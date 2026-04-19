@@ -1,9 +1,10 @@
-// Firebase 콘솔 > 프로젝트 설정 > 앱 > 웹 앱 구성에서 값을 복사해 넣으세요
 export const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
+  apiKey: "AIzaSyBp0GulmRbmD3-F22wn6tIHLE3jdT3Lvec",
   authDomain: "sosoking-481e6.firebaseapp.com",
+  databaseURL: "https://sosoking-481e6-default-rtdb.firebaseio.com",
   projectId: "sosoking-481e6",
   storageBucket: "sosoking-481e6.firebasestorage.app",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  messagingSenderId: "1059034248031",
+  appId: "1:1059034248031:web:5523a10bedec157f03bcea",
+  measurementId: "G-3P61GYPNDG"
 };
