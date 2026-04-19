@@ -1,0 +1,7 @@
+{
+  "indexes": [
+    { "collectionGroup": "cases", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "createdAt", "order": "DESCENDING" }] },
+    { "collectionGroup": "reports", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "createdAt", "order": "DESCENDING" }] }
+  ],
+  "fieldOverrides": []
+}
