@@ -2,9 +2,15 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // 관리자 UID 확인 함수 — 2단계에서 복사한 UID로 교체하세요
+    // admins 컬렉션에 UID 문서가 있으면 관리자
     function isAdmin() {
-      return request.auth != null && request.auth.uid == 'REPLACE_WITH_YOUR_ADMIN_UID';
+      return request.auth != null &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    match /admins/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
     }
 
     match /cases/{caseId} {
