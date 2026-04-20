@@ -7,7 +7,7 @@ const DEFAULTS = {
   terms: `소소킹 판결소 이용약관
 
 제1조 (목적)
-본 약관은 소소킹 판결소(이하 '서비스')가 제공하는 AI 기반 판결 서비스 이용에 관한 조건 및 절차를 규정합니다.
+본 약관은 {companyName}(이하 '서비스')가 제공하는 AI 기반 오락 판결 서비스 이용에 관한 조건 및 절차를 규정합니다.
 
 제2조 (서비스 이용)
 1. 본 서비스는 오락 목적으로 제공되며 법적 효력이 없습니다.
@@ -45,13 +45,10 @@ const DEFAULTS = {
 수집된 정보는 AI 판결 생성을 위해 Google Gemini API에 전달됩니다. 그 외 제3자에게 제공하지 않습니다.
 
 5. 이용자의 권리
-이용자는 접수한 사건의 삭제를 요청할 수 있습니다. 관리자 이메일로 문의해주세요.
+이용자는 접수한 사건의 삭제를 요청할 수 있습니다. 아래 운영자 연락처로 문의해주세요.
 
 6. 쿠키 및 추적 기술
-본 서비스는 Firebase Analytics를 통해 익명화된 서비스 이용 통계를 수집할 수 있습니다.
-
-7. 문의
-개인정보 관련 문의사항은 서비스 운영자에게 연락주세요.`,
+본 서비스는 Firebase를 통해 익명화된 서비스 이용 통계를 수집할 수 있습니다.`,
 
   ai_disclaimer: `소소킹 판결소 AI 서비스 안내
 
@@ -70,11 +67,39 @@ const DEFAULTS = {
 - 판결 결과를 타인에게 공유 시 오락 목적임을 명시해주세요.
 
 4. 사용 AI 모델
-본 서비스는 Google의 Gemini 2.0 Flash 모델을 사용합니다.
+본 서비스는 Google의 Gemini 2.5 Flash 모델을 사용합니다.
 
 5. 데이터 처리
 입력하신 사건 내용은 AI 판결 생성 목적으로만 사용되며, Google의 개인정보처리방침에 따라 처리됩니다.`
 };
+
+function applyBiz(text, biz) {
+  return text
+    .replace(/{companyName}/g, biz.companyName || '소소킹 판결소')
+    .replace(/{ceoName}/g, biz.ceoName || '')
+    .replace(/{businessNumber}/g, biz.businessNumber || '')
+    .replace(/{contact}/g, biz.contact || '')
+    .replace(/{email}/g, biz.email || '')
+    .replace(/{address}/g, biz.address || '');
+}
+
+function bizInfoHtml(biz) {
+  if (!biz || !Object.values(biz).some(Boolean)) return '';
+  const rows = [
+    biz.companyName && `상호: ${biz.companyName}`,
+    biz.ceoName && `대표자: ${biz.ceoName}`,
+    biz.businessNumber && `사업자등록번호: ${biz.businessNumber}`,
+    biz.contact && `연락처: ${biz.contact}`,
+    biz.email && `이메일: ${biz.email}`,
+    biz.address && `주소: ${biz.address}`,
+  ].filter(Boolean);
+  if (!rows.length) return '';
+  return `
+    <div style="margin-top:32px;padding:16px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;">
+      <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:10px;">운영자 정보</div>
+      <div style="font-size:13px;color:var(--cream-dim);line-height:2;">${rows.join('<br>')}</div>
+    </div>`;
+}
 
 export async function renderPolicy(container, type) {
   container.innerHTML = `
@@ -87,10 +112,17 @@ export async function renderPolicy(container, type) {
     </div>`;
 
   try {
-    const snap = await getDoc(doc(db, 'policy_docs', type));
-    const content = snap.exists() && snap.data().content ? snap.data().content : (DEFAULTS[type] || '아직 등록된 내용이 없습니다.');
+    const [policySnap, settingsSnap] = await Promise.all([
+      getDoc(doc(db, 'policy_docs', type)),
+      getDoc(doc(db, 'site_settings', 'config')),
+    ]);
+    const biz = settingsSnap.exists() ? (settingsSnap.data().businessInfo || {}) : {};
+    const raw = policySnap.exists() && policySnap.data().content
+      ? policySnap.data().content
+      : (DEFAULTS[type] || '아직 등록된 내용이 없습니다.');
+    const content = applyBiz(raw, biz);
     container.querySelector('.container').innerHTML =
-      `<div style="font-size:14px;line-height:1.9;color:var(--cream-dim);white-space:pre-wrap;">${content}</div>`;
+      `<div style="font-size:14px;line-height:1.9;color:var(--cream-dim);white-space:pre-wrap;">${content}</div>${bizInfoHtml(biz)}`;
   } catch {
     const content = DEFAULTS[type] || '불러오지 못했습니다.';
     container.querySelector('.container').innerHTML =
