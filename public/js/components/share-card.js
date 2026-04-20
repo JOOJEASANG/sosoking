@@ -17,13 +17,14 @@ export async function shareCard({ caseTitle, judgeType, judgeIcon, sentence, gri
     if (navigator.canShare) {
       await new Promise((resolve) => {
         canvas.toBlob(async (blob) => {
-          const file = new File([blob], '소소킹_판결문.png', { type: 'image/png' });
+          const file = new File([blob], '쇼킹한판결소_판결문.png', { type: 'image/png' });
           if (navigator.canShare({ files: [file] })) {
             try {
               await navigator.share({
                 files: [file],
-                title: `${caseTitle} - 소소킹 판결소`,
-                text: sentence,
+                title: `${caseTitle} - 쇼킹한판결소`,
+                text: `${sentence}\n\n⚖️ 판결문 전문 보기`,
+                url: `https://sosoking.co.kr/#/result/${encodeURIComponent(caseId)}`,
               });
               resolve();
               return;
@@ -46,7 +47,7 @@ export async function shareCard({ caseTitle, judgeType, judgeIcon, sentence, gri
 
 function download(canvas) {
   const a = document.createElement('a');
-  a.download = '소소킹_판결문.png';
+  a.download = '쇼킹한판결소_판결문.png';
   a.href = canvas.toDataURL('image/png');
   a.click();
 }
@@ -83,7 +84,7 @@ function buildCard({ caseTitle, judgeType, judgeIcon, sentence, grievanceIndex, 
   // 앱 이름
   c.fillStyle = GOLD;
   c.font = '700 32px "Noto Serif KR", serif';
-  c.fillText('⚖️  소소킹 판결소', W / 2, 106);
+  c.fillText('⚖️  쇼킹한판결소', W / 2, 106);
 
   // 사건번호
   const caseNum = `사건번호 ${caseId ? hashNum(caseId) : '2025'}-소소-${Math.floor(Math.random()*9000+1000)}호`;
@@ -146,17 +147,17 @@ function buildCard({ caseTitle, judgeType, judgeIcon, sentence, grievanceIndex, 
   sentLines.forEach((line, i) => c.fillText(line, W / 2, 706 + i * 54));
 
   // 하단 구분선
-  divider(c, 130, H - 122);
+  divider(c, 130, H - 136);
 
   // 면책 문구
   c.fillStyle = 'rgba(245,240,232,0.22)';
   c.font = '400 18px "Noto Sans KR", sans-serif';
-  c.fillText('이 판결은 법적 효력이 없는 AI 오락 서비스입니다', W / 2, H - 88);
+  c.fillText('이 판결은 법적 효력이 없는 AI 오락 서비스입니다', W / 2, H - 100);
 
-  // URL
-  c.fillStyle = 'rgba(201,168,76,0.55)';
-  c.font = '600 20px "Noto Sans KR", sans-serif';
-  c.fillText('sosoking-481e6.web.app', W / 2, H - 56);
+  // 판결문 보기 CTA
+  c.fillStyle = 'rgba(201,168,76,0.82)';
+  c.font = '700 24px "Noto Sans KR", sans-serif';
+  c.fillText('⚖️ 판결문 보기 → sosoking.co.kr', W / 2, H - 60);
 
   return canvas;
 }
