@@ -11,6 +11,8 @@ import { initTheme, renderThemeToggle } from './components/theme.js';
 import { renderNav } from './components/nav.js';
 
 function route() {
+  if (window._pageCleanup) { window._pageCleanup(); window._pageCleanup = null; }
+
   const hash = location.hash || '#/';
   const content = document.getElementById('page-content');
   if (!content) return;
