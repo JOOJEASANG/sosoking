@@ -78,16 +78,8 @@ export function renderSubmit(container) {
   let selectedJudge = '';
 
   const setActive = (activeOpt) => {
-    document.querySelectorAll('#judge-grid .judge-option').forEach(el => {
-      el.classList.remove('active');
-      el.style.borderColor = 'rgba(201,168,76,0.22)';
-      el.style.background = '#1a2035';
-      el.style.transform = '';
-    });
+    document.querySelectorAll('#judge-grid .judge-option').forEach(el => el.classList.remove('active'));
     activeOpt.classList.add('active');
-    activeOpt.style.borderColor = '#c9a84c';
-    activeOpt.style.background = 'rgba(201,168,76,0.18)';
-    activeOpt.style.transform = 'scale(1.04)';
   };
 
   // 초기 랜덤 버튼 활성화

@@ -1,6 +1,7 @@
 import { db } from '../firebase.js';
 import { doc, getDoc, updateDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { showToast } from '../components/toast.js';
+import { shareCard } from '../components/share-card.js';
 
 const JUDGE_ICON = {
   '엄벌주의형':'👨‍⚖️','감성형':'🥹','현실주의형':'🤦',
@@ -62,15 +63,26 @@ export async function renderResult(container, caseId) {
           <div class="sentence-text">${r.sentence}</div>
         </div>
         <div class="result-actions">
+          <button class="btn btn-primary" id="btn-share-card">📸 판결 카드 저장 / 공유</button>
           ${isOwner ? `<button class="btn ${isPublic ? 'btn-ghost' : 'btn-secondary'}" id="btn-share">
-            ${isPublic ? '🔒 판결문 비공개로 전환' : '🔗 판결문 공유하기'}
+            ${isPublic ? '🔒 판결문 비공개로 전환' : '🔗 링크 공유하기'}
           </button>` : ''}
-          <button class="btn btn-primary" id="btn-copy">📋 판결문 텍스트 복사</button>
           <button class="btn btn-secondary" id="btn-retry">🎲 다른 판사에게 재판받기</button>
           <a href="#/" class="btn btn-ghost">처음으로 돌아가기</a>
         </div>
       </div>
     </div>`;
+
+  document.getElementById('btn-share-card').addEventListener('click', () => {
+    shareCard({
+      caseTitle: c.caseTitle || '판결 결과',
+      judgeType: r.judgeType,
+      judgeIcon: icon,
+      sentence: r.sentence,
+      grievanceIndex: c.grievanceIndex || '?',
+      caseId,
+    });
+  });
 
   if (isOwner) {
     document.getElementById('btn-share').addEventListener('click', async () => {
