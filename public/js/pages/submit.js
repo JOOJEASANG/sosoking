@@ -2,8 +2,8 @@ import { db, auth } from '../firebase.js';
 import { doc, setDoc, getDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { showToast } from '../components/toast.js';
 
-const MAX_TITLE = 50;
-const MAX_DESC = 500;
+const MAX_TITLE = 30;
+const MAX_DESC = 200;
 
 const JUDGES = [
   { id: '엄벌주의형', icon: '👨‍⚖️', desc: '아무리 사소해도 중범죄 수준으로' },
@@ -14,6 +14,15 @@ const JUDGES = [
   { id: '논리집착형', icon: '🧮', desc: '모든 걸 수치화하는 논리 괴물' },
   { id: '드립형', icon: '🎭', desc: '진지한 척 드립 치는 유머 판사' }
 ];
+
+const NICK_ADJ = ['억울한','분노한','황당한','지친','당황한','슬픈','안타까운','기막힌','억억억','억울억울'];
+const NICK_NOUN = ['직장인','집사','아무개','라면러버','과자지킴이','충전기수호자','리모컨분실자','냉장고파수꾼','에어컨전사','택배대기자','이불킥전문가','눈치없는피해자','읽씹피해자','국물도둑피해자'];
+
+function _randomNickname() {
+  const adj = NICK_ADJ[Math.floor(Math.random() * NICK_ADJ.length)];
+  const noun = NICK_NOUN[Math.floor(Math.random() * NICK_NOUN.length)];
+  return adj + noun;
+}
 
 const SERIOUS_KEYWORDS = [
   '폭행','폭력','상해','살인','강도','절도','사기','협박','스토킹','납치','감금',
@@ -71,7 +80,7 @@ export function renderSubmit(container) {
           </div>
           <div class="form-group">
             <label class="form-label">사건 경위 <span style="color:var(--red)">*</span></label>
-            <textarea id="case-desc" class="form-textarea" maxlength="${MAX_DESC}" placeholder="어떤 일이 있었는지 상세히 작성해주세요." required></textarea>
+            <textarea id="case-desc" class="form-textarea" style="min-height:90px;" maxlength="${MAX_DESC}" placeholder="어떤 일이 있었는지 간결하게 적어주세요." required></textarea>
             <div class="char-counter"><span id="desc-count">0</span>/${MAX_DESC}</div>
           </div>
           <div class="form-group">
@@ -192,7 +201,7 @@ export function renderSubmit(container) {
     try {
       await setDoc(doc(db, 'cases', caseId), {
         userId: user.uid, caseTitle: title, caseDescription: desc,
-        grievanceIndex: grievance, nickname: '익명', desiredVerdict: desired,
+        grievanceIndex: grievance, nickname: _randomNickname(), desiredVerdict: desired,
         selectedJudge: selectedJudge || '',
         status: 'pending', isPublic: false, reportCount: 0, createdAt: serverTimestamp()
       });
