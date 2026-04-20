@@ -1,11 +1,18 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // 관리자 UID 확인 함수 — 2단계에서 복사한 UID로 교체하세요
+    function isAdmin() {
+      return request.auth != null && request.auth.uid == 'REPLACE_WITH_YOUR_ADMIN_UID';
+    }
+
     match /cases/{caseId} {
       allow read: if request.auth != null && (resource.data.userId == request.auth.uid || resource.data.isPublic == true);
+      allow read: if isAdmin();
       allow create: if request.auth != null;
       allow update: if request.auth != null && resource.data.userId == request.auth.uid;
-      allow delete: if false;
+      allow update, delete: if isAdmin();
     }
     match /results/{caseId} {
       allow read: if request.auth != null;
@@ -17,15 +24,16 @@ service cloud.firestore {
     }
     match /reports/{reportId} {
       allow create: if request.auth != null;
-      allow read, update, delete: if false;
+      allow read, update, delete: if isAdmin();
     }
     match /site_settings/{docId} {
       allow read: if true;
-      allow write: if false;
+      allow write: if isAdmin();
     }
     match /policy_docs/{docId} {
       allow read: if true;
-      allow write: if false;
+      allow write: if isAdmin();
     }
   }
 }
+
