@@ -15,6 +15,45 @@ const JUDGES = [
   { id: '드립형', icon: '🎭', desc: '진지한 척 드립 치는 유머 판사' }
 ];
 
+const SERIOUS_KEYWORDS = [
+  '폭행','폭력','상해','살인','강도','절도','사기','협박','스토킹','납치','감금',
+  '성범죄','성폭력','성추행','성희롱','강간','강제추행',
+  '가정폭력','학교폭력','직장내괴롭힘','갑질','따돌림','왕따',
+  '이혼','위자료','손해배상','형사고소','고발','소송','민사','형사','법원',
+  '자살','자해','응급','정신과','우울증','공황'
+];
+
+function _isTooSerious(text) {
+  return SERIOUS_KEYWORDS.some(kw => text.includes(kw));
+}
+
+function _showSeriousModal() {
+  return new Promise(resolve => {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px;';
+    overlay.innerHTML = `
+      <div style="background:#1a2035;border:2px solid #e74c3c;border-radius:16px;padding:28px 24px;max-width:360px;width:100%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,0.6);">
+        <div style="font-size:52px;margin-bottom:12px;">😰</div>
+        <div style="font-family:'Noto Serif KR',serif;font-size:19px;font-weight:700;color:#e74c3c;margin-bottom:10px;">잠깐, 판사님이 당황했습니다</div>
+        <p style="font-size:14px;color:rgba(245,240,232,0.7);line-height:1.75;margin-bottom:22px;">
+          이 사건은 저희 AI 판사들이<br>
+          <strong style="color:#f5f0e8;">감당하기 어려울 수 있어요.</strong><br><br>
+          진짜 법적 문제라면 실제 전문가의<br>도움을 받으시는 게 좋습니다.<br>
+          <span style="font-size:12px;opacity:0.5;">(저희 판사는 커피나 마시러 가있을게요)</span>
+        </p>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <a href="https://www.lawnb.com" target="_blank" rel="noopener" style="display:block;padding:13px;border-radius:12px;background:rgba(231,76,60,0.15);border:1.5px solid rgba(231,76,60,0.4);color:#e74c3c;font-weight:700;font-size:14px;text-decoration:none;">⚖️ 진짜 법률 상담 찾아보기</a>
+          <button id="_serious-confirm" style="padding:13px;border-radius:12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(245,240,232,0.6);font-size:13px;cursor:pointer;">🎭 그냥 재미로 접수할게요 (법적 효력 없음 인지)</button>
+          <button id="_serious-cancel" style="padding:10px;border-radius:12px;background:none;border:none;color:rgba(245,240,232,0.35);font-size:13px;cursor:pointer;">취소</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    overlay.querySelector('#_serious-confirm').onclick = () => { overlay.remove(); resolve(true); };
+    overlay.querySelector('#_serious-cancel').onclick = () => { overlay.remove(); resolve(false); };
+    overlay.onclick = (e) => { if (e.target === overlay) { overlay.remove(); resolve(false); } };
+  });
+}
+
 export function renderSubmit(container) {
   container.innerHTML = `
     <div>
@@ -84,7 +123,6 @@ export function renderSubmit(container) {
     activeOpt.classList.add('active');
   };
 
-  // 초기 랜덤 버튼 활성화
   const firstOpt = document.querySelector('#judge-grid .judge-option');
   if (firstOpt) setActive(firstOpt);
 
@@ -107,6 +145,14 @@ export function renderSubmit(container) {
 
   document.getElementById('submit-form').addEventListener('submit', async (e) => {
     e.preventDefault();
+
+    const rawTitle = document.getElementById('case-title').value;
+    const rawDesc = document.getElementById('case-desc').value;
+    if (_isTooSerious(rawTitle + ' ' + rawDesc)) {
+      const proceed = await _showSeriousModal();
+      if (!proceed) return;
+    }
+
     const btn = document.getElementById('submit-btn');
     btn.disabled = true;
     btn.textContent = '접수 중...';

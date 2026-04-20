@@ -1,5 +1,5 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js';
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
 import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, orderBy, limit } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { firebaseConfig } from '../js/firebase-config.js';
 
@@ -30,9 +30,19 @@ function renderLogin() {
           <div class="form-group"><label class="form-label">이메일</label><input type="email" id="em" class="form-input" required></div>
           <div class="form-group"><label class="form-label">비밀번호</label><input type="password" id="pw" class="form-input" required></div>
           <button type="submit" class="btn btn-primary" id="login-btn">로그인</button>
+          <button type="button" id="reset-btn" style="width:100%;margin-top:10px;background:none;border:none;color:var(--cream-dim);font-size:13px;cursor:pointer;padding:8px;">비밀번호를 잊으셨나요?</button>
         </form>
       </div>
     </div>`;
+  document.getElementById('reset-btn').addEventListener('click', async () => {
+    const email = document.getElementById('em').value.trim();
+    if (!email) { toast('이메일을 먼저 입력해주세요.', 'error'); return; }
+    try {
+      await sendPasswordResetEmail(auth, email);
+      toast('비밀번호 재설정 메일을 발송했습니다. 메일함을 확인하세요.', 'success');
+    } catch(err) { toast('발송 실패: ' + err.message, 'error'); }
+  });
+
   document.getElementById('login-form').addEventListener('submit', async e => {
     e.preventDefault();
     const btn = document.getElementById('login-btn');
@@ -133,15 +143,106 @@ async function tabBiz(el) {
 }
 
 async function tabPolicy(el) {
+  const DEFAULTS = {
+    terms: `제1조 (목적)
+소소킹 판결소(이하 "서비스")는 일상의 사소한 억울함을 AI가 과하게 진지하게 판결해주는 오락형 서비스입니다. 본 약관은 서비스 이용에 관한 기본 사항을 규정합니다.
+
+제2조 (서비스의 성격)
+① 본 서비스는 순수 오락 목적으로 제공되며, AI가 생성한 판결문은 어떠한 법적 효력도 없습니다.
+② 본 서비스는 실제 법률 자문, 법률 상담, 분쟁 조정 서비스가 아닙니다.
+③ 진지한 법적 문제가 있을 경우 반드시 변호사 등 법률 전문가에게 문의하시기 바랍니다.
+
+제3조 (이용자 의무)
+① 이용자는 사건 접수 시 실명, 연락처, 주민등록번호 등 개인정보를 입력해서는 안 됩니다.
+② 타인의 명예를 훼손하거나 사생활을 침해하는 내용은 접수할 수 없습니다.
+③ 폭력, 혐오, 불법적인 내용이 포함된 사건은 접수가 제한됩니다.
+④ 이용자는 하루 최대 3건까지 사건을 접수할 수 있습니다.
+
+제4조 (서비스 제한)
+서비스 운영자는 다음에 해당하는 경우 사전 통지 없이 접수를 차단하거나 콘텐츠를 삭제할 수 있습니다.
+- 타인의 명예를 훼손하는 내용
+- 개인정보가 포함된 내용
+- 불법적이거나 반사회적인 내용
+- 서비스 취지에 현저히 맞지 않는 내용
+
+제5조 (면책)
+① 서비스 운영자는 AI가 생성한 판결 결과의 정확성, 적절성에 대해 책임을 지지 않습니다.
+② 서비스 이용으로 인해 발생하는 분쟁에 대해 서비스 운영자는 책임을 지지 않습니다.
+
+제6조 (약관 변경)
+서비스 운영자는 필요 시 약관을 변경할 수 있으며, 변경 시 서비스 내 공지합니다.
+
+시행일: 2025년 1월 1일`,
+
+    privacy: `소소킹 판결소 개인정보처리방침
+
+1. 수집하는 개인정보 항목
+본 서비스는 별도의 회원가입 없이 익명 인증(Firebase Anonymous Authentication)을 통해 서비스를 제공합니다. 이용자가 직접 입력하는 개인정보는 수집하지 않으며, 사건 접수 시 입력한 사건 내용(사건명, 경위 등)만 처리됩니다.
+
+수집 항목:
+- 익명 인증 토큰(UID): 서비스 이용 식별 목적
+- 사건 접수 내용: 사건명, 사건 경위, 억울 지수, 원하는 판결 (이용자가 직접 입력)
+- 서비스 이용 일시
+
+2. 개인정보 수집 및 이용 목적
+- AI 판결 서비스 제공
+- 접수 횟수 제한(1일 3건) 관리
+- 서비스 부정 이용 방지
+
+3. 개인정보 보유 및 이용 기간
+서비스 이용 종료 시 또는 이용자 요청 시까지 보관하며, 관련 법령에 따라 보존이 필요한 경우 해당 기간 동안 보관합니다.
+
+4. 개인정보의 제3자 제공
+서비스 운영자는 이용자의 개인정보를 원칙적으로 제3자에게 제공하지 않습니다. 단, 법령의 규정에 의한 경우는 예외로 합니다.
+
+5. 개인정보 처리 위탁
+본 서비스는 Google Firebase를 통해 데이터를 저장·처리합니다. Firebase의 개인정보 처리방침은 Google 개인정보 보호정책을 따릅니다.
+
+6. 이용자의 권리
+이용자는 서비스 내 본인이 접수한 사건의 공개 여부를 직접 설정할 수 있습니다.
+
+7. 개인정보 보호책임자
+문의: 서비스 내 안내된 연락처를 이용해 주시기 바랍니다.
+
+시행일: 2025년 1월 1일`,
+
+    ai_disclaimer: `AI 서비스 이용 안내
+
+1. 서비스 개요
+소소킹 판결소는 Google Gemini AI를 활용하여 이용자가 접수한 사건에 대한 판결문을 자동 생성하는 오락형 서비스입니다.
+
+2. AI 생성 콘텐츠 안내
+① 본 서비스의 모든 판결문, 수사 기록, 변론 내용은 AI(Google Gemini)가 자동으로 생성한 창작물입니다.
+② AI가 생성한 판결 결과는 오락 목적의 콘텐츠이며, 실제 법적 판단·법률 해석·법률 자문과 무관합니다.
+③ AI 생성 결과는 사실과 다를 수 있으며, 부정확하거나 편향된 내용이 포함될 수 있습니다.
+
+3. 법적 효력 없음
+본 서비스에서 생성된 모든 판결문은 대한민국 법원 또는 어떠한 공적 기관의 판결과도 무관하며, 법적 효력이 전혀 없습니다.
+
+4. 이용자 책임
+이용자는 AI 생성 결과를 실제 법률 판단의 근거로 사용해서는 안 되며, 이를 제3자에게 공유할 경우 오락 목적의 AI 생성 콘텐츠임을 명확히 해야 합니다.
+
+5. AI 서비스 제공사
+본 서비스는 Google LLC의 Gemini API를 사용합니다. AI 모델의 동작 및 생성 결과에 대한 책임은 서비스 운영자에게 있지 않으며, Google의 이용약관 및 정책이 함께 적용됩니다.
+
+6. 진지한 법적 문제가 있다면
+본 서비스는 심각한 법적 분쟁, 형사 사건, 가정 문제 등에 적합하지 않습니다. 실제 법률 문제는 반드시 변호사 등 법률 전문가에게 문의하시기 바랍니다.
+- 대한법률구조공단: 132
+- 법률홈닥터: www.lawnb.com
+
+시행일: 2025년 1월 1일`
+  };
+
   const types=[['terms','이용약관'],['privacy','개인정보처리방침'],['ai_disclaimer','AI 서비스 안내']];
   const snaps=await Promise.all(types.map(([t])=>getDoc(doc(db,'policy_docs',t))));
   let active='terms';
   function render() {
     const idx=types.findIndex(([t])=>t===active);
-    const content=snaps[idx].exists()?snaps[idx].data().content:'';
+    const content=snaps[idx].exists()?snaps[idx].data().content:(DEFAULTS[active]||'');
     el.innerHTML=`
       <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">${types.map(([t,l])=>`<button onclick="window._pt('${t}')" style="padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:${active===t?'var(--gold-dim)':'none'};color:${active===t?'var(--gold)':'var(--cream-dim)'};font-size:13px;cursor:pointer;">${l}</button>`).join('')}</div>
-      <form id="pf"><div class="form-group"><label class="form-label">${types[idx][1]}</label><textarea id="pc" class="form-textarea" style="min-height:280px;">${content}</textarea></div><button type="submit" class="btn btn-primary">저장</button></form>`;
+      ${!snaps[idx].exists()?'<div style="font-size:12px;color:var(--gold);margin-bottom:10px;padding:8px 12px;background:rgba(201,168,76,0.08);border-radius:6px;">📝 기본 내용이 준비되었습니다. 확인 후 저장해 주세요.</div>':''}
+      <form id="pf"><div class="form-group"><label class="form-label">${types[idx][1]}</label><textarea id="pc" class="form-textarea" style="min-height:320px;">${content}</textarea></div><button type="submit" class="btn btn-primary">저장</button></form>`;
     document.getElementById('pf').addEventListener('submit', async e => {
       e.preventDefault();
       const val=document.getElementById('pc').value;
