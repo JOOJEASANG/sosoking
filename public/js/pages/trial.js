@@ -44,6 +44,16 @@ export async function renderTrial(container, caseId) {
     generateTrial({ caseId });
   } catch (e) { console.error(e); }
 
+  const unsubscribeCase = onSnapshot(doc(db, 'cases', caseId), (snap) => {
+    if (!snap.exists()) return;
+    if (snap.data().status === 'error') {
+      clearInterval(msgTimer);
+      unsubscribeCase();
+      const la = document.getElementById('loading-area');
+      if (la) la.innerHTML = `<div style="font-size:15px;color:var(--red);margin-top:20px;">⚠️ 판결 중 오류가 발생했습니다.<br><a href="#/submit" style="color:var(--gold);margin-top:12px;display:inline-block;">다시 접수하기</a></div>`;
+    }
+  });
+
   const unsubscribe = onSnapshot(doc(db, 'results', caseId), (snap) => {
     if (!snap.exists()) return;
     const data = snap.data();
@@ -51,6 +61,7 @@ export async function renderTrial(container, caseId) {
     if (data.sentence) {
       clearInterval(msgTimer);
       unsubscribe();
+      unsubscribeCase();
       const la = document.getElementById('loading-area');
       if (la) la.style.display = 'none';
       setTimeout(() => { location.hash = `#/result/${encodeURIComponent(caseId)}`; }, 1500);
