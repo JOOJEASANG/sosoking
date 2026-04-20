@@ -1,7 +1,6 @@
 import { db, auth } from '../firebase.js';
 import { doc, getDoc, updateDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { showToast } from '../components/toast.js';
-import { shareCard } from '../components/share-card.js';
 
 function _fmtDate(ts) {
   if (!ts) return '';
@@ -73,8 +72,7 @@ export async function renderResult(container, caseId) {
           실제 법적 효력이 없으며, 법률 자문으로 활용할 수 없습니다.
         </div>
         <div class="result-actions">
-          <button class="btn btn-primary" id="btn-share-card">📸 판결 카드 저장 / 공유</button>
-          ${isOwner ? `<button class="btn ${isPublic ? 'btn-ghost' : 'btn-secondary'}" id="btn-share">
+          ${isOwner ? `<button class="btn ${isPublic ? 'btn-ghost' : 'btn-primary'}" id="btn-share">
             ${isPublic ? '🔒 판결문 비공개로 전환' : '🔗 링크 공유하기'}
           </button>` : ''}
           <button class="btn btn-secondary" id="btn-retry">🎲 다른 판사에게 재판받기</button>
@@ -82,17 +80,6 @@ export async function renderResult(container, caseId) {
         </div>
       </div>
     </div>`;
-
-  document.getElementById('btn-share-card').addEventListener('click', () => {
-    shareCard({
-      caseTitle: c.caseTitle || '판결 결과',
-      judgeType: r.judgeType,
-      judgeIcon: icon,
-      sentence: r.sentence,
-      grievanceIndex: c.grievanceIndex || '?',
-      caseId,
-    });
-  });
 
   if (isOwner) {
     document.getElementById('btn-share').addEventListener('click', async () => {
@@ -106,8 +93,24 @@ export async function renderResult(container, caseId) {
         });
         if (newPublic) {
           const url = `${location.origin}/#/result/${encodeURIComponent(caseId)}`;
-          await navigator.clipboard.writeText(url).catch(() => {});
-          showToast('공개 전환! 링크가 복사되었습니다 🔗', 'success');
+          const shareData = {
+            title: `${c.caseTitle || '판결 결과'} - 소소킹 판결소`,
+            text: `⚖️ ${r.judgeType} 판사의 판결: ${r.sentence}`,
+            url,
+          };
+          let handled = false;
+          if (navigator.share) {
+            try {
+              await navigator.share(shareData);
+              handled = true;
+            } catch (e) {
+              if (e.name === 'AbortError') handled = true;
+            }
+          }
+          if (!handled) {
+            await navigator.clipboard.writeText(url).catch(() => {});
+            showToast('링크가 복사되었습니다 🔗', 'success');
+          }
         } else {
           showToast('비공개로 전환되었습니다.', 'success');
         }
