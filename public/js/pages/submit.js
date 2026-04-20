@@ -15,6 +15,15 @@ const JUDGES = [
   { id: '드립형', icon: '🎭', desc: '진지한 척 드립 치는 유머 판사' }
 ];
 
+const NICK_ADJ = ['억울한','분노한','황당한','지친','당황한','슬픈','안타까운','기막힌','억억억','억울억울'];
+const NICK_NOUN = ['직장인','집사','아무개','라면러버','과자지킴이','충전기수호자','리모컨분실자','냉장고파수꾼','에어컨전사','택배대기자','이불킥전문가','눈치없는피해자','읽씹피해자','국물도둑피해자'];
+
+function _randomNickname() {
+  const adj = NICK_ADJ[Math.floor(Math.random() * NICK_ADJ.length)];
+  const noun = NICK_NOUN[Math.floor(Math.random() * NICK_NOUN.length)];
+  return adj + noun;
+}
+
 const SERIOUS_KEYWORDS = [
   '폭행','폭력','상해','살인','강도','절도','사기','협박','스토킹','납치','감금',
   '성범죄','성폭력','성추행','성희롱','강간','강제추행',
@@ -192,7 +201,7 @@ export function renderSubmit(container) {
     try {
       await setDoc(doc(db, 'cases', caseId), {
         userId: user.uid, caseTitle: title, caseDescription: desc,
-        grievanceIndex: grievance, nickname: '익명', desiredVerdict: desired,
+        grievanceIndex: grievance, nickname: _randomNickname(), desiredVerdict: desired,
         selectedJudge: selectedJudge || '',
         status: 'pending', isPublic: false, reportCount: 0, createdAt: serverTimestamp()
       });
