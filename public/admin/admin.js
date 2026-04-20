@@ -1,6 +1,6 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js';
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
-import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, orderBy, limit } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, query, orderBy, limit } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { firebaseConfig } from '../js/firebase-config.js';
 
 const app = initializeApp(firebaseConfig);
@@ -63,14 +63,14 @@ function renderDashboard() {
       </div>
       <div style="max-width:900px;margin:0 auto;padding:20px;">
         <div class="admin-nav" id="admin-nav">
-          ${[['cases','사건 목록'],['reports','신고 목록'],['settings','설정'],['biz','사업자 정보'],['policy','정책 문서']]
+          ${[['cases','사건 목록'],['reports','신고 목록'],['usage','사용량·비용'],['settings','설정'],['biz','사업자 정보'],['policy','정책 문서']]
             .map(([id,label])=>`<button class="admin-tab${currentTab===id?' active':''}" onclick="window._tab('${id}')">${label}</button>`).join('')}
         </div>
         <div id="tab-content"></div>
       </div>
     </div>`;
   window._logout = async () => { await signOut(auth); };
-  window._tab = tab => { currentTab=tab; document.querySelectorAll('.admin-tab').forEach(b=>b.classList.toggle('active',b.textContent==={cases:'사건 목록',reports:'신고 목록',settings:'설정',biz:'사업자 정보',policy:'정책 문서'}[tab])); loadTab(tab); };
+  window._tab = tab => { currentTab=tab; document.querySelectorAll('.admin-tab').forEach(b=>b.classList.toggle('active',b.textContent==={cases:'사건 목록',reports:'신고 목록',usage:'사용량·비용',settings:'설정',biz:'사업자 정보',policy:'정책 문서'}[tab])); loadTab(tab); };
   loadTab(currentTab);
 }
 
@@ -79,6 +79,7 @@ async function loadTab(tab) {
   el.innerHTML = '<div class="loading-dots" style="padding:40px 0;"><span></span><span></span><span></span></div>';
   if (tab==='cases') await tabCases(el);
   else if (tab==='reports') await tabReports(el);
+  else if (tab==='usage') await tabUsage(el);
   else if (tab==='settings') await tabSettings(el);
   else if (tab==='biz') await tabBiz(el);
   else if (tab==='policy') await tabPolicy(el);
@@ -99,7 +100,13 @@ async function tabCases(el) {
   }).join('');
   el.innerHTML = `<div style="overflow-x:auto;"><table class="admin-table"><thead><tr><th>사건</th><th>내용</th><th>상태</th><th>관리</th></tr></thead><tbody>${rows||'<tr><td colspan="4" style="text-align:center;padding:30px;color:var(--cream-dim);">사건 없음</td></tr>'}</tbody></table></div>`;
   window._hide = async id => { await updateDoc(doc(db,'cases',id),{status:'hidden'}); toast('숨김 처리됨','success'); loadTab('cases'); };
-  window._del = async id => { if(!confirm('삭제하시겠습니까?'))return; await updateDoc(doc(db,'cases',id),{status:'deleted'}); toast('삭제됨','success'); loadTab('cases'); };
+  window._del = async id => {
+    if (!confirm('⚠️ 이 사건을 영구 삭제하시겠습니까?\n사건 + 판결 결과가 모두 삭제되며 복구할 수 없습니다.')) return;
+    try { await deleteDoc(doc(db,'results',id)); } catch(e) {}
+    try { await deleteDoc(doc(db,'cases',id)); toast('영구 삭제 완료','success'); }
+    catch(e) { toast('삭제 실패: '+e.message,'error'); }
+    loadTab('cases');
+  };
 }
 
 async function tabReports(el) {
@@ -112,6 +119,79 @@ async function tabReports(el) {
   window._resolve = async id => { await updateDoc(doc(db,'reports',id),{status:'resolved'}); toast('처리완료','success'); loadTab('reports'); };
 }
 
+async function tabUsage(el) {
+  const settingsSnap = await getDoc(doc(db,'site_settings','config'));
+  const s = settingsSnap.exists() ? settingsSnap.data() : {};
+  const inputPrice = s.geminiInputPricePerM ?? 0.075;
+  const outputPrice = s.geminiOutputPricePerM ?? 0.30;
+  const firestoreWritePrice = 0.18 / 100000;
+  const firestoreReadPrice = 0.06 / 100000;
+  const invocationPrice = 0.40 / 1000000;
+  const krw = s.krwUsdRate ?? 1400;
+
+  const days = [];
+  for (let i = 0; i < 30; i++) {
+    const dt = new Date(); dt.setDate(dt.getDate() - i);
+    days.push(dt.toISOString().slice(0,10));
+  }
+  const snaps = await Promise.all(days.map(date => getDoc(doc(db,'usage_stats',`daily_${date}`))));
+  const rows = days.map((date, i) => {
+    const d = snaps[i].exists() ? snaps[i].data() : {};
+    const gIn = d.geminiInputTokens||0, gOut = d.geminiOutputTokens||0;
+    const gReq = d.geminiRequests||0, fw = d.firestoreWrites||0, fr = d.firestoreReads||0;
+    const inv = d.functionInvocations||0, cases = d.caseCount||0;
+    const cost = (gIn/1e6)*inputPrice + (gOut/1e6)*outputPrice + fw*firestoreWritePrice + fr*firestoreReadPrice + inv*invocationPrice;
+    return { date, cases, gReq, gIn, gOut, fw, fr, inv, cost };
+  });
+  const total = rows.reduce((a,r)=>({
+    cases:a.cases+r.cases, gReq:a.gReq+r.gReq, gIn:a.gIn+r.gIn, gOut:a.gOut+r.gOut,
+    fw:a.fw+r.fw, fr:a.fr+r.fr, inv:a.inv+r.inv, cost:a.cost+r.cost
+  }), {cases:0,gReq:0,gIn:0,gOut:0,fw:0,fr:0,inv:0,cost:0});
+  const today = rows[0];
+
+  const card = (label, value, sub='') => `<div style="padding:14px;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:8px;"><div style="font-size:11px;color:var(--cream-dim);">${label}</div><div style="font-size:18px;font-weight:700;color:var(--cream);margin-top:4px;">${value}</div>${sub?`<div style="font-size:11px;color:var(--cream-dim);margin-top:2px;">${sub}</div>`:''}</div>`;
+
+  el.innerHTML = `
+    <div style="margin-bottom:16px;padding:10px 14px;background:rgba(201,168,76,0.08);border-radius:8px;font-size:12px;color:var(--gold);">오늘 · ${today.date} · 사건 ${today.cases}건 · Gemini ${today.gReq}회 호출 · 예상 $${today.cost.toFixed(4)} (₩${Math.round(today.cost*krw).toLocaleString()})</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:20px;">
+      ${card('30일 사건', total.cases+'건')}
+      ${card('Gemini 요청', total.gReq.toLocaleString()+'회')}
+      ${card('입력 토큰', total.gIn.toLocaleString())}
+      ${card('출력 토큰', total.gOut.toLocaleString())}
+      ${card('Firestore 쓰기', total.fw.toLocaleString())}
+      ${card('Firestore 읽기', total.fr.toLocaleString())}
+      ${card('Functions 호출', total.inv.toLocaleString())}
+    </div>
+    <div style="padding:18px;background:linear-gradient(135deg,rgba(201,168,76,0.12),rgba(201,168,76,0.04));border:1px solid var(--gold-dim);border-radius:10px;margin-bottom:20px;">
+      <div style="font-size:12px;color:var(--gold);margin-bottom:6px;">📊 최근 30일 예상 비용</div>
+      <div style="font-size:28px;font-weight:700;color:var(--gold);">$${total.cost.toFixed(4)}</div>
+      <div style="font-size:14px;color:var(--cream-dim);margin-top:4px;">≈ ₩${Math.round(total.cost*krw).toLocaleString()} (환율 ₩${krw}/$1 기준)</div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="admin-table">
+        <thead><tr><th>날짜</th><th>사건</th><th>Gemini</th><th>토큰 (입/출)</th><th>Firestore (R/W)</th><th>비용</th></tr></thead>
+        <tbody>${rows.filter(r=>r.cases||r.gReq).map(r=>`
+          <tr>
+            <td style="font-size:12px;">${r.date}</td>
+            <td>${r.cases}</td>
+            <td>${r.gReq}</td>
+            <td style="font-size:11px;">${r.gIn.toLocaleString()} / ${r.gOut.toLocaleString()}</td>
+            <td style="font-size:11px;">${r.fr.toLocaleString()} / ${r.fw.toLocaleString()}</td>
+            <td style="color:var(--gold);font-size:12px;">$${r.cost.toFixed(4)}</td>
+          </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--cream-dim);">아직 집계된 데이터가 없습니다</td></tr>'}
+        </tbody>
+      </table>
+    </div>
+    <div style="margin-top:20px;padding:14px;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--cream-dim);line-height:1.7;">
+      💡 <b style="color:var(--cream);">비용 안내</b><br>
+      · Gemini 단가: 입력 $${inputPrice}/1M · 출력 $${outputPrice}/1M (gemini-2.5-flash 기준, 설정 탭에서 변경 가능)<br>
+      · Firestore: 쓰기 $0.18/10만 · 읽기 $0.06/10만<br>
+      · Functions 호출: $0.40/1M · 환율 ₩${krw}/$1<br>
+      · 집계는 Cloud Function이 실행될 때만 기록됩니다. Firebase 콘솔 "사용량 및 결제"가 최종 기준입니다.<br>
+      · <b style="color:var(--gold);">무료 할당량(Spark/Blaze) 차감 후 실제 청구액은 이보다 적을 수 있습니다.</b>
+    </div>`;
+}
+
 async function tabSettings(el) {
   const snap = await getDoc(doc(db,'site_settings','config'));
   const d = snap.exists()?snap.data():{};
@@ -120,11 +200,25 @@ async function tabSettings(el) {
       <div class="form-group"><label class="form-label">일일 접수 한도</label><input type="number" id="dl" class="form-input" value="${d.dailyLimit||3}" min="1" max="20"></div>
       <div class="form-group"><label class="form-label">쿨다운 (초)</label><input type="number" id="cd" class="form-input" value="${d.cooldownSec||45}" min="0" max="300"></div>
       <div class="form-group"><label class="form-label">금칙어 (쉼표 구분)</label><textarea id="bw" class="form-textarea" style="min-height:80px;">${(d.bannedWords||[]).join(', ')}</textarea></div>
+      <fieldset style="border:1px solid var(--border);border-radius:8px;padding:14px 14px 4px;margin:20px 0;">
+        <legend style="padding:0 8px;color:var(--gold);font-size:13px;">💰 비용 단가 (사용량·비용 계산용)</legend>
+        <div class="form-group"><label class="form-label">Gemini 입력 단가 ($/1M 토큰)</label><input type="number" step="0.001" id="gip" class="form-input" value="${d.geminiInputPricePerM ?? 0.075}"></div>
+        <div class="form-group"><label class="form-label">Gemini 출력 단가 ($/1M 토큰)</label><input type="number" step="0.001" id="gop" class="form-input" value="${d.geminiOutputPricePerM ?? 0.30}"></div>
+        <div class="form-group"><label class="form-label">원-달러 환율 (₩/$1)</label><input type="number" id="krw" class="form-input" value="${d.krwUsdRate ?? 1400}"></div>
+      </fieldset>
       <button type="submit" class="btn btn-primary">저장</button>
     </form>`;
   document.getElementById('sf').addEventListener('submit', async e => {
     e.preventDefault();
-    await setDoc(doc(db,'site_settings','config'),{ ...( snap.exists()?snap.data():{} ), dailyLimit:parseInt(document.getElementById('dl').value), cooldownSec:parseInt(document.getElementById('cd').value), bannedWords:document.getElementById('bw').value.split(',').map(w=>w.trim()).filter(Boolean) },{merge:true});
+    await setDoc(doc(db,'site_settings','config'),{
+      ...( snap.exists()?snap.data():{} ),
+      dailyLimit:parseInt(document.getElementById('dl').value),
+      cooldownSec:parseInt(document.getElementById('cd').value),
+      bannedWords:document.getElementById('bw').value.split(',').map(w=>w.trim()).filter(Boolean),
+      geminiInputPricePerM: parseFloat(document.getElementById('gip').value),
+      geminiOutputPricePerM: parseFloat(document.getElementById('gop').value),
+      krwUsdRate: parseFloat(document.getElementById('krw').value),
+    },{merge:true});
     toast('저장되었습니다.','success');
   });
 }
