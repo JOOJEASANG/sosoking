@@ -271,6 +271,12 @@ h1, h2, h3 { font-family: var(--font-serif); line-height: 1.3; }
 [data-theme="light"] .btn-ghost { background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.12); color: rgba(26,21,10,0.6); }
 [data-theme="light"] .btn-ghost:hover { background: rgba(0,0,0,0.09); color: rgba(26,21,10,0.85); }
 [data-theme="light"] #bottom-nav { background: rgba(247,243,237,0.97); }
+[data-theme="light"] .nav-item { color: rgba(26,21,10,0.42); }
+[data-theme="light"] .hero-section { background: linear-gradient(180deg, #2d1f08 0%, #1a1205 65%); }
+[data-theme="light"] .hero-h1 { color: #f5f0e8; }
+[data-theme="light"] .cta-section { background: linear-gradient(135deg, #2d1f08 0%, #1a1205 100%); }
+[data-theme="light"] .cta-section h2,
+[data-theme="light"] .cta-section p { color: #f5f0e8; }
 [data-theme="light"] .page-header { background: rgba(247,243,237,0.95); }
 [data-theme="light"] .example-card:hover { background: rgba(238,232,223,0.9); }
 [data-theme="light"] .verdict-card { background: linear-gradient(135deg, #fff, rgba(154,112,24,0.04)) !important; }
@@ -289,6 +295,12 @@ h1, h2, h3 { font-family: var(--font-serif); line-height: 1.3; }
 @media (prefers-color-scheme: light) {
   :root:not([data-theme="dark"]) .btn-ghost { background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.12); color: rgba(26,21,10,0.6); }
   :root:not([data-theme="dark"]) .btn-ghost:hover { background: rgba(0,0,0,0.09); color: rgba(26,21,10,0.85); }
+  :root:not([data-theme="dark"]) .nav-item { color: rgba(26,21,10,0.42); }
+  :root:not([data-theme="dark"]) .hero-section { background: linear-gradient(180deg, #2d1f08 0%, #1a1205 65%); }
+  :root:not([data-theme="dark"]) .hero-h1 { color: #f5f0e8; }
+  :root:not([data-theme="dark"]) .cta-section { background: linear-gradient(135deg, #2d1f08 0%, #1a1205 100%); }
+  :root:not([data-theme="dark"]) .cta-section h2,
+  :root:not([data-theme="dark"]) .cta-section p { color: #f5f0e8; }
   :root:not([data-theme="dark"]) .page-header { background: rgba(247,243,237,0.95); }
   :root:not([data-theme="dark"]) .example-card:hover { background: rgba(238,232,223,0.9); }
   :root:not([data-theme="dark"]) .footer-biz { color: rgba(26,21,10,0.4); }
