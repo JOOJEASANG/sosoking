@@ -63,6 +63,7 @@ export async function renderHome(container) {
 
       <!-- ============ HERO ============ -->
       <section class="hero-section">
+        <img src="/logo.svg" alt="소소킹 로고" style="width:88px;height:88px;margin-bottom:14px;display:block;margin-left:auto;margin-right:auto;animation:wiggle 3.5s ease-in-out infinite;" />
         <div class="hero-badge">🌏 세계 유일 사소한 억울함 전문 법정 (UN 미승인)</div>
         <h1 class="hero-h1">억울하죠?<br><span style="font-size:0.58em;color:var(--gold);font-style:italic;">그러니까요.</span></h1>
         <p class="hero-sub">아무도 안 들어줬죠?<br>저희가 <strong>과하게 진지하게</strong> 들어드립니다.<br><span style="font-size:11px;opacity:0.5;">(법적 효력은 없지만 심리적으로 시원합니다)</span></p>
