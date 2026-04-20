@@ -11,7 +11,7 @@ function _fmtDate(ts) {
 
 const JUDGE_ICON = {
   '엄벌주의형':'👨‍⚖️','감성형':'🥹','현실주의형':'🤦',
-  '과몰입형':'🔥','선처형':'🤗','피곤형':'😴','논리집착형':'🧮','드립형':'🎭'
+  '과몰입형':'🔥','피곤형':'😴','논리집착형':'🧮','드립형':'🎭'
 };
 
 export async function renderResult(container, caseId) {
@@ -67,6 +67,10 @@ export async function renderResult(container, caseId) {
         <div class="card sentence-card step-card visible" style="margin-bottom:28px;">
           <div style="font-size:11px;color:var(--cream-dim);margin-bottom:8px;letter-spacing:.1em;">📜 생활형 처분</div>
           <div class="sentence-text">${r.sentence}</div>
+        </div>
+        <div style="text-align:center;margin-bottom:16px;padding:10px;background:rgba(255,255,255,0.04);border-radius:8px;font-size:11px;color:var(--cream-dim);line-height:1.7;">
+          🤖 본 판결문은 <strong style="color:var(--cream);">AI가 생성한 오락 콘텐츠</strong>입니다.<br>
+          실제 법적 효력이 없으며, 법률 자문으로 활용할 수 없습니다.
         </div>
         <div class="result-actions">
           <button class="btn btn-primary" id="btn-share-card">📸 판결 카드 저장 / 공유</button>
