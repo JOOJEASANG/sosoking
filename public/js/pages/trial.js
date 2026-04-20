@@ -52,6 +52,8 @@ export async function renderTrial(container, caseId) {
     if (snap.data().status === 'error') {
       clearInterval(msgTimer);
       unsubscribeCase();
+      unsubscribeResult();
+      window._pageCleanup = null;
       const errMsg = snap.data().errorMessage || '';
       const la = document.getElementById('loading-area');
       if (la) la.innerHTML = `
@@ -61,19 +63,26 @@ export async function renderTrial(container, caseId) {
     }
   });
 
-  const unsubscribe = onSnapshot(doc(db, 'results', caseId), (snap) => {
+  const unsubscribeResult = onSnapshot(doc(db, 'results', caseId), (snap) => {
     if (!snap.exists()) return;
     const data = snap.data();
     renderSteps(data);
     if (data.sentence) {
       clearInterval(msgTimer);
-      unsubscribe();
+      unsubscribeResult();
       unsubscribeCase();
+      window._pageCleanup = null;
       const la = document.getElementById('loading-area');
       if (la) la.style.display = 'none';
       setTimeout(() => { location.hash = `#/result/${encodeURIComponent(caseId)}`; }, 1500);
     }
   });
+
+  window._pageCleanup = () => {
+    clearInterval(msgTimer);
+    unsubscribeCase();
+    unsubscribeResult();
+  };
 }
 
 function renderSteps(data) {

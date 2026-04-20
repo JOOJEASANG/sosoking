@@ -61,7 +61,7 @@ export function renderSubmit(container) {
         <a href="#/" class="back-btn">‹</a>
         <span class="logo">사건 접수서</span>
       </div>
-      <div class="container" style="padding-top:24px;padding-bottom:60px;">
+      <div class="container" style="padding-top:24px;padding-bottom:80px;">
         <p style="font-size:13px;color:var(--cream-dim);margin-bottom:28px;">억울한 사건을 접수하면 AI 판사가 배정됩니다.</p>
         <form id="submit-form">
           <div class="form-group">

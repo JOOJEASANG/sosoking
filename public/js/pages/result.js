@@ -1,4 +1,4 @@
-import { db } from '../firebase.js';
+import { db, auth } from '../firebase.js';
 import { doc, getDoc, updateDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { showToast } from '../components/toast.js';
 import { shareCard } from '../components/share-card.js';
@@ -34,7 +34,7 @@ export async function renderResult(container, caseId) {
   const c = caseSnap.exists() ? caseSnap.data() : {};
   const r = resultSnap.data();
   const icon = JUDGE_ICON[r.judgeType] || '⚖️';
-  const isOwner = caseSnap.exists();
+  const isOwner = caseSnap.exists() && c.userId === auth.currentUser?.uid;
   const isPublic = c.isPublic || false;
 
   const steps = [
