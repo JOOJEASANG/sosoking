@@ -116,7 +116,10 @@ export async function renderHome(container) {
       <!-- ============ 최근 판결 사례 ============ -->
       <div class="container" style="margin-top:44px;">
         <div style="font-size:13px;color:var(--cream-dim);margin-bottom:4px;">🔥 실제로 판결받은 사건들</div>
-        <div style="font-family:var(--font-serif);font-size:20px;font-weight:700;margin-bottom:16px;">최근 억울함 판결 사례</div>
+        <div style="font-family:var(--font-serif);font-size:20px;font-weight:700;margin-bottom:12px;">최근 억울함 판결 사례</div>
+        <div style="position:relative;margin-bottom:12px;">
+          <input type="text" id="feed-search" class="form-input" placeholder="🔍 사건명으로 검색..." style="font-size:14px;padding-left:14px;">
+        </div>
         <div id="feed-container" style="display:flex;flex-direction:column;gap:10px;">
           ${EXAMPLES.map(c => _caseCard(null, c)).join('')}
         </div>
@@ -176,14 +179,39 @@ export async function renderHome(container) {
   _loadPublicFeed();
 }
 
+// 날짜 포맷: "4월 20일 오후 3:24"
+function _fmtDate(ts) {
+  if (!ts) return '';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+// 검색 필터링
+let _feedAll = [];
+function _applySearch() {
+  const q = (document.getElementById('feed-search')?.value || '').trim();
+  const feedEl = document.getElementById('feed-container');
+  if (!feedEl) return;
+  const filtered = q ? _feedAll.filter(([, r]) => (r.caseTitle || '').includes(q)) : _feedAll;
+  if (filtered.length === 0) {
+    feedEl.innerHTML = `<div style="text-align:center;padding:36px 0;color:var(--cream-dim);font-size:14px;">🔍 "${q}"에 대한 판결 사례가 없습니다</div>`;
+  } else {
+    feedEl.innerHTML = filtered.map(([id, r]) => _caseCard(id, r)).join('');
+  }
+}
+
 function _caseCard(id, r) {
   const icon = JUDGE_ICON[r.judgeType] || '⚖️';
   const href = id ? `onclick="location.hash='#/result/${encodeURIComponent(id)}'"` : `onclick="location.hash='#/submit'"`;
-  const linkLabel = id ? '직접 확인하기 →' : '판결받기 →';
+  const linkLabel = id ? '판결문 보기 →' : '나도 접수하기 →';
+  const dateStr = _fmtDate(r.createdAt);
   return `
-    <div class="card example-card" ${href} style="min-height:96px;padding:18px 20px;">
-      <div class="case-title">${r.caseTitle || r.title || '제목 없음'}</div>
-      <div style="font-size:13px;color:var(--cream-dim);margin-top:4px;line-height:1.6;">${((r.sentence || r.desc || '')).substring(0, 70)}…</div>
+    <div class="card example-card" ${href} style="padding:18px 20px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+        <div class="case-title" style="flex:1;">${r.caseTitle || r.title || '제목 없음'}</div>
+        ${dateStr ? `<div style="font-size:11px;color:var(--cream-dim);white-space:nowrap;margin-top:2px;">${dateStr}</div>` : ''}
+      </div>
+      <div style="font-size:13px;color:var(--cream-dim);margin-top:6px;line-height:1.6;">${((r.sentence || r.desc || '')).substring(0, 72)}…</div>
       <div class="case-meta" style="margin-top:10px;justify-content:space-between;">
         <span>${icon} ${r.judgeType || '?'} 판사</span>
         <span style="color:var(--gold);font-size:12px;">${linkLabel}</span>
@@ -263,14 +291,19 @@ function _animateCount() {
 async function _loadPublicFeed() {
   try {
     const snap = await getDocs(
-      query(collection(db, 'results'), where('isPublic', '==', true), orderBy('createdAt', 'desc'), limit(5))
+      query(collection(db, 'results'), where('isPublic', '==', true), orderBy('createdAt', 'desc'), limit(20))
     );
     if (snap.empty) return;
 
+    _feedAll = snap.docs.map(d => [d.id, d.data()]);
+
     const feedEl = document.getElementById('feed-container');
     if (!feedEl) return;
+    feedEl.innerHTML = _feedAll.map(([id, r]) => _caseCard(id, r)).join('');
 
-    feedEl.innerHTML = snap.docs.map(d => _caseCard(d.id, d.data())).join('');
+    // 검색 이벤트 연결
+    const searchEl = document.getElementById('feed-search');
+    if (searchEl) searchEl.addEventListener('input', _applySearch);
   } catch {
     // Keep example fallback
   }

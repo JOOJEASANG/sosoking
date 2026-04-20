@@ -3,6 +3,12 @@ import { doc, getDoc, updateDoc } from 'https://www.gstatic.com/firebasejs/12.12
 import { showToast } from '../components/toast.js';
 import { shareCard } from '../components/share-card.js';
 
+function _fmtDate(ts) {
+  if (!ts) return '';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleString('ko-KR', { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
 const JUDGE_ICON = {
   '엄벌주의형':'👨‍⚖️','감성형':'🥹','현실주의형':'🤦',
   '과몰입형':'🔥','선처형':'🤗','피곤형':'😴','논리집착형':'🧮','드립형':'🎭'
@@ -46,7 +52,7 @@ export async function renderResult(container, caseId) {
           <div style="font-size:56px;margin-bottom:8px;">${icon}</div>
           <div class="badge badge-gold" style="font-size:13px;padding:5px 14px;">${r.judgeType} 판사</div>
           <h2 style="margin-top:14px;font-size:20px;">${c.caseTitle || '판결 결과'}</h2>
-          <div style="font-size:13px;color:var(--cream-dim);margin-top:4px;">억울지수 ${c.grievanceIndex || '?'}/10</div>
+          <div style="font-size:13px;color:var(--cream-dim);margin-top:4px;">억울지수 ${c.grievanceIndex || '?'}/10${c.createdAt ? ` · ${_fmtDate(c.createdAt)}` : ''}</div>
         </div>
         ${steps.map(([role,label,content]) => `
           <div class="card step-card visible" style="margin-bottom:12px;">
