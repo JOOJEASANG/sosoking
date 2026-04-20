@@ -158,7 +158,7 @@ export async function renderHome(container) {
       <div class="container" style="margin-top:20px;">
         <div class="disclaimer">
           <strong>⚠️ 오락 서비스 안내</strong><br>
-          소소킹 판결소는 실제 법률 자문이 아닌 AI 기반 오락형 서비스입니다. 판결에는 어떠한 법적 효력도 없습니다.
+          쇼킹한판결소는 실제 법률 자문이 아닌 AI 기반 오락형 서비스입니다. 판결에는 어떠한 법적 효력도 없습니다.
         </div>
       </div>
 

@@ -9,7 +9,7 @@ export function renderGuide(container) {
 
         <div style="text-align:center;margin-bottom:32px;">
           <div style="font-size:48px;margin-bottom:12px;">⚖️</div>
-          <div style="font-family:var(--font-serif);font-size:22px;font-weight:700;margin-bottom:6px;">소소킹 판결소 사용법</div>
+          <div style="font-family:var(--font-serif);font-size:22px;font-weight:700;margin-bottom:6px;">쇼킹한판결소 사용법</div>
           <div style="font-size:13px;color:var(--cream-dim);">어렵지 않아요. 진짜로요.</div>
         </div>
 
@@ -50,7 +50,7 @@ export function renderGuide(container) {
         <!-- 면책 -->
         <div class="disclaimer" style="margin-bottom:24px;">
           <strong>⚠️ 오락 서비스 안내</strong><br>
-          소소킹 판결소는 AI 기반 오락 서비스입니다. 생성된 판결문은 실제 법률 자문이 아니며 어떠한 법적 효력도 없습니다. 진짜 법적 문제는 실제 전문가에게 문의하세요.
+          쇼킹한판결소는 AI 기반 오락 서비스입니다. 생성된 판결문은 실제 법률 자문이 아니며 어떠한 법적 효력도 없습니다. 진짜 법적 문제는 실제 전문가에게 문의하세요.
         </div>
 
         <a href="#/submit" class="btn btn-primary">⚖️ 억울함 접수하러 가기</a>
