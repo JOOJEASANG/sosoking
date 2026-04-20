@@ -20,7 +20,7 @@ const JUDGE_PROMPTS = {
   '드립형': '당신은 판결을 예능처럼 진행하는 판사입니다. 유머를 치지만 형식은 과하게 진지한 법원 문서 톤입니다.'
 };
 
-exports.generateTrial = onCall({ region: 'asia-northeast3', secrets: [geminiKey] }, async (request) => {
+exports.generateTrial = onCall({ region: 'asia-northeast3', secrets: [geminiKey], timeoutSeconds: 300, memory: '512MiB' }, async (request) => {
   const { caseId } = request.data;
   if (!caseId) throw new Error('caseId required');
 
@@ -45,25 +45,30 @@ exports.generateTrial = onCall({ region: 'asia-northeast3', secrets: [geminiKey]
   const genAI = new GoogleGenerativeAI(geminiKey.value());
   const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
-  const reception = await gen(model, `당신은 소소킹 판결소 접수관입니다. 아래 사건을 공식 접수하는 문서를 작성하세요. 형식은 과하게 진지한 법원 공문서 톤, 내용은 사소한 일상 사건. 사건번호 부여 후 2~3문단.\n\n${ctx}`);
-  await db.doc(`results/${caseId}`).set({ reception }, { merge: true });
+  try {
+    const reception = await gen(model, `당신은 소소킹 판결소 접수관입니다. 아래 사건을 공식 접수하는 문서를 작성하세요. 형식은 과하게 진지한 법원 공문서 톤, 내용은 사소한 일상 사건. 사건번호 부여 후 2~3문단.\n\n${ctx}`);
+    await db.doc(`results/${caseId}`).set({ reception }, { merge: true });
 
-  const investigation = await gen(model, `당신은 소소킹 판결소 수사관입니다. 아래 사건의 수사기록을 작성하세요. 증거물 목록, 현장진술 포함, 경찰 수사보고서 톤으로 2~3문단.\n\n${ctx}`);
-  await db.doc(`results/${caseId}`).set({ investigation }, { merge: true });
+    const investigation = await gen(model, `당신은 소소킹 판결소 수사관입니다. 아래 사건의 수사기록을 작성하세요. 증거물 목록, 현장진술 포함, 경찰 수사보고서 톤으로 2~3문단.\n\n${ctx}`);
+    await db.doc(`results/${caseId}`).set({ investigation }, { merge: true });
 
-  const plaintiffArg = await gen(model, `당신은 원고 측 변호사입니다. 아래 사건에서 원고 입장을 극적으로 변호하는 법정 주장을 작성하세요. 격정적이고 과하게 진지하게 2~3문단.\n\n${ctx}`);
-  await db.doc(`results/${caseId}`).set({ plaintiffArg }, { merge: true });
+    const plaintiffArg = await gen(model, `당신은 원고 측 변호사입니다. 아래 사건에서 원고 입장을 극적으로 변호하는 법정 주장을 작성하세요. 격정적이고 과하게 진지하게 2~3문단.\n\n${ctx}`);
+    await db.doc(`results/${caseId}`).set({ plaintiffArg }, { merge: true });
 
-  const defendantArg = await gen(model, `당신은 피고 측 변호사입니다. 아래 사건에서 피고를 나름의 논리로 변호하는 법정 주장을 작성하세요. 유머러스하게 반박하되 진지한 톤으로 2~3문단.\n\n${ctx}`);
-  await db.doc(`results/${caseId}`).set({ defendantArg, judgeType }, { merge: true });
+    const defendantArg = await gen(model, `당신은 피고 측 변호사입니다. 아래 사건에서 피고를 나름의 논리로 변호하는 법정 주장을 작성하세요. 유머러스하게 반박하되 진지한 톤으로 2~3문단.\n\n${ctx}`);
+    await db.doc(`results/${caseId}`).set({ defendantArg, judgeType }, { merge: true });
 
-  const verdict = await gen(model, `${JUDGE_PROMPTS[judgeType]}\n\n아래 사건에 대한 최종 판결문을 작성하세요. 실제 법원 판결문처럼 진지하게, 판결 이유와 근거 포함, 3~4문단.\n\n${ctx}`);
-  await db.doc(`results/${caseId}`).set({ verdict }, { merge: true });
+    const verdict = await gen(model, `${JUDGE_PROMPTS[judgeType]}\n\n아래 사건에 대한 최종 판결문을 작성하세요. 실제 법원 판결문처럼 진지하게, 판결 이유와 근거 포함, 3~4문단.\n\n${ctx}`);
+    await db.doc(`results/${caseId}`).set({ verdict }, { merge: true });
 
-  const sentence = await gen(model, `${JUDGE_PROMPTS[judgeType]}\n\n위 사건에 대해 창의적인 생활형 처분을 한 문장으로만 내려주세요. 예: "피고는 향후 30일간 라면 국물 취식을 금지한다." 딱 한 문장만.\n\n${ctx}`);
-  await db.doc(`results/${caseId}`).set({ sentence }, { merge: true });
+    const sentence = await gen(model, `${JUDGE_PROMPTS[judgeType]}\n\n위 사건에 대해 창의적인 생활형 처분을 한 문장으로만 내려주세요. 예: "피고는 향후 30일간 라면 국물 취식을 금지한다." 딱 한 문장만.\n\n${ctx}`);
+    await db.doc(`results/${caseId}`).set({ sentence }, { merge: true });
 
-  await db.doc(`cases/${caseId}`).update({ status: 'completed' });
+    await db.doc(`cases/${caseId}`).update({ status: 'completed' });
+  } catch (err) {
+    await db.doc(`cases/${caseId}`).update({ status: 'error' });
+    throw err;
+  }
   return { success: true };
 });
 
