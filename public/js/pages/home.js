@@ -25,25 +25,28 @@ const JUDGE_ICON = {
 };
 
 const JUDGES = [
-  { name: '엄벌주의형', icon: '👨‍⚖️', desc: '"중범죄야, 중범죄"' },
-  { name: '감성형',    icon: '🥹',   desc: '판사가 더 울어요' },
-  { name: '현실주의형', icon: '🤦',  desc: '"그래서 어쩌라고요"' },
-  { name: '과몰입형',  icon: '🔥',   desc: '전 세계 1면 뉴스감' },
-  { name: '선처형',    icon: '🤗',   desc: '다 이해해요 근데...' },
-  { name: '피곤형',    icon: '😴',   desc: '빨리 집에 가고 싶다' },
-  { name: '논리집착형', icon: '🧮',  desc: '억울지수 7.4532점' },
-  { name: '드립형',    icon: '🎭',   desc: '판결이요? ㅋㅋ' },
+  { name: '엄벌주의형', icon: '👨‍⚖️', desc: '전과자 만들어 드림' },
+  { name: '감성형',    icon: '🥹',   desc: '판사가 더 많이 울어요' },
+  { name: '현실주의형', icon: '🤦',  desc: '위로 기대하지 마요' },
+  { name: '과몰입형',  icon: '🔥',   desc: '드라마 대본 쓰는 판사' },
+  { name: '선처형',    icon: '🤗',   desc: '솔직히 피고 편임' },
+  { name: '피곤형',    icon: '😴',   desc: '이 재판 하기 싫다' },
+  { name: '논리집착형', icon: '🧮',  desc: '억울지수 7.35±0.003점' },
+  { name: '드립형',    icon: '🎭',   desc: 'ㅋㅋ 판결ㅋㅋ' },
 ];
 
 const TW_CASES = [
   '라면 국물 무단 음용 사건',
   '카톡 읽씹 17회 반복 사건',
-  '충전기 독점 점거 사건',
-  '화장실 청소 3주 미루기 사건',
-  '마지막 과자 몰래 먹기 사건',
+  '파마 안 한다고 해놓고 한 사건',
+  '내 자리에 슬쩍 앉아있던 사건',
+  '밥 먹었냐고 물어보지 않은 사건',
   '에어컨 온도 독단 조작 사건',
+  '마지막 과자 혼자 다 먹은 사건',
+  '택배 대신 수령 후 3일 방치 사건',
   '공용 리모컨 실종 사건',
   '우산 무단 사용 후 반납 불이행 사건',
+  '충전기 끝에 살짝 꽂아만 두고 간 사건',
 ];
 
 // Module-level timer ref so it can be cleared on re-render
@@ -61,44 +64,44 @@ export async function renderHome(container) {
 
       <!-- ============ HERO ============ -->
       <section class="hero-section">
-        <div class="hero-badge">세계 최초 사소한 억울함 전문 법정 ⚖️</div>
-        <h1 class="hero-h1">억울하세요?<br><span style="font-size:0.65em;color:var(--gold);">여기 접수하세요.</span></h1>
-        <p class="hero-sub">라면 국물 한 방울, 읽씹 한 번도<br>당신의 억울함은 <strong>중요합니다.</strong><br><span style="font-size:12px;opacity:0.6;">(법적으로는 아닙니다)</span></p>
+        <div class="hero-badge">🌏 세계 유일 사소한 억울함 전문 법정 (UN 미승인)</div>
+        <h1 class="hero-h1">억울하죠?<br><span style="font-size:0.58em;color:var(--gold);font-style:italic;">그러니까요.</span></h1>
+        <p class="hero-sub">아무도 안 들어줬죠?<br>저희가 <strong>과하게 진지하게</strong> 들어드립니다.<br><span style="font-size:11px;opacity:0.5;">(법적 효력은 없지만 심리적으로 시원합니다)</span></p>
 
         <div class="hero-tw">
-          🔴 심의중: <strong id="tw-text"></strong><span class="cursor-blink" style="color:var(--gold);">|</span>
+          ⚠️ 지금 이 억울함 심의중: <strong id="tw-text"></strong><span class="cursor-blink" style="color:var(--gold);">|</span>
         </div>
 
-        <a href="#/submit" class="hero-cta">🚨 지금 당장 억울함 호소하기</a>
-        <div class="hero-disclaimer">무료 · 완전 익명 · 법적효력 없음 (진짜로)</div>
+        <a href="#/submit" class="hero-cta hero-cta-pulse">🚨 억울함 즉시 접수하기</a>
+        <div class="hero-disclaimer">완전 무료 · 완전 익명 · 완전히 법적효력 없음</div>
 
         <div class="stats-row">
           <div class="stat-item">
             <div class="stat-num" id="stat-count">847+</div>
-            <div class="stat-label">억울함 해소됨</div>
+            <div class="stat-label">억울함 처리됨</div>
           </div>
           <div class="stat-item">
             <div class="stat-num">8명</div>
-            <div class="stat-label">개성있는 판사</div>
+            <div class="stat-label">특이한 판사</div>
           </div>
           <div class="stat-item">
             <div class="stat-num">0%</div>
-            <div class="stat-label">법적효력 😅</div>
+            <div class="stat-label">법적효력<br><span style="font-size:9px;opacity:0.7;">(근데 시원함)</span></div>
           </div>
         </div>
       </section>
 
       <!-- ============ 판사 라인업 ============ -->
       <div class="container" style="margin-top:44px;">
-        <div style="font-size:13px;color:var(--cream-dim);margin-bottom:4px;">👇 어떤 판사가 걸릴지 모릅니다</div>
-        <div style="font-family:var(--font-serif);font-size:20px;font-weight:700;margin-bottom:4px;">8명의 AI 판사가 대기중</div>
-        <div class="section-sub">랜덤 배정 or 직접 선택 가능합니다</div>
+        <div style="font-size:13px;color:var(--cream-dim);margin-bottom:4px;">⚠️ 누가 걸릴지 아무도 모릅니다</div>
+        <div style="font-family:var(--font-serif);font-size:20px;font-weight:700;margin-bottom:4px;">8명의 AI 판사 대기중 🫡</div>
+        <div class="section-sub">랜덤 배정 (용기있으면) or 직접 선택 가능</div>
 
         <div class="judge-lineup">
           <div class="judge-card" onclick="location.hash='#/submit'">
             <div class="judge-card-icon">🎲</div>
-            <div class="judge-card-name">운에 맡기기</div>
-            <div class="judge-card-desc" style="color:var(--gold);">두근두근</div>
+            <div class="judge-card-name">운명에 맡기기</div>
+            <div class="judge-card-desc" style="color:var(--gold);">두근두근...</div>
           </div>
           ${JUDGES.map(j => `
             <div class="judge-card" onclick="location.hash='#/submit'">
@@ -121,14 +124,14 @@ export async function renderHome(container) {
 
       <!-- ============ 이용 방법 ============ -->
       <div class="container" style="margin-top:44px;">
-        <div style="font-size:13px;color:var(--cream-dim);margin-bottom:4px;">📋 이게 진짜 법정처럼 진행됩니다</div>
+        <div style="font-size:13px;color:var(--cream-dim);margin-bottom:4px;">🎬 진짜 법정처럼 진행됩니다 (연기임)</div>
         <div style="font-family:var(--font-serif);font-size:20px;font-weight:700;margin-bottom:20px;">재판 진행 순서</div>
         <div style="display:flex;flex-direction:column;gap:16px;">
           ${[
-            ['01','억울함 접수 📝','사건명과 억울한 경위를 적어요 (진지하게)'],
-            ['02','AI 수사 개시 🔍','수사관이 라면 국물 방울 수를 감식합니다'],
-            ['03','법정 공방 ⚔️','원고·피고 변호사가 열정적으로 싸웁니다 (대본 있음)'],
-            ['04','판사 판결 확정 ⚖️','판사가 과하게 진지하게 생활형 처분을 내립니다']
+            ['01','억울함 접수 📝','억울한 내용 적어요. 최대한 불쌍하게 쓸수록 유리합니다 (아님)'],
+            ['02','AI 수사 개시 🔍','수사관이 라면 국물 방울 수를 정밀 감식합니다 (서버에서)'],
+            ['03','법정 공방 ⚔️','원고·피고 변호사가 열정적으로 싸웁니다. 대본 있습니다.'],
+            ['04','판사 판결 확정 ⚖️','판사가 인생을 망칠 듯이 진지하게 생활형 처분을 내립니다']
           ].map(([num, title, desc]) => `
             <div class="how-step">
               <div class="how-step-num" style="min-width:40px;height:40px;font-size:13px;">${num}</div>
@@ -151,11 +154,13 @@ export async function renderHome(container) {
 
       <!-- ============ 하단 CTA ============ -->
       <section class="cta-section" style="margin-top:48px;">
-        <div style="font-size:36px;margin-bottom:12px;">😤</div>
-        <h2>참을 수 없이 억울하신가요?</h2>
-        <p>지금 바로 접수하세요.<br>AI 판사가 기다리고 있습니다. (진짜로)</p>
-        <a href="#/submit" class="hero-cta" style="font-size:16px;">🚨 억울함 지금 바로 접수하기</a>
-        <div style="margin-top:14px;font-size:12px;color:rgba(245,240,232,0.35);">평균 판결 시간: 약 1분 (판사님 커피 드시는 시간 포함)</div>
+        <div style="font-size:48px;margin-bottom:12px;animation:wiggle 1.5s infinite;">😤</div>
+        <h2>아직도 참고 계세요?</h2>
+        <p>억울함은 참는 게 아닙니다.<br>AI 법정에 접수하는 겁니다.<br><span style="font-size:12px;opacity:0.5;">(그게 더 건강합니다 아마도)</span></p>
+        <a href="#/submit" class="hero-cta hero-cta-pulse" style="font-size:16px;">🚨 억울함 지금 바로 접수하기</a>
+        <div style="margin-top:16px;font-size:11px;color:rgba(245,240,232,0.3);">
+          평균 판결 시간: 약 1분<br>(판사님 커피 뽑으러 가시는 시간 포함)
+        </div>
       </section>
 
     </div>
