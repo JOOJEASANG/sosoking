@@ -5,6 +5,17 @@ import { showToast } from '../components/toast.js';
 const MAX_TITLE = 50;
 const MAX_DESC = 500;
 
+const JUDGES = [
+  { id: '엄벌주의형', icon: '👨‍⚖️', desc: '아무리 사소해도 중범죄 수준으로' },
+  { id: '감성형', icon: '🥹', desc: '눈물 흘리며 공감 위주 판결' },
+  { id: '현실주의형', icon: '🤦', desc: '"그래서 어쩌라고요" 현실 직격' },
+  { id: '과몰입형', icon: '🔥', desc: '역사에 남을 대형 사건 취급' },
+  { id: '선처형', icon: '🤗', desc: '피고를 두둔하며 화해 유도' },
+  { id: '피곤형', icon: '😴', desc: '빨리 끝내고 싶은 번아웃 판사' },
+  { id: '논리집착형', icon: '🧮', desc: '모든 걸 수치화하는 논리 괴물' },
+  { id: '드립형', icon: '🎭', desc: '예능처럼 진행하는 유머 판사' }
+];
+
 export function renderSubmit(container) {
   container.innerHTML = `
     <div>
@@ -33,22 +44,46 @@ export function renderSubmit(container) {
           </div>
           <hr class="divider">
           <div class="form-group">
-            <label class="form-label">닉네임 <span class="optional">선택</span></label>
-            <input type="text" id="nickname" class="form-input" maxlength="20" placeholder="비워두면 익명으로 처리됩니다">
+            <label class="form-label">담당 판사 선택 <span class="optional">선택 안 하면 랜덤 배정</span></label>
+            <div class="judge-grid" id="judge-grid">
+              <div class="judge-option active" data-judge="">
+                <span style="font-size:22px;">🎲</span>
+                <div class="judge-option-name">랜덤 배정</div>
+                <div class="judge-option-desc">운명에 맡기기</div>
+              </div>
+              ${JUDGES.map(j => `
+                <div class="judge-option" data-judge="${j.id}">
+                  <span style="font-size:22px;">${j.icon}</span>
+                  <div class="judge-option-name">${j.id}</div>
+                  <div class="judge-option-desc">${j.desc}</div>
+                </div>
+              `).join('')}
+            </div>
           </div>
+          <hr class="divider">
           <div class="form-group">
             <label class="form-label">원하는 판결 <span class="optional">선택</span></label>
             <input type="text" id="desired-verdict" class="form-input" maxlength="100" placeholder="예: 사과를 받고 싶습니다">
           </div>
           <div class="disclaimer" style="margin-bottom:24px;">
             <strong>⚠️ 개인정보 입력 금지</strong><br>
-            실명, 연락처 등 개인정보는 절대 입력하지 마세요.
+            실명, 연락처 등 개인정보는 절대 입력하지 마세요. 모든 접수는 익명으로 처리됩니다.
           </div>
-          <button type="submit" class="btn btn-primary" id="submit-btn">⚖️ 사건 접수하기</button>
+          <button type="submit" class="btn btn-primary" id="submit-btn">⚖️ 억울함 공식 접수하기</button>
         </form>
       </div>
     </div>
   `;
+
+  let selectedJudge = '';
+
+  document.getElementById('judge-grid').addEventListener('click', (e) => {
+    const opt = e.target.closest('.judge-option');
+    if (!opt) return;
+    document.querySelectorAll('.judge-option').forEach(el => el.classList.remove('active'));
+    opt.classList.add('active');
+    selectedJudge = opt.dataset.judge;
+  });
 
   document.getElementById('case-title').addEventListener('input', function() {
     document.getElementById('title-count').textContent = this.value.length;
@@ -69,7 +104,7 @@ export function renderSubmit(container) {
     const user = auth.currentUser;
     if (!user) {
       showToast('인증 오류. 새로고침 후 다시 시도해주세요.', 'error');
-      btn.disabled = false; btn.innerHTML = '⚖️ 사건 접수하기'; return;
+      btn.disabled = false; btn.innerHTML = '⚖️ 억울함 공식 접수하기'; return;
     }
 
     const today = new Date().toISOString().split('T')[0];
@@ -80,14 +115,14 @@ export function renderSubmit(container) {
       const d = limitSnap.data();
       if (d.date === today && d.count >= 3) {
         showToast('오늘 접수 한도(3건)를 초과했습니다.', 'error');
-        btn.disabled = false; btn.innerHTML = '⚖️ 사건 접수하기'; return;
+        btn.disabled = false; btn.innerHTML = '⚖️ 억울함 공식 접수하기'; return;
       }
       if (d.lastSubmittedAt) {
         const last = d.lastSubmittedAt.toDate ? d.lastSubmittedAt.toDate() : new Date(d.lastSubmittedAt);
         const diff = (Date.now() - last.getTime()) / 1000;
         if (diff < 45) {
           showToast(`${Math.ceil(45 - diff)}초 후에 다시 접수할 수 있습니다.`, 'error');
-          btn.disabled = false; btn.innerHTML = '⚖️ 사건 접수하기'; return;
+          btn.disabled = false; btn.innerHTML = '⚖️ 억울함 공식 접수하기'; return;
         }
       }
     }
@@ -95,14 +130,14 @@ export function renderSubmit(container) {
     const title = document.getElementById('case-title').value.trim();
     const desc = document.getElementById('case-desc').value.trim();
     const grievance = parseInt(document.getElementById('grievance').value);
-    const nickname = document.getElementById('nickname').value.trim() || '익명';
     const desired = document.getElementById('desired-verdict').value.trim();
     const caseId = `${user.uid}_${Date.now()}`;
 
     try {
       await setDoc(doc(db, 'cases', caseId), {
         userId: user.uid, caseTitle: title, caseDescription: desc,
-        grievanceIndex: grievance, nickname, desiredVerdict: desired,
+        grievanceIndex: grievance, nickname: '익명', desiredVerdict: desired,
+        selectedJudge: selectedJudge || '',
         status: 'pending', isPublic: false, reportCount: 0, createdAt: serverTimestamp()
       });
       const prev = limitSnap.exists() && limitSnap.data().date === today ? limitSnap.data().count : 0;
@@ -111,7 +146,7 @@ export function renderSubmit(container) {
     } catch (err) {
       console.error(err);
       showToast('접수 중 오류가 발생했습니다.', 'error');
-      btn.disabled = false; btn.innerHTML = '⚖️ 사건 접수하기';
+      btn.disabled = false; btn.innerHTML = '⚖️ 억울함 공식 접수하기';
     }
   });
 }
