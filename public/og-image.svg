@@ -1,0 +1,122 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <!-- Dark navy gradient background -->
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#161b2e"/>
+      <stop offset="100%" style="stop-color:#0d1117"/>
+    </linearGradient>
+    <!-- Gold gradient for text -->
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#e8c97a"/>
+      <stop offset="50%" style="stop-color:#c9a84c"/>
+      <stop offset="100%" style="stop-color:#e8c97a"/>
+    </linearGradient>
+    <!-- Subtle radial glow -->
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#c9a84c;stop-opacity:0.08"/>
+      <stop offset="100%" style="stop-color:#c9a84c;stop-opacity:0"/>
+    </radialGradient>
+    <!-- Dot pattern -->
+    <pattern id="dots" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="12" cy="12" r="1" fill="#c9a84c" opacity="0.07"/>
+    </pattern>
+    <!-- Clip path for rounded corners -->
+    <clipPath id="roundedClip">
+      <rect width="1200" height="630" rx="0"/>
+    </clipPath>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- Dot texture overlay -->
+  <rect width="1200" height="630" fill="url(#dots)"/>
+
+  <!-- Radial glow in center -->
+  <ellipse cx="600" cy="315" rx="500" ry="280" fill="url(#glow)"/>
+
+  <!-- Gold double border frame - outer -->
+  <rect x="28" y="28" width="1144" height="574" fill="none" stroke="#c9a84c" stroke-width="2" opacity="0.8"/>
+  <!-- Gold double border frame - inner -->
+  <rect x="40" y="40" width="1120" height="550" fill="none" stroke="#c9a84c" stroke-width="1" opacity="0.4"/>
+
+  <!-- Corner decorations - outer -->
+  <rect x="28" y="28" width="22" height="4" fill="#c9a84c" opacity="0.9"/>
+  <rect x="28" y="28" width="4" height="22" fill="#c9a84c" opacity="0.9"/>
+  <rect x="1150" y="28" width="22" height="4" fill="#c9a84c" opacity="0.9"/>
+  <rect x="1168" y="28" width="4" height="22" fill="#c9a84c" opacity="0.9"/>
+  <rect x="28" y="598" width="22" height="4" fill="#c9a84c" opacity="0.9"/>
+  <rect x="28" y="576" width="4" height="22" fill="#c9a84c" opacity="0.9"/>
+  <rect x="1150" y="598" width="22" height="4" fill="#c9a84c" opacity="0.9"/>
+  <rect x="1168" y="576" width="4" height="22" fill="#c9a84c" opacity="0.9"/>
+
+  <!-- Top divider line -->
+  <line x1="80" y1="130" x2="1120" y2="130" stroke="#c9a84c" stroke-width="1" opacity="0.3"/>
+
+  <!-- Scale emoji / icon area -->
+  <text x="600" y="108" text-anchor="middle" font-size="54" font-family="Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif">⚖️</text>
+
+  <!-- Main title: 소소킹 판결소 -->
+  <text x="600" y="230" text-anchor="middle"
+    font-family="'Noto Serif KR', 'Apple SD Gothic Neo', 'Malgun Gothic', serif"
+    font-size="88" font-weight="700" fill="url(#goldGrad)" letter-spacing="4">소소킹 판결소</text>
+
+  <!-- Subtitle divider -->
+  <line x1="200" y1="260" x2="460" y2="260" stroke="#c9a84c" stroke-width="1" opacity="0.35"/>
+  <circle cx="600" cy="260" r="3" fill="#c9a84c" opacity="0.5"/>
+  <line x1="740" y1="260" x2="1000" y2="260" stroke="#c9a84c" stroke-width="1" opacity="0.35"/>
+
+  <!-- Subtitle text -->
+  <text x="600" y="320" text-anchor="middle"
+    font-family="'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif"
+    font-size="26" fill="#f5f0e8" opacity="0.78" letter-spacing="1">일상의 억울함에 AI 판사가 과하게 진지하게 판결합니다</text>
+
+  <!-- 판결 stamp element (rotated) -->
+  <g transform="translate(940, 370) rotate(-12)">
+    <rect x="-72" y="-36" width="144" height="72" fill="none" stroke="#e74c3c" stroke-width="3" rx="4"/>
+    <rect x="-66" y="-30" width="132" height="60" fill="none" stroke="#e74c3c" stroke-width="1" rx="2" opacity="0.5"/>
+    <text x="0" y="14" text-anchor="middle"
+      font-family="'Noto Serif KR', 'Apple SD Gothic Neo', serif"
+      font-size="34" font-weight="700" fill="#e74c3c" letter-spacing="6">판결</text>
+  </g>
+
+  <!-- Second stamp: 확정 -->
+  <g transform="translate(240, 390) rotate(8)">
+    <rect x="-52" y="-28" width="104" height="56" fill="none" stroke="#e74c3c" stroke-width="2.5" rx="3" opacity="0.6"/>
+    <text x="0" y="11" text-anchor="middle"
+      font-family="'Noto Serif KR', 'Apple SD Gothic Neo', serif"
+      font-size="26" font-weight="700" fill="#e74c3c" letter-spacing="4" opacity="0.7">확정</text>
+  </g>
+
+  <!-- Info tags row -->
+  <g transform="translate(600, 420)">
+    <!-- Tag 1 -->
+    <rect x="-220" y="-16" width="120" height="32" rx="16" fill="#c9a84c" fill-opacity="0.12" stroke="#c9a84c" stroke-width="1" stroke-opacity="0.4"/>
+    <text x="-160" y="6" text-anchor="middle" font-family="'Noto Sans KR', sans-serif" font-size="14" fill="#c9a84c" font-weight="700">⚖️ AI 법정</text>
+    <!-- Tag 2 -->
+    <rect x="-84" y="-16" width="72" height="32" rx="16" fill="#c9a84c" fill-opacity="0.12" stroke="#c9a84c" stroke-width="1" stroke-opacity="0.4"/>
+    <text x="-48" y="6" text-anchor="middle" font-family="'Noto Sans KR', sans-serif" font-size="14" fill="#c9a84c" font-weight="700">무료</text>
+    <!-- Tag 3 -->
+    <rect x="6" y="-16" width="72" height="32" rx="16" fill="#c9a84c" fill-opacity="0.12" stroke="#c9a84c" stroke-width="1" stroke-opacity="0.4"/>
+    <text x="42" y="6" text-anchor="middle" font-family="'Noto Sans KR', sans-serif" font-size="14" fill="#c9a84c" font-weight="700">익명</text>
+    <!-- Tag 4 -->
+    <rect x="96" y="-16" width="120" height="32" rx="16" fill="#c9a84c" fill-opacity="0.12" stroke="#c9a84c" stroke-width="1" stroke-opacity="0.4"/>
+    <text x="156" y="6" text-anchor="middle" font-family="'Noto Sans KR', sans-serif" font-size="14" fill="#c9a84c" font-weight="700">법적효력 0%</text>
+  </g>
+
+  <!-- Bottom divider -->
+  <line x1="80" y1="490" x2="1120" y2="490" stroke="#c9a84c" stroke-width="1" opacity="0.3"/>
+
+  <!-- Decorative small diamonds on divider -->
+  <polygon points="600,484 606,490 600,496 594,490" fill="#c9a84c" opacity="0.4"/>
+
+  <!-- URL at bottom -->
+  <text x="600" y="542" text-anchor="middle"
+    font-family="'Noto Sans KR', monospace, sans-serif"
+    font-size="18" fill="#c9a84c" opacity="0.45" letter-spacing="2">sosoking-481e6.web.app</text>
+
+  <!-- Bottom decorative text -->
+  <text x="600" y="575" text-anchor="middle"
+    font-family="'Noto Sans KR', sans-serif"
+    font-size="13" fill="#f5f0e8" opacity="0.25" letter-spacing="3">SOSOKING VERDICT COURT · POWERED BY AI</text>
+</svg>
