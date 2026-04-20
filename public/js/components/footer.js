@@ -17,10 +17,10 @@ export async function renderFooter() {
       <a href="#/policy/ai_disclaimer">AI 서비스 안내</a>
     </div>
     <div class="footer-biz">
-      ${biz.companyName || '쇼킹한판결소'}${biz.ceoName ? ` | 대표 ${biz.ceoName}` : ''}<br>
+      ${biz.companyName || '소소킹 판결소'}${biz.ceoName ? ` | 대표 ${biz.ceoName}` : ''}<br>
       ${biz.businessNumber ? `사업자등록번호 ${biz.businessNumber}` : ''}${biz.contact ? ` | 연락처 ${biz.contact}` : ''}<br>
       ${biz.email ? `이메일 ${biz.email}` : ''}${biz.address ? ` | ${biz.address}` : ''}
-      <br><span style="display:block;margin-top:6px;">© 2025 쇼킹한판결소 · 이 서비스는 오락 목적이며 법적 효력이 없습니다.</span>
+      <br><span style="display:block;margin-top:6px;">© 2025 소소킹 판결소 · 이 서비스는 오락 목적이며 법적 효력이 없습니다.</span>
     </div>
     <div style="margin-top:16px;">
       <a href="/admin" style="font-size:11px;color:rgba(245,240,232,0.2);text-decoration:none;">관리자</a>
