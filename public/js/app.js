@@ -4,8 +4,11 @@ import { renderSubmit } from './pages/submit.js';
 import { renderTrial } from './pages/trial.js';
 import { renderResult } from './pages/result.js';
 import { renderPolicy } from './pages/policy.js';
+import { renderMyCases } from './pages/my-cases.js';
+import { renderGuide } from './pages/guide.js';
 import { renderFooter } from './components/footer.js';
 import { initTheme, renderThemeToggle } from './components/theme.js';
+import { renderNav } from './components/nav.js';
 
 function route() {
   const hash = location.hash || '#/';
@@ -23,9 +26,15 @@ function route() {
     renderResult(content, decodeURIComponent(hash.replace('#/result/', '')));
   } else if (hash.startsWith('#/policy/')) {
     renderPolicy(content, hash.replace('#/policy/', ''));
+  } else if (hash === '#/my-cases') {
+    renderMyCases(content);
+  } else if (hash === '#/guide') {
+    renderGuide(content);
   } else {
     renderHome(content);
   }
+
+  renderNav();
 }
 
 window.addEventListener('hashchange', route);
