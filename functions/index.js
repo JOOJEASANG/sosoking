@@ -45,7 +45,7 @@ exports.generateTrial = onCall({ region: 'asia-northeast3', secrets: [geminiKey]
 
   const ctx = `사건명: ${c.caseTitle}\n경위: ${c.caseDescription}\n억울지수: ${c.grievanceIndex}/10\n원고: ${c.nickname}\n원하는판결: ${c.desiredVerdict||'없음'}`;
   const genAI = new GoogleGenerativeAI(geminiKey.value().trim());
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
   try {
     const reception = await gen(model, `당신은 소소킹 판결소 접수관입니다. 아래 사건을 공식 접수하는 문서를 작성하세요. 형식은 과하게 진지한 법원 공문서 톤, 내용은 사소한 일상 사건. 사건번호 부여 후 2~3문단.\n\n${ctx}`);
