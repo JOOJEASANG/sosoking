@@ -1,5 +1,5 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js';
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
 import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, orderBy, limit } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { firebaseConfig } from '../js/firebase-config.js';
 
@@ -30,9 +30,19 @@ function renderLogin() {
           <div class="form-group"><label class="form-label">이메일</label><input type="email" id="em" class="form-input" required></div>
           <div class="form-group"><label class="form-label">비밀번호</label><input type="password" id="pw" class="form-input" required></div>
           <button type="submit" class="btn btn-primary" id="login-btn">로그인</button>
+          <button type="button" id="reset-btn" style="width:100%;margin-top:10px;background:none;border:none;color:var(--cream-dim);font-size:13px;cursor:pointer;padding:8px;">비밀번호를 잊으셨나요?</button>
         </form>
       </div>
     </div>`;
+  document.getElementById('reset-btn').addEventListener('click', async () => {
+    const email = document.getElementById('em').value.trim();
+    if (!email) { toast('이메일을 먼저 입력해주세요.', 'error'); return; }
+    try {
+      await sendPasswordResetEmail(auth, email);
+      toast('비밀번호 재설정 메일을 발송했습니다. 메일함을 확인하세요.', 'success');
+    } catch(err) { toast('발송 실패: ' + err.message, 'error'); }
+  });
+
   document.getElementById('login-form').addEventListener('submit', async e => {
     e.preventDefault();
     const btn = document.getElementById('login-btn');
