@@ -5,6 +5,7 @@ import { renderTrial } from './pages/trial.js';
 import { renderResult } from './pages/result.js';
 import { renderPolicy } from './pages/policy.js';
 import { renderFooter } from './components/footer.js';
+import { initTheme, renderThemeToggle } from './components/theme.js';
 
 function route() {
   const hash = location.hash || '#/';
@@ -30,7 +31,9 @@ function route() {
 window.addEventListener('hashchange', route);
 
 (async () => {
+  initTheme();
   await initAuth();
   renderFooter();
+  renderThemeToggle();
   route();
 })();
