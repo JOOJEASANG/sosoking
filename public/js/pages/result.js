@@ -123,14 +123,4 @@ export async function renderResult(container, caseId) {
     showToast('사건을 다시 접수하면 다른 판사가 배정됩니다.', 'success');
   });
 
-  document.getElementById('btn-copy').addEventListener('click', async () => {
-    const url = `${location.origin}/#/result/${encodeURIComponent(caseId)}`;
-    const text = `⚖️ 소소킹 판결소\n\n사건명: ${c.caseTitle || '판결 결과'}\n담당: ${r.judgeType} 판사 ${icon}\n\n${r.verdict}\n\n📜 처분: ${r.sentence}\n\n${url}`;
-    try {
-      await navigator.clipboard.writeText(text);
-      showToast('판결문이 복사되었습니다!', 'success');
-    } catch {
-      showToast('복사에 실패했습니다.', 'error');
-    }
-  });
 }
