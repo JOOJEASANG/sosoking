@@ -2,8 +2,8 @@ import { db, auth } from '../firebase.js';
 import { doc, setDoc, getDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { showToast } from '../components/toast.js';
 
-const MAX_TITLE = 50;
-const MAX_DESC = 500;
+const MAX_TITLE = 30;
+const MAX_DESC = 200;
 
 const JUDGES = [
   { id: '엄벌주의형', icon: '👨‍⚖️', desc: '아무리 사소해도 중범죄 수준으로' },
@@ -80,7 +80,7 @@ export function renderSubmit(container) {
           </div>
           <div class="form-group">
             <label class="form-label">사건 경위 <span style="color:var(--red)">*</span></label>
-            <textarea id="case-desc" class="form-textarea" maxlength="${MAX_DESC}" placeholder="어떤 일이 있었는지 상세히 작성해주세요." required></textarea>
+            <textarea id="case-desc" class="form-textarea" style="min-height:90px;" maxlength="${MAX_DESC}" placeholder="어떤 일이 있었는지 간결하게 적어주세요." required></textarea>
             <div class="char-counter"><span id="desc-count">0</span>/${MAX_DESC}</div>
           </div>
           <div class="form-group">
