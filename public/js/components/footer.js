@@ -1,5 +1,5 @@
 import { db } from '../firebase.js';
-import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 
 export async function renderFooter() {
   const footer = document.getElementById('site-footer');
@@ -20,7 +20,10 @@ export async function renderFooter() {
       ${biz.companyName || '소소킹 판결소'}${biz.ceoName ? ` | 대표 ${biz.ceoName}` : ''}<br>
       ${biz.businessNumber ? `사업자등록번호 ${biz.businessNumber}` : ''}${biz.contact ? ` | 연락처 ${biz.contact}` : ''}<br>
       ${biz.email ? `이메일 ${biz.email}` : ''}${biz.address ? ` | ${biz.address}` : ''}
-      <br><span style="display:block;margin-top:6px;">© 2024 소소킹 판결소 · 이 서비스는 오락 목적이며 법적 효력이 없습니다.</span>
+      <br><span style="display:block;margin-top:6px;">© 2025 소소킹 판결소 · 이 서비스는 오락 목적이며 법적 효력이 없습니다.</span>
+    </div>
+    <div style="margin-top:16px;">
+      <a href="/admin" style="font-size:11px;color:rgba(245,240,232,0.2);text-decoration:none;">관리자</a>
     </div>
   `;
 }

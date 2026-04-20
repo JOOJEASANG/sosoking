@@ -38,7 +38,9 @@ exports.generateTrial = onCall({ region: 'asia-northeast3', secrets: [geminiKey]
     }
   }
 
-  const judgeType = JUDGES[Math.floor(Math.random() * JUDGES.length)];
+  const judgeType = (c.selectedJudge && JUDGES.includes(c.selectedJudge))
+    ? c.selectedJudge
+    : JUDGES[Math.floor(Math.random() * JUDGES.length)];
   await db.doc(`cases/${caseId}`).update({ status: 'processing', judgeType });
 
   const ctx = `사건명: ${c.caseTitle}\n경위: ${c.caseDescription}\n억울지수: ${c.grievanceIndex}/10\n원고: ${c.nickname}\n원하는판결: ${c.desiredVerdict||'없음'}`;
