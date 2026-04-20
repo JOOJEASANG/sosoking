@@ -2,11 +2,11 @@ const { onCall } = require('firebase-functions/v2/https');
 const { initializeApp } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
 const { defineSecret } = require('firebase-functions/params');
-const OpenAI = require('openai');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 initializeApp();
 const db = getFirestore();
-const openaiKey = defineSecret('OPENAI_API_KEY');
+const geminiKey = defineSecret('GEMINI_API_KEY');
 
 const JUDGES = ['엄벌주의형','감성형','현실주의형','과몰입형','선처형','피곤형','논리집착형','드립형'];
 const JUDGE_PROMPTS = {
@@ -20,7 +20,7 @@ const JUDGE_PROMPTS = {
   '드립형': '당신은 판결을 예능처럼 진행하는 판사입니다. 유머를 치지만 형식은 과하게 진지한 법원 문서 톤입니다.'
 };
 
-exports.generateTrial = onCall({ region: 'asia-northeast3', secrets: [openaiKey] }, async (request) => {
+exports.generateTrial = onCall({ region: 'asia-northeast3', secrets: [geminiKey] }, async (request) => {
   const { caseId } = request.data;
   if (!caseId) throw new Error('caseId required');
 
@@ -42,36 +42,32 @@ exports.generateTrial = onCall({ region: 'asia-northeast3', secrets: [openaiKey]
   await db.doc(`cases/${caseId}`).update({ status: 'processing', judgeType });
 
   const ctx = `사건명: ${c.caseTitle}\n경위: ${c.caseDescription}\n억울지수: ${c.grievanceIndex}/10\n원고: ${c.nickname}\n원하는판결: ${c.desiredVerdict||'없음'}`;
-  const openai = new OpenAI({ apiKey: openaiKey.value() });
+  const genAI = new GoogleGenerativeAI(geminiKey.value());
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
-  const reception = await gen(openai, `당신은 소소킹 판결소 접수관입니다. 아래 사건을 공식 접수하는 문서를 작성하세요. 형식은 과하게 진지한 법원 공문서 톤, 내용은 사소한 일상 사건. 사건번호 부여 후 2~3문단.\n\n${ctx}`);
+  const reception = await gen(model, `당신은 소소킹 판결소 접수관입니다. 아래 사건을 공식 접수하는 문서를 작성하세요. 형식은 과하게 진지한 법원 공문서 톤, 내용은 사소한 일상 사건. 사건번호 부여 후 2~3문단.\n\n${ctx}`);
   await db.doc(`results/${caseId}`).set({ reception }, { merge: true });
 
-  const investigation = await gen(openai, `당신은 소소킹 판결소 수사관입니다. 아래 사건의 수사기록을 작성하세요. 증거물 목록, 현장진술 포함, 경찰 수사보고서 톤으로 2~3문단.\n\n${ctx}`);
+  const investigation = await gen(model, `당신은 소소킹 판결소 수사관입니다. 아래 사건의 수사기록을 작성하세요. 증거물 목록, 현장진술 포함, 경찰 수사보고서 톤으로 2~3문단.\n\n${ctx}`);
   await db.doc(`results/${caseId}`).set({ investigation }, { merge: true });
 
-  const plaintiffArg = await gen(openai, `당신은 원고 측 변호사입니다. 아래 사건에서 원고 입장을 극적으로 변호하는 법정 주장을 작성하세요. 격정적이고 과하게 진지하게 2~3문단.\n\n${ctx}`);
+  const plaintiffArg = await gen(model, `당신은 원고 측 변호사입니다. 아래 사건에서 원고 입장을 극적으로 변호하는 법정 주장을 작성하세요. 격정적이고 과하게 진지하게 2~3문단.\n\n${ctx}`);
   await db.doc(`results/${caseId}`).set({ plaintiffArg }, { merge: true });
 
-  const defendantArg = await gen(openai, `당신은 피고 측 변호사입니다. 아래 사건에서 피고를 나름의 논리로 변호하는 법정 주장을 작성하세요. 유머러스하게 반박하되 진지한 톤으로 2~3문단.\n\n${ctx}`);
+  const defendantArg = await gen(model, `당신은 피고 측 변호사입니다. 아래 사건에서 피고를 나름의 논리로 변호하는 법정 주장을 작성하세요. 유머러스하게 반박하되 진지한 톤으로 2~3문단.\n\n${ctx}`);
   await db.doc(`results/${caseId}`).set({ defendantArg, judgeType }, { merge: true });
 
-  const verdict = await gen(openai, `${JUDGE_PROMPTS[judgeType]}\n\n아래 사건에 대한 최종 판결문을 작성하세요. 실제 법원 판결문처럼 진지하게, 판결 이유와 근거 포함, 3~4문단.\n\n${ctx}`);
+  const verdict = await gen(model, `${JUDGE_PROMPTS[judgeType]}\n\n아래 사건에 대한 최종 판결문을 작성하세요. 실제 법원 판결문처럼 진지하게, 판결 이유와 근거 포함, 3~4문단.\n\n${ctx}`);
   await db.doc(`results/${caseId}`).set({ verdict }, { merge: true });
 
-  const sentence = await gen(openai, `${JUDGE_PROMPTS[judgeType]}\n\n위 사건에 대해 창의적인 생활형 처분을 한 문장으로만 내려주세요. 예: "피고는 향후 30일간 라면 국물 취식을 금지한다." 딱 한 문장만.\n\n${ctx}`);
+  const sentence = await gen(model, `${JUDGE_PROMPTS[judgeType]}\n\n위 사건에 대해 창의적인 생활형 처분을 한 문장으로만 내려주세요. 예: "피고는 향후 30일간 라면 국물 취식을 금지한다." 딱 한 문장만.\n\n${ctx}`);
   await db.doc(`results/${caseId}`).set({ sentence }, { merge: true });
 
   await db.doc(`cases/${caseId}`).update({ status: 'completed' });
   return { success: true };
 });
 
-async function gen(openai, prompt) {
-  const res = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
-    messages: [{ role: 'user', content: prompt }],
-    max_tokens: 600,
-    temperature: 0.9
-  });
-  return res.choices[0].message.content.trim();
+async function gen(model, prompt) {
+  const result = await model.generateContent(prompt);
+  return result.response.text().trim();
 }
