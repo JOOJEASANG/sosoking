@@ -25,14 +25,14 @@ const JUDGE_ICON = {
 };
 
 const JUDGES = [
-  { name: '엄벌주의형', icon: '👨‍⚖️', desc: '무조건 중범죄' },
-  { name: '감성형',    icon: '🥹',   desc: '눈물로 판결' },
-  { name: '현실주의형', icon: '🤦',  desc: '그래서 어쩌라고요' },
-  { name: '과몰입형',  icon: '🔥',   desc: '역사적 대형 사건' },
-  { name: '선처형',    icon: '🤗',   desc: '화해를 유도' },
-  { name: '피곤형',    icon: '😴',   desc: '빨리 끝냅시다' },
-  { name: '논리집착형', icon: '🧮',  desc: '수치화된 판결' },
-  { name: '드립형',    icon: '🎭',   desc: '예능처럼 진지하게' },
+  { name: '엄벌주의형', icon: '👨‍⚖️', desc: '"중범죄야, 중범죄"' },
+  { name: '감성형',    icon: '🥹',   desc: '판사가 더 울어요' },
+  { name: '현실주의형', icon: '🤦',  desc: '"그래서 어쩌라고요"' },
+  { name: '과몰입형',  icon: '🔥',   desc: '전 세계 1면 뉴스감' },
+  { name: '선처형',    icon: '🤗',   desc: '다 이해해요 근데...' },
+  { name: '피곤형',    icon: '😴',   desc: '빨리 집에 가고 싶다' },
+  { name: '논리집착형', icon: '🧮',  desc: '억울지수 7.4532점' },
+  { name: '드립형',    icon: '🎭',   desc: '판결이요? ㅋㅋ' },
 ];
 
 const TW_CASES = [
@@ -61,45 +61,44 @@ export async function renderHome(container) {
 
       <!-- ============ HERO ============ -->
       <section class="hero-section">
-        <div class="hero-badge">⚖️ AI 법정 · 무료 · 익명</div>
-        <h1 class="hero-h1">억울하세요?</h1>
-        <p class="hero-sub">사소한 억울함을 접수하면 AI 판사가<br><strong>과하게 진지하게</strong> 판결합니다</p>
+        <div class="hero-badge">세계 최초 사소한 억울함 전문 법정 ⚖️</div>
+        <h1 class="hero-h1">억울하세요?<br><span style="font-size:0.65em;color:var(--gold);">여기 접수하세요.</span></h1>
+        <p class="hero-sub">라면 국물 한 방울, 읽씹 한 번도<br>당신의 억울함은 <strong>중요합니다.</strong><br><span style="font-size:12px;opacity:0.6;">(법적으로는 아닙니다)</span></p>
 
         <div class="hero-tw">
-          지금 접수중: <strong id="tw-text"></strong><span class="cursor-blink" style="color:var(--gold);">|</span>
+          🔴 심의중: <strong id="tw-text"></strong><span class="cursor-blink" style="color:var(--gold);">|</span>
         </div>
 
         <a href="#/submit" class="hero-cta">🚨 지금 당장 억울함 호소하기</a>
-        <div class="hero-disclaimer">무료 · 익명 · 법적효력 없음 (당연히)</div>
+        <div class="hero-disclaimer">무료 · 완전 익명 · 법적효력 없음 (진짜로)</div>
 
         <div class="stats-row">
           <div class="stat-item">
             <div class="stat-num" id="stat-count">847+</div>
-            <div class="stat-label">총 억울함 해소</div>
+            <div class="stat-label">억울함 해소됨</div>
           </div>
           <div class="stat-item">
-            <div class="stat-num">8가지</div>
-            <div class="stat-label">판사 유형</div>
+            <div class="stat-num">8명</div>
+            <div class="stat-label">개성있는 판사</div>
           </div>
           <div class="stat-item">
             <div class="stat-num">0%</div>
-            <div class="stat-label">법적효력</div>
+            <div class="stat-label">법적효력 😅</div>
           </div>
         </div>
       </section>
 
       <!-- ============ 판사 라인업 ============ -->
-      <div class="container" style="margin-top:40px;">
-        <div class="section-header">JUDGE LINEUP</div>
-        <div style="font-family:var(--font-serif);font-size:18px;font-weight:700;margin-bottom:6px;">어떤 판사가 배정될까요?</div>
-        <div class="section-sub">판사는 랜덤 배정되며 직접 선택도 가능합니다</div>
+      <div class="container" style="margin-top:44px;">
+        <div style="font-size:13px;color:var(--cream-dim);margin-bottom:4px;">👇 어떤 판사가 걸릴지 모릅니다</div>
+        <div style="font-family:var(--font-serif);font-size:20px;font-weight:700;margin-bottom:4px;">8명의 AI 판사가 대기중</div>
+        <div class="section-sub">랜덤 배정 or 직접 선택 가능합니다</div>
 
         <div class="judge-lineup">
-          <!-- 랜덤 배정 card -->
           <div class="judge-card" onclick="location.hash='#/submit'">
             <div class="judge-card-icon">🎲</div>
-            <div class="judge-card-name" style="color:var(--cream);">랜덤 배정</div>
-            <div class="judge-card-desc" style="color:var(--gold);font-weight:700;">+ 랜덤</div>
+            <div class="judge-card-name">운에 맡기기</div>
+            <div class="judge-card-desc" style="color:var(--gold);">두근두근</div>
           </div>
           ${JUDGES.map(j => `
             <div class="judge-card" onclick="location.hash='#/submit'">
@@ -112,24 +111,24 @@ export async function renderHome(container) {
       </div>
 
       <!-- ============ 최근 판결 사례 ============ -->
-      <div class="container" style="margin-top:40px;">
-        <div class="section-header">RECENT VERDICTS</div>
-        <div style="font-family:var(--font-serif);font-size:18px;font-weight:700;margin-bottom:16px;">최근 판결 사례</div>
+      <div class="container" style="margin-top:44px;">
+        <div style="font-size:13px;color:var(--cream-dim);margin-bottom:4px;">🔥 실제로 판결받은 사건들</div>
+        <div style="font-family:var(--font-serif);font-size:20px;font-weight:700;margin-bottom:16px;">최근 억울함 판결 사례</div>
         <div id="feed-container" style="display:flex;flex-direction:column;gap:10px;">
           ${EXAMPLES.map(c => _caseCard(null, c)).join('')}
         </div>
       </div>
 
       <!-- ============ 이용 방법 ============ -->
-      <div class="container" style="margin-top:40px;">
-        <div class="section-header">HOW IT WORKS</div>
-        <div style="font-family:var(--font-serif);font-size:18px;font-weight:700;margin-bottom:20px;">이용 방법</div>
+      <div class="container" style="margin-top:44px;">
+        <div style="font-size:13px;color:var(--cream-dim);margin-bottom:4px;">📋 이게 진짜 법정처럼 진행됩니다</div>
+        <div style="font-family:var(--font-serif);font-size:20px;font-weight:700;margin-bottom:20px;">재판 진행 순서</div>
         <div style="display:flex;flex-direction:column;gap:16px;">
           ${[
-            ['01','억울함 접수','사건명과 경위를 입력합니다'],
-            ['02','AI 수사 개시','접수관·수사관이 사건을 검토합니다'],
-            ['03','법정 공방','원고·피고 측 변호사가 맞붙습니다'],
-            ['04','판사 등장','배정된 판사가 최종 판결을 내립니다']
+            ['01','억울함 접수 📝','사건명과 억울한 경위를 적어요 (진지하게)'],
+            ['02','AI 수사 개시 🔍','수사관이 라면 국물 방울 수를 감식합니다'],
+            ['03','법정 공방 ⚔️','원고·피고 변호사가 열정적으로 싸웁니다 (대본 있음)'],
+            ['04','판사 판결 확정 ⚖️','판사가 과하게 진지하게 생활형 처분을 내립니다']
           ].map(([num, title, desc]) => `
             <div class="how-step">
               <div class="how-step-num" style="min-width:40px;height:40px;font-size:13px;">${num}</div>
@@ -152,9 +151,11 @@ export async function renderHome(container) {
 
       <!-- ============ 하단 CTA ============ -->
       <section class="cta-section" style="margin-top:48px;">
-        <h2>억울한 사건이 있으신가요?</h2>
-        <p>망설이지 마세요. AI 판사가 과하게 진지하게 들어드립니다.</p>
+        <div style="font-size:36px;margin-bottom:12px;">😤</div>
+        <h2>참을 수 없이 억울하신가요?</h2>
+        <p>지금 바로 접수하세요.<br>AI 판사가 기다리고 있습니다. (진짜로)</p>
         <a href="#/submit" class="hero-cta" style="font-size:16px;">🚨 억울함 지금 바로 접수하기</a>
+        <div style="margin-top:14px;font-size:12px;color:rgba(245,240,232,0.35);">평균 판결 시간: 약 1분 (판사님 커피 드시는 시간 포함)</div>
       </section>
 
     </div>
