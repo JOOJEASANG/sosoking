@@ -16,14 +16,14 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
       - name: Install Functions dependencies
         run: npm install
         working-directory: functions
 
       - name: Deploy to Firebase
-        uses: w9jds/firebase-action@master
-        with:
-          args: deploy --only hosting,functions,firestore
+        run: firebase deploy --only hosting,functions,firestore --force --project sosoking-481e6
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
-          PROJECT_ID: sosoking-481e6
