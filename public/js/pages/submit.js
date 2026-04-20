@@ -77,18 +77,27 @@ export function renderSubmit(container) {
 
   let selectedJudge = '';
 
-  const ACTIVE_STYLE = 'border-color:var(--gold);background:var(--gold-dim);';
-  const NORMAL_STYLE = 'border-color:var(--border);background:var(--navy-card);';
+  const setActive = (activeOpt) => {
+    document.querySelectorAll('#judge-grid .judge-option').forEach(el => {
+      el.classList.remove('active');
+      el.style.borderColor = 'rgba(201,168,76,0.22)';
+      el.style.background = '#1a2035';
+      el.style.transform = '';
+    });
+    activeOpt.classList.add('active');
+    activeOpt.style.borderColor = '#c9a84c';
+    activeOpt.style.background = 'rgba(201,168,76,0.18)';
+    activeOpt.style.transform = 'scale(1.04)';
+  };
+
+  // 초기 랜덤 버튼 활성화
+  const firstOpt = document.querySelector('#judge-grid .judge-option');
+  if (firstOpt) setActive(firstOpt);
 
   document.getElementById('judge-grid').addEventListener('click', (e) => {
     const opt = e.target.closest('.judge-option');
     if (!opt) return;
-    document.querySelectorAll('#judge-grid .judge-option').forEach(el => {
-      el.classList.remove('active');
-      el.style.cssText = NORMAL_STYLE;
-    });
-    opt.classList.add('active');
-    opt.style.cssText = ACTIVE_STYLE;
+    setActive(opt);
     selectedJudge = opt.dataset.judge;
   });
 
