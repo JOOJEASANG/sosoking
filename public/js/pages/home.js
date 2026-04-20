@@ -29,10 +29,9 @@ const JUDGES = [
   { name: '감성형',    icon: '🥹',   desc: '판사가 더 많이 울어요' },
   { name: '현실주의형', icon: '🤦',  desc: '위로 기대하지 마요' },
   { name: '과몰입형',  icon: '🔥',   desc: '드라마 대본 쓰는 판사' },
-  { name: '선처형',    icon: '🤗',   desc: '솔직히 피고 편임' },
   { name: '피곤형',    icon: '😴',   desc: '이 재판 하기 싫다' },
   { name: '논리집착형', icon: '🧮',  desc: '억울지수 7.35±0.003점' },
-  { name: '드립형',    icon: '🎭',   desc: 'ㅋㅋ 판결ㅋㅋ' },
+  { name: '드립형',    icon: '🎭',   desc: '진지한 척 드립 치는 판사' },
 ];
 
 const TW_CASES = [

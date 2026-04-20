@@ -10,10 +10,9 @@ const JUDGES = [
   { id: '감성형', icon: '🥹', desc: '눈물 흘리며 공감 위주 판결' },
   { id: '현실주의형', icon: '🤦', desc: '"그래서 어쩌라고요" 현실 직격' },
   { id: '과몰입형', icon: '🔥', desc: '역사에 남을 대형 사건 취급' },
-  { id: '선처형', icon: '🤗', desc: '피고를 두둔하며 화해 유도' },
   { id: '피곤형', icon: '😴', desc: '빨리 끝내고 싶은 번아웃 판사' },
   { id: '논리집착형', icon: '🧮', desc: '모든 걸 수치화하는 논리 괴물' },
-  { id: '드립형', icon: '🎭', desc: '예능처럼 진행하는 유머 판사' }
+  { id: '드립형', icon: '🎭', desc: '진지한 척 드립 치는 유머 판사' }
 ];
 
 export function renderSubmit(container) {
@@ -66,8 +65,11 @@ export function renderSubmit(container) {
             <input type="text" id="desired-verdict" class="form-input" maxlength="100" placeholder="예: 사과를 받고 싶습니다">
           </div>
           <div class="disclaimer" style="margin-bottom:24px;">
-            <strong>⚠️ 개인정보 입력 금지</strong><br>
-            실명, 연락처 등 개인정보는 절대 입력하지 마세요. 모든 접수는 익명으로 처리됩니다.
+            <strong>⚠️ 필독 — 접수 전 확인사항</strong><br>
+            · 실명·연락처·주민번호 등 개인정보 입력 절대 금지<br>
+            · 타인의 명예를 훼손하는 내용 접수 불가<br>
+            · 본 서비스는 AI 기반 <strong>오락 목적</strong>이며, 판결에는 어떠한 <strong>법적 효력이 없습니다</strong><br>
+            · 생성된 판결문은 실제 법률 자문이 아닙니다
           </div>
           <button type="submit" class="btn btn-primary" id="submit-btn">⚖️ 억울함 공식 접수하기</button>
         </form>

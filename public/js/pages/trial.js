@@ -4,7 +4,7 @@ import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/fireba
 
 const JUDGE_ICON = {
   '엄벌주의형':'👨‍⚖️','감성형':'🥹','현실주의형':'🤦',
-  '과몰입형':'🔥','선처형':'🤗','피곤형':'😴','논리집착형':'🧮','드립형':'🎭'
+  '과몰입형':'🔥','피곤형':'😴','논리집착형':'🧮','드립형':'🎭'
 };
 
 const LOADING_MSGS = [
