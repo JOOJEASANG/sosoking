@@ -77,11 +77,18 @@ export function renderSubmit(container) {
 
   let selectedJudge = '';
 
+  const ACTIVE_STYLE = 'border-color:var(--gold);background:var(--gold-dim);';
+  const NORMAL_STYLE = 'border-color:var(--border);background:var(--navy-card);';
+
   document.getElementById('judge-grid').addEventListener('click', (e) => {
     const opt = e.target.closest('.judge-option');
     if (!opt) return;
-    document.querySelectorAll('.judge-option').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('#judge-grid .judge-option').forEach(el => {
+      el.classList.remove('active');
+      el.style.cssText = NORMAL_STYLE;
+    });
     opt.classList.add('active');
+    opt.style.cssText = ACTIVE_STYLE;
     selectedJudge = opt.dataset.judge;
   });
 

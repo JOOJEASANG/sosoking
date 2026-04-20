@@ -52,8 +52,12 @@ export async function renderTrial(container, caseId) {
     if (snap.data().status === 'error') {
       clearInterval(msgTimer);
       unsubscribeCase();
+      const errMsg = snap.data().errorMessage || '';
       const la = document.getElementById('loading-area');
-      if (la) la.innerHTML = `<div style="font-size:15px;color:var(--red);margin-top:20px;">⚠️ 판결 중 오류가 발생했습니다.<br><a href="#/submit" style="color:var(--gold);margin-top:12px;display:inline-block;">다시 접수하기</a></div>`;
+      if (la) la.innerHTML = `
+        <div style="font-size:15px;color:var(--red);margin-top:20px;">⚠️ 판결 중 오류가 발생했습니다.</div>
+        ${errMsg ? `<div style="font-size:11px;color:var(--cream-dim);margin-top:8px;padding:8px;background:rgba(255,255,255,0.05);border-radius:6px;word-break:break-all;">${errMsg}</div>` : ''}
+        <a href="#/submit" style="color:var(--gold);margin-top:16px;display:inline-block;font-size:14px;">다시 접수하기</a>`;
     }
   });
 
