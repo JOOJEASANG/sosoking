@@ -162,3 +162,17 @@ ${ctx}`);
   }
   return { success: true };
 });
+
+exports.checkConnection = onCall({ region: 'asia-northeast3', secrets: [geminiKey], timeoutSeconds: 30, memory: '256MiB' }, async (request) => {
+  const status = { firestore: false, gemini: false };
+
+  await db.doc('site_settings/config').get();
+  status.firestore = true;
+
+  const genAI = new GoogleGenerativeAI(geminiKey.value().trim());
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+  await model.generateContent('ping');
+  status.gemini = true;
+
+  return { ok: true, ...status };
+});

@@ -1,11 +1,13 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js';
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
 import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, query, orderBy, limit } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 import { firebaseConfig } from '../js/firebase-config.js';
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const functions = getFunctions(app, 'asia-northeast3');
 
 function toast(msg, type='info') {
   const c = document.getElementById('toast-container');
@@ -63,14 +65,14 @@ function renderDashboard() {
       </div>
       <div style="max-width:900px;margin:0 auto;padding:20px;">
         <div class="admin-nav" id="admin-nav">
-          ${[['cases','사건 목록'],['reports','신고 목록'],['usage','사용량·비용'],['settings','설정'],['biz','사업자 정보'],['policy','정책 문서']]
+          ${[['cases','사건 목록'],['reports','신고 목록'],['usage','사용량·비용'],['settings','설정'],['biz','사업자 정보'],['policy','정책 문서'],['connection','연결 상태']]
             .map(([id,label])=>`<button class="admin-tab${currentTab===id?' active':''}" onclick="window._tab('${id}')">${label}</button>`).join('')}
         </div>
         <div id="tab-content"></div>
       </div>
     </div>`;
   window._logout = async () => { await signOut(auth); };
-  window._tab = tab => { currentTab=tab; document.querySelectorAll('.admin-tab').forEach(b=>b.classList.toggle('active',b.textContent==={cases:'사건 목록',reports:'신고 목록',usage:'사용량·비용',settings:'설정',biz:'사업자 정보',policy:'정책 문서'}[tab])); loadTab(tab); };
+  window._tab = tab => { currentTab=tab; document.querySelectorAll('.admin-tab').forEach(b=>b.classList.toggle('active',b.textContent==={cases:'사건 목록',reports:'신고 목록',usage:'사용량·비용',settings:'설정',biz:'사업자 정보',policy:'정책 문서',connection:'연결 상태'}[tab])); loadTab(tab); };
   loadTab(currentTab);
 }
 
@@ -83,6 +85,7 @@ async function loadTab(tab) {
   else if (tab==='settings') await tabSettings(el);
   else if (tab==='biz') await tabBiz(el);
   else if (tab==='policy') await tabPolicy(el);
+  else if (tab==='connection') await tabConnection(el);
 }
 
 async function tabCases(el) {
@@ -347,4 +350,51 @@ async function tabPolicy(el) {
     window._pt=t=>{active=t;render();};
   }
   render();
+}
+
+async function tabConnection(el) {
+  const statusRow = (label, ok, errMsg='') => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:8px;margin-bottom:8px;">
+      <span style="font-size:14px;">${label}</span>
+      <span style="font-weight:700;color:${ok?'#27ae60':'var(--red)'};">${ok?'✅ 정상':`❌ 오류${errMsg?' — '+errMsg:''}`}</span>
+    </div>`;
+
+  el.innerHTML = `
+    <div style="max-width:480px;">
+      <div style="margin-bottom:20px;">
+        <div style="font-size:15px;font-weight:700;color:var(--cream);margin-bottom:6px;">🔌 연결 상태 확인</div>
+        <div style="font-size:13px;color:var(--cream-dim);">Firestore 데이터베이스와 Gemini AI API의 연결을 실시간으로 확인합니다.</div>
+      </div>
+      <button id="conn-btn" class="btn btn-primary" style="width:auto;padding:10px 24px;margin-bottom:24px;">🔍 연결 확인</button>
+      <div id="conn-result"></div>
+    </div>`;
+
+  document.getElementById('conn-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('conn-btn');
+    const resultEl = document.getElementById('conn-result');
+    btn.disabled = true;
+    btn.textContent = '확인 중...';
+    resultEl.innerHTML = '<div class="loading-dots" style="padding:20px 0;"><span></span><span></span><span></span></div>';
+
+    try {
+      const checkConnection = httpsCallable(functions, 'checkConnection');
+      const { data } = await checkConnection();
+      resultEl.innerHTML = `
+        ${statusRow('Firestore 데이터베이스', data.firestore)}
+        ${statusRow('Gemini AI API', data.gemini)}
+        <div style="margin-top:12px;padding:10px 14px;background:rgba(201,168,76,0.08);border-radius:8px;font-size:12px;color:var(--gold);">
+          확인 시각: ${new Date().toLocaleString('ko')}
+        </div>`;
+    } catch (err) {
+      const msg = err.message || '알 수 없는 오류';
+      resultEl.innerHTML = `
+        <div style="padding:16px;background:rgba(231,76,60,0.08);border:1px solid rgba(231,76,60,0.3);border-radius:8px;color:var(--red);font-size:14px;">
+          ⚠️ 연결 확인 실패<br>
+          <span style="font-size:12px;color:var(--cream-dim);margin-top:6px;display:block;">${msg}</span>
+        </div>`;
+    }
+
+    btn.disabled = false;
+    btn.textContent = '🔍 재확인';
+  });
 }
