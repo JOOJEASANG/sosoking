@@ -25,6 +25,39 @@ export async function renderHome(container) {
         <p style="font-size:13px;color:var(--cream-dim);line-height:1.75;margin-bottom:20px;">사건 선택 → 링크 복사 → 친구에게 전송<br>가입 불필요 · AI 판사는 절대 편들지 않음</p>
         <a href="#/topics" class="btn btn-primary" style="max-width:260px;margin:0 auto;display:flex;">사건 목록 보기 →</a>
       </div>
+
+      <div class="how-to-section">
+        <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.08em;margin-bottom:20px;">🎯 이렇게 합니다</div>
+        <div class="how-to-list">
+          <div class="how-to-item">
+            <div class="how-to-num">1</div>
+            <div class="how-to-body">
+              <div class="how-to-title">사건 고르기</div>
+              <div class="how-to-desc">카톡 읽씹, 치킨 마지막 조각… 공식 사건 10개 중 하나를 고르거나 직접 등록하세요.</div>
+            </div>
+          </div>
+          <div class="how-to-item">
+            <div class="how-to-num">2</div>
+            <div class="how-to-body">
+              <div class="how-to-title">입장 선택 → 친구 초대</div>
+              <div class="how-to-desc">원고/피고 중 내 입장을 선택하고 링크를 친구에게 보내세요. 친구가 클릭하는 순간 재판 시작.</div>
+            </div>
+          </div>
+          <div class="how-to-item">
+            <div class="how-to-num">3</div>
+            <div class="how-to-body">
+              <div class="how-to-title">2라운드 토론 → AI 판결</div>
+              <div class="how-to-desc">각자 주장을 2번 입력하면 AI 판사가 공정하게 판결합니다. 억울해도 논리가 부족하면 집니다.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:40px;padding-bottom:20px;">
+        <div class="disclaimer">
+          ⚖️ 소소킹 생활법정은 순수 오락 서비스입니다. AI 판결에는 법적 효력이 없으며,<br>모든 대화 내용은 익명으로 처리됩니다.
+        </div>
+      </div>
     </div>
   `;
 
