@@ -53,7 +53,7 @@ export function renderGuide(container) {
           소소킹 판결소는 AI 기반 오락 서비스입니다. 생성된 판결문은 실제 법률 자문이 아니며 어떠한 법적 효력도 없습니다. 진짜 법적 문제는 실제 전문가에게 문의하세요.
         </div>
 
-        <a href="#/submit" class="btn btn-primary">⚖️ 억울함 접수하러 가기</a>
+        <a href="#/topics" class="btn btn-primary">⚖️ 재판 시작하러 가기</a>
       </div>
     </div>`;
 }
