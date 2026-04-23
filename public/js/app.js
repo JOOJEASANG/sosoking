@@ -1,10 +1,11 @@
 import { initAuth } from './firebase.js';
 import { renderHome } from './pages/home.js';
-import { renderSubmit } from './pages/submit.js';
-import { renderTrial } from './pages/trial.js';
-import { renderResult } from './pages/result.js';
+import { renderTopics } from './pages/topics.js';
+import { renderTopicDetail } from './pages/topic-detail.js';
+import { renderDebate } from './pages/debate.js';
+import { renderSubmitTopic } from './pages/submit-topic.js';
+import { renderMyHistory } from './pages/my-history.js';
 import { renderPolicy } from './pages/policy.js';
-import { renderMyCases } from './pages/my-cases.js';
 import { renderGuide } from './pages/guide.js';
 import { renderFooter } from './components/footer.js';
 import { initTheme, renderThemeToggle } from './components/theme.js';
@@ -20,16 +21,20 @@ function route() {
 
   if (hash === '#/' || hash === '' || hash === '#') {
     renderHome(content);
-  } else if (hash === '#/submit') {
-    renderSubmit(content);
-  } else if (hash.startsWith('#/trial/')) {
-    renderTrial(content, decodeURIComponent(hash.replace('#/trial/', '')));
-  } else if (hash.startsWith('#/result/')) {
-    renderResult(content, decodeURIComponent(hash.replace('#/result/', '')));
+  } else if (hash === '#/topics') {
+    renderTopics(content);
+  } else if (hash.startsWith('#/topic/')) {
+    renderTopicDetail(content, decodeURIComponent(hash.replace('#/topic/', '')));
+  } else if (hash.startsWith('#/debate/')) {
+    renderDebate(content, decodeURIComponent(hash.replace('#/debate/', '')));
+  } else if (hash.startsWith('#/join/')) {
+    renderDebate(content, null, decodeURIComponent(hash.replace('#/join/', '')));
+  } else if (hash === '#/submit-topic') {
+    renderSubmitTopic(content);
+  } else if (hash === '#/my-history') {
+    renderMyHistory(content);
   } else if (hash.startsWith('#/policy/')) {
     renderPolicy(content, hash.replace('#/policy/', ''));
-  } else if (hash === '#/my-cases') {
-    renderMyCases(content);
   } else if (hash === '#/guide') {
     renderGuide(content);
   } else {

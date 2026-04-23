@@ -1,6 +1,6 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js';
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
-import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, query, orderBy, limit } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc, query, orderBy, limit, where, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 import { firebaseConfig } from '../js/firebase-config.js';
 
@@ -54,7 +54,7 @@ function renderLogin() {
   });
 }
 
-let currentTab = 'cases';
+let currentTab = 'topics';
 
 function renderDashboard() {
   document.getElementById('admin-content').innerHTML = `
@@ -65,21 +65,23 @@ function renderDashboard() {
       </div>
       <div style="max-width:900px;margin:0 auto;padding:20px;">
         <div class="admin-nav" id="admin-nav">
-          ${[['cases','사건 목록'],['reports','신고 목록'],['usage','사용량·비용'],['settings','설정'],['biz','사업자 정보'],['policy','정책 문서'],['connection','연결 상태']]
+          ${[['topics','주제 관리'],['categories','카테고리'],['cases','사건 목록'],['reports','신고 목록'],['usage','사용량·비용'],['settings','설정'],['biz','사업자 정보'],['policy','정책 문서'],['connection','연결 상태']]
             .map(([id,label])=>`<button class="admin-tab${currentTab===id?' active':''}" onclick="window._tab('${id}')">${label}</button>`).join('')}
         </div>
         <div id="tab-content"></div>
       </div>
     </div>`;
   window._logout = async () => { await signOut(auth); };
-  window._tab = tab => { currentTab=tab; document.querySelectorAll('.admin-tab').forEach(b=>b.classList.toggle('active',b.textContent==={cases:'사건 목록',reports:'신고 목록',usage:'사용량·비용',settings:'설정',biz:'사업자 정보',policy:'정책 문서',connection:'연결 상태'}[tab])); loadTab(tab); };
+  window._tab = tab => { currentTab=tab; document.querySelectorAll('.admin-tab').forEach(b=>b.classList.toggle('active',b.textContent==={topics:'주제 관리',categories:'카테고리',cases:'사건 목록',reports:'신고 목록',usage:'사용량·비용',settings:'설정',biz:'사업자 정보',policy:'정책 문서',connection:'연결 상태'}[tab])); loadTab(tab); };
   loadTab(currentTab);
 }
 
 async function loadTab(tab) {
   const el = document.getElementById('tab-content');
   el.innerHTML = '<div class="loading-dots" style="padding:40px 0;"><span></span><span></span><span></span></div>';
-  if (tab==='cases') await tabCases(el);
+  if (tab==='topics') await tabTopics(el);
+  else if (tab==='categories') await tabCategories(el);
+  else if (tab==='cases') await tabCases(el);
   else if (tab==='reports') await tabReports(el);
   else if (tab==='usage') await tabUsage(el);
   else if (tab==='settings') await tabSettings(el);
@@ -350,6 +352,131 @@ async function tabPolicy(el) {
     window._pt=t=>{active=t;render();};
   }
   render();
+}
+
+const DEFAULT_CATEGORIES = [
+  {name:'카톡',icon:'💬',order:1},{name:'연애',icon:'💑',order:2},{name:'음식',icon:'🍗',order:3},
+  {name:'정산',icon:'💸',order:4},{name:'직장',icon:'🏢',order:5},{name:'생활',icon:'🏠',order:6},
+  {name:'친구',icon:'👫',order:7},{name:'기타',icon:'📌',order:8},
+];
+
+const DEFAULT_TOPICS = [
+  {title:'카톡 읽씹 무죄 주장 사건',summary:'읽고 2시간 뒤 답장 — 무시인가 아닌가',plaintiffPosition:'읽었으면 바로 답장하는 게 예의다',defendantPosition:'나중에 답할 자유가 있다',category:'카톡',isOfficial:true,status:'active',playCount:0},
+  {title:'치킨 마지막 조각 선취 사건',summary:'먼저 집으면 임자 vs 눈치가 예의다',plaintiffPosition:'마지막 조각은 눈치 봐야 한다',defendantPosition:'테이블 위 음식은 먼저 집는 사람 것이다',category:'음식',isOfficial:true,status:'active',playCount:0},
+  {title:'더치페이 계산기 사건',summary:'밥 먹고 계산기 꺼내는 게 맞는가',plaintiffPosition:'공평함이 최고다, 더치가 맞다',defendantPosition:'분위기 보고 한 번쯤은 그냥 내야 한다',category:'정산',isOfficial:true,status:'active',playCount:0},
+  {title:'퇴근 5분 전 업무 지시 사건',summary:'이건 오늘 해야 합니까, 내일 해야 합니까',plaintiffPosition:'퇴근 시간 이후는 내 시간이다',defendantPosition:'급한 일은 상황에 따라 유연해야 한다',category:'직장',isOfficial:true,status:'active',playCount:0},
+  {title:'에어컨 온도 설정권 분쟁',summary:'26도가 적정인가, 23도가 적정인가',plaintiffPosition:'여름에 더운 게 정상, 시원하게 틀어야 한다',defendantPosition:'추위를 타는 사람도 배려해야 한다',category:'생활',isOfficial:true,status:'active',playCount:0},
+  {title:'5분 지각 무죄 주장 사건',summary:'5분은 지각이 아니라 오차범위입니다',plaintiffPosition:'약속 시간은 칼같이 지켜야 한다',defendantPosition:'5분은 현실적으로 허용 범위다',category:'생활',isOfficial:true,status:'active',playCount:0},
+  {title:'자정 생일 카톡 강요 사건',summary:'자정에 꼭 보내야 친한 친구인가',plaintiffPosition:'자정에 못 챙기면 친한 게 아니다',defendantPosition:'당일 낮에 진심으로 챙기면 충분하다',category:'친구',isOfficial:true,status:'active',playCount:0},
+  {title:'단톡방 알림 차단 무례 논쟁',summary:'알림 꺼놓고 나중에 보는 게 실례인가',plaintiffPosition:'단톡방 알림 끄는 건 그룹을 무시하는 것',defendantPosition:'알림 설정은 개인 자유다',category:'카톡',isOfficial:true,status:'active',playCount:0},
+  {title:'소개팅 후 연락 의무 사건',summary:'만나고 나서 먼저 연락해야 하는 쪽이 있는가',plaintiffPosition:'먼저 연락 안 하면 관심 없다는 신호다',defendantPosition:'양쪽 다 기다리는 거라면 누구 잘못도 아니다',category:'연애',isOfficial:true,status:'active',playCount:0},
+  {title:'빌린 우산 반환 의무 사건',summary:'우산 빌려줬으면 돌려받아야 하는가',plaintiffPosition:'빌린 건 돌려주는 게 기본이다',defendantPosition:'우산은 사실상 주는 것이다, 다들 그렇게 생각한다',category:'친구',isOfficial:true,status:'active',playCount:0},
+];
+
+async function tabTopics(el) {
+  const [activeSnap, pendingSnap] = await Promise.all([
+    getDocs(query(collection(db,'topics'), where('status','==','active'), orderBy('createdAt','desc'), limit(50))),
+    getDocs(query(collection(db,'topics'), where('status','==','pending'), orderBy('createdAt','desc'), limit(20))),
+  ]);
+
+  const renderRows = (docs, isPending) => docs.map(d=>{
+    const t=d.data();
+    return `<tr>
+      <td style="font-size:12px;">
+        <div style="font-weight:700;">${t.title}</div>
+        <div style="color:var(--cream-dim);font-size:11px;">${t.category||''} · ${t.isOfficial?'공식':'유저'}</div>
+      </td>
+      <td style="font-size:12px;color:var(--cream-dim);max-width:160px;">${(t.plaintiffPosition||'').substring(0,40)}...</td>
+      <td style="font-size:12px;">${t.playCount||0}</td>
+      <td>
+        ${isPending?`<button onclick="window._approveTopic('${d.id}')" style="background:none;border:1px solid var(--green);color:var(--green);padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px;">승인</button>`:''}
+        <button onclick="window._hideTopic('${d.id}','${isPending?'pending':'active'}')" style="background:none;border:1px solid var(--border);color:var(--cream-dim);padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;">숨김</button>
+        <button onclick="window._delTopic('${d.id}')" style="background:none;border:1px solid var(--red);color:var(--red);padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-left:4px;">삭제</button>
+      </td></tr>`;
+  }).join('');
+
+  const hasSeedData = activeSnap.docs.some(d=>d.data().isOfficial);
+
+  el.innerHTML = `
+    ${!hasSeedData?`<div style="margin-bottom:16px;padding:14px;background:rgba(201,168,76,0.1);border:1px solid var(--gold);border-radius:8px;font-size:13px;">
+      ⚠️ 초기 사건 데이터가 없습니다.
+      <button id="seed-btn" style="margin-left:10px;background:var(--gold);color:var(--navy);border:none;padding:6px 14px;border-radius:6px;font-weight:700;cursor:pointer;">기본 사건 10개 + 카테고리 세팅</button>
+    </div>`:''}
+    ${pendingSnap.docs.length?`
+      <div style="font-size:13px;font-weight:700;color:var(--gold);margin-bottom:10px;">검토 대기 (${pendingSnap.docs.length}건)</div>
+      <div style="overflow-x:auto;margin-bottom:24px;"><table class="admin-table"><thead><tr><th>사건명</th><th>원고 주장</th><th>재판</th><th>관리</th></tr></thead><tbody>${renderRows(pendingSnap.docs,true)}</tbody></table></div>
+    `:''}
+    <div style="font-size:13px;font-weight:700;color:var(--cream);margin-bottom:10px;">공개 사건 (${activeSnap.docs.length}건)</div>
+    <div style="overflow-x:auto;"><table class="admin-table"><thead><tr><th>사건명</th><th>원고 주장</th><th>재판</th><th>관리</th></tr></thead><tbody>${renderRows(activeSnap.docs,false)||'<tr><td colspan="4" style="text-align:center;padding:30px;color:var(--cream-dim);">없음</td></tr>'}</tbody></table></div>
+  `;
+
+  document.getElementById('seed-btn')?.addEventListener('click', async () => {
+    const btn = document.getElementById('seed-btn');
+    btn.disabled=true; btn.textContent='세팅 중...';
+    try {
+      for (const cat of DEFAULT_CATEGORIES) {
+        await setDoc(doc(collection(db,'categories')), {...cat});
+      }
+      for (const t of DEFAULT_TOPICS) {
+        await addDoc(collection(db,'topics'), {...t, createdAt: serverTimestamp()});
+      }
+      toast('초기 데이터 세팅 완료!','success');
+      loadTab('topics');
+    } catch(e) { toast('세팅 실패: '+e.message,'error'); btn.disabled=false; btn.textContent='기본 사건 10개 + 카테고리 세팅'; }
+  });
+
+  window._approveTopic = async id => { await updateDoc(doc(db,'topics',id),{status:'active'}); toast('승인됨','success'); loadTab('topics'); };
+  window._hideTopic = async (id,cur) => { await updateDoc(doc(db,'topics',id),{status:cur==='active'?'hidden':'active'}); toast('처리됨','success'); loadTab('topics'); };
+  window._delTopic = async id => {
+    if (!confirm('이 주제를 삭제하시겠습니까?')) return;
+    await deleteDoc(doc(db,'topics',id));
+    toast('삭제 완료','success'); loadTab('topics');
+  };
+}
+
+async function tabCategories(el) {
+  const snap = await getDocs(query(collection(db,'categories'), orderBy('order','asc')));
+  const cats = snap.docs.map(d=>({id:d.id,...d.data()}));
+
+  const rows = cats.map(c=>`<tr>
+    <td style="font-size:16px;">${c.icon||''}</td>
+    <td style="font-weight:700;">${c.name}</td>
+    <td style="color:var(--cream-dim);">${c.order}</td>
+    <td>
+      <button onclick="window._delCat('${c.id}')" style="background:none;border:1px solid var(--red);color:var(--red);padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;">삭제</button>
+    </td></tr>`).join('');
+
+  el.innerHTML = `
+    <div style="overflow-x:auto;margin-bottom:24px;">
+      <table class="admin-table"><thead><tr><th>아이콘</th><th>이름</th><th>순서</th><th>관리</th></tr></thead>
+      <tbody>${rows||'<tr><td colspan="4" style="text-align:center;padding:30px;color:var(--cream-dim);">카테고리 없음</td></tr>'}</tbody></table>
+    </div>
+    <form id="cat-form" style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
+      <div><div class="form-label">아이콘</div><input type="text" id="cat-icon" class="form-input" style="width:70px;" placeholder="💬" maxlength="2"></div>
+      <div style="flex:1;min-width:120px;"><div class="form-label">카테고리명</div><input type="text" id="cat-name" class="form-input" placeholder="예: 카톡" maxlength="10" required></div>
+      <div><div class="form-label">순서</div><input type="number" id="cat-order" class="form-input" style="width:80px;" value="${cats.length+1}" min="1"></div>
+      <button type="submit" class="btn btn-primary" style="width:auto;padding:12px 20px;">추가</button>
+    </form>
+  `;
+
+  document.getElementById('cat-form')?.addEventListener('submit', async e => {
+    e.preventDefault();
+    const name = document.getElementById('cat-name').value.trim();
+    if (!name) return;
+    await addDoc(collection(db,'categories'), {
+      name,
+      icon: document.getElementById('cat-icon').value.trim() || '📌',
+      order: parseInt(document.getElementById('cat-order').value) || cats.length+1,
+    });
+    toast('카테고리 추가됨','success');
+    loadTab('categories');
+  });
+
+  window._delCat = async id => {
+    if (!confirm('이 카테고리를 삭제하시겠습니까?')) return;
+    await deleteDoc(doc(db,'categories',id));
+    toast('삭제됨','success'); loadTab('categories');
+  };
 }
 
 async function tabConnection(el) {

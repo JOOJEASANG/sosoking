@@ -3,8 +3,9 @@ export function renderNav() {
 
   const hash = location.hash || '#/';
   const isHome = hash === '#/' || hash === '#' || hash === '';
-  const isSubmit = hash.startsWith('#/submit');
-  const isMy = hash.startsWith('#/my-cases');
+  const isTopics = hash.startsWith('#/topics') || hash.startsWith('#/topic/');
+  const isSubmit = hash === '#/submit-topic';
+  const isMy = hash === '#/my-history';
 
   const nav = document.createElement('nav');
   nav.id = 'bottom-nav';
@@ -13,13 +14,17 @@ export function renderNav() {
       <span class="nav-icon">🏠</span>
       <span class="nav-label">홈</span>
     </a>
-    <a href="#/submit" class="nav-item nav-cta${isSubmit ? ' active' : ''}">
+    <a href="#/topics" class="nav-item${isTopics ? ' active' : ''}">
       <span class="nav-icon">⚖️</span>
-      <span class="nav-label">접수하기</span>
+      <span class="nav-label">사건 목록</span>
     </a>
-    <a href="#/my-cases" class="nav-item${isMy ? ' active' : ''}">
+    <a href="#/submit-topic" class="nav-item nav-cta${isSubmit ? ' active' : ''}">
+      <span class="nav-icon">✏️</span>
+      <span class="nav-label">주제 등록</span>
+    </a>
+    <a href="#/my-history" class="nav-item${isMy ? ' active' : ''}">
       <span class="nav-icon">📋</span>
-      <span class="nav-label">내 사건</span>
+      <span class="nav-label">내 기록</span>
     </a>
   `;
   document.body.appendChild(nav);
