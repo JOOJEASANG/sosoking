@@ -13,6 +13,7 @@ export async function renderDebate(container, sessionId, shareToken) {
         </div>
         <div class="debate-status" id="debate-status-text">연결 중...</div>
       </div>
+      <div id="debate-topic-bar"></div>
       <div class="debate-feed" id="debate-feed" style="padding-bottom:160px;">
         <div class="loading-dots" style="padding:60px 0;"><span></span><span></span><span></span></div>
       </div>
@@ -58,6 +59,7 @@ export async function renderDebate(container, sessionId, shareToken) {
     lastRenderedStatus = session.status;
 
     updateHeader(session, myRole);
+    updateTopicBar(session, myRole);
 
     if (session.status === 'waiting') {
       renderWaiting(session, sessionId);
@@ -78,12 +80,23 @@ export async function renderDebate(container, sessionId, shareToken) {
   window._pageCleanup = () => unsub();
 }
 
+function updateTopicBar(session, myRole) {
+  const el = document.getElementById('debate-topic-bar');
+  if (!el || !session.topicTitle) return;
+  if (session.status === 'waiting') { el.innerHTML = ''; return; }
+  const roleClass = myRole === 'plaintiff' ? 'plaintiff' : 'defendant';
+  const roleLabel = myRole === 'plaintiff' ? '⚔️ 원고' : myRole === 'defendant' ? '🛡️ 피고' : '';
+  el.innerHTML = `<div class="debate-topic-bar-inner">
+    <span class="debate-topic-name">📋 ${escHtml(session.topicTitle)}</span>
+    ${roleLabel ? `<span class="debate-my-role ${roleClass}">${roleLabel}</span>` : ''}
+  </div>`;
+}
+
 function updateHeader(session, myRole) {
   const bar = document.getElementById('round-bar');
   const statusEl = document.getElementById('debate-status-text');
   if (!bar || !statusEl) return;
 
-  const maxRounds = session.maxRounds || 2;
   const dots = bar.querySelectorAll('.debate-round-dot');
   dots.forEach((d, i) => {
     d.classList.remove('done', 'active');
@@ -117,22 +130,22 @@ function renderWaiting(session, sessionId) {
     <div class="waiting-screen">
       <span class="waiting-icon">⏳</span>
       <div style="font-family:var(--font-serif);font-size:20px;font-weight:700;color:var(--cream);margin-bottom:8px;">상대방을 기다리는 중</div>
-      <p style="font-size:14px;color:var(--cream-dim);line-height:1.7;margin-bottom:20px;">${session.topicTitle}</p>
+      <p style="font-size:14px;color:var(--cream-dim);line-height:1.7;margin-bottom:20px;">${escHtml(session.topicTitle)}</p>
       <div style="font-size:13px;color:var(--gold);font-weight:700;margin-bottom:8px;">아래 링크를 친구에게 전송하세요</div>
       <div class="waiting-link-box" id="share-link">${shareUrl}</div>
-      <button onclick="copyLink('${shareUrl}')" class="btn btn-primary" style="margin-bottom:12px;">🔗 링크 복사하기</button>
-      ${navigator.share ? `<button onclick="nativeShare('${shareUrl}','${session.topicTitle}')" class="btn btn-secondary">📤 공유하기</button>` : ''}
+      <button id="copy-link-btn" class="btn btn-primary" style="margin-bottom:12px;">🔗 링크 복사하기</button>
+      ${navigator.share ? `<button id="native-share-btn" class="btn btn-secondary">📤 공유하기</button>` : ''}
       <p style="margin-top:20px;font-size:12px;color:var(--cream-dim);">링크를 받은 친구가 참가하면 자동으로 시작됩니다</p>
     </div>
   `;
-  window.copyLink = async (url) => {
-    try { await navigator.clipboard.writeText(url); showToast('링크가 복사되었습니다!', 'success'); }
+  document.getElementById('copy-link-btn')?.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(shareUrl); showToast('링크가 복사되었습니다!', 'success'); }
     catch { showToast('복사 실패. 직접 복사해주세요.', 'error'); }
-  };
-  window.nativeShare = async (url, title) => {
-    try { await navigator.share({ title: `소소킹 생활법정 - ${title}`, url }); }
+  });
+  document.getElementById('native-share-btn')?.addEventListener('click', async () => {
+    try { await navigator.share({ title: `소소킹 생활법정 - ${session.topicTitle}`, url: shareUrl }); }
     catch { /* cancelled */ }
-  };
+  });
 }
 
 function renderActive(session, myRole, sessionId) {
@@ -142,26 +155,43 @@ function renderActive(session, myRole, sessionId) {
   const rounds = session.rounds || [];
   let html = '';
 
+  if (session.status !== 'ready_for_verdict') {
+    const curRound = session.currentRound || 0;
+    const curData = rounds[curRound] || {};
+    const pSubmitted = !!curData.plaintiff;
+    const dSubmitted = !!curData.defendant;
+    html += `<div class="round-status-row">
+      <div class="round-status-chip ${pSubmitted ? 'submitted' : 'waiting'}">
+        <div class="chip-role" style="color:#e74c3c;">⚔️ 원고</div>
+        <div class="chip-state">${pSubmitted ? '✓ 주장 완료' : '✏️ 작성 중...'}</div>
+      </div>
+      <div class="round-status-chip ${dSubmitted ? 'submitted' : 'waiting'}">
+        <div class="chip-role" style="color:#3498db;">🛡️ 피고</div>
+        <div class="chip-state">${dSubmitted ? '✓ 주장 완료' : '✏️ 작성 중...'}</div>
+      </div>
+    </div>`;
+  }
+
   rounds.forEach((r, i) => {
     if (i > 0) html += `<div class="round-separator">${i + 1}라운드</div>`;
     if (r.plaintiff) {
       const isMine = myRole === 'plaintiff';
       html += `<div>
         <div class="argument-bubble ${isMine ? 'mine' : 'opponent'}">${escHtml(r.plaintiff)}</div>
-        <div class="argument-meta ${isMine ? 'right' : ''}">⚔️ ${session.plaintiff?.nickname || '원고'}</div>
+        <div class="argument-meta ${isMine ? 'right' : ''}">⚔️ ${escHtml(session.plaintiff?.nickname || '원고')}</div>
       </div>`;
     }
     if (r.defendant) {
       const isMine = myRole === 'defendant';
       html += `<div>
         <div class="argument-bubble ${isMine ? 'mine' : 'opponent'}">${escHtml(r.defendant)}</div>
-        <div class="argument-meta ${isMine ? 'right' : ''}">🛡️ ${session.defendant?.nickname || '피고'}</div>
+        <div class="argument-meta ${isMine ? 'right' : ''}">🛡️ ${escHtml(session.defendant?.nickname || '피고')}</div>
       </div>`;
     }
   });
 
-  if (!html) {
-    html = `<div style="text-align:center;padding:40px 0;color:var(--cream-dim);font-size:14px;">
+  if (!rounds.length) {
+    html += `<div style="text-align:center;padding:32px 0 16px;color:var(--cream-dim);font-size:14px;">
       <div style="font-size:32px;margin-bottom:12px;">⚖️</div>
       재판이 시작되었습니다!<br>먼저 주장을 입력하세요.
     </div>`;
@@ -171,22 +201,24 @@ function renderActive(session, myRole, sessionId) {
   feed.scrollTop = feed.scrollHeight;
 
   if (session.status === 'ready_for_verdict') {
-    const verdictBtn = document.getElementById('verdict-request-btn');
-    if (!verdictBtn) {
-      const btnWrap = document.createElement('div');
-      btnWrap.id = 'verdict-btn-wrap';
-      btnWrap.style.cssText = 'padding:0 0 16px;';
-      btnWrap.innerHTML = `<button id="verdict-request-btn" class="btn btn-primary" onclick="requestVerdictNow('${sessionId}')">⚖️ AI 판사 판결 요청하기</button>`;
-      feed.appendChild(btnWrap);
-      window.requestVerdictNow = async (sid) => {
-        const b = document.getElementById('verdict-request-btn');
-        if (b) { b.disabled = true; b.textContent = '판사 심리 중...'; }
-        try {
-          const requestVerdict = httpsCallable(functions, 'requestVerdict');
-          await requestVerdict({ sessionId: sid });
-        } catch (err) { showToast(err.message || '오류 발생', 'error'); if (b) { b.disabled = false; b.textContent = '⚖️ AI 판사 판결 요청하기'; } }
-      };
-    }
+    const btnWrap = document.createElement('div');
+    btnWrap.id = 'verdict-btn-wrap';
+    btnWrap.style.cssText = 'padding:8px 0 16px;';
+    btnWrap.innerHTML = `
+      <div style="text-align:center;font-size:13px;color:var(--gold);font-weight:700;margin-bottom:12px;">양측 주장이 모두 완료됐습니다!</div>
+      <button id="verdict-request-btn" class="btn btn-primary">⚖️ AI 판사 판결 요청하기</button>`;
+    feed.appendChild(btnWrap);
+    document.getElementById('verdict-request-btn')?.addEventListener('click', async () => {
+      const b = document.getElementById('verdict-request-btn');
+      if (b) { b.disabled = true; b.textContent = '⏳ 판사 심리 중...'; }
+      try {
+        const requestVerdict = httpsCallable(functions, 'requestVerdict');
+        await requestVerdict({ sessionId });
+      } catch (err) {
+        showToast(err.message || '오류 발생', 'error');
+        if (b) { b.disabled = false; b.textContent = '⚖️ AI 판사 판결 요청하기'; }
+      }
+    });
   }
 }
 
@@ -219,61 +251,93 @@ function renderCompleted(session, myRole) {
   let winnerIcon = '🤝';
   let winnerLabel = '무승부';
   let winnerName = '팽팽한 접전';
-  let myResult = '';
+  let myResultText = '';
+  let myResultColor = 'var(--gold)';
+  let isWin = false;
 
   if (verdict.winner === 'plaintiff') {
     winnerIcon = '⚔️'; winnerLabel = '원고 승소';
-    winnerName = session.plaintiff?.nickname || '원고';
-    myResult = myRole === 'plaintiff' ? '🎉 승소!' : '😔 패소';
+    winnerName = escHtml(session.plaintiff?.nickname || '원고');
+    if (myRole === 'plaintiff') { myResultText = '🎉 승소!'; myResultColor = '#27ae60'; isWin = true; }
+    else if (myRole === 'defendant') { myResultText = '😔 패소'; myResultColor = 'var(--red)'; }
   } else if (verdict.winner === 'defendant') {
     winnerIcon = '🛡️'; winnerLabel = '피고 승소';
-    winnerName = session.defendant?.nickname || '피고';
-    myResult = myRole === 'defendant' ? '🎉 승소!' : '😔 패소';
+    winnerName = escHtml(session.defendant?.nickname || '피고');
+    if (myRole === 'defendant') { myResultText = '🎉 승소!'; myResultColor = '#27ae60'; isWin = true; }
+    else if (myRole === 'plaintiff') { myResultText = '😔 패소'; myResultColor = 'var(--red)'; }
   }
 
-  const verdictText = verdict.text || '';
-  const parts = parseVerdict(verdictText);
+  const parts = parseVerdict(verdict.text || '');
+  const caseNo = verdict.caseNumber || '';
+  const topicTitle = session.topicTitle || '사건';
 
   const card = document.createElement('div');
   card.className = 'verdict-reveal';
   card.style.cssText = 'padding:0 0 20px;';
   card.innerHTML = `
-    <div style="text-align:center;margin-bottom:16px;font-size:11px;color:var(--cream-dim);letter-spacing:.1em;">⚖️ 최종 판결</div>
-    <div class="verdict-winner">
+    ${caseNo ? `<div class="verdict-case-no">${escHtml(caseNo)}</div>` : ''}
+    <div style="text-align:center;margin-bottom:12px;font-size:11px;color:var(--cream-dim);letter-spacing:.1em;">⚖️ 최종 판결</div>
+    <div class="verdict-winner${isWin ? ' won' : ''}">
       <span class="verdict-winner-icon">${winnerIcon}</span>
       <div class="verdict-winner-label">${winnerLabel}</div>
       <div class="verdict-winner-name">${winnerName}</div>
-      ${myResult ? `<div style="margin-top:12px;font-size:20px;font-weight:900;color:${verdict.winner==='draw'?'var(--gold)':myResult.includes('승소')?'#27ae60':'var(--red)'};">${myResult}</div>` : ''}
+      ${myResultText ? `<div class="verdict-my-result" style="color:${myResultColor};">${myResultText}</div>` : ''}
     </div>
-    ${parts.reason ? `<div class="verdict-text-card">${escHtml(parts.reason)}</div>` : ''}
-    ${parts.sentence ? `<div class="verdict-sentence">
-      <div class="verdict-sentence-label">📜 생활형 처분</div>
-      <div class="verdict-sentence-text">${escHtml(parts.sentence)}</div>
-    </div>` : ''}
-    <div style="display:flex;flex-direction:column;gap:10px;margin-top:20px;">
-      <button onclick="shareVerdictResult('${session.topicTitle}','${winnerLabel}')" class="btn btn-secondary">📤 결과 공유하기</button>
-      <a href="#/topics" class="btn btn-ghost">다른 사건 보기</a>
+    ${parts.reason ? `
+      <div style="margin-bottom:8px;">
+        <div class="verdict-reason-label">📝 판결 이유</div>
+        <div class="verdict-text-card">${escHtml(parts.reason)}</div>
+      </div>` : ''}
+    ${parts.sentence ? `
+      <div class="verdict-sentence">
+        <div class="verdict-sentence-label">📜 생활형 처분</div>
+        <div class="verdict-sentence-text">${escHtml(parts.sentence)}</div>
+      </div>` : ''}
+    <div class="verdict-actions-row">
+      <button id="share-verdict-btn" class="btn btn-secondary">📤 판결 결과 공유하기</button>
+      <a href="#/topics" class="btn btn-ghost">⚖️ 다른 사건 보기</a>
     </div>
   `;
   feed.appendChild(card);
   feed.scrollTop = feed.scrollHeight;
 
-  window.shareVerdictResult = async (title, result) => {
-    const text = `소소킹 생활법정 판결 결과\n📋 사건: ${title}\n⚖️ 판결: ${result}\n\n재판 받아보기 → ${location.origin}${location.pathname}`;
+  card.querySelector('#share-verdict-btn')?.addEventListener('click', async () => {
+    const text = `소소킹 생활법정 판결 결과\n📋 사건: ${topicTitle}\n⚖️ 판결: ${winnerLabel}${parts.sentence ? '\n📜 처분: ' + parts.sentence : ''}\n\n재판 받아보기 → ${location.origin}${location.pathname}`;
     if (navigator.share) {
-      try { await navigator.share({ text, url: location.href }); return; } catch { /* fall through */ }
+      try { await navigator.share({ title: '소소킹 생활법정', text, url: location.origin + location.pathname }); return; } catch { /* fall through */ }
     }
     try { await navigator.clipboard.writeText(text); showToast('결과가 복사되었습니다!', 'success'); }
     catch { showToast('공유 실패', 'error'); }
-  };
+  });
 }
 
 function parseVerdict(text) {
-  const reasonMatch = text.match(/판결이유\s*[:\：]?\s*([\s\S]*?)(?=생활형처분|$)/i);
-  const sentenceMatch = text.match(/생활형처분\s*[:\：]?\s*(.+?)\.?$/im);
+  const lines = text.split('\n');
+  const reasonLines = [];
+  let sentenceLine = '';
+  let inReason = false;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) { if (inReason) reasonLines.push(''); continue; }
+    if (/^판결이유/.test(trimmed)) {
+      inReason = true;
+      const content = trimmed.replace(/^판결이유\s*[:\：]?\s*/, '').trim();
+      if (content) reasonLines.push(content);
+    } else if (/^생활형\s*처분/.test(trimmed)) {
+      inReason = false;
+      sentenceLine = trimmed.replace(/^생활형\s*처분\s*[:\：]?\s*/, '').replace(/\.$/, '').trim();
+    } else if (/^(사건번호|판결)\s*[:\：]/.test(trimmed)) {
+      inReason = false;
+    } else if (inReason) {
+      reasonLines.push(trimmed);
+    }
+  }
+
+  const reason = reasonLines.join('\n').trim();
   return {
-    reason: reasonMatch?.[1]?.trim() || text,
-    sentence: sentenceMatch?.[1]?.trim() || '',
+    reason: reason || text.trim(),
+    sentence: sentenceLine,
   };
 }
 
