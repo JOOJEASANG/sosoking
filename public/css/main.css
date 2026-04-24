@@ -126,10 +126,15 @@ h1, h2, h3 { font-family: var(--font-serif); line-height: 1.3; }
 
 /* Footer */
 #site-footer { background: var(--navy-light); border-top: 1px solid var(--border); padding: 32px 20px; text-align: center; }
-.footer-links { display: flex; justify-content: center; gap: 20px; margin-bottom: 16px; flex-wrap: wrap; }
-.footer-links a { color: var(--cream-dim); text-decoration: none; font-size: 13px; transition: color 0.2s; }
+.footer-links { display: flex; justify-content: center; gap: 16px; margin-bottom: 0; flex-wrap: wrap; }
+.footer-links a { color: var(--cream-dim); text-decoration: none; font-size: 12px; transition: color 0.2s; }
 .footer-links a:hover { color: var(--gold); }
-.footer-biz { font-size: 12px; color: rgba(245,240,232,0.35); line-height: 2; }
+.footer-divider { width: 40px; height: 1px; background: var(--border); margin: 18px auto; }
+.footer-biz { display: flex; flex-direction: column; gap: 4px; }
+.footer-biz-row { font-size: 11.5px; color: rgba(245,240,232,0.35); line-height: 1.6; }
+.footer-legal { margin-top: 6px; color: rgba(245,240,232,0.22); font-size: 11px; }
+.footer-admin-link { font-size: 11px; color: rgba(245,240,232,0.25); text-decoration: none; display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(245,240,232,0.08); transition: all 0.15s; }
+.footer-admin-link:hover { color: rgba(201,168,76,0.8); border-color: rgba(201,168,76,0.25); }
 
 /* Step Cards */
 .step-card { opacity: 0; transform: translateY(14px); transition: opacity 0.45s ease, transform 0.45s ease; margin-bottom: 12px; }
