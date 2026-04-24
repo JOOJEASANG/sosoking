@@ -3,8 +3,13 @@ import { collection, query, where, orderBy, getDocs } from 'https://www.gstatic.
 
 let allTopics = [];
 let allCategories = [];
+let _renderGen = 0;
 
 export async function renderTopics(container) {
+  allTopics = [];
+  allCategories = [];
+  const gen = ++_renderGen;
+
   container.innerHTML = `
     <div>
       <div class="page-header">
@@ -16,9 +21,7 @@ export async function renderTopics(container) {
           <input type="text" id="search-input" class="search-input" placeholder="사건 검색...">
           <span class="search-icon">🔍</span>
         </div>
-        <div class="cat-filter" id="cat-filter" style="margin-bottom:20px;">
-          <button class="cat-pill active" data-cat="">전체</button>
-        </div>
+        <div class="cat-filter" id="cat-filter" style="margin-bottom:20px;"></div>
         <div id="topics-list">
           <div class="loading-dots" style="padding:40px 0;"><span></span><span></span><span></span></div>
         </div>
@@ -27,6 +30,7 @@ export async function renderTopics(container) {
   `;
 
   await Promise.all([loadCategories(), loadTopics()]);
+  if (gen !== _renderGen) return;
   renderFilter();
   renderList();
 
@@ -55,11 +59,11 @@ async function loadTopics() {
 
 function renderFilter() {
   const el = document.getElementById('cat-filter');
-  if (!el || !allCategories.length) return;
-  const pills = allCategories.map(c =>
-    `<button class="cat-pill" data-cat="${c.name}">${c.icon || ''} ${c.name}</button>`
-  ).join('');
-  el.insertAdjacentHTML('beforeend', pills);
+  if (!el) return;
+  el.innerHTML = '<button class="cat-pill active" data-cat="">전체</button>' +
+    allCategories.map(c =>
+      `<button class="cat-pill" data-cat="${c.name}">${c.icon || ''} ${c.name}</button>`
+    ).join('');
   el.addEventListener('click', e => {
     const pill = e.target.closest('.cat-pill');
     if (!pill) return;
