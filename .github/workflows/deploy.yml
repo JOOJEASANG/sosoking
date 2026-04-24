@@ -27,3 +27,9 @@ jobs:
         run: firebase deploy --only hosting,functions,firestore --force --project sosoking-481e6
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+
+      - name: Seed topics v2 (idempotent)
+        run: |
+          sleep 15
+          curl -s -X POST "https://asia-northeast3-sosoking-481e6.cloudfunctions.net/seedTopicsV2" | tee /tmp/seed.json
+          cat /tmp/seed.json
