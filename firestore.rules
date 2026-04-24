@@ -76,5 +76,12 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
+
+    match /feedback/{feedbackId} {
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasAll(['category', 'content', 'createdAt'])
+        && request.resource.data.content.size() <= 500;
+      allow read, update, delete: if isAdmin();
+    }
   }
 }

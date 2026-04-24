@@ -7,6 +7,7 @@ import { renderSubmitTopic } from './pages/submit-topic.js';
 import { renderMyHistory } from './pages/my-history.js';
 import { renderPolicy } from './pages/policy.js';
 import { renderGuide } from './pages/guide.js';
+import { renderFeedback } from './pages/feedback.js';
 import { renderFooter } from './components/footer.js';
 import { initTheme, renderThemeToggle } from './components/theme.js';
 import { renderNav } from './components/nav.js';
@@ -37,6 +38,8 @@ function route() {
     renderPolicy(content, hash.replace('#/policy/', ''));
   } else if (hash === '#/guide') {
     renderGuide(content);
+  } else if (hash === '#/feedback') {
+    renderFeedback(content);
   } else {
     renderHome(content);
   }
