@@ -1,4 +1,4 @@
-const CACHE = 'sosoking-v2';
+const CACHE = 'sosoking-v3';
 const SHELL = [
   '/',
   '/css/main.css',
@@ -49,8 +49,9 @@ self.addEventListener('fetch', e => {
     url.hostname.includes('firestore.googleapis.com')
   ) return;
 
-  // 네비게이션 요청 → index.html 서빙
+  // 네비게이션 요청 → SPA index.html 서빙 (단, /admin은 제외)
   if (e.request.mode === 'navigate') {
+    if (url.pathname.startsWith('/admin')) return; // 별도 HTML 파일, SW 개입 안 함
     e.respondWith(
       caches.match('/').then(r => r || fetch(e.request))
     );
