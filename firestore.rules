@@ -29,7 +29,6 @@ service cloud.firestore {
         resource.data.defendant.userId == request.auth.uid ||
         isAdmin()
       );
-      allow read: if request.auth != null && resource.data.status == 'waiting';
       allow create: if false;
       allow update: if false;
       allow delete: if isAdmin();
@@ -50,9 +49,8 @@ service cloud.firestore {
 
     match /results/{caseId} {
       allow read: if request.auth != null;
-      allow update: if request.auth != null;
+      allow create, update: if false;
       allow delete: if isAdmin();
-      allow create: if false;
     }
 
     match /usage_stats/{docId} {

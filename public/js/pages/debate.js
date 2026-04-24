@@ -75,6 +75,9 @@ export async function renderDebate(container, sessionId, shareToken) {
       renderCompleted(session, myRole);
       removeInputArea();
     }
+  }, (err) => {
+    console.error('Firestore listener error:', err);
+    showToast('연결이 끊어졌습니다. 페이지를 새로고침해주세요.', 'error');
   });
 
   window._pageCleanup = () => unsub();
