@@ -45,6 +45,7 @@ export async function renderDebate(container, sessionId, shareToken) {
   const unsub = onSnapshot(doc(db, 'debate_sessions', sessionId), (snap) => {
     if (!snap.exists()) {
       showToast('세션을 찾을 수 없습니다', 'error');
+      setTimeout(() => { location.hash = '#/'; }, 1500);
       return;
     }
     const session = snap.data();

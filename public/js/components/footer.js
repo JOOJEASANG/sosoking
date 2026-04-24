@@ -18,10 +18,10 @@ export async function renderFooter() {
       <a href="#/feedback">💬 의견 접수</a>
     </div>
     <div class="footer-biz">
-      ${biz.companyName || '소소킹 판결소'}${biz.ceoName ? ` | 대표 ${biz.ceoName}` : ''}<br>
+      ${biz.companyName || '소소킹 생활법정'}${biz.ceoName ? ` | 대표 ${biz.ceoName}` : ''}<br>
       ${biz.businessNumber ? `사업자등록번호 ${biz.businessNumber}` : ''}${biz.contact ? ` | 연락처 ${biz.contact}` : ''}<br>
       ${biz.email ? `이메일 ${biz.email}` : ''}${biz.address ? ` | ${biz.address}` : ''}
-      <br><span style="display:block;margin-top:6px;">© 2025 소소킹 판결소 · 이 서비스는 오락 목적이며 법적 효력이 없습니다.</span>
+      <br><span style="display:block;margin-top:6px;">© 2025 소소킹 생활법정 · 이 서비스는 오락 목적이며 법적 효력이 없습니다.</span>
     </div>
     <div style="margin-top:16px;">
       <a href="/admin" style="font-size:11px;color:rgba(245,240,232,0.35);text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:6px;border:1px solid rgba(245,240,232,0.1);transition:all 0.15s;" onmouseover="this.style.color='rgba(201,168,76,0.8)';this.style.borderColor='rgba(201,168,76,0.25)';" onmouseout="this.style.color='rgba(245,240,232,0.35)';this.style.borderColor='rgba(245,240,232,0.1)';">🔐 관리자</a>
