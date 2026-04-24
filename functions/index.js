@@ -81,7 +81,7 @@ exports.createSession = onCall({ region: 'asia-northeast3' }, async (request) =>
     defendant: side === 'defendant' ? { userId, nickname } : null,
     status: 'waiting',
     currentRound: 0,
-    maxRounds: 2,
+    maxRounds: 10,
     rounds: [],
     verdict: null,
     mode,
@@ -233,7 +233,8 @@ exports.requestVerdict = onCall({ region: 'asia-northeast3', secrets: [geminiKey
   const isParticipant = session.plaintiff?.userId === userId || session.defendant?.userId === userId;
   if (!isParticipant) throw new Error('참가자가 아닙니다');
   if (['judging', 'completed'].includes(session.status)) return { ok: true };
-  if (!session.rounds?.length) throw new Error('아직 제출된 주장이 없습니다');
+  const completeRounds = (session.rounds || []).filter(r => r.plaintiff && r.defendant);
+  if (!completeRounds.length) throw new Error('한 라운드 이상 완료 후 판결을 요청할 수 있습니다');
 
   await sessionRef.update({ status: 'judging' });
 
@@ -241,8 +242,8 @@ exports.requestVerdict = onCall({ region: 'asia-northeast3', secrets: [geminiKey
     const genAI = new GoogleGenerativeAI(geminiKey.value().trim());
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
-    const roundsText = session.rounds.map((r, i) =>
-      `[${i + 1}라운드]\n원고: ${r.plaintiff || '(발언 없음)'}\n피고: ${r.defendant || '(발언 없음)'}`
+    const roundsText = completeRounds.map((r, i) =>
+      `[${i + 1}라운드]\n원고: ${r.plaintiff}\n피고: ${r.defendant}`
     ).join('\n\n');
 
     const cn = caseNumber();

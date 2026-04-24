@@ -111,6 +111,12 @@ function updateHeader(session, myRole) {
   const statusEl = document.getElementById('debate-status-text');
   if (!bar || !statusEl) return;
 
+  const maxRounds = session.maxRounds || 10;
+  while (bar.children.length < maxRounds) {
+    const d = document.createElement('div'); d.className = 'debate-round-dot'; bar.appendChild(d);
+  }
+  while (bar.children.length > maxRounds) bar.removeChild(bar.lastChild);
+
   const dots = bar.querySelectorAll('.debate-round-dot');
   dots.forEach((d, i) => {
     d.classList.remove('done', 'active');
@@ -232,17 +238,15 @@ function renderActive(session, myRole, sessionId) {
   rounds.forEach((r, i) => {
     if (i > 0) html += `<div class="round-separator">${i + 1}라운드</div>`;
     if (r.plaintiff) {
-      const isMine = myRole === 'plaintiff';
       html += `<div>
-        <div class="argument-bubble ${isMine ? 'mine' : 'opponent'}">${escHtml(r.plaintiff)}</div>
-        <div class="argument-meta ${isMine ? 'right' : ''}">⚔️ ${escHtml(session.plaintiff?.nickname || '원고')}</div>
+        <div class="argument-bubble plaintiff-side">${escHtml(r.plaintiff)}</div>
+        <div class="argument-meta">⚔️ ${escHtml(session.plaintiff?.nickname || '원고')}</div>
       </div>`;
     }
     if (r.defendant) {
-      const isMine = myRole === 'defendant';
       html += `<div>
-        <div class="argument-bubble ${isMine ? 'mine' : 'opponent'}">${escHtml(r.defendant)}</div>
-        <div class="argument-meta ${isMine ? 'right' : ''}">🛡️ ${escHtml(session.defendant?.nickname || '피고')}</div>
+        <div class="argument-bubble defendant-side">${escHtml(r.defendant)}</div>
+        <div class="argument-meta right">🛡️ ${escHtml(session.defendant?.nickname || '피고')}</div>
       </div>`;
     }
   });
@@ -257,13 +261,21 @@ function renderActive(session, myRole, sessionId) {
   feed.innerHTML = html;
   feed.scrollTop = feed.scrollHeight;
 
-  if (session.status === 'ready_for_verdict') {
+  const hasCompleteRound = rounds.some(r => r.plaintiff && r.defendant);
+  if (hasCompleteRound) {
+    const isAllDone = session.status === 'ready_for_verdict';
     const btnWrap = document.createElement('div');
     btnWrap.id = 'verdict-btn-wrap';
     btnWrap.style.cssText = 'padding:8px 0 16px;';
-    btnWrap.innerHTML = `
-      <div style="text-align:center;font-size:13px;color:var(--gold);font-weight:700;margin-bottom:12px;">양측 주장이 모두 완료됐습니다!</div>
-      <button id="verdict-request-btn" class="btn btn-primary">⚖️ AI 판사 판결 요청하기</button>`;
+    if (isAllDone) {
+      btnWrap.innerHTML = `
+        <div style="text-align:center;font-size:13px;color:var(--gold);font-weight:700;margin-bottom:12px;">⚡ 모든 라운드 완료! 판결을 요청하세요.</div>
+        <button id="verdict-request-btn" class="btn btn-primary">⚖️ AI 판사 판결 요청하기</button>`;
+    } else {
+      btnWrap.innerHTML = `
+        <div style="text-align:center;font-size:12px;color:var(--cream-dim);margin-bottom:10px;">계속 토론하거나, 지금 바로 판결받을 수도 있어요</div>
+        <button id="verdict-request-btn" class="btn btn-secondary" style="width:100%;">⚖️ 지금 바로 판결받기</button>`;
+    }
     feed.appendChild(btnWrap);
     document.getElementById('verdict-request-btn')?.addEventListener('click', async () => {
       const b = document.getElementById('verdict-request-btn');
@@ -273,7 +285,7 @@ function renderActive(session, myRole, sessionId) {
         await requestVerdict({ sessionId });
       } catch (err) {
         showToast(err.message || '오류 발생', 'error');
-        if (b) { b.disabled = false; b.textContent = '⚖️ AI 판사 판결 요청하기'; }
+        if (b) { b.disabled = false; b.textContent = isAllDone ? '⚖️ AI 판사 판결 요청하기' : '⚖️ 지금 바로 판결받기'; }
       }
     });
   }
