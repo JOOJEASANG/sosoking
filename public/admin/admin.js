@@ -70,14 +70,14 @@ function renderDashboard() {
       </div>
       <div style="max-width:900px;margin:0 auto;padding:20px;">
         <div class="admin-nav" id="admin-nav">
-          ${[['topics','주제 관리'],['categories','카테고리'],['cases','사건 목록'],['reports','신고 목록'],['usage','사용량·비용'],['settings','설정'],['biz','사업자 정보'],['policy','정책 문서'],['connection','연결 상태']]
+          ${[['topics','주제 관리'],['categories','카테고리'],['cases','사건 목록'],['reports','신고 목록'],['feedback','의견함'],['usage','사용량·비용'],['settings','설정'],['biz','사업자 정보'],['policy','정책 문서'],['connection','연결 상태']]
             .map(([id,label])=>`<button class="admin-tab${currentTab===id?' active':''}" onclick="window._tab('${id}')">${label}</button>`).join('')}
         </div>
         <div id="tab-content"></div>
       </div>
     </div>`;
   window._logout = async () => { await signOut(auth); };
-  window._tab = tab => { currentTab=tab; document.querySelectorAll('.admin-tab').forEach(b=>b.classList.toggle('active',b.textContent==={topics:'주제 관리',categories:'카테고리',cases:'사건 목록',reports:'신고 목록',usage:'사용량·비용',settings:'설정',biz:'사업자 정보',policy:'정책 문서',connection:'연결 상태'}[tab])); loadTab(tab); };
+  window._tab = tab => { currentTab=tab; document.querySelectorAll('.admin-tab').forEach(b=>b.classList.toggle('active',b.textContent==={topics:'주제 관리',categories:'카테고리',cases:'사건 목록',reports:'신고 목록',feedback:'의견함',usage:'사용량·비용',settings:'설정',biz:'사업자 정보',policy:'정책 문서',connection:'연결 상태'}[tab])); loadTab(tab); };
   loadTab(currentTab);
 }
 
@@ -88,6 +88,7 @@ async function loadTab(tab) {
   else if (tab==='categories') await tabCategories(el);
   else if (tab==='cases') await tabCases(el);
   else if (tab==='reports') await tabReports(el);
+  else if (tab==='feedback') await tabFeedback(el);
   else if (tab==='usage') await tabUsage(el);
   else if (tab==='settings') await tabSettings(el);
   else if (tab==='biz') await tabBiz(el);
@@ -127,6 +128,36 @@ async function tabReports(el) {
   }).join('');
   el.innerHTML = `<div style="overflow-x:auto;"><table class="admin-table"><thead><tr><th>사건ID</th><th>신고사유</th><th>상태</th><th>날짜</th><th>관리</th></tr></thead><tbody>${rows||'<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--cream-dim);">신고 없음</td></tr>'}</tbody></table></div>`;
   window._resolve = async id => { await updateDoc(doc(db,'reports',id),{status:'resolved'}); toast('처리완료','success'); loadTab('reports'); };
+}
+
+async function tabFeedback(el) {
+  const snap = await getDocs(query(collection(db,'feedback'),orderBy('createdAt','desc'),limit(100)));
+  const catColors = {'버그신고':'var(--red)','기능제안':'#3498db','칭찬':'#27ae60','기타':'var(--gold)'};
+  const rows = snap.docs.map(d => {
+    const f = d.data(), date = f.createdAt?.toDate ? f.createdAt.toDate().toLocaleDateString('ko') : '-';
+    const color = catColors[f.category] || 'var(--gold)';
+    return `<tr>
+      <td><span style="font-size:11px;font-weight:700;color:${color};padding:2px 8px;background:${color}22;border-radius:20px;">${f.category||'기타'}</span></td>
+      <td style="font-size:12px;color:var(--cream-dim);">${f.nickname||'익명'}</td>
+      <td style="font-size:13px;max-width:360px;white-space:pre-wrap;line-height:1.6;">${(f.content||'').replace(/</g,'&lt;')}</td>
+      <td style="font-size:11px;color:var(--cream-dim);">${date}</td>
+      <td><button onclick="window._delFb('${d.id}')" style="background:none;border:1px solid var(--red);color:var(--red);padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;">삭제</button></td>
+    </tr>`;
+  }).join('');
+  el.innerHTML = `
+    <div style="margin-bottom:12px;font-size:13px;color:var(--cream-dim);">총 ${snap.docs.length}건</div>
+    <div style="overflow-x:auto;">
+      <table class="admin-table">
+        <thead><tr><th>유형</th><th>닉네임</th><th>내용</th><th>날짜</th><th>관리</th></tr></thead>
+        <tbody>${rows||'<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--cream-dim);">의견 없음</td></tr>'}</tbody>
+      </table>
+    </div>`;
+  window._delFb = async id => {
+    if (!confirm('삭제하시겠습니까?')) return;
+    await deleteDoc(doc(db,'feedback',id));
+    toast('삭제됨','success');
+    loadTab('feedback');
+  };
 }
 
 async function tabUsage(el) {

@@ -15,6 +15,7 @@ export async function renderFooter() {
       <a href="#/policy/terms">이용약관</a>
       <a href="#/policy/privacy">개인정보처리방침</a>
       <a href="#/policy/ai_disclaimer">AI 서비스 안내</a>
+      <a href="#/feedback">💬 의견 접수</a>
     </div>
     <div class="footer-biz">
       ${biz.companyName || '소소킹 판결소'}${biz.ceoName ? ` | 대표 ${biz.ceoName}` : ''}<br>
