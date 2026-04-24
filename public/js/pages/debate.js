@@ -3,6 +3,16 @@ import { doc, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.12.0/fire
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 import { showToast } from '../components/toast.js';
 
+const JUDGE_DEFS = {
+  '엄벌주의형': { icon: '👨‍⚖️', color: '#c0392b', desc: '사소해도 중범죄 수준으로' },
+  '감성형':     { icon: '🥹',    color: '#8e44ad', desc: '눈물 흘리며 공감 위주 판결' },
+  '현실주의형': { icon: '🤦',    color: '#7f8c8d', desc: '"그래서 어쩌라고요" 현실 직격' },
+  '과몰입형':   { icon: '🔥',    color: '#e67e22', desc: '역사에 남을 대형 사건 취급' },
+  '피곤형':     { icon: '😴',    color: '#95a5a6', desc: '빨리 끝내고 싶은 번아웃 판사' },
+  '논리집착형': { icon: '🧮',    color: '#2980b9', desc: '모든 걸 수치화하는 논리 괴물' },
+  '드립형':     { icon: '🎭',    color: '#27ae60', desc: '진지한 척 드립 치는 유머 판사' },
+};
+
 export async function renderDebate(container, sessionId, shareToken) {
   container.innerHTML = `
     <div id="debate-root">
@@ -189,7 +199,18 @@ function renderActive(session, myRole, sessionId) {
   if (!feed) return;
 
   const rounds = session.rounds || [];
+  const judge = session.judgeType ? JUDGE_DEFS[session.judgeType] : null;
   let html = '';
+
+  if (judge) {
+    html += `
+      <div style="text-align:center;padding:18px 16px 14px;margin-bottom:8px;background:rgba(255,255,255,0.02);border-radius:12px;border:1px solid var(--border);">
+        <div style="font-size:10px;color:var(--cream-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;">이번 사건 담당 판사</div>
+        <div style="font-size:36px;margin-bottom:6px;">${judge.icon}</div>
+        <div style="font-size:15px;font-weight:700;color:${judge.color};margin-bottom:3px;">${session.judgeType} 판사</div>
+        <div style="font-size:11px;color:var(--cream-dim);">${judge.desc}</div>
+      </div>`;
+  }
 
   if (session.status !== 'ready_for_verdict') {
     const curRound = session.currentRound || 0;
@@ -263,12 +284,14 @@ function renderJudging(session) {
   if (!feed) return;
   const existing = feed.querySelector('#judging-card');
   if (existing) return;
+  const judge = session.judgeType ? JUDGE_DEFS[session.judgeType] : null;
   const card = document.createElement('div');
   card.id = 'judging-card';
   card.style.cssText = 'text-align:center;padding:40px 20px;';
   card.innerHTML = `
-    <div style="font-size:48px;margin-bottom:16px;animation:waitingPulse 1.5s ease-in-out infinite;">⚖️</div>
-    <div style="font-family:var(--font-serif);font-size:18px;font-weight:700;color:var(--cream);margin-bottom:8px;">AI 판사 심리 중</div>
+    <div style="font-size:52px;margin-bottom:16px;animation:waitingPulse 1.5s ease-in-out infinite;">${judge ? judge.icon : '⚖️'}</div>
+    <div style="font-family:var(--font-serif);font-size:18px;font-weight:700;color:var(--cream);margin-bottom:6px;">${judge ? `${session.judgeType} 판사` : 'AI 판사'} 심리 중</div>
+    ${judge ? `<div style="font-size:12px;color:var(--cream-dim);margin-bottom:8px;">${judge.desc}</div>` : ''}
     <div class="loading-dots" style="padding:16px 0;"><span></span><span></span><span></span></div>
     <p style="font-size:13px;color:var(--cream-dim);">양측 주장을 꼼꼼히 검토하고 있습니다</p>
   `;
@@ -306,12 +329,19 @@ function renderCompleted(session, myRole) {
   const parts = parseVerdict(verdict.text || '');
   const caseNo = verdict.caseNumber || '';
   const topicTitle = session.topicTitle || '사건';
+  const judge = session.judgeType ? JUDGE_DEFS[session.judgeType] : null;
 
   const card = document.createElement('div');
   card.className = 'verdict-reveal';
   card.style.cssText = 'padding:0 0 20px;';
   card.innerHTML = `
     ${caseNo ? `<div class="verdict-case-no">${escHtml(caseNo)}</div>` : ''}
+    ${judge ? `
+      <div style="text-align:center;margin-bottom:10px;">
+        <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:20px;background:rgba(255,255,255,0.04);border:1px solid var(--border);font-size:12px;color:var(--cream-dim);">
+          ${judge.icon} <span style="color:${judge.color};font-weight:700;">${session.judgeType}</span> 판사 담당
+        </span>
+      </div>` : ''}
     <div style="text-align:center;margin-bottom:12px;font-size:11px;color:var(--cream-dim);letter-spacing:.1em;">⚖️ 최종 판결</div>
     <div class="verdict-winner${isWin ? ' won' : ''}">
       <span class="verdict-winner-icon">${winnerIcon}</span>
@@ -338,7 +368,8 @@ function renderCompleted(session, myRole) {
   feed.scrollTop = feed.scrollHeight;
 
   card.querySelector('#share-verdict-btn')?.addEventListener('click', async () => {
-    const text = `소소킹 생활법정 판결 결과\n📋 사건: ${topicTitle}\n⚖️ 판결: ${winnerLabel}${parts.sentence ? '\n📜 처분: ' + parts.sentence : ''}\n\n재판 받아보기 → ${location.origin}${location.pathname}`;
+    const judgeTag = judge ? `\n👨‍⚖️ 담당: ${session.judgeType} 판사` : '';
+    const text = `소소킹 생활법정 판결 결과\n📋 사건: ${topicTitle}\n⚖️ 판결: ${winnerLabel}${judgeTag}${parts.sentence ? '\n📜 처분: ' + parts.sentence : ''}\n\n재판 받아보기 → ${location.origin}${location.pathname}`;
     if (navigator.share) {
       try { await navigator.share({ title: '소소킹 생활법정', text, url: location.origin + location.pathname }); return; } catch { /* fall through */ }
     }
