@@ -143,7 +143,7 @@ AI 판결은 어떠한 법적 효력도 없습니다.
 
 function applyBiz(text, biz) {
   return text
-    .replace(/{companyName}/g, biz.companyName || '소소킹 판결소')
+    .replace(/{companyName}/g, biz.companyName || '소소킹 생활법정')
     .replace(/{ceoName}/g, biz.ceoName || '')
     .replace(/{businessNumber}/g, biz.businessNumber || '')
     .replace(/{contact}/g, biz.contact || '')

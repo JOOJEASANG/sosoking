@@ -30,7 +30,7 @@ function renderLogin() {
       <div style="width:100%;max-width:380px;">
         <div style="text-align:center;margin-bottom:36px;">
           <div style="font-size:56px;line-height:1;filter:drop-shadow(0 0 24px rgba(201,168,76,0.35));">⚖️</div>
-          <div style="font-family:'Noto Serif KR',serif;font-size:22px;color:var(--gold);margin-top:14px;font-weight:700;letter-spacing:-0.01em;">소소킹 판결소</div>
+          <div style="font-family:'Noto Serif KR',serif;font-size:22px;color:var(--gold);margin-top:14px;font-weight:700;letter-spacing:-0.01em;">소소킹 생활법정</div>
           <div style="font-size:12px;color:var(--cream-dim);margin-top:6px;letter-spacing:0.1em;text-transform:uppercase;">Admin Console</div>
         </div>
         <div style="background:rgba(255,255,255,0.03);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(201,168,76,0.18);border-radius:20px;padding:32px 28px;box-shadow:0 24px 64px rgba(0,0,0,0.45),inset 0 1px 0 rgba(201,168,76,0.08);">
@@ -47,7 +47,7 @@ function renderLogin() {
             <button type="button" id="reset-btn" style="width:100%;margin-top:12px;background:none;border:none;color:var(--cream-dim);font-size:12px;cursor:pointer;padding:8px;opacity:0.65;">비밀번호를 잊으셨나요?</button>
           </form>
         </div>
-        <div style="text-align:center;margin-top:20px;font-size:11px;color:rgba(245,240,232,0.2);">소소킹 판결소 · 내부 전용</div>
+        <div style="text-align:center;margin-top:20px;font-size:11px;color:rgba(245,240,232,0.2);">소소킹 생활법정 · 내부 전용</div>
       </div>
     </div>`;
   document.getElementById('reset-btn').addEventListener('click', async () => {
@@ -90,7 +90,7 @@ function renderDashboard() {
         <div style="display:flex;align-items:center;gap:10px;">
           <span style="font-size:22px;line-height:1;filter:drop-shadow(0 0 8px rgba(201,168,76,0.4));">⚖️</span>
           <div>
-            <div style="font-family:'Noto Serif KR',serif;font-size:14px;font-weight:700;color:var(--gold);line-height:1.2;">소소킹 판결소</div>
+            <div style="font-family:'Noto Serif KR',serif;font-size:14px;font-weight:700;color:var(--gold);line-height:1.2;">소소킹 생활법정</div>
             <div style="font-size:10px;color:var(--cream-dim);letter-spacing:0.1em;text-transform:uppercase;">Admin Console</div>
           </div>
         </div>
@@ -313,7 +313,7 @@ async function tabBiz(el) {
 async function tabPolicy(el) {
   const DEFAULTS = {
     terms: `제1조 (목적)
-소소킹 판결소(이하 "서비스")는 일상의 사소한 억울함을 AI가 과하게 진지하게 판결해주는 오락형 서비스입니다. 본 약관은 서비스 이용에 관한 기본 사항을 규정합니다.
+소소킹 생활법정(이하 "서비스")는 일상의 사소한 억울함을 AI가 과하게 진지하게 판결해주는 오락형 서비스입니다. 본 약관은 서비스 이용에 관한 기본 사항을 규정합니다.
 
 제2조 (서비스의 성격)
 ① 본 서비스는 순수 오락 목적으로 제공되며, AI가 생성한 판결문은 어떠한 법적 효력도 없습니다.
@@ -342,7 +342,7 @@ async function tabPolicy(el) {
 
 시행일: 2025년 1월 1일`,
 
-    privacy: `소소킹 판결소 개인정보처리방침
+    privacy: `소소킹 생활법정 개인정보처리방침
 
 1. 수집하는 개인정보 항목
 본 서비스는 별도의 회원가입 없이 익명 인증(Firebase Anonymous Authentication)을 통해 서비스를 제공합니다. 이용자가 직접 입력하는 개인정보는 수집하지 않으며, 사건 접수 시 입력한 사건 내용(사건명, 경위 등)만 처리됩니다.
@@ -377,7 +377,7 @@ async function tabPolicy(el) {
     ai_disclaimer: `AI 서비스 이용 안내
 
 1. 서비스 개요
-소소킹 판결소는 Google Gemini AI를 활용하여 이용자가 접수한 사건에 대한 판결문을 자동 생성하는 오락형 서비스입니다.
+소소킹 생활법정는 Google Gemini AI를 활용하여 이용자가 접수한 사건에 대한 판결문을 자동 생성하는 오락형 서비스입니다.
 
 2. AI 생성 콘텐츠 안내
 ① 본 서비스의 모든 판결문, 수사 기록, 변론 내용은 AI(Google Gemini)가 자동으로 생성한 창작물입니다.

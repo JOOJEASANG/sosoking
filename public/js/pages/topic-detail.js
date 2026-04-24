@@ -151,8 +151,7 @@ export async function renderTopicDetail(container, topicId) {
 }
 
 async function handleRandomMatch(topicId, topic, side) {
-  const { getDoc, doc: fsDoc } = await import('https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js');
-  const queueSnap = await getDoc(fsDoc(db, 'random_queue', topicId));
+  const queueSnap = await getDoc(doc(db, 'random_queue', topicId));
 
   if (queueSnap.exists() && queueSnap.data().userId !== auth.currentUser?.uid) {
     const joinSession = httpsCallable(functions, 'joinSession');
