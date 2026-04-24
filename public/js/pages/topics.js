@@ -42,7 +42,10 @@ export async function renderTopics(container) {
 async function loadCategories() {
   try {
     const snap = await getDocs(query(collection(db, 'categories'), orderBy('order', 'asc')));
-    allCategories = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const seen = new Set();
+    allCategories = snap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .filter(c => { if (seen.has(c.name)) return false; seen.add(c.name); return true; });
   } catch { allCategories = []; }
 }
 
