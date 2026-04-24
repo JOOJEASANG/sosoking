@@ -369,7 +369,7 @@ h1, h2, h3 { font-family: var(--font-serif); line-height: 1.3; }
 
 /* ===== 생활법정 Hero — 항상 어두운 배경 유지 ===== */
 .court-hero {
-  min-height: 100svh; display: flex; flex-direction: column;
+  min-height: 100vh; min-height: 100svh; display: flex; flex-direction: column;
   align-items: center; justify-content: center; text-align: center;
   padding: 60px 24px 100px;
   background: radial-gradient(ellipse at 50% 0%, rgba(201,168,76,0.15) 0%, transparent 60%),
