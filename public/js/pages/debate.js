@@ -129,26 +129,58 @@ function renderWaiting(session, sessionId) {
   const feed = document.getElementById('debate-feed');
   if (!feed) return;
   const shareUrl = `${location.origin}${location.pathname}#/join/${session.shareToken}`;
+  const shareTitle = `소소킹 생활법정 - ${session.topicTitle}`;
+  const shareText = `[소소킹 생활법정] "${session.topicTitle}" 재판에 초대합니다! 아래 링크를 눌러 참가해주세요 ⚖️`;
+  const kakaoUrl = `https://sharer.kakao.com/talk/friends/picker/link?app_key=&url=${encodeURIComponent(shareUrl)}`;
+  const canShare = typeof navigator.share === 'function';
+
   feed.innerHTML = `
     <div class="waiting-screen">
       <span class="waiting-icon">⏳</span>
-      <div style="font-family:var(--font-serif);font-size:20px;font-weight:700;color:var(--cream);margin-bottom:8px;">상대방을 기다리는 중</div>
-      <p style="font-size:14px;color:var(--cream-dim);line-height:1.7;margin-bottom:20px;">${escHtml(session.topicTitle)}</p>
-      <div style="font-size:13px;color:var(--gold);font-weight:700;margin-bottom:8px;">아래 링크를 친구에게 전송하세요</div>
-      <div class="waiting-link-box" id="share-link">${shareUrl}</div>
-      <button id="copy-link-btn" class="btn btn-primary" style="margin-bottom:12px;">🔗 링크 복사하기</button>
-      ${navigator.share ? `<button id="native-share-btn" class="btn btn-secondary">📤 공유하기</button>` : ''}
-      <p style="margin-top:20px;font-size:12px;color:var(--cream-dim);">링크를 받은 친구가 참가하면 자동으로 시작됩니다</p>
+      <div style="font-family:var(--font-serif);font-size:22px;font-weight:700;color:var(--cream);margin-bottom:6px;">친구를 초대하세요!</div>
+      <p style="font-size:15px;color:var(--cream-dim);line-height:1.7;margin-bottom:24px;">${escHtml(session.topicTitle)}</p>
+
+      <button id="kakao-share-btn" style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:17px;border-radius:14px;border:none;background:#FEE500;color:#191919;font-size:17px;font-weight:900;cursor:pointer;margin-bottom:12px;-webkit-tap-highlight-color:transparent;">
+        <span style="font-size:22px;">💬</span> 카카오톡으로 공유
+      </button>
+
+      ${canShare ? `<button id="native-share-btn" class="btn btn-secondary" style="margin-bottom:12px;">📤 다른 앱으로 공유</button>` : ''}
+
+      <div style="display:flex;align-items:center;gap:8px;margin:4px 0 12px;">
+        <div style="flex:1;height:1px;background:var(--border);"></div>
+        <span style="font-size:12px;color:var(--cream-dim);">또는 링크 직접 복사</span>
+        <div style="flex:1;height:1px;background:var(--border);"></div>
+      </div>
+
+      <div class="waiting-link-box" id="share-link" style="cursor:pointer;" title="탭하여 복사">${shareUrl}</div>
+      <button id="copy-link-btn" class="btn btn-ghost" style="margin-top:8px;">🔗 링크 복사</button>
+
+      <p style="margin-top:24px;font-size:13px;color:var(--cream-dim);line-height:1.7;">
+        친구가 링크를 누르는 순간 재판이 자동으로 시작됩니다
+      </p>
     </div>
   `;
-  document.getElementById('copy-link-btn')?.addEventListener('click', async () => {
-    try { await navigator.clipboard.writeText(shareUrl); showToast('링크가 복사되었습니다!', 'success'); }
-    catch { showToast('복사 실패. 직접 복사해주세요.', 'error'); }
+
+  document.getElementById('kakao-share-btn')?.addEventListener('click', async () => {
+    if (canShare) {
+      try { await navigator.share({ title: shareTitle, text: shareText, url: shareUrl }); return; }
+      catch { /* fall through to copy */ }
+    }
+    try { await navigator.clipboard.writeText(shareUrl); showToast('링크가 복사되었습니다! 카카오톡에 붙여넣기하세요 💬', 'success'); }
+    catch { showToast('링크를 직접 복사해주세요.', 'error'); }
   });
+
   document.getElementById('native-share-btn')?.addEventListener('click', async () => {
-    try { await navigator.share({ title: `소소킹 생활법정 - ${session.topicTitle}`, url: shareUrl }); }
+    try { await navigator.share({ title: shareTitle, text: shareText, url: shareUrl }); }
     catch { /* cancelled */ }
   });
+
+  const copyFn = async () => {
+    try { await navigator.clipboard.writeText(shareUrl); showToast('링크가 복사되었습니다!', 'success'); }
+    catch { showToast('복사 실패. 직접 복사해주세요.', 'error'); }
+  };
+  document.getElementById('copy-link-btn')?.addEventListener('click', copyFn);
+  document.getElementById('share-link')?.addEventListener('click', copyFn);
 }
 
 function renderActive(session, myRole, sessionId) {
