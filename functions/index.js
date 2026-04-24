@@ -195,6 +195,14 @@ exports.submitArgument = onCall({ region: 'asia-northeast3' }, async (request) =
   const isDefendant = session.defendant?.userId === userId;
   if (!isPlaintiff && !isDefendant) throw new Error('참가자가 아닙니다');
 
+  const argSettingsSnap = await db.doc('site_settings/config').get();
+  const argBannedWords = argSettingsSnap.exists ? (argSettingsSnap.data().bannedWords || []) : [];
+  if (argBannedWords.length) {
+    const argText = argument.trim().toLowerCase();
+    const argHit = argBannedWords.find(w => w && argText.includes(w.toLowerCase()));
+    if (argHit) throw new Error('사용할 수 없는 표현이 포함되어 있습니다');
+  }
+
   const role = isPlaintiff ? 'plaintiff' : 'defendant';
   const round = session.currentRound;
   const rounds = [...(session.rounds || [])];
@@ -305,6 +313,14 @@ exports.submitTopic = onCall({ region: 'asia-northeast3' }, async (request) => {
   if (defendantPosition.length > 100) throw new Error('피고 입장은 100자 이내');
 
   await checkRateLimit(userId, 'submitTopic', 5, 86400);
+
+  const settingsSnap = await db.doc('site_settings/config').get();
+  const bannedWords = settingsSnap.exists ? (settingsSnap.data().bannedWords || []) : [];
+  if (bannedWords.length) {
+    const allText = [title, summary, plaintiffPosition, defendantPosition].join(' ').toLowerCase();
+    const hit = bannedWords.find(w => w && allText.includes(w.toLowerCase()));
+    if (hit) throw new Error('사용할 수 없는 표현이 포함되어 있습니다');
+  }
 
   await db.collection('topics').add({
     title: title.trim(),
