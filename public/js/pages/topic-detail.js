@@ -29,21 +29,28 @@ export async function renderTopicDetail(container, topicId) {
     return;
   }
 
+  // 랜덤 대기자 확인
+  let hasRandomOpponent = false;
+  try {
+    const queueSnap = await getDoc(doc(db, 'random_queue', topicId));
+    hasRandomOpponent = queueSnap.exists() && queueSnap.data().userId !== auth.currentUser?.uid;
+  } catch {}
+
   const inner = container.querySelector('.container');
   inner.innerHTML = `
     <div class="card topic-detail-card" style="margin-bottom:20px;">
       <span class="topic-card-cat" style="margin-bottom:10px;display:inline-block;">${topic.category || '생활'}</span>
       <h2 style="font-family:var(--font-serif);font-size:20px;font-weight:700;color:var(--cream);margin-bottom:8px;line-height:1.4;">${topic.title}</h2>
-      <p style="font-size:14px;color:var(--cream-dim);line-height:1.7;margin-bottom:18px;">${topic.summary}</p>
+      <p style="font-size:15px;color:var(--cream-dim);line-height:1.7;margin-bottom:18px;">${topic.summary}</p>
       <div class="vs-divider"><span class="vs-text">⚖️ VS ⚖️</span></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;">
         <div style="background:rgba(231,76,60,0.08);border:1px solid rgba(231,76,60,0.25);border-radius:10px;padding:14px;">
-          <div style="font-size:10px;font-weight:700;color:#e74c3c;margin-bottom:6px;">⚔️ 원고 측 주장</div>
-          <div style="font-size:13px;color:var(--cream);line-height:1.6;">${topic.plaintiffPosition}</div>
+          <div style="font-size:12px;font-weight:700;color:#e74c3c;margin-bottom:6px;">⚔️ 원고 측 주장</div>
+          <div style="font-size:14px;color:var(--cream);line-height:1.6;">${topic.plaintiffPosition}</div>
         </div>
         <div style="background:rgba(52,152,219,0.08);border:1px solid rgba(52,152,219,0.25);border-radius:10px;padding:14px;">
-          <div style="font-size:10px;font-weight:700;color:#3498db;margin-bottom:6px;">🛡️ 피고 측 주장</div>
-          <div style="font-size:13px;color:var(--cream);line-height:1.6;">${topic.defendantPosition}</div>
+          <div style="font-size:12px;font-weight:700;color:#3498db;margin-bottom:6px;">🛡️ 피고 측 주장</div>
+          <div style="font-size:14px;color:var(--cream);line-height:1.6;">${topic.defendantPosition}</div>
         </div>
       </div>
     </div>
@@ -70,12 +77,12 @@ export async function renderTopicDetail(container, topicId) {
         <button class="mode-btn" data-mode="friend">
           <span class="mode-btn-icon">👫</span>
           <div class="mode-btn-label">친구와 대결</div>
-          <div class="mode-btn-desc">링크 공유로 초대</div>
+          <div class="mode-btn-desc">카카오톡으로 초대</div>
         </button>
-        <button class="mode-btn" data-mode="random">
-          <span class="mode-btn-icon">🎲</span>
+        <button class="mode-btn${hasRandomOpponent ? '' : ' mode-btn-disabled'}" data-mode="random" ${hasRandomOpponent ? '' : 'disabled'}>
+          <span class="mode-btn-icon">${hasRandomOpponent ? '🎲' : '😴'}</span>
           <div class="mode-btn-label">모르는 사람과</div>
-          <div class="mode-btn-desc">자동 매칭</div>
+          <div class="mode-btn-desc">${hasRandomOpponent ? '대기자 있음 · 자동 매칭' : '현재 대기자 없음'}</div>
         </button>
       </div>
     </div>

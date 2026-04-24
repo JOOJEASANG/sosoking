@@ -769,3 +769,47 @@ h1, h2, h3 { font-family: var(--font-serif); line-height: 1.3; }
 [data-theme="light"] .how-to-item:not(:last-child)::after { background: linear-gradient(to bottom, rgba(154,112,24,0.4), transparent); }
 [data-theme="light"] #bottom-nav .nav-item { color: rgba(26,21,10,0.42); }
 [data-theme="light"] #bottom-nav .nav-item.active { color: var(--gold); }
+
+/* ===== 모바일 글씨 크기 개선 ===== */
+.topic-card-title { font-size: 16px; }
+.topic-card-summary { font-size: 14px; }
+.topic-card-footer { font-size: 12px; }
+.today-title { font-size: 18px; }
+.today-summary { font-size: 14px; }
+.today-pos { font-size: 14px; }
+.today-pos-label { font-size: 12px; }
+.today-footer { font-size: 13px; }
+.cat-pill { font-size: 14px; padding: 8px 18px; }
+.side-btn-label { font-size: 15px; }
+.side-btn-desc { font-size: 13px; }
+.mode-btn-label { font-size: 15px; }
+.mode-btn-desc { font-size: 13px; }
+.argument-bubble { font-size: 15px; }
+.argument-meta { font-size: 12px; }
+.debate-textarea { font-size: 15px; }
+.debate-status { font-size: 13px; }
+.waiting-link-box { font-size: 14px; }
+.round-status-chip { font-size: 13px; }
+.round-status-chip .chip-role { font-size: 12px; }
+.round-status-chip .chip-state { font-size: 13px; }
+.verdict-winner-label { font-size: 13px; }
+.verdict-winner-name { font-size: 24px; }
+.verdict-sentence-label { font-size: 13px; }
+.verdict-sentence-text { font-size: 18px; }
+.verdict-reason-label { font-size: 12px; }
+.verdict-case-no { font-size: 13px; }
+.verdict-my-result { font-size: 24px; }
+.how-to-title { font-size: 16px; }
+.how-to-desc { font-size: 14px; }
+.home-feature-label { font-size: 14px; }
+.home-feature-desc { font-size: 12px; }
+.empty-state-title { font-size: 17px; }
+.empty-state-sub { font-size: 14px; }
+.section-sub { font-size: 14px; }
+.nav-label { font-size: 11px; }
+.form-label { font-size: 12px; }
+.judge-option-name { font-size: 13px; }
+.judge-option-desc { font-size: 11px; }
+.audience-labels { font-size: 12px; }
+.mode-btn-disabled { opacity: 0.45; cursor: not-allowed !important; }
+.mode-btn-disabled:hover { border-color: var(--border) !important; transform: none !important; }
