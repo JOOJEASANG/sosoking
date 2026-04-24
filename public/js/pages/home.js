@@ -1,11 +1,88 @@
 import { db } from '../firebase.js';
 import { collection, query, where, orderBy, limit, getDocs } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 
-const EXAMPLE_CASE = {
-  title: '카톡 읽씹 무죄 주장 사건',
-  plaintiff: '읽었으면 바로 답장이 기본 예의다',
-  defendant: '나중에 답할 자유가 있다',
-};
+const DEMO_STEPS = [
+  {
+    tab: '사건 고르기',
+    render: () => `
+      <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.08em;margin-bottom:14px;">📋 공감 100% 사건 중 하나를 고르세요</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        ${[
+          ['카톡 읽씹 무죄 주장', '읽었으면 답해야 vs 내 자유다', true],
+          ['치킨 마지막 조각 독식 사건', '맛있는 건 먼저 먹는 게 당연 vs 나눠 먹어야지', false],
+          ['더치페이 거부 사건', '각자 내는 게 공평 vs 사준 사람이 쏴야지', false],
+        ].map(([t, s, active]) => `
+          <div style="padding:12px 14px;border-radius:10px;border:1.5px solid ${active ? 'rgba(201,168,76,0.5)' : 'var(--border)'};background:${active ? 'rgba(201,168,76,0.07)' : 'rgba(255,255,255,0.02)'};cursor:pointer;">
+            <div style="font-size:13px;font-weight:700;color:${active ? 'var(--gold)' : 'var(--cream)'};margin-bottom:3px;">${t}</div>
+            <div style="font-size:11px;color:var(--cream-dim);">${s}</div>
+          </div>`).join('')}
+      </div>
+      <div style="margin-top:14px;text-align:center;font-size:12px;color:var(--cream-dim);">또는 직접 사건 등록도 가능해요 ✏️</div>`,
+  },
+  {
+    tab: '역할 선택',
+    render: () => `
+      <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.08em;margin-bottom:14px;">🙋 카톡 읽씹 무죄 주장 사건 — 내 입장은?</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+        <div style="padding:16px 12px;border-radius:12px;border:2px solid rgba(231,76,60,0.5);background:rgba(231,76,60,0.1);text-align:center;">
+          <div style="font-size:24px;margin-bottom:6px;">⚔️</div>
+          <div style="font-size:13px;font-weight:700;color:#e88;margin-bottom:4px;">원고</div>
+          <div style="font-size:11px;color:var(--cream-dim);line-height:1.5;">"읽었으면<br>답해야 예의다"</div>
+        </div>
+        <div style="padding:16px 12px;border-radius:12px;border:2px solid rgba(52,152,219,0.5);background:rgba(52,152,219,0.1);text-align:center;">
+          <div style="font-size:24px;margin-bottom:6px;">🛡️</div>
+          <div style="font-size:13px;font-weight:700;color:#7ac;margin-bottom:4px;">피고</div>
+          <div style="font-size:11px;color:var(--cream-dim);line-height:1.5;">"나중에 답할<br>자유가 있다"</div>
+        </div>
+      </div>
+      <div style="padding:12px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,0.02);text-align:center;">
+        <div style="font-size:12px;color:var(--cream-dim);margin-bottom:6px;">입장 선택 후 친구에게 링크를 보내세요 🔗</div>
+        <div style="font-size:11px;color:rgba(201,168,76,0.6);">sosoking.co.kr/join/ABCD1234</div>
+      </div>`,
+  },
+  {
+    tab: '토론',
+    render: () => `
+      <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.08em;margin-bottom:12px;">💬 원고(왼쪽) vs 피고(오른쪽) 실시간 토론</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div class="demo-msg demo-msg-p" style="animation-delay:0s;">
+          <div class="demo-bubble demo-bubble-p">읽었으면 답하는 게 기본 예의 아닌가요? 🙁</div>
+          <div style="font-size:10px;color:rgba(231,76,60,0.7);margin-top:3px;">⚔️ 원고</div>
+        </div>
+        <div class="demo-msg demo-msg-d" style="animation-delay:.6s;">
+          <div class="demo-bubble demo-bubble-d">내가 언제 답할지는 제가 결정해요. 카톡이 법은 아니잖아요.</div>
+          <div style="font-size:10px;color:rgba(52,152,219,0.7);margin-top:3px;text-align:right;">🛡️ 피고</div>
+        </div>
+        <div class="demo-msg demo-msg-p" style="animation-delay:1.2s;">
+          <div class="demo-bubble demo-bubble-p">그건 상대방을 무시하는 행동이에요!</div>
+          <div style="font-size:10px;color:rgba(231,76,60,0.7);margin-top:3px;">⚔️ 원고</div>
+        </div>
+        <div class="demo-msg demo-msg-d" style="animation-delay:1.8s;">
+          <div class="demo-bubble demo-bubble-d">바쁠 수도 있죠. 상황을 모르면서 단정하지 마세요.</div>
+          <div style="font-size:10px;color:rgba(52,152,219,0.7);margin-top:3px;text-align:right;">🛡️ 피고</div>
+        </div>
+      </div>
+      <div style="margin-top:12px;text-align:center;font-size:11px;color:var(--cream-dim);">1라운드 완료 후 언제든 판결 요청 가능 ⚖️</div>`,
+  },
+  {
+    tab: 'AI 판결',
+    render: () => `
+      <div style="text-align:center;margin-bottom:12px;">
+        <div style="font-size:10px;color:var(--cream-dim);letter-spacing:.1em;margin-bottom:6px;">이번 사건 담당 판사</div>
+        <div style="font-size:32px;margin-bottom:4px;">🥹</div>
+        <div style="font-size:13px;font-weight:700;color:#8e44ad;">감성형 판사</div>
+      </div>
+      <div style="padding:14px;border-radius:12px;background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.25);margin-bottom:10px;">
+        <div style="text-align:center;font-size:11px;color:var(--cream-dim);letter-spacing:.1em;margin-bottom:8px;">⚖️ 최종 판결</div>
+        <div style="text-align:center;font-size:20px;font-weight:900;color:var(--gold);margin-bottom:4px;">⚔️ 원고 승소</div>
+        <div style="font-size:12px;color:var(--cream-dim);text-align:center;line-height:1.6;margin-top:8px;">"원고여... 읽씹의 고통이 고스란히 느껴집니다 (목이 메어) 당신의 억울함은 이 법정이 기억할 것입니다 (흑흑)"</div>
+      </div>
+      <div style="padding:12px;border-radius:10px;background:rgba(255,255,255,0.03);border:1px solid var(--border);">
+        <div style="font-size:10px;color:var(--gold);font-weight:700;margin-bottom:4px;">📜 생활형 처분</div>
+        <div style="font-size:12px;color:var(--cream);line-height:1.6;">피고는 원고에게 따뜻한 국밥 한 그릇을 사주고, 눈을 마주치며 '미안해'라고 말할 것을 명한다</div>
+      </div>`,
+  },
+];
 
 export async function renderHome(container) {
   container.innerHTML = `
@@ -16,16 +93,16 @@ export async function renderHome(container) {
       <p class="court-sub">친구와 직접 토론하고<br>AI 판사에게 공정한 판결을 받으세요</p>
 
       <div class="hero-preview">
-        <div class="hero-preview-label">📋 예시 — ${EXAMPLE_CASE.title}</div>
+        <div class="hero-preview-label">📋 예시 — 카톡 읽씹 무죄 주장 사건</div>
         <div class="hero-preview-card">
           <div class="hero-preview-vs">
             <div class="hero-preview-side p">
               <div class="hero-preview-role" style="color:#e88;">⚔️ 원고 측</div>
-              <div class="hero-preview-text">"${EXAMPLE_CASE.plaintiff}"</div>
+              <div class="hero-preview-text">"읽었으면 바로 답장이 기본 예의다"</div>
             </div>
             <div class="hero-preview-side d">
               <div class="hero-preview-role" style="color:#7ac;">🛡️ 피고 측</div>
-              <div class="hero-preview-text">"${EXAMPLE_CASE.defendant}"</div>
+              <div class="hero-preview-text">"나중에 답할 자유가 있다"</div>
             </div>
           </div>
           <div class="hero-preview-footer">누가 맞을까요? → AI 판사가 판결합니다</div>
@@ -44,34 +121,20 @@ export async function renderHome(container) {
       <div id="today-section"></div>
       <div id="popular-section" style="margin-top:32px;"></div>
 
+      <!-- 이용 방법 데모 -->
       <div style="margin-top:40px;">
-        <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.08em;margin-bottom:20px;">🎯 이렇게 합니다</div>
-        <div class="how-to-list">
-          <div class="how-to-item">
-            <div class="how-to-num">1</div>
-            <div class="how-to-body">
-              <div class="how-to-title">사건 고르기</div>
-              <div class="how-to-desc">카톡 읽씹, 치킨 마지막 조각, 더치페이… 공감 100% 사건 중 하나를 고르거나 직접 등록하세요.</div>
-            </div>
-          </div>
-          <div class="how-to-item">
-            <div class="how-to-num">2</div>
-            <div class="how-to-body">
-              <div class="how-to-title">입장 선택 → 친구 초대</div>
-              <div class="how-to-desc">원고/피고 중 내 입장을 선택하고 링크를 친구에게 보내세요. 클릭하는 순간 재판 시작. 가입 불필요.</div>
-            </div>
-          </div>
-          <div class="how-to-item">
-            <div class="how-to-num">3</div>
-            <div class="how-to-body">
-              <div class="how-to-title">2라운드 토론 → AI 판결</div>
-              <div class="how-to-desc">각자 주장을 2번 입력하면 AI 판사가 공정하게 판결합니다. 억울해도 논리가 부족하면 집니다.</div>
-            </div>
-          </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+          <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.08em;">📺 이렇게 이용해요</div>
+          <a href="#/guide" style="font-size:12px;color:var(--cream-dim);text-decoration:none;display:flex;align-items:center;gap:4px;">자세한 안내 <span style="color:var(--gold);">→</span></a>
+        </div>
+        <div class="demo-carousel" id="demo-carousel">
+          <div class="demo-tabs" id="demo-tabs"></div>
+          <div class="demo-screen" id="demo-screen"></div>
+          <div class="demo-progress" id="demo-progress"></div>
         </div>
       </div>
 
-      <div style="margin-top:32px;">
+      <div style="margin-top:24px;">
         <div class="home-feature-grid">
           <div class="home-feature-item">
             <span class="home-feature-icon">🔗</span>
@@ -96,8 +159,9 @@ export async function renderHome(container) {
         </div>
       </div>
 
-      <div style="margin-top:40px;">
+      <div style="margin-top:32px;">
         <a href="#/topics" class="btn btn-primary" style="font-size:17px;padding:18px;">⚖️ 지금 재판 시작하기</a>
+        <a href="#/guide" class="btn btn-ghost" style="margin-top:10px;font-size:14px;">📖 이용 안내 보기</a>
       </div>
 
       <div id="pwa-install-banner"></div>
@@ -113,6 +177,54 @@ export async function renderHome(container) {
   loadTodayCase();
   loadPopularTopics();
   setupInstallBanner();
+  setupDemo();
+}
+
+function setupDemo() {
+  const tabsEl = document.getElementById('demo-tabs');
+  const screenEl = document.getElementById('demo-screen');
+  const progressEl = document.getElementById('demo-progress');
+  if (!tabsEl || !screenEl) return;
+
+  let current = 0;
+  let timer = null;
+
+  const progressDots = DEMO_STEPS.map((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'demo-dot';
+    progressEl.appendChild(d);
+    return d;
+  });
+
+  DEMO_STEPS.forEach((step, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'demo-tab' + (i === 0 ? ' active' : '');
+    btn.textContent = step.tab;
+    btn.addEventListener('click', () => { clearInterval(timer); goTo(i); startTimer(); });
+    tabsEl.appendChild(btn);
+  });
+
+  function goTo(idx) {
+    current = (idx + DEMO_STEPS.length) % DEMO_STEPS.length;
+    tabsEl.querySelectorAll('.demo-tab').forEach((b, i) => b.classList.toggle('active', i === current));
+    progressDots.forEach((d, i) => d.classList.toggle('active', i === current));
+    screenEl.innerHTML = `<div class="demo-step-content">${DEMO_STEPS[current].render()}</div>`;
+  }
+
+  function startTimer() {
+    timer = setInterval(() => goTo(current + 1), 4000);
+  }
+
+  goTo(0);
+  startTimer();
+
+  // Pause auto-advance when carousel is not visible
+  const obs = new IntersectionObserver(entries => {
+    if (!entries[0].isIntersecting) { clearInterval(timer); timer = null; }
+    else if (!timer) { startTimer(); }
+  }, { threshold: 0.3 });
+  const carousel = document.getElementById('demo-carousel');
+  if (carousel) obs.observe(carousel);
 }
 
 function setupInstallBanner() {
