@@ -69,10 +69,12 @@ function renderLogin() {
 }
 
 let currentTab = 'topics';
+let _pendingCount = 0;
 
 const TAB_DEFS = [
   ['topics',    '📋 주제 관리'],
   ['categories','🏷️ 카테고리'],
+  ['words',     '🚫 금칙어'],
   ['cases',     '⚖️ 사건 목록'],
   ['reports',   '🚨 신고'],
   ['feedback',  '💬 의견함'],
@@ -112,6 +114,12 @@ function renderDashboard() {
     loadTab(tab);
   };
   loadTab(currentTab);
+  // 대기 주제 뱃지 업데이트
+  getDocs(query(collection(db,'topics'), where('status','==','pending'))).then(s => {
+    _pendingCount = s.size;
+    const btn = document.querySelector('[data-tab="topics"]');
+    if (btn && s.size > 0) btn.innerHTML = `📋 주제 관리 <span style="background:var(--red);color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;margin-left:4px;">${s.size}</span>`;
+  }).catch(()=>{});
 }
 
 async function loadTab(tab) {
@@ -119,6 +127,7 @@ async function loadTab(tab) {
   el.innerHTML = '<div class="loading-dots" style="padding:40px 0;"><span></span><span></span><span></span></div>';
   if (tab==='topics') await tabTopics(el);
   else if (tab==='categories') await tabCategories(el);
+  else if (tab==='words') await tabWords(el);
   else if (tab==='cases') await tabCases(el);
   else if (tab==='reports') await tabReports(el);
   else if (tab==='feedback') await tabFeedback(el);
@@ -266,14 +275,71 @@ async function tabUsage(el) {
     </div>`;
 }
 
+async function tabWords(el) {
+  const snap = await getDoc(doc(db,'site_settings','config'));
+  let words = snap.exists() ? (snap.data().bannedWords || []) : [];
+
+  function renderWords() {
+    const tagsHtml = words.length
+      ? words.map((w,i) => `<span style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.3);color:var(--red);font-size:12px;font-weight:600;">
+          ${w}
+          <button onclick="window._removeWord(${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;line-height:1;padding:0;">&times;</button>
+        </span>`).join(' ')
+      : `<span style="font-size:13px;color:var(--cream-dim);">등록된 금칙어가 없습니다.</span>`;
+
+    el.innerHTML = `
+      <div style="margin-bottom:16px;">
+        <div style="font-size:13px;color:var(--cream-dim);line-height:1.7;margin-bottom:16px;">
+          금칙어가 포함된 주제 등록 및 토론 주장 제출이 자동으로 차단됩니다.<br>
+          욕설·혐오 표현·개인정보(이름, 전화번호 등) 키워드를 등록하세요.
+        </div>
+        <div class="admin-section-box" style="padding:16px;min-height:60px;display:flex;flex-wrap:wrap;gap:6px;align-items:flex-start;" id="word-tags">
+          ${tagsHtml}
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:flex-end;">
+        <div style="flex:1;">
+          <div class="form-label">금칙어 추가</div>
+          <input type="text" id="word-input" class="form-input" placeholder="단어 입력 후 Enter 또는 추가 버튼" maxlength="30">
+        </div>
+        <button id="word-add-btn" class="btn btn-primary" style="width:auto;padding:12px 20px;">추가</button>
+      </div>
+      <div style="margin-top:20px;">
+        <button id="word-save-btn" class="btn btn-primary">💾 저장</button>
+      </div>`;
+
+    document.getElementById('word-add-btn').addEventListener('click', addWord);
+    document.getElementById('word-input').addEventListener('keydown', e => { if(e.key==='Enter'){e.preventDefault();addWord();} });
+    document.getElementById('word-save-btn').addEventListener('click', saveWords);
+  }
+
+  function addWord() {
+    const input = document.getElementById('word-input');
+    const w = input.value.trim();
+    if (!w) return;
+    if (words.includes(w)) { toast('이미 등록된 단어입니다','error'); return; }
+    words = [...words, w];
+    input.value = '';
+    renderWords();
+  }
+
+  async function saveWords() {
+    await setDoc(doc(db,'site_settings','config'), { bannedWords: words }, { merge: true });
+    toast(`금칙어 ${words.length}개 저장됨`, 'success');
+  }
+
+  window._removeWord = i => { words = words.filter((_,idx)=>idx!==i); renderWords(); };
+
+  renderWords();
+}
+
 async function tabSettings(el) {
   const snap = await getDoc(doc(db,'site_settings','config'));
   const d = snap.exists()?snap.data():{};
   el.innerHTML = `
     <form id="sf">
-      <div class="form-group"><label class="form-label">일일 접수 한도</label><input type="number" id="dl" class="form-input" value="${d.dailyLimit||3}" min="1" max="20"></div>
-      <div class="form-group"><label class="form-label">쿨다운 (초)</label><input type="number" id="cd" class="form-input" value="${d.cooldownSec||45}" min="0" max="300"></div>
-      <div class="form-group"><label class="form-label">금칙어 (쉼표 구분)</label><textarea id="bw" class="form-textarea" style="min-height:80px;">${(d.bannedWords||[]).join(', ')}</textarea></div>
+      <div class="form-group"><label class="form-label">일일 주제 등록 한도 (유저당)</label><input type="number" id="dl" class="form-input" value="${d.dailyLimit||3}" min="1" max="20"></div>
+      <div class="form-group"><label class="form-label">재등록 쿨다운 (초)</label><input type="number" id="cd" class="form-input" value="${d.cooldownSec||45}" min="0" max="300"></div>
       <fieldset style="border:1px solid var(--border);border-radius:8px;padding:14px 14px 4px;margin:20px 0;">
         <legend style="padding:0 8px;color:var(--gold);font-size:13px;">💰 비용 단가 (사용량·비용 계산용)</legend>
         <div class="form-group"><label class="form-label">Gemini 입력 단가 ($/1M 토큰)</label><input type="number" step="0.001" id="gip" class="form-input" value="${d.geminiInputPricePerM ?? 0.075}"></div>
@@ -288,7 +354,6 @@ async function tabSettings(el) {
       ...( snap.exists()?snap.data():{} ),
       dailyLimit:parseInt(document.getElementById('dl').value),
       cooldownSec:parseInt(document.getElementById('cd').value),
-      bannedWords:document.getElementById('bw').value.split(',').map(w=>w.trim()).filter(Boolean),
       geminiInputPricePerM: parseFloat(document.getElementById('gip').value),
       geminiOutputPricePerM: parseFloat(document.getElementById('gop').value),
       krwUsdRate: parseFloat(document.getElementById('krw').value),
@@ -443,58 +508,118 @@ const DEFAULT_TOPICS = [
 ];
 
 async function tabTopics(el) {
-  const [activeSnap, pendingSnap] = await Promise.all([
-    getDocs(query(collection(db,'topics'), where('status','==','active'), orderBy('createdAt','desc'), limit(50))),
-    getDocs(query(collection(db,'topics'), where('status','==','pending'), orderBy('createdAt','desc'), limit(20))),
+  const [activeSnap, pendingSnap, catSnap] = await Promise.all([
+    getDocs(query(collection(db,'topics'), where('status','==','active'), orderBy('createdAt','desc'), limit(100))),
+    getDocs(query(collection(db,'topics'), where('status','==','pending'), orderBy('createdAt','desc'), limit(50))),
+    getDocs(query(collection(db,'categories'), orderBy('order','asc'))),
   ]);
 
-  const renderRows = (docs, isPending) => docs.map(d=>{
-    const t=d.data();
-    return `<tr>
+  const cats = catSnap.docs.map(d => d.data().name);
+  const catOptions = cats.map(c=>`<option value="${c}">${c}</option>`).join('');
+
+  let activeCatFilter = 'all';
+
+  const renderPendingRow = d => {
+    const t = d.data();
+    const selId = `cat-sel-${d.id}`;
+    return `<tr data-id="${d.id}">
       <td style="font-size:12px;">
         <div style="font-weight:700;">${t.title}</div>
-        <div style="color:var(--cream-dim);font-size:11px;">${t.category||''} · ${t.isOfficial?'공식':'유저'}</div>
+        <div style="font-size:11px;color:var(--cream-dim);margin-top:2px;">${t.summary||''}</div>
+        <div style="display:flex;gap:8px;margin-top:6px;font-size:11px;color:var(--cream-dim);">
+          <span>⚔️ ${(t.plaintiffPosition||'').substring(0,30)}...</span>
+        </div>
+        <div style="font-size:11px;color:var(--cream-dim);">🛡️ ${(t.defendantPosition||'').substring(0,30)}...</div>
+      </td>
+      <td style="white-space:nowrap;vertical-align:middle;">
+        <select id="${selId}" class="form-input" style="font-size:12px;padding:5px 8px;margin-bottom:6px;width:100%;">
+          <option value="${t.category||'기타'}" selected>${t.category||'기타'}</option>
+          ${cats.filter(c=>c!==(t.category||'기타')).map(c=>`<option value="${c}">${c}</option>`).join('')}
+        </select>
+        <button onclick="window._approveTopic('${d.id}')" class="admin-btn admin-btn-approve" style="width:100%;margin-bottom:3px;">✅ 승인</button>
+        <button onclick="window._delTopic('${d.id}')" class="admin-btn admin-btn-danger" style="width:100%;">🗑 거부·삭제</button>
+      </td>
+    </tr>`;
+  };
+
+  const renderActiveRow = d => {
+    const t = d.data();
+    return `<tr data-cat="${t.category||'기타'}">
+      <td style="font-size:12px;">
+        <div style="font-weight:700;">${t.title}</div>
+        <div style="color:var(--cream-dim);font-size:11px;">${t.category||'기타'} · ${t.isOfficial?'공식':'유저'}</div>
       </td>
       <td style="font-size:12px;color:var(--cream-dim);max-width:160px;">${(t.plaintiffPosition||'').substring(0,40)}...</td>
       <td style="font-size:12px;">${t.playCount||0}</td>
       <td style="white-space:nowrap;">
-        ${isPending?`<button onclick="window._approveTopic('${d.id}')" class="admin-btn admin-btn-approve" style="margin-right:4px;">승인</button>`:''}
-        <button onclick="window._hideTopic('${d.id}','${isPending?'pending':'active'}')" class="admin-btn">숨김</button>
+        <button onclick="window._hideTopic('${d.id}','active')" class="admin-btn">숨김</button>
         <button onclick="window._delTopic('${d.id}')" class="admin-btn admin-btn-danger" style="margin-left:4px;">삭제</button>
-      </td></tr>`;
-  }).join('');
+      </td>
+    </tr>`;
+  };
 
   const hasSeedData = activeSnap.docs.some(d=>d.data().isOfficial);
+  const allCats = ['all', ...new Set(activeSnap.docs.map(d=>d.data().category||'기타'))];
 
   el.innerHTML = `
     ${!hasSeedData?`<div style="margin-bottom:20px;padding:14px 18px;background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.3);border-radius:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
       <div style="font-size:13px;color:var(--cream);">⚠️ 초기 사건 데이터가 없습니다.</div>
       <button id="seed-btn" style="background:linear-gradient(135deg,var(--gold),var(--gold-light));color:#0d1117;border:none;padding:8px 16px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap;">기본 사건 10개 + 카테고리 세팅</button>
     </div>`:''}
+
     ${pendingSnap.docs.length?`
       <div class="admin-section-title" style="margin-top:4px;">🔍 검토 대기 <span style="background:rgba(231,76,60,0.15);color:var(--red);border-radius:20px;padding:1px 8px;font-size:11px;">${pendingSnap.docs.length}</span></div>
-      <div class="admin-section-box" style="margin-bottom:24px;"><div style="overflow-x:auto;"><table class="admin-table"><thead><tr><th>사건명</th><th>원고 주장</th><th>재판</th><th>관리</th></tr></thead><tbody>${renderRows(pendingSnap.docs,true)}</tbody></table></div></div>
+      <div style="font-size:12px;color:var(--cream-dim);margin-bottom:10px;">카테고리를 확인·변경하고 승인하세요.</div>
+      <div class="admin-section-box" style="margin-bottom:24px;"><div style="overflow-x:auto;">
+        <table class="admin-table"><thead><tr><th>사건 내용</th><th style="width:130px;">카테고리 · 처리</th></tr></thead>
+        <tbody id="pending-tbody">${pendingSnap.docs.map(renderPendingRow).join('')}</tbody></table>
+      </div></div>
     `:''}
-    <div class="admin-section-title">✅ 공개 사건 <span style="background:rgba(201,168,76,0.12);color:var(--gold);border-radius:20px;padding:1px 8px;font-size:11px;">${activeSnap.docs.length}</span></div>
-    <div class="admin-section-box"><div style="overflow-x:auto;"><table class="admin-table"><thead><tr><th>사건명</th><th>원고 주장</th><th>재판</th><th>관리</th></tr></thead><tbody>${renderRows(activeSnap.docs,false)||'<tr><td colspan="4" style="text-align:center;padding:30px;color:var(--cream-dim);">없음</td></tr>'}</tbody></table></div></div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+      <div class="admin-section-title" style="margin:0;">✅ 공개 사건 <span style="background:rgba(201,168,76,0.12);color:var(--gold);border-radius:20px;padding:1px 8px;font-size:11px;">${activeSnap.docs.length}</span></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;" id="cat-filter-bar">
+        ${allCats.map(c=>`<button class="cat-filter-btn${c==='all'?' active':''}" data-cat="${c}" style="padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:${c==='all'?'var(--gold-dim)':'none'};color:${c==='all'?'var(--gold)':'var(--cream-dim)'};transition:all 0.15s;">${c==='all'?'전체':c}</button>`).join('')}
+      </div>
+    </div>
+    <div class="admin-section-box"><div style="overflow-x:auto;">
+      <table class="admin-table"><thead><tr><th>사건명</th><th>원고 주장</th><th>재판수</th><th>관리</th></tr></thead>
+      <tbody id="active-tbody">${activeSnap.docs.map(renderActiveRow).join('')||'<tr><td colspan="4" style="text-align:center;padding:30px;color:var(--cream-dim);">없음</td></tr>'}</tbody></table>
+    </div></div>
   `;
+
+  // 카테고리 필터
+  document.getElementById('cat-filter-bar')?.addEventListener('click', e => {
+    const btn = e.target.closest('.cat-filter-btn');
+    if (!btn) return;
+    activeCatFilter = btn.dataset.cat;
+    document.querySelectorAll('.cat-filter-btn').forEach(b => {
+      const on = b.dataset.cat === activeCatFilter;
+      b.style.background = on ? 'var(--gold-dim)' : 'none';
+      b.style.color = on ? 'var(--gold)' : 'var(--cream-dim)';
+      b.style.borderColor = on ? 'rgba(201,168,76,0.4)' : 'var(--border)';
+    });
+    document.querySelectorAll('#active-tbody tr[data-cat]').forEach(row => {
+      row.style.display = (activeCatFilter === 'all' || row.dataset.cat === activeCatFilter) ? '' : 'none';
+    });
+  });
 
   document.getElementById('seed-btn')?.addEventListener('click', async () => {
     const btn = document.getElementById('seed-btn');
     btn.disabled=true; btn.textContent='세팅 중...';
     try {
-      for (const cat of DEFAULT_CATEGORIES) {
-        await setDoc(doc(db, 'categories', cat.name), {...cat});
-      }
-      for (const t of DEFAULT_TOPICS) {
-        await addDoc(collection(db,'topics'), {...t, createdAt: serverTimestamp()});
-      }
-      toast('초기 데이터 세팅 완료!','success');
-      loadTab('topics');
+      for (const cat of DEFAULT_CATEGORIES) { await setDoc(doc(db,'categories',cat.name),{...cat}); }
+      for (const t of DEFAULT_TOPICS) { await addDoc(collection(db,'topics'),{...t,createdAt:serverTimestamp()}); }
+      toast('초기 데이터 세팅 완료!','success'); loadTab('topics');
     } catch(e) { toast('세팅 실패: '+e.message,'error'); btn.disabled=false; btn.textContent='기본 사건 10개 + 카테고리 세팅'; }
   });
 
-  window._approveTopic = async id => { await updateDoc(doc(db,'topics',id),{status:'active'}); toast('승인됨','success'); loadTab('topics'); };
+  window._approveTopic = async id => {
+    const sel = document.getElementById(`cat-sel-${id}`);
+    const cat = sel ? sel.value : '기타';
+    await updateDoc(doc(db,'topics',id), { status:'active', category: cat });
+    toast('승인됨','success'); loadTab('topics');
+  };
   window._hideTopic = async (id,cur) => { await updateDoc(doc(db,'topics',id),{status:cur==='active'?'hidden':'active'}); toast('처리됨','success'); loadTab('topics'); };
   window._delTopic = async id => {
     if (!confirm('이 주제를 삭제하시겠습니까?')) return;
