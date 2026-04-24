@@ -17,6 +17,11 @@ function toast(msg, type='info') {
   setTimeout(() => { t.style.opacity='0'; t.style.transition='all 0.3s'; setTimeout(()=>t.remove(),300); }, 3000);
 }
 
+// 로딩 상태를 즉시 표시 (onAuthStateChanged 대기 중 빈 화면 방지)
+document.getElementById('admin-content').innerHTML =
+  '<div style="display:flex;align-items:center;justify-content:center;min-height:100vh;">' +
+  '<div class="loading-dots"><span></span><span></span><span></span></div></div>';
+
 onAuthStateChanged(auth, user => { user ? renderDashboard(user) : renderLogin(); });
 
 function renderLogin() {
@@ -415,7 +420,7 @@ async function tabTopics(el) {
     btn.disabled=true; btn.textContent='세팅 중...';
     try {
       for (const cat of DEFAULT_CATEGORIES) {
-        await setDoc(doc(collection(db,'categories')), {...cat});
+        await setDoc(doc(db, 'categories', cat.name), {...cat});
       }
       for (const t of DEFAULT_TOPICS) {
         await addDoc(collection(db,'topics'), {...t, createdAt: serverTimestamp()});

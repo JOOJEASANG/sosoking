@@ -10,8 +10,12 @@ export const db = getFirestore(app);
 export const functions = getFunctions(app, 'asia-northeast3');
 
 export async function initAuth() {
-  if (!auth.currentUser) {
-    await signInAnonymously(auth);
+  try {
+    if (!auth.currentUser) {
+      await signInAnonymously(auth);
+    }
+  } catch (err) {
+    console.warn('익명 로그인 실패 (일부 기능 제한):', err.code);
   }
   return auth.currentUser;
 }
