@@ -9,7 +9,7 @@ import { renderPolicy } from './pages/policy.js';
 import { renderGuide } from './pages/guide.js';
 import { renderFeedback } from './pages/feedback.js';
 import { renderFooter } from './components/footer.js';
-import { initTheme, renderThemeToggle } from './components/theme.js';
+import { initTheme } from './components/theme.js';
 import { renderNav } from './components/nav.js';
 
 function route() {
@@ -65,6 +65,5 @@ window.addEventListener('appinstalled', () => {
   initTheme();
   await initAuth();
   renderFooter();
-  renderThemeToggle();
   route();
 })();
