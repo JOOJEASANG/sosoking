@@ -20,9 +20,24 @@ function caseNumber() {
 }
 
 const NICK_ADJ = ['억울한','분노한','황당한','지친','당당한','기막힌','논리적인','감성적인','당황한','뻔뻔한'];
-const NICK_NOUN = ['직장인','집사','아무개','라면러버','과자지킴이','냉장고파수꾼','에어컨전사','이불킥전문가','치킨수호자','더치페이거부자'];
+const NICK_NOUN = ['직장인','집사','아무개','라면러버','과자지킴이','냉장고파수꾼','에어컨전사','이불킥전문기','치킨수호자','더치페이거부자'];
 function generateNickname() {
   return NICK_ADJ[Math.floor(Math.random() * NICK_ADJ.length)] + NICK_NOUN[Math.floor(Math.random() * NICK_NOUN.length)];
+}
+
+async function checkRateLimit(userId, action, maxCount, windowSeconds) {
+  const ref = db.doc(`rate_limits/${userId}`);
+  const windowMs = windowSeconds * 1000;
+  const now = Date.now();
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    const data = snap.exists ? snap.data() : {};
+    const timestamps = (data[action] || []).filter(ts => ts > now - windowMs);
+    if (timestamps.length >= maxCount) {
+      throw new Error('요청 한도를 초과했습니다. 잠시 후 다시 시도해주세요.');
+    }
+    tx.set(ref, { [action]: [...timestamps, now] }, { merge: true });
+  });
 }
 
 // 새 토론 세션 생성
@@ -78,13 +93,11 @@ exports.createSession = onCall({ region: 'asia-northeast3' }, async (request) =>
   return { sessionId: sessionRef.id, shareToken };
 });
 
-// 세션 참가 (친구 링크 or 랜덤)
+// 세션 참가 (친구 링크 or 랜덤) — 트랜잭션으로 동시 참가 방지
 exports.joinSession = onCall({ region: 'asia-northeast3' }, async (request) => {
   const { shareToken, topicId } = request.data;
   const userId = request.auth?.uid;
   if (!userId) throw new Error('인증 필요');
-
-  let sessionSnap;
 
   if (shareToken) {
     const q = await db.collection('debate_sessions')
@@ -93,38 +106,59 @@ exports.joinSession = onCall({ region: 'asia-northeast3' }, async (request) => {
       .limit(1)
       .get();
     if (q.empty) throw new Error('세션을 찾을 수 없거나 이미 시작되었습니다');
-    sessionSnap = q.docs[0];
+    const sessionId = q.docs[0].id;
+    const sessionRef = db.doc(`debate_sessions/${sessionId}`);
+
+    await db.runTransaction(async (tx) => {
+      const snap = await tx.get(sessionRef);
+      if (!snap.exists) throw new Error('세션을 찾을 수 없습니다');
+      const session = snap.data();
+      if (session.status !== 'waiting') throw new Error('세션이 이미 시작되었습니다');
+      if (session.plaintiff?.userId === userId || session.defendant?.userId === userId) return;
+      const nickname = generateNickname();
+      if (!session.plaintiff) {
+        tx.update(sessionRef, { plaintiff: { userId, nickname }, status: 'active' });
+      } else if (!session.defendant) {
+        tx.update(sessionRef, { defendant: { userId, nickname }, status: 'active' });
+      } else {
+        throw new Error('세션이 꽉 찼습니다');
+      }
+    });
+    return { sessionId };
+
   } else if (topicId) {
-    const queueSnap = await db.doc(`random_queue/${topicId}`).get();
-    if (!queueSnap.exists) throw new Error('대기 중인 상대가 없습니다');
-    const queueData = queueSnap.data();
-    if (queueData.userId === userId) throw new Error('자신의 세션에 참가할 수 없습니다');
-    sessionSnap = await db.doc(`debate_sessions/${queueData.sessionId}`).get();
-    if (!sessionSnap.exists || sessionSnap.data().status !== 'waiting') throw new Error('세션이 더 이상 유효하지 않습니다');
-    await db.doc(`random_queue/${topicId}`).delete();
+    const queueRef = db.doc(`random_queue/${topicId}`);
+    let sessionId;
+
+    await db.runTransaction(async (tx) => {
+      const queueSnap = await tx.get(queueRef);
+      if (!queueSnap.exists) throw new Error('대기 중인 상대가 없습니다');
+      const queueData = queueSnap.data();
+      if (queueData.userId === userId) throw new Error('자신의 세션에 참가할 수 없습니다');
+      const sessionRef = db.doc(`debate_sessions/${queueData.sessionId}`);
+      const sessionSnap = await tx.get(sessionRef);
+      if (!sessionSnap.exists || sessionSnap.data().status !== 'waiting') {
+        throw new Error('세션이 더 이상 유효하지 않습니다');
+      }
+      sessionId = queueData.sessionId;
+      const session = sessionSnap.data();
+      const nickname = generateNickname();
+      let updateData;
+      if (!session.plaintiff) {
+        updateData = { plaintiff: { userId, nickname }, status: 'active' };
+      } else if (!session.defendant) {
+        updateData = { defendant: { userId, nickname }, status: 'active' };
+      } else {
+        throw new Error('세션이 꽉 찼습니다');
+      }
+      tx.update(sessionRef, updateData);
+      tx.delete(queueRef);
+    });
+    return { sessionId };
+
   } else {
     throw new Error('shareToken 또는 topicId 필요');
   }
-
-  const session = sessionSnap.data();
-  const sessionId = sessionSnap.id;
-
-  if (session.plaintiff?.userId === userId || session.defendant?.userId === userId) {
-    return { sessionId };
-  }
-
-  const nickname = generateNickname();
-  let updateData;
-  if (!session.plaintiff) {
-    updateData = { plaintiff: { userId, nickname }, status: 'active' };
-  } else if (!session.defendant) {
-    updateData = { defendant: { userId, nickname }, status: 'active' };
-  } else {
-    throw new Error('세션이 꽉 찼습니다');
-  }
-
-  await db.doc(`debate_sessions/${sessionId}`).update(updateData);
-  return { sessionId };
 });
 
 // 라운드 주장 제출
@@ -174,6 +208,8 @@ exports.requestVerdict = onCall({ region: 'asia-northeast3', secrets: [geminiKey
   const { sessionId } = request.data;
   const userId = request.auth?.uid;
   if (!userId) throw new Error('인증 필요');
+
+  await checkRateLimit(userId, 'requestVerdict', 10, 86400);
 
   const sessionRef = db.doc(`debate_sessions/${sessionId}`);
   const sessionSnap = await sessionRef.get();
@@ -252,6 +288,8 @@ exports.submitTopic = onCall({ region: 'asia-northeast3' }, async (request) => {
   if (summary.length > 60) throw new Error('한 줄 요약은 60자 이내');
   if (plaintiffPosition.length > 100) throw new Error('원고 입장은 100자 이내');
   if (defendantPosition.length > 100) throw new Error('피고 입장은 100자 이내');
+
+  await checkRateLimit(userId, 'submitTopic', 5, 86400);
 
   await db.collection('topics').add({
     title: title.trim(),

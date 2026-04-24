@@ -75,6 +75,9 @@ export async function renderDebate(container, sessionId, shareToken) {
       renderCompleted(session, myRole);
       removeInputArea();
     }
+  }, (err) => {
+    console.error('Firestore listener error:', err);
+    showToast('연결이 끊어졌습니다. 페이지를 새로고침해주세요.', 'error');
   });
 
   window._pageCleanup = () => unsub();
@@ -86,7 +89,7 @@ function updateTopicBar(session, myRole) {
   if (session.status === 'waiting') { el.innerHTML = ''; return; }
   const roleClass = myRole === 'plaintiff' ? 'plaintiff' : 'defendant';
   const roleLabel = myRole === 'plaintiff' ? '⚔️ 원고' : myRole === 'defendant' ? '🛡️ 피고' : '';
-  el.innerHTML = `<div class="debate-topic-bar">
+  el.innerHTML = `<div class="debate-topic-bar-inner">
     <span class="debate-topic-name">📋 ${escHtml(session.topicTitle)}</span>
     ${roleLabel ? `<span class="debate-my-role ${roleClass}">${roleLabel}</span>` : ''}
   </div>`;
@@ -97,7 +100,6 @@ function updateHeader(session, myRole) {
   const statusEl = document.getElementById('debate-status-text');
   if (!bar || !statusEl) return;
 
-  const maxRounds = session.maxRounds || 2;
   const dots = bar.querySelectorAll('.debate-round-dot');
   dots.forEach((d, i) => {
     d.classList.remove('done', 'active');
@@ -131,22 +133,22 @@ function renderWaiting(session, sessionId) {
     <div class="waiting-screen">
       <span class="waiting-icon">⏳</span>
       <div style="font-family:var(--font-serif);font-size:20px;font-weight:700;color:var(--cream);margin-bottom:8px;">상대방을 기다리는 중</div>
-      <p style="font-size:14px;color:var(--cream-dim);line-height:1.7;margin-bottom:20px;">${session.topicTitle}</p>
+      <p style="font-size:14px;color:var(--cream-dim);line-height:1.7;margin-bottom:20px;">${escHtml(session.topicTitle)}</p>
       <div style="font-size:13px;color:var(--gold);font-weight:700;margin-bottom:8px;">아래 링크를 친구에게 전송하세요</div>
       <div class="waiting-link-box" id="share-link">${shareUrl}</div>
-      <button onclick="copyLink('${shareUrl}')" class="btn btn-primary" style="margin-bottom:12px;">🔗 링크 복사하기</button>
-      ${navigator.share ? `<button onclick="nativeShare('${shareUrl}','${session.topicTitle}')" class="btn btn-secondary">📤 공유하기</button>` : ''}
+      <button id="copy-link-btn" class="btn btn-primary" style="margin-bottom:12px;">🔗 링크 복사하기</button>
+      ${navigator.share ? `<button id="native-share-btn" class="btn btn-secondary">📤 공유하기</button>` : ''}
       <p style="margin-top:20px;font-size:12px;color:var(--cream-dim);">링크를 받은 친구가 참가하면 자동으로 시작됩니다</p>
     </div>
   `;
-  window.copyLink = async (url) => {
-    try { await navigator.clipboard.writeText(url); showToast('링크가 복사되었습니다!', 'success'); }
+  document.getElementById('copy-link-btn')?.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(shareUrl); showToast('링크가 복사되었습니다!', 'success'); }
     catch { showToast('복사 실패. 직접 복사해주세요.', 'error'); }
-  };
-  window.nativeShare = async (url, title) => {
-    try { await navigator.share({ title: `소소킹 생활법정 - ${title}`, url }); }
+  });
+  document.getElementById('native-share-btn')?.addEventListener('click', async () => {
+    try { await navigator.share({ title: `소소킹 생활법정 - ${session.topicTitle}`, url: shareUrl }); }
     catch { /* cancelled */ }
-  };
+  });
 }
 
 function renderActive(session, myRole, sessionId) {
@@ -156,7 +158,6 @@ function renderActive(session, myRole, sessionId) {
   const rounds = session.rounds || [];
   let html = '';
 
-  // 라운드 제출 현황
   if (session.status !== 'ready_for_verdict') {
     const curRound = session.currentRound || 0;
     const curData = rounds[curRound] || {};

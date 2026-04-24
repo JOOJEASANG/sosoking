@@ -367,30 +367,28 @@ h1, h2, h3 { font-family: var(--font-serif); line-height: 1.3; }
 .cta-section h2 { font-family: var(--font-serif); font-size: 24px; margin-bottom: 10px; color: var(--cream); }
 .cta-section p { font-size: 14px; color: var(--cream-dim); margin-bottom: 24px; line-height: 1.7; }
 
-/* ===== 생활법정 Hero — 라이트/다크 모두 항상 어둡게 ===== */
+/* ===== 생활법정 Hero — 항상 어두운 배경 유지 ===== */
 .court-hero {
   min-height: 100svh; display: flex; flex-direction: column;
   align-items: center; justify-content: center; text-align: center;
   padding: 60px 24px 100px;
-  background: radial-gradient(ellipse at 50% 0%, rgba(201,168,76,0.16) 0%, transparent 65%),
-              linear-gradient(160deg, #111827 0%, #0d1117 60%, #0a0e1a 100%) !important;
+  background: radial-gradient(ellipse at 50% 0%, rgba(201,168,76,0.15) 0%, transparent 60%),
+              linear-gradient(160deg, #111827 0%, #0d1117 55%, #09101e 100%) !important;
   position: relative; overflow: hidden;
 }
-/* 라이트 테마에서도 히어로는 어두운 색 유지 */
-[data-theme="light"] .court-hero,
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme="dark"]) .court-hero {
-    background: radial-gradient(ellipse at 50% 0%, rgba(201,168,76,0.16) 0%, transparent 65%),
-                linear-gradient(160deg, #111827 0%, #0d1117 60%, #0a0e1a 100%) !important;
-  }
-}
-/* 히어로 내부 텍스트 강제 다크 색상 */
-.court-hero .court-badge { color: #c9a84c !important; background: rgba(201,168,76,0.12) !important; border-color: rgba(201,168,76,0.45) !important; }
+/* 히어로 내 모든 텍스트/버튼 색상 강제 고정 */
+.court-hero .court-badge { color: #c9a84c !important; background: rgba(201,168,76,0.15) !important; border-color: rgba(201,168,76,0.5) !important; }
 .court-hero .court-title { color: #f5f0e8 !important; }
 .court-hero .court-title span { color: #e8c97a !important; }
-.court-hero .court-sub { color: rgba(245,240,232,0.62) !important; }
-.court-hero .court-disclaimer { color: rgba(245,240,232,0.22) !important; }
+.court-hero .court-sub { color: rgba(245,240,232,0.65) !important; }
+.court-hero .court-cta-main { background: linear-gradient(135deg, #c9a84c, #e8c97a) !important; color: #0d1117 !important; box-shadow: 0 4px 28px rgba(201,168,76,0.5) !important; }
+.court-hero .court-cta-sub { background: rgba(255,255,255,0.06) !important; border-color: rgba(201,168,76,0.32) !important; color: rgba(245,240,232,0.72) !important; }
+.court-hero .court-disclaimer { color: rgba(245,240,232,0.25) !important; }
 .court-hero .court-scroll-hint { color: rgba(245,240,232,0.3) !important; }
+.court-hero .hero-preview-label { color: rgba(201,168,76,0.65) !important; }
+.court-hero .hero-preview-card { background: rgba(255,255,255,0.06) !important; border-color: rgba(201,168,76,0.22) !important; }
+.court-hero .hero-preview-text { color: rgba(245,240,232,0.82) !important; }
+.court-hero .hero-preview-footer { color: rgba(201,168,76,0.5) !important; }
 .court-hero::before {
   content: ''; position: absolute; inset: 0;
   background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c9a84c' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
@@ -577,25 +575,98 @@ h1, h2, h3 { font-family: var(--font-serif); line-height: 1.3; }
 /* ===== 공유 카드 ===== */
 .share-result-card { background: var(--navy-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; text-align: center; }
 
-/* 라이트모드 추가 */
-[data-theme="light"] .court-hero { background: radial-gradient(ellipse at 50% 0%, rgba(154,112,24,0.1) 0%, transparent 65%), linear-gradient(180deg, #f7f3ed 0%, #f7f3ed 100%); }
-[data-theme="light"] .court-cta-sub { background: rgba(0,0,0,0.04); border-color: rgba(154,112,24,0.3); color: rgba(26,21,10,0.6); }
+/* ===== 히어로 예시 토론 카드 ===== */
+.hero-preview { margin: 0 0 28px; width: 100%; max-width: 320px; animation: fadeUp 0.5s 0.45s both; }
+.hero-preview-label { font-size: 10px; font-weight: 700; color: rgba(201,168,76,0.65); letter-spacing: 0.08em; margin-bottom: 8px; text-align: left; }
+.hero-preview-card { background: rgba(255,255,255,0.06); border: 1px solid rgba(201,168,76,0.22); border-radius: 14px; padding: 14px 16px; backdrop-filter: blur(4px); }
+.hero-preview-vs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.hero-preview-side { padding: 10px 12px; border-radius: 9px; }
+.hero-preview-side.p { background: rgba(231,76,60,0.13); border: 1px solid rgba(231,76,60,0.22); }
+.hero-preview-side.d { background: rgba(52,152,219,0.13); border: 1px solid rgba(52,152,219,0.22); }
+.hero-preview-role { font-size: 10px; font-weight: 700; margin-bottom: 5px; }
+.hero-preview-text { font-size: 11.5px; color: rgba(245,240,232,0.82); line-height: 1.5; }
+.hero-preview-footer { text-align: center; font-size: 11px; color: rgba(201,168,76,0.5); margin-top: 12px; }
+
+/* ===== 홈 3단계 ===== */
+.how-to-list { display: flex; flex-direction: column; }
+.how-to-item { display: flex; gap: 16px; align-items: flex-start; padding: 14px 0; position: relative; }
+.how-to-item:not(:last-child)::after { content: ''; position: absolute; left: 19px; top: 52px; bottom: -4px; width: 2px; background: linear-gradient(to bottom, rgba(201,168,76,0.4), transparent); }
+.how-to-num { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: #0d1117; font-size: 16px; font-weight: 900; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 0 0 4px rgba(201,168,76,0.15); }
+.how-to-body { flex: 1; padding-top: 8px; }
+.how-to-title { font-weight: 700; font-size: 15px; color: var(--cream); margin-bottom: 3px; }
+.how-to-desc { font-size: 13px; color: var(--cream-dim); line-height: 1.6; }
+
+/* ===== 홈 기능 그리드 ===== */
+.home-feature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.home-feature-item { background: var(--navy-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 14px; text-align: center; transition: all 0.2s; }
+.home-feature-item:hover { border-color: rgba(201,168,76,0.4); transform: translateY(-2px); }
+.home-feature-icon { font-size: 28px; display: block; margin-bottom: 8px; line-height: 1; }
+.home-feature-label { font-size: 13px; font-weight: 700; color: var(--cream); margin-bottom: 4px; }
+.home-feature-desc { font-size: 11px; color: var(--cream-dim); line-height: 1.5; }
+[data-theme="light"] .home-feature-item { background: #fff; }
+
+/* ===== 토론 — 주제 배너 ===== */
+.debate-topic-bar-inner { background: rgba(201,168,76,0.07); border-bottom: 1px solid rgba(201,168,76,0.15); padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.debate-topic-name { font-size: 12px; font-weight: 700; color: var(--cream); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.debate-my-role { font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 20px; flex-shrink: 0; }
+.debate-my-role.plaintiff { background: rgba(231,76,60,0.15); color: #e74c3c; }
+.debate-my-role.defendant { background: rgba(52,152,219,0.15); color: #3498db; }
+
+/* ===== 토론 — 라운드 제출 현황 ===== */
+.round-status-row { display: flex; gap: 8px; padding: 10px 20px 0; }
+.round-status-chip { flex: 1; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); font-size: 11px; text-align: center; }
+.round-status-chip .chip-role { font-weight: 700; font-size: 10px; letter-spacing: 0.06em; margin-bottom: 3px; }
+.round-status-chip .chip-state { font-size: 12px; }
+.round-status-chip.submitted { background: rgba(39,174,96,0.1); border-color: rgba(39,174,96,0.3); }
+.round-status-chip.waiting { background: rgba(255,255,255,0.03); }
+
+/* ===== 판결 — 케이스번호 · 결과 강조 ===== */
+.verdict-case-no { font-size: 11px; font-family: monospace; color: rgba(201,168,76,0.5); text-align: center; letter-spacing: 0.12em; padding: 16px 0 6px; }
+.verdict-winner.won { animation: winCelebrate 0.7s 0.4s cubic-bezier(0.34,1.56,0.64,1) both; }
+@keyframes winCelebrate { from{transform:scale(0.85);} 50%{transform:scale(1.04);} to{transform:scale(1);} }
+.verdict-my-result { margin-top: 14px; font-size: 22px; font-weight: 900; letter-spacing: 0.02em; animation: fadeUp 0.4s 0.8s both; }
+.verdict-reason-label { font-size: 10px; font-weight: 700; color: var(--gold); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+.verdict-actions-row { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; animation: fadeUp 0.4s 1.2s both; }
+
+/* ===== 라이트 테마 컴포넌트 오버라이드 ===== */
 [data-theme="light"] .topic-card { background: #fff; }
 [data-theme="light"] .side-btn, [data-theme="light"] .mode-btn { background: #fff; color: #1a150a; }
 [data-theme="light"] .debate-input-area { background: rgba(247,243,237,0.97); }
 [data-theme="light"] .debate-textarea { background: rgba(0,0,0,0.04); border-color: rgba(154,112,24,0.25); color: #1a150a; }
+[data-theme="light"] .debate-textarea::placeholder { color: rgba(26,21,10,0.3); }
 [data-theme="light"] .argument-bubble.mine { background: rgba(154,112,24,0.1); border-color: rgba(154,112,24,0.3); }
-[data-theme="light"] .argument-bubble.opponent { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.1); }
-[data-theme="light"] .waiting-link-box { background: rgba(0,0,0,0.04); }
-[data-theme="light"] .debate-header { background: rgba(247,243,237,0.95); }
+[data-theme="light"] .argument-bubble.opponent { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.1); color: #1a150a; }
+[data-theme="light"] .waiting-link-box { background: rgba(0,0,0,0.04); color: rgba(26,21,10,0.6); }
+[data-theme="light"] .debate-header { background: rgba(247,243,237,0.95); border-bottom-color: rgba(154,112,24,0.22); }
+[data-theme="light"] #bottom-nav { background: rgba(247,243,237,0.97); border-top-color: rgba(154,112,24,0.22); }
+[data-theme="light"] .search-input { background: rgba(0,0,0,0.04); border-color: rgba(154,112,24,0.35); color: #1a150a; }
+[data-theme="light"] .search-input::placeholder { color: rgba(26,21,10,0.3); }
+[data-theme="light"] .search-input:focus { background: rgba(154,112,24,0.05); }
+[data-theme="light"] .today-pos { background: rgba(0,0,0,0.04); }
+[data-theme="light"] .today-case-card { background: linear-gradient(135deg, rgba(154,112,24,0.08), rgba(154,112,24,0.03)); }
+[data-theme="light"] .verdict-winner { background: linear-gradient(135deg, rgba(154,112,24,0.12), rgba(154,112,24,0.04)); }
+[data-theme="light"] .verdict-sentence { background: linear-gradient(135deg, rgba(154,112,24,0.08), rgba(154,112,24,0.03)); }
+
 @media (prefers-color-scheme: light) {
-  :root:not([data-theme="dark"]) .court-hero { background: radial-gradient(ellipse at 50% 0%, rgba(154,112,24,0.1) 0%, transparent 65%), linear-gradient(180deg, #f7f3ed 0%, #f7f3ed 100%); }
   :root:not([data-theme="dark"]) .topic-card { background: #fff; }
   :root:not([data-theme="dark"]) .side-btn, :root:not([data-theme="dark"]) .mode-btn { background: #fff; color: #1a150a; }
   :root:not([data-theme="dark"]) .debate-input-area { background: rgba(247,243,237,0.97); }
   :root:not([data-theme="dark"]) .debate-textarea { background: rgba(0,0,0,0.04); border-color: rgba(154,112,24,0.25); color: #1a150a; }
+  :root:not([data-theme="dark"]) .debate-textarea::placeholder { color: rgba(26,21,10,0.3); }
   :root:not([data-theme="dark"]) .argument-bubble.mine { background: rgba(154,112,24,0.1); border-color: rgba(154,112,24,0.3); }
-  :root:not([data-theme="dark"]) .argument-bubble.opponent { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.1); }
+  :root:not([data-theme="dark"]) .argument-bubble.opponent { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.1); color: #1a150a; }
+  :root:not([data-theme="dark"]) .waiting-link-box { background: rgba(0,0,0,0.04); color: rgba(26,21,10,0.6); }
+  :root:not([data-theme="dark"]) .debate-header { background: rgba(247,243,237,0.95); border-bottom-color: rgba(154,112,24,0.22); }
+  :root:not([data-theme="dark"]) #bottom-nav { background: rgba(247,243,237,0.97); border-top-color: rgba(154,112,24,0.22); }
+  :root:not([data-theme="dark"]) .search-input { background: rgba(0,0,0,0.04); border-color: rgba(154,112,24,0.35); color: #1a150a; }
+  :root:not([data-theme="dark"]) .search-input::placeholder { color: rgba(26,21,10,0.3); }
+  :root:not([data-theme="dark"]) .search-input:focus { background: rgba(154,112,24,0.05); }
+  :root:not([data-theme="dark"]) .today-pos { background: rgba(0,0,0,0.04); }
+  :root:not([data-theme="dark"]) .today-case-card { background: linear-gradient(135deg, rgba(154,112,24,0.08), rgba(154,112,24,0.03)); }
+  :root:not([data-theme="dark"]) .verdict-winner { background: linear-gradient(135deg, rgba(154,112,24,0.12), rgba(154,112,24,0.04)); }
+  :root:not([data-theme="dark"]) .verdict-sentence { background: linear-gradient(135deg, rgba(154,112,24,0.08), rgba(154,112,24,0.03)); }
+  :root:not([data-theme="dark"]) .home-feature-item { background: #fff; }
+  :root:not([data-theme="dark"]) .how-to-num { box-shadow: 0 0 0 4px rgba(154,112,24,0.15); }
 }
 
 /* ===== 데스크톱 · 태블릿 레이아웃 ===== */
