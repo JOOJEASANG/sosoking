@@ -8,8 +8,132 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/main.css">
   <style>
-    .admin-header{background:var(--navy-light);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
-    .admin-header .logo{font-size:15px;color:var(--gold);font-weight:700;}
+    /* ── Admin Header ── */
+    .admin-header {
+      background: linear-gradient(135deg, #0d1117 0%, #161b2e 100%);
+      border-bottom: 1px solid rgba(201,168,76,0.2);
+      padding: 0 20px;
+      height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.4);
+    }
+
+    /* ── Tab bar ── */
+    .admin-tab-bar {
+      background: var(--navy-light);
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      white-space: nowrap;
+      scrollbar-width: none;
+    }
+    .admin-tab-bar::-webkit-scrollbar { display: none; }
+    .admin-tab {
+      display: inline-block;
+      padding: 13px 15px;
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--cream-dim);
+      border: none;
+      border-bottom: 2px solid transparent;
+      background: none;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: color 0.15s, border-color 0.15s;
+      letter-spacing: -0.01em;
+    }
+    .admin-tab:hover { color: var(--cream); }
+    .admin-tab.active {
+      color: var(--gold);
+      border-bottom-color: var(--gold);
+      font-weight: 700;
+    }
+
+    /* ── Table ── */
+    .admin-table { width: 100%; border-collapse: collapse; }
+    .admin-table th {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--cream-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 10px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+      white-space: nowrap;
+    }
+    .admin-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      vertical-align: top;
+      font-size: 13px;
+      color: var(--cream);
+    }
+    .admin-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+    /* ── Badges ── */
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+    .badge-gold { background: rgba(201,168,76,0.12); color: var(--gold); border: 1px solid rgba(201,168,76,0.3); }
+    .badge-red  { background: rgba(231,76,60,0.1);   color: var(--red);  border: 1px solid rgba(231,76,60,0.25); }
+    .badge-green{ background: rgba(39,174,96,0.1);   color: #27ae60;     border: 1px solid rgba(39,174,96,0.25); }
+
+    /* ── Stat cards ── */
+    .admin-stat-card {
+      padding: 16px 18px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      transition: border-color 0.2s;
+    }
+    .admin-stat-card:hover { border-color: rgba(201,168,76,0.3); }
+    .admin-stat-label { font-size: 11px; color: var(--cream-dim); font-weight: 500; }
+    .admin-stat-value { font-size: 22px; font-weight: 700; color: var(--cream); margin-top: 5px; }
+
+    /* ── Section heading ── */
+    .admin-section-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--gold);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    /* ── Action buttons ── */
+    .admin-btn { background:none; border:1px solid var(--border); color:var(--cream-dim); padding:4px 10px; border-radius:6px; font-size:11px; cursor:pointer; transition:all 0.15s; }
+    .admin-btn:hover { border-color:var(--cream-dim); color:var(--cream); }
+    .admin-btn-danger { border-color:rgba(231,76,60,0.35); color:var(--red); }
+    .admin-btn-danger:hover { background:rgba(231,76,60,0.08); border-color:var(--red); }
+    .admin-btn-approve { border-color:rgba(39,174,96,0.35); color:#27ae60; }
+    .admin-btn-approve:hover { background:rgba(39,174,96,0.08); border-color:#27ae60; }
+    .admin-btn-gold { border-color:rgba(201,168,76,0.35); color:var(--gold); }
+    .admin-btn-gold:hover { background:rgba(201,168,76,0.08); border-color:var(--gold); }
+
+    /* ── Section box ── */
+    .admin-section-box {
+      background: rgba(255,255,255,0.015);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .admin-section-box-head {
+      padding: 12px 16px;
+      background: rgba(255,255,255,0.02);
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--cream-dim);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
   </style>
 </head>
 <body>

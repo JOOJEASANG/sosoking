@@ -24,7 +24,7 @@ export async function renderFooter() {
       <br><span style="display:block;margin-top:6px;">© 2025 소소킹 판결소 · 이 서비스는 오락 목적이며 법적 효력이 없습니다.</span>
     </div>
     <div style="margin-top:16px;">
-      <a href="/admin" style="font-size:11px;color:rgba(245,240,232,0.2);text-decoration:none;">관리자</a>
+      <a href="/admin" style="font-size:11px;color:rgba(245,240,232,0.35);text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:6px;border:1px solid rgba(245,240,232,0.1);transition:all 0.15s;" onmouseover="this.style.color='rgba(201,168,76,0.8)';this.style.borderColor='rgba(201,168,76,0.25)';" onmouseout="this.style.color='rgba(245,240,232,0.35)';this.style.borderColor='rgba(245,240,232,0.1)';">🔐 관리자</a>
     </div>
   `;
 }
