@@ -304,6 +304,11 @@ function renderCompleted(session, myRole) {
   if (!feed) return;
   if (feed.querySelector('.verdict-reveal')) return;
 
+  // 초기 로딩 스피너만 있는 상태(아직 토론 내용 없음)라면 제거
+  if (!feed.querySelector('.argument-bubble, .waiting-screen, .round-status-row')) {
+    feed.innerHTML = '';
+  }
+
   const verdict = session.verdict;
   if (!verdict) return;
 
