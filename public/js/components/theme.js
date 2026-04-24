@@ -1,22 +1,19 @@
-const THEMES = ['system', 'dark', 'light'];
-const ICONS = { system: '🌓', dark: '🌙', light: '☀️' };
-const LABELS = { system: '시스템', dark: '다크', light: '라이트' };
+const THEMES = ['light', 'dark'];
+const ICONS = { dark: '🌙', light: '☀️' };
+const LABELS = { dark: '다크', light: '라이트' };
 
 export function initTheme() {
-  applyTheme(localStorage.getItem('theme') || 'system');
-  window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
-    if ((localStorage.getItem('theme') || 'system') === 'system') applyTheme('system');
-  });
+  applyTheme(localStorage.getItem('theme') || 'light');
 }
 
 export function renderThemeToggle() {
   const btn = document.createElement('button');
   btn.id = 'theme-toggle';
   btn.setAttribute('aria-label', '테마 변경');
-  updateBtn(btn, localStorage.getItem('theme') || 'system');
+  updateBtn(btn, localStorage.getItem('theme') || 'light');
 
   btn.addEventListener('click', () => {
-    const cur = localStorage.getItem('theme') || 'system';
+    const cur = localStorage.getItem('theme') || 'light';
     const next = THEMES[(THEMES.indexOf(cur) + 1) % THEMES.length];
     localStorage.setItem('theme', next);
     applyTheme(next);

@@ -405,7 +405,7 @@ async function tabTopics(el) {
   el.innerHTML = `
     ${!hasSeedData?`<div style="margin-bottom:16px;padding:14px;background:rgba(201,168,76,0.1);border:1px solid var(--gold);border-radius:8px;font-size:13px;">
       ⚠️ 초기 사건 데이터가 없습니다.
-      <button id="seed-btn" style="margin-left:10px;background:var(--gold);color:var(--navy);border:none;padding:6px 14px;border-radius:6px;font-weight:700;cursor:pointer;">기본 사건 10개 + 카테고리 세팅</button>
+      <button id="seed-btn" style="margin-left:10px;background:var(--gold);color:#0d1117;border:none;padding:6px 14px;border-radius:6px;font-weight:700;cursor:pointer;">기본 사건 10개 + 카테고리 세팅</button>
     </div>`:''}
     ${pendingSnap.docs.length?`
       <div style="font-size:13px;font-weight:700;color:var(--gold);margin-bottom:10px;">검토 대기 (${pendingSnap.docs.length}건)</div>

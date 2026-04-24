@@ -46,7 +46,7 @@ h1, h2, h3 { font-family: var(--font-serif); line-height: 1.3; }
 }
 .btn-primary {
   background: linear-gradient(135deg, var(--gold), var(--gold-light));
-  color: var(--navy); width: 100%; font-size: 16px; padding: 17px;
+  color: #0d1117; width: 100%; font-size: 16px; padding: 17px;
   box-shadow: 0 2px 12px rgba(201,168,76,0.25);
 }
 .btn-primary:hover { filter: brightness(1.08); transform: translateY(-1px); box-shadow: 0 4px 18px rgba(201,168,76,0.35); }
@@ -419,7 +419,7 @@ h1, h2, h3 { font-family: var(--font-serif); line-height: 1.3; }
   display: flex; align-items: center; justify-content: center; gap: 8px;
   padding: 18px 28px; border-radius: var(--radius); font-size: 17px; font-weight: 900;
   background: linear-gradient(135deg, var(--gold), var(--gold-light));
-  color: var(--navy); text-decoration: none; letter-spacing: 0.01em;
+  color: #0d1117; text-decoration: none; letter-spacing: 0.01em;
   box-shadow: 0 4px 28px rgba(201,168,76,0.45); transition: all 0.15s;
   animation: pulseGlow 2.5s ease-in-out infinite;
 }
@@ -534,7 +534,7 @@ h1, h2, h3 { font-family: var(--font-serif); line-height: 1.3; }
 .debate-textarea { flex: 1; background: rgba(255,255,255,0.06); border: 1.5px solid rgba(201,168,76,0.25); border-radius: 12px; color: var(--cream); font-family: var(--font-sans); font-size: 14px; padding: 10px 14px; resize: none; outline: none; max-height: 120px; min-height: 44px; transition: border-color 0.2s; }
 .debate-textarea:focus { border-color: var(--gold); }
 .debate-textarea::placeholder { color: rgba(245,240,232,0.25); }
-.debate-send-btn { width: 44px; height: 44px; border-radius: 12px; border: none; background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: var(--navy); font-size: 18px; cursor: pointer; flex-shrink: 0; transition: all 0.2s; display: flex; align-items: center; justify-content: center; font-weight: 900; }
+.debate-send-btn { width: 44px; height: 44px; border-radius: 12px; border: none; background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: #0d1117; font-size: 18px; cursor: pointer; flex-shrink: 0; transition: all 0.2s; display: flex; align-items: center; justify-content: center; font-weight: 900; }
 .debate-send-btn:hover { filter: brightness(1.1); transform: scale(1.05); }
 .debate-send-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
 
@@ -688,7 +688,7 @@ h1, h2, h3 { font-family: var(--font-serif); line-height: 1.3; }
 .how-to-list { display: flex; flex-direction: column; gap: 0; }
 .how-to-item { display: flex; gap: 16px; align-items: flex-start; padding: 14px 0; position: relative; }
 .how-to-item:not(:last-child)::after { content: ''; position: absolute; left: 19px; top: 52px; bottom: -4px; width: 2px; background: linear-gradient(to bottom, rgba(201,168,76,0.4), transparent); }
-.how-to-num { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: var(--navy); font-size: 16px; font-weight: 900; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 0 0 4px rgba(201,168,76,0.15); }
+.how-to-num { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: #0d1117; font-size: 16px; font-weight: 900; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 0 0 4px rgba(201,168,76,0.15); }
 .how-to-body { flex: 1; padding-top: 8px; }
 .how-to-title { font-weight: 700; font-size: 15px; color: var(--cream); margin-bottom: 3px; }
 .how-to-desc { font-size: 13px; color: var(--cream-dim); line-height: 1.6; }
@@ -753,7 +753,19 @@ h1, h2, h3 { font-family: var(--font-serif); line-height: 1.3; }
 /* ===== 히어로 라이트 테마 오버라이드 (추가 보완) ===== */
 [data-theme="light"] .hero-preview-card { background: rgba(255,255,255,0.08); }
 [data-theme="light"] .court-cta-sub { color: rgba(245,240,232,0.75) !important; }
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme="dark"]) .hero-preview-card { background: rgba(255,255,255,0.08); }
-  :root:not([data-theme="dark"]) .court-cta-sub { color: rgba(245,240,232,0.75) !important; }
-}
+
+/* ===== 라이트 테마 — 누락 요소 보완 ===== */
+[data-theme="light"] .admin-table tr:hover td { background: rgba(0,0,0,0.04); }
+[data-theme="light"] .tag { background: rgba(0,0,0,0.07); color: var(--cream); }
+[data-theme="light"] .tag:hover { background: rgba(231,76,60,0.15); }
+[data-theme="light"] .audience-bar-track { background: rgba(0,0,0,0.1); }
+[data-theme="light"] .round-status-chip.waiting { background: rgba(0,0,0,0.04); }
+[data-theme="light"] .judge-option { background: #fff; }
+[data-theme="light"] .judge-card { background: #fff; }
+[data-theme="light"] .verdict-text-card { background: #fff; }
+[data-theme="light"] .share-result-card { background: #fff; }
+[data-theme="light"] .step-content { color: var(--cream); }
+[data-theme="light"] .debate-input-area { border-top-color: rgba(154,112,24,0.22); }
+[data-theme="light"] .how-to-item:not(:last-child)::after { background: linear-gradient(to bottom, rgba(154,112,24,0.4), transparent); }
+[data-theme="light"] #bottom-nav .nav-item { color: rgba(26,21,10,0.42); }
+[data-theme="light"] #bottom-nav .nav-item.active { color: var(--gold); }
