@@ -26,19 +26,28 @@ onAuthStateChanged(auth, user => { user ? renderDashboard(user) : renderLogin();
 
 function renderLogin() {
   document.getElementById('admin-content').innerHTML = `
-    <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;">
-      <div style="width:100%;max-width:360px;">
-        <div style="text-align:center;margin-bottom:32px;">
-          <div style="font-size:40px;">⚖️</div>
-          <div style="font-family:'Noto Serif KR',serif;font-size:20px;color:var(--gold);margin-top:8px;">소소킹 판결소</div>
-          <div style="font-size:13px;color:var(--cream-dim);margin-top:4px;">관리자 페이지</div>
+    <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:radial-gradient(ellipse at 50% 0%, rgba(201,168,76,0.07) 0%, transparent 55%);">
+      <div style="width:100%;max-width:380px;">
+        <div style="text-align:center;margin-bottom:36px;">
+          <div style="font-size:56px;line-height:1;filter:drop-shadow(0 0 24px rgba(201,168,76,0.35));">⚖️</div>
+          <div style="font-family:'Noto Serif KR',serif;font-size:22px;color:var(--gold);margin-top:14px;font-weight:700;letter-spacing:-0.01em;">소소킹 판결소</div>
+          <div style="font-size:12px;color:var(--cream-dim);margin-top:6px;letter-spacing:0.1em;text-transform:uppercase;">Admin Console</div>
         </div>
-        <form id="login-form">
-          <div class="form-group"><label class="form-label">이메일</label><input type="email" id="em" class="form-input" required></div>
-          <div class="form-group"><label class="form-label">비밀번호</label><input type="password" id="pw" class="form-input" required></div>
-          <button type="submit" class="btn btn-primary" id="login-btn">로그인</button>
-          <button type="button" id="reset-btn" style="width:100%;margin-top:10px;background:none;border:none;color:var(--cream-dim);font-size:13px;cursor:pointer;padding:8px;">비밀번호를 잊으셨나요?</button>
-        </form>
+        <div style="background:rgba(255,255,255,0.03);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(201,168,76,0.18);border-radius:20px;padding:32px 28px;box-shadow:0 24px 64px rgba(0,0,0,0.45),inset 0 1px 0 rgba(201,168,76,0.08);">
+          <form id="login-form">
+            <div class="form-group" style="margin-bottom:18px;">
+              <label class="form-label" style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;">이메일</label>
+              <input type="email" id="em" class="form-input" required autocomplete="email" placeholder="admin@example.com" style="font-size:15px;">
+            </div>
+            <div class="form-group" style="margin-bottom:26px;">
+              <label class="form-label" style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;">비밀번호</label>
+              <input type="password" id="pw" class="form-input" required autocomplete="current-password" placeholder="••••••••" style="font-size:15px;letter-spacing:0.1em;">
+            </div>
+            <button type="submit" class="btn btn-primary" id="login-btn" style="font-size:15px;padding:15px;border-radius:12px;">로그인</button>
+            <button type="button" id="reset-btn" style="width:100%;margin-top:12px;background:none;border:none;color:var(--cream-dim);font-size:12px;cursor:pointer;padding:8px;opacity:0.65;">비밀번호를 잊으셨나요?</button>
+          </form>
+        </div>
+        <div style="text-align:center;margin-top:20px;font-size:11px;color:rgba(245,240,232,0.2);">소소킹 판결소 · 내부 전용</div>
       </div>
     </div>`;
   document.getElementById('reset-btn').addEventListener('click', async () => {
@@ -61,23 +70,47 @@ function renderLogin() {
 
 let currentTab = 'topics';
 
+const TAB_DEFS = [
+  ['topics',    '📋 주제 관리'],
+  ['categories','🏷️ 카테고리'],
+  ['cases',     '⚖️ 사건 목록'],
+  ['reports',   '🚨 신고'],
+  ['feedback',  '💬 의견함'],
+  ['usage',     '📊 사용량'],
+  ['settings',  '⚙️ 설정'],
+  ['biz',       '🏢 사업자'],
+  ['policy',    '📜 정책'],
+  ['connection','🔌 연결'],
+];
+
 function renderDashboard() {
   document.getElementById('admin-content').innerHTML = `
     <div>
       <div class="admin-header">
-        <span class="logo">⚖️ 관리자</span>
-        <button onclick="window._logout()" style="background:none;border:none;color:var(--cream-dim);font-size:13px;cursor:pointer;">로그아웃</button>
-      </div>
-      <div style="max-width:900px;margin:0 auto;padding:20px;">
-        <div class="admin-nav" id="admin-nav">
-          ${[['topics','주제 관리'],['categories','카테고리'],['cases','사건 목록'],['reports','신고 목록'],['feedback','의견함'],['usage','사용량·비용'],['settings','설정'],['biz','사업자 정보'],['policy','정책 문서'],['connection','연결 상태']]
-            .map(([id,label])=>`<button class="admin-tab${currentTab===id?' active':''}" onclick="window._tab('${id}')">${label}</button>`).join('')}
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:22px;line-height:1;filter:drop-shadow(0 0 8px rgba(201,168,76,0.4));">⚖️</span>
+          <div>
+            <div style="font-family:'Noto Serif KR',serif;font-size:14px;font-weight:700;color:var(--gold);line-height:1.2;">소소킹 판결소</div>
+            <div style="font-size:10px;color:var(--cream-dim);letter-spacing:0.1em;text-transform:uppercase;">Admin Console</div>
+          </div>
         </div>
+        <button onclick="window._logout()" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:var(--cream-dim);font-size:12px;cursor:pointer;padding:7px 14px;border-radius:8px;transition:all 0.15s;" onmouseover="this.style.borderColor='rgba(255,255,255,0.25)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)'">로그아웃</button>
+      </div>
+      <div class="admin-tab-bar">
+        <div style="display:inline-flex;padding:0 8px;">
+          ${TAB_DEFS.map(([id,label])=>`<button class="admin-tab${currentTab===id?' active':''}" data-tab="${id}" onclick="window._tab('${id}')">${label}</button>`).join('')}
+        </div>
+      </div>
+      <div style="max-width:960px;margin:0 auto;padding:24px 20px 80px;">
         <div id="tab-content"></div>
       </div>
     </div>`;
   window._logout = async () => { await signOut(auth); };
-  window._tab = tab => { currentTab=tab; document.querySelectorAll('.admin-tab').forEach(b=>b.classList.toggle('active',b.textContent==={topics:'주제 관리',categories:'카테고리',cases:'사건 목록',reports:'신고 목록',feedback:'의견함',usage:'사용량·비용',settings:'설정',biz:'사업자 정보',policy:'정책 문서',connection:'연결 상태'}[tab])); loadTab(tab); };
+  window._tab = tab => {
+    currentTab = tab;
+    document.querySelectorAll('.admin-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    loadTab(tab);
+  };
   loadTab(currentTab);
 }
 
@@ -104,12 +137,12 @@ async function tabCases(el) {
       <td><div style="font-weight:700;font-size:13px;">${c.caseTitle||'-'}</div><div style="font-size:11px;color:var(--cream-dim);">${c.nickname||'익명'} · ${date}</div></td>
       <td style="font-size:12px;color:var(--cream-dim);max-width:180px;">${(c.caseDescription||'').substring(0,50)}...</td>
       <td><span class="badge ${c.status==='completed'?'badge-gold':'badge-red'}">${c.status||'-'}</span></td>
-      <td>
-        <button onclick="window._hide('${d.id}')" style="background:none;border:1px solid var(--border);color:var(--cream-dim);padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;">숨김</button>
-        <button onclick="window._del('${d.id}')" style="background:none;border:1px solid var(--red);color:var(--red);padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-left:4px;">삭제</button>
+      <td style="white-space:nowrap;">
+        <button onclick="window._hide('${d.id}')" class="admin-btn">숨김</button>
+        <button onclick="window._del('${d.id}')" class="admin-btn admin-btn-danger" style="margin-left:4px;">삭제</button>
       </td></tr>`;
   }).join('');
-  el.innerHTML = `<div style="overflow-x:auto;"><table class="admin-table"><thead><tr><th>사건</th><th>내용</th><th>상태</th><th>관리</th></tr></thead><tbody>${rows||'<tr><td colspan="4" style="text-align:center;padding:30px;color:var(--cream-dim);">사건 없음</td></tr>'}</tbody></table></div>`;
+  el.innerHTML = `<div class="admin-section-box"><div style="overflow-x:auto;"><table class="admin-table"><thead><tr><th>사건</th><th>내용</th><th>상태</th><th>관리</th></tr></thead><tbody>${rows||'<tr><td colspan="4" style="text-align:center;padding:30px;color:var(--cream-dim);">사건 없음</td></tr>'}</tbody></table></div></div>`;
   window._hide = async id => { await updateDoc(doc(db,'cases',id),{status:'hidden'}); toast('숨김 처리됨','success'); loadTab('cases'); };
   window._del = async id => {
     if (!confirm('⚠️ 이 사건을 영구 삭제하시겠습니까?\n사건 + 판결 결과가 모두 삭제되며 복구할 수 없습니다.')) return;
@@ -124,9 +157,9 @@ async function tabReports(el) {
   const snap = await getDocs(query(collection(db,'reports'),orderBy('createdAt','desc'),limit(50)));
   const rows = snap.docs.map(d=>{
     const r=d.data(), date=r.createdAt?.toDate?r.createdAt.toDate().toLocaleDateString('ko'):'-';
-    return `<tr><td style="font-size:12px;">${r.caseId||'-'}</td><td>${r.reason||'-'}</td><td><span class="badge ${r.status==='resolved'?'badge-gold':'badge-red'}">${r.status||'pending'}</span></td><td style="font-size:12px;color:var(--cream-dim);">${date}</td><td><button onclick="window._resolve('${d.id}')" style="background:none;border:1px solid var(--gold);color:var(--gold);padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;">처리완료</button></td></tr>`;
+    return `<tr><td style="font-size:12px;">${r.caseId||'-'}</td><td>${r.reason||'-'}</td><td><span class="badge ${r.status==='resolved'?'badge-gold':'badge-red'}">${r.status||'pending'}</span></td><td style="font-size:12px;color:var(--cream-dim);">${date}</td><td><button onclick="window._resolve('${d.id}')" class="admin-btn admin-btn-gold">처리완료</button></td></tr>`;
   }).join('');
-  el.innerHTML = `<div style="overflow-x:auto;"><table class="admin-table"><thead><tr><th>사건ID</th><th>신고사유</th><th>상태</th><th>날짜</th><th>관리</th></tr></thead><tbody>${rows||'<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--cream-dim);">신고 없음</td></tr>'}</tbody></table></div>`;
+  el.innerHTML = `<div class="admin-section-box"><div style="overflow-x:auto;"><table class="admin-table"><thead><tr><th>사건ID</th><th>신고사유</th><th>상태</th><th>날짜</th><th>관리</th></tr></thead><tbody>${rows||'<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--cream-dim);">신고 없음</td></tr>'}</tbody></table></div></div>`;
   window._resolve = async id => { await updateDoc(doc(db,'reports',id),{status:'resolved'}); toast('처리완료','success'); loadTab('reports'); };
 }
 
@@ -141,17 +174,17 @@ async function tabFeedback(el) {
       <td style="font-size:12px;color:var(--cream-dim);">${f.nickname||'익명'}</td>
       <td style="font-size:13px;max-width:360px;white-space:pre-wrap;line-height:1.6;">${(f.content||'').replace(/</g,'&lt;')}</td>
       <td style="font-size:11px;color:var(--cream-dim);">${date}</td>
-      <td><button onclick="window._delFb('${d.id}')" style="background:none;border:1px solid var(--red);color:var(--red);padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;">삭제</button></td>
+      <td><button onclick="window._delFb('${d.id}')" class="admin-btn admin-btn-danger">삭제</button></td>
     </tr>`;
   }).join('');
   el.innerHTML = `
-    <div style="margin-bottom:12px;font-size:13px;color:var(--cream-dim);">총 ${snap.docs.length}건</div>
-    <div style="overflow-x:auto;">
+    <div style="margin-bottom:14px;font-size:12px;color:var(--cream-dim);">총 <strong style="color:var(--cream);">${snap.docs.length}</strong>건</div>
+    <div class="admin-section-box"><div style="overflow-x:auto;">
       <table class="admin-table">
         <thead><tr><th>유형</th><th>닉네임</th><th>내용</th><th>날짜</th><th>관리</th></tr></thead>
         <tbody>${rows||'<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--cream-dim);">의견 없음</td></tr>'}</tbody>
       </table>
-    </div>`;
+    </div></div>`;
   window._delFb = async id => {
     if (!confirm('삭제하시겠습니까?')) return;
     await deleteDoc(doc(db,'feedback',id));
@@ -190,7 +223,7 @@ async function tabUsage(el) {
   }), {cases:0,gReq:0,gIn:0,gOut:0,fw:0,fr:0,inv:0,cost:0});
   const today = rows[0];
 
-  const card = (label, value, sub='') => `<div style="padding:14px;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:8px;"><div style="font-size:11px;color:var(--cream-dim);">${label}</div><div style="font-size:18px;font-weight:700;color:var(--cream);margin-top:4px;">${value}</div>${sub?`<div style="font-size:11px;color:var(--cream-dim);margin-top:2px;">${sub}</div>`:''}</div>`;
+  const card = (label, value, sub='') => `<div class="admin-stat-card"><div class="admin-stat-label">${label}</div><div class="admin-stat-value">${value}</div>${sub?`<div style="font-size:11px;color:var(--cream-dim);margin-top:2px;">${sub}</div>`:''}</div>`;
 
   el.innerHTML = `
     <div style="margin-bottom:16px;padding:10px 14px;background:rgba(201,168,76,0.08);border-radius:8px;font-size:12px;color:var(--gold);">오늘 · ${today.date} · 사건 ${today.cases}건 · Gemini ${today.gReq}회 호출 · 예상 $${today.cost.toFixed(4)} (₩${Math.round(today.cost*krw).toLocaleString()})</div>
@@ -424,26 +457,26 @@ async function tabTopics(el) {
       </td>
       <td style="font-size:12px;color:var(--cream-dim);max-width:160px;">${(t.plaintiffPosition||'').substring(0,40)}...</td>
       <td style="font-size:12px;">${t.playCount||0}</td>
-      <td>
-        ${isPending?`<button onclick="window._approveTopic('${d.id}')" style="background:none;border:1px solid var(--green);color:var(--green);padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px;">승인</button>`:''}
-        <button onclick="window._hideTopic('${d.id}','${isPending?'pending':'active'}')" style="background:none;border:1px solid var(--border);color:var(--cream-dim);padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;">숨김</button>
-        <button onclick="window._delTopic('${d.id}')" style="background:none;border:1px solid var(--red);color:var(--red);padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-left:4px;">삭제</button>
+      <td style="white-space:nowrap;">
+        ${isPending?`<button onclick="window._approveTopic('${d.id}')" class="admin-btn admin-btn-approve" style="margin-right:4px;">승인</button>`:''}
+        <button onclick="window._hideTopic('${d.id}','${isPending?'pending':'active'}')" class="admin-btn">숨김</button>
+        <button onclick="window._delTopic('${d.id}')" class="admin-btn admin-btn-danger" style="margin-left:4px;">삭제</button>
       </td></tr>`;
   }).join('');
 
   const hasSeedData = activeSnap.docs.some(d=>d.data().isOfficial);
 
   el.innerHTML = `
-    ${!hasSeedData?`<div style="margin-bottom:16px;padding:14px;background:rgba(201,168,76,0.1);border:1px solid var(--gold);border-radius:8px;font-size:13px;">
-      ⚠️ 초기 사건 데이터가 없습니다.
-      <button id="seed-btn" style="margin-left:10px;background:var(--gold);color:#0d1117;border:none;padding:6px 14px;border-radius:6px;font-weight:700;cursor:pointer;">기본 사건 10개 + 카테고리 세팅</button>
+    ${!hasSeedData?`<div style="margin-bottom:20px;padding:14px 18px;background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.3);border-radius:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+      <div style="font-size:13px;color:var(--cream);">⚠️ 초기 사건 데이터가 없습니다.</div>
+      <button id="seed-btn" style="background:linear-gradient(135deg,var(--gold),var(--gold-light));color:#0d1117;border:none;padding:8px 16px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap;">기본 사건 10개 + 카테고리 세팅</button>
     </div>`:''}
     ${pendingSnap.docs.length?`
-      <div style="font-size:13px;font-weight:700;color:var(--gold);margin-bottom:10px;">검토 대기 (${pendingSnap.docs.length}건)</div>
-      <div style="overflow-x:auto;margin-bottom:24px;"><table class="admin-table"><thead><tr><th>사건명</th><th>원고 주장</th><th>재판</th><th>관리</th></tr></thead><tbody>${renderRows(pendingSnap.docs,true)}</tbody></table></div>
+      <div class="admin-section-title" style="margin-top:4px;">🔍 검토 대기 <span style="background:rgba(231,76,60,0.15);color:var(--red);border-radius:20px;padding:1px 8px;font-size:11px;">${pendingSnap.docs.length}</span></div>
+      <div class="admin-section-box" style="margin-bottom:24px;"><div style="overflow-x:auto;"><table class="admin-table"><thead><tr><th>사건명</th><th>원고 주장</th><th>재판</th><th>관리</th></tr></thead><tbody>${renderRows(pendingSnap.docs,true)}</tbody></table></div></div>
     `:''}
-    <div style="font-size:13px;font-weight:700;color:var(--cream);margin-bottom:10px;">공개 사건 (${activeSnap.docs.length}건)</div>
-    <div style="overflow-x:auto;"><table class="admin-table"><thead><tr><th>사건명</th><th>원고 주장</th><th>재판</th><th>관리</th></tr></thead><tbody>${renderRows(activeSnap.docs,false)||'<tr><td colspan="4" style="text-align:center;padding:30px;color:var(--cream-dim);">없음</td></tr>'}</tbody></table></div>
+    <div class="admin-section-title">✅ 공개 사건 <span style="background:rgba(201,168,76,0.12);color:var(--gold);border-radius:20px;padding:1px 8px;font-size:11px;">${activeSnap.docs.length}</span></div>
+    <div class="admin-section-box"><div style="overflow-x:auto;"><table class="admin-table"><thead><tr><th>사건명</th><th>원고 주장</th><th>재판</th><th>관리</th></tr></thead><tbody>${renderRows(activeSnap.docs,false)||'<tr><td colspan="4" style="text-align:center;padding:30px;color:var(--cream-dim);">없음</td></tr>'}</tbody></table></div></div>
   `;
 
   document.getElementById('seed-btn')?.addEventListener('click', async () => {
@@ -479,14 +512,14 @@ async function tabCategories(el) {
     <td style="font-weight:700;">${c.name}</td>
     <td style="color:var(--cream-dim);">${c.order}</td>
     <td>
-      <button onclick="window._delCat('${c.id}')" style="background:none;border:1px solid var(--red);color:var(--red);padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;">삭제</button>
+      <button onclick="window._delCat('${c.id}')" class="admin-btn admin-btn-danger">삭제</button>
     </td></tr>`).join('');
 
   el.innerHTML = `
-    <div style="overflow-x:auto;margin-bottom:24px;">
+    <div class="admin-section-box" style="margin-bottom:24px;"><div style="overflow-x:auto;">
       <table class="admin-table"><thead><tr><th>아이콘</th><th>이름</th><th>순서</th><th>관리</th></tr></thead>
       <tbody>${rows||'<tr><td colspan="4" style="text-align:center;padding:30px;color:var(--cream-dim);">카테고리 없음</td></tr>'}</tbody></table>
-    </div>
+    </div></div>
     <form id="cat-form" style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
       <div><div class="form-label">아이콘</div><input type="text" id="cat-icon" class="form-input" style="width:70px;" placeholder="💬" maxlength="2"></div>
       <div style="flex:1;min-width:120px;"><div class="form-label">카테고리명</div><input type="text" id="cat-name" class="form-input" placeholder="예: 카톡" maxlength="10" required></div>
