@@ -24,7 +24,7 @@
   <script>
     (function() {
       var t = localStorage.getItem('theme');
-      if (t && t !== 'system') document.documentElement.setAttribute('data-theme', t);
+      document.documentElement.setAttribute('data-theme', t === 'dark' ? 'dark' : 'light');
     })();
   </script>
 
