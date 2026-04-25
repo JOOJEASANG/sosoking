@@ -54,7 +54,7 @@ export async function renderMyHistory(container) {
       const myRole = s.plaintiff?.userId === uid ? 'plaintiff' : 'defendant';
       const roleLabel = myRole === 'plaintiff' ? '⚔️ 원고' : '🛡️ 피고';
       const date = s.createdAt?.toDate?.()?.toLocaleDateString('ko') || '-';
-      const statusMap = { waiting: '대기 중', active: '진행 중', ready_for_verdict: '판결 대기', judging: '심리 중', completed: '판결 완료' };
+      const statusMap = { waiting: '대기 중', active: '진행 중', ready_for_verdict: '판결 대기', verdict_requested: '판결 요청 중', judging: '심리 중', completed: '판결 완료' };
       const statusColor = s.status === 'completed' ? 'var(--gold)' : s.status === 'active' ? '#27ae60' : 'var(--cream-dim)';
 
       let resultBadge = '';
