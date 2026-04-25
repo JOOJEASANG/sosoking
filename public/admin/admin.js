@@ -89,24 +89,24 @@ function renderDashboard() {
   document.getElementById('admin-content').innerHTML = `
     <div>
       <div class="admin-header">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <span style="font-size:22px;line-height:1;filter:drop-shadow(0 0 8px rgba(201,168,76,0.4));">⚖️</span>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span class="admin-brand-icon">⚖️</span>
           <div>
-            <div style="font-family:'Noto Serif KR',serif;font-size:14px;font-weight:700;color:var(--gold);line-height:1.2;">소소킹 생활법정</div>
-            <div style="font-size:10px;color:var(--cream-dim);letter-spacing:0.1em;text-transform:uppercase;">Admin Console</div>
+            <div class="admin-brand-title">소소킹 생활법정</div>
+            <div class="admin-brand-sub">Admin Console</div>
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:8px;">
-          <button id="admin-theme-toggle" type="button" title="테마 전환">${localStorage.getItem('theme')==='light'?'🌙':'☀️'}</button>
-          <button onclick="window._logout()" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:var(--cream-dim);font-size:12px;cursor:pointer;padding:7px 14px;border-radius:8px;transition:all 0.15s;" onmouseover="this.style.borderColor='rgba(255,255,255,0.25)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)'">로그아웃</button>
+          <button id="admin-theme-toggle" class="admin-icon-btn" type="button" title="테마 전환">${localStorage.getItem('theme')==='light'?'🌙':'☀️'}</button>
+          <button onclick="window._logout()" class="admin-logout-btn" type="button">로그아웃</button>
         </div>
       </div>
       <div class="admin-tab-bar">
-        <div style="display:inline-flex;padding:0 8px;">
+        <div class="admin-tab-inner">
           ${TAB_DEFS.map(([id,label])=>`<button class="admin-tab${currentTab===id?' active':''}" data-tab="${id}" onclick="window._tab('${id}')">${label}</button>`).join('')}
         </div>
       </div>
-      <div style="max-width:960px;margin:0 auto;padding:24px 20px 80px;">
+      <div style="max-width:960px;margin:0 auto;padding:28px 24px 80px;">
         <div id="tab-content"></div>
       </div>
     </div>`;
@@ -560,7 +560,7 @@ async function tabTopics(el) {
   const [activeSnap, pendingSnap, catSnap] = await Promise.all([
     getDocs(query(collection(db,'topics'), where('status','==','active'), orderBy('createdAt','desc'), limit(100))),
     getDocs(query(collection(db,'topics'), where('status','==','pending'), orderBy('createdAt','desc'), limit(50))),
-    getDocs(query(collection(db,'categories'), orderBy('order','asc'))),
+    getDocs(query(collection(db,'categories'), orderBy('name','asc'))),
   ]);
 
   const cats = catSnap.docs.map(d => d.data().name);
