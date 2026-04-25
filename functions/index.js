@@ -68,7 +68,16 @@ exports.createSession = onCall({ region: 'asia-northeast3' }, async (request) =>
 
   const shareToken = randomToken(8);
   const nickname = generateNickname();
-  const judgeType = JUDGE_TYPES[Math.floor(Math.random() * JUDGE_TYPES.length)];
+
+  // 직전 판사 제외하고 crypto 기반 무작위 선택
+  let lastJudge = null;
+  try {
+    const userDoc = await db.doc(`users/${userId}`).get();
+    if (userDoc.exists) lastJudge = userDoc.data().lastJudgeType || null;
+  } catch {}
+  const pool = lastJudge ? JUDGE_TYPES.filter(j => j !== lastJudge) : JUDGE_TYPES;
+  const judgeType = pool[crypto.randomInt(0, pool.length)];
+  db.doc(`users/${userId}`).set({ lastJudgeType: judgeType }, { merge: true }).catch(() => {});
 
   const sessionData = {
     topicId,

@@ -394,7 +394,8 @@ function renderCompleted(session, myRole) {
 
   card.querySelector('#share-verdict-btn')?.addEventListener('click', async () => {
     const judgeTag = judge ? `\n👨‍⚖️ 담당: ${session.judgeType} 판사` : '';
-    const text = `소소킹 생활법정 판결 결과\n📋 사건: ${topicTitle}\n⚖️ 판결: ${winnerLabel}${judgeTag}${parts.sentence ? '\n📜 처분: ' + parts.sentence : ''}\n\n재판 받아보기 → ${location.origin}${location.pathname}`;
+    const winLabel = isDraw ? '🤝 무승부' : pWin ? '⚔️ 원고 승소' : '🛡️ 피고 승소';
+    const text = `소소킹 생활법정 판결 결과\n📋 사건: ${topicTitle}\n⚖️ 판결: ${winLabel}${judgeTag}${parts.sentence ? '\n📜 처분: ' + parts.sentence : ''}\n\n재판 받아보기 → ${location.origin}${location.pathname}`;
     if (navigator.share) {
       try { await navigator.share({ title: '소소킹 생활법정', text, url: location.origin + location.pathname }); return; } catch { /* fall through */ }
     }
