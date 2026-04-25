@@ -238,13 +238,13 @@ function renderActive(session, myRole, sessionId) {
   rounds.forEach((r, i) => {
     if (i > 0) html += `<div class="round-separator">${i + 1}라운드</div>`;
     if (r.plaintiff) {
-      html += `<div>
+      html += `<div class="bubble-wrap bubble-left">
         <div class="argument-bubble plaintiff-side">${escHtml(r.plaintiff)}</div>
         <div class="argument-meta">⚔️ ${escHtml(session.plaintiff?.nickname || '원고')}</div>
       </div>`;
     }
     if (r.defendant) {
-      html += `<div>
+      html += `<div class="bubble-wrap bubble-right">
         <div class="argument-bubble defendant-side">${escHtml(r.defendant)}</div>
         <div class="argument-meta right">🛡️ ${escHtml(session.defendant?.nickname || '피고')}</div>
       </div>`;
@@ -438,13 +438,16 @@ function attachInput(sessionId, session, myRole) {
   const area = document.createElement('div');
   area.className = 'debate-input-area';
   area.id = 'debate-input-area';
+  if (myRole) area.dataset.role = myRole;
+  const roleColor = myRole === 'plaintiff' ? '#e74c3c' : myRole === 'defendant' ? '#3498db' : 'var(--gold)';
+  const roleLabel = myRole === 'plaintiff' ? '⚔️ 원고' : myRole === 'defendant' ? '🛡️ 피고' : '';
   area.innerHTML = `
-    <div style="font-size:11px;color:var(--cream-dim);margin-bottom:8px;text-align:center;" id="input-hint"></div>
+    ${roleLabel ? `<div style="font-size:11px;font-weight:700;color:${roleColor};margin-bottom:6px;${myRole==='defendant'?'text-align:right;':''}">${roleLabel}</div>` : ''}
     <div class="debate-input-row">
       <textarea class="debate-textarea" id="arg-input" placeholder="주장을 입력하세요... (최대 200자)" maxlength="200" rows="1"></textarea>
       <button class="debate-send-btn" id="send-btn">↑</button>
     </div>
-    <div style="text-align:right;font-size:11px;color:var(--cream-dim);margin-top:4px;"><span id="char-count">0</span>/200</div>
+    <div style="font-size:11px;color:var(--cream-dim);margin-top:4px;${myRole==='defendant'?'text-align:left;':'text-align:right;'}"><span id="char-count">0</span>/200 · <span id="input-hint"></span></div>
   `;
   document.body.appendChild(area);
 
