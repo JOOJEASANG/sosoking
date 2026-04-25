@@ -1,3 +1,5 @@
+import { toggleTheme, getTheme } from './theme.js';
+
 export function renderNav() {
   document.getElementById('bottom-nav')?.remove();
 
@@ -6,6 +8,8 @@ export function renderNav() {
   const isTopics = hash.startsWith('#/topics') || hash.startsWith('#/topic/');
   const isSubmit = hash === '#/submit-topic';
   const isMy = hash === '#/my-history';
+  const isDark = getTheme() !== 'light';
+
   const nav = document.createElement('nav');
   nav.id = 'bottom-nav';
   nav.innerHTML = `
@@ -25,6 +29,15 @@ export function renderNav() {
       <span class="nav-icon">📋</span>
       <span class="nav-label">내 기록</span>
     </a>
+    <button class="nav-item nav-theme-btn" id="nav-theme-toggle" type="button">
+      <span class="nav-icon">${isDark ? '☀️' : '🌙'}</span>
+      <span class="nav-label">${isDark ? '라이트' : '다크'}</span>
+    </button>
   `;
   document.body.appendChild(nav);
+
+  document.getElementById('nav-theme-toggle').addEventListener('click', () => {
+    toggleTheme();
+    renderNav();
+  });
 }
