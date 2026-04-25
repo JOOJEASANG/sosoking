@@ -219,6 +219,11 @@ exports.submitArgument = onCall({ region: 'asia-northeast3' }, async (request) =
   if (!rounds[round]) rounds[round] = {};
   if (rounds[round][role]) throw new Error('이미 이번 라운드에 제출했습니다');
 
+  // 순서 강제: 원고 먼저 → 피고 반박
+  if (role === 'defendant' && !rounds[round].plaintiff) {
+    throw new Error('원고가 먼저 주장을 제출한 뒤에 반박할 수 있습니다');
+  }
+
   rounds[round][role] = argument.trim();
 
   const bothSubmitted = !!(rounds[round].plaintiff && rounds[round].defendant);

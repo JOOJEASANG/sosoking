@@ -138,8 +138,10 @@ function myTurnText(session, myRole) {
   if (!myRole) return '';
   const round = session.currentRound;
   const rounds = session.rounds || [];
-  const submitted = rounds[round]?.[myRole];
-  return submitted ? '상대방 발언 대기 중' : '내 차례';
+  const cur = rounds[round] || {};
+  if (cur[myRole]) return '상대방 차례';
+  if (myRole === 'defendant' && !cur.plaintiff) return '원고 차례';
+  return '내 차례';
 }
 
 function renderWaiting(session, sessionId) {
@@ -223,14 +225,16 @@ function renderActive(session, myRole, sessionId) {
     const curData = rounds[curRound] || {};
     const pSubmitted = !!curData.plaintiff;
     const dSubmitted = !!curData.defendant;
+    const pState = pSubmitted ? '✓ 주장 완료' : '✏️ 1️⃣ 주장 작성 중...';
+    const dState = dSubmitted ? '✓ 반박 완료' : pSubmitted ? '✏️ 2️⃣ 반박 작성 중...' : '⏳ 원고 주장 대기';
     html += `<div class="round-status-row">
       <div class="round-status-chip ${pSubmitted ? 'submitted' : 'waiting'}">
-        <div class="chip-role" style="color:#e74c3c;">⚔️ 원고</div>
-        <div class="chip-state">${pSubmitted ? '✓ 주장 완료' : '✏️ 작성 중...'}</div>
+        <div class="chip-role" style="color:#e74c3c;">⚔️ 원고 (먼저)</div>
+        <div class="chip-state">${pState}</div>
       </div>
-      <div class="round-status-chip ${dSubmitted ? 'submitted' : 'waiting'}">
-        <div class="chip-role" style="color:#3498db;">🛡️ 피고</div>
-        <div class="chip-state">${dSubmitted ? '✓ 주장 완료' : '✏️ 작성 중...'}</div>
+      <div class="round-status-chip ${dSubmitted ? 'submitted' : pSubmitted ? 'waiting' : ''}" ${!pSubmitted && !dSubmitted ? 'style="opacity:0.5;"' : ''}>
+        <div class="chip-role" style="color:#3498db;">🛡️ 피고 (반박)</div>
+        <div class="chip-state">${dState}</div>
       </div>
     </div>`;
   }
@@ -475,19 +479,35 @@ function updateInput(session, myRole) {
 
   const round = session.currentRound;
   const rounds = session.rounds || [];
-  const alreadySubmitted = rounds[round]?.[myRole];
-  const isMyTurn = !alreadySubmitted;
+  const cur = rounds[round] || {};
+  const myDone = !!cur[myRole];
   const maxReached = session.status === 'ready_for_verdict';
+
+  // 순서: 원고 먼저 주장 → 피고 반박
+  let isMyTurn = false;
+  let waitMsg = '';
+  if (myRole === 'plaintiff') {
+    if (myDone) waitMsg = '🛡️ 피고의 반박을 기다리는 중...';
+    else isMyTurn = true;
+  } else if (myRole === 'defendant') {
+    if (!cur.plaintiff) waitMsg = '⚔️ 원고가 먼저 주장 중입니다...';
+    else if (!myDone) isMyTurn = true;
+    else waitMsg = '⚔️ 원고의 다음 주장을 기다리는 중...';
+  }
 
   textarea.disabled = !isMyTurn || maxReached;
   btn.disabled = !isMyTurn || maxReached;
+  textarea.placeholder = isMyTurn
+    ? (myRole === 'plaintiff' ? '먼저 주장을 펼치세요... (최대 200자)' : '원고 주장에 반박하세요... (최대 200자)')
+    : '대기 중...';
 
   if (maxReached) {
     hint.textContent = '모든 라운드 완료 · 위에서 판결 요청 가능';
   } else if (!isMyTurn) {
-    hint.textContent = '상대방 발언을 기다리는 중...';
+    hint.textContent = waitMsg;
   } else {
-    hint.textContent = `${round + 1}라운드 · 내 차례 (${myRole === 'plaintiff' ? '원고' : '피고'})`;
+    const turnLabel = myRole === 'plaintiff' ? '원고가 먼저 주장' : '피고 반박';
+    hint.textContent = `${round + 1}라운드 · ${turnLabel}`;
   }
 }
 
