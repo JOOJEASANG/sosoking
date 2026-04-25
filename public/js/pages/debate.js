@@ -55,6 +55,7 @@ export async function renderDebate(container, sessionId, shareToken) {
   const unsub = onSnapshot(doc(db, 'debate_sessions', sessionId), (snap) => {
     if (!snap.exists()) {
       showToast('세션을 찾을 수 없습니다', 'error');
+      clearActiveSession(sessionId);
       setTimeout(() => { location.hash = '#/'; }, 1500);
       return;
     }
@@ -68,6 +69,12 @@ export async function renderDebate(container, sessionId, shareToken) {
 
     if (session.status === lastRenderedStatus && session.status !== 'active' && session.status !== 'ready_for_verdict' && session.status !== 'verdict_requested') return;
     lastRenderedStatus = session.status;
+
+    if (['completed', 'cancelled'].includes(session.status)) {
+      clearActiveSession(sessionId);
+    } else if (myRole) {
+      saveActiveSession(sessionId, session.topicTitle, myRole);
+    }
 
     updateHeader(session, myRole);
     updateTopicBar(session, myRole);
@@ -85,6 +92,9 @@ export async function renderDebate(container, sessionId, shareToken) {
     } else if (session.status === 'completed') {
       renderCompleted(session, myRole);
       removeInputArea();
+    } else if (session.status === 'cancelled') {
+      renderCancelled(session, myRole);
+      removeInputArea();
     }
   }, (err) => {
     console.error('Firestore listener error:', err);
@@ -92,6 +102,19 @@ export async function renderDebate(container, sessionId, shareToken) {
   });
 
   window._pageCleanup = () => unsub();
+}
+
+function saveActiveSession(sessionId, topicTitle, role) {
+  try {
+    localStorage.setItem('sosoking_active_session', JSON.stringify({ sessionId, topicTitle, role, savedAt: Date.now() }));
+  } catch {}
+}
+
+function clearActiveSession(sessionId) {
+  try {
+    const stored = JSON.parse(localStorage.getItem('sosoking_active_session') || 'null');
+    if (!stored || stored.sessionId === sessionId) localStorage.removeItem('sosoking_active_session');
+  } catch {}
 }
 
 function updateTopicBar(session, myRole) {
@@ -178,6 +201,8 @@ function renderWaiting(session, sessionId) {
       <p style="margin-top:24px;font-size:13px;color:var(--cream-dim);line-height:1.7;">
         친구가 링크를 누르는 순간 재판이 자동으로 시작됩니다
       </p>
+
+      <button id="cancel-session-btn" class="btn btn-ghost" style="margin-top:16px;color:var(--red);border-color:rgba(231,76,60,0.3);">✕ 재판 취소하기</button>
     </div>
   `;
 
@@ -201,6 +226,19 @@ function renderWaiting(session, sessionId) {
   };
   document.getElementById('copy-link-btn')?.addEventListener('click', copyFn);
   document.getElementById('share-link')?.addEventListener('click', copyFn);
+
+  document.getElementById('cancel-session-btn')?.addEventListener('click', async () => {
+    if (!confirm('재판을 취소하시겠습니까?')) return;
+    const b = document.getElementById('cancel-session-btn');
+    if (b) { b.disabled = true; b.textContent = '취소 중...'; }
+    try {
+      const cancelSession = httpsCallable(functions, 'cancelSession');
+      await cancelSession({ sessionId });
+    } catch (err) {
+      showToast(err.message || '오류 발생', 'error');
+      if (b) { b.disabled = false; b.textContent = '✕ 재판 취소하기'; }
+    }
+  });
 }
 
 function renderActive(session, myRole, sessionId) {
@@ -352,6 +390,40 @@ function renderActive(session, myRole, sessionId) {
       });
     }
   }
+
+  // 세션 종료 버튼 (진행 중 상태에서)
+  if (!feed.querySelector('#cancel-active-wrap') && session.status !== 'judging') {
+    const cancelWrap = document.createElement('div');
+    cancelWrap.id = 'cancel-active-wrap';
+    cancelWrap.style.cssText = 'padding:4px 0 20px;text-align:center;';
+    cancelWrap.innerHTML = `<button id="cancel-active-btn" class="btn btn-ghost" style="font-size:12px;color:var(--red);border-color:rgba(231,76,60,0.25);padding:8px 16px;">✕ 재판 종료하기</button>`;
+    feed.appendChild(cancelWrap);
+    document.getElementById('cancel-active-btn')?.addEventListener('click', async () => {
+      if (!confirm('재판을 종료하시겠습니까? 취소하면 기록에 남지 않습니다.')) return;
+      const b = document.getElementById('cancel-active-btn');
+      if (b) { b.disabled = true; b.textContent = '종료 중...'; }
+      try {
+        const cancelSession = httpsCallable(functions, 'cancelSession');
+        await cancelSession({ sessionId });
+      } catch (err) {
+        showToast(err.message || '오류 발생', 'error');
+        if (b) { b.disabled = false; b.textContent = '✕ 재판 종료하기'; }
+      }
+    });
+  }
+}
+
+function renderCancelled(session, myRole) {
+  const feed = document.getElementById('debate-feed');
+  if (!feed) return;
+  feed.innerHTML = `
+    <div style="text-align:center;padding:60px 20px;">
+      <div style="font-size:48px;margin-bottom:16px;">🚫</div>
+      <div style="font-family:var(--font-serif);font-size:20px;font-weight:700;color:var(--cream);margin-bottom:8px;">재판이 종료되었습니다</div>
+      <p style="font-size:14px;color:var(--cream-dim);margin-bottom:28px;">이 재판 세션은 종료 처리되었습니다</p>
+      <a href="#/topics" class="btn btn-primary" style="max-width:200px;display:flex;margin:0 auto;">새 사건 찾기</a>
+    </div>
+  `;
 }
 
 function renderJudging(session) {
