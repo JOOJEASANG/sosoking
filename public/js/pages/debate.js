@@ -156,6 +156,10 @@ function updateHeader(session, myRole) {
     else if (i === session.currentRound && session.status === 'active') d.classList.add('active');
   });
 
+  if (session.status === 'active' && session.aiGenerating) {
+    statusEl.textContent = `${session.currentRound + 1}라운드 · 🤖 소소봇 생각 중...`;
+    return;
+  }
   const statusMap = {
     waiting: '상대방 대기 중...',
     active: myRole ? `${session.currentRound + 1}라운드 · ${myTurnText(session, myRole)}` : `${session.currentRound + 1}라운드 진행 중`,
@@ -267,20 +271,25 @@ function renderActive(session, myRole, sessionId) {
       </div>`;
   }
 
+  const isAiMode = session.mode === 'ai';
+  const aiRole = isAiMode ? (session.plaintiff?.userId === 'AI' ? 'plaintiff' : 'defendant') : null;
+
   if (session.status !== 'ready_for_verdict') {
     const curRound = session.currentRound || 0;
     const curData = rounds[curRound] || {};
     const pSubmitted = !!curData.plaintiff;
     const dSubmitted = !!curData.defendant;
-    const pState = pSubmitted ? '✓ 주장 완료' : '✏️ 1️⃣ 주장 작성 중...';
-    const dState = dSubmitted ? '✓ 반박 완료' : pSubmitted ? '✏️ 2️⃣ 반박 작성 중...' : '⏳ 원고 주장 대기';
+    const pIsAi = isAiMode && aiRole === 'plaintiff';
+    const dIsAi = isAiMode && aiRole === 'defendant';
+    const pState = pSubmitted ? '✓ 주장 완료' : pIsAi && session.aiGenerating ? '🤖 소소봇 생각 중...' : '✏️ 1️⃣ 주장 작성 중...';
+    const dState = dSubmitted ? '✓ 반박 완료' : dIsAi && session.aiGenerating ? '🤖 소소봇 생각 중...' : pSubmitted ? '✏️ 2️⃣ 반박 작성 중...' : '⏳ 원고 주장 대기';
     html += `<div class="round-status-row">
       <div class="round-status-chip ${pSubmitted ? 'submitted' : 'waiting'}">
-        <div class="chip-role" style="color:#e74c3c;">⚔️ 원고 (먼저)</div>
+        <div class="chip-role" style="color:#e74c3c;">⚔️ 원고${pIsAi ? ' 🤖' : ' (먼저)'}</div>
         <div class="chip-state">${pState}</div>
       </div>
       <div class="round-status-chip ${dSubmitted ? 'submitted' : pSubmitted ? 'waiting' : ''}" ${!pSubmitted && !dSubmitted ? 'style="opacity:0.5;"' : ''}>
-        <div class="chip-role" style="color:#3498db;">🛡️ 피고 (반박)</div>
+        <div class="chip-role" style="color:#3498db;">🛡️ 피고${dIsAi ? ' 🤖' : ' (반박)'}</div>
         <div class="chip-state">${dState}</div>
       </div>
     </div>`;
@@ -302,10 +311,23 @@ function renderActive(session, myRole, sessionId) {
     }
   });
 
-  if (!rounds.length) {
+  if (!rounds.length && !session.aiGenerating) {
     html += `<div style="text-align:center;padding:32px 0 16px;color:var(--cream-dim);font-size:14px;">
       <div style="font-size:32px;margin-bottom:12px;">⚖️</div>
       재판이 시작되었습니다!<br>먼저 주장을 입력하세요.
+    </div>`;
+  }
+
+  if (session.aiGenerating && aiRole) {
+    const wrapClass = aiRole === 'plaintiff' ? 'bubble-wrap bubble-left' : 'bubble-wrap bubble-right';
+    const bubbleClass = aiRole === 'plaintiff' ? 'plaintiff-side' : 'defendant-side';
+    const metaClass = aiRole === 'defendant' ? 'right' : '';
+    const roleIcon = aiRole === 'plaintiff' ? '⚔️' : '🛡️';
+    html += `<div class="${wrapClass}">
+      <div class="argument-bubble ${bubbleClass}" style="opacity:0.75;min-width:80px;">
+        <div class="loading-dots" style="display:inline-flex;padding:0;"><span></span><span></span><span></span></div>
+      </div>
+      <div class="argument-meta ${metaClass}">${roleIcon} 🤖 소소봇</div>
     </div>`;
   }
 
@@ -620,6 +642,13 @@ function updateInput(session, myRole) {
   const btn = document.getElementById('send-btn');
   const textarea = document.getElementById('arg-input');
   if (!hint || !btn || !textarea) return;
+
+  if (session.aiGenerating) {
+    textarea.disabled = true;
+    btn.disabled = true;
+    hint.textContent = '🤖 소소봇이 생각 중입니다...';
+    return;
+  }
 
   const round = session.currentRound;
   const rounds = session.rounds || [];

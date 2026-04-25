@@ -29,11 +29,16 @@ export async function renderTopicDetail(container, topicId) {
     return;
   }
 
-  // 랜덤 대기자 확인
+  // 랜덤 대기자 확인 + AI 모드 활성화 여부
   let hasRandomOpponent = false;
+  let aiModeEnabled = false;
   try {
-    const queueSnap = await getDoc(doc(db, 'random_queue', topicId));
+    const [queueSnap, settingsSnap] = await Promise.all([
+      getDoc(doc(db, 'random_queue', topicId)),
+      getDoc(doc(db, 'site_settings', 'config')),
+    ]);
     hasRandomOpponent = queueSnap.exists() && queueSnap.data().userId !== auth.currentUser?.uid;
+    aiModeEnabled = settingsSnap.exists() ? (settingsSnap.data().aiModeEnabled ?? false) : false;
   } catch {}
 
   const inner = container.querySelector('.container');
@@ -82,6 +87,11 @@ export async function renderTopicDetail(container, topicId) {
           <div class="mode-btn-label">모르는 사람과</div>
           <div class="mode-btn-desc">${hasRandomOpponent ? '대기자 있음 · 자동 매칭' : '대기자 없음 · 먼저 기다리기'}</div>
         </button>
+        ${aiModeEnabled ? `<button class="mode-btn" data-mode="ai">
+          <span class="mode-btn-icon">🤖</span>
+          <div class="mode-btn-label">AI와 대결</div>
+          <div class="mode-btn-desc">소소봇 · 혼자서 바로 시작</div>
+        </button>` : ''}
       </div>
     </div>
 
@@ -165,6 +175,10 @@ export async function renderTopicDetail(container, topicId) {
     try {
       if (selectedMode === 'random') {
         await handleRandomMatch(topicId, topic, selectedSide, selectedRounds);
+      } else if (selectedMode === 'ai') {
+        const createSession = httpsCallable(functions, 'createSession');
+        const res = await createSession({ topicId, side: selectedSide, mode: 'ai', maxRounds: selectedRounds });
+        location.hash = `#/debate/${res.data.sessionId}`;
       } else {
         const createSession = httpsCallable(functions, 'createSession');
         const res = await createSession({ topicId, side: selectedSide, mode: 'friend', maxRounds: selectedRounds });

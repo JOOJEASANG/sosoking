@@ -433,6 +433,17 @@ async function tabSettings(el) {
     <form id="sf">
       <div class="form-group"><label class="form-label">일일 주제 등록 한도 (유저당)</label><input type="number" id="dl" class="form-input" value="${d.dailyLimit||3}" min="1" max="20"></div>
       <div class="form-group"><label class="form-label">재등록 쿨다운 (초)</label><input type="number" id="cd" class="form-input" value="${d.cooldownSec||45}" min="0" max="300"></div>
+      <fieldset style="border:1px solid var(--border);border-radius:8px;padding:14px 14px 8px;margin:20px 0;">
+        <legend style="padding:0 8px;color:var(--gold);font-size:13px;">🤖 AI 상대 기능</legend>
+        <div class="form-group" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <label class="form-label" style="margin:0;">AI와 대결 (소소봇)</label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <input type="checkbox" id="ai-mode-enabled" ${d.aiModeEnabled ? 'checked' : ''} style="width:18px;height:18px;accent-color:var(--gold);">
+            <span style="font-size:13px;color:var(--cream);">활성화</span>
+          </label>
+        </div>
+        <div style="font-size:12px;color:var(--cream-dim);">활성화 시 주제 상세 페이지에 "AI와 대결" 버튼이 표시됩니다. 1인용 · 즉시 시작 · 하루 5회 제한</div>
+      </fieldset>
       <fieldset style="border:1px solid var(--border);border-radius:8px;padding:14px 14px 4px;margin:20px 0;">
         <legend style="padding:0 8px;color:var(--gold);font-size:13px;">💰 비용 단가 (사용량·비용 계산용)</legend>
         <div class="form-group"><label class="form-label">Gemini 입력 단가 ($/1M 토큰)</label><input type="number" step="0.001" id="gip" class="form-input" value="${d.geminiInputPricePerM ?? 0.15}"></div>
@@ -453,6 +464,7 @@ async function tabSettings(el) {
       ...( snap.exists()?snap.data():{} ),
       dailyLimit: parseInt(document.getElementById('dl').value),
       cooldownSec: parseInt(document.getElementById('cd').value),
+      aiModeEnabled: document.getElementById('ai-mode-enabled').checked,
       geminiInputPricePerM: parseFloat(document.getElementById('gip').value),
       geminiOutputPricePerM: parseFloat(document.getElementById('gop').value),
       krwUsdRate: parseFloat(document.getElementById('krw').value),

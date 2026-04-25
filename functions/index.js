@@ -31,6 +31,39 @@ const JUDGE_PERSONAS = {
   '드립형': `당신은 드립형 판사입니다. 판결문은 완전히 진지한 법원 문체로 시작하지만 중간에 절묘한 타이밍에 드립을 날리세요. 구성: [매우 진지한 서두 → 논리적 분석 → 갑자기 웃긴 드립 → 다시 진지하게 결론]. 생활형처분이 핵심입니다. 형식은 완전히 공식적이지만 내용이 황당해야 합니다(예: "피고는 향후 30일간 모든 카톡 답장을 3초 이내에 완료할 것. 단, 화장실에서는 5초를 허용한다."). 판결문 맨 마지막 줄에 짧은 드립성 멘트로 마무리하세요(예: "(법봉 탕)"). 독자가 읽다가 빵 터져야 합니다.`,
 };
 
+const AI_USER_ID = 'AI';
+const AI_NICKNAME = '소소봇';
+
+async function generateAiArgument(genAI, { topicTitle, aiRole, aiPosition, opponentPosition, rounds, targetRound }) {
+  const model = genAI.getGenerativeModel({
+    model: 'gemini-2.5-flash',
+    generationConfig: { thinkingConfig: { thinkingBudget: 0 } },
+  });
+  const roleLabel = aiRole === 'plaintiff' ? '원고' : '피고';
+  const oppLabel = aiRole === 'plaintiff' ? '피고' : '원고';
+  const historyLines = [];
+  for (let i = 0; i < targetRound; i++) {
+    const r = rounds[i] || {};
+    if (r.plaintiff) historyLines.push(`[${i+1}라운드 원고] ${r.plaintiff}`);
+    if (r.defendant) historyLines.push(`[${i+1}라운드 피고] ${r.defendant}`);
+  }
+  const curRound = rounds[targetRound] || {};
+  const opponentArg = aiRole === 'defendant' ? curRound.plaintiff : null;
+  const prompt = `당신은 "${topicTitle}" 사건에서 ${roleLabel} 역할을 맡았습니다.
+내 입장: ${aiPosition}
+상대(${oppLabel}) 입장: ${opponentPosition}
+${historyLines.length ? '\n이전 주장:\n' + historyLines.join('\n') : ''}
+${opponentArg ? '\n이번 상대 주장: ' + opponentArg : ''}
+
+${targetRound + 1}라운드에서 ${roleLabel}로 주장하세요.
+- 2~3문장, 70자 이내
+- 한국어 존댓말, 논리 중심
+- 상대 주장이 있으면 핵심 반박 포함
+주장 내용만 출력하세요.`;
+  const result = await model.generateContent(prompt);
+  return result.response.text().trim().slice(0, 200);
+}
+
 const NICK_ADJ = ['억울한','분노한','황당한','지친','당당한','기막힌','논리적인','감성적인','당황한','뻔뻔한'];
 const NICK_NOUN = ['직장인','집사','아무개','라면러버','과자지킴이','냉장고파수꾼','에어컨전사','이불킥전문기','치킨수호자','더치페이거부자'];
 function generateNickname() {
@@ -53,15 +86,22 @@ async function checkRateLimit(userId, action, maxCount, windowSeconds) {
 }
 
 // 새 토론 세션 생성
-exports.createSession = onCall({ region: 'asia-northeast3' }, async (request) => {
+exports.createSession = onCall({ region: 'asia-northeast3', secrets: [geminiKey], timeoutSeconds: 60 }, async (request) => {
   const { topicId, side, mode, maxRounds: requestedRounds } = request.data;
   const userId = request.auth?.uid;
   if (!userId) throw new Error('인증 필요');
   if (!topicId || !side || !mode) throw new Error('필수 항목 누락');
   if (!['plaintiff', 'defendant'].includes(side)) throw new Error('올바르지 않은 입장');
-  if (!['friend', 'random'].includes(mode)) throw new Error('올바르지 않은 대결 방식');
+  if (!['friend', 'random', 'ai'].includes(mode)) throw new Error('올바르지 않은 대결 방식');
 
-  await checkRateLimit(userId, 'dailySession', 2, 86400);
+  if (mode === 'ai') {
+    const settingsSnap = await db.doc('site_settings/config').get();
+    const aiEnabled = settingsSnap.exists ? (settingsSnap.data().aiModeEnabled ?? false) : false;
+    if (!aiEnabled) throw new Error('AI 상대 기능이 현재 비활성화되어 있습니다');
+    await checkRateLimit(userId, 'dailyAiSession', 5, 86400);
+  } else {
+    await checkRateLimit(userId, 'dailySession', 2, 86400);
+  }
 
   const maxRounds = [3, 5, 7].includes(requestedRounds) ? requestedRounds : 5;
 
@@ -83,6 +123,15 @@ exports.createSession = onCall({ region: 'asia-northeast3' }, async (request) =>
   const judgeType = pool[crypto.randomInt(0, pool.length)];
   db.doc(`users/${userId}`).set({ lastJudgeType: judgeType }, { merge: true }).catch(() => {});
 
+  let plaintiffData, defendantData;
+  if (mode === 'ai') {
+    plaintiffData = side === 'plaintiff' ? { userId, nickname } : { userId: AI_USER_ID, nickname: AI_NICKNAME };
+    defendantData = side === 'defendant' ? { userId, nickname } : { userId: AI_USER_ID, nickname: AI_NICKNAME };
+  } else {
+    plaintiffData = side === 'plaintiff' ? { userId, nickname } : null;
+    defendantData = side === 'defendant' ? { userId, nickname } : null;
+  }
+
   const sessionData = {
     topicId,
     topicTitle: topic.title,
@@ -90,21 +139,41 @@ exports.createSession = onCall({ region: 'asia-northeast3' }, async (request) =>
     plaintiffPosition: topic.plaintiffPosition,
     defendantPosition: topic.defendantPosition,
     category: topic.category || '',
-    plaintiff: side === 'plaintiff' ? { userId, nickname } : null,
-    defendant: side === 'defendant' ? { userId, nickname } : null,
-    status: 'waiting',
+    plaintiff: plaintiffData,
+    defendant: defendantData,
+    status: mode === 'ai' ? 'active' : 'waiting',
     currentRound: 0,
     maxRounds,
     rounds: [],
     verdict: null,
     mode,
-    shareToken,
+    shareToken: mode === 'ai' ? null : shareToken,
     judgeType,
+    aiGenerating: false,
     createdAt: FieldValue.serverTimestamp(),
     completedAt: null,
   };
 
   const sessionRef = await db.collection('debate_sessions').add(sessionData);
+
+  // AI mode: human is defendant → AI (plaintiff) generates first argument
+  if (mode === 'ai' && side === 'defendant') {
+    await sessionRef.update({ aiGenerating: true });
+    try {
+      const genAI = new GoogleGenerativeAI(geminiKey.value().trim());
+      const aiArg = await generateAiArgument(genAI, {
+        topicTitle: topic.title,
+        aiRole: 'plaintiff',
+        aiPosition: topic.plaintiffPosition,
+        opponentPosition: topic.defendantPosition,
+        rounds: [],
+        targetRound: 0,
+      });
+      await sessionRef.update({ rounds: [{ plaintiff: aiArg }], aiGenerating: false });
+    } catch {
+      await sessionRef.update({ aiGenerating: false });
+    }
+  }
 
   if (mode === 'random') {
     await db.doc(`random_queue/${topicId}`).set({
@@ -117,7 +186,7 @@ exports.createSession = onCall({ region: 'asia-northeast3' }, async (request) =>
 
   await db.doc(`topics/${topicId}`).update({ playCount: FieldValue.increment(1) }).catch(() => {});
 
-  return { sessionId: sessionRef.id, shareToken };
+  return { sessionId: sessionRef.id, shareToken: mode !== 'ai' ? shareToken : null };
 });
 
 // 세션 참가 (친구 링크 or 랜덤) — 트랜잭션으로 동시 참가 방지
@@ -191,7 +260,7 @@ exports.joinSession = onCall({ region: 'asia-northeast3' }, async (request) => {
 });
 
 // 라운드 주장 제출
-exports.submitArgument = onCall({ region: 'asia-northeast3' }, async (request) => {
+exports.submitArgument = onCall({ region: 'asia-northeast3', secrets: [geminiKey], timeoutSeconds: 60 }, async (request) => {
   const { sessionId, argument } = request.data;
   const userId = request.auth?.uid;
   if (!userId) throw new Error('인증 필요');
@@ -242,6 +311,52 @@ exports.submitArgument = onCall({ region: 'asia-northeast3' }, async (request) =
     ...(maxReached ? { status: 'ready_for_verdict' } : {}),
   });
 
+  // AI mode: auto-generate AI response after human submits
+  if (session.mode === 'ai') {
+    const aiRole = session.plaintiff?.userId === AI_USER_ID ? 'plaintiff' : 'defendant';
+    if (role !== aiRole) {
+      let aiTargetRound = -1;
+      if (aiRole === 'defendant' && !rounds[round].defendant) {
+        // Human submitted plaintiff[round], AI responds as defendant
+        aiTargetRound = round;
+      } else if (aiRole === 'plaintiff' && bothSubmitted && !maxReached) {
+        // Human submitted defendant[round], AI opens next round as plaintiff
+        aiTargetRound = nextRound;
+      }
+      if (aiTargetRound >= 0) {
+        await sessionRef.update({ aiGenerating: true });
+        try {
+          const genAI = new GoogleGenerativeAI(geminiKey.value().trim());
+          const aiPosition = aiRole === 'plaintiff' ? session.plaintiffPosition : session.defendantPosition;
+          const oppPosition = aiRole === 'plaintiff' ? session.defendantPosition : session.plaintiffPosition;
+          const roundsForAi = [...rounds];
+          if (!roundsForAi[aiTargetRound]) roundsForAi[aiTargetRound] = {};
+          const aiArg = await generateAiArgument(genAI, {
+            topicTitle: session.topicTitle,
+            aiRole,
+            aiPosition,
+            opponentPosition: oppPosition,
+            rounds: roundsForAi,
+            targetRound: aiTargetRound,
+          });
+          const updatedRounds = [...roundsForAi];
+          updatedRounds[aiTargetRound] = { ...updatedRounds[aiTargetRound], [aiRole]: aiArg };
+          const aiBothDone = !!(updatedRounds[aiTargetRound].plaintiff && updatedRounds[aiTargetRound].defendant);
+          const aiNextRound = aiBothDone ? aiTargetRound + 1 : aiTargetRound;
+          const aiMaxReached = aiBothDone && aiNextRound >= session.maxRounds;
+          await sessionRef.update({
+            rounds: updatedRounds,
+            currentRound: aiNextRound,
+            aiGenerating: false,
+            ...(aiMaxReached ? { status: 'ready_for_verdict' } : {}),
+          });
+        } catch {
+          await sessionRef.update({ aiGenerating: false });
+        }
+      }
+    }
+  }
+
   return { ok: true, bothSubmitted, maxReached };
 });
 
@@ -264,10 +379,13 @@ exports.requestVerdict = onCall({ region: 'asia-northeast3', secrets: [geminiKey
   const completeRounds = (session.rounds || []).filter(r => r.plaintiff && r.defendant);
   if (!completeRounds.length) throw new Error('한 라운드 이상 완료 후 판결을 요청할 수 있습니다');
 
-  // active 상태: 상대방 동의 필요
+  // active 상태: 상대방 동의 필요 (AI 모드는 바로 판결 진행)
   if (session.status === 'active') {
-    await sessionRef.update({ status: 'verdict_requested', verdictRequestedBy: userId });
-    return { ok: true, waiting: true };
+    if (session.mode !== 'ai') {
+      await sessionRef.update({ status: 'verdict_requested', verdictRequestedBy: userId });
+      return { ok: true, waiting: true };
+    }
+    // AI 모드: fall through to judging
   }
 
   // verdict_requested: 요청자가 다시 누른 경우 차단
