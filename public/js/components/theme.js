@@ -1,8 +1,16 @@
 export function initTheme() {
-  document.documentElement.setAttribute('data-theme', 'dark');
-  localStorage.setItem('theme', 'dark');
+  const saved = localStorage.getItem('theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
 }
 
-export function renderThemeToggle() {
-  // 다크모드 전용 — 토글 없음
+export function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'dark';
+  const next = current === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('theme', next);
+  return next;
+}
+
+export function getTheme() {
+  return document.documentElement.getAttribute('data-theme') || 'dark';
 }
