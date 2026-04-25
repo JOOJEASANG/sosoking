@@ -275,42 +275,99 @@ async function tabUsage(el) {
     </div>`;
 }
 
+const DEFAULT_BANNED_WORDS = [
+  // 욕설
+  '씨발','시발','씨바','시바','씨팔','시팔','ㅅㅂ','ㅆㅂ',
+  '개새끼','개세끼','개새기','새끼','ㄱㅅㄲ',
+  '병신','ㅂㅅ','지랄','개지랄',
+  '미친놈','미친년','미친새끼','미쳤냐',
+  '좆','보지','자지','씹','걸레년','창녀','창놈',
+  '찐따','정신병자',
+  // 혐오 표현
+  '틀딱','노인충','맘충','한남충','김치녀','된장녀','개저씨',
+  // 성적·폭력
+  '강간','성폭행','성추행','윤간','성매매',
+  // 위험 키워드
+  '자살','자해','살인','살해','테러','폭탄','폭발물',
+];
+
 async function tabWords(el) {
   const snap = await getDoc(doc(db,'site_settings','config'));
   let words = snap.exists() ? (snap.data().bannedWords || []) : [];
 
+  // 최초 등록 시 기본 금칙어 자동 적용
+  if (words.length === 0) {
+    words = [...DEFAULT_BANNED_WORDS];
+    await setDoc(doc(db,'site_settings','config'), { bannedWords: words }, { merge: true });
+  }
+
+  const GROUPS = [
+    { label: '욕설', color: '#e74c3c', words: ['씨발','시발','씨바','시바','씨팔','시팔','ㅅㅂ','ㅆㅂ','개새끼','개세끼','개새기','새끼','ㄱㅅㄲ','병신','ㅂㅅ','지랄','개지랄','미친놈','미친년','미친새끼','미쳤냐','좆','보지','자지','씹','걸레년','창녀','창놈','찐따','정신병자'] },
+    { label: '혐오', color: '#e67e22', words: ['틀딱','노인충','맘충','한남충','김치녀','된장녀','개저씨'] },
+    { label: '성적·폭력', color: '#8e44ad', words: ['강간','성폭행','성추행','윤간','성매매'] },
+    { label: '위험', color: '#c0392b', words: ['자살','자해','살인','살해','테러','폭탄','폭발물'] },
+  ];
+
+  function groupLabel(w) {
+    for (const g of GROUPS) { if (g.words.includes(w)) return g; }
+    return { label: '기타', color: '#7f8c8d' };
+  }
+
   function renderWords() {
     const tagsHtml = words.length
-      ? words.map((w,i) => `<span style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.3);color:var(--red);font-size:12px;font-weight:600;">
-          ${w}
-          <button onclick="window._removeWord(${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;line-height:1;padding:0;">&times;</button>
-        </span>`).join(' ')
+      ? words.map((w,i) => {
+          const g = groupLabel(w);
+          return `<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px 3px 8px;border-radius:20px;background:${g.color}18;border:1px solid ${g.color}44;font-size:12px;font-weight:600;color:${g.color};">
+            <span style="font-size:9px;opacity:0.7;">${g.label}</span>
+            ${w}
+            <button onclick="window._removeWord(${i})" style="background:none;border:none;color:${g.color};cursor:pointer;font-size:14px;line-height:1;padding:0;margin-left:2px;">&times;</button>
+          </span>`;
+        }).join(' ')
       : `<span style="font-size:13px;color:var(--cream-dim);">등록된 금칙어가 없습니다.</span>`;
 
+    const stats = GROUPS.map(g => {
+      const cnt = words.filter(w => g.words.includes(w)).length;
+      const extra = words.filter(w => !DEFAULT_BANNED_WORDS.includes(w)).length;
+      return g;
+    });
+    const extraCnt = words.filter(w => !DEFAULT_BANNED_WORDS.includes(w)).length;
+
     el.innerHTML = `
-      <div style="margin-bottom:16px;">
-        <div style="font-size:13px;color:var(--cream-dim);line-height:1.7;margin-bottom:16px;">
-          금칙어가 포함된 주제 등록 및 토론 주장 제출이 자동으로 차단됩니다.<br>
-          욕설·혐오 표현·개인정보(이름, 전화번호 등) 키워드를 등록하세요.
-        </div>
-        <div class="admin-section-box" style="padding:16px;min-height:60px;display:flex;flex-wrap:wrap;gap:6px;align-items:flex-start;" id="word-tags">
-          ${tagsHtml}
-        </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
+        ${GROUPS.map(g=>{
+          const cnt = words.filter(w=>g.words.includes(w)).length;
+          return `<span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;background:${g.color}18;border:1px solid ${g.color}44;color:${g.color};">${g.label} ${cnt}</span>`;
+        }).join('')}
+        ${extraCnt ? `<span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(255,255,255,0.05);border:1px solid var(--border);color:var(--cream-dim);">추가 ${extraCnt}</span>` : ''}
+        <span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(255,255,255,0.05);border:1px solid var(--border);color:var(--cream);">전체 ${words.length}개</span>
       </div>
-      <div style="display:flex;gap:8px;align-items:flex-end;">
+      <div style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-bottom:12px;">
+        금칙어가 포함된 주제 등록·토론 주장이 자동 차단됩니다. × 버튼으로 개별 삭제, 아래에서 추가 가능합니다.
+      </div>
+      <div class="admin-section-box" style="padding:16px;min-height:60px;display:flex;flex-wrap:wrap;gap:6px;align-items:flex-start;" id="word-tags">
+        ${tagsHtml}
+      </div>
+      <div style="display:flex;gap:8px;align-items:flex-end;margin-top:16px;">
         <div style="flex:1;">
-          <div class="form-label">금칙어 추가</div>
-          <input type="text" id="word-input" class="form-input" placeholder="단어 입력 후 Enter 또는 추가 버튼" maxlength="30">
+          <div class="form-label">금칙어 직접 추가</div>
+          <input type="text" id="word-input" class="form-input" placeholder="단어 입력 후 Enter 또는 추가" maxlength="30">
         </div>
         <button id="word-add-btn" class="btn btn-primary" style="width:auto;padding:12px 20px;">추가</button>
       </div>
-      <div style="margin-top:20px;">
-        <button id="word-save-btn" class="btn btn-primary">💾 저장</button>
+      <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
+        <button id="word-save-btn" class="btn btn-primary" style="flex:1;">💾 저장</button>
+        <button id="word-reset-btn" class="admin-btn admin-btn-gold" style="padding:12px 16px;font-size:12px;">↺ 기본값으로 초기화</button>
       </div>`;
 
     document.getElementById('word-add-btn').addEventListener('click', addWord);
     document.getElementById('word-input').addEventListener('keydown', e => { if(e.key==='Enter'){e.preventDefault();addWord();} });
     document.getElementById('word-save-btn').addEventListener('click', saveWords);
+    document.getElementById('word-reset-btn').addEventListener('click', () => {
+      if (!confirm(`기본 금칙어 ${DEFAULT_BANNED_WORDS.length}개로 초기화하시겠습니까?\n직접 추가한 단어는 삭제됩니다.`)) return;
+      words = [...DEFAULT_BANNED_WORDS];
+      renderWords();
+      toast('기본값으로 초기화됐습니다. 저장 버튼을 눌러주세요.', 'info');
+    });
   }
 
   function addWord() {
