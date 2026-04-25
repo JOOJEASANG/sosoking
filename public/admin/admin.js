@@ -567,6 +567,35 @@ async function tabTopics(el) {
       <button id="seed-btn" style="background:linear-gradient(135deg,var(--gold),var(--gold-light));color:#0d1117;border:none;padding:8px 16px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap;">기본 사건 10개 + 카테고리 세팅</button>
     </div>`:''}
 
+    <!-- 사건 직접 등록 -->
+    <div style="margin-bottom:24px;">
+      <button id="new-topic-toggle" style="display:flex;align-items:center;gap:8px;width:100%;padding:12px 16px;background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.3);border-radius:10px;color:var(--gold);font-size:13px;font-weight:700;cursor:pointer;text-align:left;">
+        <span id="new-topic-arrow">▶</span> ✏️ 공식 사건 직접 등록
+      </button>
+      <div id="new-topic-form" style="display:none;margin-top:8px;padding:18px;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:10px;">
+        <div style="display:grid;gap:12px;">
+          <div><div class="form-label">사건명 <span style="color:var(--red);">*</span> <span style="color:var(--cream-dim);font-weight:400;">(30자 이내)</span></div>
+            <input type="text" id="nt-title" class="form-input" maxlength="30" placeholder="예: 카톡 읽씹 무죄 주장 사건"></div>
+          <div><div class="form-label">한 줄 요약 <span style="color:var(--red);">*</span> <span style="color:var(--cream-dim);font-weight:400;">(60자 이내)</span></div>
+            <input type="text" id="nt-summary" class="form-input" maxlength="60" placeholder="예: 읽고 2시간 뒤 답장 — 무시인가, 나중에 답할 권리인가"></div>
+          <div><div class="form-label">⚔️ 원고 입장 <span style="color:var(--red);">*</span> <span style="color:var(--cream-dim);font-weight:400;">(100자 이내)</span></div>
+            <textarea id="nt-plaintiff" class="form-textarea" style="min-height:60px;" maxlength="100" placeholder="원고 측 주장을 입력하세요"></textarea></div>
+          <div><div class="form-label">🛡️ 피고 입장 <span style="color:var(--red);">*</span> <span style="color:var(--cream-dim);font-weight:400;">(100자 이내)</span></div>
+            <textarea id="nt-defendant" class="form-textarea" style="min-height:60px;" maxlength="100" placeholder="피고 측 주장을 입력하세요"></textarea></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div><div class="form-label">카테고리</div>
+              <select id="nt-category" class="form-input">${catOptions}<option value="기타">기타</option></select></div>
+            <div><div class="form-label">공개 상태</div>
+              <select id="nt-status" class="form-input">
+                <option value="active">즉시 공개</option>
+                <option value="pending">검토 대기</option>
+              </select></div>
+          </div>
+          <button id="nt-submit" class="btn btn-primary" style="margin-top:4px;">⚖️ 공식 사건으로 등록</button>
+        </div>
+      </div>
+    </div>
+
     ${pendingSnap.docs.length?`
       <div class="admin-section-title" style="margin-top:4px;">🔍 검토 대기 <span style="background:rgba(231,76,60,0.15);color:var(--red);border-radius:20px;padding:1px 8px;font-size:11px;">${pendingSnap.docs.length}</span></div>
       <div style="font-size:12px;color:var(--cream-dim);margin-bottom:10px;">카테고리를 확인·변경하고 승인하세요.</div>
@@ -612,6 +641,41 @@ async function tabTopics(el) {
       for (const t of DEFAULT_TOPICS) { await addDoc(collection(db,'topics'),{...t,createdAt:serverTimestamp()}); }
       toast('초기 데이터 세팅 완료!','success'); loadTab('topics');
     } catch(e) { toast('세팅 실패: '+e.message,'error'); btn.disabled=false; btn.textContent='기본 사건 10개 + 카테고리 세팅'; }
+  });
+
+  // 사건 직접 등록 토글
+  document.getElementById('new-topic-toggle')?.addEventListener('click', () => {
+    const form = document.getElementById('new-topic-form');
+    const arrow = document.getElementById('new-topic-arrow');
+    const open = form.style.display === 'none';
+    form.style.display = open ? 'block' : 'none';
+    arrow.textContent = open ? '▼' : '▶';
+  });
+
+  // 사건 직접 등록 제출
+  document.getElementById('nt-submit')?.addEventListener('click', async () => {
+    const title = document.getElementById('nt-title')?.value.trim();
+    const summary = document.getElementById('nt-summary')?.value.trim();
+    const plaintiff = document.getElementById('nt-plaintiff')?.value.trim();
+    const defendant = document.getElementById('nt-defendant')?.value.trim();
+    const category = document.getElementById('nt-category')?.value || '기타';
+    const status = document.getElementById('nt-status')?.value || 'active';
+    if (!title || !summary || !plaintiff || !defendant) { toast('필수 항목을 모두 입력해주세요', 'error'); return; }
+    const btn = document.getElementById('nt-submit');
+    btn.disabled = true; btn.textContent = '등록 중...';
+    try {
+      await addDoc(collection(db,'topics'), {
+        title, summary,
+        plaintiffPosition: plaintiff,
+        defendantPosition: defendant,
+        category, status,
+        isOfficial: true,
+        playCount: 0,
+        createdAt: serverTimestamp(),
+      });
+      toast('사건이 등록되었습니다!', 'success');
+      loadTab('topics');
+    } catch(e) { toast('등록 실패: '+e.message, 'error'); btn.disabled=false; btn.textContent='⚖️ 공식 사건으로 등록'; }
   });
 
   window._approveTopic = async id => {
