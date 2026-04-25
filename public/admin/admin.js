@@ -735,24 +735,72 @@ async function tabCategories(el) {
   const snap = await getDocs(query(collection(db,'categories'), orderBy('name','asc')));
   const cats = snap.docs.map(d=>({id:d.id,...d.data()}));
 
+  const CAT_ICONS = [
+    '💬','📱','📞','📩','🗣️',
+    '💰','💳','🧾','💸','🏦',
+    '🍽️','🍺','☕','🍕','🛒',
+    '❤️','💑','👫','🤝','💔',
+    '🏠','🛋️','🔑','🏢','🏘️',
+    '💼','📋','🖥️','📚','✏️',
+    '🎮','🎬','🎵','🎲','⚽',
+    '🚗','🚇','✈️','🛵','🚴',
+    '🐾','🐕','🐱','🌿','🌸',
+    '🛍️','👗','👟','💄','🎁',
+    '⚖️','🔥','🌟','😤','🤬',
+    '📌','❓','🎯','🏆','💡',
+  ];
+
   const rows = cats.map(c=>`<tr>
-    <td style="font-size:16px;">${c.icon||''}</td>
+    <td style="font-size:18px;text-align:center;">${c.icon||'📌'}</td>
     <td style="font-weight:700;">${c.name}</td>
-    <td>
-      <button onclick="window._delCat('${c.id}')" class="admin-btn admin-btn-danger">삭제</button>
-    </td></tr>`).join('');
+    <td><button onclick="window._delCat('${c.id}')" class="admin-btn admin-btn-danger">삭제</button></td>
+  </tr>`).join('');
+
+  const iconBtns = CAT_ICONS.map(ic=>`
+    <button type="button" class="icon-pick-btn" data-icon="${ic}" title="${ic}"
+      style="font-size:20px;width:40px;height:40px;border:2px solid transparent;border-radius:8px;background:rgba(255,255,255,0.03);cursor:pointer;transition:all 0.15s;line-height:1;"
+    >${ic}</button>`).join('');
 
   el.innerHTML = `
     <div class="admin-section-box" style="margin-bottom:24px;"><div style="overflow-x:auto;">
-      <table class="admin-table"><thead><tr><th>아이콘</th><th>이름</th><th>관리</th></tr></thead>
-      <tbody>${rows||'<tr><td colspan="3" style="text-align:center;padding:30px;color:var(--cream-dim);">카테고리 없음</td></tr>'}</tbody></table>
+      <table class="admin-table">
+        <thead><tr><th style="text-align:center;">아이콘</th><th>이름</th><th>관리</th></tr></thead>
+        <tbody>${rows||'<tr><td colspan="3" style="text-align:center;padding:30px;color:var(--cream-dim);">카테고리 없음</td></tr>'}</tbody>
+      </table>
     </div></div>
-    <form id="cat-form" style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
-      <div><div class="form-label">아이콘</div><input type="text" id="cat-icon" class="form-input" style="width:70px;" placeholder="💬" maxlength="2"></div>
-      <div style="flex:1;min-width:120px;"><div class="form-label">카테고리명</div><input type="text" id="cat-name" class="form-input" placeholder="예: 카톡" maxlength="10" required></div>
-      <button type="submit" class="btn btn-primary" style="width:auto;padding:12px 20px;">추가</button>
+    <form id="cat-form" style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:12px;padding:20px;">
+      <div style="margin-bottom:16px;">
+        <div class="form-label" style="margin-bottom:10px;">아이콘 선택</div>
+        <div id="icon-picker" style="display:flex;flex-wrap:wrap;gap:4px;">${iconBtns}</div>
+        <div style="margin-top:10px;font-size:12px;color:var(--cream-dim);">선택된 아이콘: <span id="icon-preview" style="font-size:18px;vertical-align:middle;">💬</span></div>
+        <input type="hidden" id="cat-icon" value="💬">
+      </div>
+      <div style="display:flex;gap:8px;align-items:flex-end;">
+        <div style="flex:1;"><div class="form-label">카테고리명</div><input type="text" id="cat-name" class="form-input" placeholder="예: 카톡" maxlength="10" required></div>
+        <button type="submit" class="btn btn-primary" style="width:auto;padding:12px 20px;">추가</button>
+      </div>
     </form>
+    <style>
+      .icon-pick-btn:hover { background:rgba(201,168,76,0.1) !important; border-color:rgba(201,168,76,0.4) !important; }
+      .icon-pick-btn.selected { background:rgba(201,168,76,0.15) !important; border-color:var(--gold) !important; }
+      [data-theme="light"] .icon-pick-btn { background:rgba(0,0,0,0.03) !important; }
+      [data-theme="light"] .icon-pick-btn:hover { background:rgba(154,112,24,0.1) !important; border-color:rgba(154,112,24,0.5) !important; }
+      [data-theme="light"] .icon-pick-btn.selected { background:rgba(154,112,24,0.12) !important; border-color:var(--gold) !important; }
+    </style>
   `;
+
+  // 첫 번째 아이콘 기본 선택
+  const firstBtn = el.querySelector('.icon-pick-btn');
+  if (firstBtn) firstBtn.classList.add('selected');
+
+  el.querySelectorAll('.icon-pick-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      el.querySelectorAll('.icon-pick-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      document.getElementById('cat-icon').value = btn.dataset.icon;
+      document.getElementById('icon-preview').textContent = btn.dataset.icon;
+    });
+  });
 
   document.getElementById('cat-form')?.addEventListener('submit', async e => {
     e.preventDefault();
@@ -760,7 +808,7 @@ async function tabCategories(el) {
     if (!name) return;
     await addDoc(collection(db,'categories'), {
       name,
-      icon: document.getElementById('cat-icon').value.trim() || '📌',
+      icon: document.getElementById('cat-icon').value || '📌',
     });
     toast('카테고리 추가됨','success');
     loadTab('categories');
