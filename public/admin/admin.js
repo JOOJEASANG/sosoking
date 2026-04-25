@@ -585,6 +585,7 @@ async function tabTopics(el) {
           <option value="${t.category||'기타'}" selected>${t.category||'기타'}</option>
           ${cats.filter(c=>c!==(t.category||'기타')).map(c=>`<option value="${c}">${c}</option>`).join('')}
         </select>
+        <button onclick="window._editTopic('${d.id}')" class="admin-btn admin-btn-gold" style="width:100%;margin-bottom:3px;">✏️ 수정</button>
         <button onclick="window._approveTopic('${d.id}')" class="admin-btn admin-btn-approve" style="width:100%;margin-bottom:3px;">✅ 승인</button>
         <button onclick="window._delTopic('${d.id}')" class="admin-btn admin-btn-danger" style="width:100%;">🗑 거부·삭제</button>
       </td>
@@ -601,9 +602,10 @@ async function tabTopics(el) {
       <td style="font-size:12px;color:var(--cream-dim);max-width:160px;">${(t.plaintiffPosition||'').substring(0,40)}...</td>
       <td style="font-size:12px;">${t.playCount||0}</td>
       <td style="white-space:nowrap;">
+        <button onclick="window._editTopic('${d.id}')" class="admin-btn admin-btn-gold" style="margin-bottom:3px;display:block;width:100%;">✏️ 수정</button>
         ${!t.isOfficial?`<button onclick="window._adoptTopic('${d.id}')" class="admin-btn admin-btn-gold" style="margin-bottom:3px;display:block;width:100%;">⭐ 채택</button>`:''}
-        <button onclick="window._hideTopic('${d.id}','active')" class="admin-btn" style="margin-right:4px;">숨김</button>
-        <button onclick="window._delTopic('${d.id}')" class="admin-btn admin-btn-danger">삭제</button>
+        <button onclick="window._hideTopic('${d.id}','active')" class="admin-btn" style="margin-bottom:3px;display:block;width:100%;">숨김</button>
+        <button onclick="window._delTopic('${d.id}')" class="admin-btn admin-btn-danger" style="display:block;width:100%;">삭제</button>
       </td>
     </tr>`;
   };
@@ -728,6 +730,92 @@ async function tabTopics(el) {
     if (!confirm('이 주제를 삭제하시겠습니까?')) return;
     await deleteDoc(doc(db,'topics',id));
     toast('삭제 완료','success'); loadTab('topics');
+  };
+
+  // ── 수정 모달 ──
+  const modalEl = document.createElement('div');
+  modalEl.id = 'topic-edit-modal';
+  modalEl.style.cssText = 'display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.65);backdrop-filter:blur(4px);overflow-y:auto;padding:24px 16px;';
+  modalEl.innerHTML = `
+    <div style="max-width:560px;margin:0 auto;background:var(--navy-card);border:1px solid var(--border);border-radius:16px;padding:28px;position:relative;box-shadow:0 24px 64px rgba(0,0,0,0.6);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;">
+        <div style="font-family:'Noto Serif KR',serif;font-size:16px;font-weight:700;color:var(--gold);">✏️ 사건 수정</div>
+        <button id="modal-close" style="background:none;border:none;font-size:22px;color:var(--cream-dim);cursor:pointer;padding:4px 8px;border-radius:6px;line-height:1;">✕</button>
+      </div>
+      <div style="display:grid;gap:14px;">
+        <div><div class="form-label">사건명 <span style="color:var(--red);">*</span></div>
+          <input id="et-title" class="form-input" maxlength="30"></div>
+        <div><div class="form-label">한 줄 요약 <span style="color:var(--red);">*</span></div>
+          <input id="et-summary" class="form-input" maxlength="60"></div>
+        <div><div class="form-label">⚔️ 원고 입장 <span style="color:var(--red);">*</span></div>
+          <textarea id="et-plaintiff" class="form-textarea" style="min-height:70px;" maxlength="100"></textarea></div>
+        <div><div class="form-label">🛡️ 피고 입장 <span style="color:var(--red);">*</span></div>
+          <textarea id="et-defendant" class="form-textarea" style="min-height:70px;" maxlength="100"></textarea></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+          <div><div class="form-label">카테고리</div>
+            <select id="et-category" class="form-input">${catOptions}<option value="기타">기타</option></select></div>
+          <div><div class="form-label">공개 상태</div>
+            <select id="et-status" class="form-input">
+              <option value="active">공개</option>
+              <option value="pending">대기</option>
+              <option value="hidden">숨김</option>
+            </select></div>
+          <div><div class="form-label">구분</div>
+            <select id="et-official" class="form-input">
+              <option value="true">⭐ 공식</option>
+              <option value="false">👤 유저</option>
+            </select></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:4px;">
+          <button id="modal-save" class="btn btn-primary" style="flex:1;">저장</button>
+          <button id="modal-cancel" class="admin-btn" style="padding:14px 20px;font-size:14px;">취소</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(modalEl);
+
+  const closeModal = () => { modalEl.style.display = 'none'; };
+  document.getElementById('modal-close').addEventListener('click', closeModal);
+  document.getElementById('modal-cancel').addEventListener('click', closeModal);
+  modalEl.addEventListener('click', e => { if (e.target === modalEl) closeModal(); });
+
+  window._editTopic = async id => {
+    const snap = await getDoc(doc(db,'topics',id));
+    if (!snap.exists()) { toast('사건을 찾을 수 없습니다','error'); return; }
+    const t = snap.data();
+    document.getElementById('et-title').value = t.title || '';
+    document.getElementById('et-summary').value = t.summary || '';
+    document.getElementById('et-plaintiff').value = t.plaintiffPosition || '';
+    document.getElementById('et-defendant').value = t.defendantPosition || '';
+    document.getElementById('et-category').value = t.category || '기타';
+    document.getElementById('et-status').value = t.status || 'active';
+    document.getElementById('et-official').value = t.isOfficial ? 'true' : 'false';
+    modalEl.style.display = 'block';
+
+    const saveBtn = document.getElementById('modal-save');
+    const newSave = saveBtn.cloneNode(true);
+    saveBtn.replaceWith(newSave);
+    newSave.addEventListener('click', async () => {
+      const title = document.getElementById('et-title').value.trim();
+      const summary = document.getElementById('et-summary').value.trim();
+      const plaintiff = document.getElementById('et-plaintiff').value.trim();
+      const defendant = document.getElementById('et-defendant').value.trim();
+      if (!title || !summary || !plaintiff || !defendant) { toast('필수 항목을 모두 입력해주세요','error'); return; }
+      newSave.disabled = true; newSave.textContent = '저장 중...';
+      try {
+        await updateDoc(doc(db,'topics',id), {
+          title, summary,
+          plaintiffPosition: plaintiff,
+          defendantPosition: defendant,
+          category: document.getElementById('et-category').value,
+          status: document.getElementById('et-status').value,
+          isOfficial: document.getElementById('et-official').value === 'true',
+        });
+        toast('수정되었습니다','success');
+        closeModal();
+        loadTab('topics');
+      } catch(e) { toast('저장 실패: '+e.message,'error'); newSave.disabled=false; newSave.textContent='저장'; }
+    });
   };
 }
 
