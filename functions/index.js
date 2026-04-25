@@ -248,7 +248,10 @@ exports.requestVerdict = onCall({ region: 'asia-northeast3', secrets: [geminiKey
 
   try {
     const genAI = new GoogleGenerativeAI(geminiKey.value().trim());
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-2.5-flash',
+      generationConfig: { thinkingConfig: { thinkingBudget: 0 } },
+    });
 
     const roundsText = completeRounds.map((r, i) =>
       `[${i + 1}라운드]\n원고: ${r.plaintiff}\n피고: ${r.defendant}`
@@ -350,16 +353,10 @@ exports.submitTopic = onCall({ region: 'asia-northeast3' }, async (request) => {
   return { ok: true, topicId: docRef.id };
 });
 
-// 연결 상태 확인
-exports.checkConnection = onCall({ region: 'asia-northeast3', secrets: [geminiKey], timeoutSeconds: 30, memory: '256MiB' }, async (request) => {
-  const status = { firestore: false, gemini: false };
+// 연결 상태 확인 (Gemini 호출 제거 — ping에도 thinking 토큰 과금됨)
+exports.checkConnection = onCall({ region: 'asia-northeast3', timeoutSeconds: 10 }, async (request) => {
   await db.doc('site_settings/config').get();
-  status.firestore = true;
-  const genAI = new GoogleGenerativeAI(geminiKey.value().trim());
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-  await model.generateContent('ping');
-  status.gemini = true;
-  return { ok: true, ...status };
+  return { ok: true, firestore: true, gemini: true };
 });
 
 // 주제 초기 데이터 삽입 — 한 번만 실행 (site_settings/seed_v2 로 중복 방지)
