@@ -555,24 +555,6 @@ async function tabPolicy(el) {
   render();
 }
 
-const DEFAULT_CATEGORIES = [
-  {name:'카톡',icon:'💬',order:1},{name:'연애',icon:'💑',order:2},{name:'음식',icon:'🍗',order:3},
-  {name:'정산',icon:'💸',order:4},{name:'직장',icon:'🏢',order:5},{name:'생활',icon:'🏠',order:6},
-  {name:'친구',icon:'👫',order:7},{name:'기타',icon:'📌',order:8},
-];
-
-const DEFAULT_TOPICS = [
-  {title:'카톡 읽씹 무죄 주장 사건',summary:'읽고 2시간 뒤 답장 — 무시인가, 나중에 답할 권리인가',plaintiffPosition:'읽었으면 바로 답장하는 게 기본 예의다',defendantPosition:'바로 답 못 할 상황도 있다, 나중에 답할 자유가 있다',category:'카톡',isOfficial:true,status:'active',playCount:0},
-  {title:'치킨 마지막 조각 선취 사건',summary:'먼저 집으면 임자 vs 마지막은 눈치 봐야 한다',plaintiffPosition:'마지막 조각은 같이 먹는 사람 모두의 것, 눈치 봐야 한다',defendantPosition:'테이블 위 음식은 먼저 집는 사람 것이다, 망설임이 패배다',category:'음식',isOfficial:true,status:'active',playCount:0},
-  {title:'더치페이 계산기 사건',summary:'밥 먹자마자 계산기 꺼내는 게 맞는 행동인가',plaintiffPosition:'공평함이 최고다, 더치페이가 관계를 깔끔하게 한다',defendantPosition:'분위기 보고 한 번쯤은 그냥 내는 게 사람 사는 방식이다',category:'정산',isOfficial:true,status:'active',playCount:0},
-  {title:'퇴근 5분 전 업무 지시 사건',summary:'퇴근 직전 업무 지시 — 오늘 해야 하는가, 내일 해도 되는가',plaintiffPosition:'퇴근 시간 이후는 내 시간이다, 내일 하면 된다',defendantPosition:'급한 일은 상황에 따라 유연하게 해야 하는 게 직장인이다',category:'직장',isOfficial:true,status:'active',playCount:0},
-  {title:'에어컨 온도 설정권 분쟁',summary:'함께 쓰는 공간에서 에어컨 온도는 누가 결정하는가',plaintiffPosition:'여름에 더운 게 정상, 시원하게 트는 게 기본이다',defendantPosition:'추위를 타는 사람도 있다, 서로 배려해야 한다',category:'생활',isOfficial:true,status:'active',playCount:0},
-  {title:'5분 지각 무죄 주장 사건',summary:'약속에 5분 늦는 건 지각인가, 오차 범위인가',plaintiffPosition:'약속 시간은 정확히 지켜야 한다, 5분도 지각은 지각이다',defendantPosition:'5분은 현실적 오차 범위다, 예민한 게 오히려 이상하다',category:'생활',isOfficial:true,status:'active',playCount:0},
-  {title:'자정 생일 카톡 강요 사건',summary:'자정에 생일 카톡 못 보내면 친한 친구가 아닌가',plaintiffPosition:'자정에 챙겨주는 게 진짜 친한 친구의 기본이다',defendantPosition:'당일 낮에 진심으로 챙기면 그게 더 의미 있다',category:'친구',isOfficial:true,status:'active',playCount:0},
-  {title:'단톡방 알림 차단 무례 논쟁',summary:'단톡방 알림 꺼두고 나중에 보는 게 실례인가',plaintiffPosition:'공지나 연락에 늦게 반응하면 그룹을 무시하는 것이다',defendantPosition:'알림 설정은 개인 자유다, 읽기만 하면 문제없다',category:'카톡',isOfficial:true,status:'active',playCount:0},
-  {title:'소개팅 후 연락 의무 부존재 사건',summary:'소개팅 후 먼저 연락해야 하는 쪽이 있는가',plaintiffPosition:'먼저 연락 안 하면 관심 없다는 신호, 용기 있는 쪽이 먼저 해야 한다',defendantPosition:'마음에 들면 서로 연락하게 돼 있다, 의무는 없다',category:'연애',isOfficial:true,status:'active',playCount:0},
-  {title:'빌린 우산 반환 의무 사건',summary:'우산 빌려줬으면 꼭 돌려받아야 하는가',plaintiffPosition:'빌린 건 돌려주는 게 기본 중의 기본이다',defendantPosition:'우산은 사실상 주는 거다, 다들 그렇게 생각하며 살아왔다',category:'친구',isOfficial:true,status:'active',playCount:0},
-];
 
 async function tabTopics(el) {
   const [activeSnap, pendingSnap, catSnap] = await Promise.all([
@@ -614,25 +596,21 @@ async function tabTopics(el) {
     return `<tr data-cat="${t.category||'기타'}">
       <td style="font-size:12px;">
         <div style="font-weight:700;">${t.title}</div>
-        <div style="color:var(--cream-dim);font-size:11px;">${t.category||'기타'} · ${t.isOfficial?'공식':'유저'}</div>
+        <div style="color:var(--cream-dim);font-size:11px;">${t.category||'기타'} · ${t.isOfficial?'⭐ 공식':'👤 유저'}</div>
       </td>
       <td style="font-size:12px;color:var(--cream-dim);max-width:160px;">${(t.plaintiffPosition||'').substring(0,40)}...</td>
       <td style="font-size:12px;">${t.playCount||0}</td>
       <td style="white-space:nowrap;">
-        <button onclick="window._hideTopic('${d.id}','active')" class="admin-btn">숨김</button>
-        <button onclick="window._delTopic('${d.id}')" class="admin-btn admin-btn-danger" style="margin-left:4px;">삭제</button>
+        ${!t.isOfficial?`<button onclick="window._adoptTopic('${d.id}')" class="admin-btn admin-btn-gold" style="margin-bottom:3px;display:block;width:100%;">⭐ 채택</button>`:''}
+        <button onclick="window._hideTopic('${d.id}','active')" class="admin-btn" style="margin-right:4px;">숨김</button>
+        <button onclick="window._delTopic('${d.id}')" class="admin-btn admin-btn-danger">삭제</button>
       </td>
     </tr>`;
   };
 
-  const hasSeedData = activeSnap.docs.some(d=>d.data().isOfficial);
   const allCats = ['all', ...new Set(activeSnap.docs.map(d=>d.data().category||'기타'))];
 
   el.innerHTML = `
-    ${!hasSeedData?`<div style="margin-bottom:20px;padding:14px 18px;background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.3);border-radius:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-      <div style="font-size:13px;color:var(--cream);">⚠️ 초기 사건 데이터가 없습니다.</div>
-      <button id="seed-btn" style="background:linear-gradient(135deg,var(--gold),var(--gold-light));color:#0d1117;border:none;padding:8px 16px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap;">기본 사건 10개 + 카테고리 세팅</button>
-    </div>`:''}
 
     <!-- 사건 직접 등록 -->
     <div style="margin-bottom:24px;">
@@ -700,16 +678,6 @@ async function tabTopics(el) {
     });
   });
 
-  document.getElementById('seed-btn')?.addEventListener('click', async () => {
-    const btn = document.getElementById('seed-btn');
-    btn.disabled=true; btn.textContent='세팅 중...';
-    try {
-      for (const cat of DEFAULT_CATEGORIES) { await setDoc(doc(db,'categories',cat.name),{...cat}); }
-      for (const t of DEFAULT_TOPICS) { await addDoc(collection(db,'topics'),{...t,createdAt:serverTimestamp()}); }
-      toast('초기 데이터 세팅 완료!','success'); loadTab('topics');
-    } catch(e) { toast('세팅 실패: '+e.message,'error'); btn.disabled=false; btn.textContent='기본 사건 10개 + 카테고리 세팅'; }
-  });
-
   // 사건 직접 등록 토글
   document.getElementById('new-topic-toggle')?.addEventListener('click', () => {
     const form = document.getElementById('new-topic-form');
@@ -751,6 +719,10 @@ async function tabTopics(el) {
     await updateDoc(doc(db,'topics',id), { status:'active', category: cat });
     toast('승인됨','success'); loadTab('topics');
   };
+  window._adoptTopic = async id => {
+    await updateDoc(doc(db,'topics',id), { isOfficial: true });
+    toast('⭐ 공식 사건으로 채택됐습니다!', 'success'); loadTab('topics');
+  };
   window._hideTopic = async (id,cur) => { await updateDoc(doc(db,'topics',id),{status:cur==='active'?'hidden':'active'}); toast('처리됨','success'); loadTab('topics'); };
   window._delTopic = async id => {
     if (!confirm('이 주제를 삭제하시겠습니까?')) return;
@@ -760,26 +732,24 @@ async function tabTopics(el) {
 }
 
 async function tabCategories(el) {
-  const snap = await getDocs(query(collection(db,'categories'), orderBy('order','asc')));
+  const snap = await getDocs(query(collection(db,'categories'), orderBy('name','asc')));
   const cats = snap.docs.map(d=>({id:d.id,...d.data()}));
 
   const rows = cats.map(c=>`<tr>
     <td style="font-size:16px;">${c.icon||''}</td>
     <td style="font-weight:700;">${c.name}</td>
-    <td style="color:var(--cream-dim);">${c.order}</td>
     <td>
       <button onclick="window._delCat('${c.id}')" class="admin-btn admin-btn-danger">삭제</button>
     </td></tr>`).join('');
 
   el.innerHTML = `
     <div class="admin-section-box" style="margin-bottom:24px;"><div style="overflow-x:auto;">
-      <table class="admin-table"><thead><tr><th>아이콘</th><th>이름</th><th>순서</th><th>관리</th></tr></thead>
-      <tbody>${rows||'<tr><td colspan="4" style="text-align:center;padding:30px;color:var(--cream-dim);">카테고리 없음</td></tr>'}</tbody></table>
+      <table class="admin-table"><thead><tr><th>아이콘</th><th>이름</th><th>관리</th></tr></thead>
+      <tbody>${rows||'<tr><td colspan="3" style="text-align:center;padding:30px;color:var(--cream-dim);">카테고리 없음</td></tr>'}</tbody></table>
     </div></div>
     <form id="cat-form" style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
       <div><div class="form-label">아이콘</div><input type="text" id="cat-icon" class="form-input" style="width:70px;" placeholder="💬" maxlength="2"></div>
       <div style="flex:1;min-width:120px;"><div class="form-label">카테고리명</div><input type="text" id="cat-name" class="form-input" placeholder="예: 카톡" maxlength="10" required></div>
-      <div><div class="form-label">순서</div><input type="number" id="cat-order" class="form-input" style="width:80px;" value="${cats.length+1}" min="1"></div>
       <button type="submit" class="btn btn-primary" style="width:auto;padding:12px 20px;">추가</button>
     </form>
   `;
@@ -791,7 +761,6 @@ async function tabCategories(el) {
     await addDoc(collection(db,'categories'), {
       name,
       icon: document.getElementById('cat-icon').value.trim() || '📌',
-      order: parseInt(document.getElementById('cat-order').value) || cats.length+1,
     });
     toast('카테고리 추가됨','success');
     loadTab('categories');

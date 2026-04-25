@@ -322,20 +322,20 @@ exports.submitTopic = onCall({ region: 'asia-northeast3' }, async (request) => {
     if (hit) throw new Error('사용할 수 없는 표현이 포함되어 있습니다');
   }
 
-  await db.collection('topics').add({
+  const docRef = await db.collection('topics').add({
     title: title.trim(),
     summary: summary.trim(),
     plaintiffPosition: plaintiffPosition.trim(),
     defendantPosition: defendantPosition.trim(),
     category: category?.trim() || '기타',
-    status: 'pending',
+    status: 'active',
     isOfficial: false,
     createdBy: userId,
     playCount: 0,
     createdAt: FieldValue.serverTimestamp(),
   });
 
-  return { ok: true };
+  return { ok: true, topicId: docRef.id };
 });
 
 // 연결 상태 확인
