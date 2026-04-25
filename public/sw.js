@@ -1,4 +1,4 @@
-const CACHE = 'sosoking-v4';
+const CACHE = 'sosoking-v5';
 const SHELL = [
   '/',
   '/logo.svg'
