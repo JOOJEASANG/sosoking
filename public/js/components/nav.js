@@ -113,8 +113,11 @@ function showAccountMenu(user, nickname) {
         <button id="account-edit-btn" style="width:100%;padding:14px 18px;background:none;border:none;border-bottom:1px solid var(--border);text-align:left;font-size:14px;color:var(--cream);cursor:pointer;display:flex;align-items:center;gap:10px;">
           <span style="font-size:16px;">✏️</span> 닉네임 변경
         </button>
-        <button id="account-logout-btn" style="width:100%;padding:14px 18px;background:none;border:none;text-align:left;font-size:14px;color:var(--red);cursor:pointer;font-weight:600;display:flex;align-items:center;gap:10px;">
+        <button id="account-logout-btn" style="width:100%;padding:14px 18px;background:none;border:none;border-bottom:1px solid var(--border);text-align:left;font-size:14px;color:var(--red);cursor:pointer;font-weight:600;display:flex;align-items:center;gap:10px;">
           <span style="font-size:16px;">🚪</span> 로그아웃
+        </button>
+        <button id="account-delete-btn" style="width:100%;padding:12px 18px;background:none;border:none;text-align:left;font-size:12px;color:rgba(231,76,60,0.5);cursor:pointer;display:flex;align-items:center;gap:10px;">
+          <span style="font-size:14px;">🗑️</span> 회원 탈퇴
         </button>
 
       </div>
@@ -165,6 +168,32 @@ function showAccountMenu(user, nickname) {
     await logout();
     renderNav();
     location.hash = '#/';
+  });
+
+  overlay.querySelector('#account-delete-btn').addEventListener('click', async () => {
+    const confirmed = confirm(
+      '정말로 탈퇴하시겠습니까?\n\n' +
+      '· 계정 및 모든 재판 기록이 영구 삭제됩니다\n' +
+      '· 삭제된 데이터는 복구할 수 없습니다'
+    );
+    if (!confirmed) return;
+    const btn = overlay.querySelector('#account-delete-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span style="font-size:14px;">⏳</span> 탈퇴 처리 중...';
+    try {
+      const deleteAccount = httpsCallable(functions, 'deleteAccount');
+      await deleteAccount({});
+      overlay.remove();
+      _nicknameCache = null; _nicknameCacheUid = null;
+      await logout();
+      renderNav();
+      location.hash = '#/';
+      setTimeout(() => alert('탈퇴가 완료되었습니다. 이용해 주셔서 감사합니다.'), 300);
+    } catch (err) {
+      alert('탈퇴 처리 중 오류가 발생했습니다: ' + (err.message || '다시 시도해주세요'));
+      btn.disabled = false;
+      btn.innerHTML = '<span style="font-size:14px;">🗑️</span> 회원 탈퇴';
+    }
   });
 }
 

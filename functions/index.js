@@ -1,6 +1,7 @@
 const { onCall, onRequest } = require('firebase-functions/v2/https');
 const { initializeApp } = require('firebase-admin/app');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
+const { getAuth } = require('firebase-admin/auth');
 const { defineSecret } = require('firebase-functions/params');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const crypto = require('crypto');
@@ -586,6 +587,54 @@ exports.registerUser = onCall({ region: 'asia-northeast3' }, async (request) => 
     tx.set(nicknameRef, { userId, createdAt: FieldValue.serverTimestamp() });
     tx.set(userRef, { nickname: nick, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
   });
+
+  return { ok: true };
+});
+
+// 회원 탈퇴 — 유저 데이터 전체 삭제 후 Auth 계정 삭제
+exports.deleteAccount = onCall({ region: 'asia-northeast3' }, async (request) => {
+  const userId = request.auth?.uid;
+  if (!userId) throw new Error('인증 필요');
+
+  // 닉네임 조회 (삭제용)
+  const userSnap = await db.doc(`users/${userId}`).get();
+  const nickname = userSnap.exists ? userSnap.data().nickname : null;
+
+  // 참여한 세션 조회
+  const [plaintiffSnap, defendantSnap] = await Promise.all([
+    db.collection('debate_sessions').where('plaintiff.userId', '==', userId).get(),
+    db.collection('debate_sessions').where('defendant.userId', '==', userId).get(),
+  ]);
+
+  // 중복 제거
+  const sessionDocs = new Map();
+  plaintiffSnap.docs.forEach(d => sessionDocs.set(d.id, d.ref));
+  defendantSnap.docs.forEach(d => sessionDocs.set(d.id, d.ref));
+
+  // 배치 삭제 (최대 500개)
+  const batch = db.batch();
+  batch.delete(db.doc(`users/${userId}`));
+  if (nickname) batch.delete(db.doc(`nicknames/${nickname}`));
+  batch.delete(db.doc(`rate_limits/${userId}`));
+
+  let count = 3;
+  for (const [, ref] of sessionDocs) {
+    if (count >= 490) break;
+    batch.delete(ref);
+    count++;
+  }
+  await batch.commit();
+
+  // 500개 초과분 추가 삭제 (드문 경우)
+  const remaining = [...sessionDocs.values()].slice(487);
+  if (remaining.length) {
+    const b2 = db.batch();
+    remaining.forEach(r => b2.delete(r));
+    await b2.commit();
+  }
+
+  // Firebase Auth 계정 삭제
+  await getAuth().deleteUser(userId);
 
   return { ok: true };
 });
