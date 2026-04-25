@@ -8,6 +8,7 @@ import { renderMyHistory } from './pages/my-history.js';
 import { renderPolicy } from './pages/policy.js';
 import { renderGuide } from './pages/guide.js';
 import { renderFeedback } from './pages/feedback.js';
+import { renderAuth } from './pages/auth.js';
 import { renderFooter } from './components/footer.js';
 import { initTheme } from './components/theme.js';
 import { renderNav } from './components/nav.js';
@@ -40,6 +41,8 @@ function route() {
     renderGuide(content);
   } else if (hash === '#/feedback') {
     renderFeedback(content);
+  } else if (hash === '#/login') {
+    renderAuth(content);
   } else {
     renderHome(content);
   }

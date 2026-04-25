@@ -15,11 +15,20 @@ export async function renderMyHistory(container) {
   `;
 
   const inner = container.querySelector('.container');
-  const uid = auth.currentUser?.uid;
+  const user = auth.currentUser;
+  const uid = user?.uid;
   if (!uid) {
     inner.innerHTML = `<div class="empty-state"><span class="empty-state-icon">👤</span><div class="empty-state-title">로그인이 필요합니다</div></div>`;
     return;
   }
+
+  const loginBanner = user.isAnonymous ? `
+    <div class="login-nudge-banner">
+      <div style="font-size:13px;font-weight:700;color:var(--cream);margin-bottom:4px;">📱 다른 기기에서도 보고 싶다면?</div>
+      <div style="font-size:12px;color:var(--cream-dim);margin-bottom:10px;">로그인하면 어디서든 내 재판 기록을 볼 수 있어요</div>
+      <a href="#/login" class="btn btn-secondary" style="font-size:13px;padding:8px 18px;max-width:180px;display:flex;margin:0 auto;">로그인 / 회원가입</a>
+    </div>
+  ` : '';
 
   try {
     const snap = await getDocs(query(
@@ -41,7 +50,7 @@ export async function renderMyHistory(container) {
       .slice(0, 30);
 
     if (!all.length) {
-      inner.innerHTML = `<div class="empty-state">
+      inner.innerHTML = loginBanner + `<div class="empty-state">
         <span class="empty-state-icon">⚖️</span>
         <div class="empty-state-title">아직 참가한 재판이 없습니다</div>
         <div class="empty-state-sub">사건을 선택해 첫 재판을 시작해보세요</div>
@@ -50,7 +59,7 @@ export async function renderMyHistory(container) {
       return;
     }
 
-    inner.innerHTML = all.map(s => {
+    inner.innerHTML = loginBanner + all.map(s => {
       const myRole = s.plaintiff?.userId === uid ? 'plaintiff' : 'defendant';
       const roleLabel = myRole === 'plaintiff' ? '⚔️ 원고' : '🛡️ 피고';
       const date = s.createdAt?.toDate?.()?.toLocaleDateString('ko') || '-';

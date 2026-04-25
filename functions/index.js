@@ -414,6 +414,37 @@ exports.checkConnection = onCall({ region: 'asia-northeast3', timeoutSeconds: 10
   return { ok: true, firestore: true, gemini: true };
 });
 
+// 닉네임 설정 — 원자적 중복 체크 후 users/{uid} + nicknames/{nick} 동시 기록
+exports.registerUser = onCall({ region: 'asia-northeast3' }, async (request) => {
+  const { nickname } = request.data;
+  const userId = request.auth?.uid;
+  if (!userId) throw new Error('인증 필요');
+  if (!nickname?.trim()) throw new Error('닉네임을 입력해주세요');
+  const nick = nickname.trim();
+  if (nick.length < 2 || nick.length > 12) throw new Error('닉네임은 2~12자여야 합니다');
+  if (!/^[가-힣a-zA-Z0-9_]+$/.test(nick)) throw new Error('닉네임은 한글, 영문, 숫자, _만 사용 가능합니다');
+
+  await db.runTransaction(async (tx) => {
+    const nicknameRef = db.doc(`nicknames/${nick}`);
+    const nicknameSnap = await tx.get(nicknameRef);
+    if (nicknameSnap.exists && nicknameSnap.data().userId !== userId) {
+      throw new Error('이미 사용 중인 닉네임입니다');
+    }
+
+    const userRef = db.doc(`users/${userId}`);
+    const userSnap = await tx.get(userRef);
+    const oldNick = userSnap.exists ? userSnap.data().nickname : null;
+    if (oldNick && oldNick !== nick) {
+      tx.delete(db.doc(`nicknames/${oldNick}`));
+    }
+
+    tx.set(nicknameRef, { userId, createdAt: FieldValue.serverTimestamp() });
+    tx.set(userRef, { nickname: nick, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+  });
+
+  return { ok: true };
+});
+
 // 주제 초기 데이터 삽입 — 한 번만 실행 (site_settings/seed_v2 로 중복 방지)
 const SEED_TOPICS_V2 = [
   { title: '사과 껍질 무죄 주장 사건', summary: '사과는 껍질째 먹는 게 맞는가, 깎아 먹는 게 맞는가', plaintiffPosition: '껍질에 농약이 다 있다, 꼭 깎아 먹어야 위생적이다', defendantPosition: '껍질에 영양소가 다 몰려 있다, 그냥 먹는 게 정답이다', category: '음식' },
