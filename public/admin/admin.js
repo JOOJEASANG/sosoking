@@ -215,8 +215,8 @@ async function tabFeedback(el) {
 async function tabUsage(el) {
   const settingsSnap = await getDoc(doc(db,'site_settings','config'));
   const s = settingsSnap.exists() ? settingsSnap.data() : {};
-  const inputPrice = s.geminiInputPricePerM ?? 0.075;
-  const outputPrice = s.geminiOutputPricePerM ?? 0.30;
+  const inputPrice = s.geminiInputPricePerM ?? 0.15;
+  const outputPrice = s.geminiOutputPricePerM ?? 0.60;
   const firestoreWritePrice = 0.18 / 100000;
   const firestoreReadPrice = 0.06 / 100000;
   const invocationPrice = 0.40 / 1000000;
@@ -277,7 +277,8 @@ async function tabUsage(el) {
     </div>
     <div style="margin-top:20px;padding:14px;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--cream-dim);line-height:1.7;">
       💡 <b style="color:var(--cream);">비용 안내</b><br>
-      · Gemini 단가: 입력 $${inputPrice}/1M · 출력 $${outputPrice}/1M (gemini-2.5-flash 기준, 설정 탭에서 변경 가능)<br>
+      · Gemini 2.5 Flash 단가: 입력 $${inputPrice}/1M · 출력 $${outputPrice}/1M (설정 탭에서 변경 가능)<br>
+      · <a href="https://ai.google.dev/pricing" target="_blank" style="color:var(--gold);">Google AI 공식 단가 확인 →</a><br>
       · Firestore: 쓰기 $0.18/10만 · 읽기 $0.06/10만<br>
       · Functions 호출: $0.40/1M · 환율 ₩${krw}/$1<br>
       · 집계는 Cloud Function이 실행될 때만 기록됩니다. Firebase 콘솔 "사용량 및 결제"가 최종 기준입니다.<br>
@@ -409,8 +410,8 @@ async function tabSettings(el) {
       <div class="form-group"><label class="form-label">재등록 쿨다운 (초)</label><input type="number" id="cd" class="form-input" value="${d.cooldownSec||45}" min="0" max="300"></div>
       <fieldset style="border:1px solid var(--border);border-radius:8px;padding:14px 14px 4px;margin:20px 0;">
         <legend style="padding:0 8px;color:var(--gold);font-size:13px;">💰 비용 단가 (사용량·비용 계산용)</legend>
-        <div class="form-group"><label class="form-label">Gemini 입력 단가 ($/1M 토큰)</label><input type="number" step="0.001" id="gip" class="form-input" value="${d.geminiInputPricePerM ?? 0.075}"></div>
-        <div class="form-group"><label class="form-label">Gemini 출력 단가 ($/1M 토큰)</label><input type="number" step="0.001" id="gop" class="form-input" value="${d.geminiOutputPricePerM ?? 0.30}"></div>
+        <div class="form-group"><label class="form-label">Gemini 입력 단가 ($/1M 토큰)</label><input type="number" step="0.001" id="gip" class="form-input" value="${d.geminiInputPricePerM ?? 0.15}"></div>
+        <div class="form-group"><label class="form-label">Gemini 출력 단가 ($/1M 토큰)</label><input type="number" step="0.001" id="gop" class="form-input" value="${d.geminiOutputPricePerM ?? 0.60}"></div>
         <div class="form-group"><label class="form-label">원-달러 환율 (₩/$1)</label><input type="number" id="krw" class="form-input" value="${d.krwUsdRate ?? 1400}"></div>
       </fieldset>
       <button type="submit" class="btn btn-primary">저장</button>

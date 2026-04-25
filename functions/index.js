@@ -282,6 +282,18 @@ ${roundsText}
     const result = await model.generateContent(prompt);
     const verdictText = result.response.text().trim();
 
+    // 토큰 사용량 기록
+    const usage = result.response.usageMetadata;
+    const inputTokens = usage?.promptTokenCount || 0;
+    const outputTokens = usage?.candidatesTokenCount || 0;
+    const today = new Date().toISOString().slice(0, 10);
+    db.doc(`usage_stats/daily_${today}`).set({
+      geminiInputTokens: FieldValue.increment(inputTokens),
+      geminiOutputTokens: FieldValue.increment(outputTokens),
+      geminiRequests: FieldValue.increment(1),
+      functionInvocations: FieldValue.increment(1),
+    }, { merge: true }).catch(() => {});
+
     let winner = 'draw';
     if (verdictText.includes('원고 승소')) winner = 'plaintiff';
     else if (verdictText.includes('피고 승소')) winner = 'defendant';
