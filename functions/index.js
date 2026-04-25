@@ -331,6 +331,7 @@ ${roundsText}
       geminiOutputTokens: FieldValue.increment(outputTokens),
       geminiRequests: FieldValue.increment(1),
       functionInvocations: FieldValue.increment(1),
+      caseCount: FieldValue.increment(1),
     }, { merge: true }).catch(() => {});
 
     let winner = 'draw';
