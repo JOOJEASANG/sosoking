@@ -600,7 +600,7 @@ async function tabTopics(el) {
       </td>
       <td style="font-size:12px;color:var(--cream-dim);max-width:180px;">${(t.plaintiffPosition||'').substring(0,45)}…</td>
       <td style="font-size:13px;font-weight:700;text-align:center;">${t.playCount||0}</td>
-      <td style="white-space:nowrap;">
+      <td class="topic-action-cell">
         <button onclick="window._editTopic('${d.id}')" class="admin-btn admin-btn-gold" style="margin-right:3px;">✏️</button>${!t.isOfficial?`<button onclick="window._adoptTopic('${d.id}')" class="admin-btn admin-btn-gold" style="margin-right:3px;">⭐</button>`:''}<button onclick="window._hideTopic('${d.id}')" class="admin-btn" style="margin-right:3px;">숨김</button><button onclick="window._delTopic('${d.id}')" class="admin-btn admin-btn-danger">삭제</button>
       </td>
     </tr>`;

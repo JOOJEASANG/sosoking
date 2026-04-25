@@ -389,6 +389,44 @@
       background: rgba(154,112,24,0.06) !important;
     }
   </style>
+  <style>
+    @media (max-width: 640px) {
+      /* 주제관리 테이블 컬럼 너비 */
+      #active-tbody td:nth-child(1),
+      #active-tbody + * td:nth-child(1),
+      .admin-table td:nth-child(1),
+      .admin-table th:nth-child(1) { min-width: 110px; }
+
+      .admin-table td:nth-child(2),
+      .admin-table th:nth-child(2) { min-width: 90px; max-width: 130px; }
+
+      /* 재판수 컬럼 좁게 */
+      .admin-table td:nth-child(3),
+      .admin-table th:nth-child(3) { width: 40px; min-width: 40px; text-align: center; font-size: 11px; }
+
+      /* 관리 컬럼: 좁게 + 버튼 세로 배치 */
+      td.topic-action-cell { width: 52px; min-width: 52px; white-space: normal !important; }
+
+      td.topic-action-cell .admin-btn {
+        display: block !important;
+        width: 100% !important;
+        margin: 0 0 3px 0 !important;
+        font-size: 11px !important;
+        padding: 3px 2px !important;
+        text-align: center;
+      }
+
+      /* 전체 테이블 패딩 축소 */
+      .admin-table th, .admin-table td { padding: 6px 5px; font-size: 11px; }
+
+      /* 사건명 텍스트 */
+      .admin-table td:nth-child(1) div { font-size: 12px !important; }
+      .admin-table td:nth-child(1) div:last-child { font-size: 10px !important; }
+
+      /* 원고주장 텍스트 */
+      .admin-table td:nth-child(2) { font-size: 11px !important; color: var(--cream-dim); }
+    }
+  </style>
 </head>
 <body>
   <div id="admin-app"><div id="admin-content"></div></div>
