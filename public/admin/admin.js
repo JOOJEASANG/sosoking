@@ -75,14 +75,10 @@ const TAB_DEFS = [
   ['topics',    '📋 주제 관리'],
   ['categories','🏷️ 카테고리'],
   ['words',     '🚫 금칙어'],
-  ['cases',     '⚖️ 사건 목록'],
-  ['reports',   '🚨 신고'],
   ['feedback',  '💬 의견함'],
   ['usage',     '📊 사용량'],
   ['settings',  '⚙️ 설정'],
-  ['biz',       '🏢 사업자'],
   ['policy',    '📜 정책'],
-  ['connection','🔌 연결'],
 ];
 
 function renderDashboard() {
@@ -138,48 +134,10 @@ async function loadTab(tab) {
   if (tab==='topics') await tabTopics(el);
   else if (tab==='categories') await tabCategories(el);
   else if (tab==='words') await tabWords(el);
-  else if (tab==='cases') await tabCases(el);
-  else if (tab==='reports') await tabReports(el);
   else if (tab==='feedback') await tabFeedback(el);
   else if (tab==='usage') await tabUsage(el);
   else if (tab==='settings') await tabSettings(el);
-  else if (tab==='biz') await tabBiz(el);
   else if (tab==='policy') await tabPolicy(el);
-  else if (tab==='connection') await tabConnection(el);
-}
-
-async function tabCases(el) {
-  const snap = await getDocs(query(collection(db,'cases'),orderBy('createdAt','desc'),limit(50)));
-  const rows = snap.docs.map(d=>{
-    const c=d.data(), date=c.createdAt?.toDate?c.createdAt.toDate().toLocaleDateString('ko'):'-';
-    return `<tr>
-      <td><div style="font-weight:700;font-size:13px;">${c.caseTitle||'-'}</div><div style="font-size:11px;color:var(--cream-dim);">${c.nickname||'익명'} · ${date}</div></td>
-      <td style="font-size:12px;color:var(--cream-dim);max-width:180px;">${(c.caseDescription||'').substring(0,50)}...</td>
-      <td><span class="badge ${c.status==='completed'?'badge-gold':'badge-red'}">${c.status||'-'}</span></td>
-      <td style="white-space:nowrap;">
-        <button onclick="window._hide('${d.id}')" class="admin-btn">숨김</button>
-        <button onclick="window._del('${d.id}')" class="admin-btn admin-btn-danger" style="margin-left:4px;">삭제</button>
-      </td></tr>`;
-  }).join('');
-  el.innerHTML = `<div class="admin-section-box"><div style="overflow-x:auto;"><table class="admin-table"><thead><tr><th>사건</th><th>내용</th><th>상태</th><th>관리</th></tr></thead><tbody>${rows||'<tr><td colspan="4" style="text-align:center;padding:30px;color:var(--cream-dim);">사건 없음</td></tr>'}</tbody></table></div></div>`;
-  window._hide = async id => { await updateDoc(doc(db,'cases',id),{status:'hidden'}); toast('숨김 처리됨','success'); loadTab('cases'); };
-  window._del = async id => {
-    if (!confirm('⚠️ 이 사건을 영구 삭제하시겠습니까?\n사건 + 판결 결과가 모두 삭제되며 복구할 수 없습니다.')) return;
-    try { await deleteDoc(doc(db,'results',id)); } catch(e) {}
-    try { await deleteDoc(doc(db,'cases',id)); toast('영구 삭제 완료','success'); }
-    catch(e) { toast('삭제 실패: '+e.message,'error'); }
-    loadTab('cases');
-  };
-}
-
-async function tabReports(el) {
-  const snap = await getDocs(query(collection(db,'reports'),orderBy('createdAt','desc'),limit(50)));
-  const rows = snap.docs.map(d=>{
-    const r=d.data(), date=r.createdAt?.toDate?r.createdAt.toDate().toLocaleDateString('ko'):'-';
-    return `<tr><td style="font-size:12px;">${r.caseId||'-'}</td><td>${r.reason||'-'}</td><td><span class="badge ${r.status==='resolved'?'badge-gold':'badge-red'}">${r.status||'pending'}</span></td><td style="font-size:12px;color:var(--cream-dim);">${date}</td><td><button onclick="window._resolve('${d.id}')" class="admin-btn admin-btn-gold">처리완료</button></td></tr>`;
-  }).join('');
-  el.innerHTML = `<div class="admin-section-box"><div style="overflow-x:auto;"><table class="admin-table"><thead><tr><th>사건ID</th><th>신고사유</th><th>상태</th><th>날짜</th><th>관리</th></tr></thead><tbody>${rows||'<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--cream-dim);">신고 없음</td></tr>'}</tbody></table></div></div>`;
-  window._resolve = async id => { await updateDoc(doc(db,'reports',id),{status:'resolved'}); toast('처리완료','success'); loadTab('reports'); };
 }
 
 async function tabFeedback(el) {
@@ -404,6 +362,8 @@ async function tabWords(el) {
 async function tabSettings(el) {
   const snap = await getDoc(doc(db,'site_settings','config'));
   const d = snap.exists()?snap.data():{};
+  const biz = d.businessInfo || {};
+  const bizFields = [['companyName','사업자명'],['ceoName','대표자명'],['businessNumber','사업자등록번호'],['contact','연락처'],['email','이메일'],['address','주소']];
   el.innerHTML = `
     <form id="sf">
       <div class="form-group"><label class="form-label">일일 주제 등록 한도 (유저당)</label><input type="number" id="dl" class="form-input" value="${d.dailyLimit||3}" min="1" max="20"></div>
@@ -414,31 +374,25 @@ async function tabSettings(el) {
         <div class="form-group"><label class="form-label">Gemini 출력 단가 ($/1M 토큰)</label><input type="number" step="0.001" id="gop" class="form-input" value="${d.geminiOutputPricePerM ?? 0.60}"></div>
         <div class="form-group"><label class="form-label">원-달러 환율 (₩/$1)</label><input type="number" id="krw" class="form-input" value="${d.krwUsdRate ?? 1400}"></div>
       </fieldset>
+      <fieldset style="border:1px solid var(--border);border-radius:8px;padding:14px 14px 4px;margin:20px 0;">
+        <legend style="padding:0 8px;color:var(--gold);font-size:13px;">🏢 사업자 정보</legend>
+        ${bizFields.map(([k,l])=>`<div class="form-group"><label class="form-label">${l}</label><input type="text" id="b_${k}" class="form-input" value="${biz[k]||''}"></div>`).join('')}
+      </fieldset>
       <button type="submit" class="btn btn-primary">저장</button>
     </form>`;
   document.getElementById('sf').addEventListener('submit', async e => {
     e.preventDefault();
+    const businessInfo = {};
+    bizFields.forEach(([k]) => { businessInfo[k] = document.getElementById(`b_${k}`).value.trim(); });
     await setDoc(doc(db,'site_settings','config'),{
       ...( snap.exists()?snap.data():{} ),
-      dailyLimit:parseInt(document.getElementById('dl').value),
-      cooldownSec:parseInt(document.getElementById('cd').value),
+      dailyLimit: parseInt(document.getElementById('dl').value),
+      cooldownSec: parseInt(document.getElementById('cd').value),
       geminiInputPricePerM: parseFloat(document.getElementById('gip').value),
       geminiOutputPricePerM: parseFloat(document.getElementById('gop').value),
       krwUsdRate: parseFloat(document.getElementById('krw').value),
+      businessInfo,
     },{merge:true});
-    toast('저장되었습니다.','success');
-  });
-}
-
-async function tabBiz(el) {
-  const snap = await getDoc(doc(db,'site_settings','config'));
-  const biz = snap.exists()?(snap.data().businessInfo||{}):{};
-  const fields = [['companyName','사업자명'],['ceoName','대표자명'],['businessNumber','사업자등록번호'],['contact','연락처'],['email','이메일'],['address','주소']];
-  el.innerHTML = `<form id="bf">${fields.map(([k,l])=>`<div class="form-group"><label class="form-label">${l}</label><input type="text" id="b_${k}" class="form-input" value="${biz[k]||''}"></div>`).join('')}<button type="submit" class="btn btn-primary">저장</button></form>`;
-  document.getElementById('bf').addEventListener('submit', async e => {
-    e.preventDefault();
-    const businessInfo={}; fields.forEach(([k])=>{businessInfo[k]=document.getElementById(`b_${k}`).value.trim();});
-    await setDoc(doc(db,'site_settings','config'),{businessInfo},{merge:true});
     toast('저장되었습니다.','success');
   });
 }
@@ -936,51 +890,4 @@ async function tabCategories(el) {
     await deleteDoc(doc(db,'categories',id));
     toast('삭제됨','success'); loadTab('categories');
   };
-}
-
-async function tabConnection(el) {
-  const statusRow = (label, ok, errMsg='') => `
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:8px;margin-bottom:8px;">
-      <span style="font-size:14px;">${label}</span>
-      <span style="font-weight:700;color:${ok?'#27ae60':'var(--red)'};">${ok?'✅ 정상':`❌ 오류${errMsg?' — '+errMsg:''}`}</span>
-    </div>`;
-
-  el.innerHTML = `
-    <div style="max-width:480px;">
-      <div style="margin-bottom:20px;">
-        <div style="font-size:15px;font-weight:700;color:var(--cream);margin-bottom:6px;">🔌 연결 상태 확인</div>
-        <div style="font-size:13px;color:var(--cream-dim);">Firestore 데이터베이스와 Gemini AI API의 연결을 실시간으로 확인합니다.</div>
-      </div>
-      <button id="conn-btn" class="btn btn-primary" style="width:auto;padding:10px 24px;margin-bottom:24px;">🔍 연결 확인</button>
-      <div id="conn-result"></div>
-    </div>`;
-
-  document.getElementById('conn-btn').addEventListener('click', async () => {
-    const btn = document.getElementById('conn-btn');
-    const resultEl = document.getElementById('conn-result');
-    btn.disabled = true;
-    btn.textContent = '확인 중...';
-    resultEl.innerHTML = '<div class="loading-dots" style="padding:20px 0;"><span></span><span></span><span></span></div>';
-
-    try {
-      const checkConnection = httpsCallable(functions, 'checkConnection');
-      const { data } = await checkConnection();
-      resultEl.innerHTML = `
-        ${statusRow('Firestore 데이터베이스', data.firestore)}
-        ${statusRow('Gemini AI API', data.gemini)}
-        <div style="margin-top:12px;padding:10px 14px;background:rgba(201,168,76,0.08);border-radius:8px;font-size:12px;color:var(--gold);">
-          확인 시각: ${new Date().toLocaleString('ko')}
-        </div>`;
-    } catch (err) {
-      const msg = err.message || '알 수 없는 오류';
-      resultEl.innerHTML = `
-        <div style="padding:16px;background:rgba(231,76,60,0.08);border:1px solid rgba(231,76,60,0.3);border-radius:8px;color:var(--red);font-size:14px;">
-          ⚠️ 연결 확인 실패<br>
-          <span style="font-size:12px;color:var(--cream-dim);margin-top:6px;display:block;">${msg}</span>
-        </div>`;
-    }
-
-    btn.disabled = false;
-    btn.textContent = '🔍 재확인';
-  });
 }

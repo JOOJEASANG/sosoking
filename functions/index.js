@@ -54,12 +54,16 @@ async function checkRateLimit(userId, action, maxCount, windowSeconds) {
 
 // 새 토론 세션 생성
 exports.createSession = onCall({ region: 'asia-northeast3' }, async (request) => {
-  const { topicId, side, mode } = request.data;
+  const { topicId, side, mode, maxRounds: requestedRounds } = request.data;
   const userId = request.auth?.uid;
   if (!userId) throw new Error('인증 필요');
   if (!topicId || !side || !mode) throw new Error('필수 항목 누락');
   if (!['plaintiff', 'defendant'].includes(side)) throw new Error('올바르지 않은 입장');
   if (!['friend', 'random'].includes(mode)) throw new Error('올바르지 않은 대결 방식');
+
+  await checkRateLimit(userId, 'dailySession', 2, 86400);
+
+  const maxRounds = [3, 5, 7].includes(requestedRounds) ? requestedRounds : 5;
 
   const topicSnap = await db.doc(`topics/${topicId}`).get();
   if (!topicSnap.exists) throw new Error('주제를 찾을 수 없습니다');
@@ -90,7 +94,7 @@ exports.createSession = onCall({ region: 'asia-northeast3' }, async (request) =>
     defendant: side === 'defendant' ? { userId, nickname } : null,
     status: 'waiting',
     currentRound: 0,
-    maxRounds: 10,
+    maxRounds,
     rounds: [],
     verdict: null,
     mode,
@@ -121,6 +125,8 @@ exports.joinSession = onCall({ region: 'asia-northeast3' }, async (request) => {
   const { shareToken, topicId } = request.data;
   const userId = request.auth?.uid;
   if (!userId) throw new Error('인증 필요');
+
+  await checkRateLimit(userId, 'dailySession', 2, 86400);
 
   if (shareToken) {
     const q = await db.collection('debate_sessions')
@@ -258,7 +264,23 @@ exports.requestVerdict = onCall({ region: 'asia-northeast3', secrets: [geminiKey
   const completeRounds = (session.rounds || []).filter(r => r.plaintiff && r.defendant);
   if (!completeRounds.length) throw new Error('한 라운드 이상 완료 후 판결을 요청할 수 있습니다');
 
-  await sessionRef.update({ status: 'judging' });
+  // active 상태: 상대방 동의 필요
+  if (session.status === 'active') {
+    await sessionRef.update({ status: 'verdict_requested', verdictRequestedBy: userId });
+    return { ok: true, waiting: true };
+  }
+
+  // verdict_requested: 요청자가 다시 누른 경우 차단
+  if (session.status === 'verdict_requested') {
+    if (session.verdictRequestedBy === userId) {
+      throw new Error('이미 판결을 요청하셨습니다. 상대방의 동의를 기다려주세요.');
+    }
+    // 상대방이 동의한 경우 — 아래로 진행
+  }
+
+  // ready_for_verdict 또는 상대방 동의: Gemini 판결 진행
+  const preVerdictStatus = session.status;
+  await sessionRef.update({ status: 'judging', verdictRequestedBy: null });
 
   try {
     const genAI = new GoogleGenerativeAI(geminiKey.value().trim());
@@ -323,9 +345,28 @@ ${roundsText}
 
     return { ok: true };
   } catch (err) {
-    await sessionRef.update({ status: 'active' });
+    await sessionRef.update({ status: preVerdictStatus === 'ready_for_verdict' ? 'ready_for_verdict' : 'active' });
     throw err;
   }
+});
+
+// 판결 요청 거부 / 취소
+exports.declineVerdictRequest = onCall({ region: 'asia-northeast3' }, async (request) => {
+  const { sessionId } = request.data;
+  const userId = request.auth?.uid;
+  if (!userId) throw new Error('인증 필요');
+
+  const sessionRef = db.doc(`debate_sessions/${sessionId}`);
+  const sessionSnap = await sessionRef.get();
+  if (!sessionSnap.exists) throw new Error('세션 없음');
+  const session = sessionSnap.data();
+
+  const isParticipant = session.plaintiff?.userId === userId || session.defendant?.userId === userId;
+  if (!isParticipant) throw new Error('참가자가 아닙니다');
+  if (session.status !== 'verdict_requested') throw new Error('판결 요청 상태가 아닙니다');
+
+  await sessionRef.update({ status: 'active', verdictRequestedBy: null });
+  return { ok: true };
 });
 
 // 유저 주제 등록 신청
