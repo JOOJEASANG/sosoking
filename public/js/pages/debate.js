@@ -98,7 +98,16 @@ export async function renderDebate(container, sessionId, shareToken) {
     }
   }, (err) => {
     console.error('Firestore listener error:', err);
-    showToast('연결이 끊어졌습니다. 페이지를 새로고침해주세요.', 'error');
+    const feed = document.getElementById('debate-feed');
+    if (feed) {
+      feed.innerHTML = `
+        <div style="text-align:center;padding:60px 20px;">
+          <div style="font-size:44px;margin-bottom:14px;">📡</div>
+          <div style="font-size:17px;font-weight:700;color:var(--cream);margin-bottom:8px;">연결이 끊어졌습니다</div>
+          <p style="font-size:14px;color:var(--cream-dim);margin-bottom:24px;">네트워크를 확인하고 다시 시도해주세요</p>
+          <button onclick="location.reload()" class="btn btn-primary" style="max-width:200px;display:flex;margin:0 auto;">🔄 새로고침</button>
+        </div>`;
+    }
   });
 
   window._pageCleanup = () => unsub();
@@ -416,11 +425,16 @@ function renderActive(session, myRole, sessionId) {
 function renderCancelled(session, myRole) {
   const feed = document.getElementById('debate-feed');
   if (!feed) return;
+  const uid = auth.currentUser?.uid;
+  const iCancelled = session.cancelledBy === uid;
+  const msg = iCancelled ? '재판을 직접 종료했습니다' : '상대방이 재판을 종료했습니다';
+  const sub = iCancelled ? '원하면 새 사건으로 다시 시작해보세요' : '다음에 다른 사건으로 다시 도전해보세요';
   feed.innerHTML = `
     <div style="text-align:center;padding:60px 20px;">
-      <div style="font-size:48px;margin-bottom:16px;">🚫</div>
+      <div style="font-size:48px;margin-bottom:16px;">${iCancelled ? '🚫' : '😔'}</div>
       <div style="font-family:var(--font-serif);font-size:20px;font-weight:700;color:var(--cream);margin-bottom:8px;">재판이 종료되었습니다</div>
-      <p style="font-size:14px;color:var(--cream-dim);margin-bottom:28px;">이 재판 세션은 종료 처리되었습니다</p>
+      <p style="font-size:14px;color:var(--cream-dim);margin-bottom:6px;">${msg}</p>
+      <p style="font-size:13px;color:var(--cream-dim);margin-bottom:28px;">${sub}</p>
       <a href="#/topics" class="btn btn-primary" style="max-width:200px;display:flex;margin:0 auto;">새 사건 찾기</a>
     </div>
   `;

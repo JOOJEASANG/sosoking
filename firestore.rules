@@ -39,20 +39,6 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    match /cases/{caseId} {
-      allow read: if request.auth != null && (resource.data.userId == request.auth.uid || resource.data.isPublic == true);
-      allow read: if isAdmin();
-      allow create: if request.auth != null;
-      allow update: if request.auth != null && resource.data.userId == request.auth.uid;
-      allow update, delete: if isAdmin();
-    }
-
-    match /results/{caseId} {
-      allow read: if request.auth != null;
-      allow create, update: if false;
-      allow delete: if isAdmin();
-    }
-
     match /usage_stats/{docId} {
       allow read: if isAdmin();
       allow write: if false;
@@ -68,7 +54,7 @@ service cloud.firestore {
     }
 
     match /nicknames/{nickname} {
-      allow read: if true;
+      allow read: if request.auth != null;
       allow write: if false;
     }
 
@@ -90,6 +76,7 @@ service cloud.firestore {
     match /feedback/{feedbackId} {
       allow create: if request.auth != null
         && request.resource.data.keys().hasAll(['category', 'content', 'createdAt'])
+        && request.resource.data.content is string
         && request.resource.data.content.size() <= 500;
       allow read, update, delete: if isAdmin();
     }
