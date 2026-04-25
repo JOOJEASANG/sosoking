@@ -118,6 +118,7 @@ export async function renderHome(container) {
     </section>
 
     <div class="container" style="padding-top:32px;padding-bottom:80px;">
+      <div id="active-session-banner"></div>
       <div id="today-section"></div>
       <div id="popular-section" style="margin-top:32px;"></div>
 
@@ -178,6 +179,7 @@ export async function renderHome(container) {
   loadPopularTopics();
   setupInstallBanner();
   setupDemo();
+  checkActiveSessionBanner();
 }
 
 function setupDemo() {
@@ -332,4 +334,29 @@ async function loadPopularTopics() {
       <a href="#/topics" style="display:block;text-align:center;margin-top:12px;color:var(--gold);font-size:13px;font-weight:700;text-decoration:none;">전체 사건 보기 →</a>
     `;
   } catch { /* silent */ }
+}
+
+function checkActiveSessionBanner() {
+  const el = document.getElementById('active-session-banner');
+  if (!el) return;
+  try {
+    const stored = JSON.parse(localStorage.getItem('sosoking_active_session') || 'null');
+    if (!stored || !stored.sessionId) return;
+    const ageHours = (Date.now() - (stored.savedAt || 0)) / 3600000;
+    if (ageHours > 48) { localStorage.removeItem('sosoking_active_session'); return; }
+    const roleLabel = stored.role === 'plaintiff' ? '⚔️ 원고' : '🛡️ 피고';
+    el.innerHTML = `
+      <div style="background:linear-gradient(135deg,rgba(201,168,76,0.14),rgba(201,168,76,0.05));border:1.5px solid rgba(201,168,76,0.45);border-radius:14px;padding:14px 16px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--gold);margin-bottom:3px;">⚖️ 진행 중인 재판</div>
+          <div style="font-size:13px;color:var(--cream);font-weight:600;">${escHtml(stored.topicTitle || '재판')} · ${roleLabel}</div>
+        </div>
+        <a href="#/debate/${stored.sessionId}" style="flex-shrink:0;padding:9px 16px;border-radius:10px;background:var(--gold);color:#0d1117;font-size:13px;font-weight:700;text-decoration:none;">이어하기 →</a>
+      </div>
+    `;
+  } catch {}
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }

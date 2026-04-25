@@ -414,6 +414,32 @@ exports.checkConnection = onCall({ region: 'asia-northeast3', timeoutSeconds: 10
   return { ok: true, firestore: true, gemini: true };
 });
 
+// 세션 종료 (대기 중 또는 진행 중)
+exports.cancelSession = onCall({ region: 'asia-northeast3' }, async (request) => {
+  const { sessionId } = request.data;
+  const userId = request.auth?.uid;
+  if (!userId) throw new Error('인증 필요');
+
+  const sessionRef = db.doc(`debate_sessions/${sessionId}`);
+  const snap = await sessionRef.get();
+  if (!snap.exists) throw new Error('세션을 찾을 수 없습니다');
+  const session = snap.data();
+
+  const isParticipant = session.plaintiff?.userId === userId || session.defendant?.userId === userId;
+  if (!isParticipant) throw new Error('참가자가 아닙니다');
+  if (!['waiting', 'active', 'ready_for_verdict', 'verdict_requested'].includes(session.status)) {
+    throw new Error('종료할 수 없는 상태입니다');
+  }
+
+  await sessionRef.update({ status: 'cancelled', cancelledBy: userId, cancelledAt: FieldValue.serverTimestamp() });
+
+  if (session.mode === 'random' && session.status === 'waiting') {
+    await db.doc(`random_queue/${session.topicId}`).delete().catch(() => {});
+  }
+
+  return { ok: true };
+});
+
 // 닉네임 설정 — 원자적 중복 체크 후 users/{uid} + nicknames/{nick} 동시 기록
 exports.registerUser = onCall({ region: 'asia-northeast3' }, async (request) => {
   const { nickname } = request.data;

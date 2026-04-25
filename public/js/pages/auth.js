@@ -1,5 +1,5 @@
-import { auth, loginWithGoogle, loginWithEmail, signupWithEmail } from '../firebase.js';
-import { db, functions } from '../firebase.js';
+import { auth, loginWithGoogle, loginWithEmail, signupWithEmail, db, functions } from '../firebase.js';
+import { invalidateNicknameCache } from '../components/nav.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 import { showToast } from '../components/toast.js';
@@ -186,6 +186,7 @@ export async function renderAuth(container) {
       await signupWithEmail(email, pw);
       const registerUser = httpsCallable(functions, 'registerUser');
       await registerUser({ nickname: nick });
+      invalidateNicknameCache();
       showToast('가입 완료!', 'success');
       location.hash = '#/my-history';
     } catch (err) {
@@ -278,6 +279,7 @@ function showNicknameModal() {
     try {
       const registerUser = httpsCallable(functions, 'registerUser');
       await registerUser({ nickname: nick });
+      invalidateNicknameCache();
       modal.remove();
       showToast('환영합니다! 🎉', 'success');
       location.hash = '#/my-history';
