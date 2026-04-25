@@ -183,7 +183,6 @@ function renderWaiting(session, sessionId) {
   const shareUrl = `${location.origin}${location.pathname}#/join/${session.shareToken}`;
   const shareTitle = `소소킹 생활법정 - ${session.topicTitle}`;
   const shareText = `[소소킹 생활법정] "${session.topicTitle}" 재판에 초대합니다! 아래 링크를 눌러 참가해주세요 ⚖️`;
-  const kakaoUrl = `https://sharer.kakao.com/talk/friends/picker/link?app_key=&url=${encodeURIComponent(shareUrl)}`;
   const canShare = typeof navigator.share === 'function';
 
   feed.innerHTML = `
