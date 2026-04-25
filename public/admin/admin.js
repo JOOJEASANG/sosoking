@@ -241,7 +241,72 @@ async function tabUsage(el) {
       · Functions 호출: $0.40/1M · 환율 ₩${krw}/$1<br>
       · 집계는 Cloud Function이 실행될 때만 기록됩니다. Firebase 콘솔 "사용량 및 결제"가 최종 기준입니다.<br>
       · <b style="color:var(--gold);">무료 할당량(Spark/Blaze) 차감 후 실제 청구액은 이보다 적을 수 있습니다.</b>
-    </div>`;
+    </div>
+
+    <div style="margin-top:28px;padding:20px;background:rgba(231,76,60,0.05);border:1.5px solid rgba(231,76,60,0.25);border-radius:12px;">
+      <div style="font-size:14px;font-weight:700;color:var(--cream);margin-bottom:4px;">🗑️ 재판 데이터 정리</div>
+      <div style="font-size:12px;color:var(--cream-dim);margin-bottom:16px;">Firestore 용량 절약을 위해 오래된 세션을 삭제합니다. 삭제된 데이터는 복구할 수 없습니다.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+        <div>
+          <label style="font-size:11px;color:var(--cream-dim);display:block;margin-bottom:4px;">대상 상태</label>
+          <select id="cleanup-status" class="admin-input" style="width:100%;">
+            <option value="completed">판결 완료만</option>
+            <option value="cancelled">종료됨만</option>
+            <option value="all">전체 (완료+종료)</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--cream-dim);display:block;margin-bottom:4px;">기준 일수</label>
+          <select id="cleanup-days" class="admin-input" style="width:100%;">
+            <option value="30">30일 이상 된 것</option>
+            <option value="60">60일 이상 된 것</option>
+            <option value="90">90일 이상 된 것</option>
+            <option value="0">전체 (날짜 무관)</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <button id="cleanup-count-btn" class="admin-btn" style="background:rgba(255,255,255,0.05);">개수 확인</button>
+        <button id="cleanup-run-btn" class="admin-btn" style="background:rgba(231,76,60,0.15);color:#e74c3c;border-color:rgba(231,76,60,0.4);">삭제 실행</button>
+        <span id="cleanup-result" style="font-size:13px;color:var(--cream-dim);"></span>
+      </div>
+    </div>
+  `;
+
+  el.querySelector('#cleanup-count-btn').addEventListener('click', async () => {
+    const btn = el.querySelector('#cleanup-count-btn');
+    const result = el.querySelector('#cleanup-result');
+    btn.disabled = true; btn.textContent = '조회 중...';
+    try {
+      const fn = httpsCallable(functions, 'countSessionsForCleanup');
+      const res = await fn({
+        olderThanDays: Number(el.querySelector('#cleanup-days').value),
+        statusFilter: el.querySelector('#cleanup-status').value,
+      });
+      result.textContent = `조회 결과: ${res.data.count}개`;
+    } catch (e) { result.textContent = '오류: ' + e.message; }
+    btn.disabled = false; btn.textContent = '개수 확인';
+  });
+
+  el.querySelector('#cleanup-run-btn').addEventListener('click', async () => {
+    const statusVal = el.querySelector('#cleanup-status').value;
+    const daysVal = el.querySelector('#cleanup-days').value;
+    const label = el.querySelector('#cleanup-status option:checked').textContent;
+    if (!confirm(`[${label}] ${daysVal === '0' ? '전체' : daysVal + '일 이상 된'} 세션을 삭제합니다.\n최대 500개씩 처리됩니다. 계속할까요?`)) return;
+    const btn = el.querySelector('#cleanup-run-btn');
+    const result = el.querySelector('#cleanup-result');
+    btn.disabled = true; btn.textContent = '삭제 중...';
+    try {
+      const fn = httpsCallable(functions, 'cleanupCompletedSessions');
+      const res = await fn({ olderThanDays: Number(daysVal), statusFilter: statusVal });
+      result.style.color = '#27ae60';
+      result.textContent = `✅ ${res.data.deleted}개 삭제 완료`;
+    } catch (e) {
+      result.style.color = 'var(--red)';
+      result.textContent = '오류: ' + e.message;
+    }
+    btn.disabled = false; btn.textContent = '삭제 실행';
+  });
 }
 
 const DEFAULT_BANNED_WORDS = [

@@ -230,6 +230,7 @@ function showNicknameModal() {
         </div>
         <div id="modal-nick-status" style="font-size:12px;min-height:16px;margin-bottom:16px;"></div>
         <button id="modal-nick-save" class="btn btn-primary" disabled>저장하기</button>
+        <button id="modal-nick-skip" style="background:none;border:none;color:var(--cream-dim);font-size:13px;cursor:pointer;margin-top:10px;text-decoration:underline;width:100%;padding:4px;">나중에 설정하기</button>
       </div>
     </div>
   `;
@@ -287,6 +288,12 @@ function showNicknameModal() {
       showToast(err.message || '저장 실패', 'error');
       saveBtn.disabled = false; saveBtn.textContent = '저장하기';
     }
+  });
+
+  modal.querySelector('#modal-nick-skip').addEventListener('click', () => {
+    modal.remove();
+    showToast('로그인 성공! 닉네임은 내 기록 > 계정에서 설정할 수 있어요', 'info');
+    location.hash = '#/my-history';
   });
 }
 

@@ -471,6 +471,50 @@ exports.registerUser = onCall({ region: 'asia-northeast3' }, async (request) => 
   return { ok: true };
 });
 
+// 판결 완료 세션 일괄 삭제 (관리자 전용)
+exports.cleanupCompletedSessions = onCall({ region: 'asia-northeast3' }, async (request) => {
+  const userId = request.auth?.uid;
+  if (!userId) throw new Error('인증 필요');
+  const adminSnap = await db.doc(`admins/${userId}`).get();
+  if (!adminSnap.exists) throw new Error('관리자 권한 필요');
+
+  const { olderThanDays = 30, statusFilter = 'completed' } = request.data;
+  const allowed = ['completed', 'cancelled', 'all'];
+  if (!allowed.includes(statusFilter)) throw new Error('올바르지 않은 상태값');
+
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - olderThanDays);
+
+  let q = db.collection('debate_sessions').where('createdAt', '<', cutoff);
+  if (statusFilter !== 'all') q = q.where('status', '==', statusFilter);
+
+  const snap = await q.limit(500).get();
+  if (snap.empty) return { deleted: 0 };
+
+  const batch = db.batch();
+  snap.docs.forEach(d => batch.delete(d.ref));
+  await batch.commit();
+  return { deleted: snap.docs.length };
+});
+
+// 판결 완료 세션 개수 조회 (관리자 전용)
+exports.countSessionsForCleanup = onCall({ region: 'asia-northeast3' }, async (request) => {
+  const userId = request.auth?.uid;
+  if (!userId) throw new Error('인증 필요');
+  const adminSnap = await db.doc(`admins/${userId}`).get();
+  if (!adminSnap.exists) throw new Error('관리자 권한 필요');
+
+  const { olderThanDays = 30, statusFilter = 'completed' } = request.data;
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - olderThanDays);
+
+  let q = db.collection('debate_sessions').where('createdAt', '<', cutoff);
+  if (statusFilter !== 'all') q = q.where('status', '==', statusFilter);
+
+  const snap = await q.count().get();
+  return { count: snap.data().count };
+});
+
 // 주제 초기 데이터 삽입 — 한 번만 실행 (site_settings/seed_v2 로 중복 방지)
 const SEED_TOPICS_V2 = [
   { title: '사과 껍질 무죄 주장 사건', summary: '사과는 껍질째 먹는 게 맞는가, 깎아 먹는 게 맞는가', plaintiffPosition: '껍질에 농약이 다 있다, 꼭 깎아 먹어야 위생적이다', defendantPosition: '껍질에 영양소가 다 몰려 있다, 그냥 먹는 게 정답이다', category: '음식' },

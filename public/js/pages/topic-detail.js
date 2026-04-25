@@ -77,10 +77,10 @@ export async function renderTopicDetail(container, topicId) {
           <div class="mode-btn-label">친구와 대결</div>
           <div class="mode-btn-desc">카카오톡으로 초대</div>
         </button>
-        <button class="mode-btn${hasRandomOpponent ? '' : ' mode-btn-disabled'}" data-mode="random" ${hasRandomOpponent ? '' : 'disabled'}>
-          <span class="mode-btn-icon">${hasRandomOpponent ? '🎲' : '😴'}</span>
+        <button class="mode-btn" data-mode="random">
+          <span class="mode-btn-icon">${hasRandomOpponent ? '🎲' : '⏳'}</span>
           <div class="mode-btn-label">모르는 사람과</div>
-          <div class="mode-btn-desc">${hasRandomOpponent ? '대기자 있음 · 자동 매칭' : '현재 대기자 없음'}</div>
+          <div class="mode-btn-desc">${hasRandomOpponent ? '대기자 있음 · 자동 매칭' : '대기자 없음 · 먼저 기다리기'}</div>
         </button>
       </div>
     </div>
