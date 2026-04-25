@@ -1,23 +1,6 @@
-const CACHE = 'sosoking-v3';
+const CACHE = 'sosoking-v4';
 const SHELL = [
   '/',
-  '/css/main.css',
-  '/js/app.js',
-  '/js/firebase.js',
-  '/js/firebase-config.js',
-  '/js/components/nav.js',
-  '/js/components/footer.js',
-  '/js/components/theme.js',
-  '/js/components/toast.js',
-  '/js/pages/home.js',
-  '/js/pages/topics.js',
-  '/js/pages/topic-detail.js',
-  '/js/pages/debate.js',
-  '/js/pages/submit-topic.js',
-  '/js/pages/my-history.js',
-  '/js/pages/policy.js',
-  '/js/pages/guide.js',
-  '/js/pages/feedback.js',
   '/logo.svg'
 ];
 
@@ -51,14 +34,29 @@ self.addEventListener('fetch', e => {
 
   // 네비게이션 요청 → SPA index.html 서빙 (단, /admin은 제외)
   if (e.request.mode === 'navigate') {
-    if (url.pathname.startsWith('/admin')) return; // 별도 HTML 파일, SW 개입 안 함
+    if (url.pathname.startsWith('/admin')) return;
     e.respondWith(
       caches.match('/').then(r => r || fetch(e.request))
     );
     return;
   }
 
-  // 정적 자산: 캐시 우선
+  // JS / CSS → 네트워크 우선 (항상 최신 코드 반영, 오프라인 시 캐시 폴백)
+  if (url.origin === self.location.origin &&
+      (url.pathname.endsWith('.js') || url.pathname.endsWith('.css'))) {
+    e.respondWith(
+      fetch(e.request).then(res => {
+        if (res.ok) {
+          const clone = res.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
+        }
+        return res;
+      }).catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
+  // 그 외 정적 자산 (이미지, SVG 등) → 캐시 우선
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached;
