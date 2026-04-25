@@ -595,16 +595,13 @@ async function tabTopics(el) {
     const t = d.data();
     return `<tr data-cat="${t.category||'기타'}">
       <td style="font-size:12px;">
-        <div style="font-weight:700;">${t.title}</div>
-        <div style="color:var(--cream-dim);font-size:11px;">${t.category||'기타'} · ${t.isOfficial?'⭐ 공식':'👤 유저'}</div>
+        <div style="font-weight:700;line-height:1.4;">${t.title}</div>
+        <div style="color:var(--cream-dim);font-size:11px;margin-top:2px;">${t.category||'기타'} · ${t.isOfficial?'⭐ 공식':'👤 유저'}</div>
       </td>
-      <td style="font-size:12px;color:var(--cream-dim);max-width:160px;">${(t.plaintiffPosition||'').substring(0,40)}...</td>
-      <td style="font-size:12px;">${t.playCount||0}</td>
+      <td style="font-size:12px;color:var(--cream-dim);max-width:180px;">${(t.plaintiffPosition||'').substring(0,45)}…</td>
+      <td style="font-size:13px;font-weight:700;text-align:center;">${t.playCount||0}</td>
       <td style="white-space:nowrap;">
-        <button onclick="window._editTopic('${d.id}')" class="admin-btn admin-btn-gold" style="margin-bottom:3px;display:block;width:100%;">✏️ 수정</button>
-        ${!t.isOfficial?`<button onclick="window._adoptTopic('${d.id}')" class="admin-btn admin-btn-gold" style="margin-bottom:3px;display:block;width:100%;">⭐ 채택</button>`:''}
-        <button onclick="window._hideTopic('${d.id}')" class="admin-btn" style="margin-bottom:3px;display:block;width:100%;">숨김</button>
-        <button onclick="window._delTopic('${d.id}')" class="admin-btn admin-btn-danger" style="display:block;width:100%;">삭제</button>
+        <button onclick="window._editTopic('${d.id}')" class="admin-btn admin-btn-gold" style="margin-right:3px;">✏️</button>${!t.isOfficial?`<button onclick="window._adoptTopic('${d.id}')" class="admin-btn admin-btn-gold" style="margin-right:3px;">⭐</button>`:''}<button onclick="window._hideTopic('${d.id}')" class="admin-btn" style="margin-right:3px;">숨김</button><button onclick="window._delTopic('${d.id}')" class="admin-btn admin-btn-danger">삭제</button>
       </td>
     </tr>`;
   };
@@ -617,9 +614,7 @@ async function tabTopics(el) {
         <div style="font-size:11px;">${t.category||'기타'} · ${t.isOfficial?'⭐ 공식':'👤 유저'}</div>
       </td>
       <td style="white-space:nowrap;">
-        <button onclick="window._editTopic('${d.id}')" class="admin-btn admin-btn-gold" style="margin-bottom:3px;display:block;width:100%;">✏️ 수정</button>
-        <button onclick="window._restoreTopic('${d.id}')" class="admin-btn admin-btn-approve" style="margin-bottom:3px;display:block;width:100%;">♻️ 복구</button>
-        <button onclick="window._delTopic('${d.id}')" class="admin-btn admin-btn-danger" style="display:block;width:100%;">삭제</button>
+        <button onclick="window._editTopic('${d.id}')" class="admin-btn admin-btn-gold" style="margin-right:3px;">✏️</button><button onclick="window._restoreTopic('${d.id}')" class="admin-btn admin-btn-approve" style="margin-right:3px;">♻️</button><button onclick="window._delTopic('${d.id}')" class="admin-btn admin-btn-danger">삭제</button>
       </td>
     </tr>`;
   };
@@ -672,7 +667,7 @@ async function tabTopics(el) {
       </div>
     </div>
     <div class="admin-section-box" style="margin-bottom:24px;"><div style="overflow-x:auto;">
-      <table class="admin-table"><thead><tr><th>사건명</th><th>원고 주장</th><th>재판수</th><th>관리</th></tr></thead>
+      <table class="admin-table"><thead><tr><th>사건명</th><th>원고 주장</th><th style="text-align:center;width:60px;">재판수</th><th>관리</th></tr></thead>
       <tbody id="active-tbody">${activeSnap.docs.map(renderActiveRow).join('')||'<tr><td colspan="4" style="text-align:center;padding:30px;color:var(--cream-dim);">없음</td></tr>'}</tbody></table>
     </div></div>
 
