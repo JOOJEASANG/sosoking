@@ -20,25 +20,24 @@ const DEMO_STEPS = [
       <div style="margin-top:14px;text-align:center;font-size:12px;color:var(--cream-dim);">또는 직접 사건 등록도 가능해요 ✏️</div>`,
   },
   {
-    tab: '역할 선택',
+    tab: '대결 방식',
     render: () => `
-      <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.08em;margin-bottom:14px;">🙋 카톡 읽씹 무죄 주장 사건 — 내 입장은?</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
-        <div style="padding:16px 12px;border-radius:12px;border:2px solid rgba(231,76,60,0.5);background:rgba(231,76,60,0.1);text-align:center;">
-          <div style="font-size:24px;margin-bottom:6px;">⚔️</div>
-          <div style="font-size:13px;font-weight:700;color:#e88;margin-bottom:4px;">원고</div>
-          <div style="font-size:11px;color:var(--cream-dim);line-height:1.5;">"읽었으면<br>답해야 예의다"</div>
+      <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.08em;margin-bottom:14px;">🎮 원하는 방식으로 시작하세요</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="padding:12px 14px;border-radius:10px;border:1.5px solid rgba(201,168,76,0.4);background:rgba(201,168,76,0.07);">
+          <div style="font-size:13px;font-weight:700;color:var(--gold);margin-bottom:2px;">👫 친구와 대결</div>
+          <div style="font-size:11px;color:var(--cream-dim);">링크 공유 → 친구가 가입 없이 바로 입장</div>
         </div>
-        <div style="padding:16px 12px;border-radius:12px;border:2px solid rgba(52,152,219,0.5);background:rgba(52,152,219,0.1);text-align:center;">
-          <div style="font-size:24px;margin-bottom:6px;">🛡️</div>
-          <div style="font-size:13px;font-weight:700;color:#7ac;margin-bottom:4px;">피고</div>
-          <div style="font-size:11px;color:var(--cream-dim);line-height:1.5;">"나중에 답할<br>자유가 있다"</div>
+        <div style="padding:12px 14px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,0.02);">
+          <div style="font-size:13px;font-weight:700;color:var(--cream);margin-bottom:2px;">🎲 랜덤 매칭</div>
+          <div style="font-size:11px;color:var(--cream-dim);">같은 주제 대기자와 자동 연결</div>
+        </div>
+        <div style="padding:12px 14px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,0.02);">
+          <div style="font-size:13px;font-weight:700;color:var(--cream);margin-bottom:2px;">🤖 AI와 대결 (소소봇)</div>
+          <div style="font-size:11px;color:var(--cream-dim);">혼자서 즉시 시작 · AI가 논리적으로 반박</div>
         </div>
       </div>
-      <div style="padding:12px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,0.02);text-align:center;">
-        <div style="font-size:12px;color:var(--cream-dim);margin-bottom:6px;">입장 선택 후 친구에게 링크를 보내세요 🔗</div>
-        <div style="font-size:11px;color:rgba(201,168,76,0.6);">sosoking.co.kr/join/ABCD1234</div>
-      </div>`,
+      <div style="margin-top:12px;text-align:center;font-size:11px;color:var(--cream-dim);">라운드는 3 · 5 · 7 중 선택 ⚖️</div>`,
   },
   {
     tab: '토론',
@@ -149,13 +148,23 @@ export async function renderHome(container) {
           </div>
           <div class="home-feature-item">
             <span class="home-feature-icon">🤖</span>
-            <div class="home-feature-label">AI 판사</div>
-            <div class="home-feature-desc">어느 편도 안 든다. 논리로만 판결</div>
+            <div class="home-feature-label">AI 상대</div>
+            <div class="home-feature-desc">소소봇과 1인 즉시 시작 가능</div>
+          </div>
+          <div class="home-feature-item">
+            <span class="home-feature-icon">👨‍⚖️</span>
+            <div class="home-feature-label">7인 랜덤 판사</div>
+            <div class="home-feature-desc">매번 다른 성향의 AI 판사 배정</div>
           </div>
           <div class="home-feature-item">
             <span class="home-feature-icon">✏️</span>
             <div class="home-feature-label">직접 등록</div>
             <div class="home-feature-desc">내 억울한 일을 사건으로 등록</div>
+          </div>
+          <div class="home-feature-item">
+            <span class="home-feature-icon">📋</span>
+            <div class="home-feature-label">내 기록</div>
+            <div class="home-feature-desc">지난 재판과 판결 결과 모아보기</div>
           </div>
         </div>
       </div>
