@@ -316,6 +316,9 @@ function renderCompleted(session, myRole) {
   if (!feed) return;
   if (feed.querySelector('.verdict-reveal')) return;
 
+  // 판결 중 로딩 카드 제거
+  document.getElementById('judging-card')?.remove();
+
   // 초기 로딩 스피너만 있는 상태(아직 토론 내용 없음)라면 제거
   if (!feed.querySelector('.argument-bubble, .waiting-screen, .round-status-row')) {
     feed.innerHTML = '';
@@ -324,24 +327,15 @@ function renderCompleted(session, myRole) {
   const verdict = session.verdict;
   if (!verdict) return;
 
-  let winnerIcon = '🤝';
-  let winnerLabel = '무승부';
-  let winnerName = '팽팽한 접전';
-  let myResultText = '';
-  let myResultColor = 'var(--gold)';
-  let isWin = false;
+  const isDraw = !verdict.winner || verdict.winner === 'draw';
+  const pWin = verdict.winner === 'plaintiff';
+  const dWin = verdict.winner === 'defendant';
 
-  if (verdict.winner === 'plaintiff') {
-    winnerIcon = '⚔️'; winnerLabel = '원고 승소';
-    winnerName = escHtml(session.plaintiff?.nickname || '원고');
-    if (myRole === 'plaintiff') { myResultText = '🎉 승소!'; myResultColor = '#27ae60'; isWin = true; }
-    else if (myRole === 'defendant') { myResultText = '😔 패소'; myResultColor = 'var(--red)'; }
-  } else if (verdict.winner === 'defendant') {
-    winnerIcon = '🛡️'; winnerLabel = '피고 승소';
-    winnerName = escHtml(session.defendant?.nickname || '피고');
-    if (myRole === 'defendant') { myResultText = '🎉 승소!'; myResultColor = '#27ae60'; isWin = true; }
-    else if (myRole === 'plaintiff') { myResultText = '😔 패소'; myResultColor = 'var(--red)'; }
-  }
+  const pClass = isDraw ? 'vs-draw' : pWin ? 'vs-win' : 'vs-lose';
+  const dClass = isDraw ? 'vs-draw' : dWin ? 'vs-win' : 'vs-lose';
+  const pResult = isDraw ? '🤝 무승부' : pWin ? '✅ 승소' : '❌ 패소';
+  const dResult = isDraw ? '🤝 무승부' : dWin ? '✅ 승소' : '❌ 패소';
+  const isWin = (myRole === 'plaintiff' && pWin) || (myRole === 'defendant' && dWin);
 
   const parts = parseVerdict(verdict.text || '');
   const caseNo = verdict.caseNumber || '';
@@ -359,13 +353,27 @@ function renderCompleted(session, myRole) {
           ${judge.icon} <span style="color:${judge.color};font-weight:700;">${session.judgeType}</span> 판사 담당
         </span>
       </div>` : ''}
-    <div style="text-align:center;margin-bottom:12px;font-size:11px;color:var(--cream-dim);letter-spacing:.1em;">⚖️ 최종 판결</div>
-    <div class="verdict-winner${isWin ? ' won' : ''}">
-      <span class="verdict-winner-icon">${winnerIcon}</span>
-      <div class="verdict-winner-label">${winnerLabel}</div>
-      <div class="verdict-winner-name">${winnerName}</div>
-      ${myResultText ? `<div class="verdict-my-result" style="color:${myResultColor};">${myResultText}</div>` : ''}
+    <div style="text-align:center;margin-bottom:10px;font-size:11px;color:var(--cream-dim);letter-spacing:.1em;">⚖️ 최종 판결</div>
+
+    <div class="verdict-sides-row">
+      <div class="verdict-side-card ${pClass}">
+        <div class="vs-role-icon">⚔️</div>
+        <div class="vs-role-label">원고</div>
+        <div class="vs-name">${escHtml(session.plaintiff?.nickname || '원고')}</div>
+        <div class="vs-result">${pResult}</div>
+        ${myRole === 'plaintiff' ? '<div class="vs-me-badge">나</div>' : ''}
+      </div>
+      <div class="vs-divider-col">⚖️</div>
+      <div class="verdict-side-card ${dClass}">
+        <div class="vs-role-icon">🛡️</div>
+        <div class="vs-role-label">피고</div>
+        <div class="vs-name">${escHtml(session.defendant?.nickname || '피고')}</div>
+        <div class="vs-result">${dResult}</div>
+        ${myRole === 'defendant' ? '<div class="vs-me-badge">나</div>' : ''}
+      </div>
     </div>
+    ${isWin ? `<div style="text-align:center;font-size:20px;font-weight:900;color:#27ae60;margin-bottom:14px;animation:fadeUp 0.4s both;">🎉 승소!</div>` : myRole ? `<div style="text-align:center;font-size:18px;font-weight:900;color:var(--red);margin-bottom:14px;animation:fadeUp 0.4s both;">😔 패소</div>` : ''}
+
     ${parts.reason ? `
       <div style="margin-bottom:8px;">
         <div class="verdict-reason-label">📝 판결 이유</div>

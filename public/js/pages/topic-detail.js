@@ -60,13 +60,11 @@ export async function renderTopicDetail(container, topicId) {
       <div class="side-grid">
         <button class="side-btn" data-side="plaintiff">
           <span class="side-btn-icon">⚔️</span>
-          <div class="side-btn-label">원고</div>
-          <div class="side-btn-desc">${topic.plaintiffPosition.slice(0,30)}...</div>
+          <div class="side-btn-label">원고 편들기</div>
         </button>
         <button class="side-btn" data-side="defendant">
           <span class="side-btn-icon">🛡️</span>
-          <div class="side-btn-label">피고</div>
-          <div class="side-btn-desc">${topic.defendantPosition.slice(0,30)}...</div>
+          <div class="side-btn-label">피고 편들기</div>
         </button>
       </div>
     </div>
