@@ -557,9 +557,10 @@ async function tabPolicy(el) {
 
 
 async function tabTopics(el) {
-  const [activeSnap, pendingSnap, catSnap] = await Promise.all([
+  const [activeSnap, pendingSnap, hiddenSnap, catSnap] = await Promise.all([
     getDocs(query(collection(db,'topics'), where('status','==','active'), orderBy('createdAt','desc'), limit(100))),
     getDocs(query(collection(db,'topics'), where('status','==','pending'), orderBy('createdAt','desc'), limit(50))),
+    getDocs(query(collection(db,'topics'), where('status','==','hidden'), orderBy('createdAt','desc'), limit(50))),
     getDocs(query(collection(db,'categories'), orderBy('name','asc'))),
   ]);
 
@@ -575,9 +576,7 @@ async function tabTopics(el) {
       <td style="font-size:12px;">
         <div style="font-weight:700;">${t.title}</div>
         <div style="font-size:11px;color:var(--cream-dim);margin-top:2px;">${t.summary||''}</div>
-        <div style="display:flex;gap:8px;margin-top:6px;font-size:11px;color:var(--cream-dim);">
-          <span>⚔️ ${(t.plaintiffPosition||'').substring(0,30)}...</span>
-        </div>
+        <div style="font-size:11px;color:var(--cream-dim);margin-top:4px;">⚔️ ${(t.plaintiffPosition||'').substring(0,30)}...</div>
         <div style="font-size:11px;color:var(--cream-dim);">🛡️ ${(t.defendantPosition||'').substring(0,30)}...</div>
       </td>
       <td style="white-space:nowrap;vertical-align:middle;">
@@ -604,7 +603,22 @@ async function tabTopics(el) {
       <td style="white-space:nowrap;">
         <button onclick="window._editTopic('${d.id}')" class="admin-btn admin-btn-gold" style="margin-bottom:3px;display:block;width:100%;">✏️ 수정</button>
         ${!t.isOfficial?`<button onclick="window._adoptTopic('${d.id}')" class="admin-btn admin-btn-gold" style="margin-bottom:3px;display:block;width:100%;">⭐ 채택</button>`:''}
-        <button onclick="window._hideTopic('${d.id}','active')" class="admin-btn" style="margin-bottom:3px;display:block;width:100%;">숨김</button>
+        <button onclick="window._hideTopic('${d.id}')" class="admin-btn" style="margin-bottom:3px;display:block;width:100%;">숨김</button>
+        <button onclick="window._delTopic('${d.id}')" class="admin-btn admin-btn-danger" style="display:block;width:100%;">삭제</button>
+      </td>
+    </tr>`;
+  };
+
+  const renderHiddenRow = d => {
+    const t = d.data();
+    return `<tr>
+      <td style="font-size:12px;color:var(--cream-dim);">
+        <div style="font-weight:700;color:var(--cream);">${t.title}</div>
+        <div style="font-size:11px;">${t.category||'기타'} · ${t.isOfficial?'⭐ 공식':'👤 유저'}</div>
+      </td>
+      <td style="white-space:nowrap;">
+        <button onclick="window._editTopic('${d.id}')" class="admin-btn admin-btn-gold" style="margin-bottom:3px;display:block;width:100%;">✏️ 수정</button>
+        <button onclick="window._restoreTopic('${d.id}')" class="admin-btn admin-btn-approve" style="margin-bottom:3px;display:block;width:100%;">♻️ 복구</button>
         <button onclick="window._delTopic('${d.id}')" class="admin-btn admin-btn-danger" style="display:block;width:100%;">삭제</button>
       </td>
     </tr>`;
@@ -613,7 +627,6 @@ async function tabTopics(el) {
   const allCats = ['all', ...new Set(activeSnap.docs.map(d=>d.data().category||'기타'))];
 
   el.innerHTML = `
-
     <!-- 사건 직접 등록 -->
     <div style="margin-bottom:24px;">
       <button id="new-topic-toggle" style="display:flex;align-items:center;gap:8px;width:100%;padding:12px 16px;background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.3);border-radius:10px;color:var(--gold);font-size:13px;font-weight:700;cursor:pointer;text-align:left;">
@@ -621,13 +634,13 @@ async function tabTopics(el) {
       </button>
       <div id="new-topic-form" style="display:none;margin-top:8px;padding:18px;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:10px;">
         <div style="display:grid;gap:12px;">
-          <div><div class="form-label">사건명 <span style="color:var(--red);">*</span> <span style="color:var(--cream-dim);font-weight:400;">(30자 이내)</span></div>
+          <div><div class="form-label">사건명 <span style="color:var(--red);">*</span></div>
             <input type="text" id="nt-title" class="form-input" maxlength="30" placeholder="예: 카톡 읽씹 무죄 주장 사건"></div>
-          <div><div class="form-label">한 줄 요약 <span style="color:var(--red);">*</span> <span style="color:var(--cream-dim);font-weight:400;">(60자 이내)</span></div>
+          <div><div class="form-label">한 줄 요약 <span style="color:var(--red);">*</span></div>
             <input type="text" id="nt-summary" class="form-input" maxlength="60" placeholder="예: 읽고 2시간 뒤 답장 — 무시인가, 나중에 답할 권리인가"></div>
-          <div><div class="form-label">⚔️ 원고 입장 <span style="color:var(--red);">*</span> <span style="color:var(--cream-dim);font-weight:400;">(100자 이내)</span></div>
+          <div><div class="form-label">⚔️ 원고 입장 <span style="color:var(--red);">*</span></div>
             <textarea id="nt-plaintiff" class="form-textarea" style="min-height:60px;" maxlength="100" placeholder="원고 측 주장을 입력하세요"></textarea></div>
-          <div><div class="form-label">🛡️ 피고 입장 <span style="color:var(--red);">*</span> <span style="color:var(--cream-dim);font-weight:400;">(100자 이내)</span></div>
+          <div><div class="form-label">🛡️ 피고 입장 <span style="color:var(--red);">*</span></div>
             <textarea id="nt-defendant" class="form-textarea" style="min-height:60px;" maxlength="100" placeholder="피고 측 주장을 입력하세요"></textarea></div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
             <div><div class="form-label">카테고리</div>
@@ -648,7 +661,7 @@ async function tabTopics(el) {
       <div style="font-size:12px;color:var(--cream-dim);margin-bottom:10px;">카테고리를 확인·변경하고 승인하세요.</div>
       <div class="admin-section-box" style="margin-bottom:24px;"><div style="overflow-x:auto;">
         <table class="admin-table"><thead><tr><th>사건 내용</th><th style="width:130px;">카테고리 · 처리</th></tr></thead>
-        <tbody id="pending-tbody">${pendingSnap.docs.map(renderPendingRow).join('')}</tbody></table>
+        <tbody>${pendingSnap.docs.map(renderPendingRow).join('')}</tbody></table>
       </div></div>
     `:''}
 
@@ -658,10 +671,18 @@ async function tabTopics(el) {
         ${allCats.map(c=>`<button class="cat-filter-btn${c==='all'?' active':''}" data-cat="${c}" style="padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:${c==='all'?'var(--gold-dim)':'none'};color:${c==='all'?'var(--gold)':'var(--cream-dim)'};transition:all 0.15s;">${c==='all'?'전체':c}</button>`).join('')}
       </div>
     </div>
-    <div class="admin-section-box"><div style="overflow-x:auto;">
+    <div class="admin-section-box" style="margin-bottom:24px;"><div style="overflow-x:auto;">
       <table class="admin-table"><thead><tr><th>사건명</th><th>원고 주장</th><th>재판수</th><th>관리</th></tr></thead>
       <tbody id="active-tbody">${activeSnap.docs.map(renderActiveRow).join('')||'<tr><td colspan="4" style="text-align:center;padding:30px;color:var(--cream-dim);">없음</td></tr>'}</tbody></table>
     </div></div>
+
+    ${hiddenSnap.docs.length?`
+      <div class="admin-section-title">🚫 숨김 처리된 사건 <span style="background:rgba(255,255,255,0.08);color:var(--cream-dim);border-radius:20px;padding:1px 8px;font-size:11px;">${hiddenSnap.docs.length}</span></div>
+      <div class="admin-section-box"><div style="overflow-x:auto;">
+        <table class="admin-table"><thead><tr><th>사건명</th><th>관리</th></tr></thead>
+        <tbody>${hiddenSnap.docs.map(renderHiddenRow).join('')}</tbody></table>
+      </div></div>
+    `:''}
   `;
 
   // 카테고리 필터
@@ -725,59 +746,71 @@ async function tabTopics(el) {
     await updateDoc(doc(db,'topics',id), { isOfficial: true });
     toast('⭐ 공식 사건으로 채택됐습니다!', 'success'); loadTab('topics');
   };
-  window._hideTopic = async (id,cur) => { await updateDoc(doc(db,'topics',id),{status:cur==='active'?'hidden':'active'}); toast('처리됨','success'); loadTab('topics'); };
+  window._hideTopic = async id => {
+    await updateDoc(doc(db,'topics',id), { status:'hidden' });
+    toast('숨김 처리됨','success'); loadTab('topics');
+  };
+  window._restoreTopic = async id => {
+    await updateDoc(doc(db,'topics',id), { status:'active' });
+    toast('복구됨','success'); loadTab('topics');
+  };
   window._delTopic = async id => {
     if (!confirm('이 주제를 삭제하시겠습니까?')) return;
     await deleteDoc(doc(db,'topics',id));
     toast('삭제 완료','success'); loadTab('topics');
   };
 
-  // ── 수정 모달 ──
-  const modalEl = document.createElement('div');
-  modalEl.id = 'topic-edit-modal';
-  modalEl.style.cssText = 'display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.65);backdrop-filter:blur(4px);overflow-y:auto;padding:24px 16px;';
-  modalEl.innerHTML = `
-    <div style="max-width:560px;margin:0 auto;background:var(--navy-card);border:1px solid var(--border);border-radius:16px;padding:28px;position:relative;box-shadow:0 24px 64px rgba(0,0,0,0.6);">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;">
-        <div style="font-family:'Noto Serif KR',serif;font-size:16px;font-weight:700;color:var(--gold);">✏️ 사건 수정</div>
-        <button id="modal-close" style="background:none;border:none;font-size:22px;color:var(--cream-dim);cursor:pointer;padding:4px 8px;border-radius:6px;line-height:1;">✕</button>
-      </div>
-      <div style="display:grid;gap:14px;">
-        <div><div class="form-label">사건명 <span style="color:var(--red);">*</span></div>
-          <input id="et-title" class="form-input" maxlength="30"></div>
-        <div><div class="form-label">한 줄 요약 <span style="color:var(--red);">*</span></div>
-          <input id="et-summary" class="form-input" maxlength="60"></div>
-        <div><div class="form-label">⚔️ 원고 입장 <span style="color:var(--red);">*</span></div>
-          <textarea id="et-plaintiff" class="form-textarea" style="min-height:70px;" maxlength="100"></textarea></div>
-        <div><div class="form-label">🛡️ 피고 입장 <span style="color:var(--red);">*</span></div>
-          <textarea id="et-defendant" class="form-textarea" style="min-height:70px;" maxlength="100"></textarea></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
-          <div><div class="form-label">카테고리</div>
-            <select id="et-category" class="form-input">${catOptions}<option value="기타">기타</option></select></div>
-          <div><div class="form-label">공개 상태</div>
-            <select id="et-status" class="form-input">
-              <option value="active">공개</option>
-              <option value="pending">대기</option>
-              <option value="hidden">숨김</option>
-            </select></div>
-          <div><div class="form-label">구분</div>
-            <select id="et-official" class="form-input">
-              <option value="true">⭐ 공식</option>
-              <option value="false">👤 유저</option>
-            </select></div>
+  // ── 수정 모달 (중복 생성 방지) ──
+  let modalEl = document.getElementById('topic-edit-modal');
+  if (!modalEl) {
+    modalEl = document.createElement('div');
+    modalEl.id = 'topic-edit-modal';
+    modalEl.style.cssText = 'display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.65);backdrop-filter:blur(4px);overflow-y:auto;padding:24px 16px;';
+    modalEl.innerHTML = `
+      <div style="max-width:560px;margin:0 auto;background:var(--navy-card);border:1px solid var(--border);border-radius:16px;padding:28px;position:relative;box-shadow:0 24px 64px rgba(0,0,0,0.6);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;">
+          <div style="font-family:'Noto Serif KR',serif;font-size:16px;font-weight:700;color:var(--gold);">✏️ 사건 수정</div>
+          <button id="modal-close" style="background:none;border:none;font-size:22px;color:var(--cream-dim);cursor:pointer;padding:4px 8px;border-radius:6px;line-height:1;">✕</button>
         </div>
-        <div style="display:flex;gap:8px;margin-top:4px;">
-          <button id="modal-save" class="btn btn-primary" style="flex:1;">저장</button>
-          <button id="modal-cancel" class="admin-btn" style="padding:14px 20px;font-size:14px;">취소</button>
+        <div style="display:grid;gap:14px;">
+          <div><div class="form-label">사건명 <span style="color:var(--red);">*</span></div>
+            <input id="et-title" class="form-input" maxlength="30"></div>
+          <div><div class="form-label">한 줄 요약 <span style="color:var(--red);">*</span></div>
+            <input id="et-summary" class="form-input" maxlength="60"></div>
+          <div><div class="form-label">⚔️ 원고 입장 <span style="color:var(--red);">*</span></div>
+            <textarea id="et-plaintiff" class="form-textarea" style="min-height:70px;" maxlength="100"></textarea></div>
+          <div><div class="form-label">🛡️ 피고 입장 <span style="color:var(--red);">*</span></div>
+            <textarea id="et-defendant" class="form-textarea" style="min-height:70px;" maxlength="100"></textarea></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+            <div><div class="form-label">카테고리</div>
+              <select id="et-category" class="form-input"></select></div>
+            <div><div class="form-label">공개 상태</div>
+              <select id="et-status" class="form-input">
+                <option value="active">공개</option>
+                <option value="pending">대기</option>
+                <option value="hidden">숨김</option>
+              </select></div>
+            <div><div class="form-label">구분</div>
+              <select id="et-official" class="form-input">
+                <option value="true">⭐ 공식</option>
+                <option value="false">👤 유저</option>
+              </select></div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:4px;">
+            <button id="modal-save" class="btn btn-primary" style="flex:1;">저장</button>
+            <button id="modal-cancel" class="admin-btn" style="padding:14px 20px;font-size:14px;">취소</button>
+          </div>
         </div>
-      </div>
-    </div>`;
-  document.body.appendChild(modalEl);
+      </div>`;
+    document.body.appendChild(modalEl);
+    const closeModal = () => { modalEl.style.display = 'none'; };
+    document.getElementById('modal-close').addEventListener('click', closeModal);
+    document.getElementById('modal-cancel').addEventListener('click', closeModal);
+    modalEl.addEventListener('click', e => { if (e.target === modalEl) closeModal(); });
+  }
 
-  const closeModal = () => { modalEl.style.display = 'none'; };
-  document.getElementById('modal-close').addEventListener('click', closeModal);
-  document.getElementById('modal-cancel').addEventListener('click', closeModal);
-  modalEl.addEventListener('click', e => { if (e.target === modalEl) closeModal(); });
+  // 카테고리 옵션 항상 최신화
+  document.getElementById('et-category').innerHTML = catOptions + '<option value="기타">기타</option>';
 
   window._editTopic = async id => {
     const snap = await getDoc(doc(db,'topics',id));
@@ -812,7 +845,7 @@ async function tabTopics(el) {
           isOfficial: document.getElementById('et-official').value === 'true',
         });
         toast('수정되었습니다','success');
-        closeModal();
+        modalEl.style.display = 'none';
         loadTab('topics');
       } catch(e) { toast('저장 실패: '+e.message,'error'); newSave.disabled=false; newSave.textContent='저장'; }
     });
