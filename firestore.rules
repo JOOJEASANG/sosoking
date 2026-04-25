@@ -19,7 +19,7 @@ service cloud.firestore {
 
     match /topics/{topicId} {
       allow read: if resource.data.status == 'active' || isAdmin();
-      allow create: if false; // Cloud Function을 통해서만 생성
+      allow create: if isAdmin();
       allow update, delete: if isAdmin();
     }
 
