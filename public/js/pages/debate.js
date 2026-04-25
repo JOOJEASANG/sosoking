@@ -66,7 +66,7 @@ export async function renderDebate(container, sessionId, shareToken) {
       else if (session.defendant?.userId === uid) myRole = 'defendant';
     }
 
-    if (session.status === lastRenderedStatus && session.status !== 'active' && session.status !== 'ready_for_verdict') return;
+    if (session.status === lastRenderedStatus && session.status !== 'active' && session.status !== 'ready_for_verdict' && session.status !== 'verdict_requested') return;
     lastRenderedStatus = session.status;
 
     updateHeader(session, myRole);
@@ -75,7 +75,7 @@ export async function renderDebate(container, sessionId, shareToken) {
     if (session.status === 'waiting') {
       renderWaiting(session, sessionId);
       removeInputArea();
-    } else if (session.status === 'active' || session.status === 'ready_for_verdict') {
+    } else if (session.status === 'active' || session.status === 'ready_for_verdict' || session.status === 'verdict_requested') {
       renderActive(session, myRole, sessionId);
       if (!inputAttached) { attachInput(sessionId, session, myRole); inputAttached = true; }
       else updateInput(session, myRole);
@@ -128,6 +128,7 @@ function updateHeader(session, myRole) {
     waiting: '상대방 대기 중...',
     active: myRole ? `${session.currentRound + 1}라운드 · ${myTurnText(session, myRole)}` : `${session.currentRound + 1}라운드 진행 중`,
     ready_for_verdict: '주장 완료 · 판결 요청 가능',
+    verdict_requested: '⚖️ 판결 요청 중 · 상대방 동의 대기',
     judging: '⚖️ AI 판사 심리 중...',
     completed: '판결 완료',
   };
@@ -268,10 +269,29 @@ function renderActive(session, myRole, sessionId) {
   const hasCompleteRound = rounds.some(r => r.plaintiff && r.defendant);
   if (hasCompleteRound) {
     const isAllDone = session.status === 'ready_for_verdict';
+    const isVerdictPending = session.status === 'verdict_requested';
+    const uid = auth.currentUser?.uid;
+    const iAmRequester = isVerdictPending && session.verdictRequestedBy === uid;
+
     const btnWrap = document.createElement('div');
     btnWrap.id = 'verdict-btn-wrap';
     btnWrap.style.cssText = 'padding:8px 0 16px;';
-    if (isAllDone) {
+
+    if (isVerdictPending) {
+      if (iAmRequester) {
+        btnWrap.innerHTML = `
+          <div style="text-align:center;font-size:13px;color:var(--gold);font-weight:700;margin-bottom:12px;">⏳ 상대방의 동의를 기다리는 중...</div>
+          <button id="verdict-cancel-btn" class="btn btn-ghost" style="width:100%;">✕ 판결 요청 취소</button>`;
+      } else {
+        btnWrap.innerHTML = `
+          <div style="text-align:center;font-size:14px;font-weight:700;color:var(--cream);margin-bottom:8px;">⚖️ 상대방이 지금 바로 판결을 요청했어요</div>
+          <div style="text-align:center;font-size:12px;color:var(--cream-dim);margin-bottom:14px;">동의하면 AI 판사가 지금까지의 주장을 판결합니다</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <button id="verdict-accept-btn" class="btn btn-primary">✅ 동의하기</button>
+            <button id="verdict-decline-btn" class="btn btn-ghost">❌ 거부하기</button>
+          </div>`;
+      }
+    } else if (isAllDone) {
       btnWrap.innerHTML = `
         <div style="text-align:center;font-size:13px;color:var(--gold);font-weight:700;margin-bottom:12px;">⚡ 모든 라운드 완료! 판결을 요청하세요.</div>
         <button id="verdict-request-btn" class="btn btn-primary">⚖️ AI 판사 판결 요청하기</button>`;
@@ -281,17 +301,56 @@ function renderActive(session, myRole, sessionId) {
         <button id="verdict-request-btn" class="btn btn-secondary" style="width:100%;">⚖️ 지금 바로 판결받기</button>`;
     }
     feed.appendChild(btnWrap);
-    document.getElementById('verdict-request-btn')?.addEventListener('click', async () => {
-      const b = document.getElementById('verdict-request-btn');
-      if (b) { b.disabled = true; b.textContent = '⏳ 판사 심리 중...'; }
-      try {
-        const requestVerdict = httpsCallable(functions, 'requestVerdict');
-        await requestVerdict({ sessionId });
-      } catch (err) {
-        showToast(err.message || '오류 발생', 'error');
-        if (b) { b.disabled = false; b.textContent = isAllDone ? '⚖️ AI 판사 판결 요청하기' : '⚖️ 지금 바로 판결받기'; }
-      }
-    });
+
+    if (!isVerdictPending) {
+      document.getElementById('verdict-request-btn')?.addEventListener('click', async () => {
+        const b = document.getElementById('verdict-request-btn');
+        if (b) { b.disabled = true; b.textContent = isAllDone ? '⏳ 판사 심리 중...' : '⏳ 요청 중...'; }
+        try {
+          const requestVerdict = httpsCallable(functions, 'requestVerdict');
+          await requestVerdict({ sessionId });
+        } catch (err) {
+          showToast(err.message || '오류 발생', 'error');
+          if (b) { b.disabled = false; b.textContent = isAllDone ? '⚖️ AI 판사 판결 요청하기' : '⚖️ 지금 바로 판결받기'; }
+        }
+      });
+    } else if (iAmRequester) {
+      document.getElementById('verdict-cancel-btn')?.addEventListener('click', async () => {
+        const b = document.getElementById('verdict-cancel-btn');
+        if (b) b.disabled = true;
+        try {
+          const declineVerdictRequest = httpsCallable(functions, 'declineVerdictRequest');
+          await declineVerdictRequest({ sessionId });
+        } catch (err) {
+          showToast(err.message || '오류 발생', 'error');
+          if (b) b.disabled = false;
+        }
+      });
+    } else {
+      document.getElementById('verdict-accept-btn')?.addEventListener('click', async () => {
+        const b = document.getElementById('verdict-accept-btn');
+        if (b) { b.disabled = true; b.textContent = '⏳ 심리 중...'; }
+        try {
+          const requestVerdict = httpsCallable(functions, 'requestVerdict');
+          await requestVerdict({ sessionId });
+        } catch (err) {
+          showToast(err.message || '오류 발생', 'error');
+          if (b) { b.disabled = false; b.textContent = '✅ 동의하기'; }
+        }
+      });
+      document.getElementById('verdict-decline-btn')?.addEventListener('click', async () => {
+        const b = document.getElementById('verdict-decline-btn');
+        if (b) b.disabled = true;
+        try {
+          const declineVerdictRequest = httpsCallable(functions, 'declineVerdictRequest');
+          await declineVerdictRequest({ sessionId });
+          showToast('판결 요청을 거부했습니다', 'info');
+        } catch (err) {
+          showToast(err.message || '오류 발생', 'error');
+          if (b) b.disabled = false;
+        }
+      });
+    }
   }
 }
 
@@ -482,6 +541,7 @@ function updateInput(session, myRole) {
   const cur = rounds[round] || {};
   const myDone = !!cur[myRole];
   const maxReached = session.status === 'ready_for_verdict';
+  const verdictPending = session.status === 'verdict_requested';
 
   // 순서: 원고 먼저 주장 → 피고 반박
   let isMyTurn = false;
@@ -495,14 +555,16 @@ function updateInput(session, myRole) {
     else waitMsg = '⚔️ 원고의 다음 주장을 기다리는 중...';
   }
 
-  textarea.disabled = !isMyTurn || maxReached;
-  btn.disabled = !isMyTurn || maxReached;
+  textarea.disabled = !isMyTurn || maxReached || verdictPending;
+  btn.disabled = !isMyTurn || maxReached || verdictPending;
   textarea.placeholder = isMyTurn
     ? (myRole === 'plaintiff' ? '먼저 주장을 펼치세요... (최대 200자)' : '원고 주장에 반박하세요... (최대 200자)')
     : '대기 중...';
 
   if (maxReached) {
     hint.textContent = '모든 라운드 완료 · 위에서 판결 요청 가능';
+  } else if (verdictPending) {
+    hint.textContent = '⚖️ 판결 요청 처리 중...';
   } else if (!isMyTurn) {
     hint.textContent = waitMsg;
   } else {

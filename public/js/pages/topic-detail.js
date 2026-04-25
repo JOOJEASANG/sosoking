@@ -85,6 +85,27 @@ export async function renderTopicDetail(container, topicId) {
       </div>
     </div>
 
+    <div class="form-group" style="margin-top:20px;">
+      <label class="form-label">라운드 수</label>
+      <div class="rounds-grid">
+        <button class="rounds-btn" data-rounds="3">
+          <span class="rounds-btn-num">3</span>
+          <div class="rounds-btn-label">단판</div>
+          <div class="rounds-btn-desc">빠른 결판</div>
+        </button>
+        <button class="rounds-btn active" data-rounds="5">
+          <span class="rounds-btn-num">5</span>
+          <div class="rounds-btn-label">기본</div>
+          <div class="rounds-btn-desc">추천</div>
+        </button>
+        <button class="rounds-btn" data-rounds="7">
+          <span class="rounds-btn-num">7</span>
+          <div class="rounds-btn-label">풀세트</div>
+          <div class="rounds-btn-desc">끝장토론</div>
+        </button>
+      </div>
+    </div>
+
     <div class="disclaimer" style="margin:20px 0 24px;">
       재판 중 AI는 어느 편도 들지 않습니다.<br>
       논리가 부족하면 직접 입력한 사람도 집니다.<br>
@@ -96,6 +117,7 @@ export async function renderTopicDetail(container, topicId) {
 
   let selectedSide = '';
   let selectedMode = '';
+  let selectedRounds = 5;
 
   inner.querySelectorAll('.side-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -112,6 +134,14 @@ export async function renderTopicDetail(container, topicId) {
       btn.classList.add('active');
       selectedMode = btn.dataset.mode;
       updateStartBtn();
+    });
+  });
+
+  inner.querySelectorAll('.rounds-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      inner.querySelectorAll('.rounds-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedRounds = Number(btn.dataset.rounds);
     });
   });
 
@@ -134,10 +164,10 @@ export async function renderTopicDetail(container, topicId) {
 
     try {
       if (selectedMode === 'random') {
-        await handleRandomMatch(topicId, topic, selectedSide);
+        await handleRandomMatch(topicId, topic, selectedSide, selectedRounds);
       } else {
         const createSession = httpsCallable(functions, 'createSession');
-        const res = await createSession({ topicId, side: selectedSide, mode: 'friend' });
+        const res = await createSession({ topicId, side: selectedSide, mode: 'friend', maxRounds: selectedRounds });
         location.hash = `#/debate/${res.data.sessionId}`;
       }
     } catch (err) {
@@ -148,7 +178,7 @@ export async function renderTopicDetail(container, topicId) {
   });
 }
 
-async function handleRandomMatch(topicId, topic, side) {
+async function handleRandomMatch(topicId, topic, side, maxRounds) {
   const queueSnap = await getDoc(doc(db, 'random_queue', topicId));
 
   if (queueSnap.exists() && queueSnap.data().userId !== auth.currentUser?.uid) {
@@ -157,7 +187,7 @@ async function handleRandomMatch(topicId, topic, side) {
     location.hash = `#/debate/${res.data.sessionId}`;
   } else {
     const createSession = httpsCallable(functions, 'createSession');
-    const res = await createSession({ topicId, side, mode: 'random' });
+    const res = await createSession({ topicId, side, mode: 'random', maxRounds });
     location.hash = `#/debate/${res.data.sessionId}`;
   }
 }
