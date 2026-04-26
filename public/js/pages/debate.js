@@ -761,7 +761,17 @@ async function generateVerdictCard(session) {
     document.fonts.ready,
   ]);
 
-  const W = 1080, H = 1080;
+  const W = 1080;
+  const MAX_ROUNDS = 3;
+  const debateRounds = (session.rounds || []).filter(r => r.plaintiff || r.defendant);
+  const numShown = Math.min(debateRounds.length, MAX_ROUNDS);
+  const hasDebate = numShown > 0;
+  const moreRounds = debateRounds.length - numShown;
+
+  // Height: 940 base + debate section (80 header + 280/round) + 40 padding, min 1080
+  const DEBATE_H = hasDebate ? 80 + numShown * 280 + (moreRounds > 0 ? 40 : 0) : 0;
+  const H = Math.max(1080, 940 + DEBATE_H + 40);
+
   const canvas = document.createElement('canvas');
   canvas.width = W;
   canvas.height = H;
@@ -789,8 +799,8 @@ async function generateVerdictCard(session) {
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, W, H);
 
-  const glow = ctx.createRadialGradient(W / 2, H * 0.38, 0, W / 2, H * 0.38, W * 0.65);
-  glow.addColorStop(0, 'rgba(201,168,76,0.07)');
+  const glow = ctx.createRadialGradient(W / 2, H * 0.3, 0, W / 2, H * 0.3, W * 0.7);
+  glow.addColorStop(0, 'rgba(201,168,76,0.06)');
   glow.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = glow;
   ctx.fillRect(0, 0, W, H);
@@ -822,10 +832,7 @@ async function generateVerdictCard(session) {
 
   ctx.strokeStyle = GOLD_DIM;
   ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(70, y);
-  ctx.lineTo(W - 70, y);
-  ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(70, y); ctx.lineTo(W - 70, y); ctx.stroke();
   y += 46;
 
   // Topic title
@@ -834,26 +841,118 @@ async function generateVerdictCard(session) {
   ctx.font = topicFont;
   ctx.fillStyle = CREAM;
   topicLines.slice(0, 2).forEach(line => { ctx.fillText(line, W / 2, y); y += 54; });
-  y += 12;
+  y += 16;
+
+  // ── 토론 내용 섹션 ──
+  if (hasDebate) {
+    ctx.strokeStyle = GOLD_DIM;
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(70, y); ctx.lineTo(W - 70, y); ctx.stroke();
+    y += 34;
+
+    ctx.font = '700 24px "Noto Sans KR", sans-serif';
+    ctx.fillStyle = GOLD;
+    ctx.textAlign = 'center';
+    ctx.fillText('📋 토론 내용', W / 2, y);
+    y += 46;
+
+    const pNick = session.plaintiff?.nickname || '원고';
+    const dNick = session.defendant?.nickname || '피고';
+    const TRUNC = 50;
+    const argFont = '400 24px "Noto Sans KR", sans-serif';
+    const textAreaW = W - 140 - 32; // bubble inner text width
+
+    const drawDebateBubble = (text, role) => {
+      const isP = role === 'plaintiff';
+      const nick = isP ? pNick : dNick;
+      const accent = isP ? RED : BLUE;
+      const truncated = text.length > TRUNC ? text.slice(0, TRUNC) + '…' : text;
+      const lines = cardWrapText(ctx, truncated, textAreaW, argFont);
+      const lineCount = Math.min(lines.length, 2);
+      const bubbleH = 22 + 26 + 8 + lineCount * 30 + 16;
+      const bx = 70, bw = W - 140;
+
+      ctx.fillStyle = isP ? 'rgba(231,76,60,0.08)' : 'rgba(52,152,219,0.08)';
+      cardRoundRect(ctx, bx, y, bw, bubbleH, 10);
+      ctx.fill();
+      ctx.strokeStyle = isP ? 'rgba(231,76,60,0.28)' : 'rgba(52,152,219,0.28)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // accent bar
+      ctx.fillStyle = accent;
+      cardRoundRect(ctx, bx, y, 4, bubbleH, 2);
+      ctx.fill();
+
+      // role label
+      ctx.font = '700 20px "Noto Sans KR", sans-serif';
+      ctx.fillStyle = accent;
+      ctx.textAlign = 'left';
+      const shortNick = nick.length > 8 ? nick.slice(0, 8) + '…' : nick;
+      ctx.fillText(`${isP ? '⚔️ 원고' : '🛡️ 피고'} · ${shortNick}`, bx + 18, y + 22 + 18);
+
+      // argument text
+      ctx.font = argFont;
+      ctx.fillStyle = CREAM;
+      lines.slice(0, 2).forEach((line, li) => {
+        ctx.fillText(line, bx + 18, y + 22 + 26 + 8 + (li + 1) * 30);
+      });
+
+      y += bubbleH + 10;
+    };
+
+    debateRounds.slice(0, MAX_ROUNDS).forEach((round, i) => {
+      ctx.font = '700 20px "Noto Sans KR", sans-serif';
+      ctx.fillStyle = GOLD_DIM;
+      ctx.textAlign = 'center';
+      ctx.fillText(`— ${i + 1}라운드 —`, W / 2, y + 14);
+      y += 36;
+      if (round.plaintiff) drawDebateBubble(round.plaintiff, 'plaintiff');
+      if (round.defendant) drawDebateBubble(round.defendant, 'defendant');
+      y += 16;
+    });
+
+    if (moreRounds > 0) {
+      ctx.font = '400 21px "Noto Sans KR", sans-serif';
+      ctx.fillStyle = GOLD_DIM;
+      ctx.textAlign = 'center';
+      ctx.fillText(`···  외 ${moreRounds}라운드 더`, W / 2, y + 12);
+      y += 40;
+    }
+
+    y += 10;
+  }
+
+  // ── 판결 섹션 ──
+  ctx.strokeStyle = GOLD_DIM;
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(70, y); ctx.lineTo(W - 70, y); ctx.stroke();
+  y += 34;
+
+  ctx.font = '400 20px "Noto Sans KR", sans-serif';
+  ctx.fillStyle = GOLD_DIM;
+  ctx.textAlign = 'center';
+  ctx.fillText('⚖️ 최종 판결', W / 2, y);
+  y += 36;
 
   // Verdict box
   const verdictColor = isDraw ? GOLD : pWin ? RED : BLUE;
   const verdictLabel = isDraw ? '🤝 무승부' : pWin ? '⚔️ 원고 승소' : '🛡️ 피고 승소';
   const boxTop = y;
-  const boxH = 104;
+  const boxH = 100;
   ctx.fillStyle = 'rgba(255,255,255,0.03)';
   cardRoundRect(ctx, 70, boxTop, W - 140, boxH, 18);
   ctx.fill();
   ctx.strokeStyle = verdictColor;
   ctx.lineWidth = 2.5;
   ctx.stroke();
-  ctx.font = '900 58px "Noto Serif KR", serif';
+  ctx.font = '900 56px "Noto Serif KR", serif';
   ctx.fillStyle = verdictColor;
-  ctx.fillText(verdictLabel, W / 2, boxTop + 70);
-  y = boxTop + boxH + 30;
+  ctx.fillText(verdictLabel, W / 2, boxTop + 66);
+  y = boxTop + boxH + 28;
 
   // VS section
-  const vsBoxW = 360, vsBoxH = 136;
+  const vsBoxW = 360, vsBoxH = 132;
   const leftX = 70, rightX = W - 70 - vsBoxW;
 
   const drawVsBox = (x, role, nick, isWinner) => {
@@ -867,70 +966,69 @@ async function generateVerdictCard(session) {
     ctx.lineWidth = 1.5;
     ctx.stroke();
 
+    ctx.textAlign = 'center';
     ctx.font = '700 20px "Noto Sans KR", sans-serif';
     ctx.fillStyle = isP ? RED : BLUE;
-    ctx.fillText(isP ? '⚔️ 원고' : '🛡️ 피고', x + vsBoxW / 2, y + 36);
+    ctx.fillText(isP ? '⚔️ 원고' : '🛡️ 피고', x + vsBoxW / 2, y + 34);
 
-    ctx.font = '700 28px "Noto Sans KR", sans-serif';
+    ctx.font = '700 26px "Noto Sans KR", sans-serif';
     ctx.fillStyle = CREAM;
     const n = nick.length > 10 ? nick.slice(0, 10) + '…' : nick;
-    ctx.fillText(n, x + vsBoxW / 2, y + 76);
+    ctx.fillText(n, x + vsBoxW / 2, y + 70);
 
-    ctx.font = '900 30px "Noto Sans KR", sans-serif';
+    ctx.font = '900 28px "Noto Sans KR", sans-serif';
     ctx.fillStyle = isDraw ? GOLD : isWinner ? GREEN : RED;
-    ctx.fillText(isDraw ? '무승부' : isWinner ? '✅ 승소' : '❌ 패소', x + vsBoxW / 2, y + 116);
+    ctx.fillText(isDraw ? '무승부' : isWinner ? '✅ 승소' : '❌ 패소', x + vsBoxW / 2, y + 108);
   };
 
   drawVsBox(leftX, 'plaintiff', session.plaintiff?.nickname || '원고', pWin);
   drawVsBox(rightX, 'defendant', session.defendant?.nickname || '피고', dWin);
 
-  ctx.font = '900 32px "Noto Sans KR", sans-serif';
+  ctx.font = '900 30px "Noto Sans KR", sans-serif';
   ctx.fillStyle = GOLD_DIM;
-  ctx.fillText('VS', W / 2, y + vsBoxH / 2 + 12);
+  ctx.textAlign = 'center';
+  ctx.fillText('VS', W / 2, y + vsBoxH / 2 + 10);
 
-  y += vsBoxH + 32;
+  y += vsBoxH + 28;
 
   // Judge
   if (judge) {
-    ctx.font = '400 26px "Noto Sans KR", sans-serif';
+    ctx.font = '400 24px "Noto Sans KR", sans-serif';
     ctx.fillStyle = CREAM_DIM;
+    ctx.textAlign = 'center';
     ctx.fillText(`${judge.icon} ${session.judgeType} 판사 담당`, W / 2, y);
-    y += 44;
+    y += 40;
   }
 
   // Sentence
   if (parts.sentence) {
     ctx.strokeStyle = GOLD_DIM;
     ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(70, y);
-    ctx.lineTo(W - 70, y);
-    ctx.stroke();
-    y += 34;
+    ctx.beginPath(); ctx.moveTo(70, y); ctx.lineTo(W - 70, y); ctx.stroke();
+    y += 28;
 
-    ctx.font = '700 24px "Noto Sans KR", sans-serif';
+    ctx.font = '700 22px "Noto Sans KR", sans-serif';
     ctx.fillStyle = GOLD;
+    ctx.textAlign = 'center';
     ctx.fillText('📜 생활형 처분', W / 2, y);
-    y += 36;
+    y += 32;
 
-    const sentFont = '400 22px "Noto Sans KR", sans-serif';
+    const sentFont = '400 21px "Noto Sans KR", sans-serif';
     const sentLines = cardWrapText(ctx, parts.sentence, W - 140, sentFont);
     ctx.font = sentFont;
     ctx.fillStyle = CREAM_DIM;
-    sentLines.slice(0, 2).forEach(line => { ctx.fillText(line, W / 2, y); y += 32; });
+    sentLines.slice(0, 2).forEach(line => { ctx.fillText(line, W / 2, y); y += 30; });
   }
 
   // Footer
   ctx.strokeStyle = GOLD_DIM;
   ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(70, H - 58);
-  ctx.lineTo(W - 70, H - 58);
-  ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(70, H - 56); ctx.lineTo(W - 70, H - 56); ctx.stroke();
 
-  ctx.font = '400 26px "Noto Sans KR", sans-serif';
-  ctx.fillStyle = GOLD_DIM;
-  ctx.fillText('sosoking.co.kr', W / 2, H - 26);
+  ctx.font = '700 26px "Noto Sans KR", sans-serif';
+  ctx.fillStyle = GOLD;
+  ctx.textAlign = 'center';
+  ctx.fillText('🌐 sosoking.co.kr', W / 2, H - 24);
 
   return canvas;
 }
