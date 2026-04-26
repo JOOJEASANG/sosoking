@@ -777,9 +777,17 @@ async function generateVerdictCard(session) {
   const hasDebate = numShown > 0;
   const moreRounds = debateRounds.length - numShown;
 
-  // Height: 940 base + debate section (80 header + 280/round) + 40 padding, min 1080
+  // 높이 계산 전에 먼저 파싱
+  const verdict = session.verdict || {};
+  const isDraw = !verdict.winner || verdict.winner === 'draw';
+  const pWin = verdict.winner === 'plaintiff';
+  const dWin = verdict.winner === 'defendant';
+  const parts = parseVerdict(verdict.text || '');
+  const judge = session.judgeType ? JUDGE_DEFS[session.judgeType] : null;
+
+  const REASON_H = parts.reason ? 155 : 0;
   const DEBATE_H = hasDebate ? 80 + numShown * 280 + (moreRounds > 0 ? 40 : 0) : 0;
-  const H = Math.max(1080, 940 + DEBATE_H + 40);
+  const H = Math.max(1080, 940 + DEBATE_H + REASON_H + 40);
 
   const canvas = document.createElement('canvas');
   canvas.width = W;
@@ -793,13 +801,6 @@ async function generateVerdictCard(session) {
   const RED = '#e74c3c';
   const BLUE = '#3498db';
   const GREEN = '#2ecc71';
-
-  const verdict = session.verdict || {};
-  const isDraw = !verdict.winner || verdict.winner === 'draw';
-  const pWin = verdict.winner === 'plaintiff';
-  const dWin = verdict.winner === 'defendant';
-  const parts = parseVerdict(verdict.text || '');
-  const judge = session.judgeType ? JUDGE_DEFS[session.judgeType] : null;
 
   // Background
   const bgGrad = ctx.createLinearGradient(0, 0, W, H);
@@ -1009,7 +1010,29 @@ async function generateVerdictCard(session) {
     y += 40;
   }
 
-  // Sentence
+  // 판결 이유
+  if (parts.reason) {
+    ctx.strokeStyle = GOLD_DIM;
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(70, y); ctx.lineTo(W - 70, y); ctx.stroke();
+    y += 28;
+
+    ctx.font = '700 22px "Noto Sans KR", sans-serif';
+    ctx.fillStyle = GOLD;
+    ctx.textAlign = 'center';
+    ctx.fillText('📝 판결 이유', W / 2, y);
+    y += 32;
+
+    const reasonFont = '400 21px "Noto Sans KR", sans-serif';
+    const flat = parts.reason.replace(/\n+/g, ' ').trim();
+    const reasonTrunc = flat.length > 90 ? flat.slice(0, 90) + '…' : flat;
+    const reasonLines = cardWrapText(ctx, reasonTrunc, W - 140, reasonFont);
+    ctx.font = reasonFont;
+    ctx.fillStyle = CREAM_DIM;
+    reasonLines.slice(0, 3).forEach(line => { ctx.fillText(line, W / 2, y); y += 30; });
+  }
+
+  // 생활형 처분
   if (parts.sentence) {
     ctx.strokeStyle = GOLD_DIM;
     ctx.lineWidth = 1;
