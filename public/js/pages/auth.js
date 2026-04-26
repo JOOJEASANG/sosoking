@@ -1,4 +1,4 @@
-import { auth, loginWithGoogle, loginWithEmail, signupWithEmail, db, functions } from '../firebase.js';
+import { auth, loginWithGoogle, loginWithEmail, signupWithEmail, db, functions, trackEvent, trackUser } from '../firebase.js';
 import { invalidateNicknameCache } from '../components/nav.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
@@ -98,6 +98,8 @@ export async function renderAuth(container) {
   async function handleGoogleLogin() {
     try {
       await loginWithGoogle();
+      trackEvent('login', { method: 'google' });
+      if (auth.currentUser?.uid) trackUser(auth.currentUser.uid);
       await ensureNickname();
     } catch (err) {
       if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
@@ -118,6 +120,8 @@ export async function renderAuth(container) {
         container.querySelector('#login-email').value.trim(),
         container.querySelector('#login-password').value,
       );
+      trackEvent('login', { method: 'email' });
+      if (auth.currentUser?.uid) trackUser(auth.currentUser.uid);
       showToast('로그인 성공!', 'success');
       location.hash = '#/my-history';
     } catch (err) {
@@ -187,6 +191,8 @@ export async function renderAuth(container) {
       const registerUser = httpsCallable(functions, 'registerUser');
       await registerUser({ nickname: nick });
       invalidateNicknameCache();
+      trackEvent('sign_up', { method: 'email' });
+      if (auth.currentUser?.uid) trackUser(auth.currentUser.uid);
       showToast('가입 완료!', 'success');
       location.hash = '#/my-history';
     } catch (err) {

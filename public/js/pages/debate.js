@@ -1,4 +1,4 @@
-import { db, auth, functions } from '../firebase.js';
+import { db, auth, functions, trackEvent } from '../firebase.js';
 import { doc, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 import { showToast } from '../components/toast.js';
@@ -562,6 +562,14 @@ function renderCompleted(session, myRole) {
   feed.appendChild(card);
   feed.scrollTop = feed.scrollHeight;
 
+  trackEvent('verdict_complete', {
+    mode: session.mode || 'friend',
+    judge_type: session.judgeType || 'unknown',
+    winner: verdict.winner || 'draw',
+    rounds: (session.rounds || []).length,
+    my_result: myRole ? (isWin ? 'win' : 'lose') : 'spectator',
+  });
+
   card.querySelector('#share-verdict-btn')?.addEventListener('click', async () => {
     const btn = card.querySelector('#share-verdict-btn');
     btn.disabled = true;
@@ -569,6 +577,7 @@ function renderCompleted(session, myRole) {
     try {
       const cardCanvas = await generateVerdictCard(session);
       await shareVerdictCard(cardCanvas, session);
+      trackEvent('share_card', { winner: verdict.winner || 'draw', mode: session.mode || 'friend' });
     } catch {
       showToast('공유 중 오류가 발생했습니다', 'error');
     } finally {

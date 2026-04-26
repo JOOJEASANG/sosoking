@@ -1,4 +1,4 @@
-import { db, functions } from '../firebase.js';
+import { db, functions, trackEvent } from '../firebase.js';
 import { collection, getDocs, query, orderBy } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 import { showToast } from '../components/toast.js';
@@ -89,6 +89,7 @@ export async function renderSubmitTopic(container) {
       });
 
       const topicId = result.data?.topicId;
+      trackEvent('topic_submit', { category: document.getElementById('t-category').value });
       showSuccessScreen(container, topicId);
     } catch (err) {
       showToast(err.message || '등록 실패', 'error');

@@ -1,4 +1,4 @@
-import { db, auth, functions } from '../firebase.js';
+import { db, auth, functions, trackEvent } from '../firebase.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 import { showToast } from '../components/toast.js';
@@ -173,6 +173,7 @@ export async function renderTopicDetail(container, topicId) {
     btn.textContent = '세션 생성 중...';
 
     try {
+      trackEvent('session_start', { mode: selectedMode, side: selectedSide, rounds: selectedRounds, topic_id: topicId });
       if (selectedMode === 'random') {
         await handleRandomMatch(topicId, topic, selectedSide, selectedRounds);
       } else if (selectedMode === 'ai') {
