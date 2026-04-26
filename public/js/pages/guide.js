@@ -1,3 +1,6 @@
+import { db } from '../firebase.js';
+import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+
 const JUDGE_TYPES = [
   { icon: '👨‍⚖️', name: '엄벌주의형', desc: '카톡 읽씹도 중범죄 수준으로 처리합니다', color: '#c0392b' },
   { icon: '🥹', name: '감성형', desc: '눈물을 닦으며 양측 모두에게 깊이 공감합니다', color: '#8e44ad' },
@@ -8,7 +11,18 @@ const JUDGE_TYPES = [
   { icon: '🎭', name: '드립형', desc: '진지한 척하다 절묘한 타이밍에 드립을 날립니다', color: '#27ae60' },
 ];
 
-export function renderGuide(container) {
+export async function renderGuide(container) {
+  let sessionLimit = 2, aiSessionLimit = 5, topicLimit = 5;
+  try {
+    const snap = await getDoc(doc(db, 'site_settings', 'config'));
+    if (snap.exists()) {
+      const d = snap.data();
+      sessionLimit = d.dailySessionLimit ?? 2;
+      aiSessionLimit = d.dailyAiSessionLimit ?? 5;
+      topicLimit = d.dailyTopicLimit ?? 5;
+    }
+  } catch {}
+
   container.innerHTML = `
     <div>
       <div class="page-header">
@@ -68,10 +82,10 @@ export function renderGuide(container) {
             ['1인도 할 수 있나요?', '네! AI 상대(소소봇) 기능으로 혼자서 즉시 시작할 수 있습니다. 소소봇이 논리적으로 반박해줍니다.'],
             ['모르는 사람과도 할 수 있나요?', '네! 랜덤 매칭을 선택하면 같은 주제 대기자와 자동 연결됩니다. 대기자가 없으면 내가 먼저 기다릴 수 있어요.'],
             ['라운드는 몇 번이나 할 수 있나요?', '시작 전 3·5·7 라운드 중 선택합니다. 1라운드 완료 후 "지금 바로 판결받기"로 조기 판결도 가능합니다.'],
-            ['하루에 몇 번 할 수 있나요?', '친구·랜덤 대결은 하루 2회, AI(소소봇) 대결은 하루 5회 참여 가능합니다.'],
+            ['하루에 몇 번 할 수 있나요?', `친구·랜덤 대결은 하루 ${sessionLimit}회, AI(소소봇) 대결은 하루 ${aiSessionLimit}회 참여 가능합니다.`],
             ['로그인이 필요한가요?', '아니요. 익명으로 이용 가능합니다. 로그인(구글/이메일)하면 닉네임 설정과 기록 관리가 더 편리해요.'],
             ['회원 탈퇴하면 어떻게 되나요?', '계정 메뉴 → 회원 탈퇴 시 계정과 모든 재판 기록이 즉시 영구 삭제됩니다.'],
-            ['직접 사건을 등록할 수 있나요?', '네! ✏️ 주제 등록에서 등록하면 즉시 공개됩니다. 링크를 친구에게 보내 바로 재판을 시작하세요. 하루 5회까지 등록 가능합니다.'],
+            ['직접 사건을 등록할 수 있나요?', `네! ✏️ 주제 등록에서 등록하면 즉시 공개됩니다. 링크를 친구에게 보내 바로 재판을 시작하세요. 하루 ${topicLimit}회까지 등록 가능합니다.`],
             ['다크/라이트 모드를 바꿀 수 있나요?', '네! 하단 내비게이션의 🔓(로그인) 또는 🔐(비로그인) 버튼을 탭하면 나오는 메뉴에서 테마를 변경할 수 있습니다.'],
             ['개인정보 수집하나요?', '익명 이용 시 개인 식별 정보는 수집하지 않습니다. 로그인하면 이메일과 닉네임이 저장됩니다. 이름·연락처·주민번호는 절대 입력하지 마세요.'],
           ].map(([q, a]) => `
