@@ -95,13 +95,13 @@ exports.createSession = onCall({ region: 'asia-northeast3', secrets: [geminiKey]
   if (!['plaintiff', 'defendant'].includes(side)) throw new Error('올바르지 않은 입장');
   if (!['friend', 'random', 'ai'].includes(mode)) throw new Error('올바르지 않은 대결 방식');
 
+  const settingsSnap = await db.doc('site_settings/config').get();
+  const settings = settingsSnap.exists ? settingsSnap.data() : {};
   if (mode === 'ai') {
-    const settingsSnap = await db.doc('site_settings/config').get();
-    const aiEnabled = settingsSnap.exists ? (settingsSnap.data().aiModeEnabled ?? false) : false;
-    if (!aiEnabled) throw new Error('AI 상대 기능이 현재 비활성화되어 있습니다');
-    await checkRateLimit(userId, 'dailyAiSession', 5, 86400);
+    if (!(settings.aiModeEnabled ?? false)) throw new Error('AI 상대 기능이 현재 비활성화되어 있습니다');
+    await checkRateLimit(userId, 'dailyAiSession', settings.dailyAiSessionLimit ?? 5, 86400);
   } else {
-    await checkRateLimit(userId, 'dailySession', 2, 86400);
+    await checkRateLimit(userId, 'dailySession', settings.dailySessionLimit ?? 2, 86400);
   }
 
   const maxRounds = [3, 5, 7].includes(requestedRounds) ? requestedRounds : 5;
@@ -196,7 +196,9 @@ exports.joinSession = onCall({ region: 'asia-northeast3' }, async (request) => {
   const userId = request.auth?.uid;
   if (!userId) throw new Error('인증 필요');
 
-  await checkRateLimit(userId, 'dailySession', 2, 86400);
+  const joinSettingsSnap = await db.doc('site_settings/config').get();
+  const sessionLimit = joinSettingsSnap.exists ? (joinSettingsSnap.data().dailySessionLimit ?? 2) : 2;
+  await checkRateLimit(userId, 'dailySession', sessionLimit, 86400);
 
   if (shareToken) {
     const q = await db.collection('debate_sessions')
@@ -502,10 +504,10 @@ exports.submitTopic = onCall({ region: 'asia-northeast3' }, async (request) => {
   if (plaintiffPosition.length > 100) throw new Error('원고 입장은 100자 이내');
   if (defendantPosition.length > 100) throw new Error('피고 입장은 100자 이내');
 
-  await checkRateLimit(userId, 'submitTopic', 5, 86400);
-
   const settingsSnap = await db.doc('site_settings/config').get();
-  const bannedWords = settingsSnap.exists ? (settingsSnap.data().bannedWords || []) : [];
+  const settingsData = settingsSnap.exists ? settingsSnap.data() : {};
+  await checkRateLimit(userId, 'submitTopic', settingsData.dailyTopicLimit ?? 5, 86400);
+  const bannedWords = settingsData.bannedWords || [];
   if (bannedWords.length) {
     const allText = [title, summary, plaintiffPosition, defendantPosition].join(' ').toLowerCase();
     const hit = bannedWords.find(w => w && allText.includes(w.toLowerCase()));
