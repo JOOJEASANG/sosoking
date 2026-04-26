@@ -63,7 +63,7 @@ export async function renderAuth(container) {
             <div class="form-group" style="margin-bottom:20px;">
               <div style="display:flex;gap:8px;">
                 <input type="text" class="form-input" id="signup-nickname" placeholder="닉네임 (2~12자)" maxlength="12" style="flex:1;" required>
-                <button type="button" id="check-nick-btn" class="nick-check-btn" title="중복확인">✔</button>
+                <button type="button" id="check-nick-btn" class="nick-check-btn">중복확인</button>
               </div>
               <div id="nick-status" style="font-size:12px;margin-top:6px;min-height:16px;"></div>
             </div>
@@ -232,7 +232,7 @@ function showNicknameModal() {
         </div>
         <div style="display:flex;gap:8px;margin-bottom:8px;">
           <input type="text" id="modal-nick-input" class="form-input" placeholder="닉네임 (2~12자)" maxlength="12" style="flex:1;">
-          <button id="modal-nick-check" class="nick-check-btn" title="중복확인">✔</button>
+          <button id="modal-nick-check" class="nick-check-btn">중복확인</button>
         </div>
         <div id="modal-nick-status" style="font-size:12px;min-height:16px;margin-bottom:16px;"></div>
         <button id="modal-nick-save" class="btn btn-primary" disabled>저장하기</button>
