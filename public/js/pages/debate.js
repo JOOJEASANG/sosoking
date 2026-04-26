@@ -486,12 +486,42 @@ function renderCompleted(session, myRole) {
   if (!feed) return;
   if (feed.querySelector('.verdict-reveal')) return;
 
-  // 판결 중 로딩 카드 제거
   document.getElementById('judging-card')?.remove();
 
-  // 초기 로딩 스피너만 있는 상태(아직 토론 내용 없음)라면 제거
+  // 토론 내용이 없으면(직접 링크 접속 등) 먼저 대화 내역 렌더링
   if (!feed.querySelector('.argument-bubble, .waiting-screen, .round-status-row')) {
     feed.innerHTML = '';
+    const rounds = session.rounds || [];
+    const judge = session.judgeType ? JUDGE_DEFS[session.judgeType] : null;
+    let historyHtml = '';
+
+    if (judge) {
+      historyHtml += `
+        <div style="text-align:center;padding:18px 16px 14px;margin-bottom:8px;background:rgba(255,255,255,0.02);border-radius:12px;border:1px solid var(--border);">
+          <div style="font-size:10px;color:var(--cream-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;">이번 사건 담당 판사</div>
+          <div style="font-size:36px;margin-bottom:6px;">${judge.icon}</div>
+          <div style="font-size:15px;font-weight:700;color:${judge.color};margin-bottom:3px;">${session.judgeType} 판사</div>
+          <div style="font-size:11px;color:var(--cream-dim);">${judge.desc}</div>
+        </div>`;
+    }
+
+    rounds.forEach((r, i) => {
+      if (i > 0) historyHtml += `<div class="round-separator">${i + 1}라운드</div>`;
+      if (r.plaintiff) {
+        historyHtml += `<div class="bubble-wrap bubble-left">
+          <div class="argument-bubble plaintiff-side">${escHtml(r.plaintiff)}</div>
+          <div class="argument-meta">⚔️ ${escHtml(session.plaintiff?.nickname || '원고')}</div>
+        </div>`;
+      }
+      if (r.defendant) {
+        historyHtml += `<div class="bubble-wrap bubble-right">
+          <div class="argument-bubble defendant-side">${escHtml(r.defendant)}</div>
+          <div class="argument-meta right">🛡️ ${escHtml(session.defendant?.nickname || '피고')}</div>
+        </div>`;
+      }
+    });
+
+    if (historyHtml) feed.innerHTML = historyHtml;
   }
 
   const verdict = session.verdict;
@@ -555,7 +585,7 @@ function renderCompleted(session, myRole) {
         <div class="verdict-sentence-text">${escHtml(parts.sentence)}</div>
       </div>` : ''}
     <div class="verdict-actions-row">
-      <button id="share-verdict-btn" class="btn btn-secondary">🖼️ 이미지 카드 공유</button>
+      <button id="share-verdict-btn" class="btn btn-secondary">📤 판결 결과 공유하기</button>
       <a href="#/topics" class="btn btn-ghost">⚖️ 다른 사건 보기</a>
     </div>
   `;
@@ -571,19 +601,16 @@ function renderCompleted(session, myRole) {
   });
 
   card.querySelector('#share-verdict-btn')?.addEventListener('click', async () => {
-    const btn = card.querySelector('#share-verdict-btn');
-    btn.disabled = true;
-    btn.textContent = '🎨 카드 생성 중...';
-    try {
-      const cardCanvas = await generateVerdictCard(session);
-      await shareVerdictCard(cardCanvas, session);
-      trackEvent('share_card', { winner: verdict.winner || 'draw', mode: session.mode || 'friend' });
-    } catch {
-      showToast('공유 중 오류가 발생했습니다', 'error');
-    } finally {
-      btn.disabled = false;
-      btn.textContent = '🖼️ 이미지 카드 공유';
+    const url = `${location.origin}${location.pathname}${location.hash}`;
+    const verdictLabel = isDraw ? '무승부' : pWin ? '원고 승소' : '피고 승소';
+    const shareText = `[소소킹 생활법정]\n📋 사건: ${topicTitle}\n⚖️ 판결: ${verdictLabel}${parts.sentence ? '\n📜 처분: ' + parts.sentence : ''}\n\n판결 전문 보기 → ${url}`;
+    trackEvent('share_card', { winner: verdict.winner || 'draw', mode: session.mode || 'friend' });
+    if (navigator.share) {
+      try { await navigator.share({ title: '소소킹 생활법정 판결 결과', text: shareText, url }); return; }
+      catch (e) { if (e.name === 'AbortError') return; }
     }
+    try { await navigator.clipboard.writeText(shareText); showToast('결과가 복사되었습니다! 붙여넣기 해서 공유하세요 📋', 'success'); }
+    catch { showToast('공유 실패', 'error'); }
   });
 }
 
@@ -728,386 +755,4 @@ function removeInputArea() {
 
 function escHtml(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
-}
-
-function cardRoundRect(ctx, x, y, w, h, r) {
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.lineTo(x + w - r, y);
-  ctx.arc(x + w - r, y + r, r, -Math.PI / 2, 0);
-  ctx.lineTo(x + w, y + h - r);
-  ctx.arc(x + w - r, y + h - r, r, 0, Math.PI / 2);
-  ctx.lineTo(x + r, y + h);
-  ctx.arc(x + r, y + h - r, r, Math.PI / 2, Math.PI);
-  ctx.lineTo(x, y + r);
-  ctx.arc(x + r, y + r, r, Math.PI, -Math.PI / 2);
-  ctx.closePath();
-}
-
-function cardWrapText(ctx, text, maxWidth, font) {
-  ctx.font = font;
-  if (ctx.measureText(text).width <= maxWidth) return [text];
-  const lines = [];
-  let line = '';
-  for (const ch of [...text]) {
-    const test = line + ch;
-    if (ctx.measureText(test).width > maxWidth) {
-      if (line) lines.push(line);
-      line = ch;
-    } else {
-      line = test;
-    }
-  }
-  if (line) lines.push(line);
-  return lines;
-}
-
-async function generateVerdictCard(session) {
-  await Promise.all([
-    document.fonts.load('700 52px "Noto Serif KR"'),
-    document.fonts.load('700 40px "Noto Sans KR"'),
-    document.fonts.load('400 26px "Noto Sans KR"'),
-    document.fonts.ready,
-  ]);
-
-  const W = 1080;
-  const MAX_ROUNDS = 3;
-  const debateRounds = (session.rounds || []).filter(r => r.plaintiff || r.defendant);
-  const numShown = Math.min(debateRounds.length, MAX_ROUNDS);
-  const hasDebate = numShown > 0;
-  const moreRounds = debateRounds.length - numShown;
-
-  // 높이 계산 전에 먼저 파싱
-  const verdict = session.verdict || {};
-  const isDraw = !verdict.winner || verdict.winner === 'draw';
-  const pWin = verdict.winner === 'plaintiff';
-  const dWin = verdict.winner === 'defendant';
-  const parts = parseVerdict(verdict.text || '');
-  const judge = session.judgeType ? JUDGE_DEFS[session.judgeType] : null;
-
-  const REASON_H = parts.reason ? 155 : 0;
-  const DEBATE_H = hasDebate ? 80 + numShown * 280 + (moreRounds > 0 ? 40 : 0) : 0;
-  const H = Math.max(1080, 940 + DEBATE_H + REASON_H + 40);
-
-  const canvas = document.createElement('canvas');
-  canvas.width = W;
-  canvas.height = H;
-  const ctx = canvas.getContext('2d');
-
-  const GOLD = '#c9a84c';
-  const GOLD_DIM = 'rgba(201,168,76,0.45)';
-  const CREAM = '#f0e6c8';
-  const CREAM_DIM = 'rgba(240,230,200,0.6)';
-  const RED = '#e74c3c';
-  const BLUE = '#3498db';
-  const GREEN = '#2ecc71';
-
-  // Background
-  const bgGrad = ctx.createLinearGradient(0, 0, W, H);
-  bgGrad.addColorStop(0, '#1c1508');
-  bgGrad.addColorStop(1, '#0a0e16');
-  ctx.fillStyle = bgGrad;
-  ctx.fillRect(0, 0, W, H);
-
-  const glow = ctx.createRadialGradient(W / 2, H * 0.3, 0, W / 2, H * 0.3, W * 0.7);
-  glow.addColorStop(0, 'rgba(201,168,76,0.06)');
-  glow.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = glow;
-  ctx.fillRect(0, 0, W, H);
-
-  // Borders
-  ctx.strokeStyle = GOLD;
-  ctx.lineWidth = 5;
-  cardRoundRect(ctx, 22, 22, W - 44, H - 44, 22);
-  ctx.stroke();
-  ctx.strokeStyle = GOLD_DIM;
-  ctx.lineWidth = 1.5;
-  cardRoundRect(ctx, 34, 34, W - 68, H - 68, 16);
-  ctx.stroke();
-
-  let y = 95;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'alphabetic';
-
-  // Header
-  ctx.font = '700 52px "Noto Serif KR", serif';
-  ctx.fillStyle = GOLD;
-  ctx.fillText('⚖️ 소소킹 생활법정', W / 2, y);
-  y += 48;
-
-  ctx.font = '400 24px "Noto Sans KR", sans-serif';
-  ctx.fillStyle = GOLD_DIM;
-  ctx.fillText('AI 판사 판결 결과', W / 2, y);
-  y += 42;
-
-  ctx.strokeStyle = GOLD_DIM;
-  ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(70, y); ctx.lineTo(W - 70, y); ctx.stroke();
-  y += 46;
-
-  // Topic title
-  const topicFont = '700 40px "Noto Sans KR", sans-serif';
-  const topicLines = cardWrapText(ctx, session.topicTitle || '사건', W - 140, topicFont);
-  ctx.font = topicFont;
-  ctx.fillStyle = CREAM;
-  topicLines.slice(0, 2).forEach(line => { ctx.fillText(line, W / 2, y); y += 54; });
-  y += 16;
-
-  // ── 토론 내용 섹션 ──
-  if (hasDebate) {
-    ctx.strokeStyle = GOLD_DIM;
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(70, y); ctx.lineTo(W - 70, y); ctx.stroke();
-    y += 34;
-
-    ctx.font = '700 24px "Noto Sans KR", sans-serif';
-    ctx.fillStyle = GOLD;
-    ctx.textAlign = 'center';
-    ctx.fillText('📋 토론 내용', W / 2, y);
-    y += 46;
-
-    const pNick = session.plaintiff?.nickname || '원고';
-    const dNick = session.defendant?.nickname || '피고';
-    const TRUNC = 50;
-    const argFont = '400 24px "Noto Sans KR", sans-serif';
-    const textAreaW = W - 140 - 32; // bubble inner text width
-
-    const drawDebateBubble = (text, role) => {
-      const isP = role === 'plaintiff';
-      const nick = isP ? pNick : dNick;
-      const accent = isP ? RED : BLUE;
-      const truncated = text.length > TRUNC ? text.slice(0, TRUNC) + '…' : text;
-      const lines = cardWrapText(ctx, truncated, textAreaW, argFont);
-      const lineCount = Math.min(lines.length, 2);
-      const bubbleH = 22 + 26 + 8 + lineCount * 30 + 16;
-      const bx = 70, bw = W - 140;
-
-      ctx.fillStyle = isP ? 'rgba(231,76,60,0.08)' : 'rgba(52,152,219,0.08)';
-      cardRoundRect(ctx, bx, y, bw, bubbleH, 10);
-      ctx.fill();
-      ctx.strokeStyle = isP ? 'rgba(231,76,60,0.28)' : 'rgba(52,152,219,0.28)';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-
-      // accent bar
-      ctx.fillStyle = accent;
-      cardRoundRect(ctx, bx, y, 4, bubbleH, 2);
-      ctx.fill();
-
-      // role label
-      ctx.font = '700 20px "Noto Sans KR", sans-serif';
-      ctx.fillStyle = accent;
-      ctx.textAlign = 'left';
-      const shortNick = nick.length > 8 ? nick.slice(0, 8) + '…' : nick;
-      ctx.fillText(`${isP ? '⚔️ 원고' : '🛡️ 피고'} · ${shortNick}`, bx + 18, y + 22 + 18);
-
-      // argument text
-      ctx.font = argFont;
-      ctx.fillStyle = CREAM;
-      lines.slice(0, 2).forEach((line, li) => {
-        ctx.fillText(line, bx + 18, y + 22 + 26 + 8 + (li + 1) * 30);
-      });
-
-      y += bubbleH + 10;
-    };
-
-    debateRounds.slice(0, MAX_ROUNDS).forEach((round, i) => {
-      ctx.font = '700 20px "Noto Sans KR", sans-serif';
-      ctx.fillStyle = GOLD_DIM;
-      ctx.textAlign = 'center';
-      ctx.fillText(`— ${i + 1}라운드 —`, W / 2, y + 14);
-      y += 36;
-      if (round.plaintiff) drawDebateBubble(round.plaintiff, 'plaintiff');
-      if (round.defendant) drawDebateBubble(round.defendant, 'defendant');
-      y += 16;
-    });
-
-    if (moreRounds > 0) {
-      ctx.font = '400 21px "Noto Sans KR", sans-serif';
-      ctx.fillStyle = GOLD_DIM;
-      ctx.textAlign = 'center';
-      ctx.fillText(`···  외 ${moreRounds}라운드 더`, W / 2, y + 12);
-      y += 40;
-    }
-
-    y += 10;
-  }
-
-  // ── 판결 섹션 ──
-  ctx.strokeStyle = GOLD_DIM;
-  ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(70, y); ctx.lineTo(W - 70, y); ctx.stroke();
-  y += 34;
-
-  ctx.font = '400 20px "Noto Sans KR", sans-serif';
-  ctx.fillStyle = GOLD_DIM;
-  ctx.textAlign = 'center';
-  ctx.fillText('⚖️ 최종 판결', W / 2, y);
-  y += 36;
-
-  // Verdict box
-  const verdictColor = isDraw ? GOLD : pWin ? RED : BLUE;
-  const verdictLabel = isDraw ? '🤝 무승부' : pWin ? '⚔️ 원고 승소' : '🛡️ 피고 승소';
-  const boxTop = y;
-  const boxH = 100;
-  ctx.fillStyle = 'rgba(255,255,255,0.03)';
-  cardRoundRect(ctx, 70, boxTop, W - 140, boxH, 18);
-  ctx.fill();
-  ctx.strokeStyle = verdictColor;
-  ctx.lineWidth = 2.5;
-  ctx.stroke();
-  ctx.font = '900 56px "Noto Serif KR", serif';
-  ctx.fillStyle = verdictColor;
-  ctx.fillText(verdictLabel, W / 2, boxTop + 66);
-  y = boxTop + boxH + 28;
-
-  // VS section
-  const vsBoxW = 360, vsBoxH = 132;
-  const leftX = 70, rightX = W - 70 - vsBoxW;
-
-  const drawVsBox = (x, role, nick, isWinner) => {
-    const isP = role === 'plaintiff';
-    const bg = isDraw ? 'rgba(201,168,76,0.08)' : isWinner ? 'rgba(46,204,113,0.08)' : 'rgba(255,255,255,0.03)';
-    const border = isDraw ? GOLD_DIM : isWinner ? 'rgba(46,204,113,0.6)' : 'rgba(255,255,255,0.12)';
-    ctx.fillStyle = bg;
-    cardRoundRect(ctx, x, y, vsBoxW, vsBoxH, 14);
-    ctx.fill();
-    ctx.strokeStyle = border;
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-
-    ctx.textAlign = 'center';
-    ctx.font = '700 20px "Noto Sans KR", sans-serif';
-    ctx.fillStyle = isP ? RED : BLUE;
-    ctx.fillText(isP ? '⚔️ 원고' : '🛡️ 피고', x + vsBoxW / 2, y + 34);
-
-    ctx.font = '700 26px "Noto Sans KR", sans-serif';
-    ctx.fillStyle = CREAM;
-    const n = nick.length > 10 ? nick.slice(0, 10) + '…' : nick;
-    ctx.fillText(n, x + vsBoxW / 2, y + 70);
-
-    ctx.font = '900 28px "Noto Sans KR", sans-serif';
-    ctx.fillStyle = isDraw ? GOLD : isWinner ? GREEN : RED;
-    ctx.fillText(isDraw ? '무승부' : isWinner ? '✅ 승소' : '❌ 패소', x + vsBoxW / 2, y + 108);
-  };
-
-  drawVsBox(leftX, 'plaintiff', session.plaintiff?.nickname || '원고', pWin);
-  drawVsBox(rightX, 'defendant', session.defendant?.nickname || '피고', dWin);
-
-  ctx.font = '900 30px "Noto Sans KR", sans-serif';
-  ctx.fillStyle = GOLD_DIM;
-  ctx.textAlign = 'center';
-  ctx.fillText('VS', W / 2, y + vsBoxH / 2 + 10);
-
-  y += vsBoxH + 28;
-
-  // Judge
-  if (judge) {
-    ctx.font = '400 24px "Noto Sans KR", sans-serif';
-    ctx.fillStyle = CREAM_DIM;
-    ctx.textAlign = 'center';
-    ctx.fillText(`${judge.icon} ${session.judgeType} 판사 담당`, W / 2, y);
-    y += 40;
-  }
-
-  // 판결 이유
-  if (parts.reason) {
-    ctx.strokeStyle = GOLD_DIM;
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(70, y); ctx.lineTo(W - 70, y); ctx.stroke();
-    y += 28;
-
-    ctx.font = '700 22px "Noto Sans KR", sans-serif';
-    ctx.fillStyle = GOLD;
-    ctx.textAlign = 'center';
-    ctx.fillText('📝 판결 이유', W / 2, y);
-    y += 32;
-
-    const reasonFont = '400 21px "Noto Sans KR", sans-serif';
-    const flat = parts.reason.replace(/\n+/g, ' ').trim();
-    const reasonTrunc = flat.length > 90 ? flat.slice(0, 90) + '…' : flat;
-    const reasonLines = cardWrapText(ctx, reasonTrunc, W - 140, reasonFont);
-    ctx.font = reasonFont;
-    ctx.fillStyle = CREAM_DIM;
-    reasonLines.slice(0, 3).forEach(line => { ctx.fillText(line, W / 2, y); y += 30; });
-  }
-
-  // 생활형 처분
-  if (parts.sentence) {
-    ctx.strokeStyle = GOLD_DIM;
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(70, y); ctx.lineTo(W - 70, y); ctx.stroke();
-    y += 28;
-
-    ctx.font = '700 22px "Noto Sans KR", sans-serif';
-    ctx.fillStyle = GOLD;
-    ctx.textAlign = 'center';
-    ctx.fillText('📜 생활형 처분', W / 2, y);
-    y += 32;
-
-    const sentFont = '400 21px "Noto Sans KR", sans-serif';
-    const sentLines = cardWrapText(ctx, parts.sentence, W - 140, sentFont);
-    ctx.font = sentFont;
-    ctx.fillStyle = CREAM_DIM;
-    sentLines.slice(0, 2).forEach(line => { ctx.fillText(line, W / 2, y); y += 30; });
-  }
-
-  // Footer
-  ctx.strokeStyle = GOLD_DIM;
-  ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(70, H - 56); ctx.lineTo(W - 70, H - 56); ctx.stroke();
-
-  ctx.font = '700 26px "Noto Sans KR", sans-serif';
-  ctx.fillStyle = GOLD;
-  ctx.textAlign = 'center';
-  ctx.fillText('🌐 sosoking.co.kr', W / 2, H - 24);
-
-  return canvas;
-}
-
-async function shareVerdictCard(canvas, session) {
-  const isDraw = !session.verdict?.winner || session.verdict?.winner === 'draw';
-  const pWin = session.verdict?.winner === 'plaintiff';
-  const verdictLabel = isDraw ? '무승부' : pWin ? '원고 승소' : '피고 승소';
-  const topicTitle = session.topicTitle || '사건';
-  const shareTitle = `소소킹 생활법정 - ${topicTitle}`;
-  const shareText = `[소소킹 판결결과]\n📋 사건: ${topicTitle}\n⚖️ 판결: ${verdictLabel}\n\n재판 받아보기 → sosoking.co.kr`;
-
-  return new Promise((resolve) => {
-    canvas.toBlob(async (blob) => {
-      if (!blob) {
-        await textFallbackShare(shareTitle, shareText);
-        resolve();
-        return;
-      }
-      const file = new File([blob], 'sosoking-verdict.png', { type: 'image/png' });
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        try {
-          await navigator.share({ files: [file], title: shareTitle, text: shareText });
-          resolve();
-          return;
-        } catch (err) {
-          if (err.name === 'AbortError') { resolve(); return; }
-        }
-      }
-      // Download fallback
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'sosoking-verdict.png';
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 2000);
-      showToast('판결 카드가 저장되었습니다! 📸 갤러리에서 공유하세요', 'success');
-      resolve();
-    }, 'image/png');
-  });
-}
-
-async function textFallbackShare(title, text) {
-  const url = `${location.origin}${location.pathname}`;
-  if (navigator.share) {
-    try { await navigator.share({ title, text, url }); return; } catch { /* fall through */ }
-  }
-  try { await navigator.clipboard.writeText(text + '\n' + url); showToast('결과가 복사되었습니다!', 'success'); }
-  catch { showToast('공유 실패', 'error'); }
 }
