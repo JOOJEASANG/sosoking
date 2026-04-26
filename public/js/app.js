@@ -1,4 +1,4 @@
-import { initAuth } from './firebase.js';
+import { initAuth, trackEvent, trackUser, auth } from './firebase.js';
 import { renderHome } from './pages/home.js';
 import { renderTopics } from './pages/topics.js';
 import { renderTopicDetail } from './pages/topic-detail.js';
@@ -21,32 +21,44 @@ function route() {
   if (!content) return;
   window.scrollTo(0, 0);
 
+  let pageName = 'home';
   if (hash === '#/' || hash === '' || hash === '#') {
     renderHome(content);
   } else if (hash === '#/topics') {
+    pageName = 'topics';
     renderTopics(content);
   } else if (hash.startsWith('#/topic/')) {
+    pageName = 'topic_detail';
     renderTopicDetail(content, decodeURIComponent(hash.replace('#/topic/', '')));
   } else if (hash.startsWith('#/debate/')) {
+    pageName = 'debate';
     renderDebate(content, decodeURIComponent(hash.replace('#/debate/', '')));
   } else if (hash.startsWith('#/join/')) {
+    pageName = 'debate_join';
     renderDebate(content, null, decodeURIComponent(hash.replace('#/join/', '')));
   } else if (hash === '#/submit-topic') {
+    pageName = 'submit_topic';
     renderSubmitTopic(content);
   } else if (hash === '#/my-history') {
+    pageName = 'my_history';
     renderMyHistory(content);
   } else if (hash.startsWith('#/policy/')) {
+    pageName = 'policy_' + hash.replace('#/policy/', '');
     renderPolicy(content, hash.replace('#/policy/', ''));
   } else if (hash === '#/guide') {
+    pageName = 'guide';
     renderGuide(content);
   } else if (hash === '#/feedback') {
+    pageName = 'feedback';
     renderFeedback(content);
   } else if (hash === '#/login') {
+    pageName = 'login';
     renderAuth(content);
   } else {
     renderHome(content);
   }
 
+  trackEvent('page_view', { page_name: pageName, page_path: hash });
   renderNav();
 }
 
@@ -66,7 +78,8 @@ window.addEventListener('appinstalled', () => {
 
 (async () => {
   initTheme();
-  await initAuth();
+  const user = await initAuth();
+  if (user?.uid) trackUser(user.uid);
   renderFooter();
   route();
 })();
