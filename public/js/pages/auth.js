@@ -4,7 +4,29 @@ import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 import { showToast } from '../components/toast.js';
 
+function detectInAppBrowser() {
+  const ua = navigator.userAgent;
+  if (/KAKAOTALK/i.test(ua)) return 'kakaotalk';
+  if (/Instagram/i.test(ua)) return 'instagram';
+  if (/FBAN|FBAV/i.test(ua)) return 'facebook';
+  if (/Line\//i.test(ua)) return 'line';
+  if (/wv\)/.test(ua) || /WebView/i.test(ua)) return 'webview';
+  if (/iPhone|iPad|iPod/.test(ua) && !/Safari/.test(ua) && !/CriOS/.test(ua)) return 'ios-webview';
+  return null;
+}
+
 export async function renderAuth(container) {
+  const inApp = detectInAppBrowser();
+  const inAppBanner = inApp ? `
+    <div style="margin-bottom:20px;padding:14px 16px;background:rgba(231,76,60,0.1);border:1.5px solid rgba(231,76,60,0.4);border-radius:12px;">
+      <div style="font-size:13px;font-weight:700;color:#e74c3c;margin-bottom:6px;">⚠️ 인앱 브라우저 감지됨</div>
+      <div style="font-size:12px;color:var(--cream-dim);line-height:1.7;">
+        카카오톡·인스타 등 앱 내 브라우저에서는 <strong style="color:var(--cream);">Google 로그인이 차단</strong>됩니다.<br>
+        우측 상단 <strong style="color:var(--cream);">⋮ 메뉴 → 외부 브라우저로 열기</strong>를 눌러주세요.<br>
+        또는 이메일로 가입·로그인하세요.
+      </div>
+    </div>` : '';
+
   container.innerHTML = `
     <div>
       <div class="page-header">
@@ -17,7 +39,7 @@ export async function renderAuth(container) {
           <h2 style="font-family:var(--font-serif);font-size:22px;font-weight:700;color:var(--cream);margin-bottom:6px;">계정으로 시작하기</h2>
           <p style="font-size:14px;color:var(--cream-dim);line-height:1.6;">로그인하면 어떤 기기에서도<br>내 재판 기록을 볼 수 있어요</p>
         </div>
-
+        ${inAppBanner}
         <div class="auth-tabs">
           <button class="auth-tab active" data-tab="login">로그인</button>
           <button class="auth-tab" data-tab="signup">회원가입</button>
@@ -96,15 +118,22 @@ export async function renderAuth(container) {
   });
 
   async function handleGoogleLogin() {
+    if (inApp) {
+      showToast('인앱 브라우저에서는 Google 로그인을 사용할 수 없습니다. 외부 브라우저로 열거나 이메일로 로그인해주세요.', 'error');
+      return;
+    }
     try {
       await loginWithGoogle();
       trackEvent('login', { method: 'google' });
       if (auth.currentUser?.uid) trackUser(auth.currentUser.uid);
       await ensureNickname();
     } catch (err) {
-      if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
-        showToast(err.message || 'Google 로그인 실패', 'error');
+      if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') return;
+      if (err.message?.includes('disallowed_useragent') || err.code === 'auth/operation-not-supported-in-this-environment') {
+        showToast('이 브라우저에서는 Google 로그인이 차단됩니다. Chrome/Safari에서 열거나 이메일 로그인을 사용해주세요.', 'error');
+        return;
       }
+      showToast(err.message || 'Google 로그인 실패', 'error');
     }
   }
 
