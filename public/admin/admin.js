@@ -442,7 +442,28 @@ async function tabSettings(el) {
             <span style="font-size:13px;color:var(--cream);">활성화</span>
           </label>
         </div>
-        <div style="font-size:12px;color:var(--cream-dim);">활성화 시 주제 상세 페이지에 "AI와 대결" 버튼이 표시됩니다. 1인용 · 즉시 시작 · 하루 5회 제한</div>
+        <div style="font-size:12px;color:var(--cream-dim);">활성화 시 주제 상세 페이지에 "AI와 대결" 버튼이 표시됩니다. 1인용 · 즉시 시작.</div>
+      </fieldset>
+      <fieldset style="border:1px solid var(--border);border-radius:8px;padding:14px 14px 4px;margin:20px 0;">
+        <legend style="padding:0 8px;color:var(--gold);font-size:13px;">🔢 이용 제한 (하루 기준 · 유저당)</legend>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+          <div class="form-group">
+            <label class="form-label">친구·랜덤 대결</label>
+            <input type="number" id="daily-session-limit" class="form-input" value="${d.dailySessionLimit ?? 2}" min="0" max="100">
+            <div style="font-size:11px;color:var(--cream-dim);margin-top:4px;">현재 ${d.dailySessionLimit ?? 2}회/일</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">AI 대결 (소소봇)</label>
+            <input type="number" id="daily-ai-session-limit" class="form-input" value="${d.dailyAiSessionLimit ?? 5}" min="0" max="100">
+            <div style="font-size:11px;color:var(--cream-dim);margin-top:4px;">현재 ${d.dailyAiSessionLimit ?? 5}회/일</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">주제 등록</label>
+            <input type="number" id="daily-topic-limit" class="form-input" value="${d.dailyTopicLimit ?? 5}" min="0" max="100">
+            <div style="font-size:11px;color:var(--cream-dim);margin-top:4px;">현재 ${d.dailyTopicLimit ?? 5}회/일</div>
+          </div>
+        </div>
+        <div style="font-size:12px;color:var(--cream-dim);padding-bottom:10px;">0으로 설정하면 해당 기능이 완전히 차단됩니다. 저장 즉시 반영됩니다.</div>
       </fieldset>
       <fieldset style="border:1px solid var(--border);border-radius:8px;padding:14px 14px 4px;margin:20px 0;">
         <legend style="padding:0 8px;color:var(--gold);font-size:13px;">💰 비용 단가 (사용량·비용 계산용)</legend>
@@ -465,6 +486,9 @@ async function tabSettings(el) {
       dailyLimit: parseInt(document.getElementById('dl').value),
       cooldownSec: parseInt(document.getElementById('cd').value),
       aiModeEnabled: document.getElementById('ai-mode-enabled').checked,
+      dailySessionLimit: parseInt(document.getElementById('daily-session-limit').value),
+      dailyAiSessionLimit: parseInt(document.getElementById('daily-ai-session-limit').value),
+      dailyTopicLimit: parseInt(document.getElementById('daily-topic-limit').value),
       geminiInputPricePerM: parseFloat(document.getElementById('gip').value),
       geminiOutputPricePerM: parseFloat(document.getElementById('gop').value),
       krwUsdRate: parseFloat(document.getElementById('krw').value),
