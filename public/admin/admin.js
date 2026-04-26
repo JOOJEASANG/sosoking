@@ -963,7 +963,7 @@ async function tabCategories(el) {
   const rows = cats.map(c=>`<tr>
     <td style="font-size:18px;text-align:center;">${c.icon||'📌'}</td>
     <td style="font-weight:700;">${c.name}</td>
-    <td><button onclick="window._delCat('${c.id}')" class="admin-btn admin-btn-danger">삭제</button></td>
+    <td style="white-space:nowrap;"><button onclick="window._delCat('${c.id}')" class="admin-btn admin-btn-danger">삭제</button></td>
   </tr>`).join('');
 
   const iconBtns = CAT_ICONS.map(ic=>`
