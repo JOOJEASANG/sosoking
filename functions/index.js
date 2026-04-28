@@ -593,6 +593,63 @@ exports.registerUser = onCall({ region: 'asia-northeast3' }, async (request) => 
   return { ok: true };
 });
 
+// ── 닉네임+PIN 회원가입 ─────────────────────────────────────────
+exports.registerNickname = onCall({ region: 'asia-northeast3' }, async (request) => {
+  const { nickname, pin } = request.data;
+  const userId = request.auth?.uid;
+  if (!userId) throw new Error('인증 필요');
+  if (!nickname?.trim()) throw new Error('닉네임을 입력해주세요');
+  if (!pin || !/^\d{4}$/.test(String(pin))) throw new Error('PIN은 4자리 숫자여야 합니다');
+
+  const nick = nickname.trim();
+  if (nick.length < 2 || nick.length > 12) throw new Error('닉네임은 2~12자여야 합니다');
+  if (!/^[가-힣a-zA-Z0-9_]+$/.test(nick)) throw new Error('닉네임은 한글·영문·숫자·_만 사용 가능합니다');
+
+  const pinHash = crypto.createHash('sha256').update(userId + ':' + String(pin)).digest('hex');
+
+  await db.runTransaction(async (tx) => {
+    const nicknameRef = db.doc(`nicknames/${nick}`);
+    const nicknameSnap = await tx.get(nicknameRef);
+    if (nicknameSnap.exists && nicknameSnap.data().userId !== userId) {
+      throw new Error('이미 사용 중인 닉네임입니다');
+    }
+
+    const userRef = db.doc(`users/${userId}`);
+    const userSnap = await tx.get(userRef);
+    const oldNick = userSnap.exists ? userSnap.data().nickname : null;
+    if (oldNick && oldNick !== nick) {
+      tx.delete(db.doc(`nicknames/${oldNick}`));
+    }
+
+    tx.set(nicknameRef, { userId, createdAt: FieldValue.serverTimestamp() });
+    tx.set(userRef, { nickname: nick, pinHash, hasPinAuth: true, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+  });
+
+  return { ok: true };
+});
+
+// ── 닉네임+PIN 로그인 → custom token 반환 ───────────────────────
+exports.loginNickname = onCall({ region: 'asia-northeast3' }, async (request) => {
+  const { nickname, pin } = request.data;
+  if (!nickname?.trim()) throw new Error('닉네임을 입력해주세요');
+  if (!pin || !/^\d{4}$/.test(String(pin))) throw new Error('PIN은 4자리 숫자여야 합니다');
+
+  const nick = nickname.trim();
+  const nicknameSnap = await db.doc(`nicknames/${nick}`).get();
+  if (!nicknameSnap.exists) throw new Error('닉네임 또는 PIN이 올바르지 않습니다');
+
+  const userId = nicknameSnap.data().userId;
+  const userSnap = await db.doc(`users/${userId}`).get();
+  if (!userSnap.exists || !userSnap.data().pinHash) throw new Error('닉네임 또는 PIN이 올바르지 않습니다');
+
+  const expectedHash = crypto.createHash('sha256').update(userId + ':' + String(pin)).digest('hex');
+  if (userSnap.data().pinHash !== expectedHash) throw new Error('닉네임 또는 PIN이 올바르지 않습니다');
+
+  const adminAuth = getAuth();
+  const customToken = await adminAuth.createCustomToken(userId);
+  return { customToken, nickname: nick };
+});
+
 // 회원 탈퇴 — 유저 데이터 전체 삭제 후 Auth 계정 삭제
 exports.deleteAccount = onCall({ region: 'asia-northeast3' }, async (request) => {
   const userId = request.auth?.uid;
