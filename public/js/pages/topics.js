@@ -14,7 +14,7 @@ export async function renderTopics(container) {
     <div>
       <div class="page-header">
         <a href="#/" class="back-btn">‹</a>
-        <span class="logo">⚖️ 재판 목록</span>
+        <span class="logo">⚖️ 사건 목록</span>
       </div>
       <div class="container" style="padding-top:20px;padding-bottom:80px;">
         <div class="search-input-wrap">
@@ -110,8 +110,8 @@ function renderList(search = '', cat = _activeCat) {
       <div class="topic-card-summary">${t.summary}</div>
       <div class="topic-card-footer">
         <span class="topic-card-cat">${t.category || '생활'}</span>
-        <span>⚖️ ${(t.playCount||0).toLocaleString()}회</span>
-        ${t.isOfficial ? '<span style="color:var(--court);font-size:10px;font-weight:700;">👑공식</span>' : ''}
+        <span>재판 ${(t.playCount||0).toLocaleString()}회</span>
+        ${t.isOfficial ? '<span style="color:var(--gold);font-size:10px;font-weight:700;">공식</span>' : ''}
       </div>
     </div>
   `).join('');

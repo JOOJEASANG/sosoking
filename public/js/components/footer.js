@@ -11,7 +11,7 @@ export async function renderFooter() {
   } catch {}
 
   const rows = [
-    biz.companyName || '소소킹 👑',
+    biz.companyName || '소소킹 생활법정',
     biz.ceoName     ? `대표 ${biz.ceoName}` : null,
     biz.businessNumber ? `사업자등록번호 ${biz.businessNumber}` : null,
     biz.contact     ? `연락처 ${biz.contact}` : null,
@@ -32,8 +32,8 @@ export async function renderFooter() {
 
     <div class="footer-biz">
       ${rows.map(r => `<div class="footer-biz-row">${r}</div>`).join('')}
-      <div class="footer-biz-row footer-legal">© 2025 소소킹 👑</div>
-      <div class="footer-biz-row footer-legal">오락 목적 AI 게임 서비스 · 법적 효력 없음</div>
+      <div class="footer-biz-row footer-legal">© 2025 소소킹 생활법정</div>
+      <div class="footer-biz-row footer-legal">오락 목적 서비스 · AI 판결에 법적 효력 없음</div>
     </div>
 
     <div style="margin-top:20px;">
