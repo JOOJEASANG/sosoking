@@ -4,7 +4,29 @@ import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 import { showToast } from '../components/toast.js';
 
+function detectInAppBrowser() {
+  const ua = navigator.userAgent;
+  if (/KAKAOTALK/i.test(ua)) return 'kakaotalk';
+  if (/Instagram/i.test(ua)) return 'instagram';
+  if (/FBAN|FBAV/i.test(ua)) return 'facebook';
+  if (/Line\//i.test(ua)) return 'line';
+  if (/wv\)/.test(ua) || /WebView/i.test(ua)) return 'webview';
+  if (/iPhone|iPad|iPod/.test(ua) && !/Safari/.test(ua) && !/CriOS/.test(ua)) return 'ios-webview';
+  return null;
+}
+
 export async function renderAuth(container) {
+  const inApp = detectInAppBrowser();
+  const inAppBanner = inApp ? `
+    <div style="margin-bottom:20px;padding:14px 16px;background:rgba(231,76,60,0.1);border:1.5px solid rgba(231,76,60,0.4);border-radius:12px;">
+      <div style="font-size:13px;font-weight:700;color:#e74c3c;margin-bottom:6px;">⚠️ 인앱 브라우저 감지됨</div>
+      <div style="font-size:12px;color:var(--cream-dim);line-height:1.7;">
+        카카오톡·인스타 등 앱 내 브라우저에서는 <strong style="color:var(--cream);">Google 로그인이 차단</strong>됩니다.<br>
+        우측 상단 <strong style="color:var(--cream);">⋮ 메뉴 → 외부 브라우저로 열기</strong>를 눌러주세요.<br>
+        또는 이메일로 가입·로그인하세요.
+      </div>
+    </div>` : '';
+
   container.innerHTML = `
     <div>
       <div class="page-header">
@@ -18,7 +40,7 @@ export async function renderAuth(container) {
           <h2 style="font-family:var(--font-serif);font-size:22px;font-weight:700;color:var(--text);margin-bottom:6px;">닉네임 + PIN으로 시작</h2>
           <p style="font-size:13px;color:var(--text-dim);line-height:1.6;">이메일 없이 닉네임과 4자리 PIN만으로<br>어디서든 내 기록에 접근하세요</p>
         </div>
-
+        ${inAppBanner}
         <div class="auth-tabs">
           <button class="auth-tab active" data-tab="login">로그인</button>
           <button class="auth-tab" data-tab="signup">회원가입</button>
