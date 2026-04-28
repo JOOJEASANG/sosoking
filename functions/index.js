@@ -593,6 +593,63 @@ exports.registerUser = onCall({ region: 'asia-northeast3' }, async (request) => 
   return { ok: true };
 });
 
+// ── 닉네임+PIN 회원가입 ─────────────────────────────────────────
+exports.registerNickname = onCall({ region: 'asia-northeast3' }, async (request) => {
+  const { nickname, pin } = request.data;
+  const userId = request.auth?.uid;
+  if (!userId) throw new Error('인증 필요');
+  if (!nickname?.trim()) throw new Error('닉네임을 입력해주세요');
+  if (!pin || !/^\d{4}$/.test(String(pin))) throw new Error('PIN은 4자리 숫자여야 합니다');
+
+  const nick = nickname.trim();
+  if (nick.length < 2 || nick.length > 12) throw new Error('닉네임은 2~12자여야 합니다');
+  if (!/^[가-힣a-zA-Z0-9_]+$/.test(nick)) throw new Error('닉네임은 한글·영문·숫자·_만 사용 가능합니다');
+
+  const pinHash = crypto.createHash('sha256').update(userId + ':' + String(pin)).digest('hex');
+
+  await db.runTransaction(async (tx) => {
+    const nicknameRef = db.doc(`nicknames/${nick}`);
+    const nicknameSnap = await tx.get(nicknameRef);
+    if (nicknameSnap.exists && nicknameSnap.data().userId !== userId) {
+      throw new Error('이미 사용 중인 닉네임입니다');
+    }
+
+    const userRef = db.doc(`users/${userId}`);
+    const userSnap = await tx.get(userRef);
+    const oldNick = userSnap.exists ? userSnap.data().nickname : null;
+    if (oldNick && oldNick !== nick) {
+      tx.delete(db.doc(`nicknames/${oldNick}`));
+    }
+
+    tx.set(nicknameRef, { userId, createdAt: FieldValue.serverTimestamp() });
+    tx.set(userRef, { nickname: nick, pinHash, hasPinAuth: true, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+  });
+
+  return { ok: true };
+});
+
+// ── 닉네임+PIN 로그인 → custom token 반환 ───────────────────────
+exports.loginNickname = onCall({ region: 'asia-northeast3' }, async (request) => {
+  const { nickname, pin } = request.data;
+  if (!nickname?.trim()) throw new Error('닉네임을 입력해주세요');
+  if (!pin || !/^\d{4}$/.test(String(pin))) throw new Error('PIN은 4자리 숫자여야 합니다');
+
+  const nick = nickname.trim();
+  const nicknameSnap = await db.doc(`nicknames/${nick}`).get();
+  if (!nicknameSnap.exists) throw new Error('닉네임 또는 PIN이 올바르지 않습니다');
+
+  const userId = nicknameSnap.data().userId;
+  const userSnap = await db.doc(`users/${userId}`).get();
+  if (!userSnap.exists || !userSnap.data().pinHash) throw new Error('닉네임 또는 PIN이 올바르지 않습니다');
+
+  const expectedHash = crypto.createHash('sha256').update(userId + ':' + String(pin)).digest('hex');
+  if (userSnap.data().pinHash !== expectedHash) throw new Error('닉네임 또는 PIN이 올바르지 않습니다');
+
+  const adminAuth = getAuth();
+  const customToken = await adminAuth.createCustomToken(userId);
+  return { customToken, nickname: nick };
+});
+
 // 회원 탈퇴 — 유저 데이터 전체 삭제 후 Auth 계정 삭제
 exports.deleteAccount = onCall({ region: 'asia-northeast3' }, async (request) => {
   const userId = request.auth?.uid;
@@ -719,4 +776,118 @@ exports.seedTopicsV2 = onRequest({ region: 'asia-northeast3' }, async (req, res)
   batch.set(db.doc('site_settings/seed_v2'), { seededAt: FieldValue.serverTimestamp() });
   await batch.commit();
   res.json({ ok: true, added: SEED_TOPICS_V2.length });
+});
+
+// ── 소소뉴스: 사소한 사건 긴급 보도 생성 ────────────────────────
+exports.generateNews = onCall({ region: 'asia-northeast3', secrets: [geminiKey], timeoutSeconds: 60 }, async (request) => {
+  const { event, channel } = request.data;
+  const userId = request.auth?.uid;
+  if (!userId) throw new Error('인증 필요');
+  if (!event?.trim() || event.trim().length > 100) throw new Error('사건 내용을 1~100자로 입력해주세요');
+
+  await checkRateLimit(userId, 'dailyNews', 5, 86400);
+
+  const chLabels = { cnn: 'CNN 코리아', mbc: 'MBC 뉴스데스크', yt: '유튜브 긴급 생방송' };
+  const chLabel  = chLabels[channel] || 'CNN 코리아';
+
+  const anchors = { cnn: '박지수', mbc: '김현호', yt: '갓생유튜버 박소소' };
+  const anchor  = anchors[channel] || '박지수';
+
+  const prompt = `당신은 ${chLabel}의 앵커입니다. 아래 아주 사소한 일상 사건을 마치 세계를 뒤흔드는 초대형 긴급 특보인 것처럼 과장해서 뉴스 보도문을 작성하세요.
+
+사건: ${event.trim()}
+
+조건:
+1. 헤드라인(한 줄, 30자 이내): 자극적이고 과장된 뉴스 제목
+2. 보도문(4~6문장): 심각한 톤으로 사소한 사건을 과장. 전문가 인터뷰, 현장 중계, 사회적 파장 등을 꾸며냄. 중간에 황당한 드립이 하나 들어가도 좋음.
+3. 한국어. 뉴스 방송 말투 사용.
+
+출력 형식 (JSON):
+{"headline": "...", "report": "..."}`;
+
+  const genAI = new GoogleGenerativeAI(geminiKey.value().trim());
+  const model = genAI.getGenerativeModel({
+    model: 'gemini-2.5-flash',
+    generationConfig: { thinkingConfig: { thinkingBudget: 0 }, responseMimeType: 'application/json' },
+  });
+
+  const result = await model.generateContent(prompt);
+  let parsed;
+  try { parsed = JSON.parse(result.response.text().trim()); } catch { throw new Error('AI 응답 파싱 실패'); }
+
+  const newsRef = await db.collection('sosonews').add({
+    event: event.trim(),
+    channel: channel || 'cnn',
+    headline: parsed.headline || '긴급 속보',
+    report: parsed.report || '',
+    anchor,
+    userId,
+    createdAt: FieldValue.serverTimestamp(),
+  });
+
+  return { newsId: newsRef.id };
+});
+
+// ── 악마와의 거래: 소원 → 황당한 조건 생성 ──────────────────────
+exports.generateDevilDeal = onCall({ region: 'asia-northeast3', secrets: [geminiKey], timeoutSeconds: 60 }, async (request) => {
+  const { wish } = request.data;
+  const userId = request.auth?.uid;
+  if (!userId) throw new Error('인증 필요');
+  if (!wish?.trim() || wish.trim().length > 80) throw new Error('소원을 1~80자로 입력해주세요');
+
+  await checkRateLimit(userId, 'dailyDevil', 5, 86400);
+
+  const prompt = `당신은 소원을 들어주는 악마입니다. 아래 소원에 대해 황당하고 웃기지만 절묘하게 논리적인 조건(대가)을 3가지 제시하세요.
+
+소원: ${wish.trim()}
+
+조건:
+- 조건 3가지는 각각 달라야 함
+- 조건 1: 사소하지만 좀 불편한 것 (웃김 낮음)
+- 조건 2: 황당하고 웃긴 것 (웃김 중간)
+- 조건 3: 완전 병맛, 배꼽 빠질 것 (웃김 최고)
+- 소원 내용과 조건이 반드시 연결되어야 함
+- 한국어, 말투는 악마처럼 음흉하게
+
+출력 형식 (JSON):
+{"intro": "흐흐흐... 소원을 들어주지. 단 조건이 있다.", "conditions": [{"label": "조건 1", "text": "..."}, {"label": "조건 2", "text": "..."}, {"label": "조건 3", "text": "..."}], "closing": "어떤 조건을 선택하겠느냐...?"}`;
+
+  const genAI = new GoogleGenerativeAI(geminiKey.value().trim());
+  const model = genAI.getGenerativeModel({
+    model: 'gemini-2.5-flash',
+    generationConfig: { thinkingConfig: { thinkingBudget: 0 }, responseMimeType: 'application/json' },
+  });
+
+  const result = await model.generateContent(prompt);
+  let parsed;
+  try { parsed = JSON.parse(result.response.text().trim()); } catch { throw new Error('AI 응답 파싱 실패'); }
+
+  const shareToken = randomToken(8);
+  const dealRef = await db.collection('devil_deals').add({
+    wish: wish.trim(),
+    intro: parsed.intro || '조건이 있다...',
+    conditions: parsed.conditions || [],
+    closing: parsed.closing || '',
+    shareToken,
+    userId,
+    votes: {},
+    createdAt: FieldValue.serverTimestamp(),
+  });
+
+  return { dealId: dealRef.id, shareToken };
+});
+
+// ── 악마와의 거래: 조건 투표 ────────────────────────────────────
+exports.voteDevilDeal = onCall({ region: 'asia-northeast3' }, async (request) => {
+  const { dealId, conditionIndex } = request.data;
+  const userId = request.auth?.uid;
+  if (!userId) throw new Error('인증 필요');
+  if (!dealId || conditionIndex === undefined) throw new Error('필수 항목 누락');
+
+  const dealRef = db.doc(`devil_deals/${dealId}`);
+  const snap = await dealRef.get();
+  if (!snap.exists) throw new Error('거래를 찾을 수 없습니다');
+
+  await dealRef.update({ [`votes.${userId}`]: conditionIndex });
+  return { ok: true };
 });

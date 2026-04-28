@@ -9,6 +9,8 @@ import { renderPolicy } from './pages/policy.js';
 import { renderGuide } from './pages/guide.js';
 import { renderFeedback } from './pages/feedback.js';
 import { renderAuth } from './pages/auth.js';
+import { renderSosoNews } from './pages/sosonews.js';
+import { renderDevilDeal } from './pages/devil-deal.js';
 import { renderFooter } from './components/footer.js';
 import { initTheme } from './components/theme.js';
 import { renderNav } from './components/nav.js';
@@ -54,6 +56,12 @@ function route() {
   } else if (hash === '#/login') {
     pageName = 'login';
     renderAuth(content);
+  } else if (hash === '#/sosonews' || hash.startsWith('#/sosonews/')) {
+    pageName = 'sosonews';
+    renderSosoNews(content, hash.startsWith('#/sosonews/') ? decodeURIComponent(hash.replace('#/sosonews/', '')) : null);
+  } else if (hash === '#/devil-deal' || hash.startsWith('#/devil-deal/')) {
+    pageName = 'devil_deal';
+    renderDevilDeal(content, hash.startsWith('#/devil-deal/') ? decodeURIComponent(hash.replace('#/devil-deal/', '')) : null);
   } else {
     renderHome(content);
   }

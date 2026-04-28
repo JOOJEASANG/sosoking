@@ -3,6 +3,7 @@ import {
   getAuth, signInAnonymously, onAuthStateChanged,
   GoogleAuthProvider, signInWithPopup,
   createUserWithEmailAndPassword, signInWithEmailAndPassword,
+  signInWithCustomToken,
   signOut,
 } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
 import { getFirestore } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
@@ -50,6 +51,10 @@ export async function loginWithEmail(email, password) {
 
 export async function signupWithEmail(email, password) {
   return createUserWithEmailAndPassword(auth, email, password);
+}
+
+export async function loginWithPin(customToken) {
+  return signInWithCustomToken(auth, customToken);
 }
 
 export async function logout() {

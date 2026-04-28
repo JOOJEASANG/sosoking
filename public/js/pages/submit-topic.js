@@ -14,7 +14,7 @@ export async function renderSubmitTopic(container) {
     <div>
       <div class="page-header">
         <a href="#/topics" class="back-btn">‹</a>
-        <span class="logo">✏️ 내 사건 등록</span>
+        <span class="logo">⚖️ 사건 등록</span>
       </div>
       <div class="container" style="padding-top:24px;padding-bottom:80px;">
         <div class="submit-topic-tip">
@@ -106,12 +106,12 @@ function showSuccessScreen(container, topicId) {
     <div>
       <div class="page-header">
         <a href="#/topics" class="back-btn">‹</a>
-        <span class="logo">✏️ 내 사건 등록</span>
+        <span class="logo">⚖️ 사건 등록</span>
       </div>
       <div class="container" style="padding-top:56px;padding-bottom:80px;text-align:center;">
-        <div style="font-size:72px;line-height:1;margin-bottom:20px;animation:gavelDrop 0.6s cubic-bezier(0.34,1.56,0.64,1) both;">⚖️</div>
-        <h2 style="font-family:var(--font-serif);font-size:24px;font-weight:700;color:var(--gold);margin-bottom:10px;">사건 등록 완료!</h2>
-        <p style="font-size:14px;color:var(--cream-dim);line-height:1.8;margin-bottom:36px;">
+        <div style="font-size:72px;line-height:1;margin-bottom:20px;animation:crownBounce 0.6s cubic-bezier(0.34,1.56,0.64,1) both;">⚖️</div>
+        <h2 style="font-family:var(--font-display);font-size:24px;font-weight:700;color:var(--court);margin-bottom:10px;">사건 등록 완료!</h2>
+        <p style="font-size:14px;color:var(--text-dim);line-height:1.8;margin-bottom:36px;">
           지금 바로 공개됐습니다.<br>
           친구에게 링크를 보내고 재판을 시작하세요!
         </p>

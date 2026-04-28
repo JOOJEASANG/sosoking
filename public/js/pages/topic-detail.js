@@ -8,7 +8,7 @@ export async function renderTopicDetail(container, topicId) {
     <div>
       <div class="page-header">
         <a href="#/topics" class="back-btn">‹</a>
-        <span class="logo">사건 상세</span>
+        <span class="logo">⚖️ 재판 신청</span>
       </div>
       <div class="container" style="padding-top:24px;padding-bottom:80px;">
         <div class="loading-dots" style="padding:60px 0;"><span></span><span></span><span></span></div>
@@ -44,18 +44,18 @@ export async function renderTopicDetail(container, topicId) {
   const inner = container.querySelector('.container');
   inner.innerHTML = `
     <div class="card topic-detail-card" style="margin-bottom:20px;">
-      <span class="topic-card-cat" style="margin-bottom:10px;display:inline-block;">${topic.category || '생활'}</span>
-      <h2 style="font-family:var(--font-serif);font-size:20px;font-weight:700;color:var(--cream);margin-bottom:8px;line-height:1.4;">${topic.title}</h2>
-      <p style="font-size:15px;color:var(--cream-dim);line-height:1.7;margin-bottom:18px;">${topic.summary}</p>
+      <span style="display:inline-block;background:var(--court-dim);color:var(--court);border-radius:6px;padding:3px 10px;font-size:10px;font-weight:700;margin-bottom:10px;">${topic.category || '생활'}</span>
+      <h2 style="font-family:var(--font-serif);font-size:20px;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.4;">${topic.title}</h2>
+      <p style="font-size:15px;color:var(--text-dim);line-height:1.7;margin-bottom:18px;">${topic.summary}</p>
       <div class="vs-divider"><span class="vs-text">⚖️ VS ⚖️</span></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;">
-        <div style="background:rgba(231,76,60,0.08);border:1px solid rgba(231,76,60,0.25);border-radius:10px;padding:14px;">
-          <div style="font-size:12px;font-weight:700;color:#e74c3c;margin-bottom:6px;">⚔️ 원고 측 주장</div>
-          <div style="font-size:14px;color:var(--cream);line-height:1.6;">${topic.plaintiffPosition}</div>
+        <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:10px;padding:14px;">
+          <div style="font-size:12px;font-weight:700;color:#f87171;margin-bottom:6px;">⚔️ 원고 측 주장</div>
+          <div style="font-size:14px;color:var(--text);line-height:1.6;">${topic.plaintiffPosition}</div>
         </div>
-        <div style="background:rgba(52,152,219,0.08);border:1px solid rgba(52,152,219,0.25);border-radius:10px;padding:14px;">
-          <div style="font-size:12px;font-weight:700;color:#3498db;margin-bottom:6px;">🛡️ 피고 측 주장</div>
-          <div style="font-size:14px;color:var(--cream);line-height:1.6;">${topic.defendantPosition}</div>
+        <div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.25);border-radius:10px;padding:14px;">
+          <div style="font-size:12px;font-weight:700;color:#93c5fd;margin-bottom:6px;">🛡️ 피고 측 주장</div>
+          <div style="font-size:14px;color:var(--text);line-height:1.6;">${topic.defendantPosition}</div>
         </div>
       </div>
     </div>
@@ -117,9 +117,9 @@ export async function renderTopicDetail(container, topicId) {
     </div>
 
     <div class="disclaimer" style="margin:20px 0 24px;">
-      재판 중 AI는 어느 편도 들지 않습니다.<br>
-      논리가 부족하면 직접 입력한 사람도 집니다.<br>
-      <strong>어디까지나 재미로!</strong>
+      AI 판사는 어느 편도 안 듭니다.<br>
+      논리 없으면 진짜 집니다 ㅋㅋ<br>
+      <strong>⚠️ 어디까지나 재미로!</strong>
     </div>
 
     <button id="start-btn" class="btn btn-primary" disabled>입장과 방식을 선택해주세요</button>
