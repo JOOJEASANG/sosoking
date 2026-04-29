@@ -72,12 +72,12 @@ const DEMO_STEPS = [
         <div style="font-size:13px;font-weight:700;color:#8e44ad;">감성형 심판</div>
       </div>
       <div style="padding:14px;border-radius:12px;background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.25);margin-bottom:10px;">
-        <div style="text-align:center;font-size:11px;color:var(--cream-dim);letter-spacing:.1em;margin-bottom:8px;">⚖️ 최종 판정</div>
-        <div style="text-align:center;font-size:20px;font-weight:900;color:var(--gold);margin-bottom:4px;">⚔️ A팀 승소</div>
-        <div style="font-size:12px;color:var(--cream-dim);text-align:center;line-height:1.6;margin-top:8px;">"원고여... 읽씹의 고통이 고스란히 느껴집니다 (목이 메어) 당신의 억울함은 이 법정이 기억할 것입니다 (흑흑)"</div>
+        <div style="text-align:center;font-size:11px;color:var(--cream-dim);letter-spacing:.1em;margin-bottom:8px;">🏆 최종 판정</div>
+        <div style="text-align:center;font-size:20px;font-weight:900;color:var(--gold);margin-bottom:4px;">🏆 A팀 승리</div>
+        <div style="font-size:12px;color:var(--cream-dim);text-align:center;line-height:1.6;margin-top:8px;">"A팀이여... 읽씹의 고통이 고스란히 느껴집니다 (목이 메어) 당신의 억울함은 이 배틀이 기억할 것입니다 (흑흑)"</div>
       </div>
       <div style="padding:12px;border-radius:10px;background:rgba(255,255,255,0.03);border:1px solid var(--border);">
-        <div style="font-size:10px;color:var(--gold);font-weight:700;margin-bottom:4px;">📜 생활형 처분</div>
+        <div style="font-size:10px;color:var(--gold);font-weight:700;margin-bottom:4px;">🎯 미션</div>
         <div style="font-size:12px;color:var(--cream);line-height:1.6;">B팀은 A팀에게 따뜻한 국밥 한 그릇을 사주고, 눈을 마주치며 '미안해'라고 말할 것을 명한다</div>
       </div>`,
   },

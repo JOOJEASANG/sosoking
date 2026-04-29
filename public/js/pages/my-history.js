@@ -51,7 +51,7 @@ export async function renderMyHistory(container) {
 
     if (!all.length) {
       inner.innerHTML = loginBanner + `<div class="empty-state">
-        <span class="empty-state-icon">⚖️</span>
+        <span class="empty-state-icon">🔥</span>
         <div class="empty-state-title">아직 참가한 배틀이 없습니다</div>
         <div class="empty-state-sub">주제를 선택해 첫 배틀을 시작해보세요</div>
         <a href="#/topics" class="btn btn-primary" style="margin-top:20px;max-width:200px;display:flex;margin-left:auto;margin-right:auto;">주제 목록 보기</a>
@@ -73,8 +73,8 @@ export async function renderMyHistory(container) {
         resultBadge = draw
           ? `<span style="color:var(--gold);font-weight:700;font-size:12px;">🤝 무승부</span>`
           : won
-            ? `<span style="color:#27ae60;font-weight:700;font-size:12px;">🏆 승소</span>`
-            : `<span style="color:var(--red);font-weight:700;font-size:12px;">😔 패소</span>`;
+            ? `<span style="color:#27ae60;font-weight:700;font-size:12px;">🏆 승리</span>`
+            : `<span style="color:var(--red);font-weight:700;font-size:12px;">😔 패배</span>`;
       }
 
       return `<div class="card" style="margin-bottom:10px;cursor:pointer;" onclick="location.hash='#/debate/${s.id}'">

@@ -164,8 +164,8 @@ function updateHeader(session, myRole) {
     waiting: '상대방 대기 중...',
     active: myRole ? `${session.currentRound + 1}라운드 · ${myTurnText(session, myRole)}` : `${session.currentRound + 1}라운드 진행 중`,
     ready_for_verdict: '주장 완료 · 판정 요청 가능',
-    verdict_requested: '⚖️ 판정 요청 중 · 상대방 동의 대기',
-    judging: '⚖️ AI 심판 판정 중...',
+    verdict_requested: '🔥 판정 요청 중 · 상대방 동의 대기',
+    judging: '🔥 AI 심판 판정 중...',
     completed: '판정 완료',
   };
   statusEl.textContent = statusMap[session.status] || '';
@@ -186,7 +186,7 @@ function renderWaiting(session, sessionId) {
   if (!feed) return;
   const shareUrl = `${location.origin}${location.pathname}#/join/${session.shareToken}`;
   const shareTitle = `소소킹 토론배틀 - ${session.topicTitle}`;
-  const shareText = `[소소킹 토론배틀] "${session.topicTitle}" 배틀에 초대합니다! 아래 링크를 눌러 참가해주세요 ⚖️`;
+  const shareText = `[소소킹 토론배틀] "${session.topicTitle}" 배틀에 초대합니다! 아래 링크를 눌러 참가해주세요 🔥`;
   const canShare = typeof navigator.share === 'function';
 
   feed.innerHTML = `
@@ -715,7 +715,7 @@ function updateInput(session, myRole) {
   const maxReached = session.status === 'ready_for_verdict';
   const verdictPending = session.status === 'verdict_requested';
 
-  // 순서: 원고 먼저 주장 → 피고 반박
+  // 순서: A팀 먼저 주장 → B팀 반박
   let isMyTurn = false;
   let waitMsg = '';
   if (myRole === 'plaintiff') {
@@ -730,17 +730,17 @@ function updateInput(session, myRole) {
   textarea.disabled = !isMyTurn || maxReached || verdictPending;
   btn.disabled = !isMyTurn || maxReached || verdictPending;
   textarea.placeholder = isMyTurn
-    ? (myRole === 'plaintiff' ? '먼저 주장을 펼치세요... (최대 200자)' : '원고 주장에 반박하세요... (최대 200자)')
+    ? (myRole === 'plaintiff' ? '먼저 주장을 펼치세요... (최대 200자)' : 'A팀 주장에 반박하세요... (최대 200자)')
     : '대기 중...';
 
   if (maxReached) {
     hint.textContent = '모든 라운드 완료 · 위에서 판정 요청 가능';
   } else if (verdictPending) {
-    hint.textContent = '⚖️ 판결 요청 처리 중...';
+    hint.textContent = '🔥 판정 요청 처리 중...';
   } else if (!isMyTurn) {
     hint.textContent = waitMsg;
   } else {
-    const turnLabel = myRole === 'plaintiff' ? '원고가 먼저 주장' : '피고 반박';
+    const turnLabel = myRole === 'plaintiff' ? 'A팀이 먼저 주장' : 'B팀 반박';
     hint.textContent = `${round + 1}라운드 · ${turnLabel}`;
   }
 }
@@ -1012,7 +1012,7 @@ async function generateVerdictCard(session) {
 async function shareVerdictCard(canvas, session) {
   const isDraw = !session.verdict?.winner || session.verdict?.winner === 'draw';
   const pWin = session.verdict?.winner === 'plaintiff';
-  const verdictLabel = isDraw ? '무승부' : pWin ? 'A팀 승소' : 'B팀 승소';
+  const verdictLabel = isDraw ? '무승부' : pWin ? 'A팀 승리' : 'B팀 승리';
   const topicTitle = session.topicTitle || "주제";
   const shareTitle = `소소킹 토론배틀 - ${topicTitle}`;
   const shareText = `[소소킹 판정결과]\n📋 주제: ${topicTitle}\n⚖️ 판정: ${verdictLabel}\n\n배틀 해보기 → sosoking.co.kr`;
