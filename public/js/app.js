@@ -9,6 +9,7 @@ import { renderPolicy } from './pages/policy.js';
 import { renderGuide } from './pages/guide.js';
 import { renderFeedback } from './pages/feedback.js';
 import { renderAuth } from './pages/auth.js';
+import { renderJoinTeam } from './pages/join-team.js';
 import { renderFooter } from './components/footer.js';
 import { initTheme } from './components/theme.js';
 import { renderNav } from './components/nav.js';
@@ -33,6 +34,10 @@ function route() {
   } else if (hash.startsWith('#/debate/')) {
     pageName = 'debate';
     renderDebate(content, decodeURIComponent(hash.replace('#/debate/', '')));
+  } else if (hash.startsWith('#/join-team/')) {
+    pageName = 'join_team';
+    const parts = hash.replace('#/join-team/', '').split('/');
+    renderJoinTeam(content, decodeURIComponent(parts[0]), parts[1] || 'plaintiff');
   } else if (hash.startsWith('#/join/')) {
     pageName = 'debate_join';
     renderDebate(content, null, decodeURIComponent(hash.replace('#/join/', '')));

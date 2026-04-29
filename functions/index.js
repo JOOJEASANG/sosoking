@@ -1,4 +1,5 @@
 const { onCall, onRequest } = require('firebase-functions/v2/https');
+const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { initializeApp } = require('firebase-admin/app');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const { getAuth } = require('firebase-admin/auth');
@@ -88,7 +89,7 @@ async function checkRateLimit(userId, action, maxCount, windowSeconds) {
 
 // 새 토론 세션 생성
 exports.createSession = onCall({ region: 'asia-northeast3', secrets: [geminiKey], timeoutSeconds: 60 }, async (request) => {
-  const { topicId, side, mode, maxRounds: requestedRounds } = request.data;
+  const { topicId, side, mode, maxRounds: requestedRounds, teamSize: requestedTeamSize } = request.data;
   const userId = request.auth?.uid;
   if (!userId) throw new Error('인증 필요');
   if (!topicId || !side || !mode) throw new Error('필수 항목 누락');
@@ -105,6 +106,7 @@ exports.createSession = onCall({ region: 'asia-northeast3', secrets: [geminiKey]
   }
 
   const maxRounds = [3, 5, 7].includes(requestedRounds) ? requestedRounds : 5;
+  const teamSize = [1, 2, 3].includes(requestedTeamSize) ? requestedTeamSize : 1;
 
   const topicSnap = await db.doc(`topics/${topicId}`).get();
   if (!topicSnap.exists) throw new Error('주제를 찾을 수 없습니다');
@@ -133,6 +135,7 @@ exports.createSession = onCall({ region: 'asia-northeast3', secrets: [geminiKey]
     defendantData = side === 'defendant' ? { userId, nickname } : null;
   }
 
+  const creatorMember = { userId, nickname };
   const sessionData = {
     topicId,
     topicTitle: topic.title,
@@ -142,6 +145,9 @@ exports.createSession = onCall({ region: 'asia-northeast3', secrets: [geminiKey]
     category: topic.category || '',
     plaintiff: plaintiffData,
     defendant: defendantData,
+    plaintiffTeam: side === 'plaintiff' ? [creatorMember] : (mode === 'ai' ? [{ userId: AI_USER_ID, nickname: AI_NICKNAME }] : []),
+    defendantTeam: side === 'defendant' ? [creatorMember] : (mode === 'ai' ? [{ userId: AI_USER_ID, nickname: AI_NICKNAME }] : []),
+    teamSize,
     status: mode === 'ai' ? 'active' : 'waiting',
     currentRound: 0,
     maxRounds,
@@ -217,10 +223,19 @@ exports.joinSession = onCall({ region: 'asia-northeast3' }, async (request) => {
       if (session.status !== 'waiting') throw new Error('세션이 이미 시작되었습니다');
       if (session.plaintiff?.userId === userId || session.defendant?.userId === userId) return;
       const nickname = generateNickname();
+      const newMember = { userId, nickname };
       if (!session.plaintiff) {
-        tx.update(sessionRef, { plaintiff: { userId, nickname }, status: 'active' });
+        tx.update(sessionRef, {
+          plaintiff: { userId, nickname },
+          plaintiffTeam: [newMember],
+          status: 'active',
+        });
       } else if (!session.defendant) {
-        tx.update(sessionRef, { defendant: { userId, nickname }, status: 'active' });
+        tx.update(sessionRef, {
+          defendant: { userId, nickname },
+          defendantTeam: [newMember],
+          status: 'active',
+        });
       } else {
         throw new Error('세션이 꽉 찼습니다');
       }
@@ -244,11 +259,12 @@ exports.joinSession = onCall({ region: 'asia-northeast3' }, async (request) => {
       sessionId = queueData.sessionId;
       const session = sessionSnap.data();
       const nickname = generateNickname();
+      const newMember = { userId, nickname };
       let updateData;
       if (!session.plaintiff) {
-        updateData = { plaintiff: { userId, nickname }, status: 'active' };
+        updateData = { plaintiff: { userId, nickname }, plaintiffTeam: [newMember], status: 'active' };
       } else if (!session.defendant) {
-        updateData = { defendant: { userId, nickname }, status: 'active' };
+        updateData = { defendant: { userId, nickname }, defendantTeam: [newMember], status: 'active' };
       } else {
         throw new Error('세션이 꽉 찼습니다');
       }
@@ -278,8 +294,10 @@ exports.submitArgument = onCall({ region: 'asia-northeast3', secrets: [geminiKey
 
   if (!['active', 'ready_for_verdict'].includes(session.status)) throw new Error('진행 중인 세션이 아닙니다');
 
-  const isPlaintiff = session.plaintiff?.userId === userId;
-  const isDefendant = session.defendant?.userId === userId;
+  const isPlaintiff = session.plaintiff?.userId === userId ||
+    (session.plaintiffTeam || []).some(m => m.userId === userId);
+  const isDefendant = session.defendant?.userId === userId ||
+    (session.defendantTeam || []).some(m => m.userId === userId);
   if (!isPlaintiff && !isDefendant) throw new Error('참가자가 아닙니다');
 
   const argSettingsSnap = await db.doc('site_settings/config').get();
@@ -470,6 +488,37 @@ ${roundsText}
     await sessionRef.update({ status: preVerdictStatus === 'ready_for_verdict' ? 'ready_for_verdict' : 'active' });
     throw err;
   }
+});
+
+// 팀원으로 세션 참가 (같은 편으로 합류)
+exports.joinTeamSession = onCall({ region: 'asia-northeast3' }, async (request) => {
+  const { sessionId, side } = request.data;
+  const userId = request.auth?.uid;
+  if (!userId) throw new Error('인증 필요');
+  if (!sessionId || !['plaintiff', 'defendant'].includes(side)) throw new Error('필수 항목 누락');
+
+  const sessionRef = db.doc(`debate_sessions/${sessionId}`);
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(sessionRef);
+    if (!snap.exists) throw new Error('세션을 찾을 수 없습니다');
+    const session = snap.data();
+
+    if (!['waiting', 'active'].includes(session.status)) throw new Error('참가할 수 없는 세션입니다');
+    if (session.mode === 'ai') throw new Error('AI 배틀은 팀원 초대를 지원하지 않습니다');
+
+    const teamKey = side === 'plaintiff' ? 'plaintiffTeam' : 'defendantTeam';
+    const currentTeam = session[teamKey] || [];
+    const teamSize = session.teamSize || 1;
+
+    if (currentTeam.some(m => m.userId === userId)) return;
+    if ((session.plaintiffTeam || []).some(m => m.userId === userId) ||
+        (session.defendantTeam || []).some(m => m.userId === userId)) return;
+    if (currentTeam.length >= teamSize) throw new Error('팀이 꽉 찼습니다');
+
+    const nickname = generateNickname();
+    tx.update(sessionRef, { [teamKey]: [...currentTeam, { userId, nickname }] });
+  });
+  return { ok: true, sessionId };
 });
 
 // 판결 요청 거부 / 취소
@@ -699,6 +748,41 @@ const SEED_TOPICS_V2 = [
   { title: '라면 국물 동반자 취식 사건', summary: '같이 먹는 사람 라면 국물을 허락 없이 먹어도 되는가', plaintiffPosition: '같이 먹는 자리에서 국물 한 숟갈은 애교다, 문제없다', defendantPosition: '내 라면은 내 것이다, 달라고 하면 몰라도 허락 없이는 안 된다', category: '음식' },
 ];
 
+const SEED_TOPICS_V3 = [
+  { title: '퇴근 5분 전 미팅 소환 배틀', summary: '퇴근 직전 갑자기 미팅 잡는 게 실례인가', plaintiffPosition: '퇴근 5분 전 미팅은 상대방 시간을 무시하는 행위다, 다음날 잡아야 한다', defendantPosition: '급한 건 급한 거다, 업무 중에 잡는 미팅에 퇴근 시간 따지면 안 된다', category: '직장' },
+  { title: '더치페이 vs 번갈아내기 연애배틀', summary: '데이트 비용은 더치페이가 맞는가, 번갈아 내기가 맞는가', plaintiffPosition: '더치페이가 가장 공평하다, 각자 먹고 싶은 거 먹고 각자 내면 된다', defendantPosition: '번갈아 내는 게 더 자연스럽다, 더치페이는 감정이 없어 보인다', category: '연애' },
+  { title: '단톡방 조용한 퇴장 무례 배틀', summary: '단체 카톡방에서 인사 없이 나가는 게 실례인가', plaintiffPosition: '나갈 때 인사 한 마디는 기본 예의다, 그냥 나가면 무시하는 것 같다', defendantPosition: '단톡방 퇴장에 무슨 인사가 필요하냐, 알림 폭탄이 더 민폐다', category: '카톡' },
+  { title: '회식 슬쩍 빠지기 정당성 배틀', summary: '반반 냈다고 하고 회식 중간에 빠져나오는 게 허용되는가', plaintiffPosition: '돈 냈으면 자기 시간 쓸 권리 있다, 2차까지 강요하는 게 문제다', defendantPosition: '다 같이 있어야 하는 자리에서 혼자 빠지는 건 팀워크를 해치는 행동이다', category: '직장' },
+  { title: '연인 스마트폰 공개 의무 배틀', summary: '연인 사이에 스마트폰 보여달라고 하면 보여줘야 하는가', plaintiffPosition: '보여주지 않으면 뭔가 숨기는 게 있다는 증거다, 신뢰하면 보여줄 수 있어야 한다', defendantPosition: '스마트폰은 사생활이다, 연인이어도 열람 강요는 감시다', category: '연애' },
+  { title: '배달음식 리뷰 의무 배틀', summary: '배달음식 시키면 리뷰를 꼭 써야 하는가', plaintiffPosition: '사장님이 열심히 했는데 리뷰 한 줄은 기본 예의다, 사진까지는 아니어도 글은 써야 한다', defendantPosition: '먹고 싶어서 산 거지 리뷰 써주려고 산 게 아니다, 의무가 아니다', category: '생활' },
+  { title: '공유 냉장고 음식 무단 취식 배틀', summary: '회사·자취 공유 냉장고에서 이름 없는 음식 먹어도 되는가', plaintiffPosition: '이름 안 썼다고 공용은 아니다, 물어보고 먹어야 기본이다', defendantPosition: '공용 냉장고에 이름 안 쓰면 공용이라고 봐야 한다, 쓰기 싫으면 이름 써라', category: '직장' },
+  { title: '새벽 카톡 전송 타이밍 배틀', summary: '새벽 1시에 카톡 보내는 게 실례인가', plaintiffPosition: '새벽에 울리는 알림은 수면 방해다, 급하지 않으면 아침에 보내야 한다', defendantPosition: '상대방이 알림 설정 안 한 거다, 보내는 사람 잘못이 아니다', category: '카톡' },
+  { title: '친구 지각 허용 범위 배틀', summary: '약속에 10분 지각은 용납될 수 있는가', plaintiffPosition: '10분도 지각이다, 미리 나와서 여유 있게 오는 게 예의다', defendantPosition: '10분은 오차 범위다, 칼같이 따지면 사람 피곤해진다', category: '친구' },
+  { title: '생일 선물 가격 공개 논쟁', summary: '생일 선물을 받고 가격 검색해보는 게 실례인가', plaintiffPosition: '가격 확인은 당연하다, 얼마짜리 선물인지 알고 싶은 건 인지상정이다', defendantPosition: '선물의 의미는 가격이 아니다, 검색하는 순간 선물의 의미가 사라진다', category: '친구' },
+];
+
+exports.seedTopicsV3 = onRequest({ region: 'asia-northeast3' }, async (req, res) => {
+  const marker = await db.doc('site_settings/seed_v3').get();
+  if (marker.exists) {
+    res.json({ ok: false, message: '이미 실행됨' });
+    return;
+  }
+  const batch = db.batch();
+  for (const topic of SEED_TOPICS_V3) {
+    batch.set(db.collection('topics').doc(), {
+      ...topic,
+      status: 'active',
+      isOfficial: true,
+      playCount: 0,
+      createdBy: 'system',
+      createdAt: FieldValue.serverTimestamp(),
+    });
+  }
+  batch.set(db.doc('site_settings/seed_v3'), { seededAt: FieldValue.serverTimestamp() });
+  await batch.commit();
+  res.json({ ok: true, added: SEED_TOPICS_V3.length });
+});
+
 exports.seedTopicsV2 = onRequest({ region: 'asia-northeast3' }, async (req, res) => {
   const marker = await db.doc('site_settings/seed_v2').get();
   if (marker.exists) {
@@ -722,8 +806,6 @@ exports.seedTopicsV2 = onRequest({ region: 'asia-northeast3' }, async (req, res)
 });
 
 // ─── AI 일일 주제 자동 생성 (매일 오전 9시 KST = 0시 UTC) ───────────────────
-const { onSchedule } = require('firebase-functions/v2/scheduler');
-
 const DAILY_TOPIC_CATEGORIES = ['카톡', '연애', '음식', '정산', '직장', '생활', '친구'];
 
 exports.generateDailyTopic = onSchedule({
@@ -740,22 +822,23 @@ exports.generateDailyTopic = onSchedule({
   const category = DAILY_TOPIC_CATEGORIES[Math.floor(Math.random() * DAILY_TOPIC_CATEGORIES.length)];
 
   const genAI = new GoogleGenerativeAI(geminiKey.value());
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-preview-05-20' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
   const prompt = `당신은 소소킹 토론배틀 사이트의 일일 배틀 주제 생성기입니다.
 카테고리: ${category}
 오늘의 배틀 주제를 딱 1개 생성하세요. 조건:
-- 한국인 누구나 공감할 수 있는 사소하지만 의견이 갈리는 일상 주제
-- 기존과 다른 새로운 주제
-- A팀과 B팀 양쪽 입장이 팽팽하게 맞설 수 있어야 함
-- 유머러스하고 친근하게
+- 20~40대 한국인 직장인·연인·친구 사이에서 실제로 티격태격하는 상황
+- 어느 쪽이 맞다고 딱 잘라 말하기 어렵고 양쪽 다 억울할 수 있는 주제
+- 초등학생 수준이 아닌, 성인이 공감하는 현실적이고 신선한 소재
+- A팀과 B팀 입장이 팽팽하게 맞서야 함
+- 주제명은 배틀스럽고 재미있게 (예: "카톡 읽씹 3시간 후 전화 실례인가 배틀")
 
 반드시 아래 JSON 형식으로만 응답하세요 (마크다운 없이):
 {
-  "title": "주제명 (20자 이내)",
+  "title": "배틀 주제명 (25자 이내, ~배틀 또는 ~논쟁 형식)",
   "summary": "한 줄 요약 — A주장 vs B주장 형식 (50자 이내)",
-  "plaintiffPosition": "A팀 주장 (50자 이내)",
-  "defendantPosition": "B팀 주장 (50자 이내)"
+  "plaintiffPosition": "A팀 주장 (60자 이내, 구체적이고 설득력 있게)",
+  "defendantPosition": "B팀 주장 (60자 이내, 구체적이고 설득력 있게)"
 }`;
 
   const result = await model.generateContent(prompt);

@@ -74,6 +74,16 @@ export async function renderTopicDetail(container, topicId) {
       </div>
     </div>
 
+    ${!hasRandomOpponent && aiModeEnabled ? `
+    <div style="background:linear-gradient(135deg,rgba(232,96,44,0.08),rgba(255,138,90,0.06));border:1.5px solid rgba(232,96,44,0.3);border-radius:12px;padding:14px 16px;margin-top:20px;display:flex;align-items:center;gap:12px;">
+      <span style="font-size:28px;flex-shrink:0;">🤖</span>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:700;color:var(--gold);margin-bottom:2px;">랜덤 대기자가 없어요!</div>
+        <div style="font-size:12px;color:var(--cream-dim);line-height:1.5;">AI 소소봇과 바로 배틀하거나 친구를 초대해보세요</div>
+      </div>
+    </div>
+    ` : ''}
+
     <div class="form-group" style="margin-top:20px;">
       <label class="form-label">대결 방식</label>
       <div class="mode-grid">
@@ -84,14 +94,35 @@ export async function renderTopicDetail(container, topicId) {
         </button>
         <button class="mode-btn" data-mode="random">
           <span class="mode-btn-icon">${hasRandomOpponent ? '🎲' : '⏳'}</span>
-          <div class="mode-btn-label">모르는 사람과</div>
+          <div class="mode-btn-label">랜덤 매칭</div>
           <div class="mode-btn-desc">${hasRandomOpponent ? '대기자 있음 · 자동 매칭' : '대기자 없음 · 먼저 기다리기'}</div>
         </button>
-        ${aiModeEnabled ? `<button class="mode-btn" data-mode="ai">
+        ${aiModeEnabled ? `<button class="mode-btn${!hasRandomOpponent ? ' mode-btn-ai-highlight' : ''}" data-mode="ai">
           <span class="mode-btn-icon">🤖</span>
-          <div class="mode-btn-label">AI와 대결</div>
-          <div class="mode-btn-desc">소소봇 · 혼자서 바로 시작</div>
+          <div class="mode-btn-label">AI 소소봇</div>
+          <div class="mode-btn-desc">${!hasRandomOpponent ? '👉 바로 시작 가능!' : '혼자서 즉시 시작'}</div>
         </button>` : ''}
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-top:20px;">
+      <label class="form-label">팀 인원 <span style="font-size:10px;color:var(--cream-dim);font-weight:400;text-transform:none;letter-spacing:0;">(각 팀당)</span></label>
+      <div class="rounds-grid">
+        <button class="rounds-btn active" data-team="1">
+          <span class="rounds-btn-num" style="font-size:20px;">1인</span>
+          <div class="rounds-btn-label">혼자</div>
+          <div class="rounds-btn-desc">1 vs 1</div>
+        </button>
+        <button class="rounds-btn" data-team="2">
+          <span class="rounds-btn-num" style="font-size:20px;">2인</span>
+          <div class="rounds-btn-label">2팀</div>
+          <div class="rounds-btn-desc">2 vs 2</div>
+        </button>
+        <button class="rounds-btn" data-team="3">
+          <span class="rounds-btn-num" style="font-size:20px;">3인</span>
+          <div class="rounds-btn-label">3팀</div>
+          <div class="rounds-btn-desc">3 vs 3</div>
+        </button>
       </div>
     </div>
 
@@ -128,6 +159,7 @@ export async function renderTopicDetail(container, topicId) {
   let selectedSide = '';
   let selectedMode = '';
   let selectedRounds = 5;
+  let selectedTeamSize = 1;
 
   inner.querySelectorAll('.side-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -147,9 +179,17 @@ export async function renderTopicDetail(container, topicId) {
     });
   });
 
-  inner.querySelectorAll('.rounds-btn').forEach(btn => {
+  inner.querySelectorAll('[data-team]').forEach(btn => {
     btn.addEventListener('click', () => {
-      inner.querySelectorAll('.rounds-btn').forEach(b => b.classList.remove('active'));
+      inner.querySelectorAll('[data-team]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedTeamSize = Number(btn.dataset.team);
+    });
+  });
+
+  inner.querySelectorAll('.rounds-btn[data-rounds]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      inner.querySelectorAll('.rounds-btn[data-rounds]').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       selectedRounds = Number(btn.dataset.rounds);
     });
@@ -173,17 +213,21 @@ export async function renderTopicDetail(container, topicId) {
     btn.textContent = '세션 생성 중...';
 
     try {
-      trackEvent('session_start', { mode: selectedMode, side: selectedSide, rounds: selectedRounds, topic_id: topicId });
+      trackEvent('session_start', { mode: selectedMode, side: selectedSide, rounds: selectedRounds, team_size: selectedTeamSize, topic_id: topicId });
       if (selectedMode === 'random') {
-        await handleRandomMatch(topicId, topic, selectedSide, selectedRounds);
+        await handleRandomMatch(topicId, topic, selectedSide, selectedRounds, selectedTeamSize);
       } else if (selectedMode === 'ai') {
-        const createSession = httpsCallable(functions, 'createSession');
-        const res = await createSession({ topicId, side: selectedSide, mode: 'ai', maxRounds: selectedRounds });
+        const createSessionFn = httpsCallable(functions, 'createSession');
+        const res = await createSessionFn({ topicId, side: selectedSide, mode: 'ai', maxRounds: selectedRounds });
         location.hash = `#/debate/${res.data.sessionId}`;
       } else {
-        const createSession = httpsCallable(functions, 'createSession');
-        const res = await createSession({ topicId, side: selectedSide, mode: 'friend', maxRounds: selectedRounds });
-        location.hash = `#/debate/${res.data.sessionId}`;
+        const createSessionFn = httpsCallable(functions, 'createSession');
+        const res = await createSessionFn({ topicId, side: selectedSide, mode: 'friend', maxRounds: selectedRounds, teamSize: selectedTeamSize });
+        if (selectedTeamSize > 1) {
+          showTeamInviteScreen(inner, res.data.sessionId, selectedSide, selectedTeamSize, res.data.shareToken);
+        } else {
+          location.hash = `#/debate/${res.data.sessionId}`;
+        }
       }
     } catch (err) {
       showToast(err.message || '오류가 발생했습니다', 'error');
@@ -193,16 +237,65 @@ export async function renderTopicDetail(container, topicId) {
   });
 }
 
-async function handleRandomMatch(topicId, topic, side, maxRounds) {
+async function handleRandomMatch(topicId, topic, side, maxRounds, teamSize) {
   const queueSnap = await getDoc(doc(db, 'random_queue', topicId));
 
   if (queueSnap.exists() && queueSnap.data().userId !== auth.currentUser?.uid) {
-    const joinSession = httpsCallable(functions, 'joinSession');
-    const res = await joinSession({ topicId });
+    const joinSessionFn = httpsCallable(functions, 'joinSession');
+    const res = await joinSessionFn({ topicId });
     location.hash = `#/debate/${res.data.sessionId}`;
   } else {
-    const createSession = httpsCallable(functions, 'createSession');
-    const res = await createSession({ topicId, side, mode: 'random', maxRounds });
+    const createSessionFn = httpsCallable(functions, 'createSession');
+    const res = await createSessionFn({ topicId, side, mode: 'random', maxRounds, teamSize: teamSize || 1 });
     location.hash = `#/debate/${res.data.sessionId}`;
   }
+}
+
+function showTeamInviteScreen(container, sessionId, mySide, teamSize, shareToken) {
+  const teamInviteLink = `${location.origin}/#/join-team/${sessionId}/${mySide}`;
+  const opponentInviteLink = shareToken ? `${location.origin}/#/join/${shareToken}` : null;
+  const sideLabel = mySide === 'plaintiff' ? '🔴 A팀' : '🔵 B팀';
+
+  container.innerHTML = `
+    <div style="text-align:center;padding:40px 0 20px;">
+      <div style="font-size:64px;margin-bottom:16px;">🤝</div>
+      <h2 style="font-family:var(--font-serif);font-size:22px;font-weight:700;color:var(--gold);margin-bottom:8px;">팀 배틀 생성 완료!</h2>
+      <p style="font-size:14px;color:var(--cream-dim);line-height:1.7;margin-bottom:28px;">
+        팀원을 초대하거나 바로 배틀로 이동하세요.
+      </p>
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.08em;margin-bottom:10px;">${sideLabel} 팀원 초대 (최대 ${teamSize}명)</div>
+      <div style="background:rgba(255,255,255,0.04);border:1.5px dashed var(--border);border-radius:10px;padding:12px;word-break:break-all;font-size:12px;color:var(--cream-dim);font-family:monospace;margin-bottom:10px;">${teamInviteLink}</div>
+      <button id="copy-team-link" class="btn btn-secondary" style="margin-bottom:0;">👥 팀원 초대 링크 복사</button>
+    </div>
+
+    ${opponentInviteLink ? `
+    <div class="card" style="margin-bottom:24px;">
+      <div style="font-size:11px;font-weight:700;color:var(--cream-dim);letter-spacing:.08em;margin-bottom:10px;">상대 팀 초대 링크</div>
+      <button id="copy-opp-link" class="btn btn-ghost" style="margin-bottom:0;">🔗 상대방 초대 링크 복사</button>
+    </div>
+    ` : ''}
+
+    <a href="#/debate/${sessionId}" class="btn btn-primary">⚔️ 배틀 화면으로 이동</a>
+  `;
+
+  container.querySelector('#copy-team-link')?.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(teamInviteLink);
+      showToast('팀원 초대 링크가 복사됐습니다! 팀원에게 보내세요 🤝', 'success');
+    } catch {
+      showToast('링크를 직접 복사해주세요', 'info');
+    }
+  });
+
+  container.querySelector('#copy-opp-link')?.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(opponentInviteLink);
+      showToast('상대방 초대 링크가 복사됐습니다!', 'success');
+    } catch {
+      showToast('링크를 직접 복사해주세요', 'info');
+    }
+  });
 }
