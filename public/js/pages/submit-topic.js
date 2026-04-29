@@ -29,18 +29,13 @@ export async function renderSubmitTopic(container) {
             <div class="char-counter"><span id="c-title">0</span>/30</div>
           </div>
           <div class="form-group">
-            <label class="form-label">한 줄 요약 <span style="color:var(--red)">*</span></label>
-            <input type="text" id="t-summary" class="form-input" maxlength="60" placeholder="예: 먼저 집으면 임자 vs 눈치가 예의다" required>
-            <div class="char-counter"><span id="c-summary">0</span>/60</div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">A팀 주장 <span style="color:var(--red)">*</span></label>
-            <input type="text" id="t-plaintiff" class="form-input" maxlength="100" placeholder="예: 마지막 조각은 눈치 봐야 한다" required>
+            <label class="form-label">🔴 A팀 주장 <span style="color:var(--red)">*</span></label>
+            <input type="text" id="t-plaintiff" class="form-input" maxlength="100" placeholder="예: 눈치 봐야 한다" required>
             <div class="char-counter"><span id="c-plaintiff">0</span>/100</div>
           </div>
           <div class="form-group">
-            <label class="form-label">B팀 주장 <span style="color:var(--red)">*</span></label>
-            <input type="text" id="t-defendant" class="form-input" maxlength="100" placeholder="예: 테이블 위 음식은 먼저 집는 사람 것" required>
+            <label class="form-label">🔵 B팀 주장 <span style="color:var(--red)">*</span></label>
+            <input type="text" id="t-defendant" class="form-input" maxlength="100" placeholder="예: 먼저 집으면 임자" required>
             <div class="char-counter"><span id="c-defendant">0</span>/100</div>
           </div>
           <div class="form-group">
@@ -62,7 +57,6 @@ export async function renderSubmitTopic(container) {
 
   const counters = [
     ['t-title', 'c-title'],
-    ['t-summary', 'c-summary'],
     ['t-plaintiff', 'c-plaintiff'],
     ['t-defendant', 'c-defendant'],
   ];
@@ -82,7 +76,6 @@ export async function renderSubmitTopic(container) {
       const submitTopicFn = httpsCallable(functions, 'submitTopic');
       const result = await submitTopicFn({
         title: document.getElementById('t-title').value.trim(),
-        summary: document.getElementById('t-summary').value.trim(),
         plaintiffPosition: document.getElementById('t-plaintiff').value.trim(),
         defendantPosition: document.getElementById('t-defendant').value.trim(),
         category: document.getElementById('t-category').value,

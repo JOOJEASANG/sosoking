@@ -557,16 +557,20 @@ exports.declineVerdictRequest = onCall({ region: 'asia-northeast3' }, async (req
 
 // 유저 주제 등록 신청
 exports.submitTopic = onCall({ region: 'asia-northeast3' }, async (request) => {
-  const { title, summary, plaintiffPosition, defendantPosition, category } = request.data;
+  const { title, summary: rawSummary, plaintiffPosition, defendantPosition, category } = request.data;
   const userId = request.auth?.uid;
   if (!userId) throw new Error('인증 필요');
-  if (!title?.trim() || !summary?.trim() || !plaintiffPosition?.trim() || !defendantPosition?.trim()) {
+  if (!title?.trim() || !plaintiffPosition?.trim() || !defendantPosition?.trim()) {
     throw new Error('필수 항목을 모두 입력해주세요');
   }
   if (title.length > 30) throw new Error('사건명은 30자 이내');
-  if (summary.length > 60) throw new Error('한 줄 요약은 60자 이내');
-  if (plaintiffPosition.length > 100) throw new Error('원고 입장은 100자 이내');
-  if (defendantPosition.length > 100) throw new Error('피고 입장은 100자 이내');
+  if (plaintiffPosition.length > 100) throw new Error('A팀 주장은 100자 이내');
+  if (defendantPosition.length > 100) throw new Error('B팀 주장은 100자 이내');
+
+  // summary 미입력 시 두 주장으로 자동 생성
+  const autoSummary = rawSummary?.trim() ||
+    `${plaintiffPosition.trim().slice(0, 25)} vs ${defendantPosition.trim().slice(0, 25)}`;
+  const summary = autoSummary.slice(0, 60);
 
   const settingsSnap = await db.doc('site_settings/config').get();
   const settingsData = settingsSnap.exists ? settingsSnap.data() : {};
@@ -580,7 +584,7 @@ exports.submitTopic = onCall({ region: 'asia-northeast3' }, async (request) => {
 
   const docRef = await db.collection('topics').add({
     title: title.trim(),
-    summary: summary.trim(),
+    summary,
     plaintiffPosition: plaintiffPosition.trim(),
     defendantPosition: defendantPosition.trim(),
     category: category?.trim() || '기타',
