@@ -884,3 +884,19 @@ exports.generateDailyTopic = onSchedule({
   batch.set(db.doc(`site_settings/daily_topic_${today}`), { createdAt: FieldValue.serverTimestamp() });
   await batch.commit();
 });
+
+exports.deleteMySession = onCall({ region: 'asia-northeast3' }, async (request) => {
+  const userId = request.auth?.uid;
+  if (!userId) throw new Error('인증 필요');
+  const { sessionId } = request.data;
+  if (!sessionId) throw new Error('sessionId 필요');
+  const ref = db.doc(`debate_sessions/${sessionId}`);
+  const snap = await ref.get();
+  if (!snap.exists) throw new Error('세션을 찾을 수 없습니다');
+  const data = snap.data();
+  if (data.plaintiff?.userId !== userId && data.defendant?.userId !== userId) {
+    throw new Error('삭제 권한이 없습니다');
+  }
+  await ref.delete();
+  return { ok: true };
+});
