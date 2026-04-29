@@ -42,22 +42,22 @@ const DEMO_STEPS = [
   {
     tab: '토론',
     render: () => `
-      <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.08em;margin-bottom:12px;">💬 재치 있을수록 유리해요!</div>
+      <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.08em;margin-bottom:12px;">💬 친구 사이 소소한 배틀 예시</div>
       <div style="display:flex;flex-direction:column;gap:10px;">
         <div class="demo-msg demo-msg-p" style="animation-delay:0s;">
-          <div class="demo-bubble demo-bubble-p">읽씹은 현대판 투명인간 취급! 저 투명인간 아니거든요 😤</div>
+          <div class="demo-bubble demo-bubble-p">읽고 3시간 후에 답장하는 거 맞죠? ㅋㅋ 👀</div>
           <div style="font-size:10px;color:rgba(231,76,60,0.7);margin-top:3px;">🔴 A팀</div>
         </div>
         <div class="demo-msg demo-msg-d" style="animation-delay:.6s;">
-          <div class="demo-bubble demo-bubble-d">저는 카톡 알림을 끄고 선비처럼 삽니다. 불편하시면 편지 쓰세요 ✍️</div>
+          <div class="demo-bubble demo-bubble-d">그 3시간이 신중하게 고민한 숙성의 시간이에요 😌</div>
           <div style="font-size:10px;color:rgba(52,152,219,0.7);margin-top:3px;text-align:right;">🔵 B팀</div>
         </div>
         <div class="demo-msg demo-msg-p" style="animation-delay:1.2s;">
-          <div class="demo-bubble demo-bubble-p">선비시라면 서찰 1시간 내 회신이 예의 아닌가요? 📜</div>
+          <div class="demo-bubble demo-bubble-p">3시간 숙성한 답장이 '응' 한 글자면요? 😂</div>
           <div style="font-size:10px;color:rgba(231,76,60,0.7);margin-top:3px;">🔴 A팀</div>
         </div>
         <div class="demo-msg demo-msg-d" style="animation-delay:1.8s;">
-          <div class="demo-bubble demo-bubble-d">서찰은 3일 내 회신이 전통입니다. 제가 오히려 빠른 편이에요 😌</div>
+          <div class="demo-bubble demo-bubble-d">명작을 쓰다가 심플하게 간 거예요 ✍️ 그게 예술이죠</div>
           <div style="font-size:10px;color:rgba(52,152,219,0.7);margin-top:3px;text-align:right;">🔵 B팀</div>
         </div>
       </div>
