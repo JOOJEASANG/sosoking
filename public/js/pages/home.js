@@ -301,11 +301,11 @@ function renderTodayCard(el, topicId, t) {
       <div class="today-summary">${t.summary}</div>
       <div class="today-vs">
         <div class="today-pos" style="border-left:2px solid rgba(231,76,60,0.5);">
-          <div class="today-pos-label">⚔️ 원고</div>
+          <div class="today-pos-label">🔴 A팀</div>
           <div class="today-pos-text">${t.plaintiffPosition}</div>
         </div>
         <div class="today-pos" style="border-left:2px solid rgba(52,152,219,0.5);">
-          <div class="today-pos-label">🛡️ 피고</div>
+          <div class="today-pos-label">🔵 B팀</div>
           <div class="today-pos-text">${t.defendantPosition}</div>
         </div>
       </div>
@@ -353,7 +353,7 @@ function checkActiveSessionBanner() {
     if (!stored || !stored.sessionId) return;
     const ageHours = (Date.now() - (stored.savedAt || 0)) / 3600000;
     if (ageHours > 48) { localStorage.removeItem('sosoking_active_session'); return; }
-    const roleLabel = stored.role === 'plaintiff' ? '🔴 A팀 : '🛡️ 피고';
+    const roleLabel = stored.role === 'plaintiff' ? '🔴 A팀' : '🔵 B팀';
     el.innerHTML = `
       <div style="background:linear-gradient(135deg,rgba(201,168,76,0.14),rgba(201,168,76,0.05));border:1.5px solid rgba(201,168,76,0.45);border-radius:14px;padding:14px 16px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
         <div>
