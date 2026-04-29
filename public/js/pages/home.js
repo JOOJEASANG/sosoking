@@ -37,7 +37,7 @@ const DEMO_STEPS = [
           <div style="font-size:11px;color:var(--cream-dim);">혼자서 즉시 시작 · AI가 논리적으로 반박</div>
         </div>
       </div>
-      <div style="margin-top:12px;text-align:center;font-size:11px;color:var(--cream-dim);">라운드는 3 · 5 · 7 중 선택 ⚖️</div>`,
+      <div style="margin-top:12px;text-align:center;font-size:11px;color:var(--cream-dim);">라운드는 3 · 5 · 7 중 선택 🔥</div>`,
   },
   {
     tab: '토론',
@@ -46,19 +46,19 @@ const DEMO_STEPS = [
       <div style="display:flex;flex-direction:column;gap:10px;">
         <div class="demo-msg demo-msg-p" style="animation-delay:0s;">
           <div class="demo-bubble demo-bubble-p">읽었으면 답하는 게 기본 예의 아닌가요? 🙁</div>
-          <div style="font-size:10px;color:rgba(231,76,60,0.7);margin-top:3px;">⚔️ 원고</div>
+          <div style="font-size:10px;color:rgba(231,76,60,0.7);margin-top:3px;">🔴 A팀</div>
         </div>
         <div class="demo-msg demo-msg-d" style="animation-delay:.6s;">
           <div class="demo-bubble demo-bubble-d">내가 언제 답할지는 제가 결정해요. 카톡이 법은 아니잖아요.</div>
-          <div style="font-size:10px;color:rgba(52,152,219,0.7);margin-top:3px;text-align:right;">🛡️ 피고</div>
+          <div style="font-size:10px;color:rgba(52,152,219,0.7);margin-top:3px;text-align:right;">🔵 B팀</div>
         </div>
         <div class="demo-msg demo-msg-p" style="animation-delay:1.2s;">
           <div class="demo-bubble demo-bubble-p">그건 상대방을 무시하는 행동이에요!</div>
-          <div style="font-size:10px;color:rgba(231,76,60,0.7);margin-top:3px;">⚔️ 원고</div>
+          <div style="font-size:10px;color:rgba(231,76,60,0.7);margin-top:3px;">🔴 A팀</div>
         </div>
         <div class="demo-msg demo-msg-d" style="animation-delay:1.8s;">
           <div class="demo-bubble demo-bubble-d">바쁠 수도 있죠. 상황을 모르면서 단정하지 마세요.</div>
-          <div style="font-size:10px;color:rgba(52,152,219,0.7);margin-top:3px;text-align:right;">🛡️ 피고</div>
+          <div style="font-size:10px;color:rgba(52,152,219,0.7);margin-top:3px;text-align:right;">🔵 B팀</div>
         </div>
       </div>
       <div style="margin-top:12px;text-align:center;font-size:11px;color:var(--cream-dim);">1라운드 완료 후 언제든 판정 요청 가능 🔥</div>`,
@@ -86,7 +86,7 @@ const DEMO_STEPS = [
 export async function renderHome(container) {
   container.innerHTML = `
     <section class="battle-hero">
-      <span class="battle-gavel">⚖️</span>
+      <span class="battle-gavel">🔥</span>
       <span class="battle-badge">소소킹 토론배틀</span>
       <h1 class="battle-title">사소한 갈등,<br><span>배틀로 끝냅시다</span></h1>
       <p class="battle-sub">친구와 직접 토론하고<br>AI 심판에게 공정한 판정을 받으세요</p>
@@ -109,7 +109,7 @@ export async function renderHome(container) {
       </div>
 
       <div class="battle-cta-wrap">
-        <a href="#/topics" class="battle-cta-main">⚖️ 🔥 지금 바로 배틀하기</a>
+        <a href="#/topics" class="battle-cta-main">🔥 지금 바로 배틀하기</a>
         <a href="#/submit-topic" class="battle-cta-sub">✏️ ✏️ 주제 직접 등록하기</a>
       </div>
       <p class="battle-disclaimer">오락 목적 · AI 판정에 법적 효력 없음 · 무료 · 익명</p>
