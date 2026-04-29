@@ -131,7 +131,7 @@ function updateTopicBar(session, myRole) {
   if (!el || !session.topicTitle) return;
   if (session.status === 'waiting') { el.innerHTML = ''; return; }
   const roleClass = myRole === 'plaintiff' ? 'plaintiff' : 'defendant';
-  const roleLabel = myRole === 'plaintiff' ? '⚔️ 원고' : myRole === 'defendant' ? '🛡️ 피고' : '';
+  const roleLabel = myRole === 'plaintiff' ? '🔴 A팀' : myRole === 'defendant' ? '🔵 B팀' : '';
   el.innerHTML = `<div class="debate-topic-bar-inner">
     <span class="debate-topic-name">📋 ${escHtml(session.topicTitle)}</span>
     ${roleLabel ? `<span class="debate-my-role ${roleClass}">${roleLabel}</span>` : ''}
@@ -163,10 +163,10 @@ function updateHeader(session, myRole) {
   const statusMap = {
     waiting: '상대방 대기 중...',
     active: myRole ? `${session.currentRound + 1}라운드 · ${myTurnText(session, myRole)}` : `${session.currentRound + 1}라운드 진행 중`,
-    ready_for_verdict: '주장 완료 · 판결 요청 가능',
-    verdict_requested: '⚖️ 판결 요청 중 · 상대방 동의 대기',
-    judging: '⚖️ AI 판사 심리 중...',
-    completed: '판결 완료',
+    ready_for_verdict: '주장 완료 · 판정 요청 가능',
+    verdict_requested: '⚖️ 판정 요청 중 · 상대방 동의 대기',
+    judging: '⚖️ AI 심판 판정 중...',
+    completed: '판정 완료',
   };
   statusEl.textContent = statusMap[session.status] || '';
 }
@@ -177,7 +177,7 @@ function myTurnText(session, myRole) {
   const rounds = session.rounds || [];
   const cur = rounds[round] || {};
   if (cur[myRole]) return '상대방 차례';
-  if (myRole === 'defendant' && !cur.plaintiff) return '원고 차례';
+  if (myRole === 'defendant' && !cur.plaintiff) return 'A팀 차례';
   return '내 차례';
 }
 
@@ -185,8 +185,8 @@ function renderWaiting(session, sessionId) {
   const feed = document.getElementById('debate-feed');
   if (!feed) return;
   const shareUrl = `${location.origin}${location.pathname}#/join/${session.shareToken}`;
-  const shareTitle = `소소킹 생활법정 - ${session.topicTitle}`;
-  const shareText = `[소소킹 생활법정] "${session.topicTitle}" 재판에 초대합니다! 아래 링크를 눌러 참가해주세요 ⚖️`;
+  const shareTitle = `소소킹 토론배틀 - ${session.topicTitle}`;
+  const shareText = `[소소킹 토론배틀] "${session.topicTitle}" 배틀에 초대합니다! 아래 링크를 눌러 참가해주세요 ⚖️`;
   const canShare = typeof navigator.share === 'function';
 
   feed.innerHTML = `
@@ -211,10 +211,10 @@ function renderWaiting(session, sessionId) {
       <button id="copy-link-btn" class="btn btn-ghost" style="margin-top:8px;">🔗 링크 복사</button>
 
       <p style="margin-top:24px;font-size:13px;color:var(--cream-dim);line-height:1.7;">
-        친구가 링크를 누르는 순간 재판이 자동으로 시작됩니다
+        친구가 링크를 누르는 순간 배틀이 자동으로 시작됩니다
       </p>
 
-      <button id="cancel-session-btn" class="btn btn-ghost" style="margin-top:16px;color:var(--red);border-color:rgba(231,76,60,0.3);">✕ 재판 취소하기</button>
+      <button id="cancel-session-btn" class="btn btn-ghost" style="margin-top:16px;color:var(--red);border-color:rgba(231,76,60,0.3);">✕ 배틀 취소하기</button>
     </div>
   `;
 
@@ -240,7 +240,7 @@ function renderWaiting(session, sessionId) {
   document.getElementById('share-link')?.addEventListener('click', copyFn);
 
   document.getElementById('cancel-session-btn')?.addEventListener('click', async () => {
-    if (!confirm('재판을 취소하시겠습니까?')) return;
+    if (!confirm('배틀을 취소하시겠습니까?')) return;
     const b = document.getElementById('cancel-session-btn');
     if (b) { b.disabled = true; b.textContent = '취소 중...'; }
     try {
@@ -248,7 +248,7 @@ function renderWaiting(session, sessionId) {
       await cancelSession({ sessionId });
     } catch (err) {
       showToast(err.message || '오류 발생', 'error');
-      if (b) { b.disabled = false; b.textContent = '✕ 재판 취소하기'; }
+      if (b) { b.disabled = false; b.textContent = '✕ 배틀 취소하기'; }
     }
   });
 }
@@ -264,7 +264,7 @@ function renderActive(session, myRole, sessionId) {
   if (judge) {
     html += `
       <div style="text-align:center;padding:18px 16px 14px;margin-bottom:8px;background:rgba(255,255,255,0.02);border-radius:12px;border:1px solid var(--border);">
-        <div style="font-size:10px;color:var(--cream-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;">이번 사건 담당 판사</div>
+        <div style="font-size:10px;color:var(--cream-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;">이번 배틀 담당 심판</div>
         <div style="font-size:36px;margin-bottom:6px;">${judge.icon}</div>
         <div style="font-size:15px;font-weight:700;color:${judge.color};margin-bottom:3px;">${session.judgeType} 판사</div>
         <div style="font-size:11px;color:var(--cream-dim);">${judge.desc}</div>
@@ -285,11 +285,11 @@ function renderActive(session, myRole, sessionId) {
     const dState = dSubmitted ? '✓ 반박 완료' : dIsAi && session.aiGenerating ? '🤖 소소봇 생각 중...' : pSubmitted ? '✏️ 2️⃣ 반박 작성 중...' : '⏳ 원고 주장 대기';
     html += `<div class="round-status-row">
       <div class="round-status-chip ${pSubmitted ? 'submitted' : 'waiting'}">
-        <div class="chip-role" style="color:#e74c3c;">⚔️ 원고${pIsAi ? ' 🤖' : ' (먼저)'}</div>
+        <div class="chip-role" style="color:#e74c3c;">🔴 A팀${pIsAi ? ' 🤖' : ' (먼저)'}</div>
         <div class="chip-state">${pState}</div>
       </div>
       <div class="round-status-chip ${dSubmitted ? 'submitted' : pSubmitted ? 'waiting' : ''}" ${!pSubmitted && !dSubmitted ? 'style="opacity:0.5;"' : ''}>
-        <div class="chip-role" style="color:#3498db;">🛡️ 피고${dIsAi ? ' 🤖' : ' (반박)'}</div>
+        <div class="chip-role" style="color:#3498db;">🔵 B팀${dIsAi ? ' 🤖' : ' (반박)'}</div>
         <div class="chip-state">${dState}</div>
       </div>
     </div>`;
@@ -352,8 +352,8 @@ function renderActive(session, myRole, sessionId) {
           <button id="verdict-cancel-btn" class="btn btn-ghost" style="width:100%;">✕ 판결 요청 취소</button>`;
       } else {
         btnWrap.innerHTML = `
-          <div style="text-align:center;font-size:14px;font-weight:700;color:var(--cream);margin-bottom:8px;">⚖️ 상대방이 지금 바로 판결을 요청했어요</div>
-          <div style="text-align:center;font-size:12px;color:var(--cream-dim);margin-bottom:14px;">동의하면 AI 판사가 지금까지의 주장을 판결합니다</div>
+          <div style="text-align:center;font-size:14px;font-weight:700;color:var(--cream);margin-bottom:8px;">⚖️ 상대방이 지금 바로 판정을 요청했어요</div>
+          <div style="text-align:center;font-size:12px;color:var(--cream-dim);margin-bottom:14px;">동의하면 AI 심판가 지금까지의 주장을 판정합니다</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
             <button id="verdict-accept-btn" class="btn btn-primary">✅ 동의하기</button>
             <button id="verdict-decline-btn" class="btn btn-ghost">❌ 거부하기</button>
@@ -362,24 +362,24 @@ function renderActive(session, myRole, sessionId) {
     } else if (isAllDone) {
       btnWrap.innerHTML = `
         <div style="text-align:center;font-size:13px;color:var(--gold);font-weight:700;margin-bottom:12px;">⚡ 모든 라운드 완료! 판결을 요청하세요.</div>
-        <button id="verdict-request-btn" class="btn btn-primary">⚖️ AI 판사 판결 요청하기</button>`;
+        <button id="verdict-request-btn" class="btn btn-primary">⚖️ AI 심판 판정 요청하기</button>`;
     } else {
       btnWrap.innerHTML = `
         <div style="text-align:center;font-size:12px;color:var(--cream-dim);margin-bottom:10px;">계속 토론하거나, 지금 바로 판결받을 수도 있어요</div>
-        <button id="verdict-request-btn" class="btn btn-secondary" style="width:100%;">⚖️ 지금 바로 판결받기</button>`;
+        <button id="verdict-request-btn" class="btn btn-secondary" style="width:100%;">⚖️ 지금 바로 판정받기</button>`;
     }
     feed.appendChild(btnWrap);
 
     if (!isVerdictPending) {
       document.getElementById('verdict-request-btn')?.addEventListener('click', async () => {
         const b = document.getElementById('verdict-request-btn');
-        if (b) { b.disabled = true; b.textContent = isAllDone ? '⏳ 판사 심리 중...' : '⏳ 요청 중...'; }
+        if (b) { b.disabled = true; b.textContent = isAllDone ? '⏳ 판사 판정 중...' : '⏳ 요청 중...'; }
         try {
           const requestVerdict = httpsCallable(functions, 'requestVerdict');
           await requestVerdict({ sessionId });
         } catch (err) {
           showToast(err.message || '오류 발생', 'error');
-          if (b) { b.disabled = false; b.textContent = isAllDone ? '⚖️ AI 판사 판결 요청하기' : '⚖️ 지금 바로 판결받기'; }
+          if (b) { b.disabled = false; b.textContent = isAllDone ? '⚖️ AI 심판 판정 요청하기' : '⚖️ 지금 바로 판정받기'; }
         }
       });
     } else if (iAmRequester) {
@@ -397,7 +397,7 @@ function renderActive(session, myRole, sessionId) {
     } else {
       document.getElementById('verdict-accept-btn')?.addEventListener('click', async () => {
         const b = document.getElementById('verdict-accept-btn');
-        if (b) { b.disabled = true; b.textContent = '⏳ 심리 중...'; }
+        if (b) { b.disabled = true; b.textContent = '⏳ 판정 중...'; }
         try {
           const requestVerdict = httpsCallable(functions, 'requestVerdict');
           await requestVerdict({ sessionId });
@@ -426,10 +426,10 @@ function renderActive(session, myRole, sessionId) {
     const cancelWrap = document.createElement('div');
     cancelWrap.id = 'cancel-active-wrap';
     cancelWrap.style.cssText = 'padding:4px 0 20px;text-align:center;';
-    cancelWrap.innerHTML = `<button id="cancel-active-btn" class="btn btn-ghost" style="font-size:12px;color:var(--red);border-color:rgba(231,76,60,0.25);padding:8px 16px;">✕ 재판 종료하기</button>`;
+    cancelWrap.innerHTML = `<button id="cancel-active-btn" class="btn btn-ghost" style="font-size:12px;color:var(--red);border-color:rgba(231,76,60,0.25);padding:8px 16px;">✕ 배틀 종료하기</button>`;
     feed.appendChild(cancelWrap);
     document.getElementById('cancel-active-btn')?.addEventListener('click', async () => {
-      if (!confirm('재판을 종료하시겠습니까? 취소하면 기록에 남지 않습니다.')) return;
+      if (!confirm('배틀을 종료하시겠습니까? 취소하면 기록에 남지 않습니다.')) return;
       const b = document.getElementById('cancel-active-btn');
       if (b) { b.disabled = true; b.textContent = '종료 중...'; }
       try {
@@ -437,7 +437,7 @@ function renderActive(session, myRole, sessionId) {
         await cancelSession({ sessionId });
       } catch (err) {
         showToast(err.message || '오류 발생', 'error');
-        if (b) { b.disabled = false; b.textContent = '✕ 재판 종료하기'; }
+        if (b) { b.disabled = false; b.textContent = '✕ 배틀 종료하기'; }
       }
     });
   }
@@ -448,15 +448,15 @@ function renderCancelled(session, myRole) {
   if (!feed) return;
   const uid = auth.currentUser?.uid;
   const iCancelled = session.cancelledBy === uid;
-  const msg = iCancelled ? '재판을 직접 종료했습니다' : '상대방이 재판을 종료했습니다';
+  const msg = iCancelled ? '배틀을 직접 종료했습니다' : '상대방이 배틀을 종료했습니다';
   const sub = iCancelled ? '원하면 새 사건으로 다시 시작해보세요' : '다음에 다른 사건으로 다시 도전해보세요';
   feed.innerHTML = `
     <div style="text-align:center;padding:60px 20px;">
       <div style="font-size:48px;margin-bottom:16px;">${iCancelled ? '🚫' : '😔'}</div>
-      <div style="font-family:var(--font-serif);font-size:20px;font-weight:700;color:var(--cream);margin-bottom:8px;">재판이 종료되었습니다</div>
+      <div style="font-family:var(--font-serif);font-size:20px;font-weight:700;color:var(--cream);margin-bottom:8px;">배틀이 종료되었습니다</div>
       <p style="font-size:14px;color:var(--cream-dim);margin-bottom:6px;">${msg}</p>
       <p style="font-size:13px;color:var(--cream-dim);margin-bottom:28px;">${sub}</p>
-      <a href="#/topics" class="btn btn-primary" style="max-width:200px;display:flex;margin:0 auto;">새 사건 찾기</a>
+      <a href="#/topics" class="btn btn-primary" style="max-width:200px;display:flex;margin:0 auto;">새 주제 찾기</a>
     </div>
   `;
 }
@@ -472,7 +472,7 @@ function renderJudging(session) {
   card.style.cssText = 'text-align:center;padding:40px 20px;';
   card.innerHTML = `
     <div style="font-size:52px;margin-bottom:16px;animation:waitingPulse 1.5s ease-in-out infinite;">${judge ? judge.icon : '⚖️'}</div>
-    <div style="font-family:var(--font-serif);font-size:18px;font-weight:700;color:var(--cream);margin-bottom:6px;">${judge ? `${session.judgeType} 판사` : 'AI 판사'} 심리 중</div>
+    <div style="font-family:var(--font-serif);font-size:18px;font-weight:700;color:var(--cream);margin-bottom:6px;">${judge ? `${session.judgeType} 판사` : 'AI 심판'} 판정 중</div>
     ${judge ? `<div style="font-size:12px;color:var(--cream-dim);margin-bottom:8px;">${judge.desc}</div>` : ''}
     <div class="loading-dots" style="padding:16px 0;"><span></span><span></span><span></span></div>
     <p style="font-size:13px;color:var(--cream-dim);">양측 주장을 꼼꼼히 검토하고 있습니다</p>
@@ -498,7 +498,7 @@ function renderCompleted(session, myRole) {
     if (judge) {
       historyHtml += `
         <div style="text-align:center;padding:18px 16px 14px;margin-bottom:8px;background:rgba(255,255,255,0.02);border-radius:12px;border:1px solid var(--border);">
-          <div style="font-size:10px;color:var(--cream-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;">이번 사건 담당 판사</div>
+          <div style="font-size:10px;color:var(--cream-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;">이번 배틀 담당 심판</div>
           <div style="font-size:36px;margin-bottom:6px;">${judge.icon}</div>
           <div style="font-size:15px;font-weight:700;color:${judge.color};margin-bottom:3px;">${session.judgeType} 판사</div>
           <div style="font-size:11px;color:var(--cream-dim);">${judge.desc}</div>
@@ -550,10 +550,10 @@ function renderCompleted(session, myRole) {
     ${judge ? `
       <div style="text-align:center;margin-bottom:10px;">
         <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:20px;background:rgba(255,255,255,0.04);border:1px solid var(--border);font-size:12px;color:var(--cream-dim);">
-          ${judge.icon} <span style="color:${judge.color};font-weight:700;">${session.judgeType}</span> 판사 담당
+          ${judge.icon} <span style="color:${judge.color};font-weight:700;">${session.judgeType}</span> 심판 담당
         </span>
       </div>` : ''}
-    <div style="text-align:center;margin-bottom:10px;font-size:11px;color:var(--cream-dim);letter-spacing:.1em;">⚖️ 최종 판결</div>
+    <div style="text-align:center;margin-bottom:10px;font-size:11px;color:var(--cream-dim);letter-spacing:.1em;">⚖️ 최종 판정</div>
 
     <div class="verdict-sides-row">
       <div class="verdict-side-card ${pClass}">
@@ -576,7 +576,7 @@ function renderCompleted(session, myRole) {
 
     ${parts.reason ? `
       <div style="margin-bottom:8px;">
-        <div class="verdict-reason-label">📝 판결 이유</div>
+        <div class="verdict-reason-label">📝 판정 이유</div>
         <div class="verdict-text-card">${escHtml(parts.reason)}</div>
       </div>` : ''}
     ${parts.sentence ? `
@@ -586,7 +586,7 @@ function renderCompleted(session, myRole) {
       </div>` : ''}
     <div class="verdict-actions-row">
       <button id="share-verdict-btn" class="btn btn-secondary">🖼️ 이미지 카드 공유</button>
-      <a href="#/topics" class="btn btn-ghost">⚖️ 다른 사건 보기</a>
+      <a href="#/topics" class="btn btn-ghost">⚖️ 다른 주제 보기</a>
     </div>
   `;
   feed.appendChild(card);
@@ -654,7 +654,7 @@ function attachInput(sessionId, session, myRole) {
   area.id = 'debate-input-area';
   if (myRole) area.dataset.role = myRole;
   const roleColor = myRole === 'plaintiff' ? '#e74c3c' : myRole === 'defendant' ? '#3498db' : 'var(--gold)';
-  const roleLabel = myRole === 'plaintiff' ? '⚔️ 원고' : myRole === 'defendant' ? '🛡️ 피고' : '';
+  const roleLabel = myRole === 'plaintiff' ? '🔴 A팀' : myRole === 'defendant' ? '🔵 B팀' : '';
   area.innerHTML = `
     ${roleLabel ? `<div style="font-size:11px;font-weight:700;color:${roleColor};margin-bottom:6px;${myRole==='defendant'?'text-align:right;':''}">${roleLabel}</div>` : ''}
     <div class="debate-input-row">
@@ -704,12 +704,12 @@ function updateInput(session, myRole) {
   let isMyTurn = false;
   let waitMsg = '';
   if (myRole === 'plaintiff') {
-    if (myDone) waitMsg = '🛡️ 피고의 반박을 기다리는 중...';
+    if (myDone) waitMsg = '🔵 B팀의 반박을 기다리는 중...';
     else isMyTurn = true;
   } else if (myRole === 'defendant') {
-    if (!cur.plaintiff) waitMsg = '⚔️ 원고가 먼저 주장 중입니다...';
+    if (!cur.plaintiff) waitMsg = '🔴 A팀가 먼저 주장 중입니다...';
     else if (!myDone) isMyTurn = true;
-    else waitMsg = '⚔️ 원고의 다음 주장을 기다리는 중...';
+    else waitMsg = '🔴 A팀의 다음 주장을 기다리는 중...';
   }
 
   textarea.disabled = !isMyTurn || maxReached || verdictPending;
@@ -719,7 +719,7 @@ function updateInput(session, myRole) {
     : '대기 중...';
 
   if (maxReached) {
-    hint.textContent = '모든 라운드 완료 · 위에서 판결 요청 가능';
+    hint.textContent = '모든 라운드 완료 · 위에서 판정 요청 가능';
   } else if (verdictPending) {
     hint.textContent = '⚖️ 판결 요청 처리 중...';
   } else if (!isMyTurn) {
@@ -878,10 +878,10 @@ async function generateVerdictCard(session) {
   // ── 헤더 ──
   ctx.font = '700 58px "Noto Serif KR", serif';
   ctx.fillStyle = GOLD;
-  ctx.fillText('⚖️ 소소킹 생활법정', W / 2, y); y += 60;
+  ctx.fillText('⚖️ 소소킹 토론배틀', W / 2, y); y += 60;
   ctx.font = '400 28px "Noto Sans KR", sans-serif';
   ctx.fillStyle = GOLD_DIM;
-  ctx.fillText('AI 판사 판결 결과', W / 2, y); y += 48;
+  ctx.fillText('AI 심판 판결 결과', W / 2, y); y += 48;
   sep(y); y += 54;
 
   // ── 사건명 ──
@@ -890,14 +890,14 @@ async function generateVerdictCard(session) {
   topicLinesM.forEach(l => { ctx.fillText(l, W / 2, y); y += 62; });
   y += 26;
 
-  // ── 최종 판결 ──
+  // ── 최종 판정 ──
   sep(y); y += 40;
   ctx.font = '400 26px "Noto Sans KR", sans-serif';
   ctx.fillStyle = GOLD_DIM;
-  ctx.fillText('⚖️ 최종 판결', W / 2, y); y += 44;
+  ctx.fillText('⚖️ 최종 판정', W / 2, y); y += 44;
 
   const verdictColor = isDraw ? GOLD : pWin ? RED : BLUE;
-  const verdictLabel = isDraw ? '🤝 무승부' : pWin ? '⚔️ 원고 승소' : '🛡️ 피고 승소';
+  const verdictLabel = isDraw ? '🤝 무승부' : pWin ? '🔴 A팀 승소' : '🔵 B팀 승소';
   const vBoxH = 128;
   ctx.fillStyle = 'rgba(255,255,255,0.03)';
   cardRoundRect(ctx, PAD, y, INNER, vBoxH, 22); ctx.fill();
@@ -921,7 +921,7 @@ async function generateVerdictCard(session) {
     ctx.textAlign = 'center';
     ctx.font = '700 22px "Noto Sans KR", sans-serif';
     ctx.fillStyle = isP ? RED : BLUE;
-    ctx.fillText(isP ? '⚔️ 원고' : '🛡️ 피고', cx, y + 40);
+    ctx.fillText(isP ? '🔴 A팀' : '🔵 B팀', cx, y + 40);
     ctx.font = '700 30px "Noto Sans KR", sans-serif';
     ctx.fillStyle = CREAM;
     ctx.fillText(nick.length > 10 ? nick.slice(0, 10) + '…' : nick, cx, y + 84);
@@ -939,15 +939,15 @@ async function generateVerdictCard(session) {
   if (judge) {
     ctx.font = '400 27px "Noto Sans KR", sans-serif';
     ctx.fillStyle = CREAM_DIM;
-    ctx.fillText(`${judge.icon} ${session.judgeType} 판사 담당`, W / 2, y); y += 52;
+    ctx.fillText(`${judge.icon} ${session.judgeType} 심판 담당`, W / 2, y); y += 52;
   }
 
-  // ── 판결 이유 ──
+  // ── 판정 이유 ──
   if (reasonLinesM.length > 0) {
     sep(y); y += 44;
     ctx.font = '700 34px "Noto Sans KR", sans-serif';
     ctx.fillStyle = GOLD; ctx.textAlign = 'center';
-    ctx.fillText('📝 판결 이유', W / 2, y); y += 50;
+    ctx.fillText('📝 판정 이유', W / 2, y); y += 50;
 
     const panelH = reasonLinesM.length * 50 + 44;
     ctx.fillStyle = 'rgba(255,255,255,0.03)';
@@ -999,7 +999,7 @@ async function shareVerdictCard(canvas, session) {
   const pWin = session.verdict?.winner === 'plaintiff';
   const verdictLabel = isDraw ? '무승부' : pWin ? '원고 승소' : '피고 승소';
   const topicTitle = session.topicTitle || '사건';
-  const shareTitle = `소소킹 생활법정 - ${topicTitle}`;
+  const shareTitle = `소소킹 토론배틀 - ${topicTitle}`;
   const shareText = `[소소킹 판결결과]\n📋 사건: ${topicTitle}\n⚖️ 판결: ${verdictLabel}\n\n재판 받아보기 → sosoking.co.kr`;
 
   return new Promise((resolve) => {

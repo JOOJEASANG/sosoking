@@ -720,3 +720,63 @@ exports.seedTopicsV2 = onRequest({ region: 'asia-northeast3' }, async (req, res)
   await batch.commit();
   res.json({ ok: true, added: SEED_TOPICS_V2.length });
 });
+
+// ─── AI 일일 주제 자동 생성 (매일 오전 9시 KST = 0시 UTC) ───────────────────
+const { onSchedule } = require('firebase-functions/v2/scheduler');
+
+const DAILY_TOPIC_CATEGORIES = ['카톡', '연애', '음식', '정산', '직장', '생활', '친구'];
+
+exports.generateDailyTopic = onSchedule({
+  schedule: '0 0 * * *',
+  timeZone: 'Asia/Seoul',
+  region: 'asia-northeast3',
+  secrets: [geminiKey],
+}, async () => {
+  // 오늘 이미 생성됐으면 스킵
+  const today = new Date().toISOString().slice(0, 10);
+  const marker = await db.doc(`site_settings/daily_topic_${today}`).get();
+  if (marker.exists) return;
+
+  const category = DAILY_TOPIC_CATEGORIES[Math.floor(Math.random() * DAILY_TOPIC_CATEGORIES.length)];
+
+  const genAI = new GoogleGenerativeAI(geminiKey.value());
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-preview-05-20' });
+
+  const prompt = `당신은 소소킹 토론배틀 사이트의 일일 배틀 주제 생성기입니다.
+카테고리: ${category}
+오늘의 배틀 주제를 딱 1개 생성하세요. 조건:
+- 한국인 누구나 공감할 수 있는 사소하지만 의견이 갈리는 일상 주제
+- 기존과 다른 새로운 주제
+- A팀과 B팀 양쪽 입장이 팽팽하게 맞설 수 있어야 함
+- 유머러스하고 친근하게
+
+반드시 아래 JSON 형식으로만 응답하세요 (마크다운 없이):
+{
+  "title": "주제명 (20자 이내)",
+  "summary": "한 줄 요약 — A주장 vs B주장 형식 (50자 이내)",
+  "plaintiffPosition": "A팀 주장 (50자 이내)",
+  "defendantPosition": "B팀 주장 (50자 이내)"
+}`;
+
+  const result = await model.generateContent(prompt);
+  const text = result.response.text().trim().replace(/```json|```/g, '').trim();
+  const data = JSON.parse(text);
+
+  const batch = db.batch();
+  batch.set(db.collection('topics').doc(), {
+    title: data.title,
+    summary: data.summary,
+    plaintiffPosition: data.plaintiffPosition,
+    defendantPosition: data.defendantPosition,
+    category,
+    status: 'active',
+    isOfficial: true,
+    isDailyTopic: true,
+    dailyDate: today,
+    playCount: 0,
+    createdBy: 'system',
+    createdAt: FieldValue.serverTimestamp(),
+  });
+  batch.set(db.doc(`site_settings/daily_topic_${today}`), { createdAt: FieldValue.serverTimestamp() });
+  await batch.commit();
+});

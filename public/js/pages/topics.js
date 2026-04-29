@@ -14,11 +14,11 @@ export async function renderTopics(container) {
     <div>
       <div class="page-header">
         <a href="#/" class="back-btn">‹</a>
-        <span class="logo">⚖️ 사건 목록</span>
+        <span class="logo">🔥 토론 배틀</span>
       </div>
       <div class="container" style="padding-top:20px;padding-bottom:80px;">
         <div class="search-input-wrap">
-          <input type="text" id="search-input" class="search-input" placeholder="사건 검색...">
+          <input type="text" id="search-input" class="search-input" placeholder="주제 검색...">
           <span class="search-icon">🔍</span>
         </div>
         <div class="cat-filter" id="cat-filter" style="margin-bottom:20px;"></div>
@@ -97,8 +97,8 @@ function renderList(search = '', cat = _activeCat) {
   if (!list.length) {
     el.innerHTML = `<div class="empty-state">
       <span class="empty-state-icon">🔍</span>
-      <div class="empty-state-title">${allTopics.length ? '검색 결과가 없습니다' : '아직 등록된 사건이 없습니다'}</div>
-      <div class="empty-state-sub">다른 검색어를 입력하거나<br>직접 사건을 등록해보세요</div>
+      <div class="empty-state-title">${allTopics.length ? '검색 결과가 없습니다' : '아직 등록된 주제가 없습니다'}</div>
+      <div class="empty-state-sub">다른 검색어를 입력하거나<br>직접 주제를 등록해보세요</div>
       <a href="#/submit-topic" class="btn btn-secondary" style="margin-top:20px;max-width:200px;display:flex;margin-left:auto;margin-right:auto;">주제 등록하기</a>
     </div>`;
     return;
@@ -110,7 +110,7 @@ function renderList(search = '', cat = _activeCat) {
       <div class="topic-card-summary">${t.summary}</div>
       <div class="topic-card-footer">
         <span class="topic-card-cat">${t.category || '생활'}</span>
-        <span>재판 ${(t.playCount||0).toLocaleString()}회</span>
+        <span>배틀 ${(t.playCount||0).toLocaleString()}회</span>
         ${t.isOfficial ? '<span style="color:var(--gold);font-size:10px;font-weight:700;">공식</span>' : ''}
       </div>
     </div>

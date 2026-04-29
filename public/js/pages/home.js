@@ -3,7 +3,7 @@ import { collection, query, where, orderBy, limit, getDocs } from 'https://www.g
 
 const DEMO_STEPS = [
   {
-    tab: '사건 고르기',
+    tab: '주제 고르기',
     render: () => `
       <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.08em;margin-bottom:14px;">📋 공감 100% 사건 중 하나를 고르세요</div>
       <div style="display:flex;flex-direction:column;gap:8px;">
@@ -42,7 +42,7 @@ const DEMO_STEPS = [
   {
     tab: '토론',
     render: () => `
-      <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.08em;margin-bottom:12px;">💬 원고(왼쪽) vs 피고(오른쪽) 실시간 토론</div>
+      <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.08em;margin-bottom:12px;">💬 A팀(왼쪽) vs B팀(오른쪽) 실시간 토론</div>
       <div style="display:flex;flex-direction:column;gap:10px;">
         <div class="demo-msg demo-msg-p" style="animation-delay:0s;">
           <div class="demo-bubble demo-bubble-p">읽었으면 답하는 게 기본 예의 아닌가요? 🙁</div>
@@ -61,13 +61,13 @@ const DEMO_STEPS = [
           <div style="font-size:10px;color:rgba(52,152,219,0.7);margin-top:3px;text-align:right;">🛡️ 피고</div>
         </div>
       </div>
-      <div style="margin-top:12px;text-align:center;font-size:11px;color:var(--cream-dim);">1라운드 완료 후 언제든 판결 요청 가능 ⚖️</div>`,
+      <div style="margin-top:12px;text-align:center;font-size:11px;color:var(--cream-dim);">1라운드 완료 후 언제든 판정 요청 가능 🔥</div>`,
   },
   {
-    tab: 'AI 판결',
+    tab: 'AI 판정',
     render: () => `
       <div style="text-align:center;margin-bottom:12px;">
-        <div style="font-size:10px;color:var(--cream-dim);letter-spacing:.1em;margin-bottom:6px;">이번 사건 담당 판사</div>
+        <div style="font-size:10px;color:var(--cream-dim);letter-spacing:.1em;margin-bottom:6px;">이번 사건 담당 심판</div>
         <div style="font-size:32px;margin-bottom:4px;">🥹</div>
         <div style="font-size:13px;font-weight:700;color:#8e44ad;">감성형 판사</div>
       </div>
@@ -85,22 +85,22 @@ const DEMO_STEPS = [
 
 export async function renderHome(container) {
   container.innerHTML = `
-    <section class="court-hero">
-      <span class="court-gavel">⚖️</span>
-      <span class="court-badge">소소킹 생활법정</span>
-      <h1 class="court-title">사소한 갈등,<br><span>법정에서 끝냅시다</span></h1>
-      <p class="court-sub">친구와 직접 토론하고<br>AI 판사에게 공정한 판결을 받으세요</p>
+    <section class="battle-hero">
+      <span class="battle-gavel">⚖️</span>
+      <span class="battle-badge">소소킹 토론배틀</span>
+      <h1 class="battle-title">사소한 갈등,<br><span>배틀로 끝냅시다</span></h1>
+      <p class="battle-sub">친구와 직접 토론하고<br>AI 심판에게 공정한 판정을 받으세요</p>
 
       <div class="hero-preview">
         <div class="hero-preview-label">📋 예시 — 카톡 읽씹 무죄 주장 사건</div>
         <div class="hero-preview-card">
           <div class="hero-preview-vs">
             <div class="hero-preview-side p">
-              <div class="hero-preview-role" style="color:#e88;">⚔️ 원고 측</div>
+              <div class="hero-preview-role" style="color:#e88;">🔴 A팀</div>
               <div class="hero-preview-text">"읽었으면 바로 답장이 기본 예의다"</div>
             </div>
             <div class="hero-preview-side d">
-              <div class="hero-preview-role" style="color:#7ac;">🛡️ 피고 측</div>
+              <div class="hero-preview-role" style="color:#7ac;">🔵 B팀</div>
               <div class="hero-preview-text">"나중에 답할 자유가 있다"</div>
             </div>
           </div>
@@ -108,12 +108,12 @@ export async function renderHome(container) {
         </div>
       </div>
 
-      <div class="court-cta-wrap">
-        <a href="#/topics" class="court-cta-main">⚖️ 지금 바로 재판받기</a>
-        <a href="#/submit-topic" class="court-cta-sub">✏️ 내 억울한 사건 직접 등록하기</a>
+      <div class="battle-cta-wrap">
+        <a href="#/topics" class="battle-cta-main">⚖️ 🔥 지금 바로 배틀하기</a>
+        <a href="#/submit-topic" class="battle-cta-sub">✏️ ✏️ 주제 직접 등록하기</a>
       </div>
-      <p class="court-disclaimer">오락 목적 · AI 판결에 법적 효력 없음 · 무료 · 익명</p>
-      <div class="court-scroll-hint"><span>↓</span><span>오늘의 사건</span></div>
+      <p class="battle-disclaimer">오락 목적 · AI 판정에 법적 효력 없음 · 무료 · 익명</p>
+      <div class="battle-scroll-hint"><span>↓</span><span>오늘의 주제</span></div>
     </section>
 
     <div class="container" style="padding-top:32px;padding-bottom:80px;">
@@ -178,7 +178,7 @@ export async function renderHome(container) {
 
       <div style="margin-top:24px;padding-bottom:12px;">
         <div class="disclaimer" style="text-align:center;">
-          소소킹 생활법정은 순수 오락 서비스입니다.<br>AI 판결에는 법적 효력이 없으며, 익명으로 운영됩니다.
+          소소킹 토론배틀은 순수 오락 서비스입니다.<br>AI 판정에는 법적 효력이 없으며, 익명으로 운영됩니다.
         </div>
       </div>
     </div>
@@ -294,7 +294,7 @@ async function loadTodayCase() {
 
 function renderTodayCard(el, topicId, t) {
   el.innerHTML = `
-    <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.08em;margin-bottom:12px;">🌟 오늘의 사건</div>
+    <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.08em;margin-bottom:12px;">🌟 오늘의 주제</div>
     <div class="today-case-card" onclick="location.hash='#/topic/${topicId}'">
       <div class="today-label">📋 ${t.category || '생활'} · 재판 ${(t.playCount||0).toLocaleString()}회</div>
       <div class="today-title">${t.title}</div>
