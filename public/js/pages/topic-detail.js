@@ -8,7 +8,7 @@ export async function renderTopicDetail(container, topicId) {
     <div>
       <div class="page-header">
         <a href="#/topics" class="back-btn">‹</a>
-        <span class="logo">사건 상세</span>
+        <span class="logo">배틀 주제</span>
       </div>
       <div class="container" style="padding-top:24px;padding-bottom:80px;">
         <div class="loading-dots" style="padding:60px 0;"><span></span><span></span><span></span></div>
@@ -20,12 +20,12 @@ export async function renderTopicDetail(container, topicId) {
   try {
     const snap = await getDoc(doc(db, 'topics', topicId));
     if (!snap.exists() || snap.data().status !== 'active') {
-      container.querySelector('.container').innerHTML = `<div class="empty-state"><span class="empty-state-icon">⚠️</span><div class="empty-state-title">사건을 찾을 수 없습니다</div><a href="#/topics" class="btn btn-secondary" style="margin-top:20px;max-width:200px;display:flex;margin-left:auto;margin-right:auto;">목록으로</a></div>`;
+      container.querySelector('.container').innerHTML = `<div class="empty-state"><span class="empty-state-icon">⚠️</span><div class="empty-state-title">주제를 찾을 수 없습니다</div><a href="#/topics" class="btn btn-secondary" style="margin-top:20px;max-width:200px;display:flex;margin-left:auto;margin-right:auto;">목록으로</a></div>`;
       return;
     }
     topic = { id: snap.id, ...snap.data() };
   } catch {
-    showToast('사건을 불러오지 못했습니다', 'error');
+    showToast('주제를 불러오지 못했습니다', 'error');
     return;
   }
 
@@ -47,14 +47,14 @@ export async function renderTopicDetail(container, topicId) {
       <span class="topic-card-cat" style="margin-bottom:10px;display:inline-block;">${topic.category || '생활'}</span>
       <h2 style="font-family:var(--font-serif);font-size:20px;font-weight:700;color:var(--cream);margin-bottom:8px;line-height:1.4;">${topic.title}</h2>
       <p style="font-size:15px;color:var(--cream-dim);line-height:1.7;margin-bottom:18px;">${topic.summary}</p>
-      <div class="vs-divider"><span class="vs-text">⚖️ VS ⚖️</span></div>
+      <div class="vs-divider"><span class="vs-text">🔥 VS 🔥</span></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;">
         <div style="background:rgba(231,76,60,0.08);border:1px solid rgba(231,76,60,0.25);border-radius:10px;padding:14px;">
-          <div style="font-size:12px;font-weight:700;color:#e74c3c;margin-bottom:6px;">⚔️ 원고 측 주장</div>
+          <div style="font-size:12px;font-weight:700;color:#e74c3c;margin-bottom:6px;">🔴 A팀 주장</div>
           <div style="font-size:14px;color:var(--cream);line-height:1.6;">${topic.plaintiffPosition}</div>
         </div>
         <div style="background:rgba(52,152,219,0.08);border:1px solid rgba(52,152,219,0.25);border-radius:10px;padding:14px;">
-          <div style="font-size:12px;font-weight:700;color:#3498db;margin-bottom:6px;">🛡️ 피고 측 주장</div>
+          <div style="font-size:12px;font-weight:700;color:#3498db;margin-bottom:6px;">🔵 B팀 주장</div>
           <div style="font-size:14px;color:var(--cream);line-height:1.6;">${topic.defendantPosition}</div>
         </div>
       </div>
@@ -65,11 +65,11 @@ export async function renderTopicDetail(container, topicId) {
       <div class="side-grid">
         <button class="side-btn" data-side="plaintiff">
           <span class="side-btn-icon">⚔️</span>
-          <div class="side-btn-label">원고 편들기</div>
+          <div class="side-btn-label">A팀 편들기</div>
         </button>
         <button class="side-btn" data-side="defendant">
           <span class="side-btn-icon">🛡️</span>
-          <div class="side-btn-label">피고 편들기</div>
+          <div class="side-btn-label">B팀 편들기</div>
         </button>
       </div>
     </div>
@@ -117,7 +117,7 @@ export async function renderTopicDetail(container, topicId) {
     </div>
 
     <div class="disclaimer" style="margin:20px 0 24px;">
-      재판 중 AI는 어느 편도 들지 않습니다.<br>
+      배틀 중 AI는 어느 편도 들지 않습니다.<br>
       논리가 부족하면 직접 입력한 사람도 집니다.<br>
       <strong>어디까지나 재미로!</strong>
     </div>
@@ -160,7 +160,7 @@ export async function renderTopicDetail(container, topicId) {
     if (!btn) return;
     if (selectedSide && selectedMode) {
       btn.disabled = false;
-      btn.textContent = '⚖️ 재판 시작하기';
+      btn.textContent = '🔥 배틀 시작하기';
     } else {
       btn.disabled = true;
       btn.textContent = '입장과 방식을 선택해주세요';
@@ -188,7 +188,7 @@ export async function renderTopicDetail(container, topicId) {
     } catch (err) {
       showToast(err.message || '오류가 발생했습니다', 'error');
       btn.disabled = false;
-      btn.textContent = '⚖️ 재판 시작하기';
+      btn.textContent = '🔥 배틀 시작하기';
     }
   });
 }
