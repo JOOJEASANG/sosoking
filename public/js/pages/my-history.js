@@ -25,7 +25,7 @@ export async function renderMyHistory(container) {
   const loginBanner = user.isAnonymous ? `
     <div class="login-nudge-banner">
       <div style="font-size:13px;font-weight:700;color:var(--cream);margin-bottom:4px;">📱 다른 기기에서도 보고 싶다면?</div>
-      <div style="font-size:12px;color:var(--cream-dim);margin-bottom:10px;">로그인하면 어디서든 내 재판 기록을 볼 수 있어요</div>
+      <div style="font-size:12px;color:var(--cream-dim);margin-bottom:10px;">로그인하면 어디서든 내 배틀 기록을 볼 수 있어요</div>
       <a href="#/login" class="btn btn-secondary" style="font-size:13px;padding:8px 18px;max-width:180px;display:flex;margin:0 auto;">로그인 / 회원가입</a>
     </div>
   ` : '';
@@ -52,9 +52,9 @@ export async function renderMyHistory(container) {
     if (!all.length) {
       inner.innerHTML = loginBanner + `<div class="empty-state">
         <span class="empty-state-icon">⚖️</span>
-        <div class="empty-state-title">아직 참가한 재판이 없습니다</div>
-        <div class="empty-state-sub">사건을 선택해 첫 재판을 시작해보세요</div>
-        <a href="#/topics" class="btn btn-primary" style="margin-top:20px;max-width:200px;display:flex;margin-left:auto;margin-right:auto;">사건 목록 보기</a>
+        <div class="empty-state-title">아직 참가한 배틀이 없습니다</div>
+        <div class="empty-state-sub">주제를 선택해 첫 배틀을 시작해보세요</div>
+        <a href="#/topics" class="btn btn-primary" style="margin-top:20px;max-width:200px;display:flex;margin-left:auto;margin-right:auto;">주제 목록 보기</a>
       </div>`;
       return;
     }
@@ -63,7 +63,7 @@ export async function renderMyHistory(container) {
       const myRole = s.plaintiff?.userId === uid ? 'plaintiff' : 'defendant';
       const roleLabel = myRole === 'plaintiff' ? '🔴 A팀' : '🔵 B팀';
       const date = s.createdAt?.toDate?.()?.toLocaleDateString('ko') || '-';
-      const statusMap = { waiting: '대기 중', active: '진행 중', ready_for_verdict: '판결 대기', verdict_requested: '판결 요청 중', judging: '심리 중', completed: '판결 완료', cancelled: '종료됨' };
+      const statusMap = { waiting: '대기 중', active: '진행 중', ready_for_verdict: "판정 대기", verdict_requested: "판정 요청 중", judging: "판정 중", completed: "판정 완료", cancelled: '종료됨' };
       const statusColor = s.status === 'completed' ? 'var(--gold)' : s.status === 'active' ? '#27ae60' : 'var(--cream-dim)';
 
       let resultBadge = '';
@@ -82,7 +82,7 @@ export async function renderMyHistory(container) {
           <span style="font-size:10px;font-weight:700;color:var(--gold);">${roleLabel}</span>
           <span style="font-size:10px;color:${statusColor};font-weight:700;">${statusMap[s.status] || s.status}</span>
         </div>
-        <div style="font-weight:700;font-size:15px;color:var(--cream);margin-bottom:4px;">${s.topicTitle || '사건'}</div>
+        <div style="font-weight:700;font-size:15px;color:var(--cream);margin-bottom:4px;">${s.topicTitle || "주제"}</div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
           <span style="font-size:12px;color:var(--cream-dim);">${date} · ${s.mode === 'random' ? '랜덤 대결' : '친구 대결'}</span>
           ${resultBadge}

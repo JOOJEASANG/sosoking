@@ -31,13 +31,13 @@ export async function renderAuth(container) {
     <div>
       <div class="page-header">
         <a href="#/" class="back-btn">‹</a>
-        <span class="logo">⚖️ 소소재판</span>
+        <span class="logo">🔥 소소킹</span>
       </div>
       <div class="container" style="padding-top:32px;padding-bottom:80px;max-width:420px;">
         <div style="text-align:center;margin-bottom:28px;">
           <div style="font-size:40px;margin-bottom:8px;">🔐</div>
           <h2 style="font-family:var(--font-serif);font-size:22px;font-weight:700;color:var(--cream);margin-bottom:6px;">계정으로 시작하기</h2>
-          <p style="font-size:14px;color:var(--cream-dim);line-height:1.6;">로그인하면 어떤 기기에서도<br>내 재판 기록을 볼 수 있어요</p>
+          <p style="font-size:14px;color:var(--cream-dim);line-height:1.6;">로그인하면 어떤 기기에서도<br>내 배틀 기록을 볼 수 있어요</p>
         </div>
         ${inAppBanner}
         <div class="auth-tabs">
@@ -257,7 +257,7 @@ function showNicknameModal() {
         <div style="text-align:center;margin-bottom:20px;">
           <div style="font-size:32px;margin-bottom:8px;">👤</div>
           <h3 style="font-size:18px;font-weight:700;color:var(--cream);margin-bottom:6px;">닉네임을 설정해주세요</h3>
-          <p style="font-size:13px;color:var(--cream-dim);">재판에서 사용할 이름이에요</p>
+          <p style="font-size:13px;color:var(--cream-dim);">배틀에서 사용할 이름이에요</p>
         </div>
         <div style="display:flex;gap:8px;margin-bottom:8px;">
           <input type="text" id="modal-nick-input" class="form-input" placeholder="닉네임 (2~12자)" maxlength="12" style="flex:1;">
