@@ -49,6 +49,7 @@ export async function renderDebate(container, sessionId, shareToken) {
   }
 
   let myRole = null;
+  let isSpectator = false;
   let lastRenderedStatus = null;
   let inputAttached = false;
 
@@ -62,9 +63,10 @@ export async function renderDebate(container, sessionId, shareToken) {
     const session = snap.data();
     const uid = auth.currentUser?.uid;
 
-    if (!myRole) {
+    if (!myRole && !isSpectator) {
       if (session.plaintiff?.userId === uid) myRole = 'plaintiff';
       else if (session.defendant?.userId === uid) myRole = 'defendant';
+      else if (uid) isSpectator = true;
     }
 
     if (session.status === lastRenderedStatus && session.status !== 'active' && session.status !== 'ready_for_verdict' && session.status !== 'verdict_requested') return;
@@ -76,21 +78,22 @@ export async function renderDebate(container, sessionId, shareToken) {
       saveActiveSession(sessionId, session.topicTitle, myRole);
     }
 
-    updateHeader(session, myRole);
-    updateTopicBar(session, myRole);
+    updateHeader(session, myRole, isSpectator);
+    updateTopicBar(session, myRole, isSpectator);
 
     if (session.status === 'waiting') {
-      renderWaiting(session, sessionId);
+      if (myRole) renderWaiting(session, sessionId);
+      else renderSpectatorWaiting(session);
       removeInputArea();
     } else if (session.status === 'active' || session.status === 'ready_for_verdict' || session.status === 'verdict_requested') {
-      renderActive(session, myRole, sessionId);
-      if (!inputAttached) { attachInput(sessionId, session, myRole); inputAttached = true; }
-      else updateInput(session, myRole);
+      renderActive(session, myRole, sessionId, isSpectator);
+      if (!inputAttached && myRole) { attachInput(sessionId, session, myRole); inputAttached = true; }
+      else if (myRole) updateInput(session, myRole);
     } else if (session.status === 'judging') {
       renderJudging(session);
       removeInputArea();
     } else if (session.status === 'completed') {
-      renderCompleted(session, myRole);
+      renderCompleted(session, myRole, isSpectator);
       removeInputArea();
     } else if (session.status === 'cancelled') {
       renderCancelled(session, myRole);
@@ -126,19 +129,20 @@ function clearActiveSession(sessionId) {
   } catch {}
 }
 
-function updateTopicBar(session, myRole) {
+function updateTopicBar(session, myRole, isSpectator) {
   const el = document.getElementById('debate-topic-bar');
   if (!el || !session.topicTitle) return;
   if (session.status === 'waiting') { el.innerHTML = ''; return; }
-  const roleClass = myRole === 'plaintiff' ? 'plaintiff' : 'defendant';
-  const roleLabel = myRole === 'plaintiff' ? '🔴 A팀' : myRole === 'defendant' ? '🔵 B팀' : '';
+  const roleClass = myRole === 'plaintiff' ? 'plaintiff' : myRole === 'defendant' ? 'defendant' : '';
+  const roleLabel = myRole === 'plaintiff' ? '🔴 A팀' : myRole === 'defendant' ? '🔵 B팀' : isSpectator ? '👀 관전 중' : '';
+  const spectatorStyle = isSpectator ? 'background:rgba(255,255,255,0.06);color:var(--cream-dim);' : '';
   el.innerHTML = `<div class="debate-topic-bar-inner">
     <span class="debate-topic-name">📋 ${escHtml(session.topicTitle)}</span>
-    ${roleLabel ? `<span class="debate-my-role ${roleClass}">${roleLabel}</span>` : ''}
+    ${roleLabel ? `<span class="debate-my-role ${roleClass}" style="${spectatorStyle}">${roleLabel}</span>` : ''}
   </div>`;
 }
 
-function updateHeader(session, myRole) {
+function updateHeader(session, myRole, isSpectator) {
   const bar = document.getElementById('round-bar');
   const statusEl = document.getElementById('debate-status-text');
   if (!bar || !statusEl) return;
@@ -162,7 +166,7 @@ function updateHeader(session, myRole) {
   }
   const statusMap = {
     waiting: '상대방 대기 중...',
-    active: myRole ? `${session.currentRound + 1}라운드 · ${myTurnText(session, myRole)}` : `${session.currentRound + 1}라운드 진행 중`,
+    active: myRole ? `${session.currentRound + 1}라운드 · ${myTurnText(session, myRole)}` : isSpectator ? `👀 ${session.currentRound + 1}라운드 관전 중` : `${session.currentRound + 1}라운드 진행 중`,
     ready_for_verdict: '주장 완료 · 판정 요청 가능',
     verdict_requested: '🔥 판정 요청 중 · 상대방 동의 대기',
     judging: '🔥 AI 심판 판정 중...',
@@ -179,6 +183,22 @@ function myTurnText(session, myRole) {
   if (cur[myRole]) return '상대방 차례';
   if (myRole === 'defendant' && !cur.plaintiff) return 'A팀 차례';
   return '내 차례';
+}
+
+function renderSpectatorWaiting(session) {
+  const feed = document.getElementById('debate-feed');
+  if (!feed) return;
+  feed.innerHTML = `
+    <div style="text-align:center;padding:60px 20px;">
+      <div style="font-size:52px;margin-bottom:16px;">⏳</div>
+      <div style="font-family:var(--font-serif);font-size:20px;font-weight:700;color:var(--cream);margin-bottom:8px;">배틀 시작 전입니다</div>
+      <p style="font-size:14px;color:var(--cream-dim);margin-bottom:6px;">${escHtml(session.topicTitle || '')}</p>
+      <p style="font-size:13px;color:var(--cream-dim);margin-bottom:24px;">상대방 참가를 기다리는 중...</p>
+      <div style="font-size:12px;color:var(--cream-dim);padding:12px 16px;border-radius:10px;border:1px solid var(--border);display:inline-block;">
+        👀 참가자가 들어오면 실시간으로 배틀을 관전할 수 있어요
+      </div>
+    </div>
+  `;
 }
 
 function renderWaiting(session, sessionId) {
@@ -253,13 +273,16 @@ function renderWaiting(session, sessionId) {
   });
 }
 
-function renderActive(session, myRole, sessionId) {
+function renderActive(session, myRole, sessionId, isSpectator) {
   const feed = document.getElementById('debate-feed');
   if (!feed) return;
 
   const rounds = session.rounds || [];
   const judge = session.judgeType ? JUDGE_DEFS[session.judgeType] : null;
-  let html = '';
+  let html = isSpectator ? `
+    <div style="text-align:center;padding:10px 14px;border-radius:10px;background:rgba(255,255,255,0.03);border:1px solid var(--border);margin-bottom:12px;font-size:12px;color:var(--cream-dim);">
+      👀 관전 모드 · 실시간으로 배틀을 구경하고 있어요
+    </div>` : '';
 
   if (judge) {
     html += `
@@ -335,7 +358,7 @@ function renderActive(session, myRole, sessionId) {
   feed.scrollTop = feed.scrollHeight;
 
   const hasCompleteRound = rounds.some(r => r.plaintiff && r.defendant);
-  if (hasCompleteRound) {
+  if (hasCompleteRound && myRole) {
     const isAllDone = session.status === 'ready_for_verdict';
     const isVerdictPending = session.status === 'verdict_requested';
     const uid = auth.currentUser?.uid;
@@ -421,8 +444,8 @@ function renderActive(session, myRole, sessionId) {
     }
   }
 
-  // 세션 종료 버튼 (진행 중 상태에서)
-  if (!feed.querySelector('#cancel-active-wrap') && session.status !== 'judging') {
+  // 세션 종료 버튼 (참가자에게만 표시)
+  if (!feed.querySelector('#cancel-active-wrap') && session.status !== 'judging' && myRole) {
     const cancelWrap = document.createElement('div');
     cancelWrap.id = 'cancel-active-wrap';
     cancelWrap.style.cssText = 'padding:4px 0 20px;text-align:center;';
@@ -481,7 +504,7 @@ function renderJudging(session) {
   feed.scrollTop = feed.scrollHeight;
 }
 
-function renderCompleted(session, myRole) {
+function renderCompleted(session, myRole, isSpectator) {
   const feed = document.getElementById('debate-feed');
   if (!feed) return;
   if (feed.querySelector('.verdict-reveal')) return;
@@ -587,7 +610,7 @@ function renderCompleted(session, myRole) {
         ${myRole === 'defendant' ? '<div class="vs-me-badge">나</div>' : ''}
       </div>
     </div>
-    ${isWin ? `<div style="text-align:center;font-size:20px;font-weight:900;color:#27ae60;margin-bottom:14px;animation:fadeUp 0.4s both;">🎉 승리!</div>` : myRole ? `<div style="text-align:center;font-size:18px;font-weight:900;color:var(--red);margin-bottom:14px;animation:fadeUp 0.4s both;">😔 패배</div>` : ''}
+    ${isWin ? `<div style="text-align:center;font-size:20px;font-weight:900;color:#27ae60;margin-bottom:14px;animation:fadeUp 0.4s both;">🎉 승리!</div>` : myRole ? `<div style="text-align:center;font-size:18px;font-weight:900;color:var(--red);margin-bottom:14px;animation:fadeUp 0.4s both;">😔 패배</div>` : isSpectator ? `<div style="text-align:center;font-size:12px;color:var(--cream-dim);margin-bottom:14px;">👀 관전한 배틀의 최종 판정 결과입니다</div>` : ''}
 
     ${parts.reason ? `
       <div style="margin-bottom:8px;">
