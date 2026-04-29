@@ -20,12 +20,12 @@ export async function renderSubmitTopic(container) {
         <div class="submit-topic-tip">
           💡 배틀 주제를 등록하면 <strong>바로 공개</strong>됩니다.<br>
           등록 후 링크를 친구에게 보내 즉시 배틀을 시작하세요!<br>
-          <strong>양쪽 입장이 팽팽해야 좋은 재판이 됩니다!</strong>
+          <strong>양쪽 입장이 팽팽해야 좋은 배틀이 됩니다!</strong>
         </div>
         <form id="topic-form">
           <div class="form-group">
             <label class="form-label">배틀 주제명 <span style="color:var(--red)">*</span></label>
-            <input type="text" id="t-title" class="form-input" maxlength="30" placeholder="예: 치킨 마지막 조각 선취 사건" required>
+            <input type="text" id="t-title" class="form-input" maxlength="30" placeholder="예: 치킨 마지막 조각 선취 배틀" required>
             <div class="char-counter"><span id="c-title">0</span>/30</div>
           </div>
           <div class="form-group">
@@ -51,8 +51,8 @@ export async function renderSubmitTopic(container) {
           </div>
           <div class="disclaimer" style="margin-bottom:24px;">
             · 개인정보, 특정인 비방 내용은 등록 불가<br>
-            · 등록 즉시 공개 — 친구에게 링크를 보내 바로 재판 시작 가능<br>
-            · 양쪽이 다 억울한 주제일수록 좋은 재판이 됩니다
+            · 등록 즉시 공개 — 친구에게 링크를 보내 바로 배틀 시작 가능<br>
+            · 양쪽이 다 억울한 주제일수록 좋은 배틀이 됩니다
           </div>
           <button type="submit" class="btn btn-primary" id="submit-btn">⚖️ 주제 등록하기</button>
         </form>

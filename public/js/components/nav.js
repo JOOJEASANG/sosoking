@@ -42,7 +42,7 @@ export function renderNav() {
     </a>
     <a href="#/topics" class="nav-item${isTopics ? ' active' : ''}">
       <span class="nav-icon">⚖️</span>
-      <span class="nav-label">사건 목록</span>
+      <span class="nav-label">배틀 주제</span>
     </a>
     <a href="#/submit-topic" class="nav-item nav-cta${isSubmit ? ' active' : ''}">
       <span class="nav-icon">✏️</span>
