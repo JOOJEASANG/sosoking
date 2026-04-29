@@ -820,11 +820,11 @@ exports.seedTopicsV2 = onRequest({ region: 'asia-northeast3' }, async (req, res)
   res.json({ ok: true, added: SEED_TOPICS_V2.length });
 });
 
-// ─── AI 일일 주제 자동 생성 (매일 오전 9시 KST = 0시 UTC) ───────────────────
+// ─── AI 주제 자동 생성 (3일에 한번 오전 9시 KST) ────────────────────────────
 const DAILY_TOPIC_CATEGORIES = ['카톡', '연애', '음식', '정산', '직장', '생활', '친구'];
 
 exports.generateDailyTopic = onSchedule({
-  schedule: '0 0 * * *',
+  schedule: '0 0 */3 * *',
   timeZone: 'Asia/Seoul',
   region: 'asia-northeast3',
   secrets: [geminiKey],
