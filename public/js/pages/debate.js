@@ -696,7 +696,7 @@ function attachInput(sessionId, session, myRole) {
   area.innerHTML = `
     ${roleLabel ? `<div style="font-size:11px;font-weight:700;color:${roleColor};margin-bottom:6px;${myRole==='defendant'?'text-align:right;':''}">${roleLabel}</div>` : ''}
     <div class="debate-input-row">
-      <textarea class="debate-textarea" id="arg-input" placeholder="주장을 입력하세요... (최대 200자)" maxlength="200" rows="1"></textarea>
+      <textarea class="debate-textarea" id="arg-input" placeholder="재밌게 쓸수록 유리해요 😄 (최대 200자)" maxlength="200" rows="1"></textarea>
       <button class="debate-send-btn" id="send-btn">↑</button>
     </div>
     <div style="font-size:11px;color:var(--cream-dim);margin-top:4px;${myRole==='defendant'?'text-align:left;':'text-align:right;'}"><span id="char-count">0</span>/200 · <span id="input-hint"></span></div>
@@ -753,7 +753,7 @@ function updateInput(session, myRole) {
   textarea.disabled = !isMyTurn || maxReached || verdictPending;
   btn.disabled = !isMyTurn || maxReached || verdictPending;
   textarea.placeholder = isMyTurn
-    ? (myRole === 'plaintiff' ? '먼저 주장을 펼치세요... (최대 200자)' : 'A팀 주장에 반박하세요... (최대 200자)')
+    ? (myRole === 'plaintiff' ? '재밌게 주장할수록 유리해요 😄 (최대 200자)' : '재치있게 반박하세요! 진지하면 감점 (최대 200자)')
     : '대기 중...';
 
   if (maxReached) {

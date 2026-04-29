@@ -88,8 +88,8 @@ export async function renderHome(container) {
     <section class="battle-hero">
       <span class="battle-gavel">🔥</span>
       <span class="battle-badge">소소킹 토론배틀</span>
-      <h1 class="battle-title">내가 맞는데… 🤔<br><span>배틀로 증명해봐요!</span></h1>
-      <p class="battle-sub">친구와 맞붙고<br>AI 심판에게 최종 판정 받아보세요</p>
+      <h1 class="battle-title">진지하면 진다 😄<br><span>소소한 배틀의 법칙</span></h1>
+      <p class="battle-sub">재치 있을수록 유리한<br>친구와의 AI 토론배틀</p>
 
       <div class="hero-preview">
         <div class="hero-preview-label">📋 예시 — 카톡 읽씹 무죄 주장 배틀</div>
