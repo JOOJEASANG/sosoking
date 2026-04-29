@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>판정 카드 프리뷰</title>
+<style>
+  body { background:#111; display:flex; flex-direction:column; align-items:center; padding:40px 20px; font-family:sans-serif; gap:20px; }
+  canvas { max-width:100%; border-radius:16px; box-shadow:0 8px 40px rgba(0,0,0,0.6); }
+  .controls { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+  button { padding:10px 20px; border-radius:8px; border:none; background:#c9a84c; color:#000; font-weight:700; cursor:pointer; font-size:14px; }
+  button:hover { background:#e0bc5e; }
+  select { padding:10px; border-radius:8px; border:1px solid #444; background:#222; color:#eee; font-size:14px; }
+  label { color:#aaa; font-size:13px; display:flex; align-items:center; gap:6px; }
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&family=Noto+Serif+KR:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="controls">
+  <label>승자:
+    <select id="winner">
+      <option value="plaintiff">🔴 A팀 승리</option>
+      <option value="defendant">🔵 B팀 승리</option>
+      <option value="draw">🤝 무승부</option>
+    </select>
+  </label>
+  <label>심판:
+    <select id="judge">
+      <option value="엄벌주의형">👨‍⚖️ 엄벌주의형</option>
+      <option value="감성형">🥹 감성형</option>
+      <option value="현실주의형">🤦 현실주의형</option>
+      <option value="과몰입형">🔥 과몰입형</option>
+      <option value="피곤형">😴 피곤형</option>
+      <option value="논리집착형">🧮 논리집착형</option>
+      <option value="드립형">🎭 드립형</option>
+    </select>
+  </label>
+  <button onclick="render()">🔄 다시 그리기</button>
+  <button onclick="download()">💾 이미지 저장</button>
+</div>
+<canvas id="c"></canvas>
+
+<script>
+const JUDGE_DEFS = {
+  '엄벌주의형': { icon: '👨‍⚖️', color: '#c0392b' },
+  '감성형':     { icon: '🥹',    color: '#8e44ad' },
+  '현실주의형': { icon: '🤦',    color: '#7f8c8d' },
+  '과몰입형':   { icon: '🔥',    color: '#e67e22' },
+  '피곤형':     { icon: '😴',    color: '#95a5a6' },
+  '논리집착형': { icon: '🧮',    color: '#2980b9' },
+  '드립형':     { icon: '🎭',    color: '#27ae60' },
+};
+
+const SAMPLE = {
+  topicTitle: '카톡 읽씹 3시간 후 전화 실례인가 배틀',
+  plaintiff:  { nickname: '읽씹은_범죄다' },
+  defendant:  { nickname: '내_자유야' },
+  caseNumber: '소소킹-2025-0042',
+  reason: `감성형 심판의 눈시울이 붉어졌습니다. A팀의 "읽었으면 답장이 예의"라는 주장은 현대인의 소통 불안을 정확히 짚어냈고, 읽씹 당한 이의 서운함을 온 우주가 공감할 것입니다.\n\n그러나 B팀의 "답장 시점은 내 자유"라는 주장도 일리가 있어요. 다만... 3시간은 좀 너무하지 않나요? (흑흑)`,
+  sentence:   'B팀은 오늘 자정 전에 읽씹했던 모든 카톡에 이모티콘 하나씩 답장하고 스크린샷을 상대에게 보낼 것을 명한다',
+};
+
+const VERDICTS = {
+  plaintiff: { winner: 'plaintiff', scores: { plaintiff: 67, defendant: 33 } },
+  defendant: { winner: 'defendant', scores: { plaintiff: 38, defendant: 62 } },
+  draw:      { winner: 'draw',      scores: { plaintiff: 50, defendant: 50 } },
+};
+
+function cardRoundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.arc(x + w - r, y + r, r, -Math.PI / 2, 0);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.arc(x + w - r, y + h - r, r, 0, Math.PI / 2);
+  ctx.lineTo(x + r, y + h);
+  ctx.arc(x + r, y + h - r, r, Math.PI / 2, Math.PI);
+  ctx.lineTo(x, y + r);
+  ctx.arc(x + r, y + r, r, Math.PI, -Math.PI / 2);
+  ctx.closePath();
+}
+
+function wrapText(ctx, text, maxWidth, font) {
+  ctx.font = font;
+  if (ctx.measureText(text).width <= maxWidth) return [text];
+  const lines = [];
+  let line = '';
+  for (const ch of [...text]) {
+    const test = line + ch;
+    if (ctx.measureText(test).width > maxWidth) { if (line) lines.push(line); line = ch; }
+    else line = test;
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+async function render() {
+  await document.fonts.ready;
+  const winnerKey = document.getElementById('winner').value;
+  const judgeKey  = document.getElementById('judge').value;
+  const verdict   = VERDICTS[winnerKey];
+  const judge     = JUDGE_DEFS[judgeKey];
+  const session   = { ...SAMPLE, judgeType: judgeKey, verdict: { ...verdict, text: SAMPLE.reason } };
+
+  const W = 1080, PAD = 70, INNER = W - PAD * 2;
+  const isDraw = verdict.winner === 'draw';
+  const pWin   = verdict.winner === 'plaintiff';
+  const pScore = verdict.scores.plaintiff;
+  const dScore = verdict.scores.defendant;
+
+  const tmp = document.createElement('canvas').getContext('2d');
+  const topicLines  = wrapText(tmp, session.topicTitle, INNER, '700 44px "Noto Sans KR",sans-serif').slice(0, 2);
+  const reasonFlat  = SAMPLE.reason.replace(/\n+/g, ' ');
+  const reasonTrunc = reasonFlat.length > 180 ? reasonFlat.slice(0,180)+'…' : reasonFlat;
+  const reasonLines = wrapText(tmp, reasonTrunc, INNER - 56, '400 34px "Noto Sans KR",sans-serif').slice(0, 5);
+  const sentLines   = wrapText(tmp, SAMPLE.sentence, INNER - 56, '700 40px "Noto Serif KR",serif').slice(0, 3);
+
+  let yCalc = 104;
+  yCalc += 60 + 48 + 54;
+  yCalc += topicLines.length * 62 + 26;
+  yCalc += 40 + 44 + 128 + 36;
+  yCalc += 168 + 36;
+  yCalc += 52; // judge
+  if (reasonLines.length) yCalc += 44 + 50 + (reasonLines.length * 50 + 44) + 36;
+  if (sentLines.length)   yCalc += 44 + 50 + (sentLines.length * 58 + 50) + 36;
+  const H = Math.max(1500, yCalc + 110);
+
+  const canvas = document.getElementById('c');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  const GOLD     = '#c9a84c';
+  const GOLD_DIM = 'rgba(201,168,76,0.5)';
+  const GOLD_BG  = 'rgba(201,168,76,0.08)';
+  const CREAM    = '#f0e6c8';
+  const CREAM_DIM= 'rgba(240,230,200,0.7)';
+  const RED      = '#e74c3c';
+  const BLUE     = '#3498db';
+  const GREEN    = '#27ae60';
+
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#1c1508'); bg.addColorStop(0.5, '#0d1018'); bg.addColorStop(1, '#0a0c14');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+
+  const glow = ctx.createRadialGradient(W/2, 280, 0, W/2, 280, 680);
+  glow.addColorStop(0, 'rgba(201,168,76,0.08)'); glow.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
+
+  ctx.strokeStyle = GOLD; ctx.lineWidth = 6;
+  cardRoundRect(ctx, 18, 18, W-36, H-36, 26); ctx.stroke();
+  ctx.strokeStyle = GOLD_DIM; ctx.lineWidth = 1.5;
+  cardRoundRect(ctx, 30, 30, W-60, H-60, 20); ctx.stroke();
+
+  const sep = y => {
+    ctx.strokeStyle = GOLD_DIM; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W-PAD, y); ctx.stroke();
+  };
+
+  let y = 104;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+
+  ctx.font = '700 58px "Noto Serif KR",serif'; ctx.fillStyle = GOLD;
+  ctx.fillText('🔥 소소킹 토론배틀', W/2, y); y += 60;
+  ctx.font = '400 28px "Noto Sans KR",sans-serif'; ctx.fillStyle = GOLD_DIM;
+  ctx.fillText('AI 심판 판정 결과', W/2, y); y += 48;
+  sep(y); y += 54;
+
+  ctx.font = '700 44px "Noto Sans KR",sans-serif'; ctx.fillStyle = CREAM;
+  topicLines.forEach(l => { ctx.fillText(l, W/2, y); y += 62; }); y += 26;
+
+  sep(y); y += 40;
+  ctx.font = '400 26px "Noto Sans KR",sans-serif'; ctx.fillStyle = GOLD_DIM;
+  ctx.fillText('🏆 최종 판정', W/2, y); y += 44;
+
+  const verdictColor = isDraw ? GOLD : pWin ? RED : BLUE;
+  const verdictLabel = isDraw ? '🤝 무승부' : pWin ? '🔴 A팀 승리' : '🔵 B팀 승리';
+  ctx.fillStyle = 'rgba(255,255,255,0.03)';
+  cardRoundRect(ctx, PAD, y, INNER, 128, 22); ctx.fill();
+  ctx.strokeStyle = verdictColor; ctx.lineWidth = 3;
+  cardRoundRect(ctx, PAD, y, INNER, 128, 22); ctx.stroke();
+  ctx.font = '900 64px "Noto Serif KR",serif'; ctx.fillStyle = verdictColor;
+  ctx.fillText(verdictLabel, W/2, y + 84); y += 128 + 36;
+
+  // 점수 바
+  const barY = y - 20;
+  ctx.fillStyle = 'rgba(255,255,255,0.06)';
+  cardRoundRect(ctx, PAD, barY, INNER, 14, 7); ctx.fill();
+  ctx.fillStyle = 'rgba(231,76,60,0.85)';
+  cardRoundRect(ctx, PAD, barY, INNER * pScore / 100 - 2, 14, 7); ctx.fill();
+  ctx.fillStyle = 'rgba(52,152,219,0.85)';
+  cardRoundRect(ctx, PAD + INNER * pScore / 100 + 2, barY, INNER * dScore / 100 - 2, 14, 7); ctx.fill();
+  y += 10;
+
+  const vsW = (INNER - 24) / 2, vsH = 168;
+  const drawVsBox = (x, isP, nick, isWinner) => {
+    ctx.fillStyle = isDraw ? GOLD_BG : isWinner ? 'rgba(39,174,96,0.09)' : 'rgba(255,255,255,0.025)';
+    cardRoundRect(ctx, x, y, vsW, vsH, 18); ctx.fill();
+    ctx.strokeStyle = isDraw ? GOLD_DIM : isWinner ? 'rgba(39,174,96,0.65)' : 'rgba(255,255,255,0.1)';
+    ctx.lineWidth = 1.5; cardRoundRect(ctx, x, y, vsW, vsH, 18); ctx.stroke();
+    const cx = x + vsW / 2;
+    ctx.textAlign = 'center';
+    ctx.font = '700 22px "Noto Sans KR",sans-serif'; ctx.fillStyle = isP ? RED : BLUE;
+    ctx.fillText(isP ? '🔴 A팀' : '🔵 B팀', cx, y + 40);
+    ctx.font = '700 30px "Noto Sans KR",sans-serif'; ctx.fillStyle = CREAM;
+    ctx.fillText(nick.length > 10 ? nick.slice(0,10)+'…' : nick, cx, y + 84);
+
+    // 점수
+    ctx.font = '700 24px "Noto Sans KR",sans-serif'; ctx.fillStyle = isP ? RED : BLUE;
+    ctx.fillText(`${isP ? pScore : dScore}점`, cx, y + 118);
+
+    ctx.font = '900 34px "Noto Sans KR",sans-serif';
+    ctx.fillStyle = isDraw ? GOLD : isWinner ? GREEN : RED;
+    ctx.fillText(isDraw ? '무승부' : isWinner ? '🏆 승리' : '😔 패배', cx, y + 154);
+  };
+  drawVsBox(PAD, true, session.plaintiff.nickname, pWin);
+  drawVsBox(PAD + vsW + 24, false, session.defendant.nickname, !pWin && !isDraw);
+  ctx.font = '900 36px "Noto Sans KR",sans-serif'; ctx.fillStyle = GOLD_DIM; ctx.textAlign = 'center';
+  ctx.fillText('VS', W/2, y + vsH/2 + 13); y += vsH + 36;
+
+  ctx.font = '400 27px "Noto Sans KR",sans-serif'; ctx.fillStyle = CREAM_DIM;
+  ctx.fillText(`${judge.icon} ${judgeKey} 심판 담당`, W/2, y); y += 52;
+
+  if (reasonLines.length) {
+    sep(y); y += 44;
+    ctx.font = '700 34px "Noto Sans KR",sans-serif'; ctx.fillStyle = GOLD; ctx.textAlign = 'center';
+    ctx.fillText('📝 판정 이유', W/2, y); y += 50;
+    const panelH = reasonLines.length * 50 + 44;
+    ctx.fillStyle = 'rgba(255,255,255,0.03)';
+    cardRoundRect(ctx, PAD, y, INNER, panelH, 16); ctx.fill();
+    ctx.strokeStyle = 'rgba(201,168,76,0.18)'; ctx.lineWidth = 1;
+    cardRoundRect(ctx, PAD, y, INNER, panelH, 16); ctx.stroke();
+    ctx.fillStyle = GOLD_DIM; cardRoundRect(ctx, PAD, y, 5, panelH, 3); ctx.fill();
+    ctx.font = '400 34px "Noto Sans KR",sans-serif'; ctx.fillStyle = CREAM_DIM; ctx.textAlign = 'center';
+    let ty = y + 32;
+    reasonLines.forEach(l => { ctx.fillText(l, W/2, ty); ty += 50; });
+    y += panelH + 36;
+  }
+
+  if (sentLines.length) {
+    sep(y); y += 44;
+    ctx.font = '700 34px "Noto Sans KR",sans-serif'; ctx.fillStyle = GOLD; ctx.textAlign = 'center';
+    ctx.fillText('🎯 미션', W/2, y); y += 50;
+    const sBoxH = sentLines.length * 58 + 50;
+    ctx.fillStyle = GOLD_BG; cardRoundRect(ctx, PAD, y, INNER, sBoxH, 18); ctx.fill();
+    ctx.strokeStyle = 'rgba(201,168,76,0.55)'; ctx.lineWidth = 2.5;
+    cardRoundRect(ctx, PAD, y, INNER, sBoxH, 18); ctx.stroke();
+    ctx.font = '700 40px "Noto Serif KR",serif'; ctx.fillStyle = CREAM; ctx.textAlign = 'center';
+    let sy = y + 40;
+    sentLines.forEach(l => { ctx.fillText(l, W/2, sy); sy += 58; });
+    y += sBoxH + 36;
+  }
+
+  y += 24; sep(y); y += 40;
+  ctx.font = '700 30px "Noto Sans KR",sans-serif'; ctx.fillStyle = GOLD; ctx.textAlign = 'center';
+  ctx.fillText('🌐 sosoking.co.kr', W/2, y);
+}
+
+function download() {
+  const a = document.createElement('a');
+  a.href = document.getElementById('c').toDataURL('image/png');
+  a.download = 'sosoking-verdict-preview.png';
+  a.click();
+}
+
+render();
+</script>
+</body>
+</html>
