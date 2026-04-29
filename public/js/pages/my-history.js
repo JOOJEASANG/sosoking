@@ -1,5 +1,9 @@
 import { db, auth } from '../firebase.js';
 import { collection, query, where, orderBy, limit, getDocs } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
+
+const functions = getFunctions(undefined, 'asia-northeast3');
+const deleteMySessionFn = httpsCallable(functions, 'deleteMySession');
 
 export async function renderMyHistory(container) {
   container.innerHTML = `
@@ -77,18 +81,45 @@ export async function renderMyHistory(container) {
             : `<span style="color:var(--red);font-weight:700;font-size:12px;">😔 패배</span>`;
       }
 
-      return `<div class="card" style="margin-bottom:10px;cursor:pointer;" onclick="location.hash='#/debate/${s.id}'">
+      return `<div class="card" id="session-card-${s.id}" style="margin-bottom:10px;position:relative;">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
           <span style="font-size:10px;font-weight:700;color:var(--gold);">${roleLabel}</span>
-          <span style="font-size:10px;color:${statusColor};font-weight:700;">${statusMap[s.status] || s.status}</span>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:10px;color:${statusColor};font-weight:700;">${statusMap[s.status] || s.status}</span>
+            <button class="delete-session-btn" data-id="${s.id}" style="background:none;border:none;cursor:pointer;color:var(--cream-dim);font-size:16px;padding:0;line-height:1;opacity:0.6;" title="기록 삭제">🗑️</button>
+          </div>
         </div>
-        <div style="font-weight:700;font-size:15px;color:var(--cream);margin-bottom:4px;">${s.topicTitle || "주제"}</div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
-          <span style="font-size:12px;color:var(--cream-dim);">${date} · ${s.mode === 'random' ? '랜덤 대결' : '친구 대결'}</span>
+        <div style="font-weight:700;font-size:15px;color:var(--cream);margin-bottom:4px;cursor:pointer;" onclick="location.hash='#/debate/${s.id}'">${s.topicTitle || "주제"}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;cursor:pointer;" onclick="location.hash='#/debate/${s.id}'">
+          <span style="font-size:12px;color:var(--cream-dim);">${date} · ${s.mode === 'random' ? '랜덤 대결' : s.mode === 'ai' ? 'AI 대결' : '친구 대결'}</span>
           ${resultBadge}
         </div>
       </div>`;
     }).join('');
+
+    inner.querySelectorAll('.delete-session-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const sessionId = btn.dataset.id;
+        if (!confirm('이 배틀 기록을 삭제할까요?\n삭제하면 복구할 수 없습니다.')) return;
+        btn.disabled = true;
+        btn.textContent = '⏳';
+        try {
+          await deleteMySessionFn({ sessionId });
+          const card = document.getElementById(`session-card-${sessionId}`);
+          if (card) {
+            card.style.transition = 'opacity 0.3s, transform 0.3s';
+            card.style.opacity = '0';
+            card.style.transform = 'translateX(20px)';
+            setTimeout(() => card.remove(), 300);
+          }
+        } catch (err) {
+          btn.disabled = false;
+          btn.textContent = '🗑️';
+          alert('삭제 실패: ' + (err.message || '다시 시도해주세요'));
+        }
+      });
+    });
   } catch {
     inner.innerHTML = `<div class="empty-state"><span class="empty-state-icon">⚠️</span><div class="empty-state-title">불러오기 실패</div></div>`;
   }

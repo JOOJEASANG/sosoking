@@ -70,6 +70,11 @@ export async function renderDebate(container, sessionId, shareToken) {
     }
 
     if (session.status === lastRenderedStatus && session.status !== 'active' && session.status !== 'ready_for_verdict' && session.status !== 'verdict_requested') return;
+
+    if (lastRenderedStatus === 'waiting' && session.status === 'active') {
+      showBattleStart(session);
+    }
+
     lastRenderedStatus = session.status;
 
     if (['completed', 'cancelled'].includes(session.status)) {
@@ -630,6 +635,8 @@ function renderCompleted(session, myRole, isSpectator) {
   feed.appendChild(card);
   feed.scrollTop = feed.scrollHeight;
 
+  if (verdict.winner) launchConfetti(verdict.winner);
+
   trackEvent('verdict_complete', {
     mode: session.mode || 'friend',
     judge_type: session.judgeType || 'unknown',
@@ -788,6 +795,85 @@ async function submitArgument(sessionId, myRole) {
     textarea.disabled = false;
     btn.disabled = false;
   }
+}
+
+function showBattleStart(session) {
+  const overlay = document.createElement('div');
+  overlay.id = 'battle-start-overlay';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(13,17,23,0.92);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9998;pointer-events:none;';
+  document.body.appendChild(overlay);
+
+  const steps = [
+    { text: '3', cls: 'cd-num', color: 'var(--gold)' },
+    { text: '2', cls: 'cd-num', color: 'var(--gold)' },
+    { text: '1', cls: 'cd-num', color: 'var(--gold)' },
+    { text: '⚔️ 배틀!', cls: 'cd-go', color: '#fff' },
+  ];
+  let i = 0;
+
+  function tick() {
+    const s = steps[i];
+    overlay.innerHTML = `
+      <div class="${s.cls}" style="font-size:${s.cls === 'cd-go' ? '56px' : '100px'};font-weight:900;color:${s.color};text-align:center;line-height:1;text-shadow:0 0 40px currentColor;">${s.text}</div>
+      ${i === 3 ? `<div style="font-size:13px;color:var(--cream-dim);margin-top:16px;animation:fadeUp 0.3s both;max-width:260px;text-align:center;">${escHtml(session.topicTitle || '')}</div>` : ''}
+    `;
+    i++;
+    if (i < steps.length) setTimeout(tick, 700);
+    else setTimeout(() => overlay.remove(), 1000);
+  }
+  tick();
+}
+
+function launchConfetti(winner) {
+  const canvas = document.createElement('canvas');
+  canvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;';
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const palette = winner === 'plaintiff'
+    ? ['#e74c3c', '#ff6b6b', '#c9a84c', '#ffffff']
+    : winner === 'defendant'
+    ? ['#3498db', '#5dade2', '#c9a84c', '#ffffff']
+    : ['#c9a84c', '#e8c97a', '#f39c12', '#ffffff'];
+
+  const particles = Array.from({ length: 130 }, () => ({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height * -0.3 - 10,
+    w: Math.random() * 10 + 4,
+    h: Math.random() * 6 + 3,
+    color: palette[Math.floor(Math.random() * palette.length)],
+    vx: (Math.random() - 0.5) * 5,
+    vy: Math.random() * 3 + 1.5,
+    rot: Math.random() * 360,
+    rotV: (Math.random() - 0.5) * 9,
+    opacity: 1,
+  }));
+
+  let frame = 0;
+  const MAX = 180;
+  function tick() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    frame++;
+    particles.forEach(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.07;
+      p.rot += p.rotV;
+      if (frame > MAX * 0.55) p.opacity = Math.max(0, p.opacity - 0.018);
+      ctx.save();
+      ctx.globalAlpha = p.opacity;
+      ctx.translate(p.x, p.y);
+      ctx.rotate((p.rot * Math.PI) / 180);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+      ctx.restore();
+    });
+    if (frame < MAX) requestAnimationFrame(tick);
+    else canvas.remove();
+  }
+  requestAnimationFrame(tick);
 }
 
 function removeInputArea() {

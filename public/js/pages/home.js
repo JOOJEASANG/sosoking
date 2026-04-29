@@ -8,16 +8,16 @@ const DEMO_STEPS = [
       <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.08em;margin-bottom:14px;">📋 공감 100% 주제 중 하나를 고르세요</div>
       <div style="display:flex;flex-direction:column;gap:8px;">
         ${[
-          ['카톡 읽씹 무죄 주장', '읽었으면 답해야 vs 내 자유다', true],
-          ['치킨 마지막 조각 독식 주제', '맛있는 건 먼저 먹는 게 당연 vs 나눠 먹어야지', false],
-          ['더치페이 거부 주제', '각자 내는 게 공평 vs 사준 사람이 쏴야지', false],
+          ['카톡 읽씹 배틀', '읽었으면 답해야 vs 내 자유다', true],
+          ['치킨 마지막 조각 배틀', '맛있는 건 먼저 먹는 게 당연 vs 나눠 먹어야지', false],
+          ['더치페이 배틀', '각자 내는 게 공평 vs 부른 사람이 쏴야지', false],
         ].map(([t, s, active]) => `
           <div style="padding:12px 14px;border-radius:10px;border:1.5px solid ${active ? 'rgba(201,168,76,0.5)' : 'var(--border)'};background:${active ? 'rgba(201,168,76,0.07)' : 'rgba(255,255,255,0.02)'};cursor:pointer;">
             <div style="font-size:13px;font-weight:700;color:${active ? 'var(--gold)' : 'var(--cream)'};margin-bottom:3px;">${t}</div>
             <div style="font-size:11px;color:var(--cream-dim);">${s}</div>
           </div>`).join('')}
       </div>
-      <div style="margin-top:14px;text-align:center;font-size:12px;color:var(--cream-dim);">또는 직접 주제 등록도 가능해요 ✏️</div>`,
+      <div style="margin-top:14px;text-align:center;font-size:12px;color:var(--cream-dim);">또는 나만의 억울한 주제 직접 등록 ✏️</div>`,
   },
   {
     tab: '대결 방식',
@@ -26,7 +26,7 @@ const DEMO_STEPS = [
       <div style="display:flex;flex-direction:column;gap:8px;">
         <div style="padding:12px 14px;border-radius:10px;border:1.5px solid rgba(201,168,76,0.4);background:rgba(201,168,76,0.07);">
           <div style="font-size:13px;font-weight:700;color:var(--gold);margin-bottom:2px;">👫 친구와 대결</div>
-          <div style="font-size:11px;color:var(--cream-dim);">링크 공유 → 친구가 가입 없이 바로 입장</div>
+          <div style="font-size:11px;color:var(--cream-dim);">링크 공유 → 가입 없이 바로 입장</div>
         </div>
         <div style="padding:12px 14px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,0.02);">
           <div style="font-size:13px;font-weight:700;color:var(--cream);margin-bottom:2px;">🎲 랜덤 매칭</div>
@@ -34,7 +34,7 @@ const DEMO_STEPS = [
         </div>
         <div style="padding:12px 14px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,0.02);">
           <div style="font-size:13px;font-weight:700;color:var(--cream);margin-bottom:2px;">🤖 AI와 대결 (소소봇)</div>
-          <div style="font-size:11px;color:var(--cream-dim);">혼자서 즉시 시작 · AI가 논리적으로 반박</div>
+          <div style="font-size:11px;color:var(--cream-dim);">혼자서 즉시 시작 · 소소봇이 재치있게 반박</div>
         </div>
       </div>
       <div style="margin-top:12px;text-align:center;font-size:11px;color:var(--cream-dim);">라운드는 3 · 5 · 7 중 선택 🔥</div>`,
@@ -42,43 +42,53 @@ const DEMO_STEPS = [
   {
     tab: '토론',
     render: () => `
-      <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.08em;margin-bottom:12px;">💬 A팀(왼쪽) vs B팀(오른쪽) 실시간 토론</div>
+      <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.08em;margin-bottom:12px;">💬 친구 사이 소소한 배틀 예시</div>
       <div style="display:flex;flex-direction:column;gap:10px;">
         <div class="demo-msg demo-msg-p" style="animation-delay:0s;">
-          <div class="demo-bubble demo-bubble-p">읽었으면 답하는 게 기본 예의 아닌가요? 🙁</div>
+          <div class="demo-bubble demo-bubble-p">읽고 3시간 후에 답장하는 거 맞죠? ㅋㅋ 👀</div>
           <div style="font-size:10px;color:rgba(231,76,60,0.7);margin-top:3px;">🔴 A팀</div>
         </div>
         <div class="demo-msg demo-msg-d" style="animation-delay:.6s;">
-          <div class="demo-bubble demo-bubble-d">내가 언제 답할지는 제가 결정해요. 카톡이 법은 아니잖아요.</div>
+          <div class="demo-bubble demo-bubble-d">그 3시간이 신중하게 고민한 숙성의 시간이에요 😌</div>
           <div style="font-size:10px;color:rgba(52,152,219,0.7);margin-top:3px;text-align:right;">🔵 B팀</div>
         </div>
         <div class="demo-msg demo-msg-p" style="animation-delay:1.2s;">
-          <div class="demo-bubble demo-bubble-p">그건 상대방을 무시하는 행동이에요!</div>
+          <div class="demo-bubble demo-bubble-p">3시간 숙성한 답장이 '응' 한 글자면요? 😂</div>
           <div style="font-size:10px;color:rgba(231,76,60,0.7);margin-top:3px;">🔴 A팀</div>
         </div>
         <div class="demo-msg demo-msg-d" style="animation-delay:1.8s;">
-          <div class="demo-bubble demo-bubble-d">바쁠 수도 있죠. 상황을 모르면서 단정하지 마세요.</div>
+          <div class="demo-bubble demo-bubble-d">명작을 쓰다가 심플하게 간 거예요 ✍️ 그게 예술이죠</div>
           <div style="font-size:10px;color:rgba(52,152,219,0.7);margin-top:3px;text-align:right;">🔵 B팀</div>
         </div>
       </div>
-      <div style="margin-top:12px;text-align:center;font-size:11px;color:var(--cream-dim);">1라운드 완료 후 언제든 판정 요청 가능 🔥</div>`,
+      <div style="margin-top:12px;padding:8px 12px;border-radius:8px;background:rgba(201,168,76,0.07);border:1px solid rgba(201,168,76,0.2);text-align:center;font-size:11px;color:var(--gold);font-weight:700;">핵심 법칙: 진지하면 진다 😄 재치 있을수록 고득점!</div>`,
   },
   {
     tab: 'AI 판정',
     render: () => `
       <div style="text-align:center;margin-bottom:12px;">
         <div style="font-size:10px;color:var(--cream-dim);letter-spacing:.1em;margin-bottom:6px;">이번 배틀 담당 심판</div>
-        <div style="font-size:32px;margin-bottom:4px;">🥹</div>
+        <div style="font-size:28px;margin-bottom:4px;">🥹</div>
         <div style="font-size:13px;font-weight:700;color:#8e44ad;">감성형 심판</div>
       </div>
-      <div style="padding:14px;border-radius:12px;background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.25);margin-bottom:10px;">
-        <div style="text-align:center;font-size:11px;color:var(--cream-dim);letter-spacing:.1em;margin-bottom:8px;">🏆 최종 판정</div>
-        <div style="text-align:center;font-size:20px;font-weight:900;color:var(--gold);margin-bottom:4px;">🏆 A팀 승리</div>
-        <div style="font-size:12px;color:var(--cream-dim);text-align:center;line-height:1.6;margin-top:8px;">"A팀이여... 읽씹의 고통이 고스란히 느껴집니다 (목이 메어) 당신의 억울함은 이 배틀이 기억할 것입니다 (흑흑)"</div>
+      <div style="margin:0 0 10px;padding:0 2px;">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;">
+          <span style="font-size:12px;font-weight:800;color:#e74c3c;">🔴 A팀 72점</span>
+          <span style="font-size:12px;font-weight:800;color:#3498db;">🔵 B팀 28점</span>
+        </div>
+        <div style="height:10px;border-radius:5px;overflow:hidden;display:flex;gap:2px;">
+          <div style="width:72%;background:linear-gradient(90deg,#e74c3c,#ff6b6b);border-radius:5px 0 0 5px;"></div>
+          <div style="width:28%;background:linear-gradient(90deg,#3498db,#5dade2);border-radius:0 5px 5px 0;"></div>
+        </div>
+        <div style="font-size:10px;color:var(--cream-dim);text-align:center;margin-top:4px;">재치·공감·유머 종합 점수</div>
       </div>
-      <div style="padding:12px;border-radius:10px;background:rgba(255,255,255,0.03);border:1px solid var(--border);">
-        <div style="font-size:10px;color:var(--gold);font-weight:700;margin-bottom:4px;">🎯 미션</div>
-        <div style="font-size:12px;color:var(--cream);line-height:1.6;">B팀은 A팀에게 따뜻한 국밥 한 그릇을 사주고, 눈을 마주치며 '미안해'라고 말할 것을 명한다</div>
+      <div style="padding:10px 12px;border-radius:10px;background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.2);margin-bottom:8px;">
+        <div style="text-align:center;font-size:14px;font-weight:900;color:var(--gold);margin-bottom:6px;">🏆 A팀 승리</div>
+        <div style="font-size:11px;color:var(--cream-dim);line-height:1.6;">"투명인간·선비 드립이 절묘했습니다 (눈물을 닦으며). 재치 하나로 승부가 갈렸습니다 (흑흑)"</div>
+      </div>
+      <div style="padding:10px 12px;border-radius:10px;background:rgba(255,255,255,0.03);border:1px solid var(--border);">
+        <div style="font-size:10px;color:var(--gold);font-weight:700;margin-bottom:4px;">🎯 B팀 미션</div>
+        <div style="font-size:11px;color:var(--cream);line-height:1.6;">A팀에게 따뜻한 국밥 한 그릇을 사주고, 눈을 마주치며 '미안해'라고 말할 것</div>
       </div>`,
   },
 ];

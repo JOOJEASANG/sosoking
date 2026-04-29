@@ -114,13 +114,16 @@ exports.createSession = onCall({ region: 'asia-northeast3', secrets: [geminiKey]
   if (topic.status !== 'active') throw new Error('이용할 수 없는 주제입니다');
 
   const shareToken = randomToken(8);
-  const nickname = generateNickname();
 
-  // 직전 판사 제외하고 crypto 기반 무작위 선택
+  // 직전 판사 제외, 가입 닉네임 조회
   let lastJudge = null;
+  let nickname = generateNickname();
   try {
     const userDoc = await db.doc(`users/${userId}`).get();
-    if (userDoc.exists) lastJudge = userDoc.data().lastJudgeType || null;
+    if (userDoc.exists) {
+      lastJudge = userDoc.data().lastJudgeType || null;
+      if (userDoc.data().nickname) nickname = userDoc.data().nickname;
+    }
   } catch {}
   const pool = lastJudge ? JUDGE_TYPES.filter(j => j !== lastJudge) : JUDGE_TYPES;
   const judgeType = pool[crypto.randomInt(0, pool.length)];
@@ -216,13 +219,18 @@ exports.joinSession = onCall({ region: 'asia-northeast3' }, async (request) => {
     const sessionId = q.docs[0].id;
     const sessionRef = db.doc(`debate_sessions/${sessionId}`);
 
+    let nickname = generateNickname();
+    try {
+      const userDoc = await db.doc(`users/${userId}`).get();
+      if (userDoc.exists && userDoc.data().nickname) nickname = userDoc.data().nickname;
+    } catch {}
+
     await db.runTransaction(async (tx) => {
       const snap = await tx.get(sessionRef);
       if (!snap.exists) throw new Error('세션을 찾을 수 없습니다');
       const session = snap.data();
       if (session.status !== 'waiting') throw new Error('세션이 이미 시작되었습니다');
       if (session.plaintiff?.userId === userId || session.defendant?.userId === userId) return;
-      const nickname = generateNickname();
       const newMember = { userId, nickname };
       if (!session.plaintiff) {
         tx.update(sessionRef, {
@@ -246,6 +254,12 @@ exports.joinSession = onCall({ region: 'asia-northeast3' }, async (request) => {
     const queueRef = db.doc(`random_queue/${topicId}`);
     let sessionId;
 
+    let nickname = generateNickname();
+    try {
+      const userDoc = await db.doc(`users/${userId}`).get();
+      if (userDoc.exists && userDoc.data().nickname) nickname = userDoc.data().nickname;
+    } catch {}
+
     await db.runTransaction(async (tx) => {
       const queueSnap = await tx.get(queueRef);
       if (!queueSnap.exists) throw new Error('대기 중인 상대가 없습니다');
@@ -258,7 +272,6 @@ exports.joinSession = onCall({ region: 'asia-northeast3' }, async (request) => {
       }
       sessionId = queueData.sessionId;
       const session = sessionSnap.data();
-      const nickname = generateNickname();
       const newMember = { userId, nickname };
       let updateData;
       if (!session.plaintiff) {
@@ -514,6 +527,12 @@ exports.joinTeamSession = onCall({ region: 'asia-northeast3' }, async (request) 
   if (!userId) throw new Error('인증 필요');
   if (!sessionId || !['plaintiff', 'defendant'].includes(side)) throw new Error('필수 항목 누락');
 
+  let nickname = generateNickname();
+  try {
+    const userDoc = await db.doc(`users/${userId}`).get();
+    if (userDoc.exists && userDoc.data().nickname) nickname = userDoc.data().nickname;
+  } catch {}
+
   const sessionRef = db.doc(`debate_sessions/${sessionId}`);
   await db.runTransaction(async (tx) => {
     const snap = await tx.get(sessionRef);
@@ -532,7 +551,6 @@ exports.joinTeamSession = onCall({ region: 'asia-northeast3' }, async (request) 
         (session.defendantTeam || []).some(m => m.userId === userId)) return;
     if (currentTeam.length >= teamSize) throw new Error('팀이 꽉 찼습니다');
 
-    const nickname = generateNickname();
     tx.update(sessionRef, { [teamKey]: [...currentTeam, { userId, nickname }] });
   });
   return { ok: true, sessionId };
@@ -883,4 +901,20 @@ exports.generateDailyTopic = onSchedule({
   });
   batch.set(db.doc(`site_settings/daily_topic_${today}`), { createdAt: FieldValue.serverTimestamp() });
   await batch.commit();
+});
+
+exports.deleteMySession = onCall({ region: 'asia-northeast3' }, async (request) => {
+  const userId = request.auth?.uid;
+  if (!userId) throw new Error('인증 필요');
+  const { sessionId } = request.data;
+  if (!sessionId) throw new Error('sessionId 필요');
+  const ref = db.doc(`debate_sessions/${sessionId}`);
+  const snap = await ref.get();
+  if (!snap.exists) throw new Error('세션을 찾을 수 없습니다');
+  const data = snap.data();
+  if (data.plaintiff?.userId !== userId && data.defendant?.userId !== userId) {
+    throw new Error('삭제 권한이 없습니다');
+  }
+  await ref.delete();
+  return { ok: true };
 });
