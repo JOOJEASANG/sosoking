@@ -798,6 +798,7 @@ async function submitArgument(sessionId, myRole) {
 }
 
 function showBattleStart(session) {
+  if (document.getElementById('battle-start-overlay')) return;
   const overlay = document.createElement('div');
   overlay.id = 'battle-start-overlay';
   overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(13,17,23,0.92);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9998;pointer-events:none;';
