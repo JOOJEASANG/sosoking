@@ -22,6 +22,10 @@ function route() {
   if (!content) return;
   window.scrollTo(0, 0);
 
+  content.classList.remove('page-entering');
+  void content.offsetWidth;
+  content.classList.add('page-entering');
+
   let pageName = 'home';
   if (hash === '#/' || hash === '' || hash === '#') {
     renderHome(content);
