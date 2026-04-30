@@ -1,4 +1,5 @@
-import { initAuth, trackEvent, trackUser, auth } from './firebase.js';
+import { initAuth, trackEvent, trackUser, auth, db } from './firebase.js';
+import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { renderHome } from './pages/home.js';
 import { renderTopics } from './pages/topics.js';
 import { renderTopicDetail } from './pages/topic-detail.js';
@@ -85,8 +86,29 @@ window.addEventListener('appinstalled', () => {
   document.dispatchEvent(new Event('pwa-installed'));
 });
 
+async function injectSeoMeta() {
+  try {
+    const snap = await getDoc(doc(db, 'site_settings', 'config'));
+    if (!snap.exists()) return;
+    const seo = snap.data().seoVerification || {};
+    if (seo.google) {
+      const m = document.createElement('meta');
+      m.name = 'google-site-verification';
+      m.content = seo.google;
+      document.head.appendChild(m);
+    }
+    if (seo.naver) {
+      const m = document.createElement('meta');
+      m.name = 'naver-site-verification';
+      m.content = seo.naver;
+      document.head.appendChild(m);
+    }
+  } catch {}
+}
+
 (async () => {
   initTheme();
+  injectSeoMeta();
   const user = await initAuth();
   if (user?.uid) trackUser(user.uid);
   renderFooter();

@@ -428,6 +428,7 @@ async function tabSettings(el) {
   const snap = await getDoc(doc(db,'site_settings','config'));
   const d = snap.exists()?snap.data():{};
   const biz = d.businessInfo || {};
+  const seo = d.seoVerification || {};
   const bizFields = [['companyName','사업자명'],['ceoName','대표자명'],['businessNumber','사업자등록번호'],['contact','연락처'],['email','이메일'],['address','주소']];
   el.innerHTML = `
     <form id="sf">
@@ -472,6 +473,24 @@ async function tabSettings(el) {
         <div class="form-group"><label class="form-label">원-달러 환율 (₩/$1)</label><input type="number" id="krw" class="form-input" value="${d.krwUsdRate ?? 1400}"></div>
       </fieldset>
       <fieldset style="border:1px solid var(--border);border-radius:8px;padding:14px 14px 4px;margin:20px 0;">
+        <legend style="padding:0 8px;color:var(--gold);font-size:13px;">🔍 검색 엔진 소유권 인증</legend>
+        <div style="font-size:12px;color:var(--cream-dim);margin-bottom:14px;line-height:1.7;">
+          구글/네이버 웹마스터 도구에서 발급받은 인증 코드를 입력하면 자동으로 메타태그에 반영됩니다.<br>
+          · 구글: <a href="https://search.google.com/search-console" target="_blank" style="color:var(--gold);">search.google.com/search-console</a><br>
+          · 네이버: <a href="https://searchadvisor.naver.com" target="_blank" style="color:var(--gold);">searchadvisor.naver.com</a>
+        </div>
+        <div class="form-group">
+          <label class="form-label">🔵 Google Search Console 인증 코드</label>
+          <input type="text" id="seo_google" class="form-input" value="${seo.google||''}" placeholder="예) AbCdEfGhIjKlMnOpQrStUvWxYz123456">
+          <div style="font-size:11px;color:var(--cream-dim);margin-top:4px;">HTML 태그 방식 선택 → content="" 안의 값만 입력</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">🟢 네이버 서치어드바이저 인증 코드</label>
+          <input type="text" id="seo_naver" class="form-input" value="${seo.naver||''}" placeholder="예) abcdef1234567890abcdef1234567890">
+          <div style="font-size:11px;color:var(--cream-dim);margin-top:4px;">HTML 태그 방식 선택 → content="" 안의 값만 입력</div>
+        </div>
+      </fieldset>
+      <fieldset style="border:1px solid var(--border);border-radius:8px;padding:14px 14px 4px;margin:20px 0;">
         <legend style="padding:0 8px;color:var(--gold);font-size:13px;">🏢 사업자 정보</legend>
         ${bizFields.map(([k,l])=>`<div class="form-group"><label class="form-label">${l}</label><input type="text" id="b_${k}" class="form-input" value="${biz[k]||''}"></div>`).join('')}
       </fieldset>
@@ -492,6 +511,10 @@ async function tabSettings(el) {
       geminiInputPricePerM: parseFloat(document.getElementById('gip').value),
       geminiOutputPricePerM: parseFloat(document.getElementById('gop').value),
       krwUsdRate: parseFloat(document.getElementById('krw').value),
+      seoVerification: {
+        google: document.getElementById('seo_google').value.trim(),
+        naver: document.getElementById('seo_naver').value.trim(),
+      },
       businessInfo,
     },{merge:true});
     toast('저장되었습니다.','success');
