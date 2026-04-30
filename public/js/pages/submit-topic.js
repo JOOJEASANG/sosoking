@@ -29,6 +29,11 @@ export async function renderSubmitTopic(container) {
             <div class="char-counter"><span id="c-title">0</span>/30</div>
           </div>
           <div class="form-group">
+            <label class="form-label">한 줄 요약 <span style="font-size:11px;color:var(--cream-dim);font-weight:400;">(선택 · 비우면 자동 생성)</span></label>
+            <input type="text" id="t-summary" class="form-input" maxlength="60" placeholder="예: 읽었으면 답해야 한다 vs 내 자유다">
+            <div class="char-counter"><span id="c-summary">0</span>/60</div>
+          </div>
+          <div class="form-group">
             <label class="form-label">🔴 A팀 주장 <span style="color:var(--red)">*</span></label>
             <input type="text" id="t-plaintiff" class="form-input" maxlength="100" placeholder="예: 눈치 봐야 한다" required>
             <div class="char-counter"><span id="c-plaintiff">0</span>/100</div>
@@ -57,6 +62,7 @@ export async function renderSubmitTopic(container) {
 
   const counters = [
     ['t-title', 'c-title'],
+    ['t-summary', 'c-summary'],
     ['t-plaintiff', 'c-plaintiff'],
     ['t-defendant', 'c-defendant'],
   ];
@@ -74,8 +80,10 @@ export async function renderSubmitTopic(container) {
 
     try {
       const submitTopicFn = httpsCallable(functions, 'submitTopic');
+      const summary = document.getElementById('t-summary').value.trim();
       const result = await submitTopicFn({
         title: document.getElementById('t-title').value.trim(),
+        ...(summary && { summary }),
         plaintiffPosition: document.getElementById('t-plaintiff').value.trim(),
         defendantPosition: document.getElementById('t-defendant').value.trim(),
         category: document.getElementById('t-category').value,
