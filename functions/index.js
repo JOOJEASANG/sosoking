@@ -1,5 +1,4 @@
 const { onCall, onRequest } = require('firebase-functions/v2/https');
-const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { initializeApp } = require('firebase-admin/app');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const { getAuth } = require('firebase-admin/auth');
@@ -844,64 +843,6 @@ exports.seedTopicsV2 = onRequest({ region: 'asia-northeast3' }, async (req, res)
   res.json({ ok: true, added: SEED_TOPICS_V2.length });
 });
 
-// ─── AI 주제 자동 생성 (3일에 한번 오전 9시 KST) ────────────────────────────
-const DAILY_TOPIC_CATEGORIES = ['카톡', '연애', '음식', '정산', '직장', '생활', '친구'];
-
-exports.generateDailyTopic = onSchedule({
-  schedule: '0 0 */3 * *',
-  timeZone: 'Asia/Seoul',
-  region: 'asia-northeast3',
-  secrets: [geminiKey],
-}, async () => {
-  // 오늘 이미 생성됐으면 스킵
-  const today = new Date().toISOString().slice(0, 10);
-  const marker = await db.doc(`site_settings/daily_topic_${today}`).get();
-  if (marker.exists) return;
-
-  const category = DAILY_TOPIC_CATEGORIES[Math.floor(Math.random() * DAILY_TOPIC_CATEGORIES.length)];
-
-  const genAI = new GoogleGenerativeAI(geminiKey.value());
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-
-  const prompt = `당신은 소소킹 토론배틀 사이트의 일일 배틀 주제 생성기입니다.
-카테고리: ${category}
-오늘의 배틀 주제를 딱 1개 생성하세요. 조건:
-- 20~40대 한국인 직장인·연인·친구 사이에서 실제로 티격태격하는 상황
-- 어느 쪽이 맞다고 딱 잘라 말하기 어렵고 양쪽 다 억울할 수 있는 주제
-- 초등학생 수준이 아닌, 성인이 공감하는 현실적이고 신선한 소재
-- A팀과 B팀 입장이 팽팽하게 맞서야 함
-- 주제명은 배틀스럽고 재미있게 (예: "카톡 읽씹 3시간 후 전화 실례인가 배틀")
-
-반드시 아래 JSON 형식으로만 응답하세요 (마크다운 없이):
-{
-  "title": "배틀 주제명 (25자 이내, ~배틀 또는 ~논쟁 형식)",
-  "summary": "한 줄 요약 — A주장 vs B주장 형식 (50자 이내)",
-  "plaintiffPosition": "A팀 주장 (60자 이내, 구체적이고 설득력 있게)",
-  "defendantPosition": "B팀 주장 (60자 이내, 구체적이고 설득력 있게)"
-}`;
-
-  const result = await model.generateContent(prompt);
-  const text = result.response.text().trim().replace(/```json|```/g, '').trim();
-  const data = JSON.parse(text);
-
-  const batch = db.batch();
-  batch.set(db.collection('topics').doc(), {
-    title: data.title,
-    summary: data.summary,
-    plaintiffPosition: data.plaintiffPosition,
-    defendantPosition: data.defendantPosition,
-    category,
-    status: 'active',
-    isOfficial: true,
-    isDailyTopic: true,
-    dailyDate: today,
-    playCount: 0,
-    createdBy: 'system',
-    createdAt: FieldValue.serverTimestamp(),
-  });
-  batch.set(db.doc(`site_settings/daily_topic_${today}`), { createdAt: FieldValue.serverTimestamp() });
-  await batch.commit();
-});
 
 exports.deleteMySession = onCall({ region: 'asia-northeast3' }, async (request) => {
   const userId = request.auth?.uid;
