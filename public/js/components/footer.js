@@ -32,7 +32,7 @@ export async function renderFooter() {
 
     <div class="footer-biz">
       ${rows.map(r => `<div class="footer-biz-row">${r}</div>`).join('')}
-      <div class="footer-biz-row footer-legal">© 2025 소소킹 토론배틀</div>
+      <div class="footer-biz-row footer-legal">© ${new Date().getFullYear()} 소소킹 토론배틀</div>
       <div class="footer-biz-row footer-legal">오락 목적 서비스 · AI 판정에 법적 효력 없음</div>
     </div>
 

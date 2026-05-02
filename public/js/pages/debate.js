@@ -194,7 +194,7 @@ function myTurnText(session, myRole) {
   const rounds = session.rounds || [];
   const cur = rounds[round] || {};
   if (cur[myRole]) return '상대방 차례';
-  if (myRole === 'defendant' && !cur.plaintiff) return 'A팀 차례';
+  if (myRole === 'defendant' && !cur.plaintiff) return `${pLabel(session)} 차례`;
   return '내 차례';
 }
 
