@@ -1028,7 +1028,7 @@ async function generateVerdictCard(session) {
     document.fonts.ready,
   ]);
 
-  const W = 1080, H = 1440, PAD = 68, INNER = W - PAD * 2;
+  const W = 1080, H = 1920, PAD = 68, INNER = W - PAD * 2;
   const verdict = session.verdict || {};
   const isDraw  = !verdict.winner || verdict.winner === 'draw';
   const pWin    = verdict.winner === 'plaintiff';
@@ -1132,13 +1132,13 @@ async function generateVerdictCard(session) {
     dg.addColorStop(0, '#5dade2'); dg.addColorStop(1, '#3498db');
     ctx.fillStyle = dg; cardRoundRect(ctx, PAD + pW + 6, y, dW, barH, barR); ctx.fill();
   }
-  y += barH + 16;
-  ctx.font = '700 28px "Noto Sans KR", sans-serif';
+  y += barH + 40;
+  ctx.font = '700 32px "Noto Sans KR", sans-serif';
   ctx.fillStyle = 'rgba(231,76,60,0.9)'; ctx.textAlign = 'left';
   ctx.fillText(`${pScore}점`, PAD, y);
   ctx.fillStyle = 'rgba(52,152,219,0.9)'; ctx.textAlign = 'right';
   ctx.fillText(`${dScore}점`, W - PAD, y);
-  ctx.textAlign = 'center'; y += 40;
+  ctx.textAlign = 'center'; y += 48;
 
   // ── 주제명 ──
   const topicLines = wrap(session.topicTitle || '배틀 주제', INNER, '700 38px "Noto Sans KR", sans-serif', 2);
@@ -1165,9 +1165,9 @@ async function generateVerdictCard(session) {
     const flat  = parts.reason.replace(/\n+/g, ' ').trim();
     const dot   = flat.search(/[.!?。]/);
     const quote = dot > 0 && dot < 120 ? flat.slice(0, dot + 1) : flat.slice(0, 110) + (flat.length > 110 ? '…' : '');
-    const qLines = wrap(`"${quote}"`, INNER - 60, '400 34px "Noto Sans KR", sans-serif', 4);
+    const qLines = wrap(`"${quote}"`, INNER - 60, '400 36px "Noto Sans KR", sans-serif', 6);
 
-    const qBoxH = qLines.length * 52 + 56;
+    const qBoxH = qLines.length * 56 + 60;
     // 말풍선 배경
     ctx.fillStyle = 'rgba(255,255,255,0.04)';
     cardRoundRect(ctx, PAD, y, INNER, qBoxH, 18); ctx.fill();
@@ -1175,18 +1175,18 @@ async function generateVerdictCard(session) {
     ctx.fillStyle = ACCENT;
     cardRoundRect(ctx, PAD, y, 5, qBoxH, 3); ctx.fill();
 
-    ctx.font = '400 34px "Noto Sans KR", sans-serif'; ctx.fillStyle = CREAM_DIM;
-    let qy = y + 38;
-    qLines.forEach(l => { ctx.fillText(l, W / 2, qy); qy += 52; });
-    y += qBoxH + 32;
+    ctx.font = '400 36px "Noto Sans KR", sans-serif'; ctx.fillStyle = CREAM_DIM;
+    let qy = y + 44;
+    qLines.forEach(l => { ctx.fillText(l, W / 2, qy); qy += 56; });
+    y += qBoxH + 36;
 
-    // 나머지 판정문 (2줄까지)
+    // 나머지 판정문 (4줄까지)
     if (flat.length > quote.replace(/^"|"$/g, '').length + 5) {
       const rest = flat.slice(quote.replace(/^"|"$/g, '').length).trim();
-      const restLines = wrap(rest, INNER, '400 30px "Noto Sans KR", sans-serif', 2);
-      ctx.font = '400 30px "Noto Sans KR", sans-serif'; ctx.fillStyle = 'rgba(240,230,200,0.45)';
-      restLines.forEach(l => { ctx.fillText(l, W / 2, y); y += 44; });
-      y += 8;
+      const restLines = wrap(rest, INNER, '400 32px "Noto Sans KR", sans-serif', 4);
+      ctx.font = '400 32px "Noto Sans KR", sans-serif'; ctx.fillStyle = 'rgba(240,230,200,0.45)';
+      restLines.forEach(l => { ctx.fillText(l, W / 2, y); y += 48; });
+      y += 12;
     }
   }
 
