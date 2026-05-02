@@ -189,6 +189,30 @@ export async function renderTopicDetail(container, topicId) {
     });
   });
 
+  // Initialise court mode from localStorage
+  let storedMode = 'debate';
+  try { storedMode = localStorage.getItem('sosoking_game_mode') || 'debate'; } catch {}
+  let selectedCourtMode = storedMode === 'court';
+
+  // Apply initial format button state
+  if (selectedCourtMode) {
+    inner.querySelectorAll('.battle-format-btn').forEach(b => b.classList.remove('active'));
+    inner.querySelector('[data-format="court"]')?.classList.add('active');
+    inner.querySelector('.side-label-p').textContent = '원고 (먼저 주장)';
+    inner.querySelector('.side-label-d').textContent = '피고 (반론)';
+  }
+
+  inner.querySelectorAll('.battle-format-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      inner.querySelectorAll('.battle-format-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedCourtMode = btn.dataset.format === 'court';
+      try { localStorage.setItem('sosoking_game_mode', selectedCourtMode ? 'court' : 'debate'); } catch {}
+      inner.querySelector('.side-label-p').textContent = selectedCourtMode ? '원고 (먼저 주장)' : 'A팀 편들기';
+      inner.querySelector('.side-label-d').textContent = selectedCourtMode ? '피고 (반론)' : 'B팀 편들기';
+    });
+  });
+
   inner.querySelectorAll('.side-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       inner.querySelectorAll('.side-btn').forEach(b => b.classList.remove('active'));
@@ -265,7 +289,7 @@ export async function renderTopicDetail(container, topicId) {
   });
 }
 
-async function handleRandomMatch(topicId, topic, side, maxRounds, teamSize) {
+async function handleRandomMatch(topicId, topic, side, maxRounds, teamSize, courtMode) {
   const queueSnap = await getDoc(doc(db, 'random_queue', topicId));
 
   if (queueSnap.exists() && queueSnap.data().userId !== auth.currentUser?.uid) {
@@ -274,7 +298,7 @@ async function handleRandomMatch(topicId, topic, side, maxRounds, teamSize) {
     location.hash = `#/debate/${res.data.sessionId}`;
   } else {
     const createSessionFn = httpsCallable(functions, 'createSession');
-    const res = await createSessionFn({ topicId, side, mode: 'random', maxRounds, teamSize: teamSize || 1 });
+    const res = await createSessionFn({ topicId, side, mode: 'random', maxRounds, teamSize: teamSize || 1, courtMode: courtMode === true });
     location.hash = `#/debate/${res.data.sessionId}`;
   }
 }

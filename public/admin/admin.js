@@ -740,6 +740,14 @@ async function tabTopics(el) {
   const allCats = ['all', ...new Set(activeSnap.docs.map(d=>d.data().category||'기타'))];
 
   el.innerHTML = `
+    <!-- AI 주제 생성 -->
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <button id="ai-generate-btn" style="display:flex;align-items:center;gap:8px;padding:10px 18px;background:rgba(52,152,219,0.1);border:1.5px solid rgba(52,152,219,0.35);border-radius:10px;color:#3498db;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.2s;">
+        🤖 AI로 주제 생성
+      </button>
+      <span id="ai-generate-status" style="font-size:12px;color:var(--cream-dim);align-self:center;"></span>
+    </div>
+
     <!-- 주제 직접 등록 -->
     <div style="margin-bottom:24px;">
       <button id="new-topic-toggle" style="display:flex;align-items:center;gap:8px;width:100%;padding:12px 16px;background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.3);border-radius:10px;color:var(--gold);font-size:13px;font-weight:700;cursor:pointer;text-align:left;">
@@ -812,6 +820,26 @@ async function tabTopics(el) {
     document.querySelectorAll('#active-tbody tr[data-cat]').forEach(row => {
       row.style.display = (activeCatFilter === 'all' || row.dataset.cat === activeCatFilter) ? '' : 'none';
     });
+  });
+
+  // AI 주제 생성
+  document.getElementById('ai-generate-btn')?.addEventListener('click', async () => {
+    const btn = document.getElementById('ai-generate-btn');
+    const status = document.getElementById('ai-generate-status');
+    btn.disabled = true; btn.textContent = '⏳ 생성 중...';
+    status.textContent = '';
+    try {
+      const fn = httpsCallable(functions, 'adminGenerateTopic');
+      const res = await fn({});
+      status.style.color = '#27ae60';
+      status.textContent = `✅ "${res.data.title}" 등록 완료!`;
+      toast('AI 주제가 등록되었습니다!', 'success');
+      loadTab('topics');
+    } catch(e) {
+      status.style.color = 'var(--red)';
+      status.textContent = '오류: ' + e.message;
+      btn.disabled = false; btn.textContent = '🤖 AI로 주제 생성';
+    }
   });
 
   // 사건 직접 등록 토글

@@ -120,16 +120,16 @@ export async function renderHome(container) {
 
       <div class="battle-cta-wrap">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:360px;margin:0 auto 10px;">
-          <a href="#/topics" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:16px 10px;border-radius:14px;background:linear-gradient(135deg,rgba(231,76,60,0.15),rgba(231,76,60,0.05));border:1.5px solid rgba(231,76,60,0.4);text-decoration:none;color:var(--cream);">
+          <button onclick="window._startMode('debate')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:16px 10px;border-radius:14px;background:linear-gradient(135deg,rgba(231,76,60,0.15),rgba(231,76,60,0.05));border:1.5px solid rgba(231,76,60,0.4);cursor:pointer;color:var(--cream);">
             <span style="font-size:28px;">⚔️</span>
-            <span style="font-size:14px;font-weight:800;color:#e74c3c;">토론배틀</span>
-            <span style="font-size:10px;color:var(--cream-dim);text-align:center;">친구·AI와 맞붙기</span>
-          </a>
-          <a href="#/court" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:16px 10px;border-radius:14px;background:linear-gradient(135deg,rgba(201,168,76,0.15),rgba(201,168,76,0.05));border:1.5px solid rgba(201,168,76,0.4);text-decoration:none;color:var(--cream);">
+            <span style="font-size:14px;font-weight:800;color:#e74c3c;">토론 모드</span>
+            <span style="font-size:10px;color:var(--cream-dim);text-align:center;">A팀 vs B팀</span>
+          </button>
+          <button onclick="window._startMode('court')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:16px 10px;border-radius:14px;background:linear-gradient(135deg,rgba(201,168,76,0.15),rgba(201,168,76,0.05));border:1.5px solid rgba(201,168,76,0.4);cursor:pointer;color:var(--cream);">
             <span style="font-size:28px;">🏛️</span>
-            <span style="font-size:14px;font-weight:800;color:var(--gold);">법정놀이</span>
-            <span style="font-size:10px;color:var(--cream-dim);text-align:center;">내 억울함 판결받기</span>
-          </a>
+            <span style="font-size:14px;font-weight:800;color:var(--gold);">법정 모드</span>
+            <span style="font-size:10px;color:var(--cream-dim);text-align:center;">원고 vs 피고</span>
+          </button>
         </div>
         <a href="#/submit-topic" class="battle-cta-sub">✏️ 주제 직접 등록하기</a>
       </div>
@@ -211,6 +211,11 @@ export async function renderHome(container) {
   setupDemo();
   checkActiveSessionBanner();
 }
+
+window._startMode = (mode) => {
+  try { localStorage.setItem('sosoking_game_mode', mode); } catch {}
+  location.hash = '#/topics';
+};
 
 function setupDemo() {
   const tabsEl = document.getElementById('demo-tabs');

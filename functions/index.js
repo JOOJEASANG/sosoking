@@ -934,6 +934,86 @@ ${judgePersona}
   };
 });
 
+// AI 주제 자동 생성 (관리자 수동 호출)
+exports.adminGenerateTopic = onCall({ region: 'asia-northeast3', secrets: [geminiKey], timeoutSeconds: 60 }, async (request) => {
+  const userId = request.auth?.uid;
+  if (!userId) throw new Error('인증 필요');
+  const adminSnap = await db.doc(`admins/${userId}`).get();
+  if (!adminSnap.exists) throw new Error('관리자 권한 필요');
+
+  const topic = await generateAiTopic(geminiKey.value().trim());
+  const docRef = await db.collection('topics').add({
+    ...topic,
+    status: 'active',
+    isOfficial: true,
+    playCount: 0,
+    createdBy: 'ai',
+    aiGenerated: true,
+    createdAt: FieldValue.serverTimestamp(),
+  });
+  return { ok: true, topicId: docRef.id, title: topic.title };
+});
+
+// AI 주제 자동 생성 — 3일에 한 번 (한국시간 오전 9시)
+exports.generateTopicsPeriodic = onSchedule(
+  { schedule: 'every 72 hours', region: 'asia-northeast3', secrets: [geminiKey], timeoutSeconds: 120 },
+  async () => {
+    try {
+      const topic = await generateAiTopic(geminiKey.value().trim());
+      await db.collection('topics').add({
+        ...topic,
+        status: 'active',
+        isOfficial: true,
+        playCount: 0,
+        createdBy: 'ai',
+        aiGenerated: true,
+        createdAt: FieldValue.serverTimestamp(),
+      });
+      const today = new Date().toISOString().slice(0, 10);
+      await db.doc(`usage_stats/daily_${today}`).set({ aiTopicsGenerated: FieldValue.increment(1) }, { merge: true });
+    } catch {}
+  }
+);
+
+async function generateAiTopic(apiKey) {
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({
+    model: 'gemini-2.5-flash',
+    generationConfig: { thinkingConfig: { thinkingBudget: 0 } },
+  });
+
+  const CATEGORIES = ['음식', '카톡', '연애', '직장', '친구', '생활', '정산'];
+  const cat = CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
+
+  const prompt = `소소킹 토론배틀 서비스용 새 주제를 생성하세요.
+카테고리: ${cat}
+조건: 일상에서 흔히 겪는 소소한 갈등, 양쪽 입장이 모두 공감되는 주제, 재치 있고 유머러스하게.
+
+반드시 아래 JSON만 출력하세요 (마크다운 없이):
+{
+  "title": "주제명 (20자 이내, ~사건 / ~배틀 / ~논쟁 형식)",
+  "summary": "한 줄 요약 (40자 이내)",
+  "plaintiffPosition": "A팀 입장 (50자 이내)",
+  "defendantPosition": "B팀 입장 (50자 이내)",
+  "category": "${cat}"
+}`;
+
+  const result = await model.generateContent(prompt);
+  const rawText = result.response.text().trim().replace(/```json|```/g, '').trim();
+  const parsed = JSON.parse(rawText);
+
+  if (!parsed.title || !parsed.plaintiffPosition || !parsed.defendantPosition) {
+    throw new Error('AI 주제 생성 실패');
+  }
+  return {
+    title: parsed.title.trim().slice(0, 30),
+    summary: (parsed.summary || '').trim().slice(0, 60),
+    plaintiffPosition: parsed.plaintiffPosition.trim().slice(0, 100),
+    defendantPosition: parsed.defendantPosition.trim().slice(0, 100),
+    category: parsed.category || cat,
+  };
+}
+
 exports.deleteMySession = onCall({ region: 'asia-northeast3' }, async (request) => {
   const userId = request.auth?.uid;
   if (!userId) throw new Error('인증 필요');

@@ -10,13 +10,22 @@ export async function renderTopics(container) {
   allCategories = [];
   const gen = ++_renderGen;
 
+  let mode = 'debate';
+  try { mode = localStorage.getItem('sosoking_game_mode') || 'debate'; } catch {}
+  const isCourt = mode === 'court';
+
   container.innerHTML = `
     <div>
       <div class="page-header">
         <a href="#/" class="back-btn">‹</a>
-        <span class="logo">🔥 토론 배틀</span>
+        <span class="logo">${isCourt ? '🏛️ 법정 모드' : '⚔️ 토론 모드'}</span>
       </div>
-      <div class="container" style="padding-top:20px;padding-bottom:80px;">
+      <div class="container" style="padding-top:16px;padding-bottom:80px;">
+        <!-- 모드 전환 -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
+          <button id="btn-mode-debate" class="mode-switch-btn ${!isCourt ? 'active' : ''}" data-mode="debate">⚔️ 토론 모드</button>
+          <button id="btn-mode-court" class="mode-switch-btn ${isCourt ? 'active' : ''}" data-mode="court">🏛️ 법정 모드</button>
+        </div>
         <div class="search-input-wrap">
           <input type="text" id="search-input" class="search-input" placeholder="주제 검색...">
           <span class="search-icon">🔍</span>
@@ -37,6 +46,17 @@ export async function renderTopics(container) {
   document.getElementById('search-input')?.addEventListener('input', function () {
     renderList(this.value.trim());
   });
+
+
+  document.getElementById('btn-mode-debate')?.addEventListener('click', () => {
+    try { localStorage.setItem('sosoking_game_mode', 'debate'); } catch {}
+    renderTopics(container);
+  });
+  document.getElementById('btn-mode-court')?.addEventListener('click', () => {
+    try { localStorage.setItem('sosoking_game_mode', 'court'); } catch {}
+    renderTopics(container);
+  });
+
 
   document.getElementById('topics-list')?.addEventListener('click', async e => {
     const btn = e.target.closest('.vote-btn');
