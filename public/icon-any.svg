@@ -1,12 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <!-- Background: warm coral rounded square -->
+  <!-- Transparent bg — rounded square for "any" purpose -->
   <rect width="512" height="512" rx="96" fill="#E8602C"/>
-  <!-- Subtle gradient overlay -->
-  <radialGradient id="g" cx="50%" cy="30%" r="70%">
-    <stop offset="0%" stop-color="#ff7a4a" stop-opacity="0.5"/>
-    <stop offset="100%" stop-color="#c94a10" stop-opacity="0.3"/>
-  </radialGradient>
-  <rect width="512" height="512" rx="96" fill="url(#g)"/>
 
   <!-- Left speech bubble (A팀) -->
   <rect x="36" y="136" width="188" height="130" rx="34" fill="#fff" opacity="0.95"/>
@@ -20,7 +14,7 @@
   <text x="382" y="212" text-anchor="middle" dominant-baseline="middle"
         font-size="52" fill="#3498db" font-family="'Noto Sans KR',Arial,sans-serif" font-weight="900">B팀</text>
 
-  <!-- VS sword icon center -->
+  <!-- VS fire in center -->
   <text x="256" y="232" text-anchor="middle" dominant-baseline="middle"
         font-size="64" font-family="sans-serif">⚔️</text>
 

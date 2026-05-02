@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Full-bleed background for maskable (no transparent corners) -->
+  <rect width="512" height="512" fill="#E8602C"/>
+  <!-- Subtle gradient overlay -->
+  <radialGradient id="g" cx="50%" cy="30%" r="70%">
+    <stop offset="0%" stop-color="#ff7a4a" stop-opacity="0.5"/>
+    <stop offset="100%" stop-color="#c94a10" stop-opacity="0.3"/>
+  </radialGradient>
+  <rect width="512" height="512" fill="url(#g)"/>
+
+  <!-- Safe zone: center 80% = 52px inset. Elements kept within 52–460 -->
+
+  <!-- Left speech bubble (A팀) -->
+  <rect x="60" y="150" width="162" height="112" rx="28" fill="#fff" opacity="0.95"/>
+  <polygon points="106,262 88,296 120,262" fill="#fff" opacity="0.95"/>
+  <text x="141" y="218" text-anchor="middle" dominant-baseline="middle"
+        font-size="44" fill="#E8602C" font-family="'Noto Sans KR',Arial,sans-serif" font-weight="900">A팀</text>
+
+  <!-- Right speech bubble (B팀) -->
+  <rect x="290" y="150" width="162" height="112" rx="28" fill="#fff" opacity="0.95"/>
+  <polygon points="406,262 424,296 392,262" fill="#fff" opacity="0.95"/>
+  <text x="371" y="218" text-anchor="middle" dominant-baseline="middle"
+        font-size="44" fill="#3498db" font-family="'Noto Sans KR',Arial,sans-serif" font-weight="900">B팀</text>
+
+  <!-- VS icon center -->
+  <text x="256" y="234" text-anchor="middle" dominant-baseline="middle"
+        font-size="56" font-family="sans-serif">⚔️</text>
+
+  <!-- 소소킹 label -->
+  <rect x="96" y="334" width="320" height="76" rx="20" fill="rgba(0,0,0,0.22)"/>
+  <text x="256" y="373" text-anchor="middle" dominant-baseline="middle"
+        font-size="40" fill="#fff" font-family="'Noto Sans KR',Arial,sans-serif" font-weight="900"
+        letter-spacing="2">소소킹</text>
+</svg>
