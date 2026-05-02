@@ -177,24 +177,11 @@ export async function renderTopicDetail(container, topicId) {
   let selectedMode = '';
   let selectedRounds = 5;
   let selectedTeamSize = 1;
+
+  // 저장된 모드로 초기화
   let selectedCourtMode = false;
+  try { selectedCourtMode = (localStorage.getItem('sosoking_game_mode') || 'debate') === 'court'; } catch {}
 
-  inner.querySelectorAll('.battle-format-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      inner.querySelectorAll('.battle-format-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      selectedCourtMode = btn.dataset.format === 'court';
-      inner.querySelector('.side-label-p').textContent = selectedCourtMode ? '원고 (먼저 주장)' : 'A팀 편들기';
-      inner.querySelector('.side-label-d').textContent = selectedCourtMode ? '피고 (반론)' : 'B팀 편들기';
-    });
-  });
-
-  // Initialise court mode from localStorage
-  let storedMode = 'debate';
-  try { storedMode = localStorage.getItem('sosoking_game_mode') || 'debate'; } catch {}
-  let selectedCourtMode = storedMode === 'court';
-
-  // Apply initial format button state
   if (selectedCourtMode) {
     inner.querySelectorAll('.battle-format-btn').forEach(b => b.classList.remove('active'));
     inner.querySelector('[data-format="court"]')?.classList.add('active');
