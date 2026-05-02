@@ -1,13 +1,6 @@
-const CACHE = 'sosoking-v6';
-const SHELL = [
-  '/',
-  '/logo.svg'
-];
+const CACHE = 'sosoking-v7';
 
 self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(SHELL)).catch(() => {})
-  );
   self.skipWaiting();
 });
 
@@ -32,18 +25,13 @@ self.addEventListener('fetch', e => {
     url.hostname.includes('firestore.googleapis.com')
   ) return;
 
-  // 네비게이션 요청 → SPA index.html 서빙 (단, /admin은 제외)
-  if (e.request.mode === 'navigate') {
-    if (url.pathname.startsWith('/admin')) return;
-    e.respondWith(
-      caches.match('/').then(r => r || fetch(e.request))
-    );
-    return;
-  }
-
-  // JS / CSS → 네트워크 우선 (항상 최신 코드 반영, 오프라인 시 캐시 폴백)
-  if (url.origin === self.location.origin &&
-      (url.pathname.endsWith('.js') || url.pathname.endsWith('.css'))) {
+  // 네비게이션 및 JS/CSS → 네트워크 우선 (항상 최신 반영, 오프라인 시 캐시 폴백)
+  if (
+    e.request.mode === 'navigate' ||
+    (url.origin === self.location.origin &&
+     (url.pathname.endsWith('.js') || url.pathname.endsWith('.css')))
+  ) {
+    if (e.request.mode === 'navigate' && url.pathname.startsWith('/admin')) return;
     e.respondWith(
       fetch(e.request).then(res => {
         if (res.ok) {
