@@ -60,16 +60,33 @@ export async function renderTopicDetail(container, topicId) {
       </div>
     </div>
 
+    <!-- 배틀 모드 선택 -->
+    <div class="form-group">
+      <label class="form-label">배틀 형식</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
+        <button id="mode-debate" class="battle-format-btn active" data-format="debate">
+          <span style="font-size:20px;">⚔️</span>
+          <div style="font-size:13px;font-weight:700;color:var(--gold);">토론 배틀</div>
+          <div style="font-size:10px;color:var(--cream-dim);">A팀 vs B팀</div>
+        </button>
+        <button id="mode-court" class="battle-format-btn" data-format="court">
+          <span style="font-size:20px;">🏛️</span>
+          <div style="font-size:13px;font-weight:700;color:var(--gold);">법정 모드</div>
+          <div style="font-size:10px;color:var(--cream-dim);">원고 vs 피고</div>
+        </button>
+      </div>
+    </div>
+
     <div class="form-group">
       <label class="form-label">내 입장 선택</label>
       <div class="side-grid">
         <button class="side-btn" data-side="plaintiff">
           <span class="side-btn-icon">⚔️</span>
-          <div class="side-btn-label">A팀 편들기</div>
+          <div class="side-btn-label side-label-p">A팀 편들기</div>
         </button>
         <button class="side-btn" data-side="defendant">
           <span class="side-btn-icon">🛡️</span>
-          <div class="side-btn-label">B팀 편들기</div>
+          <div class="side-btn-label side-label-d">B팀 편들기</div>
         </button>
       </div>
     </div>
@@ -161,6 +178,30 @@ export async function renderTopicDetail(container, topicId) {
   let selectedRounds = 5;
   let selectedTeamSize = 1;
 
+  // Initialise court mode from localStorage
+  let storedMode = 'debate';
+  try { storedMode = localStorage.getItem('sosoking_game_mode') || 'debate'; } catch {}
+  let selectedCourtMode = storedMode === 'court';
+
+  // Apply initial format button state
+  if (selectedCourtMode) {
+    inner.querySelectorAll('.battle-format-btn').forEach(b => b.classList.remove('active'));
+    inner.querySelector('[data-format="court"]')?.classList.add('active');
+    inner.querySelector('.side-label-p').textContent = '원고 (먼저 주장)';
+    inner.querySelector('.side-label-d').textContent = '피고 (반론)';
+  }
+
+  inner.querySelectorAll('.battle-format-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      inner.querySelectorAll('.battle-format-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedCourtMode = btn.dataset.format === 'court';
+      try { localStorage.setItem('sosoking_game_mode', selectedCourtMode ? 'court' : 'debate'); } catch {}
+      inner.querySelector('.side-label-p').textContent = selectedCourtMode ? '원고 (먼저 주장)' : 'A팀 편들기';
+      inner.querySelector('.side-label-d').textContent = selectedCourtMode ? '피고 (반론)' : 'B팀 편들기';
+    });
+  });
+
   inner.querySelectorAll('.side-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       inner.querySelectorAll('.side-btn').forEach(b => b.classList.remove('active'));
@@ -237,7 +278,7 @@ export async function renderTopicDetail(container, topicId) {
   });
 }
 
-async function handleRandomMatch(topicId, topic, side, maxRounds, teamSize) {
+async function handleRandomMatch(topicId, topic, side, maxRounds, teamSize, courtMode) {
   const queueSnap = await getDoc(doc(db, 'random_queue', topicId));
 
   if (queueSnap.exists() && queueSnap.data().userId !== auth.currentUser?.uid) {
@@ -246,7 +287,7 @@ async function handleRandomMatch(topicId, topic, side, maxRounds, teamSize) {
     location.hash = `#/debate/${res.data.sessionId}`;
   } else {
     const createSessionFn = httpsCallable(functions, 'createSession');
-    const res = await createSessionFn({ topicId, side, mode: 'random', maxRounds, teamSize: teamSize || 1 });
+    const res = await createSessionFn({ topicId, side, mode: 'random', maxRounds, teamSize: teamSize || 1, courtMode: courtMode === true });
     location.hash = `#/debate/${res.data.sessionId}`;
   }
 }

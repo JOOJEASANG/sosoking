@@ -73,7 +73,6 @@ function route() {
 
 window.addEventListener('hashchange', route);
 
-// PWA 설치 프롬프트 캡처
 window._pwaInstall = null;
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
