@@ -19,6 +19,10 @@ export async function renderFooter() {
     biz.address     ? `${biz.address}` : null,
   ].filter(Boolean);
 
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  const isIOS = /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
+  const showInstallBtn = !isStandalone;
+
   footer.innerHTML = `
     <div class="footer-links">
       <a href="#/policy/terms">이용약관</a>
@@ -27,6 +31,14 @@ export async function renderFooter() {
       <a href="#/guide">이용 안내</a>
       <a href="#/feedback">💬 의견 접수</a>
     </div>
+
+    ${showInstallBtn ? `
+    <div style="margin:20px 0 4px;">
+      <button id="footer-pwa-btn" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px;border-radius:12px;border:1.5px solid rgba(201,168,76,0.35);background:rgba(201,168,76,0.07);color:#c9a84c;font-size:14px;font-weight:700;cursor:pointer;">
+        <img src="/icon-192.png" style="width:22px;height:22px;border-radius:5px;" alt="">
+        ${isIOS ? '홈 화면에 추가 (앱 설치)' : '앱으로 설치하기'}
+      </button>
+    </div>` : ''}
 
     <div class="footer-divider"></div>
 
@@ -40,4 +52,10 @@ export async function renderFooter() {
       <a href="/admin" class="footer-admin-link">🔐 관리자</a>
     </div>
   `;
+
+  if (showInstallBtn) {
+    document.getElementById('footer-pwa-btn')?.addEventListener('click', () => {
+      if (typeof window._pwaInstall === 'function') window._pwaInstall();
+    });
+  }
 }
