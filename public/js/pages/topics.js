@@ -1,5 +1,5 @@
 import { db } from '../firebase.js';
-import { collection, query, where, orderBy, getDocs } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { collection, query, where, orderBy, getDocs, doc, updateDoc, increment } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 
 let allTopics = [];
 let allCategories = [];
@@ -36,6 +36,28 @@ export async function renderTopics(container) {
 
   document.getElementById('search-input')?.addEventListener('input', function () {
     renderList(this.value.trim());
+  });
+
+  document.getElementById('topics-list')?.addEventListener('click', async e => {
+    const btn = e.target.closest('.vote-btn');
+    if (!btn) return;
+    e.stopPropagation();
+    const topicId = btn.dataset.topicId;
+    const side = btn.dataset.side;
+    if (!topicId || !side) return;
+    try { if (localStorage.getItem(`sosoking_vote_${topicId}`)) return; } catch {}
+    try { localStorage.setItem(`sosoking_vote_${topicId}`, side); } catch {}
+
+    const topic = allTopics.find(t => t.id === topicId);
+    if (topic) {
+      if (side === 'A') topic.votesA = (topic.votesA || 0) + 1;
+      else topic.votesB = (topic.votesB || 0) + 1;
+      const wrap = btn.closest('[data-vote-wrap]');
+      if (wrap) wrap.outerHTML = voteBarHtml(topic);
+    }
+    try {
+      await updateDoc(doc(db, 'topics', topicId), { [`votes${side}`]: increment(1) });
+    } catch {}
   });
 }
 
@@ -113,6 +135,35 @@ function renderList(search = '', cat = _activeCat) {
         <span>배틀 ${(t.playCount||0).toLocaleString()}회</span>
         ${t.isOfficial ? '<span style="color:var(--gold);font-size:10px;font-weight:700;">공식</span>' : ''}
       </div>
+      ${voteBarHtml(t)}
     </div>
   `).join('');
+}
+
+function voteBarHtml(t) {
+  let myVote = null;
+  try { myVote = localStorage.getItem(`sosoking_vote_${t.id}`); } catch {}
+  const votesA = t.votesA || 0;
+  const votesB = t.votesB || 0;
+  const total = votesA + votesB;
+
+  if (myVote) {
+    const pct = total > 0 ? Math.round((votesA / total) * 100) : 50;
+    return `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
+      <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700;margin-bottom:4px;">
+        <span style="color:#e74c3c;">🔴 A팀 ${pct}%</span>
+        <span style="color:#3498db;">🔵 B팀 ${100 - pct}%</span>
+      </div>
+      <div style="height:7px;border-radius:4px;overflow:hidden;display:flex;background:rgba(255,255,255,0.06);">
+        <div style="width:${pct}%;background:linear-gradient(90deg,#e74c3c,#ff6b6b);border-radius:4px 0 0 4px;"></div>
+        <div style="width:${100 - pct}%;background:linear-gradient(90deg,#3498db,#5dade2);border-radius:0 4px 4px 0;"></div>
+      </div>
+      <div style="text-align:center;font-size:10px;color:var(--cream-dim);margin-top:3px;">${total.toLocaleString()}명 참여</div>
+    </div>`;
+  }
+  return `<div data-vote-wrap style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;" onclick="event.stopPropagation()">
+    <span style="font-size:11px;color:var(--cream-dim);flex-shrink:0;">나는?</span>
+    <button class="vote-btn" data-topic-id="${t.id}" data-side="A" style="flex:1;padding:6px;border-radius:8px;border:1.5px solid rgba(231,76,60,0.5);background:rgba(231,76,60,0.08);color:#e74c3c;font-size:12px;font-weight:700;cursor:pointer;">🔴 A팀</button>
+    <button class="vote-btn" data-topic-id="${t.id}" data-side="B" style="flex:1;padding:6px;border-radius:8px;border:1.5px solid rgba(52,152,219,0.5);background:rgba(52,152,219,0.08);color:#3498db;font-size:12px;font-weight:700;cursor:pointer;">🔵 B팀</button>
+  </div>`;
 }

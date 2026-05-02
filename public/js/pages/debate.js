@@ -1,5 +1,5 @@
 import { db, auth, functions, trackEvent } from '../firebase.js';
-import { doc, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { doc, onSnapshot, updateDoc, increment } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 import { showToast } from '../components/toast.js';
 
@@ -92,6 +92,7 @@ export async function renderDebate(container, sessionId, shareToken) {
       removeInputArea();
     } else if (session.status === 'active' || session.status === 'ready_for_verdict' || session.status === 'verdict_requested') {
       renderActive(session, myRole, sessionId, isSpectator);
+      if (isSpectator) attachSpectatorVote(sessionId, session);
       if (!inputAttached && myRole) { attachInput(sessionId, session, myRole); inputAttached = true; }
       else if (myRole) updateInput(session, myRole);
     } else if (session.status === 'judging') {
@@ -284,10 +285,38 @@ function renderActive(session, myRole, sessionId, isSpectator) {
 
   const rounds = session.rounds || [];
   const judge = session.judgeType ? JUDGE_DEFS[session.judgeType] : null;
-  let html = isSpectator ? `
-    <div style="text-align:center;padding:10px 14px;border-radius:10px;background:rgba(255,255,255,0.03);border:1px solid var(--border);margin-bottom:12px;font-size:12px;color:var(--cream-dim);">
-      👀 관전 모드 · 실시간으로 배틀을 구경하고 있어요
-    </div>` : '';
+  let html = '';
+  if (isSpectator) {
+    const mySpecVote = getSpecVote(sessionId);
+    const sVotesA = session.spectatorVotesA || 0;
+    const sVotesB = session.spectatorVotesB || 0;
+    const sTotal = sVotesA + sVotesB;
+    if (mySpecVote) {
+      const pct = sTotal > 0 ? Math.round((sVotesA / sTotal) * 100) : 50;
+      html += `
+        <div style="padding:14px 16px;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid var(--border);margin-bottom:12px;">
+          <div style="font-size:11px;color:var(--cream-dim);text-align:center;margin-bottom:8px;">🔮 관중 예측 현황 (${sTotal.toLocaleString()}명)</div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:5px;">
+            <span style="color:#e74c3c;">🔴 A팀 ${pct}%</span>
+            <span style="color:#3498db;">🔵 B팀 ${100 - pct}%</span>
+          </div>
+          <div style="height:8px;border-radius:4px;overflow:hidden;display:flex;background:rgba(255,255,255,0.06);">
+            <div style="width:${pct}%;background:linear-gradient(90deg,#e74c3c,#ff6b6b);"></div>
+            <div style="width:${100 - pct}%;background:linear-gradient(90deg,#3498db,#5dade2);"></div>
+          </div>
+          <div style="text-align:center;font-size:10px;color:var(--cream-dim);margin-top:5px;">내 예측: ${mySpecVote === 'A' ? '🔴 A팀' : '🔵 B팀'} 승리</div>
+        </div>`;
+    } else {
+      html += `
+        <div style="padding:14px 16px;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid var(--border);margin-bottom:12px;text-align:center;">
+          <div style="font-size:12px;color:var(--cream-dim);margin-bottom:10px;">🔮 누가 이길 것 같나요?</div>
+          <div style="display:flex;gap:8px;">
+            <button id="spec-vote-a" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid rgba(231,76,60,0.5);background:rgba(231,76,60,0.08);color:#e74c3c;font-size:13px;font-weight:700;cursor:pointer;">🔴 A팀 승리 예측</button>
+            <button id="spec-vote-b" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid rgba(52,152,219,0.5);background:rgba(52,152,219,0.08);color:#3498db;font-size:13px;font-weight:700;cursor:pointer;">🔵 B팀 승리 예측</button>
+          </div>
+        </div>`;
+    }
+  }
 
   if (judge) {
     html += `
@@ -627,10 +656,34 @@ function renderCompleted(session, myRole, isSpectator) {
         <div class="verdict-sentence-label">🎯 미션</div>
         <div class="verdict-sentence-text">${escHtml(parts.sentence)}</div>
       </div>` : ''}
+    ${(() => {
+      const sVotesA = session.spectatorVotesA || 0;
+      const sVotesB = session.spectatorVotesB || 0;
+      const sTotal = sVotesA + sVotesB;
+      if (sTotal >= 2) {
+        const sPct = Math.round((sVotesA / sTotal) * 100);
+        const crowdPicked = sVotesA >= sVotesB ? 'plaintiff' : 'defendant';
+        const crowdRight = crowdPicked === verdict.winner;
+        return `<div style="margin-bottom:16px;padding:12px 16px;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid var(--border);">
+          <div style="font-size:11px;color:var(--cream-dim);margin-bottom:8px;text-align:center;">👥 관중 예측 결과 (${sTotal.toLocaleString()}명)</div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:5px;">
+            <span style="color:#e74c3c;">🔴 A팀 ${sPct}%</span>
+            <span style="color:#3498db;">🔵 B팀 ${100 - sPct}%</span>
+          </div>
+          <div style="height:7px;border-radius:4px;overflow:hidden;display:flex;background:rgba(255,255,255,0.06);">
+            <div style="width:${sPct}%;background:linear-gradient(90deg,#e74c3c,#ff6b6b);"></div>
+            <div style="width:${100 - sPct}%;background:linear-gradient(90deg,#3498db,#5dade2);"></div>
+          </div>
+          <div style="text-align:center;font-size:11px;margin-top:6px;color:${crowdRight ? '#27ae60' : '#e74c3c'};font-weight:700;">${crowdRight ? '✅ 관중 예측 적중!' : '😱 AI 판정이 관중 예측을 뒤집었어요!'}</div>
+        </div>`;
+      }
+      return '';
+    })()}
     <div class="verdict-actions-row">
-      <button id="share-verdict-btn" class="btn btn-secondary">🖼️ 이미지 카드 공유</button>
-      <a href="#/topics" class="btn btn-ghost">🔥 다른 주제 보기</a>
+      <button id="share-text-btn" class="btn btn-secondary">📋 결과 텍스트 공유</button>
+      <button id="share-verdict-btn" class="btn btn-secondary">🖼️ 이미지 카드</button>
     </div>
+    <a href="#/topics" class="btn btn-ghost" style="margin-top:8px;">🔥 다른 주제 보기</a>
   `;
   feed.appendChild(card);
   feed.scrollTop = feed.scrollHeight;
@@ -648,7 +701,7 @@ function renderCompleted(session, myRole, isSpectator) {
   card.querySelector('#share-verdict-btn')?.addEventListener('click', async () => {
     const shareBtn = card.querySelector('#share-verdict-btn');
     shareBtn.disabled = true;
-    shareBtn.textContent = '⏳ 카드 생성 중...';
+    shareBtn.textContent = '⏳ 생성 중...';
     trackEvent('share_card', { winner: verdict.winner || 'draw', mode: session.mode || 'friend' });
     try {
       const canvas = await generateVerdictCard(session);
@@ -657,9 +710,45 @@ function renderCompleted(session, myRole, isSpectator) {
       showToast('공유 실패', 'error');
     } finally {
       shareBtn.disabled = false;
-      shareBtn.textContent = '🖼️ 이미지 카드 공유';
+      shareBtn.textContent = '🖼️ 이미지 카드';
     }
   });
+
+  card.querySelector('#share-text-btn')?.addEventListener('click', async () => {
+    const isDraw = !verdict.winner || verdict.winner === 'draw';
+    const pWin = verdict.winner === 'plaintiff';
+    const winnerLabel = isDraw ? '🤝 무승부' : pWin ? '🔴 A팀 승리' : '🔵 B팀 승리';
+    const pScore = verdict.scores?.plaintiff ?? (pWin ? 60 : isDraw ? 50 : 40);
+    const dScore = 100 - pScore;
+    const parts = parseVerdict(verdict.text || '');
+    const snippet = parts.reason ? parts.reason.slice(0, 60) + (parts.reason.length > 60 ? '...' : '') : '';
+    const link = `${location.origin}/#/debate/${session.id || ''}`;
+    const text = `⚖️ 소소킹 배틀 판정 결과\n\n📋 ${session.topicTitle || '배틀'}\n${winnerLabel} (${pScore}:${dScore})\n\n${snippet ? `"${snippet}"\n\n` : ''}지금 배틀하러 가기 → ${location.origin}`;
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast('복사됐어요! 카톡에 붙여넣기 하세요 💬', 'success');
+    } catch {
+      showToast('복사 실패. 직접 선택해서 복사해주세요', 'error');
+    }
+  });
+}
+
+function getSpecVote(sessionId) {
+  try { return localStorage.getItem(`sosoking_specvote_${sessionId}`); } catch { return null; }
+}
+
+function attachSpectatorVote(sessionId, session) {
+  const castVote = async (side) => {
+    if (getSpecVote(sessionId)) return;
+    try { localStorage.setItem(`sosoking_specvote_${sessionId}`, side); } catch {}
+    try {
+      await updateDoc(doc(db, 'debate_sessions', sessionId), {
+        [`spectatorVotes${side}`]: increment(1),
+      });
+    } catch {}
+  };
+  document.getElementById('spec-vote-a')?.addEventListener('click', () => castVote('A'));
+  document.getElementById('spec-vote-b')?.addEventListener('click', () => castVote('B'));
 }
 
 function parseVerdict(text) {
