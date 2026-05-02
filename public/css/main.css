@@ -1024,3 +1024,6 @@ h1, h2, h3 { font-family: var(--font-serif); line-height: 1.3; }
 .judge-pick-btn { display:flex; flex-direction:column; align-items:center; gap:4px; padding:12px 8px; border-radius:12px; border:1.5px solid var(--border); background:var(--navy-card); cursor:pointer; transition:all 0.2s; text-align:center; width:100%; }
 .judge-pick-btn:hover { border-color:var(--gold); background:var(--gold-dim); }
 .judge-pick-btn.active { border-color:var(--gold); background:var(--gold-dim); box-shadow:0 0 0 2px rgba(201,168,76,0.2); }
+.battle-format-btn { display:flex; flex-direction:column; align-items:center; gap:4px; padding:14px 8px; border-radius:12px; border:1.5px solid var(--border); background:var(--navy-card); cursor:pointer; transition:all 0.2s; text-align:center; width:100%; }
+.battle-format-btn:hover { border-color:var(--gold); background:var(--gold-dim); }
+.battle-format-btn.active { border-color:var(--gold); background:var(--gold-dim); box-shadow:0 0 0 2px rgba(201,168,76,0.25); }

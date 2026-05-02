@@ -88,7 +88,7 @@ async function checkRateLimit(userId, action, maxCount, windowSeconds) {
 
 // 새 토론 세션 생성
 exports.createSession = onCall({ region: 'asia-northeast3', secrets: [geminiKey], timeoutSeconds: 60 }, async (request) => {
-  const { topicId, side, mode, maxRounds: requestedRounds, teamSize: requestedTeamSize } = request.data;
+  const { topicId, side, mode, maxRounds: requestedRounds, teamSize: requestedTeamSize, courtMode } = request.data;
   const userId = request.auth?.uid;
   if (!userId) throw new Error('인증 필요');
   if (!topicId || !side || !mode) throw new Error('필수 항목 누락');
@@ -150,6 +150,7 @@ exports.createSession = onCall({ region: 'asia-northeast3', secrets: [geminiKey]
     plaintiffTeam: side === 'plaintiff' ? [creatorMember] : (mode === 'ai' ? [{ userId: AI_USER_ID, nickname: AI_NICKNAME }] : []),
     defendantTeam: side === 'defendant' ? [creatorMember] : (mode === 'ai' ? [{ userId: AI_USER_ID, nickname: AI_NICKNAME }] : []),
     teamSize,
+    courtMode: courtMode === true,
     status: mode === 'ai' ? 'active' : 'waiting',
     currentRound: 0,
     maxRounds,

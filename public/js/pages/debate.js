@@ -13,6 +13,13 @@ const JUDGE_DEFS = {
   '드립형':     { icon: '🎭',    color: '#27ae60', desc: '진지한 척 드립 치는 유머 심판' },
 };
 
+const cm = (s) => s?.courtMode === true;
+const pLabel = (s) => cm(s) ? '원고' : 'A팀';
+const dLabel = (s) => cm(s) ? '피고' : 'B팀';
+const pIcon  = (s) => cm(s) ? '⚖️' : '🔴';
+const dIcon  = (s) => cm(s) ? '🔵' : '🔵';
+const modeTitle = (s) => cm(s) ? '🏛️ 법정' : '⚔️ 토론배틀';
+
 export async function renderDebate(container, sessionId, shareToken) {
   container.innerHTML = `
     <div id="debate-root">
@@ -140,7 +147,7 @@ function updateTopicBar(session, myRole, isSpectator) {
   if (!el || !session.topicTitle) return;
   if (session.status === 'waiting') { el.innerHTML = ''; return; }
   const roleClass = myRole === 'plaintiff' ? 'plaintiff' : myRole === 'defendant' ? 'defendant' : '';
-  const roleLabel = myRole === 'plaintiff' ? '🔴 A팀' : myRole === 'defendant' ? '🔵 B팀' : isSpectator ? '👀 관전 중' : '';
+  const roleLabel = myRole === 'plaintiff' ? `${pIcon(session)} ${pLabel(session)}` : myRole === 'defendant' ? `${dIcon(session)} ${dLabel(session)}` : isSpectator ? '👀 관전 중' : '';
   const spectatorStyle = isSpectator ? 'background:rgba(255,255,255,0.06);color:var(--cream-dim);' : '';
   el.innerHTML = `<div class="debate-topic-bar-inner">
     <span class="debate-topic-name">📋 ${escHtml(session.topicTitle)}</span>
@@ -311,8 +318,8 @@ function renderActive(session, myRole, sessionId, isSpectator) {
         <div style="padding:14px 16px;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid var(--border);margin-bottom:12px;text-align:center;">
           <div style="font-size:12px;color:var(--cream-dim);margin-bottom:10px;">🔮 누가 이길 것 같나요?</div>
           <div style="display:flex;gap:8px;">
-            <button id="spec-vote-a" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid rgba(231,76,60,0.5);background:rgba(231,76,60,0.08);color:#e74c3c;font-size:13px;font-weight:700;cursor:pointer;">🔴 A팀 승리 예측</button>
-            <button id="spec-vote-b" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid rgba(52,152,219,0.5);background:rgba(52,152,219,0.08);color:#3498db;font-size:13px;font-weight:700;cursor:pointer;">🔵 B팀 승리 예측</button>
+            <button id="spec-vote-a" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid rgba(231,76,60,0.5);background:rgba(231,76,60,0.08);color:#e74c3c;font-size:13px;font-weight:700;cursor:pointer;">${pIcon(session)} ${pLabel(session)} 승리 예측</button>
+            <button id="spec-vote-b" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid rgba(52,152,219,0.5);background:rgba(52,152,219,0.08);color:#3498db;font-size:13px;font-weight:700;cursor:pointer;">${dIcon(session)} ${dLabel(session)} 승리 예측</button>
           </div>
         </div>`;
     }
@@ -321,7 +328,7 @@ function renderActive(session, myRole, sessionId, isSpectator) {
   if (judge) {
     html += `
       <div style="text-align:center;padding:18px 16px 14px;margin-bottom:8px;background:rgba(255,255,255,0.02);border-radius:12px;border:1px solid var(--border);">
-        <div style="font-size:10px;color:var(--cream-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;">이번 배틀 담당 심판</div>
+        <div style="font-size:10px;color:var(--cream-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;">이번 담당 심판</div>
         <div style="font-size:36px;margin-bottom:6px;">${judge.icon}</div>
         <div style="font-size:15px;font-weight:700;color:${judge.color};margin-bottom:3px;">${session.judgeType} 심판</div>
         <div style="font-size:11px;color:var(--cream-dim);">${judge.desc}</div>
@@ -338,15 +345,17 @@ function renderActive(session, myRole, sessionId, isSpectator) {
     const dSubmitted = !!curData.defendant;
     const pIsAi = isAiMode && aiRole === 'plaintiff';
     const dIsAi = isAiMode && aiRole === 'defendant';
-    const pState = pSubmitted ? '✓ 주장 완료' : pIsAi && session.aiGenerating ? '🤖 소소봇 생각 중...' : '✏️ 1️⃣ 주장 작성 중...';
-    const dState = dSubmitted ? '✓ 반박 완료' : dIsAi && session.aiGenerating ? '🤖 소소봇 생각 중...' : pSubmitted ? '✏️ 2️⃣ 반박 작성 중...' : '⏳ A팀 주장 대기';
+    const pActionWord = cm(session) ? '변론' : '주장';
+    const dActionWord = cm(session) ? '반론' : '반박';
+    const pState = pSubmitted ? `✓ ${pActionWord} 완료` : pIsAi && session.aiGenerating ? '🤖 소소봇 생각 중...' : `✏️ 1️⃣ ${pActionWord} 작성 중...`;
+    const dState = dSubmitted ? `✓ ${dActionWord} 완료` : dIsAi && session.aiGenerating ? '🤖 소소봇 생각 중...' : pSubmitted ? `✏️ 2️⃣ ${dActionWord} 작성 중...` : `⏳ ${pLabel(session)} ${pActionWord} 대기`;
     html += `<div class="round-status-row">
       <div class="round-status-chip ${pSubmitted ? 'submitted' : 'waiting'}">
-        <div class="chip-role" style="color:#e74c3c;">🔴 A팀${pIsAi ? ' 🤖' : ' (먼저)'}</div>
+        <div class="chip-role" style="color:#e74c3c;">${pIcon(session)} ${pLabel(session)}${pIsAi ? ' 🤖' : ' (먼저)'}</div>
         <div class="chip-state">${pState}</div>
       </div>
       <div class="round-status-chip ${dSubmitted ? 'submitted' : pSubmitted ? 'waiting' : ''}" ${!pSubmitted && !dSubmitted ? 'style="opacity:0.5;"' : ''}>
-        <div class="chip-role" style="color:#3498db;">🔵 B팀${dIsAi ? ' 🤖' : ' (반박)'}</div>
+        <div class="chip-role" style="color:#3498db;">${dIcon(session)} ${dLabel(session)}${dIsAi ? ' 🤖' : ' (반박)'}</div>
         <div class="chip-state">${dState}</div>
       </div>
     </div>`;
@@ -555,7 +564,7 @@ function renderCompleted(session, myRole, isSpectator) {
     if (judge) {
       historyHtml += `
         <div style="text-align:center;padding:18px 16px 14px;margin-bottom:8px;background:rgba(255,255,255,0.02);border-radius:12px;border:1px solid var(--border);">
-          <div style="font-size:10px;color:var(--cream-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;">이번 배틀 담당 심판</div>
+          <div style="font-size:10px;color:var(--cream-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;">이번 담당 심판</div>
           <div style="font-size:36px;margin-bottom:6px;">${judge.icon}</div>
           <div style="font-size:15px;font-weight:700;color:${judge.color};margin-bottom:3px;">${session.judgeType} 심판</div>
           <div style="font-size:11px;color:var(--cream-dim);">${judge.desc}</div>
@@ -610,7 +619,7 @@ function renderCompleted(session, myRole, isSpectator) {
     ${judge ? `
       <div style="text-align:center;margin-bottom:10px;">
         <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:20px;background:rgba(255,255,255,0.04);border:1px solid var(--border);font-size:12px;color:var(--cream-dim);">
-          ${judge.icon} <span style="color:${judge.color};font-weight:700;">${session.judgeType}</span> 심판 담당
+          ${judge.icon} <span style="color:${judge.color};font-weight:700;">${session.judgeType}</span> ${cm(session) ? '판사' : '심판'} 담당
         </span>
       </div>` : ''}
     <div style="text-align:center;margin-bottom:14px;font-size:11px;color:var(--cream-dim);letter-spacing:.1em;">🏆 최종 판정</div>
@@ -618,8 +627,8 @@ function renderCompleted(session, myRole, isSpectator) {
     <!-- 점수 바 -->
     <div style="margin:0 0 16px;padding:0 2px;">
       <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">
-        <span style="font-size:14px;font-weight:800;color:#e74c3c;">🔴 A팀 ${pScore}점</span>
-        <span style="font-size:14px;font-weight:800;color:#3498db;">🔵 B팀 ${dScore}점</span>
+        <span style="font-size:14px;font-weight:800;color:#e74c3c;">${pIcon(session)} ${pLabel(session)} ${pScore}점</span>
+        <span style="font-size:14px;font-weight:800;color:#3498db;">${dIcon(session)} ${dLabel(session)} ${dScore}점</span>
       </div>
       <div style="height:12px;border-radius:6px;overflow:hidden;display:flex;gap:2px;background:rgba(255,255,255,0.06);">
         <div style="width:${pScore}%;background:linear-gradient(90deg,#e74c3c,#ff6b6b);border-radius:6px 0 0 6px;transition:width 1s ease;"></div>
@@ -629,22 +638,22 @@ function renderCompleted(session, myRole, isSpectator) {
 
     <div class="verdict-sides-row">
       <div class="verdict-side-card ${pClass}">
-        <div class="vs-role-icon">🔴</div>
-        <div class="vs-role-label">A팀</div>
-        <div class="vs-name">${escHtml(session.plaintiff?.nickname || "A팀")}</div>
-        <div class="vs-result">${pResult}</div>
+        <div class="vs-role-icon">${pIcon(session)}</div>
+        <div class="vs-role-label">${pLabel(session)}</div>
+        <div class="vs-name">${escHtml(session.plaintiff?.nickname || pLabel(session))}</div>
+        <div class="vs-result">${cm(session) ? (isDraw ? '🤝 무승부' : pWin ? '🏆 승소' : '😔 패소') : pResult}</div>
         ${myRole === 'plaintiff' ? '<div class="vs-me-badge">나</div>' : ''}
       </div>
-      <div class="vs-divider-col">🔥</div>
+      <div class="vs-divider-col">${cm(session) ? '⚖️' : '🔥'}</div>
       <div class="verdict-side-card ${dClass}">
-        <div class="vs-role-icon">🔵</div>
-        <div class="vs-role-label">B팀</div>
-        <div class="vs-name">${escHtml(session.defendant?.nickname || "B팀")}</div>
-        <div class="vs-result">${dResult}</div>
+        <div class="vs-role-icon">${dIcon(session)}</div>
+        <div class="vs-role-label">${dLabel(session)}</div>
+        <div class="vs-name">${escHtml(session.defendant?.nickname || dLabel(session))}</div>
+        <div class="vs-result">${cm(session) ? (isDraw ? '🤝 무승부' : dWin ? '🏆 승소' : '😔 패소') : dResult}</div>
         ${myRole === 'defendant' ? '<div class="vs-me-badge">나</div>' : ''}
       </div>
     </div>
-    ${isWin ? `<div style="text-align:center;font-size:20px;font-weight:900;color:#27ae60;margin-bottom:14px;animation:fadeUp 0.4s both;">🎉 승리!</div>` : myRole ? `<div style="text-align:center;font-size:18px;font-weight:900;color:var(--red);margin-bottom:14px;animation:fadeUp 0.4s both;">😔 패배</div>` : isSpectator ? `<div style="text-align:center;font-size:12px;color:var(--cream-dim);margin-bottom:14px;">👀 관전한 배틀의 최종 판정 결과입니다</div>` : ''}
+    ${isWin ? `<div style="text-align:center;font-size:20px;font-weight:900;color:#27ae60;margin-bottom:14px;animation:fadeUp 0.4s both;">${cm(session) ? '🏆 승소!' : '🎉 승리!'}</div>` : myRole ? `<div style="text-align:center;font-size:18px;font-weight:900;color:var(--red);margin-bottom:14px;animation:fadeUp 0.4s both;">${cm(session) ? '😔 패소' : '😔 패배'}</div>` : isSpectator ? `<div style="text-align:center;font-size:12px;color:var(--cream-dim);margin-bottom:14px;">👀 관전한 ${cm(session) ? '법정' : '배틀'}의 최종 판정 결과입니다</div>` : ''}
 
     ${parts.reason ? `
       <div style="margin-bottom:8px;">
@@ -715,20 +724,25 @@ function renderCompleted(session, myRole, isSpectator) {
   });
 
   card.querySelector('#share-text-btn')?.addEventListener('click', async () => {
+    const isCourt = cm(session);
     const isDraw = !verdict.winner || verdict.winner === 'draw';
     const pWin = verdict.winner === 'plaintiff';
-    const winnerLabel = isDraw ? '🤝 무승부' : pWin ? '🔴 A팀 승리' : '🔵 B팀 승리';
+    const winnerLabel = isDraw ? '🤝 무승부' : pWin ? `${pIcon(session)} ${pLabel(session)} 승${isCourt ? '소' : '리'}` : `${dIcon(session)} ${dLabel(session)} 승${isCourt ? '소' : '리'}`;
     const pScore = verdict.scores?.plaintiff ?? (pWin ? 60 : isDraw ? 50 : 40);
     const dScore = 100 - pScore;
     const parts = parseVerdict(verdict.text || '');
-    const snippet = parts.reason ? parts.reason.slice(0, 60) + (parts.reason.length > 60 ? '...' : '') : '';
-    const link = `${location.origin}/#/debate/${session.id || ''}`;
-    const text = `⚖️ 소소킹 배틀 판정 결과\n\n📋 ${session.topicTitle || '배틀'}\n${winnerLabel} (${pScore}:${dScore})\n\n${snippet ? `"${snippet}"\n\n` : ''}지금 배틀하러 가기 → ${location.origin}`;
+    const mission = parts.sentence ? `\n🎯 ${isCourt ? '선고' : '미션'}: ${parts.sentence}` : '';
+    const title = `소소킹 ${isCourt ? '법정' : '배틀'} - ${session.topicTitle || ''}`;
+    const text = `${isCourt ? '🏛️ 소소킹 법정 판결' : '⚔️ 소소킹 배틀 판정'}\n\n📋 ${session.topicTitle || ''}\n⚖️ ${winnerLabel} (${pScore}:${dScore})${mission}\n\n${isCourt ? '나도 판결받기' : '배틀 해보기'} → ${location.origin}`;
     try {
-      await navigator.clipboard.writeText(text);
-      showToast('복사됐어요! 카톡에 붙여넣기 하세요 💬', 'success');
-    } catch {
-      showToast('복사 실패. 직접 선택해서 복사해주세요', 'error');
+      if (navigator.share) {
+        await navigator.share({ title, text });
+      } else {
+        await navigator.clipboard.writeText(text);
+        showToast('복사됐어요! 카톡에 붙여넣기 하세요 💬', 'success');
+      }
+    } catch (err) {
+      if (err?.name !== 'AbortError') showToast('공유 실패', 'error');
     }
   });
 }
@@ -1206,10 +1220,13 @@ async function generateVerdictCard(session) {
 async function shareVerdictCard(canvas, session) {
   const isDraw = !session.verdict?.winner || session.verdict?.winner === 'draw';
   const pWin = session.verdict?.winner === 'plaintiff';
-  const verdictLabel = isDraw ? '무승부' : pWin ? 'A팀 승리' : 'B팀 승리';
-  const topicTitle = session.topicTitle || "주제";
-  const shareTitle = `소소킹 토론배틀 - ${topicTitle}`;
-  const shareText = `[소소킹 판정결과]\n📋 주제: ${topicTitle}\n⚖️ 판정: ${verdictLabel}\n\n배틀 해보기 → sosoking.co.kr`;
+  const isCourt = cm(session);
+  const verdictLabel = isDraw ? '무승부' : pWin ? `${pLabel(session)} 승${isCourt ? '소' : '리'}` : `${dLabel(session)} 승${isCourt ? '소' : '리'}`;
+  const topicTitle = session.topicTitle || '주제';
+  const parts = parseVerdict(session.verdict?.text || '');
+  const mission = parts.sentence ? `\n🎯 ${isCourt ? '선고' : '미션'}: ${parts.sentence}` : '';
+  const shareTitle = `소소킹 ${isCourt ? '법정' : '토론배틀'} - ${topicTitle}`;
+  const shareText = `${isCourt ? '🏛️ 소소킹 법정 판결' : '⚔️ 소소킹 배틀 판정'}\n\n📋 ${topicTitle}\n⚖️ ${verdictLabel}${mission}\n\n${isCourt ? '나도 법정놀이 → ' : '배틀 해보기 → '}sosoking.co.kr`;
 
   return new Promise((resolve) => {
     canvas.toBlob(async (blob) => {
@@ -1229,7 +1246,7 @@ async function shareVerdictCard(canvas, session) {
       a.download = 'sosoking-verdict.png';
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 2000);
-      showToast('판정 카드가 저장되었습니다! 📸 갤러리에서 공유하세요', 'success');
+      showToast('카드가 저장됐어요! 📸 갤러리에서 카카오톡·인스타로 공유하세요', 'success');
       resolve();
     }, 'image/png');
   });
