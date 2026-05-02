@@ -5,6 +5,7 @@ import { renderTopics } from './pages/topics.js';
 import { renderTopicDetail } from './pages/topic-detail.js';
 import { renderDebate } from './pages/debate.js';
 import { renderSubmitTopic } from './pages/submit-topic.js';
+import { renderCourt } from './pages/court.js';
 import { renderMyHistory } from './pages/my-history.js';
 import { renderPolicy } from './pages/policy.js';
 import { renderGuide } from './pages/guide.js';
@@ -46,6 +47,9 @@ function route() {
   } else if (hash.startsWith('#/join/')) {
     pageName = 'debate_join';
     renderDebate(content, null, decodeURIComponent(hash.replace('#/join/', '')));
+  } else if (hash === '#/court') {
+    pageName = 'court';
+    renderCourt(content);
   } else if (hash === '#/submit-topic') {
     pageName = 'submit_topic';
     renderSubmitTopic(content);

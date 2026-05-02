@@ -190,22 +190,23 @@ async function tabUsage(el) {
     const d = snaps[i].exists() ? snaps[i].data() : {};
     const gIn = d.geminiInputTokens||0, gOut = d.geminiOutputTokens||0;
     const gReq = d.geminiRequests||0, fw = d.firestoreWrites||0, fr = d.firestoreReads||0;
-    const inv = d.functionInvocations||0, cases = d.caseCount||0;
+    const inv = d.functionInvocations||0, cases = d.caseCount||0, courtCases = d.courtCaseCount||0;
     const cost = (gIn/1e6)*inputPrice + (gOut/1e6)*outputPrice + fw*firestoreWritePrice + fr*firestoreReadPrice + inv*invocationPrice;
-    return { date, cases, gReq, gIn, gOut, fw, fr, inv, cost };
+    return { date, cases, courtCases, gReq, gIn, gOut, fw, fr, inv, cost };
   });
   const total = rows.reduce((a,r)=>({
-    cases:a.cases+r.cases, gReq:a.gReq+r.gReq, gIn:a.gIn+r.gIn, gOut:a.gOut+r.gOut,
+    cases:a.cases+r.cases, courtCases:a.courtCases+r.courtCases, gReq:a.gReq+r.gReq, gIn:a.gIn+r.gIn, gOut:a.gOut+r.gOut,
     fw:a.fw+r.fw, fr:a.fr+r.fr, inv:a.inv+r.inv, cost:a.cost+r.cost
-  }), {cases:0,gReq:0,gIn:0,gOut:0,fw:0,fr:0,inv:0,cost:0});
+  }), {cases:0,courtCases:0,gReq:0,gIn:0,gOut:0,fw:0,fr:0,inv:0,cost:0});
   const today = rows[0];
 
   const card = (label, value, sub='') => `<div class="admin-stat-card"><div class="admin-stat-label">${label}</div><div class="admin-stat-value">${value}</div>${sub?`<div style="font-size:11px;color:var(--cream-dim);margin-top:2px;">${sub}</div>`:''}</div>`;
 
   el.innerHTML = `
-    <div style="margin-bottom:16px;padding:10px 14px;background:rgba(201,168,76,0.08);border-radius:8px;font-size:12px;color:var(--gold);">오늘 · ${today.date} · 사건 ${today.cases}건 · Gemini ${today.gReq}회 호출 · 예상 $${today.cost.toFixed(4)} (₩${Math.round(today.cost*krw).toLocaleString()})</div>
+    <div style="margin-bottom:16px;padding:10px 14px;background:rgba(201,168,76,0.08);border-radius:8px;font-size:12px;color:var(--gold);">오늘 · ${today.date} · 토론 ${today.cases}건 · 법정 ${today.courtCases}건 · Gemini ${today.gReq}회 호출 · 예상 $${today.cost.toFixed(4)} (₩${Math.round(today.cost*krw).toLocaleString()})</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:20px;">
-      ${card('30일 사건', total.cases+'건')}
+      ${card('30일 토론배틀', total.cases+'건')}
+      ${card('30일 법정놀이', total.courtCases+'건', '🏛️')}
       ${card('Gemini 요청', total.gReq.toLocaleString()+'회')}
       ${card('입력 토큰', total.gIn.toLocaleString())}
       ${card('출력 토큰', total.gOut.toLocaleString())}

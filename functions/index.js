@@ -844,6 +844,95 @@ exports.seedTopicsV2 = onRequest({ region: 'asia-northeast3' }, async (req, res)
 });
 
 
+// ─── 법정놀이: 원고 주장 → 피고 반론 + 판사 판결 ─────────────────────────────
+exports.judgeCourt = onCall({ region: 'asia-northeast3', secrets: [geminiKey], timeoutSeconds: 120, memory: '512MiB' }, async (request) => {
+  const { plaintiffStatement, judgeType: reqJudgeType } = request.data;
+  const userId = request.auth?.uid;
+  if (!userId) throw new Error('인증 필요');
+  if (!plaintiffStatement || plaintiffStatement.trim().length < 10) throw new Error('원고 주장을 10자 이상 입력해주세요');
+  if (plaintiffStatement.trim().length > 300) throw new Error('300자 이내로 입력해주세요');
+
+  await checkRateLimit(userId, 'judgeCourt', 5, 86400);
+
+  const judgeType = reqJudgeType && JUDGE_PERSONAS[reqJudgeType]
+    ? reqJudgeType
+    : JUDGE_TYPES[Math.floor(Math.random() * JUDGE_TYPES.length)];
+  const judgePersona = JUDGE_PERSONAS[judgeType];
+  const cn = caseNumber();
+
+  const genAI = new GoogleGenerativeAI(geminiKey.value().trim());
+  const model = genAI.getGenerativeModel({
+    model: 'gemini-2.5-flash',
+    generationConfig: { thinkingConfig: { thinkingBudget: 0 } },
+  });
+
+  const prompt = `당신은 소소킹 법정놀이 AI입니다. 두 역할을 수행하세요.
+
+원고 주장: "${plaintiffStatement.trim()}"
+
+[1단계 - 피고측 변호사]
+원고 주장에 반박하는 피고측 변론을 재치있고 그럴듯하게 작성하세요. (2~3문장, 원고가 "어이없네" 할 만큼 논리적이면서도 재밌게)
+
+[2단계 - ${judgeType} 판사 판결]
+${judgePersona}
+
+원고 주장과 피고 반론을 모두 검토 후 위의 판사 성향으로 판결하세요.
+핵심 원칙: "진지하면 진다" — 재치·공감·유머가 있는 쪽이 이긴다.
+
+반드시 아래 JSON 형식으로만 출력하세요 (마크다운 없이):
+{
+  "defendantRebuttal": "피고측 반론 (2~3문장)",
+  "plaintiffScore": 원고점수_0_100_정수,
+  "defendantScore": 피고점수_0_100_정수,
+  "winner": "plaintiff 또는 defendant 또는 draw",
+  "verdictReason": "판정이유 2문단. 판사 성향이 녹아있는 톤으로.",
+  "mission": "패배측 재밌는 벌칙 한 문장 30자이내"
+}
+오락 목적, 법적 효력 없음.`;
+
+  const result = await model.generateContent(prompt);
+  const rawText = result.response.text().trim().replace(/```json|```/g, '').trim();
+
+  const usage = result.response.usageMetadata;
+  const today = new Date().toISOString().slice(0, 10);
+  db.doc(`usage_stats/daily_${today}`).set({
+    geminiInputTokens: FieldValue.increment(usage?.promptTokenCount || 0),
+    geminiOutputTokens: FieldValue.increment(usage?.candidatesTokenCount || 0),
+    geminiRequests: FieldValue.increment(1),
+    functionInvocations: FieldValue.increment(1),
+    courtCaseCount: FieldValue.increment(1),
+  }, { merge: true }).catch(() => {});
+
+  let parsed;
+  try { parsed = JSON.parse(rawText); }
+  catch { throw new Error('판결 생성에 실패했습니다. 다시 시도해주세요.'); }
+
+  let pScore = Math.min(100, Math.max(0, parseInt(parsed.plaintiffScore) || 50));
+  let dScore = Math.min(100, Math.max(0, parseInt(parsed.defendantScore) || 50));
+  const total = pScore + dScore;
+  if (total !== 100 && total > 0) { pScore = Math.round(pScore / total * 100); dScore = 100 - pScore; }
+  let winner = ['plaintiff', 'defendant', 'draw'].includes(parsed.winner) ? parsed.winner : 'draw';
+
+  const docRef = db.collection('court_cases').doc();
+  await docRef.set({
+    userId,
+    plaintiffStatement: plaintiffStatement.trim(),
+    defendantRebuttal: parsed.defendantRebuttal || '',
+    judgeType,
+    caseNumber: cn,
+    verdict: { winner, scores: { plaintiff: pScore, defendant: dScore }, reason: parsed.verdictReason || '', mission: parsed.mission || '' },
+    createdAt: FieldValue.serverTimestamp(),
+  });
+
+  return {
+    caseId: docRef.id,
+    judgeType,
+    defendantRebuttal: parsed.defendantRebuttal || '',
+    caseNumber: cn,
+    verdict: { winner, scores: { plaintiff: pScore, defendant: dScore }, reason: parsed.verdictReason || '', mission: parsed.mission || '' },
+  };
+});
+
 exports.deleteMySession = onCall({ region: 'asia-northeast3' }, async (request) => {
   const userId = request.auth?.uid;
   if (!userId) throw new Error('인증 필요');
