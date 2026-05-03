@@ -195,8 +195,6 @@ export async function renderHome(container) {
         <a href="#/guide" class="btn btn-ghost" style="margin-top:10px;font-size:14px;">📖 이용 안내 보기</a>
       </div>
 
-      <div id="pwa-install-banner"></div>
-
       <div style="margin-top:24px;padding-bottom:12px;">
         <div class="disclaimer" style="text-align:center;">
           소소킹 토론배틀은 순수 오락 서비스입니다.<br>AI 판정에는 법적 효력이 없으며, 익명으로 운영됩니다.
@@ -207,7 +205,6 @@ export async function renderHome(container) {
 
   loadTodayCase();
   loadPopularTopics();
-  setupInstallBanner();
   setupDemo();
   checkActiveSessionBanner();
 }
@@ -264,36 +261,6 @@ function setupDemo() {
   if (carousel) obs.observe(carousel);
 }
 
-function setupInstallBanner() {
-  const banner = document.getElementById('pwa-install-banner');
-  if (!banner) return;
-
-  function showBanner() {
-    if (!window._pwaInstall) return;
-    banner.innerHTML = `
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;background:linear-gradient(135deg,rgba(201,168,76,0.12),rgba(201,168,76,0.04));border:1.5px solid rgba(201,168,76,0.4);border-radius:14px;margin-bottom:20px;">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <span style="font-size:28px;">📲</span>
-          <div>
-            <div style="font-size:14px;font-weight:700;color:var(--cream);">앱으로 설치하기</div>
-            <div style="font-size:12px;color:var(--cream-dim);margin-top:2px;">홈 화면에 추가하면 더 빠르게 접속</div>
-          </div>
-        </div>
-        <button id="pwa-install-btn" style="flex-shrink:0;padding:10px 16px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--gold),var(--gold-light));color:#0d1117;font-size:14px;font-weight:700;cursor:pointer;">설치</button>
-      </div>`;
-    document.getElementById('pwa-install-btn')?.addEventListener('click', async () => {
-      if (!window._pwaInstall) return;
-      window._pwaInstall.prompt();
-      const { outcome } = await window._pwaInstall.userChoice;
-      if (outcome === 'accepted') banner.innerHTML = '';
-      window._pwaInstall = null;
-    });
-  }
-
-  showBanner();
-  document.addEventListener('pwa-installable', showBanner);
-  document.addEventListener('pwa-installed', () => { banner.innerHTML = ''; });
-}
 
 async function loadTodayCase() {
   const el = document.getElementById('today-section');
