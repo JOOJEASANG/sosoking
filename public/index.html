@@ -204,10 +204,11 @@
         return;
       }
       if (window._pwaPrompt) {
+        const p = window._pwaPrompt;
+        window._pwaPrompt = null; // 항상 즉시 초기화 (소진된 프롬프트 재호출 방지)
         try {
-          await window._pwaPrompt.prompt();
-          const { outcome } = await window._pwaPrompt.userChoice;
-          if (outcome === 'accepted') window._pwaPrompt = null;
+          await p.prompt();
+          await p.userChoice;
         } catch { window._showInstallGuide('android'); }
         return;
       }

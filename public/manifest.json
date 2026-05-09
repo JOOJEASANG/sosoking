@@ -2,9 +2,8 @@
   "name": "소소킹 토론배틀",
   "short_name": "소소킹",
   "description": "친구·AI와 토론하고 7인 랜덤 AI 심판에게 판정받는 엔터테인먼트 앱",
-  "start_url": "/?source=pwa",
+  "start_url": "/",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui"],
   "background_color": "#13111e",
   "theme_color": "#c9a84c",
   "lang": "ko",
@@ -34,29 +33,6 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "/og-image.png",
-      "sizes": "1200x630",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "소소킹 토론배틀"
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "주제 목록",
-      "short_name": "주제",
-      "url": "/#/topics",
-      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
-    },
-    {
-      "name": "주제 등록",
-      "short_name": "등록",
-      "url": "/#/submit-topic",
-      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     }
   ],
   "categories": ["entertainment", "social"]
