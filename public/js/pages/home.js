@@ -15,73 +15,65 @@ export async function renderHome(container) {
   injectLobbyStyle();
 
   container.innerHTML = `
-    <section class="game-lobby-hero">
-      <div class="lobby-bg-glow"></div>
-      <div class="lobby-floating audience-a">👥</div>
-      <div class="lobby-floating audience-b">👀</div>
-      <div class="lobby-floating audience-c">👏</div>
-
-      <div class="lobby-top-ui">
-        <div>
-          <div class="lobby-kicker">SOSOKING VIRTUAL COURT</div>
-          <div class="lobby-logo">⚖️ 소소킹 생활법정</div>
+    <section class="courthouse-hero">
+      <div class="court-sky-light"></div>
+      <div class="court-building">
+        <div class="court-topbar">
+          <div>
+            <div class="court-kicker">SOSOKING CIVIL COURT · ENTERTAINMENT ONLY</div>
+            <div class="court-logo">⚖️ 소소킹 생활법정</div>
+          </div>
+          <button class="court-help-btn" onclick="location.hash='#/guide'">이용 안내</button>
         </div>
-        <button class="lobby-small-btn" onclick="location.hash='#/guide'">도움말</button>
+
+        <div class="court-facade">
+          <div class="court-roof">
+            <span>⚖️</span>
+            <strong>소소킹 생활법정</strong>
+            <small>AI MOCK COURT</small>
+          </div>
+          <div class="court-columns">
+            <i></i><i></i><i></i><i></i>
+          </div>
+          <div class="court-entrance">
+            <div class="court-door" onclick="window._startCourtCase()">
+              <div class="door-sign">대법정 입장</div>
+              <div class="door-line"></div>
+              <div class="door-knob-left"></div>
+              <div class="door-knob-right"></div>
+            </div>
+            <div class="court-clerk-window" onclick="location.hash='#/submit-topic'">
+              <div class="clerk-avatar">🧑‍💼</div>
+              <div class="clerk-title">사건 접수 창구</div>
+              <div class="clerk-sub">억울한 일을 접수하세요</div>
+            </div>
+            <div class="court-notice-board" onclick="window._startCourtCase()">
+              <div class="notice-pin">📋</div>
+              <div class="notice-title">오늘의 사건 게시판</div>
+              <div class="notice-sub">접수된 생활 사건 열람</div>
+            </div>
+          </div>
+          <div class="court-stairs"><b></b><b></b><b></b></div>
+        </div>
+
+        <div class="court-copy">
+          <h1>생활 속 작은 억울함,<br><span>가상 법정에서 판결받자</span></h1>
+          <p>실제 법정 같은 공간에서 원고와 피고가 되어 변론하고,<br>AI 판사가 재치·공감·유머 기준으로 판결합니다.</p>
+        </div>
+
+        <div class="court-actions">
+          <button onclick="window._startCourtCase()" class="court-primary-btn">🏛️ 대법정 입장하기</button>
+          <button onclick="location.hash='#/submit-topic'" class="court-secondary-btn">✏️ 사건 접수하기</button>
+        </div>
+
+        <div class="court-service-row">
+          <div class="court-service-card"><span>👫</span><strong>친구 재판</strong><small>링크로 상대 초대</small></div>
+          <div class="court-service-card"><span>🎲</span><strong>랜덤 배정</strong><small>즉석 매칭</small></div>
+          <div class="court-service-card"><span>🤖</span><strong>AI 상대</strong><small>소소봇과 재판</small></div>
+        </div>
+
+        <div class="court-legal-note">본 서비스는 오락용 모의법정입니다. 실제 법적 효력은 없습니다.</div>
       </div>
-
-      <div class="lobby-stage-card">
-        <div class="lobby-case-board" onclick="window._startCourtCase()">
-          <div class="board-pin">📋</div>
-          <div class="board-title">오늘의 사건 게시판</div>
-          <div class="board-sub">억울한 사건을 고르고 법정에 입장하세요</div>
-          <div class="board-action">사건 보러가기 →</div>
-        </div>
-
-        <div class="lobby-judge-area">
-          <div class="lobby-nameplate">AI 판사석</div>
-          <div class="lobby-avatar lobby-judge"><span>👨‍⚖️</span></div>
-          <div class="lobby-judge-speech">진지하면 질 수 있습니다. 재치 있게 변론하세요.</div>
-        </div>
-
-        <div class="lobby-character lobby-plaintiff">
-          <div class="lobby-desk red"></div>
-          <div class="lobby-avatar player red"><span>🙋</span></div>
-          <div class="lobby-role red">원고</div>
-          <div class="lobby-role-sub">억울함을 변론</div>
-        </div>
-
-        <div class="lobby-character lobby-defendant">
-          <div class="lobby-desk blue"></div>
-          <div class="lobby-avatar player blue"><span>🛡️</span></div>
-          <div class="lobby-role blue">피고</div>
-          <div class="lobby-role-sub">재치 있게 반론</div>
-        </div>
-
-        <div class="lobby-host">
-          <div class="lobby-avatar host"><span>🎙️</span></div>
-          <div class="lobby-role">진행자</div>
-        </div>
-
-        <div class="lobby-floor-seal">⚖️</div>
-      </div>
-
-      <div class="lobby-copy">
-        <h1>소소한 억울함,<br><span>가상 법정에서 판결받자</span></h1>
-        <p>친구와 다툰 일, 애매한 상황, 사소한 논쟁까지<br>원고와 피고 캐릭터가 되어 웃기게 겨루는 AI 재판 게임</p>
-      </div>
-
-      <div class="lobby-actions">
-        <button onclick="window._startCourtCase()" class="lobby-primary-btn">🏛️ 생활법정 입장하기</button>
-        <button onclick="location.hash='#/submit-topic'" class="lobby-secondary-btn">✏️ 내 사건 등록</button>
-      </div>
-
-      <div class="lobby-mode-row">
-        <div class="lobby-mode-card"><span>👫</span><strong>친구 재판</strong><small>링크 초대</small></div>
-        <div class="lobby-mode-card"><span>🎲</span><strong>랜덤 재판</strong><small>즉석 매칭</small></div>
-        <div class="lobby-mode-card"><span>🤖</span><strong>AI 재판</strong><small>소소봇 상대</small></div>
-      </div>
-
-      <p class="lobby-disclaimer">오락 목적 · 실제 법적 효력 없음 · 무료 · 익명 가능</p>
     </section>
 
     <div class="container" style="padding-top:28px;padding-bottom:80px;">
@@ -102,12 +94,12 @@ export async function renderHome(container) {
       </div>
 
       <div style="margin-top:32px;">
-        <div style="font-size:11px;font-weight:900;color:var(--gold);letter-spacing:.08em;margin-bottom:16px;">🎮 게임 진행 방식</div>
+        <div style="font-size:11px;font-weight:900;color:var(--gold);letter-spacing:.08em;margin-bottom:16px;">⚖️ 재판 진행 절차</div>
         <div class="home-feature-grid">
-          <div class="home-feature-item"><span class="home-feature-icon">📋</span><div class="home-feature-label">사건 선택</div><div class="home-feature-desc">공감되는 생활 사건을 고릅니다</div></div>
-          <div class="home-feature-item"><span class="home-feature-icon">🙋</span><div class="home-feature-label">캐릭터 입장</div><div class="home-feature-desc">원고 또는 피고 역할을 선택합니다</div></div>
-          <div class="home-feature-item"><span class="home-feature-icon">💬</span><div class="home-feature-label">변론 진행</div><div class="home-feature-desc">말풍선처럼 변론과 반론을 주고받습니다</div></div>
-          <div class="home-feature-item"><span class="home-feature-icon">🏆</span><div class="home-feature-label">AI 판결</div><div class="home-feature-desc">판사가 점수·이유·미션을 선고합니다</div></div>
+          <div class="home-feature-item"><span class="home-feature-icon">📋</span><div class="home-feature-label">사건 접수</div><div class="home-feature-desc">생활 속 억울한 사건을 고릅니다</div></div>
+          <div class="home-feature-item"><span class="home-feature-icon">🚪</span><div class="home-feature-label">입정</div><div class="home-feature-desc">원고석 또는 피고석으로 들어갑니다</div></div>
+          <div class="home-feature-item"><span class="home-feature-icon">🎙️</span><div class="home-feature-label">변론</div><div class="home-feature-desc">원고 변론과 피고 반론을 진행합니다</div></div>
+          <div class="home-feature-item"><span class="home-feature-icon">🔨</span><div class="home-feature-label">판결 선고</div><div class="home-feature-desc">AI 판사가 판결문과 미션을 선고합니다</div></div>
         </div>
       </div>
 
@@ -236,66 +228,55 @@ function injectLobbyStyle() {
   const style = document.createElement('style');
   style.id = 'game-lobby-style';
   style.textContent = `
-    .game-lobby-hero { position:relative; min-height:100vh; padding:18px 18px 28px; overflow:hidden; background:radial-gradient(ellipse at 50% 0%, rgba(201,168,76,.24), transparent 54%), linear-gradient(180deg,#0b101a 0%, #11182b 50%, #0d1117 100%); display:flex; flex-direction:column; justify-content:center; gap:16px; }
-    [data-theme="light"] .game-lobby-hero { background:radial-gradient(ellipse at 50% 0%, rgba(232,96,44,.22), transparent 55%), linear-gradient(180deg,#fff7ef 0%, #ffe7d6 65%, #fff8f2 100%); }
-    .lobby-bg-glow { position:absolute; inset:-120px -80px auto; height:260px; background:radial-gradient(circle, rgba(201,168,76,.32), transparent 70%); animation:lobbyGlow 4s ease-in-out infinite alternate; pointer-events:none; }
-    .lobby-floating { position:absolute; z-index:1; opacity:.35; font-size:34px; filter:blur(.1px); animation:lobbyFloat 3.2s ease-in-out infinite alternate; }
-    .audience-a { left:14px; top:120px; } .audience-b { right:18px; top:150px; animation-delay:.7s; } .audience-c { right:34px; bottom:210px; animation-delay:1.2s; }
-    .lobby-top-ui { position:relative; z-index:4; display:flex; align-items:flex-start; justify-content:space-between; gap:12px; max-width:720px; width:100%; margin:0 auto; }
-    .lobby-kicker { font-size:10px; font-weight:900; letter-spacing:.14em; color:var(--gold); }
-    .lobby-logo { margin-top:4px; font-family:var(--font-serif); font-size:20px; font-weight:900; color:var(--cream); }
-    .lobby-small-btn { border:1px solid rgba(201,168,76,.32); background:rgba(201,168,76,.08); color:var(--gold); border-radius:999px; padding:8px 12px; font-size:12px; font-weight:900; cursor:pointer; }
-    .lobby-stage-card { position:relative; z-index:3; width:100%; max-width:720px; height:360px; margin:0 auto; border:1.5px solid rgba(201,168,76,.38); border-radius:26px; overflow:hidden; background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.02)); box-shadow:0 22px 58px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.06); }
-    [data-theme="light"] .lobby-stage-card { background:rgba(255,255,255,.64); box-shadow:0 16px 40px rgba(154,112,24,.16); }
-    .lobby-stage-card:before { content:''; position:absolute; left:8%; right:8%; bottom:0; height:48%; background:linear-gradient(180deg, rgba(201,168,76,.12), rgba(201,168,76,.04)); clip-path:polygon(12% 0,88% 0,100% 100%,0 100%); border-radius:22px 22px 0 0; }
-    .lobby-case-board { position:absolute; left:16px; top:18px; width:132px; padding:12px; border-radius:16px; border:1px solid rgba(201,168,76,.32); background:rgba(0,0,0,.22); z-index:5; cursor:pointer; transition:transform .18s ease, border-color .18s ease; }
-    .lobby-case-board:hover { transform:translateY(-2px); border-color:var(--gold); }
-    [data-theme="light"] .lobby-case-board { background:rgba(255,255,255,.8); }
-    .board-pin { font-size:24px; margin-bottom:5px; } .board-title { font-size:12px; font-weight:900; color:var(--cream); line-height:1.3; } .board-sub { margin-top:4px; font-size:10px; color:var(--cream-dim); line-height:1.4; } .board-action { margin-top:8px; font-size:10px; font-weight:900; color:var(--gold); }
-    .lobby-judge-area { position:absolute; left:50%; top:28px; transform:translateX(-50%); width:158px; text-align:center; z-index:4; }
-    .lobby-nameplate { display:inline-flex; padding:3px 10px; border-radius:999px; background:rgba(201,168,76,.12); color:var(--gold); font-size:10px; font-weight:900; margin-bottom:7px; }
-    .lobby-avatar { display:flex; align-items:center; justify-content:center; border-radius:50%; margin:0 auto; border:2px solid rgba(201,168,76,.48); background:linear-gradient(135deg, rgba(255,255,255,.18), rgba(255,255,255,.04)); box-shadow:0 10px 30px rgba(0,0,0,.28); transform-origin:bottom center; }
-    .lobby-avatar span { line-height:1; filter:drop-shadow(0 3px 8px rgba(0,0,0,.25)); }
-    .lobby-judge { width:82px; height:82px; font-size:44px; animation:lobbyJudge 1.2s ease-in-out infinite alternate; }
-    .lobby-judge-speech { position:relative; margin:10px auto 0; max-width:180px; padding:8px 10px; border-radius:14px; background:rgba(0,0,0,.22); border:1px solid rgba(201,168,76,.22); color:var(--cream); font-size:11px; line-height:1.45; }
-    [data-theme="light"] .lobby-judge-speech { background:rgba(255,255,255,.82); }
-    .lobby-character { position:absolute; z-index:4; text-align:center; bottom:30px; }
-    .lobby-plaintiff { left:42px; } .lobby-defendant { right:42px; }
-    .lobby-desk { width:96px; height:25px; margin:0 auto -10px; border-radius:13px 13px 4px 4px; box-shadow:0 8px 20px rgba(0,0,0,.2); }
-    .lobby-desk.red { background:linear-gradient(135deg, rgba(231,76,60,.5), rgba(231,76,60,.16)); border:1px solid rgba(231,76,60,.4); }
-    .lobby-desk.blue { background:linear-gradient(135deg, rgba(52,152,219,.52), rgba(52,152,219,.16)); border:1px solid rgba(52,152,219,.4); }
-    .lobby-avatar.player { width:74px; height:74px; font-size:40px; animation:lobbyTalk 1.1s ease-in-out infinite alternate; }
-    .lobby-avatar.player.blue { animation-delay:.45s; }
-    .lobby-avatar.red { border-color:rgba(231,76,60,.68); background:linear-gradient(135deg, rgba(231,76,60,.28), rgba(231,76,60,.06)); }
-    .lobby-avatar.blue { border-color:rgba(52,152,219,.68); background:linear-gradient(135deg, rgba(52,152,219,.28), rgba(52,152,219,.06)); }
-    .lobby-role { margin-top:6px; font-size:12px; font-weight:900; color:var(--cream); } .lobby-role.red { color:#ff7b74; } .lobby-role.blue { color:#6fb8ff; }
-    .lobby-role-sub { margin-top:1px; font-size:10px; color:var(--cream-dim); font-weight:700; }
-    .lobby-host { position:absolute; left:50%; bottom:78px; transform:translateX(-50%); z-index:5; text-align:center; }
-    .lobby-avatar.host { width:48px; height:48px; font-size:27px; opacity:.94; }
-    .lobby-floor-seal { position:absolute; left:50%; bottom:26px; transform:translateX(-50%); width:82px; height:82px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:40px; opacity:.18; border:2px solid rgba(201,168,76,.38); }
-    .lobby-copy { position:relative; z-index:4; text-align:center; max-width:680px; margin:0 auto; }
-    .lobby-copy h1 { font-family:var(--font-serif); font-size:clamp(30px,8vw,52px); color:var(--cream); font-weight:900; line-height:1.15; letter-spacing:-.04em; margin:0; }
-    .lobby-copy h1 span { color:var(--gold); }
-    .lobby-copy p { margin:12px 0 0; color:var(--cream-dim); font-size:15px; line-height:1.7; }
-    .lobby-actions { position:relative; z-index:4; display:grid; grid-template-columns:1.4fr .9fr; gap:10px; width:100%; max-width:420px; margin:0 auto; }
-    .lobby-primary-btn, .lobby-secondary-btn { border:none; border-radius:16px; padding:16px 14px; font-size:15px; font-weight:900; cursor:pointer; box-shadow:0 8px 24px rgba(0,0,0,.24); }
-    .lobby-primary-btn { background:linear-gradient(135deg,var(--gold),var(--gold-light)); color:#0d1117; }
-    .lobby-secondary-btn { background:rgba(255,255,255,.07); color:var(--cream); border:1px solid rgba(201,168,76,.28); }
-    [data-theme="light"] .lobby-secondary-btn { background:rgba(255,255,255,.75); color:#2A1F14; }
-    .lobby-mode-row { position:relative; z-index:4; display:grid; grid-template-columns:repeat(3,1fr); gap:8px; width:100%; max-width:460px; margin:0 auto; }
-    .lobby-mode-card { padding:10px 8px; border-radius:14px; border:1px solid rgba(201,168,76,.18); background:rgba(255,255,255,.045); text-align:center; }
-    [data-theme="light"] .lobby-mode-card { background:rgba(255,255,255,.62); }
-    .lobby-mode-card span { display:block; font-size:22px; margin-bottom:2px; } .lobby-mode-card strong { display:block; font-size:12px; color:var(--cream); } .lobby-mode-card small { display:block; font-size:10px; color:var(--cream-dim); }
-    .lobby-disclaimer { position:relative; z-index:4; text-align:center; margin:0; font-size:11px; color:var(--cream-dim); }
-    @keyframes lobbyGlow { from { opacity:.45; transform:scale(.95); } to { opacity:1; transform:scale(1.05); } }
-    @keyframes lobbyFloat { from { transform:translateY(0); } to { transform:translateY(-12px); } }
-    @keyframes lobbyJudge { from { transform:translateY(0) rotate(-1deg); } to { transform:translateY(-5px) rotate(1deg); } }
-    @keyframes lobbyTalk { from { transform:translateY(0) scale(1); } to { transform:translateY(-6px) scale(1.03); } }
-    @media (max-width:520px) { .game-lobby-hero { min-height:calc(100vh - 10px); padding:14px 14px 24px; gap:13px; } .lobby-stage-card { height:330px; border-radius:22px; } .lobby-case-board { width:108px; left:10px; top:12px; padding:10px; } .board-sub { display:none; } .lobby-judge-area { top:22px; } .lobby-judge { width:74px; height:74px; font-size:40px; } .lobby-judge-speech { max-width:158px; font-size:10.5px; } .lobby-plaintiff { left:18px; } .lobby-defendant { right:18px; } .lobby-avatar.player { width:64px; height:64px; font-size:34px; } .lobby-desk { width:78px; height:22px; } .lobby-host { bottom:72px; } .lobby-copy p { font-size:13px; } .lobby-actions { grid-template-columns:1fr; max-width:320px; } .lobby-mode-row { max-width:340px; } .lobby-mode-card { padding:8px 4px; } .lobby-mode-card strong { font-size:11px; } }
+    .courthouse-hero { position:relative; min-height:100vh; padding:18px; overflow:hidden; display:flex; align-items:center; justify-content:center; background:radial-gradient(ellipse at 50% 0%, rgba(201,168,76,.24), transparent 52%), linear-gradient(180deg,#09101d 0%, #162036 52%, #0d1117 100%); }
+    [data-theme="light"] .courthouse-hero { background:radial-gradient(ellipse at 50% 0%, rgba(232,96,44,.18), transparent 54%), linear-gradient(180deg,#fff7ef 0%, #ead6c2 58%, #fff8f2 100%); }
+    .court-sky-light { position:absolute; left:50%; top:-160px; width:520px; height:360px; transform:translateX(-50%); background:radial-gradient(circle, rgba(255,232,179,.32), transparent 68%); animation:courtGlow 4s ease-in-out infinite alternate; pointer-events:none; }
+    .court-building { position:relative; z-index:2; width:100%; max-width:760px; display:flex; flex-direction:column; gap:15px; }
+    .court-topbar { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+    .court-kicker { font-size:10px; font-weight:900; letter-spacing:.14em; color:var(--gold); }
+    .court-logo { margin-top:4px; font-family:var(--font-serif); font-size:21px; font-weight:900; color:var(--cream); }
+    .court-help-btn { border:1px solid rgba(201,168,76,.35); background:rgba(201,168,76,.09); color:var(--gold); border-radius:999px; padding:8px 12px; font-size:12px; font-weight:900; cursor:pointer; }
+    .court-facade { position:relative; height:390px; border-radius:28px; overflow:hidden; border:1.5px solid rgba(201,168,76,.4); background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.025)); box-shadow:0 24px 62px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.08); }
+    [data-theme="light"] .court-facade { background:rgba(255,255,255,.66); box-shadow:0 16px 42px rgba(154,112,24,.16); }
+    .court-roof { position:absolute; left:50%; top:18px; transform:translateX(-50%); width:82%; height:82px; clip-path:polygon(50% 0, 100% 100%, 0 100%); background:linear-gradient(180deg, rgba(188,143,76,.82), rgba(103,64,34,.92)); border-bottom:3px solid rgba(255,231,178,.22); display:flex; align-items:center; justify-content:flex-end; flex-direction:column; padding-bottom:9px; color:var(--cream); text-align:center; }
+    .court-roof span { font-size:25px; line-height:1; } .court-roof strong { font-family:var(--font-serif); font-size:17px; font-weight:900; } .court-roof small { font-size:9px; color:rgba(255,238,202,.78); font-weight:900; letter-spacing:.12em; }
+    .court-columns { position:absolute; left:10%; right:10%; top:94px; bottom:86px; display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+    .court-columns i { position:relative; border-radius:10px 10px 4px 4px; background:linear-gradient(90deg, rgba(255,244,218,.12), rgba(126,83,46,.45), rgba(255,244,218,.12)); border:1px solid rgba(255,231,178,.16); box-shadow:inset 0 1px 0 rgba(255,255,255,.13); }
+    .court-columns i:before, .court-columns i:after { content:''; position:absolute; left:-5px; right:-5px; height:12px; border-radius:5px; background:rgba(82,49,28,.72); border:1px solid rgba(255,231,178,.12); }
+    .court-columns i:before { top:-8px; } .court-columns i:after { bottom:-8px; }
+    .court-entrance { position:absolute; left:0; right:0; bottom:74px; top:110px; z-index:3; }
+    .court-door { position:absolute; left:50%; bottom:0; transform:translateX(-50%); width:132px; height:178px; border-radius:16px 16px 4px 4px; background:linear-gradient(90deg, #3f2416, #6f4328 48%, #3f2416 52%, #6f4328); border:2px solid rgba(255,231,178,.22); box-shadow:0 14px 32px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.12); cursor:pointer; transition:transform .18s ease, filter .18s ease; }
+    .court-door:hover { transform:translateX(-50%) translateY(-3px); filter:brightness(1.1); }
+    .door-sign { position:absolute; top:18px; left:16px; right:16px; padding:7px 4px; border-radius:999px; background:rgba(201,168,76,.16); border:1px solid rgba(201,168,76,.32); color:var(--gold); font-size:11px; font-weight:900; text-align:center; }
+    .door-line { position:absolute; left:50%; top:0; bottom:0; width:2px; background:rgba(0,0,0,.25); }
+    .door-knob-left, .door-knob-right { position:absolute; top:94px; width:9px; height:9px; border-radius:50%; background:var(--gold); box-shadow:0 0 10px rgba(201,168,76,.55); }
+    .door-knob-left { left:55px; } .door-knob-right { right:55px; }
+    .court-clerk-window, .court-notice-board { position:absolute; bottom:20px; width:134px; padding:13px 12px; border-radius:16px; border:1.5px solid rgba(201,168,76,.28); background:rgba(0,0,0,.26); box-shadow:0 10px 28px rgba(0,0,0,.22); cursor:pointer; transition:transform .18s ease, border-color .18s ease; }
+    [data-theme="light"] .court-clerk-window, [data-theme="light"] .court-notice-board { background:rgba(255,255,255,.82); }
+    .court-clerk-window:hover, .court-notice-board:hover { transform:translateY(-3px); border-color:var(--gold); }
+    .court-clerk-window { left:18px; } .court-notice-board { right:18px; }
+    .clerk-avatar, .notice-pin { font-size:27px; margin-bottom:5px; } .clerk-title, .notice-title { color:var(--cream); font-size:12px; font-weight:900; line-height:1.35; } .clerk-sub, .notice-sub { margin-top:4px; color:var(--cream-dim); font-size:10px; line-height:1.4; }
+    .court-stairs { position:absolute; left:6%; right:6%; bottom:18px; height:56px; display:flex; flex-direction:column; justify-content:flex-end; gap:5px; }
+    .court-stairs b { display:block; height:13px; border-radius:5px; background:linear-gradient(180deg, rgba(175,119,68,.54), rgba(88,55,33,.72)); border:1px solid rgba(255,231,178,.12); box-shadow:0 6px 14px rgba(0,0,0,.18); }
+    .court-stairs b:nth-child(1) { margin:0 19%; } .court-stairs b:nth-child(2) { margin:0 12%; } .court-stairs b:nth-child(3) { margin:0 5%; }
+    .court-copy { text-align:center; max-width:680px; margin:0 auto; }
+    .court-copy h1 { font-family:var(--font-serif); font-size:clamp(30px,8vw,54px); color:var(--cream); font-weight:900; line-height:1.13; letter-spacing:-.04em; margin:0; } .court-copy h1 span { color:var(--gold); }
+    .court-copy p { margin:12px 0 0; color:var(--cream-dim); font-size:15px; line-height:1.7; }
+    .court-actions { display:grid; grid-template-columns:1.4fr .9fr; gap:10px; width:100%; max-width:430px; margin:0 auto; }
+    .court-primary-btn, .court-secondary-btn { border:none; border-radius:16px; padding:16px 14px; font-size:15px; font-weight:900; cursor:pointer; box-shadow:0 8px 24px rgba(0,0,0,.24); }
+    .court-primary-btn { background:linear-gradient(135deg,var(--gold),var(--gold-light)); color:#0d1117; } .court-secondary-btn { background:rgba(255,255,255,.07); color:var(--cream); border:1px solid rgba(201,168,76,.28); }
+    [data-theme="light"] .court-secondary-btn { background:rgba(255,255,255,.75); color:#2A1F14; }
+    .court-service-row { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; width:100%; max-width:470px; margin:0 auto; }
+    .court-service-card { padding:10px 8px; border-radius:14px; border:1px solid rgba(201,168,76,.18); background:rgba(255,255,255,.045); text-align:center; }
+    [data-theme="light"] .court-service-card { background:rgba(255,255,255,.62); }
+    .court-service-card span { display:block; font-size:22px; margin-bottom:2px; } .court-service-card strong { display:block; font-size:12px; color:var(--cream); } .court-service-card small { display:block; font-size:10px; color:var(--cream-dim); }
+    .court-legal-note { text-align:center; font-size:11px; color:var(--cream-dim); }
+    @keyframes courtGlow { from { opacity:.5; transform:translateX(-50%) scale(.95); } to { opacity:1; transform:translateX(-50%) scale(1.05); } }
+    @media (max-width:520px) { .courthouse-hero { padding:14px; align-items:flex-start; } .court-building { padding-top:6px; gap:13px; } .court-facade { height:350px; border-radius:24px; } .court-roof { width:88%; height:72px; } .court-roof strong { font-size:15px; } .court-columns { left:8%; right:8%; top:84px; bottom:78px; gap:8px; } .court-door { width:108px; height:150px; } .door-knob-left { left:43px; } .door-knob-right { right:43px; } .court-clerk-window, .court-notice-board { width:104px; padding:10px; bottom:18px; } .court-clerk-window { left:10px; } .court-notice-board { right:10px; } .clerk-sub, .notice-sub { display:none; } .court-copy p { font-size:13px; } .court-actions { grid-template-columns:1fr; max-width:320px; } .court-service-row { max-width:340px; } .court-service-card { padding:8px 4px; } .court-service-card strong { font-size:11px; } }
   `;
   document.head.appendChild(style);
 }
 
 function escHtml(s) {
-  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;').replace(/'/g,'&#039;');
 }
