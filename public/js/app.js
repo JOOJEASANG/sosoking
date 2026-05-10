@@ -15,6 +15,7 @@ import { renderJoinTeam } from './pages/join-team.js';
 import { renderFooter } from './components/footer.js';
 import { initTheme } from './components/theme.js';
 import { renderNav } from './components/nav.js';
+import { syncGameCourtroom } from './components/game-courtroom.js';
 
 function route() {
   if (window._pageCleanup) { window._pageCleanup(); window._pageCleanup = null; }
@@ -74,6 +75,7 @@ function route() {
 
   trackEvent('page_view', { page_name: pageName, page_path: hash });
   renderNav();
+  syncGameCourtroom(hash);
 }
 
 window.addEventListener('hashchange', route);
