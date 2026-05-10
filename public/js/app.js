@@ -78,14 +78,29 @@ function route() {
 
 window.addEventListener('hashchange', route);
 
-window._pwaInstall = null;
+// Keep the install event separate from window._pwaInstall.
+// index.html may define window._pwaInstall as the user-facing install handler.
+window._pwaPromptEvent = null;
+if (typeof window._pwaInstall !== 'function') {
+  window._pwaInstall = async () => {
+    const promptEvent = window._pwaPromptEvent;
+    if (!promptEvent) {
+      alert('브라우저 메뉴에서 “홈 화면에 추가” 또는 “앱 설치”를 선택해주세요.');
+      return;
+    }
+    promptEvent.prompt();
+    try { await promptEvent.userChoice; } catch {}
+    window._pwaPromptEvent = null;
+    document.dispatchEvent(new Event('pwa-installed'));
+  };
+}
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
-  window._pwaInstall = e;
+  window._pwaPromptEvent = e;
   document.dispatchEvent(new Event('pwa-installable'));
 });
 window.addEventListener('appinstalled', () => {
-  window._pwaInstall = null;
+  window._pwaPromptEvent = null;
   document.dispatchEvent(new Event('pwa-installed'));
 });
 
