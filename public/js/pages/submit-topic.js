@@ -14,47 +14,47 @@ export async function renderSubmitTopic(container) {
     <div>
       <div class="page-header">
         <a href="#/topics" class="back-btn">‹</a>
-        <span class="logo">✏️ 주제 등록</span>
+        <span class="logo">✏️ 사건 등록</span>
       </div>
       <div class="container" style="padding-top:24px;padding-bottom:80px;">
         <div class="submit-topic-tip">
-          💡 배틀 주제를 등록하면 <strong>바로 공개</strong>됩니다.<br>
-          등록 후 링크를 친구에게 보내 즉시 배틀을 시작하세요!<br>
-          <strong>양쪽 입장이 팽팽해야 좋은 배틀이 됩니다!</strong>
+          💡 생활 속 억울한 일을 <strong>사건</strong>으로 등록하면 바로 공개됩니다.<br>
+          친구에게 링크를 보내 원고·피고로 재판을 시작하세요.<br>
+          <strong>양쪽 입장이 팽팽해야 더 재밌는 판결이 나옵니다!</strong>
         </div>
         <form id="topic-form">
           <div class="form-group">
-            <label class="form-label">배틀 주제명 <span style="color:var(--red)">*</span></label>
-            <input type="text" id="t-title" class="form-input" maxlength="30" placeholder="예: 치킨 마지막 조각 선취 배틀" required>
+            <label class="form-label">사건명 <span style="color:var(--red)">*</span></label>
+            <input type="text" id="t-title" class="form-input" maxlength="30" placeholder="예: 치킨 마지막 조각 선취 사건" required>
             <div class="char-counter"><span id="c-title">0</span>/30</div>
           </div>
           <div class="form-group">
-            <label class="form-label">한 줄 요약 <span style="font-size:11px;color:var(--cream-dim);font-weight:400;">(선택 · 비우면 자동 생성)</span></label>
-            <input type="text" id="t-summary" class="form-input" maxlength="60" placeholder="예: 읽었으면 답해야 한다 vs 내 자유다">
+            <label class="form-label">사건 요약 <span style="font-size:11px;color:var(--cream-dim);font-weight:400;">(선택 · 비우면 자동 생성)</span></label>
+            <input type="text" id="t-summary" class="form-input" maxlength="60" placeholder="예: 먼저 집은 사람이 임자다 vs 나눠 먹어야 한다">
             <div class="char-counter"><span id="c-summary">0</span>/60</div>
           </div>
           <div class="form-group">
-            <label class="form-label">🔴 A팀 주장 <span style="color:var(--red)">*</span></label>
-            <input type="text" id="t-plaintiff" class="form-input" maxlength="100" placeholder="예: 눈치 봐야 한다" required>
+            <label class="form-label">🔴 원고 입장 <span style="color:var(--red)">*</span></label>
+            <input type="text" id="t-plaintiff" class="form-input" maxlength="100" placeholder="예: 마지막 조각은 눈치 보고 나눠야 한다" required>
             <div class="char-counter"><span id="c-plaintiff">0</span>/100</div>
           </div>
           <div class="form-group">
-            <label class="form-label">🔵 B팀 주장 <span style="color:var(--red)">*</span></label>
-            <input type="text" id="t-defendant" class="form-input" maxlength="100" placeholder="예: 먼저 집으면 임자" required>
+            <label class="form-label">🔵 피고 입장 <span style="color:var(--red)">*</span></label>
+            <input type="text" id="t-defendant" class="form-input" maxlength="100" placeholder="예: 먼저 집은 사람이 임자다" required>
             <div class="char-counter"><span id="c-defendant">0</span>/100</div>
           </div>
           <div class="form-group">
             <label class="form-label">카테고리</label>
             <select id="t-category" class="form-input" style="cursor:pointer;">
-              ${categories.map(c => `<option value="${c}">${c}</option>`).join('')}
+              ${categories.map(c => `<option value="${escAttr(c)}">${escHtml(c)}</option>`).join('')}
             </select>
           </div>
           <div class="disclaimer" style="margin-bottom:24px;">
             · 개인정보, 특정인 비방 내용은 등록 불가<br>
-            · 등록 즉시 공개 — 친구에게 링크를 보내 바로 배틀 시작 가능<br>
-            · 양쪽이 다 억울한 주제일수록 좋은 배틀이 됩니다
+            · 등록 즉시 공개 — 친구에게 링크를 보내 바로 재판 시작 가능<br>
+            · 양쪽 모두 나름 억울한 사건일수록 좋은 판결이 나옵니다
           </div>
-          <button type="submit" class="btn btn-primary" id="submit-btn">⚖️ 주제 등록하기</button>
+          <button type="submit" class="btn btn-primary" id="submit-btn">⚖️ 사건 등록하기</button>
         </form>
       </div>
     </div>
@@ -95,7 +95,7 @@ export async function renderSubmitTopic(container) {
     } catch (err) {
       showToast(err.message || '등록 실패', 'error');
       btn.disabled = false;
-      btn.textContent = '⚖️ 주제 등록하기';
+      btn.textContent = '⚖️ 사건 등록하기';
     }
   });
 }
@@ -107,27 +107,27 @@ function showSuccessScreen(container, topicId) {
     <div>
       <div class="page-header">
         <a href="#/topics" class="back-btn">‹</a>
-        <span class="logo">✏️ 주제 등록</span>
+        <span class="logo">✏️ 사건 등록</span>
       </div>
       <div class="container" style="padding-top:56px;padding-bottom:80px;text-align:center;">
         <div style="font-size:72px;line-height:1;margin-bottom:20px;animation:gavelDrop 0.6s cubic-bezier(0.34,1.56,0.64,1) both;">⚖️</div>
-        <h2 style="font-family:var(--font-serif);font-size:24px;font-weight:700;color:var(--gold);margin-bottom:10px;">주제 등록 완료!</h2>
+        <h2 style="font-family:var(--font-serif);font-size:24px;font-weight:700;color:var(--gold);margin-bottom:10px;">사건 등록 완료!</h2>
         <p style="font-size:14px;color:var(--cream-dim);line-height:1.8;margin-bottom:36px;">
           지금 바로 공개됐습니다.<br>
-          친구에게 링크를 보내고 배틀을 시작하세요!
+          친구에게 링크를 보내고 재판을 시작하세요!
         </p>
 
         ${topicId ? `
           <div style="display:flex;flex-direction:column;gap:12px;max-width:320px;margin:0 auto 28px;">
-            <a href="#/topic/${topicId}" class="btn btn-primary" style="font-size:16px;">🔥 배틀 바로 시작하기</a>
+            <a href="#/topic/${topicId}" class="btn btn-primary" style="font-size:16px;">🔥 재판 바로 시작하기</a>
             <button id="copy-link-btn" class="btn btn-secondary">🔗 링크 복사해서 친구에게 보내기</button>
           </div>
           <div id="link-box" style="display:none;background:rgba(255,255,255,0.04);border:1.5px dashed rgba(201,168,76,0.4);border-radius:10px;padding:12px 16px;margin:0 auto 20px;max-width:320px;word-break:break-all;font-size:12px;color:var(--cream-dim);font-family:monospace;">${link}</div>
           <button id="new-topic-btn" style="background:none;border:none;color:var(--cream-dim);font-size:13px;cursor:pointer;text-decoration:underline;padding:4px;">
-            + 다른 주제도 등록하기
+            + 다른 사건도 등록하기
           </button>
         ` : `
-          <a href="#/topics" class="btn btn-secondary" style="max-width:240px;margin:0 auto;">주제 목록 보기</a>
+          <a href="#/topics" class="btn btn-secondary" style="max-width:240px;margin:0 auto;">사건 목록 보기</a>
         `}
       </div>
     </div>
@@ -138,7 +138,7 @@ function showSuccessScreen(container, topicId) {
   document.getElementById('copy-link-btn')?.addEventListener('click', async () => {
     try {
       await navigator.clipboard.writeText(link);
-      showToast('링크가 복사되었습니다! 친구에게 보내세요 😊', 'success');
+      showToast('링크가 복사되었습니다! 친구에게 보내세요', 'success');
       document.getElementById('link-box').style.display = 'block';
     } catch {
       document.getElementById('link-box').style.display = 'block';
@@ -150,3 +150,8 @@ function showSuccessScreen(container, topicId) {
     renderSubmitTopic(container);
   });
 }
+
+function escHtml(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+}
+function escAttr(s) { return escHtml(s); }
