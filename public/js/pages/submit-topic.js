@@ -3,6 +3,65 @@ import { collection, getDocs, query, orderBy } from 'https://www.gstatic.com/fir
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 import { showToast } from '../components/toast.js';
 
+const CASE_SUGGESTIONS = [
+  {
+    title: '카톡 읽씹 무죄 사건',
+    summary: '읽었으면 바로 답해야 한다 vs 답장은 마음의 준비가 필요하다',
+    plaintiffPosition: '읽었으면 바로 답장하는 게 기본 예의입니다',
+    defendantPosition: '읽었다고 바로 답할 의무까지 생기는 건 아닙니다',
+    category: '카톡',
+  },
+  {
+    title: '치킨 마지막 조각 선취 사건',
+    summary: '마지막 조각은 나눠야 한다 vs 먼저 집은 사람이 임자다',
+    plaintiffPosition: '마지막 조각은 눈치 보고 공평하게 나눠야 합니다',
+    defendantPosition: '먹고 싶으면 먼저 집었어야 합니다',
+    category: '음식',
+  },
+  {
+    title: '더치페이 100원 단위 정산 사건',
+    summary: '100원까지 정산해야 한다 vs 그 정도는 넘어가야 한다',
+    plaintiffPosition: '금액이 작아도 정확한 정산이 깔끔합니다',
+    defendantPosition: '100원 단위까지 따지면 인간미가 없습니다',
+    category: '정산',
+  },
+  {
+    title: '약속 시간 5분 지각 유죄 사건',
+    summary: '5분도 지각이다 vs 5분은 인간적으로 봐줘야 한다',
+    plaintiffPosition: '5분이라도 늦었으면 명백한 지각입니다',
+    defendantPosition: '5분은 생활 오차 범위 안에 들어갑니다',
+    category: '친구',
+  },
+  {
+    title: '냉장고 음료 무단 개봉 사건',
+    summary: '남의 음료를 마시면 안 된다 vs 집 냉장고는 공유 구역이다',
+    plaintiffPosition: '이름이 없더라도 남이 산 음료는 허락받아야 합니다',
+    defendantPosition: '공용 냉장고에 있으면 어느 정도 공유로 봐야 합니다',
+    category: '생활',
+  },
+  {
+    title: '데이트 메뉴 결정 회피 사건',
+    summary: '아무거나라고 해놓고 불평하면 안 된다 vs 진짜 아무거나는 아니다',
+    plaintiffPosition: '아무거나라고 했으면 선택 결과를 받아들여야 합니다',
+    defendantPosition: '아무거나에도 최소한의 상식과 분위기는 필요합니다',
+    category: '연애',
+  },
+  {
+    title: '단톡방 공지 미확인 사건',
+    summary: '공지 안 읽은 사람이 잘못이다 vs 중요한 건 따로 말해줘야 한다',
+    plaintiffPosition: '공지로 올렸으면 확인 책임은 각자에게 있습니다',
+    defendantPosition: '정말 중요한 일이라면 직접 한 번 더 알려줘야 합니다',
+    category: '카톡',
+  },
+  {
+    title: '사무실 에어컨 온도 전쟁 사건',
+    summary: '추운 사람이 맞춰야 한다 vs 더운 사람이 더 힘들다',
+    plaintiffPosition: '추운 사람은 겉옷을 입을 수 있으니 온도를 낮춰야 합니다',
+    defendantPosition: '사무실이 냉장고도 아닌데 너무 낮추면 안 됩니다',
+    category: '직장',
+  },
+];
+
 export async function renderSubmitTopic(container) {
   let categories = [];
   try {
@@ -21,6 +80,15 @@ export async function renderSubmitTopic(container) {
           💡 생활 속 억울한 일을 <strong>사건</strong>으로 등록하면 바로 공개됩니다.<br>
           친구에게 링크를 보내 원고·피고로 재판을 시작하세요.<br>
           <strong>양쪽 입장이 팽팽해야 더 재밌는 판결이 나옵니다!</strong>
+        </div>
+        <div style="margin-bottom:18px;padding:14px 16px;border:1.5px solid rgba(201,168,76,0.28);border-radius:14px;background:linear-gradient(135deg,rgba(201,168,76,0.10),rgba(255,255,255,0.03));">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+            <div>
+              <div style="font-size:12px;font-weight:900;color:var(--gold);letter-spacing:.06em;margin-bottom:3px;">🤖 자동 사건 추천</div>
+              <div style="font-size:12px;color:var(--cream-dim);line-height:1.5;">토론 주제가 아니라 생활법정용 사건 형식으로 채워집니다.</div>
+            </div>
+            <button type="button" id="auto-case-btn" style="flex-shrink:0;border:none;border-radius:12px;padding:11px 13px;background:var(--gold);color:#0d1117;font-size:12px;font-weight:900;cursor:pointer;">추천 받기</button>
+          </div>
         </div>
         <form id="topic-form">
           <div class="form-group">
@@ -72,6 +140,13 @@ export async function renderSubmitTopic(container) {
     });
   });
 
+  document.getElementById('auto-case-btn')?.addEventListener('click', () => {
+    const item = CASE_SUGGESTIONS[Math.floor(Math.random() * CASE_SUGGESTIONS.length)];
+    fillCaseSuggestion(item, categories);
+    trackEvent('auto_case_suggestion', { category: item.category });
+    showToast('생활법정 사건 형식으로 자동 추천했습니다', 'success');
+  });
+
   document.getElementById('topic-form')?.addEventListener('submit', async e => {
     e.preventDefault();
     const btn = document.getElementById('submit-btn');
@@ -98,6 +173,23 @@ export async function renderSubmitTopic(container) {
       btn.textContent = '⚖️ 사건 등록하기';
     }
   });
+}
+
+function fillCaseSuggestion(item, categories) {
+  const set = (id, value) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.value = value;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+  set('t-title', item.title);
+  set('t-summary', item.summary);
+  set('t-plaintiff', item.plaintiffPosition);
+  set('t-defendant', item.defendantPosition);
+  const select = document.getElementById('t-category');
+  if (select) {
+    select.value = categories.includes(item.category) ? item.category : (categories[0] || '생활');
+  }
 }
 
 function showSuccessScreen(container, topicId) {
