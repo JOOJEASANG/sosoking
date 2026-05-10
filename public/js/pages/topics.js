@@ -4,30 +4,27 @@ import { collection, query, where, orderBy, getDocs, doc, updateDoc, increment }
 let allTopics = [];
 let allCategories = [];
 let _renderGen = 0;
+let _activeCat = '';
 
 export async function renderTopics(container) {
   allTopics = [];
   allCategories = [];
   const gen = ++_renderGen;
-
-  let mode = 'debate';
-  try { mode = localStorage.getItem('sosoking_game_mode') || 'debate'; } catch {}
-  const isCourt = mode === 'court';
+  try { localStorage.setItem('sosoking_game_mode', 'court'); } catch {}
 
   container.innerHTML = `
     <div>
       <div class="page-header">
         <a href="#/" class="back-btn">‹</a>
-        <span class="logo">${isCourt ? '🏛️ 법정 모드' : '⚔️ 토론 모드'}</span>
+        <span class="logo">🏛️ 사건 목록</span>
       </div>
       <div class="container" style="padding-top:16px;padding-bottom:80px;">
-        <!-- 모드 전환 -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
-          <button id="btn-mode-debate" class="mode-switch-btn ${!isCourt ? 'active' : ''}" data-mode="debate">⚔️ 토론 모드</button>
-          <button id="btn-mode-court" class="mode-switch-btn ${isCourt ? 'active' : ''}" data-mode="court">🏛️ 법정 모드</button>
+        <div class="submit-topic-tip" style="margin-bottom:16px;">
+          📋 공감되는 사건을 고르고 <strong>원고</strong> 또는 <strong>피고</strong> 입장에서 재판을 시작하세요.<br>
+          모든 사건은 AI 판사가 재미로 판결합니다.
         </div>
         <div class="search-input-wrap">
-          <input type="text" id="search-input" class="search-input" placeholder="주제 검색...">
+          <input type="text" id="search-input" class="search-input" placeholder="사건 검색...">
           <span class="search-icon">🔍</span>
         </div>
         <div class="cat-filter" id="cat-filter" style="margin-bottom:20px;"></div>
@@ -46,17 +43,6 @@ export async function renderTopics(container) {
   document.getElementById('search-input')?.addEventListener('input', function () {
     renderList(this.value.trim());
   });
-
-
-  document.getElementById('btn-mode-debate')?.addEventListener('click', () => {
-    try { localStorage.setItem('sosoking_game_mode', 'debate'); } catch {}
-    renderTopics(container);
-  });
-  document.getElementById('btn-mode-court')?.addEventListener('click', () => {
-    try { localStorage.setItem('sosoking_game_mode', 'court'); } catch {}
-    renderTopics(container);
-  });
-
 
   document.getElementById('topics-list')?.addEventListener('click', async e => {
     const btn = e.target.closest('.vote-btn');
@@ -107,7 +93,7 @@ function renderFilter() {
   if (!el) return;
   el.innerHTML = '<button class="cat-pill active" data-cat="">전체</button>' +
     allCategories.map(c =>
-      `<button class="cat-pill" data-cat="${c.name}">${c.icon || ''} ${c.name}</button>`
+      `<button class="cat-pill" data-cat="${escAttr(c.name)}">${escHtml(c.icon || '')} ${escHtml(c.name)}</button>`
     ).join('');
   el.addEventListener('click', e => {
     const pill = e.target.closest('.cat-pill');
@@ -119,7 +105,6 @@ function renderFilter() {
   });
 }
 
-let _activeCat = '';
 function renderList(search = '', cat = _activeCat) {
   _activeCat = cat;
   const el = document.getElementById('topics-list');
@@ -139,20 +124,20 @@ function renderList(search = '', cat = _activeCat) {
   if (!list.length) {
     el.innerHTML = `<div class="empty-state">
       <span class="empty-state-icon">🔍</span>
-      <div class="empty-state-title">${allTopics.length ? '검색 결과가 없습니다' : '아직 등록된 주제가 없습니다'}</div>
-      <div class="empty-state-sub">다른 검색어를 입력하거나<br>직접 주제를 등록해보세요</div>
-      <a href="#/submit-topic" class="btn btn-secondary" style="margin-top:20px;max-width:200px;display:flex;margin-left:auto;margin-right:auto;">주제 등록하기</a>
+      <div class="empty-state-title">${allTopics.length ? '검색 결과가 없습니다' : '아직 등록된 사건이 없습니다'}</div>
+      <div class="empty-state-sub">다른 검색어를 입력하거나<br>직접 사건을 등록해보세요</div>
+      <a href="#/submit-topic" class="btn btn-secondary" style="margin-top:20px;max-width:200px;display:flex;margin-left:auto;margin-right:auto;">사건 등록하기</a>
     </div>`;
     return;
   }
 
   el.innerHTML = list.map(t => `
-    <div class="topic-card" onclick="location.hash='#/topic/${t.id}'" style="margin-bottom:10px;">
-      <div class="topic-card-title">${t.title}</div>
-      <div class="topic-card-summary">${t.summary}</div>
+    <div class="topic-card" onclick="location.hash='#/topic/${encodeURIComponent(t.id)}'" style="margin-bottom:10px;">
+      <div class="topic-card-title">${escHtml(t.title)}</div>
+      <div class="topic-card-summary">${escHtml(t.summary)}</div>
       <div class="topic-card-footer">
-        <span class="topic-card-cat">${t.category || '생활'}</span>
-        <span>배틀 ${(t.playCount||0).toLocaleString()}회</span>
+        <span class="topic-card-cat">${escHtml(t.category || '생활')}</span>
+        <span>재판 ${(t.playCount||0).toLocaleString()}회</span>
         ${t.isOfficial ? '<span style="color:var(--gold);font-size:10px;font-weight:700;">공식</span>' : ''}
       </div>
       ${voteBarHtml(t)}
@@ -171,8 +156,8 @@ function voteBarHtml(t) {
     const pct = total > 0 ? Math.round((votesA / total) * 100) : 50;
     return `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
       <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700;margin-bottom:4px;">
-        <span style="color:#e74c3c;">🔴 A팀 ${pct}%</span>
-        <span style="color:#3498db;">🔵 B팀 ${100 - pct}%</span>
+        <span style="color:#e74c3c;">🔴 원고 ${pct}%</span>
+        <span style="color:#3498db;">🔵 피고 ${100 - pct}%</span>
       </div>
       <div style="height:7px;border-radius:4px;overflow:hidden;display:flex;background:rgba(255,255,255,0.06);">
         <div style="width:${pct}%;background:linear-gradient(90deg,#e74c3c,#ff6b6b);border-radius:4px 0 0 4px;"></div>
@@ -183,7 +168,13 @@ function voteBarHtml(t) {
   }
   return `<div data-vote-wrap style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;" onclick="event.stopPropagation()">
     <span style="font-size:11px;color:var(--cream-dim);flex-shrink:0;">나는?</span>
-    <button class="vote-btn" data-topic-id="${t.id}" data-side="A" style="flex:1;padding:6px;border-radius:8px;border:1.5px solid rgba(231,76,60,0.5);background:rgba(231,76,60,0.08);color:#e74c3c;font-size:12px;font-weight:700;cursor:pointer;">🔴 A팀</button>
-    <button class="vote-btn" data-topic-id="${t.id}" data-side="B" style="flex:1;padding:6px;border-radius:8px;border:1.5px solid rgba(52,152,219,0.5);background:rgba(52,152,219,0.08);color:#3498db;font-size:12px;font-weight:700;cursor:pointer;">🔵 B팀</button>
+    <button class="vote-btn" data-topic-id="${escAttr(t.id)}" data-side="A" style="flex:1;padding:6px;border-radius:8px;border:1.5px solid rgba(231,76,60,0.5);background:rgba(231,76,60,0.08);color:#e74c3c;font-size:12px;font-weight:700;cursor:pointer;">🔴 원고</button>
+    <button class="vote-btn" data-topic-id="${escAttr(t.id)}" data-side="B" style="flex:1;padding:6px;border-radius:8px;border:1.5px solid rgba(52,152,219,0.5);background:rgba(52,152,219,0.08);color:#3498db;font-size:12px;font-weight:700;cursor:pointer;">🔵 피고</button>
   </div>`;
 }
+
+function escHtml(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+}
+
+function escAttr(s) { return escHtml(s); }
