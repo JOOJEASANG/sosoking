@@ -73,7 +73,7 @@ function renderLoadingStage() {
     <div class="vc-stage vc-stage-loading">
       <div class="vc-loading-gavel">⚖️</div>
       <div class="vc-loading-title">가상 법정 입장 중...</div>
-      <div class="vc-loading-sub">판사와 양측 캐릭터를 불러오고 있습니다</div>
+      <div class="vc-loading-sub">판사석·원고석·피고석을 준비하고 있습니다</div>
     </div>`;
 }
 
@@ -106,34 +106,51 @@ function renderStage(session) {
 
   return `
     <div class="vc-stage ${state.stageClass}">
-      <div class="vc-sky-glow"></div>
+      <div class="vc-ceiling-light"></div>
       <div class="vc-titlebar">
         <div>
-          <div class="vc-kicker">2D 가상 법정 · Beta</div>
+          <div class="vc-kicker">LIVE MOCK COURT · 오락용 모의법정</div>
           <div class="vc-case-title">${escHtml(session.topicTitle || '생활 사건')}</div>
         </div>
         <div class="vc-status-chip">${escHtml(state.label)}</div>
       </div>
 
       <div class="vc-courtroom">
-        <div class="vc-audience vc-audience-left">👥 👀 👥</div>
-        <div class="vc-audience vc-audience-right">👥 😮 👥</div>
+        <div class="vc-back-wall">
+          <div class="vc-court-emblem">⚖️</div>
+          <div class="vc-wall-title">소소킹 생활법정</div>
+          <div class="vc-wall-subtitle">실제 법적 효력 없음</div>
+        </div>
+
+        <div class="vc-gallery vc-gallery-left">
+          <span>방청석</span><b>👥 👀 👥</b><b>👥 😮 👥</b>
+        </div>
+        <div class="vc-gallery vc-gallery-right">
+          <span>방청석</span><b>👥 👏 👥</b><b>👥 🤔 👥</b>
+        </div>
 
         <div class="vc-judge-bench">
-          <div class="vc-nameplate">${escHtml(session.judgeType || 'AI 판사')}</div>
-          <div class="vc-avatar vc-judge ${state.judgeActive ? 'is-talking' : ''}">
-            <span>${judge.icon}</span>
+          <div class="vc-bench-top">
+            <div class="vc-nameplate">${escHtml(session.judgeType || 'AI 판사')}</div>
+            <div class="vc-avatar vc-judge ${state.judgeActive ? 'is-talking' : ''}"><span>${judge.icon}</span></div>
+            <div class="vc-judge-mood">${escHtml(judge.mood)}</div>
           </div>
-          <div class="vc-judge-mood">${escHtml(judge.mood)}</div>
+          <div class="vc-bench-base"><span>판사석</span></div>
+        </div>
+
+        <div class="vc-witness-stand">
+          <div class="vc-witness-rail"></div>
+          <div class="vc-witness-label">증언대</div>
+          <div class="vc-witness-mic">🎙️</div>
         </div>
 
         <div class="vc-character vc-host">
-          <div class="vc-avatar vc-mini ${state.hostActive ? 'is-talking' : ''}"><span>🎙️</span></div>
-          <div class="vc-char-label">진행자</div>
+          <div class="vc-avatar vc-mini ${state.hostActive ? 'is-talking' : ''}"><span>🧑‍💼</span></div>
+          <div class="vc-char-label">서기</div>
         </div>
 
         <div class="vc-character vc-plaintiff ${state.speaker === 'plaintiff' ? 'is-active-side' : ''}">
-          <div class="vc-desk vc-desk-red"></div>
+          <div class="vc-desk vc-desk-red"><span>원고석</span></div>
           <div class="vc-avatar vc-player vc-red ${state.speaker === 'plaintiff' ? 'is-talking' : ''}"><span>${pickAvatar(pName, 'plaintiff')}</span></div>
           <div class="vc-char-label red">원고</div>
           <div class="vc-char-name">${escHtml(pName)}</div>
@@ -141,13 +158,14 @@ function renderStage(session) {
         </div>
 
         <div class="vc-character vc-defendant ${state.speaker === 'defendant' ? 'is-active-side' : ''}">
-          <div class="vc-desk vc-desk-blue"></div>
+          <div class="vc-desk vc-desk-blue"><span>피고석</span></div>
           <div class="vc-avatar vc-player vc-blue ${state.speaker === 'defendant' ? 'is-talking' : ''}"><span>${pickAvatar(dName, 'defendant')}</span></div>
           <div class="vc-char-label blue">피고</div>
           <div class="vc-char-name">${escHtml(dName)}</div>
           <div class="vc-team-count">팀원 ${dTeam}/${session.teamSize || 1}</div>
         </div>
 
+        <div class="vc-aisle"></div>
         <div class="vc-floor-seal">⚖️</div>
       </div>
 
@@ -176,7 +194,7 @@ function getCourtState(session) {
       label: '상대 입장 대기',
       stageClass: 'is-waiting',
       speaker: 'host',
-      speakerLabel: '진행자',
+      speakerLabel: '법정 서기',
       hostActive: true,
       line: '상대가 입장하면 재판이 시작됩니다. 초대 링크를 보내보세요.',
     };
@@ -244,7 +262,7 @@ function getCourtState(session) {
     label: '다음 라운드 준비',
     stageClass: 'is-active',
     speaker: 'host',
-    speakerLabel: '진행자',
+    speakerLabel: '법정 서기',
     hostActive: true,
     line: '다음 라운드로 넘어갑니다. 양측은 다음 변론을 준비해주세요.',
   };
@@ -264,41 +282,57 @@ function injectStyle() {
   const style = document.createElement('style');
   style.textContent = `
     .vc-stage-shell { margin: 0 0 18px; }
-    .vc-stage { position: relative; overflow: hidden; border: 1.5px solid rgba(201,168,76,.35); border-radius: 20px; min-height: 390px; background: radial-gradient(ellipse at 50% 0%, rgba(201,168,76,.22), transparent 55%), linear-gradient(180deg, #171a2b 0%, #0d1117 100%); box-shadow: 0 18px 48px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06); }
-    [data-theme="light"] .vc-stage { background: radial-gradient(ellipse at 50% 0%, rgba(232,96,44,.18), transparent 55%), linear-gradient(180deg, #fff7ee 0%, #ffe9d8 100%); box-shadow: 0 10px 32px rgba(154,112,24,.14); }
-    .vc-sky-glow { position:absolute; inset:-80px -80px auto; height:180px; background: radial-gradient(circle, rgba(201,168,76,.28), transparent 65%); animation: vcGlow 4s ease-in-out infinite alternate; pointer-events:none; }
-    .vc-titlebar { position: relative; z-index: 3; display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding:16px 16px 0; }
+    .vc-stage { position: relative; overflow: hidden; border: 1.5px solid rgba(201,168,76,.35); border-radius: 22px; min-height: 438px; background: radial-gradient(ellipse at 50% 0%, rgba(255,222,153,.16), transparent 54%), linear-gradient(180deg, #17100b 0%, #24170e 52%, #0d1117 100%); box-shadow: 0 18px 48px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.06); }
+    [data-theme="light"] .vc-stage { background: radial-gradient(ellipse at 50% 0%, rgba(232,96,44,.14), transparent 55%), linear-gradient(180deg, #fff7ee 0%, #f4dcc2 60%, #fff8f2 100%); box-shadow: 0 10px 32px rgba(154,112,24,.16); }
+    .vc-ceiling-light { position:absolute; left:50%; top:-120px; transform:translateX(-50%); width:360px; height:260px; background:radial-gradient(circle, rgba(255,232,179,.36), transparent 68%); animation: vcGlow 4s ease-in-out infinite alternate; pointer-events:none; }
+    .vc-titlebar { position: relative; z-index: 6; display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding:16px 16px 0; }
     .vc-kicker { font-size:10px; font-weight:900; letter-spacing:.12em; color:var(--gold); text-transform:uppercase; }
     .vc-case-title { margin-top:3px; font-family:var(--font-serif); font-size:16px; font-weight:900; color:var(--cream); line-height:1.35; }
-    .vc-status-chip { flex-shrink:0; padding:6px 10px; border-radius:999px; border:1px solid rgba(201,168,76,.38); background:rgba(201,168,76,.1); color:var(--gold); font-size:11px; font-weight:900; }
-    .vc-courtroom { position:relative; height:245px; margin:10px 12px 0; border-radius:18px; background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.015)); border:1px solid rgba(255,255,255,.06); perspective:900px; }
-    [data-theme="light"] .vc-courtroom { background:rgba(255,255,255,.58); border-color:rgba(232,96,44,.14); }
-    .vc-courtroom:before { content:''; position:absolute; left:9%; right:9%; bottom:0; height:48%; background: linear-gradient(180deg, rgba(201,168,76,.1), rgba(201,168,76,.03)); clip-path: polygon(12% 0,88% 0,100% 100%,0 100%); border-radius:18px 18px 0 0; }
-    .vc-audience { position:absolute; top:22px; font-size:20px; opacity:.34; filter:blur(.1px); }
-    .vc-audience-left { left:14px; } .vc-audience-right { right:14px; }
-    .vc-judge-bench { position:absolute; top:18px; left:50%; transform:translateX(-50%); width:118px; text-align:center; z-index:2; }
-    .vc-nameplate { font-size:9px; color:var(--gold); font-weight:900; margin-bottom:4px; white-space:nowrap; }
-    .vc-judge-mood { display:inline-flex; margin-top:4px; padding:2px 8px; border-radius:999px; background:rgba(0,0,0,.18); font-size:10px; color:var(--cream-dim); }
+    .vc-status-chip { flex-shrink:0; padding:6px 10px; border-radius:999px; border:1px solid rgba(201,168,76,.4); background:rgba(201,168,76,.12); color:var(--gold); font-size:11px; font-weight:900; box-shadow:0 4px 14px rgba(0,0,0,.16); }
+    .vc-courtroom { position:relative; height:284px; margin:10px 12px 0; border-radius:18px; overflow:hidden; background: linear-gradient(180deg, rgba(118,74,37,.25), rgba(45,28,17,.36)); border:1px solid rgba(255,221,156,.11); perspective:900px; }
+    [data-theme="light"] .vc-courtroom { background:linear-gradient(180deg, rgba(255,255,255,.72), rgba(165,103,55,.12)); border-color:rgba(154,112,24,.18); }
+    .vc-courtroom:before { content:''; position:absolute; left:0; right:0; top:0; height:46%; background: repeating-linear-gradient(90deg, rgba(122,74,37,.5) 0 18px, rgba(86,51,29,.55) 18px 36px), linear-gradient(180deg, rgba(255,255,255,.05), transparent); opacity:.62; }
+    .vc-courtroom:after { content:''; position:absolute; left:8%; right:8%; bottom:0; height:47%; background: linear-gradient(180deg, rgba(184,119,62,.28), rgba(98,58,31,.2)); clip-path: polygon(16% 0,84% 0,100% 100%,0 100%); border-radius:18px 18px 0 0; }
+    .vc-back-wall { position:absolute; left:50%; top:10px; transform:translateX(-50%); width:188px; text-align:center; z-index:2; color:var(--cream); }
+    .vc-court-emblem { width:42px; height:42px; margin:0 auto 3px; display:flex; align-items:center; justify-content:center; border-radius:50%; border:1.5px solid rgba(201,168,76,.45); background:rgba(0,0,0,.18); font-size:24px; }
+    .vc-wall-title { font-family:var(--font-serif); font-size:12px; font-weight:900; color:var(--gold); }
+    .vc-wall-subtitle { margin-top:1px; font-size:9px; color:var(--cream-dim); font-weight:800; }
+    .vc-gallery { position:absolute; top:70px; width:58px; min-height:98px; z-index:2; padding:8px 5px; border-radius:10px; background:rgba(0,0,0,.18); border:1px solid rgba(255,255,255,.06); text-align:center; opacity:.8; }
+    .vc-gallery-left { left:8px; } .vc-gallery-right { right:8px; }
+    .vc-gallery span { display:block; font-size:9px; color:var(--gold); font-weight:900; margin-bottom:5px; }
+    .vc-gallery b { display:block; font-size:14px; line-height:1.7; font-weight:400; opacity:.82; }
+    .vc-judge-bench { position:absolute; top:64px; left:50%; transform:translateX(-50%); width:152px; text-align:center; z-index:4; }
+    .vc-bench-top { position:relative; z-index:3; }
+    .vc-bench-base { margin:-6px auto 0; width:148px; height:46px; border-radius:10px 10px 4px 4px; background:linear-gradient(180deg, #7a4d2e, #4d2c19); border:1.5px solid rgba(255,221,156,.22); box-shadow:0 10px 22px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.12); display:flex; align-items:flex-end; justify-content:center; padding-bottom:7px; }
+    .vc-bench-base span { color:rgba(255,232,195,.74); font-size:10px; font-weight:900; letter-spacing:.14em; }
+    .vc-nameplate { display:inline-flex; justify-content:center; max-width:142px; margin-bottom:4px; padding:3px 9px; border-radius:999px; background:rgba(0,0,0,.26); border:1px solid rgba(201,168,76,.3); font-size:9px; color:var(--gold); font-weight:900; white-space:nowrap; }
+    .vc-judge-mood { display:inline-flex; margin-top:4px; padding:2px 8px; border-radius:999px; background:rgba(0,0,0,.22); font-size:10px; color:var(--cream-dim); }
     .vc-avatar { display:flex; align-items:center; justify-content:center; margin:0 auto; border-radius:50%; background:linear-gradient(135deg, rgba(255,255,255,.18), rgba(255,255,255,.04)); border:2px solid rgba(201,168,76,.45); box-shadow:0 8px 26px rgba(0,0,0,.28); transform-origin:bottom center; }
     .vc-avatar span { line-height:1; filter:drop-shadow(0 3px 8px rgba(0,0,0,.25)); }
-    .vc-judge { width:70px; height:70px; font-size:38px; }
+    .vc-judge { width:62px; height:62px; font-size:34px; background:linear-gradient(135deg, rgba(255,245,221,.24), rgba(201,168,76,.06)); }
     .vc-player { width:58px; height:58px; font-size:31px; }
     .vc-mini { width:42px; height:42px; font-size:24px; }
     .vc-red { border-color:rgba(231,76,60,.62); background:linear-gradient(135deg, rgba(231,76,60,.26), rgba(231,76,60,.06)); }
     .vc-blue { border-color:rgba(52,152,219,.62); background:linear-gradient(135deg, rgba(52,152,219,.25), rgba(52,152,219,.06)); }
-    .vc-character { position:absolute; z-index:3; text-align:center; }
-    .vc-host { left:50%; bottom:58px; transform:translateX(-50%); opacity:.92; }
-    .vc-plaintiff { left:24px; bottom:18px; }
-    .vc-defendant { right:24px; bottom:18px; }
+    .vc-character { position:absolute; z-index:5; text-align:center; }
+    .vc-host { left:50%; bottom:75px; transform:translateX(-50%); opacity:.94; }
+    .vc-plaintiff { left:74px; bottom:22px; }
+    .vc-defendant { right:74px; bottom:22px; }
     .vc-char-label { margin-top:5px; font-size:11px; font-weight:900; color:var(--cream); }
     .vc-char-label.red { color:#ff7b74; } .vc-char-label.blue { color:#6fb8ff; }
     .vc-char-name { max-width:100px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:11px; font-weight:800; color:var(--cream); }
     .vc-team-count { font-size:10px; color:var(--cream-dim); }
-    .vc-desk { width:76px; height:20px; margin:0 auto -8px; border-radius:10px 10px 3px 3px; box-shadow:0 6px 18px rgba(0,0,0,.18); }
-    .vc-desk-red { background:linear-gradient(135deg, rgba(231,76,60,.45), rgba(231,76,60,.16)); border:1px solid rgba(231,76,60,.35); }
-    .vc-desk-blue { background:linear-gradient(135deg, rgba(52,152,219,.45), rgba(52,152,219,.16)); border:1px solid rgba(52,152,219,.35); }
-    .vc-floor-seal { position:absolute; left:50%; bottom:18px; transform:translateX(-50%); width:62px; height:62px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:30px; opacity:.18; border:2px solid rgba(201,168,76,.35); }
-    .vc-dialogue-panel { margin:10px 12px 0; padding:11px 13px; border-radius:14px; background:rgba(0,0,0,.2); border:1px solid rgba(201,168,76,.18); position:relative; z-index:4; }
+    .vc-desk { position:relative; width:96px; height:28px; margin:0 auto -8px; border-radius:10px 10px 3px 3px; box-shadow:0 7px 18px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.11); display:flex; align-items:center; justify-content:center; }
+    .vc-desk span { font-size:9px; font-weight:900; color:rgba(255,255,255,.72); letter-spacing:.08em; }
+    .vc-desk-red { background:linear-gradient(180deg, rgba(139,58,45,.85), rgba(82,38,30,.9)); border:1px solid rgba(231,76,60,.35); }
+    .vc-desk-blue { background:linear-gradient(180deg, rgba(45,84,128,.85), rgba(29,52,82,.9)); border:1px solid rgba(52,152,219,.35); }
+    .vc-witness-stand { position:absolute; left:50%; bottom:28px; transform:translateX(-50%); z-index:4; width:78px; height:72px; text-align:center; }
+    .vc-witness-rail { position:absolute; left:8px; right:8px; bottom:16px; height:44px; border-radius:10px 10px 4px 4px; border:1.5px solid rgba(255,221,156,.18); background:linear-gradient(180deg, rgba(116,72,39,.88), rgba(61,37,21,.92)); box-shadow:0 8px 18px rgba(0,0,0,.25); }
+    .vc-witness-label { position:absolute; bottom:24px; left:0; right:0; font-size:9px; font-weight:900; color:rgba(255,232,195,.76); }
+    .vc-witness-mic { position:absolute; left:50%; bottom:54px; transform:translateX(-50%); font-size:20px; }
+    .vc-aisle { position:absolute; left:50%; bottom:0; transform:translateX(-50%); z-index:3; width:74px; height:88px; background:linear-gradient(180deg, rgba(201,168,76,.12), rgba(255,255,255,.02)); clip-path:polygon(34% 0,66% 0,100% 100%,0 100%); opacity:.85; }
+    .vc-floor-seal { position:absolute; left:50%; bottom:6px; transform:translateX(-50%); z-index:4; width:54px; height:54px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:27px; opacity:.22; border:2px solid rgba(201,168,76,.35); background:rgba(0,0,0,.06); }
+    .vc-dialogue-panel { margin:10px 12px 0; padding:11px 13px; border-radius:14px; background:rgba(0,0,0,.22); border:1px solid rgba(201,168,76,.2); position:relative; z-index:6; box-shadow:inset 0 1px 0 rgba(255,255,255,.04); }
     [data-theme="light"] .vc-dialogue-panel { background:rgba(255,255,255,.72); }
     .vc-dialogue-speaker { font-size:10px; font-weight:900; color:var(--gold); margin-bottom:4px; letter-spacing:.06em; }
     .vc-dialogue-text { font-size:13px; color:var(--cream); line-height:1.55; }
@@ -308,19 +342,21 @@ function injectStyle() {
     .vc-round-dots span { flex:1; height:5px; border-radius:999px; background:rgba(255,255,255,.1); }
     .vc-round-dots span.done { background:rgba(201,168,76,.72); } .vc-round-dots span.now { background:var(--gold); box-shadow:0 0 10px rgba(201,168,76,.5); }
     .is-talking { animation: vcTalk .72s ease-in-out infinite alternate; }
-    .is-active-side .vc-player { box-shadow:0 0 0 4px rgba(201,168,76,.16), 0 10px 30px rgba(0,0,0,.32); }
+    .is-active-side .vc-player { box-shadow:0 0 0 4px rgba(201,168,76,.18), 0 10px 30px rgba(0,0,0,.36); }
+    .is-active-side .vc-desk { filter:brightness(1.12); box-shadow:0 0 0 3px rgba(201,168,76,.12), 0 9px 20px rgba(0,0,0,.3); }
     .is-judging .vc-judge { animation: vcJudge 1s ease-in-out infinite alternate; }
+    .is-completed .vc-ceiling-light, .is-judging .vc-ceiling-light { opacity:1; }
     .vc-stage-loading { min-height:180px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:24px; }
     .vc-loading-gavel { font-size:44px; animation: vcTalk .8s ease-in-out infinite alternate; }
     .vc-loading-title { margin-top:8px; font-weight:900; color:var(--cream); } .vc-loading-sub { margin-top:4px; font-size:12px; color:var(--cream-dim); }
     @keyframes vcTalk { from { transform:translateY(0) rotate(-1deg); } to { transform:translateY(-5px) rotate(1deg); } }
     @keyframes vcJudge { from { transform:translateY(0) scale(1); } to { transform:translateY(-4px) scale(1.04); } }
-    @keyframes vcGlow { from { opacity:.45; transform:scale(.95); } to { opacity:1; transform:scale(1.05); } }
-    @media (max-width:420px) { .vc-stage { min-height:372px; } .vc-courtroom { height:230px; margin-left:8px; margin-right:8px; } .vc-plaintiff { left:12px; } .vc-defendant { right:12px; } .vc-player { width:52px; height:52px; font-size:28px; } .vc-judge { width:64px; height:64px; font-size:35px; } .vc-char-name { max-width:86px; } .vc-host { bottom:54px; } }
+    @keyframes vcGlow { from { opacity:.48; transform:translateX(-50%) scale(.95); } to { opacity:1; transform:translateX(-50%) scale(1.05); } }
+    @media (max-width:420px) { .vc-stage { min-height:424px; } .vc-courtroom { height:270px; margin-left:8px; margin-right:8px; } .vc-back-wall { top:8px; } .vc-gallery { width:42px; top:76px; padding:6px 3px; } .vc-gallery b { font-size:11px; } .vc-gallery span { font-size:8px; } .vc-judge-bench { top:64px; width:138px; } .vc-bench-base { width:132px; } .vc-plaintiff { left:42px; } .vc-defendant { right:42px; } .vc-player { width:52px; height:52px; font-size:28px; } .vc-judge { width:58px; height:58px; font-size:32px; } .vc-char-name { max-width:78px; } .vc-host { bottom:72px; } .vc-witness-stand { width:62px; } .vc-witness-label { font-size:8px; } .vc-desk { width:78px; height:25px; } }
   `;
   document.head.appendChild(style);
 }
 
 function escHtml(s) {
-  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;').replace(/'/g, '&#039;');
 }
