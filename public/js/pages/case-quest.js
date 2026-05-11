@@ -14,27 +14,29 @@ const EVIDENCES = [
 
 export async function renderCaseQuest(container) {
   injectQuestStyle();
-  let categories = ['카톡', '연애', '음식', '정산', '직장', '생활', '친구', '기타'];
+  let categories = ['카톡', '연애', '음식', '정산', '직장', '생활', '친구', '가족', '이웃', '취미', '기타'];
   try {
     const snap = await getDocs(query(collection(db, 'categories'), orderBy('name', 'asc')));
     const loaded = snap.docs.map(d => d.data().name).filter(Boolean);
-    if (loaded.length) categories = loaded;
+    if (loaded.length) categories = Array.from(new Set([...loaded, ...categories]));
   } catch {}
 
+  const prefill = readPrefillCase();
   const state = {
-    step: 0,
-    title: '',
-    situation: '',
-    plaintiff: '',
-    defendant: '',
-    category: categories[0] || '생활',
+    step: prefill ? 1 : 0,
+    title: prefill?.title || '',
+    situation: prefill?.summary || '',
+    plaintiff: prefill?.plaintiffPosition || '',
+    defendant: prefill?.defendantPosition || '',
+    category: prefill?.category || categories[0] || '생활',
     evidence: '',
+    fromOfficialPack: Boolean(prefill),
   };
 
   container.innerHTML = `
     <div class="quest-page">
       <div class="quest-header">
-        <a href="#/town" class="quest-back">‹</a>
+        <a href="#/topics" class="quest-back">‹</a>
         <div>
           <div class="quest-kicker">CASE QUEST · 사건 해결 모드</div>
           <div class="quest-title">🕵️ 생활사건 접수 퀘스트</div>
@@ -53,6 +55,18 @@ export async function renderCaseQuest(container) {
     renderCard(container, state, categories, render);
   };
   render();
+  if (prefill) showToast('공식 사건팩 내용이 퀘스트에 채워졌습니다', 'success');
+}
+
+function readPrefillCase() {
+  try {
+    const raw = sessionStorage.getItem('sosoking_prefill_case');
+    if (!raw) return null;
+    sessionStorage.removeItem('sosoking_prefill_case');
+    const data = JSON.parse(raw);
+    if (!data?.title || !data?.summary) return null;
+    return data;
+  } catch { return null; }
 }
 
 function renderStage(container, state) {
@@ -113,7 +127,12 @@ function renderCard(container, state, categories, rerender) {
 
   if (state.step === 1) {
     card.innerHTML = `
+      ${state.fromOfficialPack ? '<div class="official-prefill-note">🎮 공식 사건팩에서 선택한 사건입니다. 그대로 진행하거나 내용을 살짝 고쳐도 됩니다.</div>' : ''}
       <div class="quest-dialog"><strong>👩‍💼 상담원</strong><span>토론처럼 싸우지 말고, 양쪽이 왜 그렇게 생각하는지 사건 기록으로 남겨봅시다.</span></div>
+      <div class="quest-case-mini">
+        <strong>${escHtml(state.title)}</strong>
+        <span>${escHtml(state.situation)}</span>
+      </div>
       <label>문제 제기 내용</label>
       <textarea id="q-plaintiff" maxlength="100" placeholder="예: 마지막 조각은 물어보고 먹었어야 합니다">${escHtml(state.plaintiff)}</textarea>
       <label>상대측 설명</label>
@@ -172,7 +191,7 @@ function renderCard(container, state, categories, rerender) {
         defendantPosition: state.defendant.trim(),
         category: state.category,
       });
-      trackEvent('case_quest_submit', { category: state.category, evidence: state.evidence || 'none' });
+      trackEvent('case_quest_submit', { category: state.category, evidence: state.evidence || 'none', from_official_pack: state.fromOfficialPack });
       const topicId = result.data?.topicId;
       showToast('사건 접수 완료! 생활법정 대기실로 이동합니다', 'success');
       setTimeout(() => { location.hash = topicId ? `#/topic/${topicId}` : '#/topics'; }, 450);
@@ -234,6 +253,11 @@ function injectQuestStyle() {
     .npc-shadow { position:absolute; left:50%; bottom:18px; transform:translateX(-50%); width:30px; height:8px; border-radius:50%; background:rgba(0,0,0,.25); filter:blur(2px); }
     .quest-card { border-radius:22px; border:1.5px solid rgba(201,168,76,.26); background:linear-gradient(145deg,rgba(255,255,255,.07),rgba(255,255,255,.02)); padding:16px; box-shadow:0 12px 32px rgba(0,0,0,.22); }
     [data-theme="light"] .quest-card { background:rgba(255,255,255,.84); box-shadow:0 8px 24px rgba(154,112,24,.1); }
+    .official-prefill-note { margin-bottom:12px; padding:10px 12px; border-radius:14px; border:1.5px solid rgba(201,168,76,.26); background:rgba(201,168,76,.1); color:var(--gold); font-size:12px; font-weight:900; line-height:1.55; }
+    .quest-case-mini { margin-bottom:13px; padding:13px 14px; border-radius:16px; border:1px solid rgba(255,255,255,.08); background:rgba(0,0,0,.14); }
+    [data-theme="light"] .quest-case-mini { background:rgba(154,112,24,.06); border-color:rgba(154,112,24,.12); }
+    .quest-case-mini strong { display:block; color:var(--gold); font-family:var(--font-serif); font-size:17px; margin-bottom:4px; }
+    .quest-case-mini span { display:block; color:var(--cream-dim); font-size:13px; line-height:1.6; }
     .quest-dialog { display:flex; gap:10px; flex-direction:column; padding:13px 14px; border-radius:16px; border:1px solid rgba(201,168,76,.2); background:rgba(201,168,76,.08); margin-bottom:15px; }
     .quest-dialog strong { color:var(--gold); font-size:13px; } .quest-dialog span { color:var(--cream-dim); font-size:13px; line-height:1.65; }
     .quest-card label { display:block; margin:14px 0 7px; font-size:12px; font-weight:900; color:var(--gold); letter-spacing:.04em; }
