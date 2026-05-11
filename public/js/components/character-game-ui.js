@@ -11,6 +11,7 @@ const EMOTIONS = [
 
 let observer = null;
 let timer = null;
+let typingTimer = null;
 let lastBubbleCount = 0;
 
 function bootCharacterGameUi() {
@@ -18,12 +19,37 @@ function bootCharacterGameUi() {
   scheduleEnhance();
   window.addEventListener('hashchange', () => {
     lastBubbleCount = 0;
+    document.body.classList.remove('sosoking-typing-mode');
     scheduleEnhance();
   });
+  document.addEventListener('focusin', handleTypingFocus, true);
+  document.addEventListener('focusout', handleTypingBlur, true);
   if (!observer) {
     observer = new MutationObserver(scheduleEnhance);
     observer.observe(document.getElementById('page-content') || document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['class', 'disabled'] });
   }
+}
+
+function handleTypingFocus(e) {
+  if (!String(location.hash || '').startsWith('#/debate/')) return;
+  if (!isTypingTarget(e.target)) return;
+  clearTimeout(typingTimer);
+  document.body.classList.add('sosoking-typing-mode');
+  const panel = document.querySelector('.character-select-panel');
+  if (panel) panel.classList.add('collapsed');
+}
+
+function handleTypingBlur() {
+  clearTimeout(typingTimer);
+  typingTimer = setTimeout(() => {
+    if (!isTypingTarget(document.activeElement)) document.body.classList.remove('sosoking-typing-mode');
+  }, 220);
+}
+
+function isTypingTarget(target) {
+  if (!target) return false;
+  const tag = String(target.tagName || '').toLowerCase();
+  return tag === 'textarea' || tag === 'input' || target.isContentEditable || Boolean(target.closest?.('.court-input-panel, .case-input-panel'));
 }
 
 function scheduleEnhance() {
@@ -185,6 +211,7 @@ function normalizeWaitingRoomText(root) {
 
 function enhanceDebateReactions() {
   if (!String(location.hash || '').startsWith('#/debate/')) return;
+  if (document.body.classList.contains('sosoking-typing-mode')) return;
   const bubbles = document.querySelectorAll('.argument-bubble');
   if (!bubbles.length || bubbles.length === lastBubbleCount) return;
   lastBubbleCount = bubbles.length;
@@ -199,6 +226,7 @@ function enhanceDebateReactions() {
 }
 
 function addTinyReactionBurst(target) {
+  if (document.body.classList.contains('sosoking-typing-mode')) return;
   const rect = target.getBoundingClientRect();
   if (!rect.width) return;
   const layer = document.createElement('div');
@@ -236,7 +264,7 @@ function injectStyle() {
   const style = document.createElement('style');
   style.id = 'character-game-ui-style';
   style.textContent = `
-    .character-select-panel { position:fixed; right:12px; top:82px; z-index:7000; width:218px; border:1.5px solid rgba(201,168,76,.36); border-radius:18px; background:rgba(13,17,23,.88); backdrop-filter:blur(14px); box-shadow:0 14px 34px rgba(0,0,0,.28); overflow:hidden; transition:transform .22s ease, width .22s ease, background .22s ease; }
+    .character-select-panel { position:fixed; right:12px; top:82px; z-index:7000; width:218px; border:1.5px solid rgba(201,168,76,.36); border-radius:18px; background:rgba(13,17,23,.88); backdrop-filter:blur(14px); box-shadow:0 14px 34px rgba(0,0,0,.28); overflow:hidden; transition:transform .22s ease, width .22s ease, background .22s ease, opacity .18s ease; }
     [data-theme="light"] .character-select-panel { background:rgba(255,248,242,.88); box-shadow:0 10px 28px rgba(154,112,24,.16); }
     .character-select-panel.collapsed { width:52px; height:52px; border-radius:50%; }
     .character-panel-toggle { width:52px; height:52px; border:0; background:linear-gradient(135deg,rgba(201,168,76,.25),rgba(255,255,255,.04)); color:var(--cream); font-size:28px; cursor:pointer; display:flex; align-items:center; justify-content:center; float:left; }
@@ -260,9 +288,15 @@ function injectStyle() {
     .entry-gate.life-ai-recommended::after { content:'추천'; position:absolute; top:7px; right:7px; border-radius:999px; padding:2px 7px; background:var(--gold); color:#0d1117; font-size:10px; font-weight:900; }
     .character-game-route .hero-char .char-body, .character-game-route .quest-player .npc-body, .character-game-route .waiting-avatar.player, .character-game-route .vc-avatar span { transition:transform .18s ease, filter .18s ease; }
     .character-game-route .hero-char:hover .char-body, .character-game-route .quest-player:hover .npc-body, .character-game-route .waiting-avatar.player:hover, .character-game-route .vc-avatar:hover span { transform:scale(1.12) rotate(-4deg); filter:drop-shadow(0 12px 14px rgba(201,168,76,.32)); }
+    body.sosoking-typing-mode .character-select-panel { opacity:0 !important; pointer-events:none !important; transform:translateY(14px) scale(.88) !important; }
+    body.sosoking-typing-mode .emotion-pop, body.sosoking-typing-mode .tiny-reaction-burst, body.sosoking-typing-mode .soso-3d-particles { display:none !important; }
+    body.sosoking-typing-mode .court-input-panel, body.sosoking-typing-mode .case-input-panel { position:relative !important; z-index:9500 !important; transform:none !important; }
+    body.sosoking-typing-mode textarea, body.sosoking-typing-mode input { position:relative !important; z-index:9501 !important; transform:none !important; }
+    body.sosoking-typing-mode .vc-stage, body.sosoking-typing-mode .courtroom-3d-stage { opacity:.72; pointer-events:none; }
+    body.sosoking-typing-mode .debate-feed { padding-bottom:240px !important; }
     @keyframes emotionPop { 0% { opacity:0; transform:translateY(8px) scale(.72) rotate(-4deg); } 58% { opacity:1; transform:translateY(-4px) scale(1.08) rotate(2deg); } 100% { opacity:1; transform:translateY(0) scale(1) rotate(0); } }
     @keyframes tinyBurst { 0% { opacity:0; transform:translate(0,0) scale(.5); } 20% { opacity:1; } 100% { opacity:0; transform:translate(calc((var(--i) - 2) * 20px), -62px) scale(1.25) rotate(calc(var(--i) * 28deg)); } }
-    @media (max-width:520px) { .character-select-panel { top:auto; bottom:86px; right:10px; } .character-select-panel:not(.collapsed) { width:205px; } .emotion-pop { right:4px; top:-22px; } }
+    @media (max-width:520px) { .character-select-panel { top:74px; bottom:auto; right:10px; } .character-select-panel:not(.collapsed) { width:205px; } .emotion-pop { right:4px; top:-22px; } }
   `;
   document.head.appendChild(style);
 }
