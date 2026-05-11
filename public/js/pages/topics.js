@@ -1,17 +1,12 @@
 import { db } from '../firebase.js';
-import { collection, query, where, orderBy, getDocs, doc, updateDoc, increment } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
-import { OFFICIAL_CASE_PACK, OFFICIAL_CASE_CATEGORIES } from '../data/official-case-pack.js';
+import { collection, query, where, orderBy, getDocs } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { STORY_CASE_PACK, STORY_CASE_CATEGORIES } from '../data/story-case-pack.js';
 
-let allTopics = [];
-let allCategories = [];
-let _renderGen = 0;
-let _activeCat = '';
+let activeCategory = '';
+let dbTopics = [];
 
 export async function renderTopics(container) {
   injectCaseBoardStyle();
-  allTopics = [];
-  allCategories = [];
-  const gen = ++_renderGen;
   try { localStorage.setItem('sosoking_game_mode', 'court'); } catch {}
 
   container.innerHTML = `
@@ -19,241 +14,108 @@ export async function renderTopics(container) {
       <div class="case-board-header">
         <a href="#/" class="case-back-btn">‹</a>
         <div>
-          <div class="case-header-kicker">VIRTUAL COURT LOBBY</div>
-          <div class="case-header-title">🏛️ 사건 게시판</div>
+          <div class="case-header-kicker">STORY LIFE COURT</div>
+          <div class="case-header-title">🕵️ 오늘의 사건 게시판</div>
         </div>
-        <button class="case-write-btn" onclick="location.hash='#/case-quest'">🕵️ 접수</button>
+        <button class="case-write-btn" onclick="location.hash='#/case-quest'">접수</button>
       </div>
-
       <div class="container case-board-container">
         <div class="case-board-stage">
           <div class="case-board-glow"></div>
           <div class="case-board-judge">
             <div class="case-board-nameplate">AI 접수 판사</div>
             <div class="case-board-avatar">👨‍⚖️</div>
-            <div class="case-board-speech">사건을 고르면 AI 상대와 혼자서도 바로 생활법정에 입장할 수 있습니다.</div>
+            <div class="case-board-speech">단서와 반전이 있는 사건을 고르고, 역할별 플레이로 생활법정에 입장하세요.</div>
           </div>
-          <div class="case-board-clerk">
-            <div class="clerk-avatar">🧑‍💼</div>
-            <div class="clerk-label">서기</div>
-          </div>
-          <div class="case-board-sign">
-            <div class="sign-title">공식 생활사건 ${OFFICIAL_CASE_PACK.length}개</div>
-            <div class="sign-sub">가볍고 웃긴 사건을 골라 바로 시작하세요</div>
-          </div>
+          <div class="case-board-clerk"><div class="clerk-avatar">🧑‍💼</div><div class="clerk-label">서기</div></div>
+          <div class="case-board-sign"><div class="sign-title">스토리 사건 ${STORY_CASE_PACK.length}개</div><div class="sign-sub">단서 · 반전 · 판결 포인트 중심</div></div>
         </div>
-
         <div id="active-session-banner"></div>
-
         <div class="case-search-panel">
-          <div class="case-search-wrap">
-            <span>🔍</span>
-            <input type="text" id="search-input" placeholder="카톡, 치킨, 더치페이, 지각, 냉장고...">
-          </div>
+          <div class="case-search-wrap"><span>🔍</span><input type="text" id="search-input" placeholder="치킨 유언, 블루체크, 쿠폰, 딸기우유, 스포일러..."></div>
           <div class="case-cat-filter" id="cat-filter"></div>
         </div>
-
         <div class="official-pack-banner">
-          <span>🎮</span>
-          <div>
-            <strong>혼자 해도 바로 재밌는 공식 사건팩</strong>
-            <small>처음엔 공식 사건을 골라 AI 상대와 바로 재판해보세요.</small>
-          </div>
-          <button onclick="location.hash='#/case-quest'">내 사건 만들기</button>
+          <span>🕵️</span>
+          <div><strong>스토리형 사건팩</strong><small>기존 단순 사건 대신 사건 발단, 반전 포인트, 판결 포인트가 있는 사건만 보여줍니다.</small></div>
+          <button onclick="location.hash='#/case-quest'">내 사건 접수</button>
         </div>
-
-        <div id="topics-list" class="case-door-grid">
-          <div class="loading-dots" style="grid-column:1/-1;padding:40px 0;"><span></span><span></span><span></span></div>
-        </div>
+        <div id="topics-list" class="case-door-grid"></div>
       </div>
-    </div>
-  `;
+    </div>`;
 
   checkActiveSessionBanner();
-  await Promise.all([loadCategories(), loadTopics()]);
-  if (gen !== _renderGen) return;
+  await loadDbTopics();
   renderFilter();
   renderList();
-
-  document.getElementById('search-input')?.addEventListener('input', function () {
-    renderList(this.value.trim());
-  });
-
-  document.getElementById('topics-list')?.addEventListener('click', async e => {
-    const btn = e.target.closest('.vote-btn');
-    if (!btn) return;
-    e.stopPropagation();
-    const topicId = btn.dataset.topicId;
-    const side = btn.dataset.side;
-    if (!topicId || !side) return;
-    try { if (localStorage.getItem(`sosoking_vote_${topicId}`)) return; } catch {}
-    try { localStorage.setItem(`sosoking_vote_${topicId}`, side); } catch {}
-
-    const topic = allTopics.find(t => t.id === topicId);
-    if (topic) {
-      if (side === 'A') topic.votesA = (topic.votesA || 0) + 1;
-      else topic.votesB = (topic.votesB || 0) + 1;
-      const wrap = btn.closest('[data-vote-wrap]');
-      if (wrap) wrap.outerHTML = voteBarHtml(topic);
-    }
-    if (!topic?.isFallbackCase) {
-      try { await updateDoc(doc(db, 'topics', topicId), { [`votes${side}`]: increment(1) }); } catch {}
-    }
-  });
+  document.getElementById('search-input')?.addEventListener('input', e => renderList(e.target.value.trim(), activeCategory));
 }
 
-async function loadCategories() {
+async function loadDbTopics() {
   try {
-    const snap = await getDocs(query(collection(db, 'categories'), orderBy('order', 'asc')));
-    const seen = new Set();
-    const dbCats = snap.docs
-      .map(d => ({ id: d.id, ...d.data() }))
-      .filter(c => { if (seen.has(c.name)) return false; seen.add(c.name); return true; });
-    const merged = [...dbCats];
-    OFFICIAL_CASE_CATEGORIES.forEach(c => {
-      if (!seen.has(c.name)) { seen.add(c.name); merged.push({ id: `official-${c.name}`, ...c }); }
-    });
-    allCategories = merged.sort((a, b) => (a.order || 999) - (b.order || 999));
-  } catch { allCategories = OFFICIAL_CASE_CATEGORIES.map(c => ({ id: `official-${c.name}`, ...c })); }
-}
-
-async function loadTopics() {
-  let dbTopics = [];
-  try {
-    const snap = await getDocs(query(
-      collection(db, 'topics'),
-      where('status', '==', 'active'),
-      orderBy('playCount', 'desc')
-    ));
-    dbTopics = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const snap = await getDocs(query(collection(db, 'topics'), where('status', '==', 'active'), orderBy('playCount', 'desc')));
+    dbTopics = snap.docs.map(d => ({ id: d.id, ...d.data(), isDbTopic: true })).filter(t => !looksLikeOldSimpleCase(t.title));
   } catch { dbTopics = []; }
+}
 
-  const existingTitles = new Set(dbTopics.map(t => String(t.title || '').trim()));
-  const fallbackTopics = OFFICIAL_CASE_PACK
-    .filter(t => !existingTitles.has(t.title))
-    .map((t, idx) => ({
-      ...t,
-      status: 'active',
-      isOfficial: true,
-      isFallbackCase: true,
-      playCount: 20 + ((OFFICIAL_CASE_PACK.length - idx) * 3),
-      votesA: 8 + (idx % 17),
-      votesB: 6 + ((idx * 2) % 19),
-    }));
-  allTopics = [...dbTopics, ...fallbackTopics];
+function looksLikeOldSimpleCase(title = '') {
+  const oldTitles = ['카톡 읽씹 3시간 사건','단답형 답장 성의 부족 사건','단톡방 공지 미확인 사건','새벽 카톡 알림 사건','치킨 마지막 조각 사건','감자튀김 하나만 사건','메뉴 아무거나 사건','더치페이 100원 정산 사건','데이트 10분 지각 사건','약속 5분 지각 사건','냉장고 음료 무단 개봉 사건','리모컨 독점 사건','주차 선 살짝 넘은 사건','드라마 스포일러 사건'];
+  return oldTitles.includes(String(title));
 }
 
 function renderFilter() {
   const el = document.getElementById('cat-filter');
   if (!el) return;
-  el.innerHTML = '<button class="case-cat-pill active" data-cat="">전체 사건</button>' +
-    allCategories.map(c =>
-      `<button class="case-cat-pill" data-cat="${escAttr(c.name)}">${escHtml(c.icon || '')} ${escHtml(c.name)}</button>`
-    ).join('');
+  el.innerHTML = '<button class="case-cat-pill active" data-cat="">전체</button>' + STORY_CASE_CATEGORIES.map(c => `<button class="case-cat-pill" data-cat="${escAttr(c.name)}">${escHtml(c.icon || '')} ${escHtml(c.name)}</button>`).join('');
   el.addEventListener('click', e => {
     const pill = e.target.closest('.case-cat-pill');
     if (!pill) return;
     el.querySelectorAll('.case-cat-pill').forEach(p => p.classList.remove('active'));
     pill.classList.add('active');
-    const search = document.getElementById('search-input')?.value.trim() || '';
-    renderList(search, pill.dataset.cat);
+    activeCategory = pill.dataset.cat || '';
+    renderList(document.getElementById('search-input')?.value.trim() || '', activeCategory);
   });
 }
 
-function renderList(search = '', cat = _activeCat) {
-  _activeCat = cat;
+function renderList(search = '', cat = '') {
   const el = document.getElementById('topics-list');
   if (!el) return;
-
-  let list = allTopics;
+  let list = [
+    ...STORY_CASE_PACK.map((t, idx) => ({ ...t, isStoryCase: true, playCount: 80 + ((STORY_CASE_PACK.length - idx) * 7) })),
+    ...dbTopics,
+  ];
   if (cat) list = list.filter(t => t.category === cat);
   if (search) {
     const q = search.toLowerCase();
-    list = list.filter(t =>
-      t.title?.toLowerCase().includes(q) ||
-      t.summary?.toLowerCase().includes(q) ||
-      t.category?.toLowerCase().includes(q) ||
-      t.plaintiffPosition?.toLowerCase().includes(q) ||
-      t.defendantPosition?.toLowerCase().includes(q)
-    );
+    list = list.filter(t => [t.title, t.summary, t.category, t.difficulty, t.hook, t.twist, t.plaintiffPosition, t.defendantPosition].some(v => String(v || '').toLowerCase().includes(q)));
   }
-
   if (!list.length) {
-    el.innerHTML = `<div class="case-empty-state">
-      <div class="case-empty-icon">🔍</div>
-      <div class="case-empty-title">검색 결과가 없습니다</div>
-      <div class="case-empty-sub">다른 검색어를 입력하거나 사건 해결 퀘스트로 직접 접수해보세요.</div>
-      <button onclick="location.hash='#/case-quest'" class="case-empty-btn">🕵️ 사건 해결 퀘스트</button>
-    </div>`;
+    el.innerHTML = `<div class="case-empty-state"><div class="case-empty-icon">🔍</div><div class="case-empty-title">검색 결과가 없습니다</div><div class="case-empty-sub">다른 검색어를 입력하거나 직접 사건을 접수해보세요.</div><button onclick="location.hash='#/case-quest'" class="case-empty-btn">🕵️ 사건 직접 접수</button></div>`;
     return;
   }
-
-  el.innerHTML = list.map((t, i) => `
-    <article class="case-door-card ${t.isFallbackCase ? 'official-fallback-card' : ''}" onclick="${topicClick(t)}" style="animation-delay:${Math.min(i * 0.025, 0.36)}s;">
-      <div class="case-door-top">
-        <div class="case-file-icon">${caseIcon(t.category)}</div>
-        <div>
-          <div class="case-door-cat">${escHtml(t.category || '생활 사건')}</div>
-          <div class="case-door-count">재판 ${(t.playCount||0).toLocaleString()}회 ${t.isOfficial ? '· 공식' : ''}${t.isFallbackCase ? ' · 기본팩' : ''}</div>
-        </div>
-      </div>
-
-      <div class="case-door-title">${escHtml(t.title)}</div>
-      <div class="case-door-summary">${escHtml(t.summary)}</div>
-
-      <div class="case-roles-mini">
-        <div class="case-role-mini red"><span>🔴 문제 제기</span><strong>${escHtml(t.plaintiffPosition)}</strong></div>
-        <div class="case-role-mini blue"><span>🔵 상대측 설명</span><strong>${escHtml(t.defendantPosition)}</strong></div>
-      </div>
-
-      ${voteBarHtml(t)}
-
-      <div class="case-enter-door">
-        <span class="door-knob"></span>
-        <span>${t.isFallbackCase ? '공식 사건 시작' : '법정 입장'}</span>
-      </div>
-    </article>
-  `).join('');
-}
-
-function topicClick(t) {
-  if (!t.isFallbackCase) return `location.hash='#/topic/${encodeURIComponent(t.id)}'`;
-  const data = encodeURIComponent(JSON.stringify({
-    title: t.title,
-    summary: t.summary,
-    plaintiffPosition: t.plaintiffPosition,
-    defendantPosition: t.defendantPosition,
-    category: t.category,
+  el.innerHTML = list.map((t, i) => cardHtml(t, i)).join('');
+  el.querySelectorAll('[data-start-story]').forEach(btn => btn.addEventListener('click', e => {
+    e.stopPropagation();
+    const item = STORY_CASE_PACK.find(x => x.id === btn.dataset.startStory);
+    if (!item) return;
+    sessionStorage.setItem('sosoking_prefill_case', JSON.stringify({
+      title: item.title,
+      summary: `${item.summary} ${item.hook || ''} ${item.twist || ''}`.slice(0, 120),
+      plaintiffPosition: item.plaintiffPosition,
+      defendantPosition: item.defendantPosition,
+      category: item.category,
+      storyCaseId: item.id,
+      difficulty: item.difficulty,
+    }));
+    location.hash = '#/case-quest';
   }));
-  return `sessionStorage.setItem('sosoking_prefill_case', decodeURIComponent('${data}')); location.hash='#/case-quest'`;
 }
 
-function voteBarHtml(t) {
-  let myVote = null;
-  try { myVote = localStorage.getItem(`sosoking_vote_${t.id}`); } catch {}
-  const votesA = t.votesA || 0;
-  const votesB = t.votesB || 0;
-  const total = votesA + votesB;
-
-  if (myVote) {
-    const pct = total > 0 ? Math.round((votesA / total) * 100) : 50;
-    return `<div class="case-vote-result">
-      <div class="case-vote-labels">
-        <span style="color:#e74c3c;">문제 제기 ${pct}%</span>
-        <span style="color:#3498db;">상대측 ${100 - pct}%</span>
-      </div>
-      <div class="case-vote-bar">
-        <div style="width:${pct}%;background:linear-gradient(90deg,#e74c3c,#ff6b6b);"></div>
-        <div style="width:${100 - pct}%;background:linear-gradient(90deg,#3498db,#5dade2);"></div>
-      </div>
-      <div class="case-vote-total">${total.toLocaleString()}명 사전 의견</div>
-    </div>`;
+function cardHtml(t, i) {
+  if (t.isDbTopic && !t.isStoryCase) {
+    return `<article class="case-door-card" onclick="location.hash='#/topic/${encodeURIComponent(t.id)}'" style="animation-delay:${Math.min(i * 0.025, 0.36)}s;"><div class="case-door-top"><div class="case-file-icon">${caseIcon(t.category)}</div><div><div class="case-door-cat">${escHtml(t.category || '접수 사건')}</div><div class="case-door-count">유저 접수 사건 · 재판 ${(t.playCount||0).toLocaleString()}회</div></div></div><div class="case-door-title">${escHtml(t.title)}</div><div class="case-door-summary">${escHtml(t.summary)}</div><div class="case-roles-mini"><div class="case-role-mini red"><span>🔴 문제 제기</span><strong>${escHtml(t.plaintiffPosition)}</strong></div><div class="case-role-mini blue"><span>🔵 상대측 설명</span><strong>${escHtml(t.defendantPosition)}</strong></div></div><div class="case-enter-door"><span class="door-knob"></span><span>법정 입장</span></div></article>`;
   }
-  return `<div data-vote-wrap class="case-vote-choice" onclick="event.stopPropagation()">
-    <span>나는 어느 쪽?</span>
-    <button class="vote-btn red" data-topic-id="${escAttr(t.id)}" data-side="A">문제 제기</button>
-    <button class="vote-btn blue" data-topic-id="${escAttr(t.id)}" data-side="B">상대측</button>
-  </div>`;
+  return `<article class="case-door-card story-case-card" style="animation-delay:${Math.min(i * 0.025, 0.36)}s;"><div class="case-door-top"><div class="case-file-icon">${caseIcon(t.category)}</div><div><div class="case-door-cat">${escHtml(t.category)} · ${escHtml(t.difficulty || '스토리')}</div><div class="case-door-count">스토리 사건 · 단서/반전 포함</div></div></div><div class="case-door-title">${escHtml(t.title)}</div><div class="case-door-summary">${escHtml(t.summary)}</div><div class="story-hook"><b>사건 발단</b><span>${escHtml(t.hook || '사건 기록을 확인해보세요.')}</span></div><div class="story-twist"><b>반전 포인트</b><span>${escHtml(t.twist || '심리 중 새로운 포인트가 드러납니다.')}</span></div><div class="case-roles-mini"><div class="case-role-mini red"><span>🔴 문제 제기</span><strong>${escHtml(t.plaintiffPosition)}</strong></div><div class="case-role-mini blue"><span>🔵 상대측 설명</span><strong>${escHtml(t.defendantPosition)}</strong></div></div><div class="story-actions"><button class="story-main" data-start-story="${escAttr(t.id)}">🕵️ 이 사건으로 시작</button></div></article>`;
 }
 
 function caseIcon(category = '') {
@@ -279,14 +141,7 @@ function checkActiveSessionBanner() {
     const ageHours = (Date.now() - (stored.savedAt || 0)) / 3600000;
     if (ageHours > 48) { localStorage.removeItem('sosoking_active_session'); return; }
     const roleLabel = stored.role === 'plaintiff' ? '🔴 원고' : '🔵 피고';
-    el.innerHTML = `
-      <div class="case-active-banner">
-        <div>
-          <div class="case-active-kicker">🔥 진행 중인 재판</div>
-          <div class="case-active-title">${escHtml(stored.topicTitle || '사건')} · ${roleLabel}</div>
-        </div>
-        <a href="#/debate/${stored.sessionId}">이어하기 →</a>
-      </div>`;
+    el.innerHTML = `<div class="case-active-banner"><div><div class="case-active-kicker">🔥 진행 중인 재판</div><div class="case-active-title">${escHtml(stored.topicTitle || '사건')} · ${roleLabel}</div></div><a href="#/debate/${stored.sessionId}">이어하기 →</a></div>`;
   } catch {}
 }
 
@@ -332,30 +187,27 @@ function injectCaseBoardStyle() {
     .case-cat-pill.active { color:#0d1117; background:linear-gradient(135deg,var(--gold),var(--gold-light)); border-color:transparent; }
     .case-door-grid { display:grid; grid-template-columns:1fr; gap:12px; }
     .case-door-card { position:relative; overflow:hidden; border-radius:20px; padding:16px; border:1.5px solid rgba(201,168,76,.25); background:linear-gradient(145deg, rgba(255,255,255,.07), rgba(255,255,255,.02)); box-shadow:0 10px 28px rgba(0,0,0,.2); cursor:pointer; transform:translateY(8px); opacity:0; animation:caseCardIn .38s ease forwards; }
-    .official-fallback-card { border-color:rgba(201,168,76,.38); }
+    .story-case-card { border-color:rgba(201,168,76,.46); }
+    .story-case-card:after { content:'STORY'; position:absolute; top:12px; right:12px; border-radius:999px; padding:3px 8px; background:var(--gold); color:#0d1117; font-size:10px; font-weight:900; letter-spacing:.08em; }
     [data-theme="light"] .case-door-card { background:linear-gradient(145deg, rgba(255,255,255,.95), rgba(255,241,228,.82)); box-shadow:0 8px 22px rgba(154,112,24,.12); }
-    .case-door-card:hover { border-color:var(--gold); transform:translateY(-2px); }
-    .case-door-card:before { content:''; position:absolute; right:-38px; top:-38px; width:110px; height:110px; border-radius:50%; background:rgba(201,168,76,.09); }
     .case-door-top { position:relative; display:flex; align-items:center; gap:11px; margin-bottom:12px; }
     .case-file-icon { width:42px; height:42px; border-radius:13px; display:flex; align-items:center; justify-content:center; background:rgba(201,168,76,.12); border:1px solid rgba(201,168,76,.22); font-size:22px; }
     .case-door-cat { font-size:11px; font-weight:900; color:var(--gold); letter-spacing:.06em; }
     .case-door-count { margin-top:2px; font-size:11px; color:var(--cream-dim); }
     .case-door-title { position:relative; font-family:var(--font-serif); font-size:18px; font-weight:900; color:var(--cream); line-height:1.35; margin-bottom:6px; }
     .case-door-summary { position:relative; font-size:13px; color:var(--cream-dim); line-height:1.6; margin-bottom:12px; }
+    .story-hook, .story-twist { position:relative; margin-bottom:9px; padding:10px 11px; border-radius:13px; border:1px solid rgba(201,168,76,.18); background:rgba(255,255,255,.035); }
+    [data-theme="light"] .story-hook, [data-theme="light"] .story-twist { background:rgba(154,112,24,.055); }
+    .story-hook b, .story-twist b { display:block; color:var(--gold); font-size:10px; font-weight:900; margin-bottom:3px; }
+    .story-hook span, .story-twist span { display:block; color:var(--cream-dim); font-size:12px; line-height:1.55; }
+    .story-twist { border-color:rgba(231,76,60,.2); } .story-twist b { color:#e67e22; }
     .case-roles-mini { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px; }
     .case-role-mini { min-width:0; border-radius:12px; padding:9px 10px; border:1px solid rgba(255,255,255,.08); }
     .case-role-mini.red { background:rgba(231,76,60,.08); border-color:rgba(231,76,60,.22); } .case-role-mini.blue { background:rgba(52,152,219,.08); border-color:rgba(52,152,219,.22); }
     .case-role-mini span { display:block; font-size:10px; font-weight:900; margin-bottom:3px; } .case-role-mini.red span { color:#e74c3c; } .case-role-mini.blue span { color:#3498db; }
     .case-role-mini strong { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--cream); font-size:12px; font-weight:700; }
-    .case-vote-choice { display:flex; align-items:center; gap:7px; padding-top:11px; border-top:1px solid rgba(201,168,76,.15); }
-    .case-vote-choice span { flex-shrink:0; font-size:11px; color:var(--cream-dim); font-weight:900; }
-    .case-vote-choice .vote-btn { flex:1; border-radius:10px; padding:7px; font-size:12px; font-weight:900; cursor:pointer; }
-    .case-vote-choice .vote-btn.red { border:1.5px solid rgba(231,76,60,.48); background:rgba(231,76,60,.08); color:#e74c3c; }
-    .case-vote-choice .vote-btn.blue { border:1.5px solid rgba(52,152,219,.48); background:rgba(52,152,219,.08); color:#3498db; }
-    .case-vote-result { padding-top:11px; border-top:1px solid rgba(201,168,76,.15); }
-    .case-vote-labels { display:flex; justify-content:space-between; font-size:11px; font-weight:900; margin-bottom:5px; }
-    .case-vote-bar { height:7px; border-radius:999px; overflow:hidden; display:flex; background:rgba(255,255,255,.08); }
-    .case-vote-total { text-align:center; font-size:10px; color:var(--cream-dim); margin-top:4px; }
+    .story-actions { margin-top:12px; display:grid; }
+    .story-main { border:0; border-radius:13px; padding:12px; background:linear-gradient(135deg,var(--gold),var(--gold-light)); color:#0d1117; font-size:13px; font-weight:900; cursor:pointer; }
     .case-enter-door { margin-top:12px; display:flex; align-items:center; justify-content:center; gap:7px; border-radius:13px; padding:10px; background:rgba(201,168,76,.1); color:var(--gold); font-size:13px; font-weight:900; }
     .door-knob { width:9px; height:9px; border-radius:50%; background:var(--gold); box-shadow:0 0 10px rgba(201,168,76,.5); }
     .case-empty-state { grid-column:1/-1; text-align:center; padding:44px 20px; border:1.5px dashed rgba(201,168,76,.28); border-radius:20px; background:rgba(255,255,255,.03); }
@@ -369,7 +221,5 @@ function injectCaseBoardStyle() {
   document.head.appendChild(style);
 }
 
-function escHtml(s) {
-  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;').replace(/'/g,'&#039;');
-}
+function escHtml(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;').replace(/'/g,'&#039;'); }
 function escAttr(s) { return escHtml(s); }
