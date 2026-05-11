@@ -19,34 +19,34 @@ export function renderTown(container) {
 
         <section class="town-board">
           <div class="town-board-title">오늘의 동선</div>
-          <div class="town-board-row"><span>1</span> 경찰서에서 사건 상황 정리</div>
-          <div class="town-board-row"><span>2</span> 법률사무소에서 입장 정리</div>
-          <div class="town-board-row"><span>3</span> 사건접수처에서 생활 사건 등록</div>
-          <div class="town-board-row"><span>4</span> 법원에서 재판 시작</div>
+          <div class="town-board-row"><span>1</span> 경찰서에서 사건 상황 조사</div>
+          <div class="town-board-row"><span>2</span> 법률사무소에서 양쪽 사정 정리</div>
+          <div class="town-board-row"><span>3</span> 증거 아이템 선택</div>
+          <div class="town-board-row"><span>4</span> 접수 후 생활법정 입장</div>
         </section>
 
-        <button class="town-building police" data-target="#/submit-topic" data-speech="경찰서에서는 사건 상황을 신고서처럼 정리합니다.">
+        <button class="town-building police" data-target="#/case-quest" data-speech="경찰서에서는 누가 이겼는지보다 먼저 무슨 일이 있었는지 조사합니다.">
           <div class="building-roof">🚓</div>
           <div class="building-name">소소 경찰서</div>
-          <div class="building-sub">사건 상황 정리</div>
+          <div class="building-sub">사건 상황 조사</div>
           <div class="building-door"></div>
         </button>
 
-        <button class="town-building law-office" data-target="#/submit-topic" data-speech="법률사무소에서는 원고와 피고의 입장을 깔끔하게 나눕니다.">
+        <button class="town-building law-office" data-target="#/case-quest" data-speech="법률사무소에서는 싸움이 아니라 양쪽 사정을 사건 기록으로 정리합니다.">
           <div class="building-roof">📚</div>
           <div class="building-name">법률사무소</div>
-          <div class="building-sub">원고·피고 입장 정리</div>
+          <div class="building-sub">양쪽 사정 정리</div>
           <div class="building-door"></div>
         </button>
 
-        <button class="town-building filing" data-target="#/submit-topic" data-speech="사건접수처에서 생활 속 억울함을 사건으로 등록합니다.">
+        <button class="town-building filing" data-target="#/case-quest" data-speech="사건접수처에서는 조사한 내용을 생활법정 접수서로 제출합니다.">
           <div class="building-roof">📝</div>
           <div class="building-name">사건접수처</div>
-          <div class="building-sub">생활 사건 등록</div>
+          <div class="building-sub">접수 퀘스트 시작</div>
           <div class="building-door"></div>
         </button>
 
-        <button class="town-building courthouse" data-target="#/topics" data-speech="법원에서는 접수된 사건을 골라 원고와 피고로 재판을 시작합니다.">
+        <button class="town-building courthouse" data-target="#/topics" data-speech="법원에서는 접수된 생활 사건을 골라 AI 판사에게 판결을 요청합니다.">
           <div class="building-roof">⚖️</div>
           <div class="building-name">소소킹 생활법정</div>
           <div class="building-sub">대법정 입장</div>
@@ -69,12 +69,12 @@ export function renderTown(container) {
 
         <div class="town-speech" id="town-speech">
           <strong>가이드</strong>
-          <span>건물을 눌러 이동하세요. 지금은 2D 가상거리 베타입니다.</span>
+          <span>토론하러 가는 길이 아니라, 생활 사건을 조사하고 접수하는 짧은 퀘스트입니다.</span>
         </div>
       </main>
 
       <section class="town-action-panel">
-        <button onclick="location.hash='#/submit-topic'">📝 바로 사건 접수</button>
+        <button onclick="location.hash='#/case-quest'">🕵️ 사건 해결 퀘스트</button>
         <button onclick="location.hash='#/topics'">⚖️ 바로 법정 입장</button>
       </section>
     </div>
