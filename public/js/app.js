@@ -2,6 +2,7 @@ import { initAuth, trackEvent, trackUser, auth, db } from './firebase.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { renderHome } from './pages/home.js';
 import { renderTown } from './pages/town.js';
+import { renderCaseQuest } from './pages/case-quest.js';
 import { renderTopics } from './pages/topics.js';
 import { renderTopicDetail } from './pages/topic-detail.js';
 import { renderDebate } from './pages/debate.js';
@@ -37,6 +38,9 @@ function route() {
   } else if (hash === '#/town') {
     pageName = 'town';
     renderTown(content);
+  } else if (hash === '#/case-quest') {
+    pageName = 'case_quest';
+    renderCaseQuest(content);
   } else if (hash === '#/topics') {
     pageName = 'topics';
     renderTopics(content);
