@@ -22,7 +22,7 @@ function bootCharacterGameUi() {
   });
   if (!observer) {
     observer = new MutationObserver(scheduleEnhance);
-    observer.observe(document.getElementById('page-content') || document.body, { childList: true, subtree: true, characterData: true });
+    observer.observe(document.getElementById('page-content') || document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['class', 'disabled'] });
   }
 }
 
@@ -33,7 +33,7 @@ function scheduleEnhance() {
 
 function enhance() {
   const hash = String(location.hash || '#/');
-  const active = hash.startsWith('#/town') || hash.startsWith('#/case-quest') || hash.startsWith('#/debate/');
+  const active = hash.startsWith('#/town') || hash.startsWith('#/case-quest') || hash.startsWith('#/topic/') || hash.startsWith('#/debate/');
   document.body.classList.toggle('character-game-route', active);
   if (!active) {
     document.querySelector('.character-select-panel')?.remove();
@@ -41,6 +41,7 @@ function enhance() {
   }
   renderCharacterPanel();
   applyAvatar();
+  enhanceWaitingRoom();
   enhanceDebateReactions();
   enhanceQuestRewards();
 }
@@ -89,6 +90,9 @@ function applyAvatar() {
   const questPlayer = document.querySelector('.quest-player .npc-body');
   if (questPlayer) questPlayer.textContent = avatar;
 
+  const waitingPlayer = document.querySelector('.waiting-side-preview.selected .waiting-avatar.player');
+  if (waitingPlayer) waitingPlayer.textContent = avatar;
+
   const role = getActiveRole();
   const targetSelector = role === 'defendant'
     ? '.vc-defendant .vc-avatar span'
@@ -104,6 +108,79 @@ function getActiveRole() {
     const stored = JSON.parse(localStorage.getItem('sosoking_active_session') || 'null');
     return stored?.role || 'plaintiff';
   } catch { return 'plaintiff'; }
+}
+
+function enhanceWaitingRoom() {
+  if (!String(location.hash || '').startsWith('#/topic/')) return;
+  const root = document.querySelector('.waiting-room-page');
+  if (!root) return;
+  normalizeWaitingRoomText(root);
+  const panel = root.querySelector('.case-file-panel');
+  if (panel && panel.dataset.lifeCourtPatched !== '1') {
+    panel.dataset.lifeCourtPatched = '1';
+    const note = document.createElement('div');
+    note.className = 'life-court-waiting-note';
+    note.innerHTML = '<strong>📁 사건 기록 확인</strong><span>이 사건은 오락용 생활법정 사건입니다. 실제 인물이나 민감한 정보를 입력하지 마세요.</span>';
+    panel.prepend(note);
+  }
+  const aiGate = root.querySelector('.entry-gate[data-mode="ai"]');
+  if (aiGate) {
+    aiGate.classList.add('life-ai-recommended');
+    const strong = aiGate.querySelector('strong');
+    const small = aiGate.querySelector('small');
+    if (strong) strong.textContent = '혼자 AI 재판';
+    if (small) small.textContent = '추천 · 바로 시작';
+  }
+  if (root.dataset.aiDefaultTried !== '1') {
+    const plaintiff = root.querySelector('.character-choice[data-side="plaintiff"]');
+    if (plaintiff && aiGate) {
+      root.dataset.aiDefaultTried = '1';
+      setTimeout(() => {
+        if (!root.querySelector('.character-choice.active')) plaintiff.click();
+        if (!root.querySelector('.entry-gate.active')) aiGate.click();
+        const btn = document.getElementById('start-btn');
+        if (btn && !btn.disabled) btn.textContent = '🤖 혼자 AI 재판 시작';
+        applyAvatar();
+      }, 120);
+    }
+  }
+}
+
+function normalizeWaitingRoomText(root) {
+  const map = [
+    [/원고 주장/g, '문제 제기 내용'],
+    [/피고 주장/g, '상대측 설명'],
+    [/억울함을 먼저 변론합니다/g, '사건의 문제점을 먼저 진술합니다'],
+    [/상대 주장을 재치 있게 반론합니다/g, '상대측 사정을 설명합니다'],
+    [/재판장 입장 게이트/g, '재판 방식 선택'],
+    [/친구 게이트/g, '친구 재판'],
+    [/랜덤 게이트/g, '랜덤 재판'],
+    [/AI 게이트/g, '혼자 AI 재판'],
+    [/팀 인원/g, '참여 인원'],
+    [/변론 라운드/g, '사건 심리 단계'],
+    [/끝장 변론/g, '집중 심리'],
+    [/변론/g, '진술'],
+    [/반론/g, '해명'],
+    [/주장/g, '진술'],
+    [/배틀/g, '재판'],
+    [/토론/g, '사건 심리'],
+    [/판정/g, '판결'],
+  ];
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      const parent = node.parentElement;
+      if (!parent || ['SCRIPT', 'STYLE', 'TEXTAREA', 'INPUT'].includes(parent.tagName)) return NodeFilter.FILTER_REJECT;
+      if (!node.nodeValue || !/[토론배틀변론반론주장판정게이트]/.test(node.nodeValue)) return NodeFilter.FILTER_REJECT;
+      return NodeFilter.FILTER_ACCEPT;
+    }
+  });
+  const nodes = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode);
+  nodes.forEach(node => {
+    let text = node.nodeValue;
+    map.forEach(([from, to]) => { text = text.replace(from, to); });
+    node.nodeValue = text;
+  });
 }
 
 function enhanceDebateReactions() {
@@ -176,8 +253,13 @@ function injectStyle() {
     .tiny-reaction-burst i { position:absolute; font-style:normal; font-size:20px; animation:tinyBurst 1.15s ease-out forwards; animation-delay:calc(var(--i) * .04s); }
     .quest-reward-badge { display:flex; align-items:center; gap:10px; margin-bottom:14px; padding:11px 12px; border-radius:16px; border:1.5px solid rgba(201,168,76,.25); background:linear-gradient(135deg,rgba(201,168,76,.11),rgba(255,255,255,.03)); }
     .quest-reward-badge span { font-size:24px; } .quest-reward-badge strong { display:block; color:var(--gold); font-size:12px; } .quest-reward-badge small { display:block; color:var(--cream-dim); font-size:10px; margin-top:2px; }
-    .character-game-route .hero-char .char-body, .character-game-route .quest-player .npc-body, .character-game-route .vc-avatar span { transition:transform .18s ease, filter .18s ease; }
-    .character-game-route .hero-char:hover .char-body, .character-game-route .quest-player:hover .npc-body, .character-game-route .vc-avatar:hover span { transform:scale(1.12) rotate(-4deg); filter:drop-shadow(0 12px 14px rgba(201,168,76,.32)); }
+    .life-court-waiting-note { margin-bottom:13px; padding:12px 13px; border-radius:15px; border:1.5px solid rgba(201,168,76,.26); background:linear-gradient(135deg,rgba(201,168,76,.1),rgba(255,255,255,.03)); }
+    .life-court-waiting-note strong { display:block; color:var(--gold); font-size:12px; margin-bottom:4px; }
+    .life-court-waiting-note span { display:block; color:var(--cream-dim); font-size:12px; line-height:1.55; }
+    .entry-gate.life-ai-recommended { border-color:var(--gold) !important; background:linear-gradient(135deg,rgba(201,168,76,.18),rgba(255,255,255,.04)) !important; box-shadow:0 0 0 3px rgba(201,168,76,.14),0 10px 26px rgba(0,0,0,.18); }
+    .entry-gate.life-ai-recommended::after { content:'추천'; position:absolute; top:7px; right:7px; border-radius:999px; padding:2px 7px; background:var(--gold); color:#0d1117; font-size:10px; font-weight:900; }
+    .character-game-route .hero-char .char-body, .character-game-route .quest-player .npc-body, .character-game-route .waiting-avatar.player, .character-game-route .vc-avatar span { transition:transform .18s ease, filter .18s ease; }
+    .character-game-route .hero-char:hover .char-body, .character-game-route .quest-player:hover .npc-body, .character-game-route .waiting-avatar.player:hover, .character-game-route .vc-avatar:hover span { transform:scale(1.12) rotate(-4deg); filter:drop-shadow(0 12px 14px rgba(201,168,76,.32)); }
     @keyframes emotionPop { 0% { opacity:0; transform:translateY(8px) scale(.72) rotate(-4deg); } 58% { opacity:1; transform:translateY(-4px) scale(1.08) rotate(2deg); } 100% { opacity:1; transform:translateY(0) scale(1) rotate(0); } }
     @keyframes tinyBurst { 0% { opacity:0; transform:translate(0,0) scale(.5); } 20% { opacity:1; } 100% { opacity:0; transform:translate(calc((var(--i) - 2) * 20px), -62px) scale(1.25) rotate(calc(var(--i) * 28deg)); } }
     @media (max-width:520px) { .character-select-panel { top:auto; bottom:86px; right:10px; } .character-select-panel:not(.collapsed) { width:205px; } .emotion-pop { right:4px; top:-22px; } }
