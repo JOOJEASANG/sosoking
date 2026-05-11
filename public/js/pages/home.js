@@ -1,5 +1,4 @@
-import { db } from '../firebase.js';
-import { collection, query, where, orderBy, limit, getDocs } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { STORY_CASE_PACK } from '../data/story-case-pack.js';
 
 const JUDGES = [
   ['👨‍⚖️', '엄벌주의형', '소소한 일도 중대 사건처럼 판결'],
@@ -11,8 +10,20 @@ const JUDGES = [
   ['🎭', '드립형', '진지한 척 웃기게 판결'],
 ];
 
+function getDailyStoryCases(count = 3) {
+  const now = new Date();
+  const seed = Number(`${now.getFullYear()}${now.getMonth() + 1}${now.getDate()}`);
+  return STORY_CASE_PACK
+    .map((item, index) => ({ item, score: ((index + 11) * 7919 + seed * 104729) % 100000 }))
+    .sort((a, b) => a.score - b.score)
+    .slice(0, count)
+    .map(x => x.item);
+}
+
 export async function renderHome(container) {
   injectLobbyStyle();
+  const todayCases = getDailyStoryCases(3);
+  const popularCases = STORY_CASE_PACK.slice(0, 5);
 
   container.innerHTML = `
     <section class="courthouse-hero">
@@ -20,56 +31,37 @@ export async function renderHome(container) {
       <div class="court-building">
         <div class="court-topbar">
           <div>
-            <div class="court-kicker">SOSOKING CIVIL COURT · ENTERTAINMENT ONLY</div>
+            <div class="court-kicker">SOSOKING STORY COURT · ENTERTAINMENT ONLY</div>
             <div class="court-logo">⚖️ 소소킹 생활법정</div>
           </div>
           <button class="court-help-btn" onclick="location.hash='#/guide'">이용 안내</button>
         </div>
 
         <div class="court-facade">
-          <div class="court-roof">
-            <span>⚖️</span>
-            <strong>소소킹 생활법정</strong>
-            <small>AI MOCK COURT</small>
-          </div>
-          <div class="court-columns">
-            <i></i><i></i><i></i><i></i>
-          </div>
+          <div class="court-roof"><span>⚖️</span><strong>소소킹 생활법정</strong><small>STORY COURT</small></div>
+          <div class="court-columns"><i></i><i></i><i></i><i></i></div>
           <div class="court-entrance">
-            <div class="court-door" onclick="window._startCourtCase()">
-              <div class="door-sign">대법정 입장</div>
-              <div class="door-line"></div>
-              <div class="door-knob-left"></div>
-              <div class="door-knob-right"></div>
-            </div>
-            <div class="court-clerk-window" onclick="location.hash='#/submit-topic'">
-              <div class="clerk-avatar">🧑‍💼</div>
-              <div class="clerk-title">사건 접수 창구</div>
-              <div class="clerk-sub">억울한 일을 접수하세요</div>
-            </div>
-            <div class="court-notice-board" onclick="window._startCourtCase()">
-              <div class="notice-pin">📋</div>
-              <div class="notice-title">오늘의 사건 게시판</div>
-              <div class="notice-sub">접수된 생활 사건 열람</div>
-            </div>
+            <div class="court-door" onclick="window._startCourtCase()"><div class="door-sign">대법정 입장</div><div class="door-line"></div><div class="door-knob-left"></div><div class="door-knob-right"></div></div>
+            <div class="court-clerk-window" onclick="location.hash='#/case-quest'"><div class="clerk-avatar">🧑‍💼</div><div class="clerk-title">사건 접수 창구</div><div class="clerk-sub">내 사건을 접수하세요</div></div>
+            <div class="court-notice-board" onclick="window._startCourtCase()"><div class="notice-pin">📋</div><div class="notice-title">오늘의 사건 게시판</div><div class="notice-sub">스토리 사건 열람</div></div>
           </div>
           <div class="court-stairs"><b></b><b></b><b></b></div>
         </div>
 
         <div class="court-copy">
-          <h1>생활 속 작은 억울함,<br><span>가상 법정에서 판결받자</span></h1>
-          <p>실제 법정 같은 공간에서 원고와 피고가 되어 변론하고,<br>AI 판사가 재치·공감·유머 기준으로 판결합니다.</p>
+          <h1>생활 속 작은 사건,<br><span>역할을 골라 풀어보자</span></h1>
+          <p>경찰·검사·변호사·증인·예비 판사 역할을 고르고,<br>단서와 반전을 따라가며 AI 판사의 오락용 판결을 받아보세요.</p>
         </div>
 
         <div class="court-actions">
-          <button onclick="window._startCourtCase()" class="court-primary-btn">🏛️ 대법정 입장하기</button>
-          <button onclick="location.hash='#/submit-topic'" class="court-secondary-btn">✏️ 사건 접수하기</button>
+          <button onclick="window._startCourtCase()" class="court-primary-btn">🕵️ 오늘의 사건 보기</button>
+          <button onclick="location.hash='#/case-quest'" class="court-secondary-btn">✏️ 내 사건 접수</button>
         </div>
 
         <div class="court-service-row">
-          <div class="court-service-card"><span>👫</span><strong>친구 재판</strong><small>링크로 상대 초대</small></div>
-          <div class="court-service-card"><span>🎲</span><strong>랜덤 배정</strong><small>즉석 매칭</small></div>
-          <div class="court-service-card"><span>🤖</span><strong>AI 상대</strong><small>소소봇과 재판</small></div>
+          <div class="court-service-card"><span>🚓</span><strong>경찰 조사</strong><small>증거와 단서 확인</small></div>
+          <div class="court-service-card"><span>🧑‍💼</span><strong>검사 추궁</strong><small>모순을 캐묻기</small></div>
+          <div class="court-service-card"><span>⚖️</span><strong>변호 전략</strong><small>입장 방어하기</small></div>
         </div>
 
         <div class="court-legal-note">본 서비스는 오락용 모의법정입니다. 실제 법적 효력은 없습니다.</div>
@@ -78,28 +70,46 @@ export async function renderHome(container) {
 
     <div class="container" style="padding-top:28px;padding-bottom:80px;">
       <div id="active-session-banner"></div>
-      <div id="today-section"></div>
-      <div id="popular-section" style="margin-top:32px;"></div>
+      <section class="home-story-section">
+        <div class="home-section-head">
+          <div>
+            <div class="home-section-kicker">🌟 TODAY CASES</div>
+            <h2>오늘의 스토리 사건 3개</h2>
+          </div>
+          <a href="#/topics">전체 보기</a>
+        </div>
+        <div class="home-story-grid">
+          ${todayCases.map((item, idx) => storyCaseCard(item, idx, true)).join('')}
+        </div>
+      </section>
+
+      <section class="home-story-section" style="margin-top:34px;">
+        <div class="home-section-head">
+          <div>
+            <div class="home-section-kicker">🔥 STORY PACK</div>
+            <h2>추천 사건</h2>
+          </div>
+          <a href="#/topics">사건 게시판</a>
+        </div>
+        <div class="home-popular-list">
+          ${popularCases.map((item, idx) => compactCaseCard(item, idx)).join('')}
+        </div>
+      </section>
 
       <div style="margin-top:40px;">
         <div style="font-size:11px;font-weight:900;color:var(--gold);letter-spacing:.08em;margin-bottom:16px;">👨‍⚖️ 랜덤 AI 판사단</div>
         <div class="home-feature-grid">
-          ${JUDGES.map(([icon, name, desc]) => `
-            <div class="home-feature-item">
-              <span class="home-feature-icon">${icon}</span>
-              <div class="home-feature-label">${name}</div>
-              <div class="home-feature-desc">${desc}</div>
-            </div>`).join('')}
+          ${JUDGES.map(([icon, name, desc]) => `<div class="home-feature-item"><span class="home-feature-icon">${icon}</span><div class="home-feature-label">${name}</div><div class="home-feature-desc">${desc}</div></div>`).join('')}
         </div>
       </div>
 
       <div style="margin-top:32px;">
-        <div style="font-size:11px;font-weight:900;color:var(--gold);letter-spacing:.08em;margin-bottom:16px;">⚖️ 재판 진행 절차</div>
+        <div style="font-size:11px;font-weight:900;color:var(--gold);letter-spacing:.08em;margin-bottom:16px;">🎮 사건 진행 절차</div>
         <div class="home-feature-grid">
-          <div class="home-feature-item"><span class="home-feature-icon">📋</span><div class="home-feature-label">사건 접수</div><div class="home-feature-desc">생활 속 억울한 사건을 고릅니다</div></div>
-          <div class="home-feature-item"><span class="home-feature-icon">🚪</span><div class="home-feature-label">입정</div><div class="home-feature-desc">원고석 또는 피고석으로 들어갑니다</div></div>
-          <div class="home-feature-item"><span class="home-feature-icon">🎙️</span><div class="home-feature-label">변론</div><div class="home-feature-desc">원고 변론과 피고 반론을 진행합니다</div></div>
-          <div class="home-feature-item"><span class="home-feature-icon">🔨</span><div class="home-feature-label">판결 선고</div><div class="home-feature-desc">AI 판사가 판결문과 미션을 선고합니다</div></div>
+          <div class="home-feature-item"><span class="home-feature-icon">📋</span><div class="home-feature-label">사건 선택</div><div class="home-feature-desc">단서와 반전이 있는 사건을 고릅니다</div></div>
+          <div class="home-feature-item"><span class="home-feature-icon">🎭</span><div class="home-feature-label">역할 선택</div><div class="home-feature-desc">경찰·검사·변호사·증인 역할을 고릅니다</div></div>
+          <div class="home-feature-item"><span class="home-feature-icon">🃏</span><div class="home-feature-label">카드 진행</div><div class="home-feature-desc">글쓰기 대신 역할 카드를 선택합니다</div></div>
+          <div class="home-feature-item"><span class="home-feature-icon">🔨</span><div class="home-feature-label">AI 판결</div><div class="home-feature-desc">AI 판사가 판결문과 미션을 선고합니다</div></div>
         </div>
       </div>
 
@@ -108,16 +118,11 @@ export async function renderHome(container) {
         <a href="#/guide" class="btn btn-ghost" style="margin-top:10px;font-size:14px;">📖 이용 안내 보기</a>
       </div>
 
-      <div style="margin-top:24px;padding-bottom:12px;">
-        <div class="disclaimer" style="text-align:center;">
-          소소킹 생활법정은 순수 오락 서비스입니다.<br>AI 판결에는 실제 법적 효력이 없으며, 재미로만 이용해주세요.
-        </div>
-      </div>
+      <div style="margin-top:24px;padding-bottom:12px;"><div class="disclaimer" style="text-align:center;">소소킹 생활법정은 순수 오락 서비스입니다.<br>AI 판결에는 실제 법적 효력이 없으며, 재미로만 이용해주세요.</div></div>
     </div>
   `;
 
-  loadTodayCase();
-  loadPopularTopics();
+  bindStoryCaseButtons();
   checkActiveSessionBanner();
 }
 
@@ -126,80 +131,59 @@ window._startCourtCase = () => {
   location.hash = '#/topics';
 };
 
-async function loadTodayCase() {
-  const el = document.getElementById('today-section');
-  if (!el) return;
-  try {
-    let snap = await getDocs(query(
-      collection(db, 'topics'),
-      where('status', '==', 'active'),
-      where('isOfficial', '==', true),
-      orderBy('playCount', 'desc'),
-      limit(1)
-    ));
-    if (snap.empty) {
-      snap = await getDocs(query(
-        collection(db, 'topics'),
-        where('status', '==', 'active'),
-        orderBy('createdAt', 'desc'),
-        limit(1)
-      ));
-    }
-    if (!snap.empty) renderTodayCard(el, snap.docs[0].id, snap.docs[0].data());
-  } catch { /* no cases yet */ }
+function storyCaseCard(item, idx, large = false) {
+  return `
+    <article class="home-story-card ${large ? 'large' : ''}" data-story-id="${escAttr(item.id)}" style="animation-delay:${idx * .04}s;">
+      <div class="home-story-top"><span>${caseIcon(item.category)}</span><b>${escHtml(item.category)} · ${escHtml(item.difficulty || '스토리')}</b></div>
+      <h3>${escHtml(item.title)}</h3>
+      <p>${escHtml(item.summary)}</p>
+      <div class="home-story-hook"><b>사건 발단</b><span>${escHtml(item.hook || '')}</span></div>
+      <div class="home-story-twist"><b>반전 포인트</b><span>${escHtml(item.twist || '')}</span></div>
+      <button type="button" data-start-story="${escAttr(item.id)}">🕵️ 이 사건 시작</button>
+    </article>`;
 }
 
-function renderTodayCard(el, topicId, t) {
-  el.innerHTML = `
-    <div style="font-size:11px;font-weight:900;color:var(--gold);letter-spacing:.08em;margin-bottom:12px;">🌟 오늘의 사건</div>
-    <div class="today-case-card" onclick="location.hash='#/topic/${encodeURIComponent(topicId)}'">
-      <div class="today-label">📋 ${escHtml(t.category || '생활')} · 재판 ${(t.playCount||0).toLocaleString()}회</div>
-      <div class="today-title">${escHtml(t.title)}</div>
-      <div class="today-summary">${escHtml(t.summary)}</div>
-      <div class="today-vs">
-        <div class="today-pos" style="border-left:2px solid rgba(231,76,60,0.5);">
-          <div class="today-pos-label">🔴 원고 입장</div>
-          <div class="today-pos-text">${escHtml(t.plaintiffPosition)}</div>
-        </div>
-        <div class="today-pos" style="border-left:2px solid rgba(52,152,219,0.5);">
-          <div class="today-pos-label">🔵 피고 입장</div>
-          <div class="today-pos-text">${escHtml(t.defendantPosition)}</div>
-        </div>
-      </div>
-      <div class="today-footer"><span style="color:var(--gold);font-weight:900;">탭해서 재판 시작 →</span></div>
-    </div>
-  `;
+function compactCaseCard(item, idx) {
+  return `
+    <button type="button" class="home-compact-case" data-start-story="${escAttr(item.id)}" style="animation-delay:${idx * .035}s;">
+      <span class="home-compact-icon">${caseIcon(item.category)}</span>
+      <span class="home-compact-body"><b>${escHtml(item.title)}</b><small>${escHtml(item.summary)}</small></span>
+      <i>시작 →</i>
+    </button>`;
 }
 
-async function loadPopularTopics() {
-  const el = document.getElementById('popular-section');
-  if (!el) return;
-  try {
-    const snap = await getDocs(query(
-      collection(db, 'topics'),
-      where('status', '==', 'active'),
-      orderBy('playCount', 'desc'),
-      limit(5)
-    ));
-    if (snap.empty) return;
-    const cards = snap.docs.map(d => {
-      const t = d.data();
-      return `<div class="topic-card" onclick="location.hash='#/topic/${encodeURIComponent(d.id)}'" style="margin-bottom:8px;">
-        <div class="topic-card-title">${escHtml(t.title)}</div>
-        <div class="topic-card-summary">${escHtml(t.summary)}</div>
-        <div class="topic-card-footer">
-          <span class="topic-card-cat">${escHtml(t.category || '생활')}</span>
-          <span>재판 ${(t.playCount||0).toLocaleString()}회</span>
-          ${t.isOfficial ? '<span style="color:var(--gold);font-size:10px;font-weight:900;">공식</span>' : ''}
-        </div>
-      </div>`;
-    }).join('');
-    el.innerHTML = `
-      <div style="font-size:11px;font-weight:900;color:var(--gold);letter-spacing:.08em;margin-bottom:12px;">🔥 인기 사건</div>
-      ${cards}
-      <a href="#/topics" style="display:block;text-align:center;margin-top:12px;color:var(--gold);font-size:13px;font-weight:900;text-decoration:none;">전체 사건 보기 →</a>
-    `;
-  } catch { /* silent */ }
+function bindStoryCaseButtons() {
+  document.querySelectorAll('[data-start-story]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const item = STORY_CASE_PACK.find(x => x.id === btn.dataset.startStory);
+      if (!item) return;
+      sessionStorage.setItem('sosoking_prefill_case', JSON.stringify({
+        title: item.title,
+        summary: `${item.summary} ${item.hook || ''} ${item.twist || ''}`.slice(0, 120),
+        plaintiffPosition: item.plaintiffPosition,
+        defendantPosition: item.defendantPosition,
+        category: item.category,
+        storyCaseId: item.id,
+        difficulty: item.difficulty,
+      }));
+      location.hash = '#/case-quest';
+    });
+  });
+}
+
+function caseIcon(category = '') {
+  const c = String(category);
+  if (c.includes('카톡')) return '💬';
+  if (c.includes('연애')) return '💘';
+  if (c.includes('음식') || c.includes('치킨')) return '🍗';
+  if (c.includes('정산') || c.includes('돈')) return '💸';
+  if (c.includes('직장')) return '💼';
+  if (c.includes('친구')) return '👫';
+  if (c.includes('가족')) return '👨‍👩‍👧';
+  if (c.includes('이웃')) return '🏘️';
+  if (c.includes('취미')) return '🎮';
+  return '📁';
 }
 
 function checkActiveSessionBanner() {
@@ -211,15 +195,7 @@ function checkActiveSessionBanner() {
     const ageHours = (Date.now() - (stored.savedAt || 0)) / 3600000;
     if (ageHours > 48) { localStorage.removeItem('sosoking_active_session'); return; }
     const roleLabel = stored.role === 'plaintiff' ? '🔴 원고' : '🔵 피고';
-    el.innerHTML = `
-      <div style="background:linear-gradient(135deg,rgba(201,168,76,0.14),rgba(201,168,76,0.05));border:1.5px solid rgba(201,168,76,0.45);border-radius:14px;padding:14px 16px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
-        <div>
-          <div style="font-size:12px;font-weight:900;color:var(--gold);margin-bottom:3px;">🔥 진행 중인 재판</div>
-          <div style="font-size:13px;color:var(--cream);font-weight:800;">${escHtml(stored.topicTitle || '사건')} · ${roleLabel}</div>
-        </div>
-        <a href="#/debate/${stored.sessionId}" style="flex-shrink:0;padding:9px 16px;border-radius:10px;background:var(--gold);color:#0d1117;font-size:13px;font-weight:900;text-decoration:none;">이어하기 →</a>
-      </div>
-    `;
+    el.innerHTML = `<div style="background:linear-gradient(135deg,rgba(201,168,76,0.14),rgba(201,168,76,0.05));border:1.5px solid rgba(201,168,76,0.45);border-radius:14px;padding:14px 16px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:12px;"><div><div style="font-size:12px;font-weight:900;color:var(--gold);margin-bottom:3px;">🔥 진행 중인 재판</div><div style="font-size:13px;color:var(--cream);font-weight:800;">${escHtml(stored.topicTitle || '사건')} · ${roleLabel}</div></div><a href="#/debate/${stored.sessionId}" style="flex-shrink:0;padding:9px 16px;border-radius:10px;background:var(--gold);color:#0d1117;font-size:13px;font-weight:900;text-decoration:none;">이어하기 →</a></div>`;
   } catch {}
 }
 
@@ -271,12 +247,40 @@ function injectLobbyStyle() {
     [data-theme="light"] .court-service-card { background:rgba(255,255,255,.62); }
     .court-service-card span { display:block; font-size:22px; margin-bottom:2px; } .court-service-card strong { display:block; font-size:12px; color:var(--cream); } .court-service-card small { display:block; font-size:10px; color:var(--cream-dim); }
     .court-legal-note { text-align:center; font-size:11px; color:var(--cream-dim); }
+    .home-section-head { display:flex; align-items:flex-end; justify-content:space-between; gap:12px; margin-bottom:13px; }
+    .home-section-kicker { color:var(--gold); font-size:10px; font-weight:900; letter-spacing:.12em; margin-bottom:3px; }
+    .home-section-head h2 { margin:0; color:var(--cream); font-size:18px; font-family:var(--font-serif); }
+    .home-section-head a { color:var(--gold); font-size:12px; font-weight:900; text-decoration:none; }
+    .home-story-grid { display:grid; grid-template-columns:1fr; gap:12px; }
+    .home-story-card, .home-compact-case { animation:homeCardIn .35s ease both; }
+    .home-story-card { padding:16px; border-radius:20px; border:1.5px solid rgba(201,168,76,.32); background:linear-gradient(145deg,rgba(255,255,255,.07),rgba(255,255,255,.025)); box-shadow:0 10px 24px rgba(0,0,0,.17); }
+    [data-theme="light"] .home-story-card { background:rgba(255,255,255,.82); box-shadow:0 8px 20px rgba(154,112,24,.1); }
+    .home-story-top { display:flex; align-items:center; gap:8px; margin-bottom:9px; color:var(--gold); font-size:11px; font-weight:900; }
+    .home-story-top span { font-size:23px; }
+    .home-story-card h3 { margin:0 0 5px; color:var(--cream); font-size:18px; line-height:1.35; font-family:var(--font-serif); }
+    .home-story-card p { margin:0 0 10px; color:var(--cream-dim); font-size:13px; line-height:1.55; }
+    .home-story-hook, .home-story-twist { padding:9px 10px; border-radius:12px; background:rgba(255,255,255,.035); border:1px solid rgba(201,168,76,.16); margin-top:7px; }
+    [data-theme="light"] .home-story-hook, [data-theme="light"] .home-story-twist { background:rgba(154,112,24,.055); }
+    .home-story-twist { border-color:rgba(231,76,60,.18); }
+    .home-story-hook b, .home-story-twist b { display:block; color:var(--gold); font-size:10px; margin-bottom:3px; }
+    .home-story-twist b { color:#e67e22; }
+    .home-story-hook span, .home-story-twist span { display:block; color:var(--cream-dim); font-size:11px; line-height:1.5; }
+    .home-story-card button { width:100%; margin-top:12px; border:0; border-radius:13px; padding:12px; background:linear-gradient(135deg,var(--gold),var(--gold-light)); color:#0d1117; font-size:13px; font-weight:900; cursor:pointer; }
+    .home-popular-list { display:grid; gap:8px; }
+    .home-compact-case { width:100%; display:flex; align-items:center; gap:11px; text-align:left; border:1px solid rgba(201,168,76,.22); border-radius:15px; padding:12px; background:rgba(255,255,255,.04); cursor:pointer; }
+    [data-theme="light"] .home-compact-case { background:rgba(255,255,255,.74); }
+    .home-compact-icon { width:38px; height:38px; flex-shrink:0; display:flex; align-items:center; justify-content:center; border-radius:12px; background:rgba(201,168,76,.1); font-size:22px; }
+    .home-compact-body { flex:1; min-width:0; }
+    .home-compact-body b { display:block; color:var(--cream); font-size:13px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+    .home-compact-body small { display:block; color:var(--cream-dim); font-size:11px; margin-top:2px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+    .home-compact-case i { color:var(--gold); font-size:11px; font-style:normal; font-weight:900; }
     @keyframes courtGlow { from { opacity:.5; transform:translateX(-50%) scale(.95); } to { opacity:1; transform:translateX(-50%) scale(1.05); } }
+    @keyframes homeCardIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+    @media (min-width:760px) { .home-story-grid { grid-template-columns:repeat(3,1fr); } }
     @media (max-width:520px) { .courthouse-hero { padding:14px; align-items:flex-start; } .court-building { padding-top:6px; gap:13px; } .court-facade { height:350px; border-radius:24px; } .court-roof { width:88%; height:72px; } .court-roof strong { font-size:15px; } .court-columns { left:8%; right:8%; top:84px; bottom:78px; gap:8px; } .court-door { width:108px; height:150px; } .door-knob-left { left:43px; } .door-knob-right { right:43px; } .court-clerk-window, .court-notice-board { width:104px; padding:10px; bottom:18px; } .court-clerk-window { left:10px; } .court-notice-board { right:10px; } .clerk-sub, .notice-sub { display:none; } .court-copy p { font-size:13px; } .court-actions { grid-template-columns:1fr; max-width:320px; } .court-service-row { max-width:340px; } .court-service-card { padding:8px 4px; } .court-service-card strong { font-size:11px; } }
   `;
   document.head.appendChild(style);
 }
 
-function escHtml(s) {
-  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;').replace(/'/g,'&#039;');
-}
+function escHtml(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;').replace(/'/g,'&#039;'); }
+function escAttr(s) { return escHtml(s); }
