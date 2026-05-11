@@ -1,5 +1,6 @@
 import { db } from '../firebase.js';
 import { collection, query, where, orderBy, getDocs, doc, updateDoc, increment } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { OFFICIAL_CASE_PACK, OFFICIAL_CASE_CATEGORIES } from '../data/official-case-pack.js';
 
 let allTopics = [];
 let allCategories = [];
@@ -21,7 +22,7 @@ export async function renderTopics(container) {
           <div class="case-header-kicker">VIRTUAL COURT LOBBY</div>
           <div class="case-header-title">🏛️ 사건 게시판</div>
         </div>
-        <button class="case-write-btn" onclick="location.hash='#/submit-topic'">✏️ 등록</button>
+        <button class="case-write-btn" onclick="location.hash='#/case-quest'">🕵️ 접수</button>
       </div>
 
       <div class="container case-board-container">
@@ -30,15 +31,15 @@ export async function renderTopics(container) {
           <div class="case-board-judge">
             <div class="case-board-nameplate">AI 접수 판사</div>
             <div class="case-board-avatar">👨‍⚖️</div>
-            <div class="case-board-speech">사건을 고르면 원고와 피고가 되어 재판장에 입장합니다.</div>
+            <div class="case-board-speech">사건을 고르면 AI 상대와 혼자서도 바로 생활법정에 입장할 수 있습니다.</div>
           </div>
           <div class="case-board-clerk">
             <div class="clerk-avatar">🧑‍💼</div>
             <div class="clerk-label">서기</div>
           </div>
           <div class="case-board-sign">
-            <div class="sign-title">오늘 접수 가능한 사건</div>
-            <div class="sign-sub">재치 있게 변론할 사건을 선택하세요</div>
+            <div class="sign-title">공식 생활사건 ${OFFICIAL_CASE_PACK.length}개</div>
+            <div class="sign-sub">가볍고 웃긴 사건을 골라 바로 시작하세요</div>
           </div>
         </div>
 
@@ -47,9 +48,18 @@ export async function renderTopics(container) {
         <div class="case-search-panel">
           <div class="case-search-wrap">
             <span>🔍</span>
-            <input type="text" id="search-input" placeholder="사건명, 상황, 카테고리 검색...">
+            <input type="text" id="search-input" placeholder="카톡, 치킨, 더치페이, 지각, 냉장고...">
           </div>
           <div class="case-cat-filter" id="cat-filter"></div>
+        </div>
+
+        <div class="official-pack-banner">
+          <span>🎮</span>
+          <div>
+            <strong>혼자 해도 바로 재밌는 공식 사건팩</strong>
+            <small>처음엔 공식 사건을 골라 AI 상대와 바로 재판해보세요.</small>
+          </div>
+          <button onclick="location.hash='#/case-quest'">내 사건 만들기</button>
         </div>
 
         <div id="topics-list" class="case-door-grid">
@@ -86,9 +96,9 @@ export async function renderTopics(container) {
       const wrap = btn.closest('[data-vote-wrap]');
       if (wrap) wrap.outerHTML = voteBarHtml(topic);
     }
-    try {
-      await updateDoc(doc(db, 'topics', topicId), { [`votes${side}`]: increment(1) });
-    } catch {}
+    if (!topic?.isFallbackCase) {
+      try { await updateDoc(doc(db, 'topics', topicId), { [`votes${side}`]: increment(1) }); } catch {}
+    }
   });
 }
 
@@ -96,21 +106,41 @@ async function loadCategories() {
   try {
     const snap = await getDocs(query(collection(db, 'categories'), orderBy('order', 'asc')));
     const seen = new Set();
-    allCategories = snap.docs
+    const dbCats = snap.docs
       .map(d => ({ id: d.id, ...d.data() }))
       .filter(c => { if (seen.has(c.name)) return false; seen.add(c.name); return true; });
-  } catch { allCategories = []; }
+    const merged = [...dbCats];
+    OFFICIAL_CASE_CATEGORIES.forEach(c => {
+      if (!seen.has(c.name)) { seen.add(c.name); merged.push({ id: `official-${c.name}`, ...c }); }
+    });
+    allCategories = merged.sort((a, b) => (a.order || 999) - (b.order || 999));
+  } catch { allCategories = OFFICIAL_CASE_CATEGORIES.map(c => ({ id: `official-${c.name}`, ...c })); }
 }
 
 async function loadTopics() {
+  let dbTopics = [];
   try {
     const snap = await getDocs(query(
       collection(db, 'topics'),
       where('status', '==', 'active'),
       orderBy('playCount', 'desc')
     ));
-    allTopics = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  } catch { allTopics = []; }
+    dbTopics = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch { dbTopics = []; }
+
+  const existingTitles = new Set(dbTopics.map(t => String(t.title || '').trim()));
+  const fallbackTopics = OFFICIAL_CASE_PACK
+    .filter(t => !existingTitles.has(t.title))
+    .map((t, idx) => ({
+      ...t,
+      status: 'active',
+      isOfficial: true,
+      isFallbackCase: true,
+      playCount: 20 + ((OFFICIAL_CASE_PACK.length - idx) * 3),
+      votesA: 8 + (idx % 17),
+      votesB: 6 + ((idx * 2) % 19),
+    }));
+  allTopics = [...dbTopics, ...fallbackTopics];
 }
 
 function renderFilter() {
@@ -142,27 +172,29 @@ function renderList(search = '', cat = _activeCat) {
     list = list.filter(t =>
       t.title?.toLowerCase().includes(q) ||
       t.summary?.toLowerCase().includes(q) ||
-      t.category?.toLowerCase().includes(q)
+      t.category?.toLowerCase().includes(q) ||
+      t.plaintiffPosition?.toLowerCase().includes(q) ||
+      t.defendantPosition?.toLowerCase().includes(q)
     );
   }
 
   if (!list.length) {
     el.innerHTML = `<div class="case-empty-state">
       <div class="case-empty-icon">🔍</div>
-      <div class="case-empty-title">${allTopics.length ? '검색 결과가 없습니다' : '아직 등록된 사건이 없습니다'}</div>
-      <div class="case-empty-sub">다른 검색어를 입력하거나 직접 사건을 접수해보세요.</div>
-      <button onclick="location.hash='#/submit-topic'" class="case-empty-btn">✏️ 사건 등록하기</button>
+      <div class="case-empty-title">검색 결과가 없습니다</div>
+      <div class="case-empty-sub">다른 검색어를 입력하거나 사건 해결 퀘스트로 직접 접수해보세요.</div>
+      <button onclick="location.hash='#/case-quest'" class="case-empty-btn">🕵️ 사건 해결 퀘스트</button>
     </div>`;
     return;
   }
 
   el.innerHTML = list.map((t, i) => `
-    <article class="case-door-card" onclick="location.hash='#/topic/${encodeURIComponent(t.id)}'" style="animation-delay:${Math.min(i * 0.04, 0.36)}s;">
+    <article class="case-door-card ${t.isFallbackCase ? 'official-fallback-card' : ''}" onclick="${topicClick(t)}" style="animation-delay:${Math.min(i * 0.025, 0.36)}s;">
       <div class="case-door-top">
         <div class="case-file-icon">${caseIcon(t.category)}</div>
         <div>
           <div class="case-door-cat">${escHtml(t.category || '생활 사건')}</div>
-          <div class="case-door-count">재판 ${(t.playCount||0).toLocaleString()}회 ${t.isOfficial ? '· 공식' : ''}</div>
+          <div class="case-door-count">재판 ${(t.playCount||0).toLocaleString()}회 ${t.isOfficial ? '· 공식' : ''}${t.isFallbackCase ? ' · 기본팩' : ''}</div>
         </div>
       </div>
 
@@ -170,18 +202,30 @@ function renderList(search = '', cat = _activeCat) {
       <div class="case-door-summary">${escHtml(t.summary)}</div>
 
       <div class="case-roles-mini">
-        <div class="case-role-mini red"><span>🔴 원고</span><strong>${escHtml(t.plaintiffPosition)}</strong></div>
-        <div class="case-role-mini blue"><span>🔵 피고</span><strong>${escHtml(t.defendantPosition)}</strong></div>
+        <div class="case-role-mini red"><span>🔴 문제 제기</span><strong>${escHtml(t.plaintiffPosition)}</strong></div>
+        <div class="case-role-mini blue"><span>🔵 상대측 설명</span><strong>${escHtml(t.defendantPosition)}</strong></div>
       </div>
 
       ${voteBarHtml(t)}
 
       <div class="case-enter-door">
         <span class="door-knob"></span>
-        <span>법정 입장</span>
+        <span>${t.isFallbackCase ? '공식 사건 시작' : '법정 입장'}</span>
       </div>
     </article>
   `).join('');
+}
+
+function topicClick(t) {
+  if (!t.isFallbackCase) return `location.hash='#/topic/${encodeURIComponent(t.id)}'`;
+  const data = encodeURIComponent(JSON.stringify({
+    title: t.title,
+    summary: t.summary,
+    plaintiffPosition: t.plaintiffPosition,
+    defendantPosition: t.defendantPosition,
+    category: t.category,
+  }));
+  return `sessionStorage.setItem('sosoking_prefill_case', decodeURIComponent('${data}')); location.hash='#/case-quest'`;
 }
 
 function voteBarHtml(t) {
@@ -195,8 +239,8 @@ function voteBarHtml(t) {
     const pct = total > 0 ? Math.round((votesA / total) * 100) : 50;
     return `<div class="case-vote-result">
       <div class="case-vote-labels">
-        <span style="color:#e74c3c;">원고 ${pct}%</span>
-        <span style="color:#3498db;">피고 ${100 - pct}%</span>
+        <span style="color:#e74c3c;">문제 제기 ${pct}%</span>
+        <span style="color:#3498db;">상대측 ${100 - pct}%</span>
       </div>
       <div class="case-vote-bar">
         <div style="width:${pct}%;background:linear-gradient(90deg,#e74c3c,#ff6b6b);"></div>
@@ -207,8 +251,8 @@ function voteBarHtml(t) {
   }
   return `<div data-vote-wrap class="case-vote-choice" onclick="event.stopPropagation()">
     <span>나는 어느 쪽?</span>
-    <button class="vote-btn red" data-topic-id="${escAttr(t.id)}" data-side="A">원고</button>
-    <button class="vote-btn blue" data-topic-id="${escAttr(t.id)}" data-side="B">피고</button>
+    <button class="vote-btn red" data-topic-id="${escAttr(t.id)}" data-side="A">문제 제기</button>
+    <button class="vote-btn blue" data-topic-id="${escAttr(t.id)}" data-side="B">상대측</button>
   </div>`;
 }
 
@@ -220,6 +264,9 @@ function caseIcon(category = '') {
   if (c.includes('정산') || c.includes('돈')) return '💸';
   if (c.includes('직장')) return '💼';
   if (c.includes('친구')) return '👫';
+  if (c.includes('가족')) return '👨‍👩‍👧';
+  if (c.includes('이웃')) return '🏘️';
+  if (c.includes('취미')) return '🎮';
   return '📁';
 }
 
@@ -270,6 +317,8 @@ function injectCaseBoardStyle() {
     .case-board-sign { position:absolute; right:16px; bottom:22px; width:145px; padding:12px; border-radius:14px; border:1px solid rgba(201,168,76,.28); background:rgba(0,0,0,.2); }
     [data-theme="light"] .case-board-sign { background:rgba(255,255,255,.78); }
     .sign-title { font-size:13px; font-weight:900; color:var(--gold); } .sign-sub { margin-top:3px; font-size:11px; color:var(--cream-dim); line-height:1.4; }
+    .official-pack-banner { display:flex; align-items:center; gap:11px; margin:0 0 16px; padding:13px 14px; border-radius:17px; border:1.5px solid rgba(201,168,76,.28); background:linear-gradient(135deg,rgba(201,168,76,.11),rgba(255,255,255,.025)); }
+    .official-pack-banner span { font-size:28px; } .official-pack-banner div { flex:1; min-width:0; } .official-pack-banner strong { display:block; color:var(--gold); font-size:13px; } .official-pack-banner small { display:block; color:var(--cream-dim); font-size:11px; margin-top:2px; line-height:1.4; } .official-pack-banner button { border:none; border-radius:12px; background:var(--gold); color:#0d1117; font-size:11px; font-weight:900; padding:9px 10px; cursor:pointer; }
     .case-active-banner { background:linear-gradient(135deg,rgba(201,168,76,.14),rgba(201,168,76,.05)); border:1.5px solid rgba(201,168,76,.45); border-radius:14px; padding:14px 16px; margin-bottom:16px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
     .case-active-kicker { font-size:12px; font-weight:900; color:var(--gold); margin-bottom:3px; } .case-active-title { font-size:13px; color:var(--cream); font-weight:800; } .case-active-banner a { flex-shrink:0; padding:9px 14px; border-radius:10px; background:var(--gold); color:#0d1117; font-size:13px; font-weight:900; text-decoration:none; }
     .case-search-panel { margin-bottom:16px; }
@@ -283,6 +332,7 @@ function injectCaseBoardStyle() {
     .case-cat-pill.active { color:#0d1117; background:linear-gradient(135deg,var(--gold),var(--gold-light)); border-color:transparent; }
     .case-door-grid { display:grid; grid-template-columns:1fr; gap:12px; }
     .case-door-card { position:relative; overflow:hidden; border-radius:20px; padding:16px; border:1.5px solid rgba(201,168,76,.25); background:linear-gradient(145deg, rgba(255,255,255,.07), rgba(255,255,255,.02)); box-shadow:0 10px 28px rgba(0,0,0,.2); cursor:pointer; transform:translateY(8px); opacity:0; animation:caseCardIn .38s ease forwards; }
+    .official-fallback-card { border-color:rgba(201,168,76,.38); }
     [data-theme="light"] .case-door-card { background:linear-gradient(145deg, rgba(255,255,255,.95), rgba(255,241,228,.82)); box-shadow:0 8px 22px rgba(154,112,24,.12); }
     .case-door-card:hover { border-color:var(--gold); transform:translateY(-2px); }
     .case-door-card:before { content:''; position:absolute; right:-38px; top:-38px; width:110px; height:110px; border-radius:50%; background:rgba(201,168,76,.09); }
@@ -314,13 +364,12 @@ function injectCaseBoardStyle() {
     @keyframes caseJudge { from { transform:translateY(0) rotate(-1deg); } to { transform:translateY(-4px) rotate(1deg); } }
     @keyframes caseCardIn { to { transform:translateY(0); opacity:1; } }
     @media (min-width:760px) { .case-door-grid { grid-template-columns:1fr 1fr; } .case-board-stage { height:230px; } }
-    @media (max-width:420px) { .case-board-stage { height:190px; } .case-board-sign { width:120px; right:10px; } .case-board-clerk { left:14px; } .case-roles-mini { grid-template-columns:1fr; } .case-door-title { font-size:17px; } }
+    @media (max-width:420px) { .case-board-stage { height:190px; } .case-board-sign { width:120px; right:10px; } .case-board-clerk { left:14px; } .case-roles-mini { grid-template-columns:1fr; } .case-door-title { font-size:17px; } .official-pack-banner { align-items:flex-start; } .official-pack-banner button { display:none; } }
   `;
   document.head.appendChild(style);
 }
 
 function escHtml(s) {
-  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;').replace(/'/g,'&#039;');
 }
-
 function escAttr(s) { return escHtml(s); }
