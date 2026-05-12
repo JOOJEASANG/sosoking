@@ -1,4 +1,4 @@
-import { startNewHunt } from '../game/ai-hunt-engine.js';
+import { startNewHuntAsync } from '../game/ai-hunt-engine.js';
 
 export function renderAiHunt(container) {
   injectAiHuntStyle();
@@ -13,14 +13,17 @@ export function renderAiHunt(container) {
         <div class="hunt-hero-content">
           <div class="hunt-mark">🧠</div>
           <p class="hunt-kicker">SOSOKING · AI HUNT</p>
-          <h1>AI는 이미<br><span>빠져나갈 계획</span>을 세웠다</h1>
-          <p class="hunt-lead">당신은 30분 안에 단서와 진술의 빈틈을 연결해 AI 용의자의 도주 계획을 깨야 합니다.</p>
+          <h1>AI는 지금<br><span>새 사건과 도주 계획</span>을 만든다</h1>
+          <p class="hunt-lead">시작 버튼을 누르면 AI가 생활 속 지능형 사건, 알리바이, 단서, 모순을 즉석으로 설계합니다. 당신은 30분 안에 그 빈틈을 찾아 검거해야 합니다.</p>
           <div class="hunt-command-card">
-            <div><strong>미션 목표</strong><span>AI 회피력을 낮추고 수사망 압박도를 높여 최종 검거에 성공하세요.</span></div>
+            <div><strong>AI 생성 사건</strong><span>고정 문제풀이가 아니라 AI가 매번 다른 사건과 도주 시나리오를 만듭니다.</span></div>
             <div><strong>결과</strong><span>판결은 없습니다. 오직 검거 성공 또는 검거 실패뿐입니다.</span></div>
           </div>
+          <div id="hunt-loading" class="hunt-loading" hidden>
+            <span></span><b>AI가 사건을 꾸미는 중...</b><small>도주 계획, 단서, 모순 구조를 생성하고 있습니다.</small>
+          </div>
           <div class="hunt-actions">
-            <button id="start-hunt-btn" class="hunt-primary">🚨 30분 수사 시작</button>
+            <button id="start-hunt-btn" class="hunt-primary">🚨 AI 사건 생성 후 수사 시작</button>
             <button onclick="location.hash='#/'" class="hunt-secondary">메인으로</button>
           </div>
         </div>
@@ -28,8 +31,12 @@ export function renderAiHunt(container) {
     </main>
   `;
 
-  document.getElementById('start-hunt-btn')?.addEventListener('click', () => {
-    startNewHunt();
+  document.getElementById('start-hunt-btn')?.addEventListener('click', async () => {
+    const btn = document.getElementById('start-hunt-btn');
+    const loading = document.getElementById('hunt-loading');
+    if (btn) { btn.disabled = true; btn.textContent = 'AI 사건 생성 중...'; }
+    if (loading) loading.hidden = false;
+    await startNewHuntAsync();
     location.hash = '#/hunt/play';
   });
 }
@@ -53,11 +60,16 @@ function injectAiHuntStyle() {
     .hunt-command-card { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:26px auto 0; max-width:620px; }
     .hunt-command-card > div { text-align:left; border:1px solid rgba(102,234,255,.18); border-radius:18px; padding:15px; background:rgba(255,255,255,.045); }
     .hunt-command-card strong { display:block; color:#66eaff; font-size:12px; margin-bottom:6px; } .hunt-command-card span { display:block; color:rgba(236,246,255,.68); font-size:13px; line-height:1.55; }
+    .hunt-loading { margin:18px auto 0; max-width:420px; padding:13px; border:1px solid rgba(255,55,95,.28); border-radius:16px; background:rgba(255,55,95,.08); }
+    .hunt-loading span { width:22px; height:22px; display:inline-block; vertical-align:middle; margin-right:8px; border-radius:50%; border:3px solid rgba(255,255,255,.18); border-top-color:#66eaff; animation:huntSpin .8s linear infinite; }
+    .hunt-loading b { color:#ecf6ff; font-size:13px; } .hunt-loading small { display:block; color:rgba(236,246,255,.62); font-size:11px; margin-top:4px; }
     .hunt-actions { display:grid; grid-template-columns:1.4fr .8fr; gap:10px; max-width:440px; margin:24px auto 0; }
     .hunt-primary, .hunt-secondary { border:0; border-radius:18px; padding:16px 14px; font-weight:1000; cursor:pointer; }
     .hunt-primary { color:#02050a; background:linear-gradient(135deg,#66eaff,#d7fbff); box-shadow:0 14px 34px rgba(0,229,255,.22); }
+    .hunt-primary:disabled { opacity:.6; cursor:wait; }
     .hunt-secondary { color:#ecf6ff; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); }
     @keyframes huntGrid { from { background-position:0 0; } to { background-position:0 72px; } }
+    @keyframes huntSpin { to { transform:rotate(360deg); } }
     @media(max-width:560px){ .hunt-hero{padding:18px;} .hunt-command-card{grid-template-columns:1fr;} .hunt-actions{grid-template-columns:1fr;} }
   `;
   document.head.appendChild(style);
