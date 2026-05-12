@@ -1,15 +1,20 @@
-import { getBoards, getBoard, getWallet, getPrediction, placePrediction, getComments, addComment } from '../predict/prediction-engine.js';
+import { getBoards, getBoard, getWallet, getPrediction, placePredictionAsync, getComments, addComment, syncPredictionHomeFromServer } from '../predict/prediction-engine.js';
 import { injectPredictStyle } from './predict-home.js';
 
 export function renderPredictList(container) {
   injectPredictStyle();
+  renderListMarkup(container, true);
+  syncPredictionHomeFromServer().then(() => renderListMarkup(container, false)).catch(() => renderListMarkup(container, false));
+}
+
+function renderListMarkup(container, syncing = false) {
   const boards = getBoards();
   const wallet = getWallet();
   container.innerHTML = `
     <main class="predict-app simple-page">
       <div class="simple-header">
         <a href="#/" class="back-link">‹</a>
-        <div><span>오늘의 예측판</span><h1>핫이슈의 내일을 맞혀라</h1></div>
+        <div><span>${syncing ? '서버 동기화 중...' : '오늘의 예측판'}</span><h1>핫이슈의 내일을 맞혀라</h1></div>
         <b>${wallet.balance.toLocaleString()}</b>
       </div>
       <section class="board-preview-section list-mode">
@@ -23,6 +28,10 @@ export function renderPredictList(container) {
 export function renderPredictDetail(container, boardId) {
   injectPredictStyle();
   injectDetailStyle();
+  renderDetailMarkup(container, boardId);
+}
+
+function renderDetailMarkup(container, boardId) {
   const board = getBoard(boardId);
   const wallet = getWallet();
   const existing = getPrediction(board.id);
@@ -36,7 +45,7 @@ export function renderPredictDetail(container, boardId) {
       </div>
       <section class="detail-layout">
         <article class="detail-main-card">
-          <div class="heat-row"><span>🔥 핫이슈 점수 ${board.heat}</span><span>참여 ${board.participants.toLocaleString()}</span></div>
+          <div class="heat-row"><span>🔥 핫이슈 점수 ${board.heat}</span><span>참여 ${Number(board.participants || 0).toLocaleString()}</span></div>
           <h2>${board.question}</h2>
           <p>${board.summary}</p>
           <div class="issue-box"><b>AI 요약</b><span>${board.aiComment}</span></div>
@@ -64,16 +73,21 @@ export function renderPredictDetail(container, boardId) {
       </section>
     </main>`;
 
-  document.getElementById('prediction-form')?.addEventListener('submit', (event) => {
+  document.getElementById('prediction-form')?.addEventListener('submit', async (event) => {
     event.preventDefault();
+    const form = event.currentTarget;
+    const btn = form.querySelector('.submit-prediction');
     const optionId = document.querySelector('input[name="predict-option"]:checked')?.value;
     const amount = document.getElementById('predict-amount')?.value;
     const comment = document.getElementById('predict-comment')?.value;
+    if (btn) { btn.disabled = true; btn.textContent = '예측 등록 중...'; }
     try {
-      placePrediction({ boardId: board.id, optionId, amount, comment });
-      renderPredictDetail(container, board.id);
+      const result = await placePredictionAsync({ boardId: board.id, optionId, amount, comment });
+      if (result.fallback) showMiniNotice('서버 연결 전이라 기기 저장 방식으로 참여했습니다.');
+      renderDetailMarkup(container, board.id);
     } catch (error) {
       alert(error.message || '예측 등록에 실패했습니다.');
+      if (btn) { btn.disabled = false; btn.textContent = '예측 등록하기'; }
     }
   });
 
@@ -81,7 +95,7 @@ export function renderPredictDetail(container, boardId) {
     event.preventDefault();
     const input = document.getElementById('comment-input');
     addComment(board.id, input.value, '내 의견', true);
-    renderPredictDetail(container, board.id);
+    renderDetailMarkup(container, board.id);
   });
 }
 
@@ -115,9 +129,9 @@ function renderExisting(prediction) {
     <div class="prediction-done">
       <div class="done-icon">✅</div>
       <h3>예측 완료</h3>
-      <p><b>${prediction.optionLabel}</b>에 ${prediction.amount.toLocaleString()} 소소머니를 사용했습니다.</p>
+      <p><b>${prediction.optionLabel}</b>에 ${Number(prediction.amount || 0).toLocaleString()} 소소머니를 사용했습니다.</p>
       ${prediction.comment ? `<blockquote>${escapeHtml(prediction.comment)}</blockquote>` : ''}
-      <span>정산 전까지 결과를 기다려주세요.</span>
+      <span>${prediction.source === 'server' ? '서버에 저장되었습니다.' : '정산 전까지 결과를 기다려주세요.'}</span>
     </div>`;
 }
 
@@ -127,8 +141,18 @@ function boardCard(board) {
       <div class="board-card-top"><span>${board.category}</span><b>🔥 ${board.heat}</b></div>
       <h3>${board.title}</h3>
       <p>${board.summary}</p>
-      <div class="board-meta"><span>참여 ${board.participants.toLocaleString()}</span><span>마감 ${board.closeAt}</span></div>
+      <div class="board-meta"><span>참여 ${Number(board.participants || 0).toLocaleString()}</span><span>마감 ${board.closeAt}</span></div>
     </a>`;
+}
+
+function showMiniNotice(message) {
+  const box = document.getElementById('toast-container');
+  if (!box) return;
+  const el = document.createElement('div');
+  el.className = 'toast show';
+  el.innerHTML = `<strong>안내</strong><br>${escapeHtml(message)}`;
+  box.appendChild(el);
+  setTimeout(() => el.remove(), 2600);
 }
 
 function injectDetailStyle() {
@@ -163,6 +187,7 @@ function injectDetailStyle() {
     .prediction-form select, .prediction-form textarea, .comment-form input { width:100%; box-sizing:border-box; border:1px solid var(--predict-line); border-radius:14px; background:var(--predict-bg); color:var(--predict-ink); padding:12px; font-family:inherit; }
     .prediction-form textarea { min-height:88px; resize:vertical; }
     .submit-prediction, .comment-form button { width:100%; border:0; border-radius:16px; padding:14px; margin-top:12px; background:linear-gradient(135deg,var(--predict-main),#2f5cff); color:#fff; font-weight:1000; cursor:pointer; }
+    .submit-prediction:disabled { opacity:.62; cursor:wait; }
     .money-note { color:var(--predict-muted); font-size:11px; line-height:1.5; }
     .prediction-done { text-align:center; } .done-icon { font-size:42px; } .prediction-done h3 { margin:8px 0; } .prediction-done p, .prediction-done span { color:var(--predict-muted); line-height:1.6; } .prediction-done blockquote { margin:12px 0; padding:12px; border-radius:14px; background:var(--predict-bg); color:var(--predict-ink); }
     .comments-section { max-width:980px; margin:14px auto 0; }
