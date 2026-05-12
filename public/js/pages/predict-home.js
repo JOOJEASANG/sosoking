@@ -1,9 +1,16 @@
-import { getBoards, getWallet, claimDailyBonus, getMySummary } from '../predict/prediction-engine.js';
+import { getBoards, getWallet, getMySummary, syncPredictionHomeFromServer, claimDailyBonusAsync } from '../predict/prediction-engine.js';
 
 export function renderPredictHome(container) {
   injectPredictStyle();
+  renderHomeMarkup(container, { bonus: null, syncing: true });
+
+  Promise.all([syncPredictionHomeFromServer(), claimDailyBonusAsync()])
+    .then(([, bonus]) => renderHomeMarkup(container, { bonus, syncing: false }))
+    .catch(() => renderHomeMarkup(container, { bonus: null, syncing: false }));
+}
+
+function renderHomeMarkup(container, { bonus = null, syncing = false } = {}) {
   const wallet = getWallet();
-  const bonus = claimDailyBonus();
   const summary = getMySummary();
   const boards = getBoards();
 
@@ -13,7 +20,7 @@ export function renderPredictHome(container) {
         <div class="predict-orb"></div>
         <div class="predict-topline">
           <span>SOSOKING PREDICTION</span>
-          <b>게임머니 · 현금가치 없음</b>
+          <b>${syncing ? '서버 동기화 중...' : '게임머니 · 현금가치 없음'}</b>
         </div>
         <div class="predict-hero-inner">
           <p class="predict-kicker">소소킹</p>
@@ -33,7 +40,7 @@ export function renderPredictHome(container) {
               <strong>${wallet.title}</strong>
             </div>
           </div>
-          ${bonus.claimed ? `<div class="daily-bonus">🎁 오늘의 접속 보너스 +${bonus.amount.toLocaleString()} 소소머니 지급</div>` : ''}
+          ${bonus?.claimed ? `<div class="daily-bonus">🎁 오늘의 접속 보너스 +${Number(bonus.amount || 0).toLocaleString()} 소소머니 지급</div>` : ''}
           <div class="predict-actions">
             <a href="#/predict" class="primary-action">오늘의 예측판 보기</a>
             <a href="#/ranking" class="secondary-action">랭킹 보기</a>
@@ -64,7 +71,7 @@ function boardCard(board) {
       <div class="board-card-top"><span>${board.category}</span><b>🔥 ${board.heat}</b></div>
       <h3>${board.title}</h3>
       <p>${board.summary}</p>
-      <div class="board-meta"><span>참여 ${board.participants.toLocaleString()}</span><span>마감 ${board.closeAt}</span></div>
+      <div class="board-meta"><span>참여 ${Number(board.participants || 0).toLocaleString()}</span><span>마감 ${board.closeAt}</span></div>
     </a>`;
 }
 
