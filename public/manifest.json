@@ -1,39 +1,19 @@
 {
-  "name": "소소킹 AI 수사망",
-  "short_name": "AI수사망",
-  "description": "AI가 만든 사건과 도주 계획을 30분 안에 추적해 검거하는 브레인 수사게임",
+  "name": "소소킹 - 내일 일은 아무도 모른다",
+  "short_name": "소소킹",
+  "description": "오늘의 핫이슈가 내일 어떻게 될지 맞히는 오락용 예측 게임",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#05070d",
-  "theme_color": "#05070d",
+  "background_color": "#f7f8fb",
+  "theme_color": "#4f7cff",
   "lang": "ko",
   "orientation": "portrait-primary",
   "scope": "/",
   "icons": [
-    {
-      "src": "/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icon-192-maskable.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "/icon-512-maskable.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    }
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "categories": ["games", "entertainment"]
 }
