@@ -1,11 +1,11 @@
 {
-  "name": "소소킹 토론배틀",
-  "short_name": "소소킹",
-  "description": "친구·AI와 토론하고 7인 랜덤 AI 심판에게 판정받는 엔터테인먼트 앱",
+  "name": "소소킹 AI 수사망",
+  "short_name": "AI수사망",
+  "description": "AI가 만든 사건과 도주 계획을 30분 안에 추적해 검거하는 브레인 수사게임",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#13111e",
-  "theme_color": "#c9a84c",
+  "background_color": "#05070d",
+  "theme_color": "#05070d",
   "lang": "ko",
   "orientation": "portrait-primary",
   "scope": "/",
@@ -35,5 +35,5 @@
       "purpose": "maskable"
     }
   ],
-  "categories": ["entertainment", "social"]
+  "categories": ["games", "entertainment"]
 }
