@@ -1,20 +1,18 @@
 import { initAuth, trackEvent, trackUser, db } from './firebase.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
-import { renderHome } from './pages/home.js';
-import { renderAiHunt } from './pages/ai-hunt.js';
-import { renderAiHuntPlay } from './pages/ai-hunt-play.js';
-import { renderAiHuntResult } from './pages/ai-hunt-result.js';
-import { renderPolicy } from './pages/policy-ai-hunt.js';
-import { renderGuide } from './pages/guide.js';
+import { renderPredictHome } from './pages/predict-home.js';
+import { renderPredictList, renderPredictDetail } from './pages/predict-board.js';
+import { renderPredictRanking } from './pages/predict-ranking.js';
+import { renderPredictGuide } from './pages/predict-guide.js';
+import { renderPredictPolicy } from './pages/predict-policy.js';
 import { renderFeedback } from './pages/feedback.js';
 import { renderAuth } from './pages/auth.js';
 import { renderFooter } from './components/footer.js';
 import { initTheme } from './components/theme.js';
 import { renderNav } from './components/nav.js';
 
-const LEGACY_ROUTES = [
-  '#/town', '#/case-quest', '#/topics', '#/submit-topic', '#/court', '#/my-history'
-];
+const LEGACY_PREFIXES = ['#/hunt', '#/topic/', '#/debate/', '#/join/', '#/join-team/'];
+const LEGACY_ROUTES = ['#/town', '#/case-quest', '#/topics', '#/submit-topic', '#/court', '#/my-history'];
 
 function route() {
   if (window._pageCleanup) { window._pageCleanup(); window._pageCleanup = null; }
@@ -30,34 +28,34 @@ function route() {
 
   let pageName = 'home';
   if (hash === '#/' || hash === '' || hash === '#') {
-    renderHome(content);
-  } else if (hash === '#/hunt') {
-    pageName = 'ai_hunt_start';
-    renderAiHunt(content);
-  } else if (hash === '#/hunt/play') {
-    pageName = 'ai_hunt_play';
-    renderAiHuntPlay(content);
-  } else if (hash === '#/hunt/result') {
-    pageName = 'ai_hunt_result';
-    renderAiHuntResult(content);
+    renderPredictHome(content);
+  } else if (hash === '#/predict') {
+    pageName = 'predict_list';
+    renderPredictList(content);
+  } else if (hash.startsWith('#/predict/')) {
+    pageName = 'predict_detail';
+    renderPredictDetail(content, decodeURIComponent(hash.replace('#/predict/', '')));
+  } else if (hash === '#/ranking') {
+    pageName = 'ranking';
+    renderPredictRanking(content);
   } else if (hash.startsWith('#/policy/')) {
     pageName = 'policy_' + hash.replace('#/policy/', '');
-    renderPolicy(content, hash.replace('#/policy/', ''));
+    renderPredictPolicy(content, hash.replace('#/policy/', ''));
   } else if (hash === '#/guide') {
     pageName = 'guide';
-    renderGuide(content);
+    renderPredictGuide(content);
   } else if (hash === '#/feedback') {
     pageName = 'feedback';
     renderFeedback(content);
   } else if (hash === '#/login') {
     pageName = 'login';
     renderAuth(content);
-  } else if (LEGACY_ROUTES.includes(hash) || hash.startsWith('#/topic/') || hash.startsWith('#/debate/') || hash.startsWith('#/join/') || hash.startsWith('#/join-team/')) {
+  } else if (LEGACY_ROUTES.includes(hash) || LEGACY_PREFIXES.some(prefix => hash.startsWith(prefix))) {
     pageName = 'legacy_redirect';
-    location.hash = '#/hunt';
+    location.hash = '#/';
     return;
   } else {
-    renderHome(content);
+    renderPredictHome(content);
   }
 
   trackEvent('page_view', { page_name: pageName, page_path: hash });
