@@ -11,7 +11,7 @@ export async function renderFooter() {
   } catch {}
 
   const rows = [
-    biz.companyName || '소소킹 토론배틀',
+    biz.companyName || '소소킹 AI 수사망',
     biz.ceoName     ? `대표 ${biz.ceoName}` : null,
     biz.businessNumber ? `사업자등록번호 ${biz.businessNumber}` : null,
     biz.contact     ? `연락처 ${biz.contact}` : null,
@@ -34,7 +34,7 @@ export async function renderFooter() {
 
     ${showInstallBtn ? `
     <div style="margin:20px 0 4px;">
-      <button id="footer-pwa-btn" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px;border-radius:12px;border:1.5px solid rgba(201,168,76,0.35);background:rgba(201,168,76,0.07);color:#c9a84c;font-size:14px;font-weight:700;cursor:pointer;">
+      <button id="footer-pwa-btn" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px;border-radius:12px;border:1.5px solid rgba(102,234,255,0.35);background:rgba(102,234,255,0.07);color:#66eaff;font-size:14px;font-weight:700;cursor:pointer;">
         <img src="/icon-192.png" style="width:22px;height:22px;border-radius:5px;" alt="">
         ${isIOS ? '홈 화면에 추가 (앱 설치)' : '앱으로 설치하기'}
       </button>
@@ -44,8 +44,8 @@ export async function renderFooter() {
 
     <div class="footer-biz">
       ${rows.map(r => `<div class="footer-biz-row">${r}</div>`).join('')}
-      <div class="footer-biz-row footer-legal">© ${new Date().getFullYear()} 소소킹 토론배틀</div>
-      <div class="footer-biz-row footer-legal">오락 목적 서비스 · AI 판정에 법적 효력 없음</div>
+      <div class="footer-biz-row footer-legal">© ${new Date().getFullYear()} 소소킹 AI 수사망</div>
+      <div class="footer-biz-row footer-legal">오락 목적 AI 추리 게임 · 실제 수사/법률 판단 아님</div>
     </div>
 
     <div style="margin-top:20px;">
