@@ -1,4 +1,4 @@
-import { getBoards, getBoard, getWallet, getPrediction, placePredictionAsync, getComments, addComment, syncPredictionHomeFromServer } from '../predict/prediction-engine.js';
+import { getBoards, getBoard, getWallet, getPrediction, placePredictionAsync, getComments, addCommentAsync, syncPredictionHomeFromServer, syncPredictionDetailFromServer } from '../predict/prediction-engine.js';
 import { injectPredictStyle } from './predict-home.js';
 
 export function renderPredictList(container) {
@@ -18,9 +18,7 @@ function renderListMarkup(container, syncing = false) {
         <b>${wallet.balance.toLocaleString()}</b>
       </div>
       <section class="board-preview-section list-mode">
-        <div class="board-list">
-          ${boards.map(board => boardCard(board)).join('')}
-        </div>
+        <div class="board-list">${boards.map(board => boardCard(board)).join('')}</div>
       </section>
     </main>`;
 }
@@ -28,19 +26,24 @@ function renderListMarkup(container, syncing = false) {
 export function renderPredictDetail(container, boardId) {
   injectPredictStyle();
   injectDetailStyle();
-  renderDetailMarkup(container, boardId);
+  renderDetailMarkup(container, boardId, true);
+  syncPredictionDetailFromServer(boardId).then((result) => {
+    const nextId = result?.board?.id || boardId;
+    renderDetailMarkup(container, nextId, false);
+  }).catch(() => renderDetailMarkup(container, boardId, false));
 }
 
-function renderDetailMarkup(container, boardId) {
+function renderDetailMarkup(container, boardId, syncing = false) {
   const board = getBoard(boardId);
   const wallet = getWallet();
   const existing = getPrediction(board.id);
   const comments = getComments(board.id);
+  const resultNotice = board.status === 'settled' ? `<div class="result-box"><b>정산 완료</b><span>${escapeHtml(board.resultLine || `정답은 ${board.winningOptionLabel || '공개 완료'}입니다.`)}</span></div>` : '';
   container.innerHTML = `
     <main class="predict-app simple-page">
       <div class="simple-header">
         <a href="#/predict" class="back-link">‹</a>
-        <div><span>${board.category}</span><h1>${board.title}</h1></div>
+        <div><span>${syncing ? '서버 확인 중...' : board.category}</span><h1>${board.title}</h1></div>
         <b>${wallet.balance.toLocaleString()}</b>
       </div>
       <section class="detail-layout">
@@ -48,6 +51,7 @@ function renderDetailMarkup(container, boardId) {
           <div class="heat-row"><span>🔥 핫이슈 점수 ${board.heat}</span><span>참여 ${Number(board.participants || 0).toLocaleString()}</span></div>
           <h2>${board.question}</h2>
           <p>${board.summary}</p>
+          ${resultNotice}
           <div class="issue-box"><b>AI 요약</b><span>${board.aiComment}</span></div>
           <div class="rule-grid">
             <div><b>마감</b><span>${board.closeAt}</span></div>
@@ -55,21 +59,15 @@ function renderDetailMarkup(container, boardId) {
             <div><b>기준</b><span>${board.resultRule}</span></div>
           </div>
         </article>
-
-        <aside class="prediction-panel">
-          ${existing ? renderExisting(existing) : renderForm(board)}
-        </aside>
+        <aside class="prediction-panel">${existing ? renderExisting(existing) : renderForm(board)}</aside>
       </section>
-
       <section class="comments-section">
         <div class="section-head compact"><div><span>COMMENTS</span><h2>예측 근거</h2></div></div>
         <form id="comment-form" class="comment-form">
           <input id="comment-input" maxlength="120" placeholder="내 생각엔 이쪽이 맞을 것 같은데..." />
           <button>등록</button>
         </form>
-        <div class="comment-list">
-          ${comments.map(c => `<div class="comment-item ${c.mine ? 'mine' : ''}"><b>${c.side}</b><p>${escapeHtml(c.text)}</p><small>좋아요 ${c.likes}</small></div>`).join('')}
-        </div>
+        <div class="comment-list">${comments.map(c => `<div class="comment-item ${c.mine ? 'mine' : ''}"><b>${escapeHtml(c.side)}</b><p>${escapeHtml(c.text)}</p><small>좋아요 ${Number(c.likes || 0)}</small></div>`).join('')}</div>
       </section>
     </main>`;
 
@@ -84,39 +82,35 @@ function renderDetailMarkup(container, boardId) {
     try {
       const result = await placePredictionAsync({ boardId: board.id, optionId, amount, comment });
       if (result.fallback) showMiniNotice('서버 연결 전이라 기기 저장 방식으로 참여했습니다.');
-      renderDetailMarkup(container, board.id);
+      await syncPredictionDetailFromServer(board.id);
+      renderDetailMarkup(container, board.id, false);
     } catch (error) {
       alert(error.message || '예측 등록에 실패했습니다.');
       if (btn) { btn.disabled = false; btn.textContent = '예측 등록하기'; }
     }
   });
 
-  document.getElementById('comment-form')?.addEventListener('submit', (event) => {
+  document.getElementById('comment-form')?.addEventListener('submit', async (event) => {
     event.preventDefault();
     const input = document.getElementById('comment-input');
-    addComment(board.id, input.value, '내 의견', true);
-    renderDetailMarkup(container, board.id);
+    const btn = event.currentTarget.querySelector('button');
+    if (btn) { btn.disabled = true; btn.textContent = '등록 중'; }
+    await addCommentAsync(board.id, input.value, '내 의견');
+    await syncPredictionDetailFromServer(board.id);
+    renderDetailMarkup(container, board.id, false);
   });
 }
 
 function renderForm(board) {
+  if (board.status === 'settled') return `<div class="prediction-done"><div class="done-icon">📌</div><h3>마감된 예측판</h3><p>이미 정산이 완료된 예측판입니다.</p></div>`;
   return `
     <form id="prediction-form" class="prediction-form">
       <div class="panel-title">내 예측 선택</div>
       <div class="option-list">
-        ${board.options.map((option, index) => `
-          <label class="option-card">
-            <input type="radio" name="predict-option" value="${option.id}" ${index === 0 ? 'checked' : ''}>
-            <span><b>${option.label}</b><small>예상 배율 x${option.odds}</small></span>
-          </label>`).join('')}
+        ${board.options.map((option, index) => `<label class="option-card"><input type="radio" name="predict-option" value="${option.id}" ${index === 0 ? 'checked' : ''}><span><b>${option.label}</b><small>예상 배율 x${option.odds}</small></span></label>`).join('')}
       </div>
       <label class="input-label">사용할 소소머니</label>
-      <select id="predict-amount">
-        <option value="500">500</option>
-        <option value="1000" selected>1,000</option>
-        <option value="3000">3,000</option>
-        <option value="5000">5,000</option>
-      </select>
+      <select id="predict-amount"><option value="500">500</option><option value="1000" selected>1,000</option><option value="3000">3,000</option><option value="5000">5,000</option></select>
       <label class="input-label">내 근거 한마디</label>
       <textarea id="predict-comment" maxlength="120" placeholder="왜 그렇게 생각하는지 짧게 남겨보세요."></textarea>
       <button class="submit-prediction">예측 등록하기</button>
@@ -125,35 +119,15 @@ function renderForm(board) {
 }
 
 function renderExisting(prediction) {
-  return `
-    <div class="prediction-done">
-      <div class="done-icon">✅</div>
-      <h3>예측 완료</h3>
-      <p><b>${prediction.optionLabel}</b>에 ${Number(prediction.amount || 0).toLocaleString()} 소소머니를 사용했습니다.</p>
-      ${prediction.comment ? `<blockquote>${escapeHtml(prediction.comment)}</blockquote>` : ''}
-      <span>${prediction.source === 'server' ? '서버에 저장되었습니다.' : '정산 전까지 결과를 기다려주세요.'}</span>
-    </div>`;
+  const settledLine = prediction.settled ? (prediction.won ? `적중 성공 · +${Number(prediction.payout || 0).toLocaleString()}` : `적중 실패 · ${Number(prediction.profit || 0).toLocaleString()}`) : (prediction.source === 'server' ? '서버에 저장되었습니다.' : '정산 전까지 결과를 기다려주세요.');
+  return `<div class="prediction-done"><div class="done-icon">${prediction.settled ? (prediction.won ? '🎯' : '🫠') : '✅'}</div><h3>${prediction.settled ? '정산 완료' : '예측 완료'}</h3><p><b>${prediction.optionLabel}</b>에 ${Number(prediction.amount || 0).toLocaleString()} 소소머니를 사용했습니다.</p>${prediction.comment ? `<blockquote>${escapeHtml(prediction.comment)}</blockquote>` : ''}<span>${settledLine}</span></div>`;
 }
 
 function boardCard(board) {
-  return `
-    <a class="board-card" href="#/predict/${board.id}">
-      <div class="board-card-top"><span>${board.category}</span><b>🔥 ${board.heat}</b></div>
-      <h3>${board.title}</h3>
-      <p>${board.summary}</p>
-      <div class="board-meta"><span>참여 ${Number(board.participants || 0).toLocaleString()}</span><span>마감 ${board.closeAt}</span></div>
-    </a>`;
+  return `<a class="board-card" href="#/predict/${board.id}"><div class="board-card-top"><span>${board.category}</span><b>🔥 ${board.heat}</b></div><h3>${board.title}</h3><p>${board.summary}</p><div class="board-meta"><span>참여 ${Number(board.participants || 0).toLocaleString()}</span><span>${board.status === 'settled' ? '정산 완료' : `마감 ${board.closeAt}`}</span></div></a>`;
 }
 
-function showMiniNotice(message) {
-  const box = document.getElementById('toast-container');
-  if (!box) return;
-  const el = document.createElement('div');
-  el.className = 'toast show';
-  el.innerHTML = `<strong>안내</strong><br>${escapeHtml(message)}`;
-  box.appendChild(el);
-  setTimeout(() => el.remove(), 2600);
-}
+function showMiniNotice(message) { const box = document.getElementById('toast-container'); if (!box) return; const el = document.createElement('div'); el.className = 'toast show'; el.innerHTML = `<strong>안내</strong><br>${escapeHtml(message)}`; box.appendChild(el); setTimeout(() => el.remove(), 2600); }
 
 function injectDetailStyle() {
   if (document.getElementById('sosoking-predict-detail-style')) return;
@@ -172,6 +146,8 @@ function injectDetailStyle() {
     .heat-row { display:flex; justify-content:space-between; color:var(--predict-muted); font-size:12px; font-weight:900; margin-bottom:14px; }
     .detail-main-card h2 { margin:0; font-size:28px; letter-spacing:-.05em; line-height:1.25; }
     .detail-main-card p { color:var(--predict-muted); line-height:1.7; }
+    .result-box { margin:12px 0; border-radius:16px; padding:13px; background:rgba(22,163,106,.1); border:1px solid rgba(22,163,106,.2); }
+    .result-box b { display:block; color:var(--predict-money); font-size:12px; margin-bottom:4px; }.result-box span { color:var(--predict-muted); font-size:13px; }
     .issue-box { border-radius:16px; padding:14px; background:rgba(79,124,255,.08); border:1px solid rgba(79,124,255,.16); }
     .issue-box b { display:block; color:var(--predict-main); font-size:12px; margin-bottom:5px; }
     .issue-box span { color:var(--predict-muted); font-size:13px; line-height:1.6; }
@@ -187,7 +163,7 @@ function injectDetailStyle() {
     .prediction-form select, .prediction-form textarea, .comment-form input { width:100%; box-sizing:border-box; border:1px solid var(--predict-line); border-radius:14px; background:var(--predict-bg); color:var(--predict-ink); padding:12px; font-family:inherit; }
     .prediction-form textarea { min-height:88px; resize:vertical; }
     .submit-prediction, .comment-form button { width:100%; border:0; border-radius:16px; padding:14px; margin-top:12px; background:linear-gradient(135deg,var(--predict-main),#2f5cff); color:#fff; font-weight:1000; cursor:pointer; }
-    .submit-prediction:disabled { opacity:.62; cursor:wait; }
+    .submit-prediction:disabled,.comment-form button:disabled { opacity:.62; cursor:wait; }
     .money-note { color:var(--predict-muted); font-size:11px; line-height:1.5; }
     .prediction-done { text-align:center; } .done-icon { font-size:42px; } .prediction-done h3 { margin:8px 0; } .prediction-done p, .prediction-done span { color:var(--predict-muted); line-height:1.6; } .prediction-done blockquote { margin:12px 0; padding:12px; border-radius:14px; background:var(--predict-bg); color:var(--predict-ink); }
     .comments-section { max-width:980px; margin:14px auto 0; }
@@ -203,6 +179,4 @@ function injectDetailStyle() {
   document.head.appendChild(style);
 }
 
-function escapeHtml(s) {
-  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
+function escapeHtml(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
