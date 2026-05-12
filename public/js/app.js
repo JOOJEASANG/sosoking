@@ -1,27 +1,20 @@
-import { initAuth, trackEvent, trackUser, auth, db } from './firebase.js';
+import { initAuth, trackEvent, trackUser, db } from './firebase.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { renderHome } from './pages/home.js';
-import { renderTown } from './pages/town.js';
-import { renderCaseQuest } from './pages/case-quest.js';
-import { renderTopics } from './pages/topics.js';
-import { renderTopicDetail } from './pages/topic-detail.js';
-import { renderDebate } from './pages/debate.js';
-import { renderSubmitTopic } from './pages/submit-topic.js';
-import { renderCourt } from './pages/court.js';
-import { renderMyHistory } from './pages/my-history.js';
+import { renderAiHunt } from './pages/ai-hunt.js';
+import { renderAiHuntPlay } from './pages/ai-hunt-play.js';
+import { renderAiHuntResult } from './pages/ai-hunt-result.js';
 import { renderPolicy } from './pages/policy.js';
 import { renderGuide } from './pages/guide.js';
 import { renderFeedback } from './pages/feedback.js';
 import { renderAuth } from './pages/auth.js';
-import { renderJoinTeam } from './pages/join-team.js';
-import { renderAiHunt } from './pages/ai-hunt.js';
-import { renderAiHuntPlay } from './pages/ai-hunt-play.js';
-import { renderAiHuntResult } from './pages/ai-hunt-result.js';
 import { renderFooter } from './components/footer.js';
 import { initTheme } from './components/theme.js';
 import { renderNav } from './components/nav.js';
-import { syncGameCourtroom } from './components/game-courtroom.js';
-import { syncDebateGameUi } from './components/debate-game-ui.js';
+
+const LEGACY_ROUTES = [
+  '#/town', '#/case-quest', '#/topics', '#/submit-topic', '#/court', '#/my-history'
+];
 
 function route() {
   if (window._pageCleanup) { window._pageCleanup(); window._pageCleanup = null; }
@@ -47,37 +40,6 @@ function route() {
   } else if (hash === '#/hunt/result') {
     pageName = 'ai_hunt_result';
     renderAiHuntResult(content);
-  } else if (hash === '#/town') {
-    pageName = 'town';
-    renderTown(content);
-  } else if (hash === '#/case-quest') {
-    pageName = 'case_quest';
-    renderCaseQuest(content);
-  } else if (hash === '#/topics') {
-    pageName = 'topics';
-    renderTopics(content);
-  } else if (hash.startsWith('#/topic/')) {
-    pageName = 'topic_detail';
-    renderTopicDetail(content, decodeURIComponent(hash.replace('#/topic/', '')));
-  } else if (hash.startsWith('#/debate/')) {
-    pageName = 'debate';
-    renderDebate(content, decodeURIComponent(hash.replace('#/debate/', '')));
-  } else if (hash.startsWith('#/join-team/')) {
-    pageName = 'join_team';
-    const parts = hash.replace('#/join-team/', '').split('/');
-    renderJoinTeam(content, decodeURIComponent(parts[0]), parts[1] || 'plaintiff');
-  } else if (hash.startsWith('#/join/')) {
-    pageName = 'debate_join';
-    renderDebate(content, null, decodeURIComponent(hash.replace('#/join/', '')));
-  } else if (hash === '#/court') {
-    pageName = 'court';
-    renderCourt(content);
-  } else if (hash === '#/submit-topic') {
-    pageName = 'submit_topic';
-    renderSubmitTopic(content);
-  } else if (hash === '#/my-history') {
-    pageName = 'my_history';
-    renderMyHistory(content);
   } else if (hash.startsWith('#/policy/')) {
     pageName = 'policy_' + hash.replace('#/policy/', '');
     renderPolicy(content, hash.replace('#/policy/', ''));
@@ -90,20 +52,20 @@ function route() {
   } else if (hash === '#/login') {
     pageName = 'login';
     renderAuth(content);
+  } else if (LEGACY_ROUTES.includes(hash) || hash.startsWith('#/topic/') || hash.startsWith('#/debate/') || hash.startsWith('#/join/') || hash.startsWith('#/join-team/')) {
+    pageName = 'legacy_redirect';
+    location.hash = '#/hunt';
+    return;
   } else {
     renderHome(content);
   }
 
   trackEvent('page_view', { page_name: pageName, page_path: hash });
   renderNav();
-  syncGameCourtroom(hash);
-  syncDebateGameUi(hash);
 }
 
 window.addEventListener('hashchange', route);
 
-// Keep the install event separate from window._pwaInstall.
-// index.html may define window._pwaInstall as the user-facing install handler.
 window._pwaPromptEvent = null;
 if (typeof window._pwaInstall !== 'function') {
   window._pwaInstall = async () => {
