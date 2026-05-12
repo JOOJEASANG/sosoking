@@ -15,6 +15,15 @@ import { renderNav } from './components/nav.js';
 const LEGACY_PREFIXES = ['#/hunt', '#/topic/', '#/debate/', '#/join/', '#/join-team/'];
 const LEGACY_ROUTES = ['#/town', '#/case-quest', '#/topics', '#/submit-topic', '#/court', '#/my-history'];
 
+function loadPolishStyle() {
+  if (document.getElementById('sosoking-polish-style')) return;
+  const link = document.createElement('link');
+  link.id = 'sosoking-polish-style';
+  link.rel = 'stylesheet';
+  link.href = '/css/predict-polish.css';
+  document.head.appendChild(link);
+}
+
 function route() {
   if (window._pageCleanup) { window._pageCleanup(); window._pageCleanup = null; }
   const hash = location.hash || '#/';
@@ -62,4 +71,4 @@ async function injectSeoMeta() {
     if (seo.naver) { const m = document.createElement('meta'); m.name = 'naver-site-verification'; m.content = seo.naver; document.head.appendChild(m); }
   } catch {}
 }
-(async () => { initTheme(); injectSeoMeta(); const user = await initAuth(); if (user?.uid) trackUser(user.uid); renderFooter(); route(); })();
+(async () => { initTheme(); loadPolishStyle(); injectSeoMeta(); const user = await initAuth(); if (user?.uid) trackUser(user.uid); renderFooter(); route(); })();
