@@ -14,6 +14,9 @@ import { renderGuide } from './pages/guide.js';
 import { renderFeedback } from './pages/feedback.js';
 import { renderAuth } from './pages/auth.js';
 import { renderJoinTeam } from './pages/join-team.js';
+import { renderAiHunt } from './pages/ai-hunt.js';
+import { renderAiHuntPlay } from './pages/ai-hunt-play.js';
+import { renderAiHuntResult } from './pages/ai-hunt-result.js';
 import { renderFooter } from './components/footer.js';
 import { initTheme } from './components/theme.js';
 import { renderNav } from './components/nav.js';
@@ -35,6 +38,15 @@ function route() {
   let pageName = 'home';
   if (hash === '#/' || hash === '' || hash === '#') {
     renderHome(content);
+  } else if (hash === '#/hunt') {
+    pageName = 'ai_hunt_start';
+    renderAiHunt(content);
+  } else if (hash === '#/hunt/play') {
+    pageName = 'ai_hunt_play';
+    renderAiHuntPlay(content);
+  } else if (hash === '#/hunt/result') {
+    pageName = 'ai_hunt_result';
+    renderAiHuntResult(content);
   } else if (hash === '#/town') {
     pageName = 'town';
     renderTown(content);
