@@ -25,9 +25,8 @@ export function renderNav() {
 
   const hash = location.hash || '#/';
   const isHome = hash === '#/' || hash === '#' || hash === '';
-  const isTopics = hash.startsWith('#/topics') || hash.startsWith('#/topic/');
-  const isSubmit = hash === '#/submit-topic';
-  const isMy = hash === '#/my-history';
+  const isHunt = hash.startsWith('#/hunt');
+  const isResult = hash === '#/hunt/result';
 
   const user = auth.currentUser;
   const isAnon = !user || user.isAnonymous;
@@ -39,22 +38,22 @@ export function renderNav() {
       <span class="nav-icon">🏠</span>
       <span class="nav-label">홈</span>
     </a>
-    <a href="#/topics" class="nav-item${isTopics ? ' active' : ''}">
-      <span class="nav-icon">🏛️</span>
-      <span class="nav-label">사건 목록</span>
+    <a href="#/hunt" class="nav-item nav-cta${isHunt && !isResult ? ' active' : ''}">
+      <span class="nav-icon">🧠</span>
+      <span class="nav-label">AI 수사</span>
     </a>
-    <a href="#/submit-topic" class="nav-item nav-cta${isSubmit ? ' active' : ''}">
-      <span class="nav-icon">✏️</span>
-      <span class="nav-label">사건 등록</span>
+    <a href="#/hunt/play" class="nav-item${hash === '#/hunt/play' ? ' active' : ''}">
+      <span class="nav-icon">🔎</span>
+      <span class="nav-label">수사중</span>
     </a>
-    <a href="#/my-history" class="nav-item${isMy ? ' active' : ''}">
-      <span class="nav-icon">📋</span>
-      <span class="nav-label">내 사건</span>
+    <a href="#/hunt/result" class="nav-item${isResult ? ' active' : ''}">
+      <span class="nav-icon">🚨</span>
+      <span class="nav-label">결과</span>
     </a>
     ${isAnon
       ? `<button class="nav-item" id="nav-anon-btn" type="button">
            <span class="nav-icon">🔐</span>
-           <span class="nav-label">로그인</span>
+           <span class="nav-label">설정</span>
          </button>`
       : `<button class="nav-item" id="nav-account-btn" type="button">
            <span class="nav-icon">🔓</span>
@@ -80,7 +79,7 @@ function showAccountMenu(user, nickname) {
   const existing = document.getElementById('account-menu-overlay');
   if (existing) { existing.remove(); return; }
 
-  const displayName = nickname || user.displayName || user.email || '사용자';
+  const displayName = nickname || user.displayName || user.email || '수사관';
   const emailLine = user.email ? `<div style="font-size:12px;color:var(--cream-dim);margin-top:2px;">${user.email}</div>` : '';
 
   const overlay = document.createElement('div');
@@ -91,9 +90,9 @@ function showAccountMenu(user, nickname) {
     <div style="position:absolute;bottom:66px;left:0;right:0;margin:0 16px;">
       <div class="card" style="padding:0;overflow:hidden;border-radius:16px;">
         <div style="padding:18px 18px 14px;border-bottom:1px solid var(--border);">
-          <div style="font-size:11px;color:var(--cream-dim);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:6px;">내 계정</div>
+          <div style="font-size:11px;color:var(--cream-dim);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:6px;">수사관 계정</div>
           <div style="display:flex;align-items:center;gap:12px;">
-            <div style="width:40px;height:40px;border-radius:50%;background:rgba(201,168,76,0.15);border:1.5px solid rgba(201,168,76,0.3);display:flex;align-items:center;justify-content:center;font-size:20px;">🔓</div>
+            <div style="width:40px;height:40px;border-radius:50%;background:rgba(102,234,255,0.15);border:1.5px solid rgba(102,234,255,0.3);display:flex;align-items:center;justify-content:center;font-size:20px;">🧠</div>
             <div>
               <div id="menu-nickname" style="font-size:16px;font-weight:700;color:var(--cream);">${escHtml(displayName)}</div>
               ${emailLine}
@@ -102,16 +101,16 @@ function showAccountMenu(user, nickname) {
         </div>
 
         <div id="nickname-edit-area" style="display:none;padding:14px 18px;border-bottom:1px solid var(--border);">
-          <div style="font-size:12px;color:var(--cream-dim);margin-bottom:8px;">새 닉네임 입력 (2~12자)</div>
+          <div style="font-size:12px;color:var(--cream-dim);margin-bottom:8px;">새 수사관명 입력 (2~12자)</div>
           <div style="display:flex;gap:8px;">
-            <input id="new-nickname-input" type="text" maxlength="12" placeholder="닉네임" style="flex:1;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:14px;color:var(--cream);outline:none;">
+            <input id="new-nickname-input" type="text" maxlength="12" placeholder="수사관명" style="flex:1;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:14px;color:var(--cream);outline:none;">
             <button id="nickname-save-btn" style="padding:9px 14px;background:var(--gold);color:#0d1117;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">저장</button>
             <button id="nickname-cancel-btn" style="padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--cream-dim);cursor:pointer;">취소</button>
           </div>
           <div id="nickname-edit-msg" style="font-size:12px;margin-top:6px;min-height:16px;"></div>
         </div>
 
-        <button id="account-edit-btn" style="width:100%;padding:14px 18px;background:none;border:none;border-bottom:1px solid var(--border);text-align:left;font-size:14px;color:var(--cream);cursor:pointer;display:flex;align-items:center;gap:10px;"><span style="font-size:16px;">✏️</span> 닉네임 변경</button>
+        <button id="account-edit-btn" style="width:100%;padding:14px 18px;background:none;border:none;border-bottom:1px solid var(--border);text-align:left;font-size:14px;color:var(--cream);cursor:pointer;display:flex;align-items:center;gap:10px;"><span style="font-size:16px;">✏️</span> 수사관명 변경</button>
         <button id="account-theme-btn" style="width:100%;padding:14px 18px;background:none;border:none;border-bottom:1px solid var(--border);text-align:left;font-size:14px;color:var(--cream);cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;"><span style="display:flex;align-items:center;gap:10px;"><span style="font-size:16px;">${getTheme() === 'dark' ? '☀️' : '🌙'}</span> ${getTheme() === 'dark' ? '라이트 모드로 변경' : '다크 모드로 변경'}</span></button>
         <button id="account-logout-btn" style="width:100%;padding:14px 18px;background:none;border:none;border-bottom:1px solid var(--border);text-align:left;font-size:14px;color:var(--red);cursor:pointer;font-weight:600;display:flex;align-items:center;gap:10px;"><span style="font-size:16px;">🚪</span> 로그아웃</button>
         <button id="account-delete-btn" style="width:100%;padding:12px 18px;background:none;border:none;text-align:left;font-size:12px;color:rgba(231,76,60,0.5);cursor:pointer;display:flex;align-items:center;gap:10px;"><span style="font-size:14px;">🗑️</span> 회원 탈퇴</button>
@@ -144,7 +143,7 @@ function showAccountMenu(user, nickname) {
       _nicknameCache = newNick; _nicknameCacheUid = user.uid;
       document.getElementById('menu-nickname').textContent = newNick;
       document.getElementById('nickname-edit-area').style.display = 'none';
-      msg.style.color = '#27ae60'; msg.textContent = '닉네임이 변경되었습니다';
+      msg.style.color = '#27ae60'; msg.textContent = '수사관명이 변경되었습니다';
       nickname = newNick;
     } catch (err) {
       msg.style.color = 'var(--red)'; msg.textContent = err.message || '저장 실패';
@@ -156,7 +155,7 @@ function showAccountMenu(user, nickname) {
     await logout(); renderNav(); location.hash = '#/';
   });
   overlay.querySelector('#account-delete-btn').addEventListener('click', async () => {
-    const confirmed = confirm('정말로 탈퇴하시겠습니까?\n\n· 계정 및 모든 사건 기록이 영구 삭제됩니다\n· 삭제된 데이터는 복구할 수 없습니다');
+    const confirmed = confirm('정말로 탈퇴하시겠습니까?\n\n· 계정 및 수사 기록이 영구 삭제될 수 있습니다\n· 삭제된 데이터는 복구할 수 없습니다');
     if (!confirmed) return;
     const btn = overlay.querySelector('#account-delete-btn');
     btn.disabled = true; btn.innerHTML = '<span style="font-size:14px;">⏳</span> 탈퇴 처리 중...';
