@@ -1,16 +1,21 @@
-import { getRankings, getMySummary } from '../predict/prediction-engine.js';
+import { getRankings, getMySummary, syncRankingsFromServer } from '../predict/prediction-engine.js';
 import { injectPredictStyle } from './predict-home.js';
 
 export function renderPredictRanking(container) {
   injectPredictStyle();
   injectRankingStyle();
+  renderRankingMarkup(container, true);
+  syncRankingsFromServer().then(() => renderRankingMarkup(container, false)).catch(() => renderRankingMarkup(container, false));
+}
+
+function renderRankingMarkup(container, syncing = false) {
   const rankings = getRankings();
   const summary = getMySummary();
   container.innerHTML = `
     <main class="predict-app ranking-page">
       <div class="simple-header rank-header">
         <a href="#/" class="back-link">‹</a>
-        <div><span>SOSOKING RANKING</span><h1>이번 주 소소킹</h1></div>
+        <div><span>${syncing ? '랭킹 동기화 중...' : 'SOSOKING RANKING'}</span><h1>이번 주 소소킹</h1></div>
         <b>${summary.wallet.balance.toLocaleString()}</b>
       </div>
       <section class="my-rank-card">
@@ -22,11 +27,11 @@ export function renderPredictRanking(container) {
         ${rankings.map((item, index) => `
           <div class="rank-item ${item.name === '나' ? 'me' : ''}">
             <div class="rank-no">${index + 1}</div>
-            <div class="rank-body"><b>${item.name}</b><span>${item.title} · 연속 적중 ${item.streak}</span></div>
-            <strong>${item.balance.toLocaleString()}</strong>
+            <div class="rank-body"><b>${escapeHtml(item.name)}</b><span>${escapeHtml(item.title)} · 연속 적중 ${Number(item.streak || 0)}</span></div>
+            <strong>${Number(item.balance || 0).toLocaleString()}</strong>
           </div>`).join('')}
       </section>
-      <section class="notice-strip rank-notice"><b>안내</b><span>랭킹은 현재 데모 기준이며, 다음 단계에서 Firebase 기록 기반 주간 랭킹으로 전환됩니다.</span></section>
+      <section class="notice-strip rank-notice"><b>안내</b><span>랭킹은 user_wallets의 소소머니 기준으로 표시됩니다. 소소머니는 게임 전용 포인트입니다.</span></section>
     </main>`;
 }
 
@@ -53,3 +58,5 @@ function injectRankingStyle() {
   `;
   document.head.appendChild(style);
 }
+
+function escapeHtml(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
