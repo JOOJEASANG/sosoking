@@ -1,11 +1,9 @@
 import { toggleTheme, getTheme } from './theme.js';
-import { auth, logout, db, functions } from '../firebase.js';
+import { auth, logout, db } from '../firebase.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
-import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 
 let _nicknameCache = null;
 let _nicknameCacheUid = null;
-
 export function invalidateNicknameCache() { _nicknameCache = null; _nicknameCacheUid = null; }
 
 async function getNickname(uid) {
@@ -28,8 +26,8 @@ export function renderNav() {
   nav.innerHTML = `
     <a href="#/" class="nav-item${hash === '#/' || hash === '#' || hash === '' ? ' active' : ''}"><span class="nav-icon">🏠</span><span class="nav-label">홈</span></a>
     <a href="#/predict" class="nav-item nav-cta${hash.startsWith('#/predict') ? ' active' : ''}"><span class="nav-icon">🔮</span><span class="nav-label">예측판</span></a>
+    <a href="#/history" class="nav-item${hash === '#/history' ? ' active' : ''}"><span class="nav-icon">🧾</span><span class="nav-label">내기록</span></a>
     <a href="#/ranking" class="nav-item${hash === '#/ranking' ? ' active' : ''}"><span class="nav-icon">👑</span><span class="nav-label">랭킹</span></a>
-    <a href="#/guide" class="nav-item${hash === '#/guide' ? ' active' : ''}"><span class="nav-icon">📖</span><span class="nav-label">안내</span></a>
     ${isAnon ? `<button class="nav-item" id="nav-anon-btn" type="button"><span class="nav-icon">⚙️</span><span class="nav-label">설정</span></button>` : `<button class="nav-item" id="nav-account-btn" type="button"><span class="nav-icon">🔓</span><span class="nav-label">계정</span></button>`}
   `;
   document.body.appendChild(nav);
@@ -53,12 +51,14 @@ function showAccountMenu(user, nickname) {
           <div style="font-size:11px;color:var(--cream-dim);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:6px;">소소킹 계정</div>
           <div style="display:flex;align-items:center;gap:12px;"><div style="width:40px;height:40px;border-radius:50%;background:rgba(79,124,255,0.15);border:1.5px solid rgba(79,124,255,0.3);display:flex;align-items:center;justify-content:center;font-size:20px;">🔮</div><div><div id="menu-nickname" style="font-size:16px;font-weight:700;color:var(--cream);">${escHtml(displayName)}</div>${emailLine}</div></div>
         </div>
+        <a href="#/guide" id="account-guide-btn" style="width:100%;padding:14px 18px;background:none;border:none;border-bottom:1px solid var(--border);text-align:left;font-size:14px;color:var(--cream);cursor:pointer;display:flex;align-items:center;gap:10px;text-decoration:none;"><span style="font-size:16px;">📖</span> 이용 안내</a>
         <button id="account-theme-btn" style="width:100%;padding:14px 18px;background:none;border:none;border-bottom:1px solid var(--border);text-align:left;font-size:14px;color:var(--cream);cursor:pointer;display:flex;align-items:center;gap:10px;"><span style="font-size:16px;">${getTheme() === 'dark' ? '☀️' : '🌙'}</span>${getTheme() === 'dark' ? '라이트 모드로 변경' : '다크 모드로 변경'}</button>
         <button id="account-logout-btn" style="width:100%;padding:14px 18px;background:none;border:none;text-align:left;font-size:14px;color:var(--red);cursor:pointer;font-weight:600;display:flex;align-items:center;gap:10px;"><span style="font-size:16px;">🚪</span> 로그아웃</button>
       </div>
     </div>`;
   document.body.appendChild(overlay);
   overlay.querySelector('#account-menu-backdrop').addEventListener('click', () => overlay.remove());
+  overlay.querySelector('#account-guide-btn').addEventListener('click', () => overlay.remove());
   overlay.querySelector('#account-theme-btn').addEventListener('click', () => { toggleTheme(); overlay.remove(); });
   overlay.querySelector('#account-logout-btn').addEventListener('click', async () => { overlay.remove(); _nicknameCache = null; _nicknameCacheUid = null; await logout(); renderNav(); location.hash = '#/'; });
 }
@@ -69,9 +69,10 @@ function showAnonMenu() {
   const overlay = document.createElement('div');
   overlay.id = 'anon-menu-overlay';
   overlay.style.cssText = 'position:fixed;inset:0;z-index:1000;';
-  overlay.innerHTML = `<div id="anon-menu-backdrop" style="position:absolute;inset:0;background:rgba(0,0,0,0.5)"></div><div style="position:absolute;bottom:66px;left:0;right:0;margin:0 16px;"><div class="card" style="padding:0;overflow:hidden;border-radius:16px;"><button id="anon-theme-btn" style="width:100%;padding:14px 18px;background:none;border:none;border-bottom:1px solid var(--border);text-align:left;font-size:14px;color:var(--cream);cursor:pointer;display:flex;align-items:center;gap:10px;"><span style="font-size:16px;">${getTheme() === 'dark' ? '☀️' : '🌙'}</span>${getTheme() === 'dark' ? '라이트 모드로 변경' : '다크 모드로 변경'}</button><a href="#/login" id="anon-login-btn" style="width:100%;padding:14px 18px;background:none;border:none;text-align:left;font-size:14px;color:var(--gold);cursor:pointer;font-weight:600;display:flex;align-items:center;gap:10px;text-decoration:none;"><span style="font-size:16px;">🔐</span> 로그인 / 회원가입</a></div></div>`;
+  overlay.innerHTML = `<div id="anon-menu-backdrop" style="position:absolute;inset:0;background:rgba(0,0,0,0.5)"></div><div style="position:absolute;bottom:66px;left:0;right:0;margin:0 16px;"><div class="card" style="padding:0;overflow:hidden;border-radius:16px;"><a href="#/guide" id="anon-guide-btn" style="width:100%;padding:14px 18px;background:none;border:none;border-bottom:1px solid var(--border);text-align:left;font-size:14px;color:var(--cream);cursor:pointer;display:flex;align-items:center;gap:10px;text-decoration:none;"><span style="font-size:16px;">📖</span> 이용 안내</a><button id="anon-theme-btn" style="width:100%;padding:14px 18px;background:none;border:none;border-bottom:1px solid var(--border);text-align:left;font-size:14px;color:var(--cream);cursor:pointer;display:flex;align-items:center;gap:10px;"><span style="font-size:16px;">${getTheme() === 'dark' ? '☀️' : '🌙'}</span>${getTheme() === 'dark' ? '라이트 모드로 변경' : '다크 모드로 변경'}</button><a href="#/login" id="anon-login-btn" style="width:100%;padding:14px 18px;background:none;border:none;text-align:left;font-size:14px;color:var(--gold);cursor:pointer;font-weight:600;display:flex;align-items:center;gap:10px;text-decoration:none;"><span style="font-size:16px;">🔐</span> 로그인 / 회원가입</a></div></div>`;
   document.body.appendChild(overlay);
   overlay.querySelector('#anon-menu-backdrop').addEventListener('click', () => overlay.remove());
+  overlay.querySelector('#anon-guide-btn').addEventListener('click', () => overlay.remove());
   overlay.querySelector('#anon-theme-btn').addEventListener('click', () => { toggleTheme(); overlay.remove(); });
   overlay.querySelector('#anon-login-btn').addEventListener('click', () => overlay.remove());
 }
