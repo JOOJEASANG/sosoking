@@ -1,3 +1,6 @@
+import { functions } from '../firebase.js';
+import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
+
 const CASE_ARCHETYPES = [
   {
     id: 'access-log-gap',
@@ -83,12 +86,12 @@ const STORAGE_KEY = 'sosoking_ai_hunt_case';
 const RESULT_KEY = 'sosoking_ai_hunt_result';
 const LIMIT_MS = 30 * 60 * 1000;
 
-export function startNewHunt() {
-  const selected = CASE_ARCHETYPES[Math.floor(Math.random() * CASE_ARCHETYPES.length)];
-  const now = Date.now();
-  const game = {
-    id: `${selected.id}-${now}`,
-    caseId: selected.id,
+function buildGameFromCase(selected, now = Date.now(), remoteCaseId = null) {
+  return {
+    id: `${selected.id || remoteCaseId || 'ai-case'}-${now}`,
+    remoteCaseId,
+    caseId: selected.id || remoteCaseId || 'ai-generated',
+    caseData: selected,
     title: selected.title,
     setting: selected.setting,
     suspectClaim: selected.suspectClaim,
@@ -103,9 +106,35 @@ export function startNewHunt() {
     phase: 'investigation',
     suspectMood: 'calm',
   };
+}
+
+export function startNewHunt() {
+  const selected = CASE_ARCHETYPES[Math.floor(Math.random() * CASE_ARCHETYPES.length)];
+  const game = buildGameFromCase(selected);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(game));
   localStorage.removeItem(RESULT_KEY);
   return game;
+}
+
+export async function startNewHuntAsync() {
+  try {
+    const fn = httpsCallable(functions, 'startAiHuntCase');
+    const res = await fn({});
+    const data = res.data || {};
+    if (!data.case) throw new Error('AI 사건 응답 없음');
+    const selected = { ...data.case, id: data.caseId || 'ai-generated' };
+    const game = buildGameFromCase(selected, data.createdAt || Date.now(), data.caseId || null);
+    if (data.expiresAt) game.expiresAt = data.expiresAt;
+    game.source = 'firebase_ai';
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(game));
+    localStorage.removeItem(RESULT_KEY);
+    return game;
+  } catch (err) {
+    const game = startNewHunt();
+    game.source = 'local_fallback';
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(game));
+    return game;
+  }
 }
 
 export function getGame() {
@@ -118,6 +147,7 @@ export function getGame() {
 
 export function getCurrentCase(game = getGame()) {
   if (!game) return null;
+  if (game.caseData && Array.isArray(game.caseData.locations)) return game.caseData;
   return CASE_ARCHETYPES.find(c => c.id === game.caseId) || CASE_ARCHETYPES[0];
 }
 
@@ -191,7 +221,7 @@ export function attemptArrest(selectedEvidence = []) {
   const game = getGame();
   const c = getCurrentCase(game);
   if (!game || !c) return null;
-  const required = new Set(c.arrestEvidence);
+  const required = new Set(c.arrestEvidence || []);
   const chosen = new Set(selectedEvidence);
   const hasRequired = [...required].every(x => chosen.has(x));
   const timeLeft = getTimeLeft(game);
@@ -232,14 +262,7 @@ export function getAvailableClues(game = getGame()) {
 }
 
 function normalizeGame(game) {
-  return {
-    pressure: 0,
-    escape: 100,
-    cluesFound: [],
-    contradictionsSolved: [],
-    wrongMoves: 0,
-    ...game
-  };
+  return { pressure: 0, escape: 100, cluesFound: [], contradictionsSolved: [], wrongMoves: 0, ...game };
 }
 function save(game) { localStorage.setItem(STORAGE_KEY, JSON.stringify(game)); }
 function clamp(n) { return Math.max(0, Math.min(100, Number(n || 0))); }
