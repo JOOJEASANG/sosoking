@@ -4,7 +4,7 @@ import { renderHome } from './pages/home.js';
 import { renderAiHunt } from './pages/ai-hunt.js';
 import { renderAiHuntPlay } from './pages/ai-hunt-play.js';
 import { renderAiHuntResult } from './pages/ai-hunt-result.js';
-import { renderPolicy } from './pages/policy.js';
+import { renderPolicy } from './pages/policy-ai-hunt.js';
 import { renderGuide } from './pages/guide.js';
 import { renderFeedback } from './pages/feedback.js';
 import { renderAuth } from './pages/auth.js';
