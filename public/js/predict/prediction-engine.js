@@ -1,7 +1,12 @@
+import { functions } from '../firebase.js';
+import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
+
 const WALLET_KEY = 'sosoking_predict_wallet';
 const PREDICTIONS_KEY = 'sosoking_predict_predictions';
 const COMMENTS_KEY = 'sosoking_predict_comments';
 const DAILY_KEY = 'sosoking_predict_daily_bonus';
+const SERVER_BOARDS_KEY = 'sosoking_predict_server_boards';
+const SERVER_SYNC_KEY = 'sosoking_predict_server_sync';
 
 const WELCOME_BALANCE = 10000;
 const DAILY_BONUS = 1000;
@@ -69,11 +74,13 @@ const BOARDS = [
 ];
 
 export function getBoards() {
-  return BOARDS;
+  const serverBoards = readJson(SERVER_BOARDS_KEY, []);
+  return Array.isArray(serverBoards) && serverBoards.length ? normalizeBoards(serverBoards) : BOARDS;
 }
 
 export function getBoard(boardId) {
-  return BOARDS.find(board => board.id === boardId) || BOARDS[0];
+  const boards = getBoards();
+  return boards.find(board => board.id === boardId) || BOARDS.find(board => board.id === boardId) || boards[0] || BOARDS[0];
 }
 
 export function getWallet() {
@@ -90,6 +97,32 @@ export function getWallet() {
     writeJson(WALLET_KEY, wallet);
   }
   return wallet;
+}
+
+export async function syncPredictionHomeFromServer() {
+  try {
+    const fn = httpsCallable(functions, 'getPredictionHome');
+    const res = await fn({});
+    const data = res.data || {};
+    if (data.wallet) writeJson(WALLET_KEY, normalizeWallet(data.wallet));
+    if (Array.isArray(data.boards) && data.boards.length) writeJson(SERVER_BOARDS_KEY, normalizeBoards(data.boards));
+    localStorage.setItem(SERVER_SYNC_KEY, String(Date.now()));
+    return { ok: true, ...data };
+  } catch (error) {
+    return { ok: false, error };
+  }
+}
+
+export async function claimDailyBonusAsync() {
+  try {
+    const fn = httpsCallable(functions, 'claimPredictionDailyBonus');
+    const res = await fn({});
+    const data = res.data || {};
+    if (data.wallet) writeJson(WALLET_KEY, normalizeWallet(data.wallet));
+    return { ok: true, ...data };
+  } catch {
+    return { ok: false, ...claimDailyBonus() };
+  }
 }
 
 export function claimDailyBonus() {
@@ -134,13 +167,49 @@ export function placePrediction({ boardId, optionId, amount, comment }) {
     amount: bet,
     comment: String(comment || '').trim().slice(0, 120),
     settled: false,
-    createdAt: Date.now()
+    createdAt: Date.now(),
+    source: 'local'
   };
   predictions.unshift(prediction);
   writeJson(PREDICTIONS_KEY, predictions);
 
   if (prediction.comment) addComment(boardId, prediction.comment, option.label, true);
   return { wallet, prediction };
+}
+
+export async function placePredictionAsync({ boardId, optionId, amount, comment }) {
+  const board = getBoard(boardId);
+  const option = board.options?.find(o => o.id === optionId);
+  if (!board || !option) throw new Error('예측 항목을 선택해주세요.');
+  try {
+    const fn = httpsCallable(functions, 'placePrediction');
+    const res = await fn({ boardId, optionId, amount: Number(amount || 0), comment: String(comment || '').trim() });
+    const data = res.data || {};
+    if (data.wallet) writeJson(WALLET_KEY, normalizeWallet(data.wallet));
+    rememberPrediction({ boardId, optionId, optionLabel: option.label, odds: option.odds, amount, comment, source: 'server' });
+    if (comment) addComment(boardId, comment, option.label, true);
+    return { ok: true, wallet: getWallet() };
+  } catch (error) {
+    const local = placePrediction({ boardId, optionId, amount, comment });
+    return { ok: false, fallback: true, error, ...local };
+  }
+}
+
+function rememberPrediction({ boardId, optionId, optionLabel, odds, amount, comment, source }) {
+  const predictions = getPredictions().filter(p => p.boardId !== boardId);
+  predictions.unshift({
+    id: `${boardId}-${Date.now()}`,
+    boardId,
+    optionId,
+    optionLabel,
+    odds,
+    amount: Math.max(100, Math.min(5000, Number(amount || 0))),
+    comment: String(comment || '').trim().slice(0, 120),
+    settled: false,
+    createdAt: Date.now(),
+    source
+  });
+  writeJson(PREDICTIONS_KEY, predictions);
 }
 
 export function addComment(boardId, text, side = '근거', mine = false) {
@@ -184,7 +253,38 @@ export function getMySummary() {
     wallet,
     predictions,
     openCount: predictions.filter(p => !p.settled).length,
-    totalPredictions: predictions.length
+    totalPredictions: predictions.length,
+    lastSync: Number(localStorage.getItem(SERVER_SYNC_KEY) || 0)
+  };
+}
+
+function normalizeBoards(boards) {
+  return boards.map(board => ({
+    id: board.id,
+    status: board.status || 'open',
+    category: board.category || '예측판',
+    title: board.title || '오늘의 예측판',
+    issue: board.issue || '',
+    summary: board.summary || '',
+    question: board.question || board.title || '내일 어떻게 될까요?',
+    options: Array.isArray(board.options) ? board.options : [],
+    closeAt: board.closeAtText || board.closeAt || '오늘 23:59',
+    resultAt: board.resultAtText || board.resultAt || '내일 18:00',
+    resultRule: board.resultRule || '자동 정산 기준',
+    heat: Number(board.heat || 50),
+    participants: Number(board.participants || 0),
+    aiComment: board.aiComment || 'AI가 수집 데이터를 바탕으로 예측 질문을 정리했습니다.'
+  })).filter(board => board.id && board.options.length);
+}
+
+function normalizeWallet(wallet) {
+  return {
+    balance: Number(wallet.balance ?? WELCOME_BALANCE),
+    totalProfit: Number(wallet.totalProfit || 0),
+    winRate: Number(wallet.winRate || 0),
+    streak: Number(wallet.streak || 0),
+    joinedAt: wallet.joinedAt || Date.now(),
+    title: wallet.title || '새내기 예측러'
   };
 }
 
