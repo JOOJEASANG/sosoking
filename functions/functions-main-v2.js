@@ -1,7 +1,7 @@
 const existingFunctions = require('./functions-main.js');
-const aiHuntFunctions = require('./ai-hunt-functions.js');
+const predictionFunctions = require('./prediction-functions.js');
 
 module.exports = {
   ...existingFunctions,
-  ...aiHuntFunctions,
+  ...predictionFunctions,
 };
