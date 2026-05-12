@@ -62,8 +62,46 @@ function getDefaultBoards(dateKey = todayKey()) {
       aiComment: '카테고리 예측은 한 이슈보다 변수가 많아 역전 재미가 큰 판입니다.',
       createdAt: FieldValue.serverTimestamp(),
       createdAtMs: Date.now()
+    },
+    {
+      id: `${dateKey}-second-place-reverse`,
+      dateKey,
+      status: 'open',
+      category: '역전 예측',
+      title: '현재 2위 이슈가 내일 1위로 올라설까?',
+      issue: '오늘 2위권에서 빠르게 올라오는 추격 이슈',
+      summary: '지금은 2위지만 댓글량과 검색 상승률이 강한 이슈가 내일 1위를 차지할지 맞힙니다.',
+      question: '내일 오후 6시 기준, 현재 2위 이슈가 1위로 역전할까?',
+      options: [
+        { id: 'reverse', label: '역전한다', odds: 2.6 },
+        { id: 'no_reverse', label: '못 한다', odds: 1.55 }
+      ],
+      closeAtText: '오늘 23:59',
+      resultAtText: '내일 18:00',
+      resultRule: '내일 핫이슈 점수 1위 여부 기준',
+      heat: 83,
+      participants: 0,
+      aiComment: '역전판은 소소머니를 크게 불릴 수 있지만, 그만큼 빗나갈 확률도 높습니다.',
+      createdAt: FieldValue.serverTimestamp(),
+      createdAtMs: Date.now()
     }
   ];
+}
+
+function normalizeBoardForClient(id, board) {
+  return { id, ...board };
+}
+
+function findDefaultBoard(boardId, dateKey = todayKey()) {
+  const defaults = getDefaultBoards(dateKey);
+  return defaults.find(b => b.id === boardId || b.id.endsWith(`-${boardId}`)) || defaults[0];
+}
+
+function deterministicWinner(board) {
+  const options = Array.isArray(board.options) ? board.options : [];
+  if (!options.length) return null;
+  const seed = String(board.id || board.title || '').split('').reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
+  return options[seed % options.length];
 }
 
 async function ensureWallet(userId) {
@@ -78,6 +116,7 @@ async function ensureWallet(userId) {
     wins: 0,
     losses: 0,
     streak: 0,
+    bestStreak: 0,
     title: '새내기 예측러',
     createdAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp()
@@ -86,13 +125,41 @@ async function ensureWallet(userId) {
   return { ref, wallet, created: true };
 }
 
+async function getBoardData(boardId) {
+  const safeBoardId = cleanText(boardId, 100);
+  const ref = db.doc(`prediction_boards/${safeBoardId}`);
+  const snap = await ref.get();
+  if (snap.exists) return { ref, id: snap.id, board: snap.data(), exists: true };
+  const board = findDefaultBoard(safeBoardId);
+  return { ref, id: board.id, board, exists: false };
+}
+
 const getPredictionHome = onCall({ region: 'asia-northeast3', timeoutSeconds: 30 }, async (request) => {
   const userId = request.auth?.uid || 'anonymous';
   const { wallet } = await ensureWallet(userId);
   const dateKey = todayKey();
   const snap = await db.collection('prediction_boards').where('dateKey', '==', dateKey).where('status', '==', 'open').limit(10).get();
-  const boards = snap.empty ? getDefaultBoards(dateKey) : snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  const boards = snap.empty ? getDefaultBoards(dateKey) : snap.docs.map(doc => normalizeBoardForClient(doc.id, doc.data()));
   return { wallet, boards, dateKey };
+});
+
+const getPredictionDetail = onCall({ region: 'asia-northeast3', timeoutSeconds: 30 }, async (request) => {
+  const userId = request.auth?.uid || 'anonymous';
+  const boardId = cleanText(request.data?.boardId, 100);
+  if (!boardId) throw new Error('예측판 정보가 없습니다.');
+  const { id, board } = await getBoardData(boardId);
+  const predictionSnap = await db.doc(`predictions/${userId}_${id}`).get();
+  const altPredictionSnap = id === boardId ? null : await db.doc(`predictions/${userId}_${boardId}`).get();
+  const commentsSnap = await db.collection('prediction_comments').where('boardId', '==', id).limit(30).get();
+  const comments = commentsSnap.docs
+    .map(doc => ({ id: doc.id, ...doc.data() }))
+    .sort((a, b) => Number(b.createdAtMs || 0) - Number(a.createdAtMs || 0))
+    .slice(0, 20);
+  return {
+    board: normalizeBoardForClient(id, board),
+    prediction: predictionSnap.exists ? predictionSnap.data() : (altPredictionSnap?.exists ? altPredictionSnap.data() : null),
+    comments
+  };
 });
 
 const claimPredictionDailyBonus = onCall({ region: 'asia-northeast3', timeoutSeconds: 30 }, async (request) => {
@@ -111,32 +178,130 @@ const claimPredictionDailyBonus = onCall({ region: 'asia-northeast3', timeoutSec
 
 const placePrediction = onCall({ region: 'asia-northeast3', timeoutSeconds: 30 }, async (request) => {
   const userId = request.auth?.uid || 'anonymous';
-  const boardId = cleanText(request.data?.boardId, 80);
+  const boardId = cleanText(request.data?.boardId, 100);
   const optionId = cleanText(request.data?.optionId, 80);
   const comment = cleanText(request.data?.comment, 160);
   const amount = Math.max(100, Math.min(5000, Number(request.data?.amount || 0)));
   if (!boardId || !optionId) throw new Error('예측판과 선택지가 필요합니다.');
-  const boardRef = db.doc(`prediction_boards/${boardId}`);
-  const boardSnap = await boardRef.get();
-  const board = boardSnap.exists ? boardSnap.data() : getDefaultBoards()[0];
+
+  const { id, board, ref: boardRef, exists } = await getBoardData(boardId);
   const option = (board.options || []).find(o => o.id === optionId);
   if (!option) throw new Error('선택지를 찾을 수 없습니다.');
-  const predictionRef = db.doc(`predictions/${userId}_${boardId}`);
+  if (board.status && board.status !== 'open') throw new Error('이미 마감된 예측판입니다.');
+
+  if (!exists) {
+    const { id: defaultId, ...boardData } = board;
+    await boardRef.set(boardData, { merge: true });
+  }
+
+  const predictionRef = db.doc(`predictions/${userId}_${id}`);
   const existing = await predictionRef.get();
   if (existing.exists) throw new Error('이미 참여한 예측판입니다.');
+
   const { ref: walletRef, wallet } = await ensureWallet(userId);
   if (Number(wallet.balance || 0) < amount) throw new Error('소소머니가 부족합니다.');
+
   await predictionRef.set({
-    userId, boardId, optionId, optionLabel: option.label, odds: option.odds, amount, comment,
+    userId, boardId: id, optionId, optionLabel: option.label, odds: option.odds, amount, comment,
     settled: false, createdAt: FieldValue.serverTimestamp(), createdAtMs: Date.now()
   });
   await walletRef.set({ balance: FieldValue.increment(-amount), totalPredictions: FieldValue.increment(1), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
   await boardRef.set({ participants: FieldValue.increment(1), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
   if (comment) {
-    await db.collection('prediction_comments').add({ userId, boardId, text: comment, side: option.label, likes: 0, createdAt: FieldValue.serverTimestamp(), createdAtMs: Date.now() });
+    await db.collection('prediction_comments').add({ userId, boardId: id, text: comment, side: option.label, likes: 0, createdAt: FieldValue.serverTimestamp(), createdAtMs: Date.now() });
   }
   const updatedWallet = await walletRef.get();
-  return { ok: true, wallet: updatedWallet.data() };
+  return { ok: true, wallet: updatedWallet.data(), boardId: id };
+});
+
+const addPredictionComment = onCall({ region: 'asia-northeast3', timeoutSeconds: 30 }, async (request) => {
+  const userId = request.auth?.uid || 'anonymous';
+  const boardId = cleanText(request.data?.boardId, 100);
+  const text = cleanText(request.data?.text, 160);
+  const side = cleanText(request.data?.side || '내 의견', 40);
+  if (!boardId || !text) throw new Error('댓글 내용이 필요합니다.');
+  const { id } = await getBoardData(boardId);
+  const ref = await db.collection('prediction_comments').add({
+    userId, boardId: id, text, side, likes: 0,
+    createdAt: FieldValue.serverTimestamp(), createdAtMs: Date.now()
+  });
+  return { ok: true, commentId: ref.id };
+});
+
+const getPredictionRankings = onCall({ region: 'asia-northeast3', timeoutSeconds: 30 }, async (request) => {
+  const userId = request.auth?.uid || 'anonymous';
+  const { wallet } = await ensureWallet(userId);
+  const snap = await db.collection('user_wallets').orderBy('balance', 'desc').limit(20).get();
+  const rankings = snap.docs.map((doc, index) => {
+    const data = doc.data();
+    return {
+      rank: index + 1,
+      userId: doc.id,
+      name: doc.id === userId ? '나' : `예측러 ${String(index + 1).padStart(2, '0')}`,
+      balance: Number(data.balance || 0),
+      streak: Number(data.streak || 0),
+      title: data.title || '예측러'
+    };
+  });
+  if (!rankings.some(r => r.userId === userId)) {
+    rankings.push({ rank: rankings.length + 1, userId, name: '나', balance: Number(wallet.balance || 0), streak: Number(wallet.streak || 0), title: wallet.title || '새내기 예측러' });
+  }
+  return { rankings, wallet };
+});
+
+async function settleOneBoard(boardDoc) {
+  const boardRef = boardDoc.ref;
+  const board = { id: boardDoc.id, ...boardDoc.data() };
+  if (board.status === 'settled') return { boardId: board.id, skipped: true };
+  const winner = deterministicWinner(board);
+  if (!winner) return { boardId: board.id, skipped: true };
+  const predictionsSnap = await db.collection('predictions').where('boardId', '==', board.id).where('settled', '==', false).limit(200).get();
+  const batch = db.batch();
+  let winners = 0;
+  let losers = 0;
+  predictionsSnap.docs.forEach(predDoc => {
+    const pred = predDoc.data();
+    const won = pred.optionId === winner.id;
+    const payout = won ? Math.floor(Number(pred.amount || 0) * Number(pred.odds || 1)) : 0;
+    const profit = won ? payout - Number(pred.amount || 0) : -Number(pred.amount || 0);
+    batch.set(predDoc.ref, { settled: true, won, payout, profit, winningOptionId: winner.id, settledAt: FieldValue.serverTimestamp(), settledAtMs: Date.now() }, { merge: true });
+    const walletRef = db.doc(`user_wallets/${pred.userId}`);
+    batch.set(walletRef, {
+      balance: FieldValue.increment(payout),
+      totalProfit: FieldValue.increment(profit),
+      wins: FieldValue.increment(won ? 1 : 0),
+      losses: FieldValue.increment(won ? 0 : 1),
+      streak: won ? FieldValue.increment(1) : 0,
+      title: won ? '촉 좋은 예측러' : '다음엔 맞힐 예측러',
+      updatedAt: FieldValue.serverTimestamp()
+    }, { merge: true });
+    if (won) winners += 1; else losers += 1;
+  });
+  batch.set(boardRef, {
+    status: 'settled',
+    winningOptionId: winner.id,
+    winningOptionLabel: winner.label,
+    resultLine: `정답은 “${winner.label}”입니다.`,
+    settledAt: FieldValue.serverTimestamp(),
+    settledAtMs: Date.now(),
+    winners,
+    losers
+  }, { merge: true });
+  await batch.commit();
+  return { boardId: board.id, winner: winner.label, winners, losers };
+}
+
+const settlePredictionBoards = onCall({ region: 'asia-northeast3', timeoutSeconds: 60 }, async () => {
+  const snap = await db.collection('prediction_boards').where('status', '==', 'open').limit(10).get();
+  const results = [];
+  for (const doc of snap.docs) results.push(await settleOneBoard(doc));
+  return { ok: true, results };
+});
+
+const scheduledSettlePredictionBoards = onSchedule({ region: 'asia-northeast3', schedule: 'every day 18:00', timeZone: 'Asia/Seoul', timeoutSeconds: 300 }, async () => {
+  const snap = await db.collection('prediction_boards').where('status', '==', 'open').limit(30).get();
+  for (const doc of snap.docs) await settleOneBoard(doc);
+  return null;
 });
 
 const seedDailyPredictionBoards = onSchedule({ region: 'asia-northeast3', schedule: 'every day 21:00', timeZone: 'Asia/Seoul' }, async () => {
@@ -151,4 +316,14 @@ const seedDailyPredictionBoards = onSchedule({ region: 'asia-northeast3', schedu
   return null;
 });
 
-module.exports = { getPredictionHome, claimPredictionDailyBonus, placePrediction, seedDailyPredictionBoards };
+module.exports = {
+  getPredictionHome,
+  getPredictionDetail,
+  claimPredictionDailyBonus,
+  placePrediction,
+  addPredictionComment,
+  getPredictionRankings,
+  settlePredictionBoards,
+  scheduledSettlePredictionBoards,
+  seedDailyPredictionBoards
+};
