@@ -23,7 +23,7 @@ function draw(container, syncing, bonus) {
             <h1>내일 일은<br><em>아무도 모른다</em></h1>
             <p class="predict-lead">오늘 뜬 이슈를 보고 내일의 흐름을 맞히세요. 촉이 맞으면 소소머니가 쌓이고, 랭킹에 이름이 올라갑니다.</p>
             <div class="hero-badges"><span class="hero-badge hot">🔥 오늘의 핫판</span><span class="hero-badge gold">👑 주간 소소킹</span><span class="hero-badge">🎯 연속 적중</span></div>
-            <div class="wallet-card"><div><span>보유 소소머니</span><strong>${wallet.balance.toLocaleString()}</strong></div><div><span>참여중</span><strong>${summary.openCount}</strong></div><div><span>칭호</span><strong>${wallet.title}</strong></div></div>
+            <div class="wallet-card"><div><span>보유 소소머니</span><strong>${Number(wallet.balance || 0).toLocaleString()}</strong></div><div><span>참여중</span><strong>${Number(summary.openCount || 0)}</strong></div><div><span>칭호</span><strong>${e(wallet.title || '새내기 예측러')}</strong></div></div>
             ${bonus?.claimed ? `<div class="daily-bonus">🎁 오늘 보너스 +${Number(bonus.amount || 0).toLocaleString()}</div>` : ''}
             <div class="predict-actions"><a href="#/predict" class="primary-action">예측판 보기</a><a href="#/history" class="secondary-action">내 기록</a></div>
           </div>
@@ -32,18 +32,22 @@ function draw(container, syncing, bonus) {
       </section>
       <section class="king-strip"><div class="king-strip-inner"><div class="king-chip"><b>⚡ 의견 갈림</b><span>팽팽할수록 더 재밌음</span></div><div class="king-chip"><b>⏰ 마감 임박</b><span>오늘 23:59 전 참여</span></div><div class="king-chip"><b>🎖 칭호 성장</b><span>맞히면 캐릭터 강화</span></div><div class="king-chip"><b>💬 성지 댓글</b><span>근거를 남기면 재미 증가</span></div></div></section>
       <section class="fun-section"><div class="fun-grid"><article class="mission-card"><strong>오늘의 미션</strong><div class="mission-list"><div class="mission-item"><div class="mission-check">1</div><div><b>예측 1회 참여</b><span>오늘의 첫 선택을 남기기</span></div></div><div class="mission-item"><div class="mission-check">2</div><div><b>근거 댓글 작성</b><span>내 촉을 한 줄로 기록</span></div></div><div class="mission-item"><div class="mission-check">3</div><div><b>역전판 도전</b><span>반전 이슈를 노려보기</span></div></div></div></article><article class="briefing-card"><strong>AI 관전평</strong><p>오늘은 이슈 흐름이 빠르게 바뀌는 날입니다. 기사량만 보지 말고, 내일까지 이어질 댓글 흐름과 반전 가능성을 같이 보세요.</p><span class="mini-reward">오늘의 팁: 하루짜리 이슈 조심</span></article></div></section>
-      <section class="board-preview-section"><div class="section-head"><div><span>OPEN BOARDS</span><h2>오늘 열린 예측판</h2></div><a href="#/predict">전체보기</a></div><div class="board-list">${boards.map(card).join('')}</div></section>
+      <section class="board-preview-section"><div class="section-head"><div><span>OPEN BOARDS</span><h2>오늘 열린 예측판</h2></div><a href="#/predict">전체보기</a></div><div class="board-list">${boards.length ? boards.map(card).join('') : emptyBoards()}</div></section>
       <section class="notice-strip"><b>안전 안내</b><span>소소머니는 게임 전용 포인트이며 현금 가치가 없습니다.</span></section>
     </main>`;
 }
 
 function spotlight(board) {
-  if (!board) return `<div class="spotlight-card"><div class="spotlight-inner"><div class="spotlight-title">예측판 준비 중</div><p class="spotlight-summary">오늘의 핫이슈를 불러오고 있습니다.</p></div></div>`;
-  return `<div class="spotlight-card"><div class="spotlight-inner"><div class="spotlight-label"><span>오늘의 메인 예측</span><b>🔥 ${board.heat}</b></div><div class="spotlight-title">${e(board.title)}</div><p class="spotlight-summary">${e(board.summary)}</p><div class="spotlight-stats"><div><span>참여</span><b>${Number(board.participants||0).toLocaleString()}</b></div><div><span>마감</span><b>${e(board.closeAt)}</b></div><div><span>분류</span><b>${e(board.category)}</b></div></div><a class="spotlight-action" href="#/predict/${board.id}">이 판 예측하기</a></div></div>`;
+  if (!board) return `<div class="spotlight-card"><div class="spotlight-inner"><div class="spotlight-title">예측판 준비 중</div><p class="spotlight-summary">오늘의 핫이슈를 불러오고 있습니다.</p><a class="spotlight-action" href="#/predict">예측판 확인하기</a></div></div>`;
+  return `<div class="spotlight-card"><div class="spotlight-inner"><div class="spotlight-label"><span>오늘의 메인 예측</span><b>🔥 ${Number(board.heat || 0)}</b></div><div class="spotlight-title">${e(board.title)}</div><p class="spotlight-summary">${e(board.summary)}</p><div class="spotlight-stats"><div><span>참여</span><b>${Number(board.participants||0).toLocaleString()}</b></div><div><span>마감</span><b>${e(board.closeAt)}</b></div><div><span>분류</span><b>${e(board.category)}</b></div></div><a class="spotlight-action" href="#/predict/${encodeURIComponent(board.id)}">이 판 예측하기</a></div></div>`;
 }
 
 function card(board) {
-  return `<a class="board-card" href="#/predict/${board.id}"><div class="board-card-top"><span>${e(board.category)}</span><b>🔥 ${board.heat}</b></div><h3>${e(board.title)}</h3><p>${e(board.summary)}</p><div class="board-meta"><span>참여 ${Number(board.participants||0).toLocaleString()}</span><span>마감 ${e(board.closeAt)}</span></div></a>`;
+  return `<a class="board-card" href="#/predict/${encodeURIComponent(board.id)}"><div class="board-card-top"><span>${e(board.category)}</span><b>🔥 ${Number(board.heat || 0)}</b></div><h3>${e(board.title)}</h3><p>${e(board.summary)}</p><div class="board-meta"><span>참여 ${Number(board.participants||0).toLocaleString()}</span><span>마감 ${e(board.closeAt)}</span></div></a>`;
+}
+
+function emptyBoards() {
+  return `<div class="board-card"><div class="board-card-top"><span>READY</span><b>🔮</b></div><h3>예측판을 준비 중입니다</h3><p>잠시 후 오늘의 핫이슈 예측판이 열립니다. 관리자 수집 또는 자동 스케줄 후 표시됩니다.</p><div class="board-meta"><span>대기</span><span>곧 공개</span></div></div>`;
 }
 
 export function injectPredictStyle() {
