@@ -7,13 +7,6 @@ service cloud.firestore {
         exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
-    function isSessionParticipant() {
-      return request.auth != null && (
-        (resource.data.plaintiff is map && resource.data.plaintiff.userId == request.auth.uid) ||
-        (resource.data.defendant is map && resource.data.defendant.userId == request.auth.uid)
-      );
-    }
-
     function validNickname(nickname) {
       return nickname is string
         && nickname.size() >= 2
@@ -32,23 +25,6 @@ service cloud.firestore {
       return request.auth != null
         && validNickname(nickname)
         && request.resource.data.uid == request.auth.uid;
-    }
-
-    function isVoteOnlyUpdate() {
-      return request.auth != null &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['votesA', 'votesB']) &&
-        (
-          (
-            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['votesA']) &&
-            request.resource.data.votesA is int &&
-            request.resource.data.votesA == (resource.data.votesA is int ? resource.data.votesA : 0) + 1
-          ) ||
-          (
-            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['votesB']) &&
-            request.resource.data.votesB is int &&
-            request.resource.data.votesB == (resource.data.votesB is int ? resource.data.votesB : 0) + 1
-          )
-        );
     }
 
     function validFeedPost() {
@@ -103,10 +79,13 @@ service cloud.firestore {
     }
 
     match /admins/{uid} { allow read: if request.auth != null && request.auth.uid == uid; allow write: if false; }
-    match /categories/{catId} { allow read: if true; allow write: if isAdmin(); }
-    match /topics/{topicId} { allow read: if resource.data.status == 'active' || isAdmin(); allow create: if isAdmin(); allow update: if isAdmin() || isVoteOnlyUpdate(); allow delete: if isAdmin(); }
-    match /debate_sessions/{sessionId} { allow get: if request.auth != null; allow list: if isSessionParticipant() || isAdmin(); allow create: if false; allow update: if false; allow delete: if isAdmin(); }
-    match /random_queue/{topicId} { allow read: if request.auth != null; allow write: if false; }
+
+    // Legacy debate collections are no longer exposed in the user app.
+    match /categories/{catId} { allow read, write: if isAdmin(); }
+    match /topics/{topicId} { allow read, write: if isAdmin(); }
+    match /debate_sessions/{sessionId} { allow read, write: if isAdmin(); }
+    match /random_queue/{topicId} { allow read, write: if isAdmin(); }
+
     match /usage_stats/{docId} { allow read: if isAdmin(); allow write: if false; }
     match /rate_limits/{userId} { allow read, write: if false; }
     match /users/{userId} { allow read: if request.auth != null && request.auth.uid == userId; allow create, update: if validUserProfile(userId); allow delete: if false; }
