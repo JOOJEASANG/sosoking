@@ -42,7 +42,7 @@ function route() {
   if (hash === '#/' || hash === '' || hash === '#') renderPredictHome(content);
   else if (hash === '#/predict') { pageName = 'predict_list'; renderPredictList(content); }
   else if (hash.startsWith('#/predict/')) { pageName = 'predict_detail'; renderPredictDetail(content, decodeURIComponent(hash.replace('#/predict/', ''))); }
-  else if (hash === '#/feed' || hash === '#/feed/top' || hash === '#/feed/new') { pageName = 'soso_feed'; renderSosoFeed(content); }
+  else if (hash === '#/feed' || hash === '#/feed/top' || hash === '#/feed/new' || hash.startsWith('#/feed/')) { pageName = hash.startsWith('#/feed/') && !['#/feed/top','#/feed/new'].includes(hash) ? 'soso_feed_detail' : 'soso_feed'; renderSosoFeed(content); }
   else if (hash === '#/ranking') { pageName = 'ranking'; renderPredictRanking(content); }
   else if (hash === '#/history') { pageName = 'history'; renderPredictHistory(content); }
   else if (hash.startsWith('#/policy/')) { pageName = 'policy_' + hash.replace('#/policy/', ''); renderPredictPolicy(content, hash.replace('#/policy/', '')); }
