@@ -34,8 +34,8 @@ export async function renderFooter() {
 
     ${showInstallBtn ? `
     <div style="margin:20px 0 4px;">
-      <button id="footer-pwa-btn" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px;border-radius:12px;border:1.5px solid rgba(79,124,255,0.25);background:rgba(79,124,255,0.07);color:#4f7cff;font-size:14px;font-weight:700;cursor:pointer;">
-        <img src="/icon-192.png" style="width:22px;height:22px;border-radius:5px;" alt="">
+      <button id="footer-pwa-btn" style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:14px;border-radius:16px;border:1.5px solid rgba(79,124,255,0.22);background:linear-gradient(135deg,rgba(79,124,255,0.10),rgba(255,197,66,0.08));color:#4f7cff;font-size:14px;font-weight:900;cursor:pointer;">
+        <img src="/logo.svg" style="width:25px;height:25px;border-radius:8px;" alt="소소킹">
         ${isIOS ? '홈 화면에 추가' : '앱으로 설치하기'}
       </button>
     </div>` : ''}
