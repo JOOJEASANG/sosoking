@@ -23,7 +23,8 @@ function loadPolishStyle() {
     ['sosoking-layout-comfort-style','/css/layout-comfort.css'],
     ['sosoking-feed-style','/css/soso-feed.css'],
     ['sosoking-design-refresh-style','/css/sosoking-design-refresh.css'],
-    ['sosoking-polish-v2-style','/css/sosoking-polish-v2.css']
+    ['sosoking-polish-v2-style','/css/sosoking-polish-v2.css'],
+    ['sosoking-doc-footer-style','/css/sosoking-doc-footer.css']
   ].forEach(([id, href]) => {
     if (document.getElementById(id)) return;
     const link = document.createElement('link');
