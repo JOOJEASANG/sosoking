@@ -1,4 +1,4 @@
-import { auth, db } from '../firebase.js';
+import { auth, db, storage } from '../firebase.js';
 import {
   addDoc,
   collection,
@@ -13,6 +13,7 @@ import {
   updateDoc,
   where
 } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { getDownloadURL, ref, uploadBytesResumable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-storage.js';
 
 export const FALLBACK_FEED_ITEMS = [
   { id:'sample-office-chat', type:'생각 갈림', badge:'💬', title:'퇴근 후 단톡방 업무 지시, 어디까지 이해 가능?', summary:'회사 단톡방이 퇴근 후에도 계속 울릴 때 사람들은 어디까지 참을 수 있을까요?', question:'이 상황에서 제일 가까운 생각은?', options:['급한 일이면 가능','다음날 해도 된다','계속되면 선 넘음','읽씹한다'], stats:{ views:12840, likes:932, comments:214 }, topComment:'한두 번은 괜찮은데 반복되면 퇴근이 퇴근이 아님.', tags:['직장','단톡방','퇴근'], source:'sample' },
@@ -28,8 +29,25 @@ const FALLBACK_COMMENTS = [
 
 const BADGE_BY_TYPE = { '사진/짤':'📸', '짧은 글':'✍️', '질문':'❓', '사진 제목학원':'📸', '생각 갈림':'💬', '소소한 논쟁':'🤔', '생활 매너':'🍽️' };
 
-function clean(value, max = 500) {
-  return String(value || '').replace(/[<>]/g, '').replace(/\s{2,}/g, ' ').trim().slice(0, max);
+function clean(value, max = 500) { return String(value || '').replace(/[<>]/g, '').replace(/\s{2,}/g, ' ').trim().slice(0, max); }
+function extFromFile(file) { const name = String(file?.name || 'image').toLowerCase(); const ext = name.split('.').pop(); return ['jpg','jpeg','png','gif','webp'].includes(ext) ? ext : 'jpg'; }
+
+export async function uploadFeedImage(file, onProgress = () => {}) {
+  const user = auth.currentUser;
+  if (!user) throw new Error('로그인 후 이미지를 올릴 수 있습니다.');
+  if (!file) return '';
+  if (!String(file.type || '').startsWith('image/')) throw new Error('이미지 파일만 업로드할 수 있습니다.');
+  if (file.size > 5 * 1024 * 1024) throw new Error('이미지는 5MB 이하만 업로드할 수 있습니다.');
+  const path = `soso-feed/${user.uid}/${Date.now()}-${Math.random().toString(36).slice(2)}.${extFromFile(file)}`;
+  const storageRef = ref(storage, path);
+  const task = uploadBytesResumable(storageRef, file, { contentType: file.type });
+  await new Promise((resolve, reject) => {
+    task.on('state_changed', snap => {
+      const pct = Math.round((snap.bytesTransferred / snap.totalBytes) * 100);
+      onProgress(pct);
+    }, reject, resolve);
+  });
+  return getDownloadURL(task.snapshot.ref);
 }
 
 function normalizePost(id, data = {}) {
@@ -38,62 +56,16 @@ function normalizePost(id, data = {}) {
   const tags = Array.isArray(data.tags) ? data.tags.map(v => clean(v, 18).replace(/^#/, '')).filter(Boolean).slice(0, 6) : [];
   return { id, type, badge: data.badge || BADGE_BY_TYPE[type] || '✨', title: clean(data.title || '제목 없는 소소피드', 90), summary: clean(data.summary || data.content || '', 220), content: clean(data.content || data.summary || '', 1200), question: clean(data.question || '사람들은 어떻게 생각할까요?', 90), options: options.length ? options : ['공감한다','조금 애매하다','반대한다','댓글로 말한다'], stats:{ views:Number(data.views || 0), likes:Number(data.likes || 0), comments:Number(data.comments || 0) }, topComment: clean(data.topComment || '아직 인기 한 줄이 없습니다.', 120), tags: tags.length ? tags : ['소소피드'], imageUrl: clean(data.imageUrl || '', 500), authorId: data.authorId || null, authorName: clean(data.authorName || '익명 소소러', 40), status: data.status || 'published', source: data.source || 'user', createdAtMs:Number(data.createdAtMs || Date.now()) };
 }
-
-function normalizeComment(id, data = {}) {
-  return { id, text: clean(data.text || '', 300), authorName: clean(data.authorName || '익명 소소러', 40), authorId: data.authorId || null, likes: Number(data.likes || 0), createdAtMs: Number(data.createdAtMs || Date.now()) };
-}
+function normalizeComment(id, data = {}) { return { id, text: clean(data.text || '', 300), authorName: clean(data.authorName || '익명 소소러', 40), authorId: data.authorId || null, likes: Number(data.likes || 0), createdAtMs: Number(data.createdAtMs || Date.now()) }; }
 
 export async function getFeedPosts({ topOnly = false, pageSize = 20 } = {}) {
-  try {
-    const base = collection(db, 'soso_feed_posts');
-    const q = topOnly ? query(base, where('status', '==', 'published'), orderBy('views', 'desc'), limit(pageSize)) : query(base, where('status', '==', 'published'), orderBy('createdAtMs', 'desc'), limit(pageSize));
-    const snap = await getDocs(q);
-    const posts = snap.docs.map(d => normalizePost(d.id, d.data()));
-    return posts.length ? posts : FALLBACK_FEED_ITEMS;
-  } catch (error) { console.warn('소소피드 불러오기 실패:', error.code || error.message); return FALLBACK_FEED_ITEMS; }
+  try { const base = collection(db, 'soso_feed_posts'); const q = topOnly ? query(base, where('status', '==', 'published'), orderBy('views', 'desc'), limit(pageSize)) : query(base, where('status', '==', 'published'), orderBy('createdAtMs', 'desc'), limit(pageSize)); const snap = await getDocs(q); const posts = snap.docs.map(d => normalizePost(d.id, d.data())); return posts.length ? posts : FALLBACK_FEED_ITEMS; } catch (error) { console.warn('소소피드 불러오기 실패:', error.code || error.message); return FALLBACK_FEED_ITEMS; }
 }
-
-export async function getFeedPost(postId) {
-  const sample = FALLBACK_FEED_ITEMS.find(item => item.id === postId);
-  if (sample) return sample;
-  const snap = await getDoc(doc(db, 'soso_feed_posts', postId));
-  if (!snap.exists()) throw new Error('게시글을 찾을 수 없습니다.');
-  const post = normalizePost(snap.id, snap.data());
-  if (post.status !== 'published') throw new Error('공개되지 않은 게시글입니다.');
-  return post;
-}
-
-export async function increaseFeedView(postId) {
-  if (!postId || postId.startsWith('sample-')) return;
-  try { await updateDoc(doc(db, 'soso_feed_posts', postId), { views: increment(1) }); } catch (error) { console.warn('조회수 증가 실패:', error.code || error.message); }
-}
-
-export async function likeFeedPost(postId) {
-  if (!postId || postId.startsWith('sample-')) return { fallback: true };
-  await updateDoc(doc(db, 'soso_feed_posts', postId), { likes: increment(1) });
-  return { ok: true };
-}
-
-export async function getFeedComments(postId, pageSize = 30) {
-  if (!postId || postId.startsWith('sample-')) return FALLBACK_COMMENTS;
-  try {
-    const q = query(collection(db, 'soso_feed_posts', postId, 'comments'), orderBy('createdAtMs', 'desc'), limit(pageSize));
-    const snap = await getDocs(q);
-    return snap.docs.map(d => normalizeComment(d.id, d.data()));
-  } catch (error) { console.warn('댓글 불러오기 실패:', error.code || error.message); return []; }
-}
-
-export async function addFeedComment(postId, text) {
-  const user = auth.currentUser;
-  if (!user) throw new Error('로그인 후 댓글을 남길 수 있습니다.');
-  const body = clean(text, 300);
-  if (body.length < 2) throw new Error('댓글을 2자 이상 입력해주세요.');
-  if (!postId || postId.startsWith('sample-')) throw new Error('샘플 글에는 댓글을 저장할 수 없습니다.');
-  const payload = { text: body, likes: 0, authorId: user.uid, authorName: user.isAnonymous ? '익명 소소러' : (user.displayName || user.email || '소소킹 유저'), createdAt: serverTimestamp(), createdAtMs: Date.now() };
-  const ref = await addDoc(collection(db, 'soso_feed_posts', postId, 'comments'), payload);
-  try { await updateDoc(doc(db, 'soso_feed_posts', postId), { comments: increment(1), topComment: body }); } catch {}
-  return normalizeComment(ref.id, payload);
-}
+export async function getFeedPost(postId) { const sample = FALLBACK_FEED_ITEMS.find(item => item.id === postId); if (sample) return sample; const snap = await getDoc(doc(db, 'soso_feed_posts', postId)); if (!snap.exists()) throw new Error('게시글을 찾을 수 없습니다.'); const post = normalizePost(snap.id, snap.data()); if (post.status !== 'published') throw new Error('공개되지 않은 게시글입니다.'); return post; }
+export async function increaseFeedView(postId) { if (!postId || postId.startsWith('sample-')) return; try { await updateDoc(doc(db, 'soso_feed_posts', postId), { views: increment(1) }); } catch (error) { console.warn('조회수 증가 실패:', error.code || error.message); } }
+export async function likeFeedPost(postId) { if (!postId || postId.startsWith('sample-')) return { fallback: true }; await updateDoc(doc(db, 'soso_feed_posts', postId), { likes: increment(1) }); return { ok: true }; }
+export async function getFeedComments(postId, pageSize = 30) { if (!postId || postId.startsWith('sample-')) return FALLBACK_COMMENTS; try { const q = query(collection(db, 'soso_feed_posts', postId, 'comments'), orderBy('createdAtMs', 'desc'), limit(pageSize)); const snap = await getDocs(q); return snap.docs.map(d => normalizeComment(d.id, d.data())); } catch (error) { console.warn('댓글 불러오기 실패:', error.code || error.message); return []; } }
+export async function addFeedComment(postId, text) { const user = auth.currentUser; if (!user) throw new Error('로그인 후 댓글을 남길 수 있습니다.'); const body = clean(text, 300); if (body.length < 2) throw new Error('댓글을 2자 이상 입력해주세요.'); if (!postId || postId.startsWith('sample-')) throw new Error('샘플 글에는 댓글을 저장할 수 없습니다.'); const payload = { text: body, likes: 0, authorId: user.uid, authorName: user.isAnonymous ? '익명 소소러' : (user.displayName || user.email || '소소킹 유저'), createdAt: serverTimestamp(), createdAtMs: Date.now() }; const ref = await addDoc(collection(db, 'soso_feed_posts', postId, 'comments'), payload); try { await updateDoc(doc(db, 'soso_feed_posts', postId), { comments: increment(1), topComment: body }); } catch {} return normalizeComment(ref.id, payload); }
 
 export async function createFeedPost(input = {}) {
   const user = auth.currentUser;
