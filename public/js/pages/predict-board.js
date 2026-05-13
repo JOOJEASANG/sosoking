@@ -28,14 +28,14 @@ function renderDetailMarkup(container, boardId, syncing = false) {
   const resultNotice = board.status === 'settled' ? `<div class="result-box"><b>정산 완료</b><span>${escapeHtml(board.resultLine || `정답은 ${board.winningOptionLabel || '공개 완료'}입니다.`)}</span></div>` : '';
   container.innerHTML = `
     <main class="predict-app simple-page">
-      <div class="simple-header"><a href="#/predict" class="back-link">‹</a><div><span>${syncing ? '서버 확인 중...' : board.category}</span><h1>${board.title}</h1></div><b>${wallet.balance.toLocaleString()}</b></div>
+      <div class="simple-header"><a href="#/predict" class="back-link">‹</a><div><span>${escapeHtml(syncing ? '서버 확인 중...' : board.category)}</span><h1>${escapeHtml(board.title)}</h1></div><b>${wallet.balance.toLocaleString()}</b></div>
       <section class="detail-layout">
         <article class="detail-main-card">
-          <div class="heat-row"><span>🔥 핫이슈 점수 ${board.heat}</span><span>참여 ${Number(board.participants || 0).toLocaleString()}</span></div>
-          <h2>${board.question}</h2><p>${board.summary}</p>${resultNotice}
+          <div class="heat-row"><span>🔥 핫이슈 점수 ${Number(board.heat || 0)}</span><span>참여 ${Number(board.participants || 0).toLocaleString()}</span></div>
+          <h2>${escapeHtml(board.question)}</h2><p>${escapeHtml(board.summary)}</p>${resultNotice}
           ${moodPanel(board)}
-          <div class="issue-box"><b>AI 요약</b><span>${board.aiComment}</span></div>
-          <div class="rule-grid"><div><b>마감</b><span>${board.closeAt}</span></div><div><b>정산</b><span>${board.resultAt}</span></div><div><b>기준</b><span>${board.resultRule}</span></div></div>
+          <div class="issue-box"><b>AI 요약</b><span>${escapeHtml(board.aiComment)}</span></div>
+          <div class="rule-grid"><div><b>마감</b><span>${escapeHtml(board.closeAt)}</span></div><div><b>정산</b><span>${escapeHtml(board.resultAt)}</span></div><div><b>기준</b><span>${escapeHtml(board.resultRule)}</span></div></div>
         </article>
         <aside class="prediction-panel">${existing ? renderExisting(existing) : renderForm(board)}</aside>
       </section>
@@ -64,6 +64,7 @@ function renderDetailMarkup(container, boardId, syncing = false) {
   document.getElementById('comment-form')?.addEventListener('submit', async (event) => {
     event.preventDefault();
     const input = document.getElementById('comment-input');
+    if (!input?.value?.trim()) return;
     const btn = event.currentTarget.querySelector('button');
     if (btn) { btn.disabled = true; btn.textContent = '등록 중'; }
     await addCommentAsync(board.id, input.value, '내 의견');
@@ -78,20 +79,23 @@ function moodPanel(board) {
   const mainRate = 54 + (seed % 23);
   const aiPick = options[seed % Math.max(1, options.length)]?.label || '관망';
   const difficulty = board.heat > 86 ? '고난도 반전판' : board.heat > 75 ? '중간 난이도' : '안정 예측판';
-  return `<div class="mood-panel"><div class="mood-head"><b>판세 체크</b><span>${difficulty}</span></div><div class="mood-bars"><div><span>대중 쏠림</span><b>${mainRate}%</b><i style="--w:${mainRate}%"></i></div><div><span>반전 가능성</span><b>${100-mainRate}%</b><i style="--w:${100-mainRate}%"></i></div></div><div class="ai-pick"><b>AI 예상</b><span>${escapeHtml(aiPick)}</span><small>AI 예상은 재미용 참고이며 정답 보장이 아닙니다.</small></div></div>`;
+  return `<div class="mood-panel"><div class="mood-head"><b>판세 체크</b><span>${escapeHtml(difficulty)}</span></div><div class="mood-bars"><div><span>대중 쏠림</span><b>${mainRate}%</b><i style="--w:${mainRate}%"></i></div><div><span>반전 가능성</span><b>${100-mainRate}%</b><i style="--w:${100-mainRate}%"></i></div></div><div class="ai-pick"><b>AI 예상</b><span>${escapeHtml(aiPick)}</span><small>AI 예상은 재미용 참고이며 정답 보장이 아닙니다.</small></div></div>`;
 }
 
 function renderForm(board) {
   if (board.status === 'settled') return `<div class="prediction-done"><div class="done-icon">📌</div><h3>마감된 예측판</h3><p>이미 정산이 완료된 예측판입니다.</p></div>`;
-  return `<form id="prediction-form" class="prediction-form"><div class="panel-title">내 예측 선택</div><div class="option-list">${board.options.map((option, index) => `<label class="option-card"><input type="radio" name="predict-option" value="${option.id}" ${index === 0 ? 'checked' : ''}><span><b>${option.label}</b><small>예상 배율 x${option.odds}</small></span></label>`).join('')}</div><label class="input-label">사용할 소소머니</label><select id="predict-amount"><option value="500">500</option><option value="1000" selected>1,000</option><option value="3000">3,000</option><option value="5000">5,000</option></select><label class="input-label">내 근거 한마디</label><textarea id="predict-comment" maxlength="120" placeholder="왜 그렇게 생각하는지 짧게 남겨보세요."></textarea><button class="submit-prediction">예측 등록하기</button><p class="money-note">소소머니는 게임 전용 포인트이며 현금 가치가 없습니다.</p></form>`;
+  const options = Array.isArray(board.options) ? board.options : [];
+  return `<form id="prediction-form" class="prediction-form"><div class="panel-title">내 예측 선택</div><div class="option-list">${options.map((option, index) => `<label class="option-card"><input type="radio" name="predict-option" value="${escapeAttr(option.id)}" ${index === 0 ? 'checked' : ''}><span><b>${escapeHtml(option.label)}</b><small>예상 배율 x${Number(option.odds || 1)}</small></span></label>`).join('')}</div><label class="input-label">사용할 소소머니</label><select id="predict-amount"><option value="500">500</option><option value="1000" selected>1,000</option><option value="3000">3,000</option><option value="5000">5,000</option></select><label class="input-label">내 근거 한마디</label><textarea id="predict-comment" maxlength="120" placeholder="왜 그렇게 생각하는지 짧게 남겨보세요."></textarea><button class="submit-prediction">예측 등록하기</button><p class="money-note">소소머니는 게임 전용 포인트이며 현금 가치가 없습니다.</p></form>`;
 }
 
 function renderExisting(prediction) {
   const settledLine = prediction.settled ? (prediction.won ? `적중 성공 · +${Number(prediction.payout || 0).toLocaleString()}` : `적중 실패 · ${Number(prediction.profit || 0).toLocaleString()}`) : (prediction.source === 'server' ? '서버에 저장되었습니다.' : '정산 전까지 결과를 기다려주세요.');
-  return `<div class="prediction-done"><div class="done-icon">${prediction.settled ? (prediction.won ? '🎯' : '🫠') : '✅'}</div><h3>${prediction.settled ? '정산 완료' : '예측 완료'}</h3><p><b>${prediction.optionLabel}</b>에 ${Number(prediction.amount || 0).toLocaleString()} 소소머니를 사용했습니다.</p>${prediction.comment ? `<blockquote>${escapeHtml(prediction.comment)}</blockquote>` : ''}<span>${settledLine}</span></div>`;
+  return `<div class="prediction-done"><div class="done-icon">${prediction.settled ? (prediction.won ? '🎯' : '🫠') : '✅'}</div><h3>${prediction.settled ? '정산 완료' : '예측 완료'}</h3><p><b>${escapeHtml(prediction.optionLabel)}</b>에 ${Number(prediction.amount || 0).toLocaleString()} 소소머니를 사용했습니다.</p>${prediction.comment ? `<blockquote>${escapeHtml(prediction.comment)}</blockquote>` : ''}<span>${escapeHtml(settledLine)}</span></div>`;
 }
 
-function boardCard(board) { return `<a class="board-card" href="#/predict/${board.id}"><div class="board-card-top"><span>${board.category}</span><b>🔥 ${board.heat}</b></div><h3>${board.title}</h3><p>${board.summary}</p><div class="board-meta"><span>참여 ${Number(board.participants || 0).toLocaleString()}</span><span>${board.status === 'settled' ? '정산 완료' : `마감 ${board.closeAt}`}</span></div></a>`; }
+function boardCard(board) {
+  return `<a class="board-card" href="#/predict/${encodeURIComponent(board.id)}"><div class="board-card-top"><span>${escapeHtml(board.category)}</span><b>🔥 ${Number(board.heat || 0)}</b></div><h3>${escapeHtml(board.title)}</h3><p>${escapeHtml(board.summary)}</p><div class="board-meta"><span>참여 ${Number(board.participants || 0).toLocaleString()}</span><span>${board.status === 'settled' ? '정산 완료' : `마감 ${escapeHtml(board.closeAt)}`}</span></div></a>`;
+}
 function showMiniNotice(message) { const box = document.getElementById('toast-container'); if (!box) return; const el = document.createElement('div'); el.className = 'toast show'; el.innerHTML = `<strong>안내</strong><br>${escapeHtml(message)}`; box.appendChild(el); setTimeout(() => el.remove(), 2600); }
 
 function injectDetailStyle() {
@@ -104,4 +108,5 @@ function injectDetailStyle() {
   document.head.appendChild(style);
 }
 
+function escapeAttr(s) { return escapeHtml(s).replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
 function escapeHtml(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
