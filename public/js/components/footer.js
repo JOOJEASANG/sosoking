@@ -24,19 +24,24 @@ export async function renderFooter() {
   const showInstallBtn = !isStandalone;
 
   footer.innerHTML = `
+    <div class="footer-brand-card">
+      <img src="/logo.svg" alt="소소킹">
+      <div><b>소소킹</b><span>내일 일은 아무도 모른다</span></div>
+    </div>
+
     <div class="footer-links">
+      <a href="#/guide">이용안내</a>
       <a href="#/policy/terms">이용약관</a>
       <a href="#/policy/privacy">개인정보처리방침</a>
       <a href="#/policy/ai_disclaimer">AI 서비스 안내</a>
-      <a href="#/guide">이용 안내</a>
-      <a href="#/feedback">💬 의견 접수</a>
+      <a href="#/feedback">의견접수</a>
     </div>
 
     ${showInstallBtn ? `
-    <div style="margin:20px 0 4px;">
-      <button id="footer-pwa-btn" style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:14px;border-radius:16px;border:1.5px solid rgba(79,124,255,0.22);background:linear-gradient(135deg,rgba(79,124,255,0.10),rgba(255,197,66,0.08));color:#4f7cff;font-size:14px;font-weight:900;cursor:pointer;">
-        <img src="/logo.svg" style="width:25px;height:25px;border-radius:8px;" alt="소소킹">
-        ${isIOS ? '홈 화면에 추가' : '앱으로 설치하기'}
+    <div class="footer-install-wrap">
+      <button id="footer-pwa-btn" class="footer-install-btn">
+        <img src="/logo.svg" alt="소소킹">
+        <span>${isIOS ? '홈 화면에 추가' : '앱으로 설치하기'}</span>
       </button>
     </div>` : ''}
 
@@ -45,11 +50,11 @@ export async function renderFooter() {
     <div class="footer-biz">
       ${rows.map(r => `<div class="footer-biz-row">${r}</div>`).join('')}
       <div class="footer-biz-row footer-legal">© ${new Date().getFullYear()} 소소킹</div>
-      <div class="footer-biz-row footer-legal">오락용 예측 게임 · 소소머니는 현금 가치 없음</div>
+      <div class="footer-biz-row footer-legal">오락용 예측 게임 · 소소머니는 현금 가치 없음 · 충전/환전/출금 없음</div>
     </div>
 
-    <div style="margin-top:20px;">
-      <a href="/admin" class="footer-admin-link">🔐 관리자</a>
+    <div class="footer-admin-wrap">
+      <a href="/admin" class="footer-admin-link">관리자</a>
     </div>
   `;
 
