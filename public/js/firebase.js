@@ -1,8 +1,16 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js';
 import {
-  getAuth, signInAnonymously, onAuthStateChanged,
-  GoogleAuthProvider, signInWithPopup,
-  createUserWithEmailAndPassword, signInWithEmailAndPassword,
+  getAuth,
+  signInAnonymously,
+  onAuthStateChanged,
+  GoogleAuthProvider,
+  signInWithPopup,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  sendPasswordResetEmail,
+  updatePassword,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
   signOut,
 } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
 import { getFirestore } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
@@ -28,7 +36,11 @@ export function trackUser(uid) {
   try { if (_analytics && uid) setUserId(_analytics, uid); } catch {}
 }
 
-const googleProvider = new GoogleAuthProvider();
+function createGoogleProvider() {
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: 'select_account' });
+  return provider;
+}
 
 export async function initAuth() {
   await new Promise(resolve => {
@@ -43,7 +55,7 @@ export async function initAuth() {
 }
 
 export async function loginWithGoogle() {
-  return signInWithPopup(auth, googleProvider);
+  return signInWithPopup(auth, createGoogleProvider());
 }
 
 export async function loginWithEmail(email, password) {
@@ -52,6 +64,19 @@ export async function loginWithEmail(email, password) {
 
 export async function signupWithEmail(email, password) {
   return createUserWithEmailAndPassword(auth, email, password);
+}
+
+export async function sendResetEmail(email) {
+  return sendPasswordResetEmail(auth, email);
+}
+
+export async function changeEmailPassword(currentPassword, newPassword) {
+  const user = auth.currentUser;
+  if (!user || user.isAnonymous || !user.email) throw new Error('이메일 계정으로 로그인 후 변경할 수 있습니다.');
+  const credential = EmailAuthProvider.credential(user.email, currentPassword);
+  await reauthenticateWithCredential(user, credential);
+  await updatePassword(user, newPassword);
+  return true;
 }
 
 export async function logout() {
