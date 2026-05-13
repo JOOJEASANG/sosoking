@@ -1,0 +1,134 @@
+/* Footer, logo and document polish */
+.footer-brand-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  margin: 4px auto 16px;
+  padding: 12px 14px;
+  border: 1px solid rgba(79,124,255,.14);
+  border-radius: 22px;
+  background: rgba(255,255,255,.78);
+  box-shadow: 0 14px 38px rgba(55,90,170,.10);
+}
+.footer-brand-card img {
+  width: 42px;
+  height: 42px;
+  border-radius: 15px;
+  transform: rotate(-6deg);
+  box-shadow: 0 10px 24px rgba(79,124,255,.18);
+}
+.footer-brand-card b {
+  display: block;
+  color: var(--predict-ink, #121724);
+  font-size: 15px;
+  font-weight: 1000;
+}
+.footer-brand-card span {
+  display: block;
+  margin-top: 2px;
+  color: var(--predict-muted, #697386);
+  font-size: 12px;
+  font-weight: 800;
+}
+.footer-links {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  max-width: 760px;
+  margin: 0 auto;
+}
+.footer-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 8px 11px;
+  border: 1px solid rgba(79,124,255,.12);
+  border-radius: 999px;
+  background: rgba(79,124,255,.06);
+  color: var(--predict-main, #4f7cff);
+  font-size: 12px;
+  font-weight: 900;
+  text-decoration: none;
+}
+.footer-install-wrap {
+  max-width: 520px;
+  margin: 18px auto 4px;
+}
+.footer-install-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(79,124,255,.18);
+  background: linear-gradient(135deg,rgba(79,124,255,.10),rgba(255,92,138,.08));
+  color: var(--predict-main, #4f7cff);
+  font-size: 14px;
+  font-weight: 1000;
+  cursor: pointer;
+  box-shadow: 0 14px 38px rgba(55,90,170,.10);
+}
+.footer-install-btn img {
+  width: 27px;
+  height: 27px;
+  border-radius: 9px;
+}
+.footer-admin-wrap {
+  margin-top: 18px;
+  text-align: center;
+}
+.footer-admin-link {
+  display: inline-flex;
+  padding: 8px 11px;
+  border-radius: 999px;
+  background: rgba(120,130,150,.10);
+  color: var(--predict-muted, #697386);
+  font-size: 12px;
+  font-weight: 900;
+  text-decoration: none;
+}
+.brand-logo-img,
+.doc-hero-copy img,
+.footer-brand-card img,
+.footer-install-btn img {
+  background: #fff;
+}
+.soso-doc-page .back-link,
+.feedback-page .back-link,
+.guide-page .back-link {
+  box-shadow: 0 12px 30px rgba(55,90,170,.08);
+}
+.soso-doc-card,
+.guide-card-clean,
+.feedback-card,
+.feedback-info-card {
+  position: relative;
+  overflow: hidden;
+}
+.soso-doc-card::before,
+.guide-card-clean::before,
+.feedback-card::before,
+.feedback-info-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 5px;
+  background: linear-gradient(135deg,#4f7cff,#7c5cff 56%,#ff5c8a);
+  opacity: .82;
+}
+[data-theme="dark"] .footer-brand-card,
+[data-theme="dark"] .footer-install-btn {
+  background: rgba(16,23,34,.88);
+  box-shadow: none;
+}
+[data-theme="dark"] .footer-brand-card b {
+  color: var(--predict-ink, #eef4ff);
+}
+@media(max-width:640px){
+  .footer-links { gap: 6px; }
+  .footer-links a { font-size: 11.5px; padding: 8px 9px; }
+  .footer-brand-card { width: 100%; justify-content: center; }
+}
