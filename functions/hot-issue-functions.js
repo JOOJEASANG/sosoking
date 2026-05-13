@@ -71,15 +71,65 @@ function scoreIssues(items) {
   })).filter(issue => issue.mentionCount >= 2 || issue.sourceCount >= 2).sort((a, b) => b.hotScore - a.hotScore).slice(0, 10);
 }
 
+function shortTitle(issue) {
+  return cleanText(issue?.keyword || issue?.title || '오늘의 이슈', 18);
+}
+
+function sampleLine(issue) {
+  const first = Array.isArray(issue?.sampleTitles) ? issue.sampleTitles[0] : '';
+  return first ? `대표 기사 흐름: ${cleanText(first, 72)}` : '오늘 수집된 기사 흐름을 기준으로 만든 예측입니다.';
+}
+
+function toneForCategory(category) {
+  if (String(category).includes('스포츠')) return { verb: '경기 후폭풍', clue: '경기 결과, 선수 발언, 팬 반응이 내일까지 이어지는지가 관건입니다.' };
+  if (String(category).includes('연예')) return { verb: '화제성', clue: '방송 클립, 커뮤니티 반응, 추가 입장 여부가 흐름을 바꿀 수 있습니다.' };
+  if (String(category).includes('IT')) return { verb: '기술/게임 이슈', clue: '신제품, 업데이트, 이용자 반응이 내일까지 살아남는지가 포인트입니다.' };
+  if (String(category).includes('날씨') || String(category).includes('생활')) return { verb: '생활 체감 이슈', clue: '날씨, 교통, 생활 불편처럼 내일도 직접 체감되는지가 중요합니다.' };
+  return { verb: '뉴스 흐름', clue: '추가 기사와 댓글 반응이 이어지면 내일도 상단에 남을 수 있습니다.' };
+}
+
 function makeBoardsFromIssues(issues, dateKey = todayKey()) {
   const top = issues[0] || { keyword: '오늘의 핫이슈', title: '오늘의 핫이슈', category: '종합', hotScore: 80, sampleTitles: [] };
   const second = issues[1] || { keyword: '추격 이슈', title: '추격 이슈', category: '종합', hotScore: 70, sampleTitles: [] };
+  const topName = shortTitle(top);
+  const secondName = shortTitle(second);
+  const topTone = toneForCategory(top.category);
+  const secondTone = toneForCategory(second.category);
   const categories = [...new Set(issues.map(i => i.category).filter(Boolean))].slice(0, 4);
   const categoryOptions = (categories.length ? categories : ['연예/방송','스포츠','IT/게임','날씨/생활']).map((label, idx) => ({ id: `cat_${idx}`, label, odds: [2.0, 2.2, 2.5, 2.8][idx] || 2.4 }));
   return [
-    { id: `${dateKey}-hot-issue-survive`, dateKey, status: 'open', category: '핫이슈 생존', title: `“${top.keyword}” 이슈, 내일도 TOP5에 남을까?`, issue: top.keyword, sourceTitle: top.title, summary: `오늘 ${top.category} 쪽에서 가장 강하게 잡힌 키워드는 “${top.keyword}”입니다.`, question: `내일 오후 6시 기준, “${top.keyword}” 이슈가 다시 TOP5 안에 들어올까?`, options: [{ id: 'survive', label: '남는다', odds: 1.7 }, { id: 'fade', label: '사라진다', odds: 1.9 }], closeAtText: '오늘 23:59', resultAtText: '내일 18:00', resultRule: '내일 자동 수집된 핫이슈 TOP5 키워드 기준', heat: top.hotScore, participants: 0, aiComment: `수집 데이터 기준 “${top.keyword}” 관련 언급이 반복됐습니다.`, issueKeyword: top.keyword, sampleTitles: top.sampleTitles || [], createdAt: FieldValue.serverTimestamp(), createdAtMs: Date.now() },
-    { id: `${dateKey}-trend-category-winner`, dateKey, status: 'open', category: '카테고리 예측', title: '내일 가장 뜨거운 이슈 카테고리는?', issue: '카테고리 흐름', summary: '오늘 수집된 이슈들을 기준으로, 내일 어떤 카테고리가 가장 강할지 예측합니다.', question: '내일 핫이슈 TOP5 중 가장 많이 등장할 카테고리는?', options: categoryOptions, closeAtText: '오늘 23:59', resultAtText: '내일 18:00', resultRule: '내일 자동 수집 TOP5 이슈의 카테고리 최다 등장 기준', heat: Math.max(70, Math.min(99, Math.round((issues[0]?.hotScore || 70) * 0.9))), participants: 0, aiComment: '카테고리 예측은 단일 이슈보다 변수가 많아서 역전 재미가 큽니다.', createdAt: FieldValue.serverTimestamp(), createdAtMs: Date.now() },
-    { id: `${dateKey}-second-place-reverse`, dateKey, status: 'open', category: '역전 예측', title: `“${second.keyword}” 이슈가 내일 1위로 올라설까?`, issue: second.keyword, sourceTitle: second.title, summary: `현재 추격 중인 “${second.keyword}” 이슈가 내일 가장 뜨거운 이슈로 올라설지 예측합니다.`, question: `내일 오후 6시 기준, “${second.keyword}” 이슈가 1위로 역전할까?`, options: [{ id: 'reverse', label: '역전한다', odds: 2.6 }, { id: 'no_reverse', label: '못 한다', odds: 1.55 }], closeAtText: '오늘 23:59', resultAtText: '내일 18:00', resultRule: '내일 자동 수집 핫이슈 점수 1위 여부 기준', heat: second.hotScore, participants: 0, aiComment: `“${second.keyword}”는 현재 추격 흐름입니다.`, issueKeyword: second.keyword, sampleTitles: second.sampleTitles || [], createdAt: FieldValue.serverTimestamp(), createdAtMs: Date.now() }
+    {
+      id: `${dateKey}-hot-issue-survive`, dateKey, status: 'open', category: '오늘의 메인판',
+      title: `“${topName}” 이슈, 내일도 계속 뜰까?`, issue: topName, sourceTitle: top.title,
+      summary: `오늘 가장 눈에 띈 ${topTone.verb}입니다. 하루짜리로 식을지, 내일까지 계속 화제가 될지 맞혀보세요.`,
+      question: `내일 오후 6시에도 “${topName}” 관련 흐름이 주요 이슈로 남아 있을까?`,
+      options: [{ id: 'survive', label: '내일도 뜬다', odds: 1.7 }, { id: 'fade', label: '오늘로 식는다', odds: 1.9 }],
+      closeAtText: '오늘 23:59', resultAtText: '내일 18:00', resultRule: '내일 자동 수집된 핫이슈 TOP5 키워드 기준',
+      heat: top.hotScore, participants: 0, aiComment: `${topTone.clue} ${sampleLine(top)}`,
+      issueKeyword: top.keyword, gameTags: ['메인판','하루짜리 판별','댓글 흐름'], sampleTitles: top.sampleTitles || [],
+      createdAt: FieldValue.serverTimestamp(), createdAtMs: Date.now()
+    },
+    {
+      id: `${dateKey}-trend-category-winner`, dateKey, status: 'open', category: '내일의 판세',
+      title: '내일 뉴스판을 장악할 분야는?', issue: '카테고리 흐름',
+      summary: '오늘 이슈가 여러 갈래로 갈라졌습니다. 내일은 어떤 분야가 가장 많이 살아남을지 고르는 판입니다.',
+      question: '내일 오후 6시 핫이슈 TOP5에서 가장 많이 보일 분야는?', options: categoryOptions,
+      closeAtText: '오늘 23:59', resultAtText: '내일 18:00', resultRule: '내일 자동 수집 TOP5 이슈의 카테고리 최다 등장 기준',
+      heat: Math.max(70, Math.min(99, Math.round((issues[0]?.hotScore || 70) * 0.9))), participants: 0,
+      aiComment: '단일 키워드보다 큰 흐름을 보는 판입니다. 오늘 강한 분야가 내일도 이어질지, 전혀 다른 분야가 치고 올라올지 보는 재미가 있습니다.',
+      gameTags: ['분야 맞히기','흐름 예측','넓게 보기'], createdAt: FieldValue.serverTimestamp(), createdAtMs: Date.now()
+    },
+    {
+      id: `${dateKey}-second-place-reverse`, dateKey, status: 'open', category: '반전판',
+      title: `“${secondName}”, 내일 1위로 뒤집을까?`, issue: secondName, sourceTitle: second.title,
+      summary: `지금은 2등 흐름이지만 변수는 남아 있습니다. 추가 기사나 반응이 붙으면 내일 판이 뒤집힐 수 있습니다.`,
+      question: `내일 오후 6시 기준, “${secondName}” 이슈가 오늘의 1위 이슈를 제치고 가장 뜨거워질까?`,
+      options: [{ id: 'reverse', label: '뒤집는다', odds: 2.6 }, { id: 'no_reverse', label: '못 뒤집는다', odds: 1.55 }],
+      closeAtText: '오늘 23:59', resultAtText: '내일 18:00', resultRule: '내일 자동 수집 핫이슈 점수 1위 여부 기준',
+      heat: second.hotScore, participants: 0, aiComment: `${secondTone.clue} ${sampleLine(second)}`,
+      issueKeyword: second.keyword, gameTags: ['역전 가능성','고배율','반전판'], sampleTitles: second.sampleTitles || [],
+      createdAt: FieldValue.serverTimestamp(), createdAtMs: Date.now()
+    }
   ];
 }
 
