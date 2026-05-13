@@ -62,32 +62,24 @@ export async function getFeedPost(postId) { const sample = FALLBACK_FEED_ITEMS.f
 export async function increaseFeedView(postId) { if (!postId || postId.startsWith('sample-')) return; try { await updateDoc(doc(db, 'soso_feed_posts', postId), { views: increment(1) }); } catch (error) { console.warn('조회수 증가 실패:', error.code || error.message); } }
 export async function likeFeedPost(postId) { if (!postId || postId.startsWith('sample-')) return { fallback: true }; await updateDoc(doc(db, 'soso_feed_posts', postId), { likes: increment(1) }); return { ok: true }; }
 
-export async function getMyFeedVote(postId) {
-  const user = auth.currentUser;
-  if (!user || !postId || postId.startsWith('sample-')) return null;
-  try { const snap = await getDoc(doc(db, 'soso_feed_posts', postId, 'voters', user.uid)); return snap.exists() ? snap.data().option || null : null; } catch { return null; }
-}
-
-export async function voteFeedOption(postId, option) {
-  const user = auth.currentUser;
-  if (!user) throw new Error('로그인 후 투표할 수 있습니다.');
-  const cleanOption = clean(option, 40);
-  if (!cleanOption) throw new Error('선택지를 골라주세요.');
-  if (!postId || postId.startsWith('sample-')) throw new Error('샘플 글에는 투표를 저장할 수 없습니다.');
-  const voterRef = doc(db, 'soso_feed_posts', postId, 'voters', user.uid);
-  const existing = await getDoc(voterRef);
-  if (existing.exists()) throw new Error('이미 이 글에 투표했습니다.');
-  await setDoc(voterRef, { option: cleanOption, authorId: user.uid, createdAt: serverTimestamp(), createdAtMs: Date.now() });
-  await updateDoc(doc(db, 'soso_feed_posts', postId), { [`votes.${safeVoteKey(cleanOption)}`]: increment(1), voteTotal: increment(1) });
-  return { ok: true, option: cleanOption };
-}
+export async function getMyFeedVote(postId) { const user = auth.currentUser; if (!user || !postId || postId.startsWith('sample-')) return null; try { const snap = await getDoc(doc(db, 'soso_feed_posts', postId, 'voters', user.uid)); return snap.exists() ? snap.data().option || null : null; } catch { return null; } }
+export async function voteFeedOption(postId, option) { const user = auth.currentUser; if (!user) throw new Error('로그인 후 투표할 수 있습니다.'); const cleanOption = clean(option, 40); if (!cleanOption) throw new Error('선택지를 골라주세요.'); if (!postId || postId.startsWith('sample-')) throw new Error('샘플 글에는 투표를 저장할 수 없습니다.'); const voterRef = doc(db, 'soso_feed_posts', postId, 'voters', user.uid); const existing = await getDoc(voterRef); if (existing.exists()) throw new Error('이미 이 글에 투표했습니다.'); await setDoc(voterRef, { option: cleanOption, authorId: user.uid, createdAt: serverTimestamp(), createdAtMs: Date.now() }); await updateDoc(doc(db, 'soso_feed_posts', postId), { [`votes.${safeVoteKey(cleanOption)}`]: increment(1), voteTotal: increment(1) }); return { ok: true, option: cleanOption }; }
 
 export async function getFeedComments(postId, pageSize = 30) { if (!postId || postId.startsWith('sample-')) return FALLBACK_COMMENTS; try { const q = query(collection(db, 'soso_feed_posts', postId, 'comments'), orderBy('createdAtMs', 'desc'), limit(pageSize)); const snap = await getDocs(q); return snap.docs.map(d => normalizeComment(d.id, d.data())); } catch (error) { console.warn('댓글 불러오기 실패:', error.code || error.message); return []; } }
 export async function addFeedComment(postId, text) { const user = auth.currentUser; if (!user) throw new Error('로그인 후 댓글을 남길 수 있습니다.'); const body = clean(text, 300); if (body.length < 2) throw new Error('댓글을 2자 이상 입력해주세요.'); if (!postId || postId.startsWith('sample-')) throw new Error('샘플 글에는 댓글을 저장할 수 없습니다.'); const payload = { text: body, likes: 0, authorId: user.uid, authorName: user.isAnonymous ? '익명 소소러' : (user.displayName || user.email || '소소킹 유저'), createdAt: serverTimestamp(), createdAtMs: Date.now() }; const ref = await addDoc(collection(db, 'soso_feed_posts', postId, 'comments'), payload); try { await updateDoc(doc(db, 'soso_feed_posts', postId), { comments: increment(1), topComment: body }); } catch {} return normalizeComment(ref.id, payload); }
 
-export async function createFeedPost(input = {}) {
+export async function createFeedReport({ postId, commentId = '', reason = '기타', detail = '' } = {}) {
   const user = auth.currentUser;
-  if (!user) throw new Error('로그인 후 글을 올릴 수 있습니다.');
+  if (!user) throw new Error('로그인 후 신고할 수 있습니다.');
+  const cleanPostId = clean(postId, 120);
+  if (!cleanPostId || cleanPostId.startsWith('sample-')) throw new Error('샘플 글은 신고할 수 없습니다.');
+  const payload = { category: commentId ? 'soso_feed_comment' : 'soso_feed_post', content: clean(detail || reason, 500), reason: clean(reason, 60), targetType: commentId ? 'comment' : 'post', targetId: clean(commentId || cleanPostId, 160), postId: cleanPostId, reporterId: user.uid, status: 'open', createdAt: serverTimestamp(), createdAtMs: Date.now() };
+  await addDoc(collection(db, 'reports'), payload);
+  return { ok: true };
+}
+
+export async function createFeedPost(input = {}) {
+  const user = auth.currentUser; if (!user) throw new Error('로그인 후 글을 올릴 수 있습니다.');
   const type = clean(input.type || '짧은 글', 30), title = clean(input.title, 90), content = clean(input.content, 1200), question = clean(input.question, 90);
   const options = (Array.isArray(input.options) ? input.options : []).map(v => clean(v, 40)).filter(Boolean).slice(0, 4);
   const tags = (Array.isArray(input.tags) ? input.tags : []).map(v => clean(v, 18).replace(/^#/, '')).filter(Boolean).slice(0, 6);
