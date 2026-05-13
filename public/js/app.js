@@ -21,7 +21,8 @@ function loadPolishStyle() {
     ['sosoking-polish-style','/css/predict-polish.css'],
     ['sosoking-detail-polish-style','/css/predict-detail-polish.css'],
     ['sosoking-layout-comfort-style','/css/layout-comfort.css'],
-    ['sosoking-feed-style','/css/soso-feed.css']
+    ['sosoking-feed-style','/css/soso-feed.css'],
+    ['sosoking-design-refresh-style','/css/sosoking-design-refresh.css']
   ].forEach(([id, href]) => {
     if (document.getElementById(id)) return;
     const link = document.createElement('link');
