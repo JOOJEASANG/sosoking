@@ -11,7 +11,7 @@ export function renderPredictList(container) {
 function renderListMarkup(container, syncing = false) {
   const boards = getBoards();
   const wallet = getWallet();
-  const hottest = [...boards].sort((a, b) => Number(b.heat || 0) - Number(a.heat || 0))[0] || boards[0];
+  const hottest = [...boards].sort((a, b) => Number(b.heat || 0) - Number(a.heat || 0))[0] || null;
   const openCount = boards.filter(board => board.status !== 'settled').length;
   const participantTotal = boards.reduce((sum, board) => sum + Number(board.participants || 0), 0);
   container.innerHTML = `
@@ -21,8 +21,8 @@ function renderListMarkup(container, syncing = false) {
         <div class="list-hero-copy">
           <span>${syncing ? 'SERVER SYNC' : 'TODAY 3 PICKS'}</span>
           <h1>오늘의 3판,<br><em>어디에 걸어볼까?</em></h1>
-          <p>오늘 뜬 이슈 중 딱 3개만 골랐습니다. 내일도 살아남을 이슈인지, 오늘로 식을 이슈인지 빠르게 판단해보세요.</p>
-          <div class="list-hero-badges"><b>🔥 최고 관심도 ${Number(hottest?.heat || 0)}</b><b>⏰ 오늘 마감</b><b>💬 근거 한 줄</b></div>
+          <p>오늘 뜬 이슈 중 실제로 열린 예측판만 보여줍니다. 내일도 살아남을 이슈인지, 오늘로 식을 이슈인지 빠르게 판단해보세요.</p>
+          <div class="list-hero-badges"><b>🔥 최고 관심도 ${Number(hottest?.heat || 0)}</b><b>⏰ 실제 데이터</b><b>💬 근거 한 줄</b></div>
         </div>
         <aside class="list-wallet-card">
           <span>내 소소머니</span>
@@ -36,8 +36,8 @@ function renderListMarkup(container, syncing = false) {
         <article><span>03</span><b>근거 남기기</b><p>한 줄 근거가 있어야 나중에 더 재밌습니다.</p></article>
       </section>
       <section class="board-preview-section list-mode upgraded-list-mode">
-        <div class="section-head list-section-head"><div><span>CHOOSE YOUR ISSUE</span><h2>예측할 이슈를 선택하세요</h2></div><p>${syncing ? '최신 예측판을 불러오는 중입니다.' : '관심도와 참여 수를 보고 마음 가는 판을 골라보세요.'}</p></div>
-        <div class="board-list upgraded-board-list">${boards.map((board, index) => boardCard(board, index)).join('')}</div>
+        <div class="section-head list-section-head"><div><span>CHOOSE YOUR ISSUE</span><h2>예측할 이슈를 선택하세요</h2></div><p>${syncing ? '최신 예측판을 불러오는 중입니다.' : '실제 운영 데이터만 표시됩니다.'}</p></div>
+        <div class="board-list upgraded-board-list">${boards.length ? boards.map((board, index) => boardCard(board, index)).join('') : predictionEmptyState()}</div>
       </section>
     </main>`;
 }
@@ -52,6 +52,10 @@ export function renderPredictDetail(container, boardId) {
 function renderDetailMarkup(container, boardId, syncing = false) {
   const board = getBoard(boardId);
   const wallet = getWallet();
+  if (!board) {
+    container.innerHTML = `<main class="predict-app simple-page"><div class="simple-header"><a href="#/predict" class="back-link">‹</a><div><span>${syncing ? 'SERVER SYNC' : 'NO BOARD'}</span><h1>예측판을 찾을 수 없습니다</h1></div><b>${Number(wallet.balance || 0).toLocaleString()}</b></div><section class="prediction-empty-state"><div>🔮</div><span>NO PREDICTION BOARD</span><h3>아직 공개된 예측판이 없습니다</h3><p>가짜 예측판 없이 실제 서버에서 열린 판만 표시됩니다. 오늘의 3판이 열리면 이곳에 자동으로 나타납니다.</p><a href="#/">홈으로 돌아가기</a></section></main>`;
+    return;
+  }
   const existing = getPrediction(board.id);
   const comments = getComments(board.id);
   const resultNotice = board.status === 'settled' ? `<div class="result-box"><b>정산 완료</b><span>${escapeHtml(board.resultLine || `정답은 ${board.winningOptionLabel || '공개 완료'}입니다.`)}</span></div>` : '';
@@ -68,7 +72,7 @@ function renderDetailMarkup(container, boardId, syncing = false) {
         </article>
         <aside class="prediction-panel">${existing ? renderExisting(existing) : renderForm(board)}</aside>
       </section>
-      <section class="comments-section"><div class="section-head compact"><div><span>REASONS</span><h2>예측 근거 한 줄</h2></div><p class="comment-guide">사람들이 왜 그쪽을 골랐는지 보는 곳입니다. 짧고 명확할수록 좋아요.</p></div><form id="comment-form" class="comment-form"><input id="comment-input" maxlength="120" placeholder="예: 오늘 너무 과열돼서 내일은 식을 듯" /><button>등록</button></form><div class="comment-list">${comments.map(c => `<div class="comment-item ${c.mine ? 'mine' : ''}"><b>${escapeHtml(c.side)}</b><p>${escapeHtml(c.text)}</p><small>공감 ${Number(c.likes || 0)}</small></div>`).join('')}</div></section>
+      <section class="comments-section"><div class="section-head compact"><div><span>REASONS</span><h2>예측 근거 한 줄</h2></div><p class="comment-guide">사람들이 왜 그쪽을 골랐는지 보는 곳입니다. 짧고 명확할수록 좋아요.</p></div><form id="comment-form" class="comment-form"><input id="comment-input" maxlength="120" placeholder="예: 오늘 너무 과열돼서 내일은 식을 듯" /><button>등록</button></form><div class="comment-list">${comments.length ? comments.map(c => `<div class="comment-item ${c.mine ? 'mine' : ''}"><b>${escapeHtml(c.side)}</b><p>${escapeHtml(c.text)}</p><small>공감 ${Number(c.likes || 0)}</small></div>`).join('') : `<div class="comment-item"><b>아직 근거 없음</b><p>첫 번째 근거를 남겨보세요.</p><small>공감 0</small></div>`}</div></section>
     </main>`;
 
   document.getElementById('prediction-form')?.addEventListener('submit', async (event) => {
@@ -100,6 +104,10 @@ function renderDetailMarkup(container, boardId, syncing = false) {
     await syncPredictionDetailFromServer(board.id);
     renderDetailMarkup(container, board.id, false);
   });
+}
+
+function predictionEmptyState() {
+  return `<section class="prediction-empty-state"><div>🔮</div><span>NO BOARDS YET</span><h3>아직 열린 예측판이 없습니다</h3><p>실제 운영 데이터만 표시되도록 정리했습니다. 서버에서 오늘의 3판이 생성되면 이곳에 바로 나타납니다.</p><a href="#/feed">소소피드 둘러보기</a></section>`;
 }
 
 function moodPanel(board) {
