@@ -28,7 +28,7 @@ export function renderNav() {
     <a href="#/feed" class="nav-item${hash.startsWith('#/feed') ? ' active' : ''}"><span class="nav-icon">✨</span><span class="nav-label">소소피드</span></a>
     <a href="#/predict" class="nav-item nav-cta${hash.startsWith('#/predict') ? ' active' : ''}"><span class="nav-icon">🔮</span><span class="nav-label">예측판</span></a>
     <a href="#/ranking" class="nav-item${hash === '#/ranking' ? ' active' : ''}"><span class="nav-icon">👑</span><span class="nav-label">랭킹</span></a>
-    ${isAnon ? `<button class="nav-item" id="nav-anon-btn" type="button"><span class="nav-icon">⚙️</span><span class="nav-label">설정</span></button>` : `<button class="nav-item" id="nav-account-btn" type="button"><span class="nav-icon">🔓</span><span class="nav-label">계정</span></button>`}
+    ${isAnon ? `<button class="nav-item" id="nav-anon-btn" type="button"><span class="nav-icon">⚙️</span><span class="nav-label">설정</span></button>` : `<button class="nav-item${hash === '#/account' ? ' active' : ''}" id="nav-account-btn" type="button"><span class="nav-icon">🔓</span><span class="nav-label">계정</span></button>`}
   `;
   document.body.appendChild(nav);
   if (!isAnon) nav.querySelector('#nav-account-btn')?.addEventListener('click', async () => showAccountMenu(user, await getNickname(user.uid)));
@@ -51,6 +51,7 @@ function showAccountMenu(user, nickname) {
           <div style="font-size:11px;color:var(--cream-dim);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:6px;">소소킹 계정</div>
           <div style="display:flex;align-items:center;gap:12px;"><div style="width:40px;height:40px;border-radius:50%;background:rgba(79,124,255,0.15);border:1.5px solid rgba(79,124,255,0.3);display:flex;align-items:center;justify-content:center;font-size:20px;">🔮</div><div><div id="menu-nickname" style="font-size:16px;font-weight:700;color:var(--cream);">${escHtml(displayName)}</div>${emailLine}</div></div>
         </div>
+        <a href="#/account" id="account-profile-btn" style="width:100%;padding:14px 18px;background:none;border:none;border-bottom:1px solid var(--border);text-align:left;font-size:14px;color:var(--cream);cursor:pointer;display:flex;align-items:center;gap:10px;text-decoration:none;"><span style="font-size:16px;">⚙️</span> 내정보 수정</a>
         <a href="#/history" id="account-history-btn" style="width:100%;padding:14px 18px;background:none;border:none;border-bottom:1px solid var(--border);text-align:left;font-size:14px;color:var(--cream);cursor:pointer;display:flex;align-items:center;gap:10px;text-decoration:none;"><span style="font-size:16px;">🧾</span> 내 기록</a>
         <a href="#/guide" id="account-guide-btn" style="width:100%;padding:14px 18px;background:none;border:none;border-bottom:1px solid var(--border);text-align:left;font-size:14px;color:var(--cream);cursor:pointer;display:flex;align-items:center;gap:10px;text-decoration:none;"><span style="font-size:16px;">📖</span> 이용 안내</a>
         <button id="account-theme-btn" style="width:100%;padding:14px 18px;background:none;border:none;border-bottom:1px solid var(--border);text-align:left;font-size:14px;color:var(--cream);cursor:pointer;display:flex;align-items:center;gap:10px;"><span style="font-size:16px;">${getTheme() === 'dark' ? '☀️' : '🌙'}</span>${getTheme() === 'dark' ? '라이트 모드로 변경' : '다크 모드로 변경'}</button>
@@ -59,6 +60,7 @@ function showAccountMenu(user, nickname) {
     </div>`;
   document.body.appendChild(overlay);
   overlay.querySelector('#account-menu-backdrop').addEventListener('click', () => overlay.remove());
+  overlay.querySelector('#account-profile-btn').addEventListener('click', () => overlay.remove());
   overlay.querySelector('#account-history-btn').addEventListener('click', () => overlay.remove());
   overlay.querySelector('#account-guide-btn').addEventListener('click', () => overlay.remove());
   overlay.querySelector('#account-theme-btn').addEventListener('click', () => { toggleTheme(); overlay.remove(); });
