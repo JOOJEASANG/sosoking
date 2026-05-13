@@ -3,6 +3,7 @@ import { injectPredictStyle } from './predict-home.js';
 
 export function renderPredictList(container) {
   injectPredictStyle();
+  injectListStyle();
   renderListMarkup(container, true);
   syncPredictionHomeFromServer().then(() => renderListMarkup(container, false)).catch(() => renderListMarkup(container, false));
 }
@@ -10,7 +11,35 @@ export function renderPredictList(container) {
 function renderListMarkup(container, syncing = false) {
   const boards = getBoards();
   const wallet = getWallet();
-  container.innerHTML = `<main class="predict-app simple-page"><div class="simple-header"><a href="#/" class="back-link">‹</a><div><span>${syncing ? '서버 동기화 중...' : '오늘의 3판'}</span><h1>내일도 뜰 이슈를 고르세요</h1></div><b>${wallet.balance.toLocaleString()}</b></div><section class="board-preview-section list-mode"><div class="board-list">${boards.map(board => boardCard(board)).join('')}</div></section></main>`;
+  const hottest = [...boards].sort((a, b) => Number(b.heat || 0) - Number(a.heat || 0))[0] || boards[0];
+  const openCount = boards.filter(board => board.status !== 'settled').length;
+  const participantTotal = boards.reduce((sum, board) => sum + Number(board.participants || 0), 0);
+  container.innerHTML = `
+    <main class="predict-app simple-page predict-list-page">
+      <section class="predict-list-hero">
+        <a href="#/" class="back-link list-back">‹</a>
+        <div class="list-hero-copy">
+          <span>${syncing ? 'SERVER SYNC' : 'TODAY 3 PICKS'}</span>
+          <h1>오늘의 3판,<br><em>어디에 걸어볼까?</em></h1>
+          <p>오늘 뜬 이슈 중 딱 3개만 골랐습니다. 내일도 살아남을 이슈인지, 오늘로 식을 이슈인지 빠르게 판단해보세요.</p>
+          <div class="list-hero-badges"><b>🔥 최고 관심도 ${Number(hottest?.heat || 0)}</b><b>⏰ 오늘 마감</b><b>💬 근거 한 줄</b></div>
+        </div>
+        <aside class="list-wallet-card">
+          <span>내 소소머니</span>
+          <strong>${Number(wallet.balance || 0).toLocaleString()}</strong>
+          <p>현재 열린 판 ${openCount}개 · 전체 참여 ${participantTotal.toLocaleString()}명</p>
+        </aside>
+      </section>
+      <section class="pick-briefing">
+        <article><span>01</span><b>이슈 읽기</b><p>제목과 AI 힌트로 흐름을 먼저 봅니다.</p></article>
+        <article><span>02</span><b>선택하기</b><p>내일 실제 흐름에 가까운 쪽을 고릅니다.</p></article>
+        <article><span>03</span><b>근거 남기기</b><p>한 줄 근거가 있어야 나중에 더 재밌습니다.</p></article>
+      </section>
+      <section class="board-preview-section list-mode upgraded-list-mode">
+        <div class="section-head list-section-head"><div><span>CHOOSE YOUR ISSUE</span><h2>예측할 이슈를 선택하세요</h2></div><p>${syncing ? '최신 예측판을 불러오는 중입니다.' : '관심도와 참여 수를 보고 마음 가는 판을 골라보세요.'}</p></div>
+        <div class="board-list upgraded-board-list">${boards.map((board, index) => boardCard(board, index)).join('')}</div>
+      </section>
+    </main>`;
 }
 
 export function renderPredictDetail(container, boardId) {
@@ -93,10 +122,23 @@ function renderExisting(prediction) {
   return `<div class="prediction-done"><div class="done-icon">${prediction.settled ? (prediction.won ? '🎯' : '🫠') : '✅'}</div><h3>${prediction.settled ? '결과 확인 완료' : '내 예측 완료'}</h3><p><b>${escapeHtml(prediction.optionLabel)}</b>에 ${Number(prediction.amount || 0).toLocaleString()} 소소머니를 사용했습니다.</p>${prediction.comment ? `<blockquote>${escapeHtml(prediction.comment)}</blockquote>` : ''}<span>${escapeHtml(settledLine)}</span></div>`;
 }
 
-function boardCard(board) {
-  return `<a class="board-card" href="#/predict/${encodeURIComponent(board.id)}"><div class="board-card-top"><span>${escapeHtml(board.category)}</span><b>🔥 ${Number(board.heat || 0)}</b></div><h3>${escapeHtml(board.title)}</h3><p>${escapeHtml(board.summary)}</p><div class="board-meta"><span>참여 ${Number(board.participants || 0).toLocaleString()}</span><span>${board.status === 'settled' ? '결과 공개' : `마감 ${escapeHtml(board.closeAt)}`}</span></div></a>`;
+function boardCard(board, index = 0) {
+  const statusText = board.status === 'settled' ? '결과 공개' : `마감 ${escapeHtml(board.closeAt)}`;
+  return `<a class="board-card upgraded-board-card" href="#/predict/${encodeURIComponent(board.id)}"><div class="board-rank">0${index + 1}</div><div class="board-card-top"><span>${escapeHtml(board.category)}</span><b>🔥 ${Number(board.heat || 0)}</b></div><h3>${escapeHtml(board.title)}</h3><p>${escapeHtml(board.summary)}</p><div class="board-mini-tags"><span>참여 ${Number(board.participants || 0).toLocaleString()}</span><span>${statusText}</span></div><div class="board-card-cta"><b>이 판 예측하기</b><span>›</span></div></a>`;
 }
 function showMiniNotice(message) { const box = document.getElementById('toast-container'); if (!box) return; const el = document.createElement('div'); el.className = 'toast show'; el.innerHTML = `<strong>안내</strong><br>${escapeHtml(message)}`; box.appendChild(el); setTimeout(() => el.remove(), 2600); }
+
+function injectListStyle() {
+  if (document.getElementById('sosoking-predict-list-upgrade-style')) return;
+  const style = document.createElement('style');
+  style.id = 'sosoking-predict-list-upgrade-style';
+  style.textContent = `
+    .predict-list-page{padding:18px clamp(16px,4vw,34px) 104px;background:radial-gradient(circle at 20% 0%,rgba(79,124,255,.16),transparent 32%),var(--predict-bg)}
+    .predict-list-hero{max-width:1080px;margin:0 auto 14px;display:grid;grid-template-columns:44px 1fr 280px;gap:14px;align-items:stretch}.list-back{margin-top:4px}.list-hero-copy{position:relative;overflow:hidden;border-radius:32px;padding:30px;background:linear-gradient(135deg,#101b3c,#4f7cff 60%,#7c5cff);color:#fff;box-shadow:0 26px 78px rgba(79,124,255,.22)}.list-hero-copy:after{content:'?';position:absolute;right:24px;bottom:-36px;font-size:150px;font-weight:1000;opacity:.10}.list-hero-copy span{font-size:11px;font-weight:1000;letter-spacing:.16em;color:rgba(255,255,255,.7)}.list-hero-copy h1{position:relative;z-index:1;margin:8px 0 10px;font-size:clamp(36px,6vw,64px);line-height:.98;letter-spacing:-.08em}.list-hero-copy h1 em{font-style:normal;color:#ffe083}.list-hero-copy p{position:relative;z-index:1;max-width:620px;margin:0;color:rgba(255,255,255,.78);font-size:15px;line-height:1.75}.list-hero-badges{position:relative;z-index:1;display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}.list-hero-badges b{display:inline-flex;padding:8px 10px;border-radius:999px;background:rgba(255,255,255,.15);font-size:12px;color:#fff}.list-wallet-card{display:flex;flex-direction:column;justify-content:center;border:1px solid rgba(79,124,255,.13);border-radius:28px;padding:22px;background:rgba(255,255,255,.86);box-shadow:0 18px 54px rgba(55,90,170,.12)}.list-wallet-card span{color:var(--predict-muted);font-size:12px;font-weight:1000}.list-wallet-card strong{margin-top:7px;color:var(--predict-money);font-size:34px;letter-spacing:-.04em}.list-wallet-card p{margin:10px 0 0;color:var(--predict-muted);font-size:13px;line-height:1.6}.pick-briefing{max-width:1080px;margin:0 auto 16px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.pick-briefing article{position:relative;overflow:hidden;border:1px solid rgba(79,124,255,.11);border-radius:22px;padding:16px;background:rgba(255,255,255,.78);box-shadow:0 12px 36px rgba(55,90,170,.08)}.pick-briefing span{display:inline-flex;width:30px;height:30px;align-items:center;justify-content:center;border-radius:12px;background:rgba(79,124,255,.1);color:var(--predict-main);font-size:12px;font-weight:1000}.pick-briefing b{display:block;margin-top:10px;font-size:15px}.pick-briefing p{margin:4px 0 0;color:var(--predict-muted);font-size:13px;line-height:1.55}.upgraded-list-mode{max-width:1080px;padding:10px 0 0}.list-section-head{align-items:end}.list-section-head p{margin:0;color:var(--predict-muted);font-size:13px;line-height:1.5}.upgraded-board-list{grid-template-columns:repeat(3,1fr);gap:14px}.upgraded-board-card{position:relative;min-height:250px;padding:18px;border-radius:28px;background:rgba(255,255,255,.9);box-shadow:0 18px 54px rgba(55,90,170,.11);transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}.upgraded-board-card:hover{transform:translateY(-3px);box-shadow:0 24px 70px rgba(55,90,170,.18);border-color:rgba(79,124,255,.28)}.board-rank{position:absolute;right:16px;top:14px;font-size:38px;font-weight:1000;line-height:1;color:rgba(79,124,255,.12)}.upgraded-board-card h3{position:relative;margin-top:18px;font-size:22px;letter-spacing:-.055em}.upgraded-board-card p{font-size:13px;line-height:1.65}.board-mini-tags{display:flex;flex-wrap:wrap;gap:7px;margin-top:auto;padding-top:14px}.board-mini-tags span{display:inline-flex;padding:7px 9px;border-radius:999px;background:rgba(79,124,255,.08);color:var(--predict-main);font-size:11px;font-weight:900}.board-card-cta{display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding:12px 13px;border-radius:16px;background:linear-gradient(135deg,#4f7cff,#7c5cff);color:#fff}.board-card-cta b{font-size:13px}.board-card-cta span{font-size:20px;line-height:1}.upgraded-board-card .board-meta{display:none}@media(max-width:900px){.predict-list-hero{grid-template-columns:1fr}.list-back{width:40px}.pick-briefing,.upgraded-board-list{grid-template-columns:1fr}.list-section-head{align-items:flex-start;flex-direction:column}.list-hero-copy{padding:26px}.list-wallet-card{padding:18px}.upgraded-board-card{min-height:auto}}
+    [data-theme="dark"] .list-wallet-card,[data-theme="dark"] .pick-briefing article,[data-theme="dark"] .upgraded-board-card{background:rgba(16,23,34,.88);box-shadow:none}
+  `;
+  document.head.appendChild(style);
+}
 
 function injectDetailStyle() {
   if (document.getElementById('sosoking-predict-detail-style')) return;
