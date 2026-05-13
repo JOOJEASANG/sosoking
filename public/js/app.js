@@ -4,6 +4,7 @@ import { renderPredictHome } from './pages/predict-home.js';
 import { renderPredictList, renderPredictDetail } from './pages/predict-board.js';
 import { renderPredictRanking } from './pages/predict-ranking.js';
 import { renderPredictHistory } from './pages/predict-history.js';
+import { renderSosoFeed } from './pages/soso-feed.js';
 import { renderPredictGuide } from './pages/predict-guide.js';
 import { renderPredictPolicy } from './pages/predict-policy.js';
 import { renderFeedback } from './pages/feedback.js';
@@ -41,6 +42,7 @@ function route() {
   if (hash === '#/' || hash === '' || hash === '#') renderPredictHome(content);
   else if (hash === '#/predict') { pageName = 'predict_list'; renderPredictList(content); }
   else if (hash.startsWith('#/predict/')) { pageName = 'predict_detail'; renderPredictDetail(content, decodeURIComponent(hash.replace('#/predict/', ''))); }
+  else if (hash === '#/feed' || hash === '#/feed/top' || hash === '#/feed/new') { pageName = 'soso_feed'; renderSosoFeed(content); }
   else if (hash === '#/ranking') { pageName = 'ranking'; renderPredictRanking(content); }
   else if (hash === '#/history') { pageName = 'history'; renderPredictHistory(content); }
   else if (hash.startsWith('#/policy/')) { pageName = 'policy_' + hash.replace('#/policy/', ''); renderPredictPolicy(content, hash.replace('#/policy/', '')); }
