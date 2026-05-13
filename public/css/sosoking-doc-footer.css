@@ -120,6 +120,46 @@
   opacity: .82;
 }
 
+/* Home hero button contrast */
+.home-actions-v2 .primary-action,
+.home-actions-v2 .secondary-action {
+  position: relative;
+  overflow: hidden;
+  min-height: 50px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid rgba(255,255,255,.24) !important;
+  box-shadow: 0 14px 34px rgba(6,13,35,.18);
+}
+.home-actions-v2 .primary-action {
+  background: linear-gradient(135deg,#ffffff,#eef3ff) !important;
+  color: #17245f !important;
+}
+.home-actions-v2 .primary-action::after {
+  content: '›';
+  font-size: 20px;
+  line-height: 1;
+  color: #4f7cff;
+}
+.home-actions-v2 .secondary-action {
+  background: rgba(10,18,42,.32) !important;
+  color: #fff !important;
+  border-color: rgba(255,255,255,.34) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.home-actions-v2 .secondary-action::after {
+  content: '›';
+  font-size: 20px;
+  line-height: 1;
+  color: #ffe083;
+}
+.home-proof-row {
+  margin-top: 16px !important;
+}
+
 /* Unified top header for prediction detail and history */
 .simple-page > .simple-header,
 .history-page > .history-header {
@@ -243,6 +283,8 @@
   .footer-links { gap: 6px; }
   .footer-links a { font-size: 11.5px; padding: 8px 9px; }
   .footer-brand-card { width: 100%; justify-content: center; }
+  .home-actions-v2 .primary-action,
+  .home-actions-v2 .secondary-action { width: 100%; }
   .simple-page > .simple-header,
   .history-page > .history-header {
     grid-template-columns: 40px 1fr !important;
