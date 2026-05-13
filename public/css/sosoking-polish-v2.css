@@ -1,0 +1,423 @@
+/* Sosoking visual polish v2: finer spacing, glass cards, bottom nav, empty states */
+:root {
+  --glass-bg: rgba(255,255,255,.78);
+  --glass-strong: rgba(255,255,255,.92);
+  --brand-grad: linear-gradient(135deg,#4f7cff 0%,#7c5cff 52%,#ff5c8a 100%);
+  --brand-grad-soft: linear-gradient(135deg,rgba(79,124,255,.12),rgba(124,92,255,.09),rgba(255,92,138,.08));
+  --gold-grad: linear-gradient(135deg,#ffcf5c,#ff9f43);
+  --surface-border: rgba(79,124,255,.13);
+  --surface-shadow: 0 18px 56px rgba(48,74,130,.10);
+  --surface-shadow-strong: 0 28px 88px rgba(48,74,130,.16);
+}
+[data-theme="dark"] {
+  --glass-bg: rgba(16,23,34,.82);
+  --glass-strong: rgba(16,23,34,.94);
+  --surface-border: rgba(126,160,255,.16);
+  --surface-shadow: none;
+  --surface-shadow-strong: none;
+}
+
+/* Global refinement */
+.predict-app,
+.soso-feed-page,
+.ranking-page,
+.simple-page {
+  background-image:
+    radial-gradient(circle at 12% -4%, rgba(79,124,255,.16), transparent 30%),
+    radial-gradient(circle at 94% 4%, rgba(255,92,138,.11), transparent 30%);
+}
+
+.board-card,
+.feature-tile,
+.spotlight-card-v2,
+.hero-command-card,
+.live-brief-side article,
+.feed-card,
+.write-card,
+.write-preview,
+.side-card,
+.detail-main-card,
+.prediction-panel,
+.comments-section,
+.podium-card,
+.ranking-my-card,
+.my-rank-card div,
+.rank-item,
+.list-wallet-card,
+.pick-briefing article {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-color: var(--surface-border) !important;
+}
+
+.board-card,
+.feature-tile,
+.feed-card,
+.write-card,
+.write-preview,
+.side-card,
+.detail-main-card,
+.prediction-panel,
+.comments-section,
+.podium-card,
+.rank-item,
+.list-wallet-card,
+.pick-briefing article {
+  box-shadow: var(--surface-shadow);
+}
+
+.board-card:hover,
+.feature-tile:hover,
+.feed-card:hover,
+.rank-item:hover,
+.podium-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--surface-shadow-strong);
+}
+
+.board-card,
+.feature-tile,
+.feed-card,
+.rank-item,
+.podium-card {
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+
+/* Bottom navigation */
+#bottom-nav {
+  position: fixed;
+  left: 50%;
+  bottom: max(10px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  width: min(520px, calc(100% - 20px));
+  height: 66px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  padding: 7px;
+  border: 1px solid rgba(79,124,255,.16);
+  border-radius: 24px;
+  background: rgba(255,255,255,.86);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  box-shadow: 0 18px 54px rgba(20,30,58,.18);
+  z-index: 900;
+}
+[data-theme="dark"] #bottom-nav {
+  background: rgba(13,19,30,.88);
+  box-shadow: 0 18px 54px rgba(0,0,0,.35);
+}
+#bottom-nav .nav-item {
+  min-width: 0;
+  border: 0;
+  border-radius: 18px;
+  background: transparent;
+  color: var(--predict-muted, #697386);
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  cursor: pointer;
+}
+#bottom-nav .nav-icon { font-size: 18px; line-height: 1; }
+#bottom-nav .nav-label { font-size: 10.5px; line-height: 1; font-weight: 900; }
+#bottom-nav .nav-item.active {
+  color: #fff;
+  background: var(--brand-grad);
+  box-shadow: 0 10px 26px rgba(79,124,255,.28);
+}
+#bottom-nav .nav-cta {
+  position: relative;
+}
+#bottom-nav .nav-cta:not(.active) {
+  color: var(--predict-main, #4f7cff);
+  background: rgba(79,124,255,.09);
+}
+
+/* Account sheets created with inline styles */
+#account-menu-overlay .card,
+#anon-menu-overlay .card {
+  max-width: 520px;
+  margin: 0 auto;
+  border: 1px solid var(--surface-border) !important;
+  background: var(--glass-strong) !important;
+  border-radius: 26px !important;
+  box-shadow: var(--surface-shadow-strong) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+#account-menu-overlay a,
+#account-menu-overlay button,
+#anon-menu-overlay a,
+#anon-menu-overlay button {
+  font-family: var(--font-sans) !important;
+  font-weight: 900 !important;
+}
+
+/* Home fine detail */
+.home-copy-v2,
+.list-hero-copy,
+.ranking-hero-copy,
+.feed-hero-copy {
+  isolation: isolate;
+}
+.home-copy-v2::before,
+.list-hero-copy::before,
+.ranking-hero-copy::before,
+.feed-hero-copy::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 15% 15%, rgba(255,255,255,.23), transparent 25%),
+    linear-gradient(135deg, rgba(255,255,255,.08), transparent 45%);
+  pointer-events: none;
+}
+.home-copy-v2 > *,
+.list-hero-copy > *,
+.ranking-hero-copy > *,
+.feed-hero-copy > * { position: relative; z-index: 1; }
+.brand-mark { transform: rotate(-7deg); }
+.home-proof-row span,
+.list-hero-badges b,
+.ranking-badges b,
+.game-tags span,
+.feed-tags span,
+.side-tags span {
+  border: 1px solid rgba(79,124,255,.10);
+}
+
+/* Prediction list/detail */
+.upgraded-board-card {
+  overflow: hidden;
+}
+.upgraded-board-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 5px;
+  background: var(--brand-grad);
+}
+.board-card-cta,
+.spotlight-card-v2 > a,
+.ranking-my-card a,
+.ranking-empty-state a,
+.write-submit,
+.submit-prediction,
+.feed-card-bottom a,
+.detail-actions button,
+.feed-report-box button[type="submit"] {
+  background: var(--brand-grad) !important;
+  box-shadow: 0 12px 30px rgba(79,124,255,.22);
+}
+.option-card {
+  transition: border-color .16s ease, background .16s ease, transform .16s ease;
+}
+.option-card:hover {
+  border-color: rgba(79,124,255,.36) !important;
+  background: rgba(79,124,255,.06);
+  transform: translateY(-1px);
+}
+.option-card input:checked + span b {
+  color: var(--predict-main);
+}
+.issue-box,
+.mood-panel,
+.rule-grid div,
+.feed-question,
+.feed-top-comment,
+.upload-box {
+  border-color: rgba(79,124,255,.13) !important;
+}
+
+/* Feed polish */
+.feed-card::before {
+  background: var(--brand-grad) !important;
+}
+.feed-empty-state,
+.prediction-empty-state {
+  text-align: center;
+  border: 1px dashed rgba(79,124,255,.28);
+  border-radius: 30px;
+  padding: 34px 20px;
+  background: var(--glass-bg);
+  box-shadow: var(--surface-shadow);
+}
+.feed-empty-state div,
+.prediction-empty-state div {
+  width: 58px;
+  height: 58px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 22px;
+  background: var(--brand-grad-soft);
+  font-size: 28px;
+  margin-bottom: 12px;
+}
+.feed-empty-state span,
+.prediction-empty-state span {
+  display: block;
+  color: var(--predict-main);
+  font-size: 11px;
+  font-weight: 1000;
+  letter-spacing: .14em;
+}
+.feed-empty-state h3,
+.prediction-empty-state h3 {
+  margin: 8px 0 8px;
+  font-size: 24px;
+  letter-spacing: -.05em;
+}
+.feed-empty-state p,
+.prediction-empty-state p {
+  max-width: 520px;
+  margin: 0 auto;
+  color: var(--predict-muted);
+  line-height: 1.7;
+}
+.feed-empty-state a,
+.prediction-empty-state a {
+  display: inline-flex;
+  margin-top: 18px;
+  padding: 13px 16px;
+  border-radius: 16px;
+  background: var(--brand-grad);
+  color: #fff;
+  text-decoration: none;
+  font-weight: 1000;
+}
+.feed-vote-option.selected {
+  box-shadow: 0 0 0 4px rgba(79,124,255,.08);
+}
+.comment-item {
+  transition: transform .16s ease, border-color .16s ease;
+}
+.comment-item:hover {
+  transform: translateY(-1px);
+  border-color: rgba(79,124,255,.25) !important;
+}
+
+/* Ranking */
+.ranking-hero-copy h1 em,
+.home-copy-v2 h1 em,
+.list-hero-copy h1 em {
+  text-shadow: 0 10px 30px rgba(0,0,0,.16);
+}
+.podium-card.rank-1::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 6px;
+  background: var(--gold-grad);
+}
+.podium-card.rank-2::before,
+.podium-card.rank-3::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 5px;
+  background: var(--brand-grad);
+  opacity: .72;
+}
+
+/* Sub pages, forms, policies */
+.policy-page,
+.guide-page,
+.feedback-page,
+.auth-page,
+.history-page {
+  padding-left: clamp(16px,4vw,34px) !important;
+  padding-right: clamp(16px,4vw,34px) !important;
+}
+.policy-page article,
+.guide-page article,
+.feedback-page form,
+.auth-page form,
+.history-page article,
+.policy-card,
+.guide-card,
+.feedback-card,
+.auth-card,
+.history-card {
+  border-radius: 28px !important;
+  border-color: var(--surface-border) !important;
+  box-shadow: var(--surface-shadow) !important;
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+input, textarea, select {
+  transition: border-color .16s ease, box-shadow .16s ease, background .16s ease;
+}
+input:focus, textarea:focus, select:focus {
+  outline: none !important;
+  border-color: rgba(79,124,255,.55) !important;
+  box-shadow: 0 0 0 4px rgba(79,124,255,.10) !important;
+}
+button, a {
+  -webkit-tap-highlight-color: transparent;
+}
+button:disabled {
+  opacity: .64;
+  cursor: not-allowed;
+}
+
+/* Mobile refinements */
+@media (max-width: 760px) {
+  .home-hero-v2,
+  .predict-list-page,
+  .ranking-page,
+  .soso-feed-page,
+  .simple-page {
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+  .home-copy-v2,
+  .list-hero-copy,
+  .ranking-hero-copy,
+  .feed-hero-copy {
+    border-radius: 30px !important;
+  }
+  .home-copy-v2 h1,
+  .list-hero-copy h1,
+  .ranking-hero-copy h1,
+  .feed-hero-copy h1 {
+    letter-spacing: -.075em !important;
+  }
+  .home-shell,
+  .live-brief-section,
+  .home-feature-grid,
+  .home-board-v2,
+  .ranking-hero,
+  .podium-wrap,
+  .my-rank-card,
+  .ranking-list,
+  .feed-hero,
+  .feed-layout,
+  .feed-dashboard,
+  .feed-detail-layout,
+  .write-layout,
+  .predict-list-hero,
+  .pick-briefing,
+  .upgraded-list-mode,
+  .detail-layout,
+  .comments-section {
+    max-width: 100% !important;
+  }
+  .detail-actions,
+  .feed-card-bottom,
+  .home-actions-v2,
+  .feed-actions {
+    gap: 8px;
+  }
+  #bottom-nav {
+    width: calc(100% - 16px);
+    height: 64px;
+    border-radius: 22px;
+  }
+  #bottom-nav .nav-icon { font-size: 17px; }
+  #bottom-nav .nav-label { font-size: 10px; }
+}
