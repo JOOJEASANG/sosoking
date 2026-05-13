@@ -50,15 +50,17 @@ service cloud.firestore {
         && request.resource.data.status == 'published'
         && request.resource.data.views == 0
         && request.resource.data.likes == 0
-        && request.resource.data.comments == 0;
+        && request.resource.data.comments == 0
+        && request.resource.data.voteTotal == 0;
     }
 
     function isFeedCounterUpdate() {
       return request.auth != null
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['views', 'likes', 'comments', 'topComment'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['views', 'likes', 'comments', 'topComment', 'votes', 'voteTotal'])
         && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['views']) || request.resource.data.views == resource.data.views + 1)
         && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['likes']) || request.resource.data.likes == resource.data.likes + 1)
         && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['comments']) || request.resource.data.comments == resource.data.comments + 1)
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['voteTotal']) || request.resource.data.voteTotal == resource.data.voteTotal + 1)
         && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['topComment']) || request.resource.data.topComment is string && request.resource.data.topComment.size() <= 300);
     }
 
@@ -71,70 +73,27 @@ service cloud.firestore {
         && request.resource.data.likes == 0;
     }
 
-    match /admins/{uid} {
-      allow read: if request.auth != null && request.auth.uid == uid;
-      allow write: if false;
+    function validFeedVoter(voterId) {
+      return request.auth != null
+        && voterId == request.auth.uid
+        && request.resource.data.authorId == request.auth.uid
+        && request.resource.data.option is string
+        && request.resource.data.option.size() >= 1
+        && request.resource.data.option.size() <= 40;
     }
 
-    match /categories/{catId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    match /topics/{topicId} {
-      allow read: if resource.data.status == 'active' || isAdmin();
-      allow create: if isAdmin();
-      allow update: if isAdmin() || isVoteOnlyUpdate();
-      allow delete: if isAdmin();
-    }
-
-    match /debate_sessions/{sessionId} {
-      allow get: if request.auth != null;
-      allow list: if isSessionParticipant() || isAdmin();
-      allow create: if false;
-      allow update: if false;
-      allow delete: if isAdmin();
-    }
-
-    match /random_queue/{topicId} {
-      allow read: if request.auth != null;
-      allow write: if false;
-    }
-
-    match /usage_stats/{docId} {
-      allow read: if isAdmin();
-      allow write: if false;
-    }
-
-    match /rate_limits/{userId} {
-      allow read, write: if false;
-    }
-
-    match /users/{userId} {
-      allow read: if request.auth != null && request.auth.uid == userId;
-      allow write: if false;
-    }
-
-    match /nicknames/{nickname} {
-      allow read: if request.auth != null;
-      allow write: if false;
-    }
-
-    match /reports/{reportId} {
-      allow create: if request.auth != null;
-      allow read, update, delete: if isAdmin();
-    }
-
-    match /site_settings/{docId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    match /policy_docs/{docId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
+    match /admins/{uid} { allow read: if request.auth != null && request.auth.uid == uid; allow write: if false; }
+    match /categories/{catId} { allow read: if true; allow write: if isAdmin(); }
+    match /topics/{topicId} { allow read: if resource.data.status == 'active' || isAdmin(); allow create: if isAdmin(); allow update: if isAdmin() || isVoteOnlyUpdate(); allow delete: if isAdmin(); }
+    match /debate_sessions/{sessionId} { allow get: if request.auth != null; allow list: if isSessionParticipant() || isAdmin(); allow create: if false; allow update: if false; allow delete: if isAdmin(); }
+    match /random_queue/{topicId} { allow read: if request.auth != null; allow write: if false; }
+    match /usage_stats/{docId} { allow read: if isAdmin(); allow write: if false; }
+    match /rate_limits/{userId} { allow read, write: if false; }
+    match /users/{userId} { allow read: if request.auth != null && request.auth.uid == userId; allow write: if false; }
+    match /nicknames/{nickname} { allow read: if request.auth != null; allow write: if false; }
+    match /reports/{reportId} { allow create: if request.auth != null; allow read, update, delete: if isAdmin(); }
+    match /site_settings/{docId} { allow read: if true; allow write: if isAdmin(); }
+    match /policy_docs/{docId} { allow read: if true; allow write: if isAdmin(); }
     match /feedback/{feedbackId} {
       allow create: if request.auth != null
         && request.resource.data.keys().hasAll(['category', 'content', 'createdAt'])
@@ -152,6 +111,11 @@ service cloud.firestore {
         allow read: if get(/databases/$(database)/documents/soso_feed_posts/$(postId)).data.status == 'published' || isAdmin();
         allow create: if validFeedComment();
         allow update, delete: if isAdmin();
+      }
+      match /voters/{voterId} {
+        allow read: if request.auth != null && voterId == request.auth.uid;
+        allow create: if validFeedVoter(voterId) && !exists(/databases/$(database)/documents/soso_feed_posts/$(postId)/voters/$(voterId));
+        allow update, delete: if false;
       }
     }
   }
