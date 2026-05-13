@@ -9,6 +9,7 @@ import { renderPredictGuide } from './pages/predict-guide.js';
 import { renderPredictPolicy } from './pages/predict-policy.js';
 import { renderFeedback } from './pages/feedback.js';
 import { renderAuth } from './pages/auth.js';
+import { renderAccount } from './pages/account.js';
 import { renderFooter } from './components/footer.js';
 import { initTheme } from './components/theme.js';
 import { renderNav } from './components/nav.js';
@@ -49,6 +50,7 @@ function route() {
   else if (hash === '#/feed' || hash === '#/feed/top' || hash === '#/feed/new' || hash.startsWith('#/feed/')) { pageName = hash.startsWith('#/feed/') && !['#/feed/top','#/feed/new'].includes(hash) ? 'soso_feed_detail' : 'soso_feed'; renderSosoFeed(content); }
   else if (hash === '#/ranking') { pageName = 'ranking'; renderPredictRanking(content); }
   else if (hash === '#/history') { pageName = 'history'; renderPredictHistory(content); }
+  else if (hash === '#/account') { pageName = 'account'; renderAccount(content); }
   else if (hash.startsWith('#/policy/')) { pageName = 'policy_' + hash.replace('#/policy/', ''); renderPredictPolicy(content, hash.replace('#/policy/', '')); }
   else if (hash === '#/guide') { pageName = 'guide'; renderPredictGuide(content); }
   else if (hash === '#/feedback') { pageName = 'feedback'; renderFeedback(content); }
