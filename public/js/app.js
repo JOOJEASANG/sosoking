@@ -16,12 +16,14 @@ const LEGACY_PREFIXES = ['#/hunt', '#/topic/', '#/debate/', '#/join/', '#/join-t
 const LEGACY_ROUTES = ['#/town', '#/case-quest', '#/topics', '#/submit-topic', '#/court', '#/my-history'];
 
 function loadPolishStyle() {
-  if (document.getElementById('sosoking-polish-style')) return;
-  const link = document.createElement('link');
-  link.id = 'sosoking-polish-style';
-  link.rel = 'stylesheet';
-  link.href = '/css/predict-polish.css';
-  document.head.appendChild(link);
+  [['sosoking-polish-style','/css/predict-polish.css'],['sosoking-detail-polish-style','/css/predict-detail-polish.css']].forEach(([id, href]) => {
+    if (document.getElementById(id)) return;
+    const link = document.createElement('link');
+    link.id = id;
+    link.rel = 'stylesheet';
+    link.href = href;
+    document.head.appendChild(link);
+  });
 }
 
 function route() {
