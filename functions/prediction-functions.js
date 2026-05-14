@@ -97,13 +97,6 @@ function findDefaultBoard(boardId, dateKey = todayKey()) {
   return defaults.find(b => b.id === boardId || b.id.endsWith(`-${boardId}`)) || defaults[0];
 }
 
-function deterministicWinner(board) {
-  const options = Array.isArray(board.options) ? board.options : [];
-  if (!options.length) return null;
-  const seed = String(board.id || board.title || '').split('').reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
-  return options[seed % options.length];
-}
-
 async function ensureWallet(userId) {
   const ref = db.doc(`user_wallets/${userId}`);
   const snap = await ref.get();
@@ -249,61 +242,6 @@ const getPredictionRankings = onCall({ region: 'asia-northeast3', timeoutSeconds
   return { rankings, wallet };
 });
 
-async function settleOneBoard(boardDoc) {
-  const boardRef = boardDoc.ref;
-  const board = { id: boardDoc.id, ...boardDoc.data() };
-  if (board.status === 'settled') return { boardId: board.id, skipped: true };
-  const winner = deterministicWinner(board);
-  if (!winner) return { boardId: board.id, skipped: true };
-  const predictionsSnap = await db.collection('predictions').where('boardId', '==', board.id).where('settled', '==', false).limit(200).get();
-  const batch = db.batch();
-  let winners = 0;
-  let losers = 0;
-  predictionsSnap.docs.forEach(predDoc => {
-    const pred = predDoc.data();
-    const won = pred.optionId === winner.id;
-    const payout = won ? Math.floor(Number(pred.amount || 0) * Number(pred.odds || 1)) : 0;
-    const profit = won ? payout - Number(pred.amount || 0) : -Number(pred.amount || 0);
-    batch.set(predDoc.ref, { settled: true, won, payout, profit, winningOptionId: winner.id, settledAt: FieldValue.serverTimestamp(), settledAtMs: Date.now() }, { merge: true });
-    const walletRef = db.doc(`user_wallets/${pred.userId}`);
-    batch.set(walletRef, {
-      balance: FieldValue.increment(payout),
-      totalProfit: FieldValue.increment(profit),
-      wins: FieldValue.increment(won ? 1 : 0),
-      losses: FieldValue.increment(won ? 0 : 1),
-      streak: won ? FieldValue.increment(1) : 0,
-      title: won ? '촉 좋은 예측러' : '다음엔 맞힐 예측러',
-      updatedAt: FieldValue.serverTimestamp()
-    }, { merge: true });
-    if (won) winners += 1; else losers += 1;
-  });
-  batch.set(boardRef, {
-    status: 'settled',
-    winningOptionId: winner.id,
-    winningOptionLabel: winner.label,
-    resultLine: `정답은 “${winner.label}”입니다.`,
-    settledAt: FieldValue.serverTimestamp(),
-    settledAtMs: Date.now(),
-    winners,
-    losers
-  }, { merge: true });
-  await batch.commit();
-  return { boardId: board.id, winner: winner.label, winners, losers };
-}
-
-const settlePredictionBoards = onCall({ region: 'asia-northeast3', timeoutSeconds: 60 }, async () => {
-  const snap = await db.collection('prediction_boards').where('status', '==', 'open').limit(10).get();
-  const results = [];
-  for (const doc of snap.docs) results.push(await settleOneBoard(doc));
-  return { ok: true, results };
-});
-
-const scheduledSettlePredictionBoards = onSchedule({ region: 'asia-northeast3', schedule: 'every day 18:00', timeZone: 'Asia/Seoul', timeoutSeconds: 300 }, async () => {
-  const snap = await db.collection('prediction_boards').where('status', '==', 'open').limit(30).get();
-  for (const doc of snap.docs) await settleOneBoard(doc);
-  return null;
-});
-
 const seedDailyPredictionBoards = onSchedule({ region: 'asia-northeast3', schedule: 'every day 21:00', timeZone: 'Asia/Seoul' }, async () => {
   const dateKey = todayKey();
   const boards = getDefaultBoards(dateKey);
@@ -323,7 +261,5 @@ module.exports = {
   placePrediction,
   addPredictionComment,
   getPredictionRankings,
-  settlePredictionBoards,
-  scheduledSettlePredictionBoards,
   seedDailyPredictionBoards
 };
