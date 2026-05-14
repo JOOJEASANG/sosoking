@@ -7,39 +7,47 @@
   <link rel="icon" href="/logo.svg" type="image/svg+xml">
   <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css');
-    :root{--bg:#f5f7fb;--ink:#121724;--muted:#697386;--card:rgba(255,255,255,.88);--line:rgba(79,124,255,.14);--main:#4f7cff;--hot:#ff5c8a;--money:#16a36a;--grad:linear-gradient(135deg,#4f7cff,#7c5cff 56%,#ff5c8a);--shadow:0 22px 70px rgba(55,90,170,.13)}
+    :root{--bg:#f5f7fb;--ink:#121724;--muted:#697386;--card:rgba(255,255,255,.9);--line:rgba(79,124,255,.14);--main:#4f7cff;--grad:linear-gradient(135deg,#4f7cff,#7c5cff 56%,#ff5c8a);--shadow:0 22px 70px rgba(55,90,170,.13)}
     *{box-sizing:border-box}body{margin:0;font-family:'Pretendard Variable','Pretendard','Noto Sans KR',system-ui,sans-serif;background:radial-gradient(circle at 12% -6%,rgba(79,124,255,.18),transparent 30%),radial-gradient(circle at 92% 2%,rgba(255,92,138,.12),transparent 28%),var(--bg);color:var(--ink)}
-    .wrap{max-width:1080px;margin:0 auto;padding:22px 16px 92px}.hero{display:grid;grid-template-columns:1fr 280px;gap:14px;align-items:stretch;margin-bottom:14px}.hero-main{position:relative;overflow:hidden;border-radius:34px;padding:28px;background:var(--grad);color:#fff;box-shadow:0 30px 90px rgba(79,124,255,.22)}.hero-main:after{content:'⚙️';position:absolute;right:22px;bottom:-36px;font-size:132px;opacity:.12}.brand{display:flex;gap:12px;align-items:center;position:relative;z-index:1}.brand img{width:58px;height:58px;border-radius:20px;box-shadow:0 14px 34px rgba(0,0,0,.16);transform:rotate(-6deg)}.brand span{display:block;font-size:11px;font-weight:1000;letter-spacing:.16em;color:rgba(255,255,255,.72)}h1{margin:4px 0 0;font-size:clamp(32px,6vw,58px);letter-spacing:-.08em;line-height:1}.hero-main p{position:relative;z-index:1;max-width:650px;margin:16px 0 0;color:rgba(255,255,255,.78);line-height:1.7}.hero-side{border:1px solid var(--line);border-radius:30px;padding:20px;background:var(--card);box-shadow:var(--shadow);backdrop-filter:blur(14px)}.hero-side b{display:block;font-size:18px}.hero-side p{margin:8px 0 16px;color:var(--muted);font-size:13px;line-height:1.6}.hero-side a{display:flex;justify-content:center;border-radius:16px;padding:13px;background:var(--grad);color:#fff;font-weight:1000;text-decoration:none}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}.card{position:relative;overflow:hidden;background:var(--card);border:1px solid var(--line);border-radius:24px;padding:17px;box-shadow:var(--shadow);backdrop-filter:blur(14px)}.card:before{content:'';position:absolute;inset:0 0 auto 0;height:4px;background:var(--grad);opacity:.82}.card b{display:block;font-size:16px}.card span{display:block;color:var(--muted);font-size:12px;line-height:1.6;margin-top:7px}.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}.btn{border:1px solid var(--line);border-radius:20px;padding:16px;background:var(--card);text-align:left;color:var(--ink);font-size:14px;font-weight:1000;cursor:pointer;box-shadow:var(--shadow)}.btn.primary{background:var(--grad);color:#fff;border-color:transparent}.btn:disabled{opacity:.62;cursor:not-allowed}.console{display:grid;grid-template-columns:1fr 300px;gap:14px;align-items:start}.log{background:#101722;color:#dce8ff;border-radius:24px;padding:16px;min-height:170px;white-space:pre-wrap;font-size:12px;line-height:1.7;box-shadow:0 18px 54px rgba(0,0,0,.16)}.links{display:grid;gap:9px}.link{display:flex;align-items:center;justify-content:space-between;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;color:var(--ink);font-size:14px;font-weight:900;text-decoration:none;box-shadow:var(--shadow)}.link span{color:var(--main)}.note{margin-top:16px;color:var(--muted);font-size:12px;line-height:1.7;text-align:center}@media(max-width:860px){.hero,.console{grid-template-columns:1fr}.grid{grid-template-columns:1fr 1fr}.actions{grid-template-columns:1fr}}@media(max-width:540px){.grid{grid-template-columns:1fr}.hero-main{padding:24px}.brand img{width:48px;height:48px}}
+    .wrap{max-width:1080px;margin:0 auto;padding:22px 16px 92px}.hero{display:grid;grid-template-columns:1fr 280px;gap:14px;align-items:stretch;margin-bottom:14px}.hero-main{position:relative;overflow:hidden;border-radius:34px;padding:28px;background:var(--grad);color:#fff;box-shadow:0 30px 90px rgba(79,124,255,.22)}.hero-main:after{content:'✨';position:absolute;right:22px;bottom:-36px;font-size:132px;opacity:.14}.brand{display:flex;gap:12px;align-items:center;position:relative;z-index:1}.brand img{width:58px;height:58px;border-radius:20px;box-shadow:0 14px 34px rgba(0,0,0,.16);transform:rotate(-6deg)}.brand span{display:block;font-size:11px;font-weight:1000;letter-spacing:.16em;color:rgba(255,255,255,.72)}h1{margin:4px 0 0;font-size:clamp(32px,6vw,58px);letter-spacing:-.08em;line-height:1}.hero-main p{position:relative;z-index:1;max-width:650px;margin:16px 0 0;color:rgba(255,255,255,.8);line-height:1.7}.hero-side{border:1px solid var(--line);border-radius:30px;padding:20px;background:var(--card);box-shadow:var(--shadow);backdrop-filter:blur(14px)}.hero-side b{display:block;font-size:18px}.hero-side p{margin:8px 0 16px;color:var(--muted);font-size:13px;line-height:1.6}.hero-side a{display:flex;justify-content:center;border-radius:16px;padding:13px;background:var(--grad);color:#fff;font-weight:1000;text-decoration:none}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}.card{position:relative;overflow:hidden;background:var(--card);border:1px solid var(--line);border-radius:24px;padding:17px;box-shadow:var(--shadow);backdrop-filter:blur(14px)}.card:before{content:'';position:absolute;inset:0 0 auto 0;height:4px;background:var(--grad);opacity:.82}.card b{display:block;font-size:16px}.card span{display:block;color:var(--muted);font-size:12px;line-height:1.6;margin-top:7px}.console{display:grid;grid-template-columns:1fr 300px;gap:14px;align-items:start}.panel{background:#101722;color:#dce8ff;border-radius:24px;padding:18px;min-height:170px;font-size:13px;line-height:1.7;box-shadow:0 18px 54px rgba(0,0,0,.16)}.panel b{display:block;color:#fff;font-size:16px;margin-bottom:8px}.panel ul{margin:10px 0 0;padding-left:18px}.links{display:grid;gap:9px}.link{display:flex;align-items:center;justify-content:space-between;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;color:var(--ink);font-size:14px;font-weight:900;text-decoration:none;box-shadow:var(--shadow)}.link span{color:var(--main)}.note{margin-top:16px;color:var(--muted);font-size:12px;line-height:1.7;text-align:center}@media(max-width:860px){.hero,.console{grid-template-columns:1fr}.grid{grid-template-columns:1fr 1fr}}@media(max-width:540px){.grid{grid-template-columns:1fr}.hero-main{padding:24px}.brand img{width:48px;height:48px}}
   </style>
 </head>
 <body>
   <main class="wrap">
     <section class="hero">
       <div class="hero-main">
-        <div class="brand"><img src="/logo.svg" alt="소소킹"><div><span>SOSOKING ADMIN</span><h1>운영 대시보드</h1></div></div>
-        <p>오늘의 예측판 생성, 정산, 신고·의견 확인 흐름을 점검하는 관리자 화면입니다. 실제 운영 데이터 기준으로 사이트와 맞춰 관리합니다.</p>
+        <div class="brand"><img src="/logo.svg" alt="소소킹"><div><span>SOSOKING ADMIN</span><h1>소소피드 관리</h1></div></div>
+        <p>관리자 화면을 소소피드 운영 중심으로 전환했습니다. 글, 신고, 의견, 글쓰기 유형 확장을 기준으로 운영 상태를 확인합니다.</p>
       </div>
-      <aside class="hero-side"><b>사이트 바로가기</b><p>사용자 화면에서 디자인, 예측판, 랭킹, 소소피드를 확인하세요.</p><a href="/">소소킹 홈으로</a></aside>
+      <aside class="hero-side"><b>사용자 화면 확인</b><p>홈과 피드 화면에서 소소피드 중심 흐름이 잘 보이는지 확인하세요.</p><a href="/">소소킹 홈으로</a></aside>
     </section>
 
     <section class="grid">
-      <div class="card"><b>예측판</b><span>오늘 열린 예측판은 메인 화면과 예측판 메뉴에 표시됩니다.</span></div>
-      <div class="card"><b>랭킹</b><span>랭킹은 실제 user_wallets의 소소머니 기준으로 표시됩니다.</span></div>
-      <div class="card"><b>소소피드</b><span>유저 글, 이미지, 투표, 댓글, 신고 흐름을 확인합니다.</span></div>
-      <div class="card"><b>자동 수집</b><span>핫이슈 수집 함수가 실제 예측판 데이터를 생성합니다.</span></div>
+      <div class="card"><b>소소피드 글</b><span>사진 제목학원, 밸런스게임, 소소토론, 퀴즈, AI놀이 글 흐름을 관리합니다.</span></div>
+      <div class="card"><b>신고 관리</b><span>부적절한 글, 댓글, 이미지 신고를 우선 확인하는 영역입니다.</span></div>
+      <div class="card"><b>의견 관리</b><span>사용자 건의, 오류 제보, 운영 피드백을 확인합니다.</span></div>
+      <div class="card"><b>유형 관리</b><span>글쓰기 유형과 홈 노출 구성을 소소피드 중심으로 확장합니다.</span></div>
     </section>
 
     <section class="console">
-      <div class="log" id="admin-log">핫이슈 수집 및 예측판 정산 실행 버튼은 소소피드 중심 전환으로 비활성화되었습니다.</div>
+      <div class="panel" id="admin-status">
+        <b>운영 체크리스트</b>
+        <ul>
+          <li>새 글과 인기 글 흐름 확인</li>
+          <li>신고 접수 항목 우선 검토</li>
+          <li>의견접수 내용 확인</li>
+          <li>글쓰기 유형별 진입 흐름 점검</li>
+        </ul>
+      </div>
       <div class="links">
-        <a class="link" href="/#/predict">오늘의 예측판 <span>›</span></a>
-        <a class="link" href="/#/feed">소소피드 <span>›</span></a>
-        <a class="link" href="/#/ranking">이번 주 소소킹 <span>›</span></a>
+        <a class="link" href="/#/feed">소소피드 전체 <span>›</span></a>
+        <a class="link" href="/#/feed/top">인기 피드 <span>›</span></a>
+        <a class="link" href="/#/feed/new">글쓰기 유형 확인 <span>›</span></a>
         <a class="link" href="/#/feedback">의견접수 <span>›</span></a>
         <a class="link" href="/#/guide">이용안내 <span>›</span></a>
       </div>
     </section>
-    <p class="note">소소머니는 게임 전용 포인트이며 현금 가치, 충전, 환전, 출금, 현물 보상이 없습니다.</p>
+    <p class="note">예측판, 정산, 랭킹 운영 메뉴는 소소피드 중심 전환에 따라 관리자 화면에서 제거되었습니다.</p>
   </main>
 </body>
 </html>
