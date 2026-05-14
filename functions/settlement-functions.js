@@ -4,6 +4,12 @@ const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 
 const db = getFirestore();
 
+async function assertAdmin(uid) {
+  if (!uid) throw new Error('인증 필요');
+  const snap = await db.doc(`admins/${uid}`).get();
+  if (!snap.exists) throw new Error('관리자 권한 필요');
+}
+
 function todayKey(date = new Date()) {
   const kst = new Date(date.getTime() + 9 * 60 * 60 * 1000);
   return kst.toISOString().slice(0, 10);
@@ -100,7 +106,8 @@ async function settleBoard(doc, issues) {
   return { boardId: doc.id, winner: winner.label, correct, wrong };
 }
 
-const settlePredictionBoards = onCall({ region: 'asia-northeast3', timeoutSeconds: 90 }, async () => {
+const settlePredictionBoards = onCall({ region: 'asia-northeast3', timeoutSeconds: 90 }, async (request) => {
+  await assertAdmin(request.auth?.uid);
   const issues = await getResultIssues();
   const snap = await db.collection('prediction_boards').where('status', '==', 'open').limit(60).get();
   const results = [];
