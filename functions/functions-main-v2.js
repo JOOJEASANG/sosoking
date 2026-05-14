@@ -4,4 +4,5 @@ module.exports = {
   ...require('./prediction-functions.js'),
   ...require('./hot-issue-functions.js'),
   ...require('./settlement-functions.js'),
+  ...require('./link-summary-functions.js'),
 };
