@@ -1,0 +1,304 @@
+/* Sosoking unified visual system: polished game + community style */
+:root {
+  --soso-bg: #f6f8ff;
+  --soso-bg-warm: #fff8dc;
+  --soso-ink: #151a33;
+  --soso-muted: #6d7588;
+  --soso-card: rgba(255, 255, 255, .88);
+  --soso-line: rgba(91, 112, 255, .15);
+  --soso-blue: #4f7cff;
+  --soso-purple: #7c5cff;
+  --soso-pink: #ff5c8a;
+  --soso-orange: #ff7a59;
+  --soso-yellow: #ffe85c;
+  --soso-grad: linear-gradient(135deg, #4f7cff 0%, #7c5cff 48%, #ff5c8a 100%);
+  --soso-grad-hot: linear-gradient(135deg, #ff7a59 0%, #ff5c8a 52%, #7c5cff 100%);
+  --soso-shadow: 0 22px 70px rgba(55, 90, 170, .13);
+  --soso-soft-shadow: 0 14px 44px rgba(55, 90, 170, .09);
+  --soso-radius-xl: 34px;
+  --soso-radius-lg: 26px;
+  --soso-radius-md: 18px;
+}
+
+[data-theme="dark"] {
+  --soso-bg: #070b13;
+  --soso-bg-warm: #0f1726;
+  --soso-ink: #f4f7ff;
+  --soso-muted: #9aa7bd;
+  --soso-card: rgba(16, 23, 34, .88);
+  --soso-line: rgba(255, 255, 255, .12);
+  --soso-shadow: none;
+  --soso-soft-shadow: none;
+}
+
+body {
+  background: radial-gradient(circle at 8% -10%, rgba(255, 232, 92, .28), transparent 28%),
+              radial-gradient(circle at 96% 0%, rgba(124, 92, 255, .18), transparent 30%),
+              var(--soso-bg);
+}
+
+.predict-app,
+.simple-page,
+.soso-feed-page,
+.soso-doc-page,
+.games-page-v1,
+.soso-home-v3 {
+  background: radial-gradient(circle at 8% -6%, rgba(255, 232, 92, .25), transparent 30%),
+              radial-gradient(circle at 94% 2%, rgba(124, 92, 255, .15), transparent 30%),
+              linear-gradient(180deg, #f9fbff 0%, #f2f5ff 48%, #f8f9fc 100%) !important;
+  color: var(--soso-ink);
+}
+
+[data-theme="dark"] .predict-app,
+[data-theme="dark"] .simple-page,
+[data-theme="dark"] .soso-feed-page,
+[data-theme="dark"] .soso-doc-page,
+[data-theme="dark"] .games-page-v1,
+[data-theme="dark"] .soso-home-v3 {
+  background: radial-gradient(circle at 8% -6%, rgba(124, 92, 255, .16), transparent 30%), #070b13 !important;
+}
+
+/* Common cards */
+.home-v3-copy,
+.home-v3-phone,
+.mode-card,
+.flow-grid article,
+.recent-v3-card,
+.games-copy,
+.games-comic-card,
+.game-card,
+.games-roadmap article,
+.guide-card-clean,
+.soso-doc-card,
+.doc-hero-copy,
+.feedback-info-card,
+.feedback-card,
+.feed-card,
+.side-card,
+.side-card-v4,
+.feed-hero-copy,
+.feed-stat-card,
+.feed-dashboard article,
+.write-card,
+.write-preview,
+.auth-card-v2,
+.auth-hero-card {
+  border: 1px solid var(--soso-line) !important;
+  background: var(--soso-card) !important;
+  box-shadow: var(--soso-shadow) !important;
+  backdrop-filter: blur(18px) saturate(1.2);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+}
+
+[data-theme="dark"] .home-v3-copy,
+[data-theme="dark"] .home-v3-phone,
+[data-theme="dark"] .mode-card,
+[data-theme="dark"] .flow-grid article,
+[data-theme="dark"] .recent-v3-card,
+[data-theme="dark"] .games-copy,
+[data-theme="dark"] .games-comic-card,
+[data-theme="dark"] .game-card,
+[data-theme="dark"] .games-roadmap article,
+[data-theme="dark"] .guide-card-clean,
+[data-theme="dark"] .soso-doc-card,
+[data-theme="dark"] .doc-hero-copy,
+[data-theme="dark"] .feedback-info-card,
+[data-theme="dark"] .feedback-card,
+[data-theme="dark"] .feed-card,
+[data-theme="dark"] .side-card,
+[data-theme="dark"] .side-card-v4,
+[data-theme="dark"] .feed-hero-copy,
+[data-theme="dark"] .feed-stat-card,
+[data-theme="dark"] .feed-dashboard article,
+[data-theme="dark"] .write-card,
+[data-theme="dark"] .write-preview,
+[data-theme="dark"] .auth-card-v2,
+[data-theme="dark"] .auth-hero-card {
+  box-shadow: none !important;
+}
+
+/* Buttons and links */
+.home-v3-actions a.primary,
+.games-actions a,
+.feed-actions a,
+.write-submit,
+.feedback-submit,
+.auth-form-v2 > button,
+.modal-save-btn,
+.feed-participate,
+.feed-empty-state a,
+.hero-side a,
+.doc-hero-copy + b {
+  background: var(--soso-grad-hot) !important;
+  color: #fff !important;
+  border: 0 !important;
+  box-shadow: 0 16px 42px rgba(255, 92, 138, .22) !important;
+}
+
+.home-v3-actions a:not(.primary),
+.feed-actions a.ghost,
+.games-actions a:nth-child(2),
+.feed-mini-link,
+.section-head a,
+.back-link {
+  background: rgba(79, 124, 255, .10) !important;
+  color: var(--soso-blue) !important;
+  border: 1px solid rgba(79, 124, 255, .12) !important;
+}
+
+/* Typography polish */
+.predict-app h1,
+.predict-app h2,
+.predict-app h3,
+.games-page-v1 h1,
+.games-page-v1 h2,
+.games-page-v1 h3,
+.soso-doc-page h1,
+.soso-doc-page h2,
+.soso-home-v3 h1,
+.soso-home-v3 h2,
+.soso-home-v3 h3 {
+  font-family: 'Noto Sans KR', system-ui, sans-serif !important;
+  letter-spacing: -.065em;
+}
+
+.predict-app p,
+.predict-app span,
+.predict-app small,
+.soso-doc-page p,
+.guide-card-clean p,
+.soso-doc-card p {
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+/* Game cards: less cartoon, more premium */
+.games-copy,
+.games-comic-card,
+.game-card,
+.games-roadmap article {
+  border-width: 1px !important;
+  box-shadow: var(--soso-shadow) !important;
+}
+
+.games-copy {
+  background: linear-gradient(135deg, rgba(255,255,255,.92), rgba(255,248,220,.82)) !important;
+}
+
+.games-comic-card {
+  background: linear-gradient(135deg, #151a33, #283b88 56%, #7c5cff) !important;
+  color: #fff !important;
+}
+
+.game-card {
+  color: var(--soso-ink) !important;
+  transform: translateZ(0);
+}
+
+.game-card:hover,
+.mode-card:hover,
+.recent-v3-card:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: 0 24px 80px rgba(55, 90, 170, .17) !important;
+}
+
+.game-card span,
+.home-v3-kicker,
+.guide-title-row span,
+.doc-hero-copy span,
+.section-head span {
+  background: rgba(255, 232, 92, .45) !important;
+  color: #1b2250 !important;
+  border: 1px solid rgba(255, 184, 0, .22);
+}
+
+/* Docs */
+.soso-doc-page {
+  padding-top: 18px !important;
+}
+
+.soso-doc-card,
+.guide-card-clean {
+  max-width: 940px !important;
+  border-radius: var(--soso-radius-xl) !important;
+}
+
+.doc-hero,
+.guide-card-clean,
+.soso-doc-card {
+  max-width: 940px !important;
+}
+
+.doc-section h2,
+.guide-title-row h2 {
+  color: var(--soso-ink) !important;
+}
+
+.doc-section p,
+.guide-card-clean p,
+.clean-steps span {
+  color: var(--soso-muted) !important;
+}
+
+/* Feed and ranking visual difference */
+.soso-feed-page .feed-hero,
+.soso-feed-page .feed-dashboard,
+.soso-feed-page .feed-layout {
+  max-width: 1040px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.soso-feed-page .feed-card {
+  border-radius: 28px !important;
+  overflow: hidden;
+}
+
+.soso-feed-page .feed-card-top span,
+.feed-tags span,
+.side-tags span {
+  border-radius: 999px !important;
+  background: rgba(79, 124, 255, .10) !important;
+  color: var(--soso-blue) !important;
+}
+
+/* Admin reusable classes */
+.admin-shell-soso {
+  min-height: 100vh;
+  padding: 22px 16px 96px;
+  background: radial-gradient(circle at 8% -10%, rgba(255, 232, 92, .28), transparent 28%),
+              radial-gradient(circle at 96% 0%, rgba(124, 92, 255, .18), transparent 30%),
+              #f6f8ff;
+  color: var(--soso-ink);
+  font-family: 'Noto Sans KR', system-ui, sans-serif;
+}
+
+.admin-shell-soso .admin-card {
+  border: 1px solid var(--soso-line);
+  border-radius: 30px;
+  background: var(--soso-card);
+  box-shadow: var(--soso-shadow);
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .predict-app,
+  .simple-page,
+  .soso-feed-page,
+  .soso-doc-page,
+  .games-page-v1,
+  .soso-home-v3 {
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+  .home-v3-copy,
+  .games-copy,
+  .guide-card-clean,
+  .soso-doc-card,
+  .doc-hero-copy,
+  .feed-card,
+  .write-card,
+  .write-preview {
+    border-radius: 26px !important;
+  }
+}
