@@ -64,6 +64,48 @@ function updatePwaInstallButton() {
   button.classList.toggle('show', Boolean(window._pwaPromptEvent && !installed));
 }
 
+function injectDesktopHeaderStyle() {
+  if (document.getElementById('sosoking-dashboard-header-style')) return;
+  const style = document.createElement('style');
+  style.id = 'sosoking-dashboard-header-style';
+  style.textContent = `
+    @media(min-width:901px){body{padding-top:78px!important}.soso-dashboard-header{display:flex!important}}
+    .soso-dashboard-header{display:none;position:fixed;left:0;right:0;top:0;height:78px;z-index:520;align-items:center;gap:26px;padding:10px 34px;border-bottom:1px solid rgba(79,124,255,.12);background:rgba(255,255,255,.91);box-shadow:0 10px 34px rgba(25,35,70,.09);backdrop-filter:blur(22px) saturate(1.25);-webkit-backdrop-filter:blur(22px) saturate(1.25)}
+    .soso-top-brand{display:flex;align-items:center;gap:12px;min-width:230px;color:#10172f;text-decoration:none}.soso-top-brand img{width:55px;height:55px;border-radius:19px;background:#fff;box-shadow:0 12px 30px rgba(79,124,255,.18);transform:rotate(-6deg)}.soso-top-brand b{display:block;font-size:29px;line-height:1;font-weight:1000;letter-spacing:-.08em}.soso-top-brand span{display:block;margin-top:4px;color:#6b7280;font-size:11px;font-weight:1000;letter-spacing:-.04em}.soso-top-links{display:flex;align-items:center;gap:8px;justify-content:center;flex:1}.soso-top-links a{position:relative;padding:13px 16px;border-radius:16px;color:#171e3b;text-decoration:none;font-size:15px;font-weight:1000;letter-spacing:-.04em}.soso-top-links a:hover{background:rgba(79,124,255,.08)}.soso-top-links a.active{color:#6d38ff}.soso-top-links a.active:after{content:'';position:absolute;left:18px;right:18px;bottom:6px;height:3px;border-radius:999px;background:linear-gradient(90deg,#7c5cff,#ff5c8a)}.soso-top-tools{display:flex;align-items:center;justify-content:flex-end;gap:10px;min-width:410px}.soso-top-search{display:flex;align-items:center;gap:8px;width:238px;height:46px;padding:0 12px;border:1px solid rgba(79,124,255,.14);border-radius:999px;background:#fff;box-shadow:0 8px 22px rgba(55,90,170,.06)}.soso-top-search input{width:100%;border:0;outline:0;background:transparent;color:#151a33;font-family:inherit;font-weight:800}.soso-top-search button{border:0;background:transparent;font-size:18px;cursor:pointer}.soso-top-install{height:46px;border:0;border-radius:999px;padding:0 18px;background:linear-gradient(135deg,#ff7a59,#ff5c8a,#7c5cff);color:#fff;font-weight:1000;font-family:inherit;box-shadow:0 14px 34px rgba(255,92,138,.24);cursor:pointer;white-space:nowrap}.soso-top-avatar{display:flex;align-items:center;gap:7px;border:0;background:transparent;color:#151a33;cursor:pointer}.soso-top-avatar i{font-style:normal;width:45px;height:45px;border-radius:999px;background:linear-gradient(135deg,#ffe85c,#ff9f43,#7c5cff);display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 12px 28px rgba(55,90,170,.12)}.soso-top-avatar span{font-size:18px;color:#6d7588}
+    @media(max-width:1160px){.soso-dashboard-header{gap:14px;padding-left:18px;padding-right:18px}.soso-top-brand{min-width:185px}.soso-top-brand b{font-size:24px}.soso-top-tools{min-width:320px}.soso-top-search{width:180px}.soso-top-links a{padding:12px 10px}}
+    @media(max-width:900px){.soso-dashboard-header{display:none!important}body{padding-top:0!important}}
+    [data-theme="dark"] .soso-dashboard-header{border-color:rgba(255,255,255,.10);background:rgba(10,15,26,.9);box-shadow:0 12px 40px rgba(0,0,0,.28)}[data-theme="dark"] .soso-top-brand,[data-theme="dark"] .soso-top-links a,[data-theme="dark"] .soso-top-avatar{color:#f5f7fb}[data-theme="dark"] .soso-top-search{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.12)}[data-theme="dark"] .soso-top-search input{color:#fff}
+  `;
+  document.head.appendChild(style);
+}
+
+function renderDesktopHeader() {
+  injectDesktopHeaderStyle();
+  document.getElementById('soso-dashboard-header')?.remove();
+  const hash = location.hash || '#/';
+  const active = (path) => path === '#/' ? (hash === '#/' || hash === '#' || hash === '') : (hash === path || (path === '#/feed' && (hash === '#/feed/top' || (hash.startsWith('#/feed/') && hash !== '#/feed/new'))));
+  const header = document.createElement('header');
+  header.id = 'soso-dashboard-header';
+  header.className = 'soso-dashboard-header';
+  header.innerHTML = `
+    <a class="soso-top-brand" href="#/"><img src="/logo.svg" alt="소소킹"><div><b>소소킹</b><span>즐거운 커뮤니티의 왕!</span></div></a>
+    <nav class="soso-top-links">
+      <a href="#/" class="${active('#/') ? 'active' : ''}">홈</a>
+      <a href="#/feed" class="${active('#/feed') ? 'active' : ''}">피드</a>
+      <a href="#/feed/new" class="${active('#/feed/new') ? 'active' : ''}">만들기</a>
+      <a href="#/mission" class="${active('#/mission') ? 'active' : ''}">미션</a>
+      <a href="#/account" class="${active('#/account') ? 'active' : ''}">내정보</a>
+    </nav>
+    <div class="soso-top-tools">
+      <form class="soso-top-search" id="soso-top-search"><input id="soso-top-search-input" placeholder="검색어를 입력하세요"><button type="submit">⌕</button></form>
+      <button class="soso-top-install" id="soso-top-install" type="button">📥 앱 설치하기</button>
+      <button class="soso-top-avatar" type="button" onclick="location.hash='#/account'"><i>🧑</i><span>⌄</span></button>
+    </div>`;
+  document.body.appendChild(header);
+  header.querySelector('#soso-top-install')?.addEventListener('click', () => { if (typeof window._pwaInstall === 'function') window._pwaInstall(); else alert('브라우저 메뉴에서 “홈 화면에 추가” 또는 “앱 설치”를 선택해주세요.'); });
+  header.querySelector('#soso-top-search')?.addEventListener('submit', event => { event.preventDefault(); const q = header.querySelector('#soso-top-search-input')?.value.trim() || ''; if (q) sessionStorage.setItem('sosoFeedSearch', q); location.hash = '#/feed'; });
+}
+
 function route() {
   if (window._pageCleanup) { window._pageCleanup(); window._pageCleanup = null; }
   const hash = location.hash || '#/';
@@ -88,11 +130,13 @@ function route() {
     else if (LEGACY_ROUTES.includes(hash) || LEGACY_PREFIXES.some(prefix => hash.startsWith(prefix))) { pageName = 'legacy_redirect'; location.hash = '#/'; return; }
     else renderSosoHome(content);
     trackEvent('page_view', { page_name: pageName, page_path: hash });
+    renderDesktopHeader();
     renderNav();
     updatePwaInstallButton();
   } catch (error) {
     console.error('화면 렌더링 실패:', error);
     renderFallback(content, error);
+    renderDesktopHeader();
     updatePwaInstallButton();
   }
 }
@@ -151,11 +195,13 @@ function boot() {
   initAuth().then(user => {
     authReady = true;
     if (user?.uid) trackUser(user.uid);
+    renderDesktopHeader();
     renderNav();
     updatePwaInstallButton();
   }).catch(error => {
     authReady = true;
     console.warn('인증 초기화 실패:', error);
+    renderDesktopHeader();
     renderNav();
     updatePwaInstallButton();
   });
