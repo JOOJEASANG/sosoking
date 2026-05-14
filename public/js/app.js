@@ -2,6 +2,7 @@ import { initAuth, trackEvent, trackUser, db } from './firebase.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { renderSosoHome } from './pages/soso-home.js';
 import { renderSosoFeed } from './pages/soso-feed-v2.js';
+import { renderGames } from './pages/games.js';
 import { renderGuide } from './pages/guide.js';
 import { renderPredictPolicy } from './pages/predict-policy.js';
 import { renderFeedback } from './pages/feedback.js';
@@ -55,6 +56,7 @@ function route() {
   let pageName = 'home';
   try {
     if (hash === '#/' || hash === '' || hash === '#') renderSosoHome(content);
+    else if (hash === '#/games') { pageName = 'games'; renderGames(content); }
     else if (hash === '#/feed' || hash === '#/feed/top' || hash === '#/feed/new' || hash.startsWith('#/feed/')) { pageName = hash.startsWith('#/feed/') && !['#/feed/top','#/feed/new'].includes(hash) ? 'soso_feed_detail' : 'soso_feed'; renderSosoFeed(content); }
     else if (hash === '#/account') { pageName = 'account'; renderAccount(content); }
     else if (hash.startsWith('#/policy/')) { pageName = 'policy_' + hash.replace('#/policy/', ''); renderPredictPolicy(content, hash.replace('#/policy/', '')); }
