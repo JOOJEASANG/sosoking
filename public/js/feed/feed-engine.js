@@ -17,7 +17,6 @@ import {
 import { getDownloadURL, ref, uploadBytesResumable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-storage.js';
 
 export const FALLBACK_FEED_ITEMS = [];
-const FALLBACK_COMMENTS = [];
 
 const BADGE_BY_TYPE = { '사진/짤':'📸', '짧은 글':'✍️', '질문':'❓', '사진 제목학원':'📸', '밸런스게임':'⚖️', '소소토론':'💬', '퀴즈':'🧠', 'AI놀이':'🤖', '생각 갈림':'💬', '소소한 논쟁':'🤔', '생활 매너':'🍽️' };
 
@@ -92,7 +91,7 @@ export async function createFeedPost(input = {}) {
   const tags = (Array.isArray(input.tags) ? input.tags : []).map(v => clean(v, 18).replace(/^#/, '')).filter(Boolean).slice(0, 6);
   if (title.length < 4) throw new Error('제목을 4자 이상 입력해주세요.'); if (content.length < 5) throw new Error('본문 또는 상황 설명을 5자 이상 입력해주세요.');
   const finalOptions = options.length >= 2 ? options : ['공감한다','애매하다','반대한다','댓글로 말한다'];
-  const payload = { type, badge: BADGE_BY_TYPE[type] || '✨', title, content, summary: clean(content, 180), question: question || '사람들은 어떻게 생각할까요?', options: finalOptions, votes: Object.fromEntries(finalOptions.map(o => [safeVoteKey(o), 0])), voteTotal: 0, tags: tags.length ? tags : ['소소피드'], views:0, likes:0, comments:0, status:'published', source: user.isAnonymous ? 'anonymous_user' : 'user', authorId:user.uid, authorName: user.isAnonymous ? '익명 예측러' : (user.displayName || user.email || '소소킹 유저'), imageUrl: clean(input.imageUrl || '', 500), topComment:'', createdAt: serverTimestamp(), createdAtMs: Date.now(), updatedAt: serverTimestamp() };
+  const payload = { type, badge: BADGE_BY_TYPE[type] || '✨', title, content, summary: clean(content, 180), question: question || '사람들은 어떻게 생각할까요?', options: finalOptions, votes: Object.fromEntries(finalOptions.map(o => [safeVoteKey(o), 0])), voteTotal: 0, tags: tags.length ? tags : ['소소피드'], views:0, likes:0, comments:0, status:'published', source: user.isAnonymous ? 'anonymous_user' : 'user', authorId:user.uid, authorName: user.isAnonymous ? '익명 소소러' : (user.displayName || user.email || '소소킹 유저'), imageUrl: clean(input.imageUrl || '', 500), topComment:'', createdAt: serverTimestamp(), createdAtMs: Date.now(), updatedAt: serverTimestamp() };
   const ref = await addDoc(collection(db, 'soso_feed_posts'), payload);
   return { id: ref.id, ...normalizePost(ref.id, payload) };
 }
