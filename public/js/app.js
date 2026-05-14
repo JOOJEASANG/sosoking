@@ -1,6 +1,6 @@
 import { initAuth, trackEvent, trackUser, db } from './firebase.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
-import { renderPredictHome } from './pages/predict-home.js';
+import { renderSosoHome } from './pages/soso-home.js';
 import { renderSosoFeed } from './pages/soso-feed-v2.js';
 import { renderPredictGuide } from './pages/predict-guide.js';
 import { renderPredictPolicy } from './pages/predict-policy.js';
@@ -52,7 +52,7 @@ function route() {
   window.scrollTo(0, 0);
   content.classList.remove('page-entering'); void content.offsetWidth; content.classList.add('page-entering');
   let pageName = 'home';
-  if (hash === '#/' || hash === '' || hash === '#') renderPredictHome(content);
+  if (hash === '#/' || hash === '' || hash === '#') renderSosoHome(content);
   else if (hash === '#/feed' || hash === '#/feed/top' || hash === '#/feed/new' || hash.startsWith('#/feed/')) { pageName = hash.startsWith('#/feed/') && !['#/feed/top','#/feed/new'].includes(hash) ? 'soso_feed_detail' : 'soso_feed'; renderSosoFeed(content); }
   else if (hash === '#/account') { pageName = 'account'; renderAccount(content); }
   else if (hash.startsWith('#/policy/')) { pageName = 'policy_' + hash.replace('#/policy/', ''); renderPredictPolicy(content, hash.replace('#/policy/', '')); }
@@ -60,7 +60,7 @@ function route() {
   else if (hash === '#/feedback') { pageName = 'feedback'; renderFeedback(content); }
   else if (hash === '#/login') { pageName = 'login'; renderAuth(content); }
   else if (LEGACY_ROUTES.includes(hash) || LEGACY_PREFIXES.some(prefix => hash.startsWith(prefix))) { pageName = 'legacy_redirect'; location.hash = '#/'; return; }
-  else renderPredictHome(content);
+  else renderSosoHome(content);
   trackEvent('page_view', { page_name: pageName, page_path: hash });
   renderNav();
 }
