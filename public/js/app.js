@@ -17,14 +17,8 @@ const LEGACY_ROUTES = ['#/town', '#/case-quest', '#/topics', '#/submit-topic', '
 const SOSO_FEED_REDIRECT_PREFIXES = ['#/predict', '#/ranking', '#/history'];
 let authReady = false;
 
-function shouldRedirectToFeed(hash) {
-  return SOSO_FEED_REDIRECT_PREFIXES.some(route => hash === route || hash.startsWith(`${route}/`));
-}
-
-function redirectToFeed() {
-  history.replaceState(null, '', `${location.pathname}${location.search}#/feed`);
-  route();
-}
+function shouldRedirectToFeed(hash) { return SOSO_FEED_REDIRECT_PREFIXES.some(route => hash === route || hash.startsWith(`${route}/`)); }
+function redirectToFeed() { history.replaceState(null, '', `${location.pathname}${location.search}#/feed`); route(); }
 
 function loadSosoStyles() {
   [
@@ -41,6 +35,16 @@ function loadSosoStyles() {
     link.href = href;
     document.head.appendChild(link);
   });
+}
+
+async function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  try {
+    const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+    registration.update?.();
+  } catch (error) {
+    console.warn('서비스워커 등록 실패:', error);
+  }
 }
 
 function updatePwaInstallButton() {
@@ -107,14 +111,8 @@ function renderFallback(content, error) {
 }
 
 window.addEventListener('hashchange', route);
-window.addEventListener('error', event => {
-  const content = document.getElementById('page-content');
-  if (content && !content.innerHTML.trim()) renderFallback(content, event.error || event.message);
-});
-window.addEventListener('unhandledrejection', event => {
-  const content = document.getElementById('page-content');
-  if (content && !content.innerHTML.trim()) renderFallback(content, event.reason || event);
-});
+window.addEventListener('error', event => { const content = document.getElementById('page-content'); if (content && !content.innerHTML.trim()) renderFallback(content, event.error || event.message); });
+window.addEventListener('unhandledrejection', event => { const content = document.getElementById('page-content'); if (content && !content.innerHTML.trim()) renderFallback(content, event.reason || event); });
 
 window._pwaPromptEvent = null;
 if (typeof window._pwaInstall !== 'function') {
@@ -130,7 +128,6 @@ if (typeof window._pwaInstall !== 'function') {
 }
 window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); window._pwaPromptEvent = e; updatePwaInstallButton(); document.dispatchEvent(new Event('pwa-installable')); });
 window.addEventListener('appinstalled', () => { window._pwaPromptEvent = null; updatePwaInstallButton(); document.dispatchEvent(new Event('pwa-installed')); });
-
 document.addEventListener('visibilitychange', updatePwaInstallButton);
 
 async function injectSeoMeta() {
@@ -146,6 +143,7 @@ async function injectSeoMeta() {
 function boot() {
   try { initTheme(); } catch (error) { console.warn('테마 초기화 실패:', error); }
   try { loadSosoStyles(); } catch (error) { console.warn('스타일 로드 실패:', error); }
+  registerServiceWorker();
   try { renderFooter(); } catch (error) { console.warn('푸터 렌더링 실패:', error); }
   updatePwaInstallButton();
   route();
