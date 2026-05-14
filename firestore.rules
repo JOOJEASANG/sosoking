@@ -128,6 +128,13 @@ service cloud.firestore {
         && request.resource.data.createdAtMs is int;
     }
 
+    function isCommentReactionUpdate() {
+      return request.auth != null
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes', 'reactions'])
+        && request.resource.data.likes == resource.data.likes + 1
+        && request.resource.data.reactions is map;
+    }
+
     function validFeedVoter(voterId) {
       return request.auth != null
         && voterId == request.auth.uid
@@ -202,7 +209,8 @@ service cloud.firestore {
       match /comments/{commentId} {
         allow read: if get(/databases/$(database)/documents/soso_feed_posts/$(postId)).data.status == 'published' || isAdmin();
         allow create: if validFeedComment();
-        allow update, delete: if isAdmin();
+        allow update: if isAdmin() || isCommentReactionUpdate();
+        allow delete: if isAdmin();
       }
       match /voters/{voterId} {
         allow read: if request.auth != null && voterId == request.auth.uid;
