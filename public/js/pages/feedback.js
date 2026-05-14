@@ -21,7 +21,7 @@ export function renderFeedback(container) {
         <div class="feedback-info-card">
           <b>이런 의견을 보내주세요</b>
           <div><span>🐛</span><p>화면 깨짐, 저장 실패, 로그인 문제</p></div>
-          <div><span>💡</span><p>예측판·소소피드 기능 아이디어</p></div>
+          <div><span>💡</span><p>소소피드, 검색, 만들기, 미친작명소, 역할극 아이디어</p></div>
           <div><span>🎨</span><p>디자인, 문구, 이용 흐름 개선점</p></div>
         </div>
         <form class="feedback-card" id="feedback-form">
@@ -33,8 +33,8 @@ export function renderFeedback(container) {
             <button type="button" class="cat-pill" data-cat="기타">💬 기타</button>
           </div>
 
-          <label class="form-label">닉네임 <span class="optional">선택</span></label>
-          <input type="text" class="form-input" id="fb-nickname" placeholder="익명으로 전달됩니다" maxlength="20">
+          <label class="form-label">답변 받을 이메일 <span class="optional">선택</span></label>
+          <input type="email" class="form-input" id="fb-email" placeholder="선택 입력입니다" maxlength="120" autocomplete="email">
 
           <label class="form-label">의견 내용</label>
           <textarea class="form-textarea" id="fb-content" placeholder="불편한 점, 개선 아이디어, 칭찬을 자유롭게 적어주세요." maxlength="500"></textarea>
@@ -67,8 +67,11 @@ export function renderFeedback(container) {
 
   container.querySelector('#feedback-form').addEventListener('submit', async (event) => {
     event.preventDefault();
+    const user = auth.currentUser;
+    if (!user) { showToast('로그인 상태 확인 후 다시 시도해주세요.', 'error'); return; }
     const content = textarea.value.trim();
     if (!content) { showToast('의견 내용을 입력해주세요.', 'error'); return; }
+    if (content.length < 2) { showToast('의견 내용을 2자 이상 입력해주세요.', 'error'); return; }
     if (content.length > 500) { showToast('500자 이내로 입력해주세요.', 'error'); return; }
 
     const ratioKey = 'fb_last_sent';
@@ -86,10 +89,11 @@ export function renderFeedback(container) {
       await addDoc(collection(db, 'feedback'), {
         category,
         content,
-        nickname: container.querySelector('#fb-nickname').value.trim() || '익명',
-        userId: auth.currentUser?.uid || null,
+        email: container.querySelector('#fb-email').value.trim().slice(0, 120),
+        userId: user.uid,
+        status: 'open',
         createdAt: serverTimestamp(),
-        status: 'new'
+        createdAtMs: Date.now()
       });
       localStorage.setItem(ratioKey, String(Date.now()));
       showToast('의견을 보내주셔서 감사합니다. 서비스 개선에 반영하겠습니다.', 'success');
