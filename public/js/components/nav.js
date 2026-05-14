@@ -25,10 +25,10 @@ export function renderNav() {
   nav.id = 'bottom-nav';
   nav.innerHTML = `
     <a href="#/" class="nav-item${hash === '#/' || hash === '#' || hash === '' ? ' active' : ''}"><span class="nav-icon">🏠</span><span class="nav-label">홈</span></a>
-    <a href="#/feed" class="nav-item${hash.startsWith('#/feed') ? ' active' : ''}"><span class="nav-icon">✨</span><span class="nav-label">소소피드</span></a>
-    <a href="#/predict" class="nav-item nav-cta${hash.startsWith('#/predict') ? ' active' : ''}"><span class="nav-icon">🔮</span><span class="nav-label">예측판</span></a>
-    <a href="#/ranking" class="nav-item${hash === '#/ranking' ? ' active' : ''}"><span class="nav-icon">👑</span><span class="nav-label">랭킹</span></a>
-    ${isAnon ? `<button class="nav-item" id="nav-anon-btn" type="button"><span class="nav-icon">⚙️</span><span class="nav-label">설정</span></button>` : `<button class="nav-item${hash === '#/account' ? ' active' : ''}" id="nav-account-btn" type="button"><span class="nav-icon">🔓</span><span class="nav-label">계정</span></button>`}
+    <a href="#/feed" class="nav-item${hash === '#/feed' || (hash.startsWith('#/feed/') && !['#/feed/new', '#/feed/top'].includes(hash)) ? ' active' : ''}"><span class="nav-icon">✨</span><span class="nav-label">피드</span></a>
+    <a href="#/feed/new" class="nav-item nav-cta${hash === '#/feed/new' ? ' active' : ''}"><span class="nav-icon">➕</span><span class="nav-label">만들기</span></a>
+    <a href="#/feed/top" class="nav-item${hash === '#/feed/top' ? ' active' : ''}"><span class="nav-icon">🔥</span><span class="nav-label">인기</span></a>
+    ${isAnon ? `<button class="nav-item" id="nav-anon-btn" type="button"><span class="nav-icon">👤</span><span class="nav-label">계정</span></button>` : `<button class="nav-item${hash === '#/account' ? ' active' : ''}" id="nav-account-btn" type="button"><span class="nav-icon">👤</span><span class="nav-label">계정</span></button>`}
   `;
   document.body.appendChild(nav);
   if (!isAnon) nav.querySelector('#nav-account-btn')?.addEventListener('click', async () => showAccountMenu(user, await getNickname(user.uid)));
