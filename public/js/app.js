@@ -14,6 +14,7 @@ import { renderNav } from './components/nav.js';
 const LEGACY_PREFIXES = ['#/hunt', '#/topic/', '#/debate/', '#/join/', '#/join-team/'];
 const LEGACY_ROUTES = ['#/town', '#/case-quest', '#/topics', '#/submit-topic', '#/court', '#/my-history'];
 const SOSO_FEED_REDIRECT_PREFIXES = ['#/predict', '#/ranking', '#/history'];
+let authReady = false;
 
 function shouldRedirectToFeed(hash) {
   return SOSO_FEED_REDIRECT_PREFIXES.some(route => hash === route || hash.startsWith(`${route}/`));
@@ -48,22 +49,51 @@ function route() {
   if (!content) return;
   if (shouldRedirectToFeed(hash)) { redirectToFeed(); return; }
   window.scrollTo(0, 0);
-  content.classList.remove('page-entering'); void content.offsetWidth; content.classList.add('page-entering');
+  content.classList.remove('page-entering');
+  void content.offsetWidth;
+  content.classList.add('page-entering');
   let pageName = 'home';
-  if (hash === '#/' || hash === '' || hash === '#') renderSosoHome(content);
-  else if (hash === '#/feed' || hash === '#/feed/top' || hash === '#/feed/new' || hash.startsWith('#/feed/')) { pageName = hash.startsWith('#/feed/') && !['#/feed/top','#/feed/new'].includes(hash) ? 'soso_feed_detail' : 'soso_feed'; renderSosoFeed(content); }
-  else if (hash === '#/account') { pageName = 'account'; renderAccount(content); }
-  else if (hash.startsWith('#/policy/')) { pageName = 'policy_' + hash.replace('#/policy/', ''); renderPredictPolicy(content, hash.replace('#/policy/', '')); }
-  else if (hash === '#/guide') { pageName = 'guide'; renderGuide(content); }
-  else if (hash === '#/feedback') { pageName = 'feedback'; renderFeedback(content); }
-  else if (hash === '#/login') { pageName = 'login'; renderAuth(content); }
-  else if (LEGACY_ROUTES.includes(hash) || LEGACY_PREFIXES.some(prefix => hash.startsWith(prefix))) { pageName = 'legacy_redirect'; location.hash = '#/'; return; }
-  else renderSosoHome(content);
-  trackEvent('page_view', { page_name: pageName, page_path: hash });
-  renderNav();
+  try {
+    if (hash === '#/' || hash === '' || hash === '#') renderSosoHome(content);
+    else if (hash === '#/feed' || hash === '#/feed/top' || hash === '#/feed/new' || hash.startsWith('#/feed/')) { pageName = hash.startsWith('#/feed/') && !['#/feed/top','#/feed/new'].includes(hash) ? 'soso_feed_detail' : 'soso_feed'; renderSosoFeed(content); }
+    else if (hash === '#/account') { pageName = 'account'; renderAccount(content); }
+    else if (hash.startsWith('#/policy/')) { pageName = 'policy_' + hash.replace('#/policy/', ''); renderPredictPolicy(content, hash.replace('#/policy/', '')); }
+    else if (hash === '#/guide') { pageName = 'guide'; renderGuide(content); }
+    else if (hash === '#/feedback') { pageName = 'feedback'; renderFeedback(content); }
+    else if (hash === '#/login') { pageName = 'login'; renderAuth(content); }
+    else if (LEGACY_ROUTES.includes(hash) || LEGACY_PREFIXES.some(prefix => hash.startsWith(prefix))) { pageName = 'legacy_redirect'; location.hash = '#/'; return; }
+    else renderSosoHome(content);
+    trackEvent('page_view', { page_name: pageName, page_path: hash });
+    renderNav();
+  } catch (error) {
+    console.error('화면 렌더링 실패:', error);
+    renderFallback(content, error);
+  }
+}
+
+function renderFallback(content, error) {
+  content.innerHTML = `
+    <main style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:32px;font-family:'Noto Sans KR',system-ui,sans-serif;background:#f5f7fb;color:#121724;">
+      <section style="max-width:420px;width:100%;padding:26px;border-radius:28px;background:#fff;box-shadow:0 18px 60px rgba(55,90,170,.14);text-align:center;">
+        <img src="/logo.svg" alt="소소킹" style="width:72px;height:72px;border-radius:22px;margin-bottom:14px;">
+        <h1 style="margin:0 0 8px;font-size:24px;letter-spacing:-.04em;">소소킹을 불러오지 못했습니다</h1>
+        <p style="margin:0 0 16px;color:#697386;line-height:1.65;font-size:14px;">새로고침 후에도 계속 보이면 잠시 후 다시 접속해주세요.</p>
+        <a href="#/" onclick="location.reload()" style="display:inline-flex;justify-content:center;border-radius:16px;padding:12px 18px;background:linear-gradient(135deg,#4f7cff,#7c5cff);color:#fff;text-decoration:none;font-weight:900;">다시 불러오기</a>
+        <small style="display:block;margin-top:12px;color:#9aa4b5;word-break:break-all;">${String(error?.message || '').slice(0, 120)}</small>
+      </section>
+    </main>`;
 }
 
 window.addEventListener('hashchange', route);
+window.addEventListener('error', event => {
+  const content = document.getElementById('page-content');
+  if (content && !content.innerHTML.trim()) renderFallback(content, event.error || event.message);
+});
+window.addEventListener('unhandledrejection', event => {
+  const content = document.getElementById('page-content');
+  if (content && !content.innerHTML.trim()) renderFallback(content, event.reason || event);
+});
+
 window._pwaPromptEvent = null;
 if (typeof window._pwaInstall !== 'function') {
   window._pwaInstall = async () => {
@@ -83,8 +113,26 @@ async function injectSeoMeta() {
     const snap = await getDoc(doc(db, 'site_settings', 'config'));
     if (!snap.exists()) return;
     const seo = snap.data().seoVerification || {};
-    if (seo.google) { const m = document.createElement('meta'); m.name = 'google-site-verification'; m.content = seo.google; document.head.appendChild(m); }
-    if (seo.naver) { const m = document.createElement('meta'); m.name = 'naver-site-verification'; m.content = seo.naver; document.head.appendChild(m); }
+    if (seo.google) { const meta = document.createElement('meta'); meta.name = 'google-site-verification'; meta.content = seo.google; document.head.appendChild(meta); }
+    if (seo.naver) { const meta = document.createElement('meta'); meta.name = 'naver-site-verification'; meta.content = seo.naver; document.head.appendChild(meta); }
   } catch {}
 }
-(async () => { initTheme(); loadSosoStyles(); injectSeoMeta(); const user = await initAuth(); if (user?.uid) trackUser(user.uid); renderFooter(); route(); })();
+
+function boot() {
+  try { initTheme(); } catch (error) { console.warn('테마 초기화 실패:', error); }
+  try { loadSosoStyles(); } catch (error) { console.warn('스타일 로드 실패:', error); }
+  try { renderFooter(); } catch (error) { console.warn('푸터 렌더링 실패:', error); }
+  route();
+  injectSeoMeta();
+  initAuth().then(user => {
+    authReady = true;
+    if (user?.uid) trackUser(user.uid);
+    renderNav();
+  }).catch(error => {
+    authReady = true;
+    console.warn('인증 초기화 실패:', error);
+    renderNav();
+  });
+}
+
+boot();
