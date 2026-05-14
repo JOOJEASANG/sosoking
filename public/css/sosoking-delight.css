@@ -25,6 +25,7 @@ body::after { width: 340px; height: 340px; right: -170px; top: 8vh; background: 
 .soso-doc-page,
 .feedback-page,
 .auth-page,
+.auth-page-v2,
 .simple-page {
   background:
     radial-gradient(circle at 9% 3%, rgba(255,232,92,.36), transparent 28%),
@@ -44,13 +45,17 @@ body::after { width: 340px; height: 340px; right: -170px; top: 8vh; background: 
 .mission-card-live,
 .mission-mini-card,
 .mission-note,
+.account-hero-copy,
 .account-summary-card,
 .account-card,
+.auth-hero-card,
+.auth-card-v2,
 .side-card,
 .feedback-card,
 .feedback-info-card,
 .guide-card-clean,
-.soso-doc-card {
+.soso-doc-card,
+.doc-hero-copy {
   border: 1px solid rgba(79,124,255,.14) !important;
   background: var(--soso-panel) !important;
   box-shadow: var(--soso-pop-shadow) !important;
@@ -60,8 +65,11 @@ body::after { width: 340px; height: 340px; right: -170px; top: 8vh; background: 
 .write-card,
 .mission-copy,
 .account-card,
+.account-hero-copy,
+.auth-card-v2,
 .guide-card-clean,
-.soso-doc-card {
+.soso-doc-card,
+.doc-hero-copy {
   position: relative;
   overflow: hidden;
 }
@@ -69,8 +77,10 @@ body::after { width: 340px; height: 340px; right: -170px; top: 8vh; background: 
 .write-card::after,
 .mission-copy::after,
 .account-card::after,
+.auth-card-v2::after,
 .guide-card-clean::after,
-.soso-doc-card::after {
+.soso-doc-card::after,
+.doc-hero-copy::after {
   content: 'SOSO';
   position: absolute;
   right: -18px;
@@ -87,6 +97,7 @@ body::after { width: 340px; height: 340px; right: -170px; top: 8vh; background: 
 .feed-write-header h1,
 .mission-copy h1,
 .account-hero-copy h1,
+.auth-hero-card h1,
 .guide-card-clean h1,
 .soso-doc-card h1,
 .doc-hero-copy h1 {
@@ -97,13 +108,15 @@ body::after { width: 340px; height: 340px; right: -170px; top: 8vh; background: 
 .feed-hero-copy p,
 .mission-copy p,
 .account-hero-copy p,
+.auth-hero-card p,
 .feed-card p,
 .recent-v4-card p,
 .mode-v4-card span,
 .write-status,
 .side-card p,
 .guide-card-clean p,
-.soso-doc-card p {
+.soso-doc-card p,
+.doc-hero-copy p {
   color: #667085 !important;
 }
 
@@ -111,9 +124,11 @@ body::after { width: 340px; height: 340px; right: -170px; top: 8vh; background: 
 .feed-participate,
 .write-submit,
 .mission-primary,
+.account-summary-card a,
 .account-card button:not(.plain),
 .feedback-submit,
-.auth-form-v2 > button {
+.auth-form-v2 > button,
+.modal-save-btn {
   background: var(--soso-candy) !important;
   color: #fff !important;
   box-shadow: 0 18px 46px rgba(255,92,138,.25) !important;
@@ -124,14 +139,16 @@ body::after { width: 340px; height: 340px; right: -170px; top: 8vh; background: 
 .write-submit:hover,
 .mission-primary:hover,
 .account-card button:hover,
-.feedback-submit:hover {
+.feedback-submit:hover,
+.auth-form-v2 > button:hover {
   transform: translateY(-2px);
 }
 
 .feed-tabs-inline a.active,
 .feed-filter-chips button.active,
 .write-tabs button.active,
-.category-grid button.active {
+.category-grid button.active,
+.auth-tabs-v2 button.active {
   background: var(--soso-candy) !important;
   color: #fff !important;
   border-color: transparent !important;
@@ -144,13 +161,18 @@ body::after { width: 340px; height: 340px; right: -170px; top: 8vh; background: 
 .mission-mini-card,
 .account-card,
 .write-card,
-.write-preview {
+.write-preview,
+.auth-card-v2,
+.guide-card-clean,
+.soso-doc-card {
   transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
 }
 .feed-card:hover,
 .recent-v4-card:hover,
 .mode-v4-card:hover,
-.mission-mini-card:hover {
+.mission-mini-card:hover,
+.account-card:hover,
+.guide-card-clean:hover {
   transform: translateY(-5px) !important;
   border-color: rgba(255,122,89,.28) !important;
   box-shadow: 0 32px 96px rgba(55,90,170,.18) !important;
@@ -163,7 +185,8 @@ body::after { width: 340px; height: 340px; right: -170px; top: 8vh; background: 
 .section-head span,
 .account-card-head span,
 .doc-hero-copy span,
-.guide-title-row span {
+.guide-title-row span,
+.auth-hero-card > span {
   background: rgba(255,232,92,.55) !important;
   color: #1b2250 !important;
   border: 1px solid rgba(255,184,0,.24) !important;
@@ -174,7 +197,9 @@ body::after { width: 340px; height: 340px; right: -170px; top: 8vh; background: 
 .extra-panel,
 .upload-box,
 .comment-form,
-.account-notice {
+.account-notice,
+.password-box,
+.auth-tabs-v2 {
   background: linear-gradient(135deg, rgba(255,255,255,.78), rgba(245,248,255,.78)) !important;
   border: 1px solid rgba(79,124,255,.13) !important;
   box-shadow: 0 12px 34px rgba(55,90,170,.08) !important;
@@ -186,7 +211,8 @@ body::after { width: 340px; height: 340px; right: -170px; top: 8vh; background: 
 .write-card select,
 .account-card input,
 .feedback-card input,
-.feedback-card textarea {
+.feedback-card textarea,
+.auth-form-v2 input {
   background: rgba(255,255,255,.86) !important;
   border: 1px solid rgba(79,124,255,.14) !important;
   color: #151a33 !important;
@@ -196,18 +222,21 @@ body::after { width: 340px; height: 340px; right: -170px; top: 8vh; background: 
 .category-grid button,
 .write-tabs button,
 .feed-filter-chips button,
-.feed-tabs-inline a {
+.feed-tabs-inline a,
+.auth-tabs-v2 button {
   transition: transform .16s ease, box-shadow .16s ease, background .16s ease;
 }
 .category-grid button:hover,
 .write-tabs button:hover,
 .feed-filter-chips button:hover,
-.feed-tabs-inline a:hover {
+.feed-tabs-inline a:hover,
+.auth-tabs-v2 button:hover {
   transform: translateY(-2px);
 }
 
 .mission-card-live,
-.home-v4-live {
+.home-v4-live,
+.auth-hero-card {
   background:
     radial-gradient(circle at 15% 8%, rgba(255,232,92,.16), transparent 26%),
     linear-gradient(145deg, #101832 0%, #243f91 55%, #7c5cff 100%) !important;
@@ -237,11 +266,181 @@ body::after { width: 340px; height: 340px; right: -170px; top: 8vh; background: 
   50% { transform: translateY(-3px); }
 }
 
+/* Account / auth / document dashboard polish */
+.account-page,
+.auth-page-v2,
+.soso-doc-page,
+.feedback-page {
+  padding-top: 26px !important;
+}
+.account-hero,
+.account-layout,
+.auth-shell,
+.doc-hero,
+.guide-card-clean,
+.soso-doc-card,
+.feedback-layout {
+  width: min(1540px, calc(100vw - 72px)) !important;
+  max-width: min(1540px, calc(100vw - 72px)) !important;
+}
+.account-hero {
+  grid-template-columns: 54px minmax(0, 1fr) 90px !important;
+  gap: 16px !important;
+}
+.account-hero-copy,
+.doc-hero-copy {
+  border-radius: 32px !important;
+  min-height: 118px;
+  padding: 22px !important;
+  background: linear-gradient(118deg, rgba(255,255,255,.96), rgba(244,239,255,.90) 50%, rgba(255,244,236,.94)) !important;
+}
+.account-hero-copy img,
+.doc-hero-copy img,
+.auth-hero-card img {
+  box-shadow: 0 14px 32px rgba(79,124,255,.20) !important;
+}
+.account-layout {
+  grid-template-columns: 340px minmax(0, 1fr) !important;
+  gap: 20px !important;
+}
+.account-summary-card,
+.account-card {
+  border-radius: 32px !important;
+}
+.account-summary-card {
+  top: 98px !important;
+}
+.account-panels {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+}
+.account-card.delete-zone,
+.account-card.install,
+.account-card.danger:last-child {
+  grid-column: span 2;
+}
+.account-card-head h2 {
+  color: #10172f !important;
+  font-size: 23px !important;
+  letter-spacing: -.06em !important;
+}
+.account-card-head p,
+.account-summary-card p {
+  color: #667085 !important;
+  font-weight: 800 !important;
+}
+.account-card input {
+  min-height: 50px !important;
+  border-radius: 18px !important;
+}
+.account-card button,
+.account-summary-card a {
+  border-radius: 999px !important;
+}
+.auth-shell {
+  grid-template-columns: 54px minmax(0, 1fr) 460px !important;
+  gap: 18px !important;
+}
+.auth-hero-card {
+  min-height: 620px !important;
+  border-radius: 36px !important;
+  padding: 42px !important;
+  color: #fff !important;
+  box-shadow: 0 26px 88px rgba(55,90,170,.15) !important;
+}
+.auth-hero-card h1 {
+  color: #fff !important;
+  font-size: clamp(48px, 4.8vw, 72px) !important;
+  line-height: 1.03 !important;
+}
+.auth-hero-card p {
+  color: rgba(255,255,255,.78) !important;
+  font-weight: 800 !important;
+}
+.auth-card-v2 {
+  border-radius: 34px !important;
+  padding: 24px !important;
+}
+.google-btn-v2,
+.guest-btn-v2,
+.auth-form-v2 input,
+.auth-form-v2 > button {
+  border-radius: 999px !important;
+}
+.auth-divider-v2 span,
+.auth-form-v2 label,
+.password-box p {
+  color: #667085 !important;
+  font-weight: 900 !important;
+}
+.doc-hero {
+  grid-template-columns: 54px minmax(0, 1fr) 90px !important;
+  gap: 16px !important;
+}
+.soso-doc-card,
+.guide-card-clean {
+  border-radius: 34px !important;
+  padding: 26px !important;
+}
+.doc-section h2,
+.guide-title-row h2 {
+  color: #10172f !important;
+  font-size: 22px !important;
+  letter-spacing: -.06em !important;
+}
+.doc-section p,
+.guide-card-clean p,
+.clean-steps span {
+  color: #667085 !important;
+  font-weight: 800 !important;
+}
+.clean-steps div {
+  border-radius: 24px !important;
+  background: linear-gradient(135deg, rgba(255,255,255,.86), rgba(245,248,255,.78)) !important;
+}
+
 @media (min-width: 1080px) {
   .feed-card h3 { font-size: 21px !important; }
   .write-card { padding: 24px !important; }
   .write-preview { border-radius: 34px !important; }
   .mission-mini-card { min-height: 210px; }
+}
+
+@media (max-width: 980px) {
+  .account-hero,
+  .account-layout,
+  .auth-shell,
+  .doc-hero,
+  .guide-card-clean,
+  .soso-doc-card,
+  .feedback-layout {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  .account-hero,
+  .auth-shell,
+  .doc-hero {
+    grid-template-columns: 1fr !important;
+  }
+  .account-layout,
+  .account-panels {
+    grid-template-columns: 1fr !important;
+  }
+  .account-card.delete-zone,
+  .account-card.install,
+  .account-card.danger:last-child {
+    grid-column: auto;
+  }
+  .account-summary-card {
+    position: static !important;
+  }
+  .auth-hero-card {
+    min-height: auto !important;
+    padding: 28px !important;
+  }
+  .auth-hero-card h1 {
+    font-size: 42px !important;
+  }
 }
 
 @media (max-width: 680px) {
@@ -251,11 +450,14 @@ body::after { width: 340px; height: 340px; right: -170px; top: 8vh; background: 
   .soso-doc-page,
   .feedback-page,
   .auth-page,
+  .auth-page-v2,
   .simple-page { background: linear-gradient(180deg, #fffaf0 0%, #f5f7ff 100%) !important; }
   .feed-hero-copy::after,
   .write-card::after,
   .mission-copy::after,
-  .account-card::after { display: none; }
+  .account-card::after,
+  .auth-card-v2::after,
+  .doc-hero-copy::after { display: none; }
 }
 
 [data-theme="dark"] .soso-feed-page,
@@ -264,6 +466,7 @@ body::after { width: 340px; height: 340px; right: -170px; top: 8vh; background: 
 [data-theme="dark"] .soso-doc-page,
 [data-theme="dark"] .feedback-page,
 [data-theme="dark"] .auth-page,
+[data-theme="dark"] .auth-page-v2,
 [data-theme="dark"] .simple-page {
   background: radial-gradient(circle at 12% -4%, rgba(124,92,255,.18), transparent 30%), #070b13 !important;
 }
@@ -278,11 +481,14 @@ body::after { width: 340px; height: 340px; right: -170px; top: 8vh; background: 
 [data-theme="dark"] .mission-card-live,
 [data-theme="dark"] .mission-mini-card,
 [data-theme="dark"] .mission-note,
+[data-theme="dark"] .account-hero-copy,
 [data-theme="dark"] .account-summary-card,
 [data-theme="dark"] .account-card,
+[data-theme="dark"] .auth-card-v2,
 [data-theme="dark"] .side-card,
 [data-theme="dark"] .guide-card-clean,
-[data-theme="dark"] .soso-doc-card {
+[data-theme="dark"] .soso-doc-card,
+[data-theme="dark"] .doc-hero-copy {
   background: rgba(16,23,34,.88) !important;
   box-shadow: none !important;
 }
@@ -290,12 +496,30 @@ body::after { width: 340px; height: 340px; right: -170px; top: 8vh; background: 
 [data-theme="dark"] .feed-write-header h1,
 [data-theme="dark"] .mission-copy h1,
 [data-theme="dark"] .account-hero-copy h1,
+[data-theme="dark"] .account-card-head h2,
 [data-theme="dark"] .guide-card-clean h1,
 [data-theme="dark"] .soso-doc-card h1,
-[data-theme="dark"] .doc-hero-copy h1 { color: #f5f7fb !important; }
+[data-theme="dark"] .doc-hero-copy h1,
+[data-theme="dark"] .doc-section h2,
+[data-theme="dark"] .guide-title-row h2 { color: #f5f7fb !important; }
 [data-theme="dark"] .feed-hero-copy p,
 [data-theme="dark"] .mission-copy p,
 [data-theme="dark"] .account-hero-copy p,
+[data-theme="dark"] .account-card-head p,
 [data-theme="dark"] .feed-card p,
 [data-theme="dark"] .write-status,
-[data-theme="dark"] .side-card p { color: #a8b3c7 !important; }
+[data-theme="dark"] .side-card p,
+[data-theme="dark"] .doc-section p,
+[data-theme="dark"] .guide-card-clean p { color: #a8b3c7 !important; }
+[data-theme="dark"] .feed-search-box input,
+[data-theme="dark"] .write-card input,
+[data-theme="dark"] .write-card textarea,
+[data-theme="dark"] .write-card select,
+[data-theme="dark"] .account-card input,
+[data-theme="dark"] .auth-form-v2 input,
+[data-theme="dark"] .feedback-card input,
+[data-theme="dark"] .feedback-card textarea {
+  background: rgba(255,255,255,.07) !important;
+  color: #f5f7fb !important;
+  border-color: rgba(255,255,255,.12) !important;
+}
