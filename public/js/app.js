@@ -1,7 +1,7 @@
 import { initAuth, trackEvent, trackUser, db } from './firebase.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { renderPredictHome } from './pages/predict-home.js';
-import { renderSosoFeed } from './pages/soso-feed.js';
+import { renderSosoFeed } from './pages/soso-feed-v2.js';
 import { renderPredictGuide } from './pages/predict-guide.js';
 import { renderPredictPolicy } from './pages/predict-policy.js';
 import { renderFeedback } from './pages/feedback.js';
