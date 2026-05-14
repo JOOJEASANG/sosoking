@@ -19,7 +19,7 @@ import { getDownloadURL, ref, uploadBytesResumable } from 'https://www.gstatic.c
 export const FALLBACK_FEED_ITEMS = [];
 const FALLBACK_COMMENTS = [];
 
-const BADGE_BY_TYPE = { '사진/짤':'📸', '짧은 글':'✍️', '질문':'❓', '사진 제목학원':'📸', '생각 갈림':'💬', '소소한 논쟁':'🤔', '생활 매너':'🍽️' };
+const BADGE_BY_TYPE = { '사진/짤':'📸', '짧은 글':'✍️', '질문':'❓', '사진 제목학원':'📸', '밸런스게임':'⚖️', '소소토론':'💬', '퀴즈':'🧠', 'AI놀이':'🤖', '생각 갈림':'💬', '소소한 논쟁':'🤔', '생활 매너':'🍽️' };
 
 function clean(value, max = 500) { return String(value || '').replace(/[<>]/g, '').replace(/\s{2,}/g, ' ').trim().slice(0, max); }
 function safeVoteKey(option) { return clean(option, 40).replace(/[.~*/\[\]]/g, '_') || 'option'; }
