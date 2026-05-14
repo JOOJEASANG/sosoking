@@ -2,7 +2,7 @@ import { initAuth, trackEvent, trackUser, db } from './firebase.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { renderSosoHome } from './pages/soso-home.js';
 import { renderSosoFeed } from './pages/soso-feed-v2.js';
-import { renderPredictGuide } from './pages/predict-guide.js';
+import { renderGuide } from './pages/guide.js';
 import { renderPredictPolicy } from './pages/predict-policy.js';
 import { renderFeedback } from './pages/feedback.js';
 import { renderAuth } from './pages/auth.js';
@@ -24,10 +24,8 @@ function redirectToFeed() {
   route();
 }
 
-function loadPolishStyle() {
+function loadSosoStyles() {
   [
-    ['sosoking-polish-style','/css/predict-polish.css'],
-    ['sosoking-detail-polish-style','/css/predict-detail-polish.css'],
     ['sosoking-layout-comfort-style','/css/layout-comfort.css'],
     ['sosoking-feed-style','/css/soso-feed.css'],
     ['sosoking-design-refresh-style','/css/sosoking-design-refresh.css'],
@@ -56,7 +54,7 @@ function route() {
   else if (hash === '#/feed' || hash === '#/feed/top' || hash === '#/feed/new' || hash.startsWith('#/feed/')) { pageName = hash.startsWith('#/feed/') && !['#/feed/top','#/feed/new'].includes(hash) ? 'soso_feed_detail' : 'soso_feed'; renderSosoFeed(content); }
   else if (hash === '#/account') { pageName = 'account'; renderAccount(content); }
   else if (hash.startsWith('#/policy/')) { pageName = 'policy_' + hash.replace('#/policy/', ''); renderPredictPolicy(content, hash.replace('#/policy/', '')); }
-  else if (hash === '#/guide') { pageName = 'guide'; renderPredictGuide(content); }
+  else if (hash === '#/guide') { pageName = 'guide'; renderGuide(content); }
   else if (hash === '#/feedback') { pageName = 'feedback'; renderFeedback(content); }
   else if (hash === '#/login') { pageName = 'login'; renderAuth(content); }
   else if (LEGACY_ROUTES.includes(hash) || LEGACY_PREFIXES.some(prefix => hash.startsWith(prefix))) { pageName = 'legacy_redirect'; location.hash = '#/'; return; }
@@ -89,4 +87,4 @@ async function injectSeoMeta() {
     if (seo.naver) { const m = document.createElement('meta'); m.name = 'naver-site-verification'; m.content = seo.naver; document.head.appendChild(m); }
   } catch {}
 }
-(async () => { initTheme(); loadPolishStyle(); injectSeoMeta(); const user = await initAuth(); if (user?.uid) trackUser(user.uid); renderFooter(); route(); })();
+(async () => { initTheme(); loadSosoStyles(); injectSeoMeta(); const user = await initAuth(); if (user?.uid) trackUser(user.uid); renderFooter(); route(); })();
