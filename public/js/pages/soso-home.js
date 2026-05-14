@@ -5,84 +5,89 @@ export function renderSosoHome(container) {
   injectSosoStyle();
   injectHomeStyle();
   draw(container, []);
-  getFeedPosts({ pageSize: 4 }).then(items => draw(container, items || [])).catch(() => draw(container, []));
+  getFeedPosts({ pageSize: 6 }).then(items => draw(container, items || [])).catch(() => draw(container, []));
 }
 
 function draw(container, items = []) {
   container.innerHTML = `
-    <main class="predict-app soso-home-v3">
-      <section class="home-v3-hero">
-        <div class="home-v3-copy">
-          <div class="home-v3-brand"><img src="/logo.svg" alt="소소킹"><div><b>소소킹</b><small>사진 · 글 · 퀴즈 · 게임 피드</small></div></div>
-          <span class="home-v3-kicker">SOSO FEED PLAYGROUND</span>
-          <h1>심심할 때 여는<br><em>소소한 놀이터</em></h1>
-          <p>사진 제목학원, 밸런스게임, 소소토론, 퀴즈, AI놀이를 한 피드에서 올리고 고르고 댓글 다는 복합형 커뮤니티입니다.</p>
-          <div class="home-v3-actions"><a class="primary" href="#/feed/new">지금 만들기</a><a href="#/feed">피드 둘러보기</a></div>
-          <div class="home-v3-mini"><b>게임머니 없음</b><b>가벼운 투표</b><b>댓글 놀이</b><b>사진 업로드</b></div>
+    <main class="predict-app soso-home-v4">
+      <section class="home-v4-hero">
+        <div class="home-v4-stage">
+          <div class="home-v4-logo-pop"><img src="/logo.svg" alt="소소킹"><i>✨</i><i>🎮</i><i>💬</i></div>
+          <span class="home-v4-kicker">SOSOKING PLAY FEED</span>
+          <h1>재미, 정보, 투표, 역할극이<br><em>한 피드에 모이는 소소킹</em></h1>
+          <p>사진 제목학원, 밸런스게임, 퀴즈, 정보공유, AI 링크 요약, 릴레이소설, 막장드라마, 역할극까지 가볍게 올리고 같이 노는 커뮤니티입니다.</p>
+          <div class="home-v4-actions"><a class="primary" href="#/feed/new">소소피드 만들기</a><a href="#/feed">피드 구경하기</a><a href="#/mission">오늘의 미션</a><button type="button" id="home-install-btn">앱 설치</button></div>
+          <div class="home-v4-tags"><b>AI 요약</b><b>유튜브 링크</b><b>릴레이소설</b><b>역할극방</b><b>검색 가능</b></div>
         </div>
-        <div class="home-v3-phone" aria-label="소소피드 미리보기">
-          <div class="phone-top"><span>LIVE SOSO</span><b>오늘의 놀거리</b></div>
-          <article class="phone-card main"><i>📸</i><b>이 사진 제목 뭐가 제일 웃김?</b><p>월요일 아침 내 표정 vs 퇴근 1분 전</p><div><span style="--w:72%"></span></div></article>
-          <article class="phone-card"><i>⚖️</i><b>평생 하나만 먹는다면?</b><p>라면 · 치킨 · 떡볶이 · 댓글 선택</p></article>
-          <article class="phone-card"><i>🧠</i><b>센스 퀴즈</b><p>정답보다 댓글이 더 웃긴 판</p></article>
-        </div>
-      </section>
-
-      <section class="home-v3-mode-grid">
-        ${modeCard('📸','사진 제목학원','사진 한 장에 가장 웃긴 제목을 붙이고 투표받는 피드')}
-        ${modeCard('⚖️','밸런스게임','둘 중 하나를 고르고 댓글로 가볍게 싸우는 피드')}
-        ${modeCard('💬','소소토론','사소하지만 은근히 갈리는 주제를 올리는 피드')}
-        ${modeCard('🧠','퀴즈','문제 내고 선택지로 정답 또는 센스를 고르는 피드')}
-        ${modeCard('🤖','AI놀이','AI 문장, 상황극, 선택지를 가져와 같이 노는 피드')}
-      </section>
-
-      <section class="home-v3-flow">
-        <div class="section-head"><div><span>HOW TO PLAY</span><h2>소소킹 이용 흐름</h2></div><a href="#/guide">이용 안내</a></div>
-        <div class="flow-grid">
-          <article><b>1</b><h3>주제 고르기</h3><p>사진, 선택게임, 토론, 퀴즈, AI놀이 중 하나를 고릅니다.</p></article>
-          <article><b>2</b><h3>글·사진 올리기</h3><p>제목, 상황 설명, 질문, 선택지를 넣어 하나의 피드를 만듭니다.</p></article>
-          <article><b>3</b><h3>투표·댓글 받기</h3><p>사람들이 고르고, 웃고, 반박하고, 인기글로 올립니다.</p></article>
+        <div class="home-v4-live">
+          <div class="live-head"><span>LIVE BOARD</span><b>지금 만들 수 있는 것</b></div>
+          <article class="live-card hot"><i>🔗</i><div><b>정보공유</b><p>유용한 링크를 AI가 핵심만 요약</p></div></article>
+          <article class="live-card"><i>🎭</i><div><b>역할극방</b><p>등장인물을 고르거나 직접 역할 입력</p></div></article>
+          <article class="live-card"><i>📚</i><div><b>릴레이소설</b><p>아무나 언제든 다음 장면 이어쓰기</p></div></article>
+          <article class="live-card"><i>🎬</i><div><b>영상 리액션</b><p>유튜브 링크로 반응과 투표 받기</p></div></article>
         </div>
       </section>
 
-      <section class="home-v3-recent">
-        <div class="section-head"><div><span>RECENT SOSO</span><h2>최근 올라온 소소피드</h2></div><a href="#/feed">전체보기</a></div>
-        <div class="recent-v3-grid">${items.length ? items.map(card).join('') : emptyCard()}</div>
+      <section class="home-v4-quick-grid">
+        ${modeCard('😂','재미','사진 제목학원, 웃참, 댓글 배틀', '#/feed/new')}
+        ${modeCard('🎮','게임/투표','밸런스게임, 민심 투표, 선택지 배틀', '#/feed/new')}
+        ${modeCard('🧠','퀴즈','정답 퀴즈, 센스 퀴즈, 심리 테스트', '#/feed/new')}
+        ${modeCard('🎭','소설/역할극','릴레이소설, 막장드라마, 역할극방', '#/feed/new')}
+        ${modeCard('🔗','정보','사이트 추천, AI 링크 요약, 꿀팁 공유', '#/feed/new')}
+        ${modeCard('🔎','검색','제목, 태그, 유형으로 소소피드 찾기', '#/feed')}
+      </section>
+
+      <section class="home-v4-flow">
+        <div class="section-head"><div><span>HOW IT WORKS</span><h2>소소킹은 이렇게 놀아요</h2></div><a href="#/guide">이용 안내</a></div>
+        <div class="home-v4-steps">
+          <article><strong>01</strong><h3>카테고리 선택</h3><p>재미, 게임, 퀴즈, 소설/역할극, 정보, 영상/이미지 중에서 고릅니다.</p></article>
+          <article><strong>02</strong><h3>형식에 맞게 작성</h3><p>투표는 선택지, 퀴즈는 정답/해설, 정보는 링크/AI 요약, 역할극은 등장인물을 넣습니다.</p></article>
+          <article><strong>03</strong><h3>피드에서 같이 참여</h3><p>사람들이 투표하고, 댓글로 이어쓰고, 검색해서 다시 찾아봅니다.</p></article>
+        </div>
+      </section>
+
+      <section class="home-v4-recent">
+        <div class="section-head"><div><span>RECENT SOSO</span><h2>최근 소소피드</h2></div><a href="#/feed">전체보기</a></div>
+        <div class="recent-v4-grid">${items.length ? items.map(card).join('') : emptyCard()}</div>
       </section>
     </main>`;
+  container.querySelector('#home-install-btn')?.addEventListener('click', () => {
+    if (typeof window._pwaInstall === 'function') window._pwaInstall();
+    else alert('브라우저 메뉴에서 “홈 화면에 추가” 또는 “앱 설치”를 선택해주세요.');
+  });
 }
 
-function modeCard(icon, title, text) {
-  return `<a href="#/feed/new" class="mode-card"><i>${icon}</i><b>${e(title)}</b><span>${e(text)}</span></a>`;
+function modeCard(icon, title, text, href) {
+  return `<a href="${href}" class="mode-v4-card"><i>${icon}</i><b>${e(title)}</b><span>${e(text)}</span></a>`;
 }
 
 function card(item) {
-  return `<a class="recent-v3-card" href="#/feed/${encodeURIComponent(item.id)}"><span>${e(item.badge || '✨')} ${e(item.type || '소소피드')}</span><h3>${e(item.title)}</h3><p>${e(item.summary || item.content || '')}</p><small>조회 ${Number(item.stats?.views || 0).toLocaleString()} · 댓글 ${Number(item.stats?.comments || 0).toLocaleString()} · 좋아요 ${Number(item.stats?.likes || 0).toLocaleString()}</small></a>`;
+  return `<a class="recent-v4-card" href="#/feed/${encodeURIComponent(item.id)}"><span>${e(item.badge || '✨')} ${e(item.type || '소소피드')}</span><h3>${e(item.title)}</h3><p>${e(item.summary || item.content || '')}</p><small>조회 ${Number(item.stats?.views || 0).toLocaleString()} · 댓글 ${Number(item.stats?.comments || 0).toLocaleString()} · 좋아요 ${Number(item.stats?.likes || 0).toLocaleString()}</small></a>`;
 }
 
 function emptyCard() {
-  return `<div class="recent-v3-card empty"><span>READY</span><h3>아직 올라온 소소피드가 없습니다</h3><p>첫 사진, 첫 퀴즈, 첫 밸런스게임을 올리면 이곳에 표시됩니다.</p><small>사진 · 글 · 투표 · 댓글</small></div>`;
+  return `<div class="recent-v4-card empty"><span>READY</span><h3>아직 올라온 소소피드가 없습니다</h3><p>첫 정보공유, 첫 릴레이소설, 첫 밸런스게임을 올리면 이곳에 표시됩니다.</p><small>재미 · 정보 · 투표 · 댓글</small></div>`;
 }
 
 function injectHomeStyle() {
-  if (document.getElementById('sosoking-home-v3-style')) return;
+  if (document.getElementById('sosoking-home-v4-style')) return;
   const style = document.createElement('style');
-  style.id = 'sosoking-home-v3-style';
+  style.id = 'sosoking-home-v4-style';
   style.textContent = `
-    .soso-home-v3{padding:18px clamp(16px,4vw,36px) 112px;background:radial-gradient(circle at 8% 0%,rgba(79,124,255,.18),transparent 34%),radial-gradient(circle at 90% 4%,rgba(255,92,138,.14),transparent 30%),linear-gradient(180deg,#f7f9ff 0%,#eef3ff 48%,#f7f8fb 100%)}
-    .home-v3-hero,.home-v3-mode-grid,.home-v3-flow,.home-v3-recent{max-width:1040px;margin-left:auto;margin-right:auto}
-    .home-v3-hero{display:grid;grid-template-columns:minmax(0,1.05fr) 360px;gap:18px;align-items:stretch;min-height:560px}
-    .home-v3-copy{position:relative;overflow:hidden;border:1px solid rgba(79,124,255,.14);border-radius:38px;padding:clamp(24px,5vw,44px);background:rgba(255,255,255,.86);box-shadow:0 28px 90px rgba(55,90,170,.16);backdrop-filter:blur(14px)}
-    .home-v3-copy:after{content:'✨';position:absolute;right:24px;bottom:-42px;font-size:140px;opacity:.08;transform:rotate(-12deg)}
-    .home-v3-brand{display:flex;align-items:center;gap:13px;margin-bottom:26px}.home-v3-brand img{width:66px;height:66px;border-radius:24px;background:#fff;box-shadow:0 16px 40px rgba(79,124,255,.18);transform:rotate(-7deg)}.home-v3-brand b{display:block;font-size:22px;letter-spacing:-.05em}.home-v3-brand small{display:block;color:var(--predict-muted);font-size:13px;margin-top:3px}
-    .home-v3-kicker{display:inline-flex;padding:8px 11px;border-radius:999px;background:rgba(79,124,255,.09);color:var(--predict-main);font-size:11px;font-weight:1000;letter-spacing:.14em}.home-v3-copy h1{position:relative;z-index:1;margin:14px 0 14px;font-size:clamp(42px,8vw,78px);line-height:.98;letter-spacing:-.09em}.home-v3-copy h1 em{font-style:normal;background:linear-gradient(135deg,#4f7cff,#7c5cff 54%,#ff5c8a);-webkit-background-clip:text;background-clip:text;color:transparent}.home-v3-copy p{position:relative;z-index:1;max-width:620px;margin:0;color:var(--predict-muted);font-size:16px;line-height:1.8;word-break:keep-all}.home-v3-actions{position:relative;z-index:1;display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}.home-v3-actions a{display:inline-flex;align-items:center;justify-content:center;border-radius:20px;padding:15px 18px;background:rgba(79,124,255,.09);color:var(--predict-main);font-weight:1000;text-decoration:none}.home-v3-actions a.primary{background:linear-gradient(135deg,#4f7cff,#7c5cff);color:#fff;box-shadow:0 16px 40px rgba(79,124,255,.26)}.home-v3-mini{position:relative;z-index:1;display:flex;gap:7px;flex-wrap:wrap;margin-top:18px}.home-v3-mini b{padding:8px 10px;border-radius:999px;background:rgba(255,255,255,.75);border:1px solid rgba(79,124,255,.10);font-size:12px;color:var(--predict-muted)}
-    .home-v3-phone{border-radius:38px;padding:18px;background:linear-gradient(180deg,#111a33,#263d85);box-shadow:0 28px 90px rgba(20,34,74,.28);color:#fff;display:grid;align-content:start;gap:12px;overflow:hidden}.phone-top{display:flex;align-items:center;justify-content:space-between;padding:8px 4px 4px}.phone-top span{font-size:10px;letter-spacing:.14em;color:rgba(255,255,255,.62);font-weight:1000}.phone-top b{font-size:14px}.phone-card{border:1px solid rgba(255,255,255,.12);border-radius:24px;padding:16px;background:rgba(255,255,255,.10);backdrop-filter:blur(12px)}.phone-card.main{background:rgba(255,255,255,.18)}.phone-card i{font-style:normal;font-size:22px}.phone-card b{display:block;margin:8px 0 6px;font-size:17px;line-height:1.3}.phone-card p{margin:0;color:rgba(255,255,255,.72);font-size:13px;line-height:1.5}.phone-card div{height:10px;margin-top:12px;border-radius:999px;background:rgba(255,255,255,.13);overflow:hidden}.phone-card div span{display:block;width:var(--w);height:100%;border-radius:999px;background:linear-gradient(135deg,#fff,#8fb0ff)}
-    .home-v3-mode-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:16px}.mode-card{min-height:154px;padding:18px;border-radius:26px;background:rgba(255,255,255,.88);border:1px solid rgba(79,124,255,.12);box-shadow:0 14px 45px rgba(55,90,170,.10);text-decoration:none;color:var(--predict-ink);transition:.18s transform,.18s box-shadow}.mode-card:hover{transform:translateY(-3px);box-shadow:0 20px 60px rgba(55,90,170,.16)}.mode-card i{font-style:normal;font-size:28px}.mode-card b{display:block;margin:12px 0 7px;font-size:17px;letter-spacing:-.04em}.mode-card span{display:block;color:var(--predict-muted);font-size:13px;line-height:1.55}
-    .home-v3-flow,.home-v3-recent{margin-top:22px}.flow-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.flow-grid article{padding:20px;border-radius:26px;background:rgba(255,255,255,.86);border:1px solid rgba(79,124,255,.12);box-shadow:0 14px 45px rgba(55,90,170,.09)}.flow-grid b{display:inline-flex;width:34px;height:34px;align-items:center;justify-content:center;border-radius:14px;background:linear-gradient(135deg,#4f7cff,#7c5cff);color:#fff}.flow-grid h3{margin:12px 0 7px;font-size:19px;letter-spacing:-.04em}.flow-grid p{margin:0;color:var(--predict-muted);font-size:13px;line-height:1.65}
-    .recent-v3-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.recent-v3-card{min-height:190px;padding:18px;border-radius:26px;background:rgba(255,255,255,.88);border:1px solid rgba(79,124,255,.12);box-shadow:0 14px 45px rgba(55,90,170,.09);text-decoration:none;color:var(--predict-ink);display:flex;flex-direction:column}.recent-v3-card span{color:var(--predict-main);font-size:12px;font-weight:1000}.recent-v3-card h3{margin:10px 0 8px;font-size:18px;line-height:1.35;letter-spacing:-.04em}.recent-v3-card p{margin:0;color:var(--predict-muted);font-size:13px;line-height:1.55;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}.recent-v3-card small{margin-top:auto;color:#9aa4b5;font-size:12px;font-weight:800}.recent-v3-card.empty{grid-column:1/-1;text-align:center;align-items:center;justify-content:center}
-    [data-theme="dark"] .soso-home-v3{background:radial-gradient(circle at 8% 0%,rgba(79,124,255,.16),transparent 34%),radial-gradient(circle at 90% 4%,rgba(255,92,138,.10),transparent 30%),#070b13}[data-theme="dark"] .home-v3-copy,[data-theme="dark"] .mode-card,[data-theme="dark"] .flow-grid article,[data-theme="dark"] .recent-v3-card{background:rgba(16,23,34,.88);box-shadow:none}[data-theme="dark"] .home-v3-mini b{background:rgba(255,255,255,.06)}
-    @media(max-width:920px){.home-v3-hero{grid-template-columns:1fr;min-height:auto}.home-v3-phone{min-height:360px}.home-v3-mode-grid{grid-template-columns:repeat(2,1fr)}.recent-v3-grid{grid-template-columns:repeat(2,1fr)}}
-    @media(max-width:620px){.soso-home-v3{padding:14px 14px 108px}.home-v3-copy,.home-v3-phone{border-radius:30px}.home-v3-brand img{width:56px;height:56px}.home-v3-actions a{flex:1;min-width:140px}.home-v3-mode-grid,.flow-grid,.recent-v3-grid{grid-template-columns:1fr}.mode-card{min-height:auto}.home-v3-copy h1{font-size:44px}}
+    .soso-home-v4{min-height:100vh;padding:22px var(--soso-page-pad,clamp(18px,3vw,42px)) 118px;background:radial-gradient(circle at 8% -6%,rgba(255,232,92,.42),transparent 30%),radial-gradient(circle at 92% 0%,rgba(255,92,138,.18),transparent 26%),radial-gradient(circle at 50% 18%,rgba(79,124,255,.14),transparent 38%),linear-gradient(180deg,#fffaf0 0%,#f3f7ff 46%,#f8f9ff 100%)!important;overflow:hidden}
+    .home-v4-hero,.home-v4-quick-grid,.home-v4-flow,.home-v4-recent{width:var(--soso-wide,min(1320px,calc(100vw - 56px)));max-width:var(--soso-wide,min(1320px,calc(100vw - 56px)));margin-left:auto;margin-right:auto}
+    .home-v4-hero{position:relative;display:grid;grid-template-columns:minmax(0,1.35fr) 410px;gap:20px;align-items:stretch;min-height:620px}.home-v4-hero:before{content:'';position:absolute;inset:-80px -120px auto auto;width:360px;height:360px;border-radius:999px;background:linear-gradient(135deg,rgba(255,232,92,.45),rgba(255,92,138,.18));filter:blur(10px);z-index:0}.home-v4-stage,.home-v4-live{position:relative;z-index:1;border:1px solid rgba(79,124,255,.15);border-radius:42px;background:rgba(255,255,255,.86);box-shadow:0 30px 100px rgba(55,90,170,.15);backdrop-filter:blur(18px) saturate(1.22)}
+    .home-v4-stage{overflow:hidden;padding:clamp(28px,5vw,58px)}.home-v4-stage:after{content:'SOSO';position:absolute;right:-18px;bottom:-34px;font-size:132px;font-weight:1000;letter-spacing:-.1em;color:rgba(79,124,255,.055);transform:rotate(-9deg)}
+    .home-v4-logo-pop{position:relative;display:inline-flex;align-items:center;justify-content:center;width:118px;height:118px;margin-bottom:20px;border-radius:36px;background:linear-gradient(135deg,#fff,#fff7d7);box-shadow:0 18px 55px rgba(255,122,89,.18),0 0 0 1px rgba(255,255,255,.8) inset}.home-v4-logo-pop img{width:96px;height:96px;border-radius:30px;transform:rotate(-6deg)}.home-v4-logo-pop i{position:absolute;font-style:normal;display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:15px;background:#fff;box-shadow:0 10px 24px rgba(55,90,170,.14)}.home-v4-logo-pop i:nth-child(2){right:-15px;top:8px}.home-v4-logo-pop i:nth-child(3){left:-15px;bottom:12px}.home-v4-logo-pop i:nth-child(4){right:8px;bottom:-16px}
+    .home-v4-kicker{display:inline-flex;padding:9px 12px;border-radius:999px;background:rgba(255,232,92,.55);color:#1b2250;font-size:11px;font-weight:1000;letter-spacing:.15em;border:1px solid rgba(255,184,0,.22)}.home-v4-stage h1{position:relative;z-index:1;margin:16px 0 14px;font-size:clamp(46px,6vw,82px);line-height:.98;letter-spacing:-.09em;color:#151a33}.home-v4-stage h1 em{font-style:normal;background:linear-gradient(135deg,#4f7cff,#7c5cff 48%,#ff5c8a);-webkit-background-clip:text;background-clip:text;color:transparent}.home-v4-stage p{position:relative;z-index:1;max-width:760px;margin:0;color:#667085;font-size:17px;line-height:1.82;word-break:keep-all}.home-v4-actions{position:relative;z-index:1;display:flex;gap:10px;flex-wrap:wrap;margin-top:26px}.home-v4-actions a,.home-v4-actions button{display:inline-flex;align-items:center;justify-content:center;padding:15px 18px;border-radius:20px;background:rgba(79,124,255,.10);border:1px solid rgba(79,124,255,.13);color:#4f7cff;text-decoration:none;font-weight:1000;font-family:inherit}.home-v4-actions a.primary{background:linear-gradient(135deg,#ff7a59,#ff5c8a,#7c5cff);color:#fff;border:0;box-shadow:0 18px 44px rgba(255,92,138,.26)}.home-v4-tags{position:relative;z-index:1;display:flex;gap:7px;flex-wrap:wrap;margin-top:18px}.home-v4-tags b{padding:8px 10px;border-radius:999px;background:rgba(255,255,255,.72);border:1px solid rgba(79,124,255,.10);color:#6b7280;font-size:12px}
+    .home-v4-live{padding:20px;background:linear-gradient(180deg,#151a33,#263d85 58%,#7c5cff)!important;color:#fff;display:grid;align-content:center;gap:12px;overflow:hidden}.home-v4-live:after{content:'PLAY';position:absolute;right:-12px;top:16px;font-size:74px;font-weight:1000;color:rgba(255,255,255,.06);letter-spacing:-.08em;transform:rotate(8deg)}.live-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}.live-head span{font-size:10px;letter-spacing:.15em;color:rgba(255,255,255,.6);font-weight:1000}.live-head b{font-size:16px}.live-card{position:relative;z-index:1;display:flex;gap:12px;align-items:center;padding:15px;border-radius:24px;background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(12px)}.live-card.hot{background:rgba(255,255,255,.18)}.live-card i{font-style:normal;font-size:26px}.live-card b{display:block;font-size:16px}.live-card p{margin:4px 0 0;color:rgba(255,255,255,.72);font-size:13px;line-height:1.45}
+    .home-v4-quick-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin-top:18px}.mode-v4-card{position:relative;overflow:hidden;min-height:172px;padding:20px;border-radius:28px;background:rgba(255,255,255,.86);border:1px solid rgba(79,124,255,.13);box-shadow:0 16px 50px rgba(55,90,170,.10);text-decoration:none;color:#151a33;transition:.18s transform,.18s box-shadow}.mode-v4-card:hover{transform:translateY(-5px);box-shadow:0 26px 90px rgba(55,90,170,.16)}.mode-v4-card:after{content:'';position:absolute;right:-28px;bottom:-28px;width:86px;height:86px;border-radius:999px;background:linear-gradient(135deg,rgba(255,232,92,.32),rgba(124,92,255,.14))}.mode-v4-card i{font-style:normal;font-size:32px}.mode-v4-card b{display:block;margin:14px 0 7px;font-size:18px;letter-spacing:-.05em}.mode-v4-card span{display:block;color:#667085;font-size:13px;line-height:1.58}
+    .home-v4-flow,.home-v4-recent{margin-top:26px}.home-v4-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.home-v4-steps article,.recent-v4-card{border:1px solid rgba(79,124,255,.13);border-radius:28px;background:rgba(255,255,255,.86);box-shadow:0 16px 50px rgba(55,90,170,.09);padding:20px}.home-v4-steps strong{display:inline-flex;padding:8px 10px;border-radius:14px;background:linear-gradient(135deg,#4f7cff,#7c5cff);color:#fff;font-weight:1000}.home-v4-steps h3{margin:14px 0 8px;font-size:21px;letter-spacing:-.05em;color:#151a33}.home-v4-steps p{margin:0;color:#667085;line-height:1.68;font-size:14px}
+    .recent-v4-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.recent-v4-card{text-decoration:none;color:#151a33;min-height:200px;display:flex;flex-direction:column}.recent-v4-card span{color:#4f7cff;font-size:12px;font-weight:1000}.recent-v4-card h3{margin:10px 0 8px;font-size:20px;line-height:1.35;letter-spacing:-.05em}.recent-v4-card p{margin:0;color:#667085;font-size:14px;line-height:1.6;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}.recent-v4-card small{margin-top:auto;color:#9aa4b5;font-size:12px;font-weight:900}.recent-v4-card.empty{grid-column:1/-1;align-items:center;justify-content:center;text-align:center}
+    [data-theme="dark"] .soso-home-v4{background:radial-gradient(circle at 8% -6%,rgba(124,92,255,.16),transparent 30%),#070b13!important}[data-theme="dark"] .home-v4-stage,[data-theme="dark"] .mode-v4-card,[data-theme="dark"] .home-v4-steps article,[data-theme="dark"] .recent-v4-card{background:rgba(16,23,34,.88);box-shadow:none}[data-theme="dark"] .home-v4-stage h1,[data-theme="dark"] .mode-v4-card,[data-theme="dark"] .home-v4-steps h3,[data-theme="dark"] .recent-v4-card{color:#f5f7fb}[data-theme="dark"] .home-v4-stage p,[data-theme="dark"] .mode-v4-card span,[data-theme="dark"] .home-v4-steps p,[data-theme="dark"] .recent-v4-card p{color:#a8b3c7}
+    @media(max-width:1100px){.home-v4-hero{grid-template-columns:1fr;min-height:auto}.home-v4-live{grid-template-columns:repeat(2,minmax(0,1fr));align-content:start}.live-head{grid-column:1/-1}.home-v4-quick-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.recent-v4-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:680px){.soso-home-v4{padding:14px 14px 108px}.home-v4-hero,.home-v4-quick-grid,.home-v4-flow,.home-v4-recent{width:100%;max-width:100%}.home-v4-stage,.home-v4-live{border-radius:30px}.home-v4-logo-pop{width:94px;height:94px}.home-v4-logo-pop img{width:76px;height:76px}.home-v4-stage h1{font-size:42px}.home-v4-stage p{font-size:15px}.home-v4-actions a,.home-v4-actions button{flex:1;min-width:140px}.home-v4-live{grid-template-columns:1fr}.home-v4-quick-grid,.home-v4-steps,.recent-v4-grid{grid-template-columns:1fr}.mode-v4-card{min-height:auto}.recent-v4-card.empty{grid-column:auto}}
   `;
   document.head.appendChild(style);
 }
