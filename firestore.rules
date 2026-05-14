@@ -14,6 +14,24 @@ service cloud.firestore {
         && nickname.matches('^[가-힣a-zA-Z0-9_]+$');
     }
 
+    function validShortText(value, max) {
+      return value is string && value.size() <= max;
+    }
+
+    function validOptionalHttps(value, max) {
+      return value is string
+        && value.size() <= max
+        && (value == '' || value.matches('^https://.*'));
+    }
+
+    function validMediaType(value) {
+      return value in ['none', 'upload', 'link', 'link_summary', 'youtube', 'image_link'];
+    }
+
+    function validFeedSource(value) {
+      return value in ['user', 'anonymous_user'];
+    }
+
     function validUserProfileCreate(userId) {
       return request.auth != null
         && request.auth.uid == userId
@@ -31,30 +49,59 @@ service cloud.firestore {
     function validNicknameClaim(nickname) {
       return request.auth != null
         && validNickname(nickname)
+        && request.resource.data.keys().hasOnly(['uid'])
         && request.resource.data.uid == request.auth.uid;
+    }
+
+    function validFeedPostKeys() {
+      return request.resource.data.keys().hasOnly([
+        'type', 'badge', 'title', 'content', 'summary', 'question',
+        'options', 'votes', 'voteTotal', 'tags', 'views', 'likes', 'comments',
+        'status', 'source', 'authorId', 'authorName', 'imageUrl', 'mediaType',
+        'linkUrl', 'linkTitle', 'linkSummary', 'linkSource', 'embedUrl', 'thumbnailUrl',
+        'topComment', 'createdAt', 'createdAtMs', 'updatedAt'
+      ]);
     }
 
     function validFeedPost() {
       return request.auth != null
+        && validFeedPostKeys()
+        && validShortText(request.resource.data.type, 30)
+        && validShortText(request.resource.data.badge, 8)
         && request.resource.data.title is string
         && request.resource.data.title.size() >= 4
         && request.resource.data.title.size() <= 90
         && request.resource.data.content is string
         && request.resource.data.content.size() >= 5
         && request.resource.data.content.size() <= 1200
-        && request.resource.data.question is string
-        && request.resource.data.question.size() <= 90
+        && validShortText(request.resource.data.summary, 220)
+        && validShortText(request.resource.data.question, 90)
         && request.resource.data.options is list
         && request.resource.data.options.size() >= 2
         && request.resource.data.options.size() <= 4
+        && request.resource.data.votes is map
         && request.resource.data.tags is list
         && request.resource.data.tags.size() <= 6
         && request.resource.data.authorId == request.auth.uid
+        && validShortText(request.resource.data.authorName, 40)
         && request.resource.data.status == 'published'
+        && validFeedSource(request.resource.data.source)
         && request.resource.data.views == 0
         && request.resource.data.likes == 0
         && request.resource.data.comments == 0
-        && request.resource.data.voteTotal == 0;
+        && request.resource.data.voteTotal == 0
+        && request.resource.data.topComment == ''
+        && validOptionalHttps(request.resource.data.imageUrl, 700)
+        && validMediaType(request.resource.data.mediaType)
+        && validOptionalHttps(request.resource.data.linkUrl, 700)
+        && validShortText(request.resource.data.linkTitle, 120)
+        && validShortText(request.resource.data.linkSummary, 260)
+        && validShortText(request.resource.data.linkSource, 80)
+        && validOptionalHttps(request.resource.data.embedUrl, 700)
+        && validOptionalHttps(request.resource.data.thumbnailUrl, 700)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.createdAtMs is int;
     }
 
     function isFeedCounterUpdate() {
@@ -64,25 +111,62 @@ service cloud.firestore {
         && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['likes']) || request.resource.data.likes == resource.data.likes + 1)
         && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['comments']) || request.resource.data.comments == resource.data.comments + 1)
         && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['voteTotal']) || request.resource.data.voteTotal == resource.data.voteTotal + 1)
-        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['topComment']) || request.resource.data.topComment is string && request.resource.data.topComment.size() <= 300);
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['topComment']) || request.resource.data.topComment is string && request.resource.data.topComment.size() <= 300)
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['votes']) || request.resource.data.votes is map);
     }
 
     function validFeedComment() {
       return request.auth != null
+        && request.resource.data.keys().hasOnly(['text', 'likes', 'authorId', 'authorName', 'createdAt', 'createdAtMs'])
         && request.resource.data.text is string
         && request.resource.data.text.size() >= 2
         && request.resource.data.text.size() <= 300
         && request.resource.data.authorId == request.auth.uid
-        && request.resource.data.likes == 0;
+        && validShortText(request.resource.data.authorName, 40)
+        && request.resource.data.likes == 0
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.createdAtMs is int;
     }
 
     function validFeedVoter(voterId) {
       return request.auth != null
         && voterId == request.auth.uid
+        && request.resource.data.keys().hasOnly(['option', 'authorId', 'createdAt', 'createdAtMs'])
         && request.resource.data.authorId == request.auth.uid
         && request.resource.data.option is string
         && request.resource.data.option.size() >= 1
-        && request.resource.data.option.size() <= 40;
+        && request.resource.data.option.size() <= 40
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.createdAtMs is int;
+    }
+
+    function validReportCreate() {
+      return request.auth != null
+        && request.resource.data.keys().hasOnly(['category', 'content', 'reason', 'targetType', 'targetId', 'postId', 'reporterId', 'status', 'createdAt', 'createdAtMs'])
+        && validShortText(request.resource.data.category, 40)
+        && validShortText(request.resource.data.content, 500)
+        && validShortText(request.resource.data.reason, 60)
+        && validShortText(request.resource.data.targetType, 20)
+        && validShortText(request.resource.data.targetId, 160)
+        && validShortText(request.resource.data.postId, 120)
+        && request.resource.data.reporterId == request.auth.uid
+        && request.resource.data.status == 'open'
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.createdAtMs is int;
+    }
+
+    function validFeedbackCreate() {
+      return request.auth != null
+        && request.resource.data.keys().hasOnly(['category', 'content', 'email', 'userId', 'status', 'createdAt', 'createdAtMs'])
+        && validShortText(request.resource.data.category, 40)
+        && request.resource.data.content is string
+        && request.resource.data.content.size() >= 2
+        && request.resource.data.content.size() <= 500
+        && validShortText(request.resource.data.email, 120)
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == 'open'
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.createdAtMs is int;
     }
 
     match /admins/{uid} { allow read: if request.auth != null && request.auth.uid == uid; allow write: if false; }
@@ -102,14 +186,11 @@ service cloud.firestore {
       allow delete: if false;
     }
     match /nicknames/{nickname} { allow read: if request.auth != null; allow create: if validNicknameClaim(nickname) && !exists(/databases/$(database)/documents/nicknames/$(nickname)); allow delete: if request.auth != null && resource.data.uid == request.auth.uid; allow update: if false; }
-    match /reports/{reportId} { allow create: if request.auth != null; allow read, update, delete: if isAdmin(); }
+    match /reports/{reportId} { allow create: if validReportCreate(); allow read, update, delete: if isAdmin(); }
     match /site_settings/{docId} { allow read: if true; allow write: if isAdmin(); }
     match /policy_docs/{docId} { allow read: if true; allow write: if isAdmin(); }
     match /feedback/{feedbackId} {
-      allow create: if request.auth != null
-        && request.resource.data.keys().hasAll(['category', 'content', 'createdAt'])
-        && request.resource.data.content is string
-        && request.resource.data.content.size() <= 500;
+      allow create: if validFeedbackCreate();
       allow read, update, delete: if isAdmin();
     }
 
