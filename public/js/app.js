@@ -13,7 +13,11 @@ import { renderNav } from './components/nav.js';
 
 const LEGACY_PREFIXES = ['#/hunt', '#/topic/', '#/debate/', '#/join/', '#/join-team/'];
 const LEGACY_ROUTES = ['#/town', '#/case-quest', '#/topics', '#/submit-topic', '#/court', '#/my-history'];
-const SOSO_FEED_REDIRECT_ROUTES = ['#/predict', '#/ranking', '#/history'];
+const SOSO_FEED_REDIRECT_PREFIXES = ['#/predict', '#/ranking', '#/history'];
+
+function shouldRedirectToFeed(hash) {
+  return SOSO_FEED_REDIRECT_PREFIXES.some(route => hash === route || hash.startsWith(`${route}/`));
+}
 
 function redirectToFeed() {
   history.replaceState(null, '', `${location.pathname}${location.search}#/feed`);
@@ -44,7 +48,7 @@ function route() {
   const hash = location.hash || '#/';
   const content = document.getElementById('page-content');
   if (!content) return;
-  if (SOSO_FEED_REDIRECT_ROUTES.includes(hash) || hash.startsWith('#/predict/')) { redirectToFeed(); return; }
+  if (shouldRedirectToFeed(hash)) { redirectToFeed(); return; }
   window.scrollTo(0, 0);
   content.classList.remove('page-entering'); void content.offsetWidth; content.classList.add('page-entering');
   let pageName = 'home';
