@@ -4,6 +4,12 @@ const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 
 const db = getFirestore();
 
+async function assertAdmin(uid) {
+  if (!uid) throw new Error('인증 필요');
+  const snap = await db.doc(`admins/${uid}`).get();
+  if (!snap.exists) throw new Error('관리자 권한 필요');
+}
+
 const RSS_SOURCES = [
   { key: 'top', name: '종합', url: 'https://news.google.com/rss?hl=ko&gl=KR&ceid=KR:ko' },
   { key: 'entertainment', name: '연예/방송', url: 'https://news.google.com/rss/search?q=%EC%97%B0%EC%98%88%20OR%20%EB%B0%A9%EC%86%A1%20when:1d&hl=ko&gl=KR&ceid=KR:ko' },
@@ -161,7 +167,10 @@ async function saveIssuesAndBoards({ force = false } = {}) {
   return { dateKey, issues, boards: boards.map(({ id, ...data }) => ({ id, ...data })) };
 }
 
-const collectHotIssues = onCall({ region: 'asia-northeast3', timeoutSeconds: 120 }, async () => ({ ok: true, ...(await saveIssuesAndBoards({ force: true })) }));
+const collectHotIssues = onCall({ region: 'asia-northeast3', timeoutSeconds: 120 }, async (request) => {
+  await assertAdmin(request.auth?.uid);
+  return { ok: true, ...(await saveIssuesAndBoards({ force: true })) };
+});
 const scheduledCollectHotIssues = onSchedule({ region: 'asia-northeast3', schedule: 'every day 09:00', timeZone: 'Asia/Seoul', timeoutSeconds: 300 }, async () => { await saveIssuesAndBoards({ force: false }); return null; });
 const scheduledRefreshHotIssues = onSchedule({ region: 'asia-northeast3', schedule: 'every day 21:00', timeZone: 'Asia/Seoul', timeoutSeconds: 300 }, async () => { await saveIssuesAndBoards({ force: false }); return null; });
 
