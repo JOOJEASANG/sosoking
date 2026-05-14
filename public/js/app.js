@@ -43,6 +43,23 @@ function loadSosoStyles() {
   });
 }
 
+function updatePwaInstallButton() {
+  let button = document.getElementById('soso-pwa-install-fab');
+  if (!button) {
+    button = document.createElement('button');
+    button.id = 'soso-pwa-install-fab';
+    button.type = 'button';
+    button.innerHTML = '📲 앱 설치';
+    button.addEventListener('click', () => {
+      if (typeof window._pwaInstall === 'function') window._pwaInstall();
+      else alert('브라우저 메뉴에서 “홈 화면에 추가” 또는 “앱 설치”를 선택해주세요.');
+    });
+    document.body.appendChild(button);
+  }
+  const installed = window.matchMedia?.('(display-mode: standalone)')?.matches || window.navigator.standalone;
+  button.classList.toggle('show', Boolean(window._pwaPromptEvent && !installed));
+}
+
 function route() {
   if (window._pageCleanup) { window._pageCleanup(); window._pageCleanup = null; }
   const hash = location.hash || '#/';
@@ -68,9 +85,11 @@ function route() {
     else renderSosoHome(content);
     trackEvent('page_view', { page_name: pageName, page_path: hash });
     renderNav();
+    updatePwaInstallButton();
   } catch (error) {
     console.error('화면 렌더링 실패:', error);
     renderFallback(content, error);
+    updatePwaInstallButton();
   }
 }
 
@@ -105,11 +124,14 @@ if (typeof window._pwaInstall !== 'function') {
     promptEvent.prompt();
     try { await promptEvent.userChoice; } catch {}
     window._pwaPromptEvent = null;
+    updatePwaInstallButton();
     document.dispatchEvent(new Event('pwa-installed'));
   };
 }
-window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); window._pwaPromptEvent = e; document.dispatchEvent(new Event('pwa-installable')); });
-window.addEventListener('appinstalled', () => { window._pwaPromptEvent = null; document.dispatchEvent(new Event('pwa-installed')); });
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); window._pwaPromptEvent = e; updatePwaInstallButton(); document.dispatchEvent(new Event('pwa-installable')); });
+window.addEventListener('appinstalled', () => { window._pwaPromptEvent = null; updatePwaInstallButton(); document.dispatchEvent(new Event('pwa-installed')); });
+
+document.addEventListener('visibilitychange', updatePwaInstallButton);
 
 async function injectSeoMeta() {
   try {
@@ -125,16 +147,19 @@ function boot() {
   try { initTheme(); } catch (error) { console.warn('테마 초기화 실패:', error); }
   try { loadSosoStyles(); } catch (error) { console.warn('스타일 로드 실패:', error); }
   try { renderFooter(); } catch (error) { console.warn('푸터 렌더링 실패:', error); }
+  updatePwaInstallButton();
   route();
   injectSeoMeta();
   initAuth().then(user => {
     authReady = true;
     if (user?.uid) trackUser(user.uid);
     renderNav();
+    updatePwaInstallButton();
   }).catch(error => {
     authReady = true;
     console.warn('인증 초기화 실패:', error);
     renderNav();
+    updatePwaInstallButton();
   });
 }
 
