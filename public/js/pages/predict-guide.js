@@ -1,7 +1,7 @@
-import { injectPredictStyle } from './predict-home.js';
+import { injectSosoStyle } from '../components/soso-style.js';
 
 export function renderPredictGuide(container) {
-  injectPredictStyle();
+  injectSosoStyle();
   injectGuideCleanStyle();
   container.innerHTML = `
     <main class="predict-app simple-page soso-doc-page guide-page">
@@ -9,39 +9,39 @@ export function renderPredictGuide(container) {
         <a href="#/" class="back-link">‹</a>
         <div class="doc-hero-copy">
           <img src="/logo.svg" alt="소소킹">
-          <div><span>GUIDE</span><h1>이용안내</h1><p>예측판, 소소피드, 랭킹, 소소머니를 한눈에 이해할 수 있게 정리했습니다.</p></div>
+          <div><span>GUIDE</span><h1>이용안내</h1><p>소소피드에서 글, 사진, 투표, 댓글로 가볍게 노는 방법을 정리했습니다.</p></div>
         </div>
-        <b>🎮</b>
+        <b>✨</b>
       </section>
 
       <section class="guide-card-clean intro">
-        <div class="guide-title-row"><span>소소킹이란?</span><h2>오늘의 이슈를 내일 기준으로 맞혀보는 오락용 서비스</h2></div>
-        <p>소소킹은 실제 운영 데이터로 열린 예측판에 참여하고, 소소피드에서 글·사진·투표·댓글을 남길 수 있는 가벼운 참여형 커뮤니티입니다. 소소머니는 게임 전용 포인트이며 현금 가치가 없습니다.</p>
+        <div class="guide-title-row"><span>소소킹이란?</span><h2>소소한 웃음과 선택 게임이 모이는 피드형 커뮤니티</h2></div>
+        <p>소소킹은 사진 제목학원, 밸런스게임, 소소토론, 퀴즈, AI놀이를 한 피드에서 즐기는 참여형 커뮤니티입니다. 게임머니, 예측 정산, 랭킹 경쟁 없이 글·사진·투표·댓글 중심으로 운영됩니다.</p>
       </section>
 
       <section class="guide-card-clean">
         <div class="guide-title-row"><span>HOW TO PLAY</span><h2>기본 이용 흐름</h2></div>
         <div class="clean-steps">
-          <div><b>1</b><strong>오늘의 3판 확인</strong><span>실제 데이터로 열린 예측판만 표시됩니다. 없으면 준비 중 상태로 보입니다.</span></div>
-          <div><b>2</b><strong>내 선택 등록</strong><span>선택지와 사용할 소소머니를 고르고, 짧은 근거 한 줄을 남깁니다.</span></div>
-          <div><b>3</b><strong>결과 정산 확인</strong><span>운영 기준에 따라 결과가 정산되며, 맞히면 소소머니가 반영됩니다.</span></div>
-          <div><b>4</b><strong>소소킹 랭킹 도전</strong><span>실제 운영 데이터가 쌓이면 이번 주 소소킹 순위에 표시됩니다.</span></div>
+          <div><b>1</b><strong>피드 구경하기</strong><span>홈과 피드에서 최근 글, 인기 글, 댓글 많은 글을 확인합니다.</span></div>
+          <div><b>2</b><strong>글 유형 고르기</strong><span>사진 제목학원, 밸런스게임, 소소토론, 퀴즈, AI놀이 중 하나를 선택합니다.</span></div>
+          <div><b>3</b><strong>선택지 만들기</strong><span>참여 질문과 선택지를 넣으면 다른 사용자가 투표할 수 있습니다.</span></div>
+          <div><b>4</b><strong>댓글로 놀기</strong><span>투표 결과를 보고 한 줄 댓글로 가볍게 의견을 나눕니다.</span></div>
         </div>
       </section>
 
       <section class="guide-card-clean">
-        <div class="guide-title-row"><span>SOSO FEED</span><h2>소소피드는 이렇게 씁니다</h2></div>
+        <div class="guide-title-row"><span>SOSO FEED</span><h2>소소피드 유형</h2></div>
         <div class="clean-steps feed-steps">
-          <div><b>📸</b><strong>사진/글 올리기</strong><span>웃긴 사진, 짧은 사연, 질문형 글을 등록할 수 있습니다.</span></div>
-          <div><b>🗳️</b><strong>선택지 투표</strong><span>글에 붙은 선택지를 누르면 결과 퍼센트가 표시됩니다.</span></div>
-          <div><b>💬</b><strong>댓글 참여</strong><span>한 줄 의견을 남기고 다른 사람의 반응을 볼 수 있습니다.</span></div>
-          <div><b>🚨</b><strong>신고 기능</strong><span>문제가 있는 글은 신고할 수 있으며, 운영자가 확인합니다.</span></div>
+          <div><b>📸</b><strong>사진 제목학원</strong><span>사진 한 장에 가장 웃긴 제목을 붙이는 글입니다.</span></div>
+          <div><b>⚖️</b><strong>밸런스게임</strong><span>둘 중 하나를 고르는 가벼운 선택 게임입니다.</span></div>
+          <div><b>💬</b><strong>소소토론</strong><span>사소하지만 은근히 갈리는 주제로 의견을 나눕니다.</span></div>
+          <div><b>🧠</b><strong>퀴즈 / AI놀이</strong><span>문제, 센스 답변, AI 밈으로 함께 노는 유형입니다.</span></div>
         </div>
       </section>
 
       <section class="guide-card-clean warning">
         <div class="guide-title-row"><span>NOTICE</span><h2>중요 안내</h2></div>
-        <p>소소머니는 게임 전용 포인트이며 현금 가치가 없습니다. 충전, 환전, 출금, 현물 보상은 제공하지 않습니다. 정치 선거, 주식·코인 가격, 실제 범죄 피해자, 재난·사망 사고 희화화, 실명 비방, 혐오·차별, 선정적 내용, 저작권 침해, 개인정보 노출 콘텐츠는 제한될 수 있습니다.</p>
+        <p>저작권 문제 없는 이미지, 개인정보 없는 글, 혐오·성인·비방 없는 콘텐츠만 허용합니다. 정치 선거, 주식·코인 가격, 실제 범죄 피해자, 재난·사망 사고 희화화, 실명 비방, 혐오·차별, 선정적 내용, 저작권 침해, 개인정보 노출 콘텐츠는 제한될 수 있습니다.</p>
       </section>
     </main>`;
 }
