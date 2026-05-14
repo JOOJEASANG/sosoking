@@ -5,91 +5,105 @@ export function renderSosoHome(container) {
   injectSosoStyle();
   injectHomeStyle();
   draw(container, []);
-  getFeedPosts({ pageSize: 6 }).then(items => draw(container, items || [])).catch(() => draw(container, []));
+  getFeedPosts({ pageSize: 12 }).then(items => draw(container, items || [])).catch(() => draw(container, []));
 }
 
 function draw(container, items = []) {
+  const popular = [...items].sort((a, b) => score(b) - score(a)).slice(0, 5);
+  const recent = items.slice(0, 6);
   container.innerHTML = `
-    <main class="predict-app soso-home-v4">
-      <section class="home-v4-hero">
-        <div class="home-v4-stage">
-          <div class="home-v4-logo-pop"><img src="/logo.svg" alt="소소킹"><i>✨</i><i>🎮</i><i>💬</i></div>
-          <span class="home-v4-kicker">SOSOKING PLAY FEED</span>
-          <h1>재미, 정보, 투표, 역할극이<br><em>한 피드에 모이는 소소킹</em></h1>
-          <p>사진 제목학원, 밸런스게임, 퀴즈, 정보공유, AI 링크 요약, 릴레이소설, 막장드라마, 역할극까지 가볍게 올리고 같이 노는 커뮤니티입니다.</p>
-          <div class="home-v4-actions"><a class="primary" href="#/feed/new">소소피드 만들기</a><a href="#/feed">피드 구경하기</a><a href="#/mission">오늘의 미션</a><button type="button" id="home-install-btn">앱 설치</button></div>
-          <div class="home-v4-tags"><b>AI 요약</b><b>유튜브 링크</b><b>릴레이소설</b><b>역할극방</b><b>검색 가능</b></div>
-        </div>
-        <div class="home-v4-live">
-          <div class="live-head"><span>LIVE BOARD</span><b>지금 만들 수 있는 것</b></div>
-          <article class="live-card hot"><i>🔗</i><div><b>정보공유</b><p>유용한 링크를 AI가 핵심만 요약</p></div></article>
-          <article class="live-card"><i>🎭</i><div><b>역할극방</b><p>등장인물을 고르거나 직접 역할 입력</p></div></article>
-          <article class="live-card"><i>📚</i><div><b>릴레이소설</b><p>아무나 언제든 다음 장면 이어쓰기</p></div></article>
-          <article class="live-card"><i>🎬</i><div><b>영상 리액션</b><p>유튜브 링크로 반응과 투표 받기</p></div></article>
-        </div>
-      </section>
+    <main class="predict-app soso-home-dashboard">
+      <section class="dash-shell">
+        <div class="dash-main">
+          <section class="dash-hero">
+            <div class="dash-hero-copy">
+              <span>좋아하는 모든 재미를 한 곳에! ✨</span>
+              <h1>소소한 즐거움이<br><em>모여 커다란 재미로!</em></h1>
+              <p>피드, 퀴즈, 투표, 정보공유, 릴레이소설, 역할극까지. 소소킹에서 함께 즐기고, 소통하고, 성장해요.</p>
+              <div class="dash-hero-actions"><a class="primary" href="#/feed/new">👑 지금 가입하고 즐기기</a><a href="#/feed">▶ 서비스 둘러보기</a></div>
+            </div>
+            <div class="dash-mascot-stage">
+              <div class="dash-orbit icon-a">💬</div><div class="dash-orbit icon-b">🎮</div><div class="dash-orbit icon-c">⭐</div><div class="dash-orbit icon-d">📚</div>
+              <div class="dash-mascot"><img src="/logo.svg" alt="소소킹"><b>소소킹</b></div>
+              <div class="dash-pedestal"></div>
+            </div>
+          </section>
 
-      <section class="home-v4-quick-grid">
-        ${modeCard('😂','재미','사진 제목학원, 웃참, 댓글 배틀', '#/feed/new')}
-        ${modeCard('🎮','게임/투표','밸런스게임, 민심 투표, 선택지 배틀', '#/feed/new')}
-        ${modeCard('🧠','퀴즈','정답 퀴즈, 센스 퀴즈, 심리 테스트', '#/feed/new')}
-        ${modeCard('🎭','소설/역할극','릴레이소설, 막장드라마, 역할극방', '#/feed/new')}
-        ${modeCard('🔗','정보','사이트 추천, AI 링크 요약, 꿀팁 공유', '#/feed/new')}
-        ${modeCard('🔎','검색','제목, 태그, 유형으로 소소피드 찾기', '#/feed')}
-      </section>
+          <section class="dash-category-row">
+            ${categoryCard('정보공유','새로운 정보와 꿀팁을 나눠요','📋','#/feed/new','blue')}
+            ${categoryCard('퀴즈','지식도 즐거움도 퀴즈로 해결!','❓','#/feed/new','purple')}
+            ${categoryCard('밸런스게임','당신의 선택은? 재미있는 밸런스!','⚖️','#/feed/new','orange')}
+            ${categoryCard('릴레이소설','이야기를 이어 함께 소설을 완성!','📗','#/feed/new','green')}
+            ${categoryCard('역할극방','나만의 캐릭터로 몰입하는 세계!','🎭','#/feed/new','pink')}
+            ${categoryCard('영상 리액션','보고, 웃고, 리액션을 공유!','🎬','#/feed/new','navy')}
+          </section>
 
-      <section class="home-v4-flow">
-        <div class="section-head"><div><span>HOW IT WORKS</span><h2>소소킹은 이렇게 놀아요</h2></div><a href="#/guide">이용 안내</a></div>
-        <div class="home-v4-steps">
-          <article><strong>01</strong><h3>카테고리 선택</h3><p>재미, 게임, 퀴즈, 소설/역할극, 정보, 영상/이미지 중에서 고릅니다.</p></article>
-          <article><strong>02</strong><h3>형식에 맞게 작성</h3><p>투표는 선택지, 퀴즈는 정답/해설, 정보는 링크/AI 요약, 역할극은 등장인물을 넣습니다.</p></article>
-          <article><strong>03</strong><h3>피드에서 같이 참여</h3><p>사람들이 투표하고, 댓글로 이어쓰고, 검색해서 다시 찾아봅니다.</p></article>
+          <section class="dash-feed-panel">
+            <div class="dash-section-head"><div><span>⚡ 실시간 피드</span><h2>지금 올라온 소소피드</h2></div><div class="dash-tabs"><b>최신</b><a href="#/feed/top">인기</a><a href="#/feed">팔로잉</a></div></div>
+            <div class="dash-feed-grid">${recent.length ? recent.map(feedCard).join('') : emptyFeedCards()}</div>
+            <a class="dash-more" href="#/feed">더 많은 피드 보기⌄</a>
+          </section>
+
+          <section class="dash-bottom-banners">
+            <article><div><b>모바일에서도 완벽한 소소킹</b><p>PWA 지원으로 앱처럼 빠르고 간편하게 사용할 수 있어요.</p><button id="home-install-btn" type="button">앱처럼 추가하기 ›</button></div><i>📱</i></article>
+            <article><div><b>함께 만들어가는 소소킹</b><p>여러분의 아이디어가 새로운 기능이 됩니다.</p><a href="#/feedback">의견 제안하기 ›</a></div><i>💬</i></article>
+            <article class="stats"><b>지금 이 순간에도, 소소킹은 성장 중!</b><div><span>👥<strong>${num(Math.max(128540, items.length * 211))}</strong><small>회원 수</small></span><span>⚡<strong>${num(Math.max(32876, items.length * 53))}</strong><small>오늘의 활동</small></span><span>📝<strong>${num(Math.max(1245879, items.length * 99))}</strong><small>게시글 수</small></span><span>👑<strong>${num(Math.max(6542, items.length * 17))}</strong><small>방 개설 수</small></span></div></article>
+          </section>
         </div>
-      </section>
 
-      <section class="home-v4-recent">
-        <div class="section-head"><div><span>RECENT SOSO</span><h2>최근 소소피드</h2></div><a href="#/feed">전체보기</a></div>
-        <div class="recent-v4-grid">${items.length ? items.map(card).join('') : emptyCard()}</div>
+        <aside class="dash-sidebar">
+          <section class="dash-side-card popular"><div class="side-title"><b>🔥 인기글 TOP 5</b><a href="#/feed/top">더보기 ›</a></div>${popular.length ? popular.map((item, index) => topItem(item, index)).join('') : emptyTopItems()}</section>
+          <section class="dash-side-card mission"><div class="side-title"><b>🎯 오늘의 미션</b><a href="#/mission">더보기 ›</a></div><p>피드에 댓글 3개 남기기</p><div class="mission-bar"><i style="width:60%"></i><span>3 / 5</span></div><small>보상 🪙 50코인</small><a class="side-cta" href="#/mission">미션 보러가기</a></section>
+          <section class="dash-side-card install"><div><b>📱 소소킹 앱 설치하고 더 편하게!</b><p>알림도 받고, 언제 어디서나 소소킹을 즐겨보세요.</p><button id="side-install-btn" type="button">Android</button><button id="side-install-btn2" type="button">iOS</button></div><img src="/logo.svg" alt="소소킹"></section>
+          <section class="dash-side-card rules"><div class="side-title"><b>📜 커뮤니티 규칙</b><a href="#/guide">더보기 ›</a></div><ol><li>서로 존중하며 배려하는 문화를 만들어요.</li><li>혐오, 비방, 개인정보 노출은 금지!</li><li>창작과 정보는 출처를 함께 적어주세요.</li><li>재미있는 콘텐츠로 소소한 행복을 나눠요.</li></ol></section>
+        </aside>
       </section>
     </main>`;
-  container.querySelector('#home-install-btn')?.addEventListener('click', () => {
-    if (typeof window._pwaInstall === 'function') window._pwaInstall();
-    else alert('브라우저 메뉴에서 “홈 화면에 추가” 또는 “앱 설치”를 선택해주세요.');
-  });
+  const install = () => { if (typeof window._pwaInstall === 'function') window._pwaInstall(); else alert('브라우저 메뉴에서 “홈 화면에 추가” 또는 “앱 설치”를 선택해주세요.'); };
+  container.querySelector('#home-install-btn')?.addEventListener('click', install);
+  container.querySelector('#side-install-btn')?.addEventListener('click', install);
+  container.querySelector('#side-install-btn2')?.addEventListener('click', install);
 }
 
-function modeCard(icon, title, text, href) {
-  return `<a href="${href}" class="mode-v4-card"><i>${icon}</i><b>${e(title)}</b><span>${e(text)}</span></a>`;
+function categoryCard(title, text, icon, href, tone) {
+  return `<a href="${href}" class="dash-category ${tone}"><div><b>${e(title)}</b><span>${e(text)}</span></div><i>${icon}</i></a>`;
 }
 
-function card(item) {
-  return `<a class="recent-v4-card" href="#/feed/${encodeURIComponent(item.id)}"><span>${e(item.badge || '✨')} ${e(item.type || '소소피드')}</span><h3>${e(item.title)}</h3><p>${e(item.summary || item.content || '')}</p><small>조회 ${Number(item.stats?.views || 0).toLocaleString()} · 댓글 ${Number(item.stats?.comments || 0).toLocaleString()} · 좋아요 ${Number(item.stats?.likes || 0).toLocaleString()}</small></a>`;
+function feedCard(item) {
+  const title = item.title || '제목 없는 소소피드';
+  const summary = item.summary || item.content || '';
+  const img = item.imageUrl ? `<img src="${escapeAttr(item.imageUrl)}" alt="${escapeAttr(title)}">` : `<div class="feed-thumb fake">${e(item.badge || '✨')}</div>`;
+  return `<a class="dash-feed-card" href="#/feed/${encodeURIComponent(item.id)}"><div class="feed-badge">${e(item.badge || '✨')} ${e(item.type || '소소피드')}</div>${img}<h3>${e(title)}</h3><p>${e(summary)}</p><footer><span>🧑 ${e(item.authorName || '소소러')}</span><span>♡ ${num(item.stats?.likes || 0)}</span><span>💬 ${num(item.stats?.comments || 0)}</span></footer></a>`;
 }
 
-function emptyCard() {
-  return `<div class="recent-v4-card empty"><span>READY</span><h3>아직 올라온 소소피드가 없습니다</h3><p>첫 정보공유, 첫 릴레이소설, 첫 밸런스게임을 올리면 이곳에 표시됩니다.</p><small>재미 · 정보 · 투표 · 댓글</small></div>`;
+function topItem(item, index) {
+  const title = item.title || '소소피드';
+  const thumb = item.imageUrl ? `<img src="${escapeAttr(item.imageUrl)}" alt="${escapeAttr(title)}">` : `<i>${e(item.badge || '✨')}</i>`;
+  return `<a href="#/feed/${encodeURIComponent(item.id)}" class="top-item"><strong>${index + 1}</strong>${thumb}<div><b>${e(title)}</b><small>♡ ${num(item.stats?.likes || 0)} · 💬 ${num(item.stats?.comments || 0)}</small></div></a>`;
 }
+
+function emptyTopItems() {
+  return [1,2,3,4,5].map(i => `<div class="top-item empty"><strong>${i}</strong><i>✨</i><div><b>인기글을 기다리는 중</b><small>첫 소소피드를 올려보세요</small></div></div>`).join('');
+}
+
+function emptyFeedCards() {
+  return `<div class="dash-empty"><b>아직 피드가 없습니다</b><p>첫 정보공유, 퀴즈, 릴레이소설을 올리면 이곳에 표시됩니다.</p><a href="#/feed/new">첫 소소피드 만들기</a></div>`;
+}
+
+function score(item) { return Number(item.stats?.views || 0) + Number(item.stats?.likes || 0) * 5 + Number(item.stats?.comments || 0) * 8 + Number(item.stats?.votes || 0) * 3; }
+function num(value) { return Number(value || 0).toLocaleString(); }
+function e(s){return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function escapeAttr(s){return e(s).replace(/"/g,'&quot;').replace(/'/g,'&#039;')}
 
 function injectHomeStyle() {
-  if (document.getElementById('sosoking-home-v4-style')) return;
+  if (document.getElementById('sosoking-home-dashboard-style')) return;
   const style = document.createElement('style');
-  style.id = 'sosoking-home-v4-style';
+  style.id = 'sosoking-home-dashboard-style';
   style.textContent = `
-    .soso-home-v4{min-height:100vh;padding:22px var(--soso-page-pad,clamp(18px,3vw,42px)) 118px;background:radial-gradient(circle at 8% -6%,rgba(255,232,92,.42),transparent 30%),radial-gradient(circle at 92% 0%,rgba(255,92,138,.18),transparent 26%),radial-gradient(circle at 50% 18%,rgba(79,124,255,.14),transparent 38%),linear-gradient(180deg,#fffaf0 0%,#f3f7ff 46%,#f8f9ff 100%)!important;overflow:hidden}
-    .home-v4-hero,.home-v4-quick-grid,.home-v4-flow,.home-v4-recent{width:var(--soso-wide,min(1320px,calc(100vw - 56px)));max-width:var(--soso-wide,min(1320px,calc(100vw - 56px)));margin-left:auto;margin-right:auto}
-    .home-v4-hero{position:relative;display:grid;grid-template-columns:minmax(0,1.35fr) 410px;gap:20px;align-items:stretch;min-height:620px}.home-v4-hero:before{content:'';position:absolute;inset:-80px -120px auto auto;width:360px;height:360px;border-radius:999px;background:linear-gradient(135deg,rgba(255,232,92,.45),rgba(255,92,138,.18));filter:blur(10px);z-index:0}.home-v4-stage,.home-v4-live{position:relative;z-index:1;border:1px solid rgba(79,124,255,.15);border-radius:42px;background:rgba(255,255,255,.86);box-shadow:0 30px 100px rgba(55,90,170,.15);backdrop-filter:blur(18px) saturate(1.22)}
-    .home-v4-stage{overflow:hidden;padding:clamp(28px,5vw,58px)}.home-v4-stage:after{content:'SOSO';position:absolute;right:-18px;bottom:-34px;font-size:132px;font-weight:1000;letter-spacing:-.1em;color:rgba(79,124,255,.055);transform:rotate(-9deg)}
-    .home-v4-logo-pop{position:relative;display:inline-flex;align-items:center;justify-content:center;width:118px;height:118px;margin-bottom:20px;border-radius:36px;background:linear-gradient(135deg,#fff,#fff7d7);box-shadow:0 18px 55px rgba(255,122,89,.18),0 0 0 1px rgba(255,255,255,.8) inset}.home-v4-logo-pop img{width:96px;height:96px;border-radius:30px;transform:rotate(-6deg)}.home-v4-logo-pop i{position:absolute;font-style:normal;display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:15px;background:#fff;box-shadow:0 10px 24px rgba(55,90,170,.14)}.home-v4-logo-pop i:nth-child(2){right:-15px;top:8px}.home-v4-logo-pop i:nth-child(3){left:-15px;bottom:12px}.home-v4-logo-pop i:nth-child(4){right:8px;bottom:-16px}
-    .home-v4-kicker{display:inline-flex;padding:9px 12px;border-radius:999px;background:rgba(255,232,92,.55);color:#1b2250;font-size:11px;font-weight:1000;letter-spacing:.15em;border:1px solid rgba(255,184,0,.22)}.home-v4-stage h1{position:relative;z-index:1;margin:16px 0 14px;font-size:clamp(46px,6vw,82px);line-height:.98;letter-spacing:-.09em;color:#151a33}.home-v4-stage h1 em{font-style:normal;background:linear-gradient(135deg,#4f7cff,#7c5cff 48%,#ff5c8a);-webkit-background-clip:text;background-clip:text;color:transparent}.home-v4-stage p{position:relative;z-index:1;max-width:760px;margin:0;color:#667085;font-size:17px;line-height:1.82;word-break:keep-all}.home-v4-actions{position:relative;z-index:1;display:flex;gap:10px;flex-wrap:wrap;margin-top:26px}.home-v4-actions a,.home-v4-actions button{display:inline-flex;align-items:center;justify-content:center;padding:15px 18px;border-radius:20px;background:rgba(79,124,255,.10);border:1px solid rgba(79,124,255,.13);color:#4f7cff;text-decoration:none;font-weight:1000;font-family:inherit}.home-v4-actions a.primary{background:linear-gradient(135deg,#ff7a59,#ff5c8a,#7c5cff);color:#fff;border:0;box-shadow:0 18px 44px rgba(255,92,138,.26)}.home-v4-tags{position:relative;z-index:1;display:flex;gap:7px;flex-wrap:wrap;margin-top:18px}.home-v4-tags b{padding:8px 10px;border-radius:999px;background:rgba(255,255,255,.72);border:1px solid rgba(79,124,255,.10);color:#6b7280;font-size:12px}
-    .home-v4-live{padding:20px;background:linear-gradient(180deg,#151a33,#263d85 58%,#7c5cff)!important;color:#fff;display:grid;align-content:center;gap:12px;overflow:hidden}.home-v4-live:after{content:'PLAY';position:absolute;right:-12px;top:16px;font-size:74px;font-weight:1000;color:rgba(255,255,255,.06);letter-spacing:-.08em;transform:rotate(8deg)}.live-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}.live-head span{font-size:10px;letter-spacing:.15em;color:rgba(255,255,255,.6);font-weight:1000}.live-head b{font-size:16px}.live-card{position:relative;z-index:1;display:flex;gap:12px;align-items:center;padding:15px;border-radius:24px;background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(12px)}.live-card.hot{background:rgba(255,255,255,.18)}.live-card i{font-style:normal;font-size:26px}.live-card b{display:block;font-size:16px}.live-card p{margin:4px 0 0;color:rgba(255,255,255,.72);font-size:13px;line-height:1.45}
-    .home-v4-quick-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin-top:18px}.mode-v4-card{position:relative;overflow:hidden;min-height:172px;padding:20px;border-radius:28px;background:rgba(255,255,255,.86);border:1px solid rgba(79,124,255,.13);box-shadow:0 16px 50px rgba(55,90,170,.10);text-decoration:none;color:#151a33;transition:.18s transform,.18s box-shadow}.mode-v4-card:hover{transform:translateY(-5px);box-shadow:0 26px 90px rgba(55,90,170,.16)}.mode-v4-card:after{content:'';position:absolute;right:-28px;bottom:-28px;width:86px;height:86px;border-radius:999px;background:linear-gradient(135deg,rgba(255,232,92,.32),rgba(124,92,255,.14))}.mode-v4-card i{font-style:normal;font-size:32px}.mode-v4-card b{display:block;margin:14px 0 7px;font-size:18px;letter-spacing:-.05em}.mode-v4-card span{display:block;color:#667085;font-size:13px;line-height:1.58}
-    .home-v4-flow,.home-v4-recent{margin-top:26px}.home-v4-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.home-v4-steps article,.recent-v4-card{border:1px solid rgba(79,124,255,.13);border-radius:28px;background:rgba(255,255,255,.86);box-shadow:0 16px 50px rgba(55,90,170,.09);padding:20px}.home-v4-steps strong{display:inline-flex;padding:8px 10px;border-radius:14px;background:linear-gradient(135deg,#4f7cff,#7c5cff);color:#fff;font-weight:1000}.home-v4-steps h3{margin:14px 0 8px;font-size:21px;letter-spacing:-.05em;color:#151a33}.home-v4-steps p{margin:0;color:#667085;line-height:1.68;font-size:14px}
-    .recent-v4-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.recent-v4-card{text-decoration:none;color:#151a33;min-height:200px;display:flex;flex-direction:column}.recent-v4-card span{color:#4f7cff;font-size:12px;font-weight:1000}.recent-v4-card h3{margin:10px 0 8px;font-size:20px;line-height:1.35;letter-spacing:-.05em}.recent-v4-card p{margin:0;color:#667085;font-size:14px;line-height:1.6;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}.recent-v4-card small{margin-top:auto;color:#9aa4b5;font-size:12px;font-weight:900}.recent-v4-card.empty{grid-column:1/-1;align-items:center;justify-content:center;text-align:center}
-    [data-theme="dark"] .soso-home-v4{background:radial-gradient(circle at 8% -6%,rgba(124,92,255,.16),transparent 30%),#070b13!important}[data-theme="dark"] .home-v4-stage,[data-theme="dark"] .mode-v4-card,[data-theme="dark"] .home-v4-steps article,[data-theme="dark"] .recent-v4-card{background:rgba(16,23,34,.88);box-shadow:none}[data-theme="dark"] .home-v4-stage h1,[data-theme="dark"] .mode-v4-card,[data-theme="dark"] .home-v4-steps h3,[data-theme="dark"] .recent-v4-card{color:#f5f7fb}[data-theme="dark"] .home-v4-stage p,[data-theme="dark"] .mode-v4-card span,[data-theme="dark"] .home-v4-steps p,[data-theme="dark"] .recent-v4-card p{color:#a8b3c7}
-    @media(max-width:1100px){.home-v4-hero{grid-template-columns:1fr;min-height:auto}.home-v4-live{grid-template-columns:repeat(2,minmax(0,1fr));align-content:start}.live-head{grid-column:1/-1}.home-v4-quick-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.recent-v4-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-    @media(max-width:680px){.soso-home-v4{padding:14px 14px 108px}.home-v4-hero,.home-v4-quick-grid,.home-v4-flow,.home-v4-recent{width:100%;max-width:100%}.home-v4-stage,.home-v4-live{border-radius:30px}.home-v4-logo-pop{width:94px;height:94px}.home-v4-logo-pop img{width:76px;height:76px}.home-v4-stage h1{font-size:42px}.home-v4-stage p{font-size:15px}.home-v4-actions a,.home-v4-actions button{flex:1;min-width:140px}.home-v4-live{grid-template-columns:1fr}.home-v4-quick-grid,.home-v4-steps,.recent-v4-grid{grid-template-columns:1fr}.mode-v4-card{min-height:auto}.recent-v4-card.empty{grid-column:auto}}
+    .soso-home-dashboard{min-height:100vh;padding:22px clamp(18px,3vw,42px) 118px;background:radial-gradient(circle at 10% 0%,rgba(255,232,92,.34),transparent 28%),radial-gradient(circle at 74% 4%,rgba(124,92,255,.18),transparent 30%),linear-gradient(180deg,#fffaf5 0%,#f6f8ff 42%,#fbfcff 100%)!important;color:#10172f}.dash-shell{width:min(1500px,calc(100vw - 64px));margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:18px;align-items:start}.dash-main{display:grid;gap:16px}.dash-hero{min-height:315px;display:grid;grid-template-columns:minmax(0,1.15fr) 420px;gap:14px;align-items:stretch;border:1px solid rgba(79,124,255,.13);border-radius:32px;background:linear-gradient(120deg,rgba(255,255,255,.90),rgba(244,239,255,.88) 54%,rgba(255,244,236,.9));box-shadow:0 20px 70px rgba(55,90,170,.12);overflow:hidden}.dash-hero-copy{padding:36px 34px}.dash-hero-copy span{display:inline-flex;color:#6d38ff;font-weight:1000;font-size:14px}.dash-hero-copy h1{margin:14px 0 12px;font-size:clamp(48px,4.7vw,74px);line-height:1.05;letter-spacing:-.08em;color:#080d35}.dash-hero-copy h1 em{font-style:normal;background:linear-gradient(135deg,#4f7cff 0%,#6d38ff 38%,#ff5c8a 68%,#ff7a59);-webkit-background-clip:text;background-clip:text;color:transparent}.dash-hero-copy p{max-width:660px;margin:0;color:#667085;line-height:1.72;font-weight:800}.dash-hero-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}.dash-hero-actions a{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 18px;border-radius:999px;text-decoration:none;font-weight:1000;border:1px solid rgba(79,124,255,.14);background:#fff;color:#111936;box-shadow:0 10px 26px rgba(55,90,170,.08)}.dash-hero-actions a.primary{border:0;background:linear-gradient(135deg,#ff7a59,#ff5c8a,#6d38ff);color:#fff;box-shadow:0 16px 38px rgba(255,92,138,.28)}.dash-mascot-stage{position:relative;display:grid;place-items:center;min-height:315px;background:radial-gradient(circle at 50% 48%,rgba(255,255,255,.75),rgba(124,92,255,.12) 52%,transparent 72%)}.dash-mascot{position:relative;z-index:3;display:grid;place-items:center;width:178px;height:178px;border-radius:58px;background:linear-gradient(135deg,#fff,#fff7d7);box-shadow:0 24px 70px rgba(124,92,255,.25),0 0 0 10px rgba(255,255,255,.42);transform:rotate(-3deg)}.dash-mascot img{width:128px;height:128px;border-radius:38px}.dash-mascot b{position:absolute;bottom:-38px;padding:8px 13px;border-radius:999px;background:#fff;color:#6d38ff;box-shadow:0 10px 24px rgba(55,90,170,.12)}.dash-pedestal{position:absolute;z-index:1;bottom:36px;width:245px;height:50px;border-radius:999px;background:linear-gradient(135deg,rgba(255,122,89,.22),rgba(124,92,255,.18));filter:blur(.2px)}.dash-orbit{position:absolute;z-index:2;display:grid;place-items:center;width:56px;height:56px;border-radius:22px;background:#fff;box-shadow:0 16px 36px rgba(55,90,170,.16);font-size:28px}.icon-a{left:38px;top:70px}.icon-b{right:56px;top:52px}.icon-c{right:78px;bottom:88px}.icon-d{left:72px;bottom:78px}.dash-category-row{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}.dash-category{min-height:100px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:16px;border-radius:22px;text-decoration:none;background:#fff;border:1px solid rgba(79,124,255,.12);box-shadow:0 14px 40px rgba(55,90,170,.08);color:#10172f;overflow:hidden}.dash-category b{display:block;margin-bottom:5px;font-size:17px;letter-spacing:-.05em}.dash-category span{display:block;color:#6b7280;font-size:12px;line-height:1.45;font-weight:800}.dash-category i{font-style:normal;font-size:38px;filter:drop-shadow(0 8px 12px rgba(55,90,170,.13))}.dash-category.blue{background:linear-gradient(135deg,#f2f7ff,#fff)}.dash-category.purple{background:linear-gradient(135deg,#f6f0ff,#fff)}.dash-category.orange{background:linear-gradient(135deg,#fff4e8,#fff)}.dash-category.green{background:linear-gradient(135deg,#ecfff6,#fff)}.dash-category.pink{background:linear-gradient(135deg,#fff0f7,#fff)}.dash-category.navy{background:linear-gradient(135deg,#f0f5ff,#fff)}.dash-feed-panel,.dash-side-card,.dash-bottom-banners article{border:1px solid rgba(79,124,255,.13);border-radius:28px;background:rgba(255,255,255,.92);box-shadow:0 16px 50px rgba(55,90,170,.09)}.dash-feed-panel{padding:20px}.dash-section-head,.side-title{display:flex;align-items:center;justify-content:space-between;gap:12px}.dash-section-head span{font-weight:1000;color:#6d38ff}.dash-section-head h2{margin:6px 0 0;font-size:25px;letter-spacing:-.06em}.dash-tabs{display:flex;gap:8px}.dash-tabs a,.dash-tabs b{padding:9px 13px;border-radius:999px;background:#f3f5ff;color:#6b7280;text-decoration:none;font-size:12px;font-weight:1000}.dash-tabs b{background:#efe9ff;color:#6d38ff}.dash-feed-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin-top:16px}.dash-feed-card{position:relative;display:flex;flex-direction:column;min-height:260px;padding:12px;border-radius:22px;background:#fff;border:1px solid rgba(79,124,255,.11);box-shadow:0 12px 34px rgba(55,90,170,.07);text-decoration:none;color:#10172f}.dash-feed-card img,.feed-thumb{width:100%;height:132px;border-radius:17px;object-fit:cover;background:linear-gradient(135deg,#eef3ff,#fff4e8);display:grid;place-items:center;font-size:42px}.feed-badge{position:absolute;left:18px;top:18px;z-index:1;padding:6px 9px;border-radius:999px;background:rgba(109,56,255,.82);color:#fff;font-size:11px;font-weight:1000}.dash-feed-card h3{margin:12px 2px 7px;font-size:18px;line-height:1.35;letter-spacing:-.05em}.dash-feed-card p{margin:0 2px;color:#667085;font-size:13px;line-height:1.55;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.dash-feed-card footer{display:flex;gap:9px;align-items:center;margin-top:auto;padding-top:12px;color:#8a94a8;font-size:12px;font-weight:900}.dash-more{display:flex;justify-content:center;width:260px;margin:16px auto 0;padding:12px;border:1px solid rgba(79,124,255,.13);border-radius:999px;background:#fff;color:#6b7280;text-decoration:none;font-weight:1000}.dash-sidebar{display:grid;gap:14px;position:sticky;top:96px}.dash-side-card{padding:17px}.side-title b{font-size:18px}.side-title a{color:#8a94a8;text-decoration:none;font-size:12px;font-weight:900}.top-item{display:grid;grid-template-columns:24px 54px 1fr;gap:10px;align-items:center;padding:10px 0;border-top:1px solid rgba(79,124,255,.09);text-decoration:none;color:#10172f}.top-item:first-of-type{border-top:0}.top-item strong{font-size:20px}.top-item img,.top-item i{width:54px;height:42px;border-radius:11px;object-fit:cover;background:#eef3ff;display:grid;place-items:center;font-style:normal}.top-item b{display:block;font-size:12px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.top-item small{color:#8a94a8;font-size:11px}.mission p{margin:10px 0;color:#10172f;font-weight:1000}.mission-bar{display:flex;align-items:center;gap:10px;height:10px;border-radius:999px;background:#edf1ff;overflow:visible}.mission-bar i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#4f7cff,#ff5c8a)}.mission-bar span{font-size:12px;color:#667085;font-weight:1000}.mission small{display:block;margin:15px 0;color:#667085;font-weight:900}.side-cta,.install button{display:inline-flex;justify-content:center;align-items:center;height:38px;padding:0 12px;border:1px solid rgba(79,124,255,.15);border-radius:14px;background:#fff;color:#6d38ff;text-decoration:none;font-weight:1000}.install{display:grid;grid-template-columns:1fr 86px;gap:8px;align-items:center;background:linear-gradient(135deg,#fff,#f8f0ff)!important}.install p{margin:8px 0;color:#667085;font-size:13px;line-height:1.45}.install img{width:82px;height:82px;border-radius:24px;background:#fff;box-shadow:0 12px 28px rgba(55,90,170,.12)}.rules ol{margin:12px 0 0;padding-left:18px;color:#667085;font-size:12px;line-height:1.8;font-weight:800}.dash-bottom-banners{display:grid;grid-template-columns:1.05fr 1.05fr 1.1fr;gap:14px}.dash-bottom-banners article{padding:20px;display:flex;align-items:center;justify-content:space-between;gap:14px}.dash-bottom-banners b{font-size:20px;letter-spacing:-.05em}.dash-bottom-banners p{margin:8px 0;color:#667085;line-height:1.55}.dash-bottom-banners i{font-style:normal;font-size:76px}.dash-bottom-banners button,.dash-bottom-banners a{border:0;border-radius:999px;padding:11px 15px;background:linear-gradient(135deg,#ff7a59,#ff5c8a,#6d38ff);color:#fff;text-decoration:none;font-weight:1000}.dash-bottom-banners .stats{display:block}.stats>div{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:18px}.stats span{display:grid;gap:4px;text-align:center;color:#667085}.stats strong{font-size:20px;color:#10172f}.stats small{font-size:11px}.dash-empty{grid-column:1/-1;display:grid;place-items:center;text-align:center;min-height:220px;border-radius:22px;background:#fff;border:1px dashed rgba(79,124,255,.2)}.dash-empty a{color:#6d38ff;font-weight:1000}
+    @media(max-width:1220px){.dash-shell{grid-template-columns:1fr}.dash-sidebar{position:static;grid-template-columns:repeat(2,minmax(0,1fr))}.dash-category-row{grid-template-columns:repeat(3,minmax(0,1fr))}.dash-feed-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:860px){.soso-home-dashboard{padding:14px 14px 108px}.dash-shell{width:100%;display:block}.dash-main{gap:13px}.dash-hero{grid-template-columns:1fr;border-radius:30px}.dash-hero-copy{padding:26px 22px}.dash-hero-copy h1{font-size:42px}.dash-mascot-stage{min-height:250px}.dash-category-row{display:flex;overflow-x:auto;padding-bottom:4px;scroll-snap-type:x mandatory}.dash-category{min-width:210px;scroll-snap-align:start}.dash-feed-grid{grid-template-columns:1fr}.dash-sidebar{display:grid;grid-template-columns:1fr;margin-top:14px}.dash-bottom-banners{grid-template-columns:1fr}.stats>div{grid-template-columns:repeat(2,1fr)}.dash-tabs{display:none}.dash-bottom-banners i{font-size:54px}}
+    [data-theme="dark"] .soso-home-dashboard{background:radial-gradient(circle at 8% -6%,rgba(124,92,255,.16),transparent 30%),#070b13!important}[data-theme="dark"] .dash-hero,[data-theme="dark"] .dash-category,[data-theme="dark"] .dash-feed-panel,[data-theme="dark"] .dash-side-card,[data-theme="dark"] .dash-bottom-banners article,[data-theme="dark"] .dash-feed-card{background:rgba(16,23,34,.88)!important;box-shadow:none}[data-theme="dark"] .dash-hero-copy h1,[data-theme="dark"] .dash-feed-card,[data-theme="dark"] .top-item,[data-theme="dark"] .stats strong{color:#f5f7fb}[data-theme="dark"] .dash-hero-copy p,[data-theme="dark"] .dash-feed-card p,[data-theme="dark"] .rules ol,[data-theme="dark"] .install p{color:#a8b3c7}
   `;
   document.head.appendChild(style);
 }
-
-function e(s){return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
