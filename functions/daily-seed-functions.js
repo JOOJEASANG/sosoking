@@ -1,4 +1,5 @@
 const { onSchedule } = require('firebase-functions/v2/scheduler');
+const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
 
 if (!admin.apps.length) admin.initializeApp();
@@ -78,6 +79,18 @@ function voteMap(options) {
   return Object.fromEntries(options.map(option => [option.replace(/[.~*/[\]]/g, '_'), 0]));
 }
 
+async function isDailySeedEnabled() {
+  const snap = await db.collection('site_settings').doc('config').get();
+  const data = snap.exists ? snap.data() : {};
+  return data.dailySeedEnabled !== false;
+}
+
+async function assertAdmin(uid) {
+  if (!uid) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+  const adminSnap = await db.collection('admins').doc(uid).get();
+  if (!adminSnap.exists) throw new HttpsError('permission-denied', '관리자만 실행할 수 있습니다.');
+}
+
 function buildPost(item, dateKey, index) {
   const title = `${pick(item.titles, index)} · ${dateKey}`;
   const content = `${pick(item.prompts, index)}\n\n이 글은 소소킹 운영팀이 오늘의 참여 주제로 자동 등록한 샘플 피드입니다.`;
@@ -117,11 +130,14 @@ function buildPost(item, dateKey, index) {
   };
 }
 
-async function createDailySeedPosts() {
+async function createDailySeedPosts({ force = false } = {}) {
+  const enabled = await isDailySeedEnabled();
+  if (!enabled && !force) return { skipped: true, reason: 'disabled-by-admin', enabled };
+
   const today = dayKey();
   const markerRef = db.collection('system_jobs').doc(`daily_seed_${today}`);
   const marker = await markerRef.get();
-  if (marker.exists) return { skipped: true, reason: 'already-created', date: today };
+  if (marker.exists) return { skipped: true, reason: 'already-created', date: today, enabled };
 
   const batch = db.batch();
   let count = 0;
@@ -136,11 +152,12 @@ async function createDailySeedPosts() {
     date: today,
     count,
     status: 'done',
+    enabled,
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
     createdAtMs: Date.now()
   });
   await batch.commit();
-  return { ok: true, date: today, count };
+  return { ok: true, date: today, count, enabled };
 }
 
 exports.createDailySeedPosts = onSchedule({
@@ -154,12 +171,21 @@ exports.createDailySeedPosts = onSchedule({
   console.log('daily seed result', result);
 });
 
-exports.runDailySeedPostsNow = require('firebase-functions/v2/https').onCall({
-  region: 'asia-northeast3'
-}, async (request) => {
-  if (!request.auth) throw new Error('로그인이 필요합니다.');
-  const uid = request.auth.uid;
-  const adminSnap = await db.collection('admins').doc(uid).get();
-  if (!adminSnap.exists) throw new Error('관리자만 실행할 수 있습니다.');
-  return createDailySeedPosts();
+exports.runDailySeedPostsNow = onCall({ region: 'asia-northeast3' }, async (request) => {
+  await assertAdmin(request.auth && request.auth.uid);
+  return createDailySeedPosts({ force: true });
+});
+
+exports.getDailySeedStatus = onCall({ region: 'asia-northeast3' }, async (request) => {
+  await assertAdmin(request.auth && request.auth.uid);
+  const enabled = await isDailySeedEnabled();
+  const today = dayKey();
+  const marker = await db.collection('system_jobs').doc(`daily_seed_${today}`).get();
+  return {
+    enabled,
+    today,
+    createdToday: marker.exists,
+    marker: marker.exists ? marker.data() : null,
+    dailyCount: TYPES.length * 2
+  };
 });
