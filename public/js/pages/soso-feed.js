@@ -15,7 +15,7 @@ export function renderSosoFeed(container) {
 }
 
 function renderFeedLoading(container, topOnly = false) {
-  container.innerHTML = `<main class="predict-app soso-feed-page feed-polish"><section class="feed-hero"><div class="feed-hero-copy"><span>SOSO FEED</span><h1>${topOnly ? '인기 소소피드 불러오는 중' : '소소피드 불러오는 중'}</h1><p>웃긴 글, 사진, 소소한 논쟁을 정리하고 있습니다.</p></div></section></main>`;
+  container.innerHTML = `<main class="predict-app soso-feed-page feed-polish"><section class="feed-hero"><div class="feed-hero-copy"><span>SOSO FEED</span><h1>${topOnly ? '인기 소소피드 불러오는 중' : '소소피드 불러오는 중'}</h1><p>웃긴 글, 사진, 소소한 참여글을 정리하고 있습니다.</p></div></section></main>`;
 }
 
 function renderFeedList(container, topOnly = false, feedItems = FALLBACK_FEED_ITEMS) {
@@ -29,7 +29,7 @@ function renderFeedList(container, topOnly = false, feedItems = FALLBACK_FEED_IT
         <div class="feed-hero-copy">
           <span>SOSO FEED</span>
           <h1>피드 하나로 최신글, 인기글, 검색까지</h1>
-          <p>사진 제목학원, 밸런스게임, 퀴즈, 정보공유, 릴레이소설, 역할극까지 한 피드에서 찾고 참여합니다.</p>
+          <p>미친작명소, 밸런스게임, 퀴즈, 정보공유, 릴레이소설, 역할극까지 한 피드에서 찾고 참여합니다.</p>
           <div class="feed-actions"><a href="#/feed/new">글 올리기</a><a href="#/mission">오늘 미션</a></div>
         </div>
         <div class="feed-stat-card">
@@ -57,7 +57,7 @@ function renderFeedList(container, topOnly = false, feedItems = FALLBACK_FEED_IT
         </div>
         <aside class="feed-side">
           <div class="side-card"><b>피드 사용법</b><p>하단 메뉴는 단순하게 유지하고, 최신/인기/유형 검색은 피드 안에서 처리합니다.</p></div>
-          <div class="side-card"><b>올릴 수 있는 것</b><div class="side-tags"><span>정보공유</span><span>릴레이소설</span><span>역할극</span><span>퀴즈</span><span>영상 리액션</span></div></div>
+          <div class="side-card"><b>올릴 수 있는 것</b><div class="side-tags"><span>미친작명소</span><span>정보공유</span><span>릴레이소설</span><span>역할극</span><span>퀴즈</span><span>영상 리액션</span></div></div>
           <div class="side-card caution"><b>운영 원칙</b><p>저작권 문제 없는 이미지와 링크, 개인정보 없는 글, 혐오·성인·비방 없는 콘텐츠만 허용합니다.</p></div>
         </aside>
       </section>
@@ -119,14 +119,15 @@ function voteButtons(post, myVote) {
 }
 
 function drawFeedDetail(container, post, comments = [], myVote = null) {
+  const isNaming = post.type === '미친작명소' || post.type === '사진 제목학원';
   container.innerHTML = `
     <main class="predict-app soso-feed-page feed-polish">
-      <div class="simple-header feed-write-header"><a href="#/feed" class="back-link">‹</a><div><span>${escapeHtml(post.type)}</span><h1>${escapeHtml(post.title)}</h1></div><b>조회 ${num(post.stats?.views)}</b></div>
+      <div class="simple-header feed-write-header"><a href="#/feed" class="back-link">‹</a><div><span>${escapeHtml(isNaming ? '미친작명소' : post.type)}</span><h1>${escapeHtml(post.title)}</h1></div><b>조회 ${num(post.stats?.views)}</b></div>
       <section class="feed-detail-layout">
-        <article class="feed-card detail-main-card"><div class="feed-card-top"><span>${escapeHtml(post.badge)} ${escapeHtml(post.type)}</span><b>♡ ${num(post.stats?.likes)}</b></div>${mediaBlock(post, true)}<h3>${escapeHtml(post.title)}</h3><p>${escapeHtml(post.content || post.summary)}</p><div class="feed-question"><b>${escapeHtml(post.question)}</b>${voteButtons(post, myVote)}</div><div id="vote-status" class="write-status">${myVote ? `내 선택: ${escapeHtml(myVote)}` : '선택지를 누르면 바로 투표됩니다.'}</div><div class="feed-tags">${(post.tags || []).map(tag => `<span>#${escapeHtml(tag)}</span>`).join('')}</div><div class="detail-actions"><button id="feed-like-btn" type="button">♡ 좋아요</button><button id="feed-report-btn" type="button">신고</button><button type="button" onclick="navigator.share&&navigator.share({title:document.title,url:location.href})">공유</button></div></article>
-        <aside class="detail-side"><div class="side-card"><b>글 정보</b><p>작성자 ${escapeHtml(post.authorName || '익명 소소러')}<br>투표 ${num(post.stats?.votes)} · 댓글 ${num(post.stats?.comments)} · 좋아요 ${num(post.stats?.likes)}</p></div><div class="side-card caution"><b>참여 안내</b><p>선택지를 고르면 결과 퍼센트가 표시됩니다. 한 글에는 한 번만 투표할 수 있습니다.</p></div></aside>
+        <article class="feed-card detail-main-card"><div class="feed-card-top"><span>${escapeHtml(post.badge)} ${escapeHtml(isNaming ? '미친작명소' : post.type)}</span><b>♡ ${num(post.stats?.likes)}</b></div>${mediaBlock(post, true)}<h3>${escapeHtml(post.title)}</h3><p>${escapeHtml(post.content || post.summary)}</p><div class="feed-question"><b>${escapeHtml(post.question)}</b>${voteButtons(post, myVote)}</div><div id="vote-status" class="write-status">${myVote ? `내 선택: ${escapeHtml(myVote)}` : '선택지를 누르면 바로 투표됩니다.'}</div><div class="feed-tags">${(post.tags || []).map(tag => `<span>#${escapeHtml(tag)}</span>`).join('')}</div><div class="detail-actions"><button id="feed-like-btn" type="button">♡ 좋아요</button><button id="feed-report-btn" type="button">신고</button><button type="button" onclick="navigator.share&&navigator.share({title:document.title,url:location.href})">공유</button></div></article>
+        <aside class="detail-side"><div class="side-card"><b>글 정보</b><p>작성자 ${escapeHtml(post.authorName || '익명 소소러')}<br>투표 ${num(post.stats?.votes)} · 댓글 ${num(post.stats?.comments)} · 좋아요 ${num(post.stats?.likes)}</p></div><div class="side-card caution"><b>참여 안내</b><p>${isNaming ? '댓글로 작명에 참여하고, 마음에 드는 작명에는 느낌 추천을 눌러 순위를 올릴 수 있습니다.' : '선택지를 고르면 결과 퍼센트가 표시됩니다. 한 글에는 한 번만 투표할 수 있습니다.'}</p></div></aside>
       </section>
-      <section class="comments-section feed-comments"><div class="section-head compact"><div><span>COMMENTS</span><h2>한 줄 댓글</h2></div></div><form id="feed-comment-form" class="comment-form"><input id="feed-comment-input" maxlength="300" placeholder="한 줄 생각을 남겨보세요"/><button>등록</button></form><div class="comment-list">${comments.length ? comments.map(commentCard).join('') : '<div class="comment-item"><b>아직 댓글 없음</b><p>첫 한 줄을 남겨보세요.</p><small>공감 0</small></div>'}</div></section>
+      <section class="comments-section feed-comments"><div class="section-head compact"><div><span>${isNaming ? 'NAMING' : 'COMMENTS'}</span><h2>${isNaming ? '작명 댓글' : '한 줄 댓글'}</h2></div></div><form id="feed-comment-form" class="comment-form"><input id="feed-comment-input" maxlength="300" placeholder="${isNaming ? '이 사진에 어울리는 미친 작명을 남겨보세요' : '한 줄 생각을 남겨보세요'}"/><button>등록</button></form><div class="comment-list">${comments.length ? comments.map(commentCard).join('') : `<div class="comment-item"><b>아직 댓글 없음</b><p>${isNaming ? '첫 작명을 남겨보세요.' : '첫 한 줄을 남겨보세요.'}</p><small>추천 0</small></div>`}</div></section>
     </main>`;
   container.querySelectorAll('.feed-vote-option:not([disabled])').forEach(button => button.addEventListener('click', async event => {
     const option = event.currentTarget.dataset.option; const status = container.querySelector('#vote-status'); event.currentTarget.disabled = true; status.textContent = '투표 저장 중...';
@@ -142,7 +143,7 @@ function drawFeedDetail(container, post, comments = [], myVote = null) {
   });
 }
 
-function commentCard(comment) { return `<div class="comment-item"><b>${escapeHtml(comment.authorName)}</b><p>${escapeHtml(comment.text)}</p><small>공감 ${num(comment.likes)}</small></div>`; }
+function commentCard(comment) { return `<div class="comment-item" data-comment-id="${escapeAttr(comment.id)}"><b>${escapeHtml(comment.authorName)}</b><p>${escapeHtml(comment.text)}</p><small>추천 ${num(comment.likes)}</small></div>`; }
 function openReportDialog(postId) {
   document.getElementById('feed-report-modal')?.remove();
   const modal = document.createElement('div'); modal.id = 'feed-report-modal'; modal.className = 'feed-report-modal';
@@ -152,8 +153,9 @@ function openReportDialog(postId) {
 }
 
 function feedCard(item) {
+  const type = item.type === '사진 제목학원' ? '미친작명소' : item.type;
   const votes = item.votes || {}; const total = Math.max(1, Number(item.stats?.votes || 0) || Object.values(votes).reduce((a, b) => a + Number(b || 0), 0));
-  return `<article class="feed-card"><div class="feed-card-top"><span>${escapeHtml(item.badge)} ${escapeHtml(item.type)}</span><b>조회 ${num(item.stats?.views)}</b></div>${mediaBlock(item, false)}<h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.summary || item.content || '')}</p><div class="feed-question"><b>${escapeHtml(item.question)}</b>${(item.options || []).map((option) => { const pct = Math.round((Number(votes[option] || 0) / total) * 100); return `<div class="feed-option"><span>${escapeHtml(option)}</span><em>${pct}%</em><i style="--w:${Math.max(12, pct)}%"></i></div>`; }).join('')}</div><div class="feed-top-comment"><b>인기 한 줄</b><span>${escapeHtml(item.topComment || '아직 인기 한 줄이 없습니다.')}</span></div><div class="feed-tags">${(item.tags || []).map(tag => `<span>#${escapeHtml(tag)}</span>`).join('')}</div><div class="feed-card-bottom"><span>♡ ${num(item.stats?.likes)}</span><span>💬 ${num(item.stats?.comments)}</span><a class="feed-participate" href="#/feed/${encodeURIComponent(item.id)}">참여하기</a></div></article>`;
+  return `<article class="feed-card"><div class="feed-card-top"><span>${escapeHtml(item.badge)} ${escapeHtml(type)}</span><b>조회 ${num(item.stats?.views)}</b></div>${mediaBlock(item, false)}<h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.summary || item.content || '')}</p><div class="feed-question"><b>${escapeHtml(item.question)}</b>${(item.options || []).map((option) => { const pct = Math.round((Number(votes[option] || 0) / total) * 100); return `<div class="feed-option"><span>${escapeHtml(option)}</span><em>${pct}%</em><i style="--w:${Math.max(12, pct)}%"></i></div>`; }).join('')}</div><div class="feed-top-comment"><b>인기 한 줄</b><span>${escapeHtml(item.topComment || '아직 인기 한 줄이 없습니다.')}</span></div><div class="feed-tags">${(item.tags || []).map(tag => `<span>#${escapeHtml(tag)}</span>`).join('')}</div><div class="feed-card-bottom"><span>♡ ${num(item.stats?.likes)}</span><span>💬 ${num(item.stats?.comments)}</span><a class="feed-participate" href="#/feed/${encodeURIComponent(item.id)}">참여하기</a></div></article>`;
 }
 
 function injectFeedPolishStyle() {
