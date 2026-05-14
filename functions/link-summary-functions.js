@@ -3,6 +3,7 @@ const { defineSecret } = require('firebase-functions/params');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const GEMINI_API_KEY = defineSecret('GEMINI_API_KEY');
+const SUMMARY_MODEL = 'gemini-2.5-flash-lite';
 
 const BLOCKED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0'];
 const BLOCK_WORDS = ['성인', '도박', '카지노', '토토', '불법', '마약', '폭력'];
@@ -55,7 +56,7 @@ async function summarizeWithGemini({ title, description, body, url }) {
   const apiKey = GEMINI_API_KEY.value();
   if (!apiKey) throw new Error('AI 요약 키가 설정되어 있지 않습니다.');
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const model = genAI.getGenerativeModel({ model: SUMMARY_MODEL });
   const prompt = `아래 웹페이지를 소소킹 정보공유 피드용으로 요약해줘. 원문을 길게 복사하지 말고 한국어로 짧고 유용하게 정리해.\n\n규칙:\n- 제목 40자 이내\n- 요약 2문장 이내\n- 핵심 포인트 3개\n- 광고성/선정적 표현 제거\n- JSON만 반환\n\nURL: ${url}\n제목: ${title}\n설명: ${description}\n본문 일부: ${body.slice(0, 4500)}\n\n반환 형식: {"title":"","summary":"","points":["","",""]}`;
   const result = await model.generateContent(prompt);
   const text = result.response.text().replace(/```json|```/g, '').trim();
@@ -87,7 +88,14 @@ const summarizeLink = onCall({ region: 'asia-northeast3', timeoutSeconds: 45, se
   const html = await res.text();
   const page = extractPage(html.slice(0, 700000), url);
   const ai = await summarizeWithGemini({ ...page, url: url.toString() });
-  return { ok: true, url: url.toString(), source, ...ai };
+  return {
+    ok: true,
+    url: url.toString(),
+    source,
+    model: SUMMARY_MODEL,
+    estimatedCostLabel: 'Gemini Flash-Lite 기준: 무료 한도부터 시작, 유료 사용 시 링크 요약 1회는 보통 수 원 미만 예상',
+    ...ai
+  };
 });
 
 module.exports = { summarizeLink };
