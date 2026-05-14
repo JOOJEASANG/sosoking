@@ -1,0 +1,248 @@
+/* Mission dashboard upgrade: event board style */
+.mission-page-v1.mission-dashboard {
+  padding: 26px clamp(20px, 3vw, 46px) 118px !important;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(255,232,92,.34), transparent 28%),
+    radial-gradient(circle at 70% 2%, rgba(124,92,255,.20), transparent 31%),
+    radial-gradient(circle at 95% 22%, rgba(255,92,138,.13), transparent 25%),
+    linear-gradient(180deg, #fffaf5 0%, #f6f8ff 42%, #fbfcff 100%) !important;
+}
+.mission-page-v1 .mission-hero,
+.mission-page-v1 .mission-grid,
+.mission-page-v1 .mission-note {
+  width: min(1540px, calc(100vw - 72px)) !important;
+  max-width: min(1540px, calc(100vw - 72px)) !important;
+}
+.mission-page-v1 .mission-hero {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 420px !important;
+  gap: 20px !important;
+  align-items: stretch !important;
+}
+.mission-page-v1 .mission-copy,
+.mission-page-v1 .mission-card-live,
+.mission-page-v1 .mission-mini-card,
+.mission-page-v1 .mission-note {
+  border: 1px solid rgba(79,124,255,.13) !important;
+  background: rgba(255,255,255,.94) !important;
+  box-shadow: 0 17px 54px rgba(55,90,170,.10) !important;
+}
+.mission-page-v1 .mission-copy {
+  min-height: 370px;
+  position: relative;
+  overflow: hidden;
+  border-radius: 36px !important;
+  padding: 46px 42px !important;
+  background: linear-gradient(118deg, rgba(255,255,255,.96), rgba(244,239,255,.90) 50%, rgba(255,244,236,.94)) !important;
+}
+.mission-page-v1 .mission-copy::before {
+  content: '';
+  position: absolute;
+  left: -80px;
+  bottom: -110px;
+  width: 300px;
+  height: 300px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(255,232,92,.55), transparent 68%);
+}
+.mission-page-v1 .mission-copy::after {
+  content: 'MISSION';
+  position: absolute;
+  right: -10px;
+  bottom: -26px;
+  font-size: 96px;
+  font-weight: 1000;
+  letter-spacing: -.09em;
+  color: rgba(79,124,255,.055);
+  transform: rotate(-8deg);
+}
+.mission-page-v1 .mission-copy > * {
+  position: relative;
+  z-index: 1;
+}
+.mission-page-v1 .mission-copy > span {
+  display: inline-flex !important;
+  padding: 8px 11px !important;
+  border-radius: 999px !important;
+  background: rgba(255,232,92,.58) !important;
+  color: #1b2250 !important;
+  border: 1px solid rgba(255,184,0,.23) !important;
+  font-size: 11px !important;
+  font-weight: 1000 !important;
+  letter-spacing: .13em !important;
+}
+.mission-page-v1 .mission-copy h1 {
+  max-width: 820px;
+  margin: 16px 0 14px !important;
+  color: #080d35 !important;
+  font-size: clamp(48px, 4.8vw, 78px) !important;
+  line-height: 1.03 !important;
+  letter-spacing: -.092em !important;
+}
+.mission-page-v1 .mission-copy h1 em {
+  font-style: normal !important;
+  background: linear-gradient(135deg, #4f7cff 0%, #6d38ff 38%, #ff5c8a 68%, #ff7a59) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  color: transparent !important;
+}
+.mission-page-v1 .mission-copy p {
+  max-width: 800px;
+  color: #667085 !important;
+  font-size: 16px !important;
+  line-height: 1.74 !important;
+  font-weight: 800 !important;
+}
+.mission-page-v1 .mission-today {
+  max-width: 780px;
+  margin-top: 26px !important;
+  border-radius: 26px !important;
+  background: linear-gradient(135deg, rgba(79,124,255,.08), rgba(255,232,92,.16), rgba(255,92,138,.08)) !important;
+  border: 1px solid rgba(79,124,255,.12) !important;
+  box-shadow: 0 12px 34px rgba(55,90,170,.07) !important;
+}
+.mission-page-v1 .mission-primary {
+  min-height: 52px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  border-radius: 999px !important;
+  padding: 0 22px !important;
+  background: linear-gradient(135deg, #ff7a59, #ff5c8a, #6d38ff) !important;
+  box-shadow: 0 16px 38px rgba(255,92,138,.28) !important;
+}
+.mission-page-v1 .mission-card-live {
+  min-height: 370px;
+  border-radius: 34px !important;
+  padding: 26px !important;
+  background:
+    radial-gradient(circle at 18% 8%, rgba(255,232,92,.18), transparent 24%),
+    linear-gradient(145deg, #101832 0%, #243f91 55%, #7c5cff 100%) !important;
+  color: #fff !important;
+  position: relative;
+  overflow: hidden;
+}
+.mission-page-v1 .mission-card-live::after {
+  content: 'PLAY';
+  position: absolute;
+  right: -10px;
+  bottom: -16px;
+  font-size: 78px;
+  font-weight: 1000;
+  color: rgba(255,255,255,.07);
+  letter-spacing: -.08em;
+  transform: rotate(-8deg);
+}
+.mission-page-v1 .mission-card-live b {
+  font-size: 22px !important;
+  color: #fff !important;
+}
+.mission-page-v1 .mission-card-live div {
+  position: relative;
+  z-index: 1;
+  border-radius: 20px !important;
+  padding: 14px !important;
+  background: rgba(255,255,255,.12) !important;
+  border: 1px solid rgba(255,255,255,.14) !important;
+  font-weight: 1000 !important;
+}
+.mission-page-v1 .mission-card-live small {
+  position: relative;
+  z-index: 1;
+}
+.mission-page-v1 .mission-grid {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 15px !important;
+  margin-top: 18px !important;
+}
+.mission-page-v1 .mission-mini-card {
+  min-height: 220px;
+  border-radius: 28px !important;
+  padding: 22px !important;
+  transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease !important;
+}
+.mission-page-v1 .mission-mini-card:hover {
+  transform: translateY(-5px) !important;
+  box-shadow: 0 26px 76px rgba(55,90,170,.16) !important;
+  border-color: rgba(255,122,89,.27) !important;
+}
+.mission-page-v1 .mission-mini-card i {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 58px !important;
+  height: 58px !important;
+  border-radius: 22px !important;
+  background: linear-gradient(135deg, rgba(255,232,92,.50), rgba(124,92,255,.12)) !important;
+  font-size: 30px !important;
+  box-shadow: 0 12px 28px rgba(55,90,170,.10) !important;
+}
+.mission-page-v1 .mission-mini-card span {
+  margin-left: 0 !important;
+  margin-top: 16px !important;
+  background: rgba(109,56,255,.10) !important;
+  color: #6d38ff !important;
+}
+.mission-page-v1 .mission-mini-card h3 {
+  font-size: 21px !important;
+  line-height: 1.32 !important;
+  letter-spacing: -.06em !important;
+  color: #10172f !important;
+}
+.mission-page-v1 .mission-mini-card p {
+  color: #667085 !important;
+  font-weight: 800 !important;
+}
+.mission-page-v1 .mission-note {
+  margin-top: 18px !important;
+  border-radius: 30px !important;
+  padding: 24px !important;
+  background: linear-gradient(135deg, rgba(255,255,255,.94), rgba(255,244,236,.90)) !important;
+}
+.mission-page-v1 .mission-note b {
+  color: #10172f !important;
+  font-size: 21px !important;
+}
+.mission-page-v1 .mission-note p {
+  color: #667085 !important;
+  font-weight: 800 !important;
+}
+
+@media (max-width: 1220px) {
+  .mission-page-v1 .mission-hero { grid-template-columns: 1fr !important; }
+  .mission-page-v1 .mission-grid { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+}
+@media (max-width: 860px) {
+  .mission-page-v1.mission-dashboard { padding: 14px 14px 108px !important; }
+  .mission-page-v1 .mission-hero,
+  .mission-page-v1 .mission-grid,
+  .mission-page-v1 .mission-note {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  .mission-page-v1 .mission-copy { min-height: auto; padding: 26px 22px !important; border-radius: 30px !important; }
+  .mission-page-v1 .mission-copy h1 { font-size: 40px !important; }
+  .mission-page-v1 .mission-card-live { min-height: auto; }
+  .mission-page-v1 .mission-grid { grid-template-columns: 1fr !important; }
+  .mission-page-v1 .mission-mini-card { min-height: auto; }
+}
+
+[data-theme="dark"] .mission-page-v1.mission-dashboard {
+  background: radial-gradient(circle at 8% -6%, rgba(124,92,255,.16), transparent 30%), #070b13 !important;
+}
+[data-theme="dark"] .mission-page-v1 .mission-copy,
+[data-theme="dark"] .mission-page-v1 .mission-mini-card,
+[data-theme="dark"] .mission-page-v1 .mission-note {
+  background: rgba(16,23,34,.88) !important;
+  box-shadow: none !important;
+}
+[data-theme="dark"] .mission-page-v1 .mission-copy h1,
+[data-theme="dark"] .mission-page-v1 .mission-mini-card h3,
+[data-theme="dark"] .mission-page-v1 .mission-note b {
+  color: #f5f7fb !important;
+}
+[data-theme="dark"] .mission-page-v1 .mission-copy p,
+[data-theme="dark"] .mission-page-v1 .mission-mini-card p,
+[data-theme="dark"] .mission-page-v1 .mission-note p {
+  color: #a8b3c7 !important;
+}
