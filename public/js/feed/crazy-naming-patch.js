@@ -1,5 +1,5 @@
 import { auth, db } from '../firebase.js';
-import { doc, increment, updateDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { collection, doc, getDocs, increment, query, updateDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 
 const REACTIONS = [
   { key: 'laugh', icon: '😂', label: '미쳤다' },
@@ -7,6 +7,8 @@ const REACTIONS = [
   { key: 'king', icon: '👑', label: '1등' },
   { key: 'fire', icon: '🔥', label: '웃김' }
 ];
+
+const commentCache = new Map();
 
 function replaceTextNodes(root = document.body) {
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
@@ -35,40 +37,69 @@ function sortCommentItems(list) {
   const items = [...list.querySelectorAll('.comment-item')];
   items.sort((a, b) => parseLikeCount(b) - parseLikeCount(a));
   items.forEach(item => list.appendChild(item));
+  [...list.querySelectorAll('.crazy-rank-badge')].forEach((badge, index) => {
+    badge.textContent = index < 3 ? `작명 ${index + 1}위` : '작명 후보';
+  });
 }
 
-function enhanceComments() {
+async function loadCommentDocs(postId) {
+  if (!postId) return [];
+  if (commentCache.has(postId)) return commentCache.get(postId);
+  try {
+    const snap = await getDocs(query(collection(db, 'soso_feed_posts', postId, 'comments')));
+    const docs = snap.docs.map(d => ({ id: d.id, ...(d.data() || {}) }));
+    commentCache.set(postId, docs);
+    return docs;
+  } catch (error) {
+    console.warn('댓글 추천 데이터 확인 실패:', error);
+    return [];
+  }
+}
+
+function findCommentId(item, docs) {
+  if (item.dataset.commentId || item.getAttribute('data-id')) return item.dataset.commentId || item.getAttribute('data-id');
+  const author = (item.querySelector('b')?.textContent || '').trim();
+  const text = (item.querySelector('p')?.textContent || '').trim();
+  const matched = docs.find(d => String(d.text || '').trim() === text && String(d.authorName || '').trim() === author);
+  return matched?.id || '';
+}
+
+async function enhanceComments() {
   const postId = currentPostId();
   if (!postId) return;
+  const docs = await loadCommentDocs(postId);
   document.querySelectorAll('.comment-list').forEach(list => {
     sortCommentItems(list);
     list.querySelectorAll('.comment-item').forEach((item, index) => {
       if (item.dataset.reactionReady === '1') return;
-      const commentId = item.dataset.commentId || item.getAttribute('data-id') || '';
+      const commentId = findCommentId(item, docs);
+      if (commentId) item.dataset.commentId = commentId;
       item.dataset.reactionReady = '1';
       item.classList.add('crazy-naming-comment');
-      const title = item.querySelector('b')?.textContent || '';
       const rank = document.createElement('div');
       rank.className = 'crazy-rank-badge';
       rank.textContent = index < 3 ? `작명 ${index + 1}위` : '작명 후보';
       item.prepend(rank);
+      const small = item.querySelector('small');
+      if (small && small.textContent.includes('공감')) small.textContent = small.textContent.replace('공감', '추천');
       const bar = document.createElement('div');
       bar.className = 'comment-reaction-bar';
       bar.innerHTML = REACTIONS.map(r => `<button type="button" data-reaction="${r.key}" title="${r.label}"><span>${r.icon}</span><small>${r.label}</small></button>`).join('');
       item.appendChild(bar);
       bar.querySelectorAll('button').forEach(btn => btn.addEventListener('click', async () => {
         if (!auth.currentUser) { alert('로그인 후 추천할 수 있습니다.'); return; }
-        if (!commentId) { alert('이 댓글은 새로고침 후 추천할 수 있습니다.'); return; }
+        const targetId = item.dataset.commentId;
+        if (!targetId) { alert('이 댓글은 새로고침 후 추천할 수 있습니다.'); return; }
         btn.disabled = true;
         try {
-          await updateDoc(doc(db, 'soso_feed_posts', postId, 'comments', commentId), {
+          await updateDoc(doc(db, 'soso_feed_posts', postId, 'comments', targetId), {
             likes: increment(1),
             [`reactions.${btn.dataset.reaction}`]: increment(1)
           });
-          const small = item.querySelector('small');
           const next = parseLikeCount(item) + 1;
           if (small) small.textContent = `추천 ${next.toLocaleString()}`;
           btn.classList.add('picked');
+          commentCache.delete(postId);
           sortCommentItems(list);
         } catch (error) {
           console.warn('댓글 추천 실패:', error);
