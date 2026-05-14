@@ -26,7 +26,7 @@ export async function renderFooter() {
   footer.innerHTML = `
     <div class="footer-brand-card">
       <img src="/logo.svg" alt="소소킹">
-      <div><b>소소킹</b><span>내일 일은 아무도 모른다</span></div>
+      <div><b>소소킹</b><span>재미와 정보가 모이는 소소피드</span></div>
     </div>
 
     <div class="footer-links">
@@ -50,7 +50,7 @@ export async function renderFooter() {
     <div class="footer-biz">
       ${rows.map(r => `<div class="footer-biz-row">${r}</div>`).join('')}
       <div class="footer-biz-row footer-legal">© ${new Date().getFullYear()} 소소킹</div>
-      <div class="footer-biz-row footer-legal">오락용 예측 게임 · 소소머니는 현금 가치 없음 · 충전/환전/출금 없음</div>
+      <div class="footer-biz-row footer-legal">사진, 글, 퀴즈, 투표, 릴레이소설, 역할극, 정보공유를 즐기는 피드형 커뮤니티</div>
     </div>
 
     <div class="footer-admin-wrap">
