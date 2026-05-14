@@ -1,9 +1,6 @@
 import { initAuth, trackEvent, trackUser, db } from './firebase.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { renderPredictHome } from './pages/predict-home.js';
-import { renderPredictList, renderPredictDetail } from './pages/predict-board.js';
-import { renderPredictRanking } from './pages/predict-ranking.js';
-import { renderPredictHistory } from './pages/predict-history.js';
 import { renderSosoFeed } from './pages/soso-feed.js';
 import { renderPredictGuide } from './pages/predict-guide.js';
 import { renderPredictPolicy } from './pages/predict-policy.js';
@@ -16,6 +13,12 @@ import { renderNav } from './components/nav.js';
 
 const LEGACY_PREFIXES = ['#/hunt', '#/topic/', '#/debate/', '#/join/', '#/join-team/'];
 const LEGACY_ROUTES = ['#/town', '#/case-quest', '#/topics', '#/submit-topic', '#/court', '#/my-history'];
+const SOSO_FEED_REDIRECT_ROUTES = ['#/predict', '#/ranking', '#/history'];
+
+function redirectToFeed() {
+  history.replaceState(null, '', `${location.pathname}${location.search}#/feed`);
+  route();
+}
 
 function loadPolishStyle() {
   [
@@ -41,15 +44,12 @@ function route() {
   const hash = location.hash || '#/';
   const content = document.getElementById('page-content');
   if (!content) return;
+  if (SOSO_FEED_REDIRECT_ROUTES.includes(hash) || hash.startsWith('#/predict/')) { redirectToFeed(); return; }
   window.scrollTo(0, 0);
   content.classList.remove('page-entering'); void content.offsetWidth; content.classList.add('page-entering');
   let pageName = 'home';
   if (hash === '#/' || hash === '' || hash === '#') renderPredictHome(content);
-  else if (hash === '#/predict') { pageName = 'predict_list'; renderPredictList(content); }
-  else if (hash.startsWith('#/predict/')) { pageName = 'predict_detail'; renderPredictDetail(content, decodeURIComponent(hash.replace('#/predict/', ''))); }
   else if (hash === '#/feed' || hash === '#/feed/top' || hash === '#/feed/new' || hash.startsWith('#/feed/')) { pageName = hash.startsWith('#/feed/') && !['#/feed/top','#/feed/new'].includes(hash) ? 'soso_feed_detail' : 'soso_feed'; renderSosoFeed(content); }
-  else if (hash === '#/ranking') { pageName = 'ranking'; renderPredictRanking(content); }
-  else if (hash === '#/history') { pageName = 'history'; renderPredictHistory(content); }
   else if (hash === '#/account') { pageName = 'account'; renderAccount(content); }
   else if (hash.startsWith('#/policy/')) { pageName = 'policy_' + hash.replace('#/policy/', ''); renderPredictPolicy(content, hash.replace('#/policy/', '')); }
   else if (hash === '#/guide') { pageName = 'guide'; renderPredictGuide(content); }
