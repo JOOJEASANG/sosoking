@@ -5,4 +5,5 @@ module.exports = {
   ...require('./hot-issue-functions.js'),
   ...require('./settlement-functions.js'),
   ...require('./link-summary-functions.js'),
+  ...require('./daily-seed-functions.js'),
 };
