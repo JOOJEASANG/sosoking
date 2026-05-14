@@ -1,7 +1,8 @@
 import { getFeedPosts } from '../feed/feed-engine.js';
+import { injectAppStyle } from '../components/ui-style.js';
 
 export function renderPredictHome(container) {
-  injectPredictStyle();
+  injectAppStyle();
   draw(container, []);
   getFeedPosts({ pageSize: 3 }).then(items => draw(container, items || [])).catch(() => draw(container, []));
 }
@@ -42,12 +43,6 @@ function emptyCard() {
   return `<div class="soso-recent-card"><span>READY</span><h3>아직 올라온 소소피드가 없습니다</h3><p>첫 글을 올리면 이곳에 표시됩니다.</p><small>사진 · 밸런스게임 · 퀴즈 · 토론</small></div>`;
 }
 
-export function injectPredictStyle() {
-  if (document.getElementById('sosoking-predict-style')) return;
-  const style = document.createElement('style');
-  style.id = 'sosoking-predict-style';
-  style.textContent = `:root{--predict-bg:#f5f7fb;--predict-ink:#121724;--predict-muted:#697386;--predict-card:#fff;--predict-line:#e5eaf2;--predict-main:#4f7cff;--predict-hot:#ff5c7a;--predict-money:#16a36a}[data-theme="dark"]{--predict-bg:#070b13;--predict-ink:#eef4ff;--predict-muted:#8f9bb1;--predict-card:#101722;--predict-line:#243044;--predict-main:#72a2ff;--predict-hot:#ff6d88}.predict-app{min-height:100vh;background:var(--predict-bg);color:var(--predict-ink);padding-bottom:88px;font-family:var(--font-sans)}.section-head{display:flex;justify-content:space-between;gap:12px;margin-bottom:14px}.section-head span{color:var(--predict-main);font-size:10px;font-weight:1000;letter-spacing:.08em}.section-head h2{margin:4px 0 0;font-size:24px;letter-spacing:-.05em}.section-head a{color:var(--predict-main);font-weight:900;text-decoration:none}`;
-  document.head.appendChild(style);
-}
+export const injectPredictStyle = injectAppStyle;
 
 function e(s){return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
