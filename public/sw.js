@@ -1,4 +1,4 @@
-const CACHE = 'sosoking-v12';
+const CACHE = 'sosoking-v13-feed-rebuild';
 
 self.addEventListener('install', e => {
   self.skipWaiting();
@@ -25,7 +25,7 @@ self.addEventListener('fetch', e => {
     url.hostname.includes('firestore.googleapis.com')
   ) return;
 
-  // 네비게이션 및 JS/CSS → 네트워크 우선 (항상 최신 반영, 오프라인 시 캐시 폴백)
+  // 네비게이션 및 JS/CSS → 네트워크 우선
   if (
     e.request.mode === 'navigate' ||
     (url.origin === self.location.origin &&
@@ -33,7 +33,7 @@ self.addEventListener('fetch', e => {
   ) {
     if (e.request.mode === 'navigate' && url.pathname.startsWith('/admin')) return;
     e.respondWith(
-      fetch(e.request).then(res => {
+      fetch(e.request, { cache: 'no-store' }).then(res => {
         if (res.ok) {
           const clone = res.clone();
           caches.open(CACHE).then(c => c.put(e.request, clone));
