@@ -21,79 +21,73 @@ export async function renderAuth(container) {
   injectAuthStyle();
   const inApp = detectInAppBrowser();
   const currentEmail = auth.currentUser && !auth.currentUser.isAnonymous ? auth.currentUser.email || '' : '';
-  const inAppBanner = inApp ? `<div class="auth-alert"><b>인앱 브라우저 감지</b><p>카카오톡·인스타 앱 안에서는 Google 로그인이 차단될 수 있습니다. 외부 브라우저로 열거나 이메일 로그인을 사용해주세요.</p></div>` : '';
+  const inAppBanner = inApp ? `<div class="auth-alert"><b>Google 로그인이 막힐 수 있어요</b><p>카카오톡·인스타 앱 안에서는 이메일 로그인이나 외부 브라우저 사용을 권장합니다.</p></div>` : '';
 
   container.innerHTML = `
-    <main class="predict-app auth-page-v2">
-      <section class="auth-shell">
+    <main class="predict-app auth-page-v2 simple-auth-page">
+      <section class="auth-simple-shell">
         <a href="#/" class="back-link auth-back">‹</a>
-        <div class="auth-hero-card">
-          <img src="/logo.svg" alt="소소킹">
-          <span>SOSOKING ACCOUNT</span>
-          <h1>소소킹 계정으로<br>계속하기</h1>
-          <p>소소피드 글쓰기, 댓글, 투표, 정보공유, 릴레이소설, 역할극 참여를 계정에 안전하게 연결합니다.</p>
-          <div class="auth-mini-tags"><b>구글 계정 선택</b><b>관리자 자동 이동</b><b>비밀번호 변경</b></div>
-        </div>
-        <section class="auth-card-v2">
+        <section class="auth-simple-card">
+          <div class="auth-simple-brand">
+            <img src="/logo.svg" alt="소소킹">
+            <span>SOSOKING</span>
+            <h1>소소킹 시작하기</h1>
+            <p>피드, 댓글, 투표, 미친작명소, 릴레이소설을 바로 즐겨보세요.</p>
+          </div>
+
           ${inAppBanner}
-          <div class="auth-tabs-v2">
-            <button class="active" data-tab="login">로그인</button>
-            <button data-tab="signup">회원가입</button>
-            <button data-tab="password">비밀번호</button>
-          </div>
 
-          <div id="auth-tab-login" class="auth-panel-v2">
+          <div class="auth-panel-v2" id="auth-tab-login">
             <button id="google-login-btn" class="google-btn-v2">${googleIcon()}<span>Google로 계속하기</span></button>
-            <div class="auth-divider-v2"><span>또는 이메일로 로그인</span></div>
-            <form id="login-form" class="auth-form-v2">
-              <label>이메일</label><input type="email" id="login-email" placeholder="이메일" autocomplete="email" required>
-              <label>비밀번호</label><input type="password" id="login-password" placeholder="비밀번호" autocomplete="current-password" required>
-              <button type="submit" id="login-submit-btn">로그인</button>
+            <form id="login-form" class="auth-form-v2 simple-login-form">
+              <input type="email" id="login-email" placeholder="이메일" autocomplete="email" required>
+              <input type="password" id="login-password" placeholder="비밀번호" autocomplete="current-password" required>
+              <button type="submit" id="login-submit-btn">이메일로 로그인</button>
             </form>
-            <button class="link-button" id="open-reset-btn" type="button">비밀번호를 잊으셨나요?</button>
+            <button id="guest-btn" class="guest-btn-v2" type="button">게스트로 둘러보기</button>
+            <div class="auth-simple-links">
+              <button type="button" data-tab="signup">회원가입</button>
+              <button type="button" data-tab="password">비밀번호 찾기</button>
+            </div>
           </div>
 
-          <div id="auth-tab-signup" class="auth-panel-v2" hidden>
+          <div id="auth-tab-signup" class="auth-panel-v2 auth-sub-panel" hidden>
+            <div class="auth-sub-head"><b>회원가입</b><button type="button" data-tab="login">닫기</button></div>
             <button id="google-signup-btn" class="google-btn-v2">${googleIcon()}<span>Google로 가입하기</span></button>
-            <div class="auth-divider-v2"><span>또는 이메일로 가입</span></div>
             <form id="signup-form" class="auth-form-v2">
               <label>이메일</label><input type="email" id="signup-email" placeholder="이메일" autocomplete="email" required>
               <label>비밀번호</label><input type="password" id="signup-password" placeholder="비밀번호 6자 이상" autocomplete="new-password" required minlength="6">
               <label>비밀번호 확인</label><input type="password" id="signup-password2" placeholder="비밀번호 확인" autocomplete="new-password" required>
-              <label>닉네임</label><div class="nick-row"><input type="text" id="signup-nickname" placeholder="닉네임 2~12자" maxlength="12" required><button type="button" id="check-nick-btn">중복확인</button></div>
+              <label>닉네임</label><div class="nick-row"><input type="text" id="signup-nickname" placeholder="닉네임 2~12자" maxlength="12" required><button type="button" id="check-nick-btn">확인</button></div>
               <div id="nick-status" class="auth-status"></div>
-              <button type="submit" id="signup-submit-btn">회원가입</button>
+              <button type="submit" id="signup-submit-btn">회원가입 완료</button>
             </form>
           </div>
 
-          <div id="auth-tab-password" class="auth-panel-v2" hidden>
+          <div id="auth-tab-password" class="auth-panel-v2 auth-sub-panel" hidden>
+            <div class="auth-sub-head"><b>비밀번호</b><button type="button" data-tab="login">닫기</button></div>
             <form id="reset-form" class="auth-form-v2 password-box">
-              <b>비밀번호 재설정 메일 받기</b>
-              <p>로그인할 수 없는 경우 가입한 이메일로 재설정 메일을 보냅니다.</p>
-              <label>이메일</label><input type="email" id="reset-email" value="${escapeAttr(currentEmail)}" placeholder="가입한 이메일" autocomplete="email" required>
+              <p>가입한 이메일로 재설정 메일을 보냅니다.</p>
+              <input type="email" id="reset-email" value="${escapeAttr(currentEmail)}" placeholder="가입한 이메일" autocomplete="email" required>
               <button type="submit" id="reset-submit-btn">재설정 메일 보내기</button>
             </form>
             <form id="change-form" class="auth-form-v2 password-box">
-              <b>로그인 상태에서 비밀번호 변경</b>
-              <p>이메일/비밀번호 계정은 현재 비밀번호 확인 후 새 비밀번호로 변경할 수 있습니다.</p>
-              <label>현재 비밀번호</label><input type="password" id="current-password" placeholder="현재 비밀번호" autocomplete="current-password">
-              <label>새 비밀번호</label><input type="password" id="new-password" placeholder="새 비밀번호 6자 이상" autocomplete="new-password" minlength="6">
-              <label>새 비밀번호 확인</label><input type="password" id="new-password2" placeholder="새 비밀번호 확인" autocomplete="new-password">
+              <p>로그인 상태라면 비밀번호를 바로 변경할 수 있습니다.</p>
+              <input type="password" id="current-password" placeholder="현재 비밀번호" autocomplete="current-password">
+              <input type="password" id="new-password" placeholder="새 비밀번호 6자 이상" autocomplete="new-password" minlength="6">
+              <input type="password" id="new-password2" placeholder="새 비밀번호 확인" autocomplete="new-password">
               <button type="submit" id="change-submit-btn">비밀번호 변경</button>
             </form>
           </div>
-
-          <button id="guest-btn" class="guest-btn-v2" type="button">게스트로 계속 이용하기</button>
         </section>
       </section>
     </main>`;
 
   bindTabs(container);
   container.querySelector('#guest-btn').addEventListener('click', () => { location.hash = '#/'; });
-  container.querySelector('#open-reset-btn').addEventListener('click', () => selectTab(container, 'password'));
 
   async function handleGoogleLogin() {
-    if (inApp) { showToast('인앱 브라우저에서는 Google 로그인을 사용할 수 없습니다. 외부 브라우저로 열거나 이메일 로그인을 사용해주세요.', 'error'); return; }
+    if (inApp) { showToast('인앱 브라우저에서는 Google 로그인이 막힐 수 있습니다. 외부 브라우저로 열거나 이메일 로그인을 사용해주세요.', 'error'); return; }
     try {
       await loginWithGoogle();
       trackEvent('login', { method: 'google' });
@@ -122,7 +116,7 @@ export async function renderAuth(container) {
       await redirectAfterLogin(true);
     } catch (err) {
       showToast(authErrorMsg(err.code) || '로그인 실패', 'error');
-      btn.disabled = false; btn.textContent = '로그인';
+      btn.disabled = false; btn.textContent = '이메일로 로그인';
     }
   });
 
@@ -150,7 +144,7 @@ export async function renderAuth(container) {
     const nick = container.querySelector('#signup-nickname').value.trim();
     const btn = container.querySelector('#signup-submit-btn');
     if (pw !== pw2) { showToast('비밀번호가 일치하지 않습니다', 'error'); return; }
-    if (!nickChecked || nickCheckValue !== nick) { showToast('닉네임 중복확인을 먼저 해주세요', 'error'); return; }
+    if (!nickChecked || nickCheckValue !== nick) { showToast('닉네임 확인을 먼저 해주세요', 'error'); return; }
     btn.disabled = true; btn.textContent = '가입 중...';
     try {
       await signupWithEmail(email, pw);
@@ -162,7 +156,7 @@ export async function renderAuth(container) {
       await redirectAfterLogin(true);
     } catch (err) {
       showToast(authErrorMsg(err.code) || err.message || '가입 실패', 'error');
-      btn.disabled = false; btn.textContent = '회원가입';
+      btn.disabled = false; btn.textContent = '회원가입 완료';
     }
   });
 
@@ -191,11 +185,11 @@ export async function renderAuth(container) {
 }
 
 function bindTabs(container) {
-  container.querySelectorAll('.auth-tabs-v2 button').forEach(tab => tab.addEventListener('click', () => selectTab(container, tab.dataset.tab)));
+  container.querySelectorAll('[data-tab]').forEach(tab => tab.addEventListener('click', () => selectTab(container, tab.dataset.tab)));
 }
 function selectTab(container, tabName) {
-  container.querySelectorAll('.auth-tabs-v2 button').forEach(t => t.classList.toggle('active', t.dataset.tab === tabName));
   ['login','signup','password'].forEach(name => { container.querySelector(`#auth-tab-${name}`).hidden = name !== tabName; });
+  container.querySelector('.auth-simple-card')?.setAttribute('data-mode', tabName);
 }
 
 async function redirectAfterLogin(showSuccess = false) {
@@ -227,7 +221,7 @@ function showNicknameModal() {
   document.getElementById('nickname-modal')?.remove();
   const modal = document.createElement('div');
   modal.id = 'nickname-modal';
-  modal.innerHTML = `<div class="modal-backdrop"><div class="modal-box nickname-box"><img src="/logo.svg" alt="소소킹"><h3>닉네임을 설정해주세요</h3><p>소소피드 글쓰기, 댓글, 투표, 역할극 참여에 표시될 이름입니다.</p><div class="nick-row"><input type="text" id="modal-nick-input" class="form-input" placeholder="닉네임 2~12자" maxlength="12"><button id="modal-nick-check">중복확인</button></div><div id="modal-nick-status" class="auth-status"></div><button id="modal-nick-save" class="modal-save-btn" disabled>저장하기</button><button id="modal-nick-skip" class="link-button">나중에 설정하기</button></div></div>`;
+  modal.innerHTML = `<div class="modal-backdrop"><div class="modal-box nickname-box"><img src="/logo.svg" alt="소소킹"><h3>닉네임을 설정해주세요</h3><p>소소피드에 표시될 이름입니다.</p><div class="nick-row"><input type="text" id="modal-nick-input" class="form-input" placeholder="닉네임 2~12자" maxlength="12"><button id="modal-nick-check">확인</button></div><div id="modal-nick-status" class="auth-status"></div><button id="modal-nick-save" class="modal-save-btn" disabled>저장하기</button><button id="modal-nick-skip" class="link-button">나중에 설정하기</button></div></div>`;
   document.body.appendChild(modal);
   let checked = false, checkedVal = '';
   modal.querySelector('#modal-nick-input').addEventListener('input', () => { checked = false; checkedVal = ''; modal.querySelector('#modal-nick-status').textContent = ''; modal.querySelector('#modal-nick-save').disabled = true; });
@@ -245,7 +239,7 @@ function showNicknameModal() {
   });
   modal.querySelector('#modal-nick-save').addEventListener('click', async () => {
     const nick = modal.querySelector('#modal-nick-input').value.trim();
-    if (!checked || checkedVal !== nick) { showToast('닉네임 중복확인을 먼저 해주세요', 'error'); return; }
+    if (!checked || checkedVal !== nick) { showToast('닉네임 확인을 먼저 해주세요', 'error'); return; }
     const saveBtn = modal.querySelector('#modal-nick-save');
     saveBtn.disabled = true; saveBtn.textContent = '저장 중...';
     try { const registerUser = httpsCallable(functions, 'registerUser'); await registerUser({ nickname: nick }); invalidateNicknameCache(); modal.remove(); showToast('환영합니다!', 'success'); location.hash = '#/feed'; }
@@ -271,7 +265,7 @@ function injectAuthStyle() {
   const style = document.createElement('style');
   style.id = 'sosoking-auth-v2-style';
   style.textContent = `
-    .auth-page-v2{padding:18px clamp(16px,4vw,34px) 112px;background:radial-gradient(circle at 16% 0%,rgba(79,124,255,.18),transparent 30%),radial-gradient(circle at 92% 6%,rgba(255,92,138,.12),transparent 28%),var(--predict-bg)}.auth-shell{max-width:980px;margin:0 auto;display:grid;grid-template-columns:44px 1fr 430px;gap:14px;align-items:start}.auth-back{margin-top:6px}.auth-hero-card,.auth-card-v2{border:1px solid rgba(79,124,255,.14);border-radius:32px;background:rgba(255,255,255,.86);box-shadow:0 22px 70px rgba(55,90,170,.13);backdrop-filter:blur(14px)}.auth-hero-card{position:relative;overflow:hidden;min-height:560px;padding:30px;background:linear-gradient(135deg,#101b3c,#4f7cff 60%,#7c5cff);color:#fff}.auth-hero-card:after{content:'🔐';position:absolute;right:24px;bottom:-34px;font-size:132px;opacity:.13}.auth-hero-card img{width:68px;height:68px;border-radius:24px;background:#fff;box-shadow:0 16px 40px rgba(0,0,0,.18);transform:rotate(-7deg)}.auth-hero-card span{display:block;margin-top:24px;color:rgba(255,255,255,.72);font-size:11px;font-weight:1000;letter-spacing:.16em}.auth-hero-card h1{margin:8px 0 12px;font-size:clamp(36px,6vw,58px);line-height:1;letter-spacing:-.08em}.auth-hero-card p{max-width:440px;color:rgba(255,255,255,.78);line-height:1.75}.auth-mini-tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}.auth-mini-tags b{display:inline-flex;padding:8px 10px;border-radius:999px;background:rgba(255,255,255,.14);font-size:12px}.auth-card-v2{padding:20px}.auth-tabs-v2{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:16px;padding:5px;border-radius:18px;background:rgba(79,124,255,.06)}.auth-tabs-v2 button{border:0;border-radius:14px;padding:10px 8px;background:transparent;color:var(--predict-muted);font-weight:1000}.auth-tabs-v2 button.active{background:linear-gradient(135deg,#4f7cff,#7c5cff);color:#fff;box-shadow:0 10px 24px rgba(79,124,255,.22)}.auth-panel-v2{display:grid;gap:12px}.google-btn-v2{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;border:1px solid rgba(79,124,255,.14);border-radius:18px;padding:14px;background:#fff;color:#172033;font-weight:1000;box-shadow:0 12px 28px rgba(55,90,170,.09)}.auth-divider-v2{display:flex;align-items:center;gap:10px;color:var(--predict-muted);font-size:12px;font-weight:900}.auth-divider-v2:before,.auth-divider-v2:after{content:'';height:1px;flex:1;background:rgba(79,124,255,.13)}.auth-form-v2{display:grid;gap:8px}.auth-form-v2 label{color:var(--predict-muted);font-size:12px;font-weight:1000}.auth-form-v2 input{width:100%;border:1px solid rgba(79,124,255,.14);border-radius:16px;padding:13px;background:var(--predict-bg);color:var(--predict-ink);font-family:inherit}.auth-form-v2>button,.modal-save-btn{border:0;border-radius:18px;padding:14px;background:linear-gradient(135deg,#4f7cff,#7c5cff);color:#fff;font-weight:1000;box-shadow:0 12px 30px rgba(79,124,255,.22)}.nick-row{display:grid;grid-template-columns:1fr 92px;gap:8px}.nick-row button{border:1px solid rgba(79,124,255,.16);border-radius:16px;background:rgba(79,124,255,.08);color:var(--predict-main);font-weight:1000}.auth-status{min-height:18px;color:var(--predict-muted);font-size:12px;font-weight:900}.auth-status.ok{color:#10b981}.auth-status.error{color:var(--predict-hot)}.link-button,.guest-btn-v2{border:0;background:transparent;color:var(--predict-muted);font-size:13px;font-weight:900;text-decoration:underline;cursor:pointer}.guest-btn-v2{margin-top:4px}.password-box{padding:14px;border:1px solid rgba(79,124,255,.12);border-radius:22px;background:rgba(79,124,255,.04)}.password-box b{font-size:15px}.password-box p{margin:0 0 5px;color:var(--predict-muted);font-size:12px;line-height:1.6}.auth-alert{padding:13px;border-radius:18px;background:rgba(255,92,122,.09);border:1px solid rgba(255,92,122,.22)}.auth-alert b{color:var(--predict-hot);font-size:13px}.auth-alert p{margin:5px 0 0;color:var(--predict-muted);font-size:12px;line-height:1.6}.modal-backdrop{position:fixed;inset:0;z-index:4000;display:grid;place-items:center;padding:18px;background:rgba(3,8,20,.62);backdrop-filter:blur(8px)}.nickname-box{width:min(420px,100%);display:grid;gap:10px;padding:22px;border:1px solid rgba(79,124,255,.14);border-radius:28px;background:var(--predict-card);box-shadow:0 28px 90px rgba(0,0,0,.24);text-align:center}.nickname-box img{width:62px;height:62px;margin:0 auto;border-radius:22px;background:#fff;transform:rotate(-6deg)}.nickname-box h3{margin:6px 0 0}.nickname-box p{margin:0;color:var(--predict-muted);font-size:13px;line-height:1.6}@media(max-width:920px){.auth-shell{grid-template-columns:1fr}.auth-back{width:42px}.auth-hero-card{min-height:auto}.auth-card-v2{padding:18px}}@media(max-width:520px){.auth-hero-card{padding:24px;border-radius:28px}.auth-card-v2{border-radius:28px}.nick-row{grid-template-columns:1fr}.auth-tabs-v2 button{font-size:12px}}[data-theme="dark"] .auth-hero-card{background:linear-gradient(135deg,#0f1726,#1f3b7a 58%,#533aa2)}[data-theme="dark"] .auth-card-v2,[data-theme="dark"] .password-box,[data-theme="dark"] .nickname-box{background:rgba(16,23,34,.90);box-shadow:none}[data-theme="dark"] .google-btn-v2{background:rgba(255,255,255,.94);color:#172033}
+    .simple-auth-page{min-height:100vh;padding:18px 16px 108px;background:radial-gradient(circle at 18% -4%,rgba(255,232,92,.36),transparent 28%),radial-gradient(circle at 88% 4%,rgba(124,92,255,.20),transparent 32%),linear-gradient(180deg,#fffaf5,#f6f8ff)!important}.auth-simple-shell{width:min(460px,100%);margin:0 auto;position:relative}.auth-back{position:absolute;left:0;top:0;z-index:2}.auth-simple-card{margin-top:26px;border:1px solid rgba(79,124,255,.13);border-radius:34px;padding:24px;background:rgba(255,255,255,.94);box-shadow:0 22px 70px rgba(55,90,170,.13);backdrop-filter:blur(18px)}.auth-simple-brand{text-align:center;margin-bottom:18px}.auth-simple-brand img{width:78px;height:78px;border-radius:26px;background:#fff;box-shadow:0 16px 38px rgba(79,124,255,.18);transform:rotate(-6deg)}.auth-simple-brand span{display:inline-flex;margin-top:14px;padding:7px 10px;border-radius:999px;background:rgba(255,232,92,.58);color:#1b2250;border:1px solid rgba(255,184,0,.23);font-size:11px;font-weight:1000;letter-spacing:.14em}.auth-simple-brand h1{margin:12px 0 8px;font-size:34px;line-height:1.04;letter-spacing:-.08em;color:#080d35}.auth-simple-brand p{margin:0;color:#667085;font-size:14px;line-height:1.65;font-weight:800}.auth-panel-v2{display:grid;gap:12px}.google-btn-v2,.guest-btn-v2,.auth-form-v2>button,.modal-save-btn{width:100%;min-height:52px;border-radius:999px;font-family:inherit;font-weight:1000}.google-btn-v2{display:flex;align-items:center;justify-content:center;gap:10px;border:1px solid rgba(79,124,255,.14);background:#fff;color:#172033;box-shadow:0 12px 28px rgba(55,90,170,.08)}.auth-form-v2{display:grid;gap:9px}.auth-form-v2 label{color:#667085;font-size:12px;font-weight:1000}.auth-form-v2 input{width:100%;min-height:50px;box-sizing:border-box;border:1px solid rgba(79,124,255,.14);border-radius:18px;padding:0 14px;background:#fff;color:#151a33;font-family:inherit;font-weight:800;box-shadow:0 8px 20px rgba(55,90,170,.045) inset}.auth-form-v2>button,.modal-save-btn{border:0;background:linear-gradient(135deg,#ff7a59,#ff5c8a,#7c5cff);color:#fff;box-shadow:0 16px 38px rgba(255,92,138,.22)}.guest-btn-v2{border:1px solid rgba(79,124,255,.14);background:#f3f6ff;color:#4f7cff;text-decoration:none;cursor:pointer}.auth-simple-links{display:flex;justify-content:center;gap:6px;color:#8a94a8}.auth-simple-links button,.auth-sub-head button,.link-button{border:0;background:transparent;color:#667085;font-family:inherit;font-size:13px;font-weight:1000;text-decoration:underline;cursor:pointer}.auth-simple-links button+button:before{content:'· ';text-decoration:none}.auth-sub-panel{margin-top:4px;padding-top:16px;border-top:1px solid rgba(79,124,255,.11)}.auth-sub-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.auth-sub-head b{font-size:20px;letter-spacing:-.05em;color:#10172f}.nick-row{display:grid;grid-template-columns:1fr 78px;gap:8px}.nick-row button{border:1px solid rgba(79,124,255,.16);border-radius:18px;background:rgba(79,124,255,.08);color:#4f7cff;font-weight:1000}.auth-status{min-height:18px;color:#667085;font-size:12px;font-weight:900}.auth-status.ok{color:#10b981}.auth-status.error{color:#ff5c8a}.password-box{padding:14px;border:1px solid rgba(79,124,255,.12);border-radius:24px;background:linear-gradient(135deg,rgba(255,255,255,.86),rgba(245,248,255,.78))}.password-box p{margin:0 0 5px;color:#667085;font-size:12px;line-height:1.6;font-weight:800}.auth-alert{padding:13px;border-radius:20px;background:rgba(255,92,122,.09);border:1px solid rgba(255,92,122,.22)}.auth-alert b{color:#ff5c8a;font-size:13px}.auth-alert p{margin:5px 0 0;color:#667085;font-size:12px;line-height:1.6}.modal-backdrop{position:fixed;inset:0;z-index:4000;display:grid;place-items:center;padding:18px;background:rgba(3,8,20,.62);backdrop-filter:blur(8px)}.nickname-box{width:min(420px,100%);display:grid;gap:10px;padding:22px;border:1px solid rgba(79,124,255,.14);border-radius:28px;background:#fff;box-shadow:0 28px 90px rgba(0,0,0,.24);text-align:center}.nickname-box img{width:62px;height:62px;margin:0 auto;border-radius:22px;background:#fff;transform:rotate(-6deg)}.nickname-box h3{margin:6px 0 0}.nickname-box p{margin:0;color:#667085;font-size:13px;line-height:1.6}@media(max-width:520px){.auth-simple-card{padding:20px;border-radius:30px}.auth-simple-brand h1{font-size:31px}.nick-row{grid-template-columns:1fr}}[data-theme="dark"] .simple-auth-page{background:radial-gradient(circle at 8% -6%,rgba(124,92,255,.16),transparent 30%),#070b13!important}[data-theme="dark"] .auth-simple-card,[data-theme="dark"] .password-box,[data-theme="dark"] .nickname-box{background:rgba(16,23,34,.90);box-shadow:none}[data-theme="dark"] .auth-simple-brand h1,[data-theme="dark"] .auth-sub-head b{color:#f5f7fb}[data-theme="dark"] .auth-simple-brand p,[data-theme="dark"] .password-box p{color:#a8b3c7}[data-theme="dark"] .auth-form-v2 input{background:rgba(255,255,255,.08);color:#fff;border-color:rgba(255,255,255,.12)}[data-theme="dark"] .google-btn-v2{background:rgba(255,255,255,.94);color:#172033}[data-theme="dark"] .guest-btn-v2{background:rgba(79,124,255,.12);color:#9db5ff}
   `;
   document.head.appendChild(style);
 }
