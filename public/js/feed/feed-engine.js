@@ -19,10 +19,34 @@ import { getDownloadURL, ref, uploadBytesResumable } from 'https://www.gstatic.c
 export const FALLBACK_FEED_ITEMS = [];
 
 const BADGE_BY_TYPE = {
-  '사진/짤':'📸', '짧은 글':'✍️', '질문':'❓', '사진 제목학원':'📸', '밸런스게임':'⚖️',
-  '소소토론':'💬', '퀴즈':'🧠', 'AI놀이':'🤖', '영상 리액션':'🎬', '댓글 배틀':'🔥',
-  '상상 이어쓰기':'🧩', '민심 투표':'🗳️', '정보공유':'🔗', '꿀팁 링크':'💡',
-  '생각 갈림':'💬', '소소한 논쟁':'🤔', '생활 매너':'🍽️'
+  '사진/짤':'📸',
+  '짧은 글':'✍️',
+  '질문':'❓',
+  '사진 제목학원':'📸',
+  '댓글 배틀':'🔥',
+  '웃참 챌린지':'🤣',
+  '밸런스게임':'⚖️',
+  '민심 투표':'🗳️',
+  '선택지 배틀':'🥊',
+  '소소토론':'💬',
+  '생각 갈림':'🤔',
+  '소소한 논쟁':'🤔',
+  '생활 매너':'🍽️',
+  '퀴즈':'🧠',
+  '정답 퀴즈':'✅',
+  '센스 퀴즈':'🧩',
+  '심리 테스트':'🔮',
+  'AI놀이':'🤖',
+  'AI 역할극':'🎙️',
+  '상상 이어쓰기':'🧩',
+  '릴레이소설':'📚',
+  '막장드라마':'💥',
+  '역할극방':'🎭',
+  '영상 리액션':'🎬',
+  '이미지 링크':'🖼️',
+  '정보공유':'🔗',
+  '꿀팁 링크':'💡',
+  '사이트 추천':'🛠️'
 };
 
 function clean(value, max = 500) { return String(value || '').replace(/[<>]/g, '').replace(/\s{2,}/g, ' ').trim().slice(0, max); }
@@ -50,16 +74,29 @@ function youtubeId(url) {
   } catch {}
   return '';
 }
+async function getAuthorName(user) {
+  if (!user) return '익명 소소러';
+  if (user.isAnonymous) return '익명 소소러';
+  try {
+    const snap = await getDoc(doc(db, 'users', user.uid));
+    if (snap.exists() && snap.data().nickname) return clean(snap.data().nickname, 40);
+  } catch {}
+  return clean(user.displayName || user.email || '소소킹 유저', 40);
+}
 function normalizeMedia(data = {}) {
   const linkUrl = cleanUrl(data.linkUrl || data.mediaUrl || '', 700);
   const yt = youtubeId(linkUrl);
   const mediaType = clean(data.mediaType || (yt ? 'youtube' : linkUrl ? (isImageUrl(linkUrl) ? 'image_link' : 'link') : (data.imageUrl ? 'upload' : 'none')), 30);
+  let host = '';
+  if (linkUrl) {
+    try { host = new URL(linkUrl).hostname.replace(/^www\./, ''); } catch {}
+  }
   return {
     mediaType,
     linkUrl,
     linkTitle: clean(data.linkTitle || '', 120),
     linkSummary: clean(data.linkSummary || '', 260),
-    linkSource: linkUrl ? clean(new URL(linkUrl).hostname.replace(/^www\./, ''), 80) : '',
+    linkSource: clean(data.linkSource || host, 80),
     embedUrl: yt ? `https://www.youtube-nocookie.com/embed/${yt}` : '',
     thumbnailUrl: yt ? `https://img.youtube.com/vi/${yt}/hqdefault.jpg` : cleanUrl(data.thumbnailUrl || '', 700)
   };
@@ -117,7 +154,7 @@ export async function likeFeedPost(postId) { if (!postId) return { fallback: tru
 export async function getMyFeedVote(postId) { const user = auth.currentUser; if (!user || !postId) return null; try { const snap = await getDoc(doc(db, 'soso_feed_posts', postId, 'voters', user.uid)); return snap.exists() ? snap.data().option || null : null; } catch { return null; } }
 export async function voteFeedOption(postId, option) { const user = auth.currentUser; if (!user) throw new Error('로그인 후 투표할 수 있습니다.'); const cleanOption = clean(option, 40); if (!cleanOption) throw new Error('선택지를 골라주세요.'); if (!postId) throw new Error('게시글을 찾을 수 없습니다.'); const voterRef = doc(db, 'soso_feed_posts', postId, 'voters', user.uid); const existing = await getDoc(voterRef); if (existing.exists()) throw new Error('이미 이 글에 투표했습니다.'); await setDoc(voterRef, { option: cleanOption, authorId: user.uid, createdAt: serverTimestamp(), createdAtMs: Date.now() }); await updateDoc(doc(db, 'soso_feed_posts', postId), { [`votes.${safeVoteKey(cleanOption)}`]: increment(1), voteTotal: increment(1) }); return { ok: true, option: cleanOption }; }
 export async function getFeedComments(postId, pageSize = 30) { if (!postId) return []; try { const q = query(collection(db, 'soso_feed_posts', postId, 'comments'), orderBy('createdAtMs', 'desc'), limit(pageSize)); const snap = await getDocs(q); return snap.docs.map(d => normalizeComment(d.id, d.data())); } catch (error) { console.warn('댓글 불러오기 실패:', error.code || error.message); return []; } }
-export async function addFeedComment(postId, text) { const user = auth.currentUser; if (!user) throw new Error('로그인 후 댓글을 남길 수 있습니다.'); const body = clean(text, 300); if (body.length < 2) throw new Error('댓글을 2자 이상 입력해주세요.'); if (!postId) throw new Error('게시글을 찾을 수 없습니다.'); const payload = { text: body, likes: 0, authorId: user.uid, authorName: user.isAnonymous ? '익명 소소러' : (user.displayName || user.email || '소소킹 유저'), createdAt: serverTimestamp(), createdAtMs: Date.now() }; const ref = await addDoc(collection(db, 'soso_feed_posts', postId, 'comments'), payload); try { await updateDoc(doc(db, 'soso_feed_posts', postId), { comments: increment(1), topComment: body }); } catch {} return normalizeComment(ref.id, payload); }
+export async function addFeedComment(postId, text) { const user = auth.currentUser; if (!user) throw new Error('로그인 후 댓글을 남길 수 있습니다.'); const body = clean(text, 300); if (body.length < 2) throw new Error('댓글을 2자 이상 입력해주세요.'); if (!postId) throw new Error('게시글을 찾을 수 없습니다.'); const authorName = await getAuthorName(user); const payload = { text: body, likes: 0, authorId: user.uid, authorName, createdAt: serverTimestamp(), createdAtMs: Date.now() }; const ref = await addDoc(collection(db, 'soso_feed_posts', postId, 'comments'), payload); try { await updateDoc(doc(db, 'soso_feed_posts', postId), { comments: increment(1), topComment: body }); } catch {} return normalizeComment(ref.id, payload); }
 export async function createFeedReport({ postId, commentId = '', reason = '기타', detail = '' } = {}) { const user = auth.currentUser; if (!user) throw new Error('로그인 후 신고할 수 있습니다.'); const cleanPostId = clean(postId, 120); if (!cleanPostId) throw new Error('게시글을 찾을 수 없습니다.'); const payload = { category: commentId ? 'soso_feed_comment' : 'soso_feed_post', content: clean(detail || reason, 500), reason: clean(reason, 60), targetType: commentId ? 'comment' : 'post', targetId: clean(commentId || cleanPostId, 160), postId: cleanPostId, reporterId: user.uid, status: 'open', createdAt: serverTimestamp(), createdAtMs: Date.now() }; await addDoc(collection(db, 'reports'), payload); return { ok: true }; }
 
 export async function createFeedPost(input = {}) {
@@ -130,13 +167,15 @@ export async function createFeedPost(input = {}) {
   const linkUrl = cleanUrl(input.linkUrl || '', 700);
   const yt = youtubeId(linkUrl);
   const mediaType = clean(input.mediaType || (yt ? 'youtube' : linkUrl ? (isImageUrl(linkUrl) ? 'image_link' : 'link') : (input.imageUrl ? 'upload' : 'none')), 30);
+  const host = linkUrl ? (() => { try { return new URL(linkUrl).hostname.replace(/^www\./, ''); } catch { return ''; } })() : '';
+  const authorName = await getAuthorName(user);
   const payload = {
     type, badge: BADGE_BY_TYPE[type] || '✨', title, content, summary: clean(content, 180), question: question || '사람들은 어떻게 생각할까요?',
     options: finalOptions, votes: Object.fromEntries(finalOptions.map(o => [safeVoteKey(o), 0])), voteTotal: 0,
     tags: tags.length ? tags : ['소소피드'], views:0, likes:0, comments:0, status:'published', source: user.isAnonymous ? 'anonymous_user' : 'user',
-    authorId:user.uid, authorName: user.isAnonymous ? '익명 소소러' : (user.displayName || user.email || '소소킹 유저'),
+    authorId:user.uid, authorName,
     imageUrl: cleanUrl(input.imageUrl || (mediaType === 'image_link' ? linkUrl : ''), 700), mediaType, linkUrl,
-    linkTitle: clean(input.linkTitle || '', 120), linkSummary: clean(input.linkSummary || '', 260),
+    linkTitle: clean(input.linkTitle || '', 120), linkSummary: clean(input.linkSummary || '', 260), linkSource: clean(input.linkSource || host, 80),
     embedUrl: yt ? `https://www.youtube-nocookie.com/embed/${yt}` : '', thumbnailUrl: yt ? `https://img.youtube.com/vi/${yt}/hqdefault.jpg` : cleanUrl(input.thumbnailUrl || '', 700),
     topComment:'', createdAt: serverTimestamp(), createdAtMs: Date.now(), updatedAt: serverTimestamp()
   };
