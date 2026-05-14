@@ -23,6 +23,7 @@ const BADGE_BY_TYPE = {
   '짧은 글':'✍️',
   '질문':'❓',
   '사진 제목학원':'📸',
+  '미친작명소':'📸',
   '댓글 배틀':'🔥',
   '웃참 챌린지':'🤣',
   '밸런스게임':'⚖️',
@@ -50,6 +51,7 @@ const BADGE_BY_TYPE = {
 };
 
 function clean(value, max = 500) { return String(value || '').replace(/[<>]/g, '').replace(/\s{2,}/g, ' ').trim().slice(0, max); }
+function normalizeType(value) { const type = clean(value || '짧은 글', 30); return type === '사진 제목학원' ? '미친작명소' : type; }
 function safeVoteKey(option) { return clean(option, 40).replace(/[.~*/\[\]]/g, '_') || 'option'; }
 function extFromFile(file) { const name = String(file?.name || 'image').toLowerCase(); const ext = name.split('.').pop(); return ['jpg','jpeg','png','gif','webp'].includes(ext) ? ext : 'jpg'; }
 function buildVoteMap(options = [], source = {}) { const map = {}; options.forEach(option => { const key = safeVoteKey(option); map[option] = Number(source[option] ?? source[key] ?? 0); }); return map; }
@@ -116,7 +118,7 @@ export async function uploadFeedImage(file, onProgress = () => {}) {
 }
 
 function normalizePost(id, data = {}) {
-  const type = clean(data.type || '짧은 글', 30);
+  const type = normalizeType(data.type || '짧은 글');
   const options = Array.isArray(data.options) ? data.options.map(v => clean(v, 40)).filter(Boolean).slice(0, 4) : [];
   const tags = Array.isArray(data.tags) ? data.tags.map(v => clean(v, 18).replace(/^#/, '')).filter(Boolean).slice(0, 6) : [];
   const finalOptions = options.length ? options : ['공감한다','조금 애매하다','반대한다','댓글로 말한다'];
@@ -138,7 +140,7 @@ function normalizePost(id, data = {}) {
     status: data.status || 'published', source: data.source || 'user', createdAtMs:Number(data.createdAtMs || Date.now())
   };
 }
-function normalizeComment(id, data = {}) { return { id, text: clean(data.text || '', 300), authorName: clean(data.authorName || '익명 소소러', 40), authorId: data.authorId || null, likes: Number(data.likes || 0), createdAtMs: Number(data.createdAtMs || Date.now()) }; }
+function normalizeComment(id, data = {}) { return { id, text: clean(data.text || '', 300), authorName: clean(data.authorName || '익명 소소러', 40), authorId: data.authorId || null, likes: Number(data.likes || 0), reactions: data.reactions || {}, createdAtMs: Number(data.createdAtMs || Date.now()) }; }
 
 export async function getFeedPosts({ topOnly = false, pageSize = 20 } = {}) {
   try {
@@ -153,13 +155,13 @@ export async function increaseFeedView(postId) { if (!postId) return; try { awai
 export async function likeFeedPost(postId) { if (!postId) return { fallback: true }; await updateDoc(doc(db, 'soso_feed_posts', postId), { likes: increment(1) }); return { ok: true }; }
 export async function getMyFeedVote(postId) { const user = auth.currentUser; if (!user || !postId) return null; try { const snap = await getDoc(doc(db, 'soso_feed_posts', postId, 'voters', user.uid)); return snap.exists() ? snap.data().option || null : null; } catch { return null; } }
 export async function voteFeedOption(postId, option) { const user = auth.currentUser; if (!user) throw new Error('로그인 후 투표할 수 있습니다.'); const cleanOption = clean(option, 40); if (!cleanOption) throw new Error('선택지를 골라주세요.'); if (!postId) throw new Error('게시글을 찾을 수 없습니다.'); const voterRef = doc(db, 'soso_feed_posts', postId, 'voters', user.uid); const existing = await getDoc(voterRef); if (existing.exists()) throw new Error('이미 이 글에 투표했습니다.'); await setDoc(voterRef, { option: cleanOption, authorId: user.uid, createdAt: serverTimestamp(), createdAtMs: Date.now() }); await updateDoc(doc(db, 'soso_feed_posts', postId), { [`votes.${safeVoteKey(cleanOption)}`]: increment(1), voteTotal: increment(1) }); return { ok: true, option: cleanOption }; }
-export async function getFeedComments(postId, pageSize = 30) { if (!postId) return []; try { const q = query(collection(db, 'soso_feed_posts', postId, 'comments'), orderBy('createdAtMs', 'desc'), limit(pageSize)); const snap = await getDocs(q); return snap.docs.map(d => normalizeComment(d.id, d.data())); } catch (error) { console.warn('댓글 불러오기 실패:', error.code || error.message); return []; } }
+export async function getFeedComments(postId, pageSize = 30) { if (!postId) return []; try { const q = query(collection(db, 'soso_feed_posts', postId, 'comments'), orderBy('createdAtMs', 'desc'), limit(pageSize)); const snap = await getDocs(q); return snap.docs.map(d => normalizeComment(d.id, d.data())).sort((a, b) => Number(b.likes || 0) - Number(a.likes || 0) || Number(b.createdAtMs || 0) - Number(a.createdAtMs || 0)); } catch (error) { console.warn('댓글 불러오기 실패:', error.code || error.message); return []; } }
 export async function addFeedComment(postId, text) { const user = auth.currentUser; if (!user) throw new Error('로그인 후 댓글을 남길 수 있습니다.'); const body = clean(text, 300); if (body.length < 2) throw new Error('댓글을 2자 이상 입력해주세요.'); if (!postId) throw new Error('게시글을 찾을 수 없습니다.'); const authorName = await getAuthorName(user); const payload = { text: body, likes: 0, authorId: user.uid, authorName, createdAt: serverTimestamp(), createdAtMs: Date.now() }; const ref = await addDoc(collection(db, 'soso_feed_posts', postId, 'comments'), payload); try { await updateDoc(doc(db, 'soso_feed_posts', postId), { comments: increment(1), topComment: body }); } catch {} return normalizeComment(ref.id, payload); }
 export async function createFeedReport({ postId, commentId = '', reason = '기타', detail = '' } = {}) { const user = auth.currentUser; if (!user) throw new Error('로그인 후 신고할 수 있습니다.'); const cleanPostId = clean(postId, 120); if (!cleanPostId) throw new Error('게시글을 찾을 수 없습니다.'); const payload = { category: commentId ? 'soso_feed_comment' : 'soso_feed_post', content: clean(detail || reason, 500), reason: clean(reason, 60), targetType: commentId ? 'comment' : 'post', targetId: clean(commentId || cleanPostId, 160), postId: cleanPostId, reporterId: user.uid, status: 'open', createdAt: serverTimestamp(), createdAtMs: Date.now() }; await addDoc(collection(db, 'reports'), payload); return { ok: true }; }
 
 export async function createFeedPost(input = {}) {
   const user = auth.currentUser; if (!user) throw new Error('로그인 후 글을 올릴 수 있습니다.');
-  const type = clean(input.type || '짧은 글', 30), title = clean(input.title, 90), content = clean(input.content, 1200), question = clean(input.question, 90);
+  const type = normalizeType(input.type || '짧은 글'), title = clean(input.title, 90), content = clean(input.content, 1200), question = clean(input.question, 90);
   const options = (Array.isArray(input.options) ? input.options : []).map(v => clean(v, 40)).filter(Boolean).slice(0, 4);
   const tags = (Array.isArray(input.tags) ? input.tags : []).map(v => clean(v, 18).replace(/^#/, '')).filter(Boolean).slice(0, 6);
   if (title.length < 4) throw new Error('제목을 4자 이상 입력해주세요.'); if (content.length < 5) throw new Error('본문 또는 상황 설명을 5자 이상 입력해주세요.');
