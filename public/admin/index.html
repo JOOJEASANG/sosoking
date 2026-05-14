@@ -55,6 +55,7 @@
     import { auth, db, functions, initAuth } from '/js/firebase.js';
     import { addDoc, collection, doc, getDoc, serverTimestamp, setDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
     import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
+    import { initSeedManager } from '/admin/seed-manager.js';
 
     const label = document.getElementById('seed-status-label');
     const detail = document.getElementById('seed-status-detail');
@@ -168,6 +169,7 @@
           data = await createSeedPostsDirectly();
         }
         detail.textContent = data.skipped ? `실행 안 함: ${data.reason}` : `오늘 샘플 ${data.count || 0}개 생성 완료${data.fallback ? ' · 직접 생성' : ''}`;
+        initSeedManager();
       } catch (error) {
         alert(error.message || '즉시 생성 실패');
       } finally {
@@ -177,6 +179,7 @@
     });
 
     loadStatus();
+    initSeedManager();
   </script>
 </body>
 </html>
