@@ -18,6 +18,8 @@
   --soso-radius-xl: 34px;
   --soso-radius-lg: 26px;
   --soso-radius-md: 18px;
+  --soso-wide: min(1320px, calc(100vw - 56px));
+  --soso-page-pad: clamp(18px, 3vw, 42px);
 }
 
 [data-theme="dark"] {
@@ -31,6 +33,7 @@
   --soso-soft-shadow: none;
 }
 
+html, body { width: 100%; min-height: 100%; }
 body {
   background: radial-gradient(circle at 8% -10%, rgba(255, 232, 92, .28), transparent 28%),
               radial-gradient(circle at 96% 0%, rgba(124, 92, 255, .18), transparent 30%),
@@ -42,6 +45,7 @@ body {
 .soso-feed-page,
 .soso-doc-page,
 .games-page-v1,
+.mission-page-v1,
 .soso-home-v3 {
   background: radial-gradient(circle at 8% -6%, rgba(255, 232, 92, .25), transparent 30%),
               radial-gradient(circle at 94% 2%, rgba(124, 92, 255, .15), transparent 30%),
@@ -54,6 +58,7 @@ body {
 [data-theme="dark"] .soso-feed-page,
 [data-theme="dark"] .soso-doc-page,
 [data-theme="dark"] .games-page-v1,
+[data-theme="dark"] .mission-page-v1,
 [data-theme="dark"] .soso-home-v3 {
   background: radial-gradient(circle at 8% -6%, rgba(124, 92, 255, .16), transparent 30%), #070b13 !important;
 }
@@ -68,6 +73,10 @@ body {
 .games-comic-card,
 .game-card,
 .games-roadmap article,
+.mission-copy,
+.mission-card-live,
+.mission-mini-card,
+.mission-note,
 .guide-card-clean,
 .soso-doc-card,
 .doc-hero-copy,
@@ -82,7 +91,9 @@ body {
 .write-card,
 .write-preview,
 .auth-card-v2,
-.auth-hero-card {
+.auth-hero-card,
+.account-summary-card,
+.account-card {
   border: 1px solid var(--soso-line) !important;
   background: var(--soso-card) !important;
   box-shadow: var(--soso-shadow) !important;
@@ -99,6 +110,10 @@ body {
 [data-theme="dark"] .games-comic-card,
 [data-theme="dark"] .game-card,
 [data-theme="dark"] .games-roadmap article,
+[data-theme="dark"] .mission-copy,
+[data-theme="dark"] .mission-card-live,
+[data-theme="dark"] .mission-mini-card,
+[data-theme="dark"] .mission-note,
 [data-theme="dark"] .guide-card-clean,
 [data-theme="dark"] .soso-doc-card,
 [data-theme="dark"] .doc-hero-copy,
@@ -113,13 +128,16 @@ body {
 [data-theme="dark"] .write-card,
 [data-theme="dark"] .write-preview,
 [data-theme="dark"] .auth-card-v2,
-[data-theme="dark"] .auth-hero-card {
+[data-theme="dark"] .auth-hero-card,
+[data-theme="dark"] .account-summary-card,
+[data-theme="dark"] .account-card {
   box-shadow: none !important;
 }
 
 /* Buttons and links */
 .home-v3-actions a.primary,
 .games-actions a,
+.mission-primary,
 .feed-actions a,
 .write-submit,
 .feedback-submit,
@@ -153,6 +171,9 @@ body {
 .games-page-v1 h1,
 .games-page-v1 h2,
 .games-page-v1 h3,
+.mission-page-v1 h1,
+.mission-page-v1 h2,
+.mission-page-v1 h3,
 .soso-doc-page h1,
 .soso-doc-page h2,
 .soso-home-v3 h1,
@@ -172,30 +193,38 @@ body {
   overflow-wrap: anywhere;
 }
 
-/* Game cards: less cartoon, more premium */
+/* Premium cards */
 .games-copy,
 .games-comic-card,
 .game-card,
-.games-roadmap article {
+.games-roadmap article,
+.mission-copy,
+.mission-card-live,
+.mission-mini-card,
+.mission-note {
   border-width: 1px !important;
   box-shadow: var(--soso-shadow) !important;
 }
 
-.games-copy {
+.games-copy,
+.mission-copy {
   background: linear-gradient(135deg, rgba(255,255,255,.92), rgba(255,248,220,.82)) !important;
 }
 
-.games-comic-card {
+.games-comic-card,
+.mission-card-live {
   background: linear-gradient(135deg, #151a33, #283b88 56%, #7c5cff) !important;
   color: #fff !important;
 }
 
-.game-card {
+.game-card,
+.mission-mini-card {
   color: var(--soso-ink) !important;
   transform: translateZ(0);
 }
 
 .game-card:hover,
+.mission-mini-card:hover,
 .mode-card:hover,
 .recent-v3-card:hover {
   transform: translateY(-4px) !important;
@@ -213,47 +242,92 @@ body {
 }
 
 /* Docs */
-.soso-doc-page {
-  padding-top: 18px !important;
-}
-
+.soso-doc-page { padding-top: 18px !important; }
 .soso-doc-card,
-.guide-card-clean {
-  max-width: 940px !important;
-  border-radius: var(--soso-radius-xl) !important;
-}
-
+.guide-card-clean { max-width: 1080px !important; border-radius: var(--soso-radius-xl) !important; }
 .doc-hero,
 .guide-card-clean,
-.soso-doc-card {
-  max-width: 940px !important;
-}
-
+.soso-doc-card { max-width: 1080px !important; }
 .doc-section h2,
-.guide-title-row h2 {
-  color: var(--soso-ink) !important;
-}
-
+.guide-title-row h2 { color: var(--soso-ink) !important; }
 .doc-section p,
 .guide-card-clean p,
-.clean-steps span {
-  color: var(--soso-muted) !important;
+.clean-steps span { color: var(--soso-muted) !important; }
+
+/* Wide responsive layout */
+.home-v3-hero,
+.home-v3-mode-grid,
+.home-v3-flow,
+.home-v3-recent,
+.feed-hero,
+.feed-dashboard,
+.feed-search-panel,
+.feed-layout,
+.popular-hero-v4,
+.popular-dashboard-v4,
+.mission-hero,
+.mission-grid,
+.mission-note,
+.account-hero,
+.account-layout,
+.write-layout,
+.simple-header,
+.feed-detail-layout,
+.feed-comments,
+.comments-section,
+.feedback-layout,
+.auth-layout,
+.guide-hero-clean,
+.doc-hero {
+  width: var(--soso-wide) !important;
+  max-width: var(--soso-wide) !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+.soso-home-v3,
+.soso-feed-page,
+.mission-page-v1,
+.account-page,
+.feedback-page,
+.auth-page,
+.soso-doc-page,
+.simple-page {
+  padding-left: var(--soso-page-pad) !important;
+  padding-right: var(--soso-page-pad) !important;
+}
+
+@media (min-width: 1080px) {
+  .home-v3-hero { grid-template-columns: minmax(0, 1.35fr) 420px !important; gap: 22px !important; }
+  .home-v3-phone { min-height: 560px; }
+  .home-v3-mode-grid { grid-template-columns: repeat(5, minmax(0, 1fr)) !important; gap: 14px !important; }
+  .recent-v3-grid { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; gap: 14px !important; }
+  .flow-grid { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 14px !important; }
+
+  .feed-hero { grid-template-columns: minmax(0, 1.45fr) 340px !important; gap: 16px !important; }
+  .feed-dashboard { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 14px !important; }
+  .feed-layout { grid-template-columns: minmax(0, 1fr) 320px !important; gap: 18px !important; }
+  .feed-list { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 14px !important; }
+  .detail-main-card { min-height: 420px; }
+
+  .write-layout { grid-template-columns: minmax(0, 1fr) 390px !important; gap: 18px !important; align-items: start !important; }
+  .write-preview { position: sticky; top: 18px; }
+  .category-grid { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+
+  .mission-hero { grid-template-columns: minmax(0, 1.3fr) 390px !important; gap: 18px !important; }
+  .mission-grid { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; gap: 14px !important; }
+
+  .account-layout { grid-template-columns: 320px minmax(0, 1fr) !important; gap: 18px !important; }
+}
+
+@media (min-width: 1440px) {
+  :root { --soso-wide: min(1380px, calc(100vw - 72px)); }
+  .feed-list { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+  .recent-v3-grid { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
 }
 
 /* Feed and ranking visual difference */
-.soso-feed-page .feed-hero,
-.soso-feed-page .feed-dashboard,
-.soso-feed-page .feed-layout {
-  max-width: 1040px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.soso-feed-page .feed-card {
-  border-radius: 28px !important;
-  overflow: hidden;
-}
-
+.soso-feed-page .feed-card { border-radius: 28px !important; overflow: hidden; }
 .soso-feed-page .feed-card-top span,
 .feed-tags span,
 .side-tags span {
@@ -272,27 +346,53 @@ body {
   color: var(--soso-ink);
   font-family: 'Noto Sans KR', system-ui, sans-serif;
 }
+.admin-shell-soso .admin-card { border: 1px solid var(--soso-line); border-radius: 30px; background: var(--soso-card); box-shadow: var(--soso-shadow); }
 
-.admin-shell-soso .admin-card {
-  border: 1px solid var(--soso-line);
-  border-radius: 30px;
-  background: var(--soso-card);
-  box-shadow: var(--soso-shadow);
+/* PWA install floating button */
+#soso-pwa-install-fab {
+  position: fixed;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: calc(92px + env(safe-area-inset-bottom));
+  z-index: 290;
+  border: 0;
+  border-radius: 999px;
+  padding: 12px 15px;
+  background: var(--soso-grad-hot);
+  color: #fff;
+  font-weight: 1000;
+  box-shadow: 0 18px 44px rgba(255, 92, 138, .25);
+  display: none;
 }
+#soso-pwa-install-fab.show { display: inline-flex; align-items: center; gap: 6px; }
+@media (min-width: 900px) { #soso-pwa-install-fab { bottom: 24px; } }
 
 /* Responsive */
+@media (max-width: 900px) {
+  :root { --soso-wide: min(100%, calc(100vw - 28px)); --soso-page-pad: 14px; }
+  .home-v3-hero,
+  .feed-hero,
+  .feed-layout,
+  .mission-hero,
+  .account-layout,
+  .write-layout,
+  .feed-detail-layout { grid-template-columns: 1fr !important; }
+  .feed-list { display: grid !important; grid-template-columns: 1fr !important; gap: 12px !important; }
+}
+
 @media (max-width: 640px) {
   .predict-app,
   .simple-page,
   .soso-feed-page,
   .soso-doc-page,
   .games-page-v1,
+  .mission-page-v1,
   .soso-home-v3 {
     padding-left: 14px !important;
     padding-right: 14px !important;
   }
   .home-v3-copy,
   .games-copy,
+  .mission-copy,
   .guide-card-clean,
   .soso-doc-card,
   .doc-hero-copy,
@@ -301,4 +401,5 @@ body {
   .write-preview {
     border-radius: 26px !important;
   }
+  #soso-pwa-install-fab { right: 14px; bottom: calc(88px + env(safe-area-inset-bottom)); padding: 11px 13px; font-size: 13px; }
 }
