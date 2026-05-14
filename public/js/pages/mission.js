@@ -6,9 +6,9 @@ const MISSIONS = [
   { icon:'💬', type:'소소토론', title:'친구 카톡 답장 3시간 뒤면 서운하다?', hint:'사소하지만 갈리는 주제를 올리면 댓글이 잘 붙습니다.', options:['서운하다','괜찮다','상황마다 다르다','읽씹보다 낫다'] },
   { icon:'🧠', type:'퀴즈', title:'이 상황에서 제일 센스 있는 답은?', hint:'정답형보다 센스형 퀴즈가 댓글 반응을 만들기 좋습니다.', options:['1번','2번','3번','댓글이 정답'] },
   { icon:'🤖', type:'AI놀이', title:'AI가 만든 최악의 변명 고르기', hint:'AI 문장, 이상한 답변, 상황극을 올리고 가장 웃긴 선택지를 고르게 해보세요.', options:['너무 진지함','말이 안 됨','오히려 설득됨','댓글로 이어가기'] },
-  { icon:'🎬', type:'영상 리액션', title:'이 영상 한 줄 요약하면?', hint:'유튜브/쇼츠 링크 기능이 들어오면 가장 먼저 쓸 수 있는 유형입니다.', options:['웃김','킹받음','공감됨','댓글로 요약'] },
+  { icon:'🎬', type:'영상 리액션', title:'이 영상 한 줄 요약하면?', hint:'유튜브/쇼츠 링크를 올리고 사람들이 한 줄 리액션을 남기게 해보세요.', options:['웃김','킹받음','공감됨','댓글로 요약'] },
   { icon:'🔥', type:'댓글 배틀', title:'이 상황에서 제일 킹받는 한마디는?', hint:'본문은 짧게, 댓글이 주인공이 되게 만들어보세요.', options:['참는다','받아친다','읽씹한다','댓글로 배틀'] },
-  { icon:'🏆', type:'주간 소소왕', title:'이번 주 제일 웃긴 글 후보 올리기', hint:'나중에 랭킹 기능과 연결하기 좋은 미션입니다.', options:['사진','밸런스','퀴즈','댓글'] }
+  { icon:'📚', type:'릴레이소설', title:'첫 문장 하나로 이야기 시작하기', hint:'누구든 댓글로 다음 장면을 이어갈 수 있는 시작 문장을 올려보세요.', options:['반전','감동','공포','개그'] }
 ];
 
 export function renderMission(container) {
@@ -16,27 +16,27 @@ export function renderMission(container) {
   injectMissionStyle();
   const today = MISSIONS[new Date().getDate() % MISSIONS.length];
   container.innerHTML = `
-    <main class="predict-app mission-page-v1">
-      <section class="mission-hero">
+    <main class="predict-app mission-page-v1 mission-dashboard">
+      <section class="mission-hero mission-dash-hero">
         <div class="mission-copy">
           <span>TODAY MISSION</span>
-          <h1>뭘 올릴지 모르겠다면<br><em>미션에서 시작하세요</em></h1>
-          <p>소소킹은 게임 메뉴를 따로 두지 않고, 피드 안에서 재미있는 글 유형으로 놀도록 정리했습니다. 오늘의 미션을 골라 바로 글을 만들어보세요.</p>
-          <div class="mission-today"><i>${today.icon}</i><div><b>${today.title}</b><small>${today.hint}</small></div></div>
+          <h1>뭘 올릴지 모르겠다면<br><em>오늘의 미션으로 시작</em></h1>
+          <p>소소킹은 피드 안에서 재미, 정보, 퀴즈, 투표, 릴레이소설, 역할극을 자연스럽게 즐기는 공간입니다. 미션을 골라 바로 소소피드를 만들어보세요.</p>
+          <div class="mission-today"><i>${today.icon}</i><div><b>${escapeHtml(today.title)}</b><small>${escapeHtml(today.hint)}</small></div></div>
           <a class="mission-primary" href="#/feed/new">오늘 미션으로 만들기</a>
         </div>
         <div class="mission-card-live">
           <b>추천 선택지</b>
           ${today.options.map((option, index) => `<div><span>${index + 1}</span>${escapeHtml(option)}</div>`).join('')}
-          <small>${escapeHtml(today.type)} · 참여형 피드</small>
+          <small>${escapeHtml(today.type)} · 참여형 소소피드</small>
         </div>
       </section>
       <section class="mission-grid">
         ${MISSIONS.map(card).join('')}
       </section>
       <section class="mission-note">
-        <b>다음 확장 추천</b>
-        <p>나중에는 미션 카드를 누르면 글쓰기 화면에 제목·선택지가 자동 입력되게 만들 수 있습니다. 유튜브 링크와 이미지 링크 기능을 붙이면 “영상 리액션”, “짤 제목학원”까지 자연스럽게 확장됩니다.</p>
+        <b>미션 활용 팁</b>
+        <p>미션 카드를 누르면 만들기 화면으로 이동합니다. 정보공유, 영상 리액션, 릴레이소설, 역할극방 같은 유형을 섞으면 소소킹만의 재미있는 피드가 만들어집니다.</p>
       </section>
     </main>
   `;
