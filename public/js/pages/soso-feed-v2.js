@@ -1,5 +1,4 @@
-import { renderSosoFeed as renderLegacySosoFeed } from './soso-feed.js';
-import { injectPredictStyle } from './predict-home.js';
+import { injectAppStyle } from '../components/ui-style.js';
 import { createFeedPost, uploadFeedImage } from '../feed/feed-engine.js';
 
 const FEED_WRITE_TYPES = [
@@ -65,11 +64,15 @@ function typeButtons() {
 export function renderSosoFeed(container) {
   const hash = location.hash || '#/feed';
   if (hash === '#/feed/new') return renderFeedWrite(container);
-  return renderLegacySosoFeed(container);
+  injectAppStyle();
+  container.innerHTML = `<main class="predict-app soso-feed-page"><section class="feed-hero"><div class="feed-hero-copy"><span>SOSO FEED</span><h1>소소피드 불러오는 중</h1><p>피드 목록과 상세 화면을 준비하고 있습니다.</p></div></section></main>`;
+  import('./soso-feed.js').then(module => module.renderSosoFeed(container)).catch(() => {
+    container.innerHTML = `<main class="predict-app soso-feed-page"><section class="feed-empty-state"><div>!</div><h3>소소피드를 불러오지 못했습니다</h3><p>잠시 후 다시 시도해주세요.</p><a href="#/">홈으로</a></section></main>`;
+  });
 }
 
 function renderFeedWrite(container) {
-  injectPredictStyle();
+  injectAppStyle();
   const config = FEED_WRITE_TYPES[0];
   container.innerHTML = `
     <main class="predict-app soso-feed-page">
