@@ -196,6 +196,7 @@ service cloud.firestore {
     match /reports/{reportId} { allow create: if validReportCreate(); allow read, update, delete: if isAdmin(); }
     match /site_settings/{docId} { allow read: if true; allow write: if isAdmin(); }
     match /policy_docs/{docId} { allow read: if true; allow write: if isAdmin(); }
+    match /system_jobs/{docId} { allow read, write: if isAdmin(); }
     match /feedback/{feedbackId} {
       allow create: if validFeedbackCreate();
       allow read, update, delete: if isAdmin();
@@ -203,7 +204,7 @@ service cloud.firestore {
 
     match /soso_feed_posts/{postId} {
       allow read: if resource.data.status == 'published' || isAdmin();
-      allow create: if validFeedPost();
+      allow create: if isAdmin() || validFeedPost();
       allow update: if isAdmin() || isFeedCounterUpdate();
       allow delete: if isAdmin();
       match /comments/{commentId} {
