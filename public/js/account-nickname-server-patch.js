@@ -3,9 +3,10 @@ import { invalidateNicknameCache, renderNav } from './components/nav.js';
 import { showToast } from './components/toast.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 import './auth-state-bridge.js';
+import './instant-navigation-patch.js';
 
 // 안정화: 디자인/반응형 런타임 처리는 home-pc-mobile-final-patch.js 하나로 통합했습니다.
-// 이 파일은 닉네임 서버 처리와 인증상태 브리지 기능만 유지합니다.
+// 이 파일은 닉네임 서버 처리, 인증상태 브리지, 즉시 내부 이동 보강만 유지합니다.
 
 function validNickname(nick) {
   if (!nick || nick.length < 2 || nick.length > 12) return '닉네임은 2~12자여야 합니다.';
