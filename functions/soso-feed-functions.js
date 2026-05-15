@@ -128,7 +128,9 @@ const addFeedComment = onCall({ region: 'asia-northeast3', timeoutSeconds: 20 },
   const postRef = db.doc(`soso_feed_posts/${postId}`);
   await assertPublishedPost(postRef);
   const authorName = await getAuthorName(userId);
-  const payload = { text, likes: 0, authorId: userId, authorName, createdAt: FieldValue.serverTimestamp(), createdAtMs: Date.now() };
+  const createdAtMs = Date.now();
+  const payload = { text, likes: 0, authorId: userId, authorName, createdAt: FieldValue.serverTimestamp(), createdAtMs };
+  const responseComment = { text, likes: 0, authorId: userId, authorName, createdAtMs };
   const commentRef = postRef.collection('comments').doc();
   await db.runTransaction(async (tx) => {
     const postSnap = await tx.get(postRef);
@@ -136,7 +138,7 @@ const addFeedComment = onCall({ region: 'asia-northeast3', timeoutSeconds: 20 },
     tx.set(commentRef, payload);
     tx.update(postRef, { comments: FieldValue.increment(1), topComment: text, updatedAt: FieldValue.serverTimestamp() });
   });
-  return { ok: true, comment: { id: commentRef.id, ...payload } };
+  return { ok: true, comment: { id: commentRef.id, ...responseComment } };
 });
 
 module.exports = { registerFeedView, likeFeedPost, voteFeedOption, addFeedComment };
