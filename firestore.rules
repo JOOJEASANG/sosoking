@@ -32,6 +32,15 @@ service cloud.firestore {
       return value in ['user', 'anonymous_user'];
     }
 
+    function validImageUrls() {
+      return request.resource.data.imageUrls is list
+        && request.resource.data.imageUrls.size() <= 10
+        && request.resource.data.imageCount is int
+        && request.resource.data.imageCount >= 0
+        && request.resource.data.imageCount <= 10
+        && request.resource.data.imageCount == request.resource.data.imageUrls.size();
+    }
+
     function validUserProfileCreate(userId) {
       return request.auth != null
         && request.auth.uid == userId
@@ -57,7 +66,7 @@ service cloud.firestore {
       return request.resource.data.keys().hasOnly([
         'type', 'badge', 'title', 'content', 'summary', 'question',
         'options', 'votes', 'voteTotal', 'tags', 'views', 'likes', 'comments',
-        'status', 'source', 'authorId', 'authorName', 'imageUrl', 'mediaType',
+        'status', 'source', 'authorId', 'authorName', 'imageUrl', 'imageUrls', 'imageCount', 'mediaType',
         'linkUrl', 'linkTitle', 'linkSummary', 'linkSource', 'embedUrl', 'thumbnailUrl',
         'topComment', 'createdAt', 'createdAtMs', 'updatedAt'
       ]);
@@ -92,6 +101,7 @@ service cloud.firestore {
         && request.resource.data.voteTotal == 0
         && request.resource.data.topComment == ''
         && validOptionalHttps(request.resource.data.imageUrl, 700)
+        && validImageUrls()
         && validMediaType(request.resource.data.mediaType)
         && validOptionalHttps(request.resource.data.linkUrl, 700)
         && validShortText(request.resource.data.linkTitle, 120)
@@ -135,7 +145,6 @@ service cloud.firestore {
 
     match /admins/{uid} { allow read: if request.auth != null && request.auth.uid == uid; allow write: if false; }
 
-    // Legacy debate collections are no longer exposed in the user app.
     match /categories/{catId} { allow read, write: if isAdmin(); }
     match /topics/{topicId} { allow read, write: if isAdmin(); }
     match /debate_sessions/{sessionId} { allow read, write: if isAdmin(); }
