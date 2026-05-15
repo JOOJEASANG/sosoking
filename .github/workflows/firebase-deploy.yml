@@ -8,13 +8,15 @@ on:
 
 jobs:
   deploy:
-    name: Deploy Firebase Hosting and backend
+    name: Deploy to Firebase
     runs-on: ubuntu-latest
     permissions:
       contents: read
+
     env:
       FIREBASE_PROJECT_ID: sosoking-481e6
       FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -38,14 +40,20 @@ jobs:
       - name: Write Firebase service account
         run: |
           if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
-            echo "FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 secret is missing."
+            echo "FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 secret이 설정되지 않았습니다."
             exit 1
           fi
           echo "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-service-account.json"
           echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/firebase-service-account.json" >> "$GITHUB_ENV"
 
+      - name: Deploy Firestore rules & indexes
+        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only firestore:rules,firestore:indexes
+
+      - name: Deploy Storage rules
+        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only storage
+
       - name: Deploy Hosting
         run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only hosting
 
-      - name: Deploy Functions separately
+      - name: Deploy Functions
         run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only functions || echo "::warning::Functions 배포 실패 - 수동 배포 필요"
