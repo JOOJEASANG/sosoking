@@ -1,6 +1,9 @@
 import { auth } from './firebase.js';
 
 const NAV_PATCH_STYLE_ID = 'sosoking-pc-mobile-navigation-patch';
+let scheduled = false;
+let lastAvatarState = '';
+let lastDeviceState = '';
 
 function injectNavPatchStyle() {
   if (document.getElementById(NAV_PATCH_STYLE_ID)) return;
@@ -8,7 +11,6 @@ function injectNavPatchStyle() {
   style.id = NAV_PATCH_STYLE_ID;
   style.textContent = `
     @media (min-width: 901px) {
-      /* PC는 상단 헤더만 사용 */
       html body #bottom-nav,
       html body .bottom-nav,
       html body nav.bottom-nav {
@@ -31,7 +33,6 @@ function injectNavPatchStyle() {
         padding-bottom: 56px !important;
       }
 
-      /* PC 헤더 중앙 메뉴에서 내정보는 제거하고 우측 프로필 버튼으로 통일 */
       html body .soso-dashboard-header .soso-top-links a[href="#/account"] {
         display: none !important;
       }
@@ -81,7 +82,6 @@ function injectNavPatchStyle() {
     }
 
     @media (max-width: 900px) {
-      /* 모바일은 하단바 중심 */
       html body .soso-dashboard-header {
         display: none !important;
       }
@@ -113,8 +113,6 @@ function isRealSignedIn() {
 }
 
 function patchDesktopHeader() {
-  injectNavPatchStyle();
-
   document.querySelectorAll('.soso-dashboard-header .soso-top-links a[href="#/account"]').forEach(link => link.remove());
 
   const avatar = document.querySelector('.soso-dashboard-header .soso-top-avatar');
@@ -122,31 +120,58 @@ function patchDesktopHeader() {
 
   const signedIn = isRealSignedIn();
   const isAccount = (location.hash || '#/') === '#/account';
-  avatar.classList.toggle('is-active', isAccount);
-  avatar.setAttribute('aria-label', signedIn ? '내 정보로 이동' : '로그인으로 이동');
-  avatar.innerHTML = `<i>${signedIn ? '🧑' : '🔐'}</i><small>${signedIn ? '내정보' : '로그인'}</small><span>⌄</span>`;
-  avatar.onclick = () => {
-    location.hash = signedIn ? '#/account' : '#/login';
-  };
+  const state = `${signedIn ? 'in' : 'out'}:${isAccount ? 'account' : 'other'}`;
+
+  if (lastAvatarState !== state || avatar.dataset.navPatchState !== state) {
+    lastAvatarState = state;
+    avatar.dataset.navPatchState = state;
+    avatar.classList.toggle('is-active', isAccount);
+    avatar.setAttribute('aria-label', signedIn ? '내 정보로 이동' : '로그인으로 이동');
+    avatar.innerHTML = `<i>${signedIn ? '🧑' : '🔐'}</i><small>${signedIn ? '내정보' : '로그인'}</small><span>⌄</span>`;
+  } else {
+    avatar.classList.toggle('is-active', isAccount);
+  }
+
+  if (avatar.dataset.navPatchClick !== '1') {
+    avatar.dataset.navPatchClick = '1';
+    avatar.addEventListener('click', () => {
+      location.hash = isRealSignedIn() ? '#/account' : '#/login';
+    });
+  }
 }
 
 function patchDeviceMode() {
   injectNavPatchStyle();
   const isDesktop = window.matchMedia('(min-width: 901px)').matches;
-  document.body.classList.toggle('soso-pc-mode', isDesktop);
-  document.body.classList.toggle('soso-mobile-mode', !isDesktop);
+  const state = isDesktop ? 'pc' : 'mobile';
+
+  if (lastDeviceState !== state) {
+    lastDeviceState = state;
+    document.body.classList.toggle('soso-pc-mode', isDesktop);
+    document.body.classList.toggle('soso-mobile-mode', !isDesktop);
+  }
+
   if (isDesktop) patchDesktopHeader();
 }
 
-const observer = new MutationObserver(patchDeviceMode);
-observer.observe(document.documentElement, { childList: true, subtree: true });
+function schedulePatch() {
+  if (scheduled) return;
+  scheduled = true;
+  requestAnimationFrame(() => {
+    scheduled = false;
+    patchDeviceMode();
+  });
+}
 
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', patchDeviceMode);
-else patchDeviceMode();
+const observer = new MutationObserver(schedulePatch);
+observer.observe(document.body || document.documentElement, { childList: true, subtree: true });
 
-window.addEventListener('hashchange', () => setTimeout(patchDeviceMode, 0));
-window.addEventListener('resize', () => setTimeout(patchDeviceMode, 80));
-auth.onAuthStateChanged?.(() => setTimeout(patchDeviceMode, 0));
-setTimeout(patchDeviceMode, 0);
-setTimeout(patchDeviceMode, 300);
-setTimeout(patchDeviceMode, 1000);
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', schedulePatch);
+else schedulePatch();
+
+window.addEventListener('hashchange', schedulePatch);
+window.addEventListener('resize', () => setTimeout(schedulePatch, 80));
+auth.onAuthStateChanged?.(() => setTimeout(schedulePatch, 0));
+setTimeout(schedulePatch, 0);
+setTimeout(schedulePatch, 300);
+setTimeout(schedulePatch, 1000);
