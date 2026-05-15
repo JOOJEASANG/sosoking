@@ -16,7 +16,7 @@ export function renderGuide(container) {
 
       <section class="guide-card-clean intro">
         <div class="guide-title-row"><span>소소킹이란?</span><h2>재미와 정보가 모이는 피드형 커뮤니티</h2></div>
-        <p>소소킹은 사진 제목학원, 밸런스게임, 퀴즈, 영상 리액션, 정보공유, AI 링크 요약, 릴레이소설, 막장드라마, 역할극방을 한 피드에서 즐기는 참여형 커뮤니티입니다. 가볍게 올리고, 검색하고, 투표하고, 댓글로 이어갈 수 있습니다.</p>
+        <p>소소킹은 미친작명소, 밸런스게임, 퀴즈, 영상 리액션, 정보공유, AI 링크 요약, 릴레이소설, 막장드라마, 역할극방을 한 피드에서 즐기는 참여형 커뮤니티입니다. 가볍게 올리고, 검색하고, 투표하고, 댓글로 이어갈 수 있습니다.</p>
       </section>
 
       <section class="guide-card-clean">
@@ -32,12 +32,20 @@ export function renderGuide(container) {
       <section class="guide-card-clean">
         <div class="guide-title-row"><span>SOSO FEED</span><h2>소소피드 유형</h2></div>
         <div class="clean-steps feed-steps">
-          <div><b>📸</b><strong>사진 제목학원</strong><span>사진 한 장에 가장 웃긴 제목을 붙이는 글입니다.</span></div>
+          <div><b>📸</b><strong>미친작명소</strong><span>사진 한 장에 가장 웃긴 제목을 붙이는 글입니다.</span></div>
           <div><b>⚖️</b><strong>게임/투표</strong><span>밸런스게임, 민심 투표, 선택지 배틀처럼 고르는 재미를 만듭니다.</span></div>
           <div><b>🧠</b><strong>퀴즈</strong><span>정답 퀴즈, 센스 퀴즈, 심리 테스트를 만들 수 있습니다.</span></div>
           <div><b>📚</b><strong>소설/역할극</strong><span>릴레이소설, 막장드라마, 역할극방을 댓글로 이어갈 수 있습니다.</span></div>
           <div><b>🔗</b><strong>정보공유</strong><span>유용한 사이트 링크를 AI 요약 카드로 정리할 수 있습니다.</span></div>
           <div><b>🎬</b><strong>영상/이미지</strong><span>유튜브 링크, 이미지 링크, 영상 리액션을 피드로 공유합니다.</span></div>
+        </div>
+      </section>
+
+      <section class="guide-card-clean mode-guide">
+        <div class="guide-title-row"><span>PC / MOBILE</span><h2>접속 환경별 이용 방법</h2></div>
+        <div class="clean-steps">
+          <div><b>PC</b><strong>상단 헤더 중심</strong><span>홈, 피드, 만들기, 미션은 상단 메뉴에서 이동하고, 내정보/로그인은 오른쪽 아이콘에서 관리합니다.</span></div>
+          <div><b>MO</b><strong>하단바 중심</strong><span>모바일에서는 하단바로 홈, 피드, 만들기, 미션, 내정보를 빠르게 이동합니다.</span></div>
         </div>
       </section>
 
