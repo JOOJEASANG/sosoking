@@ -3,11 +3,8 @@ import { invalidateNicknameCache, renderNav } from './components/nav.js';
 import { showToast } from './components/toast.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 
-import('./desktop-pages-final-patch.js').catch(() => {});
-import('./write-category-options-patch.js').catch(() => {});
-import('./pc-mobile-navigation-patch.js').catch(() => {});
-import('./pc-header-and-home-real-data-patch.js').catch(() => {});
-import('./auth-responsive-design-patch.js').catch(() => {});
+// 안정화: 디자인/반응형 런타임 패치들은 DOM 감시 충돌 가능성이 있어 로드하지 않습니다.
+// 닉네임 서버 처리 기능만 유지합니다.
 
 function validNickname(nick) {
   if (!nick || nick.length < 2 || nick.length > 12) return '닉네임은 2~12자여야 합니다.';
