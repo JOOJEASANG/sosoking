@@ -6,4 +6,5 @@ module.exports = {
   ...require('./settlement-functions.js'),
   ...require('./link-summary-functions.js'),
   ...require('./daily-seed-functions.js'),
+  ...require('./soso-feed-functions.js'),
 };
