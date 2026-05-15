@@ -11,6 +11,7 @@ import './feed-image-editor-patch.js';
 import './account-premium-ui-patch.js';
 import './modern-design-polish-patch.js';
 import './mobile-home-final-polish-patch.js';
+import './pc-write-home-radius-final-patch.js';
 
 // 안정화: 디자인/반응형 런타임 처리는 home-pc-mobile-final-patch.js 하나로 통합했습니다.
 // 이 파일은 닉네임 서버 처리, 인증상태 브리지, 즉시 내부 이동, 표시명/홈/이미지/내정보/모던 UI 보정만 유지합니다.
