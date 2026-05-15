@@ -7,4 +7,5 @@ module.exports = {
   ...require('./link-summary-functions.js'),
   ...require('./daily-seed-functions.js'),
   ...require('./soso-feed-functions.js'),
+  ...require('./account-functions.js'),
 };
