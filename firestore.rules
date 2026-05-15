@@ -104,49 +104,6 @@ service cloud.firestore {
         && request.resource.data.createdAtMs is int;
     }
 
-    function isFeedCounterUpdate() {
-      return request.auth != null
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['views', 'likes', 'comments', 'topComment', 'votes', 'voteTotal'])
-        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['views']) || request.resource.data.views == resource.data.views + 1)
-        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['likes']) || request.resource.data.likes == resource.data.likes + 1)
-        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['comments']) || request.resource.data.comments == resource.data.comments + 1)
-        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['voteTotal']) || request.resource.data.voteTotal == resource.data.voteTotal + 1)
-        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['topComment']) || request.resource.data.topComment is string && request.resource.data.topComment.size() <= 300)
-        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['votes']) || request.resource.data.votes is map);
-    }
-
-    function validFeedComment() {
-      return request.auth != null
-        && request.resource.data.keys().hasOnly(['text', 'likes', 'authorId', 'authorName', 'createdAt', 'createdAtMs'])
-        && request.resource.data.text is string
-        && request.resource.data.text.size() >= 2
-        && request.resource.data.text.size() <= 300
-        && request.resource.data.authorId == request.auth.uid
-        && validShortText(request.resource.data.authorName, 40)
-        && request.resource.data.likes == 0
-        && request.resource.data.createdAt == request.time
-        && request.resource.data.createdAtMs is int;
-    }
-
-    function isCommentReactionUpdate() {
-      return request.auth != null
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes', 'reactions'])
-        && request.resource.data.likes == resource.data.likes + 1
-        && request.resource.data.reactions is map;
-    }
-
-    function validFeedVoter(voterId) {
-      return request.auth != null
-        && voterId == request.auth.uid
-        && request.resource.data.keys().hasOnly(['option', 'authorId', 'createdAt', 'createdAtMs'])
-        && request.resource.data.authorId == request.auth.uid
-        && request.resource.data.option is string
-        && request.resource.data.option.size() >= 1
-        && request.resource.data.option.size() <= 40
-        && request.resource.data.createdAt == request.time
-        && request.resource.data.createdAtMs is int;
-    }
-
     function validReportCreate() {
       return request.auth != null
         && request.resource.data.keys().hasOnly(['category', 'content', 'reason', 'targetType', 'targetId', 'postId', 'reporterId', 'status', 'createdAt', 'createdAtMs'])
@@ -205,18 +162,21 @@ service cloud.firestore {
     match /soso_feed_posts/{postId} {
       allow read: if resource.data.status == 'published' || isAdmin();
       allow create: if isAdmin() || validFeedPost();
-      allow update: if isAdmin() || isFeedCounterUpdate();
-      allow delete: if isAdmin();
+      allow update, delete: if isAdmin();
       match /comments/{commentId} {
         allow read: if get(/databases/$(database)/documents/soso_feed_posts/$(postId)).data.status == 'published' || isAdmin();
-        allow create: if validFeedComment();
-        allow update: if isAdmin() || isCommentReactionUpdate();
-        allow delete: if isAdmin();
+        allow create, update, delete: if isAdmin();
       }
       match /voters/{voterId} {
         allow read: if request.auth != null && voterId == request.auth.uid;
-        allow create: if validFeedVoter(voterId) && !exists(/databases/$(database)/documents/soso_feed_posts/$(postId)/voters/$(voterId));
-        allow update, delete: if false;
+        allow create, update, delete: if isAdmin();
+      }
+      match /likers/{likerId} {
+        allow read: if request.auth != null && likerId == request.auth.uid;
+        allow create, update, delete: if isAdmin();
+      }
+      match /viewers/{viewerId} {
+        allow read, write: if isAdmin();
       }
     }
   }
