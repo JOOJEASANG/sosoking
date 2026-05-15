@@ -279,3 +279,228 @@
 
 /* ══ 구분선 ══ */
 .divider { height: 1px; background: var(--color-border-light); margin: var(--space-4) 0; }
+
+/* ══════════════════════════════
+   피드 검색 바
+══════════════════════════════ */
+.feed-search-bar {
+  display: flex; align-items: center; gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+.feed-search-input-wrap {
+  flex: 1; position: relative; display: flex; align-items: center;
+}
+.feed-search-icon {
+  position: absolute; left: var(--space-3);
+  color: var(--color-text-muted); pointer-events: none; flex-shrink: 0;
+}
+.feed-search-input {
+  width: 100%; padding: 9px var(--space-8) 9px 36px;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid var(--color-border);
+  font-size: var(--font-size-sm); background: var(--color-surface);
+  outline: none; transition: all var(--transition-fast);
+  color: var(--color-text);
+}
+.feed-search-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(255,68,34,0.08);
+}
+.feed-search-input::placeholder { color: var(--color-text-muted); }
+.feed-search-clear {
+  position: absolute; right: var(--space-3);
+  width: 20px; height: 20px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 11px; color: var(--color-text-muted);
+  background: var(--color-surface-2); border: none; cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.feed-search-clear:hover { background: var(--color-border); color: var(--color-text); }
+.feed-search-label {
+  font-size: var(--font-size-sm); color: var(--color-text-secondary);
+  margin-bottom: var(--space-3); padding: var(--space-2) var(--space-1);
+}
+
+/* ══════════════════════════════
+   삼행시 카드 섹션
+══════════════════════════════ */
+.acrostic-section {
+  padding: 20px;
+  border-top: 1px solid var(--color-border-light);
+}
+.acrostic-section__title {
+  font-size: var(--font-size-sm); font-weight: 800;
+  margin-bottom: var(--space-4);
+  color: var(--color-text);
+}
+.acrostic-card {
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  margin-bottom: var(--space-3);
+}
+.acrostic-card__header {
+  display: flex; align-items: center; gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+.acrostic-card__name  { font-size: var(--font-size-xs); font-weight: 700; }
+.acrostic-card__time  { font-size: 11px; color: var(--color-text-muted); }
+.acrostic-card__lines { margin-bottom: var(--space-3); }
+.acrostic-card__line  {
+  display: flex; align-items: baseline; gap: var(--space-2);
+  margin-bottom: var(--space-1);
+  font-size: var(--font-size-sm);
+}
+.acrostic-card__char  {
+  width: 24px; height: 24px; flex-shrink: 0;
+  background: var(--color-primary); color: #fff;
+  border-radius: 5px; display: inline-flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 900;
+}
+.acrostic-card__text  { color: var(--color-text); line-height: 1.5; }
+.acrostic-card__footer { display: flex; gap: var(--space-2); }
+.acrostic-empty {
+  text-align: center; padding: var(--space-6);
+  font-size: var(--font-size-sm); color: var(--color-text-muted);
+}
+.reaction-btn--sm { padding: 4px var(--space-2); font-size: 11px; }
+
+/* ══════════════════════════════
+   나만의 노하우 단계 (작성)
+══════════════════════════════ */
+.howto-step-row {
+  display: flex; align-items: flex-start; gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+.howto-step-num {
+  width: 28px; height: 28px; flex-shrink: 0;
+  background: var(--color-primary); color: #fff;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 900; margin-top: 10px;
+}
+.howto-step-row .form-textarea { flex: 1; min-height: 64px; }
+.howto-step-remove { margin-top: 10px; flex-shrink: 0; }
+
+/* ══════════════════════════════
+   나만의 노하우 단계 (표시)
+══════════════════════════════ */
+.howto-steps-display {
+  margin-top: var(--space-4);
+  padding: var(--space-4);
+  background: var(--color-surface-2);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border-light);
+}
+.howto-steps-display__title {
+  font-size: 11px; font-weight: 700; color: var(--color-text-muted);
+  text-transform: uppercase; letter-spacing: 0.5px;
+  margin-bottom: var(--space-3);
+}
+.howto-step-display {
+  display: flex; align-items: flex-start; gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+.howto-step-display:last-child { margin-bottom: 0; }
+.howto-step-display__num {
+  width: 26px; height: 26px; flex-shrink: 0;
+  background: var(--gradient-brand); color: #fff;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 900;
+}
+.howto-step-display__text {
+  flex: 1; font-size: var(--font-size-sm);
+  color: var(--color-text); line-height: 1.6;
+  padding-top: 4px;
+}
+
+/* ══════════════════════════════
+   이미지 업로더 (확장)
+══════════════════════════════ */
+.img-preview-grid {
+  display: flex; flex-wrap: wrap; gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+.img-preview-item {
+  position: relative; width: 100px; height: 100px;
+  border-radius: var(--radius-md); overflow: hidden;
+  border: 2px solid var(--color-border-light);
+  flex-shrink: 0;
+}
+.img-preview-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.img-preview-item:first-child { border-color: var(--color-primary); }
+.img-preview-star {
+  position: absolute; top: 4px; left: 4px;
+  background: var(--color-primary); color: #fff;
+  font-size: 10px; font-weight: 700; padding: 2px 6px;
+  border-radius: var(--radius-pill);
+}
+.img-preview-thumb-btn {
+  position: absolute; top: 4px; left: 4px;
+  background: rgba(0,0,0,0.45); color: #FFD700;
+  font-size: 14px; width: 22px; height: 22px;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  border: none; cursor: pointer; transition: all var(--transition-fast);
+  opacity: 0;
+}
+.img-preview-item:hover .img-preview-thumb-btn { opacity: 1; }
+.img-preview-toolbar {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: rgba(0,0,0,0.55);
+  display: flex; align-items: center; justify-content: center;
+  gap: 2px; padding: 4px;
+  opacity: 0; transition: opacity var(--transition-fast);
+}
+.img-preview-item:hover .img-preview-toolbar { opacity: 1; }
+.img-tool-btn {
+  width: 22px; height: 22px;
+  background: rgba(255,255,255,0.2); color: #fff;
+  border: none; border-radius: 4px;
+  font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: background var(--transition-fast);
+}
+.img-tool-btn:hover { background: rgba(255,255,255,0.4); }
+.img-tool-btn--remove:hover { background: rgba(220,38,38,0.7); }
+
+/* ══════════════════════════════
+   이미지 자르기 모달
+══════════════════════════════ */
+.crop-modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(4px);
+  z-index: calc(var(--z-modal) + 10);
+  display: flex; align-items: center; justify-content: center;
+  padding: var(--space-4);
+}
+.crop-modal {
+  background: var(--color-surface);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  width: 100%; max-width: 600px;
+  overflow: hidden;
+}
+.crop-modal__header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--color-border-light);
+}
+.crop-modal__close {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--color-text-muted); transition: all var(--transition-fast);
+  border: none; background: none; cursor: pointer; font-size: 16px;
+}
+.crop-modal__close:hover { background: var(--color-surface-2); }
+.crop-modal__body {
+  padding: var(--space-4);
+  background: #1a1a1a;
+  max-height: 60vh;
+  overflow: auto;
+  display: flex; flex-direction: column; align-items: center;
+}
+.crop-modal__footer {
+  display: flex; gap: var(--space-3); justify-content: flex-end;
+  padding: var(--space-4) var(--space-5);
+  border-top: 1px solid var(--color-border-light);
+}

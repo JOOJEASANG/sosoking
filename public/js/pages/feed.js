@@ -19,21 +19,24 @@ const TYPE_LABELS = {
   howto:'나만의노하우', story:'경험담', fail:'실패담', concern:'고민/질문', relay:'막장릴레이',
 };
 
-let lastDoc = null;
-let currentCat = '';
-let currentType = '';
-let isLoading = false;
+let lastDoc      = null;
+let currentCat   = '';
+let currentType  = '';
+let currentSearch = '';
+let isLoading    = false;
 
 export async function renderFeed() {
   const el = document.getElementById('page-content');
   const params = getQueryParams();
-  currentCat  = params.cat  || '';
-  currentType = params.type || '';
+  currentCat    = params.cat  || '';
+  currentType   = params.type || '';
+  currentSearch = params.q    || '';
   lastDoc = null;
 
   el.innerHTML = `
     <div class="layout-cols">
       <div class="layout-main">
+        ${renderSearchBar()}
         ${renderFilterBar()}
         <div id="feed-list"></div>
         <div id="feed-loader" class="loading-center" style="display:none">
@@ -51,11 +54,42 @@ export async function renderFeed() {
   await loadPosts(true);
   setupInfiniteScroll();
 
+  // 검색 이벤트
+  const searchInput = document.getElementById('feed-search-input');
+  const searchBtn   = document.getElementById('btn-feed-search');
+
+  const doSearch = () => {
+    const q = searchInput?.value.trim() || '';
+    currentSearch = q;
+    currentCat    = '';
+    currentType   = '';
+    lastDoc = null;
+    updateFilterUI();
+    loadPosts(true);
+    if (q) {
+      document.getElementById('search-clear-btn')?.style.setProperty('display', 'inline-flex');
+    }
+  };
+
+  searchInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') doSearch(); });
+  searchBtn?.addEventListener('click', doSearch);
+
+  document.getElementById('search-clear-btn')?.addEventListener('click', () => {
+    if (searchInput) searchInput.value = '';
+    currentSearch = '';
+    lastDoc = null;
+    updateFilterUI();
+    loadPosts(true);
+    document.getElementById('search-clear-btn').style.display = 'none';
+  });
+
   // 필터 클릭 이벤트
   document.querySelectorAll('[data-cat-filter]').forEach(btn => {
     btn.addEventListener('click', () => {
-      currentCat  = btn.dataset.catFilter;
-      currentType = '';
+      currentCat    = btn.dataset.catFilter;
+      currentType   = '';
+      currentSearch = '';
+      if (searchInput) searchInput.value = '';
       lastDoc = null;
       updateFilterUI();
       loadPosts(true);
@@ -63,7 +97,9 @@ export async function renderFeed() {
   });
   document.querySelectorAll('[data-type-filter]').forEach(btn => {
     btn.addEventListener('click', () => {
-      currentType = btn.dataset.typeFilter;
+      currentType   = btn.dataset.typeFilter;
+      currentSearch = '';
+      if (searchInput) searchInput.value = '';
       if (currentType) {
         const found = Object.entries(CAT_TYPES).find(([, types]) => types.includes(currentType));
         if (found) currentCat = found[0];
@@ -75,14 +111,27 @@ export async function renderFeed() {
   });
 }
 
+function renderSearchBar() {
+  return `
+    <div class="feed-search-bar">
+      <div class="feed-search-input-wrap">
+        <svg class="feed-search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <input id="feed-search-input" class="feed-search-input" placeholder="제목으로 검색..." value="${escHtml(currentSearch)}" autocomplete="off">
+        <button id="search-clear-btn" class="feed-search-clear" style="display:${currentSearch ? 'inline-flex' : 'none'}">✕</button>
+      </div>
+      <button class="btn btn--primary btn--sm" id="btn-feed-search">검색</button>
+    </div>`;
+}
+
 function renderFilterBar() {
   return `
     <div class="feed-filters" id="cat-filters">
       ${Object.entries(CAT_LABELS).map(([key, label]) => `
-        <button class="filter-chip ${currentCat === key ? 'active' : ''}" data-cat-filter="${key}">
+        <button class="filter-chip ${currentCat === key && !currentSearch ? 'active' : ''}" data-cat-filter="${key}">
           ${label}
         </button>`).join('')}
-    </div>`;
+    </div>
+    ${currentSearch ? `<div class="feed-search-label">🔍 "<strong>${escHtml(currentSearch)}</strong>" 검색 결과</div>` : ''}`;
 }
 
 function renderTypeFilter() {
@@ -109,7 +158,7 @@ function renderTypeFilter() {
 
 function updateFilterUI() {
   document.querySelectorAll('[data-cat-filter]').forEach(b => {
-    b.classList.toggle('active', b.dataset.catFilter === currentCat);
+    b.classList.toggle('active', b.dataset.catFilter === currentCat && !currentSearch);
   });
 }
 
@@ -124,13 +173,24 @@ async function loadPosts(reset = false) {
   if (loaderEl) loaderEl.style.display = 'flex';
 
   try {
-    const constraints = [orderBy('createdAt', 'desc'), limit(15)];
-    if (currentType) {
-      constraints.unshift(where('type', '==', currentType));
-    } else if (currentCat) {
-      constraints.unshift(where('cat', '==', currentCat));
+    let constraints;
+
+    if (currentSearch) {
+      // 제목 prefix 검색 — orderBy('title') 필수
+      const qEnd = currentSearch.slice(0, -1) + String.fromCharCode(currentSearch.charCodeAt(currentSearch.length - 1) + 1);
+      constraints = [
+        where('title', '>=', currentSearch),
+        where('title', '<',  qEnd),
+        orderBy('title'),
+        limit(30),
+      ];
+      if (!reset && lastDoc) constraints.push(startAfter(lastDoc));
+    } else {
+      constraints = [orderBy('createdAt', 'desc'), limit(15)];
+      if (currentType)     constraints.unshift(where('type', '==', currentType));
+      else if (currentCat) constraints.unshift(where('cat',  '==', currentCat));
+      if (!reset && lastDoc) constraints.push(startAfter(lastDoc));
     }
-    if (!reset && lastDoc) constraints.push(startAfter(lastDoc));
 
     const q = query(collection(db, 'feeds'), ...constraints);
     const snap = await getDocs(q);
@@ -140,10 +200,10 @@ async function loadPosts(reset = false) {
     if (snap.empty && reset) {
       if (listEl) listEl.innerHTML = `
         <div class="empty-state">
-          <div class="empty-state__icon">🌱</div>
-          <div class="empty-state__title">아직 글이 없어요</div>
-          <div class="empty-state__desc">첫 번째 놀이판을 열어보세요!</div>
-          <button class="btn btn--primary" style="margin-top:16px" onclick="navigate('/write')">만들기</button>
+          <div class="empty-state__icon">${currentSearch ? '🔍' : '🌱'}</div>
+          <div class="empty-state__title">${currentSearch ? '검색 결과가 없어요' : '아직 글이 없어요'}</div>
+          <div class="empty-state__desc">${currentSearch ? '다른 검색어로 시도해보세요' : '첫 번째 놀이판을 열어보세요!'}</div>
+          ${!currentSearch ? `<button class="btn btn--primary" style="margin-top:16px" onclick="navigate('/write')">만들기</button>` : ''}
         </div>`;
       if (endEl) endEl.style.display = 'block';
     } else {
@@ -152,7 +212,8 @@ async function loadPosts(reset = false) {
         if (listEl) listEl.insertAdjacentHTML('beforeend', html);
       });
       lastDoc = snap.docs[snap.docs.length - 1];
-      if (snap.docs.length < 15 && endEl) endEl.style.display = 'block';
+      const pageSize = currentSearch ? 30 : 15;
+      if (snap.docs.length < pageSize && endEl) endEl.style.display = 'block';
     }
   } catch (e) {
     console.error('피드 로드 실패', e);
@@ -172,4 +233,8 @@ function setupInfiniteScroll() {
   }, { rootMargin: '200px' });
 
   observer.observe(sentinel);
+}
+
+function escHtml(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }

@@ -1,5 +1,5 @@
 import { db, auth } from '../firebase.js';
-import { collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { collection, addDoc, doc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { navigate } from '../router.js';
 import { toast } from '../components/toast.js';
 import { initImageUploader, getUploadedImages } from '../components/image-uploader.js';
@@ -347,6 +347,12 @@ function renderFormFields() {
           <textarea id="f-desc" class="form-textarea" placeholder="노하우를 자세히 설명해주세요" rows="6" style="min-height:150px"></textarea>
         </div>
         <div class="form-group">
+          <label class="form-label">단계별 순서</label>
+          <div id="howto-steps"></div>
+          <button class="add-option-btn" id="btn-add-step" style="margin-top:8px" type="button">+ 단계 추가 (최대 10개)</button>
+          <div class="form-hint">각 단계를 순서대로 입력하세요</div>
+        </div>
+        <div class="form-group">
           <label class="form-label">준비물</label>
           <input id="f-materials" class="form-input" placeholder="예: A, B, C (쉼표로 구분)">
         </div>
@@ -457,6 +463,27 @@ function initFormLogic() {
     attachRemoveBtns(document.getElementById('option-list'));
   }
 
+  // 나만의 노하우 단계 관리
+  if (type === 'howto') {
+    const btnAddStep = document.getElementById('btn-add-step');
+    if (btnAddStep) {
+      btnAddStep.addEventListener('click', () => {
+        const stepsDiv = document.getElementById('howto-steps');
+        const count = stepsDiv.querySelectorAll('.howto-step-row').length;
+        if (count >= 10) { toast.warn('최대 10단계까지 추가할 수 있어요'); return; }
+        stepsDiv.insertAdjacentHTML('beforeend', `
+          <div class="howto-step-row">
+            <div class="howto-step-num">${count + 1}</div>
+            <textarea class="form-textarea howto-step-input" placeholder="${count + 1}단계 내용을 입력하세요" rows="2"></textarea>
+            <button class="option-remove-btn howto-step-remove" title="삭제" type="button">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+          </div>`);
+        attachStepRemoveBtns();
+      });
+    }
+  }
+
   // 삼행시 제시어 → 미리보기
   if (type === 'acrostic') {
     const kwInput = document.getElementById('f-keyword');
@@ -499,6 +526,20 @@ function attachRemoveBtns(list) {
   });
 }
 
+function attachStepRemoveBtns() {
+  const stepsDiv = document.getElementById('howto-steps');
+  if (!stepsDiv) return;
+  stepsDiv.querySelectorAll('.howto-step-remove').forEach(btn => {
+    btn.onclick = () => {
+      btn.closest('.howto-step-row').remove();
+      // 번호 재정렬
+      stepsDiv.querySelectorAll('.howto-step-num').forEach((num, i) => {
+        num.textContent = i + 1;
+      });
+    };
+  });
+}
+
 /* ── 제출 ── */
 async function handleSubmit() {
   if (!auth.currentUser) { navigate('/login'); return; }
@@ -518,13 +559,16 @@ async function handleSubmit() {
   const extra = collectExtraData(type);
   if (extra === null) return; // 유효성 실패
 
+  // 퀴즈 정답은 별도 secret 서브컬렉션에 저장
+  const secretFields = extractSecretFields(type, extra);
+
   const images = await getUploadedImages();
 
   btn.disabled = true;
   btn.textContent = '올리는 중...';
 
   try {
-    await addDoc(collection(db, 'feeds'), {
+    const docRef = await addDoc(collection(db, 'feeds'), {
       type, cat,
       title, desc, tags,
       images,
@@ -537,6 +581,11 @@ async function handleSubmit() {
       createdAt: serverTimestamp(),
       ...extra,
     });
+
+    if (Object.keys(secretFields).length > 0) {
+      await setDoc(doc(db, 'feeds', docRef.id, 'secret', 'answer'), secretFields);
+    }
+
     toast.success('올렸어요! 🎉');
     navigate('/feed');
   } catch (e) {
@@ -545,6 +594,29 @@ async function handleSubmit() {
     btn.disabled = false;
     btn.textContent = '올리기';
   }
+}
+
+// 메인 문서에서 정답 필드를 제거하고 반환 (secret 서브컬렉션용)
+function extractSecretFields(type, extra) {
+  if (type === 'ox') {
+    const secret = { answer: extra.answer, explanation: extra.explanation || '' };
+    delete extra.answer;
+    delete extra.explanation;
+    return secret;
+  }
+  if (type === 'quiz') {
+    const secret = { quizMode: extra.quizMode, explanation: extra.explanation || '' };
+    if (extra.quizMode === 'multiple') {
+      secret.answerIdx = extra.answerIdx;
+      delete extra.answerIdx;
+    } else {
+      secret.answer = extra.answer;
+      delete extra.answer;
+    }
+    delete extra.explanation;
+    return secret;
+  }
+  return {};
 }
 
 function collectExtraData(type) {
@@ -592,8 +664,10 @@ function collectExtraData(type) {
     case 'howto': {
       const summary = document.getElementById('f-summary')?.value.trim();
       if (!summary) { toast.error('한 줄 요약을 입력해주세요'); return null; }
+      const steps = [...document.querySelectorAll('.howto-step-input')]
+        .map(el => el.value.trim()).filter(Boolean);
       return {
-        summary,
+        summary, steps,
         materials: document.getElementById('f-materials')?.value.trim() || '',
         caution:   document.getElementById('f-caution')?.value.trim()   || '',
       };

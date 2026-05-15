@@ -66,6 +66,24 @@ service cloud.firestore {
         allow update: if isAdmin() || isAuthor(resource.data.authorId);
         allow delete: if isAdmin() || isAuthor(resource.data.authorId);
       }
+
+      // 퀴즈 정답 비공개 저장 — 로그인 사용자만 답 제출 후 확인 가능
+      match /secret/{docId} {
+        allow read:   if signedIn();
+        allow create: if signedIn();
+        allow update: if isAdmin();
+        allow delete: if isAdmin();
+      }
+
+      // 삼행시 참여글 — 별도 카드 + 반응 구조
+      match /acrostics/{acrosticId} {
+        allow read:   if true;
+        allow create: if signedIn()
+                        && request.resource.data.authorId == request.auth.uid
+                        && validText(request.resource.data.get('text', ''), 500);
+        allow update: if isAdmin() || isAuthor(resource.data.authorId);
+        allow delete: if isAdmin() || isAuthor(resource.data.authorId);
+      }
     }
 
     // ── 미션 ───────────────────────────────────────────────

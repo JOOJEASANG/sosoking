@@ -48,8 +48,7 @@ jobs:
           echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/firebase-service-account.json" >> "$GITHUB_ENV"
 
       - name: Deploy Firestore rules & indexes
-        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only firestore:rules,firestore:indexes || echo "::warning::Firestore rules/indexes 배포 실패 (GCP IAM에서 roles/serviceusage.serviceUsageViewer 추가 필요)"
-        continue-on-error: true
+        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only firestore:rules,firestore:indexes
 
       - name: Deploy Storage rules
         run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only storage || echo "::warning::Storage rules 배포 실패"
