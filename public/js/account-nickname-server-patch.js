@@ -8,9 +8,10 @@ import './crazy-naming-label-patch.js';
 import './mobile-home-layout-fix.js';
 import './pc-home-sidebar-align-patch.js';
 import './feed-image-editor-patch.js';
+import './account-premium-ui-patch.js';
 
 // 안정화: 디자인/반응형 런타임 처리는 home-pc-mobile-final-patch.js 하나로 통합했습니다.
-// 이 파일은 닉네임 서버 처리, 인증상태 브리지, 즉시 내부 이동, 표시명/홈/이미지 보정만 유지합니다.
+// 이 파일은 닉네임 서버 처리, 인증상태 브리지, 즉시 내부 이동, 표시명/홈/이미지/내정보 UI 보정만 유지합니다.
 
 function validNickname(nick) {
   if (!nick || nick.length < 2 || nick.length > 12) return '닉네임은 2~12자여야 합니다.';
