@@ -2,18 +2,18 @@
 
 :root {
   /* 컬러 - 브랜드 */
-  --color-primary:       #FF6B4A;
-  --color-primary-light: #FF8F73;
-  --color-primary-dark:  #E5522F;
-  --color-primary-bg:    #FFF3F0;
+  --color-primary:       #FF5533;
+  --color-primary-light: #FF7755;
+  --color-primary-dark:  #E03010;
+  --color-primary-bg:    #FFF0ED;
 
   /* 컬러 - 카테고리 */
-  --color-cat-golra:   #4F8EF7;  /* 골라봐 - 파랑 */
-  --color-cat-usgyo:   #FF6B4A;  /* 웃겨봐 - 오렌지 */
-  --color-cat-malhe:   #22C080;  /* 말해봐 - 초록 */
+  --color-cat-golra:   #3B82F6;
+  --color-cat-usgyo:   #FF5533;
+  --color-cat-malhe:   #10B981;
 
   /* 컬러 - 중립 */
-  --color-bg:          #F5F5F7;
+  --color-bg:          #F0F2F5;
   --color-surface:     #FFFFFF;
   --color-border:      #E5E7EB;
   --color-border-light:#F0F0F2;

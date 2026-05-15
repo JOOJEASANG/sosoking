@@ -13,38 +13,41 @@ const CAT_INFO = {
 export async function renderHome() {
   const el = document.getElementById('page-content');
   el.innerHTML = `<div class="loading-center"><div class="spinner spinner--lg"></div></div>`;
+  try {
+    const [hotPosts, todayMission] = await Promise.all([
+      fetchHotPosts(),
+      fetchTodayMission(),
+    ]);
 
-  const [hotPosts, todayMission] = await Promise.all([
-    fetchHotPosts(),
-    fetchTodayMission(),
-  ]);
-
-  el.innerHTML = `
-    <div class="layout-cols">
-      <div class="layout-main">
-        ${renderHero()}
-        ${renderCategoryCards()}
-        <div class="section-header">
-          <h2 class="section-title">지금 인기</h2>
-          <a href="#/feed" class="btn btn--ghost btn--sm">더 보기</a>
+    el.innerHTML = `
+      <div class="layout-cols">
+        <div class="layout-main">
+          ${renderHero()}
+          ${renderCategoryCards()}
+          <div class="section-header">
+            <h2 class="section-title">지금 인기</h2>
+            <a href="#/feed" class="btn btn--ghost btn--sm">더 보기</a>
+          </div>
+          <div id="hot-feed-list">
+            ${hotPosts.length
+              ? hotPosts.map(p => renderFeedCard(p)).join('')
+              : '<div class="empty-state"><div class="empty-state__icon">🌱</div><div class="empty-state__title">아직 글이 없어요</div><div class="empty-state__desc">첫 번째 놀이판의 주인공이 되어보세요!</div><button class="btn btn--primary" style="margin-top:16px" onclick="navigate(\'/write\')">첫 글 올리기</button></div>'}
+          </div>
         </div>
-        <div id="hot-feed-list">
-          ${hotPosts.length
-            ? hotPosts.map(p => renderFeedCard(p)).join('')
-            : '<div class="empty-state"><div class="empty-state__icon">🌱</div><div class="empty-state__title">아직 글이 없어요</div><div class="empty-state__desc">첫 번째 놀이판의 주인공이 되어보세요!</div><button class="btn btn--primary" style="margin-top:16px" onclick="navigate(\'/write\')">첫 글 올리기</button></div>'}
-        </div>
+        <aside class="layout-sidebar">
+          ${todayMission ? renderMissionWidget(todayMission) : ''}
+          ${renderGuideWidget()}
+        </aside>
       </div>
-      <aside class="layout-sidebar">
-        ${todayMission ? renderMissionWidget(todayMission) : ''}
-        ${renderGuideWidget()}
-      </aside>
-    </div>
-  `;
+    `;
 
-  // 카테고리 카드 클릭
-  document.querySelectorAll('[data-cat-nav]').forEach(el => {
-    el.addEventListener('click', () => navigate(`/feed?cat=${el.dataset.catNav}`));
-  });
+    // 카테고리 카드 클릭
+    document.querySelectorAll('[data-cat-nav]').forEach(el => {
+      el.addEventListener('click', () => navigate(`/feed?cat=${el.dataset.catNav}`));
+    });
+  } catch (e) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-state__icon">⚠️</div><div class="empty-state__title">로딩 중 오류가 발생했어요</div><div class="empty-state__desc">잠시 후 다시 시도해주세요</div><button class="btn btn--primary" style="margin-top:16px" onclick="location.reload()">새로고침</button></div>`;
+  }
 }
 
 function renderHero() {

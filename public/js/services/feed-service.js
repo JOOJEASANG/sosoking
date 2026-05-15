@@ -32,10 +32,21 @@ export async function fetchPost(id) {
 
 /** 인기 피드 (반응 많은 순) */
 export async function fetchHotPosts(n = 5) {
-  const snap = await getDocs(
-    query(collection(db, FEEDS), orderBy('reactions.total', 'desc'), limit(n))
-  );
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  try {
+    const snap = await getDocs(
+      query(collection(db, FEEDS), orderBy('reactions.total', 'desc'), limit(n))
+    );
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch {
+    try {
+      const snap = await getDocs(
+        query(collection(db, FEEDS), orderBy('createdAt', 'desc'), limit(n))
+      );
+      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch {
+      return [];
+    }
+  }
 }
 
 /** 내 피드 */

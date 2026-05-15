@@ -3,15 +3,14 @@ import { collection, query, orderBy, limit, getDocs, deleteDoc, doc, getCountFro
 import { appState } from '../state.js';
 import { toast } from '../components/toast.js';
 import { navigate } from '../router.js';
-
-const ADMIN_UIDS = []; // 관리자 UID 목록 (운영 시 추가)
+import { isAdmin } from '../app.js';
 
 export async function renderAdmin() {
   const el = document.getElementById('page-content');
   const user = appState.user;
 
   if (!user) { navigate('/login'); return; }
-  if (ADMIN_UIDS.length && !ADMIN_UIDS.includes(user.uid)) {
+  if (!isAdmin(user)) {
     el.innerHTML = `<div class="empty-state"><div class="empty-state__icon">🔒</div><div class="empty-state__title">관리자 전용 페이지예요</div></div>`;
     return;
   }
@@ -33,6 +32,11 @@ export async function renderAdmin() {
         <div class="admin-stat-card">
           <div class="admin-stat-card__num">${totalPosts}</div>
           <div class="admin-stat-card__label">총 게시물</div>
+        </div>
+        <div class="admin-stat-card" style="grid-column:span 3">
+          <div class="admin-stat-card__label" style="margin-bottom:4px">현재 로그인 사용자 UID (관리자 설정 시 복사)</div>
+          <div style="font-size:12px;font-family:monospace;color:var(--color-primary);word-break:break-all">${user.uid}</div>
+          <div style="font-size:12px;color:var(--color-text-muted);margin-top:4px">${user.email || ''}</div>
         </div>
       </div>
 

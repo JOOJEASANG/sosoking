@@ -6,6 +6,7 @@ export function renderHeader() {
   if (!el) return;
 
   const user = appState.user;
+  const isAdmin = appState.isAdmin;
   const path = window.location.hash.slice(1).split('?')[0] || '/';
 
   el.innerHTML = `
@@ -31,6 +32,7 @@ export function renderHeader() {
           ? `<a href="#/account" class="${path === '/account' ? 'active' : ''}">내정보</a>`
           : `<a href="#/login" class="${path === '/login' ? 'active' : ''}">로그인</a>`
         }
+        ${isAdmin ? `<a href="#/admin" class="${path === '/admin' ? 'active' : ''}" style="color:var(--color-primary);font-weight:800">관리자</a>` : ''}
       </nav>
 
       <div class="site-header__mobile-menu">
@@ -45,7 +47,6 @@ export function renderHeader() {
     </div>
   `;
 
-  // 검색 엔터 핸들러
   document.getElementById('header-search')?.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       const q = e.target.value.trim();
