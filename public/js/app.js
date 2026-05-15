@@ -30,7 +30,8 @@ function loadSosoStyles() {
     ['sosoking-feed-style','/css/soso-feed.css'],
     ['sosoking-design-refresh-style','/css/sosoking-design-refresh.css'],
     ['sosoking-polish-v2-style','/css/sosoking-polish-v2.css'],
-    ['sosoking-doc-footer-style','/css/sosoking-doc-footer.css']
+    ['sosoking-doc-footer-style','/css/sosoking-doc-footer.css'],
+    ['sosoking-v3-design-style','/css/sosoking-v3-design.css?v=20260515-7']
   ].forEach(([id, href]) => {
     if (document.getElementById(id)) return;
     const link = document.createElement('link');
