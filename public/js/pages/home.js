@@ -53,28 +53,52 @@ export async function renderHome() {
 function renderHero() {
   return `
     <div class="home-hero">
-      <div class="home-hero__title">소소킹에서<br>놀이판을 열어보세요</div>
-      <div class="home-hero__sub">글과 사진으로 즐기는 게임형 커뮤니티</div>
-      <div class="home-hero__chips">
-        <span class="home-hero__chip">🎯 투표·퀴즈</span>
-        <span class="home-hero__chip">😂 드립·삼행시</span>
-        <span class="home-hero__chip">💬 경험·고민</span>
-      </div>
-      <div class="home-hero__action">
-        <button class="btn" onclick="navigate('/write')">놀이판 만들기</button>
-        <button class="btn--ghost-white" onclick="navigate('/feed')">구경하기</button>
+      <div class="home-hero__content">
+        <div class="home-hero__eyebrow">🔥 게임형 놀이 커뮤니티</div>
+        <div class="home-hero__title">소소킹에서<br>신나게 놀아봐요!</div>
+        <div class="home-hero__sub">투표·퀴즈·드립·고민 뭐든 다 가능한<br>한국 최고의 놀이판 커뮤니티</div>
+        <div class="home-hero__chips">
+          <span class="home-hero__chip">🎯 투표·퀴즈</span>
+          <span class="home-hero__chip">😂 드립·삼행시</span>
+          <span class="home-hero__chip">💬 경험·고민</span>
+        </div>
+        <div class="home-hero__action">
+          <button class="btn-hero-primary" onclick="navigate('/write')">✏️ 놀이판 만들기</button>
+          <button class="btn-hero-secondary" onclick="navigate('/feed')">구경하기 →</button>
+        </div>
       </div>
     </div>`;
 }
 
 function renderCategoryCards() {
+  const cats = [
+    {
+      key: 'golra', emoji: '🎯', badge: 'VOTE', name: '골라봐',
+      desc: '선택하고 판단해봐요',
+      types: ['밸런스게임', '민심투표', 'OX퀴즈', '퀴즈']
+    },
+    {
+      key: 'usgyo', emoji: '😂', badge: 'FUN', name: '웃겨봐',
+      desc: '웃기고 유쾌하게 즐겨요',
+      types: ['미친작명소', '삼행시', '한줄드립', '댓글배틀']
+    },
+    {
+      key: 'malhe', emoji: '💬', badge: 'TALK', name: '말해봐',
+      desc: '경험과 생각을 나눠요',
+      types: ['나만의노하우', '경험담', '고민/질문', '막장릴레이']
+    },
+  ];
   return `
     <div class="home-cats">
-      ${Object.entries(CAT_INFO).map(([key, c]) => `
-        <div class="home-cat-card home-cat-card--${key}" data-cat-nav="${key}" role="button" tabindex="0">
-          <div class="home-cat-card__icon">${c.icon}</div>
-          <div class="home-cat-card__name">${c.label}</div>
+      ${cats.map(c => `
+        <div class="home-cat-card home-cat-card--${c.key}" data-cat-nav="${c.key}" data-emoji="${c.emoji}" role="button" tabindex="0">
+          <div class="home-cat-card__badge">${c.badge}</div>
+          <div class="home-cat-card__icon">${c.emoji}</div>
+          <div class="home-cat-card__name">${c.name}</div>
           <div class="home-cat-card__desc">${c.desc}</div>
+          <div class="home-cat-card__types">
+            ${c.types.map(t => `<span class="home-cat-card__type-pill">${t}</span>`).join('')}
+          </div>
         </div>`).join('')}
     </div>`;
 }
@@ -91,18 +115,38 @@ function renderMissionWidget(mission) {
 function renderGuideWidget() {
   return `
     <div class="sidebar-widget">
-      <div class="sidebar-widget__title">📖 소소킹 이용 가이드</div>
-      <ul style="font-size:13px;color:var(--color-text-secondary);line-height:2;padding-left:4px;">
-        <li>🎯 <b>골라봐</b> — 투표·퀴즈·밸런스게임</li>
-        <li>😂 <b>웃겨봐</b> — 드립·삼행시·작명소</li>
-        <li>💬 <b>말해봐</b> — 경험·노하우·고민</li>
-      </ul>
-      <button class="btn btn--ghost btn--sm btn--full" style="margin-top:12px" onclick="navigate('/guide')">가이드 보기</button>
+      <div class="sidebar-widget__header">
+        <div class="sidebar-widget__title">📖 이용 가이드</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;gap:12px;align-items:flex-start">
+          <span style="font-size:20px;flex-shrink:0">🎯</span>
+          <div>
+            <div style="font-size:13px;font-weight:800;color:var(--color-golra-dark)">골라봐</div>
+            <div style="font-size:12px;color:var(--color-text-secondary);margin-top:2px">투표·퀴즈·밸런스게임</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start">
+          <span style="font-size:20px;flex-shrink:0">😂</span>
+          <div>
+            <div style="font-size:13px;font-weight:800;color:var(--color-usgyo-dark)">웃겨봐</div>
+            <div style="font-size:12px;color:var(--color-text-secondary);margin-top:2px">드립·삼행시·작명소</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start">
+          <span style="font-size:20px;flex-shrink:0">💬</span>
+          <div>
+            <div style="font-size:13px;font-weight:800;color:var(--color-malhe-dark)">말해봐</div>
+            <div style="font-size:12px;color:var(--color-text-secondary);margin-top:2px">경험·노하우·고민</div>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn--ghost btn--sm btn--full" style="margin-top:16px" onclick="navigate('/guide')">자세히 보기</button>
     </div>
-    <div class="sidebar-widget" style="background:linear-gradient(135deg,#FF6B4A,#FF9E4A);color:#fff;border:none;">
-      <div style="font-size:13px;font-weight:800;margin-bottom:8px;">✍️ 지금 놀이판 만들기</div>
-      <div style="font-size:12px;opacity:0.9;margin-bottom:12px;">내가 만든 퀴즈에 친구들이 참여해요!</div>
-      <button class="btn btn--sm btn--full" style="background:#fff;color:var(--color-primary);font-weight:700;" onclick="navigate('/write')">시작하기</button>
+    <div class="sidebar-cta">
+      <div class="sidebar-cta__title">✍️ 지금 놀이판 만들기</div>
+      <div class="sidebar-cta__desc">내가 만든 퀴즈에 친구들이 참여하고, 내 드립에 다들 웃어요!</div>
+      <button class="btn btn--sm btn--full" onclick="navigate('/write')">시작하기 →</button>
     </div>`;
 }
 
