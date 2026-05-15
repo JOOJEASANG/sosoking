@@ -6,6 +6,16 @@
   --soso-control-font: 14px;
 }
 
+/* Hidden must always win over display overrides */
+[hidden],
+html body [hidden],
+html body .simple-auth-page [hidden],
+html body .simple-auth-page .auth-panel-v2[hidden],
+html body .simple-auth-page .auth-sub-panel[hidden] {
+  display: none !important;
+  visibility: hidden !important;
+}
+
 /* Global clickable controls */
 body button,
 body a.feed-participate,
@@ -164,6 +174,9 @@ html body .simple-auth-page .auth-simple-brand p {
 html body .simple-auth-page .auth-panel-v2,
 html body .simple-auth-page .auth-form-v2 {
   gap: 7px !important;
+}
+html body .simple-auth-page .auth-panel-v2:not([hidden]) {
+  display: grid !important;
 }
 html body .simple-auth-page .google-btn-v2,
 html body .simple-auth-page .guest-btn-v2,
