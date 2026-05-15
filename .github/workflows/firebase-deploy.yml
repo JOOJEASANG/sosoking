@@ -45,7 +45,7 @@ jobs:
           echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/firebase-service-account.json" >> "$GITHUB_ENV"
 
       - name: Deploy Hosting
-        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only hosting --force
+        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only hosting
 
       - name: Deploy Functions separately
-        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only functions --force
+        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only functions || echo "::warning::Functions 배포 실패 - 수동 배포 필요"

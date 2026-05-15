@@ -1,4 +1,4 @@
-const CACHE = 'sosoking-v16-dark-hero';
+const CACHE = 'sosoking-v17-full-overhaul';
 
 self.addEventListener('install', e => {
   self.skipWaiting();

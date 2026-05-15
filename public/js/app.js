@@ -31,7 +31,7 @@ function loadSosoStyles() {
     ['sosoking-design-refresh-style','/css/sosoking-design-refresh.css'],
     ['sosoking-polish-v2-style','/css/sosoking-polish-v2.css'],
     ['sosoking-doc-footer-style','/css/sosoking-doc-footer.css'],
-    ['sosoking-v3-design-style','/css/sosoking-v3-design.css?v=20260515-7']
+    ['sosoking-v3-design-style','/css/sosoking-v3-design.css?v=20260515-8']
   ].forEach(([id, href]) => {
     if (document.getElementById(id)) return;
     const link = document.createElement('link');
@@ -93,7 +93,7 @@ function renderDesktopHeader() {
   header.id = 'soso-dashboard-header';
   header.className = 'soso-dashboard-header';
   header.innerHTML = `
-    <a class="soso-top-brand" href="#/"><img src="/logo.svg" alt="소소킹"><div><b>소소킹</b><span>즐거운 커뮤니티의 왕!</span></div></a>
+    <a class="soso-top-brand" href="#/"><img src="/logo.svg" alt="소소킹"><div><b>소소킹</b><span>놀이형 게임 커뮤니티</span></div></a>
     <nav class="soso-top-links">
       <a href="#/" class="${active('#/') ? 'active' : ''}">홈</a>
       <a href="#/feed" class="${active('#/feed') ? 'active' : ''}">피드</a>
