@@ -3,6 +3,8 @@ import { invalidateNicknameCache, renderNav } from './components/nav.js';
 import { showToast } from './components/toast.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 
+import('./desktop-pages-final-patch.js').catch(() => {});
+
 function validNickname(nick) {
   if (!nick || nick.length < 2 || nick.length > 12) return '닉네임은 2~12자여야 합니다.';
   if (!/^[가-힣a-zA-Z0-9_]+$/.test(nick)) return '한글, 영문, 숫자, _만 사용할 수 있습니다.';
