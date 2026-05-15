@@ -5,6 +5,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { navigate } from '../router.js';
 import { toast } from '../components/toast.js';
+import { renderReactionBar, initReactionBar } from '../components/reaction-bar.js';
 
 const TYPE_LABELS = {
   balance:'밸런스게임', vote:'민심투표', battle:'선택지배틀', ox:'OX퀴즈', quiz:'내맘대로퀴즈',
@@ -192,21 +193,7 @@ function renderVoteOptions(post) {
   }).join('');
 }
 
-function renderReactionBar(post) {
-  const REACTIONS = [
-    { key:'like', emoji:'👍', label:'좋아요' },
-    { key:'funny', emoji:'😂', label:'웃겨요' },
-    { key:'sad', emoji:'😢', label:'슬퍼요' },
-    { key:'wow', emoji:'😮', label:'놀라워요' },
-  ];
-  return `
-    <div class="reaction-bar">
-      ${REACTIONS.map(r => {
-        const cnt = post.reactions?.[r.key] || 0;
-        return `<button class="reaction-btn" data-reaction="${r.key}">${r.emoji} ${r.label} ${cnt > 0 ? `<span style="font-weight:700">${cnt}</span>` : ''}</button>`;
-      }).join('')}
-    </div>`;
-}
+// renderReactionBar은 reaction-bar.js 컴포넌트에서 import해서 사용
 
 function renderInteractive(post) {
   // 삼행시 참여 입력
@@ -264,22 +251,31 @@ function setupDetailEvents(post, el) {
     } catch (e) { toast.error('댓글 등록에 실패했어요'); }
   });
 
-  // 투표 버튼
+  // 투표 버튼 (Firestore 배열은 중첩 필드 increment 불가 → read-modify-write)
   document.querySelectorAll('[data-vote-idx]').forEach(btn => {
     btn.addEventListener('click', async () => {
       if (!auth.currentUser) { navigate('/login'); return; }
       const idx = parseInt(btn.dataset.voteIdx);
+      btn.disabled = true;
       try {
-        const fieldPath = `options.${idx}.votes`;
-        await updateDoc(doc(db, 'feeds', post.id), {
-          [fieldPath]: increment(1),
-          votedBy: arrayUnion(auth.currentUser.uid),
-        });
+        const postRef  = doc(db, 'feeds', post.id);
+        const snapshot = await getDoc(postRef);
+        const data     = snapshot.data();
+
+        // 중복 투표 방지
+        if ((data.votedBy || []).includes(auth.currentUser.uid)) {
+          toast.warn('이미 투표했어요'); btn.disabled = false; return;
+        }
+
+        const options = (data.options || []).map((opt, i) =>
+          i === idx ? { ...opt, votes: (opt.votes || 0) + 1 } : opt
+        );
+        await updateDoc(postRef, { options, votedBy: arrayUnion(auth.currentUser.uid) });
+
         toast.success('투표했어요!');
-        const updated = await getDoc(doc(db, 'feeds', post.id));
         const voteArea = document.getElementById('vote-area');
-        if (voteArea) voteArea.innerHTML = renderVoteOptions({ ...post, ...updated.data() });
-      } catch { toast.error('투표에 실패했어요'); }
+        if (voteArea) voteArea.innerHTML = renderVoteOptions({ ...post, options });
+      } catch { toast.error('투표에 실패했어요'); btn.disabled = false; }
     });
   });
 
@@ -356,24 +352,8 @@ function setupDetailEvents(post, el) {
     } catch { toast.error('올리기에 실패했어요'); }
   });
 
-  // 반응 버튼
-  document.querySelectorAll('[data-reaction]').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      if (!auth.currentUser) { navigate('/login'); return; }
-      const key = btn.dataset.reaction;
-      try {
-        await updateDoc(doc(db, 'feeds', post.id), {
-          [`reactions.${key}`]: increment(1),
-          [`reactions.total`]:  increment(1),
-        });
-        const cnt = (post.reactions?.[key] || 0) + 1;
-        btn.innerHTML = btn.innerHTML.replace(/\d+/, '');
-        btn.insertAdjacentHTML('beforeend', ` <span style="font-weight:700">${cnt}</span>`);
-        btn.classList.add('active');
-        btn.disabled = true;
-      } catch { toast.error('반응에 실패했어요'); }
-    });
-  });
+  // 반응 바 (reaction-bar.js 컴포넌트)
+  initReactionBar(post.id);
 }
 
 async function fetchComments(postId) {

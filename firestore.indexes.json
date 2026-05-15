@@ -1,10 +1,50 @@
 {
   "indexes": [
     {
+      "collectionGroup": "feeds",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "cat",       "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "feeds",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "type",      "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "feeds",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "authorId",  "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "feeds",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "reactions.total", "order": "DESCENDING" },
+        { "fieldPath": "createdAt",       "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "missions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "active",    "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "soso_feed_posts",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "status",      "order": "ASCENDING" },
         { "fieldPath": "createdAtMs", "order": "DESCENDING" }
       ]
     },
@@ -13,7 +53,7 @@
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "views", "order": "DESCENDING" }
+        { "fieldPath": "views",  "order": "DESCENDING" }
       ]
     }
   ],

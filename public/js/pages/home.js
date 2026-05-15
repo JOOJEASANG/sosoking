@@ -1,7 +1,8 @@
-import { db } from '../firebase.js';
-import { collection, query, orderBy, limit, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { navigate } from '../router.js';
 import { renderFeedCard } from '../components/feed-card.js';
+import { fetchHotPosts } from '../services/feed-service.js';
+import { db } from '../firebase.js';
+import { collection, query, orderBy, limit, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const CAT_INFO = {
   golra: { label: '골라봐', icon: '🎯', desc: '선택·투표·퀴즈', color: '--color-cat-golra' },
@@ -89,15 +90,7 @@ function renderGuideWidget() {
     </div>`;
 }
 
-async function fetchHotPosts() {
-  try {
-    const q = query(collection(db, 'feeds'), orderBy('reactions.total', 'desc'), limit(5));
-    const snap = await getDocs(q);
-    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  } catch {
-    return [];
-  }
-}
+// fetchHotPosts는 feed-service.js에서 import해서 사용
 
 async function fetchTodayMission() {
   try {

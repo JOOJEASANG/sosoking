@@ -1,6 +1,6 @@
 import { db, auth } from '../firebase.js';
 import { collection, query, orderBy, limit, getDocs, deleteDoc, doc, getCountFromServer } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import { appState } from '../app.js';
+import { appState } from '../state.js';
 import { toast } from '../components/toast.js';
 import { navigate } from '../router.js';
 

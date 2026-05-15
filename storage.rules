@@ -1,21 +1,25 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    function signedIn() {
-      return request.auth != null;
-    }
 
-    function isValidFeedImage() {
+    function signedIn()       { return request.auth != null; }
+    function isOwner(userId)  { return signedIn() && request.auth.uid == userId; }
+    function validImage()     {
       return signedIn()
-        && request.resource.size <= 5 * 1024 * 1024
+        && request.resource.size <= 8 * 1024 * 1024
         && request.resource.contentType.matches('image/.*');
     }
 
+    // v2 이미지 경로
+    match /feeds/{userId}/{fileName} {
+      allow read:  if true;
+      allow write: if isOwner(userId) && validImage();
+    }
+
+    // 레거시 경로 (이전 버전 하위 호환)
     match /soso-feed/{userId}/{fileName} {
-      allow read: if true;
-      allow write: if signedIn()
-        && request.auth.uid == userId
-        && isValidFeedImage();
+      allow read:  if true;
+      allow write: if isOwner(userId) && validImage();
     }
   }
 }

@@ -1,4 +1,4 @@
-import { appState } from '../app.js';
+import { appState } from '../state.js';
 import { navigate } from '../router.js';
 
 export function renderHeader() {

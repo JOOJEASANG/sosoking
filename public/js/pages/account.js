@@ -3,7 +3,7 @@ import { collection, query, where, orderBy, limit, getDocs } from 'https://www.g
 import { navigate } from '../router.js';
 import { toast } from '../components/toast.js';
 import { renderFeedCard } from '../components/feed-card.js';
-import { appState } from '../app.js';
+import { appState } from '../state.js';
 
 export async function renderAccount() {
   const el = document.getElementById('page-content');

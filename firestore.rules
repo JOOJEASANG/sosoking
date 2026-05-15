@@ -2,191 +2,99 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function isAdmin() {
-      return request.auth != null &&
+    // ── 헬퍼 함수 ──────────────────────────────────────────
+    function signedIn()  { return request.auth != null; }
+    function isAuthor(uid) { return signedIn() && request.auth.uid == uid; }
+    function isAdmin()   {
+      return signedIn() &&
         exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
-    function validNickname(nickname) {
-      return nickname is string
-        && nickname.size() >= 2
-        && nickname.size() <= 12
-        && nickname.matches('^[가-힣a-zA-Z0-9_]+$');
+    function validText(val, maxLen) {
+      return val is string && val.size() <= maxLen;
+    }
+    function validNickname(nick) {
+      return nick is string && nick.size() >= 2 && nick.size() <= 12
+        && nick.matches('^[가-힣a-zA-Z0-9_]+$');
     }
 
-    function validShortText(value, max) {
-      return value is string && value.size() <= max;
+    // ── 관리자 ─────────────────────────────────────────────
+    match /admins/{uid} {
+      allow read:  if signedIn() && request.auth.uid == uid;
+      allow write: if false;
     }
 
-    function validOptionalHttps(value, max) {
-      return value is string
-        && value.size() <= max
-        && (value == '' || value.matches('^https://.*'));
-    }
+    // ── 사이트 설정 (읽기 공개) ────────────────────────────
+    match /site_settings/{docId}  { allow read: if true; allow write: if isAdmin(); }
+    match /policy_docs/{docId}    { allow read: if true; allow write: if isAdmin(); }
 
-    function validMediaType(value) {
-      return value in ['none', 'upload', 'link', 'link_summary', 'youtube', 'image_link'];
-    }
-
-    function validFeedSource(value) {
-      return value in ['user', 'anonymous_user'];
-    }
-
-    function validImageUrls() {
-      return request.resource.data.imageUrls is list
-        && request.resource.data.imageUrls.size() <= 10
-        && request.resource.data.imageCount is int
-        && request.resource.data.imageCount >= 0
-        && request.resource.data.imageCount <= 10
-        && request.resource.data.imageCount == request.resource.data.imageUrls.size();
-    }
-
-    function validUserProfileCreate(userId) {
-      return request.auth != null
-        && request.auth.uid == userId
-        && request.resource.data.keys().hasOnly(['nickname', 'nicknameUpdatedAt'])
-        && validNickname(request.resource.data.nickname);
-    }
-
-    function validUserProfileUpdate(userId) {
-      return request.auth != null
-        && request.auth.uid == userId
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nickname', 'nicknameUpdatedAt'])
-        && validNickname(request.resource.data.nickname);
-    }
-
-    function validNicknameClaim(nickname) {
-      return request.auth != null
-        && validNickname(nickname)
-        && request.resource.data.keys().hasOnly(['uid'])
-        && request.resource.data.uid == request.auth.uid;
-    }
-
-    function validFeedPostKeys() {
-      return request.resource.data.keys().hasOnly([
-        'type', 'badge', 'title', 'content', 'summary', 'question',
-        'options', 'votes', 'voteTotal', 'tags', 'views', 'likes', 'comments',
-        'status', 'source', 'authorId', 'authorName', 'imageUrl', 'imageUrls', 'imageCount', 'mediaType',
-        'linkUrl', 'linkTitle', 'linkSummary', 'linkSource', 'embedUrl', 'thumbnailUrl',
-        'topComment', 'createdAt', 'createdAtMs', 'updatedAt'
-      ]);
-    }
-
-    function validFeedPost() {
-      return request.auth != null
-        && validFeedPostKeys()
-        && validShortText(request.resource.data.type, 30)
-        && validShortText(request.resource.data.badge, 8)
-        && request.resource.data.title is string
-        && request.resource.data.title.size() >= 4
-        && request.resource.data.title.size() <= 90
-        && request.resource.data.content is string
-        && request.resource.data.content.size() >= 5
-        && request.resource.data.content.size() <= 1200
-        && validShortText(request.resource.data.summary, 220)
-        && validShortText(request.resource.data.question, 90)
-        && request.resource.data.options is list
-        && request.resource.data.options.size() >= 2
-        && request.resource.data.options.size() <= 4
-        && request.resource.data.votes is map
-        && request.resource.data.tags is list
-        && request.resource.data.tags.size() <= 6
-        && request.resource.data.authorId == request.auth.uid
-        && validShortText(request.resource.data.authorName, 40)
-        && request.resource.data.status == 'published'
-        && validFeedSource(request.resource.data.source)
-        && request.resource.data.views == 0
-        && request.resource.data.likes == 0
-        && request.resource.data.comments == 0
-        && request.resource.data.voteTotal == 0
-        && request.resource.data.topComment == ''
-        && validOptionalHttps(request.resource.data.imageUrl, 700)
-        && validImageUrls()
-        && validMediaType(request.resource.data.mediaType)
-        && validOptionalHttps(request.resource.data.linkUrl, 700)
-        && validShortText(request.resource.data.linkTitle, 120)
-        && validShortText(request.resource.data.linkSummary, 260)
-        && validShortText(request.resource.data.linkSource, 80)
-        && validOptionalHttps(request.resource.data.embedUrl, 700)
-        && validOptionalHttps(request.resource.data.thumbnailUrl, 700)
-        && request.resource.data.createdAt == request.time
-        && request.resource.data.updatedAt == request.time
-        && request.resource.data.createdAtMs is int;
-    }
-
-    function validReportCreate() {
-      return request.auth != null
-        && request.resource.data.keys().hasOnly(['category', 'content', 'reason', 'targetType', 'targetId', 'postId', 'reporterId', 'status', 'createdAt', 'createdAtMs'])
-        && validShortText(request.resource.data.category, 40)
-        && validShortText(request.resource.data.content, 500)
-        && validShortText(request.resource.data.reason, 60)
-        && validShortText(request.resource.data.targetType, 20)
-        && validShortText(request.resource.data.targetId, 160)
-        && validShortText(request.resource.data.postId, 120)
-        && request.resource.data.reporterId == request.auth.uid
-        && request.resource.data.status == 'open'
-        && request.resource.data.createdAt == request.time
-        && request.resource.data.createdAtMs is int;
-    }
-
-    function validFeedbackCreate() {
-      return request.auth != null
-        && request.resource.data.keys().hasOnly(['category', 'content', 'email', 'userId', 'status', 'createdAt', 'createdAtMs'])
-        && validShortText(request.resource.data.category, 40)
-        && request.resource.data.content is string
-        && request.resource.data.content.size() >= 2
-        && request.resource.data.content.size() <= 500
-        && validShortText(request.resource.data.email, 120)
-        && request.resource.data.userId == request.auth.uid
-        && request.resource.data.status == 'open'
-        && request.resource.data.createdAt == request.time
-        && request.resource.data.createdAtMs is int;
-    }
-
-    match /admins/{uid} { allow read: if request.auth != null && request.auth.uid == uid; allow write: if false; }
-
-    match /categories/{catId} { allow read, write: if isAdmin(); }
-    match /topics/{topicId} { allow read, write: if isAdmin(); }
-    match /debate_sessions/{sessionId} { allow read, write: if isAdmin(); }
-    match /random_queue/{topicId} { allow read, write: if isAdmin(); }
-
-    match /usage_stats/{docId} { allow read: if isAdmin(); allow write: if false; }
-    match /rate_limits/{userId} { allow read, write: if false; }
+    // ── 사용자 프로필 ──────────────────────────────────────
     match /users/{userId} {
-      allow read: if request.auth != null && request.auth.uid == userId;
-      allow create: if validUserProfileCreate(userId);
-      allow update: if validUserProfileUpdate(userId);
+      allow read:   if isAuthor(userId) || isAdmin();
+      allow create: if isAuthor(userId)
+                      && validNickname(request.resource.data.get('nickname', ''));
+      allow update: if isAuthor(userId);
       allow delete: if false;
     }
-    match /nicknames/{nickname} { allow read: if request.auth != null; allow create: if validNicknameClaim(nickname) && !exists(/databases/$(database)/documents/nicknames/$(nickname)); allow delete: if request.auth != null && resource.data.uid == request.auth.uid; allow update: if false; }
-    match /reports/{reportId} { allow create: if validReportCreate(); allow read, update, delete: if isAdmin(); }
-    match /site_settings/{docId} { allow read: if true; allow write: if isAdmin(); }
-    match /policy_docs/{docId} { allow read: if true; allow write: if isAdmin(); }
-    match /system_jobs/{docId} { allow read, write: if isAdmin(); }
-    match /feedback/{feedbackId} {
-      allow create: if validFeedbackCreate();
+
+    match /nicknames/{nickname} {
+      allow read:   if signedIn();
+      allow create: if signedIn()
+                      && validNickname(nickname)
+                      && request.resource.data.uid == request.auth.uid
+                      && !exists(/databases/$(database)/documents/nicknames/$(nickname));
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+      allow update: if false;
+    }
+
+    // ── 피드 (feeds) ───────────────────────────────────────
+    match /feeds/{postId} {
+      allow read:   if true;
+      allow create: if signedIn()
+                      && request.resource.data.authorId == request.auth.uid
+                      && validText(request.resource.data.title, 100)
+                      && validText(request.resource.data.get('desc', ''), 2000);
+      allow update: if isAdmin() || isAuthor(resource.data.authorId);
+      allow delete: if isAdmin() || isAuthor(resource.data.authorId);
+
+      // 댓글
+      match /comments/{commentId} {
+        allow read:   if true;
+        allow create: if signedIn()
+                        && request.resource.data.authorId == request.auth.uid
+                        && validText(request.resource.data.text, 500);
+        allow update: if isAdmin() || isAuthor(resource.data.authorId);
+        allow delete: if isAdmin() || isAuthor(resource.data.authorId);
+      }
+    }
+
+    // ── 미션 ───────────────────────────────────────────────
+    match /missions/{missionId} {
+      allow read:   if true;
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ── 신고 ───────────────────────────────────────────────
+    match /reports/{reportId} {
+      allow create: if signedIn()
+                      && request.resource.data.reporterId == request.auth.uid
+                      && validText(request.resource.data.get('reason', ''), 300);
       allow read, update, delete: if isAdmin();
     }
 
+    // ── 레거시 컬렉션 (이전 버전 하위 호환) ───────────────
     match /soso_feed_posts/{postId} {
-      allow read: if resource.data.status == 'published' || isAdmin();
-      allow create: if isAdmin() || validFeedPost();
-      allow update, delete: if isAdmin();
-      match /comments/{commentId} {
-        allow read: if get(/databases/$(database)/documents/soso_feed_posts/$(postId)).data.status == 'published' || isAdmin();
-        allow create, update, delete: if isAdmin();
-      }
-      match /voters/{voterId} {
-        allow read: if request.auth != null && voterId == request.auth.uid;
-        allow create, update, delete: if isAdmin();
-      }
-      match /likers/{likerId} {
-        allow read: if request.auth != null && likerId == request.auth.uid;
-        allow create, update, delete: if isAdmin();
-      }
-      match /viewers/{viewerId} {
-        allow read, write: if isAdmin();
-      }
+      allow read:  if true;
+      allow write: if isAdmin();
+      match /comments/{commentId} { allow read: if true; allow write: if isAdmin(); }
     }
+
+    match /categories/{id}     { allow read, write: if isAdmin(); }
+    match /system_jobs/{id}    { allow read, write: if isAdmin(); }
+    match /usage_stats/{id}    { allow read: if isAdmin(); allow write: if false; }
+    match /rate_limits/{id}    { allow read, write: if false; }
+    match /feedback/{id}       { allow create: if signedIn(); allow read, update, delete: if isAdmin(); }
   }
 }

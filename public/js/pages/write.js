@@ -1,4 +1,4 @@
-import { db, storage, auth } from '../firebase.js';
+import { db, auth } from '../firebase.js';
 import { collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { navigate } from '../router.js';
 import { toast } from '../components/toast.js';
