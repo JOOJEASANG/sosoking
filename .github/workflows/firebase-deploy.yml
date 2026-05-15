@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - claude/project-plan-execution-NCENL
   workflow_dispatch:
 
 jobs:
