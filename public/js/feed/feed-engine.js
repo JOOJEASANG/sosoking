@@ -1,19 +1,17 @@
-import { auth, db, storage } from '../firebase.js';
+import { auth, db, storage, functions } from '../firebase.js';
 import {
   addDoc,
   collection,
   doc,
   getDoc,
   getDocs,
-  increment,
   limit,
   orderBy,
   query,
   serverTimestamp,
-  setDoc,
-  updateDoc,
   where
 } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 import { getDownloadURL, ref, uploadBytesResumable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-storage.js';
 
 export const FALLBACK_FEED_ITEMS = [];
@@ -104,6 +102,12 @@ function normalizeMedia(data = {}) {
   };
 }
 
+async function callFeedFunction(name, data) {
+  const fn = httpsCallable(functions, name);
+  const result = await fn(data);
+  return result.data || {};
+}
+
 export async function uploadFeedImage(file, onProgress = () => {}) {
   const user = auth.currentUser;
   if (!user) throw new Error('로그인 후 이미지를 올릴 수 있습니다.');
@@ -151,12 +155,12 @@ export async function getFeedPosts({ topOnly = false, pageSize = 20 } = {}) {
   } catch (error) { console.warn('소소피드 불러오기 실패:', error.code || error.message); return []; }
 }
 export async function getFeedPost(postId) { const snap = await getDoc(doc(db, 'soso_feed_posts', postId)); if (!snap.exists()) throw new Error('게시글을 찾을 수 없습니다.'); const post = normalizePost(snap.id, snap.data()); if (post.status !== 'published') throw new Error('공개되지 않은 게시글입니다.'); return post; }
-export async function increaseFeedView(postId) { if (!postId) return; try { await updateDoc(doc(db, 'soso_feed_posts', postId), { views: increment(1) }); } catch (error) { console.warn('조회수 증가 실패:', error.code || error.message); } }
-export async function likeFeedPost(postId) { if (!postId) return { fallback: true }; await updateDoc(doc(db, 'soso_feed_posts', postId), { likes: increment(1) }); return { ok: true }; }
+export async function increaseFeedView(postId) { if (!postId) return; try { await callFeedFunction('registerFeedView', { postId }); } catch (error) { console.warn('조회수 증가 실패:', error.code || error.message); } }
+export async function likeFeedPost(postId) { if (!postId) return { fallback: true }; await callFeedFunction('likeFeedPost', { postId }); return { ok: true }; }
 export async function getMyFeedVote(postId) { const user = auth.currentUser; if (!user || !postId) return null; try { const snap = await getDoc(doc(db, 'soso_feed_posts', postId, 'voters', user.uid)); return snap.exists() ? snap.data().option || null : null; } catch { return null; } }
-export async function voteFeedOption(postId, option) { const user = auth.currentUser; if (!user) throw new Error('로그인 후 투표할 수 있습니다.'); const cleanOption = clean(option, 40); if (!cleanOption) throw new Error('선택지를 골라주세요.'); if (!postId) throw new Error('게시글을 찾을 수 없습니다.'); const voterRef = doc(db, 'soso_feed_posts', postId, 'voters', user.uid); const existing = await getDoc(voterRef); if (existing.exists()) throw new Error('이미 이 글에 투표했습니다.'); await setDoc(voterRef, { option: cleanOption, authorId: user.uid, createdAt: serverTimestamp(), createdAtMs: Date.now() }); await updateDoc(doc(db, 'soso_feed_posts', postId), { [`votes.${safeVoteKey(cleanOption)}`]: increment(1), voteTotal: increment(1) }); return { ok: true, option: cleanOption }; }
+export async function voteFeedOption(postId, option) { const data = await callFeedFunction('voteFeedOption', { postId, option }); return { ok: true, option: data.option || option }; }
 export async function getFeedComments(postId, pageSize = 30) { if (!postId) return []; try { const q = query(collection(db, 'soso_feed_posts', postId, 'comments'), orderBy('createdAtMs', 'desc'), limit(pageSize)); const snap = await getDocs(q); return snap.docs.map(d => normalizeComment(d.id, d.data())).sort((a, b) => Number(b.likes || 0) - Number(a.likes || 0) || Number(b.createdAtMs || 0) - Number(a.createdAtMs || 0)); } catch (error) { console.warn('댓글 불러오기 실패:', error.code || error.message); return []; } }
-export async function addFeedComment(postId, text) { const user = auth.currentUser; if (!user) throw new Error('로그인 후 댓글을 남길 수 있습니다.'); const body = clean(text, 300); if (body.length < 2) throw new Error('댓글을 2자 이상 입력해주세요.'); if (!postId) throw new Error('게시글을 찾을 수 없습니다.'); const authorName = await getAuthorName(user); const payload = { text: body, likes: 0, authorId: user.uid, authorName, createdAt: serverTimestamp(), createdAtMs: Date.now() }; const ref = await addDoc(collection(db, 'soso_feed_posts', postId, 'comments'), payload); try { await updateDoc(doc(db, 'soso_feed_posts', postId), { comments: increment(1), topComment: body }); } catch {} return normalizeComment(ref.id, payload); }
+export async function addFeedComment(postId, text) { const data = await callFeedFunction('addFeedComment', { postId, text }); return normalizeComment(data.comment?.id || '', data.comment || {}); }
 export async function createFeedReport({ postId, commentId = '', reason = '기타', detail = '' } = {}) { const user = auth.currentUser; if (!user) throw new Error('로그인 후 신고할 수 있습니다.'); const cleanPostId = clean(postId, 120); if (!cleanPostId) throw new Error('게시글을 찾을 수 없습니다.'); const payload = { category: commentId ? 'soso_feed_comment' : 'soso_feed_post', content: clean(detail || reason, 500), reason: clean(reason, 60), targetType: commentId ? 'comment' : 'post', targetId: clean(commentId || cleanPostId, 160), postId: cleanPostId, reporterId: user.uid, status: 'open', createdAt: serverTimestamp(), createdAtMs: Date.now() }; await addDoc(collection(db, 'reports'), payload); return { ok: true }; }
 
 export async function createFeedPost(input = {}) {
