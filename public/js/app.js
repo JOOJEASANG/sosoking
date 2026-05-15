@@ -12,6 +12,7 @@ import { renderFooter } from './components/footer.js';
 import { initTheme } from './components/theme.js';
 import { renderNav } from './components/nav.js';
 import './feed/crazy-naming-patch.js';
+import './account-delete-server-patch.js';
 
 const LEGACY_PREFIXES = ['#/hunt', '#/topic/', '#/debate/', '#/join/', '#/join-team/'];
 const LEGACY_ROUTES = ['#/town', '#/case-quest', '#/topics', '#/submit-topic', '#/court', '#/my-history'];
