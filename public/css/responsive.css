@@ -1,0 +1,68 @@
+/* responsive.css — 반응형 (모바일 우선) */
+
+/* 태블릿 이하 */
+@media (max-width: 1024px) {
+  .layout-cols {
+    grid-template-columns: 1fr;
+  }
+  .layout-sidebar { display: none; }
+  .admin-layout { grid-template-columns: 1fr; }
+  .admin-sidebar { position: static; }
+  .admin-stat-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* 모바일 */
+@media (max-width: 768px) {
+  /* 헤더 */
+  .site-header__search { display: none; }
+  .site-header__nav { display: none; }
+  .site-header__inner { justify-content: space-between; }
+  .site-header__mobile-menu { display: flex; gap: var(--space-2); margin-left: auto; }
+
+  /* 컨테이너 패딩 축소 */
+  .page-container { padding: var(--space-3) var(--space-3); }
+
+  /* 홈 */
+  .home-hero { padding: var(--space-5) var(--space-4); }
+  .home-hero__title { font-size: var(--font-size-xl); }
+  .home-cats { grid-template-columns: repeat(3, 1fr); gap: var(--space-2); }
+  .home-cat-card { padding: var(--space-3) var(--space-2); }
+  .home-cat-card__icon { font-size: 22px; }
+  .home-cat-card__name { font-size: var(--font-size-sm); }
+  .home-cat-card__desc { display: none; }
+
+  /* 피드 카드 */
+  .feed-card__title { font-size: var(--font-size-base); }
+
+  /* 만들기 폼 */
+  .write-page { max-width: 100%; }
+  .type-select-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* 관리자 */
+  .admin-stat-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* 카드 패딩 축소 */
+  .card__body--lg { padding: var(--space-4); }
+  .modal { border-radius: var(--radius-base) var(--radius-base) 0 0; }
+  .modal-overlay { align-items: flex-end; padding: 0; }
+
+  /* 삼행시 */
+  .acrostic-line .form-input { font-size: var(--font-size-sm); }
+
+  /* 내정보 */
+  .account-stats { gap: var(--space-4); }
+}
+
+/* 소형 모바일 */
+@media (max-width: 375px) {
+  .page-container { padding: var(--space-2); }
+  .home-cats { gap: var(--space-1); }
+  .home-cat-card { padding: var(--space-2) var(--space-1); }
+  .feed-filters { gap: var(--space-1); }
+  .filter-chip { padding: 4px var(--space-2); font-size: 11px; }
+}
+
+/* 가로 깨짐 방지 */
+* { min-width: 0; }
+img { max-width: 100%; }
+.page-container { overflow-x: hidden; }

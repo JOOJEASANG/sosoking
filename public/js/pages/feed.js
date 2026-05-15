@@ -1,0 +1,175 @@
+import { db } from '../firebase.js';
+import { collection, query, orderBy, limit, startAfter, getDocs, where } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { getQueryParams } from '../router.js';
+import { renderFeedCard } from '../components/feed-card.js';
+
+const CAT_TYPES = {
+  golra: ['balance','vote','battle','ox','quiz'],
+  usgyo: ['naming','acrostic','cbattle','laugh','drip'],
+  malhe: ['howto','story','fail','concern','relay'],
+};
+
+const CAT_LABELS = {
+  '': '전체', golra: '골라봐', usgyo: '웃겨봐', malhe: '말해봐',
+};
+
+const TYPE_LABELS = {
+  balance:'밸런스게임', vote:'민심투표', battle:'선택지배틀', ox:'OX퀴즈', quiz:'내맘대로퀴즈',
+  naming:'미친작명소', acrostic:'삼행시짓기', cbattle:'댓글배틀', laugh:'웃참챌린지', drip:'한줄드립',
+  howto:'나만의노하우', story:'경험담', fail:'실패담', concern:'고민/질문', relay:'막장릴레이',
+};
+
+let lastDoc = null;
+let currentCat = '';
+let currentType = '';
+let isLoading = false;
+
+export async function renderFeed() {
+  const el = document.getElementById('page-content');
+  const params = getQueryParams();
+  currentCat  = params.cat  || '';
+  currentType = params.type || '';
+  lastDoc = null;
+
+  el.innerHTML = `
+    <div class="layout-cols">
+      <div class="layout-main">
+        ${renderFilterBar()}
+        <div id="feed-list"></div>
+        <div id="feed-loader" class="loading-center" style="display:none">
+          <div class="spinner"></div>
+        </div>
+        <div id="feed-end" style="display:none;text-align:center;padding:24px;font-size:13px;color:var(--color-text-muted)">
+          더 이상 글이 없어요
+        </div>
+      </div>
+      <aside class="layout-sidebar">
+        ${renderTypeFilter()}
+      </aside>
+    </div>`;
+
+  await loadPosts(true);
+  setupInfiniteScroll();
+
+  // 필터 클릭 이벤트
+  document.querySelectorAll('[data-cat-filter]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentCat  = btn.dataset.catFilter;
+      currentType = '';
+      lastDoc = null;
+      updateFilterUI();
+      loadPosts(true);
+    });
+  });
+  document.querySelectorAll('[data-type-filter]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentType = btn.dataset.typeFilter;
+      if (currentType) {
+        const found = Object.entries(CAT_TYPES).find(([, types]) => types.includes(currentType));
+        if (found) currentCat = found[0];
+      }
+      lastDoc = null;
+      updateFilterUI();
+      loadPosts(true);
+    });
+  });
+}
+
+function renderFilterBar() {
+  return `
+    <div class="feed-filters" id="cat-filters">
+      ${Object.entries(CAT_LABELS).map(([key, label]) => `
+        <button class="filter-chip ${currentCat === key ? 'active' : ''}" data-cat-filter="${key}">
+          ${label}
+        </button>`).join('')}
+    </div>`;
+}
+
+function renderTypeFilter() {
+  const cat = currentCat || null;
+  const groups = cat ? { [cat]: CAT_TYPES[cat] } : CAT_TYPES;
+  return `
+    <div class="sidebar-widget">
+      <div class="sidebar-widget__title">🗂 유형 필터</div>
+      ${Object.entries(groups).map(([catKey, types]) => `
+        <div style="margin-bottom:12px">
+          <div style="font-size:11px;font-weight:700;color:var(--color-text-muted);margin-bottom:6px">
+            ${{ golra:'골라봐', usgyo:'웃겨봐', malhe:'말해봐' }[catKey]}
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            ${types.map(t => `
+              <button class="filter-chip ${currentType === t ? 'active' : ''}" data-type-filter="${t}" style="font-size:11px">
+                ${TYPE_LABELS[t]}
+              </button>`).join('')}
+          </div>
+        </div>`).join('')}
+      ${currentType ? `<button class="btn btn--ghost btn--sm btn--full" data-type-filter="">전체 보기</button>` : ''}
+    </div>`;
+}
+
+function updateFilterUI() {
+  document.querySelectorAll('[data-cat-filter]').forEach(b => {
+    b.classList.toggle('active', b.dataset.catFilter === currentCat);
+  });
+}
+
+async function loadPosts(reset = false) {
+  if (isLoading) return;
+  isLoading = true;
+
+  const loaderEl = document.getElementById('feed-loader');
+  const listEl   = document.getElementById('feed-list');
+  const endEl    = document.getElementById('feed-end');
+
+  if (loaderEl) loaderEl.style.display = 'flex';
+
+  try {
+    const constraints = [orderBy('createdAt', 'desc'), limit(15)];
+    if (currentType) {
+      constraints.unshift(where('type', '==', currentType));
+    } else if (currentCat) {
+      constraints.unshift(where('cat', '==', currentCat));
+    }
+    if (!reset && lastDoc) constraints.push(startAfter(lastDoc));
+
+    const q = query(collection(db, 'feeds'), ...constraints);
+    const snap = await getDocs(q);
+
+    if (reset && listEl) listEl.innerHTML = '';
+
+    if (snap.empty && reset) {
+      if (listEl) listEl.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state__icon">🌱</div>
+          <div class="empty-state__title">아직 글이 없어요</div>
+          <div class="empty-state__desc">첫 번째 놀이판을 열어보세요!</div>
+          <button class="btn btn--primary" style="margin-top:16px" onclick="navigate('/write')">만들기</button>
+        </div>`;
+      if (endEl) endEl.style.display = 'block';
+    } else {
+      snap.docs.forEach(d => {
+        const html = renderFeedCard({ id: d.id, ...d.data() });
+        if (listEl) listEl.insertAdjacentHTML('beforeend', html);
+      });
+      lastDoc = snap.docs[snap.docs.length - 1];
+      if (snap.docs.length < 15 && endEl) endEl.style.display = 'block';
+    }
+  } catch (e) {
+    console.error('피드 로드 실패', e);
+  }
+
+  if (loaderEl) loaderEl.style.display = 'none';
+  isLoading = false;
+}
+
+function setupInfiniteScroll() {
+  const sentinel = document.createElement('div');
+  sentinel.id = 'scroll-sentinel';
+  document.getElementById('feed-list')?.after(sentinel);
+
+  const observer = new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting && !isLoading) loadPosts(false);
+  }, { rootMargin: '200px' });
+
+  observer.observe(sentinel);
+}

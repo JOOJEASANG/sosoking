@@ -1,73 +1,79 @@
-import { auth, db, changeEmailPassword, sendResetEmail, logout } from '../firebase.js';
-import { invalidateNicknameCache, renderNav } from '../components/nav.js';
-import { showToast } from '../components/toast.js';
-import { injectPredictStyle } from './predict-home.js';
-import { deleteDoc, doc, getDoc, serverTimestamp, setDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
-import { EmailAuthProvider, GoogleAuthProvider, deleteUser, reauthenticateWithCredential, reauthenticateWithPopup } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
+import { auth, signOut, db } from '../firebase.js';
+import { collection, query, where, orderBy, limit, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { navigate } from '../router.js';
+import { toast } from '../components/toast.js';
+import { renderFeedCard } from '../components/feed-card.js';
+import { appState } from '../app.js';
 
-function validNickname(nick) { if (!nick || nick.length < 2 || nick.length > 12) return '닉네임은 2~12자여야 합니다.'; if (!/^[가-힣a-zA-Z0-9_]+$/.test(nick)) return '한글, 영문, 숫자, _만 사용할 수 있습니다.'; return ''; }
-function providerLabel(user) { const providers = user?.providerData?.map(p => p.providerId) || []; if (providers.includes('google.com')) return 'Google 계정'; if (providers.includes('password')) return '이메일 계정'; return user?.isAnonymous ? '게스트' : '계정'; }
-function canInstallPwa() { return typeof window._pwaInstall === 'function'; }
+export async function renderAccount() {
+  const el = document.getElementById('page-content');
+  const user = appState.user;
 
-export async function renderAccount(container) {
-  injectPredictStyle(); injectAccountStyle();
-  const user = auth.currentUser;
-  if (!user || user.isAnonymous) {
-    container.innerHTML = `<main class="predict-app account-page"><section class="account-hero"><a href="#/" class="back-link">‹</a><div class="account-hero-copy"><img src="/logo.svg" alt="소소킹"><div><span>ACCOUNT</span><h1>로그인이 필요합니다</h1><p>내정보 수정은 로그인 후 사용할 수 있습니다.</p></div></div><b>🔐</b></section><section class="account-card empty"><p>계정을 연결하면 닉네임, 비밀번호, 앱 설치를 관리할 수 있습니다.</p><a href="#/login">로그인하기</a></section></main>`; return;
+  if (!user) {
+    el.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state__icon">👤</div>
+        <div class="empty-state__title">로그인이 필요해요</div>
+        <button class="btn btn--primary" style="margin-top:16px" onclick="navigate('/login')">로그인하기</button>
+      </div>`;
+    return;
   }
-  let profile = {}; try { const snap = await getDoc(doc(db, 'users', user.uid)); profile = snap.exists() ? snap.data() : {}; } catch {}
-  const nickname = profile.nickname || user.displayName || ''; const email = user.email || ''; const providers = user.providerData || []; const canChangePassword = providers.some(p => p.providerId === 'password');
-  container.innerHTML = `
-    <main class="predict-app account-page">
-      <section class="account-hero"><a href="#/" class="back-link">‹</a><div class="account-hero-copy"><img src="/logo.svg" alt="소소킹"><div><span>MY INFO</span><h1>내정보 수정</h1><p>닉네임, 비밀번호, 앱 설치, 탈퇴를 관리합니다.</p></div></div><b>⚙️</b></section>
-      <section class="account-layout">
-        <aside class="account-summary-card"><img src="/logo.svg" alt="소소킹"><b>${escapeHtml(nickname || '소소킹 유저')}</b><span>${escapeHtml(providerLabel(user))}</span><p>${email ? escapeHtml(email) : '이메일 정보 없음'}</p><a href="#/feed/new">소소피드 만들기</a></aside>
-        <div class="account-panels">
-          <form id="nickname-form" class="account-card"><div class="account-card-head"><span>NICKNAME</span><h2>닉네임 변경</h2><p>소소피드와 댓글에 표시되는 이름입니다.</p></div><label>현재 닉네임</label><input value="${escapeAttr(nickname || '')}" disabled><label>새 닉네임</label><div class="account-row"><input id="new-nickname" maxlength="12" placeholder="닉네임 2~12자"><button id="check-nickname" type="button">중복확인</button></div><div id="nickname-status" class="account-status"></div><button id="save-nickname" type="submit" disabled>닉네임 저장</button></form>
-          <form id="password-form" class="account-card"><div class="account-card-head"><span>PASSWORD</span><h2>비밀번호 변경</h2><p>${canChangePassword ? '현재 비밀번호 확인 후 새 비밀번호로 변경합니다.' : 'Google 계정은 Google 계정 관리에서 비밀번호를 변경해야 합니다.'}</p></div>${canChangePassword ? `<label>현재 비밀번호</label><input id="current-password" type="password" autocomplete="current-password" placeholder="현재 비밀번호"><label>새 비밀번호</label><input id="new-password" type="password" autocomplete="new-password" placeholder="새 비밀번호 6자 이상"><label>새 비밀번호 확인</label><input id="new-password2" type="password" autocomplete="new-password" placeholder="새 비밀번호 확인"><button type="submit">비밀번호 변경</button>` : `<div class="account-notice">현재 계정은 ${escapeHtml(providerLabel(user))}입니다. 사이트 안에서는 비밀번호를 직접 변경할 수 없습니다.</div>`}</form>
-          <form id="reset-form" class="account-card"><div class="account-card-head"><span>RESET</span><h2>비밀번호 재설정 메일</h2><p>이메일 계정 비밀번호를 잊은 경우 재설정 메일을 받을 수 있습니다.</p></div><label>이메일</label><input id="reset-email" type="email" value="${escapeAttr(email)}" placeholder="가입 이메일"><button type="submit">재설정 메일 보내기</button></form>
-          <section class="account-card install"><div class="account-card-head"><span>PWA APP</span><h2>소소킹 앱 설치</h2><p>홈 화면에 설치하면 앱처럼 빠르게 접속할 수 있습니다.</p></div><button id="pwa-install-btn" type="button">앱 설치하기</button><div class="account-notice">설치 버튼이 작동하지 않으면 브라우저 메뉴에서 “홈 화면에 추가”를 선택하세요.</div></section>
-          <section class="account-card danger"><div class="account-card-head"><span>LOGOUT</span><h2>로그아웃</h2><p>로그아웃 후에는 게스트 상태로 전환됩니다.</p></div><button id="logout-btn" type="button">로그아웃</button></section>
-          <section class="account-card danger delete-zone"><div class="account-card-head"><span>DELETE ACCOUNT</span><h2>회원 탈퇴</h2><p>탈퇴하면 로그인 계정만 삭제됩니다. 기존에 작성한 글, 댓글, 신고 기록은 운영 기록 보존을 위해 삭제되지 않습니다.</p></div>${canChangePassword ? `<label>현재 비밀번호</label><input id="delete-password" type="password" placeholder="탈퇴 확인용 현재 비밀번호">` : `<div class="account-notice">Google 계정은 탈퇴 시 Google 재인증 창이 뜹니다.</div>`}<label class="delete-confirm-row"><input id="delete-confirm" type="checkbox"> 작성한 데이터는 삭제되지 않음을 확인했습니다.</label><button id="delete-account-btn" type="button">회원 탈퇴</button></section>
-        </div>
-      </section>
-    </main>`;
 
-  let checkedNickname = '';
-  container.querySelector('#new-nickname')?.addEventListener('input', () => { checkedNickname = ''; container.querySelector('#save-nickname').disabled = true; container.querySelector('#nickname-status').textContent = ''; });
-  container.querySelector('#check-nickname')?.addEventListener('click', async () => { const nick = container.querySelector('#new-nickname').value.trim(); const status = container.querySelector('#nickname-status'); const invalid = validNickname(nick); if (invalid) { status.className = 'account-status error'; status.textContent = invalid; return; } if (nick === nickname) { status.className = 'account-status error'; status.textContent = '현재 닉네임과 같습니다.'; return; } status.className = 'account-status'; status.textContent = '확인 중...'; try { const snap = await getDoc(doc(db, 'nicknames', nick)); if (snap.exists()) { status.className = 'account-status error'; status.textContent = '이미 사용 중인 닉네임입니다.'; return; } checkedNickname = nick; status.className = 'account-status ok'; status.textContent = '사용 가능한 닉네임입니다.'; container.querySelector('#save-nickname').disabled = false; } catch { status.className = 'account-status error'; status.textContent = '중복확인에 실패했습니다.'; } });
-  container.querySelector('#nickname-form')?.addEventListener('submit', async e => { e.preventDefault(); const nick = container.querySelector('#new-nickname').value.trim(); if (!checkedNickname || checkedNickname !== nick) { showToast('닉네임 중복확인을 먼저 해주세요.', 'error'); return; } const btn = container.querySelector('#save-nickname'); btn.disabled = true; btn.textContent = '저장 중...'; try { await setDoc(doc(db, 'nicknames', nick), { uid: user.uid, createdAt: serverTimestamp() }); await setDoc(doc(db, 'users', user.uid), { nickname: nick, nicknameUpdatedAt: serverTimestamp() }, { merge: true }); if (nickname && nickname !== nick) await deleteDoc(doc(db, 'nicknames', nickname)).catch(() => {}); invalidateNicknameCache(); showToast('닉네임이 변경되었습니다.', 'success'); renderNav(); await renderAccount(container); } catch (err) { showToast(err.message || '닉네임 저장에 실패했습니다.', 'error'); btn.disabled = false; btn.textContent = '닉네임 저장'; } });
-  container.querySelector('#password-form')?.addEventListener('submit', async e => { e.preventDefault(); if (!canChangePassword) return; const current = container.querySelector('#current-password').value; const next = container.querySelector('#new-password').value; const next2 = container.querySelector('#new-password2').value; if (next !== next2) { showToast('새 비밀번호가 일치하지 않습니다.', 'error'); return; } if (next.length < 6) { showToast('새 비밀번호는 6자 이상이어야 합니다.', 'error'); return; } const btn = e.currentTarget.querySelector('button'); btn.disabled = true; btn.textContent = '변경 중...'; try { await changeEmailPassword(current, next); showToast('비밀번호가 변경되었습니다.', 'success'); e.currentTarget.reset(); } catch (err) { showToast(err.message || '비밀번호 변경에 실패했습니다.', 'error'); } finally { btn.disabled = false; btn.textContent = '비밀번호 변경'; } });
-  container.querySelector('#reset-form')?.addEventListener('submit', async e => { e.preventDefault(); const emailValue = container.querySelector('#reset-email').value.trim(); const btn = e.currentTarget.querySelector('button'); btn.disabled = true; btn.textContent = '전송 중...'; try { await sendResetEmail(emailValue); showToast('재설정 메일을 보냈습니다.', 'success'); btn.textContent = '메일 전송 완료'; } catch (err) { showToast(err.message || '메일 전송에 실패했습니다.', 'error'); btn.disabled = false; btn.textContent = '재설정 메일 보내기'; } });
-  container.querySelector('#pwa-install-btn')?.addEventListener('click', () => { if (canInstallPwa()) window._pwaInstall(); else showToast('브라우저 메뉴에서 홈 화면에 추가를 선택해주세요.', 'info'); });
-  container.querySelector('#logout-btn')?.addEventListener('click', async () => { await logout(); invalidateNicknameCache(); renderNav(); location.hash = '#/'; });
-  container.querySelector('#delete-account-btn')?.addEventListener('click', async () => {
-    if (!container.querySelector('#delete-confirm')?.checked) { showToast('데이터 보존 안내를 확인해주세요.', 'error'); return; }
-    if (!confirm('정말 탈퇴하시겠습니까? 기존 글과 댓글은 삭제되지 않습니다.')) return;
-    const btn = container.querySelector('#delete-account-btn'); btn.disabled = true; btn.textContent = '탈퇴 처리 중...';
-    try {
-      if (canChangePassword) {
-        const password = container.querySelector('#delete-password').value;
-        if (!password) throw new Error('현재 비밀번호를 입력해주세요.');
-        await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, password));
-      } else if (providers.some(p => p.providerId === 'google.com')) {
-        const provider = new GoogleAuthProvider(); provider.setCustomParameters({ prompt: 'select_account' });
-        await reauthenticateWithPopup(user, provider);
-      }
-      await deleteUser(user);
-      invalidateNicknameCache();
-      showToast('회원 탈퇴가 완료되었습니다.', 'success');
-      await logout().catch(() => {});
-      location.hash = '#/';
-    } catch (err) { showToast(err.message || '탈퇴 처리에 실패했습니다. 다시 로그인 후 시도해주세요.', 'error'); btn.disabled = false; btn.textContent = '회원 탈퇴'; }
+  el.innerHTML = `<div class="loading-center"><div class="spinner spinner--lg"></div></div>`;
+
+  const myPosts = await fetchMyPosts(user.uid);
+
+  el.innerHTML = `
+    <div style="max-width:720px;margin:0 auto">
+      <div class="card" style="margin-bottom:16px">
+        <div class="account-header">
+          <div class="avatar" style="width:72px;height:72px;font-size:24px;font-weight:800">
+            ${user.photoURL
+              ? `<img src="${user.photoURL}" alt="">`
+              : (user.displayName?.[0] || user.email?.[0] || '나')}
+          </div>
+          <div class="account-nickname">${user.displayName || user.email?.split('@')[0] || '익명'}</div>
+          <div class="account-level"><span class="badge badge--primary">일반 회원</span></div>
+          <div class="account-stats">
+            <div class="account-stat">
+              <div class="account-stat__num">${myPosts.length}</div>
+              <div class="account-stat__label">작성한 글</div>
+            </div>
+          </div>
+        </div>
+        <div class="card__footer" style="display:flex;gap:8px">
+          <button class="btn btn--ghost btn--sm" id="btn-logout">로그아웃</button>
+        </div>
+      </div>
+
+      <div class="section-header">
+        <h2 class="section-title">내가 쓴 글</h2>
+      </div>
+      ${myPosts.length
+        ? myPosts.map(p => renderFeedCard(p)).join('')
+        : `<div class="empty-state">
+            <div class="empty-state__icon">✏️</div>
+            <div class="empty-state__title">아직 쓴 글이 없어요</div>
+            <button class="btn btn--primary" style="margin-top:16px" onclick="navigate('/write')">첫 글 쓰기</button>
+          </div>`}
+    </div>`;
+
+  document.getElementById('btn-logout')?.addEventListener('click', async () => {
+    await signOut(auth);
+    toast.success('로그아웃됐어요');
+    navigate('/');
   });
 }
 
-function injectAccountStyle() {
-  if (document.getElementById('sosoking-account-style')) return;
-  const style = document.createElement('style'); style.id = 'sosoking-account-style';
-  style.textContent = `.account-page{padding:18px clamp(16px,4vw,34px) 112px}.account-hero,.account-layout{max-width:980px;margin-left:auto;margin-right:auto}.account-hero{display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:stretch;margin-bottom:14px}.account-hero-copy{display:flex;align-items:center;gap:14px;border:1px solid rgba(79,124,255,.14);border-radius:28px;padding:18px;background:rgba(255,255,255,.84);box-shadow:0 18px 54px rgba(55,90,170,.10)}.account-hero-copy img{width:58px;height:58px;border-radius:20px;background:#fff;transform:rotate(-6deg);box-shadow:0 12px 28px rgba(79,124,255,.18)}.account-hero-copy span,.account-card-head span{color:var(--predict-main);font-size:11px;font-weight:1000;letter-spacing:.14em}.account-hero-copy h1{margin:4px 0 5px;font-size:28px;letter-spacing:-.06em}.account-hero-copy p{margin:0;color:var(--predict-muted);font-size:13px;line-height:1.65}.account-hero>b{display:flex;align-items:center;justify-content:center;min-width:64px;border-radius:24px;background:linear-gradient(135deg,rgba(79,124,255,.12),rgba(255,92,138,.10));font-size:28px}.account-layout{display:grid;grid-template-columns:290px 1fr;gap:14px;align-items:start}.account-summary-card,.account-card{border:1px solid rgba(79,124,255,.14);border-radius:30px;padding:20px;background:rgba(255,255,255,.86);box-shadow:0 18px 54px rgba(55,90,170,.10)}.account-summary-card{text-align:center;position:sticky;top:14px}.account-summary-card img{width:76px;height:76px;border-radius:26px;background:#fff;transform:rotate(-6deg);box-shadow:0 16px 40px rgba(79,124,255,.18)}.account-summary-card b{display:block;margin-top:14px;font-size:20px;letter-spacing:-.04em}.account-summary-card span{display:inline-flex;margin-top:8px;padding:7px 9px;border-radius:999px;background:rgba(79,124,255,.08);color:var(--predict-main);font-size:12px;font-weight:1000}.account-summary-card p{color:var(--predict-muted);font-size:13px;line-height:1.5;word-break:break-all}.account-summary-card a,.account-card button{display:inline-flex;justify-content:center;align-items:center;border:0;border-radius:17px;padding:13px 14px;background:linear-gradient(135deg,#4f7cff,#7c5cff);color:#fff;text-decoration:none;font-weight:1000;box-shadow:0 12px 30px rgba(79,124,255,.22)}.account-panels{display:grid;gap:12px}.account-card{display:grid;gap:9px;position:relative;overflow:hidden}.account-card:before{content:'';position:absolute;inset:0 0 auto 0;height:5px;background:linear-gradient(135deg,#4f7cff,#7c5cff 56%,#ff5c8a)}.account-card-head{position:relative;z-index:1}.account-card-head h2{margin:5px 0 4px;font-size:21px;letter-spacing:-.05em}.account-card-head p{margin:0;color:var(--predict-muted);font-size:13px;line-height:1.6}.account-card label{color:var(--predict-muted);font-size:12px;font-weight:1000}.account-card input,.account-card .delete-confirm-row{width:100%;border:1px solid rgba(79,124,255,.14);border-radius:16px;padding:13px;background:var(--predict-bg);color:var(--predict-ink);font-family:inherit}.delete-confirm-row{display:flex;gap:8px;align-items:center}.delete-confirm-row input{width:auto}.account-row{display:grid;grid-template-columns:1fr 96px;gap:8px}.account-row button{background:rgba(79,124,255,.08);color:var(--predict-main);box-shadow:none;border:1px solid rgba(79,124,255,.16)}.account-status{min-height:18px;color:var(--predict-muted);font-size:12px;font-weight:900}.account-status.ok{color:var(--predict-money)}.account-status.error{color:var(--predict-hot)}.account-notice{padding:14px;border-radius:18px;background:rgba(79,124,255,.06);color:var(--predict-muted);font-size:13px;line-height:1.6}.account-card.install:before{background:linear-gradient(135deg,#10b981,#4f7cff)}.account-card.danger:before{background:linear-gradient(135deg,#ff5c8a,#ff9f43)}.account-card.danger button{background:linear-gradient(135deg,#ff5c8a,#ff7a5c)}.account-card.empty{text-align:center;max-width:620px;margin:0 auto}.account-card.empty p{color:var(--predict-muted);line-height:1.7}@media(max-width:820px){.account-hero{grid-template-columns:1fr}.account-hero .back-link{width:42px}.account-hero>b{display:none}.account-layout{grid-template-columns:1fr}.account-summary-card{position:static}.account-row{grid-template-columns:1fr}}[data-theme="dark"] .account-hero-copy,[data-theme="dark"] .account-summary-card,[data-theme="dark"] .account-card{background:rgba(16,23,34,.88);box-shadow:none}`;
-  document.head.appendChild(style);
+async function fetchMyPosts(uid) {
+  try {
+    const q = query(
+      collection(db, 'feeds'),
+      where('authorId', '==', uid),
+      orderBy('createdAt', 'desc'),
+      limit(20),
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch { return []; }
 }
-function escapeHtml(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function escapeAttr(s) { return escapeHtml(s).replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }

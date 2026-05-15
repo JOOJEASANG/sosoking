@@ -1,0 +1,55 @@
+import { appState } from '../app.js';
+import { navigate } from '../router.js';
+
+export function renderHeader() {
+  const el = document.getElementById('site-header');
+  if (!el) return;
+
+  const user = appState.user;
+  const path = window.location.hash.slice(1).split('?')[0] || '/';
+
+  el.innerHTML = `
+    <div class="site-header__inner">
+      <a class="site-header__logo" href="#/" aria-label="소소킹 홈">
+        <img src="/logo.svg" alt="" aria-hidden="true">
+        소소킹
+      </a>
+
+      <div class="site-header__search">
+        <div class="search-input-wrap">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/></svg>
+          <input class="search-input" type="search" placeholder="검색" id="header-search" autocomplete="off">
+        </div>
+      </div>
+
+      <nav class="site-header__nav" aria-label="주 내비게이션">
+        <a href="#/" class="${path === '/' ? 'active' : ''}">홈</a>
+        <a href="#/feed" class="${path === '/feed' ? 'active' : ''}">피드</a>
+        <a href="#/write" class="${path === '/write' ? 'active' : ''}">만들기</a>
+        <a href="#/mission" class="${path === '/mission' ? 'active' : ''}">미션</a>
+        ${user
+          ? `<a href="#/account" class="${path === '/account' ? 'active' : ''}">내정보</a>`
+          : `<a href="#/login" class="${path === '/login' ? 'active' : ''}">로그인</a>`
+        }
+      </nav>
+
+      <div class="site-header__mobile-menu">
+        <a href="#/write" class="btn btn--primary btn--sm" aria-label="만들기">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 4v16m8-8H4"/></svg>
+        </a>
+        ${user
+          ? `<a href="#/account" class="avatar avatar--sm" aria-label="내 정보">${user.displayName?.[0] ?? '나'}</a>`
+          : `<a href="#/login" class="btn btn--ghost btn--sm">로그인</a>`
+        }
+      </div>
+    </div>
+  `;
+
+  // 검색 엔터 핸들러
+  document.getElementById('header-search')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      const q = e.target.value.trim();
+      if (q) navigate(`/feed?q=${encodeURIComponent(q)}`);
+    }
+  });
+}

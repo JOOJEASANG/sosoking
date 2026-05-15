@@ -1,0 +1,114 @@
+/* base.css — 디자인 토큰, 리셋, 타이포그래피 */
+
+:root {
+  /* 컬러 - 브랜드 */
+  --color-primary:       #FF6B4A;
+  --color-primary-light: #FF8F73;
+  --color-primary-dark:  #E5522F;
+  --color-primary-bg:    #FFF3F0;
+
+  /* 컬러 - 카테고리 */
+  --color-cat-golra:   #4F8EF7;  /* 골라봐 - 파랑 */
+  --color-cat-usgyo:   #FF6B4A;  /* 웃겨봐 - 오렌지 */
+  --color-cat-malhe:   #22C080;  /* 말해봐 - 초록 */
+
+  /* 컬러 - 중립 */
+  --color-bg:          #F5F5F7;
+  --color-surface:     #FFFFFF;
+  --color-border:      #E5E7EB;
+  --color-border-light:#F0F0F2;
+
+  /* 컬러 - 텍스트 */
+  --color-text-primary:  #1A1A2E;
+  --color-text-secondary:#6B7280;
+  --color-text-muted:    #9CA3AF;
+  --color-text-inverse:  #FFFFFF;
+
+  /* 컬러 - 상태 */
+  --color-success: #22C080;
+  --color-warning: #F59E0B;
+  --color-danger:  #EF4444;
+  --color-info:    #3B82F6;
+
+  /* 타이포그래피 */
+  --font-base: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-size-xs:   11px;
+  --font-size-sm:   13px;
+  --font-size-base: 15px;
+  --font-size-md:   16px;
+  --font-size-lg:   18px;
+  --font-size-xl:   20px;
+  --font-size-2xl:  24px;
+  --font-size-3xl:  30px;
+  --line-height-tight:  1.3;
+  --line-height-base:   1.6;
+  --line-height-loose:  1.8;
+
+  /* 간격 */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* 라운드 */
+  --radius-sm:  10px;
+  --radius-md:  12px;
+  --radius-base:14px;
+  --radius-lg:  16px;
+  --radius-pill:999px;
+
+  /* 그림자 */
+  --shadow-xs:  0 1px 3px rgba(0,0,0,0.06);
+  --shadow-sm:  0 2px 8px rgba(0,0,0,0.08);
+  --shadow-md:  0 4px 16px rgba(0,0,0,0.10);
+  --shadow-lg:  0 8px 32px rgba(0,0,0,0.12);
+
+  /* 트랜지션 */
+  --transition-fast:   150ms ease;
+  --transition-base:   200ms ease;
+  --transition-slow:   300ms ease;
+
+  /* Z-인덱스 */
+  --z-base:    1;
+  --z-dropdown:100;
+  --z-modal:   200;
+  --z-toast:   300;
+  --z-header:  50;
+  --z-bottomnav:50;
+}
+
+/* 리셋 */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-base);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
+  color: var(--color-text-primary);
+  background-color: var(--color-bg);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: inherit; text-decoration: none; }
+ul, ol { list-style: none; }
+img, video { max-width: 100%; display: block; }
+button { cursor: pointer; font-family: inherit; border: none; background: none; }
+input, textarea, select { font-family: inherit; }
+
+/* 유틸리티 */
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.line-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
