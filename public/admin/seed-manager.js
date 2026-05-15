@@ -1,5 +1,6 @@
 import { auth, db, initAuth } from '/js/firebase.js';
 import {
+  addDoc,
   deleteDoc,
   doc,
   getDoc,
@@ -7,6 +8,7 @@ import {
   query,
   collection,
   serverTimestamp,
+  setDoc,
   updateDoc,
   where
 } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
@@ -15,11 +17,28 @@ const escapeHtml = (value) => String(value ?? '').replace(/&/g, '&amp;').replace
 const escapeAttr = (value) => escapeHtml(value).replace(/"/g, '&quot;').replace(/'/g, '&#039;');
 const cleanList = (value, max = 6) => String(value || '').split(',').map(v => v.trim()).filter(Boolean).slice(0, max);
 
+const SEED_ROWS = [
+  ['미친작명소','📸','미친작명소',['작명 센스 폭발 챌린지','이 장면에 딱 맞는 제목은?'],['이 사진에 제일 어울리는 작명은?','오늘의 작명왕은 누가 될까요?'],['사진 한 장을 보고 떠오르는 제목을 댓글로 남겨보세요. 제일 웃긴 작명은 추천을 많이 받아 위로 올라갑니다.','짧고 강한 제목일수록 좋습니다. 웃긴 제목, 황당한 제목, 묘하게 찰떡인 제목을 댓글로 남겨주세요.'],['댓글로 작명','웃긴 제목 추천','센스 작명','미친 제목']],
+  ['밸런스게임','⚖️','밸런스게임',['은근히 갈리는 소소 밸런스','친구랑 하면 갈릴 질문'],['당신의 선택은?','하나만 고른다면 어느 쪽인가요?'],['가볍게 고르고 댓글로 이유를 남겨보세요. 생각보다 취향이 갈릴 수 있습니다.','사소하지만 막상 고르려면 고민되는 질문입니다. 당신의 기준을 알려주세요.'],['A 선택','B 선택','둘 다 가능','댓글로 다른 선택']],
+  ['정답 퀴즈','✅','퀴즈',['오늘의 두뇌 워밍업','찍어도 재밌는 4지선다'],['정답은 무엇일까요?','가장 그럴듯한 답을 골라보세요.'],['정답을 고르고 댓글로 이유를 적어보세요. 쉬워 보여도 은근히 헷갈릴 수 있습니다.','정답을 몰라도 괜찮습니다. 가장 그럴듯한 답을 고르고 댓글로 추리해보세요.'],['1번','2번','3번','4번']],
+  ['정보공유','🔗','정보공유',['나만 알기 아까운 꿀팁','댓글로 더해가는 정보 모음'],['이 정보가 도움이 됐나요?','댓글로 추가 정보가 있을까요?'],['생활에 도움 되는 정보나 유용한 사이트를 댓글로 함께 추천해주세요.','사이트, 도구, 생활 팁, 공부 팁 모두 좋습니다. 도움이 된 정보를 댓글로 나눠주세요.'],['도움 됨','나중에 볼래요','이미 알고 있음','댓글로 추가 정보']],
+  ['릴레이소설','📚','릴레이소설',['댓글로 이어가는 즉흥 소설','오늘의 막장 릴레이 소설'],['다음 장면은 어떻게 이어질까요?','주인공은 어떤 선택을 할까요?'],['첫 문장: 문을 열자 전혀 예상하지 못한 장면이 펼쳐졌다. 댓글로 다음 장면을 이어주세요.','앞 댓글의 흐름을 받아도 되고, 갑자기 막장 전개로 틀어도 됩니다. 릴레이니까 가능합니다.'],['개그로 간다','반전으로 간다','감동으로 간다','공포로 간다']],
+  ['역할극방','🎭','역할극',['대사 한 줄로 참여하기','역할 정하고 바로 입장'],['어떤 역할로 참여할까요?','댓글로 어떤 역할을 맡고 싶나요?'],['상황: 갑자기 열린 회의실 문, 모두가 동시에 조용해졌다. 원하는 역할을 정하고 댓글로 대사를 이어가세요.','원하는 역할을 직접 만들고 입장해보세요. 예상 못 한 캐릭터가 나올수록 재밌습니다.'],['주인공','친구','수상한 사람','직접 역할 입력']],
+  ['영상 리액션','🎬','영상',['영상 느낌을 한 줄로','영상 리액션 배틀'],['이 영상 느낌은?','한 줄로 요약하면?'],['재밌게 본 영상이나 짧은 클립을 떠올리며 한 줄 리액션을 남겨보세요.','웃긴 장면, 공감 장면, 킹받는 장면을 댓글로 짧게 반응해보세요.'],['웃김','공감됨','킹받음','다시 보고 싶음']],
+  ['소소토론','💬','토론',['정답 없는 가벼운 논쟁','소소하지만 진심인 토론'],['당신은 어느 쪽인가요?','상황에 따라 달라질까요?'],['정답 없는 사소한 주제입니다. 선택하고 댓글로 이유를 남겨보세요.','생각보다 의견이 갈릴 수 있습니다. 선택 후 한 줄 이유를 남겨보세요.'],['완전 가능','조금 애매','절대 불가','상황에 따라']]
+];
+
 let root;
 let posts = [];
+let overrideInstalled = false;
 
 export function initSeedManager() {
   injectSeedManagerStyle();
+  installRunNowOverride();
+  if (root && document.body.contains(root)) {
+    loadSeedPosts();
+    return;
+  }
   root = document.createElement('section');
   root.className = 'admin-seed-manager';
   root.innerHTML = `
@@ -40,6 +59,84 @@ export function initSeedManager() {
   loadSeedPosts();
 }
 
+function todayKey() {
+  const now = new Date();
+  const korea = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
+  return `${korea.getFullYear()}-${String(korea.getMonth() + 1).padStart(2, '0')}-${String(korea.getDate()).padStart(2, '0')}`;
+}
+function pick(list, index, salt = 0) { return list[(index + salt) % list.length]; }
+function voteMap(options) { return Object.fromEntries(options.map(option => [option.replace(/[.~*/[\]]/g, '_'), 0])); }
+function makeSeedPost(row, dateKey, index, typeIndex) {
+  const [type, badge, tag, titles, questions, prompts, options] = row;
+  const salt = (Number(dateKey.replace(/-/g, '')) || 0) + typeIndex * 3;
+  const content = `${pick(prompts, index, salt)}\n\n이 글은 소소킹 운영팀이 오늘의 참여 주제로 등록한 샘플 피드입니다.`;
+  return {
+    type, badge, title: `${pick(titles, index, salt)} · ${dateKey}-${index + 1}`,
+    content, summary: content.slice(0, 180), question: pick(questions, index, salt), options,
+    votes: voteMap(options), voteTotal: 0, tags: [tag, '오늘의주제', '운영팀'], views: 0, likes: 0, comments: 0,
+    status: 'published', source: 'system_seed', authorId: 'system', authorName: '소소킹 운영팀',
+    imageUrl: '', mediaType: 'none', linkUrl: '', linkTitle: '', linkSummary: '', linkSource: '', embedUrl: '', thumbnailUrl: '', topComment: '',
+    seedKey: `${dateKey}:${type}:${index}`,
+    createdAt: serverTimestamp(), createdAtMs: Date.now() + (typeIndex * 10) + index, updatedAt: serverTimestamp()
+  };
+}
+
+function installRunNowOverride() {
+  if (overrideInstalled) return;
+  const button = document.getElementById('seed-run-now');
+  if (!button) return;
+  overrideInstalled = true;
+  button.addEventListener('click', async (event) => {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const detail = document.getElementById('seed-status-detail');
+    try {
+      await requireAdmin();
+      button.disabled = true;
+      button.textContent = '생성 확인 중...';
+      const result = await createOrFillTodaySeedPosts();
+      if (detail) detail.textContent = result.created > 0
+        ? `오늘 샘플 ${result.created}개 보충 생성 완료 · 현재 ${result.total}개`
+        : `오늘 샘플 이미 생성 완료 · 현재 ${result.total}개`;
+      await loadSeedPosts();
+    } catch (error) {
+      alert(error.message || '즉시 생성 실패');
+    } finally {
+      button.disabled = false;
+      button.textContent = '오늘 샘플 즉시 생성';
+    }
+  }, true);
+}
+
+async function createOrFillTodaySeedPosts() {
+  const dateKey = todayKey();
+  const snap = await getDocs(query(collection(db, 'soso_feed_posts'), where('source', '==', 'system_seed')));
+  const todayPosts = snap.docs.map(d => ({ id: d.id, ...(d.data() || {}) })).filter(post => String(post.seedKey || '').startsWith(`${dateKey}:`));
+  const existingKeys = new Set(todayPosts.map(post => post.seedKey));
+  let created = 0;
+  for (let typeIndex = 0; typeIndex < SEED_ROWS.length; typeIndex += 1) {
+    const row = SEED_ROWS[typeIndex];
+    const type = row[0];
+    for (let i = 0; i < 2; i += 1) {
+      const key = `${dateKey}:${type}:${i}`;
+      if (existingKeys.has(key)) continue;
+      await addDoc(collection(db, 'soso_feed_posts'), makeSeedPost(row, dateKey, i, typeIndex));
+      existingKeys.add(key);
+      created += 1;
+    }
+  }
+  await setDoc(doc(db, 'system_jobs', `daily_seed_${dateKey}`), {
+    date: dateKey,
+    count: existingKeys.size,
+    createdByAdminFill: created,
+    status: 'done',
+    fallback: true,
+    updatedAt: serverTimestamp(),
+    createdAtMs: Date.now()
+  }, { merge: true });
+  return { created, total: existingKeys.size };
+}
+
 async function requireAdmin() {
   await initAuth();
   const user = auth.currentUser;
@@ -50,6 +147,7 @@ async function requireAdmin() {
 }
 
 async function loadSeedPosts() {
+  if (!root) return;
   const status = root.querySelector('#seed-manager-status');
   const list = root.querySelector('#seed-manager-list');
   try {
@@ -114,22 +212,13 @@ function openEditor(id) {
         <div><b>자동 생성 글 수정</b><p>저장하면 Firestore와 사용자 피드에 바로 반영됩니다.</p></div>
         <button type="button" id="seed-edit-close">×</button>
       </div>
-      <label>유형</label>
-      <input id="seed-edit-type" value="${escapeAttr(post.type || '')}" maxlength="30">
-      <label>제목</label>
-      <input id="seed-edit-title" value="${escapeAttr(post.title || '')}" maxlength="90">
-      <label>본문</label>
-      <textarea id="seed-edit-content" maxlength="1200">${escapeHtml(post.content || '')}</textarea>
-      <label>질문</label>
-      <input id="seed-edit-question" value="${escapeAttr(post.question || '')}" maxlength="90">
-      <label>선택지 <small>쉼표로 구분, 최대 4개</small></label>
-      <input id="seed-edit-options" value="${escapeAttr((post.options || []).join(', '))}">
-      <label>태그 <small>쉼표로 구분, 최대 6개</small></label>
-      <input id="seed-edit-tags" value="${escapeAttr((post.tags || []).join(', '))}">
-      <div class="seed-modal-actions">
-        <button type="button" id="seed-edit-cancel">취소</button>
-        <button type="submit" class="primary">저장하기</button>
-      </div>
+      <label>유형</label><input id="seed-edit-type" value="${escapeAttr(post.type || '')}" maxlength="30">
+      <label>제목</label><input id="seed-edit-title" value="${escapeAttr(post.title || '')}" maxlength="90">
+      <label>본문</label><textarea id="seed-edit-content" maxlength="1200">${escapeHtml(post.content || '')}</textarea>
+      <label>질문</label><input id="seed-edit-question" value="${escapeAttr(post.question || '')}" maxlength="90">
+      <label>선택지 <small>쉼표로 구분, 최대 4개</small></label><input id="seed-edit-options" value="${escapeAttr((post.options || []).join(', '))}">
+      <label>태그 <small>쉼표로 구분, 최대 6개</small></label><input id="seed-edit-tags" value="${escapeAttr((post.tags || []).join(', '))}">
+      <div class="seed-modal-actions"><button type="button" id="seed-edit-cancel">취소</button><button type="submit" class="primary">저장하기</button></div>
       <small id="seed-edit-status"></small>
     </form>
   `;
