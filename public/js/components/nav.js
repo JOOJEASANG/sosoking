@@ -27,8 +27,8 @@ function injectNavStyle() {
       height:70px!important;padding:7px!important;gap:0!important;z-index:300!important;
       display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;
       border:1px solid rgba(255,255,255,.42)!important;border-radius:26px!important;
-      background:linear-gradient(135deg,rgba(255,255,255,.88),rgba(245,248,255,.74))!important;
-      box-shadow:0 18px 55px rgba(24,34,70,.18),0 3px 0 rgba(255,255,255,.78) inset!important;
+      background:linear-gradient(135deg,rgba(255,255,255,.92),rgba(248,244,255,.80))!important;
+      box-shadow:0 20px 60px rgba(80,30,180,.20),0 3px 0 rgba(255,255,255,.85) inset!important;
       backdrop-filter:blur(22px) saturate(1.35)!important;-webkit-backdrop-filter:blur(22px) saturate(1.35)!important;
       overflow:visible!important;box-sizing:border-box!important;
     }
