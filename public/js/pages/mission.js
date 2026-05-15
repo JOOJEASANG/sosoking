@@ -1,7 +1,7 @@
 import { injectSosoStyle } from '../components/soso-style.js';
 
 const MISSIONS = [
-  { icon:'📸', type:'사진 제목학원', title:'이 사진 제목 뭐가 제일 웃김?', hint:'웃긴 사진이나 짤을 올리고 제목 후보 4개를 만들어보세요.', options:['현실 부정 중','퇴근 1분 전','아무 일도 없었다','댓글로 제목 달기'] },
+  { icon:'📸', type:'미친작명소', title:'이 사진 제목 뭐가 제일 웃김?', hint:'웃긴 사진이나 짤을 올리고 제목 후보를 만들어보세요.', options:['현실 부정 중','퇴근 1분 전','아무 일도 없었다','댓글로 제목 달기'] },
   { icon:'⚖️', type:'밸런스게임', title:'평생 하나만 먹는다면?', hint:'너무 어렵지 않고 바로 고를 수 있는 A/B 선택을 만들어보세요.', options:['라면','치킨','떡볶이','댓글로 다른 선택'] },
   { icon:'💬', type:'소소토론', title:'친구 카톡 답장 3시간 뒤면 서운하다?', hint:'사소하지만 갈리는 주제를 올리면 댓글이 잘 붙습니다.', options:['서운하다','괜찮다','상황마다 다르다','읽씹보다 낫다'] },
   { icon:'🧠', type:'퀴즈', title:'이 상황에서 제일 센스 있는 답은?', hint:'정답형보다 센스형 퀴즈가 댓글 반응을 만들기 좋습니다.', options:['1번','2번','3번','댓글이 정답'] },
@@ -16,7 +16,7 @@ export function renderMission(container) {
   injectMissionStyle();
   const today = MISSIONS[new Date().getDate() % MISSIONS.length];
   container.innerHTML = `
-    <main class="predict-app mission-page-v1 mission-dashboard">
+    <main class="predict-app mission-page mission-page-v1 mission-dashboard">
       <section class="mission-hero mission-dash-hero">
         <div class="mission-copy">
           <span>TODAY MISSION</span>
@@ -36,7 +36,7 @@ export function renderMission(container) {
       </section>
       <section class="mission-note">
         <b>미션 활용 팁</b>
-        <p>미션 카드를 누르면 만들기 화면으로 이동합니다. 정보공유, 영상 리액션, 릴레이소설, 역할극방 같은 유형을 섞으면 소소킹만의 재미있는 피드가 만들어집니다.</p>
+        <p>미션 카드를 누르면 만들기 화면으로 이동합니다. 미친작명소, 정보공유, 영상 리액션, 릴레이소설, 역할극방 같은 유형을 섞으면 소소킹만의 재미있는 피드가 만들어집니다.</p>
       </section>
     </main>
   `;
