@@ -2,7 +2,7 @@
 
 /* ── 홈 ── */
 .home-hero {
-  background: linear-gradient(135deg, #FF6B4A 0%, #FF9E4A 100%);
+  background: linear-gradient(135deg, #FF5533 0%, #FF8C00 100%);
   border-radius: var(--radius-lg);
   padding: var(--space-8) var(--space-6);
   color: #fff; margin-bottom: var(--space-6);
@@ -50,11 +50,11 @@
   text-align: center;
 }
 .home-cat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
-.home-cat-card--golra { background: #EEF4FF; border-color: #C7DCFF; }
+.home-cat-card--golra { background: #EEF4FF; border-color: #C7DCFF; box-shadow: 3px 4px 0 rgba(59,130,246,0.2); }
 .home-cat-card--golra:hover { border-color: var(--color-cat-golra); }
-.home-cat-card--usgyo { background: #FFF3F0; border-color: #FFD5C8; }
+.home-cat-card--usgyo { background: #FFF0ED; border-color: #FFD5C8; box-shadow: 3px 4px 0 rgba(255,85,51,0.2); }
 .home-cat-card--usgyo:hover { border-color: var(--color-cat-usgyo); }
-.home-cat-card--malhe { background: #EDFAF4; border-color: #B6EDDA; }
+.home-cat-card--malhe { background: #ECFDF5; border-color: #A7F3D0; box-shadow: 3px 4px 0 rgba(16,185,129,0.2); }
 .home-cat-card--malhe:hover { border-color: var(--color-cat-malhe); }
 .home-cat-card__icon { font-size: 32px; margin-bottom: var(--space-2); }
 .home-cat-card__name { font-size: var(--font-size-md); font-weight: 800; }
