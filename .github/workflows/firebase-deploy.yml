@@ -44,8 +44,8 @@ jobs:
           echo "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-service-account.json"
           echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/firebase-service-account.json" >> "$GITHUB_ENV"
 
-      - name: Deploy Hosting, Firestore and Storage first
-        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only hosting,firestore,storage --force
+      - name: Deploy Hosting and Firestore first
+        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only hosting,firestore --force
 
       - name: Deploy Functions separately
         run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only functions --force
