@@ -31,7 +31,7 @@ export function renderFeedCard(post) {
   const commentCount = post.commentCount || 0;
 
   return `
-    <article class="card card--hover feed-card" onclick="navigate('/detail/${post.id}')">
+    <article class="card card--hover feed-card feed-card--${meta.cat}" onclick="navigate('/detail/${post.id}')">
       <div class="feed-card__header" style="padding-bottom:0">
         <div style="flex:1;min-width:0">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">

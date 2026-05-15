@@ -47,7 +47,10 @@
 }
 
 /* ── 피드 카드 ── */
-.feed-card { margin-bottom: var(--space-4); }
+.feed-card { margin-bottom: var(--space-4); border-left: 4px solid transparent; }
+.feed-card--golra { border-left-color: var(--color-cat-golra); }
+.feed-card--usgyo { border-left-color: var(--color-cat-usgyo); }
+.feed-card--malhe { border-left-color: var(--color-cat-malhe); }
 .feed-card__header {
   display: flex; align-items: flex-start; gap: var(--space-3);
   padding: var(--space-4);
