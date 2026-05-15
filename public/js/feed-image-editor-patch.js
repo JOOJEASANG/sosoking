@@ -12,7 +12,7 @@ let boundForm = null;
 let scheduled = false;
 
 const BADGE_BY_TYPE = {
-  '미친작명소':'📸','사진 제목학원':'📸','삼행시짓기':'📝','댓글 배틀':'🔥','웃참 챌린지':'🤣','밸런스게임':'⚖️','민심 투표':'🗳️','선택지 배틀':'🥊','정답 퀴즈':'✅','센스 퀴즈':'🧩','심리 테스트':'🔮','릴레이소설':'📚','막장드라마':'💥','역할극방':'🎭','정보공유':'🔗','꿀팁 링크':'💡','사이트 추천':'🛠️','영상 리액션':'🎬','이미지 링크':'🖼️','소소토론':'💬','생각 갈림':'🤔','AI놀이':'🤖','AI 역할극':'🎙️'
+  '미친작명소':'📸','사진 제목학원':'📸','삼행시짓기':'📝','삼행시':'📝','댓글 배틀':'🔥','댓글배틀':'🔥','웃참 챌린지':'🤣','웃참챌린지':'🤣','밸런스게임':'⚖️','민심 투표':'🗳️','민심투표':'🗳️','선택지 배틀':'🥊','선택지배틀':'🥊','퀴즈':'🧠','정답 퀴즈':'✅','센스 퀴즈':'🧩','심리 테스트':'🔮','심리테스트':'🔮','릴레이소설':'📚','막장드라마':'💥','역할극방':'🎭','정보공유':'🔗','꿀팁 링크':'💡','꿀팁':'💡','사이트 추천':'🛠️','영상 리액션':'🎬','영상리액션':'🎬','이미지 링크':'🖼️','소소토론':'💬','생각 갈림':'🤔','생각갈림':'🤔','AI놀이':'🤖','AI 역할극':'🎙️'
 };
 
 function injectStyle() {
@@ -30,11 +30,11 @@ function injectStyle() {
 function clean(v, max = 500) { return String(v || '').replace(/[<>]/g, '').replace(/\s{2,}/g, ' ').trim().slice(0, max); }
 function normalizeType(v) { const type = clean(v || '미친작명소', 30); return type === '사진 제목학원' ? '미친작명소' : type; }
 function getType() { return normalizeType(document.querySelector('#feed-type')?.value || document.querySelector('#type-grid button.active')?.dataset?.type || '미친작명소'); }
-function getLimit(type = getType()) { return type === '미친작명소' ? 3 : ['정보공유','꿀팁 링크','사이트 추천'].includes(type) ? 10 : 5; }
+function getLimit(type = getType()) { return type === '미친작명소' ? 3 : ['정보공유','꿀팁 링크','사이트 추천','꿀팁'].includes(type) ? 10 : 5; }
 function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function safeVoteKey(v) { return clean(v, 40).replace(/[.~*/\[\]]/g, '_') || 'option'; }
 function isImageUrl(url) { return /\.(png|jpe?g|webp|gif)(\?.*)?$/i.test(String(url || '')); }
-function mediaTypeFor(type, linkUrl, hasImages) { if (hasImages) return 'upload'; if (!linkUrl) return 'none'; if (/youtu\.be|youtube\.com/.test(linkUrl)) return 'youtube'; if (isImageUrl(linkUrl)) return 'image_link'; return ['정보공유','꿀팁 링크','사이트 추천'].includes(type) ? 'link_summary' : 'link'; }
+function mediaTypeFor(type, linkUrl, hasImages) { if (hasImages) return 'upload'; if (!linkUrl) return 'none'; if (/youtu\.be|youtube\.com/.test(linkUrl)) return 'youtube'; if (isImageUrl(linkUrl)) return 'image_link'; return ['정보공유','꿀팁 링크','사이트 추천','꿀팁'].includes(type) ? 'link_summary' : 'link'; }
 function host(url) { try { return new URL(url).hostname.replace(/^www\./,''); } catch { return ''; } }
 async function authorName(user) { if (!user || user.isAnonymous) return '익명 소소러'; try { const s = await getDoc(doc(db, 'users', user.uid)); if (s.exists() && s.data().nickname) return clean(s.data().nickname, 40); } catch {} return clean(user.displayName || user.email || '소소킹 유저', 40); }
 function fileDataUrl(file) { return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result || '')); r.onerror = rej; r.readAsDataURL(file); }); }
@@ -120,8 +120,8 @@ function patchImageInput() {
 
 function patchThreeLine() {
   const typeGrid = document.querySelector('#type-grid'); if (!typeGrid) return;
-  const cat = document.querySelector('.category-grid button.active')?.dataset?.category || 'fun';
-  if (cat === 'fun' && !typeGrid.querySelector('[data-type="삼행시짓기"]')) { const b = document.createElement('button'); b.type = 'button'; b.dataset.type = '삼행시짓기'; b.innerHTML = '<b>📝</b> 삼행시짓기'; typeGrid.appendChild(b); }
+  const cat = document.querySelector('.category-grid button.active')?.dataset?.category || 'comment';
+  if (cat === 'comment' && !typeGrid.querySelector('[data-type="삼행시짓기"]')) { const b = document.createElement('button'); b.type = 'button'; b.dataset.type = '삼행시짓기'; b.innerHTML = '<b>📝</b> 삼행시짓기'; typeGrid.appendChild(b); }
 }
 function applyThreeLine() {
   const t = document.querySelector('#feed-type'); if (t) t.value = '삼행시짓기';
@@ -147,7 +147,8 @@ async function submitPatched(e) {
     const options = [...document.querySelectorAll('.feed-option-input')].map(i => clean(i.value, 40)).filter(Boolean).slice(0,4); const finalOptions = options.length >= 2 ? options : ['공감한다','애매하다','반대한다','댓글로 말한다'];
     const tags = clean(document.querySelector('#feed-tags')?.value, 120).split(',').map(v => clean(v.replace(/^#/, ''), 18)).filter(Boolean).slice(0, 6);
     const linkUrl = clean(document.querySelector('#feed-link-url')?.value, 700), mediaType = mediaTypeFor(type, linkUrl, imageUrls.length > 0);
-    const payload = { type, badge: BADGE_BY_TYPE[type] || '✨', title, content, summary: clean(content, 180), question: question || '사람들은 어떻게 생각할까요?', options: finalOptions, votes: Object.fromEntries(finalOptions.map(o => [safeVoteKey(o), 0])), voteTotal:0, tags: tags.length ? tags : ['소소피드'], views:0, likes:0, comments:0, status:'published', source:user.isAnonymous?'anonymous_user':'user', authorId:user.uid, authorName: await authorName(user), imageUrl: imageUrls[0] || (mediaType === 'image_link' ? linkUrl : ''), imageUrls, imageCount:imageUrls.length, mediaType, linkUrl, linkTitle: clean(document.querySelector('#feed-link-title')?.value,120), linkSummary: clean(document.querySelector('#feed-link-summary')?.value,260), linkSource: clean(host(linkUrl),80), embedUrl:'', thumbnailUrl:'', topComment:'', createdAt:serverTimestamp(), createdAtMs:Date.now(), updatedAt:serverTimestamp() };
+    const quizPayload = typeof window.sosoBuildQuizPayload === 'function' ? await window.sosoBuildQuizPayload(type) : { quizMode:'', quizAnswerHash:'', quizAnswerSalt:'', quizNote:'' };
+    const payload = { type, badge: BADGE_BY_TYPE[type] || '✨', title, content, summary: clean(content, 180), question: question || '사람들은 어떻게 생각할까요?', options: finalOptions, votes: Object.fromEntries(finalOptions.map(o => [safeVoteKey(o), 0])), voteTotal:0, tags: tags.length ? tags : ['소소피드'], views:0, likes:0, comments:0, status:'published', source:user.isAnonymous?'anonymous_user':'user', authorId:user.uid, authorName: await authorName(user), imageUrl: imageUrls[0] || (mediaType === 'image_link' ? linkUrl : ''), imageUrls, imageCount:imageUrls.length, mediaType, linkUrl, linkTitle: clean(document.querySelector('#feed-link-title')?.value,120), linkSummary: clean(document.querySelector('#feed-link-summary')?.value,260), linkSource: clean(host(linkUrl),80), embedUrl:'', thumbnailUrl:'', quizMode: quizPayload.quizMode || '', quizAnswerHash: quizPayload.quizAnswerHash || '', quizAnswerSalt: quizPayload.quizAnswerSalt || '', quizNote: quizPayload.quizNote || '', topComment:'', createdAt:serverTimestamp(), createdAtMs:Date.now(), updatedAt:serverTimestamp() };
     if (status) status.textContent = '소소피드 등록 중...';
     const ref = await addDoc(collection(db, 'soso_feed_posts'), payload); selectedImages = []; location.hash = `#/feed/${ref.id}`;
   } catch (err) { alert(err.message || '등록에 실패했습니다.'); if (status) status.textContent = err.message || '등록 실패'; }
@@ -158,8 +159,8 @@ function bind() {
   const form = document.querySelector('#feed-write-form'); if (!form || boundForm === form) return; boundForm = form; selectedImages = [];
   form.addEventListener('submit', submitPatched, true);
   document.addEventListener('click', e => { const card = e.target?.closest?.('.soso-img-card'), act = e.target?.dataset?.imgAct; if (!card || !act) return; e.preventDefault(); e.stopPropagation(); const id = card.dataset.id; if (act==='primary') setPrimary(id); if (act==='crop') openCrop(id); if (act==='left') moveImage(id,-1); if (act==='right') moveImage(id,1); if (act==='remove') removeImage(id); }, true);
-  document.addEventListener('click', e => { const btn = e.target?.closest?.('#type-grid button[data-type]'); if (!btn) return; setTimeout(() => { if (btn.dataset.type === '삼행시짓기') applyThreeLine(); renderImages(); }, 40); }, true);
-  document.addEventListener('input', e => { if (getType() === '삼행시짓기' && ['feed-title','feed-content'].includes(e.target?.id)) renderThreeLineBox(); }, true);
+  document.addEventListener('click', e => { const btn = e.target?.closest?.('#type-grid button[data-type]'); if (!btn) return; setTimeout(() => { if (btn.dataset.type === '삼행시짓기' || btn.dataset.type === '삼행시') applyThreeLine(); renderImages(); }, 40); }, true);
+  document.addEventListener('input', e => { if (['삼행시짓기','삼행시'].includes(getType()) && ['feed-title','feed-content'].includes(e.target?.id)) renderThreeLineBox(); }, true);
 }
 
 function patch() { if (!location.hash.startsWith('#/feed/new')) return; injectStyle(); patchThreeLine(); patchImageInput(); bind(); renderImages(); }
