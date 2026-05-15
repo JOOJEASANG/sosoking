@@ -6,6 +6,7 @@ import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/fireba
 import('./desktop-pages-final-patch.js').catch(() => {});
 import('./write-category-options-patch.js').catch(() => {});
 import('./pc-mobile-navigation-patch.js').catch(() => {});
+import('./pc-header-and-home-real-data-patch.js').catch(() => {});
 
 function validNickname(nick) {
   if (!nick || nick.length < 2 || nick.length > 12) return '닉네임은 2~12자여야 합니다.';
