@@ -1,0 +1,1041 @@
+/* ═══════════════════════════════════════════════════════════════
+   소소킹 V3 Design System
+   통합 디자인 토큰 + 전체 UI 품질 개선
+   이 파일은 기존 CSS 레이어보다 나중에 로드되어 최종 스타일을 확정함
+═══════════════════════════════════════════════════════════════ */
+
+/* === 1. 디자인 토큰 (V3 변수 시스템) === */
+:root {
+  --v3-brand:        #7c5cff;
+  --v3-brand-dark:   #5a38e0;
+  --v3-coral:        #ff7a59;
+  --v3-pink:         #ff5c8a;
+  --v3-blue:         #4f7cff;
+  --v3-yellow:       #ffe05a;
+  --v3-green:        #22c55e;
+
+  --v3-grad:         linear-gradient(135deg, #7c5cff 0%, #ff5c8a 100%);
+  --v3-grad-warm:    linear-gradient(135deg, #ff7a59 0%, #ff5c8a 52%, #7c5cff 100%);
+  --v3-grad-cool:    linear-gradient(135deg, #4f7cff 0%, #7c5cff 100%);
+  --v3-grad-sun:     linear-gradient(135deg, #ffe05a 0%, #ff9f43 100%);
+  --v3-grad-page:    linear-gradient(160deg, #faf8ff 0%, #f6f4ff 50%, #fff4f8 100%);
+
+  --v3-bg:           #f8f7ff;
+  --v3-bg-warm:      #fff9f6;
+  --v3-card:         #ffffff;
+  --v3-card-alt:     #faf9ff;
+  --v3-border:       rgba(120, 92, 255, 0.12);
+  --v3-border-strong: rgba(120, 92, 255, 0.24);
+
+  --v3-shadow-xs:    0 2px 12px rgba(80, 60, 200, 0.08);
+  --v3-shadow-sm:    0 6px 24px rgba(80, 60, 200, 0.11);
+  --v3-shadow-md:    0 14px 44px rgba(80, 60, 200, 0.14);
+  --v3-shadow-lg:    0 24px 72px rgba(80, 60, 200, 0.18);
+  --v3-shadow-glow:  0 0 0 4px rgba(124, 92, 255, 0.18);
+
+  --v3-text:         #0d1426;
+  --v3-text-2:       #2d3654;
+  --v3-muted:        #5e6a8a;
+  --v3-subtle:       #9aa3bd;
+  --v3-placeholder:  rgba(94, 106, 138, 0.5);
+
+  --v3-r-xs:  8px;
+  --v3-r-sm:  14px;
+  --v3-r-md:  22px;
+  --v3-r-lg:  30px;
+  --v3-r-xl:  38px;
+  --v3-r-pill: 999px;
+
+  --v3-transition: 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme="dark"] {
+  --v3-bg:           #07080f;
+  --v3-bg-warm:      #0d0e18;
+  --v3-card:         #111420;
+  --v3-card-alt:     #0e1019;
+  --v3-border:       rgba(124, 92, 255, 0.20);
+  --v3-border-strong: rgba(124, 92, 255, 0.38);
+
+  --v3-shadow-xs:    0 2px 12px rgba(0, 0, 0, 0.28);
+  --v3-shadow-sm:    0 6px 24px rgba(0, 0, 0, 0.36);
+  --v3-shadow-md:    0 14px 44px rgba(0, 0, 0, 0.44);
+  --v3-shadow-lg:    0 24px 72px rgba(0, 0, 0, 0.55);
+
+  --v3-text:         #eef3ff;
+  --v3-text-2:       #c8d2ee;
+  --v3-muted:        #8a98b8;
+  --v3-subtle:       #5a6480;
+  --v3-placeholder:  rgba(138, 152, 184, 0.5);
+  --v3-grad-page:    linear-gradient(160deg, #07080f 0%, #09091a 50%, #0f090e 100%);
+}
+
+
+/* === 2. 전역 기반 스타일 === */
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--v3-bg) !important;
+  color: var(--v3-text) !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 기존 body::before/after 블롭 제거 (sosoking-delight.css) */
+body::before, body::after {
+  display: none !important;
+}
+
+/* 스크롤바 */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(124, 92, 255, 0.22);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(124, 92, 255, 0.42);
+}
+
+/* 텍스트 선택 */
+::selection {
+  background: rgba(124, 92, 255, 0.18);
+  color: var(--v3-text);
+}
+
+/* 포커스 링 */
+:focus-visible {
+  outline: 2px solid var(--v3-brand);
+  outline-offset: 3px;
+}
+
+
+/* === 3. 페이지 배경 통합 === */
+.predict-app,
+.soso-feed-page,
+.simple-page,
+.soso-doc-page,
+.auth-page,
+.auth-page-v2,
+.account-page,
+.mission-page-v1,
+.feedback-page,
+.games-page-v1 {
+  background: var(--v3-bg) !important;
+  color: var(--v3-text) !important;
+}
+
+/* PC 모드 페이지 배경 통일 */
+@media (min-width: 901px) {
+  body.soso-mode-pc main.predict-app,
+  body.soso-mode-pc .soso-feed-page,
+  body.soso-mode-pc .account-page,
+  body.soso-mode-pc .mission-page,
+  body.soso-mode-pc .guide-page,
+  body.soso-mode-pc .feedback-page {
+    background: var(--v3-bg) !important;
+    color: var(--v3-text) !important;
+  }
+
+  body.soso-mode-pc {
+    background: var(--v3-bg) !important;
+  }
+}
+
+
+/* === 4. 카드 디자인 통합 === */
+.card,
+.dash-feed-panel,
+.dash-side-card,
+.dash-feed-card,
+.feed-card,
+.write-card,
+.write-preview,
+.side-card,
+.side-card-v4,
+.feed-stat-card,
+.feed-dashboard article,
+.auth-card-v2,
+.auth-hero-card,
+.account-card,
+.account-summary-card,
+.mission-card-live,
+.mission-mini-card,
+.mission-note,
+.guide-card-clean,
+.soso-doc-card,
+.doc-hero-copy,
+.feedback-card,
+.feedback-info-card,
+.comment-item {
+  background: var(--v3-card) !important;
+  border: 1px solid var(--v3-border) !important;
+  box-shadow: var(--v3-shadow-sm) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* 카드 호버 인터랙션 */
+.feed-card,
+.guide-card-clean,
+.dash-feed-card,
+.dash-category,
+.game-card,
+.mode-card {
+  transition:
+    transform var(--v3-transition),
+    box-shadow var(--v3-transition) !important;
+}
+
+.feed-card:hover,
+.guide-card-clean:hover,
+.game-card:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: var(--v3-shadow-md) !important;
+}
+
+.dash-feed-card:hover {
+  transform: translateY(-5px) !important;
+  box-shadow: var(--v3-shadow-md) !important;
+}
+
+.dash-category:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: var(--v3-shadow-md) !important;
+}
+
+/* 다크 모드 카드 */
+[data-theme="dark"] .card,
+[data-theme="dark"] .feed-card,
+[data-theme="dark"] .write-card,
+[data-theme="dark"] .write-preview,
+[data-theme="dark"] .side-card,
+[data-theme="dark"] .auth-card-v2,
+[data-theme="dark"] .account-card,
+[data-theme="dark"] .mission-card-live,
+[data-theme="dark"] .guide-card-clean,
+[data-theme="dark"] .feedback-card,
+[data-theme="dark"] .comment-item,
+[data-theme="dark"] .dash-feed-panel,
+[data-theme="dark"] .dash-side-card,
+[data-theme="dark"] .dash-feed-card {
+  background: var(--v3-card) !important;
+  border-color: var(--v3-border) !important;
+  box-shadow: var(--v3-shadow-xs) !important;
+}
+
+
+/* === 5. 버튼 스타일 개선 === */
+.btn-primary,
+.write-submit,
+.feed-participate,
+.auth-form-v2 > button,
+.modal-save-btn,
+.mission-primary {
+  background: var(--v3-grad-warm) !important;
+  border: none !important;
+  color: #fff !important;
+  font-weight: 900 !important;
+  border-radius: var(--v3-r-md) !important;
+  box-shadow: 0 8px 28px rgba(255, 122, 89, 0.30) !important;
+  transition: transform var(--v3-transition), box-shadow var(--v3-transition) !important;
+  cursor: pointer;
+}
+
+.btn-primary:hover,
+.write-submit:hover,
+.mission-primary:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 14px 40px rgba(255, 122, 89, 0.42) !important;
+}
+
+.btn-primary:active,
+.write-submit:active {
+  transform: translateY(0) !important;
+  box-shadow: 0 4px 16px rgba(255, 122, 89, 0.25) !important;
+}
+
+/* 댓글 제출 버튼 */
+.comment-form button {
+  background: var(--v3-grad-cool) !important;
+  border: none !important;
+  color: #fff !important;
+  border-radius: var(--v3-r-sm) !important;
+  box-shadow: 0 6px 18px rgba(79, 124, 255, 0.28) !important;
+}
+
+/* feed actions 버튼 */
+.feed-card-bottom a,
+.detail-actions button {
+  background: var(--v3-grad-cool) !important;
+  border-radius: var(--v3-r-sm) !important;
+}
+
+/* 홈 CTA 버튼 */
+.pc-home-like-shot .dash-hero-actions a.primary,
+.pc-home-like-shot .dash-bottom-banners button,
+.pc-home-like-shot .dash-bottom-banners a {
+  background: var(--v3-grad-warm) !important;
+  border: none !important;
+  color: #fff !important;
+  box-shadow: 0 12px 36px rgba(255, 122, 89, 0.30) !important;
+}
+
+/* 피드 작성 제출 */
+.dash-hero-actions a.primary {
+  transition: transform var(--v3-transition), box-shadow var(--v3-transition) !important;
+}
+.dash-hero-actions a.primary:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 18px 48px rgba(255, 122, 89, 0.42) !important;
+}
+
+
+/* === 6. 폼 입력 === */
+.form-input, .form-textarea,
+.write-card input, .write-card textarea,
+.comment-form input,
+.write-card select {
+  background: var(--v3-card-alt) !important;
+  border: 1.5px solid var(--v3-border) !important;
+  color: var(--v3-text) !important;
+  border-radius: var(--v3-r-sm) !important;
+  transition: border-color var(--v3-transition), box-shadow var(--v3-transition) !important;
+}
+
+.form-input:focus, .form-textarea:focus,
+.write-card input:focus, .write-card textarea:focus,
+.comment-form input:focus {
+  border-color: var(--v3-brand) !important;
+  box-shadow: 0 0 0 3px rgba(124, 92, 255, 0.14) !important;
+  background: var(--v3-card) !important;
+  outline: none !important;
+}
+
+.form-input::placeholder, .form-textarea::placeholder,
+.write-card input::placeholder, .write-card textarea::placeholder {
+  color: var(--v3-placeholder) !important;
+}
+
+[data-theme="dark"] .form-input,
+[data-theme="dark"] .form-textarea,
+[data-theme="dark"] .write-card input,
+[data-theme="dark"] .write-card textarea,
+[data-theme="dark"] .comment-form input {
+  background: rgba(124, 92, 255, 0.08) !important;
+  border-color: rgba(124, 92, 255, 0.22) !important;
+}
+
+/* 폼 라벨 색상 */
+.form-label { color: var(--v3-brand) !important; }
+
+/* 업로드 박스 */
+.upload-box {
+  border-color: rgba(124, 92, 255, 0.28) !important;
+  background: rgba(124, 92, 255, 0.05) !important;
+  border-radius: var(--v3-r-md) !important;
+}
+
+
+/* === 7. 배지/태그 === */
+.badge-gold {
+  background: rgba(255, 224, 90, 0.18) !important;
+  color: #9a6600 !important;
+  border-color: rgba(255, 200, 30, 0.35) !important;
+}
+[data-theme="dark"] .badge-gold {
+  color: var(--v3-yellow) !important;
+  background: rgba(255, 224, 90, 0.15) !important;
+}
+
+.feed-tags span, .side-tags span {
+  background: rgba(124, 92, 255, 0.10) !important;
+  color: var(--v3-brand) !important;
+  border-radius: var(--v3-r-pill) !important;
+}
+
+[data-theme="dark"] .feed-tags span,
+[data-theme="dark"] .side-tags span {
+  background: rgba(124, 92, 255, 0.18) !important;
+}
+
+
+/* === 8. 피드 카드 강화 === */
+.feed-card {
+  border-radius: var(--v3-r-lg) !important;
+  overflow: hidden;
+}
+
+/* 상단 컬러 스트라이프 */
+.feed-card::before {
+  background: var(--v3-grad-warm) !important;
+  height: 4px !important;
+  border-radius: 0 !important;
+}
+
+/* 투표 옵션 버튼 */
+.feed-option, .feed-vote-option {
+  background: var(--v3-card-alt) !important;
+  border: 1px solid var(--v3-border) !important;
+  border-radius: var(--v3-r-sm) !important;
+  transition: background var(--v3-transition), border-color var(--v3-transition) !important;
+}
+
+.feed-vote-option.selected {
+  border-color: var(--v3-brand) !important;
+  background: rgba(124, 92, 255, 0.08) !important;
+  outline: none !important;
+}
+
+.feed-vote-option:hover:not(:disabled) {
+  border-color: rgba(124, 92, 255, 0.35) !important;
+}
+
+[data-theme="dark"] .feed-option,
+[data-theme="dark"] .feed-vote-option {
+  background: rgba(124, 92, 255, 0.10) !important;
+  border-color: rgba(124, 92, 255, 0.20) !important;
+}
+
+/* 투표 바 색상 */
+.feed-option i, .feed-vote-option i {
+  background: linear-gradient(90deg,
+    rgba(124, 92, 255, 0.22),
+    rgba(255, 92, 138, 0.18)) !important;
+}
+
+/* 댓글 아이템 */
+.comment-item {
+  border-radius: var(--v3-r-md) !important;
+}
+
+
+/* === 9. 피드 히어로 배너 === */
+.feed-hero-copy {
+  background: linear-gradient(135deg, #10193a 0%, #4f7cff 60%, #7c5cff 100%) !important;
+  border: none !important;
+  border-radius: var(--v3-r-xl) !important;
+  box-shadow: var(--v3-shadow-md) !important;
+}
+
+/* 피드 통계 카드 */
+.feed-stat-card {
+  border-radius: var(--v3-r-lg) !important;
+}
+
+
+/* === 10. 사이드 카드 === */
+.side-card {
+  border-radius: var(--v3-r-lg) !important;
+}
+
+.side-card.caution {
+  background: linear-gradient(135deg,
+    rgba(255, 200, 66, 0.12),
+    var(--v3-card)) !important;
+}
+
+
+/* === 11. PC 헤더 === */
+.soso-dashboard-header {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-bottom: 1px solid rgba(124, 92, 255, 0.12) !important;
+  box-shadow: 0 4px 28px rgba(80, 60, 200, 0.10) !important;
+  backdrop-filter: blur(20px) saturate(1.4) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(1.4) !important;
+}
+
+/* 헤더 브랜드 로고 텍스트 */
+.soso-top-brand b {
+  background: var(--v3-grad) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  color: transparent !important;
+  font-weight: 1000 !important;
+}
+
+/* 헤더 설치 버튼 */
+.soso-top-install {
+  background: var(--v3-grad-warm) !important;
+  box-shadow: 0 6px 22px rgba(255, 122, 89, 0.28) !important;
+  border: none !important;
+}
+
+/* 헤더 활성 링크 */
+.soso-top-links a.active {
+  color: var(--v3-brand) !important;
+}
+
+.soso-top-links a.active::after {
+  background: var(--v3-grad) !important;
+}
+
+/* 헤더 링크 호버 */
+.soso-top-links a:hover {
+  background: rgba(124, 92, 255, 0.08) !important;
+  color: var(--v3-brand) !important;
+}
+
+/* 검색창 */
+.soso-top-search {
+  border-color: rgba(124, 92, 255, 0.16) !important;
+  box-shadow: var(--v3-shadow-xs) !important;
+}
+
+.soso-top-search:focus-within {
+  border-color: var(--v3-brand) !important;
+  box-shadow: var(--v3-shadow-glow) !important;
+}
+
+/* 다크 헤더 */
+[data-theme="dark"] .soso-dashboard-header {
+  background: rgba(10, 12, 22, 0.96) !important;
+  border-color: rgba(124, 92, 255, 0.20) !important;
+  box-shadow: 0 4px 28px rgba(0, 0, 0, 0.35) !important;
+}
+
+[data-theme="dark"] .soso-top-brand,
+[data-theme="dark"] .soso-top-links a,
+[data-theme="dark"] .soso-top-avatar {
+  color: var(--v3-text) !important;
+}
+
+[data-theme="dark"] .soso-top-search {
+  background: rgba(124, 92, 255, 0.10) !important;
+  border-color: rgba(124, 92, 255, 0.22) !important;
+}
+
+[data-theme="dark"] .soso-top-search input {
+  color: var(--v3-text) !important;
+}
+
+[data-theme="dark"] .soso-top-links a:hover {
+  background: rgba(124, 92, 255, 0.15) !important;
+}
+
+
+/* === 12. 하단 네비 강화 === */
+#bottom-nav .nav-item.nav-cta {
+  background: var(--v3-grad-warm) !important;
+  box-shadow: 0 12px 32px rgba(255, 92, 138, 0.30) !important;
+}
+
+#bottom-nav .nav-item.nav-cta:hover {
+  box-shadow: 0 16px 44px rgba(255, 92, 138, 0.42) !important;
+}
+
+
+/* === 13. 홈 페이지 (PC 대시보드) === */
+/* 히어로 카드 */
+.pc-home-like-shot .dash-hero {
+  background: linear-gradient(112deg,
+    #ffffff 0%,
+    #fbf8ff 35%,
+    #f2eaff 65%,
+    #fff3ef 100%) !important;
+  border: 1px solid rgba(124, 92, 255, 0.14) !important;
+  box-shadow: var(--v3-shadow-lg) !important;
+  border-radius: var(--v3-r-xl) !important;
+}
+
+/* 히어로 헤드라인 em 컬러 */
+.pc-home-like-shot .dash-hero-copy h1 em {
+  background: var(--v3-grad-warm) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  color: transparent !important;
+  font-style: normal;
+}
+
+/* 히어로 설명 텍스트 */
+.pc-home-like-shot .dash-hero-copy p {
+  color: var(--v3-muted) !important;
+}
+
+/* 피드 패널, 사이드 카드 */
+.pc-home-like-shot .dash-feed-panel,
+.pc-home-like-shot .dash-side-card {
+  background: var(--v3-card) !important;
+  border: 1px solid var(--v3-border) !important;
+  box-shadow: var(--v3-shadow-sm) !important;
+  border-radius: var(--v3-r-lg) !important;
+}
+
+/* 피드 카드 */
+.pc-home-like-shot .dash-feed-card {
+  background: var(--v3-card) !important;
+  border: 1px solid var(--v3-border) !important;
+  box-shadow: var(--v3-shadow-xs) !important;
+  border-radius: var(--v3-r-md) !important;
+}
+
+/* 피드 배지 */
+.pc-home-like-shot .feed-badge {
+  background: var(--v3-grad-cool) !important;
+  border-radius: var(--v3-r-pill) !important;
+}
+
+/* 카테고리 카드 */
+.pc-home-like-shot .dash-category {
+  border: 1px solid var(--v3-border) !important;
+  border-radius: var(--v3-r-md) !important;
+  box-shadow: var(--v3-shadow-xs) !important;
+}
+
+/* 하단 배너 카드 */
+.pc-home-like-shot .dash-bottom-banners article {
+  background: var(--v3-card) !important;
+  border: 1px solid var(--v3-border) !important;
+  box-shadow: var(--v3-shadow-sm) !important;
+  border-radius: var(--v3-r-lg) !important;
+}
+
+/* 미션 배너 */
+.pc-home-like-shot .mission {
+  background: linear-gradient(135deg, #ffffff, #f5eeff) !important;
+}
+
+/* 앱 설치 배너 */
+.pc-home-like-shot .install {
+  background: linear-gradient(135deg, #ffffff, #f8f0ff) !important;
+}
+
+/* 모바일 배너 */
+.pc-home-like-shot .mobile-banner {
+  background: linear-gradient(135deg, #f5f0ff, #ffffff) !important;
+}
+
+/* 피드백 배너 */
+.pc-home-like-shot .feedback-banner {
+  background: linear-gradient(135deg, #f0f8ff, #ffffff) !important;
+}
+
+/* 더보기 버튼 */
+.pc-home-like-shot .dash-more {
+  border: 1px solid var(--v3-border) !important;
+  color: var(--v3-muted) !important;
+  border-radius: var(--v3-r-pill) !important;
+  background: var(--v3-card) !important;
+  transition: all var(--v3-transition) !important;
+}
+
+.pc-home-like-shot .dash-more:hover {
+  background: rgba(124, 92, 255, 0.08) !important;
+  color: var(--v3-brand) !important;
+  border-color: var(--v3-border-strong) !important;
+}
+
+/* 다크 홈 */
+[data-theme="dark"] .pc-home-like-shot .dash-hero {
+  background: linear-gradient(112deg,
+    #0d1020 0%,
+    #10142a 50%,
+    #190e2a 100%) !important;
+}
+
+[data-theme="dark"] .pc-home-like-shot .dash-hero-copy h1 {
+  color: var(--v3-text) !important;
+}
+
+[data-theme="dark"] .pc-home-like-shot .dash-category,
+[data-theme="dark"] .pc-home-like-shot .dash-feed-panel,
+[data-theme="dark"] .pc-home-like-shot .dash-side-card,
+[data-theme="dark"] .pc-home-like-shot .dash-bottom-banners article,
+[data-theme="dark"] .pc-home-like-shot .dash-feed-card {
+  background: var(--v3-card) !important;
+  border-color: var(--v3-border) !important;
+  box-shadow: none !important;
+}
+
+[data-theme="dark"] .pc-home-like-shot .dash-hero-copy p,
+[data-theme="dark"] .pc-home-like-shot .dash-feed-card p,
+[data-theme="dark"] .pc-home-like-shot .rules ol,
+[data-theme="dark"] .pc-home-like-shot .install p {
+  color: var(--v3-muted) !important;
+}
+
+[data-theme="dark"] .pc-home-like-shot .dash-feed-card,
+[data-theme="dark"] .pc-home-like-shot .top-item {
+  color: var(--v3-text) !important;
+}
+
+
+/* === 14. 마스코트 애니메이션 === */
+.dash-mascot {
+  animation: v3-float 3.5s ease-in-out infinite !important;
+  border-radius: 60px !important;
+  background: linear-gradient(135deg, #ffffff, #fff6ee) !important;
+  box-shadow:
+    0 28px 80px rgba(124, 92, 255, 0.22),
+    0 0 0 14px rgba(255, 255, 255, 0.55) !important;
+}
+
+@keyframes v3-float {
+  0%, 100% { transform: translateY(0) rotate(-4deg); }
+  50% { transform: translateY(-10px) rotate(-4deg); }
+}
+
+.dash-orbit {
+  background: var(--v3-card) !important;
+  box-shadow: var(--v3-shadow-sm) !important;
+  border-radius: var(--v3-r-md) !important;
+  animation: v3-orbit-bob 4s ease-in-out infinite !important;
+}
+.icon-b { animation-delay: 0.8s !important; }
+.icon-c { animation-delay: 1.6s !important; }
+.icon-d { animation-delay: 2.4s !important; }
+
+@keyframes v3-orbit-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+
+/* === 15. 섹션 헤더 === */
+.section-head h2 {
+  font-size: clamp(22px, 4vw, 30px) !important;
+  font-weight: 1000 !important;
+  letter-spacing: -0.06em !important;
+  color: var(--v3-text) !important;
+}
+
+.section-head span {
+  color: var(--v3-brand) !important;
+  font-weight: 1000 !important;
+}
+
+.section-head a {
+  color: var(--v3-brand) !important;
+}
+
+
+/* === 16. 로딩 인디케이터 === */
+.loading-dots span {
+  background: var(--v3-brand) !important;
+}
+
+
+/* === 17. 토스트 === */
+#toast-container .toast {
+  border-radius: var(--v3-r-md) !important;
+  font-weight: 700 !important;
+  box-shadow: var(--v3-shadow-md) !important;
+  background: var(--v3-card) !important;
+  color: var(--v3-text) !important;
+  border-color: var(--v3-border) !important;
+}
+
+#toast-container .toast.success {
+  border-color: var(--v3-green) !important;
+}
+
+#toast-container .toast.error {
+  border-color: #ef4444 !important;
+}
+
+
+/* === 18. 판결 카드 === */
+.verdict-card {
+  border-color: rgba(124, 92, 255, 0.40) !important;
+  background: linear-gradient(135deg,
+    var(--v3-card),
+    rgba(124, 92, 255, 0.04)) !important;
+}
+
+.verdict-stamp {
+  border-color: var(--v3-pink) !important;
+  color: var(--v3-pink) !important;
+}
+
+.judge-reveal {
+  background: linear-gradient(135deg,
+    rgba(124, 92, 255, 0.08),
+    rgba(124, 92, 255, 0.04)) !important;
+  border-color: rgba(124, 92, 255, 0.40) !important;
+}
+
+.judge-name { color: var(--v3-brand) !important; }
+
+.judge-option {
+  border-radius: var(--v3-r-md) !important;
+  transition: all var(--v3-transition) !important;
+  cursor: pointer;
+}
+
+.judge-option:hover {
+  border-color: var(--v3-brand) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: var(--v3-shadow-sm) !important;
+}
+
+.judge-option.selected {
+  background: rgba(124, 92, 255, 0.10) !important;
+  border-color: var(--v3-brand) !important;
+}
+
+
+/* === 19. 진행 바 === */
+.progress-step.done {
+  background: var(--v3-grad) !important;
+}
+
+.trial-progress {
+  gap: 6px !important;
+}
+
+.progress-step {
+  border-radius: 3px !important;
+}
+
+
+/* === 20. 예시 카드 === */
+.example-card {
+  border-radius: var(--v3-r-md) !important;
+  border-left-color: rgba(124, 92, 255, 0.40) !important;
+  transition: all var(--v3-transition) !important;
+}
+
+.example-card:hover {
+  border-left-color: var(--v3-brand) !important;
+  background: var(--v3-card-alt) !important;
+  transform: translateX(5px) !important;
+}
+
+
+/* === 21. 페이지 헤더 (mobile back nav) === */
+.page-header {
+  background: rgba(255, 255, 255, 0.96) !important;
+  border-bottom-color: var(--v3-border) !important;
+  backdrop-filter: blur(16px) saturate(1.3) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(1.3) !important;
+}
+
+[data-theme="dark"] .page-header {
+  background: rgba(10, 12, 22, 0.96) !important;
+  border-bottom-color: var(--v3-border) !important;
+}
+
+
+/* === 22. 푸터 === */
+#site-footer {
+  background: var(--v3-card) !important;
+  border-top: 1px solid var(--v3-border) !important;
+}
+
+.footer-links a:hover {
+  color: var(--v3-brand) !important;
+}
+
+
+/* === 23. 뒤로가기 버튼 === */
+.back-link, .back-btn {
+  background: var(--v3-card) !important;
+  border-color: var(--v3-border) !important;
+  color: var(--v3-text) !important;
+  border-radius: var(--v3-r-sm) !important;
+  transition: all var(--v3-transition) !important;
+}
+
+.back-link:hover, .back-btn:hover {
+  background: rgba(124, 92, 255, 0.08) !important;
+  color: var(--v3-brand) !important;
+  border-color: var(--v3-border-strong) !important;
+}
+
+
+/* === 24. 피드 쓰기 탭 === */
+.write-tabs button {
+  background: var(--v3-card) !important;
+  border-color: var(--v3-border) !important;
+  color: var(--v3-muted) !important;
+  border-radius: var(--v3-r-pill) !important;
+  transition: all var(--v3-transition) !important;
+}
+
+.write-tabs button.active {
+  background: var(--v3-brand) !important;
+  color: #fff !important;
+  border-color: transparent !important;
+  box-shadow: 0 6px 18px rgba(124, 92, 255, 0.30) !important;
+}
+
+
+/* === 25. 미션 페이지 === */
+.mission-card-live {
+  border-radius: var(--v3-r-lg) !important;
+}
+
+
+/* === 26. 인증 페이지 === */
+.auth-hero-card {
+  background: linear-gradient(135deg, #6d38ff 0%, #ff5c8a 60%, #ff7a59 100%) !important;
+  border: none !important;
+  border-radius: var(--v3-r-xl) !important;
+  box-shadow: var(--v3-shadow-lg) !important;
+}
+
+.auth-card-v2 {
+  border-radius: var(--v3-r-xl) !important;
+}
+
+
+/* === 27. 신고 모달 === */
+.feed-report-backdrop {
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+}
+
+.feed-report-box {
+  border-radius: var(--v3-r-lg) !important;
+  background: var(--v3-card) !important;
+  border-color: var(--v3-border) !important;
+  box-shadow: var(--v3-shadow-lg) !important;
+}
+
+.feed-report-box button[type="submit"] {
+  background: var(--v3-grad-cool) !important;
+  border-radius: var(--v3-r-md) !important;
+}
+
+
+/* === 28. 계정 메뉴 오버레이 === */
+#account-menu-overlay .card,
+#anon-menu-overlay .card {
+  background: var(--v3-card) !important;
+  border-color: var(--v3-border) !important;
+  box-shadow: var(--v3-shadow-lg) !important;
+  border-radius: var(--v3-r-xl) !important;
+}
+
+
+/* === 29. 반응형 모바일 보정 === */
+@media (max-width: 640px) {
+  .feed-card {
+    border-radius: var(--v3-r-md) !important;
+  }
+
+  .side-card {
+    border-radius: var(--v3-r-md) !important;
+  }
+
+  .feed-hero-copy {
+    border-radius: var(--v3-r-lg) !important;
+  }
+
+  .auth-hero-card {
+    border-radius: var(--v3-r-lg) !important;
+  }
+}
+
+
+/* === 30. PWA 설치 FAB === */
+#soso-pwa-install-fab {
+  position: fixed !important;
+  bottom: 90px !important;
+  right: 16px !important;
+  z-index: 400 !important;
+  border: none !important;
+  border-radius: var(--v3-r-pill) !important;
+  padding: 12px 18px !important;
+  background: var(--v3-grad-warm) !important;
+  color: #fff !important;
+  font-weight: 900 !important;
+  font-size: 13px !important;
+  box-shadow: var(--v3-shadow-md) !important;
+  cursor: pointer !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: translateY(8px) !important;
+  transition: all var(--v3-transition) !important;
+}
+
+#soso-pwa-install-fab.show {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  transform: translateY(0) !important;
+}
+
+
+/* === 31. 미니 링크 태그 (feed) === */
+.feed-mini-link {
+  background: var(--v3-card) !important;
+  border-color: var(--v3-border) !important;
+  color: var(--v3-text) !important;
+  border-radius: var(--v3-r-pill) !important;
+  transition: all var(--v3-transition) !important;
+}
+
+.feed-mini-link:hover {
+  background: rgba(124, 92, 255, 0.08) !important;
+  color: var(--v3-brand) !important;
+  border-color: var(--v3-border-strong) !important;
+}
+
+
+/* === 32. 이미지 업로드 프리뷰 === */
+.upload-preview, .feed-image, .detail-image {
+  border-radius: var(--v3-r-md) !important;
+}
+
+
+/* === 33. 관리자 탭 === */
+.admin-tab.active {
+  color: var(--v3-brand) !important;
+  border-bottom-color: var(--v3-brand) !important;
+}
+
+
+/* === 34. 탑 댓글 미리보기 === */
+.feed-top-comment {
+  background: rgba(255, 200, 66, 0.10) !important;
+  border-radius: var(--v3-r-md) !important;
+}
+
+
+/* === 35. 면책 고지 === */
+.disclaimer {
+  background: rgba(239, 68, 68, 0.06) !important;
+  border-color: rgba(239, 68, 68, 0.18) !important;
+  border-radius: var(--v3-r-sm) !important;
+}
+
+
+/* === 36. how-step 번호 === */
+.how-step-num {
+  background: rgba(124, 92, 255, 0.12) !important;
+  border-color: rgba(124, 92, 255, 0.28) !important;
+  color: var(--v3-brand) !important;
+}
+
+
+/* === 37. 포디움/랭킹 개선 === */
+.rank-item {
+  border-radius: var(--v3-r-md) !important;
+}
+
+
+/* === 38. 피드 대시보드 === */
+.feed-dashboard article {
+  border-radius: var(--v3-r-md) !important;
+}
+
+
+/* === 39. 글로벌 전환 효과 === */
+a, button {
+  transition:
+    color var(--v3-transition),
+    background-color var(--v3-transition),
+    border-color var(--v3-transition),
+    box-shadow var(--v3-transition),
+    opacity var(--v3-transition) !important;
+}
+
+/* 탭 하이라이트 제거 (모바일) */
+a, button, .nav-item {
+  -webkit-tap-highlight-color: transparent !important;
+}
