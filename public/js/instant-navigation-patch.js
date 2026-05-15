@@ -1,4 +1,4 @@
-const NAV_BUSY_MS = 120;
+const NAV_BUSY_MS = 180;
 let lastNavAt = 0;
 let lastNavTarget = '';
 
@@ -10,12 +10,7 @@ function normalizeHash(raw) {
   return '';
 }
 
-function fireRouteEvent() {
-  try {
-    window.dispatchEvent(new HashChangeEvent('hashchange'));
-  } catch {
-    window.dispatchEvent(new Event('hashchange'));
-  }
+function notifyRouteRequested() {
   document.dispatchEvent(new CustomEvent('soso-route-requested', { detail: { hash: location.hash || '#/' } }));
 }
 
@@ -29,15 +24,18 @@ function navigate(hash, { replace = false } = {}) {
   lastNavTarget = target;
 
   if ((location.hash || '#/') === target) {
-    fireRouteEvent();
+    notifyRouteRequested();
     return true;
   }
 
-  if (replace) history.replaceState(null, '', `${location.pathname}${location.search}${target}`);
-  else location.hash = target;
+  if (replace) {
+    history.replaceState(null, '', `${location.pathname}${location.search}${target}`);
+    try { window.dispatchEvent(new HashChangeEvent('hashchange')); } catch { window.dispatchEvent(new Event('hashchange')); }
+  } else {
+    location.hash = target;
+  }
 
-  requestAnimationFrame(fireRouteEvent);
-  setTimeout(fireRouteEvent, 80);
+  notifyRouteRequested();
   return true;
 }
 
@@ -56,10 +54,8 @@ document.addEventListener('click', event => {
 
   const link = event.target?.closest?.('a[href^="#/"]');
   if (!link) return;
-  const href = link.getAttribute('href');
-  const target = normalizeHash(href);
-  if (!target) return;
-  if (link.dataset.nativeNav === '1') return;
+  const target = normalizeHash(link.getAttribute('href'));
+  if (!target || link.dataset.nativeNav === '1') return;
 
   event.preventDefault();
   event.stopPropagation();
@@ -67,7 +63,6 @@ document.addEventListener('click', event => {
   navigate(target);
 }, true);
 
-// 검색폼처럼 스크립트에서 location.hash만 바꾸는 경우를 보강합니다.
 document.addEventListener('submit', event => {
   const form = event.target?.closest?.('.soso-top-search');
   if (!form) return;
@@ -80,4 +75,4 @@ document.addEventListener('submit', event => {
   navigate('#/feed');
 }, true);
 
-window.addEventListener('popstate', () => setTimeout(fireRouteEvent, 0));
+window.addEventListener('popstate', notifyRouteRequested);
