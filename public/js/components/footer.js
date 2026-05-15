@@ -24,11 +24,6 @@ export async function renderFooter() {
   const showInstallBtn = !isStandalone;
 
   footer.innerHTML = `
-    <div class="footer-brand-card">
-      <img src="/logo.svg" alt="소소킹">
-      <div><b>소소킹</b><span>재미와 정보가 모이는 소소피드</span></div>
-    </div>
-
     <div class="footer-links">
       <a href="#/guide">이용안내</a>
       <a href="#/policy/terms">이용약관</a>
