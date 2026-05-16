@@ -473,6 +473,10 @@ async function renderMissions(el) {
               <option value="malhe">💬 말해봐</option>
             </select>
           </div>
+          <div class="form-group">
+            <label class="form-label">마감일 (시즌 미션용, 선택)</label>
+            <input type="datetime-local" id="mission-end-date" class="form-input">
+          </div>
           <div style="display:flex;gap:8px;align-items:center;margin-top:4px">
             <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600">
               <input type="checkbox" id="mission-active" checked style="width:16px;height:16px"> 즉시 활성화
@@ -496,6 +500,7 @@ async function renderMissions(el) {
                     <div style="font-size:14px;font-weight:700;${m.active ? 'color:var(--color-primary)' : ''}">${escHtml(m.title || '')}</div>
                     ${m.desc ? `<div style="font-size:12px;color:var(--color-text-muted);margin-top:2px">${escHtml(m.desc)}</div>` : ''}
                     ${m.cat ? `<div style="font-size:11px;margin-top:4px"><span style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:99px;padding:2px 8px">${{ golra:'🎯 골라봐', usgyo:'😂 웃겨봐', malhe:'💬 말해봐' }[m.cat] || m.cat}</span></div>` : ''}
+                    ${m.endDate ? `<div style="font-size:11px;color:var(--color-warning);margin-top:4px">⏰ 마감: ${new Date(m.endDate.toDate()).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>` : ''}
                   </div>
                   <div style="display:flex;gap:6px;flex-shrink:0">
                     <button class="btn btn--sm ${m.active ? 'btn--ghost' : 'btn--primary'}" data-toggle-mission="${m.id}" data-active="${m.active ? '1' : '0'}" style="font-size:11px">${m.active ? '비활성화' : '활성화'}</button>
@@ -508,13 +513,16 @@ async function renderMissions(el) {
     </div>`;
 
   document.getElementById('btn-add-mission')?.addEventListener('click', async () => {
-    const title  = document.getElementById('mission-title')?.value.trim();
-    const desc   = document.getElementById('mission-desc')?.value.trim()  || '';
-    const cat    = document.getElementById('mission-cat')?.value          || '';
-    const active = document.getElementById('mission-active')?.checked     ?? true;
+    const title      = document.getElementById('mission-title')?.value.trim();
+    const desc       = document.getElementById('mission-desc')?.value.trim()    || '';
+    const cat        = document.getElementById('mission-cat')?.value             || '';
+    const active     = document.getElementById('mission-active')?.checked        ?? true;
+    const endDateVal = document.getElementById('mission-end-date')?.value;
     if (!title) { toast.error('미션 제목을 입력해주세요'); return; }
+    const missionData = { title, desc, cat, active, createdAt: serverTimestamp() };
+    if (endDateVal) missionData.endDate = Timestamp.fromDate(new Date(endDateVal));
     try {
-      await addDoc(collection(db, 'missions'), { title, desc, cat, active, createdAt: serverTimestamp() });
+      await addDoc(collection(db, 'missions'), missionData);
       toast.success('미션을 등록했어요 🎯');
       renderMissions(el);
     } catch { toast.error('등록에 실패했어요'); }

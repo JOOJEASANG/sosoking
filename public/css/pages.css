@@ -528,3 +528,31 @@
 }
 .admin-stat-card__num { font-size: var(--font-size-2xl); font-weight: 900; color: var(--color-primary); }
 .admin-stat-card__label { font-size: var(--font-size-xs); color: var(--color-text-muted); margin-top: 4px; }
+
+/* ════════════════════════
+   스트릭 위젯 (홈 사이드바)
+════════════════════════ */
+.sidebar-streak {
+  background: linear-gradient(135deg, #FFF7ED, #FFFBEB);
+  border: 1.5px solid #FCD34D;
+}
+.streak-display {
+  display: flex; align-items: center; gap: 8px; margin-top: 10px;
+}
+.streak-fire { font-size: 28px; }
+.streak-num  { font-size: 28px; font-weight: 900; color: #92400E; }
+.streak-label { font-size: 12px; color: var(--color-text-muted); font-weight: 600; }
+.streak-msg {
+  margin-top: 8px; font-size: 12px; font-weight: 800;
+  color: var(--color-primary); background: var(--color-primary-bg);
+  padding: 5px 10px; border-radius: var(--radius-pill); display: inline-block;
+}
+
+/* ════════════════════════
+   스크랩 페이지
+════════════════════════ */
+.section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px;
+}
+.section-title { font-size: 18px; font-weight: 900; letter-spacing: -0.3px; }

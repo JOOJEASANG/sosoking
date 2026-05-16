@@ -1,9 +1,12 @@
-import { auth, onAuthStateChanged } from './firebase.js';
+import { auth, db, onAuthStateChanged } from './firebase.js';
 import { initRouter, registerRoute, navigate } from './router.js';
 import { renderHeader } from './components/header.js';
 import { renderBottomNav } from './components/bottom-nav.js';
 import { initToast } from './components/toast.js';
 import { appState } from './state.js';
+import {
+  collection, query, where, getDocs, getDoc, doc, limit,
+} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 import { renderHome }    from './pages/home.js';
 import { renderFeed }    from './pages/feed.js';
@@ -16,16 +19,34 @@ import { renderGuide }   from './pages/guide.js';
 import { renderAdmin }   from './pages/admin.js';
 import { renderTerms }   from './pages/terms.js';
 import { renderPrivacy } from './pages/privacy.js';
+import { renderScraps }  from './pages/scraps.js';
 
 export { appState };
 
-// 관리자 이메일 목록 — Firebase Console에서 확인한 이메일 추가
 export const ADMIN_EMAILS = [];
 
 export function isAdmin(user) {
   if (!user) return false;
-  if (!ADMIN_EMAILS.length) return true; // 미설정 시 모든 로그인 유저 접근 허용
+  if (!ADMIN_EMAILS.length) return true;
   return ADMIN_EMAILS.includes(user.email);
+}
+
+async function loadUserMeta(uid) {
+  try {
+    const [notifSnap, userSnap] = await Promise.all([
+      getDocs(query(
+        collection(db, 'notifications'),
+        where('userId', '==', uid),
+        where('read', '==', false),
+        limit(100),
+      )),
+      getDoc(doc(db, 'users', uid)),
+    ]);
+    appState.unreadNotifications = notifSnap.size;
+    const data = userSnap.exists() ? userSnap.data() : {};
+    appState.streak    = data.streak    || 0;
+    appState.userTitle = data.title     || '';
+  } catch { /* non-critical */ }
 }
 
 export async function initApp() {
@@ -51,18 +72,22 @@ export async function initApp() {
   renderBottomNav();
   initToast();
 
-  onAuthStateChanged(auth, (user) => {
+  onAuthStateChanged(auth, async (user) => {
     const wasLoading = appState.loading;
     appState.user    = user;
     appState.loading = false;
     appState.isAdmin = isAdmin(user);
+    if (user) {
+      await loadUserMeta(user.uid);
+    } else {
+      appState.unreadNotifications = 0;
+      appState.streak    = 0;
+      appState.userTitle = '';
+    }
     renderHeader();
     renderBottomNav();
-    // 첫 로딩 후 관리자라면 /admin으로 이동 (로그인 페이지에서 온 경우만)
     const path = window.location.hash.slice(1).split('?')[0] || '/';
-    if (!wasLoading && user && appState.isAdmin && path === '/login') {
-      navigate('/admin');
-    }
+    if (!wasLoading && user && appState.isAdmin && path === '/login') navigate('/admin');
   });
 
   registerRoute('/',           () => renderHome());
@@ -71,6 +96,7 @@ export async function initApp() {
   registerRoute('/detail/:id', ({ id }) => renderDetail(id));
   registerRoute('/mission',    () => renderMission());
   registerRoute('/account',    () => renderAccount());
+  registerRoute('/scraps',     () => renderScraps());
   registerRoute('/login',      () => renderLogin());
   registerRoute('/guide',      () => renderGuide());
   registerRoute('/admin',      () => renderAdmin());

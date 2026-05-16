@@ -112,6 +112,19 @@ service cloud.firestore {
       allow read, update, delete: if isAdmin();
     }
 
+    // ── 스크랩 ─────────────────────────────────────────────
+    match /users/{userId}/scraps/{scrapId} {
+      allow read, write: if isAuthor(userId);
+    }
+
+    // ── 알림 ───────────────────────────────────────────────
+    match /notifications/{notifId} {
+      allow read:   if signedIn() && resource.data.userId == request.auth.uid;
+      allow create: if signedIn();
+      allow update: if signedIn() && resource.data.userId == request.auth.uid;
+      allow delete: if signedIn() && resource.data.userId == request.auth.uid;
+    }
+
     // ── 레거시 컬렉션 (이전 버전 하위 호환) ───────────────
     match /soso_feed_posts/{postId} {
       allow read:  if true;

@@ -1,11 +1,42 @@
 import { navigate } from '../router.js';
 import { renderFeedCard } from '../components/feed-card.js';
 import { fetchHotPosts } from '../services/feed-service.js';
-import { db } from '../firebase.js';
+import { auth, db } from '../firebase.js';
 import {
   collection, query, orderBy, limit, getDocs,
-  getCountFromServer, where, Timestamp,
+  getCountFromServer, where, Timestamp, doc, getDoc, updateDoc,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { appState } from '../state.js';
+
+const ALL_TYPES = [
+  'balance','vote','battle','ox','quiz',
+  'naming','acrostic','cbattle','laugh','drip',
+  'howto','story','fail','concern','relay',
+];
+
+function computeTitle(postCount) {
+  if (postCount >= 30) return '👑 소소킹';
+  if (postCount >= 20) return '⭐ 소소러';
+  if (postCount >= 10) return '🔥 놀이꾼';
+  if (postCount >= 3)  return '😊 소소인';
+  if (postCount >= 1)  return '🌱 새싹';
+  return '🥚 뉴비';
+}
+
+async function checkStreak(uid) {
+  try {
+    const today     = new Date().toISOString().slice(0, 10);
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    const userRef   = doc(db, 'users', uid);
+    const snap      = await getDoc(userRef);
+    if (!snap.exists()) return;
+    const { lastVisit = '', streak = 0 } = snap.data();
+    if (lastVisit === today) return;
+    const newStreak = lastVisit === yesterday ? streak + 1 : 1;
+    await updateDoc(userRef, { lastVisit: today, streak: newStreak });
+    appState.streak = newStreak;
+  } catch { /* non-critical */ }
+}
 
 const CAT_QUICK_TYPES = [
   { key: 'balance',  icon: '⚖️', label: '밸런스게임',   cat: 'golra' },
@@ -24,7 +55,10 @@ export async function renderHome() {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
-    const [hotPosts, recentPosts, todayMission, totalSnap, todaySnap] = await Promise.all([
+    const user = auth.currentUser;
+    if (user) checkStreak(user.uid);
+
+    const [hotPosts, recentPosts, todayMission, totalSnap, todaySnap, weeklyHot] = await Promise.all([
       fetchHotPosts(6),
       fetchRecentPosts(6),
       fetchTodayMission(),
@@ -34,6 +68,7 @@ export async function renderHome() {
         where('createdAt', '>=', Timestamp.fromDate(todayStart)),
         limit(99),
       )).catch(() => null),
+      fetchWeeklyHot(5),
     ]);
 
     const totalPosts = totalSnap?.data?.().count ?? 0;
@@ -50,7 +85,7 @@ export async function renderHome() {
             <div class="home-hero__sub">투표·퀴즈·드립·고민, 뭐든 다 가능한<br>한국 최고의 놀이판 커뮤니티</div>
             <div class="home-hero__action">
               <button class="btn-hero-primary" onclick="navigate('/write')">✏️ 놀이판 만들기</button>
-              <button class="btn-hero-secondary" onclick="navigate('/feed')">둘러보기 →</button>
+              <button class="btn-hero-secondary" id="btn-random-challenge">🎲 랜덤 도전</button>
             </div>
           </div>
           <div class="home-hero__stats">
@@ -103,7 +138,9 @@ export async function renderHome() {
 
           <!-- ── 사이드바 ── -->
           <aside class="layout-sidebar">
+            ${user && appState.streak > 0 ? renderStreakWidget(appState.streak) : ''}
             ${todayMission ? renderMissionWidget(todayMission) : renderMissionEmptyWidget()}
+            ${weeklyHot.length ? renderHallOfFameWidget(weeklyHot) : ''}
             ${renderStatsWidget(totalPosts, todayCount)}
             ${renderHotRankingWidget(hotPosts)}
             ${renderWriteCTAWidget()}
@@ -113,6 +150,11 @@ export async function renderHome() {
 
       </div>`;
 
+    // 랜덤 도전
+    document.getElementById('btn-random-challenge')?.addEventListener('click', () => {
+      const pick = ALL_TYPES[Math.floor(Math.random() * ALL_TYPES.length)];
+      navigate(`/write?type=${pick}`);
+    });
     // 카테고리 카드 클릭
     document.querySelectorAll('[data-cat-nav]').forEach(btn => {
       btn.addEventListener('click', () => navigate(`/feed?cat=${btn.dataset.catNav}`));
@@ -169,11 +211,22 @@ function renderCategoryCards() {
     </div>`;
 }
 
+function formatCountdown(endDate) {
+  const ms = endDate.toDate().getTime() - Date.now();
+  if (ms <= 0) return '마감됨';
+  const h = Math.floor(ms / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  if (h >= 48) return `${Math.floor(h / 24)}일 남음`;
+  if (h > 0)   return `${h}시간 ${m}분 남음`;
+  return `${m}분 남음`;
+}
+
 function renderMissionWidget(mission) {
+  const countdown = mission.endDate ? formatCountdown(mission.endDate) : null;
   return `
     <div class="sidebar-widget sidebar-mission" onclick="navigate('/mission')" role="button" tabindex="0">
       <div class="sidebar-widget__title">🎯 오늘의 미션</div>
-      <div class="sidebar-mission__badge">✅ 진행 중</div>
+      <div class="sidebar-mission__badge">✅ 진행 중${countdown ? ` · ⏰ ${countdown}` : ''}</div>
       <div class="sidebar-mission__text">${escHtml(mission.title || '미션을 확인해보세요!')}</div>
       ${mission.desc ? `<div class="sidebar-mission__desc">${escHtml(mission.desc)}</div>` : ''}
       <div class="sidebar-mission__cta">참여하기 →</div>
@@ -254,6 +307,36 @@ function renderGuideWidget() {
     </div>`;
 }
 
+function renderStreakWidget(streak) {
+  const fire = streak >= 7 ? '🔥🔥' : streak >= 3 ? '🔥' : '✨';
+  return `
+    <div class="sidebar-widget sidebar-streak">
+      <div class="sidebar-widget__title">출석 스트릭</div>
+      <div class="streak-display">
+        <span class="streak-fire">${fire}</span>
+        <span class="streak-num">${streak}일</span>
+        <span class="streak-label">연속 출석 중!</span>
+      </div>
+      ${streak >= 7 ? '<div class="streak-msg">🏆 7일 달성! 주간 챌린저</div>' : ''}
+    </div>`;
+}
+
+function renderHallOfFameWidget(posts) {
+  const medals = ['🥇','🥈','🥉','4️⃣','5️⃣'];
+  return `
+    <div class="sidebar-widget">
+      <div class="sidebar-widget__title">🏆 주간 명예의 전당</div>
+      <div style="margin-top:8px">
+        ${posts.map((p, i) => `
+          <div class="sidebar-rank-item" onclick="navigate('/detail/${p.id}')" role="button">
+            <span class="sidebar-rank-num">${medals[i] || i + 1}</span>
+            <span class="sidebar-rank-title">${escHtml(p.title || '')}</span>
+            <span class="sidebar-rank-meta">${p.reactions?.total || 0}❤️</span>
+          </div>`).join('')}
+      </div>
+    </div>`;
+}
+
 function emptyFeedHTML() {
   return `
     <div class="empty-state">
@@ -270,6 +353,24 @@ async function fetchRecentPosts(n = 6) {
     const q = query(collection(db, 'feeds'), orderBy('createdAt', 'desc'), limit(n + 5));
     const snap = await getDocs(q);
     return snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.hidden).slice(0, n);
+  } catch { return []; }
+}
+
+async function fetchWeeklyHot(n = 5) {
+  try {
+    const weekAgo = new Date(Date.now() - 7 * 86400000);
+    const q = query(
+      collection(db, 'feeds'),
+      where('createdAt', '>=', Timestamp.fromDate(weekAgo)),
+      orderBy('createdAt', 'desc'),
+      limit(50),
+    );
+    const snap = await getDocs(q);
+    return snap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .filter(p => !p.hidden)
+      .sort((a, b) => (b.reactions?.total || 0) - (a.reactions?.total || 0))
+      .slice(0, n);
   } catch { return []; }
 }
 

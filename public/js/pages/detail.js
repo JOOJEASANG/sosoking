@@ -1,7 +1,7 @@
 import { db, auth } from '../firebase.js';
 import {
   doc, getDoc, collection, query, orderBy, getDocs,
-  addDoc, updateDoc, deleteDoc, increment, serverTimestamp, arrayUnion, arrayRemove, deleteField,
+  addDoc, updateDoc, deleteDoc, setDoc, increment, serverTimestamp, arrayUnion, arrayRemove, deleteField,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { navigate } from '../router.js';
 import { toast } from '../components/toast.js';
@@ -32,18 +32,20 @@ export async function renderDetail(id) {
     }
     const post = { id: snap.id, ...snap.data() };
     await updateDoc(doc(db, 'feeds', id), { viewCount: increment(1) }).catch(() => {});
-    const [comments, acrostics] = await Promise.all([
+    const uid = auth.currentUser?.uid;
+    const [comments, acrostics, isScrapped] = await Promise.all([
       fetchComments(id),
       post.type === 'acrostic' ? fetchAcrostics(id) : Promise.resolve([]),
+      uid ? getDoc(doc(db, 'users', uid, 'scraps', id)).then(s => s.exists()) : Promise.resolve(false),
     ]);
-    renderDetailPage(el, post, comments, acrostics);
+    renderDetailPage(el, post, comments, acrostics, isScrapped);
   } catch (e) {
     console.error(e);
     el.innerHTML = `<div class="empty-state"><div class="empty-state__icon">⚠️</div><div class="empty-state__title">불러오기에 실패했어요</div></div>`;
   }
 }
 
-function renderDetailPage(el, post, comments, acrostics) {
+function renderDetailPage(el, post, comments, acrostics, isScrapped = false) {
   const typeLabel = TYPE_LABELS[post.type] || post.type;
   const catClass  = CAT_CLASS[post.cat] || 'malhe';
   const timeStr   = formatTime(post.createdAt?.toDate?.() || post.createdAt);
@@ -62,7 +64,11 @@ function renderDetailPage(el, post, comments, acrostics) {
             <span>${escHtml(post.authorName || '익명')}</span>
             <span>${timeStr}</span>
             <span>조회 ${post.viewCount || 0}</span>
-            <button id="btn-report" style="margin-left:auto;font-size:11px;color:var(--color-text-muted);background:none;border:1px solid var(--color-border);border-radius:var(--radius-pill);padding:3px 10px;cursor:pointer;transition:all 0.15s" title="신고하기">🚨 신고</button>
+            <div style="margin-left:auto;display:flex;gap:6px">
+              <button id="btn-scrap" class="detail-action-btn ${isScrapped ? 'active' : ''}" title="스크랩">🔖</button>
+              <button id="btn-share" class="detail-action-btn" title="공유">🔗</button>
+              <button id="btn-report" class="detail-action-btn" title="신고">🚨</button>
+            </div>
           </div>
         </div>
 
@@ -315,6 +321,39 @@ function renderComment(c) {
 }
 
 function setupDetailEvents(post, el) {
+  // 스크랩 버튼
+  document.getElementById('btn-scrap')?.addEventListener('click', async () => {
+    if (!auth.currentUser) { navigate('/login'); return; }
+    const uid = auth.currentUser.uid;
+    const scrapRef = doc(db, 'users', uid, 'scraps', post.id);
+    const btn = document.getElementById('btn-scrap');
+    if (btn.classList.contains('active')) {
+      await deleteDoc(scrapRef).catch(() => {});
+      btn.classList.remove('active');
+      toast.success('스크랩을 취소했어요');
+    } else {
+      await setDoc(scrapRef, {
+        postId: post.id, title: post.title || '', type: post.type || '',
+        cat: post.cat || '', authorName: post.authorName || '',
+        scrappedAt: serverTimestamp(),
+      }).catch(() => {});
+      btn.classList.add('active');
+      toast.success('스크랩했어요! 🔖');
+    }
+  });
+
+  // 공유 버튼
+  document.getElementById('btn-share')?.addEventListener('click', async () => {
+    const url   = `${location.origin}${location.pathname}#/detail/${post.id}`;
+    const title = post.title || '소소킹';
+    if (navigator.share) {
+      await navigator.share({ title, url }).catch(() => {});
+    } else {
+      await navigator.clipboard.writeText(url).catch(() => {});
+      toast.success('링크가 복사됐어요! 🔗');
+    }
+  });
+
   // 신고 버튼
   document.getElementById('btn-report')?.addEventListener('click', async () => {
     if (!auth.currentUser) { navigate('/login'); return; }
@@ -375,6 +414,14 @@ function setupDetailEvents(post, el) {
     try {
       await addDoc(collection(db, 'feeds', post.id, 'comments'), commentData);
       await updateDoc(doc(db, 'feeds', post.id), { commentCount: increment(1) });
+      if (post.authorId && post.authorId !== auth.currentUser.uid) {
+        addDoc(collection(db, 'notifications'), {
+          userId: post.authorId, type: 'comment',
+          postId: post.id, postTitle: post.title || '',
+          actorName: auth.currentUser.displayName || '익명',
+          read: false, createdAt: serverTimestamp(),
+        }).catch(() => {});
+      }
       input.value = '';
       const counter = document.getElementById('relay-char-count');
       if (counter) counter.textContent = '0 / 150';

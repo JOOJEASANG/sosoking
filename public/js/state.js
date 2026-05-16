@@ -2,4 +2,8 @@
 export const appState = {
   user: null,
   loading: true,
+  isAdmin: false,
+  unreadNotifications: 0,
+  streak: 0,
+  userTitle: '',
 };

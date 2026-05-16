@@ -1,6 +1,13 @@
 import { appState } from '../state.js';
 import { navigate } from '../router.js';
 
+function notifBell() {
+  const n = appState.unreadNotifications || 0;
+  return `<a href="#/account?tab=notifications" class="notif-bell" title="알림">
+    🔔${n > 0 ? `<span class="notif-badge">${n > 99 ? '99+' : n}</span>` : ''}
+  </a>`;
+}
+
 export function renderHeader() {
   const el = document.getElementById('site-header');
   if (!el) return;
@@ -29,7 +36,9 @@ export function renderHeader() {
         <a href="#/feed" class="${path === '/feed' ? 'active' : ''}">📋 피드</a>
         <a href="#/mission" class="${path === '/mission' ? 'active' : ''}">🎯 미션</a>
         ${user
-          ? `<a href="#/account" class="${path === '/account' ? 'active' : ''}">👤 내정보</a>`
+          ? `<a href="#/account" class="${path === '/account' ? 'active' : ''}">👤 내정보</a>
+             <a href="#/scraps" class="${path === '/scraps' ? 'active' : ''}" title="스크랩">🔖</a>
+             ${notifBell()}`
           : `<a href="#/login" class="${path === '/login' ? 'active' : ''}">로그인</a>`
         }
         ${isAdmin ? `<a href="#/admin" class="${path === '/admin' ? 'active' : ''}" style="color:var(--color-primary);font-weight:800">⚙️ 관리자</a>` : ''}
