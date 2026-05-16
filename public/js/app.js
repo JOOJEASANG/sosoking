@@ -6,6 +6,7 @@ import { initToast } from './components/toast.js';
 import { appState } from './state.js';
 import './secure-feed-actions.js';
 import './account-secure-actions.js';
+import './admin-ai-mission-actions.js';
 import './social-play-enhancer.js';
 import {
   collection, query, where, getDocs, getDoc, doc, limit,
