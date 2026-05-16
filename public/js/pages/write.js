@@ -1,6 +1,6 @@
 import { db, auth } from '../firebase.js';
 import { collection, addDoc, doc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import { navigate } from '../router.js';
+import { navigate, getQueryParams } from '../router.js';
 import { toast } from '../components/toast.js';
 import { initImageUploader, getUploadedImages } from '../components/image-uploader.js';
 
@@ -45,6 +45,21 @@ export function renderWrite() {
   const el = document.getElementById('page-content');
   selectedCat  = null;
   selectedType = null;
+
+  // Support ?type=X for direct navigation from quick-start buttons
+  const { type: typeParam } = getQueryParams();
+  if (typeParam) {
+    for (const cat of CATEGORIES) {
+      const found = cat.types.find(t => t.key === typeParam);
+      if (found) {
+        selectedCat  = cat;
+        selectedType = found;
+        renderForm(el);
+        return;
+      }
+    }
+  }
+
   renderCatSelect(el);
 }
 

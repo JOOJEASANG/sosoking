@@ -56,6 +56,7 @@ function renderDetailPage(el, post, comments, acrostics) {
             <span>${escHtml(post.authorName || '익명')}</span>
             <span>${timeStr}</span>
             <span>조회 ${post.viewCount || 0}</span>
+            <button id="btn-report" style="margin-left:auto;font-size:11px;color:var(--color-text-muted);background:none;border:1px solid var(--color-border);border-radius:var(--radius-pill);padding:3px 10px;cursor:pointer;transition:all 0.15s" title="신고하기">🚨 신고</button>
           </div>
         </div>
 
@@ -291,6 +292,27 @@ function renderComment(c) {
 }
 
 function setupDetailEvents(post, el) {
+  // 신고 버튼
+  document.getElementById('btn-report')?.addEventListener('click', async () => {
+    if (!auth.currentUser) { navigate('/login'); return; }
+    const reason = prompt('신고 사유를 입력해주세요 (스팸, 욕설, 허위정보 등)');
+    if (!reason?.trim()) return;
+    try {
+      await addDoc(collection(db, 'reports'), {
+        postId:       post.id,
+        postTitle:    post.title || '',
+        reason:       reason.trim(),
+        reporterId:   auth.currentUser.uid,
+        reporterName: auth.currentUser.displayName || '익명',
+        resolved:     false,
+        createdAt:    serverTimestamp(),
+      });
+      toast.success('신고가 접수됐어요. 검토 후 처리할게요.');
+      document.getElementById('btn-report').textContent = '신고됨';
+      document.getElementById('btn-report').disabled = true;
+    } catch { toast.error('신고 접수에 실패했어요'); }
+  });
+
   // 댓글 등록
   document.getElementById('btn-comment')?.addEventListener('click', async () => {
     if (!auth.currentUser) { navigate('/login'); return; }
