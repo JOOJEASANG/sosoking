@@ -1288,3 +1288,250 @@
   line-height: 1.6;
 }
 .guide-rule-emoji { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+/* ════════════════════════
+   피드 카드 — 온도 게이지 + 공유 버튼
+════════════════════════ */
+.feed-temp-bar {
+  height: 3px;
+  border-radius: 2px;
+  margin: 0 -1px -1px;
+  background: linear-gradient(to right, var(--temp-color, var(--color-primary)) var(--temp-pct, 0%), var(--color-border-light) var(--temp-pct, 0%));
+  transition: width 0.4s;
+}
+.feed-card__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--card-padding, var(--space-4)) var(--space-3);
+  border-top: 1px solid var(--color-border-light);
+}
+.feed-share-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  background: none;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-pill);
+  padding: 3px 10px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.feed-share-btn:hover {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  background: rgba(255,68,34,0.06);
+}
+
+/* ════════════════════════
+   내 통계 탭
+════════════════════════ */
+.stats-page { display: flex; flex-direction: column; gap: var(--space-3); padding-bottom: var(--space-6); }
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-3);
+}
+@media (max-width: 640px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+.stats-card {
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4) var(--space-3);
+  text-align: center;
+  box-shadow: var(--shadow-xs);
+}
+.stats-card__num {
+  font-size: var(--font-size-2xl);
+  font-weight: 900;
+  letter-spacing: -1px;
+  color: var(--color-text-primary);
+  line-height: 1.1;
+}
+.stats-card__label {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin-top: var(--space-1);
+  font-weight: 600;
+}
+
+/* ════════════════════════
+   팔로우 탭
+════════════════════════ */
+.follows-page { display: flex; flex-direction: column; gap: var(--space-4); padding-bottom: var(--space-6); }
+.follows-section {
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-xs);
+}
+.follows-section__title {
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  color: var(--color-text-primary);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border-light);
+  background: var(--color-surface-2);
+}
+.follows-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 6px;
+  background: var(--color-primary);
+  color: #fff;
+  border-radius: var(--radius-pill);
+  font-size: 10px;
+  margin-left: 6px;
+  font-weight: 800;
+}
+.follows-list { padding: var(--space-2) 0; }
+.follow-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  transition: background var(--transition-fast);
+}
+.follow-item:hover { background: var(--color-surface-alt); }
+.follow-item__avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--gradient-hero);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.follow-item__name {
+  flex: 1;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+/* ════════════════════════
+   24시간 챌린지 배지
+════════════════════════ */
+.challenge-timer {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--color-danger);
+  background: rgba(240,55,56,0.08);
+  border: 1px solid rgba(240,55,56,0.25);
+  border-radius: var(--radius-pill);
+  padding: 2px 8px;
+}
+.expired-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  background: var(--color-surface-2);
+  border-radius: var(--radius-pill);
+  padding: 2px 8px;
+}
+
+/* ════════════════════════
+   토너먼트 카드
+════════════════════════ */
+.tournament-bracket {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-2);
+}
+.tournament-item {
+  background: var(--color-surface-2);
+  border: 1.5px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.tournament-item:hover {
+  border-color: var(--color-golra);
+  background: var(--color-golra-bg);
+  color: var(--color-golra-dark);
+}
+.tournament-item.selected {
+  border-color: var(--color-primary);
+  background: rgba(255,68,34,0.08);
+}
+
+/* ════════════════════════
+   단어 릴레이 체인
+════════════════════════ */
+.relay-chain {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.relay-chain-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--color-surface-2);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+}
+.relay-chain-item__word {
+  font-weight: 900;
+  color: var(--color-malhe-dark);
+  font-size: var(--font-size-base);
+  min-width: 60px;
+}
+.relay-chain-item__author {
+  color: var(--color-text-muted);
+  font-size: 11px;
+}
+
+/* ════════════════════════
+   랜덤대결 배틀 UI
+════════════════════════ */
+.battle-entries {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.battle-entry {
+  background: var(--color-surface-2);
+  border: 1.5px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  transition: all var(--transition-fast);
+}
+.battle-entry:hover {
+  border-color: var(--color-usgyo-border);
+  background: var(--color-usgyo-bg);
+}
+.battle-entry__author {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-2);
+}
+.battle-entry__text {
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}

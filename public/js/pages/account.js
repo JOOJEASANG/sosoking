@@ -1,7 +1,7 @@
 import { auth, db, signOut } from '../firebase.js';
 import {
   collection, query, where, orderBy, limit, getDocs, getCountFromServer,
-  doc, getDoc, updateDoc, writeBatch, deleteDoc, serverTimestamp,
+  doc, getDoc, updateDoc, writeBatch, deleteDoc, serverTimestamp, setDoc,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import {
   updateProfile, deleteUser, EmailAuthProvider, reauthenticateWithCredential,
@@ -82,6 +82,8 @@ export async function renderAccount() {
       <div class="account-tabs">
         <button class="account-tab ${activeTab === 'posts' ? 'active' : ''}" data-tab="posts">📝 내 글 (${postCount})</button>
         <button class="account-tab ${activeTab === 'scraps' ? 'active' : ''}" data-tab="scraps">🔖 스크랩</button>
+        <button class="account-tab ${activeTab === 'stats' ? 'active' : ''}" data-tab="stats">📊 통계</button>
+        <button class="account-tab ${activeTab === 'follows' ? 'active' : ''}" data-tab="follows">👥 팔로우</button>
         <button class="account-tab ${activeTab === 'notifications' ? 'active' : ''}" data-tab="notifications">
           🔔 알림${appState.unreadNotifications > 0 ? ` <span class="notif-badge-sm">${appState.unreadNotifications}</span>` : ''}
         </button>
@@ -144,6 +146,12 @@ export async function renderAccount() {
         ? `<div class="notif-list">${notifs.map(n => renderNotifItem(n)).join('')}</div>`
         : `<div class="empty-state"><div class="empty-state__icon">🔔</div>
            <div class="empty-state__title">새 알림이 없어요</div></div>`;
+
+    } else if (tab === 'stats') {
+      await renderStatsTab(content, user.uid);
+
+    } else if (tab === 'follows') {
+      await renderFollowsTab(content, user.uid);
 
     } else if (tab === 'settings') {
       renderSettingsTab(content, user, userData, nickname);
@@ -326,6 +334,149 @@ function renderNotifItem(n) {
         <div class="notif-item__time">${timeStr}</div>
       </div>
     </div>`;
+}
+
+/* ── 통계 탭 ── */
+async function renderStatsTab(content, uid) {
+  try {
+    const postsSnap = await getDocs(
+      query(collection(db, 'feeds'), where('authorId', '==', uid), orderBy('createdAt', 'desc'), limit(100))
+    );
+    const posts = postsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    const catCounts = { golra: 0, usgyo: 0, malhe: 0 };
+    let totalReactions = 0, totalComments = 0, bestPost = null, bestScore = -1;
+    const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);
+    let weekPosts = 0;
+
+    for (const p of posts) {
+      catCounts[p.cat] = (catCounts[p.cat] || 0) + 1;
+      totalReactions += p.reactions?.total || 0;
+      totalComments += p.commentCount || 0;
+      const score = (p.reactions?.total || 0) * 2 + (p.commentCount || 0) * 3;
+      if (score > bestScore) { bestScore = score; bestPost = p; }
+      const d = p.createdAt?.toDate?.();
+      if (d && d >= weekAgo) weekPosts++;
+    }
+
+    const catMeta = [
+      { key: 'golra', label: '🎯 골라봐', color: 'var(--color-golra)' },
+      { key: 'usgyo', label: '😂 웃겨봐', color: 'var(--color-usgyo)' },
+      { key: 'malhe', label: '💬 말해봐', color: 'var(--color-malhe)' },
+    ];
+    const total = posts.length || 1;
+
+    content.innerHTML = `
+      <div class="stats-page">
+        <div class="stats-grid">
+          <div class="stats-card">
+            <div class="stats-card__num">${posts.length}</div>
+            <div class="stats-card__label">총 게시물</div>
+          </div>
+          <div class="stats-card">
+            <div class="stats-card__num" style="color:var(--color-primary)">${totalReactions}</div>
+            <div class="stats-card__label">받은 반응</div>
+          </div>
+          <div class="stats-card">
+            <div class="stats-card__num" style="color:var(--color-malhe)">${totalComments}</div>
+            <div class="stats-card__label">달린 댓글</div>
+          </div>
+          <div class="stats-card">
+            <div class="stats-card__num" style="color:var(--color-success)">${weekPosts}</div>
+            <div class="stats-card__label">이번 주 활동</div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:16px">
+          <div class="card__body">
+            <div style="font-size:14px;font-weight:800;margin-bottom:14px">📂 카테고리별 활동</div>
+            ${catMeta.map(c => `
+              <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+                <div style="width:72px;font-size:12px;font-weight:700">${c.label}</div>
+                <div style="flex:1;background:var(--color-surface-2);border-radius:4px;height:10px;overflow:hidden">
+                  <div style="height:100%;background:${c.color};width:${Math.round((catCounts[c.key]||0)/total*100)}%;transition:width 0.5s"></div>
+                </div>
+                <div style="width:40px;text-align:right;font-size:12px;font-weight:700;color:${c.color}">${catCounts[c.key]||0}개</div>
+              </div>`).join('')}
+          </div>
+        </div>
+
+        ${bestPost ? `
+          <div class="card" style="margin-top:12px;border:1.5px solid var(--color-primary)">
+            <div class="card__body">
+              <div style="font-size:13px;font-weight:800;margin-bottom:8px;color:var(--color-primary)">🏆 내 최고 인기 글</div>
+              <div style="font-size:15px;font-weight:700;margin-bottom:6px;cursor:pointer;color:var(--color-text-primary)" onclick="navigate('/detail/${bestPost.id}')">
+                ${escHtml(bestPost.title || '제목 없음')}
+              </div>
+              <div style="font-size:12px;color:var(--color-text-muted)">
+                ❤️ 반응 ${bestPost.reactions?.total || 0}개 &nbsp;·&nbsp; 💬 댓글 ${bestPost.commentCount || 0}개
+              </div>
+            </div>
+          </div>` : ''}
+      </div>`;
+  } catch {
+    content.innerHTML = `<div class="empty-state"><div class="empty-state__icon">📊</div><div class="empty-state__title">통계를 불러올 수 없어요</div></div>`;
+  }
+}
+
+/* ── 팔로우 탭 ── */
+async function renderFollowsTab(content, uid) {
+  const [followingSnap, followersSnap] = await Promise.all([
+    getDocs(query(collection(db, 'follows'), where('followerId', '==', uid), orderBy('createdAt', 'desc'), limit(50))).catch(() => null),
+    getDocs(query(collection(db, 'follows'), where('followedId', '==', uid), orderBy('createdAt', 'desc'), limit(50))).catch(() => null),
+  ]);
+
+  const following = followingSnap?.docs.map(d => ({ id: d.id, ...d.data() })) || [];
+  const followers = followersSnap?.docs.map(d => ({ id: d.id, ...d.data() })) || [];
+
+  const renderList = (list, isFollowing) => list.length
+    ? list.map(f => `
+        <div class="follow-item">
+          <div class="follow-item__avatar">${(isFollowing ? f.followedName : f.followerName)?.[0] || '?'}</div>
+          <div class="follow-item__name">${escHtml(isFollowing ? f.followedName : f.followerName || '알 수 없음')}</div>
+          ${isFollowing ? `<button class="btn btn--ghost btn--sm follow-unfollow-btn" data-follow-id="${f.id}" data-followed-id="${f.followedId}">언팔로우</button>` : ''}
+        </div>`).join('')
+    : `<div style="padding:24px;text-align:center;font-size:13px;color:var(--color-text-muted)">${isFollowing ? '팔로우하는 사람이 없어요' : '팔로워가 없어요'}</div>`;
+
+  content.innerHTML = `
+    <div class="follows-page">
+      <div class="follows-section">
+        <div class="follows-section__title">팔로잉 <span class="follows-count">${following.length}</span></div>
+        <div class="follows-list">${renderList(following, true)}</div>
+      </div>
+      <div class="follows-section">
+        <div class="follows-section__title">팔로워 <span class="follows-count">${followers.length}</span></div>
+        <div class="follows-list">${renderList(followers, false)}</div>
+      </div>
+    </div>`;
+
+  content.querySelectorAll('.follow-unfollow-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      try {
+        await deleteDoc(doc(db, 'follows', btn.dataset.followId));
+        btn.closest('.follow-item')?.remove();
+        toast.success('언팔로우했어요');
+      } catch { toast.error('잠시 후 다시 시도해주세요'); }
+    });
+  });
+}
+
+export async function followUser(targetUid, targetName) {
+  const { auth: fbAuth, db: fbDb } = await import('../firebase.js');
+  const user = fbAuth.currentUser;
+  if (!user) { toast.error('로그인이 필요해요'); return; }
+  if (user.uid === targetUid) { toast.error('자신은 팔로우할 수 없어요'); return; }
+  const followId = `${user.uid}_${targetUid}`;
+  try {
+    await setDoc(doc(db, 'follows', followId), {
+      followerId: user.uid,
+      followerName: user.displayName || '익명',
+      followedId: targetUid,
+      followedName: targetName || '익명',
+      createdAt: serverTimestamp(),
+    });
+    toast.success(`${targetName}님을 팔로우했어요 👋`);
+  } catch { toast.error('팔로우에 실패했어요'); }
 }
 
 async function fetchMyPosts(uid) {
