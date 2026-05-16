@@ -8,37 +8,33 @@ import { setMeta } from '../utils/seo.js';
 /* ── 카테고리/유형 정의 ── */
 const CATEGORIES = [
   {
-    key: 'golra', label: '골라봐', icon: '🎯', desc: '선택·투표·퀴즈',
+    key: 'golra', label: '골라봐', icon: '🎯', badge: '선택형', desc: '선택·투표·배틀',
     types: [
-      { key: 'balance',  icon: '⚖️', label: '밸런스게임',    desc: 'A vs B 둘 중 하나!' },
-      { key: 'vote',     icon: '🗳️', label: '민심투표',      desc: '여러 선택지로 투표' },
-      { key: 'battle',   icon: '⚔️', label: '선택지배틀',    desc: '후보 중 최강자는?' },
-      { key: 'ox',       icon: '❓', label: 'OX퀴즈',        desc: '맞으면 O, 틀리면 X' },
-      { key: 'quiz',       icon: '🧠', label: '내맘대로퀴즈',  desc: '객관식 또는 주관식' },
-      { key: 'challenge24', icon: '⏰', label: '24시간챌린지',   desc: '24시간 한정 투표·배틀' },
-      { key: 'tournament',  icon: '🏆', label: '토너먼트',        desc: '4~8개 후보 중 우승자 가리기' },
+      { key: 'balance',    icon: '⚖️', label: '밸런스게임',    desc: 'A vs B, 둘 중 하나만!' },
+      { key: 'vote',       icon: '🗳️', label: '민심투표',      desc: '여러 선택지로 투표해요' },
+      { key: 'battle',     icon: '⚔️', label: '선택지배틀',    desc: '후보들 중 최강자는?' },
+      { key: 'challenge24',icon: '⏰', label: '24시간챌린지',   desc: '24시간 한정 핫이슈 투표' },
+      { key: 'tournament', icon: '🏆', label: '이상형월드컵',   desc: '대진표로 최애를 가려봐요' },
     ],
   },
   {
-    key: 'usgyo', label: '웃겨봐', icon: '😂', desc: '드립·삼행시·작명',
+    key: 'usgyo', label: '웃겨봐', icon: '😂', badge: '드립형', desc: '센스·유머 대결',
     types: [
       { key: 'naming',   icon: '😜', label: '미친작명소',    desc: '사진에 웃긴 제목 붙이기' },
       { key: 'acrostic', icon: '✍️', label: '삼행시짓기',    desc: '제시어로 삼행시 도전' },
-      { key: 'cbattle',  icon: '💥', label: '댓글배틀',      desc: '댓글로 겨루는 배틀' },
+      { key: 'drip',     icon: '🎤', label: '한줄드립',      desc: '한 줄로 터지는 드립 대결' },
+      { key: 'cbattle',  icon: '💥', label: '댓글배틀',      desc: '두 팀으로 나눠 댓글 배틀' },
       { key: 'laugh',    icon: '🙈', label: '웃참챌린지',    desc: '웃겨도 참을 수 있어?' },
-      { key: 'drip',         icon: '🎤', label: '한줄드립',      desc: '한 줄로 표현하는 드립' },
-      { key: 'random_battle', icon: '🎰', label: '랜덤대결',      desc: '같은 주제로 누가 더 웃겨?' },
     ],
   },
   {
-    key: 'malhe', label: '말해봐', icon: '💬', desc: '경험·노하우·고민',
+    key: 'malhe', label: '도전봐', icon: '🎮', badge: '도전형', desc: '퀴즈·릴레이·창작',
     types: [
-      { key: 'howto',    icon: '💡', label: '나만의노하우',  desc: '직접 겪은 꿀팁 공유' },
-      { key: 'story',    icon: '📖', label: '경험담',        desc: '내가 겪은 이야기' },
-      { key: 'fail',     icon: '💀', label: '실패담',        desc: '실패에서 배운 것들' },
-      { key: 'concern',  icon: '🤔', label: '고민/질문',     desc: '함께 고민해요' },
-      { key: 'relay',     icon: '🎭', label: '막장릴레이',    desc: '이어쓰는 막장 이야기' },
-      { key: 'word_relay', icon: '🔗', label: '단어 릴레이',     desc: '끝말잇기 스타일 연결 게임' },
+      { key: 'ox',          icon: '❓', label: 'OX퀴즈',       desc: '맞으면 O, 틀리면 X' },
+      { key: 'quiz',        icon: '🧠', label: '4지선다',       desc: '4개 중 정답을 맞혀봐요' },
+      { key: 'relay',       icon: '🎭', label: '막장릴레이',    desc: '한 문장씩 이어가는 스토리' },
+      { key: 'word_relay',  icon: '🔗', label: '단어릴레이',    desc: '끝말잇기 스타일 연결 게임' },
+      { key: 'random_battle',icon:'🎰', label: '랜덤대결',      desc: '같은 주제로 누가 더 재밌어?' },
     ],
   },
 ];
@@ -94,11 +90,14 @@ function renderCatSelect(el) {
           <div class="card card--hover" data-cat="${cat.key}" style="cursor:pointer">
             <div class="card__body" style="display:flex;align-items:center;gap:16px">
               <div style="font-size:36px;flex-shrink:0">${cat.icon}</div>
-              <div>
-                <div style="font-size:18px;font-weight:800">${cat.label}</div>
+              <div style="flex:1;min-width:0">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="font-size:18px;font-weight:800">${cat.label}</span>
+                  <span style="font-size:10px;font-weight:800;padding:2px 8px;border-radius:99px;background:var(--color-${cat.key}-bg);color:var(--color-${cat.key}-dark);border:1px solid var(--color-${cat.key}-border)">${cat.badge}</span>
+                </div>
                 <div style="font-size:13px;color:var(--color-text-secondary);margin-top:2px">${cat.desc}</div>
               </div>
-              <div style="margin-left:auto;color:var(--color-text-muted)">›</div>
+              <div style="color:var(--color-text-muted)">›</div>
             </div>
           </div>`).join('')}
       </div>

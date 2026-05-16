@@ -6,11 +6,11 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const HALL_CATS = [
-  { key: 'naming',   label: '작명왕',  icon: '✏️', type: 'naming',   desc: '미친 작명 실력자', scoreKey: null },
-  { key: 'acrostic', label: '삼행시왕', icon: '📝', type: 'acrostic', desc: '삼행시의 달인',     scoreKey: null },
-  { key: 'comment',  label: '댓글왕',  icon: '💬', type: null,        desc: '댓글을 가장 많이 받은 글', scoreKey: 'comment' },
-  { key: 'quiz',     label: '퀴즈왕',  icon: '🎯', type: 'quiz',      desc: '퀴즈 마스터',       scoreKey: null },
-  { key: 'howto',    label: '노하우왕', icon: '💡', type: 'howto',    desc: '지식의 왕',          scoreKey: null },
+  { key: 'naming',       label: '작명왕',  icon: '✏️', type: 'naming',       desc: '미친 작명 실력자',       scoreKey: null },
+  { key: 'acrostic',     label: '삼행시왕', icon: '📝', type: 'acrostic',     desc: '삼행시의 달인',          scoreKey: null },
+  { key: 'comment',      label: '댓글왕',  icon: '💬', type: null,            desc: '댓글을 가장 많이 받은 글', scoreKey: 'comment' },
+  { key: 'quiz',         label: '퀴즈왕',  icon: '🧠', type: 'quiz',          desc: '퀴즈 마스터',            scoreKey: null },
+  { key: 'random_battle',label: '대결왕',  icon: '🎰', type: 'random_battle', desc: '랜덤대결 최고 인기글',    scoreKey: null },
 ];
 
 function score(p) {

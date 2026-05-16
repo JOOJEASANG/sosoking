@@ -3,28 +3,29 @@ import { escHtml, formatTime } from '../utils/helpers.js';
 
 /* 카테고리/유형 메타 */
 const TYPE_META = {
-  // 골라봐
-  balance:  { cat: 'golra', catLabel: '골라봐', icon: '⚖️', label: '밸런스게임' },
-  vote:     { cat: 'golra', catLabel: '골라봐', icon: '🗳️', label: '민심투표' },
-  battle:   { cat: 'golra', catLabel: '골라봐', icon: '⚔️', label: '선택지배틀' },
-  ox:       { cat: 'golra', catLabel: '골라봐', icon: '❓', label: 'OX퀴즈' },
-  quiz:         { cat: 'golra', catLabel: '골라봐', icon: '🧠', label: '내맘대로퀴즈' },
+  // 골라봐 — 선택·투표·배틀
+  balance:      { cat: 'golra', catLabel: '골라봐', icon: '⚖️', label: '밸런스게임' },
+  vote:         { cat: 'golra', catLabel: '골라봐', icon: '🗳️', label: '민심투표' },
+  battle:       { cat: 'golra', catLabel: '골라봐', icon: '⚔️', label: '선택지배틀' },
   challenge24:  { cat: 'golra', catLabel: '골라봐', icon: '⏰', label: '24시간챌린지' },
-  tournament:   { cat: 'golra', catLabel: '골라봐', icon: '🏆', label: '토너먼트' },
-  // 웃겨봐
-  naming:   { cat: 'usgyo', catLabel: '웃겨봐', icon: '😜', label: '미친작명소' },
-  acrostic: { cat: 'usgyo', catLabel: '웃겨봐', icon: '✍️', label: '삼행시짓기' },
-  cbattle:  { cat: 'usgyo', catLabel: '웃겨봐', icon: '💥', label: '댓글배틀' },
-  laugh:    { cat: 'usgyo', catLabel: '웃겨봐', icon: '🙈', label: '웃참챌린지' },
+  tournament:   { cat: 'golra', catLabel: '골라봐', icon: '🏆', label: '이상형월드컵' },
+  // 웃겨봐 — 센스·유머 대결
+  naming:       { cat: 'usgyo', catLabel: '웃겨봐', icon: '😜', label: '미친작명소' },
+  acrostic:     { cat: 'usgyo', catLabel: '웃겨봐', icon: '✍️', label: '삼행시짓기' },
   drip:         { cat: 'usgyo', catLabel: '웃겨봐', icon: '🎤', label: '한줄드립' },
-  random_battle: { cat: 'usgyo', catLabel: '웃겨봐', icon: '🎰', label: '랜덤대결' },
-  // 말해봐
-  howto:    { cat: 'malhe', catLabel: '말해봐', icon: '💡', label: '나만의노하우' },
-  story:    { cat: 'malhe', catLabel: '말해봐', icon: '📖', label: '경험담' },
-  fail:     { cat: 'malhe', catLabel: '말해봐', icon: '💀', label: '실패담' },
-  concern:  { cat: 'malhe', catLabel: '말해봐', icon: '🤔', label: '고민/질문' },
-  relay:     { cat: 'malhe', catLabel: '말해봐', icon: '🎭', label: '막장릴레이' },
-  word_relay: { cat: 'malhe', catLabel: '말해봐', icon: '🔗', label: '단어릴레이' },
+  cbattle:      { cat: 'usgyo', catLabel: '웃겨봐', icon: '💥', label: '댓글배틀' },
+  laugh:        { cat: 'usgyo', catLabel: '웃겨봐', icon: '🙈', label: '웃참챌린지' },
+  // 도전봐 — 퀴즈·릴레이·창작
+  ox:           { cat: 'malhe', catLabel: '도전봐', icon: '❓', label: 'OX퀴즈' },
+  quiz:         { cat: 'malhe', catLabel: '도전봐', icon: '🧠', label: '4지선다' },
+  relay:        { cat: 'malhe', catLabel: '도전봐', icon: '🎭', label: '막장릴레이' },
+  word_relay:   { cat: 'malhe', catLabel: '도전봐', icon: '🔗', label: '단어릴레이' },
+  random_battle:{ cat: 'malhe', catLabel: '도전봐', icon: '🎰', label: '랜덤대결' },
+  // 구형 타입 — 기존 게시물 표시용 (신규 작성 불가)
+  howto:   { cat: 'malhe', catLabel: '도전봐', icon: '💡', label: '노하우' },
+  story:   { cat: 'malhe', catLabel: '도전봐', icon: '📖', label: '경험담' },
+  fail:    { cat: 'malhe', catLabel: '도전봐', icon: '💀', label: '실패담' },
+  concern: { cat: 'malhe', catLabel: '도전봐', icon: '🤔', label: '고민/질문' },
 };
 
 export function renderFeedCard(post) {

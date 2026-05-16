@@ -12,19 +12,19 @@ import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { appState } from '../state.js';
 
 const ALL_TYPES = [
-  'balance','vote','battle','ox','quiz',
-  'naming','acrostic','cbattle','laugh','drip',
-  'howto','story','fail','concern','relay',
+  'balance','vote','battle','challenge24','tournament',
+  'naming','acrostic','drip','cbattle','laugh',
+  'ox','quiz','relay','word_relay','random_battle',
 ];
 
-const PARTICIPATORY_TYPES = ['quiz', 'vote', 'balance', 'battle', 'cbattle', 'naming', 'ox', 'laugh'];
+const PARTICIPATORY_TYPES = ['balance', 'vote', 'battle', 'challenge24', 'tournament', 'naming', 'ox', 'quiz', 'laugh', 'cbattle', 'random_battle'];
 
 const THRONE_CATS = [
-  { key: 'naming',   label: '작명왕',  icon: '✏️', type: 'naming',   scoreKey: null },
-  { key: 'acrostic', label: '삼행시왕', icon: '📝', type: 'acrostic', scoreKey: null },
-  { key: 'comment',  label: '댓글왕',  icon: '💬', type: null,        scoreKey: 'comment' },
-  { key: 'quiz',     label: '퀴즈왕',  icon: '🎯', type: 'quiz',      scoreKey: null },
-  { key: 'howto',    label: '노하우왕', icon: '💡', type: 'howto',    scoreKey: null },
+  { key: 'naming',       label: '작명왕',  icon: '✏️', type: 'naming',       scoreKey: null },
+  { key: 'acrostic',     label: '삼행시왕', icon: '📝', type: 'acrostic',     scoreKey: null },
+  { key: 'comment',      label: '댓글왕',  icon: '💬', type: null,            scoreKey: 'comment' },
+  { key: 'quiz',         label: '퀴즈왕',  icon: '🧠', type: 'quiz',          scoreKey: null },
+  { key: 'random_battle',label: '대결왕',  icon: '🎰', type: 'random_battle', scoreKey: null },
 ];
 
 function throneScore(p) {
@@ -54,12 +54,12 @@ async function checkStreak(uid) {
 }
 
 const CAT_QUICK_TYPES = [
-  { key: 'balance',  icon: '⚖️', label: '밸런스게임',   cat: 'golra' },
-  { key: 'ox',       icon: '❓', label: 'OX퀴즈',       cat: 'golra' },
-  { key: 'acrostic', icon: '✍️', label: '삼행시짓기',   cat: 'usgyo' },
-  { key: 'naming',   icon: '😜', label: '미친작명소',   cat: 'usgyo' },
-  { key: 'howto',    icon: '💡', label: '나만의노하우', cat: 'malhe' },
-  { key: 'concern',  icon: '🤔', label: '고민/질문',    cat: 'malhe' },
+  { key: 'balance',      icon: '⚖️', label: '밸런스게임',   cat: 'golra' },
+  { key: 'tournament',   icon: '🏆', label: '이상형월드컵', cat: 'golra' },
+  { key: 'acrostic',     icon: '✍️', label: '삼행시짓기',   cat: 'usgyo' },
+  { key: 'naming',       icon: '😜', label: '미친작명소',   cat: 'usgyo' },
+  { key: 'ox',           icon: '❓', label: 'OX퀴즈',       cat: 'malhe' },
+  { key: 'random_battle',icon: '🎰', label: '랜덤대결',     cat: 'malhe' },
 ];
 
 export async function renderHome() {
@@ -113,11 +113,11 @@ export async function renderHome() {
           <div class="home-hero__content">
             <div class="home-hero__eyebrow">🔥 게임형 놀이 커뮤니티</div>
             <div class="home-hero__title">고르거나 웃기거나<br>한마디만 던져도 시작!</div>
-            <div class="home-hero__sub">밸런스게임, 퀴즈, 삼행시, 작명, 고민까지<br>짧게 참여하고 댓글로 같이 노는 놀이 커뮤니티</div>
+            <div class="home-hero__sub">밸런스게임·이상형월드컵·삼행시·랜덤대결·OX퀴즈<br>짧게 참여하고 댓글로 같이 노는 게임형 커뮤니티</div>
             <div class="home-hero__chips">
               <span class="home-hero__chip">🎯 골라봐</span>
               <span class="home-hero__chip">😂 웃겨봐</span>
-              <span class="home-hero__chip">💬 말해봐</span>
+              <span class="home-hero__chip">🎮 도전봐</span>
               <span class="home-hero__chip">⚡ 바로 참여</span>
             </div>
             <div class="home-hero__action">
@@ -142,10 +142,10 @@ export async function renderHome() {
             </div>
           </div>
           <div class="home-hero__visual" aria-hidden="true">
-            <div class="home-hero__mini-card"><b>⚖️ 오늘의 선택</b><span>둘 중 하나만 고르면 끝</span></div>
-            <div class="home-hero__mini-card"><b>😂 한 줄 드립</b><span>짧게 웃기면 인기글</span></div>
-            <div class="home-hero__mini-card"><b>🎯 AI 미션</b><span>매일 새로운 참여 주제</span></div>
-            <div class="home-hero__mini-card"><b>💬 고민/노하우</b><span>가볍게 묻고 답하기</span></div>
+            <div class="home-hero__mini-card"><b>⚖️ 밸런스게임</b><span>둘 중 하나만 고르면 끝</span></div>
+            <div class="home-hero__mini-card"><b>🏆 이상형월드컵</b><span>대진표로 최애 가리기</span></div>
+            <div class="home-hero__mini-card"><b>✍️ 삼행시짓기</b><span>제시어로 삼행시 도전</span></div>
+            <div class="home-hero__mini-card"><b>🎰 랜덤대결</b><span>같은 주제 누가 더 재밌어</span></div>
           </div>
         </div>
 
@@ -258,25 +258,25 @@ export async function renderHome() {
 function renderCategoryCards() {
   const cats = [
     {
-      key: 'golra', emoji: '🎯', badge: 'CHOOSE', name: '골라봐',
+      key: 'golra', emoji: '🎯', badge: '선택형', name: '골라봐',
       hook: '선택은 빠르게, 이유는 댓글로',
-      desc: '밸런스게임·투표·OX퀴즈처럼 누르자마자 참여하는 놀이판이에요.',
-      types: ['밸런스게임', '민심투표', 'OX퀴즈', '4지선다'],
+      desc: '밸런스게임·민심투표·이상형월드컵 — 누르자마자 참여하는 선택형 놀이판이에요.',
+      types: ['밸런스게임', '민심투표', '선택지배틀', '24시간챌린지', '이상형월드컵'],
       cta: '선택하러 가기',
     },
     {
-      key: 'usgyo', emoji: '😂', badge: 'FUNNY', name: '웃겨봐',
+      key: 'usgyo', emoji: '😂', badge: '드립형', name: '웃겨봐',
       hook: '드립 한 줄이면 분위기 반전',
-      desc: '미친작명소, 삼행시, 댓글배틀로 센스와 웃음을 겨뤄요.',
-      types: ['미친작명소', '삼행시', '한줄드립', '댓글배틀'],
+      desc: '미친작명소·삼행시·한줄드립·댓글배틀로 센스와 유머를 겨뤄요.',
+      types: ['미친작명소', '삼행시짓기', '한줄드립', '댓글배틀', '웃참챌린지'],
       cta: '웃기러 가기',
     },
     {
-      key: 'malhe', emoji: '💬', badge: 'TALK', name: '말해봐',
-      hook: '소소한 경험도 콘텐츠가 돼요',
-      desc: '고민, 실패담, 노하우, 릴레이 이야기까지 편하게 나눠요.',
-      types: ['나만의노하우', '경험담', '고민/질문', '막장릴레이'],
-      cta: '이야기하러 가기',
+      key: 'malhe', emoji: '🎮', badge: '도전형', name: '도전봐',
+      hook: '퀴즈부터 릴레이까지 도전하세요',
+      desc: 'OX퀴즈·4지선다·막장릴레이·단어릴레이·랜덤대결로 두뇌와 창의력을 겨뤄요.',
+      types: ['OX퀴즈', '4지선다', '막장릴레이', '단어릴레이', '랜덤대결'],
+      cta: '도전하러 가기',
     },
   ];
   return `
