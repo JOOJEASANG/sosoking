@@ -65,10 +65,23 @@ export function renderWrite() {
   renderCatSelect(el);
 }
 
+function stepIndicator(current) {
+  const steps = ['카테고리', '유형', '작성'];
+  return `
+    <div class="write-steps">
+      ${steps.map((label, i) => `
+        ${i > 0 ? `<div class="write-step-line ${i < current ? 'done' : ''}"></div>` : ''}
+        <div class="write-step-dot ${i + 1 < current ? 'done' : i + 1 === current ? 'current' : 'pending'}" title="${label}">
+          ${i + 1 < current ? '✓' : i + 1}
+        </div>`).join('')}
+    </div>`;
+}
+
 /* ── 1단계: 카테고리 선택 ── */
 function renderCatSelect(el) {
   el.innerHTML = `
     <div class="write-page">
+      ${stepIndicator(1)}
       <div class="write-step-header">
         <h1 class="write-step-title">어떤 놀이판 만들까요?</h1>
       </div>
@@ -99,6 +112,7 @@ function renderCatSelect(el) {
 function renderTypeSelect(el) {
   el.innerHTML = `
     <div class="write-page">
+      ${stepIndicator(2)}
       <div class="write-step-header">
         <button class="write-back-btn" id="btn-back-cat">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
@@ -131,6 +145,7 @@ function renderForm(el) {
 
   el.innerHTML = `
     <div class="write-page">
+      ${stepIndicator(3)}
       <div class="write-step-header">
         <button class="write-back-btn" id="btn-back-type">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>

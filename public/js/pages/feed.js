@@ -1,7 +1,7 @@
 import { db } from '../firebase.js';
 import { collection, query, orderBy, limit, startAfter, getDocs, where } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { getQueryParams } from '../router.js';
-import { renderFeedCard } from '../components/feed-card.js';
+import { renderFeedCard, renderSkeletonCards } from '../components/feed-card.js';
 import { setMeta } from '../utils/seo.js';
 import { escHtml } from '../utils/helpers.js';
 
@@ -41,7 +41,7 @@ export async function renderFeed() {
       <div class="layout-main">
         ${renderSearchBar()}
         ${renderFilterBar()}
-        <div id="feed-list"></div>
+        <div id="feed-list">${renderSkeletonCards(5)}</div>
         <div id="feed-loader" class="loading-center" style="display:none">
           <div class="spinner"></div>
         </div>

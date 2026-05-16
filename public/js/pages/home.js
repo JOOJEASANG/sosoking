@@ -1,5 +1,5 @@
 import { navigate } from '../router.js';
-import { renderFeedCard } from '../components/feed-card.js';
+import { renderFeedCard, renderSkeletonCards } from '../components/feed-card.js';
 import { fetchHotPosts } from '../services/feed-service.js';
 import { auth, db, functions } from '../firebase.js';
 import { setMeta } from '../utils/seo.js';
@@ -44,7 +44,20 @@ const CAT_QUICK_TYPES = [
 
 export async function renderHome() {
   const el = document.getElementById('page-content');
-  el.innerHTML = `<div class="loading-center"><div class="spinner spinner--lg"></div></div>`;
+  el.innerHTML = `
+    <div class="home-layout">
+      <div class="skeleton-card" style="height:220px;border-radius:var(--radius-lg)"></div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:16px 0">
+        ${Array.from({length:3},()=>`<div class="skeleton" style="height:80px;border-radius:var(--radius-md)"></div>`).join('')}
+      </div>
+      <div class="layout-cols">
+        <div>${renderSkeletonCards(4)}</div>
+        <div class="layout-sidebar">
+          <div class="skeleton-card" style="height:120px"></div>
+          <div class="skeleton-card" style="height:160px"></div>
+        </div>
+      </div>
+    </div>`;
 
   try {
     const todayStart = new Date();

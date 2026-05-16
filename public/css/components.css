@@ -47,9 +47,10 @@
   cursor: pointer;
 }
 .card--hover:hover {
-  box-shadow: var(--shadow-md); transform: translateY(-3px);
+  box-shadow: var(--shadow-md); transform: translateY(-2px);
   border-color: var(--color-border);
 }
+.card--hover:active { transform: translateY(0); box-shadow: var(--shadow-xs); }
 .card__body { padding: var(--space-4); }
 .card__body--lg { padding: var(--space-5) var(--space-6); }
 .card__footer {
@@ -62,12 +63,28 @@
 .feed-card {
   margin-bottom: var(--space-3);
   border-left: 4px solid transparent;
-  transition: all var(--transition-base);
+  transition: box-shadow var(--transition-base), transform var(--transition-base), border-color var(--transition-base);
 }
 .feed-card--golra { border-left-color: var(--color-golra); }
 .feed-card--usgyo { border-left-color: var(--color-usgyo); }
 .feed-card--malhe { border-left-color: var(--color-malhe); }
-.feed-card--hover:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: var(--color-border); }
+/* 인라인 스타일 대체 클래스 */
+.feed-card__content { flex: 1; min-width: 0; }
+.feed-card__badge-row {
+  display: flex; align-items: center; gap: 6px;
+  margin-bottom: 6px; flex-wrap: wrap;
+}
+.feed-card__thumb {
+  flex-shrink: 0; margin-left: var(--space-3);
+  width: 80px; height: 80px;
+  border-radius: var(--radius-md); overflow: hidden;
+}
+.feed-card__thumb img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  transition: transform 0.2s ease;
+}
+.feed-card:hover .feed-card__thumb img { transform: scale(1.05); }
+.feed-card__images { margin-top: var(--space-2); }
 
 .feed-card__header { display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-4); }
 .feed-card__type-badge {
@@ -867,3 +884,116 @@
 }
 .char-counter.near-limit { color: var(--color-warning); }
 .char-counter.over-limit { color: var(--color-danger); font-weight: 700; }
+
+/* ══════════════════════════════
+   스켈레톤 로딩 시스템
+══════════════════════════════ */
+@keyframes sk-wave {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-surface-2) 25%,
+    var(--color-border-light) 50%,
+    var(--color-surface-2) 75%
+  );
+  background-size: 200% 100%;
+  animation: sk-wave 1.6s ease infinite;
+  border-radius: var(--radius-sm);
+}
+.skeleton-card {
+  display: flex; align-items: flex-start; gap: var(--space-3);
+  padding: var(--space-4); margin-bottom: var(--space-3);
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border-light);
+  border-radius: var(--radius-base);
+  overflow: hidden;
+}
+.skeleton-body { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+.skeleton-line { border-radius: 6px; height: 12px; }
+.skeleton-line--title  { height: 18px; width: 72%; }
+.skeleton-line--desc   { height: 12px; width: 92%; }
+.skeleton-line--desc2  { height: 12px; width: 58%; }
+.skeleton-line--meta   { height: 10px; width: 40%; margin-top: 4px; }
+.skeleton-thumb        { width: 80px; height: 80px; border-radius: var(--radius-md); flex-shrink: 0; }
+
+/* ══════════════════════════════
+   버튼 개선
+══════════════════════════════ */
+.btn--loading {
+  position: relative; color: transparent !important; pointer-events: none;
+}
+.btn--loading::after {
+  content: ''; position: absolute;
+  width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.65s linear infinite;
+}
+.btn--ghost.btn--loading::after { border-color: var(--color-border); border-top-color: var(--color-primary); }
+
+/* ══════════════════════════════
+   입력 폼 개선
+══════════════════════════════ */
+.form-input:disabled, .form-textarea:disabled, .form-select:disabled {
+  opacity: 0.55; cursor: not-allowed; background: var(--color-surface-2);
+}
+/* 숫자 인풋 화살표 제거 */
+.form-input[type="number"]::-webkit-inner-spin-button,
+.form-input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.form-input[type="number"] { -moz-appearance: textfield; }
+
+/* ══════════════════════════════
+   반응 바 개선
+══════════════════════════════ */
+.reaction-btn:active { transform: scale(0.93); }
+.reaction-btn.active .reaction-emoji {
+  animation: pop 0.2s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes pop {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.4); }
+  100% { transform: scale(1); }
+}
+
+/* ══════════════════════════════
+   빈 상태 개선
+══════════════════════════════ */
+.empty-state {
+  background: var(--color-surface);
+  border: 1.5px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  margin: var(--space-4) 0;
+}
+.empty-state__icon { animation: float 3s ease-in-out infinite; }
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-8px); }
+}
+
+/* ══════════════════════════════
+   스크롤 가능한 가로 컨테이너
+══════════════════════════════ */
+.scroll-x {
+  display: flex; gap: var(--space-3);
+  overflow-x: auto; scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 4px;
+}
+.scroll-x::-webkit-scrollbar { display: none; }
+.scroll-x > * { scroll-snap-align: start; flex-shrink: 0; }
+
+/* ══════════════════════════════
+   토스트 위치 개선 (모바일)
+══════════════════════════════ */
+@media (max-width: 768px) {
+  .toast-container {
+    top: auto; bottom: calc(72px + env(safe-area-inset-bottom, 0) + 8px);
+    right: var(--space-3); left: var(--space-3);
+  }
+  .toast { max-width: 100%; }
+}

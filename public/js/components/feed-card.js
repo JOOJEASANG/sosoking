@@ -31,11 +31,13 @@ export function renderFeedCard(post) {
   const totalReactions = reactions.total || 0;
   const commentCount = post.commentCount || 0;
 
+  const viewCount = post.viewCount || 0;
+
   return `
     <article class="card card--hover feed-card feed-card--${meta.cat}" onclick="navigate('/detail/${post.id}')">
-      <div class="feed-card__header" style="padding-bottom:0">
-        <div style="flex:1;min-width:0">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+      <div class="feed-card__header">
+        <div class="feed-card__content">
+          <div class="feed-card__badge-row">
             <span class="feed-card__type-badge feed-card__type-badge--${meta.cat}">
               ${meta.icon} ${meta.label}
             </span>
@@ -45,15 +47,14 @@ export function renderFeedCard(post) {
           ${post.desc ? `<p class="feed-card__desc line-clamp-2">${escHtml(post.desc)}</p>` : ''}
           <div class="feed-card__meta">
             <span>${escHtml(post.authorName || '익명')}</span>
+            <span class="feed-card__meta-dot"></span>
             <span>${timeStr}</span>
-            ${totalReactions ? `<span>❤️ ${totalReactions}</span>` : ''}
-            ${commentCount ? `<span>💬 ${commentCount}</span>` : ''}
+            ${viewCount ? `<span class="feed-card__meta-dot"></span><span>👁 ${viewCount}</span>` : ''}
+            ${totalReactions ? `<span class="feed-card__meta-dot"></span><span>❤️ ${totalReactions}</span>` : ''}
+            ${commentCount ? `<span class="feed-card__meta-dot"></span><span>💬 ${commentCount}</span>` : ''}
           </div>
         </div>
-        ${images.length === 1 ? `
-          <div style="flex-shrink:0;margin-left:12px">
-            <img src="${images[0]}" alt="" style="width:80px;height:80px;object-fit:cover;border-radius:10px">
-          </div>` : ''}
+        ${images.length === 1 ? `<div class="feed-card__thumb"><img src="${images[0]}" alt="" loading="lazy"></div>` : ''}
       </div>
       ${images.length > 1 ? renderImageGrid(images) : ''}
     </article>`;
@@ -62,8 +63,21 @@ export function renderFeedCard(post) {
 function renderImageGrid(images) {
   const shown = images.slice(0, 3);
   return `
-    <div class="feed-card__images feed-card__images--${Math.min(shown.length, 3)}" style="margin-top:8px">
+    <div class="feed-card__images feed-card__images--${Math.min(shown.length, 3)}">
       ${shown.map(src => `<img class="feed-card__img" src="${src}" alt="" loading="lazy">`).join('')}
     </div>`;
+}
+
+export function renderSkeletonCards(count = 3) {
+  return Array.from({ length: count }, () => `
+    <div class="skeleton-card">
+      <div class="skeleton-body">
+        <div class="skeleton skeleton-line--title"></div>
+        <div class="skeleton skeleton-line--desc"></div>
+        <div class="skeleton skeleton-line--desc2"></div>
+        <div class="skeleton skeleton-line--meta"></div>
+      </div>
+      <div class="skeleton skeleton-thumb"></div>
+    </div>`).join('');
 }
 

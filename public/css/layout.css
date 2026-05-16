@@ -132,9 +132,11 @@
 .bottom-nav__item.active svg { transform: scale(1.12); stroke-width: 2.2; }
 .bottom-nav__item.active::before {
   content: ''; position: absolute; top: 6px;
-  width: 32px; height: 32px;
-  background: var(--color-primary-bg); border-radius: 10px; z-index: -1;
+  width: 36px; height: 28px;
+  background: var(--color-primary-bg); border-radius: var(--radius-md); z-index: -1;
 }
+.bottom-nav__item:hover:not(.active) { color: var(--color-text-secondary); }
+.bottom-nav__item:active { transform: scale(0.92); }
 .bottom-nav__write {
   flex: 1; display: flex; align-items: center; justify-content: center;
 }
