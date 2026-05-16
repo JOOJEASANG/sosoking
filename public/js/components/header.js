@@ -1,6 +1,10 @@
 import { appState } from '../state.js';
 import { navigate } from '../router.js';
 
+function installIcon() {
+  return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>`;
+}
+
 function notifBell() {
   const n = appState.unreadNotifications || 0;
   return `<a href="#/account?tab=notifications" class="notif-bell" title="알림">
@@ -71,8 +75,10 @@ export function renderHeader() {
       </nav>
 
       ${themeToggleBtn()}
+      ${appState.installPrompt ? `<button class="btn btn--ghost btn--sm pwa-install-btn" id="pwa-install-btn" title="앱 설치">📲 설치</button>` : ''}
 
       <div class="site-header__mobile-menu">
+        ${appState.installPrompt ? `<button class="site-header__icon-btn" id="pwa-install-btn-mobile" aria-label="앱 설치" title="앱 설치">${installIcon()}</button>` : ''}
         <button class="site-header__icon-btn" id="mobile-search-btn" aria-label="검색">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/></svg>
         </button>
@@ -101,4 +107,17 @@ export function renderHeader() {
     localStorage.setItem('theme', next);
     renderHeader();
   });
+
+  const triggerInstall = async () => {
+    const prompt = appState.installPrompt;
+    if (!prompt) return;
+    prompt.prompt();
+    const { outcome } = await prompt.userChoice;
+    if (outcome === 'accepted') {
+      appState.installPrompt = null;
+      renderHeader();
+    }
+  };
+  document.getElementById('pwa-install-btn')?.addEventListener('click', triggerInstall);
+  document.getElementById('pwa-install-btn-mobile')?.addEventListener('click', triggerInstall);
 }

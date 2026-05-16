@@ -877,6 +877,14 @@
 .theme-toggle:hover { background: var(--color-surface-2); color: var(--color-primary); }
 .theme-toggle svg { width: 18px; height: 18px; }
 
+/* ── PWA 설치 버튼 (PC 헤더) ── */
+.pwa-install-btn {
+  display: flex; align-items: center; gap: 4px;
+  font-size: var(--font-size-xs); font-weight: 700;
+  white-space: nowrap; flex-shrink: 0;
+}
+@media (max-width: 768px) { .pwa-install-btn { display: none; } }
+
 /* ── 글자 수 카운터 ── */
 .char-counter {
   text-align: right; font-size: 11px; color: var(--color-text-muted);

@@ -6,4 +6,5 @@ export const appState = {
   unreadNotifications: 0,
   streak: 0,
   userTitle: '',
+  installPrompt: null,
 };

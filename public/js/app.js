@@ -106,6 +106,17 @@ export async function initApp() {
   registerRoute('/privacy',    () => renderPrivacy());
 
   initRouter();
+
+  // PWA 설치 프롬프트 캡처
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    appState.installPrompt = e;
+    renderHeader();
+  });
+  window.addEventListener('appinstalled', () => {
+    appState.installPrompt = null;
+    renderHeader();
+  });
 }
 
 window.navigate = navigate;
