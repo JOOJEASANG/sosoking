@@ -1,3 +1,5 @@
+const feedGameFunctions = require('./feed-functions.js');
+
 module.exports = {
   ...require('./functions-main.js'),
   ...require('./ai-hunt-functions.js'),
@@ -7,6 +9,10 @@ module.exports = {
   ...require('./link-summary-functions.js'),
   ...require('./daily-seed-functions.js'),
   ...require('./soso-feed-functions.js'),
-  ...require('./feed-functions.js'),
+  secureRegisterFeedView: feedGameFunctions.registerFeedView,
+  secureReactFeedPost: feedGameFunctions.reactFeedPost,
+  secureVoteFeedOption: feedGameFunctions.voteFeedOption,
+  secureAddFeedComment: feedGameFunctions.addFeedComment,
+  secureCheckQuizAnswer: feedGameFunctions.checkQuizAnswer,
   ...require('./account-functions.js'),
 };
