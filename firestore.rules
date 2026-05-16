@@ -37,9 +37,11 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // ── 사이트 설정 (읽기 공개) ────────────────────────────
+    // ── 사이트 설정 / 운영 데이터 ───────────────────────────
     match /site_settings/{docId}  { allow read: if true; allow write: if isAdmin(); }
     match /policy_docs/{docId}    { allow read: if true; allow write: if isAdmin(); }
+    match /admin_summaries/{docId} { allow read: if isAdmin(); allow write: if false; }
+    match /ai_usage/{docId}        { allow read: if isAdmin(); allow write: if false; }
 
     // ── 사용자 프로필 ──────────────────────────────────────
     match /users/{userId} {
@@ -72,13 +74,11 @@ service cloud.firestore {
                       || (signedIn() && isSafeCounterUpdate());
       allow delete: if isAdmin() || isAuthor(resource.data.authorId);
 
-      // 서버 함수가 퀴즈 도전 기록을 관리한다. 본인 기록만 읽기 허용.
       match /quiz_attempts/{userId} {
         allow read: if true;
         allow create, update, delete: if false;
       }
 
-      // 댓글 / 댓글배틀·릴레이 반응
       match /comments/{commentId} {
         allow read:   if true;
         allow create: if signedIn()
@@ -89,7 +89,6 @@ service cloud.firestore {
         allow delete: if isAdmin() || isAuthor(resource.data.authorId);
       }
 
-      // 퀴즈 정답은 클라이언트에서 직접 읽지 않는다. 정답 확인은 checkQuizAnswer 함수로 처리.
       match /secret/{docId} {
         allow read:   if isAdmin();
         allow create: if isAdmin() ||
@@ -99,7 +98,6 @@ service cloud.firestore {
         allow delete: if isAdmin();
       }
 
-      // 삼행시 참여글 — 별도 카드 + 반응 구조
       match /acrostics/{acrosticId} {
         allow read:   if true;
         allow create: if signedIn()
@@ -131,20 +129,17 @@ service cloud.firestore {
       allow read, update, delete: if isAdmin();
     }
 
-    // ── 스크랩 ─────────────────────────────────────────────
     match /users/{userId}/scraps/{scrapId} {
       allow read, write: if isAuthor(userId);
     }
 
-    // ── 알림 ───────────────────────────────────────────────
     match /notifications/{notifId} {
-      allow read:   if signedIn() && resource.data.userId == request.auth.uid;
+      allow read:   if (signedIn() && resource.data.userId == request.auth.uid) || isAdmin();
       allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
-      allow update: if signedIn() && resource.data.userId == request.auth.uid;
-      allow delete: if signedIn() && resource.data.userId == request.auth.uid;
+      allow update: if (signedIn() && resource.data.userId == request.auth.uid) || isAdmin();
+      allow delete: if (signedIn() && resource.data.userId == request.auth.uid) || isAdmin();
     }
 
-    // ── 레거시 컬렉션 (이전 버전 하위 호환) ───────────────
     match /soso_feed_posts/{postId} {
       allow read:  if true;
       allow write: if isAdmin();
