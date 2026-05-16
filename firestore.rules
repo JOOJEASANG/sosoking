@@ -65,7 +65,16 @@ service cloud.firestore {
                       || (signedIn() && isEngagementUpdate());
       allow delete: if isAdmin() || isAuthor(resource.data.authorId);
 
-      // 댓글
+      // 퀴즈 도전 기록
+      match /quiz_attempts/{userId} {
+        allow read: if true;
+        allow create, update: if signedIn()
+          && userId == request.auth.uid
+          && request.resource.data.userId == request.auth.uid;
+        allow delete: if isAdmin() || (signedIn() && userId == request.auth.uid);
+      }
+
+      // 댓글 / 댓글배틀·릴레이 반응
       match /comments/{commentId} {
         allow read:   if true;
         allow create: if signedIn()
