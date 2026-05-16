@@ -11,5 +11,6 @@ export const db        = getFirestore(app);
 export const storage   = getStorage(app);
 export const functions = getFunctions(app, 'asia-northeast3');
 export const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: 'select_account' });
 
 export { signInWithPopup, signOut, onAuthStateChanged };
