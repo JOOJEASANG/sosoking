@@ -368,9 +368,8 @@ function setupDetailEvents(post, el) {
       authorName: auth.currentUser.displayName || '익명',
       createdAt:  serverTimestamp(),
     };
-    if (post.type === 'cbattle')                          commentData.side    = _cbattleSide;
-    if (post.type === 'naming' || post.type === 'drip')   commentData.likes   = 0;
-    if (post.type === 'naming' || post.type === 'drip')   commentData.likedBy = [];
+    if (post.type === 'cbattle') commentData.side = _cbattleSide;
+    if (post.type === 'naming' || post.type === 'drip') { commentData.likes = 0; commentData.likedBy = []; }
 
     const successMsg = { relay:'이야기를 이어썼어요!', naming:'제목을 제안했어요!', drip:'드립을 올렸어요!' }[post.type] || '댓글을 남겼어요!';
     try {
@@ -654,13 +653,10 @@ function renderBattleVs(post) {
   if (post.options.length !== 2) {
     return `<div id="vote-area" class="quiz-options" style="margin-top:16px">${renderVoteOptions(post)}</div>`;
   }
-  const total = post.options.reduce((s, o) => s + ((typeof o === 'object' ? o.votes : 0) || 0), 0);
-  const sides = post.options.map((o, i) => ({
-    text:  typeof o === 'object' ? o.text : o,
-    votes: typeof o === 'object' ? (o.votes || 0) : 0,
-    pct:   total ? Math.round(((typeof o === 'object' ? o.votes : 0) || 0) / total * 100) : 0,
-    i,
-  }));
+  const norm  = o => typeof o === 'object' ? o : { text: o, votes: 0 };
+  const sides = post.options.map(o => { const n = norm(o); return { text: n.text, votes: n.votes || 0 }; });
+  const total = sides.reduce((s, o) => s + o.votes, 0);
+  sides.forEach(s => { s.pct = total ? Math.round(s.votes / total * 100) : 0; });
   return `
     <div class="battle-vs-area" id="vote-area">
       <button class="battle-side" data-vote-idx="0">
@@ -724,8 +720,8 @@ function renderCommentSection(post, comments) {
 
   if (post.type === 'naming' || post.type === 'drip') {
     const cfg = post.type === 'naming'
-      ? { title: '✏️ 제목 제안', placeholder: '사진에 어울리는 제목을 제안해보세요!', btn: '제안하기' }
-      : { title: '🎤 드립 올리기', placeholder: '한 줄 드립을 올려보세요!', btn: '올리기' };
+      ? { title: '✏️ 제목 제안', placeholder: '사진에 어울리는 제목을 제안해보세요!', btn: '제안하기', empty: '첫 번째로 제목을 제안해보세요!' }
+      : { title: '🎤 드립 올리기', placeholder: '한 줄 드립을 올려보세요!', btn: '올리기', empty: '첫 번째로 드립을 올려보세요!' };
     return `
       <div class="comment-section">
         <div class="comment-section__title">${cfg.title} (${comments.length}개)</div>
@@ -736,7 +732,7 @@ function renderCommentSection(post, comments) {
         <div id="comment-list">
           ${comments.length
             ? comments.map(c => renderLikeableComment(c)).join('')
-            : `<div style="text-align:center;padding:24px;font-size:13px;color:var(--color-text-muted)">첫 번째로 ${cfg.title.slice(2)} 보세요!</div>`}
+            : `<div style="text-align:center;padding:24px;font-size:13px;color:var(--color-text-muted)">${cfg.empty}</div>`}
         </div>
       </div>`;
   }
@@ -816,8 +812,8 @@ function refreshCommentList(post, comments) {
     const newHtml = renderRelayStory(post.startSentence, comments);
     if (storyEl) storyEl.outerHTML = newHtml;
     else {
-      const section = document.querySelector('.comment-section');
-      if (section) section.insertAdjacentHTML('afterbegin', newHtml);
+      const title = document.querySelector('.comment-section .comment-section__title');
+      if (title) title.insertAdjacentHTML('afterend', newHtml);
     }
   } else if (post.type === 'cbattle') {
     const aList = comments.filter(c => c.side === 'A');
@@ -856,10 +852,8 @@ function setupCommentLikes(postId) {
       const uid = auth.currentUser.uid;
       const commentId = btn.dataset.commentId;
       const ref = doc(db, 'feeds', postId, 'comments', commentId);
+      const liked = btn.classList.contains('active');
       try {
-        const snap = await getDoc(ref);
-        if (!snap.exists()) return;
-        const liked = (snap.data().likedBy || []).includes(uid);
         if (liked) {
           await updateDoc(ref, { likes: increment(-1), likedBy: arrayRemove(uid) });
           btn.classList.remove('active');
