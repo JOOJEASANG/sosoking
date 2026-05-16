@@ -227,7 +227,7 @@ function renderFormFields() {
           </div>
           <button class="add-option-btn" id="btn-add-option" style="margin-top:8px">+ 선택지 추가 (최대 4개)</button>
         </div>
-        ${imageUploader(3)} ${commonTags}`;
+        ${imageUploader(1)} ${commonTags}`;
 
     case 'vote':
       return commonTitle + `
@@ -243,7 +243,7 @@ function renderFormFields() {
           </div>
           <button class="add-option-btn" id="btn-add-option" style="margin-top:8px">+ 선택지 추가</button>
         </div>
-        ${imageUploader(3)} ${commonTags}`;
+        ${imageUploader(1)} ${commonTags}`;
 
     case 'battle':
       return commonTitle + `
@@ -259,7 +259,7 @@ function renderFormFields() {
           </div>
           <button class="add-option-btn" id="btn-add-option" style="margin-top:8px">+ 후보 추가</button>
         </div>
-        ${imageUploader(3)} ${commonTags}`;
+        ${imageUploader(1)} ${commonTags}`;
 
     case 'ox':
       return commonTitle + `
@@ -282,7 +282,7 @@ function renderFormFields() {
           <label class="form-label">해설</label>
           <textarea id="f-explanation" class="form-textarea" placeholder="예: 고양이는 포식 동물 본능으로 에너지를 아끼기 위해 많이 잠을 잡니다" rows="2"></textarea>
         </div>
-        ${imageUploader(3)} ${commonTags}`;
+        ${imageUploader(1)} ${commonTags}`;
 
     case 'quiz':
       return commonTitle + `
@@ -326,7 +326,7 @@ function renderFormFields() {
           <label class="form-label">해설</label>
           <textarea id="f-explanation" class="form-textarea" placeholder="예: 대한민국의 국화는 무궁화로, 나라꽃으로 지정되어 있습니다" rows="2"></textarea>
         </div>
-        ${imageUploader(3)} ${commonTags}`;
+        ${imageUploader(1)} ${commonTags}`;
 
     case 'naming':
       return commonTitle + `
@@ -334,7 +334,7 @@ function renderFormFields() {
           <label class="form-label">상황 설명 <span class="required">*</span></label>
           <textarea id="f-desc" class="form-textarea" placeholder="예: 친구가 보낸 사진인데 뭔가 많이 닮은 게 있는 것 같아요. 딱 맞는 제목 붙여주세요!" rows="3"></textarea>
         </div>
-        ${imageUploader(3, true)} ${commonTags}`;
+        ${imageUploader(2, true)} ${commonTags}`;
 
     case 'acrostic':
       return `
@@ -348,7 +348,7 @@ function renderFormFields() {
           <label class="form-label">설명</label>
           <textarea id="f-desc" class="form-textarea" placeholder="예: 창의력 넘치는 삼행시 한 번 써봐요!" rows="2"></textarea>
         </div>
-        ${imageUploader(3)} ${commonTags}`;
+        ${imageUploader(1)} ${commonTags}`;
 
     case 'cbattle':
       return commonTitle + `
@@ -360,7 +360,7 @@ function renderFormFields() {
           <label class="form-label">참여 방식 설명</label>
           <input id="f-howto" class="form-input" placeholder="예: 자신의 선택과 이유를 댓글로 올려주세요">
         </div>
-        ${imageUploader(3)} ${commonTags}`;
+        ${imageUploader(1)} ${commonTags}`;
 
     case 'laugh':
       return commonTitle + `
@@ -378,7 +378,7 @@ function renderFormFields() {
             <option value="extreme">💀 극한</option>
           </select>
         </div>
-        ${imageUploader(3)} ${commonTags}`;
+        ${imageUploader(1)} ${commonTags}`;
 
     case 'drip':
       return commonTitle + `
@@ -386,7 +386,7 @@ function renderFormFields() {
           <label class="form-label">드립 주제 <span class="required">*</span></label>
           <textarea id="f-desc" class="form-textarea" placeholder="예: 월요일에 딱 어울리는 드립 한 줄만 날려주세요!" rows="3"></textarea>
         </div>
-        ${imageUploader(3)} ${commonTags}`;
+        ${imageUploader(1)} ${commonTags}`;
 
     case 'howto':
       return commonTitle + `
@@ -412,7 +412,7 @@ function renderFormFields() {
           <label class="form-label">주의할 점</label>
           <textarea id="f-caution" class="form-textarea" placeholder="예: 혼잡 시간대에는 무리하게 이동하지 마세요" rows="2"></textarea>
         </div>
-        ${imageUploader(10)} ${commonTags}`;
+        ${imageUploader(1)} ${commonTags}`;
 
     case 'story':
       return commonTitle + `
@@ -424,7 +424,7 @@ function renderFormFields() {
           <label class="form-label">느낀 점</label>
           <textarea id="f-feeling" class="form-textarea" placeholder="예: 그 경험 덕분에 '혼자서도 뭐든 할 수 있다'는 자신감이 생겼어요" rows="2"></textarea>
         </div>
-        ${imageUploader(5)} ${commonTags}`;
+        ${imageUploader(1)} ${commonTags}`;
 
     case 'fail':
       return commonTitle + `
@@ -440,7 +440,7 @@ function renderFormFields() {
           <label class="form-label">다시 한다면?</label>
           <textarea id="f-redo" class="form-textarea" placeholder="예: 차라리 일찍 저녁을 먹고, 자기 전에는 따뜻한 물 한 잔만 마시겠습니다" rows="2"></textarea>
         </div>
-        ${imageUploader(5)} ${commonTags}`;
+        ${imageUploader(1)} ${commonTags}`;
 
     case 'concern':
       return commonTitle + `
@@ -453,7 +453,7 @@ function renderFormFields() {
           <div class="option-inputs" id="option-list"></div>
           <button class="add-option-btn" id="btn-add-option" style="margin-top:8px">+ 선택지 추가</button>
         </div>
-        ${imageUploader(5)} ${commonTags}`;
+        ${imageUploader(1)} ${commonTags}`;
 
     case 'relay':
       return commonTitle + `
@@ -469,7 +469,73 @@ function renderFormFields() {
           <label class="form-label">등장인물</label>
           <input id="f-characters" class="form-input" placeholder="예: 주인공(나), 모르는 번호의 상대방, 친구 B">
         </div>
-        ${imageUploader(3)} ${commonTags}`;
+        ${imageUploader(1)} ${commonTags}`;
+
+    case 'challenge24':
+      return commonTitle + `
+        <div class="form-group">
+          <label class="form-label">상황 설명</label>
+          <textarea id="f-desc" class="form-textarea" placeholder="예: 24시간 안에 결정해야 하는 그 질문이에요. 여러분의 선택은?" rows="3"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">선택지 <span class="required">*</span></label>
+          <div class="option-inputs" id="option-list">
+            ${renderOptionRow('A', '예: 치킨')}
+            ${renderOptionRow('B', '예: 피자')}
+          </div>
+          <button class="add-option-btn" id="btn-add-option" style="margin-top:8px">+ 선택지 추가 (최대 4개)</button>
+        </div>
+        <p style="font-size:12px;color:var(--color-text-muted)">⏰ 이 놀이판은 등록 후 24시간 후 자동으로 종료돼요.</p>
+        ${imageUploader(1)} ${commonTags}`;
+
+    case 'tournament':
+      return commonTitle + `
+        <div class="form-group">
+          <label class="form-label">토너먼트 설명</label>
+          <textarea id="f-desc" class="form-textarea" placeholder="예: 최강의 음식을 가려봐요!" rows="2"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">참가자 1~4 <span class="required">*</span></label>
+          <div class="option-inputs" id="option-list">
+            ${renderOptionRow('1', '참가자 1')}
+            ${renderOptionRow('2', '참가자 2')}
+            ${renderOptionRow('3', '참가자 3')}
+            ${renderOptionRow('4', '참가자 4')}
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">참가자 5~8 (선택)</label>
+          <div class="option-inputs" id="option-list-extra">
+            ${renderOptionRow('5', '참가자 5 (선택)')}
+            ${renderOptionRow('6', '참가자 6 (선택)')}
+            ${renderOptionRow('7', '참가자 7 (선택)')}
+            ${renderOptionRow('8', '참가자 8 (선택)')}
+          </div>
+        </div>
+        ${imageUploader(1)} ${commonTags}`;
+
+    case 'random_battle':
+      return commonTitle + `
+        <div class="form-group">
+          <label class="form-label">대결 주제 <span class="required">*</span></label>
+          <textarea id="f-desc" class="form-textarea" placeholder="예: 월요일에 딱 어울리는 드립 한 줄만 날려주세요!" rows="3"></textarea>
+        </div>
+        <p style="font-size:12px;color:var(--color-text-muted)">🎰 참여자들이 같은 주제로 드립/답변을 쓰고 좋아요로 우승자를 가려요.</p>
+        ${imageUploader(1)} ${commonTags}`;
+
+    case 'word_relay':
+      return commonTitle + `
+        <div class="form-group">
+          <label class="form-label">시작 단어 <span class="required">*</span></label>
+          <input id="f-start-word" class="form-input" placeholder="예: 사과" maxlength="20">
+          <div class="form-hint">참여자들이 이 단어에서 이어받아 끝말잇기를 시작해요</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">설명</label>
+          <textarea id="f-desc" class="form-textarea" placeholder="예: 끝말잇기로 어디까지 이어갈 수 있을까요?" rows="2"></textarea>
+        </div>
+        ${imageUploader(1)} ${commonTags}`;
+
 
     default:
       return commonTitle + `
@@ -477,7 +543,7 @@ function renderFormFields() {
           <label class="form-label">내용 <span class="required">*</span></label>
           <textarea id="f-desc" class="form-textarea" rows="5"></textarea>
         </div>
-        ${imageUploader(5)} ${commonTags}`;
+        ${imageUploader(1)} ${commonTags}`;
   }
 }
 
@@ -496,7 +562,7 @@ function initFormLogic() {
   const type = selectedType.key;
 
   // 이미지 업로더 초기화
-  const maxImg = type === 'howto' ? 10 : type === 'naming' ? 3 : 5;
+  const maxImg = type === 'naming' ? 2 : 1;
   const uploaderEl = document.getElementById('img-uploader');
   if (uploaderEl) initImageUploader(uploaderEl, maxImg);
 

@@ -112,8 +112,8 @@ export async function renderHome() {
         <div class="home-hero">
           <div class="home-hero__content">
             <div class="home-hero__eyebrow">🔥 게임형 놀이 커뮤니티</div>
-            <div class="home-hero__title">소소킹에서<br>신나게 놀아봐요!</div>
-            <div class="home-hero__sub">투표·퀴즈·드립·고민, 뭐든 다 가능한<br>한국 최고의 놀이판 커뮤니티</div>
+            <div class="home-hero__title">고르거나 웃기거나<br>한마디만 던져도 시작!</div>
+            <div class="home-hero__sub">선택형 · 드립형 · 도전형 — 15가지 게임, 짧게 참여하고 바로 결과 확인</div>
             <div class="home-hero__action">
               <button class="btn-hero-primary" onclick="navigate('/write')">✏️ 놀이판 만들기</button>
               <button class="btn-hero-secondary" id="btn-random-challenge">🎲 랜덤으로 놀기</button>
