@@ -4,6 +4,7 @@ import { renderHeader } from './components/header.js';
 import { renderBottomNav } from './components/bottom-nav.js';
 import { initToast } from './components/toast.js';
 import { appState } from './state.js';
+import './secure-feed-actions.js';
 import './social-play-enhancer.js';
 import {
   collection, query, where, getDocs, getDoc, doc, limit,
@@ -73,7 +74,7 @@ export async function initApp() {
   initToast();
 
   onAuthStateChanged(auth, async (user) => {
-    const wasLoading = appState.loading;
+    const previousUser = appState.user;
     appState.user    = user;
     appState.loading = false;
     appState.isAdmin = false;
@@ -86,11 +87,12 @@ export async function initApp() {
     }
     renderHeader();
     renderBottomNav();
+
     const path = window.location.hash.slice(1).split('?')[0] || '/';
-    // 로그인 직후(wasLoading=false): 관리자 → /admin, 일반 → /
-    if (!wasLoading && user) {
-      if (appState.isAdmin) navigate('/admin');
-      else navigate('/');
+    const justLoggedIn = !!user && previousUser?.uid !== user.uid;
+    if (justLoggedIn) {
+      if (appState.isAdmin && path !== '/admin') navigate('/admin');
+      else if (path === '/login') navigate('/');
     }
   });
 
