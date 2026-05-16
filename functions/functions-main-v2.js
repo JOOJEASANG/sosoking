@@ -1,6 +1,7 @@
 module.exports = {
   ...require('./functions-main.js'),
   ...require('./secure-feed-functions.js'),
+  ...require('./sitemap-functions.js'),
   ...require('./ai-hunt-functions.js'),
   ...require('./prediction-functions.js'),
   ...require('./hot-issue-functions.js'),
