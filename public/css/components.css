@@ -877,13 +877,36 @@
 .theme-toggle:hover { background: var(--color-surface-2); color: var(--color-primary); }
 .theme-toggle svg { width: 18px; height: 18px; }
 
-/* ── PWA 설치 버튼 (PC 헤더) ── */
+/* ── PWA 설치 버튼 (PC) ── */
 .pwa-install-btn {
-  display: flex; align-items: center; gap: 4px;
-  font-size: var(--font-size-xs); font-weight: 700;
-  white-space: nowrap; flex-shrink: 0;
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 16px;
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-full);
+  font-size: 13px; font-weight: 800;
+  cursor: pointer; white-space: nowrap; flex-shrink: 0;
+  transition: opacity var(--transition-fast), transform var(--transition-fast);
+  box-shadow: 0 2px 8px rgba(255, 68, 34, 0.35);
 }
+.pwa-install-btn svg { width: 16px; height: 16px; stroke: #fff; flex-shrink: 0; }
+.pwa-install-btn:hover { opacity: 0.88; transform: translateY(-1px); }
 @media (max-width: 768px) { .pwa-install-btn { display: none; } }
+
+/* ── PWA 설치 버튼 (모바일) ── */
+.pwa-install-btn-mobile {
+  display: flex; align-items: center; gap: 3px;
+  padding: 5px 10px;
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-full);
+  font-size: 11px; font-weight: 800;
+  cursor: pointer; white-space: nowrap; flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(255, 68, 34, 0.3);
+}
+.pwa-install-btn-mobile svg { width: 14px; height: 14px; stroke: #fff; flex-shrink: 0; }
 
 /* ── 글자 수 카운터 ── */
 .char-counter {
