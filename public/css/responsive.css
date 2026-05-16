@@ -27,15 +27,17 @@
   .site-header__logo-badge { display: none; }
   .site-header__mobile-menu { display: flex; }
 
-  /* 컨테이너 */
-  .page-container { padding: 0 0 calc(62px + env(safe-area-inset-bottom,0) + var(--space-4)); }
+  /* ── 컨테이너: 좌우 여백 통일 ── */
+  .page-container {
+    padding: var(--space-3) var(--space-3) calc(62px + env(safe-area-inset-bottom,0) + var(--space-4));
+  }
 
   /* 히어로 — 모바일 컴팩트 */
   .home-hero {
     min-height: auto;
     padding: var(--space-6) var(--space-4);
     border-radius: var(--radius-lg);
-    margin: var(--space-3) var(--space-3) var(--space-4);
+    margin-bottom: var(--space-4);
   }
   .home-hero::after { font-size: 70px; right: var(--space-4); }
   .home-hero__eyebrow { font-size: 10px; padding: 4px 10px; }
@@ -47,11 +49,13 @@
   .btn-hero-primary { padding: 11px 20px; font-size: var(--font-size-sm); }
   .btn-hero-secondary { padding: 10px 16px; font-size: var(--font-size-xs); }
 
-  /* 카테고리 — 앱 스타일 가로 스크롤 */
+  /* 카테고리 — 가로 스크롤 (컨테이너 여백 돌파) */
   .home-cats {
     display: flex; overflow-x: auto; scrollbar-width: none;
-    gap: var(--space-3); padding: var(--space-1) var(--space-3) var(--space-3);
-    margin: 0 0 var(--space-4); width: 100%;
+    gap: var(--space-3);
+    padding: var(--space-1) var(--space-3) var(--space-3);
+    margin: 0 calc(-1 * var(--space-3)) var(--space-4);
+    width: calc(100% + var(--space-3) * 2);
   }
   .home-cats::-webkit-scrollbar { display: none; }
   .home-cat-card {
@@ -63,14 +67,17 @@
   .home-cat-card__name { font-size: var(--font-size-md); }
   .home-cat-card__types { display: none; }
 
-  /* 피드 — 앱 카드 */
-  .feed-card { margin-bottom: 0; border-radius: 0; border-left-width: 0; border-right: none; border-left: none; }
-  .feed-card + .feed-card { border-top: 1px solid var(--color-border-light); }
-  .feed-card.card { box-shadow: none; border-radius: 0; border: none; border-top: 1px solid var(--color-border-light); }
+  /* 피드 카드 — 컨테이너 여백 안에서 카드 스타일 유지 */
+  .feed-card.card {
+    border-radius: var(--radius-md);
+    border: 1.5px solid var(--color-border-light);
+    box-shadow: var(--shadow-xs);
+    margin-bottom: var(--space-2);
+  }
   .feed-card__title { font-size: var(--font-size-base); }
 
-  /* 섹션 헤더 (모바일) */
-  .section-header { padding: 0 var(--space-3); }
+  /* 섹션 헤더 — 컨테이너 패딩 활용 (별도 패딩 제거) */
+  .section-header { padding: 0; }
   .section-title { font-size: var(--font-size-base); }
 
   /* 모달 — 바텀 시트 */
@@ -78,15 +85,15 @@
   .modal-overlay { align-items: flex-end; padding: 0; }
 
   /* 홈 대시보드 */
-  .home-layout { gap: var(--space-4); }
-  .home-quick-section { padding: 0 var(--space-3); }
+  .home-layout { gap: var(--space-3); }
+  .home-quick-section { padding: 0; }
   .home-quick-grid { grid-template-columns: repeat(3, 1fr); gap: var(--space-2); }
   .quick-type-card { padding: var(--space-3) var(--space-2); }
   .quick-type-card__icon { font-size: 20px; }
   .quick-type-card__label { font-size: 10px; }
   .home-hero__stats { width: 100%; justify-content: space-around; margin-top: var(--space-4); }
-  .home-hero__stat { padding: 0 var(--space-3); }
-  .home-feed-header { padding: 0 var(--space-3); }
+  .home-hero__stat { padding: 0; }
+  .home-feed-header { padding: 0; }
 
   /* 기타 */
   .card__body--lg { padding: var(--space-4); }
@@ -96,9 +103,12 @@
   .acrostic-line .form-input { font-size: var(--font-size-sm); }
   .admin-stat-grid { grid-template-columns: repeat(2, 1fr); }
 
-  /* 섹션 컨테이너 */
-  #hot-feed-list .card { border-radius: 0; border-left: none; border-right: none; box-shadow: none; }
-  .section-header + #hot-feed-list { margin: 0 calc(-1 * var(--space-4)); }
+  /* 홈 피드 리스트 내 카드 — 동일한 카드 스타일 */
+  #hot-feed-list .card {
+    border-radius: var(--radius-md);
+    border: 1.5px solid var(--color-border-light);
+    box-shadow: var(--shadow-xs);
+  }
 }
 
 /* ── 소형 모바일 ── */
