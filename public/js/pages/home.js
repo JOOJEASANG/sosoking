@@ -2,6 +2,7 @@ import { navigate } from '../router.js';
 import { renderFeedCard } from '../components/feed-card.js';
 import { fetchHotPosts } from '../services/feed-service.js';
 import { auth, db, functions } from '../firebase.js';
+import { setMeta } from '../utils/seo.js';
 import {
   collection, query, orderBy, limit, getDocs,
   getCountFromServer, where, Timestamp, doc, getDoc, updateDoc,
@@ -56,10 +57,12 @@ export async function renderHome() {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
+    setMeta();
+
     const user = auth.currentUser;
     if (user) checkStreak(user.uid);
 
-    const [hotPosts, recentPosts, todayMission, totalSnap, todaySnap, weeklyHot, weeklyBest] = await Promise.all([
+    const [hotPosts, recentPosts, todayMission, totalSnap, todaySnap, weeklyHot] = await Promise.all([
       fetchHotPosts(6),
       fetchRecentPosts(6),
       fetchTodayMission(),
@@ -70,7 +73,6 @@ export async function renderHome() {
         limit(99),
       )).catch(() => null),
       fetchWeeklyHot(5),
-      callGetWeeklyBest(),
     ]);
 
     const totalPosts = totalSnap?.data?.().count ?? 0;
@@ -142,7 +144,7 @@ export async function renderHome() {
           <aside class="layout-sidebar">
             ${user && appState.streak > 0 ? renderStreakWidget(appState.streak) : ''}
             ${todayMission ? renderMissionWidget(todayMission) : renderMissionEmptyWidget()}
-            ${weeklyBest ? renderWeeklyBestWidget(weeklyBest) : ''}
+            <div id="weekly-best-placeholder"></div>
             ${weeklyHot.length ? renderHallOfFameWidget(weeklyHot) : ''}
             ${renderStatsWidget(totalPosts, todayCount)}
             ${renderHotRankingWidget(hotPosts)}
@@ -152,6 +154,13 @@ export async function renderHome() {
         </div>
 
       </div>`;
+
+    // 주간 결선: 페이지 렌더 후 비동기 로드 (CF cold-start가 렌더를 블로킹하지 않도록)
+    callGetWeeklyBest().then(weeklyBest => {
+      if (!weeklyBest) return;
+      const placeholder = document.getElementById('weekly-best-placeholder');
+      if (placeholder) placeholder.outerHTML = renderWeeklyBestWidget(weeklyBest);
+    }).catch(() => {});
 
     // 랜덤 도전
     document.getElementById('btn-random-challenge')?.addEventListener('click', () => {

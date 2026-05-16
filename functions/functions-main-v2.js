@@ -9,4 +9,5 @@ module.exports = {
   ...require('./soso-feed-functions.js'),
   ...require('./account-functions.js'),
   ...require('./sosoking-features-functions.js'),
+  ...require('./ai-content-functions.js'),
 };

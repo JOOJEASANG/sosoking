@@ -7,6 +7,7 @@ import { navigate } from '../router.js';
 import { toast } from '../components/toast.js';
 import { renderFeedCard } from '../components/feed-card.js';
 import { appState } from '../state.js';
+import { setMeta } from '../utils/seo.js';
 
 const TITLES = [
   { min: 30, label: '👑 소소킹' },
@@ -36,6 +37,7 @@ function formatTime(date) {
 }
 
 export async function renderAccount() {
+  setMeta('내 계정');
   const el   = document.getElementById('page-content');
   const user = appState.user;
 

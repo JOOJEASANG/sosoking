@@ -3,6 +3,7 @@ import { collection, addDoc, doc, setDoc, serverTimestamp } from 'https://www.gs
 import { navigate, getQueryParams } from '../router.js';
 import { toast } from '../components/toast.js';
 import { initImageUploader, getUploadedImages } from '../components/image-uploader.js';
+import { setMeta } from '../utils/seo.js';
 
 /* ── 카테고리/유형 정의 ── */
 const CATEGORIES = [
@@ -42,6 +43,7 @@ let selectedCat  = null;
 let selectedType = null;
 
 export function renderWrite() {
+  setMeta('글 쓰기');
   const el = document.getElementById('page-content');
   selectedCat  = null;
   selectedType = null;
@@ -180,13 +182,13 @@ function renderFormFields() {
       return commonTitle + `
         <div class="form-group">
           <label class="form-label">상황 설명</label>
-          <textarea id="f-desc" class="form-textarea" placeholder="상황을 설명해주세요" rows="3"></textarea>
+          <textarea id="f-desc" class="form-textarea" placeholder="예: 배달 시킬 때마다 항상 고민되는 그 질문이에요. 여러분의 선택은?" rows="3"></textarea>
         </div>
         <div class="form-group">
           <label class="form-label">선택지 <span class="required">*</span></label>
           <div class="option-inputs" id="option-list">
-            ${renderOptionRow('A', '선택지 A')}
-            ${renderOptionRow('B', '선택지 B')}
+            ${renderOptionRow('A', '예: 치킨')}
+            ${renderOptionRow('B', '예: 피자')}
           </div>
           <button class="add-option-btn" id="btn-add-option" style="margin-top:8px">+ 선택지 추가 (최대 4개)</button>
         </div>
@@ -196,13 +198,13 @@ function renderFormFields() {
       return commonTitle + `
         <div class="form-group">
           <label class="form-label">질문 <span class="required">*</span></label>
-          <textarea id="f-desc" class="form-textarea" placeholder="투표 질문을 입력하세요" rows="2"></textarea>
+          <textarea id="f-desc" class="form-textarea" placeholder="예: 이번 MT 장소를 정하려고 해요. 어디가 가장 좋을까요?" rows="2"></textarea>
         </div>
         <div class="form-group">
           <label class="form-label">선택지 <span class="required">*</span></label>
           <div class="option-inputs" id="option-list">
-            ${renderOptionRow('1', '선택지 1')}
-            ${renderOptionRow('2', '선택지 2')}
+            ${renderOptionRow('1', '예: 제주도')}
+            ${renderOptionRow('2', '예: 강릉')}
           </div>
           <button class="add-option-btn" id="btn-add-option" style="margin-top:8px">+ 선택지 추가</button>
         </div>
@@ -212,13 +214,13 @@ function renderFormFields() {
       return commonTitle + `
         <div class="form-group">
           <label class="form-label">배틀 주제 <span class="required">*</span></label>
-          <textarea id="f-desc" class="form-textarea" placeholder="배틀 주제를 설명하세요" rows="2"></textarea>
+          <textarea id="f-desc" class="form-textarea" placeholder="예: 한국 대중음악 역대 최강자를 뽑아봐요!" rows="2"></textarea>
         </div>
         <div class="form-group">
           <label class="form-label">후보 <span class="required">*</span></label>
           <div class="option-inputs" id="option-list">
-            ${renderOptionRow('1', '후보 1')}
-            ${renderOptionRow('2', '후보 2')}
+            ${renderOptionRow('1', '예: 아이유 - 좋은 날')}
+            ${renderOptionRow('2', '예: BTS - Dynamite')}
           </div>
           <button class="add-option-btn" id="btn-add-option" style="margin-top:8px">+ 후보 추가</button>
         </div>
@@ -228,7 +230,7 @@ function renderFormFields() {
       return commonTitle + `
         <div class="form-group">
           <label class="form-label">문제 <span class="required">*</span></label>
-          <textarea id="f-desc" class="form-textarea" placeholder="OX 퀴즈 문제를 입력하세요" rows="3"></textarea>
+          <textarea id="f-desc" class="form-textarea" placeholder="예: 고양이는 하루에 16시간 이상 잔다?" rows="3"></textarea>
         </div>
         <div class="form-group">
           <label class="form-label">정답 <span class="required">*</span></label>
@@ -243,7 +245,7 @@ function renderFormFields() {
         </div>
         <div class="form-group">
           <label class="form-label">해설</label>
-          <textarea id="f-explanation" class="form-textarea" placeholder="정답 해설 (선택)" rows="2"></textarea>
+          <textarea id="f-explanation" class="form-textarea" placeholder="예: 고양이는 포식 동물 본능으로 에너지를 아끼기 위해 많이 잠을 잡니다" rows="2"></textarea>
         </div>
         ${imageUploader(3)} ${commonTags}`;
 
@@ -251,7 +253,7 @@ function renderFormFields() {
       return commonTitle + `
         <div class="form-group">
           <label class="form-label">문제 <span class="required">*</span></label>
-          <textarea id="f-desc" class="form-textarea" placeholder="퀴즈 문제를 입력하세요" rows="3"></textarea>
+          <textarea id="f-desc" class="form-textarea" placeholder="예: 대한민국의 국화(國花)는 무엇일까요? 의외로 모르는 분이 많아요!" rows="3"></textarea>
         </div>
         <div class="form-group">
           <label class="form-label">퀴즈 방식 <span class="required">*</span></label>
@@ -268,26 +270,26 @@ function renderFormFields() {
           <div class="form-group">
             <label class="form-label">보기 <span class="required">*</span></label>
             <div class="option-inputs" id="option-list">
-              ${renderOptionRow('①', '보기 1')}
-              ${renderOptionRow('②', '보기 2')}
+              ${renderOptionRow('①', '예: 진달래')}
+              ${renderOptionRow('②', '예: 무궁화')}
             </div>
             <button class="add-option-btn" id="btn-add-option" style="margin-top:8px">+ 보기 추가</button>
           </div>
           <div class="form-group">
             <label class="form-label">정답 보기 번호 <span class="required">*</span></label>
-            <input id="f-answer" class="form-input" type="number" min="1" placeholder="정답 번호 입력 (예: 1)">
+            <input id="f-answer" class="form-input" type="number" min="1" placeholder="예: 2  (2번이 정답인 경우)">
           </div>
         </div>
         <div id="quiz-short-area" style="display:none">
           <div class="form-group">
             <label class="form-label">정답 <span class="required">*</span></label>
-            <input id="f-answer-short" class="form-input" placeholder="주관식 정답 입력">
+            <input id="f-answer-short" class="form-input" placeholder="예: 무궁화">
             <div class="form-hint">정답은 참여자에게 공개되지 않아요</div>
           </div>
         </div>
         <div class="form-group">
           <label class="form-label">해설</label>
-          <textarea id="f-explanation" class="form-textarea" placeholder="정답 해설 (선택)" rows="2"></textarea>
+          <textarea id="f-explanation" class="form-textarea" placeholder="예: 대한민국의 국화는 무궁화로, 나라꽃으로 지정되어 있습니다" rows="2"></textarea>
         </div>
         ${imageUploader(3)} ${commonTags}`;
 
@@ -295,7 +297,7 @@ function renderFormFields() {
       return commonTitle + `
         <div class="form-group">
           <label class="form-label">상황 설명 <span class="required">*</span></label>
-          <textarea id="f-desc" class="form-textarea" placeholder="사진에 대한 상황 설명을 입력하세요" rows="3"></textarea>
+          <textarea id="f-desc" class="form-textarea" placeholder="예: 친구가 보낸 사진인데 뭔가 많이 닮은 게 있는 것 같아요. 딱 맞는 제목 붙여주세요!" rows="3"></textarea>
         </div>
         ${imageUploader(3, true)} ${commonTags}`;
 
@@ -309,7 +311,7 @@ function renderFormFields() {
         <div id="acrostic-preview" style="margin-top:12px"></div>
         <div class="form-group" style="margin-top:12px">
           <label class="form-label">설명</label>
-          <textarea id="f-desc" class="form-textarea" placeholder="추가 설명 (선택)" rows="2"></textarea>
+          <textarea id="f-desc" class="form-textarea" placeholder="예: 창의력 넘치는 삼행시 한 번 써봐요!" rows="2"></textarea>
         </div>
         ${imageUploader(3)} ${commonTags}`;
 
@@ -317,11 +319,11 @@ function renderFormFields() {
       return commonTitle + `
         <div class="form-group">
           <label class="form-label">배틀 주제 <span class="required">*</span></label>
-          <textarea id="f-desc" class="form-textarea" placeholder="댓글 배틀 주제를 설명하세요" rows="3"></textarea>
+          <textarea id="f-desc" class="form-textarea" placeholder="예: 인생에서 하나만 먹어야 한다면? A팀은 짜장면, B팀은 짬뽕을 지지해요!" rows="3"></textarea>
         </div>
         <div class="form-group">
           <label class="form-label">참여 방식 설명</label>
-          <input id="f-howto" class="form-input" placeholder="예: 각자 자신의 주장을 펼쳐주세요">
+          <input id="f-howto" class="form-input" placeholder="예: 자신의 선택과 이유를 댓글로 올려주세요">
         </div>
         ${imageUploader(3)} ${commonTags}`;
 
@@ -329,7 +331,7 @@ function renderFormFields() {
       return commonTitle + `
         <div class="form-group">
           <label class="form-label">웃긴 상황 설명 <span class="required">*</span></label>
-          <textarea id="f-desc" class="form-textarea" placeholder="웃참 도전 상황을 설명하세요" rows="4"></textarea>
+          <textarea id="f-desc" class="form-textarea" placeholder="예: 절대로 웃으면 안 되는 상황들만 모아봤어요. 과연 버틸 수 있으실까요?" rows="4"></textarea>
         </div>
         <div class="form-group">
           <label class="form-label">웃참 난이도</label>
@@ -347,7 +349,7 @@ function renderFormFields() {
       return commonTitle + `
         <div class="form-group">
           <label class="form-label">드립 주제 <span class="required">*</span></label>
-          <textarea id="f-desc" class="form-textarea" placeholder="한 줄 드립 주제를 입력하세요" rows="3"></textarea>
+          <textarea id="f-desc" class="form-textarea" placeholder="예: 월요일에 딱 어울리는 드립 한 줄만 날려주세요!" rows="3"></textarea>
         </div>
         ${imageUploader(3)} ${commonTags}`;
 
@@ -355,25 +357,25 @@ function renderFormFields() {
       return commonTitle + `
         <div class="form-group">
           <label class="form-label">한 줄 요약 <span class="required">*</span></label>
-          <input id="f-summary" class="form-input" placeholder="노하우를 한 줄로 요약해주세요" maxlength="80">
+          <input id="f-summary" class="form-input" placeholder="예: 도착 2분 전에 문 앞으로 이동하면 자리 선점 90% 성공!" maxlength="80">
         </div>
         <div class="form-group">
           <label class="form-label">본문 <span class="required">*</span></label>
-          <textarea id="f-desc" class="form-textarea" placeholder="노하우를 자세히 설명해주세요" rows="6" style="min-height:150px"></textarea>
+          <textarea id="f-desc" class="form-textarea" placeholder="예: 10년 경력 지하철 통근러가 알려주는 자리 선점 비법을 공유합니다" rows="6" style="min-height:150px"></textarea>
         </div>
         <div class="form-group">
           <label class="form-label">단계별 순서</label>
           <div id="howto-steps"></div>
           <button class="add-option-btn" id="btn-add-step" style="margin-top:8px" type="button">+ 단계 추가 (최대 10개)</button>
-          <div class="form-hint">각 단계를 순서대로 입력하세요</div>
+          <div class="form-hint">예: 1단계 — 도착 2분 전 자리에서 일어나 문 앞으로 이동</div>
         </div>
         <div class="form-group">
           <label class="form-label">준비물</label>
-          <input id="f-materials" class="form-input" placeholder="예: A, B, C (쉼표로 구분)">
+          <input id="f-materials" class="form-input" placeholder="예: 교통카드, 스마트폰, 이어폰">
         </div>
         <div class="form-group">
           <label class="form-label">주의할 점</label>
-          <textarea id="f-caution" class="form-textarea" placeholder="주의사항이 있다면 적어주세요" rows="2"></textarea>
+          <textarea id="f-caution" class="form-textarea" placeholder="예: 혼잡 시간대에는 무리하게 이동하지 마세요" rows="2"></textarea>
         </div>
         ${imageUploader(10)} ${commonTags}`;
 
@@ -381,26 +383,27 @@ function renderFormFields() {
       return commonTitle + `
         <div class="form-group">
           <label class="form-label">경험 내용 <span class="required">*</span></label>
-          <textarea id="f-desc" class="form-textarea" placeholder="직접 겪은 이야기를 써주세요" rows="6" style="min-height:150px"></textarea>
+          <textarea id="f-desc" class="form-textarea" placeholder="예: 바르셀로나 첫날 짐을 분실하고 나서 벌어진 48시간의 이야기..." rows="6" style="min-height:150px"></textarea>
         </div>
         <div class="form-group">
           <label class="form-label">느낀 점</label>
-          <textarea id="f-feeling" class="form-textarea" placeholder="이 경험에서 느낀 점" rows="2"></textarea>
+          <textarea id="f-feeling" class="form-textarea" placeholder="예: 그 경험 덕분에 '혼자서도 뭐든 할 수 있다'는 자신감이 생겼어요" rows="2"></textarea>
         </div>
         ${imageUploader(5)} ${commonTags}`;
+
     case 'fail':
       return commonTitle + `
         <div class="form-group">
           <label class="form-label">실패한 내용 <span class="required">*</span></label>
-          <textarea id="f-desc" class="form-textarea" placeholder="어떻게 실패했는지 써주세요" rows="5" style="min-height:130px"></textarea>
+          <textarea id="f-desc" class="form-textarea" placeholder="예: 자려고 누웠는데 갑자기 배고파서 야식을 시켰는데..." rows="5" style="min-height:130px"></textarea>
         </div>
         <div class="form-group">
           <label class="form-label">그래서 알게 된 점 <span class="required">*</span></label>
-          <textarea id="f-lesson" class="form-textarea" placeholder="실패에서 배운 것을 써주세요" rows="3"></textarea>
+          <textarea id="f-lesson" class="form-textarea" placeholder="예: 자기 전 야식은 소화가 안 돼서 결국 더 힘들어진다는 것을 깨달았어요" rows="3"></textarea>
         </div>
         <div class="form-group">
           <label class="form-label">다시 한다면?</label>
-          <textarea id="f-redo" class="form-textarea" placeholder="다시 한다면 어떻게 할지 (선택)" rows="2"></textarea>
+          <textarea id="f-redo" class="form-textarea" placeholder="예: 차라리 일찍 저녁을 먹고, 자기 전에는 따뜻한 물 한 잔만 마시겠습니다" rows="2"></textarea>
         </div>
         ${imageUploader(5)} ${commonTags}`;
 
@@ -408,7 +411,7 @@ function renderFormFields() {
       return commonTitle + `
         <div class="form-group">
           <label class="form-label">고민 내용 <span class="required">*</span></label>
-          <textarea id="f-desc" class="form-textarea" placeholder="고민이나 질문을 자세히 써주세요" rows="5" style="min-height:130px"></textarea>
+          <textarea id="f-desc" class="form-textarea" placeholder="예: 좋은 회사에서 오퍼를 받았는데 대학원도 합격했어요. 어떻게 하면 좋을까요?" rows="5" style="min-height:130px"></textarea>
         </div>
         <div class="form-group">
           <label class="form-label">선택지 (투표 가능)</label>
@@ -421,15 +424,15 @@ function renderFormFields() {
       return commonTitle + `
         <div class="form-group">
           <label class="form-label">시작 문장 <span class="required">*</span></label>
-          <textarea id="f-start" class="form-textarea" placeholder="이야기의 첫 문장을 써주세요" rows="3"></textarea>
+          <textarea id="f-start" class="form-textarea" placeholder="예: 어느 날 갑자기 내 폰에 모르는 번호로 문자가 왔다. '오늘 저녁은 파스타 어때요?'" rows="3"></textarea>
         </div>
         <div class="form-group">
           <label class="form-label">현재 상황 설명</label>
-          <textarea id="f-desc" class="form-textarea" placeholder="지금 상황을 설명해주세요" rows="3"></textarea>
+          <textarea id="f-desc" class="form-textarea" placeholder="예: 기억이 없는 번호인데 마치 아는 사이처럼 연락이 오는 미스터리한 상황" rows="3"></textarea>
         </div>
         <div class="form-group">
           <label class="form-label">등장인물</label>
-          <input id="f-characters" class="form-input" placeholder="예: 철수, 영희, 범인 (쉼표로 구분)">
+          <input id="f-characters" class="form-input" placeholder="예: 주인공(나), 모르는 번호의 상대방, 친구 B">
         </div>
         ${imageUploader(3)} ${commonTags}`;
 
@@ -443,7 +446,7 @@ function renderFormFields() {
   }
 }
 
-function renderOptionRow(label, placeholder) {
+function renderOptionRow(label, placeholder = '선택지를 입력하세요') {
   return `
     <div class="option-input-row">
       <div class="option-label">${label}</div>

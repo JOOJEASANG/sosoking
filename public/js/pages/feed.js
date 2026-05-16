@@ -2,6 +2,7 @@ import { db } from '../firebase.js';
 import { collection, query, orderBy, limit, startAfter, getDocs, where } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { getQueryParams } from '../router.js';
 import { renderFeedCard } from '../components/feed-card.js';
+import { setMeta } from '../utils/seo.js';
 
 const CAT_TYPES = {
   golra: ['balance','vote','battle','ox','quiz'],
@@ -26,6 +27,7 @@ let currentSearch = '';
 let isLoading    = false;
 
 export async function renderFeed() {
+  setMeta('피드 · 전체 글');
   const el = document.getElementById('page-content');
   const params = getQueryParams();
   currentCat    = params.cat  || '';

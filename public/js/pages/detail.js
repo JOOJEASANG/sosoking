@@ -6,6 +6,7 @@ import {
 import { navigate } from '../router.js';
 import { toast } from '../components/toast.js';
 import { renderReactionBar, initReactionBar } from '../components/reaction-bar.js';
+import { setMeta } from '../utils/seo.js';
 
 const TYPE_LABELS = {
   balance:'밸런스게임', vote:'민심투표', battle:'선택지배틀', ox:'OX퀴즈', quiz:'내맘대로퀴즈',
@@ -31,6 +32,7 @@ export async function renderDetail(id) {
       return;
     }
     const post = { id: snap.id, ...snap.data() };
+    setMeta(post.title, post.desc, post.images?.[0]);
     await updateDoc(doc(db, 'feeds', id), { viewCount: increment(1) }).catch(() => {});
     const uid = auth.currentUser?.uid;
     const [comments, acrostics, isScrapped] = await Promise.all([
