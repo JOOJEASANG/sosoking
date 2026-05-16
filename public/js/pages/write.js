@@ -300,10 +300,10 @@ function renderFormFields() {
         ${imageUploader(3, true)} ${commonTags}`;
 
     case 'acrostic':
-      return commonTitle + `
+      return `
         <div class="form-group">
           <label class="form-label">제시어 <span class="required">*</span></label>
-          <input id="f-keyword" class="form-input" placeholder="예: 소소킹" maxlength="6" id="acrostic-keyword">
+          <input id="f-keyword" class="form-input" placeholder="예: 소소킹" maxlength="6">
           <div class="form-hint">최대 6글자 · 입력하면 삼행시 줄이 자동 생성돼요</div>
         </div>
         <div id="acrostic-preview" style="margin-top:12px"></div>
@@ -562,8 +562,12 @@ async function handleSubmit() {
   const type = selectedType.key;
   const cat  = selectedCat.key;
 
-  const title = document.getElementById('f-title')?.value.trim();
-  if (!title) { toast.error('제목을 입력해주세요'); return; }
+  let title = document.getElementById('f-title')?.value.trim();
+  if (type === 'acrostic') {
+    const kw = document.getElementById('f-keyword')?.value.trim();
+    title = kw ? `'${kw}' 삼행시 도전!` : '';
+  }
+  if (!title) { toast.error(type === 'acrostic' ? '제시어를 입력해주세요' : '제목을 입력해주세요'); return; }
 
   const desc     = document.getElementById('f-desc')?.value.trim()     || '';
   const tagsRaw  = document.getElementById('f-tags')?.value.trim()     || '';
