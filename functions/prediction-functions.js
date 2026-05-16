@@ -6,6 +6,12 @@ const db = getFirestore();
 const WELCOME_BALANCE = 10000;
 const DAILY_BONUS = 1000;
 
+function requireUser(request) {
+  const uid = request.auth?.uid;
+  if (!uid) throw new Error('로그인 후 예측 기능을 사용할 수 있습니다.');
+  return uid;
+}
+
 function todayKey(date = new Date()) {
   const kst = new Date(date.getTime() + 9 * 60 * 60 * 1000);
   return kst.toISOString().slice(0, 10);
@@ -128,7 +134,7 @@ async function getBoardData(boardId) {
 }
 
 const getPredictionHome = onCall({ region: 'asia-northeast3', timeoutSeconds: 30 }, async (request) => {
-  const userId = request.auth?.uid || 'anonymous';
+  const userId = requireUser(request);
   const { wallet } = await ensureWallet(userId);
   const dateKey = todayKey();
   const snap = await db.collection('prediction_boards').where('dateKey', '==', dateKey).where('status', '==', 'open').limit(10).get();
@@ -137,7 +143,7 @@ const getPredictionHome = onCall({ region: 'asia-northeast3', timeoutSeconds: 30
 });
 
 const getPredictionDetail = onCall({ region: 'asia-northeast3', timeoutSeconds: 30 }, async (request) => {
-  const userId = request.auth?.uid || 'anonymous';
+  const userId = requireUser(request);
   const boardId = cleanText(request.data?.boardId, 100);
   if (!boardId) throw new Error('예측판 정보가 없습니다.');
   const { id, board } = await getBoardData(boardId);
@@ -156,7 +162,7 @@ const getPredictionDetail = onCall({ region: 'asia-northeast3', timeoutSeconds: 
 });
 
 const claimPredictionDailyBonus = onCall({ region: 'asia-northeast3', timeoutSeconds: 30 }, async (request) => {
-  const userId = request.auth?.uid || 'anonymous';
+  const userId = requireUser(request);
   const dateKey = todayKey();
   const { ref, wallet } = await ensureWallet(userId);
   if (wallet.lastDailyBonus === dateKey) return { claimed: false, wallet };
@@ -170,7 +176,7 @@ const claimPredictionDailyBonus = onCall({ region: 'asia-northeast3', timeoutSec
 });
 
 const placePrediction = onCall({ region: 'asia-northeast3', timeoutSeconds: 30 }, async (request) => {
-  const userId = request.auth?.uid || 'anonymous';
+  const userId = requireUser(request);
   const boardId = cleanText(request.data?.boardId, 100);
   const optionId = cleanText(request.data?.optionId, 80);
   const comment = cleanText(request.data?.comment, 160);
@@ -208,7 +214,7 @@ const placePrediction = onCall({ region: 'asia-northeast3', timeoutSeconds: 30 }
 });
 
 const addPredictionComment = onCall({ region: 'asia-northeast3', timeoutSeconds: 30 }, async (request) => {
-  const userId = request.auth?.uid || 'anonymous';
+  const userId = requireUser(request);
   const boardId = cleanText(request.data?.boardId, 100);
   const text = cleanText(request.data?.text, 160);
   const side = cleanText(request.data?.side || '내 의견', 40);
@@ -222,7 +228,7 @@ const addPredictionComment = onCall({ region: 'asia-northeast3', timeoutSeconds:
 });
 
 const getPredictionRankings = onCall({ region: 'asia-northeast3', timeoutSeconds: 30 }, async (request) => {
-  const userId = request.auth?.uid || 'anonymous';
+  const userId = requireUser(request);
   const { wallet } = await ensureWallet(userId);
   const snap = await db.collection('user_wallets').orderBy('balance', 'desc').limit(20).get();
   const rankings = snap.docs.map((doc, index) => {
