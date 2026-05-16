@@ -26,6 +26,7 @@
   --color-bg:           #F1F3F8;
   --color-surface:      #FFFFFF;
   --color-surface-2:    #F8F9FC;
+  --color-surface-alt:  #ECEEF5;
   --color-border:       #E4E7EF;
   --color-border-light: #EEF0F6;
 
@@ -106,6 +107,7 @@
   --color-bg:           #0F1117;
   --color-surface:      #1A1D2E;
   --color-surface-2:    #21253A;
+  --color-surface-alt:  #252942;
   --color-border:       #2D3154;
   --color-border-light: #23274A;
 
