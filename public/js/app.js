@@ -4,6 +4,7 @@ import { renderHeader } from './components/header.js';
 import { renderBottomNav } from './components/bottom-nav.js';
 import { initToast } from './components/toast.js';
 import { appState } from './state.js';
+import './social-play-enhancer.js';
 import {
   collection, query, where, getDocs, getDoc, doc, limit,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
