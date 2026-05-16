@@ -7,6 +7,7 @@ import { appState } from './state.js';
 import './secure-feed-actions.js';
 import './account-secure-actions.js';
 import './admin-ai-mission-actions.js';
+import './admin-ai-ops-actions.js';
 import './social-play-enhancer.js';
 import {
   collection, query, where, getDocs, getDoc, doc, limit,
