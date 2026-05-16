@@ -85,7 +85,7 @@ export function renderHeader() {
         ${appState.installPrompt ? `
           <button class="pwa-install-btn-mobile" id="pwa-install-btn-mobile" aria-label="앱 설치" title="앱 설치">
             ${installIcon()}
-            <span>설치</span>
+            <span>앱설치</span>
           </button>` : ''}
         <button class="site-header__icon-btn" id="mobile-search-btn" aria-label="검색">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/></svg>

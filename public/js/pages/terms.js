@@ -1,33 +1,104 @@
+const YEAR = new Date().getFullYear();
+
 export function renderTerms() {
   const el = document.getElementById('page-content');
   el.innerHTML = `
-    <div style="max-width:720px;margin:0 auto">
-      <div class="section-header">
-        <h1 class="section-title">이용약관</h1>
+    <div class="legal-page">
+      <div class="legal-page__header">
+        <h1 class="legal-page__title">이용약관</h1>
+        <p class="legal-page__updated">시행일: 2025년 6월 1일 · 최종 수정: ${YEAR}년</p>
       </div>
-      <div class="card">
-        <div class="card__body--lg" style="line-height:1.9;font-size:14px;color:var(--color-text-secondary)">
-          <h2 style="font-size:16px;font-weight:800;color:var(--color-text-primary);margin-bottom:8px">제1조 (목적)</h2>
-          <p>이 약관은 소소킹(이하 "서비스")이 제공하는 게임형 커뮤니티 서비스의 이용 조건 및 절차에 관한 사항을 규정함을 목적으로 합니다.</p>
-          <h2 style="font-size:16px;font-weight:800;color:var(--color-text-primary);margin:20px 0 8px">제2조 (서비스 이용)</h2>
-          <ul style="padding-left:16px">
+
+      <div class="card legal-card">
+        <div class="legal-body">
+
+          <div class="legal-notice">
+            소소킹 서비스를 이용하시면 본 약관에 동의하신 것으로 간주됩니다.
+            서비스 이용 전 반드시 읽어주세요.
+          </div>
+
+          <h2 class="legal-h2">제1조 (목적)</h2>
+          <p>본 약관은 소소킹(이하 "서비스")이 제공하는 게임형 커뮤니티 서비스의 이용 조건, 절차 및
+          회사와 이용자 간의 권리·의무·책임 사항을 규정함을 목적으로 합니다.</p>
+
+          <h2 class="legal-h2">제2조 (정의)</h2>
+          <ul class="legal-list">
+            <li><b>"서비스"</b>란 소소킹이 제공하는 웹·앱 기반 커뮤니티 플랫폼을 말합니다.</li>
+            <li><b>"이용자"</b>란 본 약관에 동의하고 서비스를 이용하는 모든 사람을 말합니다.</li>
+            <li><b>"회원"</b>이란 Google 계정 또는 이메일로 가입하여 아이디를 부여받은 이용자를 말합니다.</li>
+            <li><b>"게시물"</b>이란 회원이 서비스에 등록한 텍스트, 이미지, 댓글, 반응 등 모든 콘텐츠를 말합니다.</li>
+          </ul>
+
+          <h2 class="legal-h2">제3조 (약관의 효력 및 변경)</h2>
+          <ul class="legal-list">
+            <li>본 약관은 서비스 화면에 게시하거나 이용자에게 공지함으로써 효력이 발생합니다.</li>
+            <li>서비스는 합리적인 사유 발생 시 약관을 변경할 수 있으며, 변경 시 시행일 7일 전까지
+              서비스 공지사항 또는 이메일을 통해 공지합니다.</li>
+            <li>이용자가 변경 약관 시행일 이후에도 서비스를 계속 이용하면 변경 약관에 동의한 것으로 봅니다.</li>
+          </ul>
+
+          <h2 class="legal-h2">제4조 (회원 가입 및 이용 조건)</h2>
+          <ul class="legal-list">
             <li>서비스는 만 14세 이상 누구나 이용할 수 있습니다.</li>
-            <li>회원은 Google 계정 또는 이메일로 가입할 수 있습니다.</li>
-            <li>1인 1계정을 원칙으로 합니다.</li>
+            <li>회원은 Google 계정 또는 이메일·비밀번호로 가입할 수 있습니다.</li>
+            <li>1인 1계정을 원칙으로 하며, 중복 계정 생성은 제한될 수 있습니다.</li>
+            <li>허위 정보로 가입하거나 타인의 정보를 도용한 경우 서비스 이용이 제한될 수 있습니다.</li>
           </ul>
-          <h2 style="font-size:16px;font-weight:800;color:var(--color-text-primary);margin:20px 0 8px">제3조 (금지 행위)</h2>
-          <ul style="padding-left:16px">
-            <li>타인에 대한 비방, 욕설, 혐오 표현 금지</li>
-            <li>개인정보(실명, 연락처 등) 노출 금지</li>
-            <li>광고, 스팸, 도배 행위 금지</li>
-            <li>외부 링크, 유튜브 등 영상 콘텐츠 금지</li>
-            <li>저작권 침해 콘텐츠 업로드 금지</li>
+
+          <h2 class="legal-h2">제5조 (서비스 이용 및 게시물)</h2>
+          <ul class="legal-list">
+            <li>회원은 서비스 내에서 자유롭게 게시물을 작성하고 다른 이용자의 활동에 참여할 수 있습니다.</li>
+            <li>게시물의 저작권은 작성자 본인에게 있으나, 서비스는 서비스 운영·홍보 목적으로 게시물을
+              국내외에서 이용·복제·배포·전시할 수 있는 비독점적 라이선스를 갖습니다.</li>
+            <li>회원 탈퇴 시 작성한 게시물은 삭제되지 않을 수 있으며, 익명 처리 후 유지될 수 있습니다.</li>
           </ul>
-          <h2 style="font-size:16px;font-weight:800;color:var(--color-text-primary);margin:20px 0 8px">제4조 (서비스 변경 및 중단)</h2>
-          <p>서비스는 운영상 필요에 따라 사전 공지 없이 서비스 내용을 변경하거나 일시 중단할 수 있습니다.</p>
-          <h2 style="font-size:16px;font-weight:800;color:var(--color-text-primary);margin:20px 0 8px">제5조 (면책)</h2>
-          <p>서비스는 이용자가 게시한 정보, 자료, 사실의 신뢰도·정확성에 대해 책임을 지지 않습니다. 이용자 간 분쟁에 개입하지 않으며 이로 인한 손해를 배상할 책임이 없습니다.</p>
-          <p style="margin-top:20px;color:var(--color-text-muted);font-size:13px">시행일: 2025년 1월 1일</p>
+
+          <h2 class="legal-h2">제6조 (금지 행위)</h2>
+          <p>다음 행위는 금지되며, 위반 시 사전 통보 없이 게시물 삭제 및 계정 이용 제한이 될 수 있습니다.</p>
+          <ul class="legal-list">
+            <li>타인에 대한 비방, 욕설, 혐오 표현 및 명예 훼손 행위</li>
+            <li>개인정보(실명, 연락처, 주소 등) 노출 또는 타인의 정보 무단 수집</li>
+            <li>광고, 스팸, 도배, 음란·불법 콘텐츠 유포</li>
+            <li>외부 링크, 유튜브 등 영상 콘텐츠 무단 게시 (서비스 운영 방침에 따름)</li>
+            <li>타인의 저작권, 상표권, 특허권 등 지적재산권 침해</li>
+            <li>해킹, 크롤링, 자동화 프로그램을 이용한 서비스 접근</li>
+            <li>서비스의 안정적 운영을 방해하는 행위</li>
+            <li>기타 관련 법령 또는 서비스 운영 정책에 위반되는 행위</li>
+          </ul>
+
+          <h2 class="legal-h2">제7조 (서비스 변경·중단)</h2>
+          <ul class="legal-list">
+            <li>서비스는 운영상·기술상 필요에 따라 서비스 내용을 변경하거나 일시 중단할 수 있습니다.</li>
+            <li>서비스 중단이 예정된 경우, 가능한 한 7일 전에 서비스 내 공지를 통해 알립니다.
+              다만, 불가피한 사유(천재지변, 시스템 장애 등)로 인한 긴급 중단은 사후 공지할 수 있습니다.</li>
+            <li>서비스의 일시 중단으로 인한 손해에 대해 고의·중과실이 없는 한 책임을 지지 않습니다.</li>
+          </ul>
+
+          <h2 class="legal-h2">제8조 (면책 조항)</h2>
+          <ul class="legal-list">
+            <li>서비스는 이용자가 게시한 정보·자료의 신뢰도·정확성에 대해 보증하지 않습니다.</li>
+            <li>이용자 간 분쟁에 대해 서비스는 개입 의무가 없으며, 이로 인한 손해를 배상할 책임이 없습니다.</li>
+            <li>서비스는 천재지변, 전쟁, 통신 장애 등 불가항력적 사유로 서비스를 제공할 수 없는 경우
+              책임이 면제됩니다.</li>
+            <li>이용자가 서비스를 이용하여 기대하는 수익을 얻지 못하거나 손실이 발생해도 책임지지 않습니다.</li>
+          </ul>
+
+          <h2 class="legal-h2">제9조 (분쟁 해결)</h2>
+          <ul class="legal-list">
+            <li>서비스 이용 관련 분쟁 발생 시 양 당사자는 성실히 협의하여 해결하도록 노력합니다.</li>
+            <li>협의가 이루어지지 않는 경우, 서비스 소재지를 관할하는 법원을 전속 관할 법원으로 합니다.</li>
+            <li>본 약관에 관한 소송 준거법은 대한민국 법률로 합니다.</li>
+          </ul>
+
+          <h2 class="legal-h2">제10조 (기타)</h2>
+          <ul class="legal-list">
+            <li>본 약관에 명시되지 않은 사항은 관련 법령 및 서비스 운영 정책에 따릅니다.</li>
+            <li>이 약관의 일부가 무효로 판단되더라도 나머지 조항의 효력에는 영향을 미치지 않습니다.</li>
+          </ul>
+
+          <div class="legal-footer-note">
+            시행일: 2025년 6월 1일 &nbsp;|&nbsp; 문의: 서비스 내 신고 기능 이용
+          </div>
         </div>
       </div>
     </div>`;

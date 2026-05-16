@@ -12,19 +12,19 @@ import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { appState } from '../state.js';
 
 const ALL_TYPES = [
-  'balance','vote','battle','ox','quiz',
-  'naming','acrostic','cbattle','laugh','drip',
-  'howto','story','fail','concern','relay',
+  'balance','vote','battle','challenge24','tournament',
+  'naming','acrostic','drip','cbattle','laugh',
+  'ox','quiz','relay','word_relay','random_battle',
 ];
 
-const PARTICIPATORY_TYPES = ['quiz', 'vote', 'balance', 'battle', 'cbattle', 'naming', 'ox', 'laugh'];
+const PARTICIPATORY_TYPES = ['balance', 'vote', 'battle', 'challenge24', 'tournament', 'naming', 'ox', 'quiz', 'laugh', 'cbattle', 'random_battle'];
 
 const THRONE_CATS = [
-  { key: 'naming',   label: '작명왕',  icon: '✏️', type: 'naming',   scoreKey: null },
-  { key: 'acrostic', label: '삼행시왕', icon: '📝', type: 'acrostic', scoreKey: null },
-  { key: 'comment',  label: '댓글왕',  icon: '💬', type: null,        scoreKey: 'comment' },
-  { key: 'quiz',     label: '퀴즈왕',  icon: '🎯', type: 'quiz',      scoreKey: null },
-  { key: 'howto',    label: '노하우왕', icon: '💡', type: 'howto',    scoreKey: null },
+  { key: 'naming',       label: '작명왕',  icon: '✏️', type: 'naming',       scoreKey: null },
+  { key: 'acrostic',     label: '삼행시왕', icon: '📝', type: 'acrostic',     scoreKey: null },
+  { key: 'comment',      label: '댓글왕',  icon: '💬', type: null,            scoreKey: 'comment' },
+  { key: 'quiz',         label: '퀴즈왕',  icon: '🧠', type: 'quiz',          scoreKey: null },
+  { key: 'random_battle',label: '대결왕',  icon: '🎰', type: 'random_battle', scoreKey: null },
 ];
 
 function throneScore(p) {
@@ -54,12 +54,12 @@ async function checkStreak(uid) {
 }
 
 const CAT_QUICK_TYPES = [
-  { key: 'balance',  icon: '⚖️', label: '밸런스게임',   cat: 'golra' },
-  { key: 'ox',       icon: '❓', label: 'OX퀴즈',       cat: 'golra' },
-  { key: 'acrostic', icon: '✍️', label: '삼행시짓기',   cat: 'usgyo' },
-  { key: 'naming',   icon: '😜', label: '미친작명소',   cat: 'usgyo' },
-  { key: 'howto',    icon: '💡', label: '나만의노하우', cat: 'malhe' },
-  { key: 'concern',  icon: '🤔', label: '고민/질문',    cat: 'malhe' },
+  { key: 'balance',      icon: '⚖️', label: '밸런스게임',   cat: 'golra' },
+  { key: 'tournament',   icon: '🏆', label: '이상형월드컵', cat: 'golra' },
+  { key: 'acrostic',     icon: '✍️', label: '삼행시짓기',   cat: 'usgyo' },
+  { key: 'naming',       icon: '😜', label: '미친작명소',   cat: 'usgyo' },
+  { key: 'ox',           icon: '❓', label: 'OX퀴즈',       cat: 'malhe' },
+  { key: 'random_battle',icon: '🎰', label: '랜덤대결',     cat: 'malhe' },
 ];
 
 export async function renderHome() {
@@ -134,6 +134,12 @@ export async function renderHome() {
               <div class="home-hero__stat-num" style="font-size:14px">🟢 Live</div>
               <div class="home-hero__stat-label">실시간 운영중</div>
             </div>
+          </div>
+          <div class="home-hero__visual" aria-hidden="true">
+            <div class="home-hero__mini-card"><b>⚖️ 밸런스게임</b><span>둘 중 하나만 고르면 끝</span></div>
+            <div class="home-hero__mini-card"><b>🏆 이상형월드컵</b><span>대진표로 최애 가리기</span></div>
+            <div class="home-hero__mini-card"><b>✍️ 삼행시짓기</b><span>제시어로 삼행시 도전</span></div>
+            <div class="home-hero__mini-card"><b>🎰 랜덤대결</b><span>같은 주제 누가 더 재밌어</span></div>
           </div>
         </div>
 
@@ -245,21 +251,47 @@ export async function renderHome() {
 
 function renderCategoryCards() {
   const cats = [
-    { key: 'golra', emoji: '🎯', badge: 'VOTE', name: '골라봐',  desc: '선택하고 판단해봐요',   types: ['밸런스게임','민심투표','OX퀴즈','퀴즈'] },
-    { key: 'usgyo', emoji: '😂', badge: 'FUN',  name: '웃겨봐',  desc: '웃기고 유쾌하게 즐겨요', types: ['미친작명소','삼행시','한줄드립','댓글배틀'] },
-    { key: 'malhe', emoji: '💬', badge: 'TALK', name: '말해봐',  desc: '경험과 생각을 나눠요',   types: ['나만의노하우','경험담','고민/질문','막장릴레이'] },
+    {
+      key: 'golra', emoji: '🎯', badge: '선택형', name: '골라봐',
+      hook: '선택은 빠르게, 이유는 댓글로',
+      desc: '밸런스게임·민심투표·이상형월드컵 — 누르자마자 참여하는 선택형 놀이판이에요.',
+      types: ['밸런스게임', '민심투표', '선택지배틀', '24시간챌린지', '이상형월드컵'],
+      cta: '선택하러 가기',
+    },
+    {
+      key: 'usgyo', emoji: '😂', badge: '드립형', name: '웃겨봐',
+      hook: '드립 한 줄이면 분위기 반전',
+      desc: '미친작명소·삼행시·한줄드립·댓글배틀로 센스와 유머를 겨뤄요.',
+      types: ['미친작명소', '삼행시짓기', '한줄드립', '댓글배틀', '웃참챌린지'],
+      cta: '웃기러 가기',
+    },
+    {
+      key: 'malhe', emoji: '🎮', badge: '도전형', name: '도전봐',
+      hook: '퀴즈부터 릴레이까지 도전하세요',
+      desc: 'OX퀴즈·4지선다·막장릴레이·단어릴레이·랜덤대결로 두뇌와 창의력을 겨뤄요.',
+      types: ['OX퀴즈', '4지선다', '막장릴레이', '단어릴레이', '랜덤대결'],
+      cta: '도전하러 가기',
+    },
   ];
   return `
+    <div class="home-cats-header">
+      <div class="home-cats-header__title">오늘 뭐 하고 놀까요?</div>
+      <div class="home-cats-header__sub">세 가지 놀이판 중 하나만 골라 바로 시작</div>
+    </div>
     <div class="home-cats">
       ${cats.map(c => `
         <div class="home-cat-card home-cat-card--${c.key}" data-cat-nav="${c.key}" data-emoji="${c.emoji}" role="button" tabindex="0">
-          <div class="home-cat-card__badge">${c.badge}</div>
-          <div class="home-cat-card__icon">${c.emoji}</div>
+          <div class="home-cat-card__top">
+            <div class="home-cat-card__badge">${c.badge}</div>
+            <div class="home-cat-card__icon-wrap"><span class="home-cat-card__icon">${c.emoji}</span></div>
+          </div>
           <div class="home-cat-card__name">${c.name}</div>
+          <div class="home-cat-card__hook">${c.hook}</div>
           <div class="home-cat-card__desc">${c.desc}</div>
           <div class="home-cat-card__types">
             ${c.types.map(t => `<span class="home-cat-card__type-pill">${t}</span>`).join('')}
           </div>
+          <div class="home-cat-card__cta">${c.cta} <span>→</span></div>
         </div>`).join('')}
     </div>`;
 }
@@ -340,7 +372,7 @@ function renderGuideWidget() {
   const items = [
     { icon: '🎯', label: '골라봐', desc: '투표·퀴즈·밸런스게임', cat: 'golra' },
     { icon: '😂', label: '웃겨봐', desc: '드립·삼행시·작명소',   cat: 'usgyo' },
-    { icon: '💬', label: '말해봐', desc: '경험·노하우·고민',     cat: 'malhe' },
+    { icon: '🎮', label: '도전봐', desc: '퀴즈·릴레이·랜덤대결', cat: 'malhe' },
   ];
   return `
     <div class="sidebar-widget">

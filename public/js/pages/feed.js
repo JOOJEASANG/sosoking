@@ -6,19 +6,20 @@ import { setMeta } from '../utils/seo.js';
 import { escHtml } from '../utils/helpers.js';
 
 const CAT_TYPES = {
-  golra: ['balance','vote','battle','ox','quiz'],
-  usgyo: ['naming','acrostic','cbattle','laugh','drip'],
-  malhe: ['howto','story','fail','concern','relay'],
+  golra: ['balance','vote','battle','challenge24','tournament'],
+  usgyo: ['naming','acrostic','drip','cbattle','laugh'],
+  malhe: ['ox','quiz','relay','word_relay','random_battle'],
 };
 
 const CAT_LABELS = {
-  '': '전체', golra: '골라봐', usgyo: '웃겨봐', malhe: '말해봐',
+  '': '전체', golra: '골라봐', usgyo: '웃겨봐', malhe: '도전봐',
 };
 
 const TYPE_LABELS = {
-  balance:'밸런스게임', vote:'민심투표', battle:'선택지배틀', ox:'OX퀴즈', quiz:'내맘대로퀴즈',
-  naming:'미친작명소', acrostic:'삼행시짓기', cbattle:'댓글배틀', laugh:'웃참챌린지', drip:'한줄드립',
-  howto:'나만의노하우', story:'경험담', fail:'실패담', concern:'고민/질문', relay:'막장릴레이',
+  balance:'밸런스게임', vote:'민심투표', battle:'선택지배틀', challenge24:'24시간챌린지', tournament:'이상형월드컵',
+  naming:'미친작명소', acrostic:'삼행시짓기', drip:'한줄드립', cbattle:'댓글배틀', laugh:'웃참챌린지',
+  ox:'OX퀴즈', quiz:'4지선다', relay:'막장릴레이', word_relay:'단어릴레이', random_battle:'랜덤대결',
+  howto:'노하우', story:'경험담', fail:'실패담', concern:'고민/질문',
 };
 
 let lastDoc      = null;
@@ -146,7 +147,7 @@ function renderTypeFilter() {
       ${Object.entries(groups).map(([catKey, types]) => `
         <div style="margin-bottom:12px">
           <div style="font-size:11px;font-weight:700;color:var(--color-text-muted);margin-bottom:6px">
-            ${{ golra:'골라봐', usgyo:'웃겨봐', malhe:'말해봐' }[catKey]}
+            ${{ golra:'골라봐', usgyo:'웃겨봐', malhe:'도전봐' }[catKey]}
           </div>
           <div style="display:flex;flex-wrap:wrap;gap:6px">
             ${types.map(t => `

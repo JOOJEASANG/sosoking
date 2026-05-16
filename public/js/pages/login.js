@@ -32,7 +32,7 @@ export function renderLogin() {
           <button class="btn btn--ghost btn--full" id="btn-email-signup" style="margin-top:8px">회원가입</button>
 
           <p style="text-align:center;font-size:12px;color:var(--color-text-muted);margin-top:16px">
-            로그인 시 <a href="#/guide" style="color:var(--color-primary)">이용 약관</a>에 동의하는 것으로 간주됩니다.
+            로그인 시 <a href="#/terms" style="color:var(--color-primary)">이용 약관</a>에 동의하는 것으로 간주됩니다.
           </p>
         </div>
       </div>

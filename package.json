@@ -1,9 +1,10 @@
 {
   "scripts": {
-    "build": "node -e \"console.log('Static Firebase Hosting app: no build step')\"",
+    "check": "node --check functions/*.js",
+    "build": "npm run check && node -e \"console.log('Static Firebase Hosting app: no build step')\"",
     "deploy": "npx firebase-tools deploy",
     "deploy:hosting": "npx firebase-tools deploy --only hosting",
-    "deploy:functions": "npx firebase-tools deploy --only functions",
+    "deploy:functions": "npm run check && npx firebase-tools deploy --only functions",
     "deploy:rules": "npx firebase-tools deploy --only firestore:rules,storage:rules",
     "deploy:indexes": "npx firebase-tools deploy --only firestore:indexes"
   },

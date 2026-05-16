@@ -1,5 +1,5 @@
 import { db, auth } from '../firebase.js';
-import { collection, addDoc, doc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { collection, addDoc, doc, setDoc, serverTimestamp, Timestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { navigate, getQueryParams } from '../router.js';
 import { toast } from '../components/toast.js';
 import { initImageUploader, getUploadedImages } from '../components/image-uploader.js';
@@ -8,33 +8,33 @@ import { setMeta } from '../utils/seo.js';
 /* ── 카테고리/유형 정의 ── */
 const CATEGORIES = [
   {
-    key: 'golra', label: '골라봐', icon: '🎯', desc: '선택·투표·퀴즈',
+    key: 'golra', label: '골라봐', icon: '🎯', badge: '선택형', desc: '선택·투표·배틀',
     types: [
-      { key: 'balance',  icon: '⚖️', label: '밸런스게임',    desc: 'A vs B 둘 중 하나!' },
-      { key: 'vote',     icon: '🗳️', label: '민심투표',      desc: '여러 선택지로 투표' },
-      { key: 'battle',   icon: '⚔️', label: '선택지배틀',    desc: '후보 중 최강자는?' },
-      { key: 'ox',       icon: '❓', label: 'OX퀴즈',        desc: '맞으면 O, 틀리면 X' },
-      { key: 'quiz',     icon: '🧠', label: '내맘대로퀴즈',  desc: '객관식 또는 주관식' },
+      { key: 'balance',    icon: '⚖️', label: '밸런스게임',    desc: 'A vs B, 둘 중 하나만!' },
+      { key: 'vote',       icon: '🗳️', label: '민심투표',      desc: '여러 선택지로 투표해요' },
+      { key: 'battle',     icon: '⚔️', label: '선택지배틀',    desc: '후보들 중 최강자는?' },
+      { key: 'challenge24',icon: '⏰', label: '24시간챌린지',   desc: '24시간 한정 핫이슈 투표' },
+      { key: 'tournament', icon: '🏆', label: '이상형월드컵',   desc: '대진표로 최애를 가려봐요' },
     ],
   },
   {
-    key: 'usgyo', label: '웃겨봐', icon: '😂', desc: '드립·삼행시·작명',
+    key: 'usgyo', label: '웃겨봐', icon: '😂', badge: '드립형', desc: '센스·유머 대결',
     types: [
       { key: 'naming',   icon: '😜', label: '미친작명소',    desc: '사진에 웃긴 제목 붙이기' },
       { key: 'acrostic', icon: '✍️', label: '삼행시짓기',    desc: '제시어로 삼행시 도전' },
-      { key: 'cbattle',  icon: '💥', label: '댓글배틀',      desc: '댓글로 겨루는 배틀' },
+      { key: 'drip',     icon: '🎤', label: '한줄드립',      desc: '한 줄로 터지는 드립 대결' },
+      { key: 'cbattle',  icon: '💥', label: '댓글배틀',      desc: '두 팀으로 나눠 댓글 배틀' },
       { key: 'laugh',    icon: '🙈', label: '웃참챌린지',    desc: '웃겨도 참을 수 있어?' },
-      { key: 'drip',     icon: '🎤', label: '한줄드립',      desc: '한 줄로 표현하는 드립' },
     ],
   },
   {
-    key: 'malhe', label: '말해봐', icon: '💬', desc: '경험·노하우·고민',
+    key: 'malhe', label: '도전봐', icon: '🎮', badge: '도전형', desc: '퀴즈·릴레이·창작',
     types: [
-      { key: 'howto',    icon: '💡', label: '나만의노하우',  desc: '직접 겪은 꿀팁 공유' },
-      { key: 'story',    icon: '📖', label: '경험담',        desc: '내가 겪은 이야기' },
-      { key: 'fail',     icon: '💀', label: '실패담',        desc: '실패에서 배운 것들' },
-      { key: 'concern',  icon: '🤔', label: '고민/질문',     desc: '함께 고민해요' },
-      { key: 'relay',    icon: '🎭', label: '막장릴레이',    desc: '이어쓰는 막장 이야기' },
+      { key: 'ox',          icon: '❓', label: 'OX퀴즈',       desc: '맞으면 O, 틀리면 X' },
+      { key: 'quiz',        icon: '🧠', label: '4지선다',       desc: '4개 중 정답을 맞혀봐요' },
+      { key: 'relay',       icon: '🎭', label: '막장릴레이',    desc: '한 문장씩 이어가는 스토리' },
+      { key: 'word_relay',  icon: '🔗', label: '단어릴레이',    desc: '끝말잇기 스타일 연결 게임' },
+      { key: 'random_battle',icon:'🎰', label: '랜덤대결',      desc: '같은 주제로 누가 더 재밌어?' },
     ],
   },
 ];
@@ -90,11 +90,14 @@ function renderCatSelect(el) {
           <div class="card card--hover" data-cat="${cat.key}" style="cursor:pointer">
             <div class="card__body" style="display:flex;align-items:center;gap:16px">
               <div style="font-size:36px;flex-shrink:0">${cat.icon}</div>
-              <div>
-                <div style="font-size:18px;font-weight:800">${cat.label}</div>
+              <div style="flex:1;min-width:0">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="font-size:18px;font-weight:800">${cat.label}</span>
+                  <span style="font-size:10px;font-weight:800;padding:2px 8px;border-radius:99px;background:var(--color-${cat.key}-bg);color:var(--color-${cat.key}-dark);border:1px solid var(--color-${cat.key}-border)">${cat.badge}</span>
+                </div>
                 <div style="font-size:13px;color:var(--color-text-secondary);margin-top:2px">${cat.desc}</div>
               </div>
-              <div style="margin-left:auto;color:var(--color-text-muted)">›</div>
+              <div style="color:var(--color-text-muted)">›</div>
             </div>
           </div>`).join('')}
       </div>
@@ -537,6 +540,71 @@ function renderFormFields() {
         ${imageUploader(1)} ${commonTags}`;
 
 
+    case 'challenge24':
+      return commonTitle + `
+        <div class="form-group">
+          <label class="form-label">상황 설명</label>
+          <textarea id="f-desc" class="form-textarea" placeholder="예: 24시간 안에 결정해야 하는 그 질문이에요. 여러분의 선택은?" rows="3"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">선택지 <span class="required">*</span></label>
+          <div class="option-inputs" id="option-list">
+            ${renderOptionRow('A', '예: 치킨')}
+            ${renderOptionRow('B', '예: 피자')}
+          </div>
+          <button class="add-option-btn" id="btn-add-option" style="margin-top:8px">+ 선택지 추가 (최대 4개)</button>
+        </div>
+        <p style="font-size:12px;color:var(--color-text-muted)">⏰ 이 놀이판은 등록 후 24시간 후 자동으로 종료돼요.</p>
+        ${imageUploader(3)} ${commonTags}`;
+
+    case 'tournament':
+      return commonTitle + `
+        <div class="form-group">
+          <label class="form-label">토너먼트 설명</label>
+          <textarea id="f-desc" class="form-textarea" placeholder="예: 최강의 음식을 가려봐요!" rows="2"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">참가자 1~4 <span class="required">*</span></label>
+          <div class="option-inputs" id="option-list">
+            ${renderOptionRow('1', '참가자 1')}
+            ${renderOptionRow('2', '참가자 2')}
+            ${renderOptionRow('3', '참가자 3')}
+            ${renderOptionRow('4', '참가자 4')}
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">참가자 5~8 (선택)</label>
+          <div class="option-inputs" id="option-list-extra">
+            ${renderOptionRow('5', '참가자 5 (선택)')}
+            ${renderOptionRow('6', '참가자 6 (선택)')}
+            ${renderOptionRow('7', '참가자 7 (선택)')}
+            ${renderOptionRow('8', '참가자 8 (선택)')}
+          </div>
+        </div>
+        ${imageUploader(3)} ${commonTags}`;
+
+    case 'random_battle':
+      return commonTitle + `
+        <div class="form-group">
+          <label class="form-label">대결 주제 <span class="required">*</span></label>
+          <textarea id="f-desc" class="form-textarea" placeholder="예: 월요일에 딱 어울리는 드립 한 줄만 날려주세요!" rows="3"></textarea>
+        </div>
+        <p style="font-size:12px;color:var(--color-text-muted)">🎰 참여자들이 같은 주제로 드립/답변을 쓰고 좋아요로 우승자를 가려요.</p>
+        ${imageUploader(3)} ${commonTags}`;
+
+    case 'word_relay':
+      return commonTitle + `
+        <div class="form-group">
+          <label class="form-label">시작 단어 <span class="required">*</span></label>
+          <input id="f-start-word" class="form-input" placeholder="예: 사과" maxlength="20">
+          <div class="form-hint">참여자들이 이 단어에서 이어받아 끝말잇기를 시작해요</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">설명</label>
+          <textarea id="f-desc" class="form-textarea" placeholder="예: 끝말잇기로 어디까지 이어갈 수 있을까요?" rows="2"></textarea>
+        </div>
+        ${imageUploader(3)} ${commonTags}`;
+
     default:
       return commonTitle + `
         <div class="form-group">
@@ -756,7 +824,7 @@ async function handleSubmit() {
   btn.textContent = '올리는 중...';
 
   try {
-    const docRef = await addDoc(collection(db, 'feeds'), {
+    const postData = {
       type, cat,
       title, desc, tags,
       images,
@@ -768,7 +836,16 @@ async function handleSubmit() {
       viewCount: 0,
       createdAt: serverTimestamp(),
       ...extra,
-    });
+    };
+
+    if (selectedType.key === 'challenge24') {
+      const expires = new Date();
+      expires.setDate(expires.getDate() + 1);
+      postData.expiresAt = Timestamp.fromDate(expires);
+      postData.expired = false;
+    }
+
+    const docRef = await addDoc(collection(db, 'feeds'), postData);
 
     if (Object.keys(secretFields).length > 0) {
       await setDoc(doc(db, 'feeds', docRef.id, 'secret', 'answer'), secretFields);
@@ -881,6 +958,28 @@ function collectExtraData(type) {
       return { howto: document.getElementById('f-howto')?.value.trim() || '' };
     case 'laugh':
       return { difficulty: document.getElementById('f-difficulty')?.value || '' };
+    case 'challenge24': {
+      const opts = getOptions();
+      if (opts.length < 2) { toast.error('선택지를 2개 이상 입력해주세요'); return null; }
+      return { options: opts.map(o => ({ text: o, votes: 0 })) };
+    }
+    case 'tournament': {
+      const requiredOpts = [...document.querySelectorAll('#option-list .option-value')]
+        .map(i => i.value.trim()).filter(Boolean);
+      if (requiredOpts.length < 4) { toast.error('참가자 1~4를 모두 입력해주세요'); return null; }
+      const extraOpts = [...document.querySelectorAll('#option-list-extra .option-value')]
+        .map(i => i.value.trim()).filter(Boolean);
+      return { options: [...requiredOpts, ...extraOpts].map(o => ({ text: o, votes: 0 })) };
+    }
+    case 'random_battle': {
+      if (!document.getElementById('f-desc')?.value.trim()) { toast.error('대결 주제를 입력해주세요'); return null; }
+      return {};
+    }
+    case 'word_relay': {
+      const startWord = document.getElementById('f-start-word')?.value.trim();
+      if (!startWord) { toast.error('시작 단어를 입력해주세요'); return null; }
+      return { startWord };
+    }
     default:
       return {};
   }

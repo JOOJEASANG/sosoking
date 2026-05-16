@@ -1,9 +1,10 @@
-import { db, auth } from '../firebase.js';
+import { db, auth, functions } from '../firebase.js';
 import {
   collection, query, orderBy, limit, getDocs, deleteDoc, doc,
   getCountFromServer, where, updateDoc, addDoc, serverTimestamp,
-  Timestamp, getDoc,
+  Timestamp, getDoc, setDoc,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
 import { appState } from '../state.js';
 import { toast } from '../components/toast.js';
 import { navigate } from '../router.js';
@@ -36,6 +37,7 @@ export async function renderAdmin() {
           { key: 'reports',   icon: '🚨', label: '신고 관리' },
           { key: 'users',     icon: '👥', label: '회원 현황' },
           { key: 'missions',  icon: '🎯', label: '미션 관리' },
+          { key: 'ai',        icon: '🤖', label: 'AI 관리' },
         ].map(m => `
           <div class="admin-menu-item ${currentTab === m.key ? 'active' : ''}" data-tab="${m.key}">
             <span>${m.icon}</span><span>${m.label}</span>
@@ -74,6 +76,7 @@ async function loadTab(tab) {
     case 'reports':   return renderReports(content);
     case 'users':     return renderUsers(content);
     case 'missions':  return renderMissions(content);
+    case 'ai':        return renderAiSettings(content);
   }
 }
 
@@ -131,7 +134,7 @@ async function renderDashboard(el) {
           ${[
             { key: 'golra', label: '🎯 골라봐', count: golra, color: 'var(--color-golra)' },
             { key: 'usgyo', label: '😂 웃겨봐', count: usgyo, color: 'var(--color-usgyo)' },
-            { key: 'malhe', label: '💬 말해봐', count: malhe, color: 'var(--color-malhe)' },
+            { key: 'malhe', label: '🎮 도전봐', count: malhe, color: 'var(--color-malhe)' },
           ].map(c => `
             <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
               <div style="width:70px;font-size:13px;font-weight:700">${c.label}</div>
@@ -208,7 +211,7 @@ async function renderPosts(el, searchQ = '', catFilter = '') {
           { key: '', label: '전체' },
           { key: 'golra', label: '골라봐' },
           { key: 'usgyo', label: '웃겨봐' },
-          { key: 'malhe', label: '말해봐' },
+          { key: 'malhe', label: '도전봐' },
         ].map(c => `<button class="filter-chip ${catFilter === c.key ? 'active' : ''}" data-post-cat="${c.key}">${c.label}</button>`).join('')}
       </div>
       <div class="card" style="overflow:auto">
@@ -231,7 +234,7 @@ async function renderPosts(el, searchQ = '', catFilter = '') {
                     <a href="#/detail/${p.id}" style="color:var(--color-primary);font-weight:600;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.title || '(제목없음)')}</a>
                   </td>
                   <td style="padding:10px 12px"><span class="badge badge--gray" style="font-size:10px">${p.type || ''}</span></td>
-                  <td style="padding:10px 12px"><span style="font-size:12px">${{ golra:'🎯 골라봐', usgyo:'😂 웃겨봐', malhe:'💬 말해봐' }[p.cat] || p.cat || ''}</span></td>
+                  <td style="padding:10px 12px"><span style="font-size:12px">${{ golra:'🎯 골라봐', usgyo:'😂 웃겨봐', malhe:'🎮 도전봐' }[p.cat] || p.cat || ''}</span></td>
                   <td style="padding:10px 12px;font-size:12px;color:var(--color-text-secondary)">${escHtml(p.authorName || '익명')}</td>
                   <td style="padding:10px 12px">
                     ${p.hidden
@@ -471,7 +474,7 @@ async function renderMissions(el) {
               <option value="">전체 (카테고리 무관)</option>
               <option value="golra">🎯 골라봐</option>
               <option value="usgyo">😂 웃겨봐</option>
-              <option value="malhe">💬 말해봐</option>
+              <option value="malhe">🎮 도전봐</option>
             </select>
           </div>
           <div class="form-group">
@@ -500,7 +503,7 @@ async function renderMissions(el) {
                   <div style="flex:1">
                     <div style="font-size:14px;font-weight:700;${m.active ? 'color:var(--color-primary)' : ''}">${escHtml(m.title || '')}</div>
                     ${m.desc ? `<div style="font-size:12px;color:var(--color-text-muted);margin-top:2px">${escHtml(m.desc)}</div>` : ''}
-                    ${m.cat ? `<div style="font-size:11px;margin-top:4px"><span style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:99px;padding:2px 8px">${{ golra:'🎯 골라봐', usgyo:'😂 웃겨봐', malhe:'💬 말해봐' }[m.cat] || m.cat}</span></div>` : ''}
+                    ${m.cat ? `<div style="font-size:11px;margin-top:4px"><span style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:99px;padding:2px 8px">${{ golra:'🎯 골라봐', usgyo:'😂 웃겨봐', malhe:'🎮 도전봐' }[m.cat] || m.cat}</span></div>` : ''}
                     ${m.endDate ? `<div style="font-size:11px;color:var(--color-warning);margin-top:4px">⏰ 마감: ${new Date(m.endDate.toDate()).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>` : ''}
                   </div>
                   <div style="display:flex;gap:6px;flex-shrink:0">
@@ -550,6 +553,203 @@ async function renderMissions(el) {
         btn.closest('[data-mission-row]')?.remove();
       } catch { toast.error('삭제에 실패했어요'); }
     });
+  });
+}
+
+/* ── AI 설정 ── */
+async function renderAiSettings(el) {
+  // Load current AI config from Firestore
+  let aiConfig = { enabled: true, apiKey: '', features: {}, usage: {} };
+  try {
+    const snap = await getDoc(doc(db, 'config', 'ai'));
+    if (snap.exists()) {
+      const d = snap.data();
+      aiConfig = {
+        enabled: d.enabled !== false,
+        apiKey: d.apiKey ? '●'.repeat(8) + d.apiKey.slice(-4) : '',
+        features: d.features || {},
+        usage: d.usage || {},
+      };
+    }
+  } catch {}
+
+  // Calculate today's usage
+  const today = new Date().toISOString().slice(0, 10);
+  const todayUsage = aiConfig.usage?.[today]?.requests || 0;
+
+  // Load recent AI reports
+  let reports = [];
+  try {
+    const rSnap = await getDocs(query(collection(db, 'ai_reports'), orderBy('createdAt', 'desc'), limit(5)));
+    reports = rSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch {}
+
+  const featureList = [
+    { key: 'moderation',  label: '🛡️ 게시물 자동 검토', desc: '새 게시물 AI 모더레이션 (욕설·비방 자동 숨김)' },
+    { key: 'autoReport',  label: '📋 신고 자동 처리',   desc: '접수된 신고 AI 분석 후 명백한 위반 자동 처리' },
+    { key: 'autoMission', label: '🎯 미션 자동 생성',   desc: '매일 오전 7시 AI가 오늘의 미션 자동 생성' },
+    { key: 'weeklyReport',label: '📊 주간 보고서',      desc: '매주 월요일 AI가 활동 보고서 자동 작성' },
+  ];
+
+  el.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:24px;max-width:700px">
+      <div style="font-size:20px;font-weight:900;letter-spacing:-0.5px">🤖 AI 관리 — Gemini 2.5 Flash</div>
+
+      <!-- API 키 설정 -->
+      <div class="card">
+        <div class="card__body">
+          <div style="font-size:14px;font-weight:800;margin-bottom:4px">🔑 Gemini API 키</div>
+          <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:12px">
+            Google AI Studio에서 발급한 API 키를 입력하세요. 저장 후 마스킹 표시됩니다.
+          </div>
+          <div style="display:flex;gap:8px">
+            <input type="password" id="ai-api-key-input" class="form-input" placeholder="${aiConfig.apiKey || 'AIza...'}"
+              style="flex:1;font-family:monospace;font-size:13px" autocomplete="new-password">
+            <button class="btn btn--primary btn--sm" id="btn-save-api-key">저장</button>
+          </div>
+          <div style="margin-top:8px;font-size:11px;color:var(--color-text-muted)">
+            💡 키는 Firestore에 암호화 없이 저장됩니다. 관리자 전용 문서(config/ai)에만 보관돼요.
+          </div>
+        </div>
+      </div>
+
+      <!-- 오늘 사용량 -->
+      <div class="admin-stat-grid" style="grid-template-columns:repeat(3,1fr)">
+        <div class="admin-stat-card">
+          <div class="admin-stat-card__num" style="color:var(--color-primary)">${todayUsage}</div>
+          <div class="admin-stat-card__label">오늘 AI 요청 수</div>
+        </div>
+        <div class="admin-stat-card">
+          <div class="admin-stat-card__num" style="font-size:14px;color:${aiConfig.enabled ? 'var(--color-success)' : 'var(--color-danger)'}">
+            ${aiConfig.enabled ? '✅ 활성' : '⛔ 비활성'}
+          </div>
+          <div class="admin-stat-card__label">AI 운영 상태</div>
+        </div>
+        <div class="admin-stat-card">
+          <div class="admin-stat-card__num" style="font-size:14px">1,500</div>
+          <div class="admin-stat-card__label">일일 무료 한도</div>
+        </div>
+      </div>
+
+      <!-- 기능 ON/OFF -->
+      <div class="card">
+        <div class="card__body">
+          <div style="font-size:14px;font-weight:800;margin-bottom:12px">⚙️ AI 기능 설정</div>
+          <div style="display:flex;flex-direction:column;gap:12px" id="ai-feature-list">
+            ${featureList.map(f => `
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px solid var(--color-border-light)">
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:13px;font-weight:700">${f.label}</div>
+                  <div style="font-size:11px;color:var(--color-text-muted);margin-top:2px">${f.desc}</div>
+                </div>
+                <label style="display:flex;align-items:center;gap:6px;flex-shrink:0;cursor:pointer">
+                  <input type="checkbox" class="ai-feature-toggle" data-feature="${f.key}"
+                    ${aiConfig.features[f.key] !== false ? 'checked' : ''}>
+                  <span style="font-size:12px">${aiConfig.features[f.key] !== false ? '켜짐' : '꺼짐'}</span>
+                </label>
+              </div>`).join('')}
+          </div>
+          <button class="btn btn--ghost btn--sm" id="btn-save-features" style="margin-top:12px">기능 설정 저장</button>
+        </div>
+      </div>
+
+      <!-- 수동 실행 -->
+      <div class="card">
+        <div class="card__body">
+          <div style="font-size:14px;font-weight:800;margin-bottom:4px">⚡ 수동 실행</div>
+          <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:14px">
+            스케줄 없이 지금 바로 AI 작업을 실행할 수 있어요.
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn--primary btn--sm" id="btn-trigger-mission">🎯 미션 지금 생성</button>
+            <button class="btn btn--ghost btn--sm" id="btn-trigger-report">📊 주간 보고서 지금 생성</button>
+          </div>
+          <div id="ai-trigger-result" style="margin-top:10px;font-size:12px;color:var(--color-text-muted)"></div>
+        </div>
+      </div>
+
+      <!-- 최근 AI 보고서 -->
+      ${reports.length > 0 ? `
+        <div class="card">
+          <div class="card__body">
+            <div style="font-size:14px;font-weight:800;margin-bottom:12px">📄 최근 AI 보고서</div>
+            ${reports.map(r => `
+              <div style="padding:12px;background:var(--color-surface-2);border-radius:var(--radius-md);margin-bottom:8px">
+                <div style="font-size:13px;font-weight:700;margin-bottom:4px">${escHtml(r.title || '보고서')}</div>
+                <div style="font-size:12px;color:var(--color-text-secondary);line-height:1.6">${escHtml(r.summary || '')}</div>
+                ${r.highlights?.length ? `<ul style="font-size:11px;color:var(--color-text-muted);margin:8px 0 0 16px">${r.highlights.map(h => `<li>${escHtml(h)}</li>`).join('')}</ul>` : ''}
+                ${r.nextWeekSuggestion ? `<div style="margin-top:8px;font-size:11px;color:var(--color-primary)">💡 ${escHtml(r.nextWeekSuggestion)}</div>` : ''}
+              </div>`).join('')}
+          </div>
+        </div>` : ''}
+    </div>`;
+
+  // Save API key
+  el.querySelector('#btn-save-api-key')?.addEventListener('click', async () => {
+    const key = el.querySelector('#ai-api-key-input')?.value.trim();
+    if (!key || key.length < 10) { toast.error('유효한 API 키를 입력해주세요'); return; }
+    try {
+      const saveFn = httpsCallable(functions, 'saveAiConfig');
+      await saveFn({ apiKey: key, enabled: aiConfig.enabled, features: aiConfig.features });
+      toast.success('API 키가 저장됐어요 🔑');
+      el.querySelector('#ai-api-key-input').value = '';
+      el.querySelector('#ai-api-key-input').placeholder = '●'.repeat(8) + key.slice(-4);
+    } catch (e) { toast.error(e.message || '저장에 실패했어요'); }
+  });
+
+  // Save features
+  el.querySelector('#btn-save-features')?.addEventListener('click', async () => {
+    const features = {};
+    el.querySelectorAll('.ai-feature-toggle').forEach(cb => {
+      features[cb.dataset.feature] = cb.checked;
+      cb.nextElementSibling.textContent = cb.checked ? '켜짐' : '꺼짐';
+    });
+    try {
+      const saveFn = httpsCallable(functions, 'saveAiConfig');
+      await saveFn({ features, enabled: features.moderation || features.autoMission || features.weeklyReport || features.autoReport });
+      toast.success('설정이 저장됐어요 ✅');
+    } catch (e) { toast.error(e.message || '저장에 실패했어요'); }
+  });
+
+  // Trigger mission
+  el.querySelector('#btn-trigger-mission')?.addEventListener('click', async () => {
+    const btn = el.querySelector('#btn-trigger-mission');
+    const result = el.querySelector('#ai-trigger-result');
+    btn.disabled = true;
+    btn.textContent = '생성 중...';
+    try {
+      const triggerFn = httpsCallable(functions, 'adminTriggerMission');
+      const res = await triggerFn({});
+      result.textContent = `✅ 미션 생성 완료: "${res.data.title}"`;
+      toast.success('새 미션이 생성됐어요 🎯');
+    } catch (e) {
+      result.textContent = '❌ ' + (e.message || '생성에 실패했어요');
+      toast.error(e.message || '생성에 실패했어요');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '🎯 미션 지금 생성';
+    }
+  });
+
+  // Trigger report
+  el.querySelector('#btn-trigger-report')?.addEventListener('click', async () => {
+    const btn = el.querySelector('#btn-trigger-report');
+    const result = el.querySelector('#ai-trigger-result');
+    btn.disabled = true;
+    btn.textContent = '생성 중...';
+    try {
+      const triggerFn = httpsCallable(functions, 'adminTriggerReport');
+      const res = await triggerFn({});
+      result.textContent = `✅ 보고서 생성 완료: "${res.data.title}"`;
+      toast.success('주간 보고서가 생성됐어요 📊');
+      setTimeout(() => renderAiSettings(el), 1000);
+    } catch (e) {
+      result.textContent = '❌ ' + (e.message || '생성에 실패했어요');
+      toast.error(e.message || '생성에 실패했어요');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '📊 주간 보고서 지금 생성';
+    }
   });
 }
 

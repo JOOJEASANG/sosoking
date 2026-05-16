@@ -1,6 +1,8 @@
 const { onCall } = require('firebase-functions/v2/https');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
+const admin = require('firebase-admin');
 
+if (!admin.apps.length) admin.initializeApp();
 const db = getFirestore();
 
 function cleanNickname(value) {
@@ -49,4 +51,29 @@ const updateNickname = onCall({ region: 'asia-northeast3', timeoutSeconds: 20 },
   return { ok: true, nickname };
 });
 
-module.exports = { updateNickname };
+const deleteMyAccount = onCall({ region: 'asia-northeast3', timeoutSeconds: 60 }, async (request) => {
+  const userId = request.auth?.uid;
+  if (!userId) throw new Error('로그인 후 탈퇴할 수 있습니다.');
+
+  const userRef = db.doc(`users/${userId}`);
+  const userSnap = await userRef.get();
+  const userData = userSnap.exists ? userSnap.data() || {} : {};
+  const nickname = userData.nickname || request.auth?.token?.name || '';
+
+  const batch = db.batch();
+  batch.set(db.doc(`deleted_users/${userId}`), {
+    userId,
+    nickname: String(nickname || '').slice(0, 40),
+    email: request.auth?.token?.email || '',
+    deletedAt: FieldValue.serverTimestamp(),
+    deletedAtMs: Date.now(),
+  }, { merge: true });
+  batch.delete(userRef);
+  if (nickname) batch.delete(db.doc(`nicknames/${String(nickname).slice(0, 150)}`));
+  await batch.commit();
+
+  await admin.auth().deleteUser(userId);
+  return { ok: true };
+});
+
+module.exports = { updateNickname, deleteMyAccount };
