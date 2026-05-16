@@ -42,7 +42,7 @@ export function renderLogin() {
     try {
       await signInWithPopup(auth, googleProvider);
       toast.success('로그인됐어요!');
-      navigate('/');
+      // 내비게이션은 onAuthStateChanged에서 처리 (관리자 분기 포함)
     } catch (e) {
       if (e.code !== 'auth/popup-closed-by-user') toast.error('로그인에 실패했어요');
     }
@@ -57,7 +57,7 @@ export function renderLogin() {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       toast.success('로그인됐어요!');
-      navigate('/');
+      // 내비게이션은 onAuthStateChanged에서 처리
     } catch { toast.error('이메일 또는 비밀번호가 올바르지 않아요'); }
   });
 

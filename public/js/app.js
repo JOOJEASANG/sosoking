@@ -85,8 +85,11 @@ export async function initApp() {
     renderHeader();
     renderBottomNav();
     const path = window.location.hash.slice(1).split('?')[0] || '/';
-    // 로그인 직후 또는 이미 로그인된 관리자가 /login 접근 시 → /admin 이동
-    if (user && appState.isAdmin && path === '/login') navigate('/admin');
+    // 로그인 직후(wasLoading=false): 관리자 → /admin, 일반 → /
+    if (!wasLoading && user) {
+      if (appState.isAdmin) navigate('/admin');
+      else navigate('/');
+    }
   });
 
   registerRoute('/',           () => renderHome());
