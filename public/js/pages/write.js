@@ -388,7 +388,6 @@ function renderFormFields() {
           <textarea id="f-feeling" class="form-textarea" placeholder="이 경험에서 느낀 점" rows="2"></textarea>
         </div>
         ${imageUploader(5)} ${commonTags}`;
-
     case 'fail':
       return commonTitle + `
         <div class="form-group">
@@ -687,6 +686,8 @@ function collectExtraData(type) {
         caution:   document.getElementById('f-caution')?.value.trim()   || '',
       };
     }
+    case 'story':
+      return { feeling: document.getElementById('f-feeling')?.value.trim() || '' };
     case 'fail':
       return {
         lesson: document.getElementById('f-lesson')?.value.trim() || '',

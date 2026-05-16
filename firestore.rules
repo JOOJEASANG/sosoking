@@ -17,7 +17,8 @@ service cloud.firestore {
     function isEngagementUpdate() {
       let changed = request.resource.data.diff(resource.data).affectedKeys();
       return changed.hasOnly(['reactions', 'reactedWith', 'votedBy', 'options',
-                              'commentCount', 'viewCount', 'acrosticCount']);
+                              'commentCount', 'viewCount', 'acrosticCount',
+                              'likes', 'likedBy']);
     }
     function validNickname(nick) {
       return nick is string && nick.size() >= 2 && nick.size() <= 12
@@ -70,7 +71,8 @@ service cloud.firestore {
         allow create: if signedIn()
                         && request.resource.data.authorId == request.auth.uid
                         && validText(request.resource.data.text, 500);
-        allow update: if isAdmin() || isAuthor(resource.data.authorId);
+        allow update: if isAdmin() || isAuthor(resource.data.authorId)
+                        || (signedIn() && isEngagementUpdate());
         allow delete: if isAdmin() || isAuthor(resource.data.authorId);
       }
 

@@ -575,3 +575,113 @@
   padding: 0; transition: color var(--transition-fast);
 }
 .comment-delete-btn:hover { color: var(--color-danger); }
+
+/* ── 배틀 VS 레이아웃 ── */
+.battle-vs-area {
+  display: flex; align-items: stretch; gap: 0;
+  margin-top: 16px; border-radius: var(--radius-md); overflow: hidden;
+  border: 1.5px solid var(--color-border);
+}
+.battle-side {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 6px; padding: 20px 12px;
+  background: var(--color-surface); cursor: pointer;
+  border: none; transition: background 0.15s; text-align: center;
+}
+.battle-side:hover { background: var(--color-primary-bg); }
+.battle-side--b:hover { background: #EFF6FF; }
+.battle-side__text { font-size: var(--font-size-base); font-weight: 700; line-height: 1.4; }
+.battle-side__pct  { font-size: 22px; font-weight: 900; color: var(--color-primary); }
+.battle-side--b .battle-side__pct { color: #3B82F6; }
+.battle-side__votes { font-size: 11px; color: var(--color-text-muted); }
+.battle-vs-center {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4px; padding: 12px 8px;
+  background: var(--color-bg); border-left: 1px solid var(--color-border); border-right: 1px solid var(--color-border);
+  font-size: 20px;
+}
+.battle-vs-label { font-size: 10px; font-weight: 900; color: var(--color-text-muted); letter-spacing: 1px; }
+
+/* ── cbattle 팀 선택 + 컬럼 ── */
+.cbattle-side-select {
+  display: flex; gap: 8px; padding: 12px 20px 0;
+}
+.cbattle-side-btn {
+  flex: 1; padding: 10px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 700;
+  border: 2px solid var(--color-border); background: var(--color-surface);
+  cursor: pointer; transition: all 0.15s;
+}
+.cbattle-side-btn--a.active { border-color: #EF4444; background: #FEF2F2; color: #B91C1C; }
+.cbattle-side-btn--b.active { border-color: #3B82F6; background: #EFF6FF; color: #1D4ED8; }
+.cbattle-side-btn:hover:not(.active) { border-color: var(--color-primary); }
+.cbattle-columns {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 0;
+  margin-top: 16px; border-top: 1px solid var(--color-border);
+}
+.cbattle-col {
+  padding: 12px; border-right: 1px solid var(--color-border); min-height: 80px;
+}
+.cbattle-col--b { border-right: none; }
+.cbattle-col__title {
+  font-size: 12px; font-weight: 700; margin-bottom: 8px;
+  padding-bottom: 6px; border-bottom: 2px solid var(--color-border);
+}
+.cbattle-col--a .cbattle-col__title { border-color: #EF4444; color: #B91C1C; }
+.cbattle-col--b .cbattle-col__title { border-color: #3B82F6; color: #1D4ED8; }
+.cbattle-col__empty {
+  font-size: 12px; color: var(--color-text-muted); text-align: center; padding: 16px 0;
+}
+.cbattle-comment {
+  padding: 8px; border-radius: var(--radius-sm); margin-bottom: 6px; font-size: 13px;
+  border-left: 3px solid var(--color-border);
+}
+.cbattle-comment--a { border-left-color: #EF4444; background: #FFF5F5; }
+.cbattle-comment--b { border-left-color: #3B82F6; background: #F0F9FF; }
+.cbattle-comment__text { line-height: 1.5; margin-bottom: 4px; }
+.cbattle-comment__meta {
+  display: flex; gap: 8px; font-size: 11px; color: var(--color-text-muted);
+  align-items: center; flex-wrap: wrap;
+}
+
+/* ── 릴레이 스토리 체인 ── */
+.relay-story {
+  padding: 16px 20px; display: flex; flex-direction: column; gap: 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.relay-story__segment {
+  display: flex; gap: 12px; position: relative; padding-bottom: 16px;
+}
+.relay-story__segment::before {
+  content: ''; position: absolute; left: 17px; top: 34px;
+  width: 2px; bottom: 0; background: var(--color-border);
+}
+.relay-story__segment:last-child::before { display: none; }
+.relay-story__num {
+  width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+  background: var(--color-primary); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 900;
+}
+.relay-story__segment:first-child .relay-story__num { background: var(--color-text-muted); font-size: 10px; }
+.relay-story__body { flex: 1; padding-top: 4px; }
+.relay-story__text { font-size: 14px; line-height: 1.6; }
+.relay-story__author { font-size: 11px; color: var(--color-text-muted); margin-top: 4px; }
+
+/* ── 좋아요 가능한 댓글 (naming / drip) ── */
+.likeable-comment {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px; border-bottom: 1px solid var(--color-border);
+}
+.likeable-comment:last-child { border-bottom: none; }
+.likeable-comment__content { flex: 1; }
+.likeable-comment__text { font-size: 14px; font-weight: 600; display: block; margin-bottom: 2px; }
+.likeable-comment__meta { font-size: 11px; color: var(--color-text-muted); }
+.likeable-comment__actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.likeable-comment__like {
+  display: flex; align-items: center; gap: 4px;
+  padding: 6px 10px; border-radius: var(--radius-pill);
+  background: var(--color-surface); border: 1.5px solid var(--color-border);
+  font-size: 13px; cursor: pointer; transition: all 0.15s;
+}
+.likeable-comment__like:hover { border-color: var(--color-primary); background: var(--color-primary-bg); }
+.likeable-comment__like.active { border-color: var(--color-primary); background: var(--color-primary-bg); color: var(--color-primary); font-weight: 700; }

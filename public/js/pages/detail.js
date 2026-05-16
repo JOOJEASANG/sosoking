@@ -1,7 +1,7 @@
 import { db, auth } from '../firebase.js';
 import {
   doc, getDoc, collection, query, orderBy, getDocs,
-  addDoc, updateDoc, deleteDoc, increment, serverTimestamp, arrayUnion, deleteField,
+  addDoc, updateDoc, deleteDoc, increment, serverTimestamp, arrayUnion, arrayRemove, deleteField,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { navigate } from '../router.js';
 import { toast } from '../components/toast.js';
@@ -83,18 +83,7 @@ function renderDetailPage(el, post, comments, acrostics) {
 
         ${post.type === 'acrostic' ? renderAcrosticSection(acrostics, post.id) : ''}
 
-        <div class="comment-section">
-          <div class="comment-section__title">댓글 ${comments.length}</div>
-          <div class="comment-write-box" id="comment-write">
-            <textarea id="comment-input" placeholder="${auth.currentUser ? '댓글을 입력하세요' : '로그인 후 댓글 작성 가능'}"></textarea>
-            <button class="btn btn--primary btn--sm" style="align-self:flex-end" id="btn-comment">등록</button>
-          </div>
-          <div id="comment-list">
-            ${comments.length
-              ? comments.map(c => renderComment(c)).join('')
-              : '<div style="text-align:center;padding:24px;font-size:13px;color:var(--color-text-muted)">첫 댓글을 남겨보세요!</div>'}
-          </div>
-        </div>
+        ${renderCommentSection(post, comments)}
       </div>
     </div>`;
 
@@ -122,10 +111,24 @@ function renderTypeBody(post) {
   switch (post.type) {
     case 'balance':
     case 'vote':
-    case 'battle':
     case 'concern':
       if (!post.options?.length) return '';
       return `<div id="vote-area" class="quiz-options" style="margin-top:16px">${renderVoteOptions(post)}</div>`;
+
+    case 'battle':
+      return renderBattleVs(post);
+
+    case 'story':
+      return post.feeling
+        ? `<div style="padding:12px 16px;background:#F0FDF4;border-left:3px solid #22C55E;border-radius:8px;font-size:13px;margin-top:8px"><strong>💚 느낀 점</strong><br>${escHtml(post.feeling).replace(/\n/g,'<br>')}</div>`
+        : '';
+
+    case 'laugh': {
+      const diffMap = { easy:'😌 쉬움', normal:'😬 보통', hard:'😤 어려움', extreme:'💀 극한' };
+      return post.difficulty
+        ? `<div style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:#FEF3C7;border-radius:var(--radius-pill);font-size:13px;font-weight:700;margin-top:8px">웃참 난이도: ${diffMap[post.difficulty] || post.difficulty}</div>`
+        : '';
+    }
 
     case 'ox':
       return `
@@ -333,26 +336,53 @@ function setupDetailEvents(post, el) {
     } catch { toast.error('신고 접수에 실패했어요'); }
   });
 
+  // cbattle 팀 선택
+  let _cbattleSide = null;
+  document.querySelectorAll('.cbattle-side-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      _cbattleSide = btn.dataset.side;
+      document.querySelectorAll('.cbattle-side-btn').forEach(b => b.classList.toggle('active', b === btn));
+      const input = document.getElementById('comment-input');
+      if (input) input.placeholder = `${_cbattleSide}팀으로 참여합니다`;
+    });
+  });
+
+  // relay 글자수 카운터
+  document.getElementById('comment-input')?.addEventListener('input', function () {
+    const counter = document.getElementById('relay-char-count');
+    if (counter) counter.textContent = `${this.value.length} / 150`;
+  });
+
   // 댓글 등록
   document.getElementById('btn-comment')?.addEventListener('click', async () => {
     if (!auth.currentUser) { navigate('/login'); return; }
     const input = document.getElementById('comment-input');
     const text = input?.value.trim();
     if (!text) { toast.warn('댓글을 입력해주세요'); return; }
+    if (post.type === 'relay' && text.length > 150) { toast.warn('150자 이하로 입력해주세요'); return; }
+    if (post.type === 'cbattle' && !_cbattleSide) { toast.warn('팀을 먼저 선택해주세요'); return; }
+
+    const commentData = {
+      text,
+      authorId:   auth.currentUser.uid,
+      authorName: auth.currentUser.displayName || '익명',
+      createdAt:  serverTimestamp(),
+    };
+    if (post.type === 'cbattle')                          commentData.side    = _cbattleSide;
+    if (post.type === 'naming' || post.type === 'drip')   commentData.likes   = 0;
+    if (post.type === 'naming' || post.type === 'drip')   commentData.likedBy = [];
+
+    const successMsg = { relay:'이야기를 이어썼어요!', naming:'제목을 제안했어요!', drip:'드립을 올렸어요!' }[post.type] || '댓글을 남겼어요!';
     try {
-      await addDoc(collection(db, 'feeds', post.id, 'comments'), {
-        text,
-        authorId:   auth.currentUser.uid,
-        authorName: auth.currentUser.displayName || '익명',
-        createdAt:  serverTimestamp(),
-      });
+      await addDoc(collection(db, 'feeds', post.id, 'comments'), commentData);
       await updateDoc(doc(db, 'feeds', post.id), { commentCount: increment(1) });
       input.value = '';
-      toast.success('댓글을 남겼어요!');
+      const counter = document.getElementById('relay-char-count');
+      if (counter) counter.textContent = '0 / 150';
+      toast.success(successMsg);
       const comments = await fetchComments(post.id);
-      const listEl = document.getElementById('comment-list');
-      if (listEl) listEl.innerHTML = comments.map(c => renderComment(c)).join('');
-    } catch (e) { toast.error('댓글 등록에 실패했어요'); }
+      refreshCommentList(post, comments);
+    } catch { toast.error('등록에 실패했어요'); }
   });
 
   // 투표 버튼
@@ -377,7 +407,12 @@ function setupDetailEvents(post, el) {
 
         toast.success('투표했어요!');
         const voteArea = document.getElementById('vote-area');
-        if (voteArea) voteArea.innerHTML = renderVoteOptions({ ...post, options });
+        if (voteArea) {
+          const updated = { ...post, options };
+          voteArea.outerHTML = post.type === 'battle'
+            ? renderBattleVs(updated)
+            : `<div id="vote-area" class="quiz-options" style="margin-top:16px">${renderVoteOptions(updated)}</div>`;
+        }
       } catch { toast.error('투표에 실패했어요'); btn.disabled = false; }
     });
   });
@@ -479,6 +514,9 @@ function setupDetailEvents(post, el) {
 
   // 댓글 삭제 (본인 댓글만)
   setupCommentDelete(post.id);
+
+  // naming/drip 댓글 좋아요
+  if (post.type === 'naming' || post.type === 'drip') setupCommentLikes(post.id);
 
   // 반응 바
   initReactionBar(post.id);
@@ -609,6 +647,232 @@ function openGallery(images, startIdx) {
   document.addEventListener('keydown', onKey);
   document.body.appendChild(overlay);
   document.body.style.overflow = 'hidden';
+}
+
+function renderBattleVs(post) {
+  if (!post.options?.length) return '';
+  if (post.options.length !== 2) {
+    return `<div id="vote-area" class="quiz-options" style="margin-top:16px">${renderVoteOptions(post)}</div>`;
+  }
+  const total = post.options.reduce((s, o) => s + ((typeof o === 'object' ? o.votes : 0) || 0), 0);
+  const sides = post.options.map((o, i) => ({
+    text:  typeof o === 'object' ? o.text : o,
+    votes: typeof o === 'object' ? (o.votes || 0) : 0,
+    pct:   total ? Math.round(((typeof o === 'object' ? o.votes : 0) || 0) / total * 100) : 0,
+    i,
+  }));
+  return `
+    <div class="battle-vs-area" id="vote-area">
+      <button class="battle-side" data-vote-idx="0">
+        <div class="battle-side__text">${escHtml(sides[0].text)}</div>
+        <div class="battle-side__pct">${sides[0].pct}%</div>
+        <div class="battle-side__votes">${sides[0].votes}표</div>
+      </button>
+      <div class="battle-vs-center"><span>⚔️</span><span class="battle-vs-label">VS</span></div>
+      <button class="battle-side battle-side--b" data-vote-idx="1">
+        <div class="battle-side__text">${escHtml(sides[1].text)}</div>
+        <div class="battle-side__pct">${sides[1].pct}%</div>
+        <div class="battle-side__votes">${sides[1].votes}표</div>
+      </button>
+    </div>`;
+}
+
+function renderCommentSection(post, comments) {
+  const loggedIn = !!auth.currentUser;
+
+  if (post.type === 'relay') {
+    return `
+      <div class="comment-section">
+        <div class="comment-section__title">📖 릴레이 이야기</div>
+        ${renderRelayStory(post.startSentence, comments)}
+        <div class="comment-write-box" id="comment-write">
+          <textarea id="comment-input" placeholder="${loggedIn ? '다음 이야기를 이어주세요 (최대 150자)' : '로그인 후 참여 가능'}" maxlength="150"></textarea>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+            <span id="relay-char-count" style="font-size:12px;color:var(--color-text-muted)">0 / 150</span>
+            <button class="btn btn--primary btn--sm" id="btn-comment">이어쓰기</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  if (post.type === 'cbattle') {
+    const aList = comments.filter(c => c.side === 'A');
+    const bList = comments.filter(c => c.side === 'B');
+    return `
+      <div class="comment-section">
+        <div class="comment-section__title">⚔️ 댓글 배틀 (${comments.length}개)</div>
+        <div class="cbattle-side-select">
+          <button class="cbattle-side-btn cbattle-side-btn--a" data-side="A">🔴 A팀</button>
+          <button class="cbattle-side-btn cbattle-side-btn--b" data-side="B">🔵 B팀</button>
+        </div>
+        <div class="comment-write-box" id="comment-write">
+          <textarea id="comment-input" placeholder="${loggedIn ? '팀을 선택 후 참여해보세요' : '로그인 후 참여 가능'}"></textarea>
+          <button class="btn btn--primary btn--sm" style="align-self:flex-end" id="btn-comment">참여하기</button>
+        </div>
+        <div class="cbattle-columns">
+          <div class="cbattle-col cbattle-col--a">
+            <div class="cbattle-col__title">🔴 A팀 ${aList.length}</div>
+            ${aList.length ? aList.map(c => renderCbattleComment(c)).join('') : '<div class="cbattle-col__empty">첫 번째로 참여!</div>'}
+          </div>
+          <div class="cbattle-col cbattle-col--b">
+            <div class="cbattle-col__title">🔵 B팀 ${bList.length}</div>
+            ${bList.length ? bList.map(c => renderCbattleComment(c)).join('') : '<div class="cbattle-col__empty">첫 번째로 참여!</div>'}
+          </div>
+        </div>
+      </div>`;
+  }
+
+  if (post.type === 'naming' || post.type === 'drip') {
+    const cfg = post.type === 'naming'
+      ? { title: '✏️ 제목 제안', placeholder: '사진에 어울리는 제목을 제안해보세요!', btn: '제안하기' }
+      : { title: '🎤 드립 올리기', placeholder: '한 줄 드립을 올려보세요!', btn: '올리기' };
+    return `
+      <div class="comment-section">
+        <div class="comment-section__title">${cfg.title} (${comments.length}개)</div>
+        <div class="comment-write-box" id="comment-write">
+          <textarea id="comment-input" placeholder="${loggedIn ? cfg.placeholder : '로그인 후 참여 가능'}"></textarea>
+          <button class="btn btn--primary btn--sm" style="align-self:flex-end" id="btn-comment">${cfg.btn}</button>
+        </div>
+        <div id="comment-list">
+          ${comments.length
+            ? comments.map(c => renderLikeableComment(c)).join('')
+            : `<div style="text-align:center;padding:24px;font-size:13px;color:var(--color-text-muted)">첫 번째로 ${cfg.title.slice(2)} 보세요!</div>`}
+        </div>
+      </div>`;
+  }
+
+  return `
+    <div class="comment-section">
+      <div class="comment-section__title">댓글 ${comments.length}</div>
+      <div class="comment-write-box" id="comment-write">
+        <textarea id="comment-input" placeholder="${loggedIn ? '댓글을 입력하세요' : '로그인 후 댓글 작성 가능'}"></textarea>
+        <button class="btn btn--primary btn--sm" style="align-self:flex-end" id="btn-comment">등록</button>
+      </div>
+      <div id="comment-list">
+        ${comments.length
+          ? comments.map(c => renderComment(c)).join('')
+          : '<div style="text-align:center;padding:24px;font-size:13px;color:var(--color-text-muted)">첫 댓글을 남겨보세요!</div>'}
+      </div>
+    </div>`;
+}
+
+function renderRelayStory(startSentence, comments) {
+  if (!startSentence && !comments.length) return '';
+  return `
+    <div class="relay-story">
+      ${startSentence ? `
+        <div class="relay-story__segment">
+          <div class="relay-story__num">시작</div>
+          <div class="relay-story__text">${escHtml(startSentence)}</div>
+        </div>` : ''}
+      ${comments.map((c, i) => `
+        <div class="relay-story__segment">
+          <div class="relay-story__num">${i + 1}</div>
+          <div class="relay-story__body">
+            <div class="relay-story__text">${escHtml(c.text).replace(/\n/g,'<br>')}</div>
+            <div class="relay-story__author">${escHtml(c.authorName || '익명')}</div>
+          </div>
+        </div>`).join('')}
+    </div>`;
+}
+
+function renderLikeableComment(c) {
+  const timeStr = formatTime(c.createdAt?.toDate?.() || c.createdAt);
+  const isOwn   = auth.currentUser?.uid === c.authorId;
+  const likes   = c.likes || 0;
+  const liked   = (c.likedBy || []).includes(auth.currentUser?.uid || '');
+  return `
+    <div class="likeable-comment" data-comment-id="${c.id}">
+      <div class="likeable-comment__content">
+        <span class="likeable-comment__text">${escHtml(c.text)}</span>
+        <span class="likeable-comment__meta">${escHtml(c.authorName || '익명')} · ${timeStr}</span>
+      </div>
+      <div class="likeable-comment__actions">
+        <button class="likeable-comment__like ${liked ? 'active' : ''}" data-comment-id="${c.id}">
+          👍${likes > 0 ? ` <strong>${likes}</strong>` : ''}
+        </button>
+        ${isOwn ? `<button class="comment-delete-btn" data-comment-id="${c.id}">삭제</button>` : ''}
+      </div>
+    </div>`;
+}
+
+function renderCbattleComment(c) {
+  const timeStr = formatTime(c.createdAt?.toDate?.() || c.createdAt);
+  const isOwn   = auth.currentUser?.uid === c.authorId;
+  return `
+    <div class="cbattle-comment cbattle-comment--${(c.side || 'a').toLowerCase()}" data-comment-id="${c.id}">
+      <div class="cbattle-comment__text">${escHtml(c.text).replace(/\n/g,'<br>')}</div>
+      <div class="cbattle-comment__meta">
+        <span>${escHtml(c.authorName || '익명')}</span>
+        <span>${timeStr}</span>
+        ${isOwn ? `<button class="comment-delete-btn" data-comment-id="${c.id}">삭제</button>` : ''}
+      </div>
+    </div>`;
+}
+
+function refreshCommentList(post, comments) {
+  if (post.type === 'relay') {
+    const storyEl = document.querySelector('.relay-story');
+    const newHtml = renderRelayStory(post.startSentence, comments);
+    if (storyEl) storyEl.outerHTML = newHtml;
+    else {
+      const section = document.querySelector('.comment-section');
+      if (section) section.insertAdjacentHTML('afterbegin', newHtml);
+    }
+  } else if (post.type === 'cbattle') {
+    const aList = comments.filter(c => c.side === 'A');
+    const bList = comments.filter(c => c.side === 'B');
+    const aCol  = document.querySelector('.cbattle-col--a');
+    const bCol  = document.querySelector('.cbattle-col--b');
+    if (aCol) aCol.innerHTML = `<div class="cbattle-col__title">🔴 A팀 ${aList.length}</div>${aList.length ? aList.map(c => renderCbattleComment(c)).join('') : '<div class="cbattle-col__empty">첫 번째로 참여!</div>'}`;
+    if (bCol) bCol.innerHTML = `<div class="cbattle-col__title">🔵 B팀 ${bList.length}</div>${bList.length ? bList.map(c => renderCbattleComment(c)).join('') : '<div class="cbattle-col__empty">첫 번째로 참여!</div>'}`;
+    setupCommentDelete(post.id);
+  } else if (post.type === 'naming' || post.type === 'drip') {
+    const listEl = document.getElementById('comment-list');
+    if (listEl) {
+      listEl.innerHTML = comments.length
+        ? comments.map(c => renderLikeableComment(c)).join('')
+        : '<div style="text-align:center;padding:24px;font-size:13px;color:var(--color-text-muted)">첫 번째로 참여해보세요!</div>';
+      setupCommentDelete(post.id);
+      setupCommentLikes(post.id);
+    }
+  } else {
+    const listEl = document.getElementById('comment-list');
+    if (listEl) {
+      listEl.innerHTML = comments.length
+        ? comments.map(c => renderComment(c)).join('')
+        : '<div style="text-align:center;padding:24px;font-size:13px;color:var(--color-text-muted)">첫 댓글을 남겨보세요!</div>';
+      setupCommentDelete(post.id);
+    }
+  }
+}
+
+function setupCommentLikes(postId) {
+  document.querySelectorAll('.likeable-comment__like').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!auth.currentUser) { navigate('/login'); return; }
+      if (btn._pending) return;
+      btn._pending = true;
+      const uid = auth.currentUser.uid;
+      const commentId = btn.dataset.commentId;
+      const ref = doc(db, 'feeds', postId, 'comments', commentId);
+      try {
+        const snap = await getDoc(ref);
+        if (!snap.exists()) return;
+        const liked = (snap.data().likedBy || []).includes(uid);
+        if (liked) {
+          await updateDoc(ref, { likes: increment(-1), likedBy: arrayRemove(uid) });
+          btn.classList.remove('active');
+          adjustAcrosticCount(btn, -1);
+        } else {
+          await updateDoc(ref, { likes: increment(1), likedBy: arrayUnion(uid) });
+          btn.classList.add('active');
+          adjustAcrosticCount(btn, 1);
+        }
+      } catch { /* silent */ }
+      btn._pending = false;
+    });
+  });
 }
 
 async function fetchComments(postId) {
