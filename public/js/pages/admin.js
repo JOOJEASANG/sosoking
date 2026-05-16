@@ -8,6 +8,7 @@ import { appState } from '../state.js';
 import { toast } from '../components/toast.js';
 import { navigate } from '../router.js';
 import { isAdmin } from '../app.js';
+import { escHtml } from '../utils/helpers.js';
 
 let currentTab = 'dashboard';
 
@@ -16,7 +17,7 @@ export async function renderAdmin() {
   const user = appState.user;
 
   if (!user) { navigate('/login'); return; }
-  if (!isAdmin(user)) {
+  if (!isAdmin()) {
     el.innerHTML = `
       <div class="empty-state">
         <div class="empty-state__icon">🔒</div>
@@ -552,6 +553,3 @@ async function renderMissions(el) {
   });
 }
 
-function escHtml(str) {
-  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}

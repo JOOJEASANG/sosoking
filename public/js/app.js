@@ -23,17 +23,13 @@ import { renderScraps }  from './pages/scraps.js';
 
 export { appState };
 
-export const ADMIN_EMAILS = [];
-
-export function isAdmin(user) {
-  if (!user) return false;
-  if (!ADMIN_EMAILS.length) return true;
-  return ADMIN_EMAILS.includes(user.email);
+export function isAdmin() {
+  return !!appState.isAdmin;
 }
 
 async function loadUserMeta(uid) {
   try {
-    const [notifSnap, userSnap] = await Promise.all([
+    const [notifSnap, userSnap, adminSnap] = await Promise.all([
       getDocs(query(
         collection(db, 'notifications'),
         where('userId', '==', uid),
@@ -41,11 +37,13 @@ async function loadUserMeta(uid) {
         limit(100),
       )),
       getDoc(doc(db, 'users', uid)),
+      getDoc(doc(db, 'admins', uid)),
     ]);
     appState.unreadNotifications = notifSnap.size;
     const data = userSnap.exists() ? userSnap.data() : {};
     appState.streak    = data.streak    || 0;
     appState.userTitle = data.title     || '';
+    appState.isAdmin   = adminSnap.exists();
   } catch { /* non-critical */ }
 }
 
@@ -76,7 +74,7 @@ export async function initApp() {
     const wasLoading = appState.loading;
     appState.user    = user;
     appState.loading = false;
-    appState.isAdmin = isAdmin(user);
+    appState.isAdmin = false;
     if (user) {
       await loadUserMeta(user.uid);
     } else {

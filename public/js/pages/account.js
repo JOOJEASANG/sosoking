@@ -1,40 +1,15 @@
 import { auth, db, signOut } from '../firebase.js';
 import {
-  collection, query, where, orderBy, limit, getDocs,
+  collection, query, where, orderBy, limit, getDocs, getCountFromServer,
   doc, getDoc, updateDoc, writeBatch, serverTimestamp,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { navigate } from '../router.js';
 import { toast } from '../components/toast.js';
+import { escHtml, formatTime, computeTitle } from '../utils/helpers.js';
 import { renderFeedCard } from '../components/feed-card.js';
 import { appState } from '../state.js';
 import { setMeta } from '../utils/seo.js';
 
-const TITLES = [
-  { min: 30, label: '👑 소소킹' },
-  { min: 20, label: '⭐ 소소러' },
-  { min: 10, label: '🔥 놀이꾼' },
-  { min: 3,  label: '😊 소소인' },
-  { min: 1,  label: '🌱 새싹'  },
-  { min: 0,  label: '🥚 뉴비'  },
-];
-
-function computeTitle(count) {
-  return (TITLES.find(t => count >= t.min) || TITLES.at(-1)).label;
-}
-
-function escHtml(str) {
-  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-
-function formatTime(date) {
-  if (!date) return '';
-  const d = date instanceof Date ? date : new Date(date);
-  const diff = (Date.now() - d.getTime()) / 1000;
-  if (diff < 60)    return '방금 전';
-  if (diff < 3600)  return `${Math.floor(diff/60)}분 전`;
-  if (diff < 86400) return `${Math.floor(diff/3600)}시간 전`;
-  return `${Math.floor(diff/86400)}일 전`;
-}
 
 export async function renderAccount() {
   setMeta('내 계정');
@@ -53,13 +28,13 @@ export async function renderAccount() {
 
   el.innerHTML = `<div class="loading-center"><div class="spinner spinner--lg"></div></div>`;
 
-  const [myPosts, userSnap] = await Promise.all([
+  const [{ count: postCount, posts: myPosts }, userSnap] = await Promise.all([
     fetchMyPosts(user.uid),
     getDoc(doc(db, 'users', user.uid)).catch(() => null),
   ]);
 
   const userData  = userSnap?.exists() ? userSnap.data() : {};
-  const title     = computeTitle(myPosts.length);
+  const title     = computeTitle(postCount);
   const streak    = appState.streak || userData.streak || 0;
 
   // save computed title back to user doc (non-blocking)
@@ -86,7 +61,7 @@ export async function renderAccount() {
           </div>
           <div class="account-stats">
             <div class="account-stat">
-              <div class="account-stat__num">${myPosts.length}</div>
+              <div class="account-stat__num">${postCount}</div>
               <div class="account-stat__label">작성한 글</div>
             </div>
             <div class="account-stat">
@@ -102,7 +77,7 @@ export async function renderAccount() {
 
       <!-- 탭 -->
       <div class="account-tabs">
-        <button class="account-tab ${activeTab === 'posts' ? 'active' : ''}" data-tab="posts">📝 내 글 (${myPosts.length})</button>
+        <button class="account-tab ${activeTab === 'posts' ? 'active' : ''}" data-tab="posts">📝 내 글 (${postCount})</button>
         <button class="account-tab ${activeTab === 'scraps' ? 'active' : ''}" data-tab="scraps">🔖 스크랩</button>
         <button class="account-tab ${activeTab === 'notifications' ? 'active' : ''}" data-tab="notifications">
           🔔 알림${appState.unreadNotifications > 0 ? ` <span class="notif-badge-sm">${appState.unreadNotifications}</span>` : ''}
@@ -198,13 +173,14 @@ function renderNotifItem(n) {
 
 async function fetchMyPosts(uid) {
   try {
-    const q = query(
-      collection(db, 'feeds'),
-      where('authorId', '==', uid),
-      orderBy('createdAt', 'desc'),
-      limit(30),
-    );
-    const snap = await getDocs(q);
-    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  } catch { return []; }
+    const base = query(collection(db, 'feeds'), where('authorId', '==', uid));
+    const [countSnap, postsSnap] = await Promise.all([
+      getCountFromServer(base),
+      getDocs(query(base, orderBy('createdAt', 'desc'), limit(30))),
+    ]);
+    return {
+      count: countSnap.data().count,
+      posts: postsSnap.docs.map(d => ({ id: d.id, ...d.data() })),
+    };
+  } catch { return { count: 0, posts: [] }; }
 }

@@ -7,6 +7,7 @@ import { navigate } from '../router.js';
 import { toast } from '../components/toast.js';
 import { renderReactionBar, initReactionBar } from '../components/reaction-bar.js';
 import { setMeta } from '../utils/seo.js';
+import { escHtml, formatTime } from '../utils/helpers.js';
 
 const TYPE_LABELS = {
   balance:'밸런스게임', vote:'민심투표', battle:'선택지배틀', ox:'OX퀴즈', quiz:'내맘대로퀴즈',
@@ -926,18 +927,3 @@ async function fetchAcrostics(postId) {
   } catch { return []; }
 }
 
-function escHtml(str) {
-  return String(str)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
-function formatTime(date) {
-  if (!date) return '';
-  const d = date instanceof Date ? date : new Date(date);
-  const diff = (Date.now() - d.getTime()) / 1000;
-  if (diff < 60)    return '방금 전';
-  if (diff < 3600)  return `${Math.floor(diff/60)}분 전`;
-  if (diff < 86400) return `${Math.floor(diff/3600)}시간 전`;
-  return `${Math.floor(diff/86400)}일 전`;
-}

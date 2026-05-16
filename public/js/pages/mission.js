@@ -1,6 +1,7 @@
 import { db } from '../firebase.js';
 import { collection, query, orderBy, limit, getDocs, where } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { navigate } from '../router.js';
+import { escHtml } from '../utils/helpers.js';
 
 export async function renderMission() {
   const el = document.getElementById('page-content');
@@ -62,6 +63,3 @@ async function fetchMissions() {
   } catch { return []; }
 }
 
-function escHtml(str) {
-  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}

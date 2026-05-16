@@ -3,6 +3,7 @@ import { collection, query, orderBy, limit, startAfter, getDocs, where } from 'h
 import { getQueryParams } from '../router.js';
 import { renderFeedCard } from '../components/feed-card.js';
 import { setMeta } from '../utils/seo.js';
+import { escHtml } from '../utils/helpers.js';
 
 const CAT_TYPES = {
   golra: ['balance','vote','battle','ox','quiz'],
@@ -237,6 +238,3 @@ function setupInfiniteScroll() {
   observer.observe(sentinel);
 }
 
-function escHtml(str) {
-  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}

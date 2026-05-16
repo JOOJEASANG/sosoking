@@ -1,4 +1,5 @@
 import { navigate } from '../router.js';
+import { escHtml, formatTime } from '../utils/helpers.js';
 
 /* 카테고리/유형 메타 */
 const TYPE_META = {
@@ -66,20 +67,3 @@ function renderImageGrid(images) {
     </div>`;
 }
 
-function escHtml(str) {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
-function formatTime(date) {
-  if (!date) return '';
-  const d = date instanceof Date ? date : new Date(date);
-  const diff = (Date.now() - d.getTime()) / 1000;
-  if (diff < 60)   return '방금 전';
-  if (diff < 3600) return `${Math.floor(diff/60)}분 전`;
-  if (diff < 86400)return `${Math.floor(diff/3600)}시간 전`;
-  return `${Math.floor(diff/86400)}일 전`;
-}

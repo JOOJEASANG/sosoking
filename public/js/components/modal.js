@@ -1,4 +1,5 @@
 /* modal.js — 범용 모달 컴포넌트 */
+import { escHtml } from '../utils/helpers.js';
 
 let activeModal = null;
 
@@ -77,6 +78,3 @@ export function confirmModal(message, title = '확인') {
   });
 }
 
-function escHtml(s) {
-  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}

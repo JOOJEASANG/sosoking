@@ -3,6 +3,7 @@ import { renderFeedCard } from '../components/feed-card.js';
 import { fetchHotPosts } from '../services/feed-service.js';
 import { auth, db, functions } from '../firebase.js';
 import { setMeta } from '../utils/seo.js';
+import { escHtml, computeTitle } from '../utils/helpers.js';
 import {
   collection, query, orderBy, limit, getDocs,
   getCountFromServer, where, Timestamp, doc, getDoc, updateDoc,
@@ -16,14 +17,6 @@ const ALL_TYPES = [
   'howto','story','fail','concern','relay',
 ];
 
-function computeTitle(postCount) {
-  if (postCount >= 30) return '👑 소소킹';
-  if (postCount >= 20) return '⭐ 소소러';
-  if (postCount >= 10) return '🔥 놀이꾼';
-  if (postCount >= 3)  return '😊 소소인';
-  if (postCount >= 1)  return '🌱 새싹';
-  return '🥚 뉴비';
-}
 
 async function checkStreak(uid) {
   try {
@@ -444,6 +437,3 @@ async function fetchTodayMission() {
   } catch { return null; }
 }
 
-function escHtml(str) {
-  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}

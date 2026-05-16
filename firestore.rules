@@ -76,10 +76,12 @@ service cloud.firestore {
         allow delete: if isAdmin() || isAuthor(resource.data.authorId);
       }
 
-      // 퀴즈 정답 비공개 저장 — 로그인 사용자만 답 제출 후 확인 가능
+      // 퀴즈 정답 비공개 저장 — 게시글 작성자 또는 관리자만 생성 가능
       match /secret/{docId} {
         allow read:   if signedIn();
-        allow create: if signedIn();
+        allow create: if isAdmin() ||
+          (signedIn() &&
+            get(/databases/$(database)/documents/feeds/$(postId)).data.authorId == request.auth.uid);
         allow update: if isAdmin();
         allow delete: if isAdmin();
       }
@@ -120,7 +122,7 @@ service cloud.firestore {
     // ── 알림 ───────────────────────────────────────────────
     match /notifications/{notifId} {
       allow read:   if signedIn() && resource.data.userId == request.auth.uid;
-      allow create: if signedIn();
+      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
       allow update: if signedIn() && resource.data.userId == request.auth.uid;
       allow delete: if signedIn() && resource.data.userId == request.auth.uid;
     }
