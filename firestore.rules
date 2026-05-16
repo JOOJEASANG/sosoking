@@ -13,6 +13,12 @@ service cloud.firestore {
     function validText(val, maxLen) {
       return val is string && val.size() <= maxLen;
     }
+    // 반응·투표·조회수 등 참여 데이터만 변경하는지 확인
+    function isEngagementUpdate() {
+      let changed = request.resource.data.diff(resource.data).affectedKeys();
+      return changed.hasOnly(['reactions', 'reactedWith', 'votedBy', 'options',
+                              'commentCount', 'viewCount', 'acrosticCount']);
+    }
     function validNickname(nick) {
       return nick is string && nick.size() >= 2 && nick.size() <= 12
         && nick.matches('^[가-힣a-zA-Z0-9_]+$');
@@ -54,7 +60,8 @@ service cloud.firestore {
                       && request.resource.data.authorId == request.auth.uid
                       && validText(request.resource.data.title, 100)
                       && validText(request.resource.data.get('desc', ''), 2000);
-      allow update: if isAdmin() || isAuthor(resource.data.authorId);
+      allow update: if isAdmin() || isAuthor(resource.data.authorId)
+                      || (signedIn() && isEngagementUpdate());
       allow delete: if isAdmin() || isAuthor(resource.data.authorId);
 
       // 댓글
@@ -81,7 +88,8 @@ service cloud.firestore {
         allow create: if signedIn()
                         && request.resource.data.authorId == request.auth.uid
                         && validText(request.resource.data.get('text', ''), 500);
-        allow update: if isAdmin() || isAuthor(resource.data.authorId);
+        allow update: if isAdmin() || isAuthor(resource.data.authorId)
+                        || (signedIn() && isEngagementUpdate());
         allow delete: if isAdmin() || isAuthor(resource.data.authorId);
       }
     }

@@ -1,5 +1,5 @@
 import { db } from '../firebase.js';
-import { collection, query, orderBy, limit, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { collection, query, orderBy, limit, getDocs, where } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { navigate } from '../router.js';
 
 export async function renderMission() {
@@ -56,7 +56,7 @@ function renderMissionCard(mission) {
 
 async function fetchMissions() {
   try {
-    const q = query(collection(db, 'missions'), orderBy('createdAt', 'desc'), limit(5));
+    const q = query(collection(db, 'missions'), where('active', '==', true), orderBy('createdAt', 'desc'), limit(5));
     const snap = await getDocs(q);
     return snap.docs.map(d => ({ id: d.id, ...d.data() }));
   } catch { return []; }

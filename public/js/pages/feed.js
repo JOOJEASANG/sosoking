@@ -207,7 +207,7 @@ async function loadPosts(reset = false) {
         </div>`;
       if (endEl) endEl.style.display = 'block';
     } else {
-      snap.docs.forEach(d => {
+      snap.docs.filter(d => !d.data().hidden).forEach(d => {
         const html = renderFeedCard({ id: d.id, ...d.data() });
         if (listEl) listEl.insertAdjacentHTML('beforeend', html);
       });

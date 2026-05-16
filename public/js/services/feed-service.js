@@ -17,8 +17,9 @@ export async function fetchFeeds({ cat = '', type = '', lastDoc = null, pageSize
   if (lastDoc)   constraints.push(startAfter(lastDoc));
 
   const snap = await getDocs(query(collection(db, FEEDS), ...constraints));
+  const posts = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.hidden);
   return {
-    posts:   snap.docs.map(d => ({ id: d.id, ...d.data() })),
+    posts,
     lastDoc: snap.docs[snap.docs.length - 1] || null,
     hasMore: snap.docs.length >= pageSize,
   };
@@ -34,15 +35,15 @@ export async function fetchPost(id) {
 export async function fetchHotPosts(n = 5) {
   try {
     const snap = await getDocs(
-      query(collection(db, FEEDS), orderBy('reactions.total', 'desc'), limit(n))
+      query(collection(db, FEEDS), orderBy('reactions.total', 'desc'), limit(n + 10))
     );
-    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    return snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.hidden).slice(0, n);
   } catch {
     try {
       const snap = await getDocs(
-        query(collection(db, FEEDS), orderBy('createdAt', 'desc'), limit(n))
+        query(collection(db, FEEDS), orderBy('createdAt', 'desc'), limit(n + 10))
       );
-      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      return snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.hidden).slice(0, n);
     } catch {
       return [];
     }

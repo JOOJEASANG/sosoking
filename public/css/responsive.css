@@ -77,6 +77,17 @@
   .modal { border-radius: var(--radius-xl) var(--radius-xl) 0 0; }
   .modal-overlay { align-items: flex-end; padding: 0; }
 
+  /* 홈 대시보드 */
+  .home-layout { gap: var(--space-4); }
+  .home-quick-section { padding: 0 var(--space-3); }
+  .home-quick-grid { grid-template-columns: repeat(3, 1fr); gap: var(--space-2); }
+  .quick-type-card { padding: var(--space-3) var(--space-2); }
+  .quick-type-card__icon { font-size: 20px; }
+  .quick-type-card__label { font-size: 10px; }
+  .home-hero__stats { width: 100%; justify-content: space-around; margin-top: var(--space-4); }
+  .home-hero__stat { padding: 0 var(--space-3); }
+  .home-feed-header { padding: 0 var(--space-3); }
+
   /* 기타 */
   .card__body--lg { padding: var(--space-4); }
   .write-page { max-width: 100%; }
@@ -93,6 +104,7 @@
 /* ── 소형 모바일 ── */
 @media (max-width: 375px) {
   .home-cat-card { width: 130px; }
+  .home-quick-grid { grid-template-columns: repeat(3, 1fr); }
   .feed-filters { gap: var(--space-1); }
   .filter-chip { padding: 5px var(--space-2); font-size: 10px; }
 }

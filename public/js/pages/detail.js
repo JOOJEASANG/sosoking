@@ -1,7 +1,7 @@
 import { db, auth } from '../firebase.js';
 import {
   doc, getDoc, collection, query, orderBy, getDocs,
-  addDoc, updateDoc, increment, serverTimestamp, arrayUnion
+  addDoc, updateDoc, deleteDoc, increment, serverTimestamp, arrayUnion, deleteField,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { navigate } from '../router.js';
 import { toast } from '../components/toast.js';
@@ -13,6 +13,12 @@ const TYPE_LABELS = {
   howto:'나만의노하우', story:'경험담', fail:'실패담', concern:'고민/질문', relay:'막장릴레이',
 };
 const CAT_CLASS = { golra: 'golra', usgyo: 'usgyo', malhe: 'malhe' };
+
+const ACROSTIC_REACTIONS = [
+  { key: 'like',  emoji: '👍' },
+  { key: 'funny', emoji: '😂' },
+  { key: 'fire',  emoji: '🔥' },
+];
 
 export async function renderDetail(id) {
   const el = document.getElementById('page-content');
@@ -97,13 +103,18 @@ function renderDetailPage(el, post, comments, acrostics) {
 }
 
 function renderImageSection(images) {
-  if (images.length === 1) {
-    return `<img src="${images[0]}" alt="" style="width:100%;max-height:480px;object-fit:cover">`;
-  }
-  const cls = images.length >= 3 ? 'feed-card__images--3' : 'feed-card__images--2';
+  if (!images?.length) return '';
+  const dataAttr = encodeURIComponent(JSON.stringify(images));
+  const visible  = images.slice(0, 4);
+  const extra    = images.length > 4 ? images.length - 4 : 0;
+  const cols     = Math.min(images.length, 4);
   return `
-    <div class="feed-card__images ${cls}" style="margin:0">
-      ${images.slice(0,3).map(src => `<img class="feed-card__img" src="${src}" alt="" loading="lazy">`).join('')}
+    <div class="detail-gallery detail-gallery--${cols}" data-images="${dataAttr}">
+      ${visible.map((src, i) => `
+        <div class="detail-gallery__thumb" data-gallery-idx="${i}">
+          <img src="${src}" alt="" loading="lazy">
+          ${i === 3 && extra > 0 ? `<div class="detail-gallery__more">+${extra}</div>` : ''}
+        </div>`).join('')}
     </div>`;
 }
 
@@ -251,7 +262,8 @@ function renderAcrosticSection(acrostics, postId) {
 function renderAcrosticCard(entry, postId) {
   const timeStr = formatTime(entry.createdAt?.toDate?.() || entry.createdAt);
   const lines = entry.lines || [];
-  const likeCount = entry.reactions?.like || 0;
+  const uid = auth.currentUser?.uid;
+  const myReaction = uid ? (entry.reactedWith?.[uid] ?? null) : null;
   const linesHtml = lines.length
     ? lines.map(l => `
         <div class="acrostic-card__line">
@@ -271,22 +283,30 @@ function renderAcrosticCard(entry, postId) {
       </div>
       <div class="acrostic-card__lines">${linesHtml}</div>
       <div class="acrostic-card__footer">
-        <button class="reaction-btn reaction-btn--sm" data-acrostic-like="${entry.id}" data-post-id="${postId}">
-          👍${likeCount > 0 ? ` <strong>${likeCount}</strong>` : ''}
-        </button>
+        ${ACROSTIC_REACTIONS.map(r => {
+          const cnt = entry.reactions?.[r.key] || 0;
+          const active = myReaction === r.key ? 'active' : '';
+          return `<button class="reaction-btn reaction-btn--sm ${active}" data-acrostic-id="${entry.id}" data-post-id="${postId}" data-acrostic-reaction="${r.key}">
+            ${r.emoji}${cnt > 0 ? ` <strong>${cnt}</strong>` : ''}
+          </button>`;
+        }).join('')}
       </div>
     </div>`;
 }
 
 function renderComment(c) {
   const timeStr = formatTime(c.createdAt?.toDate?.() || c.createdAt);
+  const isOwn   = auth.currentUser?.uid === c.authorId;
   return `
-    <div class="comment-item">
+    <div class="comment-item" data-comment-id="${c.id}">
       <div class="avatar avatar--sm">${(c.authorName||'?')[0]}</div>
       <div class="comment-item__body">
         <div class="comment-item__author">${escHtml(c.authorName || '익명')}</div>
         <div class="comment-item__text">${escHtml(c.text).replace(/\n/g,'<br>')}</div>
-        <div class="comment-item__meta"><span>${timeStr}</span></div>
+        <div class="comment-item__meta">
+          <span>${timeStr}</span>
+          ${isOwn ? `<button class="comment-delete-btn" data-comment-id="${c.id}">삭제</button>` : ''}
+        </div>
       </div>
     </div>`;
 }
@@ -429,7 +449,8 @@ function setupDetailEvents(post, el) {
         lines: structured,
         authorId:   auth.currentUser.uid,
         authorName: auth.currentUser.displayName || '익명',
-        reactions:  { like: 0 },
+        reactions:  { like: 0, funny: 0, fire: 0 },
+        reactedWith: {},
         createdAt:  serverTimestamp(),
       });
       await updateDoc(doc(db, 'feeds', post.id), { acrosticCount: increment(1) });
@@ -445,6 +466,19 @@ function setupDetailEvents(post, el) {
       }
     } catch { toast.error('올리기에 실패했어요'); }
   });
+
+  // 이미지 갤러리 클릭
+  document.querySelectorAll('.detail-gallery__thumb').forEach(thumb => {
+    thumb.addEventListener('click', () => {
+      const grid   = thumb.closest('[data-images]');
+      const images = JSON.parse(decodeURIComponent(grid.dataset.images));
+      const idx    = parseInt(thumb.dataset.galleryIdx);
+      openGallery(images, idx);
+    });
+  });
+
+  // 댓글 삭제 (본인 댓글만)
+  setupCommentDelete(post.id);
 
   // 반응 바
   initReactionBar(post.id);
@@ -464,24 +498,117 @@ function showQuizResult(correct, explanation) {
 }
 
 function setupAcrosticLikes(postId) {
-  document.querySelectorAll('[data-acrostic-like]').forEach(btn => {
+  document.querySelectorAll('[data-acrostic-reaction]').forEach(btn => {
     btn.addEventListener('click', async () => {
       if (!auth.currentUser) { navigate('/login'); return; }
-      if (btn.disabled) return;
-      const acrosticId = btn.dataset.acrosticLike;
-      btn.disabled = true;
+      if (btn._pending) return;
+
+      const uid        = auth.currentUser.uid;
+      const key        = btn.dataset.acrosticReaction;
+      const acrosticId = btn.dataset.acrosticId;
+      const card       = btn.closest('[data-acrostic-id]');
+      const activeBtn  = card?.querySelector('[data-acrostic-reaction].active');
+      const currentKey = activeBtn?.dataset.acrosticReaction ?? null;
+
+      btn._pending = true;
+      const ref = doc(db, 'feeds', postId, 'acrostics', acrosticId);
       try {
-        await updateDoc(doc(db, 'feeds', postId, 'acrostics', acrosticId), {
-          'reactions.like': increment(1),
-        });
-        const strong = btn.querySelector('strong');
-        const prev = strong ? parseInt(strong.textContent) : 0;
-        if (strong) strong.textContent = prev + 1;
-        else btn.insertAdjacentHTML('beforeend', ` <strong>1</strong>`);
-        btn.disabled = false;
-      } catch { btn.disabled = false; }
+        if (currentKey === key) {
+          await updateDoc(ref, {
+            [`reactions.${key}`]:  increment(-1),
+            [`reactedWith.${uid}`]: deleteField(),
+          });
+          btn.classList.remove('active');
+          adjustAcrosticCount(btn, -1);
+        } else if (currentKey) {
+          await updateDoc(ref, {
+            [`reactions.${currentKey}`]: increment(-1),
+            [`reactions.${key}`]:        increment(1),
+            [`reactedWith.${uid}`]:      key,
+          });
+          activeBtn.classList.remove('active');
+          adjustAcrosticCount(activeBtn, -1);
+          btn.classList.add('active');
+          adjustAcrosticCount(btn, 1);
+        } else {
+          await updateDoc(ref, {
+            [`reactions.${key}`]:  increment(1),
+            [`reactedWith.${uid}`]: key,
+          });
+          btn.classList.add('active');
+          adjustAcrosticCount(btn, 1);
+        }
+      } catch { /* silent */ }
+      btn._pending = false;
     });
   });
+}
+
+function adjustAcrosticCount(btn, delta) {
+  if (!btn) return;
+  const strong = btn.querySelector('strong');
+  if (strong) {
+    const next = Math.max(0, parseInt(strong.textContent || '0') + delta);
+    if (next === 0) strong.remove();
+    else strong.textContent = next;
+  } else if (delta > 0) {
+    btn.insertAdjacentHTML('beforeend', ` <strong>1</strong>`);
+  }
+}
+
+function setupCommentDelete(postId) {
+  document.querySelectorAll('.comment-delete-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('댓글을 삭제할까요?')) return;
+      const commentId = btn.dataset.commentId;
+      try {
+        await deleteDoc(doc(db, 'feeds', postId, 'comments', commentId));
+        await updateDoc(doc(db, 'feeds', postId), { commentCount: increment(-1) });
+        btn.closest('[data-comment-id]')?.remove();
+        toast.success('댓글을 삭제했어요');
+      } catch { toast.error('삭제에 실패했어요'); }
+    });
+  });
+}
+
+function openGallery(images, startIdx) {
+  let cur = startIdx;
+  const overlay = document.createElement('div');
+  overlay.className = 'gallery-overlay';
+
+  const render = () => {
+    overlay.innerHTML = `
+      <button class="gallery-close" aria-label="닫기">✕</button>
+      <button class="gallery-nav gallery-nav--prev" ${cur === 0 ? 'style="visibility:hidden"' : ''}>‹</button>
+      <div class="gallery-img-wrap">
+        <img class="gallery-img" src="${images[cur]}" alt="">
+      </div>
+      <button class="gallery-nav gallery-nav--next" ${cur === images.length - 1 ? 'style="visibility:hidden"' : ''}>›</button>
+      ${images.length > 1 ? `<div class="gallery-counter">${cur + 1} / ${images.length}</div>` : ''}`;
+
+    overlay.querySelector('.gallery-close').onclick = close;
+    const prev = overlay.querySelector('.gallery-nav--prev');
+    const next = overlay.querySelector('.gallery-nav--next');
+    if (prev) prev.onclick = (e) => { e.stopPropagation(); if (cur > 0) { cur--; render(); } };
+    if (next) next.onclick = (e) => { e.stopPropagation(); if (cur < images.length - 1) { cur++; render(); } };
+  };
+
+  const close = () => {
+    overlay.remove();
+    document.body.style.overflow = '';
+    document.removeEventListener('keydown', onKey);
+  };
+  const onKey = (e) => {
+    if (e.key === 'Escape') close();
+    if (e.key === 'ArrowLeft'  && cur > 0)                { cur--; render(); }
+    if (e.key === 'ArrowRight' && cur < images.length - 1){ cur++; render(); }
+  };
+
+  render();
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  document.addEventListener('keydown', onKey);
+  document.body.appendChild(overlay);
+  document.body.style.overflow = 'hidden';
 }
 
 async function fetchComments(postId) {

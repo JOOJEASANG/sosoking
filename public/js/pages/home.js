@@ -267,9 +267,9 @@ function emptyFeedHTML() {
 /* ── 데이터 ── */
 async function fetchRecentPosts(n = 6) {
   try {
-    const q = query(collection(db, 'feeds'), orderBy('createdAt', 'desc'), limit(n));
+    const q = query(collection(db, 'feeds'), orderBy('createdAt', 'desc'), limit(n + 5));
     const snap = await getDocs(q);
-    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    return snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.hidden).slice(0, n);
   } catch { return []; }
 }
 
