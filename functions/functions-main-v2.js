@@ -11,4 +11,5 @@ module.exports = {
   ...require('./account-functions.js'),
   ...require('./sosoking-features-functions.js'),
   ...require('./ai-content-functions.js'),
+  ...require('./ai-admin-automation-functions.js'),
 };
