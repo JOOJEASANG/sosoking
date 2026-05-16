@@ -1,33 +1,30 @@
 'use strict';
 
 const { onSchedule } = require('firebase-functions/v2/scheduler');
+const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const Anthropic = require('@anthropic-ai/sdk');
 
 const db = getFirestore();
+const REGION = 'asia-northeast3';
 
 const POST_TYPES = [
   { type: 'balance',  cat: 'golra' },
   { type: 'vote',     cat: 'golra' },
-  { type: 'battle',   cat: 'golra' },
   { type: 'ox',       cat: 'golra' },
   { type: 'quiz',     cat: 'golra' },
   { type: 'naming',   cat: 'usgyo' },
   { type: 'acrostic', cat: 'usgyo' },
-  { type: 'cbattle',  cat: 'usgyo' },
-  { type: 'laugh',    cat: 'usgyo' },
   { type: 'drip',     cat: 'usgyo' },
   { type: 'howto',    cat: 'malhe' },
   { type: 'story',    cat: 'malhe' },
-  { type: 'fail',     cat: 'malhe' },
   { type: 'concern',  cat: 'malhe' },
   { type: 'relay',    cat: 'malhe' },
 ];
 
 function getTodayKST() {
   return new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Seoul',
-    year: 'numeric', month: '2-digit', day: '2-digit',
+    timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit',
   }).format(new Date());
 }
 
@@ -36,374 +33,216 @@ function getDayOfYear() {
   return Math.floor((new Date(year, month - 1, day) - new Date(year, 0, 1)) / 86400000) + 1;
 }
 
-function buildPrompt(type) {
-  const base = `당신은 한국 커뮤니티 사이트 "소소킹"의 AI 콘텐츠 작성자입니다.
-소소킹은 일상의 소소한 주제로 유쾌하고 가볍게 소통하는 공간입니다.
-반드시 유효한 JSON 객체만 반환하세요. 마크다운 코드블록(\`\`\`), 설명 텍스트, 추가 주석 없이 JSON만 출력하세요.
-한국어로 작성하며, 재미있고 친근하고 공감 가는 내용으로 만들어주세요.`;
-
-  const prompts = {
-    balance: `${base}
-
-다음 형식의 JSON을 반환하세요:
-{
-  "title": "밸런스게임 제목 (흥미롭고 일상적인 주제)",
-  "desc": "간단한 설명이나 상황 설명 (1-2문장)",
-  "options": [
-    {"text": "선택지 A", "votes": 0},
-    {"text": "선택지 B", "votes": 0}
-  ],
-  "tags": ["태그1", "태그2"]
+function cleanText(value, max = 500) {
+  return String(value || '')
+    .replace(/[<>]/g, '')
+    .replace(/[\n\r\t]+/g, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+    .slice(0, max);
 }
 
-예시 주제: 치킨 vs 피자, 여름 vs 겨울, 야행성 vs 아침형 인간 등 일상에서 쉽게 공감할 수 있는 밸런스게임을 만들어주세요.`,
-
-    vote: `${base}
-
-다음 형식의 JSON을 반환하세요 (선택지는 3-4개):
-{
-  "title": "투표 제목 (가볍고 재미있는 주제)",
-  "desc": "투표 배경 설명 (1-2문장)",
-  "options": [
-    {"text": "선택지1", "votes": 0},
-    {"text": "선택지2", "votes": 0},
-    {"text": "선택지3", "votes": 0}
-  ],
-  "tags": ["태그1", "태그2"]
-}
-
-예시 주제: 주말에 뭐 할지, 점심 메뉴 고르기, 소소한 취향 조사 등 커뮤니티 투표로 즐길 수 있는 주제를 만들어주세요.`,
-
-    battle: `${base}
-
-다음 형식의 JSON을 반환하세요:
-{
-  "title": "배틀 제목 (재치 있는 VS 대결)",
-  "desc": "배틀 상황 설명 (1-2문장)",
-  "options": [
-    {"text": "A팀 또는 선택지", "votes": 0},
-    {"text": "B팀 또는 선택지", "votes": 0}
-  ],
-  "tags": ["태그1", "태그2"]
-}
-
-재미있는 vs 배틀 형식으로 팀을 나눠 의견 대결을 펼칠 수 있는 주제를 만들어주세요. 예: 짜장 vs 짬뽕, 인트로버트 vs 엑스트로버트 등.`,
-
-    ox: `${base}
-
-다음 형식의 JSON을 반환하세요:
-{
-  "title": "OX 퀴즈 제목",
-  "desc": "퀴즈 문제 설명 (1-2문장, 참/거짓 판별 가능한 문장)",
-  "answer": "O",
-  "explanation": "정답 해설 (왜 O 또는 X인지 설명, 2-3문장)",
-  "tags": ["태그1", "태그2"]
-}
-
-answer는 반드시 "O" 또는 "X" 중 하나여야 합니다.
-일상 상식, 흥미로운 사실, 생활 정보에서 참/거짓 퀴즈를 만들어주세요.`,
-
-    quiz: `${base}
-
-다음 형식의 JSON을 반환하세요:
-{
-  "title": "퀴즈 제목",
-  "desc": "퀴즈 문제 (1-2문장)",
-  "quizMode": "multiple",
-  "options": ["선택지1", "선택지2", "선택지3", "선택지4"],
-  "answerIdx": 0,
-  "explanation": "정답 해설 (2-3문장, 왜 이 답인지 설명)",
-  "tags": ["태그1", "태그2"]
-}
-
-answerIdx는 0-3 사이의 정수 (정답 선택지의 인덱스)입니다.
-상식, 과학, 역사, 문화 등 가볍게 즐길 수 있는 4지선다 퀴즈를 만들어주세요.`,
-
-    naming: `${base}
-
-다음 형식의 JSON을 반환하세요:
-{
-  "title": "작명 챌린지 제목 (상황이나 사진 설명 포함)",
-  "desc": "작명 챌린지 내용 설명 (어떤 상황에 제목을 붙이는 것인지, 2-3문장)",
-  "tags": ["태그1", "태그2"]
-}
-
-재미있는 상황, 밈이 될 법한 장면, 웃긴 순간 등에 창의적인 제목을 붙이는 챌린지를 만들어주세요.`,
-
-    acrostic: `${base}
-
-다음 형식의 JSON을 반환하세요:
-{
-  "keyword": "삼행시 키워드 (2-4글자 단어)",
-  "desc": "삼행시 도전 설명 및 참여 유도 멘트 (2-3문장)",
-  "tags": ["태그1", "태그2"]
-}
-
-title은 자동으로 생성됩니다. keyword는 삼행시 짓기에 재미있는 단어로, 일상어, 음식, 계절, 감정 등 다양한 주제에서 골라주세요. 예: 소소킹, 치킨, 커피, 행복 등.`,
-
-    cbattle: `${base}
-
-다음 형식의 JSON을 반환하세요:
-{
-  "title": "댓글배틀 제목",
-  "desc": "배틀 주제 설명 (1-2문장)",
-  "howto": "참여 방법 안내 (댓글로 어떻게 참여하는지, 2-3문장)",
-  "tags": ["태그1", "태그2"]
-}
-
-댓글 배틀 형식으로, 서로 재치 있는 답변을 주고받을 수 있는 주제를 만들어주세요. 예: 최고의 인생 음식 배틀, 최악의 경험 공유 배틀 등.`,
-
-    laugh: `${base}
-
-다음 형식의 JSON을 반환하세요:
-{
-  "title": "웃음 챌린지 제목",
-  "desc": "웃음 챌린지 내용 (어떤 웃긴 상황이나 도전인지, 2-3문장)",
-  "difficulty": "normal",
-  "tags": ["태그1", "태그2"]
-}
-
-difficulty는 "easy", "normal", "hard", "extreme" 중 하나입니다.
-참여자들이 웃음을 참거나 웃긴 상황에 대응하는 챌린지를 만들어주세요.`,
-
-    drip: `${base}
-
-다음 형식의 JSON을 반환하세요:
-{
-  "title": "드립 배틀 제목 (재치 있는 말장난 주제)",
-  "desc": "드립 주제 설명 및 참여 유도 (2-3문장, 어떤 드립을 치는 자리인지 설명)",
-  "tags": ["태그1", "태그2"]
-}
-
-댓글로 드립을 치며 유쾌하게 참여할 수 있는 주제를 만들어주세요. 언어유희, 상황 드립, 말장난 등 재치 있는 드립 배틀이 벌어질 수 있는 판을 만들어주세요.`,
-
-    howto: `${base}
-
-다음 형식의 JSON을 반환하세요:
-{
-  "title": "하우투 제목 (어떻게 하는지 명확하게)",
-  "summary": "한 줄 요약 (이 하우투가 어떤 도움을 주는지)",
-  "desc": "전체 소개 설명 (2-3문장)",
-  "steps": ["1단계 설명", "2단계 설명", "3단계 설명"],
-  "materials": "필요한 재료나 준비물 (없으면 빈 문자열)",
-  "caution": "주의사항 (없으면 빈 문자열)",
-  "tags": ["태그1", "태그2"]
-}
-
-생활 꿀팁, 요리, 청소, 정리정돈, 시간 관리 등 실생활에 바로 적용할 수 있는 실용적인 하우투를 만들어주세요.`,
-
-    story: `${base}
-
-다음 형식의 JSON을 반환하세요:
-{
-  "title": "이야기 제목",
-  "desc": "짧은 에피소드나 경험담 (3-5문장, 공감 가는 일상 에피소드)",
-  "feeling": "이 이야기에서 느끼는 감정 또는 교훈 (1-2문장)",
-  "tags": ["태그1", "태그2"]
-}
-
-출퇴근, 식당, 편의점, 가족, 친구 등 일상에서 일어날 법한 소소하지만 공감 가는 에피소드를 만들어주세요.`,
-
-    fail: `${base}
-
-다음 형식의 JSON을 반환하세요:
-{
-  "title": "실패 에피소드 제목 (재미있게)",
-  "desc": "실패 경험 이야기 (3-5문장, 웃프지만 공감 가는 실패담)",
-  "lesson": "이 실패에서 얻은 교훈 (1-2문장)",
-  "redo": "다시 한다면 어떻게 할지 (1-2문장)",
-  "tags": ["태그1", "태그2"]
-}
-
-요리 실패, 약속 실수, 직장 실수, 생활 속 황당한 실패 등 웃으며 공감할 수 있는 실패담을 만들어주세요.`,
-
-    concern: `${base}
-
-다음 형식의 JSON을 반환하세요:
-{
-  "title": "고민 상담 제목 (공감 가는 고민)",
-  "desc": "고민 내용 (3-5문장, 구체적이고 현실적인 일상 고민)",
-  "tags": ["태그1", "태그2"]
-}
-
-직장, 인간관계, 연애, 가족, 취미 등 일상에서 누구나 한 번쯤 겪을 수 있는 소소한 고민을 만들어주세요. 댓글로 조언을 나눌 수 있는 주제여야 합니다.`,
-
-    relay: `${base}
-
-다음 형식의 JSON을 반환하세요:
-{
-  "title": "릴레이 글쓰기 제목",
-  "desc": "릴레이 글쓰기 소개 및 참여 안내 (2-3문장)",
-  "startSentence": "첫 문장 (릴레이를 시작하는 흥미로운 첫 문장, 이어 쓰고 싶게 만드는 문장)",
-  "characters": "등장인물 소개 (있는 경우, 없으면 빈 문자열)",
-  "tags": ["태그1", "태그2"]
-}
-
-독자들이 댓글로 다음 이야기를 이어 쓸 수 있도록 흥미로운 첫 문장과 상황을 만들어주세요. 개그, 판타지, 일상, 반전 등 다양한 장르 중 하나를 선택해 시작하세요.`,
-  };
-
-  return prompts[type] || prompts.concern;
-}
-
-function parseContent(text) {
-  const cleaned = text
+function parseJson(text) {
+  const raw = String(text || '').trim()
     .replace(/^```(?:json)?\s*/i, '')
-    .replace(/\s*```\s*$/i, '')
+    .replace(/\s*```$/i, '')
     .trim();
-  return JSON.parse(cleaned);
+  try { return JSON.parse(raw); } catch {}
+  const match = raw.match(/\{[\s\S]*\}/);
+  if (!match) return null;
+  try { return JSON.parse(match[0]); } catch { return null; }
 }
 
-function buildFeedDoc(type, cat, content, today) {
+async function getAiSettings() {
+  const snap = await db.doc('site_settings/config').get();
+  const data = snap.exists ? snap.data() || {} : {};
+  return {
+    aiAutoContentEnabled: data.aiAutoContentEnabled !== false,
+    aiDailyLimit: Math.max(0, Number(data.aiDailyLimit ?? 20)),
+    aiAutoPublish: data.aiAutoPublish !== false,
+  };
+}
+
+async function reserveAiUsage(kind) {
+  const today = getTodayKST();
+  const settings = await getAiSettings();
+  if (!settings.aiAutoContentEnabled && kind === 'daily_content') {
+    return { ok: false, reason: 'disabled-by-admin', settings };
+  }
+  if (settings.aiDailyLimit <= 0) {
+    return { ok: false, reason: 'limit-zero', settings };
+  }
+
+  const ref = db.doc(`ai_usage/${today}`);
+  let reserved = false;
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    const data = snap.exists ? snap.data() || {} : {};
+    const used = Number(data.total || 0);
+    if (used >= settings.aiDailyLimit) return;
+    reserved = true;
+    tx.set(ref, {
+      date: today,
+      total: FieldValue.increment(1),
+      [kind]: FieldValue.increment(1),
+      limit: settings.aiDailyLimit,
+      updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+  });
+  return { ok: reserved, reason: reserved ? 'reserved' : 'daily-limit-reached', settings };
+}
+
+async function assertAdmin(uid) {
+  if (!uid) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+  const snap = await db.doc(`admins/${uid}`).get();
+  if (!snap.exists) throw new HttpsError('permission-denied', '관리자만 실행할 수 있습니다.');
+}
+
+function buildPrompt(type) {
+  const common = `당신은 한국 놀이형 커뮤니티 "소소킹"의 AI 콘텐츠 운영자입니다. 정치, 종교, 혐오, 성적 내용, 위험행동, 실명 비방은 금지입니다. 반드시 JSON 객체만 반환하세요.`;
+  const byType = {
+    balance: '{"title":"밸런스게임 제목","desc":"상황 설명","options":[{"text":"선택지 A","votes":0},{"text":"선택지 B","votes":0}],"tags":["태그1","태그2"]}',
+    vote: '{"title":"투표 제목","desc":"투표 설명","options":[{"text":"선택지1","votes":0},{"text":"선택지2","votes":0},{"text":"선택지3","votes":0}],"tags":["태그1","태그2"]}',
+    ox: '{"title":"OX 퀴즈 제목","desc":"참/거짓 문제","answer":"O","explanation":"정답 해설","tags":["태그1","태그2"]}',
+    quiz: '{"title":"퀴즈 제목","desc":"문제","quizMode":"multiple","options":["선택지1","선택지2","선택지3","선택지4"],"answerIdx":0,"explanation":"정답 해설","tags":["태그1","태그2"]}',
+    naming: '{"title":"작명 챌린지 제목","desc":"상황 설명","tags":["태그1","태그2"]}',
+    acrostic: '{"keyword":"2~4글자 키워드","desc":"삼행시 참여 설명","tags":["태그1","태그2"]}',
+    drip: '{"title":"드립 배틀 제목","desc":"참여 설명","tags":["태그1","태그2"]}',
+    howto: '{"title":"하우투 제목","summary":"한 줄 요약","desc":"소개","steps":["1단계","2단계","3단계"],"materials":"준비물","caution":"주의사항","tags":["태그1","태그2"]}',
+    story: '{"title":"이야기 제목","desc":"3~5문장 일상 에피소드","feeling":"느낌","tags":["태그1","태그2"]}',
+    concern: '{"title":"고민 제목","desc":"3~5문장 현실적인 고민","tags":["태그1","태그2"]}',
+    relay: '{"title":"릴레이 제목","desc":"참여 안내","startSentence":"이어 쓰고 싶은 첫 문장","characters":"등장인물","tags":["태그1","태그2"]}',
+  };
+  return `${common}\n오늘 만들 콘텐츠 타입: ${type}\n아래 형식으로 재미있고 가볍게 작성하세요.\n${byType[type] || byType.concern}`;
+}
+
+function fallbackContent(type, today) {
+  const seed = Number(today.replace(/-/g, '')) || Date.now();
+  const pick = (arr) => arr[seed % arr.length];
+  const baseTags = ['오늘의주제', '소소킹'];
+  const fallback = {
+    balance: { title: pick(['평생 하나만 가능하다면?', '오늘의 소소 밸런스']), desc: '가볍게 고르고 댓글로 이유를 남겨보세요.', options: [{ text: 'A 선택', votes: 0 }, { text: 'B 선택', votes: 0 }], tags: baseTags },
+    vote: { title: pick(['오늘 점심 메뉴 고르기', '주말에 제일 하고 싶은 일은?']), desc: '가장 끌리는 선택지를 골라주세요.', options: [{ text: '맛있는 음식', votes: 0 }, { text: '완전 휴식', votes: 0 }, { text: '가벼운 외출', votes: 0 }], tags: baseTags },
+    ox: { title: '오늘의 OX 퀴즈', desc: '아침에 물 한 잔을 마시면 하루 시작에 도움이 된다.', answer: 'O', explanation: '수분 보충은 컨디션 관리에 도움이 됩니다.', tags: baseTags },
+    quiz: { title: '소소 상식 퀴즈', desc: '하루 중 가장 집중이 잘 되는 시간은 사람마다 다를까요?', quizMode: 'multiple', options: ['그렇다', '아니다', '항상 새벽이다', '항상 밤이다'], answerIdx: 0, explanation: '생활 패턴과 수면 습관에 따라 집중 시간은 달라질 수 있습니다.', tags: baseTags },
+    naming: { title: '오늘 하루를 한 단어로 작명한다면?', desc: '오늘 기분이나 사건을 한 줄 제목으로 붙여보세요.', tags: baseTags },
+    acrostic: { keyword: pick(['소소킹', '커피', '퇴근', '라면']), desc: '제시어로 센스 있는 삼행시를 만들어보세요.', tags: baseTags },
+    drip: { title: '이 상황에 제일 어울리는 드립은?', desc: '일상에서 갑자기 분위기가 싸해진 순간을 드립으로 살려보세요.', tags: baseTags },
+    howto: { title: '기분 전환을 빠르게 하는 방법', summary: '작은 행동으로 분위기 바꾸기', desc: '긴 시간이 없어도 기분을 바꿀 수 있는 방법을 공유해보세요.', steps: ['자리에서 일어나기', '물 한 잔 마시기', '짧게 산책하기'], materials: '', caution: '무리하지 마세요.', tags: baseTags },
+    story: { title: '오늘의 소소한 행복', desc: '별일 아닌데 괜히 기분 좋아진 순간이 있나요? 짧게 공유해보세요.', feeling: '작은 순간도 나누면 더 재밌습니다.', tags: baseTags },
+    concern: { title: '이럴 때 어떻게 하세요?', desc: '하고 싶은 일은 많은데 막상 시작이 안 되는 날이 있습니다. 여러분은 어떻게 시작하나요?', tags: baseTags },
+    relay: { title: '댓글로 이어 쓰는 오늘의 이야기', desc: '한 문장씩 이어서 이야기를 완성해보세요.', startSentence: '문을 열자 생각지도 못한 쪽지가 놓여 있었다.', characters: '나, 수상한 쪽지를 남긴 사람', tags: baseTags },
+  };
+  return fallback[type] || fallback.concern;
+}
+
+function safeArray(value, max = 8) {
+  return Array.isArray(value) ? value.slice(0, max).map(v => typeof v === 'object' ? v : String(v || '').slice(0, 80)) : [];
+}
+
+function buildFeedDoc(type, cat, content, today, source) {
   const base = {
     type,
     cat,
-    authorId:    'sosoking-ai',
-    authorName:  '소소킹AI 🤖',
+    authorId: 'sosoking-ai',
+    authorName: source === 'ai' ? '소소킹AI 🤖' : '소소킹 운영봇',
     authorPhoto: '',
-    images:      [],
-    tags:        Array.isArray(content.tags) ? content.tags : [],
-    reactions:   { total: 0 },
+    images: [],
+    tags: safeArray(content.tags, 6).map(String),
+    reactions: { total: 0 },
     commentCount: 0,
-    viewCount:    0,
-    isAiGenerated:   true,
+    viewCount: 0,
+    isAiGenerated: true,
     aiGeneratedDate: today,
-    createdAt:   FieldValue.serverTimestamp(),
+    aiSource: source,
+    createdAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
   };
 
-  const optionList = (arr) =>
-    Array.isArray(arr) ? arr.map(o => ({ text: String(o.text || o || ''), votes: 0 })) : [];
+  const optionList = (arr) => safeArray(arr, 6).map(o => ({ text: String(o.text || o || '').slice(0, 80), votes: Number(o.votes || 0) }));
 
   switch (type) {
     case 'balance':
     case 'vote':
     case 'battle':
-      return {
-        mainDoc: { ...base, title: content.title || '', desc: content.desc || '', options: optionList(content.options) },
-        secretDoc: null,
-      };
-
+      return { mainDoc: { ...base, title: cleanText(content.title, 100), desc: cleanText(content.desc, 1000), options: optionList(content.options) }, secretDoc: null };
     case 'ox':
-      return {
-        mainDoc:   { ...base, title: content.title || '', desc: content.desc || '' },
-        secretDoc: { answer: content.answer || '', explanation: content.explanation || '' },
-      };
-
+      return { mainDoc: { ...base, title: cleanText(content.title, 100), desc: cleanText(content.desc, 1000) }, secretDoc: { answer: String(content.answer || 'O').toUpperCase() === 'X' ? 'X' : 'O', explanation: cleanText(content.explanation, 500) } };
     case 'quiz':
-      return {
-        mainDoc: { ...base, title: content.title || '', desc: content.desc || '', quizMode: 'multiple', options: Array.isArray(content.options) ? content.options : [] },
-        secretDoc: { quizMode: 'multiple', answerIdx: typeof content.answerIdx === 'number' ? content.answerIdx : 0, explanation: content.explanation || '' },
-      };
-
+      return { mainDoc: { ...base, title: cleanText(content.title, 100), desc: cleanText(content.desc, 1000), quizMode: 'multiple', options: safeArray(content.options, 4).map(String) }, secretDoc: { quizMode: 'multiple', answerIdx: Math.max(0, Math.min(3, Number(content.answerIdx || 0))), explanation: cleanText(content.explanation, 500) } };
     case 'acrostic': {
-      const keyword = content.keyword || '';
-      return {
-        mainDoc:   { ...base, title: `'${keyword}' 삼행시 도전!`, keyword, desc: content.desc || '' },
-        secretDoc: null,
-      };
+      const keyword = cleanText(content.keyword, 12) || '소소킹';
+      return { mainDoc: { ...base, title: `'${keyword}' 삼행시 도전!`, keyword, desc: cleanText(content.desc, 1000) }, secretDoc: null };
     }
-
-    case 'cbattle':
-      return {
-        mainDoc:   { ...base, title: content.title || '', desc: content.desc || '', howto: content.howto || '' },
-        secretDoc: null,
-      };
-
-    case 'laugh': {
-      const validDifficulties = ['easy', 'normal', 'hard', 'extreme'];
-      return {
-        mainDoc: { ...base, title: content.title || '', desc: content.desc || '', difficulty: validDifficulties.includes(content.difficulty) ? content.difficulty : 'normal' },
-        secretDoc: null,
-      };
-    }
-
     case 'howto':
-      return {
-        mainDoc: { ...base, title: content.title || '', summary: content.summary || '', desc: content.desc || '', steps: Array.isArray(content.steps) ? content.steps : [], materials: content.materials || '', caution: content.caution || '' },
-        secretDoc: null,
-      };
-
+      return { mainDoc: { ...base, title: cleanText(content.title, 100), summary: cleanText(content.summary, 160), desc: cleanText(content.desc, 1000), steps: safeArray(content.steps, 8).map(String), materials: cleanText(content.materials, 200), caution: cleanText(content.caution, 200) }, secretDoc: null };
     case 'story':
-      return {
-        mainDoc:   { ...base, title: content.title || '', desc: content.desc || '', feeling: content.feeling || '' },
-        secretDoc: null,
-      };
-
-    case 'fail':
-      return {
-        mainDoc:   { ...base, title: content.title || '', desc: content.desc || '', lesson: content.lesson || '', redo: content.redo || '' },
-        secretDoc: null,
-      };
-
+      return { mainDoc: { ...base, title: cleanText(content.title, 100), desc: cleanText(content.desc, 1200), feeling: cleanText(content.feeling, 300) }, secretDoc: null };
     case 'relay':
-      return {
-        mainDoc:   { ...base, title: content.title || '', desc: content.desc || '', startSentence: content.startSentence || '', characters: content.characters || '' },
-        secretDoc: null,
-      };
-
-    default: // naming, drip, concern + any unknown
-      return {
-        mainDoc:   { ...base, title: content.title || '', desc: content.desc || '' },
-        secretDoc: null,
-      };
+      return { mainDoc: { ...base, title: cleanText(content.title, 100), desc: cleanText(content.desc, 1000), startSentence: cleanText(content.startSentence, 200), characters: cleanText(content.characters, 200) }, secretDoc: null };
+    default:
+      return { mainDoc: { ...base, title: cleanText(content.title, 100), desc: cleanText(content.desc, 1000) }, secretDoc: null };
   }
 }
 
-async function generateDailyAiContent() {
-  const today     = getTodayKST();
+async function generateDailyAiContent({ force = false, actorId = 'scheduler' } = {}) {
+  const today = getTodayKST();
   const dayOfYear = getDayOfYear();
-  const { type, cat } = POST_TYPES[dayOfYear % 15];
-
-  console.log(`[ai-content] date=${today} type=${type} cat=${cat}`);
-
-  const markerRef  = db.collection('system_jobs').doc(`ai_content_${today}_${type}`);
+  const { type, cat } = POST_TYPES[dayOfYear % POST_TYPES.length];
+  const markerRef = db.doc(`system_jobs/ai_content_${today}_${type}`);
   const markerSnap = await markerRef.get();
-  if (markerSnap.exists) {
-    console.log(`[ai-content] Already generated for date=${today} type=${type}, skipping.`);
-    return;
+  if (markerSnap.exists && !force) return { skipped: true, reason: 'already-generated', docId: markerSnap.data().docId };
+
+  let content = fallbackContent(type, today);
+  let source = 'fallback';
+  const usage = await reserveAiUsage('daily_content');
+  if (usage.ok && process.env.ANTHROPIC_API_KEY) {
+    try {
+      const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+      const message = await anthropic.messages.create({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 850,
+        messages: [{ role: 'user', content: buildPrompt(type) }],
+      });
+      const rawText = message.content.filter(b => b.type === 'text').map(b => b.text).join('');
+      content = parseJson(rawText) || content;
+      source = 'ai';
+    } catch (error) {
+      console.error('[ai-content] AI failed; fallback used', error);
+    }
+  } else {
+    console.log('[ai-content] fallback used:', usage.reason || 'no-key');
   }
 
-  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
-  const message = await anthropic.messages.create({
-    model:      'claude-haiku-4-5-20251001',
-    max_tokens: 1024,
-    messages:   [{ role: 'user', content: buildPrompt(type) }],
-  });
-
-  const rawText = message.content.filter(b => b.type === 'text').map(b => b.text).join('');
-  console.log(`[ai-content] response (type=${type}):`, rawText.slice(0, 200));
-
-  const content               = parseContent(rawText);
-  const { mainDoc, secretDoc } = buildFeedDoc(type, cat, content, today);
-
+  const { mainDoc, secretDoc } = buildFeedDoc(type, cat, content, today, source);
   const feedRef = db.collection('feeds').doc();
-
   await Promise.all([
     feedRef.set(mainDoc),
     secretDoc ? feedRef.collection('secret').doc('answer').set(secretDoc) : null,
   ].filter(Boolean));
 
-  await markerRef.set({ date: today, type, cat, docId: feedRef.id, createdAt: FieldValue.serverTimestamp() });
+  await markerRef.set({
+    date: today,
+    type,
+    cat,
+    docId: feedRef.id,
+    source,
+    actorId,
+    createdAt: FieldValue.serverTimestamp(),
+  }, { merge: true });
 
-  console.log(`[ai-content] saved feeds/${feedRef.id} type=${type}`);
-  return feedRef.id;
+  return { ok: true, docId: feedRef.id, type, cat, source };
 }
 
 exports.dailyAiContent = onSchedule(
-  {
-    schedule:       '0 9 * * *',
-    timeZone:       'Asia/Seoul',
-    region:         'asia-northeast3',
-    memory:         '256MiB',
-    timeoutSeconds: 120,
-    secrets:        ['ANTHROPIC_API_KEY'],
-  },
-  async () => {
-    try {
-      await generateDailyAiContent();
-    } catch (err) {
-      console.error('[ai-content] Error:', err);
-      throw err;
-    }
+  { schedule: '0 9 * * *', timeZone: 'Asia/Seoul', region: REGION, memory: '256MiB', timeoutSeconds: 120, secrets: ['ANTHROPIC_API_KEY'] },
+  async () => { await generateDailyAiContent(); }
+);
+
+exports.generateAiContentNow = onCall(
+  { region: REGION, timeoutSeconds: 120, secrets: ['ANTHROPIC_API_KEY'] },
+  async (request) => {
+    await assertAdmin(request.auth && request.auth.uid);
+    return generateDailyAiContent({ force: request.data?.force === true, actorId: request.auth.uid });
   }
 );
