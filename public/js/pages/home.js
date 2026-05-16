@@ -17,6 +17,26 @@ const ALL_TYPES = [
   'howto','story','fail','concern','relay',
 ];
 
+const PARTICIPATORY_TYPES = ['quiz', 'vote', 'balance', 'battle', 'cbattle', 'naming', 'ox', 'laugh'];
+
+const THRONE_CATS = [
+  { key: 'naming',   label: '작명왕',  icon: '✏️', type: 'naming',   scoreKey: null },
+  { key: 'acrostic', label: '삼행시왕', icon: '📝', type: 'acrostic', scoreKey: null },
+  { key: 'comment',  label: '댓글왕',  icon: '💬', type: null,        scoreKey: 'comment' },
+  { key: 'quiz',     label: '퀴즈왕',  icon: '🎯', type: 'quiz',      scoreKey: null },
+  { key: 'howto',    label: '노하우왕', icon: '💡', type: 'howto',    scoreKey: null },
+];
+
+function throneScore(p) {
+  return (p.reactions?.total || 0) * 2 + (p.commentCount || 0) * 3 + (p.viewCount || 0) * 0.1;
+}
+
+function pickRandomPost(posts) {
+  const pool = posts.filter(p => PARTICIPATORY_TYPES.includes(p.type));
+  const src = pool.length ? pool : posts;
+  return src.length ? src[Math.floor(Math.random() * src.length)] : null;
+}
+
 
 async function checkStreak(uid) {
   try {
@@ -68,7 +88,7 @@ export async function renderHome() {
     const user = auth.currentUser;
     if (user) checkStreak(user.uid);
 
-    const [hotPosts, recentPosts, todayMission, totalSnap, todaySnap, weeklyHot] = await Promise.all([
+    const [hotPosts, recentPosts, todayMission, totalSnap, todaySnap, weeklyHot, thronePosts] = await Promise.all([
       fetchHotPosts(6),
       fetchRecentPosts(6),
       fetchTodayMission(),
@@ -79,6 +99,7 @@ export async function renderHome() {
         limit(99),
       )).catch(() => null),
       fetchWeeklyHot(5),
+      fetchThronePosts(80),
     ]);
 
     const totalPosts = totalSnap?.data?.().count ?? 0;
@@ -95,7 +116,7 @@ export async function renderHome() {
             <div class="home-hero__sub">투표·퀴즈·드립·고민, 뭐든 다 가능한<br>한국 최고의 놀이판 커뮤니티</div>
             <div class="home-hero__action">
               <button class="btn-hero-primary" onclick="navigate('/write')">✏️ 놀이판 만들기</button>
-              <button class="btn-hero-secondary" id="btn-random-challenge">🎲 랜덤 도전</button>
+              <button class="btn-hero-secondary" id="btn-random-challenge">🎲 랜덤으로 놀기</button>
             </div>
           </div>
           <div class="home-hero__stats">
@@ -119,6 +140,9 @@ export async function renderHome() {
         <!-- ── 카테고리 카드 ── -->
         ${renderCategoryCards()}
 
+        <!-- ── 오늘의 왕좌 ── -->
+        ${renderThroneSection(thronePosts.slice(0, 60))}
+
         <!-- ── 바로 시작하기 ── -->
         <div class="home-quick-section">
           <div class="home-quick-section__title">⚡ 바로 시작하기</div>
@@ -130,6 +154,9 @@ export async function renderHome() {
               </button>`).join('')}
           </div>
         </div>
+
+        <!-- ── 지금 바로 한 판 놀기 ── -->
+        ${renderRandomBox(thronePosts)}
 
         <!-- ── 메인 2컬럼 ── -->
         <div class="layout-cols">
@@ -150,6 +177,7 @@ export async function renderHome() {
           <aside class="layout-sidebar">
             ${user && appState.streak > 0 ? renderStreakWidget(appState.streak) : ''}
             ${todayMission ? renderMissionWidget(todayMission) : renderMissionEmptyWidget()}
+            ${renderSidebarRandomCTA(thronePosts)}
             <div id="weekly-best-placeholder"></div>
             ${weeklyHot.length ? renderHallOfFameWidget(weeklyHot) : ''}
             ${renderStatsWidget(totalPosts, todayCount)}
@@ -168,11 +196,18 @@ export async function renderHome() {
       if (placeholder) placeholder.outerHTML = renderWeeklyBestWidget(weeklyBest);
     }).catch(() => {});
 
-    // 랜덤 도전
-    document.getElementById('btn-random-challenge')?.addEventListener('click', () => {
-      const pick = ALL_TYPES[Math.floor(Math.random() * ALL_TYPES.length)];
-      navigate(`/write?type=${pick}`);
-    });
+    // 랜덤으로 놀기
+    const doRandom = () => {
+      try {
+        const post = pickRandomPost(thronePosts);
+        if (post) navigate(`/detail/${post.id}`);
+        else navigate('/write');
+      } catch { navigate('/feed'); }
+    };
+    document.getElementById('btn-random-challenge')?.addEventListener('click', doRandom);
+    document.getElementById('btn-random-box')?.addEventListener('click', doRandom);
+    document.getElementById('btn-sidebar-random')?.addEventListener('click', doRandom);
+    document.getElementById('btn-throne-random')?.addEventListener('click', () => navigate('/hall'));
     // 카테고리 카드 클릭
     document.querySelectorAll('[data-cat-nav]').forEach(btn => {
       btn.addEventListener('click', () => navigate(`/feed?cat=${btn.dataset.catNav}`));
@@ -400,10 +435,79 @@ function emptyFeedHTML() {
     </div>`;
 }
 
+/* ── 오늘의 왕좌 ── */
+function renderThroneSection(posts) {
+  const thrones = THRONE_CATS.map(cat => {
+    const pool = cat.type ? posts.filter(p => p.type === cat.type) : [...posts];
+    const top = (cat.scoreKey === 'comment'
+      ? [...pool].sort((a, b) => (b.commentCount || 0) - (a.commentCount || 0))
+      : [...pool].sort((a, b) => throneScore(b) - throneScore(a))
+    )[0] || null;
+    return { ...cat, top };
+  });
+
+  return `
+    <div class="throne-section">
+      <div class="throne-section__head">
+        <div class="throne-section__title">👑 오늘의 왕좌</div>
+        <button class="btn btn--ghost btn--sm" id="btn-throne-random">🎲 랜덤 도전 →</button>
+      </div>
+      <div class="throne-grid">
+        ${thrones.map(t => t.top ? `
+          <div class="throne-card" onclick="navigate('/detail/${t.top.id}')" role="button">
+            <div class="throne-card__crown">${t.icon}</div>
+            <div class="throne-card__label">${t.label}</div>
+            <div class="throne-card__title">${escHtml(t.top.title || '(제목 없음)')}</div>
+            <div class="throne-card__author">${escHtml(t.top.authorName || '')}</div>
+            <div class="throne-card__score">❤️${t.top.reactions?.total || 0} 💬${t.top.commentCount || 0}</div>
+          </div>` : `
+          <div class="throne-card throne-card--empty">
+            <div class="throne-card__crown">${t.icon}</div>
+            <div class="throne-card__label">${t.label}</div>
+            <div class="throne-card__empty-msg">아직 비어 있어요</div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+}
+
+/* ── 지금 바로 한 판 놀기 ── */
+function renderRandomBox(posts) {
+  const post = pickRandomPost(posts);
+  if (!post) return '';
+  return `
+    <div class="random-box">
+      <div class="random-box__badge">🎲 지금 바로 한 판 놀기</div>
+      <div class="random-box__title">${escHtml(post.title || '놀이판에 참여해보세요!')}</div>
+      <div class="random-box__meta">${escHtml(post.authorName || '')} · ❤️${post.reactions?.total || 0}</div>
+      <div class="random-box__actions">
+        <button class="btn btn--primary btn--sm" id="btn-random-box">지금 참여하기 →</button>
+        <span class="random-box__sub">랜덤으로 선택됐어요</span>
+      </div>
+    </div>`;
+}
+
+/* ── 사이드바 랜덤 CTA ── */
+function renderSidebarRandomCTA(posts) {
+  return `
+    <div class="sidebar-widget sidebar-random" role="button" tabindex="0" id="btn-sidebar-random">
+      <div class="sidebar-widget__title">🎲 랜덤으로 놀기</div>
+      <div style="font-size:13px;color:var(--color-text-muted);margin:8px 0">참여형 글 중 랜덤 선택!<br>어떤 놀이판이 나올까요?</div>
+      <button class="btn btn--sm btn--full" style="background:var(--color-primary);color:#fff;margin-top:4px">도전하기 →</button>
+    </div>`;
+}
+
 /* ── 데이터 ── */
 async function fetchRecentPosts(n = 6) {
   try {
     const q = query(collection(db, 'feeds'), orderBy('createdAt', 'desc'), limit(n + 5));
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.hidden).slice(0, n);
+  } catch { return []; }
+}
+
+async function fetchThronePosts(n = 80) {
+  try {
+    const q = query(collection(db, 'feeds'), orderBy('createdAt', 'desc'), limit(n + 10));
     const snap = await getDocs(q);
     return snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.hidden).slice(0, n);
   } catch { return []; }

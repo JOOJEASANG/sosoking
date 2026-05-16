@@ -1030,3 +1030,78 @@ exports.deleteMySession = onCall({ region: 'asia-northeast3' }, async (request) 
   await ref.delete();
   return { ok: true };
 });
+
+// ── SEO: 게시글별 OG 메타태그 페이지 ──
+exports.seoPost = onRequest({ region: 'asia-northeast3' }, async (req, res) => {
+  const parts = req.path.split('/').filter(Boolean);
+  const id = parts[parts.length - 1] || req.query.id;
+  if (!id) { res.redirect('https://sosoking.co.kr/'); return; }
+
+  try {
+    const snap = await db.doc(`feeds/${id}`).get();
+    if (!snap.exists) { res.redirect(`https://sosoking.co.kr/#/detail/${id}`); return; }
+
+    const post = snap.data();
+    const title = (post.title || '소소킹 놀이판').replace(/</g, '&lt;').replace(/>/g, '&gt;').slice(0, 80);
+    const desc  = (post.body || post.subtitle || '소소킹에서 즐겨요').replace(/</g, '&lt;').replace(/>/g, '&gt;').slice(0, 160);
+    const image = post.images?.[0] || post.thumbnailUrl || 'https://sosoking.co.kr/og-image.png';
+    const url   = `https://sosoking.co.kr/p/${id}`;
+    const dest  = `https://sosoking.co.kr/#/detail/${id}`;
+
+    res.set('Cache-Control', 'public, max-age=300');
+    res.send(`<!DOCTYPE html><html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>${title} | 소소킹</title>
+  <meta name="description" content="${desc}">
+  <meta property="og:title" content="${title} | 소소킹">
+  <meta property="og:description" content="${desc}">
+  <meta property="og:image" content="${image}">
+  <meta property="og:url" content="${url}">
+  <meta property="og:type" content="article">
+  <meta property="og:locale" content="ko_KR">
+  <meta property="og:site_name" content="소소킹">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="${title} | 소소킹">
+  <meta name="twitter:description" content="${desc}">
+  <meta name="twitter:image" content="${image}">
+  <link rel="canonical" href="${url}">
+  <meta http-equiv="refresh" content="0;url=${dest}">
+  <script>window.location.replace('${dest}');</script>
+</head><body></body></html>`);
+  } catch {
+    res.redirect(`https://sosoking.co.kr/#/detail/${id}`);
+  }
+});
+
+// ── Sitemap XML 자동 생성 ──
+exports.sitemapXml = onRequest({ region: 'asia-northeast3' }, async (req, res) => {
+  try {
+    const snap = await db.collection('feeds')
+      .orderBy('createdAt', 'desc')
+      .limit(500)
+      .get();
+
+    const BASE = 'https://sosoking.co.kr';
+    const now  = new Date().toISOString().slice(0, 10);
+
+    const staticUrls = [
+      `<url><loc>${BASE}/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>`,
+      `<url><loc>${BASE}/#/feed</loc><changefreq>hourly</changefreq><priority>0.9</priority></url>`,
+      `<url><loc>${BASE}/#/mission</loc><changefreq>daily</changefreq><priority>0.7</priority></url>`,
+      `<url><loc>${BASE}/#/hall</loc><changefreq>daily</changefreq><priority>0.6</priority></url>`,
+    ];
+
+    const postUrls = snap.docs.map(docSnap => {
+      const d = docSnap.data();
+      const date = d.createdAt?.toDate?.().toISOString().slice(0, 10) || now;
+      return `<url><loc>${BASE}/p/${docSnap.id}</loc><lastmod>${date}</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>`;
+    });
+
+    res.set('Content-Type', 'application/xml');
+    res.set('Cache-Control', 'public, max-age=3600');
+    res.send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${[...staticUrls, ...postUrls].join('\n')}\n</urlset>`);
+  } catch (e) {
+    res.status(500).send('Error generating sitemap');
+  }
+});

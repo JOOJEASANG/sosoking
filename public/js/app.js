@@ -20,6 +20,7 @@ import { renderAdmin }   from './pages/admin.js';
 import { renderTerms }   from './pages/terms.js';
 import { renderPrivacy } from './pages/privacy.js';
 import { renderScraps }  from './pages/scraps.js';
+import { renderHall }    from './pages/hall.js';
 
 export { appState };
 
@@ -104,6 +105,7 @@ export async function initApp() {
   registerRoute('/admin',      () => renderAdmin());
   registerRoute('/terms',      () => renderTerms());
   registerRoute('/privacy',    () => renderPrivacy());
+  registerRoute('/hall',       () => renderHall());
 
   initRouter();
 
