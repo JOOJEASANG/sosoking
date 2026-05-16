@@ -414,14 +414,6 @@ function setupDetailEvents(post, el) {
     try {
       await addDoc(collection(db, 'feeds', post.id, 'comments'), commentData);
       await updateDoc(doc(db, 'feeds', post.id), { commentCount: increment(1) });
-      if (post.authorId && post.authorId !== auth.currentUser.uid) {
-        addDoc(collection(db, 'notifications'), {
-          userId: post.authorId, type: 'comment',
-          postId: post.id, postTitle: post.title || '',
-          actorName: auth.currentUser.displayName || '익명',
-          read: false, createdAt: serverTimestamp(),
-        }).catch(() => {});
-      }
       input.value = '';
       const counter = document.getElementById('relay-char-count');
       if (counter) counter.textContent = '0 / 150';

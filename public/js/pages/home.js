@@ -1,11 +1,12 @@
 import { navigate } from '../router.js';
 import { renderFeedCard } from '../components/feed-card.js';
 import { fetchHotPosts } from '../services/feed-service.js';
-import { auth, db } from '../firebase.js';
+import { auth, db, functions } from '../firebase.js';
 import {
   collection, query, orderBy, limit, getDocs,
   getCountFromServer, where, Timestamp, doc, getDoc, updateDoc,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
 import { appState } from '../state.js';
 
 const ALL_TYPES = [
@@ -58,7 +59,7 @@ export async function renderHome() {
     const user = auth.currentUser;
     if (user) checkStreak(user.uid);
 
-    const [hotPosts, recentPosts, todayMission, totalSnap, todaySnap, weeklyHot] = await Promise.all([
+    const [hotPosts, recentPosts, todayMission, totalSnap, todaySnap, weeklyHot, weeklyBest] = await Promise.all([
       fetchHotPosts(6),
       fetchRecentPosts(6),
       fetchTodayMission(),
@@ -69,6 +70,7 @@ export async function renderHome() {
         limit(99),
       )).catch(() => null),
       fetchWeeklyHot(5),
+      callGetWeeklyBest(),
     ]);
 
     const totalPosts = totalSnap?.data?.().count ?? 0;
@@ -140,6 +142,7 @@ export async function renderHome() {
           <aside class="layout-sidebar">
             ${user && appState.streak > 0 ? renderStreakWidget(appState.streak) : ''}
             ${todayMission ? renderMissionWidget(todayMission) : renderMissionEmptyWidget()}
+            ${weeklyBest ? renderWeeklyBestWidget(weeklyBest) : ''}
             ${weeklyHot.length ? renderHallOfFameWidget(weeklyHot) : ''}
             ${renderStatsWidget(totalPosts, todayCount)}
             ${renderHotRankingWidget(hotPosts)}
@@ -321,6 +324,41 @@ function renderStreakWidget(streak) {
     </div>`;
 }
 
+function renderWeeklyBestWidget({ topAcrostics, topDrips }) {
+  const acrosticHtml = topAcrostics.map((a, i) => `
+    <div class="weekly-best-item" onclick="navigate('/detail/${a.postId}')" role="button">
+      <span class="weekly-best-rank">${i + 1}</span>
+      <div class="weekly-best-body">
+        <div class="weekly-best-text">${escHtml(a.lines?.map(l => `${l.char}: ${l.line}`).join(' / ') || a.text)}</div>
+        <div class="weekly-best-meta">${escHtml(a.authorName)} · 제시어: ${escHtml(a.keyword)} · ❤️${a.total}</div>
+      </div>
+    </div>`).join('');
+
+  const dripHtml = topDrips.map((d, i) => `
+    <div class="weekly-best-item" onclick="navigate('/detail/${d.postId}')" role="button">
+      <span class="weekly-best-rank">${i + 1}</span>
+      <div class="weekly-best-body">
+        <div class="weekly-best-text">${escHtml(d.text)}</div>
+        <div class="weekly-best-meta">${escHtml(d.authorName)} · 👍${d.likes}</div>
+      </div>
+    </div>`).join('');
+
+  return `
+    <div class="sidebar-widget">
+      <div class="sidebar-widget__title">🏅 주간 결선</div>
+      ${topAcrostics.length ? `
+        <div class="weekly-best-section">
+          <div class="weekly-best-section__label">✍️ 삼행시 TOP</div>
+          ${acrosticHtml}
+        </div>` : ''}
+      ${topDrips.length ? `
+        <div class="weekly-best-section" style="margin-top:12px">
+          <div class="weekly-best-section__label">🎤 드립 TOP</div>
+          ${dripHtml}
+        </div>` : ''}
+    </div>`;
+}
+
 function renderHallOfFameWidget(posts) {
   const medals = ['🥇','🥈','🥉','4️⃣','5️⃣'];
   return `
@@ -372,6 +410,16 @@ async function fetchWeeklyHot(n = 5) {
       .sort((a, b) => (b.reactions?.total || 0) - (a.reactions?.total || 0))
       .slice(0, n);
   } catch { return []; }
+}
+
+async function callGetWeeklyBest() {
+  try {
+    const fn = httpsCallable(functions, 'getWeeklyBest');
+    const { data } = await fn();
+    const { topAcrostics = [], topDrips = [] } = data || {};
+    if (!topAcrostics.length && !topDrips.length) return null;
+    return { topAcrostics, topDrips };
+  } catch { return null; }
 }
 
 async function fetchTodayMission() {

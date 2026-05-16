@@ -763,3 +763,30 @@
 .notif-item__body { flex: 1; }
 .notif-item__text { font-size: 13px; line-height: 1.5; }
 .notif-item__time { font-size: 11px; color: var(--color-text-muted); margin-top: 4px; }
+
+/* ── 주간 결선 위젯 ── */
+.weekly-best-section { }
+.weekly-best-section__label {
+  font-size: 11px; font-weight: 800; letter-spacing: 0.5px;
+  color: var(--color-text-muted); text-transform: uppercase; margin-bottom: 8px;
+}
+.weekly-best-item {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 6px 0; border-bottom: 1px solid var(--color-border);
+  cursor: pointer; transition: background 0.15s; border-radius: 4px;
+}
+.weekly-best-item:last-child { border-bottom: none; }
+.weekly-best-item:hover { background: var(--color-surface-2); }
+.weekly-best-rank {
+  font-size: 11px; font-weight: 800; color: var(--color-text-muted);
+  min-width: 16px; padding-top: 2px; flex-shrink: 0;
+}
+.weekly-best-body { flex: 1; min-width: 0; }
+.weekly-best-text {
+  font-size: 12px; font-weight: 600; color: var(--color-text-primary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.weekly-best-meta {
+  font-size: 11px; color: var(--color-text-muted); margin-top: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}

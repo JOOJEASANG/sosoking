@@ -8,4 +8,5 @@ module.exports = {
   ...require('./daily-seed-functions.js'),
   ...require('./soso-feed-functions.js'),
   ...require('./account-functions.js'),
+  ...require('./sosoking-features-functions.js'),
 };
