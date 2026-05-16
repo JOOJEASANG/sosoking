@@ -112,8 +112,14 @@ export async function renderHome() {
         <div class="home-hero">
           <div class="home-hero__content">
             <div class="home-hero__eyebrow">🔥 게임형 놀이 커뮤니티</div>
-            <div class="home-hero__title">소소킹에서<br>신나게 놀아봐요!</div>
-            <div class="home-hero__sub">투표·퀴즈·드립·고민, 뭐든 다 가능한<br>한국 최고의 놀이판 커뮤니티</div>
+            <div class="home-hero__title">고르거나 웃기거나<br>한마디만 던져도 시작!</div>
+            <div class="home-hero__sub">밸런스게임, 퀴즈, 삼행시, 작명, 고민까지<br>짧게 참여하고 댓글로 같이 노는 놀이 커뮤니티</div>
+            <div class="home-hero__chips">
+              <span class="home-hero__chip">🎯 골라봐</span>
+              <span class="home-hero__chip">😂 웃겨봐</span>
+              <span class="home-hero__chip">💬 말해봐</span>
+              <span class="home-hero__chip">⚡ 바로 참여</span>
+            </div>
             <div class="home-hero__action">
               <button class="btn-hero-primary" onclick="navigate('/write')">✏️ 놀이판 만들기</button>
               <button class="btn-hero-secondary" id="btn-random-challenge">🎲 랜덤으로 놀기</button>
@@ -134,6 +140,12 @@ export async function renderHome() {
               <div class="home-hero__stat-num" style="font-size:14px">🟢 Live</div>
               <div class="home-hero__stat-label">실시간 운영중</div>
             </div>
+          </div>
+          <div class="home-hero__visual" aria-hidden="true">
+            <div class="home-hero__mini-card"><b>⚖️ 오늘의 선택</b><span>둘 중 하나만 고르면 끝</span></div>
+            <div class="home-hero__mini-card"><b>😂 한 줄 드립</b><span>짧게 웃기면 인기글</span></div>
+            <div class="home-hero__mini-card"><b>🎯 AI 미션</b><span>매일 새로운 참여 주제</span></div>
+            <div class="home-hero__mini-card"><b>💬 고민/노하우</b><span>가볍게 묻고 답하기</span></div>
           </div>
         </div>
 
@@ -245,21 +257,47 @@ export async function renderHome() {
 
 function renderCategoryCards() {
   const cats = [
-    { key: 'golra', emoji: '🎯', badge: 'VOTE', name: '골라봐',  desc: '선택하고 판단해봐요',   types: ['밸런스게임','민심투표','OX퀴즈','퀴즈'] },
-    { key: 'usgyo', emoji: '😂', badge: 'FUN',  name: '웃겨봐',  desc: '웃기고 유쾌하게 즐겨요', types: ['미친작명소','삼행시','한줄드립','댓글배틀'] },
-    { key: 'malhe', emoji: '💬', badge: 'TALK', name: '말해봐',  desc: '경험과 생각을 나눠요',   types: ['나만의노하우','경험담','고민/질문','막장릴레이'] },
+    {
+      key: 'golra', emoji: '🎯', badge: 'CHOOSE', name: '골라봐',
+      hook: '선택은 빠르게, 이유는 댓글로',
+      desc: '밸런스게임·투표·OX퀴즈처럼 누르자마자 참여하는 놀이판이에요.',
+      types: ['밸런스게임', '민심투표', 'OX퀴즈', '4지선다'],
+      cta: '선택하러 가기',
+    },
+    {
+      key: 'usgyo', emoji: '😂', badge: 'FUNNY', name: '웃겨봐',
+      hook: '드립 한 줄이면 분위기 반전',
+      desc: '미친작명소, 삼행시, 댓글배틀로 센스와 웃음을 겨뤄요.',
+      types: ['미친작명소', '삼행시', '한줄드립', '댓글배틀'],
+      cta: '웃기러 가기',
+    },
+    {
+      key: 'malhe', emoji: '💬', badge: 'TALK', name: '말해봐',
+      hook: '소소한 경험도 콘텐츠가 돼요',
+      desc: '고민, 실패담, 노하우, 릴레이 이야기까지 편하게 나눠요.',
+      types: ['나만의노하우', '경험담', '고민/질문', '막장릴레이'],
+      cta: '이야기하러 가기',
+    },
   ];
   return `
+    <div class="home-cats-header">
+      <div class="home-cats-header__title">오늘 뭐 하고 놀까요?</div>
+      <div class="home-cats-header__sub">세 가지 놀이판 중 하나만 골라 바로 시작</div>
+    </div>
     <div class="home-cats">
       ${cats.map(c => `
         <div class="home-cat-card home-cat-card--${c.key}" data-cat-nav="${c.key}" data-emoji="${c.emoji}" role="button" tabindex="0">
-          <div class="home-cat-card__badge">${c.badge}</div>
-          <div class="home-cat-card__icon">${c.emoji}</div>
+          <div class="home-cat-card__top">
+            <div class="home-cat-card__badge">${c.badge}</div>
+            <div class="home-cat-card__icon-wrap"><span class="home-cat-card__icon">${c.emoji}</span></div>
+          </div>
           <div class="home-cat-card__name">${c.name}</div>
+          <div class="home-cat-card__hook">${c.hook}</div>
           <div class="home-cat-card__desc">${c.desc}</div>
           <div class="home-cat-card__types">
             ${c.types.map(t => `<span class="home-cat-card__type-pill">${t}</span>`).join('')}
           </div>
+          <div class="home-cat-card__cta">${c.cta} <span>→</span></div>
         </div>`).join('')}
     </div>`;
 }

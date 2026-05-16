@@ -6,9 +6,9 @@
 .home-hero {
   position: relative; border-radius: var(--radius-xl);
   overflow: hidden; margin-bottom: var(--space-6);
-  min-height: 260px; display: flex; align-items: center;
+  min-height: 280px; display: flex; align-items: center;
   background: var(--gradient-hero);
-  padding: var(--space-10) var(--space-8);
+  padding: clamp(28px, 5vw, 52px) clamp(24px, 5vw, 52px);
 }
 .home-hero::before {
   content: '';
@@ -26,6 +26,20 @@
   line-height: 1;
 }
 .home-hero__content { position: relative; z-index: 1; max-width: 520px; }
+
+/* PC: 히어로 오른쪽 미니카드 비주얼 */
+.home-hero__visual {
+  position: absolute; right: clamp(24px, 5vw, 64px); bottom: 28px;
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
+  width: min(300px, 30vw); z-index: 1; pointer-events: none;
+}
+.home-hero__mini-card {
+  padding: 12px 14px; border-radius: 16px;
+  background: rgba(255,255,255,0.18); backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.28); color: #fff;
+}
+.home-hero__mini-card b { display: block; font-size: 12px; font-weight: 900; margin-bottom: 3px; }
+.home-hero__mini-card span { display: block; font-size: 11px; opacity: 0.82; line-height: 1.35; }
 .home-hero__eyebrow {
   display: inline-flex; align-items: center; gap: var(--space-1);
   background: rgba(255,255,255,0.22); backdrop-filter: blur(8px);
@@ -82,6 +96,18 @@
 /* ════════════════════════
    카테고리 카드 — 게임 클래스
 ════════════════════════ */
+.home-cats-header {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: var(--space-3); margin-bottom: var(--space-3);
+}
+.home-cats-header__title {
+  font-size: var(--font-size-lg); font-weight: 900;
+  color: var(--color-text-primary); letter-spacing: -0.4px;
+}
+.home-cats-header__sub {
+  font-size: 12px; font-weight: 700; color: var(--color-text-muted);
+}
+
 .home-cats {
   display: grid; grid-template-columns: repeat(3, 1fr);
   gap: var(--space-4); margin-bottom: var(--space-6);
@@ -126,12 +152,37 @@
 .home-cat-card--golra .home-cat-card__badge { background: var(--gradient-golra); }
 .home-cat-card--usgyo .home-cat-card__badge { background: var(--gradient-usgyo); }
 .home-cat-card--malhe .home-cat-card__badge { background: var(--gradient-malhe); }
-.home-cat-card__icon { font-size: 40px; margin-bottom: var(--space-2); line-height: 1; }
+/* 카드 상단: 배지 + 아이콘 가로 배치 */
+.home-cat-card__top {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+.home-cat-card__icon-wrap {
+  width: 46px; height: 46px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,0.65);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);
+}
+[data-theme="dark"] .home-cat-card__icon-wrap { background: rgba(255,255,255,0.08); }
+.home-cat-card__icon { font-size: 26px; line-height: 1; }
 .home-cat-card__name { font-size: var(--font-size-xl); font-weight: 900; letter-spacing: -0.5px; }
 .home-cat-card--golra .home-cat-card__name { color: var(--color-golra-dark); }
 .home-cat-card--usgyo .home-cat-card__name { color: var(--color-usgyo-dark); }
 .home-cat-card--malhe .home-cat-card__name { color: var(--color-malhe-dark); }
-.home-cat-card__desc { font-size: var(--font-size-sm); color: var(--color-text-secondary); margin-top: 4px; line-height: 1.5; }
+.home-cat-card__hook {
+  font-size: 12px; font-weight: 800; color: var(--color-text-primary);
+  margin-top: 5px; letter-spacing: -0.1px;
+}
+.home-cat-card__desc { font-size: var(--font-size-sm); color: var(--color-text-secondary); margin-top: 6px; line-height: 1.55; }
+.home-cat-card__cta {
+  display: inline-flex; align-items: center; gap: 4px;
+  margin-top: var(--space-4); font-size: 12px; font-weight: 900;
+  opacity: 0.75;
+}
+.home-cat-card--golra .home-cat-card__cta { color: var(--color-golra-dark); }
+.home-cat-card--usgyo .home-cat-card__cta { color: var(--color-usgyo-dark); }
+.home-cat-card--malhe .home-cat-card__cta { color: var(--color-malhe-dark); }
+.home-cat-card:hover .home-cat-card__cta { opacity: 1; }
 .home-cat-card__types {
   display: flex; flex-wrap: wrap; gap: 4px; margin-top: var(--space-3);
 }

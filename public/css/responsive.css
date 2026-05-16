@@ -35,19 +35,25 @@
   /* 히어로 — 모바일 컴팩트 */
   .home-hero {
     min-height: auto;
-    padding: var(--space-6) var(--space-4);
+    padding: var(--space-6) var(--space-4) var(--space-5);
     border-radius: var(--radius-lg);
     margin-bottom: var(--space-4);
   }
-  .home-hero::after { font-size: 70px; right: var(--space-4); }
+  .home-hero::after { font-size: 64px; right: var(--space-3); top: 18px; transform: none; }
+  .home-hero__visual { display: none; }
   .home-hero__eyebrow { font-size: 10px; padding: 4px 10px; }
   .home-hero__title { font-size: var(--font-size-xl); letter-spacing: -0.5px; }
   .home-hero__sub { font-size: var(--font-size-xs); }
   .home-hero__chips { margin-top: var(--space-3); gap: var(--space-1); }
   .home-hero__chip { padding: 5px 10px; font-size: 10px; }
-  .home-hero__action { flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-4); }
-  .btn-hero-primary { padding: 11px 20px; font-size: var(--font-size-sm); }
-  .btn-hero-secondary { padding: 10px 16px; font-size: var(--font-size-xs); }
+  .home-hero__action { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); margin-top: var(--space-4); }
+  .btn-hero-primary { padding: 11px 16px; font-size: 13px; justify-content: center; }
+  .btn-hero-secondary { padding: 10px 12px; font-size: 12px; justify-content: center; }
+
+  /* 카테고리 헤더 — 모바일 */
+  .home-cats-header { flex-direction: column; gap: 2px; margin-bottom: var(--space-2); }
+  .home-cats-header__title { font-size: var(--font-size-base); }
+  .home-cats-header__sub { display: none; }
 
   /* 카테고리 — 가로 스크롤 (컨테이너 여백 돌파) */
   .home-cats {
@@ -59,13 +65,18 @@
   }
   .home-cats::-webkit-scrollbar { display: none; }
   .home-cat-card {
-    flex-shrink: 0; width: 145px; padding: var(--space-4) var(--space-3);
+    flex-shrink: 0; width: 150px; padding: var(--space-3);
     border-radius: var(--radius-md);
   }
   .home-cat-card::after { display: none; }
-  .home-cat-card__icon { font-size: 30px; margin-bottom: var(--space-1); }
+  .home-cat-card__top { margin-bottom: var(--space-2); }
+  .home-cat-card__icon-wrap { width: 38px; height: 38px; border-radius: 11px; }
+  .home-cat-card__icon { font-size: 22px; }
   .home-cat-card__name { font-size: var(--font-size-md); }
+  .home-cat-card__hook { font-size: 11px; }
+  .home-cat-card__desc { display: none; }
   .home-cat-card__types { display: none; }
+  .home-cat-card__cta { margin-top: var(--space-2); font-size: 11px; }
 
   /* 피드 카드 — 컨테이너 여백 안에서 카드 스타일 유지 */
   .feed-card.card {
