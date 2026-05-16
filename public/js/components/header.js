@@ -8,13 +8,38 @@ function notifBell() {
   </a>`;
 }
 
+function isDark() {
+  return document.documentElement.getAttribute('data-theme') === 'dark';
+}
+
+function sunIcon() {
+  return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+      d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+  </svg>`;
+}
+
+function moonIcon() {
+  return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+      d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+  </svg>`;
+}
+
+function themeToggleBtn() {
+  const dark = isDark();
+  return `<button class="theme-toggle" id="theme-toggle-btn" title="${dark ? '라이트 모드로' : '다크 모드로'}" aria-label="테마 전환">
+    ${dark ? sunIcon() : moonIcon()}
+  </button>`;
+}
+
 export function renderHeader() {
   const el = document.getElementById('site-header');
   if (!el) return;
 
-  const user = appState.user;
+  const user    = appState.user;
   const isAdmin = appState.isAdmin;
-  const path = window.location.hash.slice(1).split('?')[0] || '/';
+  const path    = window.location.hash.slice(1).split('?')[0] || '/';
 
   el.innerHTML = `
     <div class="site-header__inner">
@@ -27,7 +52,7 @@ export function renderHeader() {
       <div class="site-header__search">
         <div class="search-input-wrap">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/></svg>
-          <input class="search-input" type="search" placeholder="게시물, 태그 검색" id="header-search" autocomplete="off">
+          <input class="search-input" type="search" placeholder="게시물 검색" id="header-search" autocomplete="off">
         </div>
       </div>
 
@@ -44,6 +69,8 @@ export function renderHeader() {
         ${isAdmin ? `<a href="#/admin" class="${path === '/admin' ? 'active' : ''}" style="color:var(--color-primary);font-weight:800">⚙️ 관리자</a>` : ''}
         <a href="#/write" class="nav-write ${path === '/write' ? 'active' : ''}">✏️ 만들기</a>
       </nav>
+
+      ${themeToggleBtn()}
 
       <div class="site-header__mobile-menu">
         <button class="site-header__icon-btn" id="mobile-search-btn" aria-label="검색">
@@ -66,5 +93,12 @@ export function renderHeader() {
 
   document.getElementById('mobile-search-btn')?.addEventListener('click', () => {
     navigate('/feed');
+  });
+
+  document.getElementById('theme-toggle-btn')?.addEventListener('click', () => {
+    const next = isDark() ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+    renderHeader();
   });
 }

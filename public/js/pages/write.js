@@ -126,6 +126,9 @@ function renderTypeSelect(el) {
 
 /* ── 3단계: 작성 폼 ── */
 function renderForm(el) {
+  const type = selectedType.key;
+  const hasDraft = !!localStorage.getItem(`write-draft-${type}`);
+
   el.innerHTML = `
     <div class="write-page">
       <div class="write-step-header">
@@ -134,6 +137,14 @@ function renderForm(el) {
         </button>
         <h1 class="write-step-title">${selectedType.icon} ${selectedType.label}</h1>
       </div>
+      ${hasDraft ? `
+        <div style="background:var(--color-primary-bg);border:1px solid var(--color-primary-border);border-radius:10px;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;font-size:13px">
+          <span>💾 저장된 임시 초안이 있어요</span>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn--primary btn--sm" id="btn-restore-draft">불러오기</button>
+            <button class="btn btn--ghost btn--sm" id="btn-discard-draft">삭제</button>
+          </div>
+        </div>` : ''}
       <div class="card">
         <div class="card__body--lg" id="form-fields">
           ${renderFormFields()}
@@ -149,6 +160,15 @@ function renderForm(el) {
 
   document.getElementById('btn-back-type').addEventListener('click', () => renderTypeSelect(el));
   document.getElementById('btn-submit').addEventListener('click', handleSubmit);
+
+  document.getElementById('btn-restore-draft')?.addEventListener('click', () => {
+    restoreDraft(type);
+    document.querySelector('[id="btn-restore-draft"]')?.closest('div[style]')?.remove();
+  });
+  document.getElementById('btn-discard-draft')?.addEventListener('click', () => {
+    localStorage.removeItem(`write-draft-${type}`);
+    document.getElementById('btn-restore-draft')?.closest('div[style]')?.remove();
+  });
 
   // 유형별 후처리 초기화
   initFormLogic();
@@ -530,6 +550,72 @@ function initFormLogic() {
       });
     });
   }
+
+  initCharCounters();
+  initDraftSave(type);
+}
+
+function initCharCounters() {
+  document.querySelectorAll('.form-textarea').forEach(ta => {
+    const maxLen = parseInt(ta.getAttribute('maxlength')) || 0;
+    const counter = document.createElement('div');
+    counter.className = 'char-counter';
+    const update = () => {
+      const len = ta.value.length;
+      counter.textContent = maxLen ? `${len} / ${maxLen}` : `${len}자`;
+      counter.className = 'char-counter' +
+        (maxLen && len >= maxLen * 0.85 ? ' near-limit' : '') +
+        (maxLen && len >= maxLen        ? ' over-limit'  : '');
+    };
+    update();
+    ta.addEventListener('input', update);
+    ta.after(counter);
+  });
+  document.querySelectorAll('.form-input[maxlength]').forEach(inp => {
+    const maxLen = parseInt(inp.getAttribute('maxlength'));
+    const counter = document.createElement('div');
+    counter.className = 'char-counter';
+    const update = () => {
+      const len = inp.value.length;
+      counter.textContent = `${len} / ${maxLen}`;
+      counter.className = 'char-counter' +
+        (len >= maxLen * 0.85 ? ' near-limit' : '') +
+        (len >= maxLen        ? ' over-limit'  : '');
+    };
+    update();
+    inp.addEventListener('input', update);
+    inp.after(counter);
+  });
+}
+
+function initDraftSave(type) {
+  const DRAFT_KEY = `write-draft-${type}`;
+  let saveTimer = null;
+  const scheduleSave = () => {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      const data = {};
+      document.querySelectorAll('#form-fields input[id], #form-fields textarea[id]').forEach(el => {
+        data[el.id] = el.value;
+      });
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
+    }, 1500);
+  };
+  document.getElementById('form-fields')?.addEventListener('input', scheduleSave);
+}
+
+function restoreDraft(type) {
+  try {
+    const data = JSON.parse(localStorage.getItem(`write-draft-${type}`) || '{}');
+    Object.entries(data).forEach(([id, val]) => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.value = val;
+        el.dispatchEvent(new Event('input'));
+      }
+    });
+    toast.success('임시 초안을 불러왔어요');
+  } catch { /* ignore */ }
 }
 
 function attachRemoveBtns(list) {
@@ -607,6 +693,7 @@ async function handleSubmit() {
       await setDoc(doc(db, 'feeds', docRef.id, 'secret', 'answer'), secretFields);
     }
 
+    localStorage.removeItem(`write-draft-${type}`);
     toast.success('올렸어요! 🎉');
     navigate('/feed');
   } catch (e) {

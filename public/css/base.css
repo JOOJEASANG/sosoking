@@ -94,6 +94,41 @@
   /* ─ Z인덱스 ─ */
   --z-base: 1; --z-dropdown: 100; --z-modal: 200;
   --z-toast: 300; --z-header: 50; --z-bottomnav: 50;
+
+  /* ─ 별칭 (하위 호환) ─ */
+  --color-text: var(--color-text-primary);
+}
+
+/* ══════════════════════════════
+   다크 모드 토큰
+══════════════════════════════ */
+[data-theme="dark"] {
+  --color-bg:           #0F1117;
+  --color-surface:      #1A1D2E;
+  --color-surface-2:    #21253A;
+  --color-border:       #2D3154;
+  --color-border-light: #23274A;
+
+  --color-text-primary:   #E8EAF6;
+  --color-text-secondary: #9AA3C8;
+  --color-text-muted:     #5C6486;
+  --color-text:           #E8EAF6;
+
+  --color-primary-bg:     rgba(255,68,34,0.14);
+  --color-primary-border: rgba(255,68,34,0.32);
+
+  --color-golra-bg:     rgba(79,142,247,0.12);
+  --color-golra-border: rgba(79,142,247,0.28);
+  --color-usgyo-bg:     rgba(255,68,34,0.12);
+  --color-usgyo-border: rgba(255,68,34,0.28);
+  --color-malhe-bg:     rgba(20,184,127,0.12);
+  --color-malhe-border: rgba(20,184,127,0.28);
+
+  --shadow-xs:    0 1px 4px rgba(0,0,0,0.40);
+  --shadow-sm:    0 2px 10px rgba(0,0,0,0.45);
+  --shadow-md:    0 6px 24px rgba(0,0,0,0.50);
+  --shadow-lg:    0 12px 40px rgba(0,0,0,0.55);
+  --shadow-xl:    0 20px 60px rgba(0,0,0,0.60);
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }

@@ -40,6 +40,13 @@ async function handleRoute() {
 
   const params = dynamic?.params || {};
   currentPage = await handler(params) || null;
+
+  const el = document.getElementById('page-content');
+  if (el) {
+    el.classList.remove('page-enter');
+    void el.offsetWidth; // reflow to restart animation
+    el.classList.add('page-enter');
+  }
 }
 
 function findDynamicRoute(path) {

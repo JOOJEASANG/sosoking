@@ -556,3 +556,45 @@
   margin-bottom: 16px;
 }
 .section-title { font-size: 18px; font-weight: 900; letter-spacing: -0.3px; }
+
+/* ══════════════════════════════
+   다크모드 페이지 오버라이드
+══════════════════════════════ */
+[data-theme="dark"] .home-cat-card--golra { background: rgba(79,142,247,0.08); border-color: var(--color-golra-border); }
+[data-theme="dark"] .home-cat-card--usgyo { background: rgba(255,68,34,0.08);  border-color: var(--color-usgyo-border); }
+[data-theme="dark"] .home-cat-card--malhe { background: rgba(20,184,127,0.08); border-color: var(--color-malhe-border); }
+[data-theme="dark"] .home-cat-card__type-pill { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.08); color: var(--color-text-muted); }
+[data-theme="dark"] .home-hero__stats { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.10); }
+[data-theme="dark"] .home-hero__stat-divider { background: rgba(255,255,255,0.15); }
+[data-theme="dark"] .quick-type-card--golra { background: rgba(79,142,247,0.08);  border-color: var(--color-golra-border); }
+[data-theme="dark"] .quick-type-card--usgyo { background: rgba(255,68,34,0.08);   border-color: var(--color-usgyo-border); }
+[data-theme="dark"] .quick-type-card--malhe { background: rgba(20,184,127,0.08);  border-color: var(--color-malhe-border); }
+[data-theme="dark"] .home-feed-tabs { background: var(--color-surface-2); }
+[data-theme="dark"] .home-feed-tab.active { background: var(--color-surface); }
+[data-theme="dark"] .sidebar-widget { background: var(--color-surface); border-color: var(--color-border); }
+[data-theme="dark"] .sidebar-rank-num { background: var(--color-surface-2); border-color: var(--color-border); }
+[data-theme="dark"] .sidebar-streak { background: linear-gradient(135deg, rgba(120,53,15,0.3), rgba(146,64,14,0.2)); border-color: rgba(252,211,77,0.25); }
+[data-theme="dark"] .streak-num { color: #FCD34D; }
+[data-theme="dark"] .streak-msg { background: rgba(255,68,34,0.15); }
+[data-theme="dark"] .filter-chip { background: var(--color-surface); border-color: var(--color-border); color: var(--color-text-secondary); }
+[data-theme="dark"] .type-select-card { background: var(--color-surface); border-color: var(--color-border); color: var(--color-text-primary); }
+[data-theme="dark"] .type-select-card:hover,
+[data-theme="dark"] .type-select-card.selected { background: var(--color-primary-bg); border-color: var(--color-primary); }
+[data-theme="dark"] .comment-write-box textarea { background: var(--color-surface-2); border-color: var(--color-border); color: var(--color-text-primary); }
+[data-theme="dark"] .comment-write-box textarea:focus { background: var(--color-surface); border-color: var(--color-primary); }
+[data-theme="dark"] .quiz-ox-btn { background: var(--color-surface); border-color: var(--color-border); color: var(--color-text-primary); }
+[data-theme="dark"] .quiz-ox-btn--o:hover, [data-theme="dark"] .quiz-ox-btn--o.selected { background: var(--color-malhe-bg); border-color: var(--color-success); }
+[data-theme="dark"] .quiz-ox-btn--x:hover, [data-theme="dark"] .quiz-ox-btn--x.selected { background: rgba(240,55,56,0.1); border-color: var(--color-danger); }
+[data-theme="dark"] .quiz-result--correct { background: var(--color-malhe-bg); }
+[data-theme="dark"] .quiz-result--wrong   { background: rgba(240,55,56,0.1); }
+[data-theme="dark"] .social-btn { background: var(--color-surface); border-color: var(--color-border); color: var(--color-text-primary); }
+[data-theme="dark"] .social-btn:hover { background: var(--color-surface-2); }
+[data-theme="dark"] .account-stats { background: var(--color-surface-2); }
+[data-theme="dark"] .account-tabs { border-color: var(--color-border); }
+[data-theme="dark"] .mission-card__body { background: var(--color-surface); }
+[data-theme="dark"] .howto-steps-display { background: var(--color-surface-2); border-color: var(--color-border); }
+[data-theme="dark"] .img-upload-area { background: var(--color-surface-2); border-color: var(--color-border); }
+[data-theme="dark"] .img-upload-area:hover, [data-theme="dark"] .img-upload-area.drag-over { background: var(--color-primary-bg); border-color: var(--color-primary); }
+[data-theme="dark"] .admin-sidebar { background: var(--color-surface); border-color: var(--color-border); }
+[data-theme="dark"] .admin-stat-card { background: var(--color-surface); border-color: var(--color-border); }
+[data-theme="dark"] .vote-option__bar--selected { background: rgba(255,68,34,0.2); }

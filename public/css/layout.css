@@ -168,3 +168,32 @@
 .site-footer__copy { font-size: var(--font-size-xs); color: var(--color-text-muted); }
 
 @media (max-width: 768px) { .site-footer { padding-bottom: calc(62px + env(safe-area-inset-bottom, 0)); } }
+
+/* ══════════════════════════════
+   페이지 전환 애니메이션
+══════════════════════════════ */
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.page-enter { animation: page-enter 0.2s cubic-bezier(0.4,0,0.2,1) both; }
+
+/* ══════════════════════════════
+   다크모드 레이아웃 오버라이드
+══════════════════════════════ */
+[data-theme="dark"] .site-header {
+  background: rgba(15,17,23,0.96);
+  border-bottom-color: var(--color-border);
+  box-shadow: 0 1px 0 var(--color-border), 0 4px 16px rgba(0,0,0,0.4);
+}
+[data-theme="dark"] .bottom-nav {
+  background: rgba(26,29,46,0.98);
+  border-top-color: var(--color-border);
+}
+[data-theme="dark"] .site-footer {
+  border-top-color: var(--color-border);
+}
+[data-theme="dark"] .cat-tab {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+}

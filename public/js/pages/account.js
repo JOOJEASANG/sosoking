@@ -1,15 +1,18 @@
 import { auth, db, signOut } from '../firebase.js';
 import {
   collection, query, where, orderBy, limit, getDocs, getCountFromServer,
-  doc, getDoc, updateDoc, writeBatch, serverTimestamp,
+  doc, getDoc, updateDoc, writeBatch, deleteDoc, serverTimestamp,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import {
+  updateProfile, deleteUser, EmailAuthProvider, reauthenticateWithCredential,
+  GoogleAuthProvider, reauthenticateWithPopup,
+} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { navigate } from '../router.js';
 import { toast } from '../components/toast.js';
 import { escHtml, formatTime, computeTitle } from '../utils/helpers.js';
 import { renderFeedCard } from '../components/feed-card.js';
 import { appState } from '../state.js';
 import { setMeta } from '../utils/seo.js';
-
 
 export async function renderAccount() {
   setMeta('내 계정');
@@ -33,11 +36,11 @@ export async function renderAccount() {
     getDoc(doc(db, 'users', user.uid)).catch(() => null),
   ]);
 
-  const userData  = userSnap?.exists() ? userSnap.data() : {};
-  const title     = computeTitle(postCount);
-  const streak    = appState.streak || userData.streak || 0;
+  const userData = userSnap?.exists() ? userSnap.data() : {};
+  const title    = computeTitle(postCount);
+  const streak   = appState.streak || userData.streak || 0;
+  const nickname = user.displayName || user.email?.split('@')[0] || '익명';
 
-  // save computed title back to user doc (non-blocking)
   if (userSnap?.exists()) {
     updateDoc(doc(db, 'users', user.uid), { title }).catch(() => {});
     appState.userTitle = title;
@@ -52,12 +55,12 @@ export async function renderAccount() {
           <div class="avatar" style="width:72px;height:72px;font-size:24px;font-weight:800">
             ${user.photoURL
               ? `<img src="${user.photoURL}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
-              : (user.displayName?.[0] || user.email?.[0] || '나')}
+              : (nickname[0] || '나')}
           </div>
-          <div class="account-nickname">${escHtml(user.displayName || user.email?.split('@')[0] || '익명')}</div>
+          <div class="account-nickname">${escHtml(nickname)}</div>
           <div class="account-level">
             <span class="title-badge">${title}</span>
-            ${streak > 0 ? `<span class="streak-pill">🔥 ${streak}일 연속</span>` : ''}
+            ${streak > 0 ? `<span class="streak-pill" style="margin-left:6px">🔥 ${streak}일 연속</span>` : ''}
           </div>
           <div class="account-stats">
             <div class="account-stat">
@@ -75,13 +78,13 @@ export async function renderAccount() {
         </div>
       </div>
 
-      <!-- 탭 -->
       <div class="account-tabs">
         <button class="account-tab ${activeTab === 'posts' ? 'active' : ''}" data-tab="posts">📝 내 글 (${postCount})</button>
         <button class="account-tab ${activeTab === 'scraps' ? 'active' : ''}" data-tab="scraps">🔖 스크랩</button>
         <button class="account-tab ${activeTab === 'notifications' ? 'active' : ''}" data-tab="notifications">
           🔔 알림${appState.unreadNotifications > 0 ? ` <span class="notif-badge-sm">${appState.unreadNotifications}</span>` : ''}
         </button>
+        <button class="account-tab ${activeTab === 'settings' ? 'active' : ''}" data-tab="settings">⚙️ 설정</button>
       </div>
       <div id="account-tab-content"></div>
     </div>`;
@@ -129,7 +132,6 @@ export async function renderAccount() {
       const notifSnap = await getDocs(q).catch(() => null);
       const notifs = notifSnap?.docs.map(d => ({ id: d.id, ...d.data() })) || [];
 
-      // mark all unread as read (batch)
       const unread = notifSnap?.docs.filter(d => !d.data().read) || [];
       if (unread.length) {
         const batch = writeBatch(db);
@@ -141,6 +143,9 @@ export async function renderAccount() {
         ? `<div class="notif-list">${notifs.map(n => renderNotifItem(n)).join('')}</div>`
         : `<div class="empty-state"><div class="empty-state__icon">🔔</div>
            <div class="empty-state__title">새 알림이 없어요</div></div>`;
+
+    } else if (tab === 'settings') {
+      renderSettingsTab(content, user, userData, nickname);
     }
   };
 
@@ -153,6 +158,157 @@ export async function renderAccount() {
   });
 
   renderTab(activeTab);
+}
+
+/* ── 설정 탭 ── */
+function renderSettingsTab(content, user, userData, nickname) {
+  const isGoogle = user.providerData?.some(p => p.providerId === 'google.com');
+
+  content.innerHTML = `
+    <div class="card" style="margin-bottom:12px">
+      <div class="card__body--lg">
+        <div class="section-title" style="font-size:15px;margin-bottom:16px">👤 닉네임 변경</div>
+        <div class="form-group">
+          <label class="form-label">새 닉네임 <span class="required">*</span></label>
+          <input id="new-nickname" class="form-input" type="text"
+            value="${escHtml(nickname)}"
+            placeholder="2~12자, 한글/영문/숫자/_"
+            maxlength="12">
+          <div class="form-hint">2~12자, 한글·영문·숫자·_(밑줄)만 사용 가능해요</div>
+          <div id="nickname-feedback" style="font-size:12px;margin-top:6px;min-height:18px"></div>
+        </div>
+        <button class="btn btn--primary btn--sm" id="btn-save-nickname">저장하기</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:12px">
+      <div class="card__body--lg">
+        <div class="section-title" style="font-size:15px;margin-bottom:8px">🔐 계정 정보</div>
+        <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:4px">
+          이메일: <strong>${escHtml(user.email || '—')}</strong>
+        </div>
+        <div style="font-size:13px;color:var(--color-text-secondary)">
+          로그인 방식: <strong>${isGoogle ? '구글 소셜 로그인' : '이메일/비밀번호'}</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="border-color:var(--color-danger);opacity:0.9">
+      <div class="card__body--lg">
+        <div class="section-title" style="font-size:15px;color:var(--color-danger);margin-bottom:8px">⚠️ 회원 탈퇴</div>
+        <p style="font-size:13px;color:var(--color-text-secondary);margin-bottom:16px;line-height:1.6">
+          탈퇴 시 계정이 삭제되며 <strong>복구할 수 없어요.</strong><br>
+          작성한 글·댓글은 즉시 삭제되지 않을 수 있어요.
+        </p>
+        <button class="btn btn--danger btn--sm" id="btn-withdraw">회원 탈퇴</button>
+      </div>
+    </div>`;
+
+  setupNicknameEdit(user, nickname);
+  setupWithdrawal(user, isGoogle);
+}
+
+function setupNicknameEdit(user, currentNickname) {
+  const input    = document.getElementById('new-nickname');
+  const feedback = document.getElementById('nickname-feedback');
+  const saveBtn  = document.getElementById('btn-save-nickname');
+
+  const NICK_RE = /^[가-힣a-zA-Z0-9_]{2,12}$/;
+
+  input?.addEventListener('input', () => {
+    const v = input.value.trim();
+    if (!v) { feedback.textContent = ''; return; }
+    if (!NICK_RE.test(v)) {
+      feedback.style.color = 'var(--color-danger)';
+      feedback.textContent = '2~12자, 한글·영문·숫자·_ 만 가능해요';
+    } else {
+      feedback.style.color = 'var(--color-success)';
+      feedback.textContent = '사용 가능한 형식이에요';
+    }
+  });
+
+  saveBtn?.addEventListener('click', async () => {
+    const newNick = input?.value.trim();
+    if (!newNick) { toast.error('닉네임을 입력해주세요'); return; }
+    if (!NICK_RE.test(newNick)) { toast.error('닉네임 형식이 맞지 않아요'); return; }
+    if (newNick === currentNickname) { toast.info('현재 닉네임과 같아요'); return; }
+
+    saveBtn.disabled = true;
+    saveBtn.textContent = '저장 중...';
+    try {
+      // 닉네임 중복 확인
+      const nickDoc = await getDoc(doc(db, 'nicknames', newNick));
+      if (nickDoc.exists() && nickDoc.data().uid !== user.uid) {
+        toast.error('이미 사용 중인 닉네임이에요');
+        return;
+      }
+
+      const batch = writeBatch(db);
+      // 새 닉네임 등록
+      batch.set(doc(db, 'nicknames', newNick), { uid: user.uid, createdAt: serverTimestamp() });
+      // 기존 닉네임 삭제 (있을 경우)
+      if (currentNickname && currentNickname !== newNick) {
+        batch.delete(doc(db, 'nicknames', currentNickname));
+      }
+      // users 문서 업데이트
+      batch.update(doc(db, 'users', user.uid), { nickname: newNick, updatedAt: serverTimestamp() });
+      await batch.commit();
+
+      // Firebase Auth displayName 업데이트
+      await updateProfile(user, { displayName: newNick });
+
+      feedback.style.color = 'var(--color-success)';
+      feedback.textContent = '저장됐어요!';
+      toast.success('닉네임이 변경됐어요');
+    } catch (e) {
+      console.error(e);
+      toast.error('저장에 실패했어요. 다시 시도해주세요');
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = '저장하기';
+    }
+  });
+}
+
+function setupWithdrawal(user, isGoogle) {
+  document.getElementById('btn-withdraw')?.addEventListener('click', async () => {
+    const confirmed = window.confirm(
+      '정말 탈퇴하시겠어요?\n\n계정이 삭제되며 복구할 수 없어요.'
+    );
+    if (!confirmed) return;
+
+    try {
+      // 재인증 필요 (Firebase 보안 정책)
+      if (isGoogle) {
+        const provider = new GoogleAuthProvider();
+        await reauthenticateWithPopup(user, provider);
+      } else {
+        const password = window.prompt('보안을 위해 비밀번호를 입력해주세요:');
+        if (!password) return;
+        const credential = EmailAuthProvider.credential(user.email, password);
+        await reauthenticateWithCredential(user, credential);
+      }
+
+      // Firestore 사용자 데이터 삭제
+      await Promise.allSettled([
+        deleteDoc(doc(db, 'users', user.uid)),
+        deleteDoc(doc(db, 'nicknames', user.displayName || '')),
+      ]);
+
+      await deleteUser(user);
+      toast.success('탈퇴가 완료됐어요. 이용해주셔서 감사합니다');
+      navigate('/');
+    } catch (e) {
+      if (e.code === 'auth/wrong-password') {
+        toast.error('비밀번호가 틀렸어요');
+      } else if (e.code === 'auth/popup-closed-by-user') {
+        // 사용자가 취소
+      } else {
+        console.error(e);
+        toast.error('탈퇴 처리 중 오류가 발생했어요');
+      }
+    }
+  });
 }
 
 function renderNotifItem(n) {

@@ -790,3 +790,80 @@
   font-size: 11px; color: var(--color-text-muted); margin-top: 2px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+
+/* ══════════════════════════════
+   다크모드 컴포넌트 오버라이드
+══════════════════════════════ */
+[data-theme="dark"] .card {
+  border-color: var(--color-border);
+}
+[data-theme="dark"] .card__footer {
+  background: var(--color-surface-2);
+  border-top-color: var(--color-border);
+}
+[data-theme="dark"] .form-input,
+[data-theme="dark"] .form-textarea,
+[data-theme="dark"] .form-select {
+  background: var(--color-surface-2);
+  border-color: var(--color-border);
+  color: var(--color-text-primary);
+}
+[data-theme="dark"] .form-input::placeholder,
+[data-theme="dark"] .form-textarea::placeholder {
+  color: var(--color-text-muted);
+}
+[data-theme="dark"] .modal {
+  background: var(--color-surface);
+}
+[data-theme="dark"] .modal__header,
+[data-theme="dark"] .modal__footer {
+  border-color: var(--color-border);
+}
+[data-theme="dark"] .toast {
+  background: var(--color-surface-2);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+}
+[data-theme="dark"] .toast--success { background: var(--color-success); color: #fff; border: none; }
+[data-theme="dark"] .toast--error   { background: var(--color-danger);  color: #fff; border: none; }
+[data-theme="dark"] .vote-option {
+  background: var(--color-surface); border-color: var(--color-border);
+  color: var(--color-text-primary);
+}
+[data-theme="dark"] .vote-option__bar { background: var(--color-surface-2); }
+[data-theme="dark"] .reaction-btn {
+  background: var(--color-surface-2); border-color: var(--color-border);
+  color: var(--color-text-secondary);
+}
+[data-theme="dark"] .cbattle-comment--a { background: rgba(239,68,68,0.08); border-left-color: #EF4444; }
+[data-theme="dark"] .cbattle-comment--b { background: rgba(59,130,246,0.08); border-left-color: #3B82F6; }
+[data-theme="dark"] .cbattle-side-btn { background: var(--color-surface); border-color: var(--color-border); color: var(--color-text-primary); }
+[data-theme="dark"] .battle-side { background: var(--color-surface); }
+[data-theme="dark"] .battle-side--b:hover { background: rgba(59,130,246,0.08); }
+[data-theme="dark"] .battle-vs-center { background: var(--color-bg); border-color: var(--color-border); }
+[data-theme="dark"] .acrostic-card { background: var(--color-surface-2); border-color: var(--color-border); }
+[data-theme="dark"] .likeable-comment__like { background: var(--color-surface); border-color: var(--color-border); }
+[data-theme="dark"] .notif-item--unread { background: var(--color-primary-bg); }
+[data-theme="dark"] .notif-item--unread:hover { background: rgba(255,68,34,0.2); }
+[data-theme="dark"] .search-input { background: var(--color-surface-2); border-color: var(--color-border); color: var(--color-text-primary); }
+[data-theme="dark"] .feed-search-input { background: var(--color-surface-2); border-color: var(--color-border); color: var(--color-text-primary); }
+[data-theme="dark"] .feed-search-clear { background: var(--color-surface-2); }
+[data-theme="dark"] .streak-pill { background: rgba(146,64,14,0.25); color: #FCD34D; border-color: rgba(252,211,77,0.3); }
+
+/* ── 다크모드 토글 버튼 ── */
+.theme-toggle {
+  width: 38px; height: 38px; border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--color-text-secondary); background: none; border: none;
+  cursor: pointer; transition: all var(--transition-fast); flex-shrink: 0;
+}
+.theme-toggle:hover { background: var(--color-surface-2); color: var(--color-primary); }
+.theme-toggle svg { width: 18px; height: 18px; }
+
+/* ── 글자 수 카운터 ── */
+.char-counter {
+  text-align: right; font-size: 11px; color: var(--color-text-muted);
+  margin-top: 4px; transition: color var(--transition-fast);
+}
+.char-counter.near-limit { color: var(--color-warning); }
+.char-counter.over-limit { color: var(--color-danger); font-weight: 700; }
