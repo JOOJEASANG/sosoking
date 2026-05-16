@@ -61,7 +61,7 @@ export async function initApp() {
           <a href="#/terms">이용약관</a>
           <a href="#/privacy">개인정보처리방침</a>
         </div>
-        <div class="site-footer__copy">© 2025 소소킹. All rights reserved.</div>
+        <div class="site-footer__copy">© ${new Date().getFullYear()} 소소킹. All rights reserved.</div>
       </div>
     </footer>
   `;
@@ -85,7 +85,8 @@ export async function initApp() {
     renderHeader();
     renderBottomNav();
     const path = window.location.hash.slice(1).split('?')[0] || '/';
-    if (!wasLoading && user && appState.isAdmin && path === '/login') navigate('/admin');
+    // 로그인 직후 또는 이미 로그인된 관리자가 /login 접근 시 → /admin 이동
+    if (user && appState.isAdmin && path === '/login') navigate('/admin');
   });
 
   registerRoute('/',           () => renderHome());
