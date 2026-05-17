@@ -1,7 +1,7 @@
 {
   "name": "sosoking-functions",
   "version": "1.0.0",
-  "engines": { "node": "20" },
+  "engines": { "node": "22" },
   "main": "functions-main-v2.js",
   "dependencies": {
     "firebase-admin": "^12.0.0",
