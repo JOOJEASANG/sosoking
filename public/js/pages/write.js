@@ -308,8 +308,8 @@ function renderFormFields() {
       return `
         <div class="form-group">
           <label class="form-label">제시어 <span class="required">*</span></label>
-          <input id="f-keyword" class="form-input" placeholder="예: 소소킹" maxlength="6">
-          <div class="form-hint">최대 6글자 · 입력하면 삼행시 줄이 자동 생성돼요</div>
+          <input id="f-keyword" class="form-input" placeholder="예: 소소킹" maxlength="6" minlength="3">
+          <div class="form-hint">3~6글자 · 입력하면 삼행시 줄이 자동 생성돼요</div>
         </div>
         <div id="acrostic-preview" style="margin-top:12px"></div>
         <div class="form-group" style="margin-top:12px">
@@ -825,6 +825,7 @@ function collectExtraData(type) {
     case 'acrostic': {
       const keyword = document.getElementById('f-keyword')?.value.trim();
       if (!keyword) { toast.error('제시어를 입력해주세요'); return null; }
+      if (keyword.length < 3) { toast.error('제시어는 3글자 이상이어야 해요'); return null; }
       return { keyword };
     }
     case 'howto': {

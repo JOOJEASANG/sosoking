@@ -9,17 +9,15 @@ const db = getFirestore();
 const REGION = 'asia-northeast3';
 
 const POST_TYPES = [
-  { type: 'balance', cat: 'golra' },
-  { type: 'vote', cat: 'golra' },
-  { type: 'ox', cat: 'golra' },
-  { type: 'quiz', cat: 'golra' },
-  { type: 'naming', cat: 'usgyo' },
-  { type: 'acrostic', cat: 'usgyo' },
-  { type: 'drip', cat: 'usgyo' },
-  { type: 'howto', cat: 'malhe' },
-  { type: 'story', cat: 'malhe' },
-  { type: 'concern', cat: 'malhe' },
-  { type: 'relay', cat: 'malhe' },
+  { type: 'balance',       cat: 'golra' },
+  { type: 'vote',          cat: 'golra' },
+  { type: 'battle',        cat: 'golra' },
+  { type: 'naming',        cat: 'usgyo' },
+  { type: 'acrostic',      cat: 'usgyo' },
+  { type: 'drip',          cat: 'usgyo' },
+  { type: 'ox',            cat: 'malhe' },
+  { type: 'relay',         cat: 'malhe' },
+  { type: 'random_battle', cat: 'malhe' },
 ];
 
 function todayKST() {
@@ -77,17 +75,15 @@ function fallbackContent(type, date) {
   const pick = arr => arr[seed % arr.length];
   const tags = ['오늘의주제', '소소킹'];
   const map = {
-    balance: { title: pick(['평생 하나만 가능하다면?', '오늘의 소소 밸런스']), desc: '가볍게 고르고 댓글로 이유를 남겨보세요.', options: [{ text: 'A 선택', votes: 0 }, { text: 'B 선택', votes: 0 }], tags },
-    vote: { title: pick(['오늘 점심 메뉴 고르기', '주말에 제일 하고 싶은 일은?']), desc: '가장 끌리는 선택지를 골라주세요.', options: [{ text: '맛있는 음식', votes: 0 }, { text: '완전 휴식', votes: 0 }, { text: '가벼운 외출', votes: 0 }], tags },
-    ox: { title: '오늘의 OX 퀴즈', desc: '아침에 물 한 잔을 마시면 하루 시작에 도움이 된다.', answer: 'O', explanation: '수분 보충은 컨디션 관리에 도움이 됩니다.', tags },
-    quiz: { title: '소소 상식 퀴즈', desc: '하루 중 가장 집중이 잘 되는 시간은 사람마다 다를까요?', options: ['그렇다', '아니다', '항상 새벽이다', '항상 밤이다'], answerIdx: 0, explanation: '생활 패턴에 따라 달라질 수 있습니다.', tags },
-    naming: { title: '오늘 하루를 한 단어로 작명한다면?', desc: '오늘 기분이나 사건을 한 줄 제목으로 붙여보세요.', tags },
-    acrostic: { keyword: pick(['소소킹', '커피', '퇴근', '라면']), desc: '제시어로 센스 있는 삼행시를 만들어보세요.', tags },
-    drip: { title: '이 상황에 제일 어울리는 드립은?', desc: '일상에서 갑자기 분위기가 싸해진 순간을 드립으로 살려보세요.', tags },
-    howto: { title: '기분 전환을 빠르게 하는 방법', summary: '작은 행동으로 분위기 바꾸기', desc: '긴 시간이 없어도 기분을 바꿀 수 있는 방법을 공유해보세요.', steps: ['자리에서 일어나기', '물 한 잔 마시기', '짧게 산책하기'], materials: '', caution: '무리하지 마세요.', tags },
-    story: { title: '오늘의 소소한 행복', desc: '별일 아닌데 괜히 기분 좋아진 순간이 있나요? 짧게 공유해보세요.', feeling: '작은 순간도 나누면 더 재밌습니다.', tags },
-    concern: { title: '이럴 때 어떻게 하세요?', desc: '하고 싶은 일은 많은데 막상 시작이 안 되는 날이 있습니다. 여러분은 어떻게 시작하나요?', tags },
-    relay: { title: '댓글로 이어 쓰는 오늘의 이야기', desc: '한 문장씩 이어서 이야기를 완성해보세요.', startSentence: '문을 열자 생각지도 못한 쪽지가 놓여 있었다.', characters: '나, 수상한 쪽지를 남긴 사람', tags },
+    balance:       { title: pick(['평생 하나만 가능하다면?', '오늘의 소소 밸런스']), desc: '가볍게 고르고 댓글로 이유를 남겨보세요.', options: [{ text: 'A 선택', votes: 0 }, { text: 'B 선택', votes: 0 }], tags },
+    vote:          { title: pick(['오늘 점심 메뉴 고르기', '주말에 제일 하고 싶은 일은?']), desc: '가장 끌리는 선택지를 골라주세요.', options: [{ text: '맛있는 음식', votes: 0 }, { text: '완전 휴식', votes: 0 }, { text: '가벼운 외출', votes: 0 }], tags },
+    battle:        { title: pick(['이 선택지 중 하나만 고른다면?', '오늘의 선택지 배틀!']), desc: '당신의 선택은? 댓글로 이유도 달아주세요.', options: [{ text: '선택지 A', votes: 0 }, { text: '선택지 B', votes: 0 }, { text: '선택지 C', votes: 0 }], tags },
+    naming:        { title: '오늘 하루를 한 단어로 작명한다면?', desc: '오늘 기분이나 사건을 한 줄 제목으로 붙여보세요.', tags },
+    acrostic:      { keyword: pick(['소소킹', '커피향기', '퇴근길', '라면왕']), desc: '제시어로 센스 있는 삼행시를 만들어보세요.', tags },
+    drip:          { title: '이 상황에 제일 어울리는 드립은?', desc: '일상에서 갑자기 분위기가 싸해진 순간을 드립으로 살려보세요.', tags },
+    ox:            { title: '오늘의 OX 퀴즈', desc: '아침에 물 한 잔을 마시면 하루 시작에 도움이 된다.', answer: 'O', explanation: '수분 보충은 컨디션 관리에 도움이 됩니다.', tags },
+    relay:         { title: '댓글로 이어 쓰는 오늘의 이야기', desc: '한 문장씩 이어서 이야기를 완성해보세요.', startSentence: '문을 열자 생각지도 못한 쪽지가 놓여 있었다.', characters: '나, 수상한 쪽지를 남긴 사람', tags },
+    random_battle: { title: pick(['같은 주제 다른 시각 — 누가 더 재밌어?', '랜덤 대결! 센스 대전']), desc: '같은 주제로 각자 답을 달아보세요. 반응이 많은 쪽이 승리!', battleTopic: pick(['최애 야식은?', '스트레스 해소법은?', '주말 아침을 여는 루틴은?']), tags },
   };
   return map[type] || map.concern;
 }
@@ -101,11 +97,9 @@ function buildDoc(type, cat, content, date, source) {
   const optionList = value => arr(value, 6).map(o => ({ text: String(o.text || o || '').slice(0, 80), votes: Number(o.votes || 0) }));
   if (['balance', 'vote', 'battle'].includes(type)) return { mainDoc: { ...base, title: clean(content.title, 100), desc: clean(content.desc, 1000), options: optionList(content.options) }, secretDoc: null };
   if (type === 'ox') return { mainDoc: { ...base, title: clean(content.title, 100), desc: clean(content.desc, 1000) }, secretDoc: { answer: String(content.answer || 'O').toUpperCase() === 'X' ? 'X' : 'O', explanation: clean(content.explanation, 500) } };
-  if (type === 'quiz') return { mainDoc: { ...base, title: clean(content.title, 100), desc: clean(content.desc, 1000), quizMode: 'multiple', options: arr(content.options, 4).map(String) }, secretDoc: { quizMode: 'multiple', answerIdx: Math.max(0, Math.min(3, Number(content.answerIdx || 0))), explanation: clean(content.explanation, 500) } };
   if (type === 'acrostic') { const keyword = clean(content.keyword, 12) || '소소킹'; return { mainDoc: { ...base, title: `'${keyword}' 삼행시 도전!`, keyword, desc: clean(content.desc, 1000) }, secretDoc: null }; }
-  if (type === 'howto') return { mainDoc: { ...base, title: clean(content.title, 100), summary: clean(content.summary, 160), desc: clean(content.desc, 1000), steps: arr(content.steps, 8).map(String), materials: clean(content.materials, 200), caution: clean(content.caution, 200) }, secretDoc: null };
-  if (type === 'story') return { mainDoc: { ...base, title: clean(content.title, 100), desc: clean(content.desc, 1200), feeling: clean(content.feeling, 300) }, secretDoc: null };
   if (type === 'relay') return { mainDoc: { ...base, title: clean(content.title, 100), desc: clean(content.desc, 1000), startSentence: clean(content.startSentence, 200), characters: clean(content.characters, 200) }, secretDoc: null };
+  if (type === 'random_battle') return { mainDoc: { ...base, title: clean(content.title, 100), desc: clean(content.desc, 1000), battleTopic: clean(content.battleTopic, 100) }, secretDoc: null };
   return { mainDoc: { ...base, title: clean(content.title, 100), desc: clean(content.desc, 1000) }, secretDoc: null };
 }
 

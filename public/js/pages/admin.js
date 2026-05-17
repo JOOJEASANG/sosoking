@@ -469,6 +469,20 @@ async function renderMissions(el) {
             <textarea id="mission-desc" class="form-textarea" placeholder="미션 설명 (선택)" rows="3"></textarea>
           </div>
           <div class="form-group">
+            <label class="form-label">참여 유형 <span class="required">*</span></label>
+            <select id="mission-type" class="form-select">
+              <option value="balance">⚖️ 밸런스게임</option>
+              <option value="vote">🗳️ 민심투표</option>
+              <option value="battle">⚔️ 선택지배틀</option>
+              <option value="naming">😜 미친작명소</option>
+              <option value="acrostic">✍️ 삼행시짓기</option>
+              <option value="drip">🎤 한줄드립</option>
+              <option value="ox">❓ OX퀴즈</option>
+              <option value="relay">🎭 막장릴레이</option>
+              <option value="random_battle">🎰 랜덤대결</option>
+            </select>
+          </div>
+          <div class="form-group">
             <label class="form-label">연결 카테고리</label>
             <select id="mission-cat" class="form-select">
               <option value="">전체 (카테고리 무관)</option>
@@ -503,7 +517,10 @@ async function renderMissions(el) {
                   <div style="flex:1">
                     <div style="font-size:14px;font-weight:700;${m.active ? 'color:var(--color-primary)' : ''}">${escHtml(m.title || '')}</div>
                     ${m.desc ? `<div style="font-size:12px;color:var(--color-text-muted);margin-top:2px">${escHtml(m.desc)}</div>` : ''}
-                    ${m.cat ? `<div style="font-size:11px;margin-top:4px"><span style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:99px;padding:2px 8px">${{ golra:'🎯 골라봐', usgyo:'😂 웃겨봐', malhe:'🎮 도전봐' }[m.cat] || m.cat}</span></div>` : ''}
+                    <div style="font-size:11px;margin-top:4px;display:flex;gap:4px;flex-wrap:wrap">
+                      ${m.type ? `<span style="background:var(--color-primary-bg);color:var(--color-primary);border-radius:99px;padding:2px 8px;font-weight:700">${{balance:'⚖️ 밸런스게임',vote:'🗳️ 민심투표',battle:'⚔️ 선택지배틀',naming:'😜 작명소',acrostic:'✍️ 삼행시',drip:'🎤 한줄드립',ox:'❓ OX퀴즈',relay:'🎭 릴레이',random_battle:'🎰 랜덤대결'}[m.type] || m.type}</span>` : '<span style="background:var(--color-surface-2);color:var(--color-text-muted);border-radius:99px;padding:2px 8px">유형 없음</span>'}
+                      ${m.cat ? `<span style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:99px;padding:2px 8px">${{ golra:'🎯 골라봐', usgyo:'😂 웃겨봐', malhe:'🎮 도전봐' }[m.cat] || m.cat}</span>` : ''}
+                    </div>
                     ${m.endDate ? `<div style="font-size:11px;color:var(--color-warning);margin-top:4px">⏰ 마감: ${new Date(m.endDate.toDate()).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>` : ''}
                   </div>
                   <div style="display:flex;gap:6px;flex-shrink:0">
@@ -519,11 +536,12 @@ async function renderMissions(el) {
   document.getElementById('btn-add-mission')?.addEventListener('click', async () => {
     const title      = document.getElementById('mission-title')?.value.trim();
     const desc       = document.getElementById('mission-desc')?.value.trim()    || '';
+    const type       = document.getElementById('mission-type')?.value            || 'balance';
     const cat        = document.getElementById('mission-cat')?.value             || '';
     const active     = document.getElementById('mission-active')?.checked        ?? true;
     const endDateVal = document.getElementById('mission-end-date')?.value;
     if (!title) { toast.error('미션 제목을 입력해주세요'); return; }
-    const missionData = { title, desc, cat, active, createdAt: serverTimestamp() };
+    const missionData = { title, desc, type, cat, active, createdAt: serverTimestamp() };
     if (endDateVal) missionData.endDate = Timestamp.fromDate(new Date(endDateVal));
     try {
       await addDoc(collection(db, 'missions'), missionData);
