@@ -1,6 +1,7 @@
 import { db, auth } from '../firebase.js';
+import { signInAnonymously } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import {
-  doc, getDoc, collection, query, orderBy, getDocs,
+  doc, getDoc, collection, query, orderBy, getDocs, where, limit,
   addDoc, updateDoc, deleteDoc, setDoc, increment, serverTimestamp, arrayUnion, arrayRemove, deleteField,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { navigate } from '../router.js';
@@ -10,9 +11,10 @@ import { setMeta } from '../utils/seo.js';
 import { escHtml, formatTime } from '../utils/helpers.js';
 
 const TYPE_LABELS = {
-  balance:'밸런스게임', vote:'민심투표', battle:'선택지배틀', ox:'OX퀴즈', quiz:'내맘대로퀴즈',
-  naming:'미친작명소', acrostic:'삼행시짓기', cbattle:'댓글배틀', laugh:'웃참챌린지', drip:'한줄드립',
-  howto:'나만의노하우', story:'경험담', fail:'실패담', concern:'고민/질문', relay:'막장릴레이',
+  balance:'밸런스게임', vote:'민심투표', battle:'선택지배틀', challenge24:'24시간챌린지', tournament:'이상형월드컵',
+  naming:'미친작명소', acrostic:'삼행시짓기', drip:'한줄드립', cbattle:'댓글배틀', laugh:'웃참챌린지',
+  ox:'OX퀴즈', quiz:'4지선다', relay:'막장릴레이', word_relay:'단어릴레이', random_battle:'랜덤대결',
+  howto:'노하우', story:'경험담', fail:'실패담', concern:'고민/질문',
 };
 const CAT_CLASS = { golra: 'golra', usgyo: 'usgyo', malhe: 'malhe' };
 
@@ -98,6 +100,23 @@ function renderDetailPage(el, post, comments, acrostics, isScrapped = false) {
 
   setupDetailEvents(post, el);
   setupAcrosticLikes(post.id);
+
+  fetchSimilarPosts(post.id, post.type).then(similar => {
+    if (!similar.length) return;
+    const area = document.createElement('div');
+    area.className = 'similar-posts';
+    area.innerHTML = `
+      <div class="similar-posts__title">🎮 비슷한 놀이판</div>
+      <div class="similar-posts__list">
+        ${similar.map(p => `
+          <div class="similar-post-card" onclick="navigate('/detail/${p.id}')">
+            <span class="similar-post-card__type">${TYPE_LABELS[p.type] || p.type}</span>
+            <div class="similar-post-card__title">${escHtml(p.title || '')}</div>
+            <div class="similar-post-card__meta">❤️${p.reactions?.total || 0} 💬${p.commentCount || 0}</div>
+          </div>`).join('')}
+      </div>`;
+    document.querySelector('[style*="max-width:720px"]')?.appendChild(area);
+  }).catch(() => {});
 }
 
 function renderImageSection(images) {
@@ -309,14 +328,26 @@ function renderAcrosticCard(entry, postId) {
 function renderComment(c) {
   const timeStr = formatTime(c.createdAt?.toDate?.() || c.createdAt);
   const isOwn   = auth.currentUser?.uid === c.authorId;
+  const uid     = auth.currentUser?.uid || '';
+  const myReact = c.reactedWith?.[uid] ?? null;
+  const isBest  = c._isBest;
+  const REACT   = [{ key:'funny',emoji:'😂' },{ key:'fire',emoji:'🔥' },{ key:'like',emoji:'👍' }];
   return `
-    <div class="comment-item" data-comment-id="${c.id}">
+    <div class="comment-item ${isBest?'comment-item--best':''}" data-comment-id="${c.id}">
+      ${isBest ? '<div class="best-badge">🏆 베스트</div>' : ''}
       <div class="avatar avatar--sm">${(c.authorName||'?')[0]}</div>
       <div class="comment-item__body">
         <div class="comment-item__author">${escHtml(c.authorName || '익명')}</div>
         <div class="comment-item__text">${escHtml(c.text).replace(/\n/g,'<br>')}</div>
         <div class="comment-item__meta">
           <span>${timeStr}</span>
+          <div class="comment-reactions">
+            ${REACT.map(r=>{
+              const cnt=c.reactions?.[r.key]||0;
+              const active=myReact===r.key?'active':'';
+              return `<button class="comment-react-btn ${active}" data-comment-id="${c.id}" data-react="${r.key}">${r.emoji}${cnt>0?` <b>${cnt}</b>`:''}`;
+            }).join('')}
+          </div>
           ${isOwn ? `<button class="comment-delete-btn" data-comment-id="${c.id}">삭제</button>` : ''}
         </div>
       </div>
@@ -411,7 +442,8 @@ function setupDetailEvents(post, el) {
       createdAt:  serverTimestamp(),
     };
     if (post.type === 'cbattle') commentData.side = _cbattleSide;
-    if (post.type === 'naming' || post.type === 'drip') { commentData.likes = 0; commentData.likedBy = []; }
+    commentData.reactions = { funny: 0, fire: 0, like: 0 };
+    commentData.reactedWith = {};
 
     const successMsg = { relay:'이야기를 이어썼어요!', naming:'제목을 제안했어요!', drip:'드립을 올렸어요!' }[post.type] || '댓글을 남겼어요!';
     try {
@@ -429,7 +461,9 @@ function setupDetailEvents(post, el) {
   // 투표 버튼
   document.querySelectorAll('[data-vote-idx]').forEach(btn => {
     btn.addEventListener('click', async () => {
-      if (!auth.currentUser) { navigate('/login'); return; }
+      if (!auth.currentUser) {
+        try { await signInAnonymously(auth); } catch { toast.warn('참여에 실패했어요'); btn.disabled=false; return; }
+      }
       const idx = parseInt(btn.dataset.voteIdx);
       btn.disabled = true;
       try {
@@ -446,7 +480,13 @@ function setupDetailEvents(post, el) {
         );
         await updateDoc(postRef, { options, votedBy: arrayUnion(auth.currentUser.uid) });
 
-        toast.success('투표했어요!');
+        const myVotes = options[idx].votes || 1;
+        const totalNew = options.reduce((s,o)=>s+(o.votes||0),0);
+        const pct = totalNew ? Math.round(myVotes/totalNew*100) : 100;
+        const msg = pct <= 30 ? `소수파 ${pct}%! 독특한 취향이네요 😎`
+                  : pct >= 70 ? `역시 대세! ${pct}%가 같은 생각이에요 👑`
+                  : `팽팽해요! 지금 ${pct}% 선택 중 🔥`;
+        toast.success(msg);
         const voteArea = document.getElementById('vote-area');
         if (voteArea) {
           const updated = { ...post, options };
@@ -461,7 +501,9 @@ function setupDetailEvents(post, el) {
   // OX 퀴즈 — 정답은 secret 서브컬렉션에서 확인
   document.querySelectorAll('[data-answer]').forEach(btn => {
     btn.addEventListener('click', async () => {
-      if (!auth.currentUser) { navigate('/login'); return; }
+      if (!auth.currentUser) {
+        try { await signInAnonymously(auth); } catch { toast.warn('참여에 실패했어요'); btn.disabled=false; return; }
+      }
       const selected = btn.dataset.answer;
       document.querySelectorAll('[data-answer]').forEach(b => b.disabled = true);
       try {
@@ -479,7 +521,9 @@ function setupDetailEvents(post, el) {
   // 객관식 퀴즈 — 정답은 secret 서브컬렉션에서 확인
   document.querySelectorAll('[data-quiz-idx]').forEach(btn => {
     btn.addEventListener('click', async () => {
-      if (!auth.currentUser) { navigate('/login'); return; }
+      if (!auth.currentUser) {
+        try { await signInAnonymously(auth); } catch { toast.warn('참여에 실패했어요'); btn.disabled=false; return; }
+      }
       const idx = parseInt(btn.dataset.quizIdx);
       document.querySelectorAll('[data-quiz-idx]').forEach(b => b.disabled = true);
       try {
@@ -556,8 +600,7 @@ function setupDetailEvents(post, el) {
   // 댓글 삭제 (본인 댓글만)
   setupCommentDelete(post.id);
 
-  // naming/drip 댓글 좋아요
-  if (post.type === 'naming' || post.type === 'drip') setupCommentLikes(post.id);
+  setupCommentLikes(post.id);
 
   // 반응 바
   initReactionBar(post.id);
@@ -788,7 +831,7 @@ function renderCommentSection(post, comments) {
       </div>
       <div id="comment-list">
         ${comments.length
-          ? comments.map(c => renderComment(c)).join('')
+          ? markBestComment(comments).map(c => renderComment(c)).join('')
           : '<div style="text-align:center;padding:24px;font-size:13px;color:var(--color-text-muted)">첫 댓글을 남겨보세요!</div>'}
       </div>
     </div>`;
@@ -817,18 +860,25 @@ function renderRelayStory(startSentence, comments) {
 function renderLikeableComment(c) {
   const timeStr = formatTime(c.createdAt?.toDate?.() || c.createdAt);
   const isOwn   = auth.currentUser?.uid === c.authorId;
-  const likes   = c.likes || 0;
-  const liked   = (c.likedBy || []).includes(auth.currentUser?.uid || '');
+  const uid     = auth.currentUser?.uid || '';
+  const myReact = c.reactedWith?.[uid] ?? null;
+  const isBest  = c._isBest;
+  const REACT   = [{ key:'funny',emoji:'😂' },{ key:'fire',emoji:'🔥' },{ key:'like',emoji:'👍' }];
   return `
     <div class="likeable-comment" data-comment-id="${c.id}">
+      ${isBest ? '<div class="best-badge">🏆 베스트</div>' : ''}
       <div class="likeable-comment__content">
         <span class="likeable-comment__text">${escHtml(c.text)}</span>
         <span class="likeable-comment__meta">${escHtml(c.authorName || '익명')} · ${timeStr}</span>
       </div>
       <div class="likeable-comment__actions">
-        <button class="likeable-comment__like ${liked ? 'active' : ''}" data-comment-id="${c.id}">
-          👍${likes > 0 ? ` <strong>${likes}</strong>` : ''}
-        </button>
+        <div class="comment-reactions">
+          ${REACT.map(r=>{
+            const cnt=c.reactions?.[r.key]||0;
+            const active=myReact===r.key?'active':'';
+            return `<button class="comment-react-btn ${active}" data-comment-id="${c.id}" data-react="${r.key}">${r.emoji}${cnt>0?` <b>${cnt}</b>`:''}`;
+          }).join('')}
+        </div>
         ${isOwn ? `<button class="comment-delete-btn" data-comment-id="${c.id}">삭제</button>` : ''}
       </div>
     </div>`;
@@ -886,29 +936,52 @@ function refreshCommentList(post, comments) {
 }
 
 function setupCommentLikes(postId) {
-  document.querySelectorAll('.likeable-comment__like').forEach(btn => {
+  document.querySelectorAll('.comment-react-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
-      if (!auth.currentUser) { navigate('/login'); return; }
+      if (!auth.currentUser) {
+        try { await signInAnonymously(auth); } catch { return; }
+      }
       if (btn._pending) return;
       btn._pending = true;
       const uid = auth.currentUser.uid;
       const commentId = btn.dataset.commentId;
+      const key = btn.dataset.react;
       const ref = doc(db, 'feeds', postId, 'comments', commentId);
-      const liked = btn.classList.contains('active');
+      // find sibling active button
+      const parent = btn.closest('[data-comment-id]');
+      const activeBtn = parent?.querySelector('.comment-react-btn.active');
+      const currentKey = activeBtn?.dataset.react ?? null;
       try {
-        if (liked) {
-          await updateDoc(ref, { likes: increment(-1), likedBy: arrayRemove(uid) });
+        if (currentKey === key) {
+          await updateDoc(ref, { [`reactions.${key}`]: increment(-1), [`reactedWith.${uid}`]: deleteField() });
           btn.classList.remove('active');
-          adjustAcrosticCount(btn, -1);
-        } else {
-          await updateDoc(ref, { likes: increment(1), likedBy: arrayUnion(uid) });
+          adjustReactCount(btn, -1);
+        } else if (currentKey) {
+          await updateDoc(ref, { [`reactions.${currentKey}`]: increment(-1), [`reactions.${key}`]: increment(1), [`reactedWith.${uid}`]: key });
+          activeBtn.classList.remove('active');
+          adjustReactCount(activeBtn, -1);
           btn.classList.add('active');
-          adjustAcrosticCount(btn, 1);
+          adjustReactCount(btn, 1);
+        } else {
+          await updateDoc(ref, { [`reactions.${key}`]: increment(1), [`reactedWith.${uid}`]: key });
+          btn.classList.add('active');
+          adjustReactCount(btn, 1);
         }
-      } catch { /* silent */ }
+      } catch {}
       btn._pending = false;
     });
   });
+}
+
+function adjustReactCount(btn, delta) {
+  if (!btn) return;
+  const b = btn.querySelector('b');
+  if (b) {
+    const n = Math.max(0, parseInt(b.textContent||'0') + delta);
+    if (n === 0) b.remove(); else b.textContent = n;
+  } else if (delta > 0) {
+    btn.insertAdjacentHTML('beforeend', ` <b>1</b>`);
+  }
 }
 
 async function fetchComments(postId) {
@@ -927,3 +1000,21 @@ async function fetchAcrostics(postId) {
   } catch { return []; }
 }
 
+function markBestComment(comments) {
+  if (comments.length < 3) return comments;
+  let bestIdx = 0, bestScore = -1;
+  comments.forEach((c, i) => {
+    const s = (c.reactions?.funny || 0) * 3 + (c.reactions?.fire || 0) * 2 + (c.reactions?.like || 0) + (c.likes || 0);
+    if (s > bestScore) { bestScore = s; bestIdx = i; }
+  });
+  if (bestScore <= 0) return comments;
+  return comments.map((c, i) => i === bestIdx ? { ...c, _isBest: true } : c);
+}
+
+async function fetchSimilarPosts(excludeId, type) {
+  try {
+    const q = query(collection(db, 'feeds'), where('type', '==', type), orderBy('reactions.total', 'desc'), limit(5));
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.hidden && p.id !== excludeId).slice(0, 4);
+  } catch { return []; }
+}

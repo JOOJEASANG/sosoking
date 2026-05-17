@@ -41,6 +41,14 @@
       ]
     },
     {
+      "collectionGroup": "feeds",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "type",            "order": "ASCENDING" },
+        { "fieldPath": "reactions.total", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "missions",
       "queryScope": "COLLECTION",
       "fields": [

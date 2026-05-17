@@ -7,8 +7,8 @@ import { navigate } from '../router.js';
 const REACTIONS = [
   { key: 'like',  emoji: '👍', label: '좋아요' },
   { key: 'funny', emoji: '😂', label: '웃겨요' },
-  { key: 'sad',   emoji: '😢', label: '슬퍼요' },
-  { key: 'wow',   emoji: '😮', label: '놀라워요' },
+  { key: 'fire',  emoji: '🔥', label: '뜨거워' },
+  { key: 'skull', emoji: '💀', label: 'ㅋㅋㅋ' },
 ];
 
 /**

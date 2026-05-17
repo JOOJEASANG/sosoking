@@ -189,6 +189,7 @@ export async function renderHome() {
             ${renderStatsWidget(totalPosts, todayCount)}
             ${renderHotRankingWidget(hotPosts)}
             ${renderWriteCTAWidget()}
+            ${renderBestCommentWidget()}
             ${renderGuideWidget()}
           </aside>
         </div>
@@ -222,6 +223,36 @@ export async function renderHome() {
     document.querySelectorAll('[data-type-quick]').forEach(btn => {
       btn.addEventListener('click', () => navigate(`/write?type=${btn.dataset.typeQuick}`));
     });
+    // 베스트 댓글 비동기 로드
+    (async () => {
+      try {
+        const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+        const allSnap = await getDocs(query(collection(db,'feeds'),orderBy('createdAt','desc'),limit(20)));
+        const postIds = allSnap.docs.map(d=>d.id);
+        const commentSnaps = await Promise.all(
+          postIds.slice(0,8).map(pid => getDocs(query(collection(db,'feeds',pid,'comments'),orderBy('createdAt','desc'),limit(5))))
+        );
+        const allComments = [];
+        commentSnaps.forEach((snap,i) => {
+          snap.docs.forEach(d => {
+            const c = d.data();
+            const score = (c.reactions?.funny||0)*3+(c.reactions?.fire||0)*2+(c.reactions?.like||0)+(c.likes||0);
+            if (score > 0) allComments.push({...c, id:d.id, postId:postIds[i], score});
+          });
+        });
+        allComments.sort((a,b)=>b.score-a.score);
+        const top = allComments.slice(0,4);
+        const el = document.getElementById('best-comment-list');
+        if (!el) return;
+        if (!top.length) { el.innerHTML = '<div style="font-size:12px;color:var(--color-text-muted)">아직 베스트 댓글이 없어요</div>'; return; }
+        el.innerHTML = top.map(c=>`
+          <div class="best-comment-item" onclick="navigate('/detail/${c.postId}')">
+            <div class="best-comment-item__text">"${escHtml(c.text||'')}"</div>
+            <div class="best-comment-item__meta">${escHtml(c.authorName||'익명')} · 😂${c.reactions?.funny||0} 🔥${c.reactions?.fire||0}</div>
+          </div>`).join('');
+      } catch {}
+    })();
+
     // 피드 탭 전환
     const hotPostsCached   = hotPosts;
     const recentPostsCached = recentPosts;
@@ -339,6 +370,16 @@ function renderStatsWidget(total, today) {
           <div class="sidebar-stats-num" style="color:var(--color-malhe)">${today}</div>
           <div class="sidebar-stats-label">오늘 새 글</div>
         </div>
+      </div>
+    </div>`;
+}
+
+function renderBestCommentWidget() {
+  return `
+    <div class="sidebar-widget best-comment-widget">
+      <div class="sidebar-widget__title">😂 오늘의 베스트 댓글</div>
+      <div id="best-comment-list" style="margin-top:8px">
+        <div style="font-size:12px;color:var(--color-text-muted)">로딩 중...</div>
       </div>
     </div>`;
 }
