@@ -3,7 +3,7 @@ import { auth, db } from '../firebase.js';
 import { renderFeedCard } from '../components/feed-card.js';
 import { appState } from '../state.js';
 import { setMeta } from '../utils/seo.js';
-import { escHtml, formatTime } from '../utils/helpers.js';
+import { escHtml } from '../utils/helpers.js';
 import {
   collection, query, orderBy, limit, getDocs,
   getCountFromServer, where, doc, getDoc, updateDoc,
@@ -11,9 +11,9 @@ import {
 import { navigate } from '../router.js';
 
 const CATEGORIES = [
-  { key: 'golra', icon: '🗳️', label: '골라봐', color: '#6366f1', desc: '밸런스게임 · 민심투표 · 선택지배틀' },
-  { key: 'usgyo', icon: '😂', label: '웃겨봐', color: '#f59e0b', desc: '미친작명소 · 삼행시 · 한줄드립' },
-  { key: 'malhe', icon: '🎯', label: '도전봐', color: '#10b981', desc: 'OX퀴즈 · 막장릴레이 · 랜덤대결' },
+  { key: 'golra', icon: '🗳️', label: '골라킹', color: '#6366f1', desc: '밸런스 · 민심투표 · 선택지배틀' },
+  { key: 'usgyo', icon: '😂', label: '드립킹', color: '#f59e0b', desc: '미친작명소 · 초성게임 · 한줄드립' },
+  { key: 'malhe', icon: '🎯', label: '도전킹', color: '#10b981', desc: 'OX퀴즈 · 막장킹 · 랜덤대결' },
 ];
 
 const QUICK_TYPES = [
@@ -21,14 +21,25 @@ const QUICK_TYPES = [
   { key: 'vote',         icon: '🗳️', label: '민심투표'   },
   { key: 'battle',       icon: '⚔️', label: '선택지배틀' },
   { key: 'naming',       icon: '😜', label: '미친작명소' },
-  { key: 'acrostic',     icon: '✍️', label: '삼행시짓기' },
+  { key: 'initial_game', icon: '🔤', label: '초성게임' },
   { key: 'drip',         icon: '🎤', label: '한줄드립'   },
   { key: 'ox',           icon: '❓', label: 'OX퀴즈'     },
-  { key: 'relay',        icon: '🎭', label: '막장릴레이' },
+  { key: 'relay',        icon: '🎭', label: '막장킹' },
   { key: 'random_battle',icon: '🎰', label: '랜덤대결'   },
 ];
 
-const WEEKLY_WORDS = ['소소킹', '월요일', '킹받네', '라면왕', '퇴근길', '대반전', '웃참패'];
+const WEEKLY_WORDS = [
+  '소소킹', '킹받네', '라면왕', '웃참패',
+  '월요일', '퇴근길', '대반전', '편의점',
+  '고양이', '배달비', '알바생', '휴대폰',
+  '아메리카노', '지하철역', '치킨게임', '퇴근요정',
+  '소확행러', '월급루팡', '반전매력', '웃음버튼',
+];
+
+function getPoemType(word) {
+  const len = [...String(word || '')].length;
+  return ({ 3: '삼행시', 4: '사행시', 5: '오행시', 6: '육행시' })[len] || '삼행시';
+}
 
 function getWeeklyWord() {
   const now = new Date();
@@ -93,8 +104,8 @@ function fmtNum(n) {
 
 const TYPE_LABEL = {
   balance:'밸런스게임', vote:'민심투표', battle:'선택지배틀',
-  naming:'미친작명소', acrostic:'삼행시', drip:'한줄드립',
-  ox:'OX퀴즈', relay:'막장릴레이', random_battle:'랜덤대결',
+  naming:'미친작명소', initial_game:'초성게임', acrostic:'미션 행시', drip:'한줄드립',
+  ox:'OX퀴즈', relay:'막장킹', random_battle:'랜덤대결',
 };
 
 export async function renderHome() {
@@ -122,8 +133,8 @@ export async function renderHome() {
 
     const streak = appState.streak || 0;
     const weeklyWord = getWeeklyWord();
+    const poemType = getPoemType(weeklyWord);
 
-    /* ── 히어로 (모바일과 동일한 단일 컬럼 스택) ── */
     const heroHTML = user ? `
       <div class="home-hero home-hero--user">
         ${streak > 1 ? `<div class="home-hero__streak">🔥 ${streak}일 연속 출석 중!</div>` : ''}
@@ -136,15 +147,14 @@ export async function renderHome() {
       </div>` : `
       <div class="home-hero home-hero--guest">
         <div class="home-hero__badge">✨ 소소킹에 오신 걸 환영해요!</div>
-        <div class="home-hero__title">골라봐, 웃겨봐,<br>도전봐 🎉</div>
-        <div class="home-hero__sub">9가지 게임형 커뮤니티. 가입하면 바로 참여할 수 있어요.</div>
+        <div class="home-hero__title">골라킹, 드립킹,<br>도전킹 🎉</div>
+        <div class="home-hero__sub">9가지 참여형 놀이판. 가입하면 바로 참여할 수 있어요.</div>
         <div class="home-hero__actions">
           <button class="home-hero__cta-btn" id="hbtn-join">지금 시작하기 →</button>
           <button class="btn btn--ghost home-hero__ghost-btn" id="hbtn-feed">먼저 둘러보기</button>
         </div>
       </div>`;
 
-    /* ── 통계 ── */
     const statsHTML = `
       <div class="home-stat-row">
         <div class="home-stat-card">
@@ -161,15 +171,14 @@ export async function renderHome() {
         </div>
       </div>`;
 
-    /* ── 이번 주 삼행시 챌린지 배너 ── */
     const missionHTML = `
       <div class="home-mission-banner">
         <div class="home-mission-banner__left">
-          <div class="home-mission-banner__eyebrow">✍️ 이번 주 삼행시 챌린지</div>
+          <div class="home-mission-banner__eyebrow">✍️ 이번 주 ${poemType} 챌린지</div>
           <div class="home-mission-banner__word">${escHtml(weeklyWord)}</div>
           <div class="home-mission-banner__chars">
             ${[...weeklyWord].map(ch => `<span class="home-mission-banner__char">${escHtml(ch)}</span>`).join('')}
-            <span class="home-mission-banner__chars-hint">로 삼행시를!</span>
+            <span class="home-mission-banner__chars-hint">로 ${poemType}를!</span>
           </div>
         </div>
         <div class="home-mission-banner__right">
@@ -178,10 +187,9 @@ export async function renderHome() {
         </div>
       </div>`;
 
-    /* ── 카테고리 ── */
     const catsHTML = `
       <div class="home-section-header">
-        <span class="home-section-title">3가지 카테고리</span>
+        <span class="home-section-title">3가지 놀이 묶음</span>
         <span class="home-section-sub">9가지 게임이 기다려요</span>
       </div>
       <div class="home-cat-grid">
@@ -193,7 +201,6 @@ export async function renderHome() {
           </div>`).join('')}
       </div>`;
 
-    /* ── 빠른 시작 ── */
     const quickHTML = `
       <div class="home-section-header">
         <span class="home-section-title">⚡ 바로 만들기</span>
@@ -207,7 +214,6 @@ export async function renderHome() {
           </button>`).join('')}
       </div>`;
 
-    /* ── 🔥 이번 주 베스트 (랭킹) ── */
     const rankHTML = hotPosts.length ? `
       <div class="home-section-header">
         <span class="home-section-title">🏆 이번 주 베스트</span>
@@ -219,7 +225,7 @@ export async function renderHome() {
             <div class="home-rank-item__num home-rank-item__num--${i < 3 ? i+1 : 'rest'}">${i + 1}</div>
             <div class="home-rank-item__body">
               <div class="home-rank-item__type">${TYPE_LABEL[p.type] || p.type}</div>
-              <div class="home-rank-item__title">${escHtml(p.title || p.keyword ? `'${p.keyword}' 삼행시 도전!` : '제목 없음')}</div>
+              <div class="home-rank-item__title">${escHtml(p.title || '제목 없음')}</div>
             </div>
             <div class="home-rank-item__stats">
               ${p.reactions?.total ? `<span>❤️ ${p.reactions.total}</span>` : ''}
@@ -228,7 +234,6 @@ export async function renderHome() {
           </div>`).join('')}
       </div>` : '';
 
-    /* ── ✨ 최신 글 ── */
     const recentHTML = recentPosts.length ? `
       <div class="home-section-header">
         <span class="home-section-title">✨ 방금 올라온 글</span>
@@ -249,7 +254,6 @@ export async function renderHome() {
         ${recentHTML}
       </div>`;
 
-    /* ── 이벤트 ── */
     el.querySelector('#hbtn-write')?.addEventListener('click', () => navigate('/write'));
     el.querySelector('#hbtn-join')?.addEventListener('click',  () => navigate('/login'));
     el.querySelector('#hbtn-feed')?.addEventListener('click',  () => navigate('/feed'));
