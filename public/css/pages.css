@@ -282,7 +282,7 @@
 /* ════════════════════════
    만들기 폼
 ════════════════════════ */
-.write-page { max-width: 760px; margin: 0 auto; }
+.write-page { max-width: 100%; }
 .write-step-header {
   display: flex; align-items: center; gap: var(--space-3);
   margin-bottom: var(--space-5);
@@ -889,7 +889,7 @@
 .sidebar-random:hover { opacity: 0.92; }
 
 /* ── 명예의 전당 페이지 ── */
-.hall-page { max-width: 900px; margin: 0 auto; }
+.hall-page { max-width: 100%; }
 .hall-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -957,8 +957,7 @@
    이용약관 / 개인정보처리방침
 ════════════════════════ */
 .legal-page {
-  max-width: 760px;
-  margin: 0 auto;
+  max-width: 100%;
   padding-bottom: var(--space-10);
 }
 .legal-page__header {
@@ -1061,8 +1060,7 @@
    이용 가이드 페이지
 ════════════════════════ */
 .guide-page {
-  max-width: 800px;
-  margin: 0 auto;
+  max-width: 100%;
   padding-bottom: var(--space-10);
   display: flex;
   flex-direction: column;
@@ -1758,7 +1756,6 @@
   display: flex;
   flex-direction: column;
   gap: 28px;
-  max-width: 860px;
 }
 
 /* ── 히어로 (PC·모바일 동일한 단일 컬럼 스택) ── */
