@@ -131,22 +131,26 @@ export async function renderHome() {
       <div class="home-hero home-hero--user">
         <div class="home-hero__left">
           ${streak > 1 ? `<div class="home-hero__streak">🔥 ${streak}일 연속 출석 중!</div>` : ''}
-          <div class="home-hero__title">오늘도 소소하게, 재미있게 👋</div>
+          <div class="home-hero__title">오늘도 소소하게,<br>재미있게 놀아봐요</div>
           <div class="home-hero__sub">새로운 놀이판을 열거나 다른 사람 글에 참여해보세요.</div>
+          <div class="home-hero__actions">
+            <button class="btn btn--primary" id="hbtn-write">놀이판 만들기</button>
+            <button class="btn btn--ghost" id="hbtn-feed">탐색하기</button>
+          </div>
         </div>
-        <div class="home-hero__actions">
-          <button class="btn btn--primary" id="hbtn-write">놀이판 만들기</button>
-          <button class="btn btn--ghost" id="hbtn-feed">탐색하기</button>
-        </div>
+        <div class="home-hero__deco" aria-hidden="true">🎮</div>
       </div>` : `
       <div class="home-hero home-hero--guest">
-        <div class="home-hero__badge">✨ 소소킹에 오신 걸 환영해요!</div>
-        <div class="home-hero__title">골라봐, 웃겨봐, 도전봐</div>
-        <div class="home-hero__sub">9가지 게임형 커뮤니티. 가입하면 바로 참여할 수 있어요.</div>
-        <div class="home-hero__actions">
-          <button class="btn btn--primary" id="hbtn-join">지금 시작하기</button>
-          <button class="btn btn--ghost" id="hbtn-feed">둘러보기</button>
+        <div class="home-hero__left">
+          <div class="home-hero__badge">✨ 소소킹에 오신 걸 환영해요!</div>
+          <div class="home-hero__title">골라봐, 웃겨봐,<br>도전봐</div>
+          <div class="home-hero__sub">9가지 게임형 커뮤니티. 가입하면 바로 참여할 수 있어요.</div>
+          <div class="home-hero__actions">
+            <button class="btn btn--primary" id="hbtn-join" style="background:#fff;color:#6366f1;border:none">지금 시작하기</button>
+            <button class="btn btn--ghost" id="hbtn-feed" style="border-color:rgba(255,255,255,.4);color:#fff">둘러보기</button>
+          </div>
         </div>
+        <div class="home-hero__deco" aria-hidden="true">🎉</div>
       </div>`;
 
     /* ── 통계 바 ── */
