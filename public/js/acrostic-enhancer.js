@@ -1,11 +1,17 @@
 import { db, auth } from './firebase.js';
-import { collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { collection, addDoc, serverTimestamp, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { navigate } from './router.js';
 import { toast } from './components/toast.js';
 
 function isAcrosticWritePage() {
   const hash = window.location.hash || '';
   return hash.startsWith('#/write') && hash.includes('type=acrostic');
+}
+
+function getDetailPostId() {
+  const hash = window.location.hash || '';
+  const match = hash.match(/^#\/detail\/([^?]+)/);
+  return match ? decodeURIComponent(match[1]) : '';
 }
 
 function clean(value, max = 100) {
@@ -123,6 +129,46 @@ async function submit(btn) {
   }
 }
 
+function renderMainAcrosticLines(post) {
+  const body = document.querySelector('.detail-body');
+  if (!body || body.querySelector('[data-main-acrostic-lines]')) return;
+
+  const keyword = post.keyword || '';
+  const lines = Array.isArray(post.acrosticLines) && post.acrosticLines.length
+    ? post.acrosticLines
+    : Array.isArray(post.lines)
+      ? [...keyword].map((char, index) => ({ char, line: post.lines[index] || '' }))
+      : [];
+  if (!keyword || !lines.length) return;
+
+  const html = `
+    <div data-main-acrostic-lines style="padding:16px;background:#F3F4F6;border-radius:10px;margin-top:8px">
+      <div style="font-size:12px;font-weight:700;color:var(--color-text-muted);margin-bottom:10px">제시어: ${escapeHtml(keyword)}</div>
+      ${lines.map(item => `
+        <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px">
+          <span style="width:28px;height:28px;background:var(--color-primary);color:#fff;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;flex-shrink:0">${escapeHtml(item.char)}</span>
+          <span style="font-size:14px;line-height:1.6;color:var(--color-text)">${escapeHtml(item.line)}</span>
+        </div>`).join('')}
+    </div>`;
+
+  const placeholder = [...body.querySelectorAll('div')]
+    .find(el => el.textContent.includes('삼행시로 참여해보세요'));
+  if (placeholder) placeholder.outerHTML = html;
+  else body.insertAdjacentHTML('beforeend', html);
+}
+
+async function enhanceDetail() {
+  const postId = getDetailPostId();
+  if (!postId) return;
+  try {
+    const snap = await getDoc(doc(db, 'feeds', postId));
+    if (!snap.exists()) return;
+    const post = snap.data() || {};
+    if (post.type !== 'acrostic') return;
+    renderMainAcrosticLines(post);
+  } catch {}
+}
+
 document.addEventListener('input', event => {
   if (event.target?.id === 'f-keyword') setTimeout(renderLineInputs, 0);
 }, true);
@@ -136,5 +182,9 @@ document.addEventListener('click', event => {
   submit(btn);
 }, true);
 
-window.addEventListener('hashchange', () => setTimeout(renderLineInputs, 250));
+window.addEventListener('hashchange', () => {
+  setTimeout(renderLineInputs, 250);
+  setTimeout(enhanceDetail, 500);
+});
 setTimeout(renderLineInputs, 500);
+setTimeout(enhanceDetail, 700);
