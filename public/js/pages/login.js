@@ -1,4 +1,4 @@
-import { auth, googleProvider, signInWithPopup } from '../firebase.js';
+import { auth, googleProvider, signInWithPopup, signInWithRedirect } from '../firebase.js';
 import { navigate } from '../router.js';
 import { toast } from '../components/toast.js';
 
@@ -30,6 +30,7 @@ export function renderLogin() {
           </div>
           <button class="btn btn--primary btn--full" id="btn-email-login">이메일로 로그인</button>
           <button class="btn btn--ghost btn--full" id="btn-email-signup" style="margin-top:8px">회원가입</button>
+          <button class="btn btn--ghost btn--full" id="btn-reset-password" style="margin-top:4px;font-size:13px;color:var(--color-text-muted)">비밀번호 재설정</button>
 
           <p style="text-align:center;font-size:12px;color:var(--color-text-muted);margin-top:16px">
             로그인 시 <a href="#/terms" style="color:var(--color-primary)">이용 약관</a>에 동의하는 것으로 간주됩니다.
@@ -44,7 +45,15 @@ export function renderLogin() {
       toast.success('로그인됐어요!');
       // 내비게이션은 onAuthStateChanged에서 처리 (관리자 분기 포함)
     } catch (e) {
-      if (e.code !== 'auth/popup-closed-by-user') toast.error('로그인에 실패했어요');
+      if (e.code === 'auth/popup-closed-by-user') return;
+      if (e.code === 'auth/popup-blocked') {
+        // 팝업 차단 시 redirect 방식으로 폴백
+        try {
+          await signInWithRedirect(auth, googleProvider);
+        } catch { toast.error('로그인에 실패했어요'); }
+      } else {
+        toast.error('로그인에 실패했어요');
+      }
     }
   });
 
@@ -59,6 +68,19 @@ export function renderLogin() {
       toast.success('로그인됐어요!');
       // 내비게이션은 onAuthStateChanged에서 처리
     } catch { toast.error('이메일 또는 비밀번호가 올바르지 않아요'); }
+  });
+
+  document.getElementById('btn-reset-password')?.addEventListener('click', async () => {
+    const email = document.getElementById('f-email')?.value.trim();
+    if (!email) { toast.warn('이메일을 먼저 입력해주세요'); return; }
+    try {
+      const { sendPasswordResetEmail } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
+      await sendPasswordResetEmail(auth, email);
+      toast.success('비밀번호 재설정 이메일을 보냈어요 📧');
+    } catch (e) {
+      if (e.code === 'auth/user-not-found') toast.error('등록되지 않은 이메일이에요');
+      else toast.error('이메일 전송에 실패했어요');
+    }
   });
 
   document.getElementById('btn-email-signup')?.addEventListener('click', async () => {

@@ -1,6 +1,6 @@
 import { db } from '../firebase.js';
 import {
-  collection, query, orderBy, getDocs, doc, getDoc,
+  collection, query, orderBy, getDocs, where, documentId,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { navigate } from '../router.js';
 import { renderFeedCard } from '../components/feed-card.js';
@@ -27,12 +27,20 @@ export async function renderScraps() {
     const snap = await getDocs(q);
     const ids  = snap.docs.map(d => d.id);
 
-    const posts = ids.length
-      ? (await Promise.all(ids.map(id => getDoc(doc(db, 'feeds', id)))))
-          .filter(s => s.exists())
-          .map(s => ({ id: s.id, ...s.data() }))
-          .filter(p => !p.hidden)
-      : [];
+    // Firestore `in` 쿼리로 배치 처리 (최대 10개씩)
+    const posts = [];
+    for (let i = 0; i < ids.length; i += 10) {
+      const batch = ids.slice(i, i + 10);
+      const batchSnap = await getDocs(
+        query(collection(db, 'feeds'), where(documentId(), 'in', batch))
+      );
+      batchSnap.docs.forEach(d => {
+        const data = d.data();
+        if (!data.hidden) posts.push({ id: d.id, ...data });
+      });
+    }
+    // scrappedAt 정렬 순서 복원
+    posts.sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id));
 
     el.innerHTML = `
       <div style="max-width:720px;margin:0 auto">

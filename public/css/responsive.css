@@ -1,14 +1,49 @@
 /* responsive.css — 반응형 */
 
-/* ── 태블릿 ── */
-@media (max-width: 1024px) {
+/* ── 태블릿 / 모바일 — 사이드바 숨김, 헤더+탭바 표시 ── */
+@media (max-width: 1023px) {
+  /* 사이드바 숨김 */
+  .site-sidebar { display: none; }
+
+  /* 메인 영역 — 사이드바 여백 제거 */
+  .site-main { margin-left: 0; }
+
+  /* 모바일 헤더 표시 */
+  .site-header {
+    display: flex;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    height: 56px;
+    background: rgba(255,255,255,0.96);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--color-border-light);
+    z-index: 50;
+  }
+
+  /* 하단 탭바 표시 */
+  .bottom-nav { display: flex; }
+
+  /* 페이지 컨테이너 — 하단 탭바 높이만큼 패딩 */
+  .page-container {
+    padding: var(--space-5) var(--space-4) calc(60px + env(safe-area-inset-bottom,0) + var(--space-4));
+    max-width: 100%;
+  }
+
+  /* 2컬럼 레이아웃 단일 컬럼으로 */
   .layout-cols { grid-template-columns: 1fr; }
   .layout-sidebar { display: none; }
+
+  /* 어드민 */
   .admin-layout { grid-template-columns: 1fr; }
   .admin-sidebar { position: static; }
   .admin-stat-grid { grid-template-columns: repeat(2, 1fr); }
-  .site-header__inner { padding: 0 var(--space-4); }
-  .page-container { padding: var(--space-5) var(--space-4); }
+}
+
+[data-theme="dark"] .site-header {
+  background: rgba(15,17,23,0.96);
+  border-bottom-color: var(--color-border);
 }
 
 /* ══════════════════════════════════════

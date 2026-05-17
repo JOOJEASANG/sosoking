@@ -99,10 +99,15 @@ export async function renderFeed() {
       loadPosts(true);
     });
   });
+  attachTypeFilterListeners();
+}
+
+function attachTypeFilterListeners() {
   document.querySelectorAll('[data-type-filter]').forEach(btn => {
     btn.addEventListener('click', () => {
       currentType   = btn.dataset.typeFilter;
       currentSearch = '';
+      const searchInput = document.getElementById('feed-search-input');
       if (searchInput) searchInput.value = '';
       if (currentType) {
         const found = Object.entries(CAT_TYPES).find(([, types]) => types.includes(currentType));
@@ -164,6 +169,12 @@ function updateFilterUI() {
   document.querySelectorAll('[data-cat-filter]').forEach(b => {
     b.classList.toggle('active', b.dataset.catFilter === currentCat && !currentSearch);
   });
+  // 카테고리가 바뀌면 사이드바 유형 필터도 다시 그림
+  const sidebar = document.querySelector('.layout-sidebar');
+  if (sidebar) {
+    sidebar.innerHTML = renderTypeFilter();
+    attachTypeFilterListeners();
+  }
 }
 
 async function loadPosts(reset = false) {

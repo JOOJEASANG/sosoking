@@ -71,7 +71,7 @@ function renderMissionCard(mission) {
         ${mission.desc ? `<p style="font-size:13px;color:var(--color-text-secondary);margin-bottom:12px">${escHtml(mission.desc)}</p>` : ''}
         <div style="display:flex;align-items:center;gap:8px">
           <span class="badge badge--primary">${typeLabel}</span>
-          <button class="btn btn--primary btn--sm" onclick="navigate('/write')">이 미션 참여하기</button>
+          <button class="btn btn--primary btn--sm" onclick="navigate('/write?type=${mission.type || ''}')">이 미션 참여하기</button>
         </div>
       </div>
     </div>`;

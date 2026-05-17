@@ -3,7 +3,7 @@ import { db, auth } from '../firebase.js';
 import {
   collection, query, orderBy, limit, startAfter,
   getDocs, getDoc, addDoc, updateDoc, deleteDoc,
-  where, doc, increment, serverTimestamp, arrayUnion,
+  where, doc, increment, serverTimestamp, arrayUnion, runTransaction,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const FEEDS = 'feeds';
@@ -88,22 +88,23 @@ export async function addReaction(postId, reactionKey) {
   });
 }
 
-/** 투표 (read-modify-write) */
+/** 투표 (트랜잭션으로 동시 투표 race condition 방지) */
 export async function castVote(postId, optionIdx) {
   const user = auth.currentUser;
   if (!user) throw new Error('로그인이 필요해요');
 
-  const postRef  = doc(db, FEEDS, postId);
-  const snapshot = await getDoc(postRef);
-  const data     = snapshot.data();
-
-  if ((data.votedBy || []).includes(user.uid)) throw new Error('이미 투표했어요');
-
-  const options = (data.options || []).map((opt, i) =>
-    i === optionIdx ? { ...opt, votes: (opt.votes || 0) + 1 } : opt
-  );
-  await updateDoc(postRef, { options, votedBy: arrayUnion(user.uid) });
-  return options;
+  const postRef = doc(db, FEEDS, postId);
+  return runTransaction(db, async (transaction) => {
+    const snapshot = await transaction.get(postRef);
+    if (!snapshot.exists()) throw new Error('게시물을 찾을 수 없어요');
+    const data = snapshot.data();
+    if ((data.votedBy || []).includes(user.uid)) throw new Error('이미 투표했어요');
+    const options = (data.options || []).map((opt, i) =>
+      i === optionIdx ? { ...opt, votes: (opt.votes || 0) + 1 } : opt
+    );
+    transaction.update(postRef, { options, votedBy: arrayUnion(user.uid) });
+    return options;
+  });
 }
 
 /** 댓글 목록 */

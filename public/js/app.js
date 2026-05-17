@@ -2,6 +2,7 @@ import { auth, db, onAuthStateChanged } from './firebase.js';
 import { initRouter, registerRoute, navigate } from './router.js';
 import { renderHeader } from './components/header.js';
 import { renderBottomNav } from './components/bottom-nav.js';
+import { renderSidebar } from './components/sidebar.js';
 import { initToast } from './components/toast.js';
 import { appState } from './state.js';
 import './secure-feed-actions.js';
@@ -55,26 +56,37 @@ async function loadUserMeta(uid) {
 
 export async function initApp() {
   document.getElementById('app').innerHTML = `
-    <header class="site-header" id="site-header"></header>
-    <main id="page-content" class="page-container"></main>
+    <div class="app-shell">
+      <aside class="site-sidebar" id="site-sidebar"></aside>
+      <div class="site-main">
+        <header class="site-header" id="site-header"></header>
+        <main id="page-content" class="page-container"></main>
+        <footer class="site-footer" id="site-footer">
+          <div class="site-footer__inner">
+            <div class="site-footer__brand">소소킹 🎉</div>
+            <div class="site-footer__links">
+              <a href="#/guide">이용안내</a>
+              <a href="#/terms">이용약관</a>
+              <a href="#/privacy">개인정보처리방침</a>
+            </div>
+            <div class="site-footer__copy">© ${new Date().getFullYear()} 소소킹. All rights reserved.</div>
+          </div>
+        </footer>
+      </div>
+    </div>
     <nav class="bottom-nav" id="bottom-nav"></nav>
     <div class="toast-container" id="toast-container"></div>
-    <footer class="site-footer" id="site-footer">
-      <div class="site-footer__inner">
-        <div class="site-footer__brand">소소킹 🎉</div>
-        <div class="site-footer__links">
-          <a href="#/guide">이용안내</a>
-          <a href="#/terms">이용약관</a>
-          <a href="#/privacy">개인정보처리방침</a>
-        </div>
-        <div class="site-footer__copy">© ${new Date().getFullYear()} 소소킹. All rights reserved.</div>
-      </div>
-    </footer>
   `;
 
+  renderSidebar();
   renderHeader();
   renderBottomNav();
   initToast();
+
+  window.addEventListener('themechange', () => {
+    renderSidebar();
+    renderHeader();
+  });
 
   onAuthStateChanged(auth, async (user) => {
     const previousUser = appState.user;
@@ -88,6 +100,7 @@ export async function initApp() {
       appState.streak    = 0;
       appState.userTitle = '';
     }
+    renderSidebar();
     renderHeader();
     renderBottomNav();
 
@@ -119,10 +132,12 @@ export async function initApp() {
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     appState.installPrompt = e;
+    renderSidebar();
     renderHeader();
   });
   window.addEventListener('appinstalled', () => {
     appState.installPrompt = null;
+    renderSidebar();
     renderHeader();
   });
 }
