@@ -56,11 +56,11 @@ export function renderWrite() {
     }
   }
 
-  renderCatSelect(el);
+  renderTypeSelect(el);
 }
 
 function stepIndicator(current) {
-  const steps = ['카테고리', '유형', '작성'];
+  const steps = ['유형 선택', '작성'];
   return `
     <div class="write-steps">
       ${steps.map((label, i) => `
@@ -71,78 +71,49 @@ function stepIndicator(current) {
     </div>`;
 }
 
-/* ── 1단계: 카테고리 선택 ── */
-function renderCatSelect(el) {
+/* ── 1단계: 유형 선택 (카테고리 그룹 라벨만 표시, 클릭 즉시 작성 이동) ── */
+function renderTypeSelect(el) {
   el.innerHTML = `
     <div class="write-page">
       ${stepIndicator(1)}
       <div class="write-step-header">
         <h1 class="write-step-title">어떤 놀이판 만들까요?</h1>
       </div>
-      <div style="display:flex;flex-direction:column;gap:16px">
-        ${CATEGORIES.map(cat => `
-          <div class="card card--hover" data-cat="${cat.key}" style="cursor:pointer">
-            <div class="card__body" style="display:flex;align-items:center;gap:16px">
-              <div style="font-size:36px;flex-shrink:0">${cat.icon}</div>
-              <div style="flex:1;min-width:0">
-                <div style="display:flex;align-items:center;gap:8px">
-                  <span style="font-size:18px;font-weight:800">${cat.label}</span>
-                  <span style="font-size:10px;font-weight:800;padding:2px 8px;border-radius:99px;background:var(--color-${cat.key}-bg);color:var(--color-${cat.key}-dark);border:1px solid var(--color-${cat.key}-border)">${cat.badge}</span>
-                </div>
-                <div style="font-size:13px;color:var(--color-text-secondary);margin-top:2px">${cat.desc}</div>
-              </div>
-              <div style="color:var(--color-text-muted)">›</div>
-            </div>
-          </div>`).join('')}
-      </div>
+      ${CATEGORIES.map(cat => `
+        <div style="margin-bottom:20px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+            <span style="font-size:16px">${cat.icon}</span>
+            <span style="font-size:13px;font-weight:700;color:var(--color-text-secondary)">${cat.label}</span>
+            <span style="font-size:10px;font-weight:800;padding:2px 8px;border-radius:99px;background:var(--color-${cat.key}-bg);color:var(--color-${cat.key}-dark);border:1px solid var(--color-${cat.key}-border)">${cat.badge}</span>
+          </div>
+          <div class="type-select-grid">
+            ${cat.types.map(t => `
+              <div class="type-select-card" data-type="${t.key}" data-cat="${cat.key}">
+                <div class="type-select-card__icon">${t.icon}</div>
+                <div class="type-select-card__name">${t.label}</div>
+                <div class="type-select-card__desc">${t.desc}</div>
+              </div>`).join('')}
+          </div>
+        </div>`).join('')}
     </div>`;
 
-  document.querySelectorAll('[data-cat]').forEach(card => {
-    card.addEventListener('click', () => {
-      selectedCat = CATEGORIES.find(c => c.key === card.dataset.cat);
-      renderTypeSelect(el);
-    });
-  });
-}
-
-/* ── 2단계: 유형 선택 ── */
-function renderTypeSelect(el) {
-  el.innerHTML = `
-    <div class="write-page">
-      ${stepIndicator(2)}
-      <div class="write-step-header">
-        <button class="write-back-btn" id="btn-back-cat">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-        </button>
-        <h1 class="write-step-title">${selectedCat.icon} ${selectedCat.label}</h1>
-      </div>
-      <div class="type-select-grid">
-        ${selectedCat.types.map(t => `
-          <div class="type-select-card" data-type="${t.key}">
-            <div class="type-select-card__icon">${t.icon}</div>
-            <div class="type-select-card__name">${t.label}</div>
-            <div class="type-select-card__desc">${t.desc}</div>
-          </div>`).join('')}
-      </div>
-    </div>`;
-
-  document.getElementById('btn-back-cat').addEventListener('click', () => renderCatSelect(el));
   document.querySelectorAll('[data-type]').forEach(card => {
     card.addEventListener('click', () => {
+      selectedCat  = CATEGORIES.find(c => c.key === card.dataset.cat);
       selectedType = selectedCat.types.find(t => t.key === card.dataset.type);
       renderForm(el);
     });
   });
 }
 
-/* ── 3단계: 작성 폼 ── */
+/* ── 2단계: 작성 폼 ── */
 function renderForm(el) {
   const type = selectedType.key;
   const hasDraft = !!localStorage.getItem(`write-draft-${type}`);
 
   el.innerHTML = `
     <div class="write-page">
-      ${stepIndicator(3)}
+      ${stepIndicator(2)}
       <div class="write-step-header">
         <button class="write-back-btn" id="btn-back-type">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
