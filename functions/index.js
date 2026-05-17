@@ -1,14 +1,14 @@
 const { onCall, onRequest } = require('firebase-functions/v2/https');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { onDocumentCreated } = require('firebase-functions/v2/firestore');
-const { initializeApp } = require('firebase-admin/app');
+const { initializeApp, getApps } = require('firebase-admin/app');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const { getAuth } = require('firebase-admin/auth');
 const { defineSecret } = require('firebase-functions/params');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const crypto = require('crypto');
 
-initializeApp();
+if (!getApps().length) initializeApp();
 const db = getFirestore();
 const geminiKey = defineSecret('GEMINI_API_KEY');
 
@@ -1380,19 +1380,3 @@ exports.scheduledWeeklyReport = onSchedule(
   }
 );
 
-// ── 외부 모듈 함수 등록 ──
-const {
-  getAdminAutomationStatus,
-  runAdminAutomationNow,
-  dailyAdminAutomation,
-} = require('./ai-admin-automation-functions');
-exports.getAdminAutomationStatus = getAdminAutomationStatus;
-exports.runAdminAutomationNow    = runAdminAutomationNow;
-exports.dailyAdminAutomation     = dailyAdminAutomation;
-
-const { generateAiMissionNow, dailyAiMission } = require('./ai-mission-functions');
-exports.generateAiMissionNow = generateAiMissionNow;
-exports.dailyAiMission       = dailyAiMission;
-
-const { generateAiContentNow } = require('./ai-content-functions');
-exports.generateAiContentNow = generateAiContentNow;

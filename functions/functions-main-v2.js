@@ -1,4 +1,5 @@
 module.exports = {
+  ...require('./index.js'),
   ...require('./functions-main.js'),
   ...require('./secure-feed-functions.js'),
   ...require('./sitemap-functions.js'),
