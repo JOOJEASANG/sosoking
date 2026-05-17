@@ -47,7 +47,7 @@ jobs:
           echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/firebase-service-account.json" >> "$GITHUB_ENV"
 
       - name: Register GEMINI_API_KEY in Secret Manager
-        if: ${{ secrets.GEMINI_API_KEY != '' }}
+        if: ${{ env.GEMINI_API_KEY != '' }}
         run: |
           printf '%s' "$GEMINI_API_KEY" | \
             firebase functions:secrets:set GEMINI_API_KEY \
@@ -57,7 +57,7 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
       - name: Register ANTHROPIC_API_KEY in Secret Manager
-        if: ${{ secrets.ANTHROPIC_API_KEY != '' }}
+        if: ${{ env.ANTHROPIC_API_KEY != '' }}
         run: |
           printf '%s' "$ANTHROPIC_API_KEY" | \
             firebase functions:secrets:set ANTHROPIC_API_KEY \
