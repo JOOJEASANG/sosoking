@@ -1369,7 +1369,7 @@ exports.scheduledWeeklyReport = onSchedule(
         model: 'gemini-2.5-flash',
         generationConfig: { thinkingConfig: { thinkingBudget: 0 } },
       });
-      const result = await model.generateContent(`소소킹 커뮤니티 주간 활동 보고서를 작성하세요.\n\n데이터:\n- 게시물: ${posts.length}개\n- 카테고리별: 골라봐 ${catCounts.golra||0}개, 웃겨봐 ${catCounts.usgyo||0}개, 말해봐 ${catCounts.malhe||0}개\n- 신고: ${reportsSnap.size}건\n- 인기글:\n${topPosts.join('\n') || '없음'}\n\n반드시 JSON만 출력하세요:\n{\n  "title": "이번 주 소소킹 리포트",\n  "summary": "이번 주 커뮤니티 활동 총평 (150자 이내, 따뜻하고 유쾌하게)",\n  "highlights": ["주요 하이라이트 3가지"],\n  "nextWeekSuggestion": "다음 주 운영 제안 (80자 이내)"\n}`);
+      const result = await model.generateContent(`소소킹 커뮤니티 주간 활동 보고서를 작성하세요.\n\n데이터:\n- 게시물: ${posts.length}개\n- 카테고리별: 골라봐 ${catCounts.golra||0}개, 웃겨봐 ${catCounts.usgyo||0}개, 도전봐 ${catCounts.malhe||0}개\n- 신고: ${reportsSnap.size}건\n- 인기글:\n${topPosts.join('\n') || '없음'}\n\n반드시 JSON만 출력하세요:\n{\n  "title": "이번 주 소소킹 리포트",\n  "summary": "이번 주 커뮤니티 활동 총평 (150자 이내, 따뜻하고 유쾌하게)",\n  "highlights": ["주요 하이라이트 3가지"],\n  "nextWeekSuggestion": "다음 주 운영 제안 (80자 이내)"\n}`);
       const raw = result.response.text().trim().replace(/```json|```/g, '').trim();
       const report = JSON.parse(raw);
       await db.collection('ai_reports').add({ ...report, type: 'weekly', postCount: posts.length, reportCount: reportsSnap.size, catCounts, createdAt: FieldValue.serverTimestamp() });
@@ -1379,3 +1379,20 @@ exports.scheduledWeeklyReport = onSchedule(
     }
   }
 );
+
+// ── 외부 모듈 함수 등록 ──
+const {
+  getAdminAutomationStatus,
+  runAdminAutomationNow,
+  dailyAdminAutomation,
+} = require('./ai-admin-automation-functions');
+exports.getAdminAutomationStatus = getAdminAutomationStatus;
+exports.runAdminAutomationNow    = runAdminAutomationNow;
+exports.dailyAdminAutomation     = dailyAdminAutomation;
+
+const { generateAiMissionNow, dailyAiMission } = require('./ai-mission-functions');
+exports.generateAiMissionNow = generateAiMissionNow;
+exports.dailyAiMission       = dailyAiMission;
+
+const { generateAiContentNow } = require('./ai-content-functions');
+exports.generateAiContentNow = generateAiContentNow;
