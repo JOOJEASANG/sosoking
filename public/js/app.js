@@ -63,12 +63,28 @@ export async function initApp() {
         <main id="page-content" class="page-container"></main>
         <footer class="site-footer" id="site-footer">
           <div class="site-footer__inner">
-            <div class="site-footer__brand">소소킹 🎉</div>
-            <div class="site-footer__links">
-              <a href="#/guide">이용안내</a>
-              <a href="#/terms">이용약관</a>
-              <a href="#/privacy">개인정보처리방침</a>
+            <div class="site-footer__brand-block">
+              <div class="site-footer__brand">소소킹 🎉</div>
+              <div class="site-footer__tagline">골라봐, 웃겨봐, 도전봐<br>9가지 게임형 한국 커뮤니티</div>
             </div>
+            <div>
+              <div class="site-footer__col-title">바로가기</div>
+              <div class="site-footer__links">
+                <a href="#/feed">탐색하기</a>
+                <a href="#/mission">오늘의 미션</a>
+                <a href="#/hall">명예의 전당</a>
+                <a href="#/guide">이용안내</a>
+              </div>
+            </div>
+            <div>
+              <div class="site-footer__col-title">정보</div>
+              <div class="site-footer__links">
+                <a href="#/terms">이용약관</a>
+                <a href="#/privacy">개인정보처리방침</a>
+              </div>
+            </div>
+          </div>
+          <div class="site-footer__copy-bar">
             <div class="site-footer__copy">© ${new Date().getFullYear()} 소소킹. All rights reserved.</div>
           </div>
         </footer>
