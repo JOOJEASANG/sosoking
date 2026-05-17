@@ -1,0 +1,4 @@
+Firebase deployment trigger
+
+Triggered from ChatGPT for main branch deployment.
+Date: 2026-05-17
