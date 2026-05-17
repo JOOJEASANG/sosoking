@@ -10,22 +10,12 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { navigate } from '../router.js';
 
-const CATEGORIES = [
-  { key: 'golra', icon: '🗳️', label: '골라킹', color: '#6366f1', desc: '밸런스 · 민심투표 · 선택지배틀' },
-  { key: 'usgyo', icon: '😂', label: '드립킹', color: '#f59e0b', desc: '미친작명소 · 초성게임 · 한줄드립' },
-  { key: 'malhe', icon: '🎯', label: '도전킹', color: '#10b981', desc: 'OX퀴즈 · 막장킹 · 랜덤대결' },
-];
-
 const QUICK_TYPES = [
-  { key: 'balance',      icon: '⚖️', label: '밸런스게임' },
-  { key: 'vote',         icon: '🗳️', label: '민심투표'   },
-  { key: 'battle',       icon: '⚔️', label: '선택지배틀' },
-  { key: 'naming',       icon: '😜', label: '미친작명소' },
-  { key: 'initial_game', icon: '🔤', label: '초성게임' },
-  { key: 'drip',         icon: '🎤', label: '한줄드립'   },
-  { key: 'ox',           icon: '❓', label: 'OX퀴즈'     },
-  { key: 'relay',        icon: '🎭', label: '막장킹' },
-  { key: 'random_battle',icon: '🎰', label: '랜덤대결'   },
+  { key: 'vote',         icon: '🗳️', label: '골라킹',   desc: '투표 · 밸런스 · 선택지 배틀' },
+  { key: 'naming',       icon: '😜', label: '미친작명소', desc: '사진이나 상황에 웃긴 이름 붙이기' },
+  { key: 'initial_game', icon: '🔤', label: '초성게임', desc: '초성을 보고 떠오르는 단어 참여' },
+  { key: 'ox',           icon: '❓', label: 'OX퀴즈',   desc: '맞다 아니다로 가볍게 도전' },
+  { key: 'relay',        icon: '🎭', label: '막장킹',   desc: '한 문장씩 터지는 막장 전개' },
 ];
 
 const WEEKLY_WORDS = [
@@ -103,7 +93,7 @@ function fmtNum(n) {
 }
 
 const TYPE_LABEL = {
-  balance:'밸런스게임', vote:'민심투표', battle:'선택지배틀',
+  balance:'골라킹', vote:'골라킹', battle:'골라킹',
   naming:'미친작명소', initial_game:'초성게임', acrostic:'미션 행시', drip:'한줄드립',
   ox:'OX퀴즈', relay:'막장킹', random_battle:'랜덤대결',
 };
@@ -117,7 +107,7 @@ export async function renderHome() {
       <div class="skeleton" style="height:160px;border-radius:18px"></div>
       <div class="home-stat-row">${[1,2,3].map(()=>`<div class="skeleton" style="height:80px;border-radius:14px"></div>`).join('')}</div>
       <div class="skeleton" style="height:100px;border-radius:16px"></div>
-      <div class="home-cat-grid">${[1,2,3].map(()=>`<div class="skeleton" style="height:130px;border-radius:14px"></div>`).join('')}</div>
+      <div class="home-quick-grid">${[1,2,3,4,5].map(()=>`<div class="skeleton" style="height:90px;border-radius:14px"></div>`).join('')}</div>
     </div>`;
 
   try {
@@ -138,8 +128,8 @@ export async function renderHome() {
     const heroHTML = user ? `
       <div class="home-hero home-hero--user">
         ${streak > 1 ? `<div class="home-hero__streak">🔥 ${streak}일 연속 출석 중!</div>` : ''}
-        <div class="home-hero__title">오늘도 소소하게,<br>재미있게 놀아봐요 👋</div>
-        <div class="home-hero__sub">새로운 놀이판을 열거나 친구들 글에 참여해보세요.</div>
+        <div class="home-hero__title">대표 놀이만 가볍게,<br>오늘도 소소하게 👋</div>
+        <div class="home-hero__sub">골라킹, 미친작명소, 초성게임, OX퀴즈, 막장킹으로 바로 참여해보세요.</div>
         <div class="home-hero__actions">
           <button class="btn btn--primary" id="hbtn-write">✏️ 놀이판 만들기</button>
           <button class="btn btn--ghost home-hero__ghost-btn" id="hbtn-feed">탐색하기</button>
@@ -147,8 +137,8 @@ export async function renderHome() {
       </div>` : `
       <div class="home-hero home-hero--guest">
         <div class="home-hero__badge">✨ 소소킹에 오신 걸 환영해요!</div>
-        <div class="home-hero__title">골라킹, 드립킹,<br>도전킹 🎉</div>
-        <div class="home-hero__sub">9가지 참여형 놀이판. 가입하면 바로 참여할 수 있어요.</div>
+        <div class="home-hero__title">딱 필요한 대표 놀이<br>5가지 🎉</div>
+        <div class="home-hero__sub">골라킹부터 막장킹까지, 복잡하지 않게 바로 참여할 수 있어요.</div>
         <div class="home-hero__actions">
           <button class="home-hero__cta-btn" id="hbtn-join">지금 시작하기 →</button>
           <button class="btn btn--ghost home-hero__ghost-btn" id="hbtn-feed">먼저 둘러보기</button>
@@ -167,7 +157,7 @@ export async function renderHome() {
         </div>
         <div class="home-stat-card">
           <div class="home-stat-card__num">${QUICK_TYPES.length}가지</div>
-          <div class="home-stat-card__label">🎮 게임 유형</div>
+          <div class="home-stat-card__label">🎮 대표 유형</div>
         </div>
       </div>`;
 
@@ -187,28 +177,14 @@ export async function renderHome() {
         </div>
       </div>`;
 
-    const catsHTML = `
-      <div class="home-section-header">
-        <span class="home-section-title">3가지 놀이 묶음</span>
-        <span class="home-section-sub">9가지 게임이 기다려요</span>
-      </div>
-      <div class="home-cat-grid">
-        ${CATEGORIES.map(c => `
-          <div class="home-cat-card" data-cat="${c.key}" style="--cat-color:${c.color}">
-            <div class="home-cat-card__icon">${c.icon}</div>
-            <div class="home-cat-card__label">${c.label}</div>
-            <div class="home-cat-card__desc">${c.desc}</div>
-          </div>`).join('')}
-      </div>`;
-
     const quickHTML = `
       <div class="home-section-header">
-        <span class="home-section-title">⚡ 바로 만들기</span>
-        <span class="home-section-sub">유형을 골라 바로 시작해요</span>
+        <span class="home-section-title">⚡ 대표 놀이 만들기</span>
+        <span class="home-section-sub">운영 유형을 5개로 단순화했어요</span>
       </div>
       <div class="home-quick-grid">
         ${QUICK_TYPES.map(t => `
-          <button class="home-quick-btn" data-type-quick="${escHtml(t.key)}">
+          <button class="home-quick-btn" data-type-quick="${escHtml(t.key)}" title="${escHtml(t.desc)}">
             <span class="home-quick-btn__icon">${t.icon}</span>
             <span class="home-quick-btn__label">${escHtml(t.label)}</span>
           </button>`).join('')}
@@ -248,7 +224,6 @@ export async function renderHome() {
         ${heroHTML}
         ${statsHTML}
         ${missionHTML}
-        ${catsHTML}
         ${quickHTML}
         ${rankHTML}
         ${recentHTML}
@@ -264,9 +239,6 @@ export async function renderHome() {
 
     el.querySelectorAll('[data-type-quick]').forEach(btn => {
       btn.addEventListener('click', () => navigate(`/write?type=${btn.dataset.typeQuick}`));
-    });
-    el.querySelectorAll('[data-cat]').forEach(card => {
-      card.addEventListener('click', () => navigate('/feed'));
     });
     el.querySelectorAll('[data-id]').forEach(item => {
       item.addEventListener('click', () => navigate(`/detail/${item.dataset.id}`));
