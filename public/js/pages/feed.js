@@ -6,9 +6,9 @@ import { setMeta } from '../utils/seo.js';
 import { escHtml } from '../utils/helpers.js';
 
 const CAT_TYPES = {
-  golra: ['balance','vote','battle','challenge24','tournament'],
-  usgyo: ['naming','acrostic','drip','cbattle','laugh'],
-  malhe: ['ox','quiz','relay','word_relay','random_battle'],
+  golra: ['balance','vote','battle'],
+  usgyo: ['naming','acrostic','drip'],
+  malhe: ['ox','relay','random_battle'],
 };
 
 const CAT_LABELS = {

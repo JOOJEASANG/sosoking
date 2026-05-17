@@ -54,12 +54,12 @@ async function checkStreak(uid) {
 }
 
 const CAT_QUICK_TYPES = [
-  { key: 'balance',      icon: '⚖️', label: '밸런스게임',   cat: 'golra' },
-  { key: 'tournament',   icon: '🏆', label: '이상형월드컵', cat: 'golra' },
-  { key: 'acrostic',     icon: '✍️', label: '삼행시짓기',   cat: 'usgyo' },
-  { key: 'naming',       icon: '😜', label: '미친작명소',   cat: 'usgyo' },
-  { key: 'ox',           icon: '❓', label: 'OX퀴즈',       cat: 'malhe' },
-  { key: 'random_battle',icon: '🎰', label: '랜덤대결',     cat: 'malhe' },
+  { key: 'balance', icon: '⚖️', label: '밸런스게임', cat: 'golra' },
+  { key: 'battle',  icon: '⚔️', label: '선택지배틀', cat: 'golra' },
+  { key: 'naming',  icon: '😜', label: '미친작명소', cat: 'usgyo' },
+  { key: 'acrostic',icon: '✍️', label: '삼행시짓기', cat: 'usgyo' },
+  { key: 'ox',      icon: '❓', label: 'OX퀴즈',     cat: 'malhe' },
+  { key: 'random_battle', icon: '🎰', label: '랜덤대결', cat: 'malhe' },
 ];
 
 export async function renderHome() {
@@ -113,7 +113,7 @@ export async function renderHome() {
           <div class="home-hero__content">
             <div class="home-hero__eyebrow">🔥 게임형 놀이 커뮤니티</div>
             <div class="home-hero__title">고르거나 웃기거나<br>한마디만 던져도 시작!</div>
-            <div class="home-hero__sub">선택형 · 드립형 · 도전형 — 15가지 게임, 짧게 참여하고 바로 결과 확인</div>
+            <div class="home-hero__sub">선택형 · 드립형 · 도전형 — 9가지 게임, 짧게 참여하고 바로 결과 확인</div>
             <div class="home-hero__action">
               <button class="btn-hero-primary" onclick="navigate('/write')">✏️ 놀이판 만들기</button>
               <button class="btn-hero-secondary" id="btn-random-challenge">🎲 랜덤으로 놀기</button>
@@ -285,22 +285,22 @@ function renderCategoryCards() {
     {
       key: 'golra', emoji: '🎯', badge: '선택형', name: '골라봐',
       hook: '선택은 빠르게, 이유는 댓글로',
-      desc: '밸런스게임·민심투표·이상형월드컵 — 누르자마자 참여하는 선택형 놀이판이에요.',
-      types: ['밸런스게임', '민심투표', '선택지배틀', '24시간챌린지', '이상형월드컵'],
+      desc: '밸런스게임·민심투표·선택지배틀 — 누르자마자 참여하는 선택형 놀이판이에요.',
+      types: ['밸런스게임', '민심투표', '선택지배틀'],
       cta: '선택하러 가기',
     },
     {
       key: 'usgyo', emoji: '😂', badge: '드립형', name: '웃겨봐',
       hook: '드립 한 줄이면 분위기 반전',
-      desc: '미친작명소·삼행시·한줄드립·댓글배틀로 센스와 유머를 겨뤄요.',
-      types: ['미친작명소', '삼행시짓기', '한줄드립', '댓글배틀', '웃참챌린지'],
+      desc: '미친작명소·삼행시짓기·한줄드립으로 센스와 유머를 겨뤄요.',
+      types: ['미친작명소', '삼행시짓기', '한줄드립'],
       cta: '웃기러 가기',
     },
     {
       key: 'malhe', emoji: '🎮', badge: '도전형', name: '도전봐',
       hook: '퀴즈부터 릴레이까지 도전하세요',
-      desc: 'OX퀴즈·4지선다·막장릴레이·단어릴레이·랜덤대결로 두뇌와 창의력을 겨뤄요.',
-      types: ['OX퀴즈', '4지선다', '막장릴레이', '단어릴레이', '랜덤대결'],
+      desc: 'OX퀴즈·막장릴레이·랜덤대결로 두뇌와 창의력을 겨뤄요.',
+      types: ['OX퀴즈', '막장릴레이', '랜덤대결'],
       cta: '도전하러 가기',
     },
   ];

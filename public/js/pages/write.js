@@ -10,31 +10,25 @@ const CATEGORIES = [
   {
     key: 'golra', label: '골라봐', icon: '🎯', badge: '선택형', desc: '선택·투표·배틀',
     types: [
-      { key: 'balance',    icon: '⚖️', label: '밸런스게임',    desc: 'A vs B, 둘 중 하나만!' },
-      { key: 'vote',       icon: '🗳️', label: '민심투표',      desc: '여러 선택지로 투표해요' },
-      { key: 'battle',     icon: '⚔️', label: '선택지배틀',    desc: '후보들 중 최강자는?' },
-      { key: 'challenge24',icon: '⏰', label: '24시간챌린지',   desc: '24시간 한정 핫이슈 투표' },
-      { key: 'tournament', icon: '🏆', label: '이상형월드컵',   desc: '대진표로 최애를 가려봐요' },
+      { key: 'balance', icon: '⚖️', label: '밸런스게임', desc: 'A vs B, 둘 중 하나만!' },
+      { key: 'vote',    icon: '🗳️', label: '민심투표',   desc: '여러 선택지로 투표해요' },
+      { key: 'battle',  icon: '⚔️', label: '선택지배틀', desc: '후보들 중 최강자는?' },
     ],
   },
   {
     key: 'usgyo', label: '웃겨봐', icon: '😂', badge: '드립형', desc: '센스·유머 대결',
     types: [
-      { key: 'naming',   icon: '😜', label: '미친작명소',    desc: '사진에 웃긴 제목 붙이기' },
-      { key: 'acrostic', icon: '✍️', label: '삼행시짓기',    desc: '제시어로 삼행시 도전' },
-      { key: 'drip',     icon: '🎤', label: '한줄드립',      desc: '한 줄로 터지는 드립 대결' },
-      { key: 'cbattle',  icon: '💥', label: '댓글배틀',      desc: '두 팀으로 나눠 댓글 배틀' },
-      { key: 'laugh',    icon: '🙈', label: '웃참챌린지',    desc: '웃겨도 참을 수 있어?' },
+      { key: 'naming',   icon: '😜', label: '미친작명소', desc: '사진에 웃긴 제목 붙이기' },
+      { key: 'acrostic', icon: '✍️', label: '삼행시짓기', desc: '제시어로 삼행시 도전' },
+      { key: 'drip',     icon: '🎤', label: '한줄드립',   desc: '한 줄로 터지는 드립 대결' },
     ],
   },
   {
     key: 'malhe', label: '도전봐', icon: '🎮', badge: '도전형', desc: '퀴즈·릴레이·창작',
     types: [
-      { key: 'ox',          icon: '❓', label: 'OX퀴즈',       desc: '맞으면 O, 틀리면 X' },
-      { key: 'quiz',        icon: '🧠', label: '4지선다',       desc: '4개 중 정답을 맞혀봐요' },
-      { key: 'relay',       icon: '🎭', label: '막장릴레이',    desc: '한 문장씩 이어가는 스토리' },
-      { key: 'word_relay',  icon: '🔗', label: '단어릴레이',    desc: '끝말잇기 스타일 연결 게임' },
-      { key: 'random_battle',icon:'🎰', label: '랜덤대결',      desc: '같은 주제로 누가 더 재밌어?' },
+      { key: 'ox',           icon: '❓', label: 'OX퀴즈',    desc: '맞으면 O, 틀리면 X' },
+      { key: 'relay',        icon: '🎭', label: '막장릴레이', desc: '한 문장씩 이어가는 스토리' },
+      { key: 'random_battle', icon: '🎰', label: '랜덤대결',  desc: '같은 주제로 누가 더 재밌어?' },
     ],
   },
 ];
