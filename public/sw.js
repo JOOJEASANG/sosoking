@@ -1,4 +1,4 @@
-const CACHE = 'sosoking-v2-rebuild';
+const CACHE = 'sosoking-v3';
 
 self.addEventListener('install', e => {
   self.skipWaiting();

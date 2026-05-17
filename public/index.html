@@ -79,5 +79,14 @@
 
   <!-- Firebase SDK (ESM CDN) -->
   <script type="module" src="/js/app.js"></script>
+
+  <!-- Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js')
+        .then(reg => reg.update())
+        .catch(() => {});
+    }
+  </script>
 </body>
 </html>
