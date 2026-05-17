@@ -195,10 +195,13 @@ async function generateDailyAiContent({ force = false, actorId = 'scheduler' } =
 
   let content = fallbackContent(type, today);
   let source = 'fallback';
-  const usage = await reserveAiUsage('daily_content');
-  if (usage.ok && process.env.ANTHROPIC_API_KEY) {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  let usage = { ok: false, reason: apiKey ? 'not-reserved' : 'no-key' };
+  if (apiKey) usage = await reserveAiUsage('daily_content');
+
+  if (usage.ok && apiKey) {
     try {
-      const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+      const anthropic = new Anthropic({ apiKey });
       const message = await anthropic.messages.create({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 850,
