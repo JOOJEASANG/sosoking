@@ -11,6 +11,10 @@ function isWritePage() {
   return (window.location.hash || '').startsWith('#/write');
 }
 
+function wantsInitialGameRoute() {
+  return isWritePage() && (window.location.hash || '').includes('type=initial_game');
+}
+
 function isInitialGameForm() {
   return isWritePage() && !!document.getElementById('f-initial-answer');
 }
@@ -55,12 +59,13 @@ function patchTypeCard() {
   const desc = card.querySelector('.type-select-card__desc');
   if (icon) icon.textContent = '🔤';
   if (name) name.textContent = '초성게임';
-  if (desc) desc.textContent = '최대 5글자 정답을 초성으로 맞혀요';
+  if (desc) desc.textContent = '최대 5글자 초성을 보고 떠오르는 단어를 적어요';
 }
 
 function renderInitialGamePage() {
   const el = document.getElementById('page-content');
-  if (!el) return;
+  if (!el || el.dataset.initialGamePage === '1') return;
+  el.dataset.initialGamePage = '1';
   el.innerHTML = `
     <div class="write-page">
       <div class="write-steps">
@@ -96,61 +101,60 @@ function renderInitialGameForm() {
   if (title) title.textContent = '🔤 초성게임';
   fields.innerHTML = `
     <div class="form-group">
-      <label class="form-label">정답 단어 <span class="required">*</span></label>
-      <input id="f-initial-answer" class="form-input" placeholder="예: 소소킹" maxlength="5" autocomplete="off">
-      <div class="form-hint">2~5글자 · 저장 후 정답은 공개되지 않고 초성만 보여요</div>
+      <label class="form-label">초성 <span class="required">*</span></label>
+      <input id="f-initial-pattern" class="form-input" placeholder="예: ㅅㅅㅋ" maxlength="5" autocomplete="off">
+      <div class="form-hint">2~5글자 · 정답이 따로 없는 참여형 초성게임이에요</div>
     </div>
     <div class="form-group">
-      <label class="form-label">자동 초성</label>
+      <label class="form-label">미리보기</label>
       <div id="initial-preview" style="padding:18px;border-radius:14px;background:#F3F4F6;border:1px solid var(--color-border);font-size:30px;font-weight:950;letter-spacing:.12em;text-align:center;color:var(--color-primary)">?</div>
     </div>
     <div class="form-group">
       <label class="form-label">힌트</label>
-      <input id="f-initial-hint" class="form-input" placeholder="예: 이 사이트 이름" maxlength="60">
+      <input id="f-initial-hint" class="form-input" placeholder="예: 생각나는 단어 아무거나" maxlength="60">
       <div class="form-hint">힌트는 선택사항이에요</div>
     </div>
     <div class="form-group">
       <label class="form-label">안내</label>
-      <div style="padding:12px 14px;border-radius:12px;background:#F9FAFB;border:1px solid var(--color-border);font-size:14px;line-height:1.6;color:var(--color-text-secondary)">초성만 보고 정답을 맞히는 게임이에요. 짧고 재밌는 단어로 만들어보세요.</div>
+      <div style="padding:12px 14px;border-radius:12px;background:#F9FAFB;border:1px solid var(--color-border);font-size:14px;line-height:1.6;color:var(--color-text-secondary)">초성을 보고 떠오르는 단어를 댓글처럼 올리는 게임이에요. 정답 맞히기가 아니라 센스 대결이에요.</div>
     </div>
     <div class="form-group">
       <label class="form-label">태그</label>
-      <input id="f-tags" class="form-input" placeholder="#초성게임, #퀴즈" maxlength="100">
+      <input id="f-tags" class="form-input" placeholder="#초성게임, #센스대결" maxlength="100">
     </div>
   `;
-  document.getElementById('f-initial-answer')?.addEventListener('input', updatePreview);
+  document.getElementById('f-initial-pattern')?.addEventListener('input', updatePreview);
   updatePreview();
 }
 
 function updatePreview() {
-  const answer = clean(document.getElementById('f-initial-answer')?.value || '', 5);
+  const pattern = clean(document.getElementById('f-initial-pattern')?.value || '', 5).replace(/\s/g, '');
   const preview = document.getElementById('initial-preview');
-  if (preview) preview.textContent = answer ? getInitials(answer) : '?';
+  if (preview) preview.textContent = pattern || '?';
 }
 
 function collectInitialData() {
-  const answer = clean(document.getElementById('f-initial-answer')?.value || '', 5);
+  const pattern = clean(document.getElementById('f-initial-pattern')?.value || '', 5).replace(/\s/g, '');
   const hint = clean(document.getElementById('f-initial-hint')?.value || '', 60);
-  const len = [...answer].length;
+  const len = [...pattern].length;
   if (len < 2 || len > 5) {
-    toast.error('정답 단어는 2~5글자로 입력해주세요');
+    toast.error('초성은 2~5글자로 입력해주세요');
     return null;
   }
-  const initials = getInitials(answer);
   const tagsRaw = document.getElementById('f-tags')?.value || '';
   const tags = tagsRaw.split(',').map(t => t.replace('#', '').trim()).filter(Boolean);
   if (!tags.includes('초성게임')) tags.unshift('초성게임');
-  if (!tags.includes('퀴즈')) tags.push('퀴즈');
+  if (!tags.includes('센스대결')) tags.push('센스대결');
   return {
-    answer,
     post: {
       type: 'initial_game',
       cat: 'usgyo',
-      title: `${initials} 초성게임`,
-      desc: hint ? `힌트: ${hint}` : '초성만 보고 정답을 맞혀보세요.',
-      initials,
+      title: `${pattern} 초성게임`,
+      desc: hint ? `힌트: ${hint}` : '초성을 보고 떠오르는 단어를 적어보세요.',
+      initials: pattern,
       answerLength: len,
       hint,
+      gameMode: 'open_answer',
       tags: tags.slice(0, 8),
     },
   };
@@ -169,7 +173,7 @@ async function submitInitialGame(btn) {
   btn.textContent = '올리는 중...';
 
   try {
-    const docRef = await addDoc(collection(db, 'feeds'), {
+    await addDoc(collection(db, 'feeds'), {
       ...data.post,
       images: [],
       authorId: auth.currentUser.uid,
@@ -180,10 +184,6 @@ async function submitInitialGame(btn) {
       viewCount: 0,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
-    });
-    await setDoc(doc(db, 'feeds', docRef.id, 'secret', 'initial'), {
-      answer: data.answer,
-      createdAt: serverTimestamp(),
     });
     localStorage.removeItem('write-draft-initial_game');
     toast.success('초성게임을 올렸어요!');
@@ -213,40 +213,14 @@ function enhanceInitialDetail() {
   const initials = title.replace('초성게임', '').trim();
   body.insertAdjacentHTML('beforeend', `
     <div class="quiz-box" id="initial-game-area" style="margin-top:16px">
-      <div style="font-size:36px;font-weight:950;letter-spacing:.14em;text-align:center;color:var(--color-primary);margin-bottom:14px">${escapeHtml(initials || '?')}</div>
-      <div style="display:flex;gap:8px">
-        <input id="initial-answer-input" class="form-input" placeholder="정답을 입력하세요" maxlength="5" style="flex:1">
-        <button class="btn btn--primary" id="btn-initial-answer">확인</button>
-      </div>
-      <div id="initial-result" style="display:none;margin-top:12px;padding:12px;border-radius:10px;font-size:14px;font-weight:800"></div>
+      <div style="font-size:36px;font-weight:950;letter-spacing:.14em;text-align:center;color:var(--color-primary);margin-bottom:10px">${escapeHtml(initials || '?')}</div>
+      <div style="font-size:13px;color:var(--color-text-secondary);text-align:center;margin-bottom:12px">떠오르는 단어를 댓글로 남겨보세요. 정답은 따로 없어요.</div>
     </div>
   `);
 }
 
-async function checkInitialAnswer() {
-  const postId = getDetailPostId();
-  const answer = clean(document.getElementById('initial-answer-input')?.value || '', 5);
-  if (!answer) return;
-  try {
-    const res = await callCheckInitial({ postId, answer });
-    const result = document.getElementById('initial-result');
-    if (!result) return;
-    result.style.display = '';
-    if (res.data?.correct) {
-      result.style.background = '#DCFCE7';
-      result.style.color = '#166534';
-      result.textContent = `정답! ${res.data.answer}`;
-    } else {
-      result.style.background = '#FEE2E2';
-      result.style.color = '#991B1B';
-      result.textContent = '아쉽지만 오답이에요.';
-    }
-  } catch (error) {
-    toast.error(error?.message || '정답 확인에 실패했어요');
-  }
-}
-
 function boot() {
+  if (wantsInitialGameRoute()) renderInitialGamePage();
   patchTypeCard();
   enhanceInitialDetail();
 }
@@ -268,18 +242,6 @@ document.addEventListener('click', event => {
     event.stopImmediatePropagation();
     submitInitialGame(submitBtn);
     return;
-  }
-  const answerBtn = event.target?.closest?.('#btn-initial-answer');
-  if (answerBtn) {
-    event.preventDefault();
-    checkInitialAnswer();
-  }
-}, true);
-
-document.addEventListener('keydown', event => {
-  if (event.key === 'Enter' && event.target?.id === 'initial-answer-input') {
-    event.preventDefault();
-    checkInitialAnswer();
   }
 }, true);
 
