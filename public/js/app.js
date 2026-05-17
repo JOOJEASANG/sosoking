@@ -73,7 +73,7 @@ export async function initApp() {
                 <img src="/logo.svg" alt="" width="26" height="26">
                 <span>소소킹</span>
               </a>
-              <div class="site-footer__tagline">골라봐, 웃겨봐, 도전봐<br>9가지 게임형 한국 커뮤니티</div>
+              <div class="site-footer__tagline">골라킹 · 드립킹 · 도전킹<br>참여형 놀이 커뮤니티</div>
             </div>
             <div>
               <div class="site-footer__col-title">바로가기</div>
