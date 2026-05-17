@@ -56,8 +56,9 @@ function renderWeeklyAcrosticChallenge(word) {
 
 function renderMissionCard(mission) {
   const typeLabels = {
-    balance:'밸런스게임', vote:'민심투표', naming:'미친작명소',
-    acrostic:'삼행시짓기', howto:'나만의노하우', story:'경험담',
+    balance:'밸런스게임', vote:'민심투표', battle:'선택지배틀',
+    naming:'미친작명소', acrostic:'삼행시짓기', drip:'한줄드립',
+    ox:'OX퀴즈', relay:'막장릴레이', random_battle:'랜덤대결',
   };
   const typeLabel = typeLabels[mission.type] || '자유';
   return `

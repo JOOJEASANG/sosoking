@@ -9,7 +9,7 @@ const HALL_CATS = [
   { key: 'naming',       label: '작명왕',  icon: '✏️', type: 'naming',       desc: '미친 작명 실력자',       scoreKey: null },
   { key: 'acrostic',     label: '삼행시왕', icon: '📝', type: 'acrostic',     desc: '삼행시의 달인',          scoreKey: null },
   { key: 'comment',      label: '댓글왕',  icon: '💬', type: null,            desc: '댓글을 가장 많이 받은 글', scoreKey: 'comment' },
-  { key: 'quiz',         label: '퀴즈왕',  icon: '🧠', type: 'quiz',          desc: '퀴즈 마스터',            scoreKey: null },
+  { key: 'drip',         label: '드립왕',  icon: '🎤', type: 'drip',          desc: '한 줄 드립의 달인',       scoreKey: null },
   { key: 'random_battle',label: '대결왕',  icon: '🎰', type: 'random_battle', desc: '랜덤대결 최고 인기글',    scoreKey: null },
 ];
 
@@ -19,7 +19,7 @@ function score(p) {
 
 export async function renderHall() {
   const el = document.getElementById('page-content');
-  setMeta('명예의 전당', '분야별 TOP 3 — 작명·삼행시·댓글·퀴즈·노하우');
+  setMeta('명예의 전당', '분야별 TOP 3 — 작명·삼행시·드립·댓글·대결');
 
   el.innerHTML = `
     <div class="hall-page">

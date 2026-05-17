@@ -17,7 +17,7 @@ export function renderGuide() {
           <div>
             <div class="guide-intro-card__title">소소킹이란?</div>
             <div class="guide-intro-card__desc">
-              밸런스게임, 퀴즈, 삼행시, 작명소, 고민까지 — 누구나 놀이판을 열고 짧게 참여하는
+              밸런스게임, 삼행시, 작명소까지 — 누구나 놀이판을 열고 짧게 참여하는
               <strong>게임형 커뮤니티</strong>예요. 긴 글 대신 짧은 한마디로도 충분해요!
             </div>
           </div>
@@ -58,11 +58,9 @@ export function renderGuide() {
             </div>
             <div class="guide-cat__types">
               ${[
-                { name: '밸런스게임',   desc: '둘 중 하나만 골라요 — 짜장 vs 짬뽕' },
-                { name: '민심투표',    desc: '여러 선택지 중 민심은 어디로?' },
-                { name: '선택지배틀',  desc: '후보들 중 최강자를 가려봐요' },
-                { name: '24시간챌린지',desc: '24시간 한정 핫이슈 투표, 마감 카운트다운' },
-                { name: '이상형월드컵',desc: '대진표 방식으로 최애를 뽑아요' },
+                { name: '밸런스게임', desc: '둘 중 하나만 골라요 — 짜장 vs 짬뽕' },
+                { name: '민심투표',  desc: '여러 선택지 중 민심은 어디로?' },
+                { name: '선택지배틀',desc: '후보들 중 최강자를 가려봐요' },
               ].map(t => `
                 <div class="guide-type-item">
                   <span class="guide-type-badge guide-type-badge--golra">${t.name}</span>
@@ -81,11 +79,9 @@ export function renderGuide() {
             </div>
             <div class="guide-cat__types">
               ${[
-                { name: '미친작명소',  desc: '사진에 웃긴 이름을 붙여봐요' },
-                { name: '삼행시짓기', desc: '제시어로 삼행시 — 좋아요로 순위 결정' },
-                { name: '한줄드립',   desc: '상황에 맞는 한 줄 드립 대결' },
-                { name: '댓글배틀',   desc: '두 팀으로 나눠 웃긴 댓글 배틀' },
-                { name: '웃참챌린지', desc: '웃겨도 참을 수 있어? 한계에 도전' },
+                { name: '미친작명소', desc: '사진에 웃긴 이름을 붙여봐요' },
+                { name: '삼행시짓기',desc: '제시어로 삼행시 — 좋아요로 순위 결정' },
+                { name: '한줄드립',  desc: '상황에 맞는 한 줄 드립 대결' },
               ].map(t => `
                 <div class="guide-type-item">
                   <span class="guide-type-badge guide-type-badge--usgyo">${t.name}</span>
@@ -105,10 +101,8 @@ export function renderGuide() {
             <div class="guide-cat__types">
               ${[
                 { name: 'OX퀴즈',    desc: '맞으면 O, 틀리면 X — 빠른 판단 대결' },
-                { name: '4지선다',   desc: '4개 중 정답을 맞혀봐요' },
                 { name: '막장릴레이',desc: '한 문장씩 이어가는 막장 스토리' },
-                { name: '단어릴레이',desc: '끝말잇기 스타일 연결 게임' },
-                { name: '랜덤대결',  desc: '같은 주제로 누가 더 재밌는 답을 쓰나?' },
+                { name: '랜덤대결', desc: '같은 주제로 누가 더 재밌는 답을 쓰나?' },
               ].map(t => `
                 <div class="guide-type-item">
                   <span class="guide-type-badge guide-type-badge--malhe">${t.name}</span>

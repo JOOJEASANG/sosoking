@@ -12,18 +12,18 @@ import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { appState } from '../state.js';
 
 const ALL_TYPES = [
-  'balance','vote','battle','challenge24','tournament',
-  'naming','acrostic','drip','cbattle','laugh',
-  'ox','quiz','relay','word_relay','random_battle',
+  'balance','vote','battle',
+  'naming','acrostic','drip',
+  'ox','relay','random_battle',
 ];
 
-const PARTICIPATORY_TYPES = ['balance', 'vote', 'battle', 'challenge24', 'tournament', 'naming', 'ox', 'quiz', 'laugh', 'cbattle', 'random_battle'];
+const PARTICIPATORY_TYPES = ['balance', 'vote', 'battle', 'naming', 'ox', 'random_battle'];
 
 const THRONE_CATS = [
   { key: 'naming',       label: '작명왕',  icon: '✏️', type: 'naming',       scoreKey: null },
   { key: 'acrostic',     label: '삼행시왕', icon: '📝', type: 'acrostic',     scoreKey: null },
   { key: 'comment',      label: '댓글왕',  icon: '💬', type: null,            scoreKey: 'comment' },
-  { key: 'quiz',         label: '퀴즈왕',  icon: '🧠', type: 'quiz',          scoreKey: null },
+  { key: 'drip',         label: '드립왕',  icon: '🎤', type: 'drip',          scoreKey: null },
   { key: 'random_battle',label: '대결왕',  icon: '🎰', type: 'random_battle', scoreKey: null },
 ];
 
@@ -137,7 +137,7 @@ export async function renderHome() {
           </div>
           <div class="home-hero__visual" aria-hidden="true">
             <div class="home-hero__mini-card"><b>⚖️ 밸런스게임</b><span>둘 중 하나만 고르면 끝</span></div>
-            <div class="home-hero__mini-card"><b>🏆 이상형월드컵</b><span>대진표로 최애 가리기</span></div>
+            <div class="home-hero__mini-card"><b>🗳️ 민심투표</b><span>지금 민심은 어디로?</span></div>
             <div class="home-hero__mini-card"><b>✍️ 삼행시짓기</b><span>제시어로 삼행시 도전</span></div>
             <div class="home-hero__mini-card"><b>🎰 랜덤대결</b><span>같은 주제 누가 더 재밌어</span></div>
           </div>
