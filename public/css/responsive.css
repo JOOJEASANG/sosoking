@@ -32,7 +32,13 @@
 
   .page-container {
     max-width: 100%;
+    margin: 0 auto;
     padding: 20px 16px calc(60px + env(safe-area-inset-bottom, 0) + 16px);
+  }
+
+  .site-footer__inner {
+    max-width: 100%;
+    margin: 0 auto;
   }
 
   /* 2컬럼 레이아웃 단일 컬럼 */

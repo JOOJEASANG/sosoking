@@ -64,7 +64,10 @@ export async function initApp() {
         <footer class="site-footer" id="site-footer">
           <div class="site-footer__inner">
             <div class="site-footer__brand-block">
-              <div class="site-footer__brand">소소킹 🎉</div>
+              <a href="#/" class="site-footer__brand">
+                <img src="/logo.svg" alt="" width="26" height="26">
+                <span>소소킹</span>
+              </a>
               <div class="site-footer__tagline">골라봐, 웃겨봐, 도전봐<br>9가지 게임형 한국 커뮤니티</div>
             </div>
             <div>

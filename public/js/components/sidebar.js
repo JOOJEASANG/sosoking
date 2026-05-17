@@ -134,7 +134,6 @@ export function renderSidebar() {
       <a href="#/" class="sidebar__brand" aria-label="소소킹 홈" data-nav="/">
         <img src="/logo.svg" alt="" width="28" height="28">
         <span class="sidebar__brand-name">소소킹</span>
-        <span class="sidebar__brand-badge">BETA</span>
       </a>
     </div>
 
