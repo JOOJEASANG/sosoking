@@ -42,7 +42,7 @@ function getInitials(text) {
 }
 
 function findAcrosticCard() {
-  return [...document.querySelectorAll('[data-type="acrostic"]')][0];
+  return [...document.querySelectorAll('[data-type="acrostic"], [data-type="initial_game"]')][0];
 }
 
 function patchTypeCard() {
@@ -56,6 +56,36 @@ function patchTypeCard() {
   if (icon) icon.textContent = '🔤';
   if (name) name.textContent = '초성게임';
   if (desc) desc.textContent = '최대 5글자 정답을 초성으로 맞혀요';
+}
+
+function renderInitialGamePage() {
+  const el = document.getElementById('page-content');
+  if (!el) return;
+  el.innerHTML = `
+    <div class="write-page">
+      <div class="write-steps">
+        <div class="write-step-dot done">✓</div>
+        <div class="write-step-line done"></div>
+        <div class="write-step-dot current">2</div>
+      </div>
+      <div class="write-step-header">
+        <button class="write-back-btn" id="btn-initial-back">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+        <h1 class="write-step-title">🔤 초성게임</h1>
+      </div>
+      <div class="card">
+        <div class="card__body--lg" id="form-fields"></div>
+        <div class="card__footer">
+          <div class="write-submit">
+            <button class="btn btn--ghost" onclick="navigate('/feed')">취소</button>
+            <button class="btn btn--primary" id="btn-submit">올리기</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('btn-initial-back')?.addEventListener('click', () => navigate('/write'));
+  renderInitialGameForm();
 }
 
 function renderInitialGameForm() {
@@ -218,18 +248,19 @@ async function checkInitialAnswer() {
 
 function boot() {
   patchTypeCard();
-  if ((window.location.hash || '').startsWith('#/write') && document.querySelector('[data-type="initial_game"]')) {
-    document.querySelectorAll('[data-type="initial_game"]').forEach(card => {
-      if (card.dataset.initialClickBound === '1') return;
-      card.dataset.initialClickBound = '1';
-      card.addEventListener('click', () => setTimeout(renderInitialGameForm, 0), true);
-    });
-  }
-  if (isInitialGameForm()) renderInitialGameForm();
   enhanceInitialDetail();
 }
 
 document.addEventListener('click', event => {
+  const card = event.target?.closest?.('[data-type="initial_game"]');
+  if (card && isWritePage()) {
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+    renderInitialGamePage();
+    return;
+  }
+
   const submitBtn = event.target?.closest?.('#btn-submit');
   if (submitBtn && isInitialGameForm()) {
     event.preventDefault();
