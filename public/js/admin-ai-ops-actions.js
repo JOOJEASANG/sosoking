@@ -1,7 +1,7 @@
 import { db, functions } from './firebase.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
 import {
-  doc, setDoc, collection, query, where, orderBy, limit, getDocs, serverTimestamp,
+  doc, setDoc, collection, query, where, limit, getDocs, serverTimestamp,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { toast } from './components/toast.js';
 
@@ -53,9 +53,20 @@ function isAdminPage() {
   return !!document.querySelector('.admin-layout') && !!document.getElementById('admin-content');
 }
 
+function hideLegacyAiTab() {
+  document.querySelectorAll('.admin-menu-item[data-tab="ai"]').forEach(item => {
+    item.style.display = 'none';
+    item.setAttribute('aria-hidden', 'true');
+    item.classList.remove('active');
+  });
+}
+
 function injectMenu() {
   const sidebar = document.querySelector('.admin-sidebar');
-  if (!sidebar || sidebar.querySelector('[data-aiops-tab]')) return;
+  if (!sidebar) return;
+  hideLegacyAiTab();
+  if (sidebar.querySelector('[data-aiops-tab]')) return;
+
   const item = document.createElement('div');
   item.className = 'admin-menu-item';
   item.dataset.aiopsTab = 'aiops';
@@ -208,8 +219,8 @@ async function renderAiOpsPanel() {
         <div class="card__body">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px">
             <div>
-              <div style="font-size:14px;font-weight:900">AI 무료한도 설정</div>
-              <div style="font-size:11px;color:var(--color-text-muted);margin-top:3px">일일 한도 초과 시 AI 호출 대신 기본 콘텐츠로 대체됩니다.</div>
+              <div style="font-size:14px;font-weight:900">AI 운영 설정</div>
+              <div style="font-size:11px;color:var(--color-text-muted);margin-top:3px">API 키는 관리자페이지에 저장하지 않습니다. GitHub Secrets 또는 Google Secret Manager에서 관리하세요.</div>
             </div>
             <button class="btn btn--primary btn--sm" id="btn-save-ai-settings">설정 저장</button>
           </div>
