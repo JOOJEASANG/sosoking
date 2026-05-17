@@ -7,18 +7,18 @@ import { escHtml } from '../utils/helpers.js';
 
 const CAT_TYPES = {
   golra: ['balance','vote','battle'],
-  usgyo: ['naming','acrostic','drip'],
+  usgyo: ['naming','initial_game','drip'],
   malhe: ['ox','relay','random_battle'],
 };
 
 const CAT_LABELS = {
-  '': '전체', golra: '골라봐', usgyo: '웃겨봐', malhe: '도전봐',
+  '': '전체', golra: '골라킹', usgyo: '드립킹', malhe: '도전킹',
 };
 
 const TYPE_LABELS = {
   balance:'밸런스게임', vote:'민심투표', battle:'선택지배틀', challenge24:'24시간챌린지', tournament:'이상형월드컵',
-  naming:'미친작명소', acrostic:'삼행시짓기', drip:'한줄드립', cbattle:'댓글배틀', laugh:'웃참챌린지',
-  ox:'OX퀴즈', quiz:'4지선다', relay:'막장릴레이', word_relay:'단어릴레이', random_battle:'랜덤대결',
+  naming:'미친작명소', initial_game:'초성게임', acrostic:'미션 행시', drip:'한줄드립', cbattle:'댓글배틀', laugh:'웃참챌린지',
+  ox:'OX퀴즈', quiz:'4지선다', relay:'막장킹', word_relay:'단어릴레이', random_battle:'랜덤대결',
   howto:'노하우', story:'경험담', fail:'실패담', concern:'고민/질문',
 };
 
@@ -58,7 +58,6 @@ export async function renderFeed() {
   await loadPosts(true);
   setupInfiniteScroll();
 
-  // 검색 이벤트
   const searchInput = document.getElementById('feed-search-input');
   const searchBtn   = document.getElementById('btn-feed-search');
 
@@ -87,7 +86,6 @@ export async function renderFeed() {
     document.getElementById('search-clear-btn').style.display = 'none';
   });
 
-  // 필터 클릭 이벤트
   document.querySelectorAll('[data-cat-filter]').forEach(btn => {
     btn.addEventListener('click', () => {
       currentCat    = btn.dataset.catFilter;
@@ -152,7 +150,7 @@ function renderTypeFilter() {
       ${Object.entries(groups).map(([catKey, types]) => `
         <div style="margin-bottom:12px">
           <div style="font-size:11px;font-weight:700;color:var(--color-text-muted);margin-bottom:6px">
-            ${{ golra:'골라봐', usgyo:'웃겨봐', malhe:'도전봐' }[catKey]}
+            ${{ golra:'골라킹', usgyo:'드립킹', malhe:'도전킹' }[catKey]}
           </div>
           <div style="display:flex;flex-wrap:wrap;gap:6px">
             ${types.map(t => `
@@ -169,7 +167,6 @@ function updateFilterUI() {
   document.querySelectorAll('[data-cat-filter]').forEach(b => {
     b.classList.toggle('active', b.dataset.catFilter === currentCat && !currentSearch);
   });
-  // 카테고리가 바뀌면 사이드바 유형 필터도 다시 그림
   const sidebar = document.querySelector('.layout-sidebar');
   if (sidebar) {
     sidebar.innerHTML = renderTypeFilter();
@@ -191,7 +188,6 @@ async function loadPosts(reset = false) {
     let constraints;
 
     if (currentSearch) {
-      // 제목 prefix 검색 — orderBy('title') 필수
       const qEnd = currentSearch.slice(0, -1) + String.fromCharCode(currentSearch.charCodeAt(currentSearch.length - 1) + 1);
       constraints = [
         where('title', '>=', currentSearch),
