@@ -1,9 +1,9 @@
 export function escHtml(str) {
-  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
 export function formatTime(date) {
-  if (!date) return '';
+  if (!date) return '알 수 없음';
   const d = date instanceof Date ? date : new Date(date);
   const diff = (Date.now() - d.getTime()) / 1000;
   if (diff < 60)    return '방금 전';
