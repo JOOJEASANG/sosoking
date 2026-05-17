@@ -24,7 +24,20 @@ service cloud.firestore {
     }
     function isSafeCounterUpdate() {
       let changed = request.resource.data.diff(resource.data).affectedKeys();
-      return changed.hasOnly(['commentCount', 'acrosticCount', 'viewCount']);
+      return signedIn()
+        && (
+          (changed.hasOnly(['commentCount'])
+            && (
+              request.resource.data.commentCount == resource.data.get('commentCount', 0) + 1 ||
+              request.resource.data.commentCount == resource.data.get('commentCount', 0) - 1
+            ))
+          ||
+          (changed.hasOnly(['acrosticCount'])
+            && (
+              request.resource.data.acrosticCount == resource.data.get('acrosticCount', 0) + 1 ||
+              request.resource.data.acrosticCount == resource.data.get('acrosticCount', 0) - 1
+            ))
+        );
     }
 
     function isSafeVoteUpdate() {
@@ -36,9 +49,11 @@ service cloud.firestore {
         && request.resource.data.votedBy.size() == resource.data.get('votedBy', []).size() + 1
         && request.resource.data.votedBy.hasOnly(resource.data.get('votedBy', []).concat([request.auth.uid]));
     }
-    function isCommentReactionUpdate() {
+    function isAuthorContentUpdate(authorId) {
       let changed = request.resource.data.diff(resource.data).affectedKeys();
-      return changed.hasOnly(['likes', 'likedBy', 'reactions', 'reactedWith']);
+      return isAuthor(authorId)
+        && request.resource.data.authorId == resource.data.authorId
+        && !changed.hasAny(['authorId', 'authorName', 'authorPhoto', 'reactions', 'reactedWith', 'commentCount', 'acrosticCount', 'viewCount', 'votedBy']);
     }
 
     // ── 관리자 ─────────────────────────────────────────────
@@ -80,8 +95,8 @@ service cloud.firestore {
                       && validText(request.resource.data.title, 100)
                       && validText(request.resource.data.get('desc', ''), 2000)
                       && validImageList();
-      allow update: if isAdmin() || isAuthor(resource.data.authorId)
-                      || (signedIn() && isSafeCounterUpdate())
+      allow update: if isAdmin() || isAuthorContentUpdate(resource.data.authorId)
+                      || isSafeCounterUpdate()
                       || isSafeVoteUpdate();
       allow delete: if isAdmin() || isAuthor(resource.data.authorId);
 
@@ -95,8 +110,7 @@ service cloud.firestore {
         allow create: if signedIn()
                         && request.resource.data.authorId == request.auth.uid
                         && validText(request.resource.data.text, 500);
-        allow update: if isAdmin() || isAuthor(resource.data.authorId)
-                        || (signedIn() && isCommentReactionUpdate());
+        allow update: if isAdmin() || isAuthorContentUpdate(resource.data.authorId);
         allow delete: if isAdmin() || isAuthor(resource.data.authorId);
       }
 
@@ -114,8 +128,7 @@ service cloud.firestore {
         allow create: if signedIn()
                         && request.resource.data.authorId == request.auth.uid
                         && validText(request.resource.data.get('text', ''), 500);
-        allow update: if isAdmin() || isAuthor(resource.data.authorId)
-                        || (signedIn() && isCommentReactionUpdate());
+        allow update: if isAdmin() || isAuthorContentUpdate(resource.data.authorId);
         allow delete: if isAdmin() || isAuthor(resource.data.authorId);
       }
 
