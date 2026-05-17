@@ -1,11 +1,7 @@
-import { db, auth, functions } from './firebase.js';
-import { collection, addDoc, doc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
+import { db, auth } from './firebase.js';
+import { collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { navigate } from './router.js';
 import { toast } from './components/toast.js';
-
-const callCheckInitial = httpsCallable(functions, 'checkInitialGameAnswer');
-const INITIALS = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
 
 function isWritePage() {
   return (window.location.hash || '').startsWith('#/write');
@@ -16,7 +12,7 @@ function wantsInitialGameRoute() {
 }
 
 function isInitialGameForm() {
-  return isWritePage() && !!document.getElementById('f-initial-answer');
+  return isWritePage() && !!document.getElementById('f-initial-pattern');
 }
 
 function clean(value, max = 80) {
@@ -35,14 +31,6 @@ function escapeHtml(value) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
-}
-
-function getInitials(text) {
-  return [...String(text || '').trim()].map(ch => {
-    const code = ch.charCodeAt(0);
-    if (code < 0xac00 || code > 0xd7a3) return ch;
-    return INITIALS[Math.floor((code - 0xac00) / 588)] || ch;
-  }).join('');
 }
 
 function findAcrosticCard() {
@@ -194,12 +182,6 @@ async function submitInitialGame(btn) {
     btn.disabled = false;
     btn.textContent = oldText || '올리기';
   }
-}
-
-function getDetailPostId() {
-  const hash = window.location.hash || '';
-  const match = hash.match(/^#\/detail\/([^?]+)/);
-  return match ? decodeURIComponent(match[1]) : '';
 }
 
 function enhanceInitialDetail() {
