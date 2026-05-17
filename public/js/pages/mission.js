@@ -3,7 +3,18 @@ import { collection, query, orderBy, limit, getDocs, where } from 'https://www.g
 import { navigate } from '../router.js';
 import { escHtml } from '../utils/helpers.js';
 
-const WEEKLY_WORDS = ['소소킹', '월요일', '킹받네', '라면왕', '퇴근길', '대반전', '웃참패'];
+const WEEKLY_WORDS = [
+  '소소킹', '킹받네', '라면왕', '웃참패',
+  '월요일', '퇴근길', '대반전', '편의점',
+  '고양이', '배달비', '알바생', '휴대폰',
+  '아메리카노', '지하철역', '치킨게임', '퇴근요정',
+  '소확행러', '월급루팡', '반전매력', '웃음버튼',
+];
+
+function getPoemType(word) {
+  const len = [...String(word || '')].length;
+  return ({ 3: '삼행시', 4: '사행시', 5: '오행시', 6: '육행시' })[len] || '삼행시';
+}
 
 export async function renderMission() {
   const el = document.getElementById('page-content');
@@ -38,15 +49,16 @@ export async function renderMission() {
 }
 
 function renderWeeklyAcrosticChallenge(word) {
+  const poemType = getPoemType(word);
   return `
     <div class="card" style="padding:18px;margin-bottom:18px;background:linear-gradient(135deg,#fff7ed,#eef2ff);border:1px solid rgba(249,115,22,.18)">
       <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap">
         <div>
-          <div style="font-size:12px;font-weight:900;color:#f97316;margin-bottom:5px">✍️ 이번 주 삼행시 챌린지</div>
+          <div style="font-size:12px;font-weight:900;color:#f97316;margin-bottom:5px">✍️ 이번 주 ${poemType} 챌린지</div>
           <div style="font-size:24px;font-weight:950;letter-spacing:-.04em;color:var(--color-text)">${escHtml(word)}</div>
-          <div style="font-size:13px;color:var(--color-text-secondary);margin-top:5px">이번 주 제시어로 삼행시 왕좌에 도전해보세요.</div>
+          <div style="font-size:13px;color:var(--color-text-secondary);margin-top:5px">이번 주 제시어로 ${poemType} 왕좌에 도전해보세요.</div>
         </div>
-        <button class="btn btn--primary btn--sm" onclick="navigate('/write?type=acrostic&keyword=${escHtml(word)}')">삼행시 만들기</button>
+        <button class="btn btn--primary btn--sm" onclick="navigate('/write?type=acrostic&keyword=${escHtml(word)}')">${poemType} 만들기</button>
       </div>
       <div style="display:grid;gap:6px;margin-top:14px">
         ${[...word].map(ch => `<div style="display:flex;align-items:center;gap:8px"><span style="width:28px;height:28px;border-radius:8px;background:#f97316;color:#fff;display:grid;place-items:center;font-weight:900">${escHtml(ch)}</span><span style="font-size:13px;color:var(--color-text-muted)">: 센스 있는 한 줄을 채워보세요</span></div>`).join('')}
@@ -57,8 +69,8 @@ function renderWeeklyAcrosticChallenge(word) {
 function renderMissionCard(mission) {
   const typeLabels = {
     balance:'밸런스게임', vote:'민심투표', battle:'선택지배틀',
-    naming:'미친작명소', acrostic:'삼행시짓기', drip:'한줄드립',
-    ox:'OX퀴즈', relay:'막장릴레이', random_battle:'랜덤대결',
+    naming:'미친작명소', initial_game:'초성게임', drip:'한줄드립',
+    ox:'OX퀴즈', relay:'막장킹', random_battle:'랜덤대결',
   };
   const typeLabel = typeLabels[mission.type] || '자유';
   return `
