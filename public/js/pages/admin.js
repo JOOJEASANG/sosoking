@@ -679,8 +679,12 @@ async function renderAiSettings(el) {
             스케줄 없이 지금 바로 AI 작업을 실행할 수 있어요.
           </div>
           <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn--primary btn--sm" id="btn-trigger-all-content">✏️ AI 게시글 9개 생성</button>
             <button class="btn btn--primary btn--sm" id="btn-trigger-mission">🎯 미션 지금 생성</button>
             <button class="btn btn--ghost btn--sm" id="btn-trigger-report">📊 주간 보고서 지금 생성</button>
+          </div>
+          <div style="font-size:11px;color:var(--color-text-muted);margin-top:6px">
+            💡 게시글 생성은 타입별 1개씩 총 9개. 오늘 이미 생성된 타입은 건너뜀 (강제 생성은 force 옵션 사용)
           </div>
           <div id="ai-trigger-result" style="margin-top:10px;font-size:12px;color:var(--color-text-muted)"></div>
         </div>
@@ -730,6 +734,30 @@ async function renderAiSettings(el) {
   });
 
   // Trigger mission
+  el.querySelector('#btn-trigger-all-content')?.addEventListener('click', async () => {
+    const btn = el.querySelector('#btn-trigger-all-content');
+    const result = el.querySelector('#ai-trigger-result');
+    if (!confirm('AI 게시글 9개를 생성할까요? (오늘 이미 생성된 타입은 건너뜁니다)')) return;
+    btn.disabled = true;
+    btn.textContent = '생성 중... (최대 2분 소요)';
+    result.textContent = '⏳ 9개 타입 순차 생성 중입니다...';
+    try {
+      const fn = httpsCallable(functions, 'generateAllAiContentNow', { timeout: 550000 });
+      const res = await fn({ force: false });
+      const { ok = 0, skipped = 0, total = 0, results = [] } = res.data || {};
+      const typeLabels = { balance:'밸런스게임', vote:'민심투표', battle:'선택지배틀', naming:'작명소', acrostic:'삼행시', drip:'한줄드립', ox:'OX퀴즈', relay:'릴레이', random_battle:'랜덤대결' };
+      const detail = results.map(r => r.ok ? `✅ ${typeLabels[r.type]||r.type}` : r.skipped ? `⏭ ${typeLabels[r.type]||r.type}(건너뜀)` : `❌ ${typeLabels[r.type]||r.type}`).join(' · ');
+      result.innerHTML = `✅ 완료 — 생성 ${ok}개 / 건너뜀 ${skipped}개 / 전체 ${total}개<br><span style="color:var(--color-text-muted)">${detail}</span>`;
+      toast.success(`AI 게시글 ${ok}개 생성 완료! 🎉`);
+    } catch (e) {
+      result.textContent = '❌ ' + (e.message || '생성에 실패했어요');
+      toast.error(e.message || '생성에 실패했어요');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '✏️ AI 게시글 9개 생성';
+    }
+  });
+
   el.querySelector('#btn-trigger-mission')?.addEventListener('click', async () => {
     const btn = el.querySelector('#btn-trigger-mission');
     const result = el.querySelector('#ai-trigger-result');

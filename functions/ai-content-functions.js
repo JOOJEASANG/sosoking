@@ -103,12 +103,11 @@ function buildDoc(type, cat, content, date, source) {
   return { mainDoc: { ...base, title: clean(content.title, 100), desc: clean(content.desc, 1000) }, secretDoc: null };
 }
 
-async function generateDailyAiContent({ force = false, actorId = 'scheduler' } = {}) {
+async function generateOneType({ type, cat, force = false, actorId = 'admin' }) {
   const date = todayKST();
-  const { type, cat } = POST_TYPES[dayOfYear() % POST_TYPES.length];
   const markerRef = db.doc(`system_jobs/ai_content_${date}_${type}`);
   const markerSnap = await markerRef.get();
-  if (markerSnap.exists && !force) return { skipped: true, reason: 'already-generated', docId: markerSnap.data().docId };
+  if (markerSnap.exists && !force) return { skipped: true, type, reason: 'already-generated' };
 
   let content = fallbackContent(type, date);
   let source = 'fallback';
@@ -118,11 +117,26 @@ async function generateDailyAiContent({ force = false, actorId = 'scheduler' } =
   if (apiKey && usage.ok) {
     try {
       const anthropic = new Anthropic({ apiKey });
-      const msg = await anthropic.messages.create({ model: 'claude-haiku-4-5-20251001', max_tokens: 700, messages: [{ role: 'user', content: `Create one short Korean community post. Type: ${type}. Return JSON only.` }] });
+      const typePrompts = {
+        balance:       'balance game with 2 options',
+        vote:          'vote poll with 3 options',
+        battle:        'battle selection with 3 options',
+        naming:        'funny naming contest',
+        acrostic:      'acrostic poem challenge (keyword 3-4 chars)',
+        drip:          'one-line witty comeback',
+        ox:            'OX true/false quiz',
+        relay:         'story relay starter sentence',
+        random_battle: 'random battle with battleTopic field',
+      };
+      const msg = await anthropic.messages.create({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 700,
+        messages: [{ role: 'user', content: `Create one short Korean community post. Type: ${type} (${typePrompts[type] || type}). Return JSON only with Korean text.` }],
+      });
       content = parseJson(msg.content.filter(b => b.type === 'text').map(b => b.text).join('')) || content;
       source = 'ai';
     } catch (error) {
-      console.error('[ai-content] fallback', error);
+      console.error(`[ai-content] fallback for ${type}`, error);
     }
   }
 
@@ -130,7 +144,27 @@ async function generateDailyAiContent({ force = false, actorId = 'scheduler' } =
   const feedRef = db.collection('feeds').doc();
   await Promise.all([feedRef.set(mainDoc), secretDoc ? feedRef.collection('secret').doc('answer').set(secretDoc) : null].filter(Boolean));
   await markerRef.set({ date, type, cat, docId: feedRef.id, source, actorId, createdAt: FieldValue.serverTimestamp() }, { merge: true });
-  return { ok: true, docId: feedRef.id, type, cat, source };
+  return { ok: true, type, cat, docId: feedRef.id, source };
+}
+
+async function generateDailyAiContent({ force = false, actorId = 'scheduler' } = {}) {
+  const date = todayKST();
+  const { type, cat } = POST_TYPES[dayOfYear() % POST_TYPES.length];
+  return generateOneType({ type, cat, force, actorId });
+}
+
+async function generateAllAiContent({ force = false, actorId = 'admin' } = {}) {
+  const results = [];
+  for (const { type, cat } of POST_TYPES) {
+    try {
+      const result = await generateOneType({ type, cat, force, actorId });
+      results.push(result);
+    } catch (e) {
+      console.error(`[ai-content] error for ${type}`, e);
+      results.push({ error: true, type, message: e.message });
+    }
+  }
+  return { results, total: results.length, ok: results.filter(r => r.ok).length, skipped: results.filter(r => r.skipped).length };
 }
 
 exports.dailyAiContent = onSchedule({ schedule: '0 9 * * *', timeZone: 'Asia/Seoul', region: REGION, memory: '256MiB', timeoutSeconds: 120 }, async () => {
@@ -140,4 +174,9 @@ exports.dailyAiContent = onSchedule({ schedule: '0 9 * * *', timeZone: 'Asia/Seo
 exports.generateAiContentNow = onCall({ region: REGION, timeoutSeconds: 120 }, async request => {
   await assertAdmin(request.auth && request.auth.uid);
   return generateDailyAiContent({ force: request.data && request.data.force === true, actorId: request.auth.uid });
+});
+
+exports.generateAllAiContentNow = onCall({ region: REGION, timeoutSeconds: 540, memory: '512MiB' }, async request => {
+  await assertAdmin(request.auth && request.auth.uid);
+  return generateAllAiContent({ force: request.data && request.data.force === true, actorId: request.auth.uid });
 });
