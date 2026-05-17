@@ -3,7 +3,6 @@ module.exports = {
   ...require('./functions-main.js'),
   ...require('./secure-feed-functions.js'),
   ...require('./secure-interactions-functions.js'),
-  ...require('./initial-game-functions.js'),
   ...require('./sitemap-functions.js'),
   ...require('./ai-mission-functions.js'),
   ...require('./ai-hunt-functions.js'),
