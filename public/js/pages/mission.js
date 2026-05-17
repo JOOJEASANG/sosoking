@@ -3,7 +3,7 @@ import { collection, query, orderBy, limit, getDocs, where } from 'https://www.g
 import { navigate } from '../router.js';
 import { escHtml } from '../utils/helpers.js';
 
-const WEEKLY_WORDS = ['소소킹', '월요일', '킹받네', '인생샷', '라면왕', '퇴근길', '대반전', '웃참패'];
+const WEEKLY_WORDS = ['소소킹', '월요일', '킹받네', '라면왕', '퇴근길', '대반전', '웃참패'];
 
 export async function renderMission() {
   const el = document.getElementById('page-content');
