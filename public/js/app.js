@@ -7,6 +7,7 @@ import { initToast } from './components/toast.js';
 import { appState } from './state.js';
 import './secure-feed-actions.js';
 import './secure-interactions-actions.js';
+import './acrostic-enhancer.js';
 import './account-secure-actions.js';
 import './admin-ai-mission-actions.js';
 import './admin-ai-ops-actions.js';
