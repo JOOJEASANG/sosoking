@@ -42,8 +42,8 @@ export function renderWrite() {
   selectedCat  = null;
   selectedType = null;
 
-  // Support ?type=X for direct navigation from quick-start buttons
-  const { type: typeParam } = getQueryParams();
+  // Support ?type=X&keyword=Y for direct navigation from quick-start / mission buttons
+  const { type: typeParam, keyword: keywordParam } = getQueryParams();
   if (typeParam) {
     for (const cat of CATEGORIES) {
       const found = cat.types.find(t => t.key === typeParam);
@@ -51,6 +51,13 @@ export function renderWrite() {
         selectedCat  = cat;
         selectedType = found;
         renderForm(el);
+        if (keywordParam && typeParam === 'acrostic') {
+          const kwInput = document.getElementById('f-keyword');
+          if (kwInput) {
+            kwInput.value = keywordParam;
+            kwInput.dispatchEvent(new Event('input'));
+          }
+        }
         return;
       }
     }
