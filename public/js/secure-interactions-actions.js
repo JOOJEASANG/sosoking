@@ -4,11 +4,13 @@ import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { navigate } from './router.js';
 import { toast } from './components/toast.js';
 
+const callView = httpsCallable(functions, 'incrementPostView');
 const callVote = httpsCallable(functions, 'votePostOption');
 const callCheckQuiz = httpsCallable(functions, 'checkQuizAnswer');
 const callReactPost = httpsCallable(functions, 'reactToPost');
 const callReactComment = httpsCallable(functions, 'reactToComment');
 const callReactAcrostic = httpsCallable(functions, 'reactToAcrostic');
+const viewedInSession = new Set();
 
 function getPostIdFromPage(target) {
   const direct = target?.dataset?.postId;
@@ -16,6 +18,13 @@ function getPostIdFromPage(target) {
   const hash = window.location.hash || '';
   const match = hash.match(/#\/detail\/([^?]+)/);
   return match ? decodeURIComponent(match[1]) : '';
+}
+
+function maybeTrackView() {
+  const postId = getPostIdFromPage(document.body);
+  if (!postId || viewedInSession.has(postId)) return;
+  viewedInSession.add(postId);
+  callView({ postId }).catch(() => {});
 }
 
 async function ensureUser({ anonymous = false } = {}) {
@@ -180,3 +189,6 @@ document.addEventListener('click', async event => {
     if (error.message !== 'auth-required') console.error(error);
   }
 }, true);
+
+window.addEventListener('hashchange', () => setTimeout(maybeTrackView, 150));
+setTimeout(maybeTrackView, 500);
