@@ -13,7 +13,7 @@ export async function renderMission() {
   const weeklyWord = getWeeklyAcrosticWord();
 
   el.innerHTML = `
-    <div style="max-width:720px;margin:0 auto">
+    <div>
       <div class="section-header">
         <h1 class="section-title">오늘의 미션 🎯</h1>
       </div>
@@ -46,12 +46,20 @@ function renderWeeklyAcrosticChallenge(word) {
           <div style="font-size:24px;font-weight:950;letter-spacing:-.04em;color:var(--color-text)">${escHtml(word)}</div>
           <div style="font-size:13px;color:var(--color-text-secondary);margin-top:5px">이번 주 제시어로 삼행시 왕좌에 도전해보세요.</div>
         </div>
-        <button class="btn btn--primary btn--sm" onclick="navigate('/write?type=acrostic')">삼행시 만들기</button>
+        <button class="btn btn--primary btn--sm" onclick="navigate('/write?type=acrostic&keyword=${encodeURIComponent(word)}')">삼행시 만들기</button>
       </div>
       <div style="display:grid;gap:6px;margin-top:14px">
         ${[...word].map(ch => `<div style="display:flex;align-items:center;gap:8px"><span style="width:28px;height:28px;border-radius:8px;background:#f97316;color:#fff;display:grid;place-items:center;font-weight:900">${escHtml(ch)}</span><span style="font-size:13px;color:var(--color-text-muted)">: 센스 있는 한 줄을 채워보세요</span></div>`).join('')}
       </div>
     </div>`;
+}
+
+function buildMissionWriteUrl(mission) {
+  const base = `/write?type=${encodeURIComponent(mission.type || 'balance')}`;
+  if (mission.type === 'acrostic' && mission.keyword) {
+    return base + `&keyword=${encodeURIComponent(mission.keyword)}`;
+  }
+  return base;
 }
 
 function renderMissionCard(mission) {
@@ -61,6 +69,7 @@ function renderMissionCard(mission) {
     ox:'OX퀴즈', relay:'막장릴레이', random_battle:'랜덤대결',
   };
   const typeLabel = typeLabels[mission.type] || '자유';
+  const writeUrl  = buildMissionWriteUrl(mission);
   return `
     <div class="mission-card card">
       <div class="mission-card__header">
@@ -69,9 +78,13 @@ function renderMissionCard(mission) {
       </div>
       <div class="mission-card__body">
         ${mission.desc ? `<p style="font-size:13px;color:var(--color-text-secondary);margin-bottom:12px">${escHtml(mission.desc)}</p>` : ''}
+        ${mission.type === 'acrostic' && mission.keyword ? `
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+            ${[...mission.keyword].map(ch => `<span style="width:28px;height:28px;border-radius:8px;background:var(--color-primary);color:#fff;display:grid;place-items:center;font-weight:900;font-size:14px">${escHtml(ch)}</span>`).join('')}
+          </div>` : ''}
         <div style="display:flex;align-items:center;gap:8px">
           <span class="badge badge--primary">${typeLabel}</span>
-          <button class="btn btn--primary btn--sm" onclick="navigate('/write?type=${mission.type || ''}')">이 미션 참여하기</button>
+          <button class="btn btn--primary btn--sm" onclick="navigate('${writeUrl}')">이 미션 참여하기</button>
         </div>
       </div>
     </div>`;

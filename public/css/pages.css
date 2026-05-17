@@ -2062,7 +2062,44 @@
 .home-recent-grid { display: flex; flex-direction: column; gap: 10px; }
 
 /* ── 모바일 미니 푸터 (PC에서 숨김) ── */
-.site-footer__mobile { display: none; }
+.site-footer__mobile {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 16px calc(env(safe-area-inset-bottom, 0) + 12px);
+  border-top: 1px solid var(--color-border-light);
+  text-align: center;
+}
+.site-footer__brand--mini {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 900;
+  color: var(--color-primary);
+  text-decoration: none;
+  letter-spacing: -0.3px;
+}
+.site-footer__mobile-links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.site-footer__mobile-links a {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+.site-footer__mobile-links a:hover { color: var(--color-primary); }
+.site-footer__mobile-links span { color: var(--color-border); font-size: 11px; }
+.site-footer__copy--mobile {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
 
 /* ── 삼행시 작성 폼 ── */
 .acrostic-lines-box {

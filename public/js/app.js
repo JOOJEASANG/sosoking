@@ -71,6 +71,18 @@ export async function initApp() {
             </div>
             <div class="site-footer__copy">© ${new Date().getFullYear()} 소소킹. All rights reserved.</div>
           </div>
+          <div class="site-footer__mobile">
+            <a href="#/" class="site-footer__brand--mini">
+              <img src="/logo.svg" alt="" width="18" height="18" onerror="this.style.display='none'">
+              <span>소소킹</span>
+            </a>
+            <div class="site-footer__mobile-links">
+              <a href="#/guide">이용안내</a><span>·</span>
+              <a href="#/terms">이용약관</a><span>·</span>
+              <a href="#/privacy">개인정보</a>
+            </div>
+            <div class="site-footer__copy site-footer__copy--mobile">© ${new Date().getFullYear()} 소소킹</div>
+          </div>
         </footer>
       </div>
     </div>

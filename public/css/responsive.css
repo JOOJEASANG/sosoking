@@ -149,6 +149,10 @@
   .acrostic-line .form-input { font-size: var(--font-size-sm); }
   .admin-stat-grid { grid-template-columns: repeat(2, 1fr); }
 
+  /* 푸터 — PC 푸터 숨기고 미니 푸터 표시 */
+  .site-footer__inner { display: none; }
+  .site-footer__mobile { display: flex; }
+
   /* 홈 피드 리스트 내 카드 — 동일한 카드 스타일 */
   #hot-feed-list .card {
     border-radius: var(--radius-md);

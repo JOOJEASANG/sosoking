@@ -311,7 +311,7 @@ function renderFormFields() {
           <input id="f-keyword" class="form-input" placeholder="예: 소소킹" maxlength="6">
           <div class="form-hint">최대 6글자 · 입력하면 삼행시 줄이 자동 생성돼요</div>
         </div>
-        <div id="acrostic-preview" style="margin-top:12px"></div>
+        <div id="acrostic-lines" style="margin-top:12px"></div>
         <div class="form-group" style="margin-top:12px">
           <label class="form-label">설명</label>
           <textarea id="f-desc" class="form-textarea" placeholder="예: 창의력 넘치는 삼행시 한 번 써봐요!" rows="2"></textarea>
@@ -761,7 +761,7 @@ async function handleSubmit() {
 
     localStorage.removeItem(`write-draft-${type}`);
     toast.success('올렸어요! 🎉');
-    navigate('/feed');
+    navigate(`/detail/${docRef.id}`);
   } catch (e) {
     console.error(e);
     toast.error('올리기에 실패했어요. 다시 시도해주세요.');
