@@ -13,7 +13,6 @@
 ════════════════════════════════════════ */
 @media (max-width: 1023px) {
   .site-sidebar { display: none; }
-  .site-main { margin-left: 0; }
 
   .site-header {
     display: flex;
@@ -50,14 +49,17 @@
   .admin-sidebar { position: static; }
   .admin-stat-grid { grid-template-columns: repeat(2, 1fr); }
 
-  /* ── 푸터 ── */
-  .site-footer__inner {
-    grid-template-columns: 1fr 1fr;
-    padding: 28px 16px 20px;
-    gap: 20px;
+  /* ── 푸터: 모바일에서 PC 푸터 숨기고 미니 푸터 표시 ── */
+  .site-footer__inner,
+  .site-footer__copy-bar { display: none; }
+  .site-footer__mobile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 20px 16px calc(env(safe-area-inset-bottom, 0) + 16px);
+    border-top: 1px solid var(--color-border-light);
   }
-  .site-footer__brand-block { grid-column: 1 / -1; }
-  .site-footer__copy-bar { padding: 12px 16px; }
 }
 
 [data-theme="dark"] .site-header {

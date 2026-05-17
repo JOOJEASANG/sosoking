@@ -315,15 +315,15 @@ function renderFormFields() {
       return `
         <div class="form-group">
           <label class="form-label">제시어 <span class="required">*</span></label>
-          <input id="f-keyword" class="form-input" placeholder="예: 소소킹" maxlength="6" minlength="3">
-          <div class="form-hint">3~6글자 · 입력하면 삼행시 줄이 자동 생성돼요</div>
+          <input id="f-keyword" class="form-input" placeholder="예: 소소킹" maxlength="6" minlength="3" autocomplete="off">
+          <div class="form-hint">3~6글자 · 입력하면 글자별 입력 칸이 생겨요</div>
         </div>
-        <div id="acrostic-preview" style="margin-top:12px"></div>
+        <div id="acrostic-lines"></div>
         <div class="form-group" style="margin-top:12px">
-          <label class="form-label">설명</label>
+          <label class="form-label">설명 <span style="font-size:11px;color:var(--color-text-muted)">(선택)</span></label>
           <textarea id="f-desc" class="form-textarea" placeholder="예: 창의력 넘치는 삼행시 한 번 써봐요!" rows="2"></textarea>
         </div>
-        ${imageUploader(1)} ${commonTags}`;
+        ${commonTags}`;
 
     case 'cbattle':
       return commonTitle + `
@@ -577,23 +577,32 @@ function initFormLogic() {
     }
   }
 
-  // 삼행시 제시어 → 미리보기
+  // 삼행시 — 글자별 입력 칸 동적 생성
   if (type === 'acrostic') {
     const kwInput = document.getElementById('f-keyword');
-    kwInput?.addEventListener('input', () => {
-      const kw = kwInput.value.trim();
-      const preview = document.getElementById('acrostic-preview');
-      if (!kw) { preview.innerHTML = ''; return; }
-      preview.innerHTML = `
-        <div class="card" style="padding:16px">
-          <div style="font-size:12px;font-weight:700;color:var(--color-text-muted);margin-bottom:8px">삼행시 미리보기</div>
-          ${[...kw].map(ch => `
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-              <span style="width:28px;height:28px;background:var(--color-primary);color:#fff;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;flex-shrink:0">${ch}</span>
-              <span style="font-size:13px;color:var(--color-text-muted)">:  여기에 한 줄 작성</span>
+    const renderAcrosticLines = (kw) => {
+      const container = document.getElementById('acrostic-lines');
+      if (!container) return;
+      if (!kw || kw.length < 3) { container.innerHTML = ''; return; }
+      container.innerHTML = `
+        <div class="acrostic-lines-box">
+          <div style="font-size:12px;font-weight:700;color:var(--color-text-muted);margin-bottom:10px">✍️ 삼행시 작성</div>
+          ${[...kw].map((ch, i) => `
+            <div class="acrostic-line-row">
+              <span class="acrostic-line-char">${escHtml(ch)}</span>
+              <input
+                class="form-input acrostic-line-input"
+                id="acrostic-line-${i}"
+                placeholder="${escHtml(ch)}로 시작하는 재치 있는 한 줄"
+                maxlength="50"
+                autocomplete="off"
+              >
             </div>`).join('')}
         </div>`;
-    });
+    };
+    kwInput?.addEventListener('input', () => renderAcrosticLines(kwInput.value.trim()));
+    // URL 파라미터로 제시어가 미리 채워진 경우
+    if (kwInput?.value.trim()) renderAcrosticLines(kwInput.value.trim());
   }
 
   // 퀴즈 방식 토글
@@ -833,7 +842,9 @@ function collectExtraData(type) {
       const keyword = document.getElementById('f-keyword')?.value.trim();
       if (!keyword) { toast.error('제시어를 입력해주세요'); return null; }
       if (keyword.length < 3) { toast.error('제시어는 3글자 이상이어야 해요'); return null; }
-      return { keyword };
+      const lines = [...keyword].map((_, i) => (document.getElementById(`acrostic-line-${i}`)?.value.trim() || ''));
+      if (lines.some(l => !l)) { toast.error('삼행시의 모든 줄을 입력해주세요'); return null; }
+      return { keyword, lines };
     }
     case 'howto': {
       const summary = document.getElementById('f-summary')?.value.trim();

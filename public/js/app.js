@@ -90,6 +90,21 @@ export async function initApp() {
           <div class="site-footer__copy-bar">
             <div class="site-footer__copy">© ${new Date().getFullYear()} 소소킹. All rights reserved.</div>
           </div>
+          <!-- 모바일 전용 미니 푸터 (PC 푸터 위에 숨겨짐) -->
+          <div class="site-footer__mobile">
+            <a href="#/" class="site-footer__brand site-footer__brand--mini">
+              <img src="/logo.svg" alt="" width="20" height="20">
+              <span>소소킹</span>
+            </a>
+            <div class="site-footer__mobile-links">
+              <a href="#/guide">이용안내</a>
+              <span>·</span>
+              <a href="#/terms">이용약관</a>
+              <span>·</span>
+              <a href="#/privacy">개인정보</a>
+            </div>
+            <div class="site-footer__copy site-footer__copy--mobile">© ${new Date().getFullYear()} 소소킹</div>
+          </div>
         </footer>
       </div>
     </div>
