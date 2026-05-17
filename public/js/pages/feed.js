@@ -5,25 +5,16 @@ import { renderFeedCard, renderSkeletonCards } from '../components/feed-card.js'
 import { setMeta } from '../utils/seo.js';
 import { escHtml } from '../utils/helpers.js';
 
-const CAT_TYPES = {
-  golra: ['balance','vote','battle'],
-  usgyo: ['naming','initial_game','drip'],
-  malhe: ['ox','relay','random_battle'],
-};
-
-const CAT_LABELS = {
-  '': '전체', golra: '골라킹', usgyo: '드립킹', malhe: '도전킹',
-};
+const PRIMARY_TYPES = ['vote', 'naming', 'initial_game', 'ox', 'relay'];
 
 const TYPE_LABELS = {
-  balance:'밸런스게임', vote:'민심투표', battle:'선택지배틀', challenge24:'24시간챌린지', tournament:'이상형월드컵',
+  balance:'골라킹', vote:'골라킹', battle:'골라킹', challenge24:'24시간챌린지', tournament:'이상형월드컵',
   naming:'미친작명소', initial_game:'초성게임', acrostic:'미션 행시', drip:'한줄드립', cbattle:'댓글배틀', laugh:'웃참챌린지',
   ox:'OX퀴즈', quiz:'4지선다', relay:'막장킹', word_relay:'단어릴레이', random_battle:'랜덤대결',
   howto:'노하우', story:'경험담', fail:'실패담', concern:'고민/질문',
 };
 
 let lastDoc      = null;
-let currentCat   = '';
 let currentType  = '';
 let currentSearch = '';
 let isLoading    = false;
@@ -32,7 +23,6 @@ export async function renderFeed() {
   setMeta('피드 · 전체 글');
   const el = document.getElementById('page-content');
   const params = getQueryParams();
-  currentCat    = params.cat  || '';
   currentType   = params.type || '';
   currentSearch = params.q    || '';
   lastDoc = null;
@@ -64,7 +54,6 @@ export async function renderFeed() {
   const doSearch = () => {
     const q = searchInput?.value.trim() || '';
     currentSearch = q;
-    currentCat    = '';
     currentType   = '';
     lastDoc = null;
     updateFilterUI();
@@ -86,17 +75,6 @@ export async function renderFeed() {
     document.getElementById('search-clear-btn').style.display = 'none';
   });
 
-  document.querySelectorAll('[data-cat-filter]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      currentCat    = btn.dataset.catFilter;
-      currentType   = '';
-      currentSearch = '';
-      if (searchInput) searchInput.value = '';
-      lastDoc = null;
-      updateFilterUI();
-      loadPosts(true);
-    });
-  });
   attachTypeFilterListeners();
 }
 
@@ -107,10 +85,6 @@ function attachTypeFilterListeners() {
       currentSearch = '';
       const searchInput = document.getElementById('feed-search-input');
       if (searchInput) searchInput.value = '';
-      if (currentType) {
-        const found = Object.entries(CAT_TYPES).find(([, types]) => types.includes(currentType));
-        if (found) currentCat = found[0];
-      }
       lastDoc = null;
       updateFilterUI();
       loadPosts(true);
@@ -133,39 +107,32 @@ function renderSearchBar() {
 function renderFilterBar() {
   return `
     <div class="feed-filters" id="cat-filters">
-      ${Object.entries(CAT_LABELS).map(([key, label]) => `
-        <button class="filter-chip ${currentCat === key && !currentSearch ? 'active' : ''}" data-cat-filter="${key}">
-          ${label}
+      <button class="filter-chip ${!currentType && !currentSearch ? 'active' : ''}" data-type-filter="">전체</button>
+      ${PRIMARY_TYPES.map(type => `
+        <button class="filter-chip ${currentType === type && !currentSearch ? 'active' : ''}" data-type-filter="${type}">
+          ${TYPE_LABELS[type]}
         </button>`).join('')}
     </div>
     ${currentSearch ? `<div class="feed-search-label">🔍 "<strong>${escHtml(currentSearch)}</strong>" 검색 결과</div>` : ''}`;
 }
 
 function renderTypeFilter() {
-  const cat = currentCat || null;
-  const groups = cat ? { [cat]: CAT_TYPES[cat] } : CAT_TYPES;
   return `
     <div class="sidebar-widget">
-      <div class="sidebar-widget__title">🗂 유형 필터</div>
-      ${Object.entries(groups).map(([catKey, types]) => `
-        <div style="margin-bottom:12px">
-          <div style="font-size:11px;font-weight:700;color:var(--color-text-muted);margin-bottom:6px">
-            ${{ golra:'골라킹', usgyo:'드립킹', malhe:'도전킹' }[catKey]}
-          </div>
-          <div style="display:flex;flex-wrap:wrap;gap:6px">
-            ${types.map(t => `
-              <button class="filter-chip ${currentType === t ? 'active' : ''}" data-type-filter="${t}" style="font-size:11px">
-                ${TYPE_LABELS[t]}
-              </button>`).join('')}
-          </div>
-        </div>`).join('')}
-      ${currentType ? `<button class="btn btn--ghost btn--sm btn--full" data-type-filter="">전체 보기</button>` : ''}
+      <div class="sidebar-widget__title">🗂 대표 유형</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        ${PRIMARY_TYPES.map(type => `
+          <button class="filter-chip ${currentType === type ? 'active' : ''}" data-type-filter="${type}" style="font-size:11px">
+            ${TYPE_LABELS[type]}
+          </button>`).join('')}
+      </div>
+      ${currentType ? `<button class="btn btn--ghost btn--sm btn--full" data-type-filter="" style="margin-top:10px">전체 보기</button>` : ''}
     </div>`;
 }
 
 function updateFilterUI() {
-  document.querySelectorAll('[data-cat-filter]').forEach(b => {
-    b.classList.toggle('active', b.dataset.catFilter === currentCat && !currentSearch);
+  document.querySelectorAll('[data-type-filter]').forEach(b => {
+    b.classList.toggle('active', b.dataset.typeFilter === currentType && !currentSearch);
   });
   const sidebar = document.querySelector('.layout-sidebar');
   if (sidebar) {
@@ -198,8 +165,7 @@ async function loadPosts(reset = false) {
       if (!reset && lastDoc) constraints.push(startAfter(lastDoc));
     } else {
       constraints = [orderBy('createdAt', 'desc'), limit(15)];
-      if (currentType)     constraints.unshift(where('type', '==', currentType));
-      else if (currentCat) constraints.unshift(where('cat',  '==', currentCat));
+      if (currentType) constraints.unshift(where('type', '==', currentType));
       if (!reset && lastDoc) constraints.push(startAfter(lastDoc));
     }
 
