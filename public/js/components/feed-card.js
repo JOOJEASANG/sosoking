@@ -39,6 +39,8 @@ export function renderFeedCard(post) {
   const viewCount = post.viewCount || 0;
   const temp = Math.min(100, Math.round((totalReactions * 2 + commentCount * 3) / 2));
   const tempColor = temp >= 70 ? '#FF4422' : temp >= 40 ? '#FF8800' : temp >= 20 ? '#FFAA00' : '#4F8EF7';
+  const tempLabel = temp >= 70 ? '🔥 불타는 중' : temp >= 40 ? '🌶️ 달아오르는 중' : temp >= 20 ? '☀️ 따뜻한 중' : '';
+  const tempEmoji = temp >= 70 ? '🔥' : temp >= 40 ? '🌶️' : temp >= 20 ? '☀️' : '🌡️';
 
   return `
     <article class="card card--hover feed-card feed-card--${meta.cat}" onclick="navigate('/detail/${post.id}')">
@@ -48,6 +50,7 @@ export function renderFeedCard(post) {
             <span class="feed-card__type-badge feed-card__type-badge--${meta.cat}">
               ${meta.icon} ${meta.label}
             </span>
+            ${temp >= 20 ? `<span class="feed-temp-chip" style="--temp-color:${tempColor}">${tempEmoji} ${temp}°C</span>` : ''}
             ${post.tags?.length ? `<span class="tag">#${post.tags[0]}</span>` : ''}
           </div>
           <h3 class="feed-card__title line-clamp-2">${escHtml(post.title || '')}</h3>
@@ -64,7 +67,11 @@ export function renderFeedCard(post) {
         ${images.length === 1 ? `<div class="feed-card__thumb"><img src="${images[0]}" alt="" loading="lazy"></div>` : ''}
       </div>
       ${images.length > 1 ? renderImageGrid(images) : ''}
-      ${temp > 0 ? `<div class="feed-temp-bar" style="--temp-pct:${temp}%;--temp-color:${tempColor}" title="참여 온도 ${temp}°C"></div>` : ''}
+      ${temp > 0 ? `
+        <div class="feed-temp-bar-wrap">
+          <div class="feed-temp-bar" style="--temp-pct:${temp}%;--temp-color:${tempColor}"></div>
+          ${tempLabel ? `<span class="feed-temp-label" style="color:${tempColor}">${tempLabel}</span>` : ''}
+        </div>` : ''}
       <div class="feed-card__actions" onclick="event.stopPropagation()">
         <button class="feed-share-btn" onclick="(async()=>{const u=location.origin+'/p/${post.id}';if(navigator.share){await navigator.share({title:${JSON.stringify(post.title||'소소킹')},url:u})}else{await navigator.clipboard.writeText(u);window.showToast?.('링크가 복사됐어요','success')}})()">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>

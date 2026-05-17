@@ -19,7 +19,7 @@ const CATEGORIES = [
     key: 'usgyo', label: '웃겨봐', icon: '😂', badge: '드립형', desc: '센스·유머 대결',
     types: [
       { key: 'naming',   icon: '😜', label: '미친작명소', desc: '사진에 웃긴 제목 붙이기' },
-      { key: 'acrostic', icon: '✍️', label: '삼행시짓기', desc: '제시어로 삼행시 도전' },
+      { key: 'acrostic', icon: '✍️', label: 'N행시짓기', desc: '제시어로 삼행시~육행시 도전' },
       { key: 'drip',     icon: '🎤', label: '한줄드립',   desc: '한 줄로 터지는 드립 대결' },
     ],
   },
@@ -573,20 +573,28 @@ function initFormLogic() {
   // 삼행시 제시어 → 미리보기
   if (type === 'acrostic') {
     const kwInput = document.getElementById('f-keyword');
-    kwInput?.addEventListener('input', () => {
-      const kw = kwInput.value.trim();
-      const preview = document.getElementById('acrostic-preview');
-      if (!kw) { preview.innerHTML = ''; return; }
-      preview.innerHTML = `
-        <div class="card" style="padding:16px">
-          <div style="font-size:12px;font-weight:700;color:var(--color-text-muted);margin-bottom:8px">삼행시 미리보기</div>
-          ${[...kw].map(ch => `
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-              <span style="width:28px;height:28px;background:var(--color-primary);color:#fff;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;flex-shrink:0">${ch}</span>
-              <span style="font-size:13px;color:var(--color-text-muted)">:  여기에 한 줄 작성</span>
+    const renderAcrosticLines = (kw) => {
+      const container = document.getElementById('acrostic-lines');
+      if (!container) return;
+      if (!kw || kw.length < 3) { container.innerHTML = ''; return; }
+      container.innerHTML = `
+        <div class="acrostic-lines-box">
+          <div style="font-size:12px;font-weight:700;color:var(--color-text-muted);margin-bottom:10px">✍️ ${kw.length}행시 작성</div>
+          ${[...kw].map((ch, i) => `
+            <div class="acrostic-line-row">
+              <span class="acrostic-line-char">${escHtml(ch)}</span>
+              <input
+                class="form-input acrostic-line-input"
+                id="acrostic-line-${i}"
+                placeholder="${escHtml(ch)}로 시작하는 재치 있는 한 줄"
+                maxlength="50"
+                autocomplete="off"
+              >
             </div>`).join('')}
         </div>`;
-    });
+    };
+    kwInput?.addEventListener('input', () => renderAcrosticLines(kwInput.value.trim()));
+    if (kwInput?.value.trim()) renderAcrosticLines(kwInput.value.trim());
   }
 
   // 퀴즈 방식 토글
@@ -703,7 +711,7 @@ async function handleSubmit() {
   let title = document.getElementById('f-title')?.value.trim();
   if (type === 'acrostic') {
     const kw = document.getElementById('f-keyword')?.value.trim();
-    title = kw ? `'${kw}' 삼행시 도전!` : '';
+    title = kw ? `'${kw}' ${kw.length}행시 도전!` : '';
   }
   if (!title) { toast.error(type === 'acrostic' ? '제시어를 입력해주세요' : '제목을 입력해주세요'); return; }
 
@@ -825,7 +833,10 @@ function collectExtraData(type) {
     case 'acrostic': {
       const keyword = document.getElementById('f-keyword')?.value.trim();
       if (!keyword) { toast.error('제시어를 입력해주세요'); return null; }
-      return { keyword };
+      if (keyword.length < 3) { toast.error('제시어는 3글자 이상이어야 해요'); return null; }
+      const lines = [...keyword].map((_, i) => (document.getElementById(`acrostic-line-${i}`)?.value.trim() || ''));
+      if (lines.some(l => !l)) { toast.error(`${keyword.length}행시의 모든 줄을 입력해주세요`); return null; }
+      return { keyword, lines };
     }
     case 'howto': {
       const summary = document.getElementById('f-summary')?.value.trim();
