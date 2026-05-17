@@ -2,14 +2,20 @@ import { navigate } from './router.js';
 import { toast } from './components/toast.js';
 
 const COPY_REPLACEMENTS = [
-  ['골라봐', '골라킹'],
-  ['웃겨봐', '드립킹'],
-  ['도전봐', '도전킹'],
+  ['골라봐', '대표 놀이'],
+  ['웃겨봐', '대표 놀이'],
+  ['도전봐', '대표 놀이'],
+  ['밸런스게임', '골라킹'],
+  ['민심투표', '골라킹'],
+  ['선택지배틀', '골라킹'],
   ['삼행시짓기', '초성게임'],
   ['제시어로 삼행시 도전', '초성을 보고 떠오르는 단어를 댓글로 참여'],
   ['막장릴레이', '막장킹'],
   ['한 문장씩 이어가는 스토리', '한 문장씩 터지는 막장 전개'],
 ];
+
+const REPRESENTATIVE_TYPES = new Set(['vote', 'naming', 'initial_game', 'ox', 'relay']);
+const HIDE_TYPES = new Set(['balance', 'battle', 'drip', 'random_battle']);
 
 function getParams() {
   const hash = window.location.hash || '';
@@ -65,28 +71,75 @@ function replaceAttributes(el) {
   }
 }
 
+function patchCardToInitialGame(card) {
+  card.dataset.type = 'initial_game';
+  const icon = card.querySelector('.type-select-card__icon');
+  const title = card.querySelector('.type-select-card__name');
+  const desc = card.querySelector('.type-select-card__desc');
+  if (icon) icon.textContent = '🔤';
+  if (title) title.textContent = '초성게임';
+  if (desc) desc.textContent = '초성을 보고 떠오르는 단어를 댓글로 참여';
+}
+
+function patchCardToVote(card) {
+  card.dataset.type = 'vote';
+  const icon = card.querySelector('.type-select-card__icon');
+  const title = card.querySelector('.type-select-card__name');
+  const desc = card.querySelector('.type-select-card__desc');
+  if (icon) icon.textContent = '🗳️';
+  if (title) title.textContent = '골라킹';
+  if (desc) desc.textContent = '선택지를 올리고 사람들의 선택을 받아요';
+}
+
 function normalizeWriteTypeCards(root = document.body) {
   if (!isWritePage() || !root) return;
   const cards = [...document.querySelectorAll('.type-select-card')];
+  const seen = new Set();
+
   for (const card of cards) {
     const name = card.querySelector('.type-select-card__name')?.textContent || '';
-    const type = card.dataset.type;
+    let type = card.dataset.type;
+
     if (type === 'acrostic' || name.includes('삼행시')) {
-      card.dataset.type = 'initial_game';
-      const icon = card.querySelector('.type-select-card__icon');
-      const title = card.querySelector('.type-select-card__name');
-      const desc = card.querySelector('.type-select-card__desc');
-      if (icon) icon.textContent = '🔤';
-      if (title) title.textContent = '초성게임';
-      if (desc) desc.textContent = '초성을 보고 떠오르는 단어를 댓글로 참여';
+      patchCardToInitialGame(card);
+      type = 'initial_game';
     }
+
+    if (['balance', 'battle'].includes(type)) {
+      patchCardToVote(card);
+      type = 'vote';
+    }
+
     if (type === 'relay' || name.includes('막장릴레이')) {
       const title = card.querySelector('.type-select-card__name');
       const desc = card.querySelector('.type-select-card__desc');
       if (title) title.textContent = '막장킹';
       if (desc) desc.textContent = '한 문장씩 터지는 막장 전개';
     }
+
+    if (HIDE_TYPES.has(type)) {
+      card.style.display = 'none';
+      continue;
+    }
+
+    if (!REPRESENTATIVE_TYPES.has(type)) {
+      card.style.display = 'none';
+      continue;
+    }
+
+    if (seen.has(type)) {
+      card.style.display = 'none';
+      continue;
+    }
+    seen.add(type);
+    card.style.display = '';
   }
+
+  document.querySelectorAll('.type-select-grid').forEach(grid => {
+    const visible = [...grid.children].some(child => child.style.display !== 'none');
+    const group = grid.closest('div[style*="margin-bottom"]');
+    if (group) group.style.display = visible ? '' : 'none';
+  });
 }
 
 function normalizeCopy(root = document.body) {
