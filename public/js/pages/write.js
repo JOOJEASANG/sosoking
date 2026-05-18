@@ -4,6 +4,7 @@ import { navigate, getQueryParams } from '../router.js';
 import { toast } from '../components/toast.js';
 import { initImageUploader, getUploadedImages } from '../components/image-uploader.js';
 import { setMeta } from '../utils/seo.js';
+import { appState } from '../state.js';
 
 /* ── 카테고리/유형 정의 ── */
 const CATEGORIES = [
@@ -846,7 +847,7 @@ async function handleSubmit() {
       title, desc, tags,
       images,
       authorId:   auth.currentUser.uid,
-      authorName: auth.currentUser.displayName || '익명',
+      authorName: appState.nickname || auth.currentUser.displayName || '익명',
       authorPhoto:auth.currentUser.photoURL || '',
       reactions: { total: 0 },
       commentCount: 0,

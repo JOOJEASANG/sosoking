@@ -2197,6 +2197,33 @@
   background: var(--color-surface-2); color: var(--color-text-primary);
 }
 
+/* ════════════════════════
+   소셜 공유 시트
+════════════════════════ */
+.share-sheet { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: flex-end; }
+.share-sheet__backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.5); }
+.share-sheet__panel {
+  position: relative; width: 100%; background: var(--color-surface);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  padding: 24px 20px 32px; transform: translateY(100%);
+  transition: transform 0.28s cubic-bezier(0.34,1.56,0.64,1);
+}
+.share-sheet__panel.open { transform: translateY(0); }
+.share-sheet__title { font-size: 15px; font-weight: 900; margin-bottom: 20px; text-align: center; }
+.share-sheet__grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.share-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 14px 8px; border-radius: var(--radius-lg);
+  background: var(--color-surface-2); border: 1.5px solid var(--color-border-light);
+  text-decoration: none; cursor: pointer;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+.share-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+.share-btn__icon { font-size: 24px; }
+.share-btn__label { font-size: 11px; font-weight: 700; color: var(--color-text-secondary); }
+[data-theme="dark"] .share-sheet__panel { background: var(--color-surface); }
+[data-theme="dark"] .share-btn { background: var(--color-surface-2); border-color: var(--color-border); }
+
 .naming-boxes {
   display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;
 }
