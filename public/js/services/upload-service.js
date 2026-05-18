@@ -37,7 +37,7 @@ export async function uploadImage(file, folder = 'feeds') {
   const path     = `${folder}/${user.uid}/${filename}`;
   const fileRef  = ref(storage, path);
 
-  await uploadBytes(fileRef, blob);
+  await uploadBytes(fileRef, blob, { contentType: 'image/jpeg' });
   return getDownloadURL(fileRef);
 }
 

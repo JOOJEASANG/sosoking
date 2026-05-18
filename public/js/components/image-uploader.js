@@ -16,19 +16,23 @@ export function initImageUploader(container, max = 5) {
 export async function getUploadedImages() {
   if (!auth.currentUser || uploadedFiles.length === 0) return [];
   const urls = [];
+  let failCount = 0;
   for (const item of uploadedFiles) {
     if (item.storageUrl) { urls.push(item.storageUrl); continue; }
     try {
       const path = `feeds/${auth.currentUser.uid}/${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
       const storageRef = ref(storage, path);
       const blob = await compressImage(item.file);
-      await uploadBytes(storageRef, blob);
+      if (!blob) throw new Error('이미지 압축 실패');
+      await uploadBytes(storageRef, blob, { contentType: 'image/jpeg' });
       item.storageUrl = await getDownloadURL(storageRef);
       urls.push(item.storageUrl);
     } catch (e) {
       console.error('이미지 업로드 실패', e);
+      failCount++;
     }
   }
+  if (failCount > 0) toast.warn(`사진 ${failCount}장 업로드에 실패했어요. 글은 저장됐어요.`);
   return urls;
 }
 

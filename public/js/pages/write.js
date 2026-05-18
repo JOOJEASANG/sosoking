@@ -186,7 +186,7 @@ function renderFormFields() {
           <input id="f-initials" class="form-input" placeholder="예: ㅅㅅㅋ" maxlength="6" autocomplete="off" inputmode="text">
           <div class="form-hint">2~6글자 초성을 입력하세요. 참여자들이 그 글자수에 맞는 단어를 맞혀요.</div>
         </div>
-        ${commonTags}`;
+        ${imageUploader(1)} ${commonTags}`;
 
     case 'crazy_court':
       return commonTitle + `
@@ -347,7 +347,7 @@ function renderFormFields() {
           <label class="form-label">설명 <span style="font-size:11px;color:var(--color-text-muted)">(선택)</span></label>
           <textarea id="f-desc" class="form-textarea" placeholder="예: 창의력 넘치는 삼행시 한 번 써봐요!" rows="2"></textarea>
         </div>
-        ${commonTags}`;
+        ${imageUploader(1)} ${commonTags}`;
 
     case 'cbattle':
       return commonTitle + `
