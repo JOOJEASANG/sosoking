@@ -1,4 +1,5 @@
 /* sidebar.js — PC 좌측 사이드바 (≥1024px) */
+import { auth, signOut } from '../firebase.js';
 import { appState } from '../state.js';
 import { navigate } from '../router.js';
 import { escHtml } from '../utils/helpers.js';
@@ -107,19 +108,27 @@ export function renderSidebar() {
     </a>`).join('');
 
   const userSection = user
-    ? `<div class="sidebar__user">
-        <div class="sidebar__user-avatar" id="sb-avatar"
-             title="${escHtml(user.displayName || '내 정보')}"
-             role="button" tabindex="0" aria-label="내 정보">
-          ${escHtml((user.displayName || '나')[0])}
+    ? `<div class="sidebar__user-wrap">
+        <div class="sidebar__user">
+          <div class="sidebar__user-avatar" id="sb-avatar"
+               title="${escHtml(user.displayName || '내 정보')}"
+               role="button" tabindex="0" aria-label="내 정보">
+            ${escHtml((user.displayName || '나')[0])}
+          </div>
+          <span class="sidebar__user-name" id="sb-username">
+            ${escHtml(user.displayName || user.email || '사용자')}
+          </span>
+          ${!isAdmin ? `<a href="#/account?tab=notifications" class="sidebar__icon-btn" title="알림" aria-label="알림">
+            ${iconBell()}
+            ${unread > 0 ? `<span class="sidebar__badge">${unread > 99 ? '99+' : unread}</span>` : ''}
+          </a>` : ''}
         </div>
-        <span class="sidebar__user-name" id="sb-username">
-          ${escHtml(user.displayName || user.email || '사용자')}
-        </span>
-        ${!isAdmin ? `<a href="#/account?tab=notifications" class="sidebar__icon-btn" title="알림" aria-label="알림">
-          ${iconBell()}
-          ${unread > 0 ? `<span class="sidebar__badge">${unread > 99 ? '99+' : unread}</span>` : ''}
-        </a>` : ''}
+        <button class="sidebar__logout-btn" id="sb-logout-btn" title="로그아웃" aria-label="로그아웃">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" width="16" height="16" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"/>
+          </svg>
+          <span>로그아웃</span>
+        </button>
       </div>`
     : `<a href="#/login" class="sidebar__login-btn">로그인 / 가입</a>`;
 
@@ -170,6 +179,11 @@ export function renderSidebar() {
   document.getElementById('sb-write-btn')?.addEventListener('click', () => navigate('/write'));
   document.getElementById('sb-avatar')?.addEventListener('click',   () => !isAdmin && navigate('/account'));
   document.getElementById('sb-username')?.addEventListener('click', () => !isAdmin && navigate('/account'));
+
+  document.getElementById('sb-logout-btn')?.addEventListener('click', async () => {
+    await signOut(auth);
+    navigate('/');
+  });
 
   document.getElementById('sb-theme-btn')?.addEventListener('click', () => {
     const next = isDark() ? 'light' : 'dark';

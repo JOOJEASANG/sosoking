@@ -104,17 +104,17 @@
    다크 모드 토큰
 ══════════════════════════════ */
 [data-theme="dark"] {
-  --color-bg:           #0F1117;
-  --color-surface:      #1A1D2E;
-  --color-surface-2:    #21253A;
-  --color-surface-alt:  #252942;
-  --color-border:       #2D3154;
-  --color-border-light: #23274A;
+  --color-bg:           #16192B;
+  --color-surface:      #1F2235;
+  --color-surface-2:    #262A40;
+  --color-surface-alt:  #2C3050;
+  --color-border:       #373B5C;
+  --color-border-light: #2E324E;
 
-  --color-text-primary:   #E8EAF6;
-  --color-text-secondary: #9AA3C8;
-  --color-text-muted:     #5C6486;
-  --color-text:           #E8EAF6;
+  --color-text-primary:   #ECEEF8;
+  --color-text-secondary: #A8B0D0;
+  --color-text-muted:     #6E7AA0;
+  --color-text:           #ECEEF8;
 
   --color-primary-bg:     rgba(255,68,34,0.14);
   --color-primary-border: rgba(255,68,34,0.32);

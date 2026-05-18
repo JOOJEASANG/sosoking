@@ -13,6 +13,7 @@ import { escHtml, formatTime, computeTitle } from '../utils/helpers.js';
 import { renderFeedCard } from '../components/feed-card.js';
 import { appState } from '../state.js';
 import { setMeta } from '../utils/seo.js';
+import { renderSidebar } from '../components/sidebar.js';
 
 export async function renderAccount() {
   setMeta('내 계정');
@@ -265,6 +266,10 @@ function setupNicknameEdit(user, currentNickname) {
 
       // Firebase Auth displayName 업데이트
       await updateProfile(user, { displayName: newNick });
+
+      // appState 및 사이드바 즉시 갱신
+      if (appState.user) appState.user.displayName = newNick;
+      renderSidebar();
 
       feedback.style.color = 'var(--color-success)';
       feedback.textContent = '저장됐어요!';

@@ -210,6 +210,35 @@
   line-height: 1.4;
 }
 
+.sidebar__user-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sidebar__logout-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: none;
+  background: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+  font-family: inherit;
+}
+.sidebar__logout-btn:hover {
+  background: #FEE2E2;
+  color: var(--color-danger);
+}
+.sidebar__logout-btn svg { flex-shrink: 0; }
+
 .sidebar__login-btn {
   display: block;
   padding: 10px 16px;
@@ -718,8 +747,12 @@
   background: var(--color-surface);
   border-right-color: var(--color-border);
 }
+[data-theme="dark"] .sidebar__logout-btn:hover {
+  background: rgba(240,55,56,0.15);
+  color: #F87171;
+}
 [data-theme="dark"] .site-header {
-  background: rgba(15,17,23,0.96);
+  background: rgba(22,25,43,0.96);
   border-bottom-color: var(--color-border);
 }
 [data-theme="dark"] .bottom-nav {

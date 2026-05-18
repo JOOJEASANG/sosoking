@@ -10,25 +10,25 @@ const CATEGORIES = [
   {
     key: 'golra', label: '골라봐', icon: '🎯', badge: '선택형', desc: '선택·투표·배틀',
     types: [
-      { key: 'balance', icon: '⚖️', label: '밸런스게임', desc: 'A vs B, 둘 중 하나만!' },
-      { key: 'vote',    icon: '🗳️', label: '민심투표',   desc: '여러 선택지로 투표해요' },
-      { key: 'battle',  icon: '⚔️', label: '선택지배틀', desc: '후보들 중 최강자는?' },
+      { key: 'vote',          icon: '🗳️', label: '골라킹',    desc: '투표·밸런스·선택지 배틀' },
+      { key: 'initial_game',  icon: '🔤', label: '초성게임',   desc: '초성을 보고 단어 맞히기' },
+      { key: 'random_battle', icon: '🎰', label: '랜덤대결',   desc: '같은 주제로 누가 더 재밌어?' },
     ],
   },
   {
     key: 'usgyo', label: '웃겨봐', icon: '😂', badge: '드립형', desc: '센스·유머 대결',
     types: [
-      { key: 'naming',   icon: '😜', label: '미친작명소', desc: '사진에 웃긴 제목 붙이기' },
-      { key: 'acrostic', icon: '✍️', label: '삼행시짓기', desc: '제시어로 삼행시 도전' },
-      { key: 'drip',     icon: '🎤', label: '한줄드립',   desc: '한 줄로 터지는 드립 대결' },
+      { key: 'naming',      icon: '😜', label: '미친작명소', desc: '사진에 웃긴 제목 붙이기' },
+      { key: 'crazy_court', icon: '⚖️', label: '억까재판',   desc: '유죄냐 무죄냐 억지 판결' },
+      { key: 'drip',        icon: '🎤', label: '한줄드립',   desc: '한 줄로 터지는 드립 대결' },
     ],
   },
   {
     key: 'malhe', label: '도전봐', icon: '🎮', badge: '도전형', desc: '퀴즈·릴레이·창작',
     types: [
-      { key: 'ox',           icon: '❓', label: 'OX퀴즈',    desc: '맞으면 O, 틀리면 X' },
-      { key: 'relay',        icon: '🎭', label: '막장릴레이', desc: '한 문장씩 이어가는 스토리' },
-      { key: 'random_battle', icon: '🎰', label: '랜덤대결',  desc: '같은 주제로 누가 더 재밌어?' },
+      { key: 'quiz',    icon: '🧠', label: '미친퀴즈',   desc: '객관식·주관식 자유 퀴즈' },
+      { key: 'relay',   icon: '🎭', label: '막장킹',     desc: '한 문장씩 이어가는 스토리' },
+      { key: 'acrostic', icon: '✍️', label: '삼행시짓기', desc: '제시어로 삼행시 도전' },
     ],
   },
 ];
@@ -188,6 +188,36 @@ function renderFormFields() {
     </div>`;
 
   switch (type) {
+    case 'initial_game':
+      return commonTitle + `
+        <div class="form-group">
+          <label class="form-label">초성 <span class="required">*</span></label>
+          <input id="f-initials" class="form-input" placeholder="예: ㅅㅅㅋ" maxlength="6" autocomplete="off">
+          <div class="form-hint">2~6글자 초성을 입력하세요 (예: ㅅㅅㅋ → 소소킹)</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">힌트 (선택)</label>
+          <input id="f-hint" class="form-input" placeholder="예: 요즘 핫한 커뮤니티 이름이에요" maxlength="80">
+        </div>
+        <div class="form-group">
+          <label class="form-label">정답 <span class="required">*</span></label>
+          <input id="f-answer-short" class="form-input" placeholder="예: 소소킹">
+          <div class="form-hint">정답은 참여자에게 공개되지 않아요</div>
+        </div>
+        ${commonTags}`;
+
+    case 'crazy_court':
+      return commonTitle + `
+        <div class="form-group">
+          <label class="form-label">상황 설명 <span class="required">*</span></label>
+          <textarea id="f-desc" class="form-textarea" placeholder="예: 친구가 영화 보는 중에 스포를 했어요. 저는 그 친구를 며칠째 못 본 척하고 있는데, 저 유죄인가요?" rows="4"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">추가 증거 / 변명</label>
+          <input id="f-evidence" class="form-input" placeholder="예: 그 영화 4번 보려고 했거든요" maxlength="100">
+        </div>
+        ${imageUploader(1)} ${commonTags}`;
+
     case 'balance':
       return commonTitle + `
         <div class="form-group">
@@ -721,7 +751,11 @@ async function handleSubmit() {
     const kw = document.getElementById('f-keyword')?.value.trim();
     title = kw ? `'${kw}' 삼행시 도전!` : '';
   }
-  if (!title) { toast.error(type === 'acrostic' ? '제시어를 입력해주세요' : '제목을 입력해주세요'); return; }
+  if (type === 'initial_game') {
+    const initials = document.getElementById('f-initials')?.value.trim();
+    title = initials ? `초성게임: ${initials}` : '';
+  }
+  if (!title) { toast.error(type === 'acrostic' ? '제시어를 입력해주세요' : type === 'initial_game' ? '초성을 입력해주세요' : '제목을 입력해주세요'); return; }
 
   const desc     = document.getElementById('f-desc')?.value.trim()     || '';
   const tagsRaw  = document.getElementById('f-tags')?.value.trim()     || '';
@@ -780,6 +814,11 @@ async function handleSubmit() {
 
 // 메인 문서에서 정답 필드를 제거하고 반환 (secret 서브컬렉션용)
 function extractSecretFields(type, extra) {
+  if (type === 'initial_game') {
+    const secret = { answer: extra.answer, quizMode: 'short' };
+    delete extra.answer;
+    return secret;
+  }
   if (type === 'ox') {
     const secret = { answer: extra.answer, explanation: extra.explanation || '' };
     delete extra.answer;
@@ -893,6 +932,17 @@ function collectExtraData(type) {
     case 'random_battle': {
       if (!document.getElementById('f-desc')?.value.trim()) { toast.error('대결 주제를 입력해주세요'); return null; }
       return {};
+    }
+    case 'initial_game': {
+      const initials = document.getElementById('f-initials')?.value.trim();
+      if (!initials) { toast.error('초성을 입력해주세요'); return null; }
+      const answer = document.getElementById('f-answer-short')?.value.trim();
+      if (!answer) { toast.error('정답을 입력해주세요'); return null; }
+      return { initials, answer, hint: document.getElementById('f-hint')?.value.trim() || '' };
+    }
+    case 'crazy_court': {
+      if (!document.getElementById('f-desc')?.value.trim()) { toast.error('상황 설명을 입력해주세요'); return null; }
+      return { evidence: document.getElementById('f-evidence')?.value.trim() || '' };
     }
     case 'word_relay': {
       const startWord = document.getElementById('f-start-word')?.value.trim();
