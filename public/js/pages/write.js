@@ -1,4 +1,5 @@
-import { db, auth } from '../firebase.js';
+import { db, auth, functions } from '../firebase.js';
+import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
 import { collection, addDoc, doc, setDoc, serverTimestamp, Timestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { navigate, getQueryParams } from '../router.js';
 import { toast } from '../components/toast.js';
@@ -40,8 +41,8 @@ export function renderWrite() {
   selectedCat  = null;
   selectedType = null;
 
-  // Support ?type=X&keyword=Y for direct navigation from quick-start / mission buttons
-  const { type: typeParam, keyword: keywordParam } = getQueryParams();
+  // Support ?type=X&keyword=Y&ai=1&q=<question> for direct navigation
+  const { type: typeParam, keyword: keywordParam, ai: aiParam, q: qParam } = getQueryParams();
   if (typeParam) {
     for (const cat of CATEGORIES) {
       const found = cat.types.find(t => t.key === typeParam);
@@ -56,12 +57,86 @@ export function renderWrite() {
             kwInput.dispatchEvent(new Event('input'));
           }
         }
+        if (aiParam === '1' && qParam) {
+          prefillFormWithAI(typeParam, decodeURIComponent(qParam));
+        }
         return;
       }
     }
   }
 
   renderTypeSelect(el);
+}
+
+async function prefillFormWithAI(type, question) {
+  const submitBtn = document.getElementById('btn-submit');
+  const originalText = submitBtn?.textContent || '올리기';
+  if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'AI 생성 중...'; }
+
+  try {
+    const fn = httpsCallable(functions, 'generateFormContent');
+    const result = await fn({ type, question });
+    const data = result.data.data;
+
+    // 공통 필드
+    const titleEl = document.getElementById('f-title');
+    if (titleEl && data.title) titleEl.value = data.title;
+
+    const descEl = document.getElementById('f-desc');
+    if (descEl && data.desc) descEl.value = data.desc;
+
+    // 유형별 필드
+    switch (type) {
+      case 'vote': {
+        if (Array.isArray(data.options)) {
+          const optsToFill = data.options.slice(0, 4);
+          const btnAddOpt = document.getElementById('btn-add-option');
+          const existingCount = document.querySelectorAll('#option-list .option-input-row').length;
+          for (let i = existingCount; i < optsToFill.length; i++) btnAddOpt?.click();
+          const allInputs = [...document.querySelectorAll('#option-list .option-value')];
+          optsToFill.forEach((opt, i) => { if (allInputs[i]) allInputs[i].value = opt; });
+        }
+        break;
+      }
+      case 'crazy_court': {
+        const evEl = document.getElementById('f-evidence');
+        if (evEl && data.evidence) evEl.value = data.evidence;
+        break;
+      }
+      case 'initial_game': {
+        const initEl = document.getElementById('f-initials');
+        if (initEl && data.initials) initEl.value = data.initials;
+        break;
+      }
+      case 'acrostic': {
+        const kwEl = document.getElementById('f-keyword');
+        if (kwEl && data.keyword) {
+          kwEl.value = data.keyword;
+          kwEl.dispatchEvent(new Event('input'));
+        }
+        break;
+      }
+      case 'naming': {
+        const freeRadio = document.querySelector('[name="naming-chars"][value="0"]');
+        if (freeRadio) freeRadio.checked = true;
+        break;
+      }
+      case 'relay': {
+        const startEl = document.getElementById('f-start');
+        if (startEl && data.start) startEl.value = data.start;
+        const charsEl = document.getElementById('f-characters');
+        if (charsEl && data.characters) charsEl.value = data.characters;
+        break;
+      }
+    }
+
+    toast.success('AI가 내용을 채워줬어요! 수정하고 올려보세요 ✨');
+  } catch (e) {
+    console.error('AI prefill 실패', e);
+    toast.warn('AI 자동 입력에 실패했어요. 직접 작성해주세요.');
+  } finally {
+    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = originalText; }
+  }
 }
 
 function stepIndicator(current) {

@@ -175,7 +175,7 @@ export async function renderHome() {
 
     const dq = getDailyQuestion();
     const dailyHTML = `
-      <div class="home-daily" data-type-quick="${escHtml(dq.type)}">
+      <div class="home-daily" data-type-quick="${escHtml(dq.type)}" data-q="${escHtml(dq.q)}">
         <div class="home-daily__left">
           <div class="home-daily__badge">오늘의 소소한 질문 ✨</div>
           <div class="home-daily__q">${dq.emoji} ${escHtml(dq.q)}</div>
@@ -245,7 +245,8 @@ export async function renderHome() {
       btn.addEventListener('click', () => navigate(`/write?type=${btn.dataset.typeQuick}`));
     });
     el.querySelector('.home-daily')?.addEventListener('click', function() {
-      navigate(`/write?type=${this.dataset.typeQuick}`);
+      const q = encodeURIComponent(this.dataset.q || '');
+      navigate(`/write?type=${this.dataset.typeQuick}&ai=1&q=${q}`);
     });
     el.querySelectorAll('[data-id]').forEach(item => {
       item.addEventListener('click', () => navigate(`/detail/${item.dataset.id}`));
