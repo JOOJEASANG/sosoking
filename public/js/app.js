@@ -9,6 +9,7 @@ import './secure-feed-actions.js';
 import './secure-interactions-actions.js';
 import './acrostic-enhancer.js';
 import './initial-game-enhancer.js';
+import './representative-games-enhancer.js';
 import './write-normalizer.js';
 import './relay-name-patch.js';
 import './account-secure-actions.js';
