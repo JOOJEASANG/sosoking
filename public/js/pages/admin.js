@@ -41,8 +41,8 @@ export async function renderAdmin() {
         <div class="admin-brand">
           <div class="admin-brand__logo">⚙️</div>
           <div>
-            <div class="admin-brand__title">관리자 패널</div>
-            <div class="admin-brand__sub">SOSOKING</div>
+            <div class="admin-brand__title">소소킹</div>
+            <div class="admin-brand__sub">ADMIN</div>
           </div>
         </div>
         <nav class="admin-nav">
@@ -53,10 +53,8 @@ export async function renderAdmin() {
             </button>`).join('')}
         </nav>
         <div class="admin-sidebar__footer">
-          <button class="admin-goto-site-btn" id="btn-goto-site">
-            <span>🏠</span><span>사이트로 가기</span>
-          </button>
-          <div class="admin-uid-label" style="margin-top:10px">UID</div>
+          <button class="admin-goto-site-btn" id="btn-goto-site">🏠 사이트로 가기</button>
+          <div class="admin-uid-label">UID</div>
           <div class="admin-uid">${user.uid}</div>
         </div>
       </aside>
