@@ -112,8 +112,9 @@ export async function renderAccount() {
       content.innerHTML = myPosts.length
         ? myPosts.map(p => renderFeedCard(p)).join('')
         : `<div class="empty-state"><div class="empty-state__icon">✏️</div>
-           <div class="empty-state__title">아직 쓴 글이 없어요</div>
-           <button class="btn btn--primary" style="margin-top:16px" onclick="navigate('/write')">첫 글 쓰기</button></div>`;
+           <div class="empty-state__title">아직 올린 글이 없어요</div>
+           <div class="empty-state__desc">뭐든 괜찮아요, 소소한 거 하나만 올려봐요 🙂</div>
+           <button class="btn btn--primary" style="margin-top:16px" onclick="navigate('/write')">놀이판 만들기</button></div>`;
 
     } else if (tab === 'scraps') {
       const scrapSnap = await getDocs(
@@ -143,8 +144,8 @@ export async function renderAccount() {
            </div>
            ${posts.map(p => wrapScrap(p)).join('')}`
         : `<div class="empty-state"><div class="empty-state__icon">🔖</div>
-           <div class="empty-state__title">스크랩한 글이 없어요</div>
-           <div class="empty-state__desc">마음에 드는 글에 🔖를 눌러보세요!</div></div>`;
+           <div class="empty-state__title">아직 스크랩한 글이 없어요</div>
+           <div class="empty-state__desc">재밌는 글 발견하면 🔖 꾹 눌러두세요!</div></div>`;
 
       window.__acctScrapDelete = async (postId) => {
         try {
@@ -152,7 +153,7 @@ export async function renderAccount() {
           document.getElementById(`acct-scrap-${postId}`)?.remove();
           if (!document.querySelectorAll('.scrap-item').length) {
             content.innerHTML = `<div class="empty-state"><div class="empty-state__icon">🔖</div>
-              <div class="empty-state__title">스크랩한 글이 없어요</div></div>`;
+              <div class="empty-state__title">스크랩이 모두 비워졌어요</div></div>`;
           }
           toast.success('스크랩을 삭제했어요');
         } catch { toast.error('삭제에 실패했어요'); }
@@ -193,7 +194,8 @@ export async function renderAccount() {
       content.innerHTML = notifs.length
         ? `<div class="notif-list">${notifs.map(n => renderNotifItem(n)).join('')}</div>`
         : `<div class="empty-state"><div class="empty-state__icon">🔔</div>
-           <div class="empty-state__title">새 알림이 없어요</div></div>`;
+           <div class="empty-state__title">아직 알림이 없어요</div>
+           <div class="empty-state__desc">글을 올리면 반응이 오기 시작해요 👀</div></div>`;
 
     } else if (tab === 'stats') {
       await renderStatsTab(content, user.uid);
