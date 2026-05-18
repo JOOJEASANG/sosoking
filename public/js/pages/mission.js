@@ -51,17 +51,17 @@ export async function renderMission() {
 function renderWeeklyAcrosticChallenge(word) {
   const poemType = getPoemType(word);
   return `
-    <div class="card" style="padding:18px;margin-bottom:18px;background:linear-gradient(135deg,#fff7ed,#eef2ff);border:1px solid rgba(249,115,22,.18)">
+    <div class="mission-weekly-card card">
       <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap">
         <div>
-          <div style="font-size:12px;font-weight:900;color:#f97316;margin-bottom:5px">✍️ 이번 주 ${poemType} 챌린지</div>
-          <div style="font-size:24px;font-weight:950;letter-spacing:-.04em;color:var(--color-text)">${escHtml(word)}</div>
+          <div class="mission-weekly-card__label">✍️ 이번 주 ${poemType} 챌린지</div>
+          <div class="mission-weekly-card__word">${escHtml(word)}</div>
           <div style="font-size:13px;color:var(--color-text-secondary);margin-top:5px">이번 주 제시어로 ${poemType} 왕좌에 도전해보세요.</div>
         </div>
         <button class="btn btn--primary btn--sm" onclick="navigate('/write?type=acrostic&keyword=${escHtml(word)}')">${poemType} 만들기</button>
       </div>
       <div style="display:grid;gap:6px;margin-top:14px">
-        ${[...word].map(ch => `<div style="display:flex;align-items:center;gap:8px"><span style="width:28px;height:28px;border-radius:8px;background:#f97316;color:#fff;display:grid;place-items:center;font-weight:900">${escHtml(ch)}</span><span style="font-size:13px;color:var(--color-text-muted)">: 센스 있는 한 줄을 채워보세요</span></div>`).join('')}
+        ${[...word].map(ch => `<div style="display:flex;align-items:center;gap:8px"><span class="mission-weekly-card__char">${escHtml(ch)}</span><span style="font-size:13px;color:var(--color-text-secondary)">: 센스 있는 한 줄을 채워보세요</span></div>`).join('')}
       </div>
     </div>`;
 }
