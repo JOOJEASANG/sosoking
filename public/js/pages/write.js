@@ -25,7 +25,6 @@ const CATEGORIES = [
   {
     key: 'malhe', label: '도전봐', icon: '🎮', badge: '도전형', desc: '퀴즈·릴레이·창작',
     types: [
-      { key: 'quiz',     icon: '🧠', label: '미친퀴즈',   desc: '객관식·주관식 자유 퀴즈' },
       { key: 'relay',    icon: '🎭', label: '막장킹',     desc: '한 문장씩 이어가는 스토리' },
       { key: 'acrostic', icon: '✍️', label: '삼행시짓기', desc: '제시어로 삼행시 도전' },
     ],
@@ -181,20 +180,11 @@ function renderFormFields() {
 
   switch (type) {
     case 'initial_game':
-      return commonTitle + `
+      return `
         <div class="form-group">
           <label class="form-label">초성 <span class="required">*</span></label>
-          <input id="f-initials" class="form-input" placeholder="예: ㅅㅅㅋ" maxlength="6" autocomplete="off">
-          <div class="form-hint">2~6글자 초성을 입력하세요 (예: ㅅㅅㅋ → 소소킹)</div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">힌트 (선택)</label>
-          <input id="f-hint" class="form-input" placeholder="예: 요즘 핫한 커뮤니티 이름이에요" maxlength="80">
-        </div>
-        <div class="form-group">
-          <label class="form-label">정답 <span class="required">*</span></label>
-          <input id="f-answer-short" class="form-input" placeholder="예: 소소킹">
-          <div class="form-hint">정답은 참여자에게 공개되지 않아요</div>
+          <input id="f-initials" class="form-input" placeholder="예: ㅅㅅㅋ" maxlength="6" autocomplete="off" inputmode="text">
+          <div class="form-hint">2~6글자 초성을 입력하세요. 참여자들이 그 글자수에 맞는 단어를 맞혀요.</div>
         </div>
         ${commonTags}`;
 
@@ -351,9 +341,8 @@ function renderFormFields() {
         <div class="form-group">
           <label class="form-label">제시어 <span class="required">*</span></label>
           <input id="f-keyword" class="form-input" placeholder="예: 소소킹" maxlength="6" minlength="3" autocomplete="off">
-          <div class="form-hint">3~6글자 · 입력하면 글자별 입력 칸이 생겨요</div>
+          <div class="form-hint">3~6글자</div>
         </div>
-        <div id="acrostic-lines"></div>
         <div class="form-group" style="margin-top:12px">
           <label class="form-label">설명 <span style="font-size:11px;color:var(--color-text-muted)">(선택)</span></label>
           <textarea id="f-desc" class="form-textarea" placeholder="예: 창의력 넘치는 삼행시 한 번 써봐요!" rows="2"></textarea>
@@ -621,33 +610,6 @@ function initFormLogic() {
     });
   }
 
-  // 삼행시 — 글자별 입력 칸 동적 생성 (선택 입력)
-  if (type === 'acrostic') {
-    const kwInput = document.getElementById('f-keyword');
-    const renderAcrosticLines = (kw) => {
-      const container = document.getElementById('acrostic-lines');
-      if (!container) return;
-      if (!kw || kw.length < 3) { container.innerHTML = ''; return; }
-      container.innerHTML = `
-        <div class="acrostic-lines-box">
-          <div style="font-size:12px;font-weight:700;color:var(--color-text-muted);margin-bottom:10px">✍️ 예시 삼행시 <span style="font-weight:400">(선택)</span></div>
-          ${[...kw].map((ch, i) => `
-            <div class="acrostic-line-row">
-              <span class="acrostic-line-char">${escHtml(ch)}</span>
-              <input
-                class="form-input acrostic-line-input"
-                id="acrostic-line-${i}"
-                placeholder="${escHtml(ch)}로 시작하는 재치 있는 한 줄"
-                maxlength="50"
-                autocomplete="off"
-              >
-            </div>`).join('')}
-        </div>`;
-    };
-    kwInput?.addEventListener('input', () => renderAcrosticLines(kwInput.value.trim()));
-    if (kwInput?.value.trim()) renderAcrosticLines(kwInput.value.trim());
-  }
-
   // 퀴즈 방식 토글
   if (type === 'quiz') {
     document.querySelectorAll('[name="quiz-mode"]').forEach(r => {
@@ -827,26 +789,9 @@ async function handleSubmit() {
 
 // 메인 문서에서 정답 필드를 제거하고 반환 (secret 서브컬렉션용)
 function extractSecretFields(type, extra) {
-  if (type === 'initial_game') {
-    const secret = { answer: extra.answer, quizMode: 'short' };
-    delete extra.answer;
-    return secret;
-  }
   if (type === 'ox') {
     const secret = { answer: extra.answer, explanation: extra.explanation || '' };
     delete extra.answer;
-    delete extra.explanation;
-    return secret;
-  }
-  if (type === 'quiz') {
-    const secret = { quizMode: extra.quizMode, explanation: extra.explanation || '' };
-    if (extra.quizMode === 'multiple') {
-      secret.answerIdx = extra.answerIdx;
-      delete extra.answerIdx;
-    } else {
-      secret.answer = extra.answer;
-      delete extra.answer;
-    }
     delete extra.explanation;
     return secret;
   }
@@ -897,10 +842,8 @@ function collectExtraData(type) {
     case 'acrostic': {
       const keyword = document.getElementById('f-keyword')?.value.trim();
       if (!keyword) { toast.error('제시어를 입력해주세요'); return null; }
-      if (keyword.length < 3) { toast.error('제시어는 3글자 이상이어야 해요'); return null; }
-      const lines = [...keyword].map((_, i) => document.getElementById(`acrostic-line-${i}`)?.value.trim() || '');
-      const hasLines = lines.some(l => l);
-      return { keyword, ...(hasLines ? { lines } : {}) };
+      if ([...keyword].length < 3) { toast.error('제시어는 3글자 이상이어야 해요'); return null; }
+      return { keyword };
     }
     case 'howto': {
       const summary = document.getElementById('f-summary')?.value.trim();
@@ -953,9 +896,8 @@ function collectExtraData(type) {
     case 'initial_game': {
       const initials = document.getElementById('f-initials')?.value.trim();
       if (!initials) { toast.error('초성을 입력해주세요'); return null; }
-      const answer = document.getElementById('f-answer-short')?.value.trim();
-      if (!answer) { toast.error('정답을 입력해주세요'); return null; }
-      return { initials, answer, hint: document.getElementById('f-hint')?.value.trim() || '' };
+      if ([...initials].length < 2) { toast.error('초성을 2글자 이상 입력해주세요'); return null; }
+      return { initials, answerLength: [...initials].length };
     }
     case 'crazy_court': {
       if (!document.getElementById('f-desc')?.value.trim()) { toast.error('상황 설명을 입력해주세요'); return null; }

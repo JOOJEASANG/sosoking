@@ -5,7 +5,7 @@ import { renderFeedCard, renderSkeletonCards } from '../components/feed-card.js'
 import { setMeta } from '../utils/seo.js';
 import { escHtml } from '../utils/helpers.js';
 
-const PRIMARY_TYPES = ['vote', 'naming', 'initial_game', 'quiz', 'crazy_court', 'relay'];
+const PRIMARY_TYPES = ['vote', 'naming', 'initial_game', 'crazy_court', 'relay', 'acrostic'];
 
 const TYPE_LABELS = {
   balance:'골라킹', vote:'골라킹', battle:'골라킹', challenge24:'24시간챌린지', tournament:'이상형월드컵',

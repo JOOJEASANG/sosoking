@@ -11,14 +11,6 @@ function isAdminUser() {
   return !!appState.user && !!appState.isAdmin;
 }
 
-function enforceAdminOnly() {
-  if (!isAdminUser()) return;
-  const path = currentPath();
-  if (path !== '/admin' && path !== '/login') {
-    navigate('/admin');
-  }
-}
-
 function injectAdminLogout() {
   if (!isAdminUser()) return;
   if (currentPath() !== '/admin') return;
@@ -48,9 +40,9 @@ function injectAdminLogout() {
 }
 
 function run() {
-  enforceAdminOnly();
   setTimeout(injectAdminLogout, 80);
 }
+
 
 const observer = new MutationObserver(() => setTimeout(injectAdminLogout, 60));
 if (document.body) observer.observe(document.body, { childList: true, subtree: true });

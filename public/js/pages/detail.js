@@ -639,8 +639,89 @@ function setupDetailEvents(post, el) {
 
   setupCommentLikes(post.id);
 
+  setupCharParticipation(post);
+
   // 반응 바
   initReactionBar(post.id);
+}
+
+function setupCharParticipation(post) {
+  const wrap = document.getElementById('char-boxes-participate');
+  if (!wrap) return;
+  const boxes = [...wrap.querySelectorAll('.char-box')];
+  if (!boxes.length) return;
+
+  boxes.forEach((box, idx) => {
+    let composing = false;
+    box.addEventListener('compositionstart', () => { composing = true; });
+    box.addEventListener('compositionend', () => {
+      composing = false;
+      if ([...box.value].length > 1) box.value = [...box.value].slice(-1).join('');
+      if (box.value && idx < boxes.length - 1) boxes[idx + 1].focus();
+    });
+    box.addEventListener('input', () => {
+      if (composing) return;
+      if ([...box.value].length > 1) box.value = [...box.value].slice(-1).join('');
+      if (box.value && idx < boxes.length - 1) boxes[idx + 1].focus();
+    });
+    box.addEventListener('keydown', e => {
+      if (e.key === 'Backspace' && !box.value && idx > 0) {
+        e.preventDefault();
+        boxes[idx - 1].value = '';
+        boxes[idx - 1].focus();
+      }
+      if (e.key === 'ArrowLeft'  && idx > 0)               { e.preventDefault(); boxes[idx - 1].focus(); }
+      if (e.key === 'ArrowRight' && idx < boxes.length - 1) { e.preventDefault(); boxes[idx + 1].focus(); }
+      if (e.key === 'Enter') document.getElementById('btn-char-submit')?.click();
+    });
+    box.addEventListener('paste', e => {
+      e.preventDefault();
+      const text = (e.clipboardData || window.clipboardData).getData('text');
+      [...text].slice(0, boxes.length - idx).forEach((ch, i) => { if (boxes[idx + i]) boxes[idx + i].value = ch; });
+      boxes[Math.min(idx + [...text].length, boxes.length - 1)].focus();
+    });
+  });
+
+  document.getElementById('btn-char-submit')?.addEventListener('click', async () => {
+    if (!auth.currentUser) { navigate('/login'); return; }
+    if (boxes.some(b => !b.value.trim())) { toast.warn('모든 칸을 채워주세요'); return; }
+    const word = boxes.map(b => b.value.trim()).join('');
+
+    const commentData = {
+      text: word,
+      authorId:   auth.currentUser.uid,
+      authorName: appState.nickname || auth.currentUser.displayName || '익명',
+      reactions:  { funny: 0, fire: 0, like: 0 },
+      reactedWith: {},
+      createdAt:  serverTimestamp(),
+    };
+
+    // 낙관적 삽입
+    const listEl = document.getElementById('comment-list');
+    if (listEl) {
+      const tempEl = document.createElement('div');
+      tempEl.innerHTML = renderLikeableComment({ ...commentData, id: `temp-${Date.now()}`, createdAt: { toDate: () => new Date() } });
+      listEl.prepend(tempEl.firstElementChild);
+    }
+    boxes.forEach(b => b.value = '');
+    boxes[0].focus();
+    toast.success('등록됐어요! 🎉');
+
+    try {
+      await Promise.all([
+        addDoc(collection(db, 'feeds', post.id, 'comments'), commentData),
+        updateDoc(doc(db, 'feeds', post.id), { commentCount: increment(1) }),
+      ]);
+      const updated = await fetchComments(post.id);
+      if (listEl) {
+        listEl.innerHTML = updated.length
+          ? markBestComment(updated).map(c => renderLikeableComment(c)).join('')
+          : '<div style="text-align:center;padding:24px;font-size:13px;color:var(--color-text-muted)">첫 번째로 참여해보세요!</div>';
+        setupCommentDelete(post.id);
+        setupCommentLikes(post.id);
+      }
+    } catch { toast.error('등록에 실패했어요'); }
+  });
 }
 
 function showQuizResult(correct, explanation) {
@@ -785,8 +866,48 @@ function renderBattleVs(post) {
     </div>`;
 }
 
+function renderCharBoxArea(count) {
+  return `<div class="char-boxes-wrap" id="char-boxes-participate" data-count="${count}">
+    ${Array.from({length: count}, (_, i) =>
+      `<input class="char-box" data-idx="${i}" maxlength="2" autocomplete="off" inputmode="text">`
+    ).join('')}
+  </div>`;
+}
+
+function renderCharCommentSection(post, comments) {
+  const loggedIn = !!auth.currentUser;
+  const isNaming = post.type === 'naming';
+  const count = isNaming
+    ? (post.charCount || 3)
+    : ([...(post.initials || '')].length || 3);
+  const title = isNaming ? `✏️ 작명 참여` : `🔤 초성 참여`;
+  const emptyMsg = isNaming ? '첫 번째로 작명해보세요!' : '첫 번째로 참여해보세요!';
+
+  return `
+    <div class="comment-section">
+      <div class="comment-section__title">${title} (${comments.length}개)</div>
+      ${loggedIn
+        ? `<div class="char-participate-box" id="char-participate">
+            ${renderCharBoxArea(count)}
+            <button class="btn btn--primary btn--sm" id="btn-char-submit">등록</button>
+           </div>`
+        : `<div style="text-align:center;padding:12px;font-size:13px;color:var(--color-text-muted)">
+             <a href="#/login" style="color:var(--color-primary)">로그인</a> 후 참여 가능
+           </div>`}
+      <div id="comment-list">
+        ${comments.length
+          ? markBestComment(comments).map(c => renderLikeableComment(c)).join('')
+          : `<div style="text-align:center;padding:24px;font-size:13px;color:var(--color-text-muted)">${emptyMsg}</div>`}
+      </div>
+    </div>`;
+}
+
 function renderCommentSection(post, comments) {
   const loggedIn = !!auth.currentUser;
+
+  if (post.type === 'naming' || post.type === 'initial_game') {
+    return renderCharCommentSection(post, comments);
+  }
 
   if (post.type === 'relay') {
     return `

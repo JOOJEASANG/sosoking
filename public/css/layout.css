@@ -784,3 +784,36 @@
   background: var(--color-surface);
   border-color: var(--color-border);
 }
+
+/* ── 글자 참여 박스 ── */
+.char-participate-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-border-light);
+  margin-bottom: 8px;
+}
+.char-boxes-wrap {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.char-box {
+  width: 44px;
+  height: 44px;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  text-align: center;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  transition: border-color var(--transition-fast);
+  caret-color: transparent;
+}
+.char-box:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  background: var(--color-primary-bg);
+}
