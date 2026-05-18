@@ -1047,8 +1047,48 @@
 ══════════════════════════════ */
 @media (max-width: 768px) {
   .toast-container {
-    top: auto; bottom: calc(72px + env(safe-area-inset-bottom, 0) + 8px);
+    top: auto; bottom: calc(68px + env(safe-area-inset-bottom, 0) + 8px);
     right: var(--space-3); left: var(--space-3);
   }
   .toast { max-width: 100%; }
+}
+
+/* ══════════════════════════════
+   피드 카드 액션 영역 개선
+══════════════════════════════ */
+.feed-card__actions {
+  padding: 0 var(--space-4) var(--space-3);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.feed-share-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border-light);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.feed-share-btn:hover {
+  color: var(--color-primary);
+  background: var(--color-primary-bg);
+  border-color: var(--color-primary-border);
+}
+[data-theme="dark"] .feed-share-btn {
+  background: var(--color-surface-2);
+  border-color: var(--color-border);
+}
+
+/* ── 참여 온도 바 ── */
+.feed-temp-bar {
+  height: 3px;
+  background: linear-gradient(90deg, var(--temp-color, #4F8EF7) var(--temp-pct, 0%), var(--color-border-light) var(--temp-pct, 0%));
+  transition: none;
 }

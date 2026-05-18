@@ -32,7 +32,7 @@ export async function renderAdmin() {
     { key: 'posts',     icon: '📝', label: '게시물' },
     { key: 'reports',   icon: '🚨', label: '신고' },
     { key: 'users',     icon: '👥', label: '회원' },
-    { key: 'ai',        icon: '🤖', label: 'AI 운영관리' },
+    { key: 'ai',        icon: '🤖', label: 'AI 운영관리', short: 'AI관리' },
   ];
 
   el.innerHTML = `
@@ -49,7 +49,10 @@ export async function renderAdmin() {
           ${MENUS.map(m => `
             <button class="admin-menu-item ${currentTab === m.key ? 'active' : ''}" data-tab="${m.key}">
               <span class="admin-menu-item__icon">${m.icon}</span>
-              <span class="admin-menu-item__label">${m.label}</span>
+              ${m.short
+                ? `<span class="admin-menu-item__label admin-label-full">${m.label}</span><span class="admin-menu-item__label admin-label-short">${m.short}</span>`
+                : `<span class="admin-menu-item__label">${m.label}</span>`
+              }
             </button>`).join('')}
         </nav>
         <div class="admin-sidebar__footer">

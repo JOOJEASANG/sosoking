@@ -139,3 +139,29 @@
     width: 230px;
   }
 }
+
+/* ── PC 홈: 빠른 시작 3열로 표시 (720px 폭에서 6열은 너무 작음) ── */
+@media (min-width: 1024px) {
+  .home-quick-grid {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+  }
+
+  .home-quick-btn {
+    padding: 16px 8px 12px;
+    min-height: 88px;
+  }
+
+  .home-quick-btn__icon { font-size: 24px; }
+  .home-quick-btn__label { font-size: 12px; }
+
+  /* 랭킹 hover 효과 강화 */
+  .home-rank-item:hover {
+    box-shadow: var(--shadow-xs);
+  }
+
+  /* 통계 카드 hover */
+  .home-stat-card:hover {
+    box-shadow: var(--shadow-sm);
+  }
+}

@@ -1,4 +1,5 @@
-const CACHE = 'sosoking-v3';
+// 버전 변경 시 이 숫자를 올리면 모든 SW 캐시가 삭제되고 갱신됩니다
+const CACHE = 'sosoking-v4';
 
 self.addEventListener('install', e => {
   self.skipWaiting();
@@ -25,26 +26,21 @@ self.addEventListener('fetch', e => {
     url.hostname.includes('firestore.googleapis.com')
   ) return;
 
-  // 네비게이션 및 JS/CSS → 네트워크 우선
+  // HTML, JS, CSS: 항상 네트워크 최신본 사용 (SW 캐시 저장 안 함)
+  // firebase.json에서 이미 no-cache, no-store 설정 → CDN이 항상 최신본 제공
   if (
     e.request.mode === 'navigate' ||
     (url.origin === self.location.origin &&
      (url.pathname.endsWith('.js') || url.pathname.endsWith('.css')))
   ) {
-    if (e.request.mode === 'navigate' && url.pathname.startsWith('/admin')) return;
     e.respondWith(
-      fetch(e.request, { cache: 'no-store' }).then(res => {
-        if (res.ok) {
-          const clone = res.clone();
-          caches.open(CACHE).then(c => c.put(e.request, clone));
-        }
-        return res;
-      }).catch(() => caches.match(e.request))
+      fetch(e.request, { cache: 'no-store' })
+        .catch(() => caches.match(e.request))
     );
     return;
   }
 
-  // 그 외 정적 자산 (이미지, SVG 등) → 캐시 우선
+  // 이미지, 아이콘 등 정적 자산: 캐시 우선 (변경 빈도 낮음)
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached;
