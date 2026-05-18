@@ -2,16 +2,21 @@
 
 @media (min-width: 1024px) {
   :root {
-    --desktop-content-max: 1160px;
-    --desktop-content-pad-x: 36px;
-    --desktop-content-pad-y: 32px;
+    /* 기존 약 1160px 기준에서 약 50% 수준으로 축소 */
+    --desktop-content-max: 580px;
+    --desktop-content-pad-x: 22px;
+    --desktop-content-pad-y: 28px;
   }
 
   .app-shell {
     width: 100%;
-    max-width: 1440px;
+    max-width: 860px;
     margin-left: auto;
     margin-right: auto;
+  }
+
+  .site-sidebar {
+    width: 220px;
   }
 
   .site-main {
@@ -31,6 +36,7 @@
 
   .page-container > .home-dash,
   .page-container > .layout-cols,
+  .page-container > .layout-main,
   .page-container > .write-page,
   .page-container > .page-enter,
   .page-container > .admin-layout,
@@ -44,6 +50,7 @@
 
   .home-dash,
   .layout-cols,
+  .layout-main,
   .write-page {
     width: 100%;
     max-width: var(--desktop-content-max);
@@ -53,8 +60,11 @@
   }
 
   .layout-cols {
-    grid-template-columns: minmax(0, 1fr) 300px;
-    gap: 24px;
+    display: block !important;
+  }
+
+  .layout-sidebar {
+    display: none !important;
   }
 
   .site-footer {
@@ -72,31 +82,57 @@
     box-sizing: border-box;
   }
 
-  .site-footer__inner {
+  .site-footer__inner,
+  .site-footer__copy-bar {
     padding-left: var(--desktop-content-pad-x) !important;
     padding-right: var(--desktop-content-pad-x) !important;
   }
 
-  .site-footer__copy-bar {
-    padding-left: var(--desktop-content-pad-x) !important;
-    padding-right: var(--desktop-content-pad-x) !important;
+  /* 관리자 화면은 사이트 우측 좁은 본문이 아니라 별도 작업 화면처럼 사용 */
+  body:has(.admin-layout) .app-shell {
+    max-width: none;
+  }
+
+  body:has(.admin-layout) .site-sidebar,
+  body:has(.admin-layout) .site-footer,
+  body:has(.admin-layout) .bottom-nav {
+    display: none !important;
+  }
+
+  body:has(.admin-layout) .site-main {
+    width: 100vw;
+    min-height: 100vh;
+  }
+
+  body:has(.admin-layout) .page-container {
+    max-width: none;
+    width: 100%;
+    padding: 28px;
+  }
+
+  body:has(.admin-layout) .page-container > .admin-layout {
+    max-width: 1280px !important;
+    width: 100% !important;
   }
 }
 
 @media (min-width: 1280px) {
   :root {
-    --desktop-content-max: 1160px;
+    --desktop-content-max: 580px;
   }
 }
 
 @media (min-width: 1024px) and (max-width: 1180px) {
   :root {
-    --desktop-content-max: 960px;
-    --desktop-content-pad-x: 28px;
+    --desktop-content-max: 540px;
+    --desktop-content-pad-x: 20px;
   }
 
-  .layout-cols {
-    grid-template-columns: minmax(0, 1fr) 280px;
-    gap: 20px;
+  .app-shell {
+    max-width: 800px;
+  }
+
+  .site-sidebar {
+    width: 210px;
   }
 }
