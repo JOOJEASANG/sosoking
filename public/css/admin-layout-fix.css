@@ -113,8 +113,11 @@ body:has(.admin-layout) .page-container {
 
 .admin-menu-item[data-tab="ai"] {
   position: relative;
-  margin-top: 14px;
+  margin-top: auto;
 }
+
+/* PC: 모바일용 짧은 라벨 숨김 */
+.admin-label-short { display: none; }
 
 .admin-menu-item[data-tab="ai"]::before {
   content: '';
@@ -448,6 +451,17 @@ body:has(.admin-layout) .page-container {
 
   .admin-menu-item[data-tab="ai"]::before {
     display: none;
+  }
+
+  /* 모바일: PC 전체 라벨 숨기고 짧은 라벨 표시 */
+  .admin-label-full { display: none; }
+  .admin-label-short {
+    display: block;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center;
   }
 
   #admin-content {
