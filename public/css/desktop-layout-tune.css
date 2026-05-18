@@ -2,28 +2,54 @@
 
 @media (min-width: 1024px) {
   :root {
-    --desktop-content-max: 1120px;
+    --desktop-content-max: 1160px;
     --desktop-content-pad-x: 36px;
     --desktop-content-pad-y: 32px;
   }
 
+  .app-shell {
+    width: 100%;
+    max-width: 1440px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
   .site-main {
     align-items: center;
+    width: 100%;
+    min-width: 0;
   }
 
   .page-container {
     width: 100%;
     max-width: calc(var(--desktop-content-max) + (var(--desktop-content-pad-x) * 2));
-    margin: 0 auto;
+    margin-left: auto;
+    margin-right: auto;
     padding: var(--desktop-content-pad-y) var(--desktop-content-pad-x);
+    box-sizing: border-box;
   }
 
   .page-container > .home-dash,
   .page-container > .layout-cols,
   .page-container > .write-page,
   .page-container > .page-enter,
-  .page-container > .admin-layout {
+  .page-container > .admin-layout,
+  .page-container > div[style*="max-width"] {
+    width: 100% !important;
+    max-width: var(--desktop-content-max) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    box-sizing: border-box;
+  }
+
+  .home-dash,
+  .layout-cols,
+  .write-page {
     width: 100%;
+    max-width: var(--desktop-content-max);
+    margin-left: auto;
+    margin-right: auto;
+    box-sizing: border-box;
   }
 
   .layout-cols {
@@ -33,21 +59,27 @@
 
   .site-footer {
     width: 100%;
+    align-self: stretch;
+    box-sizing: border-box;
   }
 
-  .site-footer__inner {
-    width: 100%;
-    max-width: calc(var(--desktop-content-max) + (var(--desktop-content-pad-x) * 2));
-    margin: 0 auto;
-    padding: 34px var(--desktop-content-pad-x) 24px;
-  }
-
+  .site-footer__inner,
   .site-footer__copy-bar {
     width: 100%;
     max-width: calc(var(--desktop-content-max) + (var(--desktop-content-pad-x) * 2));
-    margin: 0 auto;
-    padding-left: var(--desktop-content-pad-x);
-    padding-right: var(--desktop-content-pad-x);
+    margin-left: auto;
+    margin-right: auto;
+    box-sizing: border-box;
+  }
+
+  .site-footer__inner {
+    padding-left: var(--desktop-content-pad-x) !important;
+    padding-right: var(--desktop-content-pad-x) !important;
+  }
+
+  .site-footer__copy-bar {
+    padding-left: var(--desktop-content-pad-x) !important;
+    padding-right: var(--desktop-content-pad-x) !important;
   }
 }
 
