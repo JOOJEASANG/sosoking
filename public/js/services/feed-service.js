@@ -71,6 +71,7 @@ export async function createPost(data) {
     commentCount: 0,
     viewCount:    0,
     votedBy:      [],
+    hidden:       false,
     createdAt:    serverTimestamp(),
   });
 }

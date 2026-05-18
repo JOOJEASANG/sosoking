@@ -2,21 +2,20 @@
 
 @media (min-width: 1024px) {
   :root {
-    /* 기존 약 1160px 기준에서 약 50% 수준으로 축소 */
-    --desktop-content-max: 580px;
-    --desktop-content-pad-x: 22px;
-    --desktop-content-pad-y: 28px;
+    --desktop-content-max: 720px;
+    --desktop-content-pad-x: 28px;
+    --desktop-content-pad-y: 32px;
   }
 
   .app-shell {
     width: 100%;
-    max-width: 860px;
+    max-width: 1060px;
     margin-left: auto;
     margin-right: auto;
   }
 
   .site-sidebar {
-    width: 220px;
+    width: 240px;
   }
 
   .site-main {
@@ -88,7 +87,7 @@
     padding-right: var(--desktop-content-pad-x) !important;
   }
 
-  /* 관리자 화면은 사이트 우측 좁은 본문이 아니라 별도 작업 화면처럼 사용 */
+  /* 관리자 화면은 별도 작업 화면으로 사용 */
   body:has(.admin-layout) .app-shell {
     max-width: none;
   }
@@ -118,21 +117,25 @@
 
 @media (min-width: 1280px) {
   :root {
-    --desktop-content-max: 580px;
+    --desktop-content-max: 740px;
+  }
+
+  .app-shell {
+    max-width: 1100px;
   }
 }
 
 @media (min-width: 1024px) and (max-width: 1180px) {
   :root {
-    --desktop-content-max: 540px;
-    --desktop-content-pad-x: 20px;
+    --desktop-content-max: 660px;
+    --desktop-content-pad-x: 22px;
   }
 
   .app-shell {
-    max-width: 800px;
+    max-width: 940px;
   }
 
   .site-sidebar {
-    width: 210px;
+    width: 230px;
   }
 }
