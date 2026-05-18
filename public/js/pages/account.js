@@ -120,11 +120,54 @@ export async function renderAccount() {
         ? (await Promise.all(ids.map(id => getDoc(doc(db, 'feeds', id)))))
             .filter(s => s.exists()).map(s => ({ id: s.id, ...s.data() })).filter(p => !p.hidden)
         : [];
+
+      const wrapScrap = (post) => `
+        <div class="scrap-item" id="acct-scrap-${post.id}">
+          <button class="scrap-delete-btn" onclick="window.__acctScrapDelete('${post.id}')" title="스크랩 삭제">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+            </svg>
+            삭제
+          </button>
+          ${renderFeedCard(post)}
+        </div>`;
+
       content.innerHTML = posts.length
-        ? posts.map(p => renderFeedCard(p)).join('')
+        ? `<div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+             <button class="btn btn--ghost btn--sm" id="btn-acct-scrap-all" style="color:var(--color-danger)">전체 삭제</button>
+           </div>
+           ${posts.map(p => wrapScrap(p)).join('')}`
         : `<div class="empty-state"><div class="empty-state__icon">🔖</div>
            <div class="empty-state__title">스크랩한 글이 없어요</div>
            <div class="empty-state__desc">마음에 드는 글에 🔖를 눌러보세요!</div></div>`;
+
+      window.__acctScrapDelete = async (postId) => {
+        try {
+          await deleteDoc(doc(db, 'users', user.uid, 'scraps', postId));
+          document.getElementById(`acct-scrap-${postId}`)?.remove();
+          if (!document.querySelectorAll('.scrap-item').length) {
+            content.innerHTML = `<div class="empty-state"><div class="empty-state__icon">🔖</div>
+              <div class="empty-state__title">스크랩한 글이 없어요</div></div>`;
+          }
+          toast.success('스크랩을 삭제했어요');
+        } catch { toast.error('삭제에 실패했어요'); }
+      };
+
+      document.getElementById('btn-acct-scrap-all')?.addEventListener('click', async () => {
+        if (!confirm('스크랩한 글을 전부 삭제할까요?')) return;
+        try {
+          const allSnap = await getDocs(collection(db, 'users', user.uid, 'scraps'));
+          if (!allSnap.empty) {
+            const batch = writeBatch(db);
+            allSnap.docs.forEach(d => batch.delete(d.ref));
+            await batch.commit();
+          }
+          content.innerHTML = `<div class="empty-state"><div class="empty-state__icon">🔖</div>
+            <div class="empty-state__title">스크랩한 글이 없어요</div></div>`;
+          toast.success('전체 스크랩을 삭제했어요');
+        } catch { toast.error('삭제에 실패했어요'); }
+      });
 
     } else if (tab === 'notifications') {
       const q = query(

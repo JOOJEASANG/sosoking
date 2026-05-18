@@ -30,23 +30,30 @@ export async function renderAdmin() {
   el.innerHTML = `
     <div class="admin-layout">
       <nav class="admin-sidebar">
-        <div style="font-size:11px;font-weight:800;color:var(--color-text-muted);padding:8px 12px 6px;letter-spacing:0.5px">ADMIN</div>
-        ${[
-          { key: 'dashboard', icon: '📊', label: '대시보드' },
-          { key: 'posts',     icon: '📝', label: '게시물 관리' },
-          { key: 'reports',   icon: '🚨', label: '신고 관리' },
-          { key: 'users',     icon: '👥', label: '회원 현황' },
-          { key: 'missions',  icon: '🎯', label: '미션 관리' },
-          { key: 'ai',        icon: '🤖', label: 'AI 관리' },
-        ].map(m => `
-          <div class="admin-menu-item ${currentTab === m.key ? 'active' : ''}" data-tab="${m.key}">
-            <span>${m.icon}</span><span>${m.label}</span>
-          </div>`).join('')}
-        <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--color-border-light)">
-          <div style="font-size:10px;color:var(--color-text-muted);padding:4px 12px;word-break:break-all">
-            <div style="font-weight:700;margin-bottom:2px">내 UID</div>
-            <div style="font-family:monospace;font-size:9px">${user.uid}</div>
+        <div class="admin-brand">
+          <div class="admin-brand__logo">⚙️</div>
+          <div>
+            <div class="admin-brand__title">소소킹</div>
+            <div class="admin-brand__sub">관리자 패널</div>
           </div>
+        </div>
+        <div class="admin-nav">
+          ${[
+            { key: 'dashboard', icon: '📊', label: '대시보드' },
+            { key: 'posts',     icon: '📝', label: '게시물 관리' },
+            { key: 'reports',   icon: '🚨', label: '신고 관리' },
+            { key: 'users',     icon: '👥', label: '회원 현황' },
+            { key: 'missions',  icon: '🎯', label: '미션 관리' },
+            { key: 'ai',        icon: '🤖', label: 'AI 관리' },
+          ].map(m => `
+            <div class="admin-menu-item ${currentTab === m.key ? 'active' : ''}" data-tab="${m.key}">
+              <span class="admin-menu-item__icon">${m.icon}</span>
+              <span class="admin-menu-item__label">${m.label}</span>
+            </div>`).join('')}
+        </div>
+        <div class="admin-sidebar__footer">
+          <div class="admin-uid-label">내 UID</div>
+          <div class="admin-uid">${user.uid}</div>
         </div>
       </nav>
       <div id="admin-content">
@@ -107,7 +114,7 @@ async function renderDashboard(el) {
   el.innerHTML = `
     <div style="display:flex;flex-direction:column;gap:24px">
       <div>
-        <div style="font-size:20px;font-weight:900;letter-spacing:-0.5px;margin-bottom:16px">📊 대시보드</div>
+        <h2 class="admin-section-title">📊 대시보드</h2>
         <div class="admin-stat-grid">
           <div class="admin-stat-card">
             <div class="admin-stat-card__num">${total.toLocaleString()}</div>
@@ -203,7 +210,7 @@ async function renderPosts(el, searchQ = '', catFilter = '') {
 
   el.innerHTML = `
     <div style="display:flex;flex-direction:column;gap:16px">
-      <div style="font-size:20px;font-weight:900;letter-spacing:-0.5px">📝 게시물 관리</div>
+      <h2 class="admin-section-title">📝 게시물 관리</h2>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <input id="admin-post-search" class="form-input" style="max-width:220px;font-size:13px" placeholder="제목/작성자 검색" value="${escHtml(searchQ)}">
         <button class="btn btn--primary btn--sm" id="btn-post-search">검색</button>
@@ -215,33 +222,33 @@ async function renderPosts(el, searchQ = '', catFilter = '') {
         ].map(c => `<button class="filter-chip ${catFilter === c.key ? 'active' : ''}" data-post-cat="${c.key}">${c.label}</button>`).join('')}
       </div>
       <div class="card" style="overflow:auto">
-        <table style="width:100%;font-size:13px;border-collapse:collapse;min-width:600px">
+        <table class="admin-table">
           <thead>
-            <tr style="border-bottom:2px solid var(--color-border);text-align:left;background:var(--color-surface-2)">
-              <th style="padding:10px 12px">제목</th>
-              <th style="padding:10px 12px;width:80px">유형</th>
-              <th style="padding:10px 12px;width:80px">카테고리</th>
-              <th style="padding:10px 12px;width:80px">작성자</th>
-              <th style="padding:10px 12px;width:60px">상태</th>
-              <th style="padding:10px 12px;width:120px">작업</th>
+            <tr>
+              <th>제목</th>
+              <th style="width:80px">유형</th>
+              <th style="width:80px">카테고리</th>
+              <th style="width:80px">작성자</th>
+              <th style="width:60px">상태</th>
+              <th style="width:120px">작업</th>
             </tr>
           </thead>
           <tbody>
-            ${posts.length === 0 ? `<tr><td colspan="6" style="padding:24px;text-align:center;color:var(--color-text-muted)">게시물이 없어요</td></tr>` :
+            ${posts.length === 0 ? `<tr><td colspan="6" class="admin-table__empty">게시물이 없어요</td></tr>` :
               posts.map(p => `
-                <tr style="border-bottom:1px solid var(--color-border-light)" data-post-row="${p.id}">
-                  <td style="padding:10px 12px;max-width:280px">
-                    <a href="#/detail/${p.id}" style="color:var(--color-primary);font-weight:600;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.title || '(제목없음)')}</a>
+                <tr data-post-row="${p.id}">
+                  <td class="admin-table__title-cell">
+                    <a href="#/detail/${p.id}" class="admin-table__link">${escHtml(p.title || '(제목없음)')}</a>
                   </td>
-                  <td style="padding:10px 12px"><span class="badge badge--gray" style="font-size:10px">${p.type || ''}</span></td>
-                  <td style="padding:10px 12px"><span style="font-size:12px">${{ golra:'🎯 골라봐', usgyo:'😂 웃겨봐', malhe:'🎮 도전봐' }[p.cat] || p.cat || ''}</span></td>
-                  <td style="padding:10px 12px;font-size:12px;color:var(--color-text-secondary)">${escHtml(p.authorName || '익명')}</td>
-                  <td style="padding:10px 12px">
+                  <td><span class="badge badge--gray" style="font-size:10px">${p.type || ''}</span></td>
+                  <td><span style="font-size:12px">${{ golra:'🎯 골라봐', usgyo:'😂 웃겨봐', malhe:'🎮 도전봐' }[p.cat] || p.cat || ''}</span></td>
+                  <td class="admin-table__muted">${escHtml(p.authorName || '익명')}</td>
+                  <td>
                     ${p.hidden
-                      ? `<span style="font-size:11px;color:var(--color-danger);font-weight:700">숨김</span>`
-                      : `<span style="font-size:11px;color:var(--color-success);font-weight:700">공개</span>`}
+                      ? `<span class="admin-status admin-status--hidden">숨김</span>`
+                      : `<span class="admin-status admin-status--visible">공개</span>`}
                   </td>
-                  <td style="padding:10px 12px">
+                  <td>
                     <div style="display:flex;gap:6px">
                       <button class="btn btn--ghost btn--sm" data-hide="${p.id}" data-hidden="${p.hidden ? '1' : '0'}" style="font-size:11px">${p.hidden ? '공개' : '숨김'}</button>
                       <button class="btn btn--danger btn--sm" data-delete="${p.id}" style="font-size:11px">삭제</button>
@@ -317,7 +324,7 @@ async function renderReports(el) {
 
   el.innerHTML = `
     <div style="display:flex;flex-direction:column;gap:16px">
-      <div style="font-size:20px;font-weight:900;letter-spacing:-0.5px">🚨 신고 관리</div>
+      <h2 class="admin-section-title">🚨 신고 관리</h2>
       <div style="display:flex;gap:12px">
         <div class="admin-stat-card" style="flex:1">
           <div class="admin-stat-card__num" style="color:${pending.length > 0 ? 'var(--color-danger)' : 'var(--color-text-muted)'}">${pending.length}</div>
@@ -404,7 +411,7 @@ async function renderUsers(el) {
   el.innerHTML = `
     <div style="display:flex;flex-direction:column;gap:16px">
       <div style="display:flex;align-items:center;justify-content:space-between">
-        <div style="font-size:20px;font-weight:900;letter-spacing:-0.5px">👥 회원 현황</div>
+        <h2 class="admin-section-title">👥 회원 현황</h2>
         <div style="font-size:13px;color:var(--color-text-muted)">최근 100개 게시물 기준</div>
       </div>
       <div class="admin-stat-grid" style="grid-template-columns:repeat(2,1fr)">
@@ -454,7 +461,7 @@ async function renderMissions(el) {
 
   el.innerHTML = `
     <div style="display:flex;flex-direction:column;gap:16px">
-      <div style="font-size:20px;font-weight:900;letter-spacing:-0.5px">🎯 미션 관리</div>
+      <h2 class="admin-section-title">🎯 미션 관리</h2>
 
       <!-- 등록 폼 -->
       <div class="card" style="border:2px solid var(--color-primary)">
@@ -611,7 +618,7 @@ async function renderAiSettings(el) {
 
   el.innerHTML = `
     <div style="display:flex;flex-direction:column;gap:24px;max-width:700px">
-      <div style="font-size:20px;font-weight:900;letter-spacing:-0.5px">🤖 AI 관리 — Gemini 2.5 Flash</div>
+      <h2 class="admin-section-title">🤖 AI 관리</h2>
 
       <!-- API 키 설정 -->
       <div class="card">
