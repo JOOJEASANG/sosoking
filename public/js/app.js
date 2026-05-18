@@ -13,6 +13,7 @@ import './representative-games-enhancer.js';
 import './write-normalizer.js';
 import './relay-name-patch.js';
 import './account-secure-actions.js';
+import './admin-session-guard.js';
 import './admin-ai-mission-actions.js';
 import './admin-ai-ops-actions.js';
 import './social-play-enhancer.js';
