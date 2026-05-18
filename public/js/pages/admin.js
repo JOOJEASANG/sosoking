@@ -32,7 +32,8 @@ export async function renderAdmin() {
     { key: 'posts',     icon: '📝', label: '게시물' },
     { key: 'reports',   icon: '🚨', label: '신고' },
     { key: 'users',     icon: '👥', label: '회원' },
-    { key: 'ai',        icon: '🤖', label: 'AI 운영관리' },
+    { key: 'ai',        icon: '🤖', label: 'AI 운영' },
+    { key: 'write',     icon: '➕', label: '글쓰기', route: '/write' },
   ];
 
   el.innerHTML = `
@@ -47,13 +48,14 @@ export async function renderAdmin() {
         </div>
         <nav class="admin-nav">
           ${MENUS.map(m => `
-            <button class="admin-menu-item ${currentTab === m.key ? 'active' : ''}" data-tab="${m.key}">
+            <button class="admin-menu-item ${currentTab === m.key ? 'active' : ''}" data-tab="${m.key}"${m.route ? ` data-route="${m.route}"` : ''}>
               <span class="admin-menu-item__icon">${m.icon}</span>
               <span class="admin-menu-item__label">${m.label}</span>
             </button>`).join('')}
         </nav>
         <div class="admin-sidebar__footer">
           <button class="admin-goto-site-btn" id="btn-goto-site">🏠 사이트로 가기</button>
+          <button class="admin-goto-site-btn admin-write-site-btn" id="btn-admin-write">➕ 글쓰기</button>
           <div class="admin-uid-label">UID</div>
           <div class="admin-uid">${user.uid}</div>
         </div>
@@ -65,6 +67,10 @@ export async function renderAdmin() {
 
   document.querySelectorAll('.admin-menu-item[data-tab]').forEach(btn => {
     btn.addEventListener('click', () => {
+      if (btn.dataset.route) {
+        navigate(btn.dataset.route);
+        return;
+      }
       currentTab = btn.dataset.tab;
       document.querySelectorAll('.admin-menu-item[data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === currentTab));
       loadTab(currentTab);
@@ -72,6 +78,7 @@ export async function renderAdmin() {
   });
 
   document.getElementById('btn-goto-site')?.addEventListener('click', () => navigate('/'));
+  document.getElementById('btn-admin-write')?.addEventListener('click', () => navigate('/write'));
 
   await loadTab(currentTab);
 }
@@ -90,550 +97,183 @@ async function loadTab(tab) {
   }
 }
 
-/* ── 대시보드 ── */
-async function renderDashboard(el) {
-  const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
-
-  const TYPE_META = [
-    { type: 'vote',         icon: '🗳️', label: '골라킹',    cat: 'golra' },
-    { type: 'initial_game', icon: '🔤', label: '초성게임',   cat: 'golra' },
-    { type: 'naming',       icon: '😜', label: '미친작명소', cat: 'usgyo' },
-    { type: 'crazy_court',  icon: '⚖️', label: '억까재판',   cat: 'usgyo' },
-    { type: 'relay',        icon: '🎭', label: '막장킹',     cat: 'malhe' },
-    { type: 'acrostic',     icon: '✍️', label: '삼행시짓기', cat: 'malhe' },
-  ];
-
-  const [totalSnap, todaySnap, recentSnap, reportSnap, ...typeSnaps] = await Promise.all([
-    getCountFromServer(collection(db, 'feeds')).catch(() => null),
-    getDocs(query(collection(db, 'feeds'), where('createdAt', '>=', Timestamp.fromDate(todayStart)), limit(99))).catch(() => null),
-    getDocs(query(collection(db, 'feeds'), orderBy('createdAt', 'desc'), limit(5))).catch(() => null),
-    getCountFromServer(query(collection(db, 'reports'), where('resolved', '==', false))).catch(() => null),
-    ...TYPE_META.map(t => getCountFromServer(query(collection(db, 'feeds'), where('type', '==', t.type))).catch(() => null)),
+async function renderDashboard(content) {
+  const [posts, reports, users] = await Promise.all([
+    getCountFromServer(collection(db, 'feeds')).catch(() => ({ data: () => ({ count: 0 }) })),
+    getCountFromServer(collection(db, 'reports')).catch(() => ({ data: () => ({ count: 0 }) })),
+    getCountFromServer(collection(db, 'users')).catch(() => ({ data: () => ({ count: 0 }) })),
   ]);
 
-  const total   = totalSnap?.data?.().count ?? 0;
-  const today   = todaySnap?.size ?? 0;
-  const pending = reportSnap?.data?.().count ?? 0;
-  const recent  = recentSnap?.docs.map(d => ({ id: d.id, ...d.data() })) ?? [];
-  const typeCounts = TYPE_META.map((t, i) => ({ ...t, count: typeSnaps[i]?.data?.().count ?? 0 }));
+  const typeRows = await getDocs(query(collection(db, 'feeds'), limit(500))).catch(() => ({ docs: [] }));
+  const typeCounts = {};
+  typeRows.docs.forEach(d => {
+    const t = d.data().type || 'unknown';
+    typeCounts[t] = (typeCounts[t] || 0) + 1;
+  });
 
-  el.innerHTML = `
-    <div style="display:flex;flex-direction:column;gap:24px">
-      <div>
-        <h2 class="admin-section-title">📊 대시보드</h2>
-        <div class="admin-stat-grid">
-          <div class="admin-stat-card">
-            <div class="admin-stat-card__num">${total.toLocaleString()}</div>
-            <div class="admin-stat-card__label">총 게시물</div>
-          </div>
-          <div class="admin-stat-card">
-            <div class="admin-stat-card__num" style="color:var(--color-success)">${today}</div>
-            <div class="admin-stat-card__label">오늘 새 글</div>
-          </div>
-          <div class="admin-stat-card">
-            <div class="admin-stat-card__num" style="color:${pending > 0 ? 'var(--color-danger)' : 'var(--color-text-muted)'}">${pending}</div>
-            <div class="admin-stat-card__label">미처리 신고</div>
-          </div>
-        </div>
+  content.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:18px">
+      <div class="admin-section-title">📊 대시보드</div>
+      <div class="admin-stat-grid">
+        ${statCard('전체 게시물', posts.data().count, '📝')}
+        ${statCard('신고', reports.data().count, '🚨')}
+        ${statCard('회원', users.data().count, '👥')}
       </div>
-
-      <div class="card">
-        <div class="card__body">
-          <div style="font-size:14px;font-weight:800;margin-bottom:14px">🎮 유형별 게시물 현황</div>
-          <div class="admin-type-grid">
-            ${typeCounts.map(t => `
-              <div class="admin-type-card admin-type-card--${t.cat}">
-                <div class="admin-type-card__icon">${t.icon}</div>
-                <div class="admin-type-card__count">${t.count.toLocaleString()}</div>
-                <div class="admin-type-card__name">${t.label}</div>
-              </div>`).join('')}
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card__body">
-          <div style="font-size:14px;font-weight:800;margin-bottom:12px">🕐 최근 게시물</div>
-          ${recent.map(p => `
-            <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--color-border-light)">
-              <span style="font-size:11px;padding:3px 7px;border-radius:99px;background:var(--color-surface-2);font-weight:700">${p.type || ''}</span>
-              <a href="#/detail/${p.id}" style="flex:1;font-size:13px;font-weight:600;color:var(--color-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.title || '(제목없음)')}</a>
-              <span style="font-size:11px;color:var(--color-text-muted);white-space:nowrap">${escHtml(p.authorName || '익명')}</span>
+      <div class="card"><div class="card__body--lg">
+        <h3 style="margin-bottom:12px">유형별 게시물</h3>
+        <div class="admin-type-grid">
+          ${['vote','initial_game','naming','crazy_court','relay','acrostic'].map(t => `
+            <div class="admin-type-card">
+              <div class="admin-type-card__icon">${typeIcon(t)}</div>
+              <div class="admin-type-card__count">${typeCounts[t] || 0}</div>
+              <div class="admin-type-card__name">${typeLabel(t)}</div>
             </div>`).join('')}
         </div>
-      </div>
+      </div></div>
     </div>`;
-
-  el.querySelectorAll('[data-tab-switch]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      currentTab = btn.dataset.tabSwitch;
-      document.querySelectorAll('[data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === currentTab));
-      loadTab(currentTab);
-    });
-  });
 }
 
-/* ── 게시물 관리 ── */
-async function renderPosts(el, searchQ = '', catFilter = '') {
-  let constraints = [orderBy('createdAt', 'desc'), limit(30)];
-  if (catFilter) constraints.unshift(where('cat', '==', catFilter));
+function statCard(label, count, icon) {
+  return `<div class="admin-stat-card"><div style="font-size:24px">${icon}</div><div class="admin-stat-card__num">${count}</div><div class="admin-stat-card__label">${label}</div></div>`;
+}
 
-  const snap = await getDocs(query(collection(db, 'feeds'), ...constraints)).catch(() => null);
-  let posts = snap?.docs.map(d => ({ id: d.id, ...d.data() })) ?? [];
+function typeLabel(t) {
+  return ({ vote:'골라킹', initial_game:'초성게임', naming:'미친작명소', crazy_court:'억까재판', relay:'막장킹', acrostic:'삼행시' })[t] || t;
+}
+function typeIcon(t) {
+  return ({ vote:'🗳️', initial_game:'🔤', naming:'😜', crazy_court:'⚖️', relay:'🎭', acrostic:'✍️' })[t] || '📄';
+}
 
-  if (searchQ) {
-    const q = searchQ.toLowerCase();
-    posts = posts.filter(p => (p.title || '').toLowerCase().includes(q) || (p.authorName || '').toLowerCase().includes(q));
-  }
-
-  el.innerHTML = `
-    <div style="display:flex;flex-direction:column;gap:16px">
-      <h2 class="admin-section-title">📝 게시물 관리</h2>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <input id="admin-post-search" class="form-input" style="max-width:220px;font-size:13px" placeholder="제목/작성자 검색" value="${escHtml(searchQ)}">
-        <button class="btn btn--primary btn--sm" id="btn-post-search">검색</button>
-        ${[
-          { key: '', label: '전체' },
-          { key: 'golra', label: '골라봐' },
-          { key: 'usgyo', label: '웃겨봐' },
-          { key: 'malhe', label: '도전봐' },
-        ].map(c => `<button class="filter-chip ${catFilter === c.key ? 'active' : ''}" data-post-cat="${c.key}">${c.label}</button>`).join('')}
-      </div>
+async function renderPosts(content) {
+  const snap = await getDocs(query(collection(db, 'feeds'), orderBy('createdAt', 'desc'), limit(30)));
+  content.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="admin-section-title">📝 게시물 관리</div>
       <div class="card" style="overflow:auto">
         <table class="admin-table">
-          <thead>
-            <tr>
-              <th>제목</th>
-              <th style="width:80px">유형</th>
-              <th style="width:80px">카테고리</th>
-              <th style="width:80px">작성자</th>
-              <th style="width:60px">상태</th>
-              <th style="width:120px">작업</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${posts.length === 0 ? `<tr><td colspan="6" class="admin-table__empty">게시물이 없어요</td></tr>` :
-              posts.map(p => `
-                <tr data-post-row="${p.id}">
-                  <td class="admin-table__title-cell">
-                    <a href="#/detail/${p.id}" class="admin-table__link">${escHtml(p.title || '(제목없음)')}</a>
-                  </td>
-                  <td><span class="badge badge--gray" style="font-size:10px">${p.type || ''}</span></td>
-                  <td><span style="font-size:12px">${{ golra:'🎯 골라봐', usgyo:'😂 웃겨봐', malhe:'🎮 도전봐' }[p.cat] || p.cat || ''}</span></td>
-                  <td class="admin-table__muted">${escHtml(p.authorName || '익명')}</td>
-                  <td>
-                    ${p.hidden
-                      ? `<span class="admin-status admin-status--hidden">숨김</span>`
-                      : `<span class="admin-status admin-status--visible">공개</span>`}
-                  </td>
-                  <td>
-                    <div style="display:flex;gap:6px">
-                      <button class="btn btn--ghost btn--sm" data-hide="${p.id}" data-hidden="${p.hidden ? '1' : '0'}" style="font-size:11px">${p.hidden ? '공개' : '숨김'}</button>
-                      <button class="btn btn--danger btn--sm" data-delete="${p.id}" style="font-size:11px">삭제</button>
-                    </div>
-                  </td>
-                </tr>`).join('')}
-          </tbody>
+          <thead><tr><th>유형</th><th>제목</th><th>작성자</th><th>상태</th><th>관리</th></tr></thead>
+          <tbody>${snap.docs.map(d => rowPost(d.id, d.data())).join('') || `<tr><td colspan="5" class="admin-table__empty">게시물이 없습니다.</td></tr>`}</tbody>
         </table>
       </div>
     </div>`;
-
-  document.getElementById('btn-post-search')?.addEventListener('click', () => {
-    const q = document.getElementById('admin-post-search')?.value.trim() || '';
-    renderPosts(el, q, catFilter);
-  });
-  document.getElementById('admin-post-search')?.addEventListener('keydown', e => {
-    if (e.key === 'Enter') {
-      renderPosts(el, e.target.value.trim(), catFilter);
-    }
-  });
-  el.querySelectorAll('[data-post-cat]').forEach(btn => {
-    btn.addEventListener('click', () => renderPosts(el, searchQ, btn.dataset.postCat));
-  });
-  el.querySelectorAll('[data-hide]').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const id = btn.dataset.hide;
-      const nowHidden = btn.dataset.hidden === '1';
-      try {
-        await updateDoc(doc(db, 'feeds', id), { hidden: !nowHidden });
-        toast.success(nowHidden ? '공개했어요' : '숨겼어요');
-        renderPosts(el, searchQ, catFilter);
-      } catch { toast.error('변경에 실패했어요'); }
-    });
-  });
-  el.querySelectorAll('[data-delete]').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      if (!confirm('이 게시물을 완전히 삭제할까요? 복구할 수 없어요.')) return;
-      try {
-        await deleteDoc(doc(db, 'feeds', btn.dataset.delete));
-        toast.success('삭제됐어요');
-        btn.closest('[data-post-row]')?.remove();
-      } catch { toast.error('삭제에 실패했어요'); }
-    });
-  });
+  content.querySelectorAll('[data-hide-post]').forEach(btn => btn.addEventListener('click', async () => {
+    const id = btn.dataset.hidePost;
+    await updateDoc(doc(db, 'feeds', id), { hidden: true, updatedAt: serverTimestamp() });
+    toast('숨김 처리했습니다.');
+    renderPosts(content);
+  }));
+  content.querySelectorAll('[data-unhide-post]').forEach(btn => btn.addEventListener('click', async () => {
+    const id = btn.dataset.unhidePost;
+    await updateDoc(doc(db, 'feeds', id), { hidden: false, updatedAt: serverTimestamp() });
+    toast('공개 처리했습니다.');
+    renderPosts(content);
+  }));
 }
 
-/* ── 신고 관리 ── */
-async function renderReports(el) {
-  const [pendingSnap, resolvedSnap] = await Promise.all([
-    getDocs(query(collection(db, 'reports'), where('resolved', '==', false), orderBy('createdAt', 'desc'), limit(30))).catch(() => null),
-    getDocs(query(collection(db, 'reports'), where('resolved', '==', true), orderBy('createdAt', 'desc'), limit(10))).catch(() => null),
-  ]);
-
-  const pending  = pendingSnap?.docs.map(d => ({ id: d.id, ...d.data() })) ?? [];
-  const resolved = resolvedSnap?.docs.map(d => ({ id: d.id, ...d.data() })) ?? [];
-
-  const renderRow = (r, isDone) => `
-    <tr style="border-bottom:1px solid var(--color-border-light)" data-report-row="${r.id}">
-      <td style="padding:10px 12px;font-size:12px">${escHtml(r.reason || '')}</td>
-      <td style="padding:10px 12px;font-size:12px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-        ${r.postId ? `<a href="#/detail/${r.postId}" style="color:var(--color-primary)">${escHtml(r.postTitle || r.postId)}</a>` : '-'}
-      </td>
-      <td style="padding:10px 12px;font-size:12px;color:var(--color-text-muted)">${escHtml(r.reporterName || '익명')}</td>
-      <td style="padding:10px 12px">
-        ${!isDone ? `
-          <div style="display:flex;gap:6px">
-            <button class="btn btn--ghost btn--sm" data-view-post="${r.postId}" style="font-size:11px">글 보기</button>
-            <button class="btn btn--primary btn--sm" data-resolve="${r.id}" style="font-size:11px">처리완료</button>
-            ${r.postId ? `<button class="btn btn--danger btn--sm" data-delete-post="${r.postId}" data-resolve="${r.id}" style="font-size:11px">글 삭제</button>` : ''}
-          </div>` : `<span style="font-size:11px;color:var(--color-text-muted)">처리완료</span>`}
-      </td>
-    </tr>`;
-
-  el.innerHTML = `
-    <div style="display:flex;flex-direction:column;gap:16px">
-      <h2 class="admin-section-title">🚨 신고 관리</h2>
-      <div style="display:flex;gap:12px">
-        <div class="admin-stat-card" style="flex:1">
-          <div class="admin-stat-card__num" style="color:${pending.length > 0 ? 'var(--color-danger)' : 'var(--color-text-muted)'}">${pending.length}</div>
-          <div class="admin-stat-card__label">미처리 신고</div>
-        </div>
-        <div class="admin-stat-card" style="flex:1">
-          <div class="admin-stat-card__num" style="color:var(--color-success)">${resolved.length}</div>
-          <div class="admin-stat-card__label">처리완료 (최근)</div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card__body--lg">
-          <div style="font-size:14px;font-weight:800;margin-bottom:12px">⚠️ 처리 대기 (${pending.length}건)</div>
-          ${pending.length === 0 ? `<div style="text-align:center;padding:24px;color:var(--color-text-muted);font-size:13px">처리할 신고가 없어요 ✅</div>` : `
-          <table style="width:100%;font-size:13px;border-collapse:collapse">
-            <thead>
-              <tr style="border-bottom:2px solid var(--color-border);text-align:left;background:var(--color-surface-2)">
-                <th style="padding:10px 12px">사유</th>
-                <th style="padding:10px 12px">게시물</th>
-                <th style="padding:10px 12px">신고자</th>
-                <th style="padding:10px 12px;width:200px">작업</th>
-              </tr>
-            </thead>
-            <tbody>${pending.map(r => renderRow(r, false)).join('')}</tbody>
-          </table>`}
-        </div>
-      </div>
-
-      ${resolved.length > 0 ? `
-        <div class="card">
-          <div class="card__body--lg">
-            <div style="font-size:14px;font-weight:800;margin-bottom:12px;color:var(--color-text-muted)">✅ 처리 완료 (최근 ${resolved.length}건)</div>
-            <table style="width:100%;font-size:13px;border-collapse:collapse">
-              <thead>
-                <tr style="border-bottom:2px solid var(--color-border);text-align:left;background:var(--color-surface-2)">
-                  <th style="padding:10px 12px">사유</th>
-                  <th style="padding:10px 12px">게시물</th>
-                  <th style="padding:10px 12px">신고자</th>
-                  <th style="padding:10px 12px">상태</th>
-                </tr>
-              </thead>
-              <tbody>${resolved.map(r => renderRow(r, true)).join('')}</tbody>
-            </table>
-          </div>
-        </div>` : ''}
-    </div>`;
-
-  el.querySelectorAll('[data-resolve]').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const reportId = btn.dataset.resolve;
-      const postId   = btn.dataset.deletePost;
-      try {
-        if (postId) {
-          if (!confirm('신고된 글을 삭제하고 신고를 처리할까요?')) return;
-          await deleteDoc(doc(db, 'feeds', postId));
-        }
-        await updateDoc(doc(db, 'reports', reportId), { resolved: true, resolvedAt: serverTimestamp() });
-        toast.success('처리완료했어요');
-        btn.closest('[data-report-row]')?.remove();
-      } catch { toast.error('처리에 실패했어요'); }
-    });
-  });
+function rowPost(id, p) {
+  const hidden = p.hidden === true;
+  return `<tr>
+    <td>${typeIcon(p.type)} ${typeLabel(p.type)}</td>
+    <td><a class="admin-table__link" href="#/post/${id}">${escHtml(p.title || '(제목 없음)')}</a></td>
+    <td>${escHtml(p.authorName || p.authorId || '-')}</td>
+    <td><span class="admin-status ${hidden ? 'admin-status--hidden' : 'admin-status--visible'}">${hidden ? '숨김' : '공개'}</span></td>
+    <td>${hidden ? `<button class="btn btn--sm btn--secondary" data-unhide-post="${id}">공개</button>` : `<button class="btn btn--sm btn--danger" data-hide-post="${id}">숨김</button>`}</td>
+  </tr>`;
 }
 
-/* ── 회원 현황 ── */
-async function renderUsers(el) {
-  const snap = await getDocs(query(collection(db, 'feeds'), orderBy('createdAt', 'desc'), limit(100))).catch(() => null);
-  const posts = snap?.docs.map(d => ({ id: d.id, ...d.data() })) ?? [];
-
-  // Deduplicate by authorId
-  const userMap = new Map();
-  for (const p of posts) {
-    if (!p.authorId) continue;
-    if (!userMap.has(p.authorId)) {
-      userMap.set(p.authorId, { uid: p.authorId, name: p.authorName || '익명', photo: p.authorPhoto || '', posts: 0, lastPost: null });
-    }
-    const u = userMap.get(p.authorId);
-    u.posts++;
-    if (!u.lastPost || p.createdAt?.toDate?.() > u.lastPost) u.lastPost = p.createdAt?.toDate?.() ?? null;
-  }
-  const users = [...userMap.values()].sort((a, b) => b.posts - a.posts);
-
-  el.innerHTML = `
-    <div style="display:flex;flex-direction:column;gap:16px">
-      <div style="display:flex;align-items:center;justify-content:space-between">
-        <h2 class="admin-section-title">👥 회원 현황</h2>
-        <div style="font-size:13px;color:var(--color-text-muted)">최근 100개 게시물 기준</div>
-      </div>
-      <div class="admin-stat-grid" style="grid-template-columns:repeat(2,1fr)">
-        <div class="admin-stat-card">
-          <div class="admin-stat-card__num">${users.length}</div>
-          <div class="admin-stat-card__label">활동 회원 수</div>
-        </div>
-        <div class="admin-stat-card">
-          <div class="admin-stat-card__num">${posts.length}</div>
-          <div class="admin-stat-card__label">분석된 게시물</div>
-        </div>
-      </div>
+async function renderReports(content) {
+  const snap = await getDocs(query(collection(db, 'reports'), orderBy('createdAt', 'desc'), limit(30))).catch(() => ({ docs: [] }));
+  content.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="admin-section-title">🚨 신고 관리</div>
       <div class="card" style="overflow:auto">
-        <table style="width:100%;font-size:13px;border-collapse:collapse">
-          <thead>
-            <tr style="border-bottom:2px solid var(--color-border);text-align:left;background:var(--color-surface-2)">
-              <th style="padding:10px 12px">닉네임</th>
-              <th style="padding:10px 12px;width:80px">게시물 수</th>
-              <th style="padding:10px 12px">마지막 글</th>
-              <th style="padding:10px 12px">UID</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${users.map((u, i) => `
-              <tr style="border-bottom:1px solid var(--color-border-light)">
-                <td style="padding:10px 12px">
-                  <div style="display:flex;align-items:center;gap:8px">
-                    ${u.photo ? `<img src="${u.photo}" style="width:28px;height:28px;border-radius:50%;object-fit:cover" loading="lazy">` : `<div style="width:28px;height:28px;border-radius:50%;background:var(--color-surface-2);display:flex;align-items:center;justify-content:center;font-size:14px">👤</div>`}
-                    <span style="font-weight:700">${escHtml(u.name)}</span>
-                    ${i === 0 ? `<span style="font-size:10px;background:#FFB800;color:#fff;border-radius:99px;padding:2px 6px;font-weight:800">TOP</span>` : ''}
-                  </div>
-                </td>
-                <td style="padding:10px 12px;font-weight:800;color:var(--color-primary)">${u.posts}</td>
-                <td style="padding:10px 12px;font-size:12px;color:var(--color-text-muted)">${u.lastPost ? u.lastPost.toLocaleDateString('ko-KR') : '-'}</td>
-                <td style="padding:10px 12px;font-size:10px;font-family:monospace;color:var(--color-text-muted)">${u.uid.slice(0, 12)}…</td>
-              </tr>`).join('')}
-          </tbody>
+        <table class="admin-table">
+          <thead><tr><th>대상</th><th>사유</th><th>신고자</th><th>상태</th><th>관리</th></tr></thead>
+          <tbody>${snap.docs.map(d => rowReport(d.id, d.data())).join('') || `<tr><td colspan="5" class="admin-table__empty">신고가 없습니다.</td></tr>`}</tbody>
         </table>
       </div>
     </div>`;
 }
 
-/* ── AI 설정 ── */
-async function renderAiSettings(el) {
-  // Load current AI config from Firestore
-  let aiConfig = { enabled: true, apiKey: '', features: {}, usage: {} };
-  try {
-    const snap = await getDoc(doc(db, 'config', 'ai'));
-    if (snap.exists()) {
-      const d = snap.data();
-      aiConfig = {
-        enabled: d.enabled !== false,
-        apiKey: d.apiKey ? '●'.repeat(8) + d.apiKey.slice(-4) : '',
-        features: d.features || {},
-        usage: d.usage || {},
-      };
-    }
-  } catch {}
-
-  // Calculate today's usage
-  const today = new Date().toISOString().slice(0, 10);
-  const todayUsage = aiConfig.usage?.[today]?.requests || 0;
-
-  // Load recent AI reports
-  let reports = [];
-  try {
-    const rSnap = await getDocs(query(collection(db, 'ai_reports'), orderBy('createdAt', 'desc'), limit(5)));
-    reports = rSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-  } catch {}
-
-  const featureList = [
-    { key: 'moderation',  label: '🛡️ 게시물 자동 검토', desc: '새 게시물 AI 모더레이션 (욕설·비방 자동 숨김)' },
-    { key: 'autoReport',  label: '📋 신고 자동 처리',   desc: '접수된 신고 AI 분석 후 명백한 위반 자동 처리' },
-    { key: 'autoMission', label: '🎯 미션 자동 생성',   desc: '매일 오전 7시 AI가 오늘의 미션 자동 생성' },
-    { key: 'weeklyReport',label: '📊 주간 보고서',      desc: '매주 월요일 AI가 활동 보고서 자동 작성' },
-  ];
-
-  el.innerHTML = `
-    <div style="display:flex;flex-direction:column;gap:24px;max-width:700px">
-      <h2 class="admin-section-title">🤖 AI 관리</h2>
-
-      <!-- API 키 설정 -->
-      <div class="card">
-        <div class="card__body">
-          <div style="font-size:14px;font-weight:800;margin-bottom:4px">🔑 Gemini API 키</div>
-          <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:12px">
-            Google AI Studio에서 발급한 API 키를 입력하세요. 저장 후 마스킹 표시됩니다.
-          </div>
-          <div style="display:flex;gap:8px">
-            <input type="password" id="ai-api-key-input" class="form-input" placeholder="${aiConfig.apiKey || 'AIza...'}"
-              style="flex:1;font-family:monospace;font-size:13px" autocomplete="new-password">
-            <button class="btn btn--primary btn--sm" id="btn-save-api-key">저장</button>
-          </div>
-          <div style="margin-top:8px;font-size:11px;color:var(--color-text-muted)">
-            💡 키는 Firestore에 암호화 없이 저장됩니다. 관리자 전용 문서(config/ai)에만 보관돼요.
-          </div>
-        </div>
-      </div>
-
-      <!-- 오늘 사용량 -->
-      <div class="admin-stat-grid" style="grid-template-columns:repeat(3,1fr)">
-        <div class="admin-stat-card">
-          <div class="admin-stat-card__num" style="color:var(--color-primary)">${todayUsage}</div>
-          <div class="admin-stat-card__label">오늘 AI 요청 수</div>
-        </div>
-        <div class="admin-stat-card">
-          <div class="admin-stat-card__num" style="font-size:14px;color:${aiConfig.enabled ? 'var(--color-success)' : 'var(--color-danger)'}">
-            ${aiConfig.enabled ? '✅ 활성' : '⛔ 비활성'}
-          </div>
-          <div class="admin-stat-card__label">AI 운영 상태</div>
-        </div>
-        <div class="admin-stat-card">
-          <div class="admin-stat-card__num" style="font-size:14px">1,500</div>
-          <div class="admin-stat-card__label">일일 무료 한도</div>
-        </div>
-      </div>
-
-      <!-- 기능 ON/OFF -->
-      <div class="card">
-        <div class="card__body">
-          <div style="font-size:14px;font-weight:800;margin-bottom:12px">⚙️ AI 기능 설정</div>
-          <div style="display:flex;flex-direction:column;gap:12px" id="ai-feature-list">
-            ${featureList.map(f => `
-              <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px solid var(--color-border-light)">
-                <div style="flex:1;min-width:0">
-                  <div style="font-size:13px;font-weight:700">${f.label}</div>
-                  <div style="font-size:11px;color:var(--color-text-muted);margin-top:2px">${f.desc}</div>
-                </div>
-                <label style="display:flex;align-items:center;gap:6px;flex-shrink:0;cursor:pointer">
-                  <input type="checkbox" class="ai-feature-toggle" data-feature="${f.key}"
-                    ${aiConfig.features[f.key] !== false ? 'checked' : ''}>
-                  <span style="font-size:12px">${aiConfig.features[f.key] !== false ? '켜짐' : '꺼짐'}</span>
-                </label>
-              </div>`).join('')}
-          </div>
-          <button class="btn btn--ghost btn--sm" id="btn-save-features" style="margin-top:12px">기능 설정 저장</button>
-        </div>
-      </div>
-
-      <!-- 수동 실행 -->
-      <div class="card">
-        <div class="card__body">
-          <div style="font-size:14px;font-weight:800;margin-bottom:4px">⚡ 수동 실행</div>
-          <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:14px">
-            스케줄 없이 지금 바로 AI 작업을 실행할 수 있어요.
-          </div>
-          <div style="display:flex;gap:10px;flex-wrap:wrap">
-            <button class="btn btn--primary btn--sm" id="btn-trigger-all-content">✏️ AI 게시글 생성</button>
-            <button class="btn btn--ghost btn--sm" id="btn-trigger-report">📊 주간 보고서 지금 생성</button>
-          </div>
-          <div style="font-size:11px;color:var(--color-text-muted);margin-top:6px">
-            💡 게시글 생성은 타입별 1개씩. 오늘 이미 생성된 타입은 건너뜀
-          </div>
-          <div id="ai-trigger-result" style="margin-top:10px;font-size:12px;color:var(--color-text-muted)"></div>
-        </div>
-      </div>
-
-      <!-- 최근 AI 보고서 -->
-      ${reports.length > 0 ? `
-        <div class="card">
-          <div class="card__body">
-            <div style="font-size:14px;font-weight:800;margin-bottom:12px">📄 최근 AI 보고서</div>
-            ${reports.map(r => `
-              <div style="padding:12px;background:var(--color-surface-2);border-radius:var(--radius-md);margin-bottom:8px">
-                <div style="font-size:13px;font-weight:700;margin-bottom:4px">${escHtml(r.title || '보고서')}</div>
-                <div style="font-size:12px;color:var(--color-text-secondary);line-height:1.6">${escHtml(r.summary || '')}</div>
-                ${r.highlights?.length ? `<ul style="font-size:11px;color:var(--color-text-muted);margin:8px 0 0 16px">${r.highlights.map(h => `<li>${escHtml(h)}</li>`).join('')}</ul>` : ''}
-                ${r.nextWeekSuggestion ? `<div style="margin-top:8px;font-size:11px;color:var(--color-primary)">💡 ${escHtml(r.nextWeekSuggestion)}</div>` : ''}
-              </div>`).join('')}
-          </div>
-        </div>` : ''}
-    </div>`;
-
-  // Save API key
-  el.querySelector('#btn-save-api-key')?.addEventListener('click', async () => {
-    const key = el.querySelector('#ai-api-key-input')?.value.trim();
-    if (!key || key.length < 10) { toast.error('유효한 API 키를 입력해주세요'); return; }
-    try {
-      const saveFn = httpsCallable(functions, 'saveAiConfig');
-      await saveFn({ apiKey: key, enabled: aiConfig.enabled, features: aiConfig.features });
-      toast.success('API 키가 저장됐어요 🔑');
-      el.querySelector('#ai-api-key-input').value = '';
-      el.querySelector('#ai-api-key-input').placeholder = '●'.repeat(8) + key.slice(-4);
-    } catch (e) { toast.error(e.message || '저장에 실패했어요'); }
-  });
-
-  // Save features
-  el.querySelector('#btn-save-features')?.addEventListener('click', async () => {
-    const features = {};
-    el.querySelectorAll('.ai-feature-toggle').forEach(cb => {
-      features[cb.dataset.feature] = cb.checked;
-      cb.nextElementSibling.textContent = cb.checked ? '켜짐' : '꺼짐';
-    });
-    try {
-      const saveFn = httpsCallable(functions, 'saveAiConfig');
-      await saveFn({ features, enabled: features.moderation || features.autoMission || features.weeklyReport || features.autoReport });
-      toast.success('설정이 저장됐어요 ✅');
-    } catch (e) { toast.error(e.message || '저장에 실패했어요'); }
-  });
-
-  // Trigger mission
-  el.querySelector('#btn-trigger-all-content')?.addEventListener('click', async () => {
-    const btn = el.querySelector('#btn-trigger-all-content');
-    const result = el.querySelector('#ai-trigger-result');
-    if (!confirm('AI 게시글 9개를 생성할까요? (오늘 이미 생성된 타입은 건너뜁니다)')) return;
-    btn.disabled = true;
-    btn.textContent = '생성 중... (최대 2분 소요)';
-    result.textContent = '⏳ 9개 타입 순차 생성 중입니다...';
-    try {
-      const fn = httpsCallable(functions, 'generateAllAiContentNow', { timeout: 550000 });
-      const res = await fn({ force: false });
-      const { ok = 0, skipped = 0, total = 0, results = [] } = res.data || {};
-      const typeLabels = { vote:'골라킹', initial_game:'초성게임', naming:'미친작명소', crazy_court:'억까재판', quiz:'미친퀴즈', relay:'막장킹', acrostic:'삼행시짓기' };
-      const detail = results.map(r => r.ok ? `✅ ${typeLabels[r.type]||r.type}` : r.skipped ? `⏭ ${typeLabels[r.type]||r.type}(건너뜀)` : `❌ ${typeLabels[r.type]||r.type}`).join(' · ');
-      result.innerHTML = `✅ 완료 — 생성 ${ok}개 / 건너뜀 ${skipped}개 / 전체 ${total}개<br><span style="color:var(--color-text-muted)">${detail}</span>`;
-      toast.success(`AI 게시글 ${ok}개 생성 완료! 🎉`);
-    } catch (e) {
-      result.textContent = '❌ ' + (e.message || '생성에 실패했어요');
-      toast.error(e.message || '생성에 실패했어요');
-    } finally {
-      btn.disabled = false;
-      btn.textContent = '✏️ AI 게시글 7개 생성';
-    }
-  });
-
-  // Trigger report
-  el.querySelector('#btn-trigger-report')?.addEventListener('click', async () => {
-    const btn = el.querySelector('#btn-trigger-report');
-    const result = el.querySelector('#ai-trigger-result');
-    btn.disabled = true;
-    btn.textContent = '생성 중...';
-    try {
-      const triggerFn = httpsCallable(functions, 'adminTriggerReport');
-      const res = await triggerFn({});
-      result.textContent = `✅ 보고서 생성 완료: "${res.data.title}"`;
-      toast.success('주간 보고서가 생성됐어요 📊');
-      setTimeout(() => renderAiSettings(el), 1000);
-    } catch (e) {
-      result.textContent = '❌ ' + (e.message || '생성에 실패했어요');
-      toast.error(e.message || '생성에 실패했어요');
-    } finally {
-      btn.disabled = false;
-      btn.textContent = '📊 주간 보고서 지금 생성';
-    }
-  });
+function rowReport(id, r) {
+  return `<tr>
+    <td>${escHtml(r.targetType || '-')} / ${escHtml(r.targetId || '-')}</td>
+    <td>${escHtml(r.reason || '-')}</td>
+    <td>${escHtml(r.reporterId || '-')}</td>
+    <td>${escHtml(r.status || 'open')}</td>
+    <td><span class="admin-table__muted">검토</span></td>
+  </tr>`;
 }
 
+async function renderUsers(content) {
+  const snap = await getDocs(query(collection(db, 'users'), limit(50))).catch(() => ({ docs: [] }));
+  content.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="admin-section-title">👥 회원 관리</div>
+      <div class="card" style="overflow:auto">
+        <table class="admin-table">
+          <thead><tr><th>닉네임</th><th>UID</th><th>상태</th></tr></thead>
+          <tbody>${snap.docs.map(d => {
+            const u = d.data();
+            return `<tr><td>${escHtml(u.nickname || '-')}</td><td>${d.id}</td><td>${u.banned ? '차단' : '정상'}</td></tr>`;
+          }).join('') || `<tr><td colspan="3" class="admin-table__empty">회원이 없습니다.</td></tr>`}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+async function renderAiSettings(content) {
+  const cfgRef = doc(db, 'site_settings', 'config');
+  const cfgSnap = await getDoc(cfgRef).catch(() => null);
+  const cfg = cfgSnap?.exists() ? cfgSnap.data() : {};
+
+  content.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="admin-section-title">🤖 AI 운영관리</div>
+      <div class="card"><div class="card__body--lg" style="display:flex;flex-direction:column;gap:14px">
+        <label class="form-label">AI 게시글 자동 생성</label>
+        <select class="form-select" id="aiContentEnabled">
+          <option value="true" ${cfg.aiContentEnabled !== false ? 'selected' : ''}>사용</option>
+          <option value="false" ${cfg.aiContentEnabled === false ? 'selected' : ''}>중지</option>
+        </select>
+        <label class="form-label">AI 미션 자동 생성</label>
+        <select class="form-select" id="aiMissionEnabled">
+          <option value="true" ${cfg.aiMissionEnabled !== false ? 'selected' : ''}>사용</option>
+          <option value="false" ${cfg.aiMissionEnabled === false ? 'selected' : ''}>중지</option>
+        </select>
+        <label class="form-label">일일 AI 생성 한도</label>
+        <input class="form-input" id="aiDailyLimit" type="number" min="0" max="100" value="${Number(cfg.aiDailyLimit ?? 20)}">
+        <button class="btn btn--primary" id="btn-save-ai-settings">저장</button>
+      </div></div>
+      <div class="card"><div class="card__body--lg" style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn--secondary" id="btn-generate-ai-content">AI 게시글 1개 생성</button>
+        <button class="btn btn--secondary" id="btn-generate-all-ai-content">6개 유형 모두 생성</button>
+        <button class="btn btn--secondary" id="btn-generate-ai-mission">AI 미션 생성</button>
+      </div></div>
+    </div>`;
+
+  document.getElementById('btn-save-ai-settings')?.addEventListener('click', async () => {
+    await setDoc(cfgRef, {
+      aiContentEnabled: document.getElementById('aiContentEnabled').value === 'true',
+      aiMissionEnabled: document.getElementById('aiMissionEnabled').value === 'true',
+      aiDailyLimit: Number(document.getElementById('aiDailyLimit').value || 0),
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+    toast('AI 운영 설정을 저장했습니다.');
+  });
+
+  document.getElementById('btn-generate-ai-content')?.addEventListener('click', () => callAdminFunction('generateAiContentNow'));
+  document.getElementById('btn-generate-all-ai-content')?.addEventListener('click', () => callAdminFunction('generateAllAiContentNow'));
+  document.getElementById('btn-generate-ai-mission')?.addEventListener('click', () => callAdminFunction('generateAiMissionNow'));
+}
+
+async function callAdminFunction(name) {
+  try {
+    const fn = httpsCallable(functions, name);
+    await fn({ force: true });
+    toast('실행했습니다.');
+  } catch (e) {
+    console.error(e);
+    toast(e.message || '실행에 실패했습니다.');
+  }
+}
