@@ -14,4 +14,5 @@ module.exports = {
   ...require('./ai-content-functions.js'),
   ...require('./ai-admin-automation-functions.js'),
   ...require('./six-game-functions.js'),
+  ...require('./six-game-mission-functions.js'),
 };
