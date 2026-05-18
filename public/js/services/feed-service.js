@@ -1,5 +1,6 @@
 /* feed-service.js — 피드 Firestore CRUD 서비스 */
 import { db, auth } from '../firebase.js';
+import { appState } from '../state.js';
 import {
   collection, query, orderBy, limit, startAfter,
   getDocs, getDoc, addDoc, updateDoc, deleteDoc,
@@ -65,7 +66,7 @@ export async function createPost(data) {
   return addDoc(collection(db, FEEDS), {
     ...data,
     authorId:    user.uid,
-    authorName:  user.displayName || '익명',
+    authorName:  appState.nickname || user.displayName || '익명',
     authorPhoto: user.photoURL || '',
     reactions:   { total: 0 },
     commentCount: 0,
@@ -124,7 +125,7 @@ export async function addComment(postId, text) {
   await addDoc(collection(db, FEEDS, postId, 'comments'), {
     text,
     authorId:    user.uid,
-    authorName:  user.displayName || '익명',
+    authorName:  appState.nickname || user.displayName || '익명',
     createdAt:   serverTimestamp(),
   });
   await updateDoc(doc(db, FEEDS, postId), { commentCount: increment(1) });

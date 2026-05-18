@@ -59,8 +59,8 @@ export function renderHeader() {
           </a>
           <button class="site-header__icon-btn site-header__avatar" id="hdr-avatar"
             aria-label="내 정보"
-            title="${escHtml(user.displayName || '내 정보')}">
-            ${escHtml((user.displayName || '나')[0])}
+            title="${escHtml(appState.nickname || user.displayName || '내 정보')}">
+            ${escHtml((appState.nickname || user.displayName || '나')[0])}
           </button>
         ` : `
           <a href="#/login" class="btn btn--primary btn--sm">로그인</a>

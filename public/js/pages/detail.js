@@ -152,13 +152,13 @@ function renderTypeBody(post) {
 
     case 'story':
       return post.feeling
-        ? `<div style="padding:12px 16px;background:#F0FDF4;border-left:3px solid #22C55E;border-radius:8px;font-size:13px;margin-top:8px"><strong>💚 느낀 점</strong><br>${escHtml(post.feeling).replace(/\n/g,'<br>')}</div>`
+        ? `<div style="padding:12px 16px;background:var(--color-malhe-bg);border-left:3px solid var(--color-malhe);border-radius:8px;font-size:13px;margin-top:8px"><strong>💚 느낀 점</strong><br>${escHtml(post.feeling).replace(/\n/g,'<br>')}</div>`
         : '';
 
     case 'laugh': {
       const diffMap = { easy:'😌 쉬움', normal:'😬 보통', hard:'😤 어려움', extreme:'💀 극한' };
       return post.difficulty
-        ? `<div style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:#FEF3C7;border-radius:var(--radius-pill);font-size:13px;font-weight:700;margin-top:8px">웃참 난이도: ${diffMap[post.difficulty] || post.difficulty}</div>`
+        ? `<div style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:var(--color-warning-bg);border-radius:var(--radius-pill);font-size:13px;font-weight:700;margin-top:8px">웃참 난이도: ${diffMap[post.difficulty] || post.difficulty}</div>`
         : '';
     }
 
@@ -218,12 +218,12 @@ function renderTypeBody(post) {
                 <div class="howto-step-display__text">${escHtml(step).replace(/\n/g,'<br>')}</div>
               </div>`).join('')}
           </div>` : ''}
-        ${post.caution ? `<div style="font-size:13px;color:var(--color-warning);padding:10px 12px;background:#FFFBEB;border-radius:8px;margin-top:8px">⚠️ ${escHtml(post.caution)}</div>` : ''}`;
+        ${post.caution ? `<div style="font-size:13px;color:var(--color-warning);padding:10px 12px;background:var(--color-warning-bg);border-radius:8px;margin-top:8px">⚠️ ${escHtml(post.caution)}</div>` : ''}`;
 
     case 'fail':
       return `
-        ${post.lesson ? `<div style="padding:12px 16px;background:#EDFAF4;border-radius:10px;font-size:13px;margin-top:8px"><strong>알게 된 점:</strong> ${escHtml(post.lesson)}</div>` : ''}
-        ${post.redo   ? `<div style="padding:12px 16px;background:#EEF4FF;border-radius:10px;font-size:13px;margin-top:8px"><strong>다시 한다면:</strong> ${escHtml(post.redo)}</div>` : ''}`;
+        ${post.lesson ? `<div style="padding:12px 16px;background:var(--color-malhe-bg);border-radius:10px;font-size:13px;margin-top:8px"><strong>알게 된 점:</strong> ${escHtml(post.lesson)}</div>` : ''}
+        ${post.redo   ? `<div style="padding:12px 16px;background:var(--color-golra-bg);border-radius:10px;font-size:13px;margin-top:8px"><strong>다시 한다면:</strong> ${escHtml(post.redo)}</div>` : ''}`;
 
     case 'relay':
       return post.startSentence
@@ -232,7 +232,7 @@ function renderTypeBody(post) {
 
     case 'acrostic':
       return post.keyword
-        ? `<div style="padding:16px;background:#F3F4F6;border-radius:10px;margin-top:8px">
+        ? `<div style="padding:16px;background:var(--color-surface-2);border-radius:10px;margin-top:8px">
             <div style="font-size:12px;font-weight:700;color:var(--color-text-muted);margin-bottom:8px">제시어: ${escHtml(post.keyword)}</div>
             ${[...post.keyword].map(ch => `
               <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">

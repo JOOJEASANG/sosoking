@@ -14,13 +14,15 @@ const TYPE_LABELS = {
   howto:'노하우', story:'경험담', fail:'실패담', concern:'고민/질문',
 };
 
-let lastDoc      = null;
-let currentType  = '';
+let lastDoc       = null;
+let currentType   = '';
 let currentSearch = '';
-let isLoading    = false;
+let isLoading     = false;
+let scrollObserver = null;
 
 export async function renderFeed() {
   setMeta('피드 · 전체 글');
+  if (scrollObserver) { scrollObserver.disconnect(); scrollObserver = null; }
   const el = document.getElementById('page-content');
   const params = getQueryParams();
   currentType   = params.type || '';
@@ -181,9 +183,9 @@ function setupInfiniteScroll() {
   sentinel.id = 'scroll-sentinel';
   document.getElementById('feed-list')?.after(sentinel);
 
-  const observer = new IntersectionObserver(entries => {
+  scrollObserver = new IntersectionObserver(entries => {
     if (entries[0].isIntersecting && !isLoading) loadPosts(false);
   }, { rootMargin: '200px' });
 
-  observer.observe(sentinel);
+  scrollObserver.observe(sentinel);
 }

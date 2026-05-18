@@ -59,7 +59,8 @@ async function loadUserMeta(uid) {
     appState.streak    = data.streak    || 0;
     appState.userTitle = data.title     || '';
     appState.isAdmin   = adminSnap.exists();
-    appState.nickname  = data.nickname  || user.displayName || user.email?.split('@')[0] || '익명';
+    const currentUser  = auth.currentUser;
+    appState.nickname  = data.nickname  || currentUser?.displayName || currentUser?.email?.split('@')[0] || '익명';
   } catch { /* non-critical */ }
 }
 
