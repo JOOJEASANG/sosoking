@@ -110,8 +110,6 @@ export async function renderHome() {
     ]);
 
     const streak = appState.streak || 0;
-    const weeklyWord = getWeeklyWord();
-    const poemType = getPoemType(weeklyWord);
 
     const heroHTML = user ? `
       <div class="home-hero home-hero--user">
@@ -149,21 +147,7 @@ export async function renderHome() {
         </div>
       </div>`;
 
-    const missionHTML = `
-      <div class="home-mission-banner">
-        <div class="home-mission-banner__left">
-          <div class="home-mission-banner__eyebrow">✍️ 이번 주 ${poemType} 챌린지</div>
-          <div class="home-mission-banner__word">${escHtml(weeklyWord)}</div>
-          <div class="home-mission-banner__chars">
-            ${[...weeklyWord].map(ch => `<span class="home-mission-banner__char">${escHtml(ch)}</span>`).join('')}
-            <span class="home-mission-banner__chars-hint">로 ${poemType}를!</span>
-          </div>
-        </div>
-        <div class="home-mission-banner__right">
-          <button class="btn btn--primary btn--sm" id="hbtn-acrostic">도전하기</button>
-          <div class="home-mission-banner__more" id="hbtn-mission-link">미션 더보기 →</div>
-        </div>
-      </div>`;
+    const missionHTML = '';
 
     const quickHTML = `
       <div class="home-section-header">
@@ -220,8 +204,6 @@ export async function renderHome() {
     el.querySelector('#hbtn-write')?.addEventListener('click', () => navigate('/write'));
     el.querySelector('#hbtn-join')?.addEventListener('click',  () => navigate('/login'));
     el.querySelector('#hbtn-feed')?.addEventListener('click',  () => navigate('/feed'));
-    el.querySelector('#hbtn-acrostic')?.addEventListener('click', () => navigate(`/write?type=acrostic&keyword=${encodeURIComponent(weeklyWord)}`));
-    el.querySelector('#hbtn-mission-link')?.addEventListener('click', () => navigate('/mission'));
     el.querySelector('#hbtn-more-hot')?.addEventListener('click', (e) => { e.preventDefault(); navigate('/feed'); });
     el.querySelector('#hbtn-more-recent')?.addEventListener('click', (e) => { e.preventDefault(); navigate('/feed'); });
 

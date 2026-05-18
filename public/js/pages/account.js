@@ -21,6 +21,10 @@ export async function renderAccount() {
   const user = appState.user;
 
   if (!user) {
+    if (appState.loading) {
+      el.innerHTML = `<div class="loading-center"><div class="spinner spinner--lg"></div></div>`;
+      return;
+    }
     el.innerHTML = `
       <div class="empty-state">
         <div class="empty-state__icon">👤</div>
@@ -40,7 +44,7 @@ export async function renderAccount() {
   const userData = userSnap?.exists() ? userSnap.data() : {};
   const title    = computeTitle(postCount);
   const streak   = appState.streak || userData.streak || 0;
-  const nickname = user.displayName || user.email?.split('@')[0] || '익명';
+  const nickname = appState.nickname || user.displayName || user.email?.split('@')[0] || '익명';
 
   if (userSnap?.exists()) {
     updateDoc(doc(db, 'users', user.uid), { title }).catch(() => {});
@@ -312,6 +316,7 @@ function setupNicknameEdit(user, currentNickname) {
 
       // appState 및 사이드바 즉시 갱신
       if (appState.user) appState.user.displayName = newNick;
+      appState.nickname = newNick;
       renderSidebar();
 
       feedback.style.color = 'var(--color-success)';
