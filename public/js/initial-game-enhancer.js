@@ -1,4 +1,5 @@
 import { db, auth } from './firebase.js';
+import { appState } from './state.js';
 import { collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { navigate } from './router.js';
 import { toast } from './components/toast.js';
@@ -95,7 +96,7 @@ function renderInitialGameForm() {
     </div>
     <div class="form-group">
       <label class="form-label">미리보기</label>
-      <div id="initial-preview" style="padding:18px;border-radius:14px;background:#F3F4F6;border:1px solid var(--color-border);font-size:30px;font-weight:950;letter-spacing:.12em;text-align:center;color:var(--color-primary)">?</div>
+      <div id="initial-preview" style="padding:18px;border-radius:14px;background:var(--color-surface-2);border:1px solid var(--color-border);font-size:30px;font-weight:950;letter-spacing:.12em;text-align:center;color:var(--color-primary)">?</div>
     </div>
     <div class="form-group">
       <label class="form-label">힌트</label>
@@ -136,7 +137,7 @@ function collectInitialData() {
   return {
     post: {
       type: 'initial_game',
-      cat: 'usgyo',
+      cat: 'golra',
       title: `${pattern} 초성게임`,
       desc: hint ? `힌트: ${hint}` : '초성을 보고 떠오르는 단어를 적어보세요.',
       initials: pattern,
@@ -165,7 +166,7 @@ async function submitInitialGame(btn) {
       ...data.post,
       images: [],
       authorId: auth.currentUser.uid,
-      authorName: auth.currentUser.displayName || '익명',
+      authorName: appState.nickname || auth.currentUser.displayName || '익명',
       authorPhoto: auth.currentUser.photoURL || '',
       reactions: { total: 0 },
       commentCount: 0,
