@@ -151,7 +151,21 @@ exports.onFeedPostCreate = onDocumentCreated(
         model: 'gemini-2.5-flash',
         generationConfig: { thinkingConfig: { thinkingBudget: 0 } },
       });
-      const prompt = `다음 커뮤니티 게시물을 검토하세요. 반드시 JSON만 출력하세요.\n\n게시물:\n${textToCheck.slice(0, 800)}\n\n검토 기준: 타인 비방/욕설/혐오, 개인정보 노출, 스팸/광고, 불법 콘텐츠\n\n{\n  "safe": true,\n  "reason": null,\n  "tags": ["자동태그1", "자동태그2"],\n  "summary": "한 줄 요약 (20자 이내)"\n}`;
+      const prompt = `소소킹(한국 유머/게임 커뮤니티) 게시물을 검토하세요. 반드시 JSON만 출력하세요.
+
+게시물:
+${textToCheck.slice(0, 800)}
+
+[허용] 가벼운 인터넷 슬랭: 미친, 개웃김, ㅋㅋ, 대박, 헐, 존나웃김, ㅅㅂ, 아 씨, 미쳤다 등 감탄/유머 표현
+[허용] 놀이 유형 이름: 미친작명소, 억까재판, 막장킹 등 사이트 고유 명칭
+[차단] 특정인 신상 공개·협박·성희롱·혐오, 상업 광고/스팸, 명백한 불법 콘텐츠
+
+{
+  "safe": true,
+  "reason": null,
+  "tags": ["자동태그1", "자동태그2"],
+  "summary": "한 줄 요약 (20자 이내)"
+}`;
       const result = await model.generateContent(prompt);
       const raw = result.response.text().trim().replace(/```json|```/g, '').trim();
       const analysis = JSON.parse(raw);
@@ -200,7 +214,18 @@ exports.onReportCreate = onDocumentCreated(
         generationConfig: { thinkingConfig: { thinkingBudget: 0 } },
       });
       const result = await model.generateContent(
-        `신고된 게시물을 검토하세요. 반드시 JSON만 출력하세요.\n\n신고 사유: ${report.reason || ''}\n게시물 내용:\n${textToCheck.slice(0, 600)}\n\n판단: clear_violation(명백한 위반→숨김), review_needed(검토 필요), no_action(정상)\n\n{"action": "clear_violation", "reason": "판단 근거 한 문장"}`
+        `소소킹(한국 유머/게임 커뮤니티) 신고 게시물을 검토하세요. 반드시 JSON만 출력하세요.
+
+신고 사유: ${report.reason || ''}
+게시물 내용:
+${textToCheck.slice(0, 600)}
+
+[허용] 미친·개웃김·ㅅㅂ 등 가벼운 인터넷 슬랭, 유머·과장 표현, 사이트 게임 명칭
+[차단] 특정인 신상·협박·성희롱·혐오, 광고/스팸, 명백한 불법 콘텐츠
+
+판단: clear_violation(명백한 위반→숨김), review_needed(검토 필요), no_action(정상)
+
+{"action": "no_action", "reason": "판단 근거 한 문장"}`
       );
       const raw = result.response.text().trim().replace(/```json|```/g, '').trim();
       const analysis = JSON.parse(raw);
