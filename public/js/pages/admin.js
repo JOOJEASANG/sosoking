@@ -94,15 +94,13 @@ async function renderDashboard(el) {
   const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
 
   const TYPE_META = [
-    { type: 'vote',          icon: '🗳️', label: '골라킹',    cat: 'golra' },
-    { type: 'initial_game',  icon: '🔤', label: '초성게임',   cat: 'golra' },
-    { type: 'random_battle', icon: '🎰', label: '랜덤대결',   cat: 'golra' },
-    { type: 'naming',        icon: '😜', label: '미친작명소', cat: 'usgyo' },
-    { type: 'crazy_court',   icon: '⚖️', label: '억까재판',   cat: 'usgyo' },
-    { type: 'drip',          icon: '🎤', label: '한줄드립',   cat: 'usgyo' },
-    { type: 'quiz',          icon: '🧠', label: '미친퀴즈',   cat: 'malhe' },
-    { type: 'relay',         icon: '🎭', label: '막장킹',     cat: 'malhe' },
-    { type: 'acrostic',      icon: '✍️', label: '삼행시짓기', cat: 'malhe' },
+    { type: 'vote',         icon: '🗳️', label: '골라킹',    cat: 'golra' },
+    { type: 'initial_game', icon: '🔤', label: '초성게임',   cat: 'golra' },
+    { type: 'naming',       icon: '😜', label: '미친작명소', cat: 'usgyo' },
+    { type: 'crazy_court',  icon: '⚖️', label: '억까재판',   cat: 'usgyo' },
+    { type: 'quiz',         icon: '🧠', label: '미친퀴즈',   cat: 'malhe' },
+    { type: 'relay',        icon: '🎭', label: '막장킹',     cat: 'malhe' },
+    { type: 'acrostic',     icon: '✍️', label: '삼행시짓기', cat: 'malhe' },
   ];
 
   const [totalSnap, todaySnap, missionSnap, recentSnap, reportSnap, ...typeSnaps] = await Promise.all([
@@ -484,15 +482,13 @@ async function renderMissions(el) {
           <div class="form-group">
             <label class="form-label">참여 유형 <span class="required">*</span></label>
             <select id="mission-type" class="form-select">
-              <option value="balance">⚖️ 밸런스게임</option>
-              <option value="vote">🗳️ 민심투표</option>
-              <option value="battle">⚔️ 선택지배틀</option>
+              <option value="vote">🗳️ 골라킹</option>
+              <option value="initial_game">🔤 초성게임</option>
               <option value="naming">😜 미친작명소</option>
+              <option value="crazy_court">⚖️ 억까재판</option>
+              <option value="quiz">🧠 미친퀴즈</option>
+              <option value="relay">🎭 막장킹</option>
               <option value="acrostic">✍️ 삼행시짓기</option>
-              <option value="drip">🎤 한줄드립</option>
-              <option value="ox">❓ OX퀴즈</option>
-              <option value="relay">🎭 막장릴레이</option>
-              <option value="random_battle">🎰 랜덤대결</option>
             </select>
           </div>
           <div class="form-group">
@@ -531,7 +527,7 @@ async function renderMissions(el) {
                     <div style="font-size:14px;font-weight:700;${m.active ? 'color:var(--color-primary)' : ''}">${escHtml(m.title || '')}</div>
                     ${m.desc ? `<div style="font-size:12px;color:var(--color-text-muted);margin-top:2px">${escHtml(m.desc)}</div>` : ''}
                     <div style="font-size:11px;margin-top:4px;display:flex;gap:4px;flex-wrap:wrap">
-                      ${m.type ? `<span style="background:var(--color-primary-bg);color:var(--color-primary);border-radius:99px;padding:2px 8px;font-weight:700">${{balance:'⚖️ 밸런스게임',vote:'🗳️ 민심투표',battle:'⚔️ 선택지배틀',naming:'😜 작명소',acrostic:'✍️ 삼행시',drip:'🎤 한줄드립',ox:'❓ OX퀴즈',relay:'🎭 릴레이',random_battle:'🎰 랜덤대결'}[m.type] || m.type}</span>` : '<span style="background:var(--color-surface-2);color:var(--color-text-muted);border-radius:99px;padding:2px 8px">유형 없음</span>'}
+                      ${m.type ? `<span style="background:var(--color-primary-bg);color:var(--color-primary);border-radius:99px;padding:2px 8px;font-weight:700">${{vote:'🗳️ 골라킹',initial_game:'🔤 초성게임',naming:'😜 미친작명소',crazy_court:'⚖️ 억까재판',quiz:'🧠 미친퀴즈',relay:'🎭 막장킹',acrostic:'✍️ 삼행시짓기'}[m.type] || m.type}</span>` : '<span style="background:var(--color-surface-2);color:var(--color-text-muted);border-radius:99px;padding:2px 8px">유형 없음</span>'}
                       ${m.cat ? `<span style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:99px;padding:2px 8px">${{ golra:'🎯 골라봐', usgyo:'😂 웃겨봐', malhe:'🎮 도전봐' }[m.cat] || m.cat}</span>` : ''}
                     </div>
                     ${m.endDate ? `<div style="font-size:11px;color:var(--color-warning);margin-top:4px">⏰ 마감: ${new Date(m.endDate.toDate()).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>` : ''}
@@ -692,12 +688,12 @@ async function renderAiSettings(el) {
             스케줄 없이 지금 바로 AI 작업을 실행할 수 있어요.
           </div>
           <div style="display:flex;gap:10px;flex-wrap:wrap">
-            <button class="btn btn--primary btn--sm" id="btn-trigger-all-content">✏️ AI 게시글 9개 생성</button>
+            <button class="btn btn--primary btn--sm" id="btn-trigger-all-content">✏️ AI 게시글 7개 생성</button>
             <button class="btn btn--primary btn--sm" id="btn-trigger-mission">🎯 미션 지금 생성</button>
             <button class="btn btn--ghost btn--sm" id="btn-trigger-report">📊 주간 보고서 지금 생성</button>
           </div>
           <div style="font-size:11px;color:var(--color-text-muted);margin-top:6px">
-            💡 게시글 생성은 타입별 1개씩 총 9개. 오늘 이미 생성된 타입은 건너뜀 (강제 생성은 force 옵션 사용)
+            💡 게시글 생성은 타입별 1개씩 총 7개. 오늘 이미 생성된 타입은 건너뜀 (강제 생성은 force 옵션 사용)
           </div>
           <div id="ai-trigger-result" style="margin-top:10px;font-size:12px;color:var(--color-text-muted)"></div>
         </div>
@@ -758,7 +754,7 @@ async function renderAiSettings(el) {
       const fn = httpsCallable(functions, 'generateAllAiContentNow', { timeout: 550000 });
       const res = await fn({ force: false });
       const { ok = 0, skipped = 0, total = 0, results = [] } = res.data || {};
-      const typeLabels = { balance:'밸런스게임', vote:'민심투표', battle:'선택지배틀', naming:'작명소', acrostic:'삼행시', drip:'한줄드립', ox:'OX퀴즈', relay:'릴레이', random_battle:'랜덤대결' };
+      const typeLabels = { vote:'골라킹', initial_game:'초성게임', naming:'미친작명소', crazy_court:'억까재판', quiz:'미친퀴즈', relay:'막장킹', acrostic:'삼행시짓기' };
       const detail = results.map(r => r.ok ? `✅ ${typeLabels[r.type]||r.type}` : r.skipped ? `⏭ ${typeLabels[r.type]||r.type}(건너뜀)` : `❌ ${typeLabels[r.type]||r.type}`).join(' · ');
       result.innerHTML = `✅ 완료 — 생성 ${ok}개 / 건너뜀 ${skipped}개 / 전체 ${total}개<br><span style="color:var(--color-text-muted)">${detail}</span>`;
       toast.success(`AI 게시글 ${ok}개 생성 완료! 🎉`);
@@ -767,7 +763,7 @@ async function renderAiSettings(el) {
       toast.error(e.message || '생성에 실패했어요');
     } finally {
       btn.disabled = false;
-      btn.textContent = '✏️ AI 게시글 9개 생성';
+      btn.textContent = '✏️ AI 게시글 7개 생성';
     }
   });
 

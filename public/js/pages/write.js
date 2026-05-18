@@ -9,26 +9,24 @@ import { appState } from '../state.js';
 /* ── 카테고리/유형 정의 ── */
 const CATEGORIES = [
   {
-    key: 'golra', label: '골라봐', icon: '🎯', badge: '선택형', desc: '선택·투표·배틀',
+    key: 'golra', label: '골라봐', icon: '🎯', badge: '선택형', desc: '선택·투표',
     types: [
-      { key: 'vote',          icon: '🗳️', label: '골라킹',    desc: '투표·밸런스·선택지 배틀' },
-      { key: 'initial_game',  icon: '🔤', label: '초성게임',   desc: '초성을 보고 단어 맞히기' },
-      { key: 'random_battle', icon: '🎰', label: '랜덤대결',   desc: '같은 주제로 누가 더 재밌어?' },
+      { key: 'vote',         icon: '🗳️', label: '골라킹',    desc: '투표·밸런스·선택지 배틀' },
+      { key: 'initial_game', icon: '🔤', label: '초성게임',   desc: '초성을 보고 단어 맞히기' },
     ],
   },
   {
-    key: 'usgyo', label: '웃겨봐', icon: '😂', badge: '드립형', desc: '센스·유머 대결',
+    key: 'usgyo', label: '웃겨봐', icon: '😂', badge: '유머형', desc: '센스·유머 대결',
     types: [
       { key: 'naming',      icon: '😜', label: '미친작명소', desc: '사진에 웃긴 제목 붙이기' },
       { key: 'crazy_court', icon: '⚖️', label: '억까재판',   desc: '유죄냐 무죄냐 억지 판결' },
-      { key: 'drip',        icon: '🎤', label: '한줄드립',   desc: '한 줄로 터지는 드립 대결' },
     ],
   },
   {
     key: 'malhe', label: '도전봐', icon: '🎮', badge: '도전형', desc: '퀴즈·릴레이·창작',
     types: [
-      { key: 'quiz',    icon: '🧠', label: '미친퀴즈',   desc: '객관식·주관식 자유 퀴즈' },
-      { key: 'relay',   icon: '🎭', label: '막장킹',     desc: '한 문장씩 이어가는 스토리' },
+      { key: 'quiz',     icon: '🧠', label: '미친퀴즈',   desc: '객관식·주관식 자유 퀴즈' },
+      { key: 'relay',    icon: '🎭', label: '막장킹',     desc: '한 문장씩 이어가는 스토리' },
       { key: 'acrostic', icon: '✍️', label: '삼행시짓기', desc: '제시어로 삼행시 도전' },
     ],
   },
