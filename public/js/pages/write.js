@@ -18,7 +18,7 @@ const CATEGORIES = [
   {
     key: 'usgyo', label: '웃겨봐', icon: '😂', badge: '유머형', desc: '센스·유머 대결',
     types: [
-      { key: 'naming',      icon: '😜', label: '미친작명소', desc: '사진에 웃긴 제목 붙이기' },
+      { key: 'naming',      icon: '😜', label: '미친작명소', desc: '상황이나 사진에 웃긴 이름 붙이기' },
       { key: 'crazy_court', icon: '⚖️', label: '억까재판',   desc: '유죄냐 무죄냐 억지 판결' },
     ],
   },
@@ -326,11 +326,7 @@ function renderFormFields() {
           <div class="naming-char-options">
             <label class="naming-char-option"><input type="radio" name="naming-chars" value="3">3글자</label>
             <label class="naming-char-option"><input type="radio" name="naming-chars" value="5">5글자</label>
-            <label class="naming-char-option"><input type="radio" name="naming-chars" value="7">7글자</label>
-            <label class="naming-char-option" style="gap:8px">
-              <input type="radio" name="naming-chars" value="custom">직접 입력
-              <input id="f-naming-custom" class="form-input" type="number" min="2" max="10" style="display:none;width:64px;padding:6px 8px" placeholder="2~10">
-            </label>
+            <label class="naming-char-option"><input type="radio" name="naming-chars" value="0">자유</label>
           </div>
           <div class="form-hint">참여자들이 이 글자수에 맞춰 이름을 댓글로 달아요</div>
         </div>
@@ -601,14 +597,7 @@ function initFormLogic() {
   }
 
   // 미친작명소 — 글자수 선택 시 custom input 토글
-  if (type === 'naming') {
-    document.querySelectorAll('[name="naming-chars"]').forEach(radio => {
-      radio.addEventListener('change', () => {
-        const customInput = document.getElementById('f-naming-custom');
-        if (customInput) customInput.style.display = radio.value === 'custom' ? 'inline-block' : 'none';
-      });
-    });
-  }
+  // naming — 글자수 선택 이벤트 (자유/3/5 세 가지만, 별도 입력 없음)
 
   // 퀴즈 방식 토글
   if (type === 'quiz') {
@@ -833,10 +822,8 @@ function collectExtraData(type) {
     case 'naming': {
       const selected = document.querySelector('[name="naming-chars"]:checked');
       if (!selected) { toast.error('글자수를 선택해주세요'); return null; }
-      const charCount = selected.value === 'custom'
-        ? parseInt(document.getElementById('f-naming-custom')?.value)
-        : parseInt(selected.value);
-      if (!charCount || charCount < 2 || charCount > 10) { toast.error('올바른 글자수를 입력해주세요'); return null; }
+      // 0 = 자유 작명 (글자수 제한 없음)
+      const charCount = parseInt(selected.value);
       return { charCount };
     }
     case 'acrostic': {

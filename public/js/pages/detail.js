@@ -648,44 +648,60 @@ function setupDetailEvents(post, el) {
 function setupCharParticipation(post) {
   const wrap = document.getElementById('char-boxes-participate');
   if (!wrap) return;
-  const boxes = [...wrap.querySelectorAll('.char-box')];
-  if (!boxes.length) return;
 
-  boxes.forEach((box, idx) => {
-    let composing = false;
-    box.addEventListener('compositionstart', () => { composing = true; });
-    box.addEventListener('compositionend', () => {
-      composing = false;
-      if ([...box.value].length > 1) box.value = [...box.value].slice(-1).join('');
-      if (box.value && idx < boxes.length - 1) boxes[idx + 1].focus();
-    });
-    box.addEventListener('input', () => {
-      if (composing) return;
-      if ([...box.value].length > 1) box.value = [...box.value].slice(-1).join('');
-      if (box.value && idx < boxes.length - 1) boxes[idx + 1].focus();
-    });
-    box.addEventListener('keydown', e => {
-      if (e.key === 'Backspace' && !box.value && idx > 0) {
-        e.preventDefault();
-        boxes[idx - 1].value = '';
-        boxes[idx - 1].focus();
-      }
-      if (e.key === 'ArrowLeft'  && idx > 0)               { e.preventDefault(); boxes[idx - 1].focus(); }
-      if (e.key === 'ArrowRight' && idx < boxes.length - 1) { e.preventDefault(); boxes[idx + 1].focus(); }
+  const freeInput = document.getElementById('free-naming-input');
+  const boxes = freeInput ? [] : [...wrap.querySelectorAll('.char-box')];
+
+  if (!freeInput && !boxes.length) return;
+
+  if (freeInput) {
+    freeInput.addEventListener('keydown', e => {
       if (e.key === 'Enter') document.getElementById('btn-char-submit')?.click();
     });
-    box.addEventListener('paste', e => {
-      e.preventDefault();
-      const text = (e.clipboardData || window.clipboardData).getData('text');
-      [...text].slice(0, boxes.length - idx).forEach((ch, i) => { if (boxes[idx + i]) boxes[idx + i].value = ch; });
-      boxes[Math.min(idx + [...text].length, boxes.length - 1)].focus();
+  } else {
+    boxes.forEach((box, idx) => {
+      let composing = false;
+      box.addEventListener('compositionstart', () => { composing = true; });
+      box.addEventListener('compositionend', () => {
+        composing = false;
+        if ([...box.value].length > 1) box.value = [...box.value].slice(-1).join('');
+        if (box.value && idx < boxes.length - 1) boxes[idx + 1].focus();
+      });
+      box.addEventListener('input', () => {
+        if (composing) return;
+        if ([...box.value].length > 1) box.value = [...box.value].slice(-1).join('');
+        if (box.value && idx < boxes.length - 1) boxes[idx + 1].focus();
+      });
+      box.addEventListener('keydown', e => {
+        if (e.key === 'Backspace' && !box.value && idx > 0) {
+          e.preventDefault();
+          boxes[idx - 1].value = '';
+          boxes[idx - 1].focus();
+        }
+        if (e.key === 'ArrowLeft'  && idx > 0)               { e.preventDefault(); boxes[idx - 1].focus(); }
+        if (e.key === 'ArrowRight' && idx < boxes.length - 1) { e.preventDefault(); boxes[idx + 1].focus(); }
+        if (e.key === 'Enter') document.getElementById('btn-char-submit')?.click();
+      });
+      box.addEventListener('paste', e => {
+        e.preventDefault();
+        const text = (e.clipboardData || window.clipboardData).getData('text');
+        [...text].slice(0, boxes.length - idx).forEach((ch, i) => { if (boxes[idx + i]) boxes[idx + i].value = ch; });
+        boxes[Math.min(idx + [...text].length, boxes.length - 1)].focus();
+      });
     });
-  });
+  }
 
   document.getElementById('btn-char-submit')?.addEventListener('click', async () => {
     if (!auth.currentUser) { navigate('/login'); return; }
-    if (boxes.some(b => !b.value.trim())) { toast.warn('모든 칸을 채워주세요'); return; }
-    const word = boxes.map(b => b.value.trim()).join('');
+
+    let word;
+    if (freeInput) {
+      word = freeInput.value.trim();
+      if (!word) { toast.warn('이름을 입력해주세요'); return; }
+    } else {
+      if (boxes.some(b => !b.value.trim())) { toast.warn('모든 칸을 채워주세요'); return; }
+      word = boxes.map(b => b.value.trim()).join('');
+    }
 
     const commentData = {
       text: word,
@@ -703,8 +719,8 @@ function setupCharParticipation(post) {
       tempEl.innerHTML = renderLikeableComment({ ...commentData, id: `temp-${Date.now()}`, createdAt: { toDate: () => new Date() } });
       listEl.prepend(tempEl.firstElementChild);
     }
-    boxes.forEach(b => b.value = '');
-    boxes[0].focus();
+    if (freeInput) { freeInput.value = ''; freeInput.focus(); }
+    else { boxes.forEach(b => b.value = ''); boxes[0].focus(); }
     toast.success('등록됐어요! 🎉');
 
     try {
@@ -877,18 +893,23 @@ function renderCharBoxArea(count) {
 function renderCharCommentSection(post, comments) {
   const loggedIn = !!auth.currentUser;
   const isNaming = post.type === 'naming';
+  const isFreeNaming = isNaming && (post.charCount === 0);
   const count = isNaming
     ? (post.charCount || 3)
     : ([...(post.initials || '')].length || 3);
   const title = isNaming ? `✏️ 작명 참여` : `🔤 초성 참여`;
   const emptyMsg = isNaming ? '첫 번째로 작명해보세요!' : '첫 번째로 참여해보세요!';
 
+  const participateInput = isFreeNaming
+    ? `<input id="free-naming-input" class="form-input" placeholder="자유롭게 이름을 지어봐요!" maxlength="20" autocomplete="off" style="flex:1">`
+    : renderCharBoxArea(count);
+
   return `
     <div class="comment-section">
       <div class="comment-section__title">${title} (${comments.length}개)</div>
       ${loggedIn
         ? `<div class="char-participate-box" id="char-participate">
-            ${renderCharBoxArea(count)}
+            ${participateInput}
             <button class="btn btn--primary btn--sm" id="btn-char-submit">등록</button>
            </div>`
         : `<div style="text-align:center;padding:12px;font-size:13px;color:var(--color-text-muted)">
