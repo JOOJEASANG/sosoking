@@ -294,6 +294,23 @@ body:has(.admin-layout) .page-container {
   color: var(--color-primary) !important;
 }
 
+.account-action-footer {
+  justify-content: center !important;
+  align-items: center !important;
+  flex-wrap: wrap;
+  text-align: center;
+}
+
+.account-action-footer #btn-logout,
+.account-action-footer .account-install-btn {
+  min-width: 96px;
+  justify-content: center;
+}
+
+.account-action-footer .account-install-btn {
+  margin-left: 0;
+}
+
 [data-theme="dark"] body:has(.admin-layout),
 [data-theme="dark"] body:has(.admin-layout) .app-shell,
 [data-theme="dark"] body:has(.admin-layout) .site-main,
