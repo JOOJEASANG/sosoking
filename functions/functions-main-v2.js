@@ -13,4 +13,5 @@ module.exports = {
   ...require('./sosoking-features-functions.js'),
   ...require('./ai-content-functions.js'),
   ...require('./ai-admin-automation-functions.js'),
+  ...require('./six-game-functions.js'),
 };
