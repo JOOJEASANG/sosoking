@@ -295,6 +295,9 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  box-shadow: 2px 0 12px rgba(0,0,0,0.04);
 }
 
 /* ══════════════════════════════
@@ -655,12 +658,23 @@
 .site-footer__links a:hover { color: var(--color-primary); }
 .site-footer__copy-bar {
   border-top: 1px solid var(--color-border-light);
-  padding: 14px 24px;
+  padding: 12px 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 16px;
+  gap: 12px;
 }
+.site-footer__toggle {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-radius: var(--radius-pill);
+  font-size: 11px; font-weight: 700; color: var(--color-text-muted);
+  background: var(--color-surface-2); border: 1px solid var(--color-border-light);
+  cursor: pointer; transition: all var(--transition-fast);
+}
+.site-footer__toggle svg { transition: transform 0.2s; }
+.site-footer__toggle.open svg { transform: rotate(180deg); }
+.site-footer__toggle:hover { color: var(--color-primary); border-color: var(--color-primary); }
+.site-footer__body { overflow: hidden; }
 .site-footer__copy {
   font-size: 12px;
   color: var(--color-text-muted);

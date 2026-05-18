@@ -71,46 +71,38 @@ export async function initApp() {
         <header class="site-header" id="site-header"></header>
         <main id="page-content" class="page-container"></main>
         <footer class="site-footer" id="site-footer">
-          <div class="site-footer__inner">
-            <div class="site-footer__brand-block">
-              <a href="#/" class="site-footer__brand">
-                <img src="/logo.svg" alt="" width="26" height="26">
-                <span>소소킹</span>
-              </a>
-              <div class="site-footer__tagline">대표 6가지 놀이와 주간 행시 미션<br>참여형 놀이 커뮤니티</div>
-            </div>
-            <div>
-              <div class="site-footer__col-title">바로가기</div>
-              <div class="site-footer__links">
-                <a href="#/feed">탐색하기</a>
-                <a href="#/hall">명예의 전당</a>
-                <a href="#/guide">이용안내</a>
-              </div>
-            </div>
-            <div>
-              <div class="site-footer__col-title">정보</div>
-              <div class="site-footer__links">
-                <a href="#/terms">이용약관</a>
-                <a href="#/privacy">개인정보처리방침</a>
-              </div>
-            </div>
-          </div>
           <div class="site-footer__copy-bar">
             <div class="site-footer__copy">© ${new Date().getFullYear()} 소소킹. All rights reserved.</div>
+            <button class="site-footer__toggle" id="btn-footer-toggle" aria-expanded="false" title="푸터 펼치기">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
+              더보기
+            </button>
           </div>
-          <div class="site-footer__mobile">
-            <a href="#/" class="site-footer__brand site-footer__brand--mini">
-              <img src="/logo.svg" alt="" width="20" height="20">
-              <span>소소킹</span>
-            </a>
-            <div class="site-footer__mobile-links">
-              <a href="#/guide">이용안내</a>
-              <span>·</span>
-              <a href="#/terms">이용약관</a>
-              <span>·</span>
-              <a href="#/privacy">개인정보</a>
+          <div class="site-footer__body" id="footer-body" hidden>
+            <div class="site-footer__inner">
+              <div class="site-footer__brand-block">
+                <a href="#/" class="site-footer__brand">
+                  <img src="/logo.svg" alt="" width="26" height="26">
+                  <span>소소킹</span>
+                </a>
+                <div class="site-footer__tagline">7가지 대표 놀이 · 참여형 커뮤니티<br>가볍게 즐기는 소소한 킹갓 놀이터</div>
+              </div>
+              <div>
+                <div class="site-footer__col-title">바로가기</div>
+                <div class="site-footer__links">
+                  <a href="#/feed">탐색하기</a>
+                  <a href="#/hall">명예의 전당</a>
+                  <a href="#/guide">이용안내</a>
+                </div>
+              </div>
+              <div>
+                <div class="site-footer__col-title">정보</div>
+                <div class="site-footer__links">
+                  <a href="#/terms">이용약관</a>
+                  <a href="#/privacy">개인정보처리방침</a>
+                </div>
+              </div>
             </div>
-            <div class="site-footer__copy site-footer__copy--mobile">© ${new Date().getFullYear()} 소소킹</div>
           </div>
         </footer>
       </div>
@@ -127,6 +119,18 @@ export async function initApp() {
   window.addEventListener('themechange', () => {
     renderSidebar();
     renderHeader();
+  });
+
+  document.getElementById('btn-footer-toggle')?.addEventListener('click', function () {
+    const body = document.getElementById('footer-body');
+    const expanded = this.getAttribute('aria-expanded') === 'true';
+    this.setAttribute('aria-expanded', String(!expanded));
+    this.classList.toggle('open', !expanded);
+    if (expanded) {
+      body.hidden = true;
+    } else {
+      body.hidden = false;
+    }
   });
 
   onAuthStateChanged(auth, async (user) => {

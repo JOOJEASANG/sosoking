@@ -81,9 +81,11 @@ function fmtNum(n) {
 }
 
 const TYPE_LABEL = {
-  balance:'골라킹', vote:'골라킹', battle:'골라킹',
-  naming:'미친작명소', initial_game:'초성게임', acrostic:'미션 행시', drip:'한줄드립',
-  ox:'OX퀴즈', quiz:'미친퀴즈', crazy_court:'억까재판', relay:'막장킹', random_battle:'랜덤대결',
+  vote:'골라킹', initial_game:'초성게임',
+  naming:'미친작명소', crazy_court:'억까재판',
+  quiz:'미친퀴즈', relay:'막장킹', acrostic:'삼행시짓기',
+  // 구형 타입 레이블 유지 (기존 데이터 호환)
+  balance:'골라킹', battle:'골라킹', drip:'한줄드립', random_battle:'랜덤대결',
 };
 
 export async function renderHome() {
