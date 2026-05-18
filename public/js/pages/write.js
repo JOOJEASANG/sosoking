@@ -78,30 +78,23 @@ function stepIndicator(current) {
     </div>`;
 }
 
-/* ── 1단계: 유형 선택 (카테고리 그룹 라벨만 표시, 클릭 즉시 작성 이동) ── */
+/* ── 1단계: 유형 선택 (카테고리 구분 없이 단일 그리드) ── */
 function renderTypeSelect(el) {
+  const allTypes = CATEGORIES.flatMap(cat => cat.types.map(t => ({ ...t, cat: cat.key })));
   el.innerHTML = `
     <div class="write-page">
       ${stepIndicator(1)}
       <div class="write-step-header">
         <h1 class="write-step-title">어떤 놀이판 만들까요?</h1>
       </div>
-      ${CATEGORIES.map(cat => `
-        <div style="margin-bottom:20px">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-            <span style="font-size:16px">${cat.icon}</span>
-            <span style="font-size:13px;font-weight:700;color:var(--color-text-secondary)">${cat.label}</span>
-            <span style="font-size:10px;font-weight:800;padding:2px 8px;border-radius:99px;background:var(--color-${cat.key}-bg);color:var(--color-${cat.key}-dark);border:1px solid var(--color-${cat.key}-border)">${cat.badge}</span>
-          </div>
-          <div class="type-select-grid">
-            ${cat.types.map(t => `
-              <div class="type-select-card" data-type="${t.key}" data-cat="${cat.key}">
-                <div class="type-select-card__icon">${t.icon}</div>
-                <div class="type-select-card__name">${t.label}</div>
-                <div class="type-select-card__desc">${t.desc}</div>
-              </div>`).join('')}
-          </div>
-        </div>`).join('')}
+      <div class="type-select-grid type-select-grid--full">
+        ${allTypes.map(t => `
+          <div class="type-select-card type-select-card--${t.cat}" data-type="${t.key}" data-cat="${t.cat}">
+            <div class="type-select-card__icon">${t.icon}</div>
+            <div class="type-select-card__name">${t.label}</div>
+            <div class="type-select-card__desc">${t.desc}</div>
+          </div>`).join('')}
+      </div>
     </div>`;
 
   document.querySelectorAll('[data-type]').forEach(card => {
@@ -337,9 +330,31 @@ function renderFormFields() {
       return commonTitle + `
         <div class="form-group">
           <label class="form-label">상황 설명 <span class="required">*</span></label>
-          <textarea id="f-desc" class="form-textarea" placeholder="예: 친구가 보낸 사진인데 뭔가 많이 닮은 게 있는 것 같아요. 딱 맞는 제목 붙여주세요!" rows="3"></textarea>
+          <textarea id="f-desc" class="form-textarea" placeholder="예: 퇴근 5분 전에 날아온 급한 업무 지시, 이 상황에 딱 맞는 이름을 지어봐요!" rows="3"></textarea>
         </div>
-        ${imageUploader(2, true)} ${commonTags}`;
+        <div class="form-group">
+          <label class="form-label">글자수 제한 <span class="required">*</span></label>
+          <div class="naming-char-options">
+            <label class="naming-char-option"><input type="radio" name="naming-chars" value="3">3글자</label>
+            <label class="naming-char-option"><input type="radio" name="naming-chars" value="5">5글자</label>
+            <label class="naming-char-option"><input type="radio" name="naming-chars" value="7">7글자</label>
+            <label class="naming-char-option" style="gap:8px">
+              <input type="radio" name="naming-chars" value="custom">직접 입력
+              <input id="f-naming-custom" class="form-input" type="number" min="2" max="10" style="display:none;width:64px;padding:6px 8px" placeholder="2~10">
+            </label>
+          </div>
+          <div class="form-hint">참여자들이 이 글자수에 맞춰 이름을 댓글로 달아요</div>
+        </div>
+        <div id="naming-answer-area" style="display:none">
+          <div class="form-group">
+            <label class="form-label">내 작명 예시 <span class="required">*</span>
+              <span style="font-size:11px;font-weight:400;color:var(--color-text-muted);margin-left:6px">참여자에게 미리보기로 표시돼요</span>
+            </label>
+            <div id="naming-boxes" class="naming-boxes"></div>
+            <div class="form-hint">칸을 클릭하거나 타이핑하면 자동으로 채워져요. 모두 채워야 올릴 수 있어요.</div>
+          </div>
+        </div>
+        ${imageUploader(2)} ${commonTags}`;
 
     case 'acrostic':
       return `
@@ -605,6 +620,58 @@ function initFormLogic() {
         attachStepRemoveBtns();
       });
     }
+  }
+
+  // 미친작명소 — 글자수 선택 + 박스 자동 채우기
+  if (type === 'naming') {
+    const renderNamingBoxes = (count) => {
+      const area = document.getElementById('naming-answer-area');
+      const boxesEl = document.getElementById('naming-boxes');
+      if (!count || count < 2 || count > 10) { area.style.display = 'none'; boxesEl.innerHTML = ''; return; }
+      area.style.display = '';
+      boxesEl.innerHTML = Array.from({ length: count }, (_, i) =>
+        `<input class="naming-box" id="naming-box-${i}" maxlength="1" autocomplete="off" inputmode="text" data-idx="${i}">`
+      ).join('');
+      const boxes = [...boxesEl.querySelectorAll('.naming-box')];
+      boxes.forEach((box, idx) => {
+        box.addEventListener('keydown', e => {
+          if (e.key === 'Backspace') {
+            if (!box.value && idx > 0) { e.preventDefault(); boxes[idx - 1].value = ''; boxes[idx - 1].focus(); }
+          } else if (e.key === 'ArrowLeft' && idx > 0) { e.preventDefault(); boxes[idx - 1].focus(); }
+            else if (e.key === 'ArrowRight' && idx < boxes.length - 1) { e.preventDefault(); boxes[idx + 1].focus(); }
+        });
+        box.addEventListener('input', () => {
+          if (box.value.length > 1) box.value = box.value.slice(-1);
+          if (box.value && idx < boxes.length - 1) boxes[idx + 1].focus();
+        });
+        box.addEventListener('paste', e => {
+          e.preventDefault();
+          const text = (e.clipboardData || window.clipboardData).getData('text');
+          [...text].forEach((ch, i) => { if (boxes[idx + i]) boxes[idx + i].value = ch; });
+          const next = boxes[Math.min(idx + text.length, count - 1)];
+          if (next) next.focus();
+        });
+      });
+      boxes[0].focus();
+    };
+
+    document.querySelectorAll('[name="naming-chars"]').forEach(radio => {
+      radio.addEventListener('change', () => {
+        const customInput = document.getElementById('f-naming-custom');
+        if (radio.value === 'custom') {
+          customInput.style.display = 'inline-block';
+          const n = parseInt(customInput.value);
+          renderNamingBoxes(n >= 2 && n <= 10 ? n : null);
+        } else {
+          if (customInput) customInput.style.display = 'none';
+          renderNamingBoxes(parseInt(radio.value));
+        }
+      });
+    });
+    document.getElementById('f-naming-custom')?.addEventListener('input', e => {
+      const n = parseInt(e.target.value);
+      renderNamingBoxes(n >= 2 && n <= 10 ? n : null);
+    });
   }
 
   // 삼행시 — 글자별 입력 칸 동적 생성
@@ -873,9 +940,15 @@ function collectExtraData(type) {
       }
     }
     case 'naming': {
-      const imgs = document.querySelectorAll('#img-uploader img');
-      if (!imgs.length) { toast.error('사진을 1장 이상 올려주세요'); return null; }
-      return {};
+      const selected = document.querySelector('[name="naming-chars"]:checked');
+      if (!selected) { toast.error('글자수를 선택해주세요'); return null; }
+      const charCount = selected.value === 'custom'
+        ? parseInt(document.getElementById('f-naming-custom')?.value)
+        : parseInt(selected.value);
+      if (!charCount || charCount < 2 || charCount > 10) { toast.error('올바른 글자수를 입력해주세요'); return null; }
+      const boxes = [...document.querySelectorAll('.naming-box')];
+      if (boxes.some(b => !b.value)) { toast.error(`${charCount}글자 예시 작명을 모두 채워주세요`); return null; }
+      return { charCount, sampleAnswer: boxes.map(b => b.value).join('') };
     }
     case 'acrostic': {
       const keyword = document.getElementById('f-keyword')?.value.trim();
