@@ -314,12 +314,16 @@
 .write-step-line.done { background: var(--color-primary); }
 
 .type-select-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); gap: var(--space-3); }
+.type-select-grid--full { grid-template-columns: repeat(3, 1fr); }
 .type-select-card {
   padding: var(--space-4); border-radius: var(--radius-md);
   border: 2px solid var(--color-border); background: var(--color-surface);
   cursor: pointer; transition: all var(--transition-fast); text-align: center;
 }
 .type-select-card:hover { border-color: var(--color-primary); background: var(--color-primary-bg); transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+.type-select-card--golra:hover { border-color: var(--color-golra); background: var(--color-golra-bg); }
+.type-select-card--usgyo:hover { border-color: var(--color-usgyo); background: var(--color-usgyo-bg); }
+.type-select-card--malhe:hover { border-color: var(--color-malhe); background: var(--color-malhe-bg); }
 .type-select-card.selected { border-color: var(--color-primary); background: var(--color-primary-bg); box-shadow: 0 0 0 3px rgba(255,68,34,0.15); }
 .type-select-card__icon { font-size: 28px; margin-bottom: var(--space-2); }
 .type-select-card__name { font-size: var(--font-size-sm); font-weight: 800; }
