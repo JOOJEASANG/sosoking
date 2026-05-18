@@ -1,12 +1,12 @@
 import { navigate } from '../router.js';
 
 const GAMES = [
-  { icon:'🗳️', name:'골라킹', desc:'선택지를 올리고 사람들이 하나를 골라 민심을 확인하는 투표형 놀이입니다.' },
-  { icon:'😜', name:'미친작명소', desc:'사진이나 상황에 가장 웃긴 이름을 붙이는 댓글 참여형 놀이입니다.' },
-  { icon:'🔤', name:'초성게임', desc:'초성을 보고 떠오르는 단어를 댓글로 남기는 센스 대결입니다. 정답은 따로 없습니다.' },
-  { icon:'🧠', name:'미친퀴즈', desc:'사용자가 직접 객관식 또는 주관식 퀴즈를 만들고 정답/오답을 확인하는 자유 퀴즈입니다.' },
-  { icon:'⚖️', name:'억까재판', desc:'어이없는 사건에 유죄·무죄·사형·봐준다 판결을 내리고 댓글로 이유를 남기는 놀이입니다.' },
-  { icon:'🎭', name:'막장킹', desc:'한 문장씩 이어가며 어디로 튈지 모르는 막장 전개를 만드는 릴레이 놀이입니다.' },
+  { icon:'🗳️', name:'골라킹', desc:'선택지를 올리고 사람들이 하나를 골라 민심과 취향을 확인하는 투표형 놀이입니다.' },
+  { icon:'😜', name:'미친작명소', desc:'사진이나 상황에 가장 웃기고 찰진 이름을 붙이는 댓글 참여형 놀이입니다.' },
+  { icon:'🔤', name:'초성게임', desc:'초성을 보고 떠오르는 단어나 문장을 댓글로 남기는 센스 대결입니다.' },
+  { icon:'⚖️', name:'억까재판', desc:'어이없는 상황을 두고 유죄냐 무죄냐를 투표하고 댓글로 이유를 남기는 판결 놀이입니다.' },
+  { icon:'🎭', name:'막장킹', desc:'첫 문장에 이어 한 문장씩 댓글로 이어가며 어디로 튈지 모르는 이야기를 만드는 릴레이 놀이입니다.' },
+  { icon:'✍️', name:'삼행시짓기', desc:'제시어의 각 글자로 시작하는 문장을 만들어 가장 센스 있는 행시를 겨루는 창작 놀이입니다.' },
 ];
 
 export function renderGuide() {
@@ -16,7 +16,7 @@ export function renderGuide() {
       <div class="guide-hero">
         <div class="guide-hero__icon">📖</div>
         <h1 class="guide-hero__title">소소킹 이용안내</h1>
-        <p class="guide-hero__sub">대표 6가지 놀이와 주간 행시 미션을 가볍게 즐기는 참여형 커뮤니티입니다.</p>
+        <p class="guide-hero__sub">골라킹, 미친작명소, 초성게임, 억까재판, 막장킹, 삼행시짓기를 가볍게 즐기는 참여형 커뮤니티입니다.</p>
       </div>
 
       <div class="guide-toc card">
@@ -27,7 +27,7 @@ export function renderGuide() {
             ['#guide-start', '시작하기'],
             ['#guide-layout', '화면 구성'],
             ['#guide-games', '대표 6가지 놀이'],
-            ['#guide-mission', '주간 행시 미션'],
+            ['#guide-mission', '미션 안내'],
             ['#guide-play', '참여 방법'],
             ['#guide-write', '놀이판 만들기'],
             ['#guide-hall', '명예의 전당'],
@@ -44,9 +44,9 @@ export function renderGuide() {
           <div>
             <div class="guide-intro-card__title">짧게 만들고, 가볍게 참여하는 놀이 커뮤니티</div>
             <div class="guide-intro-card__desc">
-              소소킹은 긴 글보다 <strong>선택, 댓글, 투표, 퀴즈, 릴레이</strong>로 노는 커뮤니티입니다.<br><br>
-              일반 작성 유형은 <strong>골라킹, 미친작명소, 초성게임, 미친퀴즈, 억까재판, 막장킹</strong> 6가지로 운영됩니다.
-              별도로 <strong>삼행시·사행시·오행시·육행시</strong>는 주간 미션 전용으로 제공됩니다.
+              소소킹은 긴 글보다 <strong>선택, 댓글, 투표, 작명, 릴레이, 행시</strong>로 노는 커뮤니티입니다.<br><br>
+              현재 운영되는 대표 놀이는 <strong>골라킹, 미친작명소, 초성게임, 억까재판, 막장킹, 삼행시짓기</strong> 6가지입니다.
+              제거된 예전 놀이 유형은 새로 만들 수 없으며, 서비스는 6개 대표 놀이 중심으로 운영됩니다.
             </div>
           </div>
         </div>
@@ -92,7 +92,7 @@ export function renderGuide() {
 
       <div class="guide-section" id="guide-games">
         <h2 class="guide-section__title">🎲 대표 6가지 놀이</h2>
-        <p style="font-size:13px;color:var(--color-text-secondary);margin-bottom:20px">현재 소소킹은 복잡한 카테고리 구분 없이 대표 놀이 6가지를 중심으로 운영됩니다.</p>
+        <p style="font-size:13px;color:var(--color-text-secondary);margin-bottom:20px">현재 소소킹은 복잡한 카테고리 구분 없이 아래 6가지 대표 놀이를 중심으로 운영됩니다.</p>
         <div class="guide-features">
           ${GAMES.map(g => `
             <div class="guide-feature-card">
@@ -104,15 +104,15 @@ export function renderGuide() {
       </div>
 
       <div class="guide-section" id="guide-mission">
-        <h2 class="guide-section__title">✍️ 주간 행시 미션</h2>
+        <h2 class="guide-section__title">🎯 미션 안내</h2>
         <div class="guide-intro-card">
           <div class="guide-intro-card__icon">🔥</div>
           <div>
-            <div class="guide-intro-card__title">행시는 미션에서만 참여합니다</div>
+            <div class="guide-intro-card__title">미션도 6개 대표 놀이 기준으로 운영됩니다</div>
             <div class="guide-intro-card__desc">
-              제시어 길이에 따라 자동으로 삼행시·사행시·오행시·육행시가 됩니다.<br>
-              3글자 제시어는 삼행시, 4글자는 사행시, 5글자는 오행시, 6글자는 육행시로 저장됩니다.<br><br>
-              미션으로 작성한 글은 하루가 지나도 사라지지 않고 일반 게시글처럼 계속 남습니다.
+              미션은 골라킹, 미친작명소, 초성게임, 억까재판, 막장킹, 삼행시짓기 중 하나로 제공됩니다.<br>
+              미션을 통해 작성한 글은 일반 게시글처럼 탐색과 홈에 노출되며, 하루가 지나도 사라지지 않습니다.<br><br>
+              삼행시짓기는 제시어 길이에 따라 삼행시·사행시·오행시·육행시처럼 자연스럽게 확장될 수 있습니다.
             </div>
           </div>
         </div>
@@ -123,7 +123,7 @@ export function renderGuide() {
         <div class="guide-features">
           ${[
             { icon:'🖱️', title:'투표하기', desc:'골라킹과 억까재판에서 선택지를 눌러 참여합니다.' },
-            { icon:'💬', title:'댓글 달기', desc:'작명, 초성게임, 막장킹, 판결 이유 등 대부분의 놀이는 댓글 참여가 핵심입니다.' },
+            { icon:'💬', title:'댓글 달기', desc:'작명, 초성게임, 막장킹, 판결 이유, 삼행시 등 대부분의 놀이는 댓글 참여가 핵심입니다.' },
             { icon:'😂', title:'댓글 리액션', desc:'재밌는 댓글에 리액션을 남기고 베스트 댓글을 만듭니다.' },
             { icon:'❤️', title:'게시글 반응', desc:'게시글에도 리액션을 남길 수 있고, 반응이 많으면 인기글에 노출됩니다.' },
             { icon:'🔖', title:'스크랩', desc:'나중에 다시 보고 싶은 글은 스크랩해 내 정보에서 모아봅니다.' },
@@ -142,7 +142,7 @@ export function renderGuide() {
         <div class="guide-write-steps">
           ${[
             ['1', '유형 선택', '대표 6가지 놀이 중 하나를 선택합니다.'],
-            ['2', '내용 작성', '유형별 입력 항목에 맞게 제목, 설명, 선택지, 정답, 힌트 등을 작성합니다.'],
+            ['2', '내용 작성', '유형별 입력 항목에 맞게 제목, 설명, 선택지, 힌트, 시작 문장, 제시어 등을 작성합니다.'],
             ['3', '올리기', '올린 글은 탐색과 홈 최신글에 노출됩니다.'],
             ['4', '관리', '내 정보에서 내가 쓴 글을 확인하고 필요하면 삭제할 수 있습니다.'],
           ].map(([n, title, desc]) => `
