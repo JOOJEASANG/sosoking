@@ -18,6 +18,7 @@ import './admin-password-actions.js';
 import './admin-ai-mission-actions.js';
 import './admin-ai-ops-actions.js';
 import './social-play-enhancer.js';
+import './site-copy-normalizer.js';
 import {
   collection, query, where, getDocs, getDoc, doc, limit,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
