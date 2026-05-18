@@ -28,43 +28,35 @@ export async function renderAdmin() {
   }
 
   el.innerHTML = `
-    <div class="admin-layout">
-      <nav class="admin-sidebar">
-        <div class="admin-brand">
-          <div class="admin-brand__logo">⚙️</div>
-          <div>
-            <div class="admin-brand__title">소소킹</div>
-            <div class="admin-brand__sub">관리자 패널</div>
-          </div>
+    <div class="admin-page">
+      <div class="admin-tabs-wrap">
+        <div class="admin-brand-inline">
+          <span class="admin-brand-inline__icon">⚙️</span>
+          <span class="admin-brand-inline__text">관리자 패널</span>
         </div>
-        <div class="admin-nav">
+        <div class="admin-tabs">
           ${[
             { key: 'dashboard', icon: '📊', label: '대시보드' },
-            { key: 'posts',     icon: '📝', label: '게시물 관리' },
-            { key: 'reports',   icon: '🚨', label: '신고 관리' },
-            { key: 'users',     icon: '👥', label: '회원 현황' },
-            { key: 'missions',  icon: '🎯', label: '미션 관리' },
-            { key: 'ai',        icon: '🤖', label: 'AI 관리' },
+            { key: 'posts',     icon: '📝', label: '게시물' },
+            { key: 'reports',   icon: '🚨', label: '신고' },
+            { key: 'users',     icon: '👥', label: '회원' },
+            { key: 'missions',  icon: '🎯', label: '미션' },
+            { key: 'ai',        icon: '🤖', label: 'AI' },
           ].map(m => `
-            <div class="admin-menu-item ${currentTab === m.key ? 'active' : ''}" data-tab="${m.key}">
-              <span class="admin-menu-item__icon">${m.icon}</span>
-              <span class="admin-menu-item__label">${m.label}</span>
-            </div>`).join('')}
+            <button class="admin-tab ${currentTab === m.key ? 'active' : ''}" data-tab="${m.key}">
+              ${m.icon} ${m.label}
+            </button>`).join('')}
         </div>
-        <div class="admin-sidebar__footer">
-          <div class="admin-uid-label">내 UID</div>
-          <div class="admin-uid">${user.uid}</div>
-        </div>
-      </nav>
+      </div>
       <div id="admin-content">
         <div class="loading-center"><div class="spinner spinner--lg"></div></div>
       </div>
     </div>`;
 
-  document.querySelectorAll('[data-tab]').forEach(btn => {
+  document.querySelectorAll('.admin-tab[data-tab]').forEach(btn => {
     btn.addEventListener('click', () => {
       currentTab = btn.dataset.tab;
-      document.querySelectorAll('[data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === currentTab));
+      document.querySelectorAll('.admin-tab[data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === currentTab));
       loadTab(currentTab);
     });
   });
@@ -91,25 +83,33 @@ async function loadTab(tab) {
 async function renderDashboard(el) {
   const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
 
-  const [totalSnap, golraSnap, usgyoSnap, malheSnap, todaySnap, missionSnap, recentSnap, reportSnap] = await Promise.all([
+  const TYPE_META = [
+    { type: 'vote',          icon: '🗳️', label: '골라킹',    cat: 'golra' },
+    { type: 'initial_game',  icon: '🔤', label: '초성게임',   cat: 'golra' },
+    { type: 'random_battle', icon: '🎰', label: '랜덤대결',   cat: 'golra' },
+    { type: 'naming',        icon: '😜', label: '미친작명소', cat: 'usgyo' },
+    { type: 'crazy_court',   icon: '⚖️', label: '억까재판',   cat: 'usgyo' },
+    { type: 'drip',          icon: '🎤', label: '한줄드립',   cat: 'usgyo' },
+    { type: 'quiz',          icon: '🧠', label: '미친퀴즈',   cat: 'malhe' },
+    { type: 'relay',         icon: '🎭', label: '막장킹',     cat: 'malhe' },
+    { type: 'acrostic',      icon: '✍️', label: '삼행시짓기', cat: 'malhe' },
+  ];
+
+  const [totalSnap, todaySnap, missionSnap, recentSnap, reportSnap, ...typeSnaps] = await Promise.all([
     getCountFromServer(collection(db, 'feeds')).catch(() => null),
-    getCountFromServer(query(collection(db, 'feeds'), where('cat', '==', 'golra'))).catch(() => null),
-    getCountFromServer(query(collection(db, 'feeds'), where('cat', '==', 'usgyo'))).catch(() => null),
-    getCountFromServer(query(collection(db, 'feeds'), where('cat', '==', 'malhe'))).catch(() => null),
     getDocs(query(collection(db, 'feeds'), where('createdAt', '>=', Timestamp.fromDate(todayStart)), limit(99))).catch(() => null),
     getDocs(query(collection(db, 'missions'), where('active', '==', true), orderBy('createdAt', 'desc'), limit(1))).catch(() => null),
     getDocs(query(collection(db, 'feeds'), orderBy('createdAt', 'desc'), limit(5))).catch(() => null),
     getCountFromServer(query(collection(db, 'reports'), where('resolved', '==', false))).catch(() => null),
+    ...TYPE_META.map(t => getCountFromServer(query(collection(db, 'feeds'), where('type', '==', t.type))).catch(() => null)),
   ]);
 
   const total   = totalSnap?.data?.().count ?? 0;
-  const golra   = golraSnap?.data?.().count ?? 0;
-  const usgyo   = usgyoSnap?.data?.().count ?? 0;
-  const malhe   = malheSnap?.data?.().count ?? 0;
   const today   = todaySnap?.size ?? 0;
   const pending = reportSnap?.data?.().count ?? 0;
   const mission = missionSnap?.empty ? null : { id: missionSnap.docs[0].id, ...missionSnap.docs[0].data() };
   const recent  = recentSnap?.docs.map(d => ({ id: d.id, ...d.data() })) ?? [];
+  const typeCounts = TYPE_META.map((t, i) => ({ ...t, count: typeSnaps[i]?.data?.().count ?? 0 }));
 
   el.innerHTML = `
     <div style="display:flex;flex-direction:column;gap:24px">
@@ -137,19 +137,15 @@ async function renderDashboard(el) {
 
       <div class="card">
         <div class="card__body">
-          <div style="font-size:14px;font-weight:800;margin-bottom:12px">📂 카테고리별 통계</div>
-          ${[
-            { key: 'golra', label: '🎯 골라봐', count: golra, color: 'var(--color-golra)' },
-            { key: 'usgyo', label: '😂 웃겨봐', count: usgyo, color: 'var(--color-usgyo)' },
-            { key: 'malhe', label: '🎮 도전봐', count: malhe, color: 'var(--color-malhe)' },
-          ].map(c => `
-            <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
-              <div style="width:70px;font-size:13px;font-weight:700">${c.label}</div>
-              <div style="flex:1;background:var(--color-surface-2);border-radius:4px;height:10px;overflow:hidden">
-                <div style="height:100%;background:${c.color};width:${total > 0 ? Math.round(c.count/total*100) : 0}%;transition:width 0.5s"></div>
-              </div>
-              <div style="width:60px;text-align:right;font-size:12px;font-weight:700;color:${c.color}">${c.count.toLocaleString()}건</div>
-            </div>`).join('')}
+          <div style="font-size:14px;font-weight:800;margin-bottom:14px">🎮 유형별 게시물 현황</div>
+          <div class="admin-type-grid">
+            ${typeCounts.map(t => `
+              <div class="admin-type-card admin-type-card--${t.cat}">
+                <div class="admin-type-card__icon">${t.icon}</div>
+                <div class="admin-type-card__count">${t.count.toLocaleString()}</div>
+                <div class="admin-type-card__name">${t.label}</div>
+              </div>`).join('')}
+          </div>
         </div>
       </div>
 
