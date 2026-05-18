@@ -27,7 +27,6 @@ import { renderHome }    from './pages/home.js';
 import { renderFeed }    from './pages/feed.js';
 import { renderWrite }   from './pages/write.js';
 import { renderDetail }  from './pages/detail.js';
-import { renderMission } from './pages/mission.js';
 import { renderAccount } from './pages/account.js';
 import { renderLogin }   from './pages/login.js';
 import { renderGuide }   from './pages/guide.js';
@@ -84,7 +83,6 @@ export async function initApp() {
               <div class="site-footer__col-title">바로가기</div>
               <div class="site-footer__links">
                 <a href="#/feed">탐색하기</a>
-                <a href="#/mission">주간 미션</a>
                 <a href="#/hall">명예의 전당</a>
                 <a href="#/guide">이용안내</a>
               </div>
@@ -133,6 +131,7 @@ export async function initApp() {
 
   onAuthStateChanged(auth, async (user) => {
     const previousUser = appState.user;
+    const wasLoading   = appState.loading;
     appState.user    = user;
     appState.loading = false;
     appState.isAdmin = false;
@@ -153,6 +152,9 @@ export async function initApp() {
     if (justLoggedIn) {
       if (appState.isAdmin && path !== '/admin') navigate('/admin');
       else if (path === '/login') navigate('/');
+    } else if (wasLoading) {
+      // 새로고침 시 인증 완료 후 현재 페이지 재렌더
+      window.dispatchEvent(new Event('hashchange'));
     }
   });
 
@@ -160,7 +162,6 @@ export async function initApp() {
   registerRoute('/feed',       () => renderFeed());
   registerRoute('/write',      () => renderWrite());
   registerRoute('/detail/:id', ({ id }) => renderDetail(id));
-  registerRoute('/mission',    () => renderMission());
   registerRoute('/account',    () => renderAccount());
   registerRoute('/scraps',     () => renderScraps());
   registerRoute('/login',      () => renderLogin());

@@ -91,11 +91,10 @@ export function renderSidebar() {
   const NAV_ITEMS = isAdmin ? [
     { label: '관리자', path: '/admin', icon: iconAdmin() },
   ] : [
-    { label: '홈',          path: '/',        icon: iconHome()    },
-    { label: '탐색',        path: '/feed',    icon: iconFeed()    },
-    { label: '미션',        path: '/mission', icon: iconMission() },
-    { label: '명예의 전당', path: '/hall',    icon: iconHall()    },
-    ...(user ? [{ label: '스크랩', path: '/scraps',  icon: iconScraps()  }] : []),
+    { label: '홈',          path: '/',       icon: iconHome()   },
+    { label: '탐색',        path: '/feed',   icon: iconFeed()   },
+    { label: '명예의 전당', path: '/hall',   icon: iconHall()   },
+    ...(user ? [{ label: '스크랩', path: '/scraps', icon: iconScraps() }] : []),
   ];
 
   const navHTML = NAV_ITEMS.map(item => `
