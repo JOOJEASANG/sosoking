@@ -12,12 +12,13 @@ import {
 import { navigate } from '../router.js';
 
 const QUICK_TYPES = [
-  { key: 'vote',         icon: '🗳️', label: '골라킹',   desc: '투표 · 밸런스 · 선택지 배틀' },
+  { key: 'vote',         icon: '🗳️', label: '골라킹',    desc: '투표 · 밸런스 · 선택지 배틀' },
   { key: 'naming',       icon: '😜', label: '미친작명소', desc: '사진이나 상황에 웃긴 이름 붙이기' },
-  { key: 'initial_game', icon: '🔤', label: '초성게임', desc: '초성을 보고 떠오르는 단어 참여' },
-  { key: 'quiz',         icon: '🧠', label: '미친퀴즈', desc: '객관식/주관식 자유 퀴즈' },
-  { key: 'crazy_court',  icon: '⚖️', label: '억까재판', desc: '유죄냐 무죄냐 억지 판결 놀이' },
-  { key: 'relay',        icon: '🎭', label: '막장킹',   desc: '한 문장씩 터지는 막장 전개' },
+  { key: 'initial_game', icon: '🔤', label: '초성게임',   desc: '초성을 보고 떠오르는 단어 참여' },
+  { key: 'quiz',         icon: '🧠', label: '미친퀴즈',   desc: '객관식/주관식 자유 퀴즈' },
+  { key: 'crazy_court',  icon: '⚖️', label: '억까재판',   desc: '유죄냐 무죄냐 억지 판결 놀이' },
+  { key: 'relay',        icon: '🎭', label: '막장킹',     desc: '한 문장씩 터지는 막장 전개' },
+  { key: 'acrostic',     icon: '✍️', label: '삼행시짓기', desc: '제시어로 삼·사·오행시 짓기' },
 ];
 
 const WEEKLY_WORDS = [
