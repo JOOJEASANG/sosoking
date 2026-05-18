@@ -1932,7 +1932,7 @@
 
 /* ── 빠른 시작 ── */
 .home-quick-grid {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px;
 }
 .home-quick-btn {
   background: var(--color-surface); border: 1px solid var(--color-border);

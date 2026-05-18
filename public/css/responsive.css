@@ -128,8 +128,8 @@
   }
   .home-cat-card__desc { display: none; }
 
-  /* 빠른 시작: 3열 유지 */
-  .home-quick-grid { gap: 6px; }
+  /* 빠른 시작: 모바일 3열 2줄 */
+  .home-quick-grid { gap: 6px; grid-template-columns: repeat(3, 1fr); }
   .home-quick-btn { padding: 10px 4px; }
   .home-quick-btn__icon { font-size: 18px; }
   .home-quick-btn__label { font-size: 10px; }
