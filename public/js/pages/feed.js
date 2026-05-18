@@ -5,12 +5,12 @@ import { renderFeedCard, renderSkeletonCards } from '../components/feed-card.js'
 import { setMeta } from '../utils/seo.js';
 import { escHtml } from '../utils/helpers.js';
 
-const PRIMARY_TYPES = ['vote', 'naming', 'initial_game', 'ox', 'relay'];
+const PRIMARY_TYPES = ['vote', 'naming', 'initial_game', 'quiz', 'crazy_court', 'relay'];
 
 const TYPE_LABELS = {
   balance:'골라킹', vote:'골라킹', battle:'골라킹', challenge24:'24시간챌린지', tournament:'이상형월드컵',
   naming:'미친작명소', initial_game:'초성게임', acrostic:'미션 행시', drip:'한줄드립', cbattle:'댓글배틀', laugh:'웃참챌린지',
-  ox:'OX퀴즈', quiz:'4지선다', relay:'막장킹', word_relay:'단어릴레이', random_battle:'랜덤대결',
+  ox:'OX퀴즈', quiz:'미친퀴즈', crazy_court:'억까재판', relay:'막장킹', word_relay:'단어릴레이', random_battle:'랜덤대결',
   howto:'노하우', story:'경험담', fail:'실패담', concern:'고민/질문',
 };
 
@@ -28,21 +28,16 @@ export async function renderFeed() {
   lastDoc = null;
 
   el.innerHTML = `
-    <div class="layout-cols">
-      <div class="layout-main">
-        ${renderSearchBar()}
-        ${renderFilterBar()}
-        <div id="feed-list">${renderSkeletonCards(5)}</div>
-        <div id="feed-loader" class="loading-center" style="display:none">
-          <div class="spinner"></div>
-        </div>
-        <div id="feed-end" style="display:none;text-align:center;padding:24px;font-size:13px;color:var(--color-text-muted)">
-          더 이상 글이 없어요
-        </div>
+    <div class="layout-main layout-main--full">
+      ${renderSearchBar()}
+      ${renderFilterBar()}
+      <div id="feed-list">${renderSkeletonCards(5)}</div>
+      <div id="feed-loader" class="loading-center" style="display:none">
+        <div class="spinner"></div>
       </div>
-      <aside class="layout-sidebar">
-        ${renderTypeFilter()}
-      </aside>
+      <div id="feed-end" style="display:none;text-align:center;padding:24px;font-size:13px;color:var(--color-text-muted)">
+        더 이상 글이 없어요
+      </div>
     </div>`;
 
   await loadPosts(true);
@@ -116,29 +111,10 @@ function renderFilterBar() {
     ${currentSearch ? `<div class="feed-search-label">🔍 "<strong>${escHtml(currentSearch)}</strong>" 검색 결과</div>` : ''}`;
 }
 
-function renderTypeFilter() {
-  return `
-    <div class="sidebar-widget">
-      <div class="sidebar-widget__title">🗂 대표 유형</div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px">
-        ${PRIMARY_TYPES.map(type => `
-          <button class="filter-chip ${currentType === type ? 'active' : ''}" data-type-filter="${type}" style="font-size:11px">
-            ${TYPE_LABELS[type]}
-          </button>`).join('')}
-      </div>
-      ${currentType ? `<button class="btn btn--ghost btn--sm btn--full" data-type-filter="" style="margin-top:10px">전체 보기</button>` : ''}
-    </div>`;
-}
-
 function updateFilterUI() {
   document.querySelectorAll('[data-type-filter]').forEach(b => {
     b.classList.toggle('active', b.dataset.typeFilter === currentType && !currentSearch);
   });
-  const sidebar = document.querySelector('.layout-sidebar');
-  if (sidebar) {
-    sidebar.innerHTML = renderTypeFilter();
-    attachTypeFilterListeners();
-  }
 }
 
 async function loadPosts(reset = false) {
@@ -211,4 +187,3 @@ function setupInfiniteScroll() {
 
   observer.observe(sentinel);
 }
-
