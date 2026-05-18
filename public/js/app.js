@@ -14,6 +14,7 @@ import './write-normalizer.js';
 import './relay-name-patch.js';
 import './account-secure-actions.js';
 import './admin-session-guard.js';
+import './admin-password-actions.js';
 import './admin-ai-mission-actions.js';
 import './admin-ai-ops-actions.js';
 import './social-play-enhancer.js';
@@ -75,13 +76,13 @@ export async function initApp() {
                 <img src="/logo.svg" alt="" width="26" height="26">
                 <span>소소킹</span>
               </a>
-              <div class="site-footer__tagline">골라킹 · 드립킹 · 도전킹<br>참여형 놀이 커뮤니티</div>
+              <div class="site-footer__tagline">대표 6가지 놀이와 주간 행시 미션<br>참여형 놀이 커뮤니티</div>
             </div>
             <div>
               <div class="site-footer__col-title">바로가기</div>
               <div class="site-footer__links">
                 <a href="#/feed">탐색하기</a>
-                <a href="#/mission">오늘의 미션</a>
+                <a href="#/mission">주간 미션</a>
                 <a href="#/hall">명예의 전당</a>
                 <a href="#/guide">이용안내</a>
               </div>
@@ -97,7 +98,6 @@ export async function initApp() {
           <div class="site-footer__copy-bar">
             <div class="site-footer__copy">© ${new Date().getFullYear()} 소소킹. All rights reserved.</div>
           </div>
-          <!-- 모바일 전용 미니 푸터 (PC 푸터 위에 숨겨짐) -->
           <div class="site-footer__mobile">
             <a href="#/" class="site-footer__brand site-footer__brand--mini">
               <img src="/logo.svg" alt="" width="20" height="20">
@@ -169,7 +169,6 @@ export async function initApp() {
 
   initRouter();
 
-  // PWA 설치 프롬프트 캡처
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     appState.installPrompt = e;
