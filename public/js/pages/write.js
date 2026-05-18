@@ -219,8 +219,8 @@ function renderFormFields() {
         <div class="form-group">
           <label class="form-label">선택지 <span class="required">*</span></label>
           <div class="option-inputs" id="option-list">
-            ${renderOptionRow('A', '예: 치킨')}
-            ${renderOptionRow('B', '예: 피자')}
+            ${renderOptionRow('1', '예: 치킨')}
+            ${renderOptionRow('2', '예: 피자')}
           </div>
           <button class="add-option-btn" id="btn-add-option" style="margin-top:8px">+ 선택지 추가 (최대 4개)</button>
         </div>
@@ -344,15 +344,6 @@ function renderFormFields() {
           </div>
           <div class="form-hint">참여자들이 이 글자수에 맞춰 이름을 댓글로 달아요</div>
         </div>
-        <div id="naming-answer-area" style="display:none">
-          <div class="form-group">
-            <label class="form-label">내 작명 예시 <span class="required">*</span>
-              <span style="font-size:11px;font-weight:400;color:var(--color-text-muted);margin-left:6px">참여자에게 미리보기로 표시돼요</span>
-            </label>
-            <div id="naming-boxes" class="naming-boxes"></div>
-            <div class="form-hint">칸을 클릭하거나 타이핑하면 자동으로 채워져요. 모두 채워야 올릴 수 있어요.</div>
-          </div>
-        </div>
         ${imageUploader(2)} ${commonTags}`;
 
     case 'acrostic':
@@ -360,10 +351,9 @@ function renderFormFields() {
         <div class="form-group">
           <label class="form-label">제시어 <span class="required">*</span></label>
           <input id="f-keyword" class="form-input" placeholder="예: 소소킹" maxlength="6" minlength="3" autocomplete="off">
-          <div class="form-hint">3~6글자 · 입력하면 글자별 입력 칸이 생겨요</div>
+          <div class="form-hint">3~6글자 · 참여자들이 이 제시어로 삼행시를 지어요</div>
         </div>
-        <div id="acrostic-lines"></div>
-        <div class="form-group" style="margin-top:12px">
+        <div class="form-group">
           <label class="form-label">설명 <span style="font-size:11px;color:var(--color-text-muted)">(선택)</span></label>
           <textarea id="f-desc" class="form-textarea" placeholder="예: 창의력 넘치는 삼행시 한 번 써봐요!" rows="2"></textarea>
         </div>
@@ -499,8 +489,8 @@ function renderFormFields() {
         <div class="form-group">
           <label class="form-label">선택지 <span class="required">*</span></label>
           <div class="option-inputs" id="option-list">
-            ${renderOptionRow('A', '예: 치킨')}
-            ${renderOptionRow('B', '예: 피자')}
+            ${renderOptionRow('1', '예: 치킨')}
+            ${renderOptionRow('2', '예: 피자')}
           </div>
           <button class="add-option-btn" id="btn-add-option" style="margin-top:8px">+ 선택지 추가 (최대 4개)</button>
         </div>
@@ -593,8 +583,7 @@ function initFormLogic() {
       const count = list.querySelectorAll('.option-input-row').length;
       const maxOpts = (type === 'balance') ? 4 : 8;
       if (count >= maxOpts) { toast.warn(`최대 ${maxOpts}개까지 추가할 수 있어요`); return; }
-      const labels = ['A','B','C','D','E','F','G','H'];
-      list.insertAdjacentHTML('beforeend', renderOptionRow(labels[count] || count+1, `선택지 ${count+1}`));
+      list.insertAdjacentHTML('beforeend', renderOptionRow(count + 1, `선택지 ${count + 1}`));
       attachRemoveBtns(list);
     });
     attachRemoveBtns(document.getElementById('option-list'));
@@ -621,84 +610,14 @@ function initFormLogic() {
     }
   }
 
-  // 미친작명소 — 글자수 선택 + 박스 자동 채우기
+  // 미친작명소 — 글자수 선택 시 custom input 토글
   if (type === 'naming') {
-    const renderNamingBoxes = (count) => {
-      const area = document.getElementById('naming-answer-area');
-      const boxesEl = document.getElementById('naming-boxes');
-      if (!count || count < 2 || count > 10) { area.style.display = 'none'; boxesEl.innerHTML = ''; return; }
-      area.style.display = '';
-      boxesEl.innerHTML = Array.from({ length: count }, (_, i) =>
-        `<input class="naming-box" id="naming-box-${i}" maxlength="1" autocomplete="off" inputmode="text" data-idx="${i}">`
-      ).join('');
-      const boxes = [...boxesEl.querySelectorAll('.naming-box')];
-      boxes.forEach((box, idx) => {
-        box.addEventListener('keydown', e => {
-          if (e.key === 'Backspace') {
-            if (!box.value && idx > 0) { e.preventDefault(); boxes[idx - 1].value = ''; boxes[idx - 1].focus(); }
-          } else if (e.key === 'ArrowLeft' && idx > 0) { e.preventDefault(); boxes[idx - 1].focus(); }
-            else if (e.key === 'ArrowRight' && idx < boxes.length - 1) { e.preventDefault(); boxes[idx + 1].focus(); }
-        });
-        box.addEventListener('input', () => {
-          if (box.value.length > 1) box.value = box.value.slice(-1);
-          if (box.value && idx < boxes.length - 1) boxes[idx + 1].focus();
-        });
-        box.addEventListener('paste', e => {
-          e.preventDefault();
-          const text = (e.clipboardData || window.clipboardData).getData('text');
-          [...text].forEach((ch, i) => { if (boxes[idx + i]) boxes[idx + i].value = ch; });
-          const next = boxes[Math.min(idx + text.length, count - 1)];
-          if (next) next.focus();
-        });
-      });
-      boxes[0].focus();
-    };
-
     document.querySelectorAll('[name="naming-chars"]').forEach(radio => {
       radio.addEventListener('change', () => {
         const customInput = document.getElementById('f-naming-custom');
-        if (radio.value === 'custom') {
-          customInput.style.display = 'inline-block';
-          const n = parseInt(customInput.value);
-          renderNamingBoxes(n >= 2 && n <= 10 ? n : null);
-        } else {
-          if (customInput) customInput.style.display = 'none';
-          renderNamingBoxes(parseInt(radio.value));
-        }
+        if (customInput) customInput.style.display = radio.value === 'custom' ? 'inline-block' : 'none';
       });
     });
-    document.getElementById('f-naming-custom')?.addEventListener('input', e => {
-      const n = parseInt(e.target.value);
-      renderNamingBoxes(n >= 2 && n <= 10 ? n : null);
-    });
-  }
-
-  // 삼행시 — 글자별 입력 칸 동적 생성
-  if (type === 'acrostic') {
-    const kwInput = document.getElementById('f-keyword');
-    const renderAcrosticLines = (kw) => {
-      const container = document.getElementById('acrostic-lines');
-      if (!container) return;
-      if (!kw || kw.length < 3) { container.innerHTML = ''; return; }
-      container.innerHTML = `
-        <div class="acrostic-lines-box">
-          <div style="font-size:12px;font-weight:700;color:var(--color-text-muted);margin-bottom:10px">✍️ 삼행시 작성</div>
-          ${[...kw].map((ch, i) => `
-            <div class="acrostic-line-row">
-              <span class="acrostic-line-char">${escHtml(ch)}</span>
-              <input
-                class="form-input acrostic-line-input"
-                id="acrostic-line-${i}"
-                placeholder="${escHtml(ch)}로 시작하는 재치 있는 한 줄"
-                maxlength="50"
-                autocomplete="off"
-              >
-            </div>`).join('')}
-        </div>`;
-    };
-    kwInput?.addEventListener('input', () => renderAcrosticLines(kwInput.value.trim()));
-    // URL 파라미터로 제시어가 미리 채워진 경우
-    if (kwInput?.value.trim()) renderAcrosticLines(kwInput.value.trim());
   }
 
   // 퀴즈 방식 토글
@@ -945,17 +864,13 @@ function collectExtraData(type) {
         ? parseInt(document.getElementById('f-naming-custom')?.value)
         : parseInt(selected.value);
       if (!charCount || charCount < 2 || charCount > 10) { toast.error('올바른 글자수를 입력해주세요'); return null; }
-      const boxes = [...document.querySelectorAll('.naming-box')];
-      if (boxes.some(b => !b.value)) { toast.error(`${charCount}글자 예시 작명을 모두 채워주세요`); return null; }
-      return { charCount, sampleAnswer: boxes.map(b => b.value).join('') };
+      return { charCount };
     }
     case 'acrostic': {
       const keyword = document.getElementById('f-keyword')?.value.trim();
       if (!keyword) { toast.error('제시어를 입력해주세요'); return null; }
       if (keyword.length < 3) { toast.error('제시어는 3글자 이상이어야 해요'); return null; }
-      const lines = [...keyword].map((_, i) => (document.getElementById(`acrostic-line-${i}`)?.value.trim() || ''));
-      if (lines.some(l => !l)) { toast.error('삼행시의 모든 줄을 입력해주세요'); return null; }
-      return { keyword, lines };
+      return { keyword };
     }
     case 'howto': {
       const summary = document.getElementById('f-summary')?.value.trim();
