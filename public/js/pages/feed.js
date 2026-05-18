@@ -22,6 +22,7 @@ let scrollObserver = null;
 
 export async function renderFeed() {
   setMeta('피드 · 전체 글');
+  isLoading = false;
   if (scrollObserver) { scrollObserver.disconnect(); scrollObserver = null; }
   const el = document.getElementById('page-content');
   const params = getQueryParams();

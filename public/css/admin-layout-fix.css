@@ -394,11 +394,11 @@ body:has(.admin-layout) .page-container {
     max-width: 100vw !important;
     height: 66px;
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     align-items: center;
     justify-items: stretch;
     gap: 0;
-    padding: 6px 5px 8px;
+    padding: 6px 8px 8px;
     margin: 0 auto;
     flex: none;
     box-sizing: border-box;
@@ -413,16 +413,16 @@ body:has(.admin-layout) .page-container {
     justify-content: center;
     align-items: center;
     gap: 3px;
-    padding: 6px 1px;
-    border-radius: 12px;
-    font-size: 9px;
+    padding: 6px 2px;
+    border-radius: 10px;
+    font-size: 10px;
     font-weight: 800;
     text-align: center;
     line-height: 1.15;
   }
 
   .admin-menu-item__icon {
-    font-size: 17px;
+    font-size: 18px;
     line-height: 1;
   }
 
@@ -452,7 +452,7 @@ body:has(.admin-layout) .page-container {
 
   #admin-content {
     min-height: calc(100vh - 130px);
-    padding: 16px 0 4px;
+    padding: 16px 14px 4px;
     background: var(--color-surface);
   }
 
@@ -468,7 +468,18 @@ body:has(.admin-layout) .page-container {
 
 @media (max-width: 420px) {
   .admin-menu-item {
-    font-size: 8.5px;
+    font-size: 9px;
+    padding: 6px 1px;
+  }
+
+  .admin-menu-item__icon {
+    font-size: 17px;
+  }
+}
+
+@media (max-width: 340px) {
+  .admin-menu-item {
+    font-size: 8px;
   }
 
   .admin-menu-item__icon {

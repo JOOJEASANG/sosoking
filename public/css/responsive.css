@@ -67,37 +67,37 @@
   .site-header__inner { padding: 0 14px; }
 
   .page-container {
-    padding: 16px 14px calc(60px + env(safe-area-inset-bottom, 0) + 16px);
+    padding: 16px 14px calc(64px + env(safe-area-inset-bottom, 0) + 8px);
   }
 
   /* ── 홈 대시보드 모바일 ── */
-  .home-dash { gap: 18px; }
+  .home-dash { gap: 20px; }
 
-  .home-hero { padding: 20px 18px; border-radius: 14px; }
-  .home-hero__title { font-size: 18px; }
-  .home-hero__sub { font-size: 12px; }
-  .home-hero__actions { gap: 8px; }
+  .home-hero {
+    padding: 22px 18px 20px;
+    border-radius: 16px;
+    min-height: 200px;
+  }
+  .home-hero::after { display: none; }
+  .home-hero__title { font-size: 20px; line-height: 1.25; }
+  .home-hero__sub { font-size: 12px; margin-top: 8px; }
+  .home-hero__actions { gap: 8px; margin-top: 16px; }
   .home-hero__actions .btn { font-size: 13px; padding: 9px 16px; }
+  .home-hero__streak,
+  .home-hero__badge { font-size: 11px; padding: 4px 11px; margin-bottom: 8px; }
+  .home-hero__cta-btn { font-size: 13px; padding: 10px 20px; }
+  .home-hero__ghost-btn { font-size: 13px; padding: 9px 16px; }
+
+  /* 섹션 헤더 */
+  .home-section-header { margin-bottom: 10px; }
+  .home-section-title { font-size: 14px; }
+  .home-section-sub { font-size: 11px; }
 
   /* 통계: 3열 유지, 컴팩트 */
-  .home-stat-card { padding: 12px 8px; }
+  .home-stat-row { gap: 8px; }
+  .home-stat-card { padding: 12px 8px; border-radius: 10px; }
   .home-stat-card__num { font-size: 18px; }
-  .home-stat-card__label { font-size: 10px; }
-
-  /* 미션 배너: 세로 스택 */
-  .home-mission-banner {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 16px;
-  }
-  .home-mission-banner__word { font-size: 22px; }
-  .home-mission-banner__right {
-    flex-direction: row;
-    align-items: center;
-    width: 100%;
-    justify-content: space-between;
-  }
+  .home-stat-card__label { font-size: 10px; margin-top: 4px; }
 
   /* 카테고리 카드: 세로 스택 → 가로 스크롤 */
   .home-cat-grid {
@@ -106,7 +106,6 @@
     scrollbar-width: none;
     gap: 10px;
     padding: 2px 0 8px;
-    /* 컨테이너 패딩 돌파해서 엣지까지 채움 */
     margin: 0 -14px;
     padding-left: 14px;
     padding-right: 14px;
@@ -121,10 +120,32 @@
   .home-cat-card__desc { display: none; }
 
   /* 빠른 시작: 모바일 3열 2줄 */
-  .home-quick-grid { gap: 6px; grid-template-columns: repeat(3, 1fr); }
-  .home-quick-btn { padding: 10px 4px; }
-  .home-quick-btn__icon { font-size: 18px; }
-  .home-quick-btn__label { font-size: 10px; }
+  .home-quick-grid { gap: 8px; grid-template-columns: repeat(3, 1fr); }
+  .home-quick-btn { padding: 12px 6px 10px; min-height: 72px; border-radius: 10px; }
+  .home-quick-btn__icon { font-size: 20px; }
+  .home-quick-btn__label { font-size: 11px; }
+
+  /* 랭킹 */
+  .home-rank-item { padding: 10px 12px; }
+  .home-rank-item__num { width: 24px; height: 24px; font-size: 11px; border-radius: 6px; }
+  .home-rank-item__title { font-size: 12px; }
+  .home-rank-item__type { font-size: 10px; }
+  .home-rank-item__stats { font-size: 10px; gap: 6px; }
+
+  /* 미션 배너 */
+  .home-mission-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+  }
+  .home-mission-banner__word { font-size: 22px; }
+  .home-mission-banner__right {
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    justify-content: space-between;
+  }
 
   /* 푸터 모바일: 1열 */
   .site-footer__inner {
@@ -141,6 +162,7 @@
     box-shadow: var(--shadow-xs);
   }
   .feed-card__title { font-size: var(--font-size-base); }
+  .feed-card__thumb { width: 70px; height: 70px; }
 
   /* 섹션 헤더 */
   .section-header { padding: 0; }

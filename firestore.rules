@@ -37,6 +37,9 @@ service cloud.firestore {
               request.resource.data.acrosticCount == resource.data.get('acrosticCount', 0) + 1 ||
               request.resource.data.acrosticCount == resource.data.get('acrosticCount', 0) - 1
             ))
+          ||
+          (changed.hasOnly(['viewCount'])
+            && request.resource.data.viewCount == resource.data.get('viewCount', 0) + 1)
         );
     }
 
