@@ -14,7 +14,8 @@ const QUICK_TYPES = [
   { key: 'vote',         icon: '🗳️', label: '골라킹',   desc: '투표 · 밸런스 · 선택지 배틀' },
   { key: 'naming',       icon: '😜', label: '미친작명소', desc: '사진이나 상황에 웃긴 이름 붙이기' },
   { key: 'initial_game', icon: '🔤', label: '초성게임', desc: '초성을 보고 떠오르는 단어 참여' },
-  { key: 'ox',           icon: '❓', label: 'OX퀴즈',   desc: '맞다 아니다로 가볍게 도전' },
+  { key: 'quiz',         icon: '🧠', label: '미친퀴즈', desc: '객관식/주관식 자유 퀴즈' },
+  { key: 'crazy_court',  icon: '⚖️', label: '억까재판', desc: '유죄냐 무죄냐 억지 판결 놀이' },
   { key: 'relay',        icon: '🎭', label: '막장킹',   desc: '한 문장씩 터지는 막장 전개' },
 ];
 
@@ -95,7 +96,7 @@ function fmtNum(n) {
 const TYPE_LABEL = {
   balance:'골라킹', vote:'골라킹', battle:'골라킹',
   naming:'미친작명소', initial_game:'초성게임', acrostic:'미션 행시', drip:'한줄드립',
-  ox:'OX퀴즈', relay:'막장킹', random_battle:'랜덤대결',
+  ox:'OX퀴즈', quiz:'미친퀴즈', crazy_court:'억까재판', relay:'막장킹', random_battle:'랜덤대결',
 };
 
 export async function renderHome() {
@@ -107,7 +108,7 @@ export async function renderHome() {
       <div class="skeleton" style="height:160px;border-radius:18px"></div>
       <div class="home-stat-row">${[1,2,3].map(()=>`<div class="skeleton" style="height:80px;border-radius:14px"></div>`).join('')}</div>
       <div class="skeleton" style="height:100px;border-radius:16px"></div>
-      <div class="home-quick-grid">${[1,2,3,4,5].map(()=>`<div class="skeleton" style="height:90px;border-radius:14px"></div>`).join('')}</div>
+      <div class="home-quick-grid">${[1,2,3,4,5,6].map(()=>`<div class="skeleton" style="height:90px;border-radius:14px"></div>`).join('')}</div>
     </div>`;
 
   try {
@@ -129,7 +130,7 @@ export async function renderHome() {
       <div class="home-hero home-hero--user">
         ${streak > 1 ? `<div class="home-hero__streak">🔥 ${streak}일 연속 출석 중!</div>` : ''}
         <div class="home-hero__title">대표 놀이만 가볍게,<br>오늘도 소소하게 👋</div>
-        <div class="home-hero__sub">골라킹, 미친작명소, 초성게임, OX퀴즈, 막장킹으로 바로 참여해보세요.</div>
+        <div class="home-hero__sub">골라킹, 미친작명소, 초성게임, 미친퀴즈, 억까재판, 막장킹으로 바로 참여해보세요.</div>
         <div class="home-hero__actions">
           <button class="btn btn--primary" id="hbtn-write">✏️ 놀이판 만들기</button>
           <button class="btn btn--ghost home-hero__ghost-btn" id="hbtn-feed">탐색하기</button>
@@ -137,8 +138,8 @@ export async function renderHome() {
       </div>` : `
       <div class="home-hero home-hero--guest">
         <div class="home-hero__badge">✨ 소소킹에 오신 걸 환영해요!</div>
-        <div class="home-hero__title">딱 필요한 대표 놀이<br>5가지 🎉</div>
-        <div class="home-hero__sub">골라킹부터 막장킹까지, 복잡하지 않게 바로 참여할 수 있어요.</div>
+        <div class="home-hero__title">딱 필요한 대표 놀이<br>6가지 🎉</div>
+        <div class="home-hero__sub">퀴즈부터 억까재판까지, 복잡하지 않게 바로 참여할 수 있어요.</div>
         <div class="home-hero__actions">
           <button class="home-hero__cta-btn" id="hbtn-join">지금 시작하기 →</button>
           <button class="btn btn--ghost home-hero__ghost-btn" id="hbtn-feed">먼저 둘러보기</button>
@@ -180,7 +181,7 @@ export async function renderHome() {
     const quickHTML = `
       <div class="home-section-header">
         <span class="home-section-title">⚡ 대표 놀이 만들기</span>
-        <span class="home-section-sub">운영 유형을 5개로 단순화했어요</span>
+        <span class="home-section-sub">운영 유형을 6개로 단순화했어요</span>
       </div>
       <div class="home-quick-grid">
         ${QUICK_TYPES.map(t => `
