@@ -12,6 +12,7 @@ import { toast } from '../components/toast.js';
 import { renderReactionBar, initReactionBar } from '../components/reaction-bar.js';
 import { setMeta } from '../utils/seo.js';
 import { escHtml, formatTime } from '../utils/helpers.js';
+import { appState } from '../state.js';
 
 const TYPE_LABELS = {
   balance:'밸런스게임', vote:'민심투표', battle:'선택지배틀', challenge24:'24시간챌린지', tournament:'이상형월드컵',
@@ -380,15 +381,43 @@ function setupDetailEvents(post, el) {
   });
 
   // 공유 버튼
-  document.getElementById('btn-share')?.addEventListener('click', async () => {
+  document.getElementById('btn-share')?.addEventListener('click', () => {
     const url   = `${location.origin}${location.pathname}#/detail/${post.id}`;
-    const title = post.title || '소소킹';
-    if (navigator.share) {
-      await navigator.share({ title, url }).catch(() => {});
-    } else {
+    const title = encodeURIComponent(post.title || '소소킹');
+    const encodedUrl = encodeURIComponent(url);
+    const existing = document.getElementById('share-sheet');
+    if (existing) { existing.remove(); return; }
+
+    const sheet = document.createElement('div');
+    sheet.id = 'share-sheet';
+    sheet.className = 'share-sheet';
+    sheet.innerHTML = `
+      <div class="share-sheet__backdrop"></div>
+      <div class="share-sheet__panel">
+        <div class="share-sheet__title">공유하기</div>
+        <div class="share-sheet__grid">
+          <a class="share-btn share-btn--kakao" href="https://story.kakao.com/share?url=${encodedUrl}" target="_blank" rel="noopener">
+            <span class="share-btn__icon">💬</span><span class="share-btn__label">카카오</span>
+          </a>
+          <a class="share-btn share-btn--facebook" href="https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}" target="_blank" rel="noopener">
+            <span class="share-btn__icon">📘</span><span class="share-btn__label">페이스북</span>
+          </a>
+          <a class="share-btn share-btn--twitter" href="https://twitter.com/intent/tweet?url=${encodedUrl}&text=${title}" target="_blank" rel="noopener">
+            <span class="share-btn__icon">🐦</span><span class="share-btn__label">X(트위터)</span>
+          </a>
+          <button class="share-btn share-btn--copy" id="btn-copy-link">
+            <span class="share-btn__icon">🔗</span><span class="share-btn__label">링크복사</span>
+          </button>
+        </div>
+      </div>`;
+    document.body.appendChild(sheet);
+    sheet.querySelector('.share-sheet__backdrop').addEventListener('click', () => sheet.remove());
+    sheet.querySelector('#btn-copy-link').addEventListener('click', async () => {
       await navigator.clipboard.writeText(url).catch(() => {});
       toast.success('링크가 복사됐어요! 🔗');
-    }
+      sheet.remove();
+    });
+    requestAnimationFrame(() => sheet.querySelector('.share-sheet__panel').classList.add('open'));
   });
 
   // 신고 버튼
@@ -441,7 +470,7 @@ function setupDetailEvents(post, el) {
     const commentData = {
       text,
       authorId:   auth.currentUser.uid,
-      authorName: auth.currentUser.displayName || '익명',
+      authorName: appState.nickname || auth.currentUser.displayName || '익명',
       createdAt:  serverTimestamp(),
     };
     if (post.type === 'cbattle') commentData.side = _cbattleSide;
@@ -449,13 +478,25 @@ function setupDetailEvents(post, el) {
     commentData.reactedWith = {};
 
     const successMsg = { relay:'이야기를 이어썼어요!', naming:'제목을 제안했어요!', drip:'드립을 올렸어요!' }[post.type] || '댓글을 남겼어요!';
+
+    // 낙관적 삽입
+    const tempComment = { ...commentData, id: `temp-${Date.now()}`, createdAt: { toDate: () => new Date() } };
+    const commentListEl = document.getElementById('comment-list');
+    if (commentListEl) {
+      const tempEl = document.createElement('div');
+      tempEl.innerHTML = renderComment(tempComment);
+      commentListEl.prepend(tempEl.firstElementChild);
+    }
+    input.value = '';
+    const counter = document.getElementById('relay-char-count');
+    if (counter) counter.textContent = '0 / 150';
+    toast.success(successMsg);
+
     try {
-      await addDoc(collection(db, 'feeds', post.id, 'comments'), commentData);
-      await updateDoc(doc(db, 'feeds', post.id), { commentCount: increment(1) });
-      input.value = '';
-      const counter = document.getElementById('relay-char-count');
-      if (counter) counter.textContent = '0 / 150';
-      toast.success(successMsg);
+      await Promise.all([
+        addDoc(collection(db, 'feeds', post.id, 'comments'), commentData),
+        updateDoc(doc(db, 'feeds', post.id), { commentCount: increment(1) }),
+      ]);
       const comments = await fetchComments(post.id);
       refreshCommentList(post, comments);
     } catch { toast.error('등록에 실패했어요'); }
@@ -564,7 +605,7 @@ function setupDetailEvents(post, el) {
         text,
         lines: structured,
         authorId:   auth.currentUser.uid,
-        authorName: auth.currentUser.displayName || '익명',
+        authorName: appState.nickname || auth.currentUser.displayName || '익명',
         reactions:  { like: 0, funny: 0, fire: 0 },
         reactedWith: {},
         createdAt:  serverTimestamp(),
@@ -632,29 +673,19 @@ function setupAcrosticLikes(postId) {
       const ref = doc(db, 'feeds', postId, 'acrostics', acrosticId);
       try {
         if (currentKey === key) {
-          await updateDoc(ref, {
-            [`reactions.${key}`]:  increment(-1),
-            [`reactedWith.${uid}`]: deleteField(),
-          });
           btn.classList.remove('active');
           adjustAcrosticCount(btn, -1);
+          await updateDoc(ref, { [`reactions.${key}`]: increment(-1), [`reactedWith.${uid}`]: deleteField() });
         } else if (currentKey) {
-          await updateDoc(ref, {
-            [`reactions.${currentKey}`]: increment(-1),
-            [`reactions.${key}`]:        increment(1),
-            [`reactedWith.${uid}`]:      key,
-          });
           activeBtn.classList.remove('active');
           adjustAcrosticCount(activeBtn, -1);
           btn.classList.add('active');
           adjustAcrosticCount(btn, 1);
+          await updateDoc(ref, { [`reactions.${currentKey}`]: increment(-1), [`reactions.${key}`]: increment(1), [`reactedWith.${uid}`]: key });
         } else {
-          await updateDoc(ref, {
-            [`reactions.${key}`]:  increment(1),
-            [`reactedWith.${uid}`]: key,
-          });
           btn.classList.add('active');
           adjustAcrosticCount(btn, 1);
+          await updateDoc(ref, { [`reactions.${key}`]: increment(1), [`reactedWith.${uid}`]: key });
         }
       } catch { /* silent */ }
       btn._pending = false;
@@ -949,19 +980,19 @@ function setupCommentLikes(postId) {
       const currentKey = activeBtn?.dataset.react ?? null;
       try {
         if (currentKey === key) {
-          await updateDoc(ref, { [`reactions.${key}`]: increment(-1), [`reactedWith.${uid}`]: deleteField() });
           btn.classList.remove('active');
           adjustReactCount(btn, -1);
+          await updateDoc(ref, { [`reactions.${key}`]: increment(-1), [`reactedWith.${uid}`]: deleteField() });
         } else if (currentKey) {
-          await updateDoc(ref, { [`reactions.${currentKey}`]: increment(-1), [`reactions.${key}`]: increment(1), [`reactedWith.${uid}`]: key });
           activeBtn.classList.remove('active');
           adjustReactCount(activeBtn, -1);
           btn.classList.add('active');
           adjustReactCount(btn, 1);
+          await updateDoc(ref, { [`reactions.${currentKey}`]: increment(-1), [`reactions.${key}`]: increment(1), [`reactedWith.${uid}`]: key });
         } else {
-          await updateDoc(ref, { [`reactions.${key}`]: increment(1), [`reactedWith.${uid}`]: key });
           btn.classList.add('active');
           adjustReactCount(btn, 1);
+          await updateDoc(ref, { [`reactions.${key}`]: increment(1), [`reactedWith.${uid}`]: key });
         }
       } catch {}
       btn._pending = false;
