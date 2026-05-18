@@ -1,0 +1,70 @@
+/* desktop-layout-tune.css — PC 본문/푸터 폭 통일 보정 */
+
+@media (min-width: 1024px) {
+  :root {
+    --desktop-content-max: 1120px;
+    --desktop-content-pad-x: 36px;
+    --desktop-content-pad-y: 32px;
+  }
+
+  .site-main {
+    align-items: center;
+  }
+
+  .page-container {
+    width: 100%;
+    max-width: calc(var(--desktop-content-max) + (var(--desktop-content-pad-x) * 2));
+    margin: 0 auto;
+    padding: var(--desktop-content-pad-y) var(--desktop-content-pad-x);
+  }
+
+  .page-container > .home-dash,
+  .page-container > .layout-cols,
+  .page-container > .write-page,
+  .page-container > .page-enter,
+  .page-container > .admin-layout {
+    width: 100%;
+  }
+
+  .layout-cols {
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 24px;
+  }
+
+  .site-footer {
+    width: 100%;
+  }
+
+  .site-footer__inner {
+    width: 100%;
+    max-width: calc(var(--desktop-content-max) + (var(--desktop-content-pad-x) * 2));
+    margin: 0 auto;
+    padding: 34px var(--desktop-content-pad-x) 24px;
+  }
+
+  .site-footer__copy-bar {
+    width: 100%;
+    max-width: calc(var(--desktop-content-max) + (var(--desktop-content-pad-x) * 2));
+    margin: 0 auto;
+    padding-left: var(--desktop-content-pad-x);
+    padding-right: var(--desktop-content-pad-x);
+  }
+}
+
+@media (min-width: 1280px) {
+  :root {
+    --desktop-content-max: 1160px;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1180px) {
+  :root {
+    --desktop-content-max: 960px;
+    --desktop-content-pad-x: 28px;
+  }
+
+  .layout-cols {
+    grid-template-columns: minmax(0, 1fr) 280px;
+    gap: 20px;
+  }
+}
