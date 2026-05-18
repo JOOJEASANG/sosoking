@@ -27,36 +27,46 @@ export async function renderAdmin() {
     return;
   }
 
+  const MENUS = [
+    { key: 'dashboard', icon: '📊', label: '대시보드' },
+    { key: 'posts',     icon: '📝', label: '게시물' },
+    { key: 'reports',   icon: '🚨', label: '신고' },
+    { key: 'users',     icon: '👥', label: '회원' },
+    { key: 'missions',  icon: '🎯', label: '미션' },
+    { key: 'ai',        icon: '🤖', label: 'AI' },
+  ];
+
   el.innerHTML = `
-    <div class="admin-page">
-      <div class="admin-tabs-wrap">
-        <div class="admin-brand-inline">
-          <span class="admin-brand-inline__icon">⚙️</span>
-          <span class="admin-brand-inline__text">관리자 패널</span>
+    <div class="admin-layout">
+      <aside class="admin-sidebar">
+        <div class="admin-brand">
+          <div class="admin-brand__logo">⚙️</div>
+          <div>
+            <div class="admin-brand__title">관리자 패널</div>
+            <div class="admin-brand__sub">SOSOKING</div>
+          </div>
         </div>
-        <div class="admin-tabs">
-          ${[
-            { key: 'dashboard', icon: '📊', label: '대시보드' },
-            { key: 'posts',     icon: '📝', label: '게시물' },
-            { key: 'reports',   icon: '🚨', label: '신고' },
-            { key: 'users',     icon: '👥', label: '회원' },
-            { key: 'missions',  icon: '🎯', label: '미션' },
-            { key: 'ai',        icon: '🤖', label: 'AI' },
-          ].map(m => `
-            <button class="admin-tab ${currentTab === m.key ? 'active' : ''}" data-tab="${m.key}">
-              ${m.icon} ${m.label}
+        <nav class="admin-nav">
+          ${MENUS.map(m => `
+            <button class="admin-menu-item ${currentTab === m.key ? 'active' : ''}" data-tab="${m.key}">
+              <span class="admin-menu-item__icon">${m.icon}</span>
+              <span class="admin-menu-item__label">${m.label}</span>
             </button>`).join('')}
+        </nav>
+        <div class="admin-sidebar__footer">
+          <div class="admin-uid-label">UID</div>
+          <div class="admin-uid">${user.uid}</div>
         </div>
-      </div>
-      <div id="admin-content">
+      </aside>
+      <main id="admin-content">
         <div class="loading-center"><div class="spinner spinner--lg"></div></div>
-      </div>
+      </main>
     </div>`;
 
-  document.querySelectorAll('.admin-tab[data-tab]').forEach(btn => {
+  document.querySelectorAll('.admin-menu-item[data-tab]').forEach(btn => {
     btn.addEventListener('click', () => {
       currentTab = btn.dataset.tab;
-      document.querySelectorAll('.admin-tab[data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === currentTab));
+      document.querySelectorAll('.admin-menu-item[data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === currentTab));
       loadTab(currentTab);
     });
   });
