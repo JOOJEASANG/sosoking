@@ -1,9 +1,12 @@
-import { db, auth } from '../firebase.js';
+import { db, auth, functions } from '../firebase.js';
 import { signInAnonymously } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import {
   doc, getDoc, collection, query, orderBy, getDocs, where, limit,
   addDoc, updateDoc, deleteDoc, setDoc, increment, serverTimestamp, arrayUnion, arrayRemove, deleteField,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
+
+const checkQuizAnswerFn = httpsCallable(functions, 'checkQuizAnswer');
 import { navigate } from '../router.js';
 import { toast } from '../components/toast.js';
 import { renderReactionBar, initReactionBar } from '../components/reaction-bar.js';
@@ -498,7 +501,7 @@ function setupDetailEvents(post, el) {
     });
   });
 
-  // OX 퀴즈 — 정답은 secret 서브컬렉션에서 확인
+  // OX 퀴즈 — 서버에서 정답 검증
   document.querySelectorAll('[data-answer]').forEach(btn => {
     btn.addEventListener('click', async () => {
       if (!auth.currentUser) {
@@ -507,18 +510,15 @@ function setupDetailEvents(post, el) {
       const selected = btn.dataset.answer;
       document.querySelectorAll('[data-answer]').forEach(b => b.disabled = true);
       try {
-        const secretSnap = await getDoc(doc(db, 'feeds', post.id, 'secret', 'answer'));
-        const secret = secretSnap.exists() ? secretSnap.data() : null;
-        const correct = secret ? (secret.answer === selected) : (post.answer === selected);
-        showQuizResult(correct, secret?.explanation || post.explanation || '');
+        const result = await checkQuizAnswerFn({ postId: post.id, selected });
+        showQuizResult(result.data.correct, result.data.explanation || '');
       } catch {
-        const correct = post.answer === selected;
-        showQuizResult(correct, post.explanation || '');
+        showQuizResult(post.answer === selected, post.explanation || '');
       }
     });
   });
 
-  // 객관식 퀴즈 — 정답은 secret 서브컬렉션에서 확인
+  // 객관식 퀴즈 — 서버에서 정답 검증
   document.querySelectorAll('[data-quiz-idx]').forEach(btn => {
     btn.addEventListener('click', async () => {
       if (!auth.currentUser) {
@@ -527,17 +527,15 @@ function setupDetailEvents(post, el) {
       const idx = parseInt(btn.dataset.quizIdx);
       document.querySelectorAll('[data-quiz-idx]').forEach(b => b.disabled = true);
       try {
-        const secretSnap = await getDoc(doc(db, 'feeds', post.id, 'secret', 'answer'));
-        const secret = secretSnap.exists() ? secretSnap.data() : null;
-        const correct = secret ? (secret.answerIdx === idx) : (post.answerIdx === idx);
-        showQuizResult(correct, secret?.explanation || post.explanation || '');
+        const result = await checkQuizAnswerFn({ postId: post.id, selected: idx });
+        showQuizResult(result.data.correct, result.data.explanation || '');
       } catch {
         showQuizResult(post.answerIdx === idx, post.explanation || '');
       }
     });
   });
 
-  // 주관식 퀴즈 — 정답은 secret 서브컬렉션에서 확인
+  // 주관식 퀴즈 — 서버에서 정답 검증
   document.getElementById('btn-quiz-submit')?.addEventListener('click', async () => {
     if (!auth.currentUser) { navigate('/login'); return; }
     const input = document.getElementById('quiz-short-input');
@@ -546,10 +544,8 @@ function setupDetailEvents(post, el) {
     if (input) input.disabled = true;
     document.getElementById('btn-quiz-submit')?.setAttribute('disabled', 'true');
     try {
-      const secretSnap = await getDoc(doc(db, 'feeds', post.id, 'secret', 'answer'));
-      const secret = secretSnap.exists() ? secretSnap.data() : null;
-      const correct = secret ? (secret.answer === answer) : (post.answer === answer);
-      showQuizResult(correct, secret?.explanation || post.explanation || '');
+      const result = await checkQuizAnswerFn({ postId: post.id, selected: answer });
+      showQuizResult(result.data.correct, result.data.explanation || '');
     } catch {
       showQuizResult(post.answer === answer, post.explanation || '');
     }

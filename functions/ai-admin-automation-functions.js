@@ -19,15 +19,23 @@ async function assertAdmin(uid) {
   if (!snap.exists) throw new HttpsError('permission-denied', '관리자만 실행할 수 있습니다.');
 }
 
+let _settingsCache = null;
+let _settingsCacheAt = 0;
+const SETTINGS_TTL = 5 * 60 * 1000;
+
 async function getSettings() {
+  const now = Date.now();
+  if (_settingsCache && now - _settingsCacheAt < SETTINGS_TTL) return _settingsCache;
   const snap = await db.doc('site_settings/config').get();
   const data = snap.exists ? snap.data() || {} : {};
-  return {
+  _settingsCache = {
     aiAdminAutomationEnabled: data.aiAdminAutomationEnabled !== false,
     autoHideReportedPosts: data.autoHideReportedPosts === true,
     reportHideThreshold: Math.max(2, Number(data.reportHideThreshold ?? 3)),
     notificationRetentionDays: Math.max(7, Number(data.notificationRetentionDays ?? 45)),
   };
+  _settingsCacheAt = now;
+  return _settingsCache;
 }
 
 async function closeExpiredMissions() {

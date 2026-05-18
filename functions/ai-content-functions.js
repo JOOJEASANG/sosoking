@@ -41,10 +41,18 @@ function parseJson(text) {
   try { return JSON.parse(match[0]); } catch { return null; }
 }
 
+let _settingsCache = null;
+let _settingsCacheAt = 0;
+const SETTINGS_TTL = 5 * 60 * 1000;
+
 async function settings() {
+  const now = Date.now();
+  if (_settingsCache && now - _settingsCacheAt < SETTINGS_TTL) return _settingsCache;
   const snap = await db.doc('site_settings/config').get();
   const data = snap.exists ? snap.data() || {} : {};
-  return { aiAutoContentEnabled: data.aiAutoContentEnabled !== false, aiDailyLimit: Math.max(0, Number(data.aiDailyLimit ?? 20)) };
+  _settingsCache = { aiAutoContentEnabled: data.aiAutoContentEnabled !== false, aiDailyLimit: Math.max(0, Number(data.aiDailyLimit ?? 20)) };
+  _settingsCacheAt = now;
+  return _settingsCache;
 }
 
 async function reserveUsage(kind) {

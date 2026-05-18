@@ -4,6 +4,7 @@ import { renderFeedCard } from '../components/feed-card.js';
 import { appState } from '../state.js';
 import { setMeta } from '../utils/seo.js';
 import { escHtml } from '../utils/helpers.js';
+import { fetchHotPosts } from '../services/feed-service.js';
 import {
   collection, query, orderBy, limit, getDocs,
   getCountFromServer, where, doc, getDoc, updateDoc,
@@ -65,20 +66,6 @@ async function fetchStats() {
   } catch { return { total: 0, today: 0 }; }
 }
 
-async function fetchHotPosts(n = 5) {
-  try {
-    const q = query(collection(db, 'feeds'), orderBy('createdAt', 'desc'), limit(60));
-    const snap = await getDocs(q);
-    return snap.docs
-      .map(d => ({ id: d.id, ...d.data() }))
-      .filter(p => !p.hidden)
-      .sort((a, b) => {
-        const score = p => (p.reactions?.total || 0) * 2 + (p.commentCount || 0) * 3;
-        return score(b) - score(a);
-      })
-      .slice(0, n);
-  } catch { return []; }
-}
 
 async function fetchRecentPosts(n = 6) {
   try {
