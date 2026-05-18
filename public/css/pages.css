@@ -593,26 +593,31 @@
    관리자 레이아웃
 ════════════════════════ */
 /* 관리자 페이지 — 사이드바 레이아웃 */
-.admin-layout { display: grid; grid-template-columns: 200px 1fr; gap: var(--space-6); align-items: start; }
+.admin-layout { display: grid; grid-template-columns: 220px 1fr; gap: var(--space-6); align-items: start; }
 
 .admin-sidebar {
   position: sticky; top: 80px;
   background: var(--color-surface);
-  border-radius: var(--radius-lg); border: 1px solid var(--color-border-light);
-  overflow: hidden; box-shadow: var(--shadow-sm);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border-light);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
 }
 .admin-brand {
   display: flex; align-items: center; gap: 10px;
-  padding: 16px; background: var(--gradient-brand);
+  padding: 16px 16px 14px;
+  border-bottom: 1px solid var(--color-border-light);
 }
 .admin-brand__logo {
   width: 36px; height: 36px; border-radius: 10px;
-  background: rgba(255,255,255,.22); display: grid; place-items: center;
-  font-size: 17px; flex-shrink: 0;
+  background: var(--color-primary-bg);
+  border: 1.5px solid var(--color-primary);
+  display: grid; place-items: center;
+  font-size: 18px; flex-shrink: 0;
 }
-.admin-brand__title { font-size: 13px; font-weight: 900; color: #fff; line-height: 1.2; }
-.admin-brand__sub { font-size: 10px; color: rgba(255,255,255,.72); font-weight: 700; letter-spacing: 0.4px; }
-.admin-nav { padding: 8px; }
+.admin-brand__title { font-size: 13px; font-weight: 900; color: var(--color-text-primary); line-height: 1.2; }
+.admin-brand__sub { font-size: 10px; color: var(--color-text-muted); font-weight: 700; letter-spacing: 0.4px; }
+.admin-nav { padding: 8px 8px 4px; }
 .admin-menu-item {
   display: flex; align-items: center; gap: 10px;
   width: 100%; padding: 10px 12px; border-radius: var(--radius-sm);
@@ -620,28 +625,37 @@
   color: var(--color-text-secondary); cursor: pointer;
   background: none; border: none; text-align: left;
   transition: all var(--transition-fast);
-  border-left: 3px solid transparent;
 }
 .admin-menu-item__icon { font-size: 15px; flex-shrink: 0; }
 .admin-menu-item__label { flex: 1; }
 .admin-menu-item:hover {
   background: var(--color-surface-2); color: var(--color-text-primary);
-  border-left-color: var(--color-border);
 }
 .admin-menu-item.active {
   background: var(--color-primary-bg); color: var(--color-primary); font-weight: 800;
-  border-left-color: var(--color-primary);
 }
 .admin-sidebar__footer {
-  margin: 0 8px 8px; padding: 10px 12px;
-  border-radius: var(--radius-sm); background: var(--color-surface-2);
+  margin: 4px 8px 8px; padding: 10px 12px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--color-border-light);
+  background: var(--color-surface-2);
 }
+.admin-goto-site-btn {
+  display: flex; align-items: center; gap: 6px;
+  width: 100%; padding: 8px 10px; border-radius: var(--radius-sm);
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+  transition: all var(--transition-fast);
+}
+.admin-goto-site-btn:hover { background: var(--color-primary-bg); color: var(--color-primary); border-color: var(--color-primary); }
 .admin-uid-label { font-size: 10px; font-weight: 700; color: var(--color-text-muted); margin-bottom: 3px; }
 .admin-uid { font-family: monospace; font-size: 9px; color: var(--color-text-muted); word-break: break-all; }
 
 [data-theme="dark"] .admin-sidebar { border-color: var(--color-border); }
+[data-theme="dark"] .admin-brand { border-bottom-color: var(--color-border); }
 [data-theme="dark"] .admin-sidebar__footer { background: var(--color-surface-alt); border-color: var(--color-border); }
+[data-theme="dark"] .admin-goto-site-btn { background: var(--color-surface-alt); border-color: var(--color-border); }
 [data-theme="dark"] .admin-menu-item:hover { background: var(--color-surface-alt); }
 [data-theme="dark"] .admin-menu-item.active { background: var(--color-primary-bg); }
 

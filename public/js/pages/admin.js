@@ -1,7 +1,7 @@
 import { db, auth, functions } from '../firebase.js';
 import {
   collection, query, orderBy, limit, getDocs, deleteDoc, doc,
-  getCountFromServer, where, updateDoc, addDoc, serverTimestamp,
+  getCountFromServer, where, updateDoc, serverTimestamp,
   Timestamp, getDoc, setDoc,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
@@ -32,7 +32,6 @@ export async function renderAdmin() {
     { key: 'posts',     icon: '📝', label: '게시물' },
     { key: 'reports',   icon: '🚨', label: '신고' },
     { key: 'users',     icon: '👥', label: '회원' },
-    { key: 'missions',  icon: '🎯', label: '미션' },
     { key: 'ai',        icon: '🤖', label: 'AI' },
   ];
 
@@ -54,7 +53,10 @@ export async function renderAdmin() {
             </button>`).join('')}
         </nav>
         <div class="admin-sidebar__footer">
-          <div class="admin-uid-label">UID</div>
+          <button class="admin-goto-site-btn" id="btn-goto-site">
+            <span>🏠</span><span>사이트로 가기</span>
+          </button>
+          <div class="admin-uid-label" style="margin-top:10px">UID</div>
           <div class="admin-uid">${user.uid}</div>
         </div>
       </aside>
@@ -71,6 +73,8 @@ export async function renderAdmin() {
     });
   });
 
+  document.getElementById('btn-goto-site')?.addEventListener('click', () => navigate('/'));
+
   await loadTab(currentTab);
 }
 
@@ -84,7 +88,6 @@ async function loadTab(tab) {
     case 'posts':     return renderPosts(content);
     case 'reports':   return renderReports(content);
     case 'users':     return renderUsers(content);
-    case 'missions':  return renderMissions(content);
     case 'ai':        return renderAiSettings(content);
   }
 }
@@ -98,15 +101,13 @@ async function renderDashboard(el) {
     { type: 'initial_game', icon: '🔤', label: '초성게임',   cat: 'golra' },
     { type: 'naming',       icon: '😜', label: '미친작명소', cat: 'usgyo' },
     { type: 'crazy_court',  icon: '⚖️', label: '억까재판',   cat: 'usgyo' },
-    { type: 'quiz',         icon: '🧠', label: '미친퀴즈',   cat: 'malhe' },
     { type: 'relay',        icon: '🎭', label: '막장킹',     cat: 'malhe' },
     { type: 'acrostic',     icon: '✍️', label: '삼행시짓기', cat: 'malhe' },
   ];
 
-  const [totalSnap, todaySnap, missionSnap, recentSnap, reportSnap, ...typeSnaps] = await Promise.all([
+  const [totalSnap, todaySnap, recentSnap, reportSnap, ...typeSnaps] = await Promise.all([
     getCountFromServer(collection(db, 'feeds')).catch(() => null),
     getDocs(query(collection(db, 'feeds'), where('createdAt', '>=', Timestamp.fromDate(todayStart)), limit(99))).catch(() => null),
-    getDocs(query(collection(db, 'missions'), where('active', '==', true), orderBy('createdAt', 'desc'), limit(1))).catch(() => null),
     getDocs(query(collection(db, 'feeds'), orderBy('createdAt', 'desc'), limit(5))).catch(() => null),
     getCountFromServer(query(collection(db, 'reports'), where('resolved', '==', false))).catch(() => null),
     ...TYPE_META.map(t => getCountFromServer(query(collection(db, 'feeds'), where('type', '==', t.type))).catch(() => null)),
@@ -115,7 +116,6 @@ async function renderDashboard(el) {
   const total   = totalSnap?.data?.().count ?? 0;
   const today   = todaySnap?.size ?? 0;
   const pending = reportSnap?.data?.().count ?? 0;
-  const mission = missionSnap?.empty ? null : { id: missionSnap.docs[0].id, ...missionSnap.docs[0].data() };
   const recent  = recentSnap?.docs.map(d => ({ id: d.id, ...d.data() })) ?? [];
   const typeCounts = TYPE_META.map((t, i) => ({ ...t, count: typeSnaps[i]?.data?.().count ?? 0 }));
 
@@ -136,10 +136,6 @@ async function renderDashboard(el) {
             <div class="admin-stat-card__num" style="color:${pending > 0 ? 'var(--color-danger)' : 'var(--color-text-muted)'}">${pending}</div>
             <div class="admin-stat-card__label">미처리 신고</div>
           </div>
-          <div class="admin-stat-card">
-            <div class="admin-stat-card__num" style="font-size:14px;color:${mission ? 'var(--color-success)' : 'var(--color-text-muted)'}">${mission ? '✅ 운영중' : '없음'}</div>
-            <div class="admin-stat-card__label">오늘 미션</div>
-          </div>
         </div>
       </div>
 
@@ -156,26 +152,6 @@ async function renderDashboard(el) {
           </div>
         </div>
       </div>
-
-      ${mission ? `
-        <div class="card" style="border:2px solid var(--color-primary)">
-          <div class="card__body">
-            <div style="font-size:14px;font-weight:800;margin-bottom:8px">🎯 진행 중인 미션</div>
-            <div style="font-size:16px;font-weight:700">${escHtml(mission.title || '')}</div>
-            ${mission.desc ? `<div style="font-size:13px;color:var(--color-text-secondary);margin-top:4px">${escHtml(mission.desc)}</div>` : ''}
-            <div style="margin-top:12px;display:flex;gap:8px">
-              <button class="btn btn--ghost btn--sm" data-mission-edit="${mission.id}" data-tab-switch="missions">미션 관리 →</button>
-            </div>
-          </div>
-        </div>` : `
-        <div class="card" style="border:2px dashed var(--color-border)">
-          <div class="card__body" style="text-align:center;padding:24px">
-            <div style="font-size:32px;margin-bottom:8px">🎯</div>
-            <div style="font-size:14px;font-weight:700;margin-bottom:4px">오늘 미션이 없어요</div>
-            <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:12px">미션을 등록하면 사용자들이 참여할 수 있어요</div>
-            <button class="btn btn--primary btn--sm" data-tab-switch="missions">미션 등록하기 →</button>
-          </div>
-        </div>`}
 
       <div class="card">
         <div class="card__body">
@@ -458,131 +434,6 @@ async function renderUsers(el) {
     </div>`;
 }
 
-/* ── 미션 관리 ── */
-async function renderMissions(el) {
-  const snap = await getDocs(query(collection(db, 'missions'), orderBy('createdAt', 'desc'), limit(20))).catch(() => null);
-  const missions = snap?.docs.map(d => ({ id: d.id, ...d.data() })) ?? [];
-
-  el.innerHTML = `
-    <div style="display:flex;flex-direction:column;gap:16px">
-      <h2 class="admin-section-title">🎯 미션 관리</h2>
-
-      <!-- 등록 폼 -->
-      <div class="card" style="border:2px solid var(--color-primary)">
-        <div class="card__body">
-          <div style="font-size:14px;font-weight:800;margin-bottom:12px">➕ 새 미션 등록</div>
-          <div class="form-group">
-            <label class="form-label">미션 제목 <span class="required">*</span></label>
-            <input id="mission-title" class="form-input" placeholder="오늘의 미션 제목을 입력하세요" maxlength="80">
-          </div>
-          <div class="form-group">
-            <label class="form-label">미션 설명</label>
-            <textarea id="mission-desc" class="form-textarea" placeholder="미션 설명 (선택)" rows="3"></textarea>
-          </div>
-          <div class="form-group">
-            <label class="form-label">참여 유형 <span class="required">*</span></label>
-            <select id="mission-type" class="form-select">
-              <option value="vote">🗳️ 골라킹</option>
-              <option value="initial_game">🔤 초성게임</option>
-              <option value="naming">😜 미친작명소</option>
-              <option value="crazy_court">⚖️ 억까재판</option>
-              <option value="quiz">🧠 미친퀴즈</option>
-              <option value="relay">🎭 막장킹</option>
-              <option value="acrostic">✍️ 삼행시짓기</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">연결 카테고리</label>
-            <select id="mission-cat" class="form-select">
-              <option value="">전체 (카테고리 무관)</option>
-              <option value="golra">🎯 골라봐</option>
-              <option value="usgyo">😂 웃겨봐</option>
-              <option value="malhe">🎮 도전봐</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">마감일 (시즌 미션용, 선택)</label>
-            <input type="datetime-local" id="mission-end-date" class="form-input">
-          </div>
-          <div style="display:flex;gap:8px;align-items:center;margin-top:4px">
-            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600">
-              <input type="checkbox" id="mission-active" checked style="width:16px;height:16px"> 즉시 활성화
-            </label>
-          </div>
-          <div style="margin-top:16px">
-            <button class="btn btn--primary" id="btn-add-mission">등록하기</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- 미션 목록 -->
-      <div class="card">
-        <div class="card__body--lg">
-          <div style="font-size:14px;font-weight:800;margin-bottom:12px">📋 미션 목록</div>
-          ${missions.length === 0 ? `<div style="text-align:center;padding:24px;color:var(--color-text-muted);font-size:13px">등록된 미션이 없어요</div>` :
-            `<div style="display:flex;flex-direction:column;gap:10px">
-              ${missions.map(m => `
-                <div style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:var(--radius-md);background:var(--color-${m.active ? 'primary' : 'surface-2'});${m.active ? 'background:var(--color-primary-bg);border:2px solid var(--color-primary)' : 'background:var(--color-surface-2);border:1px solid var(--color-border-light)'}" data-mission-row="${m.id}">
-                  <div style="flex:1">
-                    <div style="font-size:14px;font-weight:700;${m.active ? 'color:var(--color-primary)' : ''}">${escHtml(m.title || '')}</div>
-                    ${m.desc ? `<div style="font-size:12px;color:var(--color-text-muted);margin-top:2px">${escHtml(m.desc)}</div>` : ''}
-                    <div style="font-size:11px;margin-top:4px;display:flex;gap:4px;flex-wrap:wrap">
-                      ${m.type ? `<span style="background:var(--color-primary-bg);color:var(--color-primary);border-radius:99px;padding:2px 8px;font-weight:700">${{vote:'🗳️ 골라킹',initial_game:'🔤 초성게임',naming:'😜 미친작명소',crazy_court:'⚖️ 억까재판',quiz:'🧠 미친퀴즈',relay:'🎭 막장킹',acrostic:'✍️ 삼행시짓기'}[m.type] || m.type}</span>` : '<span style="background:var(--color-surface-2);color:var(--color-text-muted);border-radius:99px;padding:2px 8px">유형 없음</span>'}
-                      ${m.cat ? `<span style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:99px;padding:2px 8px">${{ golra:'🎯 골라봐', usgyo:'😂 웃겨봐', malhe:'🎮 도전봐' }[m.cat] || m.cat}</span>` : ''}
-                    </div>
-                    ${m.endDate ? `<div style="font-size:11px;color:var(--color-warning);margin-top:4px">⏰ 마감: ${new Date(m.endDate.toDate()).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>` : ''}
-                  </div>
-                  <div style="display:flex;gap:6px;flex-shrink:0">
-                    <button class="btn btn--sm ${m.active ? 'btn--ghost' : 'btn--primary'}" data-toggle-mission="${m.id}" data-active="${m.active ? '1' : '0'}" style="font-size:11px">${m.active ? '비활성화' : '활성화'}</button>
-                    <button class="btn btn--danger btn--sm" data-delete-mission="${m.id}" style="font-size:11px">삭제</button>
-                  </div>
-                </div>`).join('')}
-            </div>`}
-        </div>
-      </div>
-    </div>`;
-
-  document.getElementById('btn-add-mission')?.addEventListener('click', async () => {
-    const title      = document.getElementById('mission-title')?.value.trim();
-    const desc       = document.getElementById('mission-desc')?.value.trim()    || '';
-    const type       = document.getElementById('mission-type')?.value            || 'balance';
-    const cat        = document.getElementById('mission-cat')?.value             || '';
-    const active     = document.getElementById('mission-active')?.checked        ?? true;
-    const endDateVal = document.getElementById('mission-end-date')?.value;
-    if (!title) { toast.error('미션 제목을 입력해주세요'); return; }
-    const missionData = { title, desc, type, cat, active, createdAt: serverTimestamp() };
-    if (endDateVal) missionData.endDate = Timestamp.fromDate(new Date(endDateVal));
-    try {
-      await addDoc(collection(db, 'missions'), missionData);
-      toast.success('미션을 등록했어요 🎯');
-      renderMissions(el);
-    } catch { toast.error('등록에 실패했어요'); }
-  });
-
-  el.querySelectorAll('[data-toggle-mission]').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const id = btn.dataset.toggleMission;
-      const nowActive = btn.dataset.active === '1';
-      try {
-        await updateDoc(doc(db, 'missions', id), { active: !nowActive });
-        toast.success(nowActive ? '비활성화했어요' : '활성화했어요');
-        renderMissions(el);
-      } catch { toast.error('변경에 실패했어요'); }
-    });
-  });
-
-  el.querySelectorAll('[data-delete-mission]').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      if (!confirm('이 미션을 삭제할까요?')) return;
-      try {
-        await deleteDoc(doc(db, 'missions', btn.dataset.deleteMission));
-        toast.success('삭제됐어요');
-        btn.closest('[data-mission-row]')?.remove();
-      } catch { toast.error('삭제에 실패했어요'); }
-    });
-  });
-}
-
 /* ── AI 설정 ── */
 async function renderAiSettings(el) {
   // Load current AI config from Firestore
@@ -688,12 +539,11 @@ async function renderAiSettings(el) {
             스케줄 없이 지금 바로 AI 작업을 실행할 수 있어요.
           </div>
           <div style="display:flex;gap:10px;flex-wrap:wrap">
-            <button class="btn btn--primary btn--sm" id="btn-trigger-all-content">✏️ AI 게시글 7개 생성</button>
-            <button class="btn btn--primary btn--sm" id="btn-trigger-mission">🎯 미션 지금 생성</button>
+            <button class="btn btn--primary btn--sm" id="btn-trigger-all-content">✏️ AI 게시글 생성</button>
             <button class="btn btn--ghost btn--sm" id="btn-trigger-report">📊 주간 보고서 지금 생성</button>
           </div>
           <div style="font-size:11px;color:var(--color-text-muted);margin-top:6px">
-            💡 게시글 생성은 타입별 1개씩 총 7개. 오늘 이미 생성된 타입은 건너뜀 (강제 생성은 force 옵션 사용)
+            💡 게시글 생성은 타입별 1개씩. 오늘 이미 생성된 타입은 건너뜀
           </div>
           <div id="ai-trigger-result" style="margin-top:10px;font-size:12px;color:var(--color-text-muted)"></div>
         </div>
@@ -764,25 +614,6 @@ async function renderAiSettings(el) {
     } finally {
       btn.disabled = false;
       btn.textContent = '✏️ AI 게시글 7개 생성';
-    }
-  });
-
-  el.querySelector('#btn-trigger-mission')?.addEventListener('click', async () => {
-    const btn = el.querySelector('#btn-trigger-mission');
-    const result = el.querySelector('#ai-trigger-result');
-    btn.disabled = true;
-    btn.textContent = '생성 중...';
-    try {
-      const triggerFn = httpsCallable(functions, 'adminTriggerMission');
-      const res = await triggerFn({});
-      result.textContent = `✅ 미션 생성 완료: "${res.data.title}"`;
-      toast.success('새 미션이 생성됐어요 🎯');
-    } catch (e) {
-      result.textContent = '❌ ' + (e.message || '생성에 실패했어요');
-      toast.error(e.message || '생성에 실패했어요');
-    } finally {
-      btn.disabled = false;
-      btn.textContent = '🎯 미션 지금 생성';
     }
   });
 
