@@ -71,13 +71,6 @@ export async function initApp() {
         <header class="site-header" id="site-header"></header>
         <main id="page-content" class="page-container"></main>
         <footer class="site-footer" id="site-footer">
-          <div class="site-footer__copy-bar">
-            <div class="site-footer__copy">© ${new Date().getFullYear()} 소소킹. All rights reserved.</div>
-            <button class="site-footer__toggle" id="btn-footer-toggle" aria-expanded="false" title="푸터 펼치기">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
-              더보기
-            </button>
-          </div>
           <div class="site-footer__body" id="footer-body" hidden>
             <div class="site-footer__inner">
               <div class="site-footer__brand-block">
@@ -103,6 +96,13 @@ export async function initApp() {
                 </div>
               </div>
             </div>
+          </div>
+          <div class="site-footer__copy-bar">
+            <div class="site-footer__copy">© ${new Date().getFullYear()} 소소킹. All rights reserved.</div>
+            <button class="site-footer__toggle" id="btn-footer-toggle" aria-expanded="false" title="푸터 펼치기">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
+              더보기
+            </button>
           </div>
         </footer>
       </div>
