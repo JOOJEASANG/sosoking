@@ -3,9 +3,10 @@ import { escHtml, formatTime } from '../utils/helpers.js';
 
 /* 카테고리/유형 메타 */
 const TYPE_META = {
-  balance:      { cat: 'golra', catLabel: '대표 놀이', icon: '🗳️', label: '골라킹' },
-  vote:         { cat: 'golra', catLabel: '대표 놀이', icon: '🗳️', label: '골라킹' },
-  battle:       { cat: 'golra', catLabel: '대표 놀이', icon: '🗳️', label: '골라킹' },
+  multi:        { cat: 'multi', catLabel: '만능', icon: '🧩', label: '만능 놀이글' },
+  balance:      { cat: 'golra', catLabel: '대표 놀이', icon: '🗳️', label: '골라봐' },
+  vote:         { cat: 'golra', catLabel: '대표 놀이', icon: '🗳️', label: '골라봐' },
+  battle:       { cat: 'golra', catLabel: '대표 놀이', icon: '🗳️', label: '골라봐' },
   challenge24:  { cat: 'golra', catLabel: '구형', icon: '⏰', label: '24시간챌린지' },
   tournament:   { cat: 'golra', catLabel: '구형', icon: '🏆', label: '이상형월드컵' },
   naming:       { cat: 'usgyo', catLabel: '대표 놀이', icon: '😜', label: '미친작명소' },
@@ -17,7 +18,7 @@ const TYPE_META = {
   ox:           { cat: 'malhe', catLabel: '구형', icon: '❓', label: 'OX퀴즈' },
   quiz:         { cat: 'malhe', catLabel: '대표 놀이', icon: '🧠', label: '미친퀴즈' },
   crazy_court:  { cat: 'malhe', catLabel: '대표 놀이', icon: '⚖️', label: '억까재판' },
-  relay:        { cat: 'malhe', catLabel: '대표 놀이', icon: '🎭', label: '막장킹' },
+  relay:        { cat: 'malhe', catLabel: '대표 놀이', icon: '🎭', label: '막장릴레이' },
   word_relay:   { cat: 'malhe', catLabel: '구형', icon: '🔗', label: '단어릴레이' },
   random_battle:{ cat: 'golra', catLabel: '대표 놀이', icon: '🎰', label: '랜덤대결' },
   howto:   { cat: 'malhe', catLabel: '구형', icon: '💡', label: '노하우' },
@@ -25,6 +26,18 @@ const TYPE_META = {
   fail:    { cat: 'malhe', catLabel: '구형', icon: '💀', label: '실패담' },
   concern: { cat: 'malhe', catLabel: '구형', icon: '🤔', label: '고민/질문' },
 };
+
+function renderModuleChips(post) {
+  if (post.type !== 'multi' || !post.modules) return '';
+  const labels = [];
+  if (post.modules.vote?.enabled) labels.push('투표');
+  if (post.modules.naming?.enabled) labels.push('작명');
+  if (post.modules.acrostic?.enabled) labels.push('삼행시');
+  if (post.modules.relay?.enabled) labels.push('릴레이');
+  if (post.modules.quiz?.enabled) labels.push('문제');
+  if (!labels.length) return '';
+  return `<div class="feed-card__multi-chips">${labels.map(label => `<span>${label}</span>`).join('')}</div>`;
+}
 
 export function renderFeedCard(post) {
   const meta = TYPE_META[post.type] || { cat: 'malhe', catLabel: '', icon: '📝', label: post.type || '글' };
@@ -50,6 +63,7 @@ export function renderFeedCard(post) {
           </div>
           <h3 class="feed-card__title line-clamp-2">${escHtml(post.title || '')}</h3>
           ${post.desc ? `<p class="feed-card__desc line-clamp-2">${escHtml(post.desc)}</p>` : ''}
+          ${renderModuleChips(post)}
           <div class="feed-card__meta">
             <span>${escHtml(post.authorName || '익명')}</span>
             <span class="feed-card__meta-dot"></span>
@@ -62,6 +76,7 @@ export function renderFeedCard(post) {
         ${images.length === 1 ? `<div class="feed-card__thumb"><img src="${images[0]}" alt="" loading="lazy"></div>` : ''}
       </div>
       ${images.length > 1 ? renderImageGrid(images) : ''}
+      ${images.length > 3 ? `<div class="feed-card__image-count">사진 ${images.length}장</div>` : ''}
       ${temp > 0 ? `<div class="feed-temp-bar" style="--temp-pct:${temp}%;--temp-color:${tempColor}" title="참여 온도 ${temp}°C"></div>` : ''}
       <div class="feed-card__actions" onclick="event.stopPropagation()">
         <button class="feed-share-btn" onclick="(async()=>{const u=location.origin+'/p/${post.id}';if(navigator.share){await navigator.share({title:${JSON.stringify(post.title||'소소킹')},url:u})}else{await navigator.clipboard.writeText(u);window.showToast?.('링크가 복사됐어요','success')}})()">
