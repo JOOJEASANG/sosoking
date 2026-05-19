@@ -13,8 +13,14 @@ function getDetailId() {
   return match ? decodeURIComponent(match[1]) : null;
 }
 
-function isMultiPage() {
-  return !!document.querySelector('.feed-card__type-badge')?.textContent?.includes('multi') || !!document.querySelector('[data-multi-modules-root]');
+function timeText(value) {
+  const date = value?.toDate?.() || value;
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '방금';
+  const diff = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (diff < 60) return '방금';
+  if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`;
+  return date.toLocaleDateString('ko-KR');
 }
 
 function renderVoteModule(post) {
@@ -128,18 +134,44 @@ async function fetchItems(postId, kind) {
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
 
+function renderMultiReplyList(replies) {
+  if (!replies.length) return `<div class="multi-empty">아직 답글이 없습니다.</div>`;
+  return replies.map(r => `
+    <div class="multi-reply-item">
+      <div class="multi-reply-item__avatar">${esc((r.authorName || '?')[0])}</div>
+      <div class="multi-reply-item__body">
+        <div class="multi-reply-item__meta"><b>${esc(r.authorName || '익명')}</b><span>${timeText(r.createdAt)}</span></div>
+        <div class="multi-reply-item__text">${esc(r.text || '').replace(/\n/g, '<br>')}</div>
+      </div>
+    </div>`).join('');
+}
+
 function renderItemList(items, kind) {
   if (!items.length) return `<div class="multi-empty">아직 참여글이 없습니다.</div>`;
   return items.map(item => {
     let body = '';
+    const reactions = item.reactions || {};
     if (kind === 'acrostic' && Array.isArray(item.lines)) {
       body = item.lines.map(l => `<div class="multi-item-line"><b>${esc(l.char)}</b><span>${esc(l.line)}</span></div>`).join('');
     } else {
       body = `<div class="multi-item-text">${esc(item.text || '').replace(/\n/g, '<br>')}</div>`;
     }
-    return `<div class="multi-participation-item">
+    return `<div class="multi-participation-item" data-multi-kind="${kind}" data-multi-item-id="${item.id}">
       ${body}
-      <div class="multi-item-meta">${esc(item.authorName || '익명')}</div>
+      <div class="multi-item-meta">${esc(item.authorName || '익명')} · ${timeText(item.createdAt)}</div>
+      <div class="multi-item-actions">
+        <button type="button" data-multi-react="like">👍 <b>${Number(reactions.like || 0) || ''}</b></button>
+        <button type="button" data-multi-react="funny">😂 <b>${Number(reactions.funny || 0) || ''}</b></button>
+        <button type="button" data-multi-react="fire">🔥 <b>${Number(reactions.fire || 0) || ''}</b></button>
+        <button type="button" data-multi-reply-toggle>답글 <b>${Number(item.replyCount || 0) || ''}</b></button>
+      </div>
+      <div class="multi-replies">
+        <div class="multi-replies__list"></div>
+        <div class="multi-replies__form">
+          <input class="multi-replies__input" maxlength="300" placeholder="답글을 입력하세요">
+          <button type="button" class="multi-replies__submit">등록</button>
+        </div>
+      </div>
     </div>`;
   }).join('');
 }
@@ -152,6 +184,7 @@ async function refreshList(postId, kind) {
   try {
     const items = await fetchItems(postId, kind);
     el.innerHTML = renderItemList(items, kind);
+    bindMultiItemActions(postId, kind);
   } catch {
     el.innerHTML = `<div class="multi-empty">불러오지 못했어요.</div>`;
   }
@@ -163,11 +196,89 @@ async function addParticipation(postId, kind, data) {
     ...data,
     authorId: auth.currentUser.uid,
     authorName: appState.nickname || auth.currentUser.displayName || '익명',
+    reactions: {},
+    replyCount: 0,
     createdAt: serverTimestamp(),
   });
   await updateDoc(doc(db, 'feeds', postId), { commentCount: increment(1) }).catch(() => {});
   toast.success('참여글을 올렸어요!');
   await refreshList(postId, kind);
+}
+
+function itemRef(postId, kind, itemId) {
+  return doc(db, 'feeds', postId, 'multi_' + kind, itemId);
+}
+
+async function refreshReplies(postId, kind, itemId, box) {
+  const list = box.querySelector('.multi-replies__list');
+  if (!list) return;
+  list.innerHTML = `<div class="multi-empty">불러오는 중...</div>`;
+  try {
+    const snap = await getDocs(query(collection(db, 'feeds', postId, 'multi_' + kind, itemId, 'replies'), orderBy('createdAt', 'asc')));
+    list.innerHTML = renderMultiReplyList(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+  } catch {
+    list.innerHTML = `<div class="multi-empty">답글을 불러오지 못했어요.</div>`;
+  }
+}
+
+function bindMultiItemActions(postId, kind) {
+  document.querySelectorAll(`.multi-participation-item[data-multi-kind="${kind}"]`).forEach(item => {
+    if (item.dataset.actionReady === '1') return;
+    item.dataset.actionReady = '1';
+    const itemId = item.dataset.multiItemId;
+
+    item.querySelectorAll('[data-multi-react]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!auth.currentUser) { navigate('/login'); return; }
+        const key = btn.dataset.multiReact;
+        try {
+          await updateDoc(itemRef(postId, kind, itemId), { [`reactions.${key}`]: increment(1) });
+          const b = btn.querySelector('b');
+          b.textContent = String((Number(b.textContent || 0) || 0) + 1);
+        } catch (error) {
+          console.error(error);
+          toast.error('반응 등록에 실패했어요.');
+        }
+      });
+    });
+
+    const box = item.querySelector('.multi-replies');
+    item.querySelector('[data-multi-reply-toggle]')?.addEventListener('click', async () => {
+      const open = !box.classList.contains('open');
+      box.classList.toggle('open', open);
+      if (open) await refreshReplies(postId, kind, itemId, box);
+      if (open) box.querySelector('.multi-replies__input')?.focus();
+    });
+
+    const send = async () => {
+      if (!auth.currentUser) { navigate('/login'); return; }
+      const input = box.querySelector('.multi-replies__input');
+      const text = input.value.trim();
+      if (!text) { toast.warn('답글을 입력해주세요'); return; }
+      try {
+        await addDoc(collection(db, 'feeds', postId, 'multi_' + kind, itemId, 'replies'), {
+          text,
+          authorId: auth.currentUser.uid,
+          authorName: appState.nickname || auth.currentUser.displayName || '익명',
+          createdAt: serverTimestamp(),
+        });
+        await updateDoc(itemRef(postId, kind, itemId), { replyCount: increment(1) }).catch(() => {});
+        input.value = '';
+        toast.success('답글을 남겼어요');
+        await refreshReplies(postId, kind, itemId, box);
+      } catch (error) {
+        console.error(error);
+        toast.error('답글 등록에 실패했어요.');
+      }
+    };
+    item.querySelector('.multi-replies__submit')?.addEventListener('click', send);
+    item.querySelector('.multi-replies__input')?.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        send();
+      }
+    });
+  });
 }
 
 function setupEvents(post) {
