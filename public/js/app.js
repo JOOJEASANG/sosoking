@@ -5,7 +5,6 @@ import { renderBottomNav } from './components/bottom-nav.js';
 import { renderSidebar } from './components/sidebar.js';
 import { initToast } from './components/toast.js';
 import { appState } from './state.js';
-import './secure-feed-actions.js';
 import './secure-interactions-actions.js';
 import './acrostic-enhancer.js';
 import './initial-game-enhancer.js';
