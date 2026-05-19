@@ -549,7 +549,6 @@
 /* ── 이미지 갤러리 ── */
 .detail-gallery {
   display: grid; gap: 3px; margin: 0;
-  max-height: 480px; overflow: hidden;
 }
 .detail-gallery--1 { grid-template-columns: 1fr; }
 .detail-gallery--2 { grid-template-columns: 1fr 1fr; }
@@ -559,12 +558,17 @@
 .detail-gallery__thumb {
   position: relative; overflow: hidden; cursor: pointer;
   background: var(--color-surface-2);
+  min-height: 140px;
 }
+.detail-gallery--1 .detail-gallery__thumb { min-height: 280px; max-height: 480px; }
+.detail-gallery--2 .detail-gallery__thumb { min-height: 180px; }
+.detail-gallery--3 .detail-gallery__thumb,
+.detail-gallery--4 .detail-gallery__thumb { min-height: 140px; }
 .detail-gallery__thumb img {
+  position: absolute; inset: 0;
   width: 100%; height: 100%; object-fit: cover; display: block;
-  transition: transform 0.2s; min-height: 140px;
+  transition: transform 0.2s;
 }
-.detail-gallery--1 .detail-gallery__thumb img { min-height: 320px; max-height: 480px; }
 .detail-gallery__thumb:hover img { transform: scale(1.03); }
 .detail-gallery__more {
   position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;

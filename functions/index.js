@@ -151,7 +151,21 @@ exports.onFeedPostCreate = onDocumentCreated(
         model: 'gemini-2.5-flash',
         generationConfig: { thinkingConfig: { thinkingBudget: 0 } },
       });
-      const prompt = `다음 커뮤니티 게시물을 검토하세요. 반드시 JSON만 출력하세요.\n\n게시물:\n${textToCheck.slice(0, 800)}\n\n검토 기준: 타인 비방/욕설/혐오, 개인정보 노출, 스팸/광고, 불법 콘텐츠\n\n{\n  "safe": true,\n  "reason": null,\n  "tags": ["자동태그1", "자동태그2"],\n  "summary": "한 줄 요약 (20자 이내)"\n}`;
+      const prompt = `소소킹(한국 유머/게임 커뮤니티) 게시물을 검토하세요. 반드시 JSON만 출력하세요.
+
+게시물:
+${textToCheck.slice(0, 800)}
+
+[허용] 가벼운 인터넷 슬랭: 미친, 개웃김, ㅋㅋ, 대박, 헐, 존나웃김, ㅅㅂ, 아 씨, 미쳤다 등 감탄/유머 표현
+[허용] 놀이 유형 이름: 미친작명소, 억까재판, 막장킹 등 사이트 고유 명칭
+[차단] 특정인 신상 공개·협박·성희롱·혐오, 상업 광고/스팸, 명백한 불법 콘텐츠
+
+{
+  "safe": true,
+  "reason": null,
+  "tags": ["자동태그1", "자동태그2"],
+  "summary": "한 줄 요약 (20자 이내)"
+}`;
       const result = await model.generateContent(prompt);
       const raw = result.response.text().trim().replace(/```json|```/g, '').trim();
       const analysis = JSON.parse(raw);
@@ -200,7 +214,18 @@ exports.onReportCreate = onDocumentCreated(
         generationConfig: { thinkingConfig: { thinkingBudget: 0 } },
       });
       const result = await model.generateContent(
-        `신고된 게시물을 검토하세요. 반드시 JSON만 출력하세요.\n\n신고 사유: ${report.reason || ''}\n게시물 내용:\n${textToCheck.slice(0, 600)}\n\n판단: clear_violation(명백한 위반→숨김), review_needed(검토 필요), no_action(정상)\n\n{"action": "clear_violation", "reason": "판단 근거 한 문장"}`
+        `소소킹(한국 유머/게임 커뮤니티) 신고 게시물을 검토하세요. 반드시 JSON만 출력하세요.
+
+신고 사유: ${report.reason || ''}
+게시물 내용:
+${textToCheck.slice(0, 600)}
+
+[허용] 미친·개웃김·ㅅㅂ 등 가벼운 인터넷 슬랭, 유머·과장 표현, 사이트 게임 명칭
+[차단] 특정인 신상·협박·성희롱·혐오, 광고/스팸, 명백한 불법 콘텐츠
+
+판단: clear_violation(명백한 위반→숨김), review_needed(검토 필요), no_action(정상)
+
+{"action": "no_action", "reason": "판단 근거 한 문장"}`
       );
       const raw = result.response.text().trim().replace(/```json|```/g, '').trim();
       const analysis = JSON.parse(raw);
@@ -245,6 +270,38 @@ exports.scheduledDailyMission = onSchedule(
     }
   }
 );
+
+// ── AI 폼 데이터 생성 (일일 질문 카드 자동 입력) ──
+exports.generateFormContent = onCall({ region: 'asia-northeast3', secrets: [geminiKey], timeoutSeconds: 30 }, async (request) => {
+  const { type, question } = request.data || {};
+  if (!type || !question) throw new Error('type과 question이 필요해요');
+
+  const apiKey = await getAiKey();
+  if (!apiKey) throw new Error('AI API 키가 없어요');
+
+  const promptMap = {
+    vote: `소소킹 커뮤니티에 올릴 투표(골라킹) 게시글을 만들어줘.\n주제 힌트: "${question}"\n재미있고 공감 가는 투표여야 해. 반드시 JSON만 출력:\n{"title":"제목(50자이내)","desc":"투표 상황 설명(70자이내)","options":["선택지1","선택지2","선택지3","선택지4"]}`,
+    crazy_court: `소소킹 커뮤니티에 올릴 억까재판 게시글을 만들어줘.\n주제 힌트: "${question}"\n황당하고 공감 가는 억울한 상황이어야 해. 반드시 JSON만 출력:\n{"title":"재판 제목(50자이내)","desc":"억울한 상황 설명(100자이내)","evidence":"결정적 증거 또는 변명(60자이내)"}`,
+    initial_game: `소소킹 커뮤니티에 올릴 초성게임 게시글을 만들어줘.\n주제 힌트: "${question}"\n재미있고 다양하게 맞힐 수 있는 초성이어야 해. 반드시 JSON만 출력:\n{"initials":"초성(2~5글자,한글자음만,예:ㅅㅅㅋ)","desc":"힌트 설명(60자이내,정답을 직접 말하지 않고)"}`,
+    acrostic: `소소킹 커뮤니티에 올릴 삼행시짓기 게시글을 만들어줘.\n주제 힌트: "${question}"\n참여하기 재미있는 3~5글자 제시어여야 해. 반드시 JSON만 출력:\n{"keyword":"3~5글자 한국어 제시어(예:소소킹)","desc":"삼행시 분위기 설명(60자이내)"}`,
+    naming: `소소킹 커뮤니티에 올릴 미친작명소 게시글을 만들어줘.\n주제 힌트: "${question}"\n이름 붙이기 재미있는 황당하거나 공감 가는 상황이어야 해. 반드시 JSON만 출력:\n{"title":"게시글 제목(50자이내)","desc":"이름 붙일 상황 설명(100자이내)"}`,
+    relay: `소소킹 커뮤니티에 올릴 막장킹(이어쓰기) 게시글을 만들어줘.\n주제 힌트: "${question}"\n계속 이어쓰고 싶은 흥미로운 막장 시작 문장이어야 해. 반드시 JSON만 출력:\n{"title":"게시글 제목(50자이내)","start":"첫 문장(80자이내,막장스럽게)","desc":"배경 상황 설명(70자이내)","characters":"주요 등장인물(예:나,팀장,친구)"}`,
+  };
+
+  const prompt = promptMap[type];
+  if (!prompt) throw new Error(`지원하지 않는 유형: ${type}`);
+
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({
+    model: 'gemini-2.5-flash',
+    generationConfig: { thinkingConfig: { thinkingBudget: 0 } },
+  });
+  const result = await model.generateContent(prompt);
+  const raw = result.response.text().trim().replace(/```json|```/g, '').trim();
+  const data = JSON.parse(raw);
+  await logAiUsage();
+  return { ok: true, data };
+});
 
 // ── 스케줄: 매주 월요일 오전 9시 KST 주간 보고서 ──
 exports.scheduledWeeklyReport = onSchedule(

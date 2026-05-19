@@ -20,6 +20,30 @@ const QUICK_TYPES = [
   { key: 'acrostic',     icon: '✍️', label: '삼행시짓기', desc: '제시어로 삼·사·오행시 짓기' },
 ];
 
+const DAILY_QUESTIONS = [
+  { emoji: '🗳️', q: '치킨 vs 피자, 평생 하나만 먹어야 한다면?',              type: 'vote' },
+  { emoji: '😂', q: '나만 이런가요? 밥 먹자마자 다음 끼니 고민함 😅',         type: 'vote' },
+  { emoji: '⚖️', q: '늦잠 자서 지각한 건 진짜 억까 아닌가요? 재판 열어봐요', type: 'crazy_court' },
+  { emoji: '🔤', q: '요즘 머릿속에 맴도는 단어, 초성만 살짝 올려봐요',        type: 'initial_game' },
+  { emoji: '✍️', q: '오늘 기분 한 줄로? 소소킹으로 삼행시 어때요',            type: 'acrostic' },
+  { emoji: '😜', q: '오늘 본 가장 황당한 장면에 이름 붙여봐요',               type: 'naming' },
+  { emoji: '🎭', q: '오늘 있었던 황당한 일, 막장킹으로 이어쓰기 해봐요',      type: 'relay' },
+  { emoji: '🗳️', q: '아침형 인간 vs 저녁형 인간, 당신은?',                   type: 'vote' },
+  { emoji: '⚖️', q: '에어컨 온도 26도 vs 23도 — 지금 당장 억까재판 개정!',  type: 'crazy_court' },
+  { emoji: '🔤', q: '주변에서 제일 자주 눈에 띄는 초성 3글자는 뭔가요?',      type: 'initial_game' },
+  { emoji: '😜', q: '오늘 점심 메뉴에 기막힌 이름 하나만 붙여봐요',           type: 'naming' },
+  { emoji: '🎭', q: '우리 팀장님은 오늘도... 막장 이야기 같이 이어써봐요',    type: 'relay' },
+  { emoji: '🗳️', q: '라면 vs 떡볶이, 자정 야식 원탑은?',                    type: 'vote' },
+  { emoji: '✍️', q: '이번 주 키워드로 삼행시 한 줄씩 모아봐요',              type: 'acrostic' },
+];
+
+function getDailyQuestion() {
+  const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
+  const start = new Date(Date.UTC(kst.getUTCFullYear(), 0, 1));
+  const day = Math.floor((kst - start) / 86400000);
+  return DAILY_QUESTIONS[day % DAILY_QUESTIONS.length];
+}
+
 const WEEKLY_WORDS = [
   '소소킹', '킹받네', '라면왕', '웃참패',
   '월요일', '퇴근길', '대반전', '편의점',
@@ -149,12 +173,20 @@ export async function renderHome() {
         </div>
       </div>`;
 
-    const missionHTML = '';
+    const dq = getDailyQuestion();
+    const dailyHTML = `
+      <div class="home-daily" data-type-quick="${escHtml(dq.type)}" data-q="${escHtml(dq.q)}">
+        <div class="home-daily__left">
+          <div class="home-daily__badge">오늘의 소소한 질문 ✨</div>
+          <div class="home-daily__q">${dq.emoji} ${escHtml(dq.q)}</div>
+        </div>
+        <button class="home-daily__btn">올리기 →</button>
+      </div>`;
 
     const quickHTML = `
       <div class="home-section-header">
         <span class="home-section-title">⚡ 대표 놀이 만들기</span>
-        <span class="home-section-sub">운영 유형을 6개로 단순화했어요</span>
+        <span class="home-section-sub">뭘 올릴지 모르겠다면 위 질문부터 🙂</span>
       </div>
       <div class="home-quick-grid">
         ${QUICK_TYPES.map(t => `
@@ -197,7 +229,7 @@ export async function renderHome() {
       <div class="home-dash page-enter">
         ${heroHTML}
         ${statsHTML}
-        ${missionHTML}
+        ${dailyHTML}
         ${quickHTML}
         ${rankHTML}
         ${recentHTML}
@@ -212,6 +244,10 @@ export async function renderHome() {
     el.querySelectorAll('[data-type-quick]').forEach(btn => {
       btn.addEventListener('click', () => navigate(`/write?type=${btn.dataset.typeQuick}`));
     });
+    el.querySelector('.home-daily')?.addEventListener('click', function() {
+      const q = encodeURIComponent(this.dataset.q || '');
+      navigate(`/write?type=${this.dataset.typeQuick}&ai=1&q=${q}`);
+    });
     el.querySelectorAll('[data-id]').forEach(item => {
       item.addEventListener('click', () => navigate(`/detail/${item.dataset.id}`));
     });
@@ -221,8 +257,9 @@ export async function renderHome() {
     el.innerHTML = `
       <div class="empty-state">
         <div class="empty-state__icon">⚠️</div>
-        <div class="empty-state__title">로딩 중 오류가 발생했어요</div>
-        <button class="btn btn--primary" style="margin-top:16px" id="btn-reload">새로고침</button>
+        <div class="empty-state__title">앗, 잠깐 오류가 났어요 😅</div>
+        <div class="empty-state__desc">잠시 후 다시 시도해볼까요?</div>
+        <button class="btn btn--primary" style="margin-top:16px" id="btn-reload">다시 불러오기</button>
       </div>`;
     el.querySelector('#btn-reload')?.addEventListener('click', () => location.reload());
   }

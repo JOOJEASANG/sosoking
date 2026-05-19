@@ -39,7 +39,7 @@ export async function renderFeed() {
         <div class="spinner"></div>
       </div>
       <div id="feed-end" style="display:none;text-align:center;padding:24px;font-size:13px;color:var(--color-text-muted)">
-        더 이상 글이 없어요
+        여기까지 다 봤어요 👀 이번엔 직접 올려볼까요?
       </div>
     </div>`;
 
@@ -157,9 +157,9 @@ async function loadPosts(reset = false) {
       if (listEl) listEl.innerHTML = `
         <div class="empty-state">
           <div class="empty-state__icon">${currentSearch ? '🔍' : '🌱'}</div>
-          <div class="empty-state__title">${currentSearch ? '검색 결과가 없어요' : '아직 글이 없어요'}</div>
-          <div class="empty-state__desc">${currentSearch ? '다른 검색어로 시도해보세요' : '첫 번째 놀이판을 열어보세요!'}</div>
-          ${!currentSearch ? `<button class="btn btn--primary" style="margin-top:16px" onclick="navigate('/write')">만들기</button>` : ''}
+          <div class="empty-state__title">${currentSearch ? `"${escHtml(currentSearch)}" 검색 결과가 없어요` : '아직 아무도 안 왔네요 😄'}</div>
+          <div class="empty-state__desc">${currentSearch ? '다른 검색어는 어때요?' : '첫 번째 놀이판 주인공이 되어볼까요?'}</div>
+          ${!currentSearch ? `<button class="btn btn--primary" style="margin-top:16px" onclick="navigate('/write')">놀이판 만들기</button>` : ''}
         </div>`;
       if (endEl) endEl.style.display = 'block';
     } else {
