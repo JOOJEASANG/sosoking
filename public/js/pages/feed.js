@@ -8,10 +8,20 @@ import { escHtml } from '../utils/helpers.js';
 const PRIMARY_TYPES = ['vote', 'naming', 'initial_game', 'crazy_court', 'relay', 'acrostic'];
 
 const TYPE_LABELS = {
-  balance:'골라킹', vote:'골라킹', battle:'골라킹', challenge24:'24시간챌린지', tournament:'이상형월드컵',
-  naming:'미친작명소', initial_game:'초성게임', acrostic:'미션 행시', drip:'한줄드립', cbattle:'댓글배틀', laugh:'웃참챌린지',
-  ox:'OX퀴즈', quiz:'미친퀴즈', crazy_court:'억까재판', relay:'막장킹', word_relay:'단어릴레이', random_battle:'랜덤대결',
+  multi:'만능 놀이글',
+  balance:'골라봐', vote:'골라봐', battle:'골라봐', challenge24:'24시간챌린지', tournament:'이상형월드컵',
+  naming:'미친작명소', initial_game:'초성게임', acrostic:'삼행시짓기', drip:'한줄드립', cbattle:'댓글배틀', laugh:'웃참챌린지',
+  ox:'OX퀴즈', quiz:'미친퀴즈', crazy_court:'억까재판', relay:'막장릴레이', word_relay:'단어릴레이', random_battle:'랜덤대결',
   howto:'노하우', story:'경험담', fail:'실패담', concern:'고민/질문',
+};
+
+const TYPE_TO_MULTI_MODULE = {
+  vote: 'vote',
+  naming: 'naming',
+  initial_game: 'quiz',
+  crazy_court: 'vote',
+  relay: 'relay',
+  acrostic: 'acrostic',
 };
 
 let lastDoc       = null;
@@ -120,6 +130,18 @@ function updateFilterUI() {
   });
 }
 
+function multiPostMatchesType(post, type) {
+  const moduleKey = TYPE_TO_MULTI_MODULE[type];
+  if (!moduleKey || post.type !== 'multi') return false;
+  return !!post.modules?.[moduleKey]?.enabled;
+}
+
+function postMatchesCurrentType(post) {
+  if (!currentType) return true;
+  if (post.type === currentType) return true;
+  return multiPostMatchesType(post, currentType);
+}
+
 async function loadPosts(reset = false) {
   if (isLoading) return;
   isLoading = true;
@@ -132,19 +154,23 @@ async function loadPosts(reset = false) {
 
   try {
     let constraints;
+    let pageSize;
 
     if (currentSearch) {
       const qEnd = currentSearch.slice(0, -1) + String.fromCharCode(currentSearch.charCodeAt(currentSearch.length - 1) + 1);
+      pageSize = 30;
       constraints = [
         where('title', '>=', currentSearch),
         where('title', '<',  qEnd),
         orderBy('title'),
-        limit(30),
+        limit(pageSize),
       ];
       if (!reset && lastDoc) constraints.push(startAfter(lastDoc));
     } else {
-      constraints = [orderBy('createdAt', 'desc'), limit(15)];
-      if (currentType) constraints.unshift(where('type', '==', currentType));
+      // 만능 놀이글은 type이 multi로 저장되므로 기존 type where 필터를 쓰면 누락됩니다.
+      // 그래서 기본 시간순 목록을 가져온 뒤 클라이언트에서 기존 유형 + 만능 모듈을 함께 필터링합니다.
+      pageSize = currentType ? 60 : 15;
+      constraints = [orderBy('createdAt', 'desc'), limit(pageSize)];
       if (!reset && lastDoc) constraints.push(startAfter(lastDoc));
     }
 
@@ -153,22 +179,25 @@ async function loadPosts(reset = false) {
 
     if (reset && listEl) listEl.innerHTML = '';
 
+    const visibleDocs = snap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .filter(post => !post.hidden)
+      .filter(post => currentSearch ? true : postMatchesCurrentType(post));
+
     if (snap.empty && reset) {
-      if (listEl) listEl.innerHTML = `
-        <div class="empty-state">
-          <div class="empty-state__icon">${currentSearch ? '🔍' : '🌱'}</div>
-          <div class="empty-state__title">${currentSearch ? `"${escHtml(currentSearch)}" 검색 결과가 없어요` : '아직 아무도 안 왔네요 😄'}</div>
-          <div class="empty-state__desc">${currentSearch ? '다른 검색어는 어때요?' : '첫 번째 놀이판 주인공이 되어볼까요?'}</div>
-          ${!currentSearch ? `<button class="btn btn--primary" style="margin-top:16px" onclick="navigate('/write')">놀이판 만들기</button>` : ''}
-        </div>`;
+      if (listEl) listEl.innerHTML = renderEmptyState();
       if (endEl) endEl.style.display = 'block';
     } else {
-      snap.docs.filter(d => !d.data().hidden).forEach(d => {
-        const html = renderFeedCard({ id: d.id, ...d.data() });
+      visibleDocs.forEach(post => {
+        const html = renderFeedCard(post);
         if (listEl) listEl.insertAdjacentHTML('beforeend', html);
       });
+
+      if (visibleDocs.length === 0 && reset && listEl) {
+        listEl.innerHTML = renderEmptyState();
+      }
+
       lastDoc = snap.docs[snap.docs.length - 1];
-      const pageSize = currentSearch ? 30 : 15;
       if (snap.docs.length < pageSize && endEl) endEl.style.display = 'block';
     }
   } catch (e) {
@@ -177,6 +206,16 @@ async function loadPosts(reset = false) {
 
   if (loaderEl) loaderEl.style.display = 'none';
   isLoading = false;
+}
+
+function renderEmptyState() {
+  return `
+    <div class="empty-state">
+      <div class="empty-state__icon">${currentSearch ? '🔍' : '🌱'}</div>
+      <div class="empty-state__title">${currentSearch ? `"${escHtml(currentSearch)}" 검색 결과가 없어요` : '아직 아무도 안 왔네요 😄'}</div>
+      <div class="empty-state__desc">${currentSearch ? '다른 검색어는 어때요?' : '첫 번째 놀이판 주인공이 되어볼까요?'}</div>
+      ${!currentSearch ? `<button class="btn btn--primary" style="margin-top:16px" onclick="navigate('/write')">놀이판 만들기</button>` : ''}
+    </div>`;
 }
 
 function setupInfiniteScroll() {
