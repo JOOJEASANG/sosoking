@@ -38,23 +38,24 @@ async function attachAuthorIcon(snapshot) {
   }, { merge: true });
 }
 
-const attachFeedAuthorIcon = onDocumentCreated({ region: REGION, document: 'feeds/{postId}' }, event => {
+// 기존 배포 함수명과 트리거 타입이 충돌하지 않도록 고유한 신규 함수명으로 export합니다.
+const syncFeedAuthorIconOnCreate = onDocumentCreated({ region: REGION, document: 'feeds/{postId}' }, event => {
   if (!event.data) return null;
   return attachAuthorIcon(event.data);
 });
 
-const attachCommentAuthorIcon = onDocumentCreated({ region: REGION, document: 'feeds/{postId}/comments/{commentId}' }, event => {
+const syncCommentAuthorIconOnCreate = onDocumentCreated({ region: REGION, document: 'feeds/{postId}/comments/{commentId}' }, event => {
   if (!event.data) return null;
   return attachAuthorIcon(event.data);
 });
 
-const attachAcrosticAuthorIcon = onDocumentCreated({ region: REGION, document: 'feeds/{postId}/acrostics/{acrosticId}' }, event => {
+const syncAcrosticAuthorIconOnCreate = onDocumentCreated({ region: REGION, document: 'feeds/{postId}/acrostics/{acrosticId}' }, event => {
   if (!event.data) return null;
   return attachAuthorIcon(event.data);
 });
 
 module.exports = {
-  attachFeedAuthorIcon,
-  attachCommentAuthorIcon,
-  attachAcrosticAuthorIcon,
+  syncFeedAuthorIconOnCreate,
+  syncCommentAuthorIconOnCreate,
+  syncAcrosticAuthorIconOnCreate,
 };
