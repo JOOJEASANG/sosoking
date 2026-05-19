@@ -706,6 +706,17 @@ body:has(.admin-layout) .page-container {
     text-align: center;
   }
 
+  /* 모바일: PC 전체 라벨 숨기고 짧은 라벨 표시 */
+  .admin-label-full { display: none; }
+  .admin-label-short {
+    display: block;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center;
+  }
+
   #admin-content {
     min-height: calc(100vh - 130px);
     padding: 16px 14px 4px;
