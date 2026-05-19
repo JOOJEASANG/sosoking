@@ -1,4 +1,4 @@
-/* bottom-nav.js — 모바일 하단 탭바 (5개 항목) */
+/* bottom-nav.js — 모바일 하단 탭바 */
 import { navigate } from '../router.js';
 
 function iconHome() {
@@ -13,9 +13,9 @@ function iconFeed() {
   </svg>`;
 }
 
-function iconWrite() {
-  return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
+function iconLand() {
+  return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 12h.008v.008H6.75V12zm10.5 0h.008v.008h-.008V12zM9 15.75h6m-9.75 3h13.5A2.25 2.25 0 0021 16.5v-9A2.25 2.25 0 0018.75 5.25H5.25A2.25 2.25 0 003 7.5v9a2.25 2.25 0 002.25 2.25z"/>
   </svg>`;
 }
 
@@ -34,7 +34,7 @@ function iconAccount() {
 const NAV_ITEMS = [
   { id: 'home',    label: '홈',   path: '/',        icon: iconHome()    },
   { id: 'feed',    label: '탐색', path: '/feed',    icon: iconFeed()    },
-  { id: 'write',   label: null,   path: '/write',   isCenter: true      },
+  { id: 'land',    label: null,   path: '/sosoland', isCenter: true    },
   { id: 'hall',    label: '명예의전당', path: '/hall', icon: iconHall() },
   { id: 'account', label: '내정보', path: '/account', icon: iconAccount() },
 ];
@@ -49,10 +49,12 @@ export function renderBottomNav() {
     <div class="bottom-nav__inner">
       ${NAV_ITEMS.map(item => {
         if (item.isCenter) {
+          const isActive = path === item.path;
           return `
             <div class="bottom-nav__write">
-              <button class="bottom-nav__write-btn" data-nav-path="/write" aria-label="놀이판 만들기">
-                ${iconWrite()}
+              <button class="bottom-nav__write-btn${isActive ? ' active' : ''}" data-nav-path="${item.path}" aria-label="소소랜드">
+                ${iconLand()}
+                <span class="bottom-nav__center-label">소소랜드</span>
               </button>
             </div>`;
         }
@@ -69,18 +71,16 @@ export function renderBottomNav() {
     </div>
   `;
 
-  /* ── 이벤트 ── */
   el.querySelectorAll('[data-nav-path]').forEach(btn => {
     btn.addEventListener('click', () => navigate(btn.dataset.navPath));
   });
 }
 
-/* ── 라우트 변경 시 활성 상태 업데이트 ── */
 window.addEventListener('hashchange', () => {
   const el = document.getElementById('bottom-nav');
   if (!el) return;
   const path = window.location.hash.slice(1).split('?')[0] || '/';
-  el.querySelectorAll('.bottom-nav__item').forEach(btn => {
+  el.querySelectorAll('[data-nav-path]').forEach(btn => {
     const isActive = btn.dataset.navPath === path;
     btn.classList.toggle('active', isActive);
     btn.setAttribute('aria-current', isActive ? 'page' : 'false');
