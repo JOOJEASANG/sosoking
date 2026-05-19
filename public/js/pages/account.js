@@ -14,9 +14,34 @@ import { renderFeedCard } from '../components/feed-card.js';
 import { appState } from '../state.js';
 import { setMeta } from '../utils/seo.js';
 import { renderSidebar } from '../components/sidebar.js';
+import { normalizeNicknameIcon } from '../utils/nickname-icon.js';
+
+function renderAccountAvatar(user, nickname) {
+  const icon = normalizeNicknameIcon(appState.nicknameIcon);
+  if (icon?.type === 'image') {
+    return `<img class="account-avatar__img" src="${escHtml(icon.url)}" alt="" aria-hidden="true">`;
+  }
+  if (icon?.type === 'emoji') {
+    return `<span class="account-avatar__emoji" aria-hidden="true">${escHtml(icon.value)}</span>`;
+  }
+  if (user.photoURL) {
+    return `<img class="account-avatar__img" src="${escHtml(user.photoURL)}" alt="" aria-hidden="true">`;
+  }
+  return escHtml((nickname || '나')[0]);
+}
+
+function tabButton(activeTab, key, icon, label, extra = '') {
+  const active = activeTab === key;
+  return `
+    <button class="account-tab ${active ? 'active' : ''}" data-tab="${key}" aria-label="${label}" title="${label}">
+      <span class="account-tab__icon">${icon}</span>
+      <span class="account-tab__label">${label}</span>
+      ${extra}
+    </button>`;
+}
 
 export async function renderAccount() {
-  setMeta('내 계정');
+  setMeta('내 정보');
   const el   = document.getElementById('page-content');
   const user = appState.user;
 
@@ -54,13 +79,11 @@ export async function renderAccount() {
   const activeTab = new URLSearchParams(window.location.hash.split('?')[1] || '').get('tab') || 'posts';
 
   el.innerHTML = `
-    <div style="max-width:720px;margin:0 auto">
-      <div class="card" style="margin-bottom:16px">
+    <div class="account-page-wrap">
+      <div class="card account-profile-card">
         <div class="account-header">
-          <div class="avatar" style="width:72px;height:72px;font-size:24px;font-weight:800">
-            ${user.photoURL
-              ? `<img src="${user.photoURL}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
-              : (nickname[0] || '나')}
+          <div class="avatar account-avatar ${normalizeNicknameIcon(appState.nicknameIcon) || user.photoURL ? 'avatar--nickname-icon' : ''}" style="width:72px;height:72px;font-size:24px;font-weight:800">
+            ${renderAccountAvatar(user, nickname)}
           </div>
           <div class="account-nickname">${escHtml(nickname)}</div>
           <div class="account-level">
@@ -78,21 +101,19 @@ export async function renderAccount() {
             </div>
           </div>
         </div>
-        <div class="card__footer" style="display:flex;gap:8px">
-          ${appState.isAdmin ? `<button class="btn btn--primary btn--sm" onclick="navigate('/admin')">⚙️ 관리자 페이지</button>` : ''}
+        <div class="card__footer account-profile-actions">
+          ${appState.isAdmin ? `<button class="btn btn--primary btn--sm" onclick="navigate('/admin')">⚙️ 관리자</button>` : ''}
           <button class="btn btn--ghost btn--sm" id="btn-logout">로그아웃</button>
         </div>
       </div>
 
-      <div class="account-tabs">
-        <button class="account-tab ${activeTab === 'posts' ? 'active' : ''}" data-tab="posts">📝 내 글 (${postCount})</button>
-        <button class="account-tab ${activeTab === 'scraps' ? 'active' : ''}" data-tab="scraps">🔖 스크랩</button>
-        <button class="account-tab ${activeTab === 'stats' ? 'active' : ''}" data-tab="stats">📊 통계</button>
-        <button class="account-tab ${activeTab === 'follows' ? 'active' : ''}" data-tab="follows">👥 팔로우</button>
-        <button class="account-tab ${activeTab === 'notifications' ? 'active' : ''}" data-tab="notifications">
-          🔔 알림${appState.unreadNotifications > 0 ? ` <span class="notif-badge-sm">${appState.unreadNotifications}</span>` : ''}
-        </button>
-        <button class="account-tab ${activeTab === 'settings' ? 'active' : ''}" data-tab="settings">⚙️ 설정</button>
+      <div class="account-tabs" aria-label="내 정보 메뉴">
+        ${tabButton(activeTab, 'posts', '📝', `내 글 ${postCount ? postCount : ''}`)}
+        ${tabButton(activeTab, 'scraps', '🔖', '스크랩')}
+        ${tabButton(activeTab, 'stats', '📊', '통계')}
+        ${tabButton(activeTab, 'follows', '👥', '팔로우')}
+        ${tabButton(activeTab, 'notifications', '🔔', '알림', appState.unreadNotifications > 0 ? `<span class="notif-badge-sm account-tab__badge">${appState.unreadNotifications}</span>` : '')}
+        ${tabButton(activeTab, 'settings', '⚙️', '설정')}
       </div>
       <div id="account-tab-content"></div>
     </div>`;
@@ -113,8 +134,8 @@ export async function renderAccount() {
         ? myPosts.map(p => renderFeedCard(p)).join('')
         : `<div class="empty-state"><div class="empty-state__icon">✏️</div>
            <div class="empty-state__title">아직 올린 글이 없어요</div>
-           <div class="empty-state__desc">뭐든 괜찮아요, 소소한 거 하나만 올려봐요 🙂</div>
-           <button class="btn btn--primary" style="margin-top:16px" onclick="navigate('/write')">놀이판 만들기</button></div>`;
+           <div class="empty-state__desc">피드에 첫 글을 올려보세요.</div>
+           <button class="btn btn--primary" style="margin-top:16px" onclick="navigate('/write')">+ 글쓰기</button></div>`;
 
     } else if (tab === 'scraps') {
       const scrapSnap = await getDocs(
@@ -195,7 +216,7 @@ export async function renderAccount() {
         ? `<div class="notif-list">${notifs.map(n => renderNotifItem(n)).join('')}</div>`
         : `<div class="empty-state"><div class="empty-state__icon">🔔</div>
            <div class="empty-state__title">아직 알림이 없어요</div>
-           <div class="empty-state__desc">글을 올리면 반응이 오기 시작해요 👀</div></div>`;
+           <div class="empty-state__desc">글을 올리면 반응이 오기 시작해요.</div></div>`;
 
     } else if (tab === 'stats') {
       await renderStatsTab(content, user.uid);
@@ -212,7 +233,10 @@ export async function renderAccount() {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.account-tab').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      renderTab(btn.dataset.tab);
+      const tab = btn.dataset.tab;
+      const nextHash = `#/account?tab=${tab}`;
+      if (window.location.hash !== nextHash) history.replaceState(null, '', nextHash);
+      renderTab(tab);
     });
   });
 
@@ -295,7 +319,6 @@ function setupNicknameEdit(user, currentNickname) {
     saveBtn.disabled = true;
     saveBtn.textContent = '저장 중...';
     try {
-      // 닉네임 중복 확인
       const nickDoc = await getDoc(doc(db, 'nicknames', newNick));
       if (nickDoc.exists() && nickDoc.data().uid !== user.uid) {
         toast.error('이미 사용 중인 닉네임이에요');
@@ -303,20 +326,15 @@ function setupNicknameEdit(user, currentNickname) {
       }
 
       const batch = writeBatch(db);
-      // 새 닉네임 등록
       batch.set(doc(db, 'nicknames', newNick), { uid: user.uid, createdAt: serverTimestamp() });
-      // 기존 닉네임 삭제 (있을 경우)
       if (currentNickname && currentNickname !== newNick) {
         batch.delete(doc(db, 'nicknames', currentNickname));
       }
-      // users 문서 업데이트
       batch.update(doc(db, 'users', user.uid), { nickname: newNick, updatedAt: serverTimestamp() });
       await batch.commit();
 
-      // Firebase Auth displayName 업데이트
       await updateProfile(user, { displayName: newNick });
 
-      // appState 및 사이드바 즉시 갱신
       if (appState.user) appState.user.displayName = newNick;
       appState.nickname = newNick;
       renderSidebar();
@@ -342,7 +360,6 @@ function setupWithdrawal(user, isGoogle) {
     if (!confirmed) return;
 
     try {
-      // 재인증 필요 (Firebase 보안 정책)
       if (isGoogle) {
         const provider = new GoogleAuthProvider();
         await reauthenticateWithPopup(user, provider);
@@ -353,7 +370,6 @@ function setupWithdrawal(user, isGoogle) {
         await reauthenticateWithCredential(user, credential);
       }
 
-      // Firestore 사용자 데이터 삭제
       await Promise.allSettled([
         deleteDoc(doc(db, 'users', user.uid)),
         deleteDoc(doc(db, 'nicknames', user.displayName || '')),
@@ -399,13 +415,13 @@ async function renderStatsTab(content, uid) {
     );
     const posts = postsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-    const catCounts = { golra: 0, usgyo: 0, malhe: 0 };
+    const typeCounts = { multi: 0, vote: 0, naming: 0, acrostic: 0, quiz: 0 };
     let totalReactions = 0, totalComments = 0, bestPost = null, bestScore = -1;
     const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);
     let weekPosts = 0;
 
     for (const p of posts) {
-      catCounts[p.cat] = (catCounts[p.cat] || 0) + 1;
+      typeCounts[p.type === 'multi' ? 'multi' : p.type] = (typeCounts[p.type === 'multi' ? 'multi' : p.type] || 0) + 1;
       totalReactions += p.reactions?.total || 0;
       totalComments += p.commentCount || 0;
       const score = (p.reactions?.total || 0) * 2 + (p.commentCount || 0) * 3;
@@ -414,44 +430,34 @@ async function renderStatsTab(content, uid) {
       if (d && d >= weekAgo) weekPosts++;
     }
 
-    const catMeta = [
-      { key: 'golra', label: '🎯 골라봐', color: 'var(--color-golra)' },
-      { key: 'usgyo', label: '😂 웃겨봐', color: 'var(--color-usgyo)' },
-      { key: 'malhe', label: '🎮 도전봐', color: 'var(--color-malhe)' },
+    const typeMeta = [
+      { key: 'multi', label: '🧩 피드 글', color: 'var(--color-primary)' },
+      { key: 'vote', label: '🗳️ 투표/판정', color: 'var(--color-golra)' },
+      { key: 'naming', label: '😜 미친작명소', color: 'var(--color-usgyo)' },
+      { key: 'acrostic', label: '✍️ 삼행시', color: 'var(--color-malhe)' },
+      { key: 'quiz', label: '🧠 퀴즈', color: 'var(--color-success)' },
     ];
     const total = posts.length || 1;
 
     content.innerHTML = `
       <div class="stats-page">
         <div class="stats-grid">
-          <div class="stats-card">
-            <div class="stats-card__num">${posts.length}</div>
-            <div class="stats-card__label">총 게시물</div>
-          </div>
-          <div class="stats-card">
-            <div class="stats-card__num" style="color:var(--color-primary)">${totalReactions}</div>
-            <div class="stats-card__label">받은 반응</div>
-          </div>
-          <div class="stats-card">
-            <div class="stats-card__num" style="color:var(--color-malhe)">${totalComments}</div>
-            <div class="stats-card__label">달린 댓글</div>
-          </div>
-          <div class="stats-card">
-            <div class="stats-card__num" style="color:var(--color-success)">${weekPosts}</div>
-            <div class="stats-card__label">이번 주 활동</div>
-          </div>
+          <div class="stats-card"><div class="stats-card__num">${posts.length}</div><div class="stats-card__label">총 게시물</div></div>
+          <div class="stats-card"><div class="stats-card__num" style="color:var(--color-primary)">${totalReactions}</div><div class="stats-card__label">받은 반응</div></div>
+          <div class="stats-card"><div class="stats-card__num" style="color:var(--color-malhe)">${totalComments}</div><div class="stats-card__label">달린 댓글</div></div>
+          <div class="stats-card"><div class="stats-card__num" style="color:var(--color-success)">${weekPosts}</div><div class="stats-card__label">이번 주 활동</div></div>
         </div>
 
         <div class="card" style="margin-top:16px">
           <div class="card__body">
-            <div style="font-size:14px;font-weight:800;margin-bottom:14px">📂 카테고리별 활동</div>
-            ${catMeta.map(c => `
+            <div style="font-size:14px;font-weight:800;margin-bottom:14px">📂 피드 활동</div>
+            ${typeMeta.map(c => `
               <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
-                <div style="width:72px;font-size:12px;font-weight:700">${c.label}</div>
+                <div style="width:92px;font-size:12px;font-weight:700">${c.label}</div>
                 <div style="flex:1;background:var(--color-surface-2);border-radius:4px;height:10px;overflow:hidden">
-                  <div style="height:100%;background:${c.color};width:${Math.round((catCounts[c.key]||0)/total*100)}%;transition:width 0.5s"></div>
+                  <div style="height:100%;background:${c.color};width:${Math.round((typeCounts[c.key]||0)/total*100)}%;transition:width 0.5s"></div>
                 </div>
-                <div style="width:40px;text-align:right;font-size:12px;font-weight:700;color:${c.color}">${catCounts[c.key]||0}개</div>
+                <div style="width:40px;text-align:right;font-size:12px;font-weight:700;color:${c.color}">${typeCounts[c.key]||0}개</div>
               </div>`).join('')}
           </div>
         </div>
@@ -517,8 +523,7 @@ async function renderFollowsTab(content, uid) {
 }
 
 export async function followUser(targetUid, targetName) {
-  const { auth: fbAuth, db: fbDb } = await import('../firebase.js');
-  const user = fbAuth.currentUser;
+  const user = auth.currentUser;
   if (!user) { toast.error('로그인이 필요해요'); return; }
   if (user.uid === targetUid) { toast.error('자신은 팔로우할 수 없어요'); return; }
   const followId = `${user.uid}_${targetUid}`;
@@ -530,7 +535,7 @@ export async function followUser(targetUid, targetName) {
       followedName: targetName || '익명',
       createdAt: serverTimestamp(),
     });
-    toast.success(`${targetName}님을 팔로우했어요 👋`);
+    toast.success(`${targetName}님을 팔로우했어요`);
   } catch { toast.error('팔로우에 실패했어요'); }
 }
 
