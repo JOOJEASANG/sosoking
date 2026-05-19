@@ -1,47 +1,7 @@
-import { appState } from './state.js';
 import { navigate } from './router.js';
-
-function isStandalone() {
-  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-}
-
-function openInstallPrompt() {
-  const prompt = appState.installPrompt;
-  if (!prompt) return;
-  prompt.prompt();
-  prompt.userChoice.then(({ outcome }) => {
-    if (outcome === 'accepted') {
-      appState.installPrompt = null;
-      removeInstallButtons();
-    }
-  }).catch(() => {});
-}
 
 function removeInstallButtons() {
   document.querySelectorAll('[data-pwa-install-shortcut]').forEach(el => el.remove());
-}
-
-function ensureHeaderInstallButton() {
-  if (!appState.installPrompt || isStandalone()) {
-    removeInstallButtons();
-    return;
-  }
-
-  const actions = document.querySelector('.site-header__actions');
-  if (!actions || actions.querySelector('[data-pwa-install-shortcut]')) return;
-
-  const btn = document.createElement('button');
-  btn.type = 'button';
-  btn.className = 'site-header__icon-btn pwa-install-shortcut';
-  btn.dataset.pwaInstallShortcut = 'header';
-  btn.title = '앱 설치';
-  btn.setAttribute('aria-label', '앱 설치');
-  btn.innerHTML = `
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="18" height="18" aria-hidden="true">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/>
-    </svg>`;
-  btn.addEventListener('click', openInstallPrompt);
-  actions.insertBefore(btn, actions.firstChild);
 }
 
 function ensureAdminWriteShortcut() {
@@ -60,7 +20,9 @@ function ensureAdminWriteShortcut() {
 }
 
 function installEnhancements() {
-  ensureHeaderInstallButton();
+  // 모바일 상단 앱 설치 버튼은 components/header.js의 빨간 "앱 설치" 버튼 하나만 사용합니다.
+  // 이전 보조 아이콘 버튼이 남아 있으면 즉시 제거해 중복 노출을 막습니다.
+  removeInstallButtons();
   ensureAdminWriteShortcut();
 }
 
