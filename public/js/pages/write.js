@@ -3,7 +3,7 @@ import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { collection, addDoc, doc, setDoc, serverTimestamp, Timestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { navigate, getQueryParams } from '../router.js';
 import { toast } from '../components/toast.js';
-import { initImageUploader, getUploadedImages } from '../components/image-uploader.js';
+import { initImageUploader, getUploadedImages, hasPendingImages } from '../components/image-uploader.js';
 import { setMeta } from '../utils/seo.js';
 import { appState } from '../state.js';
 
@@ -12,7 +12,7 @@ const CATEGORIES = [
   {
     key: 'golra', label: '골라봐', icon: '🎯', badge: '선택형', desc: '선택·투표',
     types: [
-      { key: 'vote',         icon: '🗳️', label: '골라킹',    desc: '투표·밸런스·선택지 배틀' },
+      { key: 'vote',         icon: '🗳️', label: '골라봐',    desc: '투표·밸런스·선택지 배틀' },
       { key: 'initial_game', icon: '🔤', label: '초성게임',   desc: '초성을 보고 단어 맞히기' },
     ],
   },
@@ -26,7 +26,7 @@ const CATEGORIES = [
   {
     key: 'malhe', label: '도전봐', icon: '🎮', badge: '도전형', desc: '퀴즈·릴레이·창작',
     types: [
-      { key: 'relay',    icon: '🎭', label: '막장킹',     desc: '한 문장씩 이어가는 스토리' },
+      { key: 'relay',    icon: '🎭', label: '막장릴레이',     desc: '한 문장씩 이어가는 스토리' },
       { key: 'acrostic', icon: '✍️', label: '삼행시짓기', desc: '제시어로 삼행시 도전' },
     ],
   },
@@ -516,7 +516,7 @@ function renderFormFields() {
       return commonTitle + `
         <div class="form-group">
           <label class="form-label">고민 내용 <span class="required">*</span></label>
-          <textarea id="f-desc" class="form-textarea" placeholder="예: 좋은 회사에서 오퍼를 받았는데 대학원도 합격했어요. 어떻게 하면 좋을까요?" rows="5" style="min-height:130px"></textarea>
+          <textarea id="f-desc" class="form-textarea" placeholder="고민을 입력하세요" rows="5"></textarea>
         </div>
         <div class="form-group">
           <label class="form-label">선택지 (투표 가능)</label>
@@ -650,7 +650,6 @@ function initFormLogic() {
     attachRemoveBtns(document.getElementById('option-list'));
   }
 
-  // 나만의 노하우 단계 관리
   if (type === 'howto') {
     const btnAddStep = document.getElementById('btn-add-step');
     if (btnAddStep) {
@@ -671,10 +670,6 @@ function initFormLogic() {
     }
   }
 
-  // 미친작명소 — 글자수 선택 시 custom input 토글
-  // naming — 글자수 선택 이벤트 (자유/3/5 세 가지만, 별도 입력 없음)
-
-  // 퀴즈 방식 토글
   if (type === 'quiz') {
     document.querySelectorAll('[name="quiz-mode"]').forEach(r => {
       r.addEventListener('change', () => {
@@ -769,7 +764,6 @@ function attachStepRemoveBtns() {
   stepsDiv.querySelectorAll('.howto-step-remove').forEach(btn => {
     btn.onclick = () => {
       btn.closest('.howto-step-row').remove();
-      // 번호 재정렬
       stepsDiv.querySelectorAll('.howto-step-num').forEach((num, i) => {
         num.textContent = i + 1;
       });
@@ -800,19 +794,17 @@ async function handleSubmit() {
   const tagsRaw  = document.getElementById('f-tags')?.value.trim()     || '';
   const tags     = tagsRaw.split(',').map(t => t.replace('#','').trim()).filter(Boolean);
 
-  // 유형별 추가 데이터 수집
   const extra = collectExtraData(type);
-  if (extra === null) return; // 유효성 실패
-
-  // 퀴즈 정답은 별도 secret 서브컬렉션에 저장
+  if (extra === null) return;
   const secretFields = extractSecretFields(type, extra);
 
-  const images = await getUploadedImages();
-
   btn.disabled = true;
-  btn.textContent = '올리는 중...';
+  btn.textContent = hasPendingImages() ? '사진 올리는 중...' : '올리는 중...';
 
   try {
+    const images = await getUploadedImages();
+    btn.textContent = '게시글 저장 중...';
+
     const postData = {
       type, cat,
       title, desc, tags,
@@ -842,16 +834,15 @@ async function handleSubmit() {
 
     localStorage.removeItem(`write-draft-${type}`);
     toast.success('올렸어요! 🎉');
-    navigate('/feed');
+    navigate(`/detail/${docRef.id}`);
   } catch (e) {
     console.error(e);
-    toast.error('올리기에 실패했어요. 다시 시도해주세요.');
+    toast.error(e.message || '올리기에 실패했어요. 다시 시도해주세요.');
     btn.disabled = false;
     btn.textContent = '올리기';
   }
 }
 
-// 메인 문서에서 정답 필드를 제거하고 반환 (secret 서브컬렉션용)
 function extractSecretFields(type, extra) {
   if (type === 'ox') {
     const secret = { answer: extra.answer, explanation: extra.explanation || '' };
@@ -897,7 +888,6 @@ function collectExtraData(type) {
     case 'naming': {
       const selected = document.querySelector('[name="naming-chars"]:checked');
       if (!selected) { toast.error('글자수를 선택해주세요'); return null; }
-      // 0 = 자유 작명 (글자수 제한 없음)
       const charCount = parseInt(selected.value);
       return { charCount };
     }
