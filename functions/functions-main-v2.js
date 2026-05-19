@@ -22,6 +22,7 @@ const weeklyAiSchedule = require('./weekly-ai-schedule-functions.js');
 const uploadImage = require('./upload-image-functions.js');
 const nicknameIcon = require('./nickname-icon-functions.js');
 const postOwner = require('./post-owner-functions.js');
+const postView = require('./post-view-functions.js');
 
 module.exports = {
   // Gemini 기반 관리자 AI 설정, 폼 자동 입력, 모더레이션, 리포트
@@ -67,4 +68,7 @@ module.exports = {
 
   // 작성자 본인 게시글 관리
   ...postOwner,
+
+  // 조회수 중복/관리자 보정
+  ...postView,
 };
