@@ -2,6 +2,7 @@
 import { appState } from '../state.js';
 import { navigate } from '../router.js';
 import { escHtml } from '../utils/helpers.js';
+import { normalizeNicknameIcon } from '../utils/nickname-icon.js';
 
 function isIOS() {
   return /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream;
@@ -55,6 +56,21 @@ function iconBell() {
   </svg>`;
 }
 
+function renderHeaderAvatar(user) {
+  const nickname = appState.nickname || user?.displayName || user?.email?.split('@')[0] || '나';
+  const icon = normalizeNicknameIcon(appState.nicknameIcon);
+  if (icon?.type === 'image') {
+    return `<img class="site-header__avatar-img" src="${escHtml(icon.url)}" alt="" aria-hidden="true">`;
+  }
+  if (icon?.type === 'emoji') {
+    return `<span class="site-header__avatar-emoji" aria-hidden="true">${escHtml(icon.value)}</span>`;
+  }
+  if (user?.photoURL) {
+    return `<img class="site-header__avatar-img" src="${escHtml(user.photoURL)}" alt="" aria-hidden="true">`;
+  }
+  return escHtml((nickname || '나')[0]);
+}
+
 export function renderHeader() {
   const el = document.getElementById('site-header');
   if (!el) return;
@@ -62,6 +78,7 @@ export function renderHeader() {
   const user   = appState.user;
   const dark   = isDark();
   const unread = appState.unreadNotifications || 0;
+  const hasNickIcon = !!normalizeNicknameIcon(appState.nicknameIcon) || !!user?.photoURL;
 
   el.innerHTML = `
     <div class="site-header__inner">
@@ -91,10 +108,10 @@ export function renderHeader() {
             ${iconBell()}
             ${unread > 0 ? `<span class="notif-badge">${unread > 99 ? '99+' : unread}</span>` : ''}
           </a>
-          <button class="site-header__icon-btn site-header__avatar" id="hdr-avatar"
+          <button class="site-header__icon-btn site-header__avatar ${hasNickIcon ? 'site-header__avatar--icon' : ''}" id="hdr-avatar"
             aria-label="내 정보"
             title="${escHtml(appState.nickname || user.displayName || '내 정보')}">
-            ${escHtml((appState.nickname || user.displayName || '나')[0])}
+            ${renderHeaderAvatar(user)}
           </button>
         ` : `
           <a href="#/login" class="btn btn--primary btn--sm">로그인</a>
@@ -103,7 +120,6 @@ export function renderHeader() {
     </div>
   `;
 
-  /* ── 이벤트 ── */
   el.querySelector('[data-logo-nav]')?.addEventListener('click', (e) => {
     e.preventDefault();
     navigate('/');
