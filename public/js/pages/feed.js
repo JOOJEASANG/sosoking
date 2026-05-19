@@ -1,27 +1,27 @@
 import { db } from '../firebase.js';
 import { collection, query, orderBy, limit, startAfter, getDocs, where } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import { getQueryParams } from '../router.js';
+import { getQueryParams, navigate } from '../router.js';
 import { renderFeedCard, renderSkeletonCards } from '../components/feed-card.js';
 import { setMeta } from '../utils/seo.js';
 import { escHtml } from '../utils/helpers.js';
 
-const PRIMARY_TYPES = ['vote', 'naming', 'initial_game', 'crazy_court', 'relay', 'acrostic'];
+const PRIMARY_TYPES = ['vote', 'naming', 'acrostic', 'quiz'];
 
 const TYPE_LABELS = {
-  multi:'만능 놀이글',
-  balance:'골라봐', vote:'골라봐', battle:'골라봐', challenge24:'24시간챌린지', tournament:'이상형월드컵',
-  naming:'미친작명소', initial_game:'초성게임', acrostic:'삼행시짓기', drip:'한줄드립', cbattle:'댓글배틀', laugh:'웃참챌린지',
-  ox:'OX퀴즈', quiz:'미친퀴즈', crazy_court:'억까재판', relay:'막장릴레이', word_relay:'단어릴레이', random_battle:'랜덤대결',
-  howto:'노하우', story:'경험담', fail:'실패담', concern:'고민/질문',
+  multi: '피드 글',
+  vote: '투표/판정',
+  naming: '미친작명소',
+  acrostic: '삼행시',
+  quiz: '퀴즈',
+  initial_game: '퀴즈',
+  crazy_court: '투표/판정',
 };
 
 const TYPE_TO_MULTI_MODULE = {
   vote: 'vote',
   naming: 'naming',
-  initial_game: 'quiz',
-  crazy_court: 'vote',
-  relay: 'relay',
   acrostic: 'acrostic',
+  quiz: 'quiz',
 };
 
 let lastDoc       = null;
@@ -31,7 +31,7 @@ let isLoading     = false;
 let scrollObserver = null;
 
 export async function renderFeed() {
-  setMeta('피드 · 전체 글');
+  setMeta('피드 · 멀티게시판');
   isLoading = false;
   if (scrollObserver) { scrollObserver.disconnect(); scrollObserver = null; }
   const el = document.getElementById('page-content');
@@ -42,6 +42,7 @@ export async function renderFeed() {
 
   el.innerHTML = `
     <div class="layout-main layout-main--full">
+      ${renderFeedHeader()}
       ${renderSearchBar()}
       ${renderFilterBar()}
       <div id="feed-list">${renderSkeletonCards(5)}</div>
@@ -52,6 +53,8 @@ export async function renderFeed() {
         여기까지 다 봤어요 👀 이번엔 직접 올려볼까요?
       </div>
     </div>`;
+
+  document.getElementById('btn-feed-write')?.addEventListener('click', () => navigate('/write'));
 
   await loadPosts(true);
   setupInfiniteScroll();
@@ -66,9 +69,7 @@ export async function renderFeed() {
     lastDoc = null;
     updateFilterUI();
     loadPosts(true);
-    if (q) {
-      document.getElementById('search-clear-btn')?.style.setProperty('display', 'inline-flex');
-    }
+    if (q) document.getElementById('search-clear-btn')?.style.setProperty('display', 'inline-flex');
   };
 
   searchInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') doSearch(); });
@@ -84,6 +85,17 @@ export async function renderFeed() {
   });
 
   attachTypeFilterListeners();
+}
+
+function renderFeedHeader() {
+  return `
+    <div class="feed-topbar">
+      <div>
+        <div class="feed-topbar__eyebrow">피드</div>
+        <h1 class="feed-topbar__title">멀티게시판 커뮤니티</h1>
+      </div>
+      <button class="btn btn--primary btn--sm" id="btn-feed-write">글쓰기</button>
+    </div>`;
 }
 
 function attachTypeFilterListeners() {
@@ -138,6 +150,8 @@ function multiPostMatchesType(post, type) {
 
 function postMatchesCurrentType(post) {
   if (!currentType) return true;
+  if (currentType === 'vote' && (post.type === 'vote' || post.type === 'crazy_court')) return true;
+  if (currentType === 'quiz' && (post.type === 'quiz' || post.type === 'initial_game')) return true;
   if (post.type === currentType) return true;
   return multiPostMatchesType(post, currentType);
 }
@@ -167,8 +181,6 @@ async function loadPosts(reset = false) {
       ];
       if (!reset && lastDoc) constraints.push(startAfter(lastDoc));
     } else {
-      // 만능 놀이글은 type이 multi로 저장되므로 기존 type where 필터를 쓰면 누락됩니다.
-      // 그래서 기본 시간순 목록을 가져온 뒤 클라이언트에서 기존 유형 + 만능 모듈을 함께 필터링합니다.
       pageSize = currentType ? 60 : 15;
       constraints = [orderBy('createdAt', 'desc'), limit(pageSize)];
       if (!reset && lastDoc) constraints.push(startAfter(lastDoc));
@@ -213,8 +225,8 @@ function renderEmptyState() {
     <div class="empty-state">
       <div class="empty-state__icon">${currentSearch ? '🔍' : '🌱'}</div>
       <div class="empty-state__title">${currentSearch ? `"${escHtml(currentSearch)}" 검색 결과가 없어요` : '아직 아무도 안 왔네요 😄'}</div>
-      <div class="empty-state__desc">${currentSearch ? '다른 검색어는 어때요?' : '첫 번째 놀이판 주인공이 되어볼까요?'}</div>
-      ${!currentSearch ? `<button class="btn btn--primary" style="margin-top:16px" onclick="navigate('/write')">놀이판 만들기</button>` : ''}
+      <div class="empty-state__desc">${currentSearch ? '다른 검색어는 어때요?' : '첫 번째 피드 글을 올려볼까요?'}</div>
+      ${!currentSearch ? `<button class="btn btn--primary" style="margin-top:16px" onclick="navigate('/write')">글쓰기</button>` : ''}
     </div>`;
 }
 
