@@ -16,6 +16,7 @@ import './admin-session-guard.js';
 import './admin-password-actions.js';
 import './admin-ai-mission-actions.js';
 import './admin-ai-ops-actions.js';
+import './admin-post-list-normalizer.js';
 import './social-play-enhancer.js';
 import './site-copy-normalizer.js';
 import {
