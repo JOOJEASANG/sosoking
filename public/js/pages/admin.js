@@ -43,8 +43,8 @@ export async function renderAdmin() {
   ];
   const MENUS = [...TOP_MENUS, ...BOTTOM_MENUS];
 
-  const renderMenuItem = (m) => `
-    <button class="admin-menu-item ${currentTab === m.key ? 'active' : ''}" data-tab="${m.key}">
+  const renderMenuItem = (m, isBottom = false) => `
+    <button class="admin-menu-item${isBottom ? ' admin-menu-item--bottom' : ''} ${currentTab === m.key ? 'active' : ''}" data-tab="${m.key}">
       <span class="admin-menu-item__icon">${m.icon}</span>
       ${m.short
         ? `<span class="admin-menu-item__label admin-label-full">${m.label}</span><span class="admin-menu-item__label admin-label-short">${m.short}</span>`
@@ -70,9 +70,9 @@ export async function renderAdmin() {
           </div>
         </div>
         <nav class="admin-nav">
-          ${TOP_MENUS.map(renderMenuItem).join('')}
+          ${TOP_MENUS.map(m => renderMenuItem(m)).join('')}
           <div class="admin-nav-divider"></div>
-          ${BOTTOM_MENUS.map(renderMenuItem).join('')}
+          ${BOTTOM_MENUS.map(m => renderMenuItem(m, true)).join('')}
         </nav>
         <div class="admin-sidebar__footer">
           <div class="admin-profile-card">
@@ -417,6 +417,17 @@ async function renderUsers(el) {
 
   el.innerHTML = `
     <div style="display:flex;flex-direction:column;gap:16px">
+
+      <details class="admin-accordion" id="admin-myinfo-acc">
+        <summary class="admin-accordion__summary">
+          <span>👤 내 정보 설정</span>
+          <svg class="admin-accordion__chevron" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </summary>
+        <div class="admin-accordion__body" id="admin-myinfo-body">
+          <div style="padding:24px;text-align:center"><div class="spinner spinner--sm"></div></div>
+        </div>
+      </details>
+
       <div style="display:flex;align-items:center;justify-content:space-between">
         <h2 class="admin-section-title">👥 회원 현황</h2>
         <div style="font-size:13px;color:var(--color-text-muted)">최근 100개 게시물 기준</div>
@@ -459,6 +470,14 @@ async function renderUsers(el) {
         </table>
       </div>
     </div>`;
+
+  document.getElementById('admin-myinfo-acc')?.addEventListener('toggle', async function () {
+    if (!this.open) return;
+    const body = document.getElementById('admin-myinfo-body');
+    if (body.dataset.loaded) return;
+    body.dataset.loaded = '1';
+    await renderMyInfo(body);
+  });
 }
 
 /* ── AI 설정 ── */
