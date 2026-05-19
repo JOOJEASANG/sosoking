@@ -7,5 +7,6 @@ export const appState = {
   streak: 0,
   userTitle: '',
   nickname: '',
+  nicknameIcon: null,
   installPrompt: null,
 };
