@@ -36,10 +36,10 @@ export async function renderAdmin() {
     { key: 'posts',     icon: '📝', label: '게시물' },
     { key: 'reports',   icon: '🚨', label: '신고' },
     { key: 'users',     icon: '👥', label: '회원' },
+    { key: 'ai',        icon: '🤖', label: 'AI 운영관리', short: 'AI관리' },
   ];
   const BOTTOM_MENUS = [
-    { key: 'ai',     icon: '🤖', label: 'AI 운영관리', short: 'AI관리' },
-    { key: 'myinfo', icon: '👤', label: '내 정보',     short: '내정보' },
+    { key: 'myinfo', icon: '👤', label: '내 정보', short: '내정보' },
   ];
   const MENUS = [...TOP_MENUS, ...BOTTOM_MENUS];
 

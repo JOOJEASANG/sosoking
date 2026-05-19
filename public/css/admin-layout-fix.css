@@ -20,10 +20,10 @@ body:has(.admin-layout) .page-container {
   min-height: 100vh;
 }
 
-/* PC: 페이지 패딩 제거 — 관리자 레이아웃이 헤더 바로 아래에서 전체 폭으로 */
+/* PC: 회색 좌우여백 노출 — admin-layout이 max-width 내에서 gray margins 안에 위치 */
 @media (min-width: 1024px) {
   body:has(.admin-layout) .page-container {
-    padding: 0 !important;
+    padding: 24px 28px !important;
   }
 }
 
@@ -33,12 +33,12 @@ body:has(.admin-layout) .page-container {
   grid-template-columns: 220px minmax(0, 1fr);
   width: 100%;
   max-width: 1280px;
-  min-height: calc(100vh - 56px);
+  min-height: calc(100vh - 104px); /* 56px 헤더 + 24px 상하패딩*2 */
   margin: 0 auto;
-  background: var(--color-bg);
-  border: none;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
   border-radius: 0;
-  overflow: visible;
+  overflow: hidden;
   box-shadow: none;
 }
 
@@ -266,7 +266,7 @@ body:has(.admin-layout) .page-container {
 #admin-content {
   min-width: 0;
   padding: 32px 36px;
-  background: var(--color-bg);
+  background: var(--color-surface);
 }
 
 /* ── 섹션 타이틀 ── */
@@ -507,13 +507,17 @@ body:has(.admin-layout) .page-container {
 [data-theme="dark"] body:has(.admin-layout),
 [data-theme="dark"] body:has(.admin-layout) .app-shell,
 [data-theme="dark"] body:has(.admin-layout) .site-main,
-[data-theme="dark"] body:has(.admin-layout) .page-container,
-[data-theme="dark"] .admin-layout {
+[data-theme="dark"] body:has(.admin-layout) .page-container {
   background: var(--color-bg) !important;
 }
 
+[data-theme="dark"] .admin-layout {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+}
+
 [data-theme="dark"] #admin-content {
-  background: var(--color-bg);
+  background: var(--color-surface);
 }
 
 [data-theme="dark"] .admin-sidebar,
@@ -666,7 +670,7 @@ body:has(.admin-layout) .page-container {
   #admin-content {
     min-height: calc(100vh - 130px);
     padding: 16px 14px 4px;
-    background: var(--color-bg);
+    background: var(--color-surface);
   }
 
   .admin-stat-grid {
