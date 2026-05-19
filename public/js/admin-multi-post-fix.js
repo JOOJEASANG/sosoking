@@ -12,6 +12,14 @@ const TYPE_META = [
   { key: 'acrostic', icon: '✍️', label: '삼행시짓기', module: 'acrostic' },
 ];
 
+let recentPostsPromise = null;
+
+function normalizeLegacyLabel(text = '') {
+  return String(text)
+    .replaceAll('골라킹', '골라봐')
+    .replaceAll('막장킹', '막장릴레이');
+}
+
 function moduleLabels(modules = {}) {
   const labels = [];
   if (modules.vote?.enabled) labels.push('투표');
@@ -26,12 +34,12 @@ function labelForType(type) {
   const found = TYPE_META.find(t => t.key === type);
   if (found) return `${found.icon} ${found.label}`;
   if (type === 'multi') return '🧩 만능 놀이글';
-  return type || '';
+  return normalizeLegacyLabel(type || '');
 }
 
 function categoryLabel(cat, type) {
   if (type === 'multi' || cat === 'multi') return '🧩 만능';
-  return { golra:'🎯 골라봐', usgyo:'😂 웃겨봐', malhe:'🎮 도전봐' }[cat] || cat || '';
+  return { golra:'🎯 골라봐', usgyo:'😂 웃겨봐', malhe:'🎮 도전봐' }[cat] || normalizeLegacyLabel(cat || '');
 }
 
 function getMultiModuleChipsFromTitleCell(row, labels) {
@@ -44,8 +52,12 @@ function getMultiModuleChipsFromTitleCell(row, labels) {
 }
 
 async function fetchRecentPostsForAdmin() {
-  const snap = await getDocs(query(collection(db, 'feeds'), orderBy('createdAt', 'desc'), limit(300))).catch(() => null);
-  return snap?.docs.map(d => ({ id: d.id, ...d.data() })) || [];
+  if (!recentPostsPromise) {
+    recentPostsPromise = getDocs(query(collection(db, 'feeds'), orderBy('createdAt', 'desc'), limit(300)))
+      .then(snap => snap.docs.map(d => ({ id: d.id, ...d.data() })))
+      .catch(() => []);
+  }
+  return recentPostsPromise;
 }
 
 function countByTypeAndMulti(posts) {
@@ -60,24 +72,42 @@ function countByTypeAndMulti(posts) {
   });
 }
 
+function normalizeDashboardLabelsOnly(grid) {
+  grid.querySelectorAll('.admin-type-card__name').forEach(name => {
+    const fixed = normalizeLegacyLabel(name.textContent || '');
+    if (name.textContent !== fixed) name.textContent = fixed;
+  });
+}
+
 async function enhanceDashboardStats() {
   const grid = document.querySelector('#admin-content .admin-type-grid');
-  if (!grid || grid.dataset.multiDashboardEnhanced === '1') return;
+  if (!grid) return;
+
+  normalizeDashboardLabelsOnly(grid);
+  if (grid.dataset.multiDashboardEnhanced === '1') return;
   grid.dataset.multiDashboardEnhanced = '1';
+
+  const title = grid.closest('.card')?.querySelector('[style*="font-size:14px"]');
+  if (title && !title.textContent.includes('만능 놀이글 포함')) {
+    title.textContent = '🎮 유형별 게시물 현황 · 만능 놀이글 포함';
+  }
 
   const posts = await fetchRecentPostsForAdmin();
   if (!posts.length) return;
+
   const counts = countByTypeAndMulti(posts);
+  const cards = [...grid.querySelectorAll('.admin-type-card')];
 
-  grid.innerHTML = counts.map(t => `
-    <div class="admin-type-card admin-type-card--${t.key === 'vote' || t.key === 'initial_game' ? 'golra' : t.key === 'naming' || t.key === 'crazy_court' ? 'usgyo' : 'malhe'}">
-      <div class="admin-type-card__icon">${t.icon}</div>
-      <div class="admin-type-card__count">${t.count.toLocaleString()}</div>
-      <div class="admin-type-card__name">${t.label}</div>
-    </div>`).join('');
-
-  const title = grid.closest('.card')?.querySelector('[style*="font-size:14px"]');
-  if (title) title.textContent = '🎮 유형별 게시물 현황 · 만능 놀이글 포함';
+  counts.forEach((t, index) => {
+    const card = cards[index];
+    if (!card) return;
+    const icon = card.querySelector('.admin-type-card__icon');
+    const count = card.querySelector('.admin-type-card__count');
+    const name = card.querySelector('.admin-type-card__name');
+    if (icon && icon.textContent !== t.icon) icon.textContent = t.icon;
+    if (count && count.textContent !== t.count.toLocaleString()) count.textContent = t.count.toLocaleString();
+    if (name && name.textContent !== t.label) name.textContent = t.label;
+  });
 }
 
 async function enhanceAdminRows() {
@@ -158,6 +188,9 @@ function schedule() {
   }, 180);
 }
 
-window.addEventListener('hashchange', schedule);
+window.addEventListener('hashchange', () => {
+  recentPostsPromise = null;
+  schedule();
+});
 new MutationObserver(schedule).observe(document.documentElement, { childList: true, subtree: true });
 setTimeout(schedule, 700);
