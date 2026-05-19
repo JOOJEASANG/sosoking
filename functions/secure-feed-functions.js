@@ -5,7 +5,7 @@ const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 
 const db = getFirestore();
 const REGION = 'asia-northeast3';
-const ALLOWED_REACTIONS = ['like', 'funny', 'sad', 'wow'];
+const ALLOWED_REACTIONS = ['like', 'funny', 'fire', 'skull'];
 
 function cleanId(value, max = 160) {
   return String(value || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, max);

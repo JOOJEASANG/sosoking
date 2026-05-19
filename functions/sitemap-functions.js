@@ -19,7 +19,7 @@ const sitemapXml = onRequest({ region: 'asia-northeast3' }, async (req, res) => 
   const staticUrls = [
     { loc: `${SITE_URL}/`, priority: '1.0', changefreq: 'daily' },
     { loc: `${SITE_URL}/#/feed`, priority: '0.8', changefreq: 'daily' },
-    { loc: `${SITE_URL}/#/mission`, priority: '0.7', changefreq: 'daily' },
+    { loc: `${SITE_URL}/#/write`, priority: '0.7', changefreq: 'weekly' },
     { loc: `${SITE_URL}/#/hall`, priority: '0.7', changefreq: 'weekly' },
     { loc: `${SITE_URL}/#/guide`, priority: '0.5', changefreq: 'monthly' },
   ];
