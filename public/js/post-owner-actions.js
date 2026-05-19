@@ -5,8 +5,8 @@ import { navigate } from './router.js';
 import { toast } from './components/toast.js';
 import { escHtml } from './utils/helpers.js';
 
-const EDITABLE_COMMON_FIELDS = ['title', 'desc', 'tags'];
 const TYPE_LABELS = {
+  multi: '만능 놀이글',
   vote: '골라봐',
   initial_game: '초성게임',
   naming: '미친작명소',
@@ -72,7 +72,84 @@ function renderOptionsEditor(post) {
     </div>`;
 }
 
+function moduleEnabled(post, key) {
+  return !!post.modules?.[key]?.enabled;
+}
+
+function renderMultiVoteOptions(post) {
+  const options = post.modules?.vote?.options || [{ text: '', votes: 0 }, { text: '', votes: 0 }];
+  const normalized = options.length >= 2 ? options : [{ text: '', votes: 0 }, { text: '', votes: 0 }];
+  return normalized.map((opt, i) => `<input class="form-input owner-multi-vote-option" value="${toInput(opt.text)}" maxlength="80" placeholder="선택지 ${i + 1}" data-votes="${Number(opt.votes || 0)}">`).join('');
+}
+
+function renderMultiModulesEditor(post) {
+  const modules = post.modules || {};
+  return `
+    <div class="owner-multi-edit">
+      <div class="owner-multi-edit__title">🧩 만능 놀이 기능 수정</div>
+      <div class="owner-multi-edit__hint">켜진 기능과 기본 설정을 수정할 수 있습니다. 기존 참여글은 유지됩니다.</div>
+
+      <div class="owner-multi-module">
+        <label class="owner-multi-module__head">
+          <input type="checkbox" id="owner-multi-vote-enabled" ${moduleEnabled(post, 'vote') ? 'checked' : ''}>
+          <span>🗳️ 투표</span>
+        </label>
+        <div class="owner-multi-module__body">
+          <input class="form-input" id="owner-multi-vote-question" value="${toInput(modules.vote?.question)}" maxlength="100" placeholder="투표 질문">
+          <div class="owner-edit-options" id="owner-multi-vote-options">${renderMultiVoteOptions(post)}</div>
+          <button type="button" class="btn btn--ghost btn--sm" id="owner-add-multi-vote-option">+ 선택지 추가</button>
+        </div>
+      </div>
+
+      <div class="owner-multi-module">
+        <label class="owner-multi-module__head">
+          <input type="checkbox" id="owner-multi-naming-enabled" ${moduleEnabled(post, 'naming') ? 'checked' : ''}>
+          <span>😜 작명 참여</span>
+        </label>
+        <div class="owner-multi-module__body">
+          <select class="form-select" id="owner-multi-naming-count">
+            <option value="0" ${Number(modules.naming?.charCount || 0) === 0 ? 'selected' : ''}>자유</option>
+            <option value="3" ${Number(modules.naming?.charCount || 0) === 3 ? 'selected' : ''}>3글자</option>
+            <option value="5" ${Number(modules.naming?.charCount || 0) === 5 ? 'selected' : ''}>5글자</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="owner-multi-module">
+        <label class="owner-multi-module__head">
+          <input type="checkbox" id="owner-multi-acrostic-enabled" ${moduleEnabled(post, 'acrostic') ? 'checked' : ''}>
+          <span>✍️ 삼행시</span>
+        </label>
+        <div class="owner-multi-module__body">
+          <input class="form-input" id="owner-multi-acrostic-keyword" value="${toInput(modules.acrostic?.keyword)}" maxlength="8" placeholder="제시어">
+        </div>
+      </div>
+
+      <div class="owner-multi-module">
+        <label class="owner-multi-module__head">
+          <input type="checkbox" id="owner-multi-relay-enabled" ${moduleEnabled(post, 'relay') ? 'checked' : ''}>
+          <span>🎭 릴레이</span>
+        </label>
+        <div class="owner-multi-module__body">
+          <textarea class="form-textarea" id="owner-multi-relay-start" rows="3" maxlength="300" placeholder="시작 문장">${toInput(modules.relay?.startSentence)}</textarea>
+        </div>
+      </div>
+
+      <div class="owner-multi-module">
+        <label class="owner-multi-module__head">
+          <input type="checkbox" id="owner-multi-quiz-enabled" ${moduleEnabled(post, 'quiz') ? 'checked' : ''}>
+          <span>🧠 간단 문제</span>
+        </label>
+        <div class="owner-multi-module__body">
+          <input class="form-input" id="owner-multi-quiz-question" value="${toInput(modules.quiz?.question)}" maxlength="160" placeholder="문제">
+          <input class="form-input" id="owner-multi-quiz-answer" value="${toInput(modules.quiz?.answer)}" maxlength="80" placeholder="정답">
+        </div>
+      </div>
+    </div>`;
+}
+
 function renderTypeExtraEditor(post) {
+  if (post.type === 'multi') return renderMultiModulesEditor(post);
   if (post.type === 'naming') {
     return `
       <div class="form-group">
@@ -118,6 +195,16 @@ function renderTypeExtraEditor(post) {
       </div>`;
   }
   return '';
+}
+
+function bindMultiEditEvents(overlay) {
+  const addBtn = overlay.querySelector('#owner-add-multi-vote-option');
+  addBtn?.addEventListener('click', () => {
+    const list = overlay.querySelector('#owner-multi-vote-options');
+    const count = list?.querySelectorAll('.owner-multi-vote-option').length || 0;
+    if (count >= 8) { toast.warn('선택지는 최대 8개까지 수정할 수 있어요'); return; }
+    list.insertAdjacentHTML('beforeend', `<input class="form-input owner-multi-vote-option" maxlength="80" placeholder="선택지 ${count + 1}" data-votes="0">`);
+  });
 }
 
 function openEditModal(post) {
@@ -166,6 +253,55 @@ function openEditModal(post) {
   overlay.querySelector('#owner-edit-cancel')?.addEventListener('click', close);
   overlay.querySelector('.owner-edit-modal__backdrop')?.addEventListener('click', close);
   overlay.querySelector('#owner-edit-save')?.addEventListener('click', () => saveEdit(post, overlay));
+  bindMultiEditEvents(overlay);
+}
+
+function collectMultiModules(post) {
+  const original = post.modules || {};
+  const modules = { comments: { enabled: true } };
+
+  if (document.getElementById('owner-multi-vote-enabled')?.checked) {
+    const inputs = [...document.querySelectorAll('.owner-multi-vote-option')];
+    const options = inputs.map((input, i) => ({
+      text: input.value.trim(),
+      votes: Number(input.dataset.votes || original.vote?.options?.[i]?.votes || 0),
+    })).filter(opt => opt.text);
+    if (options.length < 2) throw new Error('투표 선택지는 2개 이상 필요합니다.');
+    modules.vote = {
+      enabled: true,
+      question: document.getElementById('owner-multi-vote-question')?.value.trim() || '선택해주세요',
+      options,
+      votedBy: Array.isArray(original.vote?.votedBy) ? original.vote.votedBy : [],
+    };
+  }
+
+  if (document.getElementById('owner-multi-naming-enabled')?.checked) {
+    modules.naming = {
+      enabled: true,
+      charCount: Number(document.getElementById('owner-multi-naming-count')?.value || 0),
+    };
+  }
+
+  if (document.getElementById('owner-multi-acrostic-enabled')?.checked) {
+    const keyword = document.getElementById('owner-multi-acrostic-keyword')?.value.trim() || '';
+    if ([...keyword].length < 2) throw new Error('삼행시 제시어는 2글자 이상 입력해주세요.');
+    modules.acrostic = { enabled: true, keyword };
+  }
+
+  if (document.getElementById('owner-multi-relay-enabled')?.checked) {
+    const startSentence = document.getElementById('owner-multi-relay-start')?.value.trim() || '';
+    if (!startSentence) throw new Error('릴레이 시작 문장을 입력해주세요.');
+    modules.relay = { enabled: true, startSentence };
+  }
+
+  if (document.getElementById('owner-multi-quiz-enabled')?.checked) {
+    const question = document.getElementById('owner-multi-quiz-question')?.value.trim() || '';
+    const answer = document.getElementById('owner-multi-quiz-answer')?.value.trim() || '';
+    if (!question || !answer) throw new Error('문제와 정답을 모두 입력해주세요.');
+    modules.quiz = { enabled: true, question, answer };
+  }
+
+  return modules;
 }
 
 function collectPatch(post) {
@@ -190,6 +326,7 @@ function collectPatch(post) {
     });
   }
 
+  if (post.type === 'multi') patch.modules = collectMultiModules(post);
   if (post.type === 'naming') patch.charCount = Number(document.getElementById('owner-edit-char-count')?.value || 0);
   if (post.type === 'initial_game') {
     const initials = document.getElementById('owner-edit-initials')?.value.trim() || '';
