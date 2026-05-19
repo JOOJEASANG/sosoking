@@ -76,6 +76,30 @@ function iconInstall() {
 function isDark() {
   return document.documentElement.getAttribute('data-theme') === 'dark';
 }
+function isIOS() {
+  return /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream;
+}
+function isStandalone() {
+  return window.matchMedia('(display-mode: standalone)').matches || !!navigator.standalone;
+}
+function showIOSInstallGuide() {
+  const prev = document.getElementById('ios-install-tip');
+  if (prev) { prev.remove(); return; }
+  const tip = document.createElement('div');
+  tip.id = 'ios-install-tip';
+  tip.style.cssText = 'position:fixed;left:50%;bottom:84px;transform:translateX(-50%);z-index:10000;width:min(320px,calc(100vw - 32px));background:var(--color-surface);border:1px solid var(--color-border);border-radius:16px;padding:18px 20px;box-shadow:0 12px 40px rgba(0,0,0,.2);text-align:center;font-size:13px;line-height:1.65';
+  tip.innerHTML = `
+    <div style="font-size:24px;margin-bottom:8px">📲</div>
+    <div style="font-weight:800;color:var(--color-text-primary);margin-bottom:6px">홈 화면에 추가하기</div>
+    <div style="color:var(--color-text-secondary)">
+      Safari 하단 <b>공유 버튼 ⬆</b> 탭 후<br><b>"홈 화면에 추가"</b>를 선택하세요
+    </div>
+    <button id="ios-tip-close" style="margin-top:14px;padding:7px 24px;background:var(--color-primary);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer">확인</button>
+  `;
+  document.body.appendChild(tip);
+  document.getElementById('ios-tip-close')?.addEventListener('click', () => tip.remove());
+  setTimeout(() => tip.remove(), 10000);
+}
 
 /* ── 렌더 ── */
 export function renderSidebar() {
@@ -158,7 +182,7 @@ export function renderSidebar() {
           ${dark ? iconSun() : iconMoon()}
           <span>${dark ? '라이트 모드' : '다크 모드'}</span>
         </button>
-        ${appState.installPrompt && !isAdmin ? `
+        ${(appState.installPrompt || isIOS()) && !isAdmin && !isStandalone() ? `
         <button class="sidebar__util-btn" id="sb-pwa-btn" aria-label="앱 설치">
           ${iconInstall()}
           <span>앱 설치</span>
@@ -194,12 +218,15 @@ export function renderSidebar() {
 
   document.getElementById('sb-pwa-btn')?.addEventListener('click', async () => {
     const prompt = appState.installPrompt;
-    if (!prompt) return;
-    prompt.prompt();
-    const { outcome } = await prompt.userChoice;
-    if (outcome === 'accepted') {
-      appState.installPrompt = null;
-      renderSidebar();
+    if (prompt) {
+      prompt.prompt();
+      const { outcome } = await prompt.userChoice;
+      if (outcome === 'accepted') {
+        appState.installPrompt = null;
+        renderSidebar();
+      }
+    } else {
+      showIOSInstallGuide();
     }
   });
 }
