@@ -285,6 +285,7 @@ function compressImage(file, maxSide = 1600, quality = 0.82) {
       canvas.getContext('2d').drawImage(img, 0, 0, width, height);
       canvas.toBlob(resolve, 'image/jpeg', quality);
     };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
     img.src = url;
   });
 }

@@ -349,7 +349,7 @@ function renderComment(c) {
             ${REACT.map(r=>{
               const cnt=c.reactions?.[r.key]||0;
               const active=myReact===r.key?'active':'';
-              return `<button class="comment-react-btn ${active}" data-comment-id="${c.id}" data-react="${r.key}">${r.emoji}${cnt>0?` <b>${cnt}</b>`:''}`;
+              return `<button class="comment-react-btn ${active}" data-comment-id="${c.id}" data-react="${r.key}">${r.emoji}${cnt>0?` <b>${cnt}</b>`:''}</button>`;
             }).join('')}
           </div>
           ${isOwn ? `<button class="comment-delete-btn" data-comment-id="${c.id}">삭제</button>` : ''}
@@ -552,7 +552,7 @@ function setupDetailEvents(post, el) {
       document.querySelectorAll('[data-answer]').forEach(b => b.disabled = true);
       try {
         const result = await checkQuizAnswerFn({ postId: post.id, selected });
-        showQuizResult(result.data.correct, result.data.explanation || '');
+        showQuizResult(result?.data?.correct ?? false, result?.data?.explanation || '');
       } catch {
         showQuizResult(post.answer === selected, post.explanation || '');
       }
@@ -569,7 +569,7 @@ function setupDetailEvents(post, el) {
       document.querySelectorAll('[data-quiz-idx]').forEach(b => b.disabled = true);
       try {
         const result = await checkQuizAnswerFn({ postId: post.id, selected: idx });
-        showQuizResult(result.data.correct, result.data.explanation || '');
+        showQuizResult(result?.data?.correct ?? false, result?.data?.explanation || '');
       } catch {
         showQuizResult(post.answerIdx === idx, post.explanation || '');
       }
@@ -586,7 +586,7 @@ function setupDetailEvents(post, el) {
     document.getElementById('btn-quiz-submit')?.setAttribute('disabled', 'true');
     try {
       const result = await checkQuizAnswerFn({ postId: post.id, selected: answer });
-      showQuizResult(result.data.correct, result.data.explanation || '');
+      showQuizResult(result?.data?.correct ?? false, result?.data?.explanation || '');
     } catch {
       showQuizResult(post.answer === answer, post.explanation || '');
     }
@@ -972,7 +972,7 @@ function renderCommentSection(post, comments) {
       </div>`;
   }
 
-  if (post.type === 'naming' || post.type === 'drip') {
+  if (post.type === 'drip') {
     const cfg = post.type === 'naming'
       ? { title: '✏️ 제목 제안', placeholder: '사진에 어울리는 제목을 제안해보세요!', btn: '제안하기', empty: '첫 번째로 제목을 제안해보세요!' }
       : { title: '🎤 드립 올리기', placeholder: '한 줄 드립을 올려보세요!', btn: '올리기', empty: '첫 번째로 드립을 올려보세요!' };
@@ -1045,7 +1045,7 @@ function renderLikeableComment(c) {
           ${REACT.map(r=>{
             const cnt=c.reactions?.[r.key]||0;
             const active=myReact===r.key?'active':'';
-            return `<button class="comment-react-btn ${active}" data-comment-id="${c.id}" data-react="${r.key}">${r.emoji}${cnt>0?` <b>${cnt}</b>`:''}`;
+            return `<button class="comment-react-btn ${active}" data-comment-id="${c.id}" data-react="${r.key}">${r.emoji}${cnt>0?` <b>${cnt}</b>`:''}</button>`;
           }).join('')}
         </div>
         ${isOwn ? `<button class="comment-delete-btn" data-comment-id="${c.id}">삭제</button>` : ''}
