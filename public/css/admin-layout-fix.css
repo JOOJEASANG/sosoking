@@ -22,17 +22,29 @@ body:has(.admin-layout) .page-container {
 }
 
 @media (min-width: 1024px) {
-  body:has(.admin-layout) .page-container {
-    padding: 0 !important;
+  body:has(.admin-layout) .site-main {
+    overflow: hidden;
   }
 
-  /* PC에서 site-header가 display:none이므로 full 100vh 채움 */
+  body:has(.admin-layout) .page-container {
+    padding: 0 !important;
+    height: 100vh;
+    overflow: hidden;
+  }
+
   body:has(.admin-layout) .admin-layout {
-    min-height: 100vh;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
   }
 
   body:has(.admin-layout) .admin-sidebar {
     height: 100vh;
+  }
+
+  body:has(.admin-layout) #admin-content {
+    height: 100%;
+    overflow-y: auto;
   }
 }
 
