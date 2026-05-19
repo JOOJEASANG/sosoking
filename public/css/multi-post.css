@@ -24,6 +24,52 @@
   color: var(--color-text-secondary);
 }
 
+.multi-preset-box {
+  margin: 0 0 12px;
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+}
+
+.multi-preset-box__title {
+  font-size: 14px;
+  font-weight: 900;
+  color: var(--color-text-primary);
+  margin-bottom: 3px;
+}
+
+.multi-preset-box__desc {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--color-text-muted);
+  margin-bottom: 10px;
+}
+
+.multi-preset-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.multi-preset-btn {
+  min-height: 34px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border-light);
+  background: var(--color-surface-2);
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.multi-preset-btn.active {
+  border-color: rgba(255, 107, 74, .45);
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
+}
+
 .multi-module-list {
   display: flex;
   flex-direction: column;
@@ -509,5 +555,14 @@
 
   .multi-item-actions button {
     min-height: 32px;
+  }
+
+  .multi-preset-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .multi-preset-btn {
+    width: 100%;
   }
 }
