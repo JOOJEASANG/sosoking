@@ -1,0 +1,131 @@
+.liar-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-bottom: 24px;
+}
+
+.liar-hero,
+.liar-create-card,
+.liar-rule-card,
+.liar-room-card,
+.liar-invite-card,
+.liar-player-card {
+  padding: 16px;
+  border-radius: 18px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  box-shadow: var(--shadow-sm);
+}
+
+.liar-hero {
+  background: linear-gradient(135deg, rgba(124,58,237,.12), rgba(255,107,74,.12));
+}
+
+.liar-hero__eyebrow {
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--color-primary);
+}
+
+.liar-hero h1,
+.liar-create-card h2,
+.liar-player-card h2 {
+  margin: 5px 0 6px;
+  color: var(--color-text-primary);
+}
+
+.liar-hero p,
+.liar-rule-card span {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.liar-option-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.liar-rule-card {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.liar-room-card {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.liar-room-info {
+  padding: 10px;
+  border-radius: 13px;
+  background: var(--color-surface-2);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.liar-room-info span {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.liar-room-info b {
+  font-size: 14px;
+  color: var(--color-text-primary);
+}
+
+.liar-invite-row {
+  display: flex;
+  gap: 8px;
+}
+
+.liar-invite-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.liar-player-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.liar-player-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 13px;
+  background: var(--color-surface-2);
+  color: var(--color-text-primary);
+}
+
+.liar-player-item b {
+  color: var(--color-primary);
+  font-size: 12px;
+}
+
+@media (max-width: 767px) {
+  .liar-room-card,
+  .liar-option-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .liar-invite-row {
+    flex-direction: column;
+  }
+
+  .liar-player-card .btn {
+    width: 100%;
+    margin-top: 8px;
+  }
+}
