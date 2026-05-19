@@ -72,11 +72,6 @@ export async function renderAdmin() {
         <nav class="admin-nav">
           ${TOP_MENUS.map(renderMenuItem).join('')}
           <div class="admin-nav-divider"></div>
-          <button class="admin-write-shortcut" id="btn-admin-write">
-            <span class="admin-write-shortcut__icon">✏️</span>
-            <span class="admin-label-full">놀이판 만들기</span>
-            <span class="admin-label-short">글쓰기</span>
-          </button>
           ${BOTTOM_MENUS.map(renderMenuItem).join('')}
         </nav>
         <div class="admin-sidebar__footer">
@@ -105,7 +100,6 @@ export async function renderAdmin() {
 
   document.getElementById('btn-goto-site')?.addEventListener('click', () => navigate('/'));
   document.getElementById('admin-brand-home')?.addEventListener('click', (e) => { e.preventDefault(); navigate('/'); });
-  document.getElementById('btn-admin-write')?.addEventListener('click', () => navigate('/write'));
 
   await loadTab(currentTab);
 }

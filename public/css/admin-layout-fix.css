@@ -20,10 +20,9 @@ body:has(.admin-layout) .page-container {
   min-height: 100vh;
 }
 
-/* PC: 회색 좌우여백 노출 — admin-layout이 max-width 내에서 gray margins 안에 위치 */
 @media (min-width: 1024px) {
   body:has(.admin-layout) .page-container {
-    padding: 24px 28px !important;
+    padding: 0 !important;
   }
 }
 
@@ -32,8 +31,8 @@ body:has(.admin-layout) .page-container {
   display: grid;
   grid-template-columns: 220px minmax(0, 1fr);
   width: 100%;
-  max-width: 1280px;
-  min-height: calc(100vh - 104px); /* 56px 헤더 + 24px 상하패딩*2 */
+  max-width: 100%;
+  min-height: calc(100vh - 56px);
   margin: 0 auto;
   background: var(--color-surface);
   border: 1px solid var(--color-border-light);
@@ -82,19 +81,23 @@ body:has(.admin-layout) .page-container {
 }
 
 .admin-brand__title {
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 950;
   color: var(--color-text-primary);
-  letter-spacing: -0.4px;
+  letter-spacing: -0.5px;
   line-height: 1;
 }
 
 .admin-brand__sub {
-  margin-top: 3px;
+  display: inline-block;
+  margin-top: 5px;
+  padding: 2px 7px;
+  border-radius: 20px;
   font-size: 10px;
   font-weight: 800;
-  color: var(--color-primary);
-  letter-spacing: 0.06em;
+  color: #fff;
+  background: var(--color-primary);
+  letter-spacing: 0.04em;
 }
 
 /* ── 내비게이션 ── */
@@ -152,32 +155,6 @@ body:has(.admin-layout) .page-container {
 /* PC: 모바일용 짧은 라벨 숨김 */
 .admin-label-short { display: none; }
 
-/* ── 글쓰기 바로가기 버튼 ── */
-.admin-write-shortcut {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: calc(100% - 28px);
-  margin: 4px 14px 2px;
-  padding: 10px 14px;
-  border-radius: var(--radius-sm);
-  background: var(--gradient-brand);
-  color: #fff;
-  font-size: 13px;
-  font-weight: 900;
-  box-shadow: var(--shadow-brand);
-  flex-shrink: 0;
-  transition: filter var(--transition-fast);
-}
-
-.admin-write-shortcut:hover {
-  filter: brightness(1.06);
-}
-
-.admin-write-shortcut__icon {
-  font-size: 15px;
-  line-height: 1;
-}
 
 /* ── 사이드바 하단 ── */
 .admin-sidebar__footer {
@@ -566,7 +543,6 @@ body:has(.admin-layout) .page-container {
 
   .admin-brand,
   .admin-sidebar__footer,
-  .admin-write-shortcut,
   .admin-nav-divider {
     display: none !important;
   }
