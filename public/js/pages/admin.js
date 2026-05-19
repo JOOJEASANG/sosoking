@@ -2,14 +2,18 @@ import { db, auth, functions } from '../firebase.js';
 import {
   collection, query, orderBy, limit, getDocs, deleteDoc, doc,
   getCountFromServer, where, updateDoc, serverTimestamp,
-  Timestamp, getDoc, setDoc,
+  Timestamp, getDoc, setDoc, writeBatch,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
+import {
+  updateProfile,
+} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { appState } from '../state.js';
 import { toast } from '../components/toast.js';
 import { navigate } from '../router.js';
 import { isAdmin } from '../app.js';
 import { escHtml } from '../utils/helpers.js';
+import { renderSidebar } from '../components/sidebar.js';
 
 let currentTab = 'dashboard';
 
@@ -33,16 +37,24 @@ export async function renderAdmin() {
     { key: 'reports',   icon: '🚨', label: '신고' },
     { key: 'users',     icon: '👥', label: '회원' },
     { key: 'ai',        icon: '🤖', label: 'AI 운영관리', short: 'AI관리' },
+    { key: 'myinfo',    icon: '👤', label: '내 정보',     short: '내정보' },
   ];
+
+  const nickname = appState.nickname || user.displayName || user.email?.split('@')[0] || '관리자';
+  const avatarHTML = user.photoURL
+    ? `<img src="${user.photoURL}" alt="" class="admin-profile-card__avatar-img">`
+    : `<span>${(nickname[0] || '관')}</span>`;
 
   el.innerHTML = `
     <div class="admin-layout">
       <aside class="admin-sidebar">
         <div class="admin-brand">
-          <div class="admin-brand__logo">⚙️</div>
+          <a href="#/" class="admin-brand__logo-link" id="admin-brand-home">
+            <img src="/logo.svg" alt="소소킹" width="34" height="34">
+          </a>
           <div>
             <div class="admin-brand__title">소소킹</div>
-            <div class="admin-brand__sub">ADMIN</div>
+            <div class="admin-brand__sub">관리자 패널</div>
           </div>
         </div>
         <nav class="admin-nav">
@@ -56,9 +68,14 @@ export async function renderAdmin() {
             </button>`).join('')}
         </nav>
         <div class="admin-sidebar__footer">
-          <button class="admin-goto-site-btn" id="btn-goto-site">🏠 사이트로 가기</button>
-          <div class="admin-uid-label">UID</div>
-          <div class="admin-uid">${user.uid}</div>
+          <div class="admin-profile-card">
+            <div class="admin-profile-card__avatar">${avatarHTML}</div>
+            <div class="admin-profile-card__info">
+              <div class="admin-profile-card__name">${escHtml(nickname)}</div>
+              <div class="admin-profile-card__role">🔑 관리자</div>
+            </div>
+          </div>
+          <button class="admin-goto-site-btn" id="btn-goto-site">🏠 사이트 홈으로</button>
         </div>
       </aside>
       <main id="admin-content">
@@ -75,6 +92,7 @@ export async function renderAdmin() {
   });
 
   document.getElementById('btn-goto-site')?.addEventListener('click', () => navigate('/'));
+  document.getElementById('admin-brand-home')?.addEventListener('click', (e) => { e.preventDefault(); navigate('/'); });
 
   await loadTab(currentTab);
 }
@@ -90,6 +108,7 @@ async function loadTab(tab) {
     case 'reports':   return renderReports(content);
     case 'users':     return renderUsers(content);
     case 'ai':        return renderAiSettings(content);
+    case 'myinfo':    return renderMyInfo(content);
   }
 }
 
@@ -636,6 +655,135 @@ async function renderAiSettings(el) {
     } finally {
       btn.disabled = false;
       btn.textContent = '📊 주간 보고서 지금 생성';
+    }
+  });
+}
+
+/* ── 내 정보 설정 ── */
+async function renderMyInfo(el) {
+  const user = appState.user;
+  if (!user) return;
+
+  const userSnap = await getDoc(doc(db, 'users', user.uid)).catch(() => null);
+  const nickname = appState.nickname || user.displayName || user.email?.split('@')[0] || '관리자';
+  const isGoogle = user.providerData?.some(p => p.providerId === 'google.com');
+
+  const avatarHTML = user.photoURL
+    ? `<img src="${user.photoURL}" alt="" class="admin-myinfo-avatar-img">`
+    : `<span>${nickname[0] || '관'}</span>`;
+
+  el.innerHTML = `
+    <div style="max-width:600px;display:flex;flex-direction:column;gap:20px">
+      <h2 class="admin-section-title">👤 내 정보 설정</h2>
+
+      <div class="card">
+        <div class="card__body--lg">
+          <div class="admin-myinfo-profile-row">
+            <div class="admin-myinfo-avatar">${avatarHTML}</div>
+            <div>
+              <div style="font-size:17px;font-weight:900;color:var(--color-text-primary)">${escHtml(nickname)}</div>
+              <div style="font-size:12px;color:var(--color-text-muted);margin-top:3px">${escHtml(user.email || '')}</div>
+              <span class="admin-myinfo-role-badge">🔑 관리자</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card__body--lg">
+          <div style="font-size:15px;font-weight:800;margin-bottom:16px">✏️ 닉네임 변경</div>
+          <div class="form-group">
+            <label class="form-label">새 닉네임 <span class="required">*</span></label>
+            <input id="admin-new-nickname" class="form-input" type="text"
+              value="${escHtml(nickname)}"
+              placeholder="2~12자, 한글/영문/숫자/_"
+              maxlength="12">
+            <div class="form-hint">2~12자, 한글·영문·숫자·_(밑줄)만 사용 가능해요</div>
+            <div id="admin-nickname-feedback" style="font-size:12px;margin-top:6px;min-height:18px"></div>
+          </div>
+          <button class="btn btn--primary btn--sm" id="btn-admin-save-nickname">저장하기</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card__body--lg">
+          <div style="font-size:15px;font-weight:800;margin-bottom:14px">🔐 계정 정보</div>
+          <div style="display:flex;flex-direction:column;gap:0">
+            <div class="admin-myinfo-row">
+              <span class="admin-myinfo-row__label">이메일</span>
+              <span class="admin-myinfo-row__value">${escHtml(user.email || '—')}</span>
+            </div>
+            <div class="admin-myinfo-row">
+              <span class="admin-myinfo-row__label">로그인 방식</span>
+              <span class="admin-myinfo-row__value">${isGoogle ? '구글 소셜 로그인' : '이메일/비밀번호'}</span>
+            </div>
+            <div class="admin-myinfo-row" style="border-bottom:0">
+              <span class="admin-myinfo-row__label">권한</span>
+              <span class="admin-myinfo-row__value" style="color:var(--color-primary);font-weight:800">🔑 관리자</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+
+  const input    = el.querySelector('#admin-new-nickname');
+  const feedback = el.querySelector('#admin-nickname-feedback');
+  const saveBtn  = el.querySelector('#btn-admin-save-nickname');
+  const NICK_RE  = /^[가-힣a-zA-Z0-9_]{2,12}$/;
+
+  input?.addEventListener('input', () => {
+    const v = input.value.trim();
+    if (!v) { feedback.textContent = ''; return; }
+    if (!NICK_RE.test(v)) {
+      feedback.style.color = 'var(--color-danger)';
+      feedback.textContent = '2~12자, 한글·영문·숫자·_ 만 가능해요';
+    } else {
+      feedback.style.color = 'var(--color-success)';
+      feedback.textContent = '사용 가능한 형식이에요';
+    }
+  });
+
+  saveBtn?.addEventListener('click', async () => {
+    const newNick = input?.value.trim();
+    if (!newNick) { toast.error('닉네임을 입력해주세요'); return; }
+    if (!NICK_RE.test(newNick)) { toast.error('닉네임 형식이 맞지 않아요'); return; }
+    if (newNick === nickname) { toast.info('현재 닉네임과 같아요'); return; }
+
+    saveBtn.disabled = true;
+    saveBtn.textContent = '저장 중...';
+    try {
+      const nickDoc = await getDoc(doc(db, 'nicknames', newNick));
+      if (nickDoc.exists() && nickDoc.data().uid !== user.uid) {
+        toast.error('이미 사용 중인 닉네임이에요');
+        return;
+      }
+
+      const batch = writeBatch(db);
+      batch.set(doc(db, 'nicknames', newNick), { uid: user.uid, createdAt: serverTimestamp() });
+      if (nickname && nickname !== newNick) {
+        batch.delete(doc(db, 'nicknames', nickname));
+      }
+      batch.update(doc(db, 'users', user.uid), { nickname: newNick, updatedAt: serverTimestamp() });
+      await batch.commit();
+
+      await updateProfile(user, { displayName: newNick });
+      if (appState.user) appState.user.displayName = newNick;
+      appState.nickname = newNick;
+      renderSidebar();
+
+      feedback.style.color = 'var(--color-success)';
+      feedback.textContent = '저장됐어요!';
+      toast.success('닉네임이 변경됐어요 ✨');
+
+      // 사이드바 프로필 카드 이름도 즉시 갱신
+      const profileName = document.querySelector('.admin-profile-card__name');
+      if (profileName) profileName.textContent = newNick;
+    } catch (e) {
+      console.error(e);
+      toast.error('저장에 실패했어요. 다시 시도해주세요');
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = '저장하기';
     }
   });
 }
