@@ -17,6 +17,7 @@ import './admin-password-actions.js';
 import './admin-ai-mission-actions.js';
 import './admin-ai-ops-actions.js';
 import './admin-post-list-normalizer.js';
+import './nickname-icon-actions.js';
 import './social-play-enhancer.js';
 import './site-copy-normalizer.js';
 import {
@@ -61,6 +62,7 @@ async function loadUserMeta(uid) {
     appState.isAdmin   = adminSnap.exists();
     const currentUser  = auth.currentUser;
     appState.nickname  = data.nickname  || currentUser?.displayName || currentUser?.email?.split('@')[0] || '익명';
+    appState.nicknameIcon = data.nicknameIcon || null;
   } catch { /* non-critical */ }
 }
 
@@ -147,6 +149,7 @@ export async function initApp() {
       appState.streak    = 0;
       appState.userTitle = '';
       appState.nickname  = '';
+      appState.nicknameIcon = null;
     }
     renderSidebar();
     renderHeader();
