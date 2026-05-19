@@ -8,6 +8,14 @@ function esc(value) {
   return String(value || '').replace(/[&<>"]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[m]));
 }
 
+function isAdminPage() {
+  return (window.location.hash || '').startsWith('#/admin');
+}
+
+function removeButton() {
+  document.getElementById('feedback-open-btn')?.remove();
+}
+
 function getPageContext() {
   const hash = window.location.hash || '#/';
   return {
@@ -19,6 +27,10 @@ function getPageContext() {
 }
 
 function ensureButton() {
+  if (isAdminPage()) {
+    removeButton();
+    return;
+  }
   if (document.getElementById('feedback-open-btn')) return;
   const btn = document.createElement('button');
   btn.id = 'feedback-open-btn';
@@ -30,6 +42,10 @@ function ensureButton() {
 }
 
 function openFeedbackModal() {
+  if (isAdminPage()) {
+    removeButton();
+    return;
+  }
   if (!auth.currentUser) {
     toast.warn('로그인 후 의견이나 버그를 보낼 수 있어요.');
     navigate('/login');
@@ -60,7 +76,7 @@ function openFeedbackModal() {
 
         <div class="form-group">
           <label class="form-label">제목 <span class="required">*</span></label>
-          <input id="feedback-title" class="form-input" maxlength="80" placeholder="예: 모바일에서 작명소 버튼이 안 눌려요">
+          <input id="feedback-title" class="form-input" maxlength="80" placeholder="예: 모바일에서 버튼이 안 눌려요">
         </div>
         <div class="form-group">
           <label class="form-label">내용 <span class="required">*</span></label>
