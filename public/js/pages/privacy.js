@@ -12,7 +12,7 @@ export function renderPrivacy() {
       <div class="card legal-card">
         <div class="legal-body">
           <div class="legal-notice">
-            소소킹은 이용자의 개인정보를 안전하게 처리하기 위해 필요한 최소한의 정보만 수집·이용합니다.
+            소소킹은 피드 멀티게시판과 게임 기능을 제공하기 위해 필요한 최소한의 개인정보만 수집·이용합니다.
           </div>
 
           <h2 class="legal-h2">1. 수집하는 개인정보 항목</h2>
@@ -22,7 +22,9 @@ export function renderPrivacy() {
               <tbody>
                 <tr><td>Google 로그인</td><td>이름, 이메일, 프로필 사진 URL, Firebase UID</td><td>소셜 로그인 시</td></tr>
                 <tr><td>이메일 로그인</td><td>이메일 주소, Firebase UID, 닉네임</td><td>회원가입·로그인 시</td></tr>
-                <tr><td>서비스 이용</td><td>게시물, 댓글, 선택지, 퀴즈 정답, 리액션, 스크랩, 신고 내역</td><td>서비스 이용 중</td></tr>
+                <tr><td>프로필 설정</td><td>닉네임, 프로필 아이콘, 직접 선택한 이미지 아이콘</td><td>내 정보 설정 시</td></tr>
+                <tr><td>피드 이용</td><td>게시물, 사진, 댓글, 답글, 선택지, 퀴즈 정답, 리액션, 스크랩, 신고 내역</td><td>피드 이용 중</td></tr>
+                <tr><td>게임 이용</td><td>게임방 정보, 방 코드, 참가자 닉네임, 참가 상태, 게임 설정</td><td>게임방 생성·참가 시</td></tr>
                 <tr><td>자동 수집</td><td>접속 기록, 브라우저 정보, 오류 기록, 보안 관련 로그</td><td>서비스 접속 및 이용 시</td></tr>
               </tbody>
             </table>
@@ -31,8 +33,10 @@ export function renderPrivacy() {
           <h2 class="legal-h2">2. 개인정보 이용 목적</h2>
           <ul class="legal-list">
             <li>회원 가입, 로그인, 본인 확인 및 계정 관리</li>
-            <li>게시물 작성자 표시, 댓글·투표·퀴즈·리액션 등 커뮤니티 기능 제공</li>
-            <li>스크랩, 알림, 명예의 전당, 미션 참여 등 개인화 기능 제공</li>
+            <li>피드 작성자 표시, 댓글·답글·투표·퀴즈·리액션 등 커뮤니티 기능 제공</li>
+            <li>미친작명소, 삼행시, 투표/판정, 퀴즈 등 멀티게시판 기능 제공</li>
+            <li>게임방 만들기, 초대 링크, 참가자 표시, 게임 진행 기능 제공</li>
+            <li>스크랩, 알림, 명예의 전당 등 개인화 기능 제공</li>
             <li>신고 처리, 부정 이용 방지, 서비스 보안 유지</li>
             <li>서비스 운영 통계, 오류 분석, 품질 개선</li>
           </ul>
@@ -41,6 +45,7 @@ export function renderPrivacy() {
           <ul class="legal-list">
             <li>회원 정보는 회원 탈퇴 또는 삭제 요청 시까지 보유합니다.</li>
             <li>게시물과 댓글은 서비스 흐름 유지를 위해 탈퇴 후에도 익명 처리되어 유지될 수 있습니다.</li>
+            <li>게임방 정보와 참가 기록은 게임 진행, 신고 대응, 서비스 안정성을 위해 필요한 기간 보관될 수 있습니다.</li>
             <li>신고, 보안, 부정 이용 관련 기록은 분쟁 대응과 서비스 보호를 위해 필요한 기간 보관될 수 있습니다.</li>
             <li>법령에 따라 보관이 필요한 정보는 해당 법령에서 정한 기간 동안 보관합니다.</li>
           </ul>
@@ -50,7 +55,7 @@ export function renderPrivacy() {
             <table class="legal-table">
               <thead><tr><th>업체명</th><th>이용 목적</th><th>처리 정보</th></tr></thead>
               <tbody>
-                <tr><td>Google Firebase</td><td>인증, 데이터베이스, 파일 저장, 서버리스 기능</td><td>계정 정보, 게시물, 댓글, 서비스 이용 데이터</td></tr>
+                <tr><td>Google Firebase</td><td>인증, 데이터베이스, 파일 저장, 서버리스 기능</td><td>계정 정보, 게시물, 댓글, 게임방, 서비스 이용 데이터</td></tr>
                 <tr><td>Google Analytics 또는 유사 분석 도구</td><td>접속 통계 및 서비스 개선</td><td>비식별 이용 기록</td></tr>
               </tbody>
             </table>
@@ -69,7 +74,7 @@ export function renderPrivacy() {
           <h2 class="legal-h2">6. 이용자의 권리</h2>
           <ul class="legal-list">
             <li>이용자는 본인의 개인정보 열람, 수정, 삭제, 처리 정지를 요청할 수 있습니다.</li>
-            <li>닉네임 등 일부 정보는 내 정보 페이지에서 직접 수정할 수 있습니다.</li>
+            <li>닉네임과 프로필 아이콘 등 일부 정보는 내 정보 페이지에서 직접 수정할 수 있습니다.</li>
             <li>계정 삭제 또는 개인정보 관련 요청은 서비스 내 신고/문의 기능을 통해 접수할 수 있습니다.</li>
             <li>요청 내용은 관련 법령과 서비스 운영상 필요한 범위 내에서 처리됩니다.</li>
           </ul>
@@ -79,6 +84,7 @@ export function renderPrivacy() {
             <li>Firebase 인증과 보안 규칙을 통해 계정 및 데이터 접근을 제한합니다.</li>
             <li>관리자 기능은 권한이 확인된 계정에 한해 제공됩니다.</li>
             <li>비밀번호는 Firebase 인증 시스템을 통해 처리되며, 서비스 운영자가 평문 비밀번호를 저장하지 않습니다.</li>
+            <li>게임방 데이터는 방 생성자, 참가자, 관리자 권한에 맞게 제한될 수 있습니다.</li>
           </ul>
 
           <h2 class="legal-h2">8. 개인정보 보호 책임자</h2>
