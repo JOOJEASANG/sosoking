@@ -7,6 +7,10 @@ function getDetailId() {
   return match ? decodeURIComponent(match[1]) : null;
 }
 
+function attrSafe(value) {
+  return String(value || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 function safeUrl(value) {
   const url = String(value || '').trim();
   if (!url) return '';
@@ -52,12 +56,17 @@ function renderInlineImages(images, postId) {
   const list = images.map(safeUrl).filter(Boolean);
   if (!list.length) return '';
   return `
-    <div class="detail-inline-images" data-detail-inline-images="${postId}">
+    <div class="detail-inline-images" data-detail-inline-images="${attrSafe(postId)}">
       ${list.map((src, i) => `
         <button class="detail-inline-image" type="button" data-inline-image-idx="${i}" aria-label="사진 ${i + 1} 크게 보기">
           <img src="${src}" alt="게시글 사진 ${i + 1}" loading="eager">
         </button>`).join('')}
     </div>`;
+}
+
+function hasInlineImages(root, postId) {
+  return [...root.querySelectorAll('[data-detail-inline-images]')]
+    .some(el => el.getAttribute('data-detail-inline-images') === postId);
 }
 
 async function ensureDetailImages() {
@@ -69,8 +78,7 @@ async function ensureDetailImages() {
   const detailHeader = root.querySelector('.detail-header');
   if (!detailBody || !detailHeader) return;
 
-  const existingInline = root.querySelector(`[data-detail-inline-images="${CSS.escape(postId)}"]`);
-  if (existingInline) return;
+  if (hasInlineImages(root, postId)) return;
 
   try {
     const snap = await getDoc(doc(db, 'feeds', postId));
@@ -78,7 +86,6 @@ async function ensureDetailImages() {
     const images = Array.isArray(snap.data().images) ? snap.data().images : [];
     if (!images.length) return;
 
-    // 기존 상세 갤러리가 CSS 충돌로 안 보이는 경우가 있어, 본문 최상단에 별도 이미지 블록을 확실히 추가합니다.
     const oldGallery = root.querySelector('.detail-gallery');
     if (oldGallery) oldGallery.classList.add('detail-gallery--legacy-hidden');
 
