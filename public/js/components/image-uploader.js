@@ -4,11 +4,20 @@ import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { toast } from './toast.js';
 
 let uploadedFiles = []; // { file, dataUrl, storageUrl }
-let maxFiles = 5;
+let maxFiles = Infinity;
 let uploaderContainer = null;
 
-export function initImageUploader(container, max = 5) {
-  maxFiles = max;
+function normalizeMaxFiles(max) {
+  const n = Number(max);
+  return Number.isFinite(n) && n > 0 ? n : Infinity;
+}
+
+function isUnlimited() {
+  return !Number.isFinite(maxFiles);
+}
+
+export function initImageUploader(container, max = Infinity) {
+  maxFiles = normalizeMaxFiles(max);
   uploadedFiles = [];
   uploaderContainer = container;
   renderUploader(container);
@@ -83,6 +92,7 @@ function renderUploader(container) {
     <div class="img-upload-area" id="img-drop-zone">
       <div class="img-upload-area__icon">📷</div>
       <div class="img-upload-area__text">클릭하거나 사진을 끌어다 놓으세요</div>
+      <div class="img-upload-area__hint">사진 개수 제한 없이 추가할 수 있어요</div>
       <input type="file" id="img-file-input" accept="image/*" multiple style="display:none">
     </div>
     <div class="img-preview-grid" id="img-preview-grid"></div>
@@ -104,17 +114,25 @@ function renderUploader(container) {
 }
 
 async function handleFiles(files, container) {
-  const remaining = maxFiles - uploadedFiles.length;
-  if (remaining <= 0) { toast.warn(`최대 ${maxFiles}장까지 올릴 수 있어요`); return; }
-  const toProcess = [...files].slice(0, remaining);
+  const incoming = [...files];
+  const toProcess = isUnlimited()
+    ? incoming
+    : incoming.slice(0, Math.max(0, maxFiles - uploadedFiles.length));
 
+  if (!isUnlimited() && toProcess.length === 0) {
+    toast.warn(`최대 ${maxFiles}장까지 올릴 수 있어요`);
+    return;
+  }
+
+  let skipped = 0;
   for (const file of toProcess) {
     const looksLikeImage = file.type ? file.type.startsWith('image/') : /\.(jpe?g|png|gif|webp|heic|heif)$/i.test(file.name || '');
-    if (!looksLikeImage) continue;
+    if (!looksLikeImage) { skipped += 1; continue; }
     const dataUrl = await readAsDataUrl(file);
     uploadedFiles.push({ file, dataUrl, storageUrl: null });
   }
   renderPreviews(container);
+  if (skipped > 0) toast.warn(`이미지가 아닌 파일 ${skipped}개는 제외했어요`);
 }
 
 function renderPreviews(container) {
