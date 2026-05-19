@@ -21,6 +21,7 @@ const adminAutomation = require('./ai-admin-automation-functions.js');
 const weeklyAiSchedule = require('./weekly-ai-schedule-functions.js');
 const uploadImage = require('./upload-image-functions.js');
 const nicknameIcon = require('./nickname-icon-functions.js');
+const postOwner = require('./post-owner-functions.js');
 
 module.exports = {
   // Gemini 기반 관리자 AI 설정, 폼 자동 입력, 모더레이션, 리포트
@@ -63,4 +64,7 @@ module.exports = {
 
   // 신규 작성 콘텐츠에 작성자 닉네임 아이콘 자동 복사
   ...nicknameIcon,
+
+  // 작성자 본인 게시글 관리
+  ...postOwner,
 };
