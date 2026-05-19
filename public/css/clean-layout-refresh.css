@@ -42,6 +42,19 @@
   color: var(--color-text-secondary);
 }
 
+.home-hero--clean .home-hero__ghost-btn {
+  color: var(--color-text-primary) !important;
+  background: rgba(255,255,255,.72) !important;
+  border: 1px solid rgba(15,23,42,.14) !important;
+  font-weight: 900;
+}
+
+[data-theme="dark"] .home-hero--clean .home-hero__ghost-btn {
+  color: #fff !important;
+  background: rgba(255,255,255,.10) !important;
+  border-color: rgba(255,255,255,.16) !important;
+}
+
 .home-feature-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -202,12 +215,13 @@
   letter-spacing: -0.04em;
 }
 
-.multi-write-intro {
+.multi-preset-box--simple {
   margin-bottom: 10px !important;
+  padding: 13px !important;
 }
 
-.multi-preset-box {
-  margin-bottom: 10px !important;
+.multi-preset-box--simple .multi-preset-box__desc {
+  color: var(--color-text-muted);
 }
 
 .multi-preset-list {
@@ -216,6 +230,45 @@
 
 .multi-preset-btn {
   min-height: 32px !important;
+}
+
+.multi-module-list--selected {
+  margin-top: 14px;
+}
+
+.multi-module--selected .multi-module__head--static {
+  cursor: default;
+}
+
+.multi-module--selected .multi-module__body {
+  display: block !important;
+}
+
+.multi-general-note {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 13px;
+  border-radius: 14px;
+  border: 1px dashed rgba(255,107,74,.32);
+  background: var(--color-primary-bg);
+}
+
+.multi-general-note b {
+  color: var(--color-primary);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.multi-general-note span {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.multi-write-page .form-input::placeholder,
+.multi-write-page .form-textarea::placeholder {
+  color: color-mix(in srgb, var(--color-text-muted) 58%, transparent);
 }
 
 .account-page-wrap {
@@ -398,6 +451,14 @@
 
   .multi-write-page .write-step-title {
     font-size: 20px;
+  }
+
+  .multi-preset-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .multi-preset-btn {
+    min-height: 38px !important;
   }
 
   .account-page-wrap {
