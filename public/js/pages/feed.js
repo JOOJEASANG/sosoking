@@ -31,7 +31,7 @@ let isLoading     = false;
 let scrollObserver = null;
 
 export async function renderFeed() {
-  setMeta('피드 · 멀티게시판');
+  setMeta('피드');
   isLoading = false;
   if (scrollObserver) { scrollObserver.disconnect(); scrollObserver = null; }
   const el = document.getElementById('page-content');
@@ -41,8 +41,7 @@ export async function renderFeed() {
   lastDoc = null;
 
   el.innerHTML = `
-    <div class="layout-main layout-main--full">
-      ${renderFeedHeader()}
+    <div class="layout-main layout-main--full feed-page-clean">
       ${renderSearchBar()}
       ${renderFilterBar()}
       <div id="feed-list">${renderSkeletonCards(5)}</div>
@@ -50,7 +49,7 @@ export async function renderFeed() {
         <div class="spinner"></div>
       </div>
       <div id="feed-end" style="display:none;text-align:center;padding:24px;font-size:13px;color:var(--color-text-muted)">
-        여기까지 다 봤어요 👀 이번엔 직접 올려볼까요?
+        여기까지 다 봤어요 👀
       </div>
     </div>`;
 
@@ -87,17 +86,6 @@ export async function renderFeed() {
   attachTypeFilterListeners();
 }
 
-function renderFeedHeader() {
-  return `
-    <div class="feed-topbar">
-      <div>
-        <div class="feed-topbar__eyebrow">피드</div>
-        <h1 class="feed-topbar__title">멀티게시판 커뮤니티</h1>
-      </div>
-      <button class="btn btn--primary btn--sm" id="btn-feed-write">글쓰기</button>
-    </div>`;
-}
-
 function attachTypeFilterListeners() {
   document.querySelectorAll('[data-type-filter]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -114,19 +102,20 @@ function attachTypeFilterListeners() {
 
 function renderSearchBar() {
   return `
-    <div class="feed-search-bar">
-      <div class="feed-search-input-wrap">
+    <div class="feed-search-bar feed-search-bar--compact">
+      <div class="feed-search-input-wrap feed-search-input-wrap--compact">
         <svg class="feed-search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-        <input id="feed-search-input" class="feed-search-input" placeholder="제목으로 검색..." value="${escHtml(currentSearch)}" autocomplete="off">
+        <input id="feed-search-input" class="feed-search-input" placeholder="검색" value="${escHtml(currentSearch)}" autocomplete="off">
         <button id="search-clear-btn" class="feed-search-clear" style="display:${currentSearch ? 'inline-flex' : 'none'}">✕</button>
       </div>
-      <button class="btn btn--primary btn--sm" id="btn-feed-search">검색</button>
+      <button class="btn btn--ghost btn--sm feed-search-btn" id="btn-feed-search">검색</button>
+      <button class="btn btn--primary btn--sm feed-write-plus-btn" id="btn-feed-write">+ 글쓰기</button>
     </div>`;
 }
 
 function renderFilterBar() {
   return `
-    <div class="feed-filters" id="cat-filters">
+    <div class="feed-filters feed-filters--compact" id="cat-filters">
       <button class="filter-chip ${!currentType && !currentSearch ? 'active' : ''}" data-type-filter="">전체</button>
       ${PRIMARY_TYPES.map(type => `
         <button class="filter-chip ${currentType === type && !currentSearch ? 'active' : ''}" data-type-filter="${type}">
@@ -224,9 +213,9 @@ function renderEmptyState() {
   return `
     <div class="empty-state">
       <div class="empty-state__icon">${currentSearch ? '🔍' : '🌱'}</div>
-      <div class="empty-state__title">${currentSearch ? `"${escHtml(currentSearch)}" 검색 결과가 없어요` : '아직 아무도 안 왔네요 😄'}</div>
+      <div class="empty-state__title">${currentSearch ? `"${escHtml(currentSearch)}" 검색 결과가 없어요` : '아직 아무 글도 없어요'}</div>
       <div class="empty-state__desc">${currentSearch ? '다른 검색어는 어때요?' : '첫 번째 피드 글을 올려볼까요?'}</div>
-      ${!currentSearch ? `<button class="btn btn--primary" style="margin-top:16px" onclick="navigate('/write')">글쓰기</button>` : ''}
+      ${!currentSearch ? `<button class="btn btn--primary" style="margin-top:16px" onclick="navigate('/write')">+ 글쓰기</button>` : ''}
     </div>`;
 }
 
