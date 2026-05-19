@@ -61,14 +61,14 @@ function renderIconPicker(target) {
   section.style.marginBottom = '12px';
   section.innerHTML = `
     <div class="card__body--lg">
-      <div class="section-title" style="font-size:15px;margin-bottom:12px">🎭 닉네임 앞 아이콘</div>
+      <div class="section-title" style="font-size:15px;margin-bottom:12px">🎭 프로필 아이콘</div>
       <div class="nickname-icon-preview-row">
         <div class="nickname-icon-preview" id="nickname-icon-preview">
-          ${renderNicknameIcon(current, 'nickname-icon--preview') || '<span class="nickname-icon nickname-icon--empty">없음</span>'}
+          ${renderNicknameIcon(current, 'nickname-icon--preview') || '<span class="nickname-icon nickname-icon--empty">기본</span>'}
         </div>
         <div>
           <div style="font-size:13px;font-weight:800;color:var(--color-text-primary)">${esc(appState.nickname || auth.currentUser?.displayName || '내 닉네임')}</div>
-          <div style="font-size:12px;color:var(--color-text-muted);margin-top:3px">게시글·댓글·내 정보에서 닉네임 앞에 표시돼요</div>
+          <div style="font-size:12px;color:var(--color-text-muted);margin-top:3px">기존 닉네임 앞글자 원형 자리에 표시돼요</div>
         </div>
       </div>
       <div class="nickname-icon-emoji-grid">
@@ -81,9 +81,9 @@ function renderIconPicker(target) {
       <div class="nickname-icon-upload-row">
         <input id="nickname-icon-file" type="file" accept="image/*" style="display:none">
         <button class="btn btn--ghost btn--sm" id="btn-pick-icon-file">그림 파일 선택</button>
-        <button class="btn btn--ghost btn--sm" id="btn-clear-icon" style="color:var(--color-danger)">아이콘 제거</button>
+        <button class="btn btn--ghost btn--sm" id="btn-clear-icon" style="color:var(--color-danger)">기본 앞글자로 되돌리기</button>
       </div>
-      <div class="form-hint" style="margin-top:8px">그림 파일은 작은 정사각형 아이콘으로 보이도록 자동 축소돼요. 움직이는 GIF는 원본 유지됩니다.</div>
+      <div class="form-hint" style="margin-top:8px">선택한 이모지나 그림 파일은 닉네임 텍스트 앞에 따로 붙지 않고, 기존 앞글자 원형 표시 자리에만 보여요.</div>
     </div>`;
 
   target.insertAdjacentElement('afterend', section);
@@ -104,13 +104,13 @@ async function saveIcon(icon) {
   renderSidebar();
   updatePreview();
   applyKnownIcons();
-  toast.success(normalized ? '닉네임 아이콘을 저장했어요' : '닉네임 아이콘을 제거했어요');
+  toast.success(normalized ? '프로필 아이콘을 저장했어요' : '기본 앞글자 표시로 되돌렸어요');
 }
 
 function updatePreview() {
   const preview = document.getElementById('nickname-icon-preview');
   if (!preview) return;
-  preview.innerHTML = renderNicknameIcon(appState.nicknameIcon, 'nickname-icon--preview') || '<span class="nickname-icon nickname-icon--empty">없음</span>';
+  preview.innerHTML = renderNicknameIcon(appState.nicknameIcon, 'nickname-icon--preview') || '<span class="nickname-icon nickname-icon--empty">기본</span>';
 }
 
 function setupPickerEvents(section) {
@@ -171,34 +171,52 @@ async function getProfileIcon(uid) {
   }
 }
 
-function prependIconToElement(el, icon) {
-  if (!el || el.dataset.nicknameIconApplied === '1') return;
-  const html = renderNicknameIcon(icon);
-  if (!html) return;
-  el.insertAdjacentHTML('afterbegin', html);
-  el.dataset.nicknameIconApplied = '1';
+function defaultAvatarHtml() {
+  const user = auth.currentUser;
+  const nickname = appState.nickname || user?.displayName || user?.email?.split('@')[0] || '나';
+  if (user?.photoURL) {
+    return `<img src="${esc(user.photoURL)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+  }
+  return esc((nickname || '나')[0]);
+}
+
+function avatarContent(icon) {
+  const normalized = normalizeNicknameIcon(icon);
+  if (!normalized) return defaultAvatarHtml();
+  if (normalized.type === 'image') {
+    return `<img class="nickname-avatar-img" src="${esc(normalized.url)}" alt="" aria-hidden="true">`;
+  }
+  return `<span class="nickname-avatar-emoji" aria-hidden="true">${esc(normalized.value)}</span>`;
+}
+
+function setAvatar(el, icon) {
+  if (!el) return;
+  const normalized = normalizeNicknameIcon(icon);
+  const key = normalized ? JSON.stringify(normalized) : 'default';
+  if (el.dataset.nicknameAvatarKey === key) return;
+  el.innerHTML = avatarContent(normalized);
+  el.dataset.nicknameAvatarKey = key;
+  el.classList.toggle('avatar--nickname-icon', !!normalized);
+}
+
+function removePrependedTextIcons() {
+  document.querySelectorAll('.account-nickname, .sidebar__user-name').forEach(el => {
+    el.querySelectorAll(':scope > .nickname-icon').forEach(icon => icon.remove());
+    delete el.dataset.nicknameIconApplied;
+  });
 }
 
 async function applyAuthorIcons(root = document) {
-  // 현재 로그인 사용자 표시 영역
   const myIcon = appState.nicknameIcon;
-  document.querySelectorAll('.account-nickname, .sidebar__user-name').forEach(el => prependIconToElement(el, myIcon));
 
-  // 상세 게시글 작성자명
-  document.querySelectorAll('.detail-meta span:first-child').forEach(async el => {
-    const uid = document.querySelector('[data-post-author-id]')?.dataset.postAuthorId;
-    if (!uid) return;
-    const icon = await getProfileIcon(uid);
-    prependIconToElement(el, icon);
-  });
+  // 기존 닉네임 앞글자 원형 표시 자리에 아이콘을 넣습니다.
+  setAvatar(document.querySelector('.account-header > .avatar'), myIcon);
+  setAvatar(document.getElementById('sb-avatar'), myIcon);
 
-  // 피드 카드 작성자명은 authorId가 DOM에 없으므로 현재 사용자의 내 글/작성 직후 화면 위주로 보정
-  const myName = appState.nickname || auth.currentUser?.displayName;
-  if (myName) {
-    document.querySelectorAll('.feed-card__meta span:first-child, .comment-item__author, .acrostic-card__name, .notif-item__text strong:first-child').forEach(el => {
-      if ((el.textContent || '').trim() === myName) prependIconToElement(el, myIcon);
-    });
-  }
+  // 이전 버전에서 닉네임 글자 앞에 붙었던 아이콘은 제거합니다.
+  removePrependedTextIcons();
+
+  // 피드/댓글 텍스트 앞에는 중복 표시를 막기 위해 더 이상 새 아이콘을 붙이지 않습니다.
 }
 
 function applyKnownIcons() {
