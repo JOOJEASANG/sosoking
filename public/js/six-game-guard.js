@@ -1,6 +1,6 @@
 import { navigate } from './router.js';
 
-const ALLOWED_TYPES = new Set(['vote', 'naming', 'initial_game', 'crazy_court', 'relay', 'acrostic']);
+const ALLOWED_TYPES = new Set(['multi', 'vote', 'naming', 'initial_game', 'crazy_court', 'relay', 'acrostic']);
 const REMOVED_TYPES = new Set([
   'balance', 'battle', 'challenge24', 'tournament', 'drip', 'cbattle', 'laugh',
   'ox', 'quiz', 'word_relay', 'random_battle', 'howto', 'story', 'fail', 'concern',
