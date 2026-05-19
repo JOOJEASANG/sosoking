@@ -13,7 +13,7 @@ function iconFeed() {
   </svg>`;
 }
 
-function iconLand() {
+function iconGame() {
   return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
     <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 12h.008v.008H6.75V12zm10.5 0h.008v.008h-.008V12zM9 15.75h6m-9.75 3h13.5A2.25 2.25 0 0021 16.5v-9A2.25 2.25 0 0018.75 5.25H5.25A2.25 2.25 0 003 7.5v9a2.25 2.25 0 002.25 2.25z"/>
   </svg>`;
@@ -33,8 +33,8 @@ function iconAccount() {
 
 const NAV_ITEMS = [
   { id: 'home',    label: '홈',   path: '/',        icon: iconHome()    },
-  { id: 'feed',    label: '탐색', path: '/feed',    icon: iconFeed()    },
-  { id: 'land',    label: null,   path: '/sosoland', isCenter: true    },
+  { id: 'feed',    label: '피드', path: '/feed',    icon: iconFeed()    },
+  { id: 'game',    label: null,   path: '/sosoland', isCenter: true    },
   { id: 'hall',    label: '명예의전당', path: '/hall', icon: iconHall() },
   { id: 'account', label: '내정보', path: '/account', icon: iconAccount() },
 ];
@@ -52,9 +52,9 @@ export function renderBottomNav() {
           const isActive = path === item.path;
           return `
             <div class="bottom-nav__write">
-              <button class="bottom-nav__write-btn${isActive ? ' active' : ''}" data-nav-path="${item.path}" aria-label="소소랜드">
-                ${iconLand()}
-                <span class="bottom-nav__center-label">소소랜드</span>
+              <button class="bottom-nav__write-btn${isActive ? ' active' : ''}" data-nav-path="${item.path}" aria-label="게임">
+                ${iconGame()}
+                <span class="bottom-nav__center-label">게임</span>
               </button>
             </div>`;
         }
