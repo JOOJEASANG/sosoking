@@ -7,33 +7,23 @@ import { initImageUploader, getUploadedImages, hasPendingImages } from './compon
 
 const PRESETS = {
   vote: {
-    label: '골라봐', icon: '🗳️', modules: ['vote'],
-    title: '둘 중 뭐가 더 나아?', desc: '사람들의 선택을 받아보고 싶은 내용을 적어보세요.',
-    voteQuestion: '어느 쪽을 고를까요?', voteOptions: ['A 선택', 'B 선택'], tags: '골라봐, 투표'
+    label: '투표/판정', icon: '🗳️', modules: ['vote'],
+    title: '여러분의 판정은?', desc: '상황을 적고 사람들의 선택이나 판정을 받아보세요.',
+    voteQuestion: '어떻게 생각하세요?', voteOptions: ['그렇다', '아니다'], tags: '투표, 판정'
   },
   naming: {
     label: '미친작명소', icon: '😜', modules: ['naming'],
     title: '이 사진 이름 좀 지어줘', desc: '사진이나 상황에 어울리는 웃긴 이름을 받아보세요.', tags: '작명, 미친작명소'
   },
-  initial_game: {
-    label: '초성게임', icon: '🔤', modules: ['quiz'],
-    title: '초성게임 도전', desc: '초성이나 힌트를 본문에 적고 정답을 문제 기능에 넣어보세요.',
-    quizQuestion: '정답은 무엇일까요?', quizAnswer: '', tags: '초성게임, 문제'
-  },
-  crazy_court: {
-    label: '억까재판', icon: '⚖️', modules: ['vote'],
-    title: '이거 억까인가요?', desc: '상황을 적고 사람들이 판결하게 해보세요.',
-    voteQuestion: '이건 억까인가요?', voteOptions: ['억까다', '아니다'], tags: '억까재판, 판결'
-  },
-  relay: {
-    label: '릴레이', icon: '🎭', modules: ['relay'],
-    title: '릴레이 이어쓰기 시작', desc: '첫 문장을 던지고 사람들이 이야기를 이어가게 해보세요.',
-    relayStart: '어느 날 갑자기 이상한 일이 벌어졌다.', tags: '릴레이, 이어쓰기'
-  },
   acrostic: {
-    label: '삼행시짓기', icon: '✍️', modules: ['acrostic'],
+    label: '삼행시', icon: '✍️', modules: ['acrostic'],
     title: '삼행시 도전', desc: '제시어를 넣고 사람들이 한 줄씩 완성하게 해보세요.',
     acrosticKeyword: '소소킹', tags: '삼행시, 제시어'
+  },
+  quiz: {
+    label: '퀴즈', icon: '🧠', modules: ['quiz'],
+    title: '퀴즈 도전', desc: '문제를 내고 사람들이 정답을 맞히게 해보세요.',
+    quizQuestion: '정답은 무엇일까요?', quizAnswer: '', tags: '퀴즈, 문제'
   }
 };
 
@@ -66,8 +56,8 @@ function addMultiCard() {
   card.dataset.cat = 'multi';
   card.innerHTML = `
     <div class="type-select-card__icon">🧩</div>
-    <div class="type-select-card__name">만능 놀이글</div>
-    <div class="type-select-card__desc">글·사진·투표·작명·삼행시·릴레이·문제를 한 번에 조합</div>`;
+    <div class="type-select-card__name">피드 글쓰기</div>
+    <div class="type-select-card__desc">사진·투표·작명·삼행시·퀴즈를 조합하는 멀티게시판 글쓰기</div>`;
   card.addEventListener('click', () => {
     history.pushState(null, '', '#/write?type=multi');
     renderMultiWrite();
@@ -93,8 +83,8 @@ function moduleCard(key, icon, title, desc, body, checked = false) {
 function renderPresetButtons(activeKey) {
   return `
     <div class="multi-preset-box">
-      <div class="multi-preset-box__title">빠른 템플릿</div>
-      <div class="multi-preset-box__desc">기존 6개 유형을 만능 놀이글 모듈 조합으로 빠르게 시작합니다.</div>
+      <div class="multi-preset-box__title">글쓰기 형식</div>
+      <div class="multi-preset-box__desc">피드에 올릴 글의 기본 형식을 고르세요. 선택 후에도 기능을 자유롭게 켜고 끌 수 있습니다.</div>
       <div class="multi-preset-list">
         ${Object.entries(PRESETS).map(([key, p]) => `
           <button type="button" class="multi-preset-btn ${activeKey === key ? 'active' : ''}" data-multi-preset="${key}">${p.icon} ${p.label}</button>`).join('')}
@@ -114,11 +104,11 @@ function renderMultiWrite() {
     <div class="write-page multi-write-page" data-render-key="${esc(renderKey)}">
       <div class="write-step-header">
         <button class="write-back-btn" id="multi-back-type" type="button">←</button>
-        <h1 class="write-step-title">🧩 만능 놀이글</h1>
+        <h1 class="write-step-title">🧩 피드 글쓰기</h1>
       </div>
       <div class="multi-write-intro">
-        <div class="multi-write-intro__title">필요한 놀이 기능만 켜서 하나의 글로 만드세요.</div>
-        <div class="multi-write-intro__desc">기존 6개 유형을 템플릿으로 불러오거나, 원하는 기능을 직접 조합할 수 있습니다.</div>
+        <div class="multi-write-intro__title">멀티게시판 커뮤니티 글쓰기</div>
+        <div class="multi-write-intro__desc">미친작명소, 삼행시, 투표/판정, 퀴즈를 하나의 글 안에서 조합할 수 있습니다. 이어쓰기는 댓글과 답글 흐름으로 자연스럽게 진행됩니다.</div>
       </div>
       ${renderPresetButtons(presetKey)}
       <div class="card">
@@ -138,21 +128,21 @@ function renderMultiWrite() {
           </div>
           <div class="form-group">
             <label class="form-label">태그</label>
-            <input id="mw-tags" class="form-input" maxlength="100" value="${esc(preset?.tags || '')}" placeholder="#태그, #만능글, #소소킹">
+            <input id="mw-tags" class="form-input" maxlength="100" value="${esc(preset?.tags || '')}" placeholder="#태그, #피드, #소소킹">
           </div>
 
           <div class="multi-module-list">
-            ${moduleCard('vote', '🗳️', '투표 추가', '선택지를 만들어 사람들이 고르게 합니다.', `
+            ${moduleCard('vote', '🗳️', '투표/판정 기능', '선택지를 만들어 사람들이 고르거나 판정하게 합니다.', `
               <div class="form-group">
-                <label class="form-label">투표 질문</label>
-                <input id="mw-vote-question" class="form-input" maxlength="100" value="${esc(preset?.voteQuestion || '')}" placeholder="예: 어떤 이름이 제일 웃김?">
+                <label class="form-label">질문</label>
+                <input id="mw-vote-question" class="form-input" maxlength="100" value="${esc(preset?.voteQuestion || '')}" placeholder="예: 여러분의 판정은?">
               </div>
               <div class="multi-option-list" id="mw-vote-options">
                 ${(preset?.voteOptions || ['','']).map((v, i) => `<input class="form-input mw-vote-option" maxlength="80" value="${esc(v)}" placeholder="선택지 ${i + 1}">`).join('')}
               </div>
               <button class="btn btn--ghost btn--sm" type="button" id="mw-add-vote-option">+ 선택지 추가</button>`, isOn('vote'))}
 
-            ${moduleCard('naming', '😜', '작명 참여 추가', '참여자들이 웃긴 이름을 올립니다.', `
+            ${moduleCard('naming', '😜', '미친작명소 기능', '참여자들이 웃긴 이름을 올립니다.', `
               <div class="form-group">
                 <label class="form-label">글자수 제한</label>
                 <select id="mw-naming-count" class="form-select">
@@ -162,19 +152,13 @@ function renderMultiWrite() {
                 </select>
               </div>`, isOn('naming'))}
 
-            ${moduleCard('acrostic', '✍️', '삼행시 참여 추가', '제시어 글자별로 한 줄씩 작성합니다.', `
+            ${moduleCard('acrostic', '✍️', '삼행시 기능', '제시어 글자별로 한 줄씩 작성합니다.', `
               <div class="form-group">
                 <label class="form-label">제시어</label>
                 <input id="mw-acrostic-keyword" class="form-input" maxlength="8" value="${esc(preset?.acrosticKeyword || '')}" placeholder="예: 소소킹">
               </div>`, isOn('acrostic'))}
 
-            ${moduleCard('relay', '🎭', '릴레이 이어쓰기', '참여자들이 한 문장씩 이야기를 이어갑니다.', `
-              <div class="form-group">
-                <label class="form-label">시작 문장</label>
-                <textarea id="mw-relay-start" class="form-textarea" rows="3" maxlength="300" placeholder="예: 어느 날 내 폰에 이상한 문자가 도착했다.">${esc(preset?.relayStart || '')}</textarea>
-              </div>`, isOn('relay'))}
-
-            ${moduleCard('quiz', '🧠', '간단 문제 추가', '정답 맞히기 문제를 넣습니다.', `
+            ${moduleCard('quiz', '🧠', '퀴즈 기능', '정답 맞히기 문제를 넣습니다.', `
               <div class="form-group">
                 <label class="form-label">문제</label>
                 <input id="mw-quiz-question" class="form-input" maxlength="160" value="${esc(preset?.quizQuestion || '')}" placeholder="예: 소소킹의 첫 글자는?">
@@ -185,7 +169,7 @@ function renderMultiWrite() {
               </div>`, isOn('quiz'))}
           </div>
 
-          <div class="multi-comment-note">💬 일반 댓글과 공유는 항상 켜져 있습니다.</div>
+          <div class="multi-comment-note">💬 일반 댓글과 답글은 항상 켜져 있습니다. 이어쓰기형 놀이는 댓글로 자연스럽게 진행하세요.</div>
         </div>
         <div class="card__footer">
           <div class="write-submit">
@@ -262,12 +246,6 @@ function collectModules() {
     modules.acrostic = { enabled: true, keyword };
   }
 
-  if (enabled('relay')) {
-    const startSentence = document.getElementById('mw-relay-start')?.value.trim() || '';
-    if (!startSentence) throw new Error('릴레이 시작 문장을 입력해주세요.');
-    modules.relay = { enabled: true, startSentence };
-  }
-
   if (enabled('quiz')) {
     const question = document.getElementById('mw-quiz-question')?.value.trim() || '';
     const answer = document.getElementById('mw-quiz-answer')?.value.trim() || '';
@@ -307,7 +285,7 @@ async function submitMultiPost() {
       viewCount: 0,
       createdAt: serverTimestamp(),
     });
-    toast.success('만능 놀이글을 올렸어요! 🎉');
+    toast.success('피드 글을 올렸어요! 🎉');
     navigate(`/detail/${docRef.id}`);
   } catch (error) {
     console.error(error);
