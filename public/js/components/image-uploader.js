@@ -1,5 +1,6 @@
-import { storage, auth } from '../firebase.js';
+import { storage, auth, functions } from '../firebase.js';
 import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
+import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
 import { toast } from './toast.js';
 
 let uploadedFiles = []; // { file, dataUrl, storageUrl }
@@ -13,27 +14,59 @@ export function initImageUploader(container, max = 5) {
   renderUploader(container);
 }
 
+export function hasPendingImages() {
+  return uploadedFiles.length > 0;
+}
+
 export async function getUploadedImages() {
   if (!auth.currentUser || uploadedFiles.length === 0) return [];
   const urls = [];
-  let failCount = 0;
+  const failed = [];
+
   for (const item of uploadedFiles) {
     if (item.storageUrl) { urls.push(item.storageUrl); continue; }
     try {
-      const path = `feeds/${auth.currentUser.uid}/${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
-      const storageRef = ref(storage, path);
-      const blob = await compressImage(item.file);
-      if (!blob) throw new Error('이미지 압축 실패');
-      await uploadBytes(storageRef, blob, { contentType: 'image/jpeg' });
-      item.storageUrl = await getDownloadURL(storageRef);
-      urls.push(item.storageUrl);
+      const url = await uploadOneImage(item);
+      item.storageUrl = url;
+      urls.push(url);
     } catch (e) {
-      console.error('이미지 업로드 실패', e);
-      failCount++;
+      console.error('이미지 업로드 최종 실패', e);
+      failed.push(e);
     }
   }
-  if (failCount > 0) toast.warn(`사진 ${failCount}장 업로드에 실패했어요. 글은 저장됐어요.`);
+
+  if (failed.length > 0) {
+    throw new Error(`사진 ${failed.length}장 업로드에 실패했어요. 다시 시도해주세요.`);
+  }
   return urls;
+}
+
+async function uploadOneImage(item) {
+  const blob = await compressImage(item.file);
+  if (!blob) throw new Error('이미지 압축 실패');
+
+  try {
+    return await uploadDirect(blob);
+  } catch (directError) {
+    console.warn('Firebase Storage 직접 업로드 실패, 서버 업로드로 재시도', directError);
+    return await uploadViaFunction(blob);
+  }
+}
+
+async function uploadDirect(blob) {
+  const path = `feeds/${auth.currentUser.uid}/${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
+  const storageRef = ref(storage, path);
+  await uploadBytes(storageRef, blob, { contentType: 'image/jpeg' });
+  return getDownloadURL(storageRef);
+}
+
+async function uploadViaFunction(blob) {
+  const dataUrl = await readAsDataUrl(blob);
+  const fn = httpsCallable(functions, 'uploadFeedImage');
+  const result = await fn({ dataUrl });
+  const url = result.data && result.data.url;
+  if (!url) throw new Error('서버 이미지 업로드 응답이 올바르지 않습니다.');
+  return url;
 }
 
 function renderUploader(container) {
@@ -67,7 +100,8 @@ async function handleFiles(files, container) {
   const toProcess = [...files].slice(0, remaining);
 
   for (const file of toProcess) {
-    if (!file.type.startsWith('image/')) continue;
+    const looksLikeImage = file.type ? file.type.startsWith('image/') : /\.(jpe?g|png|gif|webp|heic|heif)$/i.test(file.name || '');
+    if (!looksLikeImage) continue;
     const dataUrl = await readAsDataUrl(file);
     uploadedFiles.push({ file, dataUrl, storageUrl: null });
   }
