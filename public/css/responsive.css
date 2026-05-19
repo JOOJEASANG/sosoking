@@ -11,8 +11,35 @@
    태블릿 + 모바일 (≤1023px)
    사이드바 숨기고 상단 헤더 + 하단 탭바로 전환
 ════════════════════════════════════════ */
+/* 헤더 앱설치 버튼 — 모바일 전용 */
+.site-header__install-btn {
+  display: none; /* 기본 숨김, 모바일에서만 표시 */
+}
+
 @media (max-width: 1023px) {
   .site-sidebar { display: none; }
+  /* 사이드바 내 설치 버튼은 모바일에서 확실히 숨김 */
+  .sidebar__util-btn#sb-pwa-btn { display: none !important; }
+
+  .site-header__install-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 11px;
+    border-radius: var(--radius-sm);
+    background: var(--color-primary);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 800;
+    border: none;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .site-header__install-btn svg {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+  }
 
   .site-header {
     display: flex;

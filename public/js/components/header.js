@@ -74,8 +74,8 @@ export function renderHeader() {
 
       <div class="site-header__actions">
         ${(appState.installPrompt || isIOS()) && !isStandalone() ? `
-        <button class="site-header__icon-btn" id="hdr-install-btn" aria-label="앱 설치" title="앱 설치">
-          ${iconInstall()}
+        <button class="site-header__install-btn" id="hdr-install-btn" aria-label="앱 설치">
+          ${iconInstall()}<span>앱 설치</span>
         </button>` : ''}
         <button class="site-header__icon-btn" id="hdr-theme-btn"
           aria-label="${dark ? '라이트 모드로 전환' : '다크 모드로 전환'}"
