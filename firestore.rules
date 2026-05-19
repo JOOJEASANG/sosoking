@@ -19,8 +19,7 @@ service cloud.firestore {
     }
     function validImageList() {
       return !('images' in request.resource.data)
-        || (request.resource.data.images is list
-          && request.resource.data.images.size() <= 10);
+        || (request.resource.data.images is list);
     }
     function isSafeCounterUpdate() {
       let changed = request.resource.data.diff(resource.data).affectedKeys();
