@@ -17,7 +17,8 @@ body:has(.admin-layout) .site-main {
 }
 
 body:has(.admin-layout) .page-container {
-  min-height: 100vh;
+  flex: 1;
+  min-height: 0;
 }
 
 @media (min-width: 1024px) {
