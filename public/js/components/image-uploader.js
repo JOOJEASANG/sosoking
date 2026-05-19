@@ -41,22 +41,31 @@ export async function getUploadedImages() {
   return urls;
 }
 
+function getImageKind(file) {
+  const type = String(file?.type || '').toLowerCase();
+  const name = String(file?.name || '').toLowerCase();
+  if (type === 'image/gif' || name.endsWith('.gif')) return { ext: 'gif', contentType: 'image/gif', animated: true };
+  return { ext: 'jpg', contentType: 'image/jpeg', animated: false };
+}
+
 async function uploadOneImage(item) {
-  const blob = await compressImage(item.file);
+  const kind = getImageKind(item.file);
+  // 움직이는 GIF는 canvas 압축을 거치면 애니메이션이 깨지므로 원본 그대로 업로드합니다.
+  const blob = kind.animated ? item.file : await compressImage(item.file);
   if (!blob) throw new Error('이미지 압축 실패');
 
   try {
-    return await uploadDirect(blob);
+    return await uploadDirect(blob, kind);
   } catch (directError) {
     console.warn('Firebase Storage 직접 업로드 실패, 서버 업로드로 재시도', directError);
     return await uploadViaFunction(blob);
   }
 }
 
-async function uploadDirect(blob) {
-  const path = `feeds/${auth.currentUser.uid}/${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
+async function uploadDirect(blob, kind = { ext: 'jpg', contentType: 'image/jpeg' }) {
+  const path = `feeds/${auth.currentUser.uid}/${Date.now()}_${Math.random().toString(36).slice(2)}.${kind.ext}`;
   const storageRef = ref(storage, path);
-  await uploadBytes(storageRef, blob, { contentType: 'image/jpeg' });
+  await uploadBytes(storageRef, blob, { contentType: kind.contentType });
   return getDownloadURL(storageRef);
 }
 
@@ -112,20 +121,24 @@ function renderPreviews(container) {
   const grid = container.querySelector('#img-preview-grid');
   if (!grid) return;
 
-  grid.innerHTML = uploadedFiles.map((item, i) => `
+  grid.innerHTML = uploadedFiles.map((item, i) => {
+    const isGif = getImageKind(item.file).animated;
+    return `
     <div class="img-preview-item" data-idx="${i}">
       <img src="${item.dataUrl}" alt="미리보기 ${i+1}">
       ${i === 0
         ? '<div class="img-preview-star">대표</div>'
         : `<button class="img-preview-thumb-btn" data-set-thumb="${i}" title="대표 사진으로 설정">★</button>`
       }
+      ${isGif ? '<div class="img-preview-star" style="left:auto;right:6px;background:#111827">GIF</div>' : ''}
       <div class="img-preview-toolbar">
         ${i > 0 ? `<button class="img-tool-btn" data-move-up="${i}" title="앞으로">↑</button>` : ''}
         ${i < uploadedFiles.length - 1 ? `<button class="img-tool-btn" data-move-down="${i}" title="뒤로">↓</button>` : ''}
-        <button class="img-tool-btn" data-crop="${i}" title="자르기">✂</button>
+        ${isGif ? '' : `<button class="img-tool-btn" data-crop="${i}" title="자르기">✂</button>`}
         <button class="img-tool-btn img-tool-btn--remove" data-remove="${i}" title="삭제">✕</button>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 
   grid.querySelectorAll('[data-remove]').forEach(btn => {
     btn.addEventListener('click', (e) => {
@@ -174,6 +187,10 @@ function renderPreviews(container) {
 
 function openCropModal(idx, container) {
   const item = uploadedFiles[idx];
+  if (getImageKind(item.file).animated) {
+    toast.warn('움직이는 GIF는 애니메이션 유지를 위해 자르기를 지원하지 않아요');
+    return;
+  }
   const overlay = document.createElement('div');
   overlay.className = 'crop-modal-overlay';
   overlay.innerHTML = `
