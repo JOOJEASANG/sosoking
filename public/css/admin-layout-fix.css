@@ -1,5 +1,6 @@
-/* admin-layout-fix.css — 관리자 페이지 전용 배경/레이아웃 보정 */
+/* admin-layout-fix.css — 관리자 페이지 전용 레이아웃 */
 
+/* ── 기본 배경 ── */
 body:has(.admin-layout) {
   background: var(--color-bg);
 }
@@ -19,20 +20,29 @@ body:has(.admin-layout) .page-container {
   min-height: 100vh;
 }
 
+/* PC: 페이지 패딩 제거 — 관리자 레이아웃이 헤더 바로 아래에서 전체 폭으로 */
+@media (min-width: 1024px) {
+  body:has(.admin-layout) .page-container {
+    padding: 0 !important;
+  }
+}
+
+/* ── 전체 레이아웃 (선/라인 스타일) ── */
 .admin-layout {
   display: grid;
-  grid-template-columns: 260px minmax(0, 1fr);
+  grid-template-columns: 220px minmax(0, 1fr);
   width: 100%;
   max-width: 1280px;
   min-height: calc(100vh - 56px);
   margin: 0 auto;
   background: var(--color-bg);
-  border: 1px solid var(--color-border-light);
-  border-radius: 24px;
-  overflow: hidden;
-  box-shadow: var(--shadow-md);
+  border: none;
+  border-radius: 0;
+  overflow: visible;
+  box-shadow: none;
 }
 
+/* ── 사이드바 ── */
 .admin-sidebar {
   position: sticky;
   top: 0;
@@ -44,11 +54,12 @@ body:has(.admin-layout) .page-container {
   border-right: 1px solid var(--color-border-light);
 }
 
+/* ── 브랜드 ── */
 .admin-brand {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 20px 18px;
+  padding: 16px 16px;
   border-bottom: 1px solid var(--color-border-light);
 }
 
@@ -56,9 +67,9 @@ body:has(.admin-layout) .page-container {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   overflow: hidden;
   flex-shrink: 0;
   background: var(--color-primary-bg);
@@ -71,7 +82,7 @@ body:has(.admin-layout) .page-container {
 }
 
 .admin-brand__title {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 950;
   color: var(--color-text-primary);
   letter-spacing: -0.4px;
@@ -84,104 +95,122 @@ body:has(.admin-layout) .page-container {
   font-weight: 800;
   color: var(--color-primary);
   letter-spacing: 0.06em;
-  background: var(--color-primary-bg);
-  display: inline-block;
-  padding: 1px 6px;
-  border-radius: 4px;
 }
 
+/* ── 내비게이션 ── */
 .admin-nav {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 14px;
+  gap: 0;
+  padding: 8px 0;
   flex: 1;
+  overflow-y: auto;
 }
 
+/* 구분선 */
+.admin-nav-divider {
+  height: 1px;
+  background: var(--color-border-light);
+  margin: 6px 16px;
+  flex-shrink: 0;
+}
+
+/* 메뉴 아이템 — 왼쪽 라인 인디케이터 스타일 */
 .admin-menu-item {
   display: flex;
   align-items: center;
   gap: 10px;
   width: 100%;
-  padding: 11px 13px;
-  border-radius: 12px;
+  padding: 10px 16px;
+  border-radius: 0;
+  border-left: 3px solid transparent;
   color: var(--color-text-secondary);
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
   text-align: left;
-  transition: background var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
+  transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
 }
 
 .admin-menu-item:hover {
   background: var(--color-surface-2);
   color: var(--color-text-primary);
+  border-left-color: var(--color-border);
 }
 
 .admin-menu-item.active {
   background: var(--color-primary-bg);
   color: var(--color-primary);
+  border-left-color: var(--color-primary);
+  font-weight: 800;
 }
 
-.admin-menu-item[data-tab="ai"] {
-  position: relative;
-  margin-top: auto;
-}
-
-.admin-menu-item[data-tab="myinfo"] {
-  margin-top: 0;
-}
+/* 구버전 separator 제거 */
+.admin-menu-item[data-tab="ai"] { margin-top: 0; position: static; }
+.admin-menu-item[data-tab="ai"]::before { display: none; }
+.admin-menu-item[data-tab="myinfo"] { margin-top: 0; }
 
 /* PC: 모바일용 짧은 라벨 숨김 */
 .admin-label-short { display: none; }
 
-.admin-menu-item[data-tab="ai"]::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: -8px;
-  height: 1px;
-  background: var(--color-border-light);
-}
-
-.admin-menu-item--write-shortcut {
+/* ── 글쓰기 바로가기 버튼 ── */
+.admin-write-shortcut {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: calc(100% - 28px);
+  margin: 4px 14px 2px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
   background: var(--gradient-brand);
   color: #fff;
+  font-size: 13px;
+  font-weight: 900;
   box-shadow: var(--shadow-brand);
+  flex-shrink: 0;
+  transition: filter var(--transition-fast);
 }
 
-.admin-menu-item--write-shortcut:hover {
-  color: #fff;
-  filter: brightness(1.02);
+.admin-write-shortcut:hover {
+  filter: brightness(1.06);
 }
 
+.admin-write-shortcut__icon {
+  font-size: 15px;
+  line-height: 1;
+}
+
+/* ── 사이드바 하단 ── */
 .admin-sidebar__footer {
-  padding: 14px;
+  padding: 12px 16px 14px;
   border-top: 1px solid var(--color-border-light);
-  background: var(--color-surface-2);
+  background: var(--color-surface);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 0;
 }
 
-/* 프로필 카드 */
+/* 프로필 — 카드 없이 플랫 */
 .admin-profile-card {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 12px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border-light);
-  border-radius: 14px;
+  padding: 8px 0 12px;
+  border-bottom: 1px solid var(--color-border-light);
+  margin-bottom: 10px;
+  background: none;
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  border-top: none;
 }
 
 .admin-profile-card__avatar {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background: var(--color-primary-bg);
   color: var(--color-primary);
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 900;
   display: flex;
   align-items: center;
@@ -210,56 +239,71 @@ body:has(.admin-layout) .page-container {
 }
 
 .admin-profile-card__role {
-  margin-top: 2px;
+  margin-top: 1px;
   font-size: 10px;
   font-weight: 700;
   color: var(--color-primary);
 }
 
-/* 사이트 이동 버튼 */
+/* 사이트 이동 버튼 — 플랫 텍스트 링크 스타일 */
 .admin-goto-site-btn {
   width: 100%;
-  padding: 9px 12px;
-  border-radius: 12px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  color: var(--color-text-secondary);
-  font-size: 13px;
-  font-weight: 800;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  padding: 6px 0;
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: left;
+  transition: color var(--transition-fast);
 }
 
 .admin-goto-site-btn:hover {
-  background: var(--color-surface-2);
-  color: var(--color-text-primary);
+  color: var(--color-primary);
 }
 
+/* ── 콘텐츠 영역 ── */
 #admin-content {
   min-width: 0;
-  padding: 28px;
-  background: var(--color-surface);
+  padding: 32px 36px;
+  background: var(--color-bg);
 }
 
+/* ── 섹션 타이틀 ── */
 .admin-section-title {
   font-size: 20px;
   font-weight: 950;
   color: var(--color-text-primary);
   letter-spacing: -0.5px;
+  margin-bottom: 20px;
 }
 
+/* ── 통계 카드 — 라인 스타일 ── */
 .admin-stat-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
+  gap: 1px;
+  background: var(--color-border-light);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
 }
 
-.admin-stat-card,
+.admin-stat-card {
+  background: var(--color-surface);
+  padding: 18px 16px;
+  box-shadow: none;
+  border: none;
+  border-radius: 0;
+}
+
 .admin-type-card {
   background: var(--color-surface);
   border: 1px solid var(--color-border-light);
-  border-radius: 16px;
-  padding: 18px 16px;
-  box-shadow: var(--shadow-xs);
+  border-radius: var(--radius-sm);
+  padding: 14px 10px;
+  box-shadow: none;
+  text-align: center;
 }
 
 .admin-stat-card__num {
@@ -279,21 +323,17 @@ body:has(.admin-layout) .page-container {
 .admin-type-grid {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.admin-type-card {
-  text-align: center;
+  gap: 8px;
 }
 
 .admin-type-card__icon {
-  font-size: 24px;
+  font-size: 22px;
   line-height: 1;
-  margin-bottom: 8px;
+  margin-bottom: 7px;
 }
 
 .admin-type-card__count {
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 950;
   color: var(--color-text-primary);
 }
@@ -305,6 +345,7 @@ body:has(.admin-layout) .page-container {
   color: var(--color-text-muted);
 }
 
+/* ── 테이블 ── */
 .admin-table {
   width: 100%;
   border-collapse: collapse;
@@ -355,26 +396,51 @@ body:has(.admin-layout) .page-container {
 }
 
 /* ── 내 정보 탭 ── */
+.admin-myinfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.admin-myinfo-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+  margin-top: 20px;
+}
+
+.admin-myinfo-section-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
 .admin-myinfo-profile-row {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--color-border-light);
+  margin-bottom: 4px;
 }
 
 .admin-myinfo-avatar {
-  width: 56px;
-  height: 56px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
   background: var(--color-primary-bg);
   color: var(--color-primary);
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 900;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
   flex-shrink: 0;
-  border: 2px solid var(--color-primary-border);
 }
 
 .admin-myinfo-avatar-img {
@@ -385,12 +451,12 @@ body:has(.admin-layout) .page-container {
 
 .admin-myinfo-role-badge {
   display: inline-block;
-  margin-top: 6px;
+  margin-top: 5px;
   padding: 2px 8px;
   border-radius: var(--radius-pill);
   background: var(--color-primary-bg);
   color: var(--color-primary);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 800;
 }
 
@@ -398,24 +464,29 @@ body:has(.admin-layout) .page-container {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 11px 0;
+  padding: 10px 0;
   border-bottom: 1px solid var(--color-border-light);
+}
+
+.admin-myinfo-row:last-child {
+  border-bottom: none;
 }
 
 .admin-myinfo-row__label {
   font-size: 13px;
   color: var(--color-text-muted);
+  flex-shrink: 0;
 }
 
 .admin-myinfo-row__value {
   font-size: 13px;
   font-weight: 700;
   color: var(--color-text-primary);
+  text-align: right;
 }
 
-.pwa-install-shortcut {
-  color: var(--color-primary) !important;
-}
+/* ── 기타 ── */
+.pwa-install-shortcut { color: var(--color-primary) !important; }
 
 .account-action-footer {
   justify-content: center !important;
@@ -430,10 +501,9 @@ body:has(.admin-layout) .page-container {
   justify-content: center;
 }
 
-.account-action-footer .account-install-btn {
-  margin-left: 0;
-}
+.account-action-footer .account-install-btn { margin-left: 0; }
 
+/* ── 다크 모드 ── */
 [data-theme="dark"] body:has(.admin-layout),
 [data-theme="dark"] body:has(.admin-layout) .app-shell,
 [data-theme="dark"] body:has(.admin-layout) .site-main,
@@ -443,27 +513,20 @@ body:has(.admin-layout) .page-container {
 }
 
 [data-theme="dark"] #admin-content {
-  background: var(--color-surface);
+  background: var(--color-bg);
 }
 
+[data-theme="dark"] .admin-sidebar,
 [data-theme="dark"] .admin-sidebar__footer {
-  background: var(--color-surface-2);
-}
-
-[data-theme="dark"] .admin-profile-card {
   background: var(--color-surface);
-  border-color: var(--color-border);
 }
 
-[data-theme="dark"] .admin-goto-site-btn {
+[data-theme="dark"] .admin-stat-card,
+[data-theme="dark"] .admin-type-card {
   background: var(--color-surface);
-  border-color: var(--color-border);
 }
 
-[data-theme="dark"] .admin-goto-site-btn:hover {
-  background: var(--color-surface-alt);
-}
-
+/* ── 모바일 (≤1023px) ── */
 @media (max-width: 1023px) {
   body:has(.admin-layout) {
     overflow-x: hidden;
@@ -498,7 +561,9 @@ body:has(.admin-layout) .page-container {
   }
 
   .admin-brand,
-  .admin-sidebar__footer {
+  .admin-sidebar__footer,
+  .admin-write-shortcut,
+  .admin-nav-divider {
     display: none !important;
   }
 
@@ -538,6 +603,7 @@ body:has(.admin-layout) .page-container {
     padding: 6px 8px 8px;
     margin: 0 auto;
     flex: none;
+    overflow: visible;
     box-sizing: border-box;
   }
 
@@ -552,6 +618,7 @@ body:has(.admin-layout) .page-container {
     gap: 3px;
     padding: 6px 2px;
     border-radius: 10px;
+    border-left: none;
     font-size: 10px;
     font-weight: 800;
     text-align: center;
@@ -573,18 +640,16 @@ body:has(.admin-layout) .page-container {
     text-align: center;
   }
 
+  .admin-menu-item:hover {
+    background: var(--color-surface-2);
+    border-left: none;
+    color: var(--color-text-primary);
+  }
+
   .admin-menu-item.active {
     background: var(--color-primary-bg);
     color: var(--color-primary);
-  }
-
-  .admin-menu-item[data-tab="ai"],
-  .admin-menu-item--write-shortcut {
-    margin-top: 0;
-  }
-
-  .admin-menu-item[data-tab="ai"]::before {
-    display: none;
+    border-left: none;
   }
 
   /* 모바일: PC 전체 라벨 숨기고 짧은 라벨 표시 */
@@ -601,16 +666,24 @@ body:has(.admin-layout) .page-container {
   #admin-content {
     min-height: calc(100vh - 130px);
     padding: 16px 14px 4px;
-    background: var(--color-surface);
+    background: var(--color-bg);
   }
 
-  .admin-stat-grid,
+  .admin-stat-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1px;
+  }
+
   .admin-type-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .admin-table {
     min-width: 720px;
+  }
+
+  .admin-myinfo-grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -620,19 +693,12 @@ body:has(.admin-layout) .page-container {
     padding: 6px 1px;
   }
 
-  .admin-menu-item__icon {
-    font-size: 17px;
-  }
+  .admin-menu-item__icon { font-size: 17px; }
 }
 
 @media (max-width: 340px) {
-  .admin-menu-item {
-    font-size: 8px;
-  }
-
-  .admin-menu-item__icon {
-    font-size: 16px;
-  }
+  .admin-menu-item { font-size: 8px; }
+  .admin-menu-item__icon { font-size: 16px; }
 }
 
 [data-theme="dark"] body:has(.admin-layout) .admin-sidebar {

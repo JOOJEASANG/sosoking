@@ -31,14 +31,26 @@ export async function renderAdmin() {
     return;
   }
 
-  const MENUS = [
+  const TOP_MENUS = [
     { key: 'dashboard', icon: '📊', label: '대시보드' },
     { key: 'posts',     icon: '📝', label: '게시물' },
     { key: 'reports',   icon: '🚨', label: '신고' },
     { key: 'users',     icon: '👥', label: '회원' },
-    { key: 'ai',        icon: '🤖', label: 'AI 운영관리', short: 'AI관리' },
-    { key: 'myinfo',    icon: '👤', label: '내 정보',     short: '내정보' },
   ];
+  const BOTTOM_MENUS = [
+    { key: 'ai',     icon: '🤖', label: 'AI 운영관리', short: 'AI관리' },
+    { key: 'myinfo', icon: '👤', label: '내 정보',     short: '내정보' },
+  ];
+  const MENUS = [...TOP_MENUS, ...BOTTOM_MENUS];
+
+  const renderMenuItem = (m) => `
+    <button class="admin-menu-item ${currentTab === m.key ? 'active' : ''}" data-tab="${m.key}">
+      <span class="admin-menu-item__icon">${m.icon}</span>
+      ${m.short
+        ? `<span class="admin-menu-item__label admin-label-full">${m.label}</span><span class="admin-menu-item__label admin-label-short">${m.short}</span>`
+        : `<span class="admin-menu-item__label">${m.label}</span>`
+      }
+    </button>`;
 
   const nickname = appState.nickname || user.displayName || user.email?.split('@')[0] || '관리자';
   const avatarHTML = user.photoURL
@@ -58,14 +70,14 @@ export async function renderAdmin() {
           </div>
         </div>
         <nav class="admin-nav">
-          ${MENUS.map(m => `
-            <button class="admin-menu-item ${currentTab === m.key ? 'active' : ''}" data-tab="${m.key}">
-              <span class="admin-menu-item__icon">${m.icon}</span>
-              ${m.short
-                ? `<span class="admin-menu-item__label admin-label-full">${m.label}</span><span class="admin-menu-item__label admin-label-short">${m.short}</span>`
-                : `<span class="admin-menu-item__label">${m.label}</span>`
-              }
-            </button>`).join('')}
+          ${TOP_MENUS.map(renderMenuItem).join('')}
+          <div class="admin-nav-divider"></div>
+          <button class="admin-write-shortcut" id="btn-admin-write">
+            <span class="admin-write-shortcut__icon">✏️</span>
+            <span class="admin-label-full">놀이판 만들기</span>
+            <span class="admin-label-short">글쓰기</span>
+          </button>
+          ${BOTTOM_MENUS.map(renderMenuItem).join('')}
         </nav>
         <div class="admin-sidebar__footer">
           <div class="admin-profile-card">
@@ -93,6 +105,7 @@ export async function renderAdmin() {
 
   document.getElementById('btn-goto-site')?.addEventListener('click', () => navigate('/'));
   document.getElementById('admin-brand-home')?.addEventListener('click', (e) => { e.preventDefault(); navigate('/'); });
+  document.getElementById('btn-admin-write')?.addEventListener('click', () => navigate('/write'));
 
   await loadTab(currentTab);
 }
@@ -673,56 +686,65 @@ async function renderMyInfo(el) {
     : `<span>${nickname[0] || '관'}</span>`;
 
   el.innerHTML = `
-    <div style="max-width:600px;display:flex;flex-direction:column;gap:20px">
+    <div class="admin-myinfo">
       <h2 class="admin-section-title">👤 내 정보 설정</h2>
 
-      <div class="card">
-        <div class="card__body--lg">
-          <div class="admin-myinfo-profile-row">
-            <div class="admin-myinfo-avatar">${avatarHTML}</div>
-            <div>
-              <div style="font-size:17px;font-weight:900;color:var(--color-text-primary)">${escHtml(nickname)}</div>
-              <div style="font-size:12px;color:var(--color-text-muted);margin-top:3px">${escHtml(user.email || '')}</div>
-              <span class="admin-myinfo-role-badge">🔑 관리자</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      <div class="admin-myinfo-grid">
 
-      <div class="card">
-        <div class="card__body--lg">
-          <div style="font-size:15px;font-weight:800;margin-bottom:16px">✏️ 닉네임 변경</div>
-          <div class="form-group">
-            <label class="form-label">새 닉네임 <span class="required">*</span></label>
-            <input id="admin-new-nickname" class="form-input" type="text"
-              value="${escHtml(nickname)}"
-              placeholder="2~12자, 한글/영문/숫자/_"
-              maxlength="12">
-            <div class="form-hint">2~12자, 한글·영문·숫자·_(밑줄)만 사용 가능해요</div>
-            <div id="admin-nickname-feedback" style="font-size:12px;margin-top:6px;min-height:18px"></div>
+        <!-- 왼쪽: 프로필 + 계정 정보 -->
+        <div>
+          <div class="card" style="margin-bottom:16px">
+            <div class="card__body--lg">
+              <div class="admin-myinfo-section-title">🙋 내 프로필</div>
+              <div class="admin-myinfo-profile-row">
+                <div class="admin-myinfo-avatar">${avatarHTML}</div>
+                <div>
+                  <div style="font-size:16px;font-weight:900;color:var(--color-text-primary)">${escHtml(nickname)}</div>
+                  <div style="font-size:12px;color:var(--color-text-muted);margin-top:2px">${escHtml(user.email || '')}</div>
+                  <span class="admin-myinfo-role-badge">🔑 관리자</span>
+                </div>
+              </div>
+            </div>
           </div>
-          <button class="btn btn--primary btn--sm" id="btn-admin-save-nickname">저장하기</button>
-        </div>
-      </div>
 
-      <div class="card">
-        <div class="card__body--lg">
-          <div style="font-size:15px;font-weight:800;margin-bottom:14px">🔐 계정 정보</div>
-          <div style="display:flex;flex-direction:column;gap:0">
-            <div class="admin-myinfo-row">
-              <span class="admin-myinfo-row__label">이메일</span>
-              <span class="admin-myinfo-row__value">${escHtml(user.email || '—')}</span>
-            </div>
-            <div class="admin-myinfo-row">
-              <span class="admin-myinfo-row__label">로그인 방식</span>
-              <span class="admin-myinfo-row__value">${isGoogle ? '구글 소셜 로그인' : '이메일/비밀번호'}</span>
-            </div>
-            <div class="admin-myinfo-row" style="border-bottom:0">
-              <span class="admin-myinfo-row__label">권한</span>
-              <span class="admin-myinfo-row__value" style="color:var(--color-primary);font-weight:800">🔑 관리자</span>
+          <div class="card">
+            <div class="card__body--lg">
+              <div class="admin-myinfo-section-title">🔐 계정 정보</div>
+              <div class="admin-myinfo-row">
+                <span class="admin-myinfo-row__label">이메일</span>
+                <span class="admin-myinfo-row__value">${escHtml(user.email || '—')}</span>
+              </div>
+              <div class="admin-myinfo-row">
+                <span class="admin-myinfo-row__label">로그인 방식</span>
+                <span class="admin-myinfo-row__value">${isGoogle ? '구글 소셜 로그인' : '이메일/비밀번호'}</span>
+              </div>
+              <div class="admin-myinfo-row">
+                <span class="admin-myinfo-row__label">권한</span>
+                <span class="admin-myinfo-row__value" style="color:var(--color-primary)">🔑 관리자</span>
+              </div>
             </div>
           </div>
         </div>
+
+        <!-- 오른쪽: 닉네임 변경 -->
+        <div>
+          <div class="card">
+            <div class="card__body--lg">
+              <div class="admin-myinfo-section-title">✏️ 닉네임 변경</div>
+              <div class="form-group">
+                <label class="form-label">새 닉네임 <span class="required">*</span></label>
+                <input id="admin-new-nickname" class="form-input" type="text"
+                  value="${escHtml(nickname)}"
+                  placeholder="2~12자, 한글/영문/숫자/_"
+                  maxlength="12">
+                <div class="form-hint">2~12자, 한글·영문·숫자·_(밑줄)만 사용 가능해요</div>
+                <div id="admin-nickname-feedback" style="font-size:12px;margin-top:6px;min-height:18px"></div>
+              </div>
+              <button class="btn btn--primary btn--sm" id="btn-admin-save-nickname">저장하기</button>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>`;
 
