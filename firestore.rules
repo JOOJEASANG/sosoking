@@ -59,6 +59,12 @@ service cloud.firestore {
         && !changed.hasAny(['authorId', 'authorName', 'authorPhoto', 'reactions', 'reactedWith', 'commentCount', 'acrosticCount', 'viewCount', 'votedBy']);
     }
 
+    function validReplyCreate() {
+      return signedIn()
+        && request.resource.data.authorId == request.auth.uid
+        && validText(request.resource.data.text, 300);
+    }
+
     // ── 관리자 ─────────────────────────────────────────────
     match /admins/{uid} {
       allow read:  if signedIn() && request.auth.uid == uid;
@@ -115,6 +121,13 @@ service cloud.firestore {
                         && validText(request.resource.data.text, 500);
         allow update: if isAdmin() || isAuthorContentUpdate(resource.data.authorId);
         allow delete: if isAdmin() || isAuthor(resource.data.authorId);
+
+        match /replies/{replyId} {
+          allow read: if true;
+          allow create: if validReplyCreate();
+          allow update: if false;
+          allow delete: if isAdmin() || isAuthor(resource.data.authorId);
+        }
       }
 
       match /secret/{docId} {
@@ -133,9 +146,20 @@ service cloud.firestore {
                         && validText(request.resource.data.get('text', ''), 500);
         allow update: if isAdmin() || isAuthorContentUpdate(resource.data.authorId);
         allow delete: if isAdmin() || isAuthor(resource.data.authorId);
+
+        match /replies/{replyId} {
+          allow read: if true;
+          allow create: if validReplyCreate();
+          allow update: if false;
+          allow delete: if isAdmin() || isAuthor(resource.data.authorId);
+        }
       }
 
       match /viewers/{userId} {
+        allow read, write: if false;
+      }
+
+      match /view_events/{eventId} {
         allow read, write: if false;
       }
     }
