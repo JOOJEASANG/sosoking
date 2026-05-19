@@ -36,6 +36,7 @@ import { renderPrivacy } from './pages/privacy.js';
 import { renderScraps }  from './pages/scraps.js';
 import { renderHall }    from './pages/hall.js';
 import { renderSosoland } from './pages/sosoland.js';
+import { renderLiarGame } from './pages/liar-game.js';
 
 export { appState };
 
@@ -81,13 +82,13 @@ export async function initApp() {
                   <img src="/logo.svg" alt="" width="26" height="26">
                   <span>소소킹</span>
                 </a>
-                <div class="site-footer__tagline">만능 놀이글 · 소소랜드 게임<br>가볍게 즐기는 소소한 킹갓 놀이터</div>
+                <div class="site-footer__tagline">피드 · 게임<br>가볍게 즐기는 소소한 킹갓 놀이터</div>
               </div>
               <div>
                 <div class="site-footer__col-title">바로가기</div>
                 <div class="site-footer__links">
-                  <a href="#/feed">탐색하기</a>
-                  <a href="#/sosoland">소소랜드</a>
+                  <a href="#/feed">피드</a>
+                  <a href="#/sosoland">게임</a>
                   <a href="#/hall">명예의 전당</a>
                   <a href="#/guide">이용안내</a>
                 </div>
@@ -167,6 +168,8 @@ export async function initApp() {
   registerRoute('/feed',       () => renderFeed());
   registerRoute('/write',      () => renderWrite());
   registerRoute('/sosoland',   () => renderSosoland());
+  registerRoute('/game/liar',  () => renderLiarGame());
+  registerRoute('/game/liar/:id', ({ id }) => renderLiarGame({ id }));
   registerRoute('/detail/:id', ({ id }) => renderDetail(id));
   registerRoute('/account',    () => renderAccount());
   registerRoute('/scraps',     () => renderScraps());
