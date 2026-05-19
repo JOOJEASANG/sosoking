@@ -48,8 +48,9 @@ service cloud.firestore {
         && changed.hasOnly(['options', 'votedBy'])
         && request.resource.data.votedBy is list
         && request.resource.data.votedBy.hasAll(resource.data.get('votedBy', []))
-        && request.resource.data.votedBy.size() == resource.data.get('votedBy', []).size() + 1
-        && request.resource.data.votedBy.hasOnly(resource.data.get('votedBy', []).concat([request.auth.uid]));
+        && !(request.auth.uid in resource.data.get('votedBy', []))
+        && request.resource.data.votedBy.hasAny([request.auth.uid])
+        && request.resource.data.votedBy.size() == resource.data.get('votedBy', []).size() + 1;
     }
     function isSafeMultiVoteUpdate() {
       let changed = request.resource.data.diff(resource.data).affectedKeys();
