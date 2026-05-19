@@ -1,8 +1,13 @@
+// relay 타입 문구 보정 스크립트
+// 최종 명칭 기준: 막장릴레이
+// site-copy-normalizer.js도 막장킹 → 막장릴레이로 정규화하므로,
+// 이 파일에서는 막장릴레이를 막장킹으로 되돌리는 치환을 절대 하지 않습니다.
 const REPLACEMENTS = [
-  ['막장릴레이', '막장킹'],
-  ['릴레이 이야기', '막장킹 이야기'],
+  ['막장킹 이야기', '막장릴레이 이야기'],
+  ['막장킹에 참여했어요!', '막장릴레이에 참여했어요!'],
+  ['릴레이 이야기', '막장릴레이 이야기'],
   ['이어쓰기', '막장 이어쓰기'],
-  ['이야기를 이어썼어요!', '막장킹에 참여했어요!'],
+  ['이야기를 이어썼어요!', '막장릴레이에 참여했어요!'],
   ['다음 이야기를 이어주세요', '다음 막장 전개를 이어주세요'],
   ['한 문장씩 이어가는 스토리', '한 문장씩 터지는 막장 전개'],
 ];
@@ -48,7 +53,7 @@ function patchRelayLabels(root = document.body) {
       const parent = node.parentElement;
       if (!parent) return NodeFilter.FILTER_REJECT;
       const tag = parent.tagName;
-      if (tag === 'SCRIPT' || tag === 'STYLE') return NodeFilter.FILTER_REJECT;
+      if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'TEXTAREA' || tag === 'INPUT') return NodeFilter.FILTER_REJECT;
       return REPLACEMENTS.some(([from]) => node.nodeValue.includes(from))
         ? NodeFilter.FILTER_ACCEPT
         : NodeFilter.FILTER_REJECT;
