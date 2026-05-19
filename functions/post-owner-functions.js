@@ -16,20 +16,11 @@ async function isAdmin(uid) {
   return !!snap?.exists;
 }
 
-async function deleteCollectionRef(colRef, batchSize = 200) {
+async function deleteDocsInCollection(path, batchSize = 200) {
   let total = 0;
   while (true) {
-    const snap = await colRef.limit(batchSize).get();
+    const snap = await db.collection(path).limit(batchSize).get();
     if (snap.empty) break;
-
-    // 문서 삭제 전 하위 컬렉션을 먼저 정리합니다.
-    for (const docSnap of snap.docs) {
-      const subCollections = await docSnap.ref.listCollections().catch(() => []);
-      for (const subCol of subCollections) {
-        total += await deleteCollectionRef(subCol, batchSize);
-      }
-    }
-
     const batch = db.batch();
     snap.docs.forEach(docSnap => batch.delete(docSnap.ref));
     await batch.commit();
@@ -39,8 +30,23 @@ async function deleteCollectionRef(colRef, batchSize = 200) {
   return total;
 }
 
-async function deleteCollection(path, batchSize = 200) {
-  return deleteCollectionRef(db.collection(path), batchSize);
+async function deleteCollectionWithReplies(path, batchSize = 100) {
+  let total = 0;
+  while (true) {
+    const snap = await db.collection(path).limit(batchSize).get();
+    if (snap.empty) break;
+
+    for (const docSnap of snap.docs) {
+      total += await deleteDocsInCollection(`${path}/${docSnap.id}/replies`, batchSize);
+    }
+
+    const batch = db.batch();
+    snap.docs.forEach(docSnap => batch.delete(docSnap.ref));
+    await batch.commit();
+    total += snap.size;
+    if (snap.size < batchSize) break;
+  }
+  return total;
 }
 
 const deleteOwnPost = onCall({ region: REGION, timeoutSeconds: 120, memory: '512MiB' }, async request => {
@@ -61,15 +67,19 @@ const deleteOwnPost = onCall({ region: REGION, timeoutSeconds: 120, memory: '512
   }
 
   const counts = {};
-  counts.comments = await deleteCollection(`feeds/${postId}/comments`);
-  counts.acrostics = await deleteCollection(`feeds/${postId}/acrostics`);
-  counts.multiNaming = await deleteCollection(`feeds/${postId}/multi_naming`);
-  counts.multiAcrostic = await deleteCollection(`feeds/${postId}/multi_acrostic`);
-  counts.multiRelay = await deleteCollection(`feeds/${postId}/multi_relay`);
-  counts.quizAttempts = await deleteCollection(`feeds/${postId}/quiz_attempts`);
-  counts.viewers = await deleteCollection(`feeds/${postId}/viewers`);
-  counts.viewEvents = await deleteCollection(`feeds/${postId}/view_events`);
-  counts.secret = await deleteCollection(`feeds/${postId}/secret`);
+
+  // 하위 답글이 있는 컬렉션은 replies를 먼저 명시적으로 삭제합니다.
+  counts.comments = await deleteCollectionWithReplies(`feeds/${postId}/comments`);
+  counts.acrostics = await deleteCollectionWithReplies(`feeds/${postId}/acrostics`);
+  counts.multiNaming = await deleteCollectionWithReplies(`feeds/${postId}/multi_naming`);
+  counts.multiAcrostic = await deleteCollectionWithReplies(`feeds/${postId}/multi_acrostic`);
+  counts.multiRelay = await deleteCollectionWithReplies(`feeds/${postId}/multi_relay`);
+
+  // 답글이 없는 보조 컬렉션은 문서만 삭제합니다.
+  counts.quizAttempts = await deleteDocsInCollection(`feeds/${postId}/quiz_attempts`);
+  counts.viewers = await deleteDocsInCollection(`feeds/${postId}/viewers`);
+  counts.viewEvents = await deleteDocsInCollection(`feeds/${postId}/view_events`);
+  counts.secret = await deleteDocsInCollection(`feeds/${postId}/secret`);
 
   const scrapSnap = await db.collectionGroup('scraps')
     .where('postId', '==', postId)
