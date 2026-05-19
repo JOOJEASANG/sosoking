@@ -10,7 +10,6 @@ import './acrostic-enhancer.js';
 import './initial-game-enhancer.js';
 import './representative-games-enhancer.js';
 import './write-normalizer.js';
-import './relay-name-patch.js';
 import './account-secure-actions.js';
 import './admin-session-guard.js';
 import './admin-password-actions.js';
@@ -36,6 +35,7 @@ import { renderTerms }   from './pages/terms.js';
 import { renderPrivacy } from './pages/privacy.js';
 import { renderScraps }  from './pages/scraps.js';
 import { renderHall }    from './pages/hall.js';
+import { renderSosoland } from './pages/sosoland.js';
 
 export { appState };
 
@@ -81,12 +81,13 @@ export async function initApp() {
                   <img src="/logo.svg" alt="" width="26" height="26">
                   <span>소소킹</span>
                 </a>
-                <div class="site-footer__tagline">7가지 대표 놀이 · 참여형 커뮤니티<br>가볍게 즐기는 소소한 킹갓 놀이터</div>
+                <div class="site-footer__tagline">만능 놀이글 · 소소랜드 게임<br>가볍게 즐기는 소소한 킹갓 놀이터</div>
               </div>
               <div>
                 <div class="site-footer__col-title">바로가기</div>
                 <div class="site-footer__links">
                   <a href="#/feed">탐색하기</a>
+                  <a href="#/sosoland">소소랜드</a>
                   <a href="#/hall">명예의 전당</a>
                   <a href="#/guide">이용안내</a>
                 </div>
@@ -129,11 +130,8 @@ export async function initApp() {
     const expanded = this.getAttribute('aria-expanded') === 'true';
     this.setAttribute('aria-expanded', String(!expanded));
     this.classList.toggle('open', !expanded);
-    if (expanded) {
-      body.hidden = true;
-    } else {
-      body.hidden = false;
-    }
+    if (expanded) body.hidden = true;
+    else body.hidden = false;
   });
 
   onAuthStateChanged(auth, async (user) => {
@@ -161,7 +159,6 @@ export async function initApp() {
       if (appState.isAdmin && path !== '/admin') navigate('/admin');
       else if (path === '/login') navigate('/');
     } else if (wasLoading) {
-      // 새로고침 시 인증 완료 후 현재 페이지 재렌더
       window.dispatchEvent(new Event('hashchange'));
     }
   });
@@ -169,6 +166,7 @@ export async function initApp() {
   registerRoute('/',           () => renderHome());
   registerRoute('/feed',       () => renderFeed());
   registerRoute('/write',      () => renderWrite());
+  registerRoute('/sosoland',   () => renderSosoland());
   registerRoute('/detail/:id', ({ id }) => renderDetail(id));
   registerRoute('/account',    () => renderAccount());
   registerRoute('/scraps',     () => renderScraps());
