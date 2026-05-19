@@ -26,9 +26,9 @@ const PRESETS = {
     voteQuestion: '이건 억까인가요?', voteOptions: ['억까다', '아니다'], tags: '억까재판, 판결'
   },
   relay: {
-    label: '막장릴레이', icon: '🎭', modules: ['relay'],
-    title: '막장릴레이 시작', desc: '첫 문장을 던지고 사람들이 이야기를 이어가게 해보세요.',
-    relayStart: '어느 날 갑자기 이상한 일이 벌어졌다.', tags: '막장릴레이, 이어쓰기'
+    label: '릴레이', icon: '🎭', modules: ['relay'],
+    title: '릴레이 이어쓰기 시작', desc: '첫 문장을 던지고 사람들이 이야기를 이어가게 해보세요.',
+    relayStart: '어느 날 갑자기 이상한 일이 벌어졌다.', tags: '릴레이, 이어쓰기'
   },
   acrostic: {
     label: '삼행시짓기', icon: '✍️', modules: ['acrostic'],
@@ -168,7 +168,7 @@ function renderMultiWrite() {
                 <input id="mw-acrostic-keyword" class="form-input" maxlength="8" value="${esc(preset?.acrosticKeyword || '')}" placeholder="예: 소소킹">
               </div>`, isOn('acrostic'))}
 
-            ${moduleCard('relay', '🎭', '릴레이 이어쓰기 추가', '참여자들이 한 문장씩 이야기를 이어갑니다.', `
+            ${moduleCard('relay', '🎭', '릴레이 이어쓰기', '참여자들이 한 문장씩 이야기를 이어갑니다.', `
               <div class="form-group">
                 <label class="form-label">시작 문장</label>
                 <textarea id="mw-relay-start" class="form-textarea" rows="3" maxlength="300" placeholder="예: 어느 날 내 폰에 이상한 문자가 도착했다.">${esc(preset?.relayStart || '')}</textarea>
