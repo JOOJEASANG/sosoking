@@ -25,6 +25,15 @@ body:has(.admin-layout) .page-container {
   body:has(.admin-layout) .page-container {
     padding: 0 !important;
   }
+
+  /* PC에서 site-header가 display:none이므로 full 100vh 채움 */
+  body:has(.admin-layout) .admin-layout {
+    min-height: 100vh;
+  }
+
+  body:has(.admin-layout) .admin-sidebar {
+    height: 100vh;
+  }
 }
 
 /* ── 전체 레이아웃 (선/라인 스타일) ── */
