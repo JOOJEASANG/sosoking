@@ -52,6 +52,14 @@ service cloud.firestore {
         && request.resource.data.votedBy.size() == resource.data.get('votedBy', []).size() + 1
         && request.resource.data.votedBy.hasOnly(resource.data.get('votedBy', []).concat([request.auth.uid]));
     }
+    function isSafeMultiVoteUpdate() {
+      let changed = request.resource.data.diff(resource.data).affectedKeys();
+      return signedIn()
+        && resource.data.type == 'multi'
+        && changed.hasOnly(['modules'])
+        && request.resource.data.authorId == resource.data.authorId
+        && request.resource.data.type == resource.data.type;
+    }
     function isAuthorContentUpdate(authorId) {
       let changed = request.resource.data.diff(resource.data).affectedKeys();
       return isAuthor(authorId)
@@ -63,6 +71,11 @@ service cloud.firestore {
       return signedIn()
         && request.resource.data.authorId == request.auth.uid
         && validText(request.resource.data.text, 300);
+    }
+    function validMultiParticipationCreate() {
+      return signedIn()
+        && request.resource.data.authorId == request.auth.uid
+        && validText(request.resource.data.get('text', ''), 500);
     }
 
     // ── 관리자 ─────────────────────────────────────────────
@@ -106,7 +119,8 @@ service cloud.firestore {
                       && validImageList();
       allow update: if isAdmin() || isAuthorContentUpdate(resource.data.authorId)
                       || isSafeCounterUpdate()
-                      || isSafeVoteUpdate();
+                      || isSafeVoteUpdate()
+                      || isSafeMultiVoteUpdate();
       allow delete: if isAdmin() || isAuthor(resource.data.authorId);
 
       match /quiz_attempts/{userId} {
@@ -153,6 +167,25 @@ service cloud.firestore {
           allow update: if false;
           allow delete: if isAdmin() || isAuthor(resource.data.authorId);
         }
+      }
+
+      match /multi_naming/{itemId} {
+        allow read: if true;
+        allow create: if validMultiParticipationCreate();
+        allow update: if false;
+        allow delete: if isAdmin() || isAuthor(resource.data.authorId);
+      }
+      match /multi_acrostic/{itemId} {
+        allow read: if true;
+        allow create: if validMultiParticipationCreate();
+        allow update: if false;
+        allow delete: if isAdmin() || isAuthor(resource.data.authorId);
+      }
+      match /multi_relay/{itemId} {
+        allow read: if true;
+        allow create: if validMultiParticipationCreate();
+        allow update: if false;
+        allow delete: if isAdmin() || isAuthor(resource.data.authorId);
       }
 
       match /viewers/{userId} {
