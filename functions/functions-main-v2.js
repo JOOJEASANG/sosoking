@@ -18,6 +18,7 @@ const account = require('./account-functions.js');
 const features = require('./sosoking-features-functions.js');
 const aiContent = require('./ai-content-functions.js');
 const adminAutomation = require('./ai-admin-automation-functions.js');
+const weeklyAiSchedule = require('./weekly-ai-schedule-functions.js');
 
 module.exports = {
   // Gemini 기반 관리자 AI 설정, 폼 자동 입력, 모더레이션, 리포트
@@ -51,4 +52,7 @@ module.exports = {
   ...account,
   ...features,
   ...adminAutomation,
+
+  // 자동 생성 스케줄은 최종적으로 주 1회 버전으로 덮어씁니다.
+  ...weeklyAiSchedule,
 };
