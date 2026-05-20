@@ -3,6 +3,8 @@ import { addDoc, collection, doc, serverTimestamp, setDoc } from 'https://www.gs
 import { makeRoomCode, gamePlayerName } from '../common.js';
 
 export async function createLiarRoom({ title, category, maxPlayers, liarCount }) {
+  if (!auth.currentUser) throw new Error('게임 접속 정보를 확인하지 못했어요. 다시 시도해주세요.');
+
   const room = {
     game: 'liar',
     status: 'waiting',
@@ -18,11 +20,18 @@ export async function createLiarRoom({ title, category, maxPlayers, liarCount })
   };
 
   const ref = await addDoc(collection(db, 'game_rooms'), room);
-  await setDoc(doc(db, 'game_rooms', ref.id, 'players', auth.currentUser.uid), makeLiarPlayer('host'));
+
+  try {
+    await setDoc(doc(db, 'game_rooms', ref.id, 'players', auth.currentUser.uid), makeLiarPlayer('host'));
+  } catch (error) {
+    console.warn('[liar] host player create failed', error);
+  }
+
   return ref.id;
 }
 
 export function makeLiarPlayer(role = 'player') {
+  if (!auth.currentUser) throw new Error('게임 접속 정보를 확인하지 못했어요. 다시 시도해주세요.');
   return {
     uid: auth.currentUser.uid,
     name: gamePlayerName(),
@@ -32,6 +41,7 @@ export function makeLiarPlayer(role = 'player') {
 }
 
 export async function joinLiarRoom(room) {
+  if (!auth.currentUser) throw new Error('게임 접속 정보를 확인하지 못했어요. 다시 시도해주세요.');
   const playerRole = auth.currentUser.uid === room.hostId ? 'host' : 'player';
   await setDoc(doc(db, 'game_rooms', room.id, 'players', auth.currentUser.uid), makeLiarPlayer(playerRole), { merge: true });
 }
