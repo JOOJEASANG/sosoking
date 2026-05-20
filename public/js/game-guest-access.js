@@ -1,4 +1,4 @@
-import { auth, signInAnonymously } from './firebase.js';
+import { auth, signInAnonymously, onAuthStateChanged } from './firebase.js';
 import { appState } from './state.js';
 import { toast } from './components/toast.js';
 
@@ -21,12 +21,23 @@ function getGuestName() {
   return name;
 }
 
+function applyGuestName() {
+  const nickname = cleanName(localStorage.getItem(STORAGE_KEY) || '');
+  if (nickname && auth.currentUser?.isAnonymous && isGamePath()) {
+    appState.nickname = nickname;
+    appState.user = auth.currentUser;
+  }
+}
+
 export async function ensureGameGuestAuth() {
   if (!isGamePath()) return null;
   const nickname = getGuestName();
-  appState.nickname = appState.nickname || nickname;
+  appState.nickname = nickname;
 
-  if (auth.currentUser) return auth.currentUser;
+  if (auth.currentUser) {
+    applyGuestName();
+    return auth.currentUser;
+  }
 
   try {
     const cred = await signInAnonymously(auth);
@@ -48,5 +59,10 @@ function schedule() {
   timer = setTimeout(ensureGameGuestAuth, 120);
 }
 
+onAuthStateChanged(auth, () => {
+  applyGuestName();
+});
+
 window.addEventListener('hashchange', schedule);
+window.addEventListener('sosoking:guest-auth-ready', applyGuestName);
 setTimeout(schedule, 500);
