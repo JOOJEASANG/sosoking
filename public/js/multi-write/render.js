@@ -1,12 +1,7 @@
 import { MULTI_PRESETS, BODY_LABELS, BODY_REQUIRED_PRESETS } from './presets.js';
 
 function esc(value) {
-  return String(value || '').replace(/[&<>"]/g, m => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-  }[m]));
+  return String(value || '').replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
 }
 
 function renderPresetButtons(activeKey) {
@@ -65,7 +60,19 @@ function renderSelectedModule(activeKey, preset) {
   }
 
   if (activeKey === 'fill') {
-    return moduleCard('fill', '🧩', '채우기', '사용자가 빈칸에 들어갈 말을 등록할 수 있습니다.', `<div class="multi-module-inline-note">본문에 <b>___</b> 또는 빈칸이 들어간 문장을 적으면 더 재미있습니다.</div>`);
+    return moduleCard('fill', '🧩', '빈줄 채우기', '작성자가 칸 수를 정하고 참여자가 칸에 맞춰 답을 채웁니다.', `
+      <div class="multi-module-inline-note">본문에는 <b>___</b>를 넣어 빈칸 문장을 적어주세요. 예: 오늘 내 기분은 ___다.</div>
+      <div class="form-group" style="margin-top:12px">
+        <label class="form-label">참여 답변 칸 수</label>
+        <input type="hidden" id="mw-fill-count" value="4">
+        <div class="multi-choice-toggle" role="radiogroup" aria-label="빈줄 채우기 칸 수 선택">
+          <button type="button" class="multi-choice-toggle__btn" data-fill-count="2" role="radio" aria-checked="false">2칸</button>
+          <button type="button" class="multi-choice-toggle__btn" data-fill-count="3" role="radio" aria-checked="false">3칸</button>
+          <button type="button" class="multi-choice-toggle__btn active" data-fill-count="4" role="radio" aria-checked="true">4칸</button>
+          <button type="button" class="multi-choice-toggle__btn" data-fill-count="5" role="radio" aria-checked="false">5칸</button>
+          <button type="button" class="multi-choice-toggle__btn" data-fill-count="6" role="radio" aria-checked="false">6칸</button>
+        </div>
+      </div>`);
   }
 
   if (activeKey === 'naming') {
@@ -89,8 +96,12 @@ function renderSelectedModule(activeKey, preset) {
       </div>`);
   }
 
+  if (activeKey === 'relay') {
+    return moduleCard('relay', '🎭', '막장릴레이', '참여자가 시작 문장 뒤로 이야기를 이어갑니다.', `<div class="multi-module-inline-note">본문에 릴레이 시작 문장이나 상황을 적어주세요.</div>`);
+  }
+
   if (activeKey === 'quiz') {
-    return moduleCard('quiz', '🧠', '퀴즈', '본문에 적은 문제를 기준으로 정답 기능만 설정합니다.', `
+    return moduleCard('quiz', '🧠', '미친퀴즈', '본문에 적은 문제를 기준으로 정답 기능만 설정합니다.', `
       <div class="form-group">
         <label class="form-label">퀴즈 방식 <span class="required">*</span></label>
         <input type="hidden" id="mw-quiz-mode" value="subjective">
