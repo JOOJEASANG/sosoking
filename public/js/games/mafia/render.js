@@ -27,11 +27,28 @@ export function renderMafiaLobbyHTML() {
 }
 
 export function renderMafiaNotFoundHTML() {
-  return `<div class="empty-state"><div class="empty-state__icon">🔍</div><div class="empty-state__title">방을 찾을 수 없어요</div><button class="btn btn--primary" onclick="navigate('/game/mafia')">방 만들기</button></div>`;
+  return `<div class="empty-state"><div class="empty-state__icon">🔍</div><div class="empty-state__title">방을 찾을 수 없어요</div><button class="btn btn--primary" onclick="navigate('/game/mafia')">마피아게임 방 만들기</button></div>`;
+}
+
+export function renderMafiaWrongGameHTML(game = '') {
+  const target = game === 'liar' ? '/game/liar' : '/sosoland';
+  const label = game === 'liar' ? '라이어게임으로 이동' : '게임 목록으로 이동';
+  return `<div class="empty-state"><div class="empty-state__icon">🚫</div><div class="empty-state__title">마피아게임 방이 아니에요</div><div class="empty-state__desc">마피아게임에서는 마피아게임 방만 열 수 있습니다.</div><button class="btn btn--primary" onclick="navigate('${target}')">${label}</button></div>`;
 }
 
 export function renderMafiaLoadingHTML() {
   return `<div class="loading-center"><div class="spinner"></div></div>`;
+}
+
+function renderMafiaPlayerItem(p, room, counts, gameOver) {
+  const isHost = p.uid === room.hostId;
+  const dead = p.alive === false;
+  return `
+    <div class="liar-player-item has-avatar mafia-player ${dead ? 'is-dead' : ''}">
+      <i class="game-player-avatar ${dead ? 'game-player-avatar--dead' : isHost ? 'game-player-avatar--host' : 'game-player-avatar--player'}" aria-hidden="true"></i>
+      <div class="liar-player-name"><span>${esc(p.name)}</span>${isHost ? '<small>방장</small>' : ''}</div>
+      <b>${dead ? '탈락' : p.assignedRole && gameOver ? roleLabel(p.assignedRole) : `${counts[p.uid] || 0}표`}</b>
+    </div>`;
 }
 
 export function renderMafiaRoomHTML(room, players) {
@@ -70,11 +87,7 @@ export function renderMafiaRoomHTML(room, players) {
       <section class="liar-player-card">
         <h2>참가자</h2>
         <div class="liar-player-list">
-          ${players.map(p => `
-            <div class="liar-player-item mafia-player ${p.alive === false ? 'is-dead' : ''}">
-              <span>${esc(p.name)} ${p.uid === room.hostId ? '<small>방장</small>' : ''}</span>
-              <b>${p.alive === false ? '탈락' : p.assignedRole && gameOver ? roleLabel(p.assignedRole) : `${counts[p.uid] || 0}표`}</b>
-            </div>`).join('') || '<div class="hall-empty">참가자가 없습니다.</div>'}
+          ${players.map(p => renderMafiaPlayerItem(p, room, counts, gameOver)).join('') || '<div class="hall-empty">참가자가 없습니다.</div>'}
         </div>
         ${!joined ? '<button class="btn btn--primary" id="mafia-join">참가하기</button>' : ''}
         ${host && room.status === 'waiting' ? '<button class="btn btn--primary" id="mafia-start">게임 시작</button>' : ''}
