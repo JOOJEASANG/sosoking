@@ -12,6 +12,24 @@
   border: 1px solid rgba(255,107,74,.2);
 }
 
+.sosoland-hero--gamebox {
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.sosoland-hero--gamebox::after {
+  content: '';
+  position: absolute;
+  width: 150px;
+  height: 150px;
+  right: -48px;
+  top: -50px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .42);
+  pointer-events: none;
+}
+
 .sosoland-hero__eyebrow {
   font-size: 13px;
   font-weight: 900;
@@ -32,6 +50,26 @@
   color: var(--color-text-secondary);
   font-size: 14px;
   line-height: 1.55;
+}
+
+.sosoland-hero__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 14px;
+}
+
+.sosoland-hero__chips span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .72);
+  border: 1px solid rgba(255, 255, 255, .85);
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 900;
 }
 
 .sosoland-grid {
