@@ -57,6 +57,17 @@ function setNamingCount(count) {
   });
 }
 
+function setFillCount(count) {
+  const normalized = ['2', '3', '4', '5', '6'].includes(String(count)) ? String(count) : '4';
+  const hidden = document.getElementById('mw-fill-count');
+  if (hidden) hidden.value = normalized;
+  document.querySelectorAll('[data-fill-count]').forEach(btn => {
+    const active = btn.dataset.fillCount === normalized;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-checked', active ? 'true' : 'false');
+  });
+}
+
 function bindMultiWriteEvents() {
   document.getElementById('multi-back-type')?.addEventListener('click', () => navigate('/feed'));
   document.getElementById('multi-cancel')?.addEventListener('click', () => navigate('/feed'));
@@ -80,6 +91,7 @@ function bindMultiWriteEvents() {
 
   document.querySelectorAll('[data-quiz-mode]').forEach(btn => btn.addEventListener('click', () => setQuizMode(btn.dataset.quizMode)));
   document.querySelectorAll('[data-naming-count]').forEach(btn => btn.addEventListener('click', () => setNamingCount(btn.dataset.namingCount)));
+  document.querySelectorAll('[data-fill-count]').forEach(btn => btn.addEventListener('click', () => setFillCount(btn.dataset.fillCount)));
 
   document.getElementById('mw-add-quiz-option')?.addEventListener('click', () => {
     const list = document.getElementById('mw-quiz-options');
