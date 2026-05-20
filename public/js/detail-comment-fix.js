@@ -1,5 +1,5 @@
 import { auth, db } from './firebase.js';
-import { collection, addDoc, doc, updateDoc, increment, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { collection, addDoc, doc, updateDoc, increment, serverTimestamp, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { navigate } from './router.js';
 import { toast } from './components/toast.js';
 import { appState } from './state.js';
@@ -14,22 +14,45 @@ function isDetailPage() {
   return !!getDetailId() && !!document.querySelector('.detail-header');
 }
 
+async function getAuthorName(user) {
+  const cached = appState.nickname || user.displayName || user.email?.split('@')[0] || '';
+  if (cached && cached !== '익명') return cached;
+  try {
+    const snap = await getDoc(doc(db, 'users', user.uid));
+    const data = snap.exists() ? snap.data() : {};
+    const nickname = data.nickname || data.displayName || data.name || cached || user.email?.split('@')[0] || '익명';
+    appState.nickname = nickname;
+    return nickname;
+  } catch {
+    return cached || '익명';
+  }
+}
+
 function ensureCommentForm() {
   if (!isDetailPage()) return;
   const postId = getDetailId();
   const card = document.querySelector('#page-content .card');
   if (!card || card.querySelector('[data-safe-comment-form]')) return;
 
+  const loggedIn = !!auth.currentUser;
   const html = `
-    <div data-safe-comment-form style="padding:20px;border-top:1px solid var(--color-border-light)">
-      <div style="font-size:15px;font-weight:900;margin-bottom:10px">댓글 작성</div>
-      ${auth.currentUser ? `
-        <textarea id="safe-comment-text" class="form-textarea" rows="3" maxlength="500" placeholder="댓글을 입력하세요"></textarea>
-        <div style="display:flex;justify-content:flex-end;margin-top:8px">
+    <div data-safe-comment-form class="detail-comment-box">
+      <div class="detail-comment-box__head">
+        <div>
+          <div class="detail-comment-box__title">댓글로 의견 남기기</div>
+          <div class="detail-comment-box__desc">투표/판정 글은 댓글로 토론까지 이어갈 수 있어요.</div>
+        </div>
+      </div>
+      ${loggedIn ? `
+        <textarea id="safe-comment-text" class="form-textarea" rows="3" maxlength="500" placeholder="댓글을 입력하세요. 비방이나 개인정보 노출은 피해주세요."></textarea>
+        <div class="detail-comment-box__actions">
+          <span class="form-hint">등록하면 닉네임이 함께 표시됩니다.</span>
           <button class="btn btn--primary btn--sm" id="safe-comment-submit">댓글 등록</button>
         </div>` : `
-        <div class="empty-state__desc" style="text-align:left;margin-bottom:10px">로그인한 회원은 댓글을 작성할 수 있어요.</div>
-        <button class="btn btn--primary btn--sm" id="safe-comment-login">로그인하기</button>`}
+        <div class="detail-login-cta">
+          <div><b>로그인하면 참여할 수 있어요</b><span>댓글, 답글, 참여글 등록과 포인트 적립이 가능합니다.</span></div>
+          <button class="btn btn--primary btn--sm" id="safe-comment-login">로그인하기</button>
+        </div>`}
     </div>`;
 
   card.insertAdjacentHTML('beforeend', html);
@@ -46,10 +69,12 @@ function ensureCommentForm() {
       btn.disabled = true;
       btn.textContent = '등록 중...';
       const user = auth.currentUser;
+      const authorName = await getAuthorName(user);
       await addDoc(collection(db, 'feeds', postId, 'comments'), {
         text,
         authorId: user.uid,
-        authorName: appState.nickname || user.displayName || user.email?.split('@')[0] || '익명',
+        authorName,
+        authorEmail: user.email || '',
         authorPhoto: user.photoURL || '',
         createdAt: serverTimestamp(),
       });
