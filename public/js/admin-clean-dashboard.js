@@ -4,17 +4,23 @@ import { collection, doc, getDoc, getDocs, limit, orderBy, query } from 'https:/
 const FEED_META = [
   { key: 'general', icon: '📝', label: '일반글' },
   { key: 'vote', icon: '🗳️', label: '투표/판정' },
+  { key: 'ox', icon: '⭕', label: 'OX판정' },
+  { key: 'fill', icon: '🧩', label: '채우기' },
   { key: 'naming', icon: '😜', label: '미친작명소' },
   { key: 'acrostic', icon: '✍️', label: '삼행시' },
   { key: 'quiz', icon: '🧠', label: '퀴즈' },
+  { key: 'anonymous', icon: '🕶️', label: '익명' },
 ];
 
 const TYPE_LABELS = {
   general: '일반글',
   vote: '투표/판정',
+  ox: 'OX판정',
+  fill: '채우기',
   naming: '미친작명소',
   acrostic: '삼행시',
   quiz: '퀴즈',
+  anonymous: '익명',
   initial_game: '퀴즈',
   crazy_court: '투표/판정',
   relay: '피드 글',
@@ -24,10 +30,13 @@ const TYPE_LABELS = {
 function moduleKey(post) {
   if (post.subtype) return post.subtype;
   const modules = post.modules || {};
+  if (modules.vote?.ox) return 'ox';
   if (modules.vote?.enabled) return 'vote';
+  if (modules.fill?.enabled) return 'fill';
   if (modules.naming?.enabled) return 'naming';
   if (modules.acrostic?.enabled) return 'acrostic';
   if (modules.quiz?.enabled) return 'quiz';
+  if (modules.anonymous?.enabled || post.anonymous) return 'anonymous';
   return 'general';
 }
 
