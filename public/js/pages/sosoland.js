@@ -24,6 +24,53 @@ const GAMES = [
   },
 ];
 
+function isMobileGameMode() {
+  return window.matchMedia('(max-width: 767px)').matches || (window.matchMedia('(pointer: coarse)').matches && window.innerWidth < 900);
+}
+
+function closeGameLayer() {
+  document.getElementById('desktop-game-layer')?.remove();
+  document.body.classList.remove('desktop-game-layer-open');
+  window.removeEventListener('keydown', onLayerKeydown);
+}
+
+function onLayerKeydown(event) {
+  if (event.key === 'Escape') closeGameLayer();
+}
+
+function openGameLayer(game) {
+  if (isMobileGameMode()) {
+    navigate(game.path);
+    return;
+  }
+
+  closeGameLayer();
+  const layer = document.createElement('div');
+  layer.id = 'desktop-game-layer';
+  layer.className = `desktop-game-layer desktop-game-layer--${game.key}`;
+  layer.innerHTML = `
+    <div class="desktop-game-layer__backdrop" data-game-layer-close></div>
+    <section class="desktop-game-layer__panel" role="dialog" aria-modal="true" aria-label="${game.title}">
+      <header class="desktop-game-layer__head">
+        <div class="desktop-game-layer__title"><span>${game.icon}</span><b>${game.title}</b><small>PC 레이어 게임창</small></div>
+        <div class="desktop-game-layer__actions">
+          <button class="desktop-game-layer__mini" type="button" data-game-open-full>새 화면</button>
+          <button class="desktop-game-layer__close" type="button" data-game-layer-close aria-label="닫기">×</button>
+        </div>
+      </header>
+      <iframe class="desktop-game-layer__frame" src="${location.origin}/#${game.path}" title="${game.title}" allow="clipboard-write"></iframe>
+    </section>`;
+
+  document.body.appendChild(layer);
+  document.body.classList.add('desktop-game-layer-open');
+  layer.querySelectorAll('[data-game-layer-close]').forEach(btn => btn.addEventListener('click', closeGameLayer));
+  layer.querySelector('[data-game-open-full]')?.addEventListener('click', () => {
+    closeGameLayer();
+    navigate(game.path);
+  });
+  window.addEventListener('keydown', onLayerKeydown);
+}
+
 export function renderSosoland() {
   setMeta('게임');
   const el = document.getElementById('page-content');
@@ -37,10 +84,12 @@ export function renderSosoland() {
         <div class="sosoland-hero__content">
           <div class="sosoland-hero__eyebrow">GAME PLAYGROUND</div>
           <h1>친구와 바로 즐기는<br>추리 게임 모음</h1>
-          <p>회원가입 없이 닉네임만 입력하고 초대 링크로 함께 즐길 수 있는 게임공간입니다.</p>
+          <p>모바일은 앱 게임처럼 전체 화면으로, PC는 소소킹 안의 게임 레이어창으로 바로 즐길 수 있습니다.</p>
           <div class="sosoland-hero__chips">
             <span>🕵️ 라이어게임</span>
             <span>🌙 마피아게임</span>
+            <span>📱 모바일 앱 모드</span>
+            <span>🖥️ PC 레이어창</span>
           </div>
         </div>
         <div class="sosoland-hero__console" aria-hidden="true">
@@ -50,7 +99,7 @@ export function renderSosoland() {
 
       <section class="sosoland-grid sosoland-grid--two">
         ${GAMES.map(game => `
-          <article class="sosoland-card sosoland-card--${game.key}" data-game-path="${game.path}">
+          <article class="sosoland-card sosoland-card--${game.key}" data-game-key="${game.key}" data-game-path="${game.path}">
             <div class="sosoland-card__top">
               <div class="sosoland-card__icon">${game.icon}</div>
               <span class="sosoland-card__tag">${game.tag}</span>
@@ -66,7 +115,9 @@ export function renderSosoland() {
   el.querySelectorAll('[data-game-path]').forEach(card => {
     card.addEventListener('click', event => {
       event.preventDefault();
-      navigate(card.dataset.gamePath);
+      const game = GAMES.find(item => item.key === card.dataset.gameKey) || GAMES.find(item => item.path === card.dataset.gamePath);
+      if (game) openGameLayer(game);
+      else navigate(card.dataset.gamePath);
     });
   });
 }
