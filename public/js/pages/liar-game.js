@@ -4,6 +4,7 @@ import { navigate } from '../router.js';
 import { toast } from '../components/toast.js';
 import { appState } from '../state.js';
 import { setMeta } from '../utils/seo.js';
+import { ensureGameGuestAuth } from '../game-guest-access.js';
 
 function makeRoomCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -15,6 +16,10 @@ function makeRoomCode() {
 function inviteUrl(roomId) {
   const base = location.origin + location.pathname;
   return `${base}#/game/liar/${roomId}`;
+}
+
+function playerName() {
+  return appState.nickname || auth.currentUser?.displayName || localStorage.getItem('sosoking_guest_nickname') || '게스트';
 }
 
 export async function renderLiarGame(params = {}) {
@@ -90,7 +95,8 @@ function renderLobby() {
 }
 
 async function createRoom() {
-  if (!auth.currentUser) { navigate('/login'); return; }
+  await ensureGameGuestAuth();
+  if (!auth.currentUser) return;
   const btn = document.getElementById('liar-create');
   try {
     btn.disabled = true;
@@ -104,14 +110,14 @@ async function createRoom() {
       liarCount: Number(document.getElementById('liar-count')?.value || 1),
       code: makeRoomCode(),
       hostId: auth.currentUser.uid,
-      hostName: appState.nickname || auth.currentUser.displayName || '방장',
+      hostName: playerName(),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
     const ref = await addDoc(collection(db, 'game_rooms'), room);
     await setDoc(doc(db, 'game_rooms', ref.id, 'players', auth.currentUser.uid), {
       uid: auth.currentUser.uid,
-      name: appState.nickname || auth.currentUser.displayName || '익명',
+      name: playerName(),
       role: 'host',
       joinedAt: serverTimestamp(),
     });
@@ -126,6 +132,7 @@ async function createRoom() {
 }
 
 async function renderRoom(roomId) {
+  await ensureGameGuestAuth();
   const el = document.getElementById('page-content');
   if (!el) return;
   const snap = await getDoc(doc(db, 'game_rooms', roomId)).catch(() => null);
@@ -146,49 +153,34 @@ async function renderRoom(roomId) {
       </section>
 
       <section class="liar-room-card">
-        <div class="liar-room-info">
-          <span>상태</span><b>${room.status === 'waiting' ? '대기중' : room.status}</b>
-        </div>
-        <div class="liar-room-info">
-          <span>카테고리</span><b>${room.category || '-'}</b>
-        </div>
-        <div class="liar-room-info">
-          <span>최대 인원</span><b>${room.maxPlayers || 0}명</b>
-        </div>
-        <div class="liar-room-info">
-          <span>라이어</span><b>${room.liarCount || 1}명</b>
-        </div>
+        <div class="liar-room-info"><span>상태</span><b>${room.status === 'waiting' ? '대기중' : room.status}</b></div>
+        <div class="liar-room-info"><span>카테고리</span><b>${room.category || '-'}</b></div>
+        <div class="liar-room-info"><span>최대 인원</span><b>${room.maxPlayers || 0}명</b></div>
+        <div class="liar-room-info"><span>라이어</span><b>${room.liarCount || 1}명</b></div>
       </section>
 
       <section class="liar-invite-card">
         <label class="form-label">초대 링크</label>
-        <div class="liar-invite-row">
-          <input class="form-input" id="liar-invite-url" value="${url}" readonly>
-          <button class="btn btn--primary btn--sm" id="liar-copy">복사</button>
-        </div>
-        <div class="form-hint">카카오톡으로 이 링크를 보내면 친구가 바로 들어올 수 있습니다.</div>
+        <div class="liar-invite-row"><input class="form-input" id="liar-invite-url" value="${url}" readonly><button class="btn btn--primary btn--sm" id="liar-copy">복사</button></div>
+        <div class="form-hint">회원가입 없이 닉네임만 입력해도 참가할 수 있습니다.</div>
       </section>
 
       <section class="liar-player-card">
         <h2>참가자</h2>
-        <div class="liar-player-list" id="liar-player-list">
-          <div class="liar-player-item"><span>${room.hostName || '방장'}</span><b>방장</b></div>
-        </div>
+        <div class="liar-player-list" id="liar-player-list"><div class="liar-player-item"><span>${room.hostName || '방장'}</span><b>방장</b></div></div>
         <button class="btn btn--ghost" id="liar-join">참가하기</button>
         <button class="btn btn--primary" id="liar-start" disabled>게임 시작 준비중</button>
       </section>
     </div>`;
 
   document.getElementById('liar-back')?.addEventListener('click', () => navigate('/sosoland'));
-  document.getElementById('liar-copy')?.addEventListener('click', async () => {
-    await navigator.clipboard?.writeText(url);
-    toast.success('초대 링크를 복사했어요');
-  });
+  document.getElementById('liar-copy')?.addEventListener('click', async () => { await navigator.clipboard?.writeText(url); toast.success('초대 링크를 복사했어요'); });
   document.getElementById('liar-join')?.addEventListener('click', async () => {
-    if (!auth.currentUser) { navigate('/login'); return; }
+    await ensureGameGuestAuth();
+    if (!auth.currentUser) return;
     await setDoc(doc(db, 'game_rooms', room.id, 'players', auth.currentUser.uid), {
       uid: auth.currentUser.uid,
-      name: appState.nickname || auth.currentUser.displayName || '익명',
+      name: playerName(),
       role: auth.currentUser.uid === room.hostId ? 'host' : 'player',
       joinedAt: serverTimestamp(),
     }, { merge: true });
