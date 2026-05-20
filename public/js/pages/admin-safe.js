@@ -3,7 +3,7 @@ import { appState } from '../state.js';
 import { navigate } from '../router.js';
 import { toast } from '../components/toast.js';
 import { escHtml } from '../utils/helpers.js';
-import { collection, query, orderBy, limit, getDocs, getCountFromServer, where, doc, updateDoc, deleteDoc, getDoc, setDoc, serverTimestamp, Timestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { collection, query, orderBy, limit, getDocs, getCountFromServer, where, doc, updateDoc, deleteDoc, getDoc, serverTimestamp, Timestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
 
 let currentTab = 'dashboard';
@@ -23,6 +23,30 @@ function adminContent() {
   return document.getElementById('admin-content');
 }
 
+function safeDate(value) {
+  const date = value?.toDate?.() || value;
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '-';
+  return date.toLocaleDateString('ko-KR') + ' ' + date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+}
+
+function typeLabel(post = {}) {
+  const m = post.modules || {};
+  if (post.anonymous || m.anonymous?.enabled || post.subtype === 'anonymous') return '익명비밀글';
+  if (post.subtype === 'fill' || m.fill?.enabled) return '빈칸 채우기';
+  if (post.subtype === 'naming' || m.naming?.enabled) return '미친작명소';
+  if (post.subtype === 'acrostic' || m.acrostic?.enabled) return '삼행시';
+  if (post.subtype === 'relay' || m.relay?.enabled) return '막장릴레이';
+  if (post.subtype === 'quiz' || m.quiz?.enabled) return '미친퀴즈';
+  if (post.subtype === 'vote' || post.subtype === 'ox' || m.vote?.enabled) return '투표/판정';
+  return post.typeLabel || '일반글';
+}
+
+function confirmDelete(title, id) {
+  const keyword = '삭제';
+  const value = prompt(`정말 삭제할까요?\n\n${title || id}\n\n되돌릴 수 없습니다. 계속하려면 '${keyword}'를 입력하세요.`);
+  return value === keyword;
+}
+
 function renderAdminShell(el) {
   const user = appState.user || auth.currentUser;
   const nickname = appState.nickname || user?.displayName || user?.email?.split('@')[0] || '관리자';
@@ -37,7 +61,7 @@ function renderAdminShell(el) {
     <div class="admin-layout">
       <aside class="admin-sidebar">
         <div class="admin-brand">
-          <a href="#/" class="admin-brand__logo-link" id="admin-safe-home"><img src="/logo.svg" alt="소소킹" width="34" height="34"></a>
+          <div class="admin-brand__logo-link"><img src="/logo.svg" alt="소소킹" width="34" height="34"></div>
           <div><div class="admin-brand__title">소소킹</div><div class="admin-brand__sub">관리자 패널</div></div>
         </div>
         <nav class="admin-nav">
@@ -45,13 +69,10 @@ function renderAdminShell(el) {
         </nav>
         <div class="admin-sidebar__footer">
           <div class="admin-profile-card"><div class="admin-profile-card__avatar"><span>${escHtml((nickname[0] || '관'))}</span></div><div class="admin-profile-card__info"><div class="admin-profile-card__name">${escHtml(nickname)}</div><div class="admin-profile-card__role">🔑 관리자</div></div></div>
-          <button class="admin-goto-site-btn" id="admin-safe-goto-site">🏠 사이트 홈으로</button>
         </div>
       </aside>
       <main id="admin-content"><div class="loading-center"><div class="spinner spinner--lg"></div></div></main>
     </div>`;
-  document.getElementById('admin-safe-home')?.addEventListener('click', e => { e.preventDefault(); navigate('/'); });
-  document.getElementById('admin-safe-goto-site')?.addEventListener('click', () => navigate('/'));
   document.querySelectorAll('[data-admin-tab]').forEach(btn => btn.addEventListener('click', () => loadTab(btn.dataset.adminTab)));
 }
 
@@ -91,39 +112,50 @@ async function loadTab(tab) {
 async function renderDashboard(el) {
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
-  const [totalSnap, todaySnap, reportSnap, recentSnap] = await Promise.all([
+  const [totalSnap, todaySnap, hiddenSnap, reportSnap, userSnap, recentSnap] = await Promise.all([
     getCountFromServer(collection(db, 'feeds')).catch(() => null),
     getDocs(query(collection(db, 'feeds'), where('createdAt', '>=', Timestamp.fromDate(todayStart)), limit(99))).catch(() => null),
+    getCountFromServer(query(collection(db, 'feeds'), where('hidden', '==', true))).catch(() => null),
     getCountFromServer(query(collection(db, 'reports'), where('resolved', '==', false))).catch(() => null),
+    getCountFromServer(collection(db, 'users')).catch(() => null),
     getDocs(query(collection(db, 'feeds'), orderBy('createdAt', 'desc'), limit(8))).catch(() => null),
   ]);
   const total = totalSnap?.data?.().count || 0;
   const today = todaySnap?.size || 0;
+  const hidden = hiddenSnap?.data?.().count || 0;
   const reports = reportSnap?.data?.().count || 0;
+  const users = userSnap?.data?.().count || 0;
   const recent = recentSnap?.docs.map(d => ({ id: d.id, ...d.data() })) || [];
   el.innerHTML = `
     <div style="display:flex;flex-direction:column;gap:20px">
-      <h2 class="admin-section-title">📊 대시보드</h2>
-      <div class="admin-stat-grid">
+      <div class="admin-page-head"><div><h2 class="admin-section-title">📊 대시보드</h2><div class="form-hint">운영자가 바로 확인해야 할 주요 상태입니다.</div></div><button class="btn btn--ghost btn--sm" id="admin-refresh-dashboard">새로고침</button></div>
+      <div class="admin-stat-grid admin-stat-grid--wide">
         <div class="admin-stat-card"><div class="admin-stat-card__num">${total.toLocaleString()}</div><div class="admin-stat-card__label">총 게시물</div></div>
         <div class="admin-stat-card"><div class="admin-stat-card__num" style="color:var(--color-success)">${today}</div><div class="admin-stat-card__label">오늘 새 글</div></div>
         <div class="admin-stat-card"><div class="admin-stat-card__num" style="color:${reports ? 'var(--color-danger)' : 'var(--color-text-muted)'}">${reports}</div><div class="admin-stat-card__label">미처리 신고</div></div>
+        <div class="admin-stat-card"><div class="admin-stat-card__num">${users.toLocaleString()}</div><div class="admin-stat-card__label">회원 문서</div></div>
+        <div class="admin-stat-card"><div class="admin-stat-card__num" style="color:${hidden ? 'var(--color-warning)' : 'var(--color-text-muted)'}">${hidden}</div><div class="admin-stat-card__label">숨김 게시물</div></div>
       </div>
-      <div class="card"><div class="card__body"><div style="font-size:14px;font-weight:800;margin-bottom:12px">최근 게시물</div>${recent.map(p => `<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--color-border-light)"><a href="#/detail/${p.id}" style="flex:1;color:var(--color-primary);font-weight:700">${escHtml(p.title || '(제목없음)')}</a><span style="font-size:12px;color:var(--color-text-muted)">${escHtml(p.authorName || '익명')}</span></div>`).join('') || '<div class="empty-state__desc">게시물이 없어요</div>'}</div></div>
+      <div class="admin-operation-note"><b>운영 체크</b><span>신고 → 게시물 숨김 → 처리완료 순서로 관리하고, 삭제는 최종 정리용으로만 사용하세요.</span></div>
+      <div class="card"><div class="card__body"><div style="font-size:14px;font-weight:800;margin-bottom:12px">최근 게시물</div>${recent.map(p => `<div class="admin-recent-post"><a href="#/detail/${p.id}" style="flex:1;color:var(--color-primary);font-weight:700">${escHtml(p.title || '(제목없음)')}</a><span>${escHtml(typeLabel(p))}</span><span>${escHtml(p.authorName || '익명')}</span></div>`).join('') || '<div class="empty-state__desc">게시물이 없어요</div>'}</div></div>
     </div>`;
+  document.getElementById('admin-refresh-dashboard')?.addEventListener('click', () => renderDashboard(el));
 }
 
 async function renderPosts(el) {
-  const snap = await getDocs(query(collection(db, 'feeds'), orderBy('createdAt', 'desc'), limit(50))).catch(() => null);
+  const snap = await getDocs(query(collection(db, 'feeds'), orderBy('createdAt', 'desc'), limit(80))).catch(() => null);
   const posts = snap?.docs.map(d => ({ id: d.id, ...d.data() })) || [];
-  el.innerHTML = `<div style="display:flex;flex-direction:column;gap:16px"><h2 class="admin-section-title">📝 게시물 관리</h2><div class="card" style="overflow:auto"><table class="admin-table"><thead><tr><th>제목</th><th>작성자</th><th>상태</th><th>작업</th></tr></thead><tbody>${posts.map(p => `<tr data-row="${p.id}"><td><a href="#/detail/${p.id}" class="admin-table__link">${escHtml(p.title || '(제목없음)')}</a></td><td>${escHtml(p.authorName || '익명')}</td><td>${p.hidden ? '숨김' : '공개'}</td><td><button class="btn btn--ghost btn--sm" data-hide="${p.id}" data-hidden="${p.hidden ? '1' : '0'}">${p.hidden ? '공개' : '숨김'}</button> <button class="btn btn--danger btn--sm" data-delete="${p.id}">삭제</button></td></tr>`).join('') || '<tr><td colspan="4" class="admin-table__empty">게시물이 없어요</td></tr>'}</tbody></table></div></div>`;
+  el.innerHTML = `<div style="display:flex;flex-direction:column;gap:16px"><div class="admin-page-head"><div><h2 class="admin-section-title">📝 게시물 관리</h2><div class="form-hint">숨김은 복구 가능, 삭제는 되돌릴 수 없습니다.</div></div><button class="btn btn--ghost btn--sm" id="admin-post-refresh">새로고침</button></div><div class="card" style="overflow:auto"><table class="admin-table"><thead><tr><th>게시물</th><th>유형</th><th>작성자</th><th>상태</th><th>날짜</th><th>작업</th></tr></thead><tbody>${posts.map(p => `<tr data-row="${p.id}"><td><a href="#/detail/${p.id}" class="admin-table__link">${escHtml(p.title || '(제목없음)')}</a><div class="admin-table__sub">${escHtml(p.id)}</div></td><td>${escHtml(typeLabel(p))}</td><td>${escHtml(p.authorName || '익명')}</td><td>${p.hidden ? '<span class="badge badge--warning">숨김</span>' : '<span class="badge">공개</span>'}</td><td>${escHtml(safeDate(p.createdAt))}</td><td class="admin-row-actions"><button class="btn btn--ghost btn--sm" data-edit-post="${p.id}">수정</button><button class="btn btn--ghost btn--sm" data-hide="${p.id}" data-hidden="${p.hidden ? '1' : '0'}">${p.hidden ? '공개' : '숨김'}</button><button class="btn btn--danger btn--sm" data-delete="${p.id}" data-title="${escHtml(p.title || '(제목없음)')}">삭제</button></td></tr>`).join('') || '<tr><td colspan="6" class="admin-table__empty">게시물이 없어요</td></tr>'}</tbody></table></div></div>`;
+  document.getElementById('admin-post-refresh')?.addEventListener('click', () => renderPosts(el));
+  el.querySelectorAll('[data-edit-post]').forEach(btn => btn.addEventListener('click', () => navigate(`/write?edit=${encodeURIComponent(btn.dataset.editPost)}`)));
   el.querySelectorAll('[data-hide]').forEach(btn => btn.addEventListener('click', async () => {
-    await updateDoc(doc(db, 'feeds', btn.dataset.hide), { hidden: btn.dataset.hidden !== '1' });
-    toast.success('변경했어요');
+    const nextHidden = btn.dataset.hidden !== '1';
+    await updateDoc(doc(db, 'feeds', btn.dataset.hide), { hidden: nextHidden, hiddenAt: nextHidden ? serverTimestamp() : null, hiddenBy: auth.currentUser?.uid || '' });
+    toast.success(nextHidden ? '숨김 처리했어요' : '공개로 변경했어요');
     renderPosts(el);
   }));
   el.querySelectorAll('[data-delete]').forEach(btn => btn.addEventListener('click', async () => {
-    if (!confirm('이 게시물을 삭제할까요?')) return;
+    if (!confirmDelete(btn.dataset.title, btn.dataset.delete)) return;
     await deleteDoc(doc(db, 'feeds', btn.dataset.delete));
     toast.success('삭제했어요');
     renderPosts(el);
@@ -131,28 +163,33 @@ async function renderPosts(el) {
 }
 
 async function renderReports(el) {
-  const snap = await getDocs(query(collection(db, 'reports'), where('resolved', '==', false), orderBy('createdAt', 'desc'), limit(50))).catch(() => null);
+  const snap = await getDocs(query(collection(db, 'reports'), where('resolved', '==', false), orderBy('createdAt', 'desc'), limit(80))).catch(() => null);
   const reports = snap?.docs.map(d => ({ id: d.id, ...d.data() })) || [];
-  el.innerHTML = `<div style="display:flex;flex-direction:column;gap:16px"><h2 class="admin-section-title">🚨 신고 관리</h2><div class="card" style="overflow:auto"><table class="admin-table"><thead><tr><th>사유</th><th>게시물</th><th>신고자</th><th>작업</th></tr></thead><tbody>${reports.map(r => `<tr data-report="${r.id}"><td>${escHtml(r.reason || '')}</td><td>${r.postId ? `<a href="#/detail/${r.postId}">${escHtml(r.postTitle || r.postId)}</a>` : '-'}</td><td>${escHtml(r.reporterName || '익명')}</td><td><button class="btn btn--primary btn--sm" data-resolve="${r.id}">처리완료</button></td></tr>`).join('') || '<tr><td colspan="4" class="admin-table__empty">처리할 신고가 없어요</td></tr>'}</tbody></table></div></div>`;
+  el.innerHTML = `<div style="display:flex;flex-direction:column;gap:16px"><div class="admin-page-head"><div><h2 class="admin-section-title">🚨 신고 관리</h2><div class="form-hint">신고 사유를 확인하고, 필요한 경우 게시물을 먼저 숨긴 뒤 처리완료하세요.</div></div><button class="btn btn--ghost btn--sm" id="admin-report-refresh">새로고침</button></div><div class="card" style="overflow:auto"><table class="admin-table"><thead><tr><th>사유</th><th>게시물</th><th>신고자</th><th>작업</th></tr></thead><tbody>${reports.map(r => `<tr data-report="${r.id}"><td>${escHtml(r.reason || '')}<div class="admin-table__sub">${escHtml(safeDate(r.createdAt))}</div></td><td>${r.postId ? `<a href="#/detail/${r.postId}">${escHtml(r.postTitle || r.postId)}</a><div class="admin-table__sub">${escHtml(r.postId)}</div>` : '-'}</td><td>${escHtml(r.reporterName || '익명')}</td><td class="admin-row-actions">${r.postId ? `<button class="btn btn--ghost btn--sm" data-hide-post="${r.postId}">게시물 숨김</button>` : ''}<button class="btn btn--primary btn--sm" data-resolve="${r.id}">처리완료</button></td></tr>`).join('') || '<tr><td colspan="4" class="admin-table__empty">처리할 신고가 없어요</td></tr>'}</tbody></table></div></div>`;
+  document.getElementById('admin-report-refresh')?.addEventListener('click', () => renderReports(el));
+  el.querySelectorAll('[data-hide-post]').forEach(btn => btn.addEventListener('click', async () => {
+    if (!confirm('신고된 게시물을 숨김 처리할까요?')) return;
+    await updateDoc(doc(db, 'feeds', btn.dataset.hidePost), { hidden: true, hiddenAt: serverTimestamp(), hiddenBy: auth.currentUser?.uid || '', hiddenReason: 'report' });
+    toast.success('게시물을 숨김 처리했어요');
+  }));
   el.querySelectorAll('[data-resolve]').forEach(btn => btn.addEventListener('click', async () => {
-    await updateDoc(doc(db, 'reports', btn.dataset.resolve), { resolved: true, resolvedAt: serverTimestamp() });
+    await updateDoc(doc(db, 'reports', btn.dataset.resolve), { resolved: true, resolvedAt: serverTimestamp(), resolvedBy: auth.currentUser?.uid || '' });
     toast.success('처리했어요');
     renderReports(el);
   }));
 }
 
 async function renderUsers(el) {
-  const snap = await getDocs(query(collection(db, 'feeds'), orderBy('createdAt', 'desc'), limit(100))).catch(() => null);
-  const map = new Map();
-  (snap?.docs || []).forEach(d => {
-    const p = d.data();
-    if (!p.authorId) return;
-    const old = map.get(p.authorId) || { uid: p.authorId, name: p.authorName || '익명', count: 0 };
-    old.count += 1;
-    map.set(p.authorId, old);
-  });
-  const users = [...map.values()].sort((a, b) => b.count - a.count);
-  el.innerHTML = `<div style="display:flex;flex-direction:column;gap:16px"><h2 class="admin-section-title">👥 회원 현황</h2><div class="card" style="overflow:auto"><table class="admin-table"><thead><tr><th>닉네임</th><th>게시물 수</th><th>UID</th></tr></thead><tbody>${users.map(u => `<tr><td>${escHtml(u.name)}</td><td>${u.count}</td><td style="font-family:monospace;font-size:11px">${escHtml(u.uid.slice(0, 16))}…</td></tr>`).join('') || '<tr><td colspan="3" class="admin-table__empty">회원 데이터가 없어요</td></tr>'}</tbody></table></div></div>`;
+  const getAdminMemberList = httpsCallable(functions, 'getAdminMemberList');
+  try {
+    const result = await getAdminMemberList({});
+    const members = result.data?.members || [];
+    el.innerHTML = `<div style="display:flex;flex-direction:column;gap:16px"><div class="admin-page-head"><div><h2 class="admin-section-title">👥 회원 현황</h2><div class="form-hint">관리자를 제외한 Firebase Auth/users 회원 목록입니다.</div></div><button class="btn btn--ghost btn--sm" id="admin-user-refresh">새로고침</button></div><div class="admin-stat-grid"><div class="admin-stat-card"><div class="admin-stat-card__num">${Number(result.data?.total || members.length).toLocaleString()}</div><div class="admin-stat-card__label">회원 수</div></div><div class="admin-stat-card"><div class="admin-stat-card__num">${Number(result.data?.excludedAdmins || 0).toLocaleString()}</div><div class="admin-stat-card__label">제외된 관리자</div></div></div><div class="card" style="overflow:auto"><table class="admin-table"><thead><tr><th>회원</th><th>이메일</th><th>포인트</th><th>가입일</th><th>최근 로그인</th><th>상태</th></tr></thead><tbody>${members.map(u => `<tr><td><b>${escHtml(u.nickname || '회원')}</b><div class="admin-table__sub">${escHtml(String(u.uid || '').slice(0,18))}…</div></td><td>${escHtml(u.email || '-')}</td><td>${Number(u.points || 0).toLocaleString()}P</td><td>${u.createdAtMs ? safeDate(new Date(u.createdAtMs)) : '-'}</td><td>${u.lastLoginAtMs ? safeDate(new Date(u.lastLoginAtMs)) : '-'}</td><td>${u.disabled ? '<span class="badge badge--danger">비활성</span>' : '<span class="badge">정상</span>'}</td></tr>`).join('') || '<tr><td colspan="6" class="admin-table__empty">회원 데이터가 없어요</td></tr>'}</tbody></table></div></div>`;
+    document.getElementById('admin-user-refresh')?.addEventListener('click', () => renderUsers(el));
+  } catch (error) {
+    console.error(error);
+    el.innerHTML = `<div class="empty-state"><div class="empty-state__icon">⚠️</div><div class="empty-state__title">회원 목록을 불러오지 못했어요</div><div class="empty-state__desc">functions 배포 후 다시 시도해주세요.</div></div>`;
+  }
 }
 
 async function renderAi(el) {
@@ -167,7 +204,7 @@ async function renderAi(el) {
       features = data.features || {};
     }
   } catch {}
-  el.innerHTML = `<div style="display:flex;flex-direction:column;gap:16px;max-width:720px"><h2 class="admin-section-title">🤖 AI 관리</h2><div class="card"><div class="card__body"><label style="display:flex;gap:10px;align-items:center"><input type="checkbox" id="ai-enabled" ${enabled ? 'checked' : ''}> AI 기능 사용</label><div class="form-hint" style="margin-top:10px">API 키는 Firestore에 저장하지 않고 Firebase Secret Manager의 GEMINI_API_KEY를 사용합니다. AI 미션 자동생성은 제거되었습니다.</div><button class="btn btn--primary" id="btn-ai-save" style="margin-top:14px">설정 저장</button></div></div></div>`;
+  el.innerHTML = `<div style="display:flex;flex-direction:column;gap:16px;max-width:760px"><h2 class="admin-section-title">🤖 AI 관리</h2><div class="admin-operation-note"><b>현재 정책</b><span>AI 미션 자동생성은 제거했고, 최소 AI 사용 여부만 관리합니다.</span></div><div class="card"><div class="card__body"><label style="display:flex;gap:10px;align-items:center;font-weight:900"><input type="checkbox" id="ai-enabled" ${enabled ? 'checked' : ''}> AI 기능 사용</label><div class="form-hint" style="margin-top:10px">API 키는 Firestore에 저장하지 않고 Firebase Secret Manager의 GEMINI_API_KEY를 사용합니다.</div><button class="btn btn--primary" id="btn-ai-save" style="margin-top:14px">설정 저장</button></div></div></div>`;
   document.getElementById('btn-ai-save')?.addEventListener('click', async () => {
     await saveAiConfig({ enabled: document.getElementById('ai-enabled')?.checked !== false, features });
     toast.success('AI 설정을 저장했어요');
