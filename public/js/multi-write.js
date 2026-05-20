@@ -87,7 +87,11 @@ function renderSelectedModule(activeKey, preset) {
       <div class="multi-module-inline-note">문제는 위 <b>본문</b>에 적어주세요.</div>
       <div class="form-group">
         <label class="form-label">퀴즈 방식 <span class="required">*</span></label>
-        <select id="mw-quiz-mode" class="form-select"><option value="subjective">주관식</option><option value="multiple">객관식</option></select>
+        <input type="hidden" id="mw-quiz-mode" value="subjective">
+        <div class="multi-quiz-mode-toggle" role="radiogroup" aria-label="퀴즈 방식 선택">
+          <button type="button" class="multi-quiz-mode-btn active" data-quiz-mode="subjective" role="radio" aria-checked="true">주관식</button>
+          <button type="button" class="multi-quiz-mode-btn" data-quiz-mode="multiple" role="radio" aria-checked="false">객관식</button>
+        </div>
       </div>
       <div id="mw-quiz-subjective-box" class="form-group"><label class="form-label">정답 <span class="required">*</span></label><input id="mw-quiz-answer" class="form-input" maxlength="80" placeholder="${esc(preset.quizAnswerPlaceholder)}"></div>
       <div id="mw-quiz-multiple-box" style="display:none">
@@ -133,6 +137,22 @@ function renderMultiWrite() {
   bindMultiWriteEvents();
 }
 
+function setQuizMode(mode) {
+  const normalized = mode === 'multiple' ? 'multiple' : 'subjective';
+  const hidden = document.getElementById('mw-quiz-mode');
+  if (hidden) hidden.value = normalized;
+  document.querySelectorAll('[data-quiz-mode]').forEach(btn => {
+    const active = btn.dataset.quizMode === normalized;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-checked', active ? 'true' : 'false');
+  });
+  const isMultiple = normalized === 'multiple';
+  const subjective = document.getElementById('mw-quiz-subjective-box');
+  const multiple = document.getElementById('mw-quiz-multiple-box');
+  if (subjective) subjective.style.display = isMultiple ? 'none' : '';
+  if (multiple) multiple.style.display = isMultiple ? '' : 'none';
+}
+
 function bindMultiWriteEvents() {
   document.getElementById('multi-back-type')?.addEventListener('click', () => navigate('/feed'));
   document.getElementById('multi-cancel')?.addEventListener('click', () => navigate('/feed'));
@@ -153,12 +173,8 @@ function bindMultiWriteEvents() {
     list.insertAdjacentHTML('beforeend', `<input class="form-input mw-vote-option" maxlength="80" placeholder="선택지 ${count + 1}">`);
   });
 
-  document.getElementById('mw-quiz-mode')?.addEventListener('change', e => {
-    const isMultiple = e.target.value === 'multiple';
-    const subjective = document.getElementById('mw-quiz-subjective-box');
-    const multiple = document.getElementById('mw-quiz-multiple-box');
-    if (subjective) subjective.style.display = isMultiple ? 'none' : '';
-    if (multiple) multiple.style.display = isMultiple ? '' : 'none';
+  document.querySelectorAll('[data-quiz-mode]').forEach(btn => {
+    btn.addEventListener('click', () => setQuizMode(btn.dataset.quizMode));
   });
 
   document.getElementById('mw-add-quiz-option')?.addEventListener('click', () => {
