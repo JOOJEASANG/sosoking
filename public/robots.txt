@@ -1,4 +1,6 @@
 User-agent: *
 Allow: /
+Allow: /p/
+Disallow: /p/*?*
 
 Sitemap: https://sosoking.co.kr/sitemap.xml

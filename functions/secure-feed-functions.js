@@ -216,6 +216,15 @@ function safeOgImage(value) {
   return 'https://sosoking.co.kr/og-image.png';
 }
 
+// HTML 태그 제거 후 plain text 추출 (meta description용)
+function stripHtml(html) {
+  return String(html || '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&[a-z]+;/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 const seoPost = onRequest({ region: REGION }, async (req, res) => {
   const parts = req.path.split('/').filter(Boolean);
   const id = cleanId(parts[parts.length - 1] || req.query.id);
@@ -226,16 +235,40 @@ const seoPost = onRequest({ region: REGION }, async (req, res) => {
     if (!snap.exists) { res.redirect(`https://sosoking.co.kr/#/detail/${id}`); return; }
 
     const post = snap.data() || {};
-    const title = escapeAttr(post.title || '소소킹 놀이판', 80);
-    const desc = escapeAttr(post.body || post.desc || post.subtitle || '소소킹에서 즐겨요', 160);
-    const image = safeOgImage(Array.isArray(post.images) ? post.images[0] : post.thumbnailUrl);
-    const url = `https://sosoking.co.kr/p/${id}`;
-    const dest = `https://sosoking.co.kr/#/detail/${id}`;
+    const title      = escapeAttr(post.title || '소소킹 놀이판', 80);
+    const rawDesc    = stripHtml(post.body || post.desc || post.subtitle || '소소킹에서 즐겨요');
+    const desc       = escapeAttr(rawDesc, 160);
+    const image      = safeOgImage(Array.isArray(post.images) ? post.images[0] : post.thumbnailUrl);
+    const url        = `https://sosoking.co.kr/p/${id}`;
+    const dest       = `https://sosoking.co.kr/#/detail/${id}`;
+    const author     = escapeAttr(post.authorName || '소소러', 40);
+    const published  = post.createdAt?.toDate?.()?.toISOString() || new Date().toISOString();
+    const modified   = post.updatedAt?.toDate?.()?.toISOString() || published;
 
-    res.set('Cache-Control', 'public, max-age=300');
+    // JSON-LD 구조화 데이터 (구글 리치 결과용)
+    const jsonLd = JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'Article',
+      headline: post.title || '소소킹 놀이판',
+      description: rawDesc.slice(0, 200),
+      image: [image],
+      datePublished: published,
+      dateModified: modified,
+      author: { '@type': 'Person', name: post.authorName || '소소러' },
+      publisher: {
+        '@type': 'Organization',
+        name: '소소킹',
+        url: 'https://sosoking.co.kr',
+        logo: { '@type': 'ImageObject', url: 'https://sosoking.co.kr/icon-512.png' },
+      },
+      mainEntityOfPage: { '@type': 'WebPage', '@id': url },
+    });
+
+    res.set('Cache-Control', 'public, max-age=600');
     res.send(`<!DOCTYPE html><html lang="ko">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>${title} | 소소킹</title>
   <meta name="description" content="${desc}">
   <meta property="og:title" content="${title} | 소소킹">
@@ -245,14 +278,26 @@ const seoPost = onRequest({ region: REGION }, async (req, res) => {
   <meta property="og:type" content="article">
   <meta property="og:locale" content="ko_KR">
   <meta property="og:site_name" content="소소킹">
+  <meta property="article:author" content="${author}">
+  <meta property="article:published_time" content="${escapeAttr(published)}">
+  <meta property="article:modified_time" content="${escapeAttr(modified)}">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="${title} | 소소킹">
   <meta name="twitter:description" content="${desc}">
   <meta name="twitter:image" content="${image}">
   <link rel="canonical" href="${url}">
+  <script type="application/ld+json">${jsonLd}</script>
   <meta http-equiv="refresh" content="0;url=${dest}">
   <script>window.location.replace(${JSON.stringify(dest)});</script>
-</head><body></body></html>`);
+  <style>body{font-family:-apple-system,sans-serif;max-width:680px;margin:24px auto;padding:0 16px;color:#222}h1{font-size:1.4em;margin-bottom:8px}p{color:#555;line-height:1.6}footer{margin-top:16px;font-size:.85em;color:#888}a{color:#FF4422}</style>
+</head>
+<body>
+  <p><a href="https://sosoking.co.kr">← 소소킹</a></p>
+  <h1>${title}</h1>
+  <p>${desc}</p>
+  <footer>${author} · <time datetime="${escapeAttr(published)}">${escapeAttr(published.slice(0, 10))}</time></footer>
+  <p style="margin-top:24px"><a href="${dest}">전체 내용 보기 →</a></p>
+</body></html>`);
   } catch {
     res.redirect(`https://sosoking.co.kr/#/detail/${id}`);
   }
