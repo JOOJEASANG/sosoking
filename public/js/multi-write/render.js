@@ -35,12 +35,16 @@ function moduleCard(key, icon, title, desc, body) {
     </div>`;
 }
 
-export function renderQuizOptionRows(count = 2) {
-  return Array.from({ length: count }, (_, i) => `
+export function renderQuizOptionRow(index, checked = false) {
+  return `
     <div class="multi-quiz-option-row">
-      <label class="multi-quiz-answer-pick"><input type="radio" name="mw-quiz-correct" value="${i}" ${i === 0 ? 'checked' : ''}> 정답</label>
-      <input class="form-input mw-quiz-option" maxlength="80" placeholder="선택지 ${i + 1}">
-    </div>`).join('');
+      <label class="multi-quiz-answer-pick"><input type="radio" name="mw-quiz-correct" value="${index}" ${checked ? 'checked' : ''}> 정답</label>
+      <input class="form-input mw-quiz-option" maxlength="80" placeholder="선택지 ${index + 1}">
+    </div>`;
+}
+
+export function renderQuizOptionRows(count = 2) {
+  return Array.from({ length: count }, (_, i) => renderQuizOptionRow(i, i === 0)).join('');
 }
 
 function renderSelectedModule(activeKey, preset) {
