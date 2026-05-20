@@ -88,11 +88,10 @@ function bindTypeFilterEvents() {
 }
 
 function bindSortEvents() {
-  document.querySelectorAll('[data-feed-sort]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      currentSort = normalizeFeedSort(btn.dataset.feedSort || 'latest');
-      refreshFeed();
-    });
+  const select = document.getElementById('feed-sort-select');
+  select?.addEventListener('change', () => {
+    currentSort = normalizeFeedSort(select.value || 'latest');
+    refreshFeed();
   });
 }
 
