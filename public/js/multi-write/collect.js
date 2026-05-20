@@ -43,12 +43,49 @@ function countBodyBlanks(bodyText) {
   return matches ? matches.length : 0;
 }
 
+export function parseYouTubeUrl(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return null;
+
+  try {
+    const url = new URL(raw);
+    const host = url.hostname.replace(/^www\./, '').replace(/^m\./, '');
+    let id = '';
+
+    if (host === 'youtu.be') id = url.pathname.split('/').filter(Boolean)[0] || '';
+    else if (host === 'youtube.com' || host === 'music.youtube.com') {
+      if (url.pathname.startsWith('/watch')) id = url.searchParams.get('v') || '';
+      else if (url.pathname.startsWith('/shorts/')) id = url.pathname.split('/')[2] || '';
+      else if (url.pathname.startsWith('/embed/')) id = url.pathname.split('/')[2] || '';
+    }
+
+    id = String(id || '').trim();
+    if (!/^[a-zA-Z0-9_-]{11}$/.test(id)) return null;
+    return {
+      enabled: true,
+      provider: 'youtube',
+      videoId: id,
+      url: `https://www.youtube.com/watch?v=${id}`,
+      embedUrl: `https://www.youtube.com/embed/${id}`,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export function collectMultiModules() {
   const modules = { comments: { enabled: true } };
   const bodyText = getBodyText();
 
   if (isAnonymousWriteChecked()) {
     modules.anonymous = { enabled: true, mode: 'general-option' };
+  }
+
+  const youtubeRaw = document.getElementById('mw-youtube-url')?.value.trim() || '';
+  if (youtubeRaw) {
+    const youtube = parseYouTubeUrl(youtubeRaw);
+    if (!youtube) throw new Error('유튜브 링크를 확인해주세요. 공유 링크, watch 링크, shorts 링크를 사용할 수 있어요.');
+    modules.youtube = youtube;
   }
 
   if (enabled('vote')) {
