@@ -251,7 +251,7 @@ const seoPost = onRequest({ region: REGION }, async (req, res) => {
   <meta name="twitter:image" content="${image}">
   <link rel="canonical" href="${url}">
   <meta http-equiv="refresh" content="0;url=${dest}">
-  <script>window.location.replace('${dest}');</script>
+  <script>window.location.replace(${JSON.stringify(dest)});</script>
 </head><body></body></html>`);
   } catch {
     res.redirect(`https://sosoking.co.kr/#/detail/${id}`);

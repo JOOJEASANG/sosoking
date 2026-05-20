@@ -59,6 +59,8 @@ async function toggleReactionOnRef(ref, uid, key, allowed, totalField = null) {
     }
 
     if (currentKey && allowed.includes(currentKey)) {
+      // BUG-019: 반응 교체 시 total은 순 변화가 0이므로 totalField를 변경하지 않습니다.
+      // secure-feed-functions.js의 toggleFeedReaction과 동일한 방식입니다.
       updates[`reactions.${currentKey}`] = FieldValue.increment(-1);
       updates[`reactions.${key}`] = FieldValue.increment(1);
       updates[`reactedWith.${uid}`] = key;
