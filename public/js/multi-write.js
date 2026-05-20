@@ -6,41 +6,11 @@ import { appState } from './state.js';
 import { initImageUploader, getUploadedImages, hasPendingImages } from './components/image-uploader.js';
 
 const PRESETS = {
-  general: {
-    label: '일반글', icon: '📝', modules: [],
-    titlePlaceholder: '예: 오늘 있었던 웃긴 일',
-    descPlaceholder: '글, 사진, 질문, 상황 설명 등을 자유롭게 적어보세요.',
-    tagsPlaceholder: '#일상, #피드, #소소킹',
-  },
-  vote: {
-    label: '투표/판정', icon: '🗳️', modules: ['vote'],
-    titlePlaceholder: '예: 여러분의 판정은?',
-    descPlaceholder: '상황을 적고 사람들의 선택이나 판정을 받아보세요.',
-    tagsPlaceholder: '#투표, #판정',
-    voteQuestionPlaceholder: '예: 이 상황 어떻게 생각하세요?',
-    voteOptionPlaceholders: ['그렇다', '아니다'],
-  },
-  naming: {
-    label: '미친작명소', icon: '😜', modules: ['naming'],
-    titlePlaceholder: '예: 이 사진 이름 좀 지어줘',
-    descPlaceholder: '사진이나 상황에 어울리는 웃긴 이름을 받아보세요.',
-    tagsPlaceholder: '#작명, #미친작명소',
-  },
-  acrostic: {
-    label: '삼행시', icon: '✍️', modules: ['acrostic'],
-    titlePlaceholder: '예: 삼행시 도전',
-    descPlaceholder: '제시어를 넣고 사람들이 한 줄씩 완성하게 해보세요.',
-    tagsPlaceholder: '#삼행시, #제시어',
-    acrosticPlaceholder: '예: 소소킹',
-  },
-  quiz: {
-    label: '퀴즈', icon: '🧠', modules: ['quiz'],
-    titlePlaceholder: '예: 퀴즈 도전',
-    descPlaceholder: '문제를 내고 사람들이 정답을 맞히게 해보세요.',
-    tagsPlaceholder: '#퀴즈, #문제',
-    quizQuestionPlaceholder: '예: 소소킹의 첫 글자는?',
-    quizAnswerPlaceholder: '예: 소',
-  },
+  general: { label: '일반글', icon: '📝', titlePlaceholder: '예: 오늘 있었던 웃긴 일', descPlaceholder: '글, 사진, 질문, 상황 설명 등을 자유롭게 적어보세요.', tagsPlaceholder: '#일상, #피드, #소소킹' },
+  vote: { label: '투표/판정', icon: '🗳️', titlePlaceholder: '예: 여러분의 판정은?', descPlaceholder: '상황을 적고 사람들의 선택이나 판정을 받아보세요.', tagsPlaceholder: '#투표, #판정', voteQuestionPlaceholder: '예: 이 상황 어떻게 생각하세요?', voteOptionPlaceholders: ['그렇다', '아니다'] },
+  naming: { label: '미친작명소', icon: '😜', titlePlaceholder: '예: 이 사진 이름 좀 지어줘', descPlaceholder: '사진이나 상황에 어울리는 웃긴 이름을 받아보세요.', tagsPlaceholder: '#작명, #미친작명소' },
+  acrostic: { label: '삼행시', icon: '✍️', titlePlaceholder: '예: 삼행시 도전', descPlaceholder: '제시어를 넣고 사람들이 한 줄씩 완성하게 해보세요.', tagsPlaceholder: '#삼행시, #제시어', acrosticPlaceholder: '예: 소소킹' },
+  quiz: { label: '퀴즈', icon: '🧠', titlePlaceholder: '예: 퀴즈 도전', descPlaceholder: '주관식 또는 객관식 문제를 내고 사람들이 정답을 맞히게 해보세요.', tagsPlaceholder: '#퀴즈, #문제', quizQuestionPlaceholder: '예: 소소킹의 첫 글자는?', quizAnswerPlaceholder: '예: 소' },
 };
 
 function esc(value) {
@@ -62,7 +32,7 @@ function renderPresetButtons(activeKey) {
   return `
     <div class="multi-preset-box multi-preset-box--simple">
       <div class="multi-preset-box__title">글쓰기 형식</div>
-      <div class="multi-preset-box__desc">기본은 일반글입니다. 형식을 선택하면 아래 입력 항목이 그 형식에 맞게 바뀝니다.</div>
+      <div class="multi-preset-box__desc">기본은 일반글입니다. 형식을 선택하면 아래 입력 항목이 바뀝니다.</div>
       <div class="multi-preset-list">
         ${Object.entries(PRESETS).map(([key, p]) => `
           <button type="button" class="multi-preset-btn ${activeKey === key ? 'active' : ''}" data-multi-preset="${key}" aria-pressed="${activeKey === key ? 'true' : 'false'}">${p.icon} ${p.label}</button>`).join('')}
@@ -76,65 +46,56 @@ function moduleCard(key, icon, title, desc, body) {
       <input type="hidden" data-module-toggle="${key}" value="1">
       <div class="multi-module__head multi-module__head--static">
         <span class="multi-module__icon">${icon}</span>
-        <span class="multi-module__text">
-          <b>${title}</b>
-          <small>${desc}</small>
-        </span>
+        <span class="multi-module__text"><b>${title}</b><small>${desc}</small></span>
       </div>
       <div class="multi-module__body">${body}</div>
     </div>`;
 }
 
+function renderQuizOptionRows(count = 2) {
+  return Array.from({ length: count }, (_, i) => `
+    <div class="multi-quiz-option-row">
+      <label class="multi-quiz-answer-pick"><input type="radio" name="mw-quiz-correct" value="${i}" ${i === 0 ? 'checked' : ''}> 정답</label>
+      <input class="form-input mw-quiz-option" maxlength="80" placeholder="선택지 ${i + 1}">
+    </div>`).join('');
+}
+
 function renderSelectedModule(activeKey, preset) {
   if (activeKey === 'general') {
-    return `
-      <div class="multi-general-note">
-        <b>일반글</b>
-        <span>일반글은 제목, 본문, 사진, 태그만 저장됩니다. 상세페이지에서는 댓글과 답글만 사용할 수 있습니다.</span>
-      </div>`;
+    return `<div class="multi-general-note"><b>일반글</b><span>제목, 본문, 사진, 태그만 저장됩니다. 댓글과 답글만 사용할 수 있습니다.</span></div>`;
   }
 
   if (activeKey === 'vote') {
     return moduleCard('vote', '🗳️', '투표/판정', '질문과 선택지를 입력하면 다른 사용자가 투표할 수 있습니다.', `
-      <div class="form-group">
-        <label class="form-label">질문 <span class="required">*</span></label>
-        <input id="mw-vote-question" class="form-input" maxlength="100" placeholder="${esc(preset.voteQuestionPlaceholder)}">
-      </div>
-      <div class="multi-option-list" id="mw-vote-options">
-        ${preset.voteOptionPlaceholders.map((v, i) => `<input class="form-input mw-vote-option" maxlength="80" placeholder="선택지 ${i + 1} · 예: ${esc(v)}">`).join('')}
-      </div>
+      <div class="form-group"><label class="form-label">질문 <span class="required">*</span></label><input id="mw-vote-question" class="form-input" maxlength="100" placeholder="${esc(preset.voteQuestionPlaceholder)}"></div>
+      <div class="multi-option-list" id="mw-vote-options">${preset.voteOptionPlaceholders.map((v, i) => `<input class="form-input mw-vote-option" maxlength="80" placeholder="선택지 ${i + 1} · 예: ${esc(v)}">`).join('')}</div>
       <button class="btn btn--ghost btn--sm" type="button" id="mw-add-vote-option">+ 선택지 추가</button>`);
   }
 
   if (activeKey === 'naming') {
     return moduleCard('naming', '😜', '미친작명소', '다른 사용자가 웃긴 이름을 등록할 수 있습니다.', `
-      <div class="form-group">
-        <label class="form-label">글자수 제한</label>
-        <select id="mw-naming-count" class="form-select">
-          <option value="0">자유</option>
-          <option value="3">3글자</option>
-          <option value="5">5글자</option>
-        </select>
-      </div>`);
+      <div class="form-group"><label class="form-label">글자수 제한</label><select id="mw-naming-count" class="form-select"><option value="0">자유</option><option value="3">3글자</option><option value="5">5글자</option></select></div>`);
   }
 
   if (activeKey === 'acrostic') {
     return moduleCard('acrostic', '✍️', '삼행시', '제시어를 입력하면 다른 사용자가 글자별로 한 줄씩 작성할 수 있습니다.', `
-      <div class="form-group">
-        <label class="form-label">제시어 <span class="required">*</span></label>
-        <input id="mw-acrostic-keyword" class="form-input" maxlength="8" placeholder="${esc(preset.acrosticPlaceholder)}">
-      </div>`);
+      <div class="form-group"><label class="form-label">제시어 <span class="required">*</span></label><input id="mw-acrostic-keyword" class="form-input" maxlength="8" placeholder="${esc(preset.acrosticPlaceholder)}"></div>`);
   }
 
   if (activeKey === 'quiz') {
-    return moduleCard('quiz', '🧠', '퀴즈', '문제와 정답을 입력하면 다른 사용자가 정답을 맞힐 수 있습니다.', `
+    return moduleCard('quiz', '🧠', '퀴즈', '주관식 또는 객관식 문제를 만들 수 있습니다.', `
       <div class="form-group">
-        <label class="form-label">문제 <span class="required">*</span></label>
-        <input id="mw-quiz-question" class="form-input" maxlength="160" placeholder="${esc(preset.quizQuestionPlaceholder)}">
+        <label class="form-label">퀴즈 방식 <span class="required">*</span></label>
+        <select id="mw-quiz-mode" class="form-select"><option value="subjective">주관식</option><option value="multiple">객관식</option></select>
       </div>
-      <div class="form-group">
-        <label class="form-label">정답 <span class="required">*</span></label>
-        <input id="mw-quiz-answer" class="form-input" maxlength="80" placeholder="${esc(preset.quizAnswerPlaceholder)}">
+      <div class="form-group"><label class="form-label">문제 <span class="required">*</span></label><input id="mw-quiz-question" class="form-input" maxlength="160" placeholder="${esc(preset.quizQuestionPlaceholder)}"></div>
+      <div id="mw-quiz-subjective-box" class="form-group"><label class="form-label">정답 <span class="required">*</span></label><input id="mw-quiz-answer" class="form-input" maxlength="80" placeholder="${esc(preset.quizAnswerPlaceholder)}"></div>
+      <div id="mw-quiz-multiple-box" style="display:none">
+        <div class="form-group">
+          <label class="form-label">객관식 선택지 <span class="required">*</span></label>
+          <div class="multi-option-list" id="mw-quiz-options">${renderQuizOptionRows(2)}</div>
+          <button class="btn btn--ghost btn--sm" type="button" id="mw-add-quiz-option">+ 선택지 추가</button>
+        </div>
       </div>`);
   }
 
@@ -150,41 +111,18 @@ function renderMultiWrite() {
 
   el.innerHTML = `
     <div class="write-page multi-write-page" data-render-key="${esc(renderKey)}">
-      <div class="write-step-header">
-        <button class="write-back-btn" id="multi-back-type" type="button">←</button>
-        <h1 class="write-step-title">🧩 피드 글쓰기</h1>
-      </div>
+      <div class="write-step-header"><button class="write-back-btn" id="multi-back-type" type="button">←</button><h1 class="write-step-title">🧩 피드 글쓰기</h1></div>
       ${renderPresetButtons(presetKey)}
       <div class="card">
         <div class="card__body--lg">
-          <div class="form-group">
-            <label class="form-label">제목 <span class="required">*</span></label>
-            <input id="mw-title" class="form-input" maxlength="100" placeholder="${esc(preset.titlePlaceholder)}">
-          </div>
-          <div class="form-group">
-            <label class="form-label">본문</label>
-            <textarea id="mw-desc" class="form-textarea" rows="4" maxlength="2000" placeholder="${esc(preset.descPlaceholder)}"></textarea>
-          </div>
-          <div class="form-group">
-            <label class="form-label">사진</label>
-            <div id="mw-img-uploader"></div>
-            <div class="form-hint">사진 개수 제한 없이 올릴 수 있어요.</div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">태그</label>
-            <input id="mw-tags" class="form-input" maxlength="100" placeholder="${esc(preset.tagsPlaceholder)}">
-          </div>
-          <div class="multi-module-list multi-module-list--selected">
-            ${renderSelectedModule(presetKey, preset)}
-          </div>
-          <div class="multi-comment-note">💬 댓글과 답글은 항상 켜져 있습니다. 이어쓰기형 놀이는 댓글 흐름으로 자연스럽게 진행하세요.</div>
+          <div class="form-group"><label class="form-label">제목 <span class="required">*</span></label><input id="mw-title" class="form-input" maxlength="100" placeholder="${esc(preset.titlePlaceholder)}"></div>
+          <div class="form-group"><label class="form-label">본문</label><textarea id="mw-desc" class="form-textarea" rows="4" maxlength="2000" placeholder="${esc(preset.descPlaceholder)}"></textarea></div>
+          <div class="form-group"><label class="form-label">사진</label><div id="mw-img-uploader"></div><div class="form-hint">사진 개수 제한 없이 올릴 수 있어요.</div></div>
+          <div class="form-group"><label class="form-label">태그</label><input id="mw-tags" class="form-input" maxlength="100" placeholder="${esc(preset.tagsPlaceholder)}"></div>
+          <div class="multi-module-list multi-module-list--selected">${renderSelectedModule(presetKey, preset)}</div>
+          <div class="multi-comment-note">💬 댓글과 답글은 항상 켜져 있습니다.</div>
         </div>
-        <div class="card__footer">
-          <div class="write-submit">
-            <button class="btn btn--ghost" type="button" id="multi-cancel">취소</button>
-            <button class="btn btn--primary" type="button" id="multi-submit">올리기</button>
-          </div>
-        </div>
+        <div class="card__footer"><div class="write-submit"><button class="btn btn--ghost" type="button" id="multi-cancel">취소</button><button class="btn btn--primary" type="button" id="multi-submit">올리기</button></div></div>
       </div>
     </div>`;
 
@@ -196,6 +134,7 @@ function renderMultiWrite() {
 function bindMultiWriteEvents() {
   document.getElementById('multi-back-type')?.addEventListener('click', () => navigate('/feed'));
   document.getElementById('multi-cancel')?.addEventListener('click', () => navigate('/feed'));
+
   document.querySelectorAll('[data-multi-preset]').forEach(btn => {
     btn.addEventListener('click', () => {
       const preset = btn.dataset.multiPreset;
@@ -204,12 +143,33 @@ function bindMultiWriteEvents() {
       renderMultiWrite();
     });
   });
+
   document.getElementById('mw-add-vote-option')?.addEventListener('click', () => {
     const list = document.getElementById('mw-vote-options');
     const count = list?.querySelectorAll('.mw-vote-option').length || 0;
     if (count >= 8) { toast.warn('선택지는 최대 8개까지 가능해요'); return; }
     list.insertAdjacentHTML('beforeend', `<input class="form-input mw-vote-option" maxlength="80" placeholder="선택지 ${count + 1}">`);
   });
+
+  document.getElementById('mw-quiz-mode')?.addEventListener('change', e => {
+    const isMultiple = e.target.value === 'multiple';
+    const subjective = document.getElementById('mw-quiz-subjective-box');
+    const multiple = document.getElementById('mw-quiz-multiple-box');
+    if (subjective) subjective.style.display = isMultiple ? 'none' : '';
+    if (multiple) multiple.style.display = isMultiple ? '' : 'none';
+  });
+
+  document.getElementById('mw-add-quiz-option')?.addEventListener('click', () => {
+    const list = document.getElementById('mw-quiz-options');
+    const count = list?.querySelectorAll('.mw-quiz-option').length || 0;
+    if (count >= 6) { toast.warn('객관식 선택지는 최대 6개까지 가능해요'); return; }
+    list.insertAdjacentHTML('beforeend', `
+      <div class="multi-quiz-option-row">
+        <label class="multi-quiz-answer-pick"><input type="radio" name="mw-quiz-correct" value="${count}"> 정답</label>
+        <input class="form-input mw-quiz-option" maxlength="80" placeholder="선택지 ${count + 1}">
+      </div>`);
+  });
+
   document.getElementById('multi-submit')?.addEventListener('click', submitMultiPost);
 }
 
@@ -244,9 +204,22 @@ function collectModules() {
 
   if (enabled('quiz')) {
     const question = document.getElementById('mw-quiz-question')?.value.trim() || '';
-    const answer = document.getElementById('mw-quiz-answer')?.value.trim() || '';
-    if (!question || !answer) throw new Error('문제와 정답을 모두 입력해주세요.');
-    modules.quiz = { enabled: true, question, answer };
+    const mode = document.getElementById('mw-quiz-mode')?.value || 'subjective';
+    if (!question) throw new Error('문제를 입력해주세요.');
+
+    if (mode === 'multiple') {
+      const rawOptions = [...document.querySelectorAll('.mw-quiz-option')].map(i => i.value.trim());
+      const options = rawOptions.filter(Boolean);
+      const correctIndex = Number(document.querySelector('input[name="mw-quiz-correct"]:checked')?.value || 0);
+      const answer = rawOptions[correctIndex] || '';
+      if (options.length < 2) throw new Error('객관식 선택지를 2개 이상 입력해주세요.');
+      if (!answer.trim()) throw new Error('정답으로 선택한 객관식 선택지를 입력해주세요.');
+      modules.quiz = { enabled: true, mode: 'multiple', question, options: options.map(text => ({ text })), answer };
+    } else {
+      const answer = document.getElementById('mw-quiz-answer')?.value.trim() || '';
+      if (!answer) throw new Error('정답을 입력해주세요.');
+      modules.quiz = { enabled: true, mode: 'subjective', question, answer };
+    }
   }
 
   return modules;
@@ -280,6 +253,7 @@ async function submitMultiPost() {
       authorId: auth.currentUser.uid,
       authorName: appState.nickname || auth.currentUser.displayName || '익명',
       authorPhoto: auth.currentUser.photoURL || '',
+      authorEmail: auth.currentUser.email || '',
       reactions: { total: 0 },
       commentCount: 0,
       viewCount: 0,
