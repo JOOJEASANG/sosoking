@@ -1,0 +1,139 @@
+body.game-only-mode {
+  overflow-x: hidden;
+  background: var(--color-bg);
+}
+
+.game-only-shell {
+  min-height: 100vh;
+  width: 100%;
+  background: var(--color-bg);
+}
+
+.game-only-content {
+  width: min(960px, 100%);
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 18px 16px 28px;
+}
+
+.game-only-mode .site-sidebar,
+.game-only-mode .site-header,
+.game-only-mode .bottom-nav,
+.game-only-mode .site-footer {
+  display: none !important;
+}
+
+.game-only-mode .liar-page,
+.game-only-mode .game-detail-page {
+  min-height: auto;
+  margin: 0;
+  padding-bottom: 24px;
+}
+
+.game-only-mode .liar-hero,
+.game-only-mode .game-detail-hero {
+  margin-top: 0 !important;
+}
+
+.game-player-avatar {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 15px;
+  background: linear-gradient(135deg, rgba(255,107,74,.18), rgba(124,58,237,.16));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.45), 0 8px 18px rgba(17,24,39,.08);
+}
+
+.game-player-avatar::before {
+  content: '';
+  position: absolute;
+  top: 7px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: .88;
+}
+
+.game-player-avatar::after {
+  content: '';
+  position: absolute;
+  bottom: 6px;
+  width: 21px;
+  height: 15px;
+  border-radius: 13px 13px 8px 8px;
+  background: currentColor;
+  opacity: .88;
+}
+
+.game-player-avatar--host {
+  color: #ff6b4a;
+}
+
+.game-player-avatar--player {
+  color: #7c3aed;
+}
+
+.game-player-avatar--dead {
+  color: #9ca3af;
+  filter: grayscale(1);
+  opacity: .58;
+}
+
+.liar-player-item.has-avatar {
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.liar-player-item.has-avatar::before {
+  display: none !important;
+}
+
+.liar-player-name {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 950;
+}
+
+.liar-player-name span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 767px) {
+  body.game-only-mode {
+    padding-bottom: 0 !important;
+  }
+
+  .game-only-content {
+    width: 100%;
+    padding: 0 12px 22px;
+  }
+
+  .game-only-mode .liar-page,
+  .game-only-mode .game-detail-page {
+    margin: 0 -12px;
+    padding: 0 12px 22px;
+  }
+
+  .game-only-mode .liar-hero,
+  .game-only-mode .game-detail-hero {
+    border-radius: 0 0 30px 30px !important;
+    margin: 0 -12px 0 !important;
+  }
+
+  .game-player-avatar {
+    width: 36px;
+    height: 36px;
+    flex-basis: 36px;
+    border-radius: 14px;
+  }
+}
