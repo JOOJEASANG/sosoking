@@ -22,16 +22,6 @@ const GAMES = [
     path: '/game/mafia',
     enabled: true,
   },
-  {
-    key: 'marble',
-    icon: '🎲',
-    title: '마블게임',
-    desc: '주사위와 선택으로 승부하는 공정한 보드 게임',
-    status: '방 만들기',
-    tag: '오픈',
-    path: '/game/marble',
-    enabled: true,
-  },
 ];
 
 export function renderSosoland() {
@@ -46,12 +36,11 @@ export function renderSosoland() {
         <div class="sosoland-hero__glow sosoland-hero__glow--two"></div>
         <div class="sosoland-hero__content">
           <div class="sosoland-hero__eyebrow">GAME PLAYGROUND</div>
-          <h1>친구와 바로 즐기는<br>게임 모음</h1>
-          <p>가볍게 들어와서 방을 만들고, 초대 링크로 함께 즐길 수 있는 게임공간입니다.</p>
+          <h1>친구와 바로 즐기는<br>추리 게임 모음</h1>
+          <p>회원가입 없이 닉네임만 입력하고 초대 링크로 함께 즐길 수 있는 게임공간입니다.</p>
           <div class="sosoland-hero__chips">
             <span>🕵️ 라이어게임</span>
             <span>🌙 마피아게임</span>
-            <span>🎲 마블게임</span>
           </div>
         </div>
         <div class="sosoland-hero__console" aria-hidden="true">
@@ -59,7 +48,7 @@ export function renderSosoland() {
         </div>
       </section>
 
-      <section class="sosoland-grid">
+      <section class="sosoland-grid sosoland-grid--two">
         ${GAMES.map(game => `
           <article class="sosoland-card sosoland-card--${game.key}" data-game-path="${game.path}">
             <div class="sosoland-card__top">
