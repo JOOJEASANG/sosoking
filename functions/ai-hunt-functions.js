@@ -6,6 +6,31 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const db = getFirestore();
 const geminiKey = defineSecret('GEMINI_API_KEY');
 
+const AI_HUNT_DAILY_LIMIT = 20; // 사용자당 하루 최대 20회
+
+async function checkUserAiHuntLimit(uid) {
+  const today = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date());
+
+  const ref = db.doc(`ai_usage_users/${uid}/hunt/${today}`);
+  let allowed = false;
+
+  await db.runTransaction(async tx => {
+    const snap = await tx.get(ref);
+    const used = snap.exists ? (snap.data().count || 0) : 0;
+    if (used < AI_HUNT_DAILY_LIMIT) {
+      tx.set(ref, {
+        count: FieldValue.increment(1),
+        updatedAt: FieldValue.serverTimestamp(),
+      }, { merge: true });
+      allowed = true;
+    }
+  });
+
+  return allowed;
+}
+
 function cleanText(value, maxLength = 200) {
   return String(value || '')
     .replace(/[\n\r\t]+/g, ' ')
@@ -143,6 +168,10 @@ const startAiHuntCase = onCall({ region: 'asia-northeast3', secrets: [geminiKey]
     throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
   }
   const userId = request.auth.uid;
+  const allowed = await checkUserAiHuntLimit(userId);
+  if (!allowed) {
+    throw new HttpsError('resource-exhausted', '오늘의 AI 추리 한도(20회)를 모두 사용했습니다. 내일 다시 도전해보세요!');
+  }
   let caseData;
   try {
     const genAI = new GoogleGenerativeAI(geminiKey.value().trim());
@@ -174,6 +203,10 @@ const startAiHuntCase = onCall({ region: 'asia-northeast3', secrets: [geminiKey]
 const interrogateAiHuntSuspect = onCall({ region: 'asia-northeast3', secrets: [geminiKey], timeoutSeconds: 60 }, async (request) => {
   if (!request.auth?.uid) {
     throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+  }
+  const allowed = await checkUserAiHuntLimit(request.auth.uid);
+  if (!allowed) {
+    throw new HttpsError('resource-exhausted', '오늘의 AI 추리 한도(20회)를 모두 사용했습니다. 내일 다시 도전해보세요!');
   }
   const { caseId, question, pressure = 0, escape = 100 } = request.data || {};
   if (!caseId) throw new Error('사건 정보가 없습니다');
@@ -211,6 +244,10 @@ const attemptAiHuntArrest = onCall({ region: 'asia-northeast3', timeoutSeconds: 
     throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
   }
   const userId = request.auth.uid;
+  const allowed = await checkUserAiHuntLimit(userId);
+  if (!allowed) {
+    throw new HttpsError('resource-exhausted', '오늘의 AI 추리 한도(20회)를 모두 사용했습니다. 내일 다시 도전해보세요!');
+  }
   const {
     caseId,
     selectedEvidence = [],

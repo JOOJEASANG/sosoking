@@ -23,6 +23,35 @@ function computeTitle(count) {
 /* ── getWeeklyBest ─────────────────────────────────── */
 // 최근 7일 acrostic 참여글 TOP5 + drip 댓글 TOP5 집계
 exports.getWeeklyBest = onCall({ region: REGION, timeoutSeconds: 60 }, async () => {
+  const CACHE_TTL_MS = 60 * 60 * 1000; // 1시간 캐시
+  const cacheRef = db.doc('config/weekly_best_cache');
+
+  // 캐시 확인
+  try {
+    const cacheSnap = await cacheRef.get();
+    if (cacheSnap.exists) {
+      const cached = cacheSnap.data();
+      const ageMs = Date.now() - (cached.updatedAt?.toMillis?.() || 0);
+      if (ageMs < CACHE_TTL_MS && cached.topAcrostics && cached.topDrips) {
+        return { topAcrostics: cached.topAcrostics, topDrips: cached.topDrips };
+      }
+    }
+  } catch { /* 캐시 읽기 실패 시 fresh 계산 */ }
+
+  // 기존 계산 로직을 별도 함수로 분리
+  const result = await calculateWeeklyBest();
+
+  // 캐시 저장 (비동기 - 결과에 영향 없음)
+  cacheRef.set({
+    topAcrostics: result.topAcrostics,
+    topDrips: result.topDrips,
+    updatedAt: FieldValue.serverTimestamp(),
+  }).catch(() => {});
+
+  return result;
+});
+
+async function calculateWeeklyBest() {
   const weekAgo = Timestamp.fromDate(new Date(Date.now() - 7 * 86400000));
 
   const [acrosticFeeds, dripFeeds] = await Promise.all([
@@ -94,7 +123,7 @@ exports.getWeeklyBest = onCall({ region: REGION, timeoutSeconds: 60 }, async () 
       ({ id, text, authorName, likes: likes || 0, postId, postTitle }));
 
   return { topAcrostics, topDrips };
-});
+}
 
 /* ── notifyOnComment ───────────────────────────────── */
 // 내 글에 댓글이 달리면 notifications 컬렉션에 기록
@@ -130,11 +159,15 @@ exports.updateUserTitle = onDocumentCreated(
     const post = event.data?.data();
     if (!post?.authorId) return;
     try {
-      const countSnap = await db.collection('feeds')
-        .where('authorId', '==', post.authorId)
-        .count().get();
-      const title = computeTitle(countSnap.data().count);
-      await db.doc(`users/${post.authorId}`).set({ title }, { merge: true });
+      const userRef = db.doc(`users/${post.authorId}`);
+      // postCount를 원자적으로 증가시키면서 타이틀도 계산
+      await db.runTransaction(async tx => {
+        const snap = await tx.get(userRef);
+        const currentCount = Number(snap.data()?.postCount || 0);
+        const newCount = currentCount + 1;
+        const title = computeTitle(newCount);
+        tx.set(userRef, { postCount: newCount, title }, { merge: true });
+      });
     } catch { /* non-critical */ }
   }
 );
@@ -145,13 +178,20 @@ exports.cleanupNotifications = onSchedule(
   { schedule: '0 3 * * *', region: REGION, timeZone: 'Asia/Seoul' },
   async () => {
     const cutoff = Timestamp.fromDate(new Date(Date.now() - 30 * 86400000));
-    const snap = await db.collection('notifications')
-      .where('read', '==', true)
-      .where('createdAt', '<', cutoff)
-      .limit(500).get().catch(() => null);
-    if (!snap?.docs.length) return;
-    const batch = db.batch();
-    snap.docs.forEach(d => batch.delete(d.ref));
-    await batch.commit();
+    let deleted = 0;
+    let hasMore = true;
+    while (hasMore) {
+      const snap = await db.collection('notifications')
+        .where('read', '==', true)
+        .where('createdAt', '<', cutoff)
+        .limit(500).get().catch(() => null);
+      if (!snap?.docs.length) break;
+      const batch = db.batch();
+      snap.docs.forEach(d => batch.delete(d.ref));
+      await batch.commit();
+      deleted += snap.docs.length;
+      hasMore = snap.docs.length === 500;
+    }
+    console.log(`cleanupNotifications: ${deleted}건 삭제`);
   }
 );

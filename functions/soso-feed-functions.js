@@ -18,7 +18,7 @@ function safeVoteKey(option) {
 
 async function getAuthorName(uid) {
   try {
-    const snap = await db.doc(`users/${uid}`).get();
+    const snap = await db.doc(`users/${uid}`).select('nickname').get();
     if (snap.exists && snap.data().nickname) return clean(snap.data().nickname, 40);
   } catch {}
   return '익명 소소러';
