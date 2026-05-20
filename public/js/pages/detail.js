@@ -1,5 +1,6 @@
-import { db, auth } from '../firebase.js';
-import { doc, getDoc, updateDoc, increment } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { db, auth, functions } from '../firebase.js';
+import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
 import { renderReactionBar, initReactionBar } from '../components/reaction-bar.js';
 import { setMeta } from '../utils/seo.js';
 import { escHtml, formatTime } from '../utils/helpers.js';
@@ -10,6 +11,19 @@ import { renderCommentSection } from '../detail/comment-render.js';
 import { renderAcrosticSection } from '../detail/acrostic-render.js';
 import { appendSimilarPosts } from '../detail/similar-render.js';
 import { setupRelayCounter, setupCharBoxInput } from '../detail/input-ux.js';
+
+const callRegisterPostView = httpsCallable(functions, 'registerPostView');
+
+async function registerDetailView(id) {
+  if (!auth.currentUser) return { counted: false, reason: 'guest' };
+  try {
+    const result = await callRegisterPostView({ postId: id });
+    return result.data || { counted: false };
+  } catch (error) {
+    console.warn('[detail] view registration failed', error);
+    return { counted: false, error: true };
+  }
+}
 
 export async function renderDetail(id) {
   const el = document.getElementById('page-content');
@@ -24,15 +38,16 @@ export async function renderDetail(id) {
 
     const post = { id: snap.id, ...snap.data() };
     setMeta(post.title, post.desc, post.images?.[0]);
-    await updateDoc(doc(db, 'feeds', id), { viewCount: increment(1) }).catch(() => {});
 
     const uid = auth.currentUser?.uid;
-    const [comments, acrostics, isScrapped] = await Promise.all([
+    const [comments, acrostics, isScrapped, viewResult] = await Promise.all([
       fetchComments(id),
       post.type === 'acrostic' ? fetchAcrostics(id) : Promise.resolve([]),
       uid ? getDoc(doc(db, 'users', uid, 'scraps', id)).then(s => s.exists()) : Promise.resolve(false),
+      registerDetailView(id),
     ]);
 
+    if (viewResult?.counted === true) post.viewCount = Number(post.viewCount || 0) + 1;
     renderDetailPage(el, post, comments, acrostics, isScrapped);
   } catch (error) {
     console.error(error);
