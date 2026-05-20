@@ -138,7 +138,7 @@ export async function initApp() {
   registerRoute('/game/liar/:id', ({ id }) => renderPage('./pages/liar-game.js', 'renderLiarGame', [{ id }]));
   registerRoute('/game/mafia', () => renderPage('./pages/mafia-game.js', 'renderMafiaGame', []));
   registerRoute('/game/mafia/:id', ({ id }) => renderPage('./pages/mafia-game.js', 'renderMafiaGame', [{ id }]));
-  registerRoute('/detail/:id', ({ id }) => renderPage('./pages/detail.js', 'renderDetail', [id]));
+  registerRoute('/detail/:id', ({ id }) => renderPage('./pages/detail-safe.js', 'renderDetail', [id]));
   registerRoute('/account', () => renderPage('./pages/account.js', 'renderAccount', []));
   registerRoute('/scraps', () => renderPage('./pages/scraps.js', 'renderScraps', []));
   registerRoute('/login', () => renderPage('./pages/login.js', 'renderLogin', []));
