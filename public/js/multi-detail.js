@@ -300,7 +300,10 @@ function setupEvents(post) {
         });
         toast.success('투표했어요!');
         const updated = { ...post, modules: { ...post.modules, vote: { ...vote, options, votedBy: [...(vote.votedBy || []), uid] } } };
-        document.querySelector('[data-multi-module="vote"]')?.outerHTML = renderVoteModule(updated);
+        const voteModule = document.querySelector('[data-multi-module="vote"]');
+        if (voteModule) {
+          voteModule.outerHTML = renderVoteModule(updated);
+        }
         setupEvents(updated);
       } catch (error) {
         console.error(error);
