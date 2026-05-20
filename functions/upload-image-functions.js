@@ -3,6 +3,7 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getStorage } = require('firebase-admin/storage');
 const { getApps, initializeApp } = require('firebase-admin/app');
+const { randomUUID } = require('crypto');
 
 if (!getApps().length) initializeApp();
 
@@ -42,6 +43,7 @@ const uploadFeedImage = onCall({ region: REGION, timeoutSeconds: 60, memory: '25
   const safeUid = cleanUid(uid);
   const ext = contentType === 'image/png' ? 'png' : contentType === 'image/webp' ? 'webp' : contentType === 'image/gif' ? 'gif' : 'jpg';
   const path = `feeds/${safeUid}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+  const token = randomUUID();
 
   const bucket = getStorage().bucket(getBucketName());
   const file = bucket.file(path);
@@ -49,15 +51,19 @@ const uploadFeedImage = onCall({ region: REGION, timeoutSeconds: 60, memory: '25
     metadata: {
       contentType,
       cacheControl: 'public, max-age=31536000, immutable',
-      metadata: { owner: safeUid, source: 'callable-upload' },
+      metadata: {
+        owner: safeUid,
+        source: 'callable-upload',
+        firebaseStorageDownloadTokens: token,
+      },
     },
     resumable: false,
     validation: 'md5',
   });
 
-  await file.makePublic().catch(() => null);
-  const publicUrl = `https://storage.googleapis.com/${bucket.name}/${encodeURIComponent(path).replace(/%2F/g, '/')}`;
-  return { ok: true, url: publicUrl, path };
+  const encodedPath = encodeURIComponent(path);
+  const url = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodedPath}?alt=media&token=${token}`;
+  return { ok: true, url, path };
 });
 
 module.exports = { uploadFeedImage };
