@@ -6,7 +6,18 @@ export function splitTags(raw) {
     .slice(0, 8);
 }
 
+function htmlToPlainText(html) {
+  const tmp = document.createElement('div');
+  tmp.innerHTML = String(html || '').replace(/<br\s*\/?>/gi, '\n').replace(/<\/div>/gi, '\n').replace(/<\/p>/gi, '\n');
+  return (tmp.textContent || '').replace(/\n{4,}/g, '\n\n\n').trim();
+}
+
 export function getBodyText() {
+  const desc = document.getElementById('mw-desc');
+  return desc?.dataset.plainText || htmlToPlainText(desc?.value || '') || desc?.value.trim() || '';
+}
+
+export function getBodyHtml() {
   return document.getElementById('mw-desc')?.value.trim() || '';
 }
 
