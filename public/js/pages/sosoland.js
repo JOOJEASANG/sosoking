@@ -15,7 +15,7 @@ const GAMES = [
   {
     key: 'mafia-lite',
     icon: '🌙',
-    title: '소소마피아',
+    title: '마피아',
     desc: '복잡한 직업 없이 가볍게 즐기는 모바일 마피아 게임',
     status: '준비중',
     tag: '실시간',
@@ -24,7 +24,7 @@ const GAMES = [
   {
     key: 'marble',
     icon: '🎲',
-    title: '소소마블',
+    title: '마블',
     desc: '과금 없이 운과 선택으로만 즐기는 공정한 보드게임',
     status: '기획중',
     tag: '보드게임',
@@ -33,18 +33,12 @@ const GAMES = [
 ];
 
 export function renderSosoland() {
-  setMeta('게임 · 소소랜드');
+  setMeta('게임');
   const el = document.getElementById('page-content');
   if (!el) return;
 
   el.innerHTML = `
     <div class="sosoland-page">
-      <section class="sosoland-hero">
-        <div class="sosoland-hero__eyebrow">🎮 게임</div>
-        <h1>소소랜드</h1>
-        <p>피드는 멀티게시판 커뮤니티, 게임은 소소랜드로 분리해서 운영합니다.</p>
-      </section>
-
       <section class="sosoland-grid">
         ${GAMES.map(game => `
           <article class="sosoland-card" data-game="${game.key}">
@@ -58,21 +52,9 @@ export function renderSosoland() {
           </article>
         `).join('')}
       </section>
-
-      <section class="sosoland-note">
-        <b>운영 방향</b>
-        <span>초기에는 카카오톡 초대 링크로 방에 들어오는 구조로 시작하고, 인원이 모이면 실시간 방/관전/랭킹을 붙입니다.</span>
-      </section>
-
-      <div class="sosoland-actions">
-        <button class="btn btn--primary" id="btn-sosoland-feed">피드로 가기</button>
-        <button class="btn btn--ghost" id="btn-sosoland-write">글쓰기</button>
-      </div>
     </div>`;
 
   el.querySelectorAll('[data-game-path]').forEach(btn => {
     btn.addEventListener('click', () => navigate(btn.dataset.gamePath));
   });
-  document.getElementById('btn-sosoland-write')?.addEventListener('click', () => navigate('/write'));
-  document.getElementById('btn-sosoland-feed')?.addEventListener('click', () => navigate('/feed'));
 }
