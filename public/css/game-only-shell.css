@@ -35,6 +35,39 @@ body.game-only-mode {
   margin-top: 0 !important;
 }
 
+.game-guide-card {
+  overflow: hidden;
+}
+
+.game-guide-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.game-guide-list div {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  padding: 12px;
+  border-radius: 16px;
+  background: rgba(255,255,255,.54);
+  border: 1px solid rgba(255,255,255,.28);
+}
+
+.game-guide-list b {
+  color: var(--color-primary);
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.game-guide-list span {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
 .game-player-avatar {
   position: relative;
   width: 38px;
@@ -128,6 +161,11 @@ body.game-only-mode {
   .game-only-mode .game-detail-hero {
     border-radius: 0 0 30px 30px !important;
     margin: 0 -12px 0 !important;
+  }
+
+  .game-guide-list div {
+    grid-template-columns: 1fr;
+    gap: 4px;
   }
 
   .game-player-avatar {
