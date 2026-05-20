@@ -17,19 +17,19 @@ const FEATURE_CARDS = [
 ];
 
 const WRITE_CHIPS = [
+  { icon:'📝', label:'일반글', path:'/write?type=multi' },
   { icon:'🗳️', label:'투표/판정', path:'/write?type=multi&preset=vote' },
   { icon:'🧩', label:'빈칸 채우기', path:'/write?type=multi&preset=fill' },
   { icon:'😜', label:'미친작명소', path:'/write?type=multi&preset=naming' },
   { icon:'✍️', label:'삼행시', path:'/write?type=multi&preset=acrostic' },
   { icon:'🎭', label:'막장릴레이', path:'/write?type=multi&preset=relay' },
   { icon:'🧠', label:'미친퀴즈', path:'/write?type=multi&preset=quiz' },
-  { icon:'🕶️', label:'익명비밀글', path:'/write?type=multi&preset=anonymous' },
 ];
 
 const TYPE_LABEL = {
   multi:'일반글', general:'일반글', vote:'투표/판정', ox:'투표/판정', crazy_court:'투표/판정',
   fill:'빈칸 채우기', naming:'미친작명소', acrostic:'삼행시', quiz:'미친퀴즈', initial_game:'미친퀴즈',
-  relay:'막장릴레이', anonymous:'익명비밀글', balance:'투표/판정', battle:'투표/판정',
+  relay:'막장릴레이', anonymous:'일반글', balance:'투표/판정', battle:'투표/판정',
 };
 
 async function checkStreak(uid) {
@@ -72,16 +72,15 @@ function fmtNum(n) {
 }
 
 function moduleLabel(post) {
-  if (post.subtype && TYPE_LABEL[post.subtype]) return TYPE_LABEL[post.subtype];
-  if (post.type !== 'multi') return TYPE_LABEL[post.type] || '피드 글';
   const m = post.modules || {};
-  if (post.anonymous || m.anonymous?.enabled) return '익명비밀글';
   if (m.fill?.enabled) return '빈칸 채우기';
   if (m.naming?.enabled) return '미친작명소';
   if (m.acrostic?.enabled) return '삼행시';
   if (m.relay?.enabled) return '막장릴레이';
   if (m.quiz?.enabled) return '미친퀴즈';
   if (m.vote?.enabled) return '투표/판정';
+  if (post.subtype && TYPE_LABEL[post.subtype]) return TYPE_LABEL[post.subtype];
+  if (post.type !== 'multi') return TYPE_LABEL[post.type] || '피드 글';
   return '일반글';
 }
 
