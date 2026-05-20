@@ -4,7 +4,10 @@ export function escHtml(str) {
 
 export function formatTime(date) {
   if (!date) return '알 수 없음';
+  // Firestore Timestamp 처리
+  if (date && typeof date.toDate === 'function') date = date.toDate();
   const d = date instanceof Date ? date : new Date(date);
+  if (isNaN(d.getTime())) return '알 수 없음';
   const diff = (Date.now() - d.getTime()) / 1000;
   if (diff < 60)    return '방금 전';
   if (diff < 3600)  return `${Math.floor(diff/60)}분 전`;

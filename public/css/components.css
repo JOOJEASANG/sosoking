@@ -246,6 +246,22 @@
 .toast--warning { background: var(--color-warning); color: var(--color-text-primary); }
 @keyframes toast-in { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
 
+/* 토스트 진입/퇴장 애니메이션 */
+.toast-enter {
+  animation: toast-slide-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.toast-exit {
+  animation: toast-slide-out 0.2s ease-in forwards;
+}
+@keyframes toast-slide-in {
+  from { transform: translateX(110%); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+@keyframes toast-slide-out {
+  from { transform: translateX(0); opacity: 1; }
+  to   { transform: translateX(110%); opacity: 0; }
+}
+
 /* ══ 모달 ══ */
 .modal-overlay {
   position: fixed; inset: 0; background: rgba(14,14,40,0.55);
@@ -272,6 +288,23 @@
 }
 @keyframes fade-in  { from { opacity: 0; } to { opacity: 1; } }
 @keyframes modal-in { from { opacity: 0; transform: scale(0.94) translateY(-10px); } to { opacity: 1; transform: none; } }
+
+/* 모달 애니메이션 개선 */
+.modal-overlay {
+  animation: modal-backdrop 0.2s ease;
+}
+.modal-content,
+.modal {
+  animation: modal-scale-in 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+@keyframes modal-backdrop {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes modal-scale-in {
+  from { transform: scale(0.92) translateY(8px); opacity: 0; }
+  to   { transform: scale(1) translateY(0); opacity: 1; }
+}
 
 /* ══ 검색 입력 ══ */
 .search-input-wrap { position: relative; display: flex; align-items: center; }
@@ -951,6 +984,10 @@
   0%   { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+@keyframes skeleton-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
 .skeleton {
   background: linear-gradient(
     90deg,
@@ -959,7 +996,7 @@
     var(--color-surface-2) 75%
   );
   background-size: 200% 100%;
-  animation: sk-wave 1.6s ease infinite;
+  animation: skeleton-shimmer 1.5s infinite;
   border-radius: var(--radius-sm);
 }
 .skeleton-card {

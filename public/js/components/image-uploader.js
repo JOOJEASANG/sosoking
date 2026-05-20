@@ -17,9 +17,10 @@ function isUnlimited() {
 }
 
 export function initImageUploader(container, max = Infinity) {
+  // 모듈 singleton 상태 완전 초기화 (M-03: 재호출 시 상태 충돌 방지)
   maxFiles = normalizeMaxFiles(max);
   uploadedFiles = [];
-  uploaderContainer = container;
+  uploaderContainer = container; // 새 컨테이너로 업데이트
   renderUploader(container);
 }
 

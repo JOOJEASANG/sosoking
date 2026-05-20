@@ -17,6 +17,7 @@ let cachedPosts = [];
 let isLoading = false;
 
 export async function renderFeed() {
+  isLoading = false;
   setMeta('피드');
   const el = document.getElementById('page-content');
   const params = getQueryParams();

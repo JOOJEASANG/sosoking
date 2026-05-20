@@ -93,6 +93,10 @@ export function bindCommentLikes(postId, root = document) {
       const activeBtn = parent?.querySelector('.comment-react-btn.active');
       const currentKey = activeBtn?.dataset.react ?? null;
 
+      // 낙관적 업데이트 전 현재 상태 스냅샷 저장
+      const prevActiveKey = currentKey;
+      const prevActiveBtnEl = activeBtn;
+
       try {
         if (currentKey === key) {
           btn.classList.remove('active');
@@ -108,6 +112,19 @@ export function bindCommentLikes(postId, root = document) {
         }
         await toggleCommentReaction(postId, commentId, key, currentKey);
       } catch {
+        // 실패 시 낙관적 업데이트 롤백
+        if (prevActiveKey === key) {
+          btn.classList.add('active');
+          adjustReactCount(btn, 1);
+        } else if (prevActiveKey) {
+          btn.classList.remove('active');
+          adjustReactCount(btn, -1);
+          prevActiveBtnEl?.classList.add('active');
+          adjustReactCount(prevActiveBtnEl, 1);
+        } else {
+          btn.classList.remove('active');
+          adjustReactCount(btn, -1);
+        }
         toast.error('반응 등록에 실패했어요.');
       }
       btn._pending = false;

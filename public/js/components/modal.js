@@ -48,6 +48,8 @@ export function openModal({ title = '', body = '', actions = [] } = {}) {
     });
   });
 
+  // 중복 리스너 방지: 추가 전에 먼저 제거
+  document.removeEventListener('keydown', handleEsc);
   document.addEventListener('keydown', handleEsc);
   return overlay;
 }

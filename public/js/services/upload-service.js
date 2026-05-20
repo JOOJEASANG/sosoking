@@ -23,6 +23,10 @@ export function compressImage(file, maxSide = MAX_SIDE, quality = QUALITY) {
       canvas.getContext('2d').drawImage(img, 0, 0, width, height);
       canvas.toBlob(resolve, 'image/jpeg', quality);
     };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(null); // null 반환해서 호출자가 원본 사용
+    };
     img.src = url;
   });
 }

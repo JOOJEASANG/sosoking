@@ -145,11 +145,14 @@ export function collectMultiModules() {
     if (mode === 'multiple') {
       const rawOptions = getQuizOptions();
       const options = rawOptions.filter(Boolean);
-      const correctIndex = Number(document.querySelector('input[name="mw-quiz-correct"]:checked')?.value || 0);
-      const answer = rawOptions[correctIndex] || '';
+      // correctIndex는 rawOptions 기준이므로, filtered options에서 맞는 인덱스 다시 계산
+      const correctRawIndex = Number(document.querySelector('input[name="mw-quiz-correct"]:checked')?.value || 0);
+      const correctAnswer = rawOptions[correctRawIndex] || '';
+      const correctIndex = options.indexOf(correctAnswer);
+      const answer = correctAnswer;
       if (options.length < 2) throw new Error('객관식 선택지를 2개 이상 입력해주세요.');
       if (!answer.trim()) throw new Error('정답으로 선택한 객관식 선택지를 입력해주세요.');
-      modules.quiz = { enabled: true, mode: 'multiple', question: bodyText, options: options.map(text => ({ text })), answer };
+      modules.quiz = { enabled: true, mode: 'multiple', question: bodyText, options: options.map(text => ({ text })), answer, correctIndex };
     } else {
       const answer = document.getElementById('mw-quiz-answer')?.value.trim() || '';
       if (!answer) throw new Error('정답을 입력해주세요.');

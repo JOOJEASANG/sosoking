@@ -27,7 +27,7 @@ export async function submitDetailComment(postId, data = {}) {
   if (data.side) payload.side = data.side;
 
   const ref = await addDoc(collection(db, 'feeds', postId, 'comments'), payload);
-  await updateDoc(doc(db, 'feeds', postId), { commentCount: increment(1) }).catch(() => {});
+  await updateDoc(doc(db, 'feeds', postId), { commentCount: increment(1) }).catch(e => console.warn('commentCount update failed:', e));
   return { id: ref.id, ...payload, createdAt: new Date() };
 }
 
