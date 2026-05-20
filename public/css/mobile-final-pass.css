@@ -17,7 +17,7 @@
   .bottom-nav__write{display:flex;align-items:center;justify-content:center}
   .bottom-nav__write-btn{width:58px;height:58px;margin-top:-18px;border-radius:22px;background:var(--gradient-brand);color:#fff;box-shadow:0 8px 24px rgba(255,68,34,.32);border:4px solid var(--color-bg)}
   .bottom-nav__write-btn.active{transform:translateY(-1px)}
-  .bottom-nav__center-label{font-size:10px;font-weight:900}
+  .bottom-nav__center-label{display:none!important}
   .site-footer{display:none!important}
   .card,.feed-card,.home-hero,.multi-detail-module,.multi-detail-root,.admin-data-row{max-width:100%!important}
   table{border-collapse:collapse}
@@ -47,14 +47,18 @@
   .home-rank-item__stats{grid-column:2;justify-content:flex-start!important;margin-top:4px}
   .home-compact-feed-item{display:grid!important;grid-template-columns:1fr!important;gap:6px!important;padding:12px!important}
 
-  .feed-search-bar{display:grid!important;grid-template-columns:1fr auto!important;gap:8px!important}
+  .feed-page-clean{margin-top:0!important;padding-top:0!important;gap:8px!important}
+  .feed-search-bar{display:grid!important;grid-template-columns:1fr auto!important;gap:7px!important;margin-top:0!important;margin-bottom:4px!important;padding-top:0!important}
   .feed-search-input-wrap{min-width:0!important}
-  .feed-search-btn{min-width:58px!important;padding-left:10px!important;padding-right:10px!important}
-  .feed-write-plus-btn{grid-column:1/-1!important;width:100%!important}
-  .feed-filters{display:flex!important;gap:6px!important;overflow-x:auto!important;margin:0 -12px!important;padding:0 12px 6px!important;scrollbar-width:none}
+  .feed-search-btn{min-width:54px!important;padding-left:9px!important;padding-right:9px!important}
+  .feed-write-plus-btn{grid-column:1/-1!important;width:100%!important;min-height:36px!important}
+  .feed-control-wrap,.feed-control-wrap--with-sort{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:center!important;gap:8px!important;width:100%!important;max-width:100%!important;overflow:hidden!important;margin-bottom:6px!important}
+  .feed-filters{display:flex!important;gap:6px!important;overflow-x:auto!important;margin:0!important;padding:0 0 6px!important;scrollbar-width:none;min-width:0!important;max-width:100%!important}
   .feed-filters::-webkit-scrollbar{display:none}
   .filter-chip{flex:0 0 auto!important;min-height:34px;white-space:nowrap}
-  .feed-sort-dropdown{align-self:flex-end!important}
+  .feed-sort-dropdown{align-self:center!important;justify-self:end!important;max-width:104px!important;min-width:92px!important;display:flex!important;align-items:center!important;gap:4px!important;padding:0!important;overflow:visible!important}
+  .feed-sort-dropdown span{font-size:11px!important;white-space:nowrap!important}
+  .feed-sort-dropdown select{width:72px!important;max-width:72px!important;min-width:72px!important;font-size:12px!important;padding-left:7px!important;padding-right:18px!important}
   .feed-card__header{padding:14px!important}
   .feed-card__title{font-size:16px!important;line-height:1.32!important}
   .feed-card__desc{font-size:13px!important;line-height:1.45!important}
@@ -97,4 +101,6 @@
 
 @media (max-width:374px){
   .page-container{padding-left:10px!important;padding-right:10px!important}.home-hero__title{font-size:22px!important}.home-stat-card__num{font-size:17px!important}.bottom-nav__item span,.bottom-nav__center-label{font-size:9px}.bottom-nav__write-btn{width:54px;height:54px}.multi-fill-char{width:32px!important;height:32px!important;font-size:15px!important}.feed-page-btn,.feed-page-num{min-width:34px!important;height:34px!important}.site-header__avatar,.site-header__avatar-img{width:32px!important;height:32px!important;max-width:32px!important;max-height:32px!important}.account-profile-card .account-avatar,.account-avatar.avatar--nickname-icon,.account-avatar__img{width:48px!important;height:48px!important;max-width:48px!important;max-height:48px!important;min-width:48px!important;min-height:48px!important}
+  .feed-sort-dropdown{max-width:92px!important;min-width:84px!important}
+  .feed-sort-dropdown select{width:64px!important;max-width:64px!important;min-width:64px!important;font-size:11px!important}
 }
