@@ -67,11 +67,16 @@ export function renderAcrosticModule(post) {
 export function renderFillModule(post) {
   const fill = post.modules?.fill;
   if (!fill?.enabled) return '';
+  const count = Math.max(2, Math.min(12, Number(fill.charCount || fill.blankCount || 4)));
   return `
     <div class="multi-detail-module" data-multi-module="fill">
-      <div class="multi-detail-module__title">🧩 채우기 참여</div>
-      <div class="multi-submit-row">
-        <input id="multi-fill-answer" class="form-input" maxlength="80" placeholder="빈칸에 들어갈 말 입력">
+      <div class="multi-detail-module__title">🧩 빈칸 채우기 참여</div>
+      <div class="multi-module-hint">미친작명소처럼 칸에 한 글자씩 입력해보세요.</div>
+      <div class="multi-submit-row multi-submit-row--fill-boxes">
+        <div class="multi-char-boxes multi-fill-boxes" id="multi-fill-boxes">
+          ${Array.from({ length: count }, (_, i) => `<input class="multi-fill-char" maxlength="1" data-idx="${i}" inputmode="text" aria-label="빈칸 ${i + 1}">`).join('')}
+        </div>
+        <input id="multi-fill-answer" type="hidden" maxlength="80">
         <button class="btn btn--primary btn--sm" id="multi-fill-submit">등록</button>
       </div>
       <div class="multi-participation-list" id="multi-fill-list"></div>
