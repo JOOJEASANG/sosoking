@@ -25,7 +25,7 @@ function timeText(value) {
 
 function hasInteractiveModule(post) {
   const modules = post.modules || {};
-  return !!(modules.vote?.enabled || modules.naming?.enabled || modules.acrostic?.enabled || modules.quiz?.enabled || modules.relay?.enabled);
+  return !!(modules.vote?.enabled || modules.naming?.enabled || modules.acrostic?.enabled || modules.quiz?.enabled || modules.relay?.enabled || modules.fill?.enabled);
 }
 
 function renderVoteModule(post) {
@@ -35,9 +35,10 @@ function renderVoteModule(post) {
   const uid = auth.currentUser?.uid || '';
   const hasVoted = uid && votedBy.includes(uid);
   const total = (vote.options || []).reduce((s, o) => s + Number(o.votes || 0), 0);
+  const titleIcon = vote.ox ? '⭕' : '🗳️';
   return `
     <div class="multi-detail-module" data-multi-module="vote">
-      <div class="multi-detail-module__title">🗳️ ${esc(vote.question || '투표')}</div>
+      <div class="multi-detail-module__title">${titleIcon} ${esc(vote.question || '투표')}</div>
       <div class="multi-vote-options">
         ${(vote.options || []).map((opt, i) => {
           const votes = Number(opt.votes || 0);
@@ -91,6 +92,20 @@ function renderAcrosticModule(post) {
     </div>`;
 }
 
+function renderFillModule(post) {
+  const fill = post.modules?.fill;
+  if (!fill?.enabled) return '';
+  return `
+    <div class="multi-detail-module" data-multi-module="fill">
+      <div class="multi-detail-module__title">🧩 채우기 참여</div>
+      <div class="multi-submit-row">
+        <input id="multi-fill-answer" class="form-input" maxlength="80" placeholder="빈칸에 들어갈 말 입력">
+        <button class="btn btn--primary btn--sm" id="multi-fill-submit">등록</button>
+      </div>
+      <div class="multi-participation-list" id="multi-fill-list"></div>
+    </div>`;
+}
+
 function renderRelayModule(post) {
   const relay = post.modules?.relay;
   if (!relay?.enabled) return '';
@@ -128,12 +143,13 @@ function renderModules(post) {
   return `
     <div class="multi-detail-root" data-multi-modules-root="${post.id}">
       <div class="multi-detail-root__head">
-        <div class="multi-detail-root__title">🧩 만능 놀이 기능</div>
-        <div class="multi-detail-root__desc">켜진 기능만 아래에 표시됩니다.</div>
+        <div class="multi-detail-root__title">🧩 참여 기능</div>
+        <div class="multi-detail-root__desc">이 글 형식에 맞는 참여 기능입니다.</div>
       </div>
       ${renderVoteModule(post)}
       ${renderNamingModule(post)}
       ${renderAcrosticModule(post)}
+      ${renderFillModule(post)}
       ${renderRelayModule(post)}
       ${renderQuizModule(post)}
     </div>`;
@@ -187,7 +203,7 @@ function renderItemList(items, kind) {
 }
 
 async function refreshList(postId, kind) {
-  const map = { naming: 'multi-naming-list', acrostic: 'multi-acrostic-list', relay: 'multi-relay-list' };
+  const map = { naming: 'multi-naming-list', acrostic: 'multi-acrostic-list', relay: 'multi-relay-list', fill: 'multi-fill-list' };
   const el = document.getElementById(map[kind]);
   if (!el) return;
   el.innerHTML = `<div class="multi-empty">불러오는 중...</div>`;
@@ -334,6 +350,14 @@ function setupEvents(post) {
     if (free) free.value = ''; else chars.forEach(i => i.value = '');
   });
 
+  document.getElementById('multi-fill-submit')?.addEventListener('click', async () => {
+    const input = document.getElementById('multi-fill-answer');
+    const text = input?.value.trim() || '';
+    if (!text) { toast.warn('빈칸에 들어갈 말을 입력해주세요'); return; }
+    await addParticipation(post.id, 'fill', { text });
+    input.value = '';
+  });
+
   document.getElementById('multi-acrostic-submit')?.addEventListener('click', async () => {
     const keyword = String(post.modules?.acrostic?.keyword || '');
     const values = [...document.querySelectorAll('.multi-acrostic-input')].map(i => i.value.trim());
@@ -384,15 +408,13 @@ async function enhanceMultiDetail() {
     if (!snap.exists()) return;
     const post = { id: snap.id, ...snap.data() };
     if (post.type !== 'multi') return;
-
     if (!hasInteractiveModule(post)) return;
 
-    badge.textContent = '🧩 만능 놀이글';
     const body = root.querySelector('.detail-body');
     if (!body) return;
     body.insertAdjacentHTML('afterend', renderModules(post));
     setupEvents(post);
-    await Promise.all([refreshList(post.id, 'naming'), refreshList(post.id, 'acrostic'), refreshList(post.id, 'relay')]);
+    await Promise.all([refreshList(post.id, 'naming'), refreshList(post.id, 'acrostic'), refreshList(post.id, 'relay'), refreshList(post.id, 'fill')]);
   } catch (error) {
     console.warn('[multi-detail] failed', error);
   }
