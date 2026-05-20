@@ -1,0 +1,70 @@
+import { buildGameInviteUrl, esc } from '../common.js';
+
+export function renderLiarLobbyHTML() {
+  return `
+    <div class="liar-page">
+      <section class="liar-hero liar-hero--lobby">
+        <button class="write-back-btn" id="liar-back" type="button">←</button>
+        <div class="liar-hero__bg">🕵️</div>
+        <div class="liar-hero__eyebrow">HIDDEN WORD</div>
+        <h1>라이어게임</h1>
+        <p>모두가 같은 제시어를 받지만, 단 한 명은 모릅니다. 대화 속 힌트로 라이어를 찾아보세요.</p>
+        <div class="liar-hero__chips"><span>친구 초대</span><span>제시어 추리</span><span>라운드 토크</span></div>
+      </section>
+
+      <section class="liar-create-card">
+        <h2>방 만들기</h2>
+        <div class="form-group"><label class="form-label">방 제목</label><input id="liar-title" class="form-input" maxlength="40" value="라이어게임" placeholder="방 제목"></div>
+        <div class="form-group"><label class="form-label">카테고리</label><select id="liar-category" class="form-select"><option value="food">음식</option><option value="place">장소</option><option value="thing">물건</option><option value="animal">동물</option><option value="random">랜덤</option></select></div>
+        <div class="liar-option-row">
+          <div class="form-group"><label class="form-label">최대 인원</label><select id="liar-max" class="form-select"><option value="4">4명</option><option value="5">5명</option><option value="6" selected>6명</option><option value="8">8명</option></select></div>
+          <div class="form-group"><label class="form-label">라이어 수</label><select id="liar-count" class="form-select"><option value="1" selected>1명</option><option value="2">2명</option></select></div>
+        </div>
+        <button class="btn btn--primary" id="liar-create">방 만들기</button>
+      </section>
+
+      <section class="liar-rule-card"><b>진행 방식</b><span>방 만들기 → 초대 링크 공유 → 참가자 입장 → 방장이 시작 → 각자 제시어/라이어 확인</span></section>
+    </div>`;
+}
+
+export function renderLiarLoadingHTML() {
+  return `<div class="loading-center"><div class="spinner"></div></div>`;
+}
+
+export function renderLiarNotFoundHTML() {
+  return `<div class="empty-state"><div class="empty-state__icon">🔍</div><div class="empty-state__title">방을 찾을 수 없어요</div><button class="btn btn--primary" onclick="navigate('/game/liar')">방 만들기</button></div>`;
+}
+
+export function renderLiarRoomHTML(room) {
+  const url = buildGameInviteUrl('liar', room.id);
+  return `
+    <div class="liar-page">
+      <section class="liar-hero liar-hero--room">
+        <button class="write-back-btn" id="liar-back" type="button">←</button>
+        <div class="liar-hero__bg">🕵️</div>
+        <div class="liar-hero__eyebrow">방 코드 ${esc(room.code || '')}</div>
+        <h1>${esc(room.title || '라이어게임')}</h1>
+        <p>초대 링크를 공유해서 참가자를 모으세요.</p>
+      </section>
+
+      <section class="liar-room-card">
+        <div class="liar-room-info"><span>상태</span><b>${room.status === 'waiting' ? '대기중' : esc(room.status)}</b></div>
+        <div class="liar-room-info"><span>카테고리</span><b>${esc(room.category || '-')}</b></div>
+        <div class="liar-room-info"><span>최대 인원</span><b>${room.maxPlayers || 0}명</b></div>
+        <div class="liar-room-info"><span>라이어</span><b>${room.liarCount || 1}명</b></div>
+      </section>
+
+      <section class="liar-invite-card">
+        <label class="form-label">초대 링크</label>
+        <div class="liar-invite-row"><input class="form-input" id="liar-invite-url" value="${url}" readonly><button class="btn btn--primary btn--sm" id="liar-copy">복사</button></div>
+        <div class="form-hint">회원가입 없이 닉네임만 입력해도 참가할 수 있습니다.</div>
+      </section>
+
+      <section class="liar-player-card">
+        <h2>참가자</h2>
+        <div class="liar-player-list" id="liar-player-list"><div class="liar-player-item"><span>${esc(room.hostName || '방장')}</span><b>방장</b></div></div>
+        <button class="btn btn--ghost" id="liar-join">참가하기</button>
+        <button class="btn btn--primary" id="liar-start" disabled>게임 시작 준비중</button>
+      </section>
+    </div>`;
+}
