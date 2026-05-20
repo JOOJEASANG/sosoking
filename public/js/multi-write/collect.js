@@ -24,6 +24,11 @@ function getQuizOptions() {
   return [...document.querySelectorAll('.mw-quiz-option')].map(input => input.value.trim());
 }
 
+function getFillCount() {
+  const count = Number(document.getElementById('mw-fill-count')?.value || 4);
+  return Math.max(2, Math.min(12, Number.isFinite(count) ? count : 4));
+}
+
 export function collectMultiModules() {
   const modules = { comments: { enabled: true } };
   const bodyText = getBodyText();
@@ -50,8 +55,8 @@ export function collectMultiModules() {
   }
 
   if (enabled('fill')) {
-    if (!bodyText) throw new Error('본문에 채우기 문장을 입력해주세요.');
-    modules.fill = { enabled: true, prompt: bodyText };
+    if (!bodyText) throw new Error('본문에 빈줄 채우기 문장을 입력해주세요.');
+    modules.fill = { enabled: true, prompt: bodyText, charCount: getFillCount(), blankCount: getFillCount() };
   }
 
   if (enabled('naming')) {
@@ -65,6 +70,11 @@ export function collectMultiModules() {
     const keyword = document.getElementById('mw-acrostic-keyword')?.value.trim() || '';
     if ([...keyword].length < 2) throw new Error('삼행시 제시어는 2글자 이상 입력해주세요.');
     modules.acrostic = { enabled: true, keyword };
+  }
+
+  if (enabled('relay')) {
+    if (!bodyText) throw new Error('본문에 릴레이 시작 문장이나 상황을 입력해주세요.');
+    modules.relay = { enabled: true, startSentence: bodyText };
   }
 
   if (enabled('quiz')) {
