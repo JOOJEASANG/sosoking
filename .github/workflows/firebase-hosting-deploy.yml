@@ -9,6 +9,7 @@ on:
       - 'firebase.json'
       - '.firebaserc'
       - '.github/workflows/firebase-hosting-deploy.yml'
+      - '.github/deploy-trigger.txt'
   workflow_dispatch:
 
 jobs:
