@@ -250,7 +250,7 @@ service cloud.firestore {
       allow read: if true;
       allow create: if signedIn()
         && request.resource.data.hostId == request.auth.uid
-        && request.resource.data.game == 'liar'
+        && request.resource.data.game in ['liar', 'mafia', 'marble']
         && validText(request.resource.data.title, 60);
       allow update: if signedIn()
         && (resource.data.hostId == request.auth.uid || isAdmin());
