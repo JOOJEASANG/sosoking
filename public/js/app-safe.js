@@ -36,6 +36,26 @@ function esc(value) {
   return String(value || '').replace(/[&<>]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[ch]));
 }
 
+function currentRoutePath() {
+  return window.location.hash.slice(1).split('?')[0] || '/';
+}
+
+function isGameOnlyRoute(path = currentRoutePath()) {
+  return path === '/game/liar' || path.startsWith('/game/liar/') || path === '/game/mafia' || path.startsWith('/game/mafia/');
+}
+
+function isGameOnlyShellActive() {
+  return !!document.querySelector('.game-only-shell');
+}
+
+function ensureGameOnlyStyles() {
+  if (document.querySelector('link[href="/css/game-only-shell.css"]')) return;
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = '/css/game-only-shell.css';
+  document.head.appendChild(link);
+}
+
 function showPageError(title, error) {
   const el = pageContent();
   if (!el) return;
@@ -87,20 +107,51 @@ async function loadUserMeta(uid) {
   }
 }
 
-function renderShell() {
+function renderSiteShell() {
+  document.body.classList.remove('game-only-mode');
   document.getElementById('app').innerHTML = '<div class="app-shell"><aside class="site-sidebar" id="site-sidebar"></aside><div class="site-main"><header class="site-header" id="site-header"></header><main id="page-content" class="page-container"></main><footer class="site-footer" id="site-footer"><div class="site-footer__copy-bar"><div class="site-footer__copy">© ' + new Date().getFullYear() + ' 소소킹. All rights reserved.</div></div></footer></div></div><nav class="bottom-nav" id="bottom-nav"></nav><div class="toast-container" id="toast-container"></div>';
 }
 
-export async function initApp() {
-  renderShell();
+function renderGameOnlyShell() {
+  document.body.classList.add('game-only-mode');
+  document.getElementById('app').innerHTML = '<div class="game-only-shell"><main id="page-content" class="game-only-content"></main><div class="toast-container" id="toast-container"></div></div>';
+}
+
+function renderChrome() {
+  if (isGameOnlyShellActive()) return;
   renderSidebar();
   renderHeader();
   renderBottomNav();
+}
+
+function syncShellWithRoute() {
+  const shouldUseGameShell = isGameOnlyRoute();
+  if (shouldUseGameShell && !isGameOnlyShellActive()) {
+    renderGameOnlyShell();
+    initToast();
+    return;
+  }
+  if (!shouldUseGameShell && isGameOnlyShellActive()) {
+    renderSiteShell();
+    renderChrome();
+    initToast();
+  }
+}
+
+export async function initApp() {
+  ensureGameOnlyStyles();
+  if (isGameOnlyRoute()) renderGameOnlyShell();
+  else {
+    renderSiteShell();
+    renderChrome();
+  }
   initToast();
 
   window.addEventListener('themechange', () => {
-    renderSidebar();
-    renderHeader();
+    if (!isGameOnlyShellActive()) {
+      renderSidebar();
+      renderHeader();
+    }
   });
 
   onAuthStateChanged(auth, async user => {
@@ -117,13 +168,11 @@ export async function initApp() {
       appState.nickname = '';
       appState.nicknameIcon = null;
     }
-    renderSidebar();
-    renderHeader();
-    renderBottomNav();
+    renderChrome();
     const currentPath = window.location.hash.slice(1).split('?')[0] || '/';
     const justLoggedIn = !!user && previousUser?.uid !== user.uid;
     if (justLoggedIn) {
-      if (appState.isAdmin && currentPath !== '/admin') navigate('/admin');
+      if (appState.isAdmin && currentPath !== '/admin' && !isGameOnlyRoute(currentPath)) navigate('/admin');
       else if (currentPath === '/login') navigate('/');
     } else if (wasLoading) {
       window.dispatchEvent(new Event('hashchange'));
@@ -148,19 +197,18 @@ export async function initApp() {
   registerRoute('/privacy', () => renderPage('./pages/privacy.js', 'renderPrivacy', []));
   registerRoute('/hall', () => renderPage('./pages/hall.js', 'renderHall', []));
 
+  window.addEventListener('hashchange', syncShellWithRoute);
   initRouter();
   loadOptionalModules();
 
   window.addEventListener('beforeinstallprompt', event => {
     event.preventDefault();
     appState.installPrompt = event;
-    renderSidebar();
-    renderHeader();
+    renderChrome();
   });
   window.addEventListener('appinstalled', () => {
     appState.installPrompt = null;
-    renderSidebar();
-    renderHeader();
+    renderChrome();
   });
 }
 
