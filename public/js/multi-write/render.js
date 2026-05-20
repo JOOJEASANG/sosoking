@@ -48,30 +48,21 @@ function renderSelectedModule(activeKey, preset) {
   }
 
   if (activeKey === 'vote') {
-    return moduleCard('vote', '🗳️', '투표/판정', '본문을 기준으로 사용자가 선택지에 투표합니다.', `
+    return moduleCard('vote', '🗳️', '투표/판정', '본문을 기준으로 사용자가 선택지에 투표하고 댓글로 토론합니다.', `
       <div class="multi-option-list" id="mw-vote-options">
         ${preset.voteOptionPlaceholders.map((value, i) => `<input class="form-input mw-vote-option" maxlength="80" placeholder="선택지 ${i + 1} · 예: ${esc(value)}">`).join('')}
       </div>
       <button class="btn btn--ghost btn--sm" type="button" id="mw-add-vote-option">+ 선택지 추가</button>`);
   }
 
-  if (activeKey === 'ox') {
-    return moduleCard('ox', '⭕', 'OX판정', '본문 상황을 O 또는 X로 바로 판정받습니다.', `<div class="multi-fixed-options"><span>⭕ O</span><span>❌ X</span></div>`);
-  }
-
   if (activeKey === 'fill') {
-    return moduleCard('fill', '🧩', '빈줄 채우기', '작성자가 칸 수를 정하고 참여자가 칸에 맞춰 답을 채웁니다.', `
-      <div class="multi-module-inline-note">본문에는 <b>___</b>를 넣어 빈칸 문장을 적어주세요. 예: 오늘 내 기분은 ___다.</div>
+    return moduleCard('fill', '🧩', '빈칸 채우기', '본문의 ___ 개수만큼 참여 빈칸이 만들어집니다.', `
+      <div class="multi-module-inline-note">본문에는 <b>___</b>를 넣어 빈칸 문장을 적어주세요.<br>예: <b>___가 ___했다</b></div>
       <div class="form-group" style="margin-top:12px">
-        <label class="form-label">참여 답변 칸 수</label>
+        <label class="form-label">빈칸별 칸 수</label>
+        <input id="mw-fill-counts" class="form-input" maxlength="40" value="3, 4" placeholder="예: 3, 4">
         <input type="hidden" id="mw-fill-count" value="4">
-        <div class="multi-choice-toggle" role="radiogroup" aria-label="빈줄 채우기 칸 수 선택">
-          <button type="button" class="multi-choice-toggle__btn" data-fill-count="2" role="radio" aria-checked="false">2칸</button>
-          <button type="button" class="multi-choice-toggle__btn" data-fill-count="3" role="radio" aria-checked="false">3칸</button>
-          <button type="button" class="multi-choice-toggle__btn active" data-fill-count="4" role="radio" aria-checked="true">4칸</button>
-          <button type="button" class="multi-choice-toggle__btn" data-fill-count="5" role="radio" aria-checked="false">5칸</button>
-          <button type="button" class="multi-choice-toggle__btn" data-fill-count="6" role="radio" aria-checked="false">6칸</button>
-        </div>
+        <div class="form-hint">본문의 ___ 순서대로 쉼표로 입력하세요. 예: ___가 ___했다 → 3, 4</div>
       </div>`);
   }
 
@@ -101,7 +92,7 @@ function renderSelectedModule(activeKey, preset) {
   }
 
   if (activeKey === 'quiz') {
-    return moduleCard('quiz', '🧠', '미친퀴즈', '본문에 적은 문제를 기준으로 정답 기능만 설정합니다.', `
+    return moduleCard('quiz', '🧠', '미친퀴즈', '본문에 적은 문제를 기준으로 정답 기능을 설정합니다.', `
       <div class="form-group">
         <label class="form-label">퀴즈 방식 <span class="required">*</span></label>
         <input type="hidden" id="mw-quiz-mode" value="subjective">
@@ -124,7 +115,7 @@ function renderSelectedModule(activeKey, preset) {
   }
 
   if (activeKey === 'anonymous') {
-    return moduleCard('anonymous', '🕶️', '익명', '작성자 닉네임을 숨기고 글이 올라갑니다.', `<div class="multi-anonymous-note">고민, 고백, 폭로 등 진지한 고민도 가능합니다.</div>`);
+    return moduleCard('anonymous', '🕶️', '익명비밀글', '작성자 닉네임을 숨기고 글이 올라갑니다.', `<div class="multi-anonymous-note">고민, 고백, 폭로 등 진지한 고민도 가능합니다.</div>`);
   }
 
   return '';
