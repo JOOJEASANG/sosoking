@@ -7,7 +7,7 @@ import { initImageUploader, getUploadedImages, hasPendingImages } from './compon
 import { awardPoints } from './utils/points.js';
 import { MULTI_PRESETS, getMultiPresetFromHash } from './multi-write/presets.js';
 import { renderMultiWriteHTML, renderQuizOptionRow } from './multi-write/render.js';
-import { collectMultiModules, getBodyText, splitTags, isAnonymousWriteChecked } from './multi-write/collect.js';
+import { collectMultiModules, getBodyText, getBodyHtml, splitTags, isAnonymousWriteChecked } from './multi-write/collect.js';
 import { fillAutoTags } from './multi-write/auto-tags.js';
 import { initRichEditor, syncRichEditor } from './multi-write/editor.js';
 
@@ -126,7 +126,7 @@ async function submitMultiPost() {
   const title = document.getElementById('mw-title')?.value.trim() || '';
   const presetKey = getPresetKey();
   const preset = MULTI_PRESETS[presetKey] || MULTI_PRESETS.general;
-  const desc = getBodyText();
+  const desc = getBodyHtml() || getBodyText();
 
   if (!title) {
     toast.error('제목을 입력해주세요.');
