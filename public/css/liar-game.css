@@ -1,4 +1,5 @@
-.liar-page {
+.liar-page,
+.game-detail-page {
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -10,7 +11,9 @@
 .liar-rule-card,
 .liar-room-card,
 .liar-invite-card,
-.liar-player-card {
+.liar-player-card,
+.game-detail-hero,
+.game-detail-card {
   padding: 16px;
   border-radius: 18px;
   background: var(--color-surface);
@@ -18,30 +21,87 @@
   box-shadow: var(--shadow-sm);
 }
 
-.liar-hero {
-  background: linear-gradient(135deg, rgba(124,58,237,.12), rgba(255,107,74,.12));
+.liar-hero,
+.game-detail-hero {
+  position: relative;
+  overflow: hidden;
+  min-height: 170px;
+  padding: 22px 18px;
+  background:
+    radial-gradient(circle at 85% 20%, rgba(255,255,255,.55), transparent 24%),
+    linear-gradient(135deg, rgba(124,58,237,.16), rgba(255,107,74,.14));
 }
 
-.liar-hero__eyebrow {
-  margin-top: 8px;
+.liar-hero--room {
+  background:
+    radial-gradient(circle at 85% 20%, rgba(255,255,255,.55), transparent 24%),
+    linear-gradient(135deg, rgba(255,107,74,.16), rgba(124,58,237,.12));
+}
+
+.liar-hero__bg,
+.game-detail-hero__bg-icon {
+  position: absolute;
+  right: 18px;
+  bottom: 12px;
+  font-size: 82px;
+  opacity: .16;
+  pointer-events: none;
+}
+
+.liar-hero__eyebrow,
+.game-detail-hero__eyebrow {
+  margin-top: 10px;
   font-size: 12px;
-  font-weight: 900;
+  font-weight: 950;
+  letter-spacing: .08em;
   color: var(--color-primary);
 }
 
 .liar-hero h1,
 .liar-create-card h2,
-.liar-player-card h2 {
-  margin: 5px 0 6px;
+.liar-player-card h2,
+.game-detail-hero h1 {
+  margin: 6px 0 7px;
   color: var(--color-text-primary);
+  letter-spacing: -0.04em;
+}
+
+.liar-hero h1,
+.game-detail-hero h1 {
+  font-size: 28px;
+  line-height: 1.18;
 }
 
 .liar-hero p,
-.liar-rule-card span {
+.liar-rule-card span,
+.game-detail-hero p {
+  max-width: 480px;
   margin: 0;
   color: var(--color-text-secondary);
   font-size: 13px;
-  line-height: 1.5;
+  line-height: 1.6;
+}
+
+.liar-hero__chips,
+.game-detail-hero__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 14px;
+}
+
+.liar-hero__chips span,
+.game-detail-hero__chips span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.68);
+  border: 1px solid rgba(255,255,255,.88);
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 900;
 }
 
 .liar-option-row {
@@ -114,6 +174,72 @@
   font-size: 12px;
 }
 
+.game-detail-page--mafia .game-detail-hero {
+  background:
+    radial-gradient(circle at 88% 15%, rgba(255,255,255,.46), transparent 25%),
+    linear-gradient(135deg, rgba(67, 56, 202, .18), rgba(15, 23, 42, .08));
+}
+
+.game-detail-page--marble .game-detail-hero {
+  background:
+    radial-gradient(circle at 88% 15%, rgba(255,255,255,.52), transparent 25%),
+    linear-gradient(135deg, rgba(20,184,166,.18), rgba(245,158,11,.12));
+}
+
+.game-detail-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.game-detail-card__head b {
+  display: block;
+  color: var(--color-text-primary);
+  font-size: 17px;
+  font-weight: 950;
+}
+
+.game-detail-card__head span {
+  display: inline-flex;
+  margin-top: 4px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: var(--color-surface-2);
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.game-detail-card__head i {
+  font-style: normal;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 18px;
+  background: var(--color-primary-bg);
+  font-size: 26px;
+}
+
+.game-detail-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.game-detail-list__item {
+  padding: 11px 12px;
+  border-radius: 13px;
+  background: var(--color-surface-2);
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
 @media (max-width: 767px) {
   .liar-room-card,
   .liar-option-row {
@@ -127,5 +253,10 @@
   .liar-player-card .btn {
     width: 100%;
     margin-top: 8px;
+  }
+
+  .liar-hero h1,
+  .game-detail-hero h1 {
+    font-size: 23px;
   }
 }
