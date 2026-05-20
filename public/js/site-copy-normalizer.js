@@ -1,86 +1,59 @@
-const REPLACEMENTS = [
-  ['골라킹', '골라봐'],
-  ['막장킹', '막장릴레이'],
-  ['웃겨봐', '대표 놀이'],
-  ['도전봐', '대표 놀이'],
-  ['3가지 카테고리', '대표 놀이'],
-  ['9가지 게임', '대표 7가지 놀이'],
-  ['9가지 유형', '대표 7가지 유형'],
-  ['게임 유형', '대표 유형'],
-  ['카테고리별 통계', '대표 유형별 통계'],
-  ['카테고리·유형', '대표 유형'],
-  ['카테고리', '유형'],
-  ['OX퀴즈', '미친퀴즈'],
-  ['4지선다', '미친퀴즈'],
-  ['골라킹 · 드립킹 · 도전킹', '대표 7가지 놀이'],
-  ['매일 오전 AI가 오늘의 미션을 자동 생성하고, 지난 AI 미션은 비활성화합니다.', '매주 월요일 오전 AI가 이번 주 미션을 자동 생성하고, 지난 AI 미션은 비활성화합니다.'],
-  ['매일 오전 AI 또는 기본 콘텐츠를 생성합니다.', '매주 월요일 오전 AI 또는 기본 콘텐츠를 생성합니다.'],
-  ['매일 오늘의 미션을 자동 생성합니다.', '매주 이번 주 미션을 자동 생성합니다.'],
-];
+function ensureFooterLinks() {
+  const footer = document.getElementById('site-footer');
+  if (!footer || footer.dataset.footerLinksRestored === '1') return;
+  footer.dataset.footerLinksRestored = '1';
 
-function shouldSkip(node) {
-  const el = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
-  if (!el) return true;
-  const tag = el.tagName;
-  return tag === 'SCRIPT' || tag === 'STYLE' || tag === 'TEXTAREA' || tag === 'INPUT';
-}
+  footer.innerHTML = `
+    <div class="site-footer__body" id="footer-body" hidden>
+      <div class="site-footer__inner">
+        <div class="site-footer__brand-block">
+          <a href="#/" class="site-footer__brand">
+            <img src="/logo.svg" alt="" width="26" height="26">
+            <span>소소킹</span>
+          </a>
+          <div class="site-footer__tagline">피드 · 게임<br>가볍게 즐기는 소소한 킹갓 놀이터</div>
+        </div>
+        <div>
+          <div class="site-footer__col-title">바로가기</div>
+          <div class="site-footer__links">
+            <a href="#/feed">피드</a>
+            <a href="#/sosoland">게임</a>
+            <a href="#/hall">통계</a>
+            <a href="#/guide">이용안내</a>
+          </div>
+        </div>
+        <div>
+          <div class="site-footer__col-title">정보</div>
+          <div class="site-footer__links">
+            <a href="#/terms">이용약관</a>
+            <a href="#/privacy">개인정보처리방침</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="site-footer__copy-bar">
+      <div class="site-footer__copy">© ${new Date().getFullYear()} 소소킹. All rights reserved.</div>
+      <button class="site-footer__toggle" id="btn-footer-toggle" aria-expanded="false" title="푸터 펼치기">더보기</button>
+    </div>`;
 
-function replaceTextNode(node) {
-  if (shouldSkip(node)) return;
-  let value = node.nodeValue || '';
-  let changed = false;
-  for (const [from, to] of REPLACEMENTS) {
-    if (value.includes(from)) {
-      value = value.split(from).join(to);
-      changed = true;
-    }
-  }
-  if (changed) node.nodeValue = value;
-}
-
-function replaceAttr(el) {
-  if (!el || el.nodeType !== Node.ELEMENT_NODE || shouldSkip(el)) return;
-  for (const attr of ['title', 'aria-label', 'placeholder']) {
-    if (!el.hasAttribute(attr)) continue;
-    let value = el.getAttribute(attr) || '';
-    let changed = false;
-    for (const [from, to] of REPLACEMENTS) {
-      if (value.includes(from)) {
-        value = value.split(from).join(to);
-        changed = true;
-      }
-    }
-    if (changed) el.setAttribute(attr, value);
-  }
-}
-
-function normalize(root = document.body) {
-  if (!root) return;
-  if (root.nodeType === Node.TEXT_NODE) {
-    replaceTextNode(root);
-    return;
-  }
-  replaceAttr(root);
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
-    acceptNode(node) {
-      if (shouldSkip(node)) return NodeFilter.FILTER_REJECT;
-      return REPLACEMENTS.some(([from]) => (node.nodeValue || '').includes(from))
-        ? NodeFilter.FILTER_ACCEPT
-        : NodeFilter.FILTER_REJECT;
-    },
+  document.getElementById('btn-footer-toggle')?.addEventListener('click', function () {
+    const body = document.getElementById('footer-body');
+    if (!body) return;
+    const expanded = this.getAttribute('aria-expanded') === 'true';
+    const next = !expanded;
+    this.setAttribute('aria-expanded', String(next));
+    this.classList.toggle('open', next);
+    body.hidden = !next;
+    this.textContent = next ? '접기' : '더보기';
   });
-  const nodes = [];
-  while (walker.nextNode()) nodes.push(walker.currentNode);
-  nodes.forEach(replaceTextNode);
-  root.querySelectorAll?.('[title], [aria-label], [placeholder]').forEach(replaceAttr);
 }
 
-let timer = null;
-const observer = new MutationObserver(() => {
-  clearTimeout(timer);
-  timer = setTimeout(() => normalize(), 60);
-});
+function scheduleFooterRestore() {
+  clearTimeout(window.__sosokingFooterTimer);
+  window.__sosokingFooterTimer = setTimeout(ensureFooterLinks, 80);
+}
 
-if (document.body) observer.observe(document.body, { childList: true, subtree: true, characterData: true });
-window.addEventListener('hashchange', () => setTimeout(() => normalize(), 120));
-setTimeout(() => normalize(), 400);
+const observer = new MutationObserver(scheduleFooterRestore);
+if (document.body) observer.observe(document.body, { childList: true, subtree: true });
+window.addEventListener('hashchange', scheduleFooterRestore);
+setTimeout(ensureFooterLinks, 300);
