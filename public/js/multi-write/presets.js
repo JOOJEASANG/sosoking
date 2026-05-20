@@ -51,13 +51,6 @@ export const MULTI_PRESETS = {
     tagsPlaceholder: '#퀴즈, #문제',
     quizAnswerPlaceholder: '예: 소',
   },
-  anonymous: {
-    label: '익명비밀글',
-    icon: '🕶️',
-    titlePlaceholder: '예: 익명으로 털어놓고 싶은 이야기',
-    descPlaceholder: '고민, 고백, 폭로 등 진지한 이야기를 익명으로 작성할 수 있습니다.',
-    tagsPlaceholder: '#익명비밀글, #고민, #고백',
-  },
 };
 
 export const BODY_LABELS = {
@@ -65,13 +58,13 @@ export const BODY_LABELS = {
   fill: '본문 · 빈칸 채우기 문장',
   relay: '본문 · 릴레이 시작 문장',
   quiz: '본문 · 문제',
-  anonymous: '본문 · 익명비밀글 내용',
 };
 
-export const BODY_REQUIRED_PRESETS = ['vote', 'fill', 'relay', 'quiz', 'anonymous'];
+export const BODY_REQUIRED_PRESETS = ['vote', 'fill', 'relay', 'quiz'];
 
 export function normalizePresetKey(key) {
   if (key === 'ox') return 'vote';
+  if (key === 'anonymous') return 'general';
   return MULTI_PRESETS[key] ? key : 'general';
 }
 
