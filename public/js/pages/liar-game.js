@@ -1,21 +1,33 @@
 import { auth, db } from '../firebase.js';
-import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { collection, doc, getDoc, onSnapshot, orderBy, query } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { navigate } from '../router.js';
 import { toast } from '../components/toast.js';
 import { setMeta } from '../utils/seo.js';
 import { ensureGameGuestAuth } from '../game-guest-access.js';
 import { buildGameInviteUrl } from '../games/common.js';
 import { createLiarRoom, joinLiarRoom } from '../games/liar/actions.js';
-import { renderLiarLobbyHTML, renderLiarLoadingHTML, renderLiarNotFoundHTML, renderLiarRoomHTML } from '../games/liar/render.js';
+import { renderLiarLobbyHTML, renderLiarLoadingHTML, renderLiarNotFoundHTML, renderLiarRoomHTML, renderLiarWrongGameHTML } from '../games/liar/render.js';
 
+let unsubscribeRoom = null;
+let unsubscribePlayers = null;
 let currentRoom = null;
+let currentPlayers = [];
 
 export async function renderLiarGame(params = {}) {
   setMeta('게임 · 라이어게임');
-  currentRoom = null;
+  destroyLiarGame();
   const roomId = params.id || '';
   if (roomId) return renderRoom(roomId);
   return renderLobby();
+}
+
+export function destroyLiarGame() {
+  if (unsubscribeRoom) unsubscribeRoom();
+  if (unsubscribePlayers) unsubscribePlayers();
+  unsubscribeRoom = null;
+  unsubscribePlayers = null;
+  currentRoom = null;
+  currentPlayers = [];
 }
 
 function pageEl() {
@@ -64,14 +76,42 @@ async function renderRoom(roomId) {
   if (!el) return;
   el.innerHTML = renderLiarLoadingHTML();
 
-  const snap = await getDoc(doc(db, 'game_rooms', roomId)).catch(() => null);
-  if (!snap?.exists()) {
+  const roomRef = doc(db, 'game_rooms', roomId);
+  const initial = await getDoc(roomRef).catch(() => null);
+  if (!initial?.exists()) {
     el.innerHTML = renderLiarNotFoundHTML();
     return;
   }
+  const initialRoom = { id: initial.id, ...initial.data() };
+  if (initialRoom.game && initialRoom.game !== 'liar') {
+    el.innerHTML = renderLiarWrongGameHTML(initialRoom.game);
+    return;
+  }
 
-  currentRoom = { id: snap.id, ...snap.data() };
-  el.innerHTML = renderLiarRoomHTML(currentRoom);
+  unsubscribeRoom = onSnapshot(roomRef, snap => {
+    if (!snap.exists()) {
+      el.innerHTML = renderLiarNotFoundHTML();
+      return;
+    }
+    currentRoom = { id: snap.id, ...snap.data() };
+    if (currentRoom.game && currentRoom.game !== 'liar') {
+      destroyLiarGame();
+      el.innerHTML = renderLiarWrongGameHTML(currentRoom.game);
+      return;
+    }
+    drawRoom();
+  });
+
+  unsubscribePlayers = onSnapshot(query(collection(db, 'game_rooms', roomId, 'players'), orderBy('joinedAt', 'asc')), snap => {
+    currentPlayers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    drawRoom();
+  });
+}
+
+function drawRoom() {
+  const el = pageEl();
+  if (!el || !currentRoom) return;
+  el.innerHTML = renderLiarRoomHTML(currentRoom, currentPlayers);
   bindRoomEvents();
 }
 
