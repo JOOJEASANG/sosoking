@@ -8,6 +8,7 @@ import { awardPoints } from './utils/points.js';
 import { MULTI_PRESETS, getMultiPresetFromHash } from './multi-write/presets.js';
 import { renderMultiWriteHTML, renderQuizOptionRow } from './multi-write/render.js';
 import { collectMultiModules, getBodyText, splitTags, isAnonymousWriteChecked } from './multi-write/collect.js';
+import { fillAutoTags } from './multi-write/auto-tags.js';
 
 function isMultiQuery() {
   return /[?&]type=multi\b/.test(window.location.hash || '');
@@ -71,6 +72,11 @@ function setFillCount(count) {
 function bindMultiWriteEvents() {
   document.getElementById('multi-back-type')?.addEventListener('click', () => navigate('/feed'));
   document.getElementById('multi-cancel')?.addEventListener('click', () => navigate('/feed'));
+  document.getElementById('mw-auto-tags')?.addEventListener('click', () => {
+    const tags = fillAutoTags({ force: true });
+    if (tags.length) toast.success('태그를 자동 생성했어요');
+    else toast.warn('제목이나 본문을 조금 더 입력하면 태그를 만들 수 있어요');
+  });
 
   document.querySelectorAll('[data-multi-preset]').forEach(btn => btn.addEventListener('click', () => {
     const preset = btn.dataset.multiPreset;
@@ -132,6 +138,9 @@ async function submitMultiPost() {
     const images = await getUploadedImages();
     btn.textContent = '게시글 저장 중...';
 
+    const manualTags = splitTags(document.getElementById('mw-tags')?.value || '');
+    const tags = manualTags.length ? manualTags : fillAutoTags({ force: true });
+
     const docRef = await addDoc(collection(db, 'feeds'), {
       type: 'multi',
       cat: 'multi',
@@ -139,7 +148,7 @@ async function submitMultiPost() {
       typeLabel: preset.label,
       title,
       desc,
-      tags: splitTags(document.getElementById('mw-tags')?.value || ''),
+      tags,
       images,
       modules,
       anonymous: isAnonymous,
