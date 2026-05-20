@@ -22,11 +22,11 @@ export const MULTI_PRESETS = {
     tagsPlaceholder: '#OX, #판정',
   },
   fill: {
-    label: '채우기',
+    label: '빈줄 채우기',
     icon: '🧩',
     titlePlaceholder: '예: 친구가 갑자기 ___라고 말했다',
     descPlaceholder: '빈칸이 들어간 문장이나 상황을 적어주세요. 예: 오늘의 내 기분은 ___다.',
-    tagsPlaceholder: '#채우기, #빈칸',
+    tagsPlaceholder: '#빈줄채우기, #빈칸',
   },
   naming: {
     label: '미친작명소',
@@ -43,8 +43,15 @@ export const MULTI_PRESETS = {
     tagsPlaceholder: '#삼행시, #제시어',
     acrosticPlaceholder: '예: 소소킹',
   },
+  relay: {
+    label: '막장릴레이',
+    icon: '🎭',
+    titlePlaceholder: '예: 다음 문장 이어줘',
+    descPlaceholder: '첫 문장이나 상황을 적어주세요. 참여자가 이야기를 이어갑니다.',
+    tagsPlaceholder: '#릴레이, #막장릴레이',
+  },
   quiz: {
-    label: '퀴즈',
+    label: '미친퀴즈',
     icon: '🧠',
     titlePlaceholder: '예: 퀴즈 도전',
     descPlaceholder: '맞혀야 할 문제를 본문에 적어주세요.',
@@ -63,12 +70,13 @@ export const MULTI_PRESETS = {
 export const BODY_LABELS = {
   vote: '본문 · 질문/상황',
   ox: '본문 · OX판정 상황',
-  fill: '본문 · 채우기 문장',
+  fill: '본문 · 빈줄 채우기 문장',
+  relay: '본문 · 릴레이 시작 문장',
   quiz: '본문 · 문제',
   anonymous: '본문 · 익명 내용',
 };
 
-export const BODY_REQUIRED_PRESETS = ['vote', 'ox', 'fill', 'quiz', 'anonymous'];
+export const BODY_REQUIRED_PRESETS = ['vote', 'ox', 'fill', 'relay', 'quiz', 'anonymous'];
 
 export function normalizePresetKey(key) {
   return MULTI_PRESETS[key] ? key : 'general';
