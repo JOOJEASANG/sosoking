@@ -30,6 +30,51 @@ function safeImageUrl(value) {
   }
 }
 
+function stripDangerous(value) {
+  return String(value || '')
+    .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, '')
+    .replace(/\son\w+="[^"]*"/gi, '')
+    .replace(/\son\w+='[^']*'/gi, '')
+    .replace(/javascript:/gi, '');
+}
+
+function renderRichBody(raw) {
+  const hasHtml = /<\/?(b|strong|br|div|p|span|font)\b/i.test(String(raw || ''));
+  if (!hasHtml) return escHtml(raw || '').replace(/\n/g, '<br>');
+  const tpl = document.createElement('template');
+  tpl.innerHTML = stripDangerous(raw);
+  const allowed = new Set(['B', 'STRONG', 'BR', 'DIV', 'P', 'SPAN', 'FONT']);
+  function clean(node) {
+    [...node.childNodes].forEach(child => {
+      if (child.nodeType === Node.COMMENT_NODE) {
+        child.remove();
+        return;
+      }
+      if (child.nodeType !== Node.ELEMENT_NODE) return;
+      clean(child);
+      if (!allowed.has(child.tagName)) {
+        child.replaceWith(...child.childNodes);
+        return;
+      }
+      const textAlign = child.style?.textAlign || '';
+      const fontSize = child.style?.fontSize || '';
+      const fontTagSize = child.getAttribute('size') || '';
+      [...child.attributes].forEach(attr => child.removeAttribute(attr.name));
+      if (['left', 'center', 'right'].includes(textAlign)) child.style.textAlign = textAlign;
+      if (/^(13|15|19)px$/.test(fontSize)) child.style.fontSize = fontSize;
+      if (child.tagName === 'FONT') {
+        const span = document.createElement('span');
+        span.style.fontSize = fontTagSize === '2' ? '13px' : fontTagSize === '5' ? '19px' : '15px';
+        span.innerHTML = child.innerHTML;
+        child.replaceWith(span);
+      }
+    });
+  }
+  clean(tpl.content);
+  return tpl.innerHTML;
+}
+
 function safeYouTubeId(value) {
   const id = String(value || '').trim();
   return /^[a-zA-Z0-9_-]{11}$/.test(id) ? id : '';
@@ -143,8 +188,8 @@ export async function renderDetail(id) {
           </div>
           ${renderImages(post.images)}
           ${renderYouTube(post)}
-          <div class="detail-body">
-            ${post.desc ? `<p>${escHtml(post.desc).replace(/\n/g, '<br>')}</p>` : ''}
+          <div class="detail-body detail-body--rich">
+            ${post.desc ? `<div class="detail-rich-content">${renderRichBody(post.desc)}</div>` : ''}
             ${renderOptions(post)}
             ${renderModules(post)}
           </div>
