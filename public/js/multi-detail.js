@@ -23,6 +23,11 @@ function timeText(value) {
   return date.toLocaleDateString('ko-KR');
 }
 
+function hasInteractiveModule(post) {
+  const modules = post.modules || {};
+  return !!(modules.vote?.enabled || modules.naming?.enabled || modules.acrostic?.enabled || modules.quiz?.enabled || modules.relay?.enabled);
+}
+
 function renderVoteModule(post) {
   const vote = post.modules?.vote;
   if (!vote?.enabled) return '';
@@ -102,14 +107,19 @@ function renderRelayModule(post) {
 function renderQuizModule(post) {
   const quiz = post.modules?.quiz;
   if (!quiz?.enabled) return '';
+  const isMultiple = quiz.mode === 'multiple' && Array.isArray(quiz.options) && quiz.options.length > 0;
   return `
     <div class="multi-detail-module" data-multi-module="quiz">
       <div class="multi-detail-module__title">🧠 문제</div>
       <div class="multi-quiz-question">${esc(quiz.question || '')}</div>
-      <div class="multi-submit-row">
-        <input id="multi-quiz-answer" class="form-input" placeholder="정답 입력">
-        <button class="btn btn--primary btn--sm" id="multi-quiz-submit">확인</button>
-      </div>
+      ${isMultiple ? `
+        <div class="multi-quiz-options">
+          ${quiz.options.map((opt, i) => `<button type="button" class="multi-quiz-option" data-quiz-option="${i}">${esc(opt.text || opt)}</button>`).join('')}
+        </div>` : `
+        <div class="multi-submit-row">
+          <input id="multi-quiz-answer" class="form-input" placeholder="정답 입력">
+          <button class="btn btn--primary btn--sm" id="multi-quiz-submit">확인</button>
+        </div>`}
       <div id="multi-quiz-result" class="multi-quiz-result" style="display:none"></div>
     </div>`;
 }
@@ -281,6 +291,14 @@ function bindMultiItemActions(postId, kind) {
   });
 }
 
+function markQuizResult(ok, message) {
+  const result = document.getElementById('multi-quiz-result');
+  if (!result) return;
+  result.style.display = '';
+  result.className = `multi-quiz-result ${ok ? 'is-correct' : 'is-wrong'}`;
+  result.textContent = message || (ok ? '⭕ 정답이에요!' : '❌ 아쉽지만 오답이에요!');
+}
+
 function setupEvents(post) {
   document.querySelectorAll('[data-multi-vote-idx]').forEach(btn => {
     btn.addEventListener('click', async () => {
@@ -294,16 +312,11 @@ function setupEvents(post) {
         const uid = auth.currentUser.uid;
         if ((vote.votedBy || []).includes(uid)) { toast.warn('이미 투표했어요'); return; }
         const options = (vote.options || []).map((opt, i) => i === idx ? { ...opt, votes: Number(opt.votes || 0) + 1 } : opt);
-        await updateDoc(postRef, {
-          'modules.vote.options': options,
-          'modules.vote.votedBy': [...(vote.votedBy || []), uid],
-        });
+        await updateDoc(postRef, { 'modules.vote.options': options, 'modules.vote.votedBy': [...(vote.votedBy || []), uid] });
         toast.success('투표했어요!');
         const updated = { ...post, modules: { ...post.modules, vote: { ...vote, options, votedBy: [...(vote.votedBy || []), uid] } } };
         const voteModule = document.querySelector('[data-multi-module="vote"]');
-        if (voteModule) {
-          voteModule.outerHTML = renderVoteModule(updated);
-        }
+        if (voteModule) voteModule.outerHTML = renderVoteModule(updated);
         setupEvents(updated);
       } catch (error) {
         console.error(error);
@@ -341,12 +354,20 @@ function setupEvents(post) {
   document.getElementById('multi-quiz-submit')?.addEventListener('click', () => {
     const answer = document.getElementById('multi-quiz-answer')?.value.trim() || '';
     const correct = String(post.modules?.quiz?.answer || '').trim();
-    const result = document.getElementById('multi-quiz-result');
     if (!answer) { toast.warn('정답을 입력해주세요'); return; }
     const ok = answer.replace(/\s/g, '') === correct.replace(/\s/g, '');
-    result.style.display = '';
-    result.className = `multi-quiz-result ${ok ? 'is-correct' : 'is-wrong'}`;
-    result.textContent = ok ? '⭕ 정답이에요!' : '❌ 아쉽지만 오답이에요!';
+    markQuizResult(ok);
+  });
+
+  document.querySelectorAll('[data-quiz-option]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const answer = btn.textContent.trim();
+      const correct = String(post.modules?.quiz?.answer || '').trim();
+      const ok = answer.replace(/\s/g, '') === correct.replace(/\s/g, '');
+      document.querySelectorAll('[data-quiz-option]').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      markQuizResult(ok);
+    });
   });
 }
 
@@ -364,16 +385,14 @@ async function enhanceMultiDetail() {
     const post = { id: snap.id, ...snap.data() };
     if (post.type !== 'multi') return;
 
+    if (!hasInteractiveModule(post)) return;
+
     badge.textContent = '🧩 만능 놀이글';
     const body = root.querySelector('.detail-body');
     if (!body) return;
     body.insertAdjacentHTML('afterend', renderModules(post));
     setupEvents(post);
-    await Promise.all([
-      refreshList(post.id, 'naming'),
-      refreshList(post.id, 'acrostic'),
-      refreshList(post.id, 'relay'),
-    ]);
+    await Promise.all([refreshList(post.id, 'naming'), refreshList(post.id, 'acrostic'), refreshList(post.id, 'relay')]);
   } catch (error) {
     console.warn('[multi-detail] failed', error);
   }
