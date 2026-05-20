@@ -13,7 +13,8 @@
 .liar-invite-card,
 .liar-player-card,
 .game-detail-hero,
-.game-detail-card {
+.game-detail-card,
+.marble-board-card {
   padding: 16px;
   border-radius: 18px;
   background: var(--color-surface);
@@ -169,9 +170,32 @@
   color: var(--color-text-primary);
 }
 
+.liar-player-item small {
+  display: inline-flex;
+  margin-left: 5px;
+  padding: 2px 5px;
+  border-radius: 999px;
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
+  font-size: 10px;
+  font-weight: 900;
+}
+
 .liar-player-item b {
   color: var(--color-primary);
   font-size: 12px;
+  text-align: right;
+}
+
+.mafia-player.is-dead {
+  opacity: .55;
+  text-decoration: line-through;
+}
+
+.mafia-vote-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
 }
 
 .game-detail-page--mafia .game-detail-hero {
@@ -240,6 +264,64 @@
   line-height: 1.45;
 }
 
+.marble-board {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.marble-cell {
+  position: relative;
+  min-height: 74px;
+  padding: 10px;
+  border-radius: 14px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border-light);
+  overflow: hidden;
+}
+
+.marble-cell.is-start {
+  background: var(--color-primary-bg);
+}
+
+.marble-cell b {
+  display: block;
+  color: var(--color-text-primary);
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.marble-cell span {
+  display: block;
+  margin-top: 3px;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.marble-pawns {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 7px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.marble-pawns i {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--color-primary);
+  color: #fff;
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 950;
+}
+
 @media (max-width: 767px) {
   .liar-room-card,
   .liar-option-row {
@@ -258,5 +340,13 @@
   .liar-hero h1,
   .game-detail-hero h1 {
     font-size: 23px;
+  }
+
+  .marble-board {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .marble-cell {
+    min-height: 70px;
   }
 }
