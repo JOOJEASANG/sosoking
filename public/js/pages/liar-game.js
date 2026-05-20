@@ -29,18 +29,24 @@ function renderLobby() {
   if (!el) return;
   el.innerHTML = `
     <div class="liar-page">
-      <section class="liar-hero">
+      <section class="liar-hero liar-hero--lobby">
         <button class="write-back-btn" id="liar-back" type="button">←</button>
-        <div class="liar-hero__eyebrow">🕵️ 게임</div>
+        <div class="liar-hero__bg">🕵️</div>
+        <div class="liar-hero__eyebrow">HIDDEN WORD</div>
         <h1>라이어게임</h1>
-        <p>친구를 초대해서 제시어를 모르는 라이어를 찾아내는 추리 게임입니다.</p>
+        <p>모두가 같은 제시어를 받지만, 단 한 명은 모릅니다. 대화 속 힌트로 라이어를 찾아보세요.</p>
+        <div class="liar-hero__chips">
+          <span>친구 초대</span>
+          <span>제시어 추리</span>
+          <span>라운드 토크</span>
+        </div>
       </section>
 
       <section class="liar-create-card">
         <h2>방 만들기</h2>
         <div class="form-group">
           <label class="form-label">방 제목</label>
-          <input id="liar-title" class="form-input" maxlength="40" value="소소 라이어게임" placeholder="방 제목">
+          <input id="liar-title" class="form-input" maxlength="40" value="라이어게임" placeholder="방 제목">
         </div>
         <div class="form-group">
           <label class="form-label">카테고리</label>
@@ -92,7 +98,7 @@ async function createRoom() {
     const room = {
       game: 'liar',
       status: 'waiting',
-      title: document.getElementById('liar-title')?.value.trim() || '소소 라이어게임',
+      title: document.getElementById('liar-title')?.value.trim() || '라이어게임',
       category: document.getElementById('liar-category')?.value || 'food',
       maxPlayers: Number(document.getElementById('liar-max')?.value || 6),
       liarCount: Number(document.getElementById('liar-count')?.value || 1),
@@ -131,8 +137,9 @@ async function renderRoom(roomId) {
   const url = inviteUrl(room.id);
   el.innerHTML = `
     <div class="liar-page">
-      <section class="liar-hero">
+      <section class="liar-hero liar-hero--room">
         <button class="write-back-btn" id="liar-back" type="button">←</button>
+        <div class="liar-hero__bg">🕵️</div>
         <div class="liar-hero__eyebrow">방 코드 ${room.code || ''}</div>
         <h1>${room.title || '라이어게임'}</h1>
         <p>초대 링크를 공유해서 참가자를 모으세요.</p>
