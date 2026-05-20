@@ -44,6 +44,14 @@ function requireLogin() {
   return false;
 }
 
+function bindOnce(element, eventName, handler, key = eventName) {
+  if (!element) return;
+  const flag = `bound${key.replace(/[^a-zA-Z0-9]/g, '')}`;
+  if (element.dataset[flag] === '1') return;
+  element.dataset[flag] = '1';
+  element.addEventListener(eventName, handler);
+}
+
 function bindMultiItemActions(postId, kind) {
   document.querySelectorAll(`.multi-participation-item[data-multi-kind="${kind}"]`).forEach(item => {
     if (item.dataset.actionReady === '1') return;
@@ -51,37 +59,42 @@ function bindMultiItemActions(postId, kind) {
     const itemId = item.dataset.multiItemId;
 
     item.querySelectorAll('[data-multi-react]').forEach(btn => {
-      btn.addEventListener('click', async () => {
+      bindOnce(btn, 'click', async () => {
         if (!requireLogin()) return;
         const key = btn.dataset.multiReact;
         try {
+          btn.disabled = true;
           await addItemReaction(postId, kind, itemId, key);
           const countEl = btn.querySelector('b');
           countEl.textContent = String((Number(countEl.textContent || 0) || 0) + 1);
         } catch (error) {
           console.error(error);
           toast.error('반응 등록에 실패했어요.');
+        } finally {
+          btn.disabled = false;
         }
-      });
+      }, `react-${kind}-${itemId}-${btn.dataset.multiReact}`);
     });
 
     const box = item.querySelector('.multi-replies');
-    item.querySelector('[data-multi-reply-toggle]')?.addEventListener('click', async () => {
+    bindOnce(item.querySelector('[data-multi-reply-toggle]'), 'click', async () => {
       const open = !box.classList.contains('open');
       box.classList.toggle('open', open);
       if (open) await refreshReplies(postId, kind, itemId, box);
       if (open) box.querySelector('.multi-replies__input')?.focus();
-    });
+    }, `reply-toggle-${kind}-${itemId}`);
 
     const sendReply = async () => {
       if (!requireLogin()) return;
       const input = box.querySelector('.multi-replies__input');
+      const submit = box.querySelector('.multi-replies__submit');
       const text = input.value.trim();
       if (!text) {
         toast.warn('답글을 입력해주세요');
         return;
       }
       try {
+        if (submit) submit.disabled = true;
         await addItemReply(postId, kind, itemId, text);
         input.value = '';
         toast.success('답글을 남겼어요');
@@ -89,23 +102,26 @@ function bindMultiItemActions(postId, kind) {
       } catch (error) {
         console.error(error);
         toast.error('답글 등록에 실패했어요.');
+      } finally {
+        if (submit) submit.disabled = false;
       }
     };
 
-    item.querySelector('.multi-replies__submit')?.addEventListener('click', sendReply);
-    item.querySelector('.multi-replies__input')?.addEventListener('keydown', e => {
+    bindOnce(item.querySelector('.multi-replies__submit'), 'click', sendReply, `reply-submit-${kind}-${itemId}`);
+    bindOnce(item.querySelector('.multi-replies__input'), 'keydown', e => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         sendReply();
       }
-    });
+    }, `reply-enter-${kind}-${itemId}`);
   });
 }
 
-async function handleVote(post, idx) {
+async function handleVote(post, idx, btn) {
   if (!requireLogin()) return;
   const postRef = doc(db, 'feeds', post.id);
   try {
+    if (btn) btn.disabled = true;
     const snap = await getDoc(postRef);
     const updated = await applyVote(postRef, post, idx, snap.data() || {});
     toast.success('투표했어요!');
@@ -115,10 +131,11 @@ async function handleVote(post, idx) {
   } catch (error) {
     console.error(error);
     toast.error(error.message || '투표에 실패했어요.');
+    if (btn) btn.disabled = false;
   }
 }
 
-async function handleNamingSubmit(post) {
+async function handleNamingSubmit(post, btn) {
   const free = document.getElementById('multi-naming-free');
   const chars = [...document.querySelectorAll('.multi-name-char')];
   const text = free ? free.value.trim() : chars.map(input => input.value.trim()).join('');
@@ -126,91 +143,108 @@ async function handleNamingSubmit(post) {
     toast.warn('이름을 입력해주세요');
     return;
   }
+  if (btn) btn.disabled = true;
   await addParticipation(post.id, 'naming', { text });
   toast.success('참여글을 올렸어요!');
   if (free) free.value = '';
   else chars.forEach(input => { input.value = ''; });
   await refreshList(post.id, 'naming');
+  if (btn) btn.disabled = false;
 }
 
-async function handleFillSubmit(post) {
+async function handleFillSubmit(post, btn) {
   const input = document.getElementById('multi-fill-answer');
   const text = input?.value.trim() || '';
   if (!text) {
     toast.warn('빈칸에 들어갈 말을 입력해주세요');
     return;
   }
+  if (btn) btn.disabled = true;
   await addParticipation(post.id, 'fill', { text });
   toast.success('참여글을 올렸어요!');
   input.value = '';
+  document.querySelectorAll('.multi-fill-char').forEach(box => { box.value = ''; });
   await refreshList(post.id, 'fill');
+  if (btn) btn.disabled = false;
 }
 
-async function handleAcrosticSubmit(post) {
+async function handleAcrosticSubmit(post, btn) {
   const keyword = String(post.modules?.acrostic?.keyword || '');
   const values = [...document.querySelectorAll('.multi-acrostic-input')].map(input => input.value.trim());
   if (values.some(value => !value)) {
     toast.warn('모든 줄을 입력해주세요');
     return;
   }
+  if (btn) btn.disabled = true;
   const lines = [...keyword].map((char, index) => ({ char, line: values[index] }));
   await addParticipation(post.id, 'acrostic', { text: lines.map(line => `${line.char}: ${line.line}`).join('\n'), lines });
   toast.success('참여글을 올렸어요!');
   document.querySelectorAll('.multi-acrostic-input').forEach(input => { input.value = ''; });
   await refreshList(post.id, 'acrostic');
+  if (btn) btn.disabled = false;
 }
 
-async function handleRelaySubmit(post) {
+async function handleRelaySubmit(post, btn) {
   const input = document.getElementById('multi-relay-input');
   const text = input?.value.trim() || '';
   if (!text) {
     toast.warn('이어쓸 내용을 입력해주세요');
     return;
   }
+  if (btn) btn.disabled = true;
   await addParticipation(post.id, 'relay', { text });
   toast.success('참여글을 올렸어요!');
   input.value = '';
   await refreshList(post.id, 'relay');
+  if (btn) btn.disabled = false;
 }
 
 function setupEvents(post) {
   document.querySelectorAll('[data-multi-vote-idx]').forEach(btn => {
-    btn.addEventListener('click', () => handleVote(post, Number(btn.dataset.multiVoteIdx)));
+    bindOnce(btn, 'click', () => handleVote(post, Number(btn.dataset.multiVoteIdx), btn), `vote-${post.id}-${btn.dataset.multiVoteIdx}`);
   });
 
-  document.getElementById('multi-naming-submit')?.addEventListener('click', async () => {
+  const namingBtn = document.getElementById('multi-naming-submit');
+  bindOnce(namingBtn, 'click', async () => {
     if (!requireLogin()) return;
-    await handleNamingSubmit(post).catch(error => {
+    await handleNamingSubmit(post, namingBtn).catch(error => {
       console.error(error);
       toast.error('등록에 실패했어요.');
+      namingBtn.disabled = false;
     });
-  });
+  }, `naming-${post.id}`);
 
-  document.getElementById('multi-fill-submit')?.addEventListener('click', async () => {
+  const fillBtn = document.getElementById('multi-fill-submit');
+  bindOnce(fillBtn, 'click', async () => {
     if (!requireLogin()) return;
-    await handleFillSubmit(post).catch(error => {
+    await handleFillSubmit(post, fillBtn).catch(error => {
       console.error(error);
       toast.error('등록에 실패했어요.');
+      fillBtn.disabled = false;
     });
-  });
+  }, `fill-${post.id}`);
 
-  document.getElementById('multi-acrostic-submit')?.addEventListener('click', async () => {
+  const acrosticBtn = document.getElementById('multi-acrostic-submit');
+  bindOnce(acrosticBtn, 'click', async () => {
     if (!requireLogin()) return;
-    await handleAcrosticSubmit(post).catch(error => {
+    await handleAcrosticSubmit(post, acrosticBtn).catch(error => {
       console.error(error);
       toast.error('등록에 실패했어요.');
+      acrosticBtn.disabled = false;
     });
-  });
+  }, `acrostic-${post.id}`);
 
-  document.getElementById('multi-relay-submit')?.addEventListener('click', async () => {
+  const relayBtn = document.getElementById('multi-relay-submit');
+  bindOnce(relayBtn, 'click', async () => {
     if (!requireLogin()) return;
-    await handleRelaySubmit(post).catch(error => {
+    await handleRelaySubmit(post, relayBtn).catch(error => {
       console.error(error);
       toast.error('등록에 실패했어요.');
+      relayBtn.disabled = false;
     });
-  });
+  }, `relay-${post.id}`);
 
-  document.getElementById('multi-quiz-submit')?.addEventListener('click', () => {
+  bindOnce(document.getElementById('multi-quiz-submit'), 'click', () => {
     const answer = document.getElementById('multi-quiz-answer')?.value.trim() || '';
     const correct = String(post.modules?.quiz?.answer || '').trim();
     if (!answer) {
@@ -218,16 +252,16 @@ function setupEvents(post) {
       return;
     }
     markQuizResult(normalizeAnswer(answer) === normalizeAnswer(correct));
-  });
+  }, `quiz-submit-${post.id}`);
 
   document.querySelectorAll('[data-quiz-option]').forEach(btn => {
-    btn.addEventListener('click', () => {
+    bindOnce(btn, 'click', () => {
       const answer = btn.textContent.trim();
       const correct = String(post.modules?.quiz?.answer || '').trim();
       document.querySelectorAll('[data-quiz-option]').forEach(optionBtn => optionBtn.classList.remove('selected'));
       btn.classList.add('selected');
       markQuizResult(normalizeAnswer(answer) === normalizeAnswer(correct));
-    });
+    }, `quiz-option-${post.id}-${btn.dataset.quizOption}`);
   });
 }
 
