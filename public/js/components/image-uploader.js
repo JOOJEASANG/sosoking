@@ -54,20 +54,21 @@ function getImageKind(file) {
   const type = String(file?.type || '').toLowerCase();
   const name = String(file?.name || '').toLowerCase();
   if (type === 'image/gif' || name.endsWith('.gif')) return { ext: 'gif', contentType: 'image/gif', animated: true };
+  if (type === 'image/png' || name.endsWith('.png')) return { ext: 'png', contentType: 'image/png', animated: false };
+  if (type === 'image/webp' || name.endsWith('.webp')) return { ext: 'webp', contentType: 'image/webp', animated: false };
   return { ext: 'jpg', contentType: 'image/jpeg', animated: false };
 }
 
 async function uploadOneImage(item) {
   const kind = getImageKind(item.file);
-  // 움직이는 GIF는 canvas 압축을 거치면 애니메이션이 깨지므로 원본 그대로 업로드합니다.
   const blob = kind.animated ? item.file : await compressImage(item.file);
   if (!blob) throw new Error('이미지 압축 실패');
 
   try {
+    return await uploadViaFunction(blob, kind);
+  } catch (serverError) {
+    console.warn('서버 이미지 업로드 실패, Firebase Storage 직접 업로드로 재시도', serverError);
     return await uploadDirect(blob, kind);
-  } catch (directError) {
-    console.warn('Firebase Storage 직접 업로드 실패, 서버 업로드로 재시도', directError);
-    return await uploadViaFunction(blob);
   }
 }
 
@@ -78,8 +79,8 @@ async function uploadDirect(blob, kind = { ext: 'jpg', contentType: 'image/jpeg'
   return getDownloadURL(storageRef);
 }
 
-async function uploadViaFunction(blob) {
-  const dataUrl = await readAsDataUrl(blob);
+async function uploadViaFunction(blob, kind = { contentType: 'image/jpeg' }) {
+  const dataUrl = await readAsDataUrl(blob, kind.contentType);
   const fn = httpsCallable(functions, 'uploadFeedImage');
   const result = await fn({ dataUrl });
   const url = result.data && result.data.url;
@@ -315,7 +316,7 @@ function openCropModal(idx, container) {
       0, 0, cropCanvas.width, cropCanvas.height
     );
     cropCanvas.toBlob(async (blob) => {
-      const dataUrl = await readAsDataUrl(blob);
+      const dataUrl = await readAsDataUrl(blob, 'image/jpeg');
       uploadedFiles[idx] = { file: blob, dataUrl, storageUrl: null };
       overlay.remove();
       renderPreviews(container);
@@ -328,7 +329,10 @@ function openCropModal(idx, container) {
   overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
 }
 
-function readAsDataUrl(file) {
+function readAsDataUrl(file, preferredType = '') {
+  if (file instanceof Blob && !file.type && preferredType) {
+    file = new Blob([file], { type: preferredType });
+  }
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload  = () => resolve(reader.result);
