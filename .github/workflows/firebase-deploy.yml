@@ -1,5 +1,6 @@
 name: Deploy Firebase
 
+# Main 브랜치에 push되면 Firebase Hosting, Firestore/Storage rules, Functions를 배포합니다.
 on:
   push:
     branches:
