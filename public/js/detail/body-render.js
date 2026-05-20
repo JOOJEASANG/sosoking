@@ -1,17 +1,39 @@
 import { escHtml } from '../utils/helpers.js';
 import { renderLegacyVoteOptions, renderLegacyBattleVs } from './vote-actions.js';
 
+function escAttr(value) {
+  return escHtml(value).replace(/`/g, '&#96;');
+}
+
+function safeImageUrl(value) {
+  const raw = String(value || '').trim();
+  if (!raw || /[\s"'<>]/.test(raw)) return '';
+  try {
+    const url = new URL(raw, window.location.origin);
+    if (!['https:', 'http:'].includes(url.protocol)) return '';
+    if (url.protocol === 'http:' && url.hostname !== window.location.hostname && url.hostname !== 'localhost') return '';
+    return url.toString();
+  } catch {
+    return '';
+  }
+}
+
+function safeImageList(images) {
+  return (Array.isArray(images) ? images : []).map(safeImageUrl).filter(Boolean).slice(0, 20);
+}
+
 export function renderImageSection(images) {
-  if (!images?.length) return '';
-  const dataAttr = encodeURIComponent(JSON.stringify(images));
-  const visible = images.slice(0, 4);
-  const extra = images.length > 4 ? images.length - 4 : 0;
-  const cols = Math.min(images.length, 4);
+  const safeImages = safeImageList(images);
+  if (!safeImages.length) return '';
+  const dataAttr = encodeURIComponent(JSON.stringify(safeImages));
+  const visible = safeImages.slice(0, 4);
+  const extra = safeImages.length > 4 ? safeImages.length - 4 : 0;
+  const cols = Math.min(safeImages.length, 4);
   return `
-    <div class="detail-gallery detail-gallery--${cols}" data-images="${dataAttr}">
+    <div class="detail-gallery detail-gallery--${cols}" data-images="${escAttr(dataAttr)}">
       ${visible.map((src, i) => `
         <div class="detail-gallery__thumb" data-gallery-idx="${i}">
-          <img src="${src}" alt="" loading="lazy">
+          <img src="${escAttr(src)}" alt="" loading="lazy" referrerpolicy="no-referrer">
           ${i === 3 && extra > 0 ? `<div class="detail-gallery__more">+${extra}</div>` : ''}
         </div>`).join('')}
     </div>`;
@@ -36,7 +58,7 @@ export function renderTypeBody(post) {
     case 'laugh': {
       const diffMap = { easy: '😌 쉬움', normal: '😬 보통', hard: '😤 어려움', extreme: '💀 극한' };
       return post.difficulty
-        ? `<div style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:var(--color-warning-bg);border-radius:var(--radius-pill);font-size:13px;font-weight:700;margin-top:8px">웃참 난이도: ${diffMap[post.difficulty] || post.difficulty}</div>`
+        ? `<div style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:var(--color-warning-bg);border-radius:var(--radius-pill);font-size:13px;font-weight:700;margin-top:8px">웃참 난이도: ${escHtml(diffMap[post.difficulty] || post.difficulty)}</div>`
         : '';
     }
 
@@ -148,7 +170,7 @@ export function renderLegacyInteractive(post) {
           ${chars.map((ch, i) => `
             <div class="acrostic-line" style="margin-bottom:8px">
               <span class="acrostic-char">${escHtml(ch)}</span>
-              <input class="form-input acrostic-submit-input" placeholder="${escHtml(ch)}(으)로 시작하는 한 줄" data-idx="${i}">
+              <input class="form-input acrostic-submit-input" placeholder="${escAttr(ch)}(으)로 시작하는 한 줄" data-idx="${i}">
             </div>`).join('')}
         </div>
         <button class="btn btn--primary btn--sm" id="btn-acrostic-submit" style="margin-top:8px">삼행시 올리기</button>
