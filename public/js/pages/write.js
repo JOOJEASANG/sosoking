@@ -16,7 +16,17 @@ export function renderWrite() {
   const el = document.getElementById('page-content');
   if (!el) return;
 
-  const { type, preset } = getQueryParams();
+  const { type, preset, edit, postId, id } = getQueryParams();
+  const editId = edit || postId || id || '';
+
+  if (editId) {
+    el.innerHTML = `
+      <div class="write-page write-edit-loading" data-edit-post-id="${String(editId).replace(/[&<>"]/g, '')}">
+        <div class="loading-center"><div class="spinner spinner--lg"></div></div>
+      </div>`;
+    window.dispatchEvent(new CustomEvent('sosoking:render-write-edit', { detail: { postId: editId } }));
+    return;
+  }
 
   if (!type) {
     navigate('/write?type=multi');
