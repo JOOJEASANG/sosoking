@@ -8,26 +8,28 @@ const GAMES = [
     title: '라이어게임',
     desc: '제시어를 모르는 라이어를 찾아내는 대화형 추리 게임',
     status: '방 만들기',
-    tag: '1차 오픈',
+    tag: '오픈',
     path: '/game/liar',
     enabled: true,
   },
   {
-    key: 'mafia-lite',
+    key: 'mafia',
     icon: '🌙',
-    title: '마피아',
-    desc: '복잡한 직업 없이 가볍게 즐기는 모바일 마피아 게임',
+    title: '마피아게임',
+    desc: '정체를 숨기고 대화로 범인을 찾아내는 추리 게임',
     status: '준비중',
     tag: '실시간',
+    path: '/game/mafia',
     enabled: false,
   },
   {
     key: 'marble',
     icon: '🎲',
-    title: '마블',
-    desc: '과금 없이 운과 선택으로만 즐기는 공정한 보드게임',
+    title: '마블게임',
+    desc: '주사위와 선택으로 승부하는 공정한 보드 게임',
     status: '기획중',
     tag: '보드게임',
+    path: '/game/marble',
     enabled: false,
   },
 ];
@@ -39,33 +41,43 @@ export function renderSosoland() {
 
   el.innerHTML = `
     <div class="sosoland-page">
-      <section class="sosoland-hero sosoland-hero--gamebox">
-        <div class="sosoland-hero__eyebrow">GAME</div>
-        <h1>가볍게 즐기는<br>게임공간</h1>
-        <p>복잡한 과금유도 없이 운과 선택으로 즐기는 게임을 하나씩 추가하고 있습니다.</p>
-        <div class="sosoland-hero__chips">
-          <span>🕵️ 라이어게임 오픈</span>
-          <span>🌙 마피아 준비중</span>
-          <span>🎲 마블 기획중</span>
+      <section class="sosoland-hero sosoland-hero--arcade">
+        <div class="sosoland-hero__glow sosoland-hero__glow--one"></div>
+        <div class="sosoland-hero__glow sosoland-hero__glow--two"></div>
+        <div class="sosoland-hero__content">
+          <div class="sosoland-hero__eyebrow">GAME PLAYGROUND</div>
+          <h1>친구와 바로 즐기는<br>게임 모음</h1>
+          <p>가볍게 들어와서 방을 만들고, 초대 링크로 함께 즐길 수 있는 게임공간입니다.</p>
+          <div class="sosoland-hero__chips">
+            <span>🕵️ 라이어게임</span>
+            <span>🌙 마피아게임</span>
+            <span>🎲 마블게임</span>
+          </div>
+        </div>
+        <div class="sosoland-hero__console" aria-hidden="true">
+          <span>▲</span><span>●</span><span>◆</span><span>✦</span>
         </div>
       </section>
 
       <section class="sosoland-grid">
         ${GAMES.map(game => `
-          <article class="sosoland-card" data-game="${game.key}">
+          <article class="sosoland-card sosoland-card--${game.key}" data-game-path="${game.path}">
             <div class="sosoland-card__top">
               <div class="sosoland-card__icon">${game.icon}</div>
               <span class="sosoland-card__tag">${game.tag}</span>
             </div>
             <h2>${game.title}</h2>
             <p>${game.desc}</p>
-            <button class="btn ${game.enabled ? 'btn--primary' : 'btn--ghost'} btn--sm" type="button" ${game.enabled ? `data-game-path="${game.path}"` : 'disabled'}>${game.status}</button>
+            <button class="btn ${game.enabled ? 'btn--primary' : 'btn--ghost'} btn--sm" type="button">${game.status}</button>
           </article>
         `).join('')}
       </section>
     </div>`;
 
-  el.querySelectorAll('[data-game-path]').forEach(btn => {
-    btn.addEventListener('click', () => navigate(btn.dataset.gamePath));
+  el.querySelectorAll('[data-game-path]').forEach(card => {
+    card.addEventListener('click', event => {
+      event.preventDefault();
+      navigate(card.dataset.gamePath);
+    });
   });
 }
