@@ -1,5 +1,5 @@
 import { auth, db } from '../firebase.js';
-import { doc, updateDoc, increment, addDoc, collection, serverTimestamp, getDocs, orderBy, query } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { doc, updateDoc, increment, addDoc, collection, serverTimestamp, getDocs, getDoc, orderBy, query } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { appState } from '../state.js';
 
 export async function fetchItems(postId, kind) {
@@ -7,11 +7,31 @@ export async function fetchItems(postId, kind) {
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
 
+async function getCurrentAuthorName() {
+  const user = auth.currentUser;
+  if (!user) return '익명';
+  const cached = appState.nickname || user.displayName || user.email?.split('@')[0] || '';
+  if (cached && cached !== '익명') return cached;
+  try {
+    const snap = await getDoc(doc(db, 'users', user.uid));
+    const data = snap.exists() ? snap.data() : {};
+    const nickname = data.nickname || data.displayName || data.name || cached || user.email?.split('@')[0] || '익명';
+    appState.nickname = nickname;
+    return nickname;
+  } catch {
+    return cached || '익명';
+  }
+}
+
 export async function addParticipation(postId, kind, data) {
+  const user = auth.currentUser;
+  const authorName = await getCurrentAuthorName();
   await addDoc(collection(db, 'feeds', postId, `multi_${kind}`), {
     ...data,
-    authorId: auth.currentUser.uid,
-    authorName: appState.nickname || auth.currentUser.displayName || '익명',
+    authorId: user.uid,
+    authorName,
+    authorEmail: user.email || '',
+    authorPhoto: user.photoURL || '',
     reactions: {},
     replyCount: 0,
     createdAt: serverTimestamp(),
@@ -33,10 +53,14 @@ export async function fetchReplies(postId, kind, itemId) {
 }
 
 export async function addItemReply(postId, kind, itemId, text) {
+  const user = auth.currentUser;
+  const authorName = await getCurrentAuthorName();
   await addDoc(collection(db, 'feeds', postId, `multi_${kind}`, itemId, 'replies'), {
     text,
-    authorId: auth.currentUser.uid,
-    authorName: appState.nickname || auth.currentUser.displayName || '익명',
+    authorId: user.uid,
+    authorName,
+    authorEmail: user.email || '',
+    authorPhoto: user.photoURL || '',
     createdAt: serverTimestamp(),
   });
   await updateDoc(itemRef(postId, kind, itemId), { replyCount: increment(1) }).catch(() => {});
@@ -56,11 +80,5 @@ export async function applyVote(postRef, post, idx, freshData) {
     'modules.vote.votedBy': votedBy,
   });
 
-  return {
-    ...post,
-    modules: {
-      ...post.modules,
-      vote: { ...vote, options, votedBy },
-    },
-  };
+  return { ...post, modules: { ...post.modules, vote: { ...vote, options, votedBy } } };
 }
