@@ -38,25 +38,6 @@ async function getSettings() {
   return _settingsCache;
 }
 
-async function closeExpiredMissions() {
-  const now = Timestamp.now();
-  const snap = await db.collection('missions')
-    .where('active', '==', true)
-    .where('endDate', '<', now)
-    .limit(200)
-    .get()
-    .catch(() => ({ docs: [] }));
-  if (!snap.docs.length) return 0;
-  const batch = db.batch();
-  snap.docs.forEach(doc => batch.update(doc.ref, {
-    active: false,
-    autoClosedAt: FieldValue.serverTimestamp(),
-    autoClosedBy: 'ai-admin-automation',
-  }));
-  await batch.commit();
-  return snap.docs.length;
-}
-
 async function cleanupOldNotifications(retentionDays) {
   const cutoff = Timestamp.fromDate(new Date(Date.now() - retentionDays * 86400000));
   const snap = await db.collection('notifications')
@@ -113,10 +94,9 @@ async function collectDailyStats() {
   const today = dayKey();
   const todayStart = new Date(`${today}T00:00:00+09:00`);
   const todayTs = Timestamp.fromDate(todayStart);
-  const [postsSnap, aiPostsSnap, missionsSnap, reportsSnap, usageSnap] = await Promise.all([
+  const [postsSnap, aiPostsSnap, reportsSnap, usageSnap] = await Promise.all([
     db.collection('feeds').where('createdAt', '>=', todayTs).limit(500).get().catch(() => ({ size: 0 })),
     db.collection('feeds').where('isAiGenerated', '==', true).where('aiGeneratedDate', '==', today).limit(100).get().catch(() => ({ size: 0 })),
-    db.collection('missions').where('active', '==', true).limit(50).get().catch(() => ({ size: 0 })),
     db.collection('reports').where('resolved', '==', false).limit(500).get().catch(() => ({ size: 0 })),
     db.doc(`ai_usage/${today}`).get().catch(() => null),
   ]);
@@ -124,7 +104,6 @@ async function collectDailyStats() {
     date: today,
     todayPosts: postsSnap.size || 0,
     todayAiPosts: aiPostsSnap.size || 0,
-    activeMissions: missionsSnap.size || 0,
     unresolvedReports: reportsSnap.size || 0,
     aiUsage: usageSnap && usageSnap.exists ? usageSnap.data() : { total: 0 },
   };
@@ -134,8 +113,7 @@ async function runAdminAutomation({ actorId = 'scheduler' } = {}) {
   const settings = await getSettings();
   if (!settings.aiAdminAutomationEnabled) return { skipped: true, reason: 'disabled-by-admin' };
 
-  const [closedMissions, removedNotifications, reportSummary, stats] = await Promise.all([
-    closeExpiredMissions(),
+  const [removedNotifications, reportSummary, stats] = await Promise.all([
     cleanupOldNotifications(settings.notificationRetentionDays),
     summarizeReports(settings),
     collectDailyStats(),
@@ -143,7 +121,6 @@ async function runAdminAutomation({ actorId = 'scheduler' } = {}) {
 
   const summary = {
     ...stats,
-    closedMissions,
     removedNotifications,
     unresolvedReports: reportSummary.unresolvedReports,
     riskyPosts: reportSummary.riskyPosts.map(item => ({ postId: item.postId, count: item.count, reasons: item.reasons.slice(0, 3) })),
@@ -158,7 +135,6 @@ async function runAdminAutomation({ actorId = 'scheduler' } = {}) {
   await db.doc(`system_jobs/admin_automation_${stats.date}`).set({
     status: 'done',
     actorId,
-    closedMissions,
     removedNotifications,
     autoHiddenPosts: reportSummary.autoHiddenPosts,
     createdAt: FieldValue.serverTimestamp(),
