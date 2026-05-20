@@ -9,6 +9,7 @@ import { renderImageSection, renderTypeBody, renderLegacyInteractive } from '../
 import { renderCommentSection } from '../detail/comment-render.js';
 import { renderAcrosticSection } from '../detail/acrostic-render.js';
 import { appendSimilarPosts } from '../detail/similar-render.js';
+import { setupRelayCounter, setupCharBoxInput } from '../detail/input-ux.js';
 
 export async function renderDetail(id) {
   const el = document.getElementById('page-content');
@@ -93,65 +94,4 @@ function setupDetailPage(post) {
   initReactionBar(post.id);
   setupRelayCounter();
   setupCharBoxInput();
-}
-
-function setupRelayCounter() {
-  document.getElementById('comment-input')?.addEventListener('input', function () {
-    const counter = document.getElementById('relay-char-count');
-    if (counter) counter.textContent = `${this.value.length} / 150`;
-  });
-}
-
-function setupCharBoxInput() {
-  const freeInput = document.getElementById('free-naming-input');
-  if (freeInput) {
-    freeInput.addEventListener('keydown', event => {
-      if (event.key === 'Enter') document.getElementById('btn-char-submit')?.click();
-    });
-    return;
-  }
-
-  const boxes = [...document.querySelectorAll('.char-box')];
-  boxes.forEach((box, index) => {
-    let composing = false;
-    box.addEventListener('compositionstart', () => { composing = true; });
-    box.addEventListener('compositionend', () => {
-      composing = false;
-      trimCharBox(box);
-      if (box.value && index < boxes.length - 1) boxes[index + 1].focus();
-    });
-    box.addEventListener('input', () => {
-      if (composing) return;
-      trimCharBox(box);
-      if (box.value && index < boxes.length - 1) boxes[index + 1].focus();
-    });
-    box.addEventListener('keydown', event => {
-      if (event.key === 'Backspace' && !box.value && index > 0) {
-        event.preventDefault();
-        boxes[index - 1].value = '';
-        boxes[index - 1].focus();
-      }
-      if (event.key === 'ArrowLeft' && index > 0) {
-        event.preventDefault();
-        boxes[index - 1].focus();
-      }
-      if (event.key === 'ArrowRight' && index < boxes.length - 1) {
-        event.preventDefault();
-        boxes[index + 1].focus();
-      }
-      if (event.key === 'Enter') document.getElementById('btn-char-submit')?.click();
-    });
-    box.addEventListener('paste', event => {
-      event.preventDefault();
-      const text = (event.clipboardData || window.clipboardData).getData('text');
-      [...text].slice(0, boxes.length - index).forEach((char, offset) => {
-        if (boxes[index + offset]) boxes[index + offset].value = char;
-      });
-      boxes[Math.min(index + [...text].length, boxes.length - 1)]?.focus();
-    });
-  });
-}
-
-function trimCharBox(box) {
-  if ([...box.value].length > 1) box.value = [...box.value].slice(-1).join('');
 }
