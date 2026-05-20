@@ -10,6 +10,10 @@ export function getBodyText() {
   return document.getElementById('mw-desc')?.value.trim() || '';
 }
 
+export function isAnonymousWriteChecked() {
+  return !!document.getElementById('mw-anonymous-toggle')?.checked;
+}
+
 function enabled(key) {
   return !!document.querySelector(`[data-module-toggle="${key}"]`);
 }
@@ -42,6 +46,10 @@ function countBodyBlanks(bodyText) {
 export function collectMultiModules() {
   const modules = { comments: { enabled: true } };
   const bodyText = getBodyText();
+
+  if (isAnonymousWriteChecked()) {
+    modules.anonymous = { enabled: true, mode: 'general-option' };
+  }
 
   if (enabled('vote')) {
     const options = getVoteOptions();
@@ -99,11 +107,6 @@ export function collectMultiModules() {
       if (!answer) throw new Error('정답을 입력해주세요.');
       modules.quiz = { enabled: true, mode: 'subjective', question: bodyText, answer };
     }
-  }
-
-  if (enabled('anonymous')) {
-    if (!bodyText) throw new Error('본문에 익명비밀글 내용을 입력해주세요.');
-    modules.anonymous = { enabled: true };
   }
 
   return modules;
