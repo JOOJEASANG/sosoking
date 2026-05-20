@@ -18,7 +18,31 @@ service cloud.firestore {
     }
     function validImageList() {
       return !('images' in request.resource.data)
-        || (request.resource.data.images is list);
+        || (request.resource.data.images is list && request.resource.data.images.size() <= 20);
+    }
+    function validInitialCounter(field) {
+      return !(field in request.resource.data) || request.resource.data[field] == 0;
+    }
+    function validInitialReactions() {
+      return !('reactions' in request.resource.data)
+        || (request.resource.data.reactions is map
+          && request.resource.data.reactions.get('total', 0) == 0);
+    }
+    function validFeedCreateShape() {
+      return request.resource.data.keys().hasOnly([
+          'type', 'cat', 'subtype', 'typeLabel',
+          'title', 'desc', 'body', 'subtitle', 'tags', 'images', 'modules',
+          'anonymous', 'authorId', 'authorName', 'authorPhoto', 'authorEmail',
+          'reactions', 'commentCount', 'acrosticCount', 'viewCount', 'pointsScore',
+          'options', 'quizMode', 'initials', 'hint', 'keyword', 'evidence',
+          'startSentence', 'characters', 'charCount', 'createdAt', 'updatedAt'
+        ])
+        && !request.resource.data.keys().hasAny(['hidden', 'hideReason', 'votedBy', 'reactedWith'])
+        && validInitialCounter('commentCount')
+        && validInitialCounter('acrosticCount')
+        && validInitialCounter('viewCount')
+        && validInitialCounter('pointsScore')
+        && validInitialReactions();
     }
     function isSafeCounterUpdate() {
       let changed = request.resource.data.diff(resource.data).affectedKeys();
@@ -35,9 +59,6 @@ service cloud.firestore {
               request.resource.data.acrosticCount == resource.data.get('acrosticCount', 0) + 1 ||
               request.resource.data.acrosticCount == resource.data.get('acrosticCount', 0) - 1
             ))
-          ||
-          (changed.hasOnly(['viewCount'])
-            && request.resource.data.viewCount == resource.data.get('viewCount', 0) + 1)
         );
     }
 
@@ -63,7 +84,7 @@ service cloud.firestore {
       let changed = request.resource.data.diff(resource.data).affectedKeys();
       return isAuthor(authorId)
         && request.resource.data.authorId == resource.data.authorId
-        && !changed.hasAny(['authorId', 'authorName', 'authorPhoto', 'reactions', 'reactedWith', 'commentCount', 'acrosticCount', 'viewCount', 'votedBy']);
+        && !changed.hasAny(['authorId', 'authorName', 'authorPhoto', 'authorEmail', 'reactions', 'reactedWith', 'commentCount', 'acrosticCount', 'viewCount', 'votedBy', 'pointsScore']);
     }
 
     function isMultiItemReactionOrReplyCountUpdate() {
@@ -86,13 +107,13 @@ service cloud.firestore {
         && request.resource.data.authorId == request.auth.uid
         && validText(request.resource.data.get('text', ''), 500);
     }
-    function validPointLogCreate(userId) {
+    function validUserSelfUpdate(userId) {
+      let changed = request.resource.data.diff(resource.data).affectedKeys();
       return isAuthor(userId)
-        && request.resource.data.points is int
-        && request.resource.data.points >= -100
-        && request.resource.data.points <= 100
-        && validText(request.resource.data.get('action', ''), 60)
-        && validText(request.resource.data.get('label', ''), 80);
+        && changed.hasOnly(['nicknameIcon', 'updatedAt'])
+        && (!('nicknameIcon' in request.resource.data)
+          || request.resource.data.nicknameIcon == null
+          || request.resource.data.nicknameIcon is map);
     }
 
     match /admins/{uid} {
@@ -109,13 +130,12 @@ service cloud.firestore {
       allow read:   if isAuthor(userId) || isAdmin();
       allow create: if isAuthor(userId)
                       && validNickname(request.resource.data.get('nickname', ''));
-      allow update: if isAuthor(userId) || isAdmin();
+      allow update: if isAdmin() || validUserSelfUpdate(userId);
       allow delete: if isAdmin();
 
       match /point_logs/{logId} {
         allow read: if isAuthor(userId) || isAdmin();
-        allow create: if validPointLogCreate(userId);
-        allow update, delete: if false;
+        allow create, update, delete: if false;
       }
     }
 
@@ -132,6 +152,7 @@ service cloud.firestore {
     match /feeds/{postId} {
       allow read:   if true;
       allow create: if signedIn()
+                      && validFeedCreateShape()
                       && request.resource.data.authorId == request.auth.uid
                       && validText(request.resource.data.title, 100)
                       && validText(request.resource.data.get('desc', ''), 2000)
@@ -301,6 +322,8 @@ service cloud.firestore {
     match /system_jobs/{id}    { allow read, write: if isAdmin(); }
     match /usage_stats/{id}    { allow read: if isAdmin(); allow write: if false; }
     match /rate_limits/{id}    { allow read, write: if false; }
+    match /point_awards/{id}   { allow read, write: if false; }
+    match /upload_usage/{id}   { allow read, write: if false; }
     match /feedback/{id}       { allow create: if signedIn(); allow read, update, delete: if isAdmin(); }
 
     match /config/{docId} {
