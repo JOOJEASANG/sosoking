@@ -12,6 +12,10 @@ function esc(value) {
   return String(value || '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 }
 
+function confirmTypedDelete(path) {
+  return prompt(`${path} 문서를 삭제합니다.\n\n삭제는 되돌릴 수 없습니다. 계속하려면 '삭제'를 입력하세요.`) === '삭제';
+}
+
 function installDataTab() {
   const nav = document.querySelector('.admin-nav');
   if (!nav || nav.querySelector('[data-admin-data-tab]')) return;
@@ -46,6 +50,7 @@ async function renderDataManager() {
           </div>
           <button class="btn btn--ghost btn--sm" id="admin-data-refresh">새로고침</button>
         </div>
+        <div class="admin-operation-note"><b>주의</b><span>데이터 탭의 삭제는 최종 정리용입니다. 게시물은 먼저 게시물 관리에서 숨김 처리하는 것을 권장합니다.</span></div>
         <div class="admin-data-controls">
           <label class="form-group" style="margin:0"><span class="form-label">컬렉션</span><select id="admin-data-collection" class="form-select">${collections.map(name => `<option value="${esc(name)}" ${name === currentCollection ? 'selected' : ''}>${esc(name)}</option>`).join('')}</select></label>
         </div>
@@ -99,7 +104,8 @@ async function loadDocs() {
     box.querySelectorAll('[data-admin-delete-doc]').forEach(btn => {
       btn.addEventListener('click', async () => {
         const id = btn.dataset.adminDeleteDoc;
-        if (!confirm(`${currentCollection}/${id} 문서를 삭제할까요?\n삭제는 되돌릴 수 없습니다.`)) return;
+        const path = `${currentCollection}/${id}`;
+        if (!confirmTypedDelete(path)) return;
         try {
           btn.disabled = true;
           await deleteAdminDocument({ collection: currentCollection, id });
