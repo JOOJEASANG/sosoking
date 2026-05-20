@@ -1,5 +1,5 @@
 import { db } from './firebase.js';
-import { collection, getCountFromServer, getDocs, limit, orderBy, query, where } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { collection, doc, getDoc, getDocs, limit, orderBy, query } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const FEED_META = [
   { key: 'general', icon: '📝', label: '일반글' },
@@ -17,6 +17,10 @@ function moduleKey(post) {
   if (modules.acrostic?.enabled) return 'acrostic';
   if (modules.quiz?.enabled) return 'quiz';
   return 'general';
+}
+
+function esc(value) {
+  return String(value || '').replace(/[&<>"]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[m]));
 }
 
 async function fetchPosts() {
@@ -52,11 +56,20 @@ function simplifyPostFilters() {
   const filterWrap = content.querySelector('[data-post-cat]')?.parentElement;
   if (!filterWrap || filterWrap.dataset.cleanFilters === '1') return;
   filterWrap.dataset.cleanFilters = '1';
+  filterWrap.classList.add('admin-post-toolbar');
+
+  const searchInput = filterWrap.querySelector('#admin-post-search');
+  const searchButton = filterWrap.querySelector('#btn-post-search');
+  if (searchInput) {
+    searchInput.classList.add('admin-post-toolbar__search');
+    searchInput.removeAttribute('style');
+  }
+  if (searchButton) {
+    searchButton.classList.add('admin-post-toolbar__button');
+  }
 
   filterWrap.querySelectorAll('[data-post-cat]').forEach(btn => btn.remove());
-  filterWrap.insertAdjacentHTML('beforeend', `
-    <span class="admin-clean-filter-note">피드 게시물은 일반글/투표/작명/삼행시/퀴즈 형식으로 통합 관리됩니다.</span>
-  `);
+  filterWrap.querySelectorAll('.admin-clean-filter-note').forEach(note => note.remove());
 }
 
 function normalizePostTable() {
@@ -87,6 +100,55 @@ function normalizePostTable() {
   });
 }
 
+async function normalizeUserEmailColumn() {
+  const content = document.getElementById('admin-content');
+  if (!content) return;
+  const title = [...content.querySelectorAll('.admin-section-title')].find(el => el.textContent.includes('회원'));
+  if (!title) return;
+  const table = title.parentElement?.parentElement?.querySelector('table');
+  if (!table || table.dataset.emailNormalized === '1') return;
+  table.dataset.emailNormalized = '1';
+
+  const uidHeader = [...table.querySelectorAll('thead th')].find(th => th.textContent.trim() === 'UID');
+  if (uidHeader) uidHeader.textContent = '메일';
+
+  const feedSnap = await getDocs(query(collection(db, 'feeds'), orderBy('createdAt', 'desc'), limit(300))).catch(() => null);
+  const emailByName = new Map();
+  const uidByName = new Map();
+  for (const d of feedSnap?.docs || []) {
+    const p = d.data() || {};
+    const name = p.authorName || '';
+    if (!name) continue;
+    const email = p.authorEmail || p.email || p.userEmail || '';
+    if (email) emailByName.set(name, email);
+    if (p.authorId) uidByName.set(name, p.authorId);
+  }
+
+  const rows = table.querySelectorAll('tbody tr');
+  for (const row of rows) {
+    const name = row.querySelector('td:first-child span[style*="font-weight"]')?.textContent?.trim() || '';
+    const cell = row.querySelector('td:last-child');
+    if (!cell || cell.dataset.emailReady === '1') continue;
+    let email = emailByName.get(name) || '';
+
+    if (!email) {
+      const uid = uidByName.get(name);
+      if (uid) {
+        const userSnap = await getDoc(doc(db, 'users', uid)).catch(() => null);
+        const data = userSnap?.exists?.() ? userSnap.data() : {};
+        email = data.email || data.userEmail || data.loginEmail || '';
+      }
+    }
+
+    cell.dataset.emailReady = '1';
+    cell.style.fontSize = '12px';
+    cell.style.fontFamily = 'inherit';
+    cell.style.color = email ? 'var(--color-text-secondary)' : 'var(--color-text-muted)';
+    cell.textContent = email || '메일 없음';
+    cell.title = email || '메일 정보 없음';
+  }
+}
+
 let timer = null;
 function schedule() {
   clearTimeout(timer);
@@ -94,6 +156,7 @@ function schedule() {
     simplifyDashboard();
     simplifyPostFilters();
     normalizePostTable();
+    normalizeUserEmailColumn();
   }, 260);
 }
 
