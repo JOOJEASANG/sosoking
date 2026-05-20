@@ -10,23 +10,16 @@ export const MULTI_PRESETS = {
     label: '투표/판정',
     icon: '🗳️',
     titlePlaceholder: '예: 여러분의 판정은?',
-    descPlaceholder: '투표/판정받을 질문이나 상황을 본문에 적어주세요.',
-    tagsPlaceholder: '#투표, #판정',
-    voteOptionPlaceholders: ['그렇다', '아니다'],
-  },
-  ox: {
-    label: 'OX판정',
-    icon: '⭕',
-    titlePlaceholder: '예: 이거 내가 잘못한 거 O/X?',
-    descPlaceholder: 'O 또는 X로 판정받을 상황을 적어주세요.',
-    tagsPlaceholder: '#OX, #판정',
+    descPlaceholder: '투표/판정받을 질문이나 상황을 본문에 적어주세요. 의견/토론도 댓글로 이어집니다.',
+    tagsPlaceholder: '#투표, #판정, #토론',
+    voteOptionPlaceholders: ['찬성', '반대'],
   },
   fill: {
-    label: '빈줄 채우기',
+    label: '빈칸 채우기',
     icon: '🧩',
-    titlePlaceholder: '예: 친구가 갑자기 ___라고 말했다',
-    descPlaceholder: '빈칸이 들어간 문장이나 상황을 적어주세요. 예: 오늘의 내 기분은 ___다.',
-    tagsPlaceholder: '#빈줄채우기, #빈칸',
+    titlePlaceholder: '예: ___가 ___했다',
+    descPlaceholder: '빈칸은 ___로 표시하세요. 예: ___가 ___했다 / 오늘의 내 기분은 ___다.',
+    tagsPlaceholder: '#빈칸채우기, #빈칸',
   },
   naming: {
     label: '미친작명소',
@@ -59,26 +52,26 @@ export const MULTI_PRESETS = {
     quizAnswerPlaceholder: '예: 소',
   },
   anonymous: {
-    label: '익명',
+    label: '익명비밀글',
     icon: '🕶️',
     titlePlaceholder: '예: 익명으로 털어놓고 싶은 이야기',
-    descPlaceholder: '고민, 고백, 폭로 등 진지한 고민도 가능합니다.',
-    tagsPlaceholder: '#익명, #고민, #고백',
+    descPlaceholder: '고민, 고백, 폭로 등 진지한 이야기를 익명으로 작성할 수 있습니다.',
+    tagsPlaceholder: '#익명비밀글, #고민, #고백',
   },
 };
 
 export const BODY_LABELS = {
-  vote: '본문 · 질문/상황',
-  ox: '본문 · OX판정 상황',
-  fill: '본문 · 빈줄 채우기 문장',
+  vote: '본문 · 질문/상황/토론 주제',
+  fill: '본문 · 빈칸 채우기 문장',
   relay: '본문 · 릴레이 시작 문장',
   quiz: '본문 · 문제',
-  anonymous: '본문 · 익명 내용',
+  anonymous: '본문 · 익명비밀글 내용',
 };
 
-export const BODY_REQUIRED_PRESETS = ['vote', 'ox', 'fill', 'relay', 'quiz', 'anonymous'];
+export const BODY_REQUIRED_PRESETS = ['vote', 'fill', 'relay', 'quiz', 'anonymous'];
 
 export function normalizePresetKey(key) {
+  if (key === 'ox') return 'vote';
   return MULTI_PRESETS[key] ? key : 'general';
 }
 
