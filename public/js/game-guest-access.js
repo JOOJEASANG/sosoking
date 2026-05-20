@@ -12,17 +12,43 @@ function cleanName(value) {
   return String(value || '').replace(/[^가-힣a-zA-Z0-9_\s]/g, '').trim().slice(0, 12);
 }
 
+function makeGuestName() {
+  return '게스트' + Math.floor(1000 + Math.random() * 9000);
+}
+
+function safeGetGuestName() {
+  try {
+    return cleanName(localStorage.getItem(STORAGE_KEY) || '');
+  } catch {
+    return '';
+  }
+}
+
+function safeSetGuestName(name) {
+  try {
+    localStorage.setItem(STORAGE_KEY, name);
+  } catch {
+    // 일부 브라우저/앱 내장 웹뷰에서는 localStorage가 막힐 수 있습니다.
+  }
+}
+
 function getGuestName() {
-  let name = cleanName(localStorage.getItem(STORAGE_KEY) || '');
+  let name = safeGetGuestName();
   if (name) return name;
-  name = cleanName(window.prompt('게임에서 사용할 닉네임을 입력해주세요.', '게스트'));
-  if (!name) name = '게스트' + Math.floor(1000 + Math.random() * 9000);
-  localStorage.setItem(STORAGE_KEY, name);
+
+  try {
+    name = cleanName(window.prompt('게임에서 사용할 닉네임을 입력해주세요.', '게스트'));
+  } catch {
+    name = '';
+  }
+
+  if (!name) name = makeGuestName();
+  safeSetGuestName(name);
   return name;
 }
 
 function applyGuestName() {
-  const nickname = cleanName(localStorage.getItem(STORAGE_KEY) || '');
+  const nickname = safeGetGuestName();
   if (nickname && auth.currentUser?.isAnonymous && isGamePath()) {
     appState.nickname = nickname;
     appState.user = auth.currentUser;
@@ -31,8 +57,16 @@ function applyGuestName() {
 
 export async function ensureGameGuestAuth() {
   if (!isGamePath()) return null;
-  const nickname = getGuestName();
-  appState.nickname = nickname;
+
+  let nickname = '게스트';
+  try {
+    nickname = getGuestName();
+    appState.nickname = nickname;
+  } catch (error) {
+    console.warn('[game guest name]', error);
+    nickname = makeGuestName();
+    appState.nickname = nickname;
+  }
 
   if (auth.currentUser) {
     applyGuestName();
@@ -48,7 +82,7 @@ export async function ensureGameGuestAuth() {
     return cred.user;
   } catch (error) {
     console.error('[game guest auth]', error);
-    toast.error('게스트 접속에 실패했어요. 잠시 후 다시 시도해주세요.');
+    toast.error('게스트 접속에 실패했어요. Firebase 인증 설정을 확인해주세요.');
     return null;
   }
 }
@@ -56,7 +90,9 @@ export async function ensureGameGuestAuth() {
 let timer = null;
 function schedule() {
   clearTimeout(timer);
-  timer = setTimeout(ensureGameGuestAuth, 120);
+  timer = setTimeout(() => {
+    ensureGameGuestAuth().catch(error => console.warn('[game guest schedule]', error));
+  }, 120);
 }
 
 onAuthStateChanged(auth, () => {
