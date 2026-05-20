@@ -8,9 +8,12 @@ import { initImageUploader, getUploadedImages, hasPendingImages } from './compon
 const PRESETS = {
   general: { label: '일반글', icon: '📝', titlePlaceholder: '예: 오늘 있었던 웃긴 일', descPlaceholder: '글, 사진, 질문, 상황 설명 등을 자유롭게 적어보세요.', tagsPlaceholder: '#일상, #피드, #소소킹' },
   vote: { label: '투표/판정', icon: '🗳️', titlePlaceholder: '예: 여러분의 판정은?', descPlaceholder: '투표/판정받을 질문이나 상황을 본문에 적어주세요.', tagsPlaceholder: '#투표, #판정', voteOptionPlaceholders: ['그렇다', '아니다'] },
+  ox: { label: 'OX판정', icon: '⭕', titlePlaceholder: '예: 이거 내가 잘못한 거 O/X?', descPlaceholder: 'O 또는 X로 판정받을 상황을 적어주세요.', tagsPlaceholder: '#OX, #판정' },
+  fill: { label: '채우기', icon: '🧩', titlePlaceholder: '예: 친구가 갑자기 ___라고 말했다', descPlaceholder: '빈칸이 들어간 문장이나 상황을 적어주세요. 예: 오늘의 내 기분은 ___다.', tagsPlaceholder: '#채우기, #빈칸' },
   naming: { label: '미친작명소', icon: '😜', titlePlaceholder: '예: 이 사진 이름 좀 지어줘', descPlaceholder: '사진이나 상황에 어울리는 웃긴 이름을 받아보세요.', tagsPlaceholder: '#작명, #미친작명소' },
   acrostic: { label: '삼행시', icon: '✍️', titlePlaceholder: '예: 삼행시 도전', descPlaceholder: '제시어를 넣고 사람들이 한 줄씩 완성하게 해보세요.', tagsPlaceholder: '#삼행시, #제시어', acrosticPlaceholder: '예: 소소킹' },
   quiz: { label: '퀴즈', icon: '🧠', titlePlaceholder: '예: 퀴즈 도전', descPlaceholder: '맞혀야 할 문제를 본문에 적어주세요.', tagsPlaceholder: '#퀴즈, #문제', quizAnswerPlaceholder: '예: 소' },
+  anonymous: { label: '익명', icon: '🕶️', titlePlaceholder: '예: 익명으로 털어놓고 싶은 이야기', descPlaceholder: '고민, 고백, 폭로 등 진지한 고민도 가능합니다.', tagsPlaceholder: '#익명, #고민, #고백' },
 };
 
 function esc(value) {
@@ -32,7 +35,7 @@ function renderPresetButtons(activeKey) {
   return `
     <div class="multi-preset-box multi-preset-box--simple">
       <div class="multi-preset-box__title">글쓰기 형식</div>
-      <div class="multi-preset-box__desc">기본은 일반글입니다. 형식을 선택하면 아래 입력 항목이 바뀝니다.</div>
+      <div class="multi-preset-box__desc">형식을 선택하면 아래 입력 항목이 바뀝니다.</div>
       <div class="multi-preset-list">
         ${Object.entries(PRESETS).map(([key, p]) => `
           <button type="button" class="multi-preset-btn ${activeKey === key ? 'active' : ''}" data-multi-preset="${key}" aria-pressed="${activeKey === key ? 'true' : 'false'}">${p.icon} ${p.label}</button>`).join('')}
@@ -66,15 +69,32 @@ function renderSelectedModule(activeKey, preset) {
   }
 
   if (activeKey === 'vote') {
-    return moduleCard('vote', '🗳️', '투표/판정', '본문에 적은 질문/상황을 기준으로 선택지만 입력합니다.', `
-      <div class="multi-module-inline-note">질문이나 상황 설명은 위 <b>본문</b>에 적어주세요.</div>
+    return moduleCard('vote', '🗳️', '투표/판정', '본문을 기준으로 사용자가 선택지에 투표합니다.', `
       <div class="multi-option-list" id="mw-vote-options">${preset.voteOptionPlaceholders.map((v, i) => `<input class="form-input mw-vote-option" maxlength="80" placeholder="선택지 ${i + 1} · 예: ${esc(v)}">`).join('')}</div>
       <button class="btn btn--ghost btn--sm" type="button" id="mw-add-vote-option">+ 선택지 추가</button>`);
   }
 
+  if (activeKey === 'ox') {
+    return moduleCard('ox', '⭕', 'OX판정', '본문 상황을 O 또는 X로 바로 판정받습니다.', `
+      <div class="multi-fixed-options"><span>⭕ O</span><span>❌ X</span></div>`);
+  }
+
+  if (activeKey === 'fill') {
+    return moduleCard('fill', '🧩', '채우기', '사용자가 빈칸에 들어갈 말을 등록할 수 있습니다.', `
+      <div class="multi-module-inline-note">본문에 <b>___</b> 또는 빈칸이 들어간 문장을 적으면 더 재미있습니다.</div>`);
+  }
+
   if (activeKey === 'naming') {
     return moduleCard('naming', '😜', '미친작명소', '다른 사용자가 웃긴 이름을 등록할 수 있습니다.', `
-      <div class="form-group"><label class="form-label">글자수 제한</label><select id="mw-naming-count" class="form-select"><option value="0">자유</option><option value="3">3글자</option><option value="5">5글자</option></select></div>`);
+      <div class="form-group">
+        <label class="form-label">글자수 제한</label>
+        <input type="hidden" id="mw-naming-count" value="0">
+        <div class="multi-choice-toggle" role="radiogroup" aria-label="글자수 제한 선택">
+          <button type="button" class="multi-choice-toggle__btn active" data-naming-count="0" role="radio" aria-checked="true">자유</button>
+          <button type="button" class="multi-choice-toggle__btn" data-naming-count="3" role="radio" aria-checked="false">3글자</button>
+          <button type="button" class="multi-choice-toggle__btn" data-naming-count="5" role="radio" aria-checked="false">5글자</button>
+        </div>
+      </div>`);
   }
 
   if (activeKey === 'acrostic') {
@@ -84,7 +104,6 @@ function renderSelectedModule(activeKey, preset) {
 
   if (activeKey === 'quiz') {
     return moduleCard('quiz', '🧠', '퀴즈', '본문에 적은 문제를 기준으로 정답 기능만 설정합니다.', `
-      <div class="multi-module-inline-note">문제는 위 <b>본문</b>에 적어주세요.</div>
       <div class="form-group">
         <label class="form-label">퀴즈 방식 <span class="required">*</span></label>
         <input type="hidden" id="mw-quiz-mode" value="subjective">
@@ -103,6 +122,11 @@ function renderSelectedModule(activeKey, preset) {
       </div>`);
   }
 
+  if (activeKey === 'anonymous') {
+    return moduleCard('anonymous', '🕶️', '익명', '작성자 닉네임을 숨기고 글이 올라갑니다.', `
+      <div class="multi-anonymous-note">고민, 고백, 폭로 등 진지한 고민도 가능합니다.</div>`);
+  }
+
   return '';
 }
 
@@ -112,8 +136,9 @@ function renderMultiWrite() {
   const renderKey = window.location.hash || '#/write?type=multi';
   const presetKey = getPresetKey();
   const preset = PRESETS[presetKey] || PRESETS.general;
-  const bodyRequired = presetKey === 'vote' || presetKey === 'quiz';
-  const bodyLabel = presetKey === 'vote' ? '본문 · 질문/상황' : presetKey === 'quiz' ? '본문 · 문제' : '본문';
+  const bodyRequired = ['vote', 'ox', 'fill', 'quiz', 'anonymous'].includes(presetKey);
+  const bodyLabelMap = { vote: '본문 · 질문/상황', ox: '본문 · OX판정 상황', fill: '본문 · 채우기 문장', quiz: '본문 · 문제', anonymous: '본문 · 익명 내용' };
+  const bodyLabel = bodyLabelMap[presetKey] || '본문';
 
   el.innerHTML = `
     <div class="write-page multi-write-page" data-render-key="${esc(renderKey)}">
@@ -153,6 +178,17 @@ function setQuizMode(mode) {
   if (multiple) multiple.style.display = isMultiple ? '' : 'none';
 }
 
+function setNamingCount(count) {
+  const normalized = ['0', '3', '5'].includes(String(count)) ? String(count) : '0';
+  const hidden = document.getElementById('mw-naming-count');
+  if (hidden) hidden.value = normalized;
+  document.querySelectorAll('[data-naming-count]').forEach(btn => {
+    const active = btn.dataset.namingCount === normalized;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-checked', active ? 'true' : 'false');
+  });
+}
+
 function bindMultiWriteEvents() {
   document.getElementById('multi-back-type')?.addEventListener('click', () => navigate('/feed'));
   document.getElementById('multi-cancel')?.addEventListener('click', () => navigate('/feed'));
@@ -173,9 +209,8 @@ function bindMultiWriteEvents() {
     list.insertAdjacentHTML('beforeend', `<input class="form-input mw-vote-option" maxlength="80" placeholder="선택지 ${count + 1}">`);
   });
 
-  document.querySelectorAll('[data-quiz-mode]').forEach(btn => {
-    btn.addEventListener('click', () => setQuizMode(btn.dataset.quizMode));
-  });
+  document.querySelectorAll('[data-quiz-mode]').forEach(btn => btn.addEventListener('click', () => setQuizMode(btn.dataset.quizMode)));
+  document.querySelectorAll('[data-naming-count]').forEach(btn => btn.addEventListener('click', () => setNamingCount(btn.dataset.namingCount)));
 
   document.getElementById('mw-add-quiz-option')?.addEventListener('click', () => {
     const list = document.getElementById('mw-quiz-options');
@@ -208,11 +243,20 @@ function collectModules() {
   const bodyText = getBodyText();
 
   if (enabled('vote')) {
-    const question = bodyText;
     const options = [...document.querySelectorAll('.mw-vote-option')].map(i => i.value.trim()).filter(Boolean);
-    if (!question) throw new Error('본문에 투표/판정 질문이나 상황을 입력해주세요.');
+    if (!bodyText) throw new Error('본문에 투표/판정 질문이나 상황을 입력해주세요.');
     if (options.length < 2) throw new Error('투표 선택지를 2개 이상 입력해주세요.');
-    modules.vote = { enabled: true, question, options: options.map(text => ({ text, votes: 0 })) };
+    modules.vote = { enabled: true, question: bodyText, options: options.map(text => ({ text, votes: 0 })) };
+  }
+
+  if (enabled('ox')) {
+    if (!bodyText) throw new Error('본문에 OX판정 상황을 입력해주세요.');
+    modules.vote = { enabled: true, question: bodyText, options: [{ text: 'O', votes: 0 }, { text: 'X', votes: 0 }], ox: true };
+  }
+
+  if (enabled('fill')) {
+    if (!bodyText) throw new Error('본문에 채우기 문장을 입력해주세요.');
+    modules.fill = { enabled: true, prompt: bodyText };
   }
 
   if (enabled('naming')) {
@@ -226,9 +270,8 @@ function collectModules() {
   }
 
   if (enabled('quiz')) {
-    const question = bodyText;
     const mode = document.getElementById('mw-quiz-mode')?.value || 'subjective';
-    if (!question) throw new Error('본문에 퀴즈 문제를 입력해주세요.');
+    if (!bodyText) throw new Error('본문에 퀴즈 문제를 입력해주세요.');
 
     if (mode === 'multiple') {
       const rawOptions = [...document.querySelectorAll('.mw-quiz-option')].map(i => i.value.trim());
@@ -237,12 +280,17 @@ function collectModules() {
       const answer = rawOptions[correctIndex] || '';
       if (options.length < 2) throw new Error('객관식 선택지를 2개 이상 입력해주세요.');
       if (!answer.trim()) throw new Error('정답으로 선택한 객관식 선택지를 입력해주세요.');
-      modules.quiz = { enabled: true, mode: 'multiple', question, options: options.map(text => ({ text })), answer };
+      modules.quiz = { enabled: true, mode: 'multiple', question: bodyText, options: options.map(text => ({ text })), answer };
     } else {
       const answer = document.getElementById('mw-quiz-answer')?.value.trim() || '';
       if (!answer) throw new Error('정답을 입력해주세요.');
-      modules.quiz = { enabled: true, mode: 'subjective', question, answer };
+      modules.quiz = { enabled: true, mode: 'subjective', question: bodyText, answer };
     }
+  }
+
+  if (enabled('anonymous')) {
+    if (!bodyText) throw new Error('본문에 익명 내용을 입력해주세요.');
+    modules.anonymous = { enabled: true };
   }
 
   return modules;
@@ -259,6 +307,7 @@ async function submitMultiPost() {
 
   try {
     const modules = collectModules();
+    const isAnonymous = presetKey === 'anonymous';
     btn.disabled = true;
     btn.textContent = hasPendingImages() ? '사진 올리는 중...' : '올리는 중...';
     const images = await getUploadedImages();
@@ -274,9 +323,10 @@ async function submitMultiPost() {
       tags: splitTags(document.getElementById('mw-tags')?.value || ''),
       images,
       modules,
+      anonymous: isAnonymous,
       authorId: auth.currentUser.uid,
-      authorName: appState.nickname || auth.currentUser.displayName || '익명',
-      authorPhoto: auth.currentUser.photoURL || '',
+      authorName: isAnonymous ? '익명' : (appState.nickname || auth.currentUser.displayName || '익명'),
+      authorPhoto: isAnonymous ? '' : (auth.currentUser.photoURL || ''),
       authorEmail: auth.currentUser.email || '',
       reactions: { total: 0 },
       commentCount: 0,
