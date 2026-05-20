@@ -37,7 +37,8 @@ import { renderScraps }  from './pages/scraps.js';
 import { renderHall }    from './pages/hall.js';
 import { renderSosoland } from './pages/sosoland.js';
 import { renderLiarGame } from './pages/liar-game.js';
-import { renderGameDetail } from './pages/game-detail.js';
+import { renderMafiaGame } from './pages/mafia-game.js';
+import { renderMarbleGame } from './pages/marble-game.js';
 
 export { appState };
 
@@ -171,8 +172,10 @@ export async function initApp() {
   registerRoute('/sosoland',   () => renderSosoland());
   registerRoute('/game/liar',  () => renderLiarGame());
   registerRoute('/game/liar/:id', ({ id }) => renderLiarGame({ id }));
-  registerRoute('/game/mafia', () => renderGameDetail({ key: 'mafia' }));
-  registerRoute('/game/marble', () => renderGameDetail({ key: 'marble' }));
+  registerRoute('/game/mafia', () => renderMafiaGame());
+  registerRoute('/game/mafia/:id', ({ id }) => renderMafiaGame({ id }));
+  registerRoute('/game/marble', () => renderMarbleGame());
+  registerRoute('/game/marble/:id', ({ id }) => renderMarbleGame({ id }));
   registerRoute('/detail/:id', ({ id }) => renderDetail(id));
   registerRoute('/account',    () => renderAccount());
   registerRoute('/scraps',     () => renderScraps());
