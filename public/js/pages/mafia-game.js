@@ -141,8 +141,12 @@ function bindRoomEvents() {
 
 async function handleCopyInvite() {
   const url = buildGameInviteUrl('mafia', currentRoom.id);
-  await navigator.clipboard?.writeText(url);
-  toast.success('초대 링크를 복사했어요');
+  try {
+    await navigator.clipboard.writeText(url);
+    toast.success('초대 링크를 복사했어요');
+  } catch {
+    toast.error('클립보드 복사에 실패했습니다. 직접 복사해주세요: ' + url);
+  }
 }
 
 async function handleJoinRoom() {

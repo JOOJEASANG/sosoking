@@ -81,18 +81,21 @@ const deleteOwnPost = onCall({ region: REGION, timeoutSeconds: 120, memory: '512
   counts.viewEvents = await deleteDocsInCollection(`feeds/${postId}/view_events`);
   counts.secret = await deleteDocsInCollection(`feeds/${postId}/secret`);
 
-  const scrapSnap = await db.collectionGroup('scraps')
-    .where('postId', '==', postId)
-    .limit(300)
-    .get()
-    .catch(() => null);
-  if (scrapSnap && !scrapSnap.empty) {
+  // BUG-013: 스크랩이 300건을 초과할 경우 모두 삭제하도록 페이지네이션 루프 처리
+  let scrapLastDoc = null;
+  let scrapHasMore = true;
+  counts.scraps = 0;
+  while (scrapHasMore) {
+    let scrapQuery = db.collectionGroup('scraps').where('postId', '==', postId).limit(300);
+    if (scrapLastDoc) scrapQuery = scrapQuery.startAfter(scrapLastDoc);
+    const scrapSnap = await scrapQuery.get().catch(() => null);
+    if (!scrapSnap || scrapSnap.empty) break;
     const batch = db.batch();
     scrapSnap.docs.forEach(docSnap => batch.delete(docSnap.ref));
     await batch.commit();
-    counts.scraps = scrapSnap.size;
-  } else {
-    counts.scraps = 0;
+    counts.scraps += scrapSnap.size;
+    scrapLastDoc = scrapSnap.docs[scrapSnap.docs.length - 1];
+    scrapHasMore = scrapSnap.size === 300;
   }
 
   await db.collection('deleted_posts').doc(postId).set({

@@ -4,6 +4,7 @@ import { makeRoomCode, gamePlayerName } from '../common.js';
 import { assignRoles, judgeAfterElimination, topVoteTarget } from './rules.js';
 
 export async function createMafiaRoom({ title, maxPlayers, mafiaCount }) {
+  if (!auth.currentUser) throw new Error('로그인이 필요합니다.');
   const room = {
     game: 'mafia',
     status: 'waiting',
@@ -44,6 +45,9 @@ export async function joinMafiaRoom(room, currentCount) {
 }
 
 export async function startMafiaGame(room) {
+  const uid = auth.currentUser?.uid;
+  if (!uid) throw new Error('로그인이 필요합니다.');
+  if (room.hostId !== uid) throw new Error('호스트만 이 작업을 수행할 수 있습니다.');
   const playersSnap = await getDocs(query(collection(db, 'game_rooms', room.id, 'players'), orderBy('joinedAt', 'asc')));
   const players = playersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
   if (players.length < 3) throw new Error('마피아게임은 3명 이상부터 추천해요');
@@ -69,6 +73,9 @@ export async function voteMafia(roomId, targetUid) {
 }
 
 export async function countMafiaVote(room, players) {
+  const uid = auth.currentUser?.uid;
+  if (!uid) throw new Error('로그인이 필요합니다.');
+  if (room.hostId !== uid) throw new Error('호스트만 이 작업을 수행할 수 있습니다.');
   const voteResult = topVoteTarget(players);
   if (voteResult.status === 'empty') throw new Error('아직 투표가 없습니다');
 
@@ -92,6 +99,7 @@ export async function countMafiaVote(room, players) {
 
   await updateDoc(roomRef, {
     status: judged.status,
+    phase: judged.status === 'ended' ? 'ended' : 'day',
     day: Number(room.day || 1) + 1,
     log,
     updatedAt: serverTimestamp(),
@@ -101,6 +109,7 @@ export async function countMafiaVote(room, players) {
 export async function clearMafiaVotes(room, players, log) {
   await Promise.all(players.map(p => setDoc(doc(db, 'game_rooms', room.id, 'players', p.uid), { votedFor: '' }, { merge: true })));
   await updateDoc(doc(db, 'game_rooms', room.id), {
+    phase: 'day',
     day: Number(room.day || 1) + 1,
     log,
     updatedAt: serverTimestamp(),
@@ -108,6 +117,9 @@ export async function clearMafiaVotes(room, players, log) {
 }
 
 export async function resetMafiaGame(room, players) {
+  const uid = auth.currentUser?.uid;
+  if (!uid) throw new Error('로그인이 필요합니다.');
+  if (room.hostId !== uid) throw new Error('호스트만 이 작업을 수행할 수 있습니다.');
   await Promise.all(players.map(p => setDoc(doc(db, 'game_rooms', room.id, 'players', p.uid), {
     assignedRole: '',
     alive: true,

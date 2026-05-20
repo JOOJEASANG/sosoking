@@ -24,11 +24,13 @@ export async function registerNickname(nickname) {
   const user = auth.currentUser;
   if (!user) throw new Error('로그인이 필요해요');
 
+  // NOTE: TOCTOU race condition 가능. 실제 중복 방지는 Firestore Rules의 create 조건으로 처리.
+  // 동시 등록 시도가 매우 드물고, 규칙에서 최종 방어.
   const exists = await getDoc(doc(db, 'nicknames', nickname));
   if (exists.exists() && exists.data().uid !== user.uid) {
     throw new Error('이미 사용 중인 닉네임이에요');
   }
 
-  await setDoc(doc(db, 'nicknames', nickname), { uid: user.uid, createdAt: serverTimestamp() });
+  await setDoc(doc(db, 'nicknames', nickname), { uid: user.uid, createdAt: serverTimestamp() }, { merge: false });
   await saveUserProfile(user.uid, { nickname });
 }

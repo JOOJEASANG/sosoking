@@ -32,10 +32,14 @@ const TYPE_LABEL = {
   relay:'막장릴레이', anonymous:'일반글', balance:'투표/판정', battle:'투표/판정',
 };
 
+function getKstDateString(date = new Date()) {
+  return new Date(date.getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
 async function checkStreak(uid) {
   try {
-    const today = new Date().toISOString().slice(0, 10);
-    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    const today = getKstDateString();
+    const yesterday = getKstDateString(new Date(Date.now() - 86400000));
     const userRef = doc(db, 'users', uid);
     const snap = await getDoc(userRef);
     if (!snap.exists()) return;

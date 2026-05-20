@@ -63,7 +63,8 @@ export function initReactionBar(postId) {
           adjustCount(btn, -1);
 
         } else if (currentKey) {
-          // 다른 반응으로 변경
+          // 다른 반응으로 변경 (교체)
+          // reactions.total은 업데이트하지 않음 — 총 반응 수가 변하지 않는 교체이므로 의도된 동작
           await updateDoc(postRef, {
             [`reactions.${currentKey}`]: increment(-1),
             [`reactions.${key}`]:        increment(1),

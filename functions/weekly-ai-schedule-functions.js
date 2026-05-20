@@ -211,6 +211,7 @@ const weeklyMissionSchedule = { schedule: '5 8 * * 1', timeZone: 'Asia/Seoul', r
 
 module.exports = {
   dailyAiContent: onSchedule(weeklySchedule, async () => { await weeklyAiContentJob(); }),
+  // A-03: scheduledDailyMission은 dailyAiMission과 동일한 cron('5 8 * * 1')으로
+  // 중복 등록되어 있어 제거합니다. dailyAiMission이 최신 버전입니다.
   dailyAiMission: onSchedule(weeklyMissionSchedule, async () => { await weeklyAiMissionJob(); }),
-  scheduledDailyMission: onSchedule(weeklyMissionSchedule, async () => { await weeklyAiMissionJob({ actorId: 'legacy-weekly-scheduler' }); }),
 };

@@ -35,6 +35,11 @@ const normalizePostView = onCall({ region: REGION, timeoutSeconds: 30, memory: '
   const visitRef = postRef.collection('view_events').doc(visitId);
   const viewerRef = postRef.collection('viewers').doc(`${day}_${visitor}`);
 
+  // BUG-006: isAdmin은 트랜잭션 외부에서 먼저 조회합니다.
+  // 트랜잭션 콜백 내부에서 외부 Firestore 조회를 호출하면 재시도 시 중복 읽기 및
+  // 일관성 문제가 생길 수 있으므로 트랜잭션 시작 전에 처리합니다.
+  const admin = await isAdmin(uid);
+
   return db.runTransaction(async tx => {
     const [postSnap, visitSnap, viewerSnap] = await Promise.all([
       tx.get(postRef),
@@ -45,7 +50,6 @@ const normalizePostView = onCall({ region: REGION, timeoutSeconds: 30, memory: '
     if (!postSnap.exists) throw new HttpsError('not-found', '게시글을 찾을 수 없습니다.');
     if (visitSnap.exists) return visitSnap.data();
 
-    const admin = await isAdmin(uid);
     const duplicate = viewerSnap.exists;
     const shouldRollback = admin || duplicate;
 

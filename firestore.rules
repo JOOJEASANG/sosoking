@@ -73,12 +73,12 @@ service cloud.firestore {
         && request.resource.data.votedBy.size() == resource.data.get('votedBy', []).size() + 1;
     }
     function isSafeMultiVoteUpdate() {
-      let changed = request.resource.data.diff(resource.data).affectedKeys();
-      return signedIn()
-        && resource.data.type == 'multi'
-        && changed.hasOnly(['modules'])
-        && request.resource.data.authorId == resource.data.authorId
-        && request.resource.data.type == resource.data.type;
+      // BUG-004: modules 전체 교체를 클라이언트에서 허용하면 안 됩니다.
+      // modules 내부의 vote count 등 구체적인 경로 업데이트는
+      // Cloud Function(서버)에서만 처리합니다.
+      // 클라이언트에서 changed.hasOnly(['modules'])를 허용하면
+      // authorId/type이 유지되더라도 modules 객체 전체를 교체할 수 있어 위험합니다.
+      return false;
     }
     function isAuthorContentUpdate(authorId) {
       let changed = request.resource.data.diff(resource.data).affectedKeys();

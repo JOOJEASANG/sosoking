@@ -17,6 +17,7 @@ export function voteCounts(players) {
 }
 
 export function assignRoles(players, mafiaCount) {
+  if (players.length < 3) throw new Error('마피아게임은 최소 3명이 필요합니다.');
   const safeMafiaCount = Math.min(Number(mafiaCount || 1), Math.max(1, players.length - 2));
   return shuffle([
     ...Array(safeMafiaCount).fill('mafia'),
@@ -39,7 +40,7 @@ export function judgeAfterElimination(players, targetUid) {
       : { ...p, votedFor: '' }
   ));
   const mafiaAlive = nextPlayers.filter(p => p.alive !== false && p.assignedRole === 'mafia').length;
-  const citizenAlive = nextPlayers.filter(p => p.alive !== false && p.assignedRole !== 'mafia').length;
+  const citizenAlive = nextPlayers.filter(p => p.alive !== false && p.assignedRole === 'citizen').length;
 
   if (mafiaAlive === 0) return { status: 'ended', winner: 'citizen', nextPlayers };
   if (mafiaAlive >= citizenAlive) return { status: 'ended', winner: 'mafia', nextPlayers };
