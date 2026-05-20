@@ -1,30 +1,27 @@
 import { navigate } from '../router.js';
 import { escHtml, formatTime } from '../utils/helpers.js';
 
-/* 카테고리/유형 메타 */
 const TYPE_META = {
   multi:        { cat: 'multi', catLabel: '만능', icon: '🧩', label: '만능 놀이글' },
+  general:      { cat: 'multi', catLabel: '피드', icon: '📝', label: '일반글' },
+  fill:         { cat: 'multi', catLabel: '만능', icon: '🧩', label: '빈줄 채우기' },
+  anonymous:    { cat: 'multi', catLabel: '만능', icon: '🕶️', label: '익명' },
   balance:      { cat: 'golra', catLabel: '대표 놀이', icon: '🗳️', label: '골라봐' },
-  vote:         { cat: 'golra', catLabel: '대표 놀이', icon: '🗳️', label: '골라봐' },
+  vote:         { cat: 'golra', catLabel: '대표 놀이', icon: '🗳️', label: '투표/판정' },
   battle:       { cat: 'golra', catLabel: '대표 놀이', icon: '🗳️', label: '골라봐' },
-  challenge24:  { cat: 'golra', catLabel: '구형', icon: '⏰', label: '24시간챌린지' },
-  tournament:   { cat: 'golra', catLabel: '구형', icon: '🏆', label: '이상형월드컵' },
   naming:       { cat: 'usgyo', catLabel: '대표 놀이', icon: '😜', label: '미친작명소' },
   initial_game: { cat: 'golra', catLabel: '대표 놀이', icon: '🔤', label: '초성게임' },
-  acrostic:     { cat: 'malhe', catLabel: '대표 놀이', icon: '✍️', label: '삼행시짓기' },
+  acrostic:     { cat: 'malhe', catLabel: '대표 놀이', icon: '✍️', label: '삼행시' },
   drip:         { cat: 'usgyo', catLabel: '대표 놀이', icon: '🎤', label: '한줄드립' },
-  cbattle:      { cat: 'usgyo', catLabel: '구형', icon: '💥', label: '댓글배틀' },
-  laugh:        { cat: 'usgyo', catLabel: '구형', icon: '🙈', label: '웃참챌린지' },
-  ox:           { cat: 'malhe', catLabel: '구형', icon: '❓', label: 'OX퀴즈' },
+  ox:           { cat: 'malhe', catLabel: '대표 놀이', icon: '⭕', label: 'OX판정' },
   quiz:         { cat: 'malhe', catLabel: '대표 놀이', icon: '🧠', label: '미친퀴즈' },
   crazy_court:  { cat: 'malhe', catLabel: '대표 놀이', icon: '⚖️', label: '억까재판' },
   relay:        { cat: 'malhe', catLabel: '대표 놀이', icon: '🎭', label: '막장릴레이' },
-  word_relay:   { cat: 'malhe', catLabel: '구형', icon: '🔗', label: '단어릴레이' },
   random_battle:{ cat: 'golra', catLabel: '대표 놀이', icon: '🎰', label: '랜덤대결' },
-  howto:   { cat: 'malhe', catLabel: '구형', icon: '💡', label: '노하우' },
-  story:   { cat: 'malhe', catLabel: '구형', icon: '📖', label: '경험담' },
-  fail:    { cat: 'malhe', catLabel: '구형', icon: '💀', label: '실패담' },
-  concern: { cat: 'malhe', catLabel: '구형', icon: '🤔', label: '고민/질문' },
+  howto:        { cat: 'malhe', catLabel: '구형', icon: '💡', label: '노하우' },
+  story:        { cat: 'malhe', catLabel: '구형', icon: '📖', label: '경험담' },
+  fail:         { cat: 'malhe', catLabel: '구형', icon: '💀', label: '실패담' },
+  concern:      { cat: 'malhe', catLabel: '구형', icon: '🤔', label: '고민/질문' },
 };
 
 function escAttr(value) {
@@ -52,10 +49,33 @@ function safeTag(value) {
   return escHtml(String(value || '').replace(/^#/, '').trim().slice(0, 24));
 }
 
+function getMultiSubtype(post) {
+  if (post.subtype && TYPE_META[post.subtype]) return post.subtype;
+  if (post.anonymous || post.modules?.anonymous?.enabled) return 'anonymous';
+  if (post.modules?.vote?.ox) return 'ox';
+  if (post.modules?.fill?.enabled) return 'fill';
+  if (post.modules?.vote?.enabled) return 'vote';
+  if (post.modules?.naming?.enabled) return 'naming';
+  if (post.modules?.acrostic?.enabled) return 'acrostic';
+  if (post.modules?.relay?.enabled) return 'relay';
+  if (post.modules?.quiz?.enabled) return 'quiz';
+  return 'general';
+}
+
+function getTypeMeta(post) {
+  if (post.type === 'multi') {
+    const subtype = getMultiSubtype(post);
+    return TYPE_META[subtype] || TYPE_META.multi;
+  }
+  return TYPE_META[post.type] || { cat: 'malhe', catLabel: '', icon: '📝', label: post.type || '글' };
+}
+
 function renderModuleChips(post) {
   if (post.type !== 'multi' || !post.modules) return '';
   const labels = [];
-  if (post.modules.vote?.enabled) labels.push('투표');
+  if (post.modules.vote?.ox) labels.push('OX');
+  else if (post.modules.vote?.enabled) labels.push('투표');
+  if (post.modules.fill?.enabled) labels.push(`빈칸 ${Number(post.modules.fill.charCount || post.modules.fill.blankCount || 0) || ''}칸`.trim());
   if (post.modules.naming?.enabled) labels.push('작명');
   if (post.modules.acrostic?.enabled) labels.push('삼행시');
   if (post.modules.relay?.enabled) labels.push('릴레이');
@@ -65,13 +85,12 @@ function renderModuleChips(post) {
 }
 
 export function renderFeedCard(post) {
-  const meta = TYPE_META[post.type] || { cat: 'malhe', catLabel: '', icon: '📝', label: post.type || '글' };
+  const meta = getTypeMeta(post);
   const images = getSafeImages(post.images);
   const timeStr = formatTime(post.createdAt?.toDate?.() || post.createdAt);
   const reactions = post.reactions || {};
   const totalReactions = reactions.total || 0;
   const commentCount = post.commentCount || 0;
-
   const viewCount = post.viewCount || 0;
   const temp = Math.min(100, Math.round((totalReactions * 2 + commentCount * 3) / 2));
   const tempColor = temp >= 70 ? '#FF4422' : temp >= 40 ? '#FF8800' : temp >= 20 ? '#FFAA00' : '#4F8EF7';
