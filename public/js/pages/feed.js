@@ -1,13 +1,13 @@
 import { db } from '../firebase.js';
-import { collection, query, orderBy, limit, getDocs, where } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { collection, query, orderBy, limit, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { getQueryParams, navigate } from '../router.js';
 import { renderFeedCard, renderSkeletonCards } from '../components/feed-card.js';
 import { setMeta } from '../utils/seo.js';
-import { normalizeFeedSort, postMatchesType, sortFeedPosts } from '../feed/filter.js';
-import { renderFeedSearchBar, renderFeedFilterBar, renderFeedEmptyState, updateFeedFilterUI } from '../feed/render.js';
+import { normalizeFeedSort, postMatchesType, postMatchesSearch, sortFeedPosts } from '../feed/filter.js';
+import { renderFeedSearchBar, renderFeedFilterBar, renderFeedEmptyState, updateFeedFilterUI, renderFeedSummary } from '../feed/render.js';
 
 const PAGE_SIZE = 10;
-const FETCH_LIMIT = 200;
+const FETCH_LIMIT = 300;
 
 let currentType = '';
 let currentSearch = '';
@@ -30,6 +30,7 @@ export async function renderFeed() {
     <div class="layout-main layout-main--full feed-page-clean">
       ${renderFeedSearchBar({ search: currentSearch })}
       ${renderFeedFilterBar({ type: currentType, search: currentSearch, sort: currentSort })}
+      <div id="feed-summary" class="feed-result-summary"></div>
       <div id="feed-list">${renderSkeletonCards(5)}</div>
       <div id="feed-pagination" class="feed-pagination"></div>
       <div id="feed-loader" class="loading-center" style="display:none"><div class="spinner"></div></div>
@@ -106,10 +107,6 @@ function updateUrlState() {
 }
 
 function buildQueryConstraints() {
-  if (currentSearch) {
-    const qEnd = currentSearch.slice(0, -1) + String.fromCharCode(currentSearch.charCodeAt(currentSearch.length - 1) + 1);
-    return [where('title', '>=', currentSearch), where('title', '<', qEnd), orderBy('title'), limit(FETCH_LIMIT)];
-  }
   return [orderBy('createdAt', 'desc'), limit(FETCH_LIMIT)];
 }
 
@@ -127,6 +124,7 @@ async function loadPosts() {
       snap.docs
         .map(d => ({ id: d.id, ...d.data() }))
         .filter(post => !post.hidden)
+        .filter(post => postMatchesSearch(post, currentSearch))
         .filter(post => currentSearch ? true : postMatchesType(post, currentType)),
       currentSort,
     );
@@ -142,11 +140,16 @@ async function loadPosts() {
 
 function renderCurrentPage() {
   const listEl = document.getElementById('feed-list');
+  const summaryEl = document.getElementById('feed-summary');
   if (!listEl) return;
   const totalPages = Math.max(1, Math.ceil(cachedPosts.length / PAGE_SIZE));
   currentPage = Math.min(Math.max(1, currentPage), totalPages);
   const start = (currentPage - 1) * PAGE_SIZE;
   const pagePosts = cachedPosts.slice(start, start + PAGE_SIZE);
+
+  if (summaryEl) {
+    summaryEl.innerHTML = renderFeedSummary({ total: cachedPosts.length, page: currentPage, totalPages, search: currentSearch, type: currentType, sort: currentSort });
+  }
 
   if (!pagePosts.length) listEl.innerHTML = renderFeedEmptyState({ search: currentSearch });
   else listEl.innerHTML = pagePosts.map(post => renderFeedCard(post)).join('');
@@ -162,7 +165,7 @@ function renderPagination(totalPages) {
     el.innerHTML = '';
     return;
   }
-  const start = Math.max(1, Math.min(currentPage - 2, totalPages - 4));
+  const start = Math.max(1, Math.min(currentPage - 2, Math.max(1, totalPages - 4)));
   const end = Math.min(totalPages, start + 4);
   el.innerHTML = `
     <button class="feed-page-btn" data-feed-page="prev" ${currentPage <= 1 ? 'disabled' : ''}>이전</button>
