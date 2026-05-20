@@ -6,6 +6,8 @@ const MODULE_LABELS = {
   vote: '투표/판정',
   naming: '미친작명소',
   acrostic: '삼행시',
+  fill: '빈칸 채우기',
+  relay: '릴레이',
   quiz: '퀴즈',
 };
 
@@ -15,11 +17,13 @@ function getDetailId() {
 }
 
 function detectSubtype(post) {
-  if (post.subtype) return post.subtype;
+  if (post.subtype && MODULE_LABELS[post.subtype]) return post.subtype;
   const modules = post.modules || {};
   if (modules.vote?.enabled) return 'vote';
   if (modules.naming?.enabled) return 'naming';
   if (modules.acrostic?.enabled) return 'acrostic';
+  if (modules.fill?.enabled) return 'fill';
+  if (modules.relay?.enabled) return 'relay';
   if (modules.quiz?.enabled) return 'quiz';
   return 'general';
 }
@@ -30,6 +34,8 @@ function hasInteractiveModule(post) {
     modules.vote?.enabled ||
     modules.naming?.enabled ||
     modules.acrostic?.enabled ||
+    modules.fill?.enabled ||
+    modules.relay?.enabled ||
     modules.quiz?.enabled
   );
 }
@@ -62,18 +68,9 @@ async function cleanupMultiDetail() {
     const desc = root?.querySelector('.multi-detail-root__desc');
     if (desc) desc.textContent = '이 글 형식에 맞는 참여 기능입니다.';
 
-    root?.querySelector('[data-multi-module="relay"]')?.remove();
-
     root?.querySelectorAll('.multi-detail-module').forEach(module => {
       const kind = module.dataset.multiModule;
-      if (
-        (kind === 'vote' && subtype !== 'vote') ||
-        (kind === 'naming' && subtype !== 'naming') ||
-        (kind === 'acrostic' && subtype !== 'acrostic') ||
-        (kind === 'quiz' && subtype !== 'quiz')
-      ) {
-        module.remove();
-      }
+      if (kind && kind !== subtype) module.remove();
     });
   } catch (error) {
     console.warn('[multi-detail-cleanup] failed', error);
