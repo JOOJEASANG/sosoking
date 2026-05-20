@@ -7,10 +7,10 @@ import { initImageUploader, getUploadedImages, hasPendingImages } from './compon
 
 const PRESETS = {
   general: { label: '일반글', icon: '📝', titlePlaceholder: '예: 오늘 있었던 웃긴 일', descPlaceholder: '글, 사진, 질문, 상황 설명 등을 자유롭게 적어보세요.', tagsPlaceholder: '#일상, #피드, #소소킹' },
-  vote: { label: '투표/판정', icon: '🗳️', titlePlaceholder: '예: 여러분의 판정은?', descPlaceholder: '상황을 적고 사람들의 선택이나 판정을 받아보세요.', tagsPlaceholder: '#투표, #판정', voteQuestionPlaceholder: '예: 이 상황 어떻게 생각하세요?', voteOptionPlaceholders: ['그렇다', '아니다'] },
+  vote: { label: '투표/판정', icon: '🗳️', titlePlaceholder: '예: 여러분의 판정은?', descPlaceholder: '투표/판정받을 질문이나 상황을 본문에 적어주세요.', tagsPlaceholder: '#투표, #판정', voteOptionPlaceholders: ['그렇다', '아니다'] },
   naming: { label: '미친작명소', icon: '😜', titlePlaceholder: '예: 이 사진 이름 좀 지어줘', descPlaceholder: '사진이나 상황에 어울리는 웃긴 이름을 받아보세요.', tagsPlaceholder: '#작명, #미친작명소' },
   acrostic: { label: '삼행시', icon: '✍️', titlePlaceholder: '예: 삼행시 도전', descPlaceholder: '제시어를 넣고 사람들이 한 줄씩 완성하게 해보세요.', tagsPlaceholder: '#삼행시, #제시어', acrosticPlaceholder: '예: 소소킹' },
-  quiz: { label: '퀴즈', icon: '🧠', titlePlaceholder: '예: 퀴즈 도전', descPlaceholder: '주관식 또는 객관식 문제를 내고 사람들이 정답을 맞히게 해보세요.', tagsPlaceholder: '#퀴즈, #문제', quizQuestionPlaceholder: '예: 소소킹의 첫 글자는?', quizAnswerPlaceholder: '예: 소' },
+  quiz: { label: '퀴즈', icon: '🧠', titlePlaceholder: '예: 퀴즈 도전', descPlaceholder: '맞혀야 할 문제를 본문에 적어주세요.', tagsPlaceholder: '#퀴즈, #문제', quizAnswerPlaceholder: '예: 소' },
 };
 
 function esc(value) {
@@ -66,8 +66,8 @@ function renderSelectedModule(activeKey, preset) {
   }
 
   if (activeKey === 'vote') {
-    return moduleCard('vote', '🗳️', '투표/판정', '질문과 선택지를 입력하면 다른 사용자가 투표할 수 있습니다.', `
-      <div class="form-group"><label class="form-label">질문 <span class="required">*</span></label><input id="mw-vote-question" class="form-input" maxlength="100" placeholder="${esc(preset.voteQuestionPlaceholder)}"></div>
+    return moduleCard('vote', '🗳️', '투표/판정', '본문에 적은 질문/상황을 기준으로 선택지만 입력합니다.', `
+      <div class="multi-module-inline-note">질문이나 상황 설명은 위 <b>본문</b>에 적어주세요.</div>
       <div class="multi-option-list" id="mw-vote-options">${preset.voteOptionPlaceholders.map((v, i) => `<input class="form-input mw-vote-option" maxlength="80" placeholder="선택지 ${i + 1} · 예: ${esc(v)}">`).join('')}</div>
       <button class="btn btn--ghost btn--sm" type="button" id="mw-add-vote-option">+ 선택지 추가</button>`);
   }
@@ -83,16 +83,16 @@ function renderSelectedModule(activeKey, preset) {
   }
 
   if (activeKey === 'quiz') {
-    return moduleCard('quiz', '🧠', '퀴즈', '주관식 또는 객관식 문제를 만들 수 있습니다.', `
+    return moduleCard('quiz', '🧠', '퀴즈', '본문에 적은 문제를 기준으로 정답 기능만 설정합니다.', `
+      <div class="multi-module-inline-note">문제는 위 <b>본문</b>에 적어주세요.</div>
       <div class="form-group">
         <label class="form-label">퀴즈 방식 <span class="required">*</span></label>
         <select id="mw-quiz-mode" class="form-select"><option value="subjective">주관식</option><option value="multiple">객관식</option></select>
       </div>
-      <div class="form-group"><label class="form-label">문제 <span class="required">*</span></label><input id="mw-quiz-question" class="form-input" maxlength="160" placeholder="${esc(preset.quizQuestionPlaceholder)}"></div>
       <div id="mw-quiz-subjective-box" class="form-group"><label class="form-label">정답 <span class="required">*</span></label><input id="mw-quiz-answer" class="form-input" maxlength="80" placeholder="${esc(preset.quizAnswerPlaceholder)}"></div>
       <div id="mw-quiz-multiple-box" style="display:none">
         <div class="form-group">
-          <label class="form-label">객관식 선택지 <span class="required">*</span></label>
+          <label class="form-label">객관식 선택지와 정답 <span class="required">*</span></label>
           <div class="multi-option-list" id="mw-quiz-options">${renderQuizOptionRows(2)}</div>
           <button class="btn btn--ghost btn--sm" type="button" id="mw-add-quiz-option">+ 선택지 추가</button>
         </div>
@@ -108,6 +108,8 @@ function renderMultiWrite() {
   const renderKey = window.location.hash || '#/write?type=multi';
   const presetKey = getPresetKey();
   const preset = PRESETS[presetKey] || PRESETS.general;
+  const bodyRequired = presetKey === 'vote' || presetKey === 'quiz';
+  const bodyLabel = presetKey === 'vote' ? '본문 · 질문/상황' : presetKey === 'quiz' ? '본문 · 문제' : '본문';
 
   el.innerHTML = `
     <div class="write-page multi-write-page" data-render-key="${esc(renderKey)}">
@@ -116,7 +118,7 @@ function renderMultiWrite() {
       <div class="card">
         <div class="card__body--lg">
           <div class="form-group"><label class="form-label">제목 <span class="required">*</span></label><input id="mw-title" class="form-input" maxlength="100" placeholder="${esc(preset.titlePlaceholder)}"></div>
-          <div class="form-group"><label class="form-label">본문</label><textarea id="mw-desc" class="form-textarea" rows="4" maxlength="2000" placeholder="${esc(preset.descPlaceholder)}"></textarea></div>
+          <div class="form-group"><label class="form-label">${bodyLabel}${bodyRequired ? ' <span class="required">*</span>' : ''}</label><textarea id="mw-desc" class="form-textarea" rows="4" maxlength="2000" placeholder="${esc(preset.descPlaceholder)}"></textarea></div>
           <div class="form-group"><label class="form-label">사진</label><div id="mw-img-uploader"></div><div class="form-hint">사진 개수 제한 없이 올릴 수 있어요.</div></div>
           <div class="form-group"><label class="form-label">태그</label><input id="mw-tags" class="form-input" maxlength="100" placeholder="${esc(preset.tagsPlaceholder)}"></div>
           <div class="multi-module-list multi-module-list--selected">${renderSelectedModule(presetKey, preset)}</div>
@@ -181,13 +183,18 @@ function splitTags(raw) {
   return String(raw || '').split(',').map(t => t.replace('#', '').trim()).filter(Boolean).slice(0, 8);
 }
 
+function getBodyText() {
+  return document.getElementById('mw-desc')?.value.trim() || '';
+}
+
 function collectModules() {
   const modules = { comments: { enabled: true } };
+  const bodyText = getBodyText();
 
   if (enabled('vote')) {
-    const question = document.getElementById('mw-vote-question')?.value.trim() || '';
+    const question = bodyText;
     const options = [...document.querySelectorAll('.mw-vote-option')].map(i => i.value.trim()).filter(Boolean);
-    if (!question) throw new Error('투표/판정 질문을 입력해주세요.');
+    if (!question) throw new Error('본문에 투표/판정 질문이나 상황을 입력해주세요.');
     if (options.length < 2) throw new Error('투표 선택지를 2개 이상 입력해주세요.');
     modules.vote = { enabled: true, question, options: options.map(text => ({ text, votes: 0 })) };
   }
@@ -203,9 +210,9 @@ function collectModules() {
   }
 
   if (enabled('quiz')) {
-    const question = document.getElementById('mw-quiz-question')?.value.trim() || '';
+    const question = bodyText;
     const mode = document.getElementById('mw-quiz-mode')?.value || 'subjective';
-    if (!question) throw new Error('문제를 입력해주세요.');
+    if (!question) throw new Error('본문에 퀴즈 문제를 입력해주세요.');
 
     if (mode === 'multiple') {
       const rawOptions = [...document.querySelectorAll('.mw-quiz-option')].map(i => i.value.trim());
@@ -231,6 +238,7 @@ async function submitMultiPost() {
   const title = document.getElementById('mw-title')?.value.trim() || '';
   const presetKey = getPresetKey();
   const preset = PRESETS[presetKey] || PRESETS.general;
+  const desc = getBodyText();
   if (!title) { toast.error('제목을 입력해주세요.'); return; }
 
   try {
@@ -246,7 +254,7 @@ async function submitMultiPost() {
       subtype: presetKey,
       typeLabel: preset.label,
       title,
-      desc: document.getElementById('mw-desc')?.value.trim() || '',
+      desc,
       tags: splitTags(document.getElementById('mw-tags')?.value || ''),
       images,
       modules,
