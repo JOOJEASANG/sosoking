@@ -7,7 +7,7 @@ import { initImageUploader, getUploadedImages, hasPendingImages } from './compon
 import { awardPoints } from './utils/points.js';
 import { MULTI_PRESETS, getMultiPresetFromHash } from './multi-write/presets.js';
 import { renderMultiWriteHTML, renderQuizOptionRow } from './multi-write/render.js';
-import { collectMultiModules, getBodyText, splitTags } from './multi-write/collect.js';
+import { collectMultiModules, getBodyText, splitTags, isAnonymousWriteChecked } from './multi-write/collect.js';
 
 function isMultiQuery() {
   return /[?&]type=multi\b/.test(window.location.hash || '');
@@ -125,7 +125,7 @@ async function submitMultiPost() {
 
   try {
     const modules = collectMultiModules();
-    const isAnonymous = presetKey === 'anonymous';
+    const isAnonymous = presetKey === 'general' && isAnonymousWriteChecked();
     btn.disabled = true;
     btn.textContent = hasPendingImages() ? '사진 올리는 중...' : '올리는 중...';
 
@@ -143,6 +143,7 @@ async function submitMultiPost() {
       images,
       modules,
       anonymous: isAnonymous,
+      anonymousMode: isAnonymous ? 'general-option' : '',
       authorId: auth.currentUser.uid,
       authorName: isAnonymous ? '익명' : (appState.nickname || auth.currentUser.displayName || '익명'),
       authorPhoto: isAnonymous ? '' : (auth.currentUser.photoURL || ''),
