@@ -9,6 +9,7 @@ import { currentDetailPostId, isDetailPath, stopDetailEvent } from './detail/act
 import { toggleScrap, reportPost } from './detail/post-actions.js';
 import { voteLegacyPost, showVoteToast, renderLegacyVoteOptions, renderLegacyBattleVs } from './detail/vote-actions.js';
 import { checkLegacyQuiz } from './detail/quiz-actions.js';
+import { submitDetailComment, submitCharParticipation, submitCbattleComment, submitAcrosticEntry, getSelectedCbattleSide, bindCbattleSideButtons } from './detail/submit-actions.js';
 
 function currentPostId() {
   return currentDetailPostId();
@@ -24,7 +25,17 @@ async function getCurrentPostSummary() {
   const snap = await getDoc(doc(db, 'feeds', id)).catch(() => null);
   if (!snap?.exists?.()) return { id };
   const data = snap.data();
-  return { id, title: data.title || '', desc: data.desc || '', images: data.images || [], type: data.type || '', answer: data.answer, answerIdx: data.answerIdx, explanation: data.explanation || '' };
+  return {
+    id,
+    title: data.title || '',
+    desc: data.desc || '',
+    images: data.images || [],
+    type: data.type || '',
+    answer: data.answer,
+    answerIdx: data.answerIdx,
+    explanation: data.explanation || '',
+    keyword: data.keyword || '',
+  };
 }
 
 async function handleScrap(event) {
@@ -126,6 +137,92 @@ async function handleShortQuiz(event) {
   if (input) input.disabled = true;
   const post = await getCurrentPostSummary();
   await checkLegacyQuiz(currentPostId(), answer, String(post?.answer || '') === answer, post?.explanation || '');
+  return true;
+}
+
+async function handleCbattleSide(event) {
+  const btn = event.target.closest?.('.cbattle-side-btn');
+  if (!btn || !isDetailPath()) return false;
+  stop(event);
+  document.querySelectorAll('.cbattle-side-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  return true;
+}
+
+async function handleCommentSubmit(event) {
+  const btn = event.target.closest?.('#btn-comment');
+  if (!btn || !isDetailPath()) return false;
+  stop(event);
+  if (btn._detailPending) return true;
+
+  const input = document.getElementById('comment-input');
+  const text = input?.value.trim() || '';
+  if (!text) {
+    toast.warn('내용을 입력해주세요');
+    return true;
+  }
+
+  btn._detailPending = true;
+  try {
+    const post = await getCurrentPostSummary();
+    if (post?.type === 'cbattle') await submitCbattleComment(currentPostId(), text, getSelectedCbattleSide());
+    else await submitDetailComment(currentPostId(), { text });
+    if (input) input.value = '';
+    toast.success('등록됐어요! 🎉');
+    window.dispatchEvent(new Event('hashchange'));
+  } catch (error) {
+    toast.error(error.message || '등록에 실패했어요');
+  }
+  btn._detailPending = false;
+  return true;
+}
+
+async function handleCharSubmit(event) {
+  const btn = event.target.closest?.('#btn-char-submit');
+  if (!btn || !isDetailPath()) return false;
+  stop(event);
+  if (btn._detailPending) return true;
+
+  const freeInput = document.getElementById('free-naming-input');
+  const boxes = [...document.querySelectorAll('.char-box')];
+  const text = freeInput ? freeInput.value.trim() : boxes.map(b => b.value.trim()).join('');
+  if (!text) {
+    toast.warn('내용을 입력해주세요');
+    return true;
+  }
+
+  btn._detailPending = true;
+  try {
+    await submitCharParticipation(currentPostId(), text);
+    if (freeInput) freeInput.value = '';
+    boxes.forEach(b => { b.value = ''; });
+    toast.success('등록됐어요! 🎉');
+    window.dispatchEvent(new Event('hashchange'));
+  } catch (error) {
+    toast.error(error.message || '등록에 실패했어요');
+  }
+  btn._detailPending = false;
+  return true;
+}
+
+async function handleAcrosticSubmit(event) {
+  const btn = event.target.closest?.('#btn-acrostic-submit');
+  if (!btn || !isDetailPath()) return false;
+  stop(event);
+  if (btn._detailPending) return true;
+
+  const post = await getCurrentPostSummary();
+  const lines = [...document.querySelectorAll('.acrostic-submit-input')].map(input => input.value.trim());
+  btn._detailPending = true;
+  try {
+    await submitAcrosticEntry(currentPostId(), post?.keyword || '', lines);
+    document.querySelectorAll('.acrostic-submit-input').forEach(input => { input.value = ''; });
+    toast.success('삼행시를 올렸어요! 🎉');
+    window.dispatchEvent(new Event('hashchange'));
+  } catch (error) {
+    toast.error(error.message || '등록에 실패했어요');
+  }
+  btn._detailPending = false;
   return true;
 }
 
@@ -233,7 +330,15 @@ document.addEventListener('click', async event => {
   if (await handleOxQuiz(event)) return;
   if (await handleOptionQuiz(event)) return;
   if (await handleShortQuiz(event)) return;
+  if (await handleCbattleSide(event)) return;
+  if (await handleCommentSubmit(event)) return;
+  if (await handleCharSubmit(event)) return;
+  if (await handleAcrosticSubmit(event)) return;
   if (await handleCommentDelete(event)) return;
   if (await handleCommentReaction(event)) return;
   await handleAcrosticReaction(event);
 }, true);
+
+setInterval(() => {
+  if (isDetailPath()) bindCbattleSideButtons(document);
+}, 1000);
