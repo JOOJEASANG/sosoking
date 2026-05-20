@@ -51,10 +51,19 @@ function renderAnonymousSwitch() {
     </label>`;
 }
 
+function renderGeneralExtras() {
+  return `
+    <div class="multi-general-note"><b>일반글</b><span>자유롭게 올리고, 필요하면 익명으로 숨길 수 있습니다.</span></div>
+    ${renderAnonymousSwitch()}
+    <div class="form-group multi-youtube-box">
+      <label class="form-label">유튜브 링크</label>
+      <input id="mw-youtube-url" class="form-input" maxlength="220" placeholder="https://youtu.be/... 또는 https://www.youtube.com/watch?v=...">
+      <div class="form-hint">일반글에 유튜브 링크를 넣으면 상세페이지에서 16:9 영상 화면으로 자동 표시됩니다.</div>
+    </div>`;
+}
+
 function renderSelectedModule(activeKey, preset) {
-  if (activeKey === 'general') {
-    return `<div class="multi-general-note"><b>일반글</b><span>자유롭게 올리고, 필요하면 익명으로 숨길 수 있습니다.</span></div>${renderAnonymousSwitch()}`;
-  }
+  if (activeKey === 'general') return renderGeneralExtras();
 
   if (activeKey === 'vote') {
     return moduleCard('vote', '🗳️', '투표/판정', '본문을 기준으로 사용자가 선택지에 투표하고 댓글로 토론합니다.', `
