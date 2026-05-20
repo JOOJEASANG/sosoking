@@ -86,6 +86,14 @@ service cloud.firestore {
         && request.resource.data.authorId == request.auth.uid
         && validText(request.resource.data.get('text', ''), 500);
     }
+    function validPointLogCreate(userId) {
+      return isAuthor(userId)
+        && request.resource.data.points is int
+        && request.resource.data.points >= -100
+        && request.resource.data.points <= 100
+        && validText(request.resource.data.get('action', ''), 60)
+        && validText(request.resource.data.get('label', ''), 80);
+    }
 
     match /admins/{uid} {
       allow read:  if signedIn() && request.auth.uid == uid;
@@ -103,6 +111,12 @@ service cloud.firestore {
                       && validNickname(request.resource.data.get('nickname', ''));
       allow update: if isAuthor(userId) || isAdmin();
       allow delete: if isAdmin();
+
+      match /point_logs/{logId} {
+        allow read: if isAuthor(userId) || isAdmin();
+        allow create: if validPointLogCreate(userId);
+        allow update, delete: if false;
+      }
     }
 
     match /nicknames/{nickname} {
@@ -199,6 +213,18 @@ service cloud.firestore {
         }
       }
       match /multi_relay/{itemId} {
+        allow read: if true;
+        allow create: if validMultiParticipationCreate();
+        allow update: if isAdmin() || isMultiItemReactionOrReplyCountUpdate();
+        allow delete: if isAdmin() || isAuthor(resource.data.authorId);
+        match /replies/{replyId} {
+          allow read: if true;
+          allow create: if validReplyCreate();
+          allow update: if false;
+          allow delete: if isAdmin() || isAuthor(resource.data.authorId);
+        }
+      }
+      match /multi_fill/{itemId} {
         allow read: if true;
         allow create: if validMultiParticipationCreate();
         allow update: if isAdmin() || isMultiItemReactionOrReplyCountUpdate();
