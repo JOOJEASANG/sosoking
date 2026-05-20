@@ -30,6 +30,21 @@ function safeImageUrl(value) {
   }
 }
 
+function safeYouTubeId(value) {
+  const id = String(value || '').trim();
+  return /^[a-zA-Z0-9_-]{11}$/.test(id) ? id : '';
+}
+
+function renderYouTube(post) {
+  const id = safeYouTubeId(post.modules?.youtube?.videoId);
+  if (!id) return '';
+  const src = `https://www.youtube.com/embed/${id}`;
+  return `
+    <div class="detail-youtube-wrap">
+      <iframe class="detail-youtube-frame" src="${escAttr(src)}" title="YouTube video player" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+    </div>`;
+}
+
 function renderImages(images) {
   const list = (Array.isArray(images) ? images : []).map(safeImageUrl).filter(Boolean).slice(0, 12);
   if (!list.length) return '';
@@ -51,6 +66,7 @@ function renderOptions(post) {
 function renderModules(post) {
   if (post.type !== 'multi' || !post.modules) return '';
   const labels = [];
+  if (post.modules.youtube?.enabled) labels.push('유튜브');
   if (post.modules.vote?.enabled) labels.push('투표');
   if (post.modules.naming?.enabled) labels.push('작명');
   if (post.modules.acrostic?.enabled) labels.push('삼행시');
@@ -126,6 +142,7 @@ export async function renderDetail(id) {
             </div>
           </div>
           ${renderImages(post.images)}
+          ${renderYouTube(post)}
           <div class="detail-body">
             ${post.desc ? `<p>${escHtml(post.desc).replace(/\n/g, '<br>')}</p>` : ''}
             ${renderOptions(post)}
