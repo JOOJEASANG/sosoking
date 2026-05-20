@@ -1,4 +1,4 @@
-const { onCall } = require('firebase-functions/v2/https');
+const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const { defineSecret } = require('firebase-functions/params');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
@@ -139,7 +139,10 @@ function calcRank(success, data) {
 }
 
 const startAiHuntCase = onCall({ region: 'asia-northeast3', secrets: [geminiKey], timeoutSeconds: 60, memory: '512MiB' }, async (request) => {
-  const userId = request.auth?.uid || 'anonymous';
+  if (!request.auth?.uid) {
+    throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+  }
+  const userId = request.auth.uid;
   let caseData;
   try {
     const genAI = new GoogleGenerativeAI(geminiKey.value().trim());
@@ -169,6 +172,9 @@ const startAiHuntCase = onCall({ region: 'asia-northeast3', secrets: [geminiKey]
 });
 
 const interrogateAiHuntSuspect = onCall({ region: 'asia-northeast3', secrets: [geminiKey], timeoutSeconds: 60 }, async (request) => {
+  if (!request.auth?.uid) {
+    throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+  }
   const { caseId, question, pressure = 0, escape = 100 } = request.data || {};
   if (!caseId) throw new Error('사건 정보가 없습니다');
   const snap = await db.doc(`ai_hunt_cases/${caseId}`).get();
@@ -201,7 +207,10 @@ const interrogateAiHuntSuspect = onCall({ region: 'asia-northeast3', secrets: [g
 });
 
 const attemptAiHuntArrest = onCall({ region: 'asia-northeast3', timeoutSeconds: 30 }, async (request) => {
-  const userId = request.auth?.uid || 'anonymous';
+  if (!request.auth?.uid) {
+    throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+  }
+  const userId = request.auth.uid;
   const {
     caseId,
     selectedEvidence = [],

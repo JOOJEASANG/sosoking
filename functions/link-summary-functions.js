@@ -1,4 +1,4 @@
-const { onCall } = require('firebase-functions/v2/https');
+const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { defineSecret } = require('firebase-functions/params');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
@@ -53,7 +53,13 @@ async function assertPublicHost(hostname) {
 }
 
 async function validateUrl(raw) {
-  const url = new URL(String(raw || '').trim());
+  let url;
+  try {
+    url = new URL(String(raw || '').trim());
+  } catch (_) {
+    const { HttpsError } = require('firebase-functions/v2/https');
+    throw new HttpsError('invalid-argument', 'URL 형식이 올바르지 않습니다.');
+  }
   if (url.protocol !== 'https:') throw new Error('https 링크만 요약할 수 있습니다.');
   await assertPublicHost(url.hostname);
   return url;
@@ -136,7 +142,9 @@ const summarizeLink = onCall({ region: 'asia-northeast3', timeoutSeconds: 45, se
 
   const url = await validateUrl(request.data?.url);
   const source = url.hostname.replace(/^www\./, '');
-  if (BLOCK_WORDS.some(word => decodeURIComponent(url.toString()).includes(word))) throw new Error('요약할 수 없는 링크입니다.');
+  let decodedUrl = url.toString();
+  try { decodedUrl = decodeURIComponent(decodedUrl); } catch (_) {}
+  if (BLOCK_WORDS.some(word => decodedUrl.includes(word))) throw new Error('요약할 수 없는 링크입니다.');
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);

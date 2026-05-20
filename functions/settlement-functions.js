@@ -58,40 +58,54 @@ async function settleBoard(doc, issues) {
   const winner = pickOption(board, issues);
   if (!winner) return { boardId: doc.id, skipped: true, reason: 'no_option' };
 
-  const predictions = await db.collection('predictions').where('boardId', '==', doc.id).where('settled', '==', false).limit(300).get();
-  const batch = db.batch();
   let correct = 0;
   let wrong = 0;
 
-  predictions.docs.forEach(predDoc => {
-    const pred = predDoc.data();
-    const hit = pred.optionId === winner.id;
-    const amount = Number(pred.amount || 0);
-    const odds = Number(pred.odds || 1);
-    const payout = hit ? Math.floor(amount * odds) : 0;
-    const scoreDelta = hit ? payout - amount : -amount;
-    batch.set(predDoc.ref, {
-      settled: true,
-      won: hit,
-      payout,
-      profit: scoreDelta,
-      winningOptionId: winner.id,
-      settledAt: FieldValue.serverTimestamp(),
-      settledAtMs: Date.now()
-    }, { merge: true });
-    batch.set(db.doc(`user_wallets/${pred.userId}`), {
-      balance: FieldValue.increment(payout),
-      totalProfit: FieldValue.increment(scoreDelta),
-      wins: FieldValue.increment(hit ? 1 : 0),
-      losses: FieldValue.increment(hit ? 0 : 1),
-      streak: hit ? FieldValue.increment(1) : 0,
-      title: hit ? '촉 좋은 예측러' : '다음엔 맞힐 예측러',
-      updatedAt: FieldValue.serverTimestamp()
-    }, { merge: true });
-    if (hit) correct += 1; else wrong += 1;
-  });
+  // BUG-012: 300건 초과 예측도 모두 정산하도록 페이지네이션 루프 처리
+  let lastDoc = null;
+  let hasMore = true;
+  while (hasMore) {
+    let q = db.collection('predictions').where('boardId', '==', doc.id).where('settled', '==', false).limit(300);
+    if (lastDoc) q = q.startAfter(lastDoc);
+    const predictions = await q.get();
+    if (predictions.empty) break;
 
-  batch.set(doc.ref, {
+    const batch = db.batch();
+    predictions.docs.forEach(predDoc => {
+      const pred = predDoc.data();
+      const hit = pred.optionId === winner.id;
+      const amount = Number(pred.amount || 0);
+      const odds = Number(pred.odds || 1);
+      const payout = hit ? Math.floor(amount * odds) : 0;
+      const scoreDelta = hit ? payout - amount : -amount;
+      batch.set(predDoc.ref, {
+        settled: true,
+        won: hit,
+        payout,
+        profit: scoreDelta,
+        winningOptionId: winner.id,
+        settledAt: FieldValue.serverTimestamp(),
+        settledAtMs: Date.now()
+      }, { merge: true });
+      batch.set(db.doc(`user_wallets/${pred.userId}`), {
+        balance: FieldValue.increment(payout),
+        totalProfit: FieldValue.increment(scoreDelta),
+        wins: FieldValue.increment(hit ? 1 : 0),
+        losses: FieldValue.increment(hit ? 0 : 1),
+        streak: hit ? FieldValue.increment(1) : 0,
+        title: hit ? '촉 좋은 예측러' : '다음엔 맞힐 예측러',
+        updatedAt: FieldValue.serverTimestamp()
+      }, { merge: true });
+      if (hit) correct += 1; else wrong += 1;
+    });
+    await batch.commit();
+
+    lastDoc = predictions.docs[predictions.docs.length - 1];
+    hasMore = predictions.size === 300;
+  }
+
+  const boardBatch = db.batch();
+  boardBatch.set(doc.ref, {
     status: 'settled',
     winningOptionId: winner.id,
     winningOptionLabel: winner.label,
@@ -102,7 +116,7 @@ async function settleBoard(doc, issues) {
     settledAtMs: Date.now()
   }, { merge: true });
 
-  await batch.commit();
+  await boardBatch.commit();
   return { boardId: doc.id, winner: winner.label, correct, wrong };
 }
 
