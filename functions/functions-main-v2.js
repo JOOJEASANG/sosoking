@@ -23,6 +23,7 @@ const uploadImage = require('./upload-image-functions.js');
 const nicknameIcon = require('./nickname-icon-functions.js');
 const postOwner = require('./post-owner-functions.js');
 const postView = require('./post-view-functions.js');
+const points = require('./points-functions.js');
 
 module.exports = {
   // Gemini 기반 관리자 AI 설정, 폼 자동 입력, 모더레이션, 리포트
@@ -56,6 +57,9 @@ module.exports = {
   ...account,
   ...features,
   ...adminAutomation,
+
+  // 서버 검증 기반 포인트 지급
+  ...points,
 
   // 자동 생성 스케줄은 최종적으로 주 1회 버전으로 덮어씁니다.
   ...weeklyAiSchedule,
