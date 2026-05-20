@@ -10,8 +10,17 @@ export function renderMafiaLobbyHTML() {
         <div class="game-detail-hero__bg-icon">🌙</div>
         <div class="game-detail-hero__eyebrow">NIGHT MISSION</div>
         <h1>마피아게임</h1>
-        <p>정체를 숨긴 마피아를 대화와 투표로 찾아내는 추리 게임입니다.</p>
+        <p>참가자 중 일부는 마피아, 나머지는 시민이 됩니다. 마피아는 정체를 숨기고, 시민은 대화와 투표로 마피아를 찾아내야 하는 심리 추리 게임입니다.</p>
         <div class="game-detail-hero__chips"><span>역할 비공개</span><span>토론 투표</span><span>친구 초대</span></div>
+      </section>
+
+      <section class="game-detail-card game-guide-card">
+        <div class="game-detail-card__head"><div><b>마피아게임 설명</b><span>정체를 숨긴 사람을 토론과 투표로 찾아내는 게임</span></div><i>🌙</i></div>
+        <div class="game-guide-list">
+          <div><b>목표</b><span>시민은 마피아를 모두 찾아내면 승리하고, 마피아는 시민 수와 같거나 많아질 때까지 살아남으면 승리합니다.</span></div>
+          <div><b>진행</b><span>방 만들기 → 초대 링크 공유 → 참가자 입장 → 방장 게임 시작 → 역할 배정 → 토론 → 투표 집계 순서로 진행합니다.</span></div>
+          <div><b>팁</b><span>마피아는 자연스럽게 시민처럼 행동하고, 시민은 말투·투표 패턴·방어 반응을 보고 의심 대상을 좁혀야 합니다.</span></div>
+        </div>
       </section>
 
       <section class="game-detail-card">
