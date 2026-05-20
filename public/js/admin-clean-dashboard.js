@@ -9,6 +9,18 @@ const FEED_META = [
   { key: 'quiz', icon: '🧠', label: '퀴즈' },
 ];
 
+const TYPE_LABELS = {
+  general: '일반글',
+  vote: '투표/판정',
+  naming: '미친작명소',
+  acrostic: '삼행시',
+  quiz: '퀴즈',
+  initial_game: '퀴즈',
+  crazy_court: '투표/판정',
+  relay: '피드 글',
+  multi: '피드 글',
+};
+
 function moduleKey(post) {
   if (post.subtype) return post.subtype;
   const modules = post.modules || {};
@@ -19,8 +31,9 @@ function moduleKey(post) {
   return 'general';
 }
 
-function esc(value) {
-  return String(value || '').replace(/[&<>"]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[m]));
+function typeLabelFromText(text) {
+  const key = String(text || '').trim();
+  return TYPE_LABELS[key] || key || '일반글';
 }
 
 async function fetchPosts() {
@@ -64,38 +77,56 @@ function simplifyPostFilters() {
     searchInput.classList.add('admin-post-toolbar__search');
     searchInput.removeAttribute('style');
   }
-  if (searchButton) {
-    searchButton.classList.add('admin-post-toolbar__button');
-  }
+  if (searchButton) searchButton.classList.add('admin-post-toolbar__button');
 
   filterWrap.querySelectorAll('[data-post-cat]').forEach(btn => btn.remove());
   filterWrap.querySelectorAll('.admin-clean-filter-note').forEach(note => note.remove());
 }
 
+function reorderAdminPostTable(table) {
+  if (!table || table.dataset.typeFirst === '1') return;
+  const headerRow = table.querySelector('thead tr');
+  if (!headerRow) return;
+  const headers = [...headerRow.children];
+  const titleHeader = headers.find(th => th.textContent.trim() === '제목');
+  const typeHeader = headers.find(th => th.textContent.trim() === '유형');
+  if (!titleHeader || !typeHeader) return;
+
+  headerRow.insertBefore(typeHeader, titleHeader);
+  table.querySelectorAll('tbody tr').forEach(row => {
+    const cells = [...row.children];
+    if (cells.length < 2 || cells[0].hasAttribute('colspan')) return;
+    const titleCell = cells[0];
+    const typeCell = cells[1];
+    row.insertBefore(typeCell, titleCell);
+  });
+  table.dataset.typeFirst = '1';
+}
+
 function normalizePostTable() {
   const table = document.querySelector('#admin-content .admin-table');
   if (!table) return;
+
+  reorderAdminPostTable(table);
+
+  const headers = [...table.querySelectorAll('thead th')];
+  const typeIndex = headers.findIndex(th => th.textContent.trim() === '유형') + 1;
+  const catIndex = headers.findIndex(th => th.textContent.trim() === '카테고리') + 1;
+  if (!typeIndex) return;
+
   const rows = table.querySelectorAll('tbody tr[data-post-row]');
   rows.forEach(row => {
-    const typeBadge = row.querySelector('td:nth-child(2) .badge');
+    const typeBadge = row.querySelector(`td:nth-child(${typeIndex}) .badge`);
     if (typeBadge && !typeBadge.dataset.cleanLabel) {
-      const text = typeBadge.textContent || '';
-      const fixed = text
-        .replace('multi', '피드 글')
-        .replace('vote', '투표/판정')
-        .replace('naming', '미친작명소')
-        .replace('acrostic', '삼행시')
-        .replace('quiz', '퀴즈')
-        .replace('initial_game', '퀴즈')
-        .replace('crazy_court', '투표/판정')
-        .replace('relay', '피드 글');
-      typeBadge.textContent = fixed || '피드 글';
+      typeBadge.textContent = typeLabelFromText(typeBadge.textContent);
       typeBadge.dataset.cleanLabel = '1';
     }
-    const catCell = row.querySelector('td:nth-child(3) span');
-    if (catCell && !catCell.dataset.cleanLabel) {
-      catCell.textContent = '피드';
-      catCell.dataset.cleanLabel = '1';
+    if (catIndex) {
+      const catCell = row.querySelector(`td:nth-child(${catIndex}) span`);
+      if (catCell && !catCell.dataset.cleanLabel) {
+        catCell.textContent = '피드';
+        catCell.dataset.cleanLabel = '1';
+      }
     }
   });
 }
