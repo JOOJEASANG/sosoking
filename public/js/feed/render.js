@@ -37,8 +37,10 @@ export function renderFeedFilterBar({ type = '', search = '', sort = 'latest' } 
 export function renderFeedSummary({ total = 0, page = 1, totalPages = 1, search = '', type = '', sort = 'latest' } = {}) {
   const label = search ? `검색 ${escHtml(search)}` : (type ? TYPE_LABELS[type] || '필터' : '전체');
   const sortLabel = SORT_LABELS[sort] || SORT_LABELS.latest;
+  // total이 null이면 커서 모드(전체 건수 미확인) → 페이지 번호만 표시
+  if (total === null) return `<div class="feed-result-summary__inner"><span>${label}</span><span>${page}페이지</span><span>${sortLabel}</span></div>`;
   if (!total) return `<div class="feed-result-summary__inner"><span>${label}</span><b>0개</b><span>${sortLabel}</span></div>`;
-  return `<div class="feed-result-summary__inner"><span>${label}</span><b>${Number(total).toLocaleString()}개</b><span>${page}/${totalPages}페이지</span><span>${sortLabel}</span></div>`;
+  return `<div class="feed-result-summary__inner"><span>${label}</span><b>${Number(total).toLocaleString()}개</b><span>${page}/${totalPages ?? '?'}페이지</span><span>${sortLabel}</span></div>`;
 }
 
 export function renderFeedEmptyState({ search = '' } = {}) {
