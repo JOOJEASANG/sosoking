@@ -37,6 +37,7 @@ import { renderScraps }  from './pages/scraps.js';
 import { renderHall }    from './pages/hall.js';
 import { renderSosoland } from './pages/sosoland.js';
 import { renderLiarGame } from './pages/liar-game.js';
+import { renderGameDetail } from './pages/game-detail.js';
 
 export { appState };
 
@@ -89,7 +90,7 @@ export async function initApp() {
                 <div class="site-footer__links">
                   <a href="#/feed">피드</a>
                   <a href="#/sosoland">게임</a>
-                  <a href="#/hall">명예의 전당</a>
+                  <a href="#/hall">통계</a>
                   <a href="#/guide">이용안내</a>
                 </div>
               </div>
@@ -170,6 +171,8 @@ export async function initApp() {
   registerRoute('/sosoland',   () => renderSosoland());
   registerRoute('/game/liar',  () => renderLiarGame());
   registerRoute('/game/liar/:id', ({ id }) => renderLiarGame({ id }));
+  registerRoute('/game/mafia', () => renderGameDetail({ key: 'mafia' }));
+  registerRoute('/game/marble', () => renderGameDetail({ key: 'marble' }));
   registerRoute('/detail/:id', ({ id }) => renderDetail(id));
   registerRoute('/account',    () => renderAccount());
   registerRoute('/scraps',     () => renderScraps());
