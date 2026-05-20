@@ -1,5 +1,5 @@
-import { auth, db } from '../firebase.js';
-import { doc, updateDoc, increment, serverTimestamp, setDoc, collection, addDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { auth, functions } from '../firebase.js';
+import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
 
 export const POINT_RULES = {
   post_create: { points: 10, label: '피드 글 작성' },
@@ -12,10 +12,7 @@ export const POINT_RULES = {
 };
 
 const sessionAwards = new Set();
-
-function todayKey() {
-  return new Date().toISOString().slice(0, 10);
-}
+const callAwardUserPoints = httpsCallable(functions, 'awardUserPoints');
 
 export async function awardPoints(action, meta = {}) {
   const user = auth.currentUser;
@@ -26,40 +23,22 @@ export async function awardPoints(action, meta = {}) {
   if (sessionAwards.has(dedupeKey)) return false;
   sessionAwards.add(dedupeKey);
 
-  const userRef = doc(db, 'users', user.uid);
-  const payload = {
-    points: increment(rule.points),
-    totalPoints: increment(rule.points),
-    [`pointStats.${action}`]: increment(rule.points),
-    [`pointDaily.${todayKey()}`]: increment(rule.points),
-    lastPointAt: serverTimestamp(),
-  };
-
   try {
-    await updateDoc(userRef, payload);
-  } catch {
-    await setDoc(userRef, {
-      points: rule.points,
-      totalPoints: rule.points,
-      pointStats: { [action]: rule.points },
-      pointDaily: { [todayKey()]: rule.points },
-      lastPointAt: serverTimestamp(),
-    }, { merge: true });
+    const result = await callAwardUserPoints({
+      action,
+      meta: {
+        postId: meta.postId || '',
+        itemId: meta.itemId || '',
+        onceKey: meta.onceKey || '',
+        type: meta.type || '',
+      },
+    });
+    return !!result.data?.awarded;
+  } catch (error) {
+    console.warn('[points] award failed', error);
+    sessionAwards.delete(dedupeKey);
+    return false;
   }
-
-  await addDoc(collection(db, 'users', user.uid, 'point_logs'), {
-    action,
-    label: rule.label,
-    points: rule.points,
-    meta: {
-      postId: meta.postId || '',
-      itemId: meta.itemId || '',
-      type: meta.type || '',
-    },
-    createdAt: serverTimestamp(),
-  }).catch(() => {});
-
-  return true;
 }
 
 export function pointText(value) {
