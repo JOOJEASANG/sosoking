@@ -5,7 +5,7 @@ import { toast } from '../components/toast.js';
 import { setMeta } from '../utils/seo.js';
 import { ensureGameGuestAuth } from '../game-guest-access.js';
 import { buildGameInviteUrl } from '../games/common.js';
-import { createLiarRoom, joinLiarRoom } from '../games/liar/actions.js';
+import { createLiarRoom, joinLiarRoom, startLiarGame } from '../games/liar/actions.js';
 import { renderLiarLobbyHTML, renderLiarLoadingHTML, renderLiarNotFoundHTML, renderLiarRoomHTML, renderLiarWrongGameHTML } from '../games/liar/render.js';
 
 let unsubscribeRoom = null;
@@ -119,12 +119,28 @@ function bindRoomEvents() {
   document.getElementById('liar-back')?.addEventListener('click', () => navigate('/sosoland'));
   document.getElementById('liar-copy')?.addEventListener('click', handleCopyInvite);
   document.getElementById('liar-join')?.addEventListener('click', handleJoinRoom);
+  const startBtn = document.getElementById('liar-start');
+  if (startBtn) {
+    startBtn.addEventListener('click', async () => {
+      try {
+        startBtn.disabled = true;
+        await startLiarGame(currentRoom, currentPlayers);
+      } catch (e) {
+        toast.error(e.message || '게임 시작에 실패했습니다.');
+        startBtn.disabled = false;
+      }
+    });
+  }
 }
 
 async function handleCopyInvite() {
   const url = buildGameInviteUrl('liar', currentRoom.id);
-  await navigator.clipboard?.writeText(url);
-  toast.success('초대 링크를 복사했어요');
+  try {
+    await navigator.clipboard.writeText(url);
+    toast.success('초대 링크를 복사했어요');
+  } catch {
+    toast.error('클립보드 복사에 실패했습니다. 직접 복사해주세요: ' + url);
+  }
 }
 
 async function handleJoinRoom() {
