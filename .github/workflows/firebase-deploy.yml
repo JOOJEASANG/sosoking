@@ -1,12 +1,23 @@
 name: Deploy Firebase
 
-# Main 브랜치에 push되면 Firebase Hosting, Firestore/Storage rules, Functions를 배포합니다.
+# Functions/Firestore/Storage 같은 백엔드 변경이 있을 때만 전체 Firebase 배포를 자동 실행합니다.
+# public 화면 수정은 firebase-hosting-deploy.yml에서 Hosting만 배포합니다.
 on:
   push:
     branches:
       - main
       - 'claude/**'
+    paths:
+      - 'functions/**'
+      - 'firestore.rules'
+      - 'firestore.indexes.json'
+      - 'storage.rules'
+      - '.github/workflows/firebase-deploy.yml'
   workflow_dispatch:
+
+concurrency:
+  group: firebase-full-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   deploy:
