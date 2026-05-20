@@ -3,10 +3,12 @@ import { doc, getDoc, updateDoc, increment } from 'https://www.gstatic.com/fireb
 import { renderReactionBar, initReactionBar } from '../components/reaction-bar.js';
 import { setMeta } from '../utils/seo.js';
 import { escHtml, formatTime } from '../utils/helpers.js';
-import { TYPE_LABELS, CAT_CLASS, ACROSTIC_REACTIONS } from '../detail/constants.js';
-import { fetchComments, fetchAcrostics, fetchSimilarPosts } from '../detail/data.js';
+import { TYPE_LABELS, CAT_CLASS } from '../detail/constants.js';
+import { fetchComments, fetchAcrostics } from '../detail/data.js';
 import { renderImageSection, renderTypeBody, renderLegacyInteractive } from '../detail/body-render.js';
 import { renderCommentSection } from '../detail/comment-render.js';
+import { renderAcrosticSection } from '../detail/acrostic-render.js';
+import { appendSimilarPosts } from '../detail/similar-render.js';
 
 export async function renderDetail(id) {
   const el = document.getElementById('page-content');
@@ -152,70 +154,4 @@ function setupCharBoxInput() {
 
 function trimCharBox(box) {
   if ([...box.value].length > 1) box.value = [...box.value].slice(-1).join('');
-}
-
-function renderAcrosticSection(acrostics, postId) {
-  return `
-    <div class="acrostic-section">
-      <div class="acrostic-section__title">✍️ 삼행시 ${acrostics.length}개</div>
-      <div id="acrostic-list">
-        ${acrostics.length
-          ? acrostics.map(entry => renderAcrosticCard(entry, postId)).join('')
-          : '<div class="acrostic-empty">첫 삼행시를 올려보세요!</div>'}
-      </div>
-    </div>`;
-}
-
-function renderAcrosticCard(entry, postId) {
-  const timeStr = formatTime(entry.createdAt?.toDate?.() || entry.createdAt);
-  const lines = entry.lines || [];
-  const uid = auth.currentUser?.uid;
-  const myReaction = uid ? (entry.reactedWith?.[uid] ?? null) : null;
-  const linesHtml = lines.length
-    ? lines.map(line => `
-        <div class="acrostic-card__line">
-          <span class="acrostic-card__char">${escHtml(line.char)}</span>
-          <span class="acrostic-card__text">${escHtml(line.line)}</span>
-        </div>`).join('')
-    : `<div style="font-size:13px;color:var(--color-text-secondary)">${escHtml(entry.text || '').replace(/\n/g, '<br>')}</div>`;
-
-  return `
-    <div class="acrostic-card" data-acrostic-id="${entry.id}">
-      <div class="acrostic-card__header">
-        <div class="avatar avatar--sm">${escHtml((entry.authorName || '?')[0])}</div>
-        <div>
-          <div class="acrostic-card__name">${escHtml(entry.authorName || '익명')}</div>
-          <div class="acrostic-card__time">${timeStr}</div>
-        </div>
-      </div>
-      <div class="acrostic-card__lines">${linesHtml}</div>
-      <div class="acrostic-card__footer">
-        ${ACROSTIC_REACTIONS.map(reaction => {
-          const count = entry.reactions?.[reaction.key] || 0;
-          const active = myReaction === reaction.key ? 'active' : '';
-          return `<button class="reaction-btn reaction-btn--sm ${active}" data-acrostic-id="${entry.id}" data-post-id="${postId}" data-acrostic-reaction="${reaction.key}">
-            ${reaction.emoji}${count > 0 ? ` <strong>${count}</strong>` : ''}
-          </button>`;
-        }).join('')}
-      </div>
-    </div>`;
-}
-
-function appendSimilarPosts(post) {
-  fetchSimilarPosts(post.id, post.type).then(similar => {
-    if (!similar.length) return;
-    const area = document.createElement('div');
-    area.className = 'similar-posts';
-    area.innerHTML = `
-      <div class="similar-posts__title">🎮 비슷한 놀이판</div>
-      <div class="similar-posts__list">
-        ${similar.map(item => `
-          <div class="similar-post-card" onclick="navigate('/detail/${item.id}')">
-            <span class="similar-post-card__type">${TYPE_LABELS[item.type] || item.type}</span>
-            <div class="similar-post-card__title">${escHtml(item.title || '')}</div>
-            <div class="similar-post-card__meta">❤️${item.reactions?.total || 0} 💬${item.commentCount || 0}</div>
-          </div>`).join('')}
-      </div>`;
-    document.querySelector('[style*="max-width:720px"]')?.appendChild(area);
-  }).catch(() => {});
 }
