@@ -1,55 +1,60 @@
-// 버전 변경 시 이 숫자를 올리면 모든 SW 캐시가 삭제되고 갱신됩니다
-const CACHE = 'sosoking-v4';
+// sw.js — 배포 후 오래된 정적 자산이 남지 않도록 캐시 버전을 관리합니다.
+const CACHE = 'sosoking-v7-2026-05-20-stable';
+const FRESH_EXTENSIONS = ['.html', '.js', '.css', '.json', '.webmanifest'];
 
-self.addEventListener('install', e => {
+self.addEventListener('install', event => {
   self.skipWaiting();
 });
 
-self.addEventListener('activate', e => {
-  e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    )
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys()
+      .then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key))))
+      .then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
-self.addEventListener('fetch', e => {
-  const url = new URL(e.request.url);
-
-  // Firebase, Google API, CDN은 SW 캐시 제외
-  if (
+function shouldBypass(request, url) {
+  if (request.method !== 'GET') return true;
+  return (
     url.hostname.includes('firebaseio.com') ||
     url.hostname.includes('googleapis.com') ||
     url.hostname.includes('gstatic.com') ||
     url.hostname.includes('cloudfunctions.net') ||
-    url.hostname.includes('firestore.googleapis.com')
-  ) return;
+    url.hostname.includes('firestore.googleapis.com') ||
+    url.hostname.includes('identitytoolkit.googleapis.com') ||
+    url.hostname.includes('securetoken.googleapis.com') ||
+    url.hostname.includes('kakao')
+  );
+}
 
-  // HTML, JS, CSS: 항상 네트워크 최신본 사용 (SW 캐시 저장 안 함)
-  // firebase.json에서 이미 no-cache, no-store 설정 → CDN이 항상 최신본 제공
-  if (
-    e.request.mode === 'navigate' ||
-    (url.origin === self.location.origin &&
-     (url.pathname.endsWith('.js') || url.pathname.endsWith('.css')))
-  ) {
-    e.respondWith(
-      fetch(e.request, { cache: 'no-store' })
-        .catch(() => caches.match(e.request))
-    );
+function shouldAlwaysFetchFresh(request, url) {
+  if (request.mode === 'navigate') return true;
+  if (url.origin !== self.location.origin) return false;
+  return FRESH_EXTENSIONS.some(ext => url.pathname.endsWith(ext)) || url.pathname === '/manifest.json';
+}
+
+self.addEventListener('fetch', event => {
+  const url = new URL(event.request.url);
+
+  if (shouldBypass(event.request, url)) return;
+
+  // HTML/JS/CSS/JSON/manifest는 캐시에 저장하지 않고 항상 최신 네트워크 응답을 사용합니다.
+  if (shouldAlwaysFetchFresh(event.request, url)) {
+    event.respondWith(fetch(event.request, { cache: 'no-store' }));
     return;
   }
 
-  // 이미지, 아이콘 등 정적 자산: 캐시 우선 (변경 빈도 낮음)
-  e.respondWith(
-    caches.match(e.request).then(cached => {
+  // 이미지/아이콘 등 정적 자산만 캐시합니다. 실패 시 캐시가 있으면 fallback합니다.
+  event.respondWith(
+    caches.match(event.request).then(cached => {
       if (cached) return cached;
-      return fetch(e.request).then(res => {
-        if (res.ok && url.origin === self.location.origin) {
-          const clone = res.clone();
-          caches.open(CACHE).then(c => c.put(e.request, clone));
+      return fetch(event.request).then(response => {
+        if (response.ok && url.origin === self.location.origin) {
+          const clone = response.clone();
+          caches.open(CACHE).then(cache => cache.put(event.request, clone));
         }
-        return res;
+        return response;
       }).catch(() => cached);
     })
   );
