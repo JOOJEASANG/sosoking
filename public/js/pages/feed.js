@@ -1,49 +1,42 @@
 import { db } from '../firebase.js';
-import { collection, query, orderBy, limit, startAfter, getDocs, where } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { collection, query, orderBy, limit, getDocs, where } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { getQueryParams, navigate } from '../router.js';
 import { renderFeedCard, renderSkeletonCards } from '../components/feed-card.js';
 import { setMeta } from '../utils/seo.js';
 import { normalizeFeedSort, postMatchesType, sortFeedPosts } from '../feed/filter.js';
 import { renderFeedSearchBar, renderFeedFilterBar, renderFeedEmptyState, updateFeedFilterUI } from '../feed/render.js';
 
-let lastDoc        = null;
-let currentType    = '';
-let currentSearch  = '';
-let currentSort    = 'latest';
-let isLoading      = false;
-let scrollObserver = null;
+const PAGE_SIZE = 10;
+const FETCH_LIMIT = 200;
+
+let currentType = '';
+let currentSearch = '';
+let currentSort = 'latest';
+let currentPage = 1;
+let cachedPosts = [];
+let isLoading = false;
 
 export async function renderFeed() {
   setMeta('피드');
-  resetFeedState();
-
   const el = document.getElementById('page-content');
   const params = getQueryParams();
-  currentType   = params.type || '';
+  currentType = params.type || '';
   currentSearch = params.q || '';
-  currentSort   = normalizeFeedSort(params.sort);
+  currentSort = normalizeFeedSort(params.sort);
+  currentPage = Math.max(1, Number(params.page || 1));
+  cachedPosts = [];
 
   el.innerHTML = `
     <div class="layout-main layout-main--full feed-page-clean">
       ${renderFeedSearchBar({ search: currentSearch })}
       ${renderFeedFilterBar({ type: currentType, search: currentSearch, sort: currentSort })}
       <div id="feed-list">${renderSkeletonCards(5)}</div>
+      <div id="feed-pagination" class="feed-pagination"></div>
       <div id="feed-loader" class="loading-center" style="display:none"><div class="spinner"></div></div>
-      <div id="feed-end" style="display:none;text-align:center;padding:24px;font-size:13px;color:var(--color-text-muted)">여기까지 다 봤어요 👀</div>
     </div>`;
 
   bindFeedEvents();
-  await loadPosts(true);
-  setupInfiniteScroll();
-}
-
-function resetFeedState() {
-  isLoading = false;
-  lastDoc = null;
-  if (scrollObserver) {
-    scrollObserver.disconnect();
-    scrollObserver = null;
-  }
+  await loadPosts();
 }
 
 function bindFeedEvents() {
@@ -57,19 +50,19 @@ function bindSearchEvents() {
   const searchInput = document.getElementById('feed-search-input');
   const searchBtn = document.getElementById('btn-feed-search');
   const clearBtn = document.getElementById('search-clear-btn');
-
   const doSearch = () => {
     currentSearch = searchInput?.value.trim() || '';
     currentType = '';
+    currentPage = 1;
     refreshFeed();
     if (currentSearch) clearBtn?.style.setProperty('display', 'inline-flex');
   };
-
   searchInput?.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
   searchBtn?.addEventListener('click', doSearch);
   clearBtn?.addEventListener('click', () => {
     if (searchInput) searchInput.value = '';
     currentSearch = '';
+    currentPage = 1;
     refreshFeed();
     clearBtn.style.display = 'none';
   });
@@ -80,6 +73,7 @@ function bindTypeFilterEvents() {
     btn.addEventListener('click', () => {
       currentType = btn.dataset.typeFilter;
       currentSearch = '';
+      currentPage = 1;
       const searchInput = document.getElementById('feed-search-input');
       if (searchInput) searchInput.value = '';
       refreshFeed();
@@ -88,18 +82,17 @@ function bindTypeFilterEvents() {
 }
 
 function bindSortEvents() {
-  const select = document.getElementById('feed-sort-select');
-  select?.addEventListener('change', () => {
-    currentSort = normalizeFeedSort(select.value || 'latest');
+  document.getElementById('feed-sort-select')?.addEventListener('change', event => {
+    currentSort = normalizeFeedSort(event.target.value || 'latest');
+    currentPage = 1;
     refreshFeed();
   });
 }
 
 function refreshFeed() {
-  lastDoc = null;
   updateUrlState();
   updateFeedFilterUI({ type: currentType, search: currentSearch, sort: currentSort });
-  loadPosts(true);
+  loadPosts();
 }
 
 function updateUrlState() {
@@ -107,88 +100,84 @@ function updateUrlState() {
   if (currentType) params.set('type', currentType);
   if (currentSearch) params.set('q', currentSearch);
   if (currentSort && currentSort !== 'latest') params.set('sort', currentSort);
+  if (currentPage > 1) params.set('page', String(currentPage));
   const next = params.toString() ? `#/feed?${params.toString()}` : '#/feed';
   if (window.location.hash !== next) history.replaceState(null, '', next);
 }
 
-function buildFeedQueryConstraints(reset) {
+function buildQueryConstraints() {
   if (currentSearch) {
     const qEnd = currentSearch.slice(0, -1) + String.fromCharCode(currentSearch.charCodeAt(currentSearch.length - 1) + 1);
-    const constraints = [where('title', '>=', currentSearch), where('title', '<', qEnd), orderBy('title'), limit(40)];
-    if (!reset && lastDoc) constraints.push(startAfter(lastDoc));
-    return { constraints, pageSize: 40 };
+    return [where('title', '>=', currentSearch), where('title', '<', qEnd), orderBy('title'), limit(FETCH_LIMIT)];
   }
-
-  const pageSize = currentType || currentSort !== 'latest' ? 80 : 15;
-  const constraints = [orderBy('createdAt', 'desc'), limit(pageSize)];
-  if (!reset && lastDoc) constraints.push(startAfter(lastDoc));
-  return { constraints, pageSize };
+  return [orderBy('createdAt', 'desc'), limit(FETCH_LIMIT)];
 }
 
-async function loadPosts(reset = false) {
+async function loadPosts() {
   if (isLoading) return;
   isLoading = true;
-
   const loaderEl = document.getElementById('feed-loader');
   const listEl = document.getElementById('feed-list');
-  const endEl = document.getElementById('feed-end');
-
   if (loaderEl) loaderEl.style.display = 'flex';
-  if (reset && endEl) endEl.style.display = 'none';
+  if (listEl) listEl.innerHTML = renderSkeletonCards(3);
 
   try {
-    const { constraints, pageSize } = buildFeedQueryConstraints(reset);
-    const snap = await getDocs(query(collection(db, 'feeds'), ...constraints));
-
-    if (reset && listEl) listEl.innerHTML = '';
-
-    const visiblePosts = sortFeedPosts(
+    const snap = await getDocs(query(collection(db, 'feeds'), ...buildQueryConstraints()));
+    cachedPosts = sortFeedPosts(
       snap.docs
         .map(d => ({ id: d.id, ...d.data() }))
         .filter(post => !post.hidden)
         .filter(post => currentSearch ? true : postMatchesType(post, currentType)),
       currentSort,
     );
-
-    renderFeedResults({ snap, visiblePosts, listEl, endEl, reset, pageSize });
-  } catch (e) {
-    console.error('피드 로드 실패', e);
-    if (reset && listEl) {
-      listEl.innerHTML = `<div class="empty-state"><div class="empty-state__icon">⚠️</div><div class="empty-state__title">피드를 불러오지 못했어요</div><div class="empty-state__desc">잠시 후 다시 시도해주세요.</div></div>`;
-    }
+    renderCurrentPage();
+  } catch (error) {
+    console.error('피드 로드 실패', error);
+    if (listEl) listEl.innerHTML = `<div class="empty-state"><div class="empty-state__icon">⚠️</div><div class="empty-state__title">피드를 불러오지 못했어요</div><div class="empty-state__desc">잠시 후 다시 시도해주세요.</div></div>`;
   }
 
   if (loaderEl) loaderEl.style.display = 'none';
   isLoading = false;
 }
 
-function renderFeedResults({ snap, visiblePosts, listEl, endEl, reset, pageSize }) {
-  if (snap.empty && reset) {
-    if (listEl) listEl.innerHTML = renderFeedEmptyState({ search: currentSearch });
-    if (endEl) endEl.style.display = 'block';
-    return;
-  }
+function renderCurrentPage() {
+  const listEl = document.getElementById('feed-list');
+  if (!listEl) return;
+  const totalPages = Math.max(1, Math.ceil(cachedPosts.length / PAGE_SIZE));
+  currentPage = Math.min(Math.max(1, currentPage), totalPages);
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const pagePosts = cachedPosts.slice(start, start + PAGE_SIZE);
 
-  visiblePosts.forEach(post => {
-    if (listEl) listEl.insertAdjacentHTML('beforeend', renderFeedCard(post));
-  });
+  if (!pagePosts.length) listEl.innerHTML = renderFeedEmptyState({ search: currentSearch });
+  else listEl.innerHTML = pagePosts.map(post => renderFeedCard(post)).join('');
 
-  if (visiblePosts.length === 0 && reset && listEl) {
-    listEl.innerHTML = renderFeedEmptyState({ search: currentSearch });
-  }
-
-  lastDoc = snap.docs[snap.docs.length - 1];
-  if (snap.docs.length < pageSize && endEl) endEl.style.display = 'block';
+  renderPagination(totalPages);
+  updateUrlState();
 }
 
-function setupInfiniteScroll() {
-  const sentinel = document.createElement('div');
-  sentinel.id = 'scroll-sentinel';
-  document.getElementById('feed-list')?.after(sentinel);
-
-  scrollObserver = new IntersectionObserver(entries => {
-    if (entries[0].isIntersecting && !isLoading) loadPosts(false);
-  }, { rootMargin: '200px' });
-
-  scrollObserver.observe(sentinel);
+function renderPagination(totalPages) {
+  const el = document.getElementById('feed-pagination');
+  if (!el) return;
+  if (totalPages <= 1) {
+    el.innerHTML = '';
+    return;
+  }
+  const start = Math.max(1, Math.min(currentPage - 2, totalPages - 4));
+  const end = Math.min(totalPages, start + 4);
+  el.innerHTML = `
+    <button class="feed-page-btn" data-feed-page="prev" ${currentPage <= 1 ? 'disabled' : ''}>이전</button>
+    <div class="feed-page-numbers">
+      ${Array.from({ length: end - start + 1 }, (_, i) => start + i).map(page => `<button class="feed-page-num ${page === currentPage ? 'active' : ''}" data-feed-page="${page}">${page}</button>`).join('')}
+    </div>
+    <button class="feed-page-btn" data-feed-page="next" ${currentPage >= totalPages ? 'disabled' : ''}>다음</button>`;
+  el.querySelectorAll('[data-feed-page]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const value = btn.dataset.feedPage;
+      if (value === 'prev') currentPage -= 1;
+      else if (value === 'next') currentPage += 1;
+      else currentPage = Number(value || 1);
+      renderCurrentPage();
+      document.querySelector('.feed-page-clean')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
 }
