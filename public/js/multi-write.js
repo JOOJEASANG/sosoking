@@ -9,6 +9,7 @@ import { MULTI_PRESETS, getMultiPresetFromHash } from './multi-write/presets.js'
 import { renderMultiWriteHTML, renderQuizOptionRow } from './multi-write/render.js';
 import { collectMultiModules, getBodyText, splitTags, isAnonymousWriteChecked } from './multi-write/collect.js';
 import { fillAutoTags } from './multi-write/auto-tags.js';
+import { initRichEditor, syncRichEditor } from './multi-write/editor.js';
 
 function isMultiQuery() {
   return /[?&]type=multi\b/.test(window.location.hash || '');
@@ -28,6 +29,7 @@ function renderMultiWrite() {
 
   const uploader = document.getElementById('mw-img-uploader');
   if (uploader) initImageUploader(uploader, Infinity);
+  initRichEditor();
   bindMultiWriteEvents();
 }
 
@@ -73,6 +75,7 @@ function bindMultiWriteEvents() {
   document.getElementById('multi-back-type')?.addEventListener('click', () => navigate('/feed'));
   document.getElementById('multi-cancel')?.addEventListener('click', () => navigate('/feed'));
   document.getElementById('mw-auto-tags')?.addEventListener('click', () => {
+    syncRichEditor();
     const tags = fillAutoTags({ force: true });
     if (tags.length) toast.success('태그를 자동 생성했어요');
     else toast.warn('제목이나 본문을 조금 더 입력하면 태그를 만들 수 있어요');
@@ -118,6 +121,7 @@ async function submitMultiPost() {
     return;
   }
 
+  syncRichEditor();
   const btn = document.getElementById('multi-submit');
   const title = document.getElementById('mw-title')?.value.trim() || '';
   const presetKey = getPresetKey();
