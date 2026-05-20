@@ -32,11 +32,28 @@ export function renderLiarLoadingHTML() {
 }
 
 export function renderLiarNotFoundHTML() {
-  return `<div class="empty-state"><div class="empty-state__icon">🔍</div><div class="empty-state__title">방을 찾을 수 없어요</div><button class="btn btn--primary" onclick="navigate('/game/liar')">방 만들기</button></div>`;
+  return `<div class="empty-state"><div class="empty-state__icon">🔍</div><div class="empty-state__title">방을 찾을 수 없어요</div><button class="btn btn--primary" onclick="navigate('/game/liar')">라이어게임 방 만들기</button></div>`;
 }
 
-export function renderLiarRoomHTML(room) {
+export function renderLiarWrongGameHTML(game = '') {
+  const target = game === 'mafia' ? '/game/mafia' : '/sosoland';
+  const label = game === 'mafia' ? '마피아게임으로 이동' : '게임 목록으로 이동';
+  return `<div class="empty-state"><div class="empty-state__icon">🚫</div><div class="empty-state__title">라이어게임 방이 아니에요</div><div class="empty-state__desc">라이어게임에서는 라이어게임 방만 열 수 있습니다.</div><button class="btn btn--primary" onclick="navigate('${target}')">${label}</button></div>`;
+}
+
+function renderPlayerItem(player, room) {
+  const isHost = player.uid === room.hostId || player.role === 'host';
+  return `
+    <div class="liar-player-item has-avatar">
+      <i class="game-player-avatar ${isHost ? 'game-player-avatar--host' : 'game-player-avatar--player'}" aria-hidden="true"></i>
+      <div class="liar-player-name"><span>${esc(player.name || '참가자')}</span>${isHost ? '<small>방장</small>' : ''}</div>
+      <b>${isHost ? '방장' : '참가자'}</b>
+    </div>`;
+}
+
+export function renderLiarRoomHTML(room, players = []) {
   const url = buildGameInviteUrl('liar', room.id);
+  const visiblePlayers = players.length ? players : [{ uid: room.hostId, name: room.hostName || '방장', role: 'host' }];
   return `
     <div class="liar-page">
       <section class="liar-hero liar-hero--room">
@@ -50,7 +67,7 @@ export function renderLiarRoomHTML(room) {
       <section class="liar-room-card">
         <div class="liar-room-info"><span>상태</span><b>${room.status === 'waiting' ? '대기중' : esc(room.status)}</b></div>
         <div class="liar-room-info"><span>카테고리</span><b>${esc(room.category || '-')}</b></div>
-        <div class="liar-room-info"><span>최대 인원</span><b>${room.maxPlayers || 0}명</b></div>
+        <div class="liar-room-info"><span>참가자</span><b>${visiblePlayers.length}/${room.maxPlayers || 0}명</b></div>
         <div class="liar-room-info"><span>라이어</span><b>${room.liarCount || 1}명</b></div>
       </section>
 
@@ -62,7 +79,7 @@ export function renderLiarRoomHTML(room) {
 
       <section class="liar-player-card">
         <h2>참가자</h2>
-        <div class="liar-player-list" id="liar-player-list"><div class="liar-player-item"><span>${esc(room.hostName || '방장')}</span><b>방장</b></div></div>
+        <div class="liar-player-list" id="liar-player-list">${visiblePlayers.map(player => renderPlayerItem(player, room)).join('')}</div>
         <button class="btn btn--ghost" id="liar-join">참가하기</button>
         <button class="btn btn--primary" id="liar-start" disabled>게임 시작 준비중</button>
       </section>
