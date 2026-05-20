@@ -18,6 +18,7 @@ import {
   renderMafiaLoadingHTML,
   renderMafiaNotFoundHTML,
   renderMafiaRoomHTML,
+  renderMafiaWrongGameHTML,
 } from '../games/mafia/render.js';
 
 let unsubscribeRoom = null;
@@ -93,9 +94,23 @@ async function renderRoom(roomId) {
     el.innerHTML = renderMafiaNotFoundHTML();
     return;
   }
+  const initialRoom = { id: initial.id, ...initial.data() };
+  if (initialRoom.game && initialRoom.game !== 'mafia') {
+    el.innerHTML = renderMafiaWrongGameHTML(initialRoom.game);
+    return;
+  }
 
   unsubscribeRoom = onSnapshot(roomRef, snap => {
+    if (!snap.exists()) {
+      el.innerHTML = renderMafiaNotFoundHTML();
+      return;
+    }
     currentRoom = { id: snap.id, ...snap.data() };
+    if (currentRoom.game && currentRoom.game !== 'mafia') {
+      destroyMafiaGame();
+      el.innerHTML = renderMafiaWrongGameHTML(currentRoom.game);
+      return;
+    }
     drawRoom();
   });
 
