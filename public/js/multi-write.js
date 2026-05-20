@@ -6,7 +6,8 @@ import { appState } from './state.js';
 import { initImageUploader, getUploadedImages, hasPendingImages } from './components/image-uploader.js';
 import { awardPoints } from './utils/points.js';
 import { MULTI_PRESETS, getMultiPresetFromHash } from './multi-write/presets.js';
-import { renderMultiWriteHTML, renderQuizOptionRows } from './multi-write/render.js';
+import { renderMultiWriteHTML, renderQuizOptionRow } from './multi-write/render.js';
+import { collectMultiModules, getBodyText, splitTags } from './multi-write/collect.js';
 
 function isMultiQuery() {
   return /[?&]type=multi\b/.test(window.location.hash || '');
@@ -87,83 +88,10 @@ function bindMultiWriteEvents() {
       toast.warn('객관식 선택지는 최대 6개까지 가능해요');
       return;
     }
-    list.insertAdjacentHTML('beforeend', renderQuizOptionRows(count + 1).split('</div>').slice(-2, -1)[0] + '</div>');
+    list.insertAdjacentHTML('beforeend', renderQuizOptionRow(count, false));
   });
 
   document.getElementById('multi-submit')?.addEventListener('click', submitMultiPost);
-}
-
-function enabled(key) {
-  return !!document.querySelector(`[data-module-toggle="${key}"]`);
-}
-
-function splitTags(raw) {
-  return String(raw || '')
-    .split(',')
-    .map(t => t.replace('#', '').trim())
-    .filter(Boolean)
-    .slice(0, 8);
-}
-
-function getBodyText() {
-  return document.getElementById('mw-desc')?.value.trim() || '';
-}
-
-function collectModules() {
-  const modules = { comments: { enabled: true } };
-  const bodyText = getBodyText();
-
-  if (enabled('vote')) {
-    const options = [...document.querySelectorAll('.mw-vote-option')].map(i => i.value.trim()).filter(Boolean);
-    if (!bodyText) throw new Error('본문에 투표/판정 질문이나 상황을 입력해주세요.');
-    if (options.length < 2) throw new Error('투표 선택지를 2개 이상 입력해주세요.');
-    modules.vote = { enabled: true, question: bodyText, options: options.map(text => ({ text, votes: 0 })) };
-  }
-
-  if (enabled('ox')) {
-    if (!bodyText) throw new Error('본문에 OX판정 상황을 입력해주세요.');
-    modules.vote = { enabled: true, question: bodyText, options: [{ text: 'O', votes: 0 }, { text: 'X', votes: 0 }], ox: true };
-  }
-
-  if (enabled('fill')) {
-    if (!bodyText) throw new Error('본문에 채우기 문장을 입력해주세요.');
-    modules.fill = { enabled: true, prompt: bodyText };
-  }
-
-  if (enabled('naming')) {
-    modules.naming = { enabled: true, charCount: Number(document.getElementById('mw-naming-count')?.value || 0) };
-  }
-
-  if (enabled('acrostic')) {
-    const keyword = document.getElementById('mw-acrostic-keyword')?.value.trim() || '';
-    if ([...keyword].length < 2) throw new Error('삼행시 제시어는 2글자 이상 입력해주세요.');
-    modules.acrostic = { enabled: true, keyword };
-  }
-
-  if (enabled('quiz')) {
-    const mode = document.getElementById('mw-quiz-mode')?.value || 'subjective';
-    if (!bodyText) throw new Error('본문에 퀴즈 문제를 입력해주세요.');
-    if (mode === 'multiple') {
-      const rawOptions = [...document.querySelectorAll('.mw-quiz-option')].map(i => i.value.trim());
-      const options = rawOptions.filter(Boolean);
-      const correctIndex = Number(document.querySelector('input[name="mw-quiz-correct"]:checked')?.value || 0);
-      const answer = rawOptions[correctIndex] || '';
-      if (options.length < 2) throw new Error('객관식 선택지를 2개 이상 입력해주세요.');
-      if (!answer.trim()) throw new Error('정답으로 선택한 객관식 선택지를 입력해주세요.');
-      modules.quiz = { enabled: true, mode: 'multiple', question: bodyText, options: options.map(text => ({ text })), answer };
-    } else {
-      const answer = document.getElementById('mw-quiz-answer')?.value.trim() || '';
-      if (!answer) throw new Error('정답을 입력해주세요.');
-      modules.quiz = { enabled: true, mode: 'subjective', question: bodyText, answer };
-    }
-  }
-
-  if (enabled('anonymous')) {
-    if (!bodyText) throw new Error('본문에 익명 내용을 입력해주세요.');
-    modules.anonymous = { enabled: true };
-  }
-
-  return modules;
 }
 
 async function submitMultiPost() {
@@ -184,7 +112,7 @@ async function submitMultiPost() {
   }
 
   try {
-    const modules = collectModules();
+    const modules = collectMultiModules();
     const isAnonymous = presetKey === 'anonymous';
     btn.disabled = true;
     btn.textContent = hasPendingImages() ? '사진 올리는 중...' : '올리는 중...';
