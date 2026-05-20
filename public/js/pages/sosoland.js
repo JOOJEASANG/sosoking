@@ -17,20 +17,20 @@ const GAMES = [
     icon: '🌙',
     title: '마피아게임',
     desc: '정체를 숨기고 대화로 범인을 찾아내는 추리 게임',
-    status: '준비중',
-    tag: '실시간',
+    status: '방 만들기',
+    tag: '오픈',
     path: '/game/mafia',
-    enabled: false,
+    enabled: true,
   },
   {
     key: 'marble',
     icon: '🎲',
     title: '마블게임',
     desc: '주사위와 선택으로 승부하는 공정한 보드 게임',
-    status: '기획중',
-    tag: '보드게임',
+    status: '방 만들기',
+    tag: '오픈',
     path: '/game/marble',
-    enabled: false,
+    enabled: true,
   },
 ];
 
@@ -68,7 +68,7 @@ export function renderSosoland() {
             </div>
             <h2>${game.title}</h2>
             <p>${game.desc}</p>
-            <button class="btn ${game.enabled ? 'btn--primary' : 'btn--ghost'} btn--sm" type="button">${game.status}</button>
+            <button class="btn btn--primary btn--sm" type="button">${game.status}</button>
           </article>
         `).join('')}
       </section>
