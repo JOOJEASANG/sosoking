@@ -4,97 +4,76 @@ import { appState } from '../state.js';
 import { navigate } from '../router.js';
 import { escHtml } from '../utils/helpers.js';
 
-/* ── 아이콘 (Heroicons outline) ── */
-function iconHome() {
-  return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/>
+function svgIcon(path, strokeWidth = '1.8') {
+  return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="${strokeWidth}" aria-hidden="true">
+    ${path}
   </svg>`;
+}
+
+function iconHome() {
+  return svgIcon('<path stroke-linecap="round" stroke-linejoin="round" d="M3 11.5 12 4l9 7.5M5.5 10v10h13V10M9.5 20v-6h5v6"/>');
 }
 
 function iconFeed() {
-  return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/>
-  </svg>`;
+  return svgIcon('<path stroke-linecap="round" stroke-linejoin="round" d="M4 6.5h16M4 12h16M4 17.5h16"/>');
 }
 
 function iconGame() {
-  return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-    <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 9.75h4.5m-2.25-2.25v4.5M15.75 8.25h.008v.008h-.008V8.25zm2.25 2.25h.008v.008H18V10.5zm-4.5 0h.008v.008H13.5V10.5zm2.25 2.25h.008v.008h-.008v-.008z"/>
-    <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.25h13.5a3 3 0 013 3v7.5a3 3 0 01-3 3h-.842a2.25 2.25 0 01-1.591-.659l-1.682-1.682a2.25 2.25 0 00-1.591-.659H10.956a2.25 2.25 0 00-1.591.659l-1.682 1.682a2.25 2.25 0 01-1.591.659H5.25a3 3 0 01-3-3v-7.5a3 3 0 013-3z"/>
-  </svg>`;
-}
-
-function iconMission() {
-  return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-  </svg>`;
+  return svgIcon('<path stroke-linecap="round" stroke-linejoin="round" d="M7 10h4M9 8v4M15.5 9.5h.01M18 12h.01M14 13.5h.01M16.5 15h.01"/><path stroke-linecap="round" stroke-linejoin="round" d="M5.5 6.5h13a3 3 0 0 1 3 3v5.5a3 3 0 0 1-3 3h-1.1a2 2 0 0 1-1.42-.59l-1.39-1.41H9.4L8.01 17.41A2 2 0 0 1 6.6 18H5.5a3 3 0 0 1-3-3V9.5a3 3 0 0 1 3-3Z"/>');
 }
 
 function iconHall() {
-  return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 01-.982-3.172M9.497 14.25a7.454 7.454 0 00.981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 007.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M7.73 9.728a6.726 6.726 0 002.748 1.35m8.272-6.842V4.5c0 2.108-.966 3.99-2.48 5.228m2.48-5.492a46.32 46.32 0 012.916.52 6.003 6.003 0 01-5.395 4.972m0 0a6.726 6.726 0 01-2.749 1.35m0 0a6.772 6.772 0 01-3.044 0"/>
-  </svg>`;
+  return svgIcon('<path stroke-linecap="round" stroke-linejoin="round" d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M7 6H4.5A2.5 2.5 0 0 0 7 10M17 6h2.5A2.5 2.5 0 0 1 17 10"/>');
 }
 
 function iconScraps() {
-  return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-    <path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 01111.186 0z"/>
-  </svg>`;
+  return svgIcon('<path stroke-linecap="round" stroke-linejoin="round" d="M6 4.5A1.5 1.5 0 0 1 7.5 3h9A1.5 1.5 0 0 1 18 4.5V21l-6-3.5L6 21V4.5Z"/>');
 }
 
 function iconAdmin() {
-  return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-    <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 010-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28z"/>
-    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-  </svg>`;
+  return svgIcon('<path stroke-linecap="round" stroke-linejoin="round" d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.4 15a8 8 0 0 0 .1-1 8 8 0 0 0-.1-1l2-1.5-2-3.5-2.4 1a7.7 7.7 0 0 0-1.7-1L15 5.5h-4L10.7 8a7.7 7.7 0 0 0-1.7 1l-2.4-1-2 3.5 2 1.5a8 8 0 0 0-.1 1 8 8 0 0 0 .1 1l-2 1.5 2 3.5 2.4-1a7.7 7.7 0 0 0 1.7 1l.3 2.5h4l.3-2.5a7.7 7.7 0 0 0 1.7-1l2.4 1 2-3.5-2-1.5Z"/>');
 }
 
 function iconWrite() {
-  return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
-    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
-  </svg>`;
+  return svgIcon('<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15M4.5 12h15"/>', '2');
 }
 
 function iconBell() {
-  return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-    <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/>
-  </svg>`;
+  return svgIcon('<path stroke-linecap="round" stroke-linejoin="round" d="M15 17H9m9-2v-4a6 6 0 1 0-12 0v4l-2 2h16l-2-2ZM10 20a2 2 0 0 0 4 0"/>');
 }
 
 function iconSun() {
-  return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-    <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z"/>
-  </svg>`;
+  return svgIcon('<path stroke-linecap="round" stroke-linejoin="round" d="M12 4V2m0 20v-2m8-8h2M2 12h2m13.66-5.66 1.41-1.41M4.93 19.07l1.41-1.41m0-11.32L4.93 4.93m14.14 14.14-1.41-1.41"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z"/>');
 }
 
 function iconMoon() {
-  return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-    <path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z"/>
-  </svg>`;
+  return svgIcon('<path stroke-linecap="round" stroke-linejoin="round" d="M21 15.5A8.5 8.5 0 0 1 8.5 3 8.5 8.5 0 1 0 21 15.5Z"/>');
 }
 
 function iconInstall() {
-  return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-    <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/>
-  </svg>`;
+  return svgIcon('<path stroke-linecap="round" stroke-linejoin="round" d="M12 3v11m0 0 4-4m-4 4-4-4M4 16.5V19a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2.5"/>');
 }
 
-/* ── 유틸 ── */
 function isDark() {
   return document.documentElement.getAttribute('data-theme') === 'dark';
 }
+
 function isIOS() {
   return /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream;
 }
+
 function isStandalone() {
   return window.matchMedia('(display-mode: standalone)').matches || !!navigator.standalone;
 }
+
 function isNavActive(navPath, currentPath) {
   return currentPath === navPath || (navPath === '/sosoland' && currentPath.startsWith('/game/'));
 }
+
 function showIOSInstallGuide() {
   const prev = document.getElementById('ios-install-tip');
   if (prev) { prev.remove(); return; }
+
   const tip = document.createElement('div');
   tip.id = 'ios-install-tip';
   tip.style.cssText = 'position:fixed;left:50%;bottom:84px;transform:translateX(-50%);z-index:10000;width:min(320px,calc(100vw - 32px));background:var(--color-surface);border:1px solid var(--color-border);border-radius:16px;padding:18px 20px;box-shadow:0 12px 40px rgba(0,0,0,.2);text-align:center;font-size:13px;line-height:1.65';
@@ -111,37 +90,36 @@ function showIOSInstallGuide() {
   setTimeout(() => tip.remove(), 10000);
 }
 
-/* ── 렌더 ── */
 export function renderSidebar() {
   const el = document.getElementById('site-sidebar');
   if (!el) return;
 
-  const user    = appState.user;
+  const user = appState.user;
   const isAdmin = appState.isAdmin;
-  const path    = window.location.hash.slice(1).split('?')[0] || '/';
-  const dark    = isDark();
-  const unread  = appState.unreadNotifications || 0;
+  const path = window.location.hash.slice(1).split('?')[0] || '/';
+  const dark = isDark();
+  const unread = appState.unreadNotifications || 0;
 
   const NAV_ITEMS = isAdmin ? [
     { label: '관리자', path: '/admin', icon: iconAdmin() },
   ] : [
-    { label: '홈',          path: '/',          icon: iconHome()   },
-    { label: '피드',        path: '/feed',      icon: iconFeed()   },
-    { label: '게임',        path: '/sosoland',  icon: iconGame()   },
-    { label: '명예의 전당', path: '/hall',      icon: iconHall()   },
+    { label: '홈', path: '/', icon: iconHome() },
+    { label: '피드', path: '/feed', icon: iconFeed() },
+    { label: '게임', path: '/sosoland', icon: iconGame() },
+    { label: '명예의 전당', path: '/hall', icon: iconHall() },
     ...(user ? [{ label: '스크랩', path: '/scraps', icon: iconScraps() }] : []),
   ];
 
   const navHTML = NAV_ITEMS.map(item => {
     const active = isNavActive(item.path, path);
     return `
-    <a href="#${item.path}"
-       class="sidebar__nav-item${active ? ' active' : ''}"
-       aria-current="${active ? 'page' : 'false'}"
-       data-nav="${item.path}">
-      ${item.icon}
-      <span>${item.label}</span>
-    </a>`;
+      <a href="#${item.path}"
+         class="sidebar__nav-item${active ? ' active' : ''}"
+         aria-current="${active ? 'page' : 'false'}"
+         data-nav="${item.path}">
+        ${item.icon}
+        <span>${item.label}</span>
+      </a>`;
   }).join('');
 
   const userSection = user
@@ -161,9 +139,7 @@ export function renderSidebar() {
           </a>` : ''}
         </div>
         <button class="sidebar__logout-btn" id="sb-logout-btn" title="로그아웃" aria-label="로그아웃">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" width="16" height="16" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"/>
-          </svg>
+          ${svgIcon('<path stroke-linecap="round" stroke-linejoin="round" d="M15 8V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2v-3M10 12h10m0 0-3-3m3 3-3 3"/>')}
           <span>로그아웃</span>
         </button>
       </div>`
@@ -205,7 +181,6 @@ export function renderSidebar() {
     </div>
   `;
 
-  /* ── 이벤트 ── */
   el.querySelectorAll('[data-nav]').forEach(link => {
     link.addEventListener('click', (e) => {
       e.preventDefault();
@@ -214,7 +189,7 @@ export function renderSidebar() {
   });
 
   document.getElementById('sb-write-btn')?.addEventListener('click', () => navigate('/write'));
-  document.getElementById('sb-avatar')?.addEventListener('click',   () => !isAdmin && navigate('/account'));
+  document.getElementById('sb-avatar')?.addEventListener('click', () => !isAdmin && navigate('/account'));
   document.getElementById('sb-username')?.addEventListener('click', () => !isAdmin && navigate('/account'));
 
   document.getElementById('sb-logout-btn')?.addEventListener('click', async () => {
@@ -245,7 +220,6 @@ export function renderSidebar() {
   });
 }
 
-/* ── 라우트 변경 시 활성 상태 업데이트 ── */
 window.addEventListener('hashchange', () => {
   const el = document.getElementById('site-sidebar');
   if (!el) return;
