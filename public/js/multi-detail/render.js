@@ -8,11 +8,9 @@ export function renderVoteModule(post) {
   const uid = auth.currentUser?.uid || '';
   const hasVoted = uid && votedBy.includes(uid);
   const total = (vote.options || []).reduce((sum, option) => sum + Number(option.votes || 0), 0);
-  const titleIcon = vote.ox ? '⭕' : '🗳️';
-
   return `
     <div class="multi-detail-module" data-multi-module="vote">
-      <div class="multi-detail-module__title">${titleIcon} ${esc(vote.question || '투표')}</div>
+      <div class="multi-detail-module__title">🗳️ ${esc(vote.question || '투표/판정')}</div>
       <div class="multi-vote-options">
         ${(vote.options || []).map((opt, i) => {
           const votes = Number(opt.votes || 0);
@@ -24,6 +22,7 @@ export function renderVoteModule(post) {
           </button>`;
         }).join('')}
       </div>
+      <div class="multi-module-hint">댓글로 의견과 토론을 이어갈 수 있어요.</div>
       ${hasVoted ? '<div class="multi-module-hint">이미 투표했어요.</div>' : ''}
     </div>`;
 }
@@ -64,19 +63,31 @@ export function renderAcrosticModule(post) {
     </div>`;
 }
 
+function fillCounts(fill) {
+  if (Array.isArray(fill.blankCounts) && fill.blankCounts.length) return fill.blankCounts.map(v => Math.max(1, Math.min(12, Number(v) || 4))).slice(0, 6);
+  if (Array.isArray(fill.blanks) && fill.blanks.length) return fill.blanks.map(b => Math.max(1, Math.min(12, Number(b.charCount) || 4))).slice(0, 6);
+  return [Math.max(2, Math.min(12, Number(fill.charCount || fill.blankCount || 4)))];
+}
+
 export function renderFillModule(post) {
   const fill = post.modules?.fill;
   if (!fill?.enabled) return '';
-  const count = Math.max(2, Math.min(12, Number(fill.charCount || fill.blankCount || 4)));
+  const counts = fillCounts(fill);
   return `
     <div class="multi-detail-module" data-multi-module="fill">
       <div class="multi-detail-module__title">🧩 빈칸 채우기 참여</div>
-      <div class="multi-module-hint">미친작명소처럼 칸에 한 글자씩 입력해보세요.</div>
+      <div class="multi-module-hint">문장 속 빈칸마다 칸에 한 글자씩 입력해보세요.</div>
       <div class="multi-submit-row multi-submit-row--fill-boxes">
-        <div class="multi-char-boxes multi-fill-boxes" id="multi-fill-boxes">
-          ${Array.from({ length: count }, (_, i) => `<input class="multi-fill-char" maxlength="1" data-idx="${i}" inputmode="text" aria-label="빈칸 ${i + 1}">`).join('')}
+        <div id="multi-fill-boxes">
+          ${counts.map((count, groupIndex) => `
+            <div class="multi-fill-blank-group" data-fill-group="${groupIndex}">
+              <div class="multi-fill-blank-label">빈칸 ${groupIndex + 1}</div>
+              <div class="multi-fill-boxes">
+                ${Array.from({ length: count }, (_, i) => `<input class="multi-fill-char" maxlength="1" data-group="${groupIndex}" data-idx="${i}" inputmode="text" aria-label="빈칸 ${groupIndex + 1}-${i + 1}">`).join('')}
+              </div>
+            </div>`).join('')}
         </div>
-        <input id="multi-fill-answer" type="hidden" maxlength="80">
+        <input id="multi-fill-answer" type="hidden" maxlength="200">
         <button class="btn btn--primary btn--sm" id="multi-fill-submit">등록</button>
       </div>
       <div class="multi-participation-list" id="multi-fill-list"></div>
@@ -102,7 +113,7 @@ export function renderQuizModule(post) {
   const isMultiple = quiz.mode === 'multiple' && Array.isArray(quiz.options) && quiz.options.length > 0;
   return `
     <div class="multi-detail-module" data-multi-module="quiz">
-      <div class="multi-detail-module__title">🧠 문제</div>
+      <div class="multi-detail-module__title">🧠 미친퀴즈</div>
       <div class="multi-quiz-question">${esc(quiz.question || '')}</div>
       ${isMultiple ? `
         <div class="multi-quiz-options">
@@ -123,25 +134,13 @@ export function renderModules(post) {
         <div class="multi-detail-root__title">🧩 참여 기능</div>
         <div class="multi-detail-root__desc">이 글 형식에 맞는 참여 기능입니다.</div>
       </div>
-      ${renderVoteModule(post)}
-      ${renderNamingModule(post)}
-      ${renderAcrosticModule(post)}
-      ${renderFillModule(post)}
-      ${renderRelayModule(post)}
-      ${renderQuizModule(post)}
+      ${renderVoteModule(post)}${renderNamingModule(post)}${renderAcrosticModule(post)}${renderFillModule(post)}${renderRelayModule(post)}${renderQuizModule(post)}
     </div>`;
 }
 
 export function renderMultiReplyList(replies) {
   if (!replies.length) return `<div class="multi-empty">아직 답글이 없습니다.</div>`;
-  return replies.map(reply => `
-    <div class="multi-reply-item">
-      <div class="multi-reply-item__avatar">${esc((reply.authorName || '?')[0])}</div>
-      <div class="multi-reply-item__body">
-        <div class="multi-reply-item__meta"><b>${esc(reply.authorName || '익명')}</b><span>${timeText(reply.createdAt)}</span></div>
-        <div class="multi-reply-item__text">${esc(reply.text || '').replace(/\n/g, '<br>')}</div>
-      </div>
-    </div>`).join('');
+  return replies.map(reply => `<div class="multi-reply-item"><div class="multi-reply-item__avatar">${esc((reply.authorName || '?')[0])}</div><div class="multi-reply-item__body"><div class="multi-reply-item__meta"><b>${esc(reply.authorName || '익명')}</b><span>${timeText(reply.createdAt)}</span></div><div class="multi-reply-item__text">${esc(reply.text || '').replace(/\n/g, '<br>')}</div></div></div>`).join('');
 }
 
 export function renderItemList(items, kind) {
@@ -151,24 +150,7 @@ export function renderItemList(items, kind) {
     const body = kind === 'acrostic' && Array.isArray(item.lines)
       ? item.lines.map(line => `<div class="multi-item-line"><b>${esc(line.char)}</b><span>${esc(line.line)}</span></div>`).join('')
       : `<div class="multi-item-text">${esc(item.text || '').replace(/\n/g, '<br>')}</div>`;
-
-    return `<div class="multi-participation-item" data-multi-kind="${kind}" data-multi-item-id="${item.id}">
-      ${body}
-      <div class="multi-item-meta">${esc(item.authorName || '익명')} · ${timeText(item.createdAt)}</div>
-      <div class="multi-item-actions">
-        <button type="button" data-multi-react="like">👍 <b>${Number(reactions.like || 0) || ''}</b></button>
-        <button type="button" data-multi-react="funny">😂 <b>${Number(reactions.funny || 0) || ''}</b></button>
-        <button type="button" data-multi-react="fire">🔥 <b>${Number(reactions.fire || 0) || ''}</b></button>
-        <button type="button" data-multi-reply-toggle>답글 <b>${Number(item.replyCount || 0) || ''}</b></button>
-      </div>
-      <div class="multi-replies">
-        <div class="multi-replies__list"></div>
-        <div class="multi-replies__form">
-          <input class="multi-replies__input" maxlength="300" placeholder="답글을 입력하세요">
-          <button type="button" class="multi-replies__submit">등록</button>
-        </div>
-      </div>
-    </div>`;
+    return `<div class="multi-participation-item" data-multi-kind="${kind}" data-multi-item-id="${item.id}">${body}<div class="multi-item-meta">${esc(item.authorName || '익명')} · ${timeText(item.createdAt)}</div><div class="multi-item-actions"><button type="button" data-multi-react="like">👍 <b>${Number(reactions.like || 0) || ''}</b></button><button type="button" data-multi-react="funny">😂 <b>${Number(reactions.funny || 0) || ''}</b></button><button type="button" data-multi-react="fire">🔥 <b>${Number(reactions.fire || 0) || ''}</b></button><button type="button" data-multi-reply-toggle>답글 <b>${Number(item.replyCount || 0) || ''}</b></button></div><div class="multi-replies"><div class="multi-replies__list"></div><div class="multi-replies__form"><input class="multi-replies__input" maxlength="300" placeholder="답글을 입력하세요"><button type="button" class="multi-replies__submit">등록</button></div></div></div>`;
   }).join('');
 }
 
