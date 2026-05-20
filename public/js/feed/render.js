@@ -16,7 +16,7 @@ export function renderFeedSearchBar({ search = '' } = {}) {
 
 export function renderFeedFilterBar({ type = '', search = '', sort = 'latest' } = {}) {
   return `
-    <div class="feed-control-wrap">
+    <div class="feed-control-wrap feed-control-wrap--with-sort">
       <div class="feed-filters feed-filters--compact" id="cat-filters">
         <button class="filter-chip ${!type && !search ? 'active' : ''}" data-type-filter="">전체</button>
         ${FILTER_TYPES.map(key => `
@@ -24,10 +24,12 @@ export function renderFeedFilterBar({ type = '', search = '', sort = 'latest' } 
             ${TYPE_LABELS[key]}
           </button>`).join('')}
       </div>
-      <div class="feed-sort-chips" aria-label="피드 정렬">
-        ${Object.entries(SORT_LABELS).map(([key, label]) => `
-          <button class="feed-sort-chip ${sort === key ? 'active' : ''}" data-feed-sort="${key}">${label}</button>`).join('')}
-      </div>
+      <label class="feed-sort-dropdown" aria-label="피드 정렬">
+        <span>정렬</span>
+        <select id="feed-sort-select">
+          ${Object.entries(SORT_LABELS).map(([key, label]) => `<option value="${key}" ${sort === key ? 'selected' : ''}>${label}</option>`).join('')}
+        </select>
+      </label>
     </div>
     ${search ? `<div class="feed-search-label">🔍 "<strong>${escHtml(search)}</strong>" 검색 결과</div>` : ''}`;
 }
@@ -46,7 +48,6 @@ export function updateFeedFilterUI({ type = '', search = '', sort = 'latest' } =
   document.querySelectorAll('[data-type-filter]').forEach(b => {
     b.classList.toggle('active', b.dataset.typeFilter === type && !search);
   });
-  document.querySelectorAll('[data-feed-sort]').forEach(b => {
-    b.classList.toggle('active', b.dataset.feedSort === sort);
-  });
+  const select = document.getElementById('feed-sort-select');
+  if (select) select.value = sort;
 }
