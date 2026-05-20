@@ -158,9 +158,9 @@ export function renderSidebar() {
     </nav>
 
     ${!isAdmin ? `<div class="sidebar__write">
-      <button class="sidebar__write-btn" id="sb-write-btn" aria-label="새 글 만들기">
+      <button class="sidebar__write-btn" id="sb-write-btn" aria-label="피드 만들기">
         ${iconWrite()}
-        <span>놀이판 만들기</span>
+        <span>피드 만들기</span>
       </button>
     </div>` : ''}
 
