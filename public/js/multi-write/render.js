@@ -8,7 +8,7 @@ function renderPresetButtons(activeKey) {
   return `
     <div class="multi-preset-box multi-preset-box--simple">
       <div class="multi-preset-box__title">글쓰기 형식</div>
-      <div class="multi-preset-box__desc">형식을 선택하면 아래 입력 항목이 바뀝니다.</div>
+      <div class="multi-preset-box__desc">익명은 일반글 안에서 선택할 수 있습니다.</div>
       <div class="multi-preset-list">
         ${Object.entries(MULTI_PRESETS).map(([key, preset]) => `
           <button type="button" class="multi-preset-btn ${activeKey === key ? 'active' : ''}" data-multi-preset="${key}" aria-pressed="${activeKey === key ? 'true' : 'false'}">
@@ -42,9 +42,18 @@ export function renderQuizOptionRows(count = 2) {
   return Array.from({ length: count }, (_, i) => renderQuizOptionRow(i, i === 0)).join('');
 }
 
+function renderAnonymousSwitch() {
+  return `
+    <label class="multi-anonymous-switch">
+      <input type="checkbox" id="mw-anonymous-toggle">
+      <span class="multi-anonymous-switch__track"><i></i></span>
+      <span class="multi-anonymous-switch__text"><b>익명으로 올리기</b><small>피드에는 작성자가 ‘익명’으로 표시됩니다.</small></span>
+    </label>`;
+}
+
 function renderSelectedModule(activeKey, preset) {
   if (activeKey === 'general') {
-    return `<div class="multi-general-note"><b>일반글</b><span>제목, 본문, 사진, 태그만 저장됩니다. 댓글과 답글만 사용할 수 있습니다.</span></div>`;
+    return `<div class="multi-general-note"><b>일반글</b><span>자유롭게 올리고, 필요하면 익명으로 숨길 수 있습니다.</span></div>${renderAnonymousSwitch()}`;
   }
 
   if (activeKey === 'vote') {
@@ -112,10 +121,6 @@ function renderSelectedModule(activeKey, preset) {
           <button class="btn btn--ghost btn--sm" type="button" id="mw-add-quiz-option">+ 선택지 추가</button>
         </div>
       </div>`);
-  }
-
-  if (activeKey === 'anonymous') {
-    return moduleCard('anonymous', '🕶️', '익명비밀글', '작성자 닉네임을 숨기고 글이 올라갑니다.', `<div class="multi-anonymous-note">고민, 고백, 폭로 등 진지한 고민도 가능합니다.</div>`);
   }
 
   return '';
