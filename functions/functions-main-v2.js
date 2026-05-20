@@ -5,6 +5,7 @@
 // 운영에서 사용하는 대표 함수만 공개하고 레거시/대체 구현은 덮어쓰지 않도록 고정합니다.
 
 const coreAi = require('./index.js');
+const secureAiConfig = require('./secure-ai-config-functions.js');
 const secureFeed = require('./secure-feed-functions.js');
 const secureInteractions = require('./secure-interactions-functions.js');
 const sitemap = require('./sitemap-functions.js');
@@ -26,8 +27,11 @@ const postView = require('./post-view-functions.js');
 const points = require('./points-functions.js');
 
 module.exports = {
-  // Gemini 기반 관리자 AI 설정, 폼 자동 입력, 모더레이션, 리포트
+  // Gemini 기반 관리자 AI 폼 자동 입력, 모더레이션, 리포트
   ...coreAi,
+
+  // AI 설정 저장은 Secret Manager 전용 보안 구현으로 덮어씁니다.
+  ...secureAiConfig,
 
   // 메인 피드 보안 액션: 이 구현을 checkQuizAnswer의 단일 기준으로 사용
   checkQuizAnswer: secureFeed.checkQuizAnswer,
