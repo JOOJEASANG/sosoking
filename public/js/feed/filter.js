@@ -1,4 +1,4 @@
-export const FILTER_TYPES = ['general', 'vote', 'fill', 'naming', 'acrostic', 'relay', 'quiz', 'anonymous'];
+export const FILTER_TYPES = ['general', 'vote', 'fill', 'naming', 'acrostic', 'relay', 'quiz'];
 
 export const TYPE_LABELS = {
   general: '일반글',
@@ -10,7 +10,7 @@ export const TYPE_LABELS = {
   acrostic: '삼행시',
   relay: '막장릴레이',
   quiz: '미친퀴즈',
-  anonymous: '익명비밀글',
+  anonymous: '일반글',
   initial_game: '미친퀴즈',
   crazy_court: '투표/판정',
 };
@@ -29,14 +29,14 @@ export function normalizeFeedSort(sort) {
 
 export function getPostTypeKey(post) {
   if (post.subtype === 'ox') return 'vote';
-  if (post.subtype && TYPE_LABELS[post.subtype]) return post.subtype;
-  if (post.anonymous || post.modules?.anonymous?.enabled) return 'anonymous';
+  if (post.subtype === 'anonymous') return 'general';
   if (post.modules?.fill?.enabled) return 'fill';
   if (post.modules?.vote?.enabled || post.modules?.vote?.ox || post.type === 'vote' || post.type === 'crazy_court' || post.type === 'ox') return 'vote';
   if (post.modules?.naming?.enabled || post.type === 'naming') return 'naming';
   if (post.modules?.acrostic?.enabled || post.type === 'acrostic') return 'acrostic';
   if (post.modules?.relay?.enabled || post.type === 'relay') return 'relay';
   if (post.modules?.quiz?.enabled || post.type === 'quiz' || post.type === 'initial_game') return 'quiz';
+  if (post.subtype && TYPE_LABELS[post.subtype]) return post.subtype;
   if (post.type === 'multi') return 'general';
   return post.type || 'general';
 }
@@ -57,6 +57,7 @@ export function postMatchesSearch(post, rawSearch) {
     post.title,
     post.desc,
     post.authorName,
+    post.anonymous ? '익명 일반글' : '',
     getPostTypeLabel(post),
     ...(Array.isArray(post.tags) ? post.tags : []),
   ].join(' ').toLowerCase();
