@@ -143,7 +143,7 @@ export async function initApp() {
   registerRoute('/scraps', () => renderPage('./pages/scraps.js', 'renderScraps', []));
   registerRoute('/login', () => renderPage('./pages/login.js', 'renderLogin', []));
   registerRoute('/guide', () => renderPage('./pages/guide.js', 'renderGuide', []));
-  registerRoute('/admin', () => renderPage('./pages/admin.js', 'renderAdmin', []));
+  registerRoute('/admin', () => renderPage('./pages/admin-safe.js', 'renderAdmin', []));
   registerRoute('/terms', () => renderPage('./pages/terms.js', 'renderTerms', []));
   registerRoute('/privacy', () => renderPage('./pages/privacy.js', 'renderPrivacy', []));
   registerRoute('/hall', () => renderPage('./pages/hall.js', 'renderHall', []));
