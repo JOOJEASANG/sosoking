@@ -1,16 +1,17 @@
-export const FILTER_TYPES = ['general', 'vote', 'ox', 'fill', 'naming', 'acrostic', 'quiz', 'anonymous'];
+export const FILTER_TYPES = ['general', 'vote', 'ox', 'fill', 'naming', 'acrostic', 'relay', 'quiz', 'anonymous'];
 
 export const TYPE_LABELS = {
   general: '일반글',
   multi: '피드 글',
   vote: '투표/판정',
   ox: 'OX판정',
-  fill: '채우기',
+  fill: '빈줄 채우기',
   naming: '미친작명소',
   acrostic: '삼행시',
-  quiz: '퀴즈',
+  relay: '막장릴레이',
+  quiz: '미친퀴즈',
   anonymous: '익명',
-  initial_game: '퀴즈',
+  initial_game: '미친퀴즈',
   crazy_court: '투표/판정',
 };
 
@@ -34,6 +35,7 @@ export function getPostTypeKey(post) {
   if (post.modules?.vote?.enabled || post.type === 'vote' || post.type === 'crazy_court') return 'vote';
   if (post.modules?.naming?.enabled || post.type === 'naming') return 'naming';
   if (post.modules?.acrostic?.enabled || post.type === 'acrostic') return 'acrostic';
+  if (post.modules?.relay?.enabled || post.type === 'relay') return 'relay';
   if (post.modules?.quiz?.enabled || post.type === 'quiz' || post.type === 'initial_game') return 'quiz';
   if (post.type === 'multi') return 'general';
   return post.type || 'general';
