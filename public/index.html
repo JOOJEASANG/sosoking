@@ -76,17 +76,7 @@
   <link rel="stylesheet" href="/css/legal-spacing-fix.css">
 
   <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "WebApplication",
-    "name": "소소킹",
-    "url": "https://sosoking.co.kr",
-    "description": "피드 멀티게시판과 소소랜드 게임을 즐기는 참여형 커뮤니티",
-    "applicationCategory": "EntertainmentApplication",
-    "operatingSystem": "Web",
-    "inLanguage": "ko-KR",
-    "isAccessibleForFree": true
-  }
+  {"@context":"https://schema.org","@type":"WebApplication","name":"소소킹","url":"https://sosoking.co.kr","description":"피드 멀티게시판과 소소랜드 게임을 즐기는 참여형 커뮤니티","applicationCategory":"EntertainmentApplication","operatingSystem":"Web","inLanguage":"ko-KR","isAccessibleForFree":true}
   </script>
 </head>
 <body>
@@ -120,6 +110,7 @@
   <script type="module" src="/js/multi-detail-cleanup.js"></script>
   <script type="module" src="/js/multi-write-stability-fix.js"></script>
   <script type="module" src="/js/write-edit-fix.js"></script>
+  <script type="module" src="/js/write-edit-router-fix.js"></script>
   <script type="module" src="/js/points-actions.js"></script>
   <script type="module" src="/js/unlimited-image-uploader.js"></script>
   <script type="module" src="/js/admin-multi-post-fix.js"></script>
@@ -129,9 +120,7 @@
 
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js')
-        .then(reg => reg.update())
-        .catch(() => {});
+      navigator.serviceWorker.register('/sw.js').then(reg => reg.update()).catch(() => {});
     }
   </script>
 </body>
