@@ -8,8 +8,17 @@ export function renderLiarLobbyHTML() {
         <div class="liar-hero__bg">🕵️</div>
         <div class="liar-hero__eyebrow">HIDDEN WORD</div>
         <h1>라이어게임</h1>
-        <p>모두가 같은 제시어를 받지만, 단 한 명은 모릅니다. 대화 속 힌트로 라이어를 찾아보세요.</p>
+        <p>모두가 같은 제시어를 받지만, 단 한 명의 라이어만 제시어를 모릅니다. 서로 자연스럽게 설명하고 질문하면서 제시어를 모르는 사람을 찾아내는 추리 대화 게임입니다.</p>
         <div class="liar-hero__chips"><span>친구 초대</span><span>제시어 추리</span><span>라운드 토크</span></div>
+      </section>
+
+      <section class="game-detail-card game-guide-card">
+        <div class="game-detail-card__head"><div><b>라이어게임 설명</b><span>대화 속 어색함을 찾아내는 심리 추리 게임</span></div><i>🕵️</i></div>
+        <div class="game-guide-list">
+          <div><b>목표</b><span>일반 참가자는 라이어를 찾아내고, 라이어는 정체를 들키지 않은 채 제시어를 맞히거나 끝까지 버팁니다.</span></div>
+          <div><b>진행</b><span>방 만들기 → 초대 링크 공유 → 참가자 입장 → 제시어 확인 → 돌아가며 설명/질문 → 투표로 라이어 지목 순서로 진행합니다.</span></div>
+          <div><b>팁</b><span>너무 직접적인 설명은 라이어에게 힌트가 되고, 너무 애매한 설명은 의심을 받을 수 있습니다.</span></div>
+        </div>
       </section>
 
       <section class="liar-create-card">
@@ -61,7 +70,7 @@ export function renderLiarRoomHTML(room, players = []) {
         <div class="liar-hero__bg">🕵️</div>
         <div class="liar-hero__eyebrow">방 코드 ${esc(room.code || '')}</div>
         <h1>${esc(room.title || '라이어게임')}</h1>
-        <p>초대 링크를 공유해서 참가자를 모으세요.</p>
+        <p>초대 링크를 공유해서 참가자를 모으세요. 참가자가 모이면 제시어를 확인하고 대화로 라이어를 찾아내면 됩니다.</p>
       </section>
 
       <section class="liar-room-card">
