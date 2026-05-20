@@ -30,7 +30,7 @@ export function renderBottomNav() {
   const path = window.location.hash.slice(1).split('?')[0] || '/';
   el.innerHTML = `<div class="bottom-nav__inner">${NAV_ITEMS.map(item => {
     const isActive = isNavActive(item.path, path);
-    if (item.isCenter) return `<div class="bottom-nav__write"><button class="bottom-nav__write-btn${isActive?' active':''}" data-nav-path="${item.path}" aria-label="${item.label}" aria-current="${isActive?'page':'false'}">${item.icon}<span class="bottom-nav__center-label">${item.label}</span></button></div>`;
+    if (item.isCenter) return `<div class="bottom-nav__write"><button class="bottom-nav__write-btn${isActive?' active':''}" data-nav-path="${item.path}" aria-label="${item.label}" aria-current="${isActive?'page':'false'}">${item.icon}</button></div>`;
     return `<button class="bottom-nav__item${isActive?' active':''}" data-nav-path="${item.path}" aria-label="${item.label}" aria-current="${isActive?'page':'false'}">${item.icon}<span>${item.label}</span></button>`;
   }).join('')}</div>`;
   el.querySelectorAll('[data-nav-path]').forEach(btn => btn.addEventListener('click', () => navigate(btn.dataset.navPath)));
