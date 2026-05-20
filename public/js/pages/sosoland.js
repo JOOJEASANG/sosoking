@@ -39,6 +39,17 @@ export function renderSosoland() {
 
   el.innerHTML = `
     <div class="sosoland-page">
+      <section class="sosoland-hero sosoland-hero--gamebox">
+        <div class="sosoland-hero__eyebrow">GAME</div>
+        <h1>가볍게 즐기는<br>게임공간</h1>
+        <p>복잡한 과금유도 없이 운과 선택으로 즐기는 게임을 하나씩 추가하고 있습니다.</p>
+        <div class="sosoland-hero__chips">
+          <span>🕵️ 라이어게임 오픈</span>
+          <span>🌙 마피아 준비중</span>
+          <span>🎲 마블 기획중</span>
+        </div>
+      </section>
+
       <section class="sosoland-grid">
         ${GAMES.map(game => `
           <article class="sosoland-card" data-game="${game.key}">
