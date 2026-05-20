@@ -17,6 +17,13 @@ function iconFeed() {
   </svg>`;
 }
 
+function iconGame() {
+  return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 9.75h4.5m-2.25-2.25v4.5M15.75 8.25h.008v.008h-.008V8.25zm2.25 2.25h.008v.008H18V10.5zm-4.5 0h.008v.008H13.5V10.5zm2.25 2.25h.008v.008h-.008v-.008z"/>
+    <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.25h13.5a3 3 0 013 3v7.5a3 3 0 01-3 3h-.842a2.25 2.25 0 01-1.591-.659l-1.682-1.682a2.25 2.25 0 00-1.591-.659H10.956a2.25 2.25 0 00-1.591.659l-1.682 1.682a2.25 2.25 0 01-1.591.659H5.25a3 3 0 01-3-3v-7.5a3 3 0 013-3z"/>
+  </svg>`;
+}
+
 function iconMission() {
   return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
     <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -31,7 +38,7 @@ function iconHall() {
 
 function iconScraps() {
   return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-    <path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z"/>
+    <path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 01111.186 0z"/>
   </svg>`;
 }
 
@@ -82,6 +89,9 @@ function isIOS() {
 function isStandalone() {
   return window.matchMedia('(display-mode: standalone)').matches || !!navigator.standalone;
 }
+function isNavActive(navPath, currentPath) {
+  return currentPath === navPath || (navPath === '/sosoland' && currentPath.startsWith('/game/'));
+}
 function showIOSInstallGuide() {
   const prev = document.getElementById('ios-install-tip');
   if (prev) { prev.remove(); return; }
@@ -115,20 +125,24 @@ export function renderSidebar() {
   const NAV_ITEMS = isAdmin ? [
     { label: '관리자', path: '/admin', icon: iconAdmin() },
   ] : [
-    { label: '홈',          path: '/',       icon: iconHome()   },
-    { label: '탐색',        path: '/feed',   icon: iconFeed()   },
-    { label: '명예의 전당', path: '/hall',   icon: iconHall()   },
+    { label: '홈',          path: '/',          icon: iconHome()   },
+    { label: '피드',        path: '/feed',      icon: iconFeed()   },
+    { label: '게임',        path: '/sosoland',  icon: iconGame()   },
+    { label: '명예의 전당', path: '/hall',      icon: iconHall()   },
     ...(user ? [{ label: '스크랩', path: '/scraps', icon: iconScraps() }] : []),
   ];
 
-  const navHTML = NAV_ITEMS.map(item => `
+  const navHTML = NAV_ITEMS.map(item => {
+    const active = isNavActive(item.path, path);
+    return `
     <a href="#${item.path}"
-       class="sidebar__nav-item${path === item.path ? ' active' : ''}"
-       aria-current="${path === item.path ? 'page' : 'false'}"
+       class="sidebar__nav-item${active ? ' active' : ''}"
+       aria-current="${active ? 'page' : 'false'}"
        data-nav="${item.path}">
       ${item.icon}
       <span>${item.label}</span>
-    </a>`).join('');
+    </a>`;
+  }).join('');
 
   const userSection = user
     ? `<div class="sidebar__user-wrap">
@@ -237,7 +251,8 @@ window.addEventListener('hashchange', () => {
   if (!el) return;
   const path = window.location.hash.slice(1).split('?')[0] || '/';
   el.querySelectorAll('[data-nav]').forEach(link => {
-    link.classList.toggle('active', link.dataset.nav === path);
-    link.setAttribute('aria-current', link.dataset.nav === path ? 'page' : 'false');
+    const active = isNavActive(link.dataset.nav, path);
+    link.classList.toggle('active', active);
+    link.setAttribute('aria-current', active ? 'page' : 'false');
   });
 });
