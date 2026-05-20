@@ -132,7 +132,7 @@ export function renderMultiWriteHTML({ renderKey, presetKey }) {
   const bodyLabel = BODY_LABELS[presetKey] || '본문';
 
   return `
-    <div class="write-page multi-write-page" data-render-key="${esc(renderKey)}">
+    <div class="write-page multi-write-page" data-render-key="${esc(renderKey)}" data-preset-key="${esc(presetKey)}">
       <div class="write-step-header">
         <button class="write-back-btn" id="multi-back-type" type="button">←</button>
         <h1 class="write-step-title">🧩 피드 글쓰기</h1>
@@ -154,8 +154,12 @@ export function renderMultiWriteHTML({ renderKey, presetKey }) {
             <div class="form-hint">사진 개수 제한 없이 올릴 수 있어요.</div>
           </div>
           <div class="form-group">
-            <label class="form-label">태그</label>
+            <div class="multi-tag-label-row">
+              <label class="form-label" for="mw-tags">태그</label>
+              <button class="btn btn--ghost btn--sm" type="button" id="mw-auto-tags">자동 생성</button>
+            </div>
             <input id="mw-tags" class="form-input" maxlength="100" placeholder="${esc(preset.tagsPlaceholder)}">
+            <div class="form-hint">비워두고 올려도 제목과 본문을 기준으로 태그가 자동 생성됩니다.</div>
           </div>
           <div class="multi-module-list multi-module-list--selected">${renderSelectedModule(presetKey, preset)}</div>
           <div class="multi-comment-note">💬 댓글과 답글은 항상 켜져 있습니다.</div>
