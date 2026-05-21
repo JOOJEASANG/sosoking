@@ -34,6 +34,7 @@ export function destroyWordtrapGame() {
   currentRoom = null;
   currentPlayers = [];
   currentChats = [];
+  if (window.__sosokingCurrentGameRoom?.game === 'wordtrap') window.__sosokingCurrentGameRoom = null;
 }
 
 function pageEl() {
@@ -63,7 +64,6 @@ async function handleCreateRoom() {
       title: document.getElementById('wordtrap-title')?.value.trim() || '금칙어 채팅게임',
       preset: document.getElementById('wordtrap-preset')?.value || 'daily',
       maxPlayers: Number(document.getElementById('wordtrap-max')?.value || 6),
-      customWords: document.getElementById('wordtrap-words')?.value || '',
     });
     toast.success('금칙어 게임방을 만들었어요');
     navigate(`/game/wordtrap/${roomId}`);
@@ -99,6 +99,7 @@ async function renderRoom(roomId) {
       return;
     }
     currentRoom = { id: snap.id, ...snap.data() };
+    window.__sosokingCurrentGameRoom = currentRoom;
     if (currentRoom.game && currentRoom.game !== 'wordtrap') {
       destroyWordtrapGame();
       el.innerHTML = renderWordtrapWrongGameHTML(currentRoom.game);
@@ -121,6 +122,7 @@ async function renderRoom(roomId) {
 function drawRoom(scrollChat = false) {
   const el = pageEl();
   if (!el || !currentRoom) return;
+  window.__sosokingCurrentGameRoom = currentRoom;
   el.innerHTML = renderWordtrapRoomHTML(currentRoom, currentPlayers, currentChats);
   bindRoomEvents();
   if (scrollChat) setTimeout(scrollGameChatToBottom, 20);
