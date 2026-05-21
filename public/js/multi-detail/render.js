@@ -152,6 +152,30 @@ export function renderQuizModule(post) {
     </div>`;
 }
 
+function deadlineDate(post) {
+  const value = post.deadlineAt;
+  return value?.toDate?.() || (value ? new Date(value) : null);
+}
+
+function renderDeadlineStatus(post) {
+  if (!post.deadline?.enabled) return '';
+  const mode = post.deadline.mode || 'manual';
+  const date = deadlineDate(post);
+  const now = new Date();
+  const isClosed = date ? date.getTime() <= now.getTime() : post.deadline.status === 'closed';
+  let label = post.deadline.label || '직접 마감';
+  if (date && !isClosed) {
+    const minutes = Math.max(1, Math.ceil((date.getTime() - now.getTime()) / 60000));
+    const left = minutes >= 60 ? `${Math.floor(minutes / 60)}시간 ${minutes % 60}분 남음` : `${minutes}분 남음`;
+    label = `${left}`;
+  } else if (date && isClosed) {
+    label = '마감됨';
+  } else if (mode === 'manual') {
+    label = '작성자 직접 마감 예정';
+  }
+  return `<div class="multi-deadline-status ${isClosed ? 'is-closed' : ''}"><b>${isClosed ? '🏁' : '⏰'} ${esc(label)}</b><span>${isClosed ? '베스트 참여작을 확인해보세요.' : '마감 후 베스트 참여작이 더 돋보입니다.'}</span></div>`;
+}
+
 export function renderModules(post) {
   return `
     <div class="multi-detail-root" data-multi-modules-root="${post.id}">
@@ -159,6 +183,7 @@ export function renderModules(post) {
         <div class="multi-detail-root__title">🧩 참여 기능</div>
         <div class="multi-detail-root__desc">이 글 형식에 맞는 참여 기능입니다.</div>
       </div>
+      ${renderDeadlineStatus(post)}
       ${renderVoteModule(post)}${renderNamingModule(post)}${renderAcrosticModule(post)}${renderFillModule(post)}${renderRelayModule(post)}${renderQuizModule(post)}
     </div>`;
 }
