@@ -89,6 +89,18 @@
   line-height: 1.5;
 }
 
+@media (min-width: 768px) {
+  .detail-game-status-card {
+    margin: 20px 24px 12px;
+    padding: 16px 18px;
+    border-radius: 20px;
+  }
+
+  .detail-game-status-card + .best-reward-rule-card {
+    margin-top: 10px;
+  }
+}
+
 @media (max-width: 767px) {
   .detail-game-status-card {
     margin: 10px 12px 8px;
