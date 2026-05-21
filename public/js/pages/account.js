@@ -61,10 +61,13 @@ export async function renderAccount() {
 
   el.innerHTML = `<div class="loading-center"><div class="spinner spinner--lg"></div></div>`;
 
-  const [{ count: postCount, posts: myPosts }, userSnap] = await Promise.all([
+  const [{ count: postCount, posts: myPosts }, userSnap, adminSnap] = await Promise.all([
     fetchMyPosts(user.uid),
     getDoc(doc(db, 'users', user.uid)).catch(() => null),
+    getDoc(doc(db, 'admins', user.uid)).catch(() => null),
   ]);
+
+  const isAdmin = adminSnap?.exists() === true;
 
   const userData = userSnap?.exists() ? userSnap.data() : {};
   const title    = computeTitle(postCount);
@@ -102,7 +105,7 @@ export async function renderAccount() {
           </div>
         </div>
         <div class="card__footer account-profile-actions">
-          ${appState.isAdmin ? `<button class="btn btn--primary btn--sm" onclick="navigate('/admin')">⚙️ 관리자</button>` : ''}
+          ${isAdmin ? `<button class="btn btn--primary btn--sm" onclick="navigate('/admin')">⚙️ 관리자</button>` : ''}
           <button class="btn btn--ghost btn--sm" id="btn-logout">로그아웃</button>
         </div>
       </div>
