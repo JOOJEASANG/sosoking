@@ -19,6 +19,115 @@ function getPresetKey() {
   return getMultiPresetFromHash(window.location.hash || '');
 }
 
+function esc(value) {
+  return String(value || '').replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
+}
+
+function lineHtml(value) {
+  return esc(value).replace(/\n/g, '<br>');
+}
+
+function blankHtml(count = 4) {
+  const safeCount = Math.max(1, Math.min(12, Number(count) || 4));
+  return `<span class="multi-preview-blank">${Array.from({ length: safeCount }, () => '<i></i>').join('')}</span>`;
+}
+
+function renderFillPreviewText(text) {
+  let blankIndex = 0;
+  const html = esc(text || '본문에 스페이스 2칸, ___, □□□로 빈칸을 만들어보세요.')
+    .replace(/_{2,}|□+|[ \t]{2,}/g, marker => {
+      blankIndex += 1;
+      return blankHtml(marker.length || 4);
+    })
+    .replace(/\n/g, '<br>');
+  return { html, count: blankIndex };
+}
+
+function participationGuide(presetKey) {
+  return {
+    general: '💬 댓글로 이야기를 이어갈 수 있어요.',
+    vote: '🗳️ 사용자가 선택지에 투표하고 댓글로 판정 이유를 남깁니다.',
+    fill: '🧩 사용자가 문장 속 빈칸을 채워 재미있는 답을 남깁니다.',
+    naming: '😜 사용자가 가장 웃긴 이름을 지어 올립니다.',
+    acrostic: '✍️ 사용자가 제시어 글자마다 한 줄씩 완성합니다.',
+    relay: '🎭 사용자가 시작 문장 뒤로 이야기를 이어 씁니다.',
+    quiz: '🧠 사용자가 정답을 맞히고 결과를 바로 확인합니다.',
+  }[presetKey] || '💬 참여자가 댓글과 답글로 반응할 수 있어요.';
+}
+
+function renderPreviewBody() {
+  syncRichEditor();
+  const presetKey = getPresetKey();
+  const preset = MULTI_PRESETS[presetKey] || MULTI_PRESETS.general;
+  const title = document.getElementById('mw-title')?.value.trim() || preset.titlePlaceholder || '제목 미리보기';
+  const bodyText = getBodyText() || preset.descPlaceholder || '';
+  const tags = splitTags(document.getElementById('mw-tags')?.value || '');
+  const guide = participationGuide(presetKey);
+  const titleHtml = `<div class="multi-preview-card__title">${esc(title)}</div>`;
+  const guideHtml = `<div class="multi-preview-guide">${guide}</div>`;
+  const tagsHtml = tags.length ? `<div class="multi-preview-tags">${tags.map(tag => `<span>#${esc(tag)}</span>`).join('')}</div>` : '';
+
+  if (presetKey === 'vote') {
+    const options = [...document.querySelectorAll('.mw-vote-option')].map(input => input.value.trim()).filter(Boolean);
+    return `${titleHtml}<div class="multi-preview-body">${lineHtml(bodyText)}</div>${guideHtml}<div class="multi-preview-options">${(options.length ? options : ['선택지 1', '선택지 2']).map(option => `<span>${esc(option)}</span>`).join('')}</div>${tagsHtml}`;
+  }
+
+  if (presetKey === 'fill') {
+    const parsed = renderFillPreviewText(bodyText);
+    const emptyNotice = parsed.count ? '' : '<div class="multi-preview-warn">빈칸 표시가 아직 없어요. 스페이스 2칸 이상, ___, □□□를 넣어보세요.</div>';
+    return `${titleHtml}<div class="multi-preview-body multi-preview-body--fill">${parsed.html}</div>${guideHtml}${emptyNotice}${tagsHtml}`;
+  }
+
+  if (presetKey === 'naming') {
+    const count = Number(document.getElementById('mw-naming-count')?.value || 0);
+    const rule = count ? `${count}글자 제한` : '글자수 자유';
+    return `${titleHtml}<div class="multi-preview-body">${lineHtml(bodyText)}</div>${guideHtml}<div class="multi-preview-rule">규칙: ${esc(rule)}</div>${tagsHtml}`;
+  }
+
+  if (presetKey === 'acrostic') {
+    const keyword = document.getElementById('mw-acrostic-keyword')?.value.trim() || '제시어';
+    return `${titleHtml}<div class="multi-preview-body">${lineHtml(bodyText)}</div>${guideHtml}<div class="multi-preview-acrostic">${[...keyword].map(ch => `<span>${esc(ch)}</span>`).join('')}</div>${tagsHtml}`;
+  }
+
+  if (presetKey === 'relay') {
+    return `${titleHtml}<div class="multi-preview-body multi-preview-body--relay">${lineHtml(bodyText || '시작 문장을 입력하면 릴레이 첫 문장으로 표시됩니다.')}</div>${guideHtml}<div class="multi-preview-rule">다음 사람이 이야기를 이어갑니다.</div>${tagsHtml}`;
+  }
+
+  if (presetKey === 'quiz') {
+    const mode = document.getElementById('mw-quiz-mode')?.value || 'subjective';
+    const options = [...document.querySelectorAll('.mw-quiz-option')].map(input => input.value.trim()).filter(Boolean);
+    const answer = mode === 'multiple' ? '객관식 선택지를 고르면 서버에서 정답 확인' : '정답 입력 후 서버에서 확인';
+    return `${titleHtml}<div class="multi-preview-body">${lineHtml(bodyText)}</div>${guideHtml}<div class="multi-preview-rule">방식: ${mode === 'multiple' ? '객관식' : '주관식'} · ${answer}</div>${mode === 'multiple' ? `<div class="multi-preview-options">${(options.length ? options : ['선택지 1', '선택지 2']).map(option => `<span>${esc(option)}</span>`).join('')}</div>` : ''}${tagsHtml}`;
+  }
+
+  return `${titleHtml}<div class="multi-preview-body">${lineHtml(bodyText)}</div>${guideHtml}${tagsHtml}`;
+}
+
+function updateGamePreview() {
+  const preview = document.getElementById('mw-preview-body');
+  if (!preview) return;
+  preview.innerHTML = renderPreviewBody();
+}
+
+function schedulePreviewUpdate() {
+  clearTimeout(schedulePreviewUpdate.timer);
+  schedulePreviewUpdate.timer = setTimeout(updateGamePreview, 80);
+}
+
+function bindGamePreviewEvents() {
+  const page = document.querySelector('.multi-write-page');
+  if (!page || page.dataset.previewBound === '1') return;
+  page.dataset.previewBound = '1';
+  page.addEventListener('input', schedulePreviewUpdate, true);
+  page.addEventListener('change', schedulePreviewUpdate, true);
+  page.addEventListener('click', event => {
+    if (event.target.closest('[data-quiz-mode], [data-naming-count], [data-fill-count], #mw-add-vote-option, #mw-add-quiz-option')) {
+      setTimeout(updateGamePreview, 0);
+    }
+  }, true);
+  updateGamePreview();
+}
+
 function cloneWithoutQuizSecret(modules) {
   const publicModules = JSON.parse(JSON.stringify(modules || {}));
   const quiz = publicModules.quiz;
@@ -58,6 +167,7 @@ function renderMultiWrite() {
   if (uploader) initImageUploader(uploader, Infinity);
   initRichEditor();
   bindMultiWriteEvents();
+  bindGamePreviewEvents();
 }
 
 function setQuizMode(mode) {
@@ -74,6 +184,7 @@ function setQuizMode(mode) {
   const multiple = document.getElementById('mw-quiz-multiple-box');
   if (subjective) subjective.style.display = isMultiple ? 'none' : '';
   if (multiple) multiple.style.display = isMultiple ? '' : 'none';
+  updateGamePreview();
 }
 
 function setNamingCount(count) {
@@ -85,6 +196,7 @@ function setNamingCount(count) {
     btn.classList.toggle('active', active);
     btn.setAttribute('aria-checked', active ? 'true' : 'false');
   });
+  updateGamePreview();
 }
 
 function setFillCount(count) {
@@ -96,6 +208,7 @@ function setFillCount(count) {
     btn.classList.toggle('active', active);
     btn.setAttribute('aria-checked', active ? 'true' : 'false');
   });
+  updateGamePreview();
 }
 
 function bindMultiWriteEvents() {
@@ -104,6 +217,7 @@ function bindMultiWriteEvents() {
   document.getElementById('mw-auto-tags')?.addEventListener('click', () => {
     syncRichEditor();
     const tags = fillAutoTags({ force: true });
+    updateGamePreview();
     if (tags.length) toast.success('태그를 자동 생성했어요');
     else toast.warn('제목이나 본문을 조금 더 입력하면 태그를 만들 수 있어요');
   });
@@ -123,6 +237,7 @@ function bindMultiWriteEvents() {
       return;
     }
     list.insertAdjacentHTML('beforeend', `<input class="form-input mw-vote-option" maxlength="80" placeholder="선택지 ${count + 1}">`);
+    updateGamePreview();
   });
 
   document.querySelectorAll('[data-quiz-mode]').forEach(btn => btn.addEventListener('click', () => setQuizMode(btn.dataset.quizMode)));
@@ -137,6 +252,7 @@ function bindMultiWriteEvents() {
       return;
     }
     list.insertAdjacentHTML('beforeend', renderQuizOptionRow(count, false));
+    updateGamePreview();
   });
 
   document.getElementById('multi-submit')?.addEventListener('click', submitMultiPost);
@@ -219,6 +335,7 @@ function run() {
     const page = document.querySelector('.multi-write-page');
     const key = window.location.hash || '#/write?type=multi';
     if (!page || page.dataset.renderKey !== key) renderMultiWrite();
+    else updateGamePreview();
   }
 }
 
