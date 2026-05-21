@@ -333,6 +333,41 @@
   margin-bottom: 10px;
 }
 
+.multi-fill-prompt {
+  margin: 10px 0;
+  padding: 13px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 107, 74, .22);
+  background: linear-gradient(135deg, rgba(255, 107, 74, .08), rgba(255, 184, 77, .08));
+  color: var(--color-text-primary);
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.9;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.multi-fill-inline-blank {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  min-height: 24px;
+  vertical-align: -3px;
+  margin: 0 3px;
+  padding: 3px 5px;
+  border-radius: 9px;
+  background: rgba(255, 107, 74, .13);
+  border: 1px dashed rgba(255, 107, 74, .45);
+}
+
+.multi-fill-inline-blank i {
+  display: block;
+  width: 14px;
+  height: 18px;
+  border-bottom: 2px solid var(--color-primary);
+  opacity: .9;
+}
+
 .multi-participation-list {
   margin-top: 10px;
   display: flex;
@@ -551,6 +586,17 @@
   .multi-name-char {
     width: 36px;
     height: 38px;
+  }
+
+  .multi-fill-prompt {
+    padding: 12px;
+    font-size: 14px;
+    line-height: 1.85;
+  }
+
+  .multi-fill-inline-blank i {
+    width: 12px;
+    height: 17px;
   }
 
   .multi-item-actions button {
