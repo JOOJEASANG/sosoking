@@ -12,6 +12,7 @@ const EXTENSION_MODULES = [
   './account-points-view.js',
   './pc-sidebar-spacing.js',
   './game-guide-toggle.js',
+  './game-random-role-polish.js',
 
   // 상세 페이지 기본 액션/참여 기능
   './detail-actions-bootstrap.js',
