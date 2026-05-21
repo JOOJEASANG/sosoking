@@ -14,7 +14,7 @@ import {
 } from '../feed/render.js';
 
 const PAGE_SIZE    = 20;
-const FILTER_LIMIT = 80; // 필터/검색/정렬 시 서버 로드 최대치 (기존 300 → 80)
+const FILTER_LIMIT = 120; // 필터/검색/정렬 시 서버 로드 최대치
 
 // ─ 상태 ─
 let currentType   = '';
@@ -65,7 +65,6 @@ export async function renderFeed() {
 }
 
 function bindFeedEvents() {
-  document.getElementById('btn-feed-write')?.addEventListener('click', () => navigate('/write?type=multi'));
   bindSearchEvents();
   bindTypeFilterEvents();
   bindSortEvents();
@@ -135,20 +134,22 @@ function updateUrlState() {
 
 // ─ 타입 → Firestore where 조건 매핑 ─
 function getTypeWhereClause(type) {
+  // 새 멀티글은 type='multi' + subtype/modules 조합이라 서버 where만으로는 누락될 수 있습니다.
+  // 정확한 분류는 postMatchesType()에서 클라이언트 기준으로 한 번 더 처리합니다.
   const map = {
-    vote:     ['vote', 'ox', 'crazy_court'],
-    naming:   ['naming'],
-    acrostic: ['acrostic'],
-    relay:    ['relay'],
-    quiz:     ['quiz', 'initial_game'],
-    fill:     ['fill'],
+    vote:     ['vote', 'ox', 'crazy_court', 'multi'],
+    naming:   ['naming', 'multi'],
+    acrostic: ['acrostic', 'multi'],
+    relay:    ['relay', 'multi'],
+    quiz:     ['quiz', 'initial_game', 'multi'],
+    fill:     ['fill', 'multi'],
     general:  ['general', 'anonymous', 'multi'],
   };
   const types = map[type];
   if (!types) return null;
   return types.length === 1
     ? where('type', '==', types[0])
-    : where('type', 'in', types);
+    : where('type', 'in', types.slice(0, 10));
 }
 
 // ─ 메인 로드 ─
