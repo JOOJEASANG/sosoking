@@ -14,6 +14,7 @@ const EXTENSION_MODULES = [
   './game-guide-toggle.js',
   './game-random-role-polish.js',
   './game-moderator-style.js',
+  './game-end-button.js',
 
   // 상세 페이지 기본 액션/참여 기능
   './detail-actions-bootstrap.js',
