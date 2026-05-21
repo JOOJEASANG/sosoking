@@ -1,45 +1,6 @@
-function isMultiWritePage() {
-  return !!document.querySelector('.multi-write-page');
-}
+// multi-write-stability-fix.js
+//
+// 현재 글쓰기 UI는 여러 모듈 체크박스 방식이 아니라 글쓰기 형식 하나를 고르는 구조입니다.
+// 이 레거시 보정은 hidden input을 체크박스처럼 토글할 수 있어 오작동 위험이 있으므로 비활성화합니다.
 
-function syncModuleCard(input) {
-  const card = input.closest('.multi-module');
-  if (card) card.classList.toggle('is-enabled', input.checked);
-}
-
-function stabilizeMultiChecks() {
-  if (!isMultiWritePage()) return;
-
-  document.querySelectorAll('.multi-module').forEach(card => {
-    const input = card.querySelector('[data-module-toggle]');
-    if (!input) return;
-
-    syncModuleCard(input);
-
-    if (card.dataset.stableCheckReady === '1') return;
-    card.dataset.stableCheckReady = '1';
-
-    input.addEventListener('change', () => syncModuleCard(input));
-
-    const head = card.querySelector('.multi-module__head');
-    head?.addEventListener('click', e => {
-      if (e.target === input) {
-        setTimeout(() => syncModuleCard(input), 0);
-        return;
-      }
-      e.preventDefault();
-      input.checked = !input.checked;
-      input.dispatchEvent(new Event('change', { bubbles: true }));
-    });
-  });
-}
-
-let timer = null;
-function schedule() {
-  clearTimeout(timer);
-  timer = setTimeout(stabilizeMultiChecks, 120);
-}
-
-window.addEventListener('hashchange', schedule);
-new MutationObserver(schedule).observe(document.documentElement, { childList: true, subtree: true });
-setTimeout(schedule, 500);
+console.info('[multi-write-stability-fix] disabled: multi-write.js owns current writer UI');
