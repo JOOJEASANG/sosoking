@@ -1,15 +1,8 @@
 name: Deploy Firebase Hosting
 
+# 자동 배포는 Deploy Firebase 워크플로 하나로 통일합니다.
+# 이 워크플로는 긴급 Hosting 단독 배포가 필요할 때만 수동 실행합니다.
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'public/**'
-      - 'firebase.json'
-      - '.firebaserc'
-      - '.github/workflows/firebase-hosting-deploy.yml'
-      - '.github/deploy-trigger.txt'
   workflow_dispatch:
 
 jobs:
