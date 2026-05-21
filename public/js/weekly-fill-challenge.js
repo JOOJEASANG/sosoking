@@ -1,3 +1,8 @@
+import { auth, db } from './firebase.js';
+import {
+  doc, getDoc, setDoc, serverTimestamp,
+} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
 const CHALLENGES = [
   {
     title: '이번 주 빈칸챌린지',
@@ -51,23 +56,86 @@ function challengeKey() {
   return `${now.getFullYear()}-${String(week).padStart(2, '0')}`;
 }
 
+function blankCount(sentence) {
+  return (sentence.match(/___/g) || []).length;
+}
+
+function fillSentence(sentence, answers) {
+  return answers.reduce((s, a) => s.replace('___', a), sentence);
+}
+
+async function loadMyAnswer() {
+  if (!auth.currentUser) return null;
+  const snap = await getDoc(
+    doc(db, 'weekly_fill', challengeKey(), 'answers', auth.currentUser.uid)
+  ).catch(() => null);
+  return snap?.exists() ? snap.data() : null;
+}
+
+async function saveAnswer(blanks) {
+  if (!auth.currentUser) throw new Error('not-logged-in');
+  const item = currentChallenge();
+  const key  = challengeKey();
+  await setDoc(doc(db, 'weekly_fill', key, 'answers', auth.currentUser.uid), {
+    weekKey:    key,
+    sentence:   item.sentence,
+    blanks,
+    filled:     fillSentence(item.sentence, blanks),
+    authorId:   auth.currentUser.uid,
+    authorName: auth.currentUser.displayName || '익명',
+    createdAt:  serverTimestamp(),
+  });
+}
+
+function renderCardDone(filled) {
+  const item = currentChallenge();
+  const key  = challengeKey();
+  return `
+    <section class="weekly-fill-card weekly-fill-card--done" data-weekly-fill-card>
+      <div class="weekly-fill-card__badge weekly-fill-card__badge--done">✅ 이번 주 미션 완료</div>
+      <div class="weekly-fill-card__main">
+        <div class="weekly-fill-card__icon">🧩</div>
+        <div style="min-width:0">
+          <h2>${item.title}</h2>
+          <p class="weekly-fill-card__sentence weekly-fill-card__sentence--filled">${filled}</p>
+        </div>
+      </div>
+      <div class="weekly-fill-card__foot">
+        <span>주간 코드 ${key} · 매주 자동 변경</span>
+      </div>
+    </section>`;
+}
+
 function renderCard() {
   const item = currentChallenge();
-  const key = challengeKey();
+  const key  = challengeKey();
+  const n    = blankCount(item.sentence);
+  const inputs = Array.from({ length: n }, (_, i) => `
+    <div class="wfc-blank-row">
+      <label class="wfc-blank-label">빈칸 ${i + 1}</label>
+      <input class="wfc-blank-input" type="text" data-idx="${i}"
+        placeholder="내용을 입력하세요" maxlength="30">
+    </div>`).join('');
+
   return `
     <section class="weekly-fill-card" data-weekly-fill-card>
       <div class="weekly-fill-card__badge">SYSTEM WEEKLY</div>
       <div class="weekly-fill-card__main">
         <div class="weekly-fill-card__icon">🧩</div>
-        <div>
+        <div style="min-width:0">
           <h2>${item.title}</h2>
           <p class="weekly-fill-card__sentence">${item.sentence}</p>
           <p class="weekly-fill-card__hint">${item.hint}</p>
         </div>
       </div>
-      <div class="weekly-fill-card__foot">
+      <div class="wfc-form" style="display:none">
+        ${inputs}
+        <button class="btn btn--primary wfc-submit-btn" type="button" data-wfc-submit>✏️ 제출하기</button>
+        <button class="btn btn--ghost btn--sm wfc-cancel-btn" type="button" data-wfc-cancel>취소</button>
+      </div>
+      <div class="weekly-fill-card__foot" data-wfc-foot>
         <span>주간 코드 ${key} · 매주 자동 변경</span>
-        <button class="btn btn--primary btn--sm" type="button" data-weekly-fill-copy>문장 복사</button>
+        <button class="btn btn--primary btn--sm" type="button" data-wfc-open>참여하기</button>
       </div>
     </section>`;
 }
@@ -87,6 +155,10 @@ function injectStyle() {
       background: linear-gradient(135deg, rgba(124,58,237,.12), rgba(255,107,74,.09));
       box-shadow: var(--shadow-sm);
     }
+    .weekly-fill-card--done {
+      border-color: rgba(34,197,94,.24);
+      background: linear-gradient(135deg, rgba(34,197,94,.09), rgba(16,185,129,.06));
+    }
     .weekly-fill-card__badge {
       display: inline-flex;
       margin-bottom: 10px;
@@ -97,6 +169,10 @@ function injectStyle() {
       font-size: 11px;
       font-weight: 950;
       letter-spacing: .06em;
+    }
+    .weekly-fill-card__badge--done {
+      background: rgba(34,197,94,.14);
+      color: var(--color-success);
     }
     .weekly-fill-card__main {
       display: flex;
@@ -127,6 +203,9 @@ function injectStyle() {
       font-weight: 950;
       line-height: 1.55;
     }
+    .weekly-fill-card__sentence--filled {
+      color: var(--color-success);
+    }
     .weekly-fill-card__hint {
       margin: 6px 0 0;
       color: var(--color-text-muted);
@@ -143,10 +222,104 @@ function injectStyle() {
       padding-top: 12px;
       border-top: 1px dashed rgba(124,58,237,.22);
     }
+    .weekly-fill-card--done .weekly-fill-card__foot {
+      border-top-color: rgba(34,197,94,.24);
+    }
     .weekly-fill-card__foot span {
       color: var(--color-text-muted);
       font-size: 12px;
       font-weight: 850;
+    }
+    .wfc-form {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px dashed rgba(124,58,237,.22);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .wfc-blank-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .wfc-blank-label {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--color-text-muted);
+    }
+    .wfc-blank-input {
+      width: 100%;
+      padding: 9px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--color-border-light);
+      background: var(--color-surface);
+      color: var(--color-text-primary);
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 800;
+      outline: none;
+      box-sizing: border-box;
+    }
+    .wfc-blank-input:focus {
+      border-color: #7c3aed;
+      box-shadow: 0 0 0 3px rgba(124,58,237,.12);
+    }
+    .wfc-submit-btn {
+      width: 100%;
+      margin-top: 4px;
+    }
+    .wfc-cancel-btn {
+      width: 100%;
+    }
+    .weekly-mission-card {
+      margin: 0 0 12px;
+      padding: 14px 16px;
+      border-radius: 17px;
+      border: 1px solid rgba(124,58,237,.20);
+      background: linear-gradient(135deg, rgba(124,58,237,.08), rgba(255,107,74,.06));
+    }
+    .weekly-mission-card--done {
+      border-color: rgba(34,197,94,.22);
+      background: linear-gradient(135deg, rgba(34,197,94,.07), rgba(16,185,129,.05));
+    }
+    .weekly-mission-card__head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .weekly-mission-card__title {
+      font-size: 13px;
+      font-weight: 900;
+      color: var(--color-text-primary);
+    }
+    .weekly-mission-card__status {
+      margin-left: auto;
+      padding: 3px 9px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 950;
+      background: rgba(124,58,237,.14);
+      color: #7c3aed;
+    }
+    .weekly-mission-card__status--done {
+      background: rgba(34,197,94,.14);
+      color: var(--color-success);
+    }
+    .weekly-mission-card__sentence {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--color-text-secondary);
+      line-height: 1.5;
+      margin-bottom: 10px;
+    }
+    .weekly-mission-card__sentence--filled {
+      color: var(--color-success);
+      font-weight: 900;
+    }
+    .weekly-mission-card__go {
+      width: 100%;
     }
     [data-theme="dark"] .weekly-fill-card__icon {
       background: rgba(255,255,255,.12);
@@ -154,6 +327,9 @@ function injectStyle() {
     [data-theme="dark"] .weekly-fill-card__badge {
       color: #ddd6fe;
       background: rgba(124,58,237,.28);
+    }
+    [data-theme="dark"] .wfc-blank-input {
+      background: var(--color-surface-2);
     }
     @media (max-width: 767px) {
       .weekly-fill-card {
@@ -176,23 +352,75 @@ function injectStyle() {
         align-items: stretch;
         flex-direction: column;
       }
-      .weekly-fill-card__foot .btn {
-        width: 100%;
-      }
     }
   `;
   document.head.appendChild(style);
 }
 
-async function copySentence() {
-  const text = currentChallenge().sentence;
-  try {
-    await navigator.clipboard.writeText(text);
-    window.dispatchEvent(new CustomEvent('toast:success', { detail: '이번 주 빈칸 문장을 복사했어요' }));
-    if (window.toast?.success) window.toast.success('이번 주 빈칸 문장을 복사했어요');
-  } catch {
-    alert(text);
+function showToast(type, msg) {
+  window.dispatchEvent(new CustomEvent(`toast:${type}`, { detail: msg }));
+  window.toast?.[type]?.(msg);
+}
+
+function bindCard() {
+  const card = document.querySelector('[data-weekly-fill-card]');
+  if (!card) return;
+
+  card.querySelector('[data-wfc-open]')?.addEventListener('click', () => {
+    if (!auth.currentUser) {
+      window.navigate?.('/login');
+      return;
+    }
+    card.querySelector('.wfc-form').style.display = 'flex';
+    card.querySelector('[data-wfc-foot]').style.display = 'none';
+    card.querySelector('.wfc-blank-input')?.focus();
+  });
+
+  card.querySelector('[data-wfc-cancel]')?.addEventListener('click', () => {
+    card.querySelector('.wfc-form').style.display = 'none';
+    card.querySelector('[data-wfc-foot]').style.display = '';
+  });
+
+  card.querySelector('[data-wfc-submit]')?.addEventListener('click', async () => {
+    const inputs = [...card.querySelectorAll('.wfc-blank-input')];
+    const blanks = inputs.map(i => i.value.trim());
+    const emptyInput = inputs.find(i => !i.value.trim());
+    if (emptyInput) {
+      emptyInput.focus();
+      showToast('error', '빈칸을 모두 채워주세요');
+      return;
+    }
+
+    const btn = card.querySelector('[data-wfc-submit]');
+    btn.disabled = true;
+    btn.textContent = '제출 중...';
+
+    try {
+      await saveAnswer(blanks);
+      const filled = fillSentence(currentChallenge().sentence, blanks);
+      card.outerHTML = renderCardDone(filled);
+      showToast('success', '이번 주 빈칸 미션을 완료했어요! 🎉');
+      updateAccountMissionCard(filled);
+    } catch (e) {
+      btn.disabled = false;
+      btn.textContent = '✏️ 제출하기';
+      showToast('error', '제출에 실패했어요. 다시 시도해주세요');
+    }
+  });
+}
+
+function updateAccountMissionCard(filled) {
+  const card = document.querySelector('[data-weekly-mission]');
+  if (!card) return;
+  card.classList.add('weekly-mission-card--done');
+  card.querySelector('.weekly-mission-card__status').classList.add('weekly-mission-card__status--done');
+  card.querySelector('.weekly-mission-card__status').textContent = '✅ 완료';
+  const sentEl = card.querySelector('.weekly-mission-card__sentence');
+  if (sentEl) {
+    sentEl.textContent = filled;
+    sentEl.classList.add('weekly-mission-card__sentence--filled');
   }
+  card.querySelector('.weekly-mission-card__go')?.remove();
 }
 
 function findInsertionRoot() {
@@ -202,25 +430,79 @@ function findInsertionRoot() {
     || document.getElementById('page-content');
 }
 
-function shouldShow() {
+function shouldShowFeed() {
   const hash = location.hash || '#/';
   return hash === '#/' || hash.startsWith('#/feed');
 }
 
-function injectCard() {
+function shouldShowAccount() {
+  const hash = location.hash || '#/';
+  return hash.startsWith('#/account');
+}
+
+async function injectCard() {
   injectStyle();
-  if (!shouldShow()) return;
+  if (!shouldShowFeed()) return;
   if (document.querySelector('[data-weekly-fill-card]')) return;
   const root = findInsertionRoot();
   if (!root) return;
-  root.insertAdjacentHTML('afterbegin', renderCard());
-  document.querySelector('[data-weekly-fill-copy]')?.addEventListener('click', copySentence);
+
+  const myAnswer = await loadMyAnswer();
+
+  if (myAnswer) {
+    root.insertAdjacentHTML('afterbegin', renderCardDone(myAnswer.filled));
+  } else {
+    root.insertAdjacentHTML('afterbegin', renderCard());
+    bindCard();
+  }
 }
 
-let timer = null;
+async function injectAccountMission() {
+  injectStyle();
+  if (!shouldShowAccount()) return;
+
+  const wrap = document.querySelector('.account-page-wrap');
+  if (!wrap || wrap.querySelector('[data-weekly-mission]')) return;
+
+  const profileCard = wrap.querySelector('.account-profile-card');
+  if (!profileCard) return;
+
+  const item     = currentChallenge();
+  const myAnswer = await loadMyAnswer();
+  const isDone   = !!myAnswer;
+
+  const html = `
+    <div class="weekly-mission-card ${isDone ? 'weekly-mission-card--done' : ''}" data-weekly-mission>
+      <div class="weekly-mission-card__head">
+        <span>🧩</span>
+        <span class="weekly-mission-card__title">이번 주 빈칸 미션</span>
+        <span class="weekly-mission-card__status ${isDone ? 'weekly-mission-card__status--done' : ''}">${isDone ? '✅ 완료' : '미완료'}</span>
+      </div>
+      <p class="weekly-mission-card__sentence ${isDone ? 'weekly-mission-card__sentence--filled' : ''}">
+        ${isDone ? myAnswer.filled : item.sentence}
+      </p>
+      ${!isDone ? `<button class="btn btn--primary btn--sm weekly-mission-card__go" onclick="window.navigate?.('/')">피드에서 참여하기</button>` : ''}
+    </div>`;
+
+  profileCard.insertAdjacentHTML('afterend', html);
+}
+
+let feedTimer = null;
+let acctTimer = null;
+
+function scheduleFeed() {
+  clearTimeout(feedTimer);
+  feedTimer = setTimeout(injectCard, 180);
+}
+
+function scheduleAccount() {
+  clearTimeout(acctTimer);
+  acctTimer = setTimeout(injectAccountMission, 300);
+}
+
 function schedule() {
-  clearTimeout(timer);
-  timer = setTimeout(injectCard, 180);
+  scheduleFeed();
+  scheduleAccount();
 }
 
 window.addEventListener('hashchange', schedule);

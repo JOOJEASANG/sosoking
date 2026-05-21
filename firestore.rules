@@ -307,6 +307,22 @@ service cloud.firestore {
     match /soso_feed_posts/{postId}  { allow read: if true; allow write: if false; }
     match /point_awards/{awardId}    { allow read, write: if false; }
 
+    match /weekly_fill/{weekKey} {
+      allow read: if true;
+      allow write: if false;
+
+      match /answers/{userId} {
+        allow read: if true;
+        allow create: if isAuthor(userId)
+                        && request.resource.data.authorId == request.auth.uid
+                        && validText(request.resource.data.get('filled', ''), 300)
+                        && request.resource.data.blanks is list
+                        && request.resource.data.blanks.size() <= 5;
+        allow update: if false;
+        allow delete: if isAdmin();
+      }
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
