@@ -1,0 +1,267 @@
+/* Light/Dark visibility polish for shared chrome */
+
+.site-header,
+.site-sidebar,
+.bottom-nav {
+  color: var(--color-text-primary);
+}
+
+.site-header {
+  background: color-mix(in srgb, var(--color-surface) 92%, transparent);
+  border-bottom: 1px solid var(--color-border-light);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 8px 24px rgba(20, 20, 43, .06);
+}
+
+[data-theme="dark"] .site-header {
+  background: rgba(27, 30, 48, .86);
+  border-bottom-color: rgba(255,255,255,.08);
+  box-shadow: 0 10px 32px rgba(0,0,0,.32);
+}
+
+.site-header__inner {
+  min-height: 56px;
+}
+
+.site-header__logo {
+  color: var(--color-text-primary);
+}
+
+.site-header__logo span,
+.sidebar__brand-name {
+  color: var(--color-text-primary);
+}
+
+.site-header__icon-btn,
+.sidebar__icon-btn,
+.sidebar__util-btn {
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  box-shadow: 0 1px 2px rgba(20,20,43,.04);
+}
+
+.site-header__icon-btn:hover,
+.sidebar__icon-btn:hover,
+.sidebar__util-btn:hover {
+  background: var(--color-primary-bg);
+  border-color: var(--color-primary-border);
+  color: var(--color-primary);
+}
+
+.site-header__theme-btn {
+  color: var(--color-primary);
+  background: linear-gradient(135deg, var(--color-primary-bg), var(--color-surface));
+  border-color: var(--color-primary-border);
+}
+
+[data-theme="dark"] .site-header__icon-btn,
+[data-theme="dark"] .sidebar__icon-btn,
+[data-theme="dark"] .sidebar__util-btn {
+  background: rgba(255,255,255,.06);
+  border-color: rgba(255,255,255,.10);
+  color: #dbe3ff;
+  box-shadow: none;
+}
+
+[data-theme="dark"] .site-header__icon-btn:hover,
+[data-theme="dark"] .sidebar__icon-btn:hover,
+[data-theme="dark"] .sidebar__util-btn:hover {
+  background: rgba(255, 107, 74, .16);
+  border-color: rgba(255, 107, 74, .38);
+  color: #ffb59f;
+}
+
+[data-theme="dark"] .site-header__theme-btn {
+  color: #ffd166;
+  background: linear-gradient(135deg, rgba(255,209,102,.16), rgba(255,255,255,.06));
+  border-color: rgba(255,209,102,.28);
+}
+
+.site-header__icon-btn svg,
+.sidebar__icon-btn svg,
+.sidebar__util-btn svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.notif-badge,
+.sidebar__badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 5px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #ef4444;
+  color: #fff;
+  border: 2px solid var(--color-surface);
+  font-size: 9px;
+  font-weight: 1000;
+  line-height: 1;
+}
+
+[data-theme="dark"] .notif-badge,
+[data-theme="dark"] .sidebar__badge {
+  border-color: #1c1f32;
+  background: #ff4d4f;
+}
+
+.site-header__avatar {
+  background: var(--gradient-brand);
+  color: #fff;
+  border-color: transparent;
+  font-weight: 1000;
+  overflow: hidden;
+}
+
+.site-header__avatar--icon {
+  background: var(--color-surface-2);
+  border-color: var(--color-border);
+}
+
+[data-theme="dark"] .site-header__avatar--icon {
+  background: rgba(255,255,255,.08);
+  border-color: rgba(255,255,255,.12);
+}
+
+.site-header__avatar-emoji {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  font-size: 19px;
+}
+
+.site-header__install-btn {
+  background: var(--color-primary-bg);
+  border: 1px solid var(--color-primary-border);
+  color: var(--color-primary);
+}
+
+[data-theme="dark"] .site-header__install-btn {
+  background: rgba(255,107,74,.14);
+  border-color: rgba(255,107,74,.34);
+  color: #ffb59f;
+}
+
+.card,
+.feed-card,
+.game-detail-card,
+.liar-create-card,
+.liar-room-card,
+.liar-invite-card,
+.liar-player-card,
+.sosoland-card {
+  background: var(--color-surface);
+  border-color: var(--color-border-light);
+}
+
+[data-theme="dark"] .card,
+[data-theme="dark"] .feed-card,
+[data-theme="dark"] .game-detail-card,
+[data-theme="dark"] .liar-create-card,
+[data-theme="dark"] .liar-room-card,
+[data-theme="dark"] .liar-invite-card,
+[data-theme="dark"] .liar-player-card,
+[data-theme="dark"] .sosoland-card {
+  background: linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.035));
+  border-color: rgba(255,255,255,.09);
+  box-shadow: 0 14px 38px rgba(0,0,0,.22);
+}
+
+.form-input,
+.form-select,
+.form-textarea,
+.search-input,
+.feed-search-input {
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  border-color: var(--color-border);
+}
+
+[data-theme="dark"] .form-input,
+[data-theme="dark"] .form-select,
+[data-theme="dark"] .form-textarea,
+[data-theme="dark"] .search-input,
+[data-theme="dark"] .feed-search-input {
+  background: rgba(255,255,255,.055);
+  color: #f5f7ff;
+  border-color: rgba(255,255,255,.12);
+}
+
+[data-theme="dark"] .form-input::placeholder,
+[data-theme="dark"] .form-textarea::placeholder,
+[data-theme="dark"] .search-input::placeholder,
+[data-theme="dark"] .feed-search-input::placeholder {
+  color: rgba(226,232,255,.48);
+}
+
+[data-theme="dark"] .btn--ghost {
+  background: rgba(255,255,255,.045);
+  border-color: rgba(255,255,255,.12);
+  color: #dbe3ff;
+}
+
+[data-theme="dark"] .btn--ghost:hover {
+  background: rgba(255,107,74,.14);
+  border-color: rgba(255,107,74,.36);
+  color: #ffb59f;
+}
+
+@media (max-width:1023px) {
+  .site-header__theme-btn {
+    display: inline-flex !important;
+  }
+
+  .site-header__icon-btn,
+  .site-header__theme-btn,
+  .notif-bell,
+  .site-header__avatar {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    max-width: 34px !important;
+    min-height: 34px !important;
+    max-height: 34px !important;
+    flex: 0 0 34px !important;
+    border-radius: 12px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+  }
+
+  .site-header__avatar {
+    border-radius: 50% !important;
+  }
+
+  .site-header__actions {
+    gap: 6px !important;
+  }
+}
+
+@media (max-width:374px) {
+  .site-header__icon-btn,
+  .site-header__theme-btn,
+  .notif-bell,
+  .site-header__avatar {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    max-width: 32px !important;
+    min-height: 32px !important;
+    max-height: 32px !important;
+    flex-basis: 32px !important;
+  }
+
+  .site-header__actions {
+    gap: 4px !important;
+  }
+}
