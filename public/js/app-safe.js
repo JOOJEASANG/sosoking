@@ -168,6 +168,10 @@ function syncShellWithRoute() {
   }
 }
 
+function rerenderCurrentRouteSoon() {
+  setTimeout(() => window.dispatchEvent(new Event('hashchange')), 0);
+}
+
 export async function initApp() {
   ensureGameOnlyStyles();
   if (isGameOnlyRoute()) renderGameOnlyShell();
@@ -204,8 +208,9 @@ export async function initApp() {
     if (justLoggedIn) {
       if (appState.isAdmin && currentPath !== '/admin' && !isGameOnlyRoute(currentPath)) navigate('/admin');
       else if (currentPath === '/login') navigate('/');
+      else if (wasLoading) rerenderCurrentRouteSoon();
     } else if (wasLoading) {
-      window.dispatchEvent(new Event('hashchange'));
+      rerenderCurrentRouteSoon();
     }
   });
 
