@@ -34,6 +34,7 @@ export function destroyLiarGame() {
   currentRoom = null;
   currentPlayers = [];
   currentChats = [];
+  if (window.__sosokingCurrentGameRoom?.game === 'liar') window.__sosokingCurrentGameRoom = null;
 }
 
 function pageEl() {
@@ -100,6 +101,7 @@ async function renderRoom(roomId) {
       return;
     }
     currentRoom = { id: snap.id, ...snap.data() };
+    window.__sosokingCurrentGameRoom = currentRoom;
     if (currentRoom.game && currentRoom.game !== 'liar') {
       destroyLiarGame();
       el.innerHTML = renderLiarWrongGameHTML(currentRoom.game);
@@ -122,6 +124,7 @@ async function renderRoom(roomId) {
 function drawRoom(scrollChat = false) {
   const el = pageEl();
   if (!el || !currentRoom) return;
+  window.__sosokingCurrentGameRoom = currentRoom;
   el.innerHTML = renderLiarRoomHTML(currentRoom, currentPlayers, currentChats);
   bindRoomEvents();
   if (scrollChat) setTimeout(scrollGameChatToBottom, 20);
