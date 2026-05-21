@@ -1,5 +1,6 @@
 /* bottom-nav.js — 모바일 하단 탭바 */
 import { navigate } from '../router.js';
+import { appState } from '../state.js';
 
 function svgIcon(path, strokeWidth = '1.8') {
   return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="${strokeWidth}" aria-hidden="true">${path}</svg>`;
@@ -9,6 +10,7 @@ function iconFeed(){return svgIcon('<path stroke-linecap="round" stroke-linejoin
 function iconPlus(){return svgIcon('<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15M4.5 12h15"/>','2.2');}
 function iconGame(){return svgIcon('<path stroke-linecap="round" stroke-linejoin="round" d="M7 10h4M9 8v4M15.5 9.5h.01M18 12h.01M14 13.5h.01M16.5 15h.01"/><path stroke-linecap="round" stroke-linejoin="round" d="M5.5 6.5h13a3 3 0 0 1 3 3v5.5a3 3 0 0 1-3 3h-1.1a2 2 0 0 1-1.42-.59l-1.39-1.41H9.4L8.01 17.41A2 2 0 0 1 6.6 18H5.5a3 3 0 0 1-3-3V9.5a3 3 0 0 1 3-3Z"/>');}
 function iconAccount(){return svgIcon('<path stroke-linecap="round" stroke-linejoin="round" d="M15.75 7a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.5 21a7.5 7.5 0 0 1 15 0"/>');}
+function iconAdmin(){return svgIcon('<path stroke-linecap="round" stroke-linejoin="round" d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.4 15a8 8 0 0 0 .1-1 8 8 0 0 0-.1-1l2-1.5-2-3.5-2.4 1a7.7 7.7 0 0 0-1.7-1L15 5.5h-4L10.7 8a7.7 7.7 0 0 0-1.7 1l-2.4-1-2 3.5 2 1.5a8 8 0 0 0-.1 1 8 8 0 0 0 .1 1l-2 1.5 2 3.5 2.4-1a7.7 7.7 0 0 0 1.7 1l.3 2.5h4l.3-2.5a7.7 7.7 0 0 0 1.7-1l2.4 1 2-3.5-2-1.5Z"/>');}
 
 function isNavActive(navPath, currentPath) {
   if (navPath === '/sosoland') return currentPath === '/sosoland' || currentPath.startsWith('/game/');
@@ -16,19 +18,31 @@ function isNavActive(navPath, currentPath) {
   return currentPath === navPath;
 }
 
-const NAV_ITEMS = [
-  { id:'home', label:'홈', path:'/', icon:iconHome() },
-  { id:'feed', label:'피드', path:'/feed', icon:iconFeed() },
-  { id:'write', label:'작성', path:'/write?type=multi', icon:iconPlus(), isCenter:true },
-  { id:'game', label:'게임', path:'/sosoland', icon:iconGame() },
-  { id:'account', label:'내정보', path:'/account', icon:iconAccount() },
-];
+function navItems() {
+  if (appState.isAdmin) {
+    return [
+      { id:'home', label:'홈', path:'/', icon:iconHome() },
+      { id:'feed', label:'피드', path:'/feed', icon:iconFeed() },
+      { id:'write', label:'작성', path:'/write?type=multi', icon:iconPlus(), isCenter:true },
+      { id:'game', label:'게임', path:'/sosoland', icon:iconGame() },
+      { id:'admin', label:'관리자', path:'/admin', icon:iconAdmin() },
+    ];
+  }
+  return [
+    { id:'home', label:'홈', path:'/', icon:iconHome() },
+    { id:'feed', label:'피드', path:'/feed', icon:iconFeed() },
+    { id:'write', label:'작성', path:'/write?type=multi', icon:iconPlus(), isCenter:true },
+    { id:'game', label:'게임', path:'/sosoland', icon:iconGame() },
+    { id:'account', label:'내정보', path:'/account', icon:iconAccount() },
+  ];
+}
 
 export function renderBottomNav() {
   const el = document.getElementById('bottom-nav');
   if (!el) return;
   const path = window.location.hash.slice(1).split('?')[0] || '/';
-  el.innerHTML = `<div class="bottom-nav__inner">${NAV_ITEMS.map(item => {
+  const items = navItems();
+  el.innerHTML = `<div class="bottom-nav__inner">${items.map(item => {
     const isActive = isNavActive(item.path, path);
     if (item.isCenter) return `<div class="bottom-nav__write"><button class="bottom-nav__write-btn${isActive?' active':''}" data-nav-path="${item.path}" aria-label="${item.label}" aria-current="${isActive?'page':'false'}">${item.icon}</button></div>`;
     return `<button class="bottom-nav__item${isActive?' active':''}" data-nav-path="${item.path}" aria-label="${item.label}" aria-current="${isActive?'page':'false'}">${item.icon}<span>${item.label}</span></button>`;
