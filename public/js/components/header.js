@@ -56,6 +56,15 @@ function iconBell() {
   </svg>`;
 }
 
+function renderThemeButton(dark) {
+  return `
+    <button class="site-header__icon-btn site-header__theme-btn" id="hdr-theme-btn"
+      aria-label="${dark ? '라이트 모드로 전환' : '다크 모드로 전환'}"
+      title="${dark ? '라이트 모드' : '다크 모드'}">
+      ${dark ? iconSun() : iconMoon()}
+    </button>`;
+}
+
 function renderHeaderAvatar(user) {
   const nickname = appState.nickname || user?.displayName || user?.email?.split('@')[0] || '나';
   const icon = normalizeNicknameIcon(appState.nicknameIcon);
@@ -79,6 +88,7 @@ export function renderHeader() {
   const dark   = isDark();
   const unread = appState.unreadNotifications || 0;
   const hasNickIcon = !!normalizeNicknameIcon(appState.nicknameIcon) || !!user?.photoURL;
+  const themeButton = renderThemeButton(dark);
 
   el.innerHTML = `
     <div class="site-header__inner">
@@ -94,11 +104,6 @@ export function renderHeader() {
         <button class="site-header__install-btn" id="hdr-install-btn" aria-label="앱 설치">
           ${iconInstall()}<span>앱 설치</span>
         </button>` : ''}
-        <button class="site-header__icon-btn" id="hdr-theme-btn"
-          aria-label="${dark ? '라이트 모드로 전환' : '다크 모드로 전환'}"
-          title="${dark ? '라이트 모드' : '다크 모드'}">
-          ${dark ? iconSun() : iconMoon()}
-        </button>
 
         ${user ? `
           <a href="#/account?tab=notifications"
@@ -108,12 +113,14 @@ export function renderHeader() {
             ${iconBell()}
             ${unread > 0 ? `<span class="notif-badge">${unread > 99 ? '99+' : unread}</span>` : ''}
           </a>
+          ${themeButton}
           <button class="site-header__icon-btn site-header__avatar ${hasNickIcon ? 'site-header__avatar--icon' : ''}" id="hdr-avatar"
             aria-label="내 정보"
             title="${escHtml(appState.nickname || user.displayName || '내 정보')}">
             ${renderHeaderAvatar(user)}
           </button>
         ` : `
+          ${themeButton}
           <a href="#/login" class="btn btn--primary btn--sm">로그인</a>
         `}
       </div>
