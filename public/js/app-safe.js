@@ -41,7 +41,7 @@ function currentRoutePath() {
 }
 
 function isGameOnlyRoute(path = currentRoutePath()) {
-  return path === '/game/liar' || path.startsWith('/game/liar/') || path === '/game/mafia' || path.startsWith('/game/mafia/') || path === '/game/test/liar' || path === '/game/test/mafia';
+  return path === '/game/liar' || path.startsWith('/game/liar/') || path === '/game/mafia' || path.startsWith('/game/mafia/');
 }
 
 function isGameOnlyShellActive() {
@@ -183,7 +183,6 @@ export async function initApp() {
   registerRoute('/feed', () => renderPage('./pages/feed.js', 'renderFeed', []));
   registerRoute('/write', () => renderPage('./pages/write.js', 'renderWrite', []));
   registerRoute('/sosoland', () => renderPage('./pages/sosoland.js', 'renderSosoland', []));
-  registerRoute('/game/test/:kind', ({ kind }) => renderPage('./pages/game-test-room.js', 'renderGameTestRoom', [{ kind }]));
   registerRoute('/game/liar', () => renderPage('./pages/liar-game.js', 'renderLiarGame', []));
   registerRoute('/game/liar/:id', ({ id }) => renderPage('./pages/liar-game.js', 'renderLiarGame', [{ id }]));
   registerRoute('/game/mafia', () => renderPage('./pages/mafia-game.js', 'renderMafiaGame', []));
