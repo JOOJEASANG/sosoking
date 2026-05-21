@@ -38,5 +38,5 @@ export async function addItemReply(postId, kind, itemId, text) {
 
 export async function applyVote(postRef, post, idx) {
   const result = await callCastMultiVote({ postId: post.id || postRef.id, optionIdx: idx });
-  return result.data?.post || post;
+  return result.data || { ok: true, post };
 }
