@@ -40,7 +40,7 @@ function ensureCommentForm() {
       <div class="detail-comment-box__head">
         <div>
           <div class="detail-comment-box__title">댓글로 의견 남기기</div>
-          <div class="detail-comment-box__desc">투표/판정 글은 댓글로 토론까지 이어갈 수 있어요.</div>
+          <div class="detail-comment-box__desc">댓글로 의견을 남기고 다른 사람들과 이야기를 이어갈 수 있어요.</div>
         </div>
       </div>
       ${loggedIn ? `
@@ -82,7 +82,7 @@ function ensureCommentForm() {
       await awardPoints('comment_create', { postId, onceKey: `comment:${postId}:${Date.now()}` }).catch(() => {});
       toast.success('댓글을 등록했어요');
       input.value = '';
-      location.reload();
+      window.dispatchEvent(new Event('hashchange'));
     } catch (error) {
       console.error(error);
       toast.error(error.message || '댓글 등록에 실패했어요');
