@@ -178,23 +178,24 @@ export function collectMultiModules() {
 
   if (enabled('quiz')) {
     const mode = document.getElementById('mw-quiz-mode')?.value || 'subjective';
+    const hint = document.getElementById('mw-quiz-hint')?.value.trim() || '';
+    const explanation = document.getElementById('mw-quiz-explanation')?.value.trim() || '';
     if (!bodyText) throw new Error('본문에 미친퀴즈 문제를 입력해주세요.');
 
     if (mode === 'multiple') {
       const rawOptions = getQuizOptions();
       const options = rawOptions.filter(Boolean);
-      // correctIndex는 rawOptions 기준이므로, filtered options에서 맞는 인덱스 다시 계산
       const correctRawIndex = Number(document.querySelector('input[name="mw-quiz-correct"]:checked')?.value || 0);
       const correctAnswer = rawOptions[correctRawIndex] || '';
       const correctIndex = options.indexOf(correctAnswer);
       const answer = correctAnswer;
       if (options.length < 2) throw new Error('객관식 선택지를 2개 이상 입력해주세요.');
       if (!answer.trim()) throw new Error('정답으로 선택한 객관식 선택지를 입력해주세요.');
-      modules.quiz = { enabled: true, mode: 'multiple', question: bodyText, options: options.map(text => ({ text })), answer, correctIndex };
+      modules.quiz = { enabled: true, mode: 'multiple', question: bodyText, options: options.map(text => ({ text })), answer, correctIndex, hint, explanation };
     } else {
       const answer = document.getElementById('mw-quiz-answer')?.value.trim() || '';
       if (!answer) throw new Error('정답을 입력해주세요.');
-      modules.quiz = { enabled: true, mode: 'subjective', question: bodyText, answer };
+      modules.quiz = { enabled: true, mode: 'subjective', question: bodyText, answer, hint, explanation };
     }
   }
 
