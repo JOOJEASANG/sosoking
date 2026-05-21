@@ -10,6 +10,7 @@ const EXTENSION_MODULES = [
   './admin-shortcuts-pwa.js',
   './account-install-actions.js',
   './account-points-view.js',
+  './pc-sidebar-spacing.js',
 
   // 상세 페이지 기본 액션/참여 기능
   './detail-actions-bootstrap.js',
