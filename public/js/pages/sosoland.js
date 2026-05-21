@@ -136,38 +136,31 @@ export function renderSosoland() {
 
   el.innerHTML = `
     <div class="sosoland-page">
-      <section class="sosoland-hero sosoland-hero--arcade">
+      <section class="sosoland-hero sosoland-hero--arcade sosoland-hero--simple">
         <div class="sosoland-hero__glow sosoland-hero__glow--one"></div>
         <div class="sosoland-hero__glow sosoland-hero__glow--two"></div>
         <div class="sosoland-hero__content">
           <div class="sosoland-hero__eyebrow">GAME PLAYGROUND</div>
           <h1>친구와 바로 즐기는<br>추리 게임 모음</h1>
           <p>모바일은 앱 게임처럼 전체 화면으로, PC는 소소킹 안의 게임 레이어창으로 바로 즐길 수 있습니다.</p>
-          <div class="sosoland-hero__chips">
-            <span>🕵️ 라이어게임</span>
-            <span>🌙 마피아게임</span>
-            <span>📱 모바일 앱 모드</span>
-            <span>🖥️ PC 레이어창</span>
-          </div>
-        </div>
-        <div class="sosoland-hero__console" aria-hidden="true">
-          <span>▲</span><span>●</span><span>◆</span><span>✦</span>
         </div>
       </section>
 
-      <section class="sosoland-grid sosoland-grid--two">
+      <section class="sosoland-grid sosoland-grid--two sosoland-grid--compact">
         ${GAMES.map(game => `
-          <article class="sosoland-card sosoland-card--${game.key}" data-game-key="${game.key}" data-game-path="${game.path}">
-            <div class="sosoland-card__top">
+          <article class="sosoland-card sosoland-card--${game.key}" data-game-key="${game.key}">
+            <div class="sosoland-card__headline">
               <div class="sosoland-card__icon">${game.icon}</div>
-              <span class="sosoland-card__tag">${game.tag}</span>
+              <div class="sosoland-card__title-stack">
+                <h2>${game.title}</h2>
+                <p>${game.desc}</p>
+              </div>
             </div>
-            <div class="sosoland-card__title-row">
-              <h2>${game.title}</h2>
+            <div class="sosoland-card__actions">
+              <span class="sosoland-card__status">${game.tag}</span>
               <button class="sosoland-card__info" type="button" data-game-info="${game.key}" aria-label="${game.title} 설명 보기">설명</button>
+              <button class="btn btn--primary btn--sm sosoland-card__start" type="button" data-game-start="${game.key}">${game.status}</button>
             </div>
-            <p>${game.desc}</p>
-            <button class="btn btn--primary btn--sm" type="button" data-game-start="${game.key}">${game.status}</button>
           </article>
         `).join('')}
       </section>
@@ -182,12 +175,12 @@ export function renderSosoland() {
     });
   });
 
-  el.querySelectorAll('[data-game-path]').forEach(card => {
-    card.addEventListener('click', event => {
+  el.querySelectorAll('[data-game-start]').forEach(btn => {
+    btn.addEventListener('click', event => {
       event.preventDefault();
-      const game = GAMES.find(item => item.key === card.dataset.gameKey) || GAMES.find(item => item.path === card.dataset.gamePath);
+      event.stopPropagation();
+      const game = GAMES.find(item => item.key === btn.dataset.gameStart);
       if (game) openGameLayer(game);
-      else navigate(card.dataset.gamePath);
     });
   });
 }
