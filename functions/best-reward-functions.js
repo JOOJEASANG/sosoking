@@ -81,6 +81,27 @@ function publicWinner(item, itemId, score, kind) {
   };
 }
 
+function writeNotification(tx, uid, data = {}) {
+  const receiver = cleanId(uid, 120);
+  if (!receiver) return;
+  const ref = db.collection('notifications').doc();
+  tx.set(ref, {
+    uid: receiver,
+    type: cleanText(data.type || 'activity', 40),
+    title: cleanText(data.title || '새 알림', 80),
+    body: cleanText(data.body || '', 180),
+    postId: cleanId(data.postId, 180),
+    kind: cleanId(data.kind, 40),
+    itemId: cleanId(data.itemId, 180),
+    actorId: cleanId(data.actorId, 120),
+    actorName: cleanText(data.actorName || '소소킹', 40),
+    points: Number(data.points || 0),
+    read: false,
+    createdAt: FieldValue.serverTimestamp(),
+    createdAtMs: Date.now(),
+  });
+}
+
 async function isAdmin(uid) {
   if (!uid) return false;
   const snap = await db.doc(`admins/${uid}`).get();
@@ -223,6 +244,17 @@ const finalizeBestReward = onCall({ region: REGION, timeoutSeconds: 30 }, async 
       },
       updatedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
+    writeNotification(tx, receiverId, {
+      type: 'best_reward',
+      title: '베스트 보상을 받았어요',
+      body: `${config.title}에 선정되어 +${BEST_REWARD_POINTS}P를 받았어요.`,
+      postId,
+      kind,
+      itemId: best.id,
+      actorId: uid,
+      actorName: '소소킹',
+      points: BEST_REWARD_POINTS,
+    });
   });
 
   return {
