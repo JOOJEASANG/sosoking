@@ -178,10 +178,20 @@ async function awardQuizPointOnce(uid, postId) {
   return awarded;
 }
 
+function publicFirstCorrectRecord({ uid, request, storedSelected }) {
+  const token = request.auth?.token || {};
+  return {
+    uid,
+    authorName: cleanText(token.name || token.email?.split('@')[0] || '익명', 40) || '익명',
+    selected: cleanText(storedSelected, 120),
+    createdAtMs: Date.now(),
+  };
+}
+
 const checkMultiQuizAnswer = onCall({ region: REGION, timeoutSeconds: 20 }, async request => {
   const uid = requireUser(request);
   const { postId, selected } = request.data || {};
-  const { postId: safePostId, post } = await loadMultiPost(postId);
+  const { ref: postRef, postId: safePostId, post } = await loadMultiPost(postId);
   if (post.modules?.quiz?.enabled !== true) {
     throw new HttpsError('failed-precondition', '퀴즈 게시글이 아닙니다.');
   }
@@ -235,30 +245,40 @@ const checkMultiQuizAnswer = onCall({ region: REGION, timeoutSeconds: 20 }, asyn
       correctCount = Number(freshSecret.correctCount || 0) + 1;
       const first = freshSecret.firstCorrect || null;
       if (!first) {
-        const authorName = cleanText(request.auth?.token?.name || request.auth?.token?.email?.split('@')[0] || '익명', 40) || '익명';
         firstCorrectNow = true;
-        firstCorrect = {
-          uid,
-          authorName,
-          selected: storedSelected,
-          createdAt: FieldValue.serverTimestamp(),
-          createdAtMs: Date.now(),
-        };
-        tx.set(secretRef, {
-          correctCount,
-          firstCorrect,
-          updatedAt: FieldValue.serverTimestamp(),
-        }, { merge: true });
+        firstCorrect = publicFirstCorrectRecord({ uid, request, storedSelected });
       } else {
         firstCorrect = first;
-        tx.set(secretRef, {
-          correctCount,
-          updatedAt: FieldValue.serverTimestamp(),
-        }, { merge: true });
       }
+
+      tx.set(secretRef, {
+        correctCount,
+        firstCorrect,
+        updatedAt: FieldValue.serverTimestamp(),
+      }, { merge: true });
+      tx.set(postRef, {
+        modules: {
+          quiz: {
+            correctCount,
+            firstCorrect,
+            lastCorrectAt: FieldValue.serverTimestamp(),
+          },
+        },
+        updatedAt: FieldValue.serverTimestamp(),
+      }, { merge: true });
     } else {
       correctCount = Number(freshSecret.correctCount || 0);
       firstCorrect = freshSecret.firstCorrect || null;
+      if (correct && firstCorrect) {
+        tx.set(postRef, {
+          modules: {
+            quiz: {
+              correctCount,
+              firstCorrect,
+            },
+          },
+        }, { merge: true });
+      }
     }
   });
 
