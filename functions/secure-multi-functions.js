@@ -59,24 +59,21 @@ function pointAwardId(uid, action, meta = {}) {
   ].filter(Boolean).join('_').slice(0, 900);
 }
 
+function awardMeta({ uid, action, postId = '', kind = '', itemId = '', onceKey = '' }) {
+  const rule = POINT_RULES[action];
+  if (!uid || !rule) return null;
+  const awardRef = db.doc(`point_awards/${pointAwardId(uid, action, { postId, kind, itemId, onceKey })}`);
+  const userRef = db.doc(`users/${uid}`);
+  const logRef = userRef.collection('point_logs').doc();
+  return { awardRef, userRef, logRef, rule, date: todayKey(), points: rule.points, action, postId, kind, itemId, onceKey };
+}
+
 function markerRef(uid, postId, kind, itemId, onceKey) {
   return db.doc(`point_awards/${pointAwardId(uid, 'reaction_marker', { postId, kind, itemId, onceKey })}`);
 }
 
-function awardPointInTx(tx, { uid, action, postId = '', kind = '', itemId = '', onceKey = '' }) {
-  const rule = POINT_RULES[action];
-  if (!uid || !rule) return { awardRef: null, userRef: null, logRef: null, points: 0 };
-  const awardRef = db.doc(`point_awards/${pointAwardId(uid, action, { postId, kind, itemId, onceKey })}`);
-  const userRef = db.doc(`users/${uid}`);
-  const logRef = userRef.collection('point_logs').doc();
-  const date = todayKey();
-  return { awardRef, userRef, logRef, rule, date, points: rule.points, action, postId, kind, itemId, onceKey };
-}
-
-async function commitPointAward(tx, award) {
-  if (!award?.awardRef) return false;
-  const awardSnap = await tx.get(award.awardRef);
-  if (awardSnap.exists) return false;
+function writePointAward(tx, award) {
+  if (!award) return;
   tx.set(award.awardRef, {
     uid: award.userRef.id,
     action: award.action,
@@ -108,7 +105,6 @@ async function commitPointAward(tx, award) {
     createdAt: FieldValue.serverTimestamp(),
     createdAtMs: Date.now(),
   });
-  return true;
 }
 
 async function loadMultiPost(postId) {
@@ -171,8 +167,9 @@ function cleanParticipationPayload(kind, payload = {}) {
 
 async function awardQuizPointOnce(uid, postId) {
   await db.runTransaction(async tx => {
-    const award = awardPointInTx(tx, { uid, action: 'quiz_correct', postId, onceKey: 'correct' });
-    await commitPointAward(tx, award);
+    const award = awardMeta({ uid, action: 'quiz_correct', postId, onceKey: 'correct' });
+    const awardSnap = await tx.get(award.awardRef);
+    if (!awardSnap.exists) writePointAward(tx, award);
   });
 }
 
@@ -223,8 +220,11 @@ const castMultiVote = onCall({ region: REGION, timeoutSeconds: 20 }, async reque
   }
 
   const ref = db.doc(`feeds/${safePostId}`);
+  let awarded = false;
   const post = await db.runTransaction(async tx => {
     const snap = await tx.get(ref);
+    const award = awardMeta({ uid, action: 'vote_participate', postId: safePostId, onceKey: 'vote' });
+    const awardSnap = await tx.get(award.awardRef);
     if (!snap.exists) throw new HttpsError('not-found', '게시글을 찾을 수 없습니다.');
     const data = snap.data() || {};
     if (data.hidden === true) throw new HttpsError('failed-precondition', '공개되지 않은 게시글입니다.');
@@ -240,16 +240,18 @@ const castMultiVote = onCall({ region: REGION, timeoutSeconds: 20 }, async reque
       return base;
     });
     const updatedVote = { ...vote, options: updatedOptions, votedBy: [...(vote.votedBy || []), uid] };
+    if (!awardSnap.exists) {
+      awarded = true;
+      writePointAward(tx, award);
+    }
     tx.update(ref, {
       'modules.vote': updatedVote,
       updatedAt: FieldValue.serverTimestamp(),
     });
-    const award = awardPointInTx(tx, { uid, action: 'vote_participate', postId: safePostId, onceKey: 'vote' });
-    await commitPointAward(tx, award);
     return { ...data, id: safePostId, modules: { ...(data.modules || {}), vote: updatedVote } };
   });
 
-  return { ok: true, post, points: 1 };
+  return { ok: true, post, awarded, points: awarded ? POINT_RULES.vote_participate.points : 0 };
 });
 
 const addMultiParticipation = onCall({ region: REGION, timeoutSeconds: 20 }, async request => {
@@ -264,6 +266,12 @@ const addMultiParticipation = onCall({ region: REGION, timeoutSeconds: 20 }, asy
   let awarded = false;
 
   await db.runTransaction(async tx => {
+    const award = awardMeta({ uid, action: 'participation_create', postId: safePostId, kind: config.kind, itemId: itemRef.id });
+    const awardSnap = await tx.get(award.awardRef);
+    if (!awardSnap.exists) {
+      awarded = true;
+      writePointAward(tx, award);
+    }
     tx.set(itemRef, {
       ...data,
       ...author,
@@ -276,8 +284,6 @@ const addMultiParticipation = onCall({ region: REGION, timeoutSeconds: 20 }, asy
       commentCount: FieldValue.increment(1),
       updatedAt: FieldValue.serverTimestamp(),
     });
-    const award = awardPointInTx(tx, { uid, action: 'participation_create', postId: safePostId, kind: config.kind, itemId: itemRef.id });
-    awarded = await commitPointAward(tx, award);
   });
 
   return { ok: true, itemId: itemRef.id, awarded, points: awarded ? POINT_RULES.participation_create.points : 0 };
@@ -298,7 +304,13 @@ const addMultiItemReply = onCall({ region: REGION, timeoutSeconds: 20 }, async r
 
   await db.runTransaction(async tx => {
     const itemSnap = await tx.get(itemRef);
+    const award = awardMeta({ uid, action: 'reply_create', postId: safePostId, kind: config.kind, itemId: safeItemId, onceKey: replyRef.id });
+    const awardSnap = await tx.get(award.awardRef);
     if (!itemSnap.exists) throw new HttpsError('not-found', '참여글을 찾을 수 없습니다.');
+    if (!awardSnap.exists) {
+      awarded = true;
+      writePointAward(tx, award);
+    }
     tx.set(replyRef, {
       text: cleanReply,
       ...author,
@@ -306,8 +318,6 @@ const addMultiItemReply = onCall({ region: REGION, timeoutSeconds: 20 }, async r
       createdAtMs: Date.now(),
     });
     tx.update(itemRef, { replyCount: FieldValue.increment(1), updatedAt: FieldValue.serverTimestamp() });
-    const award = awardPointInTx(tx, { uid, action: 'reply_create', postId: safePostId, kind: config.kind, itemId: safeItemId, onceKey: replyRef.id });
-    awarded = await commitPointAward(tx, award);
   });
 
   return { ok: true, replyId: replyRef.id, awarded, points: awarded ? POINT_RULES.reply_create.points : 0 };
@@ -329,11 +339,25 @@ const reactMultiItem = onCall({ region: REGION, timeoutSeconds: 20 }, async requ
 
   await db.runTransaction(async tx => {
     const itemSnap = await tx.get(itemRef);
-    if (!itemSnap.exists) throw new HttpsError('not-found', '참여글을 찾을 수 없습니다.');
     const markerSnap = await tx.get(reactorMarkerRef);
+    if (!itemSnap.exists) throw new HttpsError('not-found', '참여글을 찾을 수 없습니다.');
     if (markerSnap.exists) return;
 
     const item = itemSnap.data() || {};
+    let receiverAward = null;
+    let receiverAwardSnap = null;
+    if (item.authorId && item.authorId !== uid) {
+      receiverAward = awardMeta({
+        uid: item.authorId,
+        action: 'reaction_received',
+        postId: safePostId,
+        kind: config.kind,
+        itemId: safeItemId,
+        onceKey,
+      });
+      receiverAwardSnap = await tx.get(receiverAward.awardRef);
+    }
+
     reactionAdded = true;
     tx.set(reactorMarkerRef, {
       uid,
@@ -351,16 +375,9 @@ const reactMultiItem = onCall({ region: REGION, timeoutSeconds: 20 }, async requ
       updatedAt: FieldValue.serverTimestamp(),
     });
 
-    if (item.authorId && item.authorId !== uid) {
-      const receiverAward = awardPointInTx(tx, {
-        uid: item.authorId,
-        action: 'reaction_received',
-        postId: safePostId,
-        kind: config.kind,
-        itemId: safeItemId,
-        onceKey,
-      });
-      receiverAwarded = await commitPointAward(tx, receiverAward);
+    if (receiverAward && !receiverAwardSnap.exists) {
+      receiverAwarded = true;
+      writePointAward(tx, receiverAward);
     }
   });
 
