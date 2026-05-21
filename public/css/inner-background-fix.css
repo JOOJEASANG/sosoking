@@ -3,6 +3,10 @@
   --sosoking-inner-bg: #ffffff;
 }
 
+[data-theme="dark"] {
+  --sosoking-inner-bg: var(--color-bg);
+}
+
 /* 일반 사이트: 좌우 외부 배경과 본문 안쪽 배경을 분리 */
 .site-main {
   background: var(--sosoking-inner-bg) !important;
