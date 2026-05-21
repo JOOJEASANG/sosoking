@@ -1,7 +1,17 @@
 import { shuffle } from '../common.js';
 
 export function roleLabel(role) {
-  return role === 'mafia' ? '마피아' : '시민';
+  if (role === 'mafia') return '마피아';
+  if (role === 'police') return '경찰';
+  if (role === 'doctor') return '의사';
+  return '시민';
+}
+
+export function roleGuide(role) {
+  if (role === 'mafia') return '정체를 숨기고 시민처럼 행동하세요. 투표에서 살아남으면 유리합니다.';
+  if (role === 'police') return '수사관 역할입니다. 채팅에서 논리적으로 의심 대상을 좁혀보세요.';
+  if (role === 'doctor') return '보호자 역할입니다. 시민 편으로 토론을 이끌고 마피아를 찾아내세요.';
+  return '시민입니다. 말투와 투표 흐름을 보고 마피아를 찾아내세요.';
 }
 
 export function alivePlayers(players) {
@@ -19,9 +29,17 @@ export function voteCounts(players) {
 export function assignRoles(players, mafiaCount) {
   if (players.length < 3) throw new Error('마피아게임은 최소 3명이 필요합니다.');
   const safeMafiaCount = Math.min(Number(mafiaCount || 1), Math.max(1, players.length - 2));
+  const specialRoles = [];
+  const remainingAfterMafia = players.length - safeMafiaCount;
+
+  if (players.length >= 5 && remainingAfterMafia >= 2) specialRoles.push('police');
+  if (players.length >= 6 && remainingAfterMafia >= 3) specialRoles.push('doctor');
+
+  const citizenCount = players.length - safeMafiaCount - specialRoles.length;
   return shuffle([
     ...Array(safeMafiaCount).fill('mafia'),
-    ...Array(players.length - safeMafiaCount).fill('citizen'),
+    ...specialRoles,
+    ...Array(citizenCount).fill('citizen'),
   ]);
 }
 
@@ -40,9 +58,9 @@ export function judgeAfterElimination(players, targetUid) {
       : { ...p, votedFor: '' }
   ));
   const mafiaAlive = nextPlayers.filter(p => p.alive !== false && p.assignedRole === 'mafia').length;
-  const citizenAlive = nextPlayers.filter(p => p.alive !== false && p.assignedRole === 'citizen').length;
+  const citizenSideAlive = nextPlayers.filter(p => p.alive !== false && p.assignedRole !== 'mafia').length;
 
   if (mafiaAlive === 0) return { status: 'ended', winner: 'citizen', nextPlayers };
-  if (mafiaAlive >= citizenAlive) return { status: 'ended', winner: 'mafia', nextPlayers };
+  if (mafiaAlive >= citizenSideAlive) return { status: 'ended', winner: 'mafia', nextPlayers };
   return { status: 'playing', winner: '', nextPlayers };
 }
