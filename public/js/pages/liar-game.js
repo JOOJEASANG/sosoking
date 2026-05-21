@@ -4,7 +4,7 @@ import { navigate } from '../router.js';
 import { toast } from '../components/toast.js';
 import { setMeta } from '../utils/seo.js';
 import { ensureGameGuestAuth } from '../game-guest-access.js';
-import { buildGameInviteUrl, findMyPlayer } from '../games/common.js';
+import { buildGameInviteUrl } from '../games/common.js';
 import { sendGameChat, scrollGameChatToBottom } from '../games/chat.js';
 import { createLiarRoom, joinLiarRoom, startLiarGame } from '../games/liar/actions.js';
 import { renderLiarLobbyHTML, renderLiarLoadingHTML, renderLiarNotFoundHTML, renderLiarRoomHTML, renderLiarWrongGameHTML } from '../games/liar/render.js';
