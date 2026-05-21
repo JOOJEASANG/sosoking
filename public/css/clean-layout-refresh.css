@@ -4,6 +4,65 @@
   gap: 16px;
 }
 
+/* ── 새 홈 레이아웃 v2 ── */
+.home-dash--v2 {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.home-greeting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 22px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, rgba(255,107,74,.10), rgba(124,58,237,.08));
+  border: 1px solid rgba(255,107,74,.16);
+}
+
+.home-greeting__left {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.home-greeting__streak {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: rgba(245,158,11,.14);
+  color: #b45309;
+  font-size: 11px;
+  font-weight: 950;
+  margin-bottom: 5px;
+  width: fit-content;
+}
+
+.home-greeting__name {
+  font-size: 19px;
+  font-weight: 950;
+  color: var(--color-text-primary);
+  letter-spacing: -0.025em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-greeting__sub {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+
+.home-greeting__write {
+  flex: 0 0 auto;
+}
+
 .home-hero--clean {
   padding: 28px 24px;
   border-radius: 26px;
@@ -357,6 +416,19 @@
 @media (max-width: 767px) {
   .home-dash--clean {
     gap: 12px;
+  }
+
+  .home-dash--v2 {
+    gap: 14px;
+  }
+
+  .home-greeting {
+    padding: 16px 18px;
+    border-radius: 18px;
+  }
+
+  .home-greeting__name {
+    font-size: 17px;
   }
 
   .home-hero--clean {
