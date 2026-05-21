@@ -30,6 +30,7 @@ function setRelayMission(key) {
     btn.classList.toggle('active', active);
     btn.setAttribute('aria-checked', active ? 'true' : 'false');
   });
+  injectWritePreviewMission();
 }
 
 function bindWriteMissionOptions() {
@@ -58,6 +59,26 @@ function renderMissionCard(mission) {
     </div>`;
 }
 
+function renderPreviewMission(mission) {
+  if (!mission) return '';
+  return `
+    <div class="multi-preview-mission" data-relay-preview-mission="1">
+      <b>🎯 ${esc(mission.title)}</b>
+      <span>${esc(mission.instruction)}</span>
+    </div>`;
+}
+
+function injectWritePreviewMission() {
+  const page = document.querySelector('.multi-write-page[data-preset-key="relay"]');
+  const preview = document.getElementById('mw-preview-body');
+  if (!page || !preview) return;
+  preview.querySelectorAll('[data-relay-preview-mission]').forEach(el => el.remove());
+  const mission = missionFor(document.getElementById('mw-relay-mission')?.value || 'none');
+  if (!mission) return;
+  const anchor = preview.querySelector('.multi-preview-guide') || preview.querySelector('.multi-preview-body') || preview.firstElementChild;
+  if (anchor) anchor.insertAdjacentHTML('afterend', renderPreviewMission(mission));
+}
+
 async function enhanceRelayDetail() {
   const postId = getDetailId();
   if (!postId) return;
@@ -79,6 +100,7 @@ async function enhanceRelayDetail() {
 
 function tick() {
   bindWriteMissionOptions();
+  injectWritePreviewMission();
   enhanceRelayDetail();
 }
 
