@@ -17,6 +17,8 @@ const POINT_RULES = Object.freeze({
   reaction_received: { points: 1, label: '반응 받음' },
 });
 
+const CLIENT_CALLABLE_ACTIONS = new Set(['post_create']);
+
 function todayKey() {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Seoul',
@@ -42,6 +44,25 @@ function awardId(uid, action, meta) {
   return createHash('sha256').update(raw).digest('hex');
 }
 
+async function validateClientAward(uid, action, meta) {
+  if (!CLIENT_CALLABLE_ACTIONS.has(action)) {
+    throw new HttpsError('permission-denied', '이 포인트 항목은 서버 검증 액션에서만 지급됩니다.');
+  }
+
+  if (action === 'post_create') {
+    const postId = clean(meta.postId, 180);
+    if (!postId) throw new HttpsError('invalid-argument', '게시글 정보가 없습니다.');
+    const snap = await db.doc(`feeds/${postId}`).get();
+    if (!snap.exists) throw new HttpsError('not-found', '게시글을 찾을 수 없습니다.');
+    const post = snap.data() || {};
+    if (post.authorId !== uid) throw new HttpsError('permission-denied', '본인이 작성한 글에만 포인트를 지급할 수 있습니다.');
+    if (post.hidden === true) throw new HttpsError('failed-precondition', '숨김 글에는 포인트를 지급할 수 없습니다.');
+    return;
+  }
+
+  throw new HttpsError('permission-denied', '허용되지 않은 포인트 항목입니다.');
+}
+
 const awardUserPoints = onCall({ region: REGION, timeoutSeconds: 20 }, async request => {
   const uid = request.auth?.uid;
   if (!uid) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
@@ -51,6 +72,8 @@ const awardUserPoints = onCall({ region: REGION, timeoutSeconds: 20 }, async req
   if (!rule) throw new HttpsError('invalid-argument', '지원하지 않는 포인트 항목입니다.');
 
   const meta = request.data?.meta && typeof request.data.meta === 'object' ? request.data.meta : {};
+  await validateClientAward(uid, action, meta);
+
   const id = awardId(uid, action, meta);
   const awardRef = db.doc(`point_awards/${id}`);
   const userRef = db.doc(`users/${uid}`);

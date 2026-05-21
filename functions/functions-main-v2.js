@@ -7,6 +7,7 @@
 const coreAi = require('./index.js');
 const secureAiConfig = require('./secure-ai-config-functions.js');
 const secureFeed = require('./secure-feed-functions.js');
+const secureMulti = require('./secure-multi-functions.js');
 const secureInteractions = require('./secure-interactions-functions.js');
 const sitemap = require('./sitemap-functions.js');
 const aiMission = require('./ai-mission-functions.js');
@@ -41,6 +42,10 @@ module.exports = {
   toggleFeedReaction: secureFeed.toggleFeedReaction,
   registerPostView: secureFeed.registerPostView,
   seoPost: secureFeed.seoPost,
+
+  // 멀티 게시글 전용 보안 액션
+  checkMultiQuizAnswer: secureMulti.checkMultiQuizAnswer,
+  castMultiVote: secureMulti.castMultiVote,
 
   // 상세 상호작용 보안 액션: 중복 checkQuizAnswer는 공개하지 않음
   incrementPostView: secureInteractions.incrementPostView,

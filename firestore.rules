@@ -32,7 +32,7 @@ service cloud.firestore {
       return request.resource.data.keys().hasOnly([
           'type', 'cat', 'subtype', 'typeLabel',
           'title', 'desc', 'body', 'subtitle', 'tags', 'images', 'modules',
-          'anonymous', 'authorId', 'authorName', 'authorPhoto', 'authorEmail',
+          'anonymous', 'anonymousMode', 'authorId', 'authorName', 'authorPhoto', 'authorEmail',
           'reactions', 'commentCount', 'acrosticCount', 'viewCount', 'pointsScore',
           'options', 'quizMode', 'initials', 'hint', 'keyword', 'evidence',
           'startSentence', 'characters', 'charCount', 'createdAt', 'updatedAt'
@@ -73,11 +73,6 @@ service cloud.firestore {
         && request.resource.data.votedBy.size() == resource.data.get('votedBy', []).size() + 1;
     }
     function isSafeMultiVoteUpdate() {
-      // BUG-004: modules 전체 교체를 클라이언트에서 허용하면 안 됩니다.
-      // modules 내부의 vote count 등 구체적인 경로 업데이트는
-      // Cloud Function(서버)에서만 처리합니다.
-      // 클라이언트에서 changed.hasOnly(['modules'])를 허용하면
-      // authorId/type이 유지되더라도 modules 객체 전체를 교체할 수 있어 위험합니다.
       return false;
     }
     function isAuthorContentUpdate(authorId) {

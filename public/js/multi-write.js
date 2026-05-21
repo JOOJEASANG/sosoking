@@ -1,5 +1,5 @@
 import { auth, db } from './firebase.js';
-import { collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { collection, doc, setDoc, deleteDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { navigate } from './router.js';
 import { toast } from './components/toast.js';
 import { appState } from './state.js';
@@ -17,6 +17,33 @@ function isMultiQuery() {
 
 function getPresetKey() {
   return getMultiPresetFromHash(window.location.hash || '');
+}
+
+function cloneWithoutQuizSecret(modules) {
+  const publicModules = JSON.parse(JSON.stringify(modules || {}));
+  const quiz = publicModules.quiz;
+  if (!quiz?.enabled) return { publicModules, quizSecret: null };
+
+  const mode = quiz.mode === 'multiple' ? 'multiple' : 'subjective';
+  const answer = String(quiz.answer || '').trim();
+  const correctIndex = Number.isInteger(Number(quiz.correctIndex)) ? Number(quiz.correctIndex) : null;
+  const quizSecret = {
+    quizMode: mode,
+    mode,
+    answer,
+    answerIdx: correctIndex,
+    correctIndex,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  };
+
+  delete quiz.answer;
+  delete quiz.correctIndex;
+  if (Array.isArray(quiz.options)) {
+    quiz.options = quiz.options.map(option => ({ text: String(option?.text || option || '').slice(0, 120) }));
+  }
+
+  return { publicModules, quizSecret };
 }
 
 function renderMultiWrite() {
@@ -133,8 +160,10 @@ async function submitMultiPost() {
     return;
   }
 
+  let docRef = null;
   try {
-    const modules = collectMultiModules();
+    const collectedModules = collectMultiModules();
+    const { publicModules, quizSecret } = cloneWithoutQuizSecret(collectedModules);
     const isAnonymous = presetKey === 'general' && isAnonymousWriteChecked();
     btn.disabled = true;
     btn.textContent = hasPendingImages() ? '사진 올리는 중...' : '올리는 중...';
@@ -144,8 +173,9 @@ async function submitMultiPost() {
 
     const manualTags = splitTags(document.getElementById('mw-tags')?.value || '');
     const tags = manualTags.length ? manualTags : fillAutoTags({ force: true });
+    docRef = doc(collection(db, 'feeds'));
 
-    const docRef = await addDoc(collection(db, 'feeds'), {
+    await setDoc(docRef, {
       type: 'multi',
       cat: 'multi',
       subtype: presetKey,
@@ -154,7 +184,7 @@ async function submitMultiPost() {
       desc,
       tags,
       images,
-      modules,
+      modules: publicModules,
       anonymous: isAnonymous,
       anonymousMode: isAnonymous ? 'general-option' : '',
       authorId: auth.currentUser.uid,
@@ -168,11 +198,16 @@ async function submitMultiPost() {
       createdAt: serverTimestamp(),
     });
 
+    if (quizSecret) {
+      await setDoc(doc(db, 'feeds', docRef.id, 'secret', 'answer'), quizSecret);
+    }
+
     await awardPoints('post_create', { postId: docRef.id, type: presetKey }).catch(() => {});
     toast.success('피드 글을 올렸어요! +10P 🎉');
     navigate(`/detail/${docRef.id}`);
   } catch (error) {
     console.error(error);
+    if (docRef) await deleteDoc(docRef).catch(() => {});
     toast.error(error.message || '올리기에 실패했어요.');
     btn.disabled = false;
     btn.textContent = '올리기';
