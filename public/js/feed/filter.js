@@ -1,4 +1,4 @@
-export const FILTER_TYPES = ['general', 'vote', 'fill', 'naming', 'acrostic', 'relay', 'quiz'];
+export const FILTER_TYPES = ['general', 'vote', 'naming', 'acrostic', 'relay', 'quiz'];
 
 export const TYPE_LABELS = {
   general: '일반글',
