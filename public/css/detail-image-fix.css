@@ -32,6 +32,7 @@
 }
 
 .detail-gallery__thumb img {
+  position: static;
   display: block;
   width: 100%;
   height: auto !important;
