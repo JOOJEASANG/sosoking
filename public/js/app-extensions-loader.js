@@ -2,6 +2,7 @@
 //
 // index.html에 흩어져 있던 기능 보정/확장 모듈을 한 곳에서 관리합니다.
 // 각 모듈은 독립 실행형으로 만들어져 있으므로 실패해도 앱 전체 부팅을 막지 않습니다.
+// 레거시 DOM 패치 파일은 최신 전담 파일과 충돌하지 않도록 로딩 목록에서 제외합니다.
 
 const EXTENSION_MODULES = [
   './game-guest-access.js',
@@ -9,39 +10,40 @@ const EXTENSION_MODULES = [
   './admin-shortcuts-pwa.js',
   './account-install-actions.js',
   './account-points-view.js',
+
+  // 상세 페이지 기본 액션/참여 기능
   './detail-actions-bootstrap.js',
   './detail-image-visibility-patch.js',
   './post-owner-actions.js',
-  './post-image-edit-actions.js',
-  './feedback-actions.js',
-  './admin-feedback-actions.js',
-  './post-view-normalizer.js',
   './participant-replies.js',
+  './multi-detail.js',
+  './detail-comment-fix.js',
+  './post-view-normalizer.js',
+
+  // 피드/글쓰기/수정
   './acrostic-flow-fix.js',
   './multi-write.js',
-  './multi-detail.js',
-  './multi-detail-cleanup.js',
-  './multi-write-stability-fix.js',
   './fill-box-input-fix.js',
-  './write-edit-fix.js',
   './write-edit-router-fix.js',
   './points-actions.js',
   './unlimited-image-uploader.js',
-  './admin-multi-post-fix.js',
-  './admin-clean-dashboard.js',
+  './write-template-suggestions.js',
+
+  // 관리자/알림/운영 보조
+  './feedback-actions.js',
+  './admin-feedback-actions.js',
   './admin-ai-secret-notice.js',
   './admin-ai-minimal-actions.js',
   './admin-member-list-fix.js',
-  './detail-comment-fix.js',
-  './home-feed-compact-fix.js',
   './admin-data-manager.js',
   './admin-ui-cleanup.js',
-  './relay-mission-cards.js',
-  './write-template-suggestions.js',
-  './detail-game-status-card.js',
-  './best-reward-rule-card.js',
   './notifications-panel.js',
   './account-notifications-section.js',
+
+  // 추가 표시 보강
+  './relay-mission-cards.js',
+  './detail-game-status-card.js',
+  './best-reward-rule-card.js',
   './deadline-gate-render.js',
 ];
 
