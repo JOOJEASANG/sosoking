@@ -18,6 +18,24 @@ export async function sendGameChat(roomId, text) {
   });
 }
 
+export async function sendGameSystemMessage(roomId, text, name = '🎙️ 사회자') {
+  const message = String(text || '').trim();
+  if (!roomId || !message) return;
+  await addDoc(collection(db, 'game_rooms', roomId, 'chats'), {
+    uid: 'system',
+    name,
+    text: message.slice(0, 500),
+    type: 'system',
+    createdAt: serverTimestamp(),
+  });
+}
+
+export async function sendGameSystemMessages(roomId, messages = [], name = '🎙️ 사회자') {
+  for (const message of messages) {
+    await sendGameSystemMessage(roomId, message, name);
+  }
+}
+
 export function renderGameChatHTML({ room, chats = [], joined = false, inputId = 'game-chat-input', sendId = 'game-chat-send', title = '토론 채팅', hint = '차례를 정해 한 명씩 설명하고, 의심되는 부분은 질문해보세요.' }) {
   const list = chats.slice(-80);
   return `
@@ -42,13 +60,14 @@ export function renderGameChatHTML({ room, chats = [], joined = false, inputId =
 }
 
 function renderChatItem(chat) {
-  const mine = auth.currentUser?.uid && chat.uid === auth.currentUser.uid;
-  const initial = String(chat.name || '?').slice(0, 1);
+  const isSystem = chat.type === 'system' || chat.uid === 'system';
+  const mine = !isSystem && auth.currentUser?.uid && chat.uid === auth.currentUser.uid;
+  const initial = isSystem ? '🎙️' : String(chat.name || '?').slice(0, 1);
   return `
-    <div class="game-chat-item ${mine ? 'is-mine' : ''}">
+    <div class="game-chat-item ${mine ? 'is-mine' : ''} ${isSystem ? 'is-system' : ''}">
       <i>${esc(initial)}</i>
       <div>
-        <div class="game-chat-item__meta"><b>${esc(chat.name || '참가자')}</b>${mine ? '<span>나</span>' : ''}</div>
+        <div class="game-chat-item__meta"><b>${esc(chat.name || (isSystem ? '사회자' : '참가자'))}</b>${mine ? '<span>나</span>' : ''}${isSystem ? '<span>안내</span>' : ''}</div>
         <p>${esc(chat.text || '').replace(/\n/g, '<br>')}</p>
       </div>
     </div>`;
