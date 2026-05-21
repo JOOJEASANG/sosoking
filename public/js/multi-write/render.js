@@ -1,4 +1,4 @@
-import { MULTI_PRESETS, BODY_LABELS, BODY_REQUIRED_PRESETS } from './presets.js';
+import { MULTI_PRESETS, WRITER_PRESET_KEYS, BODY_LABELS, BODY_REQUIRED_PRESETS } from './presets.js';
 
 function esc(value) {
   return String(value || '').replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
@@ -8,12 +8,15 @@ function renderPresetButtons(activeKey) {
   return `
     <div class="multi-preset-box multi-preset-box--simple">
       <div class="multi-preset-box__title">글쓰기 형식</div>
-      <div class="multi-preset-box__desc">익명은 일반글 안에서 선택할 수 있습니다.</div>
+      <div class="multi-preset-box__desc">익명은 일반글 안에서 선택할 수 있습니다. 빈칸채우기는 매주 시스템 챌린지로 제공됩니다.</div>
       <div class="multi-preset-list">
-        ${Object.entries(MULTI_PRESETS).map(([key, preset]) => `
+        ${WRITER_PRESET_KEYS.map(key => {
+          const preset = MULTI_PRESETS[key];
+          return `
           <button type="button" class="multi-preset-btn ${activeKey === key ? 'active' : ''}" data-multi-preset="${key}" aria-pressed="${activeKey === key ? 'true' : 'false'}">
             ${preset.icon} ${preset.label}
-          </button>`).join('')}
+          </button>`;
+        }).join('')}
       </div>
     </div>`;
 }
@@ -74,18 +77,8 @@ function renderSelectedModule(activeKey, preset) {
   }
 
   if (activeKey === 'fill') {
-    return moduleCard('fill', '🧩', '빈칸 채우기', '스페이스바 여러 칸, ___, □□□를 빈칸으로 인식하고 줄바꿈을 유지합니다.', `
-      <div class="multi-module-inline-note">
-        본문에 문제 문장을 쓰다가 <b>스페이스바를 2칸 이상 연속</b>으로 누르면 그 부분이 빈칸이 됩니다.<br>
-        기존 방식처럼 <b>___</b> 또는 <b>□□□</b>를 넣어도 빈칸으로 인식합니다.<br>
-        한 줄 띄우기와 문단 구분은 상세페이지에서 그대로 표시됩니다.
-      </div>
-      <div class="form-group" style="margin-top:12px">
-        <label class="form-label">빈칸별 칸 수 선택 입력</label>
-        <input id="mw-fill-counts" class="form-input" maxlength="60" placeholder="비워두면 스페이스/밑줄/□ 개수로 자동 계산 · 예: 3, 4, 2">
-        <input type="hidden" id="mw-fill-count" value="4">
-        <div class="form-hint">예: “나는   을 좋아한다”처럼 스페이스 3칸을 넣으면 3글자 빈칸이 됩니다. 직접 칸 수를 지정하려면 쉼표로 입력하세요.</div>
-      </div>`);
+    return moduleCard('fill', '🧩', '빈칸 채우기', '기존 글 호환용입니다. 새 글쓰기는 시스템 주간 챌린지로 제공됩니다.', `
+      <div class="multi-module-inline-note">빈칸채우기는 작성자가 직접 만들지 않고, 매주 시스템 챌린지로 자동 제공됩니다.</div>`);
   }
 
   if (activeKey === 'naming') {
