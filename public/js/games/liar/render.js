@@ -1,27 +1,37 @@
-import { buildGameInviteUrl, esc } from '../common.js';
+import { buildGameInviteUrl, esc, findMyPlayer, isRoomHost } from '../common.js';
+import { renderGameChatHTML } from '../chat.js';
+import { auth } from '../../firebase.js';
+
+const CATEGORY_LABELS = {
+  food: '음식',
+  place: '장소',
+  thing: '물건',
+  animal: '동물',
+  random: '랜덤',
+};
 
 export function renderLiarLobbyHTML() {
   return `
-    <div class="liar-page">
+    <div class="liar-page game-shell-polished">
       <section class="liar-hero liar-hero--lobby">
         <button class="write-back-btn" id="liar-back" type="button">←</button>
         <div class="liar-hero__bg">🕵️</div>
         <div class="liar-hero__eyebrow">HIDDEN WORD</div>
         <h1>라이어게임</h1>
-        <p>모두가 같은 제시어를 받지만, 단 한 명의 라이어만 제시어를 모릅니다. 서로 자연스럽게 설명하고 질문하면서 제시어를 모르는 사람을 찾아내는 추리 대화 게임입니다.</p>
-        <div class="liar-hero__chips"><span>친구 초대</span><span>제시어 추리</span><span>라운드 토크</span></div>
+        <p>모두가 같은 제시어를 받지만, 단 한 명의 라이어만 제시어를 모릅니다. 채팅으로 자연스럽게 설명하고 질문하면서 제시어를 모르는 사람을 찾아내세요.</p>
+        <div class="liar-hero__chips"><span>채팅 토론</span><span>제시어 추리</span><span>친구 초대</span></div>
       </section>
 
-      <section class="game-detail-card game-guide-card">
+      <section class="game-detail-card game-guide-card game-guide-card--steps">
         <div class="game-detail-card__head"><div><b>라이어게임 설명</b><span>대화 속 어색함을 찾아내는 심리 추리 게임</span></div><i>🕵️</i></div>
         <div class="game-guide-list">
-          <div><b>목표</b><span>일반 참가자는 라이어를 찾아내고, 라이어는 정체를 들키지 않은 채 제시어를 맞히거나 끝까지 버팁니다.</span></div>
-          <div><b>진행</b><span>방 만들기 → 초대 링크 공유 → 참가자 입장 → 제시어 확인 → 돌아가며 설명/질문 → 투표로 라이어 지목 순서로 진행합니다.</span></div>
-          <div><b>팁</b><span>너무 직접적인 설명은 라이어에게 힌트가 되고, 너무 애매한 설명은 의심을 받을 수 있습니다.</span></div>
+          <div><b>1. 입장</b><span>방을 만들고 초대 링크를 공유해 친구들을 모읍니다.</span></div>
+          <div><b>2. 확인</b><span>게임 시작 후 일반 참가자는 제시어를 보고, 라이어는 카테고리만 봅니다.</span></div>
+          <div><b>3. 토론</b><span>채팅으로 한 명씩 설명하고 질문하면서 라이어를 찾아냅니다.</span></div>
         </div>
       </section>
 
-      <section class="liar-create-card">
+      <section class="liar-create-card game-create-panel">
         <h2>방 만들기</h2>
         <div class="form-group"><label class="form-label">방 제목</label><input id="liar-title" class="form-input" maxlength="40" value="라이어게임" placeholder="방 제목"></div>
         <div class="form-group"><label class="form-label">카테고리</label><select id="liar-category" class="form-select"><option value="food">음식</option><option value="place">장소</option><option value="thing">물건</option><option value="animal">동물</option><option value="random">랜덤</option></select></div>
@@ -32,7 +42,7 @@ export function renderLiarLobbyHTML() {
         <button class="btn btn--primary" id="liar-create">방 만들기</button>
       </section>
 
-      <section class="liar-rule-card"><b>진행 방식</b><span>방 만들기 → 초대 링크 공유 → 참가자 입장 → 방장이 시작 → 각자 제시어/라이어 확인</span></section>
+      <section class="liar-rule-card game-tip-card"><b>진행 방식</b><span>방 만들기 → 초대 링크 공유 → 참가자 입장 → 방장이 시작 → 제시어 확인 → 채팅 토론</span></section>
     </div>`;
 }
 
@@ -52,45 +62,97 @@ export function renderLiarWrongGameHTML(game = '') {
 
 function renderPlayerItem(player, room) {
   const isHost = player.uid === room.hostId || player.role === 'host';
+  const isMe = auth.currentUser?.uid === player.uid;
+  const roleText = room.status === 'playing'
+    ? player.assignedRole === 'liar' ? '라이어 후보' : '참가중'
+    : '대기중';
   return `
-    <div class="liar-player-item has-avatar">
+    <div class="liar-player-item has-avatar ${isMe ? 'is-me' : ''}">
       <i class="game-player-avatar ${isHost ? 'game-player-avatar--host' : 'game-player-avatar--player'}" aria-hidden="true"></i>
-      <div class="liar-player-name"><span>${esc(player.name || '참가자')}</span>${isHost ? '<small>방장</small>' : ''}</div>
-      <b>${isHost ? '방장' : '참가자'}</b>
+      <div class="liar-player-name"><span>${esc(player.name || '참가자')}</span>${isHost ? '<small>방장</small>' : ''}${isMe ? '<small>나</small>' : ''}</div>
+      <b>${esc(roleText)}</b>
     </div>`;
 }
 
-export function renderLiarRoomHTML(room, players = []) {
+function renderMySecretCard(room, me) {
+  if (!me || room.status !== 'playing') return '';
+  const isLiar = me.assignedRole === 'liar';
+  return `
+    <section class="game-secret-card ${isLiar ? 'game-secret-card--liar' : ''}">
+      <div>
+        <small>${isLiar ? '당신은 라이어입니다' : '당신의 제시어'}</small>
+        <b>${isLiar ? '제시어를 모릅니다' : esc(room.word || '제시어')}</b>
+        <span>${isLiar ? `카테고리: ${esc(room.topic || CATEGORY_LABELS[room.category] || '-')}` : '너무 직접적으로 말하면 라이어에게 힌트가 됩니다.'}</span>
+      </div>
+      <i>${isLiar ? '🤫' : '🔐'}</i>
+    </section>`;
+}
+
+function renderPhaseCard(room, players) {
+  const waiting = room.status === 'waiting';
+  const enough = players.length >= 3;
+  return `
+    <section class="game-phase-card">
+      <div class="game-phase-card__step ${waiting ? 'active' : 'done'}"><b>1</b><span>참가자 입장</span></div>
+      <div class="game-phase-card__line"></div>
+      <div class="game-phase-card__step ${!waiting ? 'active' : ''}"><b>2</b><span>제시어 확인</span></div>
+      <div class="game-phase-card__line"></div>
+      <div class="game-phase-card__step"><b>3</b><span>채팅 토론</span></div>
+      <p>${waiting ? (enough ? '이제 방장이 게임을 시작할 수 있어요.' : '최소 3명이 모이면 시작할 수 있어요.') : esc(room.log || '채팅으로 토론을 진행하세요.')}</p>
+    </section>`;
+}
+
+export function renderLiarRoomHTML(room, players = [], chats = []) {
   const url = buildGameInviteUrl('liar', room.id);
   const visiblePlayers = players.length ? players : [{ uid: room.hostId, name: room.hostName || '방장', role: 'host' }];
+  const me = findMyPlayer(visiblePlayers);
+  const joined = !!me;
+  const host = isRoomHost(room);
+  const canStart = host && room.status === 'waiting' && visiblePlayers.length >= 3;
+  const category = room.topic || CATEGORY_LABELS[room.category] || room.category || '-';
   return `
-    <div class="liar-page">
+    <div class="liar-page game-shell-polished">
       <section class="liar-hero liar-hero--room">
         <button class="write-back-btn" id="liar-back" type="button">←</button>
         <div class="liar-hero__bg">🕵️</div>
         <div class="liar-hero__eyebrow">방 코드 ${esc(room.code || '')}</div>
         <h1>${esc(room.title || '라이어게임')}</h1>
-        <p>초대 링크를 공유해서 참가자를 모으세요. 참가자가 모이면 제시어를 확인하고 대화로 라이어를 찾아내면 됩니다.</p>
+        <p>${esc(room.log || '초대 링크를 공유해서 참가자를 모으세요. 참가자가 모이면 채팅으로 라이어를 찾아냅니다.')}</p>
+        <div class="game-room-actions"><button class="btn btn--ghost btn--sm" id="liar-copy">초대 링크 복사</button>${!joined ? '<button class="btn btn--primary btn--sm" id="liar-join">참가하기</button>' : ''}</div>
       </section>
 
-      <section class="liar-room-card">
-        <div class="liar-room-info"><span>상태</span><b>${room.status === 'waiting' ? '대기중' : esc(room.status)}</b></div>
-        <div class="liar-room-info"><span>카테고리</span><b>${esc(room.category || '-')}</b></div>
+      <section class="liar-room-card game-stat-grid">
+        <div class="liar-room-info"><span>상태</span><b>${room.status === 'waiting' ? '대기중' : '진행중'}</b></div>
+        <div class="liar-room-info"><span>카테고리</span><b>${esc(category)}</b></div>
         <div class="liar-room-info"><span>참가자</span><b>${visiblePlayers.length}/${room.maxPlayers || 0}명</b></div>
         <div class="liar-room-info"><span>라이어</span><b>${room.liarCount || 1}명</b></div>
       </section>
 
-      <section class="liar-invite-card">
+      ${renderMySecretCard(room, me)}
+      ${renderPhaseCard(room, visiblePlayers)}
+
+      <section class="liar-invite-card game-invite-compact">
         <label class="form-label">초대 링크</label>
         <div class="liar-invite-row"><input class="form-input" id="liar-invite-url" value="${url}" readonly><button class="btn btn--primary btn--sm" id="liar-copy">복사</button></div>
-        <div class="form-hint">회원가입 없이 닉네임만 입력해도 참가할 수 있습니다.</div>
+        <div class="form-hint">마이크 없이 채팅으로 진행합니다. 참가자는 닉네임만 있어도 입장할 수 있어요.</div>
       </section>
 
-      <section class="liar-player-card">
-        <h2>참가자</h2>
-        <div class="liar-player-list" id="liar-player-list">${visiblePlayers.map(player => renderPlayerItem(player, room)).join('')}</div>
-        <button class="btn btn--ghost" id="liar-join">참가하기</button>
-        <button class="btn btn--primary" id="liar-start" disabled>게임 시작 준비중</button>
-      </section>
+      <div class="game-room-grid">
+        <section class="liar-player-card game-player-panel">
+          <div class="game-panel-head"><h2>참가자</h2><span>${visiblePlayers.length}명</span></div>
+          <div class="liar-player-list" id="liar-player-list">${visiblePlayers.map(player => renderPlayerItem(player, room)).join('')}</div>
+          ${host ? `<button class="btn btn--primary btn--full" id="liar-start" ${canStart ? '' : 'disabled'}>${room.status === 'waiting' ? canStart ? '게임 시작' : '3명 이상 필요' : '게임 진행중'}</button>` : ''}
+        </section>
+
+        ${renderGameChatHTML({
+          room,
+          chats,
+          joined,
+          inputId: 'liar-chat-input',
+          sendId: 'liar-chat-send',
+          title: '라이어 토론 채팅',
+          hint: room.status === 'playing' ? '제시어를 직접 말하지 말고 자연스럽게 설명하세요.' : '참가자가 모이면 이곳에서 토론을 진행합니다.',
+        })}
+      </div>
     </div>`;
 }
