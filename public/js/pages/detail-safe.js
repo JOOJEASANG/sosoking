@@ -93,7 +93,8 @@ function renderYouTube(post) {
 function renderImages(images) {
   const list = (Array.isArray(images) ? images : []).map(safeImageUrl).filter(Boolean).slice(0, 12);
   if (!list.length) return '';
-  return `<div class="detail-gallery detail-gallery--${Math.min(list.length, 4)}" style="margin-bottom:16px">${list.map(src => `<div class="detail-gallery__thumb"><img src="${escAttr(src)}" alt="" loading="lazy" referrerpolicy="no-referrer"></div>`).join('')}</div>`;
+  const encoded = encodeURIComponent(JSON.stringify(list));
+  return `<div class="detail-gallery detail-gallery--${Math.min(list.length, 4)}" data-images="${encoded}" style="margin-bottom:16px">${list.map((src, index) => `<button type="button" class="detail-gallery__thumb" data-gallery-idx="${index}" aria-label="사진 ${index + 1} 크게 보기"><img src="${escAttr(src)}" alt="" loading="lazy" referrerpolicy="no-referrer"></button>`).join('')}</div>`;
 }
 
 function renderOptions(post) {
