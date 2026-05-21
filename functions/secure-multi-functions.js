@@ -72,6 +72,27 @@ function markerRef(uid, postId, kind, itemId, onceKey) {
   return db.doc(`point_awards/${pointAwardId(uid, 'reaction_marker', { postId, kind, itemId, onceKey })}`);
 }
 
+function writeNotification(tx, uid, data = {}) {
+  const receiver = cleanId(uid, 120);
+  if (!receiver) return;
+  const ref = db.collection('notifications').doc();
+  tx.set(ref, {
+    uid: receiver,
+    type: cleanText(data.type || 'activity', 40),
+    title: cleanText(data.title || '새 알림', 80),
+    body: cleanText(data.body || '', 180),
+    postId: cleanId(data.postId, 180),
+    kind: cleanId(data.kind, 40),
+    itemId: cleanId(data.itemId, 180),
+    actorId: cleanId(data.actorId, 120),
+    actorName: cleanText(data.actorName || '익명', 40),
+    points: Number(data.points || 0),
+    read: false,
+    createdAt: FieldValue.serverTimestamp(),
+    createdAtMs: Date.now(),
+  });
+}
+
 function writePointAward(tx, award) {
   if (!award) return;
   tx.set(award.awardRef, {
@@ -393,6 +414,7 @@ const addMultiItemReply = onCall({ region: REGION, timeoutSeconds: 20 }, async r
     const award = awardMeta({ uid, action: 'reply_create', postId: safePostId, kind: config.kind, itemId: safeItemId, onceKey: replyRef.id });
     const awardSnap = await tx.get(award.awardRef);
     if (!itemSnap.exists) throw new HttpsError('not-found', '참여글을 찾을 수 없습니다.');
+    const item = itemSnap.data() || {};
     if (!awardSnap.exists) {
       awarded = true;
       writePointAward(tx, award);
@@ -404,6 +426,19 @@ const addMultiItemReply = onCall({ region: REGION, timeoutSeconds: 20 }, async r
       createdAtMs: Date.now(),
     });
     tx.update(itemRef, { replyCount: FieldValue.increment(1), updatedAt: FieldValue.serverTimestamp() });
+    if (item.authorId && item.authorId !== uid) {
+      writeNotification(tx, item.authorId, {
+        type: 'multi_reply',
+        title: '내 참여글에 답글이 달렸어요',
+        body: `${author.authorName}님이 답글을 남겼어요.`,
+        postId: safePostId,
+        kind: config.kind,
+        itemId: safeItemId,
+        actorId: uid,
+        actorName: author.authorName,
+        points: POINT_RULES.reply_create.points,
+      });
+    }
   });
 
   return { ok: true, replyId: replyRef.id, awarded, points: awarded ? POINT_RULES.reply_create.points : 0 };
@@ -420,6 +455,7 @@ const reactMultiItem = onCall({ region: REGION, timeoutSeconds: 20 }, async requ
   const itemRef = db.doc(`feeds/${safePostId}/${config.collection}/${safeItemId}`);
   const onceKey = `react_${key}_${uid}`;
   const reactorMarkerRef = markerRef(uid, safePostId, config.kind, safeItemId, onceKey);
+  const actor = await getAuthorInfo(uid, request.auth?.token || {});
   let reactionAdded = false;
   let receiverAwarded = false;
 
@@ -464,6 +500,17 @@ const reactMultiItem = onCall({ region: REGION, timeoutSeconds: 20 }, async requ
     if (receiverAward && !receiverAwardSnap.exists) {
       receiverAwarded = true;
       writePointAward(tx, receiverAward);
+      writeNotification(tx, item.authorId, {
+        type: 'multi_reaction',
+        title: '내 참여글에 반응이 달렸어요',
+        body: `${actor.authorName}님이 내 참여글에 반응했어요. +${POINT_RULES.reaction_received.points}P`,
+        postId: safePostId,
+        kind: config.kind,
+        itemId: safeItemId,
+        actorId: uid,
+        actorName: actor.authorName,
+        points: POINT_RULES.reaction_received.points,
+      });
     }
   });
 
