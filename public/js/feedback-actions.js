@@ -26,26 +26,9 @@ function getPageContext() {
   };
 }
 
-function ensureButton() {
-  if (isAdminPage()) {
-    removeButton();
-    return;
-  }
-  if (document.getElementById('feedback-open-btn')) return;
-  const btn = document.createElement('button');
-  btn.id = 'feedback-open-btn';
-  btn.type = 'button';
-  btn.className = 'feedback-open-btn';
-  btn.innerHTML = `<span class="feedback-open-btn__icon">💬</span><span class="feedback-open-btn__text">의견·버그</span>`;
-  btn.addEventListener('click', openFeedbackModal);
-  document.body.appendChild(btn);
-}
-
 function openFeedbackModal() {
-  if (isAdminPage()) {
-    removeButton();
-    return;
-  }
+  removeButton();
+  if (isAdminPage()) return;
   if (!auth.currentUser) {
     toast.warn('로그인 후 의견이나 버그를 보낼 수 있어요.');
     navigate('/login');
@@ -154,5 +137,8 @@ async function submitFeedback(overlay) {
   }
 }
 
-window.addEventListener('hashchange', () => setTimeout(ensureButton, 100));
-setTimeout(ensureButton, 500);
+removeButton();
+window.openSosokingFeedback = openFeedbackModal;
+window.addEventListener('sosoking:open-feedback', openFeedbackModal);
+window.addEventListener('hashchange', () => setTimeout(removeButton, 100));
+setTimeout(removeButton, 500);
