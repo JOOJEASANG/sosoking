@@ -338,6 +338,14 @@ function injectStyle() {
     .weekly-mission-card__go {
       width: 100%;
     }
+    .wfc-acct-form {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px dashed rgba(124,58,237,.20);
+    }
     [data-theme="dark"] .weekly-fill-card__icon {
       background: rgba(255,255,255,.12);
     }
@@ -426,18 +434,52 @@ function bindCard() {
   });
 }
 
-function updateAccountMissionCard(filled) {
-  const card = document.querySelector('[data-weekly-mission]');
-  if (!card) return;
+function markMissionDone(card, filled) {
   card.classList.add('weekly-mission-card--done');
-  card.querySelector('.weekly-mission-card__status').classList.add('weekly-mission-card__status--done');
-  card.querySelector('.weekly-mission-card__status').textContent = '✅ 완료';
+  const statusEl = card.querySelector('.weekly-mission-card__status');
+  if (statusEl) {
+    statusEl.classList.add('weekly-mission-card__status--done');
+    statusEl.textContent = '✅ 완료';
+  }
   const sentEl = card.querySelector('.weekly-mission-card__sentence');
   if (sentEl) {
     sentEl.textContent = filled;
     sentEl.classList.add('weekly-mission-card__sentence--filled');
   }
-  card.querySelector('.weekly-mission-card__go')?.remove();
+  card.querySelector('.wfc-acct-form')?.remove();
+}
+
+function updateAccountMissionCard(filled) {
+  const card = document.querySelector('[data-weekly-mission]');
+  if (card) markMissionDone(card, filled);
+}
+
+function bindAccountMission(card) {
+  card.querySelector('[data-wfc-acct-submit]')?.addEventListener('click', async () => {
+    const inputs = [...card.querySelectorAll('.wfc-acct-input')];
+    const blanks = inputs.map(i => i.value.trim());
+    const emptyInput = inputs.find(i => !i.value.trim());
+    if (emptyInput) {
+      emptyInput.focus();
+      showToast('error', '빈칸을 모두 채워주세요');
+      return;
+    }
+    const btn = card.querySelector('[data-wfc-acct-submit]');
+    btn.disabled = true;
+    btn.textContent = '제출 중...';
+    try {
+      await saveAnswer(blanks);
+      const filled = fillSentence(currentChallenge().sentence, blanks);
+      markMissionDone(card, filled);
+      showToast('success', '이번 주 빈칸 미션을 완료했어요! 🎉');
+      const feedCard = document.querySelector('[data-weekly-fill-card]');
+      if (feedCard) feedCard.outerHTML = renderCardDone(filled);
+    } catch {
+      btn.disabled = false;
+      btn.textContent = '✏️ 지금 참여하기';
+      showToast('error', '제출에 실패했어요. 다시 시도해주세요');
+    }
+  });
 }
 
 function findInsertionRoot() {
@@ -490,6 +532,14 @@ async function injectAccountMission() {
   const item     = currentChallenge();
   const myAnswer = await loadMyAnswer();
   const isDone   = !!myAnswer;
+  const n        = blankCount(item.sentence);
+
+  const formInputs = Array.from({ length: n }, (_, i) => `
+    <div class="wfc-blank-row">
+      <label class="wfc-blank-label">빈칸 ${i + 1}</label>
+      <input class="wfc-blank-input wfc-acct-input" type="text" data-idx="${i}"
+        placeholder="내용을 입력하세요" maxlength="30">
+    </div>`).join('');
 
   const html = `
     <div class="weekly-mission-card ${isDone ? 'weekly-mission-card--done' : ''}" data-weekly-mission>
@@ -501,10 +551,19 @@ async function injectAccountMission() {
       <p class="weekly-mission-card__sentence ${isDone ? 'weekly-mission-card__sentence--filled' : ''}">
         ${isDone ? myAnswer.filled : item.sentence}
       </p>
-      ${!isDone ? `<button class="btn btn--primary btn--sm weekly-mission-card__go" onclick="window.navigate?.('/')">피드에서 참여하기</button>` : ''}
+      ${!isDone ? `
+        <div class="wfc-acct-form">
+          ${formInputs}
+          <button class="btn btn--primary btn--sm" type="button" data-wfc-acct-submit style="width:100%;margin-top:4px">✏️ 지금 참여하기</button>
+        </div>` : ''}
     </div>`;
 
   profileCard.insertAdjacentHTML('afterend', html);
+
+  if (!isDone) {
+    const card = wrap.querySelector('[data-weekly-mission]');
+    bindAccountMission(card);
+  }
 }
 
 let feedTimer = null;
