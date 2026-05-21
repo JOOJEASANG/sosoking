@@ -100,6 +100,16 @@ service cloud.firestore {
           || request.resource.data.nicknameIcon == null
           || request.resource.data.nicknameIcon is map);
     }
+    function validNotificationReadUpdate() {
+      let changed = request.resource.data.diff(resource.data).affectedKeys();
+      return signedIn()
+        && resource.data.uid == request.auth.uid
+        && request.resource.data.uid == resource.data.uid
+        && changed.hasOnly(['read', 'readAt', 'readAtMs'])
+        && request.resource.data.read is bool
+        && (!('readAtMs' in request.resource.data) || request.resource.data.readAtMs is number)
+        && (!('readAt' in request.resource.data) || request.resource.data.readAt is timestamp);
+    }
 
     match /admins/{uid} {
       allow read:  if signedIn() && request.auth.uid == uid;
@@ -253,6 +263,12 @@ service cloud.firestore {
         && request.resource.data.reporterId == request.auth.uid
         && validText(request.resource.data.reason, 500);
       allow update, delete: if isAdmin();
+    }
+
+    match /notifications/{noticeId} {
+      allow read: if signedIn() && resource.data.uid == request.auth.uid;
+      allow update: if validNotificationReadUpdate();
+      allow create, delete: if false;
     }
 
     match /notifications/{uid}/items/{noticeId} {
