@@ -47,6 +47,7 @@ export function destroyMafiaGame() {
   currentRoom = null;
   currentPlayers = [];
   currentChats = [];
+  if (window.__sosokingCurrentGameRoom?.game === 'mafia') window.__sosokingCurrentGameRoom = null;
 }
 
 function pageEl() {
@@ -112,6 +113,7 @@ async function renderRoom(roomId) {
       return;
     }
     currentRoom = { id: snap.id, ...snap.data() };
+    window.__sosokingCurrentGameRoom = currentRoom;
     if (currentRoom.game && currentRoom.game !== 'mafia') {
       destroyMafiaGame();
       el.innerHTML = renderMafiaWrongGameHTML(currentRoom.game);
@@ -134,6 +136,7 @@ async function renderRoom(roomId) {
 function drawRoom(scrollChat = false) {
   const el = pageEl();
   if (!el || !currentRoom) return;
+  window.__sosokingCurrentGameRoom = currentRoom;
   el.innerHTML = renderMafiaRoomHTML(currentRoom, currentPlayers, currentChats);
   bindRoomEvents();
   if (scrollChat) setTimeout(scrollGameChatToBottom, 20);
