@@ -7,6 +7,7 @@ import { collection, query, orderBy, limit, getDocs, getCountFromServer, where, 
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
 
 let currentTab = 'dashboard';
+let userListState = { search: '', pageToken: 0, pageSize: 30 };
 
 function isAdminUser() {
   return !!appState.isAdmin;
@@ -181,13 +182,32 @@ async function renderReports(el) {
   }));
 }
 
-async function renderUsers(el) {
+async function renderUsers(el, options = {}) {
   const getAdminMemberList = httpsCallable(functions, 'getAdminMemberList');
+  if (options.pageToken !== undefined) userListState.pageToken = Number(options.pageToken) || 0;
+  if (options.search !== undefined) {
+    userListState.search = String(options.search || '').trim();
+    userListState.pageToken = 0;
+  }
   try {
-    const result = await getAdminMemberList({});
-    const members = result.data?.members || [];
-    el.innerHTML = `<div style="display:flex;flex-direction:column;gap:16px"><div class="admin-page-head"><div><h2 class="admin-section-title">👥 회원 현황</h2><div class="form-hint">관리자를 제외한 Firebase Auth/users 회원 목록입니다.</div></div><button class="btn btn--ghost btn--sm" id="admin-user-refresh">새로고침</button></div><div class="admin-stat-grid"><div class="admin-stat-card"><div class="admin-stat-card__num">${Number(result.data?.total || members.length).toLocaleString()}</div><div class="admin-stat-card__label">회원 수</div></div><div class="admin-stat-card"><div class="admin-stat-card__num">${Number(result.data?.excludedAdmins || 0).toLocaleString()}</div><div class="admin-stat-card__label">제외된 관리자</div></div></div><div class="card" style="overflow:auto"><table class="admin-table"><thead><tr><th>회원</th><th>이메일</th><th>포인트</th><th>가입일</th><th>최근 로그인</th><th>상태</th></tr></thead><tbody>${members.map(u => `<tr><td><b>${escHtml(u.nickname || '회원')}</b><div class="admin-table__sub">${escHtml(String(u.uid || '').slice(0,18))}…</div></td><td>${escHtml(u.email || '-')}</td><td>${Number(u.points || 0).toLocaleString()}P</td><td>${u.createdAtMs ? safeDate(new Date(u.createdAtMs)) : '-'}</td><td>${u.lastLoginAtMs ? safeDate(new Date(u.lastLoginAtMs)) : '-'}</td><td>${u.disabled ? '<span class="badge badge--danger">비활성</span>' : '<span class="badge">정상</span>'}</td></tr>`).join('') || '<tr><td colspan="6" class="admin-table__empty">회원 데이터가 없어요</td></tr>'}</tbody></table></div></div>`;
+    const result = await getAdminMemberList({
+      pageSize: userListState.pageSize,
+      pageToken: userListState.pageToken,
+      search: userListState.search,
+    });
+    const data = result.data || {};
+    const members = data.members || [];
+    const start = Number(data.total || 0) ? Number(data.pageToken || 0) + 1 : 0;
+    const end = Number(data.pageToken || 0) + members.length;
+    el.innerHTML = `<div style="display:flex;flex-direction:column;gap:16px"><div class="admin-page-head"><div><h2 class="admin-section-title">👥 회원 현황</h2><div class="form-hint">익명 로그인과 관리자를 제외한 가입 회원 목록입니다.</div></div><button class="btn btn--ghost btn--sm" id="admin-user-refresh">새로고침</button></div><div class="admin-stat-grid"><div class="admin-stat-card"><div class="admin-stat-card__num">${Number(data.total || 0).toLocaleString()}</div><div class="admin-stat-card__label">검색 결과 회원</div></div><div class="admin-stat-card"><div class="admin-stat-card__num">${Number(data.totalRegistered || data.total || 0).toLocaleString()}</div><div class="admin-stat-card__label">전체 가입 회원</div></div><div class="admin-stat-card"><div class="admin-stat-card__num">${Number(data.excludedAnonymous || 0).toLocaleString()}</div><div class="admin-stat-card__label">제외된 익명</div></div><div class="admin-stat-card"><div class="admin-stat-card__num">${Number(data.excludedAdmins || 0).toLocaleString()}</div><div class="admin-stat-card__label">제외된 관리자</div></div></div><div class="card"><div class="card__body" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><input class="form-input" id="admin-user-search" value="${escHtml(userListState.search)}" placeholder="닉네임, 이메일, UID 검색" style="max-width:360px"><button class="btn btn--primary btn--sm" id="admin-user-search-btn">검색</button><button class="btn btn--ghost btn--sm" id="admin-user-clear-btn">초기화</button><span class="form-hint">${start.toLocaleString()}-${end.toLocaleString()} / ${Number(data.total || 0).toLocaleString()}명 · 한 페이지 ${Number(data.pageSize || userListState.pageSize)}명</span></div></div><div class="card" style="overflow:auto"><table class="admin-table"><thead><tr><th>회원</th><th>이메일</th><th>가입방식</th><th>포인트</th><th>가입일</th><th>최근 로그인</th><th>상태</th></tr></thead><tbody>${members.map(u => `<tr><td><b>${escHtml(u.nickname || '회원')}</b><div class="admin-table__sub">${escHtml(String(u.uid || '').slice(0,18))}…</div></td><td>${escHtml(u.email || '-')}</td><td>${escHtml(u.provider || '-')}</td><td>${Number(u.points || 0).toLocaleString()}P</td><td>${u.createdAtMs ? safeDate(new Date(u.createdAtMs)) : '-'}</td><td>${u.lastLoginAtMs ? safeDate(new Date(u.lastLoginAtMs)) : '-'}</td><td>${u.disabled ? '<span class="badge badge--danger">비활성</span>' : '<span class="badge">정상</span>'}</td></tr>`).join('') || '<tr><td colspan="7" class="admin-table__empty">회원 데이터가 없어요</td></tr>'}</tbody></table></div><div class="admin-page-head"><button class="btn btn--ghost btn--sm" id="admin-user-prev" ${data.prevPageToken === null || data.prevPageToken === undefined ? 'disabled' : ''}>이전</button><div class="form-hint">${data.scannedAll ? '' : '회원이 매우 많으면 일부만 검색될 수 있습니다.'}</div><button class="btn btn--ghost btn--sm" id="admin-user-next" ${data.nextPageToken === null || data.nextPageToken === undefined ? 'disabled' : ''}>다음</button></div></div>`;
+    const searchInput = document.getElementById('admin-user-search');
+    const submitSearch = () => renderUsers(el, { search: searchInput?.value || '' });
     document.getElementById('admin-user-refresh')?.addEventListener('click', () => renderUsers(el));
+    document.getElementById('admin-user-search-btn')?.addEventListener('click', submitSearch);
+    document.getElementById('admin-user-clear-btn')?.addEventListener('click', () => renderUsers(el, { search: '' }));
+    searchInput?.addEventListener('keydown', e => { if (e.key === 'Enter') submitSearch(); });
+    document.getElementById('admin-user-prev')?.addEventListener('click', () => renderUsers(el, { pageToken: data.prevPageToken }));
+    document.getElementById('admin-user-next')?.addEventListener('click', () => renderUsers(el, { pageToken: data.nextPageToken }));
   } catch (error) {
     console.error(error);
     el.innerHTML = `<div class="empty-state"><div class="empty-state__icon">⚠️</div><div class="empty-state__title">회원 목록을 불러오지 못했어요</div><div class="empty-state__desc">functions 배포 후 다시 시도해주세요.</div></div>`;
