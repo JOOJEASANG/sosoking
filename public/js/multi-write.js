@@ -257,7 +257,7 @@ function renderMultiWrite() {
 
   const renderKey = window.location.hash || '#/write?type=multi';
   const presetKey = getPresetKey();
-  el.innerHTML = renderMultiWriteHTML({ renderKey, presetKey });
+  el.innerHTML = renderMultiWriteHTML({ renderKey, presetKey, showDeadline: true });
 
   const uploader = document.getElementById('mw-img-uploader');
   if (uploader) initImageUploader(uploader, Infinity);
