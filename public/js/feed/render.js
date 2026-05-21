@@ -13,7 +13,7 @@ export function renderFeedSearchBar({ search = '' } = {}) {
     </div>`;
 }
 
-export function renderFeedFilterBar({ type = '', search = '', sort = 'latest' } = {}) {
+export function renderFeedFilterBar({ type = '', search = '' } = {}) {
   return `
     <div class="soso-feed-controls">
       <div class="soso-feed-chips" id="cat-filters" aria-label="피드 유형 필터">
@@ -23,23 +23,26 @@ export function renderFeedFilterBar({ type = '', search = '', sort = 'latest' } 
             ${TYPE_LABELS[key]}
           </button>`).join('')}
       </div>
-      <label class="soso-feed-sort" aria-label="피드 정렬">
-        <span>정렬</span>
-        <select id="feed-sort-select">
-          ${Object.entries(SORT_LABELS).map(([key, label]) => `<option value="${key}" ${sort === key ? 'selected' : ''}>${label}</option>`).join('')}
-        </select>
-      </label>
     </div>
     ${search ? `<div class="soso-feed-search-label">🔍 "<strong>${escHtml(search)}</strong>" 검색 결과 · 검색 중에는 유형 필터가 자동 해제됩니다.</div>` : ''}`;
 }
 
+export function renderFeedSortSelect({ sort = 'latest' } = {}) {
+  return `
+    <label class="soso-feed-sort soso-feed-sort--summary" aria-label="피드 정렬">
+      <span>정렬</span>
+      <select id="feed-sort-select">
+        ${Object.entries(SORT_LABELS).map(([key, label]) => `<option value="${key}" ${sort === key ? 'selected' : ''}>${label}</option>`).join('')}
+      </select>
+    </label>`;
+}
+
 export function renderFeedSummary({ total = 0, page = 1, totalPages = 1, search = '', type = '', sort = 'latest' } = {}) {
   const label = search ? `검색 ${escHtml(search)}` : (type ? TYPE_LABELS[type] || '필터' : '전체');
-  const sortLabel = SORT_LABELS[sort] || SORT_LABELS.latest;
-  // total이 null이면 커서 모드(전체 건수 미확인) → 페이지 번호만 표시
-  if (total === null) return `<div class="soso-feed-summary__inner"><span>${label}</span><span>${page}페이지</span><span>${sortLabel}</span></div>`;
-  if (!total) return `<div class="soso-feed-summary__inner"><span>${label}</span><b>0개</b><span>${sortLabel}</span></div>`;
-  return `<div class="soso-feed-summary__inner"><span>${label}</span><b>${Number(total).toLocaleString()}개</b><span>${page}/${totalPages ?? '?'}페이지</span><span>${sortLabel}</span></div>`;
+  const sortControl = renderFeedSortSelect({ sort });
+  if (total === null) return `<div class="soso-feed-summary__inner"><div class="soso-feed-summary__meta"><span>${label}</span><span>${page}페이지</span></div>${sortControl}</div>`;
+  if (!total) return `<div class="soso-feed-summary__inner"><div class="soso-feed-summary__meta"><span>${label}</span><b>0개</b></div>${sortControl}</div>`;
+  return `<div class="soso-feed-summary__inner"><div class="soso-feed-summary__meta"><span>${label}</span><b>${Number(total).toLocaleString()}개</b><span>${page}/${totalPages ?? '?'}페이지</span></div>${sortControl}</div>`;
 }
 
 export function renderFeedEmptyState({ search = '' } = {}) {
