@@ -6,7 +6,7 @@ const GAMES = [
     key: 'liar',
     icon: '🕵️',
     title: '라이어게임',
-    desc: '제시어를 모르는 라이어를 찾아내는 대화형 추리 게임',
+    desc: '제시어를 모르는 라이어를 찾아내는 채팅 추리 게임',
     status: '방 만들기',
     tag: '오픈',
     path: '/game/liar',
@@ -14,7 +14,7 @@ const GAMES = [
     guide: {
       subtitle: '대화 속 어색함을 찾아내는 심리 추리 게임',
       goal: '일반 참가자는 라이어를 찾아내고, 라이어는 정체를 들키지 않은 채 제시어를 맞히거나 끝까지 버팁니다.',
-      flow: '방 만들기 → 초대 링크 공유 → 참가자 입장 → 제시어 확인 → 돌아가며 설명/질문 → 투표로 라이어 지목 순서로 진행합니다.',
+      flow: '방 만들기 → 초대 링크 공유 → 참가자 입장 → 제시어 확인 → 채팅 설명/질문 → 라이어 추리 순서로 진행합니다.',
       tip: '너무 직접적인 설명은 라이어에게 힌트가 되고, 너무 애매한 설명은 의심을 받을 수 있습니다.',
     },
   },
@@ -22,7 +22,7 @@ const GAMES = [
     key: 'mafia',
     icon: '🌙',
     title: '마피아게임',
-    desc: '정체를 숨기고 대화로 범인을 찾아내는 추리 게임',
+    desc: '정체를 숨기고 채팅 토론으로 범인을 찾아내는 추리 게임',
     status: '방 만들기',
     tag: '오픈',
     path: '/game/mafia',
@@ -30,8 +30,24 @@ const GAMES = [
     guide: {
       subtitle: '정체를 숨긴 사람을 토론과 투표로 찾아내는 게임',
       goal: '시민은 마피아를 모두 찾아내면 승리하고, 마피아는 시민 수와 같거나 많아질 때까지 살아남으면 승리합니다.',
-      flow: '방 만들기 → 초대 링크 공유 → 참가자 입장 → 방장 게임 시작 → 역할 배정 → 토론 → 투표 집계 순서로 진행합니다.',
+      flow: '방 만들기 → 초대 링크 공유 → 참가자 입장 → 방장 게임 시작 → 역할 배정 → 채팅 토론 → 투표 집계 순서로 진행합니다.',
       tip: '마피아는 자연스럽게 시민처럼 행동하고, 시민은 말투·투표 패턴·방어 반응을 보고 의심 대상을 좁혀야 합니다.',
+    },
+  },
+  {
+    key: 'wordtrap',
+    icon: '🚫',
+    title: '금칙어 채팅게임',
+    desc: '내 금칙어를 피하면서 상대를 유도하는 채팅 전용 게임',
+    status: '방 만들기',
+    tag: '신규',
+    path: '/game/wordtrap',
+    enabled: true,
+    guide: {
+      subtitle: '금칙어를 말하면 걸리는 채팅 유도 게임',
+      goal: '내 금칙어를 쓰지 않고 자연스럽게 대화하면서, 상대가 자기 금칙어를 말하도록 유도합니다.',
+      flow: '방 만들기 → 초대 링크 공유 → 참가자 입장 → 방장 시작 → 각자 금칙어 확인 → 채팅 토론 → 금칙어 말하면 자동 탈락 순서로 진행합니다.',
+      tip: '너무 노골적으로 유도하면 들킵니다. 평범한 질문 속에 금칙어를 끌어내는 게 핵심입니다.',
     },
   },
 ];
@@ -141,12 +157,12 @@ export function renderSosoland() {
         <div class="sosoland-hero__glow sosoland-hero__glow--two"></div>
         <div class="sosoland-hero__content">
           <div class="sosoland-hero__eyebrow">GAME PLAYGROUND</div>
-          <h1>친구와 바로 즐기는<br>추리 게임 모음</h1>
-          <p>모바일은 앱 게임처럼 전체 화면으로, PC는 소소킹 안의 게임 레이어창으로 바로 즐길 수 있습니다.</p>
+          <h1>친구와 바로 즐기는<br>채팅 게임 모음</h1>
+          <p>회원과 게스트가 같은 방에서 함께 즐길 수 있습니다. 모바일은 전체 화면, PC는 소소킹 안의 게임 레이어창으로 실행됩니다.</p>
         </div>
       </section>
 
-      <section class="sosoland-grid sosoland-grid--two sosoland-grid--compact">
+      <section class="sosoland-grid sosoland-grid--compact">
         ${GAMES.map(game => `
           <article class="sosoland-card sosoland-card--${game.key}" data-game-key="${game.key}">
             <div class="sosoland-card__headline">
