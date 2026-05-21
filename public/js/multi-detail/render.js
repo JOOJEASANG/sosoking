@@ -64,9 +64,33 @@ export function renderAcrosticModule(post) {
 }
 
 function fillCounts(fill) {
-  if (Array.isArray(fill.blankCounts) && fill.blankCounts.length) return fill.blankCounts.map(v => Math.max(1, Math.min(12, Number(v) || 4))).slice(0, 6);
-  if (Array.isArray(fill.blanks) && fill.blanks.length) return fill.blanks.map(b => Math.max(1, Math.min(12, Number(b.charCount) || 4))).slice(0, 6);
+  if (Array.isArray(fill.blankCounts) && fill.blankCounts.length) return fill.blankCounts.map(v => Math.max(1, Math.min(12, Number(v) || 4))).slice(0, 12);
+  if (Array.isArray(fill.blanks) && fill.blanks.length) return fill.blanks.map(b => Math.max(1, Math.min(12, Number(b.charCount) || 4))).slice(0, 12);
   return [Math.max(2, Math.min(12, Number(fill.charCount || fill.blankCount || 4)))];
+}
+
+function renderFillPrompt(fill, counts) {
+  const parts = Array.isArray(fill.templateParts) ? fill.templateParts : [];
+  if (parts.length) {
+    return `<div class="multi-fill-prompt multi-fill-prompt--template">${parts.map(part => {
+      if (part.type === 'blank') {
+        const count = Math.max(1, Math.min(12, Number(part.charCount || counts[part.index] || 4)));
+        return `<span class="multi-fill-inline-blank" data-fill-inline-blank="${Number(part.index) || 0}" aria-label="빈칸 ${Number(part.index || 0) + 1}">${Array.from({ length: count }, () => '<i></i>').join('')}</span>`;
+      }
+      return esc(part.text || '').replace(/\n/g, '<br>');
+    }).join('')}</div>`;
+  }
+
+  const prompt = String(fill.prompt || '');
+  if (!prompt) return '';
+  let index = 0;
+  const html = esc(prompt).replace(/_{2,}|□+|[ \t]{2,}/g, marker => {
+    const count = counts[index] || marker.length || 4;
+    const blankHtml = `<span class="multi-fill-inline-blank" data-fill-inline-blank="${index}" aria-label="빈칸 ${index + 1}">${Array.from({ length: count }, () => '<i></i>').join('')}</span>`;
+    index += 1;
+    return blankHtml;
+  }).replace(/\n/g, '<br>');
+  return `<div class="multi-fill-prompt multi-fill-prompt--template">${html}</div>`;
 }
 
 export function renderFillModule(post) {
@@ -76,7 +100,8 @@ export function renderFillModule(post) {
   return `
     <div class="multi-detail-module" data-multi-module="fill">
       <div class="multi-detail-module__title">🧩 빈칸 채우기 참여</div>
-      <div class="multi-module-hint">문장 속 빈칸마다 칸에 한 글자씩 입력해보세요.</div>
+      <div class="multi-module-hint">문장 속 빈칸마다 칸에 한 글자씩 입력해보세요. 문제의 줄바꿈은 그대로 유지됩니다.</div>
+      ${renderFillPrompt(fill, counts)}
       <div class="multi-submit-row multi-submit-row--fill-boxes">
         <div id="multi-fill-boxes">
           ${counts.map((count, groupIndex) => `
@@ -87,7 +112,7 @@ export function renderFillModule(post) {
               </div>
             </div>`).join('')}
         </div>
-        <input id="multi-fill-answer" type="hidden" maxlength="200">
+        <input id="multi-fill-answer" type="hidden" maxlength="400">
         <button class="btn btn--primary btn--sm" id="multi-fill-submit">등록</button>
       </div>
       <div class="multi-participation-list" id="multi-fill-list"></div>
