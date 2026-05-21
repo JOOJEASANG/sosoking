@@ -7,6 +7,7 @@
 const EXTENSION_MODULES = [
   './game-guest-access.js',
   './six-game-guard.js',
+  './admin-visibility-guard.js',
   './admin-shortcuts-pwa.js',
   './account-install-actions.js',
   './account-points-view.js',
