@@ -1,8 +1,48 @@
-import { auth, googleProvider, signInWithPopup, signInWithRedirect } from '../firebase.js';
+import { auth, db, googleProvider, signInWithPopup, signInWithRedirect } from '../firebase.js';
 import { navigate } from '../router.js';
 import { toast } from '../components/toast.js';
+import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-function goAfterLogin() {
+const OWNER_EMAILS = new Set(['joojeasang@gmail.com']);
+
+function isOwnerEmail(user) {
+  return OWNER_EMAILS.has(String(user?.email || '').toLowerCase());
+}
+
+async function isSignedInUserAdmin(user = auth.currentUser) {
+  if (!user) return false;
+  if (isOwnerEmail(user)) return true;
+
+  try {
+    const token = await user.getIdTokenResult?.(true);
+    if (token?.claims?.admin || token?.claims?.owner) return true;
+  } catch (error) {
+    console.warn('[login] admin token check failed', error);
+  }
+
+  try {
+    const userSnap = await getDoc(doc(db, 'users', user.uid));
+    const data = userSnap.exists() ? userSnap.data() : {};
+    if (data.isAdmin || data.admin || data.role === 'admin' || data.role === 'owner') return true;
+  } catch (error) {
+    console.warn('[login] admin user doc check failed', error);
+  }
+
+  try {
+    const adminSnap = await getDoc(doc(db, 'admins', user.uid));
+    return adminSnap.exists();
+  } catch (error) {
+    console.warn('[login] admin doc check failed', error);
+    return false;
+  }
+}
+
+async function goAfterLogin(user = auth.currentUser) {
+  if (await isSignedInUserAdmin(user)) {
+    navigate('/admin');
+    return;
+  }
+
   const currentPath = window.location.hash.slice(1).split('?')[0] || '/';
   if (currentPath === '/login') navigate('/');
   else window.dispatchEvent(new Event('hashchange'));
@@ -10,6 +50,13 @@ function goAfterLogin() {
 
 export function renderLogin() {
   const el = document.getElementById('page-content');
+  const existingUser = auth.currentUser;
+  if (existingUser) {
+    el.innerHTML = `<div class="loading-center"><div class="spinner spinner--lg"></div></div>`;
+    goAfterLogin(existingUser);
+    return;
+  }
+
   el.innerHTML = `
     <div class="auth-page">
       <div class="auth-card card">
@@ -48,9 +95,9 @@ export function renderLogin() {
 
   document.getElementById('btn-google')?.addEventListener('click', async () => {
     try {
-      await signInWithPopup(auth, googleProvider);
+      const cred = await signInWithPopup(auth, googleProvider);
       toast.success('로그인됐어요!');
-      goAfterLogin();
+      await goAfterLogin(cred.user);
     } catch (e) {
       if (e.code === 'auth/popup-closed-by-user') return;
       if (e.code === 'auth/popup-blocked') {
@@ -69,9 +116,9 @@ export function renderLogin() {
     const password = document.getElementById('f-password')?.value;
     if (!email || !password) { toast.warn('이메일과 비밀번호를 입력해주세요'); return; }
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const cred = await signInWithEmailAndPassword(auth, email, password);
       toast.success('로그인됐어요!');
-      goAfterLogin();
+      await goAfterLogin(cred.user);
     } catch { toast.error('이메일 또는 비밀번호가 올바르지 않아요'); }
   });
 
@@ -98,7 +145,7 @@ export function renderLogin() {
       const cred = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(cred.user, { displayName: email.split('@')[0] });
       toast.success('가입됐어요! 환영해요 🎉');
-      goAfterLogin();
+      await goAfterLogin(cred.user);
     } catch (e) {
       if (e.code === 'auth/email-already-in-use') toast.error('이미 사용 중인 이메일이에요');
       else toast.error('가입에 실패했어요');
