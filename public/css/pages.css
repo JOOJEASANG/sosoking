@@ -2468,6 +2468,9 @@
 .home-rank-item__num--1 { background: #fef3c7; color: #d97706; }
 .home-rank-item__num--2 { background: #f1f5f9; color: #64748b; }
 .home-rank-item__num--3 { background: #fef2f2; color: #dc2626; }
+[data-theme="dark"] .home-rank-item__num--1 { background: rgba(253,243,199,.15); color: #fbbf24; }
+[data-theme="dark"] .home-rank-item__num--2 { background: rgba(148,163,184,.12); color: #94a3b8; }
+[data-theme="dark"] .home-rank-item__num--3 { background: rgba(252,165,165,.15); color: #f87171; }
 .home-rank-item__num--rest { background: var(--color-surface-2); color: var(--color-text-muted); }
 .home-rank-item__body { flex: 1; min-width: 0; }
 .home-rank-item__type {
