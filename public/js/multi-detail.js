@@ -1,10 +1,13 @@
-import { auth, db } from './firebase.js';
+import { auth, db, functions } from './firebase.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
 import { navigate } from './router.js';
 import { toast } from './components/toast.js';
-import { getDetailId, hasInteractiveModule, normalizeAnswer } from './multi-detail/utils.js';
+import { getDetailId, hasInteractiveModule } from './multi-detail/utils.js';
 import { renderModules, renderVoteModule, renderItemList, renderMultiReplyList, markQuizResult } from './multi-detail/render.js';
 import { fetchItems, addParticipation, addItemReaction, fetchReplies, addItemReply, applyVote } from './multi-detail/actions.js';
+
+const callCheckMultiQuizAnswer = httpsCallable(functions, 'checkMultiQuizAnswer');
 
 const LIST_TARGETS = {
   naming: 'multi-naming-list',
@@ -122,8 +125,7 @@ async function handleVote(post, idx, btn) {
   const postRef = doc(db, 'feeds', post.id);
   try {
     if (btn) btn.disabled = true;
-    const snap = await getDoc(postRef);
-    const updated = await applyVote(postRef, post, idx, snap.data() || {});
+    const updated = await applyVote(postRef, post, idx);
     toast.success('투표했어요!');
     const voteModule = document.querySelector('[data-multi-module="vote"]');
     if (voteModule) voteModule.outerHTML = renderVoteModule(updated);
@@ -199,6 +201,20 @@ async function handleRelaySubmit(post, btn) {
   if (btn) btn.disabled = false;
 }
 
+async function checkQuiz(post, selected, btn) {
+  if (!requireLogin()) return;
+  try {
+    if (btn) btn.disabled = true;
+    const result = await callCheckMultiQuizAnswer({ postId: post.id, selected });
+    markQuizResult(!!result.data?.correct);
+  } catch (error) {
+    console.error(error);
+    toast.error(error.message || '정답 확인에 실패했어요.');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
 function setupEvents(post) {
   document.querySelectorAll('[data-multi-vote-idx]').forEach(btn => {
     bindOnce(btn, 'click', () => handleVote(post, Number(btn.dataset.multiVoteIdx), btn), `vote-${post.id}-${btn.dataset.multiVoteIdx}`);
@@ -246,21 +262,18 @@ function setupEvents(post) {
 
   bindOnce(document.getElementById('multi-quiz-submit'), 'click', () => {
     const answer = document.getElementById('multi-quiz-answer')?.value.trim() || '';
-    const correct = String(post.modules?.quiz?.answer || '').trim();
     if (!answer) {
       toast.warn('정답을 입력해주세요');
       return;
     }
-    markQuizResult(normalizeAnswer(answer) === normalizeAnswer(correct));
+    checkQuiz(post, answer, document.getElementById('multi-quiz-submit'));
   }, `quiz-submit-${post.id}`);
 
   document.querySelectorAll('[data-quiz-option]').forEach(btn => {
     bindOnce(btn, 'click', () => {
-      const answer = btn.textContent.trim();
-      const correct = String(post.modules?.quiz?.answer || '').trim();
       document.querySelectorAll('[data-quiz-option]').forEach(optionBtn => optionBtn.classList.remove('selected'));
       btn.classList.add('selected');
-      markQuizResult(normalizeAnswer(answer) === normalizeAnswer(correct));
+      checkQuiz(post, Number(btn.dataset.quizOption), btn);
     }, `quiz-option-${post.id}-${btn.dataset.quizOption}`);
   });
 }
