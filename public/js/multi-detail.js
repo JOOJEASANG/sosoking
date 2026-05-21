@@ -68,12 +68,10 @@ function bindMultiItemActions(postId, kind) {
         try {
           btn.disabled = true;
           await addItemReaction(postId, kind, itemId, key);
-          const countEl = btn.querySelector('b');
-          countEl.textContent = String((Number(countEl.textContent || 0) || 0) + 1);
+          await refreshList(postId, kind);
         } catch (error) {
           console.error(error);
           toast.error('반응 등록에 실패했어요.');
-        } finally {
           btn.disabled = false;
         }
       }, `react-${kind}-${itemId}-${btn.dataset.multiReact}`);
