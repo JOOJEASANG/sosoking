@@ -90,6 +90,16 @@ function parseFillTemplate(bodyText, manualCounts = []) {
   };
 }
 
+function relayMissionPreset(key) {
+  return {
+    but: { key: 'but', title: '그런데 시작', instruction: '다음 문장은 “그런데”로 시작해 주세요.', badge: '그런데' },
+    horror: { key: 'horror', title: '공포 전환', instruction: '갑자기 분위기를 공포로 바꿔 주세요.', badge: '공포' },
+    animal: { key: 'animal', title: '동물 등장', instruction: '동물 하나를 자연스럽게 등장시켜 주세요.', badge: '동물' },
+    twist: { key: 'twist', title: '반전 넣기', instruction: '마지막에 짧은 반전을 넣어 주세요.', badge: '반전' },
+    dialogue: { key: 'dialogue', title: '대사 필수', instruction: '인물 대사 한 줄을 반드시 포함해 주세요.', badge: '대사' },
+  }[key] || null;
+}
+
 export function parseYouTubeUrl(value) {
   const raw = String(value || '').trim();
   if (!raw) return null;
@@ -173,7 +183,13 @@ export function collectMultiModules() {
 
   if (enabled('relay')) {
     if (!bodyText) throw new Error('본문에 릴레이 시작 문장이나 상황을 입력해주세요.');
-    modules.relay = { enabled: true, startSentence: bodyText };
+    const missionKey = document.getElementById('mw-relay-mission')?.value || 'none';
+    const mission = relayMissionPreset(missionKey);
+    modules.relay = {
+      enabled: true,
+      startSentence: bodyText,
+      mission: mission ? { enabled: true, ...mission } : { enabled: false, key: 'none' },
+    };
   }
 
   if (enabled('quiz')) {
