@@ -64,6 +64,23 @@ function fillSentence(sentence, answers) {
   return answers.reduce((s, a) => s.replace('___', a), sentence);
 }
 
+async function initWeekDoc() {
+  if (!auth.currentUser) return;
+  const key  = challengeKey();
+  const ref  = doc(db, 'weekly_fill', key);
+  const snap = await getDoc(ref).catch(() => null);
+  if (snap?.exists()) return;
+  const item = currentChallenge();
+  await setDoc(ref, {
+    weekKey:        key,
+    title:          item.title,
+    sentence:       item.sentence,
+    hint:           item.hint,
+    challengeIndex: weekIndex(),
+    createdAt:      serverTimestamp(),
+  }).catch(() => {});
+}
+
 async function loadMyAnswer() {
   if (!auth.currentUser) return null;
   const snap = await getDoc(
@@ -447,7 +464,10 @@ async function injectCard() {
   const root = findInsertionRoot();
   if (!root) return;
 
-  const myAnswer = await loadMyAnswer();
+  const [myAnswer] = await Promise.all([
+    loadMyAnswer(),
+    initWeekDoc(),
+  ]);
 
   if (myAnswer) {
     root.insertAdjacentHTML('afterbegin', renderCardDone(myAnswer.filled));

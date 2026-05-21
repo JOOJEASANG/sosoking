@@ -309,7 +309,11 @@ service cloud.firestore {
 
     match /weekly_fill/{weekKey} {
       allow read: if true;
-      allow write: if false;
+      allow create: if signedIn()
+                      && request.resource.data.weekKey == weekKey
+                      && validText(request.resource.data.get('sentence', ''), 200);
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
 
       match /answers/{userId} {
         allow read: if true;
