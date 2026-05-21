@@ -25,8 +25,6 @@
   grid-template-columns: minmax(0, 1fr) auto !important;
   align-items: center !important;
   gap: 8px !important;
-  position: relative !important;
-  z-index: 2 !important;
   width: 100% !important;
   margin: 0 !important;
   padding: 0 !important;
@@ -109,33 +107,24 @@
 }
 
 .soso-feed-controls {
-  display: grid !important;
-  grid-template-columns: minmax(0, 1fr) auto !important;
-  align-items: center !important;
-  gap: 8px !important;
-  position: relative !important;
-  z-index: 1 !important;
   width: 100% !important;
   max-width: 100% !important;
   margin: 0 !important;
   padding: 0 !important;
-  overflow: visible !important;
-  transform: none !important;
+  overflow: hidden !important;
   background: transparent !important;
 }
 
 .soso-feed-chips {
   display: flex !important;
   gap: 6px !important;
-  min-width: 0 !important;
+  width: 100% !important;
   max-width: 100% !important;
   margin: 0 !important;
   padding: 1px 0 7px !important;
   overflow-x: auto !important;
   overflow-y: hidden !important;
   scrollbar-width: none !important;
-  position: static !important;
-  transform: none !important;
   background: transparent !important;
 }
 
@@ -169,68 +158,74 @@
   box-shadow: 0 5px 14px rgba(255, 68, 34, 0.22) !important;
 }
 
-.soso-feed-sort {
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-self: end !important;
-  gap: 5px !important;
-  min-height: 36px !important;
-  max-width: none !important;
-  min-width: 96px !important;
-  padding: 0 8px 0 10px !important;
-  border: 1px solid var(--color-border-light) !important;
-  border-radius: 999px !important;
-  background: var(--color-surface) !important;
-  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.04) !important;
-  position: static !important;
-  transform: none !important;
-}
-
-.soso-feed-sort span {
-  color: var(--color-text-muted) !important;
-  font-size: 11px !important;
-  font-weight: 900 !important;
-  white-space: nowrap !important;
-}
-
-.soso-feed-sort select {
-  width: 68px !important;
-  min-width: 68px !important;
-  max-width: 68px !important;
-  border: 0 !important;
-  outline: 0 !important;
-  background: transparent !important;
-  color: var(--color-text-primary) !important;
-  font-size: 12px !important;
-  font-weight: 900 !important;
-  font-family: inherit !important;
-  padding: 0 !important;
-}
-
 .soso-feed-summary {
-  margin: -2px 0 2px !important;
+  margin: 0 0 2px !important;
   position: relative !important;
   z-index: 0 !important;
 }
 
 .soso-feed-summary__inner {
-  display: flex !important;
-  flex-wrap: wrap !important;
-  gap: 6px !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: 7px !important;
   align-items: center !important;
   color: var(--color-text-muted) !important;
   font-size: 12px !important;
   font-weight: 800 !important;
 }
 
-.soso-feed-summary__inner span,
-.soso-feed-summary__inner b {
+.soso-feed-summary__meta {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 5px !important;
+  min-width: 0 !important;
+}
+
+.soso-feed-summary__meta span,
+.soso-feed-summary__meta b {
   display: inline-flex !important;
   min-height: 24px !important;
   align-items: center !important;
   padding: 3px 8px !important;
   border-radius: 999px !important;
   background: var(--color-surface-2) !important;
+  white-space: nowrap !important;
+}
+
+.soso-feed-sort--summary {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-self: end !important;
+  gap: 4px !important;
+  min-height: 28px !important;
+  min-width: 76px !important;
+  max-width: 92px !important;
+  padding: 0 6px 0 8px !important;
+  border: 1px solid var(--color-border-light) !important;
+  border-radius: 999px !important;
+  background: var(--color-surface) !important;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.04) !important;
+}
+
+.soso-feed-sort--summary span {
+  color: var(--color-text-muted) !important;
+  font-size: 10px !important;
+  font-weight: 900 !important;
+  white-space: nowrap !important;
+}
+
+.soso-feed-sort--summary select {
+  width: 50px !important;
+  min-width: 50px !important;
+  max-width: 50px !important;
+  border: 0 !important;
+  outline: 0 !important;
+  background: transparent !important;
+  color: var(--color-text-primary) !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  font-family: inherit !important;
+  padding: 0 !important;
 }
 
 .soso-feed-search-label {
@@ -248,8 +243,12 @@
 }
 
 @media (max-width: 767px) {
+  .site-header {
+    min-height: 56px !important;
+  }
+
   .page-container:has(.soso-feed-page) {
-    padding-top: 0 !important;
+    padding-top: 10px !important;
   }
 
   #page-content:has(.soso-feed-page) {
@@ -260,9 +259,9 @@
   #page-content > .soso-feed-page:first-child,
   .layout-main.soso-feed-page,
   .layout-main--full.soso-feed-page {
-    margin-top: -6px !important;
+    margin-top: 0 !important;
     padding-top: 0 !important;
-    gap: 6px !important;
+    gap: 7px !important;
   }
 
   .soso-feed-toolbar {
@@ -290,21 +289,17 @@
     padding-left: 10px !important;
     padding-right: 10px !important;
   }
-
-  .soso-feed-controls {
-    grid-template-columns: minmax(0, 1fr) auto !important;
-    gap: 7px !important;
-  }
 }
 
 @media (max-width: 374px) {
-  .soso-feed-sort {
-    min-width: 88px !important;
+  .soso-feed-sort--summary {
+    min-width: 70px !important;
+    max-width: 84px !important;
   }
 
-  .soso-feed-sort select {
-    width: 60px !important;
-    min-width: 60px !important;
-    max-width: 60px !important;
+  .soso-feed-sort--summary select {
+    width: 45px !important;
+    min-width: 45px !important;
+    max-width: 45px !important;
   }
 }
