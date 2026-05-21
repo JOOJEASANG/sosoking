@@ -254,11 +254,25 @@
 [data-theme="dark"] .card__footer,
 [data-theme="dark"] .feed-card__footer,
 [data-theme="dark"] .account-tabs,
-[data-theme="dark"] .liar-room-info,
-[data-theme="dark"] .game-guide-list > div,
 [data-theme="dark"] .feedback-page-box {
   background: rgba(255,255,255,.07);
   border-color: rgba(255,255,255,.14);
+}
+
+/* game-app-polish.css의 !important 흰 배경 강제 오버라이드 */
+[data-theme="dark"] .liar-room-info {
+  background: rgba(255,255,255,.08) !important;
+  border-color: rgba(255,255,255,.12) !important;
+  color: var(--color-text-primary) !important;
+}
+[data-theme="dark"] .liar-room-info span,
+[data-theme="dark"] .liar-room-info b {
+  color: var(--color-text-primary) !important;
+}
+[data-theme="dark"] .game-guide-list > div,
+[data-theme="dark"] .game-guide-list div {
+  background: rgba(255,255,255,.07) !important;
+  border-color: rgba(255,255,255,.12) !important;
 }
 
 [data-theme="dark"] h1,
@@ -379,11 +393,21 @@
 
 [data-theme="dark"] .vote-option,
 [data-theme="dark"] .follow-item,
-[data-theme="dark"] .liar-player-item,
 [data-theme="dark"] .feedback-type-tab {
   background: rgba(255,255,255,.08);
   border-color: rgba(255,255,255,.15);
   color: var(--color-text-primary);
+}
+
+/* liar-player-item: game-app-polish.css !important 강제 오버라이드 */
+[data-theme="dark"] .liar-player-item {
+  background: rgba(255,255,255,.08) !important;
+  border-color: rgba(255,255,255,.14) !important;
+  color: var(--color-text-primary) !important;
+}
+[data-theme="dark"] .liar-player-item span,
+[data-theme="dark"] .liar-player-item b {
+  color: var(--color-text-primary) !important;
 }
 
 [data-theme="dark"] .feedback-type-tab.active,
@@ -722,3 +746,136 @@
   background: var(--color-primary);
   color: #fff;
 }
+
+/* ══════════════════════════════════════════════════
+   다크모드 게임 영역 !important 강제 수정
+   (game-app-polish.css의 !important 흰색 배경 오버라이드)
+══════════════════════════════════════════════════ */
+
+/* game-detail-list__item: rgba(255,255,255,.56)!important */
+[data-theme="dark"] .game-detail-list__item {
+  background: rgba(255,255,255,.08) !important;
+  border-color: rgba(255,255,255,.13) !important;
+  color: var(--color-text-primary) !important;
+}
+[data-theme="dark"] .game-detail-list__item * {
+  color: var(--color-text-primary) !important;
+}
+
+/* sosoland 콘솔 스팬: rgba(255,255,255,.92)!important → 어두운 글라스 */
+[data-theme="dark"] .sosoland-hero__console span {
+  background: rgba(255,255,255,.14) !important;
+  color: #C4B5FD !important;
+}
+
+/* sosoland 카드 태그: color:#16a34a (어두운 녹색) → 밝게 */
+[data-theme="dark"] .sosoland-card__tag {
+  background: rgba(52,211,153,.18) !important;
+  color: #6EE7B7 !important;
+  border-color: rgba(52,211,153,.30) !important;
+}
+
+/* 게임 카드 내부 링크/텍스트 보강 */
+[data-theme="dark"] .game-detail-card,
+[data-theme="dark"] .liar-create-card,
+[data-theme="dark"] .liar-room-card,
+[data-theme="dark"] .liar-invite-card,
+[data-theme="dark"] .liar-player-card,
+[data-theme="dark"] .sosoland-card {
+  color: var(--color-text-primary) !important;
+}
+[data-theme="dark"] .game-detail-card h2,
+[data-theme="dark"] .liar-create-card h2,
+[data-theme="dark"] .sosoland-card h2 {
+  color: #ffffff !important;
+}
+[data-theme="dark"] .game-detail-card p,
+[data-theme="dark"] .sosoland-card p {
+  color: var(--color-text-secondary) !important;
+}
+
+/* ── 다크모드: card 내부 전체 텍스트 가시성 보강 ── */
+/* 일반 카드 내용 */
+[data-theme="dark"] .card .card__body,
+[data-theme="dark"] .feed-card .feed-card__header {
+  color: var(--color-text-primary);
+}
+
+/* ── 다크모드: 모달 헤더/바디 텍스트 ── */
+[data-theme="dark"] .modal__title { color: #ffffff !important; }
+[data-theme="dark"] .modal__body { color: var(--color-text-primary); }
+[data-theme="dark"] .modal__close { color: var(--color-text-muted); }
+
+/* ── 다크모드: 사이드바 내비 항목 기본 텍스트 ── */
+[data-theme="dark"] .sidebar__nav-item {
+  color: var(--color-text-secondary) !important;
+}
+[data-theme="dark"] .sidebar__nav-item.active {
+  color: var(--color-primary) !important;
+}
+
+/* ── 다크모드: 관리자 테이블 텍스트 ── */
+[data-theme="dark"] .admin-table td { color: var(--color-text-primary); }
+[data-theme="dark"] .admin-table th { color: var(--color-text-muted); }
+[data-theme="dark"] .admin-table__muted { color: var(--color-text-secondary); }
+
+/* ── 다크모드: 폼 라벨/힌트 보강 ── */
+[data-theme="dark"] .form-label { color: var(--color-text-primary) !important; }
+[data-theme="dark"] .form-hint { color: var(--color-text-muted); }
+[data-theme="dark"] .char-counter { color: var(--color-text-muted); }
+
+/* ── 다크모드: 상세 페이지 텍스트 ── */
+[data-theme="dark"] .detail-title { color: var(--color-text-primary) !important; }
+[data-theme="dark"] .detail-body { color: var(--color-text-primary); }
+[data-theme="dark"] .detail-body p { color: var(--color-text-secondary); }
+[data-theme="dark"] .detail-meta { color: var(--color-text-muted); }
+[data-theme="dark"] .comment-item__author { color: var(--color-text-primary) !important; }
+[data-theme="dark"] .comment-item__text { color: var(--color-text-secondary) !important; }
+
+/* ── 다크모드: 알림 항목 텍스트 ── */
+[data-theme="dark"] .notif-item__text { color: var(--color-text-primary); }
+[data-theme="dark"] .notif-item__time { color: var(--color-text-muted); }
+
+/* ── 다크모드: 피드 카드 내부 텍스트 (명시적) ── */
+[data-theme="dark"] .feed-card__title { color: var(--color-text-primary) !important; }
+[data-theme="dark"] .feed-card__desc { color: var(--color-text-secondary) !important; }
+[data-theme="dark"] .feed-card__meta { color: var(--color-text-muted) !important; }
+
+/* ── 다크모드: 빈 상태 텍스트 ── */
+[data-theme="dark"] .empty-state__title { color: var(--color-text-primary) !important; }
+[data-theme="dark"] .empty-state__desc { color: var(--color-text-secondary) !important; }
+
+/* ── 다크모드: 사이드바 하단 유틸 버튼 텍스트 ── */
+[data-theme="dark"] .sidebar__util-btn { color: var(--color-text-muted); }
+[data-theme="dark"] .sidebar__util-btn:hover { color: var(--color-text-primary); }
+[data-theme="dark"] .sidebar__user-name { color: var(--color-text-primary); }
+
+/* ── 다크모드: 계정 페이지 텍스트 ── */
+[data-theme="dark"] .account-nickname { color: var(--color-text-primary) !important; }
+[data-theme="dark"] .account-stat__num { color: var(--color-primary) !important; }
+[data-theme="dark"] .account-stat__label { color: var(--color-text-muted) !important; }
+
+/* ── 다크모드: 섹션 타이틀 ── */
+[data-theme="dark"] .section-title { color: var(--color-text-primary) !important; }
+[data-theme="dark"] .home-section-title { color: var(--color-text-primary) !important; }
+[data-theme="dark"] .home-cats-header__title { color: var(--color-text-primary) !important; }
+[data-theme="dark"] .home-cats-header__sub { color: var(--color-text-muted) !important; }
+
+/* ── 다크모드: 사이드바 위젯 텍스트 ── */
+[data-theme="dark"] .sidebar-widget__title { color: var(--color-text-primary) !important; }
+[data-theme="dark"] .sidebar-rank-title { color: var(--color-text-primary); }
+[data-theme="dark"] .sidebar-rank-meta { color: var(--color-text-muted); }
+[data-theme="dark"] .sidebar-mission__text { color: var(--color-text-primary); }
+
+/* ── 다크모드: 홈 랭킹/빠른시작 텍스트 ── */
+[data-theme="dark"] .home-rank-item__title { color: var(--color-text-primary) !important; }
+[data-theme="dark"] .home-rank-item__type { color: var(--color-text-muted); }
+[data-theme="dark"] .home-rank-item__stats { color: var(--color-text-muted); }
+[data-theme="dark"] .home-quick-btn__label { color: var(--color-text-primary) !important; }
+[data-theme="dark"] .home-stat-card__num { color: var(--color-primary) !important; }
+[data-theme="dark"] .home-stat-card__label { color: var(--color-text-muted) !important; }
+
+/* ── 다크모드: 왕좌 카드 텍스트 ── */
+[data-theme="dark"] .throne-card__title { color: var(--color-text-primary) !important; }
+[data-theme="dark"] .throne-card__author { color: var(--color-text-muted) !important; }
+[data-theme="dark"] .throne-card__score { color: var(--color-text-muted) !important; }
