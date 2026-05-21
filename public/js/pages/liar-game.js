@@ -1,17 +1,20 @@
 import { auth, db } from '../firebase.js';
-import { collection, doc, getDoc, onSnapshot, orderBy, query } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { collection, doc, getDoc, onSnapshot, orderBy, query, limit } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { navigate } from '../router.js';
 import { toast } from '../components/toast.js';
 import { setMeta } from '../utils/seo.js';
 import { ensureGameGuestAuth } from '../game-guest-access.js';
-import { buildGameInviteUrl } from '../games/common.js';
+import { buildGameInviteUrl, findMyPlayer } from '../games/common.js';
+import { sendGameChat, scrollGameChatToBottom } from '../games/chat.js';
 import { createLiarRoom, joinLiarRoom, startLiarGame } from '../games/liar/actions.js';
 import { renderLiarLobbyHTML, renderLiarLoadingHTML, renderLiarNotFoundHTML, renderLiarRoomHTML, renderLiarWrongGameHTML } from '../games/liar/render.js';
 
 let unsubscribeRoom = null;
 let unsubscribePlayers = null;
+let unsubscribeChats = null;
 let currentRoom = null;
 let currentPlayers = [];
+let currentChats = [];
 
 export async function renderLiarGame(params = {}) {
   setMeta('게임 · 라이어게임');
@@ -24,10 +27,13 @@ export async function renderLiarGame(params = {}) {
 export function destroyLiarGame() {
   if (unsubscribeRoom) unsubscribeRoom();
   if (unsubscribePlayers) unsubscribePlayers();
+  if (unsubscribeChats) unsubscribeChats();
   unsubscribeRoom = null;
   unsubscribePlayers = null;
+  unsubscribeChats = null;
   currentRoom = null;
   currentPlayers = [];
+  currentChats = [];
 }
 
 function pageEl() {
@@ -106,19 +112,32 @@ async function renderRoom(roomId) {
     currentPlayers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     drawRoom();
   });
+
+  unsubscribeChats = onSnapshot(query(collection(db, 'game_rooms', roomId, 'chats'), orderBy('createdAt', 'asc'), limit(100)), snap => {
+    currentChats = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    drawRoom(true);
+  });
 }
 
-function drawRoom() {
+function drawRoom(scrollChat = false) {
   const el = pageEl();
   if (!el || !currentRoom) return;
-  el.innerHTML = renderLiarRoomHTML(currentRoom, currentPlayers);
+  el.innerHTML = renderLiarRoomHTML(currentRoom, currentPlayers, currentChats);
   bindRoomEvents();
+  if (scrollChat) setTimeout(scrollGameChatToBottom, 20);
 }
 
 function bindRoomEvents() {
   document.getElementById('liar-back')?.addEventListener('click', () => navigate('/sosoland'));
   document.getElementById('liar-copy')?.addEventListener('click', handleCopyInvite);
   document.getElementById('liar-join')?.addEventListener('click', handleJoinRoom);
+  document.getElementById('liar-chat-send')?.addEventListener('click', handleSendChat);
+  document.getElementById('liar-chat-input')?.addEventListener('keydown', event => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      handleSendChat();
+    }
+  });
   const startBtn = document.getElementById('liar-start');
   if (startBtn) {
     startBtn.addEventListener('click', async () => {
@@ -130,6 +149,18 @@ function bindRoomEvents() {
         startBtn.disabled = false;
       }
     });
+  }
+}
+
+async function handleSendChat() {
+  const input = document.getElementById('liar-chat-input');
+  const text = input?.value || '';
+  try {
+    await sendGameChat(currentRoom.id, text);
+    input.value = '';
+    setTimeout(scrollGameChatToBottom, 20);
+  } catch (error) {
+    toast.warn(error.message || '채팅 전송에 실패했어요');
   }
 }
 
