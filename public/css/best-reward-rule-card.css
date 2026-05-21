@@ -134,6 +134,14 @@
   color: var(--color-success);
 }
 
+@media (min-width: 768px) {
+  .best-reward-rule-card {
+    margin: 10px 24px 22px;
+    padding: 16px 18px;
+    border-radius: 20px;
+  }
+}
+
 @media (max-width: 767px) {
   .best-reward-rule-card {
     margin: 4px 12px 10px;
