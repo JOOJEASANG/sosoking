@@ -132,6 +132,20 @@ export function renderRelayModule(post) {
     </div>`;
 }
 
+function renderQuizMeta(quiz) {
+  const hint = String(quiz.hint || '').trim();
+  const correctCount = Number(quiz.correctCount || 0);
+  const firstCorrect = quiz.firstCorrect || null;
+  return `
+    <div class="multi-quiz-meta" id="multi-quiz-meta">
+      ${hint ? `<div class="multi-quiz-hint"><b>💡 힌트</b><span>${esc(hint)}</span></div>` : ''}
+      <div class="multi-quiz-stats">
+        <span id="multi-quiz-correct-count">정답자 ${correctCount}명</span>
+        <span id="multi-quiz-first-correct">${firstCorrect?.authorName ? `첫 정답자 ${esc(firstCorrect.authorName)}` : '첫 정답자 대기중'}</span>
+      </div>
+    </div>`;
+}
+
 export function renderQuizModule(post) {
   const quiz = post.modules?.quiz;
   if (!quiz?.enabled) return '';
@@ -140,6 +154,7 @@ export function renderQuizModule(post) {
     <div class="multi-detail-module" data-multi-module="quiz">
       <div class="multi-detail-module__title">🧠 미친퀴즈</div>
       <div class="multi-quiz-question">${esc(quiz.question || '')}</div>
+      ${renderQuizMeta(quiz)}
       ${isMultiple ? `
         <div class="multi-quiz-options">
           ${quiz.options.map((opt, i) => `<button type="button" class="multi-quiz-option" data-quiz-option="${i}">${esc(opt.text || opt)}</button>`).join('')}
@@ -248,10 +263,17 @@ export function renderItemList(items, kind) {
   return `${best}${list}`;
 }
 
-export function markQuizResult(ok, message) {
+export function markQuizResult(ok, message, data = {}) {
   const result = document.getElementById('multi-quiz-result');
   if (!result) return;
   result.style.display = '';
   result.className = `multi-quiz-result ${ok ? 'is-correct' : 'is-wrong'}`;
-  result.textContent = message || (ok ? '⭕ 정답이에요!' : '❌ 아쉽지만 오답이에요!');
+  const explanation = ok && data.explanation ? `<div class="multi-quiz-explanation"><b>해설</b><span>${esc(data.explanation).replace(/\n/g, '<br>')}</span></div>` : '';
+  const firstCorrect = data.firstCorrectNow ? '<div class="multi-quiz-first-badge">🏆 첫 정답자입니다!</div>' : '';
+  result.innerHTML = `${message || (ok ? '⭕ 정답이에요!' : '❌ 아쉽지만 오답이에요!')}${firstCorrect}${explanation}`;
+
+  const countEl = document.getElementById('multi-quiz-correct-count');
+  if (countEl && typeof data.correctCount !== 'undefined') countEl.textContent = `정답자 ${Number(data.correctCount || 0)}명`;
+  const firstEl = document.getElementById('multi-quiz-first-correct');
+  if (firstEl && data.firstCorrect?.authorName) firstEl.textContent = `첫 정답자 ${data.firstCorrect.authorName}`;
 }
