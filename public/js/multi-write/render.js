@@ -110,7 +110,21 @@ function renderSelectedModule(activeKey, preset) {
   }
 
   if (activeKey === 'relay') {
-    return moduleCard('relay', '🎭', '막장릴레이', '참여자가 시작 문장 뒤로 이야기를 이어갑니다.', `<div class="multi-module-inline-note">본문에 릴레이 시작 문장이나 상황을 적어주세요.</div>`);
+    return moduleCard('relay', '🎭', '막장릴레이', '참여자가 시작 문장 뒤로 이야기를 이어갑니다.', `
+      <div class="multi-module-inline-note">본문에 릴레이 시작 문장이나 상황을 적어주세요.</div>
+      <div class="form-group multi-relay-mission-write">
+        <label class="form-label">릴레이 미션 카드</label>
+        <input type="hidden" id="mw-relay-mission" value="none">
+        <div class="multi-relay-mission-grid" role="radiogroup" aria-label="릴레이 미션 선택">
+          <button type="button" class="multi-relay-mission-option active" data-relay-mission="none" role="radio" aria-checked="true"><b>미션 없음</b><span>자유롭게 이어쓰기</span></button>
+          <button type="button" class="multi-relay-mission-option" data-relay-mission="but" role="radio" aria-checked="false"><b>그런데 시작</b><span>다음 문장은 “그런데”로 시작</span></button>
+          <button type="button" class="multi-relay-mission-option" data-relay-mission="horror" role="radio" aria-checked="false"><b>공포 전환</b><span>갑자기 분위기를 공포로 바꾸기</span></button>
+          <button type="button" class="multi-relay-mission-option" data-relay-mission="animal" role="radio" aria-checked="false"><b>동물 등장</b><span>동물 하나를 자연스럽게 넣기</span></button>
+          <button type="button" class="multi-relay-mission-option" data-relay-mission="twist" role="radio" aria-checked="false"><b>반전 넣기</b><span>마지막에 짧은 반전 넣기</span></button>
+          <button type="button" class="multi-relay-mission-option" data-relay-mission="dialogue" role="radio" aria-checked="false"><b>대사 필수</b><span>인물 대사 한 줄 포함</span></button>
+        </div>
+        <div class="form-hint">미션은 참여자에게 보이는 재미 장치입니다. 강제 검사는 하지 않고, 베스트 선정에 참고할 수 있습니다.</div>
+      </div>`);
   }
 
   if (activeKey === 'quiz') {
