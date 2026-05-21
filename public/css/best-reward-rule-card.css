@@ -1,5 +1,5 @@
 .best-reward-rule-card {
-  margin: 10px 0 14px;
+  margin: 6px 16px 14px;
   padding: 13px 14px;
   border-radius: 17px;
   border: 1px solid rgba(245, 158, 11, .26);
@@ -136,6 +136,7 @@
 
 @media (max-width: 767px) {
   .best-reward-rule-card {
+    margin: 4px 12px 10px;
     padding: 12px;
     border-radius: 15px;
   }
