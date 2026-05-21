@@ -74,13 +74,17 @@ function renderSelectedModule(activeKey, preset) {
   }
 
   if (activeKey === 'fill') {
-    return moduleCard('fill', '🧩', '빈칸 채우기', '본문의 ___ 개수만큼 참여 빈칸이 만들어집니다.', `
-      <div class="multi-module-inline-note">본문에는 <b>___</b>를 넣어 빈칸 문장을 적어주세요.<br>예: <b>___가 ___했다</b></div>
+    return moduleCard('fill', '🧩', '빈칸 채우기', '스페이스바 여러 칸, ___, □□□를 빈칸으로 인식하고 줄바꿈을 유지합니다.', `
+      <div class="multi-module-inline-note">
+        본문에 문제 문장을 쓰다가 <b>스페이스바를 2칸 이상 연속</b>으로 누르면 그 부분이 빈칸이 됩니다.<br>
+        기존 방식처럼 <b>___</b> 또는 <b>□□□</b>를 넣어도 빈칸으로 인식합니다.<br>
+        한 줄 띄우기와 문단 구분은 상세페이지에서 그대로 표시됩니다.
+      </div>
       <div class="form-group" style="margin-top:12px">
-        <label class="form-label">빈칸별 칸 수</label>
-        <input id="mw-fill-counts" class="form-input" maxlength="40" value="3, 4" placeholder="예: 3, 4">
+        <label class="form-label">빈칸별 칸 수 선택 입력</label>
+        <input id="mw-fill-counts" class="form-input" maxlength="60" placeholder="비워두면 스페이스/밑줄/□ 개수로 자동 계산 · 예: 3, 4, 2">
         <input type="hidden" id="mw-fill-count" value="4">
-        <div class="form-hint">본문의 ___ 순서대로 쉼표로 입력하세요. 예: ___가 ___했다 → 3, 4</div>
+        <div class="form-hint">예: “나는   을 좋아한다”처럼 스페이스 3칸을 넣으면 3글자 빈칸이 됩니다. 직접 칸 수를 지정하려면 쉼표로 입력하세요.</div>
       </div>`);
   }
 
