@@ -16,21 +16,16 @@ import {
 const PAGE_SIZE    = 20;
 const FILTER_LIMIT = 120; // 필터/검색/정렬 시 서버 로드 최대치
 
-// ─ 상태 ─
 let currentType   = '';
 let currentSearch = '';
 let currentSort   = 'latest';
 let currentPage   = 1;
 let isLoading     = false;
 
-// 커서 모드 (일반 탐색)
-let cursorStack   = []; // cursorStack[i] = 페이지 i+1의 마지막 DocumentSnapshot
-let cursorTotal   = 0;  // 커서 모드에서 현재까지 확인된 페이지 수
-
-// 캐시 모드 (필터/검색/정렬)
+let cursorStack   = [];
+let cursorTotal   = 0;
 let cachedPosts   = [];
 
-// ─ 커서 모드 여부 ─
 function useCursorMode() {
   return !currentType && !currentSearch && currentSort === 'latest';
 }
@@ -45,7 +40,6 @@ export async function renderFeed() {
   currentSort   = normalizeFeedSort(params.sort);
   currentPage   = Math.max(1, Number(params.page || 1));
 
-  // 상태 초기화
   cursorStack = [];
   cursorTotal = 0;
   cachedPosts = [];
@@ -54,7 +48,7 @@ export async function renderFeed() {
     <div class="soso-feed-page layout-main layout-main--full feed-page-clean">
       <div class="soso-feed-toolbar">
         ${renderFeedSearchBar({ search: currentSearch })}
-        ${renderFeedFilterBar({ type: currentType, search: currentSearch, sort: currentSort })}
+        ${renderFeedFilterBar({ type: currentType, search: currentSearch })}
       </div>
       <div id="feed-summary" class="soso-feed-summary feed-result-summary"></div>
       <div id="feed-list">${renderSkeletonCards(5)}</div>
@@ -69,7 +63,6 @@ export async function renderFeed() {
 function bindFeedEvents() {
   bindSearchEvents();
   bindTypeFilterEvents();
-  bindSortEvents();
 }
 
 function bindSearchEvents() {
@@ -108,7 +101,10 @@ function bindTypeFilterEvents() {
 }
 
 function bindSortEvents() {
-  document.getElementById('feed-sort-select')?.addEventListener('change', e => {
+  const select = document.getElementById('feed-sort-select');
+  if (!select || select.dataset.bound === '1') return;
+  select.dataset.bound = '1';
+  select.addEventListener('change', e => {
     currentSort = normalizeFeedSort(e.target.value || 'latest');
     currentPage = 1;
     refreshFeed();
@@ -126,18 +122,15 @@ function refreshFeed() {
 
 function updateUrlState() {
   const params = new URLSearchParams();
-  if (currentType)                           params.set('type', currentType);
-  if (currentSearch)                         params.set('q', currentSearch);
+  if (currentType)                             params.set('type', currentType);
+  if (currentSearch)                           params.set('q', currentSearch);
   if (currentSort && currentSort !== 'latest') params.set('sort', currentSort);
-  if (currentPage > 1)                       params.set('page', String(currentPage));
+  if (currentPage > 1)                         params.set('page', String(currentPage));
   const next = params.toString() ? `#/feed?${params.toString()}` : '#/feed';
   if (window.location.hash !== next) history.replaceState(null, '', next);
 }
 
-// ─ 타입 → Firestore where 조건 매핑 ─
 function getTypeWhereClause(type) {
-  // 새 멀티글은 type='multi' + subtype/modules 조합이라 서버 where만으로는 누락될 수 있습니다.
-  // 정확한 분류는 postMatchesType()에서 클라이언트 기준으로 한 번 더 처리합니다.
   const map = {
     vote:     ['vote', 'ox', 'crazy_court', 'multi'],
     naming:   ['naming', 'multi'],
@@ -154,7 +147,6 @@ function getTypeWhereClause(type) {
     : where('type', 'in', types.slice(0, 10));
 }
 
-// ─ 메인 로드 ─
 async function loadPosts() {
   if (isLoading) return;
   isLoading = true;
@@ -165,11 +157,8 @@ async function loadPosts() {
   if (listEl)   listEl.innerHTML = renderSkeletonCards(3);
 
   try {
-    if (useCursorMode()) {
-      await loadCursorPage(currentPage);
-    } else {
-      await loadFilteredPosts();
-    }
+    if (useCursorMode()) await loadCursorPage(currentPage);
+    else await loadFilteredPosts();
     renderCurrentPage();
   } catch (err) {
     console.error('피드 로드 실패', err);
@@ -185,22 +174,16 @@ async function loadPosts() {
   isLoading = false;
 }
 
-// ─ 커서 페이지네이션 (일반 탐색, 최신순, 필터 없음) ─
 async function loadCursorPage(page) {
-  // 이전 페이지 커서 가져오기
   const startCursor = page > 1 ? cursorStack[page - 2] : null;
-
   const constraints = [orderBy('createdAt', 'desc'), limit(PAGE_SIZE + 1)];
   if (startCursor) constraints.push(startAfter(startCursor));
 
   const snap = await getDocs(query(collection(db, 'feeds'), ...constraints));
   const docs = snap.docs;
-
-  // 다음 페이지 존재 여부
   const hasNext = docs.length > PAGE_SIZE;
   const pageDocs = docs.slice(0, PAGE_SIZE);
 
-  // 커서 저장 (다음 페이지 시작점)
   if (hasNext && pageDocs.length > 0) {
     cursorStack[page - 1] = pageDocs[pageDocs.length - 1];
     cursorTotal = Math.max(cursorTotal, page + 1);
@@ -208,81 +191,64 @@ async function loadCursorPage(page) {
     cursorTotal = Math.max(cursorTotal, page);
   }
 
-  cachedPosts = pageDocs
-    .map(d => ({ id: d.id, ...d.data() }))
-    .filter(p => !p.hidden);
+  cachedPosts = pageDocs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.hidden);
 }
 
-// ─ 필터/정렬/검색 모드 (최대 FILTER_LIMIT건) ─
 async function loadFilteredPosts() {
   const constraints = [orderBy('createdAt', 'desc'), limit(FILTER_LIMIT)];
-
-  // 검색 없이 타입 필터만 있는 경우 서버사이드 where 추가
   if (currentType && !currentSearch) {
     const typeWhere = getTypeWhereClause(currentType);
     if (typeWhere) constraints.unshift(typeWhere);
   }
 
   const snap = await getDocs(query(collection(db, 'feeds'), ...constraints));
-  let posts = snap.docs
-    .map(d => ({ id: d.id, ...d.data() }))
-    .filter(p => !p.hidden);
+  let posts = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.hidden);
 
-  if (currentSearch)  posts = posts.filter(p => postMatchesSearch(p, currentSearch));
-  if (currentType)    posts = posts.filter(p => postMatchesType(p, currentType));
+  if (currentSearch) posts = posts.filter(p => postMatchesSearch(p, currentSearch));
+  if (currentType)   posts = posts.filter(p => postMatchesType(p, currentType));
 
   cachedPosts = sortFeedPosts(posts, currentSort);
 }
 
-// ─ 렌더링 ─
 function renderCurrentPage() {
-  const listEl      = document.getElementById('feed-list');
-  const summaryEl   = document.getElementById('feed-summary');
+  const listEl    = document.getElementById('feed-list');
+  const summaryEl = document.getElementById('feed-summary');
   if (!listEl) return;
 
   if (useCursorMode()) {
-    // 커서 모드: cachedPosts가 이미 현재 페이지 데이터
     if (summaryEl) {
       summaryEl.innerHTML = renderFeedSummary({
-        total: null, page: currentPage,
-        totalPages: null, search: currentSearch,
-        type: currentType, sort: currentSort,
+        total: null, page: currentPage, totalPages: null,
+        search: currentSearch, type: currentType, sort: currentSort,
       });
     }
-    listEl.innerHTML = cachedPosts.length
-      ? cachedPosts.map(p => renderFeedCard(p)).join('')
-      : renderFeedEmptyState({ search: currentSearch });
+    listEl.innerHTML = cachedPosts.length ? cachedPosts.map(p => renderFeedCard(p)).join('') : renderFeedEmptyState({ search: currentSearch });
     renderCursorPagination();
   } else {
-    // 캐시 모드: 클라이언트 페이지네이션
     const totalPages = Math.max(1, Math.ceil(cachedPosts.length / PAGE_SIZE));
-    currentPage      = Math.min(Math.max(1, currentPage), totalPages);
-    const start      = (currentPage - 1) * PAGE_SIZE;
-    const pagePosts  = cachedPosts.slice(start, start + PAGE_SIZE);
+    currentPage = Math.min(Math.max(1, currentPage), totalPages);
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const pagePosts = cachedPosts.slice(start, start + PAGE_SIZE);
 
     if (summaryEl) {
       summaryEl.innerHTML = renderFeedSummary({
-        total: cachedPosts.length, page: currentPage,
-        totalPages, search: currentSearch,
-        type: currentType, sort: currentSort,
+        total: cachedPosts.length, page: currentPage, totalPages,
+        search: currentSearch, type: currentType, sort: currentSort,
       });
     }
-    listEl.innerHTML = pagePosts.length
-      ? pagePosts.map(p => renderFeedCard(p)).join('')
-      : renderFeedEmptyState({ search: currentSearch });
+    listEl.innerHTML = pagePosts.length ? pagePosts.map(p => renderFeedCard(p)).join('') : renderFeedEmptyState({ search: currentSearch });
     renderOffsetPagination(totalPages);
   }
+  bindSortEvents();
   updateUrlState();
 }
 
-// ─ 커서 페이지네이션 UI ─
 function renderCursorPagination() {
   const el = document.getElementById('feed-pagination');
   if (!el) return;
 
   const hasPrev = currentPage > 1;
   const hasNext = cursorStack[currentPage - 1] !== undefined;
-
   if (!hasPrev && !hasNext) { el.innerHTML = ''; return; }
 
   el.innerHTML = `
@@ -303,7 +269,6 @@ function renderCursorPagination() {
   });
 }
 
-// ─ 오프셋 페이지네이션 UI (필터/정렬 모드) ─
 function renderOffsetPagination(totalPages) {
   const el = document.getElementById('feed-pagination');
   if (!el) return;
@@ -315,18 +280,16 @@ function renderOffsetPagination(totalPages) {
   el.innerHTML = `
     <button class="feed-page-btn" data-feed-page="prev" ${currentPage <= 1 ? 'disabled' : ''}>이전</button>
     <div class="feed-page-numbers">
-      ${Array.from({ length: end - start + 1 }, (_, i) => start + i)
-        .map(p => `<button class="feed-page-num ${p === currentPage ? 'active' : ''}" data-feed-page="${p}">${p}</button>`)
-        .join('')}
+      ${Array.from({ length: end - start + 1 }, (_, i) => start + i).map(p => `<button class="feed-page-num ${p === currentPage ? 'active' : ''}" data-feed-page="${p}">${p}</button>`).join('')}
     </div>
     <button class="feed-page-btn" data-feed-page="next" ${currentPage >= totalPages ? 'disabled' : ''}>다음</button>`;
 
   el.querySelectorAll('[data-feed-page]').forEach(btn => {
     btn.addEventListener('click', () => {
       const v = btn.dataset.feedPage;
-      if (v === 'prev')      currentPage -= 1;
+      if (v === 'prev') currentPage -= 1;
       else if (v === 'next') currentPage += 1;
-      else                   currentPage = Number(v || 1);
+      else currentPage = Number(v || 1);
       renderCurrentPage();
       document.querySelector('.soso-feed-page')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
