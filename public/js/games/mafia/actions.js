@@ -1,7 +1,17 @@
 import { auth, db } from '../../firebase.js';
 import { addDoc, collection, doc, getDocs, orderBy, query, serverTimestamp, setDoc, updateDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { makeRoomCode, gamePlayerName } from '../common.js';
-import { assignRoles, judgeAfterElimination, topVoteTarget } from './rules.js';
+import { sendGameSystemMessages } from '../chat.js';
+import { assignRoles, judgeAfterElimination, roleLabel, topVoteTarget } from './rules.js';
+
+function moderatorRoleSummary(roles = []) {
+  const counts = roles.reduce((acc, role) => {
+    const label = roleLabel(role);
+    acc[label] = (acc[label] || 0) + 1;
+    return acc;
+  }, {});
+  return Object.entries(counts).map(([label, count]) => `${label} ${count}명`).join(' · ');
+}
 
 export async function createMafiaRoom({ title, maxPlayers, mafiaCount }) {
   if (!auth.currentUser) throw new Error('로그인이 필요합니다.');
@@ -63,9 +73,16 @@ export async function startMafiaGame(room) {
     status: 'playing',
     phase: 'day',
     day: 1,
-    log: '역할이 배정됐어요. 서로 질문하고 마피아를 찾아 투표하세요.',
+    log: '사회자가 역할을 배정했습니다. 서로 질문하고 마피아를 찾아 투표하세요.',
     updatedAt: serverTimestamp(),
   });
+
+  await sendGameSystemMessages(room.id, [
+    '마피아게임을 시작합니다.',
+    `총 ${players.length}명이 참가했습니다. 역할 구성은 ${moderatorRoleSummary(roles)}입니다.`,
+    '각자 역할 카드를 확인하세요. 마피아는 정체를 숨기고, 시민팀은 말투와 투표 흐름을 보고 마피아를 찾아내세요.',
+    '낮 토론을 시작합니다. 충분히 대화한 뒤 의심되는 사람에게 투표하세요.',
+  ]);
 }
 
 export async function voteMafia(roomId, targetUid) {
@@ -82,7 +99,14 @@ export async function countMafiaVote(room, players) {
   const roomRef = doc(db, 'game_rooms', room.id);
 
   if (voteResult.status === 'tie') {
-    await clearMafiaVotes(room, players, `동표입니다. 탈락자 없이 ${Number(room.day || 1) + 1}라운드로 넘어갑니다.`);
+    const nextDay = Number(room.day || 1) + 1;
+    const log = `동표입니다. 탈락자 없이 ${nextDay}라운드로 넘어갑니다.`;
+    await clearMafiaVotes(room, players, log);
+    await sendGameSystemMessages(room.id, [
+      '투표 결과 동표입니다.',
+      '이번 라운드는 탈락자 없이 넘어갑니다.',
+      `${nextDay}라운드 낮 토론을 시작합니다. 다시 의심 대상을 좁혀보세요.`,
+    ]);
     return;
   }
 
@@ -94,8 +118,20 @@ export async function countMafiaVote(room, players) {
   await Promise.all(judged.nextPlayers.map(p => setDoc(doc(db, 'game_rooms', room.id, 'players', p.uid), { votedFor: '' }, { merge: true })));
 
   let log = `${target.name}님이 투표로 탈락했습니다.`;
-  if (judged.winner === 'citizen') log = `시민 승리! ${target.name}님이 탈락했고 마피아가 모두 사라졌습니다.`;
-  if (judged.winner === 'mafia') log = '마피아 승리! 마피아 수가 시민 수 이상이 되었습니다.';
+  const messages = [
+    `투표 결과 ${target.name}님이 ${voteResult.count}표로 지목됐습니다.`,
+    `${target.name}님은 ${roleLabel(target.assignedRole)}였습니다.`,
+  ];
+
+  if (judged.winner === 'citizen') {
+    log = `시민 승리! ${target.name}님이 탈락했고 마피아가 모두 사라졌습니다.`;
+    messages.push('마피아가 모두 사라졌습니다. 시민팀 승리입니다!');
+  } else if (judged.winner === 'mafia') {
+    log = '마피아 승리! 마피아 수가 시민 수 이상이 되었습니다.';
+    messages.push('마피아 수가 시민팀 수 이상이 되었습니다. 마피아 승리입니다!');
+  } else {
+    messages.push(`${Number(room.day || 1) + 1}라운드 낮 토론을 시작합니다. 남은 참가자들은 다시 대화하고 투표하세요.`);
+  }
 
   await updateDoc(roomRef, {
     status: judged.status,
@@ -104,6 +140,8 @@ export async function countMafiaVote(room, players) {
     log,
     updatedAt: serverTimestamp(),
   });
+
+  await sendGameSystemMessages(room.id, messages);
 }
 
 export async function clearMafiaVotes(room, players, log) {
@@ -132,4 +170,8 @@ export async function resetMafiaGame(room, players) {
     log: '새 게임을 준비합니다. 방장이 다시 시작할 수 있어요.',
     updatedAt: serverTimestamp(),
   });
+  await sendGameSystemMessages(room.id, [
+    '새 게임 준비 상태로 돌아갑니다.',
+    '방장이 다시 게임을 시작하면 역할이 새로 랜덤 배정됩니다.',
+  ]);
 }
