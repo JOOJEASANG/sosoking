@@ -57,8 +57,23 @@ function iconBell() {
 }
 
 function renderThemeButton(dark) {
+  const inline = [
+    'display:inline-flex!important',
+    'align-items:center!important',
+    'justify-content:center!important',
+    'width:34px!important',
+    'height:34px!important',
+    'min-width:34px!important',
+    'min-height:34px!important',
+    'padding:0!important',
+    'border-radius:12px!important',
+    'position:relative!important',
+    'visibility:visible!important',
+    'opacity:1!important',
+    'flex:0 0 34px!important',
+  ].join(';');
   return `
-    <button class="site-header__icon-btn site-header__theme-btn" id="hdr-theme-btn"
+    <button class="site-header__icon-btn site-header__theme-btn" id="hdr-theme-btn" style="${inline}"
       aria-label="${dark ? '라이트 모드로 전환' : '다크 모드로 전환'}"
       title="${dark ? '라이트 모드' : '다크 모드'}">
       ${dark ? iconSun() : iconMoon()}
