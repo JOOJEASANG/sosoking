@@ -137,8 +137,40 @@ async function submitFeedback(overlay) {
   }
 }
 
+function makeFeedbackButton(className = '') {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = `btn btn--ghost btn--sm account-feedback-btn ${className}`.trim();
+  btn.innerHTML = '💬 의견·버그';
+  btn.addEventListener('click', openFeedbackModal);
+  return btn;
+}
+
+function ensureFeedbackEntrypoints() {
+  removeButton();
+  if (isAdminPage()) return;
+
+  const accountActions = document.querySelector('.account-profile-actions');
+  if (accountActions && !accountActions.querySelector('.account-feedback-btn')) {
+    const logout = accountActions.querySelector('#btn-logout');
+    const btn = makeFeedbackButton('account-feedback-btn--profile');
+    if (logout) accountActions.insertBefore(btn, logout);
+    else accountActions.appendChild(btn);
+  }
+
+  const sidebarWrap = document.querySelector('.sidebar__user-wrap');
+  if (sidebarWrap && !sidebarWrap.querySelector('.account-feedback-btn')) {
+    const logout = sidebarWrap.querySelector('#sb-logout-btn');
+    const btn = makeFeedbackButton('account-feedback-btn--sidebar');
+    if (logout) sidebarWrap.insertBefore(btn, logout);
+    else sidebarWrap.appendChild(btn);
+  }
+}
+
 removeButton();
 window.openSosokingFeedback = openFeedbackModal;
 window.addEventListener('sosoking:open-feedback', openFeedbackModal);
-window.addEventListener('hashchange', () => setTimeout(removeButton, 100));
-setTimeout(removeButton, 500);
+window.addEventListener('hashchange', () => setTimeout(ensureFeedbackEntrypoints, 180));
+window.addEventListener('themechange', () => setTimeout(ensureFeedbackEntrypoints, 180));
+setInterval(ensureFeedbackEntrypoints, 900);
+setTimeout(ensureFeedbackEntrypoints, 500);
