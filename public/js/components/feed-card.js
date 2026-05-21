@@ -27,6 +27,17 @@ function escAttr(value) {
   return escHtml(value).replace(/`/g, '&#96;');
 }
 
+function plainText(value) {
+  const source = String(value || '');
+  if (!/<[a-z][\s\S]*>/i.test(source)) return source;
+  const tmp = document.createElement('div');
+  tmp.innerHTML = source
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/div>/gi, '\n')
+    .replace(/<\/p>/gi, '\n');
+  return (tmp.textContent || '').replace(/\n{3,}/g, '\n\n').trim();
+}
+
 function safeImageUrl(value) {
   const raw = String(value || '').trim();
   if (!raw || /[\s"'<>]/.test(raw)) return '';
@@ -95,6 +106,8 @@ export function renderFeedCard(post) {
   const temp = Math.min(100, Math.round((totalReactions * 2 + commentCount * 3) / 2));
   const tempColor = temp >= 70 ? '#FF4422' : temp >= 40 ? '#FF8800' : temp >= 20 ? '#FFAA00' : '#4F8EF7';
   const firstTag = post.tags?.length ? safeTag(post.tags[0]) : '';
+  const desc = plainText(post.desc || '').slice(0, 220);
+  const title = plainText(post.title || '').slice(0, 120);
 
   return `
     <article class="card card--hover feed-card feed-card--${meta.cat}" onclick="navigate('/detail/${escAttr(post.id)}')">
@@ -106,8 +119,8 @@ export function renderFeedCard(post) {
             </span>
             ${firstTag ? `<span class="tag">#${firstTag}</span>` : ''}
           </div>
-          <h3 class="feed-card__title line-clamp-2">${escHtml(post.title || '')}</h3>
-          ${post.desc ? `<p class="feed-card__desc line-clamp-2">${escHtml(post.desc)}</p>` : ''}
+          <h3 class="feed-card__title line-clamp-2">${escHtml(title)}</h3>
+          ${desc ? `<p class="feed-card__desc line-clamp-2">${escHtml(desc)}</p>` : ''}
           ${renderModuleChips(post)}
           <div class="feed-card__meta">
             <span>${escHtml(post.authorName || '익명')}</span>
@@ -124,7 +137,7 @@ export function renderFeedCard(post) {
       ${images.length > 3 ? `<div class="feed-card__image-count">사진 ${images.length}장</div>` : ''}
       ${temp > 0 ? `<div class="feed-temp-bar" style="--temp-pct:${temp}%;--temp-color:${tempColor}" title="참여 온도 ${temp}°C"></div>` : ''}
       <div class="feed-card__actions" onclick="event.stopPropagation()">
-        <button class="feed-share-btn" onclick="(async()=>{const u=location.origin+'/p/${escAttr(post.id)}';if(navigator.share){await navigator.share({title:${JSON.stringify(post.title||'소소킹')},url:u})}else{await navigator.clipboard.writeText(u);window.showToast?.('링크가 복사됐어요','success')}})()">
+        <button class="feed-share-btn" type="button" data-feed-share="${escAttr(post.id)}" data-feed-title="${escAttr(title || '소소킹')}">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
           공유
         </button>
@@ -152,3 +165,22 @@ export function renderSkeletonCards(count = 3) {
       <div class="skeleton skeleton-thumb"></div>
     </div>`).join('');
 }
+
+document.addEventListener('click', async event => {
+  const btn = event.target.closest?.('[data-feed-share]');
+  if (!btn) return;
+  event.preventDefault();
+  event.stopPropagation();
+  const id = btn.dataset.feedShare || '';
+  const title = btn.dataset.feedTitle || '소소킹';
+  const url = `${location.origin}/p/${encodeURIComponent(id)}`;
+  try {
+    if (navigator.share) await navigator.share({ title, url });
+    else {
+      await navigator.clipboard.writeText(url);
+      window.showToast?.('링크가 복사됐어요', 'success');
+    }
+  } catch {
+    // 사용자가 공유창을 닫은 경우는 조용히 무시합니다.
+  }
+}, true);
