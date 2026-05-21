@@ -16,6 +16,11 @@ const LIST_TARGETS = {
   fill: 'multi-fill-list',
 };
 
+function pointText(result, fallback = '') {
+  const points = Number(result?.points || 0);
+  return points > 0 ? `${fallback} +${points}P` : fallback;
+}
+
 async function refreshList(postId, kind) {
   const el = document.getElementById(LIST_TARGETS[kind]);
   if (!el) return;
@@ -67,7 +72,10 @@ function bindMultiItemActions(postId, kind) {
         const key = btn.dataset.multiReact;
         try {
           btn.disabled = true;
-          await addItemReaction(postId, kind, itemId, key);
+          const result = await addItemReaction(postId, kind, itemId, key);
+          if (result?.reactionAdded === false) toast.warn('이미 반응했어요.');
+          else if (Number(result?.points || 0) > 0) toast.success(`반응했어요! 작성자에게 +${result.points}P`);
+          else toast.success('반응했어요!');
           await refreshList(postId, kind);
         } catch (error) {
           console.error(error);
@@ -96,9 +104,9 @@ function bindMultiItemActions(postId, kind) {
       }
       try {
         if (submit) submit.disabled = true;
-        await addItemReply(postId, kind, itemId, text);
+        const result = await addItemReply(postId, kind, itemId, text);
         input.value = '';
-        toast.success('답글을 남겼어요');
+        toast.success(pointText(result, '답글을 남겼어요'));
         await refreshReplies(postId, kind, itemId, box);
       } catch (error) {
         console.error(error);
@@ -123,8 +131,9 @@ async function handleVote(post, idx, btn) {
   const postRef = doc(db, 'feeds', post.id);
   try {
     if (btn) btn.disabled = true;
-    const updated = await applyVote(postRef, post, idx);
-    toast.success('투표했어요!');
+    const resultOrPost = await applyVote(postRef, post, idx);
+    const updated = resultOrPost?.post || resultOrPost;
+    toast.success(pointText(resultOrPost, '투표했어요!'));
     const voteModule = document.querySelector('[data-multi-module="vote"]');
     if (voteModule) voteModule.outerHTML = renderVoteModule(updated);
     setupEvents(updated);
@@ -144,8 +153,8 @@ async function handleNamingSubmit(post, btn) {
     return;
   }
   if (btn) btn.disabled = true;
-  await addParticipation(post.id, 'naming', { text });
-  toast.success('참여글을 올렸어요!');
+  const result = await addParticipation(post.id, 'naming', { text });
+  toast.success(pointText(result, '참여글을 올렸어요!'));
   if (free) free.value = '';
   else chars.forEach(input => { input.value = ''; });
   await refreshList(post.id, 'naming');
@@ -178,8 +187,8 @@ async function handleFillSubmit(post, btn) {
   const input = document.getElementById('multi-fill-answer');
   if (input) input.value = text;
   if (btn) btn.disabled = true;
-  await addParticipation(post.id, 'fill', { text, answers });
-  toast.success('참여글을 올렸어요!');
+  const result = await addParticipation(post.id, 'fill', { text, answers });
+  toast.success(pointText(result, '참여글을 올렸어요!'));
   if (input) input.value = '';
   document.querySelectorAll('.multi-fill-char').forEach(box => { box.value = ''; });
   await refreshList(post.id, 'fill');
@@ -195,8 +204,8 @@ async function handleAcrosticSubmit(post, btn) {
   }
   if (btn) btn.disabled = true;
   const lines = [...keyword].map((char, index) => ({ char, line: values[index] }));
-  await addParticipation(post.id, 'acrostic', { text: lines.map(line => `${line.char}: ${line.line}`).join('\n'), lines });
-  toast.success('참여글을 올렸어요!');
+  const result = await addParticipation(post.id, 'acrostic', { text: lines.map(line => `${line.char}: ${line.line}`).join('\n'), lines });
+  toast.success(pointText(result, '참여글을 올렸어요!'));
   document.querySelectorAll('.multi-acrostic-input').forEach(input => { input.value = ''; });
   await refreshList(post.id, 'acrostic');
   if (btn) btn.disabled = false;
@@ -210,8 +219,8 @@ async function handleRelaySubmit(post, btn) {
     return;
   }
   if (btn) btn.disabled = true;
-  await addParticipation(post.id, 'relay', { text });
-  toast.success('참여글을 올렸어요!');
+  const result = await addParticipation(post.id, 'relay', { text });
+  toast.success(pointText(result, '참여글을 올렸어요!'));
   input.value = '';
   await refreshList(post.id, 'relay');
   if (btn) btn.disabled = false;
@@ -223,6 +232,7 @@ async function checkQuiz(post, selected, btn) {
     if (btn) btn.disabled = true;
     const result = await callCheckMultiQuizAnswer({ postId: post.id, selected });
     markQuizResult(!!result.data?.correct);
+    if (result.data?.correct) toast.success('정답이에요! +5P');
   } catch (error) {
     console.error(error);
     toast.error(error.message || '정답 확인에 실패했어요.');
