@@ -168,15 +168,59 @@ export function renderMultiReplyList(replies) {
   return replies.map(reply => `<div class="multi-reply-item"><div class="multi-reply-item__avatar">${esc((reply.authorName || '?')[0])}</div><div class="multi-reply-item__body"><div class="multi-reply-item__meta"><b>${esc(reply.authorName || '익명')}</b><span>${timeText(reply.createdAt)}</span></div><div class="multi-reply-item__text">${esc(reply.text || '').replace(/\n/g, '<br>')}</div></div></div>`).join('');
 }
 
+function reactionScore(item = {}) {
+  const reactions = item.reactions || {};
+  return (Number(reactions.like || 0) || 0) + (Number(reactions.funny || 0) || 0) * 2 + (Number(reactions.fire || 0) || 0) * 3;
+}
+
+function bestTitle(kind) {
+  return {
+    naming: '🏆 베스트 작명',
+    acrostic: '🏆 베스트 삼행시',
+    fill: '🏆 베스트 빈칸 답',
+    relay: '🏆 베스트 릴레이',
+  }[kind] || '🏆 베스트 참여작';
+}
+
+function renderItemBody(item, kind) {
+  if (kind === 'acrostic' && Array.isArray(item.lines)) {
+    return item.lines.map(line => `<div class="multi-item-line"><b>${esc(line.char)}</b><span>${esc(line.line)}</span></div>`).join('');
+  }
+  return `<div class="multi-item-text">${esc(item.text || '').replace(/\n/g, '<br>')}</div>`;
+}
+
+function renderBestParticipation(items, kind) {
+  const best = [...items]
+    .map(item => ({ item, score: reactionScore(item) }))
+    .filter(entry => entry.score > 0)
+    .sort((a, b) => b.score - a.score || Number(b.item.replyCount || 0) - Number(a.item.replyCount || 0))[0];
+
+  if (!best) return '';
+  const item = best.item;
+  const reactions = item.reactions || {};
+  return `
+    <div class="multi-best-card">
+      <div class="multi-best-card__head">
+        <span>${bestTitle(kind)}</span>
+        <b>${best.score}점</b>
+      </div>
+      <div class="multi-best-card__body">${renderItemBody(item, kind)}</div>
+      <div class="multi-best-card__meta">
+        <span>${esc(item.authorName || '익명')} · ${timeText(item.createdAt)}</span>
+        <span>👍 ${Number(reactions.like || 0) || 0} · 😂 ${Number(reactions.funny || 0) || 0} · 🔥 ${Number(reactions.fire || 0) || 0}</span>
+      </div>
+    </div>`;
+}
+
 export function renderItemList(items, kind) {
   if (!items.length) return `<div class="multi-empty">아직 참여글이 없습니다.</div>`;
-  return items.map(item => {
+  const best = renderBestParticipation(items, kind);
+  const list = items.map(item => {
     const reactions = item.reactions || {};
-    const body = kind === 'acrostic' && Array.isArray(item.lines)
-      ? item.lines.map(line => `<div class="multi-item-line"><b>${esc(line.char)}</b><span>${esc(line.line)}</span></div>`).join('')
-      : `<div class="multi-item-text">${esc(item.text || '').replace(/\n/g, '<br>')}</div>`;
+    const body = renderItemBody(item, kind);
     return `<div class="multi-participation-item" data-multi-kind="${kind}" data-multi-item-id="${item.id}">${body}<div class="multi-item-meta">${esc(item.authorName || '익명')} · ${timeText(item.createdAt)}</div><div class="multi-item-actions"><button type="button" data-multi-react="like">👍 <b>${Number(reactions.like || 0) || ''}</b></button><button type="button" data-multi-react="funny">😂 <b>${Number(reactions.funny || 0) || ''}</b></button><button type="button" data-multi-react="fire">🔥 <b>${Number(reactions.fire || 0) || ''}</b></button><button type="button" data-multi-reply-toggle>답글 <b>${Number(item.replyCount || 0) || ''}</b></button></div><div class="multi-replies"><div class="multi-replies__list"></div><div class="multi-replies__form"><input class="multi-replies__input" maxlength="300" placeholder="답글을 입력하세요"><button type="button" class="multi-replies__submit">등록</button></div></div></div>`;
   }).join('');
+  return `${best}${list}`;
 }
 
 export function markQuizResult(ok, message) {
