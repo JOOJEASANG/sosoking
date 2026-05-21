@@ -2,6 +2,12 @@ import { auth, googleProvider, signInWithPopup, signInWithRedirect } from '../fi
 import { navigate } from '../router.js';
 import { toast } from '../components/toast.js';
 
+function goAfterLogin() {
+  const currentPath = window.location.hash.slice(1).split('?')[0] || '/';
+  if (currentPath === '/login') navigate('/');
+  else window.dispatchEvent(new Event('hashchange'));
+}
+
 export function renderLogin() {
   const el = document.getElementById('page-content');
   el.innerHTML = `
@@ -43,11 +49,10 @@ export function renderLogin() {
     try {
       await signInWithPopup(auth, googleProvider);
       toast.success('로그인됐어요!');
-      // 내비게이션은 onAuthStateChanged에서 처리 (관리자 분기 포함)
+      goAfterLogin();
     } catch (e) {
       if (e.code === 'auth/popup-closed-by-user') return;
       if (e.code === 'auth/popup-blocked') {
-        // 팝업 차단 시 redirect 방식으로 폴백
         try {
           await signInWithRedirect(auth, googleProvider);
         } catch { toast.error('로그인에 실패했어요'); }
@@ -57,7 +62,6 @@ export function renderLogin() {
     }
   });
 
-  // 이메일 로그인/가입은 Firebase Auth import 필요 (lazy)
   document.getElementById('btn-email-login')?.addEventListener('click', async () => {
     const { signInWithEmailAndPassword } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
     const email    = document.getElementById('f-email')?.value.trim();
@@ -66,7 +70,7 @@ export function renderLogin() {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       toast.success('로그인됐어요!');
-      // 내비게이션은 onAuthStateChanged에서 처리
+      goAfterLogin();
     } catch { toast.error('이메일 또는 비밀번호가 올바르지 않아요'); }
   });
 
@@ -93,7 +97,7 @@ export function renderLogin() {
       const cred = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(cred.user, { displayName: email.split('@')[0] });
       toast.success('가입됐어요! 환영해요 🎉');
-      navigate('/');
+      goAfterLogin();
     } catch (e) {
       if (e.code === 'auth/email-already-in-use') toast.error('이미 사용 중인 이메일이에요');
       else toast.error('가입에 실패했어요');
