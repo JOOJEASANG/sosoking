@@ -114,7 +114,7 @@ function renderSelectedModule(activeKey, preset) {
   }
 
   if (activeKey === 'quiz') {
-    return moduleCard('quiz', '🧠', '미친퀴즈', '본문에 적은 문제를 기준으로 정답 기능을 설정합니다.', `
+    return moduleCard('quiz', '🧠', '미친퀴즈', '힌트와 해설을 넣어 더 게임답게 만들 수 있습니다.', `
       <div class="form-group">
         <label class="form-label">퀴즈 방식 <span class="required">*</span></label>
         <input type="hidden" id="mw-quiz-mode" value="subjective">
@@ -133,6 +133,16 @@ function renderSelectedModule(activeKey, preset) {
           <div class="multi-option-list" id="mw-quiz-options">${renderQuizOptionRows(2)}</div>
           <button class="btn btn--ghost btn--sm" type="button" id="mw-add-quiz-option">+ 선택지 추가</button>
         </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">힌트</label>
+        <input id="mw-quiz-hint" class="form-input" maxlength="120" placeholder="정답을 바로 알려주지 않는 짧은 힌트">
+        <div class="form-hint">상세페이지에서 누구나 볼 수 있습니다.</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">정답 해설</label>
+        <textarea id="mw-quiz-explanation" class="form-textarea" rows="3" maxlength="500" placeholder="정답 확인 후 보여줄 해설을 입력하세요"></textarea>
+        <div class="form-hint">정답을 맞힌 사용자에게 결과와 함께 표시됩니다.</div>
       </div>`);
   }
 
