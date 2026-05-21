@@ -15,6 +15,7 @@ export function renderLogin() {
       <div class="auth-card card">
         <div class="card__body--lg">
           <div class="auth-logo">
+            <img class="auth-logo__site-img" src="/logo.svg" alt="소소킹" width="56" height="56" style="display:block;margin:0 auto 12px;border-radius:16px;box-shadow:0 10px 28px rgba(255,107,74,.18)">
             <div class="auth-logo__mark">소소킹</div>
             <div class="auth-logo__sub">글과 사진으로 즐기는 게임형 커뮤니티</div>
           </div>
