@@ -40,6 +40,15 @@ async function collectDiagnostics() {
   ].join('\n');
 }
 
+async function loadPostBootModules() {
+  const stamp = Date.now();
+  const modules = [
+    './owner-edit-route-override.js',
+    './app-stability-suite.js',
+  ];
+  await Promise.allSettled(modules.map(path => import(`${path}?v=${stamp}`)));
+}
+
 window.addEventListener('error', async event => {
   if (!document.querySelector('.app-shell')) showBootError(event.error || event.message, await collectDiagnostics());
 });
@@ -49,12 +58,10 @@ window.addEventListener('unhandledrejection', async event => {
 });
 
 const safeUrl = `./app-safe.js?v=${encodeURIComponent(BOOT_VERSION)}&t=${Date.now()}`;
-import(safeUrl).then(() => {
-  import(`./owner-edit-route-override.js?v=${Date.now()}`).catch(error => console.warn('[sosoking boot] owner edit override failed', error));
-}).catch(async safeError => {
+import(safeUrl).then(loadPostBootModules).catch(async safeError => {
   console.warn('[sosoking boot] safe entry failed, trying legacy app', safeError);
   const legacyUrl = `./app.js?v=${encodeURIComponent(BOOT_VERSION)}&t=${Date.now()}`;
-  import(legacyUrl).catch(async legacyError => {
+  import(legacyUrl).then(loadPostBootModules).catch(async legacyError => {
     showBootError(legacyError || safeError, await collectDiagnostics());
   });
 });
