@@ -49,7 +49,9 @@ window.addEventListener('unhandledrejection', async event => {
 });
 
 const safeUrl = `./app-safe.js?v=${encodeURIComponent(BOOT_VERSION)}&t=${Date.now()}`;
-import(safeUrl).catch(async safeError => {
+import(safeUrl).then(() => {
+  import(`./owner-edit-route-override.js?v=${Date.now()}`).catch(error => console.warn('[sosoking boot] owner edit override failed', error));
+}).catch(async safeError => {
   console.warn('[sosoking boot] safe entry failed, trying legacy app', safeError);
   const legacyUrl = `./app.js?v=${encodeURIComponent(BOOT_VERSION)}&t=${Date.now()}`;
   import(legacyUrl).catch(async legacyError => {
