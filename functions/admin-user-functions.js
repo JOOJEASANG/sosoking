@@ -6,6 +6,7 @@ const { getAuth } = require('firebase-admin/auth');
 
 const db = getFirestore();
 const REGION = 'asia-northeast3';
+const MAX_AUTH_SCAN = 3000;
 
 async function assertAdmin(uid) {
   if (!uid) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
@@ -24,6 +25,10 @@ function safeString(value, max = 160) {
   return String(value || '').replace(/[<>]/g, '').trim().slice(0, max);
 }
 
+function normalizeSearch(value) {
+  return safeString(value, 80).toLowerCase().replace(/\s+/g, '');
+}
+
 function providerIds(user) {
   return (user.providerData || []).map(p => p.providerId).filter(Boolean);
 }
@@ -34,7 +39,19 @@ function isRegisteredAuthUser(user) {
   return providers.length > 0 || !!user.email || !!user.phoneNumber;
 }
 
-async function listAuthUsers(maxUsers = 1000) {
+function memberMatches(member, search) {
+  if (!search) return true;
+  const haystack = normalizeSearch([
+    member.uid,
+    member.email,
+    member.nickname,
+    member.title,
+    member.provider,
+  ].filter(Boolean).join(' '));
+  return haystack.includes(search);
+}
+
+async function listAuthUsers(maxUsers = MAX_AUTH_SCAN) {
   const users = [];
   let pageToken;
   do {
@@ -42,16 +59,20 @@ async function listAuthUsers(maxUsers = 1000) {
     users.push(...(result.users || []));
     pageToken = result.pageToken;
   } while (pageToken && users.length < maxUsers);
-  return users.slice(0, maxUsers);
+  return { users: users.slice(0, maxUsers), scannedAll: !pageToken };
 }
 
-const getAdminMemberList = onCall({ region: REGION, timeoutSeconds: 60, memory: '256MiB' }, async request => {
+const getAdminMemberList = onCall({ region: REGION, timeoutSeconds: 60, memory: '512MiB' }, async request => {
   await assertAdmin(request.auth && request.auth.uid);
 
-  const [adminSnap, userSnap, authUsers] = await Promise.all([
+  const pageSize = Math.max(1, Math.min(100, Number(request.data?.pageSize) || 30));
+  const pageToken = Math.max(0, Number(request.data?.pageToken) || 0);
+  const search = normalizeSearch(request.data?.search || '');
+
+  const [adminSnap, userSnap, authResult] = await Promise.all([
     db.collection('admins').get().catch(() => ({ docs: [] })),
-    db.collection('users').limit(1000).get().catch(() => ({ docs: [] })),
-    listAuthUsers(1000).catch(() => []),
+    db.collection('users').limit(MAX_AUTH_SCAN).get().catch(() => ({ docs: [] })),
+    listAuthUsers(MAX_AUTH_SCAN).catch(() => ({ users: [], scannedAll: true })),
   ]);
 
   const adminIds = new Set(adminSnap.docs.map(d => d.id));
@@ -59,7 +80,7 @@ const getAdminMemberList = onCall({ region: REGION, timeoutSeconds: 60, memory: 
   let excludedAnonymous = 0;
   const map = new Map();
 
-  for (const user of authUsers || []) {
+  for (const user of authResult.users || []) {
     if (!user.uid || adminIds.has(user.uid)) continue;
     if (!isRegisteredAuthUser(user)) {
       excludedAnonymous += 1;
@@ -105,15 +126,25 @@ const getAdminMemberList = onCall({ region: REGION, timeoutSeconds: 60, memory: 
     });
   }
 
-  const members = [...map.values()]
-    .sort((a, b) => (b.createdAtMs || b.updatedAtMs || 0) - (a.createdAtMs || a.updatedAtMs || 0))
-    .slice(0, 500);
+  const filteredMembers = [...map.values()]
+    .filter(member => memberMatches(member, search))
+    .sort((a, b) => (b.createdAtMs || b.updatedAtMs || 0) - (a.createdAtMs || a.updatedAtMs || 0));
+
+  const members = filteredMembers.slice(pageToken, pageToken + pageSize);
+  const nextPageToken = pageToken + pageSize < filteredMembers.length ? pageToken + pageSize : null;
+  const prevPageToken = pageToken > 0 ? Math.max(0, pageToken - pageSize) : null;
 
   return {
     ok: true,
-    total: members.length,
+    total: filteredMembers.length,
+    totalRegistered: map.size,
+    pageSize,
+    pageToken,
+    nextPageToken,
+    prevPageToken,
     excludedAdmins: adminIds.size,
     excludedAnonymous,
+    scannedAll: !!authResult.scannedAll,
     members,
   };
 });
