@@ -139,6 +139,36 @@ function renderSelectedModule(activeKey, preset) {
   return '';
 }
 
+function renderGamePreview() {
+  return `
+    <div class="multi-game-preview" id="mw-game-preview">
+      <div class="multi-game-preview__head">
+        <span>🎮 참여 미리보기</span>
+        <small>작성 중인 글이 어떻게 보일지 확인하세요.</small>
+      </div>
+      <div class="multi-game-preview__body" id="mw-preview-body"></div>
+    </div>`;
+}
+
+function renderDeadlineSettings() {
+  return `
+    <div class="multi-deadline-box" id="mw-deadline-box" data-deadline-enabled="0">
+      <div class="multi-deadline-box__head">
+        <div><b>⏰ 마감/결과 공개</b><small>가입 회원 50명부터 활성화됩니다.</small></div>
+        <span id="mw-member-gate-badge">확인 중</span>
+      </div>
+      <div id="mw-deadline-locked" class="multi-deadline-locked">회원 수를 확인하는 중입니다.</div>
+      <div id="mw-deadline-options" class="multi-deadline-options" style="display:none">
+        <input type="hidden" id="mw-deadline-mode" value="none">
+        <button type="button" class="multi-deadline-option active" data-deadline-mode="none">마감 없음</button>
+        <button type="button" class="multi-deadline-option" data-deadline-mode="1h">1시간</button>
+        <button type="button" class="multi-deadline-option" data-deadline-mode="24h">24시간</button>
+        <button type="button" class="multi-deadline-option" data-deadline-mode="manual">직접 마감</button>
+      </div>
+      <div class="form-hint" id="mw-deadline-hint">마감 기능은 회원이 50명 이상일 때 글쓰기에서 선택할 수 있습니다.</div>
+    </div>`;
+}
+
 export function renderMultiWriteHTML({ renderKey, presetKey }) {
   const preset = MULTI_PRESETS[presetKey] || MULTI_PRESETS.general;
   const bodyRequired = BODY_REQUIRED_PRESETS.includes(presetKey);
@@ -175,6 +205,8 @@ export function renderMultiWriteHTML({ renderKey, presetKey }) {
             <div class="form-hint">비워두고 올려도 제목과 본문을 기준으로 태그가 자동 생성됩니다.</div>
           </div>
           <div class="multi-module-list multi-module-list--selected">${renderSelectedModule(presetKey, preset)}</div>
+          ${renderGamePreview()}
+          ${renderDeadlineSettings()}
           <div class="multi-comment-note">💬 댓글과 답글은 항상 켜져 있습니다.</div>
         </div>
         <div class="card__footer">
