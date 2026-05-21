@@ -14,12 +14,14 @@ export const MULTI_PRESETS = {
     tagsPlaceholder: '#투표, #판정, #토론',
     voteOptionPlaceholders: ['찬성', '반대'],
   },
+  // 기존 빈칸채우기 글 호환용입니다. 새 글쓰기 선택지에서는 숨깁니다.
   fill: {
     label: '빈칸 채우기',
     icon: '🧩',
     titlePlaceholder: '예: ___가 ___했다',
     descPlaceholder: '빈칸은 ___로 표시하세요. 예: ___가 ___했다 / 오늘의 내 기분은 ___다.',
     tagsPlaceholder: '#빈칸채우기, #빈칸',
+    hiddenFromWriter: true,
   },
   naming: {
     label: '미친작명소',
@@ -53,6 +55,8 @@ export const MULTI_PRESETS = {
   },
 };
 
+export const WRITER_PRESET_KEYS = Object.keys(MULTI_PRESETS).filter(key => !MULTI_PRESETS[key].hiddenFromWriter);
+
 export const BODY_LABELS = {
   vote: '본문 · 질문/상황/토론 주제',
   fill: '본문 · 빈칸 채우기 문장',
@@ -60,12 +64,14 @@ export const BODY_LABELS = {
   quiz: '본문 · 문제',
 };
 
-export const BODY_REQUIRED_PRESETS = ['vote', 'fill', 'relay', 'quiz'];
+export const BODY_REQUIRED_PRESETS = ['vote', 'relay', 'quiz'];
 
-export function normalizePresetKey(key) {
+export function normalizePresetKey(key, { allowHidden = false } = {}) {
   if (key === 'ox') return 'vote';
   if (key === 'anonymous') return 'general';
-  return MULTI_PRESETS[key] ? key : 'general';
+  if (!MULTI_PRESETS[key]) return 'general';
+  if (!allowHidden && MULTI_PRESETS[key].hiddenFromWriter) return 'general';
+  return key;
 }
 
 export function getMultiPresetFromHash(hash = window.location.hash || '') {
