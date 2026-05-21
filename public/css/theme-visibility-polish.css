@@ -167,6 +167,9 @@
   --color-golra-dark: #93C5FD;
   --color-usgyo-dark: #FCA5A5;
   --color-malhe-dark: #6EE7B7;
+
+  /* inner-background-fix.css의 #ffffff 강제 덮어쓰기 */
+  --sosoking-inner-bg: var(--color-bg);
 }
 
 [data-theme="dark"] body,
@@ -176,6 +179,13 @@
     radial-gradient(circle at top right, rgba(96, 165, 250, .10), transparent 34%),
     var(--color-bg);
   color: var(--color-text-primary);
+}
+
+/* 관리자 사이드바: inner-background-fix.css !important 오버라이드 */
+[data-theme="dark"] body:has(.admin-layout) .admin-sidebar,
+[data-theme="dark"] body:has(.admin-layout) .admin-sidebar__footer,
+[data-theme="dark"] body:has(.admin-layout) .admin-brand {
+  background: var(--color-surface) !important;
 }
 
 [data-theme="dark"] .site-header {
