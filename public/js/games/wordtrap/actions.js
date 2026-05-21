@@ -4,24 +4,19 @@ import { makeRoomCode, gamePlayerName, shuffle } from '../common.js';
 import { sendGameChat } from '../chat.js';
 
 const PRESETS = {
-  daily: { topic: '일상 토크', words: ['근데', '진짜', '아니', '오늘', 'ㅋㅋ'] },
-  food: { topic: '음식 토크', words: ['맛있다', '배고파', '치킨', '라면', '먹자'] },
-  love: { topic: '연애 토크', words: ['좋아', '사랑', '연락', '데이트', '썸'] },
-  random: { topic: '랜덤 토크', words: ['그냥', '몰라', '대박', '왜', '나'] },
+  daily: { topic: '일상 토크', words: ['근데', '진짜', '아니', '오늘', 'ㅋㅋ', '그냥', '대박', '몰라'] },
+  food: { topic: '음식 토크', words: ['맛있다', '배고파', '치킨', '라면', '먹자', '매워', '달다', '냄새'] },
+  love: { topic: '연애 토크', words: ['좋아', '사랑', '연락', '데이트', '썸', '고백', '질투', '헤어짐'] },
+  random: { topic: '랜덤 토크', words: ['그냥', '몰라', '대박', '왜', '나', '너', '진짜', '아니'] },
 };
 
 function pickPreset(key) {
   return PRESETS[key] || PRESETS.daily;
 }
 
-function cleanWords(words) {
-  return [...new Set(String(words || '').split(',').map(word => word.trim()).filter(Boolean).slice(0, 8))];
-}
-
-export async function createWordtrapRoom({ title, preset, maxPlayers, customWords }) {
+export async function createWordtrapRoom({ title, preset, maxPlayers }) {
   if (!auth.currentUser) throw new Error('게임 접속 정보를 확인하지 못했어요. 다시 시도해주세요.');
   const picked = pickPreset(preset);
-  const custom = cleanWords(customWords);
   const room = {
     game: 'wordtrap',
     status: 'waiting',
@@ -29,13 +24,13 @@ export async function createWordtrapRoom({ title, preset, maxPlayers, customWord
     title: title || '금칙어 채팅게임',
     preset: preset || 'daily',
     topic: picked.topic,
-    trapWords: custom.length ? custom : picked.words,
+    trapWords: picked.words,
     maxPlayers: Number(maxPlayers || 6),
     code: makeRoomCode(),
     hostId: auth.currentUser.uid,
     hostName: gamePlayerName('방장'),
     round: 0,
-    log: '참가자를 모은 뒤 방장이 게임을 시작하세요.',
+    log: '참가자를 모은 뒤 방장이 게임을 시작하세요. 금칙어는 시작할 때 랜덤으로 배정됩니다.',
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   };
@@ -69,19 +64,22 @@ export async function startWordtrapGame(room, players) {
   if (room.hostId !== uid) throw new Error('방장만 게임을 시작할 수 있습니다.');
   if (players.length < 2) throw new Error('금칙어 게임은 2명 이상이면 시작할 수 있어요.');
 
-  const words = Array.isArray(room.trapWords) && room.trapWords.length ? room.trapWords : pickPreset(room.preset).words;
-  const shuffled = shuffle(words);
-  await Promise.all(players.map((player, index) => setDoc(doc(db, 'game_rooms', room.id, 'players', player.uid), {
+  const preset = pickPreset(room.preset);
+  const words = Array.isArray(room.trapWords) && room.trapWords.length ? room.trapWords : preset.words;
+  const shuffledWords = shuffle(words);
+  const shuffledPlayers = shuffle(players);
+
+  await Promise.all(shuffledPlayers.map((player, index) => setDoc(doc(db, 'game_rooms', room.id, 'players', player.uid), {
     alive: true,
     caughtCount: 0,
-    myTrapWord: shuffled[index % shuffled.length],
+    myTrapWord: shuffledWords[index % shuffledWords.length],
   }, { merge: true })));
 
   await updateDoc(doc(db, 'game_rooms', room.id), {
     status: 'playing',
     phase: 'talk',
     round: Number(room.round || 0) + 1,
-    log: '내 금칙어를 피하면서 자연스럽게 채팅하세요. 금칙어를 쓰면 자동으로 걸립니다.',
+    log: '금칙어가 랜덤으로 배정됐어요. 내 금칙어를 피하면서 자연스럽게 채팅하세요.',
     startedAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
