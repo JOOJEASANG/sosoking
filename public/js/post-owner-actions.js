@@ -5,6 +5,14 @@ import { navigate } from './router.js';
 import { toast } from './components/toast.js';
 import { escHtml } from './utils/helpers.js';
 
+function descToPlain(raw) {
+  const s = String(raw || '');
+  if (!/<[a-z]/i.test(s)) return s;
+  const tmp = document.createElement('div');
+  tmp.innerHTML = s.replace(/<br\s*\/?>/gi, '\n').replace(/<\/div>/gi, '\n').replace(/<\/p>/gi, '\n');
+  return (tmp.textContent || '').replace(/\n{4,}/g, '\n\n\n').trim();
+}
+
 const TYPE_LABELS = {
   multi: '만능 놀이글',
   vote: '골라봐',
@@ -230,7 +238,7 @@ function openEditModal(post) {
         </div>
         <div class="form-group">
           <label class="form-label">내용</label>
-          <textarea class="form-textarea" id="owner-edit-desc" rows="5" maxlength="2000">${toInput(post.desc)}</textarea>
+          <textarea class="form-textarea" id="owner-edit-desc" rows="5" maxlength="2000">${escHtml(descToPlain(post.desc))}</textarea>
         </div>
         ${renderOptionsEditor(post)}
         ${renderTypeExtraEditor(post)}
