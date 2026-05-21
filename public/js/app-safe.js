@@ -43,7 +43,9 @@ function currentRoutePath() {
 }
 
 function isGameOnlyRoute(path = currentRoutePath()) {
-  return path === '/game/liar' || path.startsWith('/game/liar/') || path === '/game/mafia' || path.startsWith('/game/mafia/');
+  return path === '/game/liar' || path.startsWith('/game/liar/')
+    || path === '/game/mafia' || path.startsWith('/game/mafia/')
+    || path === '/game/wordtrap' || path.startsWith('/game/wordtrap/');
 }
 
 function isGameOnlyShellActive() {
@@ -222,6 +224,8 @@ export async function initApp() {
   registerRoute('/game/liar/:id', ({ id }) => renderPage('./pages/liar-game.js', 'renderLiarGame', [{ id }]));
   registerRoute('/game/mafia', () => renderPage('./pages/mafia-game.js', 'renderMafiaGame', []));
   registerRoute('/game/mafia/:id', ({ id }) => renderPage('./pages/mafia-game.js', 'renderMafiaGame', [{ id }]));
+  registerRoute('/game/wordtrap', () => renderPage('./pages/wordtrap-game.js', 'renderWordtrapGame', []));
+  registerRoute('/game/wordtrap/:id', ({ id }) => renderPage('./pages/wordtrap-game.js', 'renderWordtrapGame', [{ id }]));
   registerRoute('/detail/:id', ({ id }) => renderPage('./pages/detail-safe.js', 'renderDetail', [id]));
   registerRoute('/account', () => renderPage('./pages/account.js', 'renderAccount', []));
   registerRoute('/scraps', () => renderPage('./pages/scraps.js', 'renderScraps', []));
