@@ -3,43 +3,43 @@ import { FILTER_TYPES, SORT_LABELS, TYPE_LABELS } from './filter.js';
 
 export function renderFeedSearchBar({ search = '' } = {}) {
   return `
-    <div class="feed-search-bar feed-search-bar--compact" role="search">
-      <div class="feed-search-input-wrap feed-search-input-wrap--compact">
-        <svg class="feed-search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16" height="16" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-        <input id="feed-search-input" class="feed-search-input" placeholder="제목·본문·태그 검색" value="${escHtml(search)}" autocomplete="off" inputmode="search">
-        <button id="search-clear-btn" class="feed-search-clear" type="button" aria-label="검색어 지우기" style="display:${search ? 'inline-flex' : 'none'}">✕</button>
+    <div class="soso-feed-search" role="search">
+      <div class="soso-feed-search__input-wrap">
+        <svg class="soso-feed-search__icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16" height="16" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <input id="feed-search-input" class="soso-feed-search__input" placeholder="제목·본문·태그 검색" value="${escHtml(search)}" autocomplete="off" inputmode="search">
+        <button id="search-clear-btn" class="soso-feed-search__clear" type="button" aria-label="검색어 지우기" style="display:${search ? 'inline-flex' : 'none'}">✕</button>
       </div>
-      <button class="btn btn--primary btn--sm feed-search-btn" id="btn-feed-search" type="button">검색</button>
+      <button class="soso-feed-search__button" id="btn-feed-search" type="button">검색</button>
     </div>`;
 }
 
 export function renderFeedFilterBar({ type = '', search = '', sort = 'latest' } = {}) {
   return `
-    <div class="feed-control-wrap feed-control-wrap--with-sort">
-      <div class="feed-filters feed-filters--compact" id="cat-filters" aria-label="피드 유형 필터">
-        <button class="filter-chip ${!type && !search ? 'active' : ''}" data-type-filter="" type="button">전체</button>
+    <div class="soso-feed-controls">
+      <div class="soso-feed-chips" id="cat-filters" aria-label="피드 유형 필터">
+        <button class="soso-feed-chip ${!type && !search ? 'active' : ''}" data-type-filter="" type="button">전체</button>
         ${FILTER_TYPES.map(key => `
-          <button class="filter-chip ${type === key && !search ? 'active' : ''}" data-type-filter="${key}" type="button">
+          <button class="soso-feed-chip ${type === key && !search ? 'active' : ''}" data-type-filter="${key}" type="button">
             ${TYPE_LABELS[key]}
           </button>`).join('')}
       </div>
-      <label class="feed-sort-dropdown" aria-label="피드 정렬">
+      <label class="soso-feed-sort" aria-label="피드 정렬">
         <span>정렬</span>
         <select id="feed-sort-select">
           ${Object.entries(SORT_LABELS).map(([key, label]) => `<option value="${key}" ${sort === key ? 'selected' : ''}>${label}</option>`).join('')}
         </select>
       </label>
     </div>
-    ${search ? `<div class="feed-search-label">🔍 "<strong>${escHtml(search)}</strong>" 검색 결과 · 검색 중에는 유형 필터가 자동 해제됩니다.</div>` : ''}`;
+    ${search ? `<div class="soso-feed-search-label">🔍 "<strong>${escHtml(search)}</strong>" 검색 결과 · 검색 중에는 유형 필터가 자동 해제됩니다.</div>` : ''}`;
 }
 
 export function renderFeedSummary({ total = 0, page = 1, totalPages = 1, search = '', type = '', sort = 'latest' } = {}) {
   const label = search ? `검색 ${escHtml(search)}` : (type ? TYPE_LABELS[type] || '필터' : '전체');
   const sortLabel = SORT_LABELS[sort] || SORT_LABELS.latest;
   // total이 null이면 커서 모드(전체 건수 미확인) → 페이지 번호만 표시
-  if (total === null) return `<div class="feed-result-summary__inner"><span>${label}</span><span>${page}페이지</span><span>${sortLabel}</span></div>`;
-  if (!total) return `<div class="feed-result-summary__inner"><span>${label}</span><b>0개</b><span>${sortLabel}</span></div>`;
-  return `<div class="feed-result-summary__inner"><span>${label}</span><b>${Number(total).toLocaleString()}개</b><span>${page}/${totalPages ?? '?'}페이지</span><span>${sortLabel}</span></div>`;
+  if (total === null) return `<div class="soso-feed-summary__inner"><span>${label}</span><span>${page}페이지</span><span>${sortLabel}</span></div>`;
+  if (!total) return `<div class="soso-feed-summary__inner"><span>${label}</span><b>0개</b><span>${sortLabel}</span></div>`;
+  return `<div class="soso-feed-summary__inner"><span>${label}</span><b>${Number(total).toLocaleString()}개</b><span>${page}/${totalPages ?? '?'}페이지</span><span>${sortLabel}</span></div>`;
 }
 
 export function renderFeedEmptyState({ search = '' } = {}) {
