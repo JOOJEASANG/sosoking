@@ -59,6 +59,10 @@ function pointAwardId(uid, action, meta = {}) {
   ].filter(Boolean).join('_').slice(0, 900);
 }
 
+function markerRef(uid, postId, kind, itemId, onceKey) {
+  return db.doc(`point_awards/${pointAwardId(uid, 'reaction_marker', { postId, kind, itemId, onceKey })}`);
+}
+
 function awardPointInTx(tx, { uid, action, postId = '', kind = '', itemId = '', onceKey = '' }) {
   const rule = POINT_RULES[action];
   if (!uid || !rule) return { awardRef: null, userRef: null, logRef: null, points: 0 };
@@ -319,18 +323,29 @@ const reactMultiItem = onCall({ region: REGION, timeoutSeconds: 20 }, async requ
   if (!safePostId || !safeItemId || !key) throw new HttpsError('invalid-argument', '반응 정보를 확인해주세요.');
   const itemRef = db.doc(`feeds/${safePostId}/${config.collection}/${safeItemId}`);
   const onceKey = `react_${key}_${uid}`;
+  const reactorMarkerRef = markerRef(uid, safePostId, config.kind, safeItemId, onceKey);
   let reactionAdded = false;
   let receiverAwarded = false;
 
   await db.runTransaction(async tx => {
     const itemSnap = await tx.get(itemRef);
     if (!itemSnap.exists) throw new HttpsError('not-found', '참여글을 찾을 수 없습니다.');
-    const item = itemSnap.data() || {};
-    const reactionAward = awardPointInTx(tx, { uid, action: 'reaction_received', postId: safePostId, kind: config.kind, itemId: safeItemId, onceKey });
-    const alreadySnap = await tx.get(reactionAward.awardRef);
-    if (alreadySnap.exists) return;
+    const markerSnap = await tx.get(reactorMarkerRef);
+    if (markerSnap.exists) return;
 
+    const item = itemSnap.data() || {};
     reactionAdded = true;
+    tx.set(reactorMarkerRef, {
+      uid,
+      action: 'reaction_marker',
+      points: 0,
+      postId: safePostId,
+      kind: config.kind,
+      itemId: safeItemId,
+      onceKey,
+      createdAt: FieldValue.serverTimestamp(),
+      createdAtMs: Date.now(),
+    });
     tx.update(itemRef, {
       [`reactions.${key}`]: FieldValue.increment(1),
       updatedAt: FieldValue.serverTimestamp(),
@@ -346,18 +361,6 @@ const reactMultiItem = onCall({ region: REGION, timeoutSeconds: 20 }, async requ
         onceKey,
       });
       receiverAwarded = await commitPointAward(tx, receiverAward);
-    } else {
-      tx.set(reactionAward.awardRef, {
-        uid,
-        action: 'reaction_marker',
-        points: 0,
-        postId: safePostId,
-        kind: config.kind,
-        itemId: safeItemId,
-        onceKey,
-        createdAt: FieldValue.serverTimestamp(),
-        createdAtMs: Date.now(),
-      });
     }
   });
 
