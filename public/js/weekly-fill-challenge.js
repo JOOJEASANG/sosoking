@@ -503,13 +503,16 @@ async function injectCard() {
   injectStyle();
   if (!shouldShowFeed()) return;
   if (document.querySelector('[data-weekly-fill-card]')) return;
-  const root = findInsertionRoot();
-  if (!root) return;
 
   const [myAnswer] = await Promise.all([
     loadMyAnswer(),
     initWeekDoc(),
   ]);
+
+  // await 중 홈페이지가 스켈레톤→실제 콘텐츠로 전환될 수 있으므로 재확인
+  if (document.querySelector('[data-weekly-fill-card]')) return;
+  const root = findInsertionRoot();
+  if (!root) return;
 
   if (myAnswer) {
     root.insertAdjacentHTML('afterbegin', renderCardDone(myAnswer.filled));
@@ -523,14 +526,15 @@ async function injectAccountMission() {
   injectStyle();
   if (!shouldShowAccount()) return;
 
+  const item     = currentChallenge();
+  const myAnswer = await loadMyAnswer();
+
+  // await 중 페이지가 바뀔 수 있으므로 재확인
   const wrap = document.querySelector('.account-page-wrap');
   if (!wrap || wrap.querySelector('[data-weekly-mission]')) return;
 
   const profileCard = wrap.querySelector('.account-profile-card');
   if (!profileCard) return;
-
-  const item     = currentChallenge();
-  const myAnswer = await loadMyAnswer();
   const isDone   = !!myAnswer;
   const n        = blankCount(item.sentence);
 
