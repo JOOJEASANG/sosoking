@@ -40,18 +40,54 @@ function getQuizOptions() {
 }
 
 function getFillCounts() {
-  const raw = document.getElementById('mw-fill-counts')?.value || document.getElementById('mw-fill-count')?.value || '4';
+  const raw = document.getElementById('mw-fill-counts')?.value || document.getElementById('mw-fill-count')?.value || '';
   const counts = String(raw)
     .split(',')
     .map(v => Math.max(1, Math.min(12, Number(v.trim()) || 0)))
     .filter(Boolean)
-    .slice(0, 6);
-  return counts.length ? counts : [4];
+    .slice(0, 12);
+  return counts;
 }
 
-function countBodyBlanks(bodyText) {
-  const matches = String(bodyText || '').match(/_{2,}|□+/g);
-  return matches ? matches.length : 0;
+function charCountFromBlankMarker(marker, fallback = 4) {
+  const raw = String(marker || '');
+  if (/^[ \t]+$/.test(raw)) return Math.max(1, Math.min(12, raw.length));
+  if (/^□+$/.test(raw)) return Math.max(1, Math.min(12, [...raw].length));
+  if (/^_+$/.test(raw)) return Math.max(1, Math.min(12, raw.length));
+  return Math.max(1, Math.min(12, Number(fallback) || 4));
+}
+
+function parseFillTemplate(bodyText, manualCounts = []) {
+  const source = String(bodyText || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const blankRegex = /_{2,}|□+|[ \t]{2,}/g;
+  const parts = [];
+  const blanks = [];
+  let cursor = 0;
+  let match;
+
+  while ((match = blankRegex.exec(source))) {
+    if (match.index > cursor) {
+      parts.push({ type: 'text', text: source.slice(cursor, match.index) });
+    }
+    const index = blanks.length;
+    const manualCount = manualCounts[index];
+    const charCount = Math.max(1, Math.min(12, Number(manualCount) || charCountFromBlankMarker(match[0], manualCounts[manualCounts.length - 1] || 4)));
+    const blank = { index, charCount, marker: match[0] };
+    blanks.push(blank);
+    parts.push({ type: 'blank', index, charCount });
+    cursor = match.index + match[0].length;
+  }
+
+  if (cursor < source.length) {
+    parts.push({ type: 'text', text: source.slice(cursor) });
+  }
+
+  return {
+    source,
+    parts,
+    blanks,
+    blankCounts: blanks.map(blank => blank.charCount),
+  };
 }
 
 export function parseYouTubeUrl(value) {
@@ -108,18 +144,20 @@ export function collectMultiModules() {
 
   if (enabled('fill')) {
     if (!bodyText) throw new Error('본문에 빈칸 채우기 문장을 입력해주세요.');
-    const blankCount = countBodyBlanks(bodyText);
-    const counts = getFillCounts();
-    const normalizedCounts = blankCount > 0
-      ? Array.from({ length: blankCount }, (_, i) => counts[i] || counts[counts.length - 1] || 4)
-      : counts;
+    const manualCounts = getFillCounts();
+    const template = parseFillTemplate(bodyText, manualCounts);
+    if (!template.blanks.length) {
+      throw new Error('빈칸 표시가 필요합니다. 스페이스바를 2칸 이상 연속으로 누르거나 ___ 또는 □□□를 넣어주세요. 줄바꿈은 그대로 유지됩니다.');
+    }
     modules.fill = {
       enabled: true,
-      prompt: bodyText,
-      blankCounts: normalizedCounts,
-      blanks: normalizedCounts.map((count, index) => ({ index, charCount: count })),
-      charCount: normalizedCounts[0] || 4,
-      blankCount: normalizedCounts[0] || 4,
+      prompt: template.source,
+      templateParts: template.parts,
+      blankCounts: template.blankCounts,
+      blanks: template.blanks,
+      charCount: template.blankCounts[0] || 4,
+      blankCount: template.blankCounts.length,
+      inputMode: 'line-aware-template',
     };
   }
 
