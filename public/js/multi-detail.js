@@ -231,8 +231,17 @@ async function checkQuiz(post, selected, btn) {
   try {
     if (btn) btn.disabled = true;
     const result = await callCheckMultiQuizAnswer({ postId: post.id, selected });
-    markQuizResult(!!result.data?.correct);
-    if (result.data?.correct) toast.success('정답이에요! +5P');
+    const data = result.data || {};
+    const message = data.correct
+      ? data.alreadyCorrect
+        ? '⭕ 이미 정답을 맞힌 문제예요!'
+        : '⭕ 정답이에요!'
+      : '❌ 아쉽지만 오답이에요!';
+    markQuizResult(!!data.correct, message, data);
+    if (data.correct) {
+      if (Number(data.points || 0) > 0) toast.success(`정답이에요! +${data.points}P`);
+      else toast.success('정답이에요!');
+    }
   } catch (error) {
     console.error(error);
     toast.error(error.message || '정답 확인에 실패했어요.');

@@ -105,7 +105,9 @@ function renderPreviewBody() {
     const mode = document.getElementById('mw-quiz-mode')?.value || 'subjective';
     const options = [...document.querySelectorAll('.mw-quiz-option')].map(input => input.value.trim()).filter(Boolean);
     const answer = mode === 'multiple' ? '객관식 선택지를 고르면 서버에서 정답 확인' : '정답 입력 후 서버에서 확인';
-    return `${titleHtml}<div class="multi-preview-body">${lineHtml(bodyText)}</div>${guideHtml}${deadlineHtml}<div class="multi-preview-rule">방식: ${mode === 'multiple' ? '객관식' : '주관식'} · ${answer}</div>${mode === 'multiple' ? `<div class="multi-preview-options">${(options.length ? options : ['선택지 1', '선택지 2']).map(option => `<span>${esc(option)}</span>`).join('')}</div>` : ''}${tagsHtml}`;
+    const hint = document.getElementById('mw-quiz-hint')?.value.trim() || '';
+    const hintHtml = hint ? `<div class="multi-preview-rule">💡 힌트: ${esc(hint)}</div>` : '';
+    return `${titleHtml}<div class="multi-preview-body">${lineHtml(bodyText)}</div>${guideHtml}${deadlineHtml}${hintHtml}<div class="multi-preview-rule">방식: ${mode === 'multiple' ? '객관식' : '주관식'} · ${answer}</div>${mode === 'multiple' ? `<div class="multi-preview-options">${(options.length ? options : ['선택지 1', '선택지 2']).map(option => `<span>${esc(option)}</span>`).join('')}</div>` : ''}${tagsHtml}`;
   }
 
   return `${titleHtml}<div class="multi-preview-body">${lineHtml(bodyText)}</div>${guideHtml}${deadlineHtml}${tagsHtml}`;
@@ -224,6 +226,7 @@ function cloneWithoutQuizSecret(modules) {
 
   const mode = quiz.mode === 'multiple' ? 'multiple' : 'subjective';
   const answer = String(quiz.answer || '').trim();
+  const explanation = String(quiz.explanation || '').trim();
   const correctIndex = Number.isInteger(Number(quiz.correctIndex)) ? Number(quiz.correctIndex) : null;
   const quizSecret = {
     quizMode: mode,
@@ -231,12 +234,16 @@ function cloneWithoutQuizSecret(modules) {
     answer,
     answerIdx: correctIndex,
     correctIndex,
+    explanation,
+    correctCount: 0,
+    firstCorrect: null,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   };
 
   delete quiz.answer;
   delete quiz.correctIndex;
+  delete quiz.explanation;
   if (Array.isArray(quiz.options)) {
     quiz.options = quiz.options.map(option => ({ text: String(option?.text || option || '').slice(0, 120) }));
   }
