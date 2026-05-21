@@ -18,12 +18,14 @@ const EXTENSION_MODULES = [
   './multi-detail.js',
   './detail-comment-fix.js',
   './post-view-normalizer.js',
+  './detail-youtube-fallback.js',
 
   // 피드/글쓰기/수정
   './acrostic-flow-fix.js',
   './multi-write.js',
   './fill-box-input-fix.js',
   './write-edit-router-fix.js',
+  './edit-screen-polish.js',
   './points-actions.js',
   './unlimited-image-uploader.js',
   './write-template-suggestions.js',
