@@ -13,7 +13,6 @@ const EXTENSION_MODULES = [
 
   // 상세 페이지 기본 액션/참여 기능
   './detail-actions-bootstrap.js',
-  './detail-image-visibility-patch.js',
   './post-owner-actions.js',
   './participant-replies.js',
   './multi-detail.js',
