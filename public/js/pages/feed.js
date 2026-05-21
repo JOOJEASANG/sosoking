@@ -51,10 +51,12 @@ export async function renderFeed() {
   cachedPosts = [];
 
   el.innerHTML = `
-    <div class="layout-main layout-main--full feed-page-clean">
-      ${renderFeedSearchBar({ search: currentSearch })}
-      ${renderFeedFilterBar({ type: currentType, search: currentSearch, sort: currentSort })}
-      <div id="feed-summary" class="feed-result-summary"></div>
+    <div class="soso-feed-page layout-main layout-main--full feed-page-clean">
+      <div class="soso-feed-toolbar">
+        ${renderFeedSearchBar({ search: currentSearch })}
+        ${renderFeedFilterBar({ type: currentType, search: currentSearch, sort: currentSort })}
+      </div>
+      <div id="feed-summary" class="soso-feed-summary feed-result-summary"></div>
       <div id="feed-list">${renderSkeletonCards(5)}</div>
       <div id="feed-pagination" class="feed-pagination"></div>
       <div id="feed-loader" class="loading-center" style="display:none"><div class="spinner"></div></div>
@@ -292,12 +294,12 @@ function renderCursorPagination() {
     if (currentPage <= 1) return;
     currentPage -= 1;
     await loadPosts();
-    document.querySelector('.feed-page-clean')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.querySelector('.soso-feed-page')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
   el.querySelector('[data-cursor-page="next"]')?.addEventListener('click', async () => {
     currentPage += 1;
     await loadPosts();
-    document.querySelector('.feed-page-clean')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.querySelector('.soso-feed-page')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 }
 
@@ -326,7 +328,7 @@ function renderOffsetPagination(totalPages) {
       else if (v === 'next') currentPage += 1;
       else                   currentPage = Number(v || 1);
       renderCurrentPage();
-      document.querySelector('.feed-page-clean')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document.querySelector('.soso-feed-page')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   });
 }
