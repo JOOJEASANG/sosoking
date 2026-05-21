@@ -1,10 +1,11 @@
 import { auth, db } from '../firebase.js';
-import { collection, doc, getDoc, onSnapshot, orderBy, query } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { collection, doc, getDoc, onSnapshot, orderBy, query, limit } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { navigate } from '../router.js';
 import { toast } from '../components/toast.js';
 import { setMeta } from '../utils/seo.js';
 import { ensureGameGuestAuth } from '../game-guest-access.js';
 import { buildGameInviteUrl } from '../games/common.js';
+import { sendGameChat, scrollGameChatToBottom } from '../games/chat.js';
 import {
   createMafiaRoom,
   joinMafiaRoom,
@@ -23,8 +24,10 @@ import {
 
 let unsubscribeRoom = null;
 let unsubscribePlayers = null;
+let unsubscribeChats = null;
 let currentRoom = null;
 let currentPlayers = [];
+let currentChats = [];
 
 export async function renderMafiaGame(params = {}) {
   setMeta('게임 · 마피아게임');
@@ -37,10 +40,13 @@ export async function renderMafiaGame(params = {}) {
 export function destroyMafiaGame() {
   if (unsubscribeRoom) unsubscribeRoom();
   if (unsubscribePlayers) unsubscribePlayers();
+  if (unsubscribeChats) unsubscribeChats();
   unsubscribeRoom = null;
   unsubscribePlayers = null;
+  unsubscribeChats = null;
   currentRoom = null;
   currentPlayers = [];
+  currentChats = [];
 }
 
 function pageEl() {
@@ -118,13 +124,19 @@ async function renderRoom(roomId) {
     currentPlayers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     drawRoom();
   });
+
+  unsubscribeChats = onSnapshot(query(collection(db, 'game_rooms', roomId, 'chats'), orderBy('createdAt', 'asc'), limit(100)), snap => {
+    currentChats = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    drawRoom(true);
+  });
 }
 
-function drawRoom() {
+function drawRoom(scrollChat = false) {
   const el = pageEl();
   if (!el || !currentRoom) return;
-  el.innerHTML = renderMafiaRoomHTML(currentRoom, currentPlayers);
+  el.innerHTML = renderMafiaRoomHTML(currentRoom, currentPlayers, currentChats);
   bindRoomEvents();
+  if (scrollChat) setTimeout(scrollGameChatToBottom, 20);
 }
 
 function bindRoomEvents() {
@@ -134,9 +146,28 @@ function bindRoomEvents() {
   document.getElementById('mafia-start')?.addEventListener('click', handleStartGame);
   document.getElementById('mafia-count-vote')?.addEventListener('click', handleCountVote);
   document.getElementById('mafia-reset')?.addEventListener('click', handleResetGame);
+  document.getElementById('mafia-chat-send')?.addEventListener('click', handleSendChat);
+  document.getElementById('mafia-chat-input')?.addEventListener('keydown', event => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      handleSendChat();
+    }
+  });
   document.querySelectorAll('[data-mafia-vote]').forEach(btn => {
     btn.addEventListener('click', () => handleVote(btn.dataset.mafiaVote));
   });
+}
+
+async function handleSendChat() {
+  const input = document.getElementById('mafia-chat-input');
+  const text = input?.value || '';
+  try {
+    await sendGameChat(currentRoom.id, text);
+    input.value = '';
+    setTimeout(scrollGameChatToBottom, 20);
+  } catch (error) {
+    toast.warn(error.message || '채팅 전송에 실패했어요');
+  }
 }
 
 async function handleCopyInvite() {
