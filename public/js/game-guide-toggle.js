@@ -87,17 +87,17 @@ function enhanceGuideCard(card) {
   if (!head || !list) return;
 
   card.dataset.guideToggleReady = '1';
-  card.classList.add('is-collapsible');
+  card.classList.add('is-collapsible', 'is-collapsed');
 
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'game-guide-toggle-head';
-  button.setAttribute('aria-expanded', 'true');
+  button.setAttribute('aria-expanded', 'false');
   button.setAttribute('aria-label', '게임 설명 접기 또는 펼치기');
 
   const icon = document.createElement('span');
   icon.className = 'game-guide-toggle-icon';
-  icon.textContent = '⌃';
+  icon.textContent = '⌄';
 
   const body = document.createElement('div');
   body.className = 'game-guide-toggle-body';
