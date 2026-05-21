@@ -22,6 +22,7 @@ const aiContent = require('./ai-content-functions.js');
 const adminAutomation = require('./ai-admin-automation-functions.js');
 const adminUsers = require('./admin-user-functions.js');
 const adminData = require('./admin-data-functions.js');
+const memberStats = require('./member-stats-functions.js');
 const weeklyAiSchedule = require('./weekly-ai-schedule-functions.js');
 const uploadImage = require('./upload-image-functions.js');
 const nicknameIcon = require('./nickname-icon-functions.js');
@@ -70,6 +71,7 @@ module.exports = {
   ...adminAutomation,
   ...adminUsers,
   ...adminData,
+  ...memberStats,
 
   // 서버 검증 기반 포인트 지급
   ...points,
