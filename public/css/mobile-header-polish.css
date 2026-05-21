@@ -61,11 +61,12 @@
   }
 
   .site-header__install-btn,
-  .site-header__icon-btn:not(.site-header__avatar):not(.notif-bell){
+  .site-header__icon-btn:not(.site-header__avatar):not(.notif-bell):not(.site-header__theme-btn){
     display:none!important;
   }
 
   .notif-bell,
+  .site-header__theme-btn,
   .site-header__avatar{
     width:34px!important;
     height:34px!important;
@@ -74,6 +75,14 @@
     min-height:34px!important;
     max-height:34px!important;
     flex:0 0 34px!important;
+  }
+
+  .site-header__theme-btn{
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    padding:0!important;
+    border-radius:12px!important;
   }
 
   .site-header__avatar{
@@ -103,6 +112,7 @@
   .site-header__logo img,
   .site-header__logo .site-header__logo-img,
   .notif-bell,
+  .site-header__theme-btn,
   .site-header__avatar,
   .site-header__avatar-img{
     width:32px!important;
