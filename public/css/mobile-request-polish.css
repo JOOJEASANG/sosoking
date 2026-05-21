@@ -119,6 +119,113 @@
   .sosoland-card__title-row {
     display: none !important;
   }
+
+  .home-dash--clean .home-hero--clean {
+    position: relative !important;
+    overflow: hidden !important;
+    min-height: auto !important;
+    padding: 24px 18px 22px !important;
+    border: 0 !important;
+    border-radius: 24px !important;
+    background:
+      radial-gradient(circle at 18% 12%, rgba(255, 184, 77, .26), transparent 34%),
+      radial-gradient(circle at 88% 18%, rgba(124, 58, 237, .24), transparent 36%),
+      linear-gradient(135deg, #211833 0%, #392146 46%, #ff6b4a 140%) !important;
+    box-shadow: 0 18px 38px rgba(33, 24, 51, .20) !important;
+    color: #fff !important;
+  }
+
+  .home-dash--clean .home-hero--clean::before,
+  .home-dash--clean .home-hero--clean::after {
+    content: "" !important;
+    position: absolute !important;
+    border-radius: 999px !important;
+    pointer-events: none !important;
+  }
+
+  .home-dash--clean .home-hero--clean::before {
+    width: 130px !important;
+    height: 130px !important;
+    right: -48px !important;
+    top: -40px !important;
+    background: rgba(255, 255, 255, .12) !important;
+  }
+
+  .home-dash--clean .home-hero--clean::after {
+    width: 88px !important;
+    height: 88px !important;
+    left: -34px !important;
+    bottom: -28px !important;
+    background: rgba(255, 184, 77, .15) !important;
+  }
+
+  .home-dash--clean .home-hero__streak,
+  .home-dash--clean .home-hero__badge,
+  .home-dash--clean .home-hero__title,
+  .home-dash--clean .home-hero__sub,
+  .home-dash--clean .home-hero__actions {
+    position: relative !important;
+    z-index: 1 !important;
+  }
+
+  .home-dash--clean .home-hero__badge,
+  .home-dash--clean .home-hero__streak {
+    display: inline-flex !important;
+    align-items: center !important;
+    min-height: 28px !important;
+    padding: 5px 10px !important;
+    border-radius: 999px !important;
+    border: 1px solid rgba(255, 255, 255, .20) !important;
+    background: rgba(255, 255, 255, .13) !important;
+    color: rgba(255, 255, 255, .92) !important;
+    font-size: 11px !important;
+    font-weight: 950 !important;
+    letter-spacing: .03em !important;
+    backdrop-filter: blur(8px) !important;
+  }
+
+  .home-dash--clean .home-hero__title {
+    margin: 12px 0 8px !important;
+    color: #fff !important;
+    font-size: 25px !important;
+    line-height: 1.18 !important;
+    letter-spacing: -.04em !important;
+  }
+
+  .home-dash--clean .home-hero__sub {
+    margin: 0 !important;
+    color: rgba(255, 255, 255, .78) !important;
+    font-size: 13px !important;
+    font-weight: 750 !important;
+    line-height: 1.55 !important;
+  }
+
+  .home-dash--clean .home-hero__actions {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    margin-top: 16px !important;
+  }
+
+  .home-dash--clean .home-hero__actions .btn {
+    min-height: 38px !important;
+    border-radius: 999px !important;
+    font-size: 12px !important;
+    font-weight: 950 !important;
+  }
+
+  .home-dash--clean .home-hero__actions .btn--primary {
+    background: #fff !important;
+    color: #ff6b4a !important;
+    border-color: #fff !important;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, .16) !important;
+  }
+
+  .home-dash--clean .home-hero__ghost-btn {
+    border: 1px solid rgba(255, 255, 255, .26) !important;
+    background: rgba(255, 255, 255, .12) !important;
+    color: #fff !important;
+  }
 }
 
 @media (min-width: 768px) {
