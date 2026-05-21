@@ -29,8 +29,40 @@ export function shuffle(list) {
   return arr;
 }
 
+function cleanStoredName(value) {
+  return String(value || '').replace(/[^가-힣a-zA-Z0-9_\s]/g, '').trim().slice(0, 12);
+}
+
+function storedGuestName() {
+  try {
+    return cleanStoredName(localStorage.getItem('sosoking_guest_nickname') || '');
+  } catch {
+    return '';
+  }
+}
+
+function isGuestLikeName(value) {
+  const name = String(value || '').trim();
+  return name === '익명' || name === '게스트' || /^게스트\d{3,6}$/.test(name);
+}
+
+function memberName(user) {
+  const appName = appState.nickname && !isGuestLikeName(appState.nickname) ? appState.nickname : '';
+  return appName || user?.displayName || user?.email?.split('@')[0] || '';
+}
+
 export function gamePlayerName(fallback = '게스트') {
-  return appState.nickname || auth.currentUser?.displayName || localStorage.getItem('sosoking_guest_nickname') || fallback;
+  const user = auth.currentUser;
+
+  if (user && !user.isAnonymous) {
+    return memberName(user) || '회원';
+  }
+
+  if (user?.isAnonymous) {
+    return storedGuestName() || appState.nickname || fallback;
+  }
+
+  return memberName(user) || fallback;
 }
 
 export function findMyPlayer(players) {
