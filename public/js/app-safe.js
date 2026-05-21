@@ -9,6 +9,8 @@ import { collection, query, where, getDocs, getDoc, doc, limit } from 'https://w
 
 export { appState };
 
+const OWNER_EMAILS = new Set(['joojeasang@gmail.com']);
+
 const OPTIONAL_MODULES = [
   './secure-interactions-actions.js',
   './acrostic-enhancer.js',
@@ -86,24 +88,52 @@ export function isAdmin() {
   return !!appState.isAdmin;
 }
 
+async function detectAdmin(uid, userDocData = {}) {
+  const currentUser = auth.currentUser;
+  const email = String(currentUser?.email || '').toLowerCase();
+  if (OWNER_EMAILS.has(email)) return true;
+  if (userDocData.isAdmin || userDocData.admin || userDocData.role === 'admin' || userDocData.role === 'owner') return true;
+
+  try {
+    const token = await currentUser?.getIdTokenResult?.(true);
+    if (token?.claims?.admin || token?.claims?.owner) return true;
+  } catch (error) {
+    console.warn('[app-safe] admin token check failed', error);
+  }
+
+  try {
+    const adminSnap = await getDoc(doc(db, 'admins', uid));
+    return adminSnap.exists();
+  } catch (error) {
+    console.warn('[app-safe] admin doc check failed', error);
+    return false;
+  }
+}
+
 async function loadUserMeta(uid) {
+  const currentUser = auth.currentUser;
+  let data = {};
+
+  try {
+    const userSnap = await getDoc(doc(db, 'users', uid));
+    data = userSnap.exists() ? userSnap.data() : {};
+  } catch (error) {
+    console.warn('[app-safe] user doc check failed', error);
+  }
+
+  appState.streak = data.streak || 0;
+  appState.userTitle = data.title || '';
+  appState.nickname = data.nickname || currentUser?.displayName || currentUser?.email?.split('@')[0] || '익명';
+  appState.nicknameIcon = data.nicknameIcon || null;
+  appState.isAdmin = await detectAdmin(uid, data);
+
   try {
     const notifQuery = query(collection(db, 'notifications'), where('userId', '==', uid), where('read', '==', false), limit(100));
-    const [notifSnap, userSnap, adminSnap] = await Promise.all([
-      getDocs(notifQuery),
-      getDoc(doc(db, 'users', uid)),
-      getDoc(doc(db, 'admins', uid))
-    ]);
+    const notifSnap = await getDocs(notifQuery);
     appState.unreadNotifications = notifSnap.size;
-    const data = userSnap.exists() ? userSnap.data() : {};
-    appState.streak = data.streak || 0;
-    appState.userTitle = data.title || '';
-    appState.isAdmin = adminSnap.exists();
-    const currentUser = auth.currentUser;
-    appState.nickname = data.nickname || currentUser?.displayName || currentUser?.email?.split('@')[0] || '익명';
-    appState.nicknameIcon = data.nicknameIcon || null;
   } catch (error) {
-    console.warn('[app-safe] user meta failed', error);
+    console.warn('[app-safe] notifications check failed', error);
+    appState.unreadNotifications = 0;
   }
 }
 
