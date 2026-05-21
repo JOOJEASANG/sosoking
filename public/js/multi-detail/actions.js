@@ -1,6 +1,9 @@
-import { auth, db } from '../firebase.js';
+import { auth, db, functions } from '../firebase.js';
 import { doc, updateDoc, increment, addDoc, collection, serverTimestamp, getDocs, getDoc, orderBy, query } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
 import { appState } from '../state.js';
+
+const callCastMultiVote = httpsCallable(functions, 'castMultiVote');
 
 export async function fetchItems(postId, kind) {
   const snap = await getDocs(query(collection(db, 'feeds', postId, `multi_${kind}`), orderBy('createdAt', 'asc')));
@@ -66,19 +69,7 @@ export async function addItemReply(postId, kind, itemId, text) {
   await updateDoc(itemRef(postId, kind, itemId), { replyCount: increment(1) }).catch(() => {});
 }
 
-export async function applyVote(postRef, post, idx, freshData) {
-  const vote = freshData.modules?.vote || {};
-  const uid = auth.currentUser.uid;
-  if ((vote.votedBy || []).includes(uid)) throw new Error('이미 투표했어요');
-
-  const options = (vote.options || []).map((opt, i) => (
-    i === idx ? { ...opt, votes: Number(opt.votes || 0) + 1 } : opt
-  ));
-  const votedBy = [...(vote.votedBy || []), uid];
-  await updateDoc(postRef, {
-    'modules.vote.options': options,
-    'modules.vote.votedBy': votedBy,
-  });
-
-  return { ...post, modules: { ...post.modules, vote: { ...vote, options, votedBy } } };
+export async function applyVote(postRef, post, idx) {
+  const result = await callCastMultiVote({ postId: post.id || postRef.id, optionIdx: idx });
+  return result.data?.post || post;
 }
