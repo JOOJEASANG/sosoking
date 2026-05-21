@@ -1,0 +1,188 @@
+@media (max-width: 767px) {
+  .page-container:has(.soso-feed-page) {
+    padding-top: 14px !important;
+  }
+
+  #page-content:has(.soso-feed-page) {
+    padding-top: 4px !important;
+  }
+
+  .soso-feed-page {
+    gap: 10px !important;
+  }
+
+  .soso-feed-toolbar {
+    margin-top: 6px !important;
+  }
+
+  .soso-feed-page > .soso-feed-toolbar:first-child,
+  #page-content > .soso-feed-page:first-child .soso-feed-toolbar:first-child {
+    margin-top: 8px !important;
+  }
+
+  .sosoland-hero--simple {
+    min-height: auto !important;
+    padding: 24px 18px 22px !important;
+  }
+
+  .sosoland-hero--simple .sosoland-hero__chips,
+  .sosoland-hero--simple .sosoland-hero__console {
+    display: none !important;
+  }
+
+  .sosoland-grid--compact {
+    gap: 12px !important;
+  }
+
+  .sosoland-grid--compact .sosoland-card {
+    min-height: auto !important;
+    padding: 16px !important;
+    border-radius: 22px !important;
+  }
+
+  .sosoland-card__headline {
+    display: grid !important;
+    grid-template-columns: 48px minmax(0, 1fr) !important;
+    gap: 11px !important;
+    align-items: center !important;
+  }
+
+  .sosoland-grid--compact .sosoland-card__icon {
+    width: 48px !important;
+    height: 48px !important;
+    border-radius: 18px !important;
+    font-size: 27px !important;
+  }
+
+  .sosoland-card__title-stack {
+    min-width: 0 !important;
+  }
+
+  .sosoland-card__title-stack h2 {
+    margin: 0 0 3px !important;
+    font-size: 18px !important;
+    line-height: 1.2 !important;
+  }
+
+  .sosoland-card__title-stack p {
+    margin: 0 !important;
+    min-height: 0 !important;
+    color: var(--color-text-muted) !important;
+    font-size: 12.5px !important;
+    font-weight: 750 !important;
+    line-height: 1.45 !important;
+  }
+
+  .sosoland-card__actions {
+    display: grid !important;
+    grid-template-columns: auto auto minmax(0, 1fr) !important;
+    gap: 7px !important;
+    align-items: center !important;
+    margin-top: 13px !important;
+  }
+
+  .sosoland-card__status,
+  .sosoland-card__info,
+  .sosoland-card__start {
+    min-height: 34px !important;
+    border-radius: 999px !important;
+    font-family: inherit !important;
+    font-size: 12px !important;
+    font-weight: 950 !important;
+  }
+
+  .sosoland-card__status {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 10px !important;
+    border: 1px solid rgba(34, 197, 94, .20) !important;
+    background: rgba(34, 197, 94, .10) !important;
+    color: var(--color-success) !important;
+  }
+
+  .sosoland-card__info {
+    border: 1px solid var(--color-border-light) !important;
+    background: var(--color-surface) !important;
+    color: var(--color-text-secondary) !important;
+    padding: 0 11px !important;
+    cursor: pointer !important;
+  }
+
+  .sosoland-card__start {
+    width: 100% !important;
+    min-width: 0 !important;
+    padding: 0 12px !important;
+  }
+
+  .sosoland-card__top,
+  .sosoland-card__title-row {
+    display: none !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .sosoland-hero--simple .sosoland-hero__chips,
+  .sosoland-hero--simple .sosoland-hero__console {
+    display: none !important;
+  }
+
+  .sosoland-card__headline {
+    display: grid !important;
+    grid-template-columns: 58px minmax(0, 1fr) !important;
+    gap: 14px !important;
+    align-items: center !important;
+  }
+
+  .sosoland-card__title-stack h2 {
+    margin: 0 0 4px !important;
+  }
+
+  .sosoland-card__title-stack p {
+    margin: 0 !important;
+  }
+
+  .sosoland-card__actions {
+    display: flex !important;
+    gap: 8px !important;
+    align-items: center !important;
+    margin-top: 16px !important;
+  }
+
+  .sosoland-card__status {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 34px !important;
+    padding: 0 11px !important;
+    border-radius: 999px !important;
+    border: 1px solid rgba(34, 197, 94, .20) !important;
+    background: rgba(34, 197, 94, .10) !important;
+    color: var(--color-success) !important;
+    font-size: 12px !important;
+    font-weight: 950 !important;
+  }
+
+  .sosoland-card__info {
+    min-height: 34px !important;
+    padding: 0 12px !important;
+    border-radius: 999px !important;
+    border: 1px solid var(--color-border-light) !important;
+    background: var(--color-surface) !important;
+    color: var(--color-text-secondary) !important;
+    font-family: inherit !important;
+    font-size: 12px !important;
+    font-weight: 950 !important;
+    cursor: pointer !important;
+  }
+
+  .sosoland-card__start {
+    min-height: 34px !important;
+    padding: 0 13px !important;
+    border-radius: 999px !important;
+  }
+}
+
+.multi-deadline-box[data-deadline-enabled="0"] {
+  display: none !important;
+}
