@@ -154,17 +154,35 @@ async function handleNamingSubmit(post, btn) {
   if (btn) btn.disabled = false;
 }
 
+function collectFillAnswers() {
+  const groups = [...document.querySelectorAll('[data-fill-group]')];
+  return groups.map((group, index) => ({
+    index,
+    text: [...group.querySelectorAll('.multi-fill-char')].map(input => input.value.trim()).join(''),
+  }));
+}
+
 async function handleFillSubmit(post, btn) {
-  const input = document.getElementById('multi-fill-answer');
-  const text = input?.value.trim() || '';
-  if (!text) {
+  const answers = collectFillAnswers();
+  const filled = answers.filter(answer => answer.text);
+  if (!filled.length) {
     toast.warn('빈칸에 들어갈 말을 입력해주세요');
     return;
   }
+  const incomplete = answers.some(answer => !answer.text || [...answer.text].length < 1);
+  if (incomplete) {
+    toast.warn('모든 빈칸을 입력해주세요');
+    return;
+  }
+  const text = answers.length > 1
+    ? answers.map(answer => `빈칸 ${answer.index + 1}: ${answer.text}`).join(' / ')
+    : answers[0].text;
+  const input = document.getElementById('multi-fill-answer');
+  if (input) input.value = text;
   if (btn) btn.disabled = true;
-  await addParticipation(post.id, 'fill', { text });
+  await addParticipation(post.id, 'fill', { text, answers });
   toast.success('참여글을 올렸어요!');
-  input.value = '';
+  if (input) input.value = '';
   document.querySelectorAll('.multi-fill-char').forEach(box => { box.value = ''; });
   await refreshList(post.id, 'fill');
   if (btn) btn.disabled = false;
