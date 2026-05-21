@@ -166,11 +166,16 @@ function cleanParticipationPayload(kind, payload = {}) {
 }
 
 async function awardQuizPointOnce(uid, postId) {
+  let awarded = false;
   await db.runTransaction(async tx => {
     const award = awardMeta({ uid, action: 'quiz_correct', postId, onceKey: 'correct' });
     const awardSnap = await tx.get(award.awardRef);
-    if (!awardSnap.exists) writePointAward(tx, award);
+    if (!awardSnap.exists) {
+      awarded = true;
+      writePointAward(tx, award);
+    }
   });
+  return awarded;
 }
 
 const checkMultiQuizAnswer = onCall({ region: REGION, timeoutSeconds: 20 }, async request => {
@@ -181,7 +186,9 @@ const checkMultiQuizAnswer = onCall({ region: REGION, timeoutSeconds: 20 }, asyn
     throw new HttpsError('failed-precondition', '퀴즈 게시글이 아닙니다.');
   }
 
-  const secretSnap = await db.doc(`feeds/${safePostId}/secret/answer`).get();
+  const secretRef = db.doc(`feeds/${safePostId}/secret/answer`);
+  const attemptRef = db.doc(`feeds/${safePostId}/quiz_attempts/${uid}`);
+  const secretSnap = await secretRef.get();
   if (!secretSnap.exists) throw new HttpsError('failed-precondition', '정답 정보가 없습니다.');
   const secret = secretSnap.data() || {};
   const mode = secret.mode || secret.quizMode || post.modules?.quiz?.mode || 'subjective';
@@ -198,17 +205,76 @@ const checkMultiQuizAnswer = onCall({ region: REGION, timeoutSeconds: 20 }, asyn
     correct = normalizeAnswer(storedSelected) === normalizeAnswer(secret.answer);
   }
 
-  await db.doc(`feeds/${safePostId}/quiz_attempts/${uid}`).set({
-    userId: uid,
-    selected: storedSelected,
-    correct,
-    type: 'multi',
-    createdAt: FieldValue.serverTimestamp(),
-    createdAtMs: Date.now(),
-  }, { merge: true });
+  let correctCount = Number(secret.correctCount || 0);
+  let firstCorrect = secret.firstCorrect || null;
+  let firstCorrectNow = false;
+  let alreadyCorrect = false;
 
-  if (correct) await awardQuizPointOnce(uid, safePostId);
-  return { ok: true, correct, explanation: String(secret.explanation || '').slice(0, 500) };
+  await db.runTransaction(async tx => {
+    const freshSecretSnap = await tx.get(secretRef);
+    const attemptSnap = await tx.get(attemptRef);
+    const freshSecret = freshSecretSnap.exists ? freshSecretSnap.data() || {} : {};
+    const previousAttempt = attemptSnap.exists ? attemptSnap.data() || {} : {};
+    alreadyCorrect = previousAttempt.correct === true;
+
+    const attemptData = {
+      userId: uid,
+      selected: storedSelected,
+      correct,
+      type: 'multi',
+      updatedAt: FieldValue.serverTimestamp(),
+      updatedAtMs: Date.now(),
+    };
+    if (!attemptSnap.exists) {
+      attemptData.createdAt = FieldValue.serverTimestamp();
+      attemptData.createdAtMs = Date.now();
+    }
+    tx.set(attemptRef, attemptData, { merge: true });
+
+    if (correct && !alreadyCorrect) {
+      correctCount = Number(freshSecret.correctCount || 0) + 1;
+      const first = freshSecret.firstCorrect || null;
+      if (!first) {
+        const authorName = cleanText(request.auth?.token?.name || request.auth?.token?.email?.split('@')[0] || '익명', 40) || '익명';
+        firstCorrectNow = true;
+        firstCorrect = {
+          uid,
+          authorName,
+          selected: storedSelected,
+          createdAt: FieldValue.serverTimestamp(),
+          createdAtMs: Date.now(),
+        };
+        tx.set(secretRef, {
+          correctCount,
+          firstCorrect,
+          updatedAt: FieldValue.serverTimestamp(),
+        }, { merge: true });
+      } else {
+        firstCorrect = first;
+        tx.set(secretRef, {
+          correctCount,
+          updatedAt: FieldValue.serverTimestamp(),
+        }, { merge: true });
+      }
+    } else {
+      correctCount = Number(freshSecret.correctCount || 0);
+      firstCorrect = freshSecret.firstCorrect || null;
+    }
+  });
+
+  let awarded = false;
+  if (correct) awarded = await awardQuizPointOnce(uid, safePostId);
+  return {
+    ok: true,
+    correct,
+    awarded,
+    points: awarded ? POINT_RULES.quiz_correct.points : 0,
+    explanation: correct ? String(secret.explanation || '').slice(0, 500) : '',
+    correctCount,
+    firstCorrect,
+    firstCorrectNow,
+    alreadyCorrect,
+  };
 });
 
 const castMultiVote = onCall({ region: REGION, timeoutSeconds: 20 }, async request => {
