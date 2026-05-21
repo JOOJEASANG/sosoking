@@ -1,7 +1,8 @@
 name: Deploy Firebase
 
 # 모든 자동 배포는 이 워크플로 하나로 통일합니다.
-# Hosting 전용 워크플로는 수동 실행 전용으로 남겨 중복 배포를 막습니다.
+# 현재 서비스 계정은 Firebase Storage 기본 버킷 조회 권한이 없어 Storage rules 자동 배포를 제외합니다.
+# Storage rules 배포가 필요하면 Firebase 콘솔/IAM에서 권한 또는 기본 버킷을 먼저 정리한 뒤 수동 배포하세요.
 on:
   push:
     branches:
@@ -14,7 +15,6 @@ on:
       - '.firebaserc'
       - 'firestore.rules'
       - 'firestore.indexes.json'
-      - 'storage.rules'
       - '.github/workflows/firebase-deploy.yml'
       - '.github/deploy-trigger.txt'
   workflow_dispatch:
@@ -85,9 +85,6 @@ jobs:
 
       - name: Deploy Firestore rules & indexes
         run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only firestore:rules,firestore:indexes
-
-      - name: Deploy Storage rules
-        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only storage
 
       - name: Deploy Hosting
         run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only hosting
