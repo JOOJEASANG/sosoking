@@ -97,7 +97,7 @@ export async function renderHome() {
           <div class="home-greeting__name">
             ${user ? `${escHtml(nickname)}님, 반가워요 👋` : '소소킹에 오신 걸 환영해요 👋'}
           </div>
-          <div class="home-greeting__sub">투표 · 작명 · 삼행시 · 퀴즈 · 빈칸 채우기</div>
+          <div class="home-greeting__sub">투표 · 작명 · 삼행시 · 퀴즈 · 막장릴레이</div>
         </div>
         <button class="btn btn--primary btn--sm home-greeting__write" id="hbtn-write">+ 글쓰기</button>
       </div>`;
