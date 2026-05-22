@@ -47,7 +47,6 @@ const EXTENSION_MODULES = [
   './admin-ui-cleanup.js',
   './notifications-panel.js',
   './account-notifications-section.js',
-  './account-notifications-uid-fix.js',
 
   // 추가 표시 보강
   './relay-mission-cards.js',
