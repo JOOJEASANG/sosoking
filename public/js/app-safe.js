@@ -9,7 +9,7 @@ import { collection, query, where, getDocs, getDoc, doc, limit } from 'https://w
 
 export { appState };
 
-const OWNER_EMAILS = new Set(['joojeasang@gmail.com']);
+const OWNER_EMAILS = new Set();
 
 const OPTIONAL_MODULES = [
   './secure-interactions-actions.js',
