@@ -125,6 +125,22 @@ async function registerRoutes() {
   registerRoute('/game/wordtrap/:id', async ({ id }) => renderPage(() => import('./pages/wordtrap-game.js').then(m => m.renderWordtrapGame(id)), '금칙어게임'));
 }
 
+async function isStrictAdmin(user) {
+  if (!user) return false;
+  const email = String(user.email || '').toLowerCase();
+  if (OWNER_EMAILS.has(email)) return true;
+  try {
+    const token = await user.getIdTokenResult?.(false);
+    if (token?.claims?.admin || token?.claims?.owner) return true;
+  } catch {}
+  try {
+    const adminSnap = await getDoc(doc(db, 'admins', user.uid));
+    return adminSnap.exists();
+  } catch {
+    return false;
+  }
+}
+
 async function fetchUserProfile(user) {
   if (!user) return;
   try {
@@ -134,16 +150,12 @@ async function fetchUserProfile(user) {
       appState.nickname = data.nickname || user.displayName || user.email?.split('@')[0] || '';
       appState.nicknameIcon = data.nicknameIcon || null;
       appState.points = Number(data.points || data.totalPoints || 0);
-      appState.isAdmin = data.isAdmin === true || data.admin === true || data.role === 'admin' || data.role === 'owner' || OWNER_EMAILS.has(String(user.email || '').toLowerCase());
     } else {
       appState.nickname = user.displayName || user.email?.split('@')[0] || '';
-      appState.isAdmin = OWNER_EMAILS.has(String(user.email || '').toLowerCase());
     }
-    try {
-      const adminSnap = await getDoc(doc(db, 'admins', user.uid));
-      if (adminSnap.exists()) appState.isAdmin = true;
-    } catch {}
+    appState.isAdmin = await isStrictAdmin(user);
   } catch (error) {
+    appState.isAdmin = await isStrictAdmin(user);
     console.warn('[fetchUserProfile]', error);
   }
 }
