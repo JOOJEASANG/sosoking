@@ -31,12 +31,12 @@ export const MULTI_PRESETS = {
     tagsPlaceholder: '#작명, #미친작명소',
   },
   acrostic: {
-    label: '삼행시',
+    label: '행시',
     icon: '✍️',
-    titlePlaceholder: '예: 삼행시 도전',
-    descPlaceholder: '제시어를 넣고 사람들이 한 줄씩 완성하게 해보세요.',
-    tagsPlaceholder: '#삼행시, #제시어',
-    acrosticPlaceholder: '예: 소소킹',
+    titlePlaceholder: '예: 행시 도전',
+    descPlaceholder: '2~5글자 제시어를 넣으면 글자 수에 맞춰 이행시·삼행시·사행시·오행시로 자동 적용됩니다.',
+    tagsPlaceholder: '#행시, #삼행시, #오행시',
+    acrosticPlaceholder: '예: 소소킹 / 관리자 / 대한민국',
   },
   relay: {
     label: '막장릴레이',
@@ -60,11 +60,22 @@ export const WRITER_PRESET_KEYS = Object.keys(MULTI_PRESETS).filter(key => !MULT
 export const BODY_LABELS = {
   vote: '본문 · 질문/상황/토론 주제',
   fill: '본문 · 빈칸 채우기 문장',
+  acrostic: '본문 · 행시 설명/참여 안내',
   relay: '본문 · 릴레이 시작 문장',
   quiz: '본문 · 문제',
 };
 
 export const BODY_REQUIRED_PRESETS = ['vote', 'relay', 'quiz'];
+
+export function getAcrosticLabel(keyword = '') {
+  const count = [...String(keyword || '').trim()].length;
+  return ({
+    2: '이행시',
+    3: '삼행시',
+    4: '사행시',
+    5: '오행시',
+  })[count] || (count > 0 ? `${count}행시` : '행시');
+}
 
 export function normalizePresetKey(key, { allowHidden = false } = {}) {
   if (key === 'ox') return 'vote';
