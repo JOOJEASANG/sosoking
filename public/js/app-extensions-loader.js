@@ -48,8 +48,7 @@ const EXTENSION_MODULES = [
   './relay-mission-cards.js',
   './detail-game-status-card.js',
   './best-reward-rule-card.js',
-  './deadline-gate-render.js',
-  './deadline-gate-details-toggle.js',
+  './deadline-gate.js',
 ];
 
 async function loadExtension(path) {
