@@ -1,13 +1,21 @@
 @media (max-width: 1023px) {
+  body:has(.admin-layout) .admin-sidebar {
+    height: 60px !important;
+    padding: 0 !important;
+    bottom: 0 !important;
+    transform: translateY(-6px) !important;
+    border-radius: 18px 18px 0 0 !important;
+  }
+
   body:has(.admin-layout) .admin-nav {
     display: grid !important;
     grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
     gap: 0 !important;
     width: 100% !important;
     max-width: 560px !important;
-    height: 66px !important;
+    height: 60px !important;
     margin: 0 auto !important;
-    padding: 6px 6px 8px !important;
+    padding: 4px 6px 6px !important;
     overflow: hidden !important;
     box-sizing: border-box !important;
   }
@@ -20,13 +28,13 @@
     width: 100% !important;
     min-width: 0 !important;
     max-width: none !important;
-    height: 52px !important;
-    min-height: 52px !important;
+    height: 50px !important;
+    min-height: 50px !important;
     flex-direction: column !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 2px !important;
-    padding: 5px 1px !important;
+    gap: 1px !important;
+    padding: 3px 1px !important;
     border: 0 !important;
     border-radius: 12px !important;
     background: transparent !important;
@@ -44,7 +52,7 @@
   }
 
   body:has(.admin-layout) .admin-menu-item__icon {
-    font-size: 17px !important;
+    font-size: 16px !important;
     line-height: 1 !important;
   }
 
@@ -54,5 +62,13 @@
     overflow: hidden !important;
     text-overflow: ellipsis !important;
     white-space: nowrap !important;
+  }
+
+  body:has(.admin-layout) #admin-content {
+    padding-bottom: 88px !important;
+  }
+
+  .admin-password-top-action {
+    margin-left: auto !important;
   }
 }
