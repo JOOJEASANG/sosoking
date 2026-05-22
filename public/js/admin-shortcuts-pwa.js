@@ -21,9 +21,18 @@ function ensureAdminWriteShortcut() {
   }
 
   const dataTab = nav.querySelector('[data-admin-data-tab]');
-  if (dataTab && dataTab.nextSibling !== btn) nav.insertBefore(btn, dataTab.nextSibling);
-  else if (!dataTab && btn.parentNode !== nav) nav.appendChild(btn);
-  else if (!dataTab) nav.appendChild(btn);
+  if (dataTab) {
+    if (dataTab.nextElementSibling !== btn) nav.insertBefore(btn, dataTab.nextElementSibling);
+    return;
+  }
+
+  if (btn.parentNode !== nav) nav.appendChild(btn);
+}
+
+let enhanceTimer = null;
+function scheduleEnhancements() {
+  clearTimeout(enhanceTimer);
+  enhanceTimer = setTimeout(installEnhancements, 80);
 }
 
 function installEnhancements() {
@@ -35,9 +44,9 @@ function installEnhancements() {
 
 window.addEventListener('beforeinstallprompt', () => setTimeout(installEnhancements, 0));
 window.addEventListener('appinstalled', removeInstallButtons);
-window.addEventListener('hashchange', () => setTimeout(installEnhancements, 60));
-window.addEventListener('themechange', () => setTimeout(installEnhancements, 60));
+window.addEventListener('hashchange', scheduleEnhancements);
+window.addEventListener('themechange', scheduleEnhancements);
 
-new MutationObserver(() => installEnhancements()).observe(document.documentElement, { childList: true, subtree: true });
+new MutationObserver(scheduleEnhancements).observe(document.documentElement, { childList: true, subtree: true });
 
 setTimeout(installEnhancements, 0);
