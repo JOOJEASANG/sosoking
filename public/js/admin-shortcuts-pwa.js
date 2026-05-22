@@ -6,17 +6,24 @@ function removeInstallButtons() {
 
 function ensureAdminWriteShortcut() {
   const nav = document.querySelector('.admin-layout .admin-nav');
-  if (!nav || nav.querySelector('[data-admin-write-shortcut]')) return;
+  if (!nav) return;
 
-  const btn = document.createElement('button');
-  btn.type = 'button';
-  btn.className = 'admin-menu-item admin-menu-item--write-shortcut';
-  btn.dataset.adminWriteShortcut = 'true';
-  btn.innerHTML = `
-    <span class="admin-menu-item__icon">➕</span>
-    <span class="admin-menu-item__label">글쓰기</span>`;
-  btn.addEventListener('click', () => navigate('/write'));
-  nav.appendChild(btn);
+  let btn = nav.querySelector('[data-admin-write-shortcut]');
+  if (!btn) {
+    btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'admin-menu-item admin-menu-item--write-shortcut';
+    btn.dataset.adminWriteShortcut = 'true';
+    btn.innerHTML = `
+      <span class="admin-menu-item__icon">➕</span>
+      <span class="admin-menu-item__label">글쓰기</span>`;
+    btn.addEventListener('click', () => navigate('/write'));
+  }
+
+  const dataTab = nav.querySelector('[data-admin-data-tab]');
+  if (dataTab && dataTab.nextSibling !== btn) nav.insertBefore(btn, dataTab.nextSibling);
+  else if (!dataTab && btn.parentNode !== nav) nav.appendChild(btn);
+  else if (!dataTab) nav.appendChild(btn);
 }
 
 function installEnhancements() {
