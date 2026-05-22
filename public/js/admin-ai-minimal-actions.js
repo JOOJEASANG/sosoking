@@ -114,6 +114,7 @@ async function renderMinimalAiPanel(force = false) {
     catch (error) { console.error(error); toast.error(error.message || '관리자 자동화 실행에 실패했어요'); }
     finally { btn.disabled = false; btn.textContent = '관리자 자동화 실행'; }
   });
+
 }
 let timer = null;
 function schedule() { clearTimeout(timer); timer = setTimeout(() => renderMinimalAiPanel(false), 100); }
