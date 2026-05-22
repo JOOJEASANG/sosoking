@@ -1,5 +1,7 @@
 import { auth } from './firebase.js';
 import { toast } from './components/toast.js';
+import { navigate } from './router.js';
+import { appState } from './state.js';
 
 function isAdminPage() {
   return (window.location.hash || '').startsWith('#/admin');
@@ -9,20 +11,36 @@ function isPasswordProvider(user) {
   return (user?.providerData || []).some(p => p.providerId === 'password');
 }
 
-function injectPasswordButton() {
+function ensureAdminProfileCard() {
   if (!isAdminPage()) return;
   const content = document.getElementById('admin-content');
-  if (!content || document.getElementById('admin-password-btn')) return;
+  if (!content || document.getElementById('admin-mobile-profile-card')) return;
 
-  const host = document.createElement('div');
-  host.className = 'admin-password-top-action';
-  host.innerHTML = '<button class="btn btn--ghost btn--sm" id="admin-password-btn">비밀번호 변경</button>';
+  const user = auth.currentUser;
+  const name = appState.nickname || user?.displayName || user?.email?.split('@')[0] || '관리자';
+  const email = user?.email || '관리자 계정';
 
-  const head = content.querySelector('.admin-page-head');
-  if (head) head.appendChild(host);
-  else content.insertAdjacentElement('afterbegin', host);
+  const card = document.createElement('div');
+  card.id = 'admin-mobile-profile-card';
+  card.className = 'admin-mobile-profile-card';
+  card.innerHTML = `
+    <div>
+      <div class="admin-mobile-profile-card__title">${name}</div>
+      <div class="admin-mobile-profile-card__desc">관리자 정보 · ${email}</div>
+    </div>
+    <div class="admin-mobile-profile-card__actions">
+      <button class="btn btn--primary btn--sm" id="admin-profile-write-btn">글쓰기</button>
+      <button class="btn btn--ghost btn--sm" id="admin-password-btn">비밀번호</button>
+    </div>
+  `;
 
+  content.insertAdjacentElement('afterbegin', card);
+  document.getElementById('admin-profile-write-btn')?.addEventListener('click', () => navigate('/write'));
   document.getElementById('admin-password-btn')?.addEventListener('click', openPasswordDialog);
+}
+
+function injectPasswordButton() {
+  ensureAdminProfileCard();
 }
 
 function openPasswordDialog() {
