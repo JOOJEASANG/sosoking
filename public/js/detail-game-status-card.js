@@ -7,6 +7,7 @@ const KIND_INFO = {
     title: '투표 현황',
     guide: '마음에 드는 선택지에 투표하고 댓글로 이유를 남겨보세요.',
     reward: '투표 참여 +1P',
+    criteria: '선택지 투표를 정상 완료하면 게시글별·선택지별 1회 기준으로 포인트가 지급됩니다.',
     collection: null,
   },
   quiz: {
@@ -14,6 +15,7 @@ const KIND_INFO = {
     title: '퀴즈 현황',
     guide: '정답을 맞히면 해설이 열리고 정답 보상을 받을 수 있어요.',
     reward: '정답 +5P',
+    criteria: '정답 제출 후 정답 판정이 난 경우에만 게시글별 1회 기준으로 포인트가 지급됩니다.',
     collection: null,
   },
   naming: {
@@ -21,13 +23,15 @@ const KIND_INFO = {
     title: '작명 현황',
     guide: '가장 웃긴 이름을 남기고 반응을 받아 베스트에 도전하세요.',
     reward: '참여 +3P · 답글 +2P · 반응 받음 +1P',
+    criteria: '작명 참여글 작성 시 참여 포인트가 지급되고, 답글 작성·다른 사용자 반응을 받을 때 추가 포인트가 반영됩니다.',
     collection: 'multi_naming',
   },
   acrostic: {
     icon: '✍️',
-    title: '삼행시 현황',
+    title: '행시 현황',
     guide: '제시어로 센스 있는 한 줄들을 완성해보세요.',
     reward: '참여 +3P · 답글 +2P · 반응 받음 +1P',
+    criteria: '이행시·삼행시·사행시·오행시 참여글을 완성해 올리면 참여 포인트가 지급됩니다.',
     collection: 'multi_acrostic',
   },
   fill: {
@@ -35,6 +39,7 @@ const KIND_INFO = {
     title: '빈칸 현황',
     guide: '빈칸마다 글자를 채워 가장 재밌는 답을 만들어보세요.',
     reward: '참여 +3P · 답글 +2P · 반응 받음 +1P',
+    criteria: '빈칸 답변을 제출하면 참여 포인트가 지급되고, 답글·반응으로 추가 포인트가 반영됩니다.',
     collection: 'multi_fill',
   },
   relay: {
@@ -42,6 +47,7 @@ const KIND_INFO = {
     title: '릴레이 현황',
     guide: '앞 문장 뒤로 이야기를 이어 쓰고 베스트 릴레이에 도전하세요.',
     reward: '참여 +3P · 답글 +2P · 반응 받음 +1P',
+    criteria: '릴레이 문장을 이어 쓰면 참여 포인트가 지급되고, 답글·반응으로 추가 포인트가 반영됩니다.',
     collection: 'multi_relay',
   },
 };
@@ -120,17 +126,23 @@ function renderCard(kind, stats) {
   const info = KIND_INFO[kind];
   if (!info) return '';
   return `
-    <div class="detail-game-status-card" data-detail-game-status-card="1">
-      <div class="detail-game-status-card__top">
-        <div class="detail-game-status-card__title"><span>${info.icon}</span><b>${esc(info.title)}</b></div>
-        <div class="detail-game-status-card__reward">${esc(info.reward)}</div>
+    <details class="detail-game-status-card" data-detail-game-status-card="1">
+      <summary class="detail-game-status-card__summary">
+        <div class="detail-game-status-card__title"><span>${info.icon}</span><b>${esc(info.title)} · 포인트</b></div>
+        <div class="detail-game-status-card__summary-right">
+          <span class="detail-game-status-card__reward">${esc(info.reward)}</span>
+          <span class="detail-game-status-card__toggle-text">펼치기</span>
+        </div>
+      </summary>
+      <div class="detail-game-status-card__body">
+        <div class="detail-game-status-card__stats">
+          <div><small>${esc(stats.primaryLabel)}</small><b>${esc(stats.primaryValue)}</b></div>
+          <div><small>${esc(stats.secondaryLabel)}</small><b>${esc(stats.secondaryValue)}</b></div>
+        </div>
+        <div class="detail-game-status-card__guide">${esc(info.guide)}</div>
+        <div class="detail-game-status-card__criteria"><b>산정기준</b><span>${esc(info.criteria)}</span></div>
       </div>
-      <div class="detail-game-status-card__stats">
-        <div><small>${esc(stats.primaryLabel)}</small><b>${esc(stats.primaryValue)}</b></div>
-        <div><small>${esc(stats.secondaryLabel)}</small><b>${esc(stats.secondaryValue)}</b></div>
-      </div>
-      <div class="detail-game-status-card__guide">${esc(info.guide)}</div>
-    </div>`;
+    </details>`;
 }
 
 function findInsertTarget() {
