@@ -12,7 +12,7 @@ const AI_POST_TYPES = [
   { key: 'general', label: '일반글', desc: '댓글 반응을 유도하는 일반 피드 글' },
   { key: 'vote', label: '투표/판정', desc: '선택지 투표가 가능한 게시글' },
   { key: 'naming', label: '미친작명소', desc: '댓글로 이름을 붙이는 게시글' },
-  { key: 'acrostic', label: '삼행시', desc: '제시어 기반 삼행시 게시글' },
+  { key: 'acrostic', label: '행시', desc: '제시어 기반 이행시·삼행시·사행시·오행시 게시글' },
   { key: 'relay', label: '막장릴레이', desc: '댓글로 이어 쓰는 릴레이 게시글' },
   { key: 'quiz', label: '미친퀴즈', desc: '객관식 정답/해설이 있는 퀴즈 게시글' },
 ];
@@ -127,7 +127,7 @@ async function renderMinimalAiPanel() {
           <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
             <div>
               <div style="font-size:14px;font-weight:900">AI 기본 설정</div>
-              <div style="font-size:11px;color:var(--color-text-muted);margin-top:3px">API 키는 Firebase Secret Manager의 GEMINI_API_KEY/서버 환경 키를 사용합니다.</div>
+              <div style="font-size:11px;color:var(--color-text-muted);margin-top:3px">AI 게시글 생성은 서버 환경 키 <b>ANTHROPIC_API_KEY</b>를 사용합니다. API 키는 Firestore에 저장하지 않습니다.</div>
             </div>
             <button class="btn btn--primary btn--sm" id="btn-ai-minimal-save">설정 저장</button>
           </div>
