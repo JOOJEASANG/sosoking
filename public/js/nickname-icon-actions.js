@@ -53,6 +53,19 @@ function currentIconValue() {
   return normalizeNicknameIcon(appState.nicknameIcon) || null;
 }
 
+function iconKey(icon) {
+  const normalized = normalizeNicknameIcon(icon);
+  return normalized ? JSON.stringify(normalized) : 'default';
+}
+
+function previewHtml(icon, dataUrl = '') {
+  const normalized = normalizeNicknameIcon(icon);
+  if (dataUrl) {
+    return `<span class="nickname-icon nickname-icon--image nickname-icon--preview"><img src="${esc(dataUrl)}" alt=""></span>`;
+  }
+  return renderNicknameIcon(normalized, 'nickname-icon--preview') || '<span class="nickname-icon nickname-icon--empty">기본</span>';
+}
+
 function renderIconPicker(target) {
   if (!target || target.dataset.nicknameIconReady === '1') return;
   const current = currentIconValue();
@@ -64,31 +77,31 @@ function renderIconPicker(target) {
       <div class="section-title" style="font-size:15px;margin-bottom:12px">🎭 프로필 아이콘</div>
       <div class="nickname-icon-preview-row">
         <div class="nickname-icon-preview" id="nickname-icon-preview">
-          ${renderNicknameIcon(current, 'nickname-icon--preview') || '<span class="nickname-icon nickname-icon--empty">기본</span>'}
+          ${previewHtml(current)}
         </div>
         <div>
           <div style="font-size:13px;font-weight:800;color:var(--color-text-primary)">${esc(appState.nickname || auth.currentUser?.displayName || '내 닉네임')}</div>
-          <div style="font-size:12px;color:var(--color-text-muted);margin-top:3px">기존 닉네임 앞글자 원형 자리에 표시돼요</div>
+          <div style="font-size:12px;color:var(--color-text-muted);margin-top:3px">아이콘을 고른 뒤 <b>아이콘 적용</b>을 눌러야 저장돼요.</div>
         </div>
       </div>
       <div class="nickname-icon-emoji-grid">
-        ${DEFAULT_ICONS.map(icon => `<button type="button" class="nickname-icon-choice" data-emoji-icon="${icon}" aria-label="${icon}">${icon}</button>`).join('')}
+        ${DEFAULT_ICONS.map(icon => `<button type="button" class="nickname-icon-choice ${current?.type === 'emoji' && current.value === icon ? 'active' : ''}" data-emoji-icon="${icon}" aria-label="${icon}" aria-pressed="${current?.type === 'emoji' && current.value === icon ? 'true' : 'false'}">${icon}</button>`).join('')}
       </div>
       <div class="nickname-icon-custom-row">
-        <input id="nickname-icon-custom" class="form-input" maxlength="4" placeholder="직접 입력 예: 🐰">
-        <button class="btn btn--ghost btn--sm" id="btn-save-custom-icon">아이콘 적용</button>
+        <input id="nickname-icon-custom" class="form-input" maxlength="4" placeholder="목록에 없는 이모지 입력 예: 🐰">
       </div>
       <div class="nickname-icon-upload-row">
         <input id="nickname-icon-file" type="file" accept="image/*" style="display:none">
         <button class="btn btn--ghost btn--sm" id="btn-pick-icon-file">그림 파일 선택</button>
-        <button class="btn btn--ghost btn--sm" id="btn-clear-icon" style="color:var(--color-danger)">기본 앞글자로 되돌리기</button>
+        <button class="btn btn--ghost btn--sm" id="btn-clear-icon" style="color:var(--color-danger)">기본으로 선택</button>
+        <button class="btn btn--primary btn--sm" id="btn-apply-nickname-icon">아이콘 적용</button>
       </div>
-      <div class="form-hint" style="margin-top:8px">선택한 이모지나 그림 파일은 닉네임 텍스트 앞에 따로 붙지 않고, 기존 앞글자 원형 표시 자리에만 보여요.</div>
+      <div class="form-hint" style="margin-top:8px">직접 입력은 목록에 없는 이모지를 쓰고 싶을 때만 입력하는 선택 기능입니다. 필요 없으면 위 아이콘만 고르면 됩니다.</div>
     </div>`;
 
   target.insertAdjacentElement('afterend', section);
   target.dataset.nicknameIconReady = '1';
-  setupPickerEvents(section);
+  setupPickerEvents(section, current);
 }
 
 async function saveIcon(icon) {
@@ -102,29 +115,43 @@ async function saveIcon(icon) {
   });
   renderHeader();
   renderSidebar();
-  updatePreview();
+  updatePreview(normalized);
   applyKnownIcons();
   toast.success(normalized ? '프로필 아이콘을 저장했어요' : '기본 앞글자 표시로 되돌렸어요');
 }
 
-function updatePreview() {
+function updatePreview(icon = appState.nicknameIcon, dataUrl = '') {
   const preview = document.getElementById('nickname-icon-preview');
   if (!preview) return;
-  preview.innerHTML = renderNicknameIcon(appState.nicknameIcon, 'nickname-icon--preview') || '<span class="nickname-icon nickname-icon--empty">기본</span>';
+  preview.innerHTML = previewHtml(icon, dataUrl);
 }
 
-function setupPickerEvents(section) {
+function setupPickerEvents(section, initialIcon) {
+  let selectedIcon = normalizeNicknameIcon(initialIcon);
+  let pendingImageDataUrl = '';
+
+  function setSelected(icon, dataUrl = '') {
+    selectedIcon = normalizeNicknameIcon(icon);
+    pendingImageDataUrl = dataUrl || '';
+    section.querySelectorAll('[data-emoji-icon]').forEach(btn => {
+      const active = selectedIcon?.type === 'emoji' && selectedIcon.value === btn.dataset.emojiIcon;
+      btn.classList.toggle('active', active);
+      btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+    if (selectedIcon?.type !== 'emoji') section.querySelector('#nickname-icon-custom').value = '';
+    updatePreview(selectedIcon, pendingImageDataUrl);
+  }
+
   section.querySelectorAll('[data-emoji-icon]').forEach(btn => {
-    btn.addEventListener('click', () => saveIcon({ type: 'emoji', value: btn.dataset.emojiIcon }));
+    btn.addEventListener('click', () => setSelected({ type: 'emoji', value: btn.dataset.emojiIcon }));
   });
 
-  section.querySelector('#btn-save-custom-icon')?.addEventListener('click', () => {
-    const value = section.querySelector('#nickname-icon-custom')?.value.trim();
-    if (!value) { toast.warn('아이콘으로 쓸 이모지를 입력해주세요'); return; }
-    saveIcon({ type: 'emoji', value });
+  section.querySelector('#nickname-icon-custom')?.addEventListener('input', event => {
+    const value = event.target.value.trim();
+    if (value) setSelected({ type: 'emoji', value });
   });
 
-  section.querySelector('#btn-clear-icon')?.addEventListener('click', () => saveIcon(null));
+  section.querySelector('#btn-clear-icon')?.addEventListener('click', () => setSelected(null));
 
   const fileInput = section.querySelector('#nickname-icon-file');
   section.querySelector('#btn-pick-icon-file')?.addEventListener('click', () => fileInput?.click());
@@ -134,16 +161,37 @@ function setupPickerEvents(section) {
     if (!file.type.startsWith('image/')) { toast.error('이미지 파일만 선택할 수 있어요'); return; }
     try {
       const dataUrl = await dataUrlFromFile(file);
-      const fn = httpsCallable(functions, 'uploadFeedImage');
-      const result = await fn({ dataUrl });
-      const url = result.data?.url;
-      if (!url) throw new Error('업로드 실패');
-      await saveIcon({ type: 'image', url });
+      setSelected({ type: 'pendingImage', dataUrl }, dataUrl);
+      toast.success('그림 파일을 선택했어요. 아이콘 적용을 누르면 저장돼요');
     } catch (error) {
       console.error(error);
-      toast.error('아이콘 파일 저장에 실패했어요');
+      toast.error('아이콘 파일을 읽지 못했어요');
     } finally {
       fileInput.value = '';
+    }
+  });
+
+  section.querySelector('#btn-apply-nickname-icon')?.addEventListener('click', async event => {
+    const btn = event.currentTarget;
+    try {
+      btn.disabled = true;
+      btn.textContent = '저장 중...';
+
+      if (selectedIcon?.type === 'pendingImage' && pendingImageDataUrl) {
+        const fn = httpsCallable(functions, 'uploadFeedImage');
+        const result = await fn({ dataUrl: pendingImageDataUrl });
+        const url = result.data?.url;
+        if (!url) throw new Error('업로드 실패');
+        await saveIcon({ type: 'image', url });
+      } else {
+        await saveIcon(selectedIcon);
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error('프로필 아이콘 저장에 실패했어요');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '아이콘 적용';
     }
   });
 }
