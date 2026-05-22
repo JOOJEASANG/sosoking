@@ -210,7 +210,7 @@ export function renderMultiWriteHTML({ renderKey, presetKey, showDeadline = fals
           <div class="form-group">
             <label class="form-label">사진</label>
             <div id="mw-img-uploader"></div>
-            <div class="form-hint">사진 개수 제한 없이 올릴 수 있어요.</div>
+            <div class="form-hint">사진은 최대 20장까지 올릴 수 있어요.</div>
           </div>
           <div class="form-group">
             <div class="multi-tag-label-row">
