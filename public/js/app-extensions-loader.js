@@ -20,6 +20,7 @@ const EXTENSION_MODULES = [
   './participant-replies.js',
   './multi-detail.js',
   './detail-extras.js',
+  './detail-cards.js',
 
   // 피드/글쓰기/수정
   './acrostic-ui.js',
@@ -43,8 +44,6 @@ const EXTENSION_MODULES = [
 
   // 추가 표시 보강
   './relay-mission-cards.js',
-  './detail-game-status-card.js',
-  './best-reward-rule-card.js',
   './deadline-gate.js',
 ];
 
