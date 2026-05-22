@@ -28,8 +28,7 @@ const EXTENSION_MODULES = [
   './detail-youtube-fallback.js',
 
   // 피드/글쓰기/수정
-  './acrostic-flow-fix.js',
-  './acrostic-kind-label-fix.js',
+  './acrostic-ui.js',
   './multi-write.js',
   './fill-box-input-fix.js',
   './write-edit-router-fix.js',
