@@ -11,15 +11,16 @@ function isPasswordProvider(user) {
 
 function injectPasswordButton() {
   if (!isAdminPage()) return;
-  const sidebar = document.querySelector('.admin-sidebar');
-  if (!sidebar || document.getElementById('admin-password-btn')) return;
+  const content = document.getElementById('admin-content');
+  if (!content || document.getElementById('admin-password-btn')) return;
 
-  const target = document.getElementById('admin-logout-btn')?.parentElement || sidebar;
-  target.insertAdjacentHTML('afterbegin', `
-    <button class="btn btn--ghost btn--full" id="admin-password-btn" style="justify-content:center;margin-bottom:8px">
-      비밀번호 변경
-    </button>
-  `);
+  const host = document.createElement('div');
+  host.className = 'admin-password-top-action';
+  host.innerHTML = '<button class="btn btn--ghost btn--sm" id="admin-password-btn">비밀번호 변경</button>';
+
+  const head = content.querySelector('.admin-page-head');
+  if (head) head.appendChild(host);
+  else content.insertAdjacentElement('afterbegin', host);
 
   document.getElementById('admin-password-btn')?.addEventListener('click', openPasswordDialog);
 }
