@@ -1,7 +1,8 @@
 import { toast } from './components/toast.js';
+import { getAcrosticLabel } from './multi-write/presets.js';
 
 function isAcrosticWritePage() {
-  return !!document.getElementById('f-keyword') && !!document.querySelector('.write-step-title')?.textContent?.includes('삼행시');
+  return !!document.getElementById('f-keyword') && !!document.querySelector('.write-step-title')?.textContent?.includes('행시');
 }
 
 function esc(value) {
@@ -22,7 +23,7 @@ function renderKeywordPreview(keyword) {
   if (!clean) {
     return `
       <div class="acrostic-write-preview__empty">
-        제시어를 입력하면 참여자가 작성할 줄이 자동으로 만들어져요.
+        2~5글자 제시어를 입력하면 참여자가 작성할 줄이 자동으로 만들어져요.
       </div>`;
   }
   return [...clean].map(ch => `
@@ -39,21 +40,26 @@ function ensureAcrosticWriteFlow() {
 
   removeOptionalAcrosticFields();
   keyword.dataset.acrosticOnlyReady = '1';
-  keyword.placeholder = '예: 소소킹';
-  keyword.maxLength = 8;
+  keyword.placeholder = '예: 소소킹 / 관리자 / 대한민국';
+  keyword.maxLength = 5;
 
   const hint = keyword.closest('.form-group')?.querySelector('.form-hint');
-  if (hint) hint.textContent = '제시어만 입력하면 됩니다. 참여자가 각 글자 옆에 한 줄씩 삼행시를 작성합니다.';
+  const updateHint = () => {
+    const len = [...keyword.value.trim()].length;
+    if (hint) hint.textContent = len >= 2 && len <= 5 ? `${len}글자라서 ${getAcrosticLabel(keyword.value)}로 자동 적용됩니다.` : '제시어는 2~5글자로 입력해주세요. 글자 수에 따라 이행시·삼행시·사행시·오행시로 자동 적용됩니다.';
+  };
+  updateHint();
 
   const guide = document.createElement('div');
   guide.className = 'acrostic-write-guide';
   guide.innerHTML = `
-    <div class="acrostic-write-guide__title">✍️ 삼행시 참여 구조</div>
-    <div class="acrostic-write-guide__desc">작성자는 제시어만 올리고, 참여자들이 아래처럼 글자별 한 줄을 채워 삼행시를 완성합니다.</div>
+    <div class="acrostic-write-guide__title">✍️ 행시 참여 구조</div>
+    <div class="acrostic-write-guide__desc">작성자는 제시어만 올리고, 참여자들이 글자별 한 줄을 채워 행시를 완성합니다.</div>
     <div class="acrostic-write-preview" id="acrostic-write-preview">${renderKeywordPreview(keyword.value)}</div>`;
   keyword.closest('.form-group')?.insertAdjacentElement('afterend', guide);
 
   const update = () => {
+    updateHint();
     const preview = document.getElementById('acrostic-write-preview');
     if (preview) preview.innerHTML = renderKeywordPreview(keyword.value);
   };
@@ -64,7 +70,7 @@ function ensureAcrosticWriteFlow() {
     submit.dataset.acrosticOnlySubmitGuard = '1';
     submit.addEventListener('click', () => {
       const len = [...keyword.value.trim()].length;
-      if (len > 0 && len < 2) toast.warn('제시어는 2글자 이상이 좋아요');
+      if (len > 0 && (len < 2 || len > 5)) toast.warn('제시어는 2~5글자로 입력해주세요');
     }, true);
   }
 }
