@@ -134,13 +134,18 @@
   background: var(--color-surface);
   font-size: 20px;
   cursor: pointer;
-  transition: transform var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast);
+  transition: transform var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast), box-shadow var(--transition-fast);
 }
 
-.nickname-icon-choice:hover {
+.nickname-icon-choice:hover,
+.nickname-icon-choice.active {
   transform: translateY(-1px);
   border-color: var(--color-primary);
   background: var(--color-primary-bg);
+}
+
+.nickname-icon-choice.active {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 24%, transparent);
 }
 
 .nickname-icon-custom-row,
