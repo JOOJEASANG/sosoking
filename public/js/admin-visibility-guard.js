@@ -49,32 +49,41 @@ function removeAdminButtons() {
     '[data-nav-path="/admin"]',
     '[href="#/admin"]',
     'a[href*="#/admin"]',
-    '[onclick*="/admin"]',
-    '[onclick*="admin"]',
     '[data-admin-only]',
   ];
   document.querySelectorAll(selectors.join(',')).forEach(el => {
-    const removable = el.closest('button, a, .btn, .account-profile-actions, .sidebar-nav__item') || el;
-    if (removable.classList?.contains('account-profile-actions')) {
-      removable.querySelectorAll('[onclick*="/admin"], [data-nav-path="/admin"], [href="#/admin"]').forEach(btn => btn.remove());
-    } else {
-      removable.remove();
-    }
+    const removable = el.closest('button, a, .btn, .sidebar-nav__item') || el;
+    removable.remove();
   });
 }
 
 async function enforceAdminVisibility() {
+  const user = auth.currentUser || appState.user;
+  if (!user) return;
+
   const allowed = await verifyAdmin();
   document.documentElement.classList.toggle('is-verified-admin', allowed);
 
   if (!allowed) {
     removeAdminButtons();
     const path = window.location.hash.slice(1).split('?')[0] || '/';
-    if (path === '/admin') {
-      navigate('/account');
-    }
+    if (path === '/admin') navigate('/account');
   }
 }
+
+async function handleAdminNavClick(event) {
+  const target = event.target.closest?.('[data-nav-path="/admin"], [href="#/admin"], a[href*="#/admin"], button[onclick*="/admin"], button[onclick*="admin"]');
+  if (!target) return;
+
+  const allowed = await verifyAdmin();
+  if (!allowed) return;
+
+  event.preventDefault();
+  event.stopPropagation();
+  navigate('/admin');
+}
+
+document.addEventListener('click', handleAdminNavClick, true);
 
 let timer = null;
 function schedule() {
