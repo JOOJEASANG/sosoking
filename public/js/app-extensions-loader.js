@@ -29,6 +29,7 @@ const EXTENSION_MODULES = [
 
   // 피드/글쓰기/수정
   './acrostic-flow-fix.js',
+  './acrostic-kind-label-fix.js',
   './multi-write.js',
   './fill-box-input-fix.js',
   './write-edit-router-fix.js',
