@@ -55,6 +55,7 @@ const EXTENSION_MODULES = [
   './detail-game-status-card.js',
   './best-reward-rule-card.js',
   './deadline-gate-render.js',
+  './deadline-gate-details-toggle.js',
 ];
 
 async function loadExtension(path) {
