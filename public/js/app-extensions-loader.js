@@ -20,9 +20,7 @@ const EXTENSION_MODULES = [
   './post-owner-actions.js',
   './participant-replies.js',
   './multi-detail.js',
-  './detail-comment-fix.js',
-  './post-view-normalizer.js',
-  './detail-youtube-fallback.js',
+  './detail-extras.js',
 
   // 피드/글쓰기/수정
   './acrostic-ui.js',
