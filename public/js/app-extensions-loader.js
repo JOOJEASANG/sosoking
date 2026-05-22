@@ -40,7 +40,6 @@ const EXTENSION_MODULES = [
   // 관리자/알림/운영 보조
   './feedback-actions.js',
   './admin-feedback-actions.js',
-  './admin-ai-secret-notice.js',
   './admin-ai-minimal-actions.js',
   './admin-member-list-fix.js',
   './admin-data-manager.js',
