@@ -18,8 +18,6 @@ const OPTIONAL_MODULES = [
   './account-secure-actions.js',
   './admin-session-guard.js',
   './admin-password-actions.js',
-  './admin-ai-mission-actions.js',
-  './admin-ai-ops-actions.js',
   './admin-post-list-normalizer.js',
   './nickname-icon-actions.js',
   './social-play-enhancer.js',
@@ -70,186 +68,144 @@ function showPageError(title, error) {
 function fallbackHome() {
   const el = pageContent();
   if (!el) return;
-  el.innerHTML = '<section class="card"><div class="card__body--lg"><h1 style="font-size:28px;margin:0 0 10px">소소킹</h1><p style="color:var(--color-text-secondary);line-height:1.7">피드와 게임을 즐기는 참여형 커뮤니티입니다.</p><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px"><button class="btn btn--primary" data-go="/feed">피드 보기</button><button class="btn btn--ghost" data-go="/sosoland">게임 보기</button></div></div></section>';
-  el.querySelectorAll('[data-go]').forEach(btn => btn.addEventListener('click', () => navigate(btn.dataset.go)));
+  el.innerHTML = `
+    <div class="empty-state">
+      <div class="empty-state__icon">🏠</div>
+      <div class="empty-state__title">소소킹</div>
+      <div class="empty-state__desc">피드와 게임을 불러오는 중입니다.</div>
+    </div>`;
 }
 
-async function renderPage(path, exportName, args) {
+async function renderPage(renderer, title) {
   try {
-    const mod = await import(path);
-    const fn = mod[exportName];
-    if (typeof fn !== 'function') throw new Error(exportName + ' export를 찾을 수 없습니다: ' + path);
-    return fn(...args);
+    await renderer();
   } catch (error) {
-    console.error('[app-safe] page failed', path, error);
-    showPageError('페이지를 불러오지 못했어요', error);
+    console.error('[renderPage failed]', title, error);
+    showPageError(title + ' 화면을 불러오지 못했어요', error);
   }
 }
 
-export function isAdmin() {
-  return !!appState.isAdmin;
+async function renderAdminSafe() {
+  const module = await import('./pages/admin-safe.js');
+  return module.renderAdmin();
 }
 
-async function detectAdmin(uid, userDocData = {}) {
-  const currentUser = auth.currentUser;
-  const email = String(currentUser?.email || '').toLowerCase();
-  if (OWNER_EMAILS.has(email)) return true;
-  if (userDocData.isAdmin || userDocData.admin || userDocData.role === 'admin' || userDocData.role === 'owner') return true;
+async function renderAccountSafe() {
+  const module = await import('./pages/account.js');
+  return module.renderAccount();
+}
 
+async function renderWriteSafe() {
+  const module = await import('./pages/write.js');
+  return module.renderWrite();
+}
+
+async function renderDetailSafe(id) {
+  const module = await import('./pages/detail.js');
+  return module.renderDetail(id);
+}
+
+async function registerRoutes() {
+  registerRoute('/', async () => renderPage((await import('./pages/home.js')).renderHome, '홈'));
+  registerRoute('/feed', async () => renderPage((await import('./pages/feed.js')).renderFeed, '피드'));
+  registerRoute('/sosoland', async () => renderPage((await import('./pages/sosoland.js')).renderSosoland, '소소랜드'));
+  registerRoute('/hall', async () => renderPage((await import('./pages/hall.js')).renderHall, '통계'));
+  registerRoute('/account', async () => renderPage(renderAccountSafe, '내 정보'));
+  registerRoute('/admin', async () => renderPage(renderAdminSafe, '관리자'));
+  registerRoute('/write', async () => renderPage(renderWriteSafe, '글쓰기'));
+  registerRoute('/detail/:id', async ({ id }) => renderPage(() => renderDetailSafe(id), '상세'));
+  registerRoute('/login', async () => renderPage((await import('./pages/login.js')).renderLogin, '로그인'));
+  registerRoute('/legal/terms', async () => renderPage((await import('./pages/legal.js')).renderTerms, '이용약관'));
+  registerRoute('/legal/privacy', async () => renderPage((await import('./pages/legal.js')).renderPrivacy, '개인정보처리방침'));
+  registerRoute('/game/liar', async () => renderPage((await import('./pages/liar-game.js')).renderLiarGame, '라이어게임'));
+  registerRoute('/game/liar/:id', async ({ id }) => renderPage(() => import('./pages/liar-game.js').then(m => m.renderLiarGame(id)), '라이어게임'));
+  registerRoute('/game/mafia', async () => renderPage((await import('./pages/mafia-game.js')).renderMafiaGame, '마피아게임'));
+  registerRoute('/game/mafia/:id', async ({ id }) => renderPage(() => import('./pages/mafia-game.js').then(m => m.renderMafiaGame(id)), '마피아게임'));
+  registerRoute('/game/wordtrap', async () => renderPage((await import('./pages/wordtrap-game.js')).renderWordtrapGame, '금칙어게임'));
+  registerRoute('/game/wordtrap/:id', async ({ id }) => renderPage(() => import('./pages/wordtrap-game.js').then(m => m.renderWordtrapGame(id)), '금칙어게임'));
+}
+
+async function fetchUserProfile(user) {
+  if (!user) return;
   try {
-    const token = await currentUser?.getIdTokenResult?.(true);
-    if (token?.claims?.admin || token?.claims?.owner) return true;
+    const snap = await getDoc(doc(db, 'users', user.uid));
+    if (snap.exists()) {
+      const data = snap.data();
+      appState.nickname = data.nickname || user.displayName || user.email?.split('@')[0] || '';
+      appState.nicknameIcon = data.nicknameIcon || null;
+      appState.points = Number(data.points || data.totalPoints || 0);
+      appState.isAdmin = data.isAdmin === true || data.admin === true || data.role === 'admin' || data.role === 'owner' || OWNER_EMAILS.has(String(user.email || '').toLowerCase());
+    } else {
+      appState.nickname = user.displayName || user.email?.split('@')[0] || '';
+      appState.isAdmin = OWNER_EMAILS.has(String(user.email || '').toLowerCase());
+    }
+    try {
+      const adminSnap = await getDoc(doc(db, 'admins', user.uid));
+      if (adminSnap.exists()) appState.isAdmin = true;
+    } catch {}
   } catch (error) {
-    console.warn('[app-safe] admin token check failed', error);
+    console.warn('[fetchUserProfile]', error);
+  }
+}
+
+function renderFrame() {
+  const path = currentRoutePath();
+  const app = document.getElementById('app');
+  if (!app) return;
+
+  if (isGameOnlyRoute(path)) {
+    ensureGameOnlyStyles();
+    app.innerHTML = `
+      <div class="game-only-shell">
+        <main id="page-content" class="game-only-shell__content"></main>
+      </div>`;
+    return;
   }
 
-  try {
-    const adminSnap = await getDoc(doc(db, 'admins', uid));
-    return adminSnap.exists();
-  } catch (error) {
-    console.warn('[app-safe] admin doc check failed', error);
-    return false;
-  }
-}
-
-async function loadUserMeta(uid) {
-  const currentUser = auth.currentUser;
-  let data = {};
-
-  try {
-    const userSnap = await getDoc(doc(db, 'users', uid));
-    data = userSnap.exists() ? userSnap.data() : {};
-  } catch (error) {
-    console.warn('[app-safe] user doc check failed', error);
-  }
-
-  appState.streak = data.streak || 0;
-  appState.userTitle = data.title || '';
-  appState.nickname = data.nickname || currentUser?.displayName || currentUser?.email?.split('@')[0] || '익명';
-  appState.nicknameIcon = data.nicknameIcon || null;
-  appState.isAdmin = await detectAdmin(uid, data);
-
-  try {
-    const notifQuery = query(collection(db, 'notifications'), where('uid', '==', uid), where('read', '==', false), limit(100));
-    const notifSnap = await getDocs(notifQuery);
-    appState.unreadNotifications = notifSnap.size;
-  } catch (error) {
-    console.warn('[app-safe] notifications check failed', error);
-    appState.unreadNotifications = 0;
-  }
-}
-
-function renderSiteShell() {
-  document.body.classList.remove('game-only-mode');
-  document.getElementById('app').innerHTML = '<div class="app-shell"><aside class="site-sidebar" id="site-sidebar"></aside><div class="site-main"><header class="site-header" id="site-header"></header><main id="page-content" class="page-container"></main><footer class="site-footer" id="site-footer"><div class="site-footer__copy-bar"><div class="site-footer__copy">© ' + new Date().getFullYear() + ' 소소킹. All rights reserved.</div></div></footer></div></div><nav class="bottom-nav" id="bottom-nav"></nav><div class="toast-container" id="toast-container"></div>';
-}
-
-function renderGameOnlyShell() {
-  document.body.classList.add('game-only-mode');
-  document.getElementById('app').innerHTML = '<div class="game-only-shell"><main id="page-content" class="game-only-content"></main><div class="toast-container" id="toast-container"></div></div>';
-}
-
-function renderChrome() {
-  if (isGameOnlyShellActive()) return;
+  app.innerHTML = `
+    <div class="app-shell">
+      <aside id="sidebar-root"></aside>
+      <div class="app-main">
+        <header id="header-root"></header>
+        <main id="page-content"></main>
+        <nav id="bottom-nav-root"></nav>
+      </div>
+    </div>`;
   renderSidebar();
   renderHeader();
   renderBottomNav();
 }
 
-function syncShellWithRoute() {
-  const shouldUseGameShell = isGameOnlyRoute();
-  if (shouldUseGameShell && !isGameOnlyShellActive()) {
-    renderGameOnlyShell();
-    initToast();
-    return;
-  }
-  if (!shouldUseGameShell && isGameOnlyShellActive()) {
-    renderSiteShell();
-    renderChrome();
-    initToast();
-  }
-}
-
 function rerenderCurrentRouteSoon() {
-  setTimeout(() => window.dispatchEvent(new Event('hashchange')), 0);
+  setTimeout(() => {
+    renderFrame();
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+  }, 0);
 }
 
-export async function initApp() {
-  ensureGameOnlyStyles();
-  if (isGameOnlyRoute()) renderGameOnlyShell();
-  else {
-    renderSiteShell();
-    renderChrome();
-  }
+async function initApp() {
   initToast();
-
-  window.addEventListener('themechange', () => {
-    if (!isGameOnlyShellActive()) {
-      renderSidebar();
-      renderHeader();
-    }
-  });
-
-  onAuthStateChanged(auth, async user => {
-    const previousUser = appState.user;
-    const wasLoading = appState.loading;
-    appState.user = user;
-    appState.loading = false;
-    appState.isAdmin = false;
-    if (user) await loadUserMeta(user.uid);
-    else {
-      appState.unreadNotifications = 0;
-      appState.streak = 0;
-      appState.userTitle = '';
-      appState.nickname = '';
-      appState.nicknameIcon = null;
-    }
-    renderChrome();
-    const currentPath = window.location.hash.slice(1).split('?')[0] || '/';
-    const justLoggedIn = !!user && previousUser?.uid !== user.uid;
-    if (justLoggedIn) {
-      if (appState.isAdmin && currentPath !== '/admin' && !isGameOnlyRoute(currentPath)) navigate('/admin');
-      else if (currentPath === '/login') navigate('/');
-      else if (wasLoading) rerenderCurrentRouteSoon();
-    } else if (wasLoading) {
-      rerenderCurrentRouteSoon();
-    }
-  });
-
-  registerRoute('/', () => renderPage('./pages/home.js', 'renderHome', []).catch(() => fallbackHome()));
-  registerRoute('/feed', () => renderPage('./pages/feed.js', 'renderFeed', []));
-  registerRoute('/write', () => renderPage('./pages/write.js', 'renderWrite', []));
-  registerRoute('/sosoland', () => renderPage('./pages/sosoland.js', 'renderSosoland', []));
-  registerRoute('/game/liar', () => renderPage('./pages/liar-game.js', 'renderLiarGame', []));
-  registerRoute('/game/liar/:id', ({ id }) => renderPage('./pages/liar-game.js', 'renderLiarGame', [{ id }]));
-  registerRoute('/game/mafia', () => renderPage('./pages/mafia-game.js', 'renderMafiaGame', []));
-  registerRoute('/game/mafia/:id', ({ id }) => renderPage('./pages/mafia-game.js', 'renderMafiaGame', [{ id }]));
-  registerRoute('/game/wordtrap', () => renderPage('./pages/wordtrap-game.js', 'renderWordtrapGame', []));
-  registerRoute('/game/wordtrap/:id', ({ id }) => renderPage('./pages/wordtrap-game.js', 'renderWordtrapGame', [{ id }]));
-  registerRoute('/detail/:id', ({ id }) => renderPage('./pages/detail-safe.js', 'renderDetail', [id]));
-  registerRoute('/account', () => renderPage('./pages/account.js', 'renderAccount', []));
-  registerRoute('/scraps', () => renderPage('./pages/scraps.js', 'renderScraps', []));
-  registerRoute('/login', () => renderPage('./pages/login.js', 'renderLogin', []));
-  registerRoute('/guide', () => renderPage('./pages/guide.js', 'renderGuide', []));
-  registerRoute('/admin', () => renderPage('./pages/admin-safe.js', 'renderAdmin', []));
-  registerRoute('/terms', () => renderPage('./pages/terms.js', 'renderTerms', []));
-  registerRoute('/privacy', () => renderPage('./pages/privacy.js', 'renderPrivacy', []));
-  registerRoute('/hall', () => renderPage('./pages/hall.js', 'renderHall', []));
-
-  window.addEventListener('hashchange', syncShellWithRoute);
+  await registerRoutes();
   initRouter();
   loadOptionalModules();
 
-  window.addEventListener('beforeinstallprompt', event => {
-    event.preventDefault();
-    appState.installPrompt = event;
-    renderChrome();
+  onAuthStateChanged(auth, async user => {
+    appState.user = user || null;
+    appState.isAuthenticated = !!user;
+    if (user) await fetchUserProfile(user);
+    else {
+      appState.nickname = '';
+      appState.nicknameIcon = null;
+      appState.points = 0;
+      appState.isAdmin = false;
+    }
+    rerenderCurrentRouteSoon();
   });
-  window.addEventListener('appinstalled', () => {
-    appState.installPrompt = null;
-    renderChrome();
-  });
+
+  renderFrame();
 }
 
-window.navigate = navigate;
-initApp();
+initApp().catch(error => {
+  console.error('[app init failed]', error);
+  showPageError('앱 초기화 실패', error);
+});
