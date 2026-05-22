@@ -23,12 +23,8 @@ async function verifyAdmin() {
       allowed = allowed || !!token?.claims?.admin || !!token?.claims?.owner;
     } catch {}
 
-    try {
-      const userSnap = await getDoc(doc(db, 'users', user.uid));
-      const data = userSnap.exists() ? userSnap.data() : {};
-      allowed = allowed || data.isAdmin === true || data.admin === true || data.role === 'admin' || data.role === 'owner';
-    } catch {}
-
+    // 일반 회원 문서(users/{uid})의 isAdmin/admin/role 값은 관리자 판정에 사용하지 않습니다.
+    // 관리자 권한은 owner 이메일, 커스텀 클레임, admins/{uid} 문서 중 하나로만 인정합니다.
     try {
       const adminSnap = await getDoc(doc(db, 'admins', user.uid));
       allowed = allowed || adminSnap.exists();
@@ -59,7 +55,12 @@ function removeAdminButtons() {
 
 async function enforceAdminVisibility() {
   const user = auth.currentUser || appState.user;
-  if (!user) return;
+  if (!user) {
+    appState.isAdmin = false;
+    document.documentElement.classList.remove('is-verified-admin');
+    removeAdminButtons();
+    return;
+  }
 
   const allowed = await verifyAdmin();
   document.documentElement.classList.toggle('is-verified-admin', allowed);
@@ -76,7 +77,13 @@ async function handleAdminNavClick(event) {
   if (!target) return;
 
   const allowed = await verifyAdmin();
-  if (!allowed) return;
+  if (!allowed) {
+    event.preventDefault();
+    event.stopPropagation();
+    removeAdminButtons();
+    navigate('/account');
+    return;
+  }
 
   event.preventDefault();
   event.stopPropagation();
@@ -94,9 +101,11 @@ function schedule() {
 onAuthStateChanged(auth, () => {
   cachedUid = '';
   cachedValue = false;
+  checking = null;
+  appState.isAdmin = false;
   schedule();
 });
 window.addEventListener('hashchange', schedule);
 window.addEventListener('sosoking:extensions-ready', schedule);
 new MutationObserver(schedule).observe(document.documentElement, { childList: true, subtree: true });
-setTimeout(schedule, 400);
+setTimeout(schedule, 120);
