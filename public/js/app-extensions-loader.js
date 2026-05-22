@@ -4,6 +4,7 @@
 // 각 모듈은 독립 실행형으로 만들어져 있으므로 실패해도 앱 전체 부팅을 막지 않습니다.
 
 const EXTENSION_MODULES = [
+  './layout-id-repair.js',
   './game-guest-access.js',
   './six-game-guard.js',
   './admin-visibility-guard.js',
