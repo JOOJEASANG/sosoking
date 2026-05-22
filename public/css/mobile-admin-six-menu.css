@@ -1,0 +1,58 @@
+@media (max-width: 1023px) {
+  body:has(.admin-layout) .admin-nav {
+    display: grid !important;
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+    gap: 0 !important;
+    width: 100% !important;
+    max-width: 560px !important;
+    height: 66px !important;
+    margin: 0 auto !important;
+    padding: 6px 6px 8px !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  body:has(.admin-layout) .admin-menu-item,
+  body:has(.admin-layout) .admin-menu-item[data-admin-tab],
+  body:has(.admin-layout) .admin-menu-item[data-tab],
+  body:has(.admin-layout) .admin-menu-item--home-shortcut {
+    display: flex !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: 52px !important;
+    min-height: 52px !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 2px !important;
+    padding: 5px 1px !important;
+    border: 0 !important;
+    border-radius: 12px !important;
+    background: transparent !important;
+    color: var(--color-text-muted) !important;
+    font-size: 9px !important;
+    font-weight: 900 !important;
+    line-height: 1.05 !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+  }
+
+  body:has(.admin-layout) .admin-menu-item.active {
+    background: var(--color-primary-bg) !important;
+    color: var(--color-primary) !important;
+  }
+
+  body:has(.admin-layout) .admin-menu-item__icon {
+    font-size: 17px !important;
+    line-height: 1 !important;
+  }
+
+  body:has(.admin-layout) .admin-menu-item__label {
+    display: block !important;
+    width: 100% !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+}
