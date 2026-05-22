@@ -1,4 +1,4 @@
-import { MULTI_PRESETS, WRITER_PRESET_KEYS, BODY_LABELS, BODY_REQUIRED_PRESETS } from './presets.js';
+import { MULTI_PRESETS, WRITER_PRESET_KEYS, BODY_LABELS, BODY_REQUIRED_PRESETS, getAcrosticLabel } from './presets.js';
 
 function esc(value) {
   return String(value || '').replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
@@ -95,10 +95,11 @@ function renderSelectedModule(activeKey, preset) {
   }
 
   if (activeKey === 'acrostic') {
-    return moduleCard('acrostic', '✍️', '삼행시', '제시어를 입력하면 다른 사용자가 글자별로 한 줄씩 작성할 수 있습니다.', `
+    return moduleCard('acrostic', '✍️', '이행시·삼행시·사행시·오행시', '제시어 글자 수를 자동 인식해 참여 입력칸이 바뀝니다.', `
       <div class="form-group">
         <label class="form-label">제시어 <span class="required">*</span></label>
-        <input id="mw-acrostic-keyword" class="form-input" maxlength="8" placeholder="${esc(preset.acrosticPlaceholder)}">
+        <input id="mw-acrostic-keyword" class="form-input" maxlength="5" placeholder="${esc(preset.acrosticPlaceholder)}">
+        <div class="form-hint" id="mw-acrostic-kind-hint">2~5글자까지 입력 가능해요. 입력한 글자 수에 따라 ${getAcrosticLabel('소소킹')}처럼 자동 변환됩니다.</div>
       </div>`);
   }
 
