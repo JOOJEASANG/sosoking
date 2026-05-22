@@ -12,6 +12,11 @@ function htmlToPlainText(html) {
   return (tmp.textContent || '').replace(/\n{4,}/g, '\n\n\n').trim();
 }
 
+function acrosticLabel(keyword = '') {
+  const count = [...String(keyword || '').trim()].length;
+  return ({ 2: '이행시', 3: '삼행시', 4: '사행시', 5: '오행시' })[count] || `${count}행시`;
+}
+
 export function getBodyText() {
   const desc = document.getElementById('mw-desc');
   return desc?.dataset.plainText || htmlToPlainText(desc?.value || '') || desc?.value.trim() || '';
@@ -177,8 +182,9 @@ export function collectMultiModules() {
 
   if (enabled('acrostic')) {
     const keyword = document.getElementById('mw-acrostic-keyword')?.value.trim() || '';
-    if ([...keyword].length < 2) throw new Error('삼행시 제시어는 2글자 이상 입력해주세요.');
-    modules.acrostic = { enabled: true, keyword };
+    const keywordLength = [...keyword].length;
+    if (keywordLength < 2 || keywordLength > 5) throw new Error('행시 제시어는 2~5글자로 입력해주세요.');
+    modules.acrostic = { enabled: true, keyword, lineCount: keywordLength, kindLabel: acrosticLabel(keyword) };
   }
 
   if (enabled('relay')) {
