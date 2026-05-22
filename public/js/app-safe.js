@@ -130,7 +130,7 @@ async function loadUserMeta(uid) {
   appState.isAdmin = await detectAdmin(uid, data);
 
   try {
-    const notifQuery = query(collection(db, 'notifications'), where('userId', '==', uid), where('read', '==', false), limit(100));
+    const notifQuery = query(collection(db, 'notifications'), where('uid', '==', uid), where('read', '==', false), limit(100));
     const notifSnap = await getDocs(notifQuery);
     appState.unreadNotifications = notifSnap.size;
   } catch (error) {
