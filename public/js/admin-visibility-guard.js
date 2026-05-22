@@ -3,7 +3,6 @@ import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase
 import { appState } from './state.js';
 import { navigate } from './router.js';
 
-const OWNER_EMAILS = new Set(['joojeasang@gmail.com']);
 let cachedUid = '';
 let cachedValue = false;
 let checking = null;
@@ -15,16 +14,15 @@ async function verifyAdmin() {
   if (checking) return checking;
 
   checking = (async () => {
-    const email = String(user.email || '').toLowerCase();
-    let allowed = OWNER_EMAILS.has(email);
+    let allowed = false;
 
     try {
       const token = await user.getIdTokenResult?.(false);
-      allowed = allowed || !!token?.claims?.admin || !!token?.claims?.owner;
+      allowed = !!token?.claims?.admin || !!token?.claims?.owner;
     } catch {}
 
-    // 일반 회원 문서(users/{uid})의 isAdmin/admin/role 값은 관리자 판정에 사용하지 않습니다.
-    // 관리자 권한은 owner 이메일, 커스텀 클레임, admins/{uid} 문서 중 하나로만 인정합니다.
+    // 일반 회원 문서(users/{uid})의 isAdmin/admin/role 값과 이메일 주소는 관리자 판정에 사용하지 않습니다.
+    // 관리자 권한은 커스텀 클레임 또는 admins/{uid} 문서로만 인정합니다.
     try {
       const adminSnap = await getDoc(doc(db, 'admins', user.uid));
       allowed = allowed || adminSnap.exists();
