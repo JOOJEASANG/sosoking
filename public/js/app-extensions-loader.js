@@ -27,7 +27,6 @@ const EXTENSION_MODULES = [
   './unlimited-image-uploader.js',
   './write-template-suggestions.js',
   './feedback-actions.js',
-  './admin-feedback-actions.js',
   './admin-ai-minimal-actions.js',
   './admin-member-list-fix.js',
   './admin-data-manager.js',
