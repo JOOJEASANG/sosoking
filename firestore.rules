@@ -4,9 +4,16 @@ service cloud.firestore {
 
     function signedIn()  { return request.auth != null; }
     function isAuthor(uid) { return signedIn() && request.auth.uid == uid; }
+    function isOwnerEmail() {
+      return signedIn()
+        && request.auth.token.email != null
+        && request.auth.token.email.lower() == 'joojeasang@gmail.com';
+    }
     function isAdmin()   {
-      return signedIn() &&
-        exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+      return signedIn() && (
+        isOwnerEmail() ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
     }
     function isGameHost(roomId) {
       return signedIn()
@@ -116,7 +123,7 @@ service cloud.firestore {
     }
 
     match /admins/{uid} {
-      allow read:  if signedIn() && request.auth.uid == uid;
+      allow read:  if signedIn() && (request.auth.uid == uid || isOwnerEmail());
       allow write: if false;
     }
 
@@ -283,7 +290,7 @@ service cloud.firestore {
     match /feedback/{feedbackId} {
       allow read: if isAdmin();
       allow create: if signedIn()
-        && request.resource.data.authorId == request.auth.uid
+        && request.resource.data.reporterId == request.auth.uid
         && validText(request.resource.data.message, 1000);
       allow update, delete: if isAdmin();
     }
