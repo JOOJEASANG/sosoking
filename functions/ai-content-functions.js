@@ -61,6 +61,10 @@ function normalizePreset(value) {
   return PRESET_META[key] ? key : 'general';
 }
 
+function feedTypeFromPreset(preset) {
+  return ['vote', 'naming', 'acrostic', 'relay', 'quiz'].includes(preset) ? preset : 'general';
+}
+
 function toTags(value, fallback = []) {
   const arr = Array.isArray(value) ? value : [];
   return [...arr, ...fallback]
@@ -195,6 +199,7 @@ function baseDoc({ preset, content, date, source }) {
     type: 'multi',
     cat: 'multi',
     subtype: preset,
+    feedType: feedTypeFromPreset(preset),
     typeLabel: meta.label,
     title: clean(content.title || `${meta.label} AI 글`, 100),
     desc: cleanMultiline(content.desc || '', 1200),
