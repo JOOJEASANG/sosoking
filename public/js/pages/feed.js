@@ -14,7 +14,7 @@ import {
 } from '../feed/render.js';
 
 const PAGE_SIZE    = 20;
-const FILTER_LIMIT = 120; // 필터/검색/정렬 시 서버 로드 최대치
+const FILTER_LIMIT = 120; // 검색/호환 필터 시 서버 로드 최대치
 
 let currentType   = '';
 let currentSearch = '';
@@ -130,7 +130,7 @@ function updateUrlState() {
   if (window.location.hash !== next) history.replaceState(null, '', next);
 }
 
-function getTypeWhereClause(type) {
+function getLegacyTypeWhereClause(type) {
   const map = {
     vote:     ['vote', 'ox', 'crazy_court', 'multi'],
     naming:   ['naming', 'multi'],
@@ -195,17 +195,34 @@ async function loadCursorPage(page) {
 }
 
 async function loadFilteredPosts() {
-  const constraints = [orderBy('createdAt', 'desc'), limit(FILTER_LIMIT)];
+  let posts = [];
+
   if (currentType && !currentSearch) {
-    const typeWhere = getTypeWhereClause(currentType);
-    if (typeWhere) constraints.unshift(typeWhere);
+    try {
+      const snap = await getDocs(query(
+        collection(db, 'feeds'),
+        where('feedType', '==', currentType),
+        orderBy('createdAt', 'desc'),
+        limit(FILTER_LIMIT),
+      ));
+      posts = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.hidden);
+    } catch (error) {
+      console.warn('[feed] feedType query failed, fallback legacy query', error);
+      const constraints = [orderBy('createdAt', 'desc'), limit(FILTER_LIMIT)];
+      const typeWhere = getLegacyTypeWhereClause(currentType);
+      if (typeWhere) constraints.unshift(typeWhere);
+      const snap = await getDocs(query(collection(db, 'feeds'), ...constraints));
+      posts = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.hidden);
+      posts = posts.filter(p => postMatchesType(p, currentType));
+    }
+  } else {
+    const constraints = [orderBy('createdAt', 'desc'), limit(FILTER_LIMIT)];
+    const snap = await getDocs(query(collection(db, 'feeds'), ...constraints));
+    posts = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.hidden);
   }
 
-  const snap = await getDocs(query(collection(db, 'feeds'), ...constraints));
-  let posts = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.hidden);
-
   if (currentSearch) posts = posts.filter(p => postMatchesSearch(p, currentSearch));
-  if (currentType)   posts = posts.filter(p => postMatchesType(p, currentType));
+  if (currentType && currentSearch) posts = posts.filter(p => postMatchesType(p, currentType));
 
   cachedPosts = sortFeedPosts(posts, currentSort);
 }
