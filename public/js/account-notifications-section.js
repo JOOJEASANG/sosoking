@@ -1,8 +1,11 @@
 import { auth, db } from './firebase.js';
+import { appState } from './state.js';
 import { collection, doc, getDocs, limit, orderBy, query, updateDoc, where, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 function esc(value) {
-  return String(value || '').replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
+  return String(value || '').replace(/[&<>"']/g, ch => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[ch]));
 }
 
 function isAccountPage() {
@@ -13,43 +16,58 @@ function activeTab() {
   return new URLSearchParams((window.location.hash.split('?')[1] || '')).get('tab') || 'posts';
 }
 
-function timeText(ms) {
-  const n = Number(ms || 0);
+function toMillis(value) {
+  if (!value) return 0;
+  if (typeof value === 'number') return value;
+  const date = value?.toDate?.() || new Date(value);
+  return date instanceof Date && !Number.isNaN(date.getTime()) ? date.getTime() : 0;
+}
+
+function timeText(value) {
+  const n = toMillis(value);
   if (!n) return '';
   const diff = Date.now() - n;
-  const min = Math.floor(diff / 60000);
-  if (min < 1) return '방금';
-  if (min < 60) return `${min}분 전`;
-  const hour = Math.floor(min / 60);
-  if (hour < 24) return `${hour}시간 전`;
-  const day = Math.floor(hour / 24);
-  if (day < 7) return `${day}일 전`;
+  if (diff < 60_000) return '방금 전';
+  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}분 전`;
+  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}시간 전`;
+  if (diff < 604_800_000) return `${Math.floor(diff / 86_400_000)}일 전`;
   return new Date(n).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
 }
 
 function iconFor(type) {
   return {
     multi_reply: '💬',
-    multi_reaction: '👍',
+    multi_reaction: '❤️',
     best_reward: '🏆',
     quiz_correct: '🧠',
   }[type] || '🔔';
 }
 
 async function loadNotifications(uid) {
-  const q = query(
-    collection(db, 'notifications'),
-    where('uid', '==', uid),
-    orderBy('createdAtMs', 'desc'),
-    limit(50),
-  );
-  const snap = await getDocs(q);
-  return snap.docs.map(d => ({ id: d.id, ref: d.ref, ...d.data() }));
+  const base = collection(db, 'notifications');
+  const queries = [
+    query(base, where('uid', '==', uid), orderBy('createdAtMs', 'desc'), limit(50)),
+    query(base, where('uid', '==', uid), orderBy('createdAt', 'desc'), limit(50)),
+  ];
+
+  let lastError = null;
+  for (const q of queries) {
+    try {
+      const snap = await getDocs(q);
+      return snap.docs
+        .map(d => ({ id: d.id, ref: d.ref, ...d.data() }))
+        .sort((a, b) => toMillis(b.createdAtMs || b.createdAt) - toMillis(a.createdAtMs || a.createdAt));
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError || new Error('알림을 불러오지 못했어요');
 }
 
 function updateAccountUnreadBadge(notifications) {
   const unread = notifications.filter(n => !n.read).length;
-  const statNums = document.querySelectorAll('.account-stat__num');
+  appState.unreadNotifications = unread;
+
   const statLabels = [...document.querySelectorAll('.account-stat__label')];
   const notifLabel = statLabels.find(label => label.textContent.trim() === '새 알림');
   const stat = notifLabel?.closest('.account-stat');
@@ -67,13 +85,15 @@ function updateAccountUnreadBadge(notifications) {
 function renderItem(notification) {
   const unreadClass = notification.read ? '' : 'is-unread';
   const points = Number(notification.points || 0) > 0 ? `<span class="account-notification-item__points">+${Number(notification.points)}P</span>` : '';
+  const title = notification.title || (notification.type === 'multi_reply' ? '내 참여글에 답글이 달렸어요' : notification.type === 'multi_reaction' ? '내 참여글에 반응이 달렸어요' : '새 알림');
+  const body = notification.body || `${notification.actorName || '익명'}님의 활동이 있어요.`;
   return `
     <button type="button" class="account-notification-item ${unreadClass}" data-account-notification-id="${esc(notification.id)}" data-post-id="${esc(notification.postId || '')}">
       <span class="account-notification-item__icon">${iconFor(notification.type)}</span>
       <span class="account-notification-item__body">
-        <span class="account-notification-item__title">${esc(notification.title || '새 알림')}</span>
-        <span class="account-notification-item__text">${esc(notification.body || '')}</span>
-        <span class="account-notification-item__meta">${timeText(notification.createdAtMs)}${points}</span>
+        <span class="account-notification-item__title">${esc(title)}</span>
+        <span class="account-notification-item__text">${esc(body)}</span>
+        <span class="account-notification-item__meta">${timeText(notification.createdAtMs || notification.createdAt)}${points}</span>
       </span>
     </button>`;
 }
@@ -100,6 +120,7 @@ async function renderAccountNotifications() {
   content.dataset.accountNotificationsRendering = '1';
 
   try {
+    content.innerHTML = `<div class="loading-center"><div class="spinner"></div></div>`;
     const notifications = await loadNotifications(uid);
     updateAccountUnreadBadge(notifications);
     const unread = notifications.filter(n => !n.read).length;
@@ -129,13 +150,12 @@ async function renderAccountNotifications() {
 
     document.getElementById('account-notifications-read-all')?.addEventListener('click', async () => {
       await markAllRead(notifications).catch(console.warn);
-      renderAccountNotifications.force = Date.now();
       content.dataset.accountNotificationsRendering = '';
       await renderAccountNotifications();
     });
   } catch (error) {
     console.warn('[account-notifications] render failed', error);
-    content.innerHTML = `<div class="empty-state"><div class="empty-state__icon">🔔</div><div class="empty-state__title">알림을 불러오지 못했어요</div></div>`;
+    content.innerHTML = `<div class="empty-state"><div class="empty-state__icon">⚠️</div><div class="empty-state__title">알림을 불러오지 못했어요</div></div>`;
   } finally {
     content.dataset.accountNotificationsRendering = '';
   }
