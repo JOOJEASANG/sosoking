@@ -30,7 +30,7 @@ service cloud.firestore {
     }
     function validFeedCreateShape() {
       return request.resource.data.keys().hasOnly([
-          'type', 'cat', 'subtype', 'typeLabel',
+          'type', 'cat', 'subtype', 'feedType', 'typeLabel',
           'title', 'desc', 'body', 'subtitle', 'tags', 'images', 'modules',
           'anonymous', 'anonymousMode', 'authorId', 'authorName', 'authorPhoto', 'authorEmail',
           'reactions', 'commentCount', 'acrosticCount', 'viewCount', 'pointsScore',
