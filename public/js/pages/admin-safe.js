@@ -144,7 +144,7 @@ async function renderDashboard(el) {
 }
 
 async function renderPosts(el) {
-  const deleteFeedPostDeep = httpsCallable(functions, 'deleteFeedPostDeep');
+  const deleteOwnPost = httpsCallable(functions, 'deleteOwnPost');
   const snap = await getDocs(query(collection(db, 'feeds'), orderBy('createdAt', 'desc'), limit(80))).catch(() => null);
   const posts = snap?.docs.map(d => ({ id: d.id, ...d.data() })) || [];
   el.innerHTML = `<div style="display:flex;flex-direction:column;gap:16px"><div class="admin-page-head"><div><h2 class="admin-section-title">📝 게시물 관리</h2><div class="form-hint">숨김은 복구 가능, 삭제는 되돌릴 수 없습니다.</div></div><button class="btn btn--ghost btn--sm" id="admin-post-refresh">새로고침</button></div><div class="card" style="overflow:auto"><table class="admin-table"><thead><tr><th>게시물</th><th>유형</th><th>작성자</th><th>상태</th><th>날짜</th><th>작업</th></tr></thead><tbody>${posts.map(p => `<tr data-row="${p.id}"><td><a href="#/detail/${p.id}" class="admin-table__link">${escHtml(p.title || '(제목없음)')}</a><div class="admin-table__sub">${escHtml(p.id)}</div></td><td>${escHtml(typeLabel(p))}</td><td>${escHtml(p.authorName || '익명')}</td><td>${p.hidden ? '<span class="badge badge--warning">숨김</span>' : '<span class="badge">공개</span>'}</td><td>${escHtml(safeDate(p.createdAt))}</td><td class="admin-row-actions"><button class="btn btn--ghost btn--sm" data-edit-post="${p.id}">수정</button><button class="btn btn--ghost btn--sm" data-hide="${p.id}" data-hidden="${p.hidden ? '1' : '0'}">${p.hidden ? '공개' : '숨김'}</button><button class="btn btn--danger btn--sm" data-delete="${p.id}" data-title="${escHtml(p.title || '(제목없음)')}">삭제</button></td></tr>`).join('') || '<tr><td colspan="6" class="admin-table__empty">게시물이 없어요</td></tr>'}</tbody></table></div></div>`;
@@ -159,8 +159,10 @@ async function renderPosts(el) {
   el.querySelectorAll('[data-delete]').forEach(btn => btn.addEventListener('click', async () => {
     if (!confirmDelete(btn.dataset.title, btn.dataset.delete)) return;
     btn.disabled = true;
-    const result = await deleteFeedPostDeep({ postId: btn.dataset.delete });
-    toast.success(`삭제했어요${result.data?.deletedChildren ? ` · 하위 ${result.data.deletedChildren}건 정리` : ''}`);
+    const result = await deleteOwnPost({ postId: btn.dataset.delete });
+    const counts = result.data?.counts || {};
+    const childCount = Object.values(counts).reduce((sum, value) => sum + Number(value || 0), 0);
+    toast.success(`삭제했어요${childCount ? ` · 하위 ${childCount}건 정리` : ''}`);
     renderPosts(el);
   }));
 }
@@ -226,7 +228,7 @@ async function renderAi(el) {
       features = data.features || {};
     }
   } catch {}
-  el.innerHTML = `<div style="display:flex;flex-direction:column;gap:16px;max-width:760px"><h2 class="admin-section-title">🤖 AI 관리</h2><div class="admin-operation-note"><b>현재 정책</b><span>AI 미션 자동생성은 제거했고, 최소 AI 사용 여부만 관리합니다.</span></div><div class="card"><div class="card__body"><label style="display:flex;gap:10px;align-items:center;font-weight:900"><input type="checkbox" id="ai-enabled" ${enabled ? 'checked' : ''}> AI 기능 사용</label><div class="form-hint" style="margin-top:10px">API 키는 Firestore에 저장하지 않고 Firebase Secret Manager의 GEMINI_API_KEY를 사용합니다.</div><button class="btn btn--primary" id="btn-ai-save" style="margin-top:14px">설정 저장</button></div></div></div>`;
+  el.innerHTML = `<div style="display:flex;flex-direction:column;gap:16px;max-width:760px"><h2 class="admin-section-title">🤖 AI 관리</h2><div class="admin-operation-note"><b>현재 정책</b><span>AI 미션 자동생성은 제거했고, 최소 AI 사용 여부만 관리합니다.</span></div><div class="card"><div class="card__body"><label style="display:flex;gap:10px;align-items:center;font-weight:900"><input type="checkbox" id="ai-enabled" ${enabled ? 'checked' : ''}> AI 기능 사용</label><div class="form-hint" style="margin-top:10px">AI 게시글 생성은 서버 환경 키 ANTHROPIC_API_KEY를 사용합니다. API 키는 Firestore에 저장하지 않습니다.</div><button class="btn btn--primary" id="btn-ai-save" style="margin-top:14px">설정 저장</button></div></div></div>`;
   document.getElementById('btn-ai-save')?.addEventListener('click', async () => {
     await saveAiConfig({ enabled: document.getElementById('ai-enabled')?.checked !== false, features });
     toast.success('AI 설정을 저장했어요');
