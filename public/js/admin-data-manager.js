@@ -24,7 +24,10 @@ function installDataTab() {
   btn.dataset.adminDataTab = '1';
   btn.innerHTML = '<span class="admin-menu-item__icon">🗄️</span><span class="admin-menu-item__label">데이터</span>';
   btn.addEventListener('click', renderDataManager);
-  nav.appendChild(btn);
+
+  const writeShortcut = nav.querySelector('[data-admin-write-shortcut]');
+  if (writeShortcut) nav.insertBefore(btn, writeShortcut);
+  else nav.appendChild(btn);
 }
 
 function setDataActive() {
