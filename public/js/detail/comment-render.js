@@ -1,8 +1,7 @@
 import { auth } from '../firebase.js';
-import { escHtml } from '../utils/helpers.js';
+import { escHtml, formatTime as timeText } from '../utils/helpers.js';
 import { COMMENT_REACTIONS } from './constants.js';
 import { markBestComment } from './data.js';
-import { timeText } from './utils.js';
 
 export function renderComment(c) {
   const timeStr = timeText(c.createdAt?.toDate?.() || c.createdAt);
