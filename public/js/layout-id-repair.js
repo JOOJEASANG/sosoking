@@ -47,6 +47,3 @@ function schedule() {
 window.addEventListener('hashchange', schedule);
 window.addEventListener('themechange', schedule);
 window.addEventListener('sosoking:extensions-ready', schedule);
-new MutationObserver(schedule).observe(document.documentElement, { childList: true, subtree: true });
-setTimeout(rerenderLayoutParts, 50);
-setTimeout(rerenderLayoutParts, 300);

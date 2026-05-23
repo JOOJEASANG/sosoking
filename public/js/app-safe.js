@@ -176,11 +176,11 @@ function renderFrame() {
 
   app.innerHTML = `
     <div class="app-shell">
-      <aside id="sidebar-root"></aside>
-      <div class="app-main">
-        <header id="header-root"></header>
-        <main id="page-content"></main>
-        <nav id="bottom-nav-root"></nav>
+      <aside id="site-sidebar" class="site-sidebar"></aside>
+      <div class="app-main site-main">
+        <header id="site-header" class="site-header"></header>
+        <main id="page-content" class="page-container"></main>
+        <nav id="bottom-nav" class="bottom-nav"></nav>
       </div>
     </div>`;
   renderSidebar();
