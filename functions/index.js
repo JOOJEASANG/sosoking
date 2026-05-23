@@ -347,3 +347,5 @@ exports.scheduledWeeklyReport = onSchedule(
     }
   }
 );
+
+require('./ai-content-now').register({ exports, onCall, db, FieldValue, GoogleGenerativeAI, geminiKey, getAiKey, logAiUsage });
