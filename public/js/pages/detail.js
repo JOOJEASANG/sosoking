@@ -61,7 +61,7 @@ function renderDetailPage(el, post, comments, acrostics, isScrapped = false) {
   const timeStr = formatTime(post.createdAt?.toDate?.() || post.createdAt);
 
   el.innerHTML = `
-    <div style="max-width:720px;margin:0 auto">
+    <div data-detail-root data-post-id="${escHtml(post.id)}" style="max-width:720px;margin:0 auto">
       <button class="btn btn--ghost btn--sm" onclick="history.back()" style="margin-bottom:16px">← 뒤로</button>
       <div class="card">
         <div class="detail-header">
