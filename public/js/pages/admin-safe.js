@@ -79,12 +79,14 @@ function renderAdminShell(el) {
 
 export async function renderAdmin() {
   const el = document.getElementById('page-content');
-  const user = appState.user || auth.currentUser;
-  if (!user && appState.loading) {
+
+  // Firebase has a cached session but appState hasn't been populated yet — wait for onAuthStateChanged
+  if (auth.currentUser && !appState.user) {
     el.innerHTML = `<div class="loading-center"><div class="spinner spinner--lg"></div></div>`;
     return;
   }
-  if (!user) { navigate('/login'); return; }
+
+  if (!appState.user) { navigate('/login'); return; }
   if (!isAdminUser()) {
     el.innerHTML = `<div class="empty-state"><div class="empty-state__icon">🔒</div><div class="empty-state__title">관리자 전용 페이지예요</div></div>`;
     return;

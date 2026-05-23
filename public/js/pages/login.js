@@ -21,14 +21,6 @@ async function isSignedInUserAdmin(user = auth.currentUser) {
   }
 
   try {
-    const userSnap = await getDoc(doc(db, 'users', user.uid));
-    const data = userSnap.exists() ? userSnap.data() : {};
-    if (data.isAdmin || data.admin || data.role === 'admin' || data.role === 'owner') return true;
-  } catch (error) {
-    console.warn('[login] admin user doc check failed', error);
-  }
-
-  try {
     const adminSnap = await getDoc(doc(db, 'admins', user.uid));
     return adminSnap.exists();
   } catch (error) {
