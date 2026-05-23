@@ -12,6 +12,10 @@ service cloud.firestore {
       return signedIn()
         && get(/databases/$(database)/documents/game_rooms/$(roomId)).data.hostId == request.auth.uid;
     }
+    function isGameRoomPlayer(roomId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/game_rooms/$(roomId)/players/$(request.auth.uid));
+    }
 
     function validText(val, maxLen) {
       return val is string && val.size() <= maxLen;
@@ -83,7 +87,12 @@ service cloud.firestore {
       let changed = request.resource.data.diff(resource.data).affectedKeys();
       return isAuthor(authorId)
         && request.resource.data.authorId == resource.data.authorId
-        && !changed.hasAny(['authorId', 'authorName', 'authorPhoto', 'authorEmail', 'reactions', 'reactedWith', 'commentCount', 'acrosticCount', 'viewCount', 'votedBy', 'pointsScore']);
+        && !changed.hasAny([
+          'authorId', 'authorName', 'authorPhoto', 'authorEmail',
+          'reactions', 'reactedWith', 'commentCount', 'acrosticCount',
+          'viewCount', 'votedBy', 'pointsScore',
+          'options', 'modules'
+        ]);
     }
 
     function isMultiItemReactionOrReplyCountUpdate() {
@@ -110,7 +119,7 @@ service cloud.firestore {
         && resource.data.uid == request.auth.uid
         && request.resource.data.uid == resource.data.uid
         && changed.hasOnly(['read', 'readAt', 'readAtMs'])
-        && request.resource.data.read is bool
+        && request.resource.data.read == true
         && (!('readAtMs' in request.resource.data) || request.resource.data.readAtMs is number)
         && (!('readAt' in request.resource.data) || request.resource.data.readAt is timestamp);
     }
@@ -303,12 +312,9 @@ service cloud.firestore {
 
       match /chats/{chatId} {
         allow read: if true;
-        allow create: if signedIn()
+        allow create: if (isGameRoomPlayer(roomId) || isGameHost(roomId))
           && validText(request.resource.data.get('text', ''), 500)
-          && (
-            request.resource.data.uid == request.auth.uid ||
-            request.resource.data.uid == 'system'
-          );
+          && request.resource.data.uid == request.auth.uid;
         allow update: if false;
         allow delete: if isAdmin() || isGameHost(roomId);
       }

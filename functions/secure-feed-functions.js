@@ -62,17 +62,28 @@ const checkQuizAnswer = onCall({ region: REGION, timeoutSeconds: 20 }, async (re
     correct = Number(secret.answerIdx) === idx;
   }
 
-  await db.doc(`feeds/${safePostId}/quiz_attempts/${userId}`).set({
-    userId,
-    authorName: request.auth.token && request.auth.token.name ? request.auth.token.name : '익명',
-    selected: storedSelected,
-    correct,
-    type: post.type,
-    createdAt: FieldValue.serverTimestamp(),
-    createdAtMs: Date.now(),
-  }, { merge: true });
+  const explanation = String(secret.explanation || '').slice(0, 500);
+  const attemptRef = db.doc(`feeds/${safePostId}/quiz_attempts/${userId}`);
+  let resultCorrect = correct;
 
-  return { ok: true, correct, explanation: String(secret.explanation || '').slice(0, 500) };
+  await db.runTransaction(async (tx) => {
+    const existingSnap = await tx.get(attemptRef);
+    if (existingSnap.exists) {
+      resultCorrect = existingSnap.data().correct;
+      return;
+    }
+    tx.set(attemptRef, {
+      userId,
+      authorName: request.auth?.token?.name ?? '익명',
+      selected: storedSelected,
+      correct,
+      type: post.type,
+      createdAt: FieldValue.serverTimestamp(),
+      createdAtMs: Date.now(),
+    });
+  });
+
+  return { ok: true, correct: resultCorrect, explanation };
 });
 
 const castFeedVote = onCall({ region: REGION, timeoutSeconds: 20 }, async (request) => {
