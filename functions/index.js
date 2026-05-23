@@ -1,4 +1,4 @@
-const { onCall } = require('firebase-functions/v2/https');
+const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { onDocumentCreated } = require('firebase-functions/v2/firestore');
 const { initializeApp, getApps } = require('firebase-admin/app');
@@ -54,19 +54,24 @@ async function generateMissionWithAi(apiKey) {
   return JSON.parse(raw);
 }
 
+const GEMINI_KEY_RE = /^AIza[0-9A-Za-z_-]{35}$/;
+
 // ── 관리자: AI 설정 저장 ──
 exports.saveAiConfig = onCall({ region: 'asia-northeast3', secrets: [geminiKey] }, async (request) => {
   const userId = request.auth?.uid;
-  if (!userId) throw new Error('인증 필요');
+  if (!userId) throw new HttpsError('unauthenticated', '인증 필요');
   const adminSnap = await db.doc(`admins/${userId}`).get();
-  if (!adminSnap.exists) throw new Error('관리자 권한 필요');
+  if (!adminSnap.exists) throw new HttpsError('permission-denied', '관리자 권한 필요');
   const { apiKey, enabled, features } = request.data;
+  if (apiKey !== undefined && (typeof apiKey !== 'string' || !GEMINI_KEY_RE.test(apiKey))) {
+    throw new HttpsError('invalid-argument', '유효하지 않은 Gemini API 키 형식입니다. (AIza로 시작하는 39자)');
+  }
   const update = {
     enabled: enabled !== false,
-    features: features || {},
+    features: typeof features === 'object' && features !== null ? features : {},
     updatedAt: FieldValue.serverTimestamp(),
   };
-  if (apiKey && apiKey.length > 10) update.apiKey = apiKey;
+  if (apiKey) update.apiKey = apiKey;
   await db.doc('config/ai').set(update, { merge: true });
   return { ok: true };
 });
@@ -74,11 +79,11 @@ exports.saveAiConfig = onCall({ region: 'asia-northeast3', secrets: [geminiKey] 
 // ── 관리자: 미션 즉시 생성 ──
 exports.adminTriggerMission = onCall({ region: 'asia-northeast3', secrets: [geminiKey], timeoutSeconds: 60 }, async (request) => {
   const userId = request.auth?.uid;
-  if (!userId) throw new Error('인증 필요');
+  if (!userId) throw new HttpsError('unauthenticated', '인증 필요');
   const adminSnap = await db.doc(`admins/${userId}`).get();
-  if (!adminSnap.exists) throw new Error('관리자 권한 필요');
+  if (!adminSnap.exists) throw new HttpsError('permission-denied', '관리자 권한 필요');
   const apiKey = await getAiKey();
-  if (!apiKey) throw new Error('AI API 키가 설정되지 않았어요');
+  if (!apiKey) throw new HttpsError('failed-precondition', 'AI API 키가 설정되지 않았어요');
   const existing = await db.collection('missions').where('active', '==', true).get();
   const batch = db.batch();
   existing.docs.forEach(d => batch.update(d.ref, { active: false }));
@@ -99,11 +104,11 @@ exports.adminTriggerMission = onCall({ region: 'asia-northeast3', secrets: [gemi
 // ── 관리자: 주간 보고서 즉시 생성 ──
 exports.adminTriggerReport = onCall({ region: 'asia-northeast3', secrets: [geminiKey], timeoutSeconds: 120, memory: '256MiB' }, async (request) => {
   const userId = request.auth?.uid;
-  if (!userId) throw new Error('인증 필요');
+  if (!userId) throw new HttpsError('unauthenticated', '인증 필요');
   const adminSnap = await db.doc(`admins/${userId}`).get();
-  if (!adminSnap.exists) throw new Error('관리자 권한 필요');
+  if (!adminSnap.exists) throw new HttpsError('permission-denied', '관리자 권한 필요');
   const apiKey = await getAiKey();
-  if (!apiKey) throw new Error('AI API 키가 설정되지 않았어요');
+  if (!apiKey) throw new HttpsError('failed-precondition', 'AI API 키가 설정되지 않았어요');
   const weekAgo = new Date();
   weekAgo.setDate(weekAgo.getDate() - 7);
   const postsSnap = await db.collection('feeds').where('createdAt', '>=', weekAgo).orderBy('createdAt', 'desc').limit(100).get();
@@ -274,10 +279,10 @@ exports.scheduledDailyMission = onSchedule(
 // ── AI 폼 데이터 생성 (일일 질문 카드 자동 입력) ──
 exports.generateFormContent = onCall({ region: 'asia-northeast3', secrets: [geminiKey], timeoutSeconds: 30 }, async (request) => {
   const { type, question } = request.data || {};
-  if (!type || !question) throw new Error('type과 question이 필요해요');
+  if (!type || !question) throw new HttpsError('invalid-argument', 'type과 question이 필요해요');
 
   const apiKey = await getAiKey();
-  if (!apiKey) throw new Error('AI API 키가 없어요');
+  if (!apiKey) throw new HttpsError('failed-precondition', 'AI API 키가 없어요');
 
   const promptMap = {
     vote: `소소킹 커뮤니티에 올릴 투표(골라킹) 게시글을 만들어줘.\n주제 힌트: "${question}"\n재미있고 공감 가는 투표여야 해. 반드시 JSON만 출력:\n{"title":"제목(50자이내)","desc":"투표 상황 설명(70자이내)","options":["선택지1","선택지2","선택지3","선택지4"]}`,
@@ -289,7 +294,7 @@ exports.generateFormContent = onCall({ region: 'asia-northeast3', secrets: [gemi
   };
 
   const prompt = promptMap[type];
-  if (!prompt) throw new Error(`지원하지 않는 유형: ${type}`);
+  if (!prompt) throw new HttpsError('invalid-argument', `지원하지 않는 유형: ${type}`);
 
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({
