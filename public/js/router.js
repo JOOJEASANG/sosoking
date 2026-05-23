@@ -28,7 +28,10 @@ function cleanupStuckOverlays() {
   document.getElementById('desktop-game-layer')?.remove();
   document.getElementById('game-info-layer')?.remove();
   document.getElementById('share-sheet')?.remove();
+  document.getElementById('admin-password-modal')?.remove();
+  document.querySelectorAll('.gallery-overlay').forEach(el => el.remove());
   document.body.classList.remove('desktop-game-layer-open');
+  document.body.style.overflow = '';
 }
 
 async function handleRoute() {
