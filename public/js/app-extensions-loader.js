@@ -14,7 +14,6 @@ const EXTENSION_MODULES = [
   './account-notifications-uid-fix.js',
   './pc-sidebar-spacing.js',
   './game-ui.js',
-  './weekly-fill-challenge.js',
   './detail-actions-bootstrap.js',
   './post-owner-actions.js',
   './participant-replies.js',
