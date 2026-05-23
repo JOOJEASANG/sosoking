@@ -297,6 +297,23 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    match /follows/{followId} {
+      allow read: if signedIn()
+        && (resource.data.followerId == request.auth.uid
+          || resource.data.followedId == request.auth.uid
+          || isAdmin());
+      allow create: if signedIn()
+        && request.resource.data.followerId == request.auth.uid
+        && request.resource.data.followedId is string
+        && request.resource.data.followedId != request.auth.uid
+        && request.resource.data.keys().hasOnly([
+          'followerId', 'followerName', 'followedId', 'followedName', 'createdAt'
+        ]);
+      allow delete: if signedIn()
+        && (resource.data.followerId == request.auth.uid || isAdmin());
+      allow update: if false;
+    }
+
     match /feedback/{feedbackId} {
       allow read: if isAdmin();
       allow create: if signedIn()
@@ -308,7 +325,7 @@ service cloud.firestore {
     match /game_rooms/{roomId} {
       allow read: if true;
       allow create: if signedIn();
-      allow update: if signedIn();
+      allow update: if isAdmin() || isGameHost(roomId);
       allow delete: if isAdmin();
 
       match /players/{playerId} {
