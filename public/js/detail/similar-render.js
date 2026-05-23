@@ -16,15 +16,44 @@ export function renderSimilarPosts(similar) {
     </div>`;
 }
 
-export async function appendSimilarPosts(post, rootSelector = '[style*="max-width:720px"]') {
+function getSimilarKey(post) {
+  return String(post?.id || '').trim();
+}
+
+function findSimilarRoot(rootSelector) {
+  return document.querySelector(rootSelector)
+    || document.querySelector('[data-detail-root]')
+    || document.querySelector('[style*="max-width:720px"]');
+}
+
+export async function appendSimilarPosts(post, rootSelector = '[data-detail-root]') {
+  const key = getSimilarKey(post);
+  if (!key) return;
+
+  const root = findSimilarRoot(rootSelector);
+  if (!root) return;
+
+  if (root.dataset.similarPostsPending === key || root.dataset.similarPostsRendered === key) return;
+  root.dataset.similarPostsPending = key;
+
   try {
     const similar = await fetchSimilarPosts(post.id, post.type);
+    if (root.dataset.similarPostsPending !== key) return;
+
+    root.querySelectorAll('.similar-posts').forEach(area => area.remove());
+    root.dataset.similarPostsRendered = '';
+
     if (!similar.length) return;
+
     const area = document.createElement('div');
     area.className = 'similar-posts';
+    area.dataset.postId = key;
     area.innerHTML = renderSimilarPosts(similar);
-    document.querySelector(rootSelector)?.appendChild(area);
+    root.appendChild(area);
+    root.dataset.similarPostsRendered = key;
   } catch {
     // Similar posts are optional.
+  } finally {
+    if (root.dataset.similarPostsPending === key) delete root.dataset.similarPostsPending;
   }
 }
