@@ -65,7 +65,7 @@
 .image-modal-overlay,
 .gallery-modal-overlay,
 .lightbox-overlay {
-  z-index: 9999;
+  z-index: var(--z-gallery);
 }
 
 .image-modal-overlay img,

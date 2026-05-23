@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>소소킹 라이어게임 테스트</title>
+  <meta name="robots" content="noindex, nofollow">
   <meta name="theme-color" content="#ff6b4a">
   <style>
     :root {
@@ -85,13 +86,39 @@
     .toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom)); transform: translateX(-50%) translateY(20px); background: #111827; color: #fff; padding: 11px 14px; border-radius: 999px; font-size: 13px; font-weight: 800; opacity: 0; pointer-events: none; transition: .22s; z-index: 10; width: max-content; max-width: calc(100vw - 32px); text-align: center; }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
     .footer-note { text-align: center; color: var(--muted); font-size: 11px; line-height: 1.45; margin-top: 12px; }
+    @media (max-width: 520px) {
+      .secret-word { font-size: 30px; }
+      .player-name { font-size: 27px; }
+    }
     @media (max-width: 380px) {
       body { padding-left: 10px; padding-right: 10px; }
       h1 { font-size: 25px; }
-      .secret-word { font-size: 29px; }
-      .player-name { font-size: 26px; }
+      .secret-word { font-size: 27px; }
+      .player-name { font-size: 24px; }
       .btn { min-height: 46px; }
     }
+    .btn:disabled { opacity: .55; cursor: not-allowed; pointer-events: none; }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1a1c2b; --card: #22263a; --text: #eef0ff; --muted: #8b91b8;
+        --line: rgba(238,240,255,.1); --shadow: 0 16px 40px rgba(0,0,0,.4);
+      }
+      input, select { background: #2a2e44; border-color: rgba(238,240,255,.15); color: var(--text); }
+      .order-item, .vote-item, .result-item { background: #2a2e44; }
+      .btn.secondary { background: #2a2e44; color: var(--text); border-color: rgba(238,240,255,.15); }
+      .remove { background: rgba(239,68,68,.18); }
+    }
+    [data-theme="dark"] {
+      --bg: #1a1c2b; --card: #22263a; --text: #eef0ff; --muted: #8b91b8;
+      --line: rgba(238,240,255,.1); --shadow: 0 16px 40px rgba(0,0,0,.4);
+    }
+    [data-theme="dark"] input,
+    [data-theme="dark"] select { background: #2a2e44; border-color: rgba(238,240,255,.15); color: var(--text); }
+    [data-theme="dark"] .order-item,
+    [data-theme="dark"] .vote-item,
+    [data-theme="dark"] .result-item { background: #2a2e44; }
+    [data-theme="dark"] .btn.secondary { background: #2a2e44; color: var(--text); border-color: rgba(238,240,255,.15); }
+    [data-theme="dark"] .remove { background: rgba(239,68,68,.18); }
   </style>
 </head>
 <body>
@@ -288,6 +315,9 @@
       state.players = $$('[data-player-idx]').map(input => input.value.trim()).filter(Boolean);
       if (state.players.length < 3) return toast('참가자를 3명 이상 입력해주세요');
       if (new Set(state.players).size !== state.players.length) return toast('참가자 이름은 서로 다르게 해주세요');
+      const startBtn = $('#btn-start');
+      startBtn.disabled = true;
+      startBtn.textContent = '게임 준비 중…';
       state.category = $('#category-select').value;
       state.word = $('#custom-word').value.trim() || pick(WORDS[state.category] || WORDS.랜덤);
       state.liarIndex = Math.floor(Math.random() * state.players.length);
@@ -298,6 +328,8 @@
       state.timerLeft = state.timerTotal;
       renderReveal();
       screen('#screen-reveal');
+      startBtn.disabled = false;
+      startBtn.textContent = '게임 시작';
     }
 
     function renderReveal() {

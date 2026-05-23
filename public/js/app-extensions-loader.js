@@ -30,7 +30,7 @@ const EXTENSION_MODULES = [
   './write-template-suggestions.js',
   './feedback-actions.js',
   './admin-ai-minimal-actions.js',
-  './admin-ai-type-generator.js',
+  './admin-ai-write-type-force.js',
   './admin-member-list-fix.js',
   './admin-data-manager.js',
   './admin-ui-cleanup.js',

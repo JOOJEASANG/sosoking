@@ -603,6 +603,8 @@ function addAdminEditButtons() {
     const cell = row.querySelector('td:last-child');
     if (!id || !cell) return;
     row.dataset.editReady = '1';
+    // admin-safe.js 가 이미 data-edit-post 버튼을 삽입했으면 중복 생성 금지
+    if (cell.querySelector('[data-edit-post]')) return;
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'btn btn--ghost btn--sm';

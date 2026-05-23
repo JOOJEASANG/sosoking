@@ -707,8 +707,16 @@
   border-color: rgba(255,255,255,0.12);
 }
 
-/* ── 다크모드: 배틀 B팀 호버 (라이트모드 하드코딩 방지) ── */
+/* ── 다크모드: 배틀 B팀 호버 및 퍼센트 색상 ── */
 [data-theme="dark"] .battle-side--b:hover { background: rgba(59,130,246,0.10); }
+[data-theme="dark"] .battle-side--b .battle-side__pct { color: #93C5FD; }
+[data-theme="dark"] .battle-side--b:hover { background: rgba(59,130,246,0.10); }
+
+/* ── 다크모드: cbattle 선택 버튼 배경 (라이트모드 하드코딩 방지) ── */
+[data-theme="dark"] .cbattle-side-btn--a.active { border-color: #EF4444; background: rgba(239,68,68,0.16); color: #FCA5A5; }
+[data-theme="dark"] .cbattle-side-btn--b.active { border-color: #3B82F6; background: rgba(59,130,246,0.16); color: #93C5FD; }
+[data-theme="dark"] .cbattle-col--a .cbattle-col__title { border-color: rgba(239,68,68,0.6); }
+[data-theme="dark"] .cbattle-col--b .cbattle-col__title { border-color: rgba(59,130,246,0.6); }
 
 /* ── 다크모드: 스크랩 활성 상태 (황금색 계열) ── */
 [data-theme="dark"] .detail-action-btn.scrap-active,
