@@ -11,6 +11,7 @@ const EXTENSION_MODULES = [
   './admin-shortcuts-pwa.js',
   './admin-write-sidebar.js',
   './account-ui.js',
+  './account-notifications-uid-fix.js',
   './pc-sidebar-spacing.js',
   './game-ui.js',
   './weekly-fill-challenge.js',
