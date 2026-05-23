@@ -31,7 +31,7 @@ export async function renderScraps() {
       <div class="empty-state">
         <div class="empty-state__icon">🔖</div>
         <div class="empty-state__title">로그인이 필요해요</div>
-        <button class="btn btn--primary" style="margin-top:16px" onclick="navigate('/login')">로그인하기</button>
+        <button class="btn btn--primary" style="margin-top:16px" onclick="navigate('/login?return=/scraps')">로그인하기</button>
       </div>`;
     return;
   }

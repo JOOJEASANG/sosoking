@@ -227,6 +227,17 @@ function initLivePreview() {
 export async function renderMultiWrite() {
   const el = document.getElementById('page-content');
   if (!el || !isMultiQuery()) return;
+
+  if (!auth.currentUser) {
+    el.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state__icon">✏️</div>
+        <div class="empty-state__title">로그인 후 글을 쓸 수 있어요</div>
+        <button class="btn btn--primary" style="margin-top:16px" onclick="navigate('/login?return=/write?type=multi')">로그인하기</button>
+      </div>`;
+    return;
+  }
+
   const renderKey = window.location.hash || '#/write?type=multi';
   const presetKey = getPresetKey();
   await ensureDeadlineGate();

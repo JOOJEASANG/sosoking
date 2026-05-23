@@ -120,7 +120,7 @@ export async function renderHall() {
       <div class="empty-state">
         <div class="empty-state__icon">⚠️</div>
         <div class="empty-state__title">데이터를 불러올 수 없어요</div>
-        <button class="btn btn--primary" style="margin-top:16px" onclick="location.reload()">새로고침</button>
+        <button class="btn btn--primary" style="margin-top:16px" onclick="navigate('/hall')">다시 불러오기</button>
       </div>`;
   }
 }

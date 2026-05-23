@@ -4,9 +4,14 @@ import { toast } from '../components/toast.js';
 import { appState } from '../state.js';
 import { doc, getDoc, setDoc, deleteDoc, addDoc, collection, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
+function loginWithReturn() {
+  const returnTo = window.location.hash.slice(1).split('?')[0] || '/';
+  navigate('/login?return=' + encodeURIComponent(returnTo));
+}
+
 export async function toggleScrap(postId, btn) {
   if (!auth.currentUser) {
-    navigate('/login');
+    loginWithReturn();
     return;
   }
   const uid = auth.currentUser.uid;
@@ -35,7 +40,7 @@ export async function toggleScrap(postId, btn) {
 
 export async function reportPost(postId, btn) {
   if (!auth.currentUser) {
-    navigate('/login');
+    loginWithReturn();
     return;
   }
   const reason = prompt('신고 사유를 입력해주세요 (스팸, 욕설, 허위정보 등)');
