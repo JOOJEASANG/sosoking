@@ -133,11 +133,43 @@ export async function renderHome() {
         <div class="home-compact-feed-list">${recentPosts.map(renderCompactPost).join('')}</div>
       </div>` : '';
 
-    el.innerHTML = `<div class="home-dash page-enter home-dash--v2">${greetingHTML}${hotHTML}${recentHTML}</div>`;
+    const quickLinksHTML = `
+      <div>
+        <div class="home-section-header">
+          <span class="home-section-title">🚀 바로가기</span>
+        </div>
+        <div class="home-quick-links">
+          <button class="home-quick-link-card" data-nav="/sosoland">
+            <span class="home-quick-link-card__icon">🎮</span>
+            <span class="home-quick-link-card__label">소소랜드</span>
+            <span class="home-quick-link-card__sub">실시간 게임</span>
+          </button>
+          <button class="home-quick-link-card" data-nav="/hall">
+            <span class="home-quick-link-card__icon">🏆</span>
+            <span class="home-quick-link-card__label">명예의 전당</span>
+            <span class="home-quick-link-card__sub">인기글 · 통계</span>
+          </button>
+          <button class="home-quick-link-card" data-nav="/feed?sort=popular">
+            <span class="home-quick-link-card__icon">🔥</span>
+            <span class="home-quick-link-card__label">인기 피드</span>
+            <span class="home-quick-link-card__sub">반응 높은 글</span>
+          </button>
+          <button class="home-quick-link-card" data-nav="/scraps">
+            <span class="home-quick-link-card__icon">🔖</span>
+            <span class="home-quick-link-card__label">내 스크랩</span>
+            <span class="home-quick-link-card__sub">저장한 글 모음</span>
+          </button>
+        </div>
+      </div>`;
+
+    el.innerHTML = `<div class="home-dash page-enter home-dash--v2">${greetingHTML}${hotHTML}${quickLinksHTML}${recentHTML}</div>`;
 
     el.querySelector('#hbtn-write')?.addEventListener('click',        () => navigate('/write?type=multi'));
     el.querySelector('#hbtn-more-hot')?.addEventListener('click',     () => navigate('/feed?sort=popular'));
     el.querySelector('#hbtn-more-recent')?.addEventListener('click',  () => navigate('/feed'));
+    el.querySelectorAll('[data-nav]').forEach(btn =>
+      btn.addEventListener('click', () => navigate(btn.dataset.nav))
+    );
     el.querySelectorAll('[data-id]').forEach(item =>
       item.addEventListener('click', () => navigate(`/detail/${item.dataset.id}`))
     );

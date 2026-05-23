@@ -85,3 +85,6 @@ export function initRouter() {
   window.addEventListener('hashchange', handleRoute);
   handleRoute();
 }
+
+// inline onclick="navigate()" 핸들러에서 사용할 수 있도록 전역 노출
+window.navigate = navigate;

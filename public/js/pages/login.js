@@ -35,6 +35,10 @@ async function goAfterLogin(user = auth.currentUser) {
     return;
   }
 
+  const params = Object.fromEntries(new URLSearchParams(window.location.hash.slice(1).split('?')[1] || ''));
+  const returnTo = params.return;
+  if (returnTo) { navigate(returnTo); return; }
+
   const currentPath = window.location.hash.slice(1).split('?')[0] || '/';
   if (currentPath === '/login') navigate('/');
   else window.dispatchEvent(new Event('hashchange'));
@@ -79,7 +83,7 @@ export function renderLogin() {
           <button class="btn btn--ghost btn--full" id="btn-reset-password" style="margin-top:4px;font-size:13px;color:var(--color-text-muted)">비밀번호 재설정</button>
 
           <p style="text-align:center;font-size:12px;color:var(--color-text-muted);margin-top:16px">
-            로그인 시 <a href="#/terms" style="color:var(--color-primary)">이용 약관</a>에 동의하는 것으로 간주됩니다.
+            로그인 시 <a href="#/legal/terms" style="color:var(--color-primary)">이용 약관</a>에 동의하는 것으로 간주됩니다.
           </p>
         </div>
       </div>

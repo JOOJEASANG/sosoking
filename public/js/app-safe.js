@@ -111,6 +111,7 @@ async function registerRoutes() {
   registerRoute('/sosoland', async () => renderPage((await import('./pages/sosoland.js')).renderSosoland, '소소랜드'));
   registerRoute('/hall', async () => renderPage((await import('./pages/hall.js')).renderHall, '통계'));
   registerRoute('/account', async () => renderPage(renderAccountSafe, '내 정보'));
+  registerRoute('/scraps', async () => renderPage((await import('./pages/scraps.js')).renderScraps, '스크랩'));
   registerRoute('/admin', async () => renderPage(renderAdminSafe, '관리자'));
   registerRoute('/write', async () => renderPage(renderWriteSafe, '글쓰기'));
   registerRoute('/detail/:id', async ({ id }) => renderPage(() => renderDetailSafe(id), '상세'));
