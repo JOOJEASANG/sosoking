@@ -145,6 +145,14 @@ service cloud.firestore {
         allow read: if isAuthor(userId) || isAdmin();
         allow create, update, delete: if false;
       }
+
+      match /scraps/{scrapId} {
+        allow read:   if isAuthor(userId) || isAdmin();
+        allow create: if isAuthor(userId)
+                        && request.resource.data.postId is string;
+        allow delete: if isAuthor(userId) || isAdmin();
+        allow update: if false;
+      }
     }
 
     match /nicknames/{nickname} {
