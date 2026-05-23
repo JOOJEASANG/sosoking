@@ -30,6 +30,7 @@ const postOwner = require('./post-owner-functions.js');
 const postView = require('./post-view-functions.js');
 const points = require('./points-functions.js');
 const bestReward = require('./best-reward-functions.js');
+const seoGame = require('./seo-game-functions.js');
 
 module.exports = {
   // Gemini 기반 관리자 AI 폼 자동 입력, 모더레이션, 리포트
@@ -44,6 +45,7 @@ module.exports = {
   toggleFeedReaction: secureFeed.toggleFeedReaction,
   registerPostView: secureFeed.registerPostView,
   seoPost: secureFeed.seoPost,
+  ...seoGame,
 
   // 멀티 게시글 전용 보안 액션
   checkMultiQuizAnswer: secureMulti.checkMultiQuizAnswer,
