@@ -199,4 +199,11 @@ export function renderSosoland() {
       if (game) openGameLayer(game);
     });
   });
+
+  return {
+    destroy() {
+      closeGameLayer();
+      closeGameInfoLayer();
+    },
+  };
 }

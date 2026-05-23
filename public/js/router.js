@@ -24,10 +24,18 @@ export function getQueryParams() {
   return Object.fromEntries(new URLSearchParams(qs));
 }
 
+function cleanupStuckOverlays() {
+  document.getElementById('desktop-game-layer')?.remove();
+  document.getElementById('game-info-layer')?.remove();
+  document.getElementById('share-sheet')?.remove();
+  document.body.classList.remove('desktop-game-layer-open');
+}
+
 async function handleRoute() {
   const path = getCurrentPath();
 
   if (currentPage?.destroy) currentPage.destroy();
+  cleanupStuckOverlays();
 
   const exact   = routes[path];
   const dynamic = findDynamicRoute(path);
