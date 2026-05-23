@@ -2582,7 +2582,7 @@
 /* ════════════════════════
    소셜 공유 시트
 ════════════════════════ */
-.share-sheet { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: flex-end; }
+.share-sheet { position: fixed; inset: 0; z-index: var(--z-overlay); display: flex; align-items: flex-end; }
 .share-sheet__backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.5); }
 .share-sheet__panel {
   position: relative; width: 100%; background: var(--color-surface);
