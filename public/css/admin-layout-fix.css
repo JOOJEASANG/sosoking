@@ -541,6 +541,13 @@ body:has(.admin-layout) .page-container {
 
 .account-action-footer .account-install-btn { margin-left: 0; }
 
+/* PC에서 모바일 전용 관리자 프로필 카드 숨김 */
+@media (min-width: 1024px) {
+  .admin-mobile-profile-card {
+    display: none !important;
+  }
+}
+
 /* ── 다크 모드 ── */
 [data-theme="dark"] body:has(.admin-layout),
 [data-theme="dark"] body:has(.admin-layout) .app-shell,
