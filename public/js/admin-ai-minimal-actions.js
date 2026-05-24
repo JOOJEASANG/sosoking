@@ -13,7 +13,6 @@ const AI_POST_TYPES = [
   { key: 'vote', label: '투표/판정', desc: '선택지 투표가 가능한 게시글' },
   { key: 'naming', label: '미친작명소', desc: '댓글로 이름을 붙이는 게시글' },
   { key: 'acrostic', label: '행시', desc: '제시어 기반 이행시·삼행시·사행시·오행시 게시글' },
-  { key: 'relay', label: '막장릴레이', desc: '댓글로 이어 쓰는 릴레이 게시글' },
   { key: 'quiz', label: '미친퀴즈', desc: '객관식 정답/해설이 있는 퀴즈 게시글' },
 ];
 
