@@ -42,8 +42,7 @@ function currentRoutePath() {
 
 function isGameOnlyRoute(path = currentRoutePath()) {
   return path === '/game/liar' || path.startsWith('/game/liar/')
-    || path === '/game/mafia' || path.startsWith('/game/mafia/')
-    || path === '/game/wordtrap' || path.startsWith('/game/wordtrap/');
+    || path === '/game/mafia' || path.startsWith('/game/mafia/');
 }
 
 function isGameOnlyShellActive() {
@@ -122,8 +121,6 @@ async function registerRoutes() {
   registerRoute('/game/liar/:id', async ({ id }) => renderPage(() => import('./pages/liar-game.js').then(m => m.renderLiarGame(id)), '라이어게임'));
   registerRoute('/game/mafia', async () => renderPage((await import('./pages/mafia-game.js')).renderMafiaGame, '마피아게임'));
   registerRoute('/game/mafia/:id', async ({ id }) => renderPage(() => import('./pages/mafia-game.js').then(m => m.renderMafiaGame(id)), '마피아게임'));
-  registerRoute('/game/wordtrap', async () => renderPage((await import('./pages/wordtrap-game.js')).renderWordtrapGame, '금칙어게임'));
-  registerRoute('/game/wordtrap/:id', async ({ id }) => renderPage(() => import('./pages/wordtrap-game.js').then(m => m.renderWordtrapGame(id)), '금칙어게임'));
 }
 
 async function isStrictAdmin(user) {

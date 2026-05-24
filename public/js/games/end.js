@@ -5,7 +5,6 @@ import { sendGameSystemMessage } from './chat.js';
 const GAME_LABELS = {
   liar: '라이어게임',
   mafia: '마피아게임',
-  wordtrap: '금칙어 채팅게임',
 };
 
 export async function endGameRoom(room) {

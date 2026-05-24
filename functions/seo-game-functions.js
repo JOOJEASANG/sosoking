@@ -7,17 +7,17 @@ const SITE_URL = 'https://sosoking.co.kr';
 
 const GAMES = {
   liar: {
-    title: '라이어게임',
-    desc: '제시어를 모르는 라이어를 찾아내는 채팅 추리 심리 게임. 소소킹 소소랜드에서 친구들과 실시간으로 즐겨보세요.',
-    keywords: '라이어게임, 라이어 게임, 심리게임, 온라인게임, 추리게임, 채팅게임, 소소킹',
+    title: '라이어게임 — AI를 찾아라',
+    desc: 'AI가 라이어로 위장 참가합니다. 채팅으로 제시어를 설명하며 어색한 사람을 찾아내세요. 소소킹 소소랜드 실시간 추리 게임.',
+    keywords: '라이어게임, AI 라이어게임, 심리게임, 온라인게임, 추리게임, 채팅게임, 소소킹',
     hash: '/#/game/liar',
     image: `${SITE_URL}/og-image.png`,
     type: '라이어게임',
   },
   mafia: {
-    title: '마피아게임',
-    desc: '정체를 숨긴 마피아를 채팅 토론과 투표로 찾아내는 실시간 추리 게임. 소소킹 소소랜드에서 친구들과 즐겨보세요.',
-    keywords: '마피아게임, 마피아 게임, 온라인 마피아, 채팅 추리게임, 소소킹',
+    title: '마피아게임 — AI 마피아를 잡아라',
+    desc: 'AI가 마피아로 위장합니다. 채팅 토론과 투표로 AI 마피아를 찾아내세요. 소소킹 소소랜드 실시간 추리 심리 게임.',
+    keywords: '마피아게임, AI 마피아게임, 온라인 마피아, 채팅 추리게임, 소소킹',
     hash: '/#/game/mafia',
     image: `${SITE_URL}/og-image.png`,
     type: '마피아게임',
@@ -99,9 +99,4 @@ const seoGameMafia    = onRequest({ region: REGION }, (req, res) => {
   res.send(makeGamePage('mafia'));
 });
 
-const seoGameWordtrap = onRequest({ region: REGION }, (req, res) => {
-  res.set('Cache-Control', 'public, max-age=86400');
-  res.send(makeGamePage('wordtrap'));
-});
-
-module.exports = { seoGameLiar, seoGameMafia, seoGameWordtrap };
+module.exports = { seoGameLiar, seoGameMafia };
