@@ -30,13 +30,21 @@ export const MULTI_PRESETS = {
     descPlaceholder: '사진이나 상황에 어울리는 웃긴 이름을 받아보세요.',
     tagsPlaceholder: '#작명, #미친작명소',
   },
+  drip: {
+    label: '미친드립',
+    icon: '🤣',
+    titlePlaceholder: '예: 퇴근 5분 전에 팀장이 부른 이유',
+    descPlaceholder: '사람들이 한 줄 드립을 남기고 싶어지는 주제나 상황을 적어주세요.',
+    tagsPlaceholder: '#미친드립, #한줄드립, #드립대전',
+  },
+  // 기존 행시 글 호환용입니다. 새 글쓰기 선택지에서는 숨깁니다.
   acrostic: {
     label: '행시',
     icon: '✍️',
     titlePlaceholder: '예: 행시 도전',
     descPlaceholder: '2~5글자 제시어를 넣으면 글자 수에 맞춰 이행시·삼행시·사행시·오행시로 자동 적용됩니다.',
     tagsPlaceholder: '#행시, #삼행시, #오행시',
-    acrosticPlaceholder: '예: 소소킹 / 관리자 / 대한민국',
+    hiddenFromWriter: true,
   },
   // 기존 막장릴레이 글 호환용입니다. 새 글쓰기 선택지에서는 숨깁니다.
   relay: {
@@ -61,27 +69,16 @@ export const WRITER_PRESET_KEYS = Object.keys(MULTI_PRESETS).filter(key => !MULT
 
 export const BODY_LABELS = {
   vote: '본문 · 질문/상황/토론 주제',
+  drip: '본문 · 드립 주제/상황',
   fill: '본문 · 빈칸 채우기 문장',
-  acrostic: '본문 · 행시 설명/참여 안내',
-  relay: '본문 · 릴레이 시작 문장',
   quiz: '본문 · 문제',
 };
 
-export const BODY_REQUIRED_PRESETS = ['vote', 'quiz'];
-
-export function getAcrosticLabel(keyword = '') {
-  const count = [...String(keyword || '').trim()].length;
-  return ({
-    2: '이행시',
-    3: '삼행시',
-    4: '사행시',
-    5: '오행시',
-  })[count] || (count > 0 ? `${count}행시` : '행시');
-}
+export const BODY_REQUIRED_PRESETS = ['vote', 'drip', 'quiz'];
 
 export function normalizePresetKey(key, { allowHidden = false } = {}) {
   if (key === 'ox') return 'vote';
-  if (key === 'anonymous') return 'general';
+  if (key === 'anonymous' || key === 'relay' || key === 'acrostic') return 'general';
   if (!MULTI_PRESETS[key]) return 'general';
   if (!allowHidden && MULTI_PRESETS[key].hiddenFromWriter) return 'general';
   return key;
