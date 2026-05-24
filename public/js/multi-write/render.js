@@ -58,11 +58,15 @@ function renderAnonymousSwitch() {
 function renderGeneralExtras() {
   return `
     <div class="multi-general-note"><b>일반글</b><span>자유롭게 올리고, 필요하면 익명으로 숨길 수 있습니다.</span></div>
-    ${renderAnonymousSwitch()}
+    ${renderAnonymousSwitch()}`;
+}
+
+function renderYoutubeInput() {
+  return `
     <div class="form-group multi-youtube-box">
-      <label class="form-label">유튜브 링크</label>
+      <label class="form-label">유튜브 링크 <span style="font-weight:500;color:var(--color-text-muted)">(선택)</span></label>
       <input id="mw-youtube-url" class="form-input" maxlength="220" placeholder="https://youtu.be/... 또는 https://www.youtube.com/watch?v=...">
-      <div class="form-hint">일반글에 유튜브 링크를 넣으면 상세페이지에서 16:9 영상 화면으로 자동 표시됩니다.</div>
+      <div class="form-hint">입력하면 상세페이지 본문 아래에 16:9 영상으로 자동 표시됩니다.</div>
     </div>`;
 }
 
@@ -192,8 +196,9 @@ export function renderMultiWriteHTML({ renderKey, presetKey, showDeadline = fals
           </div>
           <div class="form-group">
             <label class="form-label">${bodyLabel}${bodyRequired ? ' <span class="required">*</span>' : ''}</label>
-            <textarea id="mw-desc" class="form-textarea" rows="4" maxlength="2000" placeholder="${esc(preset.descPlaceholder)}"></textarea>
+            <textarea id="mw-desc" class="form-textarea mw-desc-resizable" rows="4" maxlength="2000" placeholder="${esc(preset.descPlaceholder)}"></textarea>
           </div>
+          ${presetKey === 'general' ? renderYoutubeInput() : ''}
           <div class="form-group">
             <label class="form-label">사진</label>
             <div id="mw-img-uploader"></div>
