@@ -143,35 +143,42 @@ export function renderSosoland() {
   if (!el) return;
 
   el.innerHTML = `
-    <div class="sosoland-page">
-      <section class="sosoland-hero sosoland-hero--arcade sosoland-hero--simple">
-        <div class="sosoland-hero__glow sosoland-hero__glow--one"></div>
-        <div class="sosoland-hero__glow sosoland-hero__glow--two"></div>
-        <div class="sosoland-hero__content">
-          <div class="sosoland-hero__eyebrow">GAME PLAYGROUND</div>
-          <h1>친구와 바로 즐기는<br>채팅 게임 모음</h1>
-          <p>회원과 게스트가 같은 방에서 함께 즐길 수 있습니다. 모바일은 전체 화면, PC는 소소킹 안의 게임 레이어창으로 실행됩니다.</p>
+    <div class="arcade-lobby">
+      <section class="arcade-hero">
+        <div class="arcade-hero__orb arcade-hero__orb--1"></div>
+        <div class="arcade-hero__orb arcade-hero__orb--2"></div>
+        <div class="arcade-hero__orb arcade-hero__orb--3"></div>
+        <div class="arcade-hero__content">
+          <div class="arcade-badge">🎮 GAME ZONE</div>
+          <h1 class="arcade-hero__title">소소킹 게임</h1>
+          <p class="arcade-hero__desc">AI와 친구가 한 방에서 즐기는 채팅 추리게임<br><span class="arcade-hero__sub">모바일 전체화면 · PC 게임레이어 · 게스트 참가 가능</span></p>
         </div>
       </section>
 
-      <section class="sosoland-grid sosoland-grid--compact">
+      <div class="arcade-game-grid">
         ${GAMES.map(game => `
-          <article class="sosoland-card sosoland-card--${game.key}" data-game-key="${game.key}">
-            <div class="sosoland-card__headline">
-              <div class="sosoland-card__icon">${game.icon}</div>
-              <div class="sosoland-card__title-stack">
-                <h2>${game.title}</h2>
-                <p>${game.desc}</p>
+          <div class="arcade-card arcade-card--${game.key}" data-game-key="${game.key}">
+            <div class="arcade-card__shine"></div>
+            <div class="arcade-card__body">
+              <div class="arcade-card__top">
+                <span class="arcade-card__icon">${game.icon}</span>
+                <span class="arcade-card__ai">${game.tag}</span>
+              </div>
+              <h2 class="arcade-card__title">${esc(game.title)}</h2>
+              <p class="arcade-card__desc">${esc(game.desc)}</p>
+              <div class="arcade-card__meta">
+                <span>👥 4~8명</span>
+                <span>💬 채팅</span>
+                <span>🤖 AI 난이도</span>
               </div>
             </div>
-            <div class="sosoland-card__actions">
-              <span class="sosoland-card__status">${game.tag}</span>
-              <button class="sosoland-card__info" type="button" data-game-info="${game.key}" aria-label="${game.title} 설명 보기">설명</button>
-              <button class="btn btn--primary btn--sm sosoland-card__start" type="button" data-game-start="${game.key}">${game.status}</button>
+            <div class="arcade-card__footer">
+              <button class="arcade-card__guide" type="button" data-game-info="${game.key}">📖 방법 보기</button>
+              <button class="arcade-card__play" type="button" data-game-start="${game.key}">▶ 방 만들기</button>
             </div>
-          </article>
+          </div>
         `).join('')}
-      </section>
+      </div>
     </div>`;
 
   el.querySelectorAll('[data-game-info]').forEach(btn => {

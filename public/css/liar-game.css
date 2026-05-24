@@ -1478,3 +1478,339 @@
     gap: 0;
   }
 }
+
+/* ================================================
+   ARCADE LOBBY — 소소킹 게임 로비 다크 아케이드 디자인
+   ================================================ */
+
+.arcade-lobby {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding-bottom: 32px;
+}
+
+/* ── 히어로 ── */
+.arcade-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 28px;
+  padding: 52px 28px 44px;
+  text-align: center;
+  background: linear-gradient(135deg, #08091a 0%, #0e1535 50%, #12183f 100%);
+  border: 1px solid rgba(255,255,255,.08);
+}
+
+.arcade-hero__orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  pointer-events: none;
+  animation: arcadeOrbFloat 8s ease-in-out infinite alternate;
+}
+.arcade-hero__orb--1 {
+  width: 280px; height: 280px;
+  top: -80px; left: -60px;
+  background: rgba(124,58,237,.35);
+  animation-delay: 0s;
+}
+.arcade-hero__orb--2 {
+  width: 240px; height: 240px;
+  bottom: -60px; right: -40px;
+  background: rgba(14,165,233,.3);
+  animation-delay: -3s;
+}
+.arcade-hero__orb--3 {
+  width: 180px; height: 180px;
+  top: 30%; left: 55%;
+  background: rgba(255,107,74,.2);
+  animation-delay: -5s;
+}
+
+@keyframes arcadeOrbFloat {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(14px, -14px) scale(1.08); }
+}
+
+.arcade-hero__content { position: relative; z-index: 1; }
+
+.arcade-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.18);
+  color: rgba(255,255,255,.85);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  backdrop-filter: blur(8px);
+  margin-bottom: 18px;
+}
+
+.arcade-hero__title {
+  font-size: 38px;
+  font-weight: 950;
+  letter-spacing: -.04em;
+  line-height: 1.12;
+  background: linear-gradient(135deg, #fff 30%, #a5b4fc 70%, #7dd3fc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0 0 14px;
+}
+
+.arcade-hero__desc {
+  font-size: 15px;
+  color: rgba(255,255,255,.7);
+  line-height: 1.7;
+  margin: 0;
+}
+.arcade-hero__sub {
+  font-size: 12px;
+  color: rgba(255,255,255,.45);
+}
+
+/* ── 게임 그리드 ── */
+.arcade-game-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+/* ── 게임 카드 ── */
+.arcade-card {
+  position: relative;
+  border-radius: 24px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(160deg, #0e1225 0%, #111828 100%);
+  border: 1px solid rgba(255,255,255,.1);
+  transition: transform .25s cubic-bezier(.34,1.56,.64,1), box-shadow .25s ease, border-color .25s ease;
+}
+.arcade-card:hover {
+  transform: translateY(-5px) scale(1.015);
+  border-color: rgba(255,255,255,.2);
+}
+
+/* 게임별 상단 컬러 바 */
+.arcade-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
+.arcade-card--liar::before {
+  background: linear-gradient(90deg, #7c3aed, #a855f7, #ec4899);
+}
+.arcade-card--mafia::before {
+  background: linear-gradient(90deg, #1d4ed8, #0ea5e9, #6366f1);
+}
+
+/* 카드 호버 글로우 */
+.arcade-card--liar:hover {
+  box-shadow: 0 20px 50px rgba(124,58,237,.3), 0 0 0 1px rgba(168,85,247,.25);
+}
+.arcade-card--mafia:hover {
+  box-shadow: 0 20px 50px rgba(14,165,233,.25), 0 0 0 1px rgba(99,102,241,.25);
+}
+
+/* 반짝임 효과 */
+.arcade-card__shine {
+  position: absolute;
+  top: 0; left: -100%;
+  width: 60%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.04), transparent);
+  pointer-events: none;
+  transition: left .6s ease;
+}
+.arcade-card:hover .arcade-card__shine {
+  left: 150%;
+}
+
+/* 카드 내용 */
+.arcade-card__body {
+  flex: 1;
+  padding: 22px 20px 14px;
+}
+
+.arcade-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.arcade-card__icon {
+  font-size: 40px;
+  line-height: 1;
+  filter: drop-shadow(0 0 12px rgba(255,255,255,.3));
+}
+
+.arcade-card__ai {
+  font-size: 11px;
+  font-weight: 900;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(255,107,74,.15);
+  border: 1px solid rgba(255,107,74,.3);
+  color: #fb923c;
+  letter-spacing: .04em;
+}
+
+.arcade-card__title {
+  font-size: 22px;
+  font-weight: 950;
+  color: #fff;
+  margin: 0 0 8px;
+  letter-spacing: -.04em;
+}
+
+.arcade-card__desc {
+  font-size: 13px;
+  color: rgba(255,255,255,.58);
+  line-height: 1.65;
+  margin: 0 0 14px;
+}
+
+.arcade-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.arcade-card__meta span {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 8px;
+  background: rgba(255,255,255,.06);
+  color: rgba(255,255,255,.5);
+  font-weight: 700;
+}
+
+/* 카드 하단 버튼 */
+.arcade-card__footer {
+  display: flex;
+  gap: 8px;
+  padding: 14px 20px 20px;
+  border-top: 1px solid rgba(255,255,255,.07);
+}
+
+.arcade-card__guide {
+  flex: 0 0 auto;
+  padding: 0 14px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.15);
+  background: rgba(255,255,255,.06);
+  color: rgba(255,255,255,.7);
+  font-size: 12px;
+  font-weight: 800;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background .18s, color .18s;
+}
+.arcade-card__guide:hover {
+  background: rgba(255,255,255,.12);
+  color: #fff;
+}
+
+.arcade-card__play {
+  flex: 1;
+  height: 40px;
+  border-radius: 12px;
+  border: none;
+  font-size: 14px;
+  font-weight: 950;
+  font-family: inherit;
+  cursor: pointer;
+  transition: filter .2s, transform .15s;
+  letter-spacing: -.01em;
+}
+.arcade-card__play:hover { filter: brightness(1.12); }
+.arcade-card__play:active { transform: scale(.97); }
+
+.arcade-card--liar .arcade-card__play {
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(124,58,237,.4);
+}
+.arcade-card--mafia .arcade-card__play {
+  background: linear-gradient(135deg, #1d4ed8, #0ea5e9);
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(14,165,233,.4);
+}
+
+/* 모바일 */
+@media (max-width: 600px) {
+  .arcade-hero {
+    padding: 38px 20px 32px;
+    border-radius: 20px;
+  }
+  .arcade-hero__title { font-size: 28px; }
+  .arcade-game-grid { grid-template-columns: 1fr; }
+  .arcade-card__body { padding: 18px 16px 12px; }
+  .arcade-card__footer { padding: 12px 16px 16px; }
+  .arcade-card__icon { font-size: 34px; }
+  .arcade-card__title { font-size: 19px; }
+}
+
+/* ================================================
+   투표 글쓰기 — 간결한 칩 버전
+   ================================================ */
+
+.mw-vote-compact {
+  padding: 16px;
+  background: var(--color-surface-2);
+  border-radius: 16px;
+  border: 1px solid var(--color-border-light);
+}
+
+.mw-vote-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.mw-vote-chip {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1.5px solid var(--color-border-light);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 800;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all .16s ease;
+  white-space: nowrap;
+}
+.mw-vote-chip:hover {
+  border-color: rgba(255,107,74,.35);
+  color: var(--color-primary);
+  background: var(--color-primary-bg);
+}
+.mw-vote-chip.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(255,107,74,.3);
+}
+
+[data-theme="dark"] .mw-vote-compact {
+  background: rgba(255,255,255,.04);
+  border-color: rgba(255,255,255,.09);
+}
+[data-theme="dark"] .mw-vote-chip {
+  background: rgba(255,255,255,.06);
+  border-color: rgba(255,255,255,.12);
+  color: rgba(255,255,255,.65);
+}
+[data-theme="dark"] .mw-vote-chip:hover {
+  background: rgba(255,107,74,.12);
+  border-color: rgba(255,107,74,.4);
+  color: #fb923c;
+}

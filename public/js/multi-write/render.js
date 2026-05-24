@@ -74,31 +74,22 @@ function renderSelectedModule(activeKey, preset) {
   if (activeKey === 'general') return renderGeneralExtras();
 
   if (activeKey === 'vote') {
-    return moduleCard('vote', '🗳️', '투표·판정', '일반 투표, 밸런스 게임, 판정/심판, 찬반 토론을 모두 지원합니다.', `
-      <div class="form-group">
-        <label class="form-label">투표 형식</label>
+    return `
+      <div class="mw-vote-compact" data-module-card="vote">
+        <input type="hidden" data-module-toggle="vote" value="1">
         <input type="hidden" id="mw-vote-mode" value="general">
-        <div class="multi-vote-mode-toggle" role="radiogroup" aria-label="투표 형식 선택">
-          <button type="button" class="multi-vote-mode-btn active" data-vote-mode="general" role="radio" aria-checked="true">🗳️ 일반</button>
-          <button type="button" class="multi-vote-mode-btn" data-vote-mode="balance" role="radio" aria-checked="false">⚖️ 밸런스</button>
-          <button type="button" class="multi-vote-mode-btn" data-vote-mode="judgment" role="radio" aria-checked="false">🔨 판정</button>
-          <button type="button" class="multi-vote-mode-btn" data-vote-mode="debate" role="radio" aria-checked="false">💬 토론</button>
+        <div class="mw-vote-chips" role="radiogroup" aria-label="투표 형식">
+          <button type="button" class="mw-vote-chip active" data-vote-mode="general" role="radio" aria-checked="true">🗳️ 일반</button>
+          <button type="button" class="mw-vote-chip" data-vote-mode="balance" role="radio" aria-checked="false">⚖️ 밸런스</button>
+          <button type="button" class="mw-vote-chip" data-vote-mode="judgment" role="radio" aria-checked="false">🔨 판정</button>
+          <button type="button" class="mw-vote-chip" data-vote-mode="debate" role="radio" aria-checked="false">💬 토론</button>
         </div>
-        <div id="mw-vote-mode-note" class="form-hint" style="display:none;margin-top:6px"></div>
-      </div>
-      <div id="mw-vote-judgment-presets" style="display:none" class="form-group">
-        <div class="form-hint" style="margin-bottom:6px">빠른 선택 (클릭하면 자동 입력):</div>
-        <div class="multi-vote-judgment-preset-row">
-          <button type="button" class="btn btn--ghost btn--sm" data-judgment-preset="공감,억까">공감 vs 억까</button>
-          <button type="button" class="btn btn--ghost btn--sm" data-judgment-preset="유죄,무죄">유죄 vs 무죄</button>
-          <button type="button" class="btn btn--ghost btn--sm" data-judgment-preset="찬성,반대">찬성 vs 반대</button>
-          <button type="button" class="btn btn--ghost btn--sm" data-judgment-preset="O,X">O vs X</button>
+        <div id="mw-vote-mode-note" class="form-hint" style="display:none;margin:6px 0 10px"></div>
+        <div class="multi-option-list" id="mw-vote-options">
+          ${preset.voteOptionPlaceholders.map((value) => `<input class="form-input mw-vote-option" maxlength="80" placeholder="${esc(value)}">`).join('')}
         </div>
-      </div>
-      <div class="multi-option-list" id="mw-vote-options">
-        ${preset.voteOptionPlaceholders.map((value, i) => `<input class="form-input mw-vote-option" maxlength="80" placeholder="${esc(value)}">`).join('')}
-      </div>
-      <button class="btn btn--ghost btn--sm" type="button" id="mw-add-vote-option">+ 선택지 추가</button>`);
+        <button class="btn btn--ghost btn--sm" type="button" id="mw-add-vote-option" style="margin-top:6px">+ 선택지 추가</button>
+      </div>`;
   }
 
   if (activeKey === 'naming') {
