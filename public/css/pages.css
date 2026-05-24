@@ -2353,7 +2353,7 @@
 
 /* ── 섹션 헤더 ── */
 .home-section-header {
-  display: flex; align-items: center; gap: 8px; margin-bottom: -4px;
+  display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
 }
 .home-section-title { font-size: 15px; font-weight: 800; color: var(--color-text-primary); }
 .home-section-sub { font-size: 12px; color: var(--color-text-muted); }
