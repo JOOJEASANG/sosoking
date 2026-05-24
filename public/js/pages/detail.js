@@ -37,7 +37,7 @@ export async function renderDetail(id) {
     }
 
     const post = { id: snap.id, ...snap.data() };
-    setMeta(post.title, post.desc, post.images?.[0]);
+    setMeta(post.title, post.desc, post.images?.[0], `https://sosoking.co.kr/p/${id}`);
 
     const uid = auth.currentUser?.uid;
     const [comments, acrostics, isScrapped, viewResult] = await Promise.all([
