@@ -544,3 +544,12 @@ h2.card__title {
   color: var(--color-text-muted);
   font-weight: 500;
 }
+
+[data-theme="dark"] .home-quick-link-card {
+  background: var(--color-surface-2);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+[data-theme="dark"] .home-quick-link-card:hover {
+  background: var(--color-surface-alt);
+  border-color: rgba(255, 107, 74, 0.35);
+}
