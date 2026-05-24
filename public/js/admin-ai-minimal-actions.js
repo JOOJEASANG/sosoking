@@ -9,11 +9,11 @@ const generateAiContentNow = httpsCallable(functions, 'generateAiContentNow');
 const saveAiConfig = httpsCallable(functions, 'saveAiConfig');
 
 const AI_POST_TYPES = [
-  { key: 'general', label: '일반글', desc: '댓글 반응을 유도하는 일반 피드 글' },
-  { key: 'vote', label: '투표/판정', desc: '선택지 투표가 가능한 게시글' },
-  { key: 'naming', label: '미친작명소', desc: '댓글로 이름을 붙이는 게시글' },
-  { key: 'acrostic', label: '행시', desc: '제시어 기반 이행시·삼행시·사행시·오행시 게시글' },
-  { key: 'quiz', label: '미친퀴즈', desc: '객관식 정답/해설이 있는 퀴즈 게시글' },
+  { key: 'general', label: '일반', desc: '자유로운 피드 글' },
+  { key: 'vote', label: '투표', desc: '선택지 투표 글' },
+  { key: 'naming', label: '작명', desc: '웃긴 이름 붙이기' },
+  { key: 'drip', label: '드립', desc: '한 줄 드립 글' },
+  { key: 'quiz', label: '퀴즈', desc: '정답/해설이 있는 문제' },
 ];
 
 function esc(value) {
