@@ -30,36 +30,25 @@ export function renderVoteModule(post) {
 export function renderNamingModule(post) {
   const naming = post.modules?.naming;
   if (!naming?.enabled) return '';
-  const count = Number(naming.charCount || 0);
-  const input = count > 0
-    ? `<div class="multi-char-boxes">${Array.from({ length: count }, (_, i) => `<input class="multi-name-char" maxlength="2" data-idx="${i}">`).join('')}</div>`
-    : `<input id="multi-naming-free" class="form-input" maxlength="30" placeholder="웃긴 이름을 입력하세요">`;
-
   return `
     <div class="multi-detail-module" data-multi-module="naming">
       <div class="multi-detail-module__title">😜 작명 참여</div>
-      <div class="multi-module-hint">${count ? `${count}글자로 이름을 지어보세요.` : '자유롭게 이름을 지어보세요.'}</div>
-      <div class="multi-submit-row">${input}<button class="btn btn--primary btn--sm" id="multi-naming-submit">등록</button></div>
+      <div class="multi-module-hint">자유롭게 웃긴 이름을 지어보세요.</div>
+      <div class="multi-submit-row"><input id="multi-naming-free" class="form-input" maxlength="30" placeholder="웃긴 이름을 입력하세요"><button class="btn btn--primary btn--sm" id="multi-naming-submit">등록</button></div>
       <div class="multi-participation-list" id="multi-naming-list"></div>
     </div>`;
 }
 
-export function renderAcrosticModule(post) {
-  const acrostic = post.modules?.acrostic;
-  if (!acrostic?.enabled) return '';
-  const keyword = String(acrostic.keyword || '');
+export function renderDripModule(post) {
+  const drip = post.modules?.drip;
+  if (!drip?.enabled) return '';
   return `
-    <div class="multi-detail-module" data-multi-module="acrostic">
-      <div class="multi-detail-module__title">✍️ '${esc(keyword)}' 삼행시</div>
-      <div id="multi-acrostic-lines">
-        ${[...keyword].map((ch, i) => `
-          <div class="multi-acrostic-line">
-            <span>${esc(ch)}</span>
-            <input class="form-input multi-acrostic-input" data-idx="${i}" maxlength="80" placeholder="${esc(ch)}(으)로 시작하는 한 줄">
-          </div>`).join('')}
-      </div>
-      <button class="btn btn--primary btn--sm" id="multi-acrostic-submit">삼행시 올리기</button>
-      <div class="multi-participation-list" id="multi-acrostic-list"></div>
+    <div class="multi-detail-module" data-multi-module="drip">
+      <div class="multi-detail-module__title">🤣 미친드립</div>
+      <div class="multi-module-hint">주제에 맞는 한 줄 드립을 남겨보세요. 짧을수록 강합니다.</div>
+      <div class="multi-drip-prompt">${esc(drip.prompt || post.desc || '').replace(/\n/g, '<br>')}</div>
+      <div class="multi-submit-row"><input id="multi-drip-input" class="form-input" maxlength="80" placeholder="한 줄 드립 입력"><button class="btn btn--primary btn--sm" id="multi-drip-submit">드립 등록</button></div>
+      <div class="multi-participation-list" id="multi-drip-list"></div>
     </div>`;
 }
 
@@ -116,19 +105,6 @@ export function renderFillModule(post) {
         <button class="btn btn--primary btn--sm" id="multi-fill-submit">등록</button>
       </div>
       <div class="multi-participation-list" id="multi-fill-list"></div>
-    </div>`;
-}
-
-export function renderRelayModule(post) {
-  const relay = post.modules?.relay;
-  if (!relay?.enabled) return '';
-  return `
-    <div class="multi-detail-module" data-multi-module="relay">
-      <div class="multi-detail-module__title">🎭 릴레이 이어쓰기</div>
-      <div class="multi-relay-start">${esc(relay.startSentence || '').replace(/\n/g, '<br>')}</div>
-      <textarea id="multi-relay-input" class="form-textarea" rows="3" maxlength="150" placeholder="다음 이야기를 이어주세요"></textarea>
-      <button class="btn btn--primary btn--sm" id="multi-relay-submit">이어쓰기</button>
-      <div class="multi-participation-list" id="multi-relay-list"></div>
     </div>`;
 }
 
@@ -199,7 +175,7 @@ export function renderModules(post) {
         <div class="multi-detail-root__desc">이 글 형식에 맞는 참여 기능입니다.</div>
       </div>
       ${renderDeadlineStatus(post)}
-      ${renderVoteModule(post)}${renderNamingModule(post)}${renderAcrosticModule(post)}${renderFillModule(post)}${renderRelayModule(post)}${renderQuizModule(post)}
+      ${renderVoteModule(post)}${renderNamingModule(post)}${renderDripModule(post)}${renderFillModule(post)}${renderQuizModule(post)}
     </div>`;
 }
 
@@ -216,16 +192,12 @@ function reactionScore(item = {}) {
 function bestTitle(kind) {
   return {
     naming: '🏆 베스트 작명',
-    acrostic: '🏆 베스트 삼행시',
+    drip: '🏆 베스트 드립',
     fill: '🏆 베스트 빈칸 답',
-    relay: '🏆 베스트 릴레이',
   }[kind] || '🏆 베스트 참여작';
 }
 
 function renderItemBody(item, kind) {
-  if (kind === 'acrostic' && Array.isArray(item.lines)) {
-    return item.lines.map(line => `<div class="multi-item-line"><b>${esc(line.char)}</b><span>${esc(line.line)}</span></div>`).join('');
-  }
   return `<div class="multi-item-text">${esc(item.text || '').replace(/\n/g, '<br>')}</div>`;
 }
 
