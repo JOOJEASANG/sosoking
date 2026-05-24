@@ -20,7 +20,6 @@ const EXTENSION_MODULES = [
   './multi-detail.js',
   './detail-extras.js',
   './detail-cards.js',
-  './acrostic-ui.js',
   './multi-write.js',
   './fill-box-input-fix.js',
   './write-edit-router-fix.js',
