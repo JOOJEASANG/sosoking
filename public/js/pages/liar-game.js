@@ -183,7 +183,7 @@ function drawRoom(scrollChat = false) {
 
 function bindRoomEvents() {
   document.getElementById('liar-back')?.addEventListener('click', () => navigate('/sosoland'));
-  document.getElementById('liar-copy')?.addEventListener('click', handleCopyInvite);
+  document.querySelectorAll('[data-copy-invite]').forEach(btn => btn.addEventListener('click', handleCopyInvite));
   document.getElementById('liar-join')?.addEventListener('click', handleJoinRoom);
   document.getElementById('liar-chat-send')?.addEventListener('click', handleSendChat);
   document.getElementById('liar-chat-input')?.addEventListener('keydown', event => {

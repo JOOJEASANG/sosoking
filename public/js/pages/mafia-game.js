@@ -195,7 +195,7 @@ function drawRoom(scrollChat = false) {
 
 function bindRoomEvents() {
   document.getElementById('mafia-back')?.addEventListener('click', () => navigate('/sosoland'));
-  document.getElementById('mafia-copy')?.addEventListener('click', handleCopyInvite);
+  document.querySelectorAll('[data-copy-invite]').forEach(btn => btn.addEventListener('click', handleCopyInvite));
   document.getElementById('mafia-join')?.addEventListener('click', handleJoinRoom);
   document.getElementById('mafia-start')?.addEventListener('click', handleStartGame);
   document.getElementById('mafia-count-vote')?.addEventListener('click', handleCountVote);

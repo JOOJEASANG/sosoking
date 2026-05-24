@@ -234,7 +234,7 @@ export function renderLiarRoomHTML(room, players = [], chats = []) {
           ${hasAI ? `<span>🤖 AI ${diff}</span>` : ''}
         </div>
         <div class="game-room-actions">
-          <button class="btn btn--ghost btn--sm" id="liar-copy">초대 복사</button>
+          <button class="btn btn--ghost btn--sm" data-copy-invite>초대 복사</button>
           ${!joined ? '<button class="btn btn--primary btn--sm" id="liar-join">참가하기</button>' : ''}
         </div>
       </section>
@@ -244,7 +244,7 @@ export function renderLiarRoomHTML(room, players = [], chats = []) {
 
       <div class="game-invite-v2">
         <input class="form-input" style="flex:1;font-size:12px" value="${url}" readonly>
-        <button class="btn btn--primary btn--sm" id="liar-copy">복사</button>
+        <button class="btn btn--primary btn--sm" data-copy-invite>복사</button>
       </div>
 
       ${renderAiRevealCard(room, visiblePlayers)}
