@@ -38,12 +38,14 @@ export const MULTI_PRESETS = {
     tagsPlaceholder: '#행시, #삼행시, #오행시',
     acrosticPlaceholder: '예: 소소킹 / 관리자 / 대한민국',
   },
+  // 기존 막장릴레이 글 호환용입니다. 새 글쓰기 선택지에서는 숨깁니다.
   relay: {
     label: '막장릴레이',
     icon: '🎭',
     titlePlaceholder: '예: 다음 문장 이어줘',
     descPlaceholder: '첫 문장이나 상황을 적어주세요. 참여자가 이야기를 이어갑니다.',
     tagsPlaceholder: '#릴레이, #막장릴레이',
+    hiddenFromWriter: true,
   },
   quiz: {
     label: '미친퀴즈',
@@ -65,7 +67,7 @@ export const BODY_LABELS = {
   quiz: '본문 · 문제',
 };
 
-export const BODY_REQUIRED_PRESETS = ['vote', 'relay', 'quiz'];
+export const BODY_REQUIRED_PRESETS = ['vote', 'quiz'];
 
 export function getAcrosticLabel(keyword = '') {
   const count = [...String(keyword || '').trim()].length;
