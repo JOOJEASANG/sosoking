@@ -118,9 +118,9 @@ async function registerRoutes() {
   registerRoute('/legal/terms', async () => renderPage((await import('./pages/legal.js')).renderTerms, '이용약관'));
   registerRoute('/legal/privacy', async () => renderPage((await import('./pages/legal.js')).renderPrivacy, '개인정보처리방침'));
   registerRoute('/game/liar', async () => renderPage((await import('./pages/liar-game.js')).renderLiarGame, '라이어게임'));
-  registerRoute('/game/liar/:id', async ({ id }) => renderPage(() => import('./pages/liar-game.js').then(m => m.renderLiarGame(id)), '라이어게임'));
+  registerRoute('/game/liar/:id', async ({ id }) => renderPage(() => import('./pages/liar-game.js').then(m => m.renderLiarGame({ id })), '라이어게임'));
   registerRoute('/game/mafia', async () => renderPage((await import('./pages/mafia-game.js')).renderMafiaGame, '마피아게임'));
-  registerRoute('/game/mafia/:id', async ({ id }) => renderPage(() => import('./pages/mafia-game.js').then(m => m.renderMafiaGame(id)), '마피아게임'));
+  registerRoute('/game/mafia/:id', async ({ id }) => renderPage(() => import('./pages/mafia-game.js').then(m => m.renderMafiaGame({ id })), '마피아게임'));
 }
 
 async function isStrictAdmin(user) {
