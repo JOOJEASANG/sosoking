@@ -12,15 +12,20 @@ export function navigate(path) {
 }
 
 export function getCurrentPath() {
-  const hash = window.location.hash.slice(1) || '/';
-  return hash.split('?')[0];
+  const hash = window.location.hash.slice(1);
+  if (hash) return hash.split('?')[0];
+  // Fallback: if no hash, use pathname (handles hash-stripped links from messaging apps)
+  const pathname = window.location.pathname;
+  if (pathname && pathname !== '/') return pathname.split('?')[0];
+  return '/';
 }
 
 export function getQueryParams() {
-  const hash = window.location.hash.slice(1) || '/';
-  const idx = hash.indexOf('?');
+  const hash = window.location.hash.slice(1);
+  const src = hash || window.location.search;
+  const idx = src.indexOf('?');
   if (idx < 0) return {};
-  const qs = hash.slice(idx + 1);
+  const qs = src.slice(idx + 1);
   return Object.fromEntries(new URLSearchParams(qs));
 }
 

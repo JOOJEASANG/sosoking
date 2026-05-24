@@ -6,8 +6,8 @@
       { "source": "/p/**", "function": "seoPost" },
       { "source": "/game/liar", "function": "seoGameLiar" },
       { "source": "/game/mafia", "function": "seoGameMafia" },
-      { "source": "/game/wordtrap", "function": "seoGameWordtrap" },
-      { "source": "/sitemap.xml", "function": "sitemapXml" }
+      { "source": "/sitemap.xml", "function": "sitemapXml" },
+      { "source": "**", "destination": "/index.html" }
     ],
     "headers": [
       {

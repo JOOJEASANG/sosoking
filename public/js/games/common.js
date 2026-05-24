@@ -7,7 +7,7 @@ export function makeRoomCode(length = 6) {
 }
 
 export function buildGameInviteUrl(game, roomId) {
-  return `${location.origin + location.pathname}#/game/${game}/${roomId}`;
+  return `${location.origin}/#/game/${game}/${roomId}`;
 }
 
 export function esc(value) {
