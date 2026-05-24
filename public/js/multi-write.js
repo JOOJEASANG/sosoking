@@ -25,7 +25,7 @@ function getPresetKey() {
 }
 
 function feedTypeFromPreset(presetKey) {
-  if (['vote', 'naming', 'acrostic', 'relay', 'quiz'].includes(presetKey)) return presetKey;
+  if (['vote', 'naming', 'drip', 'quiz'].includes(presetKey)) return presetKey;
   return 'general';
 }
 
@@ -59,8 +59,7 @@ function participationGuide(presetKey) {
     vote: '🗳️ 사용자가 선택지에 투표하고 댓글로 판정 이유를 남깁니다.',
     fill: '🧩 사용자가 문장 속 빈칸을 채워 재미있는 답을 남깁니다.',
     naming: '😜 사용자가 가장 웃긴 이름을 지어 올립니다.',
-    acrostic: '✍️ 사용자가 제시어 글자마다 한 줄씩 완성합니다.',
-    relay: '🎭 사용자가 시작 문장 뒤로 이야기를 이어 씁니다.',
+    drip: '🤣 사용자가 한 줄 드립을 남기고 반응을 받습니다.',
     quiz: '🧠 사용자가 정답을 맞히고 결과를 바로 확인합니다.',
   }[presetKey] || '💬 참여자가 댓글과 답글로 반응할 수 있어요.';
 }
@@ -93,18 +92,11 @@ function renderPreviewBody() {
   }
 
   if (presetKey === 'naming') {
-    const count = Number(document.getElementById('mw-naming-count')?.value || 0);
-    const rule = count ? `${count}글자 제한` : '글자수 자유';
-    return `${titleHtml}<div class="multi-preview-body">${lineHtml(bodyText)}</div>${guideHtml}${deadlineHtml}<div class="multi-preview-rule">규칙: ${esc(rule)}</div>${tagsHtml}`;
+    return `${titleHtml}<div class="multi-preview-body">${lineHtml(bodyText)}</div>${guideHtml}${deadlineHtml}<div class="multi-preview-rule">규칙: 자유 작명</div>${tagsHtml}`;
   }
 
-  if (presetKey === 'acrostic') {
-    const keyword = document.getElementById('mw-acrostic-keyword')?.value.trim() || '제시어';
-    return `${titleHtml}<div class="multi-preview-body">${lineHtml(bodyText)}</div>${guideHtml}${deadlineHtml}<div class="multi-preview-acrostic">${[...keyword].map(ch => `<span>${esc(ch)}</span>`).join('')}</div>${tagsHtml}`;
-  }
-
-  if (presetKey === 'relay') {
-    return `${titleHtml}<div class="multi-preview-body multi-preview-body--relay">${lineHtml(bodyText || '시작 문장을 입력하면 릴레이 첫 문장으로 표시됩니다.')}</div>${guideHtml}${deadlineHtml}<div class="multi-preview-rule">다음 사람이 이야기를 이어갑니다.</div>${tagsHtml}`;
+  if (presetKey === 'drip') {
+    return `${titleHtml}<div class="multi-preview-body">${lineHtml(bodyText)}</div>${guideHtml}${deadlineHtml}<div class="multi-preview-rule">참여: 80자 이내 한 줄 드립</div>${tagsHtml}`;
   }
 
   if (presetKey === 'quiz') {
@@ -218,7 +210,7 @@ function cloneWithoutQuizSecret(modules) {
 }
 
 function initLivePreview() {
-  ['mw-title', 'mw-desc', 'mw-tags', 'mw-acrostic-keyword', 'mw-naming-count', 'mw-fill-count', 'mw-relay-mission', 'mw-quiz-mode', 'mw-quiz-hint']
+  ['mw-title', 'mw-desc', 'mw-tags', 'mw-fill-count', 'mw-quiz-mode', 'mw-quiz-hint']
     .forEach(id => document.getElementById(id)?.addEventListener('input', updateGamePreview));
   document.querySelectorAll('.mw-vote-option,.mw-quiz-option').forEach(input => input.addEventListener('input', updateGamePreview));
   document.getElementById('mw-desc')?.addEventListener('keyup', updateGamePreview);
@@ -266,18 +258,6 @@ function setQuizMode(mode) {
   updateGamePreview();
 }
 
-function setNamingCount(count) {
-  const normalized = ['0', '3', '5'].includes(String(count)) ? String(count) : '0';
-  const hidden = document.getElementById('mw-naming-count');
-  if (hidden) hidden.value = normalized;
-  document.querySelectorAll('[data-naming-count]').forEach(btn => {
-    const active = btn.dataset.namingCount === normalized;
-    btn.classList.toggle('active', active);
-    btn.setAttribute('aria-checked', active ? 'true' : 'false');
-  });
-  updateGamePreview();
-}
-
 function setFillCount(count) {
   const normalized = ['2', '3', '4', '5', '6'].includes(String(count)) ? String(count) : '4';
   const hidden = document.getElementById('mw-fill-count');
@@ -320,7 +300,6 @@ function bindMultiWriteEvents() {
   });
 
   document.querySelectorAll('[data-quiz-mode]').forEach(btn => btn.addEventListener('click', () => setQuizMode(btn.dataset.quizMode)));
-  document.querySelectorAll('[data-naming-count]').forEach(btn => btn.addEventListener('click', () => setNamingCount(btn.dataset.namingCount)));
   document.querySelectorAll('[data-fill-count]').forEach(btn => btn.addEventListener('click', () => setFillCount(btn.dataset.fillCount)));
   document.querySelectorAll('[data-deadline-mode]').forEach(btn => btn.addEventListener('click', () => setDeadlineMode(btn.dataset.deadlineMode)));
 
