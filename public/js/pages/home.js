@@ -11,9 +11,19 @@ import {
 import { navigate } from '../router.js';
 
 const TYPE_LABEL = {
-  multi:'일반글', general:'일반글', vote:'투표/판정', ox:'투표/판정', crazy_court:'투표/판정',
-  fill:'빈칸 채우기', naming:'미친작명소', acrostic:'삼행시', quiz:'미친퀴즈', initial_game:'미친퀴즈',
-  relay:'막장릴레이', anonymous:'일반글', balance:'투표/판정', battle:'투표/판정',
+  multi: '일반',
+  general: '일반',
+  vote: '투표',
+  ox: '투표',
+  crazy_court: '투표',
+  balance: '투표',
+  battle: '투표',
+  naming: '작명',
+  drip: '드립',
+  quiz: '퀴즈',
+  initial_game: '퀴즈',
+  anonymous: '일반',
+  fill: '일반',
 };
 
 function getKstDateString(date = new Date()) {
@@ -50,15 +60,13 @@ function fmtNum(n) {
 
 function moduleLabel(post) {
   const m = post.modules || {};
-  if (m.fill?.enabled)     return '빈칸 채우기';
-  if (m.naming?.enabled)   return '미친작명소';
-  if (m.acrostic?.enabled) return '삼행시';
-  if (m.relay?.enabled)    return '막장릴레이';
-  if (m.quiz?.enabled)     return '미친퀴즈';
-  if (m.vote?.enabled)     return '투표/판정';
+  if (m.vote?.enabled) return '투표';
+  if (m.naming?.enabled) return '작명';
+  if (m.drip?.enabled) return '드립';
+  if (m.quiz?.enabled) return '퀴즈';
   if (post.subtype && TYPE_LABEL[post.subtype]) return TYPE_LABEL[post.subtype];
-  if (post.type !== 'multi') return TYPE_LABEL[post.type] || '피드 글';
-  return '일반글';
+  if (post.type !== 'multi') return TYPE_LABEL[post.type] || '일반';
+  return '일반';
 }
 
 function renderCompactPost(post) {
@@ -82,7 +90,7 @@ export async function renderHome() {
     </div>`;
 
   try {
-    setMeta('소소킹 · 피드와 게임');
+    setMeta('소소킹 · 소소함의 재미');
     const user = auth.currentUser;
     if (user) checkStreak(user.uid);
 
@@ -95,9 +103,9 @@ export async function renderHome() {
         <div class="home-greeting__left">
           ${streak > 1 ? `<div class="home-greeting__streak">🔥 ${streak}일 연속 출석 중</div>` : ''}
           <div class="home-greeting__name">
-            ${user ? `${escHtml(nickname)}님, 반가워요 👋` : '소소킹에 오신 걸 환영해요 👋'}
+            ${user ? `${escHtml(nickname)}님, 오늘도 소소하게 놀아볼까요?` : '소소한데 은근히 재밌는 곳, 소소킹 👋'}
           </div>
-          <div class="home-greeting__sub">투표 · 작명 · 삼행시 · 퀴즈 · 막장릴레이</div>
+          <div class="home-greeting__sub">일반 · 투표 · 작명 · 드립 · 퀴즈로 짧게 놀고 피식 웃는 커뮤니티</div>
         </div>
         <button class="btn btn--primary btn--sm home-greeting__write" id="hbtn-write">+ 글쓰기</button>
       </div>`;
@@ -105,7 +113,7 @@ export async function renderHome() {
     const hotHTML = hotPosts.length ? `
       <div>
         <div class="home-section-header">
-          <span class="home-section-title">🔥 지금 인기</span>
+          <span class="home-section-title">🔥 지금 소소하게 뜨는 글</span>
           <button class="home-section-more home-section-more--button" id="hbtn-more-hot">더 보기</button>
         </div>
         <div class="home-rank-list">
@@ -127,7 +135,7 @@ export async function renderHome() {
     const recentHTML = recentPosts.length ? `
       <div>
         <div class="home-section-header">
-          <span class="home-section-title">🕐 최근 피드</span>
+          <span class="home-section-title">🕐 방금 올라온 소소한 재미</span>
           <button class="home-section-more home-section-more--button" id="hbtn-more-recent">피드 가기</button>
         </div>
         <div class="home-compact-feed-list">${recentPosts.map(renderCompactPost).join('')}</div>
@@ -139,25 +147,25 @@ export async function renderHome() {
           <span class="home-section-title">🚀 바로가기</span>
         </div>
         <div class="home-quick-links">
-          <button class="home-quick-link-card" data-nav="/sosoland">
-            <span class="home-quick-link-card__icon">🎮</span>
-            <span class="home-quick-link-card__label">소소랜드</span>
-            <span class="home-quick-link-card__sub">실시간 게임</span>
+          <button class="home-quick-link-card" data-nav="/write?type=multi&preset=drip">
+            <span class="home-quick-link-card__icon">🤣</span>
+            <span class="home-quick-link-card__label">드립</span>
+            <span class="home-quick-link-card__sub">한 줄로 웃기기</span>
           </button>
-          <button class="home-quick-link-card" data-nav="/hall">
-            <span class="home-quick-link-card__icon">🏆</span>
-            <span class="home-quick-link-card__label">명예의 전당</span>
-            <span class="home-quick-link-card__sub">인기글 · 통계</span>
+          <button class="home-quick-link-card" data-nav="/write?type=multi&preset=vote">
+            <span class="home-quick-link-card__icon">🗳️</span>
+            <span class="home-quick-link-card__label">투표</span>
+            <span class="home-quick-link-card__sub">가볍게 판정받기</span>
+          </button>
+          <button class="home-quick-link-card" data-nav="/write?type=multi&preset=naming">
+            <span class="home-quick-link-card__icon">😜</span>
+            <span class="home-quick-link-card__label">작명</span>
+            <span class="home-quick-link-card__sub">웃긴 이름 붙이기</span>
           </button>
           <button class="home-quick-link-card" data-nav="/feed?sort=popular">
             <span class="home-quick-link-card__icon">🔥</span>
-            <span class="home-quick-link-card__label">인기 피드</span>
+            <span class="home-quick-link-card__label">인기</span>
             <span class="home-quick-link-card__sub">반응 높은 글</span>
-          </button>
-          <button class="home-quick-link-card" data-nav="/scraps">
-            <span class="home-quick-link-card__icon">🔖</span>
-            <span class="home-quick-link-card__label">내 스크랩</span>
-            <span class="home-quick-link-card__sub">저장한 글 모음</span>
           </button>
         </div>
       </div>`;
