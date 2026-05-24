@@ -214,9 +214,8 @@ export async function renderHome() {
         </div>
       </div>`;
 
-    el.innerHTML = `<div class="home-dash page-enter home-dash--v2">${renderInstallBanner()}${greetingHTML}${hotHTML}${quickLinksHTML}${recentHTML}</div>`;
+    el.innerHTML = `<div class="home-dash page-enter home-dash--v2">${greetingHTML}${hotHTML}${quickLinksHTML}${recentHTML}</div>`;
 
-    bindInstallBanner();
     el.querySelector('#hbtn-write')?.addEventListener('click',        () => navigate('/write?type=multi'));
     el.querySelector('#hbtn-more-hot')?.addEventListener('click',     () => navigate('/feed?sort=popular'));
     el.querySelector('#hbtn-more-recent')?.addEventListener('click',  () => navigate('/feed'));

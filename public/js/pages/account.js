@@ -106,6 +106,7 @@ export async function renderAccount() {
         </div>
         <div class="card__footer account-profile-actions">
           ${isAdmin ? `<button class="btn btn--primary btn--sm" onclick="navigate('/admin')">⚙️ 관리자</button>` : ''}
+          ${(!window.matchMedia('(display-mode: standalone)').matches && !navigator.standalone) && (appState.installPrompt || /iPhone|iPad|iPod/.test(navigator.userAgent)) ? `<button class="btn btn--ghost btn--sm" id="btn-pwa-install">📲 앱 설치</button>` : ''}
           <button class="btn btn--ghost btn--sm" id="btn-logout">로그아웃</button>
         </div>
       </div>
@@ -120,6 +121,20 @@ export async function renderAccount() {
       </div>
       <div id="account-tab-content"></div>
     </div>`;
+
+  document.getElementById('btn-pwa-install')?.addEventListener('click', async () => {
+    const prompt = appState.installPrompt;
+    if (prompt) {
+      prompt.prompt();
+      const { outcome } = await prompt.userChoice;
+      if (outcome === 'accepted') {
+        appState.installPrompt = null;
+        document.getElementById('btn-pwa-install')?.remove();
+      }
+    } else {
+      alert('Safari 하단 공유 버튼(⬆)을 탭한 뒤 "홈 화면에 추가"를 선택하세요.');
+    }
+  });
 
   document.getElementById('btn-logout')?.addEventListener('click', async () => {
     await signOut(auth);
