@@ -35,7 +35,6 @@ const EXTENSION_MODULES = [
   './admin-data-manager.js',
   './admin-ui-cleanup.js',
   './notifications-ui.js',
-  './relay-mission-cards.js',
   './deadline-gate.js',
 ];
 
