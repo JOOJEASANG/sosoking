@@ -2,25 +2,23 @@ import { navigate } from '../router.js';
 import { escHtml, formatTime } from '../utils/helpers.js';
 
 const TYPE_META = {
-  multi:        { cat: 'multi', catLabel: '만능', icon: '🧩', label: '만능 놀이글' },
-  general:      { cat: 'multi', catLabel: '피드', icon: '📝', label: '일반글' },
-  fill:         { cat: 'multi', catLabel: '만능', icon: '🧩', label: '빈칸 채우기' },
-  balance:      { cat: 'golra', catLabel: '대표 놀이', icon: '🗳️', label: '골라봐' },
-  vote:         { cat: 'golra', catLabel: '대표 놀이', icon: '🗳️', label: '투표/판정' },
-  battle:       { cat: 'golra', catLabel: '대표 놀이', icon: '🗳️', label: '골라봐' },
-  naming:       { cat: 'usgyo', catLabel: '대표 놀이', icon: '😜', label: '미친작명소' },
-  initial_game: { cat: 'golra', catLabel: '대표 놀이', icon: '🔤', label: '초성게임' },
-  acrostic:     { cat: 'malhe', catLabel: '대표 놀이', icon: '✍️', label: '삼행시' },
-  drip:         { cat: 'usgyo', catLabel: '대표 놀이', icon: '🎤', label: '한줄드립' },
-  ox:           { cat: 'malhe', catLabel: '대표 놀이', icon: '🗳️', label: '투표/판정' },
-  quiz:         { cat: 'malhe', catLabel: '대표 놀이', icon: '🧠', label: '미친퀴즈' },
-  crazy_court:  { cat: 'malhe', catLabel: '대표 놀이', icon: '🗳️', label: '투표/판정' },
-  relay:        { cat: 'malhe', catLabel: '대표 놀이', icon: '🎭', label: '막장릴레이' },
-  random_battle:{ cat: 'golra', catLabel: '대표 놀이', icon: '🎰', label: '랜덤대결' },
-  howto:        { cat: 'malhe', catLabel: '구형', icon: '💡', label: '노하우' },
-  story:        { cat: 'malhe', catLabel: '구형', icon: '📖', label: '경험담' },
-  fail:         { cat: 'malhe', catLabel: '구형', icon: '💀', label: '실패담' },
-  concern:      { cat: 'malhe', catLabel: '구형', icon: '🤔', label: '고민/질문' },
+  multi:        { cat: 'multi', catLabel: '피드', icon: '📝', label: '일반' },
+  general:      { cat: 'multi', catLabel: '피드', icon: '📝', label: '일반' },
+  fill:         { cat: 'multi', catLabel: '피드', icon: '🧩', label: '빈칸' },
+  balance:      { cat: 'golra', catLabel: '놀이', icon: '🗳️', label: '투표' },
+  vote:         { cat: 'golra', catLabel: '놀이', icon: '🗳️', label: '투표' },
+  battle:       { cat: 'golra', catLabel: '놀이', icon: '🗳️', label: '투표' },
+  naming:       { cat: 'usgyo', catLabel: '놀이', icon: '😜', label: '작명' },
+  initial_game: { cat: 'malhe', catLabel: '놀이', icon: '🧠', label: '퀴즈' },
+  drip:         { cat: 'usgyo', catLabel: '놀이', icon: '🤣', label: '드립' },
+  ox:           { cat: 'golra', catLabel: '놀이', icon: '🗳️', label: '투표' },
+  quiz:         { cat: 'malhe', catLabel: '놀이', icon: '🧠', label: '퀴즈' },
+  crazy_court:  { cat: 'golra', catLabel: '놀이', icon: '🗳️', label: '투표' },
+  random_battle:{ cat: 'golra', catLabel: '놀이', icon: '📝', label: '일반' },
+  howto:        { cat: 'multi', catLabel: '피드', icon: '📝', label: '일반' },
+  story:        { cat: 'multi', catLabel: '피드', icon: '📝', label: '일반' },
+  fail:         { cat: 'multi', catLabel: '피드', icon: '📝', label: '일반' },
+  concern:      { cat: 'multi', catLabel: '피드', icon: '📝', label: '일반' },
 };
 
 function escAttr(value) {
@@ -65,8 +63,7 @@ function getMultiSubtype(post) {
   if (post.modules?.fill?.enabled) return 'fill';
   if (post.modules?.vote?.enabled) return 'vote';
   if (post.modules?.naming?.enabled) return 'naming';
-  if (post.modules?.acrostic?.enabled) return 'acrostic';
-  if (post.modules?.relay?.enabled) return 'relay';
+  if (post.modules?.drip?.enabled) return 'drip';
   if (post.modules?.quiz?.enabled) return 'quiz';
   if (post.subtype && TYPE_META[post.subtype]) return post.subtype;
   return 'general';
@@ -77,7 +74,7 @@ function getTypeMeta(post) {
     const subtype = getMultiSubtype(post);
     return TYPE_META[subtype] || TYPE_META.general;
   }
-  return TYPE_META[post.type] || { cat: 'malhe', catLabel: '', icon: '📝', label: post.type || '글' };
+  return TYPE_META[post.type] || { cat: 'multi', catLabel: '', icon: '📝', label: '일반' };
 }
 
 function renderModuleChips(post) {
@@ -86,11 +83,10 @@ function renderModuleChips(post) {
   if (post.anonymous || post.modules.anonymous?.enabled) labels.push('익명');
   if (post.modules.vote?.ox) labels.push('투표');
   else if (post.modules.vote?.enabled) labels.push('투표');
-  if (post.modules.fill?.enabled) labels.push(`빈칸 ${Number(post.modules.fill.charCount || post.modules.fill.blankCount || 0) || ''}칸`.trim());
+  if (post.modules.fill?.enabled) labels.push('빈칸');
   if (post.modules.naming?.enabled) labels.push('작명');
-  if (post.modules.acrostic?.enabled) labels.push('삼행시');
-  if (post.modules.relay?.enabled) labels.push('릴레이');
-  if (post.modules.quiz?.enabled) labels.push('문제');
+  if (post.modules.drip?.enabled) labels.push('드립');
+  if (post.modules.quiz?.enabled) labels.push('퀴즈');
   if (!labels.length) return '';
   return `<div class="feed-card__multi-chips">${labels.map(label => `<span>${escHtml(label)}</span>`).join('')}</div>`;
 }
