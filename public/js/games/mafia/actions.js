@@ -40,6 +40,7 @@ export async function createMafiaRoom({ title, maxPlayers, mafiaCount, withAI, d
 }
 
 export function makeMafiaPlayer(role = 'player') {
+  if (!auth.currentUser) throw new Error('게임 접속 정보를 확인하지 못했어요. 다시 시도해주세요.');
   return {
     uid: auth.currentUser.uid,
     name: gamePlayerName(),
@@ -52,6 +53,7 @@ export function makeMafiaPlayer(role = 'player') {
 }
 
 export async function joinMafiaRoom(room, currentCount) {
+  if (!auth.currentUser) throw new Error('게임 접속 정보를 확인하지 못했어요. 다시 시도해주세요.');
   if (currentCount >= Number(room.maxPlayers || 0)) throw new Error('방이 가득 찼어요');
   const playerRole = auth.currentUser.uid === room.hostId ? 'host' : 'player';
   await setDoc(doc(db, 'game_rooms', room.id, 'players', auth.currentUser.uid), makeMafiaPlayer(playerRole), { merge: true });
@@ -76,6 +78,9 @@ export async function startMafiaGame(room) {
           uid: result.data.aiUid,
           name: result.data.aiName,
           role: 'player',
+          assignedRole: '',
+          alive: true,
+          votedFor: '',
           isAI: true,
         }];
       }
@@ -99,7 +104,7 @@ export async function startMafiaGame(room) {
     if (roles[aiIdx] !== 'mafia') roles[aiIdx] = 'mafia';
   }
 
-  await Promise.all(players.map((p, i) => setDoc(doc(db, 'game_rooms', room.id, 'players', p.id), {
+  await Promise.all(players.map((p, i) => setDoc(doc(db, 'game_rooms', room.id, 'players', p.uid || p.id), {
     assignedRole: roles[i],
     alive: true,
     votedFor: '',

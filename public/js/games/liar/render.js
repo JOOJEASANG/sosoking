@@ -71,7 +71,7 @@ export function renderLiarLobbyHTML() {
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label">���이어 수</label>
+            <label class="form-label">라이어 수</label>
             <select id="liar-count" class="form-select">
               <option value="1" selected>1명</option>
               <option value="2">2명</option>
@@ -116,7 +116,7 @@ export function renderLiarLoadingHTML() {
 }
 
 export function renderLiarNotFoundHTML() {
-  return `<div class="empty-state"><div class="empty-state__icon">🔍</div><div class="empty-state__title">방을 찾을 수 없어요</div><button class="btn btn--primary" onclick="navigate('/game/liar')">��이어게임 방 만들기</button></div>`;
+  return `<div class="empty-state"><div class="empty-state__icon">🔍</div><div class="empty-state__title">방을 찾을 수 없어요</div><button class="btn btn--primary" onclick="navigate('/game/liar')">라이어게임 방 만들기</button></div>`;
 }
 
 export function renderLiarWrongGameHTML(game = '') {
@@ -154,7 +154,7 @@ function renderMySecretCard(room, me) {
     <div class="game-secret-v2 ${isLiar ? 'game-secret-v2--liar' : ''}">
       <div class="game-secret-v2__icon">${isLiar ? '🤫' : '🔐'}</div>
       <div>
-        <div class="game-secret-v2__role">${isLiar ? '���신은 라이어입니다' : '당신의 제시어'}</div>
+        <div class="game-secret-v2__role">${isLiar ? '당신은 라이어입니다' : '당신의 제시어'}</div>
         <div class="game-secret-v2__word">${isLiar ? '제시어를 모릅니다' : esc(room.word || '')}</div>
         <div class="game-secret-v2__hint">${isLiar ? `카테고리: ${esc(room.topic || CATEGORY_LABELS[room.category] || '-')}` : '너무 직접적으로 말하면 라이어에게 힌트가 됩니다.'}</div>
       </div>

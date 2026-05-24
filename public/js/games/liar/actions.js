@@ -110,6 +110,9 @@ export async function startLiarGame(room, players) {
           uid: result.data.aiUid,
           name: result.data.aiName,
           role: 'player',
+          assignedRole: '',
+          wordSeen: false,
+          votedFor: '',
           isAI: true,
         }];
       }
