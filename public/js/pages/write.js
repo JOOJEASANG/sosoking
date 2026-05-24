@@ -5,10 +5,11 @@ const LEGACY_REDIRECTS = {
   vote: 'vote',
   crazy_court: 'vote',
   naming: 'naming',
-  acrostic: 'acrostic',
+  drip: 'drip',
   quiz: 'quiz',
   initial_game: 'quiz',
   relay: '',
+  acrostic: '',
 };
 
 function escAttr(value) {
