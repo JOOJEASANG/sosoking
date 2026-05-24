@@ -13,7 +13,7 @@ const POST_PRESETS = [
   { preset: 'general', label: '일반글' },
   { preset: 'vote', label: '투표/판정' },
   { preset: 'naming', label: '미친작명소' },
-  { preset: 'acrostic', label: '삼행시' },
+  { preset: 'drip', label: '미친드립' },
   { preset: 'quiz', label: '미친퀴즈' },
 ];
 
@@ -56,12 +56,12 @@ function normalizePreset(value) {
   const key = String(value || 'general').trim();
   if (key === 'ox' || key === 'crazy_court') return 'vote';
   if (key === 'initial_game') return 'quiz';
-  if (key === 'random_battle' || key === 'drip' || key === 'relay') return 'general';
+  if (key === 'random_battle' || key === 'relay' || key === 'acrostic') return 'general';
   return PRESET_META[key] ? key : 'general';
 }
 
 function feedTypeFromPreset(preset) {
-  return ['vote', 'naming', 'acrostic', 'quiz'].includes(preset) ? preset : 'general';
+  return ['vote', 'naming', 'drip', 'quiz'].includes(preset) ? preset : 'general';
 }
 
 function toTags(value, fallback = []) {
@@ -140,14 +140,14 @@ const TYPE_PROMPTS = {
 {"title":"투표/판정 제목 50자 이내","desc":"투표할 상황 설명 1~3문장","options":["선택지1","선택지2","선택지3"],"tags":["투표","판정","소소킹"]}`,
 
   naming: `너는 소소킹 커뮤니티 운영자야. 현재 글쓰기 유형 '미친작명소'에 맞는 게시글 1개를 만들어줘.
-사람들이 댓글로 웃긴 이름을 붙이고 싶어지는 상황이어야 해.
+사람들이 댓글로 웃긴 이름을 붙이고 싶어지는 상황이어야 해. 글자수 제한은 없어.
 반드시 JSON만 출력해:
-{"title":"작명 대상이 명확한 제목 60자 이내","desc":"무엇에 이름을 붙이면 되는지 설명 1~3문장","charCount":0,"tags":["미친작명소","작명","소소킹"]}`,
+{"title":"작명 대상이 명확한 제목 60자 이내","desc":"무엇에 이름을 붙이면 되는지 설명 1~3문장","tags":["미친작명소","작명","소소킹"]}`,
 
-  acrostic: `너는 소소킹 커뮤니티 운영자야. 현재 글쓰기 유형 '삼행시'에 맞는 게시글 1개를 만들어줘.
-2~4글자의 한국어 제시어를 하나 고르고, 사람들이 각 글자로 시작하는 문장을 댓글로 쓰게 유도해.
+  drip: `너는 소소킹 커뮤니티 운영자야. 현재 글쓰기 유형 '미친드립'에 맞는 게시글 1개를 만들어줘.
+사람들이 80자 이내 한 줄 드립을 남기고 싶어지는 상황이어야 해. 주제는 직장, 학교, 친구, 배달, 연애, 가족, 일상 중 하나로 해.
 반드시 JSON만 출력해:
-{"title":"삼행시 도전 제목 50자 이내","keyword":"2~4글자 제시어","desc":"참여 유도 설명 1~3문장","tags":["삼행시","제시어","소소킹"]}`,
+{"title":"드립 주제가 되는 제목 60자 이내","desc":"한 줄 드립을 유도하는 상황 설명 1~2문장","tags":["미친드립","한줄드립","소소킹"]}`,
 
   quiz: `너는 소소킹 커뮤니티 운영자야. 현재 글쓰기 유형 '미친퀴즈'에 맞는 객관식 퀴즈 게시글 1개를 만들어줘.
 정답이 너무 논쟁적이지 않은 생활상식, 음식, 역사, 과학, 문화 주제로 만들어. 선택지는 4개.
@@ -169,12 +169,12 @@ function fallbackContent(preset, date) {
       { title: '주말 아침, 몇 시 기상이 제일 행복할까?', desc: '쉬는 날 아침 기준으로 가장 마음 편한 기상 시간을 골라주세요.', options: ['7시 이전', '9~10시', '11시쯤', '점심 이후'], tags: ['투표', '주말', '소소킹'] },
     ]),
     naming: pick([
-      { title: '퇴근 5분 전에 들어오는 급한 업무 지시 이름 좀 지어줘', desc: '분명 퇴근 준비 중이었는데 갑자기 떨어지는 그 업무. 이 상황에 딱 맞는 이름을 댓글로 지어주세요.', charCount: 0, tags: ['미친작명소', '직장인', '소소킹'] },
-      { title: '배달 30분 예정인데 1시간 넘게 기다리는 시간 이름은?', desc: '배는 고프고 지도는 그대로인 그 애매한 기다림. 찰진 이름을 붙여주세요.', charCount: 0, tags: ['미친작명소', '배달', '소소킹'] },
+      { title: '퇴근 5분 전에 들어오는 급한 업무 지시 이름 좀 지어줘', desc: '분명 퇴근 준비 중이었는데 갑자기 떨어지는 그 업무. 이 상황에 딱 맞는 이름을 댓글로 지어주세요.', tags: ['미친작명소', '직장인', '소소킹'] },
+      { title: '배달 30분 예정인데 1시간 넘게 기다리는 시간 이름은?', desc: '배는 고프고 지도는 그대로인 그 애매한 기다림. 찰진 이름을 붙여주세요.', tags: ['미친작명소', '배달', '소소킹'] },
     ]),
-    acrostic: pick([
-      { title: "'월요일' 삼행시 도전!", keyword: '월요일', desc: "'월요일' 각 글자로 시작하는 삼행시를 댓글로 남겨주세요. 제일 공감되는 삼행시가 오늘의 승자입니다.", tags: ['삼행시', '월요일', '소소킹'] },
-      { title: "'퇴근길' 삼행시 도전!", keyword: '퇴근길', desc: "퇴근길의 기분을 담아 각 글자로 시작하는 한 줄씩 완성해보세요.", tags: ['삼행시', '퇴근길', '소소킹'] },
+    drip: pick([
+      { title: '퇴근 5분 전에 팀장이 부른 이유', desc: '가장 킹받는 한 줄 드립을 남겨보세요.', tags: ['미친드립', '직장인', '한줄드립'] },
+      { title: '배달 기사님 위치가 20분째 같은 곳에 멈춘 이유', desc: '상상력 풀가동해서 한 줄로 웃겨주세요.', tags: ['미친드립', '배달', '한줄드립'] },
     ]),
     quiz: pick([
       { title: '오늘의 미친퀴즈 🧠', desc: '다음 중 일반적으로 냉장 보관하지 않는 것이 더 좋은 식재료는?', options: ['토마토', '우유', '생선', '두부'], answerIdx: 0, hint: '맛과 식감이 중요해요.', explanation: '토마토는 냉장 보관 시 향과 식감이 떨어질 수 있어 상온 보관이 권장되는 경우가 많습니다.', tags: ['미친퀴즈', '생활상식', '소소킹'] },
@@ -230,16 +230,11 @@ function buildDoc(preset, content, date, source) {
   }
 
   if (preset === 'naming') {
-    doc.modules.naming = {
-      enabled: true,
-      charCount: Math.max(0, Math.min(12, Number(content.charCount || 0))),
-    };
+    doc.modules.naming = { enabled: true, charCount: 0 };
   }
 
-  if (preset === 'acrostic') {
-    const keyword = clean(content.keyword, 12) || '소소킹';
-    doc.title = clean(content.title || `'${keyword}' 삼행시 도전!`, 100);
-    doc.modules.acrostic = { enabled: true, keyword };
+  if (preset === 'drip') {
+    doc.modules.drip = { enabled: true, prompt: doc.desc, maxLength: 80 };
   }
 
   if (preset === 'quiz') {
