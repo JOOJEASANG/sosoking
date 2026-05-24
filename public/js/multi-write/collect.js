@@ -12,11 +12,6 @@ function htmlToPlainText(html) {
   return (tmp.textContent || '').replace(/\n{4,}/g, '\n\n\n').trim();
 }
 
-function acrosticLabel(keyword = '') {
-  const count = [...String(keyword || '').trim()].length;
-  return ({ 2: '이행시', 3: '삼행시', 4: '사행시', 5: '오행시' })[count] || `${count}행시`;
-}
-
 export function getBodyText() {
   const desc = document.getElementById('mw-desc');
   return desc?.dataset.plainText || htmlToPlainText(desc?.value || '') || desc?.value.trim() || '';
@@ -95,16 +90,6 @@ function parseFillTemplate(bodyText, manualCounts = []) {
   };
 }
 
-function relayMissionPreset(key) {
-  return {
-    but: { key: 'but', title: '그런데 시작', instruction: '다음 문장은 “그런데”로 시작해 주세요.', badge: '그런데' },
-    horror: { key: 'horror', title: '공포 전환', instruction: '갑자기 분위기를 공포로 바꿔 주세요.', badge: '공포' },
-    animal: { key: 'animal', title: '동물 등장', instruction: '동물 하나를 자연스럽게 등장시켜 주세요.', badge: '동물' },
-    twist: { key: 'twist', title: '반전 넣기', instruction: '마지막에 짧은 반전을 넣어 주세요.', badge: '반전' },
-    dialogue: { key: 'dialogue', title: '대사 필수', instruction: '인물 대사 한 줄을 반드시 포함해 주세요.', badge: '대사' },
-  }[key] || null;
-}
-
 export function parseYouTubeUrl(value) {
   const raw = String(value || '').trim();
   if (!raw) return null;
@@ -157,6 +142,11 @@ export function collectMultiModules() {
     modules.vote = { enabled: true, question: bodyText, options: options.map(text => ({ text, votes: 0 })) };
   }
 
+  if (enabled('drip')) {
+    if (!bodyText) throw new Error('본문에 미친드립 주제나 상황을 입력해주세요.');
+    modules.drip = { enabled: true, prompt: bodyText, maxLength: 80 };
+  }
+
   if (enabled('fill')) {
     if (!bodyText) throw new Error('본문에 빈칸 채우기 문장을 입력해주세요.');
     const manualCounts = getFillCounts();
@@ -177,25 +167,7 @@ export function collectMultiModules() {
   }
 
   if (enabled('naming')) {
-    modules.naming = { enabled: true, charCount: Number(document.getElementById('mw-naming-count')?.value || 0) };
-  }
-
-  if (enabled('acrostic')) {
-    const keyword = document.getElementById('mw-acrostic-keyword')?.value.trim() || '';
-    const keywordLength = [...keyword].length;
-    if (keywordLength < 2 || keywordLength > 5) throw new Error('행시 제시어는 2~5글자로 입력해주세요.');
-    modules.acrostic = { enabled: true, keyword, lineCount: keywordLength, kindLabel: acrosticLabel(keyword) };
-  }
-
-  if (enabled('relay')) {
-    if (!bodyText) throw new Error('본문에 릴레이 시작 문장이나 상황을 입력해주세요.');
-    const missionKey = document.getElementById('mw-relay-mission')?.value || 'none';
-    const mission = relayMissionPreset(missionKey);
-    modules.relay = {
-      enabled: true,
-      startSentence: bodyText,
-      mission: mission ? { enabled: true, ...mission } : { enabled: false, key: 'none' },
-    };
+    modules.naming = { enabled: true, charCount: 0 };
   }
 
   if (enabled('quiz')) {
