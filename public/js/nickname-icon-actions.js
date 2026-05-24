@@ -86,7 +86,7 @@ function renderIconPicker(target) {
         <div>
           <div style="font-size:13px;font-weight:800;color:var(--color-text-primary)">${esc(appState.nickname || auth.currentUser?.displayName || '내 닉네임')}</div>
           <div style="font-size:12px;color:var(--color-text-muted);margin-top:3px">아이콘을 고른 뒤 <b>아이콘 적용</b>을 눌러야 저장돼요.</div>
-          <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px">아이콘을 삭제하거나 기본으로 선택하면 Google 기본 프로필 사진이 표시됩니다.</div>
+          <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px"><b>아이콘 삭제</b>를 누르면 즉시 삭제 및 저장돼요.</div>
         </div>
       </div>
       <div class="nickname-icon-emoji-grid">
@@ -162,7 +162,21 @@ function setupPickerEvents(section, initialIcon) {
     if (value) setSelected({ type: 'emoji', value });
   });
 
-  section.querySelector('#btn-clear-icon')?.addEventListener('click', () => setSelected(null));
+  section.querySelector('#btn-clear-icon')?.addEventListener('click', async event => {
+    const btn = event.currentTarget;
+    try {
+      btn.disabled = true;
+      btn.textContent = '삭제 중...';
+      setSelected(null);
+      await saveIcon(null);
+    } catch (error) {
+      console.error(error);
+      toast.error('아이콘 삭제에 실패했어요');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '아이콘 삭제';
+    }
+  });
 
   const fileInput = section.querySelector('#nickname-icon-file');
   section.querySelector('#btn-pick-icon-file')?.addEventListener('click', () => fileInput?.click());
