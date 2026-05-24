@@ -42,18 +42,23 @@ function showAndroidInstallGuide() {
   if (prev) { prev.remove(); return; }
   const tip = document.createElement('div');
   tip.id = 'ios-install-tip';
-  tip.style.cssText = 'position:fixed;left:50%;bottom:84px;transform:translateX(-50%);z-index:10000;width:min(320px,calc(100vw - 32px));background:var(--color-surface);border:1px solid var(--color-border);border-radius:16px;padding:18px 20px;box-shadow:0 12px 40px rgba(0,0,0,.2);text-align:center;font-size:13px;line-height:1.65';
+  tip.style.cssText = 'position:fixed;left:50%;bottom:84px;transform:translateX(-50%);z-index:10000;width:min(340px,calc(100vw - 32px));background:var(--color-surface);border:1px solid var(--color-border);border-radius:16px;padding:18px 20px;box-shadow:0 12px 40px rgba(0,0,0,.2);text-align:center;font-size:13px;line-height:1.65';
   tip.innerHTML = `
     <div style="font-size:24px;margin-bottom:8px">📲</div>
     <div style="font-weight:800;color:var(--color-text-primary);margin-bottom:6px">앱 설치하기</div>
-    <div style="color:var(--color-text-secondary)">
-      Chrome 주소창 오른쪽 <b>⋮ 메뉴</b> 탭 후<br><b>"앱 설치"</b> 또는 <b>"홈 화면에 추가"</b>를 선택하세요
+    <div style="color:var(--color-text-secondary);margin-bottom:14px">
+      먼저 <b>새로고침</b>을 한 번 해보세요.<br>
+      그래도 안 되면 Chrome <b>⋮ 메뉴 → 앱 설치</b>를 선택하세요.
     </div>
-    <button id="ios-tip-close" style="margin-top:14px;padding:7px 24px;background:var(--color-primary);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer">확인</button>
+    <div style="display:flex;gap:8px;justify-content:center">
+      <button id="android-tip-reload" style="flex:1;padding:8px 0;background:var(--color-primary);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer">🔄 새로고침</button>
+      <button id="ios-tip-close" style="flex:1;padding:8px 0;background:var(--color-surface-2,#f5f5f5);color:var(--color-text-primary);border:1px solid var(--color-border);border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">닫기</button>
+    </div>
   `;
   document.body.appendChild(tip);
+  document.getElementById('android-tip-reload')?.addEventListener('click', () => { tip.remove(); window.location.reload(); });
   document.getElementById('ios-tip-close')?.addEventListener('click', () => tip.remove());
-  setTimeout(() => tip.remove(), 10000);
+  setTimeout(() => tip.remove(), 15000);
 }
 
 function openInstallPrompt() {
