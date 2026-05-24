@@ -53,9 +53,13 @@ function currentIconValue() {
   return normalizeNicknameIcon(appState.nicknameIcon) || null;
 }
 
-function iconKey(icon) {
-  const normalized = normalizeNicknameIcon(icon);
-  return normalized ? JSON.stringify(normalized) : 'default';
+function defaultProfileHtml(className = 'nickname-icon--preview') {
+  const user = auth.currentUser;
+  const nickname = appState.nickname || user?.displayName || user?.email?.split('@')[0] || '나';
+  if (user?.photoURL) {
+    return `<span class="nickname-icon nickname-icon--image ${className} nickname-icon--google-default" aria-hidden="true"><img src="${esc(user.photoURL)}" alt=""></span>`;
+  }
+  return `<span class="nickname-icon nickname-icon--empty ${className}" aria-hidden="true">${esc((nickname || '나')[0])}</span>`;
 }
 
 function previewHtml(icon, dataUrl = '') {
@@ -63,7 +67,7 @@ function previewHtml(icon, dataUrl = '') {
   if (dataUrl) {
     return `<span class="nickname-icon nickname-icon--image nickname-icon--preview"><img src="${esc(dataUrl)}" alt=""></span>`;
   }
-  return renderNicknameIcon(normalized, 'nickname-icon--preview') || '<span class="nickname-icon nickname-icon--empty">기본</span>';
+  return renderNicknameIcon(normalized, 'nickname-icon--preview') || defaultProfileHtml('nickname-icon--preview');
 }
 
 function renderIconPicker(target) {
@@ -82,6 +86,7 @@ function renderIconPicker(target) {
         <div>
           <div style="font-size:13px;font-weight:800;color:var(--color-text-primary)">${esc(appState.nickname || auth.currentUser?.displayName || '내 닉네임')}</div>
           <div style="font-size:12px;color:var(--color-text-muted);margin-top:3px">아이콘을 고른 뒤 <b>아이콘 적용</b>을 눌러야 저장돼요.</div>
+          <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px">아이콘을 삭제하거나 기본으로 선택하면 Google 기본 프로필 사진이 표시됩니다.</div>
         </div>
       </div>
       <div class="nickname-icon-emoji-grid">
@@ -93,7 +98,7 @@ function renderIconPicker(target) {
       <div class="nickname-icon-upload-row">
         <input id="nickname-icon-file" type="file" accept="image/*" style="display:none">
         <button class="btn btn--ghost btn--sm" id="btn-pick-icon-file">그림 파일 선택</button>
-        <button class="btn btn--ghost btn--sm" id="btn-clear-icon" style="color:var(--color-danger)">기본으로 선택</button>
+        <button class="btn btn--ghost btn--sm" id="btn-clear-icon" style="color:var(--color-danger)">아이콘 삭제</button>
         <button class="btn btn--primary btn--sm" id="btn-apply-nickname-icon">아이콘 적용</button>
       </div>
       <div class="form-hint" style="margin-top:8px">직접 입력은 목록에 없는 이모지를 쓰고 싶을 때만 입력하는 선택 기능입니다. 필요 없으면 위 아이콘만 고르면 됩니다.</div>
@@ -117,7 +122,8 @@ async function saveIcon(icon) {
   renderSidebar();
   updatePreview(normalized);
   applyKnownIcons();
-  toast.success(normalized ? '프로필 아이콘을 저장했어요' : '기본 앞글자 표시로 되돌렸어요');
+  window.dispatchEvent(new CustomEvent('nicknameiconchange', { detail: { icon: normalized } }));
+  toast.success(normalized ? '프로필 아이콘을 저장했어요' : (user.photoURL ? 'Google 기본 프로필 사진으로 표시할게요' : '기본 프로필로 표시할게요'));
 }
 
 function updatePreview(icon = appState.nicknameIcon, dataUrl = '') {
@@ -130,16 +136,21 @@ function setupPickerEvents(section, initialIcon) {
   let selectedIcon = normalizeNicknameIcon(initialIcon);
   let pendingImageDataUrl = '';
 
+  function normalizedForActiveState() {
+    return normalizeNicknameIcon(selectedIcon);
+  }
+
   function setSelected(icon, dataUrl = '') {
-    selectedIcon = normalizeNicknameIcon(icon);
+    selectedIcon = icon?.type === 'pendingImage' ? icon : normalizeNicknameIcon(icon);
     pendingImageDataUrl = dataUrl || '';
+    const normalized = normalizedForActiveState();
     section.querySelectorAll('[data-emoji-icon]').forEach(btn => {
-      const active = selectedIcon?.type === 'emoji' && selectedIcon.value === btn.dataset.emojiIcon;
+      const active = normalized?.type === 'emoji' && normalized.value === btn.dataset.emojiIcon;
       btn.classList.toggle('active', active);
       btn.setAttribute('aria-pressed', active ? 'true' : 'false');
     });
-    if (selectedIcon?.type !== 'emoji') section.querySelector('#nickname-icon-custom').value = '';
-    updatePreview(selectedIcon, pendingImageDataUrl);
+    if (normalized?.type !== 'emoji') section.querySelector('#nickname-icon-custom').value = '';
+    updatePreview(normalized, pendingImageDataUrl);
   }
 
   section.querySelectorAll('[data-emoji-icon]').forEach(btn => {
@@ -240,11 +251,12 @@ function avatarContent(icon) {
 function setAvatar(el, icon) {
   if (!el) return;
   const normalized = normalizeNicknameIcon(icon);
-  const key = normalized ? JSON.stringify(normalized) : 'default';
+  const userPhoto = auth.currentUser?.photoURL || '';
+  const key = normalized ? JSON.stringify(normalized) : `default:${userPhoto}`;
   if (el.dataset.nicknameAvatarKey === key) return;
   el.innerHTML = avatarContent(normalized);
   el.dataset.nicknameAvatarKey = key;
-  el.classList.toggle('avatar--nickname-icon', !!normalized);
+  el.classList.toggle('avatar--nickname-icon', !!normalized || !!userPhoto);
 }
 
 function removePrependedTextIcons() {
