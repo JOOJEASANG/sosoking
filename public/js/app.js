@@ -6,7 +6,6 @@ import { renderSidebar } from './components/sidebar.js';
 import { initToast } from './components/toast.js';
 import { appState } from './state.js';
 import './secure-interactions-actions.js';
-import './acrostic-enhancer.js';
 import './initial-game-enhancer.js';
 import './representative-games-enhancer.js';
 import './write-normalizer.js';
