@@ -1,4 +1,4 @@
-import { MULTI_PRESETS, WRITER_PRESET_KEYS, BODY_LABELS, BODY_REQUIRED_PRESETS, getAcrosticLabel } from './presets.js';
+import { MULTI_PRESETS, WRITER_PRESET_KEYS, BODY_LABELS, BODY_REQUIRED_PRESETS } from './presets.js';
 
 function esc(value) {
   return String(value || '').replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
@@ -8,7 +8,7 @@ function renderPresetButtons(activeKey) {
   return `
     <div class="multi-preset-box multi-preset-box--simple">
       <div class="multi-preset-box__title">글쓰기 형식</div>
-      <div class="multi-preset-box__desc">익명은 일반글 안에서 선택할 수 있습니다. 빈칸채우기는 매주 시스템 챌린지로 제공됩니다.</div>
+      <div class="multi-preset-box__desc">짧게 올리고, 댓글로 바로 놀 수 있는 형식만 남겼습니다.</div>
       <div class="multi-preset-list">
         ${WRITER_PRESET_KEYS.map(key => {
           const preset = MULTI_PRESETS[key];
@@ -76,49 +76,14 @@ function renderSelectedModule(activeKey, preset) {
       <button class="btn btn--ghost btn--sm" type="button" id="mw-add-vote-option">+ 선택지 추가</button>`);
   }
 
-  if (activeKey === 'fill') {
-    return moduleCard('fill', '🧩', '빈칸 채우기', '기존 글 호환용입니다. 새 글쓰기는 시스템 주간 챌린지로 제공됩니다.', `
-      <div class="multi-module-inline-note">빈칸채우기는 작성자가 직접 만들지 않고, 매주 시스템 챌린지로 자동 제공됩니다.</div>`);
-  }
-
   if (activeKey === 'naming') {
     return moduleCard('naming', '😜', '미친작명소', '다른 사용자가 웃긴 이름을 등록할 수 있습니다.', `
-      <div class="form-group">
-        <label class="form-label">글자수 제한</label>
-        <input type="hidden" id="mw-naming-count" value="0">
-        <div class="multi-choice-toggle" role="radiogroup" aria-label="글자수 제한 선택">
-          <button type="button" class="multi-choice-toggle__btn active" data-naming-count="0" role="radio" aria-checked="true">자유</button>
-          <button type="button" class="multi-choice-toggle__btn" data-naming-count="3" role="radio" aria-checked="false">3글자</button>
-          <button type="button" class="multi-choice-toggle__btn" data-naming-count="5" role="radio" aria-checked="false">5글자</button>
-        </div>
-      </div>`);
+      <div class="multi-module-inline-note">글자수 제한 없이 자유롭게 작명합니다.</div>`);
   }
 
-  if (activeKey === 'acrostic') {
-    return moduleCard('acrostic', '✍️', '이행시·삼행시·사행시·오행시', '제시어 글자 수를 자동 인식해 참여 입력칸이 바뀝니다.', `
-      <div class="form-group">
-        <label class="form-label">제시어 <span class="required">*</span></label>
-        <input id="mw-acrostic-keyword" class="form-input" maxlength="5" placeholder="${esc(preset.acrosticPlaceholder)}">
-        <div class="form-hint" id="mw-acrostic-kind-hint">2~5글자까지 입력 가능해요. 입력한 글자 수에 따라 ${getAcrosticLabel('소소킹')}처럼 자동 변환됩니다.</div>
-      </div>`);
-  }
-
-  if (activeKey === 'relay') {
-    return moduleCard('relay', '🎭', '막장릴레이', '참여자가 시작 문장 뒤로 이야기를 이어갑니다.', `
-      <div class="multi-module-inline-note">본문에 릴레이 시작 문장이나 상황을 적어주세요.</div>
-      <div class="form-group multi-relay-mission-write">
-        <label class="form-label">릴레이 미션 카드</label>
-        <input type="hidden" id="mw-relay-mission" value="none">
-        <div class="multi-relay-mission-grid" role="radiogroup" aria-label="릴레이 미션 선택">
-          <button type="button" class="multi-relay-mission-option active" data-relay-mission="none" role="radio" aria-checked="true"><b>미션 없음</b><span>자유롭게 이어쓰기</span></button>
-          <button type="button" class="multi-relay-mission-option" data-relay-mission="but" role="radio" aria-checked="false"><b>그런데 시작</b><span>다음 문장은 “그런데”로 시작</span></button>
-          <button type="button" class="multi-relay-mission-option" data-relay-mission="horror" role="radio" aria-checked="false"><b>공포 전환</b><span>갑자기 분위기를 공포로 바꾸기</span></button>
-          <button type="button" class="multi-relay-mission-option" data-relay-mission="animal" role="radio" aria-checked="false"><b>동물 등장</b><span>동물 하나를 자연스럽게 넣기</span></button>
-          <button type="button" class="multi-relay-mission-option" data-relay-mission="twist" role="radio" aria-checked="false"><b>반전 넣기</b><span>마지막에 짧은 반전 넣기</span></button>
-          <button type="button" class="multi-relay-mission-option" data-relay-mission="dialogue" role="radio" aria-checked="false"><b>대사 필수</b><span>인물 대사 한 줄 포함</span></button>
-        </div>
-        <div class="form-hint">미션은 참여자에게 보이는 재미 장치입니다. 강제 검사는 하지 않고, 베스트 선정에 참고할 수 있습니다.</div>
-      </div>`);
+  if (activeKey === 'drip') {
+    return moduleCard('drip', '🤣', '미친드립', '주제에 맞는 한 줄 드립을 댓글처럼 남기는 참여형 글입니다.', `
+      <div class="multi-module-inline-note">본문에 드립 주제를 적어주세요. 참여자는 80자 이내 한 줄 드립을 남깁니다.</div>`);
   }
 
   if (activeKey === 'quiz') {
