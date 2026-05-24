@@ -14,7 +14,6 @@ const POST_PRESETS = [
   { preset: 'vote', label: '투표/판정' },
   { preset: 'naming', label: '미친작명소' },
   { preset: 'acrostic', label: '삼행시' },
-  { preset: 'relay', label: '막장릴레이' },
   { preset: 'quiz', label: '미친퀴즈' },
 ];
 
@@ -57,12 +56,12 @@ function normalizePreset(value) {
   const key = String(value || 'general').trim();
   if (key === 'ox' || key === 'crazy_court') return 'vote';
   if (key === 'initial_game') return 'quiz';
-  if (key === 'random_battle' || key === 'drip') return 'general';
+  if (key === 'random_battle' || key === 'drip' || key === 'relay') return 'general';
   return PRESET_META[key] ? key : 'general';
 }
 
 function feedTypeFromPreset(preset) {
-  return ['vote', 'naming', 'acrostic', 'relay', 'quiz'].includes(preset) ? preset : 'general';
+  return ['vote', 'naming', 'acrostic', 'quiz'].includes(preset) ? preset : 'general';
 }
 
 function toTags(value, fallback = []) {
@@ -150,11 +149,6 @@ const TYPE_PROMPTS = {
 반드시 JSON만 출력해:
 {"title":"삼행시 도전 제목 50자 이내","keyword":"2~4글자 제시어","desc":"참여 유도 설명 1~3문장","tags":["삼행시","제시어","소소킹"]}`,
 
-  relay: `너는 소소킹 커뮤니티 운영자야. 현재 글쓰기 유형 '막장릴레이'에 맞는 게시글 1개를 만들어줘.
-댓글로 한 문장씩 이어 쓰고 싶어지는 시작 문장과 상황을 만들어.
-반드시 JSON만 출력해:
-{"title":"릴레이 제목 50자 이내","desc":"참여 유도 설명 1~2문장","startSentence":"릴레이 첫 문장 120자 이내","tags":["막장릴레이","이어쓰기","소소킹"]}`,
-
   quiz: `너는 소소킹 커뮤니티 운영자야. 현재 글쓰기 유형 '미친퀴즈'에 맞는 객관식 퀴즈 게시글 1개를 만들어줘.
 정답이 너무 논쟁적이지 않은 생활상식, 음식, 역사, 과학, 문화 주제로 만들어. 선택지는 4개.
 반드시 JSON만 출력해:
@@ -181,10 +175,6 @@ function fallbackContent(preset, date) {
     acrostic: pick([
       { title: "'월요일' 삼행시 도전!", keyword: '월요일', desc: "'월요일' 각 글자로 시작하는 삼행시를 댓글로 남겨주세요. 제일 공감되는 삼행시가 오늘의 승자입니다.", tags: ['삼행시', '월요일', '소소킹'] },
       { title: "'퇴근길' 삼행시 도전!", keyword: '퇴근길', desc: "퇴근길의 기분을 담아 각 글자로 시작하는 한 줄씩 완성해보세요.", tags: ['삼행시', '퇴근길', '소소킹'] },
-    ]),
-    relay: pick([
-      { title: '막장릴레이: 수상한 택배가 왔다', desc: '댓글로 한 문장씩 이어서 이야기를 완성해보세요. 어디로 흘러갈지는 아무도 몰라요.', startSentence: '현관문 앞에는 보낸 사람도 받는 사람도 적히지 않은 작은 상자가 놓여 있었다.', tags: ['막장릴레이', '이어쓰기', '소소킹'] },
-      { title: '막장릴레이: 엘리베이터에 같이 탄 사람', desc: '다음 이야기를 댓글로 이어주세요. 가장 흥미로운 방향으로 몰고 가는 사람이 주인공입니다.', startSentence: '엘리베이터 문이 닫히자 옆 사람이 작은 봉투를 내밀며 말했다. “이걸 꼭 읽어야 해요.”', tags: ['막장릴레이', '소설', '소소킹'] },
     ]),
     quiz: pick([
       { title: '오늘의 미친퀴즈 🧠', desc: '다음 중 일반적으로 냉장 보관하지 않는 것이 더 좋은 식재료는?', options: ['토마토', '우유', '생선', '두부'], answerIdx: 0, hint: '맛과 식감이 중요해요.', explanation: '토마토는 냉장 보관 시 향과 식감이 떨어질 수 있어 상온 보관이 권장되는 경우가 많습니다.', tags: ['미친퀴즈', '생활상식', '소소킹'] },
@@ -250,16 +240,6 @@ function buildDoc(preset, content, date, source) {
     const keyword = clean(content.keyword, 12) || '소소킹';
     doc.title = clean(content.title || `'${keyword}' 삼행시 도전!`, 100);
     doc.modules.acrostic = { enabled: true, keyword };
-  }
-
-  if (preset === 'relay') {
-    const startSentence = cleanMultiline(content.startSentence || content.start || doc.desc, 300);
-    doc.desc = startSentence || doc.desc;
-    doc.modules.relay = {
-      enabled: true,
-      startSentence: doc.desc,
-      mission: { enabled: false, key: 'none' },
-    };
   }
 
   if (preset === 'quiz') {
