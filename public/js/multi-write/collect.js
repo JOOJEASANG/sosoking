@@ -137,9 +137,12 @@ export function collectMultiModules() {
 
   if (enabled('vote')) {
     const options = getVoteOptions();
+    const voteMode = document.getElementById('mw-vote-mode')?.value || 'general';
     if (!bodyText) throw new Error('본문에 투표/판정 질문이나 상황을 입력해주세요.');
-    if (options.length < 2) throw new Error('투표 선택지를 2개 이상 입력해주세요.');
-    modules.vote = { enabled: true, question: bodyText, options: options.map(text => ({ text, votes: 0 })) };
+    if (options.length < 2) throw new Error('선택지를 2개 이상 입력해주세요.');
+    const voteData = { enabled: true, question: bodyText, options: options.map(text => ({ text, votes: 0 })) };
+    if (voteMode !== 'general') voteData.voteMode = voteMode;
+    modules.vote = voteData;
   }
 
   if (enabled('drip')) {

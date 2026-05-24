@@ -20,10 +20,13 @@ const TYPE_LABEL = {
   battle: '투표',
   naming: '작명',
   drip: '드립',
+  cbattle: '드립',
   quiz: '퀴즈',
   initial_game: '퀴즈',
+  acrostic: '행시',
+  relay: '릴레이',
   anonymous: '일반',
-  fill: '일반',
+  fill: '빈칸',
 };
 
 function getKstDateString(date = new Date()) {
