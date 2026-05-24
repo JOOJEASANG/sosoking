@@ -11,14 +11,14 @@ function ensureFooterLinks() {
             <img src="/logo.svg" alt="" width="26" height="26">
             <span>소소킹</span>
           </a>
-          <div class="site-footer__tagline">피드 · 게임<br>가볍게 즐기는 소소한 킹갓 놀이터</div>
+          <div class="site-footer__tagline">소소함의 재미<br>짧게 놀고 피식 웃는 커뮤니티</div>
         </div>
         <div>
           <div class="site-footer__col-title">바로가기</div>
           <div class="site-footer__links">
             <a href="#/feed">피드</a>
+            <a href="#/write?type=multi&preset=drip">드립</a>
             <a href="#/sosoland">게임</a>
-            <a href="#/hall">통계</a>
             <a href="#/guide">이용안내</a>
           </div>
         </div>
