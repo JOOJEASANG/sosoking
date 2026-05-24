@@ -8,8 +8,7 @@ const REGION = 'asia-northeast3';
 
 const MULTI_KINDS = Object.freeze({
   naming: { collection: 'multi_naming', module: 'naming', label: '작명 참여' },
-  acrostic: { collection: 'multi_acrostic', module: 'acrostic', label: '삼행시 참여' },
-  relay: { collection: 'multi_relay', module: 'relay', label: '릴레이 참여' },
+  drip: { collection: 'multi_drip', module: 'drip', label: '드립 참여' },
   fill: { collection: 'multi_fill', module: 'fill', label: '빈칸채우기 참여' },
 });
 
@@ -168,15 +167,10 @@ function ensureModuleEnabled(post, config) {
 }
 
 function cleanParticipationPayload(kind, payload = {}) {
-  const text = cleanText(payload.text, 500);
+  const max = kind === 'drip' ? 80 : 500;
+  const text = cleanText(payload.text, max);
   if (!text) throw new HttpsError('invalid-argument', '참여 내용을 입력해주세요.');
   const data = { text };
-  if (kind === 'acrostic' && Array.isArray(payload.lines)) {
-    data.lines = payload.lines.slice(0, 12).map(line => ({
-      char: cleanText(line?.char, 2),
-      line: cleanText(line?.line, 120),
-    })).filter(line => line.char && line.line);
-  }
   if (kind === 'fill' && Array.isArray(payload.answers)) {
     data.answers = payload.answers.slice(0, 12).map((answer, index) => ({
       index: Number.isInteger(Number(answer?.index)) ? Number(answer.index) : index,
