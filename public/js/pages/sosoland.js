@@ -1,5 +1,13 @@
 import { setMeta } from '../utils/seo.js';
 import { navigate } from '../router.js';
+import { appState } from '../state.js';
+
+function isStandalone() {
+  return window.matchMedia('(display-mode: standalone)').matches || !!navigator.standalone;
+}
+function isIOS() {
+  return /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream;
+}
 
 const GAMES = [
   {
@@ -146,6 +154,12 @@ export function renderSosoland() {
         </div>
       </section>
 
+      ${(!isStandalone() && (appState.installPrompt || isIOS())) ? `
+      <div class="sosoland-install-bar" id="sosoland-install-bar">
+        <span>📲 앱으로 설치하면 친구 초대 링크를 바로 열 수 있어요!</span>
+        <button class="btn btn--primary btn--sm" id="sosoland-install-btn">앱 설치</button>
+      </div>` : ''}
+
       <section class="sosoland-grid sosoland-grid--compact">
         ${GAMES.map(game => `
           <article class="sosoland-card sosoland-card--${game.key}" data-game-key="${game.key}">
@@ -182,6 +196,20 @@ export function renderSosoland() {
       const game = GAMES.find(item => item.key === btn.dataset.gameStart);
       if (game) openGameLayer(game);
     });
+  });
+
+  document.getElementById('sosoland-install-btn')?.addEventListener('click', async () => {
+    const prompt = appState.installPrompt;
+    if (prompt) {
+      prompt.prompt();
+      const { outcome } = await prompt.userChoice;
+      if (outcome === 'accepted') {
+        appState.installPrompt = null;
+        document.getElementById('sosoland-install-bar')?.remove();
+      }
+    } else if (isIOS()) {
+      alert('Safari 하단 공유 버튼(⬆)을 탭한 뒤 "홈 화면에 추가"를 선택하세요.');
+    }
   });
 
   return {
