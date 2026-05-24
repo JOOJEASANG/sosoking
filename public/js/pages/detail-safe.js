@@ -188,12 +188,12 @@ export async function renderDetail(id) {
             </div>
           </div>
           ${renderImages(post.images)}
-          ${renderYouTube(post)}
           <div class="detail-body detail-body--rich">
             ${post.desc ? `<div class="detail-rich-content">${renderRichBody(post.desc)}</div>` : ''}
             ${renderOptions(post)}
             ${renderModules(post)}
           </div>
+          ${renderYouTube(post)}
           <div class="divider" style="margin:0"></div>
           ${renderComments(comments)}
         </div>

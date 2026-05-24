@@ -88,7 +88,6 @@ export function initRichEditor() {
       <button type="button" data-editor-size="small">작게</button>
       <button type="button" data-editor-size="normal">보통</button>
       <button type="button" data-editor-size="large">크게</button>
-      <button type="button" data-editor-youtube>유튜브</button>
     </div>
     <div id="mw-rich-editor" class="mw-rich-editor" contenteditable="true" data-placeholder="${textarea.getAttribute('placeholder') || '본문을 입력하세요'}"></div>
   `;
@@ -116,18 +115,6 @@ export function initRichEditor() {
     exec('fontSize', size);
     syncTextarea(textarea, editor);
   }));
-
-  wrapper.querySelector('[data-editor-youtube]')?.addEventListener('click', () => {
-    const input = document.getElementById('mw-youtube-url');
-    const current = input?.value || '';
-    const url = window.prompt('유튜브 링크를 입력해주세요.', current);
-    if (url === null) return;
-    if (input) {
-      input.value = url.trim();
-      input.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      input.focus();
-    }
-  });
 
   editor.addEventListener('input', () => syncTextarea(textarea, editor));
   editor.addEventListener('blur', () => {
