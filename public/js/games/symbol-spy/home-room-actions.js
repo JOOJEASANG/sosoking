@@ -1,6 +1,6 @@
 import { navigate } from '../../router.js';
 import { toast } from '../../components/toast.js';
-import { createSymbolSpyRoom } from './room.js';
+import { createSymbolSpyRoom } from './room-v2.js';
 
 function enhanceSymbolSpyHome() {
   const hero = document.querySelector('.symbol-spy--intro .symbol-spy__hero');
