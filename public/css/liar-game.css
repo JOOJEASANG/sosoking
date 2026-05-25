@@ -1459,7 +1459,14 @@
 
   .liar-hero-v2,
   .mafia-hero-v2 {
-    padding: 24px 16px 20px;
+    margin: -12px -10px 0;
+    border-radius: 0 0 24px 24px;
+    padding: 28px 18px 24px;
+  }
+
+  .arcade-hero {
+    margin: -12px -10px 0;
+    border-radius: 0 0 24px 24px;
   }
 
   .game-room-grid-v2 {
@@ -1747,7 +1754,6 @@
 @media (max-width: 600px) {
   .arcade-hero {
     padding: 38px 20px 32px;
-    border-radius: 20px;
   }
   .arcade-hero__title { font-size: 28px; }
   .arcade-game-grid { grid-template-columns: 1fr; }
