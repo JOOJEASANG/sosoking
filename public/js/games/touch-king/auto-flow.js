@@ -86,21 +86,46 @@ function shouldAdvanceRound() {
   return !!firstCorrectPlayer() || secondsLeft(currentRoom) <= 0;
 }
 
-async function finishGame(reason = 'finish') {
+function winnerPoints(winner) {
+  if (!winner) return 0;
+  const end = Number(currentRoom?.roundData?.endsAtMs || 0);
+  const selectedAt = Number(winner.selectedAtMs || 0);
+  const remaining = end && selectedAt ? Math.max(0, Math.ceil((end - selectedAt) / 1000)) : secondsLeft(currentRoom);
+  return 100 + remaining * 5;
+}
+
+async function awardWinner(winner) {
+  if (!winner?.uid || winner.roundAwarded === currentRoom.round) return;
+  const points = winnerPoints(winner);
+  await setDoc(doc(db, 'game_rooms', currentRoom.id, 'players', winner.uid), {
+    score: Number(winner.score || 0) + points,
+    correctCount: Number(winner.correctCount || 0) + 1,
+    totalMs: Number(winner.totalMs || 0) + Number(winner.responseMs || 0),
+    roundAwarded: Number(currentRoom.round || 0),
+    roundWinPoints: points,
+    updatedAt: serverTimestamp(),
+  }, { merge: true });
+}
+
+async function finishGame(winner, reason = 'finish') {
+  if (winner) await awardWinner(winner);
   await updateDoc(doc(db, 'game_rooms', currentRoom.id), {
     phase: 'result',
     status: 'finished',
-    log: reason === 'time-up' ? '마지막 판이 시간 종료되어 최종 결과가 공개되었습니다.' : '마지막 판 정답자가 나와 최종 결과가 공개되었습니다.',
+    lastRoundWinner: winner ? { uid: winner.uid, name: winner.name || '게스트', responseMs: Number(winner.responseMs || 0), points: winnerPoints(winner) } : null,
+    log: reason === 'time-up' ? '마지막 판이 시간 종료되어 최종 결과가 공개되었습니다.' : '마지막 판 첫 정답자가 나와 최종 결과가 공개되었습니다.',
     updatedAt: serverTimestamp(),
   });
 }
 
-async function startNextRound(reason = 'first-correct') {
+async function startNextRound(winner, reason = 'first-correct') {
+  if (winner) await awardWinner(winner);
   const nextRound = Number(currentRoom.round || 0) + 1;
   const roundData = buildRound(nextRound);
   await Promise.all(currentPlayers.map(player => setDoc(doc(db, 'game_rooms', currentRoom.id, 'players', player.uid), {
     selectedSymbol: '',
     selectedCorrect: false,
+    selectedAtMs: 0,
     responseMs: 0,
     ready: true,
     updatedAt: serverTimestamp(),
@@ -110,9 +135,10 @@ async function startNextRound(reason = 'first-correct') {
     phase: 'playing',
     round: nextRound,
     roundData,
+    lastRoundWinner: winner ? { uid: winner.uid, name: winner.name || '게스트', responseMs: Number(winner.responseMs || 0), points: winnerPoints(winner) } : null,
     log: reason === 'time-up'
       ? `ROUND ${nextRound} 진행 중. 이전 판은 시간 종료로 무득점입니다.`
-      : `ROUND ${nextRound} 진행 중. 이전 판 정답자가 나와 바로 다음 판으로 넘어왔습니다.`,
+      : `ROUND ${nextRound} 진행 중. ${winner?.name || '누군가'}님이 먼저 찾아 다음 판으로 넘어왔습니다.`,
     updatedAt: serverTimestamp(),
   });
 }
@@ -127,9 +153,9 @@ async function advanceRound() {
 
   try {
     const round = Number(currentRoom.round || 1);
-    const limit = Number(currentRoom.roundLimit || 5);
-    if (round >= limit) await finishGame(reason);
-    else await startNextRound(reason);
+    const limit = Number(currentRoom.roundLimit || 30);
+    if (round >= limit) await finishGame(winner, reason);
+    else await startNextRound(winner, reason);
   } catch (error) {
     console.warn('[touch-king auto-flow] advance failed', error);
     lastAdvanceKey = '';
@@ -157,7 +183,7 @@ function startForRoom(roomId) {
     currentPlayers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     checkFlow();
   });
-  timer = setInterval(checkFlow, 350);
+  timer = setInterval(checkFlow, 250);
 }
 
 function syncRoute() {
