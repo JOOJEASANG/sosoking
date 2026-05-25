@@ -7,8 +7,9 @@ function loadStyleOnce(href) {
 }
 
 function ensureTouchKingStyles() {
-  loadStyleOnce('/css/symbol-spy-game.css');
-  loadStyleOnce('/css/symbol-spy-theme-polish.css');
+  loadStyleOnce('/css/touch-king-game.css');
+  loadStyleOnce('/css/touch-king-theme.css');
+  loadStyleOnce('/css/touch-king-room.css');
   loadStyleOnce('/css/touch-king-polish.css');
 }
 
