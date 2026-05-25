@@ -8,4 +8,11 @@ function ensureSymbolSpyStyles() {
 
 ensureSymbolSpyStyles();
 
-export { renderSymbolSpyGame } from '../games/symbol-spy/index.js';
+export async function renderSymbolSpyGame(params = {}) {
+  if (params.id) {
+    const module = await import('../games/symbol-spy/room.js');
+    return module.renderSymbolSpyRoom(params.id);
+  }
+  const module = await import('../games/symbol-spy/index.js');
+  return module.renderSymbolSpyGame();
+}
