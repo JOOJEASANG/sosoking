@@ -33,12 +33,10 @@ function enhanceTouchKingHome() {
     </label>
     <label>판수
       <select id="touch-king-rounds">
-        <option value="3">3판</option>
-        <option value="5" selected>5판</option>
-        <option value="7">7판</option>
         <option value="10">10판</option>
-        <option value="15">15판</option>
         <option value="20">20판</option>
+        <option value="30" selected>30판</option>
+        <option value="50">50판</option>
       </select>
     </label>`;
   soloBtn.parentNode.insertBefore(settings, soloBtn);
@@ -59,7 +57,7 @@ function enhanceTouchKingHome() {
       roomBtn.disabled = true;
       roomBtn.textContent = '방 만드는 중...';
       const maxPlayers = Number(document.getElementById('touch-king-max-players')?.value || 6);
-      const roundLimit = Number(document.getElementById('touch-king-rounds')?.value || 5);
+      const roundLimit = Number(document.getElementById('touch-king-rounds')?.value || 30);
       const roomId = await createTouchKingRoom({ maxPlayers, roundLimit });
       toast.success('터치왕게임 방을 만들었어요');
       navigate(`/game/touch-king/${roomId}`);
