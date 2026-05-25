@@ -12,11 +12,11 @@ function ensureSymbolSpyStyles() {
 }
 
 ensureSymbolSpyStyles();
-import('../games/symbol-spy/home-room-actions.js').catch(error => console.warn('[symbol-spy home actions]', error));
+import('../games/symbol-spy/home-room-actions.js').catch(error => console.warn('[touch-king home actions]', error));
 
 export async function renderSymbolSpyGame(params = {}) {
   if (params.id) {
-    const module = await import('../games/symbol-spy/room-v3.js');
+    const module = await import('../games/symbol-spy/touch-room.js');
     return module.renderSymbolSpyRoom(params.id);
   }
   const module = await import('../games/symbol-spy/index.js');
