@@ -16,7 +16,7 @@ import('../games/symbol-spy/home-room-actions.js').catch(error => console.warn('
 
 export async function renderSymbolSpyGame(params = {}) {
   if (params.id) {
-    const module = await import('../games/symbol-spy/room-v2.js');
+    const module = await import('../games/symbol-spy/room-v3.js');
     return module.renderSymbolSpyRoom(params.id);
   }
   const module = await import('../games/symbol-spy/index.js');
