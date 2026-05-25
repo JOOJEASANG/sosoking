@@ -22,7 +22,7 @@ function take(a,n){return sh(a).slice(0,n);}
 function left(){const end=Number(room?.roundData?.endsAtMs||0);return end?Math.max(0,Math.ceil((end-Date.now())/1000)):0;}
 function elapsedMs(){const start=Number(room?.roundData?.startedAtMs||0);return start?Math.max(0,Date.now()-start):0;}
 function loadStyleOnce(href){if(document.querySelector(`link[href="${href}"]`))return;const l=document.createElement('link');l.rel='stylesheet';l.href=href;document.head.appendChild(l);}
-function style(){['/css/symbol-spy-game.css','/css/symbol-spy-room-sync.css','/css/symbol-spy-theme-polish.css','/css/touch-king-polish.css'].forEach(loadStyleOnce);}
+function style(){['/css/touch-king-game.css','/css/touch-king-theme.css','/css/touch-king-room.css','/css/touch-king-polish.css'].forEach(loadStyleOnce);}
 function clampNumber(value, min, max, fallback){const n=Number(value);return Number.isFinite(n)?Math.max(min,Math.min(max,n)):fallback;}
 function player(role='player'){return {uid:auth.currentUser.uid,name:gamePlayerName(),role,ready:role==='host',score:0,correctCount:0,totalMs:0,joinedAt:serverTimestamp(),updatedAt:serverTimestamp()};}
 function buildRound(roundNo){
