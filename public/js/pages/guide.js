@@ -2,15 +2,16 @@ import { navigate } from '../router.js';
 
 const FEED_FEATURES = [
   { icon:'📝', name:'일반', desc:'일상, 고민, 웃긴 일, 사진을 자유롭게 올리고 댓글로 이야기합니다.' },
-  { icon:'🗳️', name:'투표', desc:'둘 중 하나, 찬반, 오늘의 선택처럼 가볍게 판정을 받아봅니다.' },
+  { icon:'🗳️', name:'투표·판정', desc:'일반 투표, 밸런스 게임, 판정(유/무죄), 찬반 토론 4가지 방식으로 가볍게 의견을 받아봅니다.' },
   { icon:'😜', name:'작명', desc:'사진이나 상황에 어울리는 웃긴 이름을 댓글로 붙입니다.' },
   { icon:'🤣', name:'드립', desc:'짧은 주제에 80자 이내 한 줄 드립을 남기며 피식 웃는 공간입니다.' },
   { icon:'🧠', name:'퀴즈', desc:'주관식 또는 객관식 문제를 올리고 정답과 해설을 확인합니다.' },
 ];
 
 const GAME_FEATURES = [
-  { icon:'🕵️', name:'라이어게임', desc:'친구를 초대해 제시어를 모르는 라이어를 찾아내는 추리 게임입니다.' },
-  { icon:'🌙', name:'소소마피아', desc:'친구들과 함께 즐기는 모바일 마피아 게임입니다. 방을 만들고 초대해 시민과 마피아로 나뉘어 추리해보세요.' },
+  { icon:'🕵️', name:'AI 라이어 찾기', desc:'친구를 초대해 제시어를 모르는 AI 라이어를 채팅으로 추리하고 투표로 잡아내는 게임입니다. 4~8명.' },
+  { icon:'🌙', name:'AI 마피아', desc:'AI 마피아가 직접 토론에 참여합니다. 낮 토론·투표로 AI를 찾아내는 사회추론 게임입니다. 5~9명.' },
+  { icon:'👑', name:'터치왕게임', desc:'12개 그림 중 같은 그림을 가장 빨리 터치하는 순발력 대결 게임입니다. 2~10명, 방 만들기 지원.' },
 ];
 
 export function renderGuide() {
@@ -115,7 +116,7 @@ export function renderGuide() {
           <div class="guide-layout-card">
             <div class="guide-layout-card__head">💻 PC</div>
             <div class="guide-layout-card__body">
-              <div class="guide-layout-item"><span class="guide-layout-badge">사이드바</span>홈, 피드, 게임, 명예의 전당, 스크랩, 내 정보로 이동합니다.</div>
+              <div class="guide-layout-item"><span class="guide-layout-badge">사이드바</span>홈, 피드, 게임, 통계, 스크랩, 내 정보로 이동합니다.</div>
               <div class="guide-layout-item"><span class="guide-layout-badge">글쓰기</span>피드 만들기 버튼으로 바로 글쓰기를 시작합니다.</div>
               <div class="guide-layout-item"><span class="guide-layout-badge">중앙 콘텐츠</span>피드 글, 게임 화면, 상세 페이지가 중앙 영역에 표시됩니다.</div>
             </div>
@@ -124,7 +125,7 @@ export function renderGuide() {
             <div class="guide-layout-card__head">📱 모바일</div>
             <div class="guide-layout-card__body">
               <div class="guide-layout-item"><span class="guide-layout-badge">상단 헤더</span>로고, 알림, 내 정보, 테마 전환을 사용할 수 있습니다.</div>
-              <div class="guide-layout-item"><span class="guide-layout-badge">하단 탭바</span>홈, 게임, 피드, 명예의 전당, 내 정보로 빠르게 이동합니다.</div>
+              <div class="guide-layout-item"><span class="guide-layout-badge">하단 탭바</span>홈, 피드, 글쓰기(+), 게임, 내 정보로 빠르게 이동합니다.</div>
               <div class="guide-layout-item"><span class="guide-layout-badge">피드</span>짧은 글과 참여형 글을 바로 확인하고 반응할 수 있습니다.</div>
             </div>
           </div>
@@ -155,7 +156,7 @@ export function renderGuide() {
         <div class="guide-write-steps">
           ${[
             ['1', '글쓰기 선택', 'PC에서는 사이드바의 피드 만들기 버튼, 모바일에서는 피드 화면의 글쓰기 버튼을 누릅니다.'],
-            ['2', '카테고리 선택', '일반, 투표, 작명, 드립, 퀴즈 중 하나를 고릅니다.'],
+            ['2', '글쓰기 형식 선택', '일반, 투표·판정, 작명, 드립, 퀴즈 중 하나를 고릅니다.'],
             ['3', '짧게 작성', '제목, 본문, 사진, 선택지, 정답 등 형식에 맞는 내용을 입력합니다.'],
             ['4', '소소하게 놀기', '올린 글은 피드에 노출되고 댓글, 답글, 반응으로 이어집니다.'],
           ].map(([n, title, desc]) => `

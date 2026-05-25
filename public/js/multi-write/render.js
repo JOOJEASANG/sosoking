@@ -93,17 +93,17 @@ function renderSelectedModule(activeKey, preset) {
   }
 
   if (activeKey === 'naming') {
-    return moduleCard('naming', '😜', '미친작명소', '다른 사용자가 웃긴 이름을 등록할 수 있습니다.', `
+    return moduleCard('naming', '😜', '작명', '다른 사용자가 웃긴 이름을 댓글로 올립니다.', `
       <div class="multi-module-inline-note">글자수 제한 없이 자유롭게 작명합니다.</div>`);
   }
 
   if (activeKey === 'drip') {
-    return moduleCard('drip', '🤣', '미친드립', '주제에 맞는 한 줄 드립을 댓글처럼 남기는 참여형 글입니다.', `
+    return moduleCard('drip', '🤣', '드립', '주제에 맞는 한 줄 드립을 댓글처럼 남기는 참여형 글입니다.', `
       <div class="multi-module-inline-note">본문에 드립 주제를 적어주세요. 참여자는 80자 이내 한 줄 드립을 남깁니다.</div>`);
   }
 
   if (activeKey === 'quiz') {
-    return moduleCard('quiz', '🧠', '미친퀴즈', '힌트와 해설을 넣어 더 게임답게 만들 수 있습니다.', `
+    return moduleCard('quiz', '🧠', '퀴즈', '힌트와 해설을 넣어 더 게임답게 만들 수 있습니다.', `
       <div class="form-group">
         <label class="form-label">퀴즈 방식 <span class="required">*</span></label>
         <input type="hidden" id="mw-quiz-mode" value="subjective">

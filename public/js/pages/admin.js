@@ -124,11 +124,11 @@ async function renderDashboard(el) {
   const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
 
   const TYPE_META = [
-    { feedType: 'vote',    icon: '🗳️', label: '투표·판정', legacyTypes: ['vote', 'ox', 'crazy_court', 'balance', 'battle'] },
-    { feedType: 'naming',  icon: '😜', label: '작명',      legacyTypes: ['naming'] },
-    { feedType: 'drip',    icon: '🤣', label: '드립',      legacyTypes: ['drip', 'cbattle'] },
-    { feedType: 'quiz',    icon: '🧠', label: '퀴즈',      legacyTypes: ['quiz', 'initial_game'] },
-    { feedType: 'general', icon: '📝', label: '일반',      legacyTypes: ['general', 'anonymous', 'relay', 'acrostic', 'fill'] },
+    { feedType: 'vote',    icon: '🗳️', label: '투표·판정', cat: 'golra', legacyTypes: ['vote', 'ox', 'crazy_court', 'balance', 'battle'] },
+    { feedType: 'naming',  icon: '😜', label: '작명',      cat: 'usgyo', legacyTypes: ['naming'] },
+    { feedType: 'drip',    icon: '🤣', label: '드립',      cat: 'usgyo', legacyTypes: ['drip', 'cbattle'] },
+    { feedType: 'quiz',    icon: '🧠', label: '퀴즈',      cat: 'malhe', legacyTypes: ['quiz', 'initial_game'] },
+    { feedType: 'general', icon: '📝', label: '일반',      cat: 'malhe', legacyTypes: ['general', 'anonymous', 'relay', 'acrostic', 'fill'] },
   ];
 
   const [totalSnap, todaySnap, recentSnap, reportSnap, ...allTypeSnaps] = await Promise.all([
@@ -176,7 +176,7 @@ async function renderDashboard(el) {
           <div style="font-size:14px;font-weight:800;margin-bottom:14px">🎮 유형별 게시물 현황</div>
           <div class="admin-type-grid">
             ${typeCounts.map(t => `
-              <div class="admin-type-card admin-type-card--multi">
+              <div class="admin-type-card admin-type-card--${t.cat}">
                 <div class="admin-type-card__icon">${t.icon}</div>
                 <div class="admin-type-card__count">${t.count.toLocaleString()}</div>
                 <div class="admin-type-card__name">${t.label}</div>

@@ -52,17 +52,19 @@ function bindInstallBanner() {
 }
 
 const TYPE_LABEL = {
-  multi: '일반',
+  // 현재 feedType 값
   general: '일반',
-  vote: '투표',
+  vote: '투표·판정',
+  naming: '작명',
+  drip: '드립',
+  quiz: '퀴즈',
+  // 레거시 타입 값
+  multi: '일반',
   ox: '투표',
   crazy_court: '투표',
   balance: '투표',
   battle: '투표',
-  naming: '작명',
-  drip: '드립',
   cbattle: '드립',
-  quiz: '퀴즈',
   initial_game: '퀴즈',
   acrostic: '행시',
   relay: '릴레이',
@@ -103,13 +105,14 @@ function fmtNum(n) {
 }
 
 function moduleLabel(post) {
+  if (post.feedType && TYPE_LABEL[post.feedType]) return TYPE_LABEL[post.feedType];
   const m = post.modules || {};
-  if (m.vote?.enabled) return '투표';
+  if (m.vote?.enabled) return '투표·판정';
   if (m.naming?.enabled) return '작명';
   if (m.drip?.enabled) return '드립';
   if (m.quiz?.enabled) return '퀴즈';
-  if (post.subtype && TYPE_LABEL[post.subtype]) return TYPE_LABEL[post.subtype];
-  if (post.type !== 'multi') return TYPE_LABEL[post.type] || '일반';
+  if (post.subtype && post.subtype !== 'anonymous' && TYPE_LABEL[post.subtype]) return TYPE_LABEL[post.subtype];
+  if (post.type && post.type !== 'multi') return TYPE_LABEL[post.type] || '일반';
   return '일반';
 }
 
