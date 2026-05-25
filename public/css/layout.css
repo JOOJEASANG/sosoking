@@ -167,7 +167,6 @@
 .sidebar__user-name {
   font-size: 13px;
   font-weight: 600;
-  flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -263,6 +262,61 @@
 .sidebar__login-btn:hover {
   background: var(--color-primary);
   color: #fff;
+}
+
+/* ── 사이드바 내비게이션 추가 요소 ── */
+.sidebar__nav-divider {
+  height: 1px;
+  background: var(--color-border-light, var(--color-border));
+  margin: 8px 14px;
+  flex-shrink: 0;
+}
+
+.sidebar__nav-section-label {
+  padding: 4px 14px 2px;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.sidebar__nav-badge {
+  margin-left: auto;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--color-danger, #e53e3e);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 900;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.sidebar__nav-item--admin {
+  color: var(--color-primary) !important;
+  background: var(--color-primary-bg) !important;
+}
+.sidebar__nav-item--admin:hover {
+  background: color-mix(in srgb, var(--color-primary) 18%, transparent) !important;
+}
+
+/* ── 사이드바 유저 섹션 개선 ── */
+.sidebar__user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar__user-role {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--color-primary);
+  margin-top: 2px;
 }
 
 .sidebar__footer-utils {

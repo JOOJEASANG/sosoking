@@ -188,9 +188,31 @@
     justify-content: center !important;
     border-radius: 12px !important;
     transition: background .2s ease !important;
+    position: relative !important;
   }
   .bottom-nav__item.active .bottom-nav__icon-wrap {
     background: color-mix(in srgb, currentColor 14%, transparent) !important;
+  }
+
+  /* 알림 뱃지 */
+  .bottom-nav__badge {
+    position: absolute !important;
+    top: -4px !important;
+    right: -2px !important;
+    min-width: 16px !important;
+    height: 16px !important;
+    padding: 0 4px !important;
+    border-radius: 999px !important;
+    background: var(--color-danger, #e53e3e) !important;
+    color: #fff !important;
+    font-size: 9px !important;
+    font-weight: 900 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1 !important;
+    pointer-events: none !important;
+    box-shadow: 0 0 0 2px var(--color-surface, #fff) !important;
   }
 
   /* 아이콘 */

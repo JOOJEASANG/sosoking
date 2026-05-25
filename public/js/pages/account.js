@@ -14,6 +14,7 @@ import { renderFeedCard } from '../components/feed-card.js';
 import { appState } from '../state.js';
 import { setMeta } from '../utils/seo.js';
 import { renderSidebar } from '../components/sidebar.js';
+import { renderBottomNav } from '../components/bottom-nav.js';
 import { normalizeNicknameIcon } from '../utils/nickname-icon.js';
 
 function renderAccountAvatar(user, nickname) {
@@ -212,7 +213,7 @@ export async function renderAccount() {
       if (unread.length) {
         const batch = writeBatch(db);
         unread.forEach(d => batch.update(d.ref, { read: true }));
-        batch.commit().then(() => { appState.unreadNotifications = 0; }).catch(() => {});
+        batch.commit().then(() => { appState.unreadNotifications = 0; renderSidebar(); renderBottomNav(); }).catch(() => {});
       }
 
       content.innerHTML = notifs.length
@@ -341,6 +342,7 @@ function setupNicknameEdit(user, currentNickname) {
       if (appState.user) appState.user.displayName = newNick;
       appState.nickname = newNick;
       renderSidebar();
+      renderBottomNav();
 
       feedback.style.color = 'var(--color-success)';
       feedback.textContent = '저장됐어요!';

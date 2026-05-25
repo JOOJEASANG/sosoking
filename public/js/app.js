@@ -124,6 +124,7 @@ export async function initApp() {
   window.addEventListener('themechange', () => {
     renderSidebar();
     renderHeader();
+    renderBottomNav();
   });
 
   document.getElementById('btn-footer-toggle')?.addEventListener('click', function () {

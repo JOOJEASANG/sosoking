@@ -22,6 +22,11 @@ body:has(.admin-layout) .page-container {
 }
 
 @media (min-width: 1024px) {
+  /* 관리자 페이지에서 일반 사이드바 숨김 — 관리자 전용 사이드바만 표시 */
+  body:has(.admin-layout) .site-sidebar {
+    display: none !important;
+  }
+
   body:has(.admin-layout) .site-main {
     overflow: hidden;
   }
