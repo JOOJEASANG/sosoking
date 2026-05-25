@@ -1,9 +1,14 @@
-function ensureSymbolSpyStyles() {
-  if (document.querySelector('link[href="/css/symbol-spy-game.css"]')) return;
+function loadStyleOnce(href) {
+  if (document.querySelector(`link[href="${href}"]`)) return;
   const link = document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = '/css/symbol-spy-game.css';
+  link.href = href;
   document.head.appendChild(link);
+}
+
+function ensureSymbolSpyStyles() {
+  loadStyleOnce('/css/symbol-spy-game.css');
+  loadStyleOnce('/css/symbol-spy-theme-polish.css');
 }
 
 ensureSymbolSpyStyles();
