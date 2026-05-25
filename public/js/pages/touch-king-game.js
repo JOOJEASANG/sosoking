@@ -11,6 +11,7 @@ function ensureTouchKingStyles() {
   loadStyleOnce('/css/touch-king-theme.css');
   loadStyleOnce('/css/touch-king-room.css');
   loadStyleOnce('/css/touch-king-polish.css');
+  loadStyleOnce('/css/touch-king-play-fix.css');
 }
 
 ensureTouchKingStyles();
