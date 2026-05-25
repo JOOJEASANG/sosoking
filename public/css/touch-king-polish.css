@@ -4,7 +4,7 @@
   justify-content: center;
   margin: 0 auto 12px;
   width: 100%;
-  color: var(--spy-text, #142033);
+  color: var(--touch-text, #142033);
   font-size: clamp(28px, 6vw, 54px);
   font-weight: 1000;
   letter-spacing: -0.07em;
@@ -25,9 +25,9 @@
   gap: 6px;
   border-radius: 18px;
   padding: 12px;
-  background: var(--spy-panel, rgba(255,255,255,.9));
-  border: 1px solid var(--spy-border, rgba(148,163,184,.22));
-  color: var(--spy-muted, #64748b);
+  background: var(--touch-panel, rgba(255, 255, 255, .9));
+  border: 1px solid var(--touch-border, rgba(148, 163, 184, .22));
+  color: var(--touch-muted, #64748b);
   font-size: 12px;
   font-weight: 1000;
   text-align: left;
@@ -36,11 +36,11 @@
 
 .touch-king-settings select {
   width: 100%;
-  border: 1px solid var(--spy-border, rgba(148,163,184,.22));
+  border: 1px solid var(--touch-border, rgba(148, 163, 184, .22));
   border-radius: 14px;
   padding: 10px 12px;
-  background: var(--spy-panel-strong, #fff);
-  color: var(--spy-text, #142033);
+  background: var(--touch-panel-strong, #fff);
+  color: var(--touch-text, #142033);
   font-weight: 1000;
   outline: none;
 }
