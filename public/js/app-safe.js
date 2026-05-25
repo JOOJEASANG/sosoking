@@ -5,6 +5,7 @@ import { renderBottomNav } from './components/bottom-nav.js';
 import { renderSidebar } from './components/sidebar.js';
 import { initToast } from './components/toast.js';
 import { appState } from './state.js';
+import { GAME_ROUTE_PREFIXES } from './games/registry.js';
 import { collection, query, where, getDocs, getDoc, doc, limit } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 export { appState };
@@ -41,8 +42,7 @@ function currentRoutePath() {
 }
 
 function isGameOnlyRoute(path = currentRoutePath()) {
-  return path === '/game/liar' || path.startsWith('/game/liar/')
-    || path === '/game/mafia' || path.startsWith('/game/mafia/');
+  return GAME_ROUTE_PREFIXES.some(prefix => path === prefix || path.startsWith(`${prefix}/`));
 }
 
 function isGameOnlyShellActive() {
@@ -117,10 +117,13 @@ async function registerRoutes() {
   registerRoute('/login', async () => renderPage((await import('./pages/login.js')).renderLogin, '로그인'));
   registerRoute('/legal/terms', async () => renderPage((await import('./pages/legal.js')).renderTerms, '이용약관'));
   registerRoute('/legal/privacy', async () => renderPage((await import('./pages/legal.js')).renderPrivacy, '개인정보처리방침'));
-  registerRoute('/game/liar', async () => renderPage((await import('./pages/liar-game.js')).renderLiarGame, '라이어게임'));
-  registerRoute('/game/liar/:id', async ({ id }) => renderPage(() => import('./pages/liar-game.js').then(m => m.renderLiarGame({ id })), '라이어게임'));
-  registerRoute('/game/mafia', async () => renderPage((await import('./pages/mafia-game.js')).renderMafiaGame, '마피아게임'));
-  registerRoute('/game/mafia/:id', async ({ id }) => renderPage(() => import('./pages/mafia-game.js').then(m => m.renderMafiaGame({ id })), '마피아게임'));
+  registerRoute('/game/liar', async () => renderPage((await import('./pages/liar-game.js')).renderLiarGame, 'AI 라이어 찾기'));
+  registerRoute('/game/liar/:id', async ({ id }) => renderPage(() => import('./pages/liar-game.js').then(m => m.renderLiarGame({ id })), 'AI 라이어 찾기'));
+  registerRoute('/game/mafia', async () => renderPage((await import('./pages/mafia-game.js')).renderMafiaGame, 'AI 마피아'));
+  registerRoute('/game/mafia/:id', async ({ id }) => renderPage(() => import('./pages/mafia-game.js').then(m => m.renderMafiaGame({ id })), 'AI 마피아'));
+  registerRoute('/game/symbol-spy', async () => renderPage((await import('./pages/symbol-spy-game.js')).renderSymbolSpyGame, '심볼스파이'));
+  registerRoute('/game/soso-code', async () => renderPage((await import('./pages/soso-code-game.js')).renderSosoCodeGame, '소소코드'));
+  registerRoute('/game/ai-court', async () => renderPage((await import('./pages/ai-court-game.js')).renderAiCourtGame, 'AI 재판소'));
 }
 
 async function isStrictAdmin(user) {
