@@ -8,8 +8,18 @@
             "type": "command",
             "if": "Bash(git push*)",
             "timeout": 60,
-            "statusMessage": "🚀 main에 머지 후 Firebase 배포 중...",
-            "command": "input=$(cat); cmd=$(echo \"$input\" | jq -r '.tool_input.command // empty'); exit_code=$(echo \"$input\" | jq -r '.tool_response.exitCode // 0'); if echo \"$cmd\" | grep -qE 'git push.*origin' && [ \"$exit_code\" = '0' ]; then cd /home/user/sosoking && git fetch origin main 2>/dev/null && cur=$(git rev-parse --abbrev-ref HEAD) && git checkout main && git merge --squash \"$cur\" && (git diff --cached --quiet || git commit -m \"auto-deploy: merge $cur\") && git push origin main && git checkout \"$cur\" && echo '{\"systemMessage\":\"✅ Firebase 배포 시작 (GitHub Actions 실행 중)\"}'; fi; exit 0"
+            "statusMessage": "🚀 main 브랜치 배포 확인 중...",
+            "command": "input=$(cat); exit_code=$(echo \"$input\" | jq -r '.tool_response.exitCode // 0'); cmd=$(echo \"$input\" | jq -r '.tool_input.command // empty'); if echo \"$cmd\" | grep -qE 'git push' && [ \"$exit_code\" = '0' ]; then cd /home/user/sosoking && cur=$(git rev-parse --abbrev-ref HEAD 2>/dev/null); if [ \"$cur\" != 'main' ]; then git checkout main 2>/dev/null && git merge --ff-only \"$cur\" 2>/dev/null || git merge \"$cur\" 2>/dev/null && git push origin main; fi; echo '{\"systemMessage\":\"✅ main 브랜치 배포 완료\"}'; fi; exit 0"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/stop-hook-git-check.sh 2>/dev/null; exit 0"
           }
         ]
       }
