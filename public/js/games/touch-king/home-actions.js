@@ -1,6 +1,6 @@
 import { navigate } from '../../router.js';
 import { toast } from '../../components/toast.js';
-import { createTouchKingRoom } from './room.js';
+import { createTouchKingRoom } from './creator.js';
 
 function enhanceTouchKingHome() {
   const hero = document.querySelector('.symbol-spy--intro .symbol-spy__hero');
