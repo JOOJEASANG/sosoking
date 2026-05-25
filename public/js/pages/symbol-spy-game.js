@@ -7,6 +7,7 @@ function ensureSymbolSpyStyles() {
 }
 
 ensureSymbolSpyStyles();
+import('../games/symbol-spy/home-room-actions.js').catch(error => console.warn('[symbol-spy home actions]', error));
 
 export async function renderSymbolSpyGame(params = {}) {
   if (params.id) {
