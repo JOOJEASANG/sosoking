@@ -9,7 +9,7 @@ export function renderSimilarPosts(similar) {
     <div class="similar-posts__list">
       ${similar.map(item => `
         <div class="similar-post-card" onclick="navigate('/detail/${item.id}')">
-          <span class="similar-post-card__type">${TYPE_LABELS[item.type] || item.type}</span>
+          <span class="similar-post-card__type">${TYPE_LABELS[item.feedType] || TYPE_LABELS[item.type] || item.feedType || item.type}</span>
           <div class="similar-post-card__title">${escHtml(item.title || '')}</div>
           <div class="similar-post-card__meta">❤️${item.reactions?.total || 0} 💬${item.commentCount || 0}</div>
         </div>`).join('')}
@@ -37,7 +37,7 @@ export async function appendSimilarPosts(post, rootSelector = '[data-detail-root
   root.dataset.similarPostsPending = key;
 
   try {
-    const similar = await fetchSimilarPosts(post.id, post.type);
+    const similar = await fetchSimilarPosts(post.id, post.feedType || post.type);
     if (root.dataset.similarPostsPending !== key) return;
 
     root.querySelectorAll('.similar-posts').forEach(area => area.remove());

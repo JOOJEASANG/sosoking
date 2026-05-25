@@ -15,15 +15,17 @@ const HALL_CATS = [
 
 function postType(post) {
   if (post.feedType) return post.feedType;
-  if (post.subtype) return post.subtype;
+  if (post.subtype && post.subtype !== 'anonymous') return post.subtype;
   const modules = post.modules || {};
-  if (modules.vote?.ox) return 'ox';
+  if (modules.vote?.ox) return 'vote';
   if (modules.vote?.enabled) return 'vote';
-  if (modules.fill?.enabled) return 'fill';
   if (modules.naming?.enabled) return 'naming';
-
+  if (modules.drip?.enabled) return 'drip';
   if (modules.quiz?.enabled) return 'quiz';
-  if (modules.anonymous?.enabled || post.anonymous) return 'anonymous';
+  if (modules.fill?.enabled) return 'fill';
+  if (modules.acrostic?.enabled) return 'acrostic';
+  if (modules.relay?.enabled) return 'relay';
+  if (modules.anonymous?.enabled || post.anonymous) return 'general';
   return post.type === 'multi' ? 'general' : post.type;
 }
 

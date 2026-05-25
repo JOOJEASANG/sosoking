@@ -124,26 +124,32 @@ async function renderDashboard(el) {
   const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
 
   const TYPE_META = [
-    { type: 'vote',    icon: '🗳️', label: '골라킹',    cat: 'golra' },
-    { type: 'naming',  icon: '😜', label: '미친작명소', cat: 'usgyo' },
-    { type: 'drip',    icon: '💧', label: '드립',       cat: 'usgyo' },
-    { type: 'quiz',    icon: '🧠', label: '퀴즈',       cat: 'golra' },
-    { type: 'general', icon: '📝', label: '일반',       cat: 'malhe' },
+    { feedType: 'vote',    icon: '🗳️', label: '투표·판정', legacyTypes: ['vote', 'ox', 'crazy_court', 'balance', 'battle'] },
+    { feedType: 'naming',  icon: '😜', label: '작명',      legacyTypes: ['naming'] },
+    { feedType: 'drip',    icon: '🤣', label: '드립',      legacyTypes: ['drip', 'cbattle'] },
+    { feedType: 'quiz',    icon: '🧠', label: '퀴즈',      legacyTypes: ['quiz', 'initial_game'] },
+    { feedType: 'general', icon: '📝', label: '일반',      legacyTypes: ['general', 'anonymous', 'relay', 'acrostic', 'fill'] },
   ];
 
-  const [totalSnap, todaySnap, recentSnap, reportSnap, ...typeSnaps] = await Promise.all([
+  const [totalSnap, todaySnap, recentSnap, reportSnap, ...allTypeSnaps] = await Promise.all([
     getCountFromServer(collection(db, 'feeds')).catch(() => null),
     getDocs(query(collection(db, 'feeds'), where('createdAt', '>=', Timestamp.fromDate(todayStart)), limit(99))).catch(() => null),
     getDocs(query(collection(db, 'feeds'), orderBy('createdAt', 'desc'), limit(5))).catch(() => null),
     getCountFromServer(query(collection(db, 'reports'), where('resolved', '==', false))).catch(() => null),
-    ...TYPE_META.map(t => getCountFromServer(query(collection(db, 'feeds'), where('type', '==', t.type))).catch(() => null)),
+    ...TYPE_META.map(t => getCountFromServer(query(collection(db, 'feeds'), where('feedType', '==', t.feedType))).catch(() => null)),
+    ...TYPE_META.map(t => getCountFromServer(query(collection(db, 'feeds'), where('type', 'in', t.legacyTypes))).catch(() => null)),
   ]);
 
   const total   = totalSnap?.data?.().count ?? 0;
   const today   = todaySnap?.size ?? 0;
   const pending = reportSnap?.data?.().count ?? 0;
   const recent  = recentSnap?.docs.map(d => ({ id: d.id, ...d.data() })) ?? [];
-  const typeCounts = TYPE_META.map((t, i) => ({ ...t, count: typeSnaps[i]?.data?.().count ?? 0 }));
+  const feedTypeSnaps  = allTypeSnaps.slice(0, TYPE_META.length);
+  const legacySnaps    = allTypeSnaps.slice(TYPE_META.length);
+  const typeCounts = TYPE_META.map((t, i) => ({
+    ...t,
+    count: (feedTypeSnaps[i]?.data?.().count ?? 0) + (legacySnaps[i]?.data?.().count ?? 0),
+  }));
 
   el.innerHTML = `
     <div style="display:flex;flex-direction:column;gap:24px">
@@ -170,7 +176,7 @@ async function renderDashboard(el) {
           <div style="font-size:14px;font-weight:800;margin-bottom:14px">🎮 유형별 게시물 현황</div>
           <div class="admin-type-grid">
             ${typeCounts.map(t => `
-              <div class="admin-type-card admin-type-card--${t.cat}">
+              <div class="admin-type-card admin-type-card--multi">
                 <div class="admin-type-card__icon">${t.icon}</div>
                 <div class="admin-type-card__count">${t.count.toLocaleString()}</div>
                 <div class="admin-type-card__name">${t.label}</div>
@@ -184,7 +190,7 @@ async function renderDashboard(el) {
           <div style="font-size:14px;font-weight:800;margin-bottom:12px">🕐 최근 게시물</div>
           ${recent.map(p => `
             <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--color-border-light)">
-              <span style="font-size:11px;padding:3px 7px;border-radius:99px;background:var(--color-surface-2);font-weight:700">${p.type || ''}</span>
+              <span style="font-size:11px;padding:3px 7px;border-radius:99px;background:var(--color-surface-2);font-weight:700">${escHtml(p.typeLabel || p.feedType || p.type || '')}</span>
               <a href="#/detail/${p.id}" style="flex:1;font-size:13px;font-weight:600;color:var(--color-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.title || '(제목없음)')}</a>
               <span style="font-size:11px;color:var(--color-text-muted);white-space:nowrap">${escHtml(p.authorName || '익명')}</span>
             </div>`).join('')}
@@ -242,9 +248,10 @@ async function renderPosts(el, searchQ = '', catFilter = '') {
         <button class="btn btn--primary btn--sm" id="btn-post-search">검색</button>
         ${[
           { key: '', label: '전체' },
-          { key: 'golra', label: '골라봐' },
-          { key: 'usgyo', label: '웃겨봐' },
-          { key: 'malhe', label: '도전봐' },
+          { key: 'multi', label: '📝 피드(신규)' },
+          { key: 'golra', label: '🎯 골라봐(구)' },
+          { key: 'usgyo', label: '😂 웃겨봐(구)' },
+          { key: 'malhe', label: '🎮 도전봐(구)' },
         ].map(c => `<button class="filter-chip ${catFilter === c.key ? 'active' : ''}" data-post-cat="${c.key}">${c.label}</button>`).join('')}
       </div>
       <div class="card" style="overflow:auto">
@@ -266,8 +273,8 @@ async function renderPosts(el, searchQ = '', catFilter = '') {
                   <td class="admin-table__title-cell">
                     <a href="#/detail/${p.id}" class="admin-table__link">${escHtml(p.title || '(제목없음)')}</a>
                   </td>
-                  <td><span class="badge badge--gray" style="font-size:10px">${p.type || ''}</span></td>
-                  <td><span style="font-size:12px">${{ golra:'🎯 골라봐', usgyo:'😂 웃겨봐', malhe:'🎮 도전봐' }[p.cat] || p.cat || ''}</span></td>
+                  <td><span class="badge badge--gray" style="font-size:10px">${escHtml(p.typeLabel || p.feedType || p.type || '')}</span></td>
+                  <td><span style="font-size:12px">${{ multi:'📝 피드', golra:'🎯 골라봐', usgyo:'😂 웃겨봐', malhe:'🎮 도전봐' }[p.cat] || escHtml(p.cat || '')}</span></td>
                   <td class="admin-table__muted">${escHtml(p.authorName || '익명')}</td>
                   <td>
                     ${p.hidden

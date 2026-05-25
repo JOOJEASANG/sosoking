@@ -2,19 +2,22 @@ import { navigate } from '../router.js';
 import { escHtml, formatTime } from '../utils/helpers.js';
 
 const TYPE_META = {
-  multi:        { cat: 'multi', catLabel: '피드', icon: '📝', label: '일반' },
+  // 현재 feedType 값
   general:      { cat: 'multi', catLabel: '피드', icon: '📝', label: '일반' },
+  vote:         { cat: 'multi', catLabel: '피드', icon: '🗳️', label: '투표·판정' },
+  naming:       { cat: 'multi', catLabel: '피드', icon: '😜', label: '작명' },
+  drip:         { cat: 'multi', catLabel: '피드', icon: '🤣', label: '드립' },
+  quiz:         { cat: 'multi', catLabel: '피드', icon: '🧠', label: '퀴즈' },
+  // type: 'multi' (신규 multi-write 공통 타입 - feedType 결정 전 폴백)
+  multi:        { cat: 'multi', catLabel: '피드', icon: '📝', label: '일반' },
+  // 레거시 타입 값
   fill:         { cat: 'multi', catLabel: '피드', icon: '🧩', label: '빈칸' },
-  balance:      { cat: 'golra', catLabel: '놀이', icon: '🗳️', label: '투표' },
-  vote:         { cat: 'golra', catLabel: '놀이', icon: '🗳️', label: '투표' },
-  battle:       { cat: 'golra', catLabel: '놀이', icon: '🗳️', label: '투표' },
-  naming:       { cat: 'usgyo', catLabel: '놀이', icon: '😜', label: '작명' },
-  initial_game: { cat: 'malhe', catLabel: '놀이', icon: '🧠', label: '퀴즈' },
-  drip:         { cat: 'usgyo', catLabel: '놀이', icon: '🤣', label: '드립' },
-  ox:           { cat: 'golra', catLabel: '놀이', icon: '🗳️', label: '투표' },
-  quiz:         { cat: 'malhe', catLabel: '놀이', icon: '🧠', label: '퀴즈' },
-  crazy_court:  { cat: 'golra', catLabel: '놀이', icon: '🗳️', label: '투표' },
-  random_battle:{ cat: 'golra', catLabel: '놀이', icon: '📝', label: '일반' },
+  balance:      { cat: 'multi', catLabel: '피드', icon: '🗳️', label: '투표' },
+  battle:       { cat: 'multi', catLabel: '피드', icon: '🗳️', label: '투표' },
+  ox:           { cat: 'multi', catLabel: '피드', icon: '🗳️', label: '투표' },
+  crazy_court:  { cat: 'multi', catLabel: '피드', icon: '🗳️', label: '투표' },
+  initial_game: { cat: 'multi', catLabel: '피드', icon: '🧠', label: '퀴즈' },
+  random_battle:{ cat: 'multi', catLabel: '피드', icon: '📝', label: '일반' },
   howto:        { cat: 'multi', catLabel: '피드', icon: '📝', label: '일반' },
   story:        { cat: 'multi', catLabel: '피드', icon: '📝', label: '일반' },
   fail:         { cat: 'multi', catLabel: '피드', icon: '📝', label: '일반' },
@@ -70,6 +73,9 @@ function getMultiSubtype(post) {
 }
 
 function getTypeMeta(post) {
+  if (post.feedType && TYPE_META[post.feedType]) {
+    return TYPE_META[post.feedType];
+  }
   if (post.type === 'multi') {
     const subtype = getMultiSubtype(post);
     return TYPE_META[subtype] || TYPE_META.general;

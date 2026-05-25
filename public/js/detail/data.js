@@ -21,9 +21,12 @@ export async function fetchAcrostics(postId) {
   }
 }
 
-export async function fetchSimilarPosts(excludeId, type) {
+const FEED_TYPES = new Set(['vote', 'naming', 'drip', 'quiz', 'general']);
+
+export async function fetchSimilarPosts(excludeId, typeKey) {
   try {
-    const q = query(collection(db, 'feeds'), where('type', '==', type), orderBy('reactions.total', 'desc'), limit(5));
+    const field = FEED_TYPES.has(typeKey) ? 'feedType' : 'type';
+    const q = query(collection(db, 'feeds'), where(field, '==', typeKey), orderBy('reactions.total', 'desc'), limit(5));
     const snap = await getDocs(q);
     return snap.docs
       .map(d => ({ id: d.id, ...d.data() }))

@@ -1,19 +1,29 @@
-const TYPE_LABELS = {
-  vote: '골라봐',
-  initial_game: '초성게임',
-  naming: '미친작명소',
-  crazy_court: '억까재판',
-  relay: '막장릴레이',
-  acrostic: '삼행시짓기',
-};
-
-const TYPE_ICONS = {
-  vote: '🗳️',
-  initial_game: '🔤',
-  naming: '😜',
-  crazy_court: '⚖️',
-  relay: '🎭',
-  acrostic: '✍️',
+const FEED_TYPE_META = {
+  // 현재 feedType / typeLabel 값
+  vote:         { label: '투표·판정', icon: '🗳️' },
+  naming:       { label: '작명',      icon: '😜' },
+  drip:         { label: '드립',      icon: '🤣' },
+  quiz:         { label: '퀴즈',      icon: '🧠' },
+  general:      { label: '일반',      icon: '📝' },
+  // type: 'multi' (신규 multi-write 공통 타입)
+  multi:        { label: '피드',      icon: '📝' },
+  // 한국어 typeLabel 직접 매핑 (multi-write 저장 시 preset.label)
+  '투표·판정':  { label: '투표·판정', icon: '🗳️' },
+  '작명':       { label: '작명',      icon: '😜' },
+  '드립':       { label: '드립',      icon: '🤣' },
+  '퀴즈':       { label: '퀴즈',      icon: '🧠' },
+  '일반':       { label: '일반',      icon: '📝' },
+  // 레거시 타입 값
+  ox:           { label: '투표',      icon: '🗳️' },
+  balance:      { label: '투표',      icon: '🗳️' },
+  battle:       { label: '투표',      icon: '🗳️' },
+  crazy_court:  { label: '투표',      icon: '🗳️' },
+  cbattle:      { label: '드립',      icon: '🤣' },
+  initial_game: { label: '퀴즈',      icon: '🧠' },
+  relay:        { label: '릴레이',    icon: '🎭' },
+  acrostic:     { label: '행시',      icon: '✍️' },
+  fill:         { label: '빈칸',      icon: '🧩' },
+  anonymous:    { label: '일반',      icon: '📝' },
 };
 
 function cleanText(value) {
@@ -28,8 +38,8 @@ function isPostsAdminTable(table) {
 function normalizeTypeCell(cell) {
   if (!cell || cell.dataset.typeNormalized === '1') return;
   const raw = cleanText(cell.textContent);
-  const key = Object.keys(TYPE_LABELS).find(type => raw === type || raw.includes(type));
-  if (!key) {
+  const meta = FEED_TYPE_META[raw];
+  if (!meta) {
     cell.innerHTML = `<span class="badge badge--gray" style="font-size:10px">${raw || '기타'}</span>`;
     cell.dataset.typeNormalized = '1';
     return;
@@ -37,7 +47,7 @@ function normalizeTypeCell(cell) {
 
   cell.innerHTML = `
     <span class="badge badge--gray" style="font-size:11px;display:inline-flex;align-items:center;gap:4px;white-space:nowrap">
-      <span>${TYPE_ICONS[key]}</span><span>${TYPE_LABELS[key]}</span>
+      <span>${meta.icon}</span><span>${meta.label}</span>
     </span>`;
   cell.dataset.typeNormalized = '1';
 }
@@ -71,7 +81,10 @@ function removeCategoryColumn(table) {
 
 function normalizeAdminPostList(root = document) {
   const content = root.querySelector?.('#admin-content') || document.getElementById('admin-content');
-  if (!content || !content.textContent.includes('게시물 관리')) return;
+  if (!content) return;
+  // 탭 이름이 '데이터관리' 또는 구버전 '게시물 관리' 모두 지원
+  const text = content.textContent;
+  if (!text.includes('데이터관리') && !text.includes('게시물 관리')) return;
 
   content.querySelectorAll('table.admin-table').forEach(table => {
     if (table.dataset.postTypeUnified === '1') {

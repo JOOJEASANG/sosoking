@@ -1,17 +1,19 @@
 export const FILTER_TYPES = ['general', 'vote', 'naming', 'drip', 'quiz'];
 
 export const TYPE_LABELS = {
+  // 현재 feedType 값 (필터 UI 라벨은 presets.js와 일치)
   general: '일반',
-  multi: '일반',
-  vote: '투표',
-  ox: '투표',
-  fill: '빈칸',
+  vote: '투표·판정',
   naming: '작명',
   drip: '드립',
+  quiz: '퀴즈',
+  // 레거시 타입 값 (필터 매칭용)
+  multi: '일반',
+  ox: '투표',
+  fill: '빈칸',
   cbattle: '드립',
   acrostic: '행시',
   relay: '릴레이',
-  quiz: '퀴즈',
   anonymous: '일반',
   initial_game: '퀴즈',
   crazy_court: '투표',
@@ -32,11 +34,13 @@ export function normalizeFeedSort(sort) {
 }
 
 export function getPostTypeKey(post) {
+  if (post.feedType && TYPE_LABELS[post.feedType]) return post.feedType;
   if (post.subtype === 'ox') return 'vote';
   if (post.subtype === 'anonymous') return 'general';
   if (post.modules?.fill?.enabled) return 'fill';
   if (post.modules?.vote?.enabled || post.modules?.vote?.ox || post.type === 'vote' || post.type === 'crazy_court' || post.type === 'ox') return 'vote';
   if (post.modules?.naming?.enabled || post.type === 'naming') return 'naming';
+  if (post.modules?.drip?.enabled || post.type === 'drip') return 'drip';
   if (post.modules?.acrostic?.enabled || post.type === 'acrostic') return 'acrostic';
   if (post.modules?.relay?.enabled || post.type === 'relay') return 'relay';
   if (post.modules?.quiz?.enabled || post.type === 'quiz' || post.type === 'initial_game') return 'quiz';
