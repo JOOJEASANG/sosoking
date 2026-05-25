@@ -1,0 +1,39 @@
+.symbol-room-round {
+  display: grid;
+  gap: 14px;
+}
+
+.symbol-room-round__actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.symbol-spy--room-play .symbol-room__players {
+  margin-top: 0;
+}
+
+.symbol-spy--room-play .symbol-room__player small {
+  min-width: 76px;
+  text-align: right;
+}
+
+.symbol-spy--room-play .symbol-board--player .symbol-tile:disabled {
+  cursor: not-allowed;
+  opacity: .62;
+}
+
+.symbol-spy--room-play .symbol-board--center .symbol-tile:disabled {
+  opacity: 1;
+}
+
+@media (max-width: 520px) {
+  .symbol-room-round__actions {
+    flex-direction: column;
+  }
+
+  .symbol-room-round__actions button {
+    width: 100%;
+  }
+}
