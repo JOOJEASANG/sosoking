@@ -1,0 +1,57 @@
+.touch-king-title {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 12px;
+  width: 100%;
+  color: var(--spy-text, #142033);
+  font-size: clamp(28px, 6vw, 54px);
+  font-weight: 1000;
+  letter-spacing: -0.07em;
+}
+
+.touch-king-settings {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  width: min(420px, 100%);
+  margin-top: 22px;
+}
+
+.touch-king-settings label {
+  display: grid;
+  gap: 6px;
+  border-radius: 18px;
+  padding: 12px;
+  background: var(--spy-panel, rgba(255,255,255,.9));
+  border: 1px solid var(--spy-border, rgba(148,163,184,.22));
+  color: var(--spy-muted, #64748b);
+  font-size: 12px;
+  font-weight: 1000;
+  text-align: left;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, .07);
+}
+
+.touch-king-settings select {
+  width: 100%;
+  border: 1px solid var(--spy-border, rgba(148,163,184,.22));
+  border-radius: 14px;
+  padding: 10px 12px;
+  background: var(--spy-panel-strong, #fff);
+  color: var(--spy-text, #142033);
+  font-weight: 1000;
+  outline: none;
+}
+
+[data-theme="dark"] .touch-king-settings select {
+  background: #111827;
+  color: #f8fafc;
+}
+
+@media (max-width: 520px) {
+  .touch-king-settings {
+    grid-template-columns: 1fr;
+  }
+}
