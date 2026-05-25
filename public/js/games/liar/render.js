@@ -230,7 +230,7 @@ export function renderLiarRoomHTML(room, players = [], chats = []) {
         <div class="game-hero-chips">
           <span>${room.status === 'waiting' ? '대기중' : room.status === 'ended' ? '종료' : '진행중'}</span>
           <span>${esc(category)}</span>
-          <span>${visiblePlayers.filter(p => !p.isAI).length}/${room.maxPlayers || 0}명</span>
+          <span>${visiblePlayers.length}/${room.maxPlayers || 0}명</span>
           ${hasAI ? `<span>🤖 AI ${diff}</span>` : ''}
         </div>
         <div class="game-room-actions">
@@ -253,7 +253,7 @@ export function renderLiarRoomHTML(room, players = [], chats = []) {
         <section class="game-card-v2">
           <div class="game-card-v2__head">
             <h2>참가자</h2>
-            <span>${visiblePlayers.filter(p => !p.isAI).length}명${hasAI ? ' + 🤖' : ''}</span>
+            <span>${visiblePlayers.length}명</span>
           </div>
           <div class="game-player-list-v2">
             ${visiblePlayers.filter(p => !p.isAI || room.status === 'ended').map(p => renderPlayerItem(p, room)).join('')}

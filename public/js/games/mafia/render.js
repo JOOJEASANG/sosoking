@@ -232,7 +232,7 @@ export function renderMafiaRoomHTML(room, players = [], chats = []) {
   const counts = voteCounts(visiblePlayers);
   const hasAI = !!(room.withAI || room.aiPlayerUid);
   const diff = DIFFICULTY_LABELS[room.aiDifficulty] || '';
-  const alive = visiblePlayers.filter(p => p.alive !== false && !p.isAI);
+  const alive = visiblePlayers.filter(p => p.alive !== false);
 
   return `
     <div class="game-ai-shell">
@@ -267,7 +267,7 @@ export function renderMafiaRoomHTML(room, players = [], chats = []) {
         <section class="game-card-v2">
           <div class="game-card-v2__head">
             <h2>참가자</h2>
-            <span>${visiblePlayers.filter(p => !p.isAI).length}명${hasAI ? ' + 🤖' : ''}</span>
+            <span>${visiblePlayers.length}명</span>
           </div>
           <div class="game-player-list-v2">
             ${visiblePlayers.filter(p => !p.isAI || gameOver).map(p => renderPlayerItem(p, room, counts, gameOver)).join('')}
