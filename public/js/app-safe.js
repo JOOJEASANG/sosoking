@@ -115,8 +115,11 @@ async function registerRoutes() {
   registerRoute('/write', async () => renderPage(renderWriteSafe, '글쓰기'));
   registerRoute('/detail/:id', async ({ id }) => renderPage(() => renderDetailSafe(id), '상세'));
   registerRoute('/login', async () => renderPage((await import('./pages/login.js')).renderLogin, '로그인'));
-  registerRoute('/legal/terms', async () => renderPage((await import('./pages/legal.js')).renderTerms, '이용약관'));
-  registerRoute('/legal/privacy', async () => renderPage((await import('./pages/legal.js')).renderPrivacy, '개인정보처리방침'));
+  registerRoute('/guide', async () => renderPage((await import('./pages/guide.js')).renderGuide, '이용안내'));
+  registerRoute('/terms', async () => renderPage((await import('./pages/terms.js')).renderTerms, '이용약관'));
+  registerRoute('/privacy', async () => renderPage((await import('./pages/privacy.js')).renderPrivacy, '개인정보처리방침'));
+  registerRoute('/legal/terms', async () => renderPage((await import('./pages/terms.js')).renderTerms, '이용약관'));
+  registerRoute('/legal/privacy', async () => renderPage((await import('./pages/privacy.js')).renderPrivacy, '개인정보처리방침'));
   registerRoute('/game/liar', async () => renderPage((await import('./pages/liar-game.js')).renderLiarGame, 'AI 라이어 찾기'));
   registerRoute('/game/liar/:id', async ({ id }) => renderPage(() => import('./pages/liar-game.js').then(m => m.renderLiarGame({ id })), 'AI 라이어 찾기'));
   registerRoute('/game/mafia', async () => renderPage((await import('./pages/mafia-game.js')).renderMafiaGame, 'AI 마피아'));
@@ -184,6 +187,7 @@ function renderFrame() {
       <div class="app-main site-main">
         <header id="site-header" class="site-header"></header>
         <main id="page-content" class="page-container"></main>
+        <footer id="site-footer" class="site-footer"></footer>
         <nav id="bottom-nav" class="bottom-nav"></nav>
       </div>
     </div>`;

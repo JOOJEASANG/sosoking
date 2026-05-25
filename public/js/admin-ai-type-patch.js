@@ -3,7 +3,7 @@
 
 const DESIRED_TYPES = [
   { value: 'general', label: '일반' },
-  { value: 'vote', label: '투표' },
+  { value: 'vote', label: '투표·판정' },
   { value: 'naming', label: '작명' },
   { value: 'drip', label: '드립' },
   { value: 'quiz', label: '퀴즈' },

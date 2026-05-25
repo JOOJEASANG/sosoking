@@ -4,12 +4,11 @@ import { toast } from './components/toast.js';
 
 const callGenerate = httpsCallable(functions, 'generateAiContentNow');
 const TYPES = [
-  ['general', '일반글', '일반 피드 글 데이터'],
-  ['vote', '투표/판정', '선택지/투표 모듈 데이터'],
-  ['naming', '미친작명소', '작명 주제/참여 모듈 데이터'],
-  ['acrostic', '행시', '제시어/2~5행시 모듈 데이터'],
-  ['relay', '막장릴레이', '시작문장/릴레이 모듈 데이터'],
-  ['quiz', '미친퀴즈', '문제/보기/정답/해설 데이터'],
+  ['general', '일반',    '일상/고민/사진 자유 피드 데이터'],
+  ['vote',    '투표·판정', '선택지/투표 모듈 데이터'],
+  ['naming',  '작명',    '작명 주제/참여 모듈 데이터'],
+  ['drip',    '드립',    '한 줄 드립 주제 데이터'],
+  ['quiz',    '퀴즈',    '문제/보기/정답/해설 데이터'],
 ];
 
 function isAiScreen() {
