@@ -34,9 +34,9 @@ export async function renderAdmin() {
   const TOP_MENUS = [
     { key: 'dashboard', icon: '📊', label: '대시보드' },
     { key: 'posts',     icon: '📝', label: '게시물' },
-    { key: 'reports',   icon: '🚨', label: '신고' },
+    { key: 'reports',   icon: '🚨', label: '신고·의견', short: '신고' },
     { key: 'users',     icon: '👥', label: '회원' },
-    { key: 'ai',        icon: '🤖', label: 'AI 운영관리', short: 'AI관리' },
+    { key: 'ai',        icon: '🤖', label: 'AI 관리', short: 'AI' },
   ];
   const BOTTOM_MENUS = [
     { key: 'myinfo', icon: '👤', label: '내 정보', short: '내정보' },
@@ -302,26 +302,39 @@ async function renderPosts(el, searchQ = '', catFilter = '') {
   });
 }
 
-/* ── 신고 관리 ── */
-async function renderReports(el) {
-  const [pendingSnap, resolvedSnap] = await Promise.all([
+/* ── 신고·의견 관리 ── */
+async function renderReports(el, _subtab) {
+  let subtab = _subtab || 'reports';
+
+  // --- 신고 데이터 ---
+  const [pendingSnap, resolvedSnap, feedbackSnap] = await Promise.all([
     getDocs(query(collection(db, 'reports'), where('resolved', '==', false), orderBy('createdAt', 'desc'), limit(30))).catch(() => null),
     getDocs(query(collection(db, 'reports'), where('resolved', '==', true), orderBy('createdAt', 'desc'), limit(10))).catch(() => null),
+    getDocs(query(collection(db, 'feedback'), orderBy('createdAt', 'desc'), limit(80))).catch(() => null),
   ]);
 
   const pending  = pendingSnap?.docs.map(d => ({ id: d.id, ...d.data() })) ?? [];
   const resolved = resolvedSnap?.docs.map(d => ({ id: d.id, ...d.data() })) ?? [];
+  const feedbacks = feedbackSnap?.docs.map(d => ({ id: d.id, ...d.data() })) ?? [];
+  const fbCounts = {
+    new: feedbacks.filter(i => (i.status || 'new') === 'new').length,
+    reviewing: feedbacks.filter(i => i.status === 'reviewing').length,
+    done: feedbacks.filter(i => i.status === 'done').length,
+  };
 
-  const renderRow = (r, isDone) => `
-    <tr style="border-bottom:1px solid var(--color-border-light)" data-report-row="${r.id}">
-      <td style="padding:10px 12px;font-size:12px">${escHtml(r.reason || '')}</td>
-      <td style="padding:10px 12px;font-size:12px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+  const statusLabel = s => s === 'done' ? '처리완료' : s === 'reviewing' ? '확인중' : '신규';
+  const typeLabel = t => t === 'opinion' ? '💡 의견' : t === 'feature' ? '✨ 기능제안' : '🐞 버그';
+
+  const renderReportRow = (r, isDone) => `
+    <tr data-report-row="${r.id}">
+      <td>${escHtml(r.reason || '')}</td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
         ${r.postId ? `<a href="#/detail/${r.postId}" style="color:var(--color-primary)">${escHtml(r.postTitle || r.postId)}</a>` : '-'}
       </td>
-      <td style="padding:10px 12px;font-size:12px;color:var(--color-text-muted)">${escHtml(r.reporterName || '익명')}</td>
-      <td style="padding:10px 12px">
+      <td style="color:var(--color-text-muted)">${escHtml(r.reporterName || '익명')}</td>
+      <td>
         ${!isDone ? `
-          <div style="display:flex;gap:6px">
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
             <button class="btn btn--ghost btn--sm" data-view-post="${r.postId}" style="font-size:11px">글 보기</button>
             <button class="btn btn--primary btn--sm" data-resolve="${r.id}" style="font-size:11px">처리완료</button>
             ${r.postId ? `<button class="btn btn--danger btn--sm" data-delete-post="${r.postId}" data-resolve="${r.id}" style="font-size:11px">글 삭제</button>` : ''}
@@ -329,57 +342,111 @@ async function renderReports(el) {
       </td>
     </tr>`;
 
+  const renderFeedbackItem = item => `
+    <div class="admin-feedback-item" data-feedback-id="${escHtml(item.id)}">
+      <div class="admin-feedback-item__top">
+        <div>
+          <div class="admin-feedback-item__title">${typeLabel(item.type)} ${escHtml(item.title || '(제목없음)')}</div>
+          <div class="admin-feedback-item__meta">${escHtml(item.reporterName || '익명')} · ${item.createdAt?.toDate?.().toLocaleString('ko-KR') || '-'}</div>
+        </div>
+        <span class="feedback-status-badge feedback-status-badge--${escHtml(item.status || 'new')}">${statusLabel(item.status || 'new')}</span>
+      </div>
+      <div class="admin-feedback-item__message">${escHtml(item.message || '').replace(/\n/g, '<br>')}</div>
+      ${item.contact ? `<div class="admin-feedback-item__line"><b>연락처</b> ${escHtml(item.contact)}</div>` : ''}
+      ${item.page?.url ? `<div class="admin-feedback-item__line"><b>페이지</b> <a href="${escHtml(item.page.url)}" target="_blank" rel="noopener" style="color:var(--color-primary);word-break:break-all">${escHtml(item.page.url)}</a></div>` : ''}
+      <div class="admin-feedback-item__actions">
+        <button class="btn btn--ghost btn--sm" data-feedback-status="reviewing" data-id="${escHtml(item.id)}">확인중</button>
+        <button class="btn btn--ghost btn--sm" data-feedback-status="done" data-id="${escHtml(item.id)}">처리완료</button>
+        <button class="btn btn--ghost btn--sm" data-feedback-delete="${escHtml(item.id)}" style="color:var(--color-danger)">삭제</button>
+      </div>
+    </div>`;
+
   el.innerHTML = `
-    <div style="display:flex;flex-direction:column;gap:16px">
-      <h2 class="admin-section-title">🚨 신고 관리</h2>
-      <div style="display:flex;gap:12px">
-        <div class="admin-stat-card" style="flex:1">
-          <div class="admin-stat-card__num" style="color:${pending.length > 0 ? 'var(--color-danger)' : 'var(--color-text-muted)'}">${pending.length}</div>
-          <div class="admin-stat-card__label">미처리 신고</div>
-        </div>
-        <div class="admin-stat-card" style="flex:1">
-          <div class="admin-stat-card__num" style="color:var(--color-success)">${resolved.length}</div>
-          <div class="admin-stat-card__label">처리완료 (최근)</div>
-        </div>
+    <div class="admin-reports-wrap">
+      <h2 class="admin-section-title">🚨 신고·의견 관리</h2>
+
+      <!-- 서브탭 -->
+      <div class="admin-sub-tabs">
+        <button class="admin-sub-tab ${subtab === 'reports' ? 'active' : ''}" data-subtab="reports">
+          🚨 신고
+          ${pending.length > 0 ? `<span class="admin-sub-tab__badge">${pending.length}</span>` : ''}
+        </button>
+        <button class="admin-sub-tab ${subtab === 'feedback' ? 'active' : ''}" data-subtab="feedback">
+          💬 의견·버그
+          ${fbCounts.new > 0 ? `<span class="admin-sub-tab__badge">${fbCounts.new}</span>` : ''}
+        </button>
       </div>
 
-      <div class="card">
-        <div class="card__body--lg">
-          <div style="font-size:14px;font-weight:800;margin-bottom:12px">⚠️ 처리 대기 (${pending.length}건)</div>
-          ${pending.length === 0 ? `<div style="text-align:center;padding:24px;color:var(--color-text-muted);font-size:13px">처리할 신고가 없어요 ✅</div>` : `
-          <table style="width:100%;font-size:13px;border-collapse:collapse">
-            <thead>
-              <tr style="border-bottom:2px solid var(--color-border);text-align:left;background:var(--color-surface-2)">
-                <th style="padding:10px 12px">사유</th>
-                <th style="padding:10px 12px">게시물</th>
-                <th style="padding:10px 12px">신고자</th>
-                <th style="padding:10px 12px;width:200px">작업</th>
-              </tr>
-            </thead>
-            <tbody>${pending.map(r => renderRow(r, false)).join('')}</tbody>
-          </table>`}
+      <!-- 신고 탭 -->
+      <div id="subtab-reports" style="display:${subtab === 'reports' ? 'flex' : 'none'};flex-direction:column;gap:16px;margin-top:20px">
+        <div class="admin-stat-grid" style="grid-template-columns:repeat(2,1fr)">
+          <div class="admin-stat-card">
+            <div class="admin-stat-card__num" style="color:${pending.length > 0 ? 'var(--color-danger)' : 'var(--color-text-muted)'}">${pending.length}</div>
+            <div class="admin-stat-card__label">미처리 신고</div>
+          </div>
+          <div class="admin-stat-card">
+            <div class="admin-stat-card__num" style="color:var(--color-success)">${resolved.length}</div>
+            <div class="admin-stat-card__label">처리완료 (최근)</div>
+          </div>
         </div>
-      </div>
-
-      ${resolved.length > 0 ? `
         <div class="card">
-          <div class="card__body--lg">
+          <div class="card__body--lg" style="overflow-x:auto">
+            <div style="font-size:14px;font-weight:800;margin-bottom:12px">⚠️ 처리 대기 (${pending.length}건)</div>
+            ${pending.length === 0 ? `<div style="text-align:center;padding:24px;color:var(--color-text-muted);font-size:13px">처리할 신고가 없어요 ✅</div>` : `
+            <table class="admin-table">
+              <thead><tr>
+                <th>사유</th><th>게시물</th><th>신고자</th><th style="width:200px">작업</th>
+              </tr></thead>
+              <tbody>${pending.map(r => renderReportRow(r, false)).join('')}</tbody>
+            </table>`}
+          </div>
+        </div>
+        ${resolved.length > 0 ? `
+        <div class="card">
+          <div class="card__body--lg" style="overflow-x:auto">
             <div style="font-size:14px;font-weight:800;margin-bottom:12px;color:var(--color-text-muted)">✅ 처리 완료 (최근 ${resolved.length}건)</div>
-            <table style="width:100%;font-size:13px;border-collapse:collapse">
-              <thead>
-                <tr style="border-bottom:2px solid var(--color-border);text-align:left;background:var(--color-surface-2)">
-                  <th style="padding:10px 12px">사유</th>
-                  <th style="padding:10px 12px">게시물</th>
-                  <th style="padding:10px 12px">신고자</th>
-                  <th style="padding:10px 12px">상태</th>
-                </tr>
-              </thead>
-              <tbody>${resolved.map(r => renderRow(r, true)).join('')}</tbody>
+            <table class="admin-table">
+              <thead><tr>
+                <th>사유</th><th>게시물</th><th>신고자</th><th>상태</th>
+              </tr></thead>
+              <tbody>${resolved.map(r => renderReportRow(r, true)).join('')}</tbody>
             </table>
           </div>
         </div>` : ''}
+      </div>
+
+      <!-- 의견·버그 탭 -->
+      <div id="subtab-feedback" style="display:${subtab === 'feedback' ? 'flex' : 'none'};flex-direction:column;gap:16px;margin-top:20px">
+        <div class="admin-stat-grid" style="grid-template-columns:repeat(3,1fr)">
+          <div class="admin-stat-card">
+            <div class="admin-stat-card__num" style="color:var(--color-primary)">${fbCounts.new}</div>
+            <div class="admin-stat-card__label">신규</div>
+          </div>
+          <div class="admin-stat-card">
+            <div class="admin-stat-card__num" style="color:#b77900">${fbCounts.reviewing}</div>
+            <div class="admin-stat-card__label">확인중</div>
+          </div>
+          <div class="admin-stat-card">
+            <div class="admin-stat-card__num" style="color:var(--color-success)">${fbCounts.done}</div>
+            <div class="admin-stat-card__label">처리완료</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card__body--lg">
+            ${feedbacks.length
+              ? feedbacks.map(renderFeedbackItem).join('')
+              : '<div style="text-align:center;padding:28px;color:var(--color-text-muted);font-size:13px">접수된 의견이나 버그가 없습니다.</div>'}
+          </div>
+        </div>
+      </div>
     </div>`;
 
+  // 서브탭 전환
+  el.querySelectorAll('[data-subtab]').forEach(btn => {
+    btn.addEventListener('click', () => renderReports(el, btn.dataset.subtab));
+  });
+
+  // 신고 처리
   el.querySelectorAll('[data-resolve]').forEach(btn => {
     btn.addEventListener('click', async () => {
       const reportId = btn.dataset.resolve;
@@ -393,6 +460,29 @@ async function renderReports(el) {
         toast.success('처리완료했어요');
         btn.closest('[data-report-row]')?.remove();
       } catch { toast.error('처리에 실패했어요'); }
+    });
+  });
+
+  // 의견·버그 상태 변경
+  el.querySelectorAll('[data-feedback-status]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      try {
+        await updateDoc(doc(db, 'feedback', btn.dataset.id), { status: btn.dataset.feedbackStatus, updatedAt: serverTimestamp() });
+        toast.success('상태를 변경했어요');
+        renderReports(el, 'feedback');
+      } catch { toast.error('상태 변경에 실패했어요'); }
+    });
+  });
+
+  // 의견·버그 삭제
+  el.querySelectorAll('[data-feedback-delete]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('이 접수 항목을 삭제할까요?')) return;
+      try {
+        await deleteDoc(doc(db, 'feedback', btn.dataset.feedbackDelete));
+        toast.success('삭제했어요');
+        renderReports(el, 'feedback');
+      } catch { toast.error('삭제에 실패했어요'); }
     });
   });
 }

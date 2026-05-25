@@ -766,3 +766,140 @@ body:has(.admin-layout) .page-container {
   background: rgba(37, 40, 64, 0.98);
   border-top-color: var(--color-border);
 }
+
+/* ── 신고·의견 서브탭 ── */
+.admin-reports-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.admin-sub-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid var(--color-border-light);
+  margin-top: 0;
+}
+
+.admin-sub-tab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border: none;
+  background: none;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 800;
+  font-family: inherit;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: color .15s, border-color .15s;
+}
+.admin-sub-tab:hover { color: var(--color-text-primary); }
+.admin-sub-tab.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+.admin-sub-tab__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--color-danger);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+/* 의견·버그 아이템 */
+.admin-feedback-item {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--color-border-light);
+}
+.admin-feedback-item:last-child { border-bottom: none; }
+
+.admin-feedback-item__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.admin-feedback-item__title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--color-text-primary);
+}
+.admin-feedback-item__meta {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-top: 3px;
+}
+.admin-feedback-item__message {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  line-height: 1.65;
+  margin-bottom: 8px;
+}
+.admin-feedback-item__line {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+}
+.admin-feedback-item__actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.feedback-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 900;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.feedback-status-badge--new { background: var(--color-primary-bg); color: var(--color-primary); }
+.feedback-status-badge--reviewing { background: #fef3c7; color: #92400e; }
+.feedback-status-badge--done { background: var(--color-success-bg, #f0fdf4); color: var(--color-success); }
+
+/* ── PC 반응형 개선 ── */
+@media (min-width: 1280px) {
+  .admin-layout {
+    grid-template-columns: 240px minmax(0, 1fr);
+  }
+  #admin-content {
+    padding: 36px 48px;
+  }
+}
+
+@media (min-width: 1600px) {
+  .admin-layout {
+    grid-template-columns: 260px minmax(0, 1fr);
+  }
+  #admin-content {
+    padding: 40px 60px;
+  }
+}
+
+/* ── 모바일 5칸 그리드 확정 ── */
+@media (max-width: 1023px) {
+  .admin-nav {
+    grid-template-columns: repeat(5, 1fr) !important;
+  }
+  /* feedback-actions가 주입한 버튼은 admin-nav에서 숨김 */
+  .admin-nav [data-admin-feedback-tab] {
+    display: none !important;
+  }
+}

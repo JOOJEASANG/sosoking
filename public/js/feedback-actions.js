@@ -64,16 +64,10 @@ async function renderFeedbackAdmin(){
   content.querySelectorAll('[data-feedback-status]').forEach(btn=>btn.addEventListener('click',async()=>{try{await updateDoc(doc(db,'feedback',btn.dataset.id),{status:btn.dataset.feedbackStatus,updatedAt:serverTimestamp()});toast.success('상태를 변경했어요');renderFeedbackAdmin();}catch{toast.error('상태 변경에 실패했어요');}}));
   content.querySelectorAll('[data-feedback-delete]').forEach(btn=>btn.addEventListener('click',async()=>{if(!confirm('이 접수 항목을 삭제할까요?'))return;try{await deleteDoc(doc(db,'feedback',btn.dataset.feedbackDelete));toast.success('삭제했어요');renderFeedbackAdmin();}catch{toast.error('삭제에 실패했어요');}}));
 }
-function ensureAdminFeedbackMenu(){
-  const nav=document.querySelector('.admin-layout .admin-nav');const content=document.getElementById('admin-content');
-  if(!nav||!content||nav.querySelector('[data-admin-feedback-tab]'))return;
-  const reportsBtn=nav.querySelector('[data-admin-tab="reports"], [data-tab="reports"]');
-  const btn=document.createElement('button');btn.className='admin-menu-item';btn.dataset.adminFeedbackTab='1';btn.innerHTML='<span class="admin-menu-item__icon">💬</span><span class="admin-menu-item__label">의견·버그</span>';
-  btn.addEventListener('click',()=>{document.querySelectorAll('.admin-menu-item').forEach(b=>b.classList.toggle('active',b===btn));renderFeedbackAdmin();});
-  reportsBtn?.insertAdjacentElement('afterend',btn)||nav.appendChild(btn);
-}
-function run(){ensureFeedbackEntrypoints();ensureAdminFeedbackMenu();}
+function run(){ensureFeedbackEntrypoints();}
 
 removeButton();window.openSosokingFeedback=openFeedbackModal;window.addEventListener('sosoking:open-feedback',openFeedbackModal);
 let timer=null;function schedule(){clearTimeout(timer);timer=setTimeout(run,180);}
 window.addEventListener('hashchange',schedule);window.addEventListener('themechange',schedule);new MutationObserver(schedule).observe(document.documentElement,{childList:true,subtree:true});setTimeout(run,500);
+
+export { renderFeedbackAdmin };
