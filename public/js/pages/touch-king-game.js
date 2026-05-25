@@ -20,8 +20,8 @@ export async function renderTouchKingGame(params = {}) {
     const module = await import('../games/touch-king/room.js');
     return module.renderTouchKingRoom(params.id);
   }
-  const module = await import('../games/symbol-spy/index.js');
-  return module.renderSymbolSpyGame();
+  const module = await import('../games/touch-king/index.js');
+  return module.renderTouchKingSolo();
 }
 
 export function redirectOldSymbolSpy(params = {}) {
