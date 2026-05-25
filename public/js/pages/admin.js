@@ -32,10 +32,10 @@ export async function renderAdmin() {
   }
 
   const TOP_MENUS = [
-    { key: 'dashboard', icon: '📊', label: '대시보드' },
-    { key: 'posts',     icon: '📝', label: '게시물' },
+    { key: 'dashboard', icon: '📊', label: '대시보드', short: '통계' },
+    { key: 'posts',     icon: '🗂️', label: '데이터관리', short: '데이터' },
     { key: 'reports',   icon: '🚨', label: '신고·의견', short: '신고' },
-    { key: 'users',     icon: '👥', label: '회원' },
+    { key: 'users',     icon: '👥', label: '회원관리', short: '회원' },
     { key: 'ai',        icon: '🤖', label: 'AI 관리', short: 'AI' },
   ];
   const BOTTOM_MENUS = [
@@ -124,12 +124,11 @@ async function renderDashboard(el) {
   const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
 
   const TYPE_META = [
-    { type: 'vote',         icon: '🗳️', label: '골라킹',    cat: 'golra' },
-    { type: 'initial_game', icon: '🔤', label: '초성게임',   cat: 'golra' },
-    { type: 'naming',       icon: '😜', label: '미친작명소', cat: 'usgyo' },
-    { type: 'crazy_court',  icon: '⚖️', label: '억까재판',   cat: 'usgyo' },
-    { type: 'relay',        icon: '🎭', label: '막장킹',     cat: 'malhe' },
-    { type: 'acrostic',     icon: '✍️', label: '삼행시짓기', cat: 'malhe' },
+    { type: 'vote',    icon: '🗳️', label: '골라킹',    cat: 'golra' },
+    { type: 'naming',  icon: '😜', label: '미친작명소', cat: 'usgyo' },
+    { type: 'drip',    icon: '💧', label: '드립',       cat: 'usgyo' },
+    { type: 'quiz',    icon: '🧠', label: '퀴즈',       cat: 'golra' },
+    { type: 'general', icon: '📝', label: '일반',       cat: 'malhe' },
   ];
 
   const [totalSnap, todaySnap, recentSnap, reportSnap, ...typeSnaps] = await Promise.all([
@@ -204,11 +203,17 @@ async function renderDashboard(el) {
 
 /* ── 게시물 관리 ── */
 async function renderPosts(el, searchQ = '', catFilter = '') {
-  let constraints = [orderBy('createdAt', 'desc'), limit(30)];
+  let constraints = [orderBy('createdAt', 'desc'), limit(50)];
   if (catFilter) constraints.unshift(where('cat', '==', catFilter));
 
-  const snap = await getDocs(query(collection(db, 'feeds'), ...constraints)).catch(() => null);
+  const [snap, hiddenSnap, totalSnap] = await Promise.all([
+    getDocs(query(collection(db, 'feeds'), ...constraints)).catch(() => null),
+    getCountFromServer(query(collection(db, 'feeds'), where('hidden', '==', true))).catch(() => null),
+    getCountFromServer(collection(db, 'feeds')).catch(() => null),
+  ]);
   let posts = snap?.docs.map(d => ({ id: d.id, ...d.data() })) ?? [];
+  const totalCount  = totalSnap?.data?.().count ?? 0;
+  const hiddenCount = hiddenSnap?.data?.().count ?? 0;
 
   if (searchQ) {
     const q = searchQ.toLowerCase();
@@ -217,7 +222,21 @@ async function renderPosts(el, searchQ = '', catFilter = '') {
 
   el.innerHTML = `
     <div style="display:flex;flex-direction:column;gap:16px">
-      <h2 class="admin-section-title">📝 게시물 관리</h2>
+      <h2 class="admin-section-title">🗂️ 데이터관리</h2>
+      <div class="admin-stat-grid" style="grid-template-columns:repeat(3,1fr)">
+        <div class="admin-stat-card">
+          <div class="admin-stat-card__num">${totalCount.toLocaleString()}</div>
+          <div class="admin-stat-card__label">전체 게시물</div>
+        </div>
+        <div class="admin-stat-card">
+          <div class="admin-stat-card__num" style="color:var(--color-danger)">${hiddenCount}</div>
+          <div class="admin-stat-card__label">숨김 처리</div>
+        </div>
+        <div class="admin-stat-card">
+          <div class="admin-stat-card__num" style="color:var(--color-success)">${(totalCount - hiddenCount).toLocaleString()}</div>
+          <div class="admin-stat-card__label">공개 중</div>
+        </div>
+      </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <input id="admin-post-search" class="form-input" style="max-width:220px;font-size:13px" placeholder="제목/작성자 검색" value="${escHtml(searchQ)}">
         <button class="btn btn--primary btn--sm" id="btn-post-search">검색</button>
