@@ -40,21 +40,21 @@ export const GAMES = [
     },
   },
   {
-    key: 'symbol-spy',
+    key: 'touch-king',
     icon: '👑',
     title: '터치왕게임',
-    desc: '중앙판과 내 판에 동시에 있는 같은 그림을 가장 빨리 터치하는 순발력 대결 게임입니다.',
+    desc: '중앙판 12개와 내 판 12개 중 동시에 있는 같은 그림을 가장 빨리 터치하는 순발력 대결 게임입니다.',
     status: '방 만들기',
     tag: '👑 순발력',
-    path: '/game/symbol-spy',
+    path: '/game/touch-king',
     enabled: true,
     players: '2~10명',
     pace: '빠른 터치',
-    hook: '판수와 인원수를 정하고, 가장 많이 빠르게 찾은 사람이 터치왕이 됩니다.',
+    hook: '판수와 인원수를 정하고, 12개 그림 중 같은 그림을 가장 많이 빠르게 찾은 사람이 터치왕이 됩니다.',
     originalNote: '상업 카드게임 이름·카드 형태·심볼 세트를 쓰지 않고, 소소킹 전용 터치 대결 규칙과 UI로 운영합니다.',
     guide: {
-      subtitle: '같은 그림을 가장 빨리 찾는 실시간 터치 대결',
-      goal: '각 라운드마다 중앙판과 내 판에 동시에 있는 그림을 빠르게 찾아 점수를 얻습니다. 정해진 판수가 끝나면 점수가 가장 높은 사람이 우승합니다.',
+      subtitle: '12개 그림 중 같은 그림을 가장 빨리 찾는 실시간 터치 대결',
+      goal: '각 라운드마다 중앙판 12개와 내 판 12개에 동시에 있는 그림을 빠르게 찾아 점수를 얻습니다. 정해진 판수가 끝나면 점수가 가장 높은 사람이 우승합니다.',
       flow: '인원수/판수 선택 → 방 만들기 → 초대 링크 공유 → 참가자 입장 → 라운드 시작 → 같은 그림 터치 → 라운드 결과 → 최종 우승자 공개 순서로 진행합니다.',
       tip: '정답은 +100점이고, 남은 시간이 많을수록 보너스가 붙습니다. 오답은 감점됩니다.',
     },
@@ -101,7 +101,7 @@ export const GAMES = [
   },
 ];
 
-export const GAME_ROUTE_PREFIXES = GAMES.map(game => game.path);
+export const GAME_ROUTE_PREFIXES = GAMES.map(game => game.path).concat(['/game/symbol-spy']);
 
 export function findGameByKey(key) {
   return GAMES.find(game => game.key === key) || null;
