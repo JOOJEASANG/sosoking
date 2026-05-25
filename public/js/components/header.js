@@ -7,6 +7,9 @@ import { normalizeNicknameIcon } from '../utils/nickname-icon.js';
 function isIOS() {
   return /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream;
 }
+function isMobile() {
+  return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+}
 function isStandalone() {
   return window.matchMedia('(display-mode: standalone)').matches || !!navigator.standalone;
 }
@@ -28,6 +31,29 @@ function showIOSInstallGuide() {
   document.getElementById('ios-tip-close')?.addEventListener('click', () => tip.remove());
   setTimeout(() => tip.remove(), 10000);
 }
+function showAndroidInstallGuide() {
+  const prev = document.getElementById('android-install-tip');
+  if (prev) { prev.remove(); return; }
+  const tip = document.createElement('div');
+  tip.id = 'android-install-tip';
+  tip.style.cssText = 'position:fixed;left:50%;bottom:84px;transform:translateX(-50%);z-index:10000;width:min(340px,calc(100vw - 32px));background:var(--color-surface);border:1px solid var(--color-border);border-radius:16px;padding:18px 20px;box-shadow:0 12px 40px rgba(0,0,0,.2);text-align:center;font-size:13px;line-height:1.65';
+  tip.innerHTML = `
+    <div style="font-size:24px;margin-bottom:8px">📲</div>
+    <div style="font-weight:800;color:var(--color-text-primary);margin-bottom:8px">앱으로 설치하기</div>
+    <div style="color:var(--color-text-secondary);margin-bottom:14px">
+      Chrome <b>⋮ 메뉴 → 앱 설치</b> 또는<br><b>홈 화면에 추가</b>를 선택하세요
+    </div>
+    <div style="display:flex;gap:8px;justify-content:center">
+      <button id="android-tip-reload" style="flex:1;max-width:140px;padding:9px 0;background:var(--color-primary);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit">🔄 새로고침</button>
+      <button id="android-tip-close" style="flex:1;max-width:100px;padding:9px 0;background:var(--color-surface-2,#f5f5f5);color:var(--color-text-primary);border:1px solid var(--color-border);border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">닫기</button>
+    </div>
+  `;
+  document.body.appendChild(tip);
+  document.getElementById('android-tip-reload')?.addEventListener('click', () => { tip.remove(); window.location.reload(); });
+  document.getElementById('android-tip-close')?.addEventListener('click', () => tip.remove());
+  setTimeout(() => tip.remove(), 15000);
+}
+
 function iconInstall() {
   return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
     <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/>
@@ -115,7 +141,7 @@ export function renderHeader() {
       <div class="site-header__spacer"></div>
 
       <div class="site-header__actions">
-        ${(appState.installPrompt || isIOS()) && !isStandalone() ? `
+        ${!isStandalone() && (appState.installPrompt || isMobile()) ? `
         <button class="site-header__install-btn" id="hdr-install-btn" aria-label="앱 설치">
           ${iconInstall()}<span>앱 설치</span>
         </button>` : ''}
@@ -161,13 +187,15 @@ export function renderHeader() {
     const prompt = appState.installPrompt;
     if (prompt) {
       prompt.prompt();
-      const { outcome } = await prompt.userChoice;
+      const { outcome } = await prompt.userChoice.catch(() => ({ outcome: 'dismissed' }));
       if (outcome === 'accepted') {
         appState.installPrompt = null;
         renderHeader();
       }
-    } else {
+    } else if (isIOS()) {
       showIOSInstallGuide();
+    } else {
+      showAndroidInstallGuide();
     }
   });
 }
