@@ -9,6 +9,7 @@ function loadStyleOnce(href) {
 function ensureSymbolSpyStyles() {
   loadStyleOnce('/css/symbol-spy-game.css');
   loadStyleOnce('/css/symbol-spy-theme-polish.css');
+  loadStyleOnce('/css/touch-king-polish.css');
 }
 
 ensureSymbolSpyStyles();
