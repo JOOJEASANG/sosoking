@@ -16,6 +16,7 @@ function ensureTouchKingStyles() {
 
 ensureTouchKingStyles();
 import('../games/touch-king/home-actions.js').catch(error => console.warn('[touch-king home actions]', error));
+import('../games/touch-king/auto-flow.js').catch(error => console.warn('[touch-king auto flow]', error));
 
 export async function renderTouchKingGame(params = {}) {
   if (params.id) {
