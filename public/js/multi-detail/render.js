@@ -1,6 +1,28 @@
 import { auth } from '../firebase.js';
 import { esc, timeText } from './utils.js';
 
+function normalizeText(value) {
+  return String(value || '')
+    .replace(/<br\s*\/?\s*>/gi, '\n')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function isDuplicateOfPostBody(post, value) {
+  const text = normalizeText(value);
+  if (!text) return false;
+  return [post.desc, post.body, post.title]
+    .map(normalizeText)
+    .filter(Boolean)
+    .some(source => source === text);
+}
+
+function compactQuestion(post, value, fallback) {
+  const text = String(value || '').trim();
+  if (!text || isDuplicateOfPostBody(post, text)) return fallback;
+  return text;
+}
+
 export function renderVoteModule(post) {
   const vote = post.modules?.vote;
   if (!vote?.enabled) return '';
@@ -8,9 +30,10 @@ export function renderVoteModule(post) {
   const uid = auth.currentUser?.uid || '';
   const hasVoted = uid && votedBy.includes(uid);
   const total = (vote.options || []).reduce((sum, option) => sum + Number(option.votes || 0), 0);
+  const title = compactQuestion(post, vote.question, '투표/판정');
   return `
     <div class="multi-detail-module" data-multi-module="vote">
-      <div class="multi-detail-module__title">🗳️ ${esc(vote.question || '투표/판정')}</div>
+      <div class="multi-detail-module__title">🗳️ ${esc(title)}</div>
       <div class="multi-vote-options">
         ${(vote.options || []).map((opt, i) => {
           const votes = Number(opt.votes || 0);
@@ -22,7 +45,7 @@ export function renderVoteModule(post) {
           </button>`;
         }).join('')}
       </div>
-      <div class="multi-module-hint">댓글로 의견과 토론을 이어갈 수 있어요.</div>
+      <div class="multi-module-hint">본문을 보고 원하는 옵션을 선택하세요.</div>
       ${hasVoted ? '<div class="multi-module-hint">이미 투표했어요.</div>' : ''}
     </div>`;
 }
@@ -33,7 +56,7 @@ export function renderNamingModule(post) {
   return `
     <div class="multi-detail-module" data-multi-module="naming">
       <div class="multi-detail-module__title">😜 작명 참여</div>
-      <div class="multi-module-hint">자유롭게 웃긴 이름을 지어보세요.</div>
+      <div class="multi-module-hint">본문을 보고 웃긴 이름만 입력하세요.</div>
       <div class="multi-submit-row"><input id="multi-naming-free" class="form-input" maxlength="30" placeholder="웃긴 이름을 입력하세요"><button class="btn btn--primary btn--sm" id="multi-naming-submit">등록</button></div>
       <div class="multi-participation-list" id="multi-naming-list"></div>
     </div>`;
@@ -42,11 +65,13 @@ export function renderNamingModule(post) {
 export function renderDripModule(post) {
   const drip = post.modules?.drip;
   if (!drip?.enabled) return '';
+  const prompt = String(drip.prompt || '').trim();
+  const showPrompt = prompt && !isDuplicateOfPostBody(post, prompt);
   return `
     <div class="multi-detail-module" data-multi-module="drip">
       <div class="multi-detail-module__title">🤣 미친드립</div>
-      <div class="multi-module-hint">주제에 맞는 한 줄 드립을 남겨보세요. 짧을수록 강합니다.</div>
-      <div class="multi-drip-prompt">${esc(drip.prompt || post.desc || '').replace(/\n/g, '<br>')}</div>
+      <div class="multi-module-hint">본문을 보고 한 줄 드립만 남겨보세요. 짧을수록 강합니다.</div>
+      ${showPrompt ? `<div class="multi-drip-prompt">${esc(prompt).replace(/\n/g, '<br>')}</div>` : ''}
       <div class="multi-submit-row"><input id="multi-drip-input" class="form-input" maxlength="80" placeholder="한 줄 드립 입력"><button class="btn btn--primary btn--sm" id="multi-drip-submit">드립 등록</button></div>
       <div class="multi-participation-list" id="multi-drip-list"></div>
     </div>`;
@@ -86,11 +111,15 @@ export function renderFillModule(post) {
   const fill = post.modules?.fill;
   if (!fill?.enabled) return '';
   const counts = fillCounts(fill);
+  const fillPromptText = Array.isArray(fill.templateParts)
+    ? fill.templateParts.map(part => part.type === 'blank' ? '' : part.text || '').join('')
+    : fill.prompt || '';
+  const showPrompt = fillPromptText && !isDuplicateOfPostBody(post, fillPromptText);
   return `
     <div class="multi-detail-module" data-multi-module="fill">
       <div class="multi-detail-module__title">🧩 빈칸 채우기 참여</div>
-      <div class="multi-module-hint">문장 속 빈칸마다 칸에 한 글자씩 입력해보세요. 문제의 줄바꿈은 그대로 유지됩니다.</div>
-      ${renderFillPrompt(fill, counts)}
+      <div class="multi-module-hint">본문 속 빈칸에 들어갈 말만 입력해보세요.</div>
+      ${showPrompt ? renderFillPrompt(fill, counts) : ''}
       <div class="multi-submit-row multi-submit-row--fill-boxes">
         <div id="multi-fill-boxes">
           ${counts.map((count, groupIndex) => `
@@ -126,10 +155,11 @@ export function renderQuizModule(post) {
   const quiz = post.modules?.quiz;
   if (!quiz?.enabled) return '';
   const isMultiple = quiz.mode === 'multiple' && Array.isArray(quiz.options) && quiz.options.length > 0;
+  const question = compactQuestion(post, quiz.question, '');
   return `
     <div class="multi-detail-module" data-multi-module="quiz">
       <div class="multi-detail-module__title">🧠 미친퀴즈</div>
-      <div class="multi-quiz-question">${esc(quiz.question || '')}</div>
+      ${question ? `<div class="multi-quiz-question">${esc(question)}</div>` : '<div class="multi-module-hint">본문을 보고 정답만 선택하세요.</div>'}
       ${renderQuizMeta(quiz)}
       ${isMultiple ? `
         <div class="multi-quiz-options">
@@ -172,7 +202,7 @@ export function renderModules(post) {
     <div class="multi-detail-root" data-multi-modules-root="${post.id}">
       <div class="multi-detail-root__head">
         <div class="multi-detail-root__title">🧩 참여 기능</div>
-        <div class="multi-detail-root__desc">이 글 형식에 맞는 참여 기능입니다.</div>
+        <div class="multi-detail-root__desc">본문을 보고 아래 옵션만 선택하거나 입력하세요.</div>
       </div>
       ${renderDeadlineStatus(post)}
       ${renderVoteModule(post)}${renderNamingModule(post)}${renderDripModule(post)}${renderFillModule(post)}${renderQuizModule(post)}
