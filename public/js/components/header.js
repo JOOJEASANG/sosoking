@@ -200,13 +200,25 @@ export function renderHeader() {
   document.getElementById('hdr-avatar')?.addEventListener('click', () => navigate('/account'));
 
   document.getElementById('hdr-install-btn')?.addEventListener('click', async () => {
-    const prompt = appState.installPrompt;
+    // head 인라인 스크립트가 잡은 이벤트도 시도
+    const prompt = appState.installPrompt || window.__pwaInstallPrompt;
     if (prompt) {
-      prompt.prompt();
-      const { outcome } = await prompt.userChoice.catch(() => ({ outcome: 'dismissed' }));
-      if (outcome === 'accepted') {
-        appState.installPrompt = null;
-        renderHeader();
+      try {
+        await prompt.prompt();
+        const { outcome } = await prompt.userChoice;
+        if (outcome === 'accepted') {
+          window.__pwaInstallPrompt = null;
+          appState.installPrompt = null;
+          renderHeader();
+        } else {
+          // 거절한 경우 — 메뉴 통해 설치 안내
+          if (isIOS()) showIOSInstallGuide();
+          else showAndroidInstallGuide();
+        }
+      } catch {
+        // prompt 재사용 불가 등 예외 → 안내
+        if (isIOS()) showIOSInstallGuide();
+        else showAndroidInstallGuide();
       }
     } else if (isIOS()) {
       showIOSInstallGuide();

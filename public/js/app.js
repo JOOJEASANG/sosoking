@@ -184,13 +184,20 @@ export async function initApp() {
 
   initRouter();
 
+  // head의 인라인 스크립트가 먼저 잡은 이벤트 복구
+  if (window.__pwaInstallPrompt) {
+    appState.installPrompt = window.__pwaInstallPrompt;
+    renderHeader();
+  }
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
+    window.__pwaInstallPrompt = e;
     appState.installPrompt = e;
     renderSidebar();
     renderHeader();
   });
   window.addEventListener('appinstalled', () => {
+    window.__pwaInstallPrompt = null;
     appState.installPrompt = null;
     renderSidebar();
     renderHeader();

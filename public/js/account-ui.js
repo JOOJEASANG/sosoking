@@ -72,16 +72,24 @@ function showAndroidInstallGuide() {
   setTimeout(() => tip.remove(), 20000);
 }
 
-function openInstallPrompt() {
-  const prompt = appState.installPrompt;
+async function openInstallPrompt() {
+  const prompt = appState.installPrompt || window.__pwaInstallPrompt;
   if (prompt) {
-    prompt.prompt();
-    prompt.userChoice.then(({ outcome }) => {
+    try {
+      await prompt.prompt();
+      const { outcome } = await prompt.userChoice;
       if (outcome === 'accepted') {
+        window.__pwaInstallPrompt = null;
         appState.installPrompt = null;
         removeAccountInstallButtons();
+      } else {
+        if (isIOS()) showIOSInstallGuide();
+        else showAndroidInstallGuide();
       }
-    }).catch(() => {});
+    } catch {
+      if (isIOS()) showIOSInstallGuide();
+      else showAndroidInstallGuide();
+    }
   } else if (isIOS()) {
     showIOSInstallGuide();
   } else {
