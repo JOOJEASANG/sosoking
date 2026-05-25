@@ -21,24 +21,24 @@ export function renderLiarLobbyHTML() {
         </div>
       </section>
 
-      <section class="game-guide-v2">
-        <div class="game-guide-v2__head">📖 게임 방법</div>
+      <section class="game-guide-v2 game-guide-v2--liar">
+        <div class="game-guide-v2__head">HOW TO PLAY</div>
         <div class="game-guide-steps">
           <div class="game-guide-step">
             <div class="game-guide-step__num">1</div>
-            <div class="game-guide-step__text"><b>입장</b><span>방을 만들고 초대 링크로 친구들을 초대하세요.</span></div>
+            <div class="game-guide-step__text"><b><span class="game-guide-step__icon">🚪</span>입장</b><span>방을 만들고 초대 링크로 친구들을 초대하세요. 3명부터 시작 가능합니다.</span></div>
           </div>
           <div class="game-guide-step">
             <div class="game-guide-step__num">2</div>
-            <div class="game-guide-step__text"><b>제시어 확인</b><span>시민은 제시어를 받고, 라이어(AI)는 카테고리만 알고 있습니다.</span></div>
+            <div class="game-guide-step__text"><b><span class="game-guide-step__icon">🔑</span>제시어 확인</b><span>시민은 제시어를 받고, AI 라이어는 카테고리만 알고 있습니다.</span></div>
           </div>
           <div class="game-guide-step">
             <div class="game-guide-step__num">3</div>
-            <div class="game-guide-step__text"><b>채팅 추리</b><span>모두가 제시어를 설명합니다. 어색하게 설명하는 AI를 찾아내세요!</span></div>
+            <div class="game-guide-step__text"><b><span class="game-guide-step__icon">💬</span>채팅 추리</b><span>모두가 제시어를 자연스럽게 설명합니다. 어색하게 대답하는 AI를 찾아내세요!</span></div>
           </div>
           <div class="game-guide-step">
             <div class="game-guide-step__num">4</div>
-            <div class="game-guide-step__text"><b>AI 공개</b><span>투표로 라이어를 지목하면 AI인지 아닌지 밝혀집니다.</span></div>
+            <div class="game-guide-step__text"><b><span class="game-guide-step__icon">🕵️</span>AI 공개</b><span>투표로 라이어를 지목하면 AI인지 밝혀집니다. 시민이 AI를 잡으면 승리!</span></div>
           </div>
         </div>
       </section>
@@ -107,7 +107,7 @@ export function renderLiarLobbyHTML() {
         <button class="btn btn--primary btn--full" id="liar-create" style="margin-top:4px">방 만들기</button>
       </section>
 
-      <div class="game-tip-v2">💡 AI 난이도 <b>어려움</b>은 인터넷 슬랭까지 구사해 구별이 매우 어렵습니다. 주의 깊게 관찰하세요!</div>
+      <div class="game-tip-v2">AI 난이도 <b>어려움</b>은 인터넷 슬랭까지 구사해 구별이 매우 어렵습니다. 주의 깊게 관찰하세요!</div>
     </div>`;
 }
 

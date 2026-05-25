@@ -819,61 +819,125 @@
 
 /* Guide section */
 .game-guide-v2 {
-  padding: 16px;
-  border-radius: 18px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border-light);
-  box-shadow: var(--shadow-sm);
+  padding: 0;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(99,102,241,.07) 0%, rgba(124,58,237,.04) 100%);
+  border: 1px solid rgba(99,102,241,.16);
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(99,102,241,.07);
+}
+
+[data-theme="dark"] .game-guide-v2 {
+  background: linear-gradient(135deg, rgba(99,102,241,.13), rgba(124,58,237,.08));
+  border-color: rgba(124,58,237,.24);
+}
+
+.game-guide-v2--mafia {
+  background: linear-gradient(135deg, rgba(30,58,138,.07) 0%, rgba(15,23,42,.04) 100%);
+  border-color: rgba(30,58,138,.16);
+  box-shadow: 0 4px 20px rgba(30,58,138,.07);
+}
+
+[data-theme="dark"] .game-guide-v2--mafia {
+  background: linear-gradient(135deg, rgba(30,58,138,.14), rgba(15,23,42,.1));
+  border-color: rgba(59,130,246,.22);
 }
 
 .game-guide-v2__head {
-  font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
   font-weight: 950;
-  color: var(--color-text-primary);
-  margin-bottom: 14px;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: #7c3aed;
+  padding: 12px 18px 11px;
+  border-bottom: 1px solid rgba(99,102,241,.1);
+  background: rgba(99,102,241,.04);
+  margin-bottom: 0;
 }
+
+.game-guide-v2--mafia .game-guide-v2__head {
+  color: #1d4ed8;
+  border-bottom-color: rgba(30,58,138,.1);
+  background: rgba(30,58,138,.04);
+}
+
+[data-theme="dark"] .game-guide-v2__head { color: #a78bfa; }
+[data-theme="dark"] .game-guide-v2--mafia .game-guide-v2__head { color: #60a5fa; }
 
 .game-guide-steps {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 0;
+  padding: 4px 18px 16px;
 }
 
 .game-guide-step {
   display: flex;
-  gap: 12px;
+  gap: 14px;
   align-items: flex-start;
+  padding: 11px 0;
+  position: relative;
+}
+
+.game-guide-step:not(:last-child) {
+  border-bottom: 1px solid rgba(99,102,241,.08);
+}
+
+.game-guide-v2--mafia .game-guide-step:not(:last-child) {
+  border-bottom-color: rgba(30,58,138,.08);
 }
 
 .game-guide-step__num {
   display: grid;
   place-items: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 999px;
-  background: var(--color-primary-bg);
-  color: var(--color-primary);
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #6366f1, #7c3aed);
+  color: #fff;
   font-size: 12px;
   font-weight: 950;
-  flex: 0 0 auto;
+  flex: 0 0 28px;
+  box-shadow: 0 3px 10px rgba(99,102,241,.32);
+  margin-top: 1px;
+  letter-spacing: 0;
+}
+
+.game-guide-v2--mafia .game-guide-step__num {
+  background: linear-gradient(135deg, #1d4ed8, #0f172a);
+  box-shadow: 0 3px 10px rgba(30,58,138,.32);
 }
 
 .game-guide-step__text {
   padding-top: 3px;
+  min-width: 0;
 }
 
 .game-guide-step__text b {
-  display: block;
-  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13.5px;
   font-weight: 950;
   color: var(--color-text-primary);
-  margin-bottom: 2px;
+  margin-bottom: 3px;
+  letter-spacing: -.025em;
+}
+
+.game-guide-step__icon {
+  font-size: 14px;
+  line-height: 1;
+  flex-shrink: 0;
 }
 
 .game-guide-step__text span {
   font-size: 12.5px;
   color: var(--color-text-secondary);
-  line-height: 1.5;
+  line-height: 1.55;
+  display: block;
 }
 
 /* Create / settings panel */
@@ -1008,17 +1072,37 @@
 
 /* Tip bar */
 .game-tip-v2 {
-  padding: 12px 14px;
-  border-radius: 14px;
-  background: var(--color-surface-2);
-  border: 1px solid var(--color-border-light);
-  font-size: 12.5px;
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 13px 16px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(245,158,11,.08), rgba(234,88,12,.05));
+  border: 1px solid rgba(245,158,11,.22);
+  font-size: 13px;
   color: var(--color-text-secondary);
-  line-height: 1.5;
+  line-height: 1.55;
+}
+
+.game-tip-v2::before {
+  content: '💡';
+  font-size: 15px;
+  line-height: 1.4;
+  flex-shrink: 0;
 }
 
 .game-tip-v2 b {
-  color: var(--color-text-primary);
+  color: #b45309;
+  font-weight: 950;
+}
+
+[data-theme="dark"] .game-tip-v2 {
+  background: linear-gradient(135deg, rgba(245,158,11,.1), rgba(234,88,12,.07));
+  border-color: rgba(245,158,11,.28);
+}
+
+[data-theme="dark"] .game-tip-v2 b {
+  color: #fbbf24;
 }
 
 /* Phase progress v2 */

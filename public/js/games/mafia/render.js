@@ -18,24 +18,24 @@ export function renderMafiaLobbyHTML() {
         </div>
       </section>
 
-      <section class="game-guide-v2">
-        <div class="game-guide-v2__head">📖 게임 방법</div>
+      <section class="game-guide-v2 game-guide-v2--mafia">
+        <div class="game-guide-v2__head">HOW TO PLAY</div>
         <div class="game-guide-steps">
           <div class="game-guide-step">
             <div class="game-guide-step__num">1</div>
-            <div class="game-guide-step__text"><b>역할 배정</b><span>방장이 시작하면 시민·마피아 역할이 배정됩니다. AI는 항상 마피아입니다.</span></div>
+            <div class="game-guide-step__text"><b><span class="game-guide-step__icon">👥</span>역할 배정</b><span>방장이 게임을 시작하면 시민·마피아 역할이 배정됩니다. AI는 항상 마피아입니다.</span></div>
           </div>
           <div class="game-guide-step">
             <div class="game-guide-step__num">2</div>
-            <div class="game-guide-step__text"><b>채팅 토론</b><span>채팅으로 의심되는 사람에게 질문하고 방어합니다. AI도 채팅에 참여해요!</span></div>
+            <div class="game-guide-step__text"><b><span class="game-guide-step__icon">💬</span>채팅 토론</b><span>채팅으로 의심되는 사람에게 질문하고 방어하세요. AI도 직접 채팅에 참여합니다!</span></div>
           </div>
           <div class="game-guide-step">
             <div class="game-guide-step__num">3</div>
-            <div class="game-guide-step__text"><b>투표 처형</b><span>가장 의심되는 사람에게 투표합니다. 방장이 집계하면 최다 득표자가 탈락합니다.</span></div>
+            <div class="game-guide-step__text"><b><span class="game-guide-step__icon">🗳️</span>투표 처형</b><span>가장 의심되는 플레이어에게 투표하세요. 방장이 집계하면 최다 득표자가 탈락합니다.</span></div>
           </div>
           <div class="game-guide-step">
             <div class="game-guide-step__num">4</div>
-            <div class="game-guide-step__text"><b>승리 조건</b><span>시민팀은 마피아를 모두 처형하면 승리. 마피아 수≥시민 수이면 마피아 승리!</span></div>
+            <div class="game-guide-step__text"><b><span class="game-guide-step__icon">🏆</span>승리 조건</b><span>시민팀은 마피아를 모두 처형하면 승리! 마피아 수≥시민 수가 되면 마피아 승리!</span></div>
           </div>
         </div>
       </section>
