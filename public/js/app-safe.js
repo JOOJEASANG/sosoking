@@ -121,8 +121,10 @@ async function registerRoutes() {
   registerRoute('/game/liar/:id', async ({ id }) => renderPage(() => import('./pages/liar-game.js').then(m => m.renderLiarGame({ id })), 'AI 라이어 찾기'));
   registerRoute('/game/mafia', async () => renderPage((await import('./pages/mafia-game.js')).renderMafiaGame, 'AI 마피아'));
   registerRoute('/game/mafia/:id', async ({ id }) => renderPage(() => import('./pages/mafia-game.js').then(m => m.renderMafiaGame({ id })), 'AI 마피아'));
-  registerRoute('/game/symbol-spy', async () => renderPage((await import('./pages/symbol-spy-game.js')).renderSymbolSpyGame, '심볼스파이'));
-  registerRoute('/game/symbol-spy/:id', async ({ id }) => renderPage(() => import('./pages/symbol-spy-game.js').then(m => m.renderSymbolSpyGame({ id })), '심볼스파이'));
+  registerRoute('/game/touch-king', async () => renderPage((await import('./pages/touch-king-game.js')).renderTouchKingGame, '터치왕게임'));
+  registerRoute('/game/touch-king/:id', async ({ id }) => renderPage(() => import('./pages/touch-king-game.js').then(m => m.renderTouchKingGame({ id })), '터치왕게임'));
+  registerRoute('/game/symbol-spy', async () => renderPage(() => import('./pages/touch-king-game.js').then(m => m.redirectOldSymbolSpy()), '터치왕게임'));
+  registerRoute('/game/symbol-spy/:id', async ({ id }) => renderPage(() => import('./pages/touch-king-game.js').then(m => m.redirectOldSymbolSpy({ id })), '터치왕게임'));
   registerRoute('/game/soso-code', async () => renderPage((await import('./pages/soso-code-game.js')).renderSosoCodeGame, '소소코드'));
   registerRoute('/game/ai-court', async () => renderPage((await import('./pages/ai-court-game.js')).renderAiCourtGame, 'AI 재판소'));
 }
