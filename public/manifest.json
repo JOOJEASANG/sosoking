@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "소소킹 - 글과 사진으로 즐기는 게임형 커뮤니티",
+  "name": "소소킹 - 피드와 게임",
   "short_name": "소소킹",
-  "description": "미친작명소, 삼행시, 밸런스게임, 퀴즈, 나만의 노하우를 즐기는 놀이형 커뮤니티",
+  "description": "투표, 작명, 드립, 퀴즈, 라이어게임, 마피아게임으로 짧게 즐기는 참여형 커뮤니티",
   "start_url": "/?source=pwa",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],

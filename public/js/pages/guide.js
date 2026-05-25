@@ -10,7 +10,7 @@ const FEED_FEATURES = [
 
 const GAME_FEATURES = [
   { icon:'🕵️', name:'라이어게임', desc:'친구를 초대해 제시어를 모르는 라이어를 찾아내는 추리 게임입니다.' },
-  { icon:'🌙', name:'소소마피아', desc:'가볍게 즐길 수 있는 모바일 마피아 게임으로 확장 예정입니다.' },
+  { icon:'🌙', name:'소소마피아', desc:'친구들과 함께 즐기는 모바일 마피아 게임입니다. 방을 만들고 초대해 시민과 마피아로 나뉘어 추리해보세요.' },
 ];
 
 export function renderGuide() {

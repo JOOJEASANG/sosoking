@@ -9,7 +9,7 @@ const HALL_CATS = [
   { key: 'popular',  label: '인기글',      icon: '🔥', type: null,       desc: '반응과 댓글이 많은 글', scoreKey: null },
   { key: 'comment',  label: '댓글 많은 글', icon: '💬', type: null,       desc: '댓글 참여가 많은 글', scoreKey: 'comment' },
   { key: 'naming',   label: '작명 통계',   icon: '✏️', type: 'naming',   desc: '미친작명소 인기글', scoreKey: null },
-  { key: 'acrostic', label: '행시 통계',   icon: '📝', type: 'acrostic', desc: '이행시·삼행시·사행시·오행시 인기글', scoreKey: null },
+  { key: 'drip',     label: '드립 통계',   icon: '🤣', type: 'drip',     desc: '한 줄 드립 인기글', scoreKey: null },
   { key: 'quiz',     label: '퀴즈 통계',   icon: '🧠', type: 'quiz',     desc: '퀴즈 인기글', scoreKey: null },
 ];
 
@@ -21,7 +21,7 @@ function postType(post) {
   if (modules.vote?.enabled) return 'vote';
   if (modules.fill?.enabled) return 'fill';
   if (modules.naming?.enabled) return 'naming';
-  if (modules.acrostic?.enabled) return 'acrostic';
+
   if (modules.quiz?.enabled) return 'quiz';
   if (modules.anonymous?.enabled || post.anonymous) return 'anonymous';
   return post.type === 'multi' ? 'general' : post.type;
