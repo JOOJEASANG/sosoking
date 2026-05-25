@@ -766,7 +766,7 @@ async function renderAiSettings(el) {
       const fn = httpsCallable(functions, 'generateAllAiContentNow', { timeout: 550000 });
       const res = await fn({ force: false });
       const { ok = 0, skipped = 0, total = 0, results = [] } = res.data || {};
-      const typeLabels = { vote:'골라킹', initial_game:'초성게임', naming:'미친작명소', crazy_court:'억까재판', quiz:'미친퀴즈', relay:'막장킹', acrostic:'삼행시짓기' };
+      const typeLabels = { general:'일반', vote:'투표·판정', naming:'작명', drip:'드립', quiz:'퀴즈', initial_game:'퀴즈(구)', crazy_court:'투표(구)', relay:'릴레이(구)', acrostic:'행시(구)' };
       const detail = results.map(r => r.ok ? `✅ ${typeLabels[r.type]||r.type}` : r.skipped ? `⏭ ${typeLabels[r.type]||r.type}(건너뜀)` : `❌ ${typeLabels[r.type]||r.type}`).join(' · ');
       result.innerHTML = `✅ 완료 — 생성 ${ok}개 / 건너뜀 ${skipped}개 / 전체 ${total}개<br><span style="color:var(--color-text-muted)">${detail}</span>`;
       toast.success(`AI 게시글 ${ok}개 생성 완료! 🎉`);

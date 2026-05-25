@@ -14,9 +14,9 @@ function descToPlain(raw) {
 }
 
 const TYPE_LABELS = {
-  multi: '만능 놀이글',
+  multi: '피드',
   vote: '투표·판정',
-  naming: '미친작명소',
+  naming: '작명',
 };
 
 function getDetailId() {

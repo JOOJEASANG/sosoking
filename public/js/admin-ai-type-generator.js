@@ -5,13 +5,11 @@ import { toast } from './components/toast.js';
 const generateAiContentNow = httpsCallable(functions, 'generateAiContentNow');
 
 const TYPES = [
-  { key: 'general', icon: '📝', label: '일반글', desc: '댓글 반응형 일반 피드' },
-  { key: 'vote', icon: '🗳️', label: '투표/판정', desc: '선택지와 투표 데이터 포함' },
-  { key: 'naming', icon: '😜', label: '미친작명소', desc: '작명 미션/예시 데이터 포함' },
-  { key: 'drip', icon: '🤣', label: '드립', desc: '한 줄 드립 주제/드립 모듈 포함' },
-  { key: 'acrostic', icon: '✍️', label: '행시', desc: '제시어 기반 2~5행시 자동 구성' },
-  { key: 'relay', icon: '🎭', label: '막장릴레이', desc: '시작문장/릴레이 설정 포함' },
-  { key: 'quiz', icon: '🧠', label: '미친퀴즈', desc: '문제/보기/정답/해설 포함' },
+  { key: 'general', icon: '📝', label: '일반',    desc: '댓글 반응형 일반 피드' },
+  { key: 'vote',    icon: '🗳️', label: '투표·판정', desc: '선택지와 투표 데이터 포함' },
+  { key: 'naming',  icon: '😜', label: '작명',    desc: '작명 주제/참여 모듈 포함' },
+  { key: 'drip',    icon: '🤣', label: '드립',    desc: '한 줄 드립 주제/드립 모듈 포함' },
+  { key: 'quiz',    icon: '🧠', label: '퀴즈',    desc: '문제/보기/정답/해설 포함' },
 ];
 
 function esc(value) {

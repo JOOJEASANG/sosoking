@@ -5,13 +5,11 @@ import { toast } from './components/toast.js';
 const generateAiContentNow = httpsCallable(functions, 'generateAiContentNow');
 
 const TYPES = [
-  { key: 'general', label: '일반글', hint: '일반 피드 글 데이터' },
-  { key: 'vote', label: '투표/판정', hint: '선택지/투표 모듈 데이터' },
-  { key: 'naming', label: '미친작명소', hint: '작명 주제/참여 모듈 데이터' },
-  { key: 'drip', label: '드립', hint: '한 줄 드립 주제/드립 모듈 데이터' },
-  { key: 'acrostic', label: '행시', hint: '제시어/2~5행시 모듈 데이터' },
-  { key: 'relay', label: '막장릴레이', hint: '시작문장/릴레이 모듈 데이터' },
-  { key: 'quiz', label: '미친퀴즈', hint: '문제/보기/정답/해설 데이터' },
+  { key: 'general', label: '일반',    hint: '일반 피드 글 데이터' },
+  { key: 'vote',    label: '투표·판정', hint: '선택지/투표 모듈 데이터' },
+  { key: 'naming',  label: '작명',    hint: '작명 주제/참여 모듈 데이터' },
+  { key: 'drip',    label: '드립',    hint: '한 줄 드립 주제/드립 모듈 데이터' },
+  { key: 'quiz',    label: '퀴즈',    hint: '문제/보기/정답/해설 데이터' },
 ];
 
 function esc(value) {

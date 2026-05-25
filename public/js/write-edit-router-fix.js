@@ -47,12 +47,12 @@ function typeLabel(post) {
   const subtype = post.subtype;
   const m = post.modules || {};
   if (post.anonymous || m.anonymous?.enabled || subtype === 'anonymous') return '익명비밀글';
-  if (subtype === 'vote' || subtype === 'ox' || m.vote?.enabled) return '투표/판정';
+  if (subtype === 'vote' || subtype === 'ox' || m.vote?.enabled) return '투표·판정';
   if (subtype === 'fill' || m.fill?.enabled) return '빈칸 채우기';
-  if (subtype === 'naming' || m.naming?.enabled) return '미친작명소';
+  if (subtype === 'naming' || m.naming?.enabled) return '작명';
   if (subtype === 'acrostic' || m.acrostic?.enabled) return '삼행시';
   if (subtype === 'relay' || m.relay?.enabled) return '막장릴레이';
-  if (subtype === 'quiz' || m.quiz?.enabled) return '미친퀴즈';
+  if (subtype === 'quiz' || m.quiz?.enabled) return '퀴즈';
   return post.typeLabel || (post.type === 'multi' ? '일반글' : post.type || '게시글');
 }
 

@@ -146,7 +146,7 @@ export function collectMultiModules() {
   }
 
   if (enabled('drip')) {
-    if (!bodyText) throw new Error('본문에 미친드립 주제나 상황을 입력해주세요.');
+    if (!bodyText) throw new Error('본문에 드립 주제나 상황을 입력해주세요.');
     modules.drip = { enabled: true, prompt: bodyText, maxLength: 80 };
   }
 
@@ -177,7 +177,7 @@ export function collectMultiModules() {
     const mode = document.getElementById('mw-quiz-mode')?.value || 'subjective';
     const hint = document.getElementById('mw-quiz-hint')?.value.trim() || '';
     const explanation = document.getElementById('mw-quiz-explanation')?.value.trim() || '';
-    if (!bodyText) throw new Error('본문에 미친퀴즈 문제를 입력해주세요.');
+    if (!bodyText) throw new Error('본문에 퀴즈 문제를 입력해주세요.');
 
     if (mode === 'multiple') {
       const rawOptions = getQuizOptions();
