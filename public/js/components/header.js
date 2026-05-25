@@ -34,24 +34,40 @@ function showIOSInstallGuide() {
 function showAndroidInstallGuide() {
   const prev = document.getElementById('android-install-tip');
   if (prev) { prev.remove(); return; }
+
+  const ua = navigator.userAgent;
+  const isInApp = /KAKAOTALK|Instagram|FBAN|FBAV|Line\/|NaverApp|Twitter|Snapchat/i.test(ua);
+
   const tip = document.createElement('div');
   tip.id = 'android-install-tip';
-  tip.style.cssText = 'position:fixed;left:50%;bottom:84px;transform:translateX(-50%);z-index:10000;width:min(340px,calc(100vw - 32px));background:var(--color-surface);border:1px solid var(--color-border);border-radius:16px;padding:18px 20px;box-shadow:0 12px 40px rgba(0,0,0,.2);text-align:center;font-size:13px;line-height:1.65';
-  tip.innerHTML = `
-    <div style="font-size:24px;margin-bottom:8px">📲</div>
-    <div style="font-weight:800;color:var(--color-text-primary);margin-bottom:8px">앱으로 설치하기</div>
-    <div style="color:var(--color-text-secondary);margin-bottom:14px">
-      Chrome <b>⋮ 메뉴 → 앱 설치</b> 또는<br><b>홈 화면에 추가</b>를 선택하세요
-    </div>
-    <div style="display:flex;gap:8px;justify-content:center">
-      <button id="android-tip-reload" style="flex:1;max-width:140px;padding:9px 0;background:var(--color-primary);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit">🔄 새로고침</button>
-      <button id="android-tip-close" style="flex:1;max-width:100px;padding:9px 0;background:var(--color-surface-2,#f5f5f5);color:var(--color-text-primary);border:1px solid var(--color-border);border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">닫기</button>
-    </div>
-  `;
+  tip.style.cssText = 'position:fixed;left:50%;bottom:84px;transform:translateX(-50%);z-index:10000;width:min(340px,calc(100vw - 32px));background:var(--color-surface);border:1px solid var(--color-border);border-radius:16px;padding:20px;box-shadow:0 12px 40px rgba(0,0,0,.2);text-align:center;font-size:13px;line-height:1.7';
+
+  if (isInApp) {
+    tip.innerHTML = `
+      <div style="font-size:24px;margin-bottom:8px">⚠️</div>
+      <div style="font-weight:800;color:var(--color-text-primary);margin-bottom:8px">인앱 브라우저에서는 설치 불가</div>
+      <div style="color:var(--color-text-secondary);margin-bottom:14px">
+        카카오톡·인스타그램 등 앱 내 브라우저는<br>PWA 설치를 지원하지 않아요.<br>
+        <b>Chrome 브라우저</b>로 직접 열어주세요.
+      </div>
+      <button id="android-tip-close" style="padding:9px 32px;background:var(--color-primary);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit">확인</button>
+    `;
+  } else {
+    tip.innerHTML = `
+      <div style="font-size:24px;margin-bottom:8px">📲</div>
+      <div style="font-weight:800;color:var(--color-text-primary);margin-bottom:10px">Chrome에서 앱 설치하기</div>
+      <div style="color:var(--color-text-secondary);text-align:left;margin-bottom:14px">
+        <div style="margin-bottom:6px">① Chrome 주소창 오른쪽 <b>⋮ 메뉴</b> 탭</div>
+        <div style="margin-bottom:6px">② <b>"앱 설치"</b> 또는 <b>"홈 화면에 추가"</b> 선택</div>
+        <div style="font-size:12px;color:var(--color-text-tertiary,#999);margin-top:8px">주소창에 설치 아이콘(⊕)이 보이면 그것을 탭해도 됩니다.</div>
+      </div>
+      <button id="android-tip-close" style="width:100%;padding:10px 0;background:var(--color-primary);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit">확인</button>
+    `;
+  }
+
   document.body.appendChild(tip);
-  document.getElementById('android-tip-reload')?.addEventListener('click', () => { tip.remove(); window.location.reload(); });
   document.getElementById('android-tip-close')?.addEventListener('click', () => tip.remove());
-  setTimeout(() => tip.remove(), 15000);
+  setTimeout(() => tip.remove(), 20000);
 }
 
 function iconInstall() {
