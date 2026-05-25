@@ -107,6 +107,7 @@ export async function renderAccount() {
         </div>
         <div class="card__footer account-profile-actions">
           ${isAdmin ? `<button class="btn btn--primary btn--sm" onclick="navigate('/admin')">⚙️ 관리자</button>` : ''}
+          ${(!window.matchMedia('(display-mode: standalone)').matches && !navigator.standalone) && (appState.installPrompt || /iPhone|iPad|iPod/.test(navigator.userAgent)) ? `<button class="btn btn--ghost btn--sm" id="btn-pwa-install">📲 앱 설치</button>` : ''}
           <button class="btn btn--ghost btn--sm" id="btn-logout">로그아웃</button>
         </div>
       </div>
@@ -121,6 +122,20 @@ export async function renderAccount() {
       </div>
       <div id="account-tab-content"></div>
     </div>`;
+
+  document.getElementById('btn-pwa-install')?.addEventListener('click', async () => {
+    const prompt = appState.installPrompt;
+    if (prompt) {
+      prompt.prompt();
+      const { outcome } = await prompt.userChoice;
+      if (outcome === 'accepted') {
+        appState.installPrompt = null;
+        document.getElementById('btn-pwa-install')?.remove();
+      }
+    } else {
+      alert('Safari 하단 공유 버튼(⬆)을 탭한 뒤 "홈 화면에 추가"를 선택하세요.');
+    }
+  });
 
   document.getElementById('btn-logout')?.addEventListener('click', async () => {
     await signOut(auth);
@@ -412,21 +427,39 @@ function renderNotifItem(n) {
     </div>`;
 }
 
+function getPostTypeBucket(p) {
+  if (p.type === 'multi' || p.type === 'general') {
+    if (p.preset) return p.preset;
+    if (p.modules?.vote) return 'vote';
+    if (p.modules?.naming) return 'naming';
+    if (p.modules?.drip) return 'drip';
+    if (p.modules?.quiz) return 'quiz';
+    return 'general';
+  }
+  const t = p.type || 'general';
+  if (t === 'vote' || t === 'balance' || t === 'judgment' || t === 'debate') return 'vote';
+  if (t === 'naming') return 'naming';
+  if (t === 'quiz') return 'quiz';
+  if (t === 'drip' || t === 'cbattle') return 'drip';
+  return 'general';
+}
+
 /* ── 통계 탭 ── */
 async function renderStatsTab(content, uid) {
   try {
     const postsSnap = await getDocs(
       query(collection(db, 'feeds'), where('authorId', '==', uid), orderBy('createdAt', 'desc'), limit(100))
     );
-    const posts = postsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const posts = postsSnap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.hidden);
 
-    const typeCounts = { multi: 0, vote: 0, naming: 0, acrostic: 0, quiz: 0 };
+    const typeCounts = { general: 0, vote: 0, naming: 0, drip: 0, quiz: 0 };
     let totalReactions = 0, totalComments = 0, bestPost = null, bestScore = -1;
     const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);
     let weekPosts = 0;
 
     for (const p of posts) {
-      typeCounts[p.type === 'multi' ? 'multi' : p.type] = (typeCounts[p.type === 'multi' ? 'multi' : p.type] || 0) + 1;
+      const bucket = getPostTypeBucket(p);
+      typeCounts[bucket] = (typeCounts[bucket] || 0) + 1;
       totalReactions += p.reactions?.total || 0;
       totalComments += p.commentCount || 0;
       const score = (p.reactions?.total || 0) * 2 + (p.commentCount || 0) * 3;
@@ -436,10 +469,10 @@ async function renderStatsTab(content, uid) {
     }
 
     const typeMeta = [
-      { key: 'multi', label: '🧩 피드 글', color: 'var(--color-primary)' },
-      { key: 'vote', label: '🗳️ 투표/판정', color: 'var(--color-golra)' },
-      { key: 'naming', label: '😜 미친작명소', color: 'var(--color-usgyo)' },
-      { key: 'acrostic', label: '✍️ 삼행시', color: 'var(--color-malhe)' },
+      { key: 'general', label: '📝 일반글', color: 'var(--color-primary)' },
+      { key: 'vote', label: '🗳️ 투표·판정', color: 'var(--color-golra)' },
+      { key: 'naming', label: '😜 작명소', color: 'var(--color-usgyo)' },
+      { key: 'drip', label: '🤣 드립', color: '#FF9B21' },
       { key: 'quiz', label: '🧠 퀴즈', color: 'var(--color-success)' },
     ];
     const total = posts.length || 1;
@@ -553,7 +586,7 @@ async function fetchMyPosts(uid) {
     ]);
     return {
       count: countSnap.data().count,
-      posts: postsSnap.docs.map(d => ({ id: d.id, ...d.data() })),
+      posts: postsSnap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.hidden),
     };
   } catch { return { count: 0, posts: [] }; }
 }

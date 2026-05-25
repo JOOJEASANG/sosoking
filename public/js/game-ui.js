@@ -104,16 +104,6 @@ function enhanceGuideCard(card) {
 function polishGameLobby() {
   const hash = location.hash || '';
 
-  if (hash.startsWith('#/game/wordtrap')) {
-    document.getElementById('wordtrap-words')?.closest('.form-group')?.remove();
-    const preset = document.getElementById('wordtrap-preset')?.closest('.form-group');
-    if (preset && !preset.querySelector('.game-random-note')) {
-      preset.insertAdjacentHTML('beforeend', '<div class="form-hint game-random-note">방장은 주제만 선택합니다. 실제 금칙어는 게임 시작 시 참가자별로 랜덤 배정됩니다.</div>');
-    }
-    const hero = document.querySelector('.game-detail-page--wordtrap .game-detail-hero p');
-    if (hero) hero.textContent = '각자에게 랜덤 금칙어가 주어집니다. 자연스럽게 채팅하면서 내 금칙어를 절대 말하지 마세요. 말하는 순간 자동으로 걸립니다.';
-  }
-
   if (hash.startsWith('#/game/liar')) {
     const category = document.getElementById('liar-category')?.closest('.form-group');
     if (category && !category.querySelector('.game-random-note')) {
@@ -135,7 +125,7 @@ function polishGameLobby() {
 }
 
 function getGameTypeFromHash() {
-  const match = (location.hash || '').match(/^#\/game\/(liar|mafia|wordtrap)\//);
+  const match = (location.hash || '').match(/^#\/game\/(liar|mafia)\//);
   return match ? match[1] : '';
 }
 

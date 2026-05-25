@@ -677,3 +677,1140 @@
     min-height: 70px;
   }
 }
+
+/* ========== v2 AI Game Design System ========== */
+
+.game-ai-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-bottom: 32px;
+  max-width: 980px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Hero sections */
+.liar-hero-v2,
+.mafia-hero-v2 {
+  position: relative;
+  overflow: hidden;
+  border-radius: 22px;
+  padding: 28px 22px 24px;
+  color: #fff;
+}
+
+.liar-hero-v2 {
+  background: linear-gradient(135deg, #3730a3 0%, #7c3aed 50%, #a855f7 100%);
+  box-shadow: 0 8px 32px rgba(99,102,241,.35);
+}
+
+.liar-hero-v2--room {
+  background: linear-gradient(135deg, #6d28d9 0%, #9333ea 50%, #c026d3 100%);
+  box-shadow: 0 8px 32px rgba(147,51,234,.35);
+}
+
+.mafia-hero-v2 {
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 60%, #1e293b 100%);
+  box-shadow: 0 8px 32px rgba(15,23,42,.5);
+}
+
+.mafia-hero-v2--room {
+  background: linear-gradient(135deg, #0f172a 0%, #1e40af 55%, #1d4ed8 100%);
+  box-shadow: 0 8px 32px rgba(30,64,175,.4);
+}
+
+.liar-hero-v2::before,
+.mafia-hero-v2::before {
+  content: '';
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.07);
+  pointer-events: none;
+}
+
+.liar-hero-v2::after,
+.mafia-hero-v2::after {
+  content: '';
+  position: absolute;
+  bottom: -30px;
+  left: 20%;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.05);
+  pointer-events: none;
+}
+
+.hero-eyebrow {
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .1em;
+  color: rgba(255,255,255,.75);
+  margin-bottom: 8px;
+}
+
+.liar-hero-v2 h1,
+.mafia-hero-v2 h1 {
+  margin: 0 0 8px;
+  font-size: 30px;
+  font-weight: 1000;
+  letter-spacing: -0.04em;
+  color: #fff;
+  line-height: 1.15;
+}
+
+.liar-hero-v2 p,
+.mafia-hero-v2 p {
+  margin: 0;
+  font-size: 13.5px;
+  color: rgba(255,255,255,.82);
+  line-height: 1.6;
+  max-width: 480px;
+}
+
+.game-hero-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 16px;
+}
+
+.game-hero-chips span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.18);
+  border: 1px solid rgba(255,255,255,.28);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 900;
+  backdrop-filter: blur(4px);
+}
+
+.game-back-btn {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.3);
+  background: rgba(255,255,255,.15);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 900;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: background .15s;
+  z-index: 2;
+}
+
+.game-back-btn:hover {
+  background: rgba(255,255,255,.25);
+}
+
+/* Guide section */
+.game-guide-v2 {
+  padding: 16px;
+  border-radius: 18px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  box-shadow: var(--shadow-sm);
+}
+
+.game-guide-v2__head {
+  font-size: 15px;
+  font-weight: 950;
+  color: var(--color-text-primary);
+  margin-bottom: 14px;
+}
+
+.game-guide-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.game-guide-step {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.game-guide-step__num {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
+  font-size: 12px;
+  font-weight: 950;
+  flex: 0 0 auto;
+}
+
+.game-guide-step__text {
+  padding-top: 3px;
+}
+
+.game-guide-step__text b {
+  display: block;
+  font-size: 13px;
+  font-weight: 950;
+  color: var(--color-text-primary);
+  margin-bottom: 2px;
+}
+
+.game-guide-step__text span {
+  font-size: 12.5px;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+/* Create / settings panel */
+.game-create-v2 {
+  padding: 18px;
+  border-radius: 18px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  box-shadow: var(--shadow-sm);
+}
+
+.game-create-v2 h2 {
+  margin: 0 0 16px;
+  font-size: 18px;
+  font-weight: 950;
+  color: var(--color-text-primary);
+}
+
+.game-option-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* AI toggle */
+.ai-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border-light);
+}
+
+.ai-toggle-row__label {
+  font-size: 13.5px;
+  font-weight: 950;
+  color: var(--color-text-primary);
+  margin-bottom: 2px;
+}
+
+.ai-toggle-row__sub {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.ai-switch {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+  cursor: pointer;
+}
+
+.ai-switch input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.ai-switch__track {
+  display: block;
+  width: 46px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--color-border-light);
+  transition: background .2s;
+  position: relative;
+}
+
+.ai-switch__track::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform .2s;
+  box-shadow: 0 1px 4px rgba(0,0,0,.2);
+}
+
+.ai-switch input:checked + .ai-switch__track {
+  background: var(--color-primary);
+}
+
+.ai-switch input:checked + .ai-switch__track::after {
+  transform: translateX(20px);
+}
+
+/* Difficulty toggle */
+.difficulty-toggle {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+  margin-bottom: 8px;
+}
+
+.difficulty-btn {
+  padding: 9px 6px;
+  border-radius: 12px;
+  border: 2px solid var(--color-border-light);
+  background: var(--color-surface-2);
+  color: var(--color-text-secondary);
+  font-size: 12.5px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: all .15s;
+  text-align: center;
+}
+
+.difficulty-btn.active[data-difficulty="easy"] {
+  background: rgba(34,197,94,.12);
+  border-color: rgba(34,197,94,.4);
+  color: #16a34a;
+}
+
+.difficulty-btn.active[data-difficulty="normal"] {
+  background: rgba(251,146,60,.12);
+  border-color: rgba(251,146,60,.4);
+  color: #ea580c;
+}
+
+.difficulty-btn.active[data-difficulty="hard"] {
+  background: rgba(239,68,68,.12);
+  border-color: rgba(239,68,68,.4);
+  color: #dc2626;
+}
+
+/* Tip bar */
+.game-tip-v2 {
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border-light);
+  font-size: 12.5px;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.game-tip-v2 b {
+  color: var(--color-text-primary);
+}
+
+/* Phase progress v2 */
+.game-phase-v2 {
+  padding: 16px;
+  border-radius: 18px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  box-shadow: var(--shadow-sm);
+}
+
+.game-phase-steps {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 12px;
+}
+
+.game-phase-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+
+.game-phase-step__num {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background: var(--color-surface-2);
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 950;
+  border: 2px solid var(--color-border-light);
+  transition: all .2s;
+}
+
+.game-phase-step__label {
+  font-size: 11px;
+  font-weight: 900;
+  color: var(--color-text-muted);
+}
+
+.game-phase-step.active .game-phase-step__num {
+  background: var(--gradient-brand, var(--color-primary));
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 3px 10px rgba(99,102,241,.3);
+}
+
+.game-phase-step.active .game-phase-step__label {
+  color: var(--color-primary);
+}
+
+.game-phase-step.done .game-phase-step__num {
+  background: rgba(34,197,94,.15);
+  border-color: rgba(34,197,94,.3);
+  color: #16a34a;
+}
+
+.game-phase-line {
+  flex: 1;
+  height: 2px;
+  margin: 0 4px;
+  margin-bottom: 14px;
+  background: var(--color-border-light);
+  border-radius: 999px;
+}
+
+.game-phase-line.done {
+  background: rgba(34,197,94,.4);
+}
+
+.game-phase-log {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--color-surface-2);
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  font-weight: 850;
+  line-height: 1.5;
+}
+
+/* Invite bar */
+.game-invite-v2 {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Room grid */
+.game-room-grid-v2 {
+  display: grid;
+  grid-template-columns: minmax(260px, 360px) minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+/* Cards */
+.game-card-v2 {
+  padding: 16px;
+  border-radius: 18px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  box-shadow: var(--shadow-sm);
+}
+
+.game-card-v2__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.game-card-v2__head h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 950;
+  color: var(--color-text-primary);
+}
+
+.game-card-v2__head span {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
+  font-size: 11px;
+  font-weight: 950;
+}
+
+/* Player list v2 */
+.game-player-list-v2 {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.game-player-item-v2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--color-surface-2);
+  border: 1px solid transparent;
+  transition: border-color .15s;
+}
+
+.game-player-item-v2.is-me {
+  background: var(--color-primary-bg);
+  border-color: var(--color-primary-border, rgba(99,102,241,.2));
+}
+
+.game-player-item-v2.is-dead {
+  opacity: .5;
+}
+
+.game-player-avatar-v2 {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: var(--color-border-light);
+  font-size: 14px;
+  font-weight: 950;
+  color: var(--color-text-primary);
+  flex: 0 0 auto;
+}
+
+.game-player-avatar-v2--host {
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  color: #fff;
+}
+
+.game-player-avatar-v2--dead {
+  background: var(--color-surface-2);
+  font-size: 16px;
+}
+
+.game-player-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.game-player-info__name {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13.5px;
+  font-weight: 950;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.game-player-info__tag {
+  display: inline-flex;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(251,146,60,.15);
+  color: #ea580c;
+  font-size: 10px;
+  font-weight: 950;
+}
+
+.game-player-votes {
+  font-size: 12px;
+  font-weight: 950;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.game-player-votes--voted {
+  color: var(--color-primary);
+}
+
+.game-player-votes--dead {
+  color: #dc2626;
+}
+
+/* Secret role card v2 */
+.game-secret-v2 {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(34,197,94,.1), rgba(20,184,166,.08));
+  border: 1px solid rgba(34,197,94,.2);
+  box-shadow: var(--shadow-sm);
+}
+
+.game-secret-v2--liar {
+  background: linear-gradient(135deg, rgba(124,58,237,.15), rgba(239,68,68,.1));
+  border-color: rgba(124,58,237,.25);
+}
+
+.game-secret-v2--special {
+  background: linear-gradient(135deg, rgba(14,165,233,.12), rgba(99,102,241,.1));
+  border-color: rgba(14,165,233,.22);
+}
+
+.game-secret-v2__icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 18px;
+  background: rgba(255,255,255,.7);
+  font-size: 26px;
+  flex: 0 0 auto;
+}
+
+.game-secret-v2__role {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  font-weight: 900;
+  margin-bottom: 3px;
+}
+
+.game-secret-v2__word {
+  font-size: 22px;
+  font-weight: 1000;
+  color: var(--color-text-primary);
+  letter-spacing: -0.03em;
+  margin-bottom: 4px;
+}
+
+.game-secret-v2__hint {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  line-height: 1.45;
+}
+
+/* AI Reveal card */
+.ai-reveal-card {
+  padding: 22px 18px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #0ea5e9, #6366f1, #a855f7);
+  color: #fff;
+  text-align: center;
+  box-shadow: 0 8px 28px rgba(99,102,241,.35);
+}
+
+.ai-reveal-card__icon {
+  font-size: 40px;
+  margin-bottom: 8px;
+}
+
+.ai-reveal-card__title {
+  font-size: 16px;
+  font-weight: 950;
+  margin-bottom: 6px;
+}
+
+.ai-reveal-card__name {
+  font-size: 24px;
+  font-weight: 1000;
+  letter-spacing: -0.03em;
+  margin-bottom: 6px;
+}
+
+.ai-reveal-card__desc {
+  font-size: 13px;
+  color: rgba(255,255,255,.82);
+  line-height: 1.5;
+}
+
+/* Vote panel v2 */
+.mafia-vote-panel {
+  padding: 16px;
+  border-radius: 18px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  box-shadow: var(--shadow-sm);
+}
+
+.mafia-vote-panel__head {
+  margin-bottom: 12px;
+}
+
+.mafia-vote-panel__title {
+  display: block;
+  font-size: 16px;
+  font-weight: 950;
+  color: var(--color-text-primary);
+  margin-bottom: 4px;
+}
+
+.mafia-vote-panel__sub {
+  font-size: 12.5px;
+  color: var(--color-text-muted);
+}
+
+.mafia-vote-grid-v2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+}
+
+.mafia-vote-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 11px 13px;
+  border-radius: 13px;
+  border: 2px solid var(--color-border-light);
+  background: var(--color-surface-2);
+  cursor: pointer;
+  transition: all .15s;
+}
+
+.mafia-vote-btn:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-bg);
+}
+
+.mafia-vote-btn--selected {
+  border-color: var(--color-primary);
+  background: var(--color-primary-bg);
+}
+
+.mafia-vote-btn__name {
+  font-size: 13px;
+  font-weight: 950;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mafia-vote-btn__check {
+  font-size: 14px;
+  color: var(--color-primary);
+  flex: 0 0 auto;
+  font-weight: 950;
+}
+
+/* Dark mode overrides for v2 */
+[data-theme="dark"] .game-secret-v2__icon,
+[data-theme="dark"] .ai-switch__track::after {
+  background: #1e293b;
+}
+
+[data-theme="dark"] .game-hero-chips span {
+  background: rgba(255,255,255,.14);
+  border-color: rgba(255,255,255,.22);
+}
+
+[data-theme="dark"] .difficulty-btn {
+  background: rgba(255,255,255,.06);
+  border-color: rgba(255,255,255,.12);
+  color: var(--color-text-secondary);
+}
+
+[data-theme="dark"] .game-phase-step__num {
+  background: rgba(255,255,255,.08);
+  border-color: rgba(255,255,255,.14);
+}
+
+[data-theme="dark"] .mafia-vote-btn {
+  background: rgba(255,255,255,.06);
+  border-color: rgba(255,255,255,.12);
+}
+
+[data-theme="dark"] .mafia-vote-btn--selected,
+[data-theme="dark"] .mafia-vote-btn:hover {
+  background: rgba(99,102,241,.18);
+  border-color: rgba(99,102,241,.4);
+}
+
+[data-theme="dark"] .game-player-item-v2 {
+  background: rgba(255,255,255,.07);
+}
+
+[data-theme="dark"] .ai-toggle-row {
+  background: rgba(255,255,255,.07);
+  border-color: rgba(255,255,255,.12);
+}
+
+@media (max-width: 767px) {
+  .liar-hero-v2 h1,
+  .mafia-hero-v2 h1 {
+    font-size: 24px;
+  }
+
+  .liar-hero-v2,
+  .mafia-hero-v2 {
+    padding: 24px 16px 20px;
+  }
+
+  .game-room-grid-v2 {
+    grid-template-columns: 1fr;
+  }
+
+  .game-option-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .mafia-vote-grid-v2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .game-phase-steps {
+    gap: 0;
+  }
+}
+
+/* ================================================
+   ARCADE LOBBY — 소소킹 게임 로비 다크 아케이드 디자인
+   ================================================ */
+
+.arcade-lobby {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding-bottom: 32px;
+}
+
+/* ── 히어로 ── */
+.arcade-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 28px;
+  padding: 52px 28px 44px;
+  text-align: center;
+  background: linear-gradient(135deg, #08091a 0%, #0e1535 50%, #12183f 100%);
+  border: 1px solid rgba(255,255,255,.08);
+}
+
+.arcade-hero__orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  pointer-events: none;
+  animation: arcadeOrbFloat 8s ease-in-out infinite alternate;
+}
+.arcade-hero__orb--1 {
+  width: 280px; height: 280px;
+  top: -80px; left: -60px;
+  background: rgba(124,58,237,.35);
+  animation-delay: 0s;
+}
+.arcade-hero__orb--2 {
+  width: 240px; height: 240px;
+  bottom: -60px; right: -40px;
+  background: rgba(14,165,233,.3);
+  animation-delay: -3s;
+}
+.arcade-hero__orb--3 {
+  width: 180px; height: 180px;
+  top: 30%; left: 55%;
+  background: rgba(255,107,74,.2);
+  animation-delay: -5s;
+}
+
+@keyframes arcadeOrbFloat {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(14px, -14px) scale(1.08); }
+}
+
+.arcade-hero__content { position: relative; z-index: 1; }
+
+.arcade-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.18);
+  color: rgba(255,255,255,.85);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  backdrop-filter: blur(8px);
+  margin-bottom: 18px;
+}
+
+.arcade-hero__title {
+  font-size: 38px;
+  font-weight: 950;
+  letter-spacing: -.04em;
+  line-height: 1.12;
+  background: linear-gradient(135deg, #fff 30%, #a5b4fc 70%, #7dd3fc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0 0 14px;
+}
+
+.arcade-hero__desc {
+  font-size: 15px;
+  color: rgba(255,255,255,.7);
+  line-height: 1.7;
+  margin: 0;
+}
+.arcade-hero__sub {
+  font-size: 12px;
+  color: rgba(255,255,255,.45);
+}
+
+/* ── 게임 그리드 ── */
+.arcade-game-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+/* ── 게임 카드 ── */
+.arcade-card {
+  position: relative;
+  border-radius: 24px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(160deg, #0e1225 0%, #111828 100%);
+  border: 1px solid rgba(255,255,255,.1);
+  transition: transform .25s cubic-bezier(.34,1.56,.64,1), box-shadow .25s ease, border-color .25s ease;
+}
+.arcade-card:hover {
+  transform: translateY(-5px) scale(1.015);
+  border-color: rgba(255,255,255,.2);
+}
+
+/* 게임별 상단 컬러 바 */
+.arcade-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
+.arcade-card--liar::before {
+  background: linear-gradient(90deg, #7c3aed, #a855f7, #ec4899);
+}
+.arcade-card--mafia::before {
+  background: linear-gradient(90deg, #1d4ed8, #0ea5e9, #6366f1);
+}
+
+/* 카드 호버 글로우 */
+.arcade-card--liar:hover {
+  box-shadow: 0 20px 50px rgba(124,58,237,.3), 0 0 0 1px rgba(168,85,247,.25);
+}
+.arcade-card--mafia:hover {
+  box-shadow: 0 20px 50px rgba(14,165,233,.25), 0 0 0 1px rgba(99,102,241,.25);
+}
+
+/* 반짝임 효과 */
+.arcade-card__shine {
+  position: absolute;
+  top: 0; left: -100%;
+  width: 60%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.04), transparent);
+  pointer-events: none;
+  transition: left .6s ease;
+}
+.arcade-card:hover .arcade-card__shine {
+  left: 150%;
+}
+
+/* 카드 내용 */
+.arcade-card__body {
+  flex: 1;
+  padding: 22px 20px 14px;
+}
+
+.arcade-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.arcade-card__icon {
+  font-size: 40px;
+  line-height: 1;
+  filter: drop-shadow(0 0 12px rgba(255,255,255,.3));
+}
+
+.arcade-card__ai {
+  font-size: 11px;
+  font-weight: 900;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(255,107,74,.15);
+  border: 1px solid rgba(255,107,74,.3);
+  color: #fb923c;
+  letter-spacing: .04em;
+}
+
+.arcade-card__title {
+  font-size: 22px;
+  font-weight: 950;
+  color: #fff;
+  margin: 0 0 8px;
+  letter-spacing: -.04em;
+}
+
+.arcade-card__desc {
+  font-size: 13px;
+  color: rgba(255,255,255,.58);
+  line-height: 1.65;
+  margin: 0 0 14px;
+}
+
+.arcade-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.arcade-card__meta span {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 8px;
+  background: rgba(255,255,255,.06);
+  color: rgba(255,255,255,.5);
+  font-weight: 700;
+}
+
+/* 카드 하단 버튼 */
+.arcade-card__footer {
+  display: flex;
+  gap: 8px;
+  padding: 14px 20px 20px;
+  border-top: 1px solid rgba(255,255,255,.07);
+}
+
+.arcade-card__guide {
+  flex: 0 0 auto;
+  padding: 0 14px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.15);
+  background: rgba(255,255,255,.06);
+  color: rgba(255,255,255,.7);
+  font-size: 12px;
+  font-weight: 800;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background .18s, color .18s;
+}
+.arcade-card__guide:hover {
+  background: rgba(255,255,255,.12);
+  color: #fff;
+}
+
+.arcade-card__play {
+  flex: 1;
+  height: 40px;
+  border-radius: 12px;
+  border: none;
+  font-size: 14px;
+  font-weight: 950;
+  font-family: inherit;
+  cursor: pointer;
+  transition: filter .2s, transform .15s;
+  letter-spacing: -.01em;
+}
+.arcade-card__play:hover { filter: brightness(1.12); }
+.arcade-card__play:active { transform: scale(.97); }
+
+.arcade-card--liar .arcade-card__play {
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(124,58,237,.4);
+}
+.arcade-card--mafia .arcade-card__play {
+  background: linear-gradient(135deg, #1d4ed8, #0ea5e9);
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(14,165,233,.4);
+}
+
+/* 모바일 */
+@media (max-width: 600px) {
+  .arcade-hero {
+    padding: 38px 20px 32px;
+    border-radius: 20px;
+  }
+  .arcade-hero__title { font-size: 28px; }
+  .arcade-game-grid { grid-template-columns: 1fr; }
+  .arcade-card__body { padding: 18px 16px 12px; }
+  .arcade-card__footer { padding: 12px 16px 16px; }
+  .arcade-card__icon { font-size: 34px; }
+  .arcade-card__title { font-size: 19px; }
+}
+
+/* ================================================
+   투표 글쓰기 — 간결한 칩 버전
+   ================================================ */
+
+.mw-vote-compact {
+  padding: 16px;
+  background: var(--color-surface-2);
+  border-radius: 16px;
+  border: 1px solid var(--color-border-light);
+}
+
+.mw-vote-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.mw-vote-chip {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1.5px solid var(--color-border-light);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 800;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all .16s ease;
+  white-space: nowrap;
+}
+.mw-vote-chip:hover {
+  border-color: rgba(255,107,74,.35);
+  color: var(--color-primary);
+  background: var(--color-primary-bg);
+}
+.mw-vote-chip.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(255,107,74,.3);
+}
+
+[data-theme="dark"] .mw-vote-compact {
+  background: rgba(255,255,255,.04);
+  border-color: rgba(255,255,255,.09);
+}
+[data-theme="dark"] .mw-vote-chip {
+  background: rgba(255,255,255,.06);
+  border-color: rgba(255,255,255,.12);
+  color: rgba(255,255,255,.65);
+}
+[data-theme="dark"] .mw-vote-chip:hover {
+  background: rgba(255,107,74,.12);
+  border-color: rgba(255,107,74,.4);
+  color: #fb923c;
+}

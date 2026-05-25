@@ -242,6 +242,53 @@ export async function renderMultiWrite() {
   updateGamePreview();
 }
 
+function setVoteMode(mode) {
+  const normalized = ['general', 'balance', 'judgment', 'debate'].includes(mode) ? mode : 'general';
+  const hidden = document.getElementById('mw-vote-mode');
+  if (hidden) hidden.value = normalized;
+  document.querySelectorAll('[data-vote-mode]').forEach(btn => {
+    const active = btn.dataset.voteMode === normalized;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-checked', active ? 'true' : 'false');
+  });
+  const modeNote = document.getElementById('mw-vote-mode-note');
+  const judgmentPresets = document.getElementById('mw-vote-judgment-presets');
+  const addBtn = document.getElementById('mw-add-vote-option');
+  const optionList = document.getElementById('mw-vote-options');
+  const notes = {
+    balance: '⚖️ 둘 다 싫어도 하나를 반드시 골라야 하는 상황을 만들어보세요. 선택지는 2개로 제한됩니다.',
+    judgment: '🔨 억울한 상황이나 논란 상황을 올리면 사람들이 판정을 내립니다. 아래 빠른 선택으로 선택지를 바로 채울 수 있어요.',
+    debate: '💬 찬성/반대가 자동 고정됩니다. 본문에 토론 주제를 적어주세요.',
+    general: '',
+  };
+  if (modeNote) { modeNote.textContent = notes[normalized] || ''; modeNote.style.display = notes[normalized] ? '' : 'none'; }
+  if (judgmentPresets) judgmentPresets.style.display = normalized === 'judgment' ? '' : 'none';
+  if (normalized === 'balance') {
+    const opts = [...(optionList?.querySelectorAll('.mw-vote-option') || [])];
+    opts.slice(2).forEach(opt => opt.remove());
+    opts.slice(0, 2).forEach(opt => { opt.readOnly = false; });
+    if (addBtn) addBtn.style.display = 'none';
+  } else if (normalized === 'debate') {
+    const opts = [...(optionList?.querySelectorAll('.mw-vote-option') || [])];
+    opts.slice(2).forEach(opt => opt.remove());
+    opts.slice(0, 2).forEach((opt, i) => { opt.value = i === 0 ? '찬성' : '반대'; opt.readOnly = true; });
+    if (addBtn) addBtn.style.display = 'none';
+  } else {
+    const opts = [...(optionList?.querySelectorAll('.mw-vote-option') || [])];
+    opts.forEach(opt => { opt.readOnly = false; });
+    if (addBtn) addBtn.style.display = '';
+  }
+  updateGamePreview();
+}
+
+function applyJudgmentPreset(preset) {
+  const [a, b] = preset.split(',');
+  const opts = document.querySelectorAll('.mw-vote-option');
+  if (opts[0]) opts[0].value = a || '';
+  if (opts[1]) opts[1].value = b || '';
+  updateGamePreview();
+}
+
 function setQuizMode(mode) {
   const normalized = mode === 'multiple' ? 'multiple' : 'subjective';
   const hidden = document.getElementById('mw-quiz-mode');
@@ -299,6 +346,8 @@ function bindMultiWriteEvents() {
     updateGamePreview();
   });
 
+  document.querySelectorAll('[data-vote-mode]').forEach(btn => btn.addEventListener('click', () => setVoteMode(btn.dataset.voteMode)));
+  document.querySelectorAll('[data-judgment-preset]').forEach(btn => btn.addEventListener('click', () => applyJudgmentPreset(btn.dataset.judgmentPreset)));
   document.querySelectorAll('[data-quiz-mode]').forEach(btn => btn.addEventListener('click', () => setQuizMode(btn.dataset.quizMode)));
   document.querySelectorAll('[data-fill-count]').forEach(btn => btn.addEventListener('click', () => setFillCount(btn.dataset.fillCount)));
   document.querySelectorAll('[data-deadline-mode]').forEach(btn => btn.addEventListener('click', () => setDeadlineMode(btn.dataset.deadlineMode)));

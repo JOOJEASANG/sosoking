@@ -1,4 +1,5 @@
 import { MULTI_PRESETS } from './presets.js';
+import { getRichPlainText } from './editor.js';
 
 const STOP_WORDS = new Set([
   '그리고','그래서','하지만','그러나','이거','저거','그거','오늘','내일','어제','우리','너무','진짜','완전','그냥','하는','해서','하면','하고','입니다','있어요','없어요','해주세요','추천','질문','상황','본문','제목',
@@ -68,7 +69,7 @@ export function fillAutoTags({ force = false } = {}) {
   if (!force && input.value.trim()) return input.value.split(',').map(v => v.trim()).filter(Boolean);
 
   const title = document.getElementById('mw-title')?.value || '';
-  const body = document.getElementById('mw-desc')?.value || '';
+  const body = getRichPlainText();
   const presetKey = document.querySelector('.multi-write-page')?.dataset.presetKey || 'general';
   const extra = document.getElementById('mw-acrostic-keyword')?.value || '';
   const tags = generateAutoTags({ title, body, presetKey, extra });

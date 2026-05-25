@@ -10,6 +10,47 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { navigate } from '../router.js';
 
+function isStandalone() {
+  return window.matchMedia('(display-mode: standalone)').matches || !!navigator.standalone;
+}
+function isIOS() {
+  return /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream;
+}
+
+function renderInstallBanner() {
+  if (isStandalone()) return '';
+  if (!appState.installPrompt && !isIOS()) return '';
+  return `
+    <div class="home-install-banner" id="home-install-banner">
+      <span class="home-install-banner__icon">📲</span>
+      <div class="home-install-banner__text">
+        <b>앱으로 설치하면 더 빠르게!</b>
+        <span>홈 화면에서 바로 소소킹을 열 수 있어요</span>
+      </div>
+      <button class="btn btn--primary btn--sm" id="home-install-btn">설치</button>
+      <button class="home-install-banner__close" id="home-install-close" aria-label="닫기">×</button>
+    </div>`;
+}
+
+function bindInstallBanner() {
+  document.getElementById('home-install-close')?.addEventListener('click', () => {
+    document.getElementById('home-install-banner')?.remove();
+  });
+  document.getElementById('home-install-btn')?.addEventListener('click', async () => {
+    const prompt = appState.installPrompt;
+    if (prompt) {
+      prompt.prompt();
+      const { outcome } = await prompt.userChoice;
+      if (outcome === 'accepted') {
+        appState.installPrompt = null;
+        document.getElementById('home-install-banner')?.remove();
+      }
+    } else if (isIOS()) {
+      alert('Safari 하단 공유 버튼(⬆)을 탭한 뒤 "홈 화면에 추가"를 선택하세요.');
+    }
+  });
+}
+
 const TYPE_LABEL = {
   multi: '일반',
   general: '일반',
@@ -20,10 +61,13 @@ const TYPE_LABEL = {
   battle: '투표',
   naming: '작명',
   drip: '드립',
+  cbattle: '드립',
   quiz: '퀴즈',
   initial_game: '퀴즈',
+  acrostic: '행시',
+  relay: '릴레이',
   anonymous: '일반',
-  fill: '일반',
+  fill: '빈칸',
 };
 
 function getKstDateString(date = new Date()) {

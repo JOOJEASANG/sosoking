@@ -14,7 +14,8 @@ function renderPresetButtons(activeKey) {
           const preset = MULTI_PRESETS[key];
           return `
           <button type="button" class="multi-preset-btn ${activeKey === key ? 'active' : ''}" data-multi-preset="${key}" aria-pressed="${activeKey === key ? 'true' : 'false'}">
-            ${preset.icon} ${preset.label}
+            <span class="multi-preset-btn__label">${preset.icon} ${preset.label}</span>
+            ${preset.shortDesc ? `<span class="multi-preset-btn__desc">${esc(preset.shortDesc)}</span>` : ''}
           </button>`;
         }).join('')}
       </div>
@@ -57,11 +58,15 @@ function renderAnonymousSwitch() {
 function renderGeneralExtras() {
   return `
     <div class="multi-general-note"><b>일반글</b><span>자유롭게 올리고, 필요하면 익명으로 숨길 수 있습니다.</span></div>
-    ${renderAnonymousSwitch()}
+    ${renderAnonymousSwitch()}`;
+}
+
+function renderYoutubeInput() {
+  return `
     <div class="form-group multi-youtube-box">
-      <label class="form-label">유튜브 링크</label>
+      <label class="form-label">유튜브 링크 <span style="font-weight:500;color:var(--color-text-muted)">(선택)</span></label>
       <input id="mw-youtube-url" class="form-input" maxlength="220" placeholder="https://youtu.be/... 또는 https://www.youtube.com/watch?v=...">
-      <div class="form-hint">일반글에 유튜브 링크를 넣으면 상세페이지에서 16:9 영상 화면으로 자동 표시됩니다.</div>
+      <div class="form-hint">입력하면 상세페이지 본문 아래에 16:9 영상으로 자동 표시됩니다.</div>
     </div>`;
 }
 
@@ -69,11 +74,22 @@ function renderSelectedModule(activeKey, preset) {
   if (activeKey === 'general') return renderGeneralExtras();
 
   if (activeKey === 'vote') {
-    return moduleCard('vote', '🗳️', '투표/판정', '본문을 기준으로 사용자가 선택지에 투표하고 댓글로 토론합니다.', `
-      <div class="multi-option-list" id="mw-vote-options">
-        ${preset.voteOptionPlaceholders.map((value, i) => `<input class="form-input mw-vote-option" maxlength="80" placeholder="선택지 ${i + 1} · 예: ${esc(value)}">`).join('')}
-      </div>
-      <button class="btn btn--ghost btn--sm" type="button" id="mw-add-vote-option">+ 선택지 추가</button>`);
+    return `
+      <div class="mw-vote-compact" data-module-card="vote">
+        <input type="hidden" data-module-toggle="vote" value="1">
+        <input type="hidden" id="mw-vote-mode" value="general">
+        <div class="mw-vote-chips" role="radiogroup" aria-label="투표 형식">
+          <button type="button" class="mw-vote-chip active" data-vote-mode="general" role="radio" aria-checked="true">🗳️ 일반</button>
+          <button type="button" class="mw-vote-chip" data-vote-mode="balance" role="radio" aria-checked="false">⚖️ 밸런스</button>
+          <button type="button" class="mw-vote-chip" data-vote-mode="judgment" role="radio" aria-checked="false">🔨 판정</button>
+          <button type="button" class="mw-vote-chip" data-vote-mode="debate" role="radio" aria-checked="false">💬 토론</button>
+        </div>
+        <div id="mw-vote-mode-note" class="form-hint" style="display:none;margin:6px 0 10px"></div>
+        <div class="multi-option-list" id="mw-vote-options">
+          ${preset.voteOptionPlaceholders.map((value) => `<input class="form-input mw-vote-option" maxlength="80" placeholder="${esc(value)}">`).join('')}
+        </div>
+        <button class="btn btn--ghost btn--sm" type="button" id="mw-add-vote-option" style="margin-top:6px">+ 선택지 추가</button>
+      </div>`;
   }
 
   if (activeKey === 'naming') {
@@ -171,8 +187,9 @@ export function renderMultiWriteHTML({ renderKey, presetKey, showDeadline = fals
           </div>
           <div class="form-group">
             <label class="form-label">${bodyLabel}${bodyRequired ? ' <span class="required">*</span>' : ''}</label>
-            <textarea id="mw-desc" class="form-textarea" rows="4" maxlength="2000" placeholder="${esc(preset.descPlaceholder)}"></textarea>
+            <textarea id="mw-desc" class="form-textarea mw-desc-resizable" rows="4" maxlength="2000" placeholder="${esc(preset.descPlaceholder)}"></textarea>
           </div>
+          ${presetKey === 'general' ? renderYoutubeInput() : ''}
           <div class="form-group">
             <label class="form-label">사진</label>
             <div id="mw-img-uploader"></div>

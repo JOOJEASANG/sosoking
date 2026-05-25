@@ -1,39 +1,103 @@
 import { buildGameInviteUrl, esc, findMyPlayer, isRoomHost } from '../common.js';
 import { renderGameChatHTML } from '../chat.js';
-import { alivePlayers, roleLabel, voteCounts } from './rules.js';
+import { alivePlayers, roleLabel, roleGuide, voteCounts } from './rules.js';
 import { auth } from '../../firebase.js';
+
+const DIFFICULTY_LABELS = { easy: '😊 쉬움', normal: '😐 보통', hard: '😈 어려움' };
 
 export function renderMafiaLobbyHTML() {
   return `
-    <div class="game-detail-page game-detail-page--mafia game-shell-polished">
-      <section class="game-detail-hero">
-        <button class="write-back-btn" id="mafia-back" type="button">←</button>
-        <div class="game-detail-hero__bg-icon">🌙</div>
-        <div class="game-detail-hero__eyebrow">NIGHT MISSION</div>
+    <div class="game-ai-shell">
+      <section class="mafia-hero-v2">
+        <button class="game-back-btn" id="mafia-back" type="button" aria-label="뒤로">←</button>
+        <div class="hero-eyebrow">🌙 FIND THE AI · MAFIA GAME</div>
         <h1>마피아게임</h1>
-        <p>마이크 없이 채팅으로 토론합니다. 마피아는 정체를 숨기고, 시민은 말투와 투표 흐름을 보고 마피아를 찾아내세요.</p>
-        <div class="game-detail-hero__chips"><span>채팅 토론</span><span>역할 비공개</span><span>투표 처형</span></div>
-      </section>
-
-      <section class="game-detail-card game-guide-card game-guide-card--steps">
-        <div class="game-detail-card__head"><div><b>마피아게임 설명</b><span>정체를 숨긴 사람을 토론과 투표로 찾아내는 게임</span></div><i>🌙</i></div>
-        <div class="game-guide-list">
-          <div><b>1. 역할</b><span>방장이 시작하면 시민과 마피아 역할이 자동으로 배정됩니다.</span></div>
-          <div><b>2. 토론</b><span>채팅으로 의심되는 사람을 질문하고 방어합니다.</span></div>
-          <div><b>3. 투표</b><span>가장 의심되는 사람에게 투표하고, 방장이 집계해 처형합니다.</span></div>
+        <p>AI가 마피아로 잠입합니다.<br>채팅으로 토론하며 숨은 AI를 찾아 투표하세요.</p>
+        <div class="game-hero-chips">
+          <span>🤖 AI 마피아</span><span>💬 채팅 토론</span><span>🗳️ 투표 처형</span>
         </div>
       </section>
 
-      <section class="game-detail-card game-create-panel">
-        <div class="game-detail-card__head"><div><b>마피아게임 방 만들기</b><span>3명 이상 추천</span></div><i>🌙</i></div>
-        <div class="form-group"><label class="form-label">방 제목</label><input id="mafia-title" class="form-input" maxlength="40" value="마피아게임" placeholder="방 제목"></div>
-        <div class="liar-option-row">
-          <div class="form-group"><label class="form-label">최대 인원</label><select id="mafia-max" class="form-select"><option value="4">4명</option><option value="6" selected>6명</option><option value="8">8명</option></select></div>
-          <div class="form-group"><label class="form-label">마피아 수</label><select id="mafia-count" class="form-select"><option value="1" selected>1명</option><option value="2">2명</option></select></div>
+      <section class="game-guide-v2">
+        <div class="game-guide-v2__head">📖 게임 방법</div>
+        <div class="game-guide-steps">
+          <div class="game-guide-step">
+            <div class="game-guide-step__num">1</div>
+            <div class="game-guide-step__text"><b>역할 배정</b><span>방장이 시작하면 시민·마피아 역할이 배정됩니다. AI는 항상 마피아입니다.</span></div>
+          </div>
+          <div class="game-guide-step">
+            <div class="game-guide-step__num">2</div>
+            <div class="game-guide-step__text"><b>채팅 토론</b><span>채팅으로 의심되는 사람에게 질문하고 방어합니다. AI도 채팅에 참여해요!</span></div>
+          </div>
+          <div class="game-guide-step">
+            <div class="game-guide-step__num">3</div>
+            <div class="game-guide-step__text"><b>투표 처형</b><span>가장 의심되는 사람에게 투표합니다. 방장이 집계하면 최다 득표자가 탈락합니다.</span></div>
+          </div>
+          <div class="game-guide-step">
+            <div class="game-guide-step__num">4</div>
+            <div class="game-guide-step__text"><b>승리 조건</b><span>시민팀은 마피아를 모두 처형하면 승리. 마피아 수≥시민 수이면 마피아 승리!</span></div>
+          </div>
         </div>
-        <button class="btn btn--primary" id="mafia-create">방 만들기</button>
       </section>
+
+      <section class="game-create-v2">
+        <h2>방 만들기</h2>
+        <div class="form-group">
+          <label class="form-label">방 제목</label>
+          <input id="mafia-title" class="form-input" maxlength="40" value="마피아게임" placeholder="방 제목">
+        </div>
+        <div class="game-option-row">
+          <div class="form-group">
+            <label class="form-label">최대 인원</label>
+            <select id="mafia-max" class="form-select">
+              <option value="4">4명</option>
+              <option value="6" selected>6명</option>
+              <option value="8">8명</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">마피아 수</label>
+            <select id="mafia-count" class="form-select">
+              <option value="1" selected>1명</option>
+              <option value="2">2명</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">🤖 AI 마피아</label>
+          <div class="ai-toggle-row">
+            <div>
+              <div class="ai-toggle-row__label">AI를 마피아로 참가시키기</div>
+              <div class="ai-toggle-row__sub">AI가 시민으로 위장하며 채팅에 참여합니다</div>
+            </div>
+            <label class="ai-switch">
+              <input type="checkbox" id="mafia-with-ai" checked>
+              <span class="ai-switch__track"></span>
+            </label>
+          </div>
+        </div>
+
+        <div id="mafia-difficulty-group" class="form-group">
+          <label class="form-label">AI 난이도</label>
+          <input type="hidden" id="mafia-difficulty" value="normal">
+          <div class="difficulty-toggle">
+            <button type="button" class="difficulty-btn" data-difficulty="easy">😊 쉬움</button>
+            <button type="button" class="difficulty-btn active" data-difficulty="normal">😐 보통</button>
+            <button type="button" class="difficulty-btn" data-difficulty="hard">😈 어려움</button>
+          </div>
+          <div class="form-hint" id="mafia-difficulty-hint">AI가 약간의 어색함을 내비쳐 잡기 쉬운 편이에요.</div>
+        </div>
+
+        <button class="btn btn--primary btn--full" id="mafia-create" style="margin-top:4px">방 만들기</button>
+      </section>
+
+      <div class="game-tip-v2">💡 5명부터 경찰, 6명부터 의사 특수 역할이 추가됩니다. AI 난이도 <b>어려움</b>은 완벽한 구어체로 위장해 구별이 매우 어렵습니다!</div>
     </div>`;
+}
+
+export function renderMafiaLoadingHTML() {
+  return `<div class="loading-center"><div class="spinner"></div></div>`;
 }
 
 export function renderMafiaNotFoundHTML() {
@@ -43,100 +107,176 @@ export function renderMafiaNotFoundHTML() {
 export function renderMafiaWrongGameHTML(game = '') {
   const target = game === 'liar' ? '/game/liar' : '/sosoland';
   const label = game === 'liar' ? '라이어게임으로 이동' : '게임 목록으로 이동';
-  return `<div class="empty-state"><div class="empty-state__icon">🚫</div><div class="empty-state__title">마피아게임 방이 아니에요</div><div class="empty-state__desc">마피아게임에서는 마피아게임 방만 열 수 있습니다.</div><button class="btn btn--primary" onclick="navigate('${target}')">${label}</button></div>`;
+  return `<div class="empty-state"><div class="empty-state__icon">🚫</div><div class="empty-state__title">마피아게임 방이 아니에요</div><button class="btn btn--primary" onclick="navigate('${target}')">${label}</button></div>`;
 }
 
-export function renderMafiaLoadingHTML() {
-  return `<div class="loading-center"><div class="spinner"></div></div>`;
-}
-
-function renderMafiaPlayerItem(p, room, counts, gameOver) {
-  const isHost = p.uid === room.hostId;
+function renderPlayerItem(p, room, counts, gameOver) {
+  const isHost = p.uid === room.hostId || p.role === 'host';
   const dead = p.alive === false;
   const isMe = auth.currentUser?.uid === p.uid;
+  const initial = String(p.name || '?').slice(0, 1).toUpperCase();
+  const voteCount = counts[p.uid] || 0;
+  let statusText = dead ? '탈락' : (voteCount > 0 ? `${voteCount}표` : '생존');
+  if (gameOver && p.assignedRole) statusText = roleLabel(p.assignedRole);
   return `
-    <div class="liar-player-item has-avatar mafia-player ${dead ? 'is-dead' : ''} ${isMe ? 'is-me' : ''}">
-      <i class="game-player-avatar ${dead ? 'game-player-avatar--dead' : isHost ? 'game-player-avatar--host' : 'game-player-avatar--player'}" aria-hidden="true"></i>
-      <div class="liar-player-name"><span>${esc(p.name)}</span>${isHost ? '<small>방장</small>' : ''}${isMe ? '<small>나</small>' : ''}</div>
-      <b>${dead ? '탈락' : p.assignedRole && gameOver ? roleLabel(p.assignedRole) : `${counts[p.uid] || 0}표`}</b>
+    <div class="game-player-item-v2 ${isMe ? 'is-me' : ''} ${dead ? 'is-dead' : ''}">
+      <div class="game-player-avatar-v2 ${isHost ? 'game-player-avatar-v2--host' : ''} ${dead ? 'game-player-avatar-v2--dead' : ''}">${dead ? '💀' : esc(initial)}</div>
+      <div class="game-player-info">
+        <div class="game-player-info__name">
+          ${esc(p.name || '참가자')}
+          ${isHost ? '<span class="game-player-info__tag">방장</span>' : ''}
+          ${isMe ? '<span class="game-player-info__tag" style="color:var(--color-primary)">나</span>' : ''}
+        </div>
+      </div>
+      <div class="game-player-votes ${dead ? 'game-player-votes--dead' : voteCount > 0 ? 'game-player-votes--voted' : ''}">${esc(statusText)}</div>
     </div>`;
 }
 
-function renderRoleCard(room, me) {
+function renderMyRoleCard(room, me) {
   if (!me || room.status === 'waiting') return '';
-  const mafia = me.assignedRole === 'mafia';
+  const isMafia = me.assignedRole === 'mafia';
+  const isPolice = me.assignedRole === 'police';
+  const isDoctor = me.assignedRole === 'doctor';
+  const guide = roleGuide(me.assignedRole || '');
+  const icon = isMafia ? '🌙' : isPolice ? '🔍' : isDoctor ? '💉' : '🛡️';
   return `
-    <section class="game-secret-card ${mafia ? 'game-secret-card--liar' : ''}">
+    <div class="game-secret-v2 ${isMafia ? 'game-secret-v2--liar' : (isPolice || isDoctor) ? 'game-secret-v2--special' : ''}">
+      <div class="game-secret-v2__icon">${icon}</div>
       <div>
-        <small>당신의 역할</small>
-        <b>${roleLabel(me.assignedRole || '') || '역할 확인 전'}</b>
-        <span>${mafia ? '정체를 숨기고 시민처럼 말하세요.' : '대화와 투표로 마피아를 찾아내세요.'}</span>
+        <div class="game-secret-v2__role">당신의 역할</div>
+        <div class="game-secret-v2__word">${roleLabel(me.assignedRole || '') || '미배정'}</div>
+        <div class="game-secret-v2__hint">${esc(guide)}</div>
       </div>
-      <i>${mafia ? '🌙' : '🛡️'}</i>
-    </section>`;
+    </div>`;
 }
 
-function renderPhaseCard(room, alive, players) {
-  const waiting = room.status === 'waiting';
-  const ended = room.status === 'ended';
+function renderAiRevealCard(room, players) {
+  if (room.status !== 'ended' || !room.aiPlayerUid) return '';
+  const aiPlayer = players.find(p => p.uid === room.aiPlayerUid);
+  const aiName = aiPlayer?.name || room.aiPlayerName || 'AI';
+  const diff = DIFFICULTY_LABELS[room.aiDifficulty] || '보통';
   return `
-    <section class="game-phase-card game-phase-card--mafia">
-      <div class="game-phase-card__step ${waiting ? 'active' : 'done'}"><b>1</b><span>입장</span></div>
-      <div class="game-phase-card__line"></div>
-      <div class="game-phase-card__step ${room.status === 'playing' ? 'active' : ended ? 'done' : ''}"><b>2</b><span>토론</span></div>
-      <div class="game-phase-card__line"></div>
-      <div class="game-phase-card__step ${ended ? 'active' : ''}"><b>3</b><span>결과</span></div>
-      <p>${waiting ? (players.length >= 3 ? '이제 방장이 게임을 시작할 수 있어요.' : '최소 3명이 모이면 시작할 수 있어요.') : esc(room.log || `생존 ${alive.length}명 · 채팅으로 토론하세요.`)}</p>
-    </section>`;
+    <div class="ai-reveal-card">
+      <div class="ai-reveal-card__icon">🤖</div>
+      <div class="ai-reveal-card__title">AI의 정체가 밝혀졌습니다!</div>
+      <div class="ai-reveal-card__name">${esc(aiName)}</div>
+      <div class="ai-reveal-card__desc">이 플레이어가 AI(Gemini)였습니다<br>난이도: ${esc(diff)}</div>
+    </div>`;
+}
+
+function renderPhaseCard(room, players) {
+  const waiting = room.status === 'waiting';
+  const playing = room.status === 'playing';
+  const ended = room.status === 'ended';
+  const humanPlayers = players.filter(p => !p.isAI);
+  const enough = humanPlayers.length >= 3;
+  const hasAI = !!room.withAI;
+  const alive = players.filter(p => p.alive !== false && !p.isAI);
+
+  return `
+    <div class="game-phase-v2">
+      <div class="game-phase-steps">
+        <div class="game-phase-step ${waiting ? 'active' : 'done'}">
+          <div class="game-phase-step__num">${waiting ? '1' : '✓'}</div>
+          <div class="game-phase-step__label">입장</div>
+        </div>
+        <div class="game-phase-line ${!waiting ? 'done' : ''}"></div>
+        <div class="game-phase-step ${playing ? 'active' : ended ? 'done' : ''}">
+          <div class="game-phase-step__num">${ended ? '✓' : '2'}</div>
+          <div class="game-phase-step__label">토론</div>
+        </div>
+        <div class="game-phase-line ${ended ? 'done' : ''}"></div>
+        <div class="game-phase-step ${ended ? 'active' : ''}">
+          <div class="game-phase-step__num">3</div>
+          <div class="game-phase-step__label">결과</div>
+        </div>
+      </div>
+      <div class="game-phase-log">
+        ${waiting
+          ? enough ? `참가자 ${humanPlayers.length}명 대기중${hasAI ? ' · 🤖 AI 참가 예정' : ''} — 방장이 시작하면 돼요`
+                   : '최소 3명이 모여야 시작할 수 있어요'
+          : esc(room.log || `생존 ${alive.length}명 · 채팅으로 토론하세요`)}
+      </div>
+    </div>`;
+}
+
+function renderVotePanel(me, players) {
+  if (!me || me.alive === false) return '';
+  const targets = players.filter(p => p.alive !== false && p.uid !== me.uid && !p.isAI);
+  if (!targets.length) return '';
+  return `
+    <div class="mafia-vote-panel">
+      <div class="mafia-vote-panel__head">
+        <span class="mafia-vote-panel__title">🗳️ 투표하기</span>
+        <span class="mafia-vote-panel__sub">${me.votedFor ? '투표 완료 — 방장이 집계할 때까지 대기하세요' : '가장 의심되는 사람을 선택하세요'}</span>
+      </div>
+      <div class="mafia-vote-grid-v2">
+        ${targets.map(p => `
+          <button class="mafia-vote-btn ${me.votedFor === p.uid ? 'mafia-vote-btn--selected' : ''}" data-mafia-vote="${p.uid}">
+            <span class="mafia-vote-btn__name">${esc(p.name)}</span>
+            <span class="mafia-vote-btn__check">${me.votedFor === p.uid ? '✓' : ''}</span>
+          </button>
+        `).join('')}
+      </div>
+    </div>`;
 }
 
 export function renderMafiaRoomHTML(room, players = [], chats = []) {
-  const me = findMyPlayer(players);
-  const joined = !!me;
   const url = buildGameInviteUrl('mafia', room.id);
-  const counts = voteCounts(players);
-  const alive = alivePlayers(players);
-  const gameOver = room.status === 'ended';
+  const visiblePlayers = players.length ? players : [{ uid: room.hostId, name: room.hostName || '방장', role: 'host' }];
+  const me = findMyPlayer(visiblePlayers);
+  const joined = !!me;
   const host = isRoomHost(room);
-  const canStart = host && room.status === 'waiting' && players.length >= 3;
+  const gameOver = room.status === 'ended';
+  const canStart = host && room.status === 'waiting' && visiblePlayers.filter(p => !p.isAI).length >= 3;
+  const counts = voteCounts(visiblePlayers);
+  const hasAI = !!(room.withAI || room.aiPlayerUid);
+  const diff = DIFFICULTY_LABELS[room.aiDifficulty] || '';
+  const alive = visiblePlayers.filter(p => p.alive !== false && !p.isAI);
 
   return `
-    <div class="game-detail-page game-detail-page--mafia game-shell-polished">
-      <section class="game-detail-hero">
-        <button class="write-back-btn" id="mafia-back" type="button">←</button>
-        <div class="game-detail-hero__bg-icon">🌙</div>
-        <div class="game-detail-hero__eyebrow">방 코드 ${esc(room.code || '')}</div>
+    <div class="game-ai-shell">
+      <section class="mafia-hero-v2 mafia-hero-v2--room">
+        <button class="game-back-btn" id="mafia-back" type="button" aria-label="뒤로">←</button>
+        <div class="hero-eyebrow">방 코드 ${esc(room.code || '')}</div>
         <h1>${esc(room.title || '마피아게임')}</h1>
         <p>${esc(room.log || '참가자를 모아 게임을 시작하세요.')}</p>
-        <div class="game-detail-hero__chips"><span>${room.status === 'waiting' ? '대기중' : gameOver ? '종료' : `${room.day || 1}라운드`}</span><span>생존 ${alive.length}명</span><span>마피아 ${room.mafiaCount || 1}명</span></div>
-        <div class="game-room-actions"><button class="btn btn--ghost btn--sm" id="mafia-copy">초대 링크 복사</button>${!joined ? '<button class="btn btn--primary btn--sm" id="mafia-join">참가하기</button>' : ''}</div>
+        <div class="game-hero-chips">
+          <span>${room.status === 'waiting' ? '대기중' : gameOver ? '종료' : `${room.day || 1}라운드`}</span>
+          <span>생존 ${alive.length}명</span>
+          <span>마피아 ${room.mafiaCount || 1}명</span>
+          ${hasAI ? `<span>🤖 AI ${diff}</span>` : ''}
+        </div>
+        <div class="game-room-actions">
+          <button class="btn btn--ghost btn--sm" data-copy-invite>초대 복사</button>
+          ${!joined ? '<button class="btn btn--primary btn--sm" id="mafia-join">참가하기</button>' : ''}
+        </div>
       </section>
 
-      <section class="liar-room-card game-stat-grid">
-        <div class="liar-room-info"><span>상태</span><b>${room.status === 'waiting' ? '대기중' : gameOver ? '종료' : '진행중'}</b></div>
-        <div class="liar-room-info"><span>참가자</span><b>${players.length}/${room.maxPlayers || 0}명</b></div>
-        <div class="liar-room-info"><span>마피아</span><b>${room.mafiaCount || 1}명</b></div>
-        <div class="liar-room-info"><span>내 역할</span><b>${me?.assignedRole ? roleLabel(me.assignedRole) : '-'}</b></div>
-      </section>
+      ${renderMyRoleCard(room, me)}
+      ${renderPhaseCard(room, visiblePlayers)}
 
-      ${renderRoleCard(room, me)}
-      ${renderPhaseCard(room, alive, players)}
+      <div class="game-invite-v2">
+        <input class="form-input" style="flex:1;font-size:12px" value="${url}" readonly>
+        <button class="btn btn--primary btn--sm" data-copy-invite>복사</button>
+      </div>
 
-      <section class="liar-invite-card game-invite-compact">
-        <label class="form-label">초대 링크</label>
-        <div class="liar-invite-row"><input class="form-input" id="mafia-invite-url" value="${url}" readonly><button class="btn btn--primary btn--sm" id="mafia-copy">복사</button></div>
-        <div class="form-hint">마이크 없이 채팅 토론으로 진행합니다. 참가자는 닉네임만 있어도 입장할 수 있어요.</div>
-      </section>
+      ${renderAiRevealCard(room, visiblePlayers)}
 
-      <div class="game-room-grid">
-        <section class="liar-player-card game-player-panel">
-          <div class="game-panel-head"><h2>참가자</h2><span>${players.length}명</span></div>
-          <div class="liar-player-list">
-            ${players.map(p => renderMafiaPlayerItem(p, room, counts, gameOver)).join('') || '<div class="hall-empty">참가자가 없습니다.</div>'}
+      <div class="game-room-grid-v2">
+        <section class="game-card-v2">
+          <div class="game-card-v2__head">
+            <h2>참가자</h2>
+            <span>${visiblePlayers.filter(p => !p.isAI).length}명${hasAI ? ' + 🤖' : ''}</span>
           </div>
-          ${host && room.status === 'waiting' ? `<button class="btn btn--primary btn--full" id="mafia-start" ${canStart ? '' : 'disabled'}>${canStart ? '게임 시작' : '3명 이상 필요'}</button>` : ''}
-          ${host && room.status === 'playing' ? '<button class="btn btn--primary btn--full" id="mafia-count-vote">투표 집계 / 처형</button>' : ''}
-          ${host && gameOver ? '<button class="btn btn--ghost btn--full" id="mafia-reset">새 게임 준비</button>' : ''}
+          <div class="game-player-list-v2">
+            ${visiblePlayers.filter(p => !p.isAI || gameOver).map(p => renderPlayerItem(p, room, counts, gameOver)).join('')}
+          </div>
+          ${host ? `<div style="margin-top:10px;display:flex;flex-direction:column;gap:8px">
+            ${room.status === 'waiting' ? `<button class="btn btn--primary btn--full" id="mafia-start" ${canStart ? '' : 'disabled'}>${canStart ? '🎮 게임 시작' : '3명 이상 필요'}</button>` : ''}
+            ${room.status === 'playing' ? '<button class="btn btn--primary btn--full" id="mafia-count-vote">투표 집계 / 처형</button>' : ''}
+            ${gameOver ? '<button class="btn btn--ghost btn--full" id="mafia-reset">🔄 새 게임 준비</button>' : ''}
+          </div>` : ''}
         </section>
 
         ${renderGameChatHTML({
@@ -145,22 +285,15 @@ export function renderMafiaRoomHTML(room, players = [], chats = []) {
           joined,
           inputId: 'mafia-chat-input',
           sendId: 'mafia-chat-send',
-          title: '마피아 토론 채팅',
-          hint: room.status === 'playing' ? '의심되는 사람을 질문하고 방어하세요. 투표 전 토론을 충분히 진행하세요.' : '참가자가 모이면 이곳에서 토론을 진행합니다.',
+          title: '마피아 토론',
+          hint: room.status === 'playing' ? '의심되는 사람에게 질문하고 방어하세요. AI도 채팅에 참여합니다!' : '참가자가 모이면 이곳에서 토론을 진행합니다.',
         })}
       </div>
 
-      ${room.status === 'playing' && joined && me?.alive !== false ? renderMafiaVoteBoxHTML(me, players) : ''}
+      ${room.status === 'playing' && joined ? renderVotePanel(me, visiblePlayers) : ''}
     </div>`;
 }
 
 export function renderMafiaVoteBoxHTML(me, players) {
-  const targets = alivePlayers(players).filter(p => p.uid !== me.uid);
-  return `
-    <section class="game-detail-card game-vote-card">
-      <div class="game-detail-card__head"><div><b>투표하기</b><span>${me.votedFor ? '투표 완료' : '의심되는 사람 선택'}</span></div><i>🗳️</i></div>
-      <div class="mafia-vote-grid">
-        ${targets.map(p => `<button class="btn ${me.votedFor === p.uid ? 'btn--primary' : 'btn--ghost'} btn--sm" data-mafia-vote="${p.uid}">${esc(p.name)}</button>`).join('') || '<div class="hall-empty">투표할 대상이 없습니다.</div>'}
-      </div>
-    </section>`;
+  return renderVotePanel(me, players);
 }

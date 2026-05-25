@@ -15,12 +15,8 @@ function descToPlain(raw) {
 
 const TYPE_LABELS = {
   multi: '만능 놀이글',
-  vote: '골라봐',
-  initial_game: '초성게임',
+  vote: '투표·판정',
   naming: '미친작명소',
-  crazy_court: '억까재판',
-  relay: '막장릴레이',
-  acrostic: '삼행시짓기',
 };
 
 function getDetailId() {
@@ -66,7 +62,7 @@ function renderToolbar(post) {
 }
 
 function renderOptionsEditor(post) {
-  if (!Array.isArray(post.options) || !['vote', 'crazy_court'].includes(post.type)) return '';
+  if (!Array.isArray(post.options) || post.type !== 'vote') return '';
   return `
     <div class="form-group">
       <label class="form-label">선택지</label>
@@ -167,39 +163,6 @@ function renderTypeExtraEditor(post) {
           <option value="3" ${Number(post.charCount || 0) === 3 ? 'selected' : ''}>3글자</option>
           <option value="5" ${Number(post.charCount || 0) === 5 ? 'selected' : ''}>5글자</option>
         </select>
-      </div>`;
-  }
-  if (post.type === 'initial_game') {
-    return `
-      <div class="form-group">
-        <label class="form-label">초성</label>
-        <input class="form-input" id="owner-edit-initials" value="${toInput(post.initials)}" maxlength="8">
-      </div>`;
-  }
-  if (post.type === 'crazy_court') {
-    return `
-      <div class="form-group">
-        <label class="form-label">추가 증거 / 변명</label>
-        <input class="form-input" id="owner-edit-evidence" value="${toInput(post.evidence)}" maxlength="120">
-      </div>`;
-  }
-  if (post.type === 'relay') {
-    return `
-      <div class="form-group">
-        <label class="form-label">시작 문장</label>
-        <textarea class="form-textarea" id="owner-edit-start" rows="3" maxlength="300">${toInput(post.startSentence)}</textarea>
-      </div>
-      <div class="form-group">
-        <label class="form-label">등장인물</label>
-        <input class="form-input" id="owner-edit-characters" value="${toInput(post.characters)}" maxlength="200">
-      </div>`;
-  }
-  if (post.type === 'acrostic') {
-    return `
-      <div class="form-group">
-        <label class="form-label">제시어</label>
-        <input class="form-input" id="owner-edit-keyword" value="${toInput(post.keyword)}" maxlength="8">
-        <div class="form-hint">제시어를 바꾸면 새 참여자는 바뀐 제시어로 작성하게 됩니다.</div>
       </div>`;
   }
   return '';
@@ -336,25 +299,6 @@ function collectPatch(post) {
 
   if (post.type === 'multi') patch.modules = collectMultiModules(post);
   if (post.type === 'naming') patch.charCount = Number(document.getElementById('owner-edit-char-count')?.value || 0);
-  if (post.type === 'initial_game') {
-    const initials = document.getElementById('owner-edit-initials')?.value.trim() || '';
-    if (!initials) throw new Error('초성을 입력해주세요.');
-    patch.initials = initials;
-    patch.answerLength = [...initials].length;
-    patch.title = `초성게임: ${initials}`;
-  }
-  if (post.type === 'crazy_court') patch.evidence = document.getElementById('owner-edit-evidence')?.value.trim() || '';
-  if (post.type === 'relay') {
-    patch.startSentence = document.getElementById('owner-edit-start')?.value.trim() || '';
-    patch.characters = document.getElementById('owner-edit-characters')?.value.trim() || '';
-  }
-  if (post.type === 'acrostic') {
-    const keyword = document.getElementById('owner-edit-keyword')?.value.trim() || '';
-    if (!keyword) throw new Error('제시어를 입력해주세요.');
-    patch.keyword = keyword;
-    patch.title = `'${keyword}' 삼행시 도전!`;
-  }
-
   return patch;
 }
 

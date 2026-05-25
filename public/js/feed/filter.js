@@ -1,18 +1,22 @@
-export const FILTER_TYPES = ['general', 'vote', 'naming', 'acrostic', 'relay', 'quiz'];
+export const FILTER_TYPES = ['general', 'vote', 'naming', 'drip', 'quiz'];
 
 export const TYPE_LABELS = {
-  general: '일반글',
-  multi: '피드 글',
-  vote: '투표/판정',
-  ox: '투표/판정',
-  fill: '빈칸 채우기',
-  naming: '미친작명소',
-  acrostic: '삼행시',
-  relay: '막장릴레이',
-  quiz: '미친퀴즈',
-  anonymous: '일반글',
-  initial_game: '미친퀴즈',
-  crazy_court: '투표/판정',
+  general: '일반',
+  multi: '일반',
+  vote: '투표',
+  ox: '투표',
+  fill: '빈칸',
+  naming: '작명',
+  drip: '드립',
+  cbattle: '드립',
+  acrostic: '행시',
+  relay: '릴레이',
+  quiz: '퀴즈',
+  anonymous: '일반',
+  initial_game: '퀴즈',
+  crazy_court: '투표',
+  balance: '투표',
+  battle: '투표',
 };
 
 export const SORT_LABELS = {

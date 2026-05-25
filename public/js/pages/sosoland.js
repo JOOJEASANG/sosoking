@@ -1,53 +1,45 @@
 import { setMeta } from '../utils/seo.js';
 import { navigate } from '../router.js';
+import { appState } from '../state.js';
+
+function isStandalone() {
+  return window.matchMedia('(display-mode: standalone)').matches || !!navigator.standalone;
+}
+function isIOS() {
+  return /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream;
+}
 
 const GAMES = [
   {
     key: 'liar',
     icon: '🕵️',
     title: '라이어게임',
-    desc: '제시어를 모르는 라이어를 찾아내는 채팅 추리 게임',
+    desc: 'AI가 라이어로 잠입! 채팅으로 제시어를 설명하며 숨은 AI를 찾아내세요.',
     status: '방 만들기',
-    tag: '오픈',
+    tag: '🤖 AI',
     path: '/game/liar',
     enabled: true,
     guide: {
-      subtitle: '대화 속 어색함을 찾아내는 심리 추리 게임',
-      goal: '일반 참가자는 라이어를 찾아내고, 라이어는 정체를 들키지 않은 채 제시어를 맞히거나 끝까지 버팁니다.',
-      flow: '방 만들기 → 초대 링크 공유 → 참가자 입장 → 제시어 확인 → 채팅 설명/질문 → 라이어 추리 순서로 진행합니다.',
-      tip: '너무 직접적인 설명은 라이어에게 힌트가 되고, 너무 애매한 설명은 의심을 받을 수 있습니다.',
+      subtitle: 'AI가 라이어로 위장 — 채팅으로 찾아내는 심리 추리 게임',
+      goal: '시민은 제시어를 자연스럽게 설명하고, AI 라이어는 제시어 없이 끝까지 속입니다. 투표로 AI를 지목하면 승리!',
+      flow: '방 만들기 → 초대 링크 공유 → 참가자 입장 → 제시어 확인 → 채팅 설명/질문 → AI 라이어 추리 및 투표 순서로 진행합니다.',
+      tip: '너무 직접적인 설명은 AI에게 힌트가 됩니다. AI 난이도 어려움은 인터넷 슬랭까지 구사하니 주의하세요!',
     },
   },
   {
     key: 'mafia',
     icon: '🌙',
     title: '마피아게임',
-    desc: '정체를 숨기고 채팅 토론으로 범인을 찾아내는 추리 게임',
+    desc: 'AI가 마피아로 잠입! 채팅 토론과 투표로 숨은 AI를 처형하세요.',
     status: '방 만들기',
-    tag: '오픈',
+    tag: '🤖 AI',
     path: '/game/mafia',
     enabled: true,
     guide: {
-      subtitle: '정체를 숨긴 사람을 토론과 투표로 찾아내는 게임',
-      goal: '시민은 마피아를 모두 찾아내면 승리하고, 마피아는 시민 수와 같거나 많아질 때까지 살아남으면 승리합니다.',
+      subtitle: 'AI가 마피아로 위장 — 토론과 투표로 찾아내는 추리 게임',
+      goal: '시민팀은 AI 마피아를 모두 처형하면 승리. 마피아 수가 시민 수 이상이 되면 마피아 승리입니다.',
       flow: '방 만들기 → 초대 링크 공유 → 참가자 입장 → 방장 게임 시작 → 역할 배정 → 채팅 토론 → 투표 집계 순서로 진행합니다.',
-      tip: '마피아는 자연스럽게 시민처럼 행동하고, 시민은 말투·투표 패턴·방어 반응을 보고 의심 대상을 좁혀야 합니다.',
-    },
-  },
-  {
-    key: 'wordtrap',
-    icon: '🚫',
-    title: '금칙어 채팅게임',
-    desc: '내 금칙어를 피하면서 상대를 유도하는 채팅 전용 게임',
-    status: '방 만들기',
-    tag: '신규',
-    path: '/game/wordtrap',
-    enabled: true,
-    guide: {
-      subtitle: '금칙어를 말하면 걸리는 채팅 유도 게임',
-      goal: '내 금칙어를 쓰지 않고 자연스럽게 대화하면서, 상대가 자기 금칙어를 말하도록 유도합니다.',
-      flow: '방 만들기 → 초대 링크 공유 → 참가자 입장 → 방장 시작 → 각자 금칙어 확인 → 채팅 토론 → 금칙어 말하면 자동 탈락 순서로 진행합니다.',
-      tip: '너무 노골적으로 유도하면 들킵니다. 평범한 질문 속에 금칙어를 끌어내는 게 핵심입니다.',
+      tip: 'AI는 채팅에도 직접 참여합니다. 말투와 투표 패턴을 잘 관찰하세요. 5명 이상이면 경찰·의사 특수 역할도 추가됩니다!',
     },
   },
 ];
@@ -151,35 +143,42 @@ export function renderSosoland() {
   if (!el) return;
 
   el.innerHTML = `
-    <div class="sosoland-page">
-      <section class="sosoland-hero sosoland-hero--arcade sosoland-hero--simple">
-        <div class="sosoland-hero__glow sosoland-hero__glow--one"></div>
-        <div class="sosoland-hero__glow sosoland-hero__glow--two"></div>
-        <div class="sosoland-hero__content">
-          <div class="sosoland-hero__eyebrow">GAME PLAYGROUND</div>
-          <h1>친구와 바로 즐기는<br>채팅 게임 모음</h1>
-          <p>회원과 게스트가 같은 방에서 함께 즐길 수 있습니다. 모바일은 전체 화면, PC는 소소킹 안의 게임 레이어창으로 실행됩니다.</p>
+    <div class="arcade-lobby">
+      <section class="arcade-hero">
+        <div class="arcade-hero__orb arcade-hero__orb--1"></div>
+        <div class="arcade-hero__orb arcade-hero__orb--2"></div>
+        <div class="arcade-hero__orb arcade-hero__orb--3"></div>
+        <div class="arcade-hero__content">
+          <div class="arcade-badge">🎮 GAME ZONE</div>
+          <h1 class="arcade-hero__title">소소킹 게임</h1>
+          <p class="arcade-hero__desc">AI와 친구가 한 방에서 즐기는 채팅 추리게임<br><span class="arcade-hero__sub">모바일 전체화면 · PC 게임레이어 · 게스트 참가 가능</span></p>
         </div>
       </section>
 
-      <section class="sosoland-grid sosoland-grid--compact">
+      <div class="arcade-game-grid">
         ${GAMES.map(game => `
-          <article class="sosoland-card sosoland-card--${game.key}" data-game-key="${game.key}">
-            <div class="sosoland-card__headline">
-              <div class="sosoland-card__icon">${game.icon}</div>
-              <div class="sosoland-card__title-stack">
-                <h2>${game.title}</h2>
-                <p>${game.desc}</p>
+          <div class="arcade-card arcade-card--${game.key}" data-game-key="${game.key}">
+            <div class="arcade-card__shine"></div>
+            <div class="arcade-card__body">
+              <div class="arcade-card__top">
+                <span class="arcade-card__icon">${game.icon}</span>
+                <span class="arcade-card__ai">${game.tag}</span>
+              </div>
+              <h2 class="arcade-card__title">${esc(game.title)}</h2>
+              <p class="arcade-card__desc">${esc(game.desc)}</p>
+              <div class="arcade-card__meta">
+                <span>👥 4~8명</span>
+                <span>💬 채팅</span>
+                <span>🤖 AI 난이도</span>
               </div>
             </div>
-            <div class="sosoland-card__actions">
-              <span class="sosoland-card__status">${game.tag}</span>
-              <button class="sosoland-card__info" type="button" data-game-info="${game.key}" aria-label="${game.title} 설명 보기">설명</button>
-              <button class="btn btn--primary btn--sm sosoland-card__start" type="button" data-game-start="${game.key}">${game.status}</button>
+            <div class="arcade-card__footer">
+              <button class="arcade-card__guide" type="button" data-game-info="${game.key}">📖 방법 보기</button>
+              <button class="arcade-card__play" type="button" data-game-start="${game.key}">▶ 방 만들기</button>
             </div>
-          </article>
+          </div>
         `).join('')}
-      </section>
+      </div>
     </div>`;
 
   el.querySelectorAll('[data-game-info]').forEach(btn => {
