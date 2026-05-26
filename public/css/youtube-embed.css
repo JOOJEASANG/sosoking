@@ -30,3 +30,52 @@
     border-radius: 14px;
   }
 }
+
+/* ── 이미지 링크 입력 (글쓰기) ── */
+.mw-imgurl-box { margin-top: 4px; }
+
+.mw-imgurl-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.mw-imgurl-row .form-input { flex: 1; min-width: 0; }
+
+.mw-imgurl-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.mw-imgurl-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border-light);
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+.mw-imgurl-chip__url {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-text-secondary);
+}
+
+.mw-imgurl-chip__remove {
+  flex-shrink: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+}
+.mw-imgurl-chip__remove:hover { color: var(--color-error, #ef4444); }

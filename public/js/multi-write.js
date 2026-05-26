@@ -317,6 +317,42 @@ function setFillCount(count) {
   updateGamePreview();
 }
 
+function esc(value) {
+  return String(value || '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+}
+
+function getImgUrlEntries() {
+  return [...document.querySelectorAll('#mw-imgurl-list [data-imgurl]')].map(el => el.dataset.imgurl);
+}
+
+function addImgUrl() {
+  const input = document.getElementById('mw-imgurl-input');
+  const raw = input?.value.trim() || '';
+  if (!raw) return;
+  if (!/^https?:\/\/.{4,}/i.test(raw)) {
+    toast.warn('https:// 로 시작하는 이미지 링크를 입력해주세요.');
+    return;
+  }
+  const existing = getImgUrlEntries();
+  if (existing.includes(raw)) {
+    toast.warn('이미 추가된 링크예요.');
+    if (input) input.value = '';
+    return;
+  }
+  if (existing.length >= 20) {
+    toast.warn('이미지 링크는 최대 20개까지 추가할 수 있어요.');
+    return;
+  }
+  const list = document.getElementById('mw-imgurl-list');
+  const chip = document.createElement('div');
+  chip.className = 'mw-imgurl-chip';
+  chip.dataset.imgurl = raw;
+  chip.innerHTML = `<span class="mw-imgurl-chip__url">${esc(raw)}</span><button type="button" class="mw-imgurl-chip__remove" aria-label="삭제">×</button>`;
+  chip.querySelector('.mw-imgurl-chip__remove')?.addEventListener('click', () => chip.remove());
+  list?.appendChild(chip);
+  if (input) input.value = '';
+}
+
 function bindMultiWriteEvents() {
   document.getElementById('multi-back-type')?.addEventListener('click', () => navigate('/feed'));
   document.getElementById('multi-cancel')?.addEventListener('click', () => navigate('/feed'));
@@ -364,6 +400,10 @@ function bindMultiWriteEvents() {
   });
 
   document.getElementById('multi-submit')?.addEventListener('click', submitMultiPost);
+
+  const imgurlInput = document.getElementById('mw-imgurl-input');
+  document.getElementById('mw-imgurl-add')?.addEventListener('click', addImgUrl);
+  imgurlInput?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addImgUrl(); } });
 }
 
 async function submitMultiPost() {
@@ -393,7 +433,9 @@ async function submitMultiPost() {
     btn.disabled = true;
     btn.textContent = hasPendingImages() ? '사진 올리는 중...' : '올리는 중...';
 
-    const images = await getUploadedImages();
+    const uploadedImages = await getUploadedImages();
+    const urlImages = getImgUrlEntries();
+    const images = [...uploadedImages, ...urlImages];
     if (images.length > MAX_FEED_IMAGES) throw new Error(`사진은 최대 ${MAX_FEED_IMAGES}장까지 올릴 수 있어요.`);
     btn.textContent = '게시글 저장 중...';
 

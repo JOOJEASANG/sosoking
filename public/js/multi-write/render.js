@@ -195,6 +195,15 @@ export function renderMultiWriteHTML({ renderKey, presetKey, showDeadline = fals
             <div id="mw-img-uploader"></div>
             <div class="form-hint">사진은 최대 20장까지 올릴 수 있어요.</div>
           </div>
+          <div class="form-group mw-imgurl-box">
+            <label class="form-label">이미지 링크 <span style="font-weight:500;color:var(--color-text-muted)">(선택)</span></label>
+            <div class="mw-imgurl-row">
+              <input id="mw-imgurl-input" class="form-input" type="url" maxlength="512" placeholder="https://example.com/image.jpg">
+              <button class="btn btn--secondary btn--sm" type="button" id="mw-imgurl-add">추가</button>
+            </div>
+            <div id="mw-imgurl-list" class="mw-imgurl-list"></div>
+            <div class="form-hint">외부 이미지 URL을 직접 첨부할 수 있어요. 파일 업로드와 함께 사용 가능합니다.</div>
+          </div>
           <div class="form-group">
             <div class="multi-tag-label-row">
               <label class="form-label" for="mw-tags">태그</label>
