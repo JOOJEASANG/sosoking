@@ -13,7 +13,7 @@ function enhanceTouchKingHome() {
   const desc = hero.querySelector('p');
   const kicker = hero.querySelector('.symbol-spy__kicker');
   if (kicker) kicker.textContent = '12개 그림 빠른 터치 대결';
-  if (title) title.innerHTML = '같은 그림을 찾고<br>터치왕에 도전하라';
+  if (title) title.innerHTML = '같은 그림을 찾고<br>소소터치왕에 도전하라';
   if (desc) desc.textContent = '중앙판 12개와 내 판 12개 중 동시에 있는 그림 하나를 가장 빠르게 누르는 순발력 대결 게임입니다.';
   soloBtn.textContent = '혼자 연습하기';
 
@@ -31,13 +31,13 @@ function enhanceTouchKingHome() {
         <option value="10">10명</option>
       </select>
     </label>
-    <label>판수
+    <label>게임횟수
       <select id="touch-king-rounds">
-        <option value="5">5판</option>
-        <option value="10">10판</option>
-        <option value="20">20판</option>
-        <option value="30" selected>30판</option>
-        <option value="50">50판</option>
+        <option value="5">5회</option>
+        <option value="10">10회</option>
+        <option value="20">20회</option>
+        <option value="30" selected>30회</option>
+        <option value="50">50회</option>
       </select>
     </label>`;
   soloBtn.parentNode.insertBefore(settings, soloBtn);
@@ -60,7 +60,7 @@ function enhanceTouchKingHome() {
       const maxPlayers = Number(document.getElementById('touch-king-max-players')?.value || 6);
       const roundLimit = Number(document.getElementById('touch-king-rounds')?.value || 30);
       const roomId = await createTouchKingRoom({ maxPlayers, roundLimit });
-      toast.success('터치왕게임 방을 만들었어요');
+      toast.success('소소터치왕 방을 만들었어요');
       navigate(`/game/touch-king/${roomId}`);
     } catch (error) {
       console.error('[touch king room create]', error);
