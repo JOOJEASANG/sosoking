@@ -1,0 +1,2236 @@
+/* ================================================
+   소소코드 (SOSO CODE) — 게임 전용 CSS
+   디자인 컨셉: 어두운 해커/사이버 분위기
+   기본 배경: #0d1117 (딥 블랙)
+   포인트: #00d4aa (시안/틸)
+   ================================================ */
+
+/* ── 커스텀 프로퍼티 ── */
+:root {
+  --code-bg:           #0d1117;
+  --code-surface:      #161b22;
+  --code-card:         #1c2128;
+  --code-primary:      #00d4aa;
+  --code-primary-dim:  rgba(0, 212, 170, 0.15);
+  --code-primary-glow: rgba(0, 212, 170, 0.35);
+  --code-danger:       #ef4444;
+  --code-danger-dim:   rgba(239, 68, 68, 0.15);
+  --code-warn:         #fbbf24;
+  --code-warn-dim:     rgba(251, 191, 36, 0.15);
+  --code-success:      #22c55e;
+  --code-success-dim:  rgba(34, 197, 94, 0.15);
+  --code-purple:       #a855f7;
+  --code-purple-dim:   rgba(168, 85, 247, 0.15);
+  --code-text:         #e6edf3;
+  --code-sub:          #8b949e;
+  --code-muted:        rgba(139, 148, 158, 0.55);
+  --code-border:       rgba(0, 212, 170, 0.2);
+  --code-border-weak:  rgba(255, 255, 255, 0.07);
+  --code-border-mid:   rgba(255, 255, 255, 0.12);
+  --code-shadow:       0 4px 24px rgba(0, 0, 0, 0.5);
+  --code-shadow-lg:    0 12px 48px rgba(0, 0, 0, 0.65);
+  --code-shadow-teal:  0 6px 24px rgba(0, 212, 170, 0.3);
+  --code-radius:       14px;
+  --code-radius-sm:    10px;
+  --code-radius-lg:    20px;
+  --code-radius-xl:    24px;
+}
+
+/* ================================================
+   SHELL — 전체 컨테이너
+   ================================================ */
+
+.code-shell {
+  max-width: 640px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: var(--code-bg);
+  color: var(--code-text);
+  font-family: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 0 48px;
+  position: relative;
+}
+
+/* ================================================
+   HEADER — 상단 헤더
+   ================================================ */
+
+.code-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 16px;
+  background: rgba(13, 17, 23, 0.88);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-bottom: 1px solid var(--code-border-weak);
+}
+
+.code-header__title {
+  flex: 1;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 950;
+  letter-spacing: -.02em;
+  color: var(--code-text);
+}
+
+.code-back-btn {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 1px solid var(--code-border-mid);
+  background: var(--code-surface);
+  color: var(--code-text);
+  font-size: 16px;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+  flex: 0 0 auto;
+  text-decoration: none;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.code-back-btn:hover {
+  background: var(--code-card);
+  border-color: var(--code-border);
+}
+
+/* ================================================
+   HERO — 로비 히어로 섹션
+   ================================================ */
+
+.code-hero {
+  position: relative;
+  overflow: hidden;
+  padding: 44px 20px 40px;
+  text-align: center;
+  background:
+    radial-gradient(ellipse at 60% 0%, rgba(0, 212, 170, 0.2) 0%, transparent 55%),
+    radial-gradient(ellipse at 15% 100%, rgba(0, 212, 170, 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at 85% 80%, rgba(168, 85, 247, 0.1) 0%, transparent 40%),
+    linear-gradient(180deg, #0f1623 0%, var(--code-bg) 100%);
+  border-bottom: 1px solid var(--code-border-weak);
+}
+
+/* 배경 글로우 효과 */
+.code-hero::before {
+  content: '';
+  position: absolute;
+  top: -70px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 340px;
+  height: 340px;
+  border-radius: 50%;
+  background: rgba(0, 212, 170, 0.09);
+  filter: blur(70px);
+  pointer-events: none;
+}
+
+/* 격자 패턴 오버레이 — 사이버 느낌 */
+.code-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0, 212, 170, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 212, 170, 0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+}
+
+.code-hero__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 13px;
+  border-radius: 999px;
+  background: var(--code-primary-dim);
+  border: 1px solid var(--code-border);
+  color: var(--code-primary);
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  position: relative;
+  z-index: 1;
+}
+
+.code-hero__title {
+  margin: 0 0 12px;
+  font-size: 34px;
+  font-weight: 1000;
+  letter-spacing: -.04em;
+  line-height: 1.1;
+  background: linear-gradient(135deg, #fff 20%, #7fffd4 55%, var(--code-primary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  position: relative;
+  z-index: 1;
+}
+
+.code-hero__desc {
+  margin: 0;
+  font-size: 14px;
+  color: var(--code-sub);
+  line-height: 1.65;
+  max-width: 440px;
+  margin-left: auto;
+  margin-right: auto;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── 칩 태그 모음 ── */
+.code-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  justify-content: center;
+  margin-top: 18px;
+  position: relative;
+  z-index: 1;
+}
+
+.code-chips span {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  color: var(--code-sub);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+/* ================================================
+   GUIDE — HOW TO PLAY 섹션
+   ================================================ */
+
+.code-guide {
+  margin: 0 16px;
+  border-radius: var(--code-radius-lg);
+  background: var(--code-surface);
+  border: 1px solid var(--code-border-weak);
+  overflow: hidden;
+}
+
+.code-guide__head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 12px 18px 11px;
+  border-bottom: 1px solid var(--code-border-weak);
+  background: rgba(0, 212, 170, 0.05);
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--code-primary);
+}
+
+.code-guide__steps {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 18px 14px;
+}
+
+.code-guide-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 12px 0;
+}
+
+.code-guide-step:not(:last-child) {
+  border-bottom: 1px solid rgba(0, 212, 170, 0.07);
+}
+
+.code-guide-step__num {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #00d4aa, #00a88a);
+  color: #0d1117;
+  font-size: 12px;
+  font-weight: 950;
+  flex: 0 0 28px;
+  box-shadow: 0 3px 12px rgba(0, 212, 170, 0.38);
+  margin-top: 1px;
+}
+
+.code-guide-step__body {
+  min-width: 0;
+  padding-top: 2px;
+}
+
+.code-guide-step__body b {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13.5px;
+  font-weight: 950;
+  color: var(--code-text);
+  margin-bottom: 3px;
+  letter-spacing: -.02em;
+}
+
+.code-guide-step__body span {
+  display: block;
+  font-size: 12.5px;
+  color: var(--code-sub);
+  line-height: 1.55;
+}
+
+/* ================================================
+   FORMS — 방 만들기 / 참가
+   ================================================ */
+
+.code-create-form,
+.code-join-form {
+  margin: 0 16px;
+  padding: 18px;
+  border-radius: var(--code-radius-lg);
+  background: var(--code-surface);
+  border: 1px solid var(--code-border-weak);
+  box-shadow: var(--code-shadow);
+}
+
+.code-create-form h2,
+.code-join-form h2 {
+  margin: 0 0 16px;
+  font-size: 17px;
+  font-weight: 950;
+  color: var(--code-text);
+  letter-spacing: -.03em;
+}
+
+.code-join-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.code-join-row input {
+  flex: 1;
+  min-width: 0;
+  padding: 11px 14px;
+  border-radius: var(--code-radius-sm);
+  border: 1.5px solid var(--code-border-mid);
+  background: var(--code-card);
+  color: var(--code-text);
+  font-size: 15px;
+  font-family: inherit;
+  transition: border-color .15s, box-shadow .15s;
+  letter-spacing: .06em;
+  font-variant-numeric: tabular-nums;
+}
+
+.code-join-row input::placeholder {
+  color: var(--code-muted);
+}
+
+.code-join-row input:focus {
+  outline: none;
+  border-color: var(--code-primary);
+  box-shadow: 0 0 0 3px var(--code-primary-dim);
+}
+
+/* ================================================
+   CARD — 공통 카드
+   ================================================ */
+
+.code-card {
+  margin: 0 16px;
+  padding: 16px;
+  border-radius: var(--code-radius-lg);
+  background: var(--code-surface);
+  border: 1px solid var(--code-border-weak);
+  box-shadow: var(--code-shadow);
+}
+
+.code-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.code-card__head h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 950;
+  color: var(--code-text);
+  letter-spacing: -.02em;
+}
+
+.code-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--code-primary-dim);
+  border: 1px solid var(--code-border);
+  color: var(--code-primary);
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .03em;
+  white-space: nowrap;
+}
+
+/* ================================================
+   PLAYER LIST — 플레이어 목록
+   ================================================ */
+
+.code-player-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.code-player-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 13px;
+  border-radius: var(--code-radius);
+  background: var(--code-card);
+  border: 1px solid var(--code-border-weak);
+  transition: border-color .15s;
+}
+
+.code-player-item--me {
+  background: var(--code-primary-dim);
+  border-color: var(--code-border);
+  box-shadow: 0 0 0 1px rgba(0, 212, 170, 0.1) inset;
+}
+
+.code-player-item--ai {
+  background: var(--code-purple-dim);
+  border-color: rgba(168, 85, 247, 0.25);
+}
+
+.code-player-avatar {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 14px;
+  font-weight: 950;
+  color: var(--code-text);
+  flex: 0 0 auto;
+  border: 2px solid transparent;
+}
+
+.code-player-avatar--host {
+  border-color: var(--code-primary);
+  background: var(--code-primary-dim);
+  color: var(--code-primary);
+  box-shadow: 0 0 12px rgba(0, 212, 170, 0.25);
+}
+
+.code-player-item--me .code-player-avatar {
+  background: linear-gradient(135deg, #00d4aa, #00a88a);
+  color: #0d1117;
+  font-weight: 1000;
+  border-color: transparent;
+}
+
+.code-player-item--ai .code-player-avatar {
+  background: linear-gradient(135deg, #a855f7, #7c3aed);
+  color: #fff;
+  border-color: transparent;
+}
+
+.code-player-name {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 950;
+  color: var(--code-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  letter-spacing: -.01em;
+}
+
+/* ── 인라인 태그 ── */
+.code-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 950;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--code-sub);
+  border: 1px solid var(--code-border-weak);
+}
+
+.code-tag--me {
+  background: var(--code-primary-dim);
+  color: var(--code-primary);
+  border-color: var(--code-border);
+}
+
+.code-tag--host {
+  background: rgba(251, 191, 36, 0.15);
+  color: var(--code-warn);
+  border-color: rgba(251, 191, 36, 0.3);
+}
+
+.code-tag--ai {
+  background: var(--code-purple-dim);
+  color: var(--code-purple);
+  border-color: rgba(168, 85, 247, 0.3);
+}
+
+/* ── 방장 전용 액션 영역 ── */
+.code-host-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px 0;
+}
+
+/* ── 대기 메시지 ── */
+.code-waiting-msg {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 14px;
+  border-radius: var(--code-radius);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px dashed var(--code-border-weak);
+  color: var(--code-sub);
+  font-size: 13px;
+  font-weight: 850;
+  line-height: 1.5;
+}
+
+.code-waiting-msg::before {
+  content: '';
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--code-primary);
+  flex: 0 0 auto;
+  animation: codePulse 2s ease-in-out infinite;
+}
+
+/* ================================================
+   ROUND INFO — 라운드/턴 정보 바
+   ================================================ */
+
+.code-round-info {
+  margin: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--code-radius);
+  background: var(--code-surface);
+  border: 1px solid var(--code-border-weak);
+}
+
+.code-round-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--code-primary-dim);
+  border: 1px solid var(--code-border);
+  color: var(--code-primary);
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: .06em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 현재 턴 배너 ── */
+.code-turn-banner {
+  margin: 0 16px;
+  padding: 14px 16px;
+  border-radius: var(--code-radius);
+  background: var(--code-card);
+  border: 1px solid var(--code-border-weak);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+  color: var(--code-sub);
+  font-weight: 850;
+  transition: all .2s;
+}
+
+.code-turn-banner--my {
+  background: var(--code-primary-dim);
+  border-color: var(--code-border);
+  color: var(--code-text);
+  box-shadow: var(--code-shadow-teal);
+  animation: codeGlow 2.5s ease-in-out infinite;
+}
+
+.code-turn-banner__dot {
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--code-sub);
+  flex: 0 0 auto;
+}
+
+.code-turn-banner--my .code-turn-banner__dot {
+  background: var(--code-primary);
+  animation: codePulse 1.5s ease-in-out infinite;
+}
+
+.code-turn-banner__name {
+  font-size: 14px;
+  font-weight: 950;
+  color: var(--code-text);
+}
+
+/* ================================================
+   MY CARD — 내 비밀 코드 카드
+   ================================================ */
+
+.code-my-card {
+  margin: 0 16px;
+  padding: 24px 20px;
+  border-radius: var(--code-radius-xl);
+  background: linear-gradient(135deg, rgba(0, 212, 170, 0.12) 0%, rgba(0, 168, 138, 0.07) 100%);
+  border: 1px solid var(--code-border);
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 212, 170, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+.code-my-card::before {
+  content: '';
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: rgba(0, 212, 170, 0.08);
+  filter: blur(30px);
+  pointer-events: none;
+}
+
+.code-my-card__label {
+  display: block;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--code-primary);
+  margin-bottom: 16px;
+  position: relative;
+  z-index: 1;
+}
+
+.code-my-card__digits {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── 개별 숫자 칸 ── */
+.code-digit {
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 68px;
+  border-radius: 14px;
+  background: var(--code-card);
+  border: 2px solid var(--code-border-weak);
+  font-size: 32px;
+  font-weight: 1000;
+  color: var(--code-text);
+  letter-spacing: -.04em;
+  font-variant-numeric: tabular-nums;
+  transition: all .25s cubic-bezier(.34, 1.3, .64, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.code-digit--hidden {
+  background: var(--code-card);
+  border-color: var(--code-border-mid);
+  color: var(--code-text);
+}
+
+.code-digit--revealed {
+  background: var(--code-danger-dim);
+  border-color: rgba(239, 68, 68, 0.45);
+  color: var(--code-danger);
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.2);
+}
+
+/* 취소선 느낌 — 가로 줄 오버레이 */
+.code-digit--revealed::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  background: rgba(239, 68, 68, 0.55);
+  transform: translateY(-50%);
+  border-radius: 999px;
+}
+
+/* ================================================
+   ACTION FORM — 액션 입력 폼 카드
+   ================================================ */
+
+.code-action-form {
+  margin: 0 16px;
+  padding: 18px;
+  border-radius: var(--code-radius-lg);
+  background: var(--code-surface);
+  border: 1px solid var(--code-border-weak);
+  box-shadow: var(--code-shadow);
+}
+
+.code-action-form h3 {
+  margin: 0 0 14px;
+  font-size: 15px;
+  font-weight: 950;
+  color: var(--code-text);
+  letter-spacing: -.02em;
+}
+
+/* ── 숫자 선택 피커 ── */
+.code-digit-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+/* 포지션 행 */
+.code-digit-picker__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.code-digit-picker__pos-label {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  background: var(--code-primary-dim);
+  color: var(--code-primary);
+  font-size: 10px;
+  font-weight: 950;
+  flex: 0 0 24px;
+  letter-spacing: .02em;
+}
+
+.code-digit-picker__nums {
+  display: flex;
+  gap: 6px;
+  flex: 1;
+}
+
+.code-digit-btn {
+  display: grid;
+  place-items: center;
+  flex: 1;
+  height: 42px;
+  border-radius: 10px;
+  border: 1.5px solid var(--code-border-mid);
+  background: var(--code-card);
+  color: var(--code-text);
+  font-size: 16px;
+  font-weight: 950;
+  cursor: pointer;
+  transition: all .15s cubic-bezier(.34, 1.3, .64, 1);
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+}
+
+.code-digit-btn:hover {
+  border-color: var(--code-border);
+  background: var(--code-primary-dim);
+  color: var(--code-primary);
+  transform: translateY(-1px);
+}
+
+.code-digit-btn--selected {
+  border-color: var(--code-primary);
+  background: var(--code-primary-dim);
+  color: var(--code-primary);
+  box-shadow: 0 0 0 2px rgba(0, 212, 170, 0.18), 0 4px 12px rgba(0, 212, 170, 0.22);
+  transform: translateY(-2px) scale(1.04);
+}
+
+.code-digit-btn:active {
+  transform: scale(.95);
+}
+
+.code-digit-btn:disabled {
+  opacity: .35;
+  cursor: not-allowed;
+  pointer-events: none;
+  transform: none;
+}
+
+/* ── 현재 추측 미리보기 ── */
+.code-current-guess {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 12px;
+  border-radius: var(--code-radius);
+  background: var(--code-card);
+  border: 1px solid var(--code-border-weak);
+  margin-bottom: 14px;
+}
+
+.code-current-guess__label {
+  font-size: 11px;
+  font-weight: 950;
+  color: var(--code-sub);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  flex: 0 0 auto;
+  margin-right: 4px;
+}
+
+.code-current-digit {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 50px;
+  border-radius: 10px;
+  background: var(--code-surface);
+  border: 2px solid var(--code-border-mid);
+  font-size: 24px;
+  font-weight: 1000;
+  color: var(--code-muted);
+  font-variant-numeric: tabular-nums;
+  transition: all .2s;
+}
+
+.code-current-digit--filled {
+  background: var(--code-primary-dim);
+  border-color: var(--code-border);
+  color: var(--code-primary);
+  box-shadow: 0 0 8px rgba(0, 212, 170, 0.15);
+}
+
+/* ── 액션 버튼 행 ── */
+.code-action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+/* ================================================
+   PLAYERS STATUS — 플레이어 상태 목록
+   ================================================ */
+
+.code-players-status {
+  margin: 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.code-players-status__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.code-players-status__title {
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--code-sub);
+}
+
+.code-player-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 13px;
+  border-radius: var(--code-radius);
+  background: var(--code-surface);
+  border: 1px solid var(--code-border-weak);
+  transition: border-color .15s;
+}
+
+.code-player-status--me {
+  background: var(--code-primary-dim);
+  border-color: var(--code-border);
+}
+
+.code-player-status--eliminated {
+  opacity: .4;
+  filter: grayscale(.6);
+}
+
+.code-player-status--eliminated .code-player-status__name {
+  text-decoration: line-through;
+  color: var(--code-sub);
+}
+
+.code-player-status__avatar {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 13px;
+  font-weight: 950;
+  color: var(--code-text);
+  flex: 0 0 auto;
+}
+
+.code-player-status--me .code-player-status__avatar {
+  background: linear-gradient(135deg, #00d4aa, #00a88a);
+  color: #0d1117;
+}
+
+.code-player-status__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.code-player-status__name {
+  font-size: 13.5px;
+  font-weight: 950;
+  color: var(--code-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* ── 공개 N/4 표시 ── */
+.code-revealed-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 950;
+  flex: 0 0 auto;
+  background: var(--code-card);
+  color: var(--code-sub);
+  border: 1px solid var(--code-border-weak);
+}
+
+.code-revealed-count--danger {
+  background: var(--code-danger-dim);
+  color: var(--code-danger);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* ================================================
+   LOG — 액션 로그
+   ================================================ */
+
+.code-log {
+  margin: 0 16px;
+  border-radius: var(--code-radius-lg);
+  background: var(--code-surface);
+  border: 1px solid var(--code-border-weak);
+  overflow: hidden;
+}
+
+.code-log__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 16px 10px;
+  border-bottom: 1px solid var(--code-border-weak);
+  background: rgba(0, 212, 170, 0.03);
+}
+
+.code-log__head b {
+  font-size: 13px;
+  font-weight: 950;
+  color: var(--code-text);
+  letter-spacing: .03em;
+}
+
+.code-log__entries {
+  display: flex;
+  flex-direction: column;
+  max-height: 360px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--code-card) transparent;
+}
+
+.code-log__entries::-webkit-scrollbar {
+  width: 4px;
+}
+.code-log__entries::-webkit-scrollbar-track {
+  background: transparent;
+}
+.code-log__entries::-webkit-scrollbar-thumb {
+  background: var(--code-card);
+  border-radius: 999px;
+}
+
+.code-log-entry {
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--code-border-weak);
+  border-left: 3px solid transparent;
+  font-size: 13px;
+  color: var(--code-sub);
+  line-height: 1.55;
+  transition: background .12s;
+  animation: codeSlideIn .3s ease both;
+}
+
+.code-log-entry:last-child {
+  border-bottom: none;
+}
+
+.code-log-entry__meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  font-size: 11px;
+  color: var(--code-muted);
+  font-weight: 850;
+}
+
+.code-log-entry__actor {
+  font-weight: 950;
+  color: var(--code-sub);
+}
+
+.code-log-entry__text {
+  font-size: 13px;
+  color: var(--code-text);
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+/* ── 로그 타입별 스타일 ── */
+.code-log-entry--question {
+  border-left-color: #60a5fa;
+  background: rgba(96, 165, 250, 0.04);
+}
+
+.code-log-entry--final {
+  border-left-color: var(--code-warn);
+  background: var(--code-warn-dim);
+}
+
+.code-log-entry--correct {
+  border-left-color: var(--code-success);
+  background: var(--code-success-dim);
+}
+
+.code-log-entry--correct .code-log-entry__text {
+  color: var(--code-success);
+  font-weight: 950;
+}
+
+.code-log-entry--wrong {
+  border-left-color: var(--code-danger);
+  background: var(--code-danger-dim);
+}
+
+.code-log-entry--wrong .code-log-entry__text {
+  color: var(--code-danger);
+}
+
+/* AI 인텔 로그 — 점선 테두리 */
+.code-log-entry--intel {
+  border-left-color: var(--code-primary);
+  background: var(--code-primary-dim);
+  border-left-style: dashed;
+}
+
+.code-log-entry--intel .code-log-entry__text {
+  color: var(--code-primary);
+}
+
+/* 게임 후 AI 인텔 공개 */
+.code-log-entry--true {
+  border-left-color: var(--code-success);
+  background: var(--code-success-dim);
+}
+
+.code-log-entry--true .code-log-entry__text {
+  color: var(--code-success);
+}
+
+.code-log-entry--false {
+  border-left-color: var(--code-danger);
+  background: var(--code-danger-dim);
+}
+
+.code-log-entry--false .code-log-entry__text {
+  color: var(--code-danger);
+  text-decoration: line-through;
+}
+
+.code-log-empty {
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--code-muted);
+  font-size: 13px;
+}
+
+/* ================================================
+   HIT/BLOW — 결과 표시
+   ================================================ */
+
+.code-hb-result {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--code-card);
+  border: 1px solid var(--code-border-weak);
+}
+
+.code-hb-hit {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 950;
+  color: var(--code-success);
+}
+
+.code-hb-hit::before {
+  content: '●';
+  font-size: 8px;
+}
+
+.code-hb-blow {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 950;
+  color: var(--code-warn);
+}
+
+.code-hb-blow::before {
+  content: '○';
+  font-size: 8px;
+}
+
+.code-hb-label {
+  font-size: 10px;
+  font-weight: 950;
+  color: var(--code-muted);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+/* ================================================
+   BUTTONS — 버튼 시스템
+   ================================================ */
+
+.code-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 18px;
+  min-height: 48px;
+  border-radius: var(--code-radius-sm);
+  border: 1.5px solid transparent;
+  font-size: 14px;
+  font-weight: 950;
+  font-family: inherit;
+  cursor: pointer;
+  letter-spacing: -.01em;
+  transition: all .18s cubic-bezier(.34, 1.3, .64, 1);
+  text-decoration: none;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.code-btn:active {
+  transform: scale(.97);
+}
+
+.code-btn--primary {
+  background: linear-gradient(135deg, #00d4aa, #00a88a);
+  color: #0d1117;
+  border-color: transparent;
+  box-shadow: 0 6px 20px rgba(0, 212, 170, 0.38);
+}
+
+.code-btn--primary:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 8px 28px rgba(0, 212, 170, 0.48);
+}
+
+.code-btn--danger {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.32);
+}
+
+.code-btn--danger:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 8px 28px rgba(239, 68, 68, 0.42);
+}
+
+.code-btn--warn {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  color: #0d1117;
+  border-color: transparent;
+  box-shadow: 0 6px 20px rgba(251, 191, 36, 0.32);
+}
+
+.code-btn--warn:hover {
+  filter: brightness(1.08);
+}
+
+.code-btn--ghost {
+  background: transparent;
+  color: var(--code-sub);
+  border-color: var(--code-border-mid);
+}
+
+.code-btn--ghost:hover {
+  background: var(--code-card);
+  border-color: var(--code-border);
+  color: var(--code-text);
+}
+
+.code-btn--success {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 6px 20px rgba(34, 197, 94, 0.32);
+}
+
+.code-btn--success:hover {
+  filter: brightness(1.1);
+}
+
+.code-btn--full {
+  width: 100%;
+}
+
+.code-btn--sm {
+  min-height: 38px;
+  padding: 0 14px;
+  font-size: 13px;
+  border-radius: 9px;
+}
+
+.code-btn:disabled {
+  opacity: .35;
+  cursor: not-allowed;
+  pointer-events: none;
+  transform: none;
+  box-shadow: none;
+}
+
+.code-btn-row {
+  display: flex;
+  gap: 8px;
+  padding: 0 16px;
+}
+
+.code-btn-row .code-btn--full {
+  flex: 1;
+}
+
+/* ================================================
+   INVITE — 초대 코드 카드
+   ================================================ */
+
+.code-invite {
+  margin: 0 16px;
+  padding: 16px;
+  border-radius: var(--code-radius-lg);
+  background: var(--code-surface);
+  border: 1px solid var(--code-border-weak);
+}
+
+.code-invite__label {
+  display: block;
+  font-size: 11px;
+  font-weight: 950;
+  color: var(--code-sub);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  margin-bottom: 9px;
+}
+
+.code-invite__code {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--code-radius-sm);
+  background: var(--code-card);
+  border: 1.5px solid rgba(0, 212, 170, 0.22);
+}
+
+.code-invite__code-text {
+  flex: 1;
+  font-size: 22px;
+  font-weight: 1000;
+  letter-spacing: .14em;
+  color: var(--code-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.code-invite__copy {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--code-border);
+  background: var(--code-primary-dim);
+  color: var(--code-primary);
+  font-size: 12px;
+  font-weight: 950;
+  cursor: pointer;
+  transition: all .15s;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.code-invite__copy:hover {
+  background: rgba(0, 212, 170, 0.25);
+  border-color: rgba(0, 212, 170, 0.5);
+}
+
+/* ================================================
+   INFO GRID — 방 정보
+   ================================================ */
+
+.code-info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 0 16px;
+}
+
+.code-info-cell {
+  padding: 12px 10px;
+  border-radius: var(--code-radius-sm);
+  background: var(--code-surface);
+  border: 1px solid var(--code-border-weak);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.code-info-cell__label {
+  font-size: 10px;
+  font-weight: 950;
+  color: var(--code-sub);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.code-info-cell__value {
+  font-size: 17px;
+  font-weight: 1000;
+  color: var(--code-text);
+  letter-spacing: -.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ================================================
+   GAME END — 종료 히어로
+   ================================================ */
+
+.code-done-hero {
+  margin: 0 16px;
+  padding: 36px 20px 32px;
+  border-radius: var(--code-radius-xl);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  animation: codeFadeInScale .5s cubic-bezier(.34, 1.4, .64, 1) both;
+}
+
+.code-done-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 30px 30px;
+  pointer-events: none;
+}
+
+/* 승리 */
+.code-done-hero--winner {
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(251, 191, 36, 0.35) 0%, transparent 55%),
+    linear-gradient(135deg, rgba(251, 191, 36, 0.12) 0%, rgba(245, 158, 11, 0.08) 100%);
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  box-shadow: 0 16px 64px rgba(251, 191, 36, 0.2);
+}
+
+/* 패배 */
+.code-done-hero--loser {
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(239, 68, 68, 0.25) 0%, transparent 55%),
+    linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.06) 100%);
+  border: 1px solid rgba(239, 68, 68, 0.28);
+  box-shadow: 0 16px 64px rgba(239, 68, 68, 0.15);
+}
+
+.code-done-hero__icon {
+  font-size: 72px;
+  line-height: 1;
+  margin-bottom: 16px;
+  display: block;
+  position: relative;
+  z-index: 1;
+  animation: codeBounce .6s .25s cubic-bezier(.34, 1.56, .64, 1) both;
+}
+
+.code-done-hero--winner .code-done-hero__icon {
+  filter: drop-shadow(0 0 28px rgba(251, 191, 36, 0.6));
+}
+
+.code-done-hero--loser .code-done-hero__icon {
+  filter: drop-shadow(0 0 20px rgba(239, 68, 68, 0.45));
+}
+
+.code-done-hero__title {
+  font-size: 38px;
+  font-weight: 1000;
+  letter-spacing: -.04em;
+  line-height: 1.1;
+  margin-bottom: 8px;
+  position: relative;
+  z-index: 1;
+}
+
+.code-done-hero--winner .code-done-hero__title {
+  background: linear-gradient(135deg, #fff 20%, #fde68a 60%, #fbbf24);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.code-done-hero--loser .code-done-hero__title {
+  background: linear-gradient(135deg, #fff 20%, #fca5a5 70%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.code-done-hero__desc {
+  font-size: 14px;
+  color: var(--code-sub);
+  line-height: 1.6;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── 코드 공개 리스트 ── */
+.code-done-reveal {
+  margin: 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.code-done-reveal__title {
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--code-sub);
+  margin-bottom: 2px;
+}
+
+.code-done-player {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: var(--code-radius);
+  background: var(--code-surface);
+  border: 1px solid var(--code-border-weak);
+  animation: codeSlideIn .35s ease both;
+}
+
+.code-done-player:nth-child(1) { animation-delay: .05s; }
+.code-done-player:nth-child(2) { animation-delay: .10s; }
+.code-done-player:nth-child(3) { animation-delay: .15s; }
+.code-done-player:nth-child(4) { animation-delay: .20s; }
+.code-done-player:nth-child(5) { animation-delay: .25s; }
+
+.code-done-player--me {
+  background: var(--code-primary-dim);
+  border-color: var(--code-border);
+}
+
+.code-done-player__avatar {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 14px;
+  font-weight: 950;
+  color: var(--code-text);
+  flex: 0 0 auto;
+}
+
+.code-done-player--me .code-done-player__avatar {
+  background: linear-gradient(135deg, #00d4aa, #00a88a);
+  color: #0d1117;
+}
+
+.code-done-player__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.code-done-player__name {
+  font-size: 13px;
+  font-weight: 950;
+  color: var(--code-text);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.code-done-player__code {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* 코드 숫자 표시 */
+.code-done-player__digit {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--code-card);
+  border: 1.5px solid var(--code-border-mid);
+  font-size: 17px;
+  font-weight: 1000;
+  color: var(--code-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.code-done-player--me .code-done-player__digit {
+  border-color: var(--code-border);
+  background: var(--code-primary-dim);
+  color: var(--code-primary);
+}
+
+/* ================================================
+   SECTION LABEL — 공통 섹션 헤더
+   ================================================ */
+
+.code-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 16px;
+}
+
+.code-section__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.code-section__title {
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--code-sub);
+}
+
+/* ================================================
+   FORM FIELD — 공통 폼 필드
+   ================================================ */
+
+.code-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 12px;
+}
+
+.code-field:last-child {
+  margin-bottom: 0;
+}
+
+.code-field__label {
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--code-sub);
+  letter-spacing: .04em;
+}
+
+.code-field__input,
+.code-field select {
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: var(--code-radius-sm);
+  border: 1.5px solid var(--code-border-mid);
+  background: var(--code-card);
+  color: var(--code-text);
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color .15s, box-shadow .15s;
+  box-sizing: border-box;
+}
+
+.code-field__input::placeholder {
+  color: var(--code-muted);
+}
+
+.code-field__input:focus,
+.code-field select:focus {
+  outline: none;
+  border-color: var(--code-primary);
+  box-shadow: 0 0 0 3px var(--code-primary-dim);
+}
+
+.code-field__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* ================================================
+   TOGGLE — AI 포함 등 스위치
+   ================================================ */
+
+.code-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: var(--code-radius);
+  background: var(--code-card);
+  border: 1px solid var(--code-border-weak);
+  margin-bottom: 12px;
+}
+
+.code-toggle-row__left {
+  min-width: 0;
+}
+
+.code-toggle-row__label {
+  font-size: 13.5px;
+  font-weight: 950;
+  color: var(--code-text);
+  margin-bottom: 2px;
+}
+
+.code-toggle-row__sub {
+  font-size: 12px;
+  color: var(--code-sub);
+}
+
+.code-switch {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+  cursor: pointer;
+}
+
+.code-switch input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.code-switch__track {
+  display: block;
+  width: 46px;
+  height: 26px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  transition: background .2s;
+  position: relative;
+}
+
+.code-switch__track::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform .2s;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+.code-switch input:checked + .code-switch__track {
+  background: var(--code-primary);
+}
+
+.code-switch input:checked + .code-switch__track::after {
+  transform: translateX(20px);
+  background: #0d1117;
+}
+
+/* ================================================
+   LOADING & NOT FOUND
+   ================================================ */
+
+.code-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 320px;
+  gap: 16px;
+  padding: 40px 20px;
+}
+
+.code-loading__spinner {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 3px solid var(--code-card);
+  border-top-color: var(--code-primary);
+  animation: codeSpin 1s linear infinite;
+  box-shadow: 0 0 16px rgba(0, 212, 170, 0.2);
+}
+
+.code-loading__text {
+  font-size: 14px;
+  color: var(--code-sub);
+  font-weight: 850;
+}
+
+.code-not-found {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 320px;
+  gap: 14px;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.code-not-found__icon {
+  font-size: 56px;
+  opacity: .45;
+  filter: grayscale(1);
+}
+
+.code-not-found__title {
+  font-size: 20px;
+  font-weight: 950;
+  color: var(--code-text);
+  letter-spacing: -.03em;
+}
+
+.code-not-found__desc {
+  font-size: 14px;
+  color: var(--code-sub);
+  line-height: 1.6;
+  max-width: 280px;
+}
+
+/* ================================================
+   DIVIDER
+   ================================================ */
+
+.code-divider {
+  height: 1px;
+  margin: 4px 16px;
+  background: var(--code-border-weak);
+  border: none;
+}
+
+/* ================================================
+   ALERT / NOTICE 박스
+   ================================================ */
+
+.code-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 13px 16px;
+  border-radius: var(--code-radius);
+  font-size: 13px;
+  line-height: 1.55;
+  border: 1px solid;
+}
+
+.code-alert--info {
+  background: var(--code-primary-dim);
+  border-color: var(--code-border);
+  color: var(--code-primary);
+}
+
+.code-alert--warn {
+  background: var(--code-warn-dim);
+  border-color: rgba(251, 191, 36, 0.3);
+  color: var(--code-warn);
+}
+
+.code-alert--danger {
+  background: var(--code-danger-dim);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: var(--code-danger);
+}
+
+.code-alert--success {
+  background: var(--code-success-dim);
+  border-color: rgba(34, 197, 94, 0.3);
+  color: var(--code-success);
+}
+
+.code-alert__icon {
+  font-size: 15px;
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+
+/* ================================================
+   SCROLLBAR — 전체
+   ================================================ */
+
+.code-shell * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--code-card) transparent;
+}
+
+.code-shell *::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.code-shell *::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.code-shell *::-webkit-scrollbar-thumb {
+  background: var(--code-card);
+  border-radius: 999px;
+}
+
+/* ================================================
+   ANIMATIONS
+   ================================================ */
+
+@keyframes codeFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes codeFadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes codeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes codeSlideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes codeBounce {
+  from {
+    opacity: 0;
+    transform: scale(.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* 긴급할 때 pulse */
+@keyframes codePulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: .6; transform: scale(.92); }
+}
+
+/* 글로우 애니메이션 */
+@keyframes codeGlow {
+  0%, 100% {
+    box-shadow: 0 6px 24px rgba(0, 212, 170, 0.2), 0 0 0 1px rgba(0, 212, 170, 0.15) inset;
+  }
+  50% {
+    box-shadow: 0 8px 36px rgba(0, 212, 170, 0.4), 0 0 0 1px rgba(0, 212, 170, 0.25) inset;
+  }
+}
+
+/* 스캔 효과 — 사이버 느낌 */
+@keyframes codeScan {
+  0%   { transform: translateY(-100%); opacity: 0; }
+  20%  { opacity: .5; }
+  80%  { opacity: .5; }
+  100% { transform: translateY(200%); opacity: 0; }
+}
+
+@keyframes codeSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* 타이핑 깜빡임 */
+@keyframes codeBlink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+/* ── 유틸리티 애니메이션 클래스 ── */
+
+.anim-fade-in {
+  animation: codeFadeIn .3s ease both;
+}
+
+.anim-slide-in {
+  animation: codeSlideIn .35s cubic-bezier(.34, 1.3, .64, 1) both;
+}
+
+.anim-bounce {
+  animation: codeBounce .5s cubic-bezier(.34, 1.56, .64, 1) both;
+}
+
+.anim-pulse {
+  animation: codePulse 1.4s ease-in-out infinite;
+}
+
+/* ── 스태거드 슬라이드인 ── */
+.code-player-item:nth-child(1),
+.code-player-status:nth-child(1),
+.code-log-entry:nth-child(1) { animation-delay: .04s; }
+.code-player-item:nth-child(2),
+.code-player-status:nth-child(2),
+.code-log-entry:nth-child(2) { animation-delay: .08s; }
+.code-player-item:nth-child(3),
+.code-player-status:nth-child(3),
+.code-log-entry:nth-child(3) { animation-delay: .12s; }
+.code-player-item:nth-child(4),
+.code-player-status:nth-child(4),
+.code-log-entry:nth-child(4) { animation-delay: .16s; }
+.code-player-item:nth-child(5),
+.code-player-status:nth-child(5),
+.code-log-entry:nth-child(5) { animation-delay: .20s; }
+
+/* ================================================
+   RESPONSIVE — 모바일 (≤ 430px)
+   ================================================ */
+
+@media (max-width: 430px) {
+  .code-hero {
+    padding: 34px 16px 30px;
+  }
+
+  .code-hero__title {
+    font-size: 26px;
+  }
+
+  .code-digit {
+    width: 50px;
+    height: 58px;
+    font-size: 26px;
+    border-radius: 12px;
+  }
+
+  .code-my-card__digits {
+    gap: 7px;
+  }
+
+  .code-current-digit {
+    width: 38px;
+    height: 44px;
+    font-size: 20px;
+    border-radius: 8px;
+  }
+
+  .code-action-buttons {
+    flex-direction: column;
+  }
+
+  .code-btn-row {
+    flex-direction: column;
+  }
+
+  .code-info-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+
+  .code-info-cell__value {
+    font-size: 15px;
+  }
+
+  .code-done-hero {
+    padding: 28px 16px 24px;
+  }
+
+  .code-done-hero__title {
+    font-size: 30px;
+  }
+
+  .code-done-hero__icon {
+    font-size: 56px;
+  }
+
+  .code-field__row {
+    grid-template-columns: 1fr;
+  }
+
+  .code-digit-btn {
+    height: 38px;
+    font-size: 14px;
+  }
+
+  .code-digit-picker__row {
+    gap: 6px;
+  }
+
+  .code-digit-picker__nums {
+    gap: 4px;
+  }
+
+  .code-log__entries {
+    max-height: 280px;
+  }
+}
+
+/* ================================================
+   RESPONSIVE — 작은 모바일 (≤ 360px)
+   ================================================ */
+
+@media (max-width: 360px) {
+  .code-digit {
+    width: 44px;
+    height: 52px;
+    font-size: 22px;
+  }
+
+  .code-hero__title {
+    font-size: 22px;
+  }
+
+  .code-done-hero__title {
+    font-size: 26px;
+  }
+
+  .code-guide-step__num {
+    width: 24px;
+    height: 24px;
+    font-size: 11px;
+  }
+}
+
+/* ================================================
+   최신 로그가 위로 오도록 — flex 순서 반전 옵션
+   (JS에서 data-reverse 속성으로 제어)
+   ================================================ */
+
+.code-log__entries[data-reverse="true"] {
+  flex-direction: column-reverse;
+}
+
+/* ================================================
+   특수 상태 — 게임 종료 직전 긴급 알림
+   ================================================ */
+
+.code-digit--urgent {
+  animation: codePulse 1s ease-in-out infinite;
+  border-color: var(--code-danger);
+  background: var(--code-danger-dim);
+  color: var(--code-danger);
+}
+
+.code-round-badge--urgent {
+  animation: codePulse 1.2s ease-in-out infinite;
+  background: var(--code-danger-dim);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: var(--code-danger);
+}
+
+/* ================================================
+   터미널 스타일 텍스트 효과 (AI 힌트 등)
+   ================================================ */
+
+.code-terminal-text {
+  font-family: 'Courier New', 'SF Mono', 'Fira Code', monospace;
+  font-size: 13px;
+  color: var(--code-primary);
+  letter-spacing: .05em;
+}
+
+.code-terminal-text::before {
+  content: '> ';
+  opacity: .55;
+}
+
+/* 커서 깜빡임 */
+.code-cursor::after {
+  content: '▌';
+  font-size: .85em;
+  color: var(--code-primary);
+  animation: codeBlink .75s step-end infinite;
+  margin-left: 1px;
+}
+
+/* ================================================
+   POSITION INDICATORS — 포지션 라벨
+   ================================================ */
+
+.code-pos-labels {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.code-pos-label {
+  width: 60px;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 950;
+  color: var(--code-muted);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+/* ================================================
+   RESULT STATS — 결과 통계 그리드
+   ================================================ */
+
+.code-result-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 16px 0 0;
+}
+
+.code-result-stat {
+  padding: 12px 8px;
+  border-radius: var(--code-radius-sm);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--code-border-weak);
+  text-align: center;
+}
+
+.code-result-stat__num {
+  display: block;
+  font-size: 24px;
+  font-weight: 1000;
+  letter-spacing: -.04em;
+  color: var(--code-text);
+  margin-bottom: 3px;
+  font-variant-numeric: tabular-nums;
+}
+
+.code-result-stat__label {
+  font-size: 10px;
+  color: var(--code-sub);
+  font-weight: 850;
+  letter-spacing: .04em;
+}
+
+/* ================================================
+   EMPTY STATE — 빈 상태
+   ================================================ */
+
+.code-empty {
+  padding: 28px 16px;
+  text-align: center;
+  color: var(--code-muted);
+  font-size: 13px;
+  font-weight: 850;
+  line-height: 1.6;
+}
+
+.code-empty__icon {
+  font-size: 36px;
+  opacity: .4;
+  margin-bottom: 10px;
+  display: block;
+}
