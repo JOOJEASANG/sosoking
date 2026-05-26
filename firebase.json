@@ -8,8 +8,8 @@
       { "source": "/game/mafia", "function": "seoGameMafia" },
       { "source": "/game/soso-code", "function": "seoGameSosoCode" },
       { "source": "/game/soso-spy", "function": "seoGameSosoSpy" },
+      { "source": "/game/soso-deal", "function": "seoGameSosoDeal" },
       { "source": "/game/touch-king", "function": "seoGameTouchKing" },
-      { "source": "/game/soso-code", "function": "seoGameSosoCode" },
       { "source": "/game/ai-court", "function": "seoGameAiCourt" },
       { "source": "/sitemap.xml", "function": "sitemapXml" },
       { "source": "**", "destination": "/index.html" }

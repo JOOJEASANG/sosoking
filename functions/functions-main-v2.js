@@ -12,6 +12,7 @@ const secureInteractions = require('./secure-interactions-functions.js');
 const sitemap = require('./sitemap-functions.js');
 const sosoSpy = require('./soso-spy-functions.js');
 const sosoCode = require('./soso-code-functions.js');
+const sosoDeal = require('./soso-deal-functions.js');
 const aiMission = require('./ai-mission-functions.js');
 const aiHunt = require('./ai-hunt-functions.js');
 const settlement = require('./settlement-functions.js');
@@ -50,10 +51,10 @@ module.exports = {
   seoPost: secureFeed.seoPost,
   seoGameSosoCode: seoGame.seoGameSosoCode,
   seoGameSosoSpy: seoGame.seoGameSosoSpy,
+  seoGameSosoDeal: seoGame.seoGameSosoDeal,
   seoGameLiar: seoGame.seoGameLiar,
   seoGameMafia: seoGame.seoGameMafia,
   seoGameTouchKing: seoGame.seoGameTouchKing,
-  seoGameSosoCode: seoGame.seoGameSosoCode,
   seoGameAiCourt: seoGame.seoGameAiCourt,
   ...aiGame,
 
@@ -79,6 +80,9 @@ module.exports = {
 
   // 소소코드 게임 전용 Cloud Functions
   ...sosoCode,
+
+  // 소소딜 게임 전용 Cloud Functions
+  ...sosoDeal,
 
   // Anthropic 기반 AI 미션/자동 콘텐츠를 대표 구현으로 사용
   ...aiMission,

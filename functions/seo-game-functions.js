@@ -41,18 +41,18 @@ const GAMES = {
     hash: '/#/game/touch-king',
     image: `${SITE_URL}/og-image.png`,
   },
-  'soso-code': {
-    title: '소소코드 — 숨겨진 코드를 추리하는 턴제 게임',
-    desc: '상대의 숨겨진 숫자·색상·기호 코드를 질문과 힌트로 추리합니다. AI 해커가 가짜 힌트를 섞는 2~4명 추론 게임.',
-    keywords: '소소코드, 코드 추리게임, 턴제게임, 온라인게임, 소소킹',
-    hash: '/#/game/soso-code',
-    image: `${SITE_URL}/og-image.png`,
-  },
   'ai-court': {
     title: 'AI 재판소 — AI 증언의 모순을 찾는 토론 추리 게임',
     desc: '사건 기록, 증거 카드, AI 증언을 놓고 토론합니다. 진짜 범인과 조작된 증거를 함께 찾아내는 3~7명 추리 게임.',
     keywords: 'AI 재판소, 토론 추리게임, 법정게임, 온라인게임, 소소킹',
     hash: '/#/game/ai-court',
+    image: `${SITE_URL}/og-image.png`,
+  },
+  'soso-deal': {
+    title: '소소딜 — AI 브로커와 겨루는 자원 카드 거래 게임',
+    desc: '6종 자원 카드를 시장에서 교환하고 플레이어와 거래해 세트를 완성하세요. AI 브로커가 최적 전략으로 방해하는 2~5명 협상 게임.',
+    keywords: '소소딜, AI 브로커게임, 카드 거래게임, 자원 교환, 협상게임, 온라인게임, 소소킹',
+    hash: '/#/game/soso-deal',
     image: `${SITE_URL}/og-image.png`,
   },
 };
@@ -116,10 +116,10 @@ function makeGamePage(key) {
 
 const seoGameSosoCode  = onRequest({ region: REGION }, (req, res) => { res.set('Cache-Control', 'public, max-age=86400'); res.send(makeGamePage('soso-code')); });
 const seoGameSosoSpy   = onRequest({ region: REGION }, (req, res) => { res.set('Cache-Control', 'public, max-age=86400'); res.send(makeGamePage('soso-spy')); });
+const seoGameSosoDeal  = onRequest({ region: REGION }, (req, res) => { res.set('Cache-Control', 'public, max-age=86400'); res.send(makeGamePage('soso-deal')); });
 const seoGameLiar      = onRequest({ region: REGION }, (req, res) => { res.set('Cache-Control', 'public, max-age=86400'); res.send(makeGamePage('liar')); });
 const seoGameMafia     = onRequest({ region: REGION }, (req, res) => { res.set('Cache-Control', 'public, max-age=86400'); res.send(makeGamePage('mafia')); });
 const seoGameTouchKing = onRequest({ region: REGION }, (req, res) => { res.set('Cache-Control', 'public, max-age=86400'); res.send(makeGamePage('touch-king')); });
-const seoGameSosoCode  = onRequest({ region: REGION }, (req, res) => { res.set('Cache-Control', 'public, max-age=86400'); res.send(makeGamePage('soso-code')); });
 const seoGameAiCourt   = onRequest({ region: REGION }, (req, res) => { res.set('Cache-Control', 'public, max-age=86400'); res.send(makeGamePage('ai-court')); });
 
-module.exports = { seoGameSosoCode, seoGameSosoSpy, seoGameLiar, seoGameMafia, seoGameTouchKing, seoGameAiCourt };
+module.exports = { seoGameSosoCode, seoGameSosoSpy, seoGameSosoDeal, seoGameLiar, seoGameMafia, seoGameTouchKing, seoGameAiCourt };

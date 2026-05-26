@@ -119,6 +119,26 @@ export const GAMES = [
       tip: 'AI가 주는 답은 단서일 수도 있고 함정일 수도 있습니다. 증거끼리 맞물리는지를 봐야 합니다.',
     },
   },
+  {
+    key: 'soso-deal',
+    icon: '🎴',
+    title: '소소딜',
+    desc: '6종 자원 카드를 교환하고 세트를 완성해 최고 상인이 되세요. AI 브로커가 전략적으로 방해합니다.',
+    status: '방 만들기',
+    tag: '🤝 협상 거래',
+    path: '/game/soso-deal',
+    enabled: true,
+    players: '2~5명',
+    pace: '턴제 교환',
+    hook: 'AI 브로커는 절대 손해 보는 거래를 하지 않습니다.',
+    originalNote: '기존 보드게임 Bohnanza·Pit 규칙을 직접 쓰지 않고, 자원 종류·세트 점수·시장 교환 규칙을 독자적으로 설계합니다.',
+    guide: {
+      subtitle: '6종 자원 카드를 모아 세트를 제출하는 협상 거래 게임',
+      goal: '6라운드 동안 시장 교환, 덱 드로우, 플레이어 거래로 자원을 수집해 세트(3장↑)를 제출하세요. 가장 높은 점수를 얻은 플레이어가 승리합니다.',
+      flow: '카드 배분 → 내 턴에 시장교환/드로우/세트제출/거래제안 중 하나 선택 → 턴 종료 → 6라운드 후 점수 집계 순서로 진행합니다.',
+      tip: 'AI 브로커는 세트 제출 → 유리한 시장 교환 → 드로우 순으로 행동합니다. 희귀 자원(금·보석)을 노려보세요.',
+    },
+  },
 ];
 
 export const GAME_ROUTE_PREFIXES = GAMES.map(game => game.path).concat(['/game/symbol-spy']);
