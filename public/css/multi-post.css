@@ -859,3 +859,61 @@
   border-color: rgba(255, 107, 74, .4);
   color: #fb923c;
 }
+/* ── 익명 토글 스위치 (일반글 글쓰기) ── */
+.multi-anonymous-switch {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 13px;
+  border: 1px solid var(--color-border-light);
+  border-radius: 18px;
+  background: var(--color-surface-2);
+  cursor: pointer;
+}
+.multi-anonymous-switch input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.multi-anonymous-switch__track {
+  position: relative;
+  flex: 0 0 48px;
+  width: 48px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--color-border);
+  transition: background .18s ease;
+}
+.multi-anonymous-switch__track i {
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,.18);
+  transition: transform .18s ease;
+}
+.multi-anonymous-switch input:checked + .multi-anonymous-switch__track {
+  background: var(--color-primary);
+}
+.multi-anonymous-switch input:checked + .multi-anonymous-switch__track i {
+  transform: translateX(20px);
+}
+.multi-anonymous-switch__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.multi-anonymous-switch__text b {
+  font-size: 14px;
+  color: var(--color-text-primary);
+}
+.multi-anonymous-switch__text small {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  line-height: 1.35;
+}

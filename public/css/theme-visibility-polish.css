@@ -103,13 +103,7 @@
 }
 
 .card,
-.feed-card,
-.game-detail-card,
-.liar-create-card,
-.liar-room-card,
-.liar-invite-card,
-.liar-player-card,
-.sosoland-card {
+.feed-card {
   background: var(--color-surface);
   border-color: var(--color-border-light);
 }
@@ -242,12 +236,6 @@
 
 [data-theme="dark"] .card,
 [data-theme="dark"] .feed-card,
-[data-theme="dark"] .game-detail-card,
-[data-theme="dark"] .liar-create-card,
-[data-theme="dark"] .liar-room-card,
-[data-theme="dark"] .liar-invite-card,
-[data-theme="dark"] .liar-player-card,
-[data-theme="dark"] .sosoland-card,
 [data-theme="dark"] .account-profile-card,
 [data-theme="dark"] .stats-card,
 [data-theme="dark"] .follows-section,
@@ -269,12 +257,6 @@
   border-color: rgba(255,255,255,.14);
 }
 
-/* game-app-polish.css의 !important 흰 배경 강제 오버라이드 */
-[data-theme="dark"] .liar-room-info {
-  background: rgba(255,255,255,.08) !important;
-  border-color: rgba(255,255,255,.12) !important;
-  color: var(--color-text-primary) !important;
-}
 [data-theme="dark"] .liar-room-info span,
 [data-theme="dark"] .liar-room-info b {
   color: var(--color-text-primary) !important;
@@ -295,9 +277,6 @@
 [data-theme="dark"] .empty-state__title,
 [data-theme="dark"] .modal__title,
 [data-theme="dark"] .feedback-modal__title,
-[data-theme="dark"] .game-detail-hero h1,
-[data-theme="dark"] .liar-hero h1,
-[data-theme="dark"] .sosoland-card h2,
 [data-theme="dark"] .form-label,
 [data-theme="dark"] .account-tab.active,
 [data-theme="dark"] .sidebar__nav-item.active,
@@ -318,10 +297,7 @@
 [data-theme="dark"] .stats-card__label,
 [data-theme="dark"] .notif-item__time,
 [data-theme="dark"] .feed-card__meta,
-[data-theme="dark"] .game-guide-list span,
-[data-theme="dark"] .sosoland-card p,
-[data-theme="dark"] .liar-hero p,
-[data-theme="dark"] .game-detail-hero p {
+[data-theme="dark"] .game-guide-list span {
   color: var(--color-text-secondary);
 }
 
@@ -407,17 +383,6 @@
   background: rgba(255,255,255,.08);
   border-color: rgba(255,255,255,.15);
   color: var(--color-text-primary);
-}
-
-/* liar-player-item: game-app-polish.css !important 강제 오버라이드 */
-[data-theme="dark"] .liar-player-item {
-  background: rgba(255,255,255,.08) !important;
-  border-color: rgba(255,255,255,.14) !important;
-  color: var(--color-text-primary) !important;
-}
-[data-theme="dark"] .liar-player-item span,
-[data-theme="dark"] .liar-player-item b {
-  color: var(--color-text-primary) !important;
 }
 
 [data-theme="dark"] .feedback-type-tab.active,
@@ -763,53 +728,6 @@
 [data-theme="dark"] .sidebar__login-btn:hover {
   background: var(--color-primary);
   color: #fff;
-}
-
-/* ══════════════════════════════════════════════════
-   다크모드 게임 영역 !important 강제 수정
-   (game-app-polish.css의 !important 흰색 배경 오버라이드)
-══════════════════════════════════════════════════ */
-
-/* game-detail-list__item: rgba(255,255,255,.56)!important */
-[data-theme="dark"] .game-detail-list__item {
-  background: rgba(255,255,255,.08) !important;
-  border-color: rgba(255,255,255,.13) !important;
-  color: var(--color-text-primary) !important;
-}
-[data-theme="dark"] .game-detail-list__item * {
-  color: var(--color-text-primary) !important;
-}
-
-/* sosoland 콘솔 스팬: rgba(255,255,255,.92)!important → 어두운 글라스 */
-[data-theme="dark"] .sosoland-hero__console span {
-  background: rgba(255,255,255,.14) !important;
-  color: #C4B5FD !important;
-}
-
-/* sosoland 카드 태그: color:#16a34a (어두운 녹색) → 밝게 */
-[data-theme="dark"] .sosoland-card__tag {
-  background: rgba(52,211,153,.18) !important;
-  color: #6EE7B7 !important;
-  border-color: rgba(52,211,153,.30) !important;
-}
-
-/* 게임 카드 내부 링크/텍스트 보강 */
-[data-theme="dark"] .game-detail-card,
-[data-theme="dark"] .liar-create-card,
-[data-theme="dark"] .liar-room-card,
-[data-theme="dark"] .liar-invite-card,
-[data-theme="dark"] .liar-player-card,
-[data-theme="dark"] .sosoland-card {
-  color: var(--color-text-primary) !important;
-}
-[data-theme="dark"] .game-detail-card h2,
-[data-theme="dark"] .liar-create-card h2,
-[data-theme="dark"] .sosoland-card h2 {
-  color: #ffffff !important;
-}
-[data-theme="dark"] .game-detail-card p,
-[data-theme="dark"] .sosoland-card p {
-  color: var(--color-text-secondary) !important;
 }
 
 /* ── 다크모드: card 내부 전체 텍스트 가시성 보강 ── */

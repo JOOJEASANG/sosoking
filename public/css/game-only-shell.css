@@ -23,18 +23,6 @@ body.game-only-mode {
   display: none !important;
 }
 
-.game-only-mode .liar-page,
-.game-only-mode .game-detail-page {
-  min-height: auto;
-  margin: 0;
-  padding-bottom: 24px;
-}
-
-.game-only-mode .liar-hero,
-.game-only-mode .game-detail-hero {
-  margin-top: 0 !important;
-}
-
 .game-guide-card {
   overflow: hidden;
 }
@@ -116,31 +104,6 @@ body.game-only-mode {
   opacity: .58;
 }
 
-.liar-player-item.has-avatar {
-  display: grid !important;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 10px;
-}
-
-.liar-player-item.has-avatar::before {
-  display: none !important;
-}
-
-.liar-player-name {
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 950;
-}
-
-.liar-player-name span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 @media (max-width: 767px) {
   body.game-only-mode {
     padding-bottom: 0 !important;
@@ -149,18 +112,6 @@ body.game-only-mode {
   .game-only-content {
     width: 100%;
     padding: 0 12px 22px;
-  }
-
-  .game-only-mode .liar-page,
-  .game-only-mode .game-detail-page {
-    margin: 0 -12px;
-    padding: 0 12px 22px;
-  }
-
-  .game-only-mode .liar-hero,
-  .game-only-mode .game-detail-hero {
-    border-radius: 0 0 30px 30px !important;
-    margin: 0 -12px 0 !important;
   }
 
   .game-guide-list div {
