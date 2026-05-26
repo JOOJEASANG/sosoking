@@ -48,6 +48,9 @@ module.exports = {
   seoPost: secureFeed.seoPost,
   seoGameLiar: seoGame.seoGameLiar,
   seoGameMafia: seoGame.seoGameMafia,
+  seoGameTouchKing: seoGame.seoGameTouchKing,
+  seoGameSosoCode: seoGame.seoGameSosoCode,
+  seoGameAiCourt: seoGame.seoGameAiCourt,
   ...aiGame,
 
   // 멀티 게시글 전용 보안 액션

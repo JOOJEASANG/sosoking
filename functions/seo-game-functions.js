@@ -7,28 +7,39 @@ const SITE_URL = 'https://sosoking.co.kr';
 
 const GAMES = {
   liar: {
-    title: '라이어게임 — AI를 찾아라',
-    desc: 'AI가 라이어로 위장 참가합니다. 채팅으로 제시어를 설명하며 어색한 사람을 찾아내세요. 소소킹 소소랜드 실시간 추리 게임.',
-    keywords: '라이어게임, AI 라이어게임, 심리게임, 온라인게임, 추리게임, 채팅게임, 소소킹',
+    title: 'AI 라이어 찾기 — 제시어를 모르는 AI를 잡아라',
+    desc: '제시어를 모르는 AI 라이어가 채팅에 숨어듭니다. 말투와 설명의 빈틈을 찾아 투표로 잡아내세요. 4~8명 실시간 추리 게임.',
+    keywords: 'AI 라이어 찾기, 라이어게임, AI 라이어게임, 추리게임, 채팅게임, 온라인게임, 소소킹',
     hash: '/#/game/liar',
     image: `${SITE_URL}/og-image.png`,
-    type: '라이어게임',
   },
   mafia: {
-    title: '마피아게임 — AI 마피아를 잡아라',
-    desc: 'AI가 마피아로 위장합니다. 채팅 토론과 투표로 AI 마피아를 찾아내세요. 소소킹 소소랜드 실시간 추리 심리 게임.',
-    keywords: '마피아게임, AI 마피아게임, 온라인 마피아, 채팅 추리게임, 소소킹',
+    title: 'AI 마피아 — 낮 토론으로 AI 마피아를 처형하라',
+    desc: 'AI 마피아가 토론에 직접 참여합니다. 낮에는 설득하고 밤에는 속이는 AI를 찾아 투표로 처형하세요. 5~9명 사회추론 게임.',
+    keywords: 'AI 마피아, AI 마피아게임, 온라인 마피아, 채팅 추리게임, 사회추론게임, 소소킹',
     hash: '/#/game/mafia',
     image: `${SITE_URL}/og-image.png`,
-    type: '마피아게임',
   },
-  wordtrap: {
-    title: '금칙어 채팅게임',
-    desc: '내 금칙어를 숨기면서 상대가 자기 금칙어를 말하도록 유도하는 채팅 심리 게임. 소소킹 소소랜드에서 즐겨보세요.',
-    keywords: '금칙어게임, 금칙어 채팅게임, 채팅 심리게임, 온라인게임, 소소킹',
-    hash: '/#/game/wordtrap',
+  'touch-king': {
+    title: '터치왕게임 — 12개 그림 중 같은 그림을 가장 빨리 터치!',
+    desc: '중앙판과 내 판 12개 그림 중 같은 그림을 가장 빨리 찾아 터치하는 순발력 대결. 2~10명, 방 만들기 지원. 소소킹 소소랜드.',
+    keywords: '터치왕게임, 순발력게임, 그림 맞추기 게임, 온라인 파티게임, 소소킹',
+    hash: '/#/game/touch-king',
     image: `${SITE_URL}/og-image.png`,
-    type: '금칙어게임',
+  },
+  'soso-code': {
+    title: '소소코드 — 숨겨진 코드를 추리하는 턴제 게임',
+    desc: '상대의 숨겨진 숫자·색상·기호 코드를 질문과 힌트로 추리합니다. AI 해커가 가짜 힌트를 섞는 2~4명 추론 게임.',
+    keywords: '소소코드, 코드 추리게임, 턴제게임, 온라인게임, 소소킹',
+    hash: '/#/game/soso-code',
+    image: `${SITE_URL}/og-image.png`,
+  },
+  'ai-court': {
+    title: 'AI 재판소 — AI 증언의 모순을 찾는 토론 추리 게임',
+    desc: '사건 기록, 증거 카드, AI 증언을 놓고 토론합니다. 진짜 범인과 조작된 증거를 함께 찾아내는 3~7명 추리 게임.',
+    keywords: 'AI 재판소, 토론 추리게임, 법정게임, 온라인게임, 소소킹',
+    hash: '/#/game/ai-court',
+    image: `${SITE_URL}/og-image.png`,
   },
 };
 
@@ -89,14 +100,10 @@ function makeGamePage(key) {
 </body></html>`;
 }
 
-const seoGameLiar     = onRequest({ region: REGION }, (req, res) => {
-  res.set('Cache-Control', 'public, max-age=86400');
-  res.send(makeGamePage('liar'));
-});
+const seoGameLiar      = onRequest({ region: REGION }, (req, res) => { res.set('Cache-Control', 'public, max-age=86400'); res.send(makeGamePage('liar')); });
+const seoGameMafia     = onRequest({ region: REGION }, (req, res) => { res.set('Cache-Control', 'public, max-age=86400'); res.send(makeGamePage('mafia')); });
+const seoGameTouchKing = onRequest({ region: REGION }, (req, res) => { res.set('Cache-Control', 'public, max-age=86400'); res.send(makeGamePage('touch-king')); });
+const seoGameSosoCode  = onRequest({ region: REGION }, (req, res) => { res.set('Cache-Control', 'public, max-age=86400'); res.send(makeGamePage('soso-code')); });
+const seoGameAiCourt   = onRequest({ region: REGION }, (req, res) => { res.set('Cache-Control', 'public, max-age=86400'); res.send(makeGamePage('ai-court')); });
 
-const seoGameMafia    = onRequest({ region: REGION }, (req, res) => {
-  res.set('Cache-Control', 'public, max-age=86400');
-  res.send(makeGamePage('mafia'));
-});
-
-module.exports = { seoGameLiar, seoGameMafia };
+module.exports = { seoGameLiar, seoGameMafia, seoGameTouchKing, seoGameSosoCode, seoGameAiCourt };
