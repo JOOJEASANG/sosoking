@@ -1,7 +1,9 @@
-import { auth, db } from '../firebase.js';
+import { functions } from '../firebase.js';
 import { toast } from '../components/toast.js';
-import { doc, getDoc, updateDoc, arrayUnion } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
 import { ensureAnonymousActor } from './action-utils.js';
+
+const votePostOptionFn = httpsCallable(functions, 'votePostOption');
 
 function esc(value) {
   return String(value || '').replace(/[&<>"]/g, m => ({
@@ -46,7 +48,7 @@ export function renderLegacyBattleVs(post) {
         <div class="battle-side__pct">${sides[0].pct}%</div>
         <div class="battle-side__votes">${sides[0].votes}표</div>
       </button>
-      <div class="battle-vs-center"><span>⚔️</span><span class="battle-vs-label">VS</span></div>
+      <div class="battle-vs-center"><span>VS</span></div>
       <button class="battle-side battle-side--b" data-vote-idx="1">
         <div class="battle-side__text">${esc(sides[1].text)}</div>
         <div class="battle-side__pct">${sides[1].pct}%</div>
@@ -57,23 +59,16 @@ export function renderLegacyBattleVs(post) {
 
 export async function voteLegacyPost(postId, idx) {
   if (!(await ensureAnonymousActor())) return null;
-  const postRef = doc(db, 'feeds', postId);
-  const snapshot = await getDoc(postRef);
-  const data = snapshot.data() || {};
-  if ((data.votedBy || []).includes(auth.currentUser.uid)) throw new Error('이미 투표했어요');
-  const options = (data.options || []).map((opt, i) => (
-    i === idx ? { ...opt, votes: (opt.votes || 0) + 1 } : opt
-  ));
-  await updateDoc(postRef, { options, votedBy: arrayUnion(auth.currentUser.uid) });
-  return { ...data, id: postId, options };
+  const result = await votePostOptionFn({ postId, optionIndex: idx });
+  return { id: postId, options: result?.data?.options || [] };
 }
 
 export function showVoteToast(options, idx) {
   const myVotes = options?.[idx]?.votes || 1;
   const totalNew = (options || []).reduce((sum, option) => sum + (option.votes || 0), 0);
   const pct = totalNew ? Math.round(myVotes / totalNew * 100) : 100;
-  const msg = pct <= 30 ? `소수파 ${pct}%! 독특한 취향이네요 😎`
-    : pct >= 70 ? `역시 대세! ${pct}%가 같은 생각이에요 👑`
-      : `팽팽해요! 지금 ${pct}% 선택 중 🔥`;
+  const msg = pct <= 30 ? `소수파 ${pct}%. 독특한 취향이네요.`
+    : pct >= 70 ? `대세입니다. ${pct}%가 같은 선택이에요.`
+      : `팽팽해요. 지금 ${pct}% 선택 중입니다.`;
   toast.success(msg);
 }
