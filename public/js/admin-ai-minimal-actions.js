@@ -61,17 +61,24 @@ function renderAiPostTypeOptions() {
   return AI_POST_TYPES.map(type => `<option value="${type.key}">${esc(type.label)} — ${esc(type.desc)}</option>`).join('');
 }
 
+let renderInProgress = false;
+let renderedOnce = false;
 async function renderMinimalAiPanel(force = false) {
   const content = document.getElementById('admin-content');
   if (!content || !isAiAdminTab()) return;
-  if (!force && content.dataset.aiMinimalReady === '1' && content.querySelector('#ai-minimal-panel')) return;
+  if (renderInProgress) return;
+  if (!force && renderedOnce && content.querySelector('#ai-minimal-panel')) return;
+  renderInProgress = true;
   content.dataset.aiMinimalReady = '1';
-  content.innerHTML = `<div class="loading-center"><div class="spinner spinner--lg"></div></div>`;
+  if (!content.querySelector('#ai-minimal-panel')) {
+    content.innerHTML = `<div class="loading-center"><div class="spinner spinner--lg"></div></div>`;
+  }
   let settings;
   try { settings = await loadSettings(); }
   catch (error) {
     console.error(error);
     content.innerHTML = `<div class="empty-state"><div class="empty-state__icon">⚠️</div><div class="empty-state__title">AI 설정을 불러오지 못했어요</div></div>`;
+    renderInProgress = false;
     return;
   }
   const usage = settings.status.aiUsage || { total: 0 };
@@ -85,7 +92,7 @@ async function renderMinimalAiPanel(force = false) {
       const payload = { aiAutoContentEnabled: fieldChecked('ai-auto-content'), aiAdminAutomationEnabled: fieldChecked('ai-admin-automation'), autoHideReportedPosts: fieldChecked('ai-auto-hide'), aiDailyLimit: Math.max(0, fieldNumber('ai-daily-limit',10)), reportHideThreshold: Math.max(2, fieldNumber('ai-report-threshold',3)), notificationRetentionDays: Math.max(7, fieldNumber('ai-retention-days',45)), aiMissionEnabled: false, updatedAt: serverTimestamp() };
       await Promise.all([setDoc(doc(db,'site_settings','config'), payload, { merge: true }), saveAiConfig({ enabled: fieldChecked('ai-enabled'), features: { mission: false } })]);
       toast.success('AI 설정을 저장했어요');
-      content.dataset.aiMinimalReady = '0';
+      renderedOnce = false;
       await renderMinimalAiPanel(true);
     } catch (error) { console.error(error); toast.error(error.message || 'AI 설정 저장에 실패했어요'); }
   });
@@ -109,15 +116,17 @@ async function renderMinimalAiPanel(force = false) {
   document.getElementById('btn-ai-run-automation')?.addEventListener('click', async event => {
     const btn = event.currentTarget;
     btn.disabled = true; btn.textContent = '실행 중...';
-    try { await runAdminAutomationNow({}); toast.success('관리자 자동화를 실행했어요'); content.dataset.aiMinimalReady = '0'; await renderMinimalAiPanel(true); }
+    try { await runAdminAutomationNow({}); toast.success('관리자 자동화를 실행했어요'); renderedOnce = false; await renderMinimalAiPanel(true); }
     catch (error) { console.error(error); toast.error(error.message || '관리자 자동화 실행에 실패했어요'); }
     finally { btn.disabled = false; btn.textContent = '관리자 자동화 실행'; }
   });
 
+  renderedOnce = true;
+  renderInProgress = false;
 }
 let timer = null;
-function schedule() { clearTimeout(timer); timer = setTimeout(() => renderMinimalAiPanel(false), 100); }
-function forceSchedule() { clearTimeout(timer); timer = setTimeout(() => renderMinimalAiPanel(true), 80); }
+function schedule() { clearTimeout(timer); timer = setTimeout(() => renderMinimalAiPanel(false), 180); }
+function forceSchedule() { clearTimeout(timer); timer = setTimeout(() => renderMinimalAiPanel(true), 120); }
 document.addEventListener('click', event => { if (event.target.closest?.('[data-admin-tab="ai"], [data-tab="ai"]')) forceSchedule(); }, true);
 new MutationObserver(schedule).observe(document.documentElement, { childList: true, subtree: true });
 window.addEventListener('hashchange', schedule);
