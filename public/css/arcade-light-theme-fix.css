@@ -3,6 +3,74 @@
   color: var(--color-text-primary);
 }
 
+/* Keep action buttons visible on every PC arcade card in both themes. */
+.arcade-game-grid .arcade-card {
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 310px !important;
+  overflow: visible !important;
+}
+
+.arcade-game-grid .arcade-card__body {
+  position: relative !important;
+  z-index: 2 !important;
+  flex: 1 1 auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.arcade-game-grid .arcade-card__desc {
+  flex: 0 0 auto !important;
+}
+
+.arcade-game-grid .arcade-card__meta {
+  margin-top: auto !important;
+}
+
+.arcade-game-grid .arcade-card__footer {
+  position: relative !important;
+  z-index: 5 !important;
+  display: flex !important;
+  gap: 10px !important;
+  margin-top: 16px !important;
+  flex: 0 0 auto !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.arcade-game-grid .arcade-card__guide,
+.arcade-game-grid .arcade-card__play {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 42px !important;
+  padding: 0 14px !important;
+  border-radius: 14px !important;
+  font-family: inherit !important;
+  font-size: 13px !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+  cursor: pointer !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.arcade-game-grid .arcade-card__guide {
+  flex: 0 0 auto !important;
+}
+
+.arcade-game-grid .arcade-card__play {
+  flex: 1 1 auto !important;
+  border: 0 !important;
+  background: linear-gradient(135deg, #ff6b4a, #ff8a3d) !important;
+  box-shadow: 0 10px 24px rgba(255, 107, 74, .24) !important;
+  color: #fff !important;
+}
+
+.arcade-game-grid .arcade-card__shine {
+  pointer-events: none !important;
+}
+
 :root:not([data-theme="dark"]) .arcade-game-grid .arcade-card {
   border: 1px solid rgba(17, 24, 39, .08) !important;
   background:
@@ -58,4 +126,29 @@
 
 [data-theme="dark"] .arcade-game-grid .arcade-card {
   color: #fff;
+}
+
+[data-theme="dark"] .arcade-game-grid .arcade-card__guide {
+  border: 1px solid rgba(255, 255, 255, .18) !important;
+  background: rgba(255, 255, 255, .10) !important;
+  color: rgba(255, 255, 255, .92) !important;
+}
+
+[data-theme="dark"] .arcade-game-grid .arcade-card__play {
+  color: #fff !important;
+}
+
+@media (max-width: 767px) {
+  .arcade-game-grid .arcade-card {
+    min-height: 0 !important;
+  }
+
+  .arcade-game-grid .arcade-card__footer {
+    flex-direction: column !important;
+  }
+
+  .arcade-game-grid .arcade-card__guide,
+  .arcade-game-grid .arcade-card__play {
+    width: 100% !important;
+  }
 }
