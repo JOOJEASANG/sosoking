@@ -1,11 +1,11 @@
 import { navigate } from '../../router.js';
 import { toast } from '../../components/toast.js';
-import { createTouchKingRoom } from './creator.js';
+import { createTouchKingRoom } from './room.js';
 
 function enhanceTouchKingHome() {
   const hero = document.querySelector('.symbol-spy--intro .symbol-spy__hero');
   if (!hero || hero.dataset.touchKingEnhanced === '1') return;
-  const soloBtn = hero.querySelector('[data-action="start"]');
+  const soloBtn = hero.querySelector('[data-start], [data-action="start"]');
   if (!soloBtn) return;
 
   hero.dataset.touchKingEnhanced = '1';
@@ -33,6 +33,7 @@ function enhanceTouchKingHome() {
     </label>
     <label>판수
       <select id="touch-king-rounds">
+        <option value="5">5판</option>
         <option value="10">10판</option>
         <option value="20">20판</option>
         <option value="30" selected>30판</option>
