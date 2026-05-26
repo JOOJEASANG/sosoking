@@ -87,7 +87,7 @@ export const GAMES = [
     status: '프로토타입',
     tag: '⚖️ 토론',
     path: '/game/ai-court',
-    enabled: true,
+    enabled: false,
     players: '3~7명',
     pace: '토론 추리',
     hook: '범인만 찾으면 끝이 아닙니다. 누가 증거를 조작했는지도 밝혀야 합니다.',
@@ -100,6 +100,8 @@ export const GAMES = [
     },
   },
 ];
+
+export const VISIBLE_GAMES = GAMES.filter(game => game.enabled !== false);
 
 export const GAME_ROUTE_PREFIXES = GAMES.map(game => game.path).concat(['/game/symbol-spy']);
 
