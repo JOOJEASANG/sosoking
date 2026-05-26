@@ -6,6 +6,13 @@ const REGION = 'asia-northeast3';
 const SITE_URL = 'https://sosoking.co.kr';
 
 const GAMES = {
+  'soso-code': {
+    title: '소소코드 — AI 해커의 가짜 정보를 뚫는 코드 추리 게임',
+    desc: 'AI 해커가 가짜 인텔을 흘립니다. 질문으로 Hit·Blow를 얻고 상대의 4자리 비밀 코드를 먼저 추리하세요. 2~4명 논리 추리 게임.',
+    keywords: '소소코드, AI 해커게임, 코드 추리게임, Hit Blow, 숫자 추리, 온라인게임, 소소킹',
+    hash: '/#/game/soso-code',
+    image: `${SITE_URL}/og-image.png`,
+  },
   'soso-spy': {
     title: '소소스파이 — AI가 다른 단어로 잠입하는 힌트 추리 게임',
     desc: 'AI 스파이가 살짝 다른 단어를 받고 잠입합니다. 힌트를 교환하고 토론해서 숨은 AI를 찾아내세요. 4~8명 심리전 추리 게임.',
@@ -107,6 +114,7 @@ function makeGamePage(key) {
 </body></html>`;
 }
 
+const seoGameSosoCode  = onRequest({ region: REGION }, (req, res) => { res.set('Cache-Control', 'public, max-age=86400'); res.send(makeGamePage('soso-code')); });
 const seoGameSosoSpy   = onRequest({ region: REGION }, (req, res) => { res.set('Cache-Control', 'public, max-age=86400'); res.send(makeGamePage('soso-spy')); });
 const seoGameLiar      = onRequest({ region: REGION }, (req, res) => { res.set('Cache-Control', 'public, max-age=86400'); res.send(makeGamePage('liar')); });
 const seoGameMafia     = onRequest({ region: REGION }, (req, res) => { res.set('Cache-Control', 'public, max-age=86400'); res.send(makeGamePage('mafia')); });
@@ -114,4 +122,4 @@ const seoGameTouchKing = onRequest({ region: REGION }, (req, res) => { res.set('
 const seoGameSosoCode  = onRequest({ region: REGION }, (req, res) => { res.set('Cache-Control', 'public, max-age=86400'); res.send(makeGamePage('soso-code')); });
 const seoGameAiCourt   = onRequest({ region: REGION }, (req, res) => { res.set('Cache-Control', 'public, max-age=86400'); res.send(makeGamePage('ai-court')); });
 
-module.exports = { seoGameSosoSpy, seoGameLiar, seoGameMafia, seoGameTouchKing, seoGameSosoCode, seoGameAiCourt };
+module.exports = { seoGameSosoCode, seoGameSosoSpy, seoGameLiar, seoGameMafia, seoGameTouchKing, seoGameAiCourt };

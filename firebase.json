@@ -6,6 +6,7 @@
       { "source": "/p/**", "function": "seoPost" },
       { "source": "/game/liar", "function": "seoGameLiar" },
       { "source": "/game/mafia", "function": "seoGameMafia" },
+      { "source": "/game/soso-code", "function": "seoGameSosoCode" },
       { "source": "/game/soso-spy", "function": "seoGameSosoSpy" },
       { "source": "/game/touch-king", "function": "seoGameTouchKing" },
       { "source": "/game/soso-code", "function": "seoGameSosoCode" },

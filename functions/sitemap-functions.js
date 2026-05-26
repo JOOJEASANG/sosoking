@@ -29,6 +29,7 @@ const sitemapXml = onRequest({ region: 'asia-northeast3' }, async (req, res) => 
   const staticUrls = [
     { loc: `${SITE_URL}/`,                  priority: '1.0', changefreq: 'daily'  },
     { loc: `${SITE_URL}/game/soso-spy`,      priority: '0.8', changefreq: 'weekly' },
+    { loc: `${SITE_URL}/game/soso-code`,     priority: '0.8', changefreq: 'weekly' },
     { loc: `${SITE_URL}/game/liar`,         priority: '0.8', changefreq: 'weekly' },
     { loc: `${SITE_URL}/game/mafia`,        priority: '0.8', changefreq: 'weekly' },
     { loc: `${SITE_URL}/game/touch-king`,   priority: '0.8', changefreq: 'weekly' },

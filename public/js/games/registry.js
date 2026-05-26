@@ -83,8 +83,8 @@ export const GAMES = [
     key: 'soso-code',
     icon: '🔐',
     title: '소소코드',
-    desc: '상대의 숨겨진 숫자·색상·기호 코드를 질문과 힌트로 추리합니다. AI 해커가 가짜 힌트를 섞습니다.',
-    status: '프로토타입',
+    desc: '상대의 비밀 4자리 코드를 질문(Hit·Blow)으로 추리합니다. AI 해커가 가짜 인텔을 흘리니 조심하세요.',
+    status: '방 만들기',
     tag: '🔐 추론',
     path: '/game/soso-code',
     enabled: true,
@@ -121,7 +121,7 @@ export const GAMES = [
   },
 ];
 
-export const GAME_ROUTE_PREFIXES = GAMES.map(game => game.path).concat(['/game/symbol-spy', '/game/soso-spy']);
+export const GAME_ROUTE_PREFIXES = GAMES.map(game => game.path).concat(['/game/symbol-spy']);
 
 export function findGameByKey(key) {
   return GAMES.find(game => game.key === key) || null;
