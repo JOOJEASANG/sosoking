@@ -77,11 +77,38 @@ async function toggleReactionOnRef(ref, uid, key, allowed, totalField = null) {
 }
 
 exports.incrementPostView = onCall({ region: REGION, timeoutSeconds: 30 }, async request => {
+  const uid = requireUid(request);
   const postId = cleanId(request.data && request.data.postId, 'postId');
   const postRef = db.doc(`feeds/${postId}`);
-  await assertPostVisible(postRef);
-  await postRef.update({ viewCount: FieldValue.increment(1) });
-  return { ok: true };
+  const viewRef = postRef.collection('viewers').doc(uid);
+  const now = Date.now();
+  const intervalMs = 6 * 60 * 60 * 1000;
+  let counted = false;
+
+  await db.runTransaction(async tx => {
+    const postSnap = await tx.get(postRef);
+    if (!postSnap.exists) throw new HttpsError('not-found', '글을 찾을 수 없습니다.');
+    const post = postSnap.data() || {};
+    if (post.hidden === true) throw new HttpsError('permission-denied', '숨김 처리된 글입니다.');
+
+    const viewSnap = await tx.get(viewRef);
+    const lastViewedAtMs = Number(viewSnap.exists ? viewSnap.data().lastViewedAtMs || 0 : 0);
+    if (lastViewedAtMs > now - intervalMs) {
+      tx.set(viewRef, { lastSeenAt: FieldValue.serverTimestamp(), lastSeenAtMs: now }, { merge: true });
+      return;
+    }
+
+    counted = true;
+    tx.set(viewRef, {
+      lastViewedAt: FieldValue.serverTimestamp(),
+      lastViewedAtMs: now,
+      lastSeenAt: FieldValue.serverTimestamp(),
+      lastSeenAtMs: now,
+    }, { merge: true });
+    tx.update(postRef, { viewCount: FieldValue.increment(1), updatedAt: FieldValue.serverTimestamp() });
+  });
+
+  return { ok: true, counted };
 });
 
 exports.votePostOption = onCall({ region: REGION, timeoutSeconds: 30 }, async request => {
