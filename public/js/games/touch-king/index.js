@@ -2,14 +2,25 @@ import { setMeta } from '../../utils/seo.js';
 
 const SYMBOLS = ['🐰','🦊','🐻','🐼','🐸','🐵','🦁','🐯','🐨','🐧','🐳','🦄','🍒','🍋','🍉','🍇','🥝','🌽','🍕','🍩','🍭','⚽','🎲','🎧','🚀','💎','🔥','⭐','🌙','☂️','🧩','🎯','🪐','🔔','🛸','🧃','🍔','🍟','🌈','🎮','🎁','🦖','🐙','🍀','🍎','🥨','🏀','🎸'];
 const BOARD_SIZE = 12;
-const ROUND_LIMIT = 5;
+const DEFAULT_ROUND_LIMIT = 30;
 const ROUND_SECONDS = 12;
 
 let state = null;
 let timerId = null;
+let selectedRoundLimit = DEFAULT_ROUND_LIMIT;
 
 function esc(value) {
   return String(value || '').replace(/[&<>"']/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[m]));
+}
+
+function roundLimit() {
+  return Number(state?.roundLimit || selectedRoundLimit || DEFAULT_ROUND_LIMIT);
+}
+
+function readSelectedRoundLimit() {
+  const value = Number(document.getElementById('touch-king-rounds')?.value || selectedRoundLimit || DEFAULT_ROUND_LIMIT);
+  selectedRoundLimit = Number.isFinite(value) ? Math.max(3, Math.min(50, value)) : DEFAULT_ROUND_LIMIT;
+  return selectedRoundLimit;
 }
 
 function shuffle(list) {
@@ -53,8 +64,10 @@ function createRound(round) {
   };
 }
 
-function initState() {
-  state = { phase: 'intro', round: 1, score: 0, correctCount: 0, totalMs: 0, current: createRound(1) };
+function initState(rounds = selectedRoundLimit) {
+  const limit = Number.isFinite(Number(rounds)) ? Math.max(3, Math.min(50, Number(rounds))) : DEFAULT_ROUND_LIMIT;
+  selectedRoundLimit = limit;
+  state = { phase: 'intro', round: 1, roundLimit: limit, score: 0, correctCount: 0, totalMs: 0, current: createRound(1) };
 }
 
 function renderTopBar() {
@@ -62,7 +75,7 @@ function renderTopBar() {
     <header class="symbol-spy__topbar">
       <button class="symbol-spy__ghost" type="button" data-back>← 게임 목록</button>
       <div class="symbol-spy__brand"><span>👑</span><b>터치왕게임</b><small>혼자 연습</small></div>
-      <div class="symbol-spy__score"><span>${state.score}점</span><span>${state.round}/${ROUND_LIMIT}판</span></div>
+      <div class="symbol-spy__score"><span>${state.score}점</span><span>${state.round}/${roundLimit()}판</span></div>
     </header>`;
 }
 
@@ -86,7 +99,7 @@ function renderIntro() {
         <div class="symbol-spy__kicker">12개 그림 빠른 터치 대결</div>
         <h1>같은 그림을 찾고<br>터치왕에 도전하라</h1>
         <p>중앙판 12개와 내 판 12개 중 동시에 있는 그림 하나를 가장 빠르게 누르는 순발력 게임입니다.</p>
-        <div class="symbol-spy__rules"><span>👑 터치왕</span><span>🧩 12개 그림판</span><span>⏱ ${ROUND_SECONDS}초 라운드</span><span>🏁 ${ROUND_LIMIT}판 승부</span></div>
+        <div class="symbol-spy__rules"><span>👑 터치왕</span><span>🧩 12개 그림판</span><span>⏱ ${ROUND_SECONDS}초 라운드</span><span>🏁 ${roundLimit()}판 승부</span></div>
         <button class="symbol-spy__start" type="button" data-start>혼자 연습하기</button>
       </div>
       <div class="symbol-spy__notice"><b>게임 규칙</b><span>정답은 +100점, 남은 시간 × 5점 보너스, 오답은 -10점입니다.</span></div>
@@ -113,7 +126,7 @@ function renderPlaying() {
     <section class="symbol-spy symbol-spy--play touch-king-game">
       <div class="touch-king-title">👑 터치왕게임</div>
       ${renderTopBar()}
-      <div class="symbol-spy__playhead"><div><b>ROUND ${round.round}/${ROUND_LIMIT}</b><span>${esc(round.message)}</span></div><div class="symbol-spy__timer" data-timer>${round.timeLeft}</div></div>
+      <div class="symbol-spy__playhead"><div><b>ROUND ${round.round}/${roundLimit()}</b><span>${esc(round.message)}</span></div><div class="symbol-spy__timer" data-timer>${round.timeLeft}</div></div>
       <div class="symbol-spy__arena">
         ${renderBoard('중앙판 · 12개', round.center, 'center', true)}
         <div class="symbol-spy__versus"><span>같은 그림 1개</span><b>12</b><small>빠를수록 고득점</small></div>
@@ -130,7 +143,7 @@ function renderResult() {
   const el = pageEl();
   if (!el) return;
   const round = state.current;
-  const final = round.round >= ROUND_LIMIT;
+  const final = round.round >= roundLimit();
   const avg = state.correctCount ? (state.totalMs / state.correctCount / 1000).toFixed(1) : '-';
   el.innerHTML = `
     <section class="symbol-spy symbol-spy--result touch-king-game">
@@ -146,9 +159,9 @@ function renderResult() {
       </div>
     </section>`;
   bindBack();
-  el.querySelector('[data-restart]')?.addEventListener('click', () => { initState(); renderIntro(); });
+  el.querySelector('[data-restart]')?.addEventListener('click', () => { initState(selectedRoundLimit); renderIntro(); });
   el.querySelector('[data-next]')?.addEventListener('click', () => {
-    if (final) { initState(); startGame(); return; }
+    if (final) { initState(selectedRoundLimit); startGame(); return; }
     state.round += 1;
     state.current = createRound(state.round);
     state.phase = 'playing';
@@ -170,7 +183,8 @@ function runTimer() {
 
 function startGame() {
   clearTimer();
-  state = { phase: 'playing', round: 1, score: 0, correctCount: 0, totalMs: 0, current: createRound(1) };
+  const limit = readSelectedRoundLimit();
+  state = { phase: 'playing', round: 1, roundLimit: limit, score: 0, correctCount: 0, totalMs: 0, current: createRound(1) };
   renderPlaying();
   runTimer();
 }
@@ -199,7 +213,7 @@ function finishRound() {
 export function renderTouchKingSolo() {
   setMeta('터치왕게임');
   clearTimer();
-  initState();
+  initState(DEFAULT_ROUND_LIMIT);
   renderIntro();
   return { destroy: clearTimer };
 }
