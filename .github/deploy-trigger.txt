@@ -1,4 +1,4 @@
 Firebase deployment trigger
 
 Triggered from Claude Code for main branch deployment.
-Date: 2026-05-20 (SEO improvements)
+Date: 2026-05-26 (touch-king resize, dead code cleanup, image URL attach, footer fix)
