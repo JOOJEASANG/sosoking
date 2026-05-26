@@ -37,6 +37,7 @@ import { renderHall }    from './pages/hall.js';
 import { renderSosoland } from './pages/sosoland.js';
 import { renderLiarGame } from './pages/liar-game.js';
 import { renderMafiaGame } from './pages/mafia-game.js';
+import { renderSosoSpyGame } from './pages/soso-spy-game.js';
 
 export { appState };
 
@@ -173,6 +174,8 @@ export async function initApp() {
   registerRoute('/game/liar/:id', ({ id }) => renderLiarGame({ id }));
   registerRoute('/game/mafia', () => renderMafiaGame());
   registerRoute('/game/mafia/:id', ({ id }) => renderMafiaGame({ id }));
+  registerRoute('/game/soso-spy', () => renderSosoSpyGame());
+  registerRoute('/game/soso-spy/:id', ({ id }) => renderSosoSpyGame({ id }));
   registerRoute('/detail/:id', ({ id }) => renderDetail(id));
   registerRoute('/account',    () => renderAccount());
   registerRoute('/scraps',     () => renderScraps());

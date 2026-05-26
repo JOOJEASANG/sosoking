@@ -1,5 +1,25 @@
 export const GAMES = [
   {
+    key: 'soso-spy',
+    icon: '🕵️',
+    title: '소소스파이',
+    desc: 'AI 스파이가 살짝 다른 단어를 받고 잠입합니다. 힌트를 교환하고 토론해서 숨은 AI를 찾아내세요.',
+    status: '방 만들기',
+    tag: '🤖 힌트 추리',
+    path: '/game/soso-spy',
+    enabled: true,
+    players: '4~8명',
+    pace: '힌트/투표',
+    hook: 'AI는 비슷하지만 다른 단어를 받아 자연스럽게 위장합니다.',
+    originalNote: '소소킹 전용 숨겨진 단어 추리 게임. AI가 살짝 다른 단어로 잠입하고 힌트 라운드로 추리합니다.',
+    guide: {
+      subtitle: 'AI가 다른 단어로 잠입 — 힌트 교환과 투표로 찾아내는 추리 게임',
+      goal: '시민팀은 AI 스파이를 투표로 지목해 내보내면 승리합니다. AI는 3라운드 살아남거나 시민이 2명 이하가 되면 승리합니다.',
+      flow: '방 만들기 → 참가자 입장 → 단어 확인 → 힌트 제출(30초) → 힌트 공개/토론(90초) → 투표(30초) → 결과 공개 순서로 진행합니다.',
+      tip: '힌트가 너무 정확하면 AI가 따라 쓸 수 있고, 너무 모호하면 내가 의심받을 수 있습니다.',
+    },
+  },
+  {
     key: 'liar',
     icon: '🕵️',
     title: 'AI 라이어 찾기',
@@ -101,7 +121,7 @@ export const GAMES = [
   },
 ];
 
-export const GAME_ROUTE_PREFIXES = GAMES.map(game => game.path).concat(['/game/symbol-spy']);
+export const GAME_ROUTE_PREFIXES = GAMES.map(game => game.path).concat(['/game/symbol-spy', '/game/soso-spy']);
 
 export function findGameByKey(key) {
   return GAMES.find(game => game.key === key) || null;

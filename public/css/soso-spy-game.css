@@ -1,0 +1,1685 @@
+/* ================================================
+   소소스파이 (SOSO SPY) — 게임 전용 CSS
+   디자인 컨셉: 어두운 첩보/스파이 분위기
+   기본 배경: #0a0e1a (딥 네이비)
+   포인트: #6366f1 인디고 / #8b5cf6 바이올렛
+   ================================================ */
+
+/* ── 커스텀 프로퍼티 ── */
+:root {
+  --spy-bg:           #0a0e1a;
+  --spy-surface:      #1e2438;
+  --spy-surface-2:    #252d45;
+  --spy-surface-3:    #2c3554;
+  --spy-border:       rgba(255, 255, 255, .08);
+  --spy-border-light: rgba(255, 255, 255, .12);
+  --spy-primary:      #6366f1;
+  --spy-primary-dark: #4f46e5;
+  --spy-violet:       #8b5cf6;
+  --spy-danger:       #ef4444;
+  --spy-success:      #22c55e;
+  --spy-warning:      #f59e0b;
+  --spy-text:         #f1f5f9;
+  --spy-text-muted:   rgba(241, 245, 249, .55);
+  --spy-text-sub:     rgba(241, 245, 249, .72);
+  --spy-shadow:       0 4px 24px rgba(0, 0, 0, .45);
+  --spy-shadow-lg:    0 12px 48px rgba(0, 0, 0, .6);
+  --spy-radius:       16px;
+  --spy-radius-sm:    10px;
+  --spy-radius-lg:    22px;
+}
+
+/* ================================================
+   SHELL — 전체 컨테이너
+   ================================================ */
+
+.spy-shell {
+  max-width: 640px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: var(--spy-bg);
+  color: var(--spy-text);
+  font-family: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 0 40px;
+  position: relative;
+}
+
+/* ================================================
+   HEADER
+   ================================================ */
+
+.spy-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 16px;
+  background: rgba(10, 14, 26, .85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--spy-border);
+}
+
+.spy-back-btn {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 1px solid var(--spy-border-light);
+  background: var(--spy-surface);
+  color: var(--spy-text);
+  font-size: 16px;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+  flex: 0 0 auto;
+  text-decoration: none;
+}
+
+.spy-back-btn:hover {
+  background: var(--spy-surface-2);
+  border-color: rgba(99, 102, 241, .4);
+}
+
+.spy-header__title {
+  flex: 1;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 950;
+  letter-spacing: -.02em;
+  color: var(--spy-text);
+}
+
+.spy-round-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: rgba(99, 102, 241, .18);
+  border: 1px solid rgba(99, 102, 241, .35);
+  color: #a5b4fc;
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: .03em;
+  white-space: nowrap;
+}
+
+/* ================================================
+   HERO — 로비
+   ================================================ */
+
+.spy-hero {
+  position: relative;
+  overflow: hidden;
+  padding: 40px 20px 36px;
+  text-align: center;
+  background:
+    radial-gradient(ellipse at 60% 0%, rgba(99, 102, 241, .32) 0%, transparent 60%),
+    radial-gradient(ellipse at 20% 100%, rgba(139, 92, 246, .22) 0%, transparent 50%),
+    linear-gradient(180deg, #0d112b 0%, #0a0e1a 100%);
+  border-bottom: 1px solid var(--spy-border);
+}
+
+.spy-hero::before {
+  content: '';
+  position: absolute;
+  top: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  background: rgba(99, 102, 241, .12);
+  filter: blur(60px);
+  pointer-events: none;
+}
+
+.spy-hero__icon {
+  font-size: 56px;
+  line-height: 1;
+  margin-bottom: 16px;
+  filter: drop-shadow(0 0 20px rgba(99, 102, 241, .5));
+  position: relative;
+  z-index: 1;
+}
+
+.spy-hero__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 13px;
+  border-radius: 999px;
+  background: rgba(99, 102, 241, .18);
+  border: 1px solid rgba(99, 102, 241, .35);
+  color: #a5b4fc;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  position: relative;
+  z-index: 1;
+}
+
+.spy-hero__title {
+  margin: 0 0 10px;
+  font-size: 32px;
+  font-weight: 1000;
+  letter-spacing: -.04em;
+  line-height: 1.12;
+  background: linear-gradient(135deg, #fff 20%, #c4b5fd 60%, #818cf8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  position: relative;
+  z-index: 1;
+}
+
+.spy-hero__desc {
+  margin: 0;
+  font-size: 14px;
+  color: var(--spy-text-sub);
+  line-height: 1.65;
+  max-width: 440px;
+  margin-left: auto;
+  margin-right: auto;
+  position: relative;
+  z-index: 1;
+}
+
+.spy-hero__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  justify-content: center;
+  margin-top: 16px;
+  position: relative;
+  z-index: 1;
+}
+
+.spy-hero__chips span {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .08);
+  border: 1px solid rgba(255, 255, 255, .15);
+  color: var(--spy-text-sub);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+/* ================================================
+   GUIDE — HOW TO PLAY
+   ================================================ */
+
+.spy-guide {
+  margin: 0 16px;
+  border-radius: var(--spy-radius-lg);
+  background: var(--spy-surface);
+  border: 1px solid var(--spy-border);
+  overflow: hidden;
+}
+
+.spy-guide__head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 12px 18px 11px;
+  border-bottom: 1px solid var(--spy-border);
+  background: rgba(99, 102, 241, .06);
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: #a5b4fc;
+}
+
+.spy-guide__steps {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 18px 14px;
+}
+
+.spy-guide__step {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 12px 0;
+}
+
+.spy-guide__step:not(:last-child) {
+  border-bottom: 1px solid rgba(99, 102, 241, .08);
+}
+
+.spy-guide__step-num {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 950;
+  flex: 0 0 28px;
+  box-shadow: 0 3px 12px rgba(99, 102, 241, .4);
+  margin-top: 1px;
+}
+
+.spy-guide__step-icon {
+  font-size: 16px;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.spy-guide__step-body {
+  min-width: 0;
+  padding-top: 2px;
+}
+
+.spy-guide__step-body b {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13.5px;
+  font-weight: 950;
+  color: var(--spy-text);
+  margin-bottom: 3px;
+  letter-spacing: -.02em;
+}
+
+.spy-guide__step-body span {
+  display: block;
+  font-size: 12.5px;
+  color: var(--spy-text-muted);
+  line-height: 1.55;
+}
+
+/* ================================================
+   FORM — 방 만들기 / 설정 카드
+   ================================================ */
+
+.spy-form {
+  margin: 0 16px;
+  padding: 18px;
+  border-radius: var(--spy-radius-lg);
+  background: var(--spy-surface);
+  border: 1px solid var(--spy-border);
+  box-shadow: var(--spy-shadow);
+}
+
+.spy-form h2 {
+  margin: 0 0 16px;
+  font-size: 17px;
+  font-weight: 950;
+  color: var(--spy-text);
+  letter-spacing: -.03em;
+}
+
+.spy-form__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.spy-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.spy-form__label {
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--spy-text-muted);
+  letter-spacing: .03em;
+}
+
+/* ================================================
+   KEYWORD CARD — 내 단어 표시
+   ================================================ */
+
+.spy-keyword-card {
+  margin: 0 16px;
+  padding: 24px 20px;
+  border-radius: var(--spy-radius-lg);
+  background: linear-gradient(135deg, rgba(99, 102, 241, .18) 0%, rgba(139, 92, 246, .12) 100%);
+  border: 1px solid rgba(99, 102, 241, .35);
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(99, 102, 241, .2);
+  animation: spyFadeInScale .4s cubic-bezier(.34, 1.56, .64, 1) both;
+}
+
+.spy-keyword-card__label {
+  display: block;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: #a5b4fc;
+  margin-bottom: 10px;
+}
+
+.spy-keyword-card__icon {
+  font-size: 36px;
+  line-height: 1;
+  margin-bottom: 10px;
+  display: block;
+  filter: drop-shadow(0 0 12px rgba(99, 102, 241, .5));
+}
+
+.spy-keyword-card__word {
+  display: block;
+  font-size: 36px;
+  font-weight: 1000;
+  letter-spacing: -.04em;
+  color: #c4b5fd;
+  line-height: 1.1;
+  margin-bottom: 8px;
+}
+
+.spy-keyword-card__hint {
+  font-size: 13px;
+  color: var(--spy-text-muted);
+  line-height: 1.5;
+}
+
+.spy-keyword-card--ai {
+  background: linear-gradient(135deg, rgba(239, 68, 68, .15) 0%, rgba(99, 102, 241, .12) 100%);
+  border-color: rgba(239, 68, 68, .3);
+  box-shadow: 0 8px 32px rgba(239, 68, 68, .18);
+}
+
+.spy-keyword-card--ai .spy-keyword-card__label {
+  color: #fca5a5;
+}
+
+.spy-keyword-card--ai .spy-keyword-card__word {
+  color: #f87171;
+}
+
+/* ================================================
+   TIMER
+   ================================================ */
+
+.spy-timer {
+  margin: 0 16px;
+  padding: 14px 16px;
+  border-radius: var(--spy-radius);
+  background: var(--spy-surface);
+  border: 1px solid var(--spy-border);
+}
+
+.spy-timer__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.spy-timer__label {
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--spy-text-muted);
+  letter-spacing: .04em;
+}
+
+.spy-timer__text {
+  font-size: 22px;
+  font-weight: 1000;
+  color: var(--spy-text);
+  letter-spacing: -.04em;
+  font-variant-numeric: tabular-nums;
+  transition: color .3s;
+}
+
+.spy-timer__text--urgent {
+  color: var(--spy-danger);
+  animation: spyPulse 1s ease-in-out infinite;
+}
+
+.spy-timer__bar {
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--spy-surface-3);
+  overflow: hidden;
+}
+
+.spy-timer__fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #6366f1, #8b5cf6);
+  transition: width .8s linear;
+  box-shadow: 0 0 8px rgba(99, 102, 241, .5);
+}
+
+.spy-timer__fill--urgent {
+  background: linear-gradient(90deg, #ef4444, #f97316);
+  box-shadow: 0 0 8px rgba(239, 68, 68, .5);
+}
+
+/* ================================================
+   HINTS GRID
+   ================================================ */
+
+.spy-hints-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  padding: 0 16px;
+}
+
+.spy-hint-card {
+  padding: 14px 16px;
+  border-radius: var(--spy-radius);
+  background: var(--spy-surface);
+  border: 1px solid var(--spy-border);
+  transition: border-color .2s, transform .2s;
+  animation: spySlideIn .35s cubic-bezier(.34, 1.3, .64, 1) both;
+}
+
+.spy-hint-card:nth-child(1) { animation-delay: .05s; }
+.spy-hint-card:nth-child(2) { animation-delay: .10s; }
+.spy-hint-card:nth-child(3) { animation-delay: .15s; }
+.spy-hint-card:nth-child(4) { animation-delay: .20s; }
+.spy-hint-card:nth-child(5) { animation-delay: .25s; }
+.spy-hint-card:nth-child(6) { animation-delay: .30s; }
+.spy-hint-card:nth-child(7) { animation-delay: .35s; }
+.spy-hint-card:nth-child(8) { animation-delay: .40s; }
+
+.spy-hint-card:hover {
+  border-color: rgba(99, 102, 241, .3);
+  transform: translateY(-1px);
+}
+
+.spy-hint-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 7px;
+}
+
+.spy-hint-card__avatar {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, .3), rgba(139, 92, 246, .25));
+  font-size: 11px;
+  font-weight: 950;
+  color: #c4b5fd;
+  flex: 0 0 auto;
+}
+
+.spy-hint-card__name {
+  font-size: 12px;
+  font-weight: 950;
+  color: var(--spy-text-muted);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spy-hint-card__text {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--spy-text);
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.spy-hint-card--pending {
+  opacity: .45;
+  border-style: dashed;
+}
+
+.spy-hint-card--pending .spy-hint-card__text {
+  color: var(--spy-text-muted);
+  font-style: italic;
+}
+
+/* ================================================
+   PLAYERS LIST
+   ================================================ */
+
+.spy-players {
+  margin: 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.spy-players__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.spy-players__title {
+  font-size: 13px;
+  font-weight: 950;
+  color: var(--spy-text-muted);
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.spy-player-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--spy-radius);
+  background: var(--spy-surface);
+  border: 1px solid var(--spy-border);
+  transition: border-color .15s, background .15s;
+}
+
+.spy-player-row:hover {
+  border-color: var(--spy-border-light);
+}
+
+.spy-player-row--me {
+  background: rgba(99, 102, 241, .1);
+  border-color: rgba(99, 102, 241, .3);
+}
+
+.spy-player-row--eliminated {
+  opacity: .45;
+}
+
+.spy-player-row--eliminated .spy-player-row__name {
+  text-decoration: line-through;
+  color: var(--spy-text-muted);
+}
+
+.spy-player-row__avatar {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: var(--spy-surface-3);
+  font-size: 15px;
+  font-weight: 950;
+  color: var(--spy-text);
+  flex: 0 0 auto;
+}
+
+.spy-player-row--me .spy-player-row__avatar {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, .4);
+}
+
+.spy-player-row__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.spy-player-row__name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 950;
+  color: var(--spy-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spy-player-row__tag {
+  display: inline-flex;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(99, 102, 241, .2);
+  color: #a5b4fc;
+  font-size: 10px;
+  font-weight: 950;
+  flex-shrink: 0;
+}
+
+.spy-player-row__tag--host {
+  background: rgba(245, 158, 11, .2);
+  color: #fbbf24;
+}
+
+.spy-player-row__status {
+  font-size: 12px;
+  color: var(--spy-text-muted);
+  margin-top: 2px;
+}
+
+.spy-player-row__action {
+  flex: 0 0 auto;
+}
+
+/* ================================================
+   VOTE GRID
+   ================================================ */
+
+.spy-vote-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  padding: 0 16px;
+}
+
+.spy-vote-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 12px;
+  border-radius: var(--spy-radius);
+  border: 2px solid var(--spy-border);
+  background: var(--spy-surface);
+  color: var(--spy-text);
+  cursor: pointer;
+  transition: all .2s cubic-bezier(.34, 1.3, .64, 1);
+  min-height: 90px;
+  text-align: center;
+  font-family: inherit;
+}
+
+.spy-vote-btn:hover {
+  border-color: rgba(99, 102, 241, .5);
+  background: rgba(99, 102, 241, .1);
+  transform: translateY(-2px);
+}
+
+.spy-vote-btn__avatar {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: var(--spy-surface-3);
+  font-size: 18px;
+  font-weight: 950;
+  color: var(--spy-text);
+  transition: background .2s;
+}
+
+.spy-vote-btn__name {
+  font-size: 13px;
+  font-weight: 950;
+  color: var(--spy-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.spy-vote-btn--selected {
+  border-color: var(--spy-primary);
+  background: rgba(99, 102, 241, .18);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, .2), 0 8px 24px rgba(99, 102, 241, .25);
+  transform: translateY(-2px) scale(1.02);
+}
+
+.spy-vote-btn--selected .spy-vote-btn__avatar {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+}
+
+.spy-vote-btn--selected .spy-vote-btn__name {
+  color: #a5b4fc;
+}
+
+/* ================================================
+   REVEAL — 결과 공개
+   ================================================ */
+
+.spy-reveal {
+  margin: 0 16px;
+  padding: 32px 20px 28px;
+  border-radius: var(--spy-radius-lg);
+  text-align: center;
+  animation: spyReveal .5s cubic-bezier(.34, 1.4, .64, 1) both;
+}
+
+.spy-reveal--citizen {
+  background: linear-gradient(135deg, rgba(239, 68, 68, .18) 0%, rgba(220, 38, 38, .1) 100%);
+  border: 1px solid rgba(239, 68, 68, .3);
+  box-shadow: 0 12px 48px rgba(239, 68, 68, .2);
+}
+
+.spy-reveal--ai {
+  background: linear-gradient(135deg, rgba(34, 197, 94, .18) 0%, rgba(16, 185, 129, .1) 50%, rgba(99, 102, 241, .1) 100%);
+  border: 1px solid rgba(34, 197, 94, .3);
+  box-shadow: 0 12px 48px rgba(34, 197, 94, .2);
+}
+
+.spy-reveal__icon {
+  font-size: 64px;
+  line-height: 1;
+  margin-bottom: 14px;
+  display: block;
+  animation: spyBounce .6s .3s cubic-bezier(.34, 1.56, .64, 1) both;
+}
+
+.spy-reveal__name {
+  font-size: 28px;
+  font-weight: 1000;
+  letter-spacing: -.04em;
+  color: var(--spy-text);
+  margin-bottom: 8px;
+}
+
+.spy-reveal__verdict {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.spy-reveal--citizen .spy-reveal__verdict {
+  background: rgba(239, 68, 68, .2);
+  border: 1px solid rgba(239, 68, 68, .4);
+  color: #fca5a5;
+}
+
+.spy-reveal--ai .spy-reveal__verdict {
+  background: rgba(34, 197, 94, .2);
+  border: 1px solid rgba(34, 197, 94, .4);
+  color: #86efac;
+}
+
+.spy-reveal__keyword {
+  margin-top: 14px;
+  font-size: 13px;
+  color: var(--spy-text-muted);
+  line-height: 1.5;
+}
+
+.spy-reveal__keyword strong {
+  color: var(--spy-text);
+  font-weight: 950;
+}
+
+/* ================================================
+   RESULT — 최종 결과
+   ================================================ */
+
+.spy-result {
+  margin: 0 16px;
+  padding: 36px 20px 32px;
+  border-radius: var(--spy-radius-lg);
+  text-align: center;
+  animation: spyReveal .5s cubic-bezier(.34, 1.4, .64, 1) both;
+}
+
+.spy-result--citizens-win {
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(34, 197, 94, .25) 0%, transparent 60%),
+    linear-gradient(180deg, rgba(34, 197, 94, .1) 0%, transparent 100%);
+  border: 1px solid rgba(34, 197, 94, .3);
+  box-shadow: 0 16px 64px rgba(34, 197, 94, .2);
+}
+
+.spy-result--ai-win {
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(99, 102, 241, .3) 0%, transparent 60%),
+    linear-gradient(180deg, rgba(99, 102, 241, .12) 0%, transparent 100%);
+  border: 1px solid rgba(99, 102, 241, .35);
+  box-shadow: 0 16px 64px rgba(99, 102, 241, .25);
+}
+
+.spy-result__title {
+  font-size: 36px;
+  font-weight: 1000;
+  letter-spacing: -.04em;
+  line-height: 1.1;
+  margin-bottom: 8px;
+  background: linear-gradient(135deg, #fff 20%, #c4b5fd 70%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: spyBounce .6s .2s cubic-bezier(.34, 1.56, .64, 1) both;
+}
+
+.spy-result--citizens-win .spy-result__title {
+  background: linear-gradient(135deg, #fff 20%, #86efac 70%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.spy-result__icon {
+  font-size: 72px;
+  line-height: 1;
+  margin-bottom: 16px;
+  display: block;
+  filter: drop-shadow(0 0 24px rgba(99, 102, 241, .5));
+}
+
+.spy-result--citizens-win .spy-result__icon {
+  filter: drop-shadow(0 0 24px rgba(34, 197, 94, .5));
+}
+
+.spy-result__summary {
+  font-size: 14px;
+  color: var(--spy-text-sub);
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.spy-result__stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.spy-result__stat {
+  padding: 12px 8px;
+  border-radius: var(--spy-radius-sm);
+  background: rgba(255, 255, 255, .06);
+  border: 1px solid var(--spy-border);
+}
+
+.spy-result__stat-num {
+  display: block;
+  font-size: 22px;
+  font-weight: 1000;
+  letter-spacing: -.04em;
+  color: var(--spy-text);
+  margin-bottom: 2px;
+}
+
+.spy-result__stat-label {
+  font-size: 11px;
+  color: var(--spy-text-muted);
+  font-weight: 850;
+}
+
+/* ================================================
+   HINT INPUT
+   ================================================ */
+
+.spy-submit-hint-box {
+  margin: 0 16px;
+  padding: 16px;
+  border-radius: var(--spy-radius-lg);
+  background: var(--spy-surface);
+  border: 1px solid var(--spy-border);
+}
+
+.spy-submit-hint-box__label {
+  display: block;
+  font-size: 12px;
+  font-weight: 950;
+  color: var(--spy-text-muted);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.spy-hint-input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: var(--spy-radius-sm);
+  border: 1.5px solid var(--spy-border-light);
+  background: var(--spy-surface-2);
+  color: var(--spy-text);
+  font-size: 15px;
+  font-family: inherit;
+  line-height: 1.5;
+  resize: vertical;
+  min-height: 56px;
+  transition: border-color .15s, box-shadow .15s;
+  box-sizing: border-box;
+}
+
+.spy-hint-input::placeholder {
+  color: var(--spy-text-muted);
+}
+
+.spy-hint-input:focus {
+  outline: none;
+  border-color: rgba(99, 102, 241, .6);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, .15);
+}
+
+/* ================================================
+   BUTTONS
+   ================================================ */
+
+.spy-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 18px;
+  min-height: 48px;
+  border-radius: var(--spy-radius-sm);
+  border: 1.5px solid transparent;
+  font-size: 14px;
+  font-weight: 950;
+  font-family: inherit;
+  cursor: pointer;
+  letter-spacing: -.01em;
+  transition: all .18s cubic-bezier(.34, 1.3, .64, 1);
+  text-decoration: none;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.spy-btn:active {
+  transform: scale(.97);
+}
+
+.spy-btn--primary {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 6px 20px rgba(99, 102, 241, .4);
+}
+
+.spy-btn--primary:hover {
+  filter: brightness(1.12);
+  box-shadow: 0 8px 28px rgba(99, 102, 241, .5);
+}
+
+.spy-btn--danger {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 6px 20px rgba(239, 68, 68, .35);
+}
+
+.spy-btn--danger:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 8px 28px rgba(239, 68, 68, .45);
+}
+
+.spy-btn--ghost {
+  background: transparent;
+  color: var(--spy-text-sub);
+  border-color: var(--spy-border-light);
+}
+
+.spy-btn--ghost:hover {
+  background: var(--spy-surface-2);
+  border-color: rgba(99, 102, 241, .35);
+  color: var(--spy-text);
+}
+
+.spy-btn--success {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 6px 20px rgba(34, 197, 94, .35);
+}
+
+.spy-btn--success:hover {
+  filter: brightness(1.1);
+}
+
+.spy-btn--full {
+  width: 100%;
+}
+
+.spy-btn:disabled {
+  opacity: .38;
+  cursor: not-allowed;
+  pointer-events: none;
+  transform: none;
+}
+
+.spy-btn-row {
+  display: flex;
+  gap: 10px;
+  padding: 0 16px;
+}
+
+.spy-btn-row .spy-btn--full {
+  flex: 1;
+}
+
+/* ================================================
+   CHAT
+   ================================================ */
+
+.spy-chat {
+  margin: 0 16px;
+  border-radius: var(--spy-radius-lg);
+  background: var(--spy-surface);
+  border: 1px solid var(--spy-border);
+  overflow: hidden;
+}
+
+.spy-chat__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 16px 10px;
+  border-bottom: 1px solid var(--spy-border);
+}
+
+.spy-chat__head b {
+  font-size: 14px;
+  font-weight: 950;
+  color: var(--spy-text);
+}
+
+.spy-chat__head small {
+  font-size: 11px;
+  color: var(--spy-text-muted);
+  font-weight: 850;
+}
+
+.spy-chat__messages {
+  height: 280px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--spy-surface-3) transparent;
+}
+
+.spy-chat__messages::-webkit-scrollbar {
+  width: 4px;
+}
+
+.spy-chat__messages::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.spy-chat__messages::-webkit-scrollbar-thumb {
+  background: var(--spy-surface-3);
+  border-radius: 999px;
+}
+
+.spy-chat__message {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  max-width: 85%;
+}
+
+.spy-chat__message--mine {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.spy-chat__message-avatar {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--spy-surface-3);
+  font-size: 11px;
+  font-weight: 950;
+  color: var(--spy-text);
+  flex: 0 0 28px;
+}
+
+.spy-chat__message--mine .spy-chat__message-avatar {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+}
+
+.spy-chat__message-body {
+  min-width: 0;
+}
+
+.spy-chat__message-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 3px;
+  font-size: 11px;
+  color: var(--spy-text-muted);
+  font-weight: 850;
+}
+
+.spy-chat__message-bubble {
+  padding: 9px 12px;
+  border-radius: 13px;
+  background: var(--spy-surface-2);
+  border: 1px solid var(--spy-border);
+  color: var(--spy-text);
+  font-size: 13.5px;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.spy-chat__message--mine .spy-chat__message-bubble {
+  background: rgba(99, 102, 241, .25);
+  border-color: rgba(99, 102, 241, .35);
+  color: #e0e7ff;
+}
+
+.spy-chat__empty {
+  padding: 20px;
+  text-align: center;
+  color: var(--spy-text-muted);
+  font-size: 13px;
+}
+
+.spy-chat__input-row {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px 12px;
+  border-top: 1px solid var(--spy-border);
+}
+
+.spy-chat__input {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 13px;
+  border-radius: var(--spy-radius-sm);
+  border: 1.5px solid var(--spy-border-light);
+  background: var(--spy-surface-2);
+  color: var(--spy-text);
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color .15s, box-shadow .15s;
+}
+
+.spy-chat__input::placeholder {
+  color: var(--spy-text-muted);
+}
+
+.spy-chat__input:focus {
+  outline: none;
+  border-color: rgba(99, 102, 241, .5);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, .12);
+}
+
+/* ================================================
+   INVITE
+   ================================================ */
+
+.spy-invite {
+  margin: 0 16px;
+  padding: 16px;
+  border-radius: var(--spy-radius-lg);
+  background: var(--spy-surface);
+  border: 1px solid var(--spy-border);
+}
+
+.spy-invite__label {
+  display: block;
+  font-size: 12px;
+  font-weight: 950;
+  color: var(--spy-text-muted);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.spy-invite__code {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--spy-radius-sm);
+  background: var(--spy-surface-2);
+  border: 1.5px solid rgba(99, 102, 241, .25);
+}
+
+.spy-invite__code-text {
+  flex: 1;
+  font-size: 20px;
+  font-weight: 1000;
+  letter-spacing: .12em;
+  color: #a5b4fc;
+  font-variant-numeric: tabular-nums;
+}
+
+.spy-invite__copy {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(99, 102, 241, .35);
+  background: rgba(99, 102, 241, .15);
+  color: #a5b4fc;
+  font-size: 12px;
+  font-weight: 950;
+  cursor: pointer;
+  transition: all .15s;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.spy-invite__copy:hover {
+  background: rgba(99, 102, 241, .25);
+  border-color: rgba(99, 102, 241, .5);
+}
+
+.spy-invite__link {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--spy-text-muted);
+  line-height: 1.5;
+}
+
+/* ================================================
+   STATUS BAR — 단계 표시
+   ================================================ */
+
+.spy-status-bar {
+  margin: 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 14px 16px;
+  border-radius: var(--spy-radius);
+  background: var(--spy-surface);
+  border: 1px solid var(--spy-border);
+}
+
+.spy-status-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  flex: 1;
+  position: relative;
+}
+
+.spy-status-step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 12px;
+  left: calc(50% + 14px);
+  right: calc(-50% + 14px);
+  height: 2px;
+  background: var(--spy-surface-3);
+  border-radius: 999px;
+  transition: background .3s;
+}
+
+.spy-status-step.done:not(:last-child)::after {
+  background: rgba(34, 197, 94, .5);
+}
+
+.spy-status-step__dot {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--spy-surface-3);
+  border: 2px solid var(--spy-border);
+  color: var(--spy-text-muted);
+  font-size: 11px;
+  font-weight: 950;
+  transition: all .25s;
+  position: relative;
+  z-index: 1;
+}
+
+.spy-status-step.active .spy-status-step__dot {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 3px 12px rgba(99, 102, 241, .45);
+}
+
+.spy-status-step.done .spy-status-step__dot {
+  background: rgba(34, 197, 94, .2);
+  border-color: rgba(34, 197, 94, .45);
+  color: #22c55e;
+}
+
+.spy-status-step__label {
+  font-size: 10px;
+  font-weight: 900;
+  color: var(--spy-text-muted);
+  transition: color .2s;
+}
+
+.spy-status-step.active .spy-status-step__label {
+  color: #a5b4fc;
+}
+
+.spy-status-step.done .spy-status-step__label {
+  color: #86efac;
+}
+
+/* ================================================
+   SECTION LABEL (공용)
+   ================================================ */
+
+.spy-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 16px;
+}
+
+.spy-section__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.spy-section__title {
+  font-size: 13px;
+  font-weight: 950;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--spy-text-muted);
+}
+
+.spy-section__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--spy-surface-2);
+  color: var(--spy-text-muted);
+  font-size: 11px;
+  font-weight: 950;
+}
+
+/* ================================================
+   CARD (generic)
+   ================================================ */
+
+.spy-card {
+  padding: 14px 16px;
+  border-radius: var(--spy-radius);
+  background: var(--spy-surface);
+  border: 1px solid var(--spy-border);
+}
+
+.spy-card--highlight {
+  background: rgba(99, 102, 241, .08);
+  border-color: rgba(99, 102, 241, .25);
+}
+
+/* ================================================
+   LOADING & NOT FOUND
+   ================================================ */
+
+.spy-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 320px;
+  gap: 16px;
+  padding: 40px 20px;
+}
+
+.spy-loading__spinner {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 3px solid var(--spy-surface-3);
+  border-top-color: #6366f1;
+  animation: spySpin 1s linear infinite;
+}
+
+.spy-loading__text {
+  font-size: 14px;
+  color: var(--spy-text-muted);
+  font-weight: 850;
+}
+
+.spy-not-found {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 320px;
+  gap: 14px;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.spy-not-found__icon {
+  font-size: 56px;
+  opacity: .5;
+}
+
+.spy-not-found__title {
+  font-size: 20px;
+  font-weight: 950;
+  color: var(--spy-text);
+  letter-spacing: -.03em;
+}
+
+.spy-not-found__desc {
+  font-size: 14px;
+  color: var(--spy-text-muted);
+  line-height: 1.6;
+  max-width: 280px;
+}
+
+/* ================================================
+   INFO ROWS (방 정보 수평 나열)
+   ================================================ */
+
+.spy-info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 0 16px;
+}
+
+.spy-info-cell {
+  padding: 12px 10px;
+  border-radius: var(--spy-radius-sm);
+  background: var(--spy-surface);
+  border: 1px solid var(--spy-border);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.spy-info-cell__label {
+  font-size: 10px;
+  font-weight: 950;
+  color: var(--spy-text-muted);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.spy-info-cell__value {
+  font-size: 16px;
+  font-weight: 1000;
+  color: var(--spy-text);
+  letter-spacing: -.03em;
+}
+
+/* ================================================
+   DIVIDER
+   ================================================ */
+
+.spy-divider {
+  height: 1px;
+  margin: 4px 16px;
+  background: var(--spy-border);
+  border: none;
+}
+
+/* ================================================
+   ANIMATIONS
+   ================================================ */
+
+@keyframes spyFadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes spySlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes spyReveal {
+  from {
+    opacity: 0;
+    transform: scale(.88) translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes spyBounce {
+  from {
+    opacity: 0;
+    transform: scale(.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes spySpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes spyPulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: .55; }
+}
+
+@keyframes spyGlow {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(99, 102, 241, .4);
+  }
+  50% {
+    box-shadow: 0 0 28px rgba(99, 102, 241, .75);
+  }
+}
+
+/* 결과 공개 시 confetti 느낌 글로우 */
+.spy-reveal--ai {
+  animation: spyReveal .5s cubic-bezier(.34, 1.4, .64, 1) both, spyGlow 2.5s 1s ease-in-out infinite;
+}
+
+/* ================================================
+   RESPONSIVE — 태블릿 이상 (≥ 480px)
+   ================================================ */
+
+@media (min-width: 480px) {
+  .spy-hints-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .spy-hero__title {
+    font-size: 36px;
+  }
+
+  .spy-keyword-card__word {
+    font-size: 42px;
+  }
+
+  .spy-result__title {
+    font-size: 42px;
+  }
+}
+
+/* ================================================
+   RESPONSIVE — 모바일 (≤ 430px)
+   ================================================ */
+
+@media (max-width: 430px) {
+  .spy-hero {
+    padding: 32px 16px 28px;
+  }
+
+  .spy-hero__title {
+    font-size: 26px;
+  }
+
+  .spy-keyword-card__word {
+    font-size: 30px;
+  }
+
+  .spy-vote-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .spy-result__stats {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .spy-reveal__name {
+    font-size: 22px;
+  }
+
+  .spy-result__title {
+    font-size: 28px;
+  }
+
+  .spy-form__row {
+    grid-template-columns: 1fr;
+  }
+
+  .spy-btn-row {
+    flex-direction: column;
+  }
+
+  .spy-status-step__label {
+    font-size: 9px;
+  }
+}
+
+/* ================================================
+   SCROLLBAR (전체)
+   ================================================ */
+
+.spy-shell * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--spy-surface-3) transparent;
+}
+
+.spy-shell *::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.spy-shell *::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.spy-shell *::-webkit-scrollbar-thumb {
+  background: var(--spy-surface-3);
+  border-radius: 999px;
+}

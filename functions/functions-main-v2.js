@@ -10,6 +10,7 @@ const secureFeed = require('./secure-feed-functions.js');
 const secureMulti = require('./secure-multi-functions.js');
 const secureInteractions = require('./secure-interactions-functions.js');
 const sitemap = require('./sitemap-functions.js');
+const sosoSpy = require('./soso-spy-functions.js');
 const aiMission = require('./ai-mission-functions.js');
 const aiHunt = require('./ai-hunt-functions.js');
 const settlement = require('./settlement-functions.js');
@@ -46,6 +47,7 @@ module.exports = {
   toggleFeedReaction: secureFeed.toggleFeedReaction,
   registerPostView: secureFeed.registerPostView,
   seoPost: secureFeed.seoPost,
+  seoGameSosoSpy: seoGame.seoGameSosoSpy,
   seoGameLiar: seoGame.seoGameLiar,
   seoGameMafia: seoGame.seoGameMafia,
   seoGameTouchKing: seoGame.seoGameTouchKing,
@@ -69,6 +71,9 @@ module.exports = {
   reactToAcrostic: secureInteractions.reactToAcrostic,
 
   ...sitemap,
+
+  // 소소스파이 게임 전용 Cloud Functions
+  ...sosoSpy,
 
   // Anthropic 기반 AI 미션/자동 콘텐츠를 대표 구현으로 사용
   ...aiMission,

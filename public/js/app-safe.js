@@ -128,6 +128,8 @@ async function registerRoutes() {
   registerRoute('/game/touch-king/:id', async ({ id }) => renderPage(() => import('./pages/touch-king-game.js').then(m => m.renderTouchKingGame({ id })), '터치왕게임'));
   registerRoute('/game/symbol-spy', async () => renderPage(() => import('./pages/touch-king-game.js').then(m => m.redirectOldSymbolSpy()), '터치왕게임'));
   registerRoute('/game/symbol-spy/:id', async ({ id }) => renderPage(() => import('./pages/touch-king-game.js').then(m => m.redirectOldSymbolSpy({ id })), '터치왕게임'));
+  registerRoute('/game/soso-spy', async () => renderPage((await import('./pages/soso-spy-game.js')).renderSosoSpyGame, '소소스파이'));
+  registerRoute('/game/soso-spy/:id', async ({ id }) => renderPage(() => import('./pages/soso-spy-game.js').then(m => m.renderSosoSpyGame({ id })), '소소스파이'));
   registerRoute('/game/soso-code', async () => renderPage((await import('./pages/soso-code-game.js')).renderSosoCodeGame, '소소코드'));
   registerRoute('/game/ai-court', async () => renderPage((await import('./pages/ai-court-game.js')).renderAiCourtGame, 'AI 재판소'));
 }
