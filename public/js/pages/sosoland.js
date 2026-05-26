@@ -1,6 +1,6 @@
 import { setMeta } from '../utils/seo.js';
 import { navigate } from '../router.js';
-import { GAMES } from '../games/registry.js';
+import { VISIBLE_GAMES } from '../games/registry.js';
 
 function esc(value) {
   return String(value || '').replace(/[&<>"']/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[m]));
@@ -101,6 +101,7 @@ export function renderSosoland() {
   setMeta('게임');
   const el = document.getElementById('page-content');
   if (!el) return;
+  const games = VISIBLE_GAMES;
 
   el.innerHTML = `
     <div class="arcade-lobby">
@@ -110,13 +111,13 @@ export function renderSosoland() {
         <div class="arcade-hero__orb arcade-hero__orb--3"></div>
         <div class="arcade-hero__content">
           <div class="arcade-badge">🎮 ORIGINAL AI GAME ZONE</div>
-          <h1 class="arcade-hero__title">소소킹 창작게임 5종</h1>
+          <h1 class="arcade-hero__title">소소킹 창작게임 ${games.length}종</h1>
           <p class="arcade-hero__desc">AI와 친구가 한 방에서 즐기는 추리·순발력·토론형 오리지널 게임<br><span class="arcade-hero__sub">저작권 리스크를 낮춘 자체 이름 · 자체 설정 · 자체 룰 확장 구조</span></p>
         </div>
       </section>
 
       <div class="arcade-game-grid">
-        ${GAMES.map(game => `
+        ${games.map(game => `
           <div class="arcade-card arcade-card--${game.key}" data-game-key="${game.key}">
             <div class="arcade-card__shine"></div>
             <div class="arcade-card__body">
@@ -145,7 +146,7 @@ export function renderSosoland() {
     btn.addEventListener('click', event => {
       event.preventDefault();
       event.stopPropagation();
-      const game = GAMES.find(item => item.key === btn.dataset.gameInfo);
+      const game = games.find(item => item.key === btn.dataset.gameInfo);
       if (game) openGameInfoLayer(game);
     });
   });
@@ -154,7 +155,7 @@ export function renderSosoland() {
     btn.addEventListener('click', event => {
       event.preventDefault();
       event.stopPropagation();
-      const game = GAMES.find(item => item.key === btn.dataset.gameStart);
+      const game = games.find(item => item.key === btn.dataset.gameStart);
       if (game) openGameLayer(game);
     });
   });
