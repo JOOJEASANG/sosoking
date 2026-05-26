@@ -74,8 +74,8 @@ function renderTopBar() {
   return `
     <header class="symbol-spy__topbar">
       <button class="symbol-spy__ghost" type="button" data-back>← 게임 목록</button>
-      <div class="symbol-spy__brand"><span>👑</span><b>터치왕게임</b><small>혼자 연습</small></div>
-      <div class="symbol-spy__score"><span>${state.score}점</span><span>${state.round}/${roundLimit()}판</span></div>
+      <div class="symbol-spy__brand"><span>👑</span><b>소소터치왕</b><small>혼자 연습</small></div>
+      <div class="symbol-spy__score"><span>${state.score}점</span><span>${state.round}/${roundLimit()}회</span></div>
     </header>`;
 }
 
@@ -97,9 +97,9 @@ function renderIntro() {
         <div class="symbol-spy__glow symbol-spy__glow--a"></div>
         <div class="symbol-spy__glow symbol-spy__glow--b"></div>
         <div class="symbol-spy__kicker">12개 그림 빠른 터치 대결</div>
-        <h1>같은 그림을 찾고<br>터치왕에 도전하라</h1>
+        <h1>같은 그림을 찾고<br>소소터치왕에 도전하라</h1>
         <p>중앙판 12개와 내 판 12개 중 동시에 있는 그림 하나를 가장 빠르게 누르는 순발력 게임입니다.</p>
-        <div class="symbol-spy__rules"><span>👑 터치왕</span><span>🧩 12개 그림판</span><span>⏱ ${ROUND_SECONDS}초 라운드</span><span>🏁 ${roundLimit()}판 승부</span></div>
+        <div class="symbol-spy__rules"><span>👑 소소터치왕</span><span>🧩 12개 그림판</span><span>⏱ ${ROUND_SECONDS}초 게임</span><span>🏁 ${roundLimit()}회 승부</span></div>
         <button class="symbol-spy__start" type="button" data-start>혼자 연습하기</button>
       </div>
       <div class="symbol-spy__notice"><b>게임 규칙</b><span>정답은 +100점, 남은 시간 × 5점 보너스, 오답은 -10점입니다.</span></div>
@@ -124,9 +124,9 @@ function renderPlaying() {
   const round = state.current;
   el.innerHTML = `
     <section class="symbol-spy symbol-spy--play touch-king-game">
-      <div class="touch-king-title">👑 터치왕게임</div>
+      <div class="touch-king-title">👑 소소터치왕</div>
       ${renderTopBar()}
-      <div class="symbol-spy__playhead"><div><b>ROUND ${round.round}/${roundLimit()}</b><span>${esc(round.message)}</span></div><div class="symbol-spy__timer" data-timer>${round.timeLeft}</div></div>
+      <div class="symbol-spy__playhead"><div><b>GAME ${round.round}/${roundLimit()}</b><span>${esc(round.message)}</span></div><div class="symbol-spy__timer" data-timer>${round.timeLeft}</div></div>
       <div class="symbol-spy__arena">
         ${renderBoard('중앙판 · 12개', round.center, 'center', true)}
         <div class="symbol-spy__versus"><span>같은 그림 1개</span><b>12</b><small>빠를수록 고득점</small></div>
@@ -147,15 +147,15 @@ function renderResult() {
   const avg = state.correctCount ? (state.totalMs / state.correctCount / 1000).toFixed(1) : '-';
   el.innerHTML = `
     <section class="symbol-spy symbol-spy--result touch-king-game">
-      <div class="touch-king-title">👑 터치왕게임</div>
+      <div class="touch-king-title">👑 소소터치왕</div>
       ${renderTopBar()}
       <div class="symbol-result">
-        <div class="symbol-result__badge">ROUND ${round.round} 결과</div>
-        <h1>${final ? '최종 결과' : '라운드 결과'}</h1>
+        <div class="symbol-result__badge">GAME ${round.round} 결과</div>
+        <h1>${final ? '최종 결과' : '게임 결과'}</h1>
         <p>${round.correct ? `정답 ${round.common}을 ${(round.responseMs / 1000).toFixed(1)}초 만에 찾았습니다.` : `정답은 ${round.common} 입니다.`}</p>
         <div class="symbol-result__answer"><span>정답 그림</span><b>${round.common}</b></div>
         <div class="symbol-result__stats"><div><b>${state.score}</b><span>점수</span></div><div><b>${state.correctCount}</b><span>정답 수</span></div><div><b>${avg}</b><span>평균 초</span></div></div>
-        <div class="symbol-result__actions"><button class="symbol-spy__ghost" type="button" data-restart>처음부터</button><button class="symbol-spy__start" type="button" data-next>${final ? '다시 하기' : '다음 라운드'}</button></div>
+        <div class="symbol-result__actions"><button class="symbol-spy__ghost" type="button" data-restart>처음부터</button><button class="symbol-spy__start" type="button" data-next>${final ? '다시 하기' : '다음 게임'}</button></div>
       </div>
     </section>`;
   bindBack();
@@ -211,7 +211,7 @@ function finishRound() {
 }
 
 export function renderTouchKingSolo() {
-  setMeta('터치왕게임');
+  setMeta('소소터치왕');
   clearTimer();
   initState(DEFAULT_ROUND_LIMIT);
   renderIntro();
