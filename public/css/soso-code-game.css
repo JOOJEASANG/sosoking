@@ -2234,3 +2234,28 @@
   margin-bottom: 10px;
   display: block;
 }
+
+/* ================================================
+   LIGHT MODE — [data-theme="light"] overrides
+   ================================================ */
+
+[data-theme="light"] .code-shell {
+  --code-bg: #f0fdf9;
+  --code-surface: #ffffff;
+  --code-surface2: #e6fdf7;
+  --code-border: #b2f5ea;
+  --code-primary: #0ea5e9;
+  --code-primary-dim: #0284c7;
+  --code-glow: rgba(14,165,233,.2);
+  --code-text: #0c1a14;
+  --code-text-dim: #0ea5e9;
+  --code-success: #16a34a;
+  --code-danger: #dc2626;
+}
+[data-theme="light"] .code-shell { background: var(--code-bg); color: var(--code-text); }
+[data-theme="light"] .code-hero { background: linear-gradient(160deg, #e0f7fa, #f0fdf9); border-color: rgba(14,165,233,.2); }
+[data-theme="light"] .code-digit-btn { background: #fff; border-color: rgba(14,165,233,.25); color: var(--code-text); }
+[data-theme="light"] .code-digit-btn--selected { background: rgba(14,165,233,.12); }
+[data-theme="light"] .code-action-card { background: #fff; border-color: rgba(14,165,233,.2); }
+[data-theme="light"] .code-back-btn { background: rgba(0,0,0,.06); border-color: rgba(0,0,0,.1); color: #0c1a14; }
+[data-theme="light"] .code-intel-bubble { background: #e0f7fa; color: #0284c7; }

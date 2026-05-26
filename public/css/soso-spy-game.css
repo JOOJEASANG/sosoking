@@ -1683,3 +1683,32 @@
   background: var(--spy-surface-3);
   border-radius: 999px;
 }
+
+/* ================================================
+   LIGHT MODE — [data-theme="light"] overrides
+   ================================================ */
+
+[data-theme="light"] .spy-shell {
+  --spy-bg: #f4f4ff;
+  --spy-surface: #ffffff;
+  --spy-surface-2: #eef0ff;
+  --spy-border: #d1d5f0;
+  --spy-primary: #6366f1;
+  --spy-primary-dim: #4f46e5;
+  --spy-glow: rgba(99,102,241,.18);
+  --spy-text: #1e1b4b;
+  --spy-text-dim: #6366f1;
+  --spy-accent: #7c3aed;
+  --spy-success: #16a34a;
+  --spy-danger: #dc2626;
+  --spy-warning: #d97706;
+}
+
+[data-theme="light"] .spy-shell { background: var(--spy-bg); color: var(--spy-text); }
+[data-theme="light"] .spy-hero { background: linear-gradient(160deg, #ede9fe, #f4f4ff); border-color: rgba(99,102,241,.2); }
+[data-theme="light"] .spy-timer-bar { background: #e5e7eb; }
+[data-theme="light"] .spy-hint-card { background: #fff; border-color: rgba(99,102,241,.2); }
+[data-theme="light"] .spy-hint-card--mine { background: rgba(99,102,241,.06); }
+[data-theme="light"] .spy-vote-btn { background: #fff; border-color: rgba(99,102,241,.25); color: #1e1b4b; }
+[data-theme="light"] .spy-chat-bubble { background: #f4f4ff; color: #1e1b4b; }
+[data-theme="light"] .spy-back-btn { background: rgba(0,0,0,.06); border-color: rgba(0,0,0,.1); color: #1e1b4b; }

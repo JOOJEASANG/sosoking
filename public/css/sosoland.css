@@ -1,15 +1,676 @@
+/* ================================================
+   소소랜드 (SOSOLAND) — 게임 로비 CSS
+   디자인: Premium arcade lobby, 2×2 game grid
+   Accent: per-game colors; uses CSS variables for
+           automatic dark/light mode support.
+   ================================================ */
+
+/* ── 페이지 레이아웃 ── */
 .sosoland-page {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding-bottom: 24px;
+  gap: 20px;
+  padding-bottom: 32px;
 }
 
-.sosoland-hero {
-  padding: 22px 18px;
-  border-radius: 22px;
-  background: linear-gradient(135deg, rgba(255,107,74,.14), rgba(124,58,237,.12));
-  border: 1px solid rgba(255,107,74,.2);
+/* ================================================
+   ARCADE LOBBY WRAPPER
+   ================================================ */
+
+.arcade-lobby {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ================================================
+   ARCADE HERO SECTION
+   ================================================ */
+
+.arcade-hero {
+  position: relative;
+  overflow: hidden;
+  padding: 36px 24px 32px;
+  border-radius: var(--radius-lg, 24px);
+  background:
+    radial-gradient(circle at 12% 10%, rgba(255, 255, 255, .45), transparent 30%),
+    linear-gradient(135deg,
+      rgba(255, 68, 34, .16) 0%,
+      rgba(124, 58, 237, .13) 52%,
+      rgba(20, 184, 166, .10) 100%);
+  border: 1px solid rgba(255, 68, 34, .2);
+  box-shadow: var(--shadow-md, 0 6px 24px rgba(20, 20, 43, .11));
+  min-height: 160px;
+}
+
+/* Dark mode hero */
+[data-theme="dark"] .arcade-hero {
+  background:
+    radial-gradient(circle at 12% 10%, rgba(255, 255, 255, .06), transparent 30%),
+    linear-gradient(135deg,
+      rgba(255, 68, 34, .22) 0%,
+      rgba(124, 58, 237, .18) 52%,
+      rgba(20, 184, 166, .12) 100%);
+  border-color: rgba(255, 68, 34, .28);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, .45);
+}
+
+/* Decorative orbs */
+.arcade-hero__orb {
+  position: absolute;
+  border-radius: 999px;
+  pointer-events: none;
+  filter: blur(2px);
+}
+
+.arcade-hero__orb--1 {
+  width: 200px;
+  height: 200px;
+  right: -70px;
+  top: -80px;
+  background: rgba(255, 255, 255, .36);
+}
+
+.arcade-hero__orb--2 {
+  width: 100px;
+  height: 100px;
+  right: 100px;
+  bottom: -36px;
+  background: rgba(255, 68, 34, .16);
+}
+
+.arcade-hero__orb--3 {
+  width: 64px;
+  height: 64px;
+  left: 30%;
+  top: -20px;
+  background: rgba(124, 58, 237, .12);
+}
+
+[data-theme="dark"] .arcade-hero__orb--1 {
+  background: rgba(255, 255, 255, .07);
+}
+
+[data-theme="dark"] .arcade-hero__orb--2 {
+  background: rgba(255, 68, 34, .25);
+}
+
+/* Hero content */
+.arcade-hero__content {
+  position: relative;
+  z-index: 2;
+  max-width: 520px;
+}
+
+/* Badge / eyebrow */
+.arcade-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 13px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .72);
+  border: 1px solid rgba(255, 255, 255, .9);
+  color: var(--color-primary, #FF4422);
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+[data-theme="dark"] .arcade-badge {
+  background: rgba(255, 68, 34, .16);
+  border-color: rgba(255, 68, 34, .32);
+  color: #ff7a5c;
+}
+
+.arcade-hero__title {
+  margin: 0 0 10px;
+  font-size: 28px;
+  font-weight: 1000;
+  line-height: 1.18;
+  letter-spacing: -.055em;
+  color: var(--color-text-primary, #14142B);
+}
+
+.arcade-hero__desc {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-text-secondary, #6E7191);
+  line-height: 1.6;
+  max-width: 460px;
+}
+
+.arcade-hero__sub {
+  display: block;
+  font-size: 12px;
+  margin-top: 5px;
+  color: var(--color-text-muted, #A0A3BD);
+}
+
+/* ================================================
+   GAME GRID — 2 × 2 on desktop, 1 col on mobile
+   ================================================ */
+
+.arcade-game-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+/* ================================================
+   ARCADE CARD — base
+   ================================================ */
+
+.arcade-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-base, 18px);
+  background: var(--color-surface, #FFFFFF);
+  border: 1.5px solid var(--color-border-light, #EEF0F6);
+  box-shadow: var(--shadow-sm, 0 2px 10px rgba(20, 20, 43, .09));
+  overflow: hidden;
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+  cursor: default;
+}
+
+.arcade-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md, 0 6px 24px rgba(20, 20, 43, .11));
+}
+
+/* Per-game accent via CSS custom property --card-accent */
+.arcade-card--soso-spy   { --card-accent: #6366f1; --card-accent-bg: rgba(99,102,241,.10); --card-accent-border: rgba(99,102,241,.28); }
+.arcade-card--soso-code  { --card-accent: #0ea5e9; --card-accent-bg: rgba(14,165,233,.10); --card-accent-border: rgba(14,165,233,.28); }
+.arcade-card--soso-deal  { --card-accent: #f59e0b; --card-accent-bg: rgba(245,158,11,.10); --card-accent-border: rgba(245,158,11,.28); }
+.arcade-card--touch-king { --card-accent: #f43f5e; --card-accent-bg: rgba(244,63,94,.10);  --card-accent-border: rgba(244,63,94,.28);  }
+
+/* Colored left border accent */
+.arcade-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--card-accent, var(--color-primary, #FF4422));
+  border-radius: 0 0 0 0;
+}
+
+.arcade-card:hover {
+  border-color: var(--card-accent-border, rgba(255, 68, 34, .28));
+}
+
+/* Decorative shine overlay */
+.arcade-card__shine {
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 140px;
+  height: 140px;
+  border-radius: 999px;
+  background: var(--card-accent-bg, rgba(255, 68, 34, .07));
+  pointer-events: none;
+}
+
+/* ── Card body ── */
+.arcade-card__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 18px 18px 12px 22px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Top row: icon + tag */
+.arcade-card__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+/* Icon circle */
+.arcade-card__icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  background: var(--card-accent-bg, rgba(255, 68, 34, .10));
+  border: 1.5px solid var(--card-accent-border, rgba(255, 68, 34, .2));
+  font-size: 28px;
+  flex: 0 0 auto;
+  transition: transform .18s ease;
+}
+
+.arcade-card:hover .arcade-card__icon {
+  transform: scale(1.08) rotate(-4deg);
+}
+
+/* Status / tag pill */
+.arcade-card__ai {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--color-surface-2, #F8F9FC);
+  color: var(--color-text-muted, #A0A3BD);
+  font-size: 10.5px;
+  font-weight: 900;
+  white-space: nowrap;
+  border: 1px solid var(--color-border-light, #EEF0F6);
+}
+
+/* Card title */
+.arcade-card__title {
+  margin: 0 0 6px;
+  font-size: 17px;
+  font-weight: 950;
+  letter-spacing: -.03em;
+  color: var(--color-text-primary, #14142B);
+  line-height: 1.2;
+}
+
+/* Card description */
+.arcade-card__desc {
+  flex: 1;
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--color-text-secondary, #6E7191);
+  line-height: 1.5;
+  min-height: 44px;
+}
+
+/* Meta row: players + pace + status */
+.arcade-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 0;
+}
+
+.arcade-card__meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--card-accent-bg, rgba(255, 68, 34, .07));
+  color: var(--card-accent, var(--color-primary, #FF4422));
+  font-size: 11px;
+  font-weight: 850;
+  border: 1px solid var(--card-accent-border, rgba(255, 68, 34, .15));
+}
+
+/* ── Card footer — two stacked buttons ── */
+.arcade-card__footer {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 10px 18px 16px 22px;
+  position: relative;
+  z-index: 1;
+  border-top: 1px solid var(--color-border-light, #EEF0F6);
+}
+
+/* Ghost / info button */
+.arcade-card__guide {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 100%;
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1.5px solid var(--card-accent-border, rgba(255, 68, 34, .22));
+  background: transparent;
+  color: var(--card-accent, var(--color-primary, #FF4422));
+  font-size: 13px;
+  font-weight: 900;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, transform .15s;
+  letter-spacing: -.01em;
+}
+
+.arcade-card__guide:hover {
+  background: var(--card-accent-bg, rgba(255, 68, 34, .08));
+  border-color: var(--card-accent, var(--color-primary, #FF4422));
+  transform: translateY(-1px);
+}
+
+.arcade-card__guide:active {
+  transform: scale(.97);
+}
+
+/* Filled / play button */
+.arcade-card__play {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 12px;
+  border: none;
+  background: var(--card-accent, var(--color-primary, #FF4422));
+  color: #fff;
+  font-size: 14px;
+  font-weight: 950;
+  font-family: inherit;
+  cursor: pointer;
+  transition: filter .15s, transform .15s, box-shadow .15s;
+  letter-spacing: -.015em;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--card-accent, #FF4422) 40%, transparent);
+}
+
+.arcade-card__play:hover {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--card-accent, #FF4422) 50%, transparent);
+}
+
+.arcade-card__play:active {
+  transform: scale(.97);
+  filter: brightness(.96);
+}
+
+/* ── Fallback box-shadow for older browsers ── */
+.arcade-card--soso-spy   .arcade-card__play { box-shadow: 0 4px 14px rgba(99,102,241,.4); }
+.arcade-card--soso-code  .arcade-card__play { box-shadow: 0 4px 14px rgba(14,165,233,.4); }
+.arcade-card--soso-deal  .arcade-card__play { box-shadow: 0 4px 14px rgba(245,158,11,.4); }
+.arcade-card--touch-king .arcade-card__play { box-shadow: 0 4px 14px rgba(244,63,94,.4); }
+
+.arcade-card--soso-spy   .arcade-card__play:hover { box-shadow: 0 6px 20px rgba(99,102,241,.55); }
+.arcade-card--soso-code  .arcade-card__play:hover { box-shadow: 0 6px 20px rgba(14,165,233,.55); }
+.arcade-card--soso-deal  .arcade-card__play:hover { box-shadow: 0 6px 20px rgba(245,158,11,.55); }
+.arcade-card--touch-king .arcade-card__play:hover { box-shadow: 0 6px 20px rgba(244,63,94,.55); }
+
+/* ================================================
+   DARK MODE — card overrides
+   ================================================ */
+
+[data-theme="dark"] .arcade-card {
+  background: var(--color-surface, #252840);
+  border-color: var(--color-border, #3E4268);
+}
+
+[data-theme="dark"] .arcade-card:hover {
+  border-color: var(--card-accent-border, rgba(255, 68, 34, .45));
+}
+
+[data-theme="dark"] .arcade-card__ai {
+  background: var(--color-surface-2, #2C2F4A);
+  border-color: var(--color-border, #3E4268);
+}
+
+[data-theme="dark"] .arcade-card__footer {
+  border-top-color: var(--color-border, #3E4268);
+}
+
+[data-theme="dark"] .arcade-card__meta span {
+  background: var(--card-accent-bg, rgba(255, 68, 34, .12));
+  border-color: var(--card-accent-border, rgba(255, 68, 34, .22));
+}
+
+/* ================================================
+   BOTTOM NAV CENTER LABEL (unchanged)
+   ================================================ */
+
+.bottom-nav__center-label {
+  position: absolute;
+  left: 50%;
+  bottom: -17px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 10px;
+  font-weight: 900;
+  color: var(--color-primary, #FF4422);
+}
+
+/* ================================================
+   DESKTOP GAME LAYER — full-screen overlay + panel
+   ================================================ */
+
+.desktop-game-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.desktop-game-layer__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(6, 8, 18, .7);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.desktop-game-layer__panel {
+  position: relative;
+  width: min(900px, calc(100vw - 48px));
+  height: min(700px, calc(100vh - 48px));
+  border-radius: 28px;
+  background: var(--color-surface, #FFFFFF);
+  border: 1px solid var(--color-border, #E4E7EF);
+  box-shadow: 0 32px 96px rgba(0, 0, 0, .36);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+[data-theme="dark"] .desktop-game-layer__panel {
+  background: var(--color-surface, #252840);
+  border-color: var(--color-border, #3E4268);
+  box-shadow: 0 32px 96px rgba(0, 0, 0, .65);
+}
+
+.desktop-game-layer__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--color-border-light, #EEF0F6);
+  flex: 0 0 auto;
+}
+
+[data-theme="dark"] .desktop-game-layer__head {
+  border-bottom-color: var(--color-border, #3E4268);
+}
+
+.desktop-game-layer__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 950;
+  color: var(--color-text-primary, #14142B);
+  letter-spacing: -.03em;
+  min-width: 0;
+}
+
+.desktop-game-layer__title span {
+  font-size: 22px;
+}
+
+.desktop-game-layer__title b {
+  font-size: 15px;
+}
+
+.desktop-game-layer__title small {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--color-text-muted, #A0A3BD);
+  margin-left: 2px;
+}
+
+.desktop-game-layer__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.desktop-game-layer__mini {
+  padding: 6px 13px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border, #E4E7EF);
+  background: var(--color-surface-2, #F8F9FC);
+  color: var(--color-text-secondary, #6E7191);
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: all .15s;
+  font-family: inherit;
+}
+
+.desktop-game-layer__mini:hover {
+  border-color: var(--color-primary, #FF4422);
+  color: var(--color-primary, #FF4422);
+}
+
+.desktop-game-layer__close {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  border: 1px solid var(--color-border-light, #EEF0F6);
+  background: var(--color-surface-2, #F8F9FC);
+  color: var(--color-text-primary, #14142B);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  font-weight: 900;
+  transition: all .15s;
+  font-family: inherit;
+}
+
+.desktop-game-layer__close:hover {
+  background: var(--color-border-light, #EEF0F6);
+}
+
+.desktop-game-layer__frame {
+  flex: 1;
+  width: 100%;
+  border: none;
+  background: var(--color-bg, #F1F3F8);
+}
+
+/* ================================================
+   RESPONSIVE — mobile ≤640px: 1 column grid
+   ================================================ */
+
+@media (max-width: 640px) {
+  .arcade-game-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .arcade-hero {
+    padding: 28px 18px 24px;
+    min-height: unset;
+  }
+
+  .arcade-hero__title {
+    font-size: 22px;
+  }
+
+  .arcade-hero__desc {
+    font-size: 13px;
+  }
+
+  .arcade-card__body {
+    padding: 16px 16px 10px 20px;
+  }
+
+  .arcade-card__footer {
+    padding: 10px 16px 14px 20px;
+  }
+
+  .arcade-card__icon {
+    width: 44px;
+    height: 44px;
+    font-size: 24px;
+  }
+
+  .arcade-card__title {
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 767px) {
+  .desktop-game-layer {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .desktop-game-layer__panel {
+    width: 100%;
+    height: 90vh;
+    border-radius: 24px 24px 0 0;
+    border-left: 0;
+    border-right: 0;
+    border-bottom: 0;
+  }
+}
+
+/* ================================================
+   RESPONSIVE — large desktop ≥1024px
+   ================================================ */
+
+@media (min-width: 1024px) {
+  .arcade-hero {
+    padding: 44px 32px 40px;
+    min-height: 200px;
+  }
+
+  .arcade-hero__title {
+    font-size: 32px;
+  }
+
+  .arcade-game-grid {
+    gap: 18px;
+  }
+
+  .arcade-card__body {
+    padding: 22px 22px 14px 26px;
+  }
+
+  .arcade-card__footer {
+    padding: 12px 22px 18px 26px;
+  }
+
+  .arcade-card__title {
+    font-size: 18px;
+  }
+
+  .arcade-card__desc {
+    font-size: 14px;
+  }
+}
+
+/* ================================================
+   LEGACY .sosoland-* CLASSES
+   Kept for any existing markup that still uses them
+   ================================================ */
+
+.sosoland-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-bottom: 32px;
 }
 
 .sosoland-hero--arcade {
@@ -19,12 +680,26 @@
   gap: 18px;
   overflow: hidden;
   min-height: 178px;
-  padding: 26px 22px;
+  padding: 30px 24px;
+  border-radius: var(--radius-lg, 24px);
   background:
-    radial-gradient(circle at 12% 10%, rgba(255, 255, 255, .55), transparent 28%),
-    linear-gradient(135deg, rgba(255, 107, 74, .20), rgba(124, 58, 237, .18) 52%, rgba(20, 184, 166, .12));
-  border: 1px solid rgba(255,107,74,.22);
-  box-shadow: 0 14px 35px rgba(17, 24, 39, .08);
+    radial-gradient(circle at 12% 10%, rgba(255, 255, 255, .45), transparent 28%),
+    linear-gradient(135deg,
+      rgba(255, 68, 34, .18) 0%,
+      rgba(124, 58, 237, .15) 52%,
+      rgba(20, 184, 166, .10) 100%);
+  border: 1px solid rgba(255, 68, 34, .2);
+  box-shadow: var(--shadow-md, 0 6px 24px rgba(20, 20, 43, .11));
+}
+
+[data-theme="dark"] .sosoland-hero--arcade {
+  background:
+    radial-gradient(circle at 12% 10%, rgba(255, 255, 255, .05), transparent 28%),
+    linear-gradient(135deg,
+      rgba(255, 68, 34, .22) 0%,
+      rgba(124, 58, 237, .18) 52%,
+      rgba(20, 184, 166, .12) 100%);
+  border-color: rgba(255, 68, 34, .3);
 }
 
 .sosoland-hero__content {
@@ -44,7 +719,11 @@
   height: 190px;
   right: -62px;
   top: -70px;
-  background: rgba(255, 255, 255, .42);
+  background: rgba(255, 255, 255, .38);
+}
+
+[data-theme="dark"] .sosoland-hero__glow--one {
+  background: rgba(255, 255, 255, .06);
 }
 
 .sosoland-hero__glow--two {
@@ -52,7 +731,7 @@
   height: 92px;
   right: 112px;
   bottom: -30px;
-  background: rgba(255, 107, 74, .18);
+  background: rgba(255, 68, 34, .18);
 }
 
 .sosoland-hero__console {
@@ -64,9 +743,14 @@
   gap: 8px;
   padding: 14px;
   border-radius: 24px;
-  background: rgba(255, 255, 255, .64);
+  background: rgba(255, 255, 255, .62);
   border: 1px solid rgba(255, 255, 255, .86);
   box-shadow: 0 12px 30px rgba(17, 24, 39, .08);
+}
+
+[data-theme="dark"] .sosoland-hero__console {
+  background: rgba(255, 255, 255, .08);
+  border-color: rgba(255, 255, 255, .14);
 }
 
 .sosoland-hero__console span {
@@ -75,17 +759,17 @@
   width: 38px;
   height: 38px;
   border-radius: 14px;
-  background: var(--color-surface);
-  color: var(--color-primary);
+  background: var(--color-surface, #FFFFFF);
+  color: var(--color-primary, #FF4422);
   font-size: 15px;
   font-weight: 950;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-sm, 0 2px 10px rgba(20, 20, 43, .09));
 }
 
 .sosoland-hero__eyebrow {
   font-size: 12px;
   font-weight: 950;
-  color: var(--color-primary);
+  color: var(--color-primary, #FF4422);
   letter-spacing: .08em;
   margin-bottom: 8px;
 }
@@ -94,14 +778,14 @@
   margin: 0;
   font-size: 27px;
   line-height: 1.22;
-  color: var(--color-text-primary);
-  letter-spacing: -0.055em;
+  color: var(--color-text-primary, #14142B);
+  letter-spacing: -.055em;
 }
 
 .sosoland-hero p {
   max-width: 470px;
   margin: 11px 0 0;
-  color: var(--color-text-secondary);
+  color: var(--color-text-secondary, #6E7191);
   font-size: 14px;
   line-height: 1.6;
 }
@@ -119,49 +803,57 @@
   min-height: 30px;
   padding: 5px 11px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, .74);
+  background: rgba(255, 255, 255, .7);
   border: 1px solid rgba(255, 255, 255, .9);
-  color: var(--color-text-secondary);
+  color: var(--color-text-secondary, #6E7191);
   font-size: 12px;
   font-weight: 900;
 }
 
-.sosoland-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
+[data-theme="dark"] .sosoland-hero__chips span {
+  background: rgba(255, 255, 255, .08);
+  border-color: rgba(255, 255, 255, .14);
 }
 
+/* Legacy 2-col grid (kept for backward compat) */
+.sosoland-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+/* Legacy card */
 .sosoland-card {
   position: relative;
   overflow: hidden;
-  padding: 16px;
-  border-radius: 20px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border-light);
-  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  padding: 18px;
+  border-radius: var(--radius-base, 18px);
+  background: var(--color-surface, #FFFFFF);
+  border: 1.5px solid var(--color-border-light, #EEF0F6);
+  box-shadow: var(--shadow-sm, 0 2px 10px rgba(20, 20, 43, .09));
   cursor: pointer;
-  transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
 }
 
-.sosoland-card::after {
+.sosoland-card::before {
   content: '';
   position: absolute;
-  width: 84px;
-  height: 84px;
-  right: -28px;
-  top: -28px;
-  border-radius: 999px;
-  background: var(--color-primary-bg);
-  opacity: .72;
-  pointer-events: none;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  background: var(--card-accent, var(--color-primary, #FF4422));
 }
 
 .sosoland-card:hover {
-  transform: translateY(-2px);
-  border-color: rgba(255, 107, 74, .32);
-  box-shadow: 0 12px 28px rgba(17, 24, 39, .08);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md, 0 6px 24px rgba(20, 20, 43, .11));
 }
+
+.sosoland-card--soso-spy   { --card-accent: #6366f1; --card-accent-bg: rgba(99,102,241,.10); --card-accent-border: rgba(99,102,241,.28); }
+.sosoland-card--soso-code  { --card-accent: #0ea5e9; --card-accent-bg: rgba(14,165,233,.10); --card-accent-border: rgba(14,165,233,.28); }
+.sosoland-card--soso-deal  { --card-accent: #f59e0b; --card-accent-bg: rgba(245,158,11,.10); --card-accent-border: rgba(245,158,11,.28); }
+.sosoland-card--touch-king { --card-accent: #f43f5e; --card-accent-bg: rgba(244,63,94,.10);  --card-accent-border: rgba(244,63,94,.28);  }
 
 .sosoland-card__top {
   position: relative;
@@ -174,76 +866,115 @@
 }
 
 .sosoland-card__icon {
-  width: 46px;
-  height: 46px;
-  border-radius: 17px;
-  background: var(--color-primary-bg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  background: var(--card-accent-bg, rgba(255, 68, 34, .10));
+  border: 1.5px solid var(--card-accent-border, rgba(255, 68, 34, .2));
+  font-size: 28px;
+  flex: 0 0 auto;
 }
 
 .sosoland-card__tag {
   min-height: 22px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--color-surface-2, #F8F9FC);
+  color: var(--color-text-muted, #A0A3BD);
+  font-size: 10.5px;
+  font-weight: 900;
+  border: 1px solid var(--color-border-light, #EEF0F6);
+}
+
+.sosoland-card h2 { margin: 0 0 6px; font-size: 16px; font-weight: 950; color: var(--color-text-primary, #14142B); }
+.sosoland-card p  { flex: 1; min-height: 44px; margin: 0 0 12px; color: var(--color-text-secondary, #6E7191); font-size: 13px; line-height: 1.5; }
+
+.sosoland-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 12px;
+}
+
+.sosoland-card__meta span {
+  display: inline-flex;
+  align-items: center;
   padding: 3px 8px;
   border-radius: 999px;
-  background: var(--color-surface-2);
-  color: var(--color-text-muted);
+  background: var(--card-accent-bg, rgba(255, 68, 34, .07));
+  color: var(--card-accent, var(--color-primary, #FF4422));
   font-size: 11px;
-  font-weight: 900;
+  font-weight: 850;
+  border: 1px solid var(--card-accent-border, rgba(255, 68, 34, .15));
 }
 
-.sosoland-card h2,
-.sosoland-card p,
-.sosoland-card .btn {
-  position: relative;
-  z-index: 1;
+.sosoland-card__footer {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-border-light, #EEF0F6);
 }
 
-.sosoland-card h2 {
-  margin: 0 0 6px;
-  font-size: 16px;
-  color: var(--color-text-primary);
-}
-
-.sosoland-card p {
-  min-height: 46px;
-  margin: 0 0 12px;
-  color: var(--color-text-secondary);
+.sosoland-card__btn-info {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 100%;
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1.5px solid var(--card-accent-border, rgba(255, 68, 34, .22));
+  background: transparent;
+  color: var(--card-accent, var(--color-primary, #FF4422));
   font-size: 13px;
-  line-height: 1.45;
-}
-
-.sosoland-card--mafia .sosoland-card__icon { background: rgba(124, 58, 237, .12); }
-.sosoland-card--marble .sosoland-card__icon { background: rgba(20, 184, 166, .12); }
-
-.bottom-nav__center-label {
-  position: absolute;
-  left: 50%;
-  bottom: -17px;
-  transform: translateX(-50%);
-  white-space: nowrap;
-  font-size: 10px;
   font-weight: 900;
-  color: var(--color-primary);
+  font-family: inherit;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
 }
 
-@media (max-width: 767px) {
+.sosoland-card__btn-info:hover {
+  background: var(--card-accent-bg, rgba(255, 68, 34, .08));
+  border-color: var(--card-accent, var(--color-primary, #FF4422));
+}
+
+.sosoland-card__btn-play {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 12px;
+  border: none;
+  background: var(--card-accent, var(--color-primary, #FF4422));
+  color: #fff;
+  font-size: 14px;
+  font-weight: 950;
+  font-family: inherit;
+  cursor: pointer;
+  transition: filter .15s, transform .15s;
+  letter-spacing: -.015em;
+}
+
+.sosoland-card__btn-play:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+@media (max-width: 640px) {
+  .sosoland-grid { grid-template-columns: 1fr; }
+
   .sosoland-hero--arcade {
     grid-template-columns: 1fr;
     padding: 22px 18px;
   }
 
-  .sosoland-hero__console {
-    display: none;
-  }
-
-  .sosoland-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .sosoland-hero h1 {
-    font-size: 22px;
-  }
+  .sosoland-hero__console { display: none; }
+  .sosoland-hero h1 { font-size: 22px; }
 }

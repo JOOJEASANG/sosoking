@@ -796,3 +796,66 @@
     width: 100%;
   }
 }
+
+/* ================================================
+   투표 글쓰기 — 간결한 칩 버전
+   (moved from liar-game.css — used by multi-write forms)
+   ================================================ */
+
+.mw-vote-compact {
+  padding: 16px;
+  background: var(--color-surface-2);
+  border-radius: 16px;
+  border: 1px solid var(--color-border-light);
+}
+
+.mw-vote-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.mw-vote-chip {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1.5px solid var(--color-border-light);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 800;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all .16s ease;
+  white-space: nowrap;
+}
+
+.mw-vote-chip:hover {
+  border-color: rgba(255, 107, 74, .35);
+  color: var(--color-primary);
+  background: var(--color-primary-bg);
+}
+
+.mw-vote-chip.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(255, 107, 74, .3);
+}
+
+[data-theme="dark"] .mw-vote-compact {
+  background: rgba(255, 255, 255, .04);
+  border-color: rgba(255, 255, 255, .09);
+}
+
+[data-theme="dark"] .mw-vote-chip {
+  background: rgba(255, 255, 255, .06);
+  border-color: rgba(255, 255, 255, .12);
+  color: rgba(255, 255, 255, .65);
+}
+
+[data-theme="dark"] .mw-vote-chip:hover {
+  background: rgba(255, 107, 74, .12);
+  border-color: rgba(255, 107, 74, .4);
+  color: #fb923c;
+}

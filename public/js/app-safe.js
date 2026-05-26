@@ -120,10 +120,6 @@ async function registerRoutes() {
   registerRoute('/privacy', async () => renderPage((await import('./pages/privacy.js')).renderPrivacy, '개인정보처리방침'));
   registerRoute('/legal/terms', async () => renderPage((await import('./pages/terms.js')).renderTerms, '이용약관'));
   registerRoute('/legal/privacy', async () => renderPage((await import('./pages/privacy.js')).renderPrivacy, '개인정보처리방침'));
-  registerRoute('/game/liar', async () => renderPage((await import('./pages/liar-game.js')).renderLiarGame, 'AI 라이어 찾기'));
-  registerRoute('/game/liar/:id', async ({ id }) => renderPage(() => import('./pages/liar-game.js').then(m => m.renderLiarGame({ id })), 'AI 라이어 찾기'));
-  registerRoute('/game/mafia', async () => renderPage((await import('./pages/mafia-game.js')).renderMafiaGame, 'AI 마피아'));
-  registerRoute('/game/mafia/:id', async ({ id }) => renderPage(() => import('./pages/mafia-game.js').then(m => m.renderMafiaGame({ id })), 'AI 마피아'));
   registerRoute('/game/touch-king', async () => renderPage((await import('./pages/touch-king-game.js')).renderTouchKingGame, '터치왕게임'));
   registerRoute('/game/touch-king/:id', async ({ id }) => renderPage(() => import('./pages/touch-king-game.js').then(m => m.renderTouchKingGame({ id })), '터치왕게임'));
   registerRoute('/game/symbol-spy', async () => renderPage(() => import('./pages/touch-king-game.js').then(m => m.redirectOldSymbolSpy()), '터치왕게임'));
@@ -134,7 +130,6 @@ async function registerRoutes() {
   registerRoute('/game/soso-code/:id', async ({ id }) => renderPage(() => import('./pages/soso-code-game.js').then(m => m.renderSosoCodeGame({ id })), '소소코드'));
   registerRoute('/game/soso-deal', async () => renderPage((await import('./pages/soso-deal-game.js')).renderSosoDealGame, '소소딜'));
   registerRoute('/game/soso-deal/:id', async ({ id }) => renderPage(() => import('./pages/soso-deal-game.js').then(m => m.renderSosoDealGame({ id })), '소소딜'));
-  registerRoute('/game/ai-court', async () => renderPage((await import('./pages/ai-court-game.js')).renderAiCourtGame, 'AI 재판소'));
 }
 
 async function isStrictAdmin(user) {

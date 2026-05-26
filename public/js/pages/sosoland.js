@@ -110,7 +110,7 @@ export function renderSosoland() {
         <div class="arcade-hero__orb arcade-hero__orb--3"></div>
         <div class="arcade-hero__content">
           <div class="arcade-badge">🎮 ORIGINAL AI GAME ZONE</div>
-          <h1 class="arcade-hero__title">소소킹 창작게임 5종</h1>
+          <h1 class="arcade-hero__title">소소킹 창작게임 4종</h1>
           <p class="arcade-hero__desc">AI와 친구가 한 방에서 즐기는 추리·순발력·토론형 오리지널 게임<br><span class="arcade-hero__sub">저작권 리스크를 낮춘 자체 이름 · 자체 설정 · 자체 룰 확장 구조</span></p>
         </div>
       </section>

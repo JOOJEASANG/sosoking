@@ -52,10 +52,7 @@ module.exports = {
   seoGameSosoCode: seoGame.seoGameSosoCode,
   seoGameSosoSpy: seoGame.seoGameSosoSpy,
   seoGameSosoDeal: seoGame.seoGameSosoDeal,
-  seoGameLiar: seoGame.seoGameLiar,
-  seoGameMafia: seoGame.seoGameMafia,
   seoGameTouchKing: seoGame.seoGameTouchKing,
-  seoGameAiCourt: seoGame.seoGameAiCourt,
   ...aiGame,
 
   // 멀티 게시글 전용 보안 액션

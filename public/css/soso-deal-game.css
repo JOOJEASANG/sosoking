@@ -1868,3 +1868,41 @@
 .deal-hand .deal-card {
   animation: dealCardAppear 0.2s ease both;
 }
+
+/* ================================================
+   LIGHT MODE — [data-theme="light"] overrides
+   ================================================ */
+
+[data-theme="light"] .deal-shell {
+  --deal-bg: #fffbf0;
+  --deal-surface: #ffffff;
+  --deal-surface2: #fef9e7;
+  --deal-border: #fde68a;
+  --deal-primary: #d97706;
+  --deal-primary-dim: #b45309;
+  --deal-glow: rgba(217,119,6,.18);
+  --deal-text: #1c1200;
+  --deal-text-dim: #92400e;
+  --deal-gold: #d97706;
+  --deal-silver: #64748b;
+  --deal-food: #65a30d;
+  --deal-wood: #92400e;
+  --deal-iron: #475569;
+  --deal-gem: #7c3aed;
+  --deal-success: #16a34a;
+  --deal-danger: #dc2626;
+}
+[data-theme="light"] .deal-shell { background: var(--deal-bg); color: var(--deal-text); }
+[data-theme="light"] .deal-hero { background: linear-gradient(160deg, #fef3c7, #fffbf0); border-color: rgba(217,119,6,.2); }
+[data-theme="light"] .deal-card { background: #fff; border-color: rgba(217,119,6,.2); }
+[data-theme="light"] .deal-card:hover { border-color: var(--deal-primary); }
+[data-theme="light"] .deal-market-card { background: #fff; border-color: rgba(217,119,6,.2); }
+[data-theme="light"] .deal-back-btn { background: rgba(0,0,0,.06); border-color: rgba(0,0,0,.1); color: #1c1200; }
+[data-theme="light"] .deal-scoreboard { background: #fff; border-color: #fde68a; }
+[data-theme="light"] .deal-log { background: #fff; border-color: #fde68a; }
+[data-theme="light"] .deal-action-panel { background: #fff; border-color: rgba(217,119,6,.4); }
+[data-theme="light"] .deal-propose-form { background: #fef9e7; border-color: #fde68a; }
+[data-theme="light"] .deal-shell .form-input,
+[data-theme="light"] .deal-shell .form-select { background: #fff; border-color: #fde68a; color: #1c1200; }
+[data-theme="light"] .deal-shell .btn--secondary { background: #fef9e7; color: #92400e; border-color: #fde68a; }
+[data-theme="light"] .deal-shell .btn--ghost { color: #92400e; border-color: #fde68a; }
