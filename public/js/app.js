@@ -6,8 +6,6 @@ import { renderSidebar } from './components/sidebar.js';
 import { initToast } from './components/toast.js';
 import { appState } from './state.js';
 import './secure-interactions-actions.js';
-import './initial-game-enhancer.js';
-import './representative-games-enhancer.js';
 import './write-normalizer.js';
 import './account-secure-actions.js';
 import './admin-session-guard.js';
@@ -16,7 +14,6 @@ import './admin-ai-mission-actions.js';
 import './admin-ai-ops-actions.js';
 import './admin-post-list-normalizer.js';
 import './nickname-icon-actions.js';
-import './social-play-enhancer.js';
 import './site-copy-normalizer.js';
 import {
   collection, query, where, getDocs, getDoc, doc, limit,
@@ -34,9 +31,6 @@ import { renderTerms }   from './pages/terms.js';
 import { renderPrivacy } from './pages/privacy.js';
 import { renderScraps }  from './pages/scraps.js';
 import { renderHall }    from './pages/hall.js';
-import { renderSosoland } from './pages/sosoland.js';
-import { renderLiarGame } from './pages/liar-game.js';
-import { renderMafiaGame } from './pages/mafia-game.js';
 
 export { appState };
 
@@ -67,6 +61,18 @@ async function loadUserMeta(uid) {
   } catch { /* non-critical */ }
 }
 
+function renderRemovedGamePage() {
+  const el = document.getElementById('page-content');
+  if (!el) return;
+  el.innerHTML = `
+    <div class="empty-state">
+      <div class="empty-state__icon">🔍</div>
+      <div class="empty-state__title">게임 기능은 제거되었습니다</div>
+      <div class="empty-state__desc">현재 소소킹은 피드 중심으로 운영됩니다.</div>
+      <button class="btn btn--primary" onclick="navigate('/feed')">피드로 이동</button>
+    </div>`;
+}
+
 export async function initApp() {
   document.getElementById('app').innerHTML = `
     <div class="app-shell">
@@ -89,7 +95,6 @@ export async function initApp() {
                 <div class="site-footer__links">
                   <a href="#/feed">피드</a>
                   <a href="#/write?type=multi&preset=drip">드립</a>
-                  <a href="#/sosoland">게임</a>
                   <a href="#/guide">이용안내</a>
                 </div>
               </div>
@@ -168,11 +173,11 @@ export async function initApp() {
   registerRoute('/',           () => renderHome());
   registerRoute('/feed',       () => renderFeed());
   registerRoute('/write',      () => renderWrite());
-  registerRoute('/sosoland',   () => renderSosoland());
-  registerRoute('/game/liar',  () => renderLiarGame());
-  registerRoute('/game/liar/:id', ({ id }) => renderLiarGame({ id }));
-  registerRoute('/game/mafia', () => renderMafiaGame());
-  registerRoute('/game/mafia/:id', ({ id }) => renderMafiaGame({ id }));
+  registerRoute('/sosoland',   () => renderRemovedGamePage());
+  registerRoute('/game/liar',  () => renderRemovedGamePage());
+  registerRoute('/game/liar/:id', () => renderRemovedGamePage());
+  registerRoute('/game/mafia', () => renderRemovedGamePage());
+  registerRoute('/game/mafia/:id', () => renderRemovedGamePage());
   registerRoute('/detail/:id', ({ id }) => renderDetail(id));
   registerRoute('/account',    () => renderAccount());
   registerRoute('/scraps',     () => renderScraps());
@@ -185,7 +190,6 @@ export async function initApp() {
 
   initRouter();
 
-  // head의 인라인 스크립트가 먼저 잡은 이벤트 복구
   if (window.__pwaInstallPrompt) {
     appState.installPrompt = window.__pwaInstallPrompt;
     renderHeader();
