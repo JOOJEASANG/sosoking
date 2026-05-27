@@ -18,8 +18,8 @@ function iconPlus() {
   return svgIcon('<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>', '2.5');
 }
 
-function iconGame() {
-  return svgIcon('<path stroke-linecap="round" stroke-linejoin="round" d="M7 10h4M9 8v4M15.5 9.5h.01M18 12h.01M14 13.5h.01M16.5 15h.01"/><path stroke-linecap="round" stroke-linejoin="round" d="M5.5 6.5h13a3 3 0 0 1 3 3v5.5a3 3 0 0 1-3 3h-1.1a2 2 0 0 1-1.42-.59l-1.39-1.41H9.4L8.01 17.41A2 2 0 0 1 6.6 18H5.5a3 3 0 0 1-3-3V9.5a3 3 0 0 1 3-3Z"/>');
+function iconStats() {
+  return svgIcon('<path stroke-linecap="round" stroke-linejoin="round" d="M4 19V5m0 14h16M8 16v-5m4 5V8m4 8v-9"/>');
 }
 
 function iconAccount() {
@@ -27,7 +27,6 @@ function iconAccount() {
 }
 
 function isNavActive(navPath, currentPath) {
-  if (navPath === '/sosoland') return currentPath === '/sosoland' || currentPath.startsWith('/game/');
   if (navPath === '/write?type=multi') return currentPath === '/write';
   return currentPath === navPath;
 }
@@ -38,7 +37,7 @@ function navItems() {
     { id: 'home',    label: '홈',    path: '/',                 icon: iconHome() },
     { id: 'feed',    label: '피드',  path: '/feed',             icon: iconFeed() },
     { id: 'write',   label: '글쓰기', path: '/write?type=multi', icon: iconPlus(), isCenter: true },
-    { id: 'game',    label: '게임',  path: '/sosoland',         icon: iconGame() },
+    { id: 'hall',    label: '통계',  path: '/hall',             icon: iconStats() },
     { id: 'account', label: '내정보', path: '/account',          icon: iconAccount(), badge: unread },
   ];
 }
