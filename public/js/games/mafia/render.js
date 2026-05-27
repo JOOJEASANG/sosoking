@@ -1,6 +1,6 @@
 import { buildGameInviteUrl, esc, findMyPlayer, isRoomHost } from '../common.js';
 import { renderGameChatHTML } from '../chat.js';
-import { alivePlayers, roleLabel, roleGuide, voteCounts } from './rules.js';
+import { roleLabel, roleGuide, voteCounts } from './rules.js';
 import { auth } from '../../firebase.js';
 
 const DIFFICULTY_LABELS = { easy: '😊 쉬움', normal: '😐 보통', hard: '😈 어려움' };
@@ -86,7 +86,7 @@ export function renderMafiaLobbyHTML() {
             <button type="button" class="difficulty-btn active" data-difficulty="normal">😐 보통</button>
             <button type="button" class="difficulty-btn" data-difficulty="hard">😈 어려움</button>
           </div>
-          <div class="form-hint" id="mafia-difficulty-hint">AI가 약간의 어색함을 내비쳐 잡기 쉬운 편이에요.</div>
+          <div class="form-hint" id="mafia-difficulty-hint">AI가 자연스럽게 대화하지만 가끔 어색한 부분이 있습니다.</div>
         </div>
 
         <button class="btn btn--primary btn--full" id="mafia-create" style="margin-top:4px">방 만들기</button>
@@ -168,10 +168,9 @@ function renderPhaseCard(room, players) {
   const waiting = room.status === 'waiting';
   const playing = room.status === 'playing';
   const ended = room.status === 'ended';
-  const humanPlayers = players.filter(p => !p.isAI);
-  const enough = humanPlayers.length >= 3;
+  const enough = players.length >= 3;
   const hasAI = !!room.withAI;
-  const alive = players.filter(p => p.alive !== false && !p.isAI);
+  const alive = players.filter(p => p.alive !== false);
 
   return `
     <div class="game-phase-v2">
@@ -193,7 +192,7 @@ function renderPhaseCard(room, players) {
       </div>
       <div class="game-phase-log">
         ${waiting
-          ? enough ? `참가자 ${humanPlayers.length}명 대기중${hasAI ? ' · 🤖 AI 참가 예정' : ''} — 방장이 시작하면 돼요`
+          ? enough ? `참가자 ${players.length}명 대기중${hasAI ? ' · 🤖 AI 참가 예정' : ''} — 방장이 시작하면 돼요`
                    : '최소 3명이 모여야 시작할 수 있어요'
           : esc(room.log || `생존 ${alive.length}명 · 채팅으로 토론하세요`)}
       </div>
@@ -202,7 +201,7 @@ function renderPhaseCard(room, players) {
 
 function renderVotePanel(me, players) {
   if (!me || me.alive === false) return '';
-  const targets = players.filter(p => p.alive !== false && p.uid !== me.uid && !p.isAI);
+  const targets = players.filter(p => p.alive !== false && p.uid !== me.uid);
   if (!targets.length) return '';
   return `
     <div class="mafia-vote-panel">
@@ -228,7 +227,7 @@ export function renderMafiaRoomHTML(room, players = [], chats = []) {
   const joined = !!me;
   const host = isRoomHost(room);
   const gameOver = room.status === 'ended';
-  const canStart = host && room.status === 'waiting' && visiblePlayers.filter(p => !p.isAI).length >= 3;
+  const canStart = host && room.status === 'waiting' && visiblePlayers.length >= 3;
   const counts = voteCounts(visiblePlayers);
   const hasAI = !!(room.withAI || room.aiPlayerUid);
   const diff = DIFFICULTY_LABELS[room.aiDifficulty] || '';
@@ -270,7 +269,7 @@ export function renderMafiaRoomHTML(room, players = [], chats = []) {
             <span>${visiblePlayers.length}명</span>
           </div>
           <div class="game-player-list-v2">
-            ${visiblePlayers.filter(p => !p.isAI || gameOver).map(p => renderPlayerItem(p, room, counts, gameOver)).join('')}
+            ${visiblePlayers.map(p => renderPlayerItem(p, room, counts, gameOver)).join('')}
           </div>
           ${host ? `<div style="margin-top:10px;display:flex;flex-direction:column;gap:8px">
             ${room.status === 'waiting' ? `<button class="btn btn--primary btn--full" id="mafia-start" ${canStart ? '' : 'disabled'}>${canStart ? '🎮 게임 시작' : '3명 이상 필요'}</button>` : ''}
