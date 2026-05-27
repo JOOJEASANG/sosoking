@@ -9,7 +9,6 @@ function svgIcon(path, strokeWidth = '1.8') {
 }
 function iconHome(){return svgIcon('<path stroke-linecap="round" stroke-linejoin="round" d="M3 11.5 12 4l9 7.5M5.5 10v10h13V10M9.5 20v-6h5v6"/>');}
 function iconFeed(){return svgIcon('<path stroke-linecap="round" stroke-linejoin="round" d="M4 6.5h16M4 12h16M4 17.5h16"/>');}
-function iconGame(){return svgIcon('<path stroke-linecap="round" stroke-linejoin="round" d="M7 10h4M9 8v4M15.5 9.5h.01M18 12h.01M14 13.5h.01M16.5 15h.01"/><path stroke-linecap="round" stroke-linejoin="round" d="M5.5 6.5h13a3 3 0 0 1 3 3v5.5a3 3 0 0 1-3 3h-1.1a2 2 0 0 1-1.42-.59l-1.39-1.41H9.4L8.01 17.41A2 2 0 0 1 6.6 18H5.5a3 3 0 0 1-3-3V9.5a3 3 0 0 1 3-3Z"/>');}
 function iconStats(){return svgIcon('<path stroke-linecap="round" stroke-linejoin="round" d="M4 19V5m0 14h16M8 16v-5m4 5V8m4 8v-9"/>');}
 function iconScraps(){return svgIcon('<path stroke-linecap="round" stroke-linejoin="round" d="M6 4.5A1.5 1.5 0 0 1 7.5 3h9A1.5 1.5 0 0 1 18 4.5V21l-6-3.5L6 21V4.5Z"/>');}
 function iconAdmin(){return svgIcon('<path stroke-linecap="round" stroke-linejoin="round" d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.4 15a8 8 0 0 0 .1-1 8 8 0 0 0-.1-1l2-1.5-2-3.5-2.4 1a7.7 7.7 0 0 0-1.7-1L15 5.5h-4L10.7 8a7.7 7.7 0 0 0-1.7 1l-2.4-1-2 3.5 2 1.5a8 8 0 0 0-.1 1 8 8 0 0 0 .1 1l-2 1.5 2 3.5 2.4-1a7.7 7.7 0 0 0 1.7 1l.3 2.5h4l.3-2.5a7.7 7.7 0 0 0 1.7-1l2.4 1 2-3.5-2-1.5Z"/>');}
@@ -23,7 +22,7 @@ function isIOS(){return /iPhone|iPad|iPod/.test(navigator.userAgent)&&!window.MS
 function isAndroid(){return /Android/i.test(navigator.userAgent)&&!isIOS();}
 function isStandalone(){return window.matchMedia('(display-mode: standalone)').matches||!!navigator.standalone;}
 function isNavActive(navPath, currentPath){
-  return currentPath===navPath||(navPath==='/sosoland'&&currentPath.startsWith('/game/'));
+  return currentPath===navPath;
 }
 
 function showIOSInstallGuide(){const prev=document.getElementById('ios-install-tip');if(prev){prev.remove();return;}const tip=document.createElement('div');tip.id='ios-install-tip';tip.style.cssText='position:fixed;left:50%;bottom:84px;transform:translateX(-50%);z-index:10000;width:min(320px,calc(100vw - 32px));background:var(--color-surface);border:1px solid var(--color-border);border-radius:16px;padding:18px 20px;box-shadow:0 12px 40px rgba(0,0,0,.2);text-align:center;font-size:13px;line-height:1.65';tip.innerHTML='<div style="font-size:24px;margin-bottom:8px">📲</div><div style="font-weight:800;color:var(--color-text-primary);margin-bottom:6px">홈 화면에 추가하기</div><div style="color:var(--color-text-secondary)">Safari 하단 <b>공유 버튼 ⬆</b> 탭 후<br><b>"홈 화면에 추가"</b>를 선택하세요</div><button id="ios-tip-close" style="margin-top:14px;padding:7px 24px;background:var(--color-primary);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer">확인</button>';document.body.appendChild(tip);document.getElementById('ios-tip-close')?.addEventListener('click',()=>tip.remove());setTimeout(()=>tip.remove(),10000);}
@@ -55,10 +54,9 @@ export function renderSidebar() {
   const unread  = appState.unreadNotifications || 0;
 
   const MAIN_NAV = [
-    { label: '홈',  path: '/',         icon: iconHome() },
-    { label: '피드', path: '/feed',     icon: iconFeed() },
-    { label: '게임', path: '/sosoland', icon: iconGame() },
-    { label: '통계', path: '/hall',     icon: iconStats() },
+    { label: '홈',  path: '/',     icon: iconHome() },
+    { label: '피드', path: '/feed', icon: iconFeed() },
+    { label: '통계', path: '/hall', icon: iconStats() },
   ];
 
   const PERSONAL_NAV = user ? [
