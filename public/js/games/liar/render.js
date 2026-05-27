@@ -101,7 +101,7 @@ export function renderLiarLobbyHTML() {
             <button type="button" class="difficulty-btn active" data-difficulty="normal">😐 보통</button>
             <button type="button" class="difficulty-btn" data-difficulty="hard">😈 어려움</button>
           </div>
-          <div class="form-hint" id="liar-difficulty-hint">AI가 약간의 어색함을 내비쳐 잡기 쉬운 편이에요.</div>
+          <div class="form-hint" id="liar-difficulty-hint">AI가 자연스럽게 대화하지만 가끔 어색한 부분이 있습니다.</div>
         </div>
 
         <button class="btn btn--primary btn--full" id="liar-create" style="margin-top:4px">방 만들기</button>
@@ -215,7 +215,7 @@ export function renderLiarRoomHTML(room, players = [], chats = []) {
   const me = findMyPlayer(visiblePlayers);
   const joined = !!me;
   const host = isRoomHost(room);
-  const canStart = host && room.status === 'waiting' && visiblePlayers.filter(p => !p.isAI).length >= 3;
+  const canStart = host && room.status === 'waiting' && visiblePlayers.length >= 3;
   const category = room.topic || CATEGORY_LABELS[room.category] || room.category || '-';
   const hasAI = !!(room.withAI || room.aiPlayerUid);
   const diff = DIFFICULTY_LABELS[room.aiDifficulty] || '';
@@ -256,7 +256,7 @@ export function renderLiarRoomHTML(room, players = [], chats = []) {
             <span>${visiblePlayers.length}명</span>
           </div>
           <div class="game-player-list-v2">
-            ${visiblePlayers.filter(p => !p.isAI || room.status === 'ended').map(p => renderPlayerItem(p, room)).join('')}
+            ${visiblePlayers.map(p => renderPlayerItem(p, room)).join('')}
           </div>
           ${host ? `<div style="margin-top:10px">
             <button class="btn btn--primary btn--full" id="liar-start" ${canStart ? '' : 'disabled'}>
