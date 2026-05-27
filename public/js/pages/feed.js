@@ -2,7 +2,7 @@ import { db } from '../firebase.js';
 import {
   collection, query, orderBy, limit, getDocs, startAfter, where,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import { getQueryParams, navigate } from '../router.js';
+import { getQueryParams } from '../router.js';
 import { renderFeedCard, renderSkeletonCards } from '../components/feed-card.js';
 import { setMeta } from '../utils/seo.js';
 import {
@@ -34,6 +34,7 @@ export async function renderFeed() {
   isLoading = false;
   setMeta('피드');
   const el     = document.getElementById('page-content');
+  if (!el) return;
   const params = getQueryParams();
   currentType   = params.type  || '';
   currentSearch = params.q     || '';
@@ -174,21 +175,56 @@ async function loadPosts() {
   isLoading = false;
 }
 
-async function loadCursorPage(page) {
-  const startCursor = page > 1 ? cursorStack[page - 2] : null;
+async function fetchCursorSlice(startCursor = null) {
   const constraints = [orderBy('createdAt', 'desc'), limit(PAGE_SIZE + 1)];
   if (startCursor) constraints.push(startAfter(startCursor));
-
   const snap = await getDocs(query(collection(db, 'feeds'), ...constraints));
   const docs = snap.docs;
   const hasNext = docs.length > PAGE_SIZE;
   const pageDocs = docs.slice(0, PAGE_SIZE);
+  return {
+    pageDocs,
+    hasNext,
+    nextCursor: pageDocs.length ? pageDocs[pageDocs.length - 1] : null,
+  };
+}
 
-  if (hasNext && pageDocs.length > 0) {
-    cursorStack[page - 1] = pageDocs[pageDocs.length - 1];
-    cursorTotal = Math.max(cursorTotal, page + 1);
+async function ensureCursorForPage(page) {
+  const targetPage = Math.max(1, Number(page || 1));
+  if (targetPage <= 1 || cursorStack[targetPage - 2]) return targetPage;
+
+  let startCursor = null;
+  for (let pageNo = 1; pageNo < targetPage; pageNo += 1) {
+    if (pageNo > 1) startCursor = cursorStack[pageNo - 2] || null;
+    const { pageDocs, hasNext, nextCursor } = await fetchCursorSlice(startCursor);
+
+    if (!pageDocs.length) {
+      cursorTotal = Math.max(cursorTotal, Math.max(1, pageNo - 1));
+      return Math.max(1, pageNo - 1);
+    }
+
+    if (!hasNext || !nextCursor) {
+      cursorTotal = Math.max(cursorTotal, pageNo);
+      return pageNo;
+    }
+
+    cursorStack[pageNo - 1] = nextCursor;
+    cursorTotal = Math.max(cursorTotal, pageNo + 1);
+  }
+
+  return targetPage;
+}
+
+async function loadCursorPage(page) {
+  currentPage = await ensureCursorForPage(page);
+  const startCursor = currentPage > 1 ? cursorStack[currentPage - 2] : null;
+  const { pageDocs, hasNext, nextCursor } = await fetchCursorSlice(startCursor);
+
+  if (hasNext && nextCursor) {
+    cursorStack[currentPage - 1] = nextCursor;
+    cursorTotal = Math.max(cursorTotal, currentPage + 1);
   } else {
-    cursorTotal = Math.max(cursorTotal, page);
+    cursorTotal = Math.max(cursorTotal, currentPage);
   }
 
   cachedPosts = pageDocs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.hidden);
