@@ -1,11 +1,10 @@
 import { auth, db, onAuthStateChanged } from './firebase.js';
-import { initRouter, registerRoute, navigate } from './router.js';
+import { initRouter, registerRoute } from './router.js';
 import { renderHeader } from './components/header.js';
 import { renderBottomNav } from './components/bottom-nav.js';
 import { renderSidebar } from './components/sidebar.js';
 import { initToast } from './components/toast.js';
 import { appState } from './state.js';
-import { GAME_ROUTE_PREFIXES } from './games/registry.js';
 import { collection, query, where, getDocs, getDoc, doc, limit } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 export { appState };
@@ -15,13 +14,11 @@ const OWNER_EMAILS = new Set();
 const OPTIONAL_MODULES = [
   './secure-interactions-actions.js',
   './acrostic-enhancer.js',
-  './representative-games-enhancer.js',
   './account-secure-actions.js',
   './admin-session-guard.js',
   './admin-password-actions.js',
   './admin-post-list-normalizer.js',
   './nickname-icon-actions.js',
-  './social-play-enhancer.js',
   './site-copy-normalizer.js'
 ];
 
@@ -37,42 +34,11 @@ function esc(value) {
   return String(value || '').replace(/[&<>]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[ch]));
 }
 
-function currentRoutePath() {
-  return window.location.hash.slice(1).split('?')[0] || '/';
-}
-
-function isGameOnlyRoute(path = currentRoutePath()) {
-  return GAME_ROUTE_PREFIXES.some(prefix => path === prefix || path.startsWith(`${prefix}/`));
-}
-
-function isGameOnlyShellActive() {
-  return !!document.querySelector('.game-only-shell');
-}
-
-function ensureGameOnlyStyles() {
-  if (document.querySelector('link[href="/css/game-only-shell.css"]')) return;
-  const link = document.createElement('link');
-  link.rel = 'stylesheet';
-  link.href = '/css/game-only-shell.css';
-  document.head.appendChild(link);
-}
-
 function showPageError(title, error) {
   const el = pageContent();
   if (!el) return;
   const msg = error && (error.stack || error.message) ? String(error.stack || error.message) : String(error || '알 수 없는 오류');
   el.innerHTML = '<div class="empty-state"><div class="empty-state__icon">⚠️</div><div class="empty-state__title">' + esc(title) + '</div><div style="margin-top:10px;font-size:12px;white-space:pre-wrap;text-align:left;max-width:720px;overflow:auto">' + esc(msg) + '</div></div>';
-}
-
-function fallbackHome() {
-  const el = pageContent();
-  if (!el) return;
-  el.innerHTML = `
-    <div class="empty-state">
-      <div class="empty-state__icon">🏠</div>
-      <div class="empty-state__title">소소킹</div>
-      <div class="empty-state__desc">피드와 게임을 불러오는 중입니다.</div>
-    </div>`;
 }
 
 async function renderPage(renderer, title) {
@@ -104,10 +70,21 @@ async function renderDetailSafe(id) {
   return module.renderDetail(id);
 }
 
+function renderRemovedGamePage() {
+  const el = pageContent();
+  if (!el) return;
+  el.innerHTML = `
+    <div class="empty-state">
+      <div class="empty-state__icon">🔍</div>
+      <div class="empty-state__title">게임 기능은 제거되었습니다</div>
+      <div class="empty-state__desc">현재 소소킹은 피드 중심으로 운영됩니다.</div>
+      <button class="btn btn--primary" onclick="navigate('/feed')">피드로 이동</button>
+    </div>`;
+}
+
 async function registerRoutes() {
   registerRoute('/', async () => renderPage((await import('./pages/home.js')).renderHome, '홈'));
   registerRoute('/feed', async () => renderPage((await import('./pages/feed.js')).renderFeed, '피드'));
-  registerRoute('/sosoland', async () => renderPage((await import('./pages/sosoland.js')).renderSosoland, '소소랜드'));
   registerRoute('/hall', async () => renderPage((await import('./pages/hall.js')).renderHall, '통계'));
   registerRoute('/account', async () => renderPage(renderAccountSafe, '내 정보'));
   registerRoute('/scraps', async () => renderPage((await import('./pages/scraps.js')).renderScraps, '스크랩'));
@@ -117,16 +94,18 @@ async function registerRoutes() {
   registerRoute('/login', async () => renderPage((await import('./pages/login.js')).renderLogin, '로그인'));
   registerRoute('/legal/terms', async () => renderPage((await import('./pages/legal.js')).renderTerms, '이용약관'));
   registerRoute('/legal/privacy', async () => renderPage((await import('./pages/legal.js')).renderPrivacy, '개인정보처리방침'));
-  registerRoute('/game/liar', async () => renderPage((await import('./pages/liar-game.js')).renderLiarGame, 'AI 라이어 찾기'));
-  registerRoute('/game/liar/:id', async ({ id }) => renderPage(() => import('./pages/liar-game.js').then(m => m.renderLiarGame({ id })), 'AI 라이어 찾기'));
-  registerRoute('/game/mafia', async () => renderPage((await import('./pages/mafia-game.js')).renderMafiaGame, 'AI 마피아'));
-  registerRoute('/game/mafia/:id', async ({ id }) => renderPage(() => import('./pages/mafia-game.js').then(m => m.renderMafiaGame({ id })), 'AI 마피아'));
-  registerRoute('/game/touch-king', async () => renderPage((await import('./pages/touch-king-game.js')).renderTouchKingGame, '터치왕게임'));
-  registerRoute('/game/touch-king/:id', async ({ id }) => renderPage(() => import('./pages/touch-king-game.js').then(m => m.renderTouchKingGame({ id })), '터치왕게임'));
-  registerRoute('/game/symbol-spy', async () => renderPage(() => import('./pages/touch-king-game.js').then(m => m.redirectOldSymbolSpy()), '터치왕게임'));
-  registerRoute('/game/symbol-spy/:id', async ({ id }) => renderPage(() => import('./pages/touch-king-game.js').then(m => m.redirectOldSymbolSpy({ id })), '터치왕게임'));
-  registerRoute('/game/soso-code', async () => renderPage((await import('./pages/soso-code-game.js')).renderSosoCodeGame, '소소코드'));
-  registerRoute('/game/ai-court', async () => renderPage((await import('./pages/ai-court-game.js')).renderAiCourtGame, 'AI 재판소'));
+  registerRoute('/sosoland', async () => renderPage(renderRemovedGamePage, '게임'));
+  registerRoute('/game/liar', async () => renderPage(renderRemovedGamePage, '게임'));
+  registerRoute('/game/liar/:id', async () => renderPage(renderRemovedGamePage, '게임'));
+  registerRoute('/game/mafia', async () => renderPage(renderRemovedGamePage, '게임'));
+  registerRoute('/game/mafia/:id', async () => renderPage(renderRemovedGamePage, '게임'));
+  registerRoute('/game/touch-king', async () => renderPage(renderRemovedGamePage, '게임'));
+  registerRoute('/game/touch-king/:id', async () => renderPage(renderRemovedGamePage, '게임'));
+  registerRoute('/game/symbol-spy', async () => renderPage(renderRemovedGamePage, '게임'));
+  registerRoute('/game/symbol-spy/:id', async () => renderPage(renderRemovedGamePage, '게임'));
+  registerRoute('/game/soso-defense', async () => renderPage(renderRemovedGamePage, '게임'));
+  registerRoute('/game/soso-code', async () => renderPage(renderRemovedGamePage, '게임'));
+  registerRoute('/game/ai-court', async () => renderPage(renderRemovedGamePage, '게임'));
 }
 
 async function isStrictAdmin(user) {
@@ -165,18 +144,8 @@ async function fetchUserProfile(user) {
 }
 
 function renderFrame() {
-  const path = currentRoutePath();
   const app = document.getElementById('app');
   if (!app) return;
-
-  if (isGameOnlyRoute(path)) {
-    ensureGameOnlyStyles();
-    app.innerHTML = `
-      <div class="game-only-shell">
-        <main id="page-content" class="game-only-shell__content"></main>
-      </div>`;
-    return;
-  }
 
   app.innerHTML = `
     <div class="app-shell">
