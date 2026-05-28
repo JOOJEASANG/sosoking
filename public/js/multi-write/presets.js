@@ -8,13 +8,13 @@ export const MULTI_PRESETS = {
     tagsPlaceholder: '#일상, #피드, #소소킹',
   },
   vote: {
-    label: '투표·판정',
+    label: '투표',
     icon: '🗳️',
-    shortDesc: '투표 · 판정 · 토론 · 밸런스',
-    titlePlaceholder: '예: 이 상황 억까인가요? 공감인가요?',
-    descPlaceholder: '투표·판정받을 상황을 적어주세요. 일반 투표, 밸런스 게임, 유죄/무죄 판정, 찬반 토론 모두 이 형식으로 올릴 수 있어요.',
-    tagsPlaceholder: '#투표, #판정, #토론',
-    voteOptionPlaceholders: ['선택지 A', '선택지 B'],
+    shortDesc: '찬성 · 반대 · 선택지 투표',
+    titlePlaceholder: '예: 이거 찬성인가요 반대인가요?',
+    descPlaceholder: '투표받을 상황이나 질문을 적어주세요.',
+    tagsPlaceholder: '#투표, #찬반, #소소질문',
+    voteOptionPlaceholders: ['찬성', '반대'],
   },
   // 기존 빈칸채우기 글 호환용입니다. 새 글쓰기 선택지에서는 숨깁니다.
   fill: {
@@ -25,18 +25,20 @@ export const MULTI_PRESETS = {
     tagsPlaceholder: '#빈칸채우기, #빈칸',
     hiddenFromWriter: true,
   },
+  // 기존 작명 글 호환용입니다. 새 글쓰기 선택지에서는 제거합니다.
   naming: {
     label: '작명',
     icon: '😜',
-    shortDesc: '웃긴 이름 붙이기',
+    shortDesc: '댓글로 자유 작명',
     titlePlaceholder: '예: 이 사진 이름 좀 지어줘',
     descPlaceholder: '사진이나 상황에 어울리는 웃긴 이름을 받아보세요.',
     tagsPlaceholder: '#작명, #미친작명소',
+    hiddenFromWriter: true,
   },
   drip: {
-    label: '드립',
+    label: '한줄드립',
     icon: '🤣',
-    shortDesc: '한 줄 드립 모으기',
+    shortDesc: '짧은 드립 댓글 모으기',
     titlePlaceholder: '예: 퇴근 5분 전에 팀장이 부른 이유',
     descPlaceholder: '사람들이 한 줄 드립을 남기고 싶어지는 주제나 상황을 적어주세요.',
     tagsPlaceholder: '#드립, #한줄드립, #드립대전',
