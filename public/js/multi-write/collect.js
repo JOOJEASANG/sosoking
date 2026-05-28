@@ -51,57 +51,6 @@ function getQuizOptions() {
   return [...document.querySelectorAll('.mw-quiz-option')].map(input => realValue(input));
 }
 
-function getFillCounts() {
-  const raw = document.getElementById('mw-fill-counts')?.value || document.getElementById('mw-fill-count')?.value || '';
-  const counts = String(raw)
-    .split(',')
-    .map(v => Math.max(1, Math.min(12, Number(v.trim()) || 0)))
-    .filter(Boolean)
-    .slice(0, 12);
-  return counts;
-}
-
-function charCountFromBlankMarker(marker, fallback = 4) {
-  const raw = String(marker || '');
-  if (/^[ \t]+$/.test(raw)) return Math.max(1, Math.min(12, raw.length));
-  if (/^□+$/.test(raw)) return Math.max(1, Math.min(12, [...raw].length));
-  if (/^_+$/.test(raw)) return Math.max(1, Math.min(12, raw.length));
-  return Math.max(1, Math.min(12, Number(fallback) || 4));
-}
-
-function parseFillTemplate(bodyText, manualCounts = []) {
-  const source = String(bodyText || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-  const blankRegex = /_{2,}|□+|[ \t]{2,}/g;
-  const parts = [];
-  const blanks = [];
-  let cursor = 0;
-  let match;
-
-  while ((match = blankRegex.exec(source))) {
-    if (match.index > cursor) {
-      parts.push({ type: 'text', text: source.slice(cursor, match.index) });
-    }
-    const index = blanks.length;
-    const manualCount = manualCounts[index];
-    const charCount = Math.max(1, Math.min(12, Number(manualCount) || charCountFromBlankMarker(match[0], manualCounts[manualCounts.length - 1] || 4)));
-    const blank = { index, charCount, marker: match[0] };
-    blanks.push(blank);
-    parts.push({ type: 'blank', index, charCount });
-    cursor = match.index + match[0].length;
-  }
-
-  if (cursor < source.length) {
-    parts.push({ type: 'text', text: source.slice(cursor) });
-  }
-
-  return {
-    source,
-    parts,
-    blanks,
-    blankCounts: blanks.map(blank => blank.charCount),
-  };
-}
-
 export function parseYouTubeUrl(value) {
   const raw = String(value || '').trim();
   if (!raw) return null;
@@ -132,6 +81,33 @@ export function parseYouTubeUrl(value) {
   }
 }
 
+function isImageUrl(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return false;
+  try {
+    const url = new URL(raw);
+    return /^https?:$/.test(url.protocol) && /\.(png|jpe?g|gif|webp|avif)(\?.*)?$/i.test(url.href);
+  } catch {
+    return false;
+  }
+}
+
+function parseHttpUrl(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  try {
+    const url = new URL(raw);
+    if (!/^https?:$/.test(url.protocol)) return '';
+    return url.href;
+  } catch {
+    return '';
+  }
+}
+
+function collectKindLabel(kind) {
+  return { youtube: '유튜브', image: '웃긴그림', link: '링크' }[kind] || '모음';
+}
+
 export function collectMultiModules() {
   const modules = { comments: { enabled: true } };
   const bodyText = getBodyText();
@@ -140,17 +116,37 @@ export function collectMultiModules() {
     modules.anonymous = { enabled: true, mode: 'general-option' };
   }
 
-  const youtubeRaw = realValue(document.getElementById('mw-youtube-url'));
-  if (youtubeRaw) {
-    const youtube = parseYouTubeUrl(youtubeRaw);
-    if (!youtube) throw new Error('유튜브 링크를 확인해주세요. 공유 링크, watch 링크, shorts 링크를 사용할 수 있어요.');
-    modules.youtube = youtube;
+  if (enabled('collect')) {
+    const kind = document.getElementById('mw-collect-kind')?.value || 'youtube';
+    const urlRaw = realValue(document.getElementById('mw-collect-url'));
+    const caption = realValue(document.getElementById('mw-collect-caption')) || bodyText;
+    const collect = { enabled: true, kind, label: collectKindLabel(kind), caption };
+
+    if (kind === 'youtube') {
+      const youtube = parseYouTubeUrl(urlRaw);
+      if (!youtube) throw new Error('유튜브 링크를 입력해주세요. 쇼츠, 공유 링크, watch 링크를 사용할 수 있어요.');
+      collect.url = youtube.url;
+      collect.youtube = youtube;
+      modules.youtube = youtube;
+    } else if (kind === 'image') {
+      if (urlRaw) {
+        if (!isImageUrl(urlRaw)) throw new Error('이미지 URL은 jpg, png, gif, webp, avif 주소를 입력해주세요.');
+        collect.url = parseHttpUrl(urlRaw);
+        collect.imageUrl = collect.url;
+      }
+    } else if (kind === 'link') {
+      const url = parseHttpUrl(urlRaw);
+      if (!url) throw new Error('링크 주소를 입력해주세요.');
+      collect.url = url;
+    }
+
+    modules.collect = collect;
   }
 
   if (enabled('vote')) {
     const options = getVoteOptions();
     const voteMode = document.getElementById('mw-vote-mode')?.value || 'general';
-    if (!bodyText) throw new Error('본문에 투표/판정 질문이나 상황을 입력해주세요.');
+    if (!bodyText) throw new Error('내용에 토론 질문이나 상황을 입력해주세요.');
     if (options.length < 2) throw new Error('선택지를 2개 이상 입력해주세요.');
     const voteData = { enabled: true, question: bodyText, options: options.map(text => ({ text, votes: 0 })) };
     if (voteMode !== 'general') voteData.voteMode = voteMode;
@@ -162,34 +158,11 @@ export function collectMultiModules() {
     modules.drip = { enabled: true, prompt: bodyText, maxLength: 80 };
   }
 
-  if (enabled('fill')) {
-    if (!bodyText) throw new Error('본문에 빈칸 채우기 문장을 입력해주세요.');
-    const manualCounts = getFillCounts();
-    const template = parseFillTemplate(bodyText, manualCounts);
-    if (!template.blanks.length) {
-      throw new Error('빈칸 표시가 필요합니다. 스페이스바를 2칸 이상 연속으로 누르거나 ___ 또는 □□□를 넣어주세요. 줄바꿈은 그대로 유지됩니다.');
-    }
-    modules.fill = {
-      enabled: true,
-      prompt: template.source,
-      templateParts: template.parts,
-      blankCounts: template.blankCounts,
-      blanks: template.blanks,
-      charCount: template.blankCounts[0] || 4,
-      blankCount: template.blankCounts.length,
-      inputMode: 'line-aware-template',
-    };
-  }
-
-  if (enabled('naming')) {
-    modules.naming = { enabled: true, charCount: 0 };
-  }
-
   if (enabled('quiz')) {
     const mode = document.getElementById('mw-quiz-mode')?.value || 'subjective';
     const hint = realValue(document.getElementById('mw-quiz-hint'));
     const explanation = realValue(document.getElementById('mw-quiz-explanation'));
-    if (!bodyText) throw new Error('본문에 소소퀴즈 문제를 입력해주세요.');
+    if (!bodyText) throw new Error('내용에 퀴즈 문제를 입력해주세요.');
 
     if (mode === 'multiple') {
       const rawOptions = getQuizOptions();
