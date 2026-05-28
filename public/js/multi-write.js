@@ -7,7 +7,7 @@ import { initImageUploader, getUploadedImages, hasPendingImages } from './compon
 import { awardPoints } from './utils/points.js';
 import { MULTI_PRESETS, getMultiPresetFromHash } from './multi-write/presets.js';
 import { renderMultiWriteHTML, renderQuizOptionRow } from './multi-write/render.js';
-import { collectMultiModules, getBodyText, getBodyHtml, splitTags, isAnonymousWriteChecked } from './multi-write/collect.js';
+import { collectMultiModules, getBodyText, getBodyHtml, splitTags } from './multi-write/collect.js';
 import { fillAutoTags } from './multi-write/auto-tags.js';
 import { initRichEditor, syncRichEditor } from './multi-write/editor.js';
 
@@ -24,8 +24,8 @@ function getPresetKey() {
 }
 
 function feedTypeFromPreset(presetKey) {
-  if (['vote', 'drip', 'quiz'].includes(presetKey)) return presetKey;
-  return 'general';
+  if (['collect', 'vote', 'drip', 'quiz'].includes(presetKey)) return presetKey;
+  return 'collect';
 }
 
 function dripLineValue() {
@@ -71,9 +71,8 @@ function cloneWithoutQuizSecret(modules) {
 }
 
 function bindTextStateEvents() {
-  ['mw-title', 'mw-desc', 'mw-tags', 'mw-quiz-mode', 'mw-quiz-hint', 'mw-drip-line'].forEach(id => {
-    document.getElementById(id)?.addEventListener('input', updateWriteStateOnly);
-  });
+  ['mw-title', 'mw-desc', 'mw-tags', 'mw-quiz-mode', 'mw-quiz-hint', 'mw-drip-line', 'mw-collect-url', 'mw-collect-caption']
+    .forEach(id => document.getElementById(id)?.addEventListener('input', updateWriteStateOnly));
   document.querySelectorAll('.mw-vote-option,.mw-quiz-option').forEach(input => input.addEventListener('input', updateWriteStateOnly));
   document.getElementById('mw-desc')?.addEventListener('keyup', updateWriteStateOnly);
 }
@@ -86,7 +85,7 @@ export async function renderMultiWrite() {
     el.innerHTML = `
       <div class="empty-state">
         <div class="empty-state__icon">✏️</div>
-        <div class="empty-state__title">로그인 후 글을 쓸 수 있어요</div>
+        <div class="empty-state__title">로그인 후 올릴 수 있어요</div>
         <button class="btn btn--primary" style="margin-top:16px" onclick="navigate('/login?return=/write?type=multi')">로그인하기</button>
       </div>`;
     return;
@@ -100,12 +99,13 @@ export async function renderMultiWrite() {
   bindMultiWriteEvents();
   bindTextStateEvents();
   setVoteMode(document.getElementById('mw-vote-mode')?.value || 'debate');
+  setCollectKind(document.getElementById('mw-collect-kind')?.value || 'youtube');
   updateOptionSelection(presetKey);
   updateWriteStateOnly();
 }
 
 function updateOptionSelection(preset) {
-  const normalized = MULTI_PRESETS[preset] && !MULTI_PRESETS[preset].hiddenFromWriter ? preset : 'general';
+  const normalized = MULTI_PRESETS[preset] && !MULTI_PRESETS[preset].hiddenFromWriter ? preset : 'collect';
   const hidden = document.getElementById('mw-selected-preset');
   if (hidden) hidden.value = normalized;
   const page = document.querySelector('.multi-write-page');
@@ -129,13 +129,33 @@ function updateOptionSelection(preset) {
 
   document.querySelectorAll('[data-module-input]').forEach(input => {
     const key = input.dataset.moduleInput;
-    if (key === normalized && normalized !== 'general') input.setAttribute('data-module-toggle', key);
+    if (key === normalized) input.setAttribute('data-module-toggle', key);
     else input.removeAttribute('data-module-toggle');
   });
 
   if (normalized === 'vote') setVoteMode(document.getElementById('mw-vote-mode')?.value || 'debate');
+  if (normalized === 'collect') setCollectKind(document.getElementById('mw-collect-kind')?.value || 'youtube');
   if (normalized === 'drip') syncDripLineToHiddenBody();
   window.dispatchEvent(new Event('sosoking:write-option-changed'));
+}
+
+function setCollectKind(kind) {
+  const normalized = ['youtube', 'image', 'link'].includes(kind) ? kind : 'youtube';
+  const hidden = document.getElementById('mw-collect-kind');
+  if (hidden) hidden.value = normalized;
+  document.querySelectorAll('[data-collect-kind]').forEach(btn => {
+    const active = btn.dataset.collectKind === normalized;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-checked', active ? 'true' : 'false');
+  });
+  const input = document.getElementById('mw-collect-url');
+  if (input) {
+    input.placeholder = normalized === 'youtube'
+      ? 'https://youtube.com/shorts/... 또는 유튜브 링크'
+      : normalized === 'image'
+        ? 'https://.../image.jpg 또는 아래 사진 첨부'
+        : 'https://... 공유하고 싶은 링크';
+  }
 }
 
 function setVoteMode(mode) {
@@ -152,7 +172,7 @@ function setVoteMode(mode) {
   const optionList = document.getElementById('mw-vote-options');
   const notes = {
     balance: '밸런스 투표는 선택지 2개로 제한됩니다.',
-    debate: '찬성/반대가 자동으로 들어갑니다. 본문에 토론 주제를 적어주세요.',
+    debate: '찬성/반대가 자동으로 들어갑니다. 내용에 토론 주제를 적어주세요.',
     general: '선택지를 자유롭게 추가할 수 있습니다.',
   };
   if (modeNote) { modeNote.textContent = notes[normalized] || ''; modeNote.style.display = notes[normalized] ? '' : 'none'; }
@@ -178,7 +198,7 @@ function setQuizMode(mode) {
   const hidden = document.getElementById('mw-quiz-mode');
   if (hidden) hidden.value = normalized;
   document.querySelectorAll('[data-quiz-mode]').forEach(btn => {
-    const active = btn.dataset.quizMode === normalized;
+    const active = btn.datasetQuizMode === normalized || btn.dataset.quizMode === normalized;
     btn.classList.toggle('active', active);
     btn.setAttribute('aria-checked', active ? 'true' : 'false');
   });
@@ -200,10 +220,11 @@ function bindMultiWriteEvents() {
     const tags = fillAutoTags({ force: true });
     updateWriteStateOnly();
     if (tags.length) toast.success('태그를 자동 생성했어요');
-    else toast.warn('제목이나 본문을 조금 더 입력하면 태그를 만들 수 있어요');
+    else toast.warn('제목이나 내용을 조금 더 입력하면 태그를 만들 수 있어요');
   });
 
   document.querySelectorAll('[data-multi-preset]').forEach(btn => btn.addEventListener('click', () => updateOptionSelection(btn.dataset.multiPreset)));
+  document.querySelectorAll('[data-collect-kind]').forEach(btn => btn.addEventListener('click', () => setCollectKind(btn.dataset.collectKind)));
 
   document.getElementById('mw-add-vote-option')?.addEventListener('click', () => {
     const list = document.getElementById('mw-vote-options');
@@ -245,7 +266,7 @@ async function submitMultiPost() {
 
   const btn = document.getElementById('multi-submit');
   let title = document.getElementById('mw-title')?.value.trim() || '';
-  const preset = MULTI_PRESETS[presetKey] || MULTI_PRESETS.general;
+  const preset = MULTI_PRESETS[presetKey] || MULTI_PRESETS.collect;
   const desc = presetKey === 'drip' ? dripLineValue() : (getBodyHtml() || getBodyText());
 
   if (presetKey === 'drip') {
@@ -263,12 +284,14 @@ async function submitMultiPost() {
   try {
     const collectedModules = collectMultiModules();
     const { publicModules, quizSecret } = cloneWithoutQuizSecret(collectedModules);
-    const isAnonymous = presetKey === 'general' && isAnonymousWriteChecked();
     btn.disabled = true;
     btn.textContent = hasPendingImages() ? '사진 올리는 중...' : '올리는 중...';
 
     const images = await getUploadedImages();
     if (images.length > MAX_FEED_IMAGES) throw new Error(`사진은 최대 ${MAX_FEED_IMAGES}장까지 올릴 수 있어요.`);
+    if (presetKey === 'collect' && publicModules.collect?.kind === 'image' && !images.length && !publicModules.collect?.imageUrl) {
+      throw new Error('웃긴그림 모음은 사진 첨부 또는 이미지 URL이 필요해요.');
+    }
     btn.textContent = '게시글 저장 중...';
 
     const manualTags = splitTags(document.getElementById('mw-tags')?.value || '');
@@ -286,11 +309,11 @@ async function submitMultiPost() {
       tags,
       images,
       modules: publicModules,
-      anonymous: isAnonymous,
-      anonymousMode: isAnonymous ? 'general-option' : '',
+      anonymous: false,
+      anonymousMode: '',
       authorId: auth.currentUser.uid,
-      authorName: isAnonymous ? '익명' : (appState.nickname || auth.currentUser.displayName || '익명'),
-      authorPhoto: isAnonymous ? '' : (auth.currentUser.photoURL || ''),
+      authorName: appState.nickname || auth.currentUser.displayName || '익명',
+      authorPhoto: auth.currentUser.photoURL || '',
       authorEmail: auth.currentUser.email || '',
       reactions: { total: 0 },
       commentCount: 0,
@@ -306,7 +329,7 @@ async function submitMultiPost() {
     }
 
     await awardPoints('post_create', { postId: docRef.id, type: presetKey }).catch(() => {});
-    toast.success('피드 글을 올렸어요! +10P 🎉');
+    toast.success(`${preset.label}에 올렸어요! +10P 🎉`);
     navigate(`/detail/${docRef.id}`);
   } catch (error) {
     console.error(error);

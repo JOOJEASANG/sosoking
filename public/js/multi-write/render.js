@@ -10,11 +10,15 @@ function moduleToggleInput(key, activeKey) {
 
 function renderOptionPicker(activeKey) {
   return `
-    <div class="multi-preset-box multi-preset-box--simple multi-preset-box--after-write">
-      <div class="multi-preset-box__title">옵션 선택</div>
-      <div class="multi-preset-box__desc">글과 사진을 먼저 작성한 뒤 필요한 참여 옵션을 붙이세요. 선택하지 않으면 일반글로 올라갑니다.</div>
+    <div class="multi-preset-box multi-preset-box--simple multi-preset-box--top multi-write-option-category">
+      <div class="multi-write-option-category__head">
+        <div>
+          <div class="multi-preset-box__title">방 선택</div>
+          <div class="multi-preset-box__desc">짧고 웃긴 콘텐츠를 방별로 올립니다. 일반글은 숨기고 모음·토론·퀴즈·드립만 사용합니다.</div>
+        </div>
+      </div>
       <input type="hidden" id="mw-selected-preset" value="${esc(activeKey)}">
-      <div class="multi-preset-list">
+      <div class="multi-preset-list multi-preset-list--top">
         ${WRITER_PRESET_KEYS.map(key => {
           const preset = MULTI_PRESETS[key];
           return `
@@ -52,30 +56,26 @@ export function renderQuizOptionRows(count = 2) {
   return Array.from({ length: count }, (_, i) => renderQuizOptionRow(i, i === 0)).join('');
 }
 
-function renderAnonymousSwitch() {
-  return `
-    <label class="multi-anonymous-switch">
-      <input type="checkbox" id="mw-anonymous-toggle">
-      <span class="multi-anonymous-switch__track"><i></i></span>
-      <span class="multi-anonymous-switch__text"><b>익명으로 올리기</b><small>피드에는 작성자가 ‘익명’으로 표시됩니다.</small></span>
-    </label>`;
-}
-
-function renderGeneralExtras(activeKey) {
-  return `
-    <div class="multi-general-note" data-option-panel="general" ${activeKey === 'general' ? '' : 'style="display:none"'}>
-      <b>일반글</b><span>자유롭게 올리고, 필요하면 익명으로 숨길 수 있습니다.</span>
-      ${renderAnonymousSwitch()}
-    </div>`;
-}
-
-function renderYoutubeInput() {
-  return `
-    <div class="form-group multi-youtube-box">
-      <label class="form-label">유튜브 링크 <span style="font-weight:500;color:var(--color-text-muted)">(선택)</span></label>
-      <input id="mw-youtube-url" class="form-input" maxlength="220" placeholder="https://youtu.be/... 또는 https://www.youtube.com/watch?v=...">
-      <div class="form-hint">입력하면 상세페이지 본문 아래에 16:9 영상으로 자동 표시됩니다.</div>
-    </div>`;
+function renderCollectModule(activeKey) {
+  return moduleCard('collect', activeKey, '📌', '모음방', '유튜브 쇼츠, 웃긴 그림, 링크를 짧게 모읍니다.', `
+    <div class="form-group">
+      <label class="form-label">모음 유형 <span class="required">*</span></label>
+      <input type="hidden" id="mw-collect-kind" value="youtube">
+      <div class="mw-vote-chips" role="radiogroup" aria-label="모음 유형">
+        <button type="button" class="mw-vote-chip active" data-collect-kind="youtube" role="radio" aria-checked="true">유튜브</button>
+        <button type="button" class="mw-vote-chip" data-collect-kind="image" role="radio" aria-checked="false">웃긴그림</button>
+        <button type="button" class="mw-vote-chip" data-collect-kind="link" role="radio" aria-checked="false">링크</button>
+      </div>
+    </div>
+    <div class="form-group" data-collect-url-box>
+      <label class="form-label">링크</label>
+      <input id="mw-collect-url" class="form-input" maxlength="300" placeholder="유튜브 쇼츠/영상 링크 또는 이미지/웹 링크">
+      <div class="form-hint">그림은 아래 사진 첨부를 쓰거나 이미지 URL을 입력해도 됩니다.</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">짧은 설명</label>
+      <input id="mw-collect-caption" class="form-input" maxlength="120" placeholder="예: 출근길에 보면 안 되는 웃긴 쇼츠">
+    </div>`);
 }
 
 function renderVoteModule(activeKey) {
@@ -98,13 +98,13 @@ function renderVoteModule(activeKey) {
 }
 
 function renderDripModule(activeKey) {
-  return moduleCard('drip', activeKey, '🤣', '한줄드립', '참여자는 댓글처럼 짧은 한 줄 드립을 남깁니다.', `
-    <div class="multi-module-inline-note">본문에 사진이나 상황 설명을 적어주세요. 참여자는 80자 이내 한 줄 드립을 남깁니다.</div>`);
+  return moduleCard('drip', activeKey, '🤣', '드립방', '제목과 본문 없이 오늘의 한줄만 등록합니다.', `
+    <div class="multi-module-inline-note">아래 입력칸에 짧은 한 줄만 적으면 드립방 리스트에 올라갑니다.</div>`);
 }
 
 function renderQuizModule(activeKey) {
   const preset = MULTI_PRESETS.quiz;
-  return moduleCard('quiz', activeKey, '🧠', '퀴즈', '주관식 또는 객관식 문제를 붙일 수 있습니다.', `
+  return moduleCard('quiz', activeKey, '🧠', '퀴즈방', '주관식 또는 객관식 문제를 올립니다.', `
     <div class="form-group">
       <label class="form-label">퀴즈 방식 <span class="required">*</span></label>
       <input type="hidden" id="mw-quiz-mode" value="subjective">
@@ -127,62 +127,71 @@ function renderQuizModule(activeKey) {
     <div class="form-group">
       <label class="form-label">힌트</label>
       <input id="mw-quiz-hint" class="form-input" maxlength="120" placeholder="정답을 바로 알려주지 않는 짧은 힌트">
-      <div class="form-hint">상세페이지에서 누구나 볼 수 있습니다.</div>
     </div>
     <div class="form-group">
       <label class="form-label">정답 해설</label>
       <textarea id="mw-quiz-explanation" class="form-textarea" rows="3" maxlength="500" placeholder="정답 확인 후 보여줄 해설을 입력하세요"></textarea>
-      <div class="form-hint">정답을 맞힌 사용자에게 결과와 함께 표시됩니다.</div>
     </div>`);
 }
 
 function renderOptionPanels(activeKey) {
   return `
-    <div class="multi-module-list multi-module-list--selected">
-      ${renderGeneralExtras(activeKey)}
+    <div class="multi-module-list multi-module-list--selected multi-module-list--top">
+      ${renderCollectModule(activeKey)}
       ${renderVoteModule(activeKey)}
-      ${renderDripModule(activeKey)}
       ${renderQuizModule(activeKey)}
+      ${renderDripModule(activeKey)}
+    </div>`;
+}
+
+function renderDripLineField(activeKey) {
+  return `
+    <div class="form-group mw-drip-line-box" data-write-section="drip-line" ${activeKey === 'drip' ? '' : 'style="display:none"'}>
+      <label class="form-label">오늘의 한줄 <span class="required">*</span></label>
+      <input id="mw-drip-line" class="form-input mw-drip-line-input" maxlength="80" autocomplete="off" placeholder="짧고 웃긴 한 줄만 입력하세요">
+      <div class="form-hint">엔터 없이 딱 한 줄만 등록됩니다. 최대 80자.</div>
     </div>`;
 }
 
 export function renderMultiWriteHTML({ renderKey, presetKey }) {
-  const activeKey = MULTI_PRESETS[presetKey] && !MULTI_PRESETS[presetKey].hiddenFromWriter ? presetKey : 'general';
-  const preset = MULTI_PRESETS[activeKey] || MULTI_PRESETS.general;
+  const activeKey = MULTI_PRESETS[presetKey] && !MULTI_PRESETS[presetKey].hiddenFromWriter ? presetKey : 'collect';
+  const preset = MULTI_PRESETS[activeKey] || MULTI_PRESETS.collect;
+  const standardHidden = activeKey === 'drip' ? 'style="display:none"' : '';
 
   return `
     <div class="write-page multi-write-page" data-render-key="${esc(renderKey)}" data-preset-key="${esc(activeKey)}">
       <div class="write-step-header">
         <button class="write-back-btn" id="multi-back-type" type="button">←</button>
-        <h1 class="write-step-title">피드 글쓰기</h1>
+        <h1 class="write-step-title">소소킹 올리기</h1>
       </div>
       <div class="card">
         <div class="card__body--lg">
-          <div class="form-group">
-            <label class="form-label">제목 <span class="required">*</span></label>
-            <input id="mw-title" class="form-input" maxlength="100" placeholder="${esc(preset.titlePlaceholder || MULTI_PRESETS.general.titlePlaceholder)}">
+          ${renderOptionPicker(activeKey)}
+          ${renderOptionPanels(activeKey)}
+          ${renderDripLineField(activeKey)}
+          <div data-write-section="standard-fields" ${standardHidden}>
+            <div class="form-group">
+              <label class="form-label">제목 <span class="required">*</span></label>
+              <input id="mw-title" class="form-input" maxlength="100" placeholder="${esc(preset.titlePlaceholder)}">
+            </div>
+            <div class="form-group">
+              <label class="form-label">내용</label>
+              <textarea id="mw-desc" class="form-textarea mw-desc-resizable" rows="4" maxlength="2000" placeholder="${esc(preset.descPlaceholder)}"></textarea>
+            </div>
           </div>
           <div class="form-group">
-            <label class="form-label">본문</label>
-            <textarea id="mw-desc" class="form-textarea mw-desc-resizable" rows="4" maxlength="2000" placeholder="${esc(preset.descPlaceholder || MULTI_PRESETS.general.descPlaceholder)}"></textarea>
-          </div>
-          ${renderYoutubeInput()}
-          <div class="form-group">
-            <label class="form-label">사진</label>
+            <label class="form-label">사진 첨부</label>
             <div id="mw-img-uploader"></div>
-            <div class="form-hint">사진은 최대 20장까지 올릴 수 있어요.</div>
+            <div class="form-hint">웃긴 그림 모음은 사진 첨부 또는 이미지 URL 중 하나만 있어도 됩니다.</div>
           </div>
           <div class="form-group">
             <div class="multi-tag-label-row">
               <label class="form-label" for="mw-tags">태그</label>
               <button class="btn btn--ghost btn--sm" type="button" id="mw-auto-tags">자동 생성</button>
             </div>
-            <input id="mw-tags" class="form-input" maxlength="100" placeholder="${esc(preset.tagsPlaceholder || MULTI_PRESETS.general.tagsPlaceholder)}">
-            <div class="form-hint">비워두고 올려도 제목과 본문을 기준으로 태그가 자동 생성됩니다.</div>
+            <input id="mw-tags" class="form-input" maxlength="100" placeholder="${esc(preset.tagsPlaceholder)}">
           </div>
-          ${renderOptionPicker(activeKey)}
-          ${renderOptionPanels(activeKey)}
-          <div class="multi-comment-note">💬 댓글과 답글은 항상 켜져 있습니다.</div>
+          <div class="multi-comment-note">💬 댓글과 반응은 항상 켜져 있습니다.</div>
         </div>
         <div class="card__footer">
           <div class="write-submit">
