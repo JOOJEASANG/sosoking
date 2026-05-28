@@ -98,13 +98,66 @@ async function fetchPopularComments(n = 8) {
 
 function renderIntro() {
   return `
-    <section class="home-intro-card">
-      <div class="home-intro-card__eyebrow">SOSOKING</div>
-      <h1>소소한 질문과 드립을 짧게 즐기는 피드</h1>
-      <p>투표, 퀴즈, 한줄드립, 댓글 반응을 가볍게 올리고 바로 참여할 수 있는 소소한 놀이터입니다.</p>
-      <div class="home-intro-card__actions">
-        <button class="btn btn--primary" type="button" id="hbtn-write">글쓰기</button>
-        <button class="btn btn--ghost" type="button" id="hbtn-feed">피드 보기</button>
+    <section class="home-landing-hero" aria-label="소소킹 소개">
+      <div class="home-landing-hero__bg home-landing-hero__bg--one"></div>
+      <div class="home-landing-hero__bg home-landing-hero__bg--two"></div>
+      <div class="home-landing-hero__content">
+        <div class="home-landing-hero__badge">
+          <span>👑</span>
+          <b>SOSOKING</b>
+          <small>10초 참여 피드</small>
+        </div>
+        <h1>소소한 질문 하나로<br>투표하고, 드립치고, 퀴즈까지.</h1>
+        <p>긴 글보다 짧은 반응이 어울리는 곳. 사진, 상황, 질문을 올리고 사람들이 바로 선택하고 댓글로 참여하는 가벼운 소통 공간입니다.</p>
+        <div class="home-landing-hero__actions">
+          <button class="home-landing-hero__primary" type="button" id="hbtn-write">바로 글쓰기</button>
+          <button class="home-landing-hero__secondary" type="button" id="hbtn-feed">피드 둘러보기</button>
+        </div>
+        <div class="home-landing-hero__chips" aria-label="소소킹 사용 방식">
+          <span>🗳️ 투표</span>
+          <span>🤣 한줄드립</span>
+          <span>🧠 퀴즈</span>
+          <span>💬 댓글반응</span>
+        </div>
+      </div>
+      <div class="home-landing-hero__mock" aria-hidden="true">
+        <div class="home-mock-card home-mock-card--main">
+          <div class="home-mock-card__top"><span>오늘의 소소질문</span><b>LIVE</b></div>
+          <strong>친구 사이 돈거래, 가능?</strong>
+          <div class="home-mock-vote"><span style="width:62%">가능 62%</span></div>
+          <div class="home-mock-vote home-mock-vote--sub"><span style="width:38%">불가능 38%</span></div>
+        </div>
+        <div class="home-mock-card home-mock-card--float home-mock-card--drip">🤣 한줄드립 대기중</div>
+        <div class="home-mock-card home-mock-card--float home-mock-card--quiz">🧠 퀴즈 정답률 74%</div>
+      </div>
+    </section>
+
+    <section class="home-feature-panel" aria-label="소소킹 특별 기능">
+      <div class="home-feature-panel__head">
+        <div>
+          <span>소소킹만의 참여 방식</span>
+          <h2>게시판만 보이지 않게, 바로 참여할 판을 만듭니다.</h2>
+        </div>
+      </div>
+      <div class="home-feature-grid">
+        <button class="home-feature-card home-feature-card--vote" type="button" data-home-write-preset="vote">
+          <span class="home-feature-card__icon">🗳️</span>
+          <b>소소투표</b>
+          <em>찬성/반대, 밸런스 선택지를 바로 붙여 의견을 모읍니다.</em>
+          <small>투표 만들기 →</small>
+        </button>
+        <button class="home-feature-card home-feature-card--drip" type="button" data-home-write-preset="drip">
+          <span class="home-feature-card__icon">🤣</span>
+          <b>한줄드립</b>
+          <em>사진이나 상황을 올리고 짧은 드립 댓글을 받습니다.</em>
+          <small>드립 주제 만들기 →</small>
+        </button>
+        <button class="home-feature-card home-feature-card--quiz" type="button" data-home-write-preset="quiz">
+          <span class="home-feature-card__icon">🧠</span>
+          <b>소소퀴즈</b>
+          <em>주관식/객관식 문제를 올리고 사람들이 바로 맞힙니다.</em>
+          <small>퀴즈 만들기 →</small>
+        </button>
       </div>
     </section>`;
 }
@@ -185,6 +238,9 @@ export async function renderHome() {
     el.querySelector('#hbtn-write')?.addEventListener('click', () => navigate('/write?type=multi'));
     el.querySelector('#hbtn-feed')?.addEventListener('click', () => navigate('/feed'));
     el.querySelector('#hbtn-more-hot')?.addEventListener('click', () => navigate('/feed?sort=popular'));
+    el.querySelectorAll('[data-home-write-preset]').forEach(item =>
+      item.addEventListener('click', () => navigate(`/write?type=multi&preset=${item.dataset.homeWritePreset}`))
+    );
     el.querySelectorAll('[data-id]').forEach(item =>
       item.addEventListener('click', () => navigate(`/detail/${item.dataset.id}`))
     );
