@@ -70,6 +70,11 @@ async function renderDetailSafe(id) {
   return module.renderDetail(id);
 }
 
+async function renderGuideSafe() {
+  const module = await import('./pages/guide.js');
+  return module.renderGuide();
+}
+
 function renderRemovedGamePage() {
   navigate('/feed');
 }
@@ -84,6 +89,9 @@ async function registerRoutes() {
   registerRoute('/write', async () => renderPage(renderWriteSafe, '글쓰기'));
   registerRoute('/detail/:id', async ({ id }) => renderPage(() => renderDetailSafe(id), '상세'));
   registerRoute('/login', async () => renderPage((await import('./pages/login.js')).renderLogin, '로그인'));
+  registerRoute('/guide', async () => renderPage(renderGuideSafe, '이용안내'));
+  registerRoute('/terms', async () => renderPage((await import('./pages/legal.js')).renderTerms, '이용약관'));
+  registerRoute('/privacy', async () => renderPage((await import('./pages/legal.js')).renderPrivacy, '개인정보처리방침'));
   registerRoute('/legal/terms', async () => renderPage((await import('./pages/legal.js')).renderTerms, '이용약관'));
   registerRoute('/legal/privacy', async () => renderPage((await import('./pages/legal.js')).renderPrivacy, '개인정보처리방침'));
   registerRoute('/sosoland', async () => renderPage(renderRemovedGamePage, '게임'));
@@ -135,6 +143,19 @@ async function fetchUserProfile(user) {
   }
 }
 
+function bindFooterToggle() {
+  const toggle = document.getElementById('btn-footer-toggle');
+  const body = document.getElementById('footer-body');
+  if (!toggle || !body) return;
+  toggle.addEventListener('click', () => {
+    const expanded = toggle.getAttribute('aria-expanded') === 'true';
+    toggle.setAttribute('aria-expanded', String(!expanded));
+    toggle.classList.toggle('open', !expanded);
+    body.hidden = expanded;
+    toggle.lastChild.textContent = expanded ? ' 더보기' : ' 접기';
+  });
+}
+
 function renderFrame() {
   const app = document.getElementById('app');
   if (!app) return;
@@ -145,12 +166,48 @@ function renderFrame() {
       <div class="app-main site-main">
         <header id="site-header" class="site-header"></header>
         <main id="page-content" class="page-container"></main>
+        <footer class="site-footer" id="site-footer">
+          <div class="site-footer__body" id="footer-body" hidden>
+            <div class="site-footer__inner">
+              <div class="site-footer__brand-block">
+                <a href="#/" class="site-footer__brand">
+                  <img src="/logo.svg" alt="" width="26" height="26">
+                  <span>소소킹</span>
+                </a>
+                <div class="site-footer__tagline">소소하게 보고<br>짧게 참여하는 피드</div>
+              </div>
+              <div>
+                <div class="site-footer__col-title">바로가기</div>
+                <div class="site-footer__links">
+                  <a href="#/feed">피드</a>
+                  <a href="#/write?type=multi">글쓰기</a>
+                  <a href="#/guide">이용안내</a>
+                </div>
+              </div>
+              <div>
+                <div class="site-footer__col-title">정보</div>
+                <div class="site-footer__links">
+                  <a href="#/terms">이용약관</a>
+                  <a href="#/privacy">개인정보처리방침</a>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="site-footer__copy-bar">
+            <div class="site-footer__copy">© ${new Date().getFullYear()} 소소킹. All rights reserved.</div>
+            <button class="site-footer__toggle" id="btn-footer-toggle" aria-expanded="false" title="푸터 펼치기">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
+              더보기
+            </button>
+          </div>
+        </footer>
         <nav id="bottom-nav" class="bottom-nav"></nav>
       </div>
     </div>`;
   renderSidebar();
   renderHeader();
   renderBottomNav();
+  bindFooterToggle();
 }
 
 function rerenderCurrentRouteSoon() {
