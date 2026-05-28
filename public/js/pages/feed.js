@@ -14,7 +14,15 @@ import {
 } from '../feed/render.js';
 
 const PAGE_SIZE    = 20;
-const FILTER_LIMIT = 120; // 검색/호환 필터 시 서버 로드 최대치
+const FILTER_LIMIT = 120;
+
+const ROOMS = [
+  { key: '',        icon: '✨', label: '전체',   title: '전체 모음', desc: '유튜브, 웃긴그림, 토론, 퀴즈, 드립을 한 번에 봅니다.', write: 'collect' },
+  { key: 'collect', icon: '📌', label: '모음방', title: '모음방', desc: '유튜브 쇼츠, 웃긴그림, 링크를 짧게 모아봅니다.', write: 'collect' },
+  { key: 'vote',    icon: '🗳️', label: '토론방', title: '토론방', desc: '찬성/반대, 밸런스, 선택지로 빠르게 의견을 모읍니다.', write: 'vote' },
+  { key: 'quiz',    icon: '🧠', label: '퀴즈방', title: '퀴즈방', desc: '짧은 문제를 보고 바로 맞히는 공간입니다.', write: 'quiz' },
+  { key: 'drip',    icon: '🤣', label: '드립방', title: '드립방', desc: '제목 없이 오늘의 한줄만 모아보는 공간입니다.', write: 'drip' },
+];
 
 let currentType   = '';
 let currentSearch = '';
@@ -26,13 +34,37 @@ let cursorStack   = [];
 let cursorTotal   = 0;
 let cachedPosts   = [];
 
+function currentRoom() {
+  return ROOMS.find(room => room.key === currentType) || ROOMS[0];
+}
+
 function useCursorMode() {
   return !currentType && !currentSearch && currentSort === 'latest';
 }
 
+function renderRoomTabs() {
+  return `
+    <div class="soso-room-tabs" aria-label="방별 보기">
+      ${ROOMS.map(room => `<button type="button" class="soso-room-tab ${currentType === room.key ? 'active' : ''}" data-type-filter="${room.key}"><span>${room.icon}</span>${room.label}</button>`).join('')}
+    </div>`;
+}
+
+function renderRoomHead() {
+  const room = currentRoom();
+  return `
+    <div class="soso-room-head">
+      <div class="soso-room-head__label">${room.icon} ${room.label}</div>
+      <div class="soso-room-head__title">${room.title}</div>
+      <div class="soso-room-head__desc">${room.desc}</div>
+      <div class="soso-room-head__action">
+        <button class="btn btn--primary btn--sm" type="button" id="room-write-btn">${room.label === '전체' ? '모음 올리기' : `${room.label} 올리기`}</button>
+      </div>
+    </div>`;
+}
+
 export async function renderFeed() {
   isLoading = false;
-  setMeta('피드');
+  setMeta('소소킹 모음방');
   const el     = document.getElementById('page-content');
   const params = getQueryParams();
   currentType   = params.type  || '';
@@ -47,6 +79,8 @@ export async function renderFeed() {
   el.innerHTML = `
     <div class="soso-feed-page layout-main layout-main--full feed-page-clean">
       <div class="soso-feed-toolbar">
+        ${renderRoomTabs()}
+        ${renderRoomHead()}
         ${renderFeedSearchBar({ search: currentSearch })}
         ${renderFeedFilterBar({ type: currentType, search: currentSearch })}
       </div>
@@ -63,6 +97,14 @@ export async function renderFeed() {
 function bindFeedEvents() {
   bindSearchEvents();
   bindTypeFilterEvents();
+  bindRoomWriteEvent();
+}
+
+function bindRoomWriteEvent() {
+  document.getElementById('room-write-btn')?.addEventListener('click', () => {
+    const room = currentRoom();
+    navigate(`/write?type=multi&preset=${room.write || 'collect'}`);
+  });
 }
 
 function bindSearchEvents() {
@@ -71,7 +113,6 @@ function bindSearchEvents() {
   const clearBtn    = document.getElementById('search-clear-btn');
   const doSearch = () => {
     currentSearch = searchInput?.value.trim() || '';
-    currentType   = '';
     currentPage   = 1;
     refreshFeed();
     clearBtn?.style.setProperty('display', currentSearch ? 'inline-flex' : 'none');
@@ -91,10 +132,7 @@ function bindTypeFilterEvents() {
   document.querySelectorAll('[data-type-filter]').forEach(btn => {
     btn.addEventListener('click', () => {
       currentType   = btn.dataset.typeFilter;
-      currentSearch = '';
       currentPage   = 1;
-      const si = document.getElementById('feed-search-input');
-      if (si) si.value = '';
       refreshFeed();
     });
   });
@@ -132,11 +170,10 @@ function updateUrlState() {
 
 function getLegacyTypeWhereClause(type) {
   const map = {
+    collect:  ['multi', 'general', 'anonymous'],
     vote:     ['vote', 'ox', 'crazy_court', 'multi'],
-    naming:   ['naming', 'multi'],
-    acrostic: ['acrostic', 'multi'],
-    relay:    ['relay', 'multi'],
     quiz:     ['quiz', 'initial_game', 'multi'],
+    drip:     ['multi'],
     fill:     ['fill', 'multi'],
     general:  ['general', 'anonymous', 'multi'],
   };
@@ -165,7 +202,7 @@ async function loadPosts() {
     if (listEl) listEl.innerHTML = `
       <div class="empty-state">
         <div class="empty-state__icon">⚠️</div>
-        <div class="empty-state__title">피드를 불러오지 못했어요</div>
+        <div class="empty-state__title">모음을 불러오지 못했어요</div>
         <div class="empty-state__desc">잠시 후 다시 시도해주세요.</div>
       </div>`;
   }
