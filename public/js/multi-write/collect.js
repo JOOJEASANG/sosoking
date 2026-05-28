@@ -12,13 +12,25 @@ function htmlToPlainText(html) {
   return (tmp.textContent || '').replace(/\n{4,}/g, '\n\n\n').trim();
 }
 
+function isGhost(el) {
+  return el?.dataset?.templateGhost === '1';
+}
+
+function realValue(el) {
+  if (!el || isGhost(el)) return '';
+  return el.value?.trim?.() || '';
+}
+
 export function getBodyText() {
   const desc = document.getElementById('mw-desc');
+  if (isGhost(desc) || document.getElementById('mw-rich-editor')?.dataset.templateGhost === '1') return '';
   return desc?.dataset.plainText || htmlToPlainText(desc?.value || '') || desc?.value.trim() || '';
 }
 
 export function getBodyHtml() {
-  return document.getElementById('mw-desc')?.value.trim() || '';
+  const desc = document.getElementById('mw-desc');
+  if (isGhost(desc) || document.getElementById('mw-rich-editor')?.dataset.templateGhost === '1') return '';
+  return desc?.value.trim() || '';
 }
 
 export function isAnonymousWriteChecked() {
@@ -31,12 +43,12 @@ function enabled(key) {
 
 function getVoteOptions() {
   return [...document.querySelectorAll('.mw-vote-option')]
-    .map(input => input.value.trim())
+    .map(input => realValue(input))
     .filter(Boolean);
 }
 
 function getQuizOptions() {
-  return [...document.querySelectorAll('.mw-quiz-option')].map(input => input.value.trim());
+  return [...document.querySelectorAll('.mw-quiz-option')].map(input => realValue(input));
 }
 
 function getFillCounts() {
@@ -128,7 +140,7 @@ export function collectMultiModules() {
     modules.anonymous = { enabled: true, mode: 'general-option' };
   }
 
-  const youtubeRaw = document.getElementById('mw-youtube-url')?.value.trim() || '';
+  const youtubeRaw = realValue(document.getElementById('mw-youtube-url'));
   if (youtubeRaw) {
     const youtube = parseYouTubeUrl(youtubeRaw);
     if (!youtube) throw new Error('유튜브 링크를 확인해주세요. 공유 링크, watch 링크, shorts 링크를 사용할 수 있어요.');
@@ -146,7 +158,7 @@ export function collectMultiModules() {
   }
 
   if (enabled('drip')) {
-    if (!bodyText) throw new Error('본문에 미친드립 주제나 상황을 입력해주세요.');
+    if (!bodyText) throw new Error('오늘의 한줄을 입력해주세요.');
     modules.drip = { enabled: true, prompt: bodyText, maxLength: 80 };
   }
 
@@ -175,9 +187,9 @@ export function collectMultiModules() {
 
   if (enabled('quiz')) {
     const mode = document.getElementById('mw-quiz-mode')?.value || 'subjective';
-    const hint = document.getElementById('mw-quiz-hint')?.value.trim() || '';
-    const explanation = document.getElementById('mw-quiz-explanation')?.value.trim() || '';
-    if (!bodyText) throw new Error('본문에 미친퀴즈 문제를 입력해주세요.');
+    const hint = realValue(document.getElementById('mw-quiz-hint'));
+    const explanation = realValue(document.getElementById('mw-quiz-explanation'));
+    if (!bodyText) throw new Error('본문에 소소퀴즈 문제를 입력해주세요.');
 
     if (mode === 'multiple') {
       const rawOptions = getQuizOptions();
@@ -190,7 +202,7 @@ export function collectMultiModules() {
       if (!answer.trim()) throw new Error('정답으로 선택한 객관식 선택지를 입력해주세요.');
       modules.quiz = { enabled: true, mode: 'multiple', question: bodyText, options: options.map(text => ({ text })), answer, correctIndex, hint, explanation };
     } else {
-      const answer = document.getElementById('mw-quiz-answer')?.value.trim() || '';
+      const answer = realValue(document.getElementById('mw-quiz-answer'));
       if (!answer) throw new Error('정답을 입력해주세요.');
       modules.quiz = { enabled: true, mode: 'subjective', question: bodyText, answer, hint, explanation };
     }
