@@ -11,21 +11,22 @@ import {
 import { navigate } from '../router.js';
 
 const TYPE_LABEL = {
-  multi: '일반',
-  general: '일반',
-  vote: '투표',
-  ox: '투표',
-  crazy_court: '투표',
-  balance: '투표',
-  battle: '투표',
-  naming: '일반',
-  drip: '드립',
-  cbattle: '드립',
-  quiz: '퀴즈',
-  initial_game: '퀴즈',
+  collect: '모음방',
+  multi: '모음방',
+  general: '모음방',
+  vote: '토론방',
+  ox: '토론방',
+  crazy_court: '토론방',
+  balance: '토론방',
+  battle: '토론방',
+  naming: '모음방',
+  drip: '드립방',
+  cbattle: '드립방',
+  quiz: '퀴즈방',
+  initial_game: '퀴즈방',
   acrostic: '행시',
   relay: '릴레이',
-  anonymous: '일반',
+  anonymous: '모음방',
   fill: '빈칸',
 };
 
@@ -60,12 +61,13 @@ function commentScore(comment) {
 
 function moduleLabel(post) {
   const m = post.modules || {};
-  if (m.vote?.enabled) return '투표';
-  if (m.drip?.enabled) return '드립';
-  if (m.quiz?.enabled) return '퀴즈';
+  if (m.collect?.enabled) return m.collect.label || '모음방';
+  if (m.vote?.enabled) return '토론방';
+  if (m.drip?.enabled) return '드립방';
+  if (m.quiz?.enabled) return '퀴즈방';
   if (post.subtype && TYPE_LABEL[post.subtype]) return TYPE_LABEL[post.subtype];
-  if (post.type !== 'multi') return TYPE_LABEL[post.type] || '일반';
-  return '일반';
+  if (post.type !== 'multi') return TYPE_LABEL[post.type] || '모음방';
+  return '모음방';
 }
 
 async function fetchPopularComments(n = 8) {
@@ -105,58 +107,64 @@ function renderIntro() {
         <div class="home-landing-hero__badge">
           <span>👑</span>
           <b>SOSOKING</b>
-          <small>10초 참여 피드</small>
+          <small>짧은 모음방</small>
         </div>
-        <h1>소소한 질문 하나로<br>투표하고, 드립치고, 퀴즈까지.</h1>
-        <p>긴 글보다 짧은 반응이 어울리는 곳. 사진, 상황, 질문을 올리고 사람들이 바로 선택하고 댓글로 참여하는 가벼운 소통 공간입니다.</p>
+        <h1>쇼츠처럼 짧게 보고<br>웃긴 것만 모아보는 곳.</h1>
+        <p>유튜브, 웃긴그림, 퀴즈, 토론, 오늘의 한줄을 방별로 모읍니다. 길게 쓰는 게시판보다 짧게 올리고 짧게 반응하는 소소한 모음 서비스입니다.</p>
         <div class="home-landing-hero__actions">
-          <button class="home-landing-hero__primary" type="button" id="hbtn-write">바로 글쓰기</button>
-          <button class="home-landing-hero__secondary" type="button" id="hbtn-feed">피드 둘러보기</button>
+          <button class="home-landing-hero__primary" type="button" id="hbtn-write">바로 올리기</button>
+          <button class="home-landing-hero__secondary" type="button" id="hbtn-feed">모음 둘러보기</button>
         </div>
-        <div class="home-landing-hero__chips" aria-label="소소킹 사용 방식">
-          <span>🗳️ 투표</span>
-          <span>🤣 한줄드립</span>
-          <span>🧠 퀴즈</span>
-          <span>💬 댓글반응</span>
+        <div class="home-landing-hero__chips" aria-label="소소킹 방 구성">
+          <span>📌 모음방</span>
+          <span>🗳️ 토론방</span>
+          <span>🧠 퀴즈방</span>
+          <span>🤣 드립방</span>
         </div>
       </div>
       <div class="home-landing-hero__mock" aria-hidden="true">
         <div class="home-mock-card home-mock-card--main">
-          <div class="home-mock-card__top"><span>오늘의 소소질문</span><b>LIVE</b></div>
-          <strong>친구 사이 돈거래, 가능?</strong>
-          <div class="home-mock-vote"><span style="width:62%">가능 62%</span></div>
-          <div class="home-mock-vote home-mock-vote--sub"><span style="width:38%">불가능 38%</span></div>
+          <div class="home-mock-card__top"><span>오늘의 웃긴 쇼츠</span><b>SHORT</b></div>
+          <strong>3초 보고 피식하는 영상 모음</strong>
+          <div class="home-mock-vote"><span style="width:72%">웃김 72%</span></div>
+          <div class="home-mock-vote home-mock-vote--sub"><span style="width:44%">저장각 44%</span></div>
         </div>
-        <div class="home-mock-card home-mock-card--float home-mock-card--drip">🤣 한줄드립 대기중</div>
-        <div class="home-mock-card home-mock-card--float home-mock-card--quiz">🧠 퀴즈 정답률 74%</div>
+        <div class="home-mock-card home-mock-card--float home-mock-card--drip">🤣 오늘의 한줄</div>
+        <div class="home-mock-card home-mock-card--float home-mock-card--quiz">🧠 짧은 퀴즈</div>
       </div>
     </section>
 
-    <section class="home-feature-panel" aria-label="소소킹 특별 기능">
+    <section class="home-feature-panel" aria-label="소소킹 방 바로가기">
       <div class="home-feature-panel__head">
         <div>
-          <span>소소킹만의 참여 방식</span>
-          <h2>게시판만 보이지 않게, 바로 참여할 판을 만듭니다.</h2>
+          <span>방별로 짧게 모아보기</span>
+          <h2>일반글은 줄이고, 바로 볼 수 있는 콘텐츠만 남깁니다.</h2>
         </div>
       </div>
-      <div class="home-feature-grid">
+      <div class="home-feature-grid home-feature-grid--rooms">
+        <button class="home-feature-card home-feature-card--vote" type="button" data-home-write-preset="collect">
+          <span class="home-feature-card__icon">📌</span>
+          <b>모음방</b>
+          <em>유튜브 쇼츠, 웃긴그림, 링크를 짧게 모아 올립니다.</em>
+          <small>모음 올리기 →</small>
+        </button>
         <button class="home-feature-card home-feature-card--vote" type="button" data-home-write-preset="vote">
           <span class="home-feature-card__icon">🗳️</span>
-          <b>소소투표</b>
-          <em>찬성/반대, 밸런스 선택지를 바로 붙여 의견을 모읍니다.</em>
-          <small>투표 만들기 →</small>
-        </button>
-        <button class="home-feature-card home-feature-card--drip" type="button" data-home-write-preset="drip">
-          <span class="home-feature-card__icon">🤣</span>
-          <b>한줄드립</b>
-          <em>사진이나 상황을 올리고 짧은 드립 댓글을 받습니다.</em>
-          <small>드립 주제 만들기 →</small>
+          <b>토론방</b>
+          <em>찬성/반대, 밸런스 선택지로 바로 의견을 모읍니다.</em>
+          <small>토론 만들기 →</small>
         </button>
         <button class="home-feature-card home-feature-card--quiz" type="button" data-home-write-preset="quiz">
           <span class="home-feature-card__icon">🧠</span>
-          <b>소소퀴즈</b>
-          <em>주관식/객관식 문제를 올리고 사람들이 바로 맞힙니다.</em>
+          <b>퀴즈방</b>
+          <em>짧은 문제를 올리고 사람들이 바로 맞힙니다.</em>
           <small>퀴즈 만들기 →</small>
+        </button>
+        <button class="home-feature-card home-feature-card--drip" type="button" data-home-write-preset="drip">
+          <span class="home-feature-card__icon">🤣</span>
+          <b>드립방</b>
+          <em>제목 없이 오늘의 한줄만 리스트로 올립니다.</em>
+          <small>한줄 올리기 →</small>
         </button>
       </div>
     </section>`;
@@ -199,7 +207,7 @@ export async function renderHome() {
     </div>`;
 
   try {
-    setMeta('소소킹 · 짧게 즐기는 질문과 드립 피드');
+    setMeta('소소킹 · 짧게 모아보는 유튜브·그림·퀴즈·드립방');
     const user = auth.currentUser;
     if (user) checkStreak(user.uid);
 
@@ -211,31 +219,31 @@ export async function renderHome() {
     const hotHTML = `
       <div>
         <div class="home-section-header">
-          <span class="home-section-title">🔥 최근 인기글</span>
+          <span class="home-section-title">🔥 최근 인기 모음</span>
           <button class="home-section-more home-section-more--button" id="hbtn-more-hot">더 보기</button>
         </div>
         <div class="home-rank-list">
           ${hotPosts.length
             ? hotPosts.map(renderPopularPost).join('')
-            : '<div class="empty-state"><div class="empty-state__title">아직 인기글이 없어요</div></div>'}
+            : '<div class="empty-state"><div class="empty-state__title">아직 모음이 없어요</div></div>'}
         </div>
       </div>`;
 
     const commentsHTML = `
       <div>
         <div class="home-section-header">
-          <span class="home-section-title">💬 최근 인기 댓글</span>
+          <span class="home-section-title">💬 최근 반응 댓글</span>
         </div>
         <div class="home-compact-feed-list">
           ${popularComments.length
             ? popularComments.map(renderPopularComment).join('')
-            : '<div class="empty-state"><div class="empty-state__title">아직 인기 댓글이 없어요</div></div>'}
+            : '<div class="empty-state"><div class="empty-state__title">아직 댓글이 없어요</div></div>'}
         </div>
       </div>`;
 
     el.innerHTML = `<div class="home-dash page-enter home-dash--v2">${renderIntro()}${hotHTML}${commentsHTML}</div>`;
 
-    el.querySelector('#hbtn-write')?.addEventListener('click', () => navigate('/write?type=multi'));
+    el.querySelector('#hbtn-write')?.addEventListener('click', () => navigate('/write?type=multi&preset=collect'));
     el.querySelector('#hbtn-feed')?.addEventListener('click', () => navigate('/feed'));
     el.querySelector('#hbtn-more-hot')?.addEventListener('click', () => navigate('/feed?sort=popular'));
     el.querySelectorAll('[data-home-write-preset]').forEach(item =>
@@ -250,7 +258,6 @@ export async function renderHome() {
       <div class="empty-state">
         <div class="empty-state__icon">⚠️</div>
         <div class="empty-state__title">홈을 불러오지 못했어요</div>
-        <div class="empty-state__desc">잠시 후 다시 시도해주세요.</div>
         <button class="btn btn--primary" style="margin-top:16px" id="btn-reload">다시 불러오기</button>
       </div>`;
     el.querySelector('#btn-reload')?.addEventListener('click', () => location.reload());
