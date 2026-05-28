@@ -1,22 +1,24 @@
-export const FILTER_TYPES = ['general', 'vote', 'naming', 'drip', 'quiz'];
+export const FILTER_TYPES = ['collect', 'vote', 'quiz', 'drip'];
 
 export const TYPE_LABELS = {
-  general: '일반',
-  multi: '일반',
-  vote: '투표',
-  ox: '투표',
+  collect: '모음방',
+  collection: '모음방',
+  general: '모음방',
+  multi: '모음방',
+  vote: '토론방',
+  ox: '토론방',
   fill: '빈칸',
   naming: '작명',
-  drip: '드립',
-  cbattle: '드립',
+  drip: '드립방',
+  cbattle: '드립방',
   acrostic: '행시',
   relay: '릴레이',
-  quiz: '퀴즈',
-  anonymous: '일반',
-  initial_game: '퀴즈',
-  crazy_court: '투표',
-  balance: '투표',
-  battle: '투표',
+  quiz: '퀴즈방',
+  anonymous: '모음방',
+  initial_game: '퀴즈방',
+  crazy_court: '토론방',
+  balance: '토론방',
+  battle: '토론방',
 };
 
 export const SORT_LABELS = {
@@ -32,21 +34,23 @@ export function normalizeFeedSort(sort) {
 }
 
 export function getPostTypeKey(post) {
+  if (post.feedType === 'collect' || post.subtype === 'collect' || post.modules?.collect?.enabled) return 'collect';
   if (post.subtype === 'ox') return 'vote';
-  if (post.subtype === 'anonymous') return 'general';
+  if (post.subtype === 'anonymous') return 'collect';
   if (post.modules?.fill?.enabled) return 'fill';
   if (post.modules?.vote?.enabled || post.modules?.vote?.ox || post.type === 'vote' || post.type === 'crazy_court' || post.type === 'ox') return 'vote';
   if (post.modules?.naming?.enabled || post.type === 'naming') return 'naming';
   if (post.modules?.acrostic?.enabled || post.type === 'acrostic') return 'acrostic';
   if (post.modules?.relay?.enabled || post.type === 'relay') return 'relay';
   if (post.modules?.quiz?.enabled || post.type === 'quiz' || post.type === 'initial_game') return 'quiz';
+  if (post.modules?.drip?.enabled || post.subtype === 'drip') return 'drip';
   if (post.subtype && TYPE_LABELS[post.subtype]) return post.subtype;
-  if (post.type === 'multi') return 'general';
-  return post.type || 'general';
+  if (post.type === 'multi') return 'collect';
+  return post.type || 'collect';
 }
 
 export function getPostTypeLabel(post) {
-  return TYPE_LABELS[getPostTypeKey(post)] || TYPE_LABELS[post.type] || '피드 글';
+  return TYPE_LABELS[getPostTypeKey(post)] || TYPE_LABELS[post.type] || '소소글';
 }
 
 export function postMatchesType(post, type) {
@@ -61,8 +65,11 @@ export function postMatchesSearch(post, rawSearch) {
     post.title,
     post.desc,
     post.authorName,
-    post.anonymous ? '익명 일반글' : '',
+    post.anonymous ? '익명 모음방' : '',
     getPostTypeLabel(post),
+    post.modules?.collect?.label,
+    post.modules?.collect?.caption,
+    post.modules?.collect?.url,
     ...(Array.isArray(post.tags) ? post.tags : []),
   ].join(' ').toLowerCase();
   return haystack.includes(search);
