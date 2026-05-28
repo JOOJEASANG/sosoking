@@ -55,7 +55,7 @@ export function renderSidebar() {
 
   const MAIN_NAV = [
     { label: '홈',  path: '/',     icon: iconHome() },
-    { label: '피드', path: '/feed', icon: iconFeed() },
+    { label: '모음', path: '/feed', icon: iconFeed() },
     { label: '통계', path: '/hall', icon: iconStats() },
   ];
 
@@ -121,8 +121,8 @@ export function renderSidebar() {
     </nav>
 
     <div class="sidebar__write">
-      <button class="sidebar__write-btn" id="sb-write-btn" aria-label="피드 만들기">
-        ${iconWrite()}<span>피드 만들기</span>
+      <button class="sidebar__write-btn" id="sb-write-btn" aria-label="모음 올리기">
+        ${iconWrite()}<span>모음 올리기</span>
       </button>
     </div>
 
@@ -145,8 +145,8 @@ export function renderSidebar() {
   });
 
   document.getElementById('sb-write-btn')?.addEventListener('click', () => {
-    if (!appState.user) navigate('/login?return=/write?type=multi');
-    else navigate('/write');
+    if (!appState.user) navigate('/login?return=/write?type=multi&preset=collect');
+    else navigate('/write?type=multi&preset=collect');
   });
 
   document.getElementById('sb-avatar')?.addEventListener('click', () => navigate('/account'));
