@@ -1,6 +1,5 @@
-import { auth, db, functions } from './firebase.js';
-import { collection, doc, setDoc, deleteDoc, serverTimestamp, Timestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
+import { auth, db } from './firebase.js';
+import { collection, doc, setDoc, deleteDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { navigate } from './router.js';
 import { toast } from './components/toast.js';
 import { appState } from './state.js';
@@ -12,9 +11,7 @@ import { collectMultiModules, getBodyText, getBodyHtml, splitTags, isAnonymousWr
 import { fillAutoTags } from './multi-write/auto-tags.js';
 import { initRichEditor, syncRichEditor } from './multi-write/editor.js';
 
-const callGetRegisteredMemberCount = httpsCallable(functions, 'getRegisteredMemberCount');
 const MAX_FEED_IMAGES = 20;
-let deadlineGateState = { checked: false, enabled: false, registeredCount: 0, threshold: 50 };
 
 function isMultiQuery() {
   return /[?&]type=multi\b/.test(window.location.hash || '');
@@ -31,157 +28,10 @@ function feedTypeFromPreset(presetKey) {
   return 'general';
 }
 
-function esc(value) {
-  return String(value || '').replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
-}
-
-function lineHtml(value) {
-  return esc(value).replace(/\n/g, '<br>');
-}
-
-function blankHtml(count = 4) {
-  const safeCount = Math.max(1, Math.min(12, Number(count) || 4));
-  return `<span class="multi-preview-blank">${Array.from({ length: safeCount }, () => '<i></i>').join('')}</span>`;
-}
-
-function renderFillPreviewText(text) {
-  let blankIndex = 0;
-  const html = esc(text || '본문에 스페이스 2칸, ___, □□□로 빈칸을 만들어보세요.')
-    .replace(/_{2,}|□+|[ \t]{2,}/g, marker => {
-      blankIndex += 1;
-      return blankHtml(marker.length || 4);
-    })
-    .replace(/\n/g, '<br>');
-  return { html, count: blankIndex };
-}
-
-function participationGuide(presetKey) {
-  return {
-    general: '💬 댓글로 이야기를 이어갈 수 있어요.',
-    vote: '🗳️ 사용자가 선택지에 투표하고 댓글로 이유를 남깁니다.',
-    fill: '🧩 사용자가 문장 속 빈칸을 채워 재미있는 답을 남깁니다.',
-    naming: '💬 작명은 별도 옵션 없이 댓글로 받습니다.',
-    drip: '🤣 사용자가 한 줄 드립을 남기고 반응을 받습니다.',
-    quiz: '🧠 사용자가 정답을 맞히고 결과를 바로 확인합니다.',
-  }[presetKey] || '💬 참여자가 댓글과 답글로 반응할 수 있어요.';
-}
-
-function renderPreviewBody() {
-  syncRichEditor();
-  const presetKey = getPresetKey();
-  const preset = MULTI_PRESETS[presetKey] || MULTI_PRESETS.general;
-  const title = document.getElementById('mw-title')?.value.trim() || preset.titlePlaceholder || '제목 미리보기';
-  const bodyText = getBodyText() || preset.descPlaceholder || '';
-  const tags = splitTags(document.getElementById('mw-tags')?.value || '');
-  const guide = participationGuide(presetKey);
-  const deadline = collectDeadlineSettings();
-  const deadlineHtml = deadline.enabled
-    ? `<div class="multi-preview-rule">⏰ ${esc(deadline.label)} · 마감 후 베스트 참여작을 확정하기 좋습니다.</div>`
-    : '';
-  const titleHtml = `<div class="multi-preview-card__title">${esc(title)}</div>`;
-  const guideHtml = `<div class="multi-preview-guide">${guide}</div>`;
-  const tagsHtml = tags.length ? `<div class="multi-preview-tags">${tags.map(tag => `<span>#${esc(tag)}</span>`).join('')}</div>` : '';
-
-  if (presetKey === 'vote') {
-    const options = [...document.querySelectorAll('.mw-vote-option')].map(input => input.value.trim()).filter(Boolean);
-    return `${titleHtml}<div class="multi-preview-body">${lineHtml(bodyText)}</div>${guideHtml}${deadlineHtml}<div class="multi-preview-options">${(options.length ? options : ['찬성', '반대']).map(option => `<span>${esc(option)}</span>`).join('')}</div>${tagsHtml}`;
-  }
-
-  if (presetKey === 'fill') {
-    const parsed = renderFillPreviewText(bodyText);
-    const emptyNotice = parsed.count ? '' : '<div class="multi-preview-warn">빈칸 표시가 아직 없어요. 스페이스 2칸 이상, ___, □□□를 넣어보세요.</div>';
-    return `${titleHtml}<div class="multi-preview-body multi-preview-body--fill">${parsed.html}</div>${guideHtml}${deadlineHtml}${emptyNotice}${tagsHtml}`;
-  }
-
-  if (presetKey === 'drip') {
-    return `${titleHtml}<div class="multi-preview-body">${lineHtml(bodyText)}</div>${guideHtml}${deadlineHtml}<div class="multi-preview-rule">참여: 80자 이내 한 줄 드립</div>${tagsHtml}`;
-  }
-
-  if (presetKey === 'quiz') {
-    const mode = document.getElementById('mw-quiz-mode')?.value || 'subjective';
-    const options = [...document.querySelectorAll('.mw-quiz-option')].map(input => input.value.trim()).filter(Boolean);
-    const answer = mode === 'multiple' ? '객관식 선택지를 고르면 서버에서 정답 확인' : '정답 입력 후 서버에서 확인';
-    const hint = document.getElementById('mw-quiz-hint')?.value.trim() || '';
-    const hintHtml = hint ? `<div class="multi-preview-rule">💡 힌트: ${esc(hint)}</div>` : '';
-    return `${titleHtml}<div class="multi-preview-body">${lineHtml(bodyText)}</div>${guideHtml}${deadlineHtml}${hintHtml}<div class="multi-preview-rule">방식: ${mode === 'multiple' ? '객관식' : '주관식'} · ${answer}</div>${mode === 'multiple' ? `<div class="multi-preview-options">${(options.length ? options : ['선택지 1', '선택지 2']).map(option => `<span>${esc(option)}</span>`).join('')}</div>` : ''}${tagsHtml}`;
-  }
-
-  return `${titleHtml}<div class="multi-preview-body">${lineHtml(bodyText)}</div>${guideHtml}${deadlineHtml}${tagsHtml}`;
-}
-
-function updateGamePreview() {
-  const preview = document.getElementById('mw-preview-body');
-  if (!preview) return;
-  preview.innerHTML = renderPreviewBody();
-}
-
-async function ensureDeadlineGate() {
-  if (deadlineGateState.checked) return deadlineGateState;
-  try {
-    const result = await callGetRegisteredMemberCount({});
-    const data = result.data || {};
-    deadlineGateState = {
-      checked: true,
-      enabled: !!data.enabled,
-      registeredCount: Number(data.count || 0),
-      threshold: Number(data.threshold || 50),
-    };
-  } catch {
-    deadlineGateState = { checked: true, enabled: false, registeredCount: 0, threshold: 50 };
-  }
-  return deadlineGateState;
-}
-
-function collectDeadlineSettings() {
-  const mode = document.getElementById('mw-deadline-mode')?.value || 'none';
-  const gate = deadlineGateState;
-  if (mode === 'none' || !gate.enabled) {
-    return { enabled: false, mode: 'none', label: '마감 없음', memberGate: gate };
-  }
-  const now = new Date();
-  if (mode === '1h') {
-    return { enabled: true, mode, label: '1시간 마감', deadlineAt: new Date(now.getTime() + 60 * 60 * 1000), memberGate: gate };
-  }
-  if (mode === '24h') {
-    return { enabled: true, mode, label: '24시간 마감', deadlineAt: new Date(now.getTime() + 24 * 60 * 60 * 1000), memberGate: gate };
-  }
-  if (mode === 'manual') {
-    return { enabled: true, mode, label: '작성자 직접 마감', deadlineAt: null, memberGate: gate };
-  }
-  return { enabled: false, mode: 'none', label: '마감 없음', memberGate: gate };
-}
-
-function setDeadlineMode(mode) {
-  const gate = deadlineGateState;
-  if (!gate.enabled && mode !== 'none') {
-    toast.warn(`회원 ${gate.threshold}명 이상부터 마감 기능을 사용할 수 있어요. 현재 ${gate.registeredCount}명`);
-    mode = 'none';
-  }
-  const hidden = document.getElementById('mw-deadline-mode');
-  if (hidden) hidden.value = mode;
-  document.querySelectorAll('[data-deadline-mode]').forEach(btn => btn.classList.toggle('active', btn.dataset.deadlineMode === mode));
-  updateGamePreview();
-}
-
-function updateDeadlineGateUI() {
-  const badge = document.getElementById('mw-member-gate-badge');
-  const hint = document.getElementById('mw-deadline-hint');
-  const options = document.getElementById('mw-deadline-options');
-  if (!badge || !hint || !options) return;
-  const gate = deadlineGateState;
-  if (gate.enabled) {
-    badge.textContent = `활성화 · 회원 ${gate.registeredCount}명`;
-    badge.classList.remove('locked');
-    hint.textContent = '마감 시간이 지나면 상세페이지에서 마감 상태로 표시됩니다.';
-    options.querySelectorAll('[data-deadline-mode]').forEach(btn => { btn.disabled = false; });
-  } else {
-    badge.textContent = `잠금 · 회원 ${gate.registeredCount}/${gate.threshold}명`;
-    badge.classList.add('locked');
-    hint.textContent = `회원 ${gate.threshold}명 이상부터 마감/결과 공개 기능이 열립니다.`;
-    options.querySelectorAll('[data-deadline-mode]').forEach(btn => {
-      if (btn.dataset.deadlineMode !== 'none') btn.disabled = true;
-    });
-  }
+function updateWriteStateOnly() {
+  const page = document.querySelector('.multi-write-page');
+  const preset = getPresetKey();
+  if (page) page.dataset.presetKey = preset;
 }
 
 function cloneWithoutQuizSecret(modules) {
@@ -207,11 +57,12 @@ function cloneWithoutQuizSecret(modules) {
   return { publicModules, quizSecret };
 }
 
-function initLivePreview() {
-  ['mw-title', 'mw-desc', 'mw-tags', 'mw-fill-count', 'mw-quiz-mode', 'mw-quiz-hint']
-    .forEach(id => document.getElementById(id)?.addEventListener('input', updateGamePreview));
-  document.querySelectorAll('.mw-vote-option,.mw-quiz-option').forEach(input => input.addEventListener('input', updateGamePreview));
-  document.getElementById('mw-desc')?.addEventListener('keyup', updateGamePreview);
+function bindTextStateEvents() {
+  ['mw-title', 'mw-desc', 'mw-tags', 'mw-quiz-mode', 'mw-quiz-hint'].forEach(id => {
+    document.getElementById(id)?.addEventListener('input', updateWriteStateOnly);
+  });
+  document.querySelectorAll('.mw-vote-option,.mw-quiz-option').forEach(input => input.addEventListener('input', updateWriteStateOnly));
+  document.getElementById('mw-desc')?.addEventListener('keyup', updateWriteStateOnly);
 }
 
 export async function renderMultiWrite() {
@@ -230,15 +81,13 @@ export async function renderMultiWrite() {
 
   const renderKey = '#/write?type=multi';
   const presetKey = getPresetKey();
-  await ensureDeadlineGate();
-  el.innerHTML = renderMultiWriteHTML({ renderKey, presetKey, showDeadline: true });
-  updateDeadlineGateUI();
+  el.innerHTML = renderMultiWriteHTML({ renderKey, presetKey });
   initImageUploader(document.getElementById('mw-img-uploader'), MAX_FEED_IMAGES);
   initRichEditor(document.getElementById('mw-desc'));
   bindMultiWriteEvents();
-  initLivePreview();
+  bindTextStateEvents();
   setVoteMode(document.getElementById('mw-vote-mode')?.value || 'debate');
-  updateGamePreview();
+  updateWriteStateOnly();
 }
 
 function updateOptionSelection(preset) {
@@ -265,7 +114,6 @@ function updateOptionSelection(preset) {
   });
 
   if (normalized === 'vote') setVoteMode(document.getElementById('mw-vote-mode')?.value || 'debate');
-  updateGamePreview();
 }
 
 function setVoteMode(mode) {
@@ -301,7 +149,6 @@ function setVoteMode(mode) {
     opts.forEach(opt => { opt.readOnly = false; });
     if (addBtn) addBtn.style.display = '';
   }
-  updateGamePreview();
 }
 
 function setQuizMode(mode) {
@@ -317,19 +164,6 @@ function setQuizMode(mode) {
   const mul = document.getElementById('mw-quiz-multiple-box');
   if (sub) sub.style.display = normalized === 'subjective' ? '' : 'none';
   if (mul) mul.style.display = normalized === 'multiple' ? '' : 'none';
-  updateGamePreview();
-}
-
-function setFillCount(count) {
-  const normalized = ['2', '3', '4', '5', '6'].includes(String(count)) ? String(count) : '4';
-  const hidden = document.getElementById('mw-fill-count');
-  if (hidden) hidden.value = normalized;
-  document.querySelectorAll('[data-fill-count]').forEach(btn => {
-    const active = btn.dataset.fillCount === normalized;
-    btn.classList.toggle('active', active);
-    btn.setAttribute('aria-checked', active ? 'true' : 'false');
-  });
-  updateGamePreview();
 }
 
 function bindMultiWriteEvents() {
@@ -338,7 +172,7 @@ function bindMultiWriteEvents() {
   document.getElementById('mw-auto-tags')?.addEventListener('click', () => {
     syncRichEditor();
     const tags = fillAutoTags({ force: true });
-    updateGamePreview();
+    updateWriteStateOnly();
     if (tags.length) toast.success('태그를 자동 생성했어요');
     else toast.warn('제목이나 본문을 조금 더 입력하면 태그를 만들 수 있어요');
   });
@@ -353,14 +187,11 @@ function bindMultiWriteEvents() {
       return;
     }
     list.insertAdjacentHTML('beforeend', `<input class="form-input mw-vote-option" maxlength="80" placeholder="선택지 ${count + 1}">`);
-    list?.lastElementChild?.addEventListener('input', updateGamePreview);
-    updateGamePreview();
+    list?.lastElementChild?.addEventListener('input', updateWriteStateOnly);
   });
 
   document.querySelectorAll('[data-vote-mode]').forEach(btn => btn.addEventListener('click', () => setVoteMode(btn.dataset.voteMode)));
   document.querySelectorAll('[data-quiz-mode]').forEach(btn => btn.addEventListener('click', () => setQuizMode(btn.dataset.quizMode)));
-  document.querySelectorAll('[data-fill-count]').forEach(btn => btn.addEventListener('click', () => setFillCount(btn.dataset.fillCount)));
-  document.querySelectorAll('[data-deadline-mode]').forEach(btn => btn.addEventListener('click', () => setDeadlineMode(btn.dataset.deadlineMode)));
 
   document.getElementById('mw-add-quiz-option')?.addEventListener('click', () => {
     const list = document.getElementById('mw-quiz-options');
@@ -370,8 +201,7 @@ function bindMultiWriteEvents() {
       return;
     }
     list.insertAdjacentHTML('beforeend', renderQuizOptionRow(count, false));
-    list?.lastElementChild?.querySelector('.mw-quiz-option')?.addEventListener('input', updateGamePreview);
-    updateGamePreview();
+    list?.lastElementChild?.querySelector('.mw-quiz-option')?.addEventListener('input', updateWriteStateOnly);
   });
 
   document.getElementById('multi-submit')?.addEventListener('click', submitMultiPost);
@@ -398,7 +228,6 @@ async function submitMultiPost() {
   let docRef = null;
   try {
     const collectedModules = collectMultiModules();
-    const deadline = collectDeadlineSettings();
     const { publicModules, quizSecret } = cloneWithoutQuizSecret(collectedModules);
     const isAnonymous = presetKey === 'general' && isAnonymousWriteChecked();
     btn.disabled = true;
@@ -436,19 +265,6 @@ async function submitMultiPost() {
       createdAt: serverTimestamp(),
     };
 
-    if (deadline.enabled) {
-      postData.deadline = {
-        enabled: true,
-        mode: deadline.mode,
-        label: deadline.label,
-        status: 'open',
-        memberGate: deadline.memberGate,
-      };
-      if (deadline.deadlineAt) postData.deadlineAt = Timestamp.fromDate(deadline.deadlineAt);
-    } else {
-      postData.deadline = { enabled: false, mode: 'none', status: 'open' };
-    }
-
     await setDoc(docRef, postData);
 
     if (quizSecret) {
@@ -472,7 +288,7 @@ function run() {
     const page = document.querySelector('.multi-write-page');
     const key = '#/write?type=multi';
     if (!page || page.dataset.renderKey !== key) renderMultiWrite();
-    else updateGamePreview();
+    else updateWriteStateOnly();
   }
 }
 
