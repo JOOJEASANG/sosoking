@@ -28,10 +28,23 @@ function feedTypeFromPreset(presetKey) {
   return 'general';
 }
 
+function dripLineValue() {
+  return document.getElementById('mw-drip-line')?.value.trim() || '';
+}
+
+function syncDripLineToHiddenBody() {
+  const drip = dripLineValue();
+  const desc = document.getElementById('mw-desc');
+  if (!desc) return;
+  desc.value = drip;
+  desc.dataset.plainText = drip;
+}
+
 function updateWriteStateOnly() {
   const page = document.querySelector('.multi-write-page');
   const preset = getPresetKey();
   if (page) page.dataset.presetKey = preset;
+  if (preset === 'drip') syncDripLineToHiddenBody();
 }
 
 function cloneWithoutQuizSecret(modules) {
@@ -58,7 +71,7 @@ function cloneWithoutQuizSecret(modules) {
 }
 
 function bindTextStateEvents() {
-  ['mw-title', 'mw-desc', 'mw-tags', 'mw-quiz-mode', 'mw-quiz-hint'].forEach(id => {
+  ['mw-title', 'mw-desc', 'mw-tags', 'mw-quiz-mode', 'mw-quiz-hint', 'mw-drip-line'].forEach(id => {
     document.getElementById(id)?.addEventListener('input', updateWriteStateOnly);
   });
   document.querySelectorAll('.mw-vote-option,.mw-quiz-option').forEach(input => input.addEventListener('input', updateWriteStateOnly));
@@ -87,6 +100,7 @@ export async function renderMultiWrite() {
   bindMultiWriteEvents();
   bindTextStateEvents();
   setVoteMode(document.getElementById('mw-vote-mode')?.value || 'debate');
+  updateOptionSelection(presetKey);
   updateWriteStateOnly();
 }
 
@@ -107,6 +121,12 @@ function updateOptionSelection(preset) {
     panel.style.display = panel.dataset.optionPanel === normalized ? '' : 'none';
   });
 
+  document.querySelectorAll('[data-write-section]').forEach(section => {
+    const key = section.dataset.writeSection;
+    if (key === 'drip-line') section.style.display = normalized === 'drip' ? '' : 'none';
+    if (key === 'standard-fields') section.style.display = normalized === 'drip' ? 'none' : '';
+  });
+
   document.querySelectorAll('[data-module-input]').forEach(input => {
     const key = input.dataset.moduleInput;
     if (key === normalized && normalized !== 'general') input.setAttribute('data-module-toggle', key);
@@ -114,6 +134,8 @@ function updateOptionSelection(preset) {
   });
 
   if (normalized === 'vote') setVoteMode(document.getElementById('mw-vote-mode')?.value || 'debate');
+  if (normalized === 'drip') syncDripLineToHiddenBody();
+  window.dispatchEvent(new Event('sosoking:write-option-changed'));
 }
 
 function setVoteMode(mode) {
@@ -169,8 +191,12 @@ function setQuizMode(mode) {
 function bindMultiWriteEvents() {
   document.getElementById('multi-back-type')?.addEventListener('click', () => navigate('/feed'));
   document.getElementById('multi-cancel')?.addEventListener('click', () => navigate('/feed'));
+  document.getElementById('mw-drip-line')?.addEventListener('keydown', event => {
+    if (event.key === 'Enter') event.preventDefault();
+  });
   document.getElementById('mw-auto-tags')?.addEventListener('click', () => {
-    syncRichEditor();
+    if (getPresetKey() === 'drip') syncDripLineToHiddenBody();
+    else syncRichEditor();
     const tags = fillAutoTags({ force: true });
     updateWriteStateOnly();
     if (tags.length) toast.success('태그를 자동 생성했어요');
@@ -213,14 +239,22 @@ async function submitMultiPost() {
     return;
   }
 
-  syncRichEditor();
-  const btn = document.getElementById('multi-submit');
-  const title = document.getElementById('mw-title')?.value.trim() || '';
   const presetKey = getPresetKey();
-  const preset = MULTI_PRESETS[presetKey] || MULTI_PRESETS.general;
-  const desc = getBodyHtml() || getBodyText();
+  if (presetKey === 'drip') syncDripLineToHiddenBody();
+  else syncRichEditor();
 
-  if (!title) {
+  const btn = document.getElementById('multi-submit');
+  let title = document.getElementById('mw-title')?.value.trim() || '';
+  const preset = MULTI_PRESETS[presetKey] || MULTI_PRESETS.general;
+  const desc = presetKey === 'drip' ? dripLineValue() : (getBodyHtml() || getBodyText());
+
+  if (presetKey === 'drip') {
+    title = '오늘의 한줄';
+    if (!desc) {
+      toast.error('오늘의 한줄을 입력해주세요.');
+      return;
+    }
+  } else if (!title) {
     toast.error('제목을 입력해주세요.');
     return;
   }
