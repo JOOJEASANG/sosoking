@@ -21,11 +21,13 @@ function isMultiQuery() {
 }
 
 function getPresetKey() {
+  const selected = document.getElementById('mw-selected-preset')?.value || '';
+  if (selected && MULTI_PRESETS[selected] && !MULTI_PRESETS[selected].hiddenFromWriter) return selected;
   return getMultiPresetFromHash(window.location.hash || '');
 }
 
 function feedTypeFromPreset(presetKey) {
-  if (['vote', 'naming', 'drip', 'quiz'].includes(presetKey)) return presetKey;
+  if (['vote', 'drip', 'quiz'].includes(presetKey)) return presetKey;
   return 'general';
 }
 
@@ -56,9 +58,9 @@ function renderFillPreviewText(text) {
 function participationGuide(presetKey) {
   return {
     general: '💬 댓글로 이야기를 이어갈 수 있어요.',
-    vote: '🗳️ 사용자가 선택지에 투표하고 댓글로 판정 이유를 남깁니다.',
+    vote: '🗳️ 사용자가 선택지에 투표하고 댓글로 이유를 남깁니다.',
     fill: '🧩 사용자가 문장 속 빈칸을 채워 재미있는 답을 남깁니다.',
-    naming: '😜 사용자가 가장 웃긴 이름을 지어 올립니다.',
+    naming: '💬 작명은 별도 옵션 없이 댓글로 받습니다.',
     drip: '🤣 사용자가 한 줄 드립을 남기고 반응을 받습니다.',
     quiz: '🧠 사용자가 정답을 맞히고 결과를 바로 확인합니다.',
   }[presetKey] || '💬 참여자가 댓글과 답글로 반응할 수 있어요.';
@@ -82,17 +84,13 @@ function renderPreviewBody() {
 
   if (presetKey === 'vote') {
     const options = [...document.querySelectorAll('.mw-vote-option')].map(input => input.value.trim()).filter(Boolean);
-    return `${titleHtml}<div class="multi-preview-body">${lineHtml(bodyText)}</div>${guideHtml}${deadlineHtml}<div class="multi-preview-options">${(options.length ? options : ['선택지 1', '선택지 2']).map(option => `<span>${esc(option)}</span>`).join('')}</div>${tagsHtml}`;
+    return `${titleHtml}<div class="multi-preview-body">${lineHtml(bodyText)}</div>${guideHtml}${deadlineHtml}<div class="multi-preview-options">${(options.length ? options : ['찬성', '반대']).map(option => `<span>${esc(option)}</span>`).join('')}</div>${tagsHtml}`;
   }
 
   if (presetKey === 'fill') {
     const parsed = renderFillPreviewText(bodyText);
     const emptyNotice = parsed.count ? '' : '<div class="multi-preview-warn">빈칸 표시가 아직 없어요. 스페이스 2칸 이상, ___, □□□를 넣어보세요.</div>';
     return `${titleHtml}<div class="multi-preview-body multi-preview-body--fill">${parsed.html}</div>${guideHtml}${deadlineHtml}${emptyNotice}${tagsHtml}`;
-  }
-
-  if (presetKey === 'naming') {
-    return `${titleHtml}<div class="multi-preview-body">${lineHtml(bodyText)}</div>${guideHtml}${deadlineHtml}<div class="multi-preview-rule">규칙: 자유 작명</div>${tagsHtml}`;
   }
 
   if (presetKey === 'drip') {
@@ -230,7 +228,7 @@ export async function renderMultiWrite() {
     return;
   }
 
-  const renderKey = window.location.hash || '#/write?type=multi';
+  const renderKey = '#/write?type=multi';
   const presetKey = getPresetKey();
   await ensureDeadlineGate();
   el.innerHTML = renderMultiWriteHTML({ renderKey, presetKey, showDeadline: true });
@@ -239,11 +237,39 @@ export async function renderMultiWrite() {
   initRichEditor(document.getElementById('mw-desc'));
   bindMultiWriteEvents();
   initLivePreview();
+  setVoteMode(document.getElementById('mw-vote-mode')?.value || 'debate');
+  updateGamePreview();
+}
+
+function updateOptionSelection(preset) {
+  const normalized = MULTI_PRESETS[preset] && !MULTI_PRESETS[preset].hiddenFromWriter ? preset : 'general';
+  const hidden = document.getElementById('mw-selected-preset');
+  if (hidden) hidden.value = normalized;
+  const page = document.querySelector('.multi-write-page');
+  if (page) page.dataset.presetKey = normalized;
+
+  document.querySelectorAll('[data-multi-preset]').forEach(btn => {
+    const active = btn.dataset.multiPreset === normalized;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
+
+  document.querySelectorAll('[data-option-panel]').forEach(panel => {
+    panel.style.display = panel.dataset.optionPanel === normalized ? '' : 'none';
+  });
+
+  document.querySelectorAll('[data-module-input]').forEach(input => {
+    const key = input.dataset.moduleInput;
+    if (key === normalized && normalized !== 'general') input.setAttribute('data-module-toggle', key);
+    else input.removeAttribute('data-module-toggle');
+  });
+
+  if (normalized === 'vote') setVoteMode(document.getElementById('mw-vote-mode')?.value || 'debate');
   updateGamePreview();
 }
 
 function setVoteMode(mode) {
-  const normalized = ['general', 'balance', 'judgment', 'debate'].includes(mode) ? mode : 'general';
+  const normalized = ['general', 'balance', 'debate'].includes(mode) ? mode : 'debate';
   const hidden = document.getElementById('mw-vote-mode');
   if (hidden) hidden.value = normalized;
   document.querySelectorAll('[data-vote-mode]').forEach(btn => {
@@ -252,17 +278,14 @@ function setVoteMode(mode) {
     btn.setAttribute('aria-checked', active ? 'true' : 'false');
   });
   const modeNote = document.getElementById('mw-vote-mode-note');
-  const judgmentPresets = document.getElementById('mw-vote-judgment-presets');
   const addBtn = document.getElementById('mw-add-vote-option');
   const optionList = document.getElementById('mw-vote-options');
   const notes = {
-    balance: '⚖️ 둘 다 싫어도 하나를 반드시 골라야 하는 상황을 만들어보세요. 선택지는 2개로 제한됩니다.',
-    judgment: '🔨 억울한 상황이나 논란 상황을 올리면 사람들이 판정을 내립니다. 아래 빠른 선택으로 선택지를 바로 채울 수 있어요.',
-    debate: '💬 찬성/반대가 자동 고정됩니다. 본문에 토론 주제를 적어주세요.',
-    general: '',
+    balance: '밸런스 투표는 선택지 2개로 제한됩니다.',
+    debate: '찬성/반대가 자동으로 들어갑니다. 본문에 토론 주제를 적어주세요.',
+    general: '선택지를 자유롭게 추가할 수 있습니다.',
   };
   if (modeNote) { modeNote.textContent = notes[normalized] || ''; modeNote.style.display = notes[normalized] ? '' : 'none'; }
-  if (judgmentPresets) judgmentPresets.style.display = normalized === 'judgment' ? '' : 'none';
   if (normalized === 'balance') {
     const opts = [...(optionList?.querySelectorAll('.mw-vote-option') || [])];
     opts.slice(2).forEach(opt => opt.remove());
@@ -278,14 +301,6 @@ function setVoteMode(mode) {
     opts.forEach(opt => { opt.readOnly = false; });
     if (addBtn) addBtn.style.display = '';
   }
-  updateGamePreview();
-}
-
-function applyJudgmentPreset(preset) {
-  const [a, b] = preset.split(',');
-  const opts = document.querySelectorAll('.mw-vote-option');
-  if (opts[0]) opts[0].value = a || '';
-  if (opts[1]) opts[1].value = b || '';
   updateGamePreview();
 }
 
@@ -328,12 +343,7 @@ function bindMultiWriteEvents() {
     else toast.warn('제목이나 본문을 조금 더 입력하면 태그를 만들 수 있어요');
   });
 
-  document.querySelectorAll('[data-multi-preset]').forEach(btn => btn.addEventListener('click', () => {
-    const preset = btn.dataset.multiPreset;
-    const nextHash = preset === 'general' ? '#/write?type=multi' : `#/write?type=multi&preset=${preset}`;
-    history.pushState(null, '', nextHash);
-    renderMultiWrite();
-  }));
+  document.querySelectorAll('[data-multi-preset]').forEach(btn => btn.addEventListener('click', () => updateOptionSelection(btn.dataset.multiPreset)));
 
   document.getElementById('mw-add-vote-option')?.addEventListener('click', () => {
     const list = document.getElementById('mw-vote-options');
@@ -343,11 +353,11 @@ function bindMultiWriteEvents() {
       return;
     }
     list.insertAdjacentHTML('beforeend', `<input class="form-input mw-vote-option" maxlength="80" placeholder="선택지 ${count + 1}">`);
+    list?.lastElementChild?.addEventListener('input', updateGamePreview);
     updateGamePreview();
   });
 
   document.querySelectorAll('[data-vote-mode]').forEach(btn => btn.addEventListener('click', () => setVoteMode(btn.dataset.voteMode)));
-  document.querySelectorAll('[data-judgment-preset]').forEach(btn => btn.addEventListener('click', () => applyJudgmentPreset(btn.dataset.judgmentPreset)));
   document.querySelectorAll('[data-quiz-mode]').forEach(btn => btn.addEventListener('click', () => setQuizMode(btn.dataset.quizMode)));
   document.querySelectorAll('[data-fill-count]').forEach(btn => btn.addEventListener('click', () => setFillCount(btn.dataset.fillCount)));
   document.querySelectorAll('[data-deadline-mode]').forEach(btn => btn.addEventListener('click', () => setDeadlineMode(btn.dataset.deadlineMode)));
@@ -360,6 +370,7 @@ function bindMultiWriteEvents() {
       return;
     }
     list.insertAdjacentHTML('beforeend', renderQuizOptionRow(count, false));
+    list?.lastElementChild?.querySelector('.mw-quiz-option')?.addEventListener('input', updateGamePreview);
     updateGamePreview();
   });
 
@@ -459,7 +470,7 @@ async function submitMultiPost() {
 function run() {
   if (isMultiQuery()) {
     const page = document.querySelector('.multi-write-page');
-    const key = window.location.hash || '#/write?type=multi';
+    const key = '#/write?type=multi';
     if (!page || page.dataset.renderKey !== key) renderMultiWrite();
     else updateGamePreview();
   }
