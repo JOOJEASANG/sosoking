@@ -1,20 +1,47 @@
 export const MULTI_PRESETS = {
-  general: {
-    label: '일반',
-    icon: '📝',
-    shortDesc: '자유글 · 사진 · 유튜브',
-    titlePlaceholder: '예: 오늘 있었던 웃긴 일',
-    descPlaceholder: '글, 사진, 질문, 상황 설명 등을 자유롭게 적어보세요.',
-    tagsPlaceholder: '#일상, #피드, #소소킹',
+  collect: {
+    label: '모음방',
+    icon: '📌',
+    shortDesc: '유튜브 · 이미지 · 링크 모음',
+    titlePlaceholder: '예: 오늘 웃긴 쇼츠 모음',
+    descPlaceholder: '짧게 설명을 적어주세요. 예: 웃겨서 저장해둔 영상입니다.',
+    tagsPlaceholder: '#유튜브, #웃긴그림, #모음',
   },
   vote: {
-    label: '투표',
+    label: '토론방',
     icon: '🗳️',
     shortDesc: '찬성 · 반대 · 선택지 투표',
     titlePlaceholder: '예: 이거 찬성인가요 반대인가요?',
-    descPlaceholder: '투표받을 상황이나 질문을 적어주세요.',
-    tagsPlaceholder: '#투표, #찬반, #소소질문',
+    descPlaceholder: '토론할 상황이나 질문을 적어주세요.',
+    tagsPlaceholder: '#토론, #투표, #찬반',
     voteOptionPlaceholders: ['찬성', '반대'],
+  },
+  quiz: {
+    label: '퀴즈방',
+    icon: '🧠',
+    shortDesc: '주관식 · 객관식 퀴즈',
+    titlePlaceholder: '예: 맞히면 인정하는 퀴즈',
+    descPlaceholder: '맞혀야 할 문제를 적어주세요.',
+    tagsPlaceholder: '#퀴즈, #문제, #상식',
+    quizAnswerPlaceholder: '예: 소',
+  },
+  drip: {
+    label: '드립방',
+    icon: '🤣',
+    shortDesc: '오늘의 한줄 리스트',
+    titlePlaceholder: '오늘의 한줄',
+    descPlaceholder: '오늘의 한줄을 입력하세요.',
+    tagsPlaceholder: '#드립, #한줄드립, #짧은웃음',
+  },
+  // 기존 일반글 호환용입니다. 새 글쓰기 선택지에서는 제거합니다.
+  general: {
+    label: '일반',
+    icon: '📝',
+    shortDesc: '기존 일반글',
+    titlePlaceholder: '예: 오늘 있었던 웃긴 일',
+    descPlaceholder: '글, 사진, 질문, 상황 설명 등을 자유롭게 적어보세요.',
+    tagsPlaceholder: '#일상, #피드, #소소킹',
+    hiddenFromWriter: true,
   },
   // 기존 빈칸채우기 글 호환용입니다. 새 글쓰기 선택지에서는 숨깁니다.
   fill: {
@@ -35,14 +62,6 @@ export const MULTI_PRESETS = {
     tagsPlaceholder: '#작명, #미친작명소',
     hiddenFromWriter: true,
   },
-  drip: {
-    label: '한줄드립',
-    icon: '🤣',
-    shortDesc: '짧은 드립 댓글 모으기',
-    titlePlaceholder: '예: 퇴근 5분 전에 팀장이 부른 이유',
-    descPlaceholder: '사람들이 한 줄 드립을 남기고 싶어지는 주제나 상황을 적어주세요.',
-    tagsPlaceholder: '#드립, #한줄드립, #드립대전',
-  },
   // 기존 행시 글 호환용입니다. 새 글쓰기 선택지에서는 숨깁니다.
   acrostic: {
     label: '행시',
@@ -61,37 +80,31 @@ export const MULTI_PRESETS = {
     tagsPlaceholder: '#릴레이, #막장릴레이',
     hiddenFromWriter: true,
   },
-  quiz: {
-    label: '퀴즈',
-    icon: '🧠',
-    shortDesc: '주관식 · 객관식 퀴즈',
-    titlePlaceholder: '예: 퀴즈 도전',
-    descPlaceholder: '맞혀야 할 문제를 본문에 적어주세요.',
-    tagsPlaceholder: '#퀴즈, #문제',
-    quizAnswerPlaceholder: '예: 소',
-  },
 };
 
-export const WRITER_PRESET_KEYS = Object.keys(MULTI_PRESETS).filter(key => !MULTI_PRESETS[key].hiddenFromWriter);
+export const WRITER_PRESET_KEYS = ['collect', 'vote', 'quiz', 'drip'];
 
 export const BODY_LABELS = {
-  vote: '본문 · 투표 주제',
-  drip: '본문 · 드립 주제',
+  collect: '한줄 설명',
+  vote: '토론 주제',
+  drip: '오늘의 한줄',
   fill: '본문 · 빈칸 문장',
-  quiz: '본문 · 문제',
+  quiz: '퀴즈 문제',
 };
 
-export const BODY_REQUIRED_PRESETS = ['vote', 'drip', 'quiz'];
+export const BODY_REQUIRED_PRESETS = ['collect', 'vote', 'drip', 'quiz'];
 
 export function normalizePresetKey(key, { allowHidden = false } = {}) {
   if (key === 'ox') return 'vote';
+  if (key === 'collection' || key === 'youtube' || key === 'image' || key === 'link') return 'collect';
+  if (key === 'debate' || key === 'discussion') return 'vote';
   if (key === 'anonymous' || key === 'relay' || key === 'acrostic') return 'general';
-  if (!MULTI_PRESETS[key]) return 'general';
-  if (!allowHidden && MULTI_PRESETS[key].hiddenFromWriter) return 'general';
+  if (!MULTI_PRESETS[key]) return 'collect';
+  if (!allowHidden && MULTI_PRESETS[key].hiddenFromWriter) return 'collect';
   return key;
 }
 
 export function getMultiPresetFromHash(hash = window.location.hash || '') {
   const query = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '';
-  return normalizePresetKey(new URLSearchParams(query).get('preset') || 'general');
+  return normalizePresetKey(new URLSearchParams(query).get('preset') || 'collect');
 }
