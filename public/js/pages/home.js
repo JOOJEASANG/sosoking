@@ -5,51 +5,10 @@ import { setMeta } from '../utils/seo.js';
 import { escHtml, formatTime } from '../utils/helpers.js';
 import { fetchHotPosts } from '../services/feed-service.js';
 import {
-  collection, query, orderBy, limit, getDocs,
+  collection, collectionGroup, query, orderBy, limit, getDocs,
   doc, getDoc, updateDoc,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { navigate } from '../router.js';
-
-function isStandalone() {
-  return window.matchMedia('(display-mode: standalone)').matches || !!navigator.standalone;
-}
-function isIOS() {
-  return /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream;
-}
-
-function renderInstallBanner() {
-  if (isStandalone()) return '';
-  if (!appState.installPrompt && !isIOS()) return '';
-  return `
-    <div class="home-install-banner" id="home-install-banner">
-      <span class="home-install-banner__icon">📲</span>
-      <div class="home-install-banner__text">
-        <b>앱으로 설치하면 더 빠르게!</b>
-        <span>홈 화면에서 바로 소소킹을 열 수 있어요</span>
-      </div>
-      <button class="btn btn--primary btn--sm" id="home-install-btn">설치</button>
-      <button class="home-install-banner__close" id="home-install-close" aria-label="닫기">×</button>
-    </div>`;
-}
-
-function bindInstallBanner() {
-  document.getElementById('home-install-close')?.addEventListener('click', () => {
-    document.getElementById('home-install-banner')?.remove();
-  });
-  document.getElementById('home-install-btn')?.addEventListener('click', async () => {
-    const prompt = appState.installPrompt;
-    if (prompt) {
-      prompt.prompt();
-      const { outcome } = await prompt.userChoice;
-      if (outcome === 'accepted') {
-        appState.installPrompt = null;
-        document.getElementById('home-install-banner')?.remove();
-      }
-    } else if (isIOS()) {
-      alert('Safari 하단 공유 버튼(⬆)을 탭한 뒤 "홈 화면에 추가"를 선택하세요.');
-    }
-  });
-}
 
 const TYPE_LABEL = {
   multi: '일반',
@@ -59,7 +18,7 @@ const TYPE_LABEL = {
   crazy_court: '투표',
   balance: '투표',
   battle: '투표',
-  naming: '작명',
+  naming: '일반',
   drip: '드립',
   cbattle: '드립',
   quiz: '퀴즈',
@@ -89,23 +48,19 @@ async function checkStreak(uid) {
   } catch { /* non-critical */ }
 }
 
-async function fetchRecentPosts(n = 8) {
-  try {
-    const q    = query(collection(db, 'feeds'), orderBy('createdAt', 'desc'), limit(n + 8));
-    const snap = await getDocs(q);
-    return snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.hidden).slice(0, n);
-  } catch { return []; }
-}
-
 function fmtNum(n) {
   if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
   return String(n || 0);
 }
 
+function commentScore(comment) {
+  const r = comment.reactions || {};
+  return Number(r.funny || 0) * 3 + Number(r.fire || 0) * 2 + Number(r.like || 0) + Number(comment.likes || 0);
+}
+
 function moduleLabel(post) {
   const m = post.modules || {};
   if (m.vote?.enabled) return '투표';
-  if (m.naming?.enabled) return '작명';
   if (m.drip?.enabled) return '드립';
   if (m.quiz?.enabled) return '퀴즈';
   if (post.subtype && TYPE_LABEL[post.subtype]) return TYPE_LABEL[post.subtype];
@@ -113,12 +68,57 @@ function moduleLabel(post) {
   return '일반';
 }
 
-function renderCompactPost(post) {
+async function fetchPopularComments(n = 8) {
+  try {
+    const q = query(collectionGroup(db, 'comments'), orderBy('createdAt', 'desc'), limit(80));
+    const snap = await getDocs(q);
+    return snap.docs
+      .map(d => {
+        const data = d.data();
+        return {
+          id: d.id,
+          postId: d.ref.parent?.parent?.id || data.postId || '',
+          ...data,
+          _score: commentScore(data),
+        };
+      })
+      .filter(c => c.text && c.postId && !c.hidden)
+      .sort((a, b) => {
+        if (b._score !== a._score) return b._score - a._score;
+        const bt = b.createdAt?.toMillis?.() || 0;
+        const at = a.createdAt?.toMillis?.() || 0;
+        return bt - at;
+      })
+      .slice(0, n);
+  } catch (error) {
+    console.warn('[home] popular comments failed', error);
+    return [];
+  }
+}
+
+function renderPopularPost(post, index) {
   return `
-    <button class="home-compact-feed-item" type="button" data-id="${post.id}">
-      <span class="home-compact-feed-item__badge">${escHtml(moduleLabel(post))}</span>
-      <span class="home-compact-feed-item__title">${escHtml(post.title || '제목 없음')}</span>
-      <span class="home-compact-feed-item__meta">${formatTime(post.createdAt?.toDate?.() || post.createdAt)} · 💬 ${Number(post.commentCount || 0)}</span>
+    <div class="home-rank-item" data-id="${post.id}">
+      <div class="home-rank-item__num home-rank-item__num--${index < 3 ? index + 1 : 'rest'}">${index + 1}</div>
+      <div class="home-rank-item__body">
+        <div class="home-rank-item__type">${moduleLabel(post)}</div>
+        <div class="home-rank-item__title">${escHtml(post.title || '제목 없음')}</div>
+      </div>
+      <div class="home-rank-item__stats">
+        ${post.reactions?.total ? `<span>❤️ ${fmtNum(post.reactions.total)}</span>` : ''}
+        ${post.commentCount    ? `<span>💬 ${fmtNum(post.commentCount)}</span>`    : ''}
+      </div>
+    </div>`;
+}
+
+function renderPopularComment(comment, index) {
+  const timeStr = formatTime(comment.createdAt?.toDate?.() || comment.createdAt);
+  const score = comment._score || 0;
+  return `
+    <button class="home-compact-feed-item" type="button" data-id="${comment.postId}">
+      <span class="home-compact-feed-item__badge">댓글 ${index + 1}</span>
+      <span class="home-compact-feed-item__title">${escHtml(comment.text || '').slice(0, 120)}</span>
+      <span class="home-compact-feed-item__meta">${escHtml(comment.authorName || '익명')} · ${timeStr}${score ? ` · 반응 ${fmtNum(score)}` : ''}</span>
     </button>`;
 }
 
@@ -128,100 +128,48 @@ export async function renderHome() {
 
   el.innerHTML = `
     <div class="home-dash page-enter home-dash--v2">
-      <div class="skeleton" style="height:88px;border-radius:22px"></div>
-      <div class="skeleton" style="height:260px;border-radius:18px;margin-top:4px"></div>
-      <div class="skeleton" style="height:200px;border-radius:18px"></div>
+      <div class="skeleton" style="height:260px;border-radius:18px"></div>
+      <div class="skeleton" style="height:220px;border-radius:18px"></div>
     </div>`;
 
   try {
-    setMeta('소소킹 · 소소함의 재미');
+    setMeta('소소킹 · 최근 인기글과 인기 댓글');
     const user = auth.currentUser;
     if (user) checkStreak(user.uid);
 
-    const [hotPosts, recentPosts] = await Promise.all([fetchHotPosts(5), fetchRecentPosts(8)]);
-    const streak   = appState.streak || 0;
-    const nickname = appState.nickname || user?.displayName || user?.email?.split('@')[0] || '';
+    const [hotPosts, popularComments] = await Promise.all([
+      fetchHotPosts(8),
+      fetchPopularComments(8),
+    ]);
 
-    const greetingHTML = `
-      <div class="home-greeting">
-        <div class="home-greeting__left">
-          ${streak > 1 ? `<div class="home-greeting__streak">🔥 ${streak}일 연속 출석 중</div>` : ''}
-          <div class="home-greeting__name">
-            ${user ? `${escHtml(nickname)}님, 오늘도 소소하게 놀아볼까요?` : '소소한데 은근히 재밌는 곳, 소소킹 👋'}
-          </div>
-          <div class="home-greeting__sub">일반 · 투표 · 작명 · 드립 · 퀴즈로 짧게 놀고 피식 웃는 커뮤니티</div>
-        </div>
-        <button class="btn btn--primary btn--sm home-greeting__write" id="hbtn-write">+ 글쓰기</button>
-      </div>`;
-
-    const hotHTML = hotPosts.length ? `
+    const hotHTML = `
       <div>
         <div class="home-section-header">
-          <span class="home-section-title">🔥 지금 소소하게 뜨는 글</span>
+          <span class="home-section-title">🔥 최근 인기글</span>
           <button class="home-section-more home-section-more--button" id="hbtn-more-hot">더 보기</button>
         </div>
         <div class="home-rank-list">
-          ${hotPosts.map((p, i) => `
-            <div class="home-rank-item" data-id="${p.id}">
-              <div class="home-rank-item__num home-rank-item__num--${i < 3 ? i + 1 : 'rest'}">${i + 1}</div>
-              <div class="home-rank-item__body">
-                <div class="home-rank-item__type">${moduleLabel(p)}</div>
-                <div class="home-rank-item__title">${escHtml(p.title || '제목 없음')}</div>
-              </div>
-              <div class="home-rank-item__stats">
-                ${p.reactions?.total ? `<span>❤️ ${fmtNum(p.reactions.total)}</span>` : ''}
-                ${p.commentCount    ? `<span>💬 ${fmtNum(p.commentCount)}</span>`    : ''}
-              </div>
-            </div>`).join('')}
-        </div>
-      </div>` : '';
-
-    const recentHTML = recentPosts.length ? `
-      <div>
-        <div class="home-section-header">
-          <span class="home-section-title">🕐 방금 올라온 소소한 재미</span>
-          <button class="home-section-more home-section-more--button" id="hbtn-more-recent">피드 가기</button>
-        </div>
-        <div class="home-compact-feed-list">${recentPosts.map(renderCompactPost).join('')}</div>
-      </div>` : '';
-
-    const quickLinksHTML = `
-      <div>
-        <div class="home-section-header">
-          <span class="home-section-title">🚀 바로가기</span>
-        </div>
-        <div class="home-quick-links">
-          <button class="home-quick-link-card" data-nav="/write?type=multi&preset=drip">
-            <span class="home-quick-link-card__icon">🤣</span>
-            <span class="home-quick-link-card__label">드립</span>
-            <span class="home-quick-link-card__sub">한 줄로 웃기기</span>
-          </button>
-          <button class="home-quick-link-card" data-nav="/write?type=multi&preset=vote">
-            <span class="home-quick-link-card__icon">🗳️</span>
-            <span class="home-quick-link-card__label">투표</span>
-            <span class="home-quick-link-card__sub">가볍게 판정받기</span>
-          </button>
-          <button class="home-quick-link-card" data-nav="/write?type=multi&preset=naming">
-            <span class="home-quick-link-card__icon">😜</span>
-            <span class="home-quick-link-card__label">작명</span>
-            <span class="home-quick-link-card__sub">웃긴 이름 붙이기</span>
-          </button>
-          <button class="home-quick-link-card" data-nav="/feed?sort=popular">
-            <span class="home-quick-link-card__icon">🔥</span>
-            <span class="home-quick-link-card__label">인기</span>
-            <span class="home-quick-link-card__sub">반응 높은 글</span>
-          </button>
+          ${hotPosts.length
+            ? hotPosts.map(renderPopularPost).join('')
+            : '<div class="empty-state"><div class="empty-state__title">아직 인기글이 없어요</div></div>'}
         </div>
       </div>`;
 
-    el.innerHTML = `<div class="home-dash page-enter home-dash--v2">${greetingHTML}${hotHTML}${quickLinksHTML}${recentHTML}</div>`;
+    const commentsHTML = `
+      <div>
+        <div class="home-section-header">
+          <span class="home-section-title">💬 최근 인기 댓글</span>
+        </div>
+        <div class="home-compact-feed-list">
+          ${popularComments.length
+            ? popularComments.map(renderPopularComment).join('')
+            : '<div class="empty-state"><div class="empty-state__title">아직 인기 댓글이 없어요</div></div>'}
+        </div>
+      </div>`;
 
-    el.querySelector('#hbtn-write')?.addEventListener('click',        () => navigate('/write?type=multi'));
-    el.querySelector('#hbtn-more-hot')?.addEventListener('click',     () => navigate('/feed?sort=popular'));
-    el.querySelector('#hbtn-more-recent')?.addEventListener('click',  () => navigate('/feed'));
-    el.querySelectorAll('[data-nav]').forEach(btn =>
-      btn.addEventListener('click', () => navigate(btn.dataset.nav))
-    );
+    el.innerHTML = `<div class="home-dash page-enter home-dash--v2">${hotHTML}${commentsHTML}</div>`;
+
+    el.querySelector('#hbtn-more-hot')?.addEventListener('click', () => navigate('/feed?sort=popular'));
     el.querySelectorAll('[data-id]').forEach(item =>
       item.addEventListener('click', () => navigate(`/detail/${item.dataset.id}`))
     );
