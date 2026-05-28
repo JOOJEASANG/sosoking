@@ -1,0 +1,109 @@
+.soso-room-tabs {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 2px 0 8px;
+}
+
+.soso-room-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.soso-room-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  min-height: 38px;
+  border: 1px solid var(--color-border-light);
+  border-radius: 999px;
+  padding: 0 13px;
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 950;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, .04);
+}
+
+.soso-room-tab.active {
+  border-color: transparent;
+  background: var(--gradient-brand);
+  color: #fff;
+  box-shadow: 0 8px 22px rgba(255, 68, 34, .20);
+}
+
+.soso-room-tab small {
+  display: inline-flex;
+  align-items: center;
+  min-height: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.20);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.soso-room-head {
+  margin: 0 0 4px;
+  border: 1px solid var(--color-border-light);
+  border-radius: 22px;
+  padding: 15px 16px;
+  background:
+    linear-gradient(135deg, rgba(255, 107, 74, .09), rgba(124, 60, 255, .06)),
+    var(--color-surface);
+}
+
+.soso-room-head__label {
+  color: var(--color-primary);
+  font-size: 12px;
+  font-weight: 1000;
+}
+
+.soso-room-head__title {
+  margin-top: 4px;
+  color: var(--color-text-primary);
+  font-size: 22px;
+  line-height: 1.22;
+  letter-spacing: -.055em;
+  font-weight: 1000;
+}
+
+.soso-room-head__desc {
+  margin-top: 5px;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.5;
+  word-break: keep-all;
+}
+
+.soso-room-head__action {
+  margin-top: 12px;
+}
+
+@media (max-width: 767px) {
+  .soso-room-tabs {
+    margin-left: -2px;
+    padding-bottom: 6px;
+  }
+
+  .soso-room-tab {
+    min-height: 36px;
+    padding: 0 11px;
+    font-size: 12px;
+  }
+
+  .soso-room-head {
+    border-radius: 18px;
+    padding: 13px 14px;
+  }
+
+  .soso-room-head__title {
+    font-size: 20px;
+  }
+}
