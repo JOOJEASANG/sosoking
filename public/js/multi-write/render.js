@@ -146,36 +146,7 @@ function renderOptionPanels(activeKey) {
     </div>`;
 }
 
-function renderGamePreview() {
-  return `
-    <div class="multi-game-preview" id="mw-game-preview">
-      <div class="multi-game-preview__head">
-        <span>참여 미리보기</span>
-        <small>선택한 옵션이 어떻게 보일지 확인하세요.</small>
-      </div>
-      <div class="multi-game-preview__body" id="mw-preview-body"></div>
-    </div>`;
-}
-
-function renderDeadlineSettings() {
-  return `
-    <div class="multi-deadline-box" id="mw-deadline-box" data-deadline-enabled="1">
-      <div class="multi-deadline-box__head">
-        <div><b>⏰ 마감/결과 공개</b><small>회원 50명 이상부터 사용할 수 있습니다.</small></div>
-        <span id="mw-member-gate-badge">활성화</span>
-      </div>
-      <div id="mw-deadline-options" class="multi-deadline-options">
-        <input type="hidden" id="mw-deadline-mode" value="none">
-        <button type="button" class="multi-deadline-option active" data-deadline-mode="none">마감 없음</button>
-        <button type="button" class="multi-deadline-option" data-deadline-mode="1h">1시간</button>
-        <button type="button" class="multi-deadline-option" data-deadline-mode="24h">24시간</button>
-        <button type="button" class="multi-deadline-option" data-deadline-mode="manual">직접 마감</button>
-      </div>
-      <div class="form-hint" id="mw-deadline-hint">마감 시간이 지나면 상세페이지에서 마감 상태로 표시됩니다.</div>
-    </div>`;
-}
-
-export function renderMultiWriteHTML({ renderKey, presetKey, showDeadline = false }) {
+export function renderMultiWriteHTML({ renderKey, presetKey }) {
   const activeKey = MULTI_PRESETS[presetKey] && !MULTI_PRESETS[presetKey].hiddenFromWriter ? presetKey : 'general';
   const preset = MULTI_PRESETS[activeKey] || MULTI_PRESETS.general;
 
@@ -211,8 +182,6 @@ export function renderMultiWriteHTML({ renderKey, presetKey, showDeadline = fals
           </div>
           ${renderOptionPicker(activeKey)}
           ${renderOptionPanels(activeKey)}
-          ${renderGamePreview()}
-          ${showDeadline ? renderDeadlineSettings() : ''}
           <div class="multi-comment-note">💬 댓글과 답글은 항상 켜져 있습니다.</div>
         </div>
         <div class="card__footer">
