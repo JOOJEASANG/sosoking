@@ -6,11 +6,10 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const HALL_CATS = [
-  { key: 'popular',  label: '인기글',      icon: '🔥', type: null,       desc: '반응과 댓글이 많은 글', scoreKey: null },
-  { key: 'comment',  label: '댓글 많은 글', icon: '💬', type: null,       desc: '댓글 참여가 많은 글', scoreKey: 'comment' },
-  { key: 'naming',   label: '작명 통계',   icon: '✏️', type: 'naming',   desc: '미친작명소 인기글', scoreKey: null },
-  { key: 'drip',     label: '드립 통계',   icon: '🤣', type: 'drip',     desc: '한 줄 드립 인기글', scoreKey: null },
-  { key: 'quiz',     label: '퀴즈 통계',   icon: '🧠', type: 'quiz',     desc: '퀴즈 인기글', scoreKey: null },
+  { key: 'popular',  label: '인기글',      icon: '🔥', type: null,   desc: '반응과 댓글이 많은 글', scoreKey: null },
+  { key: 'comment',  label: '댓글 많은 글', icon: '💬', type: null,   desc: '댓글 참여가 많은 글', scoreKey: 'comment' },
+  { key: 'drip',     label: '드립 통계',   icon: '🤣', type: 'drip', desc: '한 줄 드립 인기글', scoreKey: null },
+  { key: 'quiz',     label: '퀴즈 통계',   icon: '🧠', type: 'quiz', desc: '퀴즈 인기글', scoreKey: null },
 ];
 
 function postType(post) {
@@ -20,8 +19,6 @@ function postType(post) {
   if (modules.vote?.ox) return 'ox';
   if (modules.vote?.enabled) return 'vote';
   if (modules.fill?.enabled) return 'fill';
-  if (modules.naming?.enabled) return 'naming';
-
   if (modules.quiz?.enabled) return 'quiz';
   if (modules.anonymous?.enabled || post.anonymous) return 'anonymous';
   return post.type === 'multi' ? 'general' : post.type;
@@ -91,7 +88,7 @@ export async function renderHall() {
       </div>
       <div id="hall-info-box">${renderHallInfo([])}</div>
       <div class="hall-grid">
-        ${Array.from({ length: 5 }, () => `<div class="skeleton-card" style="height:200px"></div>`).join('')}
+        ${Array.from({ length: 4 }, () => `<div class="skeleton-card" style="height:200px"></div>`).join('')}
       </div>
     </div>`;
 

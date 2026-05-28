@@ -96,6 +96,19 @@ async function fetchPopularComments(n = 8) {
   }
 }
 
+function renderIntro() {
+  return `
+    <section class="home-intro-card">
+      <div class="home-intro-card__eyebrow">SOSOKING</div>
+      <h1>소소한 질문과 드립을 짧게 즐기는 피드</h1>
+      <p>투표, 퀴즈, 한줄드립, 댓글 반응을 가볍게 올리고 바로 참여할 수 있는 소소한 놀이터입니다.</p>
+      <div class="home-intro-card__actions">
+        <button class="btn btn--primary" type="button" id="hbtn-write">글쓰기</button>
+        <button class="btn btn--ghost" type="button" id="hbtn-feed">피드 보기</button>
+      </div>
+    </section>`;
+}
+
 function renderPopularPost(post, index) {
   return `
     <div class="home-rank-item" data-id="${post.id}">
@@ -133,7 +146,7 @@ export async function renderHome() {
     </div>`;
 
   try {
-    setMeta('소소킹 · 최근 인기글과 인기 댓글');
+    setMeta('소소킹 · 짧게 즐기는 질문과 드립 피드');
     const user = auth.currentUser;
     if (user) checkStreak(user.uid);
 
@@ -167,8 +180,10 @@ export async function renderHome() {
         </div>
       </div>`;
 
-    el.innerHTML = `<div class="home-dash page-enter home-dash--v2">${hotHTML}${commentsHTML}</div>`;
+    el.innerHTML = `<div class="home-dash page-enter home-dash--v2">${renderIntro()}${hotHTML}${commentsHTML}</div>`;
 
+    el.querySelector('#hbtn-write')?.addEventListener('click', () => navigate('/write?type=multi'));
+    el.querySelector('#hbtn-feed')?.addEventListener('click', () => navigate('/feed'));
     el.querySelector('#hbtn-more-hot')?.addEventListener('click', () => navigate('/feed?sort=popular'));
     el.querySelectorAll('[data-id]').forEach(item =>
       item.addEventListener('click', () => navigate(`/detail/${item.dataset.id}`))
