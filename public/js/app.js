@@ -34,9 +34,6 @@ import { renderTerms }   from './pages/terms.js';
 import { renderPrivacy } from './pages/privacy.js';
 import { renderScraps }  from './pages/scraps.js';
 import { renderHall }    from './pages/hall.js';
-import { renderSosoland } from './pages/sosoland.js';
-import { renderLiarGame } from './pages/liar-game.js';
-import { renderMafiaGame } from './pages/mafia-game.js';
 
 export { appState };
 
@@ -67,6 +64,10 @@ async function loadUserMeta(uid) {
   } catch { /* non-critical */ }
 }
 
+function renderRemovedGamePage() {
+  navigate('/feed');
+}
+
 export async function initApp() {
   document.getElementById('app').innerHTML = `
     <div class="app-shell">
@@ -82,14 +83,13 @@ export async function initApp() {
                   <img src="/logo.svg" alt="" width="26" height="26">
                   <span>소소킹</span>
                 </a>
-                <div class="site-footer__tagline">소소함의 재미<br>짧게 놀고 피식 웃는 커뮤니티</div>
+                <div class="site-footer__tagline">소소하게 보고<br>짧게 참여하는 피드</div>
               </div>
               <div>
                 <div class="site-footer__col-title">바로가기</div>
                 <div class="site-footer__links">
                   <a href="#/feed">피드</a>
-                  <a href="#/write?type=multi&preset=drip">드립</a>
-                  <a href="#/sosoland">게임</a>
+                  <a href="#/write?type=multi">글쓰기</a>
                   <a href="#/guide">이용안내</a>
                 </div>
               </div>
@@ -168,11 +168,11 @@ export async function initApp() {
   registerRoute('/',           () => renderHome());
   registerRoute('/feed',       () => renderFeed());
   registerRoute('/write',      () => renderWrite());
-  registerRoute('/sosoland',   () => renderSosoland());
-  registerRoute('/game/liar',  () => renderLiarGame());
-  registerRoute('/game/liar/:id', ({ id }) => renderLiarGame({ id }));
-  registerRoute('/game/mafia', () => renderMafiaGame());
-  registerRoute('/game/mafia/:id', ({ id }) => renderMafiaGame({ id }));
+  registerRoute('/sosoland',   () => renderRemovedGamePage());
+  registerRoute('/game/liar',  () => renderRemovedGamePage());
+  registerRoute('/game/liar/:id', () => renderRemovedGamePage());
+  registerRoute('/game/mafia', () => renderRemovedGamePage());
+  registerRoute('/game/mafia/:id', () => renderRemovedGamePage());
   registerRoute('/detail/:id', ({ id }) => renderDetail(id));
   registerRoute('/account',    () => renderAccount());
   registerRoute('/scraps',     () => renderScraps());
@@ -185,7 +185,6 @@ export async function initApp() {
 
   initRouter();
 
-  // head의 인라인 스크립트가 먼저 잡은 이벤트 복구
   if (window.__pwaInstallPrompt) {
     appState.installPrompt = window.__pwaInstallPrompt;
     renderHeader();
