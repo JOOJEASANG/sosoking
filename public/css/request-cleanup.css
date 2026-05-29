@@ -21,6 +21,69 @@
 @media (max-width: 767px) {
   .home-feature-grid {
     grid-template-columns: 1fr !important;
+    gap: 9px !important;
+  }
+
+  .home-feature-card {
+    display: grid !important;
+    grid-template-columns: 44px minmax(0, 1fr) !important;
+    grid-template-rows: auto auto !important;
+    column-gap: 12px !important;
+    row-gap: 3px !important;
+    align-items: center !important;
+    min-height: 0 !important;
+    padding: 14px 15px !important;
+    border-radius: 18px !important;
+    writing-mode: horizontal-tb !important;
+    text-orientation: mixed !important;
+  }
+
+  .home-feature-card::after {
+    width: 82px !important;
+    height: 82px !important;
+    right: -28px !important;
+    bottom: -32px !important;
+    opacity: .10 !important;
+  }
+
+  .home-feature-card__icon {
+    grid-column: 1 !important;
+    grid-row: 1 / span 2 !important;
+    width: 42px !important;
+    height: 42px !important;
+    margin: 0 !important;
+    border-radius: 14px !important;
+    font-size: 22px !important;
+  }
+
+  .home-feature-card b {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    display: block !important;
+    margin: 0 !important;
+    font-size: 17px !important;
+    line-height: 1.25 !important;
+    letter-spacing: -.04em !important;
+    white-space: nowrap !important;
+    writing-mode: horizontal-tb !important;
+    text-orientation: mixed !important;
+  }
+
+  .home-feature-card em {
+    grid-column: 2 !important;
+    grid-row: 2 !important;
+    display: block !important;
+    margin: 0 !important;
+    font-size: 12.5px !important;
+    line-height: 1.45 !important;
+    font-weight: 750 !important;
+    word-break: keep-all !important;
+    writing-mode: horizontal-tb !important;
+    text-orientation: mixed !important;
+  }
+
+  .home-feature-card small {
+    display: none !important;
   }
 }
 
