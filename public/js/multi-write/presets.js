@@ -2,7 +2,7 @@ export const MULTI_PRESETS = {
   collect: {
     label: '모음방',
     icon: '📌',
-    shortDesc: '유튜브 · 이미지 · 링크 모음',
+    shortDesc: '유튜브 · 이미지 모음',
     titlePlaceholder: '예: 오늘 웃긴 쇼츠 모음',
     descPlaceholder: '짧게 설명을 적어주세요. 예: 웃겨서 저장해둔 영상입니다.',
     tagsPlaceholder: '#유튜브, #웃긴그림, #모음',
