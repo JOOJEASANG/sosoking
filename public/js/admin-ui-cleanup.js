@@ -62,13 +62,52 @@ function injectPolishStyle() {
       width: 100% !important;
       box-sizing: border-box !important;
     }
-    .soso-room-head {
-      margin: 0 !important;
-    }
+    .soso-room-head { margin: 0 !important; }
     .feed-pagination,
-    #feed-pagination {
-      margin-top: 14px !important;
+    #feed-pagination { margin-top: 14px !important; }
+
+    .vote-type-toggle {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin: 0 0 12px;
     }
+    .vote-type-toggle__btn {
+      min-height: 58px;
+      padding: 10px 12px;
+      border: 1px solid var(--color-border-light);
+      border-radius: 16px;
+      background: var(--color-surface);
+      color: var(--color-text-secondary);
+      font-family: inherit;
+      font-weight: 900;
+      text-align: left;
+      cursor: pointer;
+    }
+    .vote-type-toggle__btn b {
+      display: block;
+      color: var(--color-text-primary);
+      font-size: 13px;
+      margin-bottom: 3px;
+    }
+    .vote-type-toggle__btn span {
+      display: block;
+      color: var(--color-text-muted);
+      font-size: 11px;
+      line-height: 1.35;
+    }
+    .vote-type-toggle__btn.active {
+      border-color: var(--color-primary-border);
+      background: var(--color-primary-bg);
+    }
+    .vote-mode-hint {
+      margin-top: 7px;
+      color: var(--color-text-muted);
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1.45;
+    }
+
     .debate-comment-mode {
       display: flex;
       flex-direction: column;
@@ -116,8 +155,6 @@ function injectPolishStyle() {
       background: rgba(59, 130, 246, .08);
       color: #2563eb;
     }
-    .debate-side-row { display: none; }
-    .debate-comment-mode[data-mode="debate"] .debate-side-row { display: flex; }
     .debate-comments-wrap {
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -171,9 +208,7 @@ function injectPolishStyle() {
       font-size: 11px;
       font-weight: 750;
     }
-    .debate-normal-comments {
-      margin-top: 12px;
-    }
+    .debate-normal-comments { margin-top: 12px; }
     .debate-empty {
       padding: 18px 8px;
       color: var(--color-text-muted);
@@ -190,6 +225,7 @@ function injectPolishStyle() {
       .soso-feed-toolbar { gap: 10px !important; }
       #feed-list,
       .soso-feed-list { gap: 10px !important; }
+      .vote-type-toggle { grid-template-columns: 1fr; }
       .debate-comments-wrap { grid-template-columns: 1fr; gap: 10px; }
       .debate-comment-mode { padding: 9px; }
       .debate-comment-mode__row button { flex: 1 1 auto; }
@@ -260,40 +296,124 @@ async function loadFirebaseMods() {
   return firebaseMods;
 }
 
+function optionInputs() {
+  return [...document.querySelectorAll('.mw-vote-option')];
+}
+
+function ensureVoteTypeToggle() {
+  const modeInput = document.getElementById('mw-vote-mode');
+  const optionList = document.getElementById('mw-vote-options');
+  if (!modeInput || !optionList) return;
+  const card = document.querySelector('[data-module-card="vote"], .mw-vote-compact');
+  if (!card || card.querySelector('.vote-type-toggle')) return;
+  card.insertAdjacentHTML('afterbegin', `
+    <div class="vote-type-toggle" data-vote-type-toggle>
+      <button type="button" class="vote-type-toggle__btn active" data-vote-type="general"><b>투표형</b><span>선택지를 자유롭게 추가하고 일반 댓글로 이야기합니다.</span></button>
+      <button type="button" class="vote-type-toggle__btn" data-vote-type="debate"><b>선택형</b><span>옵션 2개 중 하나를 고르고 좌우 주장 토론을 합니다.</span></button>
+    </div>
+    <div class="vote-mode-hint" data-vote-mode-hint>투표형은 여러 선택지를 만들 수 있고, 댓글은 일반 댓글로 표시됩니다.</div>`);
+}
+
+function applyVoteType(type) {
+  const modeInput = document.getElementById('mw-vote-mode');
+  const list = document.getElementById('mw-vote-options');
+  if (!modeInput || !list) return;
+  const normalized = type === 'debate' ? 'debate' : 'general';
+  modeInput.value = normalized;
+  document.querySelectorAll('[data-vote-type]').forEach(btn => btn.classList.toggle('active', btn.dataset.voteType === normalized));
+  const inputs = optionInputs();
+  const addBtn = document.getElementById('mw-add-vote-option');
+  const hint = document.querySelector('[data-vote-mode-hint]');
+
+  if (normalized === 'debate') {
+    while (optionInputs().length > 2) optionInputs().at(-1)?.remove();
+    const current = optionInputs();
+    if (current[0]) current[0].placeholder = '왼쪽 선택지 예: 찬성 / 가능 / A';
+    if (current[1]) current[1].placeholder = '오른쪽 선택지 예: 반대 / 불가능 / B';
+    if (addBtn) addBtn.style.display = 'none';
+    if (hint) hint.textContent = '선택형은 선택지 2개만 사용합니다. 상세페이지 댓글은 자동으로 좌우 주장 토론 모드로 표시됩니다.';
+  } else {
+    optionInputs().forEach((input, index) => { input.placeholder = `선택지 ${index + 1}`; });
+    if (addBtn) addBtn.style.display = '';
+    if (hint) hint.textContent = '투표형은 여러 선택지를 만들 수 있고, 댓글은 일반 댓글로 표시됩니다.';
+  }
+}
+
+function enhanceVoteWriteMode() {
+  ensureVoteTypeToggle();
+  const modeInput = document.getElementById('mw-vote-mode');
+  if (!modeInput || modeInput.dataset.voteTypeReady === '1') return;
+  modeInput.dataset.voteTypeReady = '1';
+  applyVoteType(modeInput.value === 'debate' ? 'debate' : 'general');
+}
+
+function bindVoteWriteModeControls() {
+  if (window.__sosokingVoteWriteModeBound) return;
+  window.__sosokingVoteWriteModeBound = true;
+  document.addEventListener('click', event => {
+    const btn = event.target.closest?.('[data-vote-type]');
+    if (!btn) return;
+    event.preventDefault();
+    applyVoteType(btn.dataset.voteType);
+  }, true);
+}
+
+const postCache = new Map();
+async function currentPost() {
+  const id = detailId();
+  if (!id) return null;
+  if (postCache.has(id)) return postCache.get(id);
+  const { db, firestore } = await loadFirebaseMods();
+  const snap = await firestore.getDoc(firestore.doc(db, 'feeds', id));
+  const post = snap.exists() ? { id: snap.id, ...snap.data() } : null;
+  postCache.set(id, post);
+  return post;
+}
+
 function isVoteDetailPage() {
   return !!detailId() && !!document.querySelector('[data-multi-module="vote"], .multi-vote-options');
+}
+
+function isDebateModePost(post) {
+  const mode = String(post?.modules?.vote?.voteMode || post?.voteMode || '').toLowerCase();
+  return ['debate', 'choice', 'selection', 'versus'].includes(mode);
+}
+
+function voteOptionLabels(post) {
+  const options = Array.isArray(post?.modules?.vote?.options) ? post.modules.vote.options : [];
+  return [
+    plain(options[0]?.text || options[0] || '찬성'),
+    plain(options[1]?.text || options[1] || '반대'),
+  ];
 }
 
 function setDebatePlaceholder(root) {
   const input = document.getElementById('comment-input');
   if (!input || !root) return;
-  if (root.dataset.mode !== 'debate') {
-    input.placeholder = '댓글을 입력하세요';
-    return;
-  }
   const side = root.querySelector('[data-debate-side].active')?.dataset.debateSide;
+  const a = root.dataset.labelA || '찬성';
+  const b = root.dataset.labelB || '반대';
   input.placeholder = side === 'A'
-    ? '찬성 주장과 근거를 적어주세요'
+    ? `${a} 주장과 근거를 적어주세요`
     : side === 'B'
-      ? '반대 주장과 근거를 적어주세요'
-      : '찬성/반대를 선택하고 주장을 펼쳐주세요';
+      ? `${b} 주장과 근거를 적어주세요`
+      : '한쪽을 선택하고 주장을 펼쳐주세요';
 }
 
-function enhanceVoteCommentBox() {
+async function enhanceVoteCommentBox() {
   if (!isVoteDetailPage()) return;
+  const post = await currentPost();
+  if (!isDebateModePost(post)) return;
   const box = document.getElementById('comment-write');
   if (!box || box.querySelector('.debate-comment-mode')) return;
+  const [a, b] = voteOptionLabels(post);
   box.insertAdjacentHTML('afterbegin', `
-    <div class="debate-comment-mode" data-mode="normal">
-      <div class="debate-comment-mode__row">
-        <button type="button" class="active" data-debate-mode="normal">일반 댓글</button>
-        <button type="button" data-debate-mode="debate">토론형 주장</button>
+    <div class="debate-comment-mode" data-mode="debate" data-label-a="${escapeHtml(a)}" data-label-b="${escapeHtml(b)}">
+      <div class="debate-comment-mode__row debate-side-row" style="display:flex">
+        <button type="button" data-debate-side="A">${escapeHtml(a)} 주장</button>
+        <button type="button" data-debate-side="B">${escapeHtml(b)} 주장</button>
       </div>
-      <div class="debate-comment-mode__row debate-side-row">
-        <button type="button" data-debate-side="A">찬성 주장</button>
-        <button type="button" data-debate-side="B">반대 주장</button>
-      </div>
-      <div class="debate-comment-mode__hint">토론형 주장은 찬성/반대 영역에 나뉘어 표시됩니다. 이유나 근거를 함께 적으면 토론처럼 보입니다.</div>
+      <div class="debate-comment-mode__hint">선택형 토론입니다. 한쪽을 선택하고 주장과 근거를 적으면 좌우 토론 영역에 표시됩니다.</div>
     </div>`);
   setDebatePlaceholder(box.querySelector('.debate-comment-mode'));
 }
@@ -302,16 +422,6 @@ function bindDebateCommentControls() {
   if (window.__sosokingDebateCommentBound) return;
   window.__sosokingDebateCommentBound = true;
   document.addEventListener('click', async event => {
-    const modeBtn = event.target.closest?.('[data-debate-mode]');
-    if (modeBtn) {
-      event.preventDefault();
-      const root = modeBtn.closest('.debate-comment-mode');
-      root.dataset.mode = modeBtn.dataset.debateMode;
-      root.querySelectorAll('[data-debate-mode]').forEach(btn => btn.classList.toggle('active', btn === modeBtn));
-      setDebatePlaceholder(root);
-      return;
-    }
-
     const sideBtn = event.target.closest?.('[data-debate-side]');
     if (sideBtn) {
       event.preventDefault();
@@ -335,7 +445,7 @@ function bindDebateCommentControls() {
     const side = modeRoot.querySelector('[data-debate-side].active')?.dataset.debateSide || '';
     if (!side) {
       const { toast } = await loadFirebaseMods();
-      toast.warn('찬성 주장 또는 반대 주장을 선택해주세요');
+      toast.warn('주장을 펼칠 쪽을 선택해주세요');
       return;
     }
 
@@ -354,11 +464,12 @@ function bindDebateCommentControls() {
       const isGuest = auth.currentUser?.isAnonymous;
       const guestName = String(document.getElementById('comment-guest-name')?.value || '').trim().slice(0, 12);
       const authorName = isGuest ? (guestName || '익명') : (appState.nickname || auth.currentUser?.displayName || '익명');
+      const label = side === 'A' ? (modeRoot.dataset.labelA || '찬성') : (modeRoot.dataset.labelB || '반대');
       await firestore.addDoc(firestore.collection(db, 'feeds', detailId(), 'comments'), {
         text,
         side,
         debateSide: side,
-        debateRoleLabel: side === 'A' ? '찬성 주장' : '반대 주장',
+        debateRoleLabel: `${label} 주장`,
         commentKind: 'debateArgument',
         authorId: auth.currentUser.uid,
         authorName,
@@ -370,8 +481,10 @@ function bindDebateCommentControls() {
       });
       await firestore.updateDoc(firestore.doc(db, 'feeds', detailId()), { commentCount: firestore.increment(1) }).catch(() => {});
       if (input) input.value = '';
+      const list = document.getElementById('comment-list');
+      if (list) list.dataset.debateColumnsReady = '';
       toast.success('토론 주장이 등록됐어요');
-      window.dispatchEvent(new Event('hashchange'));
+      setTimeout(renderDebateCommentColumns, 180);
     } catch (error) {
       const { toast } = await loadFirebaseMods();
       toast.error(error.message || '등록에 실패했어요');
@@ -394,8 +507,11 @@ function debateCard(comment) {
 let renderToken = 0;
 async function renderDebateCommentColumns() {
   if (!isVoteDetailPage()) return;
+  const post = await currentPost();
+  if (!isDebateModePost(post)) return;
   const list = document.getElementById('comment-list');
   if (!list || list.dataset.debateColumnsReady === '1') return;
+  const [labelA, labelB] = voteOptionLabels(post);
   const token = ++renderToken;
   try {
     const { db, firestore } = await loadFirebaseMods();
@@ -405,10 +521,9 @@ async function renderDebateCommentColumns() {
     ));
     if (token !== renderToken) return;
     const comments = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    const yes = comments.filter(c => c.side === 'A' || c.debateSide === 'A');
-    const no = comments.filter(c => c.side === 'B' || c.debateSide === 'B');
+    const left = comments.filter(c => c.side === 'A' || c.debateSide === 'A');
+    const right = comments.filter(c => c.side === 'B' || c.debateSide === 'B');
     const normal = comments.filter(c => !c.side && !c.debateSide);
-    if (!yes.length && !no.length) return;
     list.dataset.debateColumnsReady = '1';
     const normalHtml = normal.length
       ? `<div class="debate-normal-comments"><div class="comment-section__title" style="font-size:13px;margin:10px 0">일반 댓글 ${normal.length}</div>${list.innerHTML}</div>`
@@ -416,12 +531,12 @@ async function renderDebateCommentColumns() {
     list.innerHTML = `
       <div class="debate-comments-wrap">
         <div class="debate-comments-col debate-comments-col--a">
-          <div class="debate-comments-col__title">찬성 주장 ${yes.length}</div>
-          ${yes.length ? yes.map(debateCard).join('') : '<div class="debate-empty">찬성 주장을 펼쳐보세요</div>'}
+          <div class="debate-comments-col__title">${escapeHtml(labelA)} 주장 ${left.length}</div>
+          ${left.length ? left.map(debateCard).join('') : `<div class="debate-empty">${escapeHtml(labelA)} 주장을 펼쳐보세요</div>`}
         </div>
         <div class="debate-comments-col debate-comments-col--b">
-          <div class="debate-comments-col__title">반대 주장 ${no.length}</div>
-          ${no.length ? no.map(debateCard).join('') : '<div class="debate-empty">반대 주장을 펼쳐보세요</div>'}
+          <div class="debate-comments-col__title">${escapeHtml(labelB)} 주장 ${right.length}</div>
+          ${right.length ? right.map(debateCard).join('') : `<div class="debate-empty">${escapeHtml(labelB)} 주장을 펼쳐보세요</div>`}
         </div>
       </div>
       ${normalHtml}`;
@@ -435,6 +550,8 @@ function installEnhancements() {
   removeAdminHomeButton();
   removeStatsHeaderNote();
   polishAdminDataDripTitles();
+  enhanceVoteWriteMode();
+  bindVoteWriteModeControls();
   enhanceVoteCommentBox();
   bindDebateCommentControls();
   renderDebateCommentColumns();
@@ -449,6 +566,7 @@ function schedule() {
 new MutationObserver(schedule).observe(document.documentElement, { childList: true, subtree: true });
 window.addEventListener('hashchange', () => {
   renderToken += 1;
+  postCache.clear();
   schedule();
 });
 setTimeout(installEnhancements, 0);
