@@ -29,7 +29,7 @@ function feedTypeFromPreset(presetKey) {
 }
 
 function dripLineValue() {
-  return document.getElementById('mw-drip-line')?.value.trim() || '';
+  return (document.getElementById('mw-drip-line')?.value.trim() || '').slice(0, 50);
 }
 
 function syncDripLineToHiddenBody() {
@@ -50,7 +50,7 @@ function updateWriteStateOnly() {
 function cloneWithoutQuizSecret(modules) {
   const publicModules = JSON.parse(JSON.stringify(modules || {}));
   let quizSecret = null;
-  if (publicModules.quiz?.enabled) {
+  if (publicModules.quiz?.enabled && publicModules.quiz?.noAnswer !== true) {
     const quiz = publicModules.quiz;
     quizSecret = {
       mode: quiz.mode || 'subjective',
@@ -99,7 +99,6 @@ export async function renderMultiWrite() {
   bindMultiWriteEvents();
   bindTextStateEvents();
   setVoteMode('general');
-  setCollectKind(document.getElementById('mw-collect-kind')?.value || 'youtube');
   updateOptionSelection(presetKey);
   updateWriteStateOnly();
 }
@@ -110,10 +109,11 @@ function setWriteSectionVisibility(normalized) {
     if (key === 'drip-line') section.style.display = normalized === 'drip' ? '' : 'none';
     if (key === 'standard-fields') section.style.display = normalized === 'drip' ? 'none' : '';
     if (key === 'content-field') section.style.display = (normalized === 'collect' || normalized === 'drip') ? 'none' : '';
+    if (key === 'collect-url-field') section.style.display = normalized === 'collect' ? '' : 'none';
     if (key === 'media-field') section.style.display = normalized === 'drip' ? 'none' : '';
-    if (key === 'collect-panel') section.style.display = normalized === 'collect' ? '' : 'none';
     if (key === 'vote-panel') section.style.display = normalized === 'vote' ? '' : 'none';
     if (key === 'quiz-panel') section.style.display = normalized === 'quiz' ? '' : 'none';
+    if (key === 'drip-panel') section.style.display = normalized === 'drip' ? '' : 'none';
   });
 }
 
@@ -143,29 +143,8 @@ function updateOptionSelection(preset) {
   });
 
   if (normalized === 'vote') setVoteMode('general');
-  if (normalized === 'collect') setCollectKind(document.getElementById('mw-collect-kind')?.value || 'youtube');
   if (normalized === 'drip') syncDripLineToHiddenBody();
   window.dispatchEvent(new Event('sosoking:write-option-changed'));
-}
-
-function setCollectKind(kind) {
-  const normalized = ['youtube', 'image'].includes(kind) ? kind : 'youtube';
-  const hidden = document.getElementById('mw-collect-kind');
-  if (hidden) hidden.value = normalized;
-  document.querySelectorAll('[data-collect-kind]').forEach(btn => {
-    const active = btn.dataset.collectKind === normalized;
-    btn.classList.toggle('active', active);
-    btn.setAttribute('aria-checked', active ? 'true' : 'false');
-  });
-  const input = document.getElementById('mw-collect-url');
-  const urlBox = document.querySelector('[data-collect-url-box]');
-  const imageHint = document.querySelector('[data-collect-image-hint]');
-  if (input) {
-    input.placeholder = 'https://youtube.com/shorts/... 또는 유튜브 링크';
-    if (normalized === 'image') input.value = '';
-  }
-  if (urlBox) urlBox.style.display = normalized === 'youtube' ? '' : 'none';
-  if (imageHint) imageHint.style.display = normalized === 'image' ? '' : 'none';
 }
 
 function setVoteMode() {
@@ -197,6 +176,9 @@ function bindMultiWriteEvents() {
   document.getElementById('mw-drip-line')?.addEventListener('keydown', event => {
     if (event.key === 'Enter') event.preventDefault();
   });
+  document.getElementById('mw-drip-line')?.addEventListener('input', event => {
+    if (event.target.value.length > 50) event.target.value = event.target.value.slice(0, 50);
+  });
   document.getElementById('mw-auto-tags')?.addEventListener('click', () => {
     if (getPresetKey() === 'drip') syncDripLineToHiddenBody();
     else syncRichEditor();
@@ -207,7 +189,6 @@ function bindMultiWriteEvents() {
   });
 
   document.querySelectorAll('[data-multi-preset]').forEach(btn => btn.addEventListener('click', () => updateOptionSelection(btn.dataset.multiPreset)));
-  document.querySelectorAll('[data-collect-kind]').forEach(btn => btn.addEventListener('click', () => setCollectKind(btn.dataset.collectKind)));
 
   document.getElementById('mw-add-vote-option')?.addEventListener('click', () => {
     const list = document.getElementById('mw-vote-options');
@@ -272,7 +253,7 @@ async function submitMultiPost() {
     const images = await getUploadedImages();
     if (images.length > MAX_FEED_IMAGES) throw new Error(`사진은 최대 ${MAX_FEED_IMAGES}장까지 올릴 수 있어요.`);
     if (presetKey === 'collect' && publicModules.collect?.kind === 'image' && !images.length) {
-      throw new Error('웃긴그림 모음은 사진 파일 업로드가 필요해요.');
+      throw new Error('유튜브 링크를 입력하거나 사진 파일을 업로드해주세요.');
     }
     btn.textContent = '게시글 저장 중...';
 
