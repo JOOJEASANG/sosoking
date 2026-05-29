@@ -1,0 +1,345 @@
+/* home-onboard.css — 홈 온보딩 섹션 (히어로 + 방 그리드) */
+
+/* ══════════════════════════════════════
+   전체 래퍼
+══════════════════════════════════════ */
+.home-onboard {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(14,14,40,0.10), 0 2px 8px rgba(14,14,40,0.06);
+}
+
+/* ══════════════════════════════════════
+   히어로
+══════════════════════════════════════ */
+.home-onboard__hero {
+  position: relative;
+  padding: clamp(24px, 4vw, 36px) clamp(20px, 4vw, 32px);
+  background:
+    radial-gradient(ellipse at 10% 60%, rgba(255,255,255,0.18) 0%, transparent 45%),
+    radial-gradient(ellipse at 85% 10%, rgba(255,200,50,0.22) 0%, transparent 42%),
+    linear-gradient(135deg, #FF4B2B 0%, #FF6D00 45%, #FFAB00 100%);
+  color: #fff;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  min-height: 140px;
+}
+
+.home-onboard__hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 95% 95%, rgba(255,255,255,0.10) 0%, transparent 35%);
+  pointer-events: none;
+}
+
+.home-onboard__hero-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.home-onboard__badge {
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.20);
+  border: 1px solid rgba(255,255,255,0.32);
+  font-size: 10.5px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.95);
+  backdrop-filter: blur(8px);
+  margin-bottom: 10px;
+}
+
+.home-onboard__title {
+  margin: 0;
+  font-size: clamp(26px, 4.5vw, 36px);
+  font-weight: 900;
+  letter-spacing: -0.06em;
+  line-height: 1.08;
+  color: #fff;
+  text-shadow: 0 2px 16px rgba(0,0,0,0.12);
+}
+
+.home-onboard__desc {
+  margin: 10px 0 0;
+  font-size: clamp(12px, 1.5vw, 14px);
+  font-weight: 600;
+  color: rgba(255,255,255,0.82);
+  line-height: 1.5;
+}
+
+.home-onboard__hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  align-self: flex-end;
+  padding-bottom: 2px;
+}
+
+.home-onboard__btn-primary {
+  display: inline-flex;
+  align-items: center;
+  height: 42px;
+  padding: 0 20px;
+  border-radius: 999px;
+  border: none;
+  background: #fff;
+  color: #FF4B2B;
+  font-size: 13.5px;
+  font-weight: 900;
+  letter-spacing: -0.2px;
+  cursor: pointer;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.18);
+  transition: transform 150ms cubic-bezier(0.34,1,0.64,1),
+              box-shadow 150ms ease;
+  -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
+}
+
+.home-onboard__btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(0,0,0,0.22);
+}
+
+.home-onboard__btn-primary:active {
+  transform: scale(0.95);
+}
+
+.home-onboard__btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  height: 42px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(255,255,255,0.44);
+  background: rgba(255,255,255,0.14);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: background 140ms ease, border-color 140ms ease, transform 140ms ease;
+  -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
+}
+
+.home-onboard__btn-ghost:hover {
+  background: rgba(255,255,255,0.24);
+  border-color: rgba(255,255,255,0.65);
+  transform: translateY(-1px);
+}
+
+.home-onboard__btn-ghost:active {
+  transform: scale(0.95);
+}
+
+/* ══════════════════════════════════════
+   방 그리드 (2×2)
+══════════════════════════════════════ */
+.home-onboard__rooms {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0;
+  border-top: 1px solid var(--color-border-light);
+}
+
+.home-onboard__room {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 20px;
+  text-decoration: none;
+  cursor: pointer;
+  border-bottom: 1px solid var(--color-border-light);
+  background: var(--color-surface);
+  transition: background 130ms ease, transform 130ms cubic-bezier(0.34,1,0.64,1);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 우측 카드엔 왼쪽 구분선 */
+.home-onboard__room:nth-child(even) {
+  border-left: 1px solid var(--color-border-light);
+}
+
+/* 마지막 두 칸 아래 보더 제거 */
+.home-onboard__room:nth-last-child(-n+2) {
+  border-bottom: none;
+}
+
+.home-onboard__room:hover {
+  background: var(--color-surface-2);
+}
+
+.home-onboard__room:active {
+  transform: scale(0.97);
+}
+
+.home-onboard__room-icon {
+  font-size: 28px;
+  line-height: 1;
+  flex-shrink: 0;
+  width: 46px;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  transition: transform 130ms cubic-bezier(0.34,1,0.64,1);
+}
+
+.home-onboard__room:hover .home-onboard__room-icon {
+  transform: scale(1.1);
+}
+
+.home-onboard__room-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.home-onboard__room-info b {
+  display: block;
+  font-size: 14.5px;
+  font-weight: 900;
+  letter-spacing: -0.3px;
+  line-height: 1.25;
+}
+
+.home-onboard__room-info em {
+  display: block;
+  font-style: normal;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  margin-top: 3px;
+  letter-spacing: -0.05px;
+}
+
+/* ── 방별 색상 ── */
+.home-onboard__room--collect .home-onboard__room-icon {
+  background: var(--color-primary-bg);
+}
+.home-onboard__room--collect .home-onboard__room-info b {
+  color: var(--color-primary);
+}
+.home-onboard__room--collect:hover {
+  background: #fff8f5;
+}
+
+.home-onboard__room--vote .home-onboard__room-icon {
+  background: var(--color-golra-bg);
+}
+.home-onboard__room--vote .home-onboard__room-info b {
+  color: var(--color-golra-dark);
+}
+.home-onboard__room--vote:hover {
+  background: #f5f7ff;
+}
+
+.home-onboard__room--quiz .home-onboard__room-icon {
+  background: var(--color-malhe-bg);
+}
+.home-onboard__room--quiz .home-onboard__room-info b {
+  color: var(--color-malhe-dark);
+}
+.home-onboard__room--quiz:hover {
+  background: #f2fdf8;
+}
+
+.home-onboard__room--drip .home-onboard__room-icon {
+  background: var(--color-usgyo-bg);
+}
+.home-onboard__room--drip .home-onboard__room-info b {
+  color: var(--color-usgyo-dark);
+}
+.home-onboard__room--drip:hover {
+  background: #faf8ff;
+}
+
+/* ══════════════════════════════════════
+   다크 모드
+══════════════════════════════════════ */
+[data-theme="dark"] .home-onboard {
+  box-shadow: 0 8px 32px rgba(0,0,0,0.36), 0 2px 8px rgba(0,0,0,0.24);
+}
+
+[data-theme="dark"] .home-onboard__rooms {
+  border-top-color: rgba(255,255,255,0.06);
+}
+
+[data-theme="dark"] .home-onboard__room {
+  background: var(--color-surface);
+  border-bottom-color: rgba(255,255,255,0.06);
+}
+
+[data-theme="dark"] .home-onboard__room:nth-child(even) {
+  border-left-color: rgba(255,255,255,0.06);
+}
+
+[data-theme="dark"] .home-onboard__room--collect:hover { background: rgba(255,75,43,0.06); }
+[data-theme="dark"] .home-onboard__room--vote:hover   { background: rgba(79,110,255,0.06); }
+[data-theme="dark"] .home-onboard__room--quiz:hover   { background: rgba(16,185,129,0.06); }
+[data-theme="dark"] .home-onboard__room--drip:hover   { background: rgba(139,92,246,0.06); }
+
+[data-theme="dark"] .home-onboard__room--collect .home-onboard__room-icon { background: rgba(255,75,43,0.12); }
+[data-theme="dark"] .home-onboard__room--vote .home-onboard__room-icon    { background: rgba(79,110,255,0.12); }
+[data-theme="dark"] .home-onboard__room--quiz .home-onboard__room-icon    { background: rgba(16,185,129,0.12); }
+[data-theme="dark"] .home-onboard__room--drip .home-onboard__room-icon    { background: rgba(139,92,246,0.12); }
+
+/* ══════════════════════════════════════
+   모바일
+══════════════════════════════════════ */
+@media (max-width: 480px) {
+  .home-onboard {
+    border-radius: 20px;
+  }
+
+  .home-onboard__hero {
+    flex-direction: column;
+    align-items: flex-start;
+    min-height: auto;
+    gap: 14px;
+  }
+
+  .home-onboard__hero-actions {
+    align-self: stretch;
+    padding-bottom: 0;
+  }
+
+  .home-onboard__btn-primary,
+  .home-onboard__btn-ghost {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .home-onboard__room {
+    padding: 14px 16px;
+    gap: 10px;
+  }
+
+  .home-onboard__room-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 22px;
+    border-radius: 12px;
+  }
+
+  .home-onboard__room-info b {
+    font-size: 13.5px;
+  }
+
+  .home-onboard__room-info em {
+    font-size: 11px;
+  }
+}

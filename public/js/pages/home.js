@@ -96,75 +96,49 @@ async function fetchPopularComments(n = 8) {
 
 function renderIntro() {
   return `
-    <section class="home-top-strip" aria-label="소소킹">
-      <div class="home-top-strip__left">
-        <div class="home-top-strip__brand">
-          <span class="home-top-strip__crown">👑</span>
-          <div>
-            <div class="home-top-strip__title">소소킹</div>
-            <div class="home-top-strip__sub">짧게 올리고 짧게 반응하는 모음방</div>
-          </div>
+    <section class="home-onboard">
+      <div class="home-onboard__hero">
+        <div class="home-onboard__hero-text">
+          <div class="home-onboard__badge">👑 SOSOKING</div>
+          <h1 class="home-onboard__title">짧게 올리고<br>짧게 반응하는 곳</h1>
+          <p class="home-onboard__desc">유튜브·퀴즈·토론·드립을 방별로 모아요</p>
+        </div>
+        <div class="home-onboard__hero-actions">
+          <button class="home-onboard__btn-primary" type="button" id="hbtn-write">+ 지금 올리기</button>
+          <button class="home-onboard__btn-ghost" type="button" id="hbtn-feed">전체 둘러보기</button>
         </div>
       </div>
-      <button class="home-top-strip__cta" type="button" id="hbtn-write">+ 올리기</button>
-    </section>
 
-    <nav class="home-room-nav" aria-label="방 바로가기">
-      <button class="home-room-btn home-room-btn--collect" type="button" data-home-write-preset="collect">
-        <span class="home-room-btn__icon">📌</span>
-        <span class="home-room-btn__label">모음방</span>
-      </button>
-      <button class="home-room-btn home-room-btn--vote" type="button" data-home-write-preset="vote">
-        <span class="home-room-btn__icon">🗳️</span>
-        <span class="home-room-btn__label">토론방</span>
-      </button>
-      <button class="home-room-btn home-room-btn--quiz" type="button" data-home-write-preset="quiz">
-        <span class="home-room-btn__icon">🧠</span>
-        <span class="home-room-btn__label">퀴즈방</span>
-      </button>
-      <button class="home-room-btn home-room-btn--drip" type="button" id="hbtn-drip">
-        <span class="home-room-btn__icon">🤣</span>
-        <span class="home-room-btn__label">드립방</span>
-      </button>
-      <button class="home-room-btn home-room-btn--feed" type="button" id="hbtn-feed">
-        <span class="home-room-btn__icon">📋</span>
-        <span class="home-room-btn__label">전체보기</span>
-      </button>
-    </nav>
-
-    <section class="home-room-cards" aria-label="방 소개">
-      <button class="home-room-card home-room-card--collect" type="button" data-home-write-preset="collect">
-        <span class="home-room-card__icon">📌</span>
-        <div class="home-room-card__body">
-          <b>모음방</b>
-          <em>유튜브·이미지·링크를 짧게 모아요</em>
-        </div>
-        <span class="home-room-card__arrow">→</span>
-      </button>
-      <button class="home-room-card home-room-card--vote" type="button" data-home-write-preset="vote">
-        <span class="home-room-card__icon">🗳️</span>
-        <div class="home-room-card__body">
-          <b>토론방</b>
-          <em>선택지로 빠르게 의견을 모아요</em>
-        </div>
-        <span class="home-room-card__arrow">→</span>
-      </button>
-      <button class="home-room-card home-room-card--quiz" type="button" data-home-write-preset="quiz">
-        <span class="home-room-card__icon">🧠</span>
-        <div class="home-room-card__body">
-          <b>퀴즈방</b>
-          <em>짧은 문제를 보고 바로 맞혀요</em>
-        </div>
-        <span class="home-room-card__arrow">→</span>
-      </button>
-      <button class="home-room-card home-room-card--drip" type="button" id="hbtn-drip2">
-        <span class="home-room-card__icon">🤣</span>
-        <div class="home-room-card__body">
-          <b>드립방</b>
-          <em>제목 없이 한줄만 올리는 공간</em>
-        </div>
-        <span class="home-room-card__arrow">→</span>
-      </button>
+      <div class="home-onboard__rooms" aria-label="방 바로가기">
+        <a class="home-onboard__room home-onboard__room--collect" href="#/feed?type=collect" data-room-nav="collect">
+          <span class="home-onboard__room-icon">📌</span>
+          <div class="home-onboard__room-info">
+            <b>모음방</b>
+            <em>유튜브·이미지·링크 모음</em>
+          </div>
+        </a>
+        <a class="home-onboard__room home-onboard__room--vote" href="#/feed?type=vote" data-room-nav="vote">
+          <span class="home-onboard__room-icon">🗳️</span>
+          <div class="home-onboard__room-info">
+            <b>토론방</b>
+            <em>찬반 토론·선택지 투표</em>
+          </div>
+        </a>
+        <a class="home-onboard__room home-onboard__room--quiz" href="#/feed?type=quiz" data-room-nav="quiz">
+          <span class="home-onboard__room-icon">🧠</span>
+          <div class="home-onboard__room-info">
+            <b>퀴즈방</b>
+            <em>짧은 문제 바로 풀기</em>
+          </div>
+        </a>
+        <a class="home-onboard__room home-onboard__room--drip" href="#/drip" data-room-nav="drip">
+          <span class="home-onboard__room-icon">🤣</span>
+          <div class="home-onboard__room-info">
+            <b>드립방</b>
+            <em>제목 없이 한줄만</em>
+          </div>
+        </a>
+      </div>
     </section>`;
 }
 
@@ -267,12 +241,15 @@ export async function renderHome() {
 
     el.querySelector('#hbtn-write')?.addEventListener('click', () => navigate('/write?type=multi&preset=collect'));
     el.querySelector('#hbtn-feed')?.addEventListener('click', () => navigate('/feed'));
-    el.querySelector('#hbtn-drip')?.addEventListener('click', () => navigate('/drip'));
-    el.querySelector('#hbtn-drip2')?.addEventListener('click', () => navigate('/drip'));
     el.querySelector('#hbtn-more-hot')?.addEventListener('click', () => navigate('/feed?sort=popular'));
-    el.querySelectorAll('[data-home-write-preset]').forEach(item =>
-      item.addEventListener('click', () => navigate(`/write?type=multi&preset=${item.dataset.homeWritePreset}`))
-    );
+    el.querySelectorAll('[data-room-nav]').forEach(item => {
+      item.addEventListener('click', e => {
+        e.preventDefault();
+        const room = item.dataset.roomNav;
+        if (room === 'drip') navigate('/drip');
+        else navigate(`/feed?type=${room}`);
+      });
+    });
     el.querySelectorAll('[data-id]').forEach(item =>
       item.addEventListener('click', () => navigate(`/detail/${item.dataset.id}`))
     );
