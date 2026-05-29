@@ -154,10 +154,17 @@
 /* 태그 입력란 + 자동생성 버튼 행 */
 .mw-tags-row {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 8px;
 }
 .mw-tags-row .form-input {
   flex: 1;
   min-width: 0;
+}
+.mw-tags-row #mw-auto-tags {
+  align-self: stretch;
+  height: auto;
+  padding-top: 0;
+  padding-bottom: 0;
+  border-radius: var(--radius-md);
 }

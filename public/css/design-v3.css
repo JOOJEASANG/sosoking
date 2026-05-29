@@ -740,7 +740,7 @@ body {
    21. 페이지 컨테이너 (PC)
 ────────────────────────────────────────── */
 @media (min-width: 1024px) {
-  .page-container {
+  body:not(:has(.admin-layout)) .page-container {
     padding: 28px 24px 56px !important;
     max-width: 740px !important;
   }
