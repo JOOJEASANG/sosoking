@@ -27,7 +27,6 @@ const EXTENSION_MODULES = [
   './edit-screen-polish.js',
   './points-actions.js',
   './unlimited-image-uploader.js',
-  './write-template-suggestions.js',
   './feedback-actions.js',
   './admin-ai-minimal-actions.js',
   './admin-ai-type-patch.js',
