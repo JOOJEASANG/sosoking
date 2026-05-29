@@ -50,6 +50,43 @@ function writeStoredContext(ctx = {}) {
   } catch {}
 }
 
+function injectMobileCommentStyle() {
+  if (document.getElementById('sosoking-mobile-comment-fix')) return;
+  const style = document.createElement('style');
+  style.id = 'sosoking-mobile-comment-fix';
+  style.textContent = `
+    @media (max-width: 640px) {
+      .comment-write-box {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 8px !important;
+        width: 100% !important;
+        min-width: 0 !important;
+      }
+      .comment-write-box #comment-guest-name,
+      .comment-write-box #comment-input,
+      .comment-write-box textarea,
+      .comment-write-box .form-input {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+      }
+      .comment-write-box #comment-input,
+      .comment-write-box textarea {
+        min-height: 108px !important;
+        resize: vertical !important;
+      }
+      .comment-write-box #btn-comment {
+        width: 100% !important;
+        align-self: stretch !important;
+        justify-content: center !important;
+      }
+    }`;
+  document.head.appendChild(style);
+}
+
 function captureVisibleFeedList() {
   const list = document.getElementById('feed-list');
   if (!list) return;
@@ -135,6 +172,7 @@ function bindSwipe(ids, currentId, root) {
 }
 
 async function ensureDetailNav() {
+  injectMobileCommentStyle();
   captureVisibleFeedList();
   const currentId = detailId();
   if (!currentId) return;
