@@ -3,7 +3,7 @@ import { auth, db } from '../firebase.js';
 import { appState } from '../state.js';
 import { setMeta } from '../utils/seo.js';
 import { escHtml, formatTime } from '../utils/helpers.js';
-import { fetchHotPosts } from '../services/feed-service.js';
+import { fetchHotPosts, fetchTodayBest } from '../services/feed-service.js';
 import {
   collection, collectionGroup, query, orderBy, limit, getDocs,
   doc, getDoc, updateDoc,
@@ -122,7 +122,7 @@ function renderIntro() {
         <span class="home-room-btn__icon">🧠</span>
         <span class="home-room-btn__label">퀴즈방</span>
       </button>
-      <button class="home-room-btn home-room-btn--drip" type="button" data-home-write-preset="drip">
+      <button class="home-room-btn home-room-btn--drip" type="button" id="hbtn-drip">
         <span class="home-room-btn__icon">🤣</span>
         <span class="home-room-btn__label">드립방</span>
       </button>
@@ -130,7 +130,42 @@ function renderIntro() {
         <span class="home-room-btn__icon">📋</span>
         <span class="home-room-btn__label">전체보기</span>
       </button>
-    </nav>`;
+    </nav>
+
+    <section class="home-room-cards" aria-label="방 소개">
+      <button class="home-room-card home-room-card--collect" type="button" data-home-write-preset="collect">
+        <span class="home-room-card__icon">📌</span>
+        <div class="home-room-card__body">
+          <b>모음방</b>
+          <em>유튜브·이미지·링크를 짧게 모아요</em>
+        </div>
+        <span class="home-room-card__arrow">→</span>
+      </button>
+      <button class="home-room-card home-room-card--vote" type="button" data-home-write-preset="vote">
+        <span class="home-room-card__icon">🗳️</span>
+        <div class="home-room-card__body">
+          <b>토론방</b>
+          <em>선택지로 빠르게 의견을 모아요</em>
+        </div>
+        <span class="home-room-card__arrow">→</span>
+      </button>
+      <button class="home-room-card home-room-card--quiz" type="button" data-home-write-preset="quiz">
+        <span class="home-room-card__icon">🧠</span>
+        <div class="home-room-card__body">
+          <b>퀴즈방</b>
+          <em>짧은 문제를 보고 바로 맞혀요</em>
+        </div>
+        <span class="home-room-card__arrow">→</span>
+      </button>
+      <button class="home-room-card home-room-card--drip" type="button" id="hbtn-drip2">
+        <span class="home-room-card__icon">🤣</span>
+        <div class="home-room-card__body">
+          <b>드립방</b>
+          <em>제목 없이 한줄만 올리는 공간</em>
+        </div>
+        <span class="home-room-card__arrow">→</span>
+      </button>
+    </section>`;
 }
 
 function renderPopularPost(post, index) {
@@ -144,6 +179,23 @@ function renderPopularPost(post, index) {
       <div class="home-rank-item__stats">
         ${post.reactions?.total ? `<span>❤️ ${fmtNum(post.reactions.total)}</span>` : ''}
         ${post.commentCount    ? `<span>💬 ${fmtNum(post.commentCount)}</span>`    : ''}
+      </div>
+    </div>`;
+}
+
+function renderTodayBest(post) {
+  if (!post) return '';
+  const label = moduleLabel(post);
+  const reactions = post.reactions?.total || 0;
+  const comments = post.commentCount || 0;
+  return `
+    <div class="home-today-best" data-id="${post.id}">
+      <div class="home-today-best__label">⭐ 오늘의 베스트</div>
+      <div class="home-today-best__title">${escHtml(post.title || '제목 없음')}</div>
+      <div class="home-today-best__meta">
+        <span class="home-today-best__room">${label}</span>
+        ${reactions ? `<span>❤️ ${fmtNum(reactions)}</span>` : ''}
+        ${comments  ? `<span>💬 ${fmtNum(comments)}</span>`  : ''}
       </div>
     </div>`;
 }
@@ -174,10 +226,17 @@ export async function renderHome() {
     const user = auth.currentUser;
     if (user) checkStreak(user.uid);
 
-    const [hotPosts, popularComments] = await Promise.all([
+    const [hotPosts, popularComments, todayBest] = await Promise.all([
       fetchHotPosts(8),
       fetchPopularComments(8),
+      fetchTodayBest(),
     ]);
+
+    const bestHTML = todayBest ? `
+      <div class="home-section-header" style="margin-bottom:8px">
+        <span class="home-section-title">⭐ 오늘의 베스트</span>
+      </div>
+      ${renderTodayBest(todayBest)}` : '';
 
     const hotHTML = `
       <div>
@@ -204,10 +263,12 @@ export async function renderHome() {
         </div>
       </div>`;
 
-    el.innerHTML = `<div class="home-dash page-enter home-dash--v2">${renderIntro()}${hotHTML}${commentsHTML}</div>`;
+    el.innerHTML = `<div class="home-dash page-enter home-dash--v2">${renderIntro()}${bestHTML}${hotHTML}${commentsHTML}</div>`;
 
     el.querySelector('#hbtn-write')?.addEventListener('click', () => navigate('/write?type=multi&preset=collect'));
     el.querySelector('#hbtn-feed')?.addEventListener('click', () => navigate('/feed'));
+    el.querySelector('#hbtn-drip')?.addEventListener('click', () => navigate('/drip'));
+    el.querySelector('#hbtn-drip2')?.addEventListener('click', () => navigate('/drip'));
     el.querySelector('#hbtn-more-hot')?.addEventListener('click', () => navigate('/feed?sort=popular'));
     el.querySelectorAll('[data-home-write-preset]').forEach(item =>
       item.addEventListener('click', () => navigate(`/write?type=multi&preset=${item.dataset.homeWritePreset}`))

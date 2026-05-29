@@ -51,6 +51,26 @@ export async function fetchHotPosts(n = 5) {
   }
 }
 
+/** 오늘의 베스트 (최근 24시간 반응 최다 1개) */
+export async function fetchTodayBest() {
+  try {
+    const since = new Date(Date.now() - 86400000);
+    const snap = await getDocs(
+      query(collection(db, FEEDS), orderBy('reactions.total', 'desc'), limit(30))
+    );
+    const posts = snap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .filter(p => !p.hidden);
+    const today = posts.find(p => {
+      const t = p.createdAt?.toDate?.() || p.createdAt;
+      return t && new Date(t) >= since;
+    });
+    return today || posts[0] || null;
+  } catch {
+    return null;
+  }
+}
+
 /** 내 피드 */
 export async function fetchMyPosts(uid, n = 20) {
   const snap = await getDocs(

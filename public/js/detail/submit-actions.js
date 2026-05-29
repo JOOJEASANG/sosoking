@@ -51,3 +51,72 @@ export function bindCbattleSideButtons(root = document) {
     });
   });
 }
+
+/**
+ * 퀴즈 제출 후 결과 공유 카드를 모달로 표시
+ * @param {{ isCorrect: boolean, answer: string, postId: string, postTitle?: string, stats?: { total: number, correctRate: number } }} opts
+ */
+export function showQuizResultCard({ isCorrect, answer, postId, postTitle = '', stats = null }) {
+  const MODAL_ID = 'quiz-result-modal-root';
+  if (document.getElementById(MODAL_ID)) return; // 중복 방지
+
+  const emoji   = isCorrect ? '🎉' : '😅';
+  const verdict = isCorrect ? '정답!' : '아깝다!';
+  const modClass = isCorrect ? 'quiz-result-card--correct' : 'quiz-result-card--wrong';
+  const headerText = isCorrect ? '✅ 정답입니다' : '❌ 오답입니다';
+
+  const statsHtml = stats
+    ? `<p class="quiz-result-card__stats">참여자 <strong>${stats.total.toLocaleString()}명</strong> 중 <strong>${stats.correctRate}%</strong> 정답</p>`
+    : '';
+
+  const shareUrl = `${location.origin}/p/${postId}`;
+
+  const html = `
+    <div class="quiz-result-modal" id="${MODAL_ID}" role="dialog" aria-modal="true" aria-label="퀴즈 결과">
+      <div class="quiz-result-card ${modClass}">
+        <div class="quiz-result-card__header">${headerText}</div>
+        <div class="quiz-result-card__emoji" aria-hidden="true">${emoji}</div>
+        <p class="quiz-result-card__verdict">${verdict}</p>
+        <p class="quiz-result-card__answer">정답: <strong>${answer.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</strong></p>
+        ${statsHtml}
+        <button class="quiz-result-card__share-btn" id="qrc-share-btn">🔗 공유하기</button>
+        <button class="quiz-result-card__close" id="qrc-close-btn">닫기</button>
+      </div>
+    </div>`;
+
+  document.body.insertAdjacentHTML('beforeend', html);
+
+  const modal = document.getElementById(MODAL_ID);
+
+  function closeModal() {
+    modal.remove();
+  }
+
+  // 닫기 버튼
+  modal.querySelector('#qrc-close-btn').addEventListener('click', closeModal);
+
+  // 오버레이 클릭으로 닫기
+  modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+
+  // 공유 버튼
+  modal.querySelector('#qrc-share-btn').addEventListener('click', async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: postTitle || '퀴즈', url: shareUrl });
+      } catch (_) { /* 사용자 취소 등 무시 */ }
+    } else {
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        const btn = modal.querySelector('#qrc-share-btn');
+        btn.textContent = '✅ 링크 복사됨!';
+        setTimeout(() => { btn.textContent = '🔗 공유하기'; }, 2000);
+      } catch (_) {
+        alert(`링크를 복사해주세요:\n${shareUrl}`);
+      }
+    }
+  });
+
+  // 5초 후 자동 닫힘
+  const autoClose = setTimeout(closeModal, 5000);
+  modal.querySelector('#qrc-close-btn').addEventListener('click', () => clearTimeout(autoClose), { once: true });
+}
