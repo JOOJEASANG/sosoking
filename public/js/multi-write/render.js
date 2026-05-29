@@ -80,8 +80,8 @@ function renderVoteModule(activeKey) {
 }
 
 function renderDripModule(activeKey) {
-  return moduleCard('drip', activeKey, '🤣', '드립방', '제목과 본문 없이 오늘의 한줄만 등록합니다.', `
-    <div class="multi-module-inline-note">아래 입력칸에 짧은 한 줄만 적으면 드립방 리스트에 올라갑니다.</div>`);
+  return moduleCard('drip', activeKey, '🤣', '드립방 참여 방식', '주제를 던지고, 댓글처럼 한 줄 드립을 받습니다.', `
+    <div class="multi-module-inline-note">아래에 드립칠 주제만 적으면, 상세 페이지에서 사람들이 50자 이내 한 줄 드립으로 참여합니다.</div>`);
 }
 
 function renderQuizModule(activeKey) {
@@ -121,12 +121,12 @@ function renderQuizModule(activeKey) {
     </div>`);
 }
 
-function renderDripLineField(activeKey) {
+function renderDripTopicField(activeKey) {
   return `
     <div class="form-group mw-drip-line-box" data-write-section="drip-line" ${activeKey === 'drip' ? '' : 'style="display:none"'}>
-      <label class="form-label">오늘의 한줄 <span class="required">*</span></label>
-      <input id="mw-drip-line" class="form-input mw-drip-line-input" maxlength="80" autocomplete="off" placeholder="짧고 웃긴 한 줄만 입력하세요">
-      <div class="form-hint">엔터 없이 딱 한 줄만 등록됩니다. 최대 80자.</div>
+      <label class="form-label">드립 주제 <span class="required">*</span></label>
+      <input id="mw-drip-line" class="form-input mw-drip-line-input" maxlength="80" autocomplete="off" placeholder="예: 퇴근 5분 전 회의 잡힌 내 표정은?">
+      <div class="form-hint">사람들이 한 줄 드립을 칠 수 있는 상황이나 주제를 던져주세요. 주제 최대 80자.</div>
     </div>`;
 }
 
@@ -147,7 +147,7 @@ export function renderMultiWriteHTML({ renderKey, presetKey }) {
         <div class="card__body--lg">
           ${renderOptionPicker(activeKey)}
           ${renderCollectHidden(activeKey)}
-          ${renderDripLineField(activeKey)}
+          ${renderDripTopicField(activeKey)}
           <div data-write-section="standard-fields" ${standardHidden}>
             <div class="form-group">
               <label class="form-label">제목 <span class="required">*</span></label>
