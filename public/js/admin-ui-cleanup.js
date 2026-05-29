@@ -84,6 +84,12 @@ function injectPolishStyle() {
       gap: 6px;
       flex-wrap: wrap;
     }
+    .debate-comment-mode__hint {
+      color: var(--color-text-muted);
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1.45;
+    }
     .debate-comment-mode button {
       min-height: 32px;
       padding: 0 11px;
@@ -99,6 +105,16 @@ function injectPolishStyle() {
       border-color: var(--color-primary-border);
       background: var(--color-primary-bg);
       color: var(--color-primary);
+    }
+    .debate-comment-mode [data-debate-side="A"].active {
+      border-color: rgba(239, 68, 68, .34);
+      background: rgba(239, 68, 68, .08);
+      color: #dc2626;
+    }
+    .debate-comment-mode [data-debate-side="B"].active {
+      border-color: rgba(59, 130, 246, .34);
+      background: rgba(59, 130, 246, .08);
+      color: #2563eb;
     }
     .debate-side-row { display: none; }
     .debate-comment-mode[data-mode="debate"] .debate-side-row { display: flex; }
@@ -129,6 +145,16 @@ function injectPolishStyle() {
       border-radius: 13px;
       background: var(--color-surface);
       box-shadow: 0 6px 16px rgba(20, 14, 40, .045);
+    }
+    .debate-comment-card__badge {
+      display: inline-flex;
+      margin-bottom: 6px;
+      padding: 3px 7px;
+      border-radius: 999px;
+      background: var(--color-primary-bg);
+      color: var(--color-primary);
+      font-size: 10px;
+      font-weight: 950;
     }
     .debate-comment-card__text {
       color: var(--color-text-primary);
@@ -191,6 +217,35 @@ function timeText(value) {
   return date.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
 }
 
+function plain(value) {
+  return String(value || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function dripDisplayTitle(data = {}) {
+  const title = plain(data.title || '');
+  const prompt = plain(data.modules?.drip?.prompt || '');
+  const desc = plain(data.desc || '');
+  if (!data.modules?.drip?.enabled) return '';
+  if (['오늘의 드립 주제', '오늘의 한줄', '드립방 AI 글'].includes(title)) return prompt || desc || title;
+  return title || prompt || desc;
+}
+
+function polishAdminDataDripTitles() {
+  document.querySelectorAll('.admin-data-row').forEach(row => {
+    if (row.dataset.dripTitlePolished === '1') return;
+    const titleEl = row.querySelector('.admin-data-title');
+    const jsonEl = row.querySelector('.admin-data-json pre');
+    if (!titleEl || !jsonEl) return;
+    try {
+      const data = JSON.parse(jsonEl.textContent || '{}');
+      const title = dripDisplayTitle(data);
+      if (!title) return;
+      titleEl.textContent = title;
+      row.dataset.dripTitlePolished = '1';
+    } catch {}
+  });
+}
+
 let firebaseMods = null;
 async function loadFirebaseMods() {
   if (firebaseMods) return firebaseMods;
@@ -209,6 +264,21 @@ function isVoteDetailPage() {
   return !!detailId() && !!document.querySelector('[data-multi-module="vote"], .multi-vote-options');
 }
 
+function setDebatePlaceholder(root) {
+  const input = document.getElementById('comment-input');
+  if (!input || !root) return;
+  if (root.dataset.mode !== 'debate') {
+    input.placeholder = '댓글을 입력하세요';
+    return;
+  }
+  const side = root.querySelector('[data-debate-side].active')?.dataset.debateSide;
+  input.placeholder = side === 'A'
+    ? '찬성 주장과 근거를 적어주세요'
+    : side === 'B'
+      ? '반대 주장과 근거를 적어주세요'
+      : '찬성/반대를 선택하고 주장을 펼쳐주세요';
+}
+
 function enhanceVoteCommentBox() {
   if (!isVoteDetailPage()) return;
   const box = document.getElementById('comment-write');
@@ -217,13 +287,15 @@ function enhanceVoteCommentBox() {
     <div class="debate-comment-mode" data-mode="normal">
       <div class="debate-comment-mode__row">
         <button type="button" class="active" data-debate-mode="normal">일반 댓글</button>
-        <button type="button" data-debate-mode="debate">토론형 댓글</button>
+        <button type="button" data-debate-mode="debate">토론형 주장</button>
       </div>
       <div class="debate-comment-mode__row debate-side-row">
-        <button type="button" data-debate-side="A">찬성</button>
-        <button type="button" data-debate-side="B">반대</button>
+        <button type="button" data-debate-side="A">찬성 주장</button>
+        <button type="button" data-debate-side="B">반대 주장</button>
       </div>
+      <div class="debate-comment-mode__hint">토론형 주장은 찬성/반대 영역에 나뉘어 표시됩니다. 이유나 근거를 함께 적으면 토론처럼 보입니다.</div>
     </div>`);
+  setDebatePlaceholder(box.querySelector('.debate-comment-mode'));
 }
 
 function bindDebateCommentControls() {
@@ -236,6 +308,7 @@ function bindDebateCommentControls() {
       const root = modeBtn.closest('.debate-comment-mode');
       root.dataset.mode = modeBtn.dataset.debateMode;
       root.querySelectorAll('[data-debate-mode]').forEach(btn => btn.classList.toggle('active', btn === modeBtn));
+      setDebatePlaceholder(root);
       return;
     }
 
@@ -244,6 +317,7 @@ function bindDebateCommentControls() {
       event.preventDefault();
       const root = sideBtn.closest('.debate-comment-mode');
       root.querySelectorAll('[data-debate-side]').forEach(btn => btn.classList.toggle('active', btn === sideBtn));
+      setDebatePlaceholder(root);
       return;
     }
   }, true);
@@ -261,7 +335,7 @@ function bindDebateCommentControls() {
     const side = modeRoot.querySelector('[data-debate-side].active')?.dataset.debateSide || '';
     if (!side) {
       const { toast } = await loadFirebaseMods();
-      toast.warn('찬성 또는 반대를 선택해주세요');
+      toast.warn('찬성 주장 또는 반대 주장을 선택해주세요');
       return;
     }
 
@@ -269,7 +343,7 @@ function bindDebateCommentControls() {
     const text = input?.value.trim() || '';
     if (!text) {
       const { toast } = await loadFirebaseMods();
-      toast.warn('내용을 입력해주세요');
+      toast.warn('주장을 입력해주세요');
       return;
     }
 
@@ -284,6 +358,8 @@ function bindDebateCommentControls() {
         text,
         side,
         debateSide: side,
+        debateRoleLabel: side === 'A' ? '찬성 주장' : '반대 주장',
+        commentKind: 'debateArgument',
         authorId: auth.currentUser.uid,
         authorName,
         authorPhoto: isGuest ? '' : (auth.currentUser?.photoURL || ''),
@@ -294,7 +370,7 @@ function bindDebateCommentControls() {
       });
       await firestore.updateDoc(firestore.doc(db, 'feeds', detailId()), { commentCount: firestore.increment(1) }).catch(() => {});
       if (input) input.value = '';
-      toast.success('토론 댓글이 등록됐어요');
+      toast.success('토론 주장이 등록됐어요');
       window.dispatchEvent(new Event('hashchange'));
     } catch (error) {
       const { toast } = await loadFirebaseMods();
@@ -306,7 +382,10 @@ function bindDebateCommentControls() {
 }
 
 function debateCard(comment) {
+  const side = comment.side || comment.debateSide;
+  const label = comment.debateRoleLabel || (side === 'A' ? '찬성 주장' : '반대 주장');
   return `<div class="debate-comment-card" data-comment-id="${escapeHtml(comment.id)}">
+    <div class="debate-comment-card__badge">${escapeHtml(label)}</div>
     <div class="debate-comment-card__text">${escapeHtml(comment.text || '').replace(/\n/g, '<br>')}</div>
     <div class="debate-comment-card__meta"><span>${escapeHtml(comment.authorName || '익명')}</span><span>${timeText(comment.createdAt)}</span></div>
   </div>`;
@@ -337,12 +416,12 @@ async function renderDebateCommentColumns() {
     list.innerHTML = `
       <div class="debate-comments-wrap">
         <div class="debate-comments-col debate-comments-col--a">
-          <div class="debate-comments-col__title">찬성 ${yes.length}</div>
-          ${yes.length ? yes.map(debateCard).join('') : '<div class="debate-empty">찬성 댓글 대기중</div>'}
+          <div class="debate-comments-col__title">찬성 주장 ${yes.length}</div>
+          ${yes.length ? yes.map(debateCard).join('') : '<div class="debate-empty">찬성 주장을 펼쳐보세요</div>'}
         </div>
         <div class="debate-comments-col debate-comments-col--b">
-          <div class="debate-comments-col__title">반대 ${no.length}</div>
-          ${no.length ? no.map(debateCard).join('') : '<div class="debate-empty">반대 댓글 대기중</div>'}
+          <div class="debate-comments-col__title">반대 주장 ${no.length}</div>
+          ${no.length ? no.map(debateCard).join('') : '<div class="debate-empty">반대 주장을 펼쳐보세요</div>'}
         </div>
       </div>
       ${normalHtml}`;
@@ -355,6 +434,7 @@ function installEnhancements() {
   injectPolishStyle();
   removeAdminHomeButton();
   removeStatsHeaderNote();
+  polishAdminDataDripTitles();
   enhanceVoteCommentBox();
   bindDebateCommentControls();
   renderDebateCommentColumns();
