@@ -10,11 +10,10 @@ const REGION = 'asia-northeast3';
 
 // 현재 실제 글쓰기 화면(multi-write)의 공개 프리셋만 사용합니다.
 const POST_PRESETS = [
-  { preset: 'general', label: '일반' },
-  { preset: 'vote', label: '투표' },
-  { preset: 'naming', label: '작명' },
-  { preset: 'drip', label: '드립' },
-  { preset: 'quiz', label: '퀴즈' },
+  { preset: 'general', label: '모음방' },
+  { preset: 'vote', label: '토론방' },
+  { preset: 'drip', label: '드립방' },
+  { preset: 'quiz', label: '퀴즈방' },
 ];
 
 const PRESET_META = Object.fromEntries(POST_PRESETS.map(item => [item.preset, item]));
@@ -54,14 +53,20 @@ function parseJson(text) {
 
 function normalizePreset(value) {
   const key = String(value || 'general').trim();
+  if (key === 'collect' || key === 'collection') return 'general';
   if (key === 'ox' || key === 'crazy_court') return 'vote';
   if (key === 'initial_game') return 'quiz';
-  if (key === 'random_battle' || key === 'relay' || key === 'acrostic') return 'general';
+  if (key === 'random_battle' || key === 'relay' || key === 'acrostic' || key === 'naming') return 'general';
   return PRESET_META[key] ? key : 'general';
 }
 
 function feedTypeFromPreset(preset) {
-  return ['vote', 'naming', 'drip', 'quiz'].includes(preset) ? preset : 'general';
+  if (preset === 'general') return 'collect';
+  return ['vote', 'drip', 'quiz'].includes(preset) ? preset : 'collect';
+}
+
+function subtypeFromPreset(preset) {
+  return preset === 'general' ? 'collect' : preset;
 }
 
 function toTags(value, fallback = []) {
@@ -129,27 +134,23 @@ async function assertAdmin(uid) {
 }
 
 const TYPE_PROMPTS = {
-  general: `너는 소소킹 커뮤니티 운영자야. 사용자가 댓글로 가볍게 반응할 수 있는 일반 피드 글 1개를 만들어줘.
+  general: `너는 소소킹 커뮤니티 운영자야. 모음방에 올릴 가벼운 유튜브/이미지 소개형 게시글 1개를 만들어줘.
 주제는 일상, 직장, 음식, 관계, 취미 중 하나로 하고 너무 광고처럼 보이면 안 돼.
 반드시 JSON만 출력해:
-{"title":"제목 50자 이내","desc":"본문 2~4문장. 댓글을 유도하는 자연스러운 문장 포함","tags":["일상","소소킹"]}`,
+{"title":"제목 50자 이내","desc":"본문 2~4문장. 댓글을 유도하는 자연스러운 문장 포함","tags":["모음","소소킹"]}`,
 
-  vote: `너는 소소킹 커뮤니티 운영자야. 현재 글쓰기 유형 '투표'에 맞는 게시글 1개를 만들어줘.
+  vote: `너는 소소킹 커뮤니티 운영자야. 현재 글쓰기 유형 '토론방'에 맞는 게시글 1개를 만들어줘.
 상황을 제시하고 선택지에 투표하도록 만들어. 선택지는 2~4개.
 반드시 JSON만 출력해:
 {"title":"투표 제목 50자 이내","desc":"투표할 상황 설명 1~3문장","options":["선택지1","선택지2","선택지3"],"tags":["투표","판정","소소킹"]}`,
 
-  naming: `너는 소소킹 커뮤니티 운영자야. 현재 글쓰기 유형 '작명'에 맞는 게시글 1개를 만들어줘.
-사람들이 댓글로 웃긴 이름을 붙이고 싶어지는 상황이어야 해. 글자수 제한은 없어.
+  drip: `너는 소소킹 커뮤니티 운영자야. 현재 글쓰기 유형 '드립방'에 올라갈 웃긴 한 줄 드립 1개만 만들어줘.
+중요: 상황 설명, 질문, 참여 유도 문장, 제목형 문장을 만들지 마. 게시글 본문에 그대로 들어갈 완성된 드립 한 줄만 만들어.
+길이는 80자 이내. 직장, 학교, 친구, 배달, 연애, 가족, 일상 중 하나를 소재로 피식 웃기는 문장이어야 해.
 반드시 JSON만 출력해:
-{"title":"작명 대상이 명확한 제목 60자 이내","desc":"무엇에 이름을 붙이면 되는지 설명 1~3문장","tags":["작명","소소킹"]}`,
+{"line":"80자 이내 웃긴 한 줄 드립","tags":["드립","한줄드립","소소킹"]}`,
 
-  drip: `너는 소소킹 커뮤니티 운영자야. 현재 글쓰기 유형 '드립'에 맞는 게시글 1개를 만들어줘.
-사람들이 80자 이내 한 줄 드립을 남기고 싶어지는 상황이어야 해. 주제는 직장, 학교, 친구, 배달, 연애, 가족, 일상 중 하나로 해.
-반드시 JSON만 출력해:
-{"title":"드립 주제가 되는 제목 60자 이내","desc":"한 줄 드립을 유도하는 상황 설명 1~2문장","tags":["드립","한줄드립","소소킹"]}`,
-
-  quiz: `너는 소소킹 커뮤니티 운영자야. 현재 글쓰기 유형 '퀴즈'에 맞는 객관식 퀴즈 게시글 1개를 만들어줘.
+  quiz: `너는 소소킹 커뮤니티 운영자야. 현재 글쓰기 유형 '퀴즈방'에 맞는 객관식 퀴즈 게시글 1개를 만들어줘.
 정답이 너무 논쟁적이지 않은 생활상식, 음식, 역사, 과학, 문화 주제로 만들어. 선택지는 4개.
 반드시 JSON만 출력해:
 {"title":"퀴즈 제목 50자 이내","desc":"문제 본문","options":["선택지1","선택지2","선택지3","선택지4"],"answerIdx":0,"hint":"힌트 50자 이내","explanation":"정답 해설 1~2문장","tags":["퀴즈","소소킹"]}`,
@@ -161,26 +162,22 @@ function fallbackContent(preset, date) {
 
   return {
     general: pick([
-      { title: '오늘 하루 중 제일 소소하게 웃겼던 순간은?', desc: '거창한 일 아니어도 괜찮아요. 오늘 나를 피식 웃게 만든 장면 하나만 댓글로 남겨주세요.', tags: ['일상', '소소킹'] },
+      { title: '오늘 하루 중 제일 소소하게 웃겼던 순간은?', desc: '거창한 일 아니어도 괜찮아요. 오늘 나를 피식 웃게 만든 장면 하나만 댓글로 남겨주세요.', tags: ['모음', '소소킹'] },
       { title: '요즘 나만 은근히 빠진 작은 취미 있어?', desc: '남들은 별거 아니라고 해도 계속 하게 되는 소소한 취미를 공유해봐요.', tags: ['취미', '소소킹'] },
     ]),
     vote: pick([
       { title: '지금 당장 먹고 싶은 야식은?', desc: '딱 하나만 고를 수 있다면 오늘 밤 메뉴는 무엇인가요? 댓글로 이유도 남겨주세요.', options: ['🍗 치킨', '🍜 라면', '🍕 피자', '🥟 만두'], tags: ['투표', '야식', '소소킹'] },
       { title: '주말 아침, 몇 시 기상이 제일 행복할까?', desc: '쉬는 날 아침 기준으로 가장 마음 편한 기상 시간을 골라주세요.', options: ['7시 이전', '9~10시', '11시쯤', '점심 이후'], tags: ['투표', '주말', '소소킹'] },
     ]),
-    naming: pick([
-      { title: '퇴근 5분 전에 들어오는 급한 업무 지시 이름 좀 지어줘', desc: '분명 퇴근 준비 중이었는데 갑자기 떨어지는 그 업무. 이 상황에 딱 맞는 이름을 댓글로 지어주세요.', tags: ['작명', '직장인', '소소킹'] },
-      { title: '배달 30분 예정인데 1시간 넘게 기다리는 시간 이름은?', desc: '배는 고프고 지도는 그대로인 그 애매한 기다림. 찰진 이름을 붙여주세요.', tags: ['작명', '배달', '소소킹'] },
-    ]),
     drip: pick([
-      { title: '퇴근 5분 전에 팀장이 부른 이유', desc: '가장 킹받는 한 줄 드립을 남겨보세요.', tags: ['드립', '직장인', '한줄드립'] },
-      { title: '배달 기사님 위치가 20분째 같은 곳에 멈춘 이유', desc: '상상력 풀가동해서 한 줄로 웃겨주세요.', tags: ['드립', '배달', '한줄드립'] },
+      { line: '퇴근 5분 전 회의 잡는 사람은 시간여행자 말고 퇴근방해자다.', tags: ['드립', '직장인', '한줄드립'] },
+      { line: '배달 예상시간은 약속이 아니라 내 배고픔을 테스트하는 심리검사지다.', tags: ['드립', '배달', '한줄드립'] },
     ]),
     quiz: pick([
       { title: '오늘의 퀴즈 🧠', desc: '다음 중 일반적으로 냉장 보관하지 않는 것이 더 좋은 식재료는?', options: ['토마토', '우유', '생선', '두부'], answerIdx: 0, hint: '맛과 식감이 중요해요.', explanation: '토마토는 냉장 보관 시 향과 식감이 떨어질 수 있어 상온 보관이 권장되는 경우가 많습니다.', tags: ['퀴즈', '생활상식', '소소킹'] },
       { title: '오늘의 퀴즈 🧠', desc: '한국어 맞춤법에서 “며칠”의 올바른 표기는 무엇일까요?', options: ['며칠', '몇일', '몇 일', '며 일'], answerIdx: 0, hint: '소리 나는 대로 굳어진 표준어입니다.', explanation: '표준어는 “며칠”입니다. “몇일”은 표준 표기가 아닙니다.', tags: ['퀴즈', '맞춤법', '소소킹'] },
     ]),
-  }[preset] || { title: '오늘의 소소 이야기', desc: '가볍게 댓글로 이야기 나눠봐요.', tags: ['소소킹'] };
+  }[preset] || { title: '오늘의 소소 이야기', desc: '가볍게 댓글로 이야기해봐요.', tags: ['소소킹'] };
 }
 
 function baseDoc({ preset, content, date, source }) {
@@ -188,7 +185,7 @@ function baseDoc({ preset, content, date, source }) {
   return {
     type: 'multi',
     cat: 'multi',
-    subtype: preset,
+    subtype: subtypeFromPreset(preset),
     feedType: feedTypeFromPreset(preset),
     typeLabel: meta.label,
     title: clean(content.title || `${meta.label} AI 글`, 100),
@@ -229,12 +226,15 @@ function buildDoc(preset, content, date, source) {
     };
   }
 
-  if (preset === 'naming') {
-    doc.modules.naming = { enabled: true, charCount: 0 };
-  }
-
   if (preset === 'drip') {
-    doc.modules.drip = { enabled: true, prompt: doc.desc, maxLength: 80 };
+    const line = clean(content.line || content.drip || content.desc || content.title || '', 80) || '오늘도 웃긴 척하다가 진짜 웃겨버렸다.';
+    doc.title = '오늘의 한줄';
+    doc.desc = line;
+    doc.typeLabel = '드립방';
+    doc.subtype = 'drip';
+    doc.feedType = 'drip';
+    doc.tags = toTags(content.tags, ['드립', '한줄드립', '소소킹']);
+    doc.modules.drip = { enabled: true, prompt: line, maxLength: 80 };
   }
 
   if (preset === 'quiz') {
