@@ -13,6 +13,64 @@ import { initRichEditor, syncRichEditor } from './multi-write/editor.js';
 
 const MAX_FEED_IMAGES = 20;
 
+/* ── 임시저장(드래프트) ── */
+const DRAFT_KEY = 'sosoking:multiWriteDraft';
+let draftTimer = null;
+
+function scheduleDraftSave() {
+  clearTimeout(draftTimer);
+  draftTimer = setTimeout(() => {
+    try {
+      syncRichEditor();
+      const preset = getPresetKey();
+      const title    = document.getElementById('mw-title')?.value || '';
+      const desc     = document.getElementById('mw-desc')?.value || '';
+      const tags     = document.getElementById('mw-tags')?.value || '';
+      const dripLine = document.getElementById('mw-drip-line')?.value || '';
+      if (!title && !desc && !tags && !dripLine) { clearDraft(); return; }
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({ preset, title, desc, tags, dripLine, savedAt: Date.now() }));
+    } catch {}
+  }, 1500);
+}
+
+function clearDraft() {
+  localStorage.removeItem(DRAFT_KEY);
+}
+
+function offerDraftRestore() {
+  let draft;
+  try { draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); } catch { return; }
+  if (!draft || Date.now() - draft.savedAt > 86_400_000) { clearDraft(); return; }
+
+  const banner = document.createElement('div');
+  banner.id = 'draft-restore-banner';
+  banner.innerHTML = `
+    <span style="flex:1;color:var(--color-text-primary)">💾 이전에 작성하던 내용이 있어요.</span>
+    <button class="btn btn--primary btn--sm" id="draft-yes">복원하기</button>
+    <button class="btn btn--ghost btn--sm" id="draft-no">무시</button>`;
+
+  const header = document.querySelector('.write-step-header');
+  if (header) header.insertAdjacentElement('afterend', banner);
+
+  document.getElementById('draft-yes')?.addEventListener('click', () => {
+    if (draft.preset) updateOptionSelection(draft.preset);
+    setTimeout(() => {
+      ['title','desc','tags'].forEach(key => {
+        if (draft[key]) { const el = document.getElementById(`mw-${key}`); if (el) el.value = draft[key]; }
+      });
+      if (draft.dripLine) { const el = document.getElementById('mw-drip-line'); if (el) el.value = draft.dripLine; }
+      updateWriteStateOnly();
+    }, 80);
+    banner.remove();
+    clearDraft();
+  });
+
+  document.getElementById('draft-no')?.addEventListener('click', () => {
+    clearDraft();
+    banner.remove();
+  });
+}
+
 function isMultiQuery() {
   return /[?&]type=multi\b/.test(window.location.hash || '');
 }
@@ -71,9 +129,10 @@ function cloneWithoutQuizSecret(modules) {
 }
 
 function bindTextStateEvents() {
+  function onInput() { updateWriteStateOnly(); scheduleDraftSave(); }
   ['mw-title', 'mw-desc', 'mw-tags', 'mw-quiz-mode', 'mw-quiz-hint', 'mw-drip-line', 'mw-collect-url']
-    .forEach(id => document.getElementById(id)?.addEventListener('input', updateWriteStateOnly));
-  document.querySelectorAll('.mw-vote-option,.mw-quiz-option').forEach(input => input.addEventListener('input', updateWriteStateOnly));
+    .forEach(id => document.getElementById(id)?.addEventListener('input', onInput));
+  document.querySelectorAll('.mw-vote-option,.mw-quiz-option').forEach(input => input.addEventListener('input', onInput));
   document.getElementById('mw-desc')?.addEventListener('keyup', updateWriteStateOnly);
 }
 
@@ -101,6 +160,7 @@ export async function renderMultiWrite() {
   setVoteMode('general');
   updateOptionSelection(presetKey);
   updateWriteStateOnly();
+  setTimeout(offerDraftRestore, 150);
 }
 
 function setWriteSectionVisibility(normalized) {
@@ -289,6 +349,7 @@ async function submitMultiPost() {
     }
 
     await awardPoints('post_create', { postId: docRef.id, type: presetKey }).catch(() => {});
+    clearDraft();
     toast.success(`${preset.label}에 올렸어요! +10P 🎉`);
     navigate(`/detail/${docRef.id}`);
   } catch (error) {

@@ -37,6 +37,7 @@ const EXTENSION_MODULES = [
   './account-request-cleanup.js',
   './deadline-gate.js',
   './ui-final-interactions.js',
+  './ux-improvements.js',
 ];
 
 async function loadExtension(path) {
