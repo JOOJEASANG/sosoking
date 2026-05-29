@@ -23,6 +23,28 @@ async function registerDetailView(id) {
   }
 }
 
+function shouldHideMainDesc(post) {
+  return post.type === 'multi' && (
+    post.modules?.quiz?.enabled === true ||
+    post.modules?.drip?.enabled === true ||
+    post.modules?.vote?.enabled === true
+  );
+}
+
+function displayDetailTitle(post) {
+  if (post.type === 'multi' && post.modules?.drip?.enabled) {
+    const title = String(post.title || '').trim();
+    const topic = String(post.modules.drip.prompt || post.desc || '').trim();
+    return ['오늘의 드립 주제', '오늘의 한줄', '드립방 AI 글'].includes(title) ? (topic || title) : title || topic;
+  }
+  if (post.type === 'multi' && post.modules?.vote?.enabled) {
+    const title = String(post.title || '').trim();
+    const topic = String(post.modules.vote.question || post.desc || '').trim();
+    return title || topic || '토론 주제';
+  }
+  return post.title || '';
+}
+
 export async function renderDetail(id) {
   const el = document.getElementById('page-content');
   el.innerHTML = `<div class="loading-center"><div class="spinner spinner--lg"></div></div>`;
@@ -35,7 +57,7 @@ export async function renderDetail(id) {
     }
 
     const post = { id: snap.id, ...snap.data() };
-    setMeta(post.title, post.desc, post.images?.[0], `https://sosoking.co.kr/p/${id}`);
+    setMeta(displayDetailTitle(post), post.desc, post.images?.[0], `https://sosoking.co.kr/p/${id}`);
 
     const uid = auth.currentUser?.uid;
     const [comments, isScrapped, viewResult] = await Promise.all([
@@ -56,6 +78,8 @@ function renderDetailPage(el, post, comments, isScrapped = false) {
   const typeLabel = TYPE_LABELS[post.type] || post.type;
   const catClass = CAT_CLASS[post.cat] || 'malhe';
   const timeStr = formatTime(post.createdAt?.toDate?.() || post.createdAt);
+  const detailTitle = displayDetailTitle(post);
+  const hideMainDesc = shouldHideMainDesc(post);
 
   el.innerHTML = `
     <div data-detail-root data-post-id="${escHtml(post.id)}" style="max-width:720px;margin:0 auto">
@@ -66,7 +90,7 @@ function renderDetailPage(el, post, comments, isScrapped = false) {
             <span class="feed-card__type-badge feed-card__type-badge--${catClass}">${typeLabel}</span>
             ${post.tags?.map(t => `<span class="tag">#${escHtml(t)}</span>`).join('') || ''}
           </div>
-          <h1 class="detail-title">${escHtml(post.title || '')}</h1>
+          <h1 class="detail-title">${escHtml(detailTitle || '')}</h1>
           <div class="detail-meta">
             <span>${escHtml(post.authorName || '익명')}</span>
             <span>${timeStr}</span>
@@ -81,8 +105,8 @@ function renderDetailPage(el, post, comments, isScrapped = false) {
 
         ${post.images?.length ? renderImageSection(post.images) : ''}
 
-        <div class="detail-body">
-          ${post.desc ? `<p>${escHtml(post.desc).replace(/\n/g, '<br>')}</p>` : ''}
+        <div class="detail-body ${hideMainDesc ? 'detail-body--module-only' : ''}">
+          ${post.desc && !hideMainDesc ? `<p>${escHtml(post.desc).replace(/\n/g, '<br>')}</p>` : ''}
           ${renderTypeBody(post)}
         </div>
 
