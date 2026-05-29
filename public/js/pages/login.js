@@ -48,10 +48,17 @@ async function goAfterLogin(user = auth.currentUser) {
 
 async function loginWithKakao() {
   const K = window.Kakao;
-  if (!K) { toast.error('카카오 SDK를 불러오지 못했어요'); return; }
+  if (!K) { toast.error('[카카오] SDK 미로드'); return; }
+
   if (!K.isInitialized()) {
-    try { K.init(KAKAO_JS_APP_KEY); } catch { toast.error('카카오 초기화에 실패했어요'); return; }
+    try { K.init(KAKAO_JS_APP_KEY); }
+    catch (e) { toast.error('[카카오] 초기화 실패: ' + e.message); return; }
   }
+
+  if (!K.isInitialized()) { toast.error('[카카오] 초기화 확인 실패'); return; }
+  if (typeof K.Auth?.login !== 'function') { toast.error('[카카오] Auth.login 없음'); return; }
+
+  toast.warn('[카카오] 로그인 팝업 요청 중...');
 
   let accessToken;
   try {
@@ -59,8 +66,11 @@ async function loginWithKakao() {
       K.Auth.login({ success: (o) => resolve(o.access_token), fail: reject });
     });
   } catch (err) {
-    if (err?.error === 'access_denied' || err?.error === 'cancelled') return;
-    toast.error('카카오 로그인에 실패했어요: ' + (err?.error_description || err?.error || ''));
+    if (err?.error === 'access_denied' || err?.error === 'cancelled') {
+      toast.warn('카카오 로그인이 취소됐어요');
+      return;
+    }
+    toast.error('[카카오] Auth 실패: ' + JSON.stringify(err));
     return;
   }
 
