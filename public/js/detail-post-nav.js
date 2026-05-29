@@ -1,5 +1,5 @@
 import { db } from './firebase.js';
-import { collection, getDocs, limit, orderBy, query, where } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { collection, getDocs, limit, orderBy, query } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { navigate } from './router.js';
 
 const STORE_KEY = 'sosoking:detailPostNav';
@@ -57,9 +57,9 @@ function navHtml(index, total) {
   const hasNext = index >= 0 && index < total - 1;
   return `
     <div class="detail-post-nav" data-detail-post-nav="1">
-      <button class="detail-post-nav__btn detail-post-nav__btn--prev" type="button" data-detail-nav="prev" ${hasPrev ? '' : 'disabled'}>← 이전글</button>
+      <button class="detail-post-nav__btn detail-post-nav__btn--prev" type="button" data-detail-nav="prev" aria-label="이전글" title="이전글" ${hasPrev ? '' : 'disabled'}>‹</button>
       <div class="detail-post-nav__count">${total ? `${index + 1} / ${total}` : '글 이동'}</div>
-      <button class="detail-post-nav__btn detail-post-nav__btn--next" type="button" data-detail-nav="next" ${hasNext ? '' : 'disabled'}>다음글 →</button>
+      <button class="detail-post-nav__btn detail-post-nav__btn--next" type="button" data-detail-nav="next" aria-label="다음글" title="다음글" ${hasNext ? '' : 'disabled'}>›</button>
     </div>
     <div class="detail-swipe-hint">모바일에서는 화면을 좌우로 밀어 이전글/다음글을 볼 수 있어요.</div>`;
 }
