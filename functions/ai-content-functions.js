@@ -144,11 +144,11 @@ const TYPE_PROMPTS = {
 반드시 JSON만 출력해:
 {"title":"투표 제목 50자 이내","desc":"투표할 상황 설명 1~3문장","options":["선택지1","선택지2","선택지3"],"tags":["투표","판정","소소킹"]}`,
 
-  drip: `너는 소소킹 커뮤니티 운영자야. 현재 글쓰기 유형 '드립방'에 올라갈 웃긴 한 줄 드립 1개만 만들어줘.
-중요: 상황 설명, 질문, 참여 유도 문장, 제목형 문장을 만들지 마. 게시글 본문에 그대로 들어갈 완성된 드립 한 줄만 만들어.
-길이는 50자 이내. 직장, 학교, 친구, 배달, 연애, 가족, 일상 중 하나를 소재로 피식 웃기는 문장이어야 해.
+  drip: `너는 소소킹 커뮤니티 운영자야. 현재 글쓰기 유형 '드립방'에 올릴 드립 주제 1개를 만들어줘.
+중요: 완성된 드립 한 줄을 만들지 말고, 사람들이 50자 이내 한 줄 드립으로 답할 수 있는 짧은 상황/질문형 주제를 만들어.
+방송 사연처럼 길게 설명하지 말고, 한눈에 드립칠 수 있는 생활형 상황이어야 해.
 반드시 JSON만 출력해:
-{"line":"50자 이내 웃긴 한 줄 드립","tags":["드립","한줄드립","소소킹"]}`,
+{"topic":"80자 이내 드립 주제","tags":["드립","한줄드립","드립주제","소소킹"]}`,
 
   quiz: `너는 소소킹 커뮤니티 운영자야. 현재 글쓰기 유형 '퀴즈방'에 맞는 게시글 1개를 만들어줘.
 주관식, 객관식, 정답 없는 생각 퀴즈 중 하나를 골라 만들어.
@@ -173,8 +173,9 @@ function fallbackContent(preset, date) {
       { title: '주말 아침, 몇 시 기상이 제일 행복할까?', desc: '쉬는 날 아침 기준으로 가장 마음 편한 기상 시간을 골라주세요.', options: ['7시 이전', '9~10시', '11시쯤', '점심 이후'], tags: ['투표', '주말', '소소킹'] },
     ]),
     drip: pick([
-      { line: '퇴근 5분 전 회의는 업무가 아니라 급습이다.', tags: ['드립', '직장인', '한줄드립'] },
-      { line: '배달 예상시간은 내 인내심의 유통기한이다.', tags: ['드립', '배달', '한줄드립'] },
+      { topic: '퇴근 5분 전에 회의 잡힌 사람의 한마디는?', tags: ['드립', '직장인', '드립주제'] },
+      { topic: '배달 예상시간이 계속 늘어날 때 떠오르는 한 줄은?', tags: ['드립', '배달', '드립주제'] },
+      { topic: '월요일 아침 알람을 본 내 영혼에게 이름을 붙인다면?', tags: ['드립', '월요일', '드립주제'] },
     ]),
     quiz: pick([
       { title: '오늘의 퀴즈 🧠', desc: '다음 중 일반적으로 냉장 보관하지 않는 것이 더 좋은 식재료는?', mode: 'multiple', noAnswer: false, options: ['토마토', '우유', '생선', '두부'], answerIdx: 0, hint: '맛과 식감이 중요해요.', explanation: '토마토는 냉장 보관 시 향과 식감이 떨어질 수 있어 상온 보관이 권장되는 경우가 많습니다.', tags: ['퀴즈', '생활상식', '소소킹'] },
@@ -230,14 +231,14 @@ function buildDoc(preset, content, date, source) {
   }
 
   if (preset === 'drip') {
-    const line = clean(content.line || content.drip || content.desc || content.title || '', 50) || '오늘도 웃긴 척하다가 진짜 웃겨버렸다.';
-    doc.title = '오늘의 한줄';
-    doc.desc = line;
+    const topic = clean(content.topic || content.prompt || content.desc || content.title || content.line || '', 80) || '퇴근 5분 전에 회의 잡힌 사람의 한마디는?';
+    doc.title = '오늘의 드립 주제';
+    doc.desc = topic;
     doc.typeLabel = '드립방';
     doc.subtype = 'drip';
     doc.feedType = 'drip';
-    doc.tags = toTags(content.tags, ['드립', '한줄드립', '소소킹']);
-    doc.modules.drip = { enabled: true, prompt: line, maxLength: 50 };
+    doc.tags = toTags(content.tags, ['드립', '한줄드립', '드립주제', '소소킹']);
+    doc.modules.drip = { enabled: true, prompt: topic, maxLength: 50, responseLabel: '한 줄 드립' };
   }
 
   if (preset === 'quiz') {
