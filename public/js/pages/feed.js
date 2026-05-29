@@ -15,13 +15,14 @@ import {
 
 const PAGE_SIZE    = 20;
 const FILTER_LIMIT = 120;
+const NAV_CONTEXT_KEY = 'sosoking:feedNavContext';
 
 const ROOMS = [
   { key: '',        icon: '✨', label: '전체',   title: '전체 모음', desc: '유튜브, 웃긴그림, 토론, 퀴즈, 드립을 한 번에 봅니다.', write: 'collect' },
   { key: 'collect', icon: '📌', label: '모음방', title: '모음방', desc: '유튜브 쇼츠와 업로드한 웃긴그림을 짧게 모아봅니다.', write: 'collect' },
   { key: 'vote',    icon: '🗳️', label: '토론방', title: '토론방', desc: '선택지로 빠르게 의견을 모으고 댓글로 이야기합니다.', write: 'vote' },
   { key: 'quiz',    icon: '🧠', label: '퀴즈방', title: '퀴즈방', desc: '짧은 문제를 보고 바로 맞히는 공간입니다.', write: 'quiz' },
-  { key: 'drip',    icon: '🤣', label: '드립방', title: '드립방', desc: '제목 없이 오늘의 한줄만 모아보는 공간입니다.', write: 'drip' },
+  { key: 'drip',    icon: '🤣', label: '드립방', title: '드립방', desc: '주제를 보고 50자 이내 한 줄 드립으로 참여하는 공간입니다.', write: 'drip' },
 ];
 
 let currentType        = '';
@@ -34,6 +35,7 @@ let currentCollectKind = ''; // '' = 전체, 'youtube', 'image'
 let cursorStack   = [];
 let cursorTotal   = 0;
 let cachedPosts   = [];
+let lastDisplayPosts = [];
 
 function currentRoom() {
   return ROOMS.find(room => room.key === currentType) || ROOMS[0];
@@ -83,6 +85,7 @@ export async function renderFeed() {
   cursorStack = [];
   cursorTotal = 0;
   cachedPosts = [];
+  lastDisplayPosts = [];
 
   if (params.type !== 'collect') currentCollectKind = '';
 
@@ -95,12 +98,7 @@ export async function renderFeed() {
         ${renderFeedFilterBar({ type: currentType, search: currentSearch })}
       </div>
       <div id="feed-summary" class="soso-feed-summary feed-result-summary"></div>
-      <div class="soso-feed-swipe-shell" aria-label="글 목록 슬라이드">
-        <button class="soso-feed-slide-btn soso-feed-slide-btn--prev" type="button" data-feed-slide="prev" aria-label="이전 글">‹</button>
-        <div id="feed-list" class="soso-feed-swipe-list">${renderSkeletonCards(5)}</div>
-        <button class="soso-feed-slide-btn soso-feed-slide-btn--next" type="button" data-feed-slide="next" aria-label="다음 글">›</button>
-      </div>
-      <div class="soso-feed-swipe-hint">모바일에서는 좌우로 밀어서 다음 글을 볼 수 있어요.</div>
+      <div id="feed-list" class="soso-feed-list">${renderSkeletonCards(5)}</div>
       <div id="feed-pagination" class="feed-pagination"></div>
       <div id="feed-loader" class="loading-center" style="display:none"><div class="spinner"></div></div>
     </div>`;
@@ -114,7 +112,6 @@ function bindFeedEvents() {
   bindTypeFilterEvents();
   bindCollectKindEvents();
   bindRoomWriteEvent();
-  bindFeedSlideButtons();
 }
 
 function bindCollectKindEvents() {
@@ -181,6 +178,7 @@ function refreshFeed() {
   cursorStack = [];
   cursorTotal = 0;
   cachedPosts = [];
+  lastDisplayPosts = [];
   updateUrlState();
   updateFeedFilterUI({ type: currentType, search: currentSearch, sort: currentSort });
   loadPosts();
@@ -298,6 +296,26 @@ async function loadFilteredPosts() {
   cachedPosts = sortFeedPosts(posts, currentSort);
 }
 
+function persistNavContext(posts) {
+  lastDisplayPosts = posts || [];
+  try {
+    sessionStorage.setItem(NAV_CONTEXT_KEY, JSON.stringify({
+      ids: lastDisplayPosts.map(p => p.id).filter(Boolean),
+      page: currentPage,
+      type: currentType,
+      search: currentSearch,
+      sort: currentSort,
+      collectKind: currentCollectKind,
+      href: window.location.hash || '#/feed',
+      savedAt: Date.now(),
+    }));
+    sessionStorage.setItem('sosoking:detailPostNav', JSON.stringify({
+      ids: lastDisplayPosts.map(p => p.id).filter(Boolean),
+      savedAt: Date.now(),
+    }));
+  } catch {}
+}
+
 function renderCurrentPage() {
   const listEl    = document.getElementById('feed-list');
   const summaryEl = document.getElementById('feed-summary');
@@ -314,6 +332,7 @@ function renderCurrentPage() {
         search: currentSearch, type: currentType, sort: currentSort,
       });
     }
+    persistNavContext(displayPosts);
     listEl.classList.toggle('is-empty', !displayPosts.length);
     listEl.innerHTML = displayPosts.length ? displayPosts.map(p => renderFeedCard(p)).join('') : renderFeedEmptyState({ search: currentSearch });
     renderCursorPagination();
@@ -329,60 +348,13 @@ function renderCurrentPage() {
         search: currentSearch, type: currentType, sort: currentSort,
       });
     }
+    persistNavContext(pagePosts);
     listEl.classList.toggle('is-empty', !pagePosts.length);
     listEl.innerHTML = pagePosts.length ? pagePosts.map(p => renderFeedCard(p)).join('') : renderFeedEmptyState({ search: currentSearch });
     renderOffsetPagination(totalPages);
   }
   bindSortEvents();
-  resetFeedSlidePosition();
-  updateFeedSlideButtons();
   updateUrlState();
-}
-
-function slideStep() {
-  const list = document.getElementById('feed-list');
-  if (!list) return 0;
-  const firstCard = [...list.children].find(el => el.classList?.contains('feed-card') || el.classList?.contains('card'));
-  if (!firstCard) return Math.max(280, Math.round(list.clientWidth * 0.9));
-  const rect = firstCard.getBoundingClientRect();
-  const style = getComputedStyle(list);
-  const gap = parseFloat(style.columnGap || style.gap || '16') || 16;
-  return Math.max(220, Math.round(rect.width + gap));
-}
-
-function resetFeedSlidePosition() {
-  const list = document.getElementById('feed-list');
-  if (!list) return;
-  list.scrollTo({ left: 0, behavior: 'auto' });
-}
-
-function updateFeedSlideButtons() {
-  const list = document.getElementById('feed-list');
-  const prev = document.querySelector('[data-feed-slide="prev"]');
-  const next = document.querySelector('[data-feed-slide="next"]');
-  const hasScrollable = !!list && !list.classList.contains('is-empty') && list.scrollWidth > list.clientWidth + 8;
-  if (prev) prev.disabled = !hasScrollable || list.scrollLeft <= 4;
-  if (next) next.disabled = !hasScrollable || list.scrollLeft + list.clientWidth >= list.scrollWidth - 8;
-}
-
-function scrollFeedSlide(direction) {
-  const list = document.getElementById('feed-list');
-  if (!list || list.classList.contains('is-empty')) return;
-  list.scrollBy({ left: slideStep() * direction, behavior: 'smooth' });
-  setTimeout(updateFeedSlideButtons, 260);
-}
-
-function bindFeedSlideButtons() {
-  document.querySelector('[data-feed-slide="prev"]')?.addEventListener('click', () => scrollFeedSlide(-1));
-  document.querySelector('[data-feed-slide="next"]')?.addEventListener('click', () => scrollFeedSlide(1));
-  document.getElementById('feed-list')?.addEventListener('scroll', () => {
-    clearTimeout(window.__sosoFeedSlideTimer);
-    window.__sosoFeedSlideTimer = setTimeout(updateFeedSlideButtons, 60);
-  }, { passive: true });
-  window.addEventListener('resize', () => {
-    clearTimeout(window.__sosoFeedResizeTimer);
-    window.__sosoFeedResizeTimer = setTimeout(updateFeedSlideButtons, 120);
-  });
 }
 
 function renderCursorPagination() {
