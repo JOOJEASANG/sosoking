@@ -7,7 +7,7 @@ import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/fireba
 
 // ── 카카오 JavaScript 앱 키 ──────────────────────────────────────────
 // developers.kakao.com → 내 애플리케이션 → 앱 설정 → 앱 키 → JavaScript 키
-const KAKAO_JS_APP_KEY = 'b6a8f53233bbfcc7b6ffca0e198e9cca';
+const KAKAO_JS_APP_KEY = '377995fee0850a5de4167641d343be0e';
 // ────────────────────────────────────────────────────────────────────
 
 const OWNER_EMAILS = new Set(['joojeasang@gmail.com']);
