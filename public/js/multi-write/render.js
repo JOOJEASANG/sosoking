@@ -51,21 +51,21 @@ export function renderQuizOptionRows(count = 2) {
 }
 
 function renderCollectModule(activeKey) {
-  return moduleCard('collect', activeKey, '📌', '모음방 카테고리', '유튜브, 웃긴그림, 링크 중 하나를 고르세요.', `
+  return moduleCard('collect', activeKey, '📌', '모음방 등록 방식', '유튜브 링크 또는 사진 파일 업로드로 올립니다.', `
     <div class="form-group">
-      <label class="form-label">모음 카테고리 <span class="required">*</span></label>
+      <label class="form-label">등록 방식 <span class="required">*</span></label>
       <input type="hidden" id="mw-collect-kind" value="youtube">
-      <div class="mw-vote-chips mw-room-subchips" role="radiogroup" aria-label="모음 카테고리">
+      <div class="mw-vote-chips mw-room-subchips" role="radiogroup" aria-label="모음방 등록 방식">
         <button type="button" class="mw-vote-chip active" data-collect-kind="youtube" role="radio" aria-checked="true">유튜브</button>
         <button type="button" class="mw-vote-chip" data-collect-kind="image" role="radio" aria-checked="false">웃긴그림</button>
-        <button type="button" class="mw-vote-chip" data-collect-kind="link" role="radio" aria-checked="false">링크</button>
       </div>
     </div>
     <div class="form-group" data-collect-url-box>
-      <label class="form-label">링크</label>
-      <input id="mw-collect-url" class="form-input" maxlength="300" placeholder="유튜브 쇼츠/영상 링크 또는 이미지/웹 링크">
-      <div class="form-hint">웃긴그림은 사진 첨부 또는 이미지 URL 중 하나만 있어도 됩니다.</div>
-    </div>`);
+      <label class="form-label">유튜브 링크 <span class="required">*</span></label>
+      <input id="mw-collect-url" class="form-input" maxlength="300" placeholder="https://youtube.com/shorts/... 또는 유튜브 영상 링크">
+      <div class="form-hint">유튜브는 쇼츠, 공유 링크, watch 링크를 사용할 수 있습니다.</div>
+    </div>
+    <div class="form-hint" data-collect-image-hint style="display:none">웃긴그림은 아래 사진 첨부에서 파일을 업로드해주세요. 이미지 URL 입력은 사용하지 않습니다.</div>`);
 }
 
 function renderVoteModule(activeKey) {
@@ -171,7 +171,7 @@ export function renderMultiWriteHTML({ renderKey, presetKey }) {
           <div class="form-group" data-write-section="media-field" ${mediaHidden}>
             <label class="form-label">사진 첨부</label>
             <div id="mw-img-uploader"></div>
-            <div class="form-hint">사진은 선택사항입니다. 웃긴그림 모음은 사진 첨부 또는 이미지 URL 중 하나가 필요합니다.</div>
+            <div class="form-hint">사진은 선택사항입니다. 웃긴그림 모음은 사진 파일 업로드가 필요합니다.</div>
           </div>
           <div data-write-section="vote-panel" ${activeKey === 'vote' ? '' : 'style="display:none"'}>${renderVoteModule(activeKey)}</div>
           <div data-write-section="quiz-panel" ${activeKey === 'quiz' ? '' : 'style="display:none"'}>${renderQuizModule(activeKey)}</div>
