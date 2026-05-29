@@ -1,0 +1,84 @@
+/* 요청 반영 정리: 홈/글쓰기/내정보 */
+
+/* 홈 방모음 카드: PC 2개씩 2줄, 모바일 1줄씩 */
+.home-feature-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+.home-feature-card {
+  writing-mode: horizontal-tb !important;
+  text-orientation: mixed !important;
+  min-height: 150px;
+}
+
+.home-feature-card b,
+.home-feature-card em,
+.home-feature-card small {
+  writing-mode: horizontal-tb !important;
+  text-orientation: mixed !important;
+}
+
+@media (max-width: 767px) {
+  .home-feature-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* 글쓰기 방 선택 버튼: 방 이름만 한 줄로 */
+.multi-preset-list--compact,
+.multi-preset-list--top {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  gap: 8px !important;
+  overflow-x: auto !important;
+  scrollbar-width: none;
+}
+
+.multi-preset-list--compact::-webkit-scrollbar,
+.multi-preset-list--top::-webkit-scrollbar {
+  display: none;
+}
+
+.multi-preset-btn--compact,
+.multi-preset-list--compact .multi-preset-btn,
+.multi-preset-list--top .multi-preset-btn {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: 0 !important;
+  min-height: 38px !important;
+  padding: 0 14px !important;
+  border-radius: 999px !important;
+  white-space: nowrap !important;
+  text-align: center !important;
+}
+
+.multi-preset-btn--compact .multi-preset-btn__desc,
+.multi-preset-list--compact .multi-preset-btn__desc,
+.multi-preset-list--top .multi-preset-btn__desc {
+  display: none !important;
+}
+
+.multi-preset-btn--compact .multi-preset-btn__label,
+.multi-preset-list--compact .multi-preset-btn__label,
+.multi-preset-list--top .multi-preset-btn__label {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  white-space: nowrap !important;
+  font-size: 13px !important;
+}
+
+.multi-write-option-category__head .multi-preset-box__desc {
+  display: none !important;
+}
+
+/* 내정보: 팔로우 기능 삭제 */
+.account-tab[data-tab="follows"] {
+  display: none !important;
+}
+
+/* 내정보 통계: 피드활동의 작명소 행 삭제
+   구조: 제목 div + 일반글 + 투표 + 작명소 + 드립 + 퀴즈 */
+.stats-page .card .card__body > div:nth-child(4) {
+  display: none !important;
+}
