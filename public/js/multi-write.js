@@ -149,7 +149,7 @@ function updateOptionSelection(preset) {
 }
 
 function setCollectKind(kind) {
-  const normalized = ['youtube', 'image', 'link'].includes(kind) ? kind : 'youtube';
+  const normalized = ['youtube', 'image'].includes(kind) ? kind : 'youtube';
   const hidden = document.getElementById('mw-collect-kind');
   if (hidden) hidden.value = normalized;
   document.querySelectorAll('[data-collect-kind]').forEach(btn => {
@@ -158,13 +158,14 @@ function setCollectKind(kind) {
     btn.setAttribute('aria-checked', active ? 'true' : 'false');
   });
   const input = document.getElementById('mw-collect-url');
+  const urlBox = document.querySelector('[data-collect-url-box]');
+  const imageHint = document.querySelector('[data-collect-image-hint]');
   if (input) {
-    input.placeholder = normalized === 'youtube'
-      ? 'https://youtube.com/shorts/... 또는 유튜브 링크'
-      : normalized === 'image'
-        ? 'https://.../image.jpg 또는 아래 사진 첨부'
-        : 'https://... 공유하고 싶은 링크';
+    input.placeholder = 'https://youtube.com/shorts/... 또는 유튜브 링크';
+    if (normalized === 'image') input.value = '';
   }
+  if (urlBox) urlBox.style.display = normalized === 'youtube' ? '' : 'none';
+  if (imageHint) imageHint.style.display = normalized === 'image' ? '' : 'none';
 }
 
 function setVoteMode() {
@@ -270,8 +271,8 @@ async function submitMultiPost() {
 
     const images = await getUploadedImages();
     if (images.length > MAX_FEED_IMAGES) throw new Error(`사진은 최대 ${MAX_FEED_IMAGES}장까지 올릴 수 있어요.`);
-    if (presetKey === 'collect' && publicModules.collect?.kind === 'image' && !images.length && !publicModules.collect?.imageUrl) {
-      throw new Error('웃긴그림 모음은 사진 첨부 또는 이미지 URL이 필요해요.');
+    if (presetKey === 'collect' && publicModules.collect?.kind === 'image' && !images.length) {
+      throw new Error('웃긴그림 모음은 사진 파일 업로드가 필요해요.');
     }
     btn.textContent = '게시글 저장 중...';
 
