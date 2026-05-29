@@ -142,9 +142,16 @@ function bindSearchEvents() {
     refreshFeed();
     clearBtn?.style.setProperty('display', currentSearch ? 'inline-flex' : 'none');
   };
-  searchInput?.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
-  searchBtn?.addEventListener('click', doSearch);
+  let debounceTimer = null;
+  searchInput?.addEventListener('input', () => {
+    clearBtn?.style.setProperty('display', searchInput.value.trim() ? 'inline-flex' : 'none');
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(doSearch, 420);
+  });
+  searchInput?.addEventListener('keydown', e => { if (e.key === 'Enter') { clearTimeout(debounceTimer); doSearch(); } });
+  searchBtn?.addEventListener('click', () => { clearTimeout(debounceTimer); doSearch(); });
   clearBtn?.addEventListener('click', () => {
+    clearTimeout(debounceTimer);
     if (searchInput) searchInput.value = '';
     currentSearch = '';
     currentPage   = 1;
