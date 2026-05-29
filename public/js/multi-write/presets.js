@@ -28,10 +28,10 @@ export const MULTI_PRESETS = {
   drip: {
     label: '드립방',
     icon: '🤣',
-    shortDesc: '오늘의 한줄 리스트',
-    titlePlaceholder: '오늘의 한줄',
-    descPlaceholder: '오늘의 한줄을 입력하세요.',
-    tagsPlaceholder: '#드립, #한줄드립, #짧은웃음',
+    shortDesc: '주제 던지고 한줄 드립',
+    titlePlaceholder: '드립 주제',
+    descPlaceholder: '사람들이 한 줄 드립을 칠 수 있는 상황이나 주제를 적어주세요.',
+    tagsPlaceholder: '#드립, #한줄드립, #드립주제',
   },
   // 기존 일반글 호환용입니다. 새 글쓰기 선택지에서는 제거합니다.
   general: {
@@ -87,7 +87,7 @@ export const WRITER_PRESET_KEYS = ['collect', 'vote', 'quiz', 'drip'];
 export const BODY_LABELS = {
   collect: '한줄 설명',
   vote: '토론 주제',
-  drip: '오늘의 한줄',
+  drip: '드립 주제',
   fill: '본문 · 빈칸 문장',
   quiz: '퀴즈 문제',
 };
