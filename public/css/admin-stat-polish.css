@@ -11,24 +11,15 @@ body:has(.admin-layout) .admin-stat-card {
   position: relative !important;
   overflow: hidden !important;
   padding: 18px 18px 16px !important;
-  border: 1px solid rgba(255, 107, 74, .12) !important;
+  border: 1px solid rgba(255, 107, 74, .20) !important;
   border-radius: 20px !important;
-  background:
-    radial-gradient(circle at 100% 0%, rgba(255, 107, 74, .10), transparent 36%),
-    linear-gradient(180deg, rgba(255, 255, 255, .98), rgba(255, 255, 255, .94)) !important;
-  box-shadow: 0 10px 26px rgba(20, 14, 40, .06), 0 1px 0 rgba(255, 255, 255, .85) inset !important;
+  background: var(--color-surface) !important;
+  box-shadow: 0 8px 22px rgba(20, 14, 40, .055) !important;
 }
 
 body:has(.admin-layout) .admin-stat-card::before {
-  content: '';
-  position: absolute;
-  left: 16px;
-  right: 16px;
-  top: 0;
-  height: 3px;
-  border-radius: 0 0 999px 999px;
-  background: linear-gradient(90deg, var(--color-primary), rgba(255, 138, 0, .72));
-  opacity: .75;
+  display: none !important;
+  content: none !important;
 }
 
 body:has(.admin-layout) .admin-stat-card__num {
@@ -53,11 +44,9 @@ body:has(.admin-layout) .admin-stat-card div[style*="color:var(--color-text-mute
 }
 
 [data-theme="dark"] body:has(.admin-layout) .admin-stat-card {
-  border-color: rgba(255, 107, 74, .18) !important;
-  background:
-    radial-gradient(circle at 100% 0%, rgba(255, 107, 74, .16), transparent 38%),
-    linear-gradient(180deg, rgba(33, 36, 60, .98), rgba(27, 30, 50, .94)) !important;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, .22), 0 1px 0 rgba(255, 255, 255, .04) inset !important;
+  border-color: rgba(255, 107, 74, .26) !important;
+  background: var(--color-surface) !important;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, .20) !important;
 }
 
 @media (max-width: 1023px) {
