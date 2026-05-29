@@ -41,6 +41,10 @@ function enabled(key) {
   return !!document.querySelector(`[data-module-toggle="${key}"]`);
 }
 
+function getTitleText() {
+  return realValue(document.getElementById('mw-title'));
+}
+
 function getVoteOptions() {
   return [...document.querySelectorAll('.mw-vote-option')]
     .map(input => realValue(input))
@@ -88,6 +92,7 @@ function collectKindLabel(kind) {
 export function collectMultiModules() {
   const modules = { comments: { enabled: true } };
   const bodyText = getBodyText();
+  const titleText = getTitleText();
 
   if (isAnonymousWriteChecked()) {
     modules.anonymous = { enabled: true, mode: 'general-option' };
@@ -113,9 +118,10 @@ export function collectMultiModules() {
   if (enabled('vote')) {
     const options = getVoteOptions();
     const voteMode = document.getElementById('mw-vote-mode')?.value || 'general';
-    if (!bodyText) throw new Error('내용에 토론 질문이나 상황을 입력해주세요.');
+    const question = bodyText || titleText;
+    if (!question) throw new Error('토론 주제를 입력해주세요.');
     if (options.length < 2) throw new Error('선택지를 2개 이상 입력해주세요.');
-    const voteData = { enabled: true, question: bodyText, options: options.map(text => ({ text, votes: 0 })) };
+    const voteData = { enabled: true, question, options: options.map(text => ({ text, votes: 0 })) };
     if (voteMode !== 'general') voteData.voteMode = voteMode;
     modules.vote = voteData;
   }
