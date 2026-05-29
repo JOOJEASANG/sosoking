@@ -39,14 +39,16 @@ function fallbackDraft(preset) {
       tags: ['유튜브', '쇼츠', '웃긴영상'],
     },
     vote: {
-      title: '친구 사이 이 상황 가능?',
-      desc: '둘 중 뭐가 더 이해되는지 골라주세요.',
-      options: ['가능하다', '불가능하다', '상황 따라 다르다'],
+      title: '친구가 약속 5분 전에 “나 이제 출발” 하면?',
+      desc: '',
+      options: ['이해 가능', '바로 손절각', '상습이면 문제', '나도 그래서 할 말 없음'],
       tags: ['토론방', '선택지', '공감'],
     },
     quiz: {
       title: '눈치 빠른 사람만 맞히는 퀴즈',
       desc: '다음 상황에서 가장 그럴듯한 정답은 무엇일까요?',
+      quizMode: 'multiple',
+      noAnswer: false,
       options: ['첫 번째 선택지', '두 번째 선택지', '세 번째 선택지', '네 번째 선택지'],
       answer: '두 번째 선택지',
       correctIndex: 1,
@@ -55,9 +57,10 @@ function fallbackDraft(preset) {
       tags: ['퀴즈방', '문제', '정답'],
     },
     drip: {
-      title: '오늘의 한줄',
-      desc: '월요일 아침 내 표정은 이미 퇴근했다',
-      tags: ['드립방', '오늘의한줄', '짧은웃음'],
+      title: '오늘의 드립 주제',
+      desc: '퇴근 5분 전에 회의 잡힌 사람의 한마디는?',
+      topic: '퇴근 5분 전에 회의 잡힌 사람의 한마디는?',
+      tags: ['드립방', '드립주제', '한줄드립'],
     },
   };
   return { ...base, ...(map[preset] || {}) };
@@ -68,10 +71,10 @@ function promptFor(preset) {
   return `소소킹 관리자용 AI 콘텐츠 데이터를 만드세요.
 
 소소킹 현재 구조:
-- 모음방: 유튜브 쇼츠/영상, 웃긴그림, 링크를 짧게 모아보는 방
-- 토론방: 제목, 짧은 상황 설명, 일반 선택지로 의견을 모으는 방
-- 퀴즈방: 주관식 또는 객관식 퀴즈를 올리는 방
-- 드립방: 제목/본문 없이 오늘의 한줄만 올리는 방
+- 모음방: 유튜브 쇼츠/영상 또는 업로드한 웃긴그림을 짧게 모아보는 방. 일반 링크 카테고리는 사용하지 않음.
+- 토론방: 토론 주제만 던지고, 선택지로 의견을 모으는 방. 추가 설명은 선택사항.
+- 퀴즈방: 주관식, 객관식, 정답 없는 퀴즈를 올리는 방.
+- 드립방: 완성된 드립을 올리는 곳이 아니라, 사람들이 50자 이내 한 줄 드립으로 답할 수 있는 주제를 던지는 방.
 
 현재 생성 유형: ${meta.typeLabel}
 
@@ -83,24 +86,26 @@ function promptFor(preset) {
 
 필수 JSON 스키마:
 {
-  "title": "제목 또는 오늘의 한줄 제목",
-  "desc": "본문 또는 오늘의 한줄",
+  "title": "제목 또는 주제",
+  "desc": "본문/설명. 토론방은 비워도 됨. 드립방은 topic과 동일해도 됨.",
+  "topic": "드립방 주제 또는 토론방 주제",
   "tags": ["태그1", "태그2", "태그3"],
-  "collectKind": "youtube|image|link",
-  "url": "유튜브 또는 링크 URL, 없으면 빈 문자열",
+  "collectKind": "youtube|image",
+  "url": "유튜브 URL, 없으면 빈 문자열",
   "options": ["선택지1", "선택지2", "선택지3"],
   "quizMode": "subjective|multiple",
-  "answer": "퀴즈 정답",
+  "noAnswer": false,
+  "answer": "퀴즈 정답. 정답 없는 퀴즈면 빈 문자열",
   "correctIndex": 0,
   "hint": "퀴즈 힌트",
-  "explanation": "퀴즈 해설"
+  "explanation": "퀴즈 해설 또는 정답 없는 퀴즈 안내"
 }
 
 유형별 지시:
-- 모음방: title은 40자 이내. desc는 80자 이내 한줄 설명. collectKind는 youtube, image, link 중 하나. url은 실제 접속 가능한 예시 URL이 아니어도 빈 문자열로 둬도 됩니다.
-- 토론방: title은 질문형. desc는 상황 설명 100자 이내. options는 일반 선택지 2~4개. 찬성/반대, 밸런스 고정 표현은 쓰지 말고 자연스러운 선택지로 작성.
-- 퀴즈방: title과 desc는 문제 형태. quizMode는 multiple 권장. options 2~4개, correctIndex, answer, hint, explanation 필수.
-- 드립방: title은 반드시 "오늘의 한줄". desc는 80자 이내 한 줄 드립 하나만 작성.
+- 모음방: title은 40자 이내. desc는 80자 이내 한줄 설명. collectKind는 youtube 또는 image만 사용. link는 절대 쓰지 마세요.
+- 토론방: title은 토론 주제 질문형. desc는 비워도 됩니다. options는 자연스러운 선택지 2~4개. 찬성/반대 고정 표현만 반복하지 마세요.
+- 퀴즈방: 주관식, 객관식, 정답 없는 퀴즈 중 하나. noAnswer가 true면 answer/correctIndex는 비우고 explanation은 참여 안내로 작성.
+- 드립방: title은 반드시 "오늘의 드립 주제". topic은 사람들이 한 줄 드립으로 답할 수 있는 80자 이내 상황/질문. 완성된 드립 문장은 만들지 마세요.
 
 현재 유형 ${preset}에 맞게 만들어주세요.`;
 }
@@ -140,16 +145,15 @@ function buildPost({ preset, draft, userId, token, FieldValue }) {
   let quizSecret = null;
 
   if (preset === 'collect') {
-    const kind = ['youtube', 'image', 'link'].includes(draft.collectKind) ? draft.collectKind : 'youtube';
+    const kind = ['youtube', 'image'].includes(draft.collectKind) ? draft.collectKind : 'youtube';
     const url = clean(draft.url, 300);
     const collect = {
       enabled: true,
       kind,
-      label: kind === 'youtube' ? '유튜브' : kind === 'image' ? '웃긴그림' : '링크',
+      label: kind === 'youtube' ? '유튜브' : '웃긴그림',
       caption: desc,
     };
-    if (url) collect.url = url;
-    if (kind === 'youtube') {
+    if (url && kind === 'youtube') {
       const youtube = youtubeData(url);
       if (youtube) {
         collect.url = youtube.url;
@@ -157,51 +161,59 @@ function buildPost({ preset, draft, userId, token, FieldValue }) {
         modules.youtube = youtube;
       }
     }
-    if (kind === 'image' && url) collect.imageUrl = url;
     modules.collect = collect;
   }
 
   if (preset === 'vote') {
+    const question = clean(draft.topic || draft.title || draft.desc, 100) || fallbackDraft('vote').title;
     const options = list(draft.options, fallbackDraft('vote').options, 8);
+    title = question;
+    desc = clean(draft.desc, 500) || question;
     modules.vote = {
       enabled: true,
-      question: desc,
+      question,
       voteMode: 'general',
       options: options.map(text => ({ text, votes: 0 })),
     };
   }
 
   if (preset === 'drip') {
-    title = '오늘의 한줄';
-    desc = clean(desc, 80) || fallbackDraft('drip').desc;
-    modules.drip = { enabled: true, prompt: desc, maxLength: 80 };
+    const topic = clean(draft.topic || draft.desc || draft.title, 80) || fallbackDraft('drip').topic;
+    title = '오늘의 드립 주제';
+    desc = topic;
+    modules.drip = { enabled: true, prompt: topic, maxLength: 50, responseLabel: '한 줄 드립' };
   }
 
   if (preset === 'quiz') {
     const mode = draft.quizMode === 'subjective' ? 'subjective' : 'multiple';
+    const noAnswer = draft.noAnswer === true;
     const options = list(draft.options, fallbackDraft('quiz').options, 6);
     const correctIndex = Math.max(0, Math.min(Math.max(0, options.length - 1), Number(draft.correctIndex) || 0));
     const answer = clean(draft.answer, 120) || options[correctIndex] || options[0] || '정답';
     modules.quiz = {
       enabled: true,
       mode,
+      noAnswer,
       question: desc,
       hint: clean(draft.hint, 160),
+      explanation: noAnswer ? clean(draft.explanation || '정답이 없는 퀴즈입니다. 댓글로 자유롭게 이야기해보세요.', 500) : clean(draft.explanation, 500),
     };
-    if (mode === 'multiple') {
-      modules.quiz.options = options.map(text => ({ text }));
+    if (mode === 'multiple') modules.quiz.options = options.map(text => ({ text }));
+    if (!noAnswer) {
+      if (mode === 'multiple') modules.quiz.correctIndex = correctIndex;
+      else modules.quiz.answer = answer;
+      quizSecret = {
+        mode,
+        answer: mode === 'subjective' ? answer : options[correctIndex],
+        correctIndex: mode === 'multiple' ? correctIndex : null,
+        answerIdx: mode === 'multiple' ? correctIndex : null,
+        explanation: clean(draft.explanation, 500),
+        correctCount: 0,
+        firstCorrect: null,
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      };
     }
-    quizSecret = {
-      mode,
-      answer,
-      correctIndex: mode === 'multiple' ? correctIndex : null,
-      answerIdx: mode === 'multiple' ? correctIndex : null,
-      explanation: clean(draft.explanation, 500),
-      correctCount: 0,
-      firstCorrect: null,
-      createdAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp(),
-    };
   }
 
   return {
@@ -236,6 +248,8 @@ function buildPost({ preset, draft, userId, token, FieldValue }) {
 }
 
 function register({ exports, onCall, db, FieldValue, GoogleGenerativeAI, geminiKey, getAiKey, logAiUsage }) {
+  require('./seo-functions').register({ exports, db });
+
   exports.generateAiContentNow = onCall({ region: 'asia-northeast3', secrets: [geminiKey], timeoutSeconds: 90, memory: '256MiB' }, async (request) => {
     const userId = request.auth?.uid;
     if (!userId) throw new Error('인증 필요');
