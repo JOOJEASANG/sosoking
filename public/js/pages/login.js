@@ -1,7 +1,14 @@
-import { auth, db, googleProvider, signInWithPopup, signInWithRedirect } from '../firebase.js';
+import { auth, db, googleProvider, signInWithPopup, signInWithRedirect, functions } from '../firebase.js';
 import { navigate } from '../router.js';
 import { toast } from '../components/toast.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { signInWithCustomToken } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
+
+// ── 카카오 JavaScript 앱 키 ──────────────────────────────────────────
+// developers.kakao.com → 내 애플리케이션 → 앱 설정 → 앱 키 → JavaScript 키
+const KAKAO_JS_APP_KEY = 'YOUR_KAKAO_JS_APP_KEY';
+// ────────────────────────────────────────────────────────────────────
 
 const OWNER_EMAILS = new Set(['joojeasang@gmail.com']);
 
@@ -44,6 +51,66 @@ async function goAfterLogin(user = auth.currentUser) {
   else window.dispatchEvent(new Event('hashchange'));
 }
 
+function initKakaoSDK() {
+  const K = window.Kakao;
+  if (!K) return false;
+  if (!K.isInitialized()) {
+    try {
+      K.init(KAKAO_JS_APP_KEY);
+    } catch (e) {
+      console.warn('[kakao] init failed', e);
+      return false;
+    }
+  }
+  return K.isInitialized();
+}
+
+async function loginWithKakao() {
+  if (!initKakaoSDK()) {
+    toast.error('카카오 SDK를 불러오지 못했어요');
+    return;
+  }
+
+  const K = window.Kakao;
+
+  let accessToken;
+  try {
+    accessToken = await new Promise((resolve, reject) => {
+      K.Auth.login({
+        success: (authObj) => resolve(authObj.access_token),
+        fail: (err) => reject(err),
+      });
+    });
+  } catch (err) {
+    if (err?.error === 'access_denied') return;
+    console.warn('[kakao] Auth.login failed', err);
+    toast.error('카카오 로그인에 실패했어요');
+    return;
+  }
+
+  const btn = document.getElementById('btn-kakao');
+  if (btn) { btn.disabled = true; btn.textContent = '로그인 중...'; }
+
+  try {
+    const kakaoLogin = httpsCallable(functions, 'kakaoLogin');
+    const { data } = await kakaoLogin({ accessToken });
+    const cred = await signInWithCustomToken(auth, data.customToken);
+    toast.success('카카오 로그인됐어요!');
+    await goAfterLogin(cred.user);
+  } catch (e) {
+    console.error('[kakao] sign-in error', e);
+    toast.error('카카오 로그인 처리에 실패했어요');
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = kakaoButtonInner(); }
+  }
+}
+
+function kakaoButtonInner() {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M12 3C6.477 3 2 6.824 2 11.5c0 2.938 1.884 5.516 4.751 7.003L5.7 22.5l4.35-2.891A11.7 11.7 0 0 0 12 20c5.523 0 10-3.824 10-8.5S17.523 3 12 3z" fill="#3C1E1E"/>
+  </svg>카카오로 로그인`;
+}
+
 export function renderLogin() {
   const el = document.getElementById('page-content');
   const existingUser = auth.currentUser;
@@ -66,6 +133,10 @@ export function renderLogin() {
           <button class="social-btn" id="btn-google">
             <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
             Google로 로그인
+          </button>
+
+          <button class="social-btn social-btn--kakao" id="btn-kakao">
+            ${kakaoButtonInner()}
           </button>
 
           <div class="auth-divider">또는</div>
@@ -105,6 +176,8 @@ export function renderLogin() {
       }
     }
   });
+
+  document.getElementById('btn-kakao')?.addEventListener('click', loginWithKakao);
 
   document.getElementById('btn-email-login')?.addEventListener('click', async () => {
     const { signInWithEmailAndPassword } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');

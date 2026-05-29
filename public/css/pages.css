@@ -475,6 +475,10 @@
 }
 .social-btn:hover { border-color: var(--color-primary); background: var(--color-primary-bg); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
 .social-btn img { width: 20px; height: 20px; }
+.social-btn--kakao { background: #FEE500; border-color: #FEE500; color: #3C1E1E; }
+.social-btn--kakao:hover { background: #f0d800; border-color: #f0d800; }
+[data-theme="dark"] .social-btn--kakao { background: #FEE500; border-color: #FEE500; color: #3C1E1E; }
+[data-theme="dark"] .social-btn--kakao:hover { background: #f0d800; border-color: #f0d800; }
 
 /* ════════════════════════
    내정보
