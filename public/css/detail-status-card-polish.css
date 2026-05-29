@@ -1,0 +1,212 @@
+/* detail-status-card-polish.css — 투표/퀴즈/포인트 접기 카드 정리 */
+
+.detail-game-status-card {
+  margin: 8px 16px 14px;
+  border: 1px solid rgba(255, 107, 74, .16);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255, 107, 74, .11), transparent 34%),
+    var(--color-surface);
+  box-shadow: 0 10px 24px rgba(20, 14, 40, .06);
+  overflow: hidden;
+}
+
+.detail-game-status-card__summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  cursor: pointer;
+  list-style: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.detail-game-status-card__summary::-webkit-details-marker {
+  display: none;
+}
+
+.detail-game-status-card__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: var(--color-text-primary);
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.detail-game-status-card__title span {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: var(--color-primary-bg);
+  flex: 0 0 auto;
+}
+
+.detail-game-status-card__title b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.detail-game-status-card__summary-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex: 0 0 auto;
+}
+
+.detail-game-status-card__reward {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, .12);
+  color: #b45309;
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.detail-game-status-card__toggle-text {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: var(--color-surface-2);
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.detail-game-status-card[open] .detail-game-status-card__toggle-text {
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
+}
+
+.detail-game-status-card[open] .detail-game-status-card__toggle-text::before {
+  content: '접기';
+  font-size: 0;
+}
+
+.detail-game-status-card[open] .detail-game-status-card__toggle-text {
+  font-size: 0;
+}
+
+.detail-game-status-card[open] .detail-game-status-card__toggle-text::after {
+  content: '접기';
+  font-size: 11px;
+}
+
+.detail-game-status-card__body {
+  padding: 0 16px 16px;
+  border-top: 1px solid var(--color-border-light);
+}
+
+.detail-game-status-card__stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding-top: 14px;
+}
+
+.detail-game-status-card__stats > div {
+  padding: 12px 10px;
+  border: 1px solid var(--color-border-light);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .72);
+}
+
+.detail-game-status-card__stats small {
+  display: block;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 850;
+  margin-bottom: 4px;
+}
+
+.detail-game-status-card__stats b {
+  display: block;
+  color: var(--color-primary);
+  font-size: 18px;
+  font-weight: 950;
+  line-height: 1.15;
+}
+
+.detail-game-status-card__guide,
+.detail-game-status-card__criteria {
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 14px;
+  background: var(--color-surface-2);
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.55;
+}
+
+.detail-game-status-card__criteria {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.detail-game-status-card__criteria b {
+  flex: 0 0 auto;
+  color: var(--color-text-primary);
+  font-weight: 950;
+}
+
+[data-theme="dark"] .detail-game-status-card {
+  border-color: rgba(255, 107, 74, .24);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255, 107, 74, .16), transparent 36%),
+    var(--color-surface);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, .22);
+}
+
+[data-theme="dark"] .detail-game-status-card__stats > div {
+  background: rgba(255, 255, 255, .035);
+}
+
+@media (min-width: 768px) {
+  .detail-game-status-card {
+    margin: 10px 24px 18px;
+  }
+}
+
+@media (max-width: 640px) {
+  .detail-game-status-card {
+    margin: 6px 12px 12px;
+    border-radius: 16px;
+  }
+
+  .detail-game-status-card__summary {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 13px;
+  }
+
+  .detail-game-status-card__summary-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .detail-game-status-card__body {
+    padding: 0 13px 13px;
+  }
+
+  .detail-game-status-card__stats {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-game-status-card__criteria {
+    flex-direction: column;
+    gap: 4px;
+  }
+}
