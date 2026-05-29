@@ -82,9 +82,12 @@ async function loginWithKakao() {
       });
     });
   } catch (err) {
-    if (err?.error === 'access_denied') return;
+    if (err?.error === 'access_denied' || err?.error === 'cancelled') {
+      toast.warn('카카오 로그인이 취소됐어요');
+      return;
+    }
     console.warn('[kakao] Auth.login failed', err);
-    toast.error('카카오 로그인에 실패했어요');
+    toast.error('카카오 로그인에 실패했어요: ' + (err?.error_description || err?.error || '알 수 없는 오류'));
     return;
   }
 
