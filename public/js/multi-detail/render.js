@@ -30,10 +30,11 @@ export function renderVoteModule(post) {
   const uid = auth.currentUser?.uid || '';
   const hasVoted = uid && votedBy.includes(uid);
   const total = (vote.options || []).reduce((sum, option) => sum + Number(option.votes || 0), 0);
-  const title = compactQuestion(post, vote.question, '투표/판정');
+  const title = String(vote.question || post.desc || post.title || '토론 주제').trim();
   return `
     <div class="multi-detail-module" data-multi-module="vote">
-      <div class="multi-detail-module__title">🗳️ ${esc(title)}</div>
+      <div class="multi-detail-module__title">🗳️ 토론 주제</div>
+      <div class="multi-drip-prompt">${esc(title).replace(/\n/g, '<br>')}</div>
       <div class="multi-vote-options">
         ${(vote.options || []).map((opt, i) => {
           const votes = Number(opt.votes || 0);
@@ -45,7 +46,7 @@ export function renderVoteModule(post) {
           </button>`;
         }).join('')}
       </div>
-      <div class="multi-module-hint">본문을 보고 원하는 옵션을 선택하세요.</div>
+      <div class="multi-module-hint">주제를 보고 원하는 옵션을 선택하세요.</div>
       ${hasVoted ? '<div class="multi-module-hint">이미 투표했어요.</div>' : ''}
     </div>`;
 }
@@ -65,13 +66,12 @@ export function renderNamingModule(post) {
 export function renderDripModule(post) {
   const drip = post.modules?.drip;
   if (!drip?.enabled) return '';
-  const topic = String(drip.prompt || post.desc || '').trim();
-  const showTopic = topic && !isDuplicateOfPostBody(post, topic);
+  const topic = String(drip.prompt || post.desc || post.title || '').trim();
   return `
     <div class="multi-detail-module" data-multi-module="drip">
       <div class="multi-detail-module__title">🤣 드립 주제</div>
       <div class="multi-module-hint">주제를 보고 50자 이내 한 줄 드립만 남겨보세요. 짧을수록 강합니다.</div>
-      ${showTopic ? `<div class="multi-drip-prompt">${esc(topic).replace(/\n/g, '<br>')}</div>` : ''}
+      ${topic ? `<div class="multi-drip-prompt">${esc(topic).replace(/\n/g, '<br>')}</div>` : ''}
       <div class="multi-submit-row"><input id="multi-drip-input" class="form-input" maxlength="50" placeholder="이 주제로 한 줄 드립 입력"><button class="btn btn--primary btn--sm" id="multi-drip-submit">드립 등록</button></div>
       <div class="multi-participation-list" id="multi-drip-list"></div>
     </div>`;
@@ -155,11 +155,11 @@ export function renderQuizModule(post) {
   const quiz = post.modules?.quiz;
   if (!quiz?.enabled) return '';
   const isMultiple = quiz.mode === 'multiple' && Array.isArray(quiz.options) && quiz.options.length > 0;
-  const question = compactQuestion(post, quiz.question, '');
+  const question = String(quiz.question || post.desc || '').trim();
   if (quiz.noAnswer) {
     return `
       <div class="multi-detail-module" data-multi-module="quiz">
-        <div class="multi-detail-module__title">🧠 미친퀴즈</div>
+        <div class="multi-detail-module__title">🧠 퀴즈 문제</div>
         ${question ? `<div class="multi-quiz-question">${esc(question)}</div>` : '<div class="multi-module-hint">정답 없는 퀴즈입니다.</div>'}
         ${renderQuizMeta(quiz)}
         <div class="multi-quiz-result is-open is-no-answer" style="display:block"><b>정답 없는 퀴즈</b><span>${esc(quiz.explanation || '댓글로 자유롭게 이야기해보세요.')}</span></div>
@@ -167,7 +167,7 @@ export function renderQuizModule(post) {
   }
   return `
     <div class="multi-detail-module" data-multi-module="quiz">
-      <div class="multi-detail-module__title">🧠 미친퀴즈</div>
+      <div class="multi-detail-module__title">🧠 퀴즈 문제</div>
       ${question ? `<div class="multi-quiz-question">${esc(question)}</div>` : '<div class="multi-module-hint">본문을 보고 정답만 선택하세요.</div>'}
       ${renderQuizMeta(quiz)}
       ${isMultiple ? `
