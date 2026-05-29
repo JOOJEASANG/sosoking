@@ -18,6 +18,7 @@ const EXTENSION_MODULES = [
   './multi-detail.js',
   './detail-extras.js',
   './detail-cards.js',
+  './detail-post-nav.js',
   './multi-write.js',
   './write-edit-router-fix.js',
   './write-edit-save-fix.js',
