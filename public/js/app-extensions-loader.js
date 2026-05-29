@@ -19,6 +19,7 @@ const EXTENSION_MODULES = [
   './detail-extras.js',
   './detail-cards.js',
   './detail-post-nav.js',
+  './no-answer-quiz-polish.js',
   './multi-write.js',
   './write-edit-router-fix.js',
   './write-edit-save-fix.js',
