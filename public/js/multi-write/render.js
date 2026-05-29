@@ -50,22 +50,17 @@ export function renderQuizOptionRows(count = 2) {
   return Array.from({ length: count }, (_, i) => renderQuizOptionRow(i, i === 0)).join('');
 }
 
-function renderCollectModule(activeKey) {
-  return moduleCard('collect', activeKey, '📌', '모음방 등록 방식', '유튜브 링크 또는 사진 파일 업로드로 올립니다.', `
-    <div class="form-group">
-      <label class="form-label">등록 방식 <span class="required">*</span></label>
-      <input type="hidden" id="mw-collect-kind" value="youtube">
-      <div class="mw-vote-chips mw-room-subchips" role="radiogroup" aria-label="모음방 등록 방식">
-        <button type="button" class="mw-vote-chip active" data-collect-kind="youtube" role="radio" aria-checked="true">유튜브</button>
-        <button type="button" class="mw-vote-chip" data-collect-kind="image" role="radio" aria-checked="false">웃긴그림</button>
-      </div>
-    </div>
-    <div class="form-group" data-collect-url-box>
-      <label class="form-label">유튜브 링크 <span class="required">*</span></label>
+function renderCollectHidden(activeKey) {
+  return `<div data-option-panel="collect" style="display:none">${moduleToggleInput('collect', activeKey)}<input type="hidden" id="mw-collect-kind" value="auto"></div>`;
+}
+
+function renderCollectUrlField(activeKey) {
+  return `
+    <div class="form-group" data-write-section="collect-url-field" ${activeKey === 'collect' ? '' : 'style="display:none"'}>
+      <label class="form-label">유튜브 링크</label>
       <input id="mw-collect-url" class="form-input" maxlength="300" placeholder="https://youtube.com/shorts/... 또는 유튜브 영상 링크">
-      <div class="form-hint">유튜브는 쇼츠, 공유 링크, watch 링크를 사용할 수 있습니다.</div>
-    </div>
-    <div class="form-hint" data-collect-image-hint style="display:none">웃긴그림은 아래 사진 첨부에서 파일을 업로드해주세요. 이미지 URL 입력은 사용하지 않습니다.</div>`);
+      <div class="form-hint">유튜브 링크를 넣으면 유튜브 모음으로, 링크 없이 사진만 첨부하면 웃긴그림 모음으로 등록됩니다.</div>
+    </div>`;
 }
 
 function renderVoteModule(activeKey) {
@@ -91,24 +86,29 @@ function renderDripModule(activeKey) {
 
 function renderQuizModule(activeKey) {
   const preset = MULTI_PRESETS.quiz;
-  return moduleCard('quiz', activeKey, '🧠', '퀴즈 옵션', '주관식 또는 객관식 문제를 올립니다.', `
+  return moduleCard('quiz', activeKey, '🧠', '퀴즈 옵션', '주관식 · 객관식 · 정답 없는 퀴즈를 올립니다.', `
     <div class="form-group">
       <label class="form-label">퀴즈 방식 <span class="required">*</span></label>
       <input type="hidden" id="mw-quiz-mode" value="subjective">
+      <label style="display:flex;align-items:center;gap:7px;margin:0 0 8px;font-size:12px;font-weight:850;color:var(--color-text-secondary)">
+        <input type="checkbox" id="mw-quiz-no-answer" style="width:16px;height:16px"> 정답 없는 퀴즈로 등록
+      </label>
       <div class="multi-quiz-mode-toggle" role="radiogroup" aria-label="퀴즈 방식 선택">
         <button type="button" class="multi-quiz-mode-btn active" data-quiz-mode="subjective" role="radio" aria-checked="true">주관식</button>
         <button type="button" class="multi-quiz-mode-btn" data-quiz-mode="multiple" role="radio" aria-checked="false">객관식</button>
       </div>
     </div>
     <div id="mw-quiz-subjective-box" class="form-group">
-      <label class="form-label">정답 <span class="required">*</span></label>
+      <label class="form-label">정답</label>
       <input id="mw-quiz-answer" class="form-input" maxlength="80" placeholder="${esc(preset.quizAnswerPlaceholder)}">
+      <div class="form-hint">정답 없는 퀴즈로 등록하면 비워도 됩니다.</div>
     </div>
     <div id="mw-quiz-multiple-box" style="display:none">
       <div class="form-group">
-        <label class="form-label">객관식 선택지와 정답 <span class="required">*</span></label>
+        <label class="form-label">객관식 선택지와 정답</label>
         <div class="multi-option-list" id="mw-quiz-options">${renderQuizOptionRows(2)}</div>
         <button class="btn btn--ghost btn--sm" type="button" id="mw-add-quiz-option">+ 선택지 추가</button>
+        <div class="form-hint">정답 없는 퀴즈로 등록하면 정답 선택은 참고용으로만 사용됩니다.</div>
       </div>
     </div>
     <div class="form-group">
@@ -119,16 +119,6 @@ function renderQuizModule(activeKey) {
       <label class="form-label">정답 해설</label>
       <textarea id="mw-quiz-explanation" class="form-textarea" rows="3" maxlength="500" placeholder="정답 확인 후 보여줄 해설을 입력하세요"></textarea>
     </div>`);
-}
-
-function renderOptionPanels(activeKey) {
-  return `
-    <div class="multi-module-list multi-module-list--selected multi-module-list--top">
-      ${renderCollectModule(activeKey)}
-      ${renderVoteModule(activeKey)}
-      ${renderQuizModule(activeKey)}
-      ${renderDripModule(activeKey)}
-    </div>`;
 }
 
 function renderDripLineField(activeKey) {
@@ -156,13 +146,14 @@ export function renderMultiWriteHTML({ renderKey, presetKey }) {
       <div class="card">
         <div class="card__body--lg">
           ${renderOptionPicker(activeKey)}
+          ${renderCollectHidden(activeKey)}
           ${renderDripLineField(activeKey)}
-          <div data-write-section="collect-panel" ${activeKey === 'collect' ? '' : 'style="display:none"'}>${renderCollectModule(activeKey)}</div>
           <div data-write-section="standard-fields" ${standardHidden}>
             <div class="form-group">
               <label class="form-label">제목 <span class="required">*</span></label>
               <input id="mw-title" class="form-input" maxlength="100" placeholder="${esc(preset.titlePlaceholder)}">
             </div>
+            ${renderCollectUrlField(activeKey)}
             <div class="form-group" data-write-section="content-field" ${contentHidden}>
               <label class="form-label">내용 <span class="required">*</span></label>
               <textarea id="mw-desc" class="form-textarea mw-desc-resizable" rows="4" maxlength="2000" placeholder="${esc(preset.descPlaceholder)}"></textarea>
@@ -171,10 +162,11 @@ export function renderMultiWriteHTML({ renderKey, presetKey }) {
           <div class="form-group" data-write-section="media-field" ${mediaHidden}>
             <label class="form-label">사진 첨부</label>
             <div id="mw-img-uploader"></div>
-            <div class="form-hint">사진은 선택사항입니다. 웃긴그림 모음은 사진 파일 업로드가 필요합니다.</div>
+            <div class="form-hint">사진은 선택사항입니다. 유튜브 링크 없이 사진만 첨부하면 웃긴그림 모음으로 등록됩니다.</div>
           </div>
           <div data-write-section="vote-panel" ${activeKey === 'vote' ? '' : 'style="display:none"'}>${renderVoteModule(activeKey)}</div>
           <div data-write-section="quiz-panel" ${activeKey === 'quiz' ? '' : 'style="display:none"'}>${renderQuizModule(activeKey)}</div>
+          <div data-write-section="drip-panel" ${activeKey === 'drip' ? '' : 'style="display:none"'}>${renderDripModule(activeKey)}</div>
           <div class="form-group">
             <label class="form-label" for="mw-tags">태그</label>
             <div class="mw-tags-row">
