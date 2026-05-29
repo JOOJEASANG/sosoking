@@ -96,74 +96,41 @@ async function fetchPopularComments(n = 8) {
 
 function renderIntro() {
   return `
-    <section class="home-landing-hero" aria-label="소소킹 소개">
-      <div class="home-landing-hero__bg home-landing-hero__bg--one"></div>
-      <div class="home-landing-hero__bg home-landing-hero__bg--two"></div>
-      <div class="home-landing-hero__content">
-        <div class="home-landing-hero__badge">
-          <span>👑</span>
-          <b>SOSOKING</b>
-          <small>짧은 모음방</small>
-        </div>
-        <h1>쇼츠처럼 짧게 보고<br>웃긴 것만 모아보는 곳.</h1>
-        <p>유튜브, 웃긴그림, 퀴즈, 토론, 오늘의 한줄을 방별로 모읍니다. 길게 쓰는 게시판보다 짧게 올리고 짧게 반응하는 소소한 모음 서비스입니다.</p>
-        <div class="home-landing-hero__actions">
-          <button class="home-landing-hero__primary" type="button" id="hbtn-write">바로 올리기</button>
-          <button class="home-landing-hero__secondary" type="button" id="hbtn-feed">모음 둘러보기</button>
-        </div>
-        <div class="home-landing-hero__chips" aria-label="소소킹 방 구성">
-          <span>📌 모음방</span>
-          <span>🗳️ 토론방</span>
-          <span>🧠 퀴즈방</span>
-          <span>🤣 드립방</span>
+    <section class="home-top-strip" aria-label="소소킹">
+      <div class="home-top-strip__left">
+        <div class="home-top-strip__brand">
+          <span class="home-top-strip__crown">👑</span>
+          <div>
+            <div class="home-top-strip__title">소소킹</div>
+            <div class="home-top-strip__sub">짧게 올리고 짧게 반응하는 모음방</div>
+          </div>
         </div>
       </div>
-      <div class="home-landing-hero__mock" aria-hidden="true">
-        <div class="home-mock-card home-mock-card--main">
-          <div class="home-mock-card__top"><span>오늘의 웃긴 쇼츠</span><b>SHORT</b></div>
-          <strong>3초 보고 피식하는 영상 모음</strong>
-          <div class="home-mock-vote"><span style="width:72%">웃김 72%</span></div>
-          <div class="home-mock-vote home-mock-vote--sub"><span style="width:44%">저장각 44%</span></div>
-        </div>
-        <div class="home-mock-card home-mock-card--float home-mock-card--drip">🤣 오늘의 한줄</div>
-        <div class="home-mock-card home-mock-card--float home-mock-card--quiz">🧠 짧은 퀴즈</div>
-      </div>
+      <button class="home-top-strip__cta" type="button" id="hbtn-write">+ 올리기</button>
     </section>
 
-    <section class="home-feature-panel" aria-label="소소킹 방 바로가기">
-      <div class="home-feature-panel__head">
-        <div>
-          <span>방별로 짧게 모아보기</span>
-          <h2>일반글은 줄이고, 바로 볼 수 있는 콘텐츠만 남깁니다.</h2>
-        </div>
-      </div>
-      <div class="home-feature-grid home-feature-grid--rooms">
-        <button class="home-feature-card home-feature-card--vote" type="button" data-home-write-preset="collect">
-          <span class="home-feature-card__icon">📌</span>
-          <b>모음방</b>
-          <em>유튜브 쇼츠, 웃긴그림, 링크를 짧게 모아 올립니다.</em>
-          <small>모음 올리기 →</small>
-        </button>
-        <button class="home-feature-card home-feature-card--vote" type="button" data-home-write-preset="vote">
-          <span class="home-feature-card__icon">🗳️</span>
-          <b>토론방</b>
-          <em>찬성/반대, 밸런스 선택지로 바로 의견을 모읍니다.</em>
-          <small>토론 만들기 →</small>
-        </button>
-        <button class="home-feature-card home-feature-card--quiz" type="button" data-home-write-preset="quiz">
-          <span class="home-feature-card__icon">🧠</span>
-          <b>퀴즈방</b>
-          <em>짧은 문제를 올리고 사람들이 바로 맞힙니다.</em>
-          <small>퀴즈 만들기 →</small>
-        </button>
-        <button class="home-feature-card home-feature-card--drip" type="button" data-home-write-preset="drip">
-          <span class="home-feature-card__icon">🤣</span>
-          <b>드립방</b>
-          <em>제목 없이 오늘의 한줄만 리스트로 올립니다.</em>
-          <small>한줄 올리기 →</small>
-        </button>
-      </div>
-    </section>`;
+    <nav class="home-room-nav" aria-label="방 바로가기">
+      <button class="home-room-btn home-room-btn--collect" type="button" data-home-write-preset="collect">
+        <span class="home-room-btn__icon">📌</span>
+        <span class="home-room-btn__label">모음방</span>
+      </button>
+      <button class="home-room-btn home-room-btn--vote" type="button" data-home-write-preset="vote">
+        <span class="home-room-btn__icon">🗳️</span>
+        <span class="home-room-btn__label">토론방</span>
+      </button>
+      <button class="home-room-btn home-room-btn--quiz" type="button" data-home-write-preset="quiz">
+        <span class="home-room-btn__icon">🧠</span>
+        <span class="home-room-btn__label">퀴즈방</span>
+      </button>
+      <button class="home-room-btn home-room-btn--drip" type="button" data-home-write-preset="drip">
+        <span class="home-room-btn__icon">🤣</span>
+        <span class="home-room-btn__label">드립방</span>
+      </button>
+      <button class="home-room-btn home-room-btn--feed" type="button" id="hbtn-feed">
+        <span class="home-room-btn__icon">📋</span>
+        <span class="home-room-btn__label">전체보기</span>
+      </button>
+    </nav>`;
 }
 
 function renderPopularPost(post, index) {
