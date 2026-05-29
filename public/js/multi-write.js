@@ -28,16 +28,16 @@ function feedTypeFromPreset(presetKey) {
   return 'collect';
 }
 
-function dripLineValue() {
-  return (document.getElementById('mw-drip-line')?.value.trim() || '').slice(0, 50);
+function dripTopicValue() {
+  return (document.getElementById('mw-drip-line')?.value.trim() || '').slice(0, 80);
 }
 
 function syncDripLineToHiddenBody() {
-  const drip = dripLineValue();
+  const topic = dripTopicValue();
   const desc = document.getElementById('mw-desc');
   if (!desc) return;
-  desc.value = drip;
-  desc.dataset.plainText = drip;
+  desc.value = topic;
+  desc.dataset.plainText = topic;
 }
 
 function updateWriteStateOnly() {
@@ -177,7 +177,7 @@ function bindMultiWriteEvents() {
     if (event.key === 'Enter') event.preventDefault();
   });
   document.getElementById('mw-drip-line')?.addEventListener('input', event => {
-    if (event.target.value.length > 50) event.target.value = event.target.value.slice(0, 50);
+    if (event.target.value.length > 80) event.target.value = event.target.value.slice(0, 80);
   });
   document.getElementById('mw-auto-tags')?.addEventListener('click', () => {
     if (getPresetKey() === 'drip') syncDripLineToHiddenBody();
@@ -188,7 +188,7 @@ function bindMultiWriteEvents() {
     else toast.warn('제목이나 내용을 조금 더 입력하면 태그를 만들 수 있어요');
   });
 
-  document.querySelectorAll('[data-multi-preset]').forEach(btn => btn.addEventListener('click', () => updateOptionSelection(btn.dataset.multiPreset)));
+  document.querySelectorAll('[data-multi-preset]').forEach(btn => btn.addEventListener('click', () => updateOptionSelection(btn.datasetMultiPreset || btn.dataset.multiPreset)));
 
   document.getElementById('mw-add-vote-option')?.addEventListener('click', () => {
     const list = document.getElementById('mw-vote-options');
@@ -230,12 +230,12 @@ async function submitMultiPost() {
   const btn = document.getElementById('multi-submit');
   let title = document.getElementById('mw-title')?.value.trim() || '';
   const preset = MULTI_PRESETS[presetKey] || MULTI_PRESETS.collect;
-  const desc = presetKey === 'drip' ? dripLineValue() : (getBodyHtml() || getBodyText());
+  const desc = presetKey === 'drip' ? dripTopicValue() : (getBodyHtml() || getBodyText());
 
   if (presetKey === 'drip') {
-    title = '오늘의 한줄';
+    title = '오늘의 드립 주제';
     if (!desc) {
-      toast.error('오늘의 한줄을 입력해주세요.');
+      toast.error('드립 주제를 입력해주세요.');
       return;
     }
   } else if (!title) {
