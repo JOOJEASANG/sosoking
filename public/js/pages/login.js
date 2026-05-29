@@ -1,14 +1,9 @@
-import { auth, db, googleProvider, signInWithPopup, signInWithRedirect, functions } from '../firebase.js';
+import { auth, db, googleProvider, signInWithPopup, signInWithRedirect } from '../firebase.js';
 import { navigate } from '../router.js';
 import { toast } from '../components/toast.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import { signInWithCustomToken } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
 
-// ── 카카오 JavaScript 앱 키 ──────────────────────────────────────────
-// developers.kakao.com → 내 애플리케이션 → 앱 설정 → 앱 키 → JavaScript 키
 const KAKAO_JS_APP_KEY = '377995fee0850a5de4167641d343be0e';
-// ────────────────────────────────────────────────────────────────────
 
 const OWNER_EMAILS = new Set(['joojeasang@gmail.com']);
 
@@ -51,52 +46,32 @@ async function goAfterLogin(user = auth.currentUser) {
   else window.dispatchEvent(new Event('hashchange'));
 }
 
-function initKakaoSDK() {
-  const K = window.Kakao;
-  if (!K) return false;
-  if (!K.isInitialized()) {
-    try {
-      K.init(KAKAO_JS_APP_KEY);
-    } catch (e) {
-      console.warn('[kakao] init failed', e);
-      return false;
-    }
-  }
-  return K.isInitialized();
-}
-
 async function loginWithKakao() {
-  if (!initKakaoSDK()) {
-    toast.error('카카오 SDK를 불러오지 못했어요');
-    return;
-  }
-
   const K = window.Kakao;
+  if (!K) { toast.error('카카오 SDK를 불러오지 못했어요'); return; }
+  if (!K.isInitialized()) {
+    try { K.init(KAKAO_JS_APP_KEY); } catch { toast.error('카카오 초기화에 실패했어요'); return; }
+  }
 
   let accessToken;
   try {
     accessToken = await new Promise((resolve, reject) => {
-      K.Auth.login({
-        success: (authObj) => resolve(authObj.access_token),
-        fail: (err) => reject(err),
-      });
+      K.Auth.login({ success: (o) => resolve(o.access_token), fail: reject });
     });
   } catch (err) {
-    if (err?.error === 'access_denied' || err?.error === 'cancelled') {
-      toast.warn('카카오 로그인이 취소됐어요');
-      return;
-    }
-    console.warn('[kakao] Auth.login failed', err);
-    toast.error('카카오 로그인에 실패했어요: ' + (err?.error_description || err?.error || '알 수 없는 오류'));
+    if (err?.error === 'access_denied' || err?.error === 'cancelled') return;
+    toast.error('카카오 로그인에 실패했어요: ' + (err?.error_description || err?.error || ''));
     return;
   }
 
   const btn = document.getElementById('btn-kakao');
   if (btn) { btn.disabled = true; btn.textContent = '로그인 중...'; }
-
   try {
-    const kakaoLogin = httpsCallable(functions, 'kakaoLogin');
-    const { data } = await kakaoLogin({ accessToken });
+    const { getFunctions, httpsCallable } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js');
+    const { getApp } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');
+    const { signInWithCustomToken } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
+    const fns = getFunctions(getApp(), 'asia-northeast3');
+    const { data } = await httpsCallable(fns, 'kakaoLogin')({ accessToken });
     const cred = await signInWithCustomToken(auth, data.customToken);
     toast.success('카카오 로그인됐어요!');
     await goAfterLogin(cred.user);
@@ -104,12 +79,8 @@ async function loginWithKakao() {
     console.error('[kakao] sign-in error', e);
     toast.error('카카오 로그인 처리에 실패했어요');
   } finally {
-    if (btn) { btn.disabled = false; btn.innerHTML = kakaoButtonInner(); }
+    if (btn) { btn.disabled = false; btn.textContent = '💛 카카오로 로그인'; }
   }
-}
-
-function kakaoButtonInner() {
-  return `💛 카카오로 로그인`;
 }
 
 export function renderLogin() {
@@ -137,7 +108,7 @@ export function renderLogin() {
           </button>
 
           <button type="button" class="social-btn social-btn--kakao" id="btn-kakao">
-            ${kakaoButtonInner()}
+            💛 카카오로 로그인
           </button>
 
           <div class="auth-divider">또는</div>
