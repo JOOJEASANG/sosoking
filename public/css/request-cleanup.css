@@ -1,5 +1,96 @@
 /* 요청 반영 정리: 홈/글쓰기/내정보 */
 
+/* PC 메인 히어로: 제목이 세로로 쪼개지지 않도록 가로폭/폰트/미리보기 카드 재정렬 */
+@media (min-width: 861px) {
+  .home-landing-hero {
+    grid-template-columns: minmax(0, 1fr) 300px !important;
+    gap: 28px !important;
+    min-height: 430px !important;
+    padding: 48px 56px !important;
+    align-items: center !important;
+  }
+
+  .home-landing-hero__content {
+    max-width: 520px !important;
+    min-width: 0 !important;
+  }
+
+  .home-landing-hero h1 {
+    max-width: 520px !important;
+    font-size: clamp(36px, 3.4vw, 46px) !important;
+    line-height: 1.12 !important;
+    letter-spacing: -0.055em !important;
+    word-break: keep-all !important;
+    overflow-wrap: normal !important;
+  }
+
+  .home-landing-hero p {
+    max-width: 470px !important;
+    margin-top: 18px !important;
+    font-size: 15px !important;
+    line-height: 1.68 !important;
+    word-break: keep-all !important;
+  }
+
+  .home-landing-hero__mock {
+    min-height: 230px !important;
+    transform: translateX(-4px) !important;
+  }
+
+  .home-mock-card--main {
+    width: 260px !important;
+    padding: 17px !important;
+    border-radius: 22px !important;
+    right: 8px !important;
+    top: 26px !important;
+    transform: rotate(1.2deg) !important;
+  }
+
+  .home-mock-card strong {
+    font-size: 18px !important;
+    line-height: 1.34 !important;
+    word-break: keep-all !important;
+  }
+
+  .home-mock-vote {
+    height: 30px !important;
+  }
+
+  .home-mock-card--float {
+    min-height: 38px !important;
+    padding: 0 13px !important;
+    font-size: 12px !important;
+  }
+
+  .home-mock-card--drip {
+    left: 8px !important;
+    top: 34px !important;
+    transform: rotate(-4deg) !important;
+  }
+
+  .home-mock-card--quiz {
+    right: 0 !important;
+    bottom: 18px !important;
+    transform: rotate(3deg) !important;
+  }
+}
+
+@media (min-width: 861px) and (max-width: 1180px) {
+  .home-landing-hero {
+    grid-template-columns: minmax(0, 1fr) 260px !important;
+    padding: 42px 44px !important;
+    gap: 22px !important;
+  }
+
+  .home-landing-hero h1 {
+    font-size: 38px !important;
+  }
+
+  .home-mock-card--main {
+    width: 235px !important;
+  }
+}
+
 /* 홈 방모음 카드: PC 2개씩 2줄, 모바일 1줄씩 */
 .home-feature-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -7,33 +98,34 @@
 
 .home-feature-card {
   display: grid !important;
-  grid-template-columns: 52px minmax(0, 1fr) !important;
+  grid-template-columns: 48px minmax(0, 1fr) !important;
   grid-template-rows: auto auto !important;
   column-gap: 14px !important;
-  row-gap: 5px !important;
+  row-gap: 4px !important;
   align-items: center !important;
-  min-height: 132px !important;
-  padding: 20px !important;
+  min-height: 118px !important;
+  padding: 18px 20px !important;
+  border-radius: 20px !important;
   writing-mode: horizontal-tb !important;
   text-orientation: mixed !important;
 }
 
 .home-feature-card::after {
-  width: 116px !important;
-  height: 116px !important;
-  right: -34px !important;
-  bottom: -40px !important;
-  opacity: .12 !important;
+  width: 86px !important;
+  height: 86px !important;
+  right: -28px !important;
+  bottom: -32px !important;
+  opacity: .08 !important;
 }
 
 .home-feature-card__icon {
   grid-column: 1 !important;
   grid-row: 1 / span 2 !important;
-  width: 52px !important;
-  height: 52px !important;
+  width: 46px !important;
+  height: 46px !important;
   margin: 0 !important;
-  border-radius: 17px !important;
-  font-size: 27px !important;
+  border-radius: 15px !important;
+  font-size: 24px !important;
 }
 
 .home-feature-card b {
@@ -41,9 +133,9 @@
   grid-row: 1 !important;
   display: block !important;
   margin: 0 !important;
-  font-size: 21px !important;
+  font-size: 19px !important;
   line-height: 1.25 !important;
-  letter-spacing: -.05em !important;
+  letter-spacing: -.045em !important;
   white-space: nowrap !important;
   writing-mode: horizontal-tb !important;
   text-orientation: mixed !important;
@@ -55,7 +147,7 @@
   display: block !important;
   margin: 0 !important;
   font-size: 13px !important;
-  line-height: 1.55 !important;
+  line-height: 1.5 !important;
   font-weight: 750 !important;
   word-break: keep-all !important;
   writing-mode: horizontal-tb !important;
