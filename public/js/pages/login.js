@@ -109,9 +109,7 @@ async function loginWithKakao() {
 }
 
 function kakaoButtonInner() {
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
-    <path d="M12 3C6.477 3 2 6.824 2 11.5c0 2.938 1.884 5.516 4.751 7.003L5.7 22.5l4.35-2.891A11.7 11.7 0 0 0 12 20c5.523 0 10-3.824 10-8.5S17.523 3 12 3z" fill="#3C1E1E"/>
-  </svg>카카오로 로그인`;
+  return `💛 카카오로 로그인`;
 }
 
 export function renderLogin() {
@@ -133,12 +131,12 @@ export function renderLogin() {
             <div class="auth-logo__sub">글과 사진으로 즐기는 게임형 커뮤니티</div>
           </div>
 
-          <button class="social-btn" id="btn-google">
+          <button type="button" class="social-btn" id="btn-google">
             <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
             Google로 로그인
           </button>
 
-          <button class="social-btn social-btn--kakao" id="btn-kakao">
+          <button type="button" class="social-btn social-btn--kakao" id="btn-kakao">
             ${kakaoButtonInner()}
           </button>
 
@@ -152,9 +150,9 @@ export function renderLogin() {
             <label class="form-label">비밀번호</label>
             <input id="f-password" class="form-input" type="password" placeholder="비밀번호">
           </div>
-          <button class="btn btn--primary btn--full" id="btn-email-login">이메일로 로그인</button>
-          <button class="btn btn--ghost btn--full" id="btn-email-signup" style="margin-top:8px">회원가입</button>
-          <button class="btn btn--ghost btn--full" id="btn-reset-password" style="margin-top:4px;font-size:13px;color:var(--color-text-muted)">비밀번호 재설정</button>
+          <button type="button" class="btn btn--primary btn--full" id="btn-email-login">이메일로 로그인</button>
+          <button type="button" class="btn btn--ghost btn--full" id="btn-email-signup" style="margin-top:8px">회원가입</button>
+          <button type="button" class="btn btn--ghost btn--full" id="btn-reset-password" style="margin-top:4px;font-size:13px;color:var(--color-text-muted)">비밀번호 재설정</button>
 
           <p style="text-align:center;font-size:12px;color:var(--color-text-muted);margin-top:16px">
             로그인 시 <a href="#/legal/terms" style="color:var(--color-primary)">이용 약관</a>에 동의하는 것으로 간주됩니다.
