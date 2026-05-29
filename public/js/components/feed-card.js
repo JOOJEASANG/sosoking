@@ -2,8 +2,8 @@ import { navigate } from '../router.js';
 import { escHtml, formatTime } from '../utils/helpers.js';
 
 const TYPE_META = {
-  multi:        { cat: 'multi', catLabel: '모음방', icon: '📌', label: '모음방' },
-  general:      { cat: 'multi', catLabel: '모음방', icon: '📌', label: '모음방' },
+  multi:        { cat: 'multi', catLabel: '일반방', icon: '📌', label: '일반방' },
+  general:      { cat: 'multi', catLabel: '일반방', icon: '📌', label: '일반방' },
   vote:         { cat: 'golra', catLabel: '토론방', icon: '🗳️', label: '토론방' },
   crazy_court:  { cat: 'golra', catLabel: '토론방', icon: '🗳️', label: '토론방' },
   battle:       { cat: 'golra', catLabel: '토론방', icon: '🗳️', label: '토론방' },

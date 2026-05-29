@@ -1,6 +1,6 @@
 export const MULTI_PRESETS = {
   collect: {
-    label: '모음방',
+    label: '일반방',
     icon: '📌',
     shortDesc: '유튜브 · 이미지 모음',
     titlePlaceholder: '예: 오늘 웃긴 쇼츠 모음',

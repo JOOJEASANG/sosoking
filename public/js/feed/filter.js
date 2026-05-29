@@ -1,10 +1,10 @@
 export const FILTER_TYPES = ['collect', 'vote', 'quiz', 'drip'];
 
 export const TYPE_LABELS = {
-  collect: '모음방',
-  collection: '모음방',
-  general: '모음방',
-  multi: '모음방',
+  collect: '일반방',
+  collection: '일반방',
+  general: '일반방',
+  multi: '일반방',
   vote: '토론방',
   ox: '토론방',
   fill: '빈칸',
@@ -14,7 +14,7 @@ export const TYPE_LABELS = {
   acrostic: '행시',
   relay: '릴레이',
   quiz: '퀴즈방',
-  anonymous: '모음방',
+  anonymous: '일반방',
   initial_game: '퀴즈방',
   crazy_court: '토론방',
   balance: '토론방',
@@ -65,7 +65,7 @@ export function postMatchesSearch(post, rawSearch) {
     post.title,
     post.desc,
     post.authorName,
-    post.anonymous ? '익명 모음방' : '',
+    post.anonymous ? '익명 일반방' : '',
     getPostTypeLabel(post),
     post.modules?.collect?.label,
     post.modules?.collect?.caption,

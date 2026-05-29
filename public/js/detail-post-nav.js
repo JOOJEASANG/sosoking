@@ -30,7 +30,7 @@ function labelForContext(ctx = {}) {
   if (ctx.type === 'collect') {
     if (ctx.collectKind === 'youtube') return '유튜브';
     if (ctx.collectKind === 'image') return '그림';
-    return '모음방';
+    return '일반방';
   }
   if (ctx.type === 'vote') return '토론방';
   if (ctx.type === 'quiz') return '퀴즈방';

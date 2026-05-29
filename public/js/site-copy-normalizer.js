@@ -16,7 +16,7 @@ function ensureFooterLinks() {
         <div>
           <div class="site-footer__col-title">바로가기</div>
           <div class="site-footer__links">
-            <a href="#/feed">모음</a>
+            <a href="#/feed">피드</a>
             <a href="#/write?type=multi&preset=collect">올리기</a>
             <a href="#/guide">이용안내</a>
           </div>

@@ -19,7 +19,7 @@ const NAV_CONTEXT_KEY = 'sosoking:feedNavContext';
 
 const ROOMS = [
   { key: '',        icon: '✨', label: '전체',   title: '전체 모음', desc: '유튜브, 웃긴그림, 토론, 퀴즈, 드립을 한 번에 봅니다.', write: 'collect' },
-  { key: 'collect', icon: '📌', label: '모음방', title: '모음방', desc: '유튜브 쇼츠와 업로드한 웃긴그림을 짧게 모아봅니다.', write: 'collect' },
+  { key: 'collect', icon: '📌', label: '일반방', title: '일반방', desc: '유튜브 쇼츠와 업로드한 웃긴그림을 짧게 모아봅니다.', write: 'collect' },
   { key: 'vote',    icon: '🗳️', label: '토론방', title: '토론방', desc: '선택지로 빠르게 의견을 모으고 댓글로 이야기합니다.', write: 'vote' },
   { key: 'quiz',    icon: '🧠', label: '퀴즈방', title: '퀴즈방', desc: '짧은 문제를 보고 바로 맞히는 공간입니다.', write: 'quiz' },
   { key: 'drip',    icon: '🤣', label: '드립방', title: '드립방', desc: '주제를 보고 50자 이내 한 줄 드립으로 참여하는 공간입니다.', write: 'drip' },
@@ -55,7 +55,7 @@ function renderRoomTabs() {
 function renderRoomHead() {
   const room = currentRoom();
   const collectToggle = currentType === 'collect' ? `
-    <div class="collect-kind-toggle" role="group" aria-label="모음방 콘텐츠 종류">
+    <div class="collect-kind-toggle" role="group" aria-label="일반방 콘텐츠 종류">
       <button type="button" class="collect-kind-btn ${currentCollectKind === '' ? 'active' : ''}" data-collect-kind="">전체</button>
       <button type="button" class="collect-kind-btn ${currentCollectKind === 'youtube' ? 'active' : ''}" data-collect-kind="youtube">📺 유튜브</button>
       <button type="button" class="collect-kind-btn ${currentCollectKind === 'image' ? 'active' : ''}" data-collect-kind="image">🖼️ 그림</button>
@@ -67,14 +67,14 @@ function renderRoomHead() {
       <div class="soso-room-head__desc">${room.desc}</div>
       ${collectToggle}
       <div class="soso-room-head__action">
-        <button class="btn btn--primary btn--sm" type="button" id="room-write-btn">${room.label === '전체' ? '모음 올리기' : `${room.label} 올리기`}</button>
+        <button class="btn btn--primary btn--sm" type="button" id="room-write-btn">${room.label === '전체' ? '올리기' : `${room.label} 올리기`}</button>
       </div>
     </div>`;
 }
 
 export async function renderFeed() {
   isLoading = false;
-  setMeta('소소킹 모음방');
+  setMeta('소소킹 피드');
   const el     = document.getElementById('page-content');
   const params = getQueryParams();
   currentType   = params.type  || '';

@@ -108,7 +108,7 @@ function setWriteSectionVisibility(normalized) {
     const key = section.dataset.writeSection;
     if (key === 'drip-line') section.style.display = normalized === 'drip' ? '' : 'none';
     if (key === 'standard-fields') section.style.display = normalized === 'drip' ? 'none' : '';
-    if (key === 'content-field') section.style.display = (normalized === 'collect' || normalized === 'drip') ? 'none' : '';
+    if (key === 'content-field') section.style.display = normalized === 'drip' ? 'none' : '';
     if (key === 'collect-url-field') section.style.display = normalized === 'collect' ? '' : 'none';
     if (key === 'media-field') section.style.display = normalized === 'drip' ? 'none' : '';
     if (key === 'vote-panel') section.style.display = normalized === 'vote' ? '' : 'none';

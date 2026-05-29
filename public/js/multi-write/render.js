@@ -134,11 +134,11 @@ export function renderMultiWriteHTML({ renderKey, presetKey }) {
   const activeKey = MULTI_PRESETS[presetKey] && !MULTI_PRESETS[presetKey].hiddenFromWriter ? presetKey : 'collect';
   const preset = MULTI_PRESETS[activeKey] || MULTI_PRESETS.collect;
   const standardHidden = activeKey === 'drip' ? 'style="display:none"' : '';
-  const contentHidden = activeKey === 'collect' ? 'style="display:none"' : '';
+  const contentHidden = '';
   const mediaHidden = activeKey === 'drip' ? 'style="display:none"' : '';
   const titleLabel = activeKey === 'vote' ? '토론 주제' : '제목';
-  const contentLabel = activeKey === 'vote' ? '추가 설명' : '내용';
-  const requiredMark = activeKey === 'vote' ? '' : '<span class="required">*</span>';
+  const contentLabel = activeKey === 'vote' ? '추가 설명' : activeKey === 'collect' ? '한줄 설명' : '내용';
+  const requiredMark = (activeKey === 'vote' || activeKey === 'collect') ? '' : '<span class="required">*</span>';
 
   return `
     <div class="write-page multi-write-page" data-render-key="${esc(renderKey)}" data-preset-key="${esc(activeKey)}">
