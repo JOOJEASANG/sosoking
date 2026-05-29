@@ -18,7 +18,7 @@ const FILTER_LIMIT = 120;
 
 const ROOMS = [
   { key: '',        icon: '✨', label: '전체',   title: '전체 모음', desc: '유튜브, 웃긴그림, 토론, 퀴즈, 드립을 한 번에 봅니다.', write: 'collect' },
-  { key: 'collect', icon: '📌', label: '모음방', title: '모음방', desc: '유튜브 쇼츠, 웃긴그림, 링크를 짧게 모아봅니다.', write: 'collect' },
+  { key: 'collect', icon: '📌', label: '모음방', title: '모음방', desc: '유튜브 쇼츠와 업로드한 웃긴그림을 짧게 모아봅니다.', write: 'collect' },
   { key: 'vote',    icon: '🗳️', label: '토론방', title: '토론방', desc: '선택지로 빠르게 의견을 모으고 댓글로 이야기합니다.', write: 'vote' },
   { key: 'quiz',    icon: '🧠', label: '퀴즈방', title: '퀴즈방', desc: '짧은 문제를 보고 바로 맞히는 공간입니다.', write: 'quiz' },
   { key: 'drip',    icon: '🤣', label: '드립방', title: '드립방', desc: '제목 없이 오늘의 한줄만 모아보는 공간입니다.', write: 'drip' },
@@ -29,7 +29,7 @@ let currentSearch      = '';
 let currentSort        = 'latest';
 let currentPage        = 1;
 let isLoading          = false;
-let currentCollectKind = ''; // '' = 전체, 'youtube', 'image', 'link'
+let currentCollectKind = ''; // '' = 전체, 'youtube', 'image'
 
 let cursorStack   = [];
 let cursorTotal   = 0;
