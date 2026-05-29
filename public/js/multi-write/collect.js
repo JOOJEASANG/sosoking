@@ -81,31 +81,8 @@ export function parseYouTubeUrl(value) {
   }
 }
 
-function isImageUrl(value) {
-  const raw = String(value || '').trim();
-  if (!raw) return false;
-  try {
-    const url = new URL(raw);
-    return /^https?:$/.test(url.protocol) && /\.(png|jpe?g|gif|webp|avif)(\?.*)?$/i.test(url.href);
-  } catch {
-    return false;
-  }
-}
-
-function parseHttpUrl(value) {
-  const raw = String(value || '').trim();
-  if (!raw) return '';
-  try {
-    const url = new URL(raw);
-    if (!/^https?:$/.test(url.protocol)) return '';
-    return url.href;
-  } catch {
-    return '';
-  }
-}
-
 function collectKindLabel(kind) {
-  return { youtube: '유튜브', image: '웃긴그림', link: '링크' }[kind] || '모음';
+  return { youtube: '유튜브', image: '웃긴그림' }[kind] || '모음';
 }
 
 export function collectMultiModules() {
@@ -117,8 +94,9 @@ export function collectMultiModules() {
   }
 
   if (enabled('collect')) {
-    const kind = document.getElementById('mw-collect-kind')?.value || 'youtube';
-    const urlRaw = realValue(document.getElementById('mw-collect-url'));
+    const rawKind = document.getElementById('mw-collect-kind')?.value || 'youtube';
+    const kind = ['youtube', 'image'].includes(rawKind) ? rawKind : 'youtube';
+    const urlRaw = kind === 'youtube' ? realValue(document.getElementById('mw-collect-url')) : '';
     const caption = realValue(document.getElementById('mw-collect-caption')) || bodyText;
     const collect = { enabled: true, kind, label: collectKindLabel(kind), caption };
 
@@ -128,16 +106,6 @@ export function collectMultiModules() {
       collect.url = youtube.url;
       collect.youtube = youtube;
       modules.youtube = youtube;
-    } else if (kind === 'image') {
-      if (urlRaw) {
-        if (!isImageUrl(urlRaw)) throw new Error('이미지 URL은 jpg, png, gif, webp, avif 주소를 입력해주세요.');
-        collect.url = parseHttpUrl(urlRaw);
-        collect.imageUrl = collect.url;
-      }
-    } else if (kind === 'link') {
-      const url = parseHttpUrl(urlRaw);
-      if (!url) throw new Error('링크 주소를 입력해주세요.');
-      collect.url = url;
     }
 
     modules.collect = collect;
