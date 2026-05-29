@@ -6,8 +6,6 @@ import { renderSidebar } from './components/sidebar.js';
 import { initToast } from './components/toast.js';
 import { appState } from './state.js';
 import './secure-interactions-actions.js';
-import './initial-game-enhancer.js';
-import './representative-games-enhancer.js';
 import './write-normalizer.js';
 import './account-secure-actions.js';
 import './admin-session-guard.js';

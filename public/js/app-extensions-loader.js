@@ -5,7 +5,6 @@
 
 const EXTENSION_MODULES = [
   './layout-id-repair.js',
-  './game-guest-access.js',
   './six-game-guard.js',
   './admin-visibility-guard.js',
   './admin-shortcuts-pwa.js',
@@ -13,7 +12,6 @@ const EXTENSION_MODULES = [
   './account-ui.js',
   './account-notifications-uid-fix.js',
   './pc-sidebar-spacing.js',
-  './game-ui.js',
   './detail-actions-bootstrap.js',
   './post-owner-actions.js',
   './participant-replies.js',
