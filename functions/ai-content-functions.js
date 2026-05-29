@@ -146,14 +146,17 @@ const TYPE_PROMPTS = {
 
   drip: `너는 소소킹 커뮤니티 운영자야. 현재 글쓰기 유형 '드립방'에 올라갈 웃긴 한 줄 드립 1개만 만들어줘.
 중요: 상황 설명, 질문, 참여 유도 문장, 제목형 문장을 만들지 마. 게시글 본문에 그대로 들어갈 완성된 드립 한 줄만 만들어.
-길이는 80자 이내. 직장, 학교, 친구, 배달, 연애, 가족, 일상 중 하나를 소재로 피식 웃기는 문장이어야 해.
+길이는 50자 이내. 직장, 학교, 친구, 배달, 연애, 가족, 일상 중 하나를 소재로 피식 웃기는 문장이어야 해.
 반드시 JSON만 출력해:
-{"line":"80자 이내 웃긴 한 줄 드립","tags":["드립","한줄드립","소소킹"]}`,
+{"line":"50자 이내 웃긴 한 줄 드립","tags":["드립","한줄드립","소소킹"]}`,
 
-  quiz: `너는 소소킹 커뮤니티 운영자야. 현재 글쓰기 유형 '퀴즈방'에 맞는 객관식 퀴즈 게시글 1개를 만들어줘.
-정답이 너무 논쟁적이지 않은 생활상식, 음식, 역사, 과학, 문화 주제로 만들어. 선택지는 4개.
+  quiz: `너는 소소킹 커뮤니티 운영자야. 현재 글쓰기 유형 '퀴즈방'에 맞는 게시글 1개를 만들어줘.
+주관식, 객관식, 정답 없는 생각 퀴즈 중 하나를 골라 만들어.
+- 주관식이면 mode는 "subjective", answer를 포함해.
+- 객관식이면 mode는 "multiple", options 2~4개와 answerIdx를 포함해.
+- 정답 없는 퀴즈이면 noAnswer를 true로 하고 answer, answerIdx는 비워. 사용자가 댓글/반응으로 이야기할 수 있는 질문이어야 해.
 반드시 JSON만 출력해:
-{"title":"퀴즈 제목 50자 이내","desc":"문제 본문","options":["선택지1","선택지2","선택지3","선택지4"],"answerIdx":0,"hint":"힌트 50자 이내","explanation":"정답 해설 1~2문장","tags":["퀴즈","소소킹"]}`,
+{"title":"퀴즈 제목 50자 이내","desc":"문제 본문","mode":"subjective 또는 multiple","noAnswer":false,"options":["선택지1","선택지2"],"answer":"주관식 정답","answerIdx":0,"hint":"힌트 50자 이내","explanation":"정답 해설 또는 정답 없는 퀴즈 안내 1~2문장","tags":["퀴즈","소소킹"]}`,
 };
 
 function fallbackContent(preset, date) {
@@ -170,12 +173,12 @@ function fallbackContent(preset, date) {
       { title: '주말 아침, 몇 시 기상이 제일 행복할까?', desc: '쉬는 날 아침 기준으로 가장 마음 편한 기상 시간을 골라주세요.', options: ['7시 이전', '9~10시', '11시쯤', '점심 이후'], tags: ['투표', '주말', '소소킹'] },
     ]),
     drip: pick([
-      { line: '퇴근 5분 전 회의 잡는 사람은 시간여행자 말고 퇴근방해자다.', tags: ['드립', '직장인', '한줄드립'] },
-      { line: '배달 예상시간은 약속이 아니라 내 배고픔을 테스트하는 심리검사지다.', tags: ['드립', '배달', '한줄드립'] },
+      { line: '퇴근 5분 전 회의는 업무가 아니라 급습이다.', tags: ['드립', '직장인', '한줄드립'] },
+      { line: '배달 예상시간은 내 인내심의 유통기한이다.', tags: ['드립', '배달', '한줄드립'] },
     ]),
     quiz: pick([
-      { title: '오늘의 퀴즈 🧠', desc: '다음 중 일반적으로 냉장 보관하지 않는 것이 더 좋은 식재료는?', options: ['토마토', '우유', '생선', '두부'], answerIdx: 0, hint: '맛과 식감이 중요해요.', explanation: '토마토는 냉장 보관 시 향과 식감이 떨어질 수 있어 상온 보관이 권장되는 경우가 많습니다.', tags: ['퀴즈', '생활상식', '소소킹'] },
-      { title: '오늘의 퀴즈 🧠', desc: '한국어 맞춤법에서 “며칠”의 올바른 표기는 무엇일까요?', options: ['며칠', '몇일', '몇 일', '며 일'], answerIdx: 0, hint: '소리 나는 대로 굳어진 표준어입니다.', explanation: '표준어는 “며칠”입니다. “몇일”은 표준 표기가 아닙니다.', tags: ['퀴즈', '맞춤법', '소소킹'] },
+      { title: '오늘의 퀴즈 🧠', desc: '다음 중 일반적으로 냉장 보관하지 않는 것이 더 좋은 식재료는?', mode: 'multiple', noAnswer: false, options: ['토마토', '우유', '생선', '두부'], answerIdx: 0, hint: '맛과 식감이 중요해요.', explanation: '토마토는 냉장 보관 시 향과 식감이 떨어질 수 있어 상온 보관이 권장되는 경우가 많습니다.', tags: ['퀴즈', '생활상식', '소소킹'] },
+      { title: '정답 없는 상상 퀴즈', desc: '만약 하루 동안 모든 사람이 말끝에 “ㅋㅋ”를 붙여야 한다면 제일 난감한 순간은 언제일까요?', mode: 'subjective', noAnswer: true, hint: '정답보다 센스가 중요해요.', explanation: '정답이 없는 생각 퀴즈입니다. 댓글로 가장 웃긴 답을 남겨보세요.', tags: ['퀴즈', '상상퀴즈', '정답없음'] },
     ]),
   }[preset] || { title: '오늘의 소소 이야기', desc: '가볍게 댓글로 이야기해봐요.', tags: ['소소킹'] };
 }
@@ -227,40 +230,48 @@ function buildDoc(preset, content, date, source) {
   }
 
   if (preset === 'drip') {
-    const line = clean(content.line || content.drip || content.desc || content.title || '', 80) || '오늘도 웃긴 척하다가 진짜 웃겨버렸다.';
+    const line = clean(content.line || content.drip || content.desc || content.title || '', 50) || '오늘도 웃긴 척하다가 진짜 웃겨버렸다.';
     doc.title = '오늘의 한줄';
     doc.desc = line;
     doc.typeLabel = '드립방';
     doc.subtype = 'drip';
     doc.feedType = 'drip';
     doc.tags = toTags(content.tags, ['드립', '한줄드립', '소소킹']);
-    doc.modules.drip = { enabled: true, prompt: line, maxLength: 80 };
+    doc.modules.drip = { enabled: true, prompt: line, maxLength: 50 };
   }
 
   if (preset === 'quiz') {
+    const mode = content.mode === 'subjective' ? 'subjective' : 'multiple';
+    const noAnswer = content.noAnswer === true;
     const options = optionTexts(content.options, ['정답 후보 1', '정답 후보 2', '정답 후보 3', '정답 후보 4']).slice(0, 6);
     const safeOptions = options.length >= 2 ? options : ['맞다', '아니다'];
     const answerIdx = Math.max(0, Math.min(Number(content.answerIdx || content.correctIndex || 0), safeOptions.length - 1));
     const answer = clean(content.answer || safeOptions[answerIdx], 120);
     doc.modules.quiz = {
       enabled: true,
-      mode: 'multiple',
+      mode,
+      noAnswer,
       question: doc.desc,
-      options: safeOptions.map(text => ({ text })),
       hint: clean(content.hint, 100),
+      explanation: noAnswer ? clean(content.explanation || '정답이 없는 퀴즈입니다. 댓글로 자유롭게 이야기해보세요.', 500) : clean(content.explanation, 500),
     };
-    secretDoc = {
-      quizMode: 'multiple',
-      mode: 'multiple',
-      answer,
-      answerIdx,
-      correctIndex: answerIdx,
-      explanation: clean(content.explanation, 500),
-      correctCount: 0,
-      firstCorrect: null,
-      createdAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp(),
-    };
+    if (mode === 'multiple') doc.modules.quiz.options = safeOptions.map(text => ({ text }));
+    if (!noAnswer) {
+      if (mode === 'multiple') doc.modules.quiz.correctIndex = answerIdx;
+      else doc.modules.quiz.answer = answer;
+      secretDoc = {
+        quizMode: mode,
+        mode,
+        answer: mode === 'subjective' ? answer : safeOptions[answerIdx],
+        answerIdx: mode === 'multiple' ? answerIdx : null,
+        correctIndex: mode === 'multiple' ? answerIdx : null,
+        explanation: clean(content.explanation, 500),
+        correctCount: 0,
+        firstCorrect: null,
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      };
+    }
   }
 
   return { mainDoc: doc, secretDoc };
