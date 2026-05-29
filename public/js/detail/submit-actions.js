@@ -31,42 +31,9 @@ export async function submitDetailComment(postId, data = {}) {
   return { id: ref.id, ...payload, createdAt: new Date() };
 }
 
-export async function submitCharParticipation(postId, text) {
-  return submitDetailComment(postId, { text });
-}
-
-export async function submitRelayComment(postId, text) {
-  return submitDetailComment(postId, { text });
-}
-
 export async function submitCbattleComment(postId, text, side) {
   if (!side) throw new Error('A팀 또는 B팀을 선택해주세요');
   return submitDetailComment(postId, { text, side });
-}
-
-export async function submitAcrosticEntry(postId, keyword, lines) {
-  if (!(await ensureAnonymousActor('로그인 후 참여해주세요'))) return null;
-  const chars = [...String(keyword || '')];
-  const values = Array.isArray(lines) ? lines.map(v => String(v || '').trim()) : [];
-  if (!chars.length) throw new Error('제시어를 찾을 수 없어요');
-  if (values.length !== chars.length || values.some(v => !v)) throw new Error('모든 줄을 입력해주세요');
-
-  const lineObjects = chars.map((char, index) => ({ char, line: values[index] }));
-  const text = lineObjects.map(item => `${item.char}: ${item.line}`).join('\n');
-
-  const payload = {
-    text,
-    lines: lineObjects,
-    ...authorPayload(),
-    reactions: {},
-    reactedWith: {},
-    replyCount: 0,
-    createdAt: serverTimestamp(),
-  };
-
-  const ref = await addDoc(collection(db, 'feeds', postId, 'acrostics'), payload);
-  await updateDoc(doc(db, 'feeds', postId), { acrosticCount: increment(1) }).catch(() => {});
-  return { id: ref.id, ...payload, createdAt: new Date() };
 }
 
 export function getSelectedCbattleSide(root = document) {

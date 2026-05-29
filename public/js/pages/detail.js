@@ -5,12 +5,10 @@ import { renderReactionBar, initReactionBar } from '../components/reaction-bar.j
 import { setMeta } from '../utils/seo.js';
 import { escHtml, formatTime } from '../utils/helpers.js';
 import { TYPE_LABELS, CAT_CLASS } from '../detail/constants.js';
-import { fetchComments, fetchAcrostics } from '../detail/data.js';
+import { fetchComments } from '../detail/data.js';
 import { renderImageSection, renderTypeBody, renderLegacyInteractive } from '../detail/body-render.js';
 import { renderCommentSection } from '../detail/comment-render.js';
-import { renderAcrosticSection } from '../detail/acrostic-render.js';
 import { appendSimilarPosts } from '../detail/similar-render.js';
-import { setupRelayCounter, setupCharBoxInput } from '../detail/input-ux.js';
 
 const callRegisterPostView = httpsCallable(functions, 'registerPostView');
 
@@ -40,22 +38,21 @@ export async function renderDetail(id) {
     setMeta(post.title, post.desc, post.images?.[0], `https://sosoking.co.kr/p/${id}`);
 
     const uid = auth.currentUser?.uid;
-    const [comments, acrostics, isScrapped, viewResult] = await Promise.all([
+    const [comments, isScrapped, viewResult] = await Promise.all([
       fetchComments(id),
-      post.type === 'acrostic' ? fetchAcrostics(id) : Promise.resolve([]),
       uid ? getDoc(doc(db, 'users', uid, 'scraps', id)).then(s => s.exists()) : Promise.resolve(false),
       registerDetailView(id),
     ]);
 
     if (viewResult?.counted === true) post.viewCount = Number(post.viewCount || 0) + 1;
-    renderDetailPage(el, post, comments, acrostics, isScrapped);
+    renderDetailPage(el, post, comments, isScrapped);
   } catch (error) {
     console.error(error);
     el.innerHTML = `<div class="empty-state"><div class="empty-state__icon">⚠️</div><div class="empty-state__title">불러오기에 실패했어요</div></div>`;
   }
 }
 
-function renderDetailPage(el, post, comments, acrostics, isScrapped = false) {
+function renderDetailPage(el, post, comments, isScrapped = false) {
   const typeLabel = TYPE_LABELS[post.type] || post.type;
   const catClass = CAT_CLASS[post.cat] || 'malhe';
   const timeStr = formatTime(post.createdAt?.toDate?.() || post.createdAt);
@@ -95,18 +92,11 @@ function renderDetailPage(el, post, comments, acrostics, isScrapped = false) {
 
         <div class="divider" style="margin:0"></div>
 
-        ${renderLegacyInteractive(post)}
-        ${post.type === 'acrostic' ? renderAcrosticSection(acrostics, post.id) : ''}
+        ${renderLegacyInteractive()}
         ${renderCommentSection(post, comments)}
       </div>
     </div>`;
 
-  setupDetailPage(post);
-  appendSimilarPosts(post);
-}
-
-function setupDetailPage(post) {
   initReactionBar(post.id);
-  setupRelayCounter();
-  setupCharBoxInput();
+  appendSimilarPosts(post);
 }

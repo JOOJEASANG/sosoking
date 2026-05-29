@@ -11,15 +11,6 @@ export async function fetchComments(postId) {
   }
 }
 
-export async function fetchAcrostics(postId) {
-  try {
-    const q = query(collection(db, 'feeds', postId, 'acrostics'), orderBy('createdAt', 'asc'));
-    const snap = await getDocs(q);
-    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  } catch {
-    return [];
-  }
-}
 
 export async function fetchSimilarPosts(excludeId, type) {
   try {

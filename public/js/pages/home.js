@@ -14,20 +14,16 @@ const TYPE_LABEL = {
   collect: '모음방',
   multi: '모음방',
   general: '모음방',
+  anonymous: '모음방',
   vote: '토론방',
   ox: '토론방',
   crazy_court: '토론방',
   balance: '토론방',
   battle: '토론방',
-  naming: '모음방',
   drip: '드립방',
   cbattle: '드립방',
   quiz: '퀴즈방',
   initial_game: '퀴즈방',
-  acrostic: '행시',
-  relay: '릴레이',
-  anonymous: '모음방',
-  fill: '빈칸',
 };
 
 function getKstDateString(date = new Date()) {

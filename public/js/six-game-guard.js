@@ -1,9 +1,10 @@
 import { navigate } from './router.js';
 
-const ALLOWED_TYPES = new Set(['multi', 'vote', 'naming', 'initial_game', 'crazy_court', 'relay', 'acrostic']);
+const ALLOWED_TYPES = new Set(['multi', 'vote', 'crazy_court', 'quiz', 'drip']);
 const REMOVED_TYPES = new Set([
-  'balance', 'battle', 'challenge24', 'tournament', 'drip', 'cbattle', 'laugh',
-  'ox', 'quiz', 'word_relay', 'random_battle', 'howto', 'story', 'fail', 'concern',
+  'naming', 'initial_game', 'relay', 'acrostic', 'fill',
+  'balance', 'battle', 'challenge24', 'tournament', 'cbattle', 'laugh',
+  'ox', 'word_relay', 'random_battle', 'howto', 'story', 'fail', 'concern',
 ]);
 
 function getHashPath() {

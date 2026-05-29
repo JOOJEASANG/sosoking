@@ -87,14 +87,6 @@ export function renderTypeBody(post) {
         ${post.lesson ? `<div style="padding:12px 16px;background:var(--color-malhe-bg);border-radius:10px;font-size:13px;margin-top:8px"><strong>알게 된 점:</strong> ${escHtml(post.lesson)}</div>` : ''}
         ${post.redo ? `<div style="padding:12px 16px;background:var(--color-golra-bg);border-radius:10px;font-size:13px;margin-top:8px"><strong>다시 한다면:</strong> ${escHtml(post.redo)}</div>` : ''}`;
 
-    case 'relay':
-      return post.startSentence
-        ? `<div style="padding:16px;background:var(--color-primary-bg);border-left:4px solid var(--color-primary);border-radius:4px;font-weight:600;margin-top:8px">"${escHtml(post.startSentence)}"</div>`
-        : '';
-
-    case 'acrostic':
-      return renderAcrosticPrompt(post);
-
     default:
       return '';
   }
@@ -147,34 +139,6 @@ function renderHowtoBody(post) {
     ${post.caution ? `<div style="font-size:13px;color:var(--color-warning);padding:10px 12px;background:var(--color-warning-bg);border-radius:8px;margin-top:8px">⚠️ ${escHtml(post.caution)}</div>` : ''}`;
 }
 
-function renderAcrosticPrompt(post) {
-  return post.keyword
-    ? `<div style="padding:16px;background:var(--color-surface-2);border-radius:10px;margin-top:8px">
-        <div style="font-size:12px;font-weight:700;color:var(--color-text-muted);margin-bottom:8px">제시어: ${escHtml(post.keyword)}</div>
-        ${[...post.keyword].map(ch => `
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-            <span style="width:28px;height:28px;background:var(--color-primary);color:#fff;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;flex-shrink:0">${escHtml(ch)}</span>
-            <span style="font-size:13px;color:var(--color-text-muted)">: 삼행시로 참여해보세요</span>
-          </div>`).join('')}
-      </div>`
-    : '';
-}
-
-export function renderLegacyInteractive(post) {
-  if (post.type === 'acrostic' && post.keyword) {
-    const chars = [...post.keyword];
-    return `
-      <div style="padding:20px">
-        <div style="font-size:14px;font-weight:700;margin-bottom:12px">✍️ 삼행시 참여하기</div>
-        <div id="acrostic-submit-lines">
-          ${chars.map((ch, i) => `
-            <div class="acrostic-line" style="margin-bottom:8px">
-              <span class="acrostic-char">${escHtml(ch)}</span>
-              <input class="form-input acrostic-submit-input" placeholder="${escAttr(ch)}(으)로 시작하는 한 줄" data-idx="${i}">
-            </div>`).join('')}
-        </div>
-        <button class="btn btn--primary btn--sm" id="btn-acrostic-submit" style="margin-top:8px">삼행시 올리기</button>
-      </div>`;
-  }
+export function renderLegacyInteractive() {
   return '';
 }

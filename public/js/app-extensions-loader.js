@@ -19,7 +19,6 @@ const EXTENSION_MODULES = [
   './detail-extras.js',
   './detail-cards.js',
   './multi-write.js',
-  './fill-box-input-fix.js',
   './write-edit-router-fix.js',
   './write-edit-save-fix.js',
   './edit-screen-polish.js',

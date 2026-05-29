@@ -48,11 +48,7 @@ function typeLabel(post) {
   const m = post.modules || {};
   if (post.anonymous || m.anonymous?.enabled || subtype === 'anonymous') return '익명비밀글';
   if (subtype === 'vote' || subtype === 'ox' || m.vote?.enabled) return '투표/판정';
-  if (subtype === 'fill' || m.fill?.enabled) return '빈칸 채우기';
-  if (subtype === 'naming' || m.naming?.enabled) return '미친작명소';
-  if (subtype === 'acrostic' || m.acrostic?.enabled) return '삼행시';
-  if (subtype === 'relay' || m.relay?.enabled) return '막장릴레이';
-  if (subtype === 'quiz' || m.quiz?.enabled) return '미친퀴즈';
+  if (subtype === 'quiz' || m.quiz?.enabled) return '퀴즈';
   return post.typeLabel || (post.type === 'multi' ? '일반글' : post.type || '게시글');
 }
 
@@ -66,62 +62,12 @@ function hideNewWriteUi() {
 function moduleLabels(m = {}) {
   const labels = [];
   if (m.vote?.enabled) labels.push('투표/판정');
-  if (m.fill?.enabled) labels.push('빈칸 채우기');
-  if (m.naming?.enabled) labels.push('작명');
-  if (m.acrostic?.enabled) labels.push('삼행시');
-  if (m.relay?.enabled) labels.push('릴레이');
-  if (m.quiz?.enabled) labels.push('문제');
+  if (m.quiz?.enabled) labels.push('퀴즈');
   if (m.youtube?.enabled) labels.push('유튜브');
   if (m.anonymous?.enabled) labels.push('익명');
   return labels.length
     ? `<div class="feed-card__multi-chips" style="margin:8px 0 12px">${labels.map(label => `<span>${esc(label)}</span>`).join('')}</div>`
     : '';
-}
-
-function fillCounts(fill = {}) {
-  if (Array.isArray(fill.blankCounts) && fill.blankCounts.length) return fill.blankCounts;
-  if (Array.isArray(fill.blanks) && fill.blanks.length) return fill.blanks.map(blank => blank.charCount || 4);
-  return [fill.charCount || fill.blankCount || 4];
-}
-
-function parseCounts(raw) {
-  const nums = String(raw || '')
-    .split(',')
-    .map(value => Math.max(1, Math.min(12, Number(value.trim()) || 0)))
-    .filter(Boolean)
-    .slice(0, 12);
-  return nums.length ? nums : [4];
-}
-
-function charCountFromBlankMarker(marker, fallback = 4) {
-  const raw = String(marker || '');
-  if (/^[ \t]+$/.test(raw)) return Math.max(1, Math.min(12, raw.length));
-  if (/^□+$/.test(raw)) return Math.max(1, Math.min(12, [...raw].length));
-  if (/^_+$/.test(raw)) return Math.max(1, Math.min(12, raw.length));
-  return Math.max(1, Math.min(12, Number(fallback) || 4));
-}
-
-function parseFillTemplate(bodyText, manualCounts = []) {
-  const source = String(bodyText || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-  const blankRegex = /_{2,}|□+|[ \t]{2,}/g;
-  const parts = [];
-  const blanks = [];
-  let cursor = 0;
-  let match;
-
-  while ((match = blankRegex.exec(source))) {
-    if (match.index > cursor) parts.push({ type: 'text', text: source.slice(cursor, match.index) });
-    const index = blanks.length;
-    const manualCount = manualCounts[index];
-    const charCount = Math.max(1, Math.min(12, Number(manualCount) || charCountFromBlankMarker(match[0], manualCounts[manualCounts.length - 1] || 4)));
-    const blank = { index, charCount, marker: match[0] };
-    blanks.push(blank);
-    parts.push({ type: 'blank', index, charCount });
-    cursor = match.index + match[0].length;
-  }
-
-  if (cursor < source.length) parts.push({ type: 'text', text: source.slice(cursor) });
-  return { source, parts, blanks, blankCounts: blanks.map(blank => blank.charCount) };
 }
 
 function normalizeImages(images) {
@@ -246,40 +192,6 @@ function renderModules(post) {
         ${(m.vote.options || []).map((option, index) => `<input class="form-input edit-vote-o" style="margin-bottom:8px" value="${esc(option.text || option || '')}" data-votes="${Number(option.votes || 0)}" placeholder="선택지 ${index + 1}">`).join('')}
       </div>` : ''}
 
-    ${m.fill?.enabled ? `
-      <div class="form-group">
-        <label class="form-label">빈칸별 칸 수</label>
-        <input id="edit-fill-counts" class="form-input" value="${esc(fillCounts(m.fill).join(', '))}" maxlength="80">
-        <div class="form-hint">본문의 ___, □□□, 스페이스 2칸 이상 순서대로 칸 수를 쉼표로 입력하세요. 예: 3, 4</div>
-      </div>` : ''}
-
-    ${m.naming?.enabled ? `
-      <div class="form-group">
-        <label class="form-label">작명 글자 수 제한</label>
-        <select id="edit-naming-count" class="form-select">
-          <option value="0" ${Number(m.naming.charCount || 0) === 0 ? 'selected' : ''}>자유</option>
-          <option value="3" ${Number(m.naming.charCount || 0) === 3 ? 'selected' : ''}>3글자</option>
-          <option value="5" ${Number(m.naming.charCount || 0) === 5 ? 'selected' : ''}>5글자</option>
-        </select>
-      </div>` : ''}
-
-    ${m.acrostic?.enabled ? `
-      <div class="form-group">
-        <label class="form-label">삼행시 제시어</label>
-        <input id="edit-acrostic-k" class="form-input" value="${esc(m.acrostic.keyword || '')}" maxlength="12">
-      </div>` : ''}
-
-    ${m.relay?.enabled ? `
-      <div class="form-group">
-        <label class="form-label">릴레이 시작 문장</label>
-        <textarea id="edit-relay-s" class="form-textarea" rows="3" maxlength="500">${esc(m.relay.startSentence || desc || '')}</textarea>
-      </div>
-      <div class="form-group">
-        <label class="form-label">릴레이 미션</label>
-        <input id="edit-relay-mission" class="form-input" value="${esc(m.relay.mission?.key || 'none')}" maxlength="30">
-        <div class="form-hint">예: none, but, horror, animal, twist, dialogue</div>
-      </div>` : ''}
-
     ${m.quiz?.enabled ? `
       <div class="form-group">
         <label class="form-label">퀴즈 문제</label>
@@ -336,16 +248,6 @@ function parseYouTubeUrl(value) {
   }
 }
 
-function relayMission(key) {
-  return {
-    but: { key: 'but', title: '그런데 시작', instruction: '다음 문장은 “그런데”로 시작해 주세요.', badge: '그런데' },
-    horror: { key: 'horror', title: '공포 전환', instruction: '갑자기 분위기를 공포로 바꿔 주세요.', badge: '공포' },
-    animal: { key: 'animal', title: '동물 등장', instruction: '동물 하나를 자연스럽게 등장시켜 주세요.', badge: '동물' },
-    twist: { key: 'twist', title: '반전 넣기', instruction: '마지막에 짧은 반전을 넣어 주세요.', badge: '반전' },
-    dialogue: { key: 'dialogue', title: '대사 필수', instruction: '인물 대사 한 줄을 반드시 포함해 주세요.', badge: '대사' },
-  }[key] || null;
-}
-
 async function buildUpdate(post) {
   const title = document.getElementById('edit-title-force')?.value.trim() || '';
   if (!title) throw new Error('제목을 입력해주세요.');
@@ -399,41 +301,6 @@ async function buildUpdate(post) {
         .filter(option => option.text);
       if (opts.length < 2) throw new Error('투표 선택지는 2개 이상 필요합니다.');
       m.vote = { ...m.vote, question: document.getElementById('edit-vote-q')?.value.trim() || desc || '선택해주세요', options: opts };
-    }
-
-    if (m.fill?.enabled) {
-      const counts = parseCounts(document.getElementById('edit-fill-counts')?.value || '4');
-      const template = parseFillTemplate(desc, counts);
-      m.fill = {
-        ...m.fill,
-        prompt: desc,
-        templateParts: template.parts.length ? template.parts : m.fill.templateParts || [],
-        blankCounts: template.blankCounts.length ? template.blankCounts : counts,
-        blanks: template.blanks.length ? template.blanks : counts.map((count, index) => ({ index, charCount: count })),
-        charCount: (template.blankCounts[0] || counts[0] || 4),
-        blankCount: template.blanks.length || counts.length,
-        inputMode: 'line-aware-template',
-      };
-    }
-
-    if (m.naming?.enabled) {
-      m.naming = { ...m.naming, charCount: Number(document.getElementById('edit-naming-count')?.value || 0) };
-    }
-
-    if (m.acrostic?.enabled) {
-      const keyword = document.getElementById('edit-acrostic-k')?.value.trim() || '';
-      if ([...keyword].length < 2) throw new Error('삼행시 제시어는 2글자 이상 입력해주세요.');
-      m.acrostic = { ...m.acrostic, keyword };
-    }
-
-    if (m.relay?.enabled) {
-      const missionKey = document.getElementById('edit-relay-mission')?.value.trim() || 'none';
-      const mission = relayMission(missionKey);
-      m.relay = {
-        ...m.relay,
-        startSentence: document.getElementById('edit-relay-s')?.value.trim() || desc || m.relay.startSentence || '',
-        mission: mission ? { enabled: true, ...mission } : { enabled: false, key: 'none' },
-      };
     }
 
     if (m.quiz?.enabled) {

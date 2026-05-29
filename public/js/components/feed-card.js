@@ -2,23 +2,17 @@ import { navigate } from '../router.js';
 import { escHtml, formatTime } from '../utils/helpers.js';
 
 const TYPE_META = {
-  multi:        { cat: 'multi', catLabel: '피드', icon: '📝', label: '일반' },
-  general:      { cat: 'multi', catLabel: '피드', icon: '📝', label: '일반' },
-  fill:         { cat: 'multi', catLabel: '피드', icon: '🧩', label: '빈칸' },
-  balance:      { cat: 'golra', catLabel: '놀이', icon: '🗳️', label: '투표' },
-  vote:         { cat: 'golra', catLabel: '놀이', icon: '🗳️', label: '투표' },
-  battle:       { cat: 'golra', catLabel: '놀이', icon: '🗳️', label: '투표' },
-  naming:       { cat: 'usgyo', catLabel: '놀이', icon: '😜', label: '작명' },
-  initial_game: { cat: 'malhe', catLabel: '놀이', icon: '🧠', label: '퀴즈' },
-  drip:         { cat: 'usgyo', catLabel: '놀이', icon: '🤣', label: '드립' },
-  ox:           { cat: 'golra', catLabel: '놀이', icon: '🗳️', label: '투표' },
-  quiz:         { cat: 'malhe', catLabel: '놀이', icon: '🧠', label: '퀴즈' },
-  crazy_court:  { cat: 'golra', catLabel: '놀이', icon: '🗳️', label: '투표' },
-  random_battle:{ cat: 'golra', catLabel: '놀이', icon: '📝', label: '일반' },
-  howto:        { cat: 'multi', catLabel: '피드', icon: '📝', label: '일반' },
-  story:        { cat: 'multi', catLabel: '피드', icon: '📝', label: '일반' },
-  fail:         { cat: 'multi', catLabel: '피드', icon: '📝', label: '일반' },
-  concern:      { cat: 'multi', catLabel: '피드', icon: '📝', label: '일반' },
+  multi:        { cat: 'multi', catLabel: '모음방', icon: '📌', label: '모음방' },
+  general:      { cat: 'multi', catLabel: '모음방', icon: '📌', label: '모음방' },
+  vote:         { cat: 'golra', catLabel: '토론방', icon: '🗳️', label: '토론방' },
+  crazy_court:  { cat: 'golra', catLabel: '토론방', icon: '🗳️', label: '토론방' },
+  battle:       { cat: 'golra', catLabel: '토론방', icon: '🗳️', label: '토론방' },
+  balance:      { cat: 'golra', catLabel: '토론방', icon: '🗳️', label: '토론방' },
+  drip:         { cat: 'usgyo', catLabel: '드립방', icon: '🤣', label: '드립방' },
+  cbattle:      { cat: 'usgyo', catLabel: '드립방', icon: '🤣', label: '드립방' },
+  quiz:         { cat: 'malhe', catLabel: '퀴즈방', icon: '🧠', label: '퀴즈방' },
+  initial_game: { cat: 'malhe', catLabel: '퀴즈방', icon: '🧠', label: '퀴즈방' },
+  ox:           { cat: 'malhe', catLabel: '퀴즈방', icon: '🧠', label: '퀴즈방' },
 };
 
 function escAttr(value) {
@@ -59,10 +53,7 @@ function safeTag(value) {
 
 function getMultiSubtype(post) {
   if (post.subtype === 'anonymous') return 'general';
-  if (post.modules?.vote?.ox) return 'vote';
-  if (post.modules?.fill?.enabled) return 'fill';
   if (post.modules?.vote?.enabled) return 'vote';
-  if (post.modules?.naming?.enabled) return 'naming';
   if (post.modules?.drip?.enabled) return 'drip';
   if (post.modules?.quiz?.enabled) return 'quiz';
   if (post.subtype && TYPE_META[post.subtype]) return post.subtype;
