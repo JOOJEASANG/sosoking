@@ -30,28 +30,6 @@ document.addEventListener('click', event => {
     return;
   }
 
-  if (target.closest('#multi-naming-submit')) {
-    const ok = hasText('#multi-naming-free') || [...document.querySelectorAll('.multi-name-char')].some(i => String(i.value || '').trim());
-    if (ok) later(() => awardPoints('participation_create', { postId, type: 'naming' }));
-    return;
-  }
-
-  if (target.closest('#multi-fill-submit') && hasText('#multi-fill-answer')) {
-    later(() => awardPoints('participation_create', { postId, type: 'fill' }));
-    return;
-  }
-
-  if (target.closest('#multi-acrostic-submit')) {
-    const ok = [...document.querySelectorAll('.multi-acrostic-input')].every(i => String(i.value || '').trim());
-    if (ok) later(() => awardPoints('participation_create', { postId, type: 'acrostic' }));
-    return;
-  }
-
-  if (target.closest('#multi-relay-submit') && hasText('#multi-relay-input')) {
-    later(() => awardPoints('participation_create', { postId, type: 'relay' }));
-    return;
-  }
-
   if (target.closest('#multi-quiz-submit') && hasText('#multi-quiz-answer')) {
     later(() => {
       const result = document.getElementById('multi-quiz-result');

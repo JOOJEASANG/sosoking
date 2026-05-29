@@ -149,7 +149,8 @@ export function renderCommentSection(post, comments) {
     <div class="comment-section">
       <div class="comment-section__title">댓글 ${comments.length}</div>
       <div class="comment-write-box" id="comment-write">
-        <textarea id="comment-input" placeholder="${loggedIn ? '댓글을 입력하세요' : '로그인 후 댓글 작성 가능'}"></textarea>
+        ${!loggedIn ? '<input id="comment-guest-name" class="form-input" placeholder="닉네임 (선택, 최대 12자)" maxlength="12" style="margin-bottom:6px">' : ''}
+        <textarea id="comment-input" placeholder="댓글을 입력하세요"></textarea>
         <button class="btn btn--primary btn--sm" style="align-self:flex-end" id="btn-comment">등록</button>
       </div>
       <div id="comment-list">
@@ -171,7 +172,8 @@ function renderCbattleSection(comments, loggedIn) {
         <button class="cbattle-side-btn cbattle-side-btn--b" data-side="B">🔵 B팀</button>
       </div>
       <div class="comment-write-box" id="comment-write">
-        <textarea id="comment-input" placeholder="${loggedIn ? '팀을 선택 후 참여해보세요' : '로그인 후 참여 가능'}"></textarea>
+        ${!loggedIn ? '<input id="comment-guest-name" class="form-input" placeholder="닉네임 (선택, 최대 12자)" maxlength="12" style="margin-bottom:6px">' : ''}
+        <textarea id="comment-input" placeholder="팀을 선택 후 참여해보세요"></textarea>
         <button class="btn btn--primary btn--sm" style="align-self:flex-end" id="btn-comment">참여하기</button>
       </div>
       <div class="cbattle-columns">
@@ -187,7 +189,8 @@ function renderDripSection(comments, loggedIn) {
     <div class="comment-section">
       <div class="comment-section__title">${cfg.title} (${comments.length}개)</div>
       <div class="comment-write-box" id="comment-write">
-        <textarea id="comment-input" placeholder="${loggedIn ? cfg.placeholder : '로그인 후 참여 가능'}"></textarea>
+        ${!loggedIn ? '<input id="comment-guest-name" class="form-input" placeholder="닉네임 (선택, 최대 12자)" maxlength="12" style="margin-bottom:6px">' : ''}
+        <textarea id="comment-input" placeholder="${cfg.placeholder}"></textarea>
         <button class="btn btn--primary btn--sm" style="align-self:flex-end" id="btn-comment">${cfg.btn}</button>
       </div>
       <div id="comment-list">

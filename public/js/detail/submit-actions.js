@@ -12,13 +12,23 @@ function authorPayload() {
 }
 
 export async function submitDetailComment(postId, data = {}) {
-  if (!(await ensureAnonymousActor('로그인 후 참여해주세요'))) return null;
+  if (!(await ensureAnonymousActor('댓글 등록에 실패했어요'))) return null;
   const text = String(data.text || '').trim();
   if (!text) throw new Error('내용을 입력해주세요');
 
+  // 비회원이면 입력한 이름 사용, 회원이면 닉네임 사용
+  const isAnonymousUser = auth.currentUser?.isAnonymous;
+  const guestName = String(data.guestName || '').trim().slice(0, 12);
+  const authorName = isAnonymousUser
+    ? (guestName || '익명')
+    : (appState.nickname || auth.currentUser?.displayName || '익명');
+
   const payload = {
     text,
-    ...authorPayload(),
+    authorId: auth.currentUser.uid,
+    authorName,
+    authorPhoto: isAnonymousUser ? '' : (auth.currentUser?.photoURL || ''),
+    isGuest: isAnonymousUser || false,
     reactions: {},
     reactedWith: {},
     createdAt: serverTimestamp(),
@@ -31,17 +41,9 @@ export async function submitDetailComment(postId, data = {}) {
   return { id: ref.id, ...payload, createdAt: new Date() };
 }
 
-export async function submitCharParticipation(postId, text) {
-  return submitDetailComment(postId, { text });
-}
-
-export async function submitRelayComment(postId, text) {
-  return submitDetailComment(postId, { text });
-}
-
-export async function submitCbattleComment(postId, text, side) {
+export async function submitCbattleComment(postId, text, side, guestName = '') {
   if (!side) throw new Error('A팀 또는 B팀을 선택해주세요');
-  return submitDetailComment(postId, { text, side });
+  return submitDetailComment(postId, { text, side, guestName });
 }
 
 export async function submitAcrosticEntry(postId, keyword, lines) {

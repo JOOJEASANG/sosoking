@@ -107,40 +107,6 @@ function renderMultiModulesEditor(post) {
 
       <div class="owner-multi-module">
         <label class="owner-multi-module__head">
-          <input type="checkbox" id="owner-multi-naming-enabled" ${moduleEnabled(post, 'naming') ? 'checked' : ''}>
-          <span>😜 작명 참여</span>
-        </label>
-        <div class="owner-multi-module__body">
-          <select class="form-select" id="owner-multi-naming-count">
-            <option value="0" ${Number(modules.naming?.charCount || 0) === 0 ? 'selected' : ''}>자유</option>
-            <option value="3" ${Number(modules.naming?.charCount || 0) === 3 ? 'selected' : ''}>3글자</option>
-            <option value="5" ${Number(modules.naming?.charCount || 0) === 5 ? 'selected' : ''}>5글자</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="owner-multi-module">
-        <label class="owner-multi-module__head">
-          <input type="checkbox" id="owner-multi-acrostic-enabled" ${moduleEnabled(post, 'acrostic') ? 'checked' : ''}>
-          <span>✍️ 삼행시</span>
-        </label>
-        <div class="owner-multi-module__body">
-          <input class="form-input" id="owner-multi-acrostic-keyword" value="${toInput(modules.acrostic?.keyword)}" maxlength="8" placeholder="제시어">
-        </div>
-      </div>
-
-      <div class="owner-multi-module">
-        <label class="owner-multi-module__head">
-          <input type="checkbox" id="owner-multi-relay-enabled" ${moduleEnabled(post, 'relay') ? 'checked' : ''}>
-          <span>🎭 릴레이</span>
-        </label>
-        <div class="owner-multi-module__body">
-          <textarea class="form-textarea" id="owner-multi-relay-start" rows="3" maxlength="300" placeholder="시작 문장">${toInput(modules.relay?.startSentence)}</textarea>
-        </div>
-      </div>
-
-      <div class="owner-multi-module">
-        <label class="owner-multi-module__head">
           <input type="checkbox" id="owner-multi-quiz-enabled" ${moduleEnabled(post, 'quiz') ? 'checked' : ''}>
           <span>🧠 간단 문제</span>
         </label>
@@ -154,17 +120,6 @@ function renderMultiModulesEditor(post) {
 
 function renderTypeExtraEditor(post) {
   if (post.type === 'multi') return renderMultiModulesEditor(post);
-  if (post.type === 'naming') {
-    return `
-      <div class="form-group">
-        <label class="form-label">글자수 제한</label>
-        <select class="form-select" id="owner-edit-char-count">
-          <option value="0" ${Number(post.charCount || 0) === 0 ? 'selected' : ''}>자유</option>
-          <option value="3" ${Number(post.charCount || 0) === 3 ? 'selected' : ''}>3글자</option>
-          <option value="5" ${Number(post.charCount || 0) === 5 ? 'selected' : ''}>5글자</option>
-        </select>
-      </div>`;
-  }
   return '';
 }
 
@@ -244,25 +199,6 @@ function collectMultiModules(post) {
       options,
       votedBy: Array.isArray(original.vote?.votedBy) ? original.vote.votedBy : [],
     };
-  }
-
-  if (document.getElementById('owner-multi-naming-enabled')?.checked) {
-    modules.naming = {
-      enabled: true,
-      charCount: Number(document.getElementById('owner-multi-naming-count')?.value || 0),
-    };
-  }
-
-  if (document.getElementById('owner-multi-acrostic-enabled')?.checked) {
-    const keyword = document.getElementById('owner-multi-acrostic-keyword')?.value.trim() || '';
-    if ([...keyword].length < 2) throw new Error('삼행시 제시어는 2글자 이상 입력해주세요.');
-    modules.acrostic = { enabled: true, keyword };
-  }
-
-  if (document.getElementById('owner-multi-relay-enabled')?.checked) {
-    const startSentence = document.getElementById('owner-multi-relay-start')?.value.trim() || '';
-    if (!startSentence) throw new Error('릴레이 시작 문장을 입력해주세요.');
-    modules.relay = { enabled: true, startSentence };
   }
 
   if (document.getElementById('owner-multi-quiz-enabled')?.checked) {
