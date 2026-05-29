@@ -175,11 +175,11 @@ export function renderMultiWriteHTML({ renderKey, presetKey }) {
           <div data-write-section="vote-panel" ${activeKey === 'vote' ? '' : 'style="display:none"'}>${renderVoteModule(activeKey)}</div>
           <div data-write-section="quiz-panel" ${activeKey === 'quiz' ? '' : 'style="display:none"'}>${renderQuizModule(activeKey)}</div>
           <div class="form-group">
-            <div class="multi-tag-label-row">
-              <label class="form-label" for="mw-tags">태그</label>
-              <button class="btn btn--ghost btn--sm" type="button" id="mw-auto-tags">자동 생성</button>
+            <label class="form-label" for="mw-tags">태그</label>
+            <div class="mw-tags-row">
+              <input id="mw-tags" class="form-input" maxlength="100" placeholder="${esc(preset.tagsPlaceholder)}">
+              <button class="btn btn--ghost btn--sm" type="button" id="mw-auto-tags" style="white-space:nowrap;flex-shrink:0">자동 생성</button>
             </div>
-            <input id="mw-tags" class="form-input" maxlength="100" placeholder="${esc(preset.tagsPlaceholder)}">
           </div>
           <div class="multi-comment-note">💬 댓글과 반응은 항상 켜져 있습니다.</div>
         </div>
