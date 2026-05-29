@@ -176,7 +176,7 @@ document.addEventListener('click', async event => {
   event.preventDefault();
   event.stopPropagation();
   const id = btn.dataset.feedShare || '';
-  const title = btn.datasetFeedTitle || btn.dataset.feedTitle || '소소킹';
+  const title = btn.dataset.feedTitle || '소소킹';
   const url = `${location.origin}/p/${encodeURIComponent(id)}`;
   try {
     if (navigator.share) await navigator.share({ title, url });
