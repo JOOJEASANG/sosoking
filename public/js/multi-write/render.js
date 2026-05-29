@@ -124,7 +124,7 @@ function renderQuizModule(activeKey) {
 function renderDripTopicField(activeKey) {
   return `
     <div class="form-group mw-drip-line-box" data-write-section="drip-line" ${activeKey === 'drip' ? '' : 'style="display:none"'}>
-      <label class="form-label">드립 주제 <span class="required">*</span></label>
+      <label class="form-label">드립 주제</label>
       <input id="mw-drip-line" class="form-input mw-drip-line-input" maxlength="80" autocomplete="off" placeholder="예: 퇴근 5분 전 회의 잡힌 내 표정은?">
       <div class="form-hint">사람들이 한 줄 드립을 칠 수 있는 상황이나 주제를 던져주세요. 주제 최대 80자.</div>
     </div>`;

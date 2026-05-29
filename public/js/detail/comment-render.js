@@ -143,7 +143,7 @@ export function renderCommentSection(post, comments) {
   }
 
   if (post.type === 'cbattle') return renderCbattleSection(comments, loggedIn);
-  if (post.type === 'drip') return renderDripSection(comments, loggedIn);
+  if (post.type === 'drip' || post.feedType === 'drip' || post.modules?.drip?.enabled) return '';
 
   return `
     <div class="comment-section">

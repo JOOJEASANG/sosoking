@@ -235,10 +235,6 @@ async function submitMultiPost() {
 
   if (presetKey === 'drip') {
     title = '오늘의 드립 주제';
-    if (!desc) {
-      toast.error('드립 주제를 입력해주세요.');
-      return;
-    }
   } else if (!title) {
     toast.error(presetKey === 'vote' ? '토론 주제를 입력해주세요.' : '제목을 입력해주세요.');
     return;
