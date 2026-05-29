@@ -12,20 +12,13 @@ function renderOptionPicker(activeKey) {
   return `
     <div class="multi-preset-box multi-preset-box--simple multi-preset-box--top multi-write-option-category">
       <div class="multi-write-option-category__head">
-        <div>
-          <div class="multi-preset-box__title">방 선택</div>
-          <div class="multi-preset-box__desc">짧고 웃긴 콘텐츠를 방별로 올립니다. 일반글은 숨기고 모음·토론·퀴즈·드립만 사용합니다.</div>
-        </div>
+        <div class="multi-preset-box__title">방 선택</div>
       </div>
       <input type="hidden" id="mw-selected-preset" value="${esc(activeKey)}">
-      <div class="multi-preset-list multi-preset-list--top">
+      <div class="multi-preset-list multi-preset-list--top multi-preset-list--compact">
         ${WRITER_PRESET_KEYS.map(key => {
           const preset = MULTI_PRESETS[key];
-          return `
-          <button type="button" class="multi-preset-btn ${activeKey === key ? 'active' : ''}" data-multi-preset="${key}" aria-pressed="${activeKey === key ? 'true' : 'false'}">
-            <span class="multi-preset-btn__label">${preset.icon} ${preset.label}</span>
-            ${preset.shortDesc ? `<span class="multi-preset-btn__desc">${esc(preset.shortDesc)}</span>` : ''}
-          </button>`;
+          return `<button type="button" class="multi-preset-btn multi-preset-btn--compact ${activeKey === key ? 'active' : ''}" data-multi-preset="${key}" aria-pressed="${activeKey === key ? 'true' : 'false'}">${esc(preset.label)}</button>`;
         }).join('')}
       </div>
     </div>`;
@@ -57,11 +50,11 @@ export function renderQuizOptionRows(count = 2) {
 }
 
 function renderCollectModule(activeKey) {
-  return moduleCard('collect', activeKey, '📌', '모음방', '유튜브 쇼츠, 웃긴 그림, 링크를 짧게 모읍니다.', `
+  return moduleCard('collect', activeKey, '📌', '모음방 카테고리', '유튜브, 웃긴그림, 링크 중 하나를 고르세요.', `
     <div class="form-group">
-      <label class="form-label">모음 유형 <span class="required">*</span></label>
+      <label class="form-label">모음 카테고리 <span class="required">*</span></label>
       <input type="hidden" id="mw-collect-kind" value="youtube">
-      <div class="mw-vote-chips" role="radiogroup" aria-label="모음 유형">
+      <div class="mw-vote-chips mw-room-subchips" role="radiogroup" aria-label="모음 카테고리">
         <button type="button" class="mw-vote-chip active" data-collect-kind="youtube" role="radio" aria-checked="true">유튜브</button>
         <button type="button" class="mw-vote-chip" data-collect-kind="image" role="radio" aria-checked="false">웃긴그림</button>
         <button type="button" class="mw-vote-chip" data-collect-kind="link" role="radio" aria-checked="false">링크</button>
@@ -70,30 +63,23 @@ function renderCollectModule(activeKey) {
     <div class="form-group" data-collect-url-box>
       <label class="form-label">링크</label>
       <input id="mw-collect-url" class="form-input" maxlength="300" placeholder="유튜브 쇼츠/영상 링크 또는 이미지/웹 링크">
-      <div class="form-hint">그림은 아래 사진 첨부를 쓰거나 이미지 URL을 입력해도 됩니다.</div>
-    </div>
-    <div class="form-group">
-      <label class="form-label">짧은 설명</label>
-      <input id="mw-collect-caption" class="form-input" maxlength="120" placeholder="예: 출근길에 보면 안 되는 웃긴 쇼츠">
+      <div class="form-hint">웃긴그림은 사진 첨부 또는 이미지 URL 중 하나만 있어도 됩니다.</div>
     </div>`);
 }
 
 function renderVoteModule(activeKey) {
-  const preset = MULTI_PRESETS.vote;
   return `
     <div class="mw-vote-compact" data-module-card="vote" data-option-panel="vote" ${activeKey === 'vote' ? '' : 'style="display:none"'}>
       ${moduleToggleInput('vote', activeKey)}
-      <input type="hidden" id="mw-vote-mode" value="debate">
-      <div class="mw-vote-chips" role="radiogroup" aria-label="투표 형식">
-        <button type="button" class="mw-vote-chip active" data-vote-mode="debate" role="radio" aria-checked="true">찬성/반대</button>
-        <button type="button" class="mw-vote-chip" data-vote-mode="general" role="radio" aria-checked="false">일반 선택지</button>
-        <button type="button" class="mw-vote-chip" data-vote-mode="balance" role="radio" aria-checked="false">밸런스</button>
+      <input type="hidden" id="mw-vote-mode" value="general">
+      <div class="form-group">
+        <label class="form-label">선택 옵션 <span class="required">*</span></label>
+        <div class="multi-option-list" id="mw-vote-options">
+          <input class="form-input mw-vote-option" maxlength="80" placeholder="선택지 1">
+          <input class="form-input mw-vote-option" maxlength="80" placeholder="선택지 2">
+        </div>
+        <button class="btn btn--ghost btn--sm" type="button" id="mw-add-vote-option" style="margin-top:6px">+ 선택지 추가</button>
       </div>
-      <div id="mw-vote-mode-note" class="form-hint" style="margin:6px 0 10px">찬성/반대가 기본으로 들어갑니다. 일반 선택지로 바꾸면 선택지를 직접 추가할 수 있어요.</div>
-      <div class="multi-option-list" id="mw-vote-options">
-        ${preset.voteOptionPlaceholders.map((value) => `<input class="form-input mw-vote-option" maxlength="80" value="${esc(value)}" placeholder="${esc(value)}" readonly>`).join('')}
-      </div>
-      <button class="btn btn--ghost btn--sm" type="button" id="mw-add-vote-option" style="margin-top:6px;display:none">+ 선택지 추가</button>
     </div>`;
 }
 
@@ -104,7 +90,7 @@ function renderDripModule(activeKey) {
 
 function renderQuizModule(activeKey) {
   const preset = MULTI_PRESETS.quiz;
-  return moduleCard('quiz', activeKey, '🧠', '퀴즈방', '주관식 또는 객관식 문제를 올립니다.', `
+  return moduleCard('quiz', activeKey, '🧠', '퀴즈 옵션', '주관식 또는 객관식 문제를 올립니다.', `
     <div class="form-group">
       <label class="form-label">퀴즈 방식 <span class="required">*</span></label>
       <input type="hidden" id="mw-quiz-mode" value="subjective">
@@ -157,6 +143,8 @@ export function renderMultiWriteHTML({ renderKey, presetKey }) {
   const activeKey = MULTI_PRESETS[presetKey] && !MULTI_PRESETS[presetKey].hiddenFromWriter ? presetKey : 'collect';
   const preset = MULTI_PRESETS[activeKey] || MULTI_PRESETS.collect;
   const standardHidden = activeKey === 'drip' ? 'style="display:none"' : '';
+  const contentHidden = activeKey === 'collect' ? 'style="display:none"' : '';
+  const mediaHidden = activeKey === 'drip' ? 'style="display:none"' : '';
 
   return `
     <div class="write-page multi-write-page" data-render-key="${esc(renderKey)}" data-preset-key="${esc(activeKey)}">
@@ -167,23 +155,25 @@ export function renderMultiWriteHTML({ renderKey, presetKey }) {
       <div class="card">
         <div class="card__body--lg">
           ${renderOptionPicker(activeKey)}
-          ${renderOptionPanels(activeKey)}
           ${renderDripLineField(activeKey)}
+          <div data-write-section="collect-panel" ${activeKey === 'collect' ? '' : 'style="display:none"'}>${renderCollectModule(activeKey)}</div>
           <div data-write-section="standard-fields" ${standardHidden}>
             <div class="form-group">
               <label class="form-label">제목 <span class="required">*</span></label>
               <input id="mw-title" class="form-input" maxlength="100" placeholder="${esc(preset.titlePlaceholder)}">
             </div>
-            <div class="form-group">
-              <label class="form-label">내용</label>
+            <div class="form-group" data-write-section="content-field" ${contentHidden}>
+              <label class="form-label">내용 <span class="required">*</span></label>
               <textarea id="mw-desc" class="form-textarea mw-desc-resizable" rows="4" maxlength="2000" placeholder="${esc(preset.descPlaceholder)}"></textarea>
             </div>
           </div>
-          <div class="form-group">
+          <div class="form-group" data-write-section="media-field" ${mediaHidden}>
             <label class="form-label">사진 첨부</label>
             <div id="mw-img-uploader"></div>
-            <div class="form-hint">웃긴 그림 모음은 사진 첨부 또는 이미지 URL 중 하나만 있어도 됩니다.</div>
+            <div class="form-hint">사진은 선택사항입니다. 웃긴그림 모음은 사진 첨부 또는 이미지 URL 중 하나가 필요합니다.</div>
           </div>
+          <div data-write-section="vote-panel" ${activeKey === 'vote' ? '' : 'style="display:none"'}>${renderVoteModule(activeKey)}</div>
+          <div data-write-section="quiz-panel" ${activeKey === 'quiz' ? '' : 'style="display:none"'}>${renderQuizModule(activeKey)}</div>
           <div class="form-group">
             <div class="multi-tag-label-row">
               <label class="form-label" for="mw-tags">태그</label>
