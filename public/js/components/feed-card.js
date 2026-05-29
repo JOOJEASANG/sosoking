@@ -68,6 +68,23 @@ function getTypeMeta(post) {
   return TYPE_META[post.type] || { cat: 'multi', catLabel: '', icon: '📝', label: '일반' };
 }
 
+function displayTitle(post) {
+  const title = plainText(post.title || '').trim();
+  const desc = plainText(post.desc || '').trim();
+  const dripTopic = plainText(post.modules?.drip?.prompt || '').trim();
+  if (post.modules?.drip?.enabled) {
+    const generic = ['오늘의 드립 주제', '오늘의 한줄', '드립방 AI 글'];
+    return (generic.includes(title) ? (dripTopic || desc) : title) || dripTopic || desc || '드립 주제';
+  }
+  return title || desc || '제목 없음';
+}
+
+function displayDesc(post) {
+  if (post.modules?.drip?.enabled) return '';
+  if (post.modules?.quiz?.enabled) return '';
+  return plainText(post.desc || '').slice(0, 220);
+}
+
 function renderModuleChips(post) {
   if (post.type !== 'multi' || !post.modules) return '';
   const labels = [];
@@ -93,8 +110,8 @@ export function renderFeedCard(post) {
   const temp = Math.min(100, Math.round((totalReactions * 2 + commentCount * 3) / 2));
   const tempColor = temp >= 70 ? '#FF4422' : temp >= 40 ? '#FF8800' : temp >= 20 ? '#FFAA00' : '#4F8EF7';
   const firstTag = post.tags?.length ? safeTag(post.tags[0]) : '';
-  const desc = plainText(post.desc || '').slice(0, 220);
-  const title = plainText(post.title || '').slice(0, 120);
+  const desc = displayDesc(post);
+  const title = displayTitle(post).slice(0, 120);
 
   return `
     <article class="card card--hover feed-card feed-card--${meta.cat}" onclick="navigate('/detail/${escAttr(post.id)}')">
@@ -159,7 +176,7 @@ document.addEventListener('click', async event => {
   event.preventDefault();
   event.stopPropagation();
   const id = btn.dataset.feedShare || '';
-  const title = btn.dataset.feedTitle || '소소킹';
+  const title = btn.datasetFeedTitle || btn.dataset.feedTitle || '소소킹';
   const url = `${location.origin}/p/${encodeURIComponent(id)}`;
   try {
     if (navigator.share) await navigator.share({ title, url });
