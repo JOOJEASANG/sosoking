@@ -160,7 +160,7 @@ function setQuizMode(mode) {
   const hidden = document.getElementById('mw-quiz-mode');
   if (hidden) hidden.value = normalized;
   document.querySelectorAll('[data-quiz-mode]').forEach(btn => {
-    const active = btn.dataset.quizMode === normalized;
+    const active = btn.datasetQuizMode === normalized || btn.dataset.quizMode === normalized;
     btn.classList.toggle('active', active);
     btn.setAttribute('aria-checked', active ? 'true' : 'false');
   });
@@ -230,7 +230,8 @@ async function submitMultiPost() {
   const btn = document.getElementById('multi-submit');
   let title = document.getElementById('mw-title')?.value.trim() || '';
   const preset = MULTI_PRESETS[presetKey] || MULTI_PRESETS.collect;
-  const desc = presetKey === 'drip' ? dripTopicValue() : (getBodyHtml() || getBodyText());
+  const bodyValue = getBodyHtml() || getBodyText();
+  const desc = presetKey === 'drip' ? dripTopicValue() : (presetKey === 'vote' ? (bodyValue || title) : bodyValue);
 
   if (presetKey === 'drip') {
     title = '오늘의 드립 주제';
@@ -239,7 +240,7 @@ async function submitMultiPost() {
       return;
     }
   } else if (!title) {
-    toast.error('제목을 입력해주세요.');
+    toast.error(presetKey === 'vote' ? '토론 주제를 입력해주세요.' : '제목을 입력해주세요.');
     return;
   }
 
