@@ -10,15 +10,16 @@ function moduleToggleInput(key, activeKey) {
 
 function renderOptionPicker(activeKey) {
   return `
-    <div class="multi-preset-box multi-preset-box--simple multi-preset-box--top multi-write-option-category">
-      <div class="multi-write-option-category__head">
-        <div class="multi-preset-box__title">방 선택</div>
-      </div>
+    <div class="mw-room-picker">
+      <div class="mw-room-picker__label">어느 방에 올릴까요?</div>
       <input type="hidden" id="mw-selected-preset" value="${esc(activeKey)}">
-      <div class="multi-preset-list multi-preset-list--top multi-preset-list--compact">
+      <div class="mw-room-nav">
         ${WRITER_PRESET_KEYS.map(key => {
           const preset = MULTI_PRESETS[key];
-          return `<button type="button" class="multi-preset-btn multi-preset-btn--compact ${activeKey === key ? 'active' : ''}" data-multi-preset="${key}" aria-pressed="${activeKey === key ? 'true' : 'false'}">${esc(preset.label)}</button>`;
+          return `<button type="button" class="mw-room-btn mw-room-btn--${esc(key)} ${activeKey === key ? 'active' : ''}" data-multi-preset="${key}" aria-pressed="${activeKey === key ? 'true' : 'false'}">
+            <span class="mw-room-btn__icon">${esc(preset.icon)}</span>
+            <span class="mw-room-btn__label">${esc(preset.label)}</span>
+          </button>`;
         }).join('')}
       </div>
     </div>`;

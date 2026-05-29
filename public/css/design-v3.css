@@ -1259,7 +1259,7 @@ h1, h2, h3, h4, h5, h6 {
    27. PC 레이아웃
 ───────────────────────────────────────── */
 @media (min-width: 1024px) {
-  .page-container {
+  .page-container:not(:has(.admin-layout)) {
     padding: 28px 24px 56px !important;
     max-width: 740px !important;
   }
