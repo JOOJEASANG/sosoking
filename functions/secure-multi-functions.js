@@ -167,7 +167,7 @@ function ensureModuleEnabled(post, config) {
 }
 
 function cleanParticipationPayload(kind, payload = {}) {
-  const max = kind === 'drip' ? 80 : 500;
+  const max = kind === 'drip' ? 50 : 500;
   const text = cleanText(payload.text, max);
   if (!text) throw new HttpsError('invalid-argument', '참여 내용을 입력해주세요.');
   const data = { text };
@@ -209,6 +209,20 @@ const checkMultiQuizAnswer = onCall({ region: REGION, timeoutSeconds: 20 }, asyn
   const { ref: postRef, postId: safePostId, post } = await loadMultiPost(postId);
   if (post.modules?.quiz?.enabled !== true) {
     throw new HttpsError('failed-precondition', '퀴즈 게시글이 아닙니다.');
+  }
+  if (post.modules?.quiz?.noAnswer === true) {
+    return {
+      ok: true,
+      correct: false,
+      noAnswer: true,
+      awarded: false,
+      points: 0,
+      explanation: cleanText(post.modules.quiz.explanation || '정답이 없는 퀴즈입니다. 댓글로 자유롭게 이야기해보세요.', 500),
+      correctCount: 0,
+      firstCorrect: null,
+      firstCorrectNow: false,
+      alreadyCorrect: false,
+    };
   }
 
   const secretRef = db.doc(`feeds/${safePostId}/secret/answer`);
@@ -324,32 +338,33 @@ const castMultiVote = onCall({ region: REGION, timeoutSeconds: 20 }, async reque
   let awarded = false;
   const post = await db.runTransaction(async tx => {
     const snap = await tx.get(ref);
-    const award = awardMeta({ uid, action: 'vote_participate', postId: safePostId, onceKey: 'vote' });
-    const awardSnap = await tx.get(award.awardRef);
     if (!snap.exists) throw new HttpsError('not-found', '게시글을 찾을 수 없습니다.');
     const data = snap.data() || {};
-    if (data.hidden === true) throw new HttpsError('failed-precondition', '공개되지 않은 게시글입니다.');
-    const vote = data.modules?.vote || {};
-    if (data.type !== 'multi' || vote.enabled !== true) throw new HttpsError('failed-precondition', '투표 글이 아닙니다.');
-    const options = Array.isArray(vote.options) ? vote.options : [];
-    if (!options[optionIdx]) throw new HttpsError('invalid-argument', '존재하지 않는 선택지입니다.');
-    if ((vote.votedBy || []).includes(uid)) throw new HttpsError('already-exists', '이미 투표했어요');
-
-    const updatedOptions = options.map((option, index) => {
-      const base = typeof option === 'object' && option !== null ? { ...option } : { text: String(option || '') };
-      base.votes = Number(base.votes || 0) + (index === optionIdx ? 1 : 0);
-      return base;
-    });
-    const updatedVote = { ...vote, options: updatedOptions, votedBy: [...(vote.votedBy || []), uid] };
-    if (!awardSnap.exists) {
-      awarded = true;
-      writePointAward(tx, award);
+    if (data.hidden === true || data.type !== 'multi' || data.modules?.vote?.enabled !== true) {
+      throw new HttpsError('failed-precondition', '투표할 수 없는 게시글입니다.');
     }
-    tx.update(ref, {
-      'modules.vote': updatedVote,
-      updatedAt: FieldValue.serverTimestamp(),
-    });
-    return { ...data, id: safePostId, modules: { ...(data.modules || {}), vote: updatedVote } };
+    const vote = data.modules.vote;
+    const options = Array.isArray(vote.options) ? vote.options : [];
+    if (!options[optionIdx]) throw new HttpsError('invalid-argument', '선택지가 올바르지 않습니다.');
+    const votedBy = Array.isArray(vote.votedBy) ? vote.votedBy : [];
+    if (votedBy.includes(uid)) throw new HttpsError('already-exists', '이미 투표한 게시글입니다.');
+
+    const nextOptions = options.map((option, index) => index === optionIdx
+      ? { ...option, votes: Number(option.votes || 0) + 1 }
+      : option);
+    const nextVote = { ...vote, options: nextOptions, votedBy: [...votedBy, uid], updatedAt: FieldValue.serverTimestamp() };
+    const nextPost = { ...data, id: safePostId, modules: { ...(data.modules || {}), vote: nextVote } };
+    tx.set(ref, { modules: { vote: nextVote }, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+
+    const award = awardMeta({ uid, action: 'vote_participate', postId: safePostId, kind: 'vote', onceKey: 'vote' });
+    if (award) {
+      const awardSnap = await tx.get(award.awardRef);
+      if (!awardSnap.exists) {
+        awarded = true;
+        writePointAward(tx, award);
+      }
+    }
+    return nextPost;
   });
 
   return { ok: true, post, awarded, points: awarded ? POINT_RULES.vote_participate.points : 0 };
@@ -359,32 +374,29 @@ const addMultiParticipation = onCall({ region: REGION, timeoutSeconds: 20 }, asy
   const uid = requireUser(request);
   const { postId, kind, payload } = request.data || {};
   const config = getKindConfig(kind);
-  const { postId: safePostId, ref, post } = await loadMultiPost(postId);
+  const { ref: postRef, postId: safePostId, post } = await loadMultiPost(postId);
   ensureModuleEnabled(post, config);
+  const user = await getAuthorInfo(uid, request.auth?.token || {});
   const data = cleanParticipationPayload(config.kind, payload || {});
-  const author = await getAuthorInfo(uid, request.auth?.token || {});
-  const itemRef = ref.collection(config.collection).doc();
+  const itemRef = postRef.collection(config.collection).doc();
   let awarded = false;
 
   await db.runTransaction(async tx => {
+    tx.set(itemRef, {
+      ...data,
+      ...user,
+      reactions: {},
+      replyCount: 0,
+      createdAt: FieldValue.serverTimestamp(),
+      createdAtMs: Date.now(),
+    });
+    tx.set(postRef, { [`modules.${config.module}.count`]: FieldValue.increment(1), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
     const award = awardMeta({ uid, action: 'participation_create', postId: safePostId, kind: config.kind, itemId: itemRef.id });
     const awardSnap = await tx.get(award.awardRef);
     if (!awardSnap.exists) {
       awarded = true;
       writePointAward(tx, award);
     }
-    tx.set(itemRef, {
-      ...data,
-      ...author,
-      reactions: {},
-      replyCount: 0,
-      createdAt: FieldValue.serverTimestamp(),
-      createdAtMs: Date.now(),
-    });
-    tx.update(ref, {
-      commentCount: FieldValue.increment(1),
-      updatedAt: FieldValue.serverTimestamp(),
-    });
   });
 
   return { ok: true, itemId: itemRef.id, awarded, points: awarded ? POINT_RULES.participation_create.points : 0 };
@@ -394,121 +406,99 @@ const addMultiItemReply = onCall({ region: REGION, timeoutSeconds: 20 }, async r
   const uid = requireUser(request);
   const { postId, kind, itemId, text } = request.data || {};
   const config = getKindConfig(kind);
-  const { postId: safePostId, ref } = await loadMultiPost(postId);
+  const { ref: postRef, postId: safePostId, post } = await loadMultiPost(postId);
+  ensureModuleEnabled(post, config);
   const safeItemId = cleanId(itemId);
-  const cleanReply = cleanText(text, 300);
-  if (!safeItemId || !cleanReply) throw new HttpsError('invalid-argument', '답글 정보를 확인해주세요.');
-  const itemRef = ref.collection(config.collection).doc(safeItemId);
+  const replyText = cleanText(text, 500);
+  if (!safeItemId || !replyText) throw new HttpsError('invalid-argument', '답글 정보가 올바르지 않습니다.');
+  const itemRef = postRef.collection(config.collection).doc(safeItemId);
+  const itemSnap = await itemRef.get();
+  if (!itemSnap.exists) throw new HttpsError('not-found', '참여글을 찾을 수 없습니다.');
+  const item = itemSnap.data() || {};
+  const user = await getAuthorInfo(uid, request.auth?.token || {});
   const replyRef = itemRef.collection('replies').doc();
-  const author = await getAuthorInfo(uid, request.auth?.token || {});
   let awarded = false;
 
   await db.runTransaction(async tx => {
-    const itemSnap = await tx.get(itemRef);
+    tx.set(replyRef, {
+      text: replyText,
+      ...user,
+      createdAt: FieldValue.serverTimestamp(),
+      createdAtMs: Date.now(),
+    });
+    tx.set(itemRef, { replyCount: FieldValue.increment(1), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
     const award = awardMeta({ uid, action: 'reply_create', postId: safePostId, kind: config.kind, itemId: safeItemId, onceKey: replyRef.id });
     const awardSnap = await tx.get(award.awardRef);
-    if (!itemSnap.exists) throw new HttpsError('not-found', '참여글을 찾을 수 없습니다.');
-    const item = itemSnap.data() || {};
     if (!awardSnap.exists) {
       awarded = true;
       writePointAward(tx, award);
     }
-    tx.set(replyRef, {
-      text: cleanReply,
-      ...author,
-      createdAt: FieldValue.serverTimestamp(),
-      createdAtMs: Date.now(),
-    });
-    tx.update(itemRef, { replyCount: FieldValue.increment(1), updatedAt: FieldValue.serverTimestamp() });
     if (item.authorId && item.authorId !== uid) {
       writeNotification(tx, item.authorId, {
         type: 'multi_reply',
         title: '내 참여글에 답글이 달렸어요',
-        body: `${author.authorName}님이 답글을 남겼어요.`,
+        body: `${user.authorName}: ${replyText.slice(0, 50)}`,
         postId: safePostId,
         kind: config.kind,
         itemId: safeItemId,
         actorId: uid,
-        actorName: author.authorName,
-        points: POINT_RULES.reply_create.points,
+        actorName: user.authorName,
+        points: awarded ? POINT_RULES.reply_create.points : 0,
       });
     }
   });
 
-  return { ok: true, replyId: replyRef.id, awarded, points: awarded ? POINT_RULES.reply_create.points : 0 };
+  return { ok: true, awarded, points: awarded ? POINT_RULES.reply_create.points : 0 };
 });
 
 const reactMultiItem = onCall({ region: REGION, timeoutSeconds: 20 }, async request => {
   const uid = requireUser(request);
   const { postId, kind, itemId, reaction } = request.data || {};
   const config = getKindConfig(kind);
-  const safePostId = cleanId(postId);
+  const { postId: safePostId, post } = await loadMultiPost(postId);
+  ensureModuleEnabled(post, config);
   const safeItemId = cleanId(itemId);
-  const key = ['like', 'funny', 'fire'].includes(String(reaction)) ? String(reaction) : '';
-  if (!safePostId || !safeItemId || !key) throw new HttpsError('invalid-argument', '반응 정보를 확인해주세요.');
+  const reactionKey = ['like', 'funny', 'fire'].includes(reaction) ? reaction : 'like';
   const itemRef = db.doc(`feeds/${safePostId}/${config.collection}/${safeItemId}`);
-  const onceKey = `react_${key}_${uid}`;
-  const reactorMarkerRef = markerRef(uid, safePostId, config.kind, safeItemId, onceKey);
-  const actor = await getAuthorInfo(uid, request.auth?.token || {});
+  const itemSnap = await itemRef.get();
+  if (!itemSnap.exists) throw new HttpsError('not-found', '참여글을 찾을 수 없습니다.');
+  const item = itemSnap.data() || {};
+  if (item.authorId === uid) throw new HttpsError('failed-precondition', '본인 글에는 반응할 수 없습니다.');
+  const markRef = markerRef(uid, safePostId, config.kind, safeItemId, reactionKey);
+  const user = await getAuthorInfo(uid, request.auth?.token || {});
   let reactionAdded = false;
-  let receiverAwarded = false;
+  let awarded = false;
 
   await db.runTransaction(async tx => {
-    const itemSnap = await tx.get(itemRef);
-    const markerSnap = await tx.get(reactorMarkerRef);
-    if (!itemSnap.exists) throw new HttpsError('not-found', '참여글을 찾을 수 없습니다.');
-    if (markerSnap.exists) return;
-
-    const item = itemSnap.data() || {};
-    let receiverAward = null;
-    let receiverAwardSnap = null;
-    if (item.authorId && item.authorId !== uid) {
-      receiverAward = awardMeta({
-        uid: item.authorId,
-        action: 'reaction_received',
-        postId: safePostId,
-        kind: config.kind,
-        itemId: safeItemId,
-        onceKey,
-      });
-      receiverAwardSnap = await tx.get(receiverAward.awardRef);
-    }
-
+    const markSnap = await tx.get(markRef);
+    if (markSnap.exists) return;
     reactionAdded = true;
-    tx.set(reactorMarkerRef, {
-      uid,
-      action: 'reaction_marker',
-      points: 0,
-      postId: safePostId,
-      kind: config.kind,
-      itemId: safeItemId,
-      onceKey,
-      createdAt: FieldValue.serverTimestamp(),
-      createdAtMs: Date.now(),
-    });
-    tx.update(itemRef, {
-      [`reactions.${key}`]: FieldValue.increment(1),
-      updatedAt: FieldValue.serverTimestamp(),
-    });
-
-    if (receiverAward && !receiverAwardSnap.exists) {
-      receiverAwarded = true;
-      writePointAward(tx, receiverAward);
-      writeNotification(tx, item.authorId, {
-        type: 'multi_reaction',
-        title: '내 참여글에 반응이 달렸어요',
-        body: `${actor.authorName}님이 내 참여글에 반응했어요. +${POINT_RULES.reaction_received.points}P`,
-        postId: safePostId,
-        kind: config.kind,
-        itemId: safeItemId,
-        actorId: uid,
-        actorName: actor.authorName,
-        points: POINT_RULES.reaction_received.points,
-      });
+    tx.set(markRef, { uid, postId: safePostId, kind: config.kind, itemId: safeItemId, reaction: reactionKey, createdAt: FieldValue.serverTimestamp(), createdAtMs: Date.now() });
+    tx.set(itemRef, { [`reactions.${reactionKey}`]: FieldValue.increment(1), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+    if (item.authorId) {
+      const award = awardMeta({ uid: item.authorId, action: 'reaction_received', postId: safePostId, kind: config.kind, itemId: safeItemId, onceKey: `${uid}_${reactionKey}` });
+      const awardSnap = await tx.get(award.awardRef);
+      if (!awardSnap.exists) {
+        awarded = true;
+        writePointAward(tx, award);
+      }
+      if (item.authorId !== uid) {
+        writeNotification(tx, item.authorId, {
+          type: 'multi_reaction',
+          title: '내 참여글에 반응이 달렸어요',
+          body: `${user.authorName}님이 반응을 남겼어요`,
+          postId: safePostId,
+          kind: config.kind,
+          itemId: safeItemId,
+          actorId: uid,
+          actorName: user.authorName,
+          points: awarded ? POINT_RULES.reaction_received.points : 0,
+        });
+      }
     }
   });
 
-  return { ok: true, reactionAdded, receiverAwarded, points: receiverAwarded ? POINT_RULES.reaction_received.points : 0 };
+  return { ok: true, reactionAdded, awarded, points: awarded ? POINT_RULES.reaction_received.points : 0 };
 });
 
 module.exports = {
