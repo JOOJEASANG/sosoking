@@ -12,13 +12,23 @@ function authorPayload() {
 }
 
 export async function submitDetailComment(postId, data = {}) {
-  if (!(await ensureAnonymousActor('로그인 후 참여해주세요'))) return null;
+  if (!(await ensureAnonymousActor('댓글 등록에 실패했어요'))) return null;
   const text = String(data.text || '').trim();
   if (!text) throw new Error('내용을 입력해주세요');
 
+  // 비회원이면 입력한 이름 사용, 회원이면 닉네임 사용
+  const isAnonymousUser = auth.currentUser?.isAnonymous;
+  const guestName = String(data.guestName || '').trim().slice(0, 12);
+  const authorName = isAnonymousUser
+    ? (guestName || '익명')
+    : (appState.nickname || auth.currentUser?.displayName || '익명');
+
   const payload = {
     text,
-    ...authorPayload(),
+    authorId: auth.currentUser.uid,
+    authorName,
+    authorPhoto: isAnonymousUser ? '' : (auth.currentUser?.photoURL || ''),
+    isGuest: isAnonymousUser || false,
     reactions: {},
     reactedWith: {},
     createdAt: serverTimestamp(),
@@ -31,9 +41,34 @@ export async function submitDetailComment(postId, data = {}) {
   return { id: ref.id, ...payload, createdAt: new Date() };
 }
 
-export async function submitCbattleComment(postId, text, side) {
+export async function submitCbattleComment(postId, text, side, guestName = '') {
   if (!side) throw new Error('A팀 또는 B팀을 선택해주세요');
-  return submitDetailComment(postId, { text, side });
+  return submitDetailComment(postId, { text, side, guestName });
+}
+
+export async function submitAcrosticEntry(postId, keyword, lines) {
+  if (!(await ensureAnonymousActor('로그인 후 참여해주세요'))) return null;
+  const chars = [...String(keyword || '')];
+  const values = Array.isArray(lines) ? lines.map(v => String(v || '').trim()) : [];
+  if (!chars.length) throw new Error('제시어를 찾을 수 없어요');
+  if (values.length !== chars.length || values.some(v => !v)) throw new Error('모든 줄을 입력해주세요');
+
+  const lineObjects = chars.map((char, index) => ({ char, line: values[index] }));
+  const text = lineObjects.map(item => `${item.char}: ${item.line}`).join('\n');
+
+  const payload = {
+    text,
+    lines: lineObjects,
+    ...authorPayload(),
+    reactions: {},
+    reactedWith: {},
+    replyCount: 0,
+    createdAt: serverTimestamp(),
+  };
+
+  const ref = await addDoc(collection(db, 'feeds', postId, 'acrostics'), payload);
+  await updateDoc(doc(db, 'feeds', postId), { acrosticCount: increment(1) }).catch(() => {});
+  return { id: ref.id, ...payload, createdAt: new Date() };
 }
 
 export function getSelectedCbattleSide(root = document) {
@@ -50,73 +85,4 @@ export function bindCbattleSideButtons(root = document) {
       btn.classList.add('active');
     });
   });
-}
-
-/**
- * 퀴즈 제출 후 결과 공유 카드를 모달로 표시
- * @param {{ isCorrect: boolean, answer: string, postId: string, postTitle?: string, stats?: { total: number, correctRate: number } }} opts
- */
-export function showQuizResultCard({ isCorrect, answer, postId, postTitle = '', stats = null }) {
-  const MODAL_ID = 'quiz-result-modal-root';
-  if (document.getElementById(MODAL_ID)) return; // 중복 방지
-
-  const emoji   = isCorrect ? '🎉' : '😅';
-  const verdict = isCorrect ? '정답!' : '아깝다!';
-  const modClass = isCorrect ? 'quiz-result-card--correct' : 'quiz-result-card--wrong';
-  const headerText = isCorrect ? '✅ 정답입니다' : '❌ 오답입니다';
-
-  const statsHtml = stats
-    ? `<p class="quiz-result-card__stats">참여자 <strong>${stats.total.toLocaleString()}명</strong> 중 <strong>${stats.correctRate}%</strong> 정답</p>`
-    : '';
-
-  const shareUrl = `${location.origin}/p/${postId}`;
-
-  const html = `
-    <div class="quiz-result-modal" id="${MODAL_ID}" role="dialog" aria-modal="true" aria-label="퀴즈 결과">
-      <div class="quiz-result-card ${modClass}">
-        <div class="quiz-result-card__header">${headerText}</div>
-        <div class="quiz-result-card__emoji" aria-hidden="true">${emoji}</div>
-        <p class="quiz-result-card__verdict">${verdict}</p>
-        <p class="quiz-result-card__answer">정답: <strong>${answer.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</strong></p>
-        ${statsHtml}
-        <button class="quiz-result-card__share-btn" id="qrc-share-btn">🔗 공유하기</button>
-        <button class="quiz-result-card__close" id="qrc-close-btn">닫기</button>
-      </div>
-    </div>`;
-
-  document.body.insertAdjacentHTML('beforeend', html);
-
-  const modal = document.getElementById(MODAL_ID);
-
-  function closeModal() {
-    modal.remove();
-  }
-
-  // 닫기 버튼
-  modal.querySelector('#qrc-close-btn').addEventListener('click', closeModal);
-
-  // 오버레이 클릭으로 닫기
-  modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
-
-  // 공유 버튼
-  modal.querySelector('#qrc-share-btn').addEventListener('click', async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: postTitle || '퀴즈', url: shareUrl });
-      } catch (_) { /* 사용자 취소 등 무시 */ }
-    } else {
-      try {
-        await navigator.clipboard.writeText(shareUrl);
-        const btn = modal.querySelector('#qrc-share-btn');
-        btn.textContent = '✅ 링크 복사됨!';
-        setTimeout(() => { btn.textContent = '🔗 공유하기'; }, 2000);
-      } catch (_) {
-        alert(`링크를 복사해주세요:\n${shareUrl}`);
-      }
-    }
-  });
-
-  // 5초 후 자동 닫힘
-  const autoClose = setTimeout(closeModal, 5000);
-  modal.querySelector('#qrc-close-btn').addEventListener('click', () => clearTimeout(autoClose), { once: true });
 }

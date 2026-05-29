@@ -150,3 +150,14 @@
     margin-top: 0 !important;
   }
 }
+
+/* 태그 입력란 + 자동생성 버튼 행 */
+.mw-tags-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mw-tags-row .form-input {
+  flex: 1;
+  min-width: 0;
+}

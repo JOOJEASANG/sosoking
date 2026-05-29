@@ -71,8 +71,76 @@ export function renderCbattleComment(c) {
     </div>`;
 }
 
+export function renderRelayStory(startSentence, comments) {
+  if (!startSentence && !comments.length) return '';
+  return `
+    <div class="relay-story">
+      ${startSentence ? `
+        <div class="relay-story__segment">
+          <div class="relay-story__num">시작</div>
+          <div class="relay-story__text">${escHtml(startSentence)}</div>
+        </div>` : ''}
+      ${comments.map((c, i) => `
+        <div class="relay-story__segment">
+          <div class="relay-story__num">${i + 1}</div>
+          <div class="relay-story__body">
+            <div class="relay-story__text">${escHtml(c.text || '').replace(/\n/g, '<br>')}</div>
+            <div class="relay-story__author">${escHtml(c.authorName || '익명')}</div>
+          </div>
+        </div>`).join('')}
+    </div>`;
+}
+
+export function renderCharBoxArea(count) {
+  return `<div class="char-boxes-wrap" id="char-boxes-participate" data-count="${count}">
+    ${Array.from({ length: count }, (_, i) => `<input class="char-box" data-idx="${i}" maxlength="2" autocomplete="off" inputmode="text">`).join('')}
+  </div>`;
+}
+
+export function renderCharCommentSection(post, comments) {
+  const loggedIn = !!auth.currentUser;
+  const isNaming = post.type === 'naming';
+  const isFreeNaming = isNaming && (post.charCount === 0);
+  const count = isNaming ? (post.charCount || 3) : ([...(post.initials || '')].length || 3);
+  const title = isNaming ? '✏️ 작명 참여' : '🔤 초성 참여';
+  const emptyMsg = isNaming ? '첫 번째로 작명해보세요!' : '첫 번째로 참여해보세요!';
+  const participateInput = isFreeNaming
+    ? `<input id="free-naming-input" class="form-input" placeholder="자유롭게 이름을 지어봐요!" maxlength="20" autocomplete="off" style="flex:1">`
+    : renderCharBoxArea(count);
+
+  return `
+    <div class="comment-section">
+      <div class="comment-section__title">${title} (${comments.length}개)</div>
+      ${loggedIn
+        ? `<div class="char-participate-box" id="char-participate">${participateInput}<button class="btn btn--primary btn--sm" id="btn-char-submit">등록</button></div>`
+        : `<div style="text-align:center;padding:12px;font-size:13px;color:var(--color-text-muted)"><a href="#/login" style="color:var(--color-primary)">로그인</a> 후 참여 가능</div>`}
+      <div id="comment-list">
+        ${comments.length
+          ? markBestComment(comments).map(c => renderLikeableComment(c)).join('')
+          : `<div style="text-align:center;padding:24px;font-size:13px;color:var(--color-text-muted)">${emptyMsg}</div>`}
+      </div>
+    </div>`;
+}
+
 export function renderCommentSection(post, comments) {
   const loggedIn = !!auth.currentUser;
+
+  if (post.type === 'naming' || post.type === 'initial_game') return renderCharCommentSection(post, comments);
+
+  if (post.type === 'relay') {
+    return `
+      <div class="comment-section">
+        <div class="comment-section__title">📖 릴레이 이야기</div>
+        ${renderRelayStory(post.startSentence, comments)}
+        <div class="comment-write-box" id="comment-write">
+          <textarea id="comment-input" placeholder="${loggedIn ? '다음 이야기를 이어주세요 (최대 150자)' : '로그인 후 참여 가능'}" maxlength="150"></textarea>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+            <span id="relay-char-count" style="font-size:12px;color:var(--color-text-muted)">0 / 150</span>
+            <button class="btn btn--primary btn--sm" id="btn-comment">이어쓰기</button>
+          </div>
+        </div>
+      </div>`;
+  }
 
   if (post.type === 'cbattle') return renderCbattleSection(comments, loggedIn);
   if (post.type === 'drip') return renderDripSection(comments, loggedIn);
@@ -81,7 +149,8 @@ export function renderCommentSection(post, comments) {
     <div class="comment-section">
       <div class="comment-section__title">댓글 ${comments.length}</div>
       <div class="comment-write-box" id="comment-write">
-        <textarea id="comment-input" placeholder="${loggedIn ? '댓글을 입력하세요' : '로그인 후 댓글 작성 가능'}"></textarea>
+        ${!loggedIn ? '<input id="comment-guest-name" class="form-input" placeholder="닉네임 (선택, 최대 12자)" maxlength="12" style="margin-bottom:6px">' : ''}
+        <textarea id="comment-input" placeholder="댓글을 입력하세요"></textarea>
         <button class="btn btn--primary btn--sm" style="align-self:flex-end" id="btn-comment">등록</button>
       </div>
       <div id="comment-list">
@@ -103,7 +172,8 @@ function renderCbattleSection(comments, loggedIn) {
         <button class="cbattle-side-btn cbattle-side-btn--b" data-side="B">🔵 B팀</button>
       </div>
       <div class="comment-write-box" id="comment-write">
-        <textarea id="comment-input" placeholder="${loggedIn ? '팀을 선택 후 참여해보세요' : '로그인 후 참여 가능'}"></textarea>
+        ${!loggedIn ? '<input id="comment-guest-name" class="form-input" placeholder="닉네임 (선택, 최대 12자)" maxlength="12" style="margin-bottom:6px">' : ''}
+        <textarea id="comment-input" placeholder="팀을 선택 후 참여해보세요"></textarea>
         <button class="btn btn--primary btn--sm" style="align-self:flex-end" id="btn-comment">참여하기</button>
       </div>
       <div class="cbattle-columns">
@@ -114,17 +184,19 @@ function renderCbattleSection(comments, loggedIn) {
 }
 
 function renderDripSection(comments, loggedIn) {
+  const cfg = { title: '🎤 드립 올리기', placeholder: '한 줄 드립을 올려보세요!', btn: '올리기', empty: '첫 번째로 드립을 올려보세요!' };
   return `
     <div class="comment-section">
-      <div class="comment-section__title">🎤 드립 올리기 (${comments.length}개)</div>
+      <div class="comment-section__title">${cfg.title} (${comments.length}개)</div>
       <div class="comment-write-box" id="comment-write">
-        <textarea id="comment-input" placeholder="${loggedIn ? '한 줄 드립을 올려보세요!' : '로그인 후 참여 가능'}"></textarea>
-        <button class="btn btn--primary btn--sm" style="align-self:flex-end" id="btn-comment">올리기</button>
+        ${!loggedIn ? '<input id="comment-guest-name" class="form-input" placeholder="닉네임 (선택, 최대 12자)" maxlength="12" style="margin-bottom:6px">' : ''}
+        <textarea id="comment-input" placeholder="${cfg.placeholder}"></textarea>
+        <button class="btn btn--primary btn--sm" style="align-self:flex-end" id="btn-comment">${cfg.btn}</button>
       </div>
       <div id="comment-list">
         ${comments.length
           ? comments.map(c => renderLikeableComment(c)).join('')
-          : '<div style="text-align:center;padding:24px;font-size:13px;color:var(--color-text-muted)">첫 번째로 드립을 올려보세요!</div>'}
+          : `<div style="text-align:center;padding:24px;font-size:13px;color:var(--color-text-muted)">${cfg.empty}</div>`}
       </div>
     </div>`;
 }
@@ -139,13 +211,35 @@ export function renderCommentListHTML(post, comments) {
     };
   }
 
-  if (post.type === 'drip') {
+  if (post.type === 'naming' || post.type === 'initial_game' || post.type === 'drip') {
     return comments.length
-      ? comments.map(c => renderLikeableComment(c)).join('')
-      : '<div style="text-align:center;padding:24px;font-size:13px;color:var(--color-text-muted)">첫 번째로 드립을 올려보세요!</div>';
+      ? markBestComment(comments).map(c => renderLikeableComment(c)).join('')
+      : '<div style="text-align:center;padding:24px;font-size:13px;color:var(--color-text-muted)">첫 번째로 참여해보세요!</div>';
   }
 
   return comments.length
     ? markBestComment(comments).map(c => renderComment(c)).join('')
     : '<div style="text-align:center;padding:24px;font-size:13px;color:var(--color-text-muted)">첫 댓글을 남겨보세요!</div>';
+}
+
+export function refreshCommentListUI(post, comments) {
+  if (post.type === 'relay') {
+    const storyEl = document.querySelector('.relay-story');
+    const newHtml = renderRelayStory(post.startSentence, comments);
+    if (storyEl) storyEl.outerHTML = newHtml;
+    else document.querySelector('.comment-section .comment-section__title')?.insertAdjacentHTML('afterend', newHtml);
+    return;
+  }
+
+  if (post.type === 'cbattle') {
+    const html = renderCommentListHTML(post, comments);
+    const aCol = document.querySelector('.cbattle-col--a');
+    const bCol = document.querySelector('.cbattle-col--b');
+    if (aCol) aCol.innerHTML = html.a;
+    if (bCol) bCol.innerHTML = html.b;
+    return;
+  }
+
+  const listEl = document.getElementById('comment-list');
+  if (listEl) listEl.innerHTML = renderCommentListHTML(post, comments);
 }

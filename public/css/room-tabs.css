@@ -225,3 +225,49 @@
     max-width: calc(100vw - 36px);
   }
 }
+
+/* ── 모음방 유튜브/그림 토글 ── */
+.collect-kind-toggle {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.collect-kind-btn {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1.5px solid var(--color-border-light);
+  background: var(--color-surface);
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background 130ms ease, border-color 130ms ease, color 130ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.collect-kind-btn:hover {
+  background: var(--color-primary-bg);
+  border-color: var(--color-primary-border);
+  color: var(--color-primary);
+}
+
+.collect-kind-btn.active {
+  background: var(--color-primary-bg);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+[data-theme="dark"] .collect-kind-btn {
+  border-color: rgba(255,255,255,0.08);
+  background: var(--color-surface-2);
+}
+
+[data-theme="dark"] .collect-kind-btn.active {
+  background: rgba(255,75,43,0.12);
+  border-color: rgba(255,75,43,0.40);
+}

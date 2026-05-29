@@ -27,11 +27,13 @@ export async function handleCommentSubmit(event) {
     return true;
   }
 
+  const guestName = document.getElementById('comment-guest-name')?.value.trim() || '';
+
   btn._detailPending = true;
   try {
     const post = await getCurrentPostSummary();
-    if (post?.type === 'cbattle') await submitCbattleComment(currentPostId(), text, getSelectedCbattleSide());
-    else await submitDetailComment(currentPostId(), { text });
+    if (post?.type === 'cbattle') await submitCbattleComment(currentPostId(), text, getSelectedCbattleSide(), guestName);
+    else await submitDetailComment(currentPostId(), { text, guestName });
     if (input) input.value = '';
     toast.success('등록됐어요! 🎉');
     window.dispatchEvent(new Event('hashchange'));

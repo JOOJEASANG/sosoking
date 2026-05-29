@@ -24,11 +24,12 @@ const ROOMS = [
   { key: 'drip',    icon: '🤣', label: '드립방', title: '드립방', desc: '제목 없이 오늘의 한줄만 모아보는 공간입니다.', write: 'drip' },
 ];
 
-let currentType   = '';
-let currentSearch = '';
-let currentSort   = 'latest';
-let currentPage   = 1;
-let isLoading     = false;
+let currentType        = '';
+let currentSearch      = '';
+let currentSort        = 'latest';
+let currentPage        = 1;
+let isLoading          = false;
+let currentCollectKind = ''; // '' = 전체, 'youtube', 'image', 'link'
 
 let cursorStack   = [];
 let cursorTotal   = 0;
@@ -51,11 +52,18 @@ function renderRoomTabs() {
 
 function renderRoomHead() {
   const room = currentRoom();
+  const collectToggle = currentType === 'collect' ? `
+    <div class="collect-kind-toggle" role="group" aria-label="모음방 콘텐츠 종류">
+      <button type="button" class="collect-kind-btn ${currentCollectKind === '' ? 'active' : ''}" data-collect-kind="">전체</button>
+      <button type="button" class="collect-kind-btn ${currentCollectKind === 'youtube' ? 'active' : ''}" data-collect-kind="youtube">📺 유튜브</button>
+      <button type="button" class="collect-kind-btn ${currentCollectKind === 'image' ? 'active' : ''}" data-collect-kind="image">🖼️ 그림</button>
+    </div>` : '';
   return `
     <div class="soso-room-head">
       <div class="soso-room-head__label">${room.icon} ${room.label}</div>
       <div class="soso-room-head__title">${room.title}</div>
       <div class="soso-room-head__desc">${room.desc}</div>
+      ${collectToggle}
       <div class="soso-room-head__action">
         <button class="btn btn--primary btn--sm" type="button" id="room-write-btn">${room.label === '전체' ? '모음 올리기' : `${room.label} 올리기`}</button>
       </div>
@@ -75,6 +83,8 @@ export async function renderFeed() {
   cursorStack = [];
   cursorTotal = 0;
   cachedPosts = [];
+
+  if (params.type !== 'collect') currentCollectKind = '';
 
   el.innerHTML = `
     <div class="soso-feed-page layout-main layout-main--full feed-page-clean">
@@ -102,8 +112,20 @@ export async function renderFeed() {
 function bindFeedEvents() {
   bindSearchEvents();
   bindTypeFilterEvents();
+  bindCollectKindEvents();
   bindRoomWriteEvent();
   bindFeedSlideButtons();
+}
+
+function bindCollectKindEvents() {
+  document.querySelectorAll('[data-collect-kind]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentCollectKind = btn.dataset.collectKind;
+      currentPage = 1;
+      document.querySelectorAll('[data-collect-kind]').forEach(b => b.classList.toggle('active', b.dataset.collectKind === currentCollectKind));
+      refreshFeed();
+    });
+  });
 }
 
 function bindRoomWriteEvent() {
@@ -281,6 +303,10 @@ function renderCurrentPage() {
   const summaryEl = document.getElementById('feed-summary');
   if (!listEl) return;
 
+  const displayPosts = currentCollectKind && currentType === 'collect'
+    ? cachedPosts.filter(p => (p.modules?.collect?.kind || 'youtube') === currentCollectKind)
+    : cachedPosts;
+
   if (useCursorMode()) {
     if (summaryEl) {
       summaryEl.innerHTML = renderFeedSummary({
@@ -288,18 +314,18 @@ function renderCurrentPage() {
         search: currentSearch, type: currentType, sort: currentSort,
       });
     }
-    listEl.classList.toggle('is-empty', !cachedPosts.length);
-    listEl.innerHTML = cachedPosts.length ? cachedPosts.map(p => renderFeedCard(p)).join('') : renderFeedEmptyState({ search: currentSearch });
+    listEl.classList.toggle('is-empty', !displayPosts.length);
+    listEl.innerHTML = displayPosts.length ? displayPosts.map(p => renderFeedCard(p)).join('') : renderFeedEmptyState({ search: currentSearch });
     renderCursorPagination();
   } else {
-    const totalPages = Math.max(1, Math.ceil(cachedPosts.length / PAGE_SIZE));
+    const totalPages = Math.max(1, Math.ceil(displayPosts.length / PAGE_SIZE));
     currentPage = Math.min(Math.max(1, currentPage), totalPages);
     const start = (currentPage - 1) * PAGE_SIZE;
-    const pagePosts = cachedPosts.slice(start, start + PAGE_SIZE);
+    const pagePosts = displayPosts.slice(start, start + PAGE_SIZE);
 
     if (summaryEl) {
       summaryEl.innerHTML = renderFeedSummary({
-        total: cachedPosts.length, page: currentPage, totalPages,
+        total: displayPosts.length, page: currentPage, totalPages,
         search: currentSearch, type: currentType, sort: currentSort,
       });
     }

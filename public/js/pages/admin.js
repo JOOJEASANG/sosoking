@@ -124,11 +124,10 @@ async function renderDashboard(el) {
   const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
 
   const TYPE_META = [
-    { type: 'vote',    icon: '🗳️', label: '골라킹',    cat: 'golra' },
-    { type: 'naming',  icon: '😜', label: '미친작명소', cat: 'usgyo' },
-    { type: 'drip',    icon: '💧', label: '드립',       cat: 'usgyo' },
-    { type: 'quiz',    icon: '🧠', label: '퀴즈',       cat: 'golra' },
-    { type: 'general', icon: '📝', label: '일반',       cat: 'malhe' },
+    { feedType: 'collect', icon: '📌', label: '모음방', cat: 'primary' },
+    { feedType: 'vote',    icon: '🗳️', label: '토론방', cat: 'golra' },
+    { feedType: 'quiz',    icon: '🧠', label: '퀴즈방', cat: 'malhe' },
+    { feedType: 'drip',    icon: '🤣', label: '드립방', cat: 'usgyo' },
   ];
 
   const [totalSnap, todaySnap, recentSnap, reportSnap, ...typeSnaps] = await Promise.all([
@@ -136,7 +135,7 @@ async function renderDashboard(el) {
     getDocs(query(collection(db, 'feeds'), where('createdAt', '>=', Timestamp.fromDate(todayStart)), limit(99))).catch(() => null),
     getDocs(query(collection(db, 'feeds'), orderBy('createdAt', 'desc'), limit(5))).catch(() => null),
     getCountFromServer(query(collection(db, 'reports'), where('resolved', '==', false))).catch(() => null),
-    ...TYPE_META.map(t => getCountFromServer(query(collection(db, 'feeds'), where('type', '==', t.type))).catch(() => null)),
+    ...TYPE_META.map(t => getCountFromServer(query(collection(db, 'feeds'), where('feedType', '==', t.feedType))).catch(() => null)),
   ]);
 
   const total   = totalSnap?.data?.().count ?? 0;
@@ -204,7 +203,7 @@ async function renderDashboard(el) {
 /* ── 게시물 관리 ── */
 async function renderPosts(el, searchQ = '', catFilter = '') {
   let constraints = [orderBy('createdAt', 'desc'), limit(50)];
-  if (catFilter) constraints.unshift(where('cat', '==', catFilter));
+  if (catFilter) constraints.unshift(where('feedType', '==', catFilter));
 
   const [snap, hiddenSnap, totalSnap] = await Promise.all([
     getDocs(query(collection(db, 'feeds'), ...constraints)).catch(() => null),
@@ -242,9 +241,10 @@ async function renderPosts(el, searchQ = '', catFilter = '') {
         <button class="btn btn--primary btn--sm" id="btn-post-search">검색</button>
         ${[
           { key: '', label: '전체' },
-          { key: 'golra', label: '골라봐' },
-          { key: 'usgyo', label: '웃겨봐' },
-          { key: 'malhe', label: '도전봐' },
+          { key: 'collect', label: '📌 모음방', field: 'feedType' },
+          { key: 'vote',    label: '🗳️ 토론방', field: 'feedType' },
+          { key: 'quiz',    label: '🧠 퀴즈방', field: 'feedType' },
+          { key: 'drip',    label: '🤣 드립방', field: 'feedType' },
         ].map(c => `<button class="filter-chip ${catFilter === c.key ? 'active' : ''}" data-post-cat="${c.key}">${c.label}</button>`).join('')}
       </div>
       <div class="card" style="overflow:auto">
@@ -252,22 +252,20 @@ async function renderPosts(el, searchQ = '', catFilter = '') {
           <thead>
             <tr>
               <th>제목</th>
-              <th style="width:80px">유형</th>
-              <th style="width:80px">카테고리</th>
+              <th style="width:70px">방</th>
               <th style="width:80px">작성자</th>
               <th style="width:60px">상태</th>
               <th style="width:120px">작업</th>
             </tr>
           </thead>
           <tbody>
-            ${posts.length === 0 ? `<tr><td colspan="6" class="admin-table__empty">게시물이 없어요</td></tr>` :
+            ${posts.length === 0 ? `<tr><td colspan="5" class="admin-table__empty">게시물이 없어요</td></tr>` :
               posts.map(p => `
                 <tr data-post-row="${p.id}">
                   <td class="admin-table__title-cell">
                     <a href="#/detail/${p.id}" class="admin-table__link">${escHtml(p.title || '(제목없음)')}</a>
                   </td>
-                  <td><span class="badge badge--gray" style="font-size:10px">${p.type || ''}</span></td>
-                  <td><span style="font-size:12px">${{ golra:'🎯 골라봐', usgyo:'😂 웃겨봐', malhe:'🎮 도전봐' }[p.cat] || p.cat || ''}</span></td>
+                  <td><span class="badge badge--gray" style="font-size:10px">${{ collect:'📌 모음', vote:'🗳️ 토론', quiz:'🧠 퀴즈', drip:'🤣 드립' }[p.feedType] || (p.feedType || p.type || '')}</span></td>
                   <td class="admin-table__muted">${escHtml(p.authorName || '익명')}</td>
                   <td>
                     ${p.hidden
@@ -618,10 +616,10 @@ async function renderAiSettings(el) {
   } catch {}
 
   const featureList = [
-    { key: 'moderation',  label: '🛡️ 게시물 자동 검토', desc: '새 게시물 AI 모더레이션 (욕설·비방 자동 숨김)' },
-    { key: 'autoReport',  label: '📋 신고 자동 처리',   desc: '접수된 신고 AI 분석 후 명백한 위반 자동 처리' },
-    { key: 'autoMission', label: '🎯 미션 자동 생성',   desc: '매일 오전 7시 AI가 오늘의 미션 자동 생성' },
-    { key: 'weeklyReport',label: '📊 주간 보고서',      desc: '매주 월요일 AI가 활동 보고서 자동 작성' },
+    { key: 'moderation',   label: '🛡️ 게시물 자동 검토',   desc: '새 게시물 AI 모더레이션 (욕설·비방 자동 숨김)' },
+    { key: 'autoReport',   label: '📋 신고 자동 처리',     desc: '접수된 신고 AI 분석 후 명백한 위반 자동 처리' },
+    { key: 'autoContent',  label: '✏️ AI 콘텐츠 자동 생성', desc: '매일 오전 AI가 4개 방에 콘텐츠 자동 생성' },
+    { key: 'weeklyReport', label: '📊 주간 보고서',         desc: '매주 월요일 AI가 활동 보고서 자동 작성' },
   ];
 
   el.innerHTML = `
@@ -751,15 +749,15 @@ async function renderAiSettings(el) {
   el.querySelector('#btn-trigger-all-content')?.addEventListener('click', async () => {
     const btn = el.querySelector('#btn-trigger-all-content');
     const result = el.querySelector('#ai-trigger-result');
-    if (!confirm('AI 게시글 9개를 생성할까요? (오늘 이미 생성된 타입은 건너뜁니다)')) return;
+    if (!confirm('AI 게시글을 생성할까요? (오늘 이미 생성된 방은 건너뜁니다)')) return;
     btn.disabled = true;
     btn.textContent = '생성 중... (최대 2분 소요)';
-    result.textContent = '⏳ 9개 타입 순차 생성 중입니다...';
+    result.textContent = '⏳ 방별 순차 생성 중입니다...';
     try {
       const fn = httpsCallable(functions, 'generateAllAiContentNow', { timeout: 550000 });
       const res = await fn({ force: false });
       const { ok = 0, skipped = 0, total = 0, results = [] } = res.data || {};
-      const typeLabels = { vote:'골라킹', initial_game:'초성게임', naming:'미친작명소', crazy_court:'억까재판', quiz:'미친퀴즈', relay:'막장킹', acrostic:'삼행시짓기' };
+      const typeLabels = { collect:'모음방', vote:'토론방', quiz:'퀴즈방', drip:'드립방' };
       const detail = results.map(r => r.ok ? `✅ ${typeLabels[r.type]||r.type}` : r.skipped ? `⏭ ${typeLabels[r.type]||r.type}(건너뜀)` : `❌ ${typeLabels[r.type]||r.type}`).join(' · ');
       result.innerHTML = `✅ 완료 — 생성 ${ok}개 / 건너뜀 ${skipped}개 / 전체 ${total}개<br><span style="color:var(--color-text-muted)">${detail}</span>`;
       toast.success(`AI 게시글 ${ok}개 생성 완료! 🎉`);
@@ -768,7 +766,7 @@ async function renderAiSettings(el) {
       toast.error(e.message || '생성에 실패했어요');
     } finally {
       btn.disabled = false;
-      btn.textContent = '✏️ AI 게시글 7개 생성';
+      btn.textContent = '✏️ AI 게시글 생성';
     }
   });
 
