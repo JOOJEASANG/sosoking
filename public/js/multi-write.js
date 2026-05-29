@@ -188,7 +188,7 @@ function bindMultiWriteEvents() {
     else toast.warn('제목이나 내용을 조금 더 입력하면 태그를 만들 수 있어요');
   });
 
-  document.querySelectorAll('[data-multi-preset]').forEach(btn => btn.addEventListener('click', () => updateOptionSelection(btn.datasetMultiPreset || btn.dataset.multiPreset)));
+  document.querySelectorAll('[data-multi-preset]').forEach(btn => btn.addEventListener('click', () => updateOptionSelection(btn.dataset.multiPreset)));
 
   document.getElementById('mw-add-vote-option')?.addEventListener('click', () => {
     const list = document.getElementById('mw-vote-options');
