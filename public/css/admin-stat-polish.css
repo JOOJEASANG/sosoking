@@ -1,0 +1,77 @@
+/* admin-stat-polish.css — 관리자 상단 현황 박스 시각 정리 */
+
+body:has(.admin-layout) .admin-stat-grid,
+body:has(.admin-layout) .admin-stat-grid--wide {
+  gap: 12px !important;
+  background: transparent !important;
+  border: 0 !important;
+}
+
+body:has(.admin-layout) .admin-stat-card {
+  position: relative !important;
+  overflow: hidden !important;
+  padding: 18px 18px 16px !important;
+  border: 1px solid rgba(255, 107, 74, .12) !important;
+  border-radius: 20px !important;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255, 107, 74, .10), transparent 36%),
+    linear-gradient(180deg, rgba(255, 255, 255, .98), rgba(255, 255, 255, .94)) !important;
+  box-shadow: 0 10px 26px rgba(20, 14, 40, .06), 0 1px 0 rgba(255, 255, 255, .85) inset !important;
+}
+
+body:has(.admin-layout) .admin-stat-card::before {
+  content: '';
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  top: 0;
+  height: 3px;
+  border-radius: 0 0 999px 999px;
+  background: linear-gradient(90deg, var(--color-primary), rgba(255, 138, 0, .72));
+  opacity: .75;
+}
+
+body:has(.admin-layout) .admin-stat-card__num {
+  color: var(--color-text-primary) !important;
+  font-size: 26px !important;
+  font-weight: 950 !important;
+  letter-spacing: -0.7px !important;
+  line-height: 1.05 !important;
+}
+
+body:has(.admin-layout) .admin-stat-card__label {
+  margin-top: 7px !important;
+  color: var(--color-text-secondary) !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.2px !important;
+}
+
+body:has(.admin-layout) .admin-stat-card__label + div,
+body:has(.admin-layout) .admin-stat-card div[style*="color:var(--color-text-muted)"] {
+  color: var(--color-text-muted) !important;
+}
+
+[data-theme="dark"] body:has(.admin-layout) .admin-stat-card {
+  border-color: rgba(255, 107, 74, .18) !important;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255, 107, 74, .16), transparent 38%),
+    linear-gradient(180deg, rgba(33, 36, 60, .98), rgba(27, 30, 50, .94)) !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, .22), 0 1px 0 rgba(255, 255, 255, .04) inset !important;
+}
+
+@media (max-width: 1023px) {
+  body:has(.admin-layout) .admin-stat-grid,
+  body:has(.admin-layout) .admin-stat-grid--wide {
+    gap: 10px !important;
+  }
+
+  body:has(.admin-layout) .admin-stat-card {
+    padding: 15px 14px 14px !important;
+    border-radius: 18px !important;
+  }
+
+  body:has(.admin-layout) .admin-stat-card__num {
+    font-size: 23px !important;
+  }
+}
