@@ -71,7 +71,7 @@ function cloneWithoutQuizSecret(modules) {
 }
 
 function bindTextStateEvents() {
-  ['mw-title', 'mw-desc', 'mw-tags', 'mw-quiz-mode', 'mw-quiz-hint', 'mw-drip-line', 'mw-collect-url', 'mw-collect-caption']
+  ['mw-title', 'mw-desc', 'mw-tags', 'mw-quiz-mode', 'mw-quiz-hint', 'mw-drip-line', 'mw-collect-url']
     .forEach(id => document.getElementById(id)?.addEventListener('input', updateWriteStateOnly));
   document.querySelectorAll('.mw-vote-option,.mw-quiz-option').forEach(input => input.addEventListener('input', updateWriteStateOnly));
   document.getElementById('mw-desc')?.addEventListener('keyup', updateWriteStateOnly);
@@ -98,10 +98,23 @@ export async function renderMultiWrite() {
   initRichEditor(document.getElementById('mw-desc'));
   bindMultiWriteEvents();
   bindTextStateEvents();
-  setVoteMode(document.getElementById('mw-vote-mode')?.value || 'debate');
+  setVoteMode('general');
   setCollectKind(document.getElementById('mw-collect-kind')?.value || 'youtube');
   updateOptionSelection(presetKey);
   updateWriteStateOnly();
+}
+
+function setWriteSectionVisibility(normalized) {
+  document.querySelectorAll('[data-write-section]').forEach(section => {
+    const key = section.dataset.writeSection;
+    if (key === 'drip-line') section.style.display = normalized === 'drip' ? '' : 'none';
+    if (key === 'standard-fields') section.style.display = normalized === 'drip' ? 'none' : '';
+    if (key === 'content-field') section.style.display = (normalized === 'collect' || normalized === 'drip') ? 'none' : '';
+    if (key === 'media-field') section.style.display = normalized === 'drip' ? 'none' : '';
+    if (key === 'collect-panel') section.style.display = normalized === 'collect' ? '' : 'none';
+    if (key === 'vote-panel') section.style.display = normalized === 'vote' ? '' : 'none';
+    if (key === 'quiz-panel') section.style.display = normalized === 'quiz' ? '' : 'none';
+  });
 }
 
 function updateOptionSelection(preset) {
@@ -121,11 +134,7 @@ function updateOptionSelection(preset) {
     panel.style.display = panel.dataset.optionPanel === normalized ? '' : 'none';
   });
 
-  document.querySelectorAll('[data-write-section]').forEach(section => {
-    const key = section.dataset.writeSection;
-    if (key === 'drip-line') section.style.display = normalized === 'drip' ? '' : 'none';
-    if (key === 'standard-fields') section.style.display = normalized === 'drip' ? 'none' : '';
-  });
+  setWriteSectionVisibility(normalized);
 
   document.querySelectorAll('[data-module-input]').forEach(input => {
     const key = input.dataset.moduleInput;
@@ -133,7 +142,7 @@ function updateOptionSelection(preset) {
     else input.removeAttribute('data-module-toggle');
   });
 
-  if (normalized === 'vote') setVoteMode(document.getElementById('mw-vote-mode')?.value || 'debate');
+  if (normalized === 'vote') setVoteMode('general');
   if (normalized === 'collect') setCollectKind(document.getElementById('mw-collect-kind')?.value || 'youtube');
   if (normalized === 'drip') syncDripLineToHiddenBody();
   window.dispatchEvent(new Event('sosoking:write-option-changed'));
@@ -158,39 +167,12 @@ function setCollectKind(kind) {
   }
 }
 
-function setVoteMode(mode) {
-  const normalized = ['general', 'balance', 'debate'].includes(mode) ? mode : 'debate';
+function setVoteMode() {
   const hidden = document.getElementById('mw-vote-mode');
-  if (hidden) hidden.value = normalized;
-  document.querySelectorAll('[data-vote-mode]').forEach(btn => {
-    const active = btn.dataset.voteMode === normalized;
-    btn.classList.toggle('active', active);
-    btn.setAttribute('aria-checked', active ? 'true' : 'false');
-  });
-  const modeNote = document.getElementById('mw-vote-mode-note');
+  if (hidden) hidden.value = 'general';
+  document.querySelectorAll('.mw-vote-option').forEach(opt => { opt.readOnly = false; });
   const addBtn = document.getElementById('mw-add-vote-option');
-  const optionList = document.getElementById('mw-vote-options');
-  const notes = {
-    balance: '밸런스 투표는 선택지 2개로 제한됩니다.',
-    debate: '찬성/반대가 자동으로 들어갑니다. 내용에 토론 주제를 적어주세요.',
-    general: '선택지를 자유롭게 추가할 수 있습니다.',
-  };
-  if (modeNote) { modeNote.textContent = notes[normalized] || ''; modeNote.style.display = notes[normalized] ? '' : 'none'; }
-  if (normalized === 'balance') {
-    const opts = [...(optionList?.querySelectorAll('.mw-vote-option') || [])];
-    opts.slice(2).forEach(opt => opt.remove());
-    opts.slice(0, 2).forEach(opt => { opt.readOnly = false; });
-    if (addBtn) addBtn.style.display = 'none';
-  } else if (normalized === 'debate') {
-    const opts = [...(optionList?.querySelectorAll('.mw-vote-option') || [])];
-    opts.slice(2).forEach(opt => opt.remove());
-    opts.slice(0, 2).forEach((opt, i) => { opt.value = i === 0 ? '찬성' : '반대'; opt.readOnly = true; });
-    if (addBtn) addBtn.style.display = 'none';
-  } else {
-    const opts = [...(optionList?.querySelectorAll('.mw-vote-option') || [])];
-    opts.forEach(opt => { opt.readOnly = false; });
-    if (addBtn) addBtn.style.display = '';
-  }
+  if (addBtn) addBtn.style.display = '';
 }
 
 function setQuizMode(mode) {
@@ -198,7 +180,7 @@ function setQuizMode(mode) {
   const hidden = document.getElementById('mw-quiz-mode');
   if (hidden) hidden.value = normalized;
   document.querySelectorAll('[data-quiz-mode]').forEach(btn => {
-    const active = btn.datasetQuizMode === normalized || btn.dataset.quizMode === normalized;
+    const active = btn.dataset.quizMode === normalized;
     btn.classList.toggle('active', active);
     btn.setAttribute('aria-checked', active ? 'true' : 'false');
   });
@@ -237,7 +219,6 @@ function bindMultiWriteEvents() {
     list?.lastElementChild?.addEventListener('input', updateWriteStateOnly);
   });
 
-  document.querySelectorAll('[data-vote-mode]').forEach(btn => btn.addEventListener('click', () => setVoteMode(btn.dataset.voteMode)));
   document.querySelectorAll('[data-quiz-mode]').forEach(btn => btn.addEventListener('click', () => setQuizMode(btn.dataset.quizMode)));
 
   document.getElementById('mw-add-quiz-option')?.addEventListener('click', () => {
