@@ -52,17 +52,20 @@
 }
 
 .detail-post-nav__btn {
-  min-height: 36px;
-  padding: 0 12px;
+  width: 42px;
+  min-width: 42px;
+  height: 42px;
+  padding: 0;
   border: 1px solid var(--color-border-light);
-  border-radius: 999px;
+  border-radius: 50%;
   background: var(--color-surface);
-  color: var(--color-text-secondary);
+  color: var(--color-text-primary);
   font-family: inherit;
-  font-size: 12px;
+  font-size: 30px;
   font-weight: 950;
+  line-height: 1;
   cursor: pointer;
-  box-shadow: 0 6px 16px rgba(20, 14, 40, .05);
+  box-shadow: 0 6px 16px rgba(20, 14, 40, .06);
 }
 
 .detail-post-nav__btn:hover:not(:disabled) {
@@ -112,31 +115,32 @@
   .detail-post-nav__btn {
     position: fixed;
     top: 50%;
-    width: 88px;
-    min-height: 78px;
-    padding: 0 10px;
-    border-radius: 22px;
-    border-color: rgba(255, 107, 74, .20);
-    background: rgba(255, 255, 255, .88);
+    width: 58px;
+    min-width: 58px;
+    height: 58px;
+    min-height: 58px;
+    padding: 0;
+    border-radius: 50%;
+    border-color: rgba(255, 107, 74, .24);
+    background: rgba(255, 255, 255, .92);
     color: var(--color-text-primary);
+    font-size: 42px;
     box-shadow: 0 14px 34px rgba(20, 14, 40, .11);
     backdrop-filter: blur(12px);
     transform: translateY(-50%);
     pointer-events: auto;
-    white-space: normal;
-    line-height: 1.25;
   }
 
   .detail-post-nav__btn--prev {
-    left: max(18px, calc((100vw - 900px) / 2 - 116px));
+    left: max(18px, calc((100vw - 900px) / 2 - 92px));
   }
 
   .detail-post-nav__btn--next {
-    right: max(18px, calc((100vw - 900px) / 2 - 116px));
+    right: max(18px, calc((100vw - 900px) / 2 - 92px));
   }
 
   .detail-post-nav__btn:hover:not(:disabled) {
-    transform: translateY(-50%) scale(1.035);
+    transform: translateY(-50%) scale(1.055);
     box-shadow: 0 18px 42px rgba(255, 107, 74, .16);
   }
 
@@ -186,18 +190,10 @@
   }
 
   .detail-post-nav {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr auto 1fr;
   }
 
   .detail-post-nav__count {
-    grid-column: 1 / -1;
-    grid-row: 1;
     text-align: center;
-  }
-
-  .detail-post-nav__btn--prev,
-  .detail-post-nav__btn--next {
-    width: 100%;
-    justify-self: stretch;
   }
 }
