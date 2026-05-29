@@ -121,8 +121,8 @@ export function collectMultiModules() {
   }
 
   if (enabled('drip')) {
-    if (!bodyText) throw new Error('오늘의 한줄을 입력해주세요.');
-    modules.drip = { enabled: true, prompt: bodyText.slice(0, 50), maxLength: 50 };
+    if (!bodyText) throw new Error('드립 주제를 입력해주세요.');
+    modules.drip = { enabled: true, prompt: bodyText.slice(0, 80), maxLength: 50, responseLabel: '한 줄 드립' };
   }
 
   if (enabled('quiz')) {
