@@ -136,6 +136,9 @@ export function renderMultiWriteHTML({ renderKey, presetKey }) {
   const standardHidden = activeKey === 'drip' ? 'style="display:none"' : '';
   const contentHidden = activeKey === 'collect' ? 'style="display:none"' : '';
   const mediaHidden = activeKey === 'drip' ? 'style="display:none"' : '';
+  const titleLabel = activeKey === 'vote' ? '토론 주제' : '제목';
+  const contentLabel = activeKey === 'vote' ? '추가 설명' : '내용';
+  const requiredMark = activeKey === 'vote' ? '' : '<span class="required">*</span>';
 
   return `
     <div class="write-page multi-write-page" data-render-key="${esc(renderKey)}" data-preset-key="${esc(activeKey)}">
@@ -150,12 +153,12 @@ export function renderMultiWriteHTML({ renderKey, presetKey }) {
           ${renderDripTopicField(activeKey)}
           <div data-write-section="standard-fields" ${standardHidden}>
             <div class="form-group">
-              <label class="form-label">제목 <span class="required">*</span></label>
+              <label class="form-label">${titleLabel} <span class="required">*</span></label>
               <input id="mw-title" class="form-input" maxlength="100" placeholder="${esc(preset.titlePlaceholder)}">
             </div>
             ${renderCollectUrlField(activeKey)}
             <div class="form-group" data-write-section="content-field" ${contentHidden}>
-              <label class="form-label">내용 <span class="required">*</span></label>
+              <label class="form-label">${contentLabel} ${requiredMark}</label>
               <textarea id="mw-desc" class="form-textarea mw-desc-resizable" rows="4" maxlength="2000" placeholder="${esc(preset.descPlaceholder)}"></textarea>
             </div>
           </div>
