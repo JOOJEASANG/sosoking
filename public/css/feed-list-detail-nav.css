@@ -131,12 +131,12 @@
     pointer-events: auto;
   }
 
+  /* 사이드바 240px + 콘텐츠 760px = 1000px 기준으로 좌우 여백 중앙에 배치 */
   .detail-post-nav__btn--prev {
-    left: max(18px, calc((100vw - 900px) / 2 - 92px));
+    left: max(256px, calc(240px + (100vw - 1000px) / 4 - 29px));
   }
-
   .detail-post-nav__btn--next {
-    right: max(18px, calc((100vw - 900px) / 2 - 92px));
+    right: max(12px, calc((100vw - 1000px) / 4 - 29px));
   }
 
   .detail-post-nav__btn:hover:not(:disabled) {
