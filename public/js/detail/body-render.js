@@ -50,6 +50,23 @@ export function renderTypeBody(post) {
     case 'battle':
       return renderLegacyBattleVs(post);
 
+    case 'cbattle':
+      return `
+        <div class="quiz-box cbattle-quiz-box" id="cbattle-select-area">
+          <div class="cbattle-ox">
+            <button type="button" class="cbattle-ox-btn cbattle-ox-btn--a cbattle-side-btn" data-side="A">
+              <span class="cbattle-ox-emoji">🔴</span>
+              <span class="cbattle-ox-label">A팀</span>
+            </button>
+            <div class="cbattle-ox-vs">VS</div>
+            <button type="button" class="cbattle-ox-btn cbattle-ox-btn--b cbattle-side-btn" data-side="B">
+              <span class="cbattle-ox-emoji">🔵</span>
+              <span class="cbattle-ox-label">B팀</span>
+            </button>
+          </div>
+          <p class="cbattle-select-hint">팀을 선택하고 아래에 의견을 남겨보세요</p>
+        </div>`;
+
     case 'story':
       return post.feeling
         ? `<div style="padding:12px 16px;background:var(--color-malhe-bg);border-left:3px solid var(--color-malhe);border-radius:8px;font-size:13px;margin-top:8px"><strong>💚 느낀 점</strong><br>${escHtml(post.feeling).replace(/\n/g, '<br>')}</div>`
