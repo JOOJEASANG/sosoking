@@ -167,8 +167,7 @@ export async function renderDetail(id) {
     document.title = post.title ? `${post.title} - 소소킹` : '소소킹';
 
     el.innerHTML = `
-      <div style="max-width:720px;margin:0 auto">
-        <button class="btn btn--ghost btn--sm" onclick="history.back()" style="margin-bottom:16px">← 뒤로</button>
+      <div data-detail-root data-post-id="${escHtml(id)}" style="max-width:720px;margin:0 auto">
         <div class="card">
           <div class="detail-header">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">

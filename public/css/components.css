@@ -684,6 +684,55 @@
 .cbattle-side-btn--a.active { border-color: #EF4444; background: #FEF2F2; color: #B91C1C; }
 .cbattle-side-btn--b.active { border-color: #3B82F6; background: #EFF6FF; color: #1D4ED8; }
 .cbattle-side-btn:hover:not(.active) { border-color: var(--color-primary); }
+
+/* ── cbattle VS 카드 (퀴즈 스타일) ── */
+.cbattle-vs-box {
+  display: flex; align-items: stretch; gap: 0; padding: 16px 20px 0; gap: 8px;
+}
+.cbattle-vs-btn {
+  position: relative; flex: 1; overflow: hidden;
+  padding: 16px 14px; border-radius: var(--radius-md);
+  border: 2px solid var(--color-border); background: var(--color-surface-2);
+  cursor: pointer; transition: border-color .15s, background .15s;
+  text-align: left; display: block;
+}
+.cbattle-vs-btn__bar {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  background: rgba(0,0,0,.05); z-index: 0; transition: width .4s ease;
+  pointer-events: none;
+}
+.cbattle-vs-btn--a .cbattle-vs-btn__bar { background: rgba(239,68,68,.1); }
+.cbattle-vs-btn--b .cbattle-vs-btn__bar { background: rgba(59,130,246,.1); }
+.cbattle-vs-btn__inner {
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.cbattle-vs-btn__label {
+  font-size: 15px; font-weight: 900; color: var(--color-text-primary);
+}
+.cbattle-vs-btn__stat {
+  font-size: 12px; font-weight: 600; color: var(--color-text-muted);
+}
+.cbattle-vs-btn--a.active {
+  border-color: #EF4444; background: #FFF5F5;
+}
+.cbattle-vs-btn--a.active .cbattle-vs-btn__label { color: #B91C1C; }
+.cbattle-vs-btn--b.active {
+  border-color: #3B82F6; background: #EFF6FF;
+}
+.cbattle-vs-btn--b.active .cbattle-vs-btn__label { color: #1D4ED8; }
+.cbattle-vs-btn:hover:not(.active) { border-color: var(--color-primary); }
+.cbattle-vs-divider {
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 900; color: var(--color-text-muted);
+  flex-shrink: 0; padding: 0 2px;
+}
+.cbattle-write-hint {
+  font-size: 12px; color: var(--color-text-muted);
+  text-align: center; padding: 8px 20px 0;
+}
+[data-theme="dark"] .cbattle-vs-btn--a.active { background: rgba(239,68,68,.12); }
+[data-theme="dark"] .cbattle-vs-btn--b.active { background: rgba(59,130,246,.12); }
 .cbattle-columns {
   display: grid; grid-template-columns: 1fr 1fr; gap: 0;
   margin-top: 16px; border-top: 1px solid var(--color-border);
