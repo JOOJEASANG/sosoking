@@ -1,4 +1,1 @@
-Firebase deployment trigger
-
-Triggered from Claude Code for main branch deployment.
-Date: 2026-05-20 (SEO improvements)
+2026-05-30 23:55 UTC
