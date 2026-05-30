@@ -52,8 +52,10 @@ export function renderTypeBody(post) {
 
     case 'cbattle':
       return `
-        <div class="quiz-box cbattle-quiz-box" id="cbattle-select-area">
-          <div class="cbattle-ox">
+        <div class="multi-detail-module" style="margin-bottom:14px">
+          <div class="multi-detail-module__title">⚔️ 토론 주제</div>
+          ${post.desc ? `<div class="multi-quiz-question">${escHtml(post.desc).replace(/\n/g, '<br>')}</div>` : ''}
+          <div class="cbattle-ox" style="margin-top:${post.desc ? '14px' : '0'}">
             <button type="button" class="cbattle-ox-btn cbattle-ox-btn--a cbattle-side-btn" data-side="A">
               <span class="cbattle-ox-emoji">🔴</span>
               <span class="cbattle-ox-label">A팀</span>
