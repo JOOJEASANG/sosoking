@@ -50,12 +50,13 @@ export function renderTypeBody(post) {
     case 'battle':
       return renderLegacyBattleVs(post);
 
-    case 'cbattle':
+    case 'cbattle': {
+      const topic = (post.desc || post.title || '').trim();
       return `
         <div class="multi-detail-module" style="margin-bottom:14px">
           <div class="multi-detail-module__title">⚔️ 토론 주제</div>
-          ${post.desc ? `<div class="multi-quiz-question">${escHtml(post.desc).replace(/\n/g, '<br>')}</div>` : ''}
-          <div class="cbattle-ox" style="margin-top:${post.desc ? '14px' : '0'}">
+          ${topic ? `<div class="multi-quiz-question">${escHtml(topic).replace(/\n/g, '<br>')}</div>` : ''}
+          <div class="cbattle-ox">
             <button type="button" class="cbattle-ox-btn cbattle-ox-btn--a cbattle-side-btn" data-side="A">
               <span class="cbattle-ox-emoji">🔴</span>
               <span class="cbattle-ox-label">A팀</span>
@@ -68,6 +69,7 @@ export function renderTypeBody(post) {
           </div>
           <p class="cbattle-select-hint">팀을 선택하고 아래에 의견을 남겨보세요</p>
         </div>`;
+    }
 
     case 'story':
       return post.feeling

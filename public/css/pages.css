@@ -411,7 +411,7 @@
 
 /* cbattle A/B 퀴즈 스타일 선택 */
 .cbattle-quiz-box { border-bottom: 1px solid var(--color-border); }
-.cbattle-ox { display: flex; gap: var(--space-3); align-items: center; }
+.cbattle-ox { display: flex; gap: var(--space-3); align-items: center; margin-top: 12px; }
 .cbattle-ox-btn {
   flex: 1; padding: var(--space-5) var(--space-4); border-radius: var(--radius-lg);
   border: 2px solid var(--color-border); background: var(--color-surface-2);
