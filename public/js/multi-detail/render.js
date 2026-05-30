@@ -34,7 +34,8 @@ export function renderVoteModule(post) {
   return `
     <div class="multi-detail-module" data-multi-module="vote">
       <div class="multi-detail-module__title">🗳️ 토론 주제</div>
-      <div class="multi-drip-prompt">${esc(title).replace(/\n/g, '<br>')}</div>
+      <div class="multi-module-hint">주제를 보고 원하는 옵션을 선택하세요.</div>
+      <div class="multi-quiz-question" style="margin:10px 0">${esc(title).replace(/\n/g, '<br>')}</div>
       <div class="multi-vote-options">
         ${(vote.options || []).map((opt, i) => {
           const votes = Number(opt.votes || 0);
@@ -46,7 +47,6 @@ export function renderVoteModule(post) {
           </button>`;
         }).join('')}
       </div>
-      <div class="multi-module-hint">주제를 보고 원하는 옵션을 선택하세요.</div>
       ${hasVoted ? '<div class="multi-module-hint">이미 투표했어요.</div>' : ''}
     </div>`;
 }
