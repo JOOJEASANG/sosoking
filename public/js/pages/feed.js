@@ -30,8 +30,6 @@ let currentSearch      = '';
 let currentSort        = 'latest';
 let currentPage        = 1;
 let isLoading          = false;
-let currentCollectKind = ''; // '' = 전체, 'youtube', 'image'
-
 let cursorStack   = [];
 let cursorTotal   = 0;
 let cachedPosts   = [];
@@ -54,18 +52,11 @@ function renderRoomTabs() {
 
 function renderRoomHead() {
   const room = currentRoom();
-  const collectToggle = currentType === 'collect' ? `
-    <div class="collect-kind-toggle" role="group" aria-label="일반방 콘텐츠 종류">
-      <button type="button" class="collect-kind-btn ${currentCollectKind === '' ? 'active' : ''}" data-collect-kind="">전체</button>
-      <button type="button" class="collect-kind-btn ${currentCollectKind === 'youtube' ? 'active' : ''}" data-collect-kind="youtube">📺 유튜브</button>
-      <button type="button" class="collect-kind-btn ${currentCollectKind === 'image' ? 'active' : ''}" data-collect-kind="image">🖼️ 그림</button>
-    </div>` : '';
   return `
     <div class="soso-room-head">
       <div class="soso-room-head__label">${room.icon} ${room.label}</div>
       <div class="soso-room-head__title">${room.title}</div>
       <div class="soso-room-head__desc">${room.desc}</div>
-      ${collectToggle}
       <div class="soso-room-head__action">
         <button class="btn btn--primary btn--sm" type="button" id="room-write-btn">${room.label === '전체' ? '올리기' : `${room.label} 올리기`}</button>
       </div>
@@ -86,8 +77,6 @@ export async function renderFeed() {
   cursorTotal = 0;
   cachedPosts = [];
   lastDisplayPosts = [];
-
-  if (params.type !== 'collect') currentCollectKind = '';
 
   el.innerHTML = `
     <div class="soso-feed-page layout-main layout-main--full feed-page-clean">
@@ -110,19 +99,7 @@ export async function renderFeed() {
 function bindFeedEvents() {
   bindSearchEvents();
   bindTypeFilterEvents();
-  bindCollectKindEvents();
   bindRoomWriteEvent();
-}
-
-function bindCollectKindEvents() {
-  document.querySelectorAll('[data-collect-kind]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      currentCollectKind = btn.dataset.collectKind;
-      currentPage = 1;
-      document.querySelectorAll('[data-collect-kind]').forEach(b => b.classList.toggle('active', b.dataset.collectKind === currentCollectKind));
-      refreshFeed();
-    });
-  });
 }
 
 function bindRoomWriteEvent() {
@@ -312,7 +289,6 @@ function persistNavContext(posts) {
       type: currentType,
       search: currentSearch,
       sort: currentSort,
-      collectKind: currentCollectKind,
       href: window.location.hash || '#/feed',
       savedAt: Date.now(),
     }));
@@ -328,9 +304,7 @@ function renderCurrentPage() {
   const summaryEl = document.getElementById('feed-summary');
   if (!listEl) return;
 
-  const displayPosts = currentCollectKind && currentType === 'collect'
-    ? cachedPosts.filter(p => (p.modules?.collect?.kind || 'youtube') === currentCollectKind)
-    : cachedPosts;
+  const displayPosts = cachedPosts;
 
   if (useCursorMode()) {
     if (summaryEl) {

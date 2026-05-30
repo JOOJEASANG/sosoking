@@ -63,8 +63,7 @@ function moduleLabels(m = {}) {
   const labels = [];
   if (m.vote?.enabled) labels.push('투표/판정');
   if (m.quiz?.enabled) labels.push('퀴즈');
-  if (m.youtube?.enabled) labels.push('유튜브');
-  if (m.anonymous?.enabled) labels.push('익명');
+if (m.anonymous?.enabled) labels.push('익명');
   return labels.length
     ? `<div class="feed-card__multi-chips" style="margin:8px 0 12px">${labels.map(label => `<span>${esc(label)}</span>`).join('')}</div>`
     : '';
@@ -176,12 +175,6 @@ function renderModules(post) {
         <label class="edit-check-row"><input type="checkbox" id="edit-anonymous" ${post.anonymous || m.anonymous?.enabled ? 'checked' : ''}> 익명으로 표시</label>
       </div>` : ''}
 
-    ${m.youtube?.enabled ? `
-      <div class="form-group">
-        <label class="form-label">유튜브 링크</label>
-        <input id="edit-youtube-url" class="form-input" value="${esc(m.youtube.url || '')}" maxlength="220">
-      </div>` : ''}
-
     ${m.vote?.enabled ? `
       <div class="form-group">
         <label class="form-label">투표/판정 질문</label>
@@ -228,25 +221,6 @@ function renderModules(post) {
   </div></div>`;
 }
 
-function parseYouTubeUrl(value) {
-  const raw = String(value || '').trim();
-  if (!raw) return null;
-  try {
-    const url = new URL(raw);
-    const host = url.hostname.replace(/^www\./, '').replace(/^m\./, '');
-    let id = '';
-    if (host === 'youtu.be') id = url.pathname.split('/').filter(Boolean)[0] || '';
-    else if (host === 'youtube.com' || host === 'music.youtube.com') {
-      if (url.pathname.startsWith('/watch')) id = url.searchParams.get('v') || '';
-      else if (url.pathname.startsWith('/shorts/')) id = url.pathname.split('/')[2] || '';
-      else if (url.pathname.startsWith('/embed/')) id = url.pathname.split('/')[2] || '';
-    }
-    if (!/^[a-zA-Z0-9_-]{11}$/.test(id)) return null;
-    return { enabled: true, provider: 'youtube', videoId: id, url: `https://www.youtube.com/watch?v=${id}`, embedUrl: `https://www.youtube.com/embed/${id}` };
-  } catch {
-    return null;
-  }
-}
 
 async function buildUpdate(post) {
   const title = document.getElementById('edit-title-force')?.value.trim() || '';
@@ -280,18 +254,6 @@ async function buildUpdate(post) {
         delete m.anonymous;
         patch.authorName = appState.nickname || auth.currentUser?.displayName || post.authorName || '익명';
         patch.authorPhoto = auth.currentUser?.photoURL || post.authorPhoto || '';
-      }
-    }
-
-    const youtubeInput = document.getElementById('edit-youtube-url');
-    if (youtubeInput) {
-      const raw = youtubeInput.value.trim();
-      if (raw) {
-        const youtube = parseYouTubeUrl(raw);
-        if (!youtube) throw new Error('유튜브 링크를 확인해주세요.');
-        m.youtube = youtube;
-      } else {
-        delete m.youtube;
       }
     }
 

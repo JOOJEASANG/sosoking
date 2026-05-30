@@ -32,11 +32,10 @@ function fallbackDraft(preset) {
   };
   const map = {
     collect: {
-      title: '오늘 저장각 웃긴 쇼츠 모음',
-      desc: '짧게 보고 피식하기 좋은 유튜브 모음입니다.',
-      collectKind: 'youtube',
-      url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-      tags: ['유튜브', '쇼츠', '웃긴영상'],
+      title: '오늘 저장각 웃긴짤 모음',
+      desc: '보고 피식하기 좋은 웃긴 그림 모음입니다.',
+      collectKind: 'image',
+      tags: ['웃긴짤', '그림', '유머'],
     },
     vote: {
       title: '친구가 약속 5분 전에 “나 이제 출발” 하면?',
@@ -71,7 +70,7 @@ function promptFor(preset) {
   return `소소킹 관리자용 AI 콘텐츠 데이터를 만드세요.
 
 소소킹 현재 구조:
-- 모음방: 유튜브 쇼츠/영상 또는 업로드한 웃긴그림을 짧게 모아보는 방. 일반 링크 카테고리는 사용하지 않음.
+- 모음방: 업로드한 웃긴그림을 짧게 모아보는 방. 일반 링크 카테고리는 사용하지 않음.
 - 토론방: 토론 주제만 던지고, 선택지로 의견을 모으는 방. 추가 설명은 선택사항.
 - 퀴즈방: 주관식, 객관식, 정답 없는 퀴즈를 올리는 방.
 - 드립방: 완성된 드립을 올리는 곳이 아니라, 사람들이 50자 이내 한 줄 드립으로 답할 수 있는 주제를 던지는 방.
@@ -90,8 +89,7 @@ function promptFor(preset) {
   "desc": "본문/설명. 토론방은 비워도 됨. 드립방은 topic과 동일해도 됨.",
   "topic": "드립방 주제 또는 토론방 주제",
   "tags": ["태그1", "태그2", "태그3"],
-  "collectKind": "youtube|image",
-  "url": "유튜브 URL, 없으면 빈 문자열",
+  "collectKind": "image",
   "options": ["선택지1", "선택지2", "선택지3"],
   "quizMode": "subjective|multiple",
   "noAnswer": false,
@@ -102,38 +100,12 @@ function promptFor(preset) {
 }
 
 유형별 지시:
-- 모음방: title은 40자 이내. desc는 80자 이내 한줄 설명. collectKind는 youtube 또는 image만 사용. link는 절대 쓰지 마세요.
+- 모음방: title은 40자 이내. desc는 80자 이내 한줄 설명. collectKind는 image만 사용.
 - 토론방: title은 토론 주제 질문형. desc는 비워도 됩니다. options는 자연스러운 선택지 2~4개. 찬성/반대 고정 표현만 반복하지 마세요.
 - 퀴즈방: 주관식, 객관식, 정답 없는 퀴즈 중 하나. noAnswer가 true면 answer/correctIndex는 비우고 explanation은 참여 안내로 작성.
 - 드립방: title은 반드시 "오늘의 드립 주제". topic은 사람들이 한 줄 드립으로 답할 수 있는 80자 이내 상황/질문. 완성된 드립 문장은 만들지 마세요.
 
 현재 유형 ${preset}에 맞게 만들어주세요.`;
-}
-
-function youtubeData(url) {
-  const raw = clean(url, 300);
-  if (!raw) return null;
-  try {
-    const parsed = new URL(raw);
-    const host = parsed.hostname.replace(/^www\./, '').replace(/^m\./, '');
-    let id = '';
-    if (host === 'youtu.be') id = parsed.pathname.split('/').filter(Boolean)[0] || '';
-    else if (host === 'youtube.com' || host === 'music.youtube.com') {
-      if (parsed.pathname.startsWith('/watch')) id = parsed.searchParams.get('v') || '';
-      else if (parsed.pathname.startsWith('/shorts/')) id = parsed.pathname.split('/')[2] || '';
-      else if (parsed.pathname.startsWith('/embed/')) id = parsed.pathname.split('/')[2] || '';
-    }
-    if (!/^[a-zA-Z0-9_-]{11}$/.test(id)) return null;
-    return {
-      enabled: true,
-      provider: 'youtube',
-      videoId: id,
-      url: `https://www.youtube.com/watch?v=${id}`,
-      embedUrl: `https://www.youtube.com/embed/${id}`,
-    };
-  } catch {
-    return null;
-  }
 }
 
 function buildPost({ preset, draft, userId, token, FieldValue }) {
@@ -145,23 +117,7 @@ function buildPost({ preset, draft, userId, token, FieldValue }) {
   let quizSecret = null;
 
   if (preset === 'collect') {
-    const kind = ['youtube', 'image'].includes(draft.collectKind) ? draft.collectKind : 'youtube';
-    const url = clean(draft.url, 300);
-    const collect = {
-      enabled: true,
-      kind,
-      label: kind === 'youtube' ? '유튜브' : '웃긴그림',
-      caption: desc,
-    };
-    if (url && kind === 'youtube') {
-      const youtube = youtubeData(url);
-      if (youtube) {
-        collect.url = youtube.url;
-        collect.youtube = youtube;
-        modules.youtube = youtube;
-      }
-    }
-    modules.collect = collect;
+    modules.collect = { enabled: true, kind: 'image', label: '웃긴그림', caption: desc };
   }
 
   if (preset === 'vote') {

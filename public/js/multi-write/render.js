@@ -54,14 +54,6 @@ function renderCollectHidden(activeKey) {
   return `<div data-option-panel="collect" style="display:none">${moduleToggleInput('collect', activeKey)}<input type="hidden" id="mw-collect-kind" value="auto"></div>`;
 }
 
-function renderCollectUrlField(activeKey) {
-  return `
-    <div class="form-group" data-write-section="collect-url-field" ${activeKey === 'collect' ? '' : 'style="display:none"'}>
-      <label class="form-label">유튜브 링크</label>
-      <input id="mw-collect-url" class="form-input" maxlength="300" placeholder="https://youtube.com/shorts/... 또는 유튜브 영상 링크">
-      <div class="form-hint">유튜브 링크를 넣으면 유튜브 모음으로, 링크 없이 사진만 첨부하면 웃긴그림 모음으로 등록됩니다.</div>
-    </div>`;
-}
 
 function renderVoteModule(activeKey) {
   return `
@@ -156,7 +148,6 @@ export function renderMultiWriteHTML({ renderKey, presetKey }) {
               <label class="form-label">${titleLabel} <span class="required">*</span></label>
               <input id="mw-title" class="form-input" maxlength="100" placeholder="${esc(preset.titlePlaceholder)}">
             </div>
-            ${renderCollectUrlField(activeKey)}
             <div class="form-group" data-write-section="content-field" ${contentHidden}>
               <label class="form-label">${contentLabel} ${requiredMark}</label>
               <textarea id="mw-desc" class="form-textarea mw-desc-resizable" rows="4" maxlength="2000" placeholder="${esc(preset.descPlaceholder)}"></textarea>

@@ -96,7 +96,7 @@ export const BODY_REQUIRED_PRESETS = ['collect', 'vote', 'drip', 'quiz'];
 
 export function normalizePresetKey(key, { allowHidden = false } = {}) {
   if (key === 'ox') return 'vote';
-  if (key === 'collection' || key === 'youtube' || key === 'image' || key === 'link') return 'collect';
+  if (key === 'collection' || key === 'youtube' || key === 'image' || key === 'link') return 'collect'; // youtube alias kept for old links
   if (key === 'debate' || key === 'discussion') return 'vote';
   if (key === 'anonymous' || key === 'relay' || key === 'acrostic') return 'general';
   if (!MULTI_PRESETS[key]) return 'collect';

@@ -27,11 +27,7 @@ function readContext() {
 }
 
 function labelForContext(ctx = {}) {
-  if (ctx.type === 'collect') {
-    if (ctx.collectKind === 'youtube') return '유튜브';
-    if (ctx.collectKind === 'image') return '그림';
-    return '일반방';
-  }
+  if (ctx.type === 'collect') return '일반방';
   if (ctx.type === 'vote') return '토론방';
   if (ctx.type === 'quiz') return '퀴즈방';
   if (ctx.type === 'drip') return '드립방';
@@ -120,7 +116,7 @@ async function fallbackIds(currentId, ctx = {}) {
     let posts = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.hidden);
     if (ctx.type) posts = posts.filter(p => legacyMatchesContext(p, ctx));
     if (ctx.type === 'collect' && ctx.collectKind) {
-      posts = posts.filter(p => (p.modules?.collect?.kind || 'youtube') === ctx.collectKind);
+      posts = posts.filter(p => p.modules?.collect?.kind === ctx.collectKind);
     }
     const ids = posts.map(p => p.id);
     if (ids.length) writeStoredContext({ ...ctx, ids });

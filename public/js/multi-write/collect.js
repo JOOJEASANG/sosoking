@@ -55,64 +55,17 @@ function getQuizOptions() {
   return [...document.querySelectorAll('.mw-quiz-option')].map(input => realValue(input));
 }
 
-export function parseYouTubeUrl(value) {
-  const raw = String(value || '').trim();
-  if (!raw) return null;
-
-  try {
-    const url = new URL(raw);
-    const host = url.hostname.replace(/^www\./, '').replace(/^m\./, '');
-    let id = '';
-
-    if (host === 'youtu.be') id = url.pathname.split('/').filter(Boolean)[0] || '';
-    else if (host === 'youtube.com' || host === 'music.youtube.com') {
-      if (url.pathname.startsWith('/watch')) id = url.searchParams.get('v') || '';
-      else if (url.pathname.startsWith('/shorts/')) id = url.pathname.split('/')[2] || '';
-      else if (url.pathname.startsWith('/embed/')) id = url.pathname.split('/')[2] || '';
-    }
-
-    id = String(id || '').trim();
-    if (!/^[a-zA-Z0-9_-]{11}$/.test(id)) return null;
-    return {
-      enabled: true,
-      provider: 'youtube',
-      videoId: id,
-      url: `https://www.youtube.com/watch?v=${id}`,
-      embedUrl: `https://www.youtube.com/embed/${id}`,
-    };
-  } catch {
-    return null;
-  }
-}
-
-function collectKindLabel(kind) {
-  return { youtube: '유튜브', image: '웃긴그림' }[kind] || '모음';
-}
-
 export function collectMultiModules() {
   const modules = { comments: { enabled: true } };
   const bodyText = getBodyText();
-  const titleText = getTitleText();
 
   if (isAnonymousWriteChecked()) {
     modules.anonymous = { enabled: true, mode: 'general-option' };
   }
 
   if (enabled('collect')) {
-    const urlRaw = realValue(document.getElementById('mw-collect-url'));
-    const youtube = parseYouTubeUrl(urlRaw);
-    if (urlRaw && !youtube) throw new Error('유튜브 링크 형식이 올바르지 않습니다. 쇼츠, 공유 링크, watch 링크를 사용할 수 있어요.');
-    const kind = youtube ? 'youtube' : 'image';
     const caption = realValue(document.getElementById('mw-collect-caption')) || bodyText;
-    const collect = { enabled: true, kind, label: collectKindLabel(kind), caption };
-
-    if (youtube) {
-      collect.url = youtube.url;
-      collect.youtube = youtube;
-      modules.youtube = youtube;
-    }
-
-    modules.collect = collect;
+    modules.collect = { enabled: true, kind: 'image', label: '웃긴그림', caption };
   }
 
   if (enabled('vote')) {
