@@ -55,7 +55,8 @@ export function renderTypeBody(post) {
       return `
         <div class="multi-detail-module" style="margin-bottom:14px">
           <div class="multi-detail-module__title">⚔️ 토론 주제</div>
-          ${topic ? `<div class="multi-quiz-question">${escHtml(topic).replace(/\n/g, '<br>')}</div>` : ''}
+          <div class="multi-module-hint">팀을 선택하고 의견을 남겨보세요</div>
+          ${topic ? `<div class="multi-quiz-question" style="margin-top:10px">${escHtml(topic).replace(/\n/g, '<br>')}</div>` : ''}
           <div class="cbattle-ox">
             <button type="button" class="cbattle-ox-btn cbattle-ox-btn--a cbattle-side-btn" data-side="A">
               <span class="cbattle-ox-emoji">🔴</span>
@@ -67,7 +68,6 @@ export function renderTypeBody(post) {
               <span class="cbattle-ox-label">B팀</span>
             </button>
           </div>
-          <p class="cbattle-select-hint">팀을 선택하고 아래에 의견을 남겨보세요</p>
         </div>`;
     }
 
