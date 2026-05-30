@@ -33,6 +33,8 @@ function ensureCommentForm() {
   const postId = getDetailId();
   const card = document.querySelector('#page-content .card');
   if (!card || card.querySelector('[data-safe-comment-form]')) return;
+  // 기존 댓글 섹션이 이미 있으면 중복 추가하지 않음
+  if (document.getElementById('comment-write') || document.querySelector('.comment-section')) return;
 
   const loggedIn = !!auth.currentUser;
   const html = `
