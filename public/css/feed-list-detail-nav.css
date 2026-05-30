@@ -46,7 +46,7 @@
 /* ── 상세 페이지 네비게이션 바 ── */
 .detail-post-nav {
   position: fixed;
-  top: 56px; /* below sticky mobile header */
+  top: 52px; /* below sticky mobile header (52px) */
   left: 0;
   right: 0;
   z-index: 39;
