@@ -108,6 +108,17 @@
 .detail-post-nav__btn--list { justify-self: center; }
 .detail-post-nav__btn--next { justify-self: end; }
 
+@media (max-width: 1023px) {
+  .detail-post-nav {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+  .detail-post-nav__btn--prev,
+  .detail-post-nav__btn--next {
+    display: none;
+  }
+}
+
 .detail-swipe-hint { display: none; }
 
 @media (max-width: 480px) {
