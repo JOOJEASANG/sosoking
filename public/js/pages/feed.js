@@ -18,11 +18,11 @@ const FILTER_LIMIT = 120;
 const NAV_CONTEXT_KEY = 'sosoking:feedNavContext';
 
 const ROOMS = [
-  { key: '',        icon: '✨', label: '전체',   title: '전체 모음', desc: '유튜브, 웃긴그림, 토론, 퀴즈, 드립을 한 번에 봅니다.', write: 'collect' },
-  { key: 'collect', icon: '📌', label: '모음방', title: '모음방', desc: '유튜브 쇼츠와 업로드한 웃긴그림을 짧게 모아봅니다.', write: 'collect' },
-  { key: 'vote',    icon: '🗳️', label: '토론방', title: '토론방', desc: '선택지로 빠르게 의견을 모으고 댓글로 이야기합니다.', write: 'vote' },
-  { key: 'quiz',    icon: '🧠', label: '퀴즈방', title: '퀴즈방', desc: '짧은 문제를 보고 바로 맞히는 공간입니다.', write: 'quiz' },
-  { key: 'drip',    icon: '🤣', label: '드립방', title: '드립방', desc: '주제를 보고 50자 이내 한 줄 드립으로 참여하는 공간입니다.', write: 'drip' },
+  { key: '',           icon: '✨', label: '전체',   title: '전체 모음', desc: '이상형 월드컵, 토론, 퀴즈, 드립을 한 번에 봅니다.', write: 'tournament' },
+  { key: 'tournament', icon: '⚔️', label: '대결방', title: '대결방', desc: '이상형 월드컵으로 1위를 가려보세요!', write: 'tournament' },
+  { key: 'vote',       icon: '🗳️', label: '토론방', title: '토론방', desc: '선택지로 빠르게 의견을 모으고 댓글로 이야기합니다.', write: 'vote' },
+  { key: 'quiz',       icon: '🧠', label: '퀴즈방', title: '퀴즈방', desc: '짧은 문제를 보고 바로 맞히는 공간입니다.', write: 'quiz' },
+  { key: 'drip',       icon: '🤣', label: '드립방', title: '드립방', desc: '주제를 보고 50자 이내 한 줄 드립으로 참여하는 공간입니다.', write: 'drip' },
 ];
 
 let currentType        = '';
@@ -30,8 +30,6 @@ let currentSearch      = '';
 let currentSort        = 'latest';
 let currentPage        = 1;
 let isLoading          = false;
-let currentCollectKind = ''; // '' = 전체, 'youtube', 'image'
-
 let cursorStack   = [];
 let cursorTotal   = 0;
 let cachedPosts   = [];
@@ -54,27 +52,20 @@ function renderRoomTabs() {
 
 function renderRoomHead() {
   const room = currentRoom();
-  const collectToggle = currentType === 'collect' ? `
-    <div class="collect-kind-toggle" role="group" aria-label="모음방 콘텐츠 종류">
-      <button type="button" class="collect-kind-btn ${currentCollectKind === '' ? 'active' : ''}" data-collect-kind="">전체</button>
-      <button type="button" class="collect-kind-btn ${currentCollectKind === 'youtube' ? 'active' : ''}" data-collect-kind="youtube">📺 유튜브</button>
-      <button type="button" class="collect-kind-btn ${currentCollectKind === 'image' ? 'active' : ''}" data-collect-kind="image">🖼️ 그림</button>
-    </div>` : '';
   return `
     <div class="soso-room-head">
       <div class="soso-room-head__label">${room.icon} ${room.label}</div>
       <div class="soso-room-head__title">${room.title}</div>
       <div class="soso-room-head__desc">${room.desc}</div>
-      ${collectToggle}
       <div class="soso-room-head__action">
-        <button class="btn btn--primary btn--sm" type="button" id="room-write-btn">${room.label === '전체' ? '모음 올리기' : `${room.label} 올리기`}</button>
+        <button class="btn btn--primary btn--sm" type="button" id="room-write-btn">${room.label === '전체' ? '올리기' : `${room.label} 올리기`}</button>
       </div>
     </div>`;
 }
 
 export async function renderFeed() {
   isLoading = false;
-  setMeta('소소킹 모음방');
+  setMeta('소소킹 피드');
   const el     = document.getElementById('page-content');
   const params = getQueryParams();
   currentType   = params.type  || '';
@@ -86,8 +77,6 @@ export async function renderFeed() {
   cursorTotal = 0;
   cachedPosts = [];
   lastDisplayPosts = [];
-
-  if (params.type !== 'collect') currentCollectKind = '';
 
   el.innerHTML = `
     <div class="soso-feed-page layout-main layout-main--full feed-page-clean">
@@ -110,19 +99,7 @@ export async function renderFeed() {
 function bindFeedEvents() {
   bindSearchEvents();
   bindTypeFilterEvents();
-  bindCollectKindEvents();
   bindRoomWriteEvent();
-}
-
-function bindCollectKindEvents() {
-  document.querySelectorAll('[data-collect-kind]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      currentCollectKind = btn.dataset.collectKind;
-      currentPage = 1;
-      document.querySelectorAll('[data-collect-kind]').forEach(b => b.classList.toggle('active', b.dataset.collectKind === currentCollectKind));
-      refreshFeed();
-    });
-  });
 }
 
 function bindRoomWriteEvent() {
@@ -142,9 +119,16 @@ function bindSearchEvents() {
     refreshFeed();
     clearBtn?.style.setProperty('display', currentSearch ? 'inline-flex' : 'none');
   };
-  searchInput?.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
-  searchBtn?.addEventListener('click', doSearch);
+  let debounceTimer = null;
+  searchInput?.addEventListener('input', () => {
+    clearBtn?.style.setProperty('display', searchInput.value.trim() ? 'inline-flex' : 'none');
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(doSearch, 420);
+  });
+  searchInput?.addEventListener('keydown', e => { if (e.key === 'Enter') { clearTimeout(debounceTimer); doSearch(); } });
+  searchBtn?.addEventListener('click', () => { clearTimeout(debounceTimer); doSearch(); });
   clearBtn?.addEventListener('click', () => {
+    clearTimeout(debounceTimer);
     if (searchInput) searchInput.value = '';
     currentSearch = '';
     currentPage   = 1;
@@ -305,7 +289,6 @@ function persistNavContext(posts) {
       type: currentType,
       search: currentSearch,
       sort: currentSort,
-      collectKind: currentCollectKind,
       href: window.location.hash || '#/feed',
       savedAt: Date.now(),
     }));
@@ -321,9 +304,7 @@ function renderCurrentPage() {
   const summaryEl = document.getElementById('feed-summary');
   if (!listEl) return;
 
-  const displayPosts = currentCollectKind && currentType === 'collect'
-    ? cachedPosts.filter(p => (p.modules?.collect?.kind || 'youtube') === currentCollectKind)
-    : cachedPosts;
+  const displayPosts = cachedPosts;
 
   if (useCursorMode()) {
     if (summaryEl) {

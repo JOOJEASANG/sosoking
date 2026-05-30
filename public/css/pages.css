@@ -409,6 +409,40 @@
 .quiz-result__icon { font-size: 40px; }
 .quiz-result__text { font-size: var(--font-size-md); font-weight: 800; margin-top: var(--space-2); letter-spacing: -0.3px; }
 
+/* cbattle A/B 퀴즈 스타일 선택 */
+.cbattle-quiz-box { border-bottom: 1px solid var(--color-border); }
+.cbattle-ox { display: flex; gap: var(--space-3); align-items: center; margin-top: 12px; }
+.cbattle-ox-btn {
+  flex: 1; padding: var(--space-5) var(--space-4); border-radius: var(--radius-lg);
+  border: 2px solid var(--color-border); background: var(--color-surface-2);
+  cursor: pointer; transition: all var(--transition-fast);
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+}
+.cbattle-ox-emoji { font-size: 36px; line-height: 1; }
+.cbattle-ox-label { font-size: 15px; font-weight: 900; color: var(--color-text-primary); }
+.cbattle-ox-vs {
+  font-size: 16px; font-weight: 900; color: var(--color-text-muted);
+  flex-shrink: 0; padding: 0 4px;
+}
+.cbattle-ox-btn--a:hover,
+.cbattle-ox-btn--a.active {
+  border-color: #EF4444; background: #FFF5F5;
+  box-shadow: 0 0 0 3px rgba(239,68,68,0.15);
+}
+.cbattle-ox-btn--a.active .cbattle-ox-label { color: #B91C1C; }
+.cbattle-ox-btn--b:hover,
+.cbattle-ox-btn--b.active {
+  border-color: #3B82F6; background: #EFF6FF;
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+}
+.cbattle-ox-btn--b.active .cbattle-ox-label { color: #1D4ED8; }
+.cbattle-select-hint {
+  text-align: center; font-size: 12px; color: var(--color-text-muted);
+  margin: 10px 0 0; padding: 0;
+}
+[data-theme="dark"] .cbattle-ox-btn--a.active { background: rgba(239,68,68,.12); }
+[data-theme="dark"] .cbattle-ox-btn--b.active { background: rgba(59,130,246,.12); }
+
 /* ════════════════════════
    삼행시
 ════════════════════════ */
@@ -475,6 +509,10 @@
 }
 .social-btn:hover { border-color: var(--color-primary); background: var(--color-primary-bg); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
 .social-btn img { width: 20px; height: 20px; }
+.social-btn--kakao { background: #FEE500; border-color: #FEE500; color: #3C1E1E; }
+.social-btn--kakao:hover { background: #f0d800; border-color: #f0d800; }
+[data-theme="dark"] .social-btn--kakao { background: #FEE500; border-color: #FEE500; color: #3C1E1E; }
+[data-theme="dark"] .social-btn--kakao:hover { background: #f0d800; border-color: #f0d800; }
 
 /* ════════════════════════
    내정보

@@ -50,6 +50,27 @@ export function renderTypeBody(post) {
     case 'battle':
       return renderLegacyBattleVs(post);
 
+    case 'cbattle': {
+      const topic = (post.desc || post.title || '').trim();
+      return `
+        <div class="multi-detail-module" style="margin-bottom:14px">
+          <div class="multi-detail-module__title">⚔️ 토론 주제</div>
+          <div class="multi-module-hint">팀을 선택하고 의견을 남겨보세요</div>
+          ${topic ? `<div class="multi-quiz-question" style="margin-top:10px">${escHtml(topic).replace(/\n/g, '<br>')}</div>` : ''}
+          <div class="cbattle-ox">
+            <button type="button" class="cbattle-ox-btn cbattle-ox-btn--a cbattle-side-btn" data-side="A">
+              <span class="cbattle-ox-emoji">🔴</span>
+              <span class="cbattle-ox-label">A팀</span>
+            </button>
+            <div class="cbattle-ox-vs">VS</div>
+            <button type="button" class="cbattle-ox-btn cbattle-ox-btn--b cbattle-side-btn" data-side="B">
+              <span class="cbattle-ox-emoji">🔵</span>
+              <span class="cbattle-ox-label">B팀</span>
+            </button>
+          </div>
+        </div>`;
+    }
+
     case 'story':
       return post.feeling
         ? `<div style="padding:12px 16px;background:var(--color-malhe-bg);border-left:3px solid var(--color-malhe);border-radius:8px;font-size:13px;margin-top:8px"><strong>💚 느낀 점</strong><br>${escHtml(post.feeling).replace(/\n/g, '<br>')}</div>`

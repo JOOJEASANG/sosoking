@@ -29,7 +29,8 @@ export function hasInteractiveModule(post) {
     modules.naming?.enabled ||
     modules.drip?.enabled ||
     modules.quiz?.enabled ||
-    modules.fill?.enabled
+    modules.fill?.enabled ||
+    modules.tournament?.enabled
   );
 }
 

@@ -75,20 +75,6 @@ function renderRichBody(raw) {
   return tpl.innerHTML;
 }
 
-function safeYouTubeId(value) {
-  const id = String(value || '').trim();
-  return /^[a-zA-Z0-9_-]{11}$/.test(id) ? id : '';
-}
-
-function renderYouTube(post) {
-  const id = safeYouTubeId(post.modules?.youtube?.videoId);
-  if (!id) return '';
-  const src = `https://www.youtube.com/embed/${id}`;
-  return `
-    <div class="detail-youtube-wrap">
-      <iframe class="detail-youtube-frame" src="${escAttr(src)}" title="YouTube video player" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
-    </div>`;
-}
 
 function renderImages(images) {
   const list = (Array.isArray(images) ? images : []).map(safeImageUrl).filter(Boolean).slice(0, 12);
@@ -112,8 +98,7 @@ function renderOptions(post) {
 function renderModules(post) {
   if (post.type !== 'multi' || !post.modules) return '';
   const labels = [];
-  if (post.modules.youtube?.enabled) labels.push('유튜브');
-  if (post.modules.vote?.enabled) labels.push('투표');
+if (post.modules.vote?.enabled) labels.push('투표');
   if (post.modules.naming?.enabled) labels.push('작명');
   if (post.modules.acrostic?.enabled) labels.push('삼행시');
   if (post.modules.relay?.enabled) labels.push('릴레이');
@@ -167,8 +152,7 @@ export async function renderDetail(id) {
     document.title = post.title ? `${post.title} - 소소킹` : '소소킹';
 
     el.innerHTML = `
-      <div style="max-width:720px;margin:0 auto">
-        <button class="btn btn--ghost btn--sm" onclick="history.back()" style="margin-bottom:16px">← 뒤로</button>
+      <div data-detail-root data-post-id="${escHtml(id)}" style="max-width:720px;margin:0 auto">
         <div class="card">
           <div class="detail-header">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
@@ -193,7 +177,6 @@ export async function renderDetail(id) {
             ${renderOptions(post)}
             ${renderModules(post)}
           </div>
-          ${renderYouTube(post)}
           <div class="divider" style="margin:0"></div>
           ${renderComments(comments)}
         </div>

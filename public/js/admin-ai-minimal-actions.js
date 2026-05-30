@@ -9,7 +9,7 @@ const generateAiContentNow = httpsCallable(functions, 'generateAiContentNow');
 const saveAiConfig = httpsCallable(functions, 'saveAiConfig');
 
 const AI_POST_TYPES = [
-  { key: 'general', label: '모음방', desc: '유튜브·웃긴그림·링크 모음' },
+  { key: 'general', label: '일반방', desc: '유튜브·웃긴그림·링크 모음' },
   { key: 'vote', label: '토론방', desc: '선택지 토론 글' },
   { key: 'quiz', label: '퀴즈방', desc: '주관식·객관식 퀴즈' },
   { key: 'drip', label: '드립방', desc: '오늘의 한줄' },
@@ -137,7 +137,7 @@ async function renderMinimalAiPanel(force = false) {
       </div></div>
       <div class="card"><div class="card__body">
         <div style="font-size:14px;font-weight:900;margin-bottom:6px">AI 모음 수동 생성</div>
-        <div style="font-size:12px;color:var(--color-text-muted);line-height:1.6;margin-bottom:12px">현재 사이트 구조에 맞춰 <b>모음방 / 토론방 / 퀴즈방 / 드립방</b> 데이터로 저장합니다. 선택한 방 유형 1개만 생성됩니다.</div>
+        <div style="font-size:12px;color:var(--color-text-muted);line-height:1.6;margin-bottom:12px">현재 사이트 구조에 맞춰 <b>일반방 / 토론방 / 퀴즈방 / 드립방</b> 데이터로 저장합니다. 선택한 방 유형 1개만 생성됩니다.</div>
         <div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center"><select class="form-input" id="ai-content-preset" aria-label="AI 모음 유형 선택">${renderAiPostTypeOptions()}</select><button class="btn btn--primary btn--sm" id="btn-ai-content-now">선택 유형 1개 생성</button></div>
         <div id="ai-content-result" style="font-size:12px;color:var(--color-text-muted);margin-top:10px;line-height:1.6"></div>
       </div></div>

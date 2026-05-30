@@ -27,11 +27,8 @@ function readContext() {
 }
 
 function labelForContext(ctx = {}) {
-  if (ctx.type === 'collect') {
-    if (ctx.collectKind === 'youtube') return '유튜브';
-    if (ctx.collectKind === 'image') return '그림';
-    return '모음방';
-  }
+  if (ctx.type === 'tournament') return '대결방';
+  if (ctx.type === 'collect') return '일반방';
   if (ctx.type === 'vote') return '토론방';
   if (ctx.type === 'quiz') return '퀴즈방';
   if (ctx.type === 'drip') return '드립방';
@@ -120,7 +117,7 @@ async function fallbackIds(currentId, ctx = {}) {
     let posts = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.hidden);
     if (ctx.type) posts = posts.filter(p => legacyMatchesContext(p, ctx));
     if (ctx.type === 'collect' && ctx.collectKind) {
-      posts = posts.filter(p => (p.modules?.collect?.kind || 'youtube') === ctx.collectKind);
+      posts = posts.filter(p => p.modules?.collect?.kind === ctx.collectKind);
     }
     const ids = posts.map(p => p.id);
     if (ids.length) writeStoredContext({ ...ctx, ids });
@@ -130,17 +127,16 @@ async function fallbackIds(currentId, ctx = {}) {
   }
 }
 
-function navHtml(index, total, ctx) {
+function navHtml(index, total, ctx, postId) {
   const hasPrev = index > 0;
   const hasNext = index >= 0 && index < total - 1;
   const label = labelForContext(ctx);
   return `
-    <div class="detail-post-nav" data-detail-post-nav="1" data-detail-nav-scope="${label}">
-      <button class="detail-post-nav__btn detail-post-nav__btn--prev" type="button" data-detail-nav="prev" aria-label="${label} 이전글" title="${label} 이전글" ${hasPrev ? '' : 'disabled'}>‹</button>
-      <div class="detail-post-nav__count"><b>${label}</b><span>${total ? `${index + 1} / ${total}` : '글 이동'}</span></div>
-      <button class="detail-post-nav__btn detail-post-nav__btn--next" type="button" data-detail-nav="next" aria-label="${label} 다음글" title="${label} 다음글" ${hasNext ? '' : 'disabled'}>›</button>
-    </div>
-    <div class="detail-swipe-hint">모바일에서는 화면을 좌우로 밀어 ${label} 이전글/다음글을 볼 수 있어요.</div>`;
+    <div class="detail-post-nav" data-detail-post-nav="1" data-for-post-id="${postId || ''}" data-detail-nav-scope="${label}">
+      <button class="detail-post-nav__btn detail-post-nav__btn--prev" type="button" data-detail-nav="prev" aria-label="이전글" ${hasPrev ? '' : 'disabled'}>‹ 이전글</button>
+      <button class="detail-post-nav__btn detail-post-nav__btn--list" type="button" data-detail-nav="list" aria-label="목록으로">목록으로</button>
+      <button class="detail-post-nav__btn detail-post-nav__btn--next" type="button" data-detail-nav="next" aria-label="다음글" ${hasNext ? '' : 'disabled'}>다음글 ›</button>
+    </div>`;
 }
 
 function goBy(ids, currentId, direction) {
@@ -175,9 +171,23 @@ async function ensureDetailNav() {
   injectMobileCommentStyle();
   captureVisibleFeedList();
   const currentId = detailId();
-  if (!currentId) return;
+  const existingNav = document.querySelector('[data-detail-post-nav]');
+
+  if (!currentId) {
+    existingNav?.remove();
+    return;
+  }
+
   const detailRoot = document.querySelector('[data-detail-root]');
-  if (!detailRoot || detailRoot.querySelector('[data-detail-post-nav]')) return;
+  if (!detailRoot) {
+    existingNav?.remove();
+    return;
+  }
+
+  // Re-use existing nav if it already belongs to this post
+  const currentPostId = detailRoot.dataset.postId || '';
+  if (existingNav && existingNav.dataset.forPostId === currentPostId) return;
+  existingNav?.remove();
 
   const ctx = readContext();
   let ids = ctx.ids || [];
@@ -185,9 +195,12 @@ async function ensureDetailNav() {
   const index = ids.indexOf(currentId);
   if (index < 0) return;
 
-  detailRoot.insertAdjacentHTML('afterbegin', navHtml(index, ids.length, ctx));
-  detailRoot.querySelector('[data-detail-nav="prev"]')?.addEventListener('click', () => goBy(ids, currentId, -1));
-  detailRoot.querySelector('[data-detail-nav="next"]')?.addEventListener('click', () => goBy(ids, currentId, 1));
+  // Attach to body so position:fixed works regardless of parent overflow/transform
+  document.body.insertAdjacentHTML('beforeend', navHtml(index, ids.length, ctx, currentPostId));
+  const navEl = document.querySelector('[data-detail-post-nav]');
+  navEl.querySelector('[data-detail-nav="prev"]')?.addEventListener('click', () => goBy(ids, currentId, -1));
+  navEl.querySelector('[data-detail-nav="next"]')?.addEventListener('click', () => goBy(ids, currentId, 1));
+  navEl.querySelector('[data-detail-nav="list"]')?.addEventListener('click', () => navigate('/feed'));
   bindSwipe(ids, currentId, detailRoot);
 }
 

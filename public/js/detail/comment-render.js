@@ -143,7 +143,7 @@ export function renderCommentSection(post, comments) {
   }
 
   if (post.type === 'cbattle') return renderCbattleSection(comments, loggedIn);
-  if (post.type === 'drip') return renderDripSection(comments, loggedIn);
+  if (post.type === 'drip' || post.feedType === 'drip' || post.modules?.drip?.enabled) return '';
 
   return `
     <div class="comment-section">
@@ -166,14 +166,10 @@ function renderCbattleSection(comments, loggedIn) {
   const bList = comments.filter(c => c.side === 'B');
   return `
     <div class="comment-section">
-      <div class="comment-section__title">⚔️ 댓글 배틀 (${comments.length}개)</div>
-      <div class="cbattle-side-select">
-        <button class="cbattle-side-btn cbattle-side-btn--a" data-side="A">🔴 A팀</button>
-        <button class="cbattle-side-btn cbattle-side-btn--b" data-side="B">🔵 B팀</button>
-      </div>
+      <div class="comment-section__title">⚔️ 토론 의견 (${comments.length}명)</div>
       <div class="comment-write-box" id="comment-write">
         ${!loggedIn ? '<input id="comment-guest-name" class="form-input" placeholder="닉네임 (선택, 최대 12자)" maxlength="12" style="margin-bottom:6px">' : ''}
-        <textarea id="comment-input" placeholder="팀을 선택 후 참여해보세요"></textarea>
+        <textarea id="comment-input" placeholder="위에서 팀을 선택하고 의견을 입력해주세요"></textarea>
         <button class="btn btn--primary btn--sm" style="align-self:flex-end" id="btn-comment">참여하기</button>
       </div>
       <div class="cbattle-columns">

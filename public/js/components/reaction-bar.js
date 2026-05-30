@@ -39,7 +39,11 @@ export function initReactionBar(postId) {
 
   bar.querySelectorAll('[data-reaction]').forEach(btn => {
     btn.addEventListener('click', async () => {
-      if (!auth.currentUser) { navigate('/login'); return; }
+      if (!auth.currentUser) {
+        const returnTo = window.location.hash.slice(1) || '/';
+        navigate('/login?return=' + encodeURIComponent(returnTo));
+        return;
+      }
 
       const uid        = auth.currentUser.uid;
       const key        = btn.dataset.reaction;

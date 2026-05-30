@@ -1,4 +1,5 @@
 export const TYPE_LABELS = {
+  tournament: '대결방',
   vote: '토론방',
   crazy_court: '토론방',
   ox: '퀴즈방',
@@ -8,8 +9,8 @@ export const TYPE_LABELS = {
   cbattle: '드립방',
   quiz: '퀴즈방',
   initial_game: '퀴즈방',
-  multi: '모음방',
-  general: '모음방',
+  multi: '일반방',
+  general: '일반방',
 };
 
 export const CAT_CLASS = {

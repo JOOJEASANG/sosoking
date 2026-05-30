@@ -124,7 +124,7 @@ async function renderDashboard(el) {
   const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
 
   const TYPE_META = [
-    { feedType: 'collect', icon: '📌', label: '모음방', cat: 'primary' },
+    { feedType: 'collect', icon: '📌', label: '일반방', cat: 'primary' },
     { feedType: 'vote',    icon: '🗳️', label: '토론방', cat: 'golra' },
     { feedType: 'quiz',    icon: '🧠', label: '퀴즈방', cat: 'malhe' },
     { feedType: 'drip',    icon: '🤣', label: '드립방', cat: 'usgyo' },
@@ -241,7 +241,7 @@ async function renderPosts(el, searchQ = '', catFilter = '') {
         <button class="btn btn--primary btn--sm" id="btn-post-search">검색</button>
         ${[
           { key: '', label: '전체' },
-          { key: 'collect', label: '📌 모음방', field: 'feedType' },
+          { key: 'collect', label: '📌 일반방', field: 'feedType' },
           { key: 'vote',    label: '🗳️ 토론방', field: 'feedType' },
           { key: 'quiz',    label: '🧠 퀴즈방', field: 'feedType' },
           { key: 'drip',    label: '🤣 드립방', field: 'feedType' },
@@ -265,7 +265,7 @@ async function renderPosts(el, searchQ = '', catFilter = '') {
                   <td class="admin-table__title-cell">
                     <a href="#/detail/${p.id}" class="admin-table__link">${escHtml(p.title || '(제목없음)')}</a>
                   </td>
-                  <td><span class="badge badge--gray" style="font-size:10px">${{ collect:'📌 모음', vote:'🗳️ 토론', quiz:'🧠 퀴즈', drip:'🤣 드립' }[p.feedType] || (p.feedType || p.type || '')}</span></td>
+                  <td><span class="badge badge--gray" style="font-size:10px">${{ collect:'📌 일반', vote:'🗳️ 토론', quiz:'🧠 퀴즈', drip:'🤣 드립' }[p.feedType] || (p.feedType || p.type || '')}</span></td>
                   <td class="admin-table__muted">${escHtml(p.authorName || '익명')}</td>
                   <td>
                     ${p.hidden

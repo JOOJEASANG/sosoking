@@ -2,8 +2,9 @@ import { navigate } from '../router.js';
 import { escHtml, formatTime } from '../utils/helpers.js';
 
 const TYPE_META = {
-  multi:        { cat: 'multi', catLabel: '모음방', icon: '📌', label: '모음방' },
-  general:      { cat: 'multi', catLabel: '모음방', icon: '📌', label: '모음방' },
+  tournament:   { cat: 'multi', catLabel: '대결방', icon: '⚔️', label: '대결방' },
+  multi:        { cat: 'multi', catLabel: '일반방', icon: '📌', label: '일반방' },
+  general:      { cat: 'multi', catLabel: '일반방', icon: '📌', label: '일반방' },
   vote:         { cat: 'golra', catLabel: '토론방', icon: '🗳️', label: '토론방' },
   crazy_court:  { cat: 'golra', catLabel: '토론방', icon: '🗳️', label: '토론방' },
   battle:       { cat: 'golra', catLabel: '토론방', icon: '🗳️', label: '토론방' },
@@ -53,6 +54,7 @@ function safeTag(value) {
 
 function getMultiSubtype(post) {
   if (post.subtype === 'anonymous') return 'general';
+  if (post.modules?.tournament?.enabled || post.subtype === 'tournament') return 'tournament';
   if (post.modules?.vote?.enabled) return 'vote';
   if (post.modules?.drip?.enabled) return 'drip';
   if (post.modules?.quiz?.enabled) return 'quiz';

@@ -3,6 +3,8 @@ import { navigate } from '../router.js';
 import { toast } from '../components/toast.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
+const KAKAO_JS_APP_KEY = '377995fee0850a5de4167641d343be0e';
+
 const OWNER_EMAILS = new Set(['joojeasang@gmail.com']);
 
 function isOwnerEmail(user) {
@@ -44,6 +46,53 @@ async function goAfterLogin(user = auth.currentUser) {
   else window.dispatchEvent(new Event('hashchange'));
 }
 
+async function loginWithKakao() {
+  const K = window.Kakao;
+  if (!K) { toast.error('[카카오] SDK 미로드'); return; }
+
+  if (!K.isInitialized()) {
+    try { K.init(KAKAO_JS_APP_KEY); }
+    catch (e) { toast.error('[카카오] 초기화 실패: ' + e.message); return; }
+  }
+
+  if (!K.isInitialized()) { toast.error('[카카오] 초기화 확인 실패'); return; }
+  if (typeof K.Auth?.login !== 'function') { toast.error('[카카오] Auth.login 없음'); return; }
+
+  toast.warn('[카카오] 로그인 팝업 요청 중...');
+
+  let accessToken;
+  try {
+    accessToken = await new Promise((resolve, reject) => {
+      K.Auth.login({ success: (o) => resolve(o.access_token), fail: reject });
+    });
+  } catch (err) {
+    if (err?.error === 'access_denied' || err?.error === 'cancelled') {
+      toast.warn('카카오 로그인이 취소됐어요');
+      return;
+    }
+    toast.error('[카카오] Auth 실패: ' + JSON.stringify(err));
+    return;
+  }
+
+  const btn = document.getElementById('btn-kakao');
+  if (btn) { btn.disabled = true; btn.textContent = '로그인 중...'; }
+  try {
+    const { getFunctions, httpsCallable } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js');
+    const { getApp } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');
+    const { signInWithCustomToken } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
+    const fns = getFunctions(getApp(), 'asia-northeast3');
+    const { data } = await httpsCallable(fns, 'kakaoLogin')({ accessToken });
+    const cred = await signInWithCustomToken(auth, data.customToken);
+    toast.success('카카오 로그인됐어요!');
+    await goAfterLogin(cred.user);
+  } catch (e) {
+    console.error('[kakao] sign-in error', e);
+    toast.error('카카오 로그인 처리에 실패했어요');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '💛 카카오로 로그인'; }
+  }
+}
+
 export function renderLogin() {
   const el = document.getElementById('page-content');
   const existingUser = auth.currentUser;
@@ -63,9 +112,13 @@ export function renderLogin() {
             <div class="auth-logo__sub">글과 사진으로 즐기는 게임형 커뮤니티</div>
           </div>
 
-          <button class="social-btn" id="btn-google">
+          <button type="button" class="social-btn" id="btn-google">
             <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
             Google로 로그인
+          </button>
+
+          <button type="button" class="social-btn social-btn--kakao" id="btn-kakao">
+            💛 카카오로 로그인
           </button>
 
           <div class="auth-divider">또는</div>
@@ -78,9 +131,9 @@ export function renderLogin() {
             <label class="form-label">비밀번호</label>
             <input id="f-password" class="form-input" type="password" placeholder="비밀번호">
           </div>
-          <button class="btn btn--primary btn--full" id="btn-email-login">이메일로 로그인</button>
-          <button class="btn btn--ghost btn--full" id="btn-email-signup" style="margin-top:8px">회원가입</button>
-          <button class="btn btn--ghost btn--full" id="btn-reset-password" style="margin-top:4px;font-size:13px;color:var(--color-text-muted)">비밀번호 재설정</button>
+          <button type="button" class="btn btn--primary btn--full" id="btn-email-login">이메일로 로그인</button>
+          <button type="button" class="btn btn--ghost btn--full" id="btn-email-signup" style="margin-top:8px">회원가입</button>
+          <button type="button" class="btn btn--ghost btn--full" id="btn-reset-password" style="margin-top:4px;font-size:13px;color:var(--color-text-muted)">비밀번호 재설정</button>
 
           <p style="text-align:center;font-size:12px;color:var(--color-text-muted);margin-top:16px">
             로그인 시 <a href="#/legal/terms" style="color:var(--color-primary)">이용 약관</a>에 동의하는 것으로 간주됩니다.
@@ -105,6 +158,8 @@ export function renderLogin() {
       }
     }
   });
+
+  document.getElementById('btn-kakao')?.addEventListener('click', loginWithKakao);
 
   document.getElementById('btn-email-login')?.addEventListener('click', async () => {
     const { signInWithEmailAndPassword } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');

@@ -1,9 +1,12 @@
-import { auth } from '../firebase.js';
+import { auth, functions } from '../firebase.js';
+import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
 import { toast } from '../components/toast.js';
 import { isDetailPath } from './action-utils.js';
 import { currentPostId, getCurrentPostSummary, stop } from './bootstrap-context.js';
 import { ensureCommentActor, deleteComment, toggleCommentReaction, adjustReactCount } from './comment-actions.js';
-import { submitDetailComment, submitCbattleComment, getSelectedCbattleSide, bindCbattleSideButtons } from './submit-actions.js';
+import { submitDetailComment, submitCbattleComment, submitAcrosticEntry, getSelectedCbattleSide, bindCbattleSideButtons } from './submit-actions.js';
+
+const callReactAcrostic = httpsCallable(functions, 'reactToAcrostic');
 
 export async function handleCbattleSide(event) {
   const btn = event.target.closest?.('.cbattle-side-btn');
@@ -100,4 +103,91 @@ export async function handleCommentReaction(event) {
 
 export function refreshCbattleSideBinding() {
   if (isDetailPath()) bindCbattleSideButtons(document);
+}
+
+export async function handleCharSubmit(event) {
+  const btn = event.target.closest?.('#btn-char-submit');
+  if (!btn || !isDetailPath()) return false;
+  stop(event);
+  if (btn._detailPending) return true;
+
+  const freeInput = document.getElementById('free-naming-input');
+  let text;
+  if (freeInput) {
+    text = freeInput.value.trim();
+    if (!text) { toast.warn('이름을 입력해주세요'); return true; }
+  } else {
+    const boxes = [...document.querySelectorAll('.char-box')];
+    if (!boxes.length) return true;
+    text = boxes.map(b => b.value.trim()).join('');
+    if (!text || boxes.some(b => !b.value.trim())) { toast.warn('모든 칸을 채워주세요'); return true; }
+  }
+
+  btn._detailPending = true;
+  try {
+    await submitDetailComment(currentPostId(), { text });
+    if (freeInput) freeInput.value = '';
+    else document.querySelectorAll('.char-box').forEach(b => { b.value = ''; });
+    toast.success('등록됐어요! 🎉');
+    window.dispatchEvent(new Event('hashchange'));
+  } catch (error) {
+    toast.error(error.message || '등록에 실패했어요');
+  }
+  btn._detailPending = false;
+  return true;
+}
+
+export async function handleAcrosticSubmit(event) {
+  const btn = event.target.closest?.('#btn-acrostic-submit');
+  if (!btn || !isDetailPath()) return false;
+  stop(event);
+  if (btn._detailPending) return true;
+
+  const keywordEl = document.getElementById('acrostic-keyword');
+  const keyword = keywordEl?.dataset.keyword || keywordEl?.textContent?.trim() || '';
+  const lines = [...document.querySelectorAll('.acrostic-line-input')].map(el => el.value.trim());
+
+  if (!keyword) { toast.warn('제시어를 찾을 수 없어요'); return true; }
+  if (!lines.length || lines.some(l => !l)) { toast.warn('모든 줄을 입력해주세요'); return true; }
+
+  btn._detailPending = true;
+  try {
+    await submitAcrosticEntry(currentPostId(), keyword, lines);
+    document.querySelectorAll('.acrostic-line-input').forEach(el => { el.value = ''; });
+    toast.success('행시를 등록했어요! 🎉');
+    window.dispatchEvent(new Event('hashchange'));
+  } catch (error) {
+    toast.error(error.message || '등록에 실패했어요');
+  }
+  btn._detailPending = false;
+  return true;
+}
+
+export async function handleAcrosticReaction(event) {
+  const btn = event.target.closest?.('[data-acrostic-reaction]');
+  if (!btn || !isDetailPath()) return false;
+  stop(event);
+  if (btn._detailPending) return true;
+
+  if (!auth.currentUser) {
+    const { navigate } = await import('../router.js');
+    navigate('/login');
+    return true;
+  }
+
+  btn._detailPending = true;
+  try {
+    const res = await callReactAcrostic({
+      postId: currentPostId(),
+      acrosticId: btn.dataset.acrosticId,
+      reaction: btn.dataset.acrosticReaction,
+    });
+    const result = res.data || {};
+    if (result.active) btn.classList.add('active');
+    else btn.classList.remove('active');
+  } catch (error) {
+    toast.error(error?.message || '삼행시 반응에 실패했어요');
+  }
+  btn._detailPending = false;
+  return true;
 }

@@ -16,6 +16,7 @@ const EXTENSION_MODULES = [
   './post-owner-actions.js',
   './participant-replies.js',
   './multi-detail.js',
+  './tournament-play.js',
   './detail-extras.js',
   './detail-cards.js',
   './detail-post-nav.js',
@@ -36,6 +37,8 @@ const EXTENSION_MODULES = [
   './notifications-ui.js',
   './account-request-cleanup.js',
   './deadline-gate.js',
+  './ui-final-interactions.js',
+  './ux-improvements.js',
 ];
 
 async function loadExtension(path) {

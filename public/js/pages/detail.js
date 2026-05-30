@@ -24,6 +24,7 @@ async function registerDetailView(id) {
 }
 
 function shouldHideMainDesc(post) {
+  if (post.type === 'cbattle') return true;
   return post.type === 'multi' && (
     post.modules?.quiz?.enabled === true ||
     post.modules?.drip?.enabled === true ||
@@ -83,7 +84,6 @@ function renderDetailPage(el, post, comments, isScrapped = false) {
 
   el.innerHTML = `
     <div data-detail-root data-post-id="${escHtml(post.id)}" style="max-width:720px;margin:0 auto">
-      <button class="btn btn--ghost btn--sm" onclick="history.back()" style="margin-bottom:16px">← 뒤로</button>
       <div class="card">
         <div class="detail-header">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
