@@ -171,7 +171,7 @@ function setWriteSectionVisibility(normalized) {
     if (key === 'standard-fields') section.style.display = normalized === 'drip' ? 'none' : '';
     if (key === 'content-field') section.style.display = (normalized === 'drip' || isTournament) ? 'none' : '';
     if (key === 'collect-url-field') section.style.display = 'none';
-    if (key === 'media-field') section.style.display = (normalized === 'drip' || isTournament) ? 'none' : '';
+    if (key === 'media-field') section.style.display = isTournament ? 'none' : '';
     if (key === 'vote-panel') section.style.display = normalized === 'vote' ? '' : 'none';
     if (key === 'quiz-panel') section.style.display = normalized === 'quiz' ? '' : 'none';
     if (key === 'drip-panel') section.style.display = normalized === 'drip' ? '' : 'none';
@@ -423,6 +423,10 @@ async function submitMultiPost() {
 
   if (presetKey === 'drip') {
     title = '오늘의 드립 주제';
+    if (!desc && !hasPendingImages()) {
+      toast.error('드립 주제를 적거나 사진을 올려주세요.');
+      return;
+    }
   } else if (!title) {
     toast.error(presetKey === 'vote' ? '토론 주제를 입력해주세요.' : '제목을 입력해주세요.');
     return;
