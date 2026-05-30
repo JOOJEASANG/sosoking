@@ -136,11 +136,10 @@ function navHtml(index, total, ctx) {
   const label = labelForContext(ctx);
   return `
     <div class="detail-post-nav" data-detail-post-nav="1" data-detail-nav-scope="${label}">
-      <button class="detail-post-nav__btn detail-post-nav__btn--prev" type="button" data-detail-nav="prev" aria-label="${label} 이전글" title="${label} 이전글" ${hasPrev ? '' : 'disabled'}>‹</button>
-      <div class="detail-post-nav__count"><b>${label}</b><span>${total ? `${index + 1} / ${total}` : '글 이동'}</span></div>
-      <button class="detail-post-nav__btn detail-post-nav__btn--next" type="button" data-detail-nav="next" aria-label="${label} 다음글" title="${label} 다음글" ${hasNext ? '' : 'disabled'}>›</button>
-    </div>
-    <div class="detail-swipe-hint">모바일에서는 화면을 좌우로 밀어 ${label} 이전글/다음글을 볼 수 있어요.</div>`;
+      <button class="detail-post-nav__btn detail-post-nav__btn--prev" type="button" data-detail-nav="prev" aria-label="이전글" ${hasPrev ? '' : 'disabled'}>‹ 이전글</button>
+      <button class="detail-post-nav__btn detail-post-nav__btn--list" type="button" data-detail-nav="list" aria-label="목록으로">목록으로</button>
+      <button class="detail-post-nav__btn detail-post-nav__btn--next" type="button" data-detail-nav="next" aria-label="다음글" ${hasNext ? '' : 'disabled'}>다음글 ›</button>
+    </div>`;
 }
 
 function goBy(ids, currentId, direction) {
@@ -188,6 +187,7 @@ async function ensureDetailNav() {
   detailRoot.insertAdjacentHTML('afterbegin', navHtml(index, ids.length, ctx));
   detailRoot.querySelector('[data-detail-nav="prev"]')?.addEventListener('click', () => goBy(ids, currentId, -1));
   detailRoot.querySelector('[data-detail-nav="next"]')?.addEventListener('click', () => goBy(ids, currentId, 1));
+  detailRoot.querySelector('[data-detail-nav="list"]')?.addEventListener('click', () => navigate('/feed'));
   bindSwipe(ids, currentId, detailRoot);
 }
 
