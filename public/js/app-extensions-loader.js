@@ -16,6 +16,7 @@ const EXTENSION_MODULES = [
   './post-owner-actions.js',
   './participant-replies.js',
   './multi-detail.js',
+  './tournament-play.js',
   './detail-extras.js',
   './detail-cards.js',
   './detail-post-nav.js',

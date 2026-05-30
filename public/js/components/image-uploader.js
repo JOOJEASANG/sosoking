@@ -60,6 +60,17 @@ function getImageKind(file) {
   return { ext: 'jpg', contentType: 'image/jpeg', animated: false };
 }
 
+export async function uploadSingleImage(file) {
+  const kind = getImageKind(file);
+  const blob = kind.animated ? file : await compressImage(file);
+  if (!blob) throw new Error('이미지 압축 실패');
+  try {
+    return await uploadViaFunction(blob, kind);
+  } catch {
+    return await uploadDirect(blob, kind);
+  }
+}
+
 async function uploadOneImage(item) {
   const kind = getImageKind(item.file);
   const blob = kind.animated ? item.file : await compressImage(item.file);

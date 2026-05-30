@@ -354,3 +354,28 @@ exports.scheduledWeeklyReport = onSchedule(
 );
 
 require('./ai-content-now').register({ exports, onCall, db, FieldValue, GoogleGenerativeAI, geminiKey, getAiKey, logAiUsage });
+
+// ── 토너먼트 결과 기록 ──
+exports.recordTournamentResult = onCall({ region: 'asia-northeast3' }, async (request) => {
+  const userId = request.auth?.uid;
+  if (!userId) throw new HttpsError('unauthenticated', '로그인 필요');
+
+  const { postId, winnerIdx } = request.data || {};
+  if (!postId || typeof winnerIdx !== 'number') throw new HttpsError('invalid-argument', '잘못된 데이터');
+
+  const postRef = db.doc(`feeds/${postId}`);
+  const snap = await postRef.get();
+  if (!snap.exists) throw new HttpsError('not-found', '게시물 없음');
+
+  const t = snap.data()?.modules?.tournament;
+  if (!t?.enabled || !Array.isArray(t.items) || winnerIdx < 0 || winnerIdx >= t.items.length) {
+    throw new HttpsError('invalid-argument', '유효하지 않은 항목');
+  }
+
+  await postRef.update({
+    [`modules.tournament.wins.${winnerIdx}`]: FieldValue.increment(1),
+    'modules.tournament.plays': FieldValue.increment(1),
+  });
+
+  return { ok: true };
+});

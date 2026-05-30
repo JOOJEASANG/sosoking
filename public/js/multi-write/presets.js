@@ -1,4 +1,12 @@
 export const MULTI_PRESETS = {
+  tournament: {
+    label: '대결방',
+    icon: '⚔️',
+    shortDesc: '이상형 월드컵 대결',
+    titlePlaceholder: '예: 역대 최강 라면 이상형 월드컵',
+    descPlaceholder: '',
+    tagsPlaceholder: '#대결, #이상형월드컵, #최강자',
+  },
   collect: {
     label: '일반방',
     icon: '📌',
@@ -6,6 +14,7 @@ export const MULTI_PRESETS = {
     titlePlaceholder: '예: 오늘 웃긴 쇼츠 모음',
     descPlaceholder: '짧게 설명을 적어주세요. 예: 웃겨서 저장해둔 영상입니다.',
     tagsPlaceholder: '#유튜브, #웃긴그림, #모음',
+    hiddenFromWriter: true,
   },
   vote: {
     label: '토론방',
@@ -82,7 +91,7 @@ export const MULTI_PRESETS = {
   },
 };
 
-export const WRITER_PRESET_KEYS = ['collect', 'vote', 'quiz', 'drip'];
+export const WRITER_PRESET_KEYS = ['tournament', 'vote', 'quiz', 'drip'];
 
 export const BODY_LABELS = {
   collect: '한줄 설명',
@@ -90,21 +99,23 @@ export const BODY_LABELS = {
   drip: '드립 주제',
   fill: '본문 · 빈칸 문장',
   quiz: '퀴즈 문제',
+  tournament: '대결 설명',
 };
 
 export const BODY_REQUIRED_PRESETS = ['collect', 'vote', 'drip', 'quiz'];
+// tournament does not use body text — items are entered per-row
 
 export function normalizePresetKey(key, { allowHidden = false } = {}) {
   if (key === 'ox') return 'vote';
-  if (key === 'collection' || key === 'youtube' || key === 'image' || key === 'link') return 'collect'; // youtube alias kept for old links
+  if (key === 'collection' || key === 'youtube' || key === 'image' || key === 'link') return 'collect'; // kept for old link compat
   if (key === 'debate' || key === 'discussion') return 'vote';
   if (key === 'anonymous' || key === 'relay' || key === 'acrostic') return 'general';
-  if (!MULTI_PRESETS[key]) return 'collect';
-  if (!allowHidden && MULTI_PRESETS[key].hiddenFromWriter) return 'collect';
+  if (!MULTI_PRESETS[key]) return 'tournament';
+  if (!allowHidden && MULTI_PRESETS[key].hiddenFromWriter) return 'tournament';
   return key;
 }
 
 export function getMultiPresetFromHash(hash = window.location.hash || '') {
   const query = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '';
-  return normalizePresetKey(new URLSearchParams(query).get('preset') || 'collect');
+  return normalizePresetKey(new URLSearchParams(query).get('preset') || 'tournament');
 }

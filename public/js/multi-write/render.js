@@ -54,6 +54,32 @@ function renderCollectHidden(activeKey) {
   return `<div data-option-panel="collect" style="display:none">${moduleToggleInput('collect', activeKey)}<input type="hidden" id="mw-collect-kind" value="auto"></div>`;
 }
 
+function renderTournamentItemRows() {
+  return Array.from({ length: 16 }, (_, i) => `
+    <div class="t-item-row" data-t-item-idx="${i}" ${i >= 8 ? 'style="display:none"' : ''}>
+      <span class="t-item-num">${i + 1}</span>
+      <input class="form-input t-item-name" maxlength="30" placeholder="항목 ${i + 1}" autocomplete="off">
+      <button type="button" class="t-item-img-btn" data-t-img-btn="${i}" title="사진 추가">📷</button>
+      <input type="file" class="t-item-file" accept="image/*" data-item-idx="${i}" style="display:none">
+    </div>`).join('');
+}
+
+function renderTournamentPanel(activeKey) {
+  return moduleCard('tournament', activeKey, '⚔️', '이상형 월드컵 설정', '항목을 입력하고 1위를 가려보세요.', `
+    <div class="form-group">
+      <label class="form-label">대결 규모 <span class="required">*</span></label>
+      <div class="t-size-picker">
+        <button type="button" class="t-size-btn" data-t-size="4">4강</button>
+        <button type="button" class="t-size-btn active" data-t-size="8">8강</button>
+        <button type="button" class="t-size-btn" data-t-size="16">16강</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">대결 항목 <span class="required">*</span> <small style="font-weight:400;color:var(--color-text-muted)">이름 필수 · 사진 선택</small></label>
+      <div class="t-items-list" id="t-items-list">${renderTournamentItemRows()}</div>
+    </div>`);
+}
+
 
 function renderVoteModule(activeKey) {
   return `
@@ -123,11 +149,12 @@ function renderDripTopicField(activeKey) {
 }
 
 export function renderMultiWriteHTML({ renderKey, presetKey }) {
-  const activeKey = MULTI_PRESETS[presetKey] && !MULTI_PRESETS[presetKey].hiddenFromWriter ? presetKey : 'collect';
-  const preset = MULTI_PRESETS[activeKey] || MULTI_PRESETS.collect;
+  const activeKey = MULTI_PRESETS[presetKey] && !MULTI_PRESETS[presetKey].hiddenFromWriter ? presetKey : 'tournament';
+  const preset = MULTI_PRESETS[activeKey] || MULTI_PRESETS.tournament;
+  const isTournament = activeKey === 'tournament';
   const standardHidden = activeKey === 'drip' ? 'style="display:none"' : '';
-  const contentHidden = '';
-  const mediaHidden = activeKey === 'drip' ? 'style="display:none"' : '';
+  const contentHidden = isTournament ? 'style="display:none"' : '';
+  const mediaHidden = (activeKey === 'drip' || isTournament) ? 'style="display:none"' : '';
   const titleLabel = activeKey === 'vote' ? '토론 주제' : '제목';
   const contentLabel = activeKey === 'vote' ? '추가 설명' : activeKey === 'collect' ? '한줄 설명' : '내용';
   const requiredMark = (activeKey === 'vote' || activeKey === 'collect') ? '' : '<span class="required">*</span>';
@@ -161,6 +188,7 @@ export function renderMultiWriteHTML({ renderKey, presetKey }) {
           <div data-write-section="vote-panel" ${activeKey === 'vote' ? '' : 'style="display:none"'}>${renderVoteModule(activeKey)}</div>
           <div data-write-section="quiz-panel" ${activeKey === 'quiz' ? '' : 'style="display:none"'}>${renderQuizModule(activeKey)}</div>
           <div data-write-section="drip-panel" ${activeKey === 'drip' ? '' : 'style="display:none"'}>${renderDripModule(activeKey)}</div>
+          <div data-write-section="tournament-panel" ${activeKey === 'tournament' ? '' : 'style="display:none"'}>${renderTournamentPanel(activeKey)}</div>
           <div class="form-group">
             <label class="form-label" for="mw-tags">태그</label>
             <div class="mw-tags-row">

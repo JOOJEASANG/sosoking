@@ -3,7 +3,7 @@ import { collection, doc, setDoc, deleteDoc, serverTimestamp } from 'https://www
 import { navigate } from './router.js';
 import { toast } from './components/toast.js';
 import { appState } from './state.js';
-import { initImageUploader, getUploadedImages, hasPendingImages } from './components/image-uploader.js';
+import { initImageUploader, getUploadedImages, hasPendingImages, uploadSingleImage } from './components/image-uploader.js';
 import { awardPoints } from './utils/points.js';
 import { MULTI_PRESETS, getMultiPresetFromHash } from './multi-write/presets.js';
 import { renderMultiWriteHTML, renderQuizOptionRow } from './multi-write/render.js';
@@ -82,8 +82,8 @@ function getPresetKey() {
 }
 
 function feedTypeFromPreset(presetKey) {
-  if (['collect', 'vote', 'drip', 'quiz'].includes(presetKey)) return presetKey;
-  return 'collect';
+  if (['tournament', 'collect', 'vote', 'drip', 'quiz'].includes(presetKey)) return presetKey;
+  return 'tournament';
 }
 
 function dripTopicValue() {
@@ -164,21 +164,23 @@ export async function renderMultiWrite() {
 }
 
 function setWriteSectionVisibility(normalized) {
+  const isTournament = normalized === 'tournament';
   document.querySelectorAll('[data-write-section]').forEach(section => {
     const key = section.dataset.writeSection;
     if (key === 'drip-line') section.style.display = normalized === 'drip' ? '' : 'none';
     if (key === 'standard-fields') section.style.display = normalized === 'drip' ? 'none' : '';
-    if (key === 'content-field') section.style.display = normalized === 'drip' ? 'none' : '';
-    if (key === 'collect-url-field') section.style.display = normalized === 'collect' ? '' : 'none';
-    if (key === 'media-field') section.style.display = normalized === 'drip' ? 'none' : '';
+    if (key === 'content-field') section.style.display = (normalized === 'drip' || isTournament) ? 'none' : '';
+    if (key === 'collect-url-field') section.style.display = 'none';
+    if (key === 'media-field') section.style.display = (normalized === 'drip' || isTournament) ? 'none' : '';
     if (key === 'vote-panel') section.style.display = normalized === 'vote' ? '' : 'none';
     if (key === 'quiz-panel') section.style.display = normalized === 'quiz' ? '' : 'none';
     if (key === 'drip-panel') section.style.display = normalized === 'drip' ? '' : 'none';
+    if (key === 'tournament-panel') section.style.display = isTournament ? '' : 'none';
   });
 }
 
 function updateOptionSelection(preset) {
-  const normalized = MULTI_PRESETS[preset] && !MULTI_PRESETS[preset].hiddenFromWriter ? preset : 'collect';
+  const normalized = MULTI_PRESETS[preset] && !MULTI_PRESETS[preset].hiddenFromWriter ? preset : 'tournament';
   const hidden = document.getElementById('mw-selected-preset');
   if (hidden) hidden.value = normalized;
   const page = document.querySelector('.multi-write-page');
@@ -275,6 +277,127 @@ function bindMultiWriteEvents() {
   });
 
   document.getElementById('multi-submit')?.addEventListener('click', submitMultiPost);
+
+  // Tournament size picker
+  document.querySelectorAll('.t-size-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const size = parseInt(btn.dataset.tSize || '8');
+      document.querySelectorAll('.t-size-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.t-item-row').forEach(row => {
+        const idx = parseInt(row.dataset.tItemIdx || '0');
+        row.style.display = idx < size ? '' : 'none';
+      });
+    });
+  });
+
+  // Tournament per-item image buttons
+  document.querySelectorAll('[data-t-img-btn]').forEach(imgBtn => {
+    imgBtn.addEventListener('click', () => {
+      const idx = imgBtn.dataset.tImgBtn;
+      document.querySelector(`.t-item-file[data-item-idx="${idx}"]`)?.click();
+    });
+  });
+
+  document.querySelectorAll('.t-item-file').forEach(fileInput => {
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files?.[0];
+      if (!file) return;
+      const idx = fileInput.dataset.itemIdx;
+      const imgBtn = document.querySelector(`[data-t-img-btn="${idx}"]`);
+      const reader = new FileReader();
+      reader.onload = ev => {
+        if (imgBtn) imgBtn.innerHTML = `<img src="${ev.target.result}" alt="">`;
+        fileInput._tournamentFile = file;
+      };
+      reader.readAsDataURL(file);
+    });
+  });
+}
+
+async function submitTournamentPost(btn) {
+  const sizeBtn = document.querySelector('.t-size-btn.active');
+  const size = parseInt(sizeBtn?.dataset.tSize || '8');
+  const title = document.getElementById('mw-title')?.value.trim() || '';
+
+  if (!title) {
+    toast.error('대결 제목을 입력해주세요.');
+    return;
+  }
+
+  const rows = [...document.querySelectorAll('.t-item-row')].filter(row => parseInt(row.dataset.tItemIdx || '0') < size);
+  const rawItems = rows.map(row => ({
+    name: row.querySelector('.t-item-name')?.value.trim() || '',
+    file: row.querySelector('.t-item-file')?._tournamentFile || null,
+  }));
+  const emptyCount = rawItems.filter(item => !item.name).length;
+  if (emptyCount > 0) {
+    toast.error(`항목을 모두 입력해주세요. (${size - emptyCount}/${size})`);
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '사진 업로드 중...';
+
+  try {
+    const itemsWithUrls = await Promise.all(rawItems.map(async item => {
+      if (!item.file) return { name: item.name, imageUrl: '' };
+      try {
+        const url = await uploadSingleImage(item.file);
+        return { name: item.name, imageUrl: url };
+      } catch {
+        return { name: item.name, imageUrl: '' };
+      }
+    }));
+
+    btn.textContent = '게시글 저장 중...';
+    const preset = MULTI_PRESETS.tournament;
+    const manualTags = splitTags(document.getElementById('mw-tags')?.value || '');
+    const tags = manualTags.length ? manualTags : ['대결방', '이상형월드컵', `${size}강`];
+    const docRef = doc(collection(db, 'feeds'));
+
+    await setDoc(docRef, {
+      type: 'multi',
+      cat: 'multi',
+      subtype: 'tournament',
+      feedType: 'tournament',
+      typeLabel: preset.label,
+      title,
+      desc: '',
+      tags,
+      images: [],
+      modules: {
+        comments: { enabled: true },
+        tournament: {
+          enabled: true,
+          size,
+          items: itemsWithUrls,
+          wins: {},
+          plays: 0,
+        },
+      },
+      anonymous: false,
+      anonymousMode: '',
+      authorId: auth.currentUser.uid,
+      authorName: appState.nickname || auth.currentUser.displayName || '익명',
+      authorPhoto: auth.currentUser.photoURL || '',
+      authorEmail: auth.currentUser.email || '',
+      reactions: { total: 0 },
+      commentCount: 0,
+      viewCount: 0,
+      pointsScore: 0,
+      createdAt: serverTimestamp(),
+    });
+
+    clearDraft();
+    toast.success(`${preset.label}에 올렸어요! +10P 🎉`);
+    navigate(`/detail/${docRef.id}`);
+  } catch (error) {
+    console.error(error);
+    toast.error(error.message || '올리기에 실패했어요.');
+    btn.disabled = false;
+    btn.textContent = '올리기';
+  }
 }
 
 async function submitMultiPost() {
@@ -288,8 +411,13 @@ async function submitMultiPost() {
   else syncRichEditor();
 
   const btn = document.getElementById('multi-submit');
+
+  if (presetKey === 'tournament') {
+    return submitTournamentPost(btn);
+  }
+
   let title = document.getElementById('mw-title')?.value.trim() || '';
-  const preset = MULTI_PRESETS[presetKey] || MULTI_PRESETS.collect;
+  const preset = MULTI_PRESETS[presetKey] || MULTI_PRESETS.tournament;
   const bodyValue = getBodyHtml() || getBodyText();
   const desc = presetKey === 'drip' ? dripTopicValue() : (presetKey === 'vote' ? (bodyValue || title) : bodyValue);
 
@@ -310,7 +438,7 @@ async function submitMultiPost() {
     const images = await getUploadedImages();
     if (images.length > MAX_FEED_IMAGES) throw new Error(`사진은 최대 ${MAX_FEED_IMAGES}장까지 올릴 수 있어요.`);
     if (presetKey === 'collect' && publicModules.collect?.kind === 'image' && !images.length) {
-      throw new Error('유튜브 링크를 입력하거나 사진 파일을 업로드해주세요.');
+      throw new Error('사진 파일을 업로드해주세요.');
     }
     btn.textContent = '게시글 저장 중...';
 

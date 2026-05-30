@@ -18,11 +18,11 @@ const FILTER_LIMIT = 120;
 const NAV_CONTEXT_KEY = 'sosoking:feedNavContext';
 
 const ROOMS = [
-  { key: '',        icon: '✨', label: '전체',   title: '전체 모음', desc: '유튜브, 웃긴그림, 토론, 퀴즈, 드립을 한 번에 봅니다.', write: 'collect' },
-  { key: 'collect', icon: '📌', label: '일반방', title: '일반방', desc: '유튜브 쇼츠와 업로드한 웃긴그림을 짧게 모아봅니다.', write: 'collect' },
-  { key: 'vote',    icon: '🗳️', label: '토론방', title: '토론방', desc: '선택지로 빠르게 의견을 모으고 댓글로 이야기합니다.', write: 'vote' },
-  { key: 'quiz',    icon: '🧠', label: '퀴즈방', title: '퀴즈방', desc: '짧은 문제를 보고 바로 맞히는 공간입니다.', write: 'quiz' },
-  { key: 'drip',    icon: '🤣', label: '드립방', title: '드립방', desc: '주제를 보고 50자 이내 한 줄 드립으로 참여하는 공간입니다.', write: 'drip' },
+  { key: '',           icon: '✨', label: '전체',   title: '전체 모음', desc: '이상형 월드컵, 토론, 퀴즈, 드립을 한 번에 봅니다.', write: 'tournament' },
+  { key: 'tournament', icon: '⚔️', label: '대결방', title: '대결방', desc: '이상형 월드컵으로 1위를 가려보세요!', write: 'tournament' },
+  { key: 'vote',       icon: '🗳️', label: '토론방', title: '토론방', desc: '선택지로 빠르게 의견을 모으고 댓글로 이야기합니다.', write: 'vote' },
+  { key: 'quiz',       icon: '🧠', label: '퀴즈방', title: '퀴즈방', desc: '짧은 문제를 보고 바로 맞히는 공간입니다.', write: 'quiz' },
+  { key: 'drip',       icon: '🤣', label: '드립방', title: '드립방', desc: '주제를 보고 50자 이내 한 줄 드립으로 참여하는 공간입니다.', write: 'drip' },
 ];
 
 let currentType        = '';

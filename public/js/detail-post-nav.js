@@ -27,6 +27,7 @@ function readContext() {
 }
 
 function labelForContext(ctx = {}) {
+  if (ctx.type === 'tournament') return '대결방';
   if (ctx.type === 'collect') return '일반방';
   if (ctx.type === 'vote') return '토론방';
   if (ctx.type === 'quiz') return '퀴즈방';

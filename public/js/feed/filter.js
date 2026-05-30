@@ -1,6 +1,7 @@
-export const FILTER_TYPES = ['collect', 'vote', 'quiz', 'drip'];
+export const FILTER_TYPES = ['tournament', 'collect', 'vote', 'quiz', 'drip'];
 
 export const TYPE_LABELS = {
+  tournament: '대결방',
   collect: '일반방',
   collection: '일반방',
   general: '일반방',
@@ -34,6 +35,7 @@ export function normalizeFeedSort(sort) {
 }
 
 export function getPostTypeKey(post) {
+  if (post.feedType === 'tournament' || post.subtype === 'tournament' || post.modules?.tournament?.enabled) return 'tournament';
   if (post.feedType === 'collect' || post.subtype === 'collect' || post.modules?.collect?.enabled) return 'collect';
   if (post.subtype === 'ox') return 'vote';
   if (post.subtype === 'anonymous') return 'collect';

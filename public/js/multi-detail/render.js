@@ -182,6 +182,49 @@ export function renderQuizModule(post) {
     </div>`;
 }
 
+export function renderTournamentModule(post) {
+  const t = post.modules?.tournament;
+  if (!t?.enabled) return '';
+  const items = Array.isArray(t.items) ? t.items : [];
+  const size = t.size || items.length;
+  const plays = Number(t.plays || 0);
+  const wins = t.wins || {};
+
+  const ranked = items
+    .map((item, i) => ({ name: item.name, imageUrl: item.imageUrl || '', origIdx: i, w: Number(wins[i] || 0) }))
+    .filter(item => item.w > 0)
+    .sort((a, b) => b.w - a.w)
+    .slice(0, 5);
+
+  const statsHtml = ranked.length > 0 ? `
+    <div class="t-stats-bar">
+      ${ranked.map(item => `
+        <div class="t-stats-row">
+          <span class="t-stats-name">${esc(item.name)}</span>
+          <div class="t-stats-bar-wrap"><div class="t-stats-bar-fill" style="width:${plays > 0 ? Math.round(item.w / plays * 100) : 0}%"></div></div>
+          <span class="t-stats-count">${item.w}</span>
+        </div>`).join('')}
+    </div>` : '';
+
+  const dataJson = JSON.stringify({ size, items: items.map((item, i) => ({ name: item.name, imageUrl: item.imageUrl || '', origIdx: i })) });
+
+  return `
+    <div class="multi-detail-module" data-multi-module="tournament" data-post-id="${esc(post.id)}">
+      <script type="application/json" id="t-data-${esc(post.id)}">${dataJson.replace(/<\/script>/gi, '<\\/script>')}</script>
+      <div class="multi-detail-module__title">⚔️ 이상형 월드컵</div>
+      <div class="t-info-header">
+        <div class="t-info-size">${size}강 대결 · ${items.length}개 항목</div>
+        <div class="t-info-plays">${plays > 0 ? `${plays}명이 플레이했어요` : '아직 플레이한 사람이 없어요'}</div>
+      </div>
+      ${statsHtml}
+      <div id="t-game-wrap-${esc(post.id)}" data-t-game-wrap="${esc(post.id)}">
+        <div style="text-align:center;padding:14px 0 4px">
+          <button class="btn btn--primary" type="button" data-t-start="${esc(post.id)}">⚔️ 게임 시작</button>
+        </div>
+      </div>
+    </div>`;
+}
+
 function deadlineDate(post) {
   const value = post.deadlineAt;
   return value?.toDate?.() || (value ? new Date(value) : null);
@@ -214,7 +257,7 @@ export function renderModules(post) {
         <div class="multi-detail-root__desc">본문을 보고 아래 옵션만 선택하거나 입력하세요.</div>
       </div>
       ${renderDeadlineStatus(post)}
-      ${renderVoteModule(post)}${renderNamingModule(post)}${renderDripModule(post)}${renderFillModule(post)}${renderQuizModule(post)}
+      ${renderVoteModule(post)}${renderNamingModule(post)}${renderDripModule(post)}${renderFillModule(post)}${renderQuizModule(post)}${renderTournamentModule(post)}
     </div>`;
 }
 

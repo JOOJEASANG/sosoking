@@ -1,4 +1,5 @@
 export const TYPE_LABELS = {
+  tournament: '대결방',
   vote: '토론방',
   crazy_court: '토론방',
   ox: '퀴즈방',
