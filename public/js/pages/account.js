@@ -390,8 +390,9 @@ function setupWithdrawal(user, isGoogle, isKakao, nickname) {
       const fns = getFunctions(getApp(), 'asia-northeast3');
       await httpsCallable(fns, 'deleteMyAccount')({});
       await signOut(auth).catch(() => {});
-      toast.success('탈퇴 완료됐어요. 이용해주셔서 감사합니다');
-      setTimeout(() => navigate('/login'), 1500);
+      if (btn) { btn.textContent = '탈퇴 완료 ✓'; btn.style.background = '#22c55e'; btn.style.color = '#fff'; }
+      toast.success('탈퇴 완료됐어요. 이용해주셔서 감사합니다 👋');
+      setTimeout(() => navigate('/'), 2000);
     } catch (e) {
       console.error('[탈퇴]', e);
       if (btn) { btn.disabled = false; btn.textContent = '회원 탈퇴'; }
