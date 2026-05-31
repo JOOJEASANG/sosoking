@@ -87,7 +87,8 @@ async function loginWithKakao() {
     await goAfterLogin(cred.user);
   } catch (e) {
     console.error('[kakao] sign-in error', e);
-    toast.error('카카오 로그인 처리에 실패했어요');
+    const msg = e?.code || e?.message || String(e);
+    toast.error('카카오 로그인 실패: ' + msg);
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = '💛 카카오로 로그인'; }
   }
