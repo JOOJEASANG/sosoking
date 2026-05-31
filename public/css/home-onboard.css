@@ -227,6 +227,16 @@
 }
 
 /* ── 방별 색상 ── */
+.home-onboard__room--tournament .home-onboard__room-icon {
+  background: var(--color-primary-bg);
+}
+.home-onboard__room--tournament .home-onboard__room-info b {
+  color: var(--color-primary);
+}
+.home-onboard__room--tournament:hover {
+  background: #fff8f5;
+}
+
 .home-onboard__room--collect .home-onboard__room-icon {
   background: var(--color-primary-bg);
 }
@@ -287,11 +297,13 @@
   border-left-color: rgba(255,255,255,0.06);
 }
 
+[data-theme="dark"] .home-onboard__room--tournament:hover { background: rgba(255,75,43,0.06); }
 [data-theme="dark"] .home-onboard__room--collect:hover { background: rgba(255,75,43,0.06); }
 [data-theme="dark"] .home-onboard__room--vote:hover   { background: rgba(79,110,255,0.06); }
 [data-theme="dark"] .home-onboard__room--quiz:hover   { background: rgba(16,185,129,0.06); }
 [data-theme="dark"] .home-onboard__room--drip:hover   { background: rgba(139,92,246,0.06); }
 
+[data-theme="dark"] .home-onboard__room--tournament .home-onboard__room-icon { background: rgba(255,75,43,0.12); }
 [data-theme="dark"] .home-onboard__room--collect .home-onboard__room-icon { background: rgba(255,75,43,0.12); }
 [data-theme="dark"] .home-onboard__room--vote .home-onboard__room-icon    { background: rgba(79,110,255,0.12); }
 [data-theme="dark"] .home-onboard__room--quiz .home-onboard__room-icon    { background: rgba(16,185,129,0.12); }

@@ -11,10 +11,11 @@ import {
 import { navigate } from '../router.js';
 
 const TYPE_LABEL = {
-  collect: '모음방',
-  multi: '모음방',
-  general: '모음방',
-  anonymous: '모음방',
+  tournament: '대결방',
+  collect: '일반방',
+  multi: '일반방',
+  general: '일반방',
+  anonymous: '일반방',
   vote: '토론방',
   ox: '토론방',
   crazy_court: '토론방',
@@ -57,13 +58,15 @@ function commentScore(comment) {
 
 function moduleLabel(post) {
   const m = post.modules || {};
-  if (m.collect?.enabled) return m.collect.label || '모음방';
+  if (m.tournament?.enabled) return '대결방';
+  if (m.collect?.enabled) return m.collect.label || '일반방';
   if (m.vote?.enabled) return '토론방';
   if (m.drip?.enabled) return '드립방';
   if (m.quiz?.enabled) return '퀴즈방';
+  if (post.feedType && TYPE_LABEL[post.feedType]) return TYPE_LABEL[post.feedType];
   if (post.subtype && TYPE_LABEL[post.subtype]) return TYPE_LABEL[post.subtype];
-  if (post.type !== 'multi') return TYPE_LABEL[post.type] || '모음방';
-  return '모음방';
+  if (post.type !== 'multi') return TYPE_LABEL[post.type] || '일반방';
+  return '일반방';
 }
 
 async function fetchPopularComments(n = 8) {
@@ -101,7 +104,7 @@ function renderIntro() {
         <div class="home-onboard__hero-text">
           <div class="home-onboard__badge">👑 SOSOKING</div>
           <h1 class="home-onboard__title">짧게 올리고<br>짧게 반응하는 곳</h1>
-          <p class="home-onboard__desc">유튜브·퀴즈·토론·드립을 방별로 모아요</p>
+          <p class="home-onboard__desc">이상형 월드컵·토론·퀴즈·드립을 방별로 즐겨요</p>
         </div>
         <div class="home-onboard__hero-actions">
           <button class="home-onboard__btn-primary" type="button" id="hbtn-write">+ 지금 올리기</button>
@@ -110,11 +113,11 @@ function renderIntro() {
       </div>
 
       <div class="home-onboard__rooms" aria-label="방 바로가기">
-        <a class="home-onboard__room home-onboard__room--collect" href="#/feed?type=collect" data-room-nav="collect">
-          <span class="home-onboard__room-icon">📌</span>
+        <a class="home-onboard__room home-onboard__room--tournament" href="#/feed?type=tournament" data-room-nav="tournament">
+          <span class="home-onboard__room-icon">⚔️</span>
           <div class="home-onboard__room-info">
-            <b>모음방</b>
-            <em>유튜브·이미지·링크 모음</em>
+            <b>대결방</b>
+            <em>이상형 월드컵 대결</em>
           </div>
         </a>
         <a class="home-onboard__room home-onboard__room--vote" href="#/feed?type=vote" data-room-nav="vote">
@@ -196,7 +199,7 @@ export async function renderHome() {
     </div>`;
 
   try {
-    setMeta('소소킹 · 짧게 모아보는 유튜브·그림·퀴즈·드립방');
+    setMeta('소소킹 · 이상형 월드컵·퀴즈·토론·드립방');
     const user = auth.currentUser;
     if (user) checkStreak(user.uid);
 
@@ -239,7 +242,7 @@ export async function renderHome() {
 
     el.innerHTML = `<div class="home-dash page-enter home-dash--v2">${renderIntro()}${bestHTML}${hotHTML}${commentsHTML}</div>`;
 
-    el.querySelector('#hbtn-write')?.addEventListener('click', () => navigate('/write?type=multi&preset=collect'));
+    el.querySelector('#hbtn-write')?.addEventListener('click', () => navigate('/write?type=multi&preset=tournament'));
     el.querySelector('#hbtn-feed')?.addEventListener('click', () => navigate('/feed'));
     el.querySelector('#hbtn-more-hot')?.addEventListener('click', () => navigate('/feed?sort=popular'));
     el.querySelectorAll('[data-room-nav]').forEach(item => {
