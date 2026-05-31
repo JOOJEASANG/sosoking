@@ -84,7 +84,6 @@ export async function renderHall() {
     <div class="hall-page">
       <div class="section-header">
         <h1 class="section-header__title">📊 통계</h1>
-        <div class="section-header__sub">최근 100개 게시글 기준 · 인기/참여 TOP 3</div>
       </div>
       <div id="hall-info-box">${renderHallInfo([])}</div>
       <div class="hall-grid">
