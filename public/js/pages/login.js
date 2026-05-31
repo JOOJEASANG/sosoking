@@ -47,6 +47,7 @@ async function goAfterLogin(user = auth.currentUser) {
 }
 
 async function loginWithKakao() {
+  toast.info('카카오 로그인 시도 중...');
   const btn = document.getElementById('btn-kakao');
   if (btn) { btn.disabled = true; btn.textContent = '카카오 연결 중...'; }
 
