@@ -353,7 +353,7 @@ async function submitTournamentPost(btn) {
     btn.textContent = '게시글 저장 중...';
     const preset = MULTI_PRESETS.tournament;
     const manualTags = splitTags(document.getElementById('mw-tags')?.value || '');
-    const tags = manualTags.length ? manualTags : ['대결방', '이상형월드컵', `${size}강`];
+    const tags = manualTags.length ? manualTags : ['대결방', '토너먼트', `${size}강`];
     const docRef = doc(collection(db, 'feeds'));
 
     await setDoc(docRef, {

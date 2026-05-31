@@ -2,10 +2,10 @@ export const MULTI_PRESETS = {
   tournament: {
     label: '대결방',
     icon: '⚔️',
-    shortDesc: '이상형 월드컵 대결',
-    titlePlaceholder: '예: 역대 최강 라면 이상형 월드컵',
+    shortDesc: '토너먼트 대결',
+    titlePlaceholder: '예: 역대 최강 라면 토너먼트 대결',
     descPlaceholder: '',
-    tagsPlaceholder: '#대결, #이상형월드컵, #최강자',
+    tagsPlaceholder: '#대결, #토너먼트, #최강자',
   },
   collect: {
     label: '일반방',

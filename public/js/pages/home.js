@@ -104,7 +104,7 @@ function renderIntro() {
         <div class="home-onboard__hero-text">
           <div class="home-onboard__badge">👑 SOSOKING</div>
           <h1 class="home-onboard__title">짧게 올리고<br>짧게 반응하는 곳</h1>
-          <p class="home-onboard__desc">이상형 월드컵·토론·퀴즈·드립을 방별로 즐겨요</p>
+          <p class="home-onboard__desc">토너먼트 대결·토론·퀴즈·드립을 방별로 즐겨요</p>
         </div>
         <div class="home-onboard__hero-actions">
           <button class="home-onboard__btn-primary" type="button" id="hbtn-write">+ 지금 올리기</button>
@@ -117,7 +117,7 @@ function renderIntro() {
           <span class="home-onboard__room-icon">⚔️</span>
           <div class="home-onboard__room-info">
             <b>대결방</b>
-            <em>이상형 월드컵 대결</em>
+            <em>토너먼트 대결</em>
           </div>
         </a>
         <a class="home-onboard__room home-onboard__room--vote" href="#/feed?type=vote" data-room-nav="vote">
@@ -199,7 +199,7 @@ export async function renderHome() {
     </div>`;
 
   try {
-    setMeta('소소킹 · 이상형 월드컵·퀴즈·토론·드립방');
+    setMeta('소소킹 · 토너먼트 대결·퀴즈·토론·드립방');
     const user = auth.currentUser;
     if (user) checkStreak(user.uid);
 

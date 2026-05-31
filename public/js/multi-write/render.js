@@ -65,7 +65,7 @@ function renderTournamentItemRows() {
 }
 
 function renderTournamentPanel(activeKey) {
-  return moduleCard('tournament', activeKey, '⚔️', '이상형 월드컵 설정', '항목을 입력하고 1위를 가려보세요.', `
+  return moduleCard('tournament', activeKey, '⚔️', '토너먼트 대결 설정', '항목을 입력하고 1위를 가려보세요.', `
     <div class="form-group">
       <label class="form-label">대결 규모 <span class="required">*</span></label>
       <div class="t-size-picker">

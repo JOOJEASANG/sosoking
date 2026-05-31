@@ -211,7 +211,7 @@ export function renderTournamentModule(post) {
   return `
     <div class="multi-detail-module" data-multi-module="tournament" data-post-id="${esc(post.id)}">
       <script type="application/json" id="t-data-${esc(post.id)}">${dataJson.replace(/<\/script>/gi, '<\\/script>')}</script>
-      <div class="multi-detail-module__title">⚔️ 이상형 월드컵</div>
+      <div class="multi-detail-module__title">⚔️ 토너먼트 대결</div>
       <div class="t-info-header">
         <div class="t-info-size">${size}강 대결 · ${items.length}개 항목</div>
         <div class="t-info-plays">${plays > 0 ? `${plays}명이 플레이했어요` : '아직 플레이한 사람이 없어요'}</div>
