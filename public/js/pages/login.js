@@ -47,18 +47,30 @@ async function goAfterLogin(user = auth.currentUser) {
 }
 
 async function loginWithKakao() {
+  const btn = document.getElementById('btn-kakao');
+  if (btn) { btn.disabled = true; btn.textContent = '카카오 연결 중...'; }
+
   const K = window.Kakao;
-  if (!K) { toast.error('[카카오] SDK 미로드'); return; }
+  if (!K) {
+    toast.error('카카오 SDK가 로드되지 않았어요. 새로고침 후 다시 시도해주세요.');
+    if (btn) { btn.disabled = false; btn.textContent = '💛 카카오로 로그인'; }
+    return;
+  }
 
   if (!K.isInitialized()) {
     try { K.init(KAKAO_JS_APP_KEY); }
-    catch (e) { toast.error('[카카오] 초기화 실패: ' + e.message); return; }
+    catch (e) {
+      toast.error('카카오 초기화 실패: ' + e.message);
+      if (btn) { btn.disabled = false; btn.textContent = '💛 카카오로 로그인'; }
+      return;
+    }
   }
 
-  if (!K.isInitialized()) { toast.error('[카카오] 초기화 확인 실패'); return; }
-  if (typeof K.Auth?.login !== 'function') { toast.error('[카카오] Auth.login 없음'); return; }
-
-  toast.warn('[카카오] 로그인 팝업 요청 중...');
+  if (typeof K.Auth?.login !== 'function') {
+    toast.error('카카오 Auth를 찾을 수 없어요. 새로고침 후 다시 시도해주세요.');
+    if (btn) { btn.disabled = false; btn.textContent = '💛 카카오로 로그인'; }
+    return;
+  }
 
   let accessToken;
   try {
@@ -66,16 +78,16 @@ async function loginWithKakao() {
       K.Auth.login({ success: (o) => resolve(o.access_token), fail: reject });
     });
   } catch (err) {
+    if (btn) { btn.disabled = false; btn.textContent = '💛 카카오로 로그인'; }
     if (err?.error === 'access_denied' || err?.error === 'cancelled') {
       toast.warn('카카오 로그인이 취소됐어요');
       return;
     }
-    toast.error('[카카오] Auth 실패: ' + JSON.stringify(err));
+    toast.error('카카오 인증 실패: ' + (err?.error_description || err?.error || JSON.stringify(err)));
     return;
   }
 
-  const btn = document.getElementById('btn-kakao');
-  if (btn) { btn.disabled = true; btn.textContent = '로그인 중...'; }
+  if (btn) btn.textContent = '로그인 중...';
   try {
     const { getFunctions, httpsCallable } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js');
     const { getApp } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');
