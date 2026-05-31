@@ -265,6 +265,8 @@ export async function renderAccount() {
 /* ── 설정 탭 ── */
 function renderSettingsTab(content, user, userData, nickname) {
   const isGoogle = user.providerData?.some(p => p.providerId === 'google.com');
+  const isEmail  = user.providerData?.some(p => p.providerId === 'password');
+  const isKakao  = !isGoogle && !isEmail;
 
   content.innerHTML = `
     <div class="card" style="margin-bottom:12px">
@@ -307,7 +309,7 @@ function renderSettingsTab(content, user, userData, nickname) {
     </div>`;
 
   setupNicknameEdit(user, nickname);
-  setupWithdrawal(user, isGoogle);
+  setupWithdrawal(user, isGoogle, isKakao);
 }
 
 function setupNicknameEdit(user, currentNickname) {
@@ -372,7 +374,7 @@ function setupNicknameEdit(user, currentNickname) {
   });
 }
 
-function setupWithdrawal(user, isGoogle) {
+function setupWithdrawal(user, isGoogle, isKakao) {
   document.getElementById('btn-withdraw')?.addEventListener('click', async () => {
     const confirmed = window.confirm(
       '정말 탈퇴하시겠어요?\n\n계정이 삭제되며 복구할 수 없어요.'
@@ -380,7 +382,9 @@ function setupWithdrawal(user, isGoogle) {
     if (!confirmed) return;
 
     try {
-      if (isGoogle) {
+      if (isKakao) {
+        // 카카오 유저는 별도 재인증 불필요 — 최근 로그인 필요 시 재로그인 안내
+      } else if (isGoogle) {
         const provider = new GoogleAuthProvider();
         await reauthenticateWithPopup(user, provider);
       } else {
@@ -403,6 +407,8 @@ function setupWithdrawal(user, isGoogle) {
         toast.error('비밀번호가 틀렸어요');
       } else if (e.code === 'auth/popup-closed-by-user') {
         // 사용자가 취소
+      } else if (e.code === 'auth/requires-recent-login') {
+        toast.error('보안을 위해 로그아웃 후 다시 로그인하고 탈퇴해주세요');
       } else {
         console.error(e);
         toast.error('탈퇴 처리 중 오류가 발생했어요');
