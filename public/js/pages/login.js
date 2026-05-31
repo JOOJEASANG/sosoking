@@ -46,71 +46,35 @@ async function goAfterLogin(user = auth.currentUser) {
   else window.dispatchEvent(new Event('hashchange'));
 }
 
-async function loginWithKakao() {
-  toast.info('카카오 로그인 시도 중...');
+const KAKAO_REDIRECT_URI = 'https://sosoking.co.kr/';
+
+function loginWithKakao() {
   const btn = document.getElementById('btn-kakao');
-  if (btn) { btn.disabled = true; btn.textContent = '카카오 연결 중...'; }
+  if (btn) { btn.disabled = true; btn.textContent = '카카오로 이동 중...'; }
 
-  const K = window.Kakao;
-  if (!K) {
-    toast.error('카카오 SDK가 아직 로드되지 않았어요. 잠시 후 다시 시도해주세요.');
-    if (btn) { btn.disabled = false; btn.textContent = '💛 카카오로 로그인'; }
-    return;
-  }
+  const returnTo = window.location.hash.slice(1).split('?')[0] || '/';
+  sessionStorage.setItem('kakao_return_to', returnTo === '/login' ? '/' : returnTo);
 
-  if (!K.isInitialized()) {
-    try { K.init(KAKAO_JS_APP_KEY); }
-    catch (e) {
-      toast.error('카카오 초기화 실패: ' + e.message);
-      if (btn) { btn.disabled = false; btn.textContent = '💛 카카오로 로그인'; }
-      return;
-    }
-  }
-
-  if (typeof K.Auth?.login !== 'function') {
-    toast.error('카카오 Auth를 찾을 수 없어요. 새로고침 후 다시 시도해주세요.');
-    if (btn) { btn.disabled = false; btn.textContent = '💛 카카오로 로그인'; }
-    return;
-  }
-
-  let accessToken;
   try {
-    accessToken = await new Promise((resolve, reject) => {
-      K.Auth.login({
-        throughTalk: false,
-        success: (o) => resolve(o.access_token),
-        fail: (err) => reject(err),
-      });
+    const K = window.Kakao;
+    if (K) {
+      if (!K.isInitialized()) K.init(KAKAO_JS_APP_KEY);
+      if (typeof K.Auth?.authorize === 'function') {
+        K.Auth.authorize({ redirectUri: KAKAO_REDIRECT_URI, scope: 'profile_nickname' });
+        return;
+      }
+    }
+    // SDK 없어도 직접 URL로 이동
+    const params = new URLSearchParams({
+      client_id: KAKAO_JS_APP_KEY,
+      redirect_uri: KAKAO_REDIRECT_URI,
+      response_type: 'code',
+      scope: 'profile_nickname',
     });
-  } catch (err) {
-    if (btn) { btn.disabled = false; btn.textContent = '💛 카카오로 로그인'; }
-    const errCode = err?.error || err?.code || '';
-    if (errCode === 'access_denied' || errCode === 'cancelled' || errCode === '-2') {
-      toast.warn('카카오 로그인이 취소됐어요');
-      return;
-    }
-    const errMsg = err?.error_description || err?.message || JSON.stringify(err);
-    toast.error('카카오 인증 실패: ' + errMsg);
-    console.error('[kakao] auth fail', err);
-    return;
-  }
-
-  if (btn) btn.textContent = '로그인 중...';
-  try {
-    const { getFunctions, httpsCallable } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js');
-    const { getApp } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');
-    const { signInWithCustomToken } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
-    const fns = getFunctions(getApp(), 'asia-northeast3');
-    const { data } = await httpsCallable(fns, 'kakaoLogin')({ accessToken });
-    const cred = await signInWithCustomToken(auth, data.customToken);
-    toast.success('카카오 로그인됐어요!');
-    await goAfterLogin(cred.user);
+    window.location.href = `https://kauth.kakao.com/oauth/authorize?${params}`;
   } catch (e) {
-    console.error('[kakao] sign-in error', e);
-    const msg = e?.code || e?.message || String(e);
-    toast.error('카카오 로그인 실패: ' + msg);
-  } finally {
     if (btn) { btn.disabled = false; btn.textContent = '💛 카카오로 로그인'; }
+    toast.error('카카오 로그인 오류: ' + (e.message || String(e)));
   }
 }
 

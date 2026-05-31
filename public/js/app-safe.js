@@ -216,8 +216,53 @@ function rerenderCurrentRouteSoon() {
   }, 0);
 }
 
+async function handleKakaoCallback() {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
+  const oauthError = params.get('error');
+  if (!code && !oauthError) return;
+
+  window.history.replaceState({}, '', '/');
+
+  if (oauthError) {
+    setTimeout(() => toast.warn('카카오 로그인이 취소됐어요'), 800);
+    return;
+  }
+
+  const returnTo = sessionStorage.getItem('kakao_return_to') || '/';
+  sessionStorage.removeItem('kakao_return_to');
+
+  const processingEl = document.getElementById('app');
+  if (processingEl) processingEl.innerHTML = `
+    <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:'Noto Sans KR',system-ui,sans-serif;">
+      <div style="text-align:center">
+        <div style="width:40px;height:40px;border:4px solid #fee500;border-top-color:#3c1e1e;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 16px"></div>
+        <p style="font-size:14px;color:#666">카카오 로그인 처리 중...</p>
+      </div>
+    </div>
+    <style>@keyframes spin{to{transform:rotate(360deg)}}</style>`;
+
+  try {
+    const { getFunctions, httpsCallable } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js');
+    const { getApp } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');
+    const { signInWithCustomToken } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
+    const fns = getFunctions(getApp(), 'asia-northeast3');
+    const { data } = await httpsCallable(fns, 'kakaoLogin')({
+      code,
+      redirectUri: 'https://sosoking.co.kr/',
+    });
+    await signInWithCustomToken(auth, data.customToken);
+    window.location.hash = '#' + returnTo;
+  } catch (e) {
+    console.error('[kakao callback]', e);
+    const msg = e?.code || e?.message || String(e);
+    setTimeout(() => toast.error('카카오 로그인 실패: ' + msg), 800);
+  }
+}
+
 async function initApp() {
   initToast();
+  await handleKakaoCallback();
   await registerRoutes();
   initRouter();
   loadOptionalModules();
