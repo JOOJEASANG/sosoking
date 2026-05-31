@@ -75,9 +75,20 @@ export async function renderDetail(id) {
   }
 }
 
+function resolvePostTypeLabel(post) {
+  if (post.feedType && TYPE_LABELS[post.feedType]) return TYPE_LABELS[post.feedType];
+  if (post.modules?.tournament?.enabled) return '대결방';
+  return TYPE_LABELS[post.type] || post.type;
+}
+
+function resolvePostCatClass(post) {
+  if (post.feedType === 'tournament' || post.modules?.tournament?.enabled) return 'multi';
+  return CAT_CLASS[post.cat] || CAT_CLASS[post.type] || 'malhe';
+}
+
 function renderDetailPage(el, post, comments, isScrapped = false) {
-  const typeLabel = TYPE_LABELS[post.type] || post.type;
-  const catClass = CAT_CLASS[post.cat] || 'malhe';
+  const typeLabel = resolvePostTypeLabel(post);
+  const catClass = resolvePostCatClass(post);
   const timeStr = formatTime(post.createdAt?.toDate?.() || post.createdAt);
   const detailTitle = displayDetailTitle(post);
   const hideMainDesc = shouldHideMainDesc(post);
