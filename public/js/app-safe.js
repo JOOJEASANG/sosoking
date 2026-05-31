@@ -249,7 +249,7 @@ async function handleKakaoCallback() {
     const fns = getFunctions(getApp(), 'asia-northeast3');
     const { data } = await httpsCallable(fns, 'kakaoLogin')({
       code,
-      redirectUri: 'https://sosoking.co.kr/',
+      redirectUri: 'https://sosoking.co.kr',
     });
     await signInWithCustomToken(auth, data.customToken);
     window.location.hash = '#' + returnTo;

@@ -46,7 +46,7 @@ async function goAfterLogin(user = auth.currentUser) {
   else window.dispatchEvent(new Event('hashchange'));
 }
 
-const KAKAO_REDIRECT_URI = 'https://sosoking.co.kr/';
+const KAKAO_REDIRECT_URI = 'https://sosoking.co.kr';
 
 function loginWithKakao() {
   const btn = document.getElementById('btn-kakao');
