@@ -13,7 +13,6 @@ const OWNER_EMAILS = new Set();
 
 const OPTIONAL_MODULES = [
   './secure-interactions-actions.js',
-  './acrostic-enhancer.js',
   './account-secure-actions.js',
   './admin-session-guard.js',
   './admin-password-actions.js',
