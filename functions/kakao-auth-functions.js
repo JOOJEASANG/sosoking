@@ -124,17 +124,42 @@ exports.kakaoLogin = onCall({ region: 'asia-northeast3' }, async (request) => {
   }
 
   try {
-    await db.doc(`users/${uid}`).set(
-      {
-        displayName,
-        photoURL,
-        ...(email ? { email } : {}),
-        provider: 'kakao',
-        kakaoId,
-        updatedAt: FieldValue.serverTimestamp(),
-      },
-      { merge: true }
-    );
+    const userRef = db.doc(`users/${uid}`);
+    const existingSnap = await userRef.get().catch(() => null);
+    const existingNickname = existingSnap?.data()?.nickname || null;
+
+    // 닉네임이 없는 신규 사용자면 카카오 displayName으로 자동 설정 시도
+    let autoNickname = null;
+    if (!existingNickname) {
+      const candidate = (displayName || '').replace(/[^가-힣a-zA-Z0-9_]/g, '').slice(0, 12);
+      if (candidate && candidate.length >= 2) {
+        const nickRef = db.doc(`nicknames/${candidate}`);
+        const nickSnap = await nickRef.get().catch(() => null);
+        if (!nickSnap?.exists) {
+          autoNickname = candidate;
+        }
+      }
+    }
+
+    const batch = db.batch();
+    batch.set(userRef, {
+      displayName,
+      photoURL,
+      ...(email ? { email } : {}),
+      ...(autoNickname ? { nickname: autoNickname } : {}),
+      provider: 'kakao',
+      kakaoId,
+      updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+
+    if (autoNickname) {
+      batch.set(db.doc(`nicknames/${autoNickname}`), {
+        uid,
+        createdAt: FieldValue.serverTimestamp(),
+      });
+    }
+
+    await batch.commit();
   } catch (e) {
     console.warn('[kakaoLogin] Firestore update error (non-fatal):', e.message);
   }

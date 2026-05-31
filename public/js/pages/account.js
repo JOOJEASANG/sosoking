@@ -267,6 +267,8 @@ function renderSettingsTab(content, user, userData, nickname) {
   const isGoogle = user.providerData?.some(p => p.providerId === 'google.com');
   const isEmail  = user.providerData?.some(p => p.providerId === 'password');
   const isKakao  = !isGoogle && !isEmail;
+  // 카카오 커스텀 토큰 사용자는 Firebase Auth에 email이 없어 Firestore에서 보완
+  const displayEmail = user.email || userData?.email || '';
 
   content.innerHTML = `
     <div class="card" style="margin-bottom:12px">
@@ -289,7 +291,7 @@ function renderSettingsTab(content, user, userData, nickname) {
       <div class="card__body--lg">
         <div class="section-title" style="font-size:15px;margin-bottom:8px">🔐 계정 정보</div>
         <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:4px">
-          이메일: <strong>${escHtml(user.email || '—')}</strong>
+          이메일: <strong>${escHtml(displayEmail || '—')}</strong>
         </div>
         <div style="font-size:13px;color:var(--color-text-secondary)">
           로그인 방식: <strong>${isGoogle ? '구글 소셜 로그인' : isKakao ? '카카오 소셜 로그인' : '이메일/비밀번호'}</strong>

@@ -72,7 +72,12 @@ const deleteMyAccount = onCall({ region: 'asia-northeast3', timeoutSeconds: 60 }
   if (nickname) batch.delete(db.doc(`nicknames/${String(nickname).slice(0, 150)}`));
   await batch.commit();
 
-  await admin.auth().deleteUser(userId);
+  try {
+    await admin.auth().deleteUser(userId);
+  } catch (authErr) {
+    // 이미 삭제됐거나 존재하지 않는 경우는 무시 (Firestore 정리는 완료됨)
+    if (authErr.code !== 'auth/user-not-found') throw authErr;
+  }
   return { ok: true };
 });
 

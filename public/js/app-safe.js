@@ -245,13 +245,20 @@ async function handleKakaoCallback() {
   try {
     const { getFunctions, httpsCallable } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js');
     const { getApp } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');
-    const { signInWithCustomToken } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
+    const { signInWithCustomToken, updateProfile } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
     const fns = getFunctions(getApp(), 'asia-northeast3');
     const { data } = await httpsCallable(fns, 'kakaoLogin')({
       code,
       redirectUri: 'https://sosoking.co.kr',
     });
     await signInWithCustomToken(auth, data.customToken);
+    // 커스텀 토큰 로그인은 displayName/photoURL이 자동 설정 안 되므로 직접 세팅
+    if (auth.currentUser && (data.displayName || data.photoURL)) {
+      await updateProfile(auth.currentUser, {
+        displayName: data.displayName || auth.currentUser.displayName || null,
+        photoURL: data.photoURL || auth.currentUser.photoURL || null,
+      }).catch(() => {});
+    }
     toast.success('카카오 로그인됐어요!');
     window.location.hash = '#' + (returnTo.startsWith('/') ? returnTo : '/' + returnTo);
   } catch (e) {
