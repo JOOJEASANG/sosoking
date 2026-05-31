@@ -381,38 +381,22 @@ function setupWithdrawal(user, isGoogle, isKakao, nickname) {
     );
     if (!confirmed) return;
 
+    const btn = document.getElementById('btn-withdraw');
+    if (btn) { btn.disabled = true; btn.textContent = '처리 중...'; }
+
     try {
-      if (isKakao) {
-        // 카카오 유저는 별도 재인증 불필요 — 최근 로그인 필요 시 재로그인 안내
-      } else if (isGoogle) {
-        const provider = new GoogleAuthProvider();
-        await reauthenticateWithPopup(user, provider);
-      } else {
-        const password = window.prompt('보안을 위해 비밀번호를 입력해주세요:');
-        if (!password) return;
-        const credential = EmailAuthProvider.credential(user.email, password);
-        await reauthenticateWithCredential(user, credential);
-      }
-
-      await Promise.allSettled([
-        deleteDoc(doc(db, 'users', user.uid)),
-        deleteDoc(doc(db, 'nicknames', nickname || user.displayName || '')),
-      ]);
-
-      await deleteUser(user);
+      const { getFunctions, httpsCallable } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js');
+      const { getApp } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');
+      const fns = getFunctions(getApp(), 'asia-northeast3');
+      await httpsCallable(fns, 'deleteMyAccount')({});
+      await signOut(auth).catch(() => {});
       toast.success('탈퇴 완료됐어요. 이용해주셔서 감사합니다');
       setTimeout(() => navigate('/login'), 1500);
     } catch (e) {
-      if (e.code === 'auth/wrong-password') {
-        toast.error('비밀번호가 틀렸어요');
-      } else if (e.code === 'auth/popup-closed-by-user') {
-        // 사용자가 취소
-      } else if (e.code === 'auth/requires-recent-login') {
-        toast.error('보안을 위해 로그아웃 후 다시 로그인하고 탈퇴해주세요');
-      } else {
-        console.error(e);
-        toast.error('탈퇴 처리 중 오류가 발생했어요');
-      }
+      console.error('[탈퇴]', e);
+      if (btn) { btn.disabled = false; btn.textContent = '회원 탈퇴'; }
+      const msg = e?.code || e?.message || String(e);
+      toast.error('탈퇴 처리 오류: ' + msg);
     }
   });
 }
