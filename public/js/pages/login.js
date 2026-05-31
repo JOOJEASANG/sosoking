@@ -52,7 +52,7 @@ async function loginWithKakao() {
 
   const K = window.Kakao;
   if (!K) {
-    toast.error('카카오 SDK가 로드되지 않았어요. 새로고침 후 다시 시도해주세요.');
+    toast.error('카카오 SDK가 아직 로드되지 않았어요. 잠시 후 다시 시도해주세요.');
     if (btn) { btn.disabled = false; btn.textContent = '💛 카카오로 로그인'; }
     return;
   }
@@ -75,15 +75,22 @@ async function loginWithKakao() {
   let accessToken;
   try {
     accessToken = await new Promise((resolve, reject) => {
-      K.Auth.login({ success: (o) => resolve(o.access_token), fail: reject });
+      K.Auth.login({
+        throughTalk: false,
+        success: (o) => resolve(o.access_token),
+        fail: (err) => reject(err),
+      });
     });
   } catch (err) {
     if (btn) { btn.disabled = false; btn.textContent = '💛 카카오로 로그인'; }
-    if (err?.error === 'access_denied' || err?.error === 'cancelled') {
+    const errCode = err?.error || err?.code || '';
+    if (errCode === 'access_denied' || errCode === 'cancelled' || errCode === '-2') {
       toast.warn('카카오 로그인이 취소됐어요');
       return;
     }
-    toast.error('카카오 인증 실패: ' + (err?.error_description || err?.error || JSON.stringify(err)));
+    const errMsg = err?.error_description || err?.message || JSON.stringify(err);
+    toast.error('카카오 인증 실패: ' + errMsg);
+    console.error('[kakao] auth fail', err);
     return;
   }
 
@@ -115,6 +122,8 @@ export function renderLogin() {
     return;
   }
 
+  window.__kakaoLogin = loginWithKakao;
+
   el.innerHTML = `
     <div class="auth-page">
       <div class="auth-card card">
@@ -130,7 +139,7 @@ export function renderLogin() {
             Google로 로그인
           </button>
 
-          <button type="button" class="social-btn social-btn--kakao" id="btn-kakao">
+          <button type="button" class="social-btn social-btn--kakao" id="btn-kakao" onclick="window.__kakaoLogin()">
             💛 카카오로 로그인
           </button>
 
