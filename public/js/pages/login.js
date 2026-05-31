@@ -146,8 +146,6 @@ export function renderLogin() {
     }
   });
 
-  document.getElementById('btn-kakao')?.addEventListener('click', loginWithKakao);
-
   document.getElementById('btn-email-login')?.addEventListener('click', async () => {
     const { signInWithEmailAndPassword } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
     const email    = document.getElementById('f-email')?.value.trim();

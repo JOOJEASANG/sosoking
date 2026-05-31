@@ -252,7 +252,8 @@ async function handleKakaoCallback() {
       redirectUri: 'https://sosoking.co.kr',
     });
     await signInWithCustomToken(auth, data.customToken);
-    window.location.hash = '#' + returnTo;
+    toast.success('카카오 로그인됐어요!');
+    window.location.hash = '#' + (returnTo.startsWith('/') ? returnTo : '/' + returnTo);
   } catch (e) {
     console.error('[kakao callback]', e);
     const msg = e?.code || e?.message || String(e);

@@ -292,7 +292,7 @@ function renderSettingsTab(content, user, userData, nickname) {
           이메일: <strong>${escHtml(user.email || '—')}</strong>
         </div>
         <div style="font-size:13px;color:var(--color-text-secondary)">
-          로그인 방식: <strong>${isGoogle ? '구글 소셜 로그인' : '이메일/비밀번호'}</strong>
+          로그인 방식: <strong>${isGoogle ? '구글 소셜 로그인' : isKakao ? '카카오 소셜 로그인' : '이메일/비밀번호'}</strong>
         </div>
       </div>
     </div>
@@ -309,7 +309,7 @@ function renderSettingsTab(content, user, userData, nickname) {
     </div>`;
 
   setupNicknameEdit(user, nickname);
-  setupWithdrawal(user, isGoogle, isKakao);
+  setupWithdrawal(user, isGoogle, isKakao, nickname);
 }
 
 function setupNicknameEdit(user, currentNickname) {
@@ -374,7 +374,7 @@ function setupNicknameEdit(user, currentNickname) {
   });
 }
 
-function setupWithdrawal(user, isGoogle, isKakao) {
+function setupWithdrawal(user, isGoogle, isKakao, nickname) {
   document.getElementById('btn-withdraw')?.addEventListener('click', async () => {
     const confirmed = window.confirm(
       '정말 탈퇴하시겠어요?\n\n계정이 삭제되며 복구할 수 없어요.'
@@ -396,7 +396,7 @@ function setupWithdrawal(user, isGoogle, isKakao) {
 
       await Promise.allSettled([
         deleteDoc(doc(db, 'users', user.uid)),
-        deleteDoc(doc(db, 'nicknames', user.displayName || '')),
+        deleteDoc(doc(db, 'nicknames', nickname || user.displayName || '')),
       ]);
 
       await deleteUser(user);
