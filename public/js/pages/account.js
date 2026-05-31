@@ -385,19 +385,22 @@ function setupWithdrawal(user, isGoogle, isKakao, nickname) {
     if (btn) { btn.disabled = true; btn.textContent = '처리 중...'; }
 
     try {
+      const currentUser = auth.currentUser;
+      if (!currentUser) throw new Error('auth.currentUser가 없어요. 다시 로그인 후 시도해주세요.');
+
       const { getFunctions, httpsCallable } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js');
       const { getApp } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');
       const fns = getFunctions(getApp(), 'asia-northeast3');
       await httpsCallable(fns, 'deleteMyAccount')({});
       await signOut(auth).catch(() => {});
-      if (btn) { btn.textContent = '탈퇴 완료 ✓'; btn.style.background = '#22c55e'; btn.style.color = '#fff'; }
       toast.success('탈퇴 완료됐어요. 이용해주셔서 감사합니다 👋');
-      setTimeout(() => navigate('/'), 2000);
+      navigate('/');
     } catch (e) {
       console.error('[탈퇴]', e);
       if (btn) { btn.disabled = false; btn.textContent = '회원 탈퇴'; }
-      const msg = e?.code || e?.message || String(e);
-      toast.error('탈퇴 처리 오류: ' + msg);
+      const code = e?.code || '';
+      const msg  = e?.message || String(e);
+      window.alert('탈퇴 오류\n코드: ' + (code || '없음') + '\n메시지: ' + msg);
     }
   });
 }
