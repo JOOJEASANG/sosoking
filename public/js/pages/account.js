@@ -400,8 +400,8 @@ function setupWithdrawal(user, isGoogle, isKakao, nickname) {
       ]);
 
       await deleteUser(user);
-      toast.success('탈퇴가 완료됐어요. 이용해주셔서 감사합니다');
-      navigate('/login');
+      toast.success('탈퇴 완료됐어요. 이용해주셔서 감사합니다');
+      setTimeout(() => navigate('/login'), 1500);
     } catch (e) {
       if (e.code === 'auth/wrong-password') {
         toast.error('비밀번호가 틀렸어요');
