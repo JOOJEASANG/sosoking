@@ -173,13 +173,22 @@ function renderFrame() {
                   <img src="/logo.svg" alt="" width="26" height="26">
                   <span>소소킹</span>
                 </a>
-                <div class="site-footer__tagline">소소하게 보고<br>짧게 참여하는 피드</div>
+                <div class="site-footer__tagline">AI가 판결하고, 번역하고,<br>궁합 보고, 이름 짓는 놀이터</div>
+              </div>
+              <div>
+                <div class="site-footer__col-title">AI킹</div>
+                <div class="site-footer__links">
+                  <a href="#/ai-judge">⚖️ 미친판사</a>
+                  <a href="#/ai-translate">🌍 미친번역사</a>
+                  <a href="#/ai-match">💘 AI궁합</a>
+                  <a href="#/ai-naming">🎭 AI작명소</a>
+                </div>
               </div>
               <div>
                 <div class="site-footer__col-title">바로가기</div>
                 <div class="site-footer__links">
                   <a href="#/feed">피드</a>
-                  <a href="#/write?type=multi">글쓰기</a>
+                  <a href="#/hall">통계</a>
                   <a href="#/guide">이용안내</a>
                 </div>
               </div>

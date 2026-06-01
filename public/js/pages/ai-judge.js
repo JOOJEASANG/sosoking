@@ -29,23 +29,34 @@ export function renderAiJudge() {
   const el = document.getElementById('page-content');
   if (!auth.currentUser) { navigate('/login'); return; }
 
+  const EXAMPLES = [
+    '친구가 내 치킨을 허락도 없이 먹었는데 맛없다고 했음. 유죄?',
+    '카톡 읽씹 3일째인데 갑자기 "ㅋ" 하나 보냄. 이게 맞나요?',
+    '3년 사귄 연인이 생일 선물로 양말 줌. 이건 고의인가요?',
+    '회의 때 내 아이디어 발표했더니 팀장이 "나도 그 생각 했었는데" 라고 함',
+    '샤워하고 나왔더니 자리 뺏김. 1분도 안 됐는데 이게 정당한가요?',
+  ];
+
   el.innerHTML = `
     <div class="ai-king-page">
       <div class="ai-king-header">
         <button class="btn btn--ghost btn--sm" id="btn-back" style="margin-bottom:12px">← 뒤로</button>
         <div class="ai-king-header__title">⚖️ 미친판사</div>
-        <div class="ai-king-header__sub">7명의 이상한 판사가 당신의 상황을 판결합니다</div>
+        <div class="ai-king-header__sub">억울한 상황을 적으면 7명의 판사가 각자 판결합니다<br><small style="color:var(--color-text-muted)">⚖️ 엄근진 법관 · 😭 감성 판사 · 👴 꼰대 판사 · 🔬 과학자 · 🤔 철학자 · 👽 외계인 · 🤪 돌아이</small></div>
       </div>
       <div class="ai-king-form">
         <label class="ai-king-form__label">판결 받을 상황을 적어주세요 *</label>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">
+          ${EXAMPLES.map((ex, i) => `<button class="ai-example-chip" data-ex="${i}" type="button">${ex.slice(0, 20)}...</button>`).join('')}
+        </div>
         <textarea id="situation-input" class="ai-king-form__textarea" maxlength="500"
-          placeholder="예) 친구가 내 치킨을 허락도 없이 먹었는데 맛없다고 했습니다. 이건 무죄인가요 유죄인가요?"></textarea>
+          placeholder="예) 친구가 내 치킨을 허락도 없이 먹었는데 맛없다고 했습니다. 이건 무죄인가요 유죄인가요?&#10;&#10;억울한 상황을 최대한 자세히 적을수록 더 재밌는 판결이 나옵니다 ㅋㅋ"></textarea>
         <div class="ai-king-form__charcount"><span id="situation-count">0</span>/500</div>
 
-        <label class="ai-king-form__label" style="margin-top:16px">📷 사진 첨부 (선택)</label>
+        <label class="ai-king-form__label" style="margin-top:16px">📷 증거 사진 첨부 (선택)</label>
         <div class="ai-king-img-upload" id="judge-img-area">
           <input type="file" id="judge-img-input" accept="image/*" style="display:none">
-          <div class="ai-king-img-upload__label">📎 클릭하여 사진 추가<br><small>카톡 캡처 등 증거 사진</small></div>
+          <div class="ai-king-img-upload__label">📎 클릭하여 증거 사진 추가<br><small>카톡 캡처, 현장 사진 등 — 사진이 있으면 판결이 더 생생해요</small></div>
           <img id="judge-img-preview" class="ai-king-img-upload__preview" alt="">
           <div id="judge-img-remove" class="ai-king-img-upload__remove">✕ 사진 제거</div>
         </div>
@@ -53,7 +64,7 @@ export function renderAiJudge() {
         <button id="btn-judge-submit" class="btn btn--primary btn--full" style="margin-top:20px;font-size:16px;font-weight:800">
           ⚖️ 판결 받기
         </button>
-        <div style="font-size:11px;color:var(--color-text-muted);text-align:center;margin-top:8px">하루 3번 무료</div>
+        <div style="font-size:11px;color:var(--color-text-muted);text-align:center;margin-top:8px">하루 3번 무료 · 결과는 피드에 자동 공유돼요</div>
       </div>
     </div>`;
 
@@ -62,6 +73,14 @@ export function renderAiJudge() {
   const textarea = document.getElementById('situation-input');
   const count = document.getElementById('situation-count');
   textarea.addEventListener('input', () => { count.textContent = textarea.value.length; });
+
+  el.querySelectorAll('.ai-example-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      textarea.value = EXAMPLES[Number(chip.dataset.ex)];
+      count.textContent = textarea.value.length;
+      textarea.focus();
+    });
+  });
 
   let imageBase64 = null;
   const imgArea = document.getElementById('judge-img-area');

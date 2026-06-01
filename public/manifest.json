@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "소소킹 - 피드와 게임",
+  "name": "소소킹 - AI킹 놀이터",
   "short_name": "소소킹",
-  "description": "투표, 작명, 드립, 퀴즈, 라이어게임, 마피아게임으로 짧게 즐기는 참여형 커뮤니티",
+  "description": "미친판사·미친번역사·AI궁합·AI작명소를 즐기는 AI킹 놀이터 커뮤니티",
   "start_url": "/?source=pwa",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],

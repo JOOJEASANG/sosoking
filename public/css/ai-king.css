@@ -91,6 +91,14 @@
 .home-aiking-card__name { font-size: 13px; font-weight: 800; color: var(--color-text-primary); }
 .home-aiking-card__desc { font-size: 11px; color: var(--color-text-muted); }
 
+/* 예시 힌트 칩 */
+.ai-example-chip { font-size: 11px; padding: 5px 10px; background: var(--color-surface-2); border: 1px solid var(--color-border); border-radius: var(--radius-pill); cursor: pointer; color: var(--color-text-secondary); transition: all .15s; white-space: nowrap; }
+.ai-example-chip:hover { border-color: var(--color-primary); color: var(--color-primary); background: var(--color-primary-bg); }
+
+/* 결과 하단 액션 */
+.ai-result-actions { display: flex; gap: 10px; margin-top: 20px; }
+.ai-result-actions .btn { flex: 1; }
+
 /* 가이드 안내 박스 */
 .guide-notice { background: var(--color-primary-bg); border: 1.5px solid var(--color-primary); border-radius: 12px; padding: 14px 16px; font-size: 13px; line-height: 1.6; color: var(--color-text-primary); margin-bottom: 12px; }
 .guide-page { max-width: 640px; margin: 0 auto; padding: 16px 16px 80px; }

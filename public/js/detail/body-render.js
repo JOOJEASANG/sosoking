@@ -39,16 +39,29 @@ export function renderImageSection(images) {
     </div>`;
 }
 
+const AI_KING_AGAIN = {
+  ai_judge:     { path: '/ai-judge',     label: '⚖️ 나도 판결받기' },
+  ai_translate: { path: '/ai-translate', label: '🌍 나도 번역하기' },
+  ai_match:     { path: '/ai-match',     label: '💘 나도 궁합보기' },
+  ai_naming:    { path: '/ai-naming',    label: '🎭 나도 이름짓기' },
+};
+
+function renderAiAgainBtn(type) {
+  const info = AI_KING_AGAIN[type];
+  if (!info) return '';
+  return `<div class="ai-result-actions"><a href="#${info.path}" class="btn btn--primary">${info.label}</a><a href="#/feed?type=${type}" class="btn btn--outline">다른 결과 보기</a></div>`;
+}
+
 export function renderTypeBody(post) {
   switch (post.type) {
     case 'ai_judge':
-      return renderAiJudgeBody(post);
+      return renderAiJudgeBody(post) + renderAiAgainBtn('ai_judge');
     case 'ai_translate':
-      return renderAiTranslateBody(post);
+      return renderAiTranslateBody(post) + renderAiAgainBtn('ai_translate');
     case 'ai_match':
-      return renderAiMatchBody(post);
+      return renderAiMatchBody(post) + renderAiAgainBtn('ai_match');
     case 'ai_naming':
-      return renderAiNamingBody(post);
+      return renderAiNamingBody(post) + renderAiAgainBtn('ai_naming');
     case 'balance':
     case 'vote':
       if (!post.options?.length) return '';

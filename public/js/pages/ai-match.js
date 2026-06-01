@@ -74,15 +74,19 @@ export function renderAiMatch() {
         <div class="ai-king-header__sub">두 가지를 입력하면 AI가 궁합을 봐드립니다<br>사람, 음식, 물건, 동물 뭐든 OK</div>
       </div>
       <div class="ai-king-form">
-        <div class="ai-match-grid">
-          ${makeImgUpload('item-a', '첫 번째 ✨')}
-          ${makeImgUpload('item-b', '두 번째 ✨')}
+        <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:14px;text-align:center">
+          사람, 음식, 동물, 물건, 개념 — 뭐든 두 가지를 골라보세요<br>
+          <span style="color:var(--color-primary);font-weight:700">예) 나 + 우리팀장 / 치킨 + 피자 / MBTI I형 + E형</span>
         </div>
-        <div class="ai-match-vs" style="margin:12px 0">💘 VS 💘</div>
+        <div class="ai-match-grid">
+          ${makeImgUpload('item-a', '첫 번째')}
+          ${makeImgUpload('item-b', '두 번째')}
+        </div>
+        <div class="ai-match-vs" style="margin:14px 0">💘 VS 💘</div>
         <button id="btn-match-submit" class="btn btn--primary btn--full" style="font-size:16px;font-weight:800">
           💘 궁합 보기
         </button>
-        <div style="font-size:11px;color:var(--color-text-muted);text-align:center;margin-top:8px">하루 3번 무료</div>
+        <div style="font-size:11px;color:var(--color-text-muted);text-align:center;margin-top:8px">하루 3번 무료 · 결과는 피드에 자동 공유돼요</div>
       </div>
     </div>`;
 
