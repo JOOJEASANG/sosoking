@@ -34,7 +34,7 @@
   width: min(300px, 30vw); z-index: 1; pointer-events: none;
 }
 .home-hero__mini-card {
-  padding: 12px 14px; border-radius: 8px;
+  padding: 12px 14px; border-radius: 12px;
   background: rgba(255,255,255,0.18); backdrop-filter: blur(12px);
   border: 1px solid rgba(255,255,255,0.28); color: #fff;
 }

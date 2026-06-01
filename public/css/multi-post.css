@@ -6,7 +6,7 @@
 .multi-write-intro {
   margin-bottom: 12px;
   padding: 14px 16px;
-  border-radius: 8px;
+  border-radius: 14px;
   border: 1px solid rgba(255, 107, 74, .25);
   background: var(--color-primary-bg);
 }
@@ -27,7 +27,7 @@
 .multi-preset-box {
   margin: 0 0 12px;
   padding: 14px;
-  border-radius: 8px;
+  border-radius: 14px;
   background: var(--color-surface);
   border: 1px solid var(--color-border-light);
 }
@@ -58,7 +58,7 @@
   align-items: flex-start;
   gap: 2px;
   padding: 8px 13px;
-  border-radius: 8px;
+  border-radius: 10px;
   border: 1px solid var(--color-border-light);
   background: var(--color-surface-2);
   color: var(--color-text-secondary);
@@ -98,7 +98,7 @@
 
 .multi-module {
   border: 1px solid var(--color-border-light);
-  border-radius: 8px;
+  border-radius: 14px;
   background: var(--color-surface-2);
   overflow: hidden;
 }
@@ -168,7 +168,7 @@
 
 .multi-game-preview {
   margin-top: 16px;
-  border-radius: 8px;
+  border-radius: 14px;
   border: 1px solid rgba(255, 107, 74, .24);
   background: linear-gradient(135deg, rgba(255, 107, 74, .08), rgba(255, 184, 77, .08));
   overflow: hidden;
@@ -208,7 +208,7 @@
 
 .multi-preview-body {
   padding: 11px 12px;
-  border-radius: 8px;
+  border-radius: 10px;
   background: var(--color-surface);
   color: var(--color-text-secondary);
   font-size: 13px;
@@ -233,7 +233,7 @@
 .multi-preview-warn {
   margin-top: 8px;
   padding: 9px 10px;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 12px;
   font-weight: 850;
   line-height: 1.45;
@@ -332,7 +332,7 @@
 .multi-comment-note {
   margin-top: 14px;
   padding: 11px 12px;
-  border-radius: 8px;
+  border-radius: 10px;
   background: var(--color-surface-2);
   color: var(--color-text-secondary);
   font-size: 13px;
@@ -373,7 +373,7 @@
 .multi-detail-root {
   margin: 0 16px 18px;
   padding: 16px;
-  border-radius: 8px;
+  border-radius: 14px;
   background: var(--color-surface-2);
   border: 1px solid var(--color-border-light);
 }
@@ -398,7 +398,7 @@
 
 .multi-detail-module {
   padding: 14px;
-  border-radius: 8px;
+  border-radius: 12px;
   background: var(--color-surface);
   border: 1px solid var(--color-border-light);
   margin-top: 10px;
@@ -421,7 +421,7 @@
   position: relative;
   min-height: 44px;
   border: 1px solid var(--color-border-light);
-  border-radius: 8px;
+  border-radius: 10px;
   background: var(--color-surface-2);
   overflow: hidden;
   display: flex;
@@ -506,7 +506,7 @@
 .multi-relay-start,
 .multi-quiz-question {
   padding: 12px;
-  border-radius: 8px;
+  border-radius: 10px;
   background: var(--color-primary-bg);
   color: var(--color-text-primary);
   font-size: 13px;
@@ -518,7 +518,7 @@
 .multi-fill-prompt {
   margin: 10px 0;
   padding: 13px 14px;
-  border-radius: 8px;
+  border-radius: 12px;
   border: 1px solid rgba(255, 107, 74, .22);
   background: linear-gradient(135deg, rgba(255, 107, 74, .08), rgba(255, 184, 77, .08));
   color: var(--color-text-primary);
@@ -559,7 +559,7 @@
 
 .multi-empty {
   padding: 12px;
-  border-radius: 8px;
+  border-radius: 10px;
   background: var(--color-surface-2);
   color: var(--color-text-muted);
   text-align: center;
@@ -568,7 +568,7 @@
 
 .multi-participation-item {
   padding: 11px 12px;
-  border-radius: 8px;
+  border-radius: 10px;
   background: var(--color-surface-2);
   border: 1px solid var(--color-border-light);
 }
@@ -635,7 +635,7 @@
   display: none;
   margin-top: 10px;
   padding: 10px;
-  border-radius: 8px;
+  border-radius: 12px;
   background: var(--color-surface);
   border: 1px solid var(--color-border-light);
 }
@@ -675,7 +675,7 @@
   flex: 1;
   min-width: 0;
   padding: 8px 10px;
-  border-radius: 8px;
+  border-radius: 10px;
   background: var(--color-surface-2);
 }
 
@@ -732,7 +732,7 @@
 .multi-quiz-result {
   margin-top: 8px;
   padding: 10px 12px;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 13px;
   font-weight: 900;
 }

@@ -16,7 +16,7 @@
    2. 카드 전반 개선
 ────────────────────────────────────────────────── */
 .card {
-  border-radius: 12px !important;
+  border-radius: 14px !important;
   border: 1px solid var(--color-border-light) !important;
   box-shadow: var(--shadow-card) !important;
   transition: transform .22s cubic-bezier(.4,0,.2,1),
@@ -41,7 +41,7 @@
    3. 피드 카드 개선
 ────────────────────────────────────────────────── */
 .feed-card {
-  border-radius: 12px !important;
+  border-radius: 14px !important;
   border: 1px solid var(--color-border-light) !important;
   box-shadow: var(--shadow-card) !important;
   transition: transform .22s cubic-bezier(.4,0,.2,1),
@@ -458,7 +458,7 @@ h2.card__title {
    15. 모달 개선
 ────────────────────────────────────────────────── */
 .modal {
-  border-radius: 12px !important;
+  border-radius: 14px !important;
   box-shadow: 0 24px 64px rgba(0,0,0,.16) !important;
 }
 
@@ -535,7 +535,7 @@ h2.card__title {
   padding: 16px 8px;
   background: var(--color-bg-card, #fff);
   border: 1.5px solid var(--color-border-light, rgba(0,0,0,.08));
-  border-radius: 10px;
+  border-radius: 12px;
   cursor: pointer;
   text-align: center;
   transition: transform .22s cubic-bezier(.34,1.56,.64,1),
