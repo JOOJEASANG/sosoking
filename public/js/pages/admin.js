@@ -11,8 +11,9 @@ import {
 import { appState } from '../state.js';
 import { toast } from '../components/toast.js';
 import { navigate } from '../router.js';
-import { isAdmin } from '../app.js';
 import { escHtml } from '../utils/helpers.js';
+
+function isAdmin() { return !!appState.isAdmin; }
 import { renderSidebar } from '../components/sidebar.js';
 
 let currentTab = 'dashboard';
