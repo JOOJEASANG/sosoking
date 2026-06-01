@@ -125,12 +125,12 @@ function renderHallInfo(posts = []) {
 
 export async function renderHall() {
   const el = document.getElementById('page-content');
-  setMeta('명예의 전당', 'AI킹 베스트 결과 모음');
+  setMeta('통계', 'AI킹 인기글·유형별 랭킹 통계');
 
   el.innerHTML = `
     <div class="hall-page">
       <div class="section-header">
-        <h1 class="section-header__title">🏆 명예의 전당</h1>
+        <h1 class="section-header__title">📊 통계</h1>
       </div>
       <div id="hall-legend-box"></div>
       <div id="hall-info-box">${renderHallInfo([])}</div>

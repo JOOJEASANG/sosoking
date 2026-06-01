@@ -1393,7 +1393,7 @@
 .hall-section {
   background: var(--color-surface);
   border: 1.5px solid var(--color-border-light);
-  border-radius: 8px;
+  border-radius: 14px;
   padding: var(--space-4);
 }
 .hall-section__head {
