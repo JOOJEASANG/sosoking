@@ -21,6 +21,7 @@ export function renderPrivacy() {
               <thead><tr><th>구분</th><th>수집 항목</th><th>수집 시점</th></tr></thead>
               <tbody>
                 <tr><td>Google 로그인</td><td>이름, 이메일, 프로필 사진 URL, Firebase UID</td><td>소셜 로그인 시</td></tr>
+                <tr><td>카카오 로그인</td><td>카카오 닉네임, 프로필 정보, Firebase UID</td><td>소셜 로그인 시</td></tr>
                 <tr><td>이메일 로그인</td><td>이메일 주소, Firebase UID, 닉네임</td><td>회원가입·로그인 시</td></tr>
                 <tr><td>프로필 설정</td><td>닉네임, 프로필 아이콘, 직접 선택한 이미지 아이콘</td><td>내 정보 설정 시</td></tr>
                 <tr><td>피드 이용</td><td>게시물, 사진, 댓글, 답글, AI킹 결과물, 리액션, 스크랩, 신고 내역</td><td>피드 이용 중</td></tr>
@@ -59,7 +60,9 @@ export function renderPrivacy() {
               <thead><tr><th>업체명</th><th>이용 목적</th><th>처리 정보</th></tr></thead>
               <tbody>
                 <tr><td>Google Firebase</td><td>인증, 데이터베이스, 파일 저장, 서버리스 기능</td><td>계정 정보, 게시물, 댓글, 이미지, 서비스 이용 데이터</td></tr>
+                <tr><td>카카오</td><td>카카오 계정 소셜 로그인</td><td>카카오 닉네임, 프로필 정보</td></tr>
                 <tr><td>Anthropic (Claude AI)</td><td>AI킹 기능(판결·번역·궁합·작명) 결과 생성</td><td>입력 텍스트, 업로드 이미지(이용자가 선택한 경우)</td></tr>
+                <tr><td>Google (Gemini AI)</td><td>AI킹 기능(판결·번역·궁합·작명) 결과 생성</td><td>입력 텍스트, 업로드 이미지(이용자가 선택한 경우)</td></tr>
                 <tr><td>Google Analytics 또는 유사 분석 도구</td><td>접속 통계 및 서비스 개선</td><td>비식별 이용 기록</td></tr>
               </tbody>
             </table>
