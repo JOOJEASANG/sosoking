@@ -133,6 +133,14 @@ async function fetchUserProfile(user) {
       appState.nickname = data.nickname || user.displayName || user.email?.split('@')[0] || '';
       appState.nicknameIcon = data.nicknameIcon || null;
       appState.points = Number(data.points || data.totalPoints || 0);
+      // 가입 보너스 자동 지급 (서버에서 중복 방지, 기존 회원도 자동 적용)
+      if (!data.signupBonusClaimed) {
+        import('./firebase.js').then(({ functions }) =>
+          import('https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js').then(({ httpsCallable }) =>
+            httpsCallable(functions, 'claimSignupBonus')().catch(() => {})
+          )
+        );
+      }
     } else {
       appState.nickname = user.displayName || user.email?.split('@')[0] || '';
     }
