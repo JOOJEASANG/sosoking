@@ -589,6 +589,25 @@ async function renderUsers(el) {
 
 /* ── AI 설정 ── */
 async function renderAiSettings(el) {
+  // Load AI킹 model config
+  let aiKingConfig = { activeModel: 'claude', claudeModel: 'claude-haiku-4-5-20251001', geminiModel: 'gemini-2.5-flash', openaiModel: 'gpt-4o-mini', pointsPerUse: 100 };
+  try {
+    const kSnap = await getDoc(doc(db, 'config', 'ai_king'));
+    if (kSnap.exists()) {
+      const d = kSnap.data();
+      aiKingConfig = {
+        activeModel: d.activeModel || 'claude',
+        claudeModel: d.claudeModel || 'claude-haiku-4-5-20251001',
+        claudeKeyMasked: d.claudeApiKey ? '●'.repeat(8) + d.claudeApiKey.slice(-4) : '',
+        geminiModel: d.geminiModel || 'gemini-2.5-flash',
+        geminiKeyMasked: d.geminiApiKey ? '●'.repeat(8) + d.geminiApiKey.slice(-4) : '',
+        openaiModel: d.openaiModel || 'gpt-4o-mini',
+        openaiKeyMasked: d.openaiApiKey ? '●'.repeat(8) + d.openaiApiKey.slice(-4) : '',
+        pointsPerUse: d.pointsPerUse || 100,
+      };
+    }
+  } catch {}
+
   // Load current AI config from Firestore
   let aiConfig = { enabled: true, apiKey: '', features: {}, usage: {} };
   try {
@@ -626,7 +645,73 @@ async function renderAiSettings(el) {
     <div style="display:flex;flex-direction:column;gap:24px;max-width:700px">
       <h2 class="admin-section-title">🤖 AI 관리</h2>
 
-      <!-- API 키 설정 -->
+      <!-- AI킹 모델 설정 -->
+      <div class="card">
+        <div class="card__body">
+          <div style="font-size:15px;font-weight:900;margin-bottom:4px">🎮 AI킹 모델 설정</div>
+          <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:16px">판사·번역사·궁합·작명소에 사용할 AI 모델과 API 키를 설정하세요.</div>
+
+          <div style="font-size:13px;font-weight:700;margin-bottom:8px">사용 모델 선택</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
+            ${[
+              { id: 'claude', icon: '🟣', label: 'Claude Haiku', sub: '현재 사용 중' },
+              { id: 'gemini', icon: '🔵', label: 'Gemini 2.5 Flash', sub: '8~10배 저렴' },
+              { id: 'openai', icon: '🟢', label: 'GPT-4o mini', sub: '준비 중' },
+            ].map(m => `
+              <label class="admin-model-radio ${aiKingConfig.activeModel === m.id ? 'active' : ''}">
+                <input type="radio" name="ai-model" value="${m.id}" ${aiKingConfig.activeModel === m.id ? 'checked' : ''} style="display:none">
+                <span style="font-size:18px">${m.icon}</span>
+                <div>
+                  <div style="font-size:13px;font-weight:700">${m.label}</div>
+                  <div style="font-size:11px;opacity:0.7">${m.sub}</div>
+                </div>
+              </label>`).join('')}
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div class="admin-key-row">
+              <div style="font-size:12px;font-weight:700;color:#6C5CE7;margin-bottom:4px">🟣 Claude API Key (Anthropic)</div>
+              <div style="display:flex;gap:6px">
+                <input type="password" class="form-input" id="key-claude" placeholder="${aiKingConfig.claudeKeyMasked || 'sk-ant-...'}" style="flex:1;font-size:12px;font-family:monospace" autocomplete="new-password">
+                <select class="form-input" id="model-claude" style="font-size:12px;min-width:160px">
+                  <option value="claude-haiku-4-5-20251001" ${aiKingConfig.claudeModel === 'claude-haiku-4-5-20251001' ? 'selected' : ''}>Haiku 4.5 (추천)</option>
+                  <option value="claude-sonnet-4-6" ${aiKingConfig.claudeModel === 'claude-sonnet-4-6' ? 'selected' : ''}>Sonnet 4.6</option>
+                </select>
+              </div>
+            </div>
+            <div class="admin-key-row">
+              <div style="font-size:12px;font-weight:700;color:#0984e3;margin-bottom:4px">🔵 Gemini API Key (Google AI Studio)</div>
+              <div style="display:flex;gap:6px">
+                <input type="password" class="form-input" id="key-gemini" placeholder="${aiKingConfig.geminiKeyMasked || 'AIza...'}" style="flex:1;font-size:12px;font-family:monospace" autocomplete="new-password">
+                <select class="form-input" id="model-gemini" style="font-size:12px;min-width:160px">
+                  <option value="gemini-2.5-flash" ${aiKingConfig.geminiModel === 'gemini-2.5-flash' ? 'selected' : ''}>Gemini 2.5 Flash (추천)</option>
+                  <option value="gemini-2.0-flash" ${aiKingConfig.geminiModel === 'gemini-2.0-flash' ? 'selected' : ''}>Gemini 2.0 Flash</option>
+                </select>
+              </div>
+            </div>
+            <div class="admin-key-row" style="opacity:0.5">
+              <div style="font-size:12px;font-weight:700;color:#00b894;margin-bottom:4px">🟢 OpenAI API Key (준비 중)</div>
+              <div style="display:flex;gap:6px">
+                <input type="password" class="form-input" id="key-openai" placeholder="${aiKingConfig.openaiKeyMasked || 'sk-...'}" style="flex:1;font-size:12px;font-family:monospace" disabled autocomplete="new-password">
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:12px;margin-top:16px;padding-top:16px;border-top:1px solid var(--color-border)">
+            <div style="flex:1">
+              <div style="font-size:12px;font-weight:700;margin-bottom:4px">💰 추가 사용권 포인트 가격</div>
+              <div style="display:flex;align-items:center;gap:6px">
+                <input type="number" class="form-input" id="points-per-use" value="${aiKingConfig.pointsPerUse}" min="10" max="500" style="width:100px;font-size:13px">
+                <span style="font-size:12px;color:var(--color-text-muted)">포인트 / 1회 사용권</span>
+              </div>
+            </div>
+            <button class="btn btn--primary" id="btn-save-ai-king-config">저장</button>
+          </div>
+          <div id="ai-king-config-result" style="font-size:12px;margin-top:8px;color:var(--color-text-muted)"></div>
+        </div>
+      </div>
+
+      <!-- API 키 설정 (기존 모더레이션용 Gemini) -->
       <div class="card">
         <div class="card__body">
           <div style="font-size:14px;font-weight:800;margin-bottom:4px">🔑 Gemini API 키</div>
@@ -715,6 +800,47 @@ async function renderAiSettings(el) {
     </div>`;
 
   // Save API key
+  // AI킹 모델 라디오 스타일
+  el.querySelectorAll('input[name="ai-model"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      el.querySelectorAll('.admin-model-radio').forEach(l => l.classList.toggle('active', l.querySelector('input').value === radio.value));
+    });
+  });
+
+  // AI킹 설정 저장
+  el.querySelector('#btn-save-ai-king-config')?.addEventListener('click', async () => {
+    const btn = el.querySelector('#btn-save-ai-king-config');
+    const result = el.querySelector('#ai-king-config-result');
+    btn.disabled = true;
+    btn.textContent = '저장 중...';
+    try {
+      const saveFn = httpsCallable(functions, 'saveAiKingConfig');
+      const payload = {
+        activeModel: el.querySelector('input[name="ai-model"]:checked')?.value || 'claude',
+        claudeModel: el.querySelector('#model-claude')?.value,
+        geminiModel: el.querySelector('#model-gemini')?.value,
+        pointsPerUse: parseInt(el.querySelector('#points-per-use')?.value) || 100,
+      };
+      const claudeKey = el.querySelector('#key-claude')?.value.trim();
+      const geminiKey = el.querySelector('#key-gemini')?.value.trim();
+      const openaiKey = el.querySelector('#key-openai')?.value.trim();
+      if (claudeKey) payload.claudeApiKey = claudeKey;
+      if (geminiKey) payload.geminiApiKey = geminiKey;
+      if (openaiKey) payload.openaiApiKey = openaiKey;
+      await saveFn(payload);
+      toast.success('AI킹 설정이 저장됐어요 ✅');
+      result.textContent = `✅ ${new Date().toLocaleTimeString('ko-KR')} 저장 완료 (모델: ${payload.activeModel})`;
+      if (claudeKey) { el.querySelector('#key-claude').value = ''; el.querySelector('#key-claude').placeholder = '●'.repeat(8) + claudeKey.slice(-4); }
+      if (geminiKey) { el.querySelector('#key-gemini').value = ''; el.querySelector('#key-gemini').placeholder = '●'.repeat(8) + geminiKey.slice(-4); }
+    } catch (e) {
+      result.textContent = '❌ ' + (e.message || '저장 실패');
+      toast.error(e.message || '저장에 실패했어요');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '저장';
+    }
+  });
+
   el.querySelector('#btn-save-api-key')?.addEventListener('click', async () => {
     const key = el.querySelector('#ai-api-key-input')?.value.trim();
     if (!key || key.length < 10) { toast.error('유효한 API 키를 입력해주세요'); return; }

@@ -95,6 +95,7 @@ async function registerRoutes() {
   registerRoute('/ai-translate', async () => renderPage((await import('./pages/ai-translate.js')).renderAiTranslate, '미친번역사'));
   registerRoute('/ai-match', async () => renderPage((await import('./pages/ai-match.js')).renderAiMatch, 'AI궁합'));
   registerRoute('/ai-naming', async () => renderPage((await import('./pages/ai-naming.js')).renderAiNaming, 'AI작명소'));
+  registerRoute('/points-shop', async () => renderPage((await import('./pages/points-shop.js')).renderPointsShop, '포인트 상점'));
 }
 
 async function isStrictAdmin(user) {

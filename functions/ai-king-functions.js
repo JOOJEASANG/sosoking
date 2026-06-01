@@ -1,45 +1,120 @@
 'use strict';
 
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
-const { defineSecret } = require('firebase-functions/params');
 const { getApps, initializeApp } = require('firebase-admin/app');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
-const Anthropic = require('@anthropic-ai/sdk');
 
 if (!getApps().length) initializeApp();
 const db = getFirestore();
-const anthropicKey = defineSecret('ANTHROPIC_API_KEY');
 
 const DAILY_LIMIT = 3;
 
-async function checkUsage(userId, feature) {
-  const today = new Date().toISOString().slice(0, 10);
-  const ref = db.doc(`ai_king_usage/${userId}_${today}_${feature}`);
-  return db.runTransaction(async (tx) => {
-    const snap = await tx.get(ref);
-    const count = snap.exists ? (snap.data().count || 0) : 0;
-    if (count >= DAILY_LIMIT) return false;
-    tx.set(ref, { count: count + 1, userId, feature, date: today, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-    return true;
-  });
+// ── AI King config cache ──
+let _aiKingConfig = null;
+let _aiKingConfigFetchedAt = 0;
+
+async function getAiKingConfig() {
+  const now = Date.now();
+  if (_aiKingConfig && now - _aiKingConfigFetchedAt < 60_000) return _aiKingConfig;
+  const snap = await db.doc('config/ai_king').get();
+  _aiKingConfig = snap.exists ? snap.data() : {};
+  _aiKingConfigFetchedAt = now;
+  return _aiKingConfig;
 }
 
-function makeImageContent(base64) {
-  if (!base64) return null;
-  return { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: base64 } };
-}
+// ── Multi-provider AI call ──
+async function callAI(system, userText, imageBase64 = null, maxTokens = 400) {
+  const config = await getAiKingConfig();
 
-async function callClaude(anthropic, system, userText, imageBase64 = null, maxTokens = 400) {
+  if (config.activeModel === 'gemini') {
+    const { GoogleGenerativeAI } = require('@google/generative-ai');
+    const genAI = new GoogleGenerativeAI(config.geminiApiKey);
+    const model = genAI.getGenerativeModel({
+      model: config.geminiModel || 'gemini-2.5-flash',
+      systemInstruction: system,
+    });
+    const parts = [];
+    if (imageBase64) {
+      parts.push({ inlineData: { data: imageBase64, mimeType: 'image/jpeg' } });
+    }
+    parts.push({ text: userText });
+    const result = await model.generateContent({
+      contents: [{ role: 'user', parts }],
+      generationConfig: { maxOutputTokens: maxTokens },
+    });
+    return result.response.text() || '';
+  }
+
+  // Default: Claude
+  const Anthropic = require('@anthropic-ai/sdk');
+  const anthropic = new Anthropic({ apiKey: config.claudeApiKey });
   const content = [];
-  if (imageBase64) content.push(makeImageContent(imageBase64));
+  if (imageBase64) {
+    content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: imageBase64 } });
+  }
   content.push({ type: 'text', text: userText });
   const msg = await anthropic.messages.create({
-    model: 'claude-haiku-4-5-20251001',
+    model: config.claudeModel || 'claude-haiku-4-5-20251001',
     max_tokens: maxTokens,
     system,
     messages: [{ role: 'user', content }],
   });
   return msg.content[0]?.text || '';
+}
+
+async function callAIWithImages(system, userText, imageA = null, imageB = null, maxTokens = 500) {
+  const config = await getAiKingConfig();
+
+  if (config.activeModel === 'gemini') {
+    const { GoogleGenerativeAI } = require('@google/generative-ai');
+    const genAI = new GoogleGenerativeAI(config.geminiApiKey);
+    const model = genAI.getGenerativeModel({
+      model: config.geminiModel || 'gemini-2.5-flash',
+      systemInstruction: system,
+    });
+    const parts = [];
+    if (imageA) parts.push({ inlineData: { data: imageA, mimeType: 'image/jpeg' } });
+    if (imageB) parts.push({ inlineData: { data: imageB, mimeType: 'image/jpeg' } });
+    parts.push({ text: userText });
+    const result = await model.generateContent({
+      contents: [{ role: 'user', parts }],
+      generationConfig: { maxOutputTokens: maxTokens },
+    });
+    return result.response.text() || '';
+  }
+
+  // Default: Claude
+  const Anthropic = require('@anthropic-ai/sdk');
+  const anthropic = new Anthropic({ apiKey: config.claudeApiKey });
+  const content = [];
+  if (imageA) content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: imageA } });
+  if (imageB) content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: imageB } });
+  content.push({ type: 'text', text: userText });
+  const msg = await anthropic.messages.create({
+    model: config.claudeModel || 'claude-haiku-4-5-20251001',
+    max_tokens: maxTokens,
+    system,
+    messages: [{ role: 'user', content }],
+  });
+  return msg.content[0]?.text || '';
+}
+
+// ── Usage check with extraAiUses fallback ──
+async function checkUsage(userId, feature) {
+  const today = new Date().toISOString().slice(0, 10);
+  const ref = db.doc(`ai_king_usage/${userId}_${today}_${feature}`);
+  return db.runTransaction(async (tx) => {
+    const [snap, userSnap] = await Promise.all([tx.get(ref), tx.get(db.doc(`users/${userId}`))]);
+    const count = snap.exists ? (snap.data().count || 0) : 0;
+    if (count >= DAILY_LIMIT) {
+      const extra = userSnap.exists ? (userSnap.data()?.extraAiUses || 0) : 0;
+      if (extra <= 0) return false;
+      tx.update(db.doc(`users/${userId}`), { extraAiUses: FieldValue.increment(-1), updatedAt: FieldValue.serverTimestamp() });
+      return true;
+    }
+    tx.set(ref, { count: count + 1, userId, feature, date: today, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+    return true;
+  });
 }
 
 // ── 미친판사: 7가지 판사 유형 ──
@@ -70,7 +145,6 @@ ${JUDGES.map(j => `- ${j.id}: ${j.desc}`).join('\n')}`;
 
 exports.aiJudge = onCall({
   region: 'asia-northeast3',
-  secrets: [anthropicKey],
   timeoutSeconds: 60,
   memory: '512MiB',
 }, async (request) => {
@@ -85,9 +159,7 @@ exports.aiJudge = onCall({
   const allowed = await checkUsage(userId, 'judge');
   if (!allowed) throw new HttpsError('resource-exhausted', `오늘 판결은 하루 ${DAILY_LIMIT}번만 가능해요`);
 
-  const anthropic = new Anthropic({ apiKey: anthropicKey.value() });
-  const raw = await callClaude(
-    anthropic,
+  const raw = await callAI(
     JUDGE_SYSTEM,
     `다음 상황을 7명의 판사가 각자 판결해줘:\n${situation.slice(0, 500)}`,
     imageBase64,
@@ -140,7 +212,6 @@ const TRANSLATE_STYLES = {
 
 exports.aiTranslate = onCall({
   region: 'asia-northeast3',
-  secrets: [anthropicKey],
   timeoutSeconds: 60,
   memory: '512MiB',
 }, async (request) => {
@@ -157,12 +228,11 @@ exports.aiTranslate = onCall({
   const allowed = await checkUsage(userId, 'translate');
   if (!allowed) throw new HttpsError('resource-exhausted', `오늘 번역은 하루 ${DAILY_LIMIT}번만 가능해요`);
 
-  const anthropic = new Anthropic({ apiKey: anthropicKey.value() });
   const userText = imageBase64
     ? `이미지에 있는 텍스트와 함께 다음 내용을 번역해줘:\n${text.slice(0, 500)}`
     : `다음을 번역해줘:\n${text.slice(0, 500)}`;
 
-  const translated = await callClaude(anthropic, styleData.system, userText, imageBase64, 500);
+  const translated = await callAI(styleData.system, userText, imageBase64, 500);
 
   const postRef = db.collection('feeds').doc();
   await postRef.set({
@@ -190,7 +260,6 @@ exports.aiTranslate = onCall({
 // ── AI궁합 ──
 exports.aiMatch = onCall({
   region: 'asia-northeast3',
-  secrets: [anthropicKey],
   timeoutSeconds: 60,
   memory: '512MiB',
 }, async (request) => {
@@ -205,25 +274,18 @@ exports.aiMatch = onCall({
   const allowed = await checkUsage(userId, 'match');
   if (!allowed) throw new HttpsError('resource-exhausted', `오늘 궁합은 하루 ${DAILY_LIMIT}번만 가능해요`);
 
-  const anthropic = new Anthropic({ apiKey: anthropicKey.value() });
-
   const system = `당신은 세상 모든 것의 궁합을 보는 AI 점쟁이다. 사람, 음식, 물건, 동물 뭐든 궁합을 본다. 반드시 JSON 형식으로만 답하라:
 {"score": 숫자(0~100), "grade": "등급(예:천생연분💕/찰떡궁합🎯/그냥저냥😐/최악의조합💥)", "reason": "궁합 이유(웃기고 황당하게 2~3문장)", "chemistry": "둘이 만나면 생기는 일(재미있고 구체적으로 1~2문장)", "advice": "조언(웃기게 한 문장)"}`;
 
-  const content = [];
-  if (imageA) content.push(makeImageContent(imageA));
-  if (imageB) content.push(makeImageContent(imageB));
-  content.push({ type: 'text', text: `"${itemA.slice(0, 100)}"와 "${itemB.slice(0, 100)}"의 궁합을 봐줘` });
-
   let matchResult;
   try {
-    const msg = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 500,
+    const raw = await callAIWithImages(
       system,
-      messages: [{ role: 'user', content }],
-    });
-    const raw = msg.content[0]?.text || '{}';
+      `"${itemA.slice(0, 100)}"와 "${itemB.slice(0, 100)}"의 궁합을 봐줘`,
+      imageA,
+      imageB,
+      500,
+    );
     matchResult = JSON.parse(raw.replace(/```json|```/g, '').trim());
   } catch {
     matchResult = {
@@ -270,7 +332,6 @@ const NAME_CATEGORIES = {
 
 exports.aiNaming = onCall({
   region: 'asia-northeast3',
-  secrets: [anthropicKey],
   timeoutSeconds: 60,
   memory: '512MiB',
 }, async (request) => {
@@ -286,7 +347,6 @@ exports.aiNaming = onCall({
   const allowed = await checkUsage(userId, 'naming');
   if (!allowed) throw new HttpsError('resource-exhausted', `오늘 작명은 하루 ${DAILY_LIMIT}번만 가능해요`);
 
-  const anthropic = new Anthropic({ apiKey: anthropicKey.value() });
   const catLabel = NAME_CATEGORIES[category] || '기타';
 
   const system = `당신은 세상에서 가장 웃기고 창의적인 작명 전문가다. 요청받은 것의 이름을 5개 지어준다.
@@ -301,7 +361,7 @@ exports.aiNaming = onCall({
 
   let names;
   try {
-    const raw = await callClaude(anthropic, system, userText, imageBase64, 600);
+    const raw = await callAI(system, userText, imageBase64, 600);
     const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
     names = parsed.names || [];
   } catch {
@@ -333,15 +393,90 @@ exports.aiNaming = onCall({
 
   return { postId: postRef.id, names };
 });
+
+// ── getAiKingUsage ──
 exports.getAiKingUsage = onCall({ region: 'asia-northeast3' }, async (request) => {
   const userId = request.auth?.uid;
-  if (!userId) return { judge: 0, translate: 0, match: 0, naming: 0 };
+  if (!userId) return { judge: 0, translate: 0, match: 0, naming: 0, extraUses: 0 };
   const today = new Date().toISOString().slice(0, 10);
   const features = ['judge', 'translate', 'match', 'naming'];
-  const snaps = await Promise.all(
-    features.map(f => db.doc(`ai_king_usage/${userId}_${today}_${f}`).get())
-  );
+  const [snaps, userSnap] = await Promise.all([
+    Promise.all(features.map(f => db.doc(`ai_king_usage/${userId}_${today}_${f}`).get())),
+    db.doc(`users/${userId}`).get(),
+  ]);
   const result = {};
   features.forEach((f, i) => { result[f] = snaps[i].exists ? (snaps[i].data().count || 0) : 0; });
+  result.extraUses = userSnap.exists ? (userSnap.data()?.extraAiUses || 0) : 0;
   return result;
+});
+
+// ── saveAiKingConfig (admin only) ──
+exports.saveAiKingConfig = onCall({ region: 'asia-northeast3' }, async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError('unauthenticated', '로그인이 필요해요');
+
+  const adminSnap = await db.doc(`admins/${uid}`).get();
+  if (!adminSnap.exists) throw new HttpsError('permission-denied', '관리자만 접근 가능해요');
+
+  const data = request.data || {};
+  const FIELDS = ['activeModel', 'claudeApiKey', 'claudeModel', 'geminiApiKey', 'geminiModel', 'openaiApiKey', 'openaiModel', 'pointsPerUse'];
+
+  const update = {};
+  for (const field of FIELDS) {
+    if (data[field] !== undefined && data[field] !== null) {
+      const val = data[field];
+      // Skip masked values (API keys shown as ●●●●●)
+      if (typeof val === 'string' && val.startsWith('●')) continue;
+      update[field] = val;
+    }
+  }
+
+  if (Object.keys(update).length === 0) {
+    return { success: true, updated: [] };
+  }
+
+  update.updatedAt = FieldValue.serverTimestamp();
+  update.updatedBy = uid;
+
+  await db.doc('config/ai_king').set(update, { merge: true });
+
+  // Invalidate cache
+  _aiKingConfig = null;
+  _aiKingConfigFetchedAt = 0;
+
+  return { success: true, updated: Object.keys(update).filter(k => k !== 'updatedAt' && k !== 'updatedBy') };
+});
+
+// ── purchaseAiExtraUse ──
+exports.purchaseAiExtraUse = onCall({ region: 'asia-northeast3' }, async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError('unauthenticated', '로그인이 필요해요');
+
+  const quantity = Math.min(Math.max(Math.floor(Number(request.data?.quantity) || 1), 1), 10);
+  const config = await getAiKingConfig();
+  const pointsPerUse = config.pointsPerUse || 100;
+  const totalCost = pointsPerUse * quantity;
+
+  const userRef = db.doc(`users/${uid}`);
+
+  await db.runTransaction(async (tx) => {
+    const userSnap = await tx.get(userRef);
+    if (!userSnap.exists) throw new HttpsError('not-found', '사용자를 찾을 수 없어요');
+
+    const currentPoints = userSnap.data()?.points || 0;
+    if (currentPoints < totalCost) {
+      throw new HttpsError(
+        'failed-precondition',
+        `포인트가 부족해요. 현재 ${currentPoints}포인트 / 필요 ${totalCost}포인트`,
+      );
+    }
+
+    tx.update(userRef, {
+      points: FieldValue.increment(-totalCost),
+      extraAiUses: FieldValue.increment(quantity),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+  });
+
+  return { success: true, quantity, pointsUsed: totalCost };
 });
