@@ -59,7 +59,7 @@ function showAndroidInstallGuide() {
       <div style="color:var(--color-text-secondary);text-align:left;margin-bottom:14px">
         <div style="margin-bottom:6px">① Chrome 주소창 오른쪽 <b>⋮ 메뉴</b> 탭</div>
         <div style="margin-bottom:6px">② <b>"앱 설치"</b> 또는 <b>"홈 화면에 추가"</b> 선택</div>
-        <div style="font-size:12px;color:var(--color-text-tertiary,#999);margin-top:8px">주소창에 설치 아이콘(⊕)이 보이면 그것을 탭해도 됩니다.</div>
+        <div style="font-size:12px;color:var(--color-text-muted);margin-top:8px">주소창에 설치 아이콘(⊕)이 보이면 그것을 탭해도 됩니다.</div>
       </div>
       <button id="android-tip-close" style="width:100%;padding:10px 0;background:var(--color-primary);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit">확인</button>
     `;

@@ -320,7 +320,7 @@ async function renderReports(el, _subtab) {
             <div class="admin-stat-card__label">신규</div>
           </div>
           <div class="admin-stat-card">
-            <div class="admin-stat-card__num" style="color:#b77900">${fbCounts.reviewing}</div>
+            <div class="admin-stat-card__num" style="color:var(--color-warning-text)">${fbCounts.reviewing}</div>
             <div class="admin-stat-card__label">확인중</div>
           </div>
           <div class="admin-stat-card">
@@ -464,7 +464,7 @@ async function renderUsers(el) {
               <tr>
                 <td>
                   <div style="display:flex;align-items:center;gap:8px">
-                    ${m.photoURL ? `<img src="${escHtml(m.photoURL)}" style="width:28px;height:28px;border-radius:50%;object-fit:cover" loading="lazy">` : `<div style="width:28px;height:28px;border-radius:50%;background:var(--color-surface-2);display:flex;align-items:center;justify-content:center;font-size:14px">👤</div>`}
+                    ${m.photoURL ? `<img src="${escHtml(m.photoURL)}" alt="" style="width:28px;height:28px;border-radius:50%;object-fit:cover" loading="lazy">` : `<div style="width:28px;height:28px;border-radius:50%;background:var(--color-surface-2);display:flex;align-items:center;justify-content:center;font-size:14px">👤</div>`}
                     <div style="min-width:0">
                       <div style="font-weight:700">${escHtml(m.nickname || '회원')}</div>
                       <div style="font-family:monospace;font-size:10px;color:var(--color-text-muted)">${escHtml(String(m.uid || '').slice(0, 14))}…</div>
@@ -603,7 +603,7 @@ async function renderAiSettings(el) {
         <div class="card__body">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
             <div style="font-size:15px;font-weight:900">💰 이번 달 비용 관리</div>
-            <span style="font-size:11px;padding:3px 8px;border-radius:99px;font-weight:800;background:${isOver ? 'rgba(239,68,68,.12)' : isNear ? 'rgba(255,184,0,.12)' : 'var(--color-surface-2)'};color:${isOver ? 'var(--color-danger)' : isNear ? '#b77900' : 'var(--color-text-muted)'}">${today.slice(0, 7)}</span>
+            <span style="font-size:11px;padding:3px 8px;border-radius:99px;font-weight:800;background:${isOver ? 'rgba(239,68,68,.12)' : isNear ? 'rgba(255,184,0,.12)' : 'var(--color-surface-2)'};color:${isOver ? 'var(--color-danger)' : isNear ? 'var(--color-warning-text)' : 'var(--color-text-muted)'}">${today.slice(0, 7)}</span>
           </div>
           <div class="admin-stat-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:14px">
             <div class="admin-stat-card">
@@ -615,7 +615,7 @@ async function renderAiSettings(el) {
               <div class="admin-stat-card__label">이번 달 총 사용</div>
             </div>
             <div class="admin-stat-card">
-              <div class="admin-stat-card__num" style="color:${isOver ? 'var(--color-danger)' : isNear ? '#b77900' : 'var(--color-text-primary)'}">$${monthCostUSD.toFixed(3)}</div>
+              <div class="admin-stat-card__num" style="color:${isOver ? 'var(--color-danger)' : isNear ? 'var(--color-warning-text)' : 'var(--color-text-primary)'}">$${monthCostUSD.toFixed(3)}</div>
               <div class="admin-stat-card__label">추정 비용 (≈₩${monthCostKRW.toLocaleString()})</div>
             </div>
             <div class="admin-stat-card">
@@ -632,7 +632,7 @@ async function renderAiSettings(el) {
               <div style="height:100%;width:${capPct}%;background:${isOver ? 'var(--color-danger)' : isNear ? '#FFB800' : 'var(--color-primary)'};transition:width .3s"></div>
             </div>
           </div>
-          ${isOver ? `<div style="padding:9px 12px;border-radius:10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);font-size:12px;font-weight:700;color:var(--color-danger);margin-bottom:12px">🚨 이번 달 예산 한도($${cap})를 초과했어요. AI 전체 중지 또는 한도를 조정해주세요.</div>` : isNear ? `<div style="padding:9px 12px;border-radius:10px;background:rgba(255,184,0,.1);border:1px solid rgba(255,184,0,.25);font-size:12px;font-weight:700;color:#b77900;margin-bottom:12px">⚠️ 예산의 ${capPct}%를 사용했어요. 잔여 한도: $${(cap - monthCostUSD).toFixed(3)}</div>` : ''}
+          ${isOver ? `<div style="padding:9px 12px;border-radius:10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);font-size:12px;font-weight:700;color:var(--color-danger);margin-bottom:12px">🚨 이번 달 예산 한도($${cap})를 초과했어요. AI 전체 중지 또는 한도를 조정해주세요.</div>` : isNear ? `<div style="padding:9px 12px;border-radius:10px;background:rgba(255,184,0,.1);border:1px solid rgba(255,184,0,.25);font-size:12px;font-weight:700;color:var(--color-warning-text);margin-bottom:12px">⚠️ 예산의 ${capPct}%를 사용했어요. 잔여 한도: $${(cap - monthCostUSD).toFixed(3)}</div>` : ''}
           <div style="display:flex;align-items:center;gap:10px;padding-top:12px;border-top:1px solid var(--color-border);flex-wrap:wrap">
             <div style="font-size:12px;font-weight:700">월 예산 한도</div>
             <div style="display:flex;align-items:center;gap:4px">
