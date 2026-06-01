@@ -11,21 +11,20 @@ import {
 import { navigate } from '../router.js';
 
 const TYPE_LABEL = {
-  tournament: '대결방',
-  collect: '일반방',
-  multi: '일반방',
-  general: '일반방',
-  anonymous: '일반방',
-  vote: '토론방',
-  ox: '토론방',
-  crazy_court: '토론방',
-  balance: '토론방',
-  battle: '토론방',
-  drip: '드립방',
-  cbattle: '드립방',
-  quiz: '퀴즈방',
-  initial_game: '퀴즈방',
+  tournament:   '🏆 끝판왕',
+  multi:        '🏆 끝판왕',
+  ai_judge:     '⚖️ 미친판사',
+  ai_translate: '🌍 미친번역사',
+  ai_match:     '💘 AI궁합',
+  ai_naming:    '🎭 AI작명소',
 };
+
+const AI_KINGS = [
+  { path: '/ai-judge',    emoji: '⚖️', name: '미친판사',   desc: '7명이 판결' },
+  { path: '/ai-translate', emoji: '🌍', name: '미친번역사', desc: '말투 변환' },
+  { path: '/ai-match',    emoji: '💘', name: 'AI궁합',     desc: '궁합 분석' },
+  { path: '/ai-naming',   emoji: '🎭', name: 'AI작명소',   desc: '이름 창작' },
+];
 
 function getKstDateString(date = new Date()) {
   return new Date(date.getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
@@ -57,100 +56,60 @@ function commentScore(comment) {
 }
 
 function moduleLabel(post) {
-  const m = post.modules || {};
-  if (m.tournament?.enabled) return '대결방';
-  if (m.collect?.enabled) return m.collect.label || '일반방';
-  if (m.vote?.enabled) return '토론방';
-  if (m.drip?.enabled) return '드립방';
-  if (m.quiz?.enabled) return '퀴즈방';
-  if (post.feedType && TYPE_LABEL[post.feedType]) return TYPE_LABEL[post.feedType];
-  if (post.subtype && TYPE_LABEL[post.subtype]) return TYPE_LABEL[post.subtype];
-  if (post.type !== 'multi') return TYPE_LABEL[post.type] || '일반방';
-  return '일반방';
+  if (TYPE_LABEL[post.type]) return TYPE_LABEL[post.type];
+  if (post.modules?.tournament?.enabled) return '🏆 끝판왕';
+  return TYPE_LABEL[post.feedType] || TYPE_LABEL[post.subtype] || '🏆 끝판왕';
 }
 
-async function fetchPopularComments(n = 8) {
+async function fetchPopularComments(n = 6) {
   try {
     const q = query(collectionGroup(db, 'comments'), orderBy('createdAt', 'desc'), limit(80));
     const snap = await getDocs(q);
     return snap.docs
       .map(d => {
         const data = d.data();
-        return {
-          id: d.id,
-          postId: d.ref.parent?.parent?.id || data.postId || '',
-          ...data,
-          _score: commentScore(data),
-        };
+        return { id: d.id, postId: d.ref.parent?.parent?.id || data.postId || '', ...data, _score: commentScore(data) };
       })
       .filter(c => c.text && c.postId && !c.hidden)
-      .sort((a, b) => {
-        if (b._score !== a._score) return b._score - a._score;
-        const bt = b.createdAt?.toMillis?.() || 0;
-        const at = a.createdAt?.toMillis?.() || 0;
-        return bt - at;
-      })
+      .sort((a, b) => b._score !== a._score ? b._score - a._score : (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0))
       .slice(0, n);
-  } catch (error) {
-    console.warn('[home] popular comments failed', error);
-    return [];
-  }
+  } catch { return []; }
 }
 
-function renderIntro() {
+function renderHero() {
+  const user = auth.currentUser;
+  const nick = appState.nickname || user?.displayName || '';
+  const streak = appState.streak || 0;
+
   return `
-    <section class="home-onboard">
-      <div class="home-onboard__hero">
-        <div class="home-onboard__hero-text">
-          <div class="home-onboard__badge">👑 SOSOKING</div>
-          <h1 class="home-onboard__title">짧게 올리고<br>짧게 반응하는 곳</h1>
-          <p class="home-onboard__desc">토너먼트 대결·토론·퀴즈·드립을 방별로 즐겨요</p>
-        </div>
-        <div class="home-onboard__hero-actions">
-          <button class="home-onboard__btn-primary" type="button" id="hbtn-write">+ 지금 올리기</button>
-          <button class="home-onboard__btn-ghost" type="button" id="hbtn-feed">전체 둘러보기</button>
-        </div>
+    <section class="home-hero-v3">
+      <div class="home-hero-v3__top">
+        <div class="home-hero-v3__badge">🤖 AI킹 놀이터</div>
+        <h1 class="home-hero-v3__title">
+          ${nick ? `${escHtml(nick)}님,<br>` : ''}AI랑 놀다 가세요 👋
+        </h1>
+        <p class="home-hero-v3__sub">판결·번역·궁합·작명 — 다 AI가 해드립니다</p>
+        ${streak >= 2 ? `<div class="home-hero-v3__streak">🔥 ${streak}일 연속 방문 중!</div>` : ''}
       </div>
 
-      <div class="home-onboard__rooms" aria-label="방 바로가기">
-        <a class="home-onboard__room home-onboard__room--tournament" href="#/feed?type=tournament" data-room-nav="tournament">
-          <span class="home-onboard__room-icon">⚔️</span>
-          <div class="home-onboard__room-info">
-            <b>대결방</b>
-            <em>토너먼트 대결</em>
-          </div>
-        </a>
-        <a class="home-onboard__room home-onboard__room--vote" href="#/feed?type=vote" data-room-nav="vote">
-          <span class="home-onboard__room-icon">🗳️</span>
-          <div class="home-onboard__room-info">
-            <b>토론방</b>
-            <em>찬반 토론·선택지 투표</em>
-          </div>
-        </a>
-        <a class="home-onboard__room home-onboard__room--quiz" href="#/feed?type=quiz" data-room-nav="quiz">
-          <span class="home-onboard__room-icon">🧠</span>
-          <div class="home-onboard__room-info">
-            <b>퀴즈방</b>
-            <em>짧은 문제 바로 풀기</em>
-          </div>
-        </a>
-        <a class="home-onboard__room home-onboard__room--drip" href="#/drip" data-room-nav="drip">
-          <span class="home-onboard__room-icon">🤣</span>
-          <div class="home-onboard__room-info">
-            <b>드립방</b>
-            <em>제목 없이 한줄만</em>
-          </div>
-        </a>
+      <div class="home-aiking-grid">
+        ${AI_KINGS.map(k => `
+          <button class="home-aiking-card" data-path="${k.path}" type="button">
+            <span class="home-aiking-card__emoji">${k.emoji}</span>
+            <span class="home-aiking-card__name">${k.name}</span>
+            <span class="home-aiking-card__desc">${k.desc}</span>
+          </button>`).join('')}
       </div>
     </section>`;
 }
 
 function renderPopularPost(post, index) {
+  const label = moduleLabel(post);
   return `
     <div class="home-rank-item" data-id="${post.id}">
       <div class="home-rank-item__num home-rank-item__num--${index < 3 ? index + 1 : 'rest'}">${index + 1}</div>
       <div class="home-rank-item__body">
-        <div class="home-rank-item__type">${moduleLabel(post)}</div>
+        <div class="home-rank-item__type">${label}</div>
         <div class="home-rank-item__title">${escHtml(post.title || '제목 없음')}</div>
       </div>
       <div class="home-rank-item__stats">
@@ -162,17 +121,14 @@ function renderPopularPost(post, index) {
 
 function renderTodayBest(post) {
   if (!post) return '';
-  const label = moduleLabel(post);
-  const reactions = post.reactions?.total || 0;
-  const comments = post.commentCount || 0;
   return `
     <div class="home-today-best" data-id="${post.id}">
       <div class="home-today-best__label">⭐ 오늘의 베스트</div>
       <div class="home-today-best__title">${escHtml(post.title || '제목 없음')}</div>
       <div class="home-today-best__meta">
-        <span class="home-today-best__room">${label}</span>
-        ${reactions ? `<span>❤️ ${fmtNum(reactions)}</span>` : ''}
-        ${comments  ? `<span>💬 ${fmtNum(comments)}</span>`  : ''}
+        <span class="home-today-best__room">${moduleLabel(post)}</span>
+        ${post.reactions?.total ? `<span>❤️ ${fmtNum(post.reactions.total)}</span>` : ''}
+        ${post.commentCount  ? `<span>💬 ${fmtNum(post.commentCount)}</span>` : ''}
       </div>
     </div>`;
 }
@@ -182,8 +138,8 @@ function renderPopularComment(comment, index) {
   const score = comment._score || 0;
   return `
     <button class="home-compact-feed-item" type="button" data-id="${comment.postId}">
-      <span class="home-compact-feed-item__badge">댓글 ${index + 1}</span>
-      <span class="home-compact-feed-item__title">${escHtml(comment.text || '').slice(0, 120)}</span>
+      <span class="home-compact-feed-item__badge">💬 ${index + 1}</span>
+      <span class="home-compact-feed-item__title">${escHtml(comment.text || '').slice(0, 100)}</span>
       <span class="home-compact-feed-item__meta">${escHtml(comment.authorName || '익명')} · ${timeStr}${score ? ` · 반응 ${fmtNum(score)}` : ''}</span>
     </button>`;
 }
@@ -192,20 +148,19 @@ export async function renderHome() {
   const el = document.getElementById('page-content');
   if (!el) return;
 
-  el.innerHTML = `
-    <div class="home-dash page-enter home-dash--v2">
-      <div class="skeleton" style="height:260px;border-radius:18px"></div>
-      <div class="skeleton" style="height:220px;border-radius:18px"></div>
-    </div>`;
+  el.innerHTML = `<div class="home-dash page-enter home-dash--v2">
+    <div class="skeleton" style="height:280px;border-radius:18px"></div>
+    <div class="skeleton" style="height:200px;border-radius:18px;margin-top:16px"></div>
+  </div>`;
 
   try {
-    setMeta('소소킹 · 토너먼트 대결·퀴즈·토론·드립방');
+    setMeta('소소킹 · AI킹 놀이터');
     const user = auth.currentUser;
     if (user) checkStreak(user.uid);
 
     const [hotPosts, popularComments, todayBest] = await Promise.all([
       fetchHotPosts(8),
-      fetchPopularComments(8),
+      fetchPopularComments(6),
       fetchTodayBest(),
     ]);
 
@@ -218,40 +173,31 @@ export async function renderHome() {
     const hotHTML = `
       <div>
         <div class="home-section-header">
-          <span class="home-section-title">🔥 최근 인기 모음</span>
+          <span class="home-section-title">🔥 인기 모음</span>
           <button class="home-section-more home-section-more--button" id="hbtn-more-hot">더 보기</button>
         </div>
         <div class="home-rank-list">
           ${hotPosts.length
             ? hotPosts.map(renderPopularPost).join('')
-            : '<div class="empty-state"><div class="empty-state__title">아직 모음이 없어요</div></div>'}
+            : '<div class="empty-state"><div class="empty-state__title">아직 없어요. 첫 번째가 되어보세요!</div></div>'}
         </div>
       </div>`;
 
-    const commentsHTML = `
+    const commentsHTML = popularComments.length ? `
       <div>
         <div class="home-section-header">
-          <span class="home-section-title">💬 최근 반응 댓글</span>
+          <span class="home-section-title">💬 따끈한 댓글</span>
         </div>
         <div class="home-compact-feed-list">
-          ${popularComments.length
-            ? popularComments.map(renderPopularComment).join('')
-            : '<div class="empty-state"><div class="empty-state__title">아직 댓글이 없어요</div></div>'}
+          ${popularComments.map(renderPopularComment).join('')}
         </div>
-      </div>`;
+      </div>` : '';
 
-    el.innerHTML = `<div class="home-dash page-enter home-dash--v2">${renderIntro()}${bestHTML}${hotHTML}${commentsHTML}</div>`;
+    el.innerHTML = `<div class="home-dash page-enter home-dash--v2">${renderHero()}${bestHTML}${hotHTML}${commentsHTML}</div>`;
 
-    el.querySelector('#hbtn-write')?.addEventListener('click', () => navigate('/write?type=multi&preset=tournament'));
-    el.querySelector('#hbtn-feed')?.addEventListener('click', () => navigate('/feed'));
-    el.querySelector('#hbtn-more-hot')?.addEventListener('click', () => navigate('/feed?sort=popular'));
-    el.querySelectorAll('[data-room-nav]').forEach(item => {
-      item.addEventListener('click', e => {
-        e.preventDefault();
-        const room = item.dataset.roomNav;
-        if (room === 'drip') navigate('/drip');
-        else navigate(`/feed?type=${room}`);
-      });
+    el.querySelector('#hbtn-more-hot')?.addEventListener('click', () => navigate('/feed'));
+    el.querySelectorAll('[data-path]').forEach(btn => {
+      btn.addEventListener('click', () => navigate(btn.dataset.path));
     });
     el.querySelectorAll('[data-id]').forEach(item =>
       item.addEventListener('click', () => navigate(`/detail/${item.dataset.id}`))

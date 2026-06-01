@@ -18,11 +18,12 @@ const FILTER_LIMIT = 120;
 const NAV_CONTEXT_KEY = 'sosoking:feedNavContext';
 
 const ROOMS = [
-  { key: '',             icon: '✨', label: '전체',     title: '전체', desc: '모든 콘텐츠를 한 번에 봅니다.' },
-  { key: 'tournament',   icon: '🏆', label: '끝판왕',   title: '끝판왕', desc: '토너먼트 대결로 최후의 1위를 가려보세요!' },
-  { key: 'ai_judge',     icon: '⚖️', label: '미친판사', title: '미친판사', desc: '7명의 이상한 판사가 판결합니다.' },
-  { key: 'ai_translate', icon: '🌍', label: '미친번역사', title: '미친번역사', desc: '원하는 말투로 번역해드립니다.' },
-  { key: 'ai_match',     icon: '💘', label: 'AI궁합',   title: 'AI궁합', desc: 'AI가 두 가지의 궁합을 봐드립니다.' },
+  { key: '',             icon: '✨', label: '전체',      title: '전체',      desc: '모든 콘텐츠를 한 번에 봅니다.' },
+  { key: 'tournament',   icon: '🏆', label: '끝판왕',    title: '끝판왕',    desc: '토너먼트 대결로 최후의 1위를 가려보세요!' },
+  { key: 'ai_judge',     icon: '⚖️', label: '미친판사',  title: '미친판사',  desc: '7명의 이상한 판사가 당신의 상황을 판결합니다.' },
+  { key: 'ai_translate', icon: '🌍', label: '미친번역사', title: '미친번역사', desc: '텍스트를 북한말·사투리·급식체 등으로 변환합니다.' },
+  { key: 'ai_match',     icon: '💘', label: 'AI궁합',    title: 'AI궁합',    desc: 'AI가 두 가지의 궁합 점수를 분석해 드립니다.' },
+  { key: 'ai_naming',    icon: '🎭', label: 'AI작명소',  title: 'AI작명소',  desc: '설명하면 웃기고 그럴듯한 이름 5개를 지어드립니다.' },
 ];
 
 let currentType        = '';
@@ -180,15 +181,11 @@ function updateUrlState() {
 
 function getLegacyTypeWhereClause(type) {
   const map = {
-    collect:      ['multi', 'general', 'anonymous'],
-    vote:         ['vote', 'ox', 'crazy_court', 'multi'],
-    quiz:         ['quiz', 'initial_game', 'multi'],
-    drip:         ['multi'],
-    fill:         ['fill', 'multi'],
-    general:      ['general', 'anonymous', 'multi'],
+    tournament:   ['multi', 'tournament'],
     ai_judge:     ['ai_judge'],
     ai_translate: ['ai_translate'],
     ai_match:     ['ai_match'],
+    ai_naming:    ['ai_naming'],
   };
   const types = map[type];
   if (!types) return null;

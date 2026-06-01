@@ -71,3 +71,118 @@
 .ai-match-reason { background: var(--color-surface-2); border-radius: var(--radius-md); padding: 14px; font-size: 13px; color: var(--color-text-secondary); line-height: 1.6; margin-bottom: 10px; text-align: left; }
 .ai-match-chemistry { background: var(--color-golra-bg); border-radius: var(--radius-md); padding: 12px 14px; font-size: 13px; color: var(--color-text-secondary); margin-bottom: 10px; text-align: left; }
 .ai-match-advice { font-size: 13px; color: var(--color-warning); font-weight: 700; padding: 10px; background: var(--color-warning-bg); border-radius: var(--radius-md); }
+
+/* 작명 결과 */
+.ai-naming-result { }
+
+/* 홈 히어로 v3 */
+.home-hero-v3 { background: linear-gradient(135deg, var(--color-primary-bg) 0%, var(--color-surface) 100%); border-radius: 16px; padding: 24px 20px 20px; margin-bottom: 20px; border: 1.5px solid var(--color-border); }
+.home-hero-v3__top { margin-bottom: 20px; }
+.home-hero-v3__badge { display: inline-block; font-size: 12px; font-weight: 700; background: var(--color-primary); color: #fff; padding: 4px 12px; border-radius: var(--radius-pill); margin-bottom: 12px; letter-spacing: .3px; }
+.home-hero-v3__title { font-size: 22px; font-weight: 900; color: var(--color-text-primary); line-height: 1.4; margin-bottom: 6px; }
+.home-hero-v3__sub { font-size: 13px; color: var(--color-text-secondary); line-height: 1.5; }
+.home-hero-v3__streak { display: inline-flex; align-items: center; gap: 4px; margin-top: 10px; font-size: 13px; font-weight: 700; color: var(--color-warning); background: var(--color-warning-bg); padding: 5px 12px; border-radius: var(--radius-pill); }
+
+/* 홈 AI킹 그리드 */
+.home-aiking-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.home-aiking-card { background: var(--color-surface); border: 1.5px solid var(--color-border); border-radius: 12px; padding: 14px 12px; cursor: pointer; text-align: center; transition: box-shadow .15s, transform .15s, border-color .15s; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.home-aiking-card:hover, .home-aiking-card:focus { box-shadow: 0 6px 16px rgba(0,0,0,.1); transform: translateY(-2px); border-color: var(--color-primary); }
+.home-aiking-card__emoji { font-size: 28px; line-height: 1; }
+.home-aiking-card__name { font-size: 13px; font-weight: 800; color: var(--color-text-primary); }
+.home-aiking-card__desc { font-size: 11px; color: var(--color-text-muted); }
+
+/* 예시 힌트 칩 */
+.ai-example-chip { font-size: 11px; padding: 5px 10px; background: var(--color-surface-2); border: 1px solid var(--color-border); border-radius: var(--radius-pill); cursor: pointer; color: var(--color-text-secondary); transition: all .15s; white-space: nowrap; }
+.ai-example-chip:hover { border-color: var(--color-primary); color: var(--color-primary); background: var(--color-primary-bg); }
+
+/* 결과 하단 액션 */
+.ai-result-actions { display: flex; gap: 10px; margin-top: 20px; }
+.ai-result-actions .btn { flex: 1; }
+
+/* 가이드 안내 박스 */
+.guide-notice { background: var(--color-primary-bg); border: 1.5px solid var(--color-primary); border-radius: 10px; padding: 14px 16px; font-size: 13px; line-height: 1.6; color: var(--color-text-primary); margin-bottom: 12px; }
+.guide-page { max-width: 640px; margin: 0 auto; padding: 16px 16px 80px; }
+.guide-hero { text-align: center; padding: 28px 16px; }
+.guide-hero__icon { font-size: 48px; margin-bottom: 12px; }
+.guide-hero__title { font-size: 24px; font-weight: 900; color: var(--color-text-primary); margin-bottom: 8px; }
+.guide-hero__sub { font-size: 14px; color: var(--color-text-secondary); line-height: 1.6; }
+.guide-toc { padding: 16px; margin-bottom: 20px; }
+.guide-toc__title { font-size: 13px; font-weight: 700; color: var(--color-text-muted); margin-bottom: 10px; }
+.guide-toc__list { display: flex; flex-wrap: wrap; gap: 8px; }
+.guide-toc__item { font-size: 13px; color: var(--color-primary); text-decoration: none; padding: 4px 10px; background: var(--color-primary-bg); border-radius: var(--radius-pill); font-weight: 600; }
+.guide-section { margin-bottom: 28px; }
+.guide-section__title { font-size: 18px; font-weight: 900; color: var(--color-text-primary); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid var(--color-border); }
+.guide-section__body { font-size: 14px; color: var(--color-text-secondary); line-height: 1.7; }
+.guide-section__body p { margin-bottom: 10px; }
+
+/* AI킹 포인트 행 */
+.ai-king-points-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.ai-king-points-badge { font-size: 12px; font-weight: 700; padding: 4px 10px; background: var(--color-surface-2); border-radius: var(--radius-pill); color: var(--color-text-primary); border: 1px solid var(--color-border); }
+.ai-king-points-badge--extra { background: #fff3cd; color: #856404; border-color: #ffc107; }
+[data-theme="dark"] .ai-king-points-badge--extra { background: #3d2e00; color: #ffc107; border-color: #856404; }
+.ai-king-points-shop-link { font-size: 12px; color: var(--color-primary); font-weight: 700; text-decoration: none; margin-left: auto; }
+
+/* 포인트 상점 페이지 */
+.points-shop-page { max-width: 640px; margin: 0 auto; padding: 16px 16px 80px; }
+.points-balance-card { background: linear-gradient(135deg, #FF6B4A, #e84393); border-radius: 16px; padding: 24px; color: #fff; text-align: center; }
+.points-balance-card__label { font-size: 13px; opacity: 0.85; margin-bottom: 4px; }
+.points-balance-card__amount { font-size: 48px; font-weight: 900; line-height: 1; }
+.points-balance-card__amount span { font-size: 24px; margin-left: 4px; opacity: 0.8; }
+.points-balance-card__extra { font-size: 13px; opacity: 0.85; margin-top: 8px; }
+
+.points-shop-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.points-shop-item { border: 2px solid var(--color-border); border-radius: 12px; padding: 14px; text-align: center; display: flex; flex-direction: column; gap: 8px; align-items: center; transition: border-color .15s; }
+.points-shop-item:not(.points-shop-item--disabled):hover { border-color: var(--color-primary); }
+.points-shop-item--disabled { opacity: 0.5; }
+.points-shop-item__qty { font-size: 16px; font-weight: 800; color: var(--color-text-primary); }
+.points-shop-item__bonus { font-size: 11px; background: #fff3cd; color: #856404; padding: 2px 6px; border-radius: 6px; font-weight: 700; vertical-align: middle; }
+[data-theme="dark"] .points-shop-item__bonus { background: #3d2e00; color: #ffc107; }
+.points-shop-item__cost { font-size: 20px; font-weight: 900; color: var(--color-primary); }
+
+.points-earn-list { display: flex; flex-direction: column; gap: 10px; }
+.points-earn-item { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+.points-earn-item__icon { font-size: 18px; flex-shrink: 0; }
+.points-earn-item__label { flex: 1; color: var(--color-text-secondary); }
+.points-earn-item__pts { font-size: 13px; font-weight: 800; color: var(--color-primary); flex-shrink: 0; }
+
+/* 관리자 모델 라디오 */
+.admin-model-radio { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border: 2px solid var(--color-border); border-radius: 10px; cursor: pointer; transition: all .15s; flex: 1; min-width: 140px; }
+.admin-model-radio.active { border-color: var(--color-primary); background: var(--color-primary-bg); }
+.admin-key-row { padding: 10px 0; border-top: 1px solid var(--color-border-light); }
+
+/* 결과 공유 버튼 행 */
+.ai-result-share-row { display: flex; gap: 8px; margin-top: 10px; }
+.ai-result-share-row .btn { flex: 1; font-size: 13px; }
+
+/* share-sheet 결과 텍스트 버튼 */
+.share-btn--text { background: var(--color-surface-2); border: 1px solid var(--color-border); }
+
+/* ── 명예의 전당 ── */
+.hall-legend { background: linear-gradient(135deg, #FF6B4A 0%, #e84393 100%); border-radius: 14px; padding: 16px; margin-bottom: 16px; color: #fff; }
+.hall-legend__head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.hall-legend__crown { font-size: 28px; line-height: 1; }
+.hall-legend__title { font-size: 17px; font-weight: 900; }
+.hall-legend__sub { font-size: 12px; opacity: 0.8; margin-top: 2px; }
+
+.hall-legend__first { background: rgba(0,0,0,0.18); border-radius: 8px; padding: 12px 14px; display: flex; gap: 12px; align-items: flex-start; cursor: pointer; margin-bottom: 8px; transition: background .15s; }
+.hall-legend__first:hover { background: rgba(0,0,0,0.28); }
+.hall-legend__first-rank { font-size: 22px; line-height: 1; flex-shrink: 0; }
+.hall-legend__first-body { flex: 1; min-width: 0; }
+.hall-legend__first-title { font-size: 14px; font-weight: 700; line-height: 1.4; margin-bottom: 4px; }
+.hall-legend__first-meta { font-size: 12px; opacity: 0.75; margin-top: 6px; }
+
+.hall-legend__rest { display: flex; flex-direction: column; gap: 6px; }
+.hall-legend__rest-item { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.12); border-radius: 8px; padding: 8px 12px; cursor: pointer; transition: background .15s; }
+.hall-legend__rest-item:hover { background: rgba(255,255,255,0.22); }
+.hall-legend__rest-rank { font-size: 18px; flex-shrink: 0; }
+.hall-legend__rest-body { flex: 1; min-width: 0; }
+.hall-legend__rest-title { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hall-legend__rest-score { font-size: 12px; opacity: 0.8; flex-shrink: 0; }
+
+/* hall 섹션 스니펫 + 전체보기 */
+.hall-ai-snippet { display: inline-block; font-size: 11px; color: var(--color-primary); background: var(--color-primary-bg); border-radius: 8px; padding: 2px 8px; margin: 4px 0; }
+.hall-ai-snippet--score { color: #E84393; background: #fce4f1; }
+[data-theme="dark"] .hall-ai-snippet--score { background: #3d1c2e; }
+.hall-section__head { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 12px; position: relative; }
+.hall-section__more { margin-left: auto; font-size: 12px; color: var(--color-primary); text-decoration: none; font-weight: 600; padding-top: 2px; white-space: nowrap; }
+.hall-item__meta { font-size: 11px; color: var(--color-text-muted); margin-top: 4px; }

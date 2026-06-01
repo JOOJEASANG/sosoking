@@ -1,40 +1,60 @@
 'use strict';
 
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
-const { defineSecret } = require('firebase-functions/params');
 const { getApps, initializeApp } = require('firebase-admin/app');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
-const Anthropic = require('@anthropic-ai/sdk');
 
 if (!getApps().length) initializeApp();
 const db = getFirestore();
-const anthropicKey = defineSecret('ANTHROPIC_API_KEY');
 
 const DAILY_LIMIT = 3;
 
-async function checkUsage(userId, feature) {
-  const today = new Date().toISOString().slice(0, 10);
-  const ref = db.doc(`ai_king_usage/${userId}_${today}_${feature}`);
-  return db.runTransaction(async (tx) => {
-    const snap = await tx.get(ref);
-    const count = snap.exists ? (snap.data().count || 0) : 0;
-    if (count >= DAILY_LIMIT) return false;
-    tx.set(ref, { count: count + 1, userId, feature, date: today, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-    return true;
-  });
+// ── AI King config cache ──
+let _aiKingConfig = null;
+let _aiKingConfigFetchedAt = 0;
+
+async function getAiKingConfig() {
+  const now = Date.now();
+  if (_aiKingConfig && now - _aiKingConfigFetchedAt < 60_000) return _aiKingConfig;
+  const snap = await db.doc('config/ai_king').get();
+  _aiKingConfig = snap.exists ? snap.data() : {};
+  _aiKingConfigFetchedAt = now;
+  return _aiKingConfig;
 }
 
-function makeImageContent(base64) {
-  if (!base64) return null;
-  return { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: base64 } };
-}
+// ── Multi-provider AI call ──
+async function callAI(system, userText, imageBase64 = null, maxTokens = 400) {
+  const config = await getAiKingConfig();
 
-async function callClaude(anthropic, system, userText, imageBase64 = null, maxTokens = 400) {
+  if (config.activeModel === 'gemini') {
+    const { GoogleGenerativeAI } = require('@google/generative-ai');
+    const genAI = new GoogleGenerativeAI(config.geminiApiKey);
+    const model = genAI.getGenerativeModel({
+      model: config.geminiModel || 'gemini-2.5-flash',
+      systemInstruction: system,
+    });
+    const parts = [];
+    if (imageBase64) {
+      parts.push({ inlineData: { data: imageBase64, mimeType: 'image/jpeg' } });
+    }
+    parts.push({ text: userText });
+    const result = await model.generateContent({
+      contents: [{ role: 'user', parts }],
+      generationConfig: { maxOutputTokens: maxTokens },
+    });
+    return result.response.text() || '';
+  }
+
+  // Default: Claude
+  const Anthropic = require('@anthropic-ai/sdk');
+  const anthropic = new Anthropic({ apiKey: config.claudeApiKey });
   const content = [];
-  if (imageBase64) content.push(makeImageContent(imageBase64));
+  if (imageBase64) {
+    content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: imageBase64 } });
+  }
   content.push({ type: 'text', text: userText });
   const msg = await anthropic.messages.create({
-    model: 'claude-haiku-4-5-20251001',
+    model: config.claudeModel || 'claude-haiku-4-5-20251001',
     max_tokens: maxTokens,
     system,
     messages: [{ role: 'user', content }],
@@ -42,49 +62,90 @@ async function callClaude(anthropic, system, userText, imageBase64 = null, maxTo
   return msg.content[0]?.text || '';
 }
 
+async function callAIWithImages(system, userText, imageA = null, imageB = null, maxTokens = 500) {
+  const config = await getAiKingConfig();
+
+  if (config.activeModel === 'gemini') {
+    const { GoogleGenerativeAI } = require('@google/generative-ai');
+    const genAI = new GoogleGenerativeAI(config.geminiApiKey);
+    const model = genAI.getGenerativeModel({
+      model: config.geminiModel || 'gemini-2.5-flash',
+      systemInstruction: system,
+    });
+    const parts = [];
+    if (imageA) parts.push({ inlineData: { data: imageA, mimeType: 'image/jpeg' } });
+    if (imageB) parts.push({ inlineData: { data: imageB, mimeType: 'image/jpeg' } });
+    parts.push({ text: userText });
+    const result = await model.generateContent({
+      contents: [{ role: 'user', parts }],
+      generationConfig: { maxOutputTokens: maxTokens },
+    });
+    return result.response.text() || '';
+  }
+
+  // Default: Claude
+  const Anthropic = require('@anthropic-ai/sdk');
+  const anthropic = new Anthropic({ apiKey: config.claudeApiKey });
+  const content = [];
+  if (imageA) content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: imageA } });
+  if (imageB) content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: imageB } });
+  content.push({ type: 'text', text: userText });
+  const msg = await anthropic.messages.create({
+    model: config.claudeModel || 'claude-haiku-4-5-20251001',
+    max_tokens: maxTokens,
+    system,
+    messages: [{ role: 'user', content }],
+  });
+  return msg.content[0]?.text || '';
+}
+
+// ── Usage check with extraAiUses fallback ──
+async function checkUsage(userId, feature) {
+  const today = new Date().toISOString().slice(0, 10);
+  const ref = db.doc(`ai_king_usage/${userId}_${today}_${feature}`);
+  return db.runTransaction(async (tx) => {
+    const [snap, userSnap] = await Promise.all([tx.get(ref), tx.get(db.doc(`users/${userId}`))]);
+    const count = snap.exists ? (snap.data().count || 0) : 0;
+    if (count >= DAILY_LIMIT) {
+      const extra = userSnap.exists ? (userSnap.data()?.extraAiUses || 0) : 0;
+      if (extra <= 0) return false;
+      tx.update(db.doc(`users/${userId}`), { extraAiUses: FieldValue.increment(-1), updatedAt: FieldValue.serverTimestamp() });
+      return true;
+    }
+    tx.set(ref, { count: count + 1, userId, feature, date: today, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+    return true;
+  });
+}
+
 // ── 미친판사: 7가지 판사 유형 ──
 const JUDGES = [
-  {
-    id: 'lawyer',
-    name: '⚖️ 엄근진 법관',
-    system: '당신은 대한민국 대법원 판사다. 황당한 상황도 형법·민법 조항을 인용하며 딱딱하게 판결한다. "제○조", "피고인", "주문" 같은 법률 용어를 꼭 써라. 2~3문장으로 짧고 엄중하게.',
-  },
-  {
-    id: 'emotional',
-    name: '😭 감성 판사',
-    system: '당신은 모든 것에 눈물을 흘리는 감성 과잉 판사다. 피고도 원고도 불쌍하다. 판결보다 감정이 앞선다. 시적인 표현을 써라. 마지막엔 항상 눈물. 2~3문장.',
-  },
-  {
-    id: 'boomer',
-    name: '👴 꼰대 판사',
-    system: '당신은 "내가 젊을 때는..."으로 시작하는 꼰대 판사다. 요즘 세대를 이해 못 한다. "라떼는~", "우리 때는~", "요즘 것들은~" 표현 필수. 교훈으로 끝냄. 2~3문장.',
-  },
-  {
-    id: 'scientist',
-    name: '🔬 과학자 판사',
-    system: '당신은 데이터와 통계로만 판결하는 과학자 판사다. 감정 없이 숫자와 확률로 분석한다. 없는 논문이나 연구도 인용한다. 2~3문장.',
-  },
-  {
-    id: 'philosopher',
-    name: '🤔 철학자 판사',
-    system: '당신은 소크라테스·니체·공자를 인용하며 뜬구름 잡는 철학자 판사다. 명확한 결론은 없다. 모든 것에 반문하며 오히려 질문으로 끝낸다. 2~3문장.',
-  },
-  {
-    id: 'alien',
-    name: '👽 외계인 판사',
-    system: '당신은 지구에 온 외계인 판사다. 인간의 감정과 행동이 이해 안 된다. "지구인들은 왜..."를 반복한다. 비교 대상이 엉뚱하다. 2~3문장.',
-  },
-  {
-    id: 'crazy',
-    name: '🤪 돌아이 판사',
-    system: '당신은 완전히 예측불가능한 돌아이 판사다. 논리 없음, 엉뚱하지만 자신은 매우 진지하다. 갑자기 전혀 다른 주제로 샌다. 2~3문장.',
-  },
+  { id: 'lawyer',      name: '⚖️ 엄근진 법관',  desc: '대한민국 대법원 판사. 형법·민법 조항 인용, "제○조" "피고인" "주문" 필수. 딱딱하고 엄중하게 2~3문장.' },
+  { id: 'emotional',   name: '😭 감성 판사',     desc: '모든 것에 눈물 흘리는 감성 과잉 판사. 시적 표현 필수, 마지막엔 항상 눈물. 2~3문장.' },
+  { id: 'boomer',      name: '👴 꼰대 판사',     desc: '"라떼는~" "우리 때는~" "요즘 것들은~" 표현 필수 꼰대 판사. 교훈으로 끝냄. 2~3문장.' },
+  { id: 'scientist',   name: '🔬 과학자 판사',   desc: '데이터·통계·확률로만 판결. 없는 논문도 인용. 감정 없음. 2~3문장.' },
+  { id: 'philosopher', name: '🤔 철학자 판사',   desc: '소크라테스·니체·공자 인용하며 뜬구름 잡음. 결론 없이 질문으로 끝. 2~3문장.' },
+  { id: 'alien',       name: '👽 외계인 판사',   desc: '"지구인들은 왜..." 반복하는 외계인. 비교 대상 엉뚱함. 2~3문장.' },
+  { id: 'crazy',       name: '🤪 돌아이 판사',   desc: '예측불가능하고 엉뚱하지만 자신은 매우 진지. 갑자기 딴 주제로 샘. 2~3문장.' },
 ];
+
+const JUDGE_SYSTEM = `당신은 7명의 서로 다른 캐릭터 판사다. 주어진 상황에 대해 각 판사가 자신의 캐릭터에 맞게 판결을 내린다.
+반드시 아래 JSON 형식으로만 답하라. 다른 텍스트 없이 JSON만 출력:
+{"verdicts":[
+  {"id":"lawyer","verdict":"판결문"},
+  {"id":"emotional","verdict":"판결문"},
+  {"id":"boomer","verdict":"판결문"},
+  {"id":"scientist","verdict":"판결문"},
+  {"id":"philosopher","verdict":"판결문"},
+  {"id":"alien","verdict":"판결문"},
+  {"id":"crazy","verdict":"판결문"}
+]}
+
+각 판사 캐릭터:
+${JUDGES.map(j => `- ${j.id}: ${j.desc}`).join('\n')}`;
 
 exports.aiJudge = onCall({
   region: 'asia-northeast3',
-  secrets: [anthropicKey],
-  timeoutSeconds: 90,
+  timeoutSeconds: 60,
   memory: '512MiB',
 }, async (request) => {
   const userId = request.auth?.uid;
@@ -98,17 +159,23 @@ exports.aiJudge = onCall({
   const allowed = await checkUsage(userId, 'judge');
   if (!allowed) throw new HttpsError('resource-exhausted', `오늘 판결은 하루 ${DAILY_LIMIT}번만 가능해요`);
 
-  const anthropic = new Anthropic({ apiKey: anthropicKey.value() });
-  const userText = `다음 상황을 판결해줘:\n${situation.slice(0, 500)}`;
+  const raw = await callAI(
+    JUDGE_SYSTEM,
+    `다음 상황을 7명의 판사가 각자 판결해줘:\n${situation.slice(0, 500)}`,
+    imageBase64,
+    1400,
+  );
 
-  const verdicts = [];
-  for (const judge of JUDGES) {
-    try {
-      const verdict = await callClaude(anthropic, judge.system, userText, imageBase64, 300);
-      verdicts.push({ judgeId: judge.id, judgeName: judge.name, verdict });
-    } catch {
-      verdicts.push({ judgeId: judge.id, judgeName: judge.name, verdict: '이 판사는 오늘 결근했습니다. 😴' });
-    }
+  let verdicts;
+  try {
+    const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
+    verdicts = (parsed.verdicts || []).map(v => ({
+      judgeId: v.id,
+      judgeName: JUDGES.find(j => j.id === v.id)?.name || v.id,
+      verdict: v.verdict || '',
+    }));
+  } catch {
+    verdicts = JUDGES.map(j => ({ judgeId: j.id, judgeName: j.name, verdict: '이 판사는 오늘 결근했습니다. 😴' }));
   }
 
   const postRef = db.collection('feeds').doc();
@@ -145,7 +212,6 @@ const TRANSLATE_STYLES = {
 
 exports.aiTranslate = onCall({
   region: 'asia-northeast3',
-  secrets: [anthropicKey],
   timeoutSeconds: 60,
   memory: '512MiB',
 }, async (request) => {
@@ -162,12 +228,11 @@ exports.aiTranslate = onCall({
   const allowed = await checkUsage(userId, 'translate');
   if (!allowed) throw new HttpsError('resource-exhausted', `오늘 번역은 하루 ${DAILY_LIMIT}번만 가능해요`);
 
-  const anthropic = new Anthropic({ apiKey: anthropicKey.value() });
   const userText = imageBase64
     ? `이미지에 있는 텍스트와 함께 다음 내용을 번역해줘:\n${text.slice(0, 500)}`
     : `다음을 번역해줘:\n${text.slice(0, 500)}`;
 
-  const translated = await callClaude(anthropic, styleData.system, userText, imageBase64, 500);
+  const translated = await callAI(styleData.system, userText, imageBase64, 500);
 
   const postRef = db.collection('feeds').doc();
   await postRef.set({
@@ -195,7 +260,6 @@ exports.aiTranslate = onCall({
 // ── AI궁합 ──
 exports.aiMatch = onCall({
   region: 'asia-northeast3',
-  secrets: [anthropicKey],
   timeoutSeconds: 60,
   memory: '512MiB',
 }, async (request) => {
@@ -210,25 +274,18 @@ exports.aiMatch = onCall({
   const allowed = await checkUsage(userId, 'match');
   if (!allowed) throw new HttpsError('resource-exhausted', `오늘 궁합은 하루 ${DAILY_LIMIT}번만 가능해요`);
 
-  const anthropic = new Anthropic({ apiKey: anthropicKey.value() });
-
   const system = `당신은 세상 모든 것의 궁합을 보는 AI 점쟁이다. 사람, 음식, 물건, 동물 뭐든 궁합을 본다. 반드시 JSON 형식으로만 답하라:
 {"score": 숫자(0~100), "grade": "등급(예:천생연분💕/찰떡궁합🎯/그냥저냥😐/최악의조합💥)", "reason": "궁합 이유(웃기고 황당하게 2~3문장)", "chemistry": "둘이 만나면 생기는 일(재미있고 구체적으로 1~2문장)", "advice": "조언(웃기게 한 문장)"}`;
 
-  const content = [];
-  if (imageA) content.push(makeImageContent(imageA));
-  if (imageB) content.push(makeImageContent(imageB));
-  content.push({ type: 'text', text: `"${itemA.slice(0, 100)}"와 "${itemB.slice(0, 100)}"의 궁합을 봐줘` });
-
   let matchResult;
   try {
-    const msg = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 500,
+    const raw = await callAIWithImages(
       system,
-      messages: [{ role: 'user', content }],
-    });
-    const raw = msg.content[0]?.text || '{}';
+      `"${itemA.slice(0, 100)}"와 "${itemB.slice(0, 100)}"의 궁합을 봐줘`,
+      imageA,
+      imageB,
+      500,
+    );
     matchResult = JSON.parse(raw.replace(/```json|```/g, '').trim());
   } catch {
     matchResult = {
@@ -263,16 +320,163 @@ exports.aiMatch = onCall({
   return { postId: postRef.id, matchResult };
 });
 
-// ── 사용량 조회 ──
+// ── AI작명소 ──
+const NAME_CATEGORIES = {
+  person:  '사람 별명/닉네임',
+  food:    '음식/메뉴 이름',
+  pet:     '반려동물 이름',
+  team:    '팀/모임 이름',
+  product: '물건/제품 이름',
+  other:   '기타',
+};
+
+exports.aiNaming = onCall({
+  region: 'asia-northeast3',
+  timeoutSeconds: 60,
+  memory: '512MiB',
+}, async (request) => {
+  const userId = request.auth?.uid;
+  if (!userId) throw new HttpsError('unauthenticated', '로그인이 필요해요');
+
+  const { description, category, imageBase64 } = request.data || {};
+  const hasDesc = description && description.trim().length >= 2;
+  if (!hasDesc && !imageBase64) {
+    throw new HttpsError('invalid-argument', '설명을 입력하거나 사진을 첨부해주세요');
+  }
+
+  const allowed = await checkUsage(userId, 'naming');
+  if (!allowed) throw new HttpsError('resource-exhausted', `오늘 작명은 하루 ${DAILY_LIMIT}번만 가능해요`);
+
+  const catLabel = NAME_CATEGORIES[category] || '기타';
+
+  const system = `당신은 세상에서 가장 웃기고 창의적인 작명 전문가다. 요청받은 것의 이름을 5개 지어준다.
+이름은 웃기지만 그럴듯해야 한다. 너무 평범하면 안 된다. 듣는 순간 "ㅋㅋㅋ 맞네" 소리가 나와야 한다.
+반드시 JSON 형식으로만 답하라:
+{"names": [{"name": "이름1", "reason": "이유(한 줄, 웃기게)"}, {"name": "이름2", "reason": "..."}, {"name": "이름3", "reason": "..."}, {"name": "이름4", "reason": "..."}, {"name": "이름5", "reason": "..."}]}`;
+
+  const descPart = hasDesc ? `설명: ${description.trim().slice(0, 300)}\n` : '';
+  const userText = imageBase64
+    ? `카테고리: ${catLabel}\n${descPart}첨부된 사진을 보고 이름을 지어줘.`
+    : `카테고리: ${catLabel}\n${descPart}이 이름을 지어줘.`;
+
+  let names;
+  try {
+    const raw = await callAI(system, userText, imageBase64, 600);
+    const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
+    names = parsed.names || [];
+  } catch {
+    names = [
+      { name: '이름짓기실패킹', reason: 'AI가 충격받아서 말문이 막혔습니다' },
+      { name: '무명의존재', reason: '이름 없이도 살 수 있습니다' },
+      { name: '그냥그거', reason: '설명이 필요 없는 이름' },
+    ];
+  }
+
+  const postRef = db.collection('feeds').doc();
+  await postRef.set({
+    type: 'ai_naming',
+    title: hasDesc ? `${catLabel} 작명: ${description.trim().slice(0, 40)}${description.trim().length > 40 ? '...' : ''}` : `${catLabel} 작명: 사진으로 요청`,
+    description: hasDesc ? description.trim().slice(0, 300) : '',
+    category: catLabel,
+    names,
+    hasImage: !!imageBase64,
+    authorId: userId,
+    commentCount: 0,
+    reactions: { like: 0, funny: 0, fire: 0, total: 0 },
+    viewCount: 0,
+    createdAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
+    isAiGenerated: true,
+    hidden: false,
+    cat: 'usgyo',
+  });
+
+  return { postId: postRef.id, names };
+});
+
+// ── getAiKingUsage ──
 exports.getAiKingUsage = onCall({ region: 'asia-northeast3' }, async (request) => {
   const userId = request.auth?.uid;
-  if (!userId) return { judge: 0, translate: 0, match: 0 };
+  if (!userId) return { judge: 0, translate: 0, match: 0, naming: 0, extraUses: 0 };
   const today = new Date().toISOString().slice(0, 10);
-  const features = ['judge', 'translate', 'match'];
-  const snaps = await Promise.all(
-    features.map(f => db.doc(`ai_king_usage/${userId}_${today}_${f}`).get())
-  );
+  const features = ['judge', 'translate', 'match', 'naming'];
+  const [snaps, userSnap] = await Promise.all([
+    Promise.all(features.map(f => db.doc(`ai_king_usage/${userId}_${today}_${f}`).get())),
+    db.doc(`users/${userId}`).get(),
+  ]);
   const result = {};
   features.forEach((f, i) => { result[f] = snaps[i].exists ? (snaps[i].data().count || 0) : 0; });
+  result.extraUses = userSnap.exists ? (userSnap.data()?.extraAiUses || 0) : 0;
   return result;
+});
+
+// ── saveAiKingConfig (admin only) ──
+exports.saveAiKingConfig = onCall({ region: 'asia-northeast3' }, async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError('unauthenticated', '로그인이 필요해요');
+
+  const adminSnap = await db.doc(`admins/${uid}`).get();
+  if (!adminSnap.exists) throw new HttpsError('permission-denied', '관리자만 접근 가능해요');
+
+  const data = request.data || {};
+  const FIELDS = ['activeModel', 'claudeApiKey', 'claudeModel', 'geminiApiKey', 'geminiModel', 'openaiApiKey', 'openaiModel', 'pointsPerUse'];
+
+  const update = {};
+  for (const field of FIELDS) {
+    if (data[field] !== undefined && data[field] !== null) {
+      const val = data[field];
+      // Skip masked values (API keys shown as ●●●●●)
+      if (typeof val === 'string' && val.startsWith('●')) continue;
+      update[field] = val;
+    }
+  }
+
+  if (Object.keys(update).length === 0) {
+    return { success: true, updated: [] };
+  }
+
+  update.updatedAt = FieldValue.serverTimestamp();
+  update.updatedBy = uid;
+
+  await db.doc('config/ai_king').set(update, { merge: true });
+
+  // Invalidate cache
+  _aiKingConfig = null;
+  _aiKingConfigFetchedAt = 0;
+
+  return { success: true, updated: Object.keys(update).filter(k => k !== 'updatedAt' && k !== 'updatedBy') };
+});
+
+// ── purchaseAiExtraUse ──
+exports.purchaseAiExtraUse = onCall({ region: 'asia-northeast3' }, async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError('unauthenticated', '로그인이 필요해요');
+
+  const quantity = Math.min(Math.max(Math.floor(Number(request.data?.quantity) || 1), 1), 10);
+  const config = await getAiKingConfig();
+  const pointsPerUse = config.pointsPerUse || 100;
+  const totalCost = pointsPerUse * quantity;
+
+  const userRef = db.doc(`users/${uid}`);
+
+  await db.runTransaction(async (tx) => {
+    const userSnap = await tx.get(userRef);
+    if (!userSnap.exists) throw new HttpsError('not-found', '사용자를 찾을 수 없어요');
+
+    const currentPoints = userSnap.data()?.points || 0;
+    if (currentPoints < totalCost) {
+      throw new HttpsError(
+        'failed-precondition',
+        `포인트가 부족해요. 현재 ${currentPoints}포인트 / 필요 ${totalCost}포인트`,
+      );
+    }
+
+    tx.update(userRef, {
+      points: FieldValue.increment(-totalCost),
+      extraAiUses: FieldValue.increment(quantity),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+  });
+
+  return { success: true, quantity, pointsUsed: totalCost };
 });

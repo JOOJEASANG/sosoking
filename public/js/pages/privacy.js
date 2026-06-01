@@ -12,7 +12,7 @@ export function renderPrivacy() {
       <div class="card legal-card">
         <div class="legal-body">
           <div class="legal-notice">
-            소소킹은 피드와 게임 기능을 제공하기 위해 필요한 최소한의 개인정보만 수집·이용합니다.
+            소소킹은 피드와 AI킹 기능을 제공하기 위해 필요한 최소한의 개인정보만 수집·이용합니다.
           </div>
 
           <h2 class="legal-h2">1. 수집하는 개인정보 항목</h2>
@@ -23,9 +23,9 @@ export function renderPrivacy() {
                 <tr><td>Google 로그인</td><td>이름, 이메일, 프로필 사진 URL, Firebase UID</td><td>소셜 로그인 시</td></tr>
                 <tr><td>이메일 로그인</td><td>이메일 주소, Firebase UID, 닉네임</td><td>회원가입·로그인 시</td></tr>
                 <tr><td>프로필 설정</td><td>닉네임, 프로필 아이콘, 직접 선택한 이미지 아이콘</td><td>내 정보 설정 시</td></tr>
-                <tr><td>피드 이용</td><td>게시물, 사진, 댓글, 답글, 선택지, 퀴즈 정답, 작명·드립 참여글, 리액션, 스크랩, 신고 내역</td><td>피드 이용 중</td></tr>
+                <tr><td>피드 이용</td><td>게시물, 사진, 댓글, 답글, AI킹 결과물, 리액션, 스크랩, 신고 내역</td><td>피드 이용 중</td></tr>
+                <tr><td>AI킹 이용</td><td>입력 텍스트, 업로드 이미지(선택), AI 생성 결과물, 일일 이용 횟수</td><td>AI킹 기능 이용 시</td></tr>
                 <tr><td>익명 글</td><td>화면 표시용 익명 여부, 작성자 Firebase UID, 신고 대응에 필요한 작성 기록</td><td>익명 글 작성 시</td></tr>
-                <tr><td>게임 이용</td><td>게임방 정보, 방 코드, 참가자 닉네임, 참가 상태, 게임 설정</td><td>게임방 생성·참가 시</td></tr>
                 <tr><td>자동 수집</td><td>접속 기록, 브라우저 정보, 오류 기록, 보안 관련 로그</td><td>서비스 접속 및 이용 시</td></tr>
               </tbody>
             </table>
@@ -34,11 +34,11 @@ export function renderPrivacy() {
           <h2 class="legal-h2">2. 개인정보 이용 목적</h2>
           <ul class="legal-list">
             <li>회원 가입, 로그인, 본인 확인 및 계정 관리</li>
-            <li>피드 작성자 표시, 댓글·답글·투표·퀴즈·작명·드립·리액션 등 커뮤니티 기능 제공</li>
-            <li>일반, 투표, 작명, 드립, 퀴즈 글쓰기 기능 제공</li>
+            <li>피드 작성자 표시, 댓글·답글·리액션 등 커뮤니티 기능 제공</li>
+            <li>AI킹(미친판사·미친번역사·AI궁합·AI작명소) 기능 제공 및 결과물 피드 게시</li>
+            <li>AI킹 일일 이용 횟수 관리</li>
             <li>익명 글의 화면상 작성자명 숨김 처리와 신고·분쟁 대응</li>
-            <li>게임방 만들기, 초대 링크, 참가자 표시, 게임 진행 기능 제공</li>
-            <li>스크랩, 알림, 명예의 전당 등 개인화 기능 제공</li>
+            <li>스크랩, 알림, 통계 등 개인화 기능 제공</li>
             <li>신고 처리, 부정 이용 방지, 서비스 보안 유지</li>
             <li>서비스 운영 통계, 오류 분석, 품질 개선</li>
           </ul>
@@ -58,7 +58,8 @@ export function renderPrivacy() {
             <table class="legal-table">
               <thead><tr><th>업체명</th><th>이용 목적</th><th>처리 정보</th></tr></thead>
               <tbody>
-                <tr><td>Google Firebase</td><td>인증, 데이터베이스, 파일 저장, 서버리스 기능</td><td>계정 정보, 게시물, 댓글, 이미지, 게임방, 서비스 이용 데이터</td></tr>
+                <tr><td>Google Firebase</td><td>인증, 데이터베이스, 파일 저장, 서버리스 기능</td><td>계정 정보, 게시물, 댓글, 이미지, 서비스 이용 데이터</td></tr>
+                <tr><td>Anthropic (Claude AI)</td><td>AI킹 기능(판결·번역·궁합·작명) 결과 생성</td><td>입력 텍스트, 업로드 이미지(이용자가 선택한 경우)</td></tr>
                 <tr><td>Google Analytics 또는 유사 분석 도구</td><td>접속 통계 및 서비스 개선</td><td>비식별 이용 기록</td></tr>
               </tbody>
             </table>

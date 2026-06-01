@@ -74,10 +74,6 @@ async function renderGuideSafe() {
   return module.renderGuide();
 }
 
-function renderRemovedGamePage() {
-  navigate('/feed');
-}
-
 async function registerRoutes() {
   registerRoute('/', async () => renderPage((await import('./pages/home.js')).renderHome, '홈'));
   registerRoute('/feed', async () => renderPage((await import('./pages/feed.js')).renderFeed, '피드'));
@@ -94,22 +90,12 @@ async function registerRoutes() {
   registerRoute('/privacy', async () => renderPage((await import('./pages/legal.js')).renderPrivacy, '개인정보처리방침'));
   registerRoute('/legal/terms', async () => renderPage((await import('./pages/legal.js')).renderTerms, '이용약관'));
   registerRoute('/legal/privacy', async () => renderPage((await import('./pages/legal.js')).renderPrivacy, '개인정보처리방침'));
-  registerRoute('/sosoland', async () => renderPage(renderRemovedGamePage, '게임'));
-  registerRoute('/game/liar', async () => renderPage(renderRemovedGamePage, '게임'));
-  registerRoute('/game/liar/:id', async () => renderPage(renderRemovedGamePage, '게임'));
-  registerRoute('/game/mafia', async () => renderPage(renderRemovedGamePage, '게임'));
-  registerRoute('/game/mafia/:id', async () => renderPage(renderRemovedGamePage, '게임'));
-  registerRoute('/game/touch-king', async () => renderPage(renderRemovedGamePage, '게임'));
-  registerRoute('/game/touch-king/:id', async () => renderPage(renderRemovedGamePage, '게임'));
-  registerRoute('/game/symbol-spy', async () => renderPage(renderRemovedGamePage, '게임'));
-  registerRoute('/game/symbol-spy/:id', async () => renderPage(renderRemovedGamePage, '게임'));
-  registerRoute('/game/soso-defense', async () => renderPage(renderRemovedGamePage, '게임'));
-  registerRoute('/game/soso-code', async () => renderPage(renderRemovedGamePage, '게임'));
-  registerRoute('/game/ai-court', async () => renderPage(renderRemovedGamePage, '게임'));
   registerRoute('/ai-king', async () => renderPage((await import('./pages/ai-king.js')).renderAiKing, 'AI킹'));
   registerRoute('/ai-judge', async () => renderPage((await import('./pages/ai-judge.js')).renderAiJudge, '미친판사'));
   registerRoute('/ai-translate', async () => renderPage((await import('./pages/ai-translate.js')).renderAiTranslate, '미친번역사'));
   registerRoute('/ai-match', async () => renderPage((await import('./pages/ai-match.js')).renderAiMatch, 'AI궁합'));
+  registerRoute('/ai-naming', async () => renderPage((await import('./pages/ai-naming.js')).renderAiNaming, 'AI작명소'));
+  registerRoute('/points-shop', async () => renderPage((await import('./pages/points-shop.js')).renderPointsShop, '포인트 상점'));
 }
 
 async function isStrictAdmin(user) {
@@ -147,6 +133,14 @@ async function fetchUserProfile(user) {
       appState.nickname = data.nickname || user.displayName || user.email?.split('@')[0] || '';
       appState.nicknameIcon = data.nicknameIcon || null;
       appState.points = Number(data.points || data.totalPoints || 0);
+      // 가입 보너스 자동 지급 (서버에서 중복 방지, 기존 회원도 자동 적용)
+      if (!data.signupBonusClaimed) {
+        import('./firebase.js').then(({ functions }) =>
+          import('https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js').then(({ httpsCallable }) =>
+            httpsCallable(functions, 'claimSignupBonus')().catch(() => {})
+          )
+        );
+      }
     } else {
       appState.nickname = user.displayName || user.email?.split('@')[0] || '';
     }
@@ -188,13 +182,22 @@ function renderFrame() {
                   <img src="/logo.svg" alt="" width="26" height="26">
                   <span>소소킹</span>
                 </a>
-                <div class="site-footer__tagline">소소하게 보고<br>짧게 참여하는 피드</div>
+                <div class="site-footer__tagline">AI가 판결하고, 번역하고,<br>궁합 보고, 이름 짓는 놀이터</div>
+              </div>
+              <div>
+                <div class="site-footer__col-title">AI킹</div>
+                <div class="site-footer__links">
+                  <a href="#/ai-judge">⚖️ 미친판사</a>
+                  <a href="#/ai-translate">🌍 미친번역사</a>
+                  <a href="#/ai-match">💘 AI궁합</a>
+                  <a href="#/ai-naming">🎭 AI작명소</a>
+                </div>
               </div>
               <div>
                 <div class="site-footer__col-title">바로가기</div>
                 <div class="site-footer__links">
                   <a href="#/feed">피드</a>
-                  <a href="#/write?type=multi">글쓰기</a>
+                  <a href="#/hall">통계</a>
                   <a href="#/guide">이용안내</a>
                 </div>
               </div>

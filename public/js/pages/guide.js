@@ -1,169 +1,183 @@
 import { navigate } from '../router.js';
+import { setMeta } from '../utils/seo.js';
 
-const ROOM_FEATURES = [
-  { icon:'📌', name:'모음방', desc:'유튜브 쇼츠/영상, 웃긴그림, 링크를 짧게 모아보는 공간입니다.' },
-  { icon:'🗳️', name:'토론방', desc:'질문을 올리고 여러 선택지로 의견을 모으며 댓글로 이야기합니다.' },
-  { icon:'🧠', name:'퀴즈방', desc:'주관식·객관식 퀴즈를 올리고 정답과 해설을 확인합니다.' },
-  { icon:'🤣', name:'드립방', desc:'제목 없이 오늘의 한줄만 올리고 짧게 웃는 공간입니다.' },
+const AI_KINGS = [
+  {
+    emoji: '⚖️',
+    name: '미친판사',
+    path: '/ai-judge',
+    desc: '억울한 상황을 적으면 7명의 이상한 판사가 각자 판결을 내립니다.',
+    examples: ['친구가 내 치킨 허락없이 먹음 → 유죄/무죄?', '카톡 읽씹 → 이게 잘못인가?'],
+    judges: ['⚖️ 엄근진 법관', '😭 감성 판사', '👴 꼰대 판사', '🔬 과학자 판사', '🤔 철학자 판사', '👽 외계인 판사', '🤪 돌아이 판사'],
+  },
+  {
+    emoji: '🌍',
+    name: '미친번역사',
+    path: '/ai-translate',
+    desc: '어떤 텍스트든 원하는 말투로 번역해드립니다. 사진 속 글자도 번역 가능!',
+    examples: ['오늘 밥 먹었어? → 🇰🇵 동무, 끼니는 때웠수?', '고마워 → 🎮 갈비탕ㅋㅋ'],
+    styles: ['🇰🇵 북한말', '🌊 부산 사투리', '🌾 전라도 사투리', '🐢 충청도 사투리', '📜 조선시대', '👔 꼰대체', '🎮 급식체'],
+  },
+  {
+    emoji: '💘',
+    name: 'AI궁합',
+    path: '/ai-match',
+    desc: '두 가지를 입력하면 AI가 궁합 점수와 분석을 해드립니다. 사람도 음식도 뭐든 OK.',
+    examples: ['나 + 우리 팀장 → 천생연분 or 최악의조합?', '치킨 + 맥주 → 궁합 98% 찰떡!'],
+    tip: '이름만 써도 되고 사진을 첨부하면 더 재밌는 분석이 나와요.',
+  },
+  {
+    emoji: '🎭',
+    name: 'AI작명소',
+    path: '/ai-naming',
+    desc: '설명하면 AI가 웃기고 그럴듯한 이름을 5개 지어드립니다.',
+    examples: ['회의 때 항상 졸는 팀장 → "숨참고버티기팀장", "회의의신"...', '매운 듯 안 매운 듯 애매한 떡볶이 → "기묘한매움탕"...'],
+    categories: ['👤 사람 별명', '🍜 음식 이름', '🐶 반려동물', '👥 팀/모임', '📦 물건/제품'],
+  },
 ];
 
 export function renderGuide() {
+  setMeta('이용안내');
   const el = document.getElementById('page-content');
   el.innerHTML = `
     <div class="guide-page">
       <div class="guide-hero">
-        <div class="guide-hero__icon">📖</div>
+        <div class="guide-hero__icon">🤖</div>
         <h1 class="guide-hero__title">소소킹 이용안내</h1>
-        <p class="guide-hero__sub">소소킹은 유튜브, 웃긴그림, 퀴즈, 토론, 한줄드립을 짧게 모아보고 가볍게 반응하는 모음방 서비스입니다.</p>
+        <p class="guide-hero__sub">AI가 판결하고, 번역하고, 궁합 보고, 이름 짓는<br>대한민국 유일무이한 AI 놀이터입니다 ㅋㅋ</p>
       </div>
 
       <div class="guide-toc card">
         <div class="guide-toc__title">📌 목차</div>
         <div class="guide-toc__list">
           ${[
-            ['#guide-what', '소소킹이란?'],
-            ['#guide-rooms', '방 구성'],
-            ['#guide-start', '시작하기'],
-            ['#guide-layout', '화면 구성'],
-            ['#guide-play', '참여 방법'],
-            ['#guide-write', '올리기'],
-            ['#guide-stats', '통계'],
-            ['#guide-account', '내 정보'],
-            ['#guide-rules', '이용 규칙'],
+            ['#guide-what',   '소소킹이란?'],
+            ['#guide-kings',  'AI킹 4종 소개'],
+            ['#guide-start',  '시작하기'],
+            ['#guide-limit',  '이용 제한'],
+            ['#guide-share',  '결과 공유하기'],
+            ['#guide-rules',  '이용 규칙'],
           ].map(([href, label]) => `<a class="guide-toc__item" href="${href}">${label}</a>`).join('')}
         </div>
       </div>
 
-      <div class="guide-section" id="guide-what">
-        <h2 class="guide-section__title">👑 소소킹이란?</h2>
-        <div class="guide-intro-card">
-          <div class="guide-intro-card__icon">⚡</div>
-          <div>
-            <div class="guide-intro-card__title">쇼츠처럼 짧게 보고, 웃긴 것만 모아보는 곳</div>
-            <div class="guide-intro-card__desc">
-              소소킹은 긴 글을 잘 써야 하는 게시판이 아닙니다.<br><br>
-              <strong>모음방, 토론방, 퀴즈방, 드립방</strong>처럼 목적이 분명한 방에서 짧은 콘텐츠를 올리고 바로 반응하는 공간입니다.<br><br>
-              유튜브 링크, 웃긴 그림, 짧은 퀴즈, 선택지 토론, 오늘의 한줄을 가볍게 모아보세요.
-            </div>
-          </div>
+      <section id="guide-what" class="guide-section">
+        <h2 class="guide-section__title">🤔 소소킹이란?</h2>
+        <div class="guide-section__body">
+          <p>소소킹은 <strong>AI를 재미있게 활용하는 커뮤니티</strong>입니다.</p>
+          <p>딱딱한 AI 챗봇이 아니라, <strong>웃기고 황당하고 공감 가는</strong> AI 캐릭터들이 여러분의 요청을 처리합니다.</p>
+          <p>결과물은 자동으로 게시되어 <strong>다른 사람들이 댓글로 반응</strong>할 수 있어요. 재밌는 결과는 카카오톡으로 공유해보세요!</p>
         </div>
-      </div>
+      </section>
 
-      <div class="guide-section" id="guide-rooms">
-        <h2 class="guide-section__title">🧩 방 구성</h2>
-        <p style="font-size:13px;color:var(--color-text-secondary);margin-bottom:20px">소소킹은 일반 게시판보다 방별 모음 구조를 중심으로 운영됩니다.</p>
-        <div class="guide-features">
-          ${ROOM_FEATURES.map(g => `
-            <div class="guide-feature-card">
-              <div class="guide-feature-card__icon">${g.icon}</div>
-              <div class="guide-feature-card__title">${g.name}</div>
-              <div class="guide-feature-card__desc">${g.desc}</div>
+      <section id="guide-kings" class="guide-section">
+        <h2 class="guide-section__title">👑 AI킹 4종 소개</h2>
+        <div style="display:flex;flex-direction:column;gap:20px;margin-top:16px">
+          ${AI_KINGS.map(k => `
+            <div class="card" style="padding:20px">
+              <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+                <span style="font-size:32px">${k.emoji}</span>
+                <div>
+                  <div style="font-size:18px;font-weight:900;color:var(--color-text-primary)">${k.name}</div>
+                  <div style="font-size:13px;color:var(--color-text-secondary)">${k.desc}</div>
+                </div>
+              </div>
+              <div style="background:var(--color-surface-2);border-radius:10px;padding:12px;margin-bottom:12px">
+                <div style="font-size:12px;font-weight:700;color:var(--color-text-muted);margin-bottom:8px">예시</div>
+                ${k.examples.map(e => `<div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:4px">• ${e}</div>`).join('')}
+              </div>
+              ${k.judges ? `<div style="font-size:12px;color:var(--color-text-muted)">${k.judges.join(' · ')}</div>` : ''}
+              ${k.styles ? `<div style="font-size:12px;color:var(--color-text-muted)">${k.styles.join(' · ')}</div>` : ''}
+              ${k.categories ? `<div style="font-size:12px;color:var(--color-text-muted)">${k.categories.join(' · ')}</div>` : ''}
+              ${k.tip ? `<div style="font-size:12px;color:var(--color-primary);margin-top:8px">💡 ${k.tip}</div>` : ''}
+              <button class="btn btn--primary btn--sm" style="margin-top:14px" data-path="${k.path}">
+                ${k.emoji} ${k.name} 해보기
+              </button>
             </div>`).join('')}
         </div>
-      </div>
+      </section>
 
-      <div class="guide-section" id="guide-start">
-        <h2 class="guide-section__title">🔑 시작하기</h2>
-        <div class="guide-steps">
+      <section id="guide-start" class="guide-section">
+        <h2 class="guide-section__title">🚀 시작하기</h2>
+        <div style="display:flex;flex-direction:column;gap:12px;margin-top:16px">
           ${[
-            { n:'1', icon:'🔑', title:'로그인', desc:'Google 계정 또는 이메일과 비밀번호로 로그인할 수 있습니다.' },
-            { n:'2', icon:'😊', title:'닉네임 설정', desc:'처음 로그인하면 닉네임을 설정합니다. 내 정보에서 닉네임과 프로필 아이콘을 바꿀 수 있습니다.' },
-            { n:'3', icon:'📌', title:'방 선택', desc:'모음방, 토론방, 퀴즈방, 드립방 중 올릴 방을 고릅니다.' },
-            { n:'4', icon:'💬', title:'짧게 참여', desc:'좋아요, 댓글, 투표, 퀴즈 정답, 한줄드립으로 가볍게 반응합니다.' },
-          ].map(s => `
-            <div class="guide-step">
-              <div class="guide-step__num">${s.n}</div>
-              <div class="guide-step__icon">${s.icon}</div>
-              <div class="guide-step__title">${s.title}</div>
-              <div class="guide-step__desc">${s.desc}</div>
-            </div>`).join('')}
-        </div>
-      </div>
-
-      <div class="guide-section" id="guide-layout">
-        <h2 class="guide-section__title">🖥️ 화면 구성</h2>
-        <div class="guide-layout-grid">
-          <div class="guide-layout-card">
-            <div class="guide-layout-card__head">💻 PC</div>
-            <div class="guide-layout-card__body">
-              <div class="guide-layout-item"><span class="guide-layout-badge">사이드바</span>홈, 모음, 통계, 스크랩, 내 정보로 이동합니다.</div>
-              <div class="guide-layout-item"><span class="guide-layout-badge">모음 올리기</span>모음방을 기본으로 바로 콘텐츠를 올릴 수 있습니다.</div>
-              <div class="guide-layout-item"><span class="guide-layout-badge">중앙 콘텐츠</span>방별 모음, 상세 페이지, 내 정보가 중앙 영역에 표시됩니다.</div>
-            </div>
-          </div>
-          <div class="guide-layout-card">
-            <div class="guide-layout-card__head">📱 모바일</div>
-            <div class="guide-layout-card__body">
-              <div class="guide-layout-item"><span class="guide-layout-badge">하단 탭바</span>홈, 모음, 올리기, 통계, 내 정보로 빠르게 이동합니다.</div>
-              <div class="guide-layout-item"><span class="guide-layout-badge">방별 탭</span>모음방, 토론방, 퀴즈방, 드립방을 탭으로 전환합니다.</div>
-              <div class="guide-layout-item"><span class="guide-layout-badge">모바일 보기</span>짧은 콘텐츠를 빠르게 확인하고 반응할 수 있습니다.</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="guide-section" id="guide-play">
-        <h2 class="guide-section__title">⚡ 참여 방법</h2>
-        <div class="guide-features">
-          ${[
-            { icon:'📌', title:'모음 보기', desc:'유튜브, 웃긴그림, 링크를 보고 반응하거나 댓글을 남깁니다.' },
-            { icon:'🗳️', title:'토론 참여', desc:'선택지를 누르고 댓글로 이유를 남깁니다.' },
-            { icon:'🧠', title:'퀴즈 풀기', desc:'정답을 맞히고 해설을 확인합니다.' },
-            { icon:'🤣', title:'한줄드립 보기', desc:'짧은 한 줄을 보고 반응하거나 댓글로 이어갑니다.' },
-            { icon:'💬', title:'댓글과 답글', desc:'소소킹의 핵심은 짧은 반응입니다. 부담 없이 남기면 됩니다.' },
-            { icon:'🚨', title:'신고', desc:'부적절한 글과 댓글은 신고할 수 있으며 관리자가 검토합니다.' },
-          ].map(f => `
-            <div class="guide-feature-card">
-              <div class="guide-feature-card__icon">${f.icon}</div>
-              <div class="guide-feature-card__title">${f.title}</div>
-              <div class="guide-feature-card__desc">${f.desc}</div>
-            </div>`).join('')}
-        </div>
-      </div>
-
-      <div class="guide-section" id="guide-write">
-        <h2 class="guide-section__title">✏️ 올리기</h2>
-        <div class="guide-write-steps">
-          ${[
-            ['1', '올리기 선택', 'PC에서는 사이드바의 모음 올리기, 모바일에서는 하단 올리기 버튼을 누릅니다.'],
-            ['2', '방 선택', '모음방, 토론방, 퀴즈방, 드립방 중 하나를 고릅니다.'],
-            ['3', '짧게 입력', '모음방은 제목과 링크/이미지, 토론방은 제목·내용·선택지, 퀴즈방은 문제와 정답, 드립방은 오늘의 한줄만 입력합니다.'],
-            ['4', '반응 받기', '올린 콘텐츠는 방별 모음에 노출되고 댓글, 반응, 투표, 정답 참여로 이어집니다.'],
-          ].map(([n, title, desc]) => `
-            <div class="guide-write-step">
-              <div class="guide-write-step__num">${n}</div>
-              <div class="guide-write-step__content">
-                <div class="guide-write-step__title">${title}</div>
-                <div class="guide-write-step__desc">${desc}</div>
+            ['1', '회원가입', '구글 또는 카카오 계정으로 간편하게 가입할 수 있어요.'],
+            ['2', 'AI킹 선택', '미친판사, 미친번역사, AI궁합, AI작명소 중 하나를 선택하세요.'],
+            ['3', '내용 입력', '상황, 텍스트, 두 가지 대상, 또는 이름 지을 대상을 입력하세요.'],
+            ['4', '결과 확인', '자동으로 결과 페이지로 이동하며 댓글로 반응할 수 있어요.'],
+            ['5', '공유하기', '재밌는 결과는 카카오톡이나 링크로 공유해보세요!'],
+          ].map(([num, title, desc]) => `
+            <div style="display:flex;gap:14px;align-items:flex-start">
+              <div style="min-width:32px;height:32px;border-radius:50%;background:var(--color-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px">${num}</div>
+              <div>
+                <div style="font-weight:700;color:var(--color-text-primary);margin-bottom:2px">${title}</div>
+                <div style="font-size:13px;color:var(--color-text-secondary)">${desc}</div>
               </div>
             </div>`).join('')}
         </div>
-        <button class="btn btn--primary btn--full" id="guide-write-btn" style="margin-top:16px">올리기</button>
-      </div>
+      </section>
 
-      <div class="guide-section" id="guide-stats">
-        <h2 class="guide-section__title">📊 통계</h2>
-        <p style="font-size:14px;color:var(--color-text-secondary);line-height:1.7">반응과 댓글 참여가 많은 콘텐츠는 통계 화면에서 확인할 수 있습니다. 운영 상황에 따라 집계 기준은 조정될 수 있습니다.</p>
-      </div>
-
-      <div class="guide-section" id="guide-account">
-        <h2 class="guide-section__title">👤 내 정보</h2>
-        <p style="font-size:14px;color:var(--color-text-secondary);line-height:1.7">내가 올린 콘텐츠, 스크랩, 알림, 활동 통계, 설정을 확인할 수 있습니다.</p>
-      </div>
-
-      <div class="guide-section" id="guide-rules">
-        <h2 class="guide-section__title">🚨 이용 규칙</h2>
-        <div class="guide-rules">
-          ${[
-            '타인에게 불쾌감을 주는 콘텐츠는 제한될 수 있습니다.',
-            '개인정보와 민감한 정보는 동의 없이 올리지 마세요.',
-            '권리를 침해하는 이미지, 영상, 링크 공유는 삭제될 수 있습니다.',
-            '서비스 운영을 방해하는 반복投稿와 광고성 콘텐츠는 제한될 수 있습니다.',
-            '신고된 콘텐츠는 관리자가 검토 후 숨김 또는 삭제할 수 있습니다.',
-          ].map(rule => `<div class="guide-rule-item">${rule}</div>`).join('')}
+      <section id="guide-limit" class="guide-section">
+        <h2 class="guide-section__title">⏱️ 이용 제한</h2>
+        <div class="guide-section__body">
+          <div class="guide-notice">
+            <strong>🆓 현재 무료 운영 중!</strong><br>
+            각 AI킹은 하루 <strong>3회</strong>까지 무료로 이용할 수 있어요.<br>
+            자정(00:00 KST)에 횟수가 초기화됩니다.
+          </div>
+          <table style="width:100%;margin-top:14px;font-size:13px;border-collapse:collapse">
+            <tr style="background:var(--color-surface-2)">
+              <th style="padding:8px 12px;text-align:left;border-radius:8px 0 0 0">AI킹</th>
+              <th style="padding:8px 12px;text-align:center;border-radius:0 8px 0 0">하루 무료 횟수</th>
+            </tr>
+            ${['⚖️ 미친판사', '🌍 미친번역사', '💘 AI궁합', '🎭 AI작명소'].map(k => `
+              <tr style="border-top:1px solid var(--color-border)">
+                <td style="padding:8px 12px">${k}</td>
+                <td style="padding:8px 12px;text-align:center;font-weight:700">3회</td>
+              </tr>`).join('')}
+          </table>
         </div>
+      </section>
+
+      <section id="guide-share" class="guide-section">
+        <h2 class="guide-section__title">📤 결과 공유하기</h2>
+        <div class="guide-section__body">
+          <p>AI킹 결과 페이지에서 <strong>링크 복사 버튼(🔗)</strong>을 누르면 결과를 공유할 수 있어요.</p>
+          <p>재밌는 판결문, 웃긴 번역, 황당한 궁합 결과를 친구들에게 공유해보세요!</p>
+          <p style="color:var(--color-primary);font-weight:700">💡 "야 판결킹한테 우리 상황 올려봤는데 봐봐 ㅋㅋㅋ" 이런 거 기대하고 만들었습니다.</p>
+        </div>
+      </section>
+
+      <section id="guide-rules" class="guide-section">
+        <h2 class="guide-section__title">📋 이용 규칙</h2>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">
+          ${[
+            ['✅', '허용', '가벼운 유머, 일상 고민, 재미있는 상황, 웃긴 번역 요청'],
+            ['✅', '허용', '공인에 대한 공개된 사실 (단, 비방 없이)'],
+            ['❌', '금지', '특정인 신상 공개, 협박, 성희롱, 혐오 발언'],
+            ['❌', '금지', '광고/스팸성 내용'],
+            ['❌', '금지', '명백한 불법 콘텐츠'],
+            ['⚠️', '주의', 'AI 결과물은 재미 목적으로만 활용하세요. 실제 법적 판단이나 의학적 조언이 아닙니다.'],
+          ].map(([icon, type, desc]) => `
+            <div style="display:flex;gap:10px;padding:10px 14px;background:var(--color-surface-2);border-radius:10px">
+              <span style="font-size:16px;min-width:20px">${icon}</span>
+              <div>
+                <strong style="font-size:12px;color:${type === '금지' ? 'var(--color-danger)' : type === '주의' ? 'var(--color-warning)' : 'var(--color-success)'}">${type}</strong>
+                <div style="font-size:13px;color:var(--color-text-secondary);margin-top:2px">${desc}</div>
+              </div>
+            </div>`).join('')}
+        </div>
+      </section>
+
+      <div style="text-align:center;padding:32px 0 16px">
+        <button class="btn btn--primary" id="btn-guide-start" style="font-size:16px;padding:14px 32px;font-weight:900">
+          🤖 AI킹 놀이터 바로가기
+        </button>
       </div>
     </div>`;
 
-  document.getElementById('guide-write-btn')?.addEventListener('click', () => navigate('/write?type=multi&preset=collect'));
+  el.querySelectorAll('[data-path]').forEach(btn => {
+    btn.addEventListener('click', () => navigate(btn.dataset.path));
+  });
+  el.querySelector('#btn-guide-start')?.addEventListener('click', () => navigate('/ai-king'));
 }

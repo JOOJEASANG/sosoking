@@ -59,10 +59,10 @@ export function renderAiTranslate() {
           placeholder="번역할 텍스트를 입력하세요. 뭐든 됩니다!&#10;예) 오늘 밥 먹었어? 나 배고파 죽겠어."></textarea>
         <div class="ai-king-form__charcount"><span id="translate-count">0</span>/500</div>
 
-        <label class="ai-king-form__label" style="margin-top:16px">📷 사진 속 텍스트도 번역 (선택)</label>
+        <label class="ai-king-form__label" style="margin-top:16px">📷 이미지 첨부 (선택)</label>
         <div class="ai-king-img-upload" id="translate-img-area">
           <input type="file" id="translate-img-input" accept="image/*" style="display:none">
-          <div class="ai-king-img-upload__label">📎 클릭하여 사진 추가</div>
+          <div class="ai-king-img-upload__label">📎 클릭하여 이미지 추가<br><small>사진 속 텍스트는 물론 이미지 상황 자체도 번역해요</small></div>
           <img id="translate-img-preview" class="ai-king-img-upload__preview" alt="">
           <div id="translate-img-remove" class="ai-king-img-upload__remove">✕ 사진 제거</div>
         </div>

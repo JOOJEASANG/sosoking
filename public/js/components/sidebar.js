@@ -54,9 +54,10 @@ export function renderSidebar() {
   const unread  = appState.unreadNotifications || 0;
 
   const MAIN_NAV = [
-    { label: '홈',  path: '/',     icon: iconHome() },
-    { label: '피드', path: '/feed', icon: iconFeed() },
-    { label: '통계', path: '/hall', icon: iconStats() },
+    { label: '홈',     path: '/',        icon: iconHome() },
+    { label: '피드',   path: '/feed',    icon: iconFeed() },
+    { label: '🤖 AI킹', path: '/ai-king', icon: '' },
+    { label: '통계',   path: '/hall',    icon: iconStats() },
   ];
 
   const PERSONAL_NAV = user ? [
@@ -121,8 +122,8 @@ export function renderSidebar() {
     </nav>
 
     <div class="sidebar__write">
-      <button class="sidebar__write-btn" id="sb-write-btn" aria-label="올리기">
-        ${iconWrite()}<span>올리기</span>
+      <button class="sidebar__write-btn" id="sb-write-btn" aria-label="AI킹">
+        <span style="font-size:18px">🤖</span><span>AI킹 놀이터</span>
       </button>
     </div>
 
@@ -145,8 +146,7 @@ export function renderSidebar() {
   });
 
   document.getElementById('sb-write-btn')?.addEventListener('click', () => {
-    if (!appState.user) navigate('/login?return=/write?type=multi&preset=collect');
-    else navigate('/write?type=multi&preset=collect');
+    navigate('/ai-king');
   });
 
   document.getElementById('sb-avatar')?.addEventListener('click', () => navigate('/account'));

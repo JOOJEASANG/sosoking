@@ -2,21 +2,12 @@ import { navigate } from '../router.js';
 import { escHtml, formatTime } from '../utils/helpers.js';
 
 const TYPE_META = {
-  tournament:   { cat: 'multi',  catLabel: '끝판왕',   icon: '🏆', label: '끝판왕' },
-  multi:        { cat: 'multi',  catLabel: '끝판왕',   icon: '🏆', label: '끝판왕' },
-  general:      { cat: 'multi',  catLabel: '끝판왕',   icon: '🏆', label: '끝판왕' },
-  vote:         { cat: 'golra',  catLabel: '토론',     icon: '🗳️', label: '토론' },
-  crazy_court:  { cat: 'golra',  catLabel: '토론',     icon: '🗳️', label: '토론' },
-  battle:       { cat: 'golra',  catLabel: '토론',     icon: '🗳️', label: '토론' },
-  balance:      { cat: 'golra',  catLabel: '토론',     icon: '🗳️', label: '토론' },
-  drip:         { cat: 'usgyo',  catLabel: '드립',     icon: '🤣', label: '드립' },
-  cbattle:      { cat: 'usgyo',  catLabel: '드립',     icon: '🤣', label: '드립' },
-  quiz:         { cat: 'malhe',  catLabel: '퀴즈',     icon: '🧠', label: '퀴즈' },
-  initial_game: { cat: 'malhe',  catLabel: '퀴즈',     icon: '🧠', label: '퀴즈' },
-  ox:           { cat: 'malhe',  catLabel: '퀴즈',     icon: '🧠', label: '퀴즈' },
-  ai_judge:     { cat: 'golra',  catLabel: '미친판사', icon: '⚖️', label: '미친판사' },
+  tournament:   { cat: 'multi',  catLabel: '끝판왕',    icon: '🏆', label: '끝판왕' },
+  multi:        { cat: 'multi',  catLabel: '끝판왕',    icon: '🏆', label: '끝판왕' },
+  ai_judge:     { cat: 'golra',  catLabel: '미친판사',  icon: '⚖️', label: '미친판사' },
   ai_translate: { cat: 'usgyo',  catLabel: '미친번역사', icon: '🌍', label: '미친번역사' },
-  ai_match:     { cat: 'golra',  catLabel: 'AI궁합',   icon: '💘', label: 'AI궁합' },
+  ai_match:     { cat: 'golra',  catLabel: 'AI궁합',    icon: '💘', label: 'AI궁합' },
+  ai_naming:    { cat: 'usgyo',  catLabel: 'AI작명소',  icon: '🎭', label: 'AI작명소' },
 };
 
 function escAttr(value) {
@@ -56,13 +47,9 @@ function safeTag(value) {
 }
 
 function getMultiSubtype(post) {
-  if (post.subtype === 'anonymous') return 'general';
   if (post.modules?.tournament?.enabled || post.subtype === 'tournament') return 'tournament';
-  if (post.modules?.vote?.enabled) return 'vote';
-  if (post.modules?.drip?.enabled) return 'drip';
-  if (post.modules?.quiz?.enabled) return 'quiz';
   if (post.subtype && TYPE_META[post.subtype]) return post.subtype;
-  return 'general';
+  return 'tournament';
 }
 
 function getTypeMeta(post) {
@@ -76,17 +63,10 @@ function getTypeMeta(post) {
 function displayTitle(post) {
   const title = plainText(post.title || '').trim();
   const desc = plainText(post.desc || '').trim();
-  const dripTopic = plainText(post.modules?.drip?.prompt || '').trim();
-  if (post.modules?.drip?.enabled) {
-    const generic = ['오늘의 드립 주제', '오늘의 한줄', '드립방 AI 글'];
-    return (generic.includes(title) ? (dripTopic || desc) : title) || dripTopic || desc || '드립 주제';
-  }
   return title || desc || '제목 없음';
 }
 
 function displayDesc(post) {
-  if (post.modules?.drip?.enabled) return '';
-  if (post.modules?.quiz?.enabled) return '';
   return plainText(post.desc || '').slice(0, 220);
 }
 
@@ -94,12 +74,7 @@ function renderModuleChips(post) {
   if (post.type !== 'multi' || !post.modules) return '';
   const labels = [];
   if (post.anonymous || post.modules.anonymous?.enabled) labels.push('익명');
-  if (post.modules.vote?.ox) labels.push('투표');
-  else if (post.modules.vote?.enabled) labels.push('투표');
-  if (post.modules.fill?.enabled) labels.push('빈칸');
-  if (post.modules.naming?.enabled) labels.push('작명');
-  if (post.modules.drip?.enabled) labels.push('드립');
-  if (post.modules.quiz?.enabled) labels.push('퀴즈');
+  if (post.modules.tournament?.enabled) labels.push('토너먼트');
   if (!labels.length) return '';
   return `<div class="feed-card__multi-chips">${labels.map(label => `<span>${escHtml(label)}</span>`).join('')}</div>`;
 }

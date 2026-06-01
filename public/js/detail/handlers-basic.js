@@ -4,6 +4,7 @@ import { openGallery } from './gallery.js';
 import { toggleScrap, reportPost } from './post-actions.js';
 import { isDetailPath } from './action-utils.js';
 import { currentPostId, getCurrentPostSummary, stop } from './bootstrap-context.js';
+import { downloadShareCard } from './share-card.js';
 
 export async function handleScrap(event) {
   const btn = event.target.closest?.('#btn-scrap');
@@ -27,6 +28,15 @@ export async function handleShare(event) {
   stop(event);
   const post = await getCurrentPostSummary();
   if (post) openShareSheet(post);
+  return true;
+}
+
+export async function handleShareCard(event) {
+  const btn = event.target.closest?.('.ai-share-card-btn');
+  if (!btn || !isDetailPath()) return false;
+  stop(event);
+  const post = await getCurrentPostSummary();
+  if (post) downloadShareCard(post);
   return true;
 }
 

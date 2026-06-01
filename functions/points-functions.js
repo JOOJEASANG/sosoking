@@ -122,4 +122,56 @@ const awardUserPoints = onCall({ region: REGION, timeoutSeconds: 20 }, async req
   return { ok: true, awarded, points: awarded ? rule.points : 0 };
 });
 
-module.exports = { awardUserPoints };
+const claimSignupBonus = onCall({ region: REGION, timeoutSeconds: 20 }, async request => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+
+  const bonusRef = db.doc(`point_awards/${uid}_signup`);
+  const userRef = db.doc(`users/${uid}`);
+  let awarded = false;
+
+  await db.runTransaction(async tx => {
+    const bonusSnap = await tx.get(bonusRef);
+    if (bonusSnap.exists) return;
+    awarded = true;
+    tx.set(bonusRef, { uid, claimed: true, createdAt: FieldValue.serverTimestamp() });
+    tx.set(userRef, {
+      points: FieldValue.increment(500),
+      totalPoints: FieldValue.increment(500),
+      extraAiUses: 0,
+      signupBonusClaimed: true,
+      updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+  });
+
+  return { ok: true, awarded, points: awarded ? 500 : 0 };
+});
+
+const claimDailyBonus = onCall({ region: REGION, timeoutSeconds: 20 }, async request => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+
+  const today = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date());
+
+  const dailyRef = db.doc(`point_awards/${uid}_daily_${today}`);
+  const userRef = db.doc(`users/${uid}`);
+  let awarded = false;
+
+  await db.runTransaction(async tx => {
+    const dailySnap = await tx.get(dailyRef);
+    if (dailySnap.exists) return;
+    awarded = true;
+    tx.set(dailyRef, { uid, date: today, createdAt: FieldValue.serverTimestamp() });
+    tx.set(userRef, {
+      points: FieldValue.increment(20),
+      totalPoints: FieldValue.increment(20),
+      updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+  });
+
+  return { ok: true, awarded, points: awarded ? 20 : 0 };
+});
+
+module.exports = { awardUserPoints, claimSignupBonus, claimDailyBonus };
