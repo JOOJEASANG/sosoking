@@ -46,7 +46,7 @@ export function triggerKakaoLogin(page = 'login') {
     if (K) {
       if (!K.isInitialized()) K.init(KAKAO_JS_APP_KEY);
       if (typeof K.Auth?.authorize === 'function') {
-        K.Auth.authorize({ redirectUri: KAKAO_REDIRECT_URI, scope: 'profile_nickname,account_email' });
+        K.Auth.authorize({ redirectUri: KAKAO_REDIRECT_URI, scope: 'profile_nickname' });
         return;
       }
     }
@@ -54,7 +54,7 @@ export function triggerKakaoLogin(page = 'login') {
       client_id: KAKAO_JS_APP_KEY,
       redirect_uri: KAKAO_REDIRECT_URI,
       response_type: 'code',
-      scope: 'profile_nickname,account_email',
+      scope: 'profile_nickname',
     });
     window.location.href = `https://kauth.kakao.com/oauth/authorize?${p}`;
   } catch (e) {
