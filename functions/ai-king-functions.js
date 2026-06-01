@@ -44,47 +44,34 @@ async function callClaude(anthropic, system, userText, imageBase64 = null, maxTo
 
 // ── 미친판사: 7가지 판사 유형 ──
 const JUDGES = [
-  {
-    id: 'lawyer',
-    name: '⚖️ 엄근진 법관',
-    system: '당신은 대한민국 대법원 판사다. 황당한 상황도 형법·민법 조항을 인용하며 딱딱하게 판결한다. "제○조", "피고인", "주문" 같은 법률 용어를 꼭 써라. 2~3문장으로 짧고 엄중하게.',
-  },
-  {
-    id: 'emotional',
-    name: '😭 감성 판사',
-    system: '당신은 모든 것에 눈물을 흘리는 감성 과잉 판사다. 피고도 원고도 불쌍하다. 판결보다 감정이 앞선다. 시적인 표현을 써라. 마지막엔 항상 눈물. 2~3문장.',
-  },
-  {
-    id: 'boomer',
-    name: '👴 꼰대 판사',
-    system: '당신은 "내가 젊을 때는..."으로 시작하는 꼰대 판사다. 요즘 세대를 이해 못 한다. "라떼는~", "우리 때는~", "요즘 것들은~" 표현 필수. 교훈으로 끝냄. 2~3문장.',
-  },
-  {
-    id: 'scientist',
-    name: '🔬 과학자 판사',
-    system: '당신은 데이터와 통계로만 판결하는 과학자 판사다. 감정 없이 숫자와 확률로 분석한다. 없는 논문이나 연구도 인용한다. 2~3문장.',
-  },
-  {
-    id: 'philosopher',
-    name: '🤔 철학자 판사',
-    system: '당신은 소크라테스·니체·공자를 인용하며 뜬구름 잡는 철학자 판사다. 명확한 결론은 없다. 모든 것에 반문하며 오히려 질문으로 끝낸다. 2~3문장.',
-  },
-  {
-    id: 'alien',
-    name: '👽 외계인 판사',
-    system: '당신은 지구에 온 외계인 판사다. 인간의 감정과 행동이 이해 안 된다. "지구인들은 왜..."를 반복한다. 비교 대상이 엉뚱하다. 2~3문장.',
-  },
-  {
-    id: 'crazy',
-    name: '🤪 돌아이 판사',
-    system: '당신은 완전히 예측불가능한 돌아이 판사다. 논리 없음, 엉뚱하지만 자신은 매우 진지하다. 갑자기 전혀 다른 주제로 샌다. 2~3문장.',
-  },
+  { id: 'lawyer',      name: '⚖️ 엄근진 법관',  desc: '대한민국 대법원 판사. 형법·민법 조항 인용, "제○조" "피고인" "주문" 필수. 딱딱하고 엄중하게 2~3문장.' },
+  { id: 'emotional',   name: '😭 감성 판사',     desc: '모든 것에 눈물 흘리는 감성 과잉 판사. 시적 표현 필수, 마지막엔 항상 눈물. 2~3문장.' },
+  { id: 'boomer',      name: '👴 꼰대 판사',     desc: '"라떼는~" "우리 때는~" "요즘 것들은~" 표현 필수 꼰대 판사. 교훈으로 끝냄. 2~3문장.' },
+  { id: 'scientist',   name: '🔬 과학자 판사',   desc: '데이터·통계·확률로만 판결. 없는 논문도 인용. 감정 없음. 2~3문장.' },
+  { id: 'philosopher', name: '🤔 철학자 판사',   desc: '소크라테스·니체·공자 인용하며 뜬구름 잡음. 결론 없이 질문으로 끝. 2~3문장.' },
+  { id: 'alien',       name: '👽 외계인 판사',   desc: '"지구인들은 왜..." 반복하는 외계인. 비교 대상 엉뚱함. 2~3문장.' },
+  { id: 'crazy',       name: '🤪 돌아이 판사',   desc: '예측불가능하고 엉뚱하지만 자신은 매우 진지. 갑자기 딴 주제로 샘. 2~3문장.' },
 ];
+
+const JUDGE_SYSTEM = `당신은 7명의 서로 다른 캐릭터 판사다. 주어진 상황에 대해 각 판사가 자신의 캐릭터에 맞게 판결을 내린다.
+반드시 아래 JSON 형식으로만 답하라. 다른 텍스트 없이 JSON만 출력:
+{"verdicts":[
+  {"id":"lawyer","verdict":"판결문"},
+  {"id":"emotional","verdict":"판결문"},
+  {"id":"boomer","verdict":"판결문"},
+  {"id":"scientist","verdict":"판결문"},
+  {"id":"philosopher","verdict":"판결문"},
+  {"id":"alien","verdict":"판결문"},
+  {"id":"crazy","verdict":"판결문"}
+]}
+
+각 판사 캐릭터:
+${JUDGES.map(j => `- ${j.id}: ${j.desc}`).join('\n')}`;
 
 exports.aiJudge = onCall({
   region: 'asia-northeast3',
   secrets: [anthropicKey],
-  timeoutSeconds: 90,
+  timeoutSeconds: 60,
   memory: '512MiB',
 }, async (request) => {
   const userId = request.auth?.uid;
@@ -99,16 +86,24 @@ exports.aiJudge = onCall({
   if (!allowed) throw new HttpsError('resource-exhausted', `오늘 판결은 하루 ${DAILY_LIMIT}번만 가능해요`);
 
   const anthropic = new Anthropic({ apiKey: anthropicKey.value() });
-  const userText = `다음 상황을 판결해줘:\n${situation.slice(0, 500)}`;
+  const raw = await callClaude(
+    anthropic,
+    JUDGE_SYSTEM,
+    `다음 상황을 7명의 판사가 각자 판결해줘:\n${situation.slice(0, 500)}`,
+    imageBase64,
+    1400,
+  );
 
-  const verdicts = [];
-  for (const judge of JUDGES) {
-    try {
-      const verdict = await callClaude(anthropic, judge.system, userText, imageBase64, 300);
-      verdicts.push({ judgeId: judge.id, judgeName: judge.name, verdict });
-    } catch {
-      verdicts.push({ judgeId: judge.id, judgeName: judge.name, verdict: '이 판사는 오늘 결근했습니다. 😴' });
-    }
+  let verdicts;
+  try {
+    const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
+    verdicts = (parsed.verdicts || []).map(v => ({
+      judgeId: v.id,
+      judgeName: JUDGES.find(j => j.id === v.id)?.name || v.id,
+      verdict: v.verdict || '',
+    }));
+  } catch {
+    verdicts = JUDGES.map(j => ({ judgeId: j.id, judgeName: j.name, verdict: '이 판사는 오늘 결근했습니다. 😴' }));
   }
 
   const postRef = db.collection('feeds').doc();
