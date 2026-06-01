@@ -6,7 +6,11 @@ const { getAuth } = require('firebase-admin/auth');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const https = require('https');
 
-if (!getApps().length) initializeApp();
+if (!getApps().length) {
+  initializeApp({
+    serviceAccountId: '1059034248031-compute@developer.gserviceaccount.com',
+  });
+}
 const adminAuth = getAuth();
 const db = getFirestore();
 
