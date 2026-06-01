@@ -6,10 +6,12 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const HALL_CATS = [
-  { key: 'popular',  label: '인기글',      icon: '🔥', type: null,   desc: '반응과 댓글이 많은 글', scoreKey: null },
-  { key: 'comment',  label: '댓글 많은 글', icon: '💬', type: null,   desc: '댓글 참여가 많은 글', scoreKey: 'comment' },
-  { key: 'drip',     label: '드립 통계',   icon: '🤣', type: 'drip', desc: '한 줄 드립 인기글', scoreKey: null },
-  { key: 'quiz',     label: '퀴즈 통계',   icon: '🧠', type: 'quiz', desc: '퀴즈 인기글', scoreKey: null },
+  { key: 'popular',      label: '인기글',        icon: '🔥', type: null,         desc: '반응과 댓글이 많은 글', scoreKey: null },
+  { key: 'comment',      label: '댓글 많은 글',  icon: '💬', type: null,         desc: '댓글 참여가 많은 글', scoreKey: 'comment' },
+  { key: 'ai_judge',     label: '미친판사',      icon: '⚖️', type: 'ai_judge',   desc: '판결 인기글', scoreKey: null },
+  { key: 'ai_translate', label: '미친번역사',    icon: '🌍', type: 'ai_translate', desc: '번역 인기글', scoreKey: null },
+  { key: 'ai_match',     label: 'AI궁합',        icon: '💘', type: 'ai_match',   desc: '궁합 인기글', scoreKey: null },
+  { key: 'ai_naming',    label: 'AI작명소',      icon: '🎭', type: 'ai_naming',  desc: '작명 인기글', scoreKey: null },
 ];
 
 function postType(post) {

@@ -27,13 +27,20 @@ const FEATURES = [
     path: '/ai-match',
     desc: '두 가지를 입력하면 AI가 궁합을 봐드립니다. 사람도 음식도 물건도 뭐든 OK.',
   },
+  {
+    id: 'naming',
+    emoji: '🎭',
+    name: 'AI작명소',
+    path: '/ai-naming',
+    desc: '이름 지을 대상을 설명하면 웃기고 그럴듯한 이름 5개를 지어드립니다. 별명, 팀명, 메뉴명 뭐든!',
+  },
 ];
 
 export async function renderAiKing() {
   setMeta('AI킹 놀이터');
   const el = document.getElementById('page-content');
 
-  let usage = { judge: 0, translate: 0, match: 0 };
+  let usage = { judge: 0, translate: 0, match: 0, naming: 0 };
   if (auth.currentUser) {
     try {
       const fn = httpsCallable(functions, 'getAiKingUsage');

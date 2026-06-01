@@ -360,6 +360,7 @@ const aiKing = require('./ai-king-functions');
 exports.aiJudge = aiKing.aiJudge;
 exports.aiTranslate = aiKing.aiTranslate;
 exports.aiMatch = aiKing.aiMatch;
+exports.aiNaming = aiKing.aiNaming;
 exports.getAiKingUsage = aiKing.getAiKingUsage;
 
 // ── 토너먼트 결과 기록 ──

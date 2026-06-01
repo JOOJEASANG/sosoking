@@ -47,6 +47,8 @@ export function renderTypeBody(post) {
       return renderAiTranslateBody(post);
     case 'ai_match':
       return renderAiMatchBody(post);
+    case 'ai_naming':
+      return renderAiNamingBody(post);
     case 'balance':
     case 'vote':
     case 'concern':
@@ -194,6 +196,27 @@ function renderAiTranslateBody(post) {
       <div class="ai-translate-output">
         <div class="ai-translate-output__label">${escHtml(post.styleName || '')} 번역 결과</div>
         <div class="ai-translate-output__text">${escHtml(post.translated || '').replace(/\n/g, '<br>')}</div>
+      </div>
+    </div>`;
+}
+
+function renderAiNamingBody(post) {
+  const names = Array.isArray(post.names) ? post.names : [];
+  return `
+    <div class="ai-naming-result">
+      <div class="ai-judge-situation">
+        <strong>🎭 작명 요청</strong><br>
+        <span style="font-size:12px;color:var(--color-text-muted)">${escHtml(post.category || '')}</span><br>
+        ${escHtml(post.description || post.title || '').replace(/\n/g, '<br>')}
+      </div>
+      <div class="ai-verdict-list">
+        ${names.map((n, i) => `
+          <div class="ai-verdict-item">
+            <div class="ai-verdict-judge" style="font-size:16px">
+              ${['🥇','🥈','🥉','4️⃣','5️⃣'][i] || ''} ${escHtml(n.name || '')}
+            </div>
+            <div class="ai-verdict-text">${escHtml(n.reason || '').replace(/\n/g, '<br>')}</div>
+          </div>`).join('')}
       </div>
     </div>`;
 }

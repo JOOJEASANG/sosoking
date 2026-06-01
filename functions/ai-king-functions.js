@@ -263,7 +263,77 @@ exports.aiMatch = onCall({
   return { postId: postRef.id, matchResult };
 });
 
-// ── 사용량 조회 ──
+// ── AI작명소 ──
+const NAME_CATEGORIES = {
+  person:  '사람 별명/닉네임',
+  food:    '음식/메뉴 이름',
+  pet:     '반려동물 이름',
+  team:    '팀/모임 이름',
+  product: '물건/제품 이름',
+  other:   '기타',
+};
+
+exports.aiNaming = onCall({
+  region: 'asia-northeast3',
+  secrets: [anthropicKey],
+  timeoutSeconds: 60,
+  memory: '512MiB',
+}, async (request) => {
+  const userId = request.auth?.uid;
+  if (!userId) throw new HttpsError('unauthenticated', '로그인이 필요해요');
+
+  const { description, category, imageBase64 } = request.data || {};
+  if (!description || description.trim().length < 2) {
+    throw new HttpsError('invalid-argument', '설명을 입력해주세요');
+  }
+
+  const allowed = await checkUsage(userId, 'naming');
+  if (!allowed) throw new HttpsError('resource-exhausted', `오늘 작명은 하루 ${DAILY_LIMIT}번만 가능해요`);
+
+  const anthropic = new Anthropic({ apiKey: anthropicKey.value() });
+  const catLabel = NAME_CATEGORIES[category] || '기타';
+
+  const system = `당신은 세상에서 가장 웃기고 창의적인 작명 전문가다. 요청받은 것의 이름을 5개 지어준다.
+이름은 웃기지만 그럴듯해야 한다. 너무 평범하면 안 된다. 듣는 순간 "ㅋㅋㅋ 맞네" 소리가 나와야 한다.
+반드시 JSON 형식으로만 답하라:
+{"names": [{"name": "이름1", "reason": "이유(한 줄, 웃기게)"}, {"name": "이름2", "reason": "..."}, {"name": "이름3", "reason": "..."}, {"name": "이름4", "reason": "..."}, {"name": "이름5", "reason": "..."}]}`;
+
+  const userText = `카테고리: ${catLabel}\n설명: ${description.slice(0, 300)}\n이 이름을 지어줘.`;
+
+  let names;
+  try {
+    const raw = await callClaude(anthropic, system, userText, imageBase64, 600);
+    const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
+    names = parsed.names || [];
+  } catch {
+    names = [
+      { name: '이름짓기실패킹', reason: 'AI가 충격받아서 말문이 막혔습니다' },
+      { name: '무명의존재', reason: '이름 없이도 살 수 있습니다' },
+      { name: '그냥그거', reason: '설명이 필요 없는 이름' },
+    ];
+  }
+
+  const postRef = db.collection('feeds').doc();
+  await postRef.set({
+    type: 'ai_naming',
+    title: `${catLabel} 작명: ${description.slice(0, 40)}${description.length > 40 ? '...' : ''}`,
+    description: description.slice(0, 300),
+    category: catLabel,
+    names,
+    hasImage: !!imageBase64,
+    authorId: userId,
+    commentCount: 0,
+    reactions: { like: 0, funny: 0, fire: 0, total: 0 },
+    viewCount: 0,
+    createdAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
+    isAiGenerated: true,
+    hidden: false,
+    cat: 'usgyo',
+  });
+
+  return { postId: postRef.id, names };
+});
 exports.getAiKingUsage = onCall({ region: 'asia-northeast3' }, async (request) => {
   const userId = request.auth?.uid;
   if (!userId) return { judge: 0, translate: 0, match: 0 };

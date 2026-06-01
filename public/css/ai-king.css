@@ -71,3 +71,38 @@
 .ai-match-reason { background: var(--color-surface-2); border-radius: var(--radius-md); padding: 14px; font-size: 13px; color: var(--color-text-secondary); line-height: 1.6; margin-bottom: 10px; text-align: left; }
 .ai-match-chemistry { background: var(--color-golra-bg); border-radius: var(--radius-md); padding: 12px 14px; font-size: 13px; color: var(--color-text-secondary); margin-bottom: 10px; text-align: left; }
 .ai-match-advice { font-size: 13px; color: var(--color-warning); font-weight: 700; padding: 10px; background: var(--color-warning-bg); border-radius: var(--radius-md); }
+
+/* 작명 결과 */
+.ai-naming-result { }
+
+/* 홈 히어로 v3 */
+.home-hero-v3 { background: linear-gradient(135deg, var(--color-primary-bg) 0%, var(--color-surface) 100%); border-radius: 20px; padding: 24px 20px 20px; margin-bottom: 20px; border: 1.5px solid var(--color-border); }
+.home-hero-v3__top { margin-bottom: 20px; }
+.home-hero-v3__badge { display: inline-block; font-size: 12px; font-weight: 700; background: var(--color-primary); color: #fff; padding: 4px 12px; border-radius: var(--radius-pill); margin-bottom: 12px; letter-spacing: .3px; }
+.home-hero-v3__title { font-size: 22px; font-weight: 900; color: var(--color-text-primary); line-height: 1.4; margin-bottom: 6px; }
+.home-hero-v3__sub { font-size: 13px; color: var(--color-text-secondary); line-height: 1.5; }
+.home-hero-v3__streak { display: inline-flex; align-items: center; gap: 4px; margin-top: 10px; font-size: 13px; font-weight: 700; color: var(--color-warning); background: var(--color-warning-bg); padding: 5px 12px; border-radius: var(--radius-pill); }
+
+/* 홈 AI킹 그리드 */
+.home-aiking-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.home-aiking-card { background: var(--color-surface); border: 1.5px solid var(--color-border); border-radius: 14px; padding: 14px 12px; cursor: pointer; text-align: center; transition: box-shadow .15s, transform .15s, border-color .15s; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.home-aiking-card:hover, .home-aiking-card:focus { box-shadow: 0 6px 16px rgba(0,0,0,.1); transform: translateY(-2px); border-color: var(--color-primary); }
+.home-aiking-card__emoji { font-size: 28px; line-height: 1; }
+.home-aiking-card__name { font-size: 13px; font-weight: 800; color: var(--color-text-primary); }
+.home-aiking-card__desc { font-size: 11px; color: var(--color-text-muted); }
+
+/* 가이드 안내 박스 */
+.guide-notice { background: var(--color-primary-bg); border: 1.5px solid var(--color-primary); border-radius: 12px; padding: 14px 16px; font-size: 13px; line-height: 1.6; color: var(--color-text-primary); margin-bottom: 12px; }
+.guide-page { max-width: 640px; margin: 0 auto; padding: 16px 16px 80px; }
+.guide-hero { text-align: center; padding: 28px 16px; }
+.guide-hero__icon { font-size: 48px; margin-bottom: 12px; }
+.guide-hero__title { font-size: 24px; font-weight: 900; color: var(--color-text-primary); margin-bottom: 8px; }
+.guide-hero__sub { font-size: 14px; color: var(--color-text-secondary); line-height: 1.6; }
+.guide-toc { padding: 16px; margin-bottom: 20px; }
+.guide-toc__title { font-size: 13px; font-weight: 700; color: var(--color-text-muted); margin-bottom: 10px; }
+.guide-toc__list { display: flex; flex-wrap: wrap; gap: 8px; }
+.guide-toc__item { font-size: 13px; color: var(--color-primary); text-decoration: none; padding: 4px 10px; background: var(--color-primary-bg); border-radius: var(--radius-pill); font-weight: 600; }
+.guide-section { margin-bottom: 28px; }
+.guide-section__title { font-size: 18px; font-weight: 900; color: var(--color-text-primary); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid var(--color-border); }
+.guide-section__body { font-size: 14px; color: var(--color-text-secondary); line-height: 1.7; }
+.guide-section__body p { margin-bottom: 10px; }
