@@ -2,7 +2,7 @@ import { db, auth, functions } from '../firebase.js';
 import {
   collection, query, orderBy, limit, getDocs, deleteDoc, doc,
   getCountFromServer, where, updateDoc, serverTimestamp,
-  Timestamp, getDoc, setDoc, writeBatch,
+  Timestamp, getDoc, writeBatch,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
 import {
@@ -33,7 +33,6 @@ export async function renderAdmin() {
 
   const TOP_MENUS = [
     { key: 'dashboard', icon: '📊', label: '대시보드', short: '통계' },
-    { key: 'posts',     icon: '🗂️', label: '데이터관리', short: '데이터' },
     { key: 'reports',   icon: '🚨', label: '신고·의견', short: '신고' },
     { key: 'users',     icon: '👥', label: '회원관리', short: '회원' },
     { key: 'ai',        icon: '🤖', label: 'AI 관리', short: 'AI' },
@@ -111,7 +110,6 @@ async function loadTab(tab) {
 
   switch (tab) {
     case 'dashboard': return renderDashboard(content);
-    case 'posts':     return renderPosts(content);
     case 'reports':   return renderReports(content);
     case 'users':     return renderUsers(content);
     case 'ai':        return renderAiSettings(content);
@@ -196,125 +194,6 @@ async function renderDashboard(el) {
       currentTab = btn.dataset.tabSwitch;
       document.querySelectorAll('[data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === currentTab));
       loadTab(currentTab);
-    });
-  });
-}
-
-/* ── 게시물 관리 ── */
-async function renderPosts(el, searchQ = '', catFilter = '') {
-  let constraints = [orderBy('createdAt', 'desc'), limit(50)];
-  if (catFilter) constraints.unshift(where('feedType', '==', catFilter));
-
-  const [snap, hiddenSnap, totalSnap] = await Promise.all([
-    getDocs(query(collection(db, 'feeds'), ...constraints)).catch(() => null),
-    getCountFromServer(query(collection(db, 'feeds'), where('hidden', '==', true))).catch(() => null),
-    getCountFromServer(collection(db, 'feeds')).catch(() => null),
-  ]);
-  let posts = snap?.docs.map(d => ({ id: d.id, ...d.data() })) ?? [];
-  const totalCount  = totalSnap?.data?.().count ?? 0;
-  const hiddenCount = hiddenSnap?.data?.().count ?? 0;
-
-  if (searchQ) {
-    const q = searchQ.toLowerCase();
-    posts = posts.filter(p => (p.title || '').toLowerCase().includes(q) || (p.authorName || '').toLowerCase().includes(q));
-  }
-
-  el.innerHTML = `
-    <div style="display:flex;flex-direction:column;gap:16px">
-      <h2 class="admin-section-title">🗂️ 데이터관리</h2>
-      <div class="admin-stat-grid" style="grid-template-columns:repeat(3,1fr)">
-        <div class="admin-stat-card">
-          <div class="admin-stat-card__num">${totalCount.toLocaleString()}</div>
-          <div class="admin-stat-card__label">전체 게시물</div>
-        </div>
-        <div class="admin-stat-card">
-          <div class="admin-stat-card__num" style="color:var(--color-danger)">${hiddenCount}</div>
-          <div class="admin-stat-card__label">숨김 처리</div>
-        </div>
-        <div class="admin-stat-card">
-          <div class="admin-stat-card__num" style="color:var(--color-success)">${(totalCount - hiddenCount).toLocaleString()}</div>
-          <div class="admin-stat-card__label">공개 중</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <input id="admin-post-search" class="form-input" style="max-width:220px;font-size:13px" placeholder="제목/작성자 검색" value="${escHtml(searchQ)}">
-        <button class="btn btn--primary btn--sm" id="btn-post-search">검색</button>
-        ${[
-          { key: '', label: '전체' },
-          { key: 'collect', label: '📌 일반방', field: 'feedType' },
-          { key: 'vote',    label: '🗳️ 토론방', field: 'feedType' },
-          { key: 'quiz',    label: '🧠 퀴즈방', field: 'feedType' },
-          { key: 'drip',    label: '🤣 드립방', field: 'feedType' },
-        ].map(c => `<button class="filter-chip ${catFilter === c.key ? 'active' : ''}" data-post-cat="${c.key}">${c.label}</button>`).join('')}
-      </div>
-      <div class="card" style="overflow:auto">
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th>제목</th>
-              <th style="width:70px">방</th>
-              <th style="width:80px">작성자</th>
-              <th style="width:60px">상태</th>
-              <th style="width:120px">작업</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${posts.length === 0 ? `<tr><td colspan="5" class="admin-table__empty">게시물이 없어요</td></tr>` :
-              posts.map(p => `
-                <tr data-post-row="${p.id}">
-                  <td class="admin-table__title-cell">
-                    <a href="#/detail/${p.id}" class="admin-table__link">${escHtml(p.title || '(제목없음)')}</a>
-                  </td>
-                  <td><span class="badge badge--gray" style="font-size:10px">${{ collect:'📌 일반', vote:'🗳️ 토론', quiz:'🧠 퀴즈', drip:'🤣 드립' }[p.feedType] || (p.feedType || p.type || '')}</span></td>
-                  <td class="admin-table__muted">${escHtml(p.authorName || '익명')}</td>
-                  <td>
-                    ${p.hidden
-                      ? `<span class="admin-status admin-status--hidden">숨김</span>`
-                      : `<span class="admin-status admin-status--visible">공개</span>`}
-                  </td>
-                  <td>
-                    <div style="display:flex;gap:6px">
-                      <button class="btn btn--ghost btn--sm" data-hide="${p.id}" data-hidden="${p.hidden ? '1' : '0'}" style="font-size:11px">${p.hidden ? '공개' : '숨김'}</button>
-                      <button class="btn btn--danger btn--sm" data-delete="${p.id}" style="font-size:11px">삭제</button>
-                    </div>
-                  </td>
-                </tr>`).join('')}
-          </tbody>
-        </table>
-      </div>
-    </div>`;
-
-  document.getElementById('btn-post-search')?.addEventListener('click', () => {
-    const q = document.getElementById('admin-post-search')?.value.trim() || '';
-    renderPosts(el, q, catFilter);
-  });
-  document.getElementById('admin-post-search')?.addEventListener('keydown', e => {
-    if (e.key === 'Enter') {
-      renderPosts(el, e.target.value.trim(), catFilter);
-    }
-  });
-  el.querySelectorAll('[data-post-cat]').forEach(btn => {
-    btn.addEventListener('click', () => renderPosts(el, searchQ, btn.dataset.postCat));
-  });
-  el.querySelectorAll('[data-hide]').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const id = btn.dataset.hide;
-      const nowHidden = btn.dataset.hidden === '1';
-      try {
-        await updateDoc(doc(db, 'feeds', id), { hidden: !nowHidden });
-        toast.success(nowHidden ? '공개했어요' : '숨겼어요');
-        renderPosts(el, searchQ, catFilter);
-      } catch { toast.error('변경에 실패했어요'); }
-    });
-  });
-  el.querySelectorAll('[data-delete]').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      if (!confirm('이 게시물을 완전히 삭제할까요? 복구할 수 없어요.')) return;
-      try {
-        await deleteDoc(doc(db, 'feeds', btn.dataset.delete));
-        toast.success('삭제됐어요');
-        btn.closest('[data-post-row]')?.remove();
-      } catch { toast.error('삭제에 실패했어요'); }
     });
   });
 }
@@ -587,14 +466,20 @@ async function renderUsers(el) {
   });
 }
 
-/* ── AI 설정 ── */
+/* ── AI 관리 ── */
 async function renderAiSettings(el) {
-  // Load AI킹 model config
-  let aiKingConfig = { activeModel: 'claude', claudeModel: 'claude-haiku-4-5-20251001', geminiModel: 'gemini-2.5-flash', openaiModel: 'gpt-4o-mini', pointsPerUse: 100 };
-  try {
-    const kSnap = await getDoc(doc(db, 'config', 'ai_king'));
-    if (kSnap.exists()) {
-      const d = kSnap.data();
+  const today = new Date().toISOString().slice(0, 10);
+
+  // Load AI킹 config + usage stats in parallel
+  let aiKingConfig = { activeModel: 'claude', claudeModel: 'claude-haiku-4-5-20251001', geminiModel: 'gemini-2.5-flash', openaiModel: 'gpt-4o-mini', pointsPerUse: 100, dailyFreeLimit: 3 };
+  let aiConfig = { enabled: true, features: {} };
+  let usageDocs = [];
+  let reports = [];
+
+  await Promise.all([
+    getDoc(doc(db, 'config', 'ai_king')).then(snap => {
+      if (!snap.exists()) return;
+      const d = snap.data();
       aiKingConfig = {
         activeModel: d.activeModel || 'claude',
         claudeModel: d.claudeModel || 'claude-haiku-4-5-20251001',
@@ -603,47 +488,79 @@ async function renderAiSettings(el) {
         geminiKeyMasked: d.geminiApiKey ? '●'.repeat(8) + d.geminiApiKey.slice(-4) : '',
         openaiModel: d.openaiModel || 'gpt-4o-mini',
         openaiKeyMasked: d.openaiApiKey ? '●'.repeat(8) + d.openaiApiKey.slice(-4) : '',
-        pointsPerUse: d.pointsPerUse || 100,
+        pointsPerUse: d.pointsPerUse ?? 100,
+        dailyFreeLimit: d.dailyFreeLimit ?? 3,
       };
-    }
-  } catch {}
-
-  // Load current AI config from Firestore
-  let aiConfig = { enabled: true, apiKey: '', features: {}, usage: {} };
-  try {
-    const snap = await getDoc(doc(db, 'config', 'ai'));
-    if (snap.exists()) {
+    }).catch(() => {}),
+    getDoc(doc(db, 'config', 'ai')).then(snap => {
+      if (!snap.exists()) return;
       const d = snap.data();
-      aiConfig = {
-        enabled: d.enabled !== false,
-        apiKey: d.apiKey ? '●'.repeat(8) + d.apiKey.slice(-4) : '',
-        features: d.features || {},
-        usage: d.usage || {},
-      };
-    }
-  } catch {}
+      aiConfig = { enabled: d.enabled !== false, features: d.features || {} };
+    }).catch(() => {}),
+    getDocs(query(collection(db, 'ai_king_usage'), where('date', '==', today), limit(200))).then(snap => {
+      usageDocs = snap.docs.map(d => d.data());
+    }).catch(() => {}),
+    getDocs(query(collection(db, 'ai_reports'), orderBy('createdAt', 'desc'), limit(3))).then(snap => {
+      reports = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    }).catch(() => {}),
+  ]);
 
-  // Calculate today's usage
-  const today = new Date().toISOString().slice(0, 10);
-  const todayUsage = aiConfig.usage?.[today]?.requests || 0;
-
-  // Load recent AI reports
-  let reports = [];
-  try {
-    const rSnap = await getDocs(query(collection(db, 'ai_reports'), orderBy('createdAt', 'desc'), limit(5)));
-    reports = rSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-  } catch {}
+  // Aggregate today's usage
+  const FEATURES = [
+    { key: 'judge',   label: '⚖️ 미친판사' },
+    { key: 'translate', label: '🌍 번역사' },
+    { key: 'match',   label: '💕 궁합' },
+    { key: 'naming',  label: '✨ 작명소' },
+  ];
+  const usageByFeature = {};
+  const usageByUser = {};
+  for (const d of usageDocs) {
+    usageByFeature[d.feature] = (usageByFeature[d.feature] || 0) + (d.count || 0);
+    if (d.userId) usageByUser[d.userId] = (usageByUser[d.userId] || 0) + (d.count || 0);
+  }
+  const totalTodayUses = Object.values(usageByFeature).reduce((s, n) => s + n, 0);
+  const topUsers = Object.entries(usageByUser).sort((a, b) => b[1] - a[1]).slice(0, 5);
 
   const featureList = [
     { key: 'moderation',   label: '🛡️ 게시물 자동 검토',   desc: '새 게시물 AI 모더레이션 (욕설·비방 자동 숨김)' },
     { key: 'autoReport',   label: '📋 신고 자동 처리',     desc: '접수된 신고 AI 분석 후 명백한 위반 자동 처리' },
-    { key: 'autoContent',  label: '✏️ AI 콘텐츠 자동 생성', desc: '매일 오전 AI가 4개 방에 콘텐츠 자동 생성' },
     { key: 'weeklyReport', label: '📊 주간 보고서',         desc: '매주 월요일 AI가 활동 보고서 자동 작성' },
   ];
 
   el.innerHTML = `
-    <div style="display:flex;flex-direction:column;gap:24px;max-width:700px">
+    <div style="display:flex;flex-direction:column;gap:24px;max-width:740px">
       <h2 class="admin-section-title">🤖 AI 관리</h2>
+
+      <!-- 오늘 사용량 현황 -->
+      <div class="card">
+        <div class="card__body">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <div style="font-size:15px;font-weight:900">📊 AI킹 오늘 사용량</div>
+            <div style="font-size:11px;color:var(--color-text-muted)">${today}</div>
+          </div>
+          <div class="admin-stat-grid" style="grid-template-columns:repeat(${FEATURES.length + 1},1fr);margin-bottom:16px">
+            <div class="admin-stat-card" style="background:var(--color-primary-bg)">
+              <div class="admin-stat-card__num" style="color:var(--color-primary)">${totalTodayUses}</div>
+              <div class="admin-stat-card__label">전체</div>
+            </div>
+            ${FEATURES.map(f => `
+              <div class="admin-stat-card">
+                <div class="admin-stat-card__num">${usageByFeature[f.key] || 0}</div>
+                <div class="admin-stat-card__label" style="font-size:10px">${f.label}</div>
+              </div>`).join('')}
+          </div>
+          ${topUsers.length > 0 ? `
+          <div style="font-size:12px;font-weight:800;color:var(--color-text-secondary);margin-bottom:8px">오늘 사용자 TOP ${topUsers.length}</div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            ${topUsers.map(([uid, cnt], i) => `
+              <div style="display:flex;align-items:center;gap:10px;font-size:12px">
+                <span style="width:18px;height:18px;border-radius:50%;background:var(--color-surface-2);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0">${i + 1}</span>
+                <span style="flex:1;font-family:monospace;color:var(--color-text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${uid.slice(0, 16)}…</span>
+                <span style="font-weight:800;color:var(--color-primary)">${cnt}회</span>
+              </div>`).join('')}
+          </div>` : `<div style="font-size:13px;color:var(--color-text-muted);text-align:center;padding:12px 0">오늘 사용 기록이 없어요</div>`}
+        </div>
+      </div>
 
       <!-- AI킹 모델 설정 -->
       <div class="card">
@@ -654,7 +571,7 @@ async function renderAiSettings(el) {
           <div style="font-size:13px;font-weight:700;margin-bottom:8px">사용 모델 선택</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
             ${[
-              { id: 'claude', icon: '🟣', label: 'Claude Haiku', sub: '현재 사용 중' },
+              { id: 'claude', icon: '🟣', label: 'Claude Haiku', sub: '권장' },
               { id: 'gemini', icon: '🔵', label: 'Gemini 2.5 Flash', sub: '8~10배 저렴' },
               { id: 'openai', icon: '🟢', label: 'GPT-4o mini', sub: '준비 중' },
             ].map(m => `
@@ -691,66 +608,38 @@ async function renderAiSettings(el) {
             </div>
             <div class="admin-key-row" style="opacity:0.5">
               <div style="font-size:12px;font-weight:700;color:#00b894;margin-bottom:4px">🟢 OpenAI API Key (준비 중)</div>
-              <div style="display:flex;gap:6px">
-                <input type="password" class="form-input" id="key-openai" placeholder="${aiKingConfig.openaiKeyMasked || 'sk-...'}" style="flex:1;font-size:12px;font-family:monospace" disabled autocomplete="new-password">
-              </div>
+              <input type="password" class="form-input" id="key-openai" placeholder="${aiKingConfig.openaiKeyMasked || 'sk-...'}" style="font-size:12px;font-family:monospace;width:100%" disabled autocomplete="new-password">
             </div>
           </div>
 
-          <div style="display:flex;align-items:center;gap:12px;margin-top:16px;padding-top:16px;border-top:1px solid var(--color-border)">
-            <div style="flex:1">
+          <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:16px;padding-top:16px;border-top:1px solid var(--color-border)">
+            <div style="flex:1;min-width:160px">
+              <div style="font-size:12px;font-weight:700;margin-bottom:4px">🆓 1인 1일 무료 한도 (회당)</div>
+              <div style="display:flex;align-items:center;gap:6px">
+                <input type="number" class="form-input" id="daily-free-limit" value="${aiKingConfig.dailyFreeLimit}" min="1" max="50" style="width:80px;font-size:13px">
+                <span style="font-size:12px;color:var(--color-text-muted)">회 / 기능</span>
+              </div>
+            </div>
+            <div style="flex:1;min-width:160px">
               <div style="font-size:12px;font-weight:700;margin-bottom:4px">💰 추가 사용권 포인트 가격</div>
               <div style="display:flex;align-items:center;gap:6px">
-                <input type="number" class="form-input" id="points-per-use" value="${aiKingConfig.pointsPerUse}" min="10" max="500" style="width:100px;font-size:13px">
-                <span style="font-size:12px;color:var(--color-text-muted)">포인트 / 1회 사용권</span>
+                <input type="number" class="form-input" id="points-per-use" value="${aiKingConfig.pointsPerUse}" min="10" max="500" style="width:80px;font-size:13px">
+                <span style="font-size:12px;color:var(--color-text-muted)">포인트 / 1회</span>
               </div>
             </div>
-            <button class="btn btn--primary" id="btn-save-ai-king-config">저장</button>
+            <div style="display:flex;align-items:flex-end">
+              <button class="btn btn--primary" id="btn-save-ai-king-config">저장</button>
+            </div>
           </div>
           <div id="ai-king-config-result" style="font-size:12px;margin-top:8px;color:var(--color-text-muted)"></div>
-        </div>
-      </div>
-
-      <!-- API 키 설정 (기존 모더레이션용 Gemini) -->
-      <div class="card">
-        <div class="card__body">
-          <div style="font-size:14px;font-weight:800;margin-bottom:4px">🔑 Gemini API 키</div>
-          <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:12px">
-            Google AI Studio에서 발급한 API 키를 입력하세요. 저장 후 마스킹 표시됩니다.
-          </div>
-          <div style="display:flex;gap:8px">
-            <input type="password" id="ai-api-key-input" class="form-input" placeholder="${aiConfig.apiKey || 'AIza...'}"
-              style="flex:1;font-family:monospace;font-size:13px" autocomplete="new-password">
-            <button class="btn btn--primary btn--sm" id="btn-save-api-key">저장</button>
-          </div>
-          <div style="margin-top:8px;font-size:11px;color:var(--color-text-muted)">
-            💡 키는 Firestore에 암호화 없이 저장됩니다. 관리자 전용 문서(config/ai)에만 보관돼요.
-          </div>
-        </div>
-      </div>
-
-      <!-- 오늘 사용량 -->
-      <div class="admin-stat-grid" style="grid-template-columns:repeat(3,1fr)">
-        <div class="admin-stat-card">
-          <div class="admin-stat-card__num" style="color:var(--color-primary)">${todayUsage}</div>
-          <div class="admin-stat-card__label">오늘 AI 요청 수</div>
-        </div>
-        <div class="admin-stat-card">
-          <div class="admin-stat-card__num" style="font-size:14px;color:${aiConfig.enabled ? 'var(--color-success)' : 'var(--color-danger)'}">
-            ${aiConfig.enabled ? '✅ 활성' : '⛔ 비활성'}
-          </div>
-          <div class="admin-stat-card__label">AI 운영 상태</div>
-        </div>
-        <div class="admin-stat-card">
-          <div class="admin-stat-card__num" style="font-size:14px">1,500</div>
-          <div class="admin-stat-card__label">일일 무료 한도</div>
         </div>
       </div>
 
       <!-- 기능 ON/OFF -->
       <div class="card">
         <div class="card__body">
-          <div style="font-size:14px;font-weight:800;margin-bottom:12px">⚙️ AI 기능 설정</div>
+          <div style="font-size:14px;font-weight:800;margin-bottom:2px">⚙️ AI 기능 설정</div>
+          <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:14px">AI킹 외 사이트 자동화 기능을 켜거나 끌 수 있어요.</div>
           <div style="display:flex;flex-direction:column;gap:12px" id="ai-feature-list">
             ${featureList.map(f => `
               <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px solid var(--color-border-light)">
@@ -765,7 +654,10 @@ async function renderAiSettings(el) {
                 </label>
               </div>`).join('')}
           </div>
-          <button class="btn btn--ghost btn--sm" id="btn-save-features" style="margin-top:12px">기능 설정 저장</button>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:14px">
+            <button class="btn btn--ghost btn--sm" id="btn-save-features">기능 설정 저장</button>
+            <button class="btn btn--danger btn--sm" id="btn-ai-emergency-stop" style="margin-left:auto">🚨 AI 긴급 중지</button>
+          </div>
         </div>
       </div>
 
@@ -773,9 +665,7 @@ async function renderAiSettings(el) {
       <div class="card">
         <div class="card__body">
           <div style="font-size:14px;font-weight:800;margin-bottom:4px">⚡ 수동 실행</div>
-          <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:14px">
-            스케줄 없이 지금 바로 AI 작업을 실행할 수 있어요.
-          </div>
+          <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:14px">스케줄 없이 지금 바로 AI 작업을 실행할 수 있어요.</div>
           <div style="display:flex;gap:10px;flex-wrap:wrap">
             <button class="btn btn--ghost btn--sm" id="btn-trigger-report">📊 주간 보고서 지금 생성</button>
           </div>
@@ -799,7 +689,6 @@ async function renderAiSettings(el) {
         </div>` : ''}
     </div>`;
 
-  // Save API key
   // AI킹 모델 라디오 스타일
   el.querySelectorAll('input[name="ai-model"]').forEach(radio => {
     radio.addEventListener('change', () => {
@@ -820,16 +709,15 @@ async function renderAiSettings(el) {
         claudeModel: el.querySelector('#model-claude')?.value,
         geminiModel: el.querySelector('#model-gemini')?.value,
         pointsPerUse: parseInt(el.querySelector('#points-per-use')?.value) || 100,
+        dailyFreeLimit: parseInt(el.querySelector('#daily-free-limit')?.value) || 3,
       };
       const claudeKey = el.querySelector('#key-claude')?.value.trim();
       const geminiKey = el.querySelector('#key-gemini')?.value.trim();
-      const openaiKey = el.querySelector('#key-openai')?.value.trim();
       if (claudeKey) payload.claudeApiKey = claudeKey;
       if (geminiKey) payload.geminiApiKey = geminiKey;
-      if (openaiKey) payload.openaiApiKey = openaiKey;
       await saveFn(payload);
       toast.success('AI킹 설정이 저장됐어요 ✅');
-      result.textContent = `✅ ${new Date().toLocaleTimeString('ko-KR')} 저장 완료 (모델: ${payload.activeModel})`;
+      result.textContent = `✅ ${new Date().toLocaleTimeString('ko-KR')} 저장 완료 (모델: ${payload.activeModel}, 무료 ${payload.dailyFreeLimit}회/일)`;
       if (claudeKey) { el.querySelector('#key-claude').value = ''; el.querySelector('#key-claude').placeholder = '●'.repeat(8) + claudeKey.slice(-4); }
       if (geminiKey) { el.querySelector('#key-gemini').value = ''; el.querySelector('#key-gemini').placeholder = '●'.repeat(8) + geminiKey.slice(-4); }
     } catch (e) {
@@ -841,19 +729,7 @@ async function renderAiSettings(el) {
     }
   });
 
-  el.querySelector('#btn-save-api-key')?.addEventListener('click', async () => {
-    const key = el.querySelector('#ai-api-key-input')?.value.trim();
-    if (!key || key.length < 10) { toast.error('유효한 API 키를 입력해주세요'); return; }
-    try {
-      const saveFn = httpsCallable(functions, 'saveAiConfig');
-      await saveFn({ apiKey: key, enabled: aiConfig.enabled, features: aiConfig.features });
-      toast.success('API 키가 저장됐어요 🔑');
-      el.querySelector('#ai-api-key-input').value = '';
-      el.querySelector('#ai-api-key-input').placeholder = '●'.repeat(8) + key.slice(-4);
-    } catch (e) { toast.error(e.message || '저장에 실패했어요'); }
-  });
-
-  // Save features
+  // 기능 설정 저장
   el.querySelector('#btn-save-features')?.addEventListener('click', async () => {
     const features = {};
     el.querySelectorAll('.ai-feature-toggle').forEach(cb => {
@@ -862,12 +738,24 @@ async function renderAiSettings(el) {
     });
     try {
       const saveFn = httpsCallable(functions, 'saveAiConfig');
-      await saveFn({ features, enabled: features.moderation || features.autoMission || features.weeklyReport || features.autoReport });
+      await saveFn({ features, enabled: Object.values(features).some(Boolean) });
       toast.success('설정이 저장됐어요 ✅');
     } catch (e) { toast.error(e.message || '저장에 실패했어요'); }
   });
 
-  // Trigger report
+  // AI 긴급 중지
+  el.querySelector('#btn-ai-emergency-stop')?.addEventListener('click', async () => {
+    if (!confirm('AI 기능을 전체 중지할까요? 판사·번역·궁합·작명 등이 모두 비활성화됩니다.')) return;
+    try {
+      const saveFn = httpsCallable(functions, 'saveAiConfig');
+      const allOff = Object.fromEntries(featureList.map(f => [f.key, false]));
+      await saveFn({ features: allOff, enabled: false });
+      toast.success('AI 기능이 전체 중지됐어요');
+      setTimeout(() => renderAiSettings(el), 600);
+    } catch (e) { toast.error(e.message || '중지에 실패했어요'); }
+  });
+
+  // 주간 보고서 수동 생성
   el.querySelector('#btn-trigger-report')?.addEventListener('click', async () => {
     const btn = el.querySelector('#btn-trigger-report');
     const result = el.querySelector('#ai-trigger-result');

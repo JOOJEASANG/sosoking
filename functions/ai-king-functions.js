@@ -103,10 +103,12 @@ async function callAIWithImages(system, userText, imageA = null, imageB = null, 
 async function checkUsage(userId, feature) {
   const today = new Date().toISOString().slice(0, 10);
   const ref = db.doc(`ai_king_usage/${userId}_${today}_${feature}`);
+  const config = await getAiKingConfig();
+  const dailyLimit = config.dailyFreeLimit || DAILY_LIMIT;
   return db.runTransaction(async (tx) => {
     const [snap, userSnap] = await Promise.all([tx.get(ref), tx.get(db.doc(`users/${userId}`))]);
     const count = snap.exists ? (snap.data().count || 0) : 0;
-    if (count >= DAILY_LIMIT) {
+    if (count >= dailyLimit) {
       const extra = userSnap.exists ? (userSnap.data()?.extraAiUses || 0) : 0;
       if (extra <= 0) return false;
       tx.update(db.doc(`users/${userId}`), { extraAiUses: FieldValue.increment(-1), updatedAt: FieldValue.serverTimestamp() });
@@ -419,7 +421,7 @@ exports.saveAiKingConfig = onCall({ region: 'asia-northeast3' }, async (request)
   if (!adminSnap.exists) throw new HttpsError('permission-denied', '관리자만 접근 가능해요');
 
   const data = request.data || {};
-  const FIELDS = ['activeModel', 'claudeApiKey', 'claudeModel', 'geminiApiKey', 'geminiModel', 'openaiApiKey', 'openaiModel', 'pointsPerUse'];
+  const FIELDS = ['activeModel', 'claudeApiKey', 'claudeModel', 'geminiApiKey', 'geminiModel', 'openaiApiKey', 'openaiModel', 'pointsPerUse', 'dailyFreeLimit'];
 
   const update = {};
   for (const field of FIELDS) {
