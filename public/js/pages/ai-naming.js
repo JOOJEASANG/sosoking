@@ -53,11 +53,6 @@ export function renderAiNaming() {
           `).join('')}
         </div>
 
-        <label class="ai-king-form__label" style="margin-top:20px">이름 지을 대상 설명 *</label>
-        <textarea id="naming-input" class="ai-king-form__textarea" maxlength="300"
-          placeholder="예) 항상 회의 때 졸면서 딴소리하는 우리 팀장님&#10;예) 오늘 처음 만든 닭볶음탕인데 매운 듯 안 매운 듯 애매한 맛"></textarea>
-        <div class="ai-king-form__charcount"><span id="naming-count">0</span>/300</div>
-
         <label class="ai-king-form__label" style="margin-top:16px">📷 사진 첨부 (선택)</label>
         <div class="ai-king-img-upload" id="naming-img-area">
           <input type="file" id="naming-img-input" accept="image/*" style="display:none">
@@ -65,6 +60,11 @@ export function renderAiNaming() {
           <img id="naming-img-preview" class="ai-king-img-upload__preview" alt="">
           <div id="naming-img-remove" class="ai-king-img-upload__remove">✕ 사진 제거</div>
         </div>
+
+        <label class="ai-king-form__label" id="naming-desc-label" style="margin-top:20px">이름 지을 대상 설명 *</label>
+        <textarea id="naming-input" class="ai-king-form__textarea" maxlength="300"
+          placeholder="예) 항상 회의 때 졸면서 딴소리하는 우리 팀장님&#10;예) 오늘 처음 만든 닭볶음탕인데 매운 듯 안 매운 듯 애매한 맛&#10;(사진 첨부 시 설명 없이도 가능해요)"></textarea>
+        <div class="ai-king-form__charcount"><span id="naming-count">0</span>/300</div>
 
         <button id="btn-naming-submit" class="btn btn--primary btn--full" style="margin-top:20px;font-size:16px;font-weight:800">
           🎭 이름 지어주기
@@ -93,6 +93,11 @@ export function renderAiNaming() {
   const imgPreview = document.getElementById('naming-img-preview');
   const imgRemove = document.getElementById('naming-img-remove');
 
+  const descLabel = document.getElementById('naming-desc-label');
+  function updateDescLabel() {
+    descLabel.textContent = imageBase64 ? '이름 지을 대상 설명 (선택)' : '이름 지을 대상 설명 *';
+  }
+
   imgArea.addEventListener('click', (e) => { if (e.target !== imgRemove) imgInput.click(); });
   imgInput.addEventListener('change', async () => {
     const file = imgInput.files[0];
@@ -102,6 +107,7 @@ export function renderAiNaming() {
     imgPreview.style.display = 'block';
     imgRemove.style.display = 'block';
     imgArea.querySelector('.ai-king-img-upload__label').style.display = 'none';
+    updateDescLabel();
   });
   imgRemove.addEventListener('click', () => {
     imageBase64 = null;
@@ -109,11 +115,12 @@ export function renderAiNaming() {
     imgRemove.style.display = 'none';
     imgInput.value = '';
     imgArea.querySelector('.ai-king-img-upload__label').style.display = '';
+    updateDescLabel();
   });
 
   document.getElementById('btn-naming-submit')?.addEventListener('click', async () => {
     const description = textarea.value.trim();
-    if (!description || description.length < 2) { toast.warn('설명을 입력해주세요'); return; }
+    if (!description && !imageBase64) { toast.warn('설명을 입력하거나 사진을 첨부해주세요'); return; }
 
     const btn = document.getElementById('btn-naming-submit');
     btn.disabled = true;

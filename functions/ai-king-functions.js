@@ -278,8 +278,9 @@ exports.aiNaming = onCall({
   if (!userId) throw new HttpsError('unauthenticated', '로그인이 필요해요');
 
   const { description, category, imageBase64 } = request.data || {};
-  if (!description || description.trim().length < 2) {
-    throw new HttpsError('invalid-argument', '설명을 입력해주세요');
+  const hasDesc = description && description.trim().length >= 2;
+  if (!hasDesc && !imageBase64) {
+    throw new HttpsError('invalid-argument', '설명을 입력하거나 사진을 첨부해주세요');
   }
 
   const allowed = await checkUsage(userId, 'naming');
@@ -293,7 +294,10 @@ exports.aiNaming = onCall({
 반드시 JSON 형식으로만 답하라:
 {"names": [{"name": "이름1", "reason": "이유(한 줄, 웃기게)"}, {"name": "이름2", "reason": "..."}, {"name": "이름3", "reason": "..."}, {"name": "이름4", "reason": "..."}, {"name": "이름5", "reason": "..."}]}`;
 
-  const userText = `카테고리: ${catLabel}\n설명: ${description.slice(0, 300)}\n이 이름을 지어줘.`;
+  const descPart = hasDesc ? `설명: ${description.trim().slice(0, 300)}\n` : '';
+  const userText = imageBase64
+    ? `카테고리: ${catLabel}\n${descPart}첨부된 사진을 보고 이름을 지어줘.`
+    : `카테고리: ${catLabel}\n${descPart}이 이름을 지어줘.`;
 
   let names;
   try {
@@ -311,8 +315,8 @@ exports.aiNaming = onCall({
   const postRef = db.collection('feeds').doc();
   await postRef.set({
     type: 'ai_naming',
-    title: `${catLabel} 작명: ${description.slice(0, 40)}${description.length > 40 ? '...' : ''}`,
-    description: description.slice(0, 300),
+    title: hasDesc ? `${catLabel} 작명: ${description.trim().slice(0, 40)}${description.trim().length > 40 ? '...' : ''}` : `${catLabel} 작명: 사진으로 요청`,
+    description: hasDesc ? description.trim().slice(0, 300) : '',
     category: catLabel,
     names,
     hasImage: !!imageBase64,
