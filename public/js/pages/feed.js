@@ -18,11 +18,11 @@ const FILTER_LIMIT = 120;
 const NAV_CONTEXT_KEY = 'sosoking:feedNavContext';
 
 const ROOMS = [
-  { key: '',           icon: '✨', label: '전체',   title: '전체 모음', desc: '토너먼트 대결, 토론, 퀴즈, 드립을 한 번에 봅니다.', write: 'tournament' },
-  { key: 'tournament', icon: '⚔️', label: '대결방', title: '대결방', desc: '토너먼트 대결로 1위를 가려보세요!', write: 'tournament' },
-  { key: 'vote',       icon: '🗳️', label: '토론방', title: '토론방', desc: '선택지로 빠르게 의견을 모으고 댓글로 이야기합니다.', write: 'vote' },
-  { key: 'quiz',       icon: '🧠', label: '퀴즈방', title: '퀴즈방', desc: '짧은 문제를 보고 바로 맞히는 공간입니다.', write: 'quiz' },
-  { key: 'drip',       icon: '🤣', label: '드립방', title: '드립방', desc: '주제를 보고 50자 이내 한 줄 드립으로 참여하는 공간입니다.', write: 'drip' },
+  { key: '',             icon: '✨', label: '전체',     title: '전체', desc: '모든 콘텐츠를 한 번에 봅니다.' },
+  { key: 'tournament',   icon: '🏆', label: '끝판왕',   title: '끝판왕', desc: '토너먼트 대결로 최후의 1위를 가려보세요!' },
+  { key: 'ai_judge',     icon: '⚖️', label: '미친판사', title: '미친판사', desc: '7명의 이상한 판사가 판결합니다.' },
+  { key: 'ai_translate', icon: '🌍', label: '미친번역사', title: '미친번역사', desc: '원하는 말투로 번역해드립니다.' },
+  { key: 'ai_match',     icon: '💘', label: 'AI궁합',   title: 'AI궁합', desc: 'AI가 두 가지의 궁합을 봐드립니다.' },
 ];
 
 let currentType        = '';
@@ -180,12 +180,15 @@ function updateUrlState() {
 
 function getLegacyTypeWhereClause(type) {
   const map = {
-    collect:  ['multi', 'general', 'anonymous'],
-    vote:     ['vote', 'ox', 'crazy_court', 'multi'],
-    quiz:     ['quiz', 'initial_game', 'multi'],
-    drip:     ['multi'],
-    fill:     ['fill', 'multi'],
-    general:  ['general', 'anonymous', 'multi'],
+    collect:      ['multi', 'general', 'anonymous'],
+    vote:         ['vote', 'ox', 'crazy_court', 'multi'],
+    quiz:         ['quiz', 'initial_game', 'multi'],
+    drip:         ['multi'],
+    fill:         ['fill', 'multi'],
+    general:      ['general', 'anonymous', 'multi'],
+    ai_judge:     ['ai_judge'],
+    ai_translate: ['ai_translate'],
+    ai_match:     ['ai_match'],
   };
   const types = map[type];
   if (!types) return null;

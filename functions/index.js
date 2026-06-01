@@ -355,6 +355,13 @@ exports.scheduledWeeklyReport = onSchedule(
 
 require('./ai-content-now').register({ exports, onCall, db, FieldValue, GoogleGenerativeAI, geminiKey, getAiKey, logAiUsage });
 
+// ── AI킹 (판사·번역사·궁합) ──
+const aiKing = require('./ai-king-functions');
+exports.aiJudge = aiKing.aiJudge;
+exports.aiTranslate = aiKing.aiTranslate;
+exports.aiMatch = aiKing.aiMatch;
+exports.getAiKingUsage = aiKing.getAiKingUsage;
+
 // ── 토너먼트 결과 기록 ──
 exports.recordTournamentResult = onCall({ region: 'asia-northeast3' }, async (request) => {
   const userId = request.auth?.uid;

@@ -2,18 +2,21 @@ import { navigate } from '../router.js';
 import { escHtml, formatTime } from '../utils/helpers.js';
 
 const TYPE_META = {
-  tournament:   { cat: 'multi', catLabel: '대결방', icon: '⚔️', label: '대결방' },
-  multi:        { cat: 'multi', catLabel: '일반방', icon: '📌', label: '일반방' },
-  general:      { cat: 'multi', catLabel: '일반방', icon: '📌', label: '일반방' },
-  vote:         { cat: 'golra', catLabel: '토론방', icon: '🗳️', label: '토론방' },
-  crazy_court:  { cat: 'golra', catLabel: '토론방', icon: '🗳️', label: '토론방' },
-  battle:       { cat: 'golra', catLabel: '토론방', icon: '🗳️', label: '토론방' },
-  balance:      { cat: 'golra', catLabel: '토론방', icon: '🗳️', label: '토론방' },
-  drip:         { cat: 'usgyo', catLabel: '드립방', icon: '🤣', label: '드립방' },
-  cbattle:      { cat: 'usgyo', catLabel: '드립방', icon: '🤣', label: '드립방' },
-  quiz:         { cat: 'malhe', catLabel: '퀴즈방', icon: '🧠', label: '퀴즈방' },
-  initial_game: { cat: 'malhe', catLabel: '퀴즈방', icon: '🧠', label: '퀴즈방' },
-  ox:           { cat: 'malhe', catLabel: '퀴즈방', icon: '🧠', label: '퀴즈방' },
+  tournament:   { cat: 'multi',  catLabel: '끝판왕',   icon: '🏆', label: '끝판왕' },
+  multi:        { cat: 'multi',  catLabel: '끝판왕',   icon: '🏆', label: '끝판왕' },
+  general:      { cat: 'multi',  catLabel: '끝판왕',   icon: '🏆', label: '끝판왕' },
+  vote:         { cat: 'golra',  catLabel: '토론',     icon: '🗳️', label: '토론' },
+  crazy_court:  { cat: 'golra',  catLabel: '토론',     icon: '🗳️', label: '토론' },
+  battle:       { cat: 'golra',  catLabel: '토론',     icon: '🗳️', label: '토론' },
+  balance:      { cat: 'golra',  catLabel: '토론',     icon: '🗳️', label: '토론' },
+  drip:         { cat: 'usgyo',  catLabel: '드립',     icon: '🤣', label: '드립' },
+  cbattle:      { cat: 'usgyo',  catLabel: '드립',     icon: '🤣', label: '드립' },
+  quiz:         { cat: 'malhe',  catLabel: '퀴즈',     icon: '🧠', label: '퀴즈' },
+  initial_game: { cat: 'malhe',  catLabel: '퀴즈',     icon: '🧠', label: '퀴즈' },
+  ox:           { cat: 'malhe',  catLabel: '퀴즈',     icon: '🧠', label: '퀴즈' },
+  ai_judge:     { cat: 'golra',  catLabel: '미친판사', icon: '⚖️', label: '미친판사' },
+  ai_translate: { cat: 'usgyo',  catLabel: '미친번역사', icon: '🌍', label: '미친번역사' },
+  ai_match:     { cat: 'golra',  catLabel: 'AI궁합',   icon: '💘', label: 'AI궁합' },
 };
 
 function escAttr(value) {

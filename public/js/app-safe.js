@@ -106,6 +106,10 @@ async function registerRoutes() {
   registerRoute('/game/soso-defense', async () => renderPage(renderRemovedGamePage, '게임'));
   registerRoute('/game/soso-code', async () => renderPage(renderRemovedGamePage, '게임'));
   registerRoute('/game/ai-court', async () => renderPage(renderRemovedGamePage, '게임'));
+  registerRoute('/ai-king', async () => renderPage((await import('./pages/ai-king.js')).renderAiKing, 'AI킹'));
+  registerRoute('/ai-judge', async () => renderPage((await import('./pages/ai-judge.js')).renderAiJudge, '미친판사'));
+  registerRoute('/ai-translate', async () => renderPage((await import('./pages/ai-translate.js')).renderAiTranslate, '미친번역사'));
+  registerRoute('/ai-match', async () => renderPage((await import('./pages/ai-match.js')).renderAiMatch, 'AI궁합'));
 }
 
 async function isStrictAdmin(user) {

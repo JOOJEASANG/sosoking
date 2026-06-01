@@ -41,6 +41,12 @@ export function renderImageSection(images) {
 
 export function renderTypeBody(post) {
   switch (post.type) {
+    case 'ai_judge':
+      return renderAiJudgeBody(post);
+    case 'ai_translate':
+      return renderAiTranslateBody(post);
+    case 'ai_match':
+      return renderAiMatchBody(post);
     case 'balance':
     case 'vote':
     case 'concern':
@@ -158,6 +164,58 @@ function renderHowtoBody(post) {
           </div>`).join('')}
       </div>` : ''}
     ${post.caution ? `<div style="font-size:13px;color:var(--color-warning);padding:10px 12px;background:var(--color-warning-bg);border-radius:8px;margin-top:8px">⚠️ ${escHtml(post.caution)}</div>` : ''}`;
+}
+
+function renderAiJudgeBody(post) {
+  const verdicts = Array.isArray(post.verdicts) ? post.verdicts : [];
+  return `
+    <div class="ai-judge-result">
+      <div class="ai-judge-situation">
+        <strong>📋 상황</strong><br>
+        ${escHtml(post.situation || post.title || '').replace(/\n/g, '<br>')}
+      </div>
+      <div class="ai-verdict-list">
+        ${verdicts.map(v => `
+          <div class="ai-verdict-item">
+            <div class="ai-verdict-judge">${escHtml(v.judgeName || '')}</div>
+            <div class="ai-verdict-text">${escHtml(v.verdict || '').replace(/\n/g, '<br>')}</div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+}
+
+function renderAiTranslateBody(post) {
+  return `
+    <div class="ai-translate-result">
+      <div class="ai-translate-original">
+        <div class="ai-translate-original__label">원문</div>
+        ${escHtml(post.originalText || '').replace(/\n/g, '<br>')}
+      </div>
+      <div class="ai-translate-output">
+        <div class="ai-translate-output__label">${escHtml(post.styleName || '')} 번역 결과</div>
+        <div class="ai-translate-output__text">${escHtml(post.translated || '').replace(/\n/g, '<br>')}</div>
+      </div>
+    </div>`;
+}
+
+function renderAiMatchBody(post) {
+  const m = post.matchResult || {};
+  const score = Math.max(0, Math.min(100, parseInt(m.score) || 0));
+  return `
+    <div class="ai-match-result">
+      <div class="ai-match-items">
+        <span>${escHtml(post.itemA || '')}</span>
+        <span class="ai-match-items__vs">💘</span>
+        <span>${escHtml(post.itemB || '')}</span>
+      </div>
+      <div class="ai-match-score-ring" style="--score:${score}">
+        <span class="ai-match-score-num">${score}%</span>
+      </div>
+      <div class="ai-match-grade">${escHtml(m.grade || '')}</div>
+      ${m.reason ? `<div class="ai-match-reason"><strong>궁합 분석 🔮</strong><br>${escHtml(m.reason).replace(/\n/g, '<br>')}</div>` : ''}
+      ${m.chemistry ? `<div class="ai-match-chemistry"><strong>둘이 만나면? 💥</strong><br>${escHtml(m.chemistry).replace(/\n/g, '<br>')}</div>` : ''}
+      ${m.advice ? `<div class="ai-match-advice">💡 ${escHtml(m.advice)}</div>` : ''}
+    </div>`;
 }
 
 export function renderLegacyInteractive() {

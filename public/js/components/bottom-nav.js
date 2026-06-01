@@ -18,6 +18,10 @@ function iconPlus() {
   return svgIcon('<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>', '2.5');
 }
 
+function iconAiKing() {
+  return `<span style="font-size:22px;line-height:1">🤖</span>`;
+}
+
 function iconStats() {
   return svgIcon('<path stroke-linecap="round" stroke-linejoin="round" d="M4 19V5m0 14h16M8 16v-5m4 5V8m4 8v-9"/>');
 }
@@ -36,7 +40,7 @@ function navItems() {
   return [
     { id: 'home',    label: '홈',    path: '/',                 icon: iconHome() },
     { id: 'feed',    label: '피드',  path: '/feed',             icon: iconFeed() },
-    { id: 'write',   label: '올리기', path: '/write?type=multi', icon: iconPlus(), isCenter: true },
+    { id: 'aiking',  label: 'AI킹', path: '/ai-king', icon: iconAiKing(), isCenter: true },
     { id: 'hall',    label: '통계',  path: '/hall',             icon: iconStats() },
     { id: 'account', label: '내정보', path: '/account',          icon: iconAccount(), badge: unread },
   ];

@@ -91,7 +91,7 @@ export const MULTI_PRESETS = {
   },
 };
 
-export const WRITER_PRESET_KEYS = ['tournament', 'vote', 'quiz', 'drip'];
+export const WRITER_PRESET_KEYS = ['tournament'];
 
 export const BODY_LABELS = {
   collect: '한줄 설명',
