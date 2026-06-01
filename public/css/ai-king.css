@@ -114,3 +114,40 @@
 .guide-section__title { font-size: 18px; font-weight: 900; color: var(--color-text-primary); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid var(--color-border); }
 .guide-section__body { font-size: 14px; color: var(--color-text-secondary); line-height: 1.7; }
 .guide-section__body p { margin-bottom: 10px; }
+
+/* 결과 공유 버튼 행 */
+.ai-result-share-row { display: flex; gap: 8px; margin-top: 10px; }
+.ai-result-share-row .btn { flex: 1; font-size: 13px; }
+
+/* share-sheet 결과 텍스트 버튼 */
+.share-btn--text { background: var(--color-surface-2); border: 1px solid var(--color-border); }
+
+/* ── 명예의 전당 ── */
+.hall-legend { background: linear-gradient(135deg, #FF6B4A 0%, #e84393 100%); border-radius: 20px; padding: 20px; margin-bottom: 20px; color: #fff; }
+.hall-legend__head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.hall-legend__crown { font-size: 32px; line-height: 1; }
+.hall-legend__title { font-size: 18px; font-weight: 900; }
+.hall-legend__sub { font-size: 12px; opacity: 0.8; margin-top: 2px; }
+
+.hall-legend__first { background: rgba(0,0,0,0.18); border-radius: 14px; padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start; cursor: pointer; margin-bottom: 10px; transition: background .15s; }
+.hall-legend__first:hover { background: rgba(0,0,0,0.28); }
+.hall-legend__first-rank { font-size: 24px; line-height: 1; flex-shrink: 0; }
+.hall-legend__first-body { flex: 1; min-width: 0; }
+.hall-legend__first-title { font-size: 15px; font-weight: 700; line-height: 1.4; margin-bottom: 4px; }
+.hall-legend__first-meta { font-size: 12px; opacity: 0.75; margin-top: 6px; }
+
+.hall-legend__rest { display: flex; flex-direction: column; gap: 8px; }
+.hall-legend__rest-item { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.12); border-radius: 10px; padding: 10px 14px; cursor: pointer; transition: background .15s; }
+.hall-legend__rest-item:hover { background: rgba(255,255,255,0.22); }
+.hall-legend__rest-rank { font-size: 18px; flex-shrink: 0; }
+.hall-legend__rest-body { flex: 1; min-width: 0; }
+.hall-legend__rest-title { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hall-legend__rest-score { font-size: 12px; opacity: 0.8; flex-shrink: 0; }
+
+/* hall 섹션 스니펫 + 전체보기 */
+.hall-ai-snippet { display: inline-block; font-size: 11px; color: var(--color-primary); background: var(--color-primary-bg); border-radius: 6px; padding: 2px 8px; margin: 4px 0; }
+.hall-ai-snippet--score { color: #E84393; background: #fce4f1; }
+[data-theme="dark"] .hall-ai-snippet--score { background: #3d1c2e; }
+.hall-section__head { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 12px; position: relative; }
+.hall-section__more { margin-left: auto; font-size: 12px; color: var(--color-primary); text-decoration: none; font-weight: 600; padding-top: 2px; white-space: nowrap; }
+.hall-item__meta { font-size: 11px; color: var(--color-text-muted); margin-top: 4px; }

@@ -49,7 +49,15 @@ const AI_KING_AGAIN = {
 function renderAiAgainBtn(type) {
   const info = AI_KING_AGAIN[type];
   if (!info) return '';
-  return `<div class="ai-result-actions"><a href="#${info.path}" class="btn btn--primary">${info.label}</a><a href="#/feed?type=${type}" class="btn btn--outline">다른 결과 보기</a></div>`;
+  return `
+    <div class="ai-result-actions">
+      <a href="#${info.path}" class="btn btn--primary">${info.label}</a>
+      <a href="#/feed?type=${type}" class="btn btn--outline">다른 결과 보기</a>
+    </div>
+    <div class="ai-result-share-row">
+      <button class="ai-share-card-btn btn btn--ghost btn--sm">📸 카드 저장</button>
+      <button id="btn-share" class="btn btn--ghost btn--sm">🔗 공유하기</button>
+    </div>`;
 }
 
 export function renderTypeBody(post) {

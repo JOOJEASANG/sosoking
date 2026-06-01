@@ -5,26 +5,16 @@ import {
   collection, query, orderBy, limit, getDocs,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-const HALL_CATS = [
-  { key: 'popular',      label: '인기글',        icon: '🔥', type: null,         desc: '반응과 댓글이 많은 글', scoreKey: null },
-  { key: 'comment',      label: '댓글 많은 글',  icon: '💬', type: null,         desc: '댓글 참여가 많은 글', scoreKey: 'comment' },
-  { key: 'ai_judge',     label: '미친판사',      icon: '⚖️', type: 'ai_judge',   desc: '판결 인기글', scoreKey: null },
-  { key: 'ai_translate', label: '미친번역사',    icon: '🌍', type: 'ai_translate', desc: '번역 인기글', scoreKey: null },
-  { key: 'ai_match',     label: 'AI궁합',        icon: '💘', type: 'ai_match',   desc: '궁합 인기글', scoreKey: null },
-  { key: 'ai_naming',    label: 'AI작명소',      icon: '🎭', type: 'ai_naming',  desc: '작명 인기글', scoreKey: null },
-];
+const AI_TYPES = ['ai_judge', 'ai_translate', 'ai_match', 'ai_naming'];
 
-function postType(post) {
-  if (post.feedType) return post.feedType;
-  if (post.subtype) return post.subtype;
-  const modules = post.modules || {};
-  if (modules.vote?.ox) return 'ox';
-  if (modules.vote?.enabled) return 'vote';
-  if (modules.fill?.enabled) return 'fill';
-  if (modules.quiz?.enabled) return 'quiz';
-  if (modules.anonymous?.enabled || post.anonymous) return 'anonymous';
-  return post.type === 'multi' ? 'general' : post.type;
-}
+const HALL_CATS = [
+  { key: 'popular',      label: '인기글',        icon: '🔥', type: null,           desc: '반응과 댓글이 많은 글', scoreKey: null },
+  { key: 'comment',      label: '댓글 많은 글',  icon: '💬', type: null,           desc: '댓글 참여가 많은 글',   scoreKey: 'comment' },
+  { key: 'ai_judge',     label: '미친판사',      icon: '⚖️', type: 'ai_judge',     desc: '판결 인기글',           scoreKey: null },
+  { key: 'ai_translate', label: '미친번역사',    icon: '🌍', type: 'ai_translate', desc: '번역 인기글',           scoreKey: null },
+  { key: 'ai_match',     label: 'AI궁합',        icon: '💘', type: 'ai_match',     desc: '궁합 인기글',           scoreKey: null },
+  { key: 'ai_naming',    label: 'AI작명소',      icon: '🎭', type: 'ai_naming',    desc: '작명 인기글',           scoreKey: null },
+];
 
 function score(p) {
   return (p.reactions?.total || 0) * 2 + (p.commentCount || 0) * 3 + (p.viewCount || 0) * 0.1;
@@ -32,6 +22,65 @@ function score(p) {
 
 function fmt(n) {
   return Number(n || 0).toLocaleString();
+}
+
+function postType(post) {
+  if (post.feedType) return post.feedType;
+  if (post.subtype) return post.subtype;
+  return post.type === 'multi' ? 'general' : post.type;
+}
+
+function aiResultSnippet(post) {
+  switch (post.type) {
+    case 'ai_judge': {
+      const v = (post.verdicts || [])[0];
+      return v ? `<span class="hall-ai-snippet">${escHtml(v.judgeName)}: "${escHtml((v.verdict || '').slice(0, 50))}..."</span>` : '';
+    }
+    case 'ai_translate':
+      return post.styleName ? `<span class="hall-ai-snippet">${escHtml(post.styleName)} 번역</span>` : '';
+    case 'ai_match': {
+      const s = post.matchResult?.score;
+      return s != null ? `<span class="hall-ai-snippet hall-ai-snippet--score">💘 ${s}% ${escHtml(post.matchResult?.grade || '')}</span>` : '';
+    }
+    case 'ai_naming': {
+      const names = (post.names || []).slice(0, 2).map(n => escHtml(n.name)).join(', ');
+      return names ? `<span class="hall-ai-snippet">${names}</span>` : '';
+    }
+    default:
+      return '';
+  }
+}
+
+function renderLegendSection(top5) {
+  if (!top5.length) return '';
+  const [first, ...rest] = top5;
+  return `
+    <div class="hall-legend">
+      <div class="hall-legend__head">
+        <span class="hall-legend__crown">👑</span>
+        <div>
+          <div class="hall-legend__title">AI킹 명예의 전당</div>
+          <div class="hall-legend__sub">좋아요·댓글·조회 기준 역대 베스트</div>
+        </div>
+      </div>
+      <div class="hall-legend__first" onclick="navigate('/detail/${first.id}')" role="button">
+        <div class="hall-legend__first-rank">🥇</div>
+        <div class="hall-legend__first-body">
+          <div class="hall-legend__first-title">${escHtml(first.title || '(제목 없음)')}</div>
+          ${aiResultSnippet(first)}
+          <div class="hall-legend__first-meta">❤️ ${fmt(first.reactions?.total)} · 💬 ${fmt(first.commentCount)} · 👁 ${fmt(first.viewCount)}</div>
+        </div>
+      </div>
+      ${rest.length ? `<div class="hall-legend__rest">${rest.map((p, i) => `
+        <div class="hall-legend__rest-item" onclick="navigate('/detail/${p.id}')" role="button">
+          <span class="hall-legend__rest-rank">${['🥈','🥉','4️⃣','5️⃣'][i]}</span>
+          <div class="hall-legend__rest-body">
+            <div class="hall-legend__rest-title">${escHtml(p.title || '(제목 없음)')}</div>
+            ${aiResultSnippet(p)}
+          </div>
+          <div class="hall-legend__rest-score">❤️${fmt(p.reactions?.total)}</div>
+        </div>`).join('')}</div>` : ''}
+    </div>`;
 }
 
 function renderHallInfo(posts = []) {
@@ -59,18 +108,14 @@ function renderHallInfo(posts = []) {
         <div class="hall-info-rule-grid">
           <div class="hall-info-rule">
             <b>집계 범위</b>
-            <p>최신 게시글 100개 중 숨김 처리되지 않은 공개 게시글만 기준으로 계산합니다.</p>
+            <p>최신 게시글 200개 중 숨김 처리되지 않은 공개 게시글 기준입니다.</p>
           </div>
           <div class="hall-info-rule">
             <b>인기글 산정</b>
             <p>좋아요×2 + 댓글×3 + 조회×0.1 점수로 정렬합니다.</p>
           </div>
           <div class="hall-info-rule">
-            <b>댓글 많은 글</b>
-            <p>댓글 수가 많은 순서로 TOP 3를 보여줍니다.</p>
-          </div>
-          <div class="hall-info-rule">
-            <b>유형별 통계</b>
+            <b>AI킹 유형별</b>
             <p>${counts.map(item => `${item.label} ${fmt(item.count)}개`).join(' · ') || '유형별 데이터 없음'}</p>
           </div>
         </div>
@@ -80,31 +125,35 @@ function renderHallInfo(posts = []) {
 
 export async function renderHall() {
   const el = document.getElementById('page-content');
-  setMeta('통계', '피드 인기글과 참여 통계');
+  setMeta('명예의 전당', 'AI킹 베스트 결과 모음');
 
   el.innerHTML = `
     <div class="hall-page">
       <div class="section-header">
-        <h1 class="section-header__title">📊 통계</h1>
+        <h1 class="section-header__title">🏆 명예의 전당</h1>
       </div>
+      <div id="hall-legend-box"></div>
       <div id="hall-info-box">${renderHallInfo([])}</div>
-      <div class="hall-grid">
+      <div class="hall-grid" id="hall-grid">
         ${Array.from({ length: 4 }, () => `<div class="skeleton-card" style="height:200px"></div>`).join('')}
       </div>
     </div>`;
 
   try {
-    const snap = await getDocs(query(
-      collection(db, 'feeds'),
-      orderBy('createdAt', 'desc'),
-      limit(100),
+    const recentSnap = await getDocs(query(
+      collection(db, 'feeds'), orderBy('createdAt', 'desc'), limit(200),
     ));
-    const posts = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.hidden);
 
-    const infoBox = el.querySelector('#hall-info-box');
-    if (infoBox) infoBox.innerHTML = renderHallInfo(posts);
+    const posts = recentSnap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.hidden);
+    const legendPosts = [...posts]
+      .filter(p => AI_TYPES.includes(postType(p)))
+      .sort((a, b) => score(b) - score(a))
+      .slice(0, 5);
 
-    el.querySelector('.hall-grid').innerHTML = HALL_CATS.map(cat => {
+    document.getElementById('hall-legend-box').innerHTML = renderLegendSection(legendPosts);
+    document.getElementById('hall-info-box').innerHTML = renderHallInfo(posts);
+
+    document.getElementById('hall-grid').innerHTML = HALL_CATS.map(cat => {
       const pool = cat.type ? posts.filter(p => postType(p) === cat.type) : [...posts];
       const sorted = (cat.scoreKey === 'comment'
         ? [...pool].sort((a, b) => (b.commentCount || 0) - (a.commentCount || 0))
@@ -113,7 +162,8 @@ export async function renderHall() {
       return renderSection(cat, sorted);
     }).join('');
 
-  } catch {
+  } catch (e) {
+    console.error(e);
     el.innerHTML = `
       <div class="empty-state">
         <div class="empty-state__icon">⚠️</div>
@@ -123,8 +173,8 @@ export async function renderHall() {
   }
 }
 
-function renderSection({ label, icon, desc }, top3) {
-  const medals = ['1', '2', '3'];
+function renderSection({ label, icon, desc, type }, top3) {
+  const medals = ['🥇', '🥈', '🥉'];
   return `
     <div class="hall-section">
       <div class="hall-section__head">
@@ -133,13 +183,15 @@ function renderSection({ label, icon, desc }, top3) {
           <div class="hall-section__label">${label}</div>
           <div class="hall-section__desc">${desc}</div>
         </div>
+        ${type ? `<a href="#/feed?type=${type}" class="hall-section__more">전체보기 →</a>` : ''}
       </div>
       ${top3.length ? top3.map((p, i) => `
         <div class="hall-item" onclick="navigate('/detail/${p.id}')" role="button">
           <span class="hall-medal">${medals[i]}</span>
           <div class="hall-item__body">
             <div class="hall-item__title">${escHtml(p.title || '(제목 없음)')}</div>
-            <div class="hall-item__meta">${escHtml(p.authorName || '')} · 좋아요 ${fmt(p.reactions?.total)} · 댓글 ${fmt(p.commentCount)} · 조회 ${fmt(p.viewCount)}</div>
+            ${aiResultSnippet(p)}
+            <div class="hall-item__meta">❤️ ${fmt(p.reactions?.total)} · 💬 ${fmt(p.commentCount)} · 👁 ${fmt(p.viewCount)}</div>
           </div>
         </div>`).join('') : `
         <div class="hall-empty">아직 집계할 데이터가 없어요</div>`}

@@ -1,5 +1,5 @@
 import { isDetailPath } from './detail/action-utils.js';
-import { handleScrap, handleReport, handleShare, handleGallery } from './detail/handlers-basic.js';
+import { handleScrap, handleReport, handleShare, handleGallery, handleShareCard } from './detail/handlers-basic.js';
 import { handleVote, handleOxQuiz, handleOptionQuiz, handleShortQuiz } from './detail/handlers-vote-quiz.js';
 import {
   handleCbattleSide,
@@ -17,6 +17,7 @@ document.addEventListener('click', async event => {
   if (await handleScrap(event)) return;
   if (await handleReport(event)) return;
   if (await handleShare(event)) return;
+  if (await handleShareCard(event)) return;
   if (handleGallery(event)) return;
   if (await handleVote(event)) return;
   if (await handleOxQuiz(event)) return;
