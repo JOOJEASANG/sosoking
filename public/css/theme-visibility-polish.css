@@ -253,12 +253,17 @@
 [data-theme="dark"] .follows-section,
 [data-theme="dark"] .notif-item,
 [data-theme="dark"] .acrostic-card,
-[data-theme="dark"] .howto-steps-display,
-[data-theme="dark"] .feedback-modal__panel {
+[data-theme="dark"] .howto-steps-display {
   background: linear-gradient(180deg, rgba(255,255,255,.105), rgba(255,255,255,.075));
   border-color: rgba(255,255,255,.16);
   box-shadow: 0 16px 38px rgba(18,22,36,.20);
   color: var(--color-text-primary);
+}
+
+[data-theme="dark"] .feedback-modal__panel {
+  background: var(--color-surface) !important;
+  border-color: rgba(255,255,255,.12) !important;
+  box-shadow: 0 24px 60px rgba(0,0,0,.55) !important;
 }
 
 [data-theme="dark"] .card__footer,
