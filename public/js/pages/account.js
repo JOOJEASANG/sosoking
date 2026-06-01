@@ -321,16 +321,41 @@ function setupNicknameEdit(user, currentNickname) {
 
   const NICK_RE = /^[가-힣a-zA-Z0-9_]{2,12}$/;
 
+  let nickCheckTimer = null;
   input?.addEventListener('input', () => {
     const v = input.value.trim();
-    if (!v) { feedback.textContent = ''; return; }
+    feedback.textContent = '';
+    clearTimeout(nickCheckTimer);
+    if (!v) return;
     if (!NICK_RE.test(v)) {
       feedback.style.color = 'var(--color-danger)';
       feedback.textContent = '2~12자, 한글·영문·숫자·_ 만 가능해요';
-    } else {
-      feedback.style.color = 'var(--color-success)';
-      feedback.textContent = '사용 가능한 형식이에요';
+      return;
     }
+    if (v === currentNickname) {
+      feedback.style.color = 'var(--color-text-muted)';
+      feedback.textContent = '현재 닉네임이에요';
+      return;
+    }
+    feedback.style.color = 'var(--color-text-muted)';
+    feedback.textContent = '확인 중...';
+    nickCheckTimer = setTimeout(async () => {
+      try {
+        const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
+        const snap = await getDoc(doc(db, 'nicknames', v));
+        if (input.value.trim() !== v) return; // 입력값 바뀌었으면 무시
+        if (snap.exists() && snap.data()?.uid !== user.uid) {
+          feedback.style.color = 'var(--color-danger)';
+          feedback.textContent = '이미 사용 중인 닉네임이에요';
+        } else {
+          feedback.style.color = 'var(--color-success)';
+          feedback.textContent = '사용 가능한 닉네임이에요 ✓';
+        }
+      } catch {
+        feedback.style.color = 'var(--color-text-muted)';
+        feedback.textContent = '올바른 형식이에요';
+      }
+    }, 500);
   });
 
   saveBtn?.addEventListener('click', async () => {
