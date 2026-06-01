@@ -336,9 +336,9 @@ exports.aiNaming = onCall({
 });
 exports.getAiKingUsage = onCall({ region: 'asia-northeast3' }, async (request) => {
   const userId = request.auth?.uid;
-  if (!userId) return { judge: 0, translate: 0, match: 0 };
+  if (!userId) return { judge: 0, translate: 0, match: 0, naming: 0 };
   const today = new Date().toISOString().slice(0, 10);
-  const features = ['judge', 'translate', 'match'];
+  const features = ['judge', 'translate', 'match', 'naming'];
   const snaps = await Promise.all(
     features.map(f => db.doc(`ai_king_usage/${userId}_${today}_${f}`).get())
   );

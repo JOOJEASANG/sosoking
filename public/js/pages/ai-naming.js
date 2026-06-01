@@ -61,7 +61,7 @@ export function renderAiNaming() {
         <label class="ai-king-form__label" style="margin-top:16px">📷 사진 첨부 (선택)</label>
         <div class="ai-king-img-upload" id="naming-img-area">
           <input type="file" id="naming-img-input" accept="image/*" style="display:none">
-          <div class="ai-king-img-upload__label">📎 사진 보여주면 더 정확한 이름이 나와요</div>
+          <div class="ai-king-img-upload__label">📷 사진 첨부 시 이미지를 직접 보고 이름을 지어줘요<br><small>얼굴, 물건, 음식 사진 모두 인식 가능</small></div>
           <img id="naming-img-preview" class="ai-king-img-upload__preview" alt="">
           <div id="naming-img-remove" class="ai-king-img-upload__remove">✕ 사진 제거</div>
         </div>
