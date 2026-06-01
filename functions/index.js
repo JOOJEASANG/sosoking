@@ -57,7 +57,7 @@ async function generateMissionWithAi(apiKey) {
 const GEMINI_KEY_RE = /^AIza[0-9A-Za-z_-]{35}$/;
 
 // ── 관리자: AI 설정 저장 ──
-exports.saveAiConfig = onCall({ region: 'asia-northeast3', secrets: [geminiKey] }, async (request) => {
+exports.saveAiConfig = onCall({ region: 'asia-northeast3' }, async (request) => {
   const userId = request.auth?.uid;
   if (!userId) throw new HttpsError('unauthenticated', '인증 필요');
   const adminSnap = await db.doc(`admins/${userId}`).get();
@@ -77,7 +77,7 @@ exports.saveAiConfig = onCall({ region: 'asia-northeast3', secrets: [geminiKey] 
 });
 
 // ── 관리자: 미션 즉시 생성 ──
-exports.adminTriggerMission = onCall({ region: 'asia-northeast3', secrets: [geminiKey], timeoutSeconds: 60 }, async (request) => {
+exports.adminTriggerMission = onCall({ region: 'asia-northeast3', timeoutSeconds: 60 }, async (request) => {
   const userId = request.auth?.uid;
   if (!userId) throw new HttpsError('unauthenticated', '인증 필요');
   const adminSnap = await db.doc(`admins/${userId}`).get();
@@ -102,7 +102,7 @@ exports.adminTriggerMission = onCall({ region: 'asia-northeast3', secrets: [gemi
 });
 
 // ── 관리자: 주간 보고서 즉시 생성 ──
-exports.adminTriggerReport = onCall({ region: 'asia-northeast3', secrets: [geminiKey], timeoutSeconds: 120, memory: '256MiB' }, async (request) => {
+exports.adminTriggerReport = onCall({ region: 'asia-northeast3', timeoutSeconds: 120, memory: '256MiB' }, async (request) => {
   const userId = request.auth?.uid;
   if (!userId) throw new HttpsError('unauthenticated', '인증 필요');
   const adminSnap = await db.doc(`admins/${userId}`).get();
@@ -140,7 +140,7 @@ exports.adminTriggerReport = onCall({ region: 'asia-northeast3', secrets: [gemin
 
 // ── AI 콘텐츠 자동 모더레이션: 새 게시물 생성 시 ──
 exports.onFeedPostCreate = onDocumentCreated(
-  { document: 'feeds/{postId}', region: 'asia-northeast3', secrets: [geminiKey], timeoutSeconds: 60 },
+  { document: 'feeds/{postId}', region: 'asia-northeast3', timeoutSeconds: 60 },
   async (event) => {
     const snap = event.data;
     if (!snap) return;
@@ -199,7 +199,7 @@ ${textToCheck.slice(0, 800)}
 
 // ── AI 신고 자동 처리: 새 신고 접수 시 ──
 exports.onReportCreate = onDocumentCreated(
-  { document: 'reports/{reportId}', region: 'asia-northeast3', secrets: [geminiKey], timeoutSeconds: 60 },
+  { document: 'reports/{reportId}', region: 'asia-northeast3', timeoutSeconds: 60 },
   async (event) => {
     const snap = event.data;
     if (!snap) return;
@@ -250,7 +250,7 @@ ${textToCheck.slice(0, 600)}
 
 // ── 스케줄: 매일 오전 7시 KST 미션 자동 생성 ──
 exports.scheduledDailyMission = onSchedule(
-  { schedule: '0 22 * * *', timeZone: 'UTC', region: 'asia-northeast3', secrets: [geminiKey], timeoutSeconds: 60 },
+  { schedule: '0 22 * * *', timeZone: 'UTC', region: 'asia-northeast3', timeoutSeconds: 60 },
   async () => {
     if (!(await isAiFeatureEnabled('autoMission'))) return;
     const apiKey = await getAiKey();
@@ -277,7 +277,7 @@ exports.scheduledDailyMission = onSchedule(
 );
 
 // ── AI 폼 데이터 생성 (일일 질문 카드 자동 입력) ──
-exports.generateFormContent = onCall({ region: 'asia-northeast3', secrets: [geminiKey], timeoutSeconds: 30 }, async (request) => {
+exports.generateFormContent = onCall({ region: 'asia-northeast3', timeoutSeconds: 30 }, async (request) => {
   const { type, question } = request.data || {};
   if (!type || !question) throw new HttpsError('invalid-argument', 'type과 question이 필요해요');
 
@@ -308,7 +308,7 @@ exports.generateFormContent = onCall({ region: 'asia-northeast3', secrets: [gemi
 
 // ── 스케줄: 매주 월요일 오전 9시 KST 주간 보고서 ──
 exports.scheduledWeeklyReport = onSchedule(
-  { schedule: '0 0 * * 1', timeZone: 'UTC', region: 'asia-northeast3', secrets: [geminiKey], timeoutSeconds: 120, memory: '256MiB' },
+  { schedule: '0 0 * * 1', timeZone: 'UTC', region: 'asia-northeast3', timeoutSeconds: 120, memory: '256MiB' },
   async () => {
     if (!(await isAiFeatureEnabled('weeklyReport'))) return;
     const apiKey = await getAiKey();

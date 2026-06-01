@@ -52,7 +52,7 @@ function renderAiAgainBtn(type) {
   return `
     <div class="ai-result-actions">
       <a href="#${info.path}" class="btn btn--primary">${info.label}</a>
-      <a href="#/feed?type=${type}" class="btn btn--outline">다른 결과 보기</a>
+      <a href="#/feed?type=${type}" class="btn btn--ghost">다른 결과 보기</a>
     </div>
     <div class="ai-result-share-row">
       <button class="ai-share-card-btn btn btn--ghost btn--sm">📸 카드 저장</button>

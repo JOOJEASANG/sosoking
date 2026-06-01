@@ -206,7 +206,7 @@ function buildPost({ preset, draft, userId, token, FieldValue }) {
 function register({ exports, onCall, db, FieldValue, GoogleGenerativeAI, geminiKey, getAiKey, logAiUsage }) {
   require('./seo-functions').register({ exports, db });
 
-  exports.generateAiContentNow = onCall({ region: 'asia-northeast3', secrets: [geminiKey], timeoutSeconds: 90, memory: '256MiB' }, async (request) => {
+  exports.generateAiContentNow = onCall({ region: 'asia-northeast3', timeoutSeconds: 90, memory: '256MiB' }, async (request) => {
     const userId = request.auth?.uid;
     if (!userId) throw new Error('인증 필요');
     const adminSnap = await db.doc(`admins/${userId}`).get();
