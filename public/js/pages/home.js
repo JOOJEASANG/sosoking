@@ -13,16 +13,6 @@ import { navigate } from '../router.js';
 const TYPE_LABEL = {
   tournament:   '🏆 끝판왕',
   multi:        '🏆 끝판왕',
-  general:      '🏆 끝판왕',
-  vote:         '🗳️ 토론',
-  ox:           '🗳️ 토론',
-  crazy_court:  '🗳️ 토론',
-  balance:      '🗳️ 토론',
-  battle:       '🗳️ 토론',
-  drip:         '🤣 드립',
-  cbattle:      '🤣 드립',
-  quiz:         '🧠 퀴즈',
-  initial_game: '🧠 퀴즈',
   ai_judge:     '⚖️ 미친판사',
   ai_translate: '🌍 미친번역사',
   ai_match:     '💘 AI궁합',
@@ -67,12 +57,8 @@ function commentScore(comment) {
 
 function moduleLabel(post) {
   if (TYPE_LABEL[post.type]) return TYPE_LABEL[post.type];
-  const m = post.modules || {};
-  if (m.tournament?.enabled) return '🏆 끝판왕';
-  if (m.vote?.enabled)       return '🗳️ 토론';
-  if (m.drip?.enabled)       return '🤣 드립';
-  if (m.quiz?.enabled)       return '🧠 퀴즈';
-  return TYPE_LABEL[post.feedType] || TYPE_LABEL[post.subtype] || '📌 기타';
+  if (post.modules?.tournament?.enabled) return '🏆 끝판왕';
+  return TYPE_LABEL[post.feedType] || TYPE_LABEL[post.subtype] || '🏆 끝판왕';
 }
 
 async function fetchPopularComments(n = 6) {

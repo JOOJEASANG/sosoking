@@ -25,23 +25,6 @@ export const MULTI_PRESETS = {
     tagsPlaceholder: '#토론, #투표, #찬반',
     voteOptionPlaceholders: ['찬성', '반대'],
   },
-  quiz: {
-    label: '퀴즈방',
-    icon: '🧠',
-    shortDesc: '주관식 · 객관식 퀴즈',
-    titlePlaceholder: '예: 맞히면 인정하는 퀴즈',
-    descPlaceholder: '맞혀야 할 문제를 적어주세요.',
-    tagsPlaceholder: '#퀴즈, #문제, #상식',
-    quizAnswerPlaceholder: '예: 소',
-  },
-  drip: {
-    label: '드립방',
-    icon: '🤣',
-    shortDesc: '주제 던지고 한줄 드립',
-    titlePlaceholder: '드립 주제',
-    descPlaceholder: '사람들이 한 줄 드립을 칠 수 있는 상황이나 주제를 적어주세요.',
-    tagsPlaceholder: '#드립, #한줄드립, #드립주제',
-  },
   // 기존 일반글 호환용입니다. 새 글쓰기 선택지에서는 제거합니다.
   general: {
     label: '일반',
@@ -96,14 +79,10 @@ export const WRITER_PRESET_KEYS = ['tournament'];
 export const BODY_LABELS = {
   collect: '한줄 설명',
   vote: '토론 주제',
-  drip: '드립 주제',
-  fill: '본문 · 빈칸 문장',
-  quiz: '퀴즈 문제',
   tournament: '대결 설명',
 };
 
-export const BODY_REQUIRED_PRESETS = ['collect', 'vote', 'drip', 'quiz'];
-// tournament does not use body text — items are entered per-row
+export const BODY_REQUIRED_PRESETS = ['collect', 'vote'];
 
 export function normalizePresetKey(key, { allowHidden = false } = {}) {
   if (key === 'ox') return 'vote';

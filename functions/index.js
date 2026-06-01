@@ -45,7 +45,7 @@ async function generateMissionWithAi(apiKey) {
     model: 'gemini-2.5-flash',
     generationConfig: { thinkingConfig: { thinkingBudget: 0 } },
   });
-  const types = ['밸런스게임', '삼행시', '한줄드립', '나만의노하우', '고민/질문', '경험담', '웃참챌린지', '실패담'];
+  const types = ['밸런스게임', '삼행시', '나만의노하우', '고민/질문', '경험담', '웃참챌린지', '실패담'];
   const type = types[Math.floor(Math.random() * types.length)];
   const result = await model.generateContent(
     `소소킹 커뮤니티 오늘의 미션을 만드세요. 재미있고 참여하기 쉬운 미션이어야 합니다.\n유형: ${type}\n\n반드시 JSON만 출력하세요:\n{\n  "title": "미션 제목 (40자 이내, 구체적이고 재미있게)",\n  "desc": "미션 설명 (80자 이내, 참여 방법 안내 포함)",\n  "cat": "golra 또는 usgyo 또는 malhe"\n}`
@@ -286,8 +286,6 @@ exports.generateFormContent = onCall({ region: 'asia-northeast3', secrets: [gemi
 
   const promptMap = {
     vote: `소소킹 커뮤니티에 올릴 투표(골라킹) 게시글을 만들어줘.\n주제 힌트: "${question}"\n재미있고 공감 가는 투표여야 해. 반드시 JSON만 출력:\n{"title":"제목(50자이내)","desc":"투표 상황 설명(70자이내)","options":["선택지1","선택지2","선택지3","선택지4"]}`,
-    crazy_court: `소소킹 커뮤니티에 올릴 억까재판 게시글을 만들어줘.\n주제 힌트: "${question}"\n황당하고 공감 가는 억울한 상황이어야 해. 반드시 JSON만 출력:\n{"title":"재판 제목(50자이내)","desc":"억울한 상황 설명(100자이내)","evidence":"결정적 증거 또는 변명(60자이내)"}`,
-    initial_game: `소소킹 커뮤니티에 올릴 초성게임 게시글을 만들어줘.\n주제 힌트: "${question}"\n재미있고 다양하게 맞힐 수 있는 초성이어야 해. 반드시 JSON만 출력:\n{"initials":"초성(2~5글자,한글자음만,예:ㅅㅅㅋ)","desc":"힌트 설명(60자이내,정답을 직접 말하지 않고)"}`,
     acrostic: `소소킹 커뮤니티에 올릴 삼행시짓기 게시글을 만들어줘.\n주제 힌트: "${question}"\n참여하기 재미있는 3~5글자 제시어여야 해. 반드시 JSON만 출력:\n{"keyword":"3~5글자 한국어 제시어(예:소소킹)","desc":"삼행시 분위기 설명(60자이내)"}`,
     naming: `소소킹 커뮤니티에 올릴 미친작명소 게시글을 만들어줘.\n주제 힌트: "${question}"\n이름 붙이기 재미있는 황당하거나 공감 가는 상황이어야 해. 반드시 JSON만 출력:\n{"title":"게시글 제목(50자이내)","desc":"이름 붙일 상황 설명(100자이내)"}`,
     relay: `소소킹 커뮤니티에 올릴 막장킹(이어쓰기) 게시글을 만들어줘.\n주제 힌트: "${question}"\n계속 이어쓰고 싶은 흥미로운 막장 시작 문장이어야 해. 반드시 JSON만 출력:\n{"title":"게시글 제목(50자이내)","start":"첫 문장(80자이내,막장스럽게)","desc":"배경 상황 설명(70자이내)","characters":"주요 등장인물(예:나,팀장,친구)"}`,

@@ -74,10 +74,6 @@ async function renderGuideSafe() {
   return module.renderGuide();
 }
 
-function renderRemovedGamePage() {
-  navigate('/feed');
-}
-
 async function registerRoutes() {
   registerRoute('/', async () => renderPage((await import('./pages/home.js')).renderHome, '홈'));
   registerRoute('/feed', async () => renderPage((await import('./pages/feed.js')).renderFeed, '피드'));
@@ -94,18 +90,6 @@ async function registerRoutes() {
   registerRoute('/privacy', async () => renderPage((await import('./pages/legal.js')).renderPrivacy, '개인정보처리방침'));
   registerRoute('/legal/terms', async () => renderPage((await import('./pages/legal.js')).renderTerms, '이용약관'));
   registerRoute('/legal/privacy', async () => renderPage((await import('./pages/legal.js')).renderPrivacy, '개인정보처리방침'));
-  registerRoute('/sosoland', async () => renderPage(renderRemovedGamePage, '게임'));
-  registerRoute('/game/liar', async () => renderPage(renderRemovedGamePage, '게임'));
-  registerRoute('/game/liar/:id', async () => renderPage(renderRemovedGamePage, '게임'));
-  registerRoute('/game/mafia', async () => renderPage(renderRemovedGamePage, '게임'));
-  registerRoute('/game/mafia/:id', async () => renderPage(renderRemovedGamePage, '게임'));
-  registerRoute('/game/touch-king', async () => renderPage(renderRemovedGamePage, '게임'));
-  registerRoute('/game/touch-king/:id', async () => renderPage(renderRemovedGamePage, '게임'));
-  registerRoute('/game/symbol-spy', async () => renderPage(renderRemovedGamePage, '게임'));
-  registerRoute('/game/symbol-spy/:id', async () => renderPage(renderRemovedGamePage, '게임'));
-  registerRoute('/game/soso-defense', async () => renderPage(renderRemovedGamePage, '게임'));
-  registerRoute('/game/soso-code', async () => renderPage(renderRemovedGamePage, '게임'));
-  registerRoute('/game/ai-court', async () => renderPage(renderRemovedGamePage, '게임'));
   registerRoute('/ai-king', async () => renderPage((await import('./pages/ai-king.js')).renderAiKing, 'AI킹'));
   registerRoute('/ai-judge', async () => renderPage((await import('./pages/ai-judge.js')).renderAiJudge, '미친판사'));
   registerRoute('/ai-translate', async () => renderPage((await import('./pages/ai-translate.js')).renderAiTranslate, '미친번역사'));

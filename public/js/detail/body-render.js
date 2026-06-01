@@ -51,33 +51,11 @@ export function renderTypeBody(post) {
       return renderAiNamingBody(post);
     case 'balance':
     case 'vote':
-    case 'concern':
       if (!post.options?.length) return '';
       return `<div id="vote-area" class="quiz-options" style="margin-top:16px">${renderLegacyVoteOptions(post)}</div>`;
 
     case 'battle':
       return renderLegacyBattleVs(post);
-
-    case 'cbattle': {
-      const topic = (post.desc || post.title || '').trim();
-      return `
-        <div class="multi-detail-module" style="margin-bottom:14px">
-          <div class="multi-detail-module__title">⚔️ 토론 주제</div>
-          <div class="multi-module-hint">팀을 선택하고 의견을 남겨보세요</div>
-          ${topic ? `<div class="multi-quiz-question" style="margin-top:10px">${escHtml(topic).replace(/\n/g, '<br>')}</div>` : ''}
-          <div class="cbattle-ox">
-            <button type="button" class="cbattle-ox-btn cbattle-ox-btn--a cbattle-side-btn" data-side="A">
-              <span class="cbattle-ox-emoji">🔴</span>
-              <span class="cbattle-ox-label">A팀</span>
-            </button>
-            <div class="cbattle-ox-vs">VS</div>
-            <button type="button" class="cbattle-ox-btn cbattle-ox-btn--b cbattle-side-btn" data-side="B">
-              <span class="cbattle-ox-emoji">🔵</span>
-              <span class="cbattle-ox-label">B팀</span>
-            </button>
-          </div>
-        </div>`;
-    }
 
     case 'story':
       return post.feeling
@@ -91,23 +69,6 @@ export function renderTypeBody(post) {
         : '';
     }
 
-    case 'ox':
-      return `
-        <div class="quiz-box" id="quiz-area">
-          <div class="quiz-ox">
-            <button class="quiz-ox-btn quiz-ox-btn--o" data-answer="O">⭕ O</button>
-            <button class="quiz-ox-btn quiz-ox-btn--x" data-answer="X">❌ X</button>
-          </div>
-          <div id="quiz-result" style="display:none" class="quiz-result">
-            <div class="quiz-result__icon"></div>
-            <div class="quiz-result__text"></div>
-            <div class="quiz-result__explanation" style="margin-top:8px;font-size:13px;color:var(--color-text-secondary)"></div>
-          </div>
-        </div>`;
-
-    case 'quiz':
-      return renderLegacyQuizBody(post);
-
     case 'howto':
       return renderHowtoBody(post);
 
@@ -119,37 +80,6 @@ export function renderTypeBody(post) {
     default:
       return '';
   }
-}
-
-function renderLegacyQuizBody(post) {
-  if (post.quizMode === 'short') {
-    return `
-      <div class="quiz-box" id="quiz-area">
-        <div style="display:flex;gap:8px">
-          <input id="quiz-short-input" class="form-input" placeholder="답을 입력하세요" style="flex:1">
-          <button class="btn btn--primary" id="btn-quiz-submit">확인</button>
-        </div>
-        <div id="quiz-result" style="display:none" class="quiz-result">
-          <div class="quiz-result__icon"></div>
-          <div class="quiz-result__text"></div>
-          <div class="quiz-result__explanation" style="margin-top:8px;font-size:13px;color:var(--color-text-secondary)"></div>
-        </div>
-      </div>`;
-  }
-
-  if (!post.options?.length) return '';
-  return `
-    <div class="quiz-box quiz-options" id="quiz-area">
-      ${post.options.map((opt, i) => `
-        <button class="vote-option" data-quiz-idx="${i}" style="text-align:left">
-          <div class="vote-option__content"><span>${i + 1}. ${escHtml(opt)}</span></div>
-        </button>`).join('')}
-      <div id="quiz-result" style="display:none" class="quiz-result">
-        <div class="quiz-result__icon"></div>
-        <div class="quiz-result__text"></div>
-        <div class="quiz-result__explanation" style="margin-top:8px;font-size:13px;color:var(--color-text-secondary)"></div>
-      </div>
-    </div>`;
 }
 
 function renderHowtoBody(post) {

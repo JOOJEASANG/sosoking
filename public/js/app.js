@@ -71,10 +71,6 @@ async function loadUserMeta(uid) {
   } catch { /* non-critical */ }
 }
 
-function renderRemovedGamePage() {
-  navigate('/feed');
-}
-
 export async function initApp() {
   document.getElementById('app').innerHTML = `
     <div class="app-shell">
@@ -175,11 +171,6 @@ export async function initApp() {
   registerRoute('/',           () => renderHome());
   registerRoute('/feed',       () => renderFeed());
   registerRoute('/write',      () => renderWrite());
-  registerRoute('/sosoland',   () => renderRemovedGamePage());
-  registerRoute('/game/liar',  () => renderRemovedGamePage());
-  registerRoute('/game/liar/:id', () => renderRemovedGamePage());
-  registerRoute('/game/mafia', () => renderRemovedGamePage());
-  registerRoute('/game/mafia/:id', () => renderRemovedGamePage());
   registerRoute('/detail/:id', ({ id }) => renderDetail(id));
   registerRoute('/account',    () => renderAccount());
   registerRoute('/scraps',     () => renderScraps());

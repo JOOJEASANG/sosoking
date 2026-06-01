@@ -180,15 +180,11 @@ function updateUrlState() {
 
 function getLegacyTypeWhereClause(type) {
   const map = {
-    collect:      ['multi', 'general', 'anonymous'],
-    vote:         ['vote', 'ox', 'crazy_court', 'multi'],
-    quiz:         ['quiz', 'initial_game', 'multi'],
-    drip:         ['multi'],
-    fill:         ['fill', 'multi'],
-    general:      ['general', 'anonymous', 'multi'],
+    tournament:   ['multi', 'tournament'],
     ai_judge:     ['ai_judge'],
     ai_translate: ['ai_translate'],
     ai_match:     ['ai_match'],
+    ai_naming:    ['ai_naming'],
   };
   const types = map[type];
   if (!types) return null;
