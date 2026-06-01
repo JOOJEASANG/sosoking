@@ -469,11 +469,22 @@ async function renderUsers(el) {
 /* ── AI 관리 ── */
 async function renderAiSettings(el) {
   const today = new Date().toISOString().slice(0, 10);
+  const monthStart = today.slice(0, 7) + '-01';
+
+  // Estimated cost per request by model (USD) — approximate based on avg ~400 input / 300 output tokens
+  const COST_PER_USE = { claude: 0.0010, gemini: 0.0005, openai: 0.0003 };
+  const MODEL_NAMES  = { claude: 'Claude Haiku 4.5', gemini: 'Gemini 2.5 Flash', openai: 'GPT-4o mini' };
+  // Gemini free tier: 1,500 req/day from Google AI Studio (effectively free at small scale)
+  const GEMINI_FREE_DAILY = 1500;
 
   // Load AI킹 config + usage stats in parallel
   let aiKingConfig = { activeModel: 'claude', claudeModel: 'claude-haiku-4-5-20251001', geminiModel: 'gemini-2.5-flash', openaiModel: 'gpt-4o-mini', pointsPerUse: 100, dailyFreeLimit: 3 };
   let aiConfig = { enabled: true, features: {} };
   let usageDocs = [];
+  let aiKingConfig = { activeModel: 'claude', claudeModel: 'claude-haiku-4-5-20251001', geminiModel: 'gemini-2.5-flash', openaiModel: 'gpt-4o-mini', pointsPerUse: 100, dailyFreeLimit: 3, monthlyCap: 10 };
+  let aiConfig = { enabled: true, features: {} };
+  let todayDocs = [];
+  let monthDocs = [];
   let reports = [];
 
   await Promise.all([
@@ -490,6 +501,7 @@ async function renderAiSettings(el) {
         openaiKeyMasked: d.openaiApiKey ? '●'.repeat(8) + d.openaiApiKey.slice(-4) : '',
         pointsPerUse: d.pointsPerUse ?? 100,
         dailyFreeLimit: d.dailyFreeLimit ?? 3,
+        monthlyCap: d.monthlyCap ?? 10,
       };
     }).catch(() => {}),
     getDoc(doc(db, 'config', 'ai')).then(snap => {
@@ -497,29 +509,55 @@ async function renderAiSettings(el) {
       const d = snap.data();
       aiConfig = { enabled: d.enabled !== false, features: d.features || {} };
     }).catch(() => {}),
-    getDocs(query(collection(db, 'ai_king_usage'), where('date', '==', today), limit(200))).then(snap => {
-      usageDocs = snap.docs.map(d => d.data());
+    getDocs(query(collection(db, 'ai_king_usage'), where('date', '==', today), limit(500))).then(snap => {
+      todayDocs = snap.docs.map(d => d.data());
+    }).catch(() => {}),
+    getDocs(query(collection(db, 'ai_king_usage'), where('date', '>=', monthStart), where('date', '<=', today), limit(2000))).then(snap => {
+      monthDocs = snap.docs.map(d => d.data());
     }).catch(() => {}),
     getDocs(query(collection(db, 'ai_reports'), orderBy('createdAt', 'desc'), limit(3))).then(snap => {
       reports = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     }).catch(() => {}),
   ]);
 
-  // Aggregate today's usage
   const FEATURES = [
-    { key: 'judge',   label: '⚖️ 미친판사' },
+    { key: 'judge',     label: '⚖️ 미친판사' },
     { key: 'translate', label: '🌍 번역사' },
-    { key: 'match',   label: '💕 궁합' },
-    { key: 'naming',  label: '✨ 작명소' },
+    { key: 'match',     label: '💕 궁합' },
+    { key: 'naming',    label: '✨ 작명소' },
   ];
-  const usageByFeature = {};
-  const usageByUser = {};
-  for (const d of usageDocs) {
-    usageByFeature[d.feature] = (usageByFeature[d.feature] || 0) + (d.count || 0);
-    if (d.userId) usageByUser[d.userId] = (usageByUser[d.userId] || 0) + (d.count || 0);
+
+  // Today stats
+  const todayByFeature = {};
+  const todayByUser = {};
+  let todayTotal = 0;
+  for (const d of todayDocs) {
+    todayByFeature[d.feature] = (todayByFeature[d.feature] || 0) + (d.count || 0);
+    if (d.userId) todayByUser[d.userId] = (todayByUser[d.userId] || 0) + (d.count || 0);
+    todayTotal += (d.count || 0);
   }
-  const totalTodayUses = Object.values(usageByFeature).reduce((s, n) => s + n, 0);
-  const topUsers = Object.entries(usageByUser).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const topUsers = Object.entries(todayByUser).sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+  // Monthly stats + cost
+  let monthTotal = 0;
+  for (const d of monthDocs) monthTotal += (d.count || 0);
+  const costPerUse = COST_PER_USE[aiKingConfig.activeModel] || 0.001;
+  // Gemini free tier: subtract free daily allowance from billed count
+  let billedUses = monthTotal;
+  if (aiKingConfig.activeModel === 'gemini') {
+    const dayOfMonth = parseInt(today.slice(8, 10));
+    const freeThisMonth = GEMINI_FREE_DAILY * dayOfMonth;
+    billedUses = Math.max(0, monthTotal - freeThisMonth);
+  }
+  const monthCostUSD = billedUses * costPerUse;
+  const monthCostKRW = Math.round(monthCostUSD * 1370);
+  const cap = aiKingConfig.monthlyCap;
+  const capPct = cap > 0 ? Math.min(100, Math.round((monthCostUSD / cap) * 100)) : 0;
+  const isOver = monthCostUSD >= cap;
+  const isNear = capPct >= 80 && !isOver;
+  const dayOfMonth = parseInt(today.slice(8, 10));
+  const daysInMonth = new Date(parseInt(today.slice(0, 4)), parseInt(today.slice(5, 7)), 0).getDate();
+  const projectedUSD = dayOfMonth > 0 ? ((monthCostUSD / dayOfMonth) * daysInMonth) : 0;
 
   const featureList = [
     { key: 'moderation',   label: '🛡️ 게시물 자동 검토',   desc: '새 게시물 AI 모더레이션 (욕설·비방 자동 숨김)' },
@@ -531,49 +569,95 @@ async function renderAiSettings(el) {
     <div style="display:flex;flex-direction:column;gap:24px;max-width:740px">
       <h2 class="admin-section-title">🤖 AI 관리</h2>
 
-      <!-- 오늘 사용량 현황 -->
+      <!-- 비용 관리 -->
+      <div class="card" style="${isOver ? 'border-color:var(--color-danger)!important' : isNear ? 'border-color:#b77900!important' : ''}">
+        <div class="card__body">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <div style="font-size:15px;font-weight:900">💰 이번 달 비용 관리</div>
+            <span style="font-size:11px;padding:3px 8px;border-radius:99px;font-weight:800;background:${isOver ? 'rgba(239,68,68,.12)' : isNear ? 'rgba(255,184,0,.12)' : 'var(--color-surface-2)'};color:${isOver ? 'var(--color-danger)' : isNear ? '#b77900' : 'var(--color-text-muted)'}">${today.slice(0, 7)}</span>
+          </div>
+          <div class="admin-stat-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:14px">
+            <div class="admin-stat-card">
+              <div class="admin-stat-card__num" style="font-size:13px;color:var(--color-primary)">${MODEL_NAMES[aiKingConfig.activeModel] || aiKingConfig.activeModel}</div>
+              <div class="admin-stat-card__label">사용 모델</div>
+            </div>
+            <div class="admin-stat-card">
+              <div class="admin-stat-card__num">${monthTotal.toLocaleString()}</div>
+              <div class="admin-stat-card__label">이번 달 총 사용</div>
+            </div>
+            <div class="admin-stat-card">
+              <div class="admin-stat-card__num" style="color:${isOver ? 'var(--color-danger)' : isNear ? '#b77900' : 'var(--color-text-primary)'}">$${monthCostUSD.toFixed(3)}</div>
+              <div class="admin-stat-card__label">추정 비용 (≈₩${monthCostKRW.toLocaleString()})</div>
+            </div>
+            <div class="admin-stat-card">
+              <div class="admin-stat-card__num" style="color:var(--color-text-muted)">$${projectedUSD.toFixed(2)}</div>
+              <div class="admin-stat-card__label">월말 예상</div>
+            </div>
+          </div>
+          <div style="margin-bottom:${isOver || isNear ? 10 : 14}px">
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--color-text-muted);margin-bottom:5px">
+              <span>예산 대비 사용률</span>
+              <span>$${monthCostUSD.toFixed(3)} / $${cap} (${capPct}%)</span>
+            </div>
+            <div style="height:8px;border-radius:999px;background:var(--color-surface-2);overflow:hidden">
+              <div style="height:100%;width:${capPct}%;background:${isOver ? 'var(--color-danger)' : isNear ? '#FFB800' : 'var(--color-primary)'};transition:width .3s"></div>
+            </div>
+          </div>
+          ${isOver ? `<div style="padding:9px 12px;border-radius:10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);font-size:12px;font-weight:700;color:var(--color-danger);margin-bottom:12px">🚨 이번 달 예산 한도($${cap})를 초과했어요. AI 전체 중지 또는 한도를 조정해주세요.</div>` : isNear ? `<div style="padding:9px 12px;border-radius:10px;background:rgba(255,184,0,.1);border:1px solid rgba(255,184,0,.25);font-size:12px;font-weight:700;color:#b77900;margin-bottom:12px">⚠️ 예산의 ${capPct}%를 사용했어요. 잔여 한도: $${(cap - monthCostUSD).toFixed(3)}</div>` : ''}
+          <div style="display:flex;align-items:center;gap:10px;padding-top:12px;border-top:1px solid var(--color-border);flex-wrap:wrap">
+            <div style="font-size:12px;font-weight:700">월 예산 한도</div>
+            <div style="display:flex;align-items:center;gap:4px">
+              <span style="font-size:13px;color:var(--color-text-muted)">$</span>
+              <input type="number" class="form-input" id="monthly-cap" value="${cap}" min="0.5" max="500" step="0.5" style="width:80px;font-size:13px">
+            </div>
+            <span style="font-size:11px;color:var(--color-text-muted)">≈₩${Math.round(cap * 1370).toLocaleString()}/월</span>
+            <span style="font-size:11px;color:var(--color-text-muted);margin-left:auto">${MODEL_NAMES[aiKingConfig.activeModel]} 기준 건당 약 $${costPerUse.toFixed(4)}${aiKingConfig.activeModel === 'gemini' ? ' · 일 1,500건 무료' : ''}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 오늘 사용량 -->
       <div class="card">
         <div class="card__body">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-            <div style="font-size:15px;font-weight:900">📊 AI킹 오늘 사용량</div>
+            <div style="font-size:15px;font-weight:900">📊 오늘 사용량</div>
             <div style="font-size:11px;color:var(--color-text-muted)">${today}</div>
           </div>
-          <div class="admin-stat-grid" style="grid-template-columns:repeat(${FEATURES.length + 1},1fr);margin-bottom:16px">
+          <div class="admin-stat-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:${topUsers.length ? 16 : 0}px">
             <div class="admin-stat-card" style="background:var(--color-primary-bg)">
-              <div class="admin-stat-card__num" style="color:var(--color-primary)">${totalTodayUses}</div>
+              <div class="admin-stat-card__num" style="color:var(--color-primary)">${todayTotal}</div>
               <div class="admin-stat-card__label">전체</div>
             </div>
             ${FEATURES.map(f => `
               <div class="admin-stat-card">
-                <div class="admin-stat-card__num">${usageByFeature[f.key] || 0}</div>
+                <div class="admin-stat-card__num">${todayByFeature[f.key] || 0}</div>
                 <div class="admin-stat-card__label" style="font-size:10px">${f.label}</div>
               </div>`).join('')}
           </div>
           ${topUsers.length > 0 ? `
-          <div style="font-size:12px;font-weight:800;color:var(--color-text-secondary);margin-bottom:8px">오늘 사용자 TOP ${topUsers.length}</div>
-          <div style="display:flex;flex-direction:column;gap:6px">
-            ${topUsers.map(([uid, cnt], i) => `
-              <div style="display:flex;align-items:center;gap:10px;font-size:12px">
-                <span style="width:18px;height:18px;border-radius:50%;background:var(--color-surface-2);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0">${i + 1}</span>
-                <span style="flex:1;font-family:monospace;color:var(--color-text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${uid.slice(0, 16)}…</span>
-                <span style="font-weight:800;color:var(--color-primary)">${cnt}회</span>
-              </div>`).join('')}
-          </div>` : `<div style="font-size:13px;color:var(--color-text-muted);text-align:center;padding:12px 0">오늘 사용 기록이 없어요</div>`}
+            <div style="font-size:12px;font-weight:800;color:var(--color-text-secondary);margin-bottom:8px">오늘 TOP ${topUsers.length} 사용자</div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              ${topUsers.map(([uid, cnt], i) => `
+                <div style="display:flex;align-items:center;gap:10px;font-size:12px">
+                  <span style="width:18px;height:18px;border-radius:50%;background:var(--color-surface-2);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0">${i + 1}</span>
+                  <span style="flex:1;font-family:monospace;color:var(--color-text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${uid.slice(0, 16)}…</span>
+                  <span style="font-weight:800;color:var(--color-primary)">${cnt}회</span>
+                </div>`).join('')}
+            </div>` : `<div style="font-size:13px;color:var(--color-text-muted);text-align:center;padding:8px 0">오늘 사용 기록이 없어요</div>`}
         </div>
       </div>
 
-      <!-- AI킹 모델 설정 -->
+      <!-- AI 모델 및 API 설정 -->
       <div class="card">
         <div class="card__body">
-          <div style="font-size:15px;font-weight:900;margin-bottom:4px">🎮 AI킹 모델 설정</div>
-          <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:16px">판사·번역사·궁합·작명소에 사용할 AI 모델과 API 키를 설정하세요.</div>
+          <div style="font-size:15px;font-weight:900;margin-bottom:4px">🎮 AI 모델 설정</div>
+          <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:16px">AI킹(판사·번역사·궁합·작명소) 전체에 적용되는 모델과 API 키예요.</div>
 
-          <div style="font-size:13px;font-weight:700;margin-bottom:8px">사용 모델 선택</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
             ${[
-              { id: 'claude', icon: '🟣', label: 'Claude Haiku', sub: '권장' },
-              { id: 'gemini', icon: '🔵', label: 'Gemini 2.5 Flash', sub: '8~10배 저렴' },
-              { id: 'openai', icon: '🟢', label: 'GPT-4o mini', sub: '준비 중' },
+              { id: 'claude', icon: '🟣', label: 'Claude Haiku 4.5', sub: '권장 · 건당 $0.001' },
+              { id: 'gemini', icon: '🔵', label: 'Gemini 2.5 Flash', sub: '무료 1,500/일 · 건당 $0.0005' },
+              { id: 'openai', icon: '🟢', label: 'GPT-4o mini',      sub: '준비 중 · 건당 $0.0003' },
             ].map(m => `
               <label class="admin-model-radio ${aiKingConfig.activeModel === m.id ? 'active' : ''}">
                 <input type="radio" name="ai-model" value="${m.id}" ${aiKingConfig.activeModel === m.id ? 'checked' : ''} style="display:none">
@@ -585,7 +669,7 @@ async function renderAiSettings(el) {
               </label>`).join('')}
           </div>
 
-          <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:18px">
             <div class="admin-key-row">
               <div style="font-size:12px;font-weight:700;color:#6C5CE7;margin-bottom:4px">🟣 Claude API Key (Anthropic)</div>
               <div style="display:flex;gap:6px">
@@ -612,35 +696,35 @@ async function renderAiSettings(el) {
             </div>
           </div>
 
-          <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:16px;padding-top:16px;border-top:1px solid var(--color-border)">
-            <div style="flex:1;min-width:160px">
-              <div style="font-size:12px;font-weight:700;margin-bottom:4px">🆓 1인 1일 무료 한도 (회당)</div>
-              <div style="display:flex;align-items:center;gap:6px">
-                <input type="number" class="form-input" id="daily-free-limit" value="${aiKingConfig.dailyFreeLimit}" min="1" max="50" style="width:80px;font-size:13px">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;padding-top:14px;border-top:1px solid var(--color-border)">
+            <div style="flex:1;min-width:130px">
+              <div style="font-size:12px;font-weight:700;margin-bottom:4px">🆓 1인 1일 무료 한도</div>
+              <div style="display:flex;align-items:center;gap:5px">
+                <input type="number" class="form-input" id="daily-free-limit" value="${aiKingConfig.dailyFreeLimit}" min="1" max="50" style="width:65px;font-size:13px">
                 <span style="font-size:12px;color:var(--color-text-muted)">회 / 기능</span>
               </div>
             </div>
-            <div style="flex:1;min-width:160px">
-              <div style="font-size:12px;font-weight:700;margin-bottom:4px">💰 추가 사용권 포인트 가격</div>
-              <div style="display:flex;align-items:center;gap:6px">
-                <input type="number" class="form-input" id="points-per-use" value="${aiKingConfig.pointsPerUse}" min="10" max="500" style="width:80px;font-size:13px">
-                <span style="font-size:12px;color:var(--color-text-muted)">포인트 / 1회</span>
+            <div style="flex:1;min-width:130px">
+              <div style="font-size:12px;font-weight:700;margin-bottom:4px">💰 추가 사용권 포인트</div>
+              <div style="display:flex;align-items:center;gap:5px">
+                <input type="number" class="form-input" id="points-per-use" value="${aiKingConfig.pointsPerUse}" min="10" max="500" style="width:65px;font-size:13px">
+                <span style="font-size:12px;color:var(--color-text-muted)">P / 1회</span>
               </div>
             </div>
             <div style="display:flex;align-items:flex-end">
-              <button class="btn btn--primary" id="btn-save-ai-king-config">저장</button>
+              <button class="btn btn--primary" id="btn-save-ai-king-config">설정 저장</button>
             </div>
           </div>
           <div id="ai-king-config-result" style="font-size:12px;margin-top:8px;color:var(--color-text-muted)"></div>
         </div>
       </div>
 
-      <!-- 기능 ON/OFF -->
+      <!-- 운영 기능 설정 -->
       <div class="card">
         <div class="card__body">
-          <div style="font-size:14px;font-weight:800;margin-bottom:2px">⚙️ AI 기능 설정</div>
-          <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:14px">AI킹 외 사이트 자동화 기능을 켜거나 끌 수 있어요.</div>
-          <div style="display:flex;flex-direction:column;gap:12px" id="ai-feature-list">
+          <div style="font-size:14px;font-weight:800;margin-bottom:2px">⚙️ 운영 기능</div>
+          <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:14px">AI킹 외 사이트 자동화 기능을 관리해요.</div>
+          <div style="display:flex;flex-direction:column;gap:4px" id="ai-feature-list">
             ${featureList.map(f => `
               <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px solid var(--color-border-light)">
                 <div style="flex:1;min-width:0">
@@ -655,8 +739,8 @@ async function renderAiSettings(el) {
               </div>`).join('')}
           </div>
           <div style="display:flex;align-items:center;gap:10px;margin-top:14px">
-            <button class="btn btn--ghost btn--sm" id="btn-save-features">기능 설정 저장</button>
-            <button class="btn btn--danger btn--sm" id="btn-ai-emergency-stop" style="margin-left:auto">🚨 AI 긴급 중지</button>
+            <button class="btn btn--ghost btn--sm" id="btn-save-features">저장</button>
+            <button class="btn btn--danger btn--sm" id="btn-ai-emergency-stop" style="margin-left:auto">🚨 AI 전체 중지</button>
           </div>
         </div>
       </div>
@@ -665,7 +749,7 @@ async function renderAiSettings(el) {
       <div class="card">
         <div class="card__body">
           <div style="font-size:14px;font-weight:800;margin-bottom:4px">⚡ 수동 실행</div>
-          <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:14px">스케줄 없이 지금 바로 AI 작업을 실행할 수 있어요.</div>
+          <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:14px">스케줄 없이 즉시 AI 작업을 실행해요.</div>
           <div style="display:flex;gap:10px;flex-wrap:wrap">
             <button class="btn btn--ghost btn--sm" id="btn-trigger-report">📊 주간 보고서 지금 생성</button>
           </div>
@@ -683,53 +767,49 @@ async function renderAiSettings(el) {
                 <div style="font-size:13px;font-weight:700;margin-bottom:4px">${escHtml(r.title || '보고서')}</div>
                 <div style="font-size:12px;color:var(--color-text-secondary);line-height:1.6">${escHtml(r.summary || '')}</div>
                 ${r.highlights?.length ? `<ul style="font-size:11px;color:var(--color-text-muted);margin:8px 0 0 16px">${r.highlights.map(h => `<li>${escHtml(h)}</li>`).join('')}</ul>` : ''}
-                ${r.nextWeekSuggestion ? `<div style="margin-top:8px;font-size:11px;color:var(--color-primary)">💡 ${escHtml(r.nextWeekSuggestion)}</div>` : ''}
               </div>`).join('')}
           </div>
         </div>` : ''}
     </div>`;
 
-  // AI킹 모델 라디오 스타일
+  // 모델 라디오 스타일 + 비용 안내 실시간 업데이트
   el.querySelectorAll('input[name="ai-model"]').forEach(radio => {
     radio.addEventListener('change', () => {
       el.querySelectorAll('.admin-model-radio').forEach(l => l.classList.toggle('active', l.querySelector('input').value === radio.value));
     });
   });
 
-  // AI킹 설정 저장
+  // 설정 저장 (모델 + API키 + 한도 + 예산)
   el.querySelector('#btn-save-ai-king-config')?.addEventListener('click', async () => {
     const btn = el.querySelector('#btn-save-ai-king-config');
     const result = el.querySelector('#ai-king-config-result');
-    btn.disabled = true;
-    btn.textContent = '저장 중...';
+    btn.disabled = true; btn.textContent = '저장 중...';
     try {
       const saveFn = httpsCallable(functions, 'saveAiKingConfig');
       const payload = {
-        activeModel: el.querySelector('input[name="ai-model"]:checked')?.value || 'claude',
-        claudeModel: el.querySelector('#model-claude')?.value,
-        geminiModel: el.querySelector('#model-gemini')?.value,
-        pointsPerUse: parseInt(el.querySelector('#points-per-use')?.value) || 100,
+        activeModel:    el.querySelector('input[name="ai-model"]:checked')?.value || 'claude',
+        claudeModel:    el.querySelector('#model-claude')?.value,
+        geminiModel:    el.querySelector('#model-gemini')?.value,
+        pointsPerUse:   parseInt(el.querySelector('#points-per-use')?.value) || 100,
         dailyFreeLimit: parseInt(el.querySelector('#daily-free-limit')?.value) || 3,
+        monthlyCap:     parseFloat(el.querySelector('#monthly-cap')?.value) || 10,
       };
       const claudeKey = el.querySelector('#key-claude')?.value.trim();
       const geminiKey = el.querySelector('#key-gemini')?.value.trim();
       if (claudeKey) payload.claudeApiKey = claudeKey;
       if (geminiKey) payload.geminiApiKey = geminiKey;
       await saveFn(payload);
-      toast.success('AI킹 설정이 저장됐어요 ✅');
-      result.textContent = `✅ ${new Date().toLocaleTimeString('ko-KR')} 저장 완료 (모델: ${payload.activeModel}, 무료 ${payload.dailyFreeLimit}회/일)`;
+      toast.success('AI 설정이 저장됐어요 ✅');
+      result.textContent = `✅ ${new Date().toLocaleTimeString('ko-KR')} 저장 완료 — 모델: ${MODEL_NAMES[payload.activeModel]}, 무료 ${payload.dailyFreeLimit}회/일, 월 예산 $${payload.monthlyCap}`;
       if (claudeKey) { el.querySelector('#key-claude').value = ''; el.querySelector('#key-claude').placeholder = '●'.repeat(8) + claudeKey.slice(-4); }
       if (geminiKey) { el.querySelector('#key-gemini').value = ''; el.querySelector('#key-gemini').placeholder = '●'.repeat(8) + geminiKey.slice(-4); }
     } catch (e) {
       result.textContent = '❌ ' + (e.message || '저장 실패');
       toast.error(e.message || '저장에 실패했어요');
-    } finally {
-      btn.disabled = false;
-      btn.textContent = '저장';
-    }
+    } finally { btn.disabled = false; btn.textContent = '설정 저장'; }
   });
 
-  // 기능 설정 저장
+  // 운영 기능 저장
   el.querySelector('#btn-save-features')?.addEventListener('click', async () => {
     const features = {};
     el.querySelectorAll('.ai-feature-toggle').forEach(cb => {
@@ -737,20 +817,18 @@ async function renderAiSettings(el) {
       cb.nextElementSibling.textContent = cb.checked ? '켜짐' : '꺼짐';
     });
     try {
-      const saveFn = httpsCallable(functions, 'saveAiConfig');
-      await saveFn({ features, enabled: Object.values(features).some(Boolean) });
-      toast.success('설정이 저장됐어요 ✅');
+      await httpsCallable(functions, 'saveAiConfig')({ features, enabled: Object.values(features).some(Boolean) });
+      toast.success('운영 기능 설정이 저장됐어요 ✅');
     } catch (e) { toast.error(e.message || '저장에 실패했어요'); }
   });
 
-  // AI 긴급 중지
+  // AI 전체 중지
   el.querySelector('#btn-ai-emergency-stop')?.addEventListener('click', async () => {
-    if (!confirm('AI 기능을 전체 중지할까요? 판사·번역·궁합·작명 등이 모두 비활성화됩니다.')) return;
+    if (!confirm('AI 기능을 전체 중지할까요? 판사·번역·궁합·작명 등 사용자 기능이 모두 비활성화됩니다.')) return;
     try {
-      const saveFn = httpsCallable(functions, 'saveAiConfig');
       const allOff = Object.fromEntries(featureList.map(f => [f.key, false]));
-      await saveFn({ features: allOff, enabled: false });
-      toast.success('AI 기능이 전체 중지됐어요');
+      await httpsCallable(functions, 'saveAiConfig')({ features: allOff, enabled: false });
+      toast.success('AI 전체 중지됐어요');
       setTimeout(() => renderAiSettings(el), 600);
     } catch (e) { toast.error(e.message || '중지에 실패했어요'); }
   });
@@ -759,21 +837,16 @@ async function renderAiSettings(el) {
   el.querySelector('#btn-trigger-report')?.addEventListener('click', async () => {
     const btn = el.querySelector('#btn-trigger-report');
     const result = el.querySelector('#ai-trigger-result');
-    btn.disabled = true;
-    btn.textContent = '생성 중...';
+    btn.disabled = true; btn.textContent = '생성 중...';
     try {
-      const triggerFn = httpsCallable(functions, 'adminTriggerReport');
-      const res = await triggerFn({});
+      const res = await httpsCallable(functions, 'adminTriggerReport')({});
       result.textContent = `✅ 보고서 생성 완료: "${res.data.title}"`;
       toast.success('주간 보고서가 생성됐어요 📊');
       setTimeout(() => renderAiSettings(el), 1000);
     } catch (e) {
       result.textContent = '❌ ' + (e.message || '생성에 실패했어요');
       toast.error(e.message || '생성에 실패했어요');
-    } finally {
-      btn.disabled = false;
-      btn.textContent = '📊 주간 보고서 지금 생성';
-    }
+    } finally { btn.disabled = false; btn.textContent = '📊 주간 보고서 지금 생성'; }
   });
 }
 

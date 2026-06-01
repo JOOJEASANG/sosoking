@@ -423,7 +423,7 @@ exports.saveAiKingConfig = onCall({ region: 'asia-northeast3' }, async (request)
   if (!adminSnap.exists) throw new HttpsError('permission-denied', '관리자만 접근 가능해요');
 
   const data = request.data || {};
-  const FIELDS = ['activeModel', 'claudeApiKey', 'claudeModel', 'geminiApiKey', 'geminiModel', 'openaiApiKey', 'openaiModel', 'pointsPerUse', 'dailyFreeLimit'];
+  const FIELDS = ['activeModel', 'claudeApiKey', 'claudeModel', 'geminiApiKey', 'geminiModel', 'openaiApiKey', 'openaiModel', 'pointsPerUse', 'dailyFreeLimit', 'monthlyCap'];
 
   const update = {};
   for (const field of FIELDS) {
