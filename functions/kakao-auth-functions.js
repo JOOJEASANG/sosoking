@@ -119,8 +119,10 @@ exports.kakaoLogin = onCall({ region: 'asia-northeast3' }, async (request) => {
       kakaoId,
     });
   } catch (e) {
-    console.error('[kakaoLogin] createCustomToken error:', e.message);
-    throw new HttpsError('internal', '로그인 처리에 실패했어요');
+    console.error('[kakaoLogin] createCustomToken error:', e.message, e.code);
+    // 실제 원인을 클라이언트에도 전달해 디버깅 용이하게 함
+    const detail = e.message || String(e);
+    throw new HttpsError('internal', '커스텀 토큰 생성 실패: ' + detail);
   }
 
   try {
