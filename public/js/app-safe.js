@@ -3,7 +3,7 @@ import { initRouter, registerRoute, navigate } from './router.js';
 import { renderHeader } from './components/header.js';
 import { renderBottomNav } from './components/bottom-nav.js';
 import { renderSidebar } from './components/sidebar.js';
-import { initToast } from './components/toast.js';
+import { initToast, toast } from './components/toast.js';
 import { appState } from './state.js';
 import { collection, query, where, getDocs, getDoc, doc, limit } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
@@ -126,7 +126,17 @@ async function isStrictAdmin(user) {
 async function fetchUserProfile(user) {
   if (!user) return;
   try {
-    const snap = await getDoc(doc(db, 'users', user.uid));
+    let snap = await getDoc(doc(db, 'users', user.uid));
+    if (!snap.exists() && !user.isAnonymous) {
+      // 첫 로그인(이메일/구글): users 문서 + 고유 닉네임 프로비저닝
+      try {
+        const { ensureUserProvisioned } = await import('./services/user-service.js');
+        await ensureUserProvisioned(user);
+        snap = await getDoc(doc(db, 'users', user.uid));
+      } catch (provErr) {
+        console.warn('[fetchUserProfile] provision failed', provErr);
+      }
+    }
     if (snap.exists()) {
       const data = snap.data();
       appState.nickname = data.nickname || user.displayName || user.email?.split('@')[0] || '';

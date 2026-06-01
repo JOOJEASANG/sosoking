@@ -342,21 +342,14 @@ function setupNicknameEdit(user, currentNickname) {
     saveBtn.disabled = true;
     saveBtn.textContent = '저장 중...';
     try {
-      const nickDoc = await getDoc(doc(db, 'nicknames', newNick));
-      if (nickDoc.exists() && nickDoc.data().uid !== user.uid) {
-        toast.error('이미 사용 중인 닉네임이에요');
-        return;
-      }
+      // 닉네임 변경은 서버 트랜잭션(updateNickname)으로 처리한다.
+      // 클라이언트에서 users.nickname을 직접 수정하면 보안 규칙에 막힌다.
+      const { getFunctions, httpsCallable } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js');
+      const { getApp } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');
+      const fns = getFunctions(getApp(), 'asia-northeast3');
+      await httpsCallable(fns, 'updateNickname')({ nickname: newNick });
 
-      const batch = writeBatch(db);
-      batch.set(doc(db, 'nicknames', newNick), { uid: user.uid, createdAt: serverTimestamp() });
-      if (currentNickname && currentNickname !== newNick) {
-        batch.delete(doc(db, 'nicknames', currentNickname));
-      }
-      batch.update(doc(db, 'users', user.uid), { nickname: newNick, updatedAt: serverTimestamp() });
-      await batch.commit();
-
-      await updateProfile(user, { displayName: newNick });
+      await updateProfile(user, { displayName: newNick }).catch(() => {});
 
       if (appState.user) appState.user.displayName = newNick;
       appState.nickname = newNick;
@@ -368,7 +361,7 @@ function setupNicknameEdit(user, currentNickname) {
       toast.success('닉네임이 변경됐어요');
     } catch (e) {
       console.error(e);
-      toast.error('저장에 실패했어요. 다시 시도해주세요');
+      toast.error(e?.message || '저장에 실패했어요. 다시 시도해주세요');
     } finally {
       saveBtn.disabled = false;
       saveBtn.textContent = '저장하기';

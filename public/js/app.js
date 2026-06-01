@@ -53,11 +53,20 @@ async function loadUserMeta(uid) {
       getDoc(doc(db, 'admins', uid)),
     ]);
     appState.unreadNotifications = notifSnap.size;
-    const data = userSnap.exists() ? userSnap.data() : {};
+    let data = userSnap.exists() ? userSnap.data() : {};
+    const currentUser = auth.currentUser;
+    if (!userSnap.exists() && currentUser && !currentUser.isAnonymous) {
+      // 첫 로그인: users 문서 + 고유 닉네임 프로비저닝
+      try {
+        const { ensureUserProvisioned } = await import('./services/user-service.js');
+        await ensureUserProvisioned(currentUser);
+        const re = await getDoc(doc(db, 'users', uid));
+        if (re.exists()) data = re.data();
+      } catch { /* non-critical */ }
+    }
     appState.streak    = data.streak    || 0;
     appState.userTitle = data.title     || '';
     appState.isAdmin   = adminSnap.exists();
-    const currentUser  = auth.currentUser;
     appState.nickname  = data.nickname  || currentUser?.displayName || currentUser?.email?.split('@')[0] || '익명';
     appState.nicknameIcon = data.nicknameIcon || null;
   } catch { /* non-critical */ }

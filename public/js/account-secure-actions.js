@@ -1,12 +1,6 @@
-import { auth, functions } from './firebase.js';
+import { auth, functions, signOut } from './firebase.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
-import {
-  updateProfile,
-  EmailAuthProvider,
-  reauthenticateWithCredential,
-  GoogleAuthProvider,
-  reauthenticateWithPopup,
-} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { updateProfile } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { navigate } from './router.js';
 import { toast } from './components/toast.js';
 
@@ -53,20 +47,6 @@ async function handleNicknameSave(event) {
   }
 }
 
-async function reauthenticate(user) {
-  const isGoogle = user.providerData?.some(p => p.providerId === 'google.com');
-  if (isGoogle) {
-    const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: 'select_account' });
-    await reauthenticateWithPopup(user, provider);
-    return;
-  }
-  const password = window.prompt('보안을 위해 비밀번호를 입력해주세요:');
-  if (!password) throw new Error('비밀번호 입력이 취소됐습니다.');
-  const credential = EmailAuthProvider.credential(user.email, password);
-  await reauthenticateWithCredential(user, credential);
-}
-
 async function handleWithdraw(event) {
   const btn = event.target.closest('#btn-withdraw');
   if (!btn || !isSettingsPage()) return;
@@ -81,18 +61,17 @@ async function handleWithdraw(event) {
   btn.disabled = true;
   btn.textContent = '탈퇴 처리 중...';
   try {
-    await reauthenticate(user);
+    // 계정 삭제는 서버(Admin SDK)에서 수행하므로 클라이언트 재인증이 필요 없다.
+    // (카카오 커스텀 토큰 사용자는 비밀번호/구글 재인증이 불가능하므로 재인증을 강요하면 탈퇴가 막힌다.)
     await callDeleteMyAccount();
+    await signOut(auth).catch(() => {});
     toast.success('탈퇴가 완료됐어요. 이용해주셔서 감사합니다');
     navigate('/');
   } catch (error) {
-    if (error?.code === 'auth/wrong-password') toast.error('비밀번호가 틀렸어요');
-    else if (error?.code === 'auth/popup-closed-by-user') {}
-    else if (String(error?.message || '').includes('취소')) {}
-    else {
-      console.error(error);
-      toast.error(error?.message || '탈퇴 처리 중 오류가 발생했어요');
-    }
+    console.error('[withdraw]', error);
+    const code = error?.code || '';
+    const msg  = error?.message || '탈퇴 처리 중 오류가 발생했어요';
+    toast.error(code ? `${msg} (${code})` : msg);
   } finally {
     btn.disabled = false;
     btn.textContent = '회원 탈퇴';
