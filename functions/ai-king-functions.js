@@ -100,12 +100,13 @@ async function callAIWithImages(system, userText, imageA = null, imageB = null, 
 }
 
 // ── Usage check with extraAiUses fallback ──
+// Returns { allowed: boolean, limit: number }
 async function checkUsage(userId, feature) {
   const today = new Date().toISOString().slice(0, 10);
   const ref = db.doc(`ai_king_usage/${userId}_${today}_${feature}`);
   const config = await getAiKingConfig();
   const dailyLimit = config.dailyFreeLimit || DAILY_LIMIT;
-  return db.runTransaction(async (tx) => {
+  const allowed = await db.runTransaction(async (tx) => {
     const [snap, userSnap] = await Promise.all([tx.get(ref), tx.get(db.doc(`users/${userId}`))]);
     const count = snap.exists ? (snap.data().count || 0) : 0;
     if (count >= dailyLimit) {
@@ -117,6 +118,7 @@ async function checkUsage(userId, feature) {
     tx.set(ref, { count: count + 1, userId, feature, date: today, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
     return true;
   });
+  return { allowed, limit: dailyLimit };
 }
 
 // ── 미친판사: 7가지 판사 유형 ──
@@ -158,8 +160,8 @@ exports.aiJudge = onCall({
     throw new HttpsError('invalid-argument', '상황을 5자 이상 적어주세요');
   }
 
-  const allowed = await checkUsage(userId, 'judge');
-  if (!allowed) throw new HttpsError('resource-exhausted', `오늘 판결은 하루 ${DAILY_LIMIT}번만 가능해요`);
+  const { allowed, limit } = await checkUsage(userId, 'judge');
+  if (!allowed) throw new HttpsError('resource-exhausted', `오늘 판결은 하루 ${limit}번만 가능해요`);
 
   const raw = await callAI(
     JUDGE_SYSTEM,
@@ -227,8 +229,8 @@ exports.aiTranslate = onCall({
   const styleData = TRANSLATE_STYLES[style];
   if (!styleData) throw new HttpsError('invalid-argument', '번역 스타일을 선택해주세요');
 
-  const allowed = await checkUsage(userId, 'translate');
-  if (!allowed) throw new HttpsError('resource-exhausted', `오늘 번역은 하루 ${DAILY_LIMIT}번만 가능해요`);
+  const { allowed, limit } = await checkUsage(userId, 'translate');
+  if (!allowed) throw new HttpsError('resource-exhausted', `오늘 번역은 하루 ${limit}번만 가능해요`);
 
   const userText = imageBase64
     ? `이미지에 있는 텍스트와 함께 다음 내용을 번역해줘:\n${text.slice(0, 500)}`
@@ -273,8 +275,8 @@ exports.aiMatch = onCall({
     throw new HttpsError('invalid-argument', '두 가지를 모두 입력해주세요');
   }
 
-  const allowed = await checkUsage(userId, 'match');
-  if (!allowed) throw new HttpsError('resource-exhausted', `오늘 궁합은 하루 ${DAILY_LIMIT}번만 가능해요`);
+  const { allowed, limit } = await checkUsage(userId, 'match');
+  if (!allowed) throw new HttpsError('resource-exhausted', `오늘 궁합은 하루 ${limit}번만 가능해요`);
 
   const system = `당신은 세상 모든 것의 궁합을 보는 AI 점쟁이다. 사람, 음식, 물건, 동물 뭐든 궁합을 본다. 반드시 JSON 형식으로만 답하라:
 {"score": 숫자(0~100), "grade": "등급(예:천생연분💕/찰떡궁합🎯/그냥저냥😐/최악의조합💥)", "reason": "궁합 이유(웃기고 황당하게 2~3문장)", "chemistry": "둘이 만나면 생기는 일(재미있고 구체적으로 1~2문장)", "advice": "조언(웃기게 한 문장)"}`;
@@ -346,8 +348,8 @@ exports.aiNaming = onCall({
     throw new HttpsError('invalid-argument', '설명을 입력하거나 사진을 첨부해주세요');
   }
 
-  const allowed = await checkUsage(userId, 'naming');
-  if (!allowed) throw new HttpsError('resource-exhausted', `오늘 작명은 하루 ${DAILY_LIMIT}번만 가능해요`);
+  const { allowed, limit } = await checkUsage(userId, 'naming');
+  if (!allowed) throw new HttpsError('resource-exhausted', `오늘 작명은 하루 ${limit}번만 가능해요`);
 
   const catLabel = NAME_CATEGORIES[category] || '기타';
 
