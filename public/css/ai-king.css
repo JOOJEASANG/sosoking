@@ -76,7 +76,7 @@
 .ai-naming-result { }
 
 /* 홈 히어로 v3 */
-.home-hero-v3 { background: linear-gradient(135deg, var(--color-primary-bg) 0%, var(--color-surface) 100%); border-radius: 20px; padding: 24px 20px 20px; margin-bottom: 20px; border: 1.5px solid var(--color-border); }
+.home-hero-v3 { background: linear-gradient(135deg, var(--color-primary-bg) 0%, var(--color-surface) 100%); border-radius: 12px; padding: 24px 20px 20px; margin-bottom: 20px; border: 1.5px solid var(--color-border); }
 .home-hero-v3__top { margin-bottom: 20px; }
 .home-hero-v3__badge { display: inline-block; font-size: 12px; font-weight: 700; background: var(--color-primary); color: #fff; padding: 4px 12px; border-radius: var(--radius-pill); margin-bottom: 12px; letter-spacing: .3px; }
 .home-hero-v3__title { font-size: 22px; font-weight: 900; color: var(--color-text-primary); line-height: 1.4; margin-bottom: 6px; }
@@ -85,7 +85,7 @@
 
 /* 홈 AI킹 그리드 */
 .home-aiking-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.home-aiking-card { background: var(--color-surface); border: 1.5px solid var(--color-border); border-radius: 14px; padding: 14px 12px; cursor: pointer; text-align: center; transition: box-shadow .15s, transform .15s, border-color .15s; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.home-aiking-card { background: var(--color-surface); border: 1.5px solid var(--color-border); border-radius: 8px; padding: 14px 12px; cursor: pointer; text-align: center; transition: box-shadow .15s, transform .15s, border-color .15s; display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .home-aiking-card:hover, .home-aiking-card:focus { box-shadow: 0 6px 16px rgba(0,0,0,.1); transform: translateY(-2px); border-color: var(--color-primary); }
 .home-aiking-card__emoji { font-size: 28px; line-height: 1; }
 .home-aiking-card__name { font-size: 13px; font-weight: 800; color: var(--color-text-primary); }
@@ -100,7 +100,7 @@
 .ai-result-actions .btn { flex: 1; }
 
 /* 가이드 안내 박스 */
-.guide-notice { background: var(--color-primary-bg); border: 1.5px solid var(--color-primary); border-radius: 12px; padding: 14px 16px; font-size: 13px; line-height: 1.6; color: var(--color-text-primary); margin-bottom: 12px; }
+.guide-notice { background: var(--color-primary-bg); border: 1.5px solid var(--color-primary); border-radius: 8px; padding: 14px 16px; font-size: 13px; line-height: 1.6; color: var(--color-text-primary); margin-bottom: 12px; }
 .guide-page { max-width: 640px; margin: 0 auto; padding: 16px 16px 80px; }
 .guide-hero { text-align: center; padding: 28px 16px; }
 .guide-hero__icon { font-size: 48px; margin-bottom: 12px; }
@@ -124,18 +124,18 @@
 
 /* 포인트 상점 페이지 */
 .points-shop-page { max-width: 640px; margin: 0 auto; padding: 16px 16px 80px; }
-.points-balance-card { background: linear-gradient(135deg, #FF6B4A, #e84393); border-radius: 20px; padding: 24px; color: #fff; text-align: center; }
+.points-balance-card { background: linear-gradient(135deg, #FF6B4A, #e84393); border-radius: 12px; padding: 24px; color: #fff; text-align: center; }
 .points-balance-card__label { font-size: 13px; opacity: 0.85; margin-bottom: 4px; }
 .points-balance-card__amount { font-size: 48px; font-weight: 900; line-height: 1; }
 .points-balance-card__amount span { font-size: 24px; margin-left: 4px; opacity: 0.8; }
 .points-balance-card__extra { font-size: 13px; opacity: 0.85; margin-top: 8px; }
 
 .points-shop-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-.points-shop-item { border: 2px solid var(--color-border); border-radius: 14px; padding: 14px; text-align: center; display: flex; flex-direction: column; gap: 8px; align-items: center; transition: border-color .15s; }
+.points-shop-item { border: 2px solid var(--color-border); border-radius: 8px; padding: 14px; text-align: center; display: flex; flex-direction: column; gap: 8px; align-items: center; transition: border-color .15s; }
 .points-shop-item:not(.points-shop-item--disabled):hover { border-color: var(--color-primary); }
 .points-shop-item--disabled { opacity: 0.5; }
 .points-shop-item__qty { font-size: 16px; font-weight: 800; color: var(--color-text-primary); }
-.points-shop-item__bonus { font-size: 11px; background: #fff3cd; color: #856404; padding: 2px 6px; border-radius: 10px; font-weight: 700; vertical-align: middle; }
+.points-shop-item__bonus { font-size: 11px; background: #fff3cd; color: #856404; padding: 2px 6px; border-radius: 4px; font-weight: 700; vertical-align: middle; }
 [data-theme="dark"] .points-shop-item__bonus { background: #3d2e00; color: #ffc107; }
 .points-shop-item__cost { font-size: 20px; font-weight: 900; color: var(--color-primary); }
 
@@ -146,7 +146,7 @@
 .points-earn-item__pts { font-size: 13px; font-weight: 800; color: var(--color-primary); flex-shrink: 0; }
 
 /* 관리자 모델 라디오 */
-.admin-model-radio { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border: 2px solid var(--color-border); border-radius: 12px; cursor: pointer; transition: all .15s; flex: 1; min-width: 140px; }
+.admin-model-radio { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border: 2px solid var(--color-border); border-radius: 8px; cursor: pointer; transition: all .15s; flex: 1; min-width: 140px; }
 .admin-model-radio.active { border-color: var(--color-primary); background: var(--color-primary-bg); }
 .admin-key-row { padding: 10px 0; border-top: 1px solid var(--color-border-light); }
 

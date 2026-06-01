@@ -161,7 +161,7 @@ body {
 
 .sidebar__nav-item {
   padding: 10px 12px !important;
-  border-radius: 12px !important;
+  border-radius: 8px !important;
   font-size: 14px !important;
   font-weight: 600 !important;
   gap: 11px !important;
@@ -197,7 +197,7 @@ body {
 }
 
 .sidebar__write-btn {
-  border-radius: 14px !important;
+  border-radius: 8px !important;
   font-size: 14px !important;
   font-weight: 800 !important;
   padding: 13px 16px !important;
@@ -434,7 +434,7 @@ body {
 .form-input,
 .form-textarea,
 .form-select {
-  border-radius: 12px !important;
+  border-radius: 8px !important;
   border: 1.5px solid var(--color-border) !important;
   font-size: 15px !important;
   padding: 12px 16px !important;
@@ -603,7 +603,7 @@ body {
    15. 카테고리 카드 개선
 ────────────────────────────────────────── */
 .home-cat-card {
-  border-radius: 22px !important;
+  border-radius: 12px !important;
   transition: transform var(--transition-base), box-shadow var(--transition-base), border-color var(--transition-base) !important;
 }
 
@@ -654,7 +654,7 @@ body {
 .home-cat-card__icon-wrap {
   width: 48px !important;
   height: 48px !important;
-  border-radius: 14px !important;
+  border-radius: 8px !important;
   background: rgba(255,255,255,0.70) !important;
   box-shadow: 0 1px 4px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.8) !important;
 }
@@ -676,7 +676,7 @@ body {
    17. 토스트 개선
 ────────────────────────────────────────── */
 .toast {
-  border-radius: 14px !important;
+  border-radius: 8px !important;
   font-size: 13.5px !important;
   font-weight: 700 !important;
   box-shadow: var(--shadow-lg) !important;
@@ -688,7 +688,7 @@ body {
    18. 투표 옵션 개선
 ────────────────────────────────────────── */
 .vote-option {
-  border-radius: 14px !important;
+  border-radius: 8px !important;
   border: 2px solid var(--color-border) !important;
   font-size: 14px !important;
   font-weight: 700 !important;
@@ -877,7 +877,7 @@ body {
    30. 미니 인터랙션 — 링크/아이콘 버튼
 ────────────────────────────────────────── */
 .sidebar__icon-btn {
-  border-radius: 10px !important;
+  border-radius: 8px !important;
   width: 34px !important;
   height: 34px !important;
   transition: background 130ms ease, color 130ms ease, transform 120ms cubic-bezier(0.34,1,0.64,1) !important;
@@ -917,16 +917,16 @@ body {
 ────────────────────────────────────────── */
 @media (max-width: 767px) {
   .feed-card {
-    border-radius: 16px !important;
+    border-radius: 10px !important;
     margin-bottom: 8px !important;
   }
 
   .home-cat-card {
-    border-radius: 18px !important;
+    border-radius: 10px !important;
   }
 
   .card {
-    border-radius: 16px !important;
+    border-radius: 10px !important;
   }
 
   .btn {
