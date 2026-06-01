@@ -478,9 +478,6 @@ async function renderAiSettings(el) {
   const GEMINI_FREE_DAILY = 1500;
 
   // Load AI킹 config + usage stats in parallel
-  let aiKingConfig = { activeModel: 'claude', claudeModel: 'claude-haiku-4-5-20251001', geminiModel: 'gemini-2.5-flash', openaiModel: 'gpt-4o-mini', pointsPerUse: 100, dailyFreeLimit: 3 };
-  let aiConfig = { enabled: true, features: {} };
-  let usageDocs = [];
   let aiKingConfig = { activeModel: 'claude', claudeModel: 'claude-haiku-4-5-20251001', geminiModel: 'gemini-2.5-flash', openaiModel: 'gpt-4o-mini', pointsPerUse: 100, dailyFreeLimit: 3, monthlyCap: 10 };
   let aiConfig = { enabled: true, features: {} };
   let todayDocs = [];
