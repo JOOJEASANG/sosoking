@@ -370,32 +370,27 @@ function setupNicknameEdit(user, currentNickname) {
 }
 
 function setupWithdrawal(user, isGoogle, isKakao, nickname) {
+  // 실제 탈퇴 처리는 account-secure-actions.js(capture 단계)가 가로챔.
+  // 보안 모듈 미로드 시 fallback으로만 동작.
   document.getElementById('btn-withdraw')?.addEventListener('click', async () => {
-    const confirmed = window.confirm(
-      '정말 탈퇴하시겠어요?\n\n계정이 삭제되며 복구할 수 없어요.'
-    );
+    const confirmed = window.confirm('정말 탈퇴하시겠어요?\n\n계정이 삭제되며 복구할 수 없어요.');
     if (!confirmed) return;
 
     const btn = document.getElementById('btn-withdraw');
     if (btn) { btn.disabled = true; btn.textContent = '처리 중...'; }
 
     try {
-      const currentUser = auth.currentUser;
-      if (!currentUser) throw new Error('auth.currentUser가 없어요. 다시 로그인 후 시도해주세요.');
-
       const { getFunctions, httpsCallable } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js');
       const { getApp } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');
       const fns = getFunctions(getApp(), 'asia-northeast3');
       await httpsCallable(fns, 'deleteMyAccount')({});
       await signOut(auth).catch(() => {});
-      toast.success('탈퇴 완료됐어요. 이용해주셔서 감사합니다 👋');
+      toast.success('탈퇴가 완료됐어요. 이용해주셔서 감사합니다');
       navigate('/');
     } catch (e) {
       console.error('[탈퇴]', e);
       if (btn) { btn.disabled = false; btn.textContent = '회원 탈퇴'; }
-      const code = e?.code || '';
-      const msg  = e?.message || String(e);
-      window.alert('탈퇴 오류\n코드: ' + (code || '없음') + '\n메시지: ' + msg);
+      toast.error((e?.message || '탈퇴 처리 중 오류가 발생했어요') + (e?.code ? ` (${e.code})` : ''));
     }
   });
 }

@@ -186,6 +186,7 @@ export async function initApp() {
   registerRoute('/account',    () => renderAccount());
   registerRoute('/scraps',     () => renderScraps());
   registerRoute('/login',      () => renderLogin());
+  registerRoute('/signup', async () => { const m = await import('./pages/signup.js'); m.renderSignup(); });
   registerRoute('/guide',      () => renderGuide());
   registerRoute('/admin',      () => renderAdmin());
   registerRoute('/terms',      () => renderTerms());

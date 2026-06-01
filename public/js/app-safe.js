@@ -88,6 +88,7 @@ async function registerRoutes() {
   registerRoute('/write', async () => renderPage(renderWriteSafe, '글쓰기'));
   registerRoute('/detail/:id', async ({ id }) => renderPage(() => renderDetailSafe(id), '상세'));
   registerRoute('/login', async () => renderPage((await import('./pages/login.js')).renderLogin, '로그인'));
+  registerRoute('/signup', async () => renderPage((await import('./pages/signup.js')).renderSignup, '회원가입'));
   registerRoute('/guide', async () => renderPage(renderGuideSafe, '이용안내'));
   registerRoute('/terms', async () => renderPage((await import('./pages/legal.js')).renderTerms, '이용약관'));
   registerRoute('/privacy', async () => renderPage((await import('./pages/legal.js')).renderPrivacy, '개인정보처리방침'));
@@ -273,8 +274,17 @@ async function handleKakaoCallback() {
     window.location.hash = '#' + (returnTo.startsWith('/') ? returnTo : '/' + returnTo);
   } catch (e) {
     console.error('[kakao callback]', e);
-    const msg = e?.code || e?.message || String(e);
-    setTimeout(() => toast.error('카카오 로그인 실패: ' + msg), 800);
+    // 사람이 읽을 수 있는 메시지를 우선, code는 괄호 안에 보조 표시
+    const code = e?.code || '';
+    const msg  = e?.message || String(e);
+    const label = code ? `${msg} (${code})` : msg;
+    const backPage = sessionStorage.getItem('kakao_page') || 'login';
+    sessionStorage.removeItem('kakao_page');
+    setTimeout(() => {
+      toast.error('카카오 로그인 실패: ' + label);
+      // 실패 후 로그인/가입 페이지로 복귀해 재시도할 수 있게 함
+      window.location.hash = '#/' + backPage;
+    }, 300);
   }
 }
 
