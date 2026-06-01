@@ -547,8 +547,7 @@ async function renderDebateCommentColumns() {
 
 function installEnhancements() {
   injectPolishStyle();
-  removeAdminHomeButton();
-  removeStatsHeaderNote();
+  // 관리자 페이지(admin.js)가 홈 버튼·헤더를 직접 렌더하므로 더 이상 제거하지 않습니다.
   polishAdminDataDripTitles();
   enhanceVoteWriteMode();
   bindVoteWriteModeControls();

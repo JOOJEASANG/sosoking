@@ -28,7 +28,6 @@ const EXTENSION_MODULES = [
   './points-actions.js',
   './unlimited-image-uploader.js',
   './feedback-actions.js',
-  './admin-member-list-fix.js',
   './admin-ui-cleanup.js',
   './notifications-ui.js',
   './account-request-cleanup.js',

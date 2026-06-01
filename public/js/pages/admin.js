@@ -386,25 +386,27 @@ async function renderReports(el, _subtab) {
 
 /* ── 회원 현황 ── */
 async function renderUsers(el) {
-  const snap = await getDocs(query(collection(db, 'feeds'), orderBy('createdAt', 'desc'), limit(100))).catch(() => null);
-  const posts = snap?.docs.map(d => ({ id: d.id, ...d.data() })) ?? [];
+  const fmtDate = (ms) => {
+    if (!ms) return '-';
+    const d = new Date(ms);
+    if (Number.isNaN(d.getTime())) return '-';
+    return d.toLocaleDateString('ko-KR') + ' ' + d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+  };
 
-  // Deduplicate by authorId
-  const userMap = new Map();
-  for (const p of posts) {
-    if (!p.authorId) continue;
-    if (!userMap.has(p.authorId)) {
-      userMap.set(p.authorId, { uid: p.authorId, name: p.authorName || '익명', photo: p.authorPhoto || '', posts: 0, lastPost: null });
-    }
-    const u = userMap.get(p.authorId);
-    u.posts++;
-    if (!u.lastPost || p.createdAt?.toDate?.() > u.lastPost) u.lastPost = p.createdAt?.toDate?.() ?? null;
+  let data = null;
+  let loadError = null;
+  try {
+    const res = await httpsCallable(functions, 'getAdminMemberList')({ pageSize: 100 });
+    data = res.data;
+  } catch (e) {
+    loadError = e;
   }
-  const users = [...userMap.values()].sort((a, b) => b.posts - a.posts);
 
-  el.innerHTML = `
-    <div style="display:flex;flex-direction:column;gap:16px">
+  const members = data?.members || [];
+  const total = data?.total ?? members.length;
+  const excludedAdmins = data?.excludedAdmins ?? 0;
 
+  const accordion = `
       <details class="admin-accordion" id="admin-myinfo-acc">
         <summary class="admin-accordion__summary">
           <span>👤 내 정보 설정</span>
@@ -413,55 +415,82 @@ async function renderUsers(el) {
         <div class="admin-accordion__body" id="admin-myinfo-body">
           <div style="padding:24px;text-align:center"><div class="spinner spinner--sm"></div></div>
         </div>
-      </details>
+      </details>`;
 
-      <div style="display:flex;align-items:center;justify-content:space-between">
-        <h2 class="admin-section-title">👥 회원 현황</h2>
-        <div style="font-size:13px;color:var(--color-text-muted)">최근 100개 게시물 기준</div>
+  if (loadError) {
+    console.error('[renderUsers] getAdminMemberList failed', loadError);
+    el.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:16px">
+        ${accordion}
+        <h2 class="admin-section-title">👥 회원관리</h2>
+        <div class="empty-state">
+          <div class="empty-state__icon">⚠️</div>
+          <div class="empty-state__title">회원 목록을 불러오지 못했어요</div>
+          <div class="empty-state__desc">${escHtml(loadError.message || 'Functions 배포 후 다시 시도해주세요.')}</div>
+          <button class="btn btn--ghost btn--sm" id="btn-users-retry" style="margin-top:12px">다시 시도</button>
+        </div>
+      </div>`;
+    el.querySelector('#btn-users-retry')?.addEventListener('click', () => renderUsers(el));
+    bindMyInfoAccordion();
+    return;
+  }
+
+  el.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:16px">
+      ${accordion}
+
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <h2 class="admin-section-title">👥 회원관리</h2>
+        <button class="btn btn--ghost btn--sm" id="btn-users-refresh">새로고침</button>
       </div>
       <div class="admin-stat-grid" style="grid-template-columns:repeat(2,1fr)">
         <div class="admin-stat-card">
-          <div class="admin-stat-card__num">${users.length}</div>
-          <div class="admin-stat-card__label">활동 회원 수</div>
+          <div class="admin-stat-card__num">${total.toLocaleString()}</div>
+          <div class="admin-stat-card__label">전체 회원</div>
         </div>
         <div class="admin-stat-card">
-          <div class="admin-stat-card__num">${posts.length}</div>
-          <div class="admin-stat-card__label">분석된 게시물</div>
+          <div class="admin-stat-card__num" style="color:var(--color-text-muted)">${excludedAdmins.toLocaleString()}</div>
+          <div class="admin-stat-card__label">제외된 관리자</div>
         </div>
       </div>
       <div class="card" style="overflow:auto">
-        <table style="width:100%;font-size:13px;border-collapse:collapse">
+        ${members.length === 0 ? `<div style="text-align:center;padding:32px;color:var(--color-text-muted);font-size:13px">표시할 회원이 없어요</div>` : `
+        <table class="admin-table">
           <thead>
-            <tr style="border-bottom:2px solid var(--color-border);text-align:left;background:var(--color-surface-2)">
-              <th style="padding:10px 12px">닉네임</th>
-              <th style="padding:10px 12px;width:80px">게시물 수</th>
-              <th style="padding:10px 12px">마지막 글</th>
-              <th style="padding:10px 12px">UID</th>
-            </tr>
+            <tr><th>회원</th><th>이메일</th><th style="width:90px">포인트</th><th>가입일</th><th>최근 로그인</th><th style="width:70px">상태</th></tr>
           </thead>
           <tbody>
-            ${users.map((u, i) => `
-              <tr style="border-bottom:1px solid var(--color-border-light)">
-                <td style="padding:10px 12px">
+            ${members.map(m => `
+              <tr>
+                <td>
                   <div style="display:flex;align-items:center;gap:8px">
-                    ${u.photo ? `<img src="${u.photo}" style="width:28px;height:28px;border-radius:50%;object-fit:cover" loading="lazy">` : `<div style="width:28px;height:28px;border-radius:50%;background:var(--color-surface-2);display:flex;align-items:center;justify-content:center;font-size:14px">👤</div>`}
-                    <span style="font-weight:700">${escHtml(u.name)}</span>
-                    ${i === 0 ? `<span style="font-size:10px;background:#FFB800;color:#fff;border-radius:99px;padding:2px 6px;font-weight:800">TOP</span>` : ''}
+                    ${m.photoURL ? `<img src="${escHtml(m.photoURL)}" style="width:28px;height:28px;border-radius:50%;object-fit:cover" loading="lazy">` : `<div style="width:28px;height:28px;border-radius:50%;background:var(--color-surface-2);display:flex;align-items:center;justify-content:center;font-size:14px">👤</div>`}
+                    <div style="min-width:0">
+                      <div style="font-weight:700">${escHtml(m.nickname || '회원')}</div>
+                      <div style="font-family:monospace;font-size:10px;color:var(--color-text-muted)">${escHtml(String(m.uid || '').slice(0, 14))}…</div>
+                    </div>
                   </div>
                 </td>
-                <td style="padding:10px 12px;font-weight:800;color:var(--color-primary)">${u.posts}</td>
-                <td style="padding:10px 12px;font-size:12px;color:var(--color-text-muted)">${u.lastPost ? u.lastPost.toLocaleDateString('ko-KR') : '-'}</td>
-                <td style="padding:10px 12px;font-size:10px;font-family:monospace;color:var(--color-text-muted)">${u.uid.slice(0, 12)}…</td>
+                <td style="font-size:12px;color:var(--color-text-secondary)">${escHtml(m.email || '-')}</td>
+                <td style="font-weight:800;color:var(--color-primary)">${Number(m.points || 0).toLocaleString()}P</td>
+                <td style="font-size:12px;color:var(--color-text-muted)">${escHtml(fmtDate(m.createdAtMs))}</td>
+                <td style="font-size:12px;color:var(--color-text-muted)">${escHtml(fmtDate(m.lastLoginAtMs))}</td>
+                <td>${m.disabled ? '<span style="font-size:11px;font-weight:700;color:var(--color-danger)">비활성</span>' : '<span style="font-size:11px;font-weight:700;color:var(--color-success)">정상</span>'}</td>
               </tr>`).join('')}
           </tbody>
-        </table>
+        </table>`}
       </div>
     </div>`;
 
+  el.querySelector('#btn-users-refresh')?.addEventListener('click', () => renderUsers(el));
+  bindMyInfoAccordion();
+}
+
+function bindMyInfoAccordion() {
   document.getElementById('admin-myinfo-acc')?.addEventListener('toggle', async function () {
     if (!this.open) return;
     const body = document.getElementById('admin-myinfo-body');
-    if (body.dataset.loaded) return;
+    if (!body || body.dataset.loaded) return;
     body.dataset.loaded = '1';
     await renderMyInfo(body);
   });
@@ -472,14 +501,15 @@ async function renderAiSettings(el) {
   const today = new Date().toISOString().slice(0, 10);
   const monthStart = today.slice(0, 7) + '-01';
 
+  // 운영 텍스트 AI(판사·번역·궁합·작명)에 쓰는 모델만. GPT는 이미지 생성 전용이라 제외.
   // Estimated cost per request by model (USD) — approximate based on avg ~400 input / 300 output tokens
-  const COST_PER_USE = { claude: 0.0010, gemini: 0.0005, openai: 0.0003 };
-  const MODEL_NAMES  = { claude: 'Claude Haiku 4.5', gemini: 'Gemini 2.5 Flash', openai: 'GPT-4o mini' };
+  const COST_PER_USE = { claude: 0.0010, gemini: 0.0005 };
+  const MODEL_NAMES  = { claude: 'Claude Haiku 4.5', gemini: 'Gemini 2.5 Flash' };
   // Gemini free tier: 1,500 req/day from Google AI Studio (effectively free at small scale)
   const GEMINI_FREE_DAILY = 1500;
 
   // Load AI킹 config + usage stats in parallel
-  let aiKingConfig = { activeModel: 'claude', claudeModel: 'claude-haiku-4-5-20251001', geminiModel: 'gemini-2.5-flash', openaiModel: 'gpt-4o-mini', pointsPerUse: 100, dailyFreeLimit: 3, monthlyCap: 10 };
+  let aiKingConfig = { activeModel: 'claude', claudeModel: 'claude-haiku-4-5-20251001', geminiModel: 'gemini-2.5-flash', openaiModel: 'gpt-image-1', pointsPerUse: 100, dailyFreeLimit: 3, monthlyCap: 10 };
   let aiConfig = { enabled: true, features: {} };
   let todayDocs = [];
   let monthDocs = [];
@@ -490,12 +520,13 @@ async function renderAiSettings(el) {
       if (!snap.exists()) return;
       const d = snap.data();
       aiKingConfig = {
-        activeModel: d.activeModel || 'claude',
+        // GPT는 운영 모델 선택지가 아니므로, 과거에 openai로 저장돼 있었다면 claude로 되돌림
+        activeModel: (d.activeModel === 'openai' ? 'claude' : d.activeModel) || 'claude',
         claudeModel: d.claudeModel || 'claude-haiku-4-5-20251001',
         claudeKeyMasked: d.claudeApiKey ? '●'.repeat(8) + d.claudeApiKey.slice(-4) : '',
         geminiModel: d.geminiModel || 'gemini-2.5-flash',
         geminiKeyMasked: d.geminiApiKey ? '●'.repeat(8) + d.geminiApiKey.slice(-4) : '',
-        openaiModel: d.openaiModel || 'gpt-4o-mini',
+        openaiModel: d.openaiModel || 'gpt-image-1',
         openaiKeyMasked: d.openaiApiKey ? '●'.repeat(8) + d.openaiApiKey.slice(-4) : '',
         pointsPerUse: d.pointsPerUse ?? 100,
         dailyFreeLimit: d.dailyFreeLimit ?? 3,
@@ -648,14 +679,13 @@ async function renderAiSettings(el) {
       <!-- AI 모델 및 API 설정 -->
       <div class="card">
         <div class="card__body">
-          <div style="font-size:15px;font-weight:900;margin-bottom:4px">🎮 AI 모델 설정</div>
-          <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:16px">AI킹(판사·번역사·궁합·작명소) 전체에 적용되는 모델과 API 키예요.</div>
+          <div style="font-size:15px;font-weight:900;margin-bottom:4px">🎮 운영 AI 모델</div>
+          <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:16px">AI킹(판사·번역사·궁합·작명소)에 쓰는 텍스트 모델이에요. 하나만 골라서 운영해요.</div>
 
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
             ${[
               { id: 'claude', icon: '🟣', label: 'Claude Haiku 4.5', sub: '권장 · 건당 $0.001' },
               { id: 'gemini', icon: '🔵', label: 'Gemini 2.5 Flash', sub: '무료 1,500/일 · 건당 $0.0005' },
-              { id: 'openai', icon: '🟢', label: 'GPT-4o mini',      sub: '준비 중 · 건당 $0.0003' },
             ].map(m => `
               <label class="admin-model-radio ${aiKingConfig.activeModel === m.id ? 'active' : ''}">
                 <input type="radio" name="ai-model" value="${m.id}" ${aiKingConfig.activeModel === m.id ? 'checked' : ''} style="display:none">
@@ -688,10 +718,6 @@ async function renderAiSettings(el) {
                 </select>
               </div>
             </div>
-            <div class="admin-key-row" style="opacity:0.5">
-              <div style="font-size:12px;font-weight:700;color:#00b894;margin-bottom:4px">🟢 OpenAI API Key (준비 중)</div>
-              <input type="password" class="form-input" id="key-openai" placeholder="${aiKingConfig.openaiKeyMasked || 'sk-...'}" style="font-size:12px;font-family:monospace;width:100%" disabled autocomplete="new-password">
-            </div>
           </div>
 
           <div style="display:flex;gap:12px;flex-wrap:wrap;padding-top:14px;border-top:1px solid var(--color-border)">
@@ -714,6 +740,26 @@ async function renderAiSettings(el) {
             </div>
           </div>
           <div id="ai-king-config-result" style="font-size:12px;margin-top:8px;color:var(--color-text-muted)"></div>
+        </div>
+      </div>
+
+      <!-- GPT 이미지 생성 (전용) -->
+      <div class="card">
+        <div class="card__body">
+          <div style="font-size:15px;font-weight:900;margin-bottom:4px">🖼️ GPT 이미지 생성</div>
+          <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:14px">GPT(OpenAI)는 운영 텍스트 AI에는 쓰지 않고, <b>이미지 생성에만</b> 사용해요. 키만 저장해두면 이미지 기능 출시 때 바로 연결돼요.</div>
+          <div class="admin-key-row">
+            <div style="font-size:12px;font-weight:700;color:#00b894;margin-bottom:4px">🟢 OpenAI API Key</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <input type="password" class="form-input" id="key-openai" placeholder="${aiKingConfig.openaiKeyMasked || 'sk-...'}" style="flex:1;min-width:200px;font-size:12px;font-family:monospace" autocomplete="new-password">
+              <select class="form-input" id="model-openai" style="font-size:12px;min-width:160px">
+                <option value="gpt-image-1" ${aiKingConfig.openaiModel === 'gpt-image-1' ? 'selected' : ''}>gpt-image-1 (이미지)</option>
+                <option value="dall-e-3" ${aiKingConfig.openaiModel === 'dall-e-3' ? 'selected' : ''}>DALL·E 3</option>
+              </select>
+              <button class="btn btn--ghost" id="btn-save-openai-key">저장</button>
+            </div>
+            <div id="openai-key-result" style="font-size:12px;margin-top:8px;color:var(--color-text-muted)"></div>
+          </div>
         </div>
       </div>
 
@@ -805,6 +851,27 @@ async function renderAiSettings(el) {
       result.textContent = '❌ ' + (e.message || '저장 실패');
       toast.error(e.message || '저장에 실패했어요');
     } finally { btn.disabled = false; btn.textContent = '설정 저장'; }
+  });
+
+  // GPT 이미지 생성 키 저장 (운영 모델과 분리)
+  el.querySelector('#btn-save-openai-key')?.addEventListener('click', async () => {
+    const btn = el.querySelector('#btn-save-openai-key');
+    const result = el.querySelector('#openai-key-result');
+    const openaiKey = el.querySelector('#key-openai')?.value.trim();
+    const openaiModel = el.querySelector('#model-openai')?.value;
+    if (!openaiKey && !openaiModel) { result.textContent = '저장할 내용이 없어요'; return; }
+    btn.disabled = true; btn.textContent = '저장 중...';
+    try {
+      const payload = { openaiModel };
+      if (openaiKey) payload.openaiApiKey = openaiKey;
+      await httpsCallable(functions, 'saveAiKingConfig')(payload);
+      toast.success('GPT 이미지 설정이 저장됐어요 ✅');
+      result.textContent = `✅ ${new Date().toLocaleTimeString('ko-KR')} 저장 완료`;
+      if (openaiKey) { el.querySelector('#key-openai').value = ''; el.querySelector('#key-openai').placeholder = '●'.repeat(8) + openaiKey.slice(-4); }
+    } catch (e) {
+      result.textContent = '❌ ' + (e.message || '저장 실패');
+      toast.error(e.message || '저장에 실패했어요');
+    } finally { btn.disabled = false; btn.textContent = '저장'; }
   });
 
   // 운영 기능 저장
