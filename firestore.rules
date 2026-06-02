@@ -317,7 +317,7 @@ service cloud.firestore {
     }
 
     match /config/{docId} {
-      allow read: if true;
+      allow read: if docId != 'ai' || isAdmin();
       allow write: if isAdmin();
     }
 
