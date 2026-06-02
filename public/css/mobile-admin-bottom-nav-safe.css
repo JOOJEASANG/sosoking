@@ -231,6 +231,23 @@
     padding-top: 1px !important;
   }
 
+  body:has(.admin-layout) .admin-label-full {
+    display: none !important;
+  }
+
+  body:has(.admin-layout) .admin-label-short {
+    display: block !important;
+  }
+
+  body:has(.admin-layout) .admin-menu-item--bottom,
+  body:has(.admin-layout) .admin-menu-item[data-tab="myinfo"] {
+    display: none !important;
+  }
+
+  body:has(.admin-layout) .admin-nav-divider {
+    display: none !important;
+  }
+
   body:has(.admin-layout) #admin-content {
     padding: 14px 12px 96px !important;
   }

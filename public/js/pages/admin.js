@@ -156,10 +156,19 @@ async function renderDashboard(el) {
     monthByFeature[data.feature] = (monthByFeature[data.feature] || 0) + (data.count || 0);
     monthTotal += (data.count || 0);
   }
+  const todayByFeature = {};
   let todayAiTotal = 0;
-  for (const d of (todayUsageSnap?.docs ?? [])) todayAiTotal += (d.data().count || 0);
+  for (const d of (todayUsageSnap?.docs ?? [])) {
+    const data = d.data();
+    todayByFeature[data.feature] = (todayByFeature[data.feature] || 0) + (data.count || 0);
+    todayAiTotal += (data.count || 0);
+  }
 
-  const aiCounts = AI_FEATURES.map(f => ({ ...f, count: monthByFeature[f.key] || 0 }));
+  const aiCounts = AI_FEATURES.map(f => ({
+    ...f,
+    count: monthByFeature[f.key] || 0,
+    today: todayByFeature[f.key] || 0,
+  }));
 
   const FEED_TYPE_LABEL = {
     tournament: '대결방', vote: '토론방', drip: '드립방',
@@ -191,13 +200,14 @@ async function renderDashboard(el) {
 
       <div class="card admin-dashboard-card">
         <div class="card__body">
-          <div class="admin-card-head">🤖 AI킹 서비스별 이번달 사용 현황</div>
+          <div class="admin-card-head">🤖 AI킹 서비스별 사용 현황</div>
           <div class="admin-type-grid admin-type-grid--4">
             ${aiCounts.map(f => `
               <div class="admin-type-card admin-type-card--${f.cat}">
                 <div class="admin-type-card__icon">${f.icon}</div>
                 <div class="admin-type-card__count">${f.count.toLocaleString()}</div>
                 <div class="admin-type-card__name">${f.label}</div>
+                <div class="admin-type-card__today">오늘 ${f.today}</div>
               </div>`).join('')}
           </div>
         </div>

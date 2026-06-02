@@ -352,6 +352,14 @@ body:has(.admin-layout) .page-container {
   color: var(--color-text-muted);
 }
 
+.admin-type-card__today {
+  margin-top: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  opacity: 0.75;
+}
+
 /* ── 테이블 ── */
 .admin-table {
   width: 100%;
