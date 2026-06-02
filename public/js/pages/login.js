@@ -4,7 +4,7 @@ import { toast } from '../components/toast.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const KAKAO_JS_APP_KEY  = '377995fee0850a5de4167641d343be0e';
-const KAKAO_REDIRECT_URI = 'https://sosoking.co.kr';
+const KAKAO_REDIRECT_URI = 'https://sosoking.co.kr/';
 const OWNER_EMAILS = new Set(['joojeasang@gmail.com']);
 
 function isOwnerEmail(user) {
@@ -36,10 +36,9 @@ export function triggerKakaoLogin(page = 'login') {
   const btn = document.getElementById('btn-kakao');
   if (btn) { btn.disabled = true; btn.textContent = '카카오로 이동 중...'; }
 
-  // 로그인 완료 후 돌아올 경로: /login·/signup 은 홈으로
   const returnTo = window.location.hash.slice(1).split('?')[0] || '/';
   sessionStorage.setItem('kakao_return_to', (returnTo === '/login' || returnTo === '/signup') ? '/' : returnTo);
-  sessionStorage.setItem('kakao_page', page); // 실패 시 돌아올 페이지 기록
+  sessionStorage.setItem('kakao_page', page);
 
   try {
     const K = window.Kakao;
