@@ -1,6 +1,6 @@
 'use strict';
 
-const coreAi = require('./index.js');
+const { recordTournamentResult, ...coreAi } = require('./index.js');
 const secureAiConfig = require('./secure-ai-config-functions.js');
 const secureFeed = require('./secure-feed-functions.js');
 const secureMulti = require('./secure-multi-functions.js');
