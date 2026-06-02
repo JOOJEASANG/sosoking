@@ -111,6 +111,25 @@ async function callAIWithImages(system, userText, imageA = null, imageB = null, 
   return msg.content[0]?.text || '';
 }
 
+// ── JSON 문자열 내 실제 줄바꿈 이스케이프 ──
+function sanitizeJson(str) {
+  let inString = false, escaped = false, out = '';
+  for (const ch of str) {
+    if (escaped) { escaped = false; out += ch; continue; }
+    if (ch === '\\' && inString) { escaped = true; out += ch; continue; }
+    if (ch === '"') { inString = !inString; out += ch; continue; }
+    if (inString && (ch === '\n' || ch === '\r')) { out += '\\n'; continue; }
+    out += ch;
+  }
+  return out;
+}
+
+function parseJson(raw) {
+  const cleaned = raw.replace(/```json|```/g, '').trim();
+  const match = cleaned.match(/[\[{][\s\S]*[\]}]/);
+  return JSON.parse(sanitizeJson(match ? match[0] : cleaned));
+}
+
 // ── Usage check with extraAiUses fallback ──
 // Returns { allowed: boolean, limit: number }
 async function checkUsage(userId, feature) {
@@ -240,9 +259,7 @@ exports.aiJudge = onCall({
 
   let verdicts;
   try {
-    const cleaned = raw.replace(/```json|```/g, '').trim();
-    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-    const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : cleaned);
+    const parsed = parseJson(raw);
     verdicts = (parsed.verdicts || []).map(v => ({
       judgeId: v.id,
       judgeName: JUDGES.find(j => j.id === v.id)?.name || v.id,
@@ -250,7 +267,7 @@ exports.aiJudge = onCall({
     }));
     if (!verdicts.length) throw new Error('empty verdicts');
   } catch (parseErr) {
-    console.error('[aiJudge] parse failed:', parseErr.message, raw?.slice(0, 200));
+    console.error('[aiJudge] parse failed:', parseErr.message, raw?.slice(0, 300));
     verdicts = activeJudges.map(j => ({ judgeId: j.id, judgeName: j.name, verdict: '이 판사는 오늘 결근했습니다. 😴' }));
   }
 
@@ -417,8 +434,9 @@ advice: 한 줄 조언. 진지한 어투로 황당하거나 예상 밖의 말.
       600,
       0.9,
     );
-    matchResult = JSON.parse(raw.replace(/```json|```/g, '').trim());
+    matchResult = parseJson(raw);
   } catch (err) {
+    console.error('[aiMatch] parse failed:', err.message, raw?.slice(0, 300));
     if (err instanceof HttpsError) throw err;
     matchResult = {
       score: Math.floor(Math.random() * 101),
@@ -509,11 +527,12 @@ reason은 이름보다 더 웃겨야 한다. 이름이 왜 찰떡인지 핵심�
 
   let names;
   try {
-    const raw = await callAI(system, userText, imageBase64, 600, 1.0);
-    const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
+    const raw = await callAI(system, userText, imageBase64, 700, 1.0);
+    const parsed = parseJson(raw);
     names = (parsed.names || []).filter(n => n.name);
     if (names.length === 0) throw new Error('empty names');
   } catch (err) {
+    console.error('[aiNaming] parse failed:', err.message);
     if (err instanceof HttpsError) throw err;
     names = [
       { name: '이름짓기실패킹', reason: 'AI가 충격받아서 말문이 막혔습니다' },

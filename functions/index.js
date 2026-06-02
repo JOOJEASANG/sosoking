@@ -372,6 +372,10 @@ exports.getAiKingUsage = aiKing.getAiKingUsage;
 exports.saveAiKingConfig = aiKing.saveAiKingConfig;
 exports.purchaseAiExtraUse = aiKing.purchaseAiExtraUse;
 
+// ── 이미지 업로드 ──
+const uploadFns = require('./upload-image-functions');
+exports.uploadFeedImage = uploadFns.uploadFeedImage;
+
 // ── 게시글 삭제 (작성자/관리자) ──
 const postOwnerFns = require('./post-owner-functions');
 exports.deleteOwnPost = postOwnerFns.deleteOwnPost;
