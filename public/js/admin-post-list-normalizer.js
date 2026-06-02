@@ -1,7 +1,7 @@
 // 관리자 게시글 목록 테이블 정규화 (DOM 주입 제거됨 — 탭은 admin.js에서 관리)
 const TYPE_LABELS = {
   ai_judge: '미친판사',
-  ai_translate: '미친번역사',
+  ai_translate: '사투리번역사',
   ai_match: 'AI궁합',
   ai_naming: 'AI작명소',
   vote: '토론방',

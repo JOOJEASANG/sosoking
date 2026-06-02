@@ -20,7 +20,7 @@ const NAV_CONTEXT_KEY = 'sosoking:feedNavContext';
 const ROOMS = [
   { key: '',             icon: '✨', label: '전체',      title: '전체',      desc: 'AI킹 콘텐츠를 한 번에 봅니다.' },
   { key: 'ai_judge',     icon: '⚖️', label: '미친판사',  title: '미친판사',  desc: '7명의 이상한 판사가 당신의 상황을 판결합니다.', path: '/ai-judge' },
-  { key: 'ai_translate', icon: '🌍', label: '미친번역사', title: '미친번역사', desc: '텍스트를 북한말·사투리·급식체 등으로 변환합니다.', path: '/ai-translate' },
+  { key: 'ai_translate', icon: '🌍', label: '사투리번역사', title: '사투리번역사', desc: '경상도·전라도·충청도·연변 사투리로 변환합니다.', path: '/ai-translate' },
   { key: 'ai_match',     icon: '💘', label: 'AI궁합',    title: 'AI궁합',    desc: 'AI가 두 가지의 궁합 점수를 분석해 드립니다.', path: '/ai-match' },
   { key: 'ai_naming',    icon: '🎭', label: 'AI작명소',  title: 'AI작명소',  desc: '설명하면 웃기고 그럴듯한 이름 5개를 지어드립니다.', path: '/ai-naming' },
 ];

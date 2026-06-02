@@ -16,9 +16,9 @@ const FEATURES = [
   {
     id: 'translate',
     emoji: '🌍',
-    name: '미친번역사',
+    name: '사투리번역사',
     path: '/ai-translate',
-    desc: '텍스트를 북한말, 부산 사투리, 조선시대, 급식체 등으로 변환해드립니다. 이미지 속 텍스트도 가능!',
+    desc: '경상도, 전라도, 충청도, 연변 사투리로 번역해드립니다. 이미지 속 텍스트도 사투리로!',
   },
   {
     id: 'match',

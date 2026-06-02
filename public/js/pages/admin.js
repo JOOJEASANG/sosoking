@@ -1090,7 +1090,7 @@ async function renderMyInfo(el) {
 /* ── 게시글관리 ── */
 async function renderAdminPosts(el) {
   const POST_TYPE_LABELS = {
-    ai_judge: '⚖️ 미친판사', ai_translate: '🌍 미친번역사',
+    ai_judge: '⚖️ 미친판사', ai_translate: '🌍 사투리번역사',
     ai_match: '💘 AI궁합', ai_naming: '🎭 AI작명소',
     vote: '🗳️ 토론방', drip: '🤣 드립방',
     collect: '📌 일반방', general: '📝 일반',
