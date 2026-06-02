@@ -2,12 +2,16 @@ import { navigate } from '../router.js';
 import { escHtml, formatTime } from '../utils/helpers.js';
 
 const TYPE_META = {
-  tournament:   { cat: 'multi',  catLabel: '끝판왕',    icon: '🏆', label: '끝판왕' },
-  multi:        { cat: 'multi',  catLabel: '끝판왕',    icon: '🏆', label: '끝판왕' },
-  ai_judge:     { cat: 'golra',  catLabel: '미친판사',  icon: '⚖️', label: '미친판사' },
-  ai_translate: { cat: 'usgyo',  catLabel: '미친번역사', icon: '🌍', label: '미친번역사' },
-  ai_match:     { cat: 'golra',  catLabel: 'AI궁합',    icon: '💘', label: 'AI궁합' },
-  ai_naming:    { cat: 'usgyo',  catLabel: 'AI작명소',  icon: '🎭', label: 'AI작명소' },
+  tournament:   { cat: 'multi',  catLabel: '\uB05D\uD310\uC655', icon: '🏆', label: '\uB05D\uD310\uC655' },
+  collect:      { cat: 'multi',  catLabel: '\uBAA8\uC74C\uBC29', icon: '📌', label: '\uBAA8\uC74C\uBC29' },
+  vote:         { cat: 'multi',  catLabel: '\uD1A0\uB860\uBC29', icon: '🗳️', label: '\uD1A0\uB860\uBC29' },
+  drip:         { cat: 'multi',  catLabel: '\uB4DC\uB9BD\uBC29', icon: '🤣', label: '\uB4DC\uB9BD\uBC29' },
+  quiz:         { cat: 'multi',  catLabel: '\uD034\uC988\uBC29', icon: '🧠', label: '\uD034\uC988\uBC29' },
+  multi:        { cat: 'multi',  catLabel: '\uBAA8\uC74C\uBC29', icon: '📌', label: '\uBAA8\uC74C\uBC29' },
+  ai_judge:     { cat: 'golra',  catLabel: 'AI\uD310\uC0AC', icon: '⚖️', label: 'AI\uD310\uC0AC' },
+  ai_translate: { cat: 'usgyo',  catLabel: 'AI\uBC88\uC5ED\uC0AC', icon: '🌍', label: 'AI\uBC88\uC5ED\uC0AC' },
+  ai_match:     { cat: 'golra',  catLabel: 'AI\uAD81\uD569', icon: '💘', label: 'AI\uAD81\uD569' },
+  ai_naming:    { cat: 'usgyo',  catLabel: 'AI\uC791\uBA85\uC18C', icon: '🎭', label: 'AI\uC791\uBA85\uC18C' },
 };
 
 function escAttr(value) {
@@ -49,21 +53,26 @@ function safeTag(value) {
 function getMultiSubtype(post) {
   if (post.modules?.tournament?.enabled || post.subtype === 'tournament') return 'tournament';
   if (post.subtype && TYPE_META[post.subtype]) return post.subtype;
-  return 'tournament';
+  if (post.feedType && TYPE_META[post.feedType]) return post.feedType;
+  if (post.modules?.vote?.enabled) return 'vote';
+  if (post.modules?.drip?.enabled) return 'drip';
+  if (post.modules?.quiz?.enabled) return 'quiz';
+  if (post.modules?.collect?.enabled) return 'collect';
+  return 'collect';
 }
 
 function getTypeMeta(post) {
   if (post.type === 'multi') {
     const subtype = getMultiSubtype(post);
-    return TYPE_META[subtype] || TYPE_META.general;
+    return TYPE_META[subtype] || TYPE_META.collect;
   }
-  return TYPE_META[post.type] || { cat: 'multi', catLabel: '', icon: '📝', label: '일반' };
+  return TYPE_META[post.type] || { cat: 'multi', catLabel: '', icon: '📝', label: '\uC77C\uBC18' };
 }
 
 function displayTitle(post) {
   const title = plainText(post.title || '').trim();
   const desc = plainText(post.desc || '').trim();
-  return title || desc || '제목 없음';
+  return title || desc || '\uC81C\uBAA9 \uC5C6\uC74C';
 }
 
 function displayDesc(post) {
@@ -73,8 +82,8 @@ function displayDesc(post) {
 function renderModuleChips(post) {
   if (post.type !== 'multi' || !post.modules) return '';
   const labels = [];
-  if (post.anonymous || post.modules.anonymous?.enabled) labels.push('익명');
-  if (post.modules.tournament?.enabled) labels.push('토너먼트');
+  if (post.anonymous || post.modules.anonymous?.enabled) labels.push('\uC775\uBA85');
+  if (post.modules.tournament?.enabled) labels.push('\uD1A0\uB108\uBA3C\uD2B8');
   if (!labels.length) return '';
   return `<div class="feed-card__multi-chips">${labels.map(label => `<span>${escHtml(label)}</span>`).join('')}</div>`;
 }
@@ -107,7 +116,7 @@ export function renderFeedCard(post) {
           ${desc ? `<p class="feed-card__desc line-clamp-2">${escHtml(desc)}</p>` : ''}
           ${renderModuleChips(post)}
           <div class="feed-card__meta">
-            <span>${escHtml(post.authorName || '익명')}</span>
+            <span>${escHtml(post.authorName || '\uC775\uBA85')}</span>
             <span class="feed-card__meta-dot"></span>
             <span>${timeStr}</span>
             ${viewCount ? `<span class="feed-card__meta-dot"></span><span>👁 ${Number(viewCount || 0).toLocaleString()}</span>` : ''}
@@ -118,13 +127,10 @@ export function renderFeedCard(post) {
         ${images.length === 1 ? `<div class="feed-card__thumb"><img src="${escAttr(images[0])}" alt="" loading="lazy" referrerpolicy="no-referrer"></div>` : ''}
       </div>
       ${images.length > 1 ? renderImageGrid(images) : ''}
-      ${images.length > 3 ? `<div class="feed-card__image-count">사진 ${images.length}장</div>` : ''}
-      ${temp > 0 ? `<div class="feed-temp-bar" style="--temp-pct:${temp}%;--temp-color:${tempColor}" title="참여 온도 ${temp}°C"></div>` : ''}
+      ${images.length > 3 ? `<div class="feed-card__image-count">\uC0AC\uC9C4 ${images.length}\uC7A5</div>` : ''}
+      ${temp > 0 ? `<div class="feed-temp-bar" style="--temp-pct:${temp}%;--temp-color:${tempColor}" title="\uCC38\uC5EC \uC628\uB3C4 ${temp}°C"></div>` : ''}
       <div class="feed-card__actions" onclick="event.stopPropagation()">
-        <button class="feed-share-btn" type="button" data-feed-share="${escAttr(post.id)}" data-feed-title="${escAttr(title || '소소킹')}">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
-          공유
-        </button>
+        <button class="feed-share-btn" type="button" data-feed-share="${escAttr(post.id)}" data-feed-title="${escAttr(title || '소소킹')}">🔗 공유</button>
       </div>
     </article>`;
 }
@@ -162,9 +168,9 @@ document.addEventListener('click', async event => {
     if (navigator.share) await navigator.share({ title, url });
     else {
       await navigator.clipboard.writeText(url);
-      window.showToast?.('링크가 복사됐어요', 'success');
+      window.showToast?.('\uB9C1\uD06C\uAC00 \uBCF5\uC0AC\uB410\uC5B4\uC694', 'success');
     }
   } catch {
-    // 사용자가 공유창을 닫은 경우는 조용히 무시합니다.
+    // intentionally ignored
   }
 }, true);
