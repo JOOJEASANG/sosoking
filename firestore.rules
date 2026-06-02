@@ -62,12 +62,8 @@ service cloud.firestore {
         );
     }
 
-    function isSafeVoteUpdate() {
-      return false;
-    }
-    function isSafeMultiVoteUpdate() {
-      return false;
-    }
+    function isSafeVoteUpdate() { return false; }
+    function isSafeMultiVoteUpdate() { return false; }
     function isAuthorContentUpdate(authorId) {
       let changed = request.resource.data.diff(resource.data).affectedKeys();
       return isAuthor(authorId)
@@ -79,17 +75,9 @@ service cloud.firestore {
           'options', 'modules'
         ]);
     }
-
-    function isMultiItemReactionOrReplyCountUpdate() {
-      return false;
-    }
-
-    function validReplyCreate() {
-      return false;
-    }
-    function validMultiParticipationCreate() {
-      return false;
-    }
+    function isMultiItemReactionOrReplyCountUpdate() { return false; }
+    function validReplyCreate() { return false; }
+    function validMultiParticipationCreate() { return false; }
     function validUserSelfUpdate(userId) {
       let changed = request.resource.data.diff(resource.data).affectedKeys();
       return isAuthor(userId)
@@ -130,11 +118,9 @@ service cloud.firestore {
         allow read: if isAuthor(userId) || isAdmin();
         allow create, update, delete: if false;
       }
-
       match /scraps/{scrapId} {
         allow read:   if isAuthor(userId) || isAdmin();
-        allow create: if isAuthor(userId)
-                        && request.resource.data.postId is string;
+        allow create: if isAuthor(userId) && request.resource.data.postId is string;
         allow delete: if isAuthor(userId) || isAdmin();
         allow update: if false;
       }
@@ -164,10 +150,7 @@ service cloud.firestore {
                       || isSafeMultiVoteUpdate();
       allow delete: if isAdmin() || isAuthor(resource.data.authorId);
 
-      match /quiz_attempts/{userId} {
-        allow read: if true;
-        allow create, update, delete: if false;
-      }
+      match /quiz_attempts/{userId} { allow read: if true; allow create, update, delete: if false; }
 
       match /comments/{commentId} {
         allow read:   if true;
@@ -176,7 +159,6 @@ service cloud.firestore {
                         && validText(request.resource.data.text, 500);
         allow update: if isAdmin() || isAuthorContentUpdate(resource.data.authorId);
         allow delete: if isAdmin() || isAuthor(resource.data.authorId);
-
         match /replies/{replyId} {
           allow read: if true;
           allow create: if false;
@@ -188,8 +170,7 @@ service cloud.firestore {
       match /secret/{docId} {
         allow read:   if isAdmin();
         allow create: if isAdmin() ||
-          (signedIn() &&
-            get(/databases/$(database)/documents/feeds/$(postId)).data.authorId == request.auth.uid);
+          (signedIn() && get(/databases/$(database)/documents/feeds/$(postId)).data.authorId == request.auth.uid);
         allow update: if isAdmin();
         allow delete: if isAdmin();
       }
@@ -199,7 +180,6 @@ service cloud.firestore {
         allow create: if false;
         allow update: if isAdmin();
         allow delete: if isAdmin() || isAuthor(resource.data.authorId);
-
         match /replies/{replyId} {
           allow read: if true;
           allow create: if false;
@@ -209,40 +189,16 @@ service cloud.firestore {
       }
 
       match /multi_naming/{itemId} {
-        allow read: if true;
-        allow create: if false;
-        allow update: if isAdmin();
-        allow delete: if isAdmin() || isAuthor(resource.data.authorId);
-        match /replies/{replyId} {
-          allow read: if true;
-          allow create: if false;
-          allow update: if false;
-          allow delete: if isAdmin() || isAuthor(resource.data.authorId);
-        }
+        allow read: if true; allow create: if false; allow update: if isAdmin(); allow delete: if isAdmin() || isAuthor(resource.data.authorId);
+        match /replies/{replyId} { allow read: if true; allow create: if false; allow update: if false; allow delete: if isAdmin() || isAuthor(resource.data.authorId); }
       }
       match /multi_drip/{itemId} {
-        allow read: if true;
-        allow create: if false;
-        allow update: if isAdmin();
-        allow delete: if isAdmin() || isAuthor(resource.data.authorId);
-        match /replies/{replyId} {
-          allow read: if true;
-          allow create: if false;
-          allow update: if false;
-          allow delete: if isAdmin() || isAuthor(resource.data.authorId);
-        }
+        allow read: if true; allow create: if false; allow update: if isAdmin(); allow delete: if isAdmin() || isAuthor(resource.data.authorId);
+        match /replies/{replyId} { allow read: if true; allow create: if false; allow update: if false; allow delete: if isAdmin() || isAuthor(resource.data.authorId); }
       }
       match /multi_fill/{itemId} {
-        allow read: if true;
-        allow create: if false;
-        allow update: if isAdmin();
-        allow delete: if isAdmin() || isAuthor(resource.data.authorId);
-        match /replies/{replyId} {
-          allow read: if true;
-          allow create: if false;
-          allow update: if false;
-          allow delete: if isAdmin() || isAuthor(resource.data.authorId);
-        }
+        allow read: if true; allow create: if false; allow update: if isAdmin(); allow delete: if isAdmin() || isAuthor(resource.data.authorId);
+        match /replies/{replyId} { allow read: if true; allow create: if false; allow update: if false; allow delete: if isAdmin() || isAuthor(resource.data.authorId); }
       }
 
       match /view_events/{eventId} { allow read, write: if false; }
@@ -262,26 +218,17 @@ service cloud.firestore {
       allow update: if validNotificationReadUpdate();
       allow create, delete: if false;
     }
-
-    match /notifications/{uid}/items/{noticeId} {
-      allow read: if isAuthor(uid);
-      allow write: if false;
-    }
+    match /notifications/{uid}/items/{noticeId} { allow read: if isAuthor(uid); allow write: if false; }
 
     match /follows/{followId} {
       allow read: if signedIn()
-        && (resource.data.followerId == request.auth.uid
-          || resource.data.followedId == request.auth.uid
-          || isAdmin());
+        && (resource.data.followerId == request.auth.uid || resource.data.followedId == request.auth.uid || isAdmin());
       allow create: if signedIn()
         && request.resource.data.followerId == request.auth.uid
         && request.resource.data.followedId is string
         && request.resource.data.followedId != request.auth.uid
-        && request.resource.data.keys().hasOnly([
-          'followerId', 'followerName', 'followedId', 'followedName', 'createdAt'
-        ]);
-      allow delete: if signedIn()
-        && (resource.data.followerId == request.auth.uid || isAdmin());
+        && request.resource.data.keys().hasOnly(['followerId', 'followerName', 'followedId', 'followedName', 'createdAt']);
+      allow delete: if signedIn() && (resource.data.followerId == request.auth.uid || isAdmin());
       allow update: if false;
     }
 
@@ -298,14 +245,12 @@ service cloud.firestore {
       allow create: if signedIn();
       allow update: if isAdmin() || isGameHost(roomId);
       allow delete: if isAdmin();
-
       match /players/{playerId} {
         allow read: if true;
         allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
         allow update: if signedIn() && (playerId == request.auth.uid || resource.data.uid == request.auth.uid || isGameHost(roomId));
         allow delete: if isAdmin() || isGameHost(roomId) || isAuthor(playerId);
       }
-
       match /chats/{chatId} {
         allow read: if true;
         allow create: if (isGameRoomPlayer(roomId) || isGameHost(roomId))
@@ -316,11 +261,8 @@ service cloud.firestore {
       }
     }
 
-    match /config/{docId} {
-      allow read: if docId != 'ai' || isAdmin();
-      allow write: if isAdmin();
-    }
-
+    match /config/{docId} { allow read, write: if isAdmin(); }
+    match /ai_ladder_bonus/{docId} { allow read: if isAdmin(); allow write: if false; }
     match /missions/{missionId}      { allow read: if true; allow write: if isAdmin(); }
     match /categories/{categoryId}   { allow read: if true; allow write: if isAdmin(); }
     match /topics/{topicId}          { allow read: if true; allow write: if isAdmin(); }
@@ -332,8 +274,6 @@ service cloud.firestore {
     match /soso_feed_posts/{postId}  { allow read: if true; allow write: if false; }
     match /point_awards/{awardId}    { allow read, write: if false; }
 
-    match /{document=**} {
-      allow read, write: if false;
-    }
+    match /{document=**} { allow read, write: if false; }
   }
 }
