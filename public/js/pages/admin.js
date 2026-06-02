@@ -37,6 +37,7 @@ export async function renderAdmin() {
     { key: 'ai',        icon: '🤖', label: 'AI 관리',  short: 'AI' },
     { key: 'reports',   icon: '🚨', label: '신고·의견', short: '신고' },
     { key: 'users',     icon: '👥', label: '회원관리', short: '회원' },
+    { key: 'posts',     icon: '📝', label: '게시글관리', short: '게시글' },
   ];
   const BOTTOM_MENUS = [
     { key: 'myinfo', icon: '👤', label: '내 정보', short: '내정보' },
@@ -114,6 +115,7 @@ async function loadTab(tab) {
     case 'reports':   return renderReports(content);
     case 'users':     return renderUsers(content);
     case 'ai':        return renderAiSettings(content);
+    case 'posts':     return renderAdminPosts(content);
     case 'myinfo':    return renderMyInfo(content);
   }
 }
@@ -1070,6 +1072,79 @@ async function renderMyInfo(el) {
       saveBtn.disabled = false;
       saveBtn.textContent = '저장하기';
     }
+  });
+}
+
+/* ── 게시글관리 ── */
+async function renderAdminPosts(el) {
+  const POST_TYPE_LABELS = {
+    ai_judge: '⚖️ 미친판사', ai_translate: '🌍 미친번역사',
+    ai_match: '💘 AI궁합', ai_naming: '🎭 AI작명소',
+    vote: '🗳️ 토론방', drip: '🤣 드립방',
+    collect: '📌 일반방', general: '📝 일반',
+  };
+  function postTypeLabel(post) {
+    const key = post.type || post.feedType || post.subtype || 'general';
+    return POST_TYPE_LABELS[key] || `📝 ${key}`;
+  }
+  function dateFmt(v) {
+    try { const d = v?.toDate?.() || v; return d ? new Date(d).toLocaleString('ko-KR') : '-'; } catch { return '-'; }
+  }
+
+  el.innerHTML = '<div class="loading-center"><div class="spinner spinner--lg"></div></div>';
+  const snap = await getDocs(query(collection(db, 'feeds'), orderBy('createdAt', 'desc'), limit(100))).catch(() => null);
+  const posts = snap?.docs.map(d => ({ id: d.id, ...d.data() })) || [];
+
+  el.innerHTML = `
+    <div class="admin-posts-panel">
+      <h2 class="admin-section-title">📝 게시글관리</h2>
+      <div class="card"><div class="card__body">
+        <div style="font-size:13px;color:var(--color-text-muted);margin-bottom:12px">최신 게시글 100개 기준 · 숨김/해제 작업 가능</div>
+        <div class="admin-table-wrap" style="overflow:auto">
+          <table class="admin-table" style="width:100%;min-width:680px">
+            <thead><tr>
+              <th style="text-align:left;width:110px">유형</th>
+              <th style="text-align:left">제목</th>
+              <th style="text-align:left;width:90px">작성자</th>
+              <th style="text-align:left;width:130px">작성일</th>
+              <th style="text-align:center;width:60px">상태</th>
+              <th style="text-align:center;width:80px">작업</th>
+            </tr></thead>
+            <tbody>
+              ${posts.length ? posts.map(post => `
+                <tr data-admin-post-row="${escHtml(post.id)}">
+                  <td><span style="font-size:12px">${escHtml(postTypeLabel(post))}</span></td>
+                  <td><a href="#/detail/${escHtml(post.id)}" style="color:var(--color-primary)">${escHtml(post.title || post.desc || '(제목 없음)')}</a></td>
+                  <td style="font-size:12px">${escHtml(post.authorName || post.authorEmail || post.authorId || '익명')}</td>
+                  <td style="font-size:12px">${escHtml(dateFmt(post.createdAt))}</td>
+                  <td style="text-align:center">${post.hidden
+                    ? '<span class="badge badge--danger">숨김</span>'
+                    : '<span class="badge badge--success">공개</span>'}</td>
+                  <td style="text-align:center;white-space:nowrap">
+                    <button class="btn btn--ghost btn--sm" data-admin-toggle-post="${escHtml(post.id)}" data-hidden="${post.hidden ? '1' : '0'}">${post.hidden ? '해제' : '숨김'}</button>
+                  </td>
+                </tr>`).join('')
+              : '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--color-text-muted)">게시글이 없습니다.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div></div>
+    </div>`;
+
+  el.querySelectorAll('[data-admin-toggle-post]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.adminTogglePost;
+      const hide = btn.dataset.hidden !== '1';
+      btn.disabled = true;
+      try {
+        await updateDoc(doc(db, 'feeds', id), {
+          hidden: hide, hideReason: hide ? '관리자 숨김' : '',
+          updatedAt: serverTimestamp(),
+        });
+        toast.success(hide ? '게시글을 숨김 처리했어요' : '게시글 숨김을 해제했어요');
+        renderAdminPosts(el);
+      } catch { toast.error('처리에 실패했어요'); btn.disabled = false; }
+    });
   });
 }
 
