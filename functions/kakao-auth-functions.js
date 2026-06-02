@@ -15,13 +15,26 @@ const adminAuth = getAuth();
 const db = getFirestore();
 
 const KAKAO_JS_APP_KEY = '377995fee0850a5de4167641d343be0e';
+const ALLOWED_REDIRECT_URIS = new Set([
+  'https://sosoking.co.kr',
+  'https://sosoking.co.kr/',
+]);
+
+function normalizeRedirectUri(value) {
+  const redirectUri = String(value || '').trim();
+  if (!ALLOWED_REDIRECT_URIS.has(redirectUri)) {
+    throw new HttpsError('invalid-argument', '허용되지 않은 카카오 redirectUri입니다.');
+  }
+  return redirectUri;
+}
 
 function exchangeKakaoCode(code, redirectUri) {
   return new Promise((resolve, reject) => {
+    const safeRedirectUri = normalizeRedirectUri(redirectUri);
     const body = [
       'grant_type=authorization_code',
       `client_id=${encodeURIComponent(KAKAO_JS_APP_KEY)}`,
-      `redirect_uri=${encodeURIComponent(redirectUri)}`,
+      `redirect_uri=${encodeURIComponent(safeRedirectUri)}`,
       `code=${encodeURIComponent(code)}`,
     ].join('&');
     const req = https.request({
@@ -124,7 +137,6 @@ exports.kakaoLogin = onCall({ region: 'asia-northeast3' }, async (request) => {
     });
   } catch (e) {
     console.error('[kakaoLogin] createCustomToken error:', e.message, e.code);
-    // 실제 원인을 클라이언트에도 전달해 디버깅 용이하게 함
     const detail = e.message || String(e);
     throw new HttpsError('internal', '커스텀 토큰 생성 실패: ' + detail);
   }
@@ -134,7 +146,6 @@ exports.kakaoLogin = onCall({ region: 'asia-northeast3' }, async (request) => {
     const existingSnap = await userRef.get().catch(() => null);
     const existingNickname = existingSnap?.data()?.nickname || null;
 
-    // 닉네임이 없는 신규 사용자면 카카오 displayName으로 자동 설정 시도
     let autoNickname = null;
     if (!existingNickname) {
       const candidate = (displayName || '').replace(/[^가-힣a-zA-Z0-9_]/g, '').slice(0, 12);
