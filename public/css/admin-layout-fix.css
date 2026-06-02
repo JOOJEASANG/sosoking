@@ -326,7 +326,7 @@ body:has(.admin-layout) .page-container {
 
 .admin-type-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -1028,6 +1028,13 @@ body:has(.admin-layout) .page-container {
 }
 .admin-type-card--usgyo .admin-type-card__count {
   color: var(--color-usgyo-dark);
+}
+.admin-type-card--neutral {
+  border-color: var(--color-border-light);
+  background: var(--color-surface-2);
+}
+.admin-type-card--neutral .admin-type-card__count {
+  color: var(--color-text-secondary);
 }
 
 /* 최근 게시물 리스트 */

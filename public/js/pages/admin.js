@@ -123,10 +123,16 @@ async function renderDashboard(el) {
   const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
 
   const TYPE_META = [
-    { feedType: 'tournament', icon: '⚔️', label: '대결방', cat: 'primary' },
-    { feedType: 'vote',       icon: '🗳️', label: '토론방', cat: 'golra' },
-    { feedType: 'quiz',       icon: '🧠', label: '퀴즈방', cat: 'malhe' },
-    { feedType: 'drip',       icon: '🤣', label: '드립방', cat: 'usgyo' },
+    { feedType: 'tournament', icon: '⚔️', label: '대결방',  cat: 'primary' },
+    { feedType: 'vote',       icon: '🗳️', label: '토론방',  cat: 'golra'   },
+    { feedType: 'collect',    icon: '📌', label: '일반방',  cat: 'neutral'  },
+    { feedType: 'general',    icon: '📝', label: '일반',    cat: 'neutral'  },
+    { feedType: 'quiz',       icon: '🧠', label: '퀴즈방',  cat: 'malhe'   },
+    { feedType: 'drip',       icon: '🤣', label: '드립방',  cat: 'usgyo'   },
+    { feedType: 'fill',       icon: '🧩', label: '빈칸',    cat: 'neutral'  },
+    { feedType: 'naming',     icon: '😜', label: '작명',    cat: 'neutral'  },
+    { feedType: 'acrostic',   icon: '✍️', label: '행시',    cat: 'neutral'  },
+    { feedType: 'relay',      icon: '🎭', label: '릴레이',  cat: 'neutral'  },
   ];
 
   const FEED_TYPE_LABEL = {
