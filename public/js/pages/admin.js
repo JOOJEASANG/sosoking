@@ -123,10 +123,10 @@ async function renderDashboard(el) {
   const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
 
   const TYPE_META = [
-    { feedType: 'collect', icon: '📌', label: '일반방', cat: 'primary' },
-    { feedType: 'vote',    icon: '🗳️', label: '토론방', cat: 'golra' },
-    { feedType: 'quiz',    icon: '🧠', label: '퀴즈방', cat: 'malhe' },
-    { feedType: 'drip',    icon: '🤣', label: '드립방', cat: 'usgyo' },
+    { feedType: 'tournament', icon: '⚔️', label: '대결방', cat: 'primary' },
+    { feedType: 'vote',       icon: '🗳️', label: '토론방', cat: 'golra' },
+    { feedType: 'quiz',       icon: '🧠', label: '퀴즈방', cat: 'malhe' },
+    { feedType: 'drip',       icon: '🤣', label: '드립방', cat: 'usgyo' },
   ];
 
   const [totalSnap, todaySnap, recentSnap, reportSnap, ...typeSnaps] = await Promise.all([
@@ -144,28 +144,30 @@ async function renderDashboard(el) {
   const typeCounts = TYPE_META.map((t, i) => ({ ...t, count: typeSnaps[i]?.data?.().count ?? 0 }));
 
   el.innerHTML = `
-    <div style="display:flex;flex-direction:column;gap:24px">
-      <div>
-        <h2 class="admin-section-title">📊 대시보드</h2>
-        <div class="admin-stat-grid">
-          <div class="admin-stat-card">
-            <div class="admin-stat-card__num">${total.toLocaleString()}</div>
-            <div class="admin-stat-card__label">총 게시물</div>
-          </div>
-          <div class="admin-stat-card">
-            <div class="admin-stat-card__num" style="color:var(--color-success)">${today}</div>
-            <div class="admin-stat-card__label">오늘 새 글</div>
-          </div>
-          <div class="admin-stat-card">
-            <div class="admin-stat-card__num" style="color:${pending > 0 ? 'var(--color-danger)' : 'var(--color-text-muted)'}">${pending}</div>
-            <div class="admin-stat-card__label">미처리 신고</div>
-          </div>
+    <div class="admin-dashboard">
+      <h2 class="admin-section-title">📊 대시보드</h2>
+
+      <div class="admin-stat-grid">
+        <div class="admin-stat-card">
+          <div class="admin-stat-card__icon">📝</div>
+          <div class="admin-stat-card__num">${total.toLocaleString()}</div>
+          <div class="admin-stat-card__label">총 게시물</div>
+        </div>
+        <div class="admin-stat-card">
+          <div class="admin-stat-card__icon">✨</div>
+          <div class="admin-stat-card__num" style="color:var(--color-success)">${today}</div>
+          <div class="admin-stat-card__label">오늘 새 글</div>
+        </div>
+        <div class="admin-stat-card">
+          <div class="admin-stat-card__icon">🚨</div>
+          <div class="admin-stat-card__num" style="color:${pending > 0 ? 'var(--color-danger)' : 'var(--color-success)'}">${pending}</div>
+          <div class="admin-stat-card__label">미처리 신고</div>
         </div>
       </div>
 
-      <div class="card">
+      <div class="card admin-dashboard-card">
         <div class="card__body">
-          <div style="font-size:14px;font-weight:800;margin-bottom:14px">🎮 유형별 게시물 현황</div>
+          <div class="admin-card-head">⚔️ 유형별 게시물 현황</div>
           <div class="admin-type-grid">
             ${typeCounts.map(t => `
               <div class="admin-type-card admin-type-card--${t.cat}">
@@ -177,15 +179,17 @@ async function renderDashboard(el) {
         </div>
       </div>
 
-      <div class="card">
+      <div class="card admin-dashboard-card">
         <div class="card__body">
-          <div style="font-size:14px;font-weight:800;margin-bottom:12px">🕐 최근 게시물</div>
-          ${recent.map(p => `
-            <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--color-border-light)">
-              <span style="font-size:11px;padding:3px 7px;border-radius:99px;background:var(--color-surface-2);font-weight:700">${p.type || ''}</span>
-              <a href="#/detail/${p.id}" style="flex:1;font-size:13px;font-weight:600;color:var(--color-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.title || '(제목없음)')}</a>
-              <span style="font-size:11px;color:var(--color-text-muted);white-space:nowrap">${escHtml(p.authorName || '익명')}</span>
-            </div>`).join('')}
+          <div class="admin-card-head">🕐 최근 게시물</div>
+          <div class="admin-recent-list">
+            ${recent.length ? recent.map(p => `
+              <div class="admin-recent-item">
+                <span class="admin-recent-item__type">${escHtml(p.feedType || p.type || '—')}</span>
+                <a href="#/detail/${p.id}" class="admin-recent-item__title">${escHtml(p.title || '(제목없음)')}</a>
+                <span class="admin-recent-item__author">${escHtml(p.authorName || '익명')}</span>
+              </div>`).join('') : '<div class="admin-empty-note">최근 게시물이 없습니다</div>'}
+          </div>
         </div>
       </div>
     </div>`;
@@ -932,63 +936,57 @@ async function renderMyInfo(el) {
     <div class="admin-myinfo">
       <h2 class="admin-section-title">👤 내 정보 설정</h2>
 
-      <div class="admin-myinfo-grid">
-
-        <!-- 왼쪽: 프로필 + 계정 정보 -->
-        <div>
-          <div class="card" style="margin-bottom:16px">
-            <div class="card__body--lg">
-              <div class="admin-myinfo-section-title">🙋 내 프로필</div>
-              <div class="admin-myinfo-profile-row">
-                <div class="admin-myinfo-avatar">${avatarHTML}</div>
-                <div>
-                  <div style="font-size:16px;font-weight:900;color:var(--color-text-primary)">${escHtml(nickname)}</div>
-                  <div style="font-size:12px;color:var(--color-text-muted);margin-top:2px">${escHtml(user.email || '')}</div>
-                  <span class="admin-myinfo-role-badge">🔑 관리자</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card__body--lg">
-              <div class="admin-myinfo-section-title">🔐 계정 정보</div>
-              <div class="admin-myinfo-row">
-                <span class="admin-myinfo-row__label">이메일</span>
-                <span class="admin-myinfo-row__value">${escHtml(user.email || '—')}</span>
-              </div>
-              <div class="admin-myinfo-row">
-                <span class="admin-myinfo-row__label">로그인 방식</span>
-                <span class="admin-myinfo-row__value">${isGoogle ? '구글 소셜 로그인' : '이메일/비밀번호'}</span>
-              </div>
-              <div class="admin-myinfo-row">
-                <span class="admin-myinfo-row__label">권한</span>
-                <span class="admin-myinfo-row__value" style="color:var(--color-primary)">🔑 관리자</span>
-              </div>
+      <!-- 프로필 -->
+      <div class="card admin-myinfo-block">
+        <div class="card__body--lg">
+          <div class="admin-myinfo-section-title">🙋 내 프로필</div>
+          <div class="admin-myinfo-profile-row">
+            <div class="admin-myinfo-avatar">${avatarHTML}</div>
+            <div>
+              <div style="font-size:17px;font-weight:950;color:var(--color-text-primary);letter-spacing:-.3px">${escHtml(nickname)}</div>
+              <div style="font-size:12px;color:var(--color-text-muted);margin-top:3px">${escHtml(user.email || '')}</div>
+              <span class="admin-myinfo-role-badge">🔑 관리자</span>
             </div>
           </div>
         </div>
-
-        <!-- 오른쪽: 닉네임 변경 -->
-        <div>
-          <div class="card">
-            <div class="card__body--lg">
-              <div class="admin-myinfo-section-title">✏️ 닉네임 변경</div>
-              <div class="form-group">
-                <label class="form-label">새 닉네임 <span class="required">*</span></label>
-                <input id="admin-new-nickname" class="form-input" type="text"
-                  value="${escHtml(nickname)}"
-                  placeholder="2~12자, 한글/영문/숫자/_"
-                  maxlength="12">
-                <div class="form-hint">2~12자, 한글·영문·숫자·_(밑줄)만 사용 가능해요</div>
-                <div id="admin-nickname-feedback" style="font-size:12px;margin-top:6px;min-height:18px"></div>
-              </div>
-              <button class="btn btn--primary btn--sm" id="btn-admin-save-nickname">저장하기</button>
-            </div>
-          </div>
-        </div>
-
       </div>
+
+      <!-- 닉네임 변경 -->
+      <div class="card admin-myinfo-block">
+        <div class="card__body--lg">
+          <div class="admin-myinfo-section-title">✏️ 닉네임 변경</div>
+          <div class="form-group">
+            <label class="form-label">새 닉네임 <span class="required">*</span></label>
+            <input id="admin-new-nickname" class="form-input" type="text"
+              value="${escHtml(nickname)}"
+              placeholder="2~12자, 한글/영문/숫자/_"
+              maxlength="12">
+            <div class="form-hint">2~12자, 한글·영문·숫자·_(밑줄)만 사용 가능해요</div>
+            <div id="admin-nickname-feedback" style="font-size:12px;margin-top:6px;min-height:18px"></div>
+          </div>
+          <button class="btn btn--primary btn--sm" id="btn-admin-save-nickname">저장하기</button>
+        </div>
+      </div>
+
+      <!-- 계정 정보 -->
+      <div class="card admin-myinfo-block">
+        <div class="card__body--lg">
+          <div class="admin-myinfo-section-title">🔐 계정 정보</div>
+          <div class="admin-myinfo-row">
+            <span class="admin-myinfo-row__label">이메일</span>
+            <span class="admin-myinfo-row__value">${escHtml(user.email || '—')}</span>
+          </div>
+          <div class="admin-myinfo-row">
+            <span class="admin-myinfo-row__label">로그인 방식</span>
+            <span class="admin-myinfo-row__value">${isGoogle ? '구글 소셜 로그인' : '이메일/비밀번호'}</span>
+          </div>
+          <div class="admin-myinfo-row">
+            <span class="admin-myinfo-row__label">권한</span>
+            <span class="admin-myinfo-row__value" style="color:var(--color-primary);font-weight:900">🔑 관리자</span>
+          </div>
+        </div>
+      </div>
+
     </div>`;
 
   const input    = el.querySelector('#admin-new-nickname');

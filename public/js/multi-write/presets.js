@@ -25,6 +25,27 @@ export const MULTI_PRESETS = {
     tagsPlaceholder: '#토론, #투표, #찬반',
     voteOptionPlaceholders: ['찬성', '반대'],
   },
+  // quiz: 퀴즈방 (주관식·객관식 퀴즈)
+  quiz: {
+    label: '퀴즈방',
+    icon: '🧠',
+    shortDesc: '주관식 · 객관식 퀴즈',
+    titlePlaceholder: '예: 이 사진의 정체는 무엇일까요?',
+    descPlaceholder: '퀴즈에 대한 설명이나 추가 정보를 적어주세요.',
+    tagsPlaceholder: '#퀴즈, #맞혀봐, #정답',
+    quizAnswerPlaceholder: '예: 정답을 여기에 입력하세요',
+    hiddenFromWriter: true,
+  },
+  // drip: 드립방 (한 줄 드립)
+  drip: {
+    label: '드립방',
+    icon: '🤣',
+    shortDesc: '한 줄 드립',
+    titlePlaceholder: '예: 퇴근 5분 전 회의 잡혔을 때',
+    descPlaceholder: '',
+    tagsPlaceholder: '#드립, #한줄드립, #유머',
+    hiddenFromWriter: true,
+  },
   // 기존 일반글 호환용입니다. 새 글쓰기 선택지에서는 제거합니다.
   general: {
     label: '일반',

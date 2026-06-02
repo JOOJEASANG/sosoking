@@ -969,3 +969,131 @@ body:has(.admin-layout) .page-container {
     display: flex !important;
   }
 }
+
+/* ── 대시보드 ── */
+.admin-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.admin-dashboard-card {
+  margin: 0;
+}
+
+.admin-card-head {
+  font-size: 14px;
+  font-weight: 900;
+  color: var(--color-text-primary);
+  margin-bottom: 14px;
+  letter-spacing: -0.2px;
+}
+
+.admin-stat-card__icon {
+  font-size: 20px;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+/* 유형별 현황 카드 컬러 배리언트 */
+.admin-type-card--primary {
+  border-color: var(--color-primary);
+  background: var(--color-primary-bg);
+}
+.admin-type-card--primary .admin-type-card__count {
+  color: var(--color-primary);
+}
+.admin-type-card--golra {
+  border-color: var(--color-golra-border);
+  background: var(--color-golra-bg);
+}
+.admin-type-card--golra .admin-type-card__count {
+  color: var(--color-golra-dark);
+}
+.admin-type-card--malhe {
+  border-color: var(--color-malhe-border);
+  background: var(--color-malhe-bg);
+}
+.admin-type-card--malhe .admin-type-card__count {
+  color: var(--color-malhe-dark);
+}
+.admin-type-card--usgyo {
+  border-color: var(--color-usgyo-border);
+  background: var(--color-usgyo-bg);
+}
+.admin-type-card--usgyo .admin-type-card__count {
+  color: var(--color-usgyo-dark);
+}
+
+/* 최근 게시물 리스트 */
+.admin-recent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.admin-recent-item {
+  display: grid;
+  grid-template-columns: 60px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-border-light);
+}
+.admin-recent-item:last-child {
+  border-bottom: none;
+}
+
+.admin-recent-item__type {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-2);
+  color: var(--color-text-muted);
+  font-size: 10px;
+  font-weight: 900;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 60px;
+}
+
+.admin-recent-item__title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.admin-recent-item__title:hover {
+  color: var(--color-primary);
+}
+
+.admin-recent-item__author {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.admin-empty-note {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  padding: 16px 0;
+  text-align: center;
+}
+
+/* ── 내 정보 단일 컬럼 카드 ── */
+.admin-myinfo-block {
+  margin-bottom: 16px;
+}
+.admin-myinfo-block:last-child {
+  margin-bottom: 0;
+}
+
+/* 기존 2단 그리드는 단일 컬럼으로 재정의 */
+.admin-myinfo-grid {
+  grid-template-columns: 1fr;
+}
