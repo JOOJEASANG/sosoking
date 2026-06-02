@@ -140,37 +140,6 @@
   font-size: 12px;
 }
 
-/* 밝은 다크모드: 너무 검지 않게, 글씨 대비는 높게 */
-[data-theme="dark"] {
-  --color-bg: #24293d;
-  --color-surface: #30364f;
-  --color-surface-2: #3a415c;
-  --color-surface-alt: #454d6b;
-  --color-border: #59617f;
-  --color-border-light: #48506c;
-
-  --color-text-primary: #f8faff;
-  --color-text-secondary: #dce4ff;
-  --color-text-muted: #bbc7ea;
-  --color-text: #f8faff;
-
-  --color-primary-bg: rgba(255,107,74,.20);
-  --color-primary-border: rgba(255,150,120,.48);
-  --color-golra-bg: rgba(96,165,250,.20);
-  --color-golra-border: rgba(147,197,253,.42);
-  --color-usgyo-bg: rgba(255,107,74,.20);
-  --color-usgyo-border: rgba(255,150,120,.42);
-  --color-malhe-bg: rgba(52,211,153,.19);
-  --color-malhe-border: rgba(110,231,183,.42);
-
-  /* 다크 배경에서 카테고리 텍스트가 잘 보이도록 밝은 변형 */
-  --color-golra-dark: #93C5FD;
-  --color-usgyo-dark: #FCA5A5;
-  --color-malhe-dark: #6EE7B7;
-
-  /* inner-background-fix.css의 #ffffff 강제 덮어쓰기 */
-  --sosoking-inner-bg: var(--color-bg);
-}
 
 [data-theme="dark"] body,
 [data-theme="dark"] .site-main {

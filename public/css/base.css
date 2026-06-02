@@ -1,36 +1,36 @@
-/* base.css — 디자인 토큰 v3 */
+/* base.css — 디자인 토큰 (단일 진실 공급원) */
 
 :root {
   /* ─ 브랜드 ─ */
-  --color-primary:        #FF4422;
-  --color-primary-hover:  #FF5533;
-  --color-primary-dark:   #CC2200;
-  --color-primary-bg:     #FFF2EE;
-  --color-primary-border: #FFD0C5;
-  --color-primary-light:  #FF6644;
-  --color-primary-soft:   #FFF2EE;
+  --color-primary:        #FF4B2B;
+  --color-primary-hover:  #FF5E3A;
+  --color-primary-dark:   #D93200;
+  --color-primary-bg:     #FFF3EF;
+  --color-primary-border: #FFD4C5;
+  --color-primary-light:  #FF7755;
+  --color-primary-soft:   #FFF3EF;
 
   /* ─ 카테고리 ─ */
   --color-golra:        #4F8EF7;
   --color-golra-dark:   #2D6FD4;
   --color-golra-bg:     #EEF4FF;
   --color-golra-border: #C7DCFF;
-  --color-usgyo:        #FF4422;
-  --color-usgyo-dark:   #CC2200;
-  --color-usgyo-bg:     #FFF2EE;
-  --color-usgyo-border: #FFD0C5;
-  --color-malhe:        #14B87F;
+  --color-usgyo:        #FF4B2B;
+  --color-usgyo-dark:   #D93200;
+  --color-usgyo-bg:     #FFF3EF;
+  --color-usgyo-border: #FFD4C5;
+  --color-malhe:        #12B67A;
   --color-malhe-dark:   #0E8C60;
   --color-malhe-bg:     #EDFAF4;
   --color-malhe-border: #A7F3D0;
 
   /* ─ 중립 ─ */
-  --color-bg:           #F1F3F8;
+  --color-bg:           #F6F6F8;
   --color-surface:      #FFFFFF;
-  --color-surface-2:    #F8F9FC;
-  --color-surface-alt:  #ECEEF5;
-  --color-border:       #E4E7EF;
-  --color-border-light: #EEF0F6;
+  --color-surface-2:    #F9F9FB;
+  --color-surface-alt:  #F0F1F6;
+  --color-border:       #E6E8F0;
+  --color-border-light: #EDEEF5;
 
   /* ─ 텍스트 ─ */
   --color-text-primary:   #14142B;
@@ -46,12 +46,12 @@
   --color-info:        #4F8EF7;
   --color-warning-bg:  #FEF9C3;
 
-  /* ─ 그라디언트 변수 ─ */
-  --gradient-brand:  linear-gradient(135deg, #FF4422 0%, #FF8C00 100%);
-  --gradient-golra:  linear-gradient(135deg, #4F8EF7 0%, #7B5FFF 100%);
-  --gradient-usgyo:  linear-gradient(135deg, #FF4422 0%, #FF8C00 100%);
-  --gradient-malhe:  linear-gradient(135deg, #14B87F 0%, #00C6A2 100%);
-  --gradient-hero:   linear-gradient(135deg, #FF4422 0%, #FF6B00 55%, #FFB800 100%);
+  /* ─ 그라디언트 ─ */
+  --gradient-brand:  linear-gradient(135deg, #FF4B2B 0%, #FF8A00 100%);
+  --gradient-golra:  linear-gradient(135deg, #4F8EF7 0%, #845EF7 100%);
+  --gradient-usgyo:  linear-gradient(135deg, #FF4B2B 0%, #FF8A00 100%);
+  --gradient-malhe:  linear-gradient(135deg, #12B67A 0%, #00C9A5 100%);
+  --gradient-hero:   linear-gradient(135deg, #FF4B2B 0%, #FF6D00 50%, #FFAB00 100%);
 
   /* ─ 타이포그래피 ─ */
   --font-base: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -66,6 +66,12 @@
   --line-height-tight: 1.25;
   --line-height-base:  1.6;
   --line-height-loose: 1.8;
+  --font-weight-normal:   400;
+  --font-weight-medium:   500;
+  --font-weight-semibold: 600;
+  --font-weight-bold:     700;
+  --font-weight-heavy:    800;
+  --font-weight-black:    900;
 
   /* ─ 간격 ─ */
   --space-1:  4px;  --space-2:  8px;  --space-3:  12px;
@@ -74,27 +80,32 @@
 
   /* ─ 라운드 ─ */
   --radius-xs:   4px;
-  --radius-sm:   6px;
-  --radius-md:   8px;
-  --radius-base: 10px;
-  --radius-lg:   12px;
-  --radius-xl:   16px;
+  --radius-sm:   8px;
+  --radius-md:   10px;
+  --radius-base: 14px;
+  --radius-lg:   18px;
+  --radius-xl:   24px;
   --radius-pill: 999px;
 
   /* ─ 그림자 ─ */
-  --shadow-xs:    0 1px 4px rgba(20,20,43,0.08);
-  --shadow-sm:    0 2px 10px rgba(20,20,43,0.09);
-  --shadow-md:    0 6px 24px rgba(20,20,43,0.11);
-  --shadow-lg:    0 12px 40px rgba(20,20,43,0.14);
-  --shadow-xl:    0 20px 60px rgba(20,20,43,0.18);
-  --shadow-brand: 0 4px 20px rgba(255,68,34,0.32);
-  --shadow-golra: 0 4px 16px rgba(79,142,247,0.32);
-  --shadow-malhe: 0 4px 16px rgba(20,184,127,0.32);
+  --shadow-xs:         0 1px 2px rgba(20,14,40,0.05), 0 1px 4px rgba(20,14,40,0.04);
+  --shadow-sm:         0 2px 6px rgba(20,14,40,0.07), 0 4px 12px rgba(20,14,40,0.04);
+  --shadow-md:         0 4px 16px rgba(20,14,40,0.08), 0 8px 28px rgba(20,14,40,0.05);
+  --shadow-lg:         0 8px 28px rgba(20,14,40,0.11), 0 18px 48px rgba(20,14,40,0.06);
+  --shadow-xl:         0 16px 48px rgba(20,14,40,0.14), 0 32px 80px rgba(20,14,40,0.08);
+  --shadow-card:       0 1px 3px rgba(20,14,40,0.06), 0 4px 14px rgba(20,14,40,0.05);
+  --shadow-card-hover: 0 6px 20px rgba(20,14,40,0.10), 0 16px 40px rgba(20,14,40,0.06);
+  --shadow-brand:      0 4px 18px rgba(255,75,43,0.30);
+  --shadow-brand-hover:0 8px 28px rgba(255,75,43,0.42);
+  --shadow-btn:        0 2px 8px rgba(255,75,43,0.22);
+  --shadow-btn-hover:  0 5px 18px rgba(255,75,43,0.38);
+  --shadow-golra:      0 4px 16px rgba(79,142,247,0.30);
+  --shadow-malhe:      0 4px 16px rgba(18,182,122,0.30);
 
   /* ─ 트랜지션 ─ */
-  --transition-fast: 150ms cubic-bezier(0.4,0,0.2,1);
-  --transition-base: 250ms cubic-bezier(0.4,0,0.2,1);
-  --transition-slow: 350ms cubic-bezier(0.4,0,0.2,1);
+  --transition-fast: 140ms cubic-bezier(0.34, 1.0, 0.64, 1);
+  --transition-base: 220ms cubic-bezier(0.34, 1.0, 0.64, 1);
+  --transition-slow: 360ms cubic-bezier(0.34, 1.0, 0.64, 1);
 
   /* ─ Z인덱스 ─ */
   --z-base:       1;
@@ -103,11 +114,11 @@
   --z-dropdown: 100;
   --z-modal:    200;
   --z-toast:    300;
-  --z-gallery:  500;   /* 전체화면 이미지 뷰어 */
-  --z-overlay: 1000;   /* 게임 오버레이, 공유시트 */
-  --z-supreme: 2000;   /* 최상위 (피드백 패널 등) */
+  --z-gallery:  500;
+  --z-overlay: 1000;
+  --z-supreme: 2000;
 
-  /* ─ 별칭 (하위 호환) ─ */
+  /* ─ 별칭 ─ */
   --color-text: var(--color-text-primary);
 }
 
@@ -115,40 +126,52 @@
    다크 모드 토큰
 ══════════════════════════════ */
 [data-theme="dark"] {
-  --color-bg:           #1C1F32;
-  --color-surface:      #252840;
-  --color-surface-2:    #2C2F4A;
-  --color-surface-alt:  #333655;
-  --color-border:       #3E4268;
-  --color-border-light: #353860;
+  /* ─ 중립 ─ */
+  --color-bg:           #24293d;
+  --color-surface:      #30364f;
+  --color-surface-2:    #3a415c;
+  --color-surface-alt:  #454d6b;
+  --color-border:       #59617f;
+  --color-border-light: #48506c;
 
-  --color-text-primary:   #F0F2FF;
-  --color-text-secondary: #B4BCE0;
-  --color-text-muted:     #7880A8;
-  --color-text:           #F0F2FF;
+  /* ─ 텍스트 ─ */
+  --color-text-primary:   #f8faff;
+  --color-text-secondary: #dce4ff;
+  --color-text-muted:     #bbc7ea;
+  --color-text:           #f8faff;
+  --color-warning-text:   #FFC53D;
 
-  --color-primary-bg:     rgba(255,68,34,0.14);
-  --color-primary-border: rgba(255,68,34,0.32);
+  /* ─ 브랜드 ─ */
+  --color-primary-bg:     rgba(255,107,74,.20);
+  --color-primary-border: rgba(255,150,120,.48);
   --color-primary-light:  #FF7755;
-  --color-primary-soft:   rgba(255,68,34,0.14);
+  --color-primary-soft:   rgba(255,75,43,0.12);
 
-  --color-golra-bg:     rgba(79,142,247,0.12);
-  --color-golra-border: rgba(79,142,247,0.28);
-  --color-usgyo-bg:     rgba(255,68,34,0.12);
-  --color-usgyo-border: rgba(255,68,34,0.28);
-  --color-malhe-bg:     rgba(20,184,127,0.12);
-  --color-malhe-border: rgba(20,184,127,0.28);
+  /* ─ 카테고리 ─ */
+  --color-golra-bg:     rgba(96,165,250,.20);
+  --color-golra-border: rgba(147,197,253,.42);
+  --color-golra-dark:   #93C5FD;
+  --color-usgyo-bg:     rgba(255,107,74,.20);
+  --color-usgyo-border: rgba(255,150,120,.42);
+  --color-usgyo-dark:   #FCA5A5;
+  --color-malhe-bg:     rgba(52,211,153,.19);
+  --color-malhe-border: rgba(110,231,183,.42);
+  --color-malhe-dark:   #6EE7B7;
 
+  /* ─ 상태 ─ */
   --color-warning-bg:  rgba(245,158,11,0.14);
 
-  --shadow-xs:    0 1px 4px rgba(0,0,0,0.40);
-  --shadow-sm:    0 2px 10px rgba(0,0,0,0.45);
-  --shadow-md:    0 6px 24px rgba(0,0,0,0.50);
-  --shadow-lg:    0 12px 40px rgba(0,0,0,0.55);
-  --shadow-xl:    0 20px 60px rgba(0,0,0,0.60);
-  --shadow-brand: 0 4px 20px rgba(255,68,34,0.22);
-  --shadow-golra: 0 4px 16px rgba(79,142,247,0.20);
-  --shadow-malhe: 0 4px 16px rgba(20,184,127,0.20);
+  /* ─ 그림자 ─ */
+  --shadow-xs:         0 1px 3px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.22);
+  --shadow-sm:         0 2px 8px rgba(0,0,0,0.40), 0 4px 16px rgba(0,0,0,0.24);
+  --shadow-md:         0 6px 22px rgba(0,0,0,0.44), 0 12px 36px rgba(0,0,0,0.28);
+  --shadow-lg:         0 10px 36px rgba(0,0,0,0.50), 0 22px 56px rgba(0,0,0,0.32);
+  --shadow-xl:         0 18px 56px rgba(0,0,0,0.56), 0 36px 88px rgba(0,0,0,0.38);
+  --shadow-card:       0 1px 4px rgba(0,0,0,0.36), 0 4px 16px rgba(0,0,0,0.22);
+  --shadow-card-hover: 0 6px 22px rgba(0,0,0,0.46), 0 16px 44px rgba(0,0,0,0.28);
+
+  /* ─ inner-background-fix.css 오버라이드 ─ */
+  --sosoking-inner-bg: var(--color-bg);
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
