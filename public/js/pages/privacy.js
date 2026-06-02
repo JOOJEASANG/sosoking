@@ -49,12 +49,28 @@ export function renderPrivacy() {
             <li>회원 정보는 회원 탈퇴 또는 삭제 요청 시까지 보유합니다.</li>
             <li>게시물과 댓글은 서비스 흐름 유지를 위해 탈퇴 후에도 익명 처리되어 유지될 수 있습니다.</li>
             <li>익명 글의 작성자 식별 정보는 신고 대응, 분쟁 처리, 부정 이용 방지를 위해 필요한 범위에서 보관될 수 있습니다.</li>
-            <li>게임방 정보와 참가 기록은 게임 진행, 신고 대응, 서비스 안정성을 위해 필요한 기간 보관될 수 있습니다.</li>
             <li>신고, 보안, 부정 이용 관련 기록은 분쟁 대응과 서비스 보호를 위해 필요한 기간 보관될 수 있습니다.</li>
             <li>법령에 따라 보관이 필요한 정보는 해당 법령에서 정한 기간 동안 보관합니다.</li>
           </ul>
 
-          <h2 class="legal-h2">4. 개인정보 처리 위탁 및 외부 서비스</h2>
+          <h2 class="legal-h2">4. 탈퇴 시 처리방침</h2>
+          <div class="legal-table-wrap">
+            <table class="legal-table">
+              <thead><tr><th>항목</th><th>탈퇴 후 처리</th></tr></thead>
+              <tbody>
+                <tr><td>계정 정보 (이메일, 닉네임, 프로필)</td><td>즉시 삭제 또는 식별 불가 처리</td></tr>
+                <tr><td>게시물·댓글·AI킹 결과물</td><td>작성자명 익명 처리 후 서비스 유지 (서비스 흐름 보호)</td></tr>
+                <tr><td>포인트·추가 사용권</td><td>탈퇴 즉시 소멸, 환불 불가</td></tr>
+                <tr><td>신고·분쟁 관련 기록</td><td>관련 절차 종료 시까지 보관 후 삭제</td></tr>
+                <tr><td>소셜 로그인 연동 정보</td><td>서비스 내 연동 해제 (소셜 계정 자체는 각 플랫폼에서 별도 관리)</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p style="font-size:13px;color:var(--color-text-muted);margin-top:8px">
+            탈퇴 처리 요청은 서비스 내 신고/문의 기능을 통해 접수하실 수 있습니다.
+          </p>
+
+          <h2 class="legal-h2">5. 개인정보 처리 위탁 및 외부 서비스 (Firebase 기반)</h2>
           <div class="legal-table-wrap">
             <table class="legal-table">
               <thead><tr><th>업체명</th><th>이용 목적</th><th>처리 정보</th></tr></thead>
@@ -72,13 +88,13 @@ export function renderPrivacy() {
             <a href="https://policies.google.com/privacy" target="_blank" rel="noopener" style="color:var(--color-primary)">https://policies.google.com/privacy</a>
           </p>
 
-          <h2 class="legal-h2">5. 쿠키 및 로컬 저장소</h2>
+          <h2 class="legal-h2">6. 쿠키 및 로컬 저장소</h2>
           <ul class="legal-list">
             <li>서비스는 로그인 상태 유지와 화면 설정 저장을 위해 쿠키, localStorage, Firebase 인증 토큰을 사용할 수 있습니다.</li>
             <li>브라우저 설정에서 쿠키를 제한할 수 있으나 일부 기능이 정상 작동하지 않을 수 있습니다.</li>
           </ul>
 
-          <h2 class="legal-h2">6. 이용자의 권리</h2>
+          <h2 class="legal-h2">7. 이용자의 권리</h2>
           <ul class="legal-list">
             <li>이용자는 본인의 개인정보 열람, 수정, 삭제, 처리 정지를 요청할 수 있습니다.</li>
             <li>닉네임과 프로필 아이콘 등 일부 정보는 내 정보 페이지에서 직접 수정할 수 있습니다.</li>
@@ -86,7 +102,7 @@ export function renderPrivacy() {
             <li>요청 내용은 관련 법령과 서비스 운영상 필요한 범위 내에서 처리됩니다.</li>
           </ul>
 
-          <h2 class="legal-h2">7. 개인정보 보호 조치</h2>
+          <h2 class="legal-h2">8. 개인정보 보호 조치</h2>
           <ul class="legal-list">
             <li>Firebase 인증과 보안 규칙을 통해 계정 및 데이터 접근을 제한합니다.</li>
             <li>관리자 기능은 권한이 확인된 계정에 한해 제공됩니다.</li>
@@ -95,14 +111,14 @@ export function renderPrivacy() {
             <li>게임방 데이터는 방 생성자, 참가자, 관리자 권한에 맞게 제한될 수 있습니다.</li>
           </ul>
 
-          <h2 class="legal-h2">8. 개인정보 보호 책임자</h2>
+          <h2 class="legal-h2">9. 개인정보 보호 책임자</h2>
           <ul class="legal-list">
             <li><b>책임자:</b> 소소킹 운영팀</li>
             <li><b>문의:</b> 서비스 내 신고/문의 기능 이용</li>
             <li>개인정보 침해 신고는 개인정보보호위원회 또는 한국인터넷진흥원에 하실 수 있습니다.</li>
           </ul>
 
-          <h2 class="legal-h2">9. 방침 변경</h2>
+          <h2 class="legal-h2">10. 방침 변경</h2>
           <p>본 방침이 변경되는 경우 서비스 내 공지 또는 화면 게시를 통해 안내합니다.</p>
 
           <div class="legal-footer-note">

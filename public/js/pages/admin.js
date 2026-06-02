@@ -34,9 +34,9 @@ export async function renderAdmin() {
 
   const TOP_MENUS = [
     { key: 'dashboard', icon: '📊', label: '대시보드', short: '통계' },
-    { key: 'reports',   icon: '🚨', label: '신고·의견', short: '접수' },
+    { key: 'ai',        icon: '🤖', label: 'AI 관리',  short: 'AI' },
+    { key: 'reports',   icon: '🚨', label: '신고·의견', short: '신고' },
     { key: 'users',     icon: '👥', label: '회원관리', short: '회원' },
-    { key: 'ai',        icon: '🤖', label: 'AI 관리',  short: '관리' },
   ];
   const BOTTOM_MENUS = [
     { key: 'myinfo', icon: '👤', label: '내 정보', short: '내정보' },
@@ -160,9 +160,9 @@ async function renderDashboard(el) {
   const aiCounts = AI_FEATURES.map(f => ({ ...f, count: monthByFeature[f.key] || 0 }));
 
   const FEED_TYPE_LABEL = {
-    tournament: '대결방', vote: '토론방', quiz: '퀴즈방', drip: '드립방',
+    tournament: '대결방', vote: '토론방', drip: '드립방',
     collect: '일반방', general: '일반', fill: '빈칸', naming: '작명',
-    acrostic: '행시', relay: '릴레이', ox: '토론방',
+    acrostic: '행시', relay: '릴레이',
   };
 
   el.innerHTML = `

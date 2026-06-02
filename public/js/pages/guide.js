@@ -54,7 +54,9 @@ export function renderGuide() {
             ['#guide-what',   '소소킹이란?'],
             ['#guide-kings',  'AI킹 4종 소개'],
             ['#guide-start',  '시작하기'],
-            ['#guide-limit',  '이용 제한'],
+            ['#guide-limit',  '일일 사용 제한'],
+            ['#guide-ladder', '사다리게임 추가 기회'],
+            ['#guide-points', '포인트 사용 안내'],
             ['#guide-share',  '결과 공유하기'],
             ['#guide-rules',  '이용 규칙'],
           ].map(([href, label]) => `<a class="guide-toc__item" href="${href}">${label}</a>`).join('')}
@@ -136,6 +138,69 @@ export function renderGuide() {
                 <td style="padding:8px 12px;text-align:center;font-weight:700">3회</td>
               </tr>`).join('')}
           </table>
+        </div>
+      </section>
+
+      <section id="guide-ladder" class="guide-section">
+        <h2 class="guide-section__title">🎰 사다리게임 추가 기회</h2>
+        <div class="guide-section__body">
+          <div class="guide-notice">
+            <strong>🆓 무료 횟수를 다 쓰셨나요?</strong><br>
+            사다리게임을 하면 <strong>AI킹 추가 이용권</strong>을 무료로 얻을 수 있어요!
+          </div>
+          <table style="width:100%;margin-top:14px;font-size:13px;border-collapse:collapse">
+            <tr style="background:var(--color-surface-2)">
+              <th style="padding:8px 12px;text-align:left;border-radius:8px 0 0 0">항목</th>
+              <th style="padding:8px 12px;text-align:center;border-radius:0 8px 0 0">내용</th>
+            </tr>
+            ${[
+              ['참여 방법', '홈 또는 AI킹 페이지 → 사다리게임 버튼'],
+              ['하루 참여', '1일 1회 무료 참여 가능'],
+              ['보상', 'AI킹 추가 이용권 1~3회 (결과에 따라 다름)'],
+              ['초기화', '매일 자정(00:00 KST)에 참여 횟수 초기화'],
+            ].map(([label, val]) => `
+              <tr style="border-top:1px solid var(--color-border)">
+                <td style="padding:8px 12px;font-weight:700">${label}</td>
+                <td style="padding:8px 12px;text-align:center">${val}</td>
+              </tr>`).join('')}
+          </table>
+          <p style="margin-top:12px;font-size:13px;color:var(--color-text-secondary)">
+            💡 추가 이용권은 4가지 AI킹 어디서나 공통으로 사용할 수 있어요.
+          </p>
+        </div>
+      </section>
+
+      <section id="guide-points" class="guide-section">
+        <h2 class="guide-section__title">🪙 포인트 사용 안내</h2>
+        <div class="guide-section__body">
+          <p>활동 포인트를 모아 <strong>AI킹 추가 이용권</strong>을 구입할 수 있어요.</p>
+          <div class="guide-notice" style="margin-top:12px">
+            <strong>💡 포인트 적립 방법</strong>
+          </div>
+          <table style="width:100%;margin-top:10px;font-size:13px;border-collapse:collapse">
+            <tr style="background:var(--color-surface-2)">
+              <th style="padding:8px 12px;text-align:left;border-radius:8px 0 0 0">활동</th>
+              <th style="padding:8px 12px;text-align:center;border-radius:0 8px 0 0">적립</th>
+            </tr>
+            ${[
+              ['첫 가입 보너스', '+500p'],
+              ['매일 출석 체크', '+20p'],
+              ['내 글에 좋아요 받기', '+5p'],
+              ['내 글에 댓글 받기', '+10p'],
+              ['글 작성', '+10p'],
+            ].map(([label, pts]) => `
+              <tr style="border-top:1px solid var(--color-border)">
+                <td style="padding:8px 12px">${label}</td>
+                <td style="padding:8px 12px;text-align:center;font-weight:700;color:var(--color-primary)">${pts}</td>
+              </tr>`).join('')}
+          </table>
+          <div class="guide-notice" style="margin-top:16px">
+            <strong>🛒 포인트 사용처</strong>
+          </div>
+          <p style="margin-top:10px;font-size:13px;color:var(--color-text-secondary)">
+            포인트로 AI킹 추가 이용권을 구입할 수 있어요. 이용권 1회당 100p가 필요하며 10회 구매 시 3회 보너스가 제공됩니다.<br>
+            <a href="#/points-shop" style="color:var(--color-primary);font-weight:700">→ 포인트 상점 바로가기</a>
+          </p>
         </div>
       </section>
 

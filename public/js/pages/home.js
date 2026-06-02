@@ -11,8 +11,6 @@ import {
 import { navigate } from '../router.js';
 
 const TYPE_LABEL = {
-  tournament:   '🏆 끝판왕',
-  multi:        '🏆 끝판왕',
   ai_judge:     '⚖️ 미친판사',
   ai_translate: '🌍 미친번역사',
   ai_match:     '💘 AI궁합',
@@ -56,9 +54,7 @@ function commentScore(comment) {
 }
 
 function moduleLabel(post) {
-  if (TYPE_LABEL[post.type]) return TYPE_LABEL[post.type];
-  if (post.modules?.tournament?.enabled) return '🏆 끝판왕';
-  return TYPE_LABEL[post.feedType] || TYPE_LABEL[post.subtype] || '🏆 끝판왕';
+  return TYPE_LABEL[post.type] || TYPE_LABEL[post.feedType] || TYPE_LABEL[post.subtype] || '';
 }
 
 async function fetchPopularComments(n = 6) {
