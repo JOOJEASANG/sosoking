@@ -3,6 +3,7 @@ import { auth, functions } from '../firebase.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
 import { toast } from '../components/toast.js';
 import { setMeta } from '../utils/seo.js';
+import { isQuotaError, showAiLadderBonus } from '../ai-ladder-bonus.js';
 
 function resizeImageToBase64(file, maxPx = 512) {
   return new Promise((resolve) => {
@@ -16,8 +17,7 @@ function resizeImageToBase64(file, maxPx = 512) {
       const canvas = document.createElement('canvas');
       canvas.width = w; canvas.height = h;
       canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      const b64 = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
-      resolve(b64);
+      resolve(canvas.toDataURL('image/jpeg', 0.8).split(',')[1]);
     };
     img.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
     img.src = url;
@@ -61,10 +61,8 @@ export function renderAiJudge() {
           <div id="judge-img-remove" class="ai-king-img-upload__remove">✕ 사진 제거</div>
         </div>
 
-        <button id="btn-judge-submit" class="btn btn--primary btn--full" style="margin-top:20px;font-size:16px;font-weight:800">
-          ⚖️ 판결 받기
-        </button>
-        <div style="font-size:11px;color:var(--color-text-muted);text-align:center;margin-top:8px">하루 3번 무료 · 결과는 피드에 자동 공유돼요</div>
+        <button id="btn-judge-submit" class="btn btn--primary btn--full" style="margin-top:20px;font-size:16px;font-weight:800">⚖️ 판결 받기</button>
+        <div style="font-size:11px;color:var(--color-text-muted);text-align:center;margin-top:8px">하루 3번 무료 · 소진 시 하루 1회 사다리게임 보너스</div>
       </div>
     </div>`;
 
@@ -88,10 +86,7 @@ export function renderAiJudge() {
   const imgPreview = document.getElementById('judge-img-preview');
   const imgRemove = document.getElementById('judge-img-remove');
 
-  imgArea.addEventListener('click', (e) => {
-    if (e.target === imgRemove) return;
-    imgInput.click();
-  });
+  imgArea.addEventListener('click', (e) => { if (e.target !== imgRemove) imgInput.click(); });
   imgInput.addEventListener('change', async () => {
     const file = imgInput.files[0];
     if (!file) return;
@@ -117,23 +112,18 @@ export function renderAiJudge() {
     btn.disabled = true;
     btn.textContent = '판사들 소환 중...';
 
-    const loadingHtml = `
-      <div class="ai-king-page">
-        <div class="ai-king-loading">
-          <div class="spinner spinner--lg"></div>
-          <div class="ai-king-loading__text">⚖️ 7명의 판사가 심의 중입니다...</div>
-          <div class="ai-king-loading__sub">엄근진 법관이 판례를 뒤지는 중 🔍</div>
-        </div>
-      </div>`;
-    el.innerHTML = loadingHtml;
+    el.innerHTML = `<div class="ai-king-page"><div class="ai-king-loading"><div class="spinner spinner--lg"></div><div class="ai-king-loading__text">⚖️ 7명의 판사가 심의 중입니다...</div><div class="ai-king-loading__sub">엄근진 법관이 판례를 뒤지는 중 🔍</div></div></div>`;
 
     try {
       const fn = httpsCallable(functions, 'aiJudge');
       const result = await fn({ situation, imageBase64 });
       navigate(`/detail/${result.data.postId}`);
     } catch (e) {
-      const msg = e?.message || '판결에 실패했어요';
-      toast.error(msg.includes('resource-exhausted') ? '오늘 판결 횟수를 모두 사용했어요 (하루 3회)' : msg);
+      if (isQuotaError(e)) {
+        showAiLadderBonus({ feature: 'judge', featureLabel: '미친판사', onReplay: renderAiJudge });
+        return;
+      }
+      toast.error(e?.message || '판결에 실패했어요');
       renderAiJudge();
     }
   });
