@@ -34,9 +34,9 @@ export async function renderAdmin() {
 
   const TOP_MENUS = [
     { key: 'dashboard', icon: '📊', label: '대시보드', short: '통계' },
-    { key: 'reports',   icon: '🚨', label: '신고·의견', short: '신고' },
+    { key: 'reports',   icon: '🚨', label: '신고·의견', short: '접수' },
     { key: 'users',     icon: '👥', label: '회원관리', short: '회원' },
-    { key: 'ai',        icon: '🤖', label: 'AI 관리', short: 'AI' },
+    { key: 'ai',        icon: '🤖', label: 'AI 관리',  short: '관리' },
   ];
   const BOTTOM_MENUS = [
     { key: 'myinfo', icon: '👤', label: '내 정보', short: '내정보' },
@@ -121,19 +121,43 @@ async function loadTab(tab) {
 /* ── 대시보드 ── */
 async function renderDashboard(el) {
   const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+  const now = new Date();
+  const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+  const todayStr   = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-  const TYPE_META = [
-    { feedType: 'tournament', icon: '⚔️', label: '대결방',  cat: 'primary' },
-    { feedType: 'vote',       icon: '🗳️', label: '토론방',  cat: 'golra'   },
-    { feedType: 'collect',    icon: '📌', label: '일반방',  cat: 'neutral'  },
-    { feedType: 'general',    icon: '📝', label: '일반',    cat: 'neutral'  },
-    { feedType: 'quiz',       icon: '🧠', label: '퀴즈방',  cat: 'malhe'   },
-    { feedType: 'drip',       icon: '🤣', label: '드립방',  cat: 'usgyo'   },
-    { feedType: 'fill',       icon: '🧩', label: '빈칸',    cat: 'neutral'  },
-    { feedType: 'naming',     icon: '😜', label: '작명',    cat: 'neutral'  },
-    { feedType: 'acrostic',   icon: '✍️', label: '행시',    cat: 'neutral'  },
-    { feedType: 'relay',      icon: '🎭', label: '릴레이',  cat: 'neutral'  },
+  const AI_FEATURES = [
+    { key: 'judge',     icon: '⚖️', label: '미친판사', cat: 'primary' },
+    { key: 'translate', icon: '🌍', label: '번역사',   cat: 'golra'  },
+    { key: 'match',     icon: '💕', label: '궁합',     cat: 'usgyo'  },
+    { key: 'naming',    icon: '✨', label: '작명소',   cat: 'malhe'  },
   ];
+
+  const [totalSnap, todaySnap, recentSnap, reportSnap, monthUsageSnap, todayUsageSnap] = await Promise.all([
+    getCountFromServer(collection(db, 'feeds')).catch(() => null),
+    getDocs(query(collection(db, 'feeds'), where('createdAt', '>=', Timestamp.fromDate(todayStart)), limit(99))).catch(() => null),
+    getDocs(query(collection(db, 'feeds'), orderBy('createdAt', 'desc'), limit(5))).catch(() => null),
+    getCountFromServer(query(collection(db, 'reports'), where('resolved', '==', false))).catch(() => null),
+    getDocs(query(collection(db, 'ai_king_usage'), where('date', '>=', monthStart), where('date', '<=', todayStr), limit(2000))).catch(() => null),
+    getDocs(query(collection(db, 'ai_king_usage'), where('date', '==', todayStr), limit(500))).catch(() => null),
+  ]);
+
+  const total   = totalSnap?.data?.().count ?? 0;
+  const todayPosts = todaySnap?.size ?? 0;
+  const pending = reportSnap?.data?.().count ?? 0;
+  const recent  = recentSnap?.docs.map(d => ({ id: d.id, ...d.data() })) ?? [];
+
+  // AI킹 이번달 서비스별 사용량 집계
+  const monthByFeature = {};
+  let monthTotal = 0;
+  for (const d of (monthUsageSnap?.docs ?? [])) {
+    const data = d.data();
+    monthByFeature[data.feature] = (monthByFeature[data.feature] || 0) + (data.count || 0);
+    monthTotal += (data.count || 0);
+  }
+  let todayAiTotal = 0;
+  for (const d of (todayUsageSnap?.docs ?? [])) todayAiTotal += (d.data().count || 0);
+
+  const aiCounts = AI_FEATURES.map(f => ({ ...f, count: monthByFeature[f.key] || 0 }));
 
   const FEED_TYPE_LABEL = {
     tournament: '대결방', vote: '토론방', quiz: '퀴즈방', drip: '드립방',
@@ -141,34 +165,20 @@ async function renderDashboard(el) {
     acrostic: '행시', relay: '릴레이', ox: '토론방',
   };
 
-  const [totalSnap, todaySnap, recentSnap, reportSnap, ...typeSnaps] = await Promise.all([
-    getCountFromServer(collection(db, 'feeds')).catch(() => null),
-    getDocs(query(collection(db, 'feeds'), where('createdAt', '>=', Timestamp.fromDate(todayStart)), limit(99))).catch(() => null),
-    getDocs(query(collection(db, 'feeds'), orderBy('createdAt', 'desc'), limit(5))).catch(() => null),
-    getCountFromServer(query(collection(db, 'reports'), where('resolved', '==', false))).catch(() => null),
-    ...TYPE_META.map(t => getCountFromServer(query(collection(db, 'feeds'), where('feedType', '==', t.feedType))).catch(() => null)),
-  ]);
-
-  const total   = totalSnap?.data?.().count ?? 0;
-  const today   = todaySnap?.size ?? 0;
-  const pending = reportSnap?.data?.().count ?? 0;
-  const recent  = recentSnap?.docs.map(d => ({ id: d.id, ...d.data() })) ?? [];
-  const typeCounts = TYPE_META.map((t, i) => ({ ...t, count: typeSnaps[i]?.data?.().count ?? 0 }));
-
   el.innerHTML = `
     <div class="admin-dashboard">
       <h2 class="admin-section-title">📊 대시보드</h2>
 
       <div class="admin-stat-grid">
         <div class="admin-stat-card">
-          <div class="admin-stat-card__icon">📝</div>
-          <div class="admin-stat-card__num">${total.toLocaleString()}</div>
-          <div class="admin-stat-card__label">총 게시물</div>
+          <div class="admin-stat-card__icon">🤖</div>
+          <div class="admin-stat-card__num">${monthTotal.toLocaleString()}</div>
+          <div class="admin-stat-card__label">이번달 AI 사용</div>
         </div>
         <div class="admin-stat-card">
           <div class="admin-stat-card__icon">✨</div>
-          <div class="admin-stat-card__num" style="color:var(--color-success)">${today}</div>
-          <div class="admin-stat-card__label">오늘 새 글</div>
+          <div class="admin-stat-card__num" style="color:var(--color-success)">${todayAiTotal}</div>
+          <div class="admin-stat-card__label">오늘 AI 사용</div>
         </div>
         <div class="admin-stat-card">
           <div class="admin-stat-card__icon">🚨</div>
@@ -179,13 +189,13 @@ async function renderDashboard(el) {
 
       <div class="card admin-dashboard-card">
         <div class="card__body">
-          <div class="admin-card-head">⚔️ 유형별 게시물 현황</div>
-          <div class="admin-type-grid">
-            ${typeCounts.map(t => `
-              <div class="admin-type-card admin-type-card--${t.cat}">
-                <div class="admin-type-card__icon">${t.icon}</div>
-                <div class="admin-type-card__count">${t.count.toLocaleString()}</div>
-                <div class="admin-type-card__name">${t.label}</div>
+          <div class="admin-card-head">🤖 AI킹 서비스별 이번달 사용 현황</div>
+          <div class="admin-type-grid admin-type-grid--4">
+            ${aiCounts.map(f => `
+              <div class="admin-type-card admin-type-card--${f.cat}">
+                <div class="admin-type-card__icon">${f.icon}</div>
+                <div class="admin-type-card__count">${f.count.toLocaleString()}</div>
+                <div class="admin-type-card__name">${f.label}</div>
               </div>`).join('')}
           </div>
         </div>

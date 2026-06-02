@@ -326,8 +326,11 @@ body:has(.admin-layout) .page-container {
 
 .admin-type-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+.admin-type-grid--4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .admin-type-card__icon {
@@ -670,14 +673,14 @@ body:has(.admin-layout) .page-container {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    gap: 3px;
-    padding: 6px 2px;
+    gap: 2px;
+    padding: 4px 1px;
     border-radius: 10px;
     border-left: none;
     font-size: 10px;
     font-weight: 800;
     text-align: center;
-    line-height: 1.15;
+    line-height: 1;
   }
 
   .admin-menu-item__icon {
@@ -690,7 +693,7 @@ body:has(.admin-layout) .page-container {
     width: 100%;
     max-width: 100%;
     overflow: hidden;
-    text-overflow: ellipsis;
+    text-overflow: clip;
     white-space: nowrap;
     text-align: center;
   }
