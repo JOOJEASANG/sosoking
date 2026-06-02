@@ -240,7 +240,7 @@ exports.aiJudge = onCall({
       JUDGE_SYSTEM,
       `다음 상황을 7명의 판사가 각자의 캐릭터로 판결해줘. 각 판사는 이 상황의 핵심을 자기 방식으로 정확히 찌를 것:${imageHint}\n\n${situation.slice(0, 500)}`,
       imageBase64,
-      1600,
+      2800,
     );
   } catch (err) {
     console.error('[aiJudge] AI call failed:', err.message);
@@ -250,13 +250,17 @@ exports.aiJudge = onCall({
 
   let verdicts;
   try {
-    const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
+    const cleaned = raw.replace(/```json|```/g, '').trim();
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+    const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : cleaned);
     verdicts = (parsed.verdicts || []).map(v => ({
       judgeId: v.id,
       judgeName: JUDGES.find(j => j.id === v.id)?.name || v.id,
       verdict: v.verdict || '',
     }));
-  } catch {
+    if (!verdicts.length) throw new Error('empty verdicts');
+  } catch (parseErr) {
+    console.error('[aiJudge] parse failed:', parseErr.message, raw?.slice(0, 200));
     verdicts = JUDGES.map(j => ({ judgeId: j.id, judgeName: j.name, verdict: '이 판사는 오늘 결근했습니다. 😴' }));
   }
 

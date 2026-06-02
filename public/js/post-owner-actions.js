@@ -259,8 +259,7 @@ async function saveEdit(post, overlay) {
 }
 
 async function deletePost(post) {
-  if (!confirm('이 게시글을 삭제할까요? 삭제하면 복구하기 어렵습니다.')) return;
-  if (!confirm('댓글, 삼행시, 스크랩 정보도 함께 정리됩니다. 정말 삭제할까요?')) return;
+  if (!confirm('삭제할까요? 삭제하면 복구 불가능합니다~')) return;
 
   try {
     const fn = httpsCallable(functions, 'deleteOwnPost');
