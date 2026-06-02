@@ -3,6 +3,7 @@ import { auth, functions } from '../firebase.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
 import { toast } from '../components/toast.js';
 import { setMeta } from '../utils/seo.js';
+import { isQuotaError, showAiLadderBonus } from '../ai-ladder-bonus.js';
 
 function resizeImageToBase64(file, maxPx = 512) {
   return new Promise((resolve) => {
@@ -26,8 +27,7 @@ function makeImgUpload(prefix, label) {
   return `
     <div>
       <label class="ai-king-form__label">${label}</label>
-      <input id="${prefix}-text" class="form-input" type="text" maxlength="100"
-        placeholder="이름이나 설명을 적어주세요">
+      <input id="${prefix}-text" class="form-input" type="text" maxlength="100" placeholder="이름이나 설명을 적어주세요">
       <div class="ai-king-img-upload" id="${prefix}-img-area" style="margin-top:8px">
         <input type="file" id="${prefix}-img-input" accept="image/*" style="display:none">
         <div class="ai-king-img-upload__label" style="font-size:12px">📷 사진 (선택)</div>
@@ -78,20 +78,14 @@ export function renderAiMatch() {
           사람, 음식, 동물, 물건, 개념 — 뭐든 두 가지를 골라보세요<br>
           <span style="color:var(--color-primary);font-weight:700">예) 나 + 우리팀장 / 치킨 + 피자 / MBTI I형 + E형</span>
         </div>
-        <div class="ai-match-grid">
-          ${makeImgUpload('item-a', '첫 번째')}
-          ${makeImgUpload('item-b', '두 번째')}
-        </div>
+        <div class="ai-match-grid">${makeImgUpload('item-a', '첫 번째')}${makeImgUpload('item-b', '두 번째')}</div>
         <div class="ai-match-vs" style="margin:14px 0">💘 VS 💘</div>
-        <button id="btn-match-submit" class="btn btn--primary btn--full" style="font-size:16px;font-weight:800">
-          💘 궁합 보기
-        </button>
-        <div style="font-size:11px;color:var(--color-text-muted);text-align:center;margin-top:8px">하루 3번 무료 · 결과는 피드에 자동 공유돼요</div>
+        <button id="btn-match-submit" class="btn btn--primary btn--full" style="font-size:16px;font-weight:800">💘 궁합 보기</button>
+        <div style="font-size:11px;color:var(--color-text-muted);text-align:center;margin-top:8px">하루 3번 무료 · 소진 시 하루 1회 사다리게임 보너스</div>
       </div>
     </div>`;
 
   document.getElementById('btn-back')?.addEventListener('click', () => navigate('/ai-king'));
-
   const imgA = { base64: null };
   const imgB = { base64: null };
   setupImgUpload('item-a', imgA);
@@ -101,27 +95,20 @@ export function renderAiMatch() {
     const itemA = document.getElementById('item-a-text')?.value.trim();
     const itemB = document.getElementById('item-b-text')?.value.trim();
     if (!itemA || !itemB) { toast.warn('두 가지를 모두 입력해주세요'); return; }
-
     const btn = document.getElementById('btn-match-submit');
     btn.disabled = true;
     btn.textContent = '궁합 보는 중...';
-
-    el.innerHTML = `
-      <div class="ai-king-page">
-        <div class="ai-king-loading">
-          <div class="spinner spinner--lg"></div>
-          <div class="ai-king-loading__text">💘 AI 점쟁이가 궁합을 보는 중...</div>
-          <div class="ai-king-loading__sub">"${itemA}" 와 "${itemB}"...</div>
-        </div>
-      </div>`;
-
+    el.innerHTML = `<div class="ai-king-page"><div class="ai-king-loading"><div class="spinner spinner--lg"></div><div class="ai-king-loading__text">💘 AI 점쟁이가 궁합을 보는 중...</div><div class="ai-king-loading__sub">"${itemA}" 와 "${itemB}"...</div></div></div>`;
     try {
       const fn = httpsCallable(functions, 'aiMatch');
       const result = await fn({ itemA, itemB, imageA: imgA.base64, imageB: imgB.base64 });
       navigate(`/detail/${result.data.postId}`);
     } catch (e) {
-      const msg = e?.message || '궁합 보기에 실패했어요';
-      toast.error(msg.includes('resource-exhausted') ? '오늘 궁합 횟수를 모두 사용했어요 (하루 3회)' : msg);
+      if (isQuotaError(e)) {
+        showAiLadderBonus({ feature: 'match', featureLabel: 'AI궁합', onReplay: renderAiMatch });
+        return;
+      }
+      toast.error(e?.message || '궁합 보기에 실패했어요');
       renderAiMatch();
     }
   });
