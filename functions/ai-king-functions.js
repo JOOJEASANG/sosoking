@@ -23,10 +23,19 @@ async function getAiKingConfig() {
 }
 
 // ── Multi-provider AI call ──
-async function callAI(system, userText, imageBase64 = null, maxTokens = 400) {
+function validBase64(str) {
+  if (!str || typeof str !== 'string') return null;
+  const stripped = str.includes(',') ? str.split(',')[1] : str;
+  if (stripped.length > 4 * 1024 * 1024) { console.warn('[ai-king] image too large, skipping'); return null; }
+  return stripped;
+}
+
+async function callAI(system, userText, imageBase64 = null, maxTokens = 400, temperature = 0.8) {
   const config = await getAiKingConfig();
+  const img = validBase64(imageBase64);
 
   if (config.activeModel === 'gemini') {
+    if (!config.geminiApiKey) throw new HttpsError('failed-precondition', 'AI 키가 설정되지 않았어요. 관리자에게 문의하세요.');
     const { GoogleGenerativeAI } = require('@google/generative-ai');
     const genAI = new GoogleGenerativeAI(config.geminiApiKey);
     const model = genAI.getGenerativeModel({
@@ -34,38 +43,39 @@ async function callAI(system, userText, imageBase64 = null, maxTokens = 400) {
       systemInstruction: system,
     });
     const parts = [];
-    if (imageBase64) {
-      parts.push({ inlineData: { data: imageBase64, mimeType: 'image/jpeg' } });
-    }
+    if (img) parts.push({ inlineData: { data: img, mimeType: 'image/jpeg' } });
     parts.push({ text: userText });
     const result = await model.generateContent({
       contents: [{ role: 'user', parts }],
-      generationConfig: { maxOutputTokens: maxTokens },
+      generationConfig: { maxOutputTokens: maxTokens, temperature },
     });
     return result.response.text() || '';
   }
 
   // Default: Claude
+  if (!config.claudeApiKey) throw new HttpsError('failed-precondition', 'AI 키가 설정되지 않았어요. 관리자에게 문의하세요.');
   const Anthropic = require('@anthropic-ai/sdk');
   const anthropic = new Anthropic({ apiKey: config.claudeApiKey });
   const content = [];
-  if (imageBase64) {
-    content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: imageBase64 } });
-  }
+  if (img) content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: img } });
   content.push({ type: 'text', text: userText });
   const msg = await anthropic.messages.create({
     model: config.claudeModel || 'claude-haiku-4-5-20251001',
     max_tokens: maxTokens,
+    temperature,
     system,
     messages: [{ role: 'user', content }],
   });
   return msg.content[0]?.text || '';
 }
 
-async function callAIWithImages(system, userText, imageA = null, imageB = null, maxTokens = 500) {
+async function callAIWithImages(system, userText, imageA = null, imageB = null, maxTokens = 500, temperature = 0.8) {
   const config = await getAiKingConfig();
+  const imgA = validBase64(imageA);
+  const imgB = validBase64(imageB);
 
   if (config.activeModel === 'gemini') {
+    if (!config.geminiApiKey) throw new HttpsError('failed-precondition', 'AI 키가 설정되지 않았어요. 관리자에게 문의하세요.');
     const { GoogleGenerativeAI } = require('@google/generative-ai');
     const genAI = new GoogleGenerativeAI(config.geminiApiKey);
     const model = genAI.getGenerativeModel({
@@ -73,26 +83,28 @@ async function callAIWithImages(system, userText, imageA = null, imageB = null, 
       systemInstruction: system,
     });
     const parts = [];
-    if (imageA) parts.push({ inlineData: { data: imageA, mimeType: 'image/jpeg' } });
-    if (imageB) parts.push({ inlineData: { data: imageB, mimeType: 'image/jpeg' } });
+    if (imgA) parts.push({ inlineData: { data: imgA, mimeType: 'image/jpeg' } });
+    if (imgB) parts.push({ inlineData: { data: imgB, mimeType: 'image/jpeg' } });
     parts.push({ text: userText });
     const result = await model.generateContent({
       contents: [{ role: 'user', parts }],
-      generationConfig: { maxOutputTokens: maxTokens },
+      generationConfig: { maxOutputTokens: maxTokens, temperature },
     });
     return result.response.text() || '';
   }
 
   // Default: Claude
+  if (!config.claudeApiKey) throw new HttpsError('failed-precondition', 'AI 키가 설정되지 않았어요. 관리자에게 문의하세요.');
   const Anthropic = require('@anthropic-ai/sdk');
   const anthropic = new Anthropic({ apiKey: config.claudeApiKey });
   const content = [];
-  if (imageA) content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: imageA } });
-  if (imageB) content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: imageB } });
+  if (imgA) content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: imgA } });
+  if (imgB) content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: imgB } });
   content.push({ type: 'text', text: userText });
   const msg = await anthropic.messages.create({
     model: config.claudeModel || 'claude-haiku-4-5-20251001',
     max_tokens: maxTokens,
+    temperature,
     system,
     messages: [{ role: 'user', content }],
   });
@@ -119,6 +131,22 @@ async function checkUsage(userId, feature) {
     return true;
   });
   return { allowed, limit: dailyLimit };
+}
+
+// ── 작성자 정보 조회 (Firestore users 우선, Auth token 보완) ──
+async function getAuthorInfo(userId, authToken = {}) {
+  let userData = {};
+  try {
+    const snap = await db.doc(`users/${userId}`).get();
+    if (snap.exists) userData = snap.data() || {};
+  } catch {}
+  const name = (userData.nickname || userData.displayName || authToken.name || authToken.email?.split('@')[0] || '').trim().slice(0, 40) || '익명';
+  return {
+    authorId: userId,
+    authorName: name,
+    authorEmail: (authToken.email || userData.email || '').slice(0, 120),
+    authorPhoto: (authToken.picture || userData.photoURL || '').slice(0, 300),
+  };
 }
 
 // ── 미친판사: 7가지 판사 유형 ──
@@ -160,15 +188,25 @@ exports.aiJudge = onCall({
     throw new HttpsError('invalid-argument', '상황을 5자 이상 적어주세요');
   }
 
-  const { allowed, limit } = await checkUsage(userId, 'judge');
+  const [{ allowed, limit }, author] = await Promise.all([
+    checkUsage(userId, 'judge'),
+    getAuthorInfo(userId, request.auth?.token || {}),
+  ]);
   if (!allowed) throw new HttpsError('resource-exhausted', `오늘 판결은 하루 ${limit}번만 가능해요`);
 
-  const raw = await callAI(
-    JUDGE_SYSTEM,
-    `다음 상황을 7명의 판사가 각자 판결해줘:\n${situation.slice(0, 500)}`,
-    imageBase64,
-    1400,
-  );
+  let raw;
+  try {
+    raw = await callAI(
+      JUDGE_SYSTEM,
+      `다음 상황을 7명의 판사가 각자 판결해줘:\n${situation.slice(0, 500)}`,
+      imageBase64,
+      1400,
+    );
+  } catch (err) {
+    console.error('[aiJudge] AI call failed:', err.message);
+    if (err instanceof HttpsError) throw err;
+    throw new HttpsError('internal', 'AI 판결에 실패했어요. 잠시 후 다시 시도해주세요.');
+  }
 
   let verdicts;
   try {
@@ -189,7 +227,7 @@ exports.aiJudge = onCall({
     situation: situation.slice(0, 500),
     hasImage: !!imageBase64,
     verdicts,
-    authorId: userId,
+    ...author,
     commentCount: 0,
     reactions: { like: 0, funny: 0, fire: 0, total: 0 },
     viewCount: 0,
@@ -229,14 +267,24 @@ exports.aiTranslate = onCall({
   const styleData = TRANSLATE_STYLES[style];
   if (!styleData) throw new HttpsError('invalid-argument', '번역 스타일을 선택해주세요');
 
-  const { allowed, limit } = await checkUsage(userId, 'translate');
+  const [{ allowed, limit }, author] = await Promise.all([
+    checkUsage(userId, 'translate'),
+    getAuthorInfo(userId, request.auth?.token || {}),
+  ]);
   if (!allowed) throw new HttpsError('resource-exhausted', `오늘 번역은 하루 ${limit}번만 가능해요`);
 
   const userText = imageBase64
     ? `이미지에 있는 텍스트와 함께 다음 내용을 번역해줘:\n${text.slice(0, 500)}`
     : `다음을 번역해줘:\n${text.slice(0, 500)}`;
 
-  const translated = await callAI(styleData.system, userText, imageBase64, 500);
+  let translated;
+  try {
+    translated = await callAI(styleData.system, userText, imageBase64, 500);
+  } catch (err) {
+    console.error('[aiTranslate] AI call failed:', err.message);
+    if (err instanceof HttpsError) throw err;
+    throw new HttpsError('internal', 'AI 번역에 실패했어요. 잠시 후 다시 시도해주세요.');
+  }
 
   const postRef = db.collection('feeds').doc();
   await postRef.set({
@@ -247,7 +295,7 @@ exports.aiTranslate = onCall({
     styleName: styleData.name,
     translated,
     hasImage: !!imageBase64,
-    authorId: userId,
+    ...author,
     commentCount: 0,
     reactions: { like: 0, funny: 0, fire: 0, total: 0 },
     viewCount: 0,
@@ -275,7 +323,10 @@ exports.aiMatch = onCall({
     throw new HttpsError('invalid-argument', '두 가지를 모두 입력해주세요');
   }
 
-  const { allowed, limit } = await checkUsage(userId, 'match');
+  const [{ allowed, limit }, author] = await Promise.all([
+    checkUsage(userId, 'match'),
+    getAuthorInfo(userId, request.auth?.token || {}),
+  ]);
   if (!allowed) throw new HttpsError('resource-exhausted', `오늘 궁합은 하루 ${limit}번만 가능해요`);
 
   const system = `당신은 세상 모든 것의 궁합을 보는 AI 점쟁이다. 사람, 음식, 물건, 동물 뭐든 궁합을 본다. 반드시 JSON 형식으로만 답하라:
@@ -289,9 +340,11 @@ exports.aiMatch = onCall({
       imageA,
       imageB,
       500,
+      0.9,
     );
     matchResult = JSON.parse(raw.replace(/```json|```/g, '').trim());
-  } catch {
+  } catch (err) {
+    if (err instanceof HttpsError) throw err;
     matchResult = {
       score: Math.floor(Math.random() * 101),
       grade: '신비로운궁합🔮',
@@ -310,7 +363,7 @@ exports.aiMatch = onCall({
     hasImageA: !!imageA,
     hasImageB: !!imageB,
     matchResult,
-    authorId: userId,
+    ...author,
     commentCount: 0,
     reactions: { like: 0, funny: 0, fire: 0, total: 0 },
     viewCount: 0,
@@ -348,13 +401,17 @@ exports.aiNaming = onCall({
     throw new HttpsError('invalid-argument', '설명을 입력하거나 사진을 첨부해주세요');
   }
 
-  const { allowed, limit } = await checkUsage(userId, 'naming');
+  const [{ allowed, limit }, author] = await Promise.all([
+    checkUsage(userId, 'naming'),
+    getAuthorInfo(userId, request.auth?.token || {}),
+  ]);
   if (!allowed) throw new HttpsError('resource-exhausted', `오늘 작명은 하루 ${limit}번만 가능해요`);
 
   const catLabel = NAME_CATEGORIES[category] || '기타';
 
   const system = `당신은 세상에서 가장 웃기고 창의적인 작명 전문가다. 요청받은 것의 이름을 5개 지어준다.
 이름은 웃기지만 그럴듯해야 한다. 너무 평범하면 안 된다. 듣는 순간 "ㅋㅋㅋ 맞네" 소리가 나와야 한다.
+매번 완전히 다른 이름을 지어라. 이전에 지은 이름을 절대 반복하지 마라.
 반드시 JSON 형식으로만 답하라:
 {"names": [{"name": "이름1", "reason": "이유(한 줄, 웃기게)"}, {"name": "이름2", "reason": "..."}, {"name": "이름3", "reason": "..."}, {"name": "이름4", "reason": "..."}, {"name": "이름5", "reason": "..."}]}`;
 
@@ -365,10 +422,12 @@ exports.aiNaming = onCall({
 
   let names;
   try {
-    const raw = await callAI(system, userText, imageBase64, 600);
+    const raw = await callAI(system, userText, imageBase64, 600, 1.0);
     const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
-    names = parsed.names || [];
-  } catch {
+    names = (parsed.names || []).filter(n => n.name);
+    if (names.length === 0) throw new Error('empty names');
+  } catch (err) {
+    if (err instanceof HttpsError) throw err;
     names = [
       { name: '이름짓기실패킹', reason: 'AI가 충격받아서 말문이 막혔습니다' },
       { name: '무명의존재', reason: '이름 없이도 살 수 있습니다' },
@@ -384,7 +443,7 @@ exports.aiNaming = onCall({
     category: catLabel,
     names,
     hasImage: !!imageBase64,
-    authorId: userId,
+    ...author,
     commentCount: 0,
     reactions: { like: 0, funny: 0, fire: 0, total: 0 },
     viewCount: 0,
