@@ -735,26 +735,28 @@ async function renderAiSettings(el) {
               </label>`).join('')}
           </div>
 
-          <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:18px">
+          <div style="display:flex;flex-direction:column;gap:16px;margin-bottom:18px">
             <div class="admin-key-row">
-              <div style="font-size:12px;font-weight:700;color:#6C5CE7;margin-bottom:4px">🟣 Claude API Key (Anthropic)</div>
-              <div style="display:flex;gap:6px">
-                <input type="password" class="form-input" id="key-claude" placeholder="${aiKingConfig.claudeKeyMasked || 'sk-ant-...'}" style="flex:1;font-size:12px;font-family:monospace" autocomplete="new-password">
-                <select class="form-input" id="model-claude" style="font-size:12px;min-width:160px">
-                  <option value="claude-haiku-4-5-20251001" ${aiKingConfig.claudeModel === 'claude-haiku-4-5-20251001' ? 'selected' : ''}>Haiku 4.5 (추천)</option>
-                  <option value="claude-sonnet-4-6" ${aiKingConfig.claudeModel === 'claude-sonnet-4-6' ? 'selected' : ''}>Sonnet 4.6</option>
-                </select>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                <span style="font-size:12px;font-weight:700;color:#6C5CE7">🟣 Claude API Key (Anthropic)</span>
+                <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener" style="font-size:11px;color:var(--color-primary);text-decoration:underline">키 발급 →</a>
               </div>
+              <input type="password" class="form-input" id="key-claude" placeholder="${aiKingConfig.claudeKeyMasked || 'sk-ant-api03-...'}" style="width:100%;font-size:13px;font-family:monospace;margin-bottom:6px" autocomplete="new-password">
+              <select class="form-input" id="model-claude" style="font-size:12px;width:100%">
+                <option value="claude-haiku-4-5-20251001" ${aiKingConfig.claudeModel === 'claude-haiku-4-5-20251001' ? 'selected' : ''}>Haiku 4.5 (추천 · 저렴)</option>
+                <option value="claude-sonnet-4-6" ${aiKingConfig.claudeModel === 'claude-sonnet-4-6' ? 'selected' : ''}>Sonnet 4.6 (고성능)</option>
+              </select>
             </div>
             <div class="admin-key-row">
-              <div style="font-size:12px;font-weight:700;color:#0984e3;margin-bottom:4px">🔵 Gemini API Key (Google AI Studio)</div>
-              <div style="display:flex;gap:6px">
-                <input type="password" class="form-input" id="key-gemini" placeholder="${aiKingConfig.geminiKeyMasked || 'AIza...'}" style="flex:1;font-size:12px;font-family:monospace" autocomplete="new-password">
-                <select class="form-input" id="model-gemini" style="font-size:12px;min-width:160px">
-                  <option value="gemini-2.5-flash" ${aiKingConfig.geminiModel === 'gemini-2.5-flash' ? 'selected' : ''}>Gemini 2.5 Flash (추천)</option>
-                  <option value="gemini-2.0-flash" ${aiKingConfig.geminiModel === 'gemini-2.0-flash' ? 'selected' : ''}>Gemini 2.0 Flash</option>
-                </select>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                <span style="font-size:12px;font-weight:700;color:#0984e3">🔵 Gemini API Key (Google AI Studio)</span>
+                <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener" style="font-size:11px;color:var(--color-primary);text-decoration:underline">키 발급 →</a>
               </div>
+              <input type="password" class="form-input" id="key-gemini" placeholder="${aiKingConfig.geminiKeyMasked || 'AIzaSy...'}" style="width:100%;font-size:13px;font-family:monospace;margin-bottom:6px" autocomplete="new-password">
+              <select class="form-input" id="model-gemini" style="font-size:12px;width:100%">
+                <option value="gemini-2.5-flash" ${aiKingConfig.geminiModel === 'gemini-2.5-flash' ? 'selected' : ''}>Gemini 2.5 Flash (추천 · 무료 1,500건/일)</option>
+                <option value="gemini-2.0-flash" ${aiKingConfig.geminiModel === 'gemini-2.0-flash' ? 'selected' : ''}>Gemini 2.0 Flash</option>
+              </select>
             </div>
           </div>
 
