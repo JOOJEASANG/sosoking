@@ -3,6 +3,7 @@ import { auth, functions } from '../firebase.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
 import { toast } from '../components/toast.js';
 import { setMeta } from '../utils/seo.js';
+import { isQuotaError, showAiLadderBonus } from '../ai-ladder-bonus.js';
 
 function resizeImageToBase64(file, maxPx = 512) {
   return new Promise((resolve) => {
@@ -35,7 +36,6 @@ export function renderAiNaming() {
   setMeta('AI작명소');
   const el = document.getElementById('page-content');
   if (!auth.currentUser) { navigate('/login'); return; }
-
   let selectedCat = 'person';
 
   el.innerHTML = `
@@ -47,12 +47,7 @@ export function renderAiNaming() {
       </div>
       <div class="ai-king-form">
         <label class="ai-king-form__label">카테고리 선택 *</label>
-        <div class="ai-style-grid">
-          ${CATEGORIES.map(c => `
-            <button class="ai-style-btn${c.id === selectedCat ? ' active' : ''}" data-cat="${c.id}">${c.label}</button>
-          `).join('')}
-        </div>
-
+        <div class="ai-style-grid">${CATEGORIES.map(c => `<button class="ai-style-btn${c.id === selectedCat ? ' active' : ''}" data-cat="${c.id}">${c.label}</button>`).join('')}</div>
         <label class="ai-king-form__label" style="margin-top:16px">📷 사진 첨부 (선택)</label>
         <div class="ai-king-img-upload" id="naming-img-area">
           <input type="file" id="naming-img-input" accept="image/*" style="display:none">
@@ -60,44 +55,29 @@ export function renderAiNaming() {
           <img id="naming-img-preview" class="ai-king-img-upload__preview" alt="">
           <div id="naming-img-remove" class="ai-king-img-upload__remove">✕ 사진 제거</div>
         </div>
-
         <label class="ai-king-form__label" id="naming-desc-label" style="margin-top:20px">이름 지을 대상 설명 *</label>
-        <textarea id="naming-input" class="ai-king-form__textarea" maxlength="300"
-          placeholder="예) 항상 회의 때 졸면서 딴소리하는 우리 팀장님&#10;예) 오늘 처음 만든 닭볶음탕인데 매운 듯 안 매운 듯 애매한 맛&#10;(사진 첨부 시 설명 없이도 가능해요)"></textarea>
+        <textarea id="naming-input" class="ai-king-form__textarea" maxlength="300" placeholder="예) 항상 회의 때 졸면서 딴소리하는 우리 팀장님&#10;예) 오늘 처음 만든 닭볶음탕인데 매운 듯 안 매운 듯 애매한 맛&#10;(사진 첨부 시 설명 없이도 가능해요)"></textarea>
         <div class="ai-king-form__charcount"><span id="naming-count">0</span>/300</div>
-
-        <button id="btn-naming-submit" class="btn btn--primary btn--full" style="margin-top:20px;font-size:16px;font-weight:800">
-          🎭 이름 지어주기
-        </button>
-        <div style="font-size:11px;color:var(--color-text-muted);text-align:center;margin-top:8px">하루 3번 무료</div>
+        <button id="btn-naming-submit" class="btn btn--primary btn--full" style="margin-top:20px;font-size:16px;font-weight:800">🎭 이름 지어주기</button>
+        <div style="font-size:11px;color:var(--color-text-muted);text-align:center;margin-top:8px">하루 3번 무료 · 소진 시 하루 1회 사다리게임 보너스</div>
       </div>
     </div>`;
 
   document.getElementById('btn-back')?.addEventListener('click', () => navigate('/ai-king'));
-
   const textarea = document.getElementById('naming-input');
-  textarea.addEventListener('input', () => {
-    document.getElementById('naming-count').textContent = textarea.value.length;
-  });
-
-  el.querySelectorAll('.ai-style-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      selectedCat = btn.dataset.cat;
-      el.querySelectorAll('.ai-style-btn').forEach(b => b.classList.toggle('active', b === btn));
-    });
-  });
+  textarea.addEventListener('input', () => { document.getElementById('naming-count').textContent = textarea.value.length; });
+  el.querySelectorAll('.ai-style-btn').forEach(btn => btn.addEventListener('click', () => {
+    selectedCat = btn.dataset.cat;
+    el.querySelectorAll('.ai-style-btn').forEach(b => b.classList.toggle('active', b === btn));
+  }));
 
   let imageBase64 = null;
   const imgArea = document.getElementById('naming-img-area');
   const imgInput = document.getElementById('naming-img-input');
   const imgPreview = document.getElementById('naming-img-preview');
   const imgRemove = document.getElementById('naming-img-remove');
-
   const descLabel = document.getElementById('naming-desc-label');
-  function updateDescLabel() {
-    descLabel.textContent = imageBase64 ? '이름 지을 대상 설명 (선택)' : '이름 지을 대상 설명 *';
-  }
-
+  function updateDescLabel() { descLabel.textContent = imageBase64 ? '이름 지을 대상 설명 (선택)' : '이름 지을 대상 설명 *'; }
   imgArea.addEventListener('click', (e) => { if (e.target !== imgRemove) imgInput.click(); });
   imgInput.addEventListener('change', async () => {
     const file = imgInput.files[0];
@@ -121,27 +101,20 @@ export function renderAiNaming() {
   document.getElementById('btn-naming-submit')?.addEventListener('click', async () => {
     const description = textarea.value.trim();
     if (!description && !imageBase64) { toast.warn('설명을 입력하거나 사진을 첨부해주세요'); return; }
-
     const btn = document.getElementById('btn-naming-submit');
     btn.disabled = true;
     btn.textContent = '이름 짓는 중...';
-
-    el.innerHTML = `
-      <div class="ai-king-page">
-        <div class="ai-king-loading">
-          <div class="spinner spinner--lg"></div>
-          <div class="ai-king-loading__text">🎭 AI 작명가가 고민 중...</div>
-          <div class="ai-king-loading__sub">세상에서 제일 웃긴 이름을 생각하는 중 💭</div>
-        </div>
-      </div>`;
-
+    el.innerHTML = `<div class="ai-king-page"><div class="ai-king-loading"><div class="spinner spinner--lg"></div><div class="ai-king-loading__text">🎭 AI 작명가가 고민 중...</div><div class="ai-king-loading__sub">세상에서 제일 웃긴 이름을 생각하는 중 💭</div></div></div>`;
     try {
       const fn = httpsCallable(functions, 'aiNaming');
       const result = await fn({ description, category: selectedCat, imageBase64 });
       navigate(`/detail/${result.data.postId}`);
     } catch (e) {
-      const msg = e?.message || '작명에 실패했어요';
-      toast.error(msg.includes('resource-exhausted') ? '오늘 작명 횟수를 모두 사용했어요 (하루 3회)' : msg);
+      if (isQuotaError(e)) {
+        showAiLadderBonus({ feature: 'naming', featureLabel: 'AI작명소', onReplay: renderAiNaming });
+        return;
+      }
+      toast.error(e?.message || '작명에 실패했어요');
       renderAiNaming();
     }
   });
