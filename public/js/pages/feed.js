@@ -18,13 +18,14 @@ const FILTER_LIMIT = 500;
 const NAV_CONTEXT_KEY = 'sosoking:feedNavContext';
 
 const ROOMS = [
-  { key: '',             icon: '✨', label: '전체',      title: '전체',      desc: '모든 콘텐츠를 한 번에 봅니다.', write: 'collect' },
-  { key: 'tournament',   icon: '🏆', label: '끝판왕',    title: '끝판왕',    desc: '토너먼트 대결로 최후의 1위를 가려보세요!', write: 'tournament' },
-  { key: 'ai_judge',     icon: '⚖️', label: '\uBBF8\uCE5C\uD310\uC0AC',  title: '\uBBF8\uCE5C\uD310\uC0AC',  desc: '7명의 이상한 판사가 당신의 상황을 판결합니다.', path: '/ai-judge' },
-  { key: 'ai_translate', icon: '🌍', label: '\uBBF8\uCE5C\uBC88\uC5ED\uC0AC', title: '\uBBF8\uCE5C\uBC88\uC5ED\uC0AC', desc: '텍스트를 북한말·사투리·급식체 등으로 변환합니다.', path: '/ai-translate' },
+  { key: '',             icon: '✨', label: '전체',      title: '전체',      desc: 'AI킹 콘텐츠를 한 번에 봅니다.' },
+  { key: 'ai_judge',     icon: '⚖️', label: '미친판사',  title: '미친판사',  desc: '7명의 이상한 판사가 당신의 상황을 판결합니다.', path: '/ai-judge' },
+  { key: 'ai_translate', icon: '🌍', label: '미친번역사', title: '미친번역사', desc: '텍스트를 북한말·사투리·급식체 등으로 변환합니다.', path: '/ai-translate' },
   { key: 'ai_match',     icon: '💘', label: 'AI궁합',    title: 'AI궁합',    desc: 'AI가 두 가지의 궁합 점수를 분석해 드립니다.', path: '/ai-match' },
   { key: 'ai_naming',    icon: '🎭', label: 'AI작명소',  title: 'AI작명소',  desc: '설명하면 웃기고 그럴듯한 이름 5개를 지어드립니다.', path: '/ai-naming' },
 ];
+
+const AI_TYPES = ['ai_judge', 'ai_translate', 'ai_match', 'ai_naming'];
 
 let currentType        = '';
 let currentSearch      = '';
@@ -59,7 +60,7 @@ function renderRoomHead() {
       <div class="soso-room-head__title">${room.title}</div>
       <div class="soso-room-head__desc">${room.desc}</div>
       <div class="soso-room-head__action">
-        <button class="btn btn--primary btn--sm" type="button" id="room-write-btn">${room.label === '전체' ? '올리기' : `${room.label} 올리기`}</button>
+        <button class="btn btn--primary btn--sm" type="button" id="room-write-btn">${room.label === '전체' ? 'AI킹 하러가기' : `${room.label} 해보기`}</button>
       </div>
     </div>`;
 }
@@ -69,7 +70,7 @@ export async function renderFeed() {
   setMeta('소소킹 피드');
   const el     = document.getElementById('page-content');
   const params = getQueryParams();
-  currentType   = params.type  || '';
+  currentType   = params.type === 'tournament' ? '' : (params.type || '');
   currentSearch = params.q     || '';
   currentSort   = normalizeFeedSort(params.sort);
   currentPage   = Math.max(1, Number(params.page || 1));
@@ -106,8 +107,7 @@ function bindFeedEvents() {
 function bindRoomWriteEvent() {
   document.getElementById('room-write-btn')?.addEventListener('click', () => {
     const room = currentRoom();
-    if (room.path) navigate(room.path);
-    else navigate(`/write?type=multi&preset=${room.write || 'collect'}`);
+    navigate(room.path || '/ai-king');
   });
 }
 
@@ -182,7 +182,6 @@ function updateUrlState() {
 
 function getLegacyTypeWhereClause(type) {
   const map = {
-    tournament:   ['multi', 'tournament'],
     ai_judge:     ['ai_judge'],
     ai_translate: ['ai_translate'],
     ai_match:     ['ai_match'],
@@ -190,22 +189,20 @@ function getLegacyTypeWhereClause(type) {
   };
   const types = map[type];
   if (!types) return null;
-  return types.length === 1
-    ? where('type', '==', types[0])
-    : where('type', 'in', types.slice(0, 10));
+  return types.length === 1 ? where('type', '==', types[0]) : where('type', 'in', types.slice(0, 10));
+}
+
+function onlyAiPosts(posts) {
+  return posts.filter(p => AI_TYPES.includes(p.feedType || p.type));
 }
 
 async function loadPosts() {
   if (isLoading) return;
   isLoading = true;
-
   const loaderEl = document.getElementById('feed-loader');
   const listEl   = document.getElementById('feed-list');
   if (loaderEl) loaderEl.style.display = 'flex';
-  if (listEl) {
-    listEl.classList.remove('is-empty');
-    listEl.innerHTML = renderSkeletonCards(3);
-  }
+  if (listEl) { listEl.classList.remove('is-empty'); listEl.innerHTML = renderSkeletonCards(3); }
 
   try {
     if (useCursorMode()) await loadCursorPage(currentPage);
@@ -215,50 +212,33 @@ async function loadPosts() {
     console.error('피드 로드 실패', err);
     if (listEl) {
       listEl.classList.add('is-empty');
-      listEl.innerHTML = `
-        <div class="empty-state">
-          <div class="empty-state__icon">⚠️</div>
-          <div class="empty-state__title">모음을 불러오지 못했어요</div>
-          <div class="empty-state__desc">잠시 후 다시 시도해주세요.</div>
-        </div>`;
+      listEl.innerHTML = `<div class="empty-state"><div class="empty-state__icon">⚠️</div><div class="empty-state__title">피드를 불러오지 못했어요</div><div class="empty-state__desc">잠시 후 다시 시도해주세요.</div></div>`;
     }
   }
-
   if (loaderEl) loaderEl.style.display = 'none';
   isLoading = false;
 }
 
 async function loadCursorPage(page) {
   const startCursor = page > 1 ? cursorStack[page - 2] : null;
-  const constraints = [orderBy('createdAt', 'desc'), limit(PAGE_SIZE + 1)];
+  const constraints = [where('type', 'in', AI_TYPES), orderBy('createdAt', 'desc'), limit(PAGE_SIZE + 1)];
   if (startCursor) constraints.push(startAfter(startCursor));
-
   const snap = await getDocs(query(collection(db, 'feeds'), ...constraints));
   const docs = snap.docs;
   const hasNext = docs.length > PAGE_SIZE;
   const pageDocs = docs.slice(0, PAGE_SIZE);
-
   if (hasNext && pageDocs.length > 0) {
     cursorStack[page - 1] = pageDocs[pageDocs.length - 1];
     cursorTotal = Math.max(cursorTotal, page + 1);
-  } else {
-    cursorTotal = Math.max(cursorTotal, page);
-  }
-
+  } else cursorTotal = Math.max(cursorTotal, page);
   cachedPosts = pageDocs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.hidden);
 }
 
 async function loadFilteredPosts() {
   let posts = [];
-
   if (currentType && !currentSearch) {
     try {
-      const snap = await getDocs(query(
-        collection(db, 'feeds'),
-        where('feedType', '==', currentType),
-        orderBy('createdAt', 'desc'),
-        limit(FILTER_LIMIT),
-      ));
+      const snap = await getDocs(query(collection(db, 'feeds'), where('feedType', '==', currentType), orderBy('createdAt', 'desc'), limit(FILTER_LIMIT)));
       posts = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.hidden);
     } catch (error) {
       console.warn('[feed] feedType query failed, fallback legacy query', error);
@@ -270,50 +250,30 @@ async function loadFilteredPosts() {
       posts = posts.filter(p => postMatchesType(p, currentType));
     }
   } else {
-    const constraints = [orderBy('createdAt', 'desc'), limit(FILTER_LIMIT)];
-    const snap = await getDocs(query(collection(db, 'feeds'), ...constraints));
+    const snap = await getDocs(query(collection(db, 'feeds'), where('type', 'in', AI_TYPES), orderBy('createdAt', 'desc'), limit(FILTER_LIMIT)));
     posts = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.hidden);
   }
-
+  posts = onlyAiPosts(posts);
   if (currentSearch) posts = posts.filter(p => postMatchesSearch(p, currentSearch));
   if (currentType && currentSearch) posts = posts.filter(p => postMatchesType(p, currentType));
-
   cachedPosts = sortFeedPosts(posts, currentSort);
 }
 
 function persistNavContext(posts) {
   lastDisplayPosts = posts || [];
   try {
-    sessionStorage.setItem(NAV_CONTEXT_KEY, JSON.stringify({
-      ids: lastDisplayPosts.map(p => p.id).filter(Boolean),
-      page: currentPage,
-      type: currentType,
-      search: currentSearch,
-      sort: currentSort,
-      href: window.location.hash || '#/feed',
-      savedAt: Date.now(),
-    }));
-    sessionStorage.setItem('sosoking:detailPostNav', JSON.stringify({
-      ids: lastDisplayPosts.map(p => p.id).filter(Boolean),
-      savedAt: Date.now(),
-    }));
+    sessionStorage.setItem(NAV_CONTEXT_KEY, JSON.stringify({ ids: lastDisplayPosts.map(p => p.id).filter(Boolean), page: currentPage, type: currentType, search: currentSearch, sort: currentSort, href: window.location.hash || '#/feed', savedAt: Date.now() }));
+    sessionStorage.setItem('sosoking:detailPostNav', JSON.stringify({ ids: lastDisplayPosts.map(p => p.id).filter(Boolean), savedAt: Date.now() }));
   } catch {}
 }
 
 function renderCurrentPage() {
-  const listEl    = document.getElementById('feed-list');
+  const listEl = document.getElementById('feed-list');
   const summaryEl = document.getElementById('feed-summary');
   if (!listEl) return;
-
   const displayPosts = cachedPosts;
-
   if (useCursorMode()) {
-    if (summaryEl) {
-      summaryEl.innerHTML = renderFeedSummary({
-        total: null, page: currentPage, totalPages: null,
-        search: currentSearch, type: currentType, sort: currentSort,
-      });
-    }
+    if (summaryEl) summaryEl.innerHTML = renderFeedSummary({ total: null, page: currentPage, totalPages: null, search: currentSearch, type: currentType, sort: currentSort });
     persistNavContext(displayPosts);
     listEl.classList.toggle('is-empty', !displayPosts.length);
     listEl.innerHTML = displayPosts.length ? displayPosts.map(p => renderFeedCard(p)).join('') : renderFeedEmptyState({ search: currentSearch });
@@ -323,71 +283,32 @@ function renderCurrentPage() {
     currentPage = Math.min(Math.max(1, currentPage), totalPages);
     const start = (currentPage - 1) * PAGE_SIZE;
     const pagePosts = displayPosts.slice(start, start + PAGE_SIZE);
-
-    if (summaryEl) {
-      summaryEl.innerHTML = renderFeedSummary({
-        total: displayPosts.length, page: currentPage, totalPages,
-        search: currentSearch, type: currentType, sort: currentSort,
-      });
-    }
+    if (summaryEl) summaryEl.innerHTML = renderFeedSummary({ total: displayPosts.length, page: currentPage, totalPages, search: currentSearch, type: currentType, sort: currentSort });
     persistNavContext(pagePosts);
     listEl.classList.toggle('is-empty', !pagePosts.length);
     listEl.innerHTML = pagePosts.length ? pagePosts.map(p => renderFeedCard(p)).join('') : renderFeedEmptyState({ search: currentSearch });
     renderOffsetPagination(totalPages);
   }
-  bindSortEvents();
-  updateUrlState();
+  bindSortEvents(); updateUrlState();
 }
 
 function renderCursorPagination() {
   const el = document.getElementById('feed-pagination');
   if (!el) return;
-
   const hasPrev = currentPage > 1;
   const hasNext = cursorStack[currentPage - 1] !== undefined;
   if (!hasPrev && !hasNext) { el.innerHTML = ''; return; }
-
-  el.innerHTML = `
-    <button class="feed-page-btn" data-cursor-page="prev" ${!hasPrev ? 'disabled' : ''}>이전 페이지</button>
-    <span class="feed-page-current">${currentPage}페이지</span>
-    <button class="feed-page-btn" data-cursor-page="next" ${!hasNext ? 'disabled' : ''}>다음 페이지</button>`;
-
-  el.querySelector('[data-cursor-page="prev"]')?.addEventListener('click', async () => {
-    if (currentPage <= 1) return;
-    currentPage -= 1;
-    await loadPosts();
-    document.querySelector('.soso-feed-page')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  });
-  el.querySelector('[data-cursor-page="next"]')?.addEventListener('click', async () => {
-    currentPage += 1;
-    await loadPosts();
-    document.querySelector('.soso-feed-page')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  });
+  el.innerHTML = `<button class="feed-page-btn" data-cursor-page="prev" ${!hasPrev ? 'disabled' : ''}>이전 페이지</button><span class="feed-page-current">${currentPage}페이지</span><button class="feed-page-btn" data-cursor-page="next" ${!hasNext ? 'disabled' : ''}>다음 페이지</button>`;
+  el.querySelector('[data-cursor-page="prev"]')?.addEventListener('click', async () => { if (currentPage <= 1) return; currentPage -= 1; await loadPosts(); document.querySelector('.soso-feed-page')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+  el.querySelector('[data-cursor-page="next"]')?.addEventListener('click', async () => { currentPage += 1; await loadPosts(); document.querySelector('.soso-feed-page')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
 }
 
 function renderOffsetPagination(totalPages) {
   const el = document.getElementById('feed-pagination');
   if (!el) return;
   if (totalPages <= 1) { el.innerHTML = ''; return; }
-
   const start = Math.max(1, Math.min(currentPage - 2, Math.max(1, totalPages - 4)));
-  const end   = Math.min(totalPages, start + 4);
-
-  el.innerHTML = `
-    <button class="feed-page-btn" data-feed-page="prev" ${currentPage <= 1 ? 'disabled' : ''}>이전 페이지</button>
-    <div class="feed-page-numbers">
-      ${Array.from({ length: end - start + 1 }, (_, i) => start + i).map(p => `<button class="feed-page-num ${p === currentPage ? 'active' : ''}" data-feed-page="${p}">${p}</button>`).join('')}
-    </div>
-    <button class="feed-page-btn" data-feed-page="next" ${currentPage >= totalPages ? 'disabled' : ''}>다음 페이지</button>`;
-
-  el.querySelectorAll('[data-feed-page]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const v = btn.dataset.feedPage;
-      if (v === 'prev') currentPage -= 1;
-      else if (v === 'next') currentPage += 1;
-      else currentPage = Number(v || 1);
-      renderCurrentPage();
-      document.querySelector('.soso-feed-page')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
-  });
+  const end = Math.min(totalPages, start + 4);
+  el.innerHTML = `<button class="feed-page-btn" data-feed-page="prev" ${currentPage <= 1 ? 'disabled' : ''}>이전 페이지</button><div class="feed-page-numbers">${Array.from({ length: end - start + 1 }, (_, i) => start + i).map(p => `<button class="feed-page-num ${p === currentPage ? 'active' : ''}" data-feed-page="${p}">${p}</button>`).join('')}</div><button class="feed-page-btn" data-feed-page="next" ${currentPage >= totalPages ? 'disabled' : ''}>다음 페이지</button>`;
+  el.querySelectorAll('[data-feed-page]').forEach(btn => btn.addEventListener('click', () => { const v = btn.dataset.feedPage; if (v === 'prev') currentPage -= 1; else if (v === 'next') currentPage += 1; else currentPage = Number(v || 1); renderCurrentPage(); document.querySelector('.soso-feed-page')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }));
 }
