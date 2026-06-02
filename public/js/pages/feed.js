@@ -14,16 +14,16 @@ import {
 } from '../feed/render.js';
 
 const PAGE_SIZE    = 20;
-const FILTER_LIMIT = 120;
+const FILTER_LIMIT = 500;
 const NAV_CONTEXT_KEY = 'sosoking:feedNavContext';
 
 const ROOMS = [
-  { key: '',             icon: '✨', label: '전체',      title: '전체',      desc: '모든 콘텐츠를 한 번에 봅니다.' },
-  { key: 'tournament',   icon: '🏆', label: '끝판왕',    title: '끝판왕',    desc: '토너먼트 대결로 최후의 1위를 가려보세요!' },
-  { key: 'ai_judge',     icon: '⚖️', label: '미친판사',  title: '미친판사',  desc: '7명의 이상한 판사가 당신의 상황을 판결합니다.' },
-  { key: 'ai_translate', icon: '🌍', label: '미친번역사', title: '미친번역사', desc: '텍스트를 북한말·사투리·급식체 등으로 변환합니다.' },
-  { key: 'ai_match',     icon: '💘', label: 'AI궁합',    title: 'AI궁합',    desc: 'AI가 두 가지의 궁합 점수를 분석해 드립니다.' },
-  { key: 'ai_naming',    icon: '🎭', label: 'AI작명소',  title: 'AI작명소',  desc: '설명하면 웃기고 그럴듯한 이름 5개를 지어드립니다.' },
+  { key: '',             icon: '✨', label: '전체',      title: '전체',      desc: '모든 콘텐츠를 한 번에 봅니다.', write: 'collect' },
+  { key: 'tournament',   icon: '🏆', label: '끝판왕',    title: '끝판왕',    desc: '토너먼트 대결로 최후의 1위를 가려보세요!', write: 'tournament' },
+  { key: 'ai_judge',     icon: '⚖️', label: '\uBBF8\uCE5C\uD310\uC0AC',  title: '\uBBF8\uCE5C\uD310\uC0AC',  desc: '7명의 이상한 판사가 당신의 상황을 판결합니다.', path: '/ai-judge' },
+  { key: 'ai_translate', icon: '🌍', label: '\uBBF8\uCE5C\uBC88\uC5ED\uC0AC', title: '\uBBF8\uCE5C\uBC88\uC5ED\uC0AC', desc: '텍스트를 북한말·사투리·급식체 등으로 변환합니다.', path: '/ai-translate' },
+  { key: 'ai_match',     icon: '💘', label: 'AI궁합',    title: 'AI궁합',    desc: 'AI가 두 가지의 궁합 점수를 분석해 드립니다.', path: '/ai-match' },
+  { key: 'ai_naming',    icon: '🎭', label: 'AI작명소',  title: 'AI작명소',  desc: '설명하면 웃기고 그럴듯한 이름 5개를 지어드립니다.', path: '/ai-naming' },
 ];
 
 let currentType        = '';
@@ -106,7 +106,8 @@ function bindFeedEvents() {
 function bindRoomWriteEvent() {
   document.getElementById('room-write-btn')?.addEventListener('click', () => {
     const room = currentRoom();
-    navigate(`/write?type=multi&preset=${room.write || 'collect'}`);
+    if (room.path) navigate(room.path);
+    else navigate(`/write?type=multi&preset=${room.write || 'collect'}`);
   });
 }
 
