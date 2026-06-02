@@ -10,6 +10,7 @@ import { collection, query, where, getDocs, getDoc, doc, limit } from 'https://w
 export { appState };
 
 const OWNER_EMAILS = new Set();
+const ADMIN_ALLOWED_PATHS = new Set(['/admin', '/account', '/terms', '/privacy', '/legal/terms', '/legal/privacy', '/guide', '/login', '/signup']);
 
 const OPTIONAL_MODULES = [
   './secure-interactions-actions.js',
@@ -25,13 +26,8 @@ function loadOptionalModules() {
   OPTIONAL_MODULES.forEach(path => import(path).catch(error => console.warn('[app-safe] optional failed', path, error)));
 }
 
-function pageContent() {
-  return document.getElementById('page-content');
-}
-
-function esc(value) {
-  return String(value || '').replace(/[&<>]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[ch]));
-}
+function pageContent() { return document.getElementById('page-content'); }
+function esc(value) { return String(value || '').replace(/[&<>]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[ch])); }
 
 function showPageError(title, error) {
   const el = pageContent();
@@ -40,8 +36,23 @@ function showPageError(title, error) {
   el.innerHTML = '<div class="empty-state"><div class="empty-state__icon">⚠️</div><div class="empty-state__title">' + esc(title) + '</div><div style="margin-top:10px;font-size:12px;white-space:pre-wrap;text-align:left;max-width:720px;overflow:auto">' + esc(msg) + '</div></div>';
 }
 
+function currentPath() {
+  const hash = window.location.hash.slice(1) || '/';
+  return hash.split('?')[0] || '/';
+}
+
+function isAdminAllowedPath(path) {
+  return ADMIN_ALLOWED_PATHS.has(path) || path.startsWith('/admin');
+}
+
 async function renderPage(renderer, title) {
   try {
+    const path = currentPath();
+    if (appState.isAdmin && !isAdminAllowedPath(path)) {
+      toast.info?.('관리자 계정은 관리 페이지에서만 사용합니다.');
+      navigate('/admin');
+      return;
+    }
     await renderer();
   } catch (error) {
     console.error('[renderPage failed]', title, error);
@@ -49,30 +60,10 @@ async function renderPage(renderer, title) {
   }
 }
 
-async function renderAdminSafe() {
-  const module = await import('./pages/admin-safe.js');
-  return module.renderAdmin();
-}
-
-async function renderAccountSafe() {
-  const module = await import('./pages/account.js');
-  return module.renderAccount();
-}
-
-async function renderWriteSafe() {
-  const module = await import('./pages/write.js');
-  return module.renderWrite();
-}
-
-async function renderDetailSafe(id) {
-  const module = await import('./pages/detail.js');
-  return module.renderDetail(id);
-}
-
-async function renderGuideSafe() {
-  const module = await import('./pages/guide.js');
-  return module.renderGuide();
-}
+async function renderAdminSafe() { const module = await import('./pages/admin-safe.js'); return module.renderAdmin(); }
+async function renderAccountSafe() { const module = await import('./pages/account.js'); return module.renderAccount(); }
+async function renderDetailSafe(id) { const module = await import('./pages/detail.js'); return module.renderDetail(id); }
+async function renderGuideSafe() { const module = await import('./pages/guide.js'); return module.renderGuide(); }
 
 async function registerRoutes() {
   registerRoute('/', async () => renderPage((await import('./pages/home.js')).renderHome, '홈'));
@@ -81,7 +72,6 @@ async function registerRoutes() {
   registerRoute('/account', async () => renderPage(renderAccountSafe, '내 정보'));
   registerRoute('/scraps', async () => renderPage((await import('./pages/scraps.js')).renderScraps, '스크랩'));
   registerRoute('/admin', async () => renderPage(renderAdminSafe, '관리자'));
-  registerRoute('/write', async () => renderPage(renderWriteSafe, '글쓰기'));
   registerRoute('/detail/:id', async ({ id }) => renderPage(() => renderDetailSafe(id), '상세'));
   registerRoute('/login', async () => renderPage((await import('./pages/login.js')).renderLogin, '로그인'));
   registerRoute('/signup', async () => renderPage((await import('./pages/signup.js')).renderSignup, '회원가입'));
@@ -109,9 +99,7 @@ async function isStrictAdmin(user) {
   try {
     const adminSnap = await getDoc(doc(db, 'admins', user.uid));
     return adminSnap.exists();
-  } catch {
-    return false;
-  }
+  } catch { return false; }
 }
 
 async function fetchUserProfile(user) {
@@ -119,21 +107,17 @@ async function fetchUserProfile(user) {
   try {
     let snap = await getDoc(doc(db, 'users', user.uid));
     if (!snap.exists() && !user.isAnonymous) {
-      // 첫 로그인(이메일/구글): users 문서 + 고유 닉네임 프로비저닝
       try {
         const { ensureUserProvisioned } = await import('./services/user-service.js');
         await ensureUserProvisioned(user);
         snap = await getDoc(doc(db, 'users', user.uid));
-      } catch (provErr) {
-        console.warn('[fetchUserProfile] provision failed', provErr);
-      }
+      } catch (provErr) { console.warn('[fetchUserProfile] provision failed', provErr); }
     }
     if (snap.exists()) {
       const data = snap.data();
       appState.nickname = data.nickname || user.displayName || user.email?.split('@')[0] || '';
       appState.nicknameIcon = data.nicknameIcon || null;
       appState.points = Number(data.points || data.totalPoints || 0);
-      // 가입 보너스 자동 지급 (서버에서 중복 방지, 기존 회원도 자동 적용)
       if (!data.signupBonusClaimed) {
         import('./firebase.js').then(({ functions }) =>
           import('https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js').then(({ httpsCallable }) =>
@@ -167,7 +151,6 @@ function bindFooterToggle() {
 function renderFrame() {
   const app = document.getElementById('app');
   if (!app) return;
-
   app.innerHTML = `
     <div class="app-shell">
       <aside id="site-sidebar" class="site-sidebar"></aside>
@@ -177,121 +160,51 @@ function renderFrame() {
         <footer class="site-footer" id="site-footer">
           <div class="site-footer__body" id="footer-body" hidden>
             <div class="site-footer__inner">
-              <div class="site-footer__brand-block">
-                <a href="#/" class="site-footer__brand">
-                  <img src="/logo.svg" alt="" width="26" height="26">
-                  <span>소소킹</span>
-                </a>
-                <div class="site-footer__tagline">AI가 판결하고, 번역하고,<br>궁합 보고, 이름 짓는 놀이터</div>
-              </div>
-              <div>
-                <div class="site-footer__col-title">AI킹</div>
-                <div class="site-footer__links">
-                  <a href="#/ai-judge">⚖️ 미친판사</a>
-                  <a href="#/ai-translate">🌍 미친번역사</a>
-                  <a href="#/ai-match">💘 AI궁합</a>
-                  <a href="#/ai-naming">🎭 AI작명소</a>
-                </div>
-              </div>
-              <div>
-                <div class="site-footer__col-title">바로가기</div>
-                <div class="site-footer__links">
-                  <a href="#/feed">피드</a>
-                  <a href="#/hall">통계</a>
-                  <a href="#/guide">이용안내</a>
-                </div>
-              </div>
-              <div>
-                <div class="site-footer__col-title">정보</div>
-                <div class="site-footer__links">
-                  <a href="#/terms">이용약관</a>
-                  <a href="#/privacy">개인정보처리방침</a>
-                </div>
-              </div>
+              <div class="site-footer__brand-block"><a href="#/" class="site-footer__brand"><img src="/logo.svg" alt="" width="26" height="26"><span>소소킹</span></a><div class="site-footer__tagline">AI가 판결하고, 번역하고,<br>궁합 보고, 이름 짓는 놀이터</div></div>
+              <div><div class="site-footer__col-title">AI킹</div><div class="site-footer__links"><a href="#/ai-judge">⚖️ 미친판사</a><a href="#/ai-translate">🌍 미친번역사</a><a href="#/ai-match">💘 AI궁합</a><a href="#/ai-naming">🎭 AI작명소</a></div></div>
+              <div><div class="site-footer__col-title">바로가기</div><div class="site-footer__links"><a href="#/feed">피드</a><a href="#/hall">통계</a><a href="#/guide">이용안내</a></div></div>
+              <div><div class="site-footer__col-title">정보</div><div class="site-footer__links"><a href="#/terms">이용약관</a><a href="#/privacy">개인정보처리방침</a></div></div>
             </div>
           </div>
-          <div class="site-footer__copy-bar">
-            <div class="site-footer__copy">© ${new Date().getFullYear()} 소소킹. All rights reserved.</div>
-            <button class="site-footer__toggle" id="btn-footer-toggle" aria-expanded="false" title="푸터 펼치기">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
-              더보기
-            </button>
-          </div>
+          <div class="site-footer__copy-bar"><div class="site-footer__copy">© ${new Date().getFullYear()} 소소킹. All rights reserved.</div><button class="site-footer__toggle" id="btn-footer-toggle" aria-expanded="false" title="푸터 펼치기">더보기</button></div>
         </footer>
         <nav id="bottom-nav" class="bottom-nav"></nav>
       </div>
     </div>`;
-  renderSidebar();
-  renderHeader();
-  renderBottomNav();
-  bindFooterToggle();
+  renderSidebar(); renderHeader(); renderBottomNav(); bindFooterToggle();
 }
 
-function rerenderCurrentRouteSoon() {
-  setTimeout(() => {
-    renderFrame();
-    window.dispatchEvent(new HashChangeEvent('hashchange'));
-  }, 0);
-}
+function rerenderCurrentRouteSoon() { setTimeout(() => { renderFrame(); window.dispatchEvent(new HashChangeEvent('hashchange')); }, 0); }
 
 async function handleKakaoCallback() {
   const params = new URLSearchParams(window.location.search);
   const code = params.get('code');
   const oauthError = params.get('error');
   if (!code && !oauthError) return;
-
   window.history.replaceState({}, '', '/');
-
-  if (oauthError) {
-    setTimeout(() => toast.warn('카카오 로그인이 취소됐어요'), 800);
-    return;
-  }
-
+  if (oauthError) { setTimeout(() => toast.warn('카카오 로그인이 취소됐어요'), 800); return; }
   const returnTo = sessionStorage.getItem('kakao_return_to') || '/';
   sessionStorage.removeItem('kakao_return_to');
-
   const processingEl = document.getElementById('app');
-  if (processingEl) processingEl.innerHTML = `
-    <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:'Noto Sans KR',system-ui,sans-serif;">
-      <div style="text-align:center">
-        <div style="width:40px;height:40px;border:4px solid #fee500;border-top-color:#3c1e1e;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 16px"></div>
-        <p style="font-size:14px;color:#666">카카오 로그인 처리 중...</p>
-      </div>
-    </div>
-    <style>@keyframes spin{to{transform:rotate(360deg)}}</style>`;
-
+  if (processingEl) processingEl.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:sans-serif"><div style="text-align:center"><div class="spinner spinner--lg"></div><p>카카오 로그인 처리 중...</p></div></div>';
   try {
     const { getFunctions, httpsCallable } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js');
     const { getApp } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');
     const { signInWithCustomToken, updateProfile } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
     const fns = getFunctions(getApp(), 'asia-northeast3');
-    const { data } = await httpsCallable(fns, 'kakaoLogin')({
-      code,
-      redirectUri: 'https://sosoking.co.kr',
-    });
+    const { data } = await httpsCallable(fns, 'kakaoLogin')({ code, redirectUri: 'https://sosoking.co.kr/' });
     await signInWithCustomToken(auth, data.customToken);
-    // 커스텀 토큰 로그인은 displayName/photoURL이 자동 설정 안 되므로 직접 세팅
     if (auth.currentUser && (data.displayName || data.photoURL)) {
-      await updateProfile(auth.currentUser, {
-        displayName: data.displayName || auth.currentUser.displayName || null,
-        photoURL: data.photoURL || auth.currentUser.photoURL || null,
-      }).catch(() => {});
+      await updateProfile(auth.currentUser, { displayName: data.displayName || auth.currentUser.displayName || null, photoURL: data.photoURL || auth.currentUser.photoURL || null }).catch(() => {});
     }
     toast.success('카카오 로그인됐어요!');
     window.location.hash = '#' + (returnTo.startsWith('/') ? returnTo : '/' + returnTo);
   } catch (e) {
     console.error('[kakao callback]', e);
-    // 사람이 읽을 수 있는 메시지를 우선, code는 괄호 안에 보조 표시
-    const code = e?.code || '';
-    const msg  = e?.message || String(e);
-    const label = code ? `${msg} (${code})` : msg;
+    const label = e?.code ? `${e?.message || String(e)} (${e.code})` : (e?.message || String(e));
     const backPage = sessionStorage.getItem('kakao_page') || 'login';
     sessionStorage.removeItem('kakao_page');
-    setTimeout(() => {
-      toast.error('카카오 로그인 실패: ' + label);
-      // 실패 후 로그인/가입 페이지로 복귀해 재시도할 수 있게 함
-      window.location.hash = '#/' + backPage;
-    }, 300);
+    setTimeout(() => { toast.error('카카오 로그인 실패: ' + label); window.location.hash = '#/' + backPage; }, 300);
   }
 }
 
@@ -301,24 +214,15 @@ async function initApp() {
   await registerRoutes();
   initRouter();
   loadOptionalModules();
-
   onAuthStateChanged(auth, async user => {
     appState.user = user || null;
     appState.isAuthenticated = !!user;
     if (user) await fetchUserProfile(user);
-    else {
-      appState.nickname = '';
-      appState.nicknameIcon = null;
-      appState.points = 0;
-      appState.isAdmin = false;
-    }
+    else { appState.nickname = ''; appState.nicknameIcon = null; appState.points = 0; appState.isAdmin = false; }
+    if (appState.isAdmin && !isAdminAllowedPath(currentPath())) navigate('/admin');
     rerenderCurrentRouteSoon();
   });
-
   renderFrame();
 }
 
-initApp().catch(error => {
-  console.error('[app init failed]', error);
-  showPageError('앱 초기화 실패', error);
-});
+initApp().catch(error => { console.error('[app init failed]', error); showPageError('앱 초기화 실패', error); });
