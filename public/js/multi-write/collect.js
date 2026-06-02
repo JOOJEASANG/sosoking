@@ -71,7 +71,7 @@ export function collectMultiModules() {
   if (enabled('vote')) {
     const options = getVoteOptions();
     const voteMode = document.getElementById('mw-vote-mode')?.value || 'general';
-    const question = bodyText || titleText;
+    const question = bodyText || getTitleText();
     if (!question) throw new Error('토론 주제를 입력해주세요.');
     if (options.length < 2) throw new Error('선택지를 2개 이상 입력해주세요.');
     const voteData = { enabled: true, question, options: options.map(text => ({ text, votes: 0 })) };
