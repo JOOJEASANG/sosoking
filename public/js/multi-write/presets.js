@@ -1,12 +1,4 @@
 export const MULTI_PRESETS = {
-  tournament: {
-    label: '대결방',
-    icon: '⚔️',
-    shortDesc: '토너먼트 대결',
-    titlePlaceholder: '예: 역대 최강 라면 토너먼트 대결',
-    descPlaceholder: '',
-    tagsPlaceholder: '#대결, #토너먼트, #최강자',
-  },
   collect: {
     label: '일반방',
     icon: '📌',
@@ -24,8 +16,8 @@ export const MULTI_PRESETS = {
     descPlaceholder: '토론할 상황이나 질문을 적어주세요.',
     tagsPlaceholder: '#토론, #투표, #찬반',
     voteOptionPlaceholders: ['찬성', '반대'],
+    hiddenFromWriter: true,
   },
-  // quiz: 퀴즈방 (주관식·객관식 퀴즈)
   quiz: {
     label: '퀴즈방',
     icon: '🧠',
@@ -36,7 +28,6 @@ export const MULTI_PRESETS = {
     quizAnswerPlaceholder: '예: 정답을 여기에 입력하세요',
     hiddenFromWriter: true,
   },
-  // drip: 드립방 (한 줄 드립)
   drip: {
     label: '드립방',
     icon: '🤣',
@@ -46,7 +37,6 @@ export const MULTI_PRESETS = {
     tagsPlaceholder: '#드립, #한줄드립, #유머',
     hiddenFromWriter: true,
   },
-  // 기존 일반글 호환용입니다. 새 글쓰기 선택지에서는 제거합니다.
   general: {
     label: '일반',
     icon: '📝',
@@ -56,16 +46,14 @@ export const MULTI_PRESETS = {
     tagsPlaceholder: '#일상, #피드, #소소킹',
     hiddenFromWriter: true,
   },
-  // 기존 빈칸채우기 글 호환용입니다. 새 글쓰기 선택지에서는 숨깁니다.
   fill: {
     label: '빈칸',
     icon: '🧩',
     titlePlaceholder: '예: ___가 ___했다',
-    descPlaceholder: '빈칸은 ___로 표시하세요. 예: ___가 ___했다 / 오늘의 내 기분은 ___다.',
+    descPlaceholder: '빈칸은 ___로 표시하세요.',
     tagsPlaceholder: '#빈칸채우기, #빈칸',
     hiddenFromWriter: true,
   },
-  // 기존 작명 글 호환용입니다. 새 글쓰기 선택지에서는 제거합니다.
   naming: {
     label: '작명',
     icon: '😜',
@@ -75,47 +63,45 @@ export const MULTI_PRESETS = {
     tagsPlaceholder: '#작명, #미친작명소',
     hiddenFromWriter: true,
   },
-  // 기존 행시 글 호환용입니다. 새 글쓰기 선택지에서는 숨깁니다.
   acrostic: {
     label: '행시',
     icon: '✍️',
     titlePlaceholder: '예: 행시 도전',
-    descPlaceholder: '2~5글자 제시어를 넣으면 글자 수에 맞춰 이행시·삼행시·사행시·오행시로 자동 적용됩니다.',
+    descPlaceholder: '2~5글자 제시어를 넣어주세요.',
     tagsPlaceholder: '#행시, #삼행시, #오행시',
     hiddenFromWriter: true,
   },
-  // 기존 막장릴레이 글 호환용입니다. 새 글쓰기 선택지에서는 숨깁니다.
   relay: {
     label: '릴레이',
     icon: '🎭',
     titlePlaceholder: '예: 다음 문장 이어줘',
-    descPlaceholder: '첫 문장이나 상황을 적어주세요. 참여자가 이야기를 이어갑니다.',
+    descPlaceholder: '첫 문장이나 상황을 적어주세요.',
     tagsPlaceholder: '#릴레이, #막장릴레이',
     hiddenFromWriter: true,
   },
 };
 
-export const WRITER_PRESET_KEYS = ['tournament'];
+export const WRITER_PRESET_KEYS = [];
 
 export const BODY_LABELS = {
   collect: '한줄 설명',
   vote: '토론 주제',
-  tournament: '대결 설명',
 };
 
 export const BODY_REQUIRED_PRESETS = ['collect', 'vote'];
 
 export function normalizePresetKey(key, { allowHidden = false } = {}) {
+  if (key === 'tournament') return 'collect';
   if (key === 'ox') return 'vote';
-  if (key === 'collection' || key === 'youtube' || key === 'image' || key === 'link') return 'collect'; // kept for old link compat
+  if (key === 'collection' || key === 'youtube' || key === 'image' || key === 'link') return 'collect';
   if (key === 'debate' || key === 'discussion') return 'vote';
   if (key === 'anonymous' || key === 'relay' || key === 'acrostic') return 'general';
-  if (!MULTI_PRESETS[key]) return 'tournament';
-  if (!allowHidden && MULTI_PRESETS[key].hiddenFromWriter) return 'tournament';
+  if (!MULTI_PRESETS[key]) return 'collect';
+  if (!allowHidden && MULTI_PRESETS[key].hiddenFromWriter) return 'collect';
   return key;
 }
 
 export function getMultiPresetFromHash(hash = window.location.hash || '') {
   const query = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '';
-  return normalizePresetKey(new URLSearchParams(query).get('preset') || 'tournament');
+  return normalizePresetKey(new URLSearchParams(query).get('preset') || 'collect', { allowHidden: true });
 }
