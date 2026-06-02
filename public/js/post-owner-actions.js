@@ -1,6 +1,7 @@
 import { auth, db, functions } from './firebase.js';
 import { doc, getDoc, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { navigate } from './router.js';
 import { toast } from './components/toast.js';
 import { escHtml } from './utils/helpers.js';
@@ -292,11 +293,14 @@ async function ensureOwnerActions() {
 }
 
 let timer = null;
-function schedule() {
+function schedule(delay = 160) {
   clearTimeout(timer);
-  timer = setTimeout(ensureOwnerActions, 160);
+  timer = setTimeout(ensureOwnerActions, delay);
 }
 
-window.addEventListener('hashchange', schedule);
-new MutationObserver(schedule).observe(document.documentElement, { childList: true, subtree: true });
-setTimeout(schedule, 500);
+// auth 상태 변경(로그인 완료) 시 즉시 재시도
+onAuthStateChanged(auth, user => { if (user) schedule(80); });
+
+window.addEventListener('hashchange', () => schedule(200));
+new MutationObserver(() => schedule()).observe(document.body, { childList: true, subtree: true });
+setTimeout(() => schedule(600), 0);

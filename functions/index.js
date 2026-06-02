@@ -372,6 +372,10 @@ exports.getAiKingUsage = aiKing.getAiKingUsage;
 exports.saveAiKingConfig = aiKing.saveAiKingConfig;
 exports.purchaseAiExtraUse = aiKing.purchaseAiExtraUse;
 
+// ── 게시글 삭제 (작성자/관리자) ──
+const postOwnerFns = require('./post-owner-functions');
+exports.deleteOwnPost = postOwnerFns.deleteOwnPost;
+
 // ── 포인트 ──
 const pointsFns = require('./points-functions');
 exports.awardUserPoints = pointsFns.awardUserPoints;
