@@ -95,6 +95,12 @@
 .ai-example-chip { font-size: 11px; padding: 5px 10px; background: var(--color-surface-2); border: 1px solid var(--color-border); border-radius: var(--radius-pill); cursor: pointer; color: var(--color-text-secondary); transition: all .15s; white-space: nowrap; }
 .ai-example-chip:hover { border-color: var(--color-primary); color: var(--color-primary); background: var(--color-primary-bg); }
 
+/* 판사 선택 칩 */
+.ai-judge-select-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; margin-top: 10px; }
+.ai-judge-chip { padding: 9px 8px; border: 1.5px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-bg); cursor: pointer; font-size: 13px; font-weight: 600; text-align: center; transition: all .15s; color: var(--color-text-primary); }
+.ai-judge-chip:hover { border-color: var(--color-primary); background: var(--color-primary-bg); color: var(--color-primary); }
+.ai-judge-chip.active { border-color: var(--color-primary); background: var(--color-primary); color: #fff; }
+
 /* 결과 하단 액션 */
 .ai-result-actions { display: flex; gap: 10px; margin-top: 20px; }
 .ai-result-actions .btn { flex: 1; }
