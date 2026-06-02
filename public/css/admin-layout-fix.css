@@ -326,7 +326,7 @@ body:has(.admin-layout) .page-container {
 
 .admin-type-grid {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -741,7 +741,7 @@ body:has(.admin-layout) .page-container {
   }
 
   .admin-type-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .admin-table {
@@ -965,9 +965,14 @@ body:has(.admin-layout) .page-container {
     grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
   }
 
-  body:has(.admin-layout) .admin-menu-item--write-shortcut {
-    display: flex !important;
-  }
+}
+
+/* 관리자 글쓰기 바로가기 완전 숨김 */
+.admin-menu-item--write-shortcut,
+.admin-menu-item--pc-write,
+[data-admin-pc-write-shortcut],
+[data-admin-write-shortcut] {
+  display: none !important;
 }
 
 /* ── 대시보드 ── */

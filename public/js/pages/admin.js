@@ -129,6 +129,12 @@ async function renderDashboard(el) {
     { feedType: 'drip',       icon: '🤣', label: '드립방', cat: 'usgyo' },
   ];
 
+  const FEED_TYPE_LABEL = {
+    tournament: '대결방', vote: '토론방', quiz: '퀴즈방', drip: '드립방',
+    collect: '일반방', general: '일반', fill: '빈칸', naming: '작명',
+    acrostic: '행시', relay: '릴레이', ox: '토론방',
+  };
+
   const [totalSnap, todaySnap, recentSnap, reportSnap, ...typeSnaps] = await Promise.all([
     getCountFromServer(collection(db, 'feeds')).catch(() => null),
     getDocs(query(collection(db, 'feeds'), where('createdAt', '>=', Timestamp.fromDate(todayStart)), limit(99))).catch(() => null),
@@ -185,7 +191,7 @@ async function renderDashboard(el) {
           <div class="admin-recent-list">
             ${recent.length ? recent.map(p => `
               <div class="admin-recent-item">
-                <span class="admin-recent-item__type">${escHtml(p.feedType || p.type || '—')}</span>
+                <span class="admin-recent-item__type">${escHtml(FEED_TYPE_LABEL[p.feedType || p.type] || p.feedType || p.type || '—')}</span>
                 <a href="#/detail/${p.id}" class="admin-recent-item__title">${escHtml(p.title || '(제목없음)')}</a>
                 <span class="admin-recent-item__author">${escHtml(p.authorName || '익명')}</span>
               </div>`).join('') : '<div class="admin-empty-note">최근 게시물이 없습니다</div>'}

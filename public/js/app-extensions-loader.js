@@ -8,7 +8,6 @@ const EXTENSION_MODULES = [
   './six-game-guard.js',
   './admin-visibility-guard.js',
   './admin-shortcuts-pwa.js',
-  './admin-write-sidebar.js',
   './account-ui.js',
   './account-notifications-uid-fix.js',
   './pc-sidebar-spacing.js',
