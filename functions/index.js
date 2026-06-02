@@ -39,6 +39,14 @@ async function logAiUsage() {
   );
 }
 
+function safeParseJson(raw, fallback = null) {
+  const text = String(raw || '').trim().replace(/```json|```/g, '').trim();
+  try { return JSON.parse(text); } catch {}
+  const match = text.match(/\{[\s\S]*\}/);
+  if (match) { try { return JSON.parse(match[0]); } catch {} }
+  return fallback;
+}
+
 async function generateMissionWithAi(apiKey) {
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({
@@ -50,8 +58,9 @@ async function generateMissionWithAi(apiKey) {
   const result = await model.generateContent(
     `소소킹 커뮤니티 오늘의 미션을 만드세요. 재미있고 참여하기 쉬운 미션이어야 합니다.\n유형: ${type}\n\n반드시 JSON만 출력하세요:\n{\n  "title": "미션 제목 (40자 이내, 구체적이고 재미있게)",\n  "desc": "미션 설명 (80자 이내, 참여 방법 안내 포함)",\n  "cat": "golra 또는 usgyo 또는 malhe"\n}`
   );
-  const raw = result.response.text().trim().replace(/```json|```/g, '').trim();
-  return JSON.parse(raw);
+  const parsed = safeParseJson(result.response.text());
+  if (!parsed) throw new Error('AI 미션 JSON 파싱 실패');
+  return parsed;
 }
 
 const GEMINI_KEY_RE = /^AIza[0-9A-Za-z_-]{35}$/;
@@ -125,8 +134,8 @@ exports.adminTriggerReport = onCall({ region: 'asia-northeast3', timeoutSeconds:
   });
   const prompt = `소소킹 커뮤니티 주간 활동 보고서를 작성하세요.\n\n데이터:\n- 이번 주 게시물 수: ${posts.length}개\n- 카테고리별: 골라봐 ${catCounts.golra || 0}개, 웃겨봐 ${catCounts.usgyo || 0}개, 말해봐 ${catCounts.malhe || 0}개\n- 인기 게시물 TOP 5:\n${topPosts.join('\n') || '없음'}\n\n반드시 JSON만 출력하세요:\n{\n  "title": "이번 주 소소킹 리포트",\n  "summary": "이번 주 커뮤니티 활동 총평 (150자 이내, 따뜻하고 유쾌하게)",\n  "highlights": ["주요 하이라이트 3가지"],\n  "nextWeekSuggestion": "다음 주 운영 제안 (80자 이내)"\n}`;
   const result = await model.generateContent(prompt);
-  const raw = result.response.text().trim().replace(/```json|```/g, '').trim();
-  const report = JSON.parse(raw);
+  const report = safeParseJson(result.response.text());
+  if (!report) throw new HttpsError('internal', 'AI 보고서 생성에 실패했어요. 잠시 후 다시 시도해주세요.');
   await db.collection('ai_reports').add({
     ...report,
     type: 'weekly',
@@ -172,8 +181,8 @@ ${textToCheck.slice(0, 800)}
   "summary": "한 줄 요약 (20자 이내)"
 }`;
       const result = await model.generateContent(prompt);
-      const raw = result.response.text().trim().replace(/```json|```/g, '').trim();
-      const analysis = JSON.parse(raw);
+      const analysis = safeParseJson(result.response.text());
+      if (!analysis) { console.warn('[moderation] AI JSON 파싱 실패, 모더레이션 건너뜀'); return; }
       const updates = { aiModerated: true, aiTags: analysis.tags || [], aiSummary: analysis.summary || '' };
       if (!analysis.safe) {
         updates.hidden = true;
@@ -232,8 +241,8 @@ ${textToCheck.slice(0, 600)}
 
 {"action": "no_action", "reason": "판단 근거 한 문장"}`
       );
-      const raw = result.response.text().trim().replace(/```json|```/g, '').trim();
-      const analysis = JSON.parse(raw);
+      const analysis = safeParseJson(result.response.text());
+      if (!analysis) { console.warn('[report-handler] AI JSON 파싱 실패'); return; }
       const updateData = { aiReviewed: true, aiAction: analysis.action, aiReason: analysis.reason };
       if (analysis.action === 'clear_violation') {
         await postSnap.ref.update({ hidden: true, hideReason: 'AI 신고 처리: ' + (analysis.reason || '') });
@@ -300,8 +309,8 @@ exports.generateFormContent = onCall({ region: 'asia-northeast3', timeoutSeconds
     generationConfig: { thinkingConfig: { thinkingBudget: 0 } },
   });
   const result = await model.generateContent(prompt);
-  const raw = result.response.text().trim().replace(/```json|```/g, '').trim();
-  const data = JSON.parse(raw);
+  const data = safeParseJson(result.response.text());
+  if (!data) throw new HttpsError('internal', 'AI 콘텐츠 생성에 실패했어요. 잠시 후 다시 시도해주세요.');
   await logAiUsage();
   return { ok: true, data };
 });
@@ -334,8 +343,8 @@ exports.scheduledWeeklyReport = onSchedule(
       const result = await model.generateContent(
         `소소킹 커뮤니티 주간 활동 보고서를 작성하세요.\n\n데이터:\n- 게시물: ${posts.length}개\n- 카테고리별: 골라봐 ${catCounts.golra||0}개, 웃겨봐 ${catCounts.usgyo||0}개, 도전봐 ${catCounts.malhe||0}개\n- 신고: ${reportsSnap.size}건\n- 인기글:\n${topPosts.join('\n') || '없음'}\n\n반드시 JSON만 출력하세요:\n{\n  "title": "이번 주 소소킹 리포트",\n  "summary": "이번 주 커뮤니티 활동 총평 (150자 이내, 따뜻하고 유쾌하게)",\n  "highlights": ["주요 하이라이트 3가지"],\n  "nextWeekSuggestion": "다음 주 운영 제안 (80자 이내)"\n}`
       );
-      const raw = result.response.text().trim().replace(/```json|```/g, '').trim();
-      const report = JSON.parse(raw);
+      const report = safeParseJson(result.response.text());
+      if (!report) { console.warn('[weekly-report] AI JSON 파싱 실패'); return; }
       await db.collection('ai_reports').add({
         ...report,
         type: 'weekly',

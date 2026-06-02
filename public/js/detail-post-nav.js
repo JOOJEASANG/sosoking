@@ -30,7 +30,6 @@ function labelForContext(ctx = {}) {
   if (ctx.type === 'tournament') return '대결방';
   if (ctx.type === 'collect') return '일반방';
   if (ctx.type === 'vote') return '토론방';
-  if (ctx.type === 'quiz') return '퀴즈방';
   if (ctx.type === 'drip') return '드립방';
   return '전체글';
 }
@@ -104,7 +103,6 @@ function legacyMatchesContext(post, ctx = {}) {
   if (post.feedType === ctx.type) return true;
   if (ctx.type === 'collect') return post.type === 'multi' && (post.subtype === 'collect' || post.modules?.collect?.enabled);
   if (ctx.type === 'vote') return post.modules?.vote?.enabled || post.subtype === 'vote';
-  if (ctx.type === 'quiz') return post.modules?.quiz?.enabled || post.subtype === 'quiz';
   if (ctx.type === 'drip') return post.modules?.drip?.enabled || post.subtype === 'drip';
   return true;
 }

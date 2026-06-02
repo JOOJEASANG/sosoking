@@ -26,7 +26,6 @@ async function registerDetailView(id) {
 function shouldHideMainDesc(post) {
   if (post.type === 'cbattle') return true;
   return post.type === 'multi' && (
-    post.modules?.quiz?.enabled === true ||
     post.modules?.drip?.enabled === true ||
     post.modules?.vote?.enabled === true
   );

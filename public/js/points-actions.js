@@ -30,24 +30,4 @@ document.addEventListener('click', event => {
     return;
   }
 
-  if (target.closest('#multi-quiz-submit') && hasText('#multi-quiz-answer')) {
-    later(() => {
-      const result = document.getElementById('multi-quiz-result');
-      if (result?.classList.contains('is-correct')) {
-        return awardPoints('quiz_correct', { postId });
-      }
-      return Promise.resolve(false);
-    });
-    return;
-  }
-
-  if (target.closest('[data-quiz-option]')) {
-    later(() => {
-      const result = document.getElementById('multi-quiz-result');
-      if (result?.classList.contains('is-correct')) {
-        return awardPoints('quiz_correct', { postId, onceKey: 'choice' });
-      }
-      return Promise.resolve(false);
-    });
-  }
 });

@@ -76,7 +76,6 @@ const deleteOwnPost = onCall({ region: REGION, timeoutSeconds: 120, memory: '512
   counts.multiRelay = await deleteCollectionWithReplies(`feeds/${postId}/multi_relay`);
 
   // 답글이 없는 보조 컬렉션은 문서만 삭제합니다.
-  counts.quizAttempts = await deleteDocsInCollection(`feeds/${postId}/quiz_attempts`);
   counts.viewers = await deleteDocsInCollection(`feeds/${postId}/viewers`);
   counts.viewEvents = await deleteDocsInCollection(`feeds/${postId}/view_events`);
   counts.secret = await deleteDocsInCollection(`feeds/${postId}/secret`);

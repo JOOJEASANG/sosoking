@@ -26,7 +26,7 @@ function timeText(value) {
   return new Date(n).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
 }
 function iconFor(type) {
-  return ({ multi_reply:'💬', multi_reaction:'❤️', best_reward:'🏆', quiz_correct:'🧠' })[type] || '🔔';
+  return ({ multi_reply:'💬', multi_reaction:'❤️', best_reward:'🏆' })[type] || '🔔';
 }
 function isAccountPage() { return (location.hash || '').startsWith('#/account'); }
 function activeAccountTab() { return new URLSearchParams((location.hash.split('?')[1] || '')).get('tab') || 'posts'; }

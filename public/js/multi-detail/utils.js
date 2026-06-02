@@ -28,12 +28,7 @@ export function hasInteractiveModule(post) {
     modules.vote?.enabled ||
     modules.naming?.enabled ||
     modules.drip?.enabled ||
-    modules.quiz?.enabled ||
     modules.fill?.enabled ||
     modules.tournament?.enabled
   );
-}
-
-export function normalizeAnswer(value) {
-  return String(value || '').trim().replace(/\s/g, '');
 }

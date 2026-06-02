@@ -1,5 +1,6 @@
 'use strict';
 
+const { randomInt } = require('crypto');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getApps, initializeApp } = require('firebase-admin/app');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
@@ -36,10 +37,7 @@ exports.playAiLadderBonus = onCall({ region: 'asia-northeast3' }, async (request
       throw new HttpsError('failed-precondition', '오늘 사다리게임은 이미 사용했습니다.');
     }
 
-    const seed = `${uid}_${date}_${feature}_${lane}`;
-    let hash = 0;
-    for (let i = 0; i < seed.length; i += 1) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
-    const winningLane = ['A', 'B', 'C', 'D'][hash % 4];
+    const winningLane = ['A', 'B', 'C', 'D'][randomInt(4)];
 
     result = {
       success: true,

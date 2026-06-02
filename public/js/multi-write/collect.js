@@ -51,10 +51,6 @@ function getVoteOptions() {
     .filter(Boolean);
 }
 
-function getQuizOptions() {
-  return [...document.querySelectorAll('.mw-quiz-option')].map(input => realValue(input));
-}
-
 export function collectMultiModules() {
   const modules = { comments: { enabled: true } };
   const bodyText = getBodyText();
@@ -81,30 +77,6 @@ export function collectMultiModules() {
 
   if (enabled('drip')) {
     modules.drip = { enabled: true, prompt: bodyText.slice(0, 80), maxLength: 50, responseLabel: '한 줄 드립' };
-  }
-
-  if (enabled('quiz')) {
-    const mode = document.getElementById('mw-quiz-mode')?.value || 'subjective';
-    const noAnswer = document.getElementById('mw-quiz-no-answer')?.checked === true;
-    const hint = realValue(document.getElementById('mw-quiz-hint'));
-    const explanation = realValue(document.getElementById('mw-quiz-explanation'));
-    if (!bodyText) throw new Error('내용에 퀴즈 문제를 입력해주세요.');
-
-    if (mode === 'multiple') {
-      const rawOptions = getQuizOptions();
-      const options = rawOptions.filter(Boolean);
-      const correctRawIndex = Number(document.querySelector('input[name="mw-quiz-correct"]:checked')?.value || 0);
-      const correctAnswer = rawOptions[correctRawIndex] || '';
-      const correctIndex = options.indexOf(correctAnswer);
-      const answer = correctAnswer;
-      if (options.length < 2) throw new Error('객관식 선택지를 2개 이상 입력해주세요.');
-      if (!noAnswer && !answer.trim()) throw new Error('정답으로 선택한 객관식 선택지를 입력해주세요.');
-      modules.quiz = { enabled: true, mode: 'multiple', noAnswer, question: bodyText, options: options.map(text => ({ text })), answer: noAnswer ? '' : answer, correctIndex: noAnswer ? null : correctIndex, hint, explanation };
-    } else {
-      const answer = realValue(document.getElementById('mw-quiz-answer'));
-      if (!noAnswer && !answer) throw new Error('정답을 입력해주세요. 정답이 없으면 정답 없는 퀴즈를 체크해주세요.');
-      modules.quiz = { enabled: true, mode: 'subjective', noAnswer, question: bodyText, answer: noAnswer ? '' : answer, hint, explanation };
-    }
   }
 
   return modules;

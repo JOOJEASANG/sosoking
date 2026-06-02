@@ -1,8 +1,7 @@
 import { toast } from '../components/toast.js';
 import { isDetailPath } from './action-utils.js';
-import { currentPostId, getCurrentPostSummary, stop } from './bootstrap-context.js';
+import { currentPostId, stop } from './bootstrap-context.js';
 import { voteLegacyPost, showVoteToast, renderLegacyVoteOptions, renderLegacyBattleVs } from './vote-actions.js';
-import { checkLegacyQuiz } from './quiz-actions.js';
 
 export async function handleVote(event) {
   const btn = event.target.closest?.('[data-vote-idx]');
@@ -27,44 +26,5 @@ export async function handleVote(event) {
   }
 
   btn._detailPending = false;
-  return true;
-}
-
-export async function handleOxQuiz(event) {
-  const btn = event.target.closest?.('[data-answer]');
-  if (!btn || !isDetailPath()) return false;
-  stop(event);
-  if (btn._detailPending) return true;
-  btn._detailPending = true;
-  document.querySelectorAll('[data-answer]').forEach(b => { b.disabled = true; });
-  const post = await getCurrentPostSummary();
-  await checkLegacyQuiz(currentPostId(), btn.dataset.answer, post?.answer === btn.dataset.answer, post?.explanation || '');
-  return true;
-}
-
-export async function handleOptionQuiz(event) {
-  const btn = event.target.closest?.('[data-quiz-idx]');
-  if (!btn || !isDetailPath()) return false;
-  stop(event);
-  if (btn._detailPending) return true;
-  btn._detailPending = true;
-  document.querySelectorAll('[data-quiz-idx]').forEach(b => { b.disabled = true; });
-  const idx = Number(btn.dataset.quizIdx || 0);
-  const post = await getCurrentPostSummary();
-  await checkLegacyQuiz(currentPostId(), idx, Number(post?.answerIdx) === idx, post?.explanation || '');
-  return true;
-}
-
-export async function handleShortQuiz(event) {
-  const btn = event.target.closest?.('#btn-quiz-submit');
-  if (!btn || !isDetailPath()) return false;
-  stop(event);
-  const input = document.getElementById('quiz-short-input');
-  const answer = input?.value.trim() || '';
-  if (!answer) return true;
-  btn.disabled = true;
-  if (input) input.disabled = true;
-  const post = await getCurrentPostSummary();
-  await checkLegacyQuiz(currentPostId(), answer, String(post?.answer || '') === answer, post?.explanation || '');
   return true;
 }

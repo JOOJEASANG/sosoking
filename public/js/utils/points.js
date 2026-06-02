@@ -7,7 +7,6 @@ export const POINT_RULES = {
   reply_create: { points: 2, label: '답글 작성' },
   participation_create: { points: 3, label: '참여글 작성' },
   vote_participate: { points: 1, label: '투표 참여' },
-  quiz_correct: { points: 5, label: '퀴즈 정답' },
   reaction_received: { points: 1, label: '반응 받음' },
 };
 

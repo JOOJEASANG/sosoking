@@ -135,26 +135,6 @@ exports.votePostOption = onCall({ region: REGION, timeoutSeconds: 30 }, async re
   });
 });
 
-exports.checkQuizAnswer = onCall({ region: REGION, timeoutSeconds: 30 }, async request => {
-  requireUid(request);
-  const postId = cleanId(request.data && request.data.postId, 'postId');
-  const selected = request.data && request.data.answer;
-  const postRef = db.doc(`feeds/${postId}`);
-  await assertPostVisible(postRef);
-  const secretSnap = await postRef.collection('secret').doc('answer').get();
-  if (!secretSnap.exists) throw new HttpsError('not-found', '정답 정보가 없습니다.');
-  const secret = secretSnap.data() || {};
-  let correct = false;
-  if (typeof selected === 'number') {
-    correct = Number(secret.answerIdx) === selected;
-  } else {
-    const normalizedSelected = String(selected || '').trim().toLowerCase();
-    const normalizedAnswer = String(secret.answer || '').trim().toLowerCase();
-    correct = !!normalizedAnswer && normalizedSelected === normalizedAnswer;
-  }
-  return { correct, explanation: String(secret.explanation || '').slice(0, 600) };
-});
-
 exports.reactToPost = onCall({ region: REGION, timeoutSeconds: 30 }, async request => {
   const uid = requireUid(request);
   const postId = cleanId(request.data && request.data.postId, 'postId');

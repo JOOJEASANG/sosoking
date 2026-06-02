@@ -17,7 +17,6 @@ const POINT_RULES = Object.freeze({
   vote_participate: { points: 1, label: '투표 참여' },
   reply_create: { points: 2, label: '답글 작성' },
   reaction_received: { points: 1, label: '반응 받음' },
-  quiz_correct: { points: 5, label: '퀴즈 정답' },
 });
 
 function cleanId(value, max = 160) {
@@ -41,10 +40,6 @@ function todayKey() {
     month: '2-digit',
     day: '2-digit',
   }).format(new Date());
-}
-
-function normalizeAnswer(value) {
-  return String(value || '').trim().replace(/\s+/g, '').toLowerCase();
 }
 
 function pointAwardId(uid, action, meta = {}) {
@@ -179,152 +174,6 @@ function cleanParticipationPayload(kind, payload = {}) {
   }
   return data;
 }
-
-async function awardQuizPointOnce(uid, postId) {
-  let awarded = false;
-  await db.runTransaction(async tx => {
-    const award = awardMeta({ uid, action: 'quiz_correct', postId, onceKey: 'correct' });
-    const awardSnap = await tx.get(award.awardRef);
-    if (!awardSnap.exists) {
-      awarded = true;
-      writePointAward(tx, award);
-    }
-  });
-  return awarded;
-}
-
-function publicFirstCorrectRecord({ uid, request, storedSelected }) {
-  const token = request.auth?.token || {};
-  return {
-    uid,
-    authorName: cleanText(token.name || token.email?.split('@')[0] || '익명', 40) || '익명',
-    selected: cleanText(storedSelected, 120),
-    createdAtMs: Date.now(),
-  };
-}
-
-const checkMultiQuizAnswer = onCall({ region: REGION, timeoutSeconds: 20 }, async request => {
-  const uid = requireUser(request);
-  const { postId, selected } = request.data || {};
-  const { ref: postRef, postId: safePostId, post } = await loadMultiPost(postId);
-  if (post.modules?.quiz?.enabled !== true) {
-    throw new HttpsError('failed-precondition', '퀴즈 게시글이 아닙니다.');
-  }
-  if (post.modules?.quiz?.noAnswer === true) {
-    return {
-      ok: true,
-      correct: false,
-      noAnswer: true,
-      awarded: false,
-      points: 0,
-      explanation: cleanText(post.modules.quiz.explanation || '정답이 없는 퀴즈입니다. 댓글로 자유롭게 이야기해보세요.', 500),
-      correctCount: 0,
-      firstCorrect: null,
-      firstCorrectNow: false,
-      alreadyCorrect: false,
-    };
-  }
-
-  const secretRef = db.doc(`feeds/${safePostId}/secret/answer`);
-  const attemptRef = db.doc(`feeds/${safePostId}/quiz_attempts/${uid}`);
-  const secretSnap = await secretRef.get();
-  if (!secretSnap.exists) throw new HttpsError('failed-precondition', '정답 정보가 없습니다.');
-  const secret = secretSnap.data() || {};
-  const mode = secret.mode || secret.quizMode || post.modules?.quiz?.mode || 'subjective';
-
-  let correct = false;
-  let storedSelected = '';
-  if (mode === 'multiple') {
-    const idx = Number(selected);
-    const answerIdx = Number(secret.answerIdx ?? secret.correctIndex);
-    storedSelected = Number.isFinite(idx) ? String(idx) : '';
-    correct = Number.isInteger(idx) && idx === answerIdx;
-  } else {
-    storedSelected = String(selected || '').slice(0, 80);
-    correct = normalizeAnswer(storedSelected) === normalizeAnswer(secret.answer);
-  }
-
-  let correctCount = Number(secret.correctCount || 0);
-  let firstCorrect = secret.firstCorrect || null;
-  let firstCorrectNow = false;
-  let alreadyCorrect = false;
-
-  await db.runTransaction(async tx => {
-    const freshSecretSnap = await tx.get(secretRef);
-    const attemptSnap = await tx.get(attemptRef);
-    const freshSecret = freshSecretSnap.exists ? freshSecretSnap.data() || {} : {};
-    const previousAttempt = attemptSnap.exists ? attemptSnap.data() || {} : {};
-    alreadyCorrect = previousAttempt.correct === true;
-
-    const attemptData = {
-      userId: uid,
-      selected: storedSelected,
-      correct,
-      type: 'multi',
-      updatedAt: FieldValue.serverTimestamp(),
-      updatedAtMs: Date.now(),
-    };
-    if (!attemptSnap.exists) {
-      attemptData.createdAt = FieldValue.serverTimestamp();
-      attemptData.createdAtMs = Date.now();
-    }
-    tx.set(attemptRef, attemptData, { merge: true });
-
-    if (correct && !alreadyCorrect) {
-      correctCount = Number(freshSecret.correctCount || 0) + 1;
-      const first = freshSecret.firstCorrect || null;
-      if (!first) {
-        firstCorrectNow = true;
-        firstCorrect = publicFirstCorrectRecord({ uid, request, storedSelected });
-      } else {
-        firstCorrect = first;
-      }
-
-      tx.set(secretRef, {
-        correctCount,
-        firstCorrect,
-        updatedAt: FieldValue.serverTimestamp(),
-      }, { merge: true });
-      tx.set(postRef, {
-        modules: {
-          quiz: {
-            correctCount,
-            firstCorrect,
-            lastCorrectAt: FieldValue.serverTimestamp(),
-          },
-        },
-        updatedAt: FieldValue.serverTimestamp(),
-      }, { merge: true });
-    } else {
-      correctCount = Number(freshSecret.correctCount || 0);
-      firstCorrect = freshSecret.firstCorrect || null;
-      if (correct && firstCorrect) {
-        tx.set(postRef, {
-          modules: {
-            quiz: {
-              correctCount,
-              firstCorrect,
-            },
-          },
-        }, { merge: true });
-      }
-    }
-  });
-
-  let awarded = false;
-  if (correct) awarded = await awardQuizPointOnce(uid, safePostId);
-  return {
-    ok: true,
-    correct,
-    awarded,
-    points: awarded ? POINT_RULES.quiz_correct.points : 0,
-    explanation: correct ? String(secret.explanation || '').slice(0, 500) : '',
-    correctCount,
-    firstCorrect,
-    firstCorrectNow,
-    alreadyCorrect,
-  };
-});
 
 const castMultiVote = onCall({ region: REGION, timeoutSeconds: 20 }, async request => {
   const uid = requireUser(request);
@@ -502,7 +351,6 @@ const reactMultiItem = onCall({ region: REGION, timeoutSeconds: 20 }, async requ
 });
 
 module.exports = {
-  checkMultiQuizAnswer,
   castMultiVote,
   addMultiParticipation,
   addMultiItemReply,

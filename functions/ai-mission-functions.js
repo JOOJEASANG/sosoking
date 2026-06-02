@@ -1,7 +1,6 @@
 'use strict';
 
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
-const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 
 const db = getFirestore();
@@ -43,9 +42,4 @@ const generateAiMissionNow = onCall({ region: REGION, timeoutSeconds: 10 }, asyn
   };
 });
 
-const dailyAiMission = onSchedule({ schedule: '5 8 * * *', timeZone: 'Asia/Seoul', region: REGION, timeoutSeconds: 10, memory: '128MiB' }, async () => {
-  console.log('[ai-mission] skipped: mission feature removed');
-  return null;
-});
-
-module.exports = { generateAiMissionNow, dailyAiMission };
+module.exports = { generateAiMissionNow };

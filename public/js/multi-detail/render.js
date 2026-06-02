@@ -137,51 +137,6 @@ export function renderFillModule(post) {
     </div>`;
 }
 
-function renderQuizMeta(quiz) {
-  const hint = String(quiz.hint || '').trim();
-  const correctCount = Number(quiz.correctCount || 0);
-  const firstCorrect = quiz.firstCorrect || null;
-  return `
-    <div class="multi-quiz-meta" id="multi-quiz-meta">
-      ${hint ? `<div class="multi-quiz-hint"><b>💡 힌트</b><span>${esc(hint)}</span></div>` : ''}
-      <div class="multi-quiz-stats">
-        <span id="multi-quiz-correct-count">${quiz.noAnswer ? '정답 없음' : `정답자 ${correctCount}명`}</span>
-        <span id="multi-quiz-first-correct">${quiz.noAnswer ? '댓글로 의견을 남겨보세요' : (firstCorrect?.authorName ? `첫 정답자 ${esc(firstCorrect.authorName)}` : '첫 정답자 대기중')}</span>
-      </div>
-    </div>`;
-}
-
-export function renderQuizModule(post) {
-  const quiz = post.modules?.quiz;
-  if (!quiz?.enabled) return '';
-  const isMultiple = quiz.mode === 'multiple' && Array.isArray(quiz.options) && quiz.options.length > 0;
-  const question = String(quiz.question || post.desc || '').trim();
-  if (quiz.noAnswer) {
-    return `
-      <div class="multi-detail-module" data-multi-module="quiz">
-        <div class="multi-detail-module__title">🧠 퀴즈 문제</div>
-        ${question ? `<div class="multi-quiz-question">${esc(question)}</div>` : '<div class="multi-module-hint">정답 없는 퀴즈입니다.</div>'}
-        ${renderQuizMeta(quiz)}
-        <div class="multi-quiz-result is-open is-no-answer" style="display:block"><b>정답 없는 퀴즈</b><span>${esc(quiz.explanation || '댓글로 자유롭게 이야기해보세요.')}</span></div>
-      </div>`;
-  }
-  return `
-    <div class="multi-detail-module" data-multi-module="quiz">
-      <div class="multi-detail-module__title">🧠 퀴즈 문제</div>
-      ${question ? `<div class="multi-quiz-question">${esc(question)}</div>` : '<div class="multi-module-hint">본문을 보고 정답만 선택하세요.</div>'}
-      ${renderQuizMeta(quiz)}
-      ${isMultiple ? `
-        <div class="multi-quiz-options">
-          ${quiz.options.map((opt, i) => `<button type="button" class="multi-quiz-option" data-quiz-option="${i}">${esc(opt.text || opt)}</button>`).join('')}
-        </div>` : `
-        <div class="multi-submit-row">
-          <input id="multi-quiz-answer" class="form-input" placeholder="정답 입력">
-          <button class="btn btn--primary btn--sm" id="multi-quiz-submit">확인</button>
-        </div>`}
-      <div id="multi-quiz-result" class="multi-quiz-result" style="display:none"></div>
-    </div>`;
-}
-
 export function renderTournamentModule(post) {
   const t = post.modules?.tournament;
   if (!t?.enabled) return '';
@@ -257,7 +212,7 @@ export function renderModules(post) {
         <div class="multi-detail-root__desc">본문을 보고 아래 옵션만 선택하거나 입력하세요.</div>
       </div>
       ${renderDeadlineStatus(post)}
-      ${renderVoteModule(post)}${renderNamingModule(post)}${renderDripModule(post)}${renderFillModule(post)}${renderQuizModule(post)}${renderTournamentModule(post)}
+      ${renderVoteModule(post)}${renderNamingModule(post)}${renderDripModule(post)}${renderFillModule(post)}${renderTournamentModule(post)}
     </div>`;
 }
 
@@ -312,14 +267,3 @@ export function renderItemList(items, kind) {
   }).join('')}`;
 }
 
-export function markQuizResult(correct, message, data = {}) {
-  const el = document.getElementById('multi-quiz-result');
-  if (!el) return;
-  el.style.display = 'block';
-  el.className = `multi-quiz-result ${correct ? 'is-correct' : 'is-wrong'}`;
-  el.innerHTML = `<b>${esc(message)}</b>${data.explanation ? `<span>${esc(data.explanation)}</span>` : ''}`;
-  const countEl = document.getElementById('multi-quiz-correct-count');
-  if (countEl && typeof data.correctCount === 'number') countEl.textContent = `정답자 ${data.correctCount}명`;
-  const firstEl = document.getElementById('multi-quiz-first-correct');
-  if (firstEl && data.firstCorrect?.authorName) firstEl.textContent = `첫 정답자 ${esc(data.firstCorrect.authorName)}`;
-}

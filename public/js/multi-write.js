@@ -6,7 +6,7 @@ import { appState } from './state.js';
 import { initImageUploader, getUploadedImages, hasPendingImages, uploadSingleImage } from './components/image-uploader.js';
 import { awardPoints } from './utils/points.js';
 import { MULTI_PRESETS, getMultiPresetFromHash } from './multi-write/presets.js';
-import { renderMultiWriteHTML, renderQuizOptionRow } from './multi-write/render.js';
+import { renderMultiWriteHTML } from './multi-write/render.js';
 import { collectMultiModules, getBodyText, getBodyHtml, splitTags } from './multi-write/collect.js';
 import { fillAutoTags } from './multi-write/auto-tags.js';
 import { initRichEditor, syncRichEditor } from './multi-write/editor.js';
@@ -82,7 +82,7 @@ function getPresetKey() {
 }
 
 function feedTypeFromPreset(presetKey) {
-  if (['tournament', 'collect', 'vote', 'drip', 'quiz'].includes(presetKey)) return presetKey;
+  if (['tournament', 'collect', 'vote', 'drip'].includes(presetKey)) return presetKey;
   return 'tournament';
 }
 
@@ -105,34 +105,11 @@ function updateWriteStateOnly() {
   if (preset === 'drip') syncDripLineToHiddenBody();
 }
 
-function cloneWithoutQuizSecret(modules) {
-  const publicModules = JSON.parse(JSON.stringify(modules || {}));
-  let quizSecret = null;
-  if (publicModules.quiz?.enabled && publicModules.quiz?.noAnswer !== true) {
-    const quiz = publicModules.quiz;
-    quizSecret = {
-      mode: quiz.mode || 'subjective',
-      answer: quiz.answer || '',
-      correctIndex: typeof quiz.correctIndex === 'number' ? quiz.correctIndex : null,
-      answerIdx: typeof quiz.correctIndex === 'number' ? quiz.correctIndex : null,
-      explanation: quiz.explanation || '',
-      correctCount: 0,
-      firstCorrect: null,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    };
-    delete quiz.answer;
-    delete quiz.correctIndex;
-    delete quiz.explanation;
-  }
-  return { publicModules, quizSecret };
-}
-
 function bindTextStateEvents() {
   function onInput() { updateWriteStateOnly(); scheduleDraftSave(); }
-  ['mw-title', 'mw-desc', 'mw-tags', 'mw-quiz-mode', 'mw-quiz-hint', 'mw-drip-line', 'mw-collect-url']
+  ['mw-title', 'mw-desc', 'mw-tags', 'mw-drip-line', 'mw-collect-url']
     .forEach(id => document.getElementById(id)?.addEventListener('input', onInput));
-  document.querySelectorAll('.mw-vote-option,.mw-quiz-option').forEach(input => input.addEventListener('input', onInput));
+  document.querySelectorAll('.mw-vote-option').forEach(input => input.addEventListener('input', onInput));
   document.getElementById('mw-desc')?.addEventListener('keyup', updateWriteStateOnly);
 }
 
@@ -173,7 +150,6 @@ function setWriteSectionVisibility(normalized) {
     if (key === 'collect-url-field') section.style.display = 'none';
     if (key === 'media-field') section.style.display = isTournament ? 'none' : '';
     if (key === 'vote-panel') section.style.display = normalized === 'vote' ? '' : 'none';
-    if (key === 'quiz-panel') section.style.display = normalized === 'quiz' ? '' : 'none';
     if (key === 'drip-panel') section.style.display = normalized === 'drip' ? '' : 'none';
     if (key === 'tournament-panel') section.style.display = isTournament ? '' : 'none';
   });
@@ -217,21 +193,6 @@ function setVoteMode() {
   if (addBtn) addBtn.style.display = '';
 }
 
-function setQuizMode(mode) {
-  const normalized = mode === 'multiple' ? 'multiple' : 'subjective';
-  const hidden = document.getElementById('mw-quiz-mode');
-  if (hidden) hidden.value = normalized;
-  document.querySelectorAll('[data-quiz-mode]').forEach(btn => {
-    const active = btn.datasetQuizMode === normalized || btn.dataset.quizMode === normalized;
-    btn.classList.toggle('active', active);
-    btn.setAttribute('aria-checked', active ? 'true' : 'false');
-  });
-  const sub = document.getElementById('mw-quiz-subjective-box');
-  const mul = document.getElementById('mw-quiz-multiple-box');
-  if (sub) sub.style.display = normalized === 'subjective' ? '' : 'none';
-  if (mul) mul.style.display = normalized === 'multiple' ? '' : 'none';
-}
-
 function bindMultiWriteEvents() {
   document.getElementById('multi-back-type')?.addEventListener('click', () => navigate('/feed'));
   document.getElementById('multi-cancel')?.addEventListener('click', () => navigate('/feed'));
@@ -261,19 +222,6 @@ function bindMultiWriteEvents() {
     }
     list.insertAdjacentHTML('beforeend', `<input class="form-input mw-vote-option" maxlength="80" placeholder="선택지 ${count + 1}">`);
     list?.lastElementChild?.addEventListener('input', updateWriteStateOnly);
-  });
-
-  document.querySelectorAll('[data-quiz-mode]').forEach(btn => btn.addEventListener('click', () => setQuizMode(btn.dataset.quizMode)));
-
-  document.getElementById('mw-add-quiz-option')?.addEventListener('click', () => {
-    const list = document.getElementById('mw-quiz-options');
-    const count = list?.querySelectorAll('.mw-quiz-option').length || 0;
-    if (count >= 6) {
-      toast.warn('객관식 선택지는 최대 6개까지 가능해요');
-      return;
-    }
-    list.insertAdjacentHTML('beforeend', renderQuizOptionRow(count, false));
-    list?.lastElementChild?.querySelector('.mw-quiz-option')?.addEventListener('input', updateWriteStateOnly);
   });
 
   document.getElementById('multi-submit')?.addEventListener('click', submitMultiPost);
@@ -434,8 +382,7 @@ async function submitMultiPost() {
 
   let docRef = null;
   try {
-    const collectedModules = collectMultiModules();
-    const { publicModules, quizSecret } = cloneWithoutQuizSecret(collectedModules);
+    const publicModules = collectMultiModules();
     btn.disabled = true;
     btn.textContent = hasPendingImages() ? '사진 올리는 중...' : '올리는 중...';
 
@@ -475,11 +422,6 @@ async function submitMultiPost() {
     };
 
     await setDoc(docRef, postData);
-
-    if (quizSecret) {
-      await setDoc(doc(db, 'feeds', docRef.id, 'secret', 'answer'), quizSecret);
-    }
-
     await awardPoints('post_create', { postId: docRef.id, type: presetKey }).catch(() => {});
     clearDraft();
     toast.success(`${preset.label}에 올렸어요! +10P 🎉`);

@@ -6,7 +6,6 @@ import { toast } from './components/toast.js';
 
 const callView = httpsCallable(functions, 'incrementPostView');
 const callVote = httpsCallable(functions, 'votePostOption');
-const callCheckQuiz = httpsCallable(functions, 'checkQuizAnswer');
 const callReactPost = httpsCallable(functions, 'reactToPost');
 const callReactComment = httpsCallable(functions, 'reactToComment');
 const callReactAcrostic = httpsCallable(functions, 'reactToAcrostic');
@@ -65,19 +64,6 @@ function applyToggleUi(btn, result, countTag = 'strong') {
   }
 }
 
-function showQuizResult(correct, explanation) {
-  const resultEl = document.getElementById('quiz-result');
-  if (!resultEl) return;
-  resultEl.style.display = '';
-  resultEl.className = `quiz-result quiz-result--${correct ? 'correct' : 'wrong'}`;
-  const iconEl = resultEl.querySelector('.quiz-result__icon');
-  const textEl = resultEl.querySelector('.quiz-result__text');
-  const exEl = resultEl.querySelector('.quiz-result__explanation');
-  if (iconEl) iconEl.textContent = correct ? '⭕' : '❌';
-  if (textEl) textEl.textContent = correct ? '정답이에요!' : '오답이에요!';
-  if (exEl) exEl.textContent = explanation ? `💡 ${explanation}` : '';
-}
-
 function renderVoteOptions(options) {
   const total = options.reduce((sum, opt) => sum + Number(opt.votes || 0), 0);
   return options.map((opt, i) => {
@@ -110,14 +96,6 @@ async function handleVote(btn) {
     toast.warn(error?.message || '투표에 실패했어요');
     btn.disabled = false;
   }
-}
-
-async function handleQuiz(answer) {
-  await ensureUser({ anonymous: true });
-  const postId = getPostIdFromPage(document.body);
-  const res = await callCheckQuiz({ postId, answer });
-  document.querySelectorAll('[data-answer], [data-quiz-idx], #btn-quiz-submit, #quiz-short-input').forEach(el => { el.disabled = true; });
-  showQuizResult(!!res.data?.correct, res.data?.explanation || '');
 }
 
 async function handlePostReaction(btn) {
@@ -159,14 +137,11 @@ async function handleAcrosticReaction(btn) {
 document.addEventListener('click', async event => {
   const target = event.target;
   const voteBtn = target.closest?.('[data-vote-idx]');
-  const oxBtn = target.closest?.('[data-answer]');
-  const quizBtn = target.closest?.('[data-quiz-idx]');
-  const quizSubmit = target.closest?.('#btn-quiz-submit');
   const postReactionBtn = target.closest?.('.reaction-bar [data-reaction]');
   const commentReactionBtn = target.closest?.('.comment-react-btn');
   const acrosticReactionBtn = target.closest?.('[data-acrostic-reaction]');
 
-  const handled = voteBtn || oxBtn || quizBtn || quizSubmit || postReactionBtn || commentReactionBtn || acrosticReactionBtn;
+  const handled = voteBtn || postReactionBtn || commentReactionBtn || acrosticReactionBtn;
   if (!handled) return;
 
   event.preventDefault();
@@ -175,13 +150,6 @@ document.addEventListener('click', async event => {
 
   try {
     if (voteBtn) return await handleVote(voteBtn);
-    if (oxBtn) return await handleQuiz(oxBtn.dataset.answer);
-    if (quizBtn) return await handleQuiz(Number(quizBtn.dataset.quizIdx));
-    if (quizSubmit) {
-      const answer = document.getElementById('quiz-short-input')?.value.trim();
-      if (!answer) return;
-      return await handleQuiz(answer);
-    }
     if (postReactionBtn) return await handlePostReaction(postReactionBtn);
     if (commentReactionBtn) return await handleCommentReaction(commentReactionBtn);
     if (acrosticReactionBtn) return await handleAcrosticReaction(acrosticReactionBtn);

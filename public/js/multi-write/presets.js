@@ -18,16 +18,6 @@ export const MULTI_PRESETS = {
     voteOptionPlaceholders: ['찬성', '반대'],
     hiddenFromWriter: true,
   },
-  quiz: {
-    label: '퀴즈방',
-    icon: '🧠',
-    shortDesc: '주관식 · 객관식 퀴즈',
-    titlePlaceholder: '예: 이 사진의 정체는 무엇일까요?',
-    descPlaceholder: '퀴즈에 대한 설명이나 추가 정보를 적어주세요.',
-    tagsPlaceholder: '#퀴즈, #맞혀봐, #정답',
-    quizAnswerPlaceholder: '예: 정답을 여기에 입력하세요',
-    hiddenFromWriter: true,
-  },
   drip: {
     label: '드립방',
     icon: '🤣',
@@ -95,7 +85,7 @@ export function normalizePresetKey(key, { allowHidden = false } = {}) {
   if (key === 'ox') return 'vote';
   if (key === 'collection' || key === 'youtube' || key === 'image' || key === 'link') return 'collect';
   if (key === 'debate' || key === 'discussion') return 'vote';
-  if (key === 'anonymous' || key === 'relay' || key === 'acrostic') return 'general';
+  if (key === 'anonymous' || key === 'relay' || key === 'acrostic' || key === 'quiz' || key === 'initial_game') return 'general';
   if (!MULTI_PRESETS[key]) return 'collect';
   if (!allowHidden && MULTI_PRESETS[key].hiddenFromWriter) return 'collect';
   return key;

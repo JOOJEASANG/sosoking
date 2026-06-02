@@ -17,10 +17,6 @@ function requireUser(request) {
   return uid;
 }
 
-function normalizeAnswer(value) {
-  return String(value || '').trim().replace(/\s+/g, '').toLowerCase();
-}
-
 function clampCount(value) {
   return Math.max(0, Number(value || 0));
 }
@@ -35,56 +31,6 @@ async function loadPost(postId) {
   if (post.hidden === true) throw new HttpsError('failed-precondition', '공개되지 않은 게시글입니다.');
   return { ref, postId: safePostId, post };
 }
-
-const checkQuizAnswer = onCall({ region: REGION, timeoutSeconds: 20 }, async (request) => {
-  const userId = requireUser(request);
-  const { postId, selected } = request.data || {};
-  const { postId: safePostId, post } = await loadPost(postId);
-  if (!['ox', 'quiz'].includes(post.type)) {
-    throw new HttpsError('failed-precondition', '퀴즈 게시글이 아닙니다.');
-  }
-
-  const secretSnap = await db.doc(`feeds/${safePostId}/secret/answer`).get();
-  if (!secretSnap.exists) throw new HttpsError('failed-precondition', '정답 정보가 없습니다.');
-  const secret = secretSnap.data() || {};
-
-  let correct = false;
-  let storedSelected = '';
-  if (post.type === 'ox') {
-    storedSelected = String(selected || '').toUpperCase().slice(0, 1);
-    correct = String(secret.answer || '').toUpperCase() === storedSelected;
-  } else if (secret.quizMode === 'short' || post.quizMode === 'short') {
-    storedSelected = String(selected || '').slice(0, 80);
-    correct = normalizeAnswer(secret.answer) === normalizeAnswer(storedSelected);
-  } else {
-    const idx = Number(selected);
-    storedSelected = Number.isFinite(idx) ? String(idx) : '';
-    correct = Number(secret.answerIdx) === idx;
-  }
-
-  const explanation = String(secret.explanation || '').slice(0, 500);
-  const attemptRef = db.doc(`feeds/${safePostId}/quiz_attempts/${userId}`);
-  let resultCorrect = correct;
-
-  await db.runTransaction(async (tx) => {
-    const existingSnap = await tx.get(attemptRef);
-    if (existingSnap.exists) {
-      resultCorrect = existingSnap.data().correct;
-      return;
-    }
-    tx.set(attemptRef, {
-      userId,
-      authorName: request.auth?.token?.name ?? '익명',
-      selected: storedSelected,
-      correct,
-      type: post.type,
-      createdAt: FieldValue.serverTimestamp(),
-      createdAtMs: Date.now(),
-    });
-  });
-
-  return { ok: true, correct: resultCorrect, explanation };
-});
 
 const castFeedVote = onCall({ region: REGION, timeoutSeconds: 20 }, async (request) => {
   const userId = requireUser(request);
@@ -315,7 +261,6 @@ const seoPost = onRequest({ region: REGION }, async (req, res) => {
 });
 
 module.exports = {
-  checkQuizAnswer,
   castFeedVote,
   toggleFeedReaction,
   registerPostView,

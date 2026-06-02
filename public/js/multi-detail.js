@@ -4,10 +4,8 @@ import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { navigate } from './router.js';
 import { toast } from './components/toast.js';
 import { getDetailId, hasInteractiveModule } from './multi-detail/utils.js';
-import { renderModules, renderVoteModule, renderItemList, renderMultiReplyList, markQuizResult } from './multi-detail/render.js';
+import { renderModules, renderVoteModule, renderItemList, renderMultiReplyList } from './multi-detail/render.js';
 import { fetchItems, addParticipation, addItemReaction, fetchReplies, addItemReply, applyVote } from './multi-detail/actions.js';
-
-const callCheckMultiQuizAnswer = httpsCallable(functions, 'checkMultiQuizAnswer');
 
 const LIST_TARGETS = {
   naming: 'multi-naming-list',
@@ -207,30 +205,6 @@ async function handleFillSubmit(post, btn) {
   if (btn) btn.disabled = false;
 }
 
-async function checkQuiz(post, selected, btn) {
-  if (!requireLogin()) return;
-  try {
-    if (btn) btn.disabled = true;
-    const result = await callCheckMultiQuizAnswer({ postId: post.id, selected });
-    const data = result.data || {};
-    const message = data.correct
-      ? data.alreadyCorrect
-        ? '⭕ 이미 정답을 맞힌 문제예요!'
-        : '⭕ 정답이에요!'
-      : '❌ 아쉽지만 오답이에요!';
-    markQuizResult(!!data.correct, message, data);
-    if (data.correct) {
-      if (Number(data.points || 0) > 0) toast.success(`정답이에요! +${data.points}P`);
-      else toast.success('정답이에요!');
-    }
-  } catch (error) {
-    console.error(error);
-    toast.error(error.message || '정답 확인에 실패했어요.');
-  } finally {
-    if (btn) btn.disabled = false;
-  }
-}
-
 function setupEvents(post) {
   document.querySelectorAll('[data-multi-vote-idx]').forEach(btn => {
     bindOnce(btn, 'click', () => handleVote(post, Number(btn.dataset.multiVoteIdx), btn), `vote-${post.id}-${btn.dataset.multiVoteIdx}`);
@@ -266,22 +240,6 @@ function setupEvents(post) {
     });
   }, `fill-${post.id}`);
 
-  bindOnce(document.getElementById('multi-quiz-submit'), 'click', () => {
-    const answer = document.getElementById('multi-quiz-answer')?.value.trim() || '';
-    if (!answer) {
-      toast.warn('정답을 입력해주세요');
-      return;
-    }
-    checkQuiz(post, answer, document.getElementById('multi-quiz-submit'));
-  }, `quiz-submit-${post.id}`);
-
-  document.querySelectorAll('[data-quiz-option]').forEach(btn => {
-    bindOnce(btn, 'click', () => {
-      document.querySelectorAll('[data-quiz-option]').forEach(optionBtn => optionBtn.classList.remove('selected'));
-      btn.classList.add('selected');
-      checkQuiz(post, Number(btn.dataset.quizOption), btn);
-    }, `quiz-option-${post.id}-${btn.dataset.quizOption}`);
-  });
 }
 
 async function enhanceMultiDetail() {

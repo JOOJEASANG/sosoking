@@ -13,7 +13,6 @@ const PRESET_TAGS = {
   naming: ['미친작명소', '작명', '웃긴이름'],
   acrostic: ['삼행시', '제시어', '글짓기'],
   relay: ['막장릴레이', '릴레이소설', '이야기'],
-  quiz: ['미친퀴즈', '퀴즈', '문제']
 };
 
 function normalizeWord(word) {

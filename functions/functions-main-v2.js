@@ -32,12 +32,10 @@ const aiLadder = require('./ai-ladder-functions.js');
 module.exports = {
   ...coreAi,
   ...secureAiConfig,
-  checkQuizAnswer: secureFeed.checkQuizAnswer,
   castFeedVote: secureFeed.castFeedVote,
   toggleFeedReaction: secureFeed.toggleFeedReaction,
   registerPostView: secureFeed.registerPostView,
   seoPost: secureFeed.seoPost,
-  checkMultiQuizAnswer: secureMulti.checkMultiQuizAnswer,
   castMultiVote: secureMulti.castMultiVote,
   addMultiParticipation: secureMulti.addMultiParticipation,
   addMultiItemReply: secureMulti.addMultiItemReply,

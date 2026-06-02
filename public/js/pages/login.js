@@ -5,15 +5,9 @@ import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase
 
 const KAKAO_JS_APP_KEY  = '377995fee0850a5de4167641d343be0e';
 const KAKAO_REDIRECT_URI = 'https://sosoking.co.kr/';
-const OWNER_EMAILS = new Set(['joojeasang@gmail.com']);
-
-function isOwnerEmail(user) {
-  return OWNER_EMAILS.has(String(user?.email || '').toLowerCase());
-}
 
 async function isSignedInUserAdmin(user = auth.currentUser) {
   if (!user) return false;
-  if (isOwnerEmail(user)) return true;
   try {
     const token = await user.getIdTokenResult?.(true);
     if (token?.claims?.admin || token?.claims?.owner) return true;
