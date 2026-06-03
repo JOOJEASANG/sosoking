@@ -129,7 +129,7 @@ function renderAiJudgeBody(post) {
       </div>
       <div class="ai-verdict-list">
         ${verdicts.map(v => `
-          <div class="ai-verdict-item">
+          <div class="ai-verdict-item ai-verdict-item--judge" data-judge="${escHtml(v.judgeId || '')}">
             <div class="ai-verdict-judge">${escHtml(v.judgeName || '')}</div>
             <div class="ai-verdict-text">${escHtml(v.verdict || '').replace(/\n/g, '<br>')}</div>
           </div>`).join('')}
