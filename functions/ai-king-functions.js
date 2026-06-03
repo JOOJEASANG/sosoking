@@ -9,6 +9,13 @@ const db = getFirestore();
 
 const DAILY_LIMIT = 3;
 
+function kstToday() {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date());
+}
+
 // ── AI King config cache ──
 let _aiKingConfig = null;
 let _aiKingConfigFetchedAt = 0;
@@ -133,7 +140,7 @@ function parseJson(raw) {
 // ── Usage check with extraAiUses fallback ──
 // Returns { allowed: boolean, limit: number }
 async function checkUsage(userId, feature) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = kstToday();
   const ref = db.doc(`ai_king_usage/${userId}_${today}_${feature}`);
   const config = await getAiKingConfig();
   const dailyLimit = config.dailyFreeLimit || DAILY_LIMIT;
@@ -566,7 +573,7 @@ reason은 이름보다 더 웃겨야 한다. 이름이 왜 찰떡인지 핵심�
 exports.getAiKingUsage = onCall({ region: 'asia-northeast3' }, async (request) => {
   const userId = request.auth?.uid;
   if (!userId) return { judge: 0, translate: 0, match: 0, naming: 0, extraUses: 0 };
-  const today = new Date().toISOString().slice(0, 10);
+  const today = kstToday();
   const features = ['judge', 'translate', 'match', 'naming'];
   const [snaps, userSnap] = await Promise.all([
     Promise.all(features.map(f => db.doc(`ai_king_usage/${userId}_${today}_${f}`).get())),
