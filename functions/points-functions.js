@@ -137,7 +137,6 @@ const claimSignupBonus = onCall({ region: REGION, timeoutSeconds: 20 }, async re
     tx.set(userRef, {
       points: FieldValue.increment(500),
       totalPoints: FieldValue.increment(500),
-      extraAiUses: 0,
       signupBonusClaimed: true,
       updatedAt: FieldValue.serverTimestamp(),
     }, { merge: true });

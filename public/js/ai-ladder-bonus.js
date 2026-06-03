@@ -62,7 +62,12 @@ export function showAiLadderBonus({ feature, featureLabel, onReplay } = {}) {
   });
   document.querySelector('.ladder-lane')?.classList.add('active');
 
+  // played 플래그: 성공 후 버튼 재클릭 시 addEventListener 재실행 방지
+  let played = false;
+
   document.getElementById('ladder-play')?.addEventListener('click', async () => {
+    if (played) return;
+
     const playBtn = document.getElementById('ladder-play');
     const resultEl = document.getElementById('ladder-result');
     playBtn.disabled = true;
@@ -72,9 +77,10 @@ export function showAiLadderBonus({ feature, featureLabel, onReplay } = {}) {
       const fn = httpsCallable(functions, 'playAiLadderBonus');
       const { data } = await fn({ feature, lane: selectedLane });
       if (data?.success) {
+        played = true;
         if (resultEl) resultEl.innerHTML = `<strong style="color:var(--color-success)">${esc(prizeLabel(data.prize))} 지급 완료!</strong>`;
-        toast.success('AI 추가 이용권 1회가 지급됐어요');
-        playBtn.textContent = '다시 AI 사용하기';
+        toast.success('AI 추가 이용권 1회가 지급됐어요 ⚡');
+        playBtn.textContent = '✅ 다시 AI 사용하기';
         playBtn.disabled = false;
         playBtn.onclick = () => { if (typeof onReplay === 'function') onReplay(); };
       } else {
@@ -82,10 +88,24 @@ export function showAiLadderBonus({ feature, featureLabel, onReplay } = {}) {
       }
     } catch (error) {
       const msg = String(error?.message || error || '사다리게임을 실행할 수 없어요');
-      if (resultEl) resultEl.textContent = msg;
-      toast.error(msg.includes('already') || msg.includes('이미') ? '오늘 사다리게임은 이미 사용했어요' : msg);
-      playBtn.disabled = false;
-      playBtn.textContent = '🪜 사다리게임 시작';
+      const alreadyPlayed = msg.includes('already') || msg.includes('이미');
+      if (alreadyPlayed) {
+        // 오늘 이미 사다리를 했지만 추가 이용권이 있을 수 있음 → AI로 바로 돌아가기
+        if (resultEl) resultEl.innerHTML = `오늘 사다리게임은 이미 사용했어요.<br>
+          <button class="btn btn--ghost btn--sm" id="ladder-go-back" style="margin-top:8px">↩ AI로 돌아가기</button>`;
+        document.getElementById('ladder-go-back')?.addEventListener('click', () => {
+          if (typeof onReplay === 'function') onReplay();
+        });
+        playBtn.textContent = '↩ AI로 돌아가기';
+        playBtn.disabled = false;
+        playBtn.onclick = () => { if (typeof onReplay === 'function') onReplay(); };
+        played = true; // 더 이상 사다리 시도 막기
+      } else {
+        if (resultEl) resultEl.textContent = msg;
+        toast.error(msg);
+        playBtn.disabled = false;
+        playBtn.textContent = '🪜 사다리게임 시작';
+      }
     }
   });
 }

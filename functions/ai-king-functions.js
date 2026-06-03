@@ -865,11 +865,11 @@ exports.purchaseAiExtraUse = onCall({ region: 'asia-northeast3' }, async (reques
       );
     }
 
-    tx.update(userRef, {
+    tx.set(userRef, {
       points: FieldValue.increment(-totalCost),
       extraAiUses: FieldValue.increment(quantity),
       updatedAt: FieldValue.serverTimestamp(),
-    });
+    }, { merge: true });
   });
 
   return { success: true, quantity, pointsUsed: totalCost };
