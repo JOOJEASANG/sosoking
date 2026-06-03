@@ -543,8 +543,9 @@ async function renderAiSettings(el) {
   // Estimated cost per request by model (USD) — approximate based on avg ~400 input / 300 output tokens
   const COST_PER_USE = { claude: 0.0010, gemini: 0.0005 };
   const MODEL_NAMES  = { claude: 'Claude Haiku 4.5', gemini: 'Gemini 2.5 Flash' };
-  // Gemini free tier: 1,500 req/day from Google AI Studio (effectively free at small scale)
-  const GEMINI_FREE_DAILY = 1500;
+  // Gemini free tier per day (RPD) by model — Google AI Studio free tier
+  const GEMINI_FREE_DAILY_BY_MODEL = { 'gemini-2.5-flash': 250, 'gemini-2.0-flash': 1500 };
+  const geminiFreeDailyLimit = GEMINI_FREE_DAILY_BY_MODEL[aiKingConfig.geminiModel] ?? 250;
 
   // Load AI킹 config + usage stats in parallel
   let aiKingConfig = { activeModel: 'claude', claudeModel: 'claude-haiku-4-5-20251001', geminiModel: 'gemini-2.5-flash', openaiModel: 'gpt-image-1', pointsPerUse: 100, dailyFreeLimit: 3, monthlyCap: 10 };
@@ -613,7 +614,7 @@ async function renderAiSettings(el) {
   let billedUses = monthTotal;
   if (aiKingConfig.activeModel === 'gemini') {
     const dayOfMonth = parseInt(today.slice(8, 10));
-    const freeThisMonth = GEMINI_FREE_DAILY * dayOfMonth;
+    const freeThisMonth = geminiFreeDailyLimit * dayOfMonth;
     billedUses = Math.max(0, monthTotal - freeThisMonth);
   }
   const monthCostUSD = billedUses * costPerUse;
@@ -678,7 +679,7 @@ async function renderAiSettings(el) {
               <input type="number" class="form-input" id="monthly-cap" value="${cap}" min="0.5" max="500" step="0.5" style="width:80px;font-size:13px">
             </div>
             <span style="font-size:11px;color:var(--color-text-muted)">≈₩${Math.round(cap * 1370).toLocaleString()}/월</span>
-            <span style="font-size:11px;color:var(--color-text-muted);margin-left:auto">${MODEL_NAMES[aiKingConfig.activeModel]} 기준 건당 약 $${costPerUse.toFixed(4)}${aiKingConfig.activeModel === 'gemini' ? ' · 일 1,500건 무료' : ''}</span>
+            <span style="font-size:11px;color:var(--color-text-muted);margin-left:auto">${MODEL_NAMES[aiKingConfig.activeModel]} 기준 건당 약 $${costPerUse.toFixed(4)}${aiKingConfig.activeModel === 'gemini' ? ` · 일 ${geminiFreeDailyLimit.toLocaleString()}건 무료` : ''}</span>
           </div>
         </div>
       </div>
@@ -723,7 +724,7 @@ async function renderAiSettings(el) {
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
             ${[
               { id: 'claude', icon: '🟣', label: 'Claude Haiku 4.5', sub: '권장 · 건당 $0.001' },
-              { id: 'gemini', icon: '🔵', label: 'Gemini 2.5 Flash', sub: '무료 1,500/일 · 건당 $0.0005' },
+              { id: 'gemini', icon: '🔵', label: 'Gemini 2.5 Flash', sub: '무료 250/일 · 건당 $0.0005' },
             ].map(m => `
               <label class="admin-model-radio ${aiKingConfig.activeModel === m.id ? 'active' : ''}">
                 <input type="radio" name="ai-model" value="${m.id}" ${aiKingConfig.activeModel === m.id ? 'checked' : ''} style="display:none">
@@ -754,8 +755,8 @@ async function renderAiSettings(el) {
               </div>
               <input type="password" class="form-input" id="key-gemini" placeholder="${aiKingConfig.geminiKeyMasked || 'AIzaSy...'}" style="width:100%;font-size:13px;font-family:monospace;margin-bottom:6px" autocomplete="new-password">
               <select class="form-input" id="model-gemini" style="font-size:12px;width:100%">
-                <option value="gemini-2.5-flash" ${aiKingConfig.geminiModel === 'gemini-2.5-flash' ? 'selected' : ''}>Gemini 2.5 Flash (추천 · 무료 1,500건/일)</option>
-                <option value="gemini-2.0-flash" ${aiKingConfig.geminiModel === 'gemini-2.0-flash' ? 'selected' : ''}>Gemini 2.0 Flash</option>
+                <option value="gemini-2.5-flash" ${aiKingConfig.geminiModel === 'gemini-2.5-flash' ? 'selected' : ''}>Gemini 2.5 Flash (추천 · 무료 250건/일)</option>
+                <option value="gemini-2.0-flash" ${aiKingConfig.geminiModel === 'gemini-2.0-flash' ? 'selected' : ''}>Gemini 2.0 Flash (무료 1,500건/일)</option>
               </select>
             </div>
           </div>
