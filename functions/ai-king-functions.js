@@ -498,7 +498,8 @@ const TRANSLATE_HUMOR_RULE = `【중요 — 단순 번역 금지】
 2. 원문의 뜻은 그대로 두되, 감정은 한 단계 과장해서 원문보다 더 찰지고 웃기게 만들어라.
 3. 그 지역 특유의 비유나 입버릇을 한 군데 살짝 섞어라 (억지로 많이 넣지는 말 것).
 4. 결과물을 읽고 "내가 쓴 것보다 이게 더 웃기네ㅋㅋ" 소리가 나와야 한다.
-번역 결과 한 줄만 출력. 원문·설명·따옴표·주석 금지.`;
+5. 반드시 완성된 문장으로 깔끔하게 마무리하라. 문장이 중간에 끊기면 실패다.
+번역 결과 텍스트만 출력. 제목·원문·설명·따옴표·주석 일절 금지.`;
 
 // 매 호출마다 살짝 다른 톤을 주어 같은 입력도 결과가 반복되지 않도록
 const TRANSLATE_TONES = [
@@ -538,7 +539,7 @@ exports.aiTranslate = onCall({
 
   let translated;
   try {
-    translated = String(await callAI(system, userText, imageBase64, 1400, 0.95) || '').trim();
+    translated = String(await callAI(system, userText, imageBase64, 2000, 0.95) || '').trim();
     if (!translated) throw new Error('empty translation');
   } catch (err) {
     console.error('[aiTranslate] AI call failed:', err.message);
