@@ -47,7 +47,7 @@ export function renderAiNaming() {
         <textarea id="naming-input" class="ai-king-form__textarea" maxlength="300" placeholder="예) 항상 회의 때 졸면서 딴소리하는 우리 팀장님&#10;예) 오늘 처음 만든 닭볶음탕인데 매운 듯 안 매운 듯 애매한 맛&#10;예) 뭘 물어봐도 글쎄요만 하는 친구&#10;(사진 첨부 시 설명 없이도 가능해요)"></textarea>
         <div class="ai-king-form__charcount"><span id="naming-count">0</span>/300</div>
         <button id="btn-naming-submit" class="btn btn--primary btn--full" style="margin-top:20px;font-size:16px;font-weight:800">🎭 이름 지어주기</button>
-        <div style="font-size:11px;color:var(--color-text-muted);text-align:center;margin-top:8px">하루 3번 무료 · 소진 시 하루 1회 사다리게임 보너스</div>
+        <div style="font-size:11px;color:var(--color-text-muted);text-align:center;margin-top:8px">하루 ${parseInt(sessionStorage.getItem('sosoking:aiDailyLimit') || '3')}번 무료 · 소진 시 하루 1회 사다리게임 보너스</div>
       </div>
     </div>`;
 

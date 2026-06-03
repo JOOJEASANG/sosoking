@@ -24,7 +24,7 @@ let _aiKingConfigFetchedAt = 0;
 
 async function getAiKingConfig() {
   const now = Date.now();
-  if (_aiKingConfig && now - _aiKingConfigFetchedAt < 60_000) return _aiKingConfig;
+  if (_aiKingConfig && now - _aiKingConfigFetchedAt < 10_000) return _aiKingConfig;
   const snap = await db.doc('config/ai_king').get();
   _aiKingConfig = snap.exists ? snap.data() : {};
   _aiKingConfigFetchedAt = now;
@@ -441,6 +441,7 @@ exports.aiJudge = onCall({
   const postRef = db.collection('feeds').doc();
   await postRef.set({
     type: 'ai_judge',
+    feedType: 'ai_judge',
     title: situation.slice(0, 60) + (situation.length > 60 ? '...' : ''),
     situation: situation.slice(0, 500),
     hasImage: !!imageBase64,
@@ -552,6 +553,7 @@ exports.aiTranslate = onCall({
   const postRef = db.collection('feeds').doc();
   await postRef.set({
     type: 'ai_translate',
+    feedType: 'ai_translate',
     title: `${styleData.name}: ${text.slice(0, 30)}${text.length > 30 ? '...' : ''}`,
     originalText: text.slice(0, 500),
     style,
@@ -672,6 +674,7 @@ advice: 한 줄. 진지한 어투로 황당하거나 뜻밖의 말.
   const postRef = db.collection('feeds').doc();
   await postRef.set({
     type: 'ai_match',
+    feedType: 'ai_match',
     title: `${itemA} 💘 ${itemB} 궁합 결과`,
     itemA: itemA.slice(0, 100),
     itemB: itemB.slice(0, 100),
@@ -769,6 +772,7 @@ exports.aiNaming = onCall({
   const postRef = db.collection('feeds').doc();
   await postRef.set({
     type: 'ai_naming',
+    feedType: 'ai_naming',
     title: hasDesc ? `작명: ${description.trim().slice(0, 40)}${description.trim().length > 40 ? '...' : ''}` : '작명: 사진으로 요청',
     description: hasDesc ? description.trim().slice(0, 300) : '',
     names,

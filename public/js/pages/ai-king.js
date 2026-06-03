@@ -54,6 +54,7 @@ export async function renderAiKing() {
       ]);
       usage = usageRes.data || usage;
       userPoints = userSnap.data()?.points || 0;
+      try { sessionStorage.setItem('sosoking:aiDailyLimit', String(usage.dailyFreeLimit || 3)); } catch {}
     } catch {}
   }
 
