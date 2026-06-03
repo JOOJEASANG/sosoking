@@ -32,7 +32,10 @@ async function isAiFeatureEnabled(feature) {
 }
 
 async function logAiUsage() {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date());
   await db.doc('config/ai').set(
     { usage: { [today]: { requests: FieldValue.increment(1) } } },
     { merge: true }

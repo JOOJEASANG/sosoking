@@ -30,11 +30,28 @@ async function getAiKingConfig() {
 }
 
 // ── Multi-provider AI call ──
+// data URI prefix 또는 매직바이트로 실제 이미지 타입 추론 (PNG를 jpeg로 보내면 거부/오인식됨)
+function sniffMime(prefix, b64) {
+  if (prefix) {
+    const m = prefix.match(/data:(image\/[a-z0-9.+-]+)/i);
+    if (m) return m[1].toLowerCase();
+  }
+  if (b64.startsWith('/9j/')) return 'image/jpeg';
+  if (b64.startsWith('iVBORw')) return 'image/png';
+  if (b64.startsWith('R0lGOD')) return 'image/gif';
+  if (b64.startsWith('UklGR')) return 'image/webp';
+  return 'image/jpeg';
+}
+
+// 반환: { data, mime } 또는 null
 function validBase64(str) {
   if (!str || typeof str !== 'string') return null;
-  const stripped = str.includes(',') ? str.split(',')[1] : str;
-  if (stripped.length > 4 * 1024 * 1024) { console.warn('[ai-king] image too large, skipping'); return null; }
-  return stripped;
+  let prefix = '';
+  let stripped = str;
+  const comma = str.indexOf(',');
+  if (comma !== -1 && /^data:/i.test(str)) { prefix = str.slice(0, comma); stripped = str.slice(comma + 1); }
+  if (stripped.length > 8 * 1024 * 1024) { console.warn('[ai-king] image too large, skipping'); return null; }
+  return { data: stripped, mime: sniffMime(prefix, stripped) };
 }
 
 async function callAI(system, userText, imageBase64 = null, maxTokens = 400, temperature = 0.8, jsonMode = false) {
@@ -50,7 +67,7 @@ async function callAI(system, userText, imageBase64 = null, maxTokens = 400, tem
       systemInstruction: system,
     });
     const parts = [];
-    if (img) parts.push({ inlineData: { data: img, mimeType: 'image/jpeg' } });
+    if (img) parts.push({ inlineData: { data: img.data, mimeType: img.mime } });
     parts.push({ text: userText });
     const genConfig = { maxOutputTokens: maxTokens, temperature };
     if (jsonMode) genConfig.responseMimeType = 'application/json';
@@ -66,7 +83,7 @@ async function callAI(system, userText, imageBase64 = null, maxTokens = 400, tem
   const Anthropic = require('@anthropic-ai/sdk');
   const anthropic = new Anthropic({ apiKey: config.claudeApiKey });
   const content = [];
-  if (img) content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: img } });
+  if (img) content.push({ type: 'image', source: { type: 'base64', media_type: img.mime, data: img.data } });
   content.push({ type: 'text', text: userText });
   const msg = await anthropic.messages.create({
     model: config.claudeModel || 'claude-haiku-4-5-20251001',
@@ -75,7 +92,7 @@ async function callAI(system, userText, imageBase64 = null, maxTokens = 400, tem
     system,
     messages: [{ role: 'user', content }],
   });
-  return msg.content[0]?.text || '';
+  return (msg.content.find(b => b.type === 'text')?.text) || '';
 }
 
 async function callAIWithImages(system, userText, imageA = null, imageB = null, maxTokens = 500, temperature = 0.8, jsonMode = false) {
@@ -122,45 +139,93 @@ async function callAIWithImages(system, userText, imageA = null, imageB = null, 
   return msg.content[0]?.text || '';
 }
 
-// ── JSON 문자열 내 실제 줄바꿈 이스케이프 ──
+// ── JSON 문자열 내 실제 제어문자(줄바꿈·탭 등) 이스케이프 ──
 function sanitizeJson(str) {
   let inString = false, escaped = false, out = '';
   for (const ch of str) {
     if (escaped) { escaped = false; out += ch; continue; }
     if (ch === '\\' && inString) { escaped = true; out += ch; continue; }
     if (ch === '"') { inString = !inString; out += ch; continue; }
-    if (inString && (ch === '\n' || ch === '\r')) { out += '\\n'; continue; }
+    if (inString) {
+      if (ch === '\n' || ch === '\r') { out += '\\n'; continue; }
+      if (ch === '\t') { out += '\\t'; continue; }
+      const code = ch.charCodeAt(0);
+      if (code < 0x20) { continue; } // 기타 제어문자는 제거
+    }
     out += ch;
   }
   return out;
 }
 
 function parseJson(raw) {
-  const cleaned = raw.replace(/```json|```/g, '').trim();
-  const match = cleaned.match(/[\[{][\s\S]*[\]}]/);
-  return JSON.parse(sanitizeJson(match ? match[0] : cleaned));
+  const cleaned = String(raw || '').replace(/```json|```/g, '').trim();
+  if (!cleaned) throw new Error('empty AI response');
+  // 1) 그대로 파싱 시도
+  try { return JSON.parse(cleaned); } catch {}
+  // 2) 제어문자 정리 후 파싱
+  try { return JSON.parse(sanitizeJson(cleaned)); } catch {}
+  // 3) 첫 [ 또는 { 부터 마지막 ] 또는 } 까지 추출 후 파싱
+  const match = cleaned.match(/[[{][\s\S]*[\]}]/);
+  if (!match) throw new Error('no JSON found in AI response');
+  return JSON.parse(sanitizeJson(match[0]));
 }
 
 // ── Usage check with extraAiUses fallback ──
-// Returns { allowed: boolean, limit: number }
+// Returns { allowed: boolean, limit: number, usedExtra: boolean }
+// usedExtra: 무료 한도 초과로 유료 이용권(extraAiUses)을 차감했는지 여부 (실패 시 환불용)
 async function checkUsage(userId, feature) {
   const today = kstToday();
   const ref = db.doc(`ai_king_usage/${userId}_${today}_${feature}`);
   const config = await getAiKingConfig();
   const dailyLimit = config.dailyFreeLimit || DAILY_LIMIT;
-  const allowed = await db.runTransaction(async (tx) => {
+  const result = await db.runTransaction(async (tx) => {
     const [snap, userSnap] = await Promise.all([tx.get(ref), tx.get(db.doc(`users/${userId}`))]);
     const count = snap.exists ? (snap.data().count || 0) : 0;
     if (count >= dailyLimit) {
       const extra = userSnap.exists ? (userSnap.data()?.extraAiUses || 0) : 0;
-      if (extra <= 0) return false;
+      if (extra <= 0) return { allowed: false, usedExtra: false };
       tx.update(db.doc(`users/${userId}`), { extraAiUses: FieldValue.increment(-1), updatedAt: FieldValue.serverTimestamp() });
-      return true;
+      return { allowed: true, usedExtra: true };
     }
     tx.set(ref, { count: count + 1, userId, feature, date: today, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-    return true;
+    return { allowed: true, usedExtra: false };
   });
-  return { allowed, limit: dailyLimit };
+  return { allowed: result.allowed, limit: dailyLimit, usedExtra: result.usedExtra };
+}
+
+// ── AI 호출 실패 시 차감했던 사용량 환불 ──
+async function refundUsage(userId, feature, usedExtra) {
+  try {
+    if (usedExtra) {
+      await db.doc(`users/${userId}`).set(
+        { extraAiUses: FieldValue.increment(1), updatedAt: FieldValue.serverTimestamp() },
+        { merge: true },
+      );
+    } else {
+      const today = kstToday();
+      const ref = db.doc(`ai_king_usage/${userId}_${today}_${feature}`);
+      await db.runTransaction(async (tx) => {
+        const snap = await tx.get(ref);
+        const count = snap.exists ? (snap.data().count || 0) : 0;
+        if (count > 0) tx.set(ref, { count: count - 1, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+      });
+    }
+  } catch (e) {
+    console.error('[refundUsage] failed:', e.message);
+  }
+}
+
+// ── JSON 결과를 받는 AI 호출 + 파싱, 실패 시 1회 토큰 늘려 재시도 ──
+async function callAndParse(callFn, maxTokens) {
+  let raw = '';
+  try {
+    raw = await callFn(maxTokens);
+    return { parsed: parseJson(raw), raw };
+  } catch (e1) {
+    console.warn('[callAndParse] first attempt failed, retrying with more tokens:', e1.message);
+    raw = await callFn(Math.min(Math.round(maxTokens * 1.6), 4000));
+    return { parsed: parseJson(raw), raw };
+  }
 }
 
 // ── 작성자 정보 조회 (Firestore users 우선, Auth token 보완) ──
@@ -241,6 +306,17 @@ const JUDGE_DESC = {
 예) "본 판사는 피고가 지난 수요일 스타벅스에서 무선이어폰을 끼고도 친구 말을 못 들은 척했다는 제보를 입수했다. 이는 본 사건과 직결된다. 참고로 어제 점심은 된장찌개였는데 맛있었다. 어쨌든 방귀 냄새를 외면한 것은 공중도덕 위반이며, 피고에게 엘리베이터 내 파인애플 에어프레시너 상시 비치를 명한다."`,
 };
 
+// AI 파싱 실패 시에도 "결근"처럼 안 보이도록 캐릭터를 살린 대체 판결문
+const JUDGE_FALLBACK = {
+  lawyer: '주문: 본 건은 심리 자료 미비로 휴정한다. 피고인은 잠시 후 다시 출석할 것을 명한다. 이상.',
+  emotional: '판사는... 지금 너무 벅차서 잠시 말을 잇지 못한다. 눈물을 닦고 곧 돌아오겠다. 잠시만 기다려달라.',
+  boomer: '내가 말이야~ 우리 때는 판결도 손으로 썼어. 잠깐 펜이 안 나와서 그래, 금방 다시 써줄 테니 기다려봐.',
+  scientist: '현재 데이터 표본이 부족하여 신뢰구간 산출 불가. 재수집 후 판결 예정. 잠시 대기 요망.',
+  philosopher: '판결이란 과연 서두를 수 있는 것인가? 잠시 사유의 시간을 갖겠다. 다시 물어봐 주겠는가?',
+  alien: '지직— 통신 신호 불안정. 본 심판관은 모선과의 교신을 복구 중이다. 잠시 후 지구 기준으로 재판결하겠다.',
+  crazy: '아 잠깐, 방금 천장에서 영감이 내려오다 말았다. 참고로 오늘 점심은 못 먹었다. 곧 판결 줄 테니 다시 눌러봐라.',
+};
+
 function buildJudgeSystem(selectedJudges) {
   const descs = selectedJudges.map(j => JUDGE_DESC[j.id]).filter(Boolean).join('\n\n');
   const jsonFormat = selectedJudges.map(j => `  {"id":"${j.id}","verdict":"판결문"}`).join(',\n');
@@ -282,51 +358,44 @@ exports.aiJudge = onCall({
     throw new HttpsError('invalid-argument', '상황을 5자 이상 적어주세요');
   }
 
-  // 선택된 판사 검증 (최대 3명), 없으면 랜덤 3명
-  const validIds = (Array.isArray(reqJudges) ? reqJudges : [])
-    .filter(id => JUDGES.some(j => j.id === id))
-    .slice(0, 3);
+  // 선택된 판사 검증 (중복 제거, 최대 3명), 없으면 랜덤 3명
+  const validIds = [...new Set(
+    (Array.isArray(reqJudges) ? reqJudges : []).filter(id => JUDGES.some(j => j.id === id)),
+  )].slice(0, 3);
   const activeJudges = validIds.length > 0
     ? validIds.map(id => JUDGES.find(j => j.id === id))
     : [...JUDGES].sort(() => Math.random() - 0.5).slice(0, 3);
 
-  const [{ allowed, limit }, author] = await Promise.all([
+  const [{ allowed, limit, usedExtra }, author] = await Promise.all([
     checkUsage(userId, 'judge'),
     getAuthorInfo(userId, request.auth?.token || {}),
   ]);
   if (!allowed) throw new HttpsError('resource-exhausted', `오늘 판결은 하루 ${limit}번만 가능해요`);
 
-  let raw;
-  try {
-    const imageHint = imageBase64
-      ? '\n[이미지 첨부됨: 표정·배경·텍스트·옷차림 등 구체적 시각 요소를 판결문에 직접 인용하라]'
-      : '';
-    raw = await callAI(
-      buildJudgeSystem(activeJudges),
-      `아래 상황에서 구체적인 인물·행동·물건·감정을 반드시 판결문에 언급하며 판결하라:${imageHint}\n\n${situation.slice(0, 500)}`,
-      imageBase64,
-      1400,
-      0.95,
-      true,
-    );
-  } catch (err) {
-    console.error('[aiJudge] AI call failed:', err.message);
-    if (err instanceof HttpsError) throw err;
-    throw new HttpsError('internal', 'AI 판결에 실패했어요. 잠시 후 다시 시도해주세요.');
-  }
+  const imageHint = imageBase64
+    ? '\n[이미지 첨부됨: 표정·배경·텍스트·옷차림 등 구체적 시각 요소를 판결문에 직접 인용하라]'
+    : '';
+  const judgeSystem = buildJudgeSystem(activeJudges);
+  const judgeUser = `아래 상황에서 구체적인 인물·행동·물건·감정을 반드시 판결문에 언급하며 판결하라:${imageHint}\n\n${situation.slice(0, 500)}`;
 
   let verdicts;
   try {
-    const parsed = parseJson(raw);
-    verdicts = (parsed.verdicts || []).map(v => ({
-      judgeId: v.id,
-      judgeName: JUDGES.find(j => j.id === v.id)?.name || v.id,
-      verdict: v.verdict || '',
+    const { parsed } = await callAndParse(
+      (mt) => callAI(judgeSystem, judgeUser, imageBase64, mt, 0.95, true),
+      2400,
+    );
+    const byId = new Map((parsed.verdicts || []).map(v => [v.id, String(v.verdict || '').trim()]));
+    // 요청한 판사 순서대로 정렬, 누락된 판사는 캐릭터 대체 판결문으로 채움
+    verdicts = activeJudges.map(j => ({
+      judgeId: j.id,
+      judgeName: j.name,
+      verdict: byId.get(j.id) || JUDGE_FALLBACK[j.id] || '잠시 후 다시 시도해주세요.',
     }));
-    if (!verdicts.length) throw new Error('empty verdicts');
-  } catch (parseErr) {
-    console.error('[aiJudge] parse failed:', parseErr.message, raw?.slice(0, 300));
-    verdicts = activeJudges.map(j => ({ judgeId: j.id, judgeName: j.name, verdict: '이 판사는 오늘 결근했습니다. 😴' }));
+  } catch (err) {
+    console.error('[aiJudge] AI/parse failed:', err.message);
+    await refundUsage(userId, 'judge', usedExtra);
+    if (err instanceof HttpsError) throw err;
+    throw new HttpsError('internal', 'AI 판결에 실패했어요. 사용 횟수는 차감되지 않았어요. 잠시 후 다시 시도해주세요.');
   }
 
   const postRef = db.collection('feeds').doc();
@@ -382,6 +451,23 @@ const TRANSLATE_STYLES = {
 예시: "진짜 힘들어 죽겠어." → "야 진짜 이거 너무 힘들어서 못 하겠이디야. 하오하오, 조금만 더 참으라우."` },
 };
 
+// 모든 사투리에 공통 적용 — 원문보다 한 끗 더 웃기게 (단순 어미 치환 방지)
+const TRANSLATE_HUMOR_RULE = `【중요 — 단순 번역 금지】
+1. 어미만 바꾸지 마라. 그 지역 사람이 실제로 이 말을 할 때 자연스레 붙일 너스레·추임새·감탄사를 한두 군데 끼워 넣어라.
+2. 원문의 뜻은 그대로 두되, 감정은 한 단계 과장해서 원문보다 더 찰지고 웃기게 만들어라.
+3. 그 지역 특유의 비유나 입버릇을 한 군데 살짝 섞어라 (억지로 많이 넣지는 말 것).
+4. 결과물을 읽고 "내가 쓴 것보다 이게 더 웃기네ㅋㅋ" 소리가 나와야 한다.
+번역 결과 한 줄만 출력. 원문·설명·따옴표·주석 금지.`;
+
+// 매 호출마다 살짝 다른 톤을 주어 같은 입력도 결과가 반복되지 않도록
+const TRANSLATE_TONES = [
+  '톤: 신나서 떠벌리는 느낌으로.',
+  '톤: 살짝 투덜대며 정겹게.',
+  '톤: 능청맞고 너스레 가득하게.',
+  '톤: 짠하고 안쓰러워하는 느낌으로.',
+  '톤: 호들갑스럽고 과장되게.',
+];
+
 exports.aiTranslate = onCall({
   region: 'asia-northeast3',
   timeoutSeconds: 60,
@@ -397,23 +483,27 @@ exports.aiTranslate = onCall({
   const styleData = TRANSLATE_STYLES[style];
   if (!styleData) throw new HttpsError('invalid-argument', '번역 스타일을 선택해주세요');
 
-  const [{ allowed, limit }, author] = await Promise.all([
+  const [{ allowed, limit, usedExtra }, author] = await Promise.all([
     checkUsage(userId, 'translate'),
     getAuthorInfo(userId, request.auth?.token || {}),
   ]);
   if (!allowed) throw new HttpsError('resource-exhausted', `오늘 번역은 하루 ${limit}번만 가능해요`);
 
+  const tone = TRANSLATE_TONES[Math.floor(Math.random() * TRANSLATE_TONES.length)];
+  const system = `${styleData.system}\n\n${TRANSLATE_HUMOR_RULE}\n${tone}`;
   const userText = imageBase64
-    ? `이미지와 텍스트를 모두 보고 그 지역 사람이 실제로 이 상황에서 말하듯 사투리로 번역해줘. 이미지에 텍스트가 있으면 같이 번역. 단어만 사투리로 바꾸지 말고 말투·어투·감정까지 그 지역 사람처럼. 번역 결과만 출력. 원문·설명·주석 없이:\n${text.slice(0, 500)}`
-    : `다음을 그 지역 사람이 실제로 이 상황에서 말하듯 사투리로 번역해줘. 단어만 치환하지 말고 말투·리듬·감정까지 살려라. 번역 결과만 출력. 원문·설명·주석 없이:\n${text.slice(0, 500)}`;
+    ? `이미지와 텍스트를 모두 보고 그 지역 사람이 실제로 이 상황에서 말하듯 사투리로 번역해줘. 이미지에 텍스트가 있으면 같이 번역:\n${text.slice(0, 500)}`
+    : `다음을 그 지역 사람이 실제로 이 상황에서 말하듯 사투리로 번역해줘:\n${text.slice(0, 500)}`;
 
   let translated;
   try {
-    translated = await callAI(styleData.system, userText, imageBase64, 600);
+    translated = String(await callAI(system, userText, imageBase64, 900, 0.95) || '').trim();
+    if (!translated) throw new Error('empty translation');
   } catch (err) {
     console.error('[aiTranslate] AI call failed:', err.message);
+    await refundUsage(userId, 'translate', usedExtra);
     if (err instanceof HttpsError) throw err;
-    throw new HttpsError('internal', 'AI 번역에 실패했어요. 잠시 후 다시 시도해주세요.');
+    throw new HttpsError('internal', 'AI 번역에 실패했어요. 사용 횟수는 차감되지 않았어요. 잠시 후 다시 시도해주세요.');
   }
 
   const postRef = db.collection('feeds').doc();
@@ -440,6 +530,34 @@ exports.aiTranslate = onCall({
 });
 
 // ── AI궁합 ──
+// 매 호출 무작위 관점으로 같은 입력도 결과가 반복되지 않게
+const MATCH_ANGLES = [
+  '겉으론 안 어울려 보이지만 의외의 공통점을 파고들어라.',
+  '둘의 치명적인 충돌 지점을 과장해서 드러내라.',
+  '시간이 지날수록 어떻게 변할 관계인지에 초점을 맞춰라.',
+  '서로의 단점을 묘하게 보완하는 지점을 찾아라.',
+  '함께 있으면 벌어질 가장 웃긴 사고 한 장면을 상상하라.',
+  '둘 사이의 권력관계(누가 휘둘리는지)를 짚어라.',
+];
+
+// 점수를 정수로 보정하고 5의 배수면 어중간하게 흩뜨림 (몰입 깨는 라운드 숫자 방지)
+function normalizeMatch(parsed) {
+  const out = { ...parsed };
+  let score = Math.round(Number(out.score));
+  if (!Number.isFinite(score)) score = 40 + Math.floor(Math.random() * 50);
+  score = Math.max(0, Math.min(100, score));
+  if (score % 5 === 0 && score > 2 && score < 98) {
+    score += (Math.random() < 0.5 ? -1 : 1) * (1 + Math.floor(Math.random() * 3));
+    score = Math.max(0, Math.min(100, score));
+  }
+  out.score = score;
+  out.grade = String(out.grade || '미지의궁합🔮');
+  out.reason = String(out.reason || '');
+  out.chemistry = String(out.chemistry || '');
+  out.advice = String(out.advice || '');
+  return out;
+}
+
 exports.aiMatch = onCall({
   region: 'asia-northeast3',
   timeoutSeconds: 60,
@@ -453,21 +571,24 @@ exports.aiMatch = onCall({
     throw new HttpsError('invalid-argument', '두 가지를 모두 입력해주세요');
   }
 
-  const [{ allowed, limit }, author] = await Promise.all([
+  const [{ allowed, limit, usedExtra }, author] = await Promise.all([
     checkUsage(userId, 'match'),
     getAuthorInfo(userId, request.auth?.token || {}),
   ]);
   if (!allowed) throw new HttpsError('resource-exhausted', `오늘 궁합은 하루 ${limit}번만 가능해요`);
 
+  // 같은 입력도 매번 다른 관점으로 보도록 분석 각도를 무작위 지정
+  const angle = MATCH_ANGLES[Math.floor(Math.random() * MATCH_ANGLES.length)];
   const system = `당신은 세상 모든 것의 궁합을 꿰뚫어보는 AI 점쟁이다.
 
 【분석 핵심 — 이게 전부다】
 이 두 대상에서만 나올 수 있는 연결고리를 찾아라. 다른 조합에도 쓸 수 있는 분석은 0점.
 "치킨과 맥주는 맛있으니 잘 맞는다" → 실격. "야식과 후회는 항상 함께 온다" → 합격.
 사진이 첨부된 경우: 외모·표정·분위기·색감 등 시각적 특징을 reason과 chemistry에 직접 인용하라.
+이번 분석 관점: ${angle}
 
 【각 필드】
-score: 0~100 정수. 라운드 숫자(50·60·70·80·90) 금지. 23, 67, 84, 91 같은 숫자로.
+score: 0~100 정수. 절대 5의 배수(50·65·70·80·85·90) 쓰지 마라. 반드시 23, 67, 84, 91, 38 처럼 어중간한 수로.
 grade: 이 조합만을 위한 창의적 등급명+이모지. 예시와 똑같이 쓰지 마라.
 reason: 이 둘만의 본질적 공통점 또는 충돌. 진지한 척하면서 읽으면 웃기는 2~3문장.
 chemistry: 둘이 만나면 실제로 벌어지는 장면. "~하게 된다" 형태. 구체적일수록 웃기다.
@@ -478,32 +599,25 @@ advice: 한 줄. 진지한 어투로 황당하거나 뜻밖의 말.
 반드시 JSON만 출력. 다른 텍스트 없이:
 {"score": 숫자, "grade": "등급", "reason": "이유", "chemistry": "케미", "advice": "조언"}`;
 
-  let raw = '';
   let matchResult;
   try {
     const imageHint = (imageA || imageB)
       ? `\n[이미지 첨부: ${imageA && imageB ? '양쪽 사진 있음' : '한쪽 사진 있음'} — 사진 속 외모·표정·분위기를 reason/chemistry에 직접 인용]`
       : '';
-    raw = await callAIWithImages(
-      system,
-      `"${itemA.slice(0, 100)}"와 "${itemB.slice(0, 100)}"의 궁합. 이 둘에서만 나올 수 있는 핵심을 찔러라.${imageHint}`,
-      imageA,
-      imageB,
-      700,
-      0.95,
-      true,
+    const { parsed } = await callAndParse(
+      (mt) => callAIWithImages(
+        system,
+        `"${itemA.slice(0, 100)}"와 "${itemB.slice(0, 100)}"의 궁합. 이 둘에서만 나올 수 있는 핵심을 찔러라.${imageHint}`,
+        imageA, imageB, mt, 0.95, true,
+      ),
+      900,
     );
-    matchResult = parseJson(raw);
+    matchResult = normalizeMatch(parsed);
   } catch (err) {
-    console.error('[aiMatch] failed:', err.message, raw.slice(0, 200));
+    console.error('[aiMatch] failed:', err.message);
+    await refundUsage(userId, 'match', usedExtra);
     if (err instanceof HttpsError) throw err;
-    matchResult = {
-      score: Math.floor(Math.random() * 101),
-      grade: '신비로운궁합🔮',
-      reason: 'AI 점쟁이가 너무 충격받아서 말을 잃었습니다.',
-      chemistry: '세상에 이런 조합이 있다니...',
-      advice: '그냥 해보세요. 뭔가 일어날 겁니다.',
-    };
+    throw new HttpsError('internal', 'AI 궁합에 실패했어요. 사용 횟수는 차감되지 않았어요. 잠시 후 다시 시도해주세요.');
   }
 
   const postRef = db.collection('feeds').doc();
@@ -530,6 +644,11 @@ advice: 한 줄. 진지한 어투로 황당하거나 뜻밖의 말.
 });
 
 // ── AI작명소 ──
+const NAMING_TECHNIQUES = [
+  '특성 합성어', '역설 비틀기', '의성어·의태어', '한자·사자성어 패러디',
+  '한방 직관', '브랜드/제품명 패러디', '신화·전설풍 거창한 이름', '동요·유행어 변형',
+];
+
 exports.aiNaming = onCall({
   region: 'asia-northeast3',
   timeoutSeconds: 60,
@@ -544,13 +663,15 @@ exports.aiNaming = onCall({
     throw new HttpsError('invalid-argument', '설명을 입력하거나 사진을 첨부해주세요');
   }
 
-  const [{ allowed, limit }, author] = await Promise.all([
+  const [{ allowed, limit, usedExtra }, author] = await Promise.all([
     checkUsage(userId, 'naming'),
     getAuthorInfo(userId, request.auth?.token || {}),
   ]);
   if (!allowed) throw new HttpsError('resource-exhausted', `오늘 작명은 하루 ${limit}번만 가능해요`);
 
-  const system = `당신은 세상에서 가장 웃기고 본질을 꿰뚫는 작명 전문가다. 주어진 대상에 딱 맞는 이름 5개를 지어준다.
+  // 매 호출마다 강조할 작명 기법 2개를 무작위로 골라 같은 입력도 결과가 반복되지 않게
+  const picked = [...NAMING_TECHNIQUES].sort(() => Math.random() - 0.5).slice(0, 2);
+  const system = `당신은 세상에서 가장 웃기고 본질을 꿰뚫는 작명 전문가다. 주어진 대상에 딱 맞는 이름 5개를 지어준다. 이번엔 특히 [${picked.join('] 와 [')}] 기법을 신선하게 살려라.
 
 【분석 — 반드시 이 순서로】
 1. 사진 첨부 시: 표정·눈빛·색감·체형·분위기·가장 눈에 띄는 특징 하나를 먼저 집어라.
@@ -578,18 +699,20 @@ exports.aiNaming = onCall({
 
   let names;
   try {
-    const raw = await callAI(system, userText, imageBase64, 800, 1.0, true);
-    const parsed = parseJson(raw);
-    names = (parsed.names || []).filter(n => n.name);
+    const { parsed } = await callAndParse(
+      (mt) => callAI(system, userText, imageBase64, mt, 1.0, true),
+      1200,
+    );
+    names = (parsed.names || []).filter(n => n && n.name).map(n => ({
+      name: String(n.name).slice(0, 40),
+      reason: String(n.reason || '').slice(0, 200),
+    }));
     if (names.length === 0) throw new Error('empty names');
   } catch (err) {
     console.error('[aiNaming] failed:', err.message);
+    await refundUsage(userId, 'naming', usedExtra);
     if (err instanceof HttpsError) throw err;
-    names = [
-      { name: '이름짓기실패킹', reason: 'AI가 충격받아서 말문이 막혔습니다' },
-      { name: '무명의존재', reason: '이름 없이도 살 수 있습니다' },
-      { name: '그냥그거', reason: '설명이 필요 없는 이름' },
-    ];
+    throw new HttpsError('internal', 'AI 작명에 실패했어요. 사용 횟수는 차감되지 않았어요. 잠시 후 다시 시도해주세요.');
   }
 
   const postRef = db.collection('feeds').doc();
