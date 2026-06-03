@@ -791,16 +791,18 @@ exports.aiNaming = onCall({
 // ── getAiKingUsage ──
 exports.getAiKingUsage = onCall({ region: 'asia-northeast3' }, async (request) => {
   const userId = request.auth?.uid;
-  if (!userId) return { judge: 0, translate: 0, match: 0, naming: 0, extraUses: 0 };
+  if (!userId) return { judge: 0, translate: 0, match: 0, naming: 0, extraUses: 0, dailyFreeLimit: DAILY_LIMIT };
   const today = kstToday();
   const features = ['judge', 'translate', 'match', 'naming'];
-  const [snaps, userSnap] = await Promise.all([
+  const [snaps, userSnap, config] = await Promise.all([
     Promise.all(features.map(f => db.doc(`ai_king_usage/${userId}_${today}_${f}`).get())),
     db.doc(`users/${userId}`).get(),
+    getAiKingConfig(),
   ]);
   const result = {};
   features.forEach((f, i) => { result[f] = snaps[i].exists ? (snaps[i].data().count || 0) : 0; });
   result.extraUses = userSnap.exists ? (userSnap.data()?.extraAiUses || 0) : 0;
+  result.dailyFreeLimit = config.dailyFreeLimit || DAILY_LIMIT;
   return result;
 });
 

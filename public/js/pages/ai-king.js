@@ -40,7 +40,7 @@ export async function renderAiKing() {
   setMeta('AI킹 놀이터');
   const el = document.getElementById('page-content');
 
-  let usage = { judge: 0, translate: 0, match: 0, naming: 0, extraUses: 0 };
+  let usage = { judge: 0, translate: 0, match: 0, naming: 0, extraUses: 0, dailyFreeLimit: 3 };
   let userPoints = 0;
   if (auth.currentUser) {
     try {
@@ -65,8 +65,9 @@ export async function renderAiKing() {
         <div class="ai-king-usage">
           ${FEATURES.map(f => {
             const used = usage[f.id] || 0;
-            const warn = used >= 3;
-            return `<span class="ai-king-usage__badge${warn ? ' ai-king-usage__badge--warn' : ''}">${f.emoji} ${used}/3</span>`;
+            const lim = usage.dailyFreeLimit || 3;
+            const warn = used >= lim;
+            return `<span class="ai-king-usage__badge${warn ? ' ai-king-usage__badge--warn' : ''}">${f.emoji} ${used}/${lim}</span>`;
           }).join('')}
         </div>
         <div class="ai-king-points-row">
@@ -81,7 +82,7 @@ export async function renderAiKing() {
             <div class="ai-king-card__emoji">${f.emoji}</div>
             <div class="ai-king-card__name">${f.name}</div>
             <div class="ai-king-card__desc">${escHtml(f.desc)}</div>
-            <div class="ai-king-card__limit">하루 3회 무료</div>
+            <div class="ai-king-card__limit">하루 ${usage.dailyFreeLimit || 3}회 무료</div>
           </a>`).join('')}
       </div>
     </div>`;
