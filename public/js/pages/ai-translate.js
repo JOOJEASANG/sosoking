@@ -78,7 +78,10 @@ export function renderAiTranslate() {
   imgInput.addEventListener('change', async () => {
     const file = imgInput.files[0];
     if (!file) return;
-    imageBase64 = await resizeImageToBase64(file);
+    if (!file.type.startsWith('image/')) { toast.warn('이미지 파일만 첨부할 수 있어요'); imgInput.value = ''; return; }
+    const b64 = await resizeImageToBase64(file);
+    if (!b64) { toast.warn('이미지를 불러올 수 없어요. 다른 사진을 써주세요'); imgInput.value = ''; return; }
+    imageBase64 = b64;
     imgPreview.src = `data:image/jpeg;base64,${imageBase64}`;
     imgPreview.style.display = 'block';
     imgRemove.style.display = 'block';

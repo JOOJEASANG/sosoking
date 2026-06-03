@@ -157,7 +157,6 @@ function renderAiNamingBody(post) {
     <div class="ai-naming-result">
       <div class="ai-judge-situation">
         <strong>🎭 작명 요청</strong><br>
-        <span style="font-size:12px;color:var(--color-text-muted)">${escHtml(post.category || '')}</span><br>
         ${escHtml(post.description || post.title || '').replace(/\n/g, '<br>')}
       </div>
       <div class="ai-verdict-list">

@@ -5,6 +5,10 @@ import { toast } from '../components/toast.js';
 import { setMeta } from '../utils/seo.js';
 import { isQuotaError, showAiLadderBonus } from '../ai-ladder-bonus.js';
 
+function esc(v) {
+  return String(v || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
 function resizeImageToBase64(file, maxPx = 512) {
   return new Promise((resolve) => {
     const img = new Image();
@@ -46,8 +50,11 @@ function setupImgUpload(prefix, store) {
   input.addEventListener('change', async () => {
     const file = input.files[0];
     if (!file) return;
-    store.base64 = await resizeImageToBase64(file);
-    preview.src = `data:image/jpeg;base64,${store.base64}`;
+    if (!file.type.startsWith('image/')) { toast.warn('이미지 파일만 첨부할 수 있어요'); input.value = ''; return; }
+    const base64 = await resizeImageToBase64(file);
+    if (!base64) { toast.warn('이미지를 불러올 수 없어요. 다른 사진을 써주세요'); input.value = ''; return; }
+    store.base64 = base64;
+    preview.src = `data:image/jpeg;base64,${base64}`;
     preview.style.display = 'block';
     remove.style.display = 'block';
     area.querySelector('.ai-king-img-upload__label').style.display = 'none';
@@ -98,7 +105,7 @@ export function renderAiMatch() {
     const btn = document.getElementById('btn-match-submit');
     btn.disabled = true;
     btn.textContent = '궁합 보는 중...';
-    el.innerHTML = `<div class="ai-king-page"><div class="ai-king-loading"><div class="spinner spinner--lg"></div><div class="ai-king-loading__text">💘 AI 점쟁이가 궁합을 보는 중...</div><div class="ai-king-loading__sub">"${itemA}" 와 "${itemB}"...</div></div></div>`;
+    el.innerHTML = `<div class="ai-king-page"><div class="ai-king-loading"><div class="spinner spinner--lg"></div><div class="ai-king-loading__text">💘 AI 점쟁이가 궁합을 보는 중...</div><div class="ai-king-loading__sub">"${esc(itemA)}" 와 "${esc(itemB)}"...</div></div></div>`;
     try {
       const fn = httpsCallable(functions, 'aiMatch');
       const result = await fn({ itemA, itemB, imageA: imgA.base64, imageB: imgB.base64 });

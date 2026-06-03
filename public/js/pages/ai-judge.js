@@ -52,7 +52,7 @@ export function renderAiJudge() {
       <div class="ai-king-header">
         <button class="btn btn--ghost btn--sm" id="btn-back" style="margin-bottom:12px">← 뒤로</button>
         <div class="ai-king-header__title">⚖️ 미친판사</div>
-        <div class="ai-king-header__sub">억울한 상황을 적으면 판사 3명이 판결합니다</div>
+        <div class="ai-king-header__sub">억울한 상황을 적으면 최대 3명의 판사가 판결합니다</div>
       </div>
       <div class="ai-king-form">
         <label class="ai-king-form__label">판결 받을 상황을 적어주세요 *</label>
@@ -128,7 +128,10 @@ export function renderAiJudge() {
   imgInput.addEventListener('change', async () => {
     const file = imgInput.files[0];
     if (!file) return;
-    imageBase64 = await resizeImageToBase64(file);
+    if (!file.type.startsWith('image/')) { toast.warn('이미지 파일만 첨부할 수 있어요'); imgInput.value = ''; return; }
+    const b64 = await resizeImageToBase64(file);
+    if (!b64) { toast.warn('이미지를 불러올 수 없어요. 다른 사진을 써주세요'); imgInput.value = ''; return; }
+    imageBase64 = b64;
     imgPreview.src = `data:image/jpeg;base64,${imageBase64}`;
     imgPreview.style.display = 'block';
     imgRemove.style.display = 'block';
