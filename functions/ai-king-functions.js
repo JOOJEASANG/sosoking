@@ -37,7 +37,7 @@ function validBase64(str) {
   return stripped;
 }
 
-async function callAI(system, userText, imageBase64 = null, maxTokens = 400, temperature = 0.8) {
+async function callAI(system, userText, imageBase64 = null, maxTokens = 400, temperature = 0.8, jsonMode = false) {
   const config = await getAiKingConfig();
   const img = validBase64(imageBase64);
 
@@ -52,9 +52,11 @@ async function callAI(system, userText, imageBase64 = null, maxTokens = 400, tem
     const parts = [];
     if (img) parts.push({ inlineData: { data: img, mimeType: 'image/jpeg' } });
     parts.push({ text: userText });
+    const genConfig = { maxOutputTokens: maxTokens, temperature };
+    if (jsonMode) genConfig.responseMimeType = 'application/json';
     const result = await model.generateContent({
       contents: [{ role: 'user', parts }],
-      generationConfig: { maxOutputTokens: maxTokens, temperature },
+      generationConfig: genConfig,
     });
     return result.response.text() || '';
   }
@@ -76,7 +78,7 @@ async function callAI(system, userText, imageBase64 = null, maxTokens = 400, tem
   return msg.content[0]?.text || '';
 }
 
-async function callAIWithImages(system, userText, imageA = null, imageB = null, maxTokens = 500, temperature = 0.8) {
+async function callAIWithImages(system, userText, imageA = null, imageB = null, maxTokens = 500, temperature = 0.8, jsonMode = false) {
   const config = await getAiKingConfig();
   const imgA = validBase64(imageA);
   const imgB = validBase64(imageB);
@@ -93,9 +95,11 @@ async function callAIWithImages(system, userText, imageA = null, imageB = null, 
     if (imgA) parts.push({ inlineData: { data: imgA, mimeType: 'image/jpeg' } });
     if (imgB) parts.push({ inlineData: { data: imgB, mimeType: 'image/jpeg' } });
     parts.push({ text: userText });
+    const genConfig = { maxOutputTokens: maxTokens, temperature };
+    if (jsonMode) genConfig.responseMimeType = 'application/json';
     const result = await model.generateContent({
       contents: [{ role: 'user', parts }],
-      generationConfig: { maxOutputTokens: maxTokens, temperature },
+      generationConfig: genConfig,
     });
     return result.response.text() || '';
   }
@@ -201,14 +205,18 @@ function buildJudgeSystem(selectedJudges) {
   const jsonFormat = selectedJudges.map(j => `  {"id":"${j.id}","verdict":"판결문"}`).join(',\n');
   return `당신은 개성 넘치는 캐릭터 판사다. 주어진 상황(텍스트 + 이미지)을 읽고 담당 판사가 자기만의 방식으로 핵심을 찌르는 판결을 내린다.
 
-【입력 분석 방법】
-- 이미지가 첨부된 경우: 이미지 속 인물, 표정, 상황, 증거물을 텍스트와 함께 종합 분석해 판결 근거로 적극 활용하라.
-- 이미지에서 발견한 구체적 디테일을 판결문에 직접 언급하면 훨씬 강렬해진다.
+【입력 분석 — 이것이 가장 중요하다】
+사용자가 직접 쓴 내용에서 반드시 아래 중 하나 이상을 판결에 직접 인용하라:
+- 구체적 인물/상황/장소/숫자/날짜/물건 이름
+- 이미지에서 발견한 표정, 배경, 텍스트, 옷차림 등 시각적 디테일
+- 사용자 글 속 감정 키워드 (억울, 황당, 분노, 슬픔 등)
+→ 판결문에 이 요소가 없으면 실패. 일반론("그런 행동은 나쁘다") 금지.
 
-【핵심 원칙】
-- 반드시 그 상황만의 구체적인 내용을 판결에 담아야 한다. 일반론 절대 금지.
-- 읽는 사람이 "아 ㅋㅋㅋ 맞는 말이긴 한데" 하는 반응이 나와야 한다.
-- 각 판사는 2~3문장. 짧고 강렬하게.
+【웃음 코드】
+- 판결이 맞는 말인데 예상 밖의 각도여야 한다 — 읽는 사람이 "어? 근데 그 말도 맞네 ㅋㅋ"
+- 과장하되 틀리지 않는다. 사용자 상황을 꿰뚫으면서 웃긴 것.
+- 2~3문장. 짧고 강렬하게. 길면 안 읽는다.
+- 예시 표현을 그대로 쓰지 마라 — 상황에 맞는 새 표현을 만들어라.
 
 【담당 판사 캐릭터】
 
@@ -250,13 +258,15 @@ exports.aiJudge = onCall({
   let raw;
   try {
     const imageHint = imageBase64
-      ? '\n[이미지 첨부됨: 이미지 속 상황, 인물 표정, 증거물을 판결 근거로 반드시 활용할 것. 이미지에서 발견한 구체적 디테일을 판결문에 직접 언급하라]'
+      ? '\n[이미지 첨부됨: 표정·배경·텍스트·옷차림 등 구체적 시각 요소를 판결문에 직접 인용하라]'
       : '';
     raw = await callAI(
       buildJudgeSystem(activeJudges),
-      `다음 상황을 담당 판사들이 각자의 캐릭터로 판결해줘. 각 판사는 이 상황의 핵심을 자기 방식으로 정확히 찌를 것:${imageHint}\n\n${situation.slice(0, 500)}`,
+      `아래 상황에서 구체적인 인물·행동·물건·감정을 반드시 판결문에 언급하며 판결하라:${imageHint}\n\n${situation.slice(0, 500)}`,
       imageBase64,
       1400,
+      0.95,
+      true,
     );
   } catch (err) {
     console.error('[aiJudge] AI call failed:', err.message);
@@ -353,8 +363,8 @@ exports.aiTranslate = onCall({
   if (!allowed) throw new HttpsError('resource-exhausted', `오늘 번역은 하루 ${limit}번만 가능해요`);
 
   const userText = imageBase64
-    ? `이미지와 텍스트를 모두 보고 사투리로 번역해줘. 이미지에 텍스트가 있으면 그것도 번역하고, 이미지의 상황 자체도 사투리로 설명해줘. 번역 결과만 출력. 설명·원문·주석 절대 없이. 사투리 맛이 진짜로 살아야 한다:\n${text.slice(0, 500)}`
-    : `다음을 사투리로 번역해줘. 번역 결과만 출력. 설명·원문·주석 절대 없이. 사투리 맛이 진짜로 살아야 한다:\n${text.slice(0, 500)}`;
+    ? `이미지와 텍스트를 모두 보고 그 지역 사람이 실제로 이 상황에서 말하듯 사투리로 번역해줘. 이미지에 텍스트가 있으면 같이 번역. 단어만 사투리로 바꾸지 말고 말투·어투·감정까지 그 지역 사람처럼. 번역 결과만 출력. 원문·설명·주석 없이:\n${text.slice(0, 500)}`
+    : `다음을 그 지역 사람이 실제로 이 상황에서 말하듯 사투리로 번역해줘. 단어만 치환하지 말고 말투·리듬·감정까지 살려라. 번역 결과만 출력. 원문·설명·주석 없이:\n${text.slice(0, 500)}`;
 
   let translated;
   try {
@@ -410,40 +420,41 @@ exports.aiMatch = onCall({
 
   const system = `당신은 세상 모든 것의 궁합을 꿰뚫어보는 AI 점쟁이다.
 
-【핵심 원칙】
-남들이 못 보는 걸 봐야 한다. "치킨은 맛있고 맥주도 맛있으니 잘 맞는다" 수준의 뻔한 분석은 0점. 두 대상의 본질적 특성에서 예상 못 한 공통점 또는 충돌 지점을 찾아라.
-읽는 사람이 "어? 근데 이거 진짜 맞는 말이네 ㅋㅋ" 반응이 나와야 한다.
+【분석 핵심 — 이게 전부다】
+이 두 대상에서만 나올 수 있는 연결고리를 찾아라. 다른 조합에도 쓸 수 있는 분석은 0점.
+"치킨과 맥주는 맛있으니 잘 맞는다" → 실격. "야식과 후회는 항상 함께 온다" → 합격.
+사진이 첨부된 경우: 외모·표정·분위기·색감 등 시각적 특징을 reason과 chemistry에 직접 인용하라.
 
-【각 필드 작성법】
-score: 0~100 정수. 딱 떨어지는 라운드 숫자(50, 70, 80, 90) 지양.
-grade: 점수에 맞는 창의적 등급. 기존 표현 그대로 쓰지 말고 이 상황에 맞는 표현으로. (예: "운명적 공범💘", "서로가 서로의 독🔥", "억지로 붙인 사이😅", "환장의 케미✨", "두 개의 태양☀️☀️" 등)
-reason: 두 대상이 왜 이 점수인지. 뻔하지 않은 핵심 이유. 진지한 척하면서 읽으면 웃김. 2~3문장.
-chemistry: 둘이 실제로 만나면 벌어지는 일. 구체적이고 생생하게. 1~2문장.
-advice: 한 줄 조언. 진지한 어투로 황당하거나 예상 밖의 말.
+【각 필드】
+score: 0~100 정수. 라운드 숫자(50·60·70·80·90) 금지. 23, 67, 84, 91 같은 숫자로.
+grade: 이 조합만을 위한 창의적 등급명+이모지. 예시와 똑같이 쓰지 마라.
+reason: 이 둘만의 본질적 공통점 또는 충돌. 진지한 척하면서 읽으면 웃기는 2~3문장.
+chemistry: 둘이 만나면 실제로 벌어지는 장면. "~하게 된다" 형태. 구체적일수록 웃기다.
+advice: 한 줄. 진지한 어투로 황당하거나 뜻밖의 말.
 
-【예시】
-"아이유"와 "새벽 4시" 궁합이라면:
-→ score: 97, grade: "운명적공범💘", reason: "둘 다 잠 못 들게 한다는 공통점이 있다. 아이유의 노래는 감정을 증폭시키고 새벽 4시는 그 감정을 증폭할 시간을 제공한다 — 이 둘은 서로를 위해 존재하는 것이 아닌지 의심스럽다.", chemistry: "이 조합을 만난 자는 이불킥과 함께 아침을 맞이하게 된다.", advice: "이 궁합은 좋은데, 다음날 출근이 있다면 피하는 것을 권한다."
+【금지 표현】예시와 동일한 표현, "이 조합은~", "서로~", 무난한 조언.
 
-반드시 JSON 형식으로만 답하라:
+반드시 JSON만 출력. 다른 텍스트 없이:
 {"score": 숫자, "grade": "등급", "reason": "이유", "chemistry": "케미", "advice": "조언"}`;
 
+  let raw = '';
   let matchResult;
   try {
     const imageHint = (imageA || imageB)
-      ? `\n[이미지 첨부: ${imageA && imageB ? '양쪽 모두 사진 있음' : '한쪽 사진 있음'}. 사진 속 외모·표정·분위기·색감·스타일 등 시각적 특성을 궁합 분석에 반드시 반영하라. 이미지에서 발견한 구체적 특징을 reason/chemistry에 직접 언급하면 더 강렬해진다]`
+      ? `\n[이미지 첨부: ${imageA && imageB ? '양쪽 사진 있음' : '한쪽 사진 있음'} — 사진 속 외모·표정·분위기를 reason/chemistry에 직접 인용]`
       : '';
-    const raw = await callAIWithImages(
+    raw = await callAIWithImages(
       system,
-      `"${itemA.slice(0, 100)}"와 "${itemB.slice(0, 100)}"의 궁합을 봐줘. 뻔한 분석 말고 이 둘만의 진짜 핵심을 찔러라.${imageHint}`,
+      `"${itemA.slice(0, 100)}"와 "${itemB.slice(0, 100)}"의 궁합. 이 둘에서만 나올 수 있는 핵심을 찔러라.${imageHint}`,
       imageA,
       imageB,
-      600,
-      0.9,
+      700,
+      0.95,
+      true,
     );
     matchResult = parseJson(raw);
   } catch (err) {
-    console.error('[aiMatch] parse failed:', err.message, raw?.slice(0, 300));
+    console.error('[aiMatch] failed:', err.message, raw.slice(0, 200));
     if (err instanceof HttpsError) throw err;
     matchResult = {
       score: Math.floor(Math.random() * 101),
@@ -500,46 +511,38 @@ exports.aiNaming = onCall({
 
   const system = `당신은 세상에서 가장 웃기고 본질을 꿰뚫는 작명 전문가다. 주어진 대상에 딱 맞는 이름 5개를 지어준다.
 
-【분석 방법 — 반드시 이 순서로】
-1. 사진이 첨부된 경우: 외모, 표정, 분위기, 색감, 가장 눈에 띄는 특징을 먼저 파악한다.
-2. 설명이 있는 경우: 그 대상의 핵심 특성, 습관, 개성, 행동 패턴을 파악한다.
-3. 둘 다 있으면: 사진과 설명을 종합해서 그 대상을 완전히 이해한 뒤 이름을 짓는다.
-→ 이름은 반드시 파악한 구체적 특성에서 나와야 한다. 일반적인 이름 금지.
+【분석 — 반드시 이 순서로】
+1. 사진 첨부 시: 표정·눈빛·색감·체형·분위기·가장 눈에 띄는 특징 하나를 먼저 집어라.
+2. 설명 있으면: 핵심 습관·행동 패턴·개성 하나를 집어라.
+3. 이름은 집어낸 그 특징에서 직접 나와야 한다. 일반론 이름 금지.
 
-【핵심 원칙】
-이름을 들은 순간 "아 ㄹㅇ 딱 맞네 ㅋㅋㅋ" 소리가 나와야 한다.
-reason은 이름보다 더 웃겨야 한다. 이름이 왜 찰떡인지 핵심을 한 줄에 박아라.
+【5개 이름 — 완전히 다른 방식으로, 겹치는 방식 금지】
+① 특성 합성어 (예: "회의중졸음신" — 특징 두 개 붙이기)
+② 역설 비틀기 (예: 항상 늦는 사람 → "제시간의전설")
+③ 의성어·의태어 (예: "흐물흐물카리스마", "뚱땅뚱땅이")
+④ 한자·사자성어 패러디 (예: 臥龍睡眠 — 회의 때 자는 팀장)
+⑤ 한방 직관 (예: "미안왕", "괜찮아봇" — 너무 정확해서 웃김)
 
-【이름 스타일 — 5개 모두 다른 방식으로】
-① 특성 합성어: 핵심 특징 두 가지 직접 붙임 (예: "회의중졸음신", "밥도둑메뉴", "애교폭발뭉치")
-② 역설 이름: 반대 특성으로 비틀어 오히려 맞음 (예: 항상 늦는 사람 → "제시간의전설", 조용한 고양이 → "소음주의보")
-③ 의성어/의태어: 그 존재의 느낌을 소리로 (예: "얼얼한척떡볶이", "흐물흐물한카리스마", "뚱땅뚱땅이")
-④ 사자성어 비틀기: 진지하게 틀어서 웃김 (예: 竹馬放棄 → 어릴 때 친구 버린 사람, 臥龍睡眠 → 회의 때 자는 팀장)
-⑤ 직관 한방: 너무 정확해서 웃긴 이름 (예: 매번 사과하는 친구 → "미안왕", 뭐든 긍정인 사람 → "괜찮아봇")
+【reason — 이름보다 reason이 더 웃겨야 한다】
+왜 찰떡인지 핵심을 한 줄. 진지하게 쓰되 읽으면 웃긴다.
 
-【예시 — 이 수준으로】
-"회의 때마다 조는 팀장" 작명이라면:
-→ {"name": "회의의신", "reason": "신의 경지에 올라야만 저렇게 눈을 감을 수 있다"}
-→ {"name": "기립성각성장애", "reason": "서 있을 때만 깨어있는 희귀 증상의 보유자"}
-→ {"name": "수면PT강사", "reason": "회의실을 무료 수면 클리닉으로 만드는 천재"}
+금지: 예시와 동일한 이름, 평범한 이름, 단순 설명형, 영어만.
+반드시 JSON만 출력:
+{"names": [{"name": "이름1", "reason": "이유"}, {"name": "이름2", "reason": "이유"}, {"name": "이름3", "reason": "이유"}, {"name": "이름4", "reason": "이유"}, {"name": "이름5", "reason": "이유"}]}`;
 
-절대 금지: 평범한 이름("열정팀장"), 단순 설명형("잘 자는 사람"), 영어 이름만.
-반드시 JSON 형식으로만 답하라:
-{"names": [{"name": "이름1", "reason": "이유(핵심 한 줄)"}, {"name": "이름2", "reason": "..."}, {"name": "이름3", "reason": "..."}, {"name": "이름4", "reason": "..."}, {"name": "이름5", "reason": "..."}]}`;
-
-  const descPart = hasDesc ? `설명: ${description.trim().slice(0, 300)}\n` : '';
+  const descPart = hasDesc ? `대상 설명: ${description.trim().slice(0, 300)}\n` : '';
   const userText = imageBase64
-    ? `${descPart}첨부된 사진을 꼼꼼히 보고, 외모·분위기·가장 눈에 띄는 특징을 파악해서 찰떡 이름을 지어줘.`
-    : `${descPart}이 대상의 이름을 지어줘.`;
+    ? `${descPart}첨부된 사진에서 가장 눈에 띄는 특징 하나를 집어내서 거기서 출발하는 찰떡 이름 5개.`
+    : `${descPart}이 대상의 핵심 특성에서 출발하는 찰떡 이름 5개.`;
 
   let names;
   try {
-    const raw = await callAI(system, userText, imageBase64, 700, 1.0);
+    const raw = await callAI(system, userText, imageBase64, 800, 1.0, true);
     const parsed = parseJson(raw);
     names = (parsed.names || []).filter(n => n.name);
     if (names.length === 0) throw new Error('empty names');
   } catch (err) {
-    console.error('[aiNaming] parse failed:', err.message);
+    console.error('[aiNaming] failed:', err.message);
     if (err instanceof HttpsError) throw err;
     names = [
       { name: '이름짓기실패킹', reason: 'AI가 충격받아서 말문이 막혔습니다' },
