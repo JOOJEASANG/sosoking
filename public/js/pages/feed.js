@@ -37,10 +37,6 @@ let cursorTotal   = 0;
 let cachedPosts   = [];
 let lastDisplayPosts = [];
 
-function currentRoom() {
-  return ROOMS.find(room => room.key === currentType) || ROOMS[0];
-}
-
 function useCursorMode() {
   return !currentType && !currentSearch && currentSort === 'latest';
 }
@@ -49,19 +45,6 @@ function renderRoomTabs() {
   return `
     <div class="soso-room-tabs" aria-label="방별 보기">
       ${ROOMS.map(room => `<button type="button" class="soso-room-tab ${currentType === room.key ? 'active' : ''}" data-type-filter="${room.key}"><span>${room.icon}</span>${room.label}</button>`).join('')}
-    </div>`;
-}
-
-function renderRoomHead() {
-  const room = currentRoom();
-  return `
-    <div class="soso-room-head">
-      <div class="soso-room-head__label">${room.icon} ${room.label}</div>
-      <div class="soso-room-head__title">${room.title}</div>
-      <div class="soso-room-head__desc">${room.desc}</div>
-      <div class="soso-room-head__action">
-        <button class="btn btn--primary btn--sm" type="button" id="room-write-btn">${room.label === '전체' ? 'AI킹 하러가기' : `${room.label} 해보기`}</button>
-      </div>
     </div>`;
 }
 
@@ -84,7 +67,6 @@ export async function renderFeed() {
     <div class="soso-feed-page layout-main layout-main--full feed-page-clean">
       <div class="soso-feed-toolbar">
         ${renderRoomTabs()}
-        ${renderRoomHead()}
         ${renderFeedSearchBar({ search: currentSearch })}
         ${renderFeedFilterBar({ type: currentType, search: currentSearch })}
       </div>
@@ -101,14 +83,6 @@ export async function renderFeed() {
 function bindFeedEvents() {
   bindSearchEvents();
   bindTypeFilterEvents();
-  bindRoomWriteEvent();
-}
-
-function bindRoomWriteEvent() {
-  document.getElementById('room-write-btn')?.addEventListener('click', () => {
-    const room = currentRoom();
-    navigate(room.path || '/ai-king');
-  });
 }
 
 function bindSearchEvents() {
