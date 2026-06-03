@@ -16,8 +16,8 @@ function prizeLabel(prize) {
 
 export function isQuotaError(error) {
   const code = String(error?.code || '');
-  const msg = String(error?.message || error || '');
-  return code.includes('resource-exhausted') || msg.includes('resource-exhausted') || msg.includes('하루') || msg.includes('횟수');
+  // resource-exhausted 코드만 정확히 확인 (메시지 문자열 매칭 제거 — 오탐 방지)
+  return code === 'functions/resource-exhausted' || code.includes('resource-exhausted');
 }
 
 export function showAiLadderBonus({ feature, featureLabel, onReplay } = {}) {

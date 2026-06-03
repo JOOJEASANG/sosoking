@@ -24,7 +24,7 @@ let _aiKingConfigFetchedAt = 0;
 
 async function getAiKingConfig() {
   const now = Date.now();
-  if (_aiKingConfig && now - _aiKingConfigFetchedAt < 10_000) return _aiKingConfig;
+  if (_aiKingConfig && now - _aiKingConfigFetchedAt < 5_000) return _aiKingConfig;
   const snap = await db.doc('config/ai_king').get();
   _aiKingConfig = snap.exists ? snap.data() : {};
   _aiKingConfigFetchedAt = now;
@@ -209,35 +209,48 @@ function parseJson(raw) {
   return JSON.parse(sanitizeJson(match[0]));
 }
 
-// ── Usage check with extraAiUses fallback ──
-// Returns { allowed: boolean, limit: number, usedExtra: boolean }
-// usedExtra: 무료 한도 초과로 유료 이용권(extraAiUses)을 차감했는지 여부 (실패 시 환불용)
+// ── Usage check with extraAiUses / points fallback ──
+// Returns { allowed, limit, usedExtra, usedPoints, pointsUsed }
 async function checkUsage(userId, feature) {
   const today = kstToday();
   const ref = db.doc(`ai_king_usage/${userId}_${today}_${feature}`);
   const config = await getAiKingConfig();
   const dailyLimit = config.dailyFreeLimit || DAILY_LIMIT;
+  const pointsPerUse = config.pointsPerUse || 100;
   const result = await db.runTransaction(async (tx) => {
     const [snap, userSnap] = await Promise.all([tx.get(ref), tx.get(db.doc(`users/${userId}`))]);
     const count = snap.exists ? (snap.data().count || 0) : 0;
-    if (count >= dailyLimit) {
-      const extra = userSnap.exists ? (userSnap.data()?.extraAiUses || 0) : 0;
-      if (extra <= 0) return { allowed: false, usedExtra: false };
-      tx.update(db.doc(`users/${userId}`), { extraAiUses: FieldValue.increment(-1), updatedAt: FieldValue.serverTimestamp() });
-      return { allowed: true, usedExtra: true };
+    if (count < dailyLimit) {
+      tx.set(ref, { count: count + 1, userId, feature, date: today, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+      return { allowed: true, usedExtra: false, usedPoints: false };
     }
-    tx.set(ref, { count: count + 1, userId, feature, date: today, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-    return { allowed: true, usedExtra: false };
+    const userData = userSnap.exists ? (userSnap.data() || {}) : {};
+    const extra = userData.extraAiUses || 0;
+    if (extra > 0) {
+      tx.set(db.doc(`users/${userId}`), { extraAiUses: FieldValue.increment(-1), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+      return { allowed: true, usedExtra: true, usedPoints: false };
+    }
+    const points = userData.points || 0;
+    if (points >= pointsPerUse) {
+      tx.set(db.doc(`users/${userId}`), { points: FieldValue.increment(-pointsPerUse), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+      return { allowed: true, usedExtra: false, usedPoints: true, pointsUsed: pointsPerUse };
+    }
+    return { allowed: false, usedExtra: false, usedPoints: false };
   });
-  return { allowed: result.allowed, limit: dailyLimit, usedExtra: result.usedExtra };
+  return { allowed: result.allowed, limit: dailyLimit, usedExtra: result.usedExtra || false, usedPoints: result.usedPoints || false, pointsUsed: result.pointsUsed || 0 };
 }
 
 // ── AI 호출 실패 시 차감했던 사용량 환불 ──
-async function refundUsage(userId, feature, usedExtra) {
+async function refundUsage(userId, feature, usedExtra, usedPoints = false, pointsUsed = 0) {
   try {
     if (usedExtra) {
       await db.doc(`users/${userId}`).set(
         { extraAiUses: FieldValue.increment(1), updatedAt: FieldValue.serverTimestamp() },
+        { merge: true },
+      );
+    } else if (usedPoints && pointsUsed > 0) {
+      await db.doc(`users/${userId}`).set(
+        { points: FieldValue.increment(pointsUsed), updatedAt: FieldValue.serverTimestamp() },
         { merge: true },
       );
     } else {
@@ -405,7 +418,7 @@ exports.aiJudge = onCall({
     ? validIds.map(id => JUDGES.find(j => j.id === id))
     : [...JUDGES].sort(() => Math.random() - 0.5).slice(0, 3);
 
-  const [{ allowed, limit, usedExtra }, author] = await Promise.all([
+  const [{ allowed, limit, usedExtra, usedPoints, pointsUsed }, author] = await Promise.all([
     checkUsage(userId, 'judge'),
     getAuthorInfo(userId, request.auth?.token || {}),
   ]);
@@ -432,7 +445,7 @@ exports.aiJudge = onCall({
     }));
   } catch (err) {
     console.error('[aiJudge] AI/parse failed:', err.message);
-    await refundUsage(userId, 'judge', usedExtra);
+    await refundUsage(userId, 'judge', usedExtra, usedPoints, pointsUsed);
     if (err instanceof HttpsError) throw err;
     throw new HttpsError('internal', 'AI 판결에 실패했어요. 사용 횟수는 차감되지 않았어요. 잠시 후 다시 시도해주세요.');
   }
@@ -526,7 +539,7 @@ exports.aiTranslate = onCall({
   const styleData = TRANSLATE_STYLES[style];
   if (!styleData) throw new HttpsError('invalid-argument', '번역 스타일을 선택해주세요');
 
-  const [{ allowed, limit, usedExtra }, author] = await Promise.all([
+  const [{ allowed, limit, usedExtra, usedPoints, pointsUsed }, author] = await Promise.all([
     checkUsage(userId, 'translate'),
     getAuthorInfo(userId, request.auth?.token || {}),
   ]);
@@ -544,7 +557,7 @@ exports.aiTranslate = onCall({
     if (!translated) throw new Error('empty translation');
   } catch (err) {
     console.error('[aiTranslate] AI call failed:', err.message);
-    await refundUsage(userId, 'translate', usedExtra);
+    await refundUsage(userId, 'translate', usedExtra, usedPoints, pointsUsed);
     if (err instanceof HttpsError) throw err;
     throw new HttpsError('internal', 'AI 번역에 실패했어요. 사용 횟수는 차감되지 않았어요. 잠시 후 다시 시도해주세요.');
   }
@@ -617,7 +630,7 @@ exports.aiMatch = onCall({
     throw new HttpsError('invalid-argument', '두 가지를 모두 입력해주세요');
   }
 
-  const [{ allowed, limit, usedExtra }, author] = await Promise.all([
+  const [{ allowed, limit, usedExtra, usedPoints, pointsUsed }, author] = await Promise.all([
     checkUsage(userId, 'match'),
     getAuthorInfo(userId, request.auth?.token || {}),
   ]);
@@ -661,7 +674,7 @@ advice: 한 줄. 진지한 어투로 황당하거나 뜻밖의 말.
     matchResult = normalizeMatch(parsed);
   } catch (err) {
     console.error('[aiMatch] failed:', err.message);
-    await refundUsage(userId, 'match', usedExtra);
+    await refundUsage(userId, 'match', usedExtra, usedPoints, pointsUsed);
     if (err instanceof HttpsError) throw err;
     throw new HttpsError('internal', 'AI 궁합에 실패했어요. 사용 횟수는 차감되지 않았어요. 잠시 후 다시 시도해주세요.');
   }
@@ -716,7 +729,7 @@ exports.aiNaming = onCall({
     throw new HttpsError('invalid-argument', '설명을 입력하거나 사진을 첨부해주세요');
   }
 
-  const [{ allowed, limit, usedExtra }, author] = await Promise.all([
+  const [{ allowed, limit, usedExtra, usedPoints, pointsUsed }, author] = await Promise.all([
     checkUsage(userId, 'naming'),
     getAuthorInfo(userId, request.auth?.token || {}),
   ]);
@@ -763,7 +776,7 @@ exports.aiNaming = onCall({
     if (names.length === 0) throw new Error('empty names');
   } catch (err) {
     console.error('[aiNaming] failed:', err.message);
-    await refundUsage(userId, 'naming', usedExtra);
+    await refundUsage(userId, 'naming', usedExtra, usedPoints, pointsUsed);
     if (err instanceof HttpsError) throw err;
     throw new HttpsError('internal', 'AI 작명에 실패했어요. 사용 횟수는 차감되지 않았어요. 잠시 후 다시 시도해주세요.');
   }
