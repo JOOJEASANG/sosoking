@@ -109,8 +109,8 @@ async function callAIWithImages(system, userText, imageA = null, imageB = null, 
       systemInstruction: system,
     });
     const parts = [];
-    if (imgA) parts.push({ inlineData: { data: imgA, mimeType: 'image/jpeg' } });
-    if (imgB) parts.push({ inlineData: { data: imgB, mimeType: 'image/jpeg' } });
+    if (imgA) parts.push({ inlineData: { data: imgA.data, mimeType: imgA.mime } });
+    if (imgB) parts.push({ inlineData: { data: imgB.data, mimeType: imgB.mime } });
     parts.push({ text: userText });
     const genConfig = { maxOutputTokens: maxTokens, temperature };
     if (jsonMode) genConfig.responseMimeType = 'application/json';
@@ -126,8 +126,8 @@ async function callAIWithImages(system, userText, imageA = null, imageB = null, 
   const Anthropic = require('@anthropic-ai/sdk');
   const anthropic = new Anthropic({ apiKey: config.claudeApiKey });
   const content = [];
-  if (imgA) content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: imgA } });
-  if (imgB) content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: imgB } });
+  if (imgA) content.push({ type: 'image', source: { type: 'base64', media_type: imgA.mime, data: imgA.data } });
+  if (imgB) content.push({ type: 'image', source: { type: 'base64', media_type: imgB.mime, data: imgB.data } });
   content.push({ type: 'text', text: userText });
   const msg = await anthropic.messages.create({
     model: config.claudeModel || 'claude-haiku-4-5-20251001',
@@ -497,7 +497,7 @@ exports.aiTranslate = onCall({
 
   let translated;
   try {
-    translated = String(await callAI(system, userText, imageBase64, 900, 0.95) || '').trim();
+    translated = String(await callAI(system, userText, imageBase64, 1400, 0.95) || '').trim();
     if (!translated) throw new Error('empty translation');
   } catch (err) {
     console.error('[aiTranslate] AI call failed:', err.message);
