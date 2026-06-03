@@ -70,7 +70,7 @@
 .ai-translate-original__label { font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 6px; color: var(--color-text-muted); }
 .ai-translate-output { position: relative; background: var(--color-primary-bg); border: 1.5px solid var(--color-primary); border-radius: var(--radius-md); padding: 16px; }
 .ai-translate-output__label { display: inline-block; font-size: 12px; font-weight: 800; color: #fff; background: var(--color-primary); padding: 3px 10px; border-radius: var(--radius-pill); margin-bottom: 10px; }
-.ai-translate-output__text { font-size: 16px; color: var(--color-text-primary); line-height: 1.7; font-weight: 600; }
+.ai-translate-output__text { font-size: 16px; color: var(--color-text-primary); line-height: 1.7; font-weight: 600; overflow-wrap: anywhere; word-break: break-word; }
 
 /* 궁합 결과 */
 .ai-match-result { text-align: center; }

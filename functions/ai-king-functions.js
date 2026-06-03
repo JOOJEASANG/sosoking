@@ -3,6 +3,8 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getApps, initializeApp } = require('firebase-admin/app');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
+const { getStorage } = require('firebase-admin/storage');
+const { randomUUID } = require('crypto');
 
 if (!getApps().length) initializeApp();
 const db = getFirestore();
@@ -52,6 +54,43 @@ function validBase64(str) {
   if (comma !== -1 && /^data:/i.test(str)) { prefix = str.slice(0, comma); stripped = str.slice(comma + 1); }
   if (stripped.length > 8 * 1024 * 1024) { console.warn('[ai-king] image too large, skipping'); return null; }
   return { data: stripped, mime: sniffMime(prefix, stripped) };
+}
+
+function getBucketName() {
+  try {
+    const config = JSON.parse(process.env.FIREBASE_CONFIG || '{}');
+    if (config.storageBucket) return config.storageBucket;
+  } catch {}
+  const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT || 'sosoking-481e6';
+  return `${projectId}.firebasestorage.app`;
+}
+
+// 첨부 이미지를 Storage에 저장하고 표시용 URL 반환 (실패해도 AI 결과는 막지 않음 → null)
+async function saveAiImage(userId, imageBase64) {
+  try {
+    const img = validBase64(imageBase64);
+    if (!img) return null;
+    const buffer = Buffer.from(img.data, 'base64');
+    if (!buffer.length) return null;
+    const ext = img.mime === 'image/png' ? 'png' : img.mime === 'image/webp' ? 'webp' : img.mime === 'image/gif' ? 'gif' : 'jpg';
+    const safeUid = String(userId || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 128) || 'anon';
+    const path = `ai-king/${safeUid}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    const token = randomUUID();
+    const bucket = getStorage().bucket(getBucketName());
+    const file = bucket.file(path);
+    await file.save(buffer, {
+      metadata: {
+        contentType: img.mime,
+        cacheControl: 'public, max-age=31536000, immutable',
+        metadata: { owner: safeUid, source: 'ai-king', firebaseStorageDownloadTokens: token },
+      },
+      resumable: false,
+    });
+    return `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(path)}?alt=media&token=${token}`;
+  } catch (e) {
+    console.error('[saveAiImage] failed:', e.message);
+    return null;
+  }
 }
 
 async function callAI(system, userText, imageBase64 = null, maxTokens = 400, temperature = 0.8, jsonMode = false) {
@@ -398,12 +437,14 @@ exports.aiJudge = onCall({
     throw new HttpsError('internal', 'AI 판결에 실패했어요. 사용 횟수는 차감되지 않았어요. 잠시 후 다시 시도해주세요.');
   }
 
+  const imageUrl = imageBase64 ? await saveAiImage(userId, imageBase64) : null;
   const postRef = db.collection('feeds').doc();
   await postRef.set({
     type: 'ai_judge',
     title: situation.slice(0, 60) + (situation.length > 60 ? '...' : ''),
     situation: situation.slice(0, 500),
     hasImage: !!imageBase64,
+    images: imageUrl ? [imageUrl] : [],
     verdicts,
     ...author,
     commentCount: 0,
@@ -506,6 +547,7 @@ exports.aiTranslate = onCall({
     throw new HttpsError('internal', 'AI 번역에 실패했어요. 사용 횟수는 차감되지 않았어요. 잠시 후 다시 시도해주세요.');
   }
 
+  const imageUrl = imageBase64 ? await saveAiImage(userId, imageBase64) : null;
   const postRef = db.collection('feeds').doc();
   await postRef.set({
     type: 'ai_translate',
@@ -515,6 +557,7 @@ exports.aiTranslate = onCall({
     styleName: styleData.name,
     translated,
     hasImage: !!imageBase64,
+    images: imageUrl ? [imageUrl] : [],
     ...author,
     commentCount: 0,
     reactions: { like: 0, funny: 0, fire: 0, total: 0 },
@@ -620,6 +663,11 @@ advice: 한 줄. 진지한 어투로 황당하거나 뜻밖의 말.
     throw new HttpsError('internal', 'AI 궁합에 실패했어요. 사용 횟수는 차감되지 않았어요. 잠시 후 다시 시도해주세요.');
   }
 
+  const [urlA, urlB] = await Promise.all([
+    imageA ? saveAiImage(userId, imageA) : null,
+    imageB ? saveAiImage(userId, imageB) : null,
+  ]);
+  const matchImages = [urlA, urlB].filter(Boolean);
   const postRef = db.collection('feeds').doc();
   await postRef.set({
     type: 'ai_match',
@@ -628,6 +676,7 @@ advice: 한 줄. 진지한 어투로 황당하거나 뜻밖의 말.
     itemB: itemB.slice(0, 100),
     hasImageA: !!imageA,
     hasImageB: !!imageB,
+    images: matchImages,
     matchResult,
     ...author,
     commentCount: 0,
@@ -715,6 +764,7 @@ exports.aiNaming = onCall({
     throw new HttpsError('internal', 'AI 작명에 실패했어요. 사용 횟수는 차감되지 않았어요. 잠시 후 다시 시도해주세요.');
   }
 
+  const imageUrl = imageBase64 ? await saveAiImage(userId, imageBase64) : null;
   const postRef = db.collection('feeds').doc();
   await postRef.set({
     type: 'ai_naming',
@@ -722,6 +772,7 @@ exports.aiNaming = onCall({
     description: hasDesc ? description.trim().slice(0, 300) : '',
     names,
     hasImage: !!imageBase64,
+    images: imageUrl ? [imageUrl] : [],
     ...author,
     commentCount: 0,
     reactions: { like: 0, funny: 0, fire: 0, total: 0 },
