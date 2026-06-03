@@ -543,9 +543,7 @@ async function renderAiSettings(el) {
   // Estimated cost per request by model (USD) — approximate based on avg ~400 input / 300 output tokens
   const COST_PER_USE = { claude: 0.0010, gemini: 0.0005 };
   const MODEL_NAMES  = { claude: 'Claude Haiku 4.5', gemini: 'Gemini 2.5 Flash' };
-  // Gemini free tier per day (RPD) by model — Google AI Studio free tier
   const GEMINI_FREE_DAILY_BY_MODEL = { 'gemini-2.5-flash': 250, 'gemini-2.0-flash': 1500 };
-  const geminiFreeDailyLimit = GEMINI_FREE_DAILY_BY_MODEL[aiKingConfig.geminiModel] ?? 250;
 
   // Load AI킹 config + usage stats in parallel
   let aiKingConfig = { activeModel: 'claude', claudeModel: 'claude-haiku-4-5-20251001', geminiModel: 'gemini-2.5-flash', openaiModel: 'gpt-image-1', pointsPerUse: 100, dailyFreeLimit: 3, monthlyCap: 10 };
@@ -587,6 +585,8 @@ async function renderAiSettings(el) {
       reports = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     }).catch(() => {}),
   ]);
+
+  const geminiFreeDailyLimit = GEMINI_FREE_DAILY_BY_MODEL[aiKingConfig.geminiModel] ?? 250;
 
   const FEATURES = [
     { key: 'judge',     label: '⚖️ 미친판사' },
