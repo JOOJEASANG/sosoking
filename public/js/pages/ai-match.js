@@ -9,63 +9,148 @@ function esc(v) {
   return String(v || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
-function resizeImageToBase64(file, maxPx = 512) {
-  return new Promise((resolve) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      const scale = Math.min(1, maxPx / Math.max(img.width, img.height));
-      const canvas = document.createElement('canvas');
-      canvas.width = Math.round(img.width * scale);
-      canvas.height = Math.round(img.height * scale);
-      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-      resolve(canvas.toDataURL('image/jpeg', 0.8).split(',')[1]);
-    };
-    img.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
-    img.src = url;
-  });
-}
-
 function makeImgUpload(prefix, label) {
   return `
     <div>
       <label class="ai-king-form__label">${label}</label>
       <input id="${prefix}-text" class="form-input" type="text" maxlength="100" placeholder="이름이나 설명을 적어주세요">
-      <div class="ai-king-img-upload" id="${prefix}-img-area" style="margin-top:8px">
-        <input type="file" id="${prefix}-img-input" accept="image/*" style="display:none">
-        <div class="ai-king-img-upload__label" style="font-size:12px">📷 사진 (선택)</div>
-        <img id="${prefix}-img-preview" class="ai-king-img-upload__preview" alt="">
-        <div id="${prefix}-img-remove" class="ai-king-img-upload__remove">✕</div>
+      <div class="match-img-box" id="${prefix}-box">
+        <input type="file" id="${prefix}-file" accept="image/*" style="display:none">
+        <div class="match-img-placeholder" id="${prefix}-ph">
+          <span class="match-img-placeholder__icon">📷</span>
+          <span class="match-img-placeholder__label">사진 추가 (선택)</span>
+        </div>
+        <img id="${prefix}-img" class="match-img-draggable" alt="" draggable="false">
+        <button type="button" class="match-img-remove" id="${prefix}-rm">✕</button>
       </div>
+      <div class="match-img-hint" id="${prefix}-hint">✋ 드래그로 위치 조정</div>
     </div>`;
 }
 
+// 드래그 위치를 반영한 이미지를 canvas로 캡처해 base64 반환
+function capturePositioned(store) {
+  if (!store.hasImage || !store.imgEl) return null;
+  const OUT = 512;
+  const canvas = document.createElement('canvas');
+  canvas.width = OUT;
+  canvas.height = OUT;
+  const ctx = canvas.getContext('2d');
+  const s = OUT / store.boxSize;
+  const drawX = (store.boxSize - store.dw) / 2 + store.ox;
+  const drawY = (store.boxSize - store.dh) / 2 + store.oy;
+  ctx.drawImage(store.imgEl, drawX * s, drawY * s, store.dw * s, store.dh * s);
+  return canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+}
+
 function setupImgUpload(prefix, store) {
-  const area = document.getElementById(`${prefix}-img-area`);
-  const input = document.getElementById(`${prefix}-img-input`);
-  const preview = document.getElementById(`${prefix}-img-preview`);
-  const remove = document.getElementById(`${prefix}-img-remove`);
-  area.addEventListener('click', (e) => { if (e.target !== remove) input.click(); });
-  input.addEventListener('change', async () => {
-    const file = input.files[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) { toast.warn('이미지 파일만 첨부할 수 있어요'); input.value = ''; return; }
-    const base64 = await resizeImageToBase64(file);
-    if (!base64) { toast.warn('이미지를 불러올 수 없어요. 다른 사진을 써주세요'); input.value = ''; return; }
-    store.base64 = base64;
-    preview.src = `data:image/jpeg;base64,${base64}`;
-    preview.style.display = 'block';
-    remove.style.display = 'block';
-    area.querySelector('.ai-king-img-upload__label').style.display = 'none';
+  const box  = document.getElementById(`${prefix}-box`);
+  const file = document.getElementById(`${prefix}-file`);
+  const ph   = document.getElementById(`${prefix}-ph`);
+  const img  = document.getElementById(`${prefix}-img`);
+  const rm   = document.getElementById(`${prefix}-rm`);
+  const hint = document.getElementById(`${prefix}-hint`);
+
+  Object.assign(store, { hasImage: false, imgEl: null, dw: 0, dh: 0, ox: 0, oy: 0, boxSize: 140, blobUrl: null });
+
+  function applyOffset(ox, oy) {
+    const hx = Math.max(0, (store.dw - store.boxSize) / 2);
+    const hy = Math.max(0, (store.dh - store.boxSize) / 2);
+    store.ox = Math.max(-hx, Math.min(hx, ox));
+    store.oy = Math.max(-hy, Math.min(hy, oy));
+    img.style.transform = `translate(calc(-50% + ${store.ox}px), calc(-50% + ${store.oy}px))`;
+  }
+
+  function showImage(imgEl, blobUrl) {
+    store.boxSize = box.offsetWidth || 140;
+    const scale = Math.max(store.boxSize / imgEl.naturalWidth, store.boxSize / imgEl.naturalHeight);
+    store.imgEl  = imgEl;
+    store.dw     = Math.round(imgEl.naturalWidth  * scale);
+    store.dh     = Math.round(imgEl.naturalHeight * scale);
+    store.ox = 0; store.oy = 0;
+    if (store.blobUrl) URL.revokeObjectURL(store.blobUrl);
+    store.blobUrl = blobUrl;
+    store.hasImage = true;
+
+    img.src = blobUrl;
+    img.style.width  = store.dw + 'px';
+    img.style.height = store.dh + 'px';
+    img.style.display = 'block';
+    img.style.transform = 'translate(-50%, -50%)';
+
+    ph.style.display   = 'none';
+    rm.style.display   = 'flex';
+    hint.style.display = 'block';
+    box.classList.add('match-img-box--has-image');
+  }
+
+  function clearImage() {
+    store.hasImage = false;
+    store.imgEl = null;
+    store.ox = 0; store.oy = 0;
+    if (store.blobUrl) { URL.revokeObjectURL(store.blobUrl); store.blobUrl = null; }
+    img.style.display = 'none';
+    rm.style.display  = 'none';
+    hint.style.display = 'none';
+    ph.style.display  = 'flex';
+    box.classList.remove('match-img-box--has-image');
+    file.value = '';
+  }
+
+  // 클릭: 이미지 없을 때만 파일 선택
+  box.addEventListener('click', (e) => {
+    if (e.target === rm) return;
+    if (!store.hasImage) file.click();
   });
-  remove.addEventListener('click', () => {
-    store.base64 = null;
-    preview.style.display = 'none';
-    remove.style.display = 'none';
-    input.value = '';
-    area.querySelector('.ai-king-img-upload__label').style.display = '';
+
+  file.addEventListener('change', () => {
+    const f = file.files[0];
+    if (!f) return;
+    if (!f.type.startsWith('image/')) { toast.warn('이미지 파일만 첨부할 수 있어요'); file.value = ''; return; }
+    const url = URL.createObjectURL(f);
+    const el  = new Image();
+    el.onload  = () => showImage(el, url);
+    el.onerror = () => { URL.revokeObjectURL(url); toast.warn('이미지를 불러올 수 없어요. 다른 사진을 써주세요'); file.value = ''; };
+    el.src = url;
   });
+
+  rm.addEventListener('click', (e) => { e.stopPropagation(); clearImage(); });
+
+  // ── 드래그 (마우스) ──
+  let dragging = false, px = 0, py = 0;
+
+  box.addEventListener('mousedown', (e) => {
+    if (!store.hasImage || e.target === rm) return;
+    dragging = true;
+    px = e.clientX; py = e.clientY;
+    box.style.cursor = 'grabbing';
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    applyOffset(store.ox + e.clientX - px, store.oy + e.clientY - py);
+    px = e.clientX; py = e.clientY;
+  });
+  document.addEventListener('mouseup', () => {
+    if (!dragging) return;
+    dragging = false;
+    if (store.hasImage) box.style.cursor = 'grab';
+  });
+
+  // ── 드래그 (터치) ──
+  box.addEventListener('touchstart', (e) => {
+    if (!store.hasImage || e.target === rm) return;
+    dragging = true;
+    px = e.touches[0].clientX; py = e.touches[0].clientY;
+    e.preventDefault();
+  }, { passive: false });
+  box.addEventListener('touchmove', (e) => {
+    if (!dragging) return;
+    applyOffset(store.ox + e.touches[0].clientX - px, store.oy + e.touches[0].clientY - py);
+    px = e.touches[0].clientX; py = e.touches[0].clientY;
+    e.preventDefault();
+  }, { passive: false });
+  box.addEventListener('touchend',   () => { dragging = false; });
+  box.addEventListener('touchcancel', () => { dragging = false; });
 }
 
 export function renderAiMatch() {
@@ -93,8 +178,8 @@ export function renderAiMatch() {
     </div>`;
 
   document.getElementById('btn-back')?.addEventListener('click', () => navigate('/ai-king'));
-  const imgA = { base64: null };
-  const imgB = { base64: null };
+  const imgA = {};
+  const imgB = {};
   setupImgUpload('item-a', imgA);
   setupImgUpload('item-b', imgB);
 
@@ -105,10 +190,12 @@ export function renderAiMatch() {
     const btn = document.getElementById('btn-match-submit');
     btn.disabled = true;
     btn.textContent = '궁합 보는 중...';
+    const base64A = capturePositioned(imgA);
+    const base64B = capturePositioned(imgB);
     el.innerHTML = `<div class="ai-king-page"><div class="ai-king-loading"><div class="spinner spinner--lg"></div><div class="ai-king-loading__text">💘 AI 점쟁이가 궁합을 보는 중...</div><div class="ai-king-loading__sub">"${esc(itemA)}" 와 "${esc(itemB)}"...</div></div></div>`;
     try {
       const fn = httpsCallable(functions, 'aiMatch');
-      const result = await fn({ itemA, itemB, imageA: imgA.base64, imageB: imgB.base64 });
+      const result = await fn({ itemA, itemB, imageA: base64A, imageB: base64B });
       navigate(`/detail/${result.data.postId}`);
     } catch (e) {
       if (isQuotaError(e)) {
