@@ -272,6 +272,8 @@ service cloud.firestore {
     match /deleted_posts/{docId}     { allow read, write: if isAdmin(); }
     match /soso_feed_posts/{postId}  { allow read: if true; allow write: if false; }
     match /point_awards/{awardId}    { allow read, write: if false; }
+    match /ai_king_usage/{docId}     { allow read: if isAdmin(); allow write: if false; }
+    match /ai_reports/{docId}        { allow read: if isAdmin(); allow write: if false; }
 
     match /{document=**} { allow read, write: if false; }
   }
