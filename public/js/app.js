@@ -92,9 +92,9 @@ export async function initApp() {
                 <div class="site-footer__col-title">AI킹</div>
                 <div class="site-footer__links">
                   <a href="#/ai-judge">⚖️ 미친판사</a>
-                  <a href="#/ai-translate">🌍 사투리번역사</a>
-                  <a href="#/ai-match">💘 AI궁합</a>
-                  <a href="#/ai-naming">🎭 AI작명소</a>
+                  <a href="#/ai-translate">🌍 만국번역사</a>
+                  <a href="#/ai-match">💘 궁합점쟁이</a>
+                  <a href="#/ai-naming">🎭 작명의신</a>
                 </div>
               </div>
               <div>

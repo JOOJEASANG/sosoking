@@ -24,30 +24,30 @@ function resizeImageToBase64(file, maxPx = 512) {
 }
 
 const STYLES = [
-  { id: 'gyeongsang',  label: '🔥 경상도 사투리' },
-  { id: 'jolla',       label: '🌾 전라도 사투리' },
-  { id: 'chungcheong', label: '🐢 충청도 사투리' },
-  { id: 'yeonbyeon',   label: '🗺️ 연변 사투리' },
+  { id: 'bukhan',   label: '🇰🇵 북한 주체어' },
+  { id: 'japanese', label: '🇯🇵 일본 공손어' },
+  { id: 'french',   label: '🇫🇷 프랑스 지식인어' },
+  { id: 'english',  label: '🇺🇸 미국 Z세대 영어' },
 ];
 
 export function renderAiTranslate() {
-  setMeta('사투리번역사');
+  setMeta('만국번역사');
   const el = document.getElementById('page-content');
   if (!auth.currentUser) { navigate('/login'); return; }
-  let selectedStyle = 'gyeongsang';
+  let selectedStyle = 'bukhan';
 
   el.innerHTML = `
     <div class="ai-king-page">
       <div class="ai-king-header">
         <button class="btn btn--ghost btn--sm" id="btn-back" style="margin-bottom:12px">← 뒤로</button>
-        <div class="ai-king-header__title">🌍 사투리번역사</div>
-        <div class="ai-king-header__sub">어떤 텍스트든 진짜 사투리로 번역해드립니다</div>
+        <div class="ai-king-header__title">🌍 만국번역사</div>
+        <div class="ai-king-header__sub">어떤 말이든 웃긴 세계언어로 번역해드립니다</div>
       </div>
       <div class="ai-king-form">
-        <label class="ai-king-form__label">사투리 선택 *</label>
+        <label class="ai-king-form__label">번역 스타일 선택 *</label>
         <div class="ai-style-grid">${STYLES.map(s => `<button class="ai-style-btn${s.id === selectedStyle ? ' active' : ''}" data-style="${s.id}">${s.label}</button>`).join('')}</div>
         <label class="ai-king-form__label" style="margin-top:20px">번역할 텍스트 *</label>
-        <textarea id="translate-input" class="ai-king-form__textarea" maxlength="500" placeholder="번역할 텍스트를 입력하세요.&#10;예) 오늘 밥 먹었어? 나 배고파 죽겠어.&#10;예) 회의 언제 끝나요? 할 일이 산더미예요."></textarea>
+        <textarea id="translate-input" class="ai-king-form__textarea" maxlength="500" placeholder="번역할 텍스트를 입력하세요.&#10;예) 오늘 밥 먹었어? 나 배고파 죽겠어.&#10;예) 카톡 읽씹했는데 갑자기 연락이 왔어."></textarea>
         <div class="ai-king-form__charcount"><span id="translate-count">0</span>/500</div>
         <label class="ai-king-form__label" style="margin-top:16px">📷 이미지 첨부 (선택)</label>
         <div class="ai-king-img-upload" id="translate-img-area">
@@ -102,14 +102,14 @@ export function renderAiTranslate() {
     btn.disabled = true;
     const styleName = STYLES.find(s => s.id === selectedStyle)?.label || '';
     btn.textContent = `${styleName}로 번역 중...`;
-    el.innerHTML = `<div class="ai-king-page"><div class="ai-king-loading"><div class="spinner spinner--lg"></div><div class="ai-king-loading__text">🌍 사투리 번역 중...</div><div class="ai-king-loading__sub">${styleName} 전문 번역사 투입 완료 ✅</div></div></div>`;
+    el.innerHTML = `<div class="ai-king-page"><div class="ai-king-loading"><div class="spinner spinner--lg"></div><div class="ai-king-loading__text">🌍 번역 중...</div><div class="ai-king-loading__sub">${styleName} 전담 번역사 긴급 투입 완료 ✅</div></div></div>`;
     try {
       const fn = httpsCallable(functions, 'aiTranslate');
       const result = await fn({ text, style: selectedStyle, imageBase64 });
       navigate(`/detail/${result.data.postId}`);
     } catch (e) {
       if (isQuotaError(e)) {
-        showAiLadderBonus({ feature: 'translate', featureLabel: '사투리번역사', onReplay: renderAiTranslate });
+        showAiLadderBonus({ feature: 'translate', featureLabel: '만국번역사', onReplay: renderAiTranslate });
         return;
       }
       toast.error(e?.message || '번역에 실패했어요');

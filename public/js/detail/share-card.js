@@ -3,9 +3,9 @@ import { toast } from '../components/toast.js';
 
 const CARD_THEMES = {
   ai_judge:     { g1: '#6C5CE7', g2: '#a29bfe', emoji: '⚖️', label: '미친판사' },
-  ai_translate: { g1: '#00B894', g2: '#55efc4', emoji: '🌍', label: '사투리번역사' },
-  ai_match:     { g1: '#E84393', g2: '#fd79a8', emoji: '💘', label: 'AI궁합' },
-  ai_naming:    { g1: '#e17055', g2: '#FF6B4A', emoji: '🎭', label: 'AI작명소' },
+  ai_translate: { g1: '#00B894', g2: '#55efc4', emoji: '🌍', label: '만국번역사' },
+  ai_match:     { g1: '#E84393', g2: '#fd79a8', emoji: '💘', label: '궁합점쟁이' },
+  ai_naming:    { g1: '#e17055', g2: '#FF6B4A', emoji: '🎭', label: '작명의신' },
 };
 
 function getCardContent(post) {

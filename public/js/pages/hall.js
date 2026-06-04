@@ -11,9 +11,9 @@ const HALL_CATS = [
   { key: 'popular',      label: '인기글',        icon: '🔥', type: null,           desc: '반응과 댓글이 많은 글', scoreKey: null },
   { key: 'comment',      label: '댓글 많은 글',  icon: '💬', type: null,           desc: '댓글 참여가 많은 글',   scoreKey: 'comment' },
   { key: 'ai_judge',     label: '미친판사',      icon: '⚖️', type: 'ai_judge',     desc: '판결 인기글',           scoreKey: null },
-  { key: 'ai_translate', label: '사투리번역사',    icon: '🌍', type: 'ai_translate', desc: '번역 인기글',           scoreKey: null },
-  { key: 'ai_match',     label: 'AI궁합',        icon: '💘', type: 'ai_match',     desc: '궁합 인기글',           scoreKey: null },
-  { key: 'ai_naming',    label: 'AI작명소',      icon: '🎭', type: 'ai_naming',    desc: '작명 인기글',           scoreKey: null },
+  { key: 'ai_translate', label: '만국번역사',    icon: '🌍', type: 'ai_translate', desc: '번역 인기글',           scoreKey: null },
+  { key: 'ai_match',     label: '궁합점쟁이',    icon: '💘', type: 'ai_match',     desc: '궁합 인기글',           scoreKey: null },
+  { key: 'ai_naming',    label: '작명의신',      icon: '🎭', type: 'ai_naming',    desc: '작명 인기글',           scoreKey: null },
 ];
 
 function score(p) {

@@ -24,7 +24,7 @@ function resizeImageToBase64(file, maxPx = 512) {
 }
 
 export function renderAiNaming() {
-  setMeta('AI작명소');
+  setMeta('작명의신');
   const el = document.getElementById('page-content');
   if (!auth.currentUser) { navigate('/login'); return; }
 
@@ -32,7 +32,7 @@ export function renderAiNaming() {
     <div class="ai-king-page">
       <div class="ai-king-header">
         <button class="btn btn--ghost btn--sm" id="btn-back" style="margin-bottom:12px">← 뒤로</button>
-        <div class="ai-king-header__title">🎭 AI작명소</div>
+        <div class="ai-king-header__title">🎭 작명의신</div>
         <div class="ai-king-header__sub">사람, 음식, 동물, 물건 뭐든 — 설명하면 찰떡 이름 5개를 지어드립니다</div>
       </div>
       <div class="ai-king-form">
@@ -98,7 +98,7 @@ export function renderAiNaming() {
       navigate(`/detail/${result.data.postId}`);
     } catch (e) {
       if (isQuotaError(e)) {
-        showAiLadderBonus({ feature: 'naming', featureLabel: 'AI작명소', onReplay: renderAiNaming });
+        showAiLadderBonus({ feature: 'naming', featureLabel: '작명의신', onReplay: renderAiNaming });
         return;
       }
       toast.error(e?.message || '작명에 실패했어요');

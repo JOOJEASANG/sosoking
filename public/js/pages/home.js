@@ -12,16 +12,16 @@ import { navigate } from '../router.js';
 
 const TYPE_LABEL = {
   ai_judge:     '⚖️ 미친판사',
-  ai_translate: '🌍 사투리번역사',
-  ai_match:     '💘 AI궁합',
-  ai_naming:    '🎭 AI작명소',
+  ai_translate: '🌍 만국번역사',
+  ai_match:     '💘 궁합점쟁이',
+  ai_naming:    '🎭 작명의신',
 };
 
 const AI_KINGS = [
   { path: '/ai-judge',    emoji: '⚖️', name: '미친판사',   desc: '7명이 판결' },
-  { path: '/ai-translate', emoji: '🌍', name: '사투리번역사', desc: '사투리 변환' },
-  { path: '/ai-match',    emoji: '💘', name: 'AI궁합',     desc: '궁합 분석' },
-  { path: '/ai-naming',   emoji: '🎭', name: 'AI작명소',   desc: '이름 창작' },
+  { path: '/ai-translate', emoji: '🌍', name: '만국번역사', desc: '세계언어 변환' },
+  { path: '/ai-match',    emoji: '💘', name: '궁합점쟁이', desc: '궁합 분석' },
+  { path: '/ai-naming',   emoji: '🎭', name: '작명의신',   desc: '이름 창작' },
 ];
 
 function getKstDateString(date = new Date()) {

@@ -1,6 +1,32 @@
 import { db } from '../firebase.js';
 import { collection, getDocs, limit, orderBy, query, where } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
+export async function fetchAdjacentPosts(postId, createdAt) {
+  if (!createdAt) return { prev: null, next: null };
+  try {
+    const [prevSnap, nextSnap] = await Promise.all([
+      getDocs(query(
+        collection(db, 'feeds'),
+        where('createdAt', '<', createdAt),
+        orderBy('createdAt', 'desc'),
+        limit(3),
+      )),
+      getDocs(query(
+        collection(db, 'feeds'),
+        where('createdAt', '>', createdAt),
+        orderBy('createdAt', 'asc'),
+        limit(3),
+      )),
+    ]);
+    const toPost = d => ({ id: d.id, ...d.data() });
+    const prev = prevSnap.docs.map(toPost).find(p => !p.hidden && p.id !== postId) || null;
+    const next = nextSnap.docs.map(toPost).find(p => !p.hidden && p.id !== postId) || null;
+    return { prev, next };
+  } catch {
+    return { prev: null, next: null };
+  }
+}
+
 export async function fetchComments(postId) {
   try {
     const q = query(collection(db, 'feeds', postId, 'comments'), orderBy('createdAt', 'asc'));

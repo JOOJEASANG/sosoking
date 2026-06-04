@@ -154,7 +154,7 @@ function setupImgUpload(prefix, store) {
 }
 
 export function renderAiMatch() {
-  setMeta('AI궁합');
+  setMeta('궁합점쟁이');
   const el = document.getElementById('page-content');
   if (!auth.currentUser) { navigate('/login'); return; }
 
@@ -162,7 +162,7 @@ export function renderAiMatch() {
     <div class="ai-king-page">
       <div class="ai-king-header">
         <button class="btn btn--ghost btn--sm" id="btn-back" style="margin-bottom:12px">← 뒤로</button>
-        <div class="ai-king-header__title">💘 AI궁합</div>
+        <div class="ai-king-header__title">💘 궁합점쟁이</div>
         <div class="ai-king-header__sub">두 가지를 입력하면 AI가 궁합을 봐드립니다<br>사람, 음식, 물건, 동물 뭐든 OK</div>
       </div>
       <div class="ai-king-form">
@@ -199,7 +199,7 @@ export function renderAiMatch() {
       navigate(`/detail/${result.data.postId}`);
     } catch (e) {
       if (isQuotaError(e)) {
-        showAiLadderBonus({ feature: 'match', featureLabel: 'AI궁합', onReplay: renderAiMatch });
+        showAiLadderBonus({ feature: 'match', featureLabel: '궁합점쟁이', onReplay: renderAiMatch });
         return;
       }
       toast.error(e?.message || '궁합 보기에 실패했어요');

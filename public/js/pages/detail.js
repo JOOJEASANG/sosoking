@@ -5,7 +5,7 @@ import { renderReactionBar, initReactionBar } from '../components/reaction-bar.j
 import { setMeta } from '../utils/seo.js';
 import { escHtml, formatTime } from '../utils/helpers.js';
 import { TYPE_LABELS, CAT_CLASS } from '../detail/constants.js';
-import { fetchComments } from '../detail/data.js';
+import { fetchComments, fetchAdjacentPosts } from '../detail/data.js';
 import { renderImageSection, renderTypeBody, renderLegacyInteractive } from '../detail/body-render.js';
 import { renderCommentSection } from '../detail/comment-render.js';
 import { appendSimilarPosts } from '../detail/similar-render.js';
@@ -133,4 +133,38 @@ function renderDetailPage(el, post, comments, isScrapped = false) {
 
   initReactionBar(post.id);
   appendSimilarPosts(post);
+  appendDetailNav(post, el.querySelector('[data-detail-root]'));
+}
+
+async function appendDetailNav(post, root) {
+  if (!root || !post.createdAt) return;
+  try {
+    const { prev, next } = await fetchAdjacentPosts(post.id, post.createdAt);
+    if (!prev && !next) return;
+    if (!root.isConnected) return;
+
+    root.querySelectorAll('.detail-nav').forEach(n => n.remove());
+
+    const nav = document.createElement('div');
+    nav.className = 'detail-nav';
+    nav.innerHTML = `
+      <div class="detail-nav__inner">
+        ${prev ? `
+          <a class="detail-nav__item detail-nav__item--prev" href="#/detail/${escHtml(prev.id)}">
+            <span class="detail-nav__label">← 이전글</span>
+            <span class="detail-nav__title">${escHtml(String(prev.title || '').slice(0, 50))}</span>
+          </a>` : '<span class="detail-nav__spacer"></span>'}
+        ${next ? `
+          <a class="detail-nav__item detail-nav__item--next" href="#/detail/${escHtml(next.id)}">
+            <span class="detail-nav__label">다음글 →</span>
+            <span class="detail-nav__title">${escHtml(String(next.title || '').slice(0, 50))}</span>
+          </a>` : '<span class="detail-nav__spacer"></span>'}
+      </div>`;
+
+    const similar = root.querySelector('.similar-posts');
+    if (similar) root.insertBefore(nav, similar);
+    else root.appendChild(nav);
+  } catch {
+    // Navigation is optional
+  }
 }

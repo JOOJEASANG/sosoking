@@ -12,25 +12,25 @@ const AI_KINGS = [
   },
   {
     emoji: '🌍',
-    name: '사투리번역사',
+    name: '만국번역사',
     path: '/ai-translate',
-    desc: '어떤 텍스트든 진짜 그 지역 사람처럼 사투리로 번역해드립니다. 사진 속 글자도 번역 가능!',
-    examples: ['오늘 밥 먹었어? → 🔥 오늘 밥 무봤나? 억수로 배고프데이', '회의 언제 끝나요? → 🐢 회의 언제 끝나유~ 천천히 하지유'],
-    styles: ['🔥 경상도 사투리', '🌾 전라도 사투리', '🐢 충청도 사투리', '🗺️ 연변 사투리'],
+    desc: '어떤 말이든 웃긴 세계언어로 번역해드립니다. 사진 속 글자도 번역 가능!',
+    examples: ['오늘 밥 먹었어? → 🇰🇵 동무여! 혁명의 전사는 식사로 체력을 단련해야 하지 않겠습니까!', '카톡 읽씹함 → 🇫🇷 L\'absence de réponse... c\'est aussi une réponse (응답의 부재도 하나의 응답이오)'],
+    styles: ['🇰🇵 북한 주체어', '🇯🇵 일본 공손어', '🇫🇷 프랑스 지식인어', '🇺🇸 미국 Z세대 영어'],
   },
   {
     emoji: '💘',
-    name: 'AI궁합',
+    name: '궁합점쟁이',
     path: '/ai-match',
-    desc: '두 가지를 입력하면 AI가 궁합 점수와 분석을 해드립니다. 사람도 음식도 뭐든 OK.',
+    desc: '두 가지를 입력하면 궁합 점수와 분석을 해드립니다. 사람도 음식도 뭐든 OK.',
     examples: ['나 + 우리 팀장 → 천생연분 or 최악의조합?', '치킨 + 맥주 → 궁합 91% 찰떡!'],
     tip: '이름만 써도 되고 사진을 첨부하면 더 재밌는 분석이 나와요.',
   },
   {
     emoji: '🎭',
-    name: 'AI작명소',
+    name: '작명의신',
     path: '/ai-naming',
-    desc: '설명하거나 사진을 올리면 AI가 웃기고 그럴듯한 이름을 5개 지어드립니다. 사람·음식·동물·물건 뭐든 OK.',
+    desc: '설명하거나 사진을 올리면 웃기고 그럴듯한 이름을 5개 지어드립니다. 사람·음식·동물·물건 뭐든 OK.',
     examples: ['회의 때 항상 졸는 팀장 → "숨참고버티기팀장", "회의의신"...', '매운 듯 안 매운 듯 애매한 떡볶이 → "기묘한매움탕"...'],
   },
 ];
@@ -103,7 +103,7 @@ export function renderGuide() {
         <div style="display:flex;flex-direction:column;gap:12px;margin-top:16px">
           ${[
             ['1', '회원가입', '구글 또는 카카오 계정으로 간편하게 가입할 수 있어요.'],
-            ['2', 'AI킹 선택', '미친판사, 사투리번역사, AI궁합, AI작명소 중 하나를 선택하세요.'],
+            ['2', 'AI킹 선택', '미친판사, 만국번역사, 궁합점쟁이, 작명의신 중 하나를 선택하세요.'],
             ['3', '내용 입력', '상황, 텍스트, 두 가지 대상, 또는 이름 지을 대상을 입력하세요.'],
             ['4', '결과 확인', '자동으로 결과 페이지로 이동하며 댓글로 반응할 수 있어요.'],
             ['5', '공유하기', '재밌는 결과는 카카오톡이나 링크로 공유해보세요!'],
@@ -131,7 +131,7 @@ export function renderGuide() {
               <th style="padding:8px 12px;text-align:left;border-radius:8px 0 0 0">AI킹</th>
               <th style="padding:8px 12px;text-align:center;border-radius:0 8px 0 0">하루 무료 횟수</th>
             </tr>
-            ${['⚖️ 미친판사', '🌍 사투리번역사', '💘 AI궁합', '🎭 AI작명소'].map(k => `
+            ${['⚖️ 미친판사', '🌍 만국번역사', '💘 궁합점쟁이', '🎭 작명의신'].map(k => `
               <tr style="border-top:1px solid var(--color-border)">
                 <td style="padding:8px 12px">${k}</td>
                 <td style="padding:8px 12px;text-align:center;font-weight:700">3회</td>
