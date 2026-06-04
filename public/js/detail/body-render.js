@@ -55,8 +55,7 @@ function renderAiAgainBtn(type) {
       <a href="#/feed?type=${type}" class="btn btn--ghost">다른 결과 보기</a>
     </div>
     <div class="ai-result-share-row">
-      <button class="ai-share-card-btn btn btn--ghost btn--sm">📸 카드 저장</button>
-      <button id="btn-share" class="btn btn--ghost btn--sm">🔗 공유하기</button>
+      <button id="btn-share" class="btn btn--primary btn--sm" style="flex:1;max-width:200px">📤 공유하기</button>
     </div>`;
 }
 

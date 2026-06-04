@@ -81,39 +81,32 @@ function buildCardEl(post) {
   return el;
 }
 
-export async function downloadShareCard(post) {
+// 카드 이미지를 blob + dataUrl 로 반환 (저장/공유에 공용)
+export async function generateShareCardBlob(post) {
   const h2c = window.html2canvas;
-  if (!h2c) { toast.warn('카드 기능을 불러오는 중이에요. 잠시 후 다시 시도해주세요'); return; }
-
+  if (!h2c) return null;
   const el = buildCardEl(post);
-  if (!el) { toast.warn('이 게시글은 카드 저장을 지원하지 않아요'); return; }
-
-  const toastId = toast.info?.('카드 만드는 중... ✏️') ?? null;
+  if (!el) return null;
   try {
     const canvas = await h2c(el, { scale: 2, useCORS: true, backgroundColor: null, logging: false });
     el.remove();
     const dataUrl = canvas.toDataURL('image/png');
-
-    if (navigator.canShare) {
-      try {
-        const blob = await (await fetch(dataUrl)).blob();
-        const file = new File([blob], 'sosoking-result.png', { type: 'image/png' });
-        if (navigator.canShare({ files: [file] })) {
-          await navigator.share({ files: [file], title: '소소킹 AI 결과' });
-          return;
-        }
-      } catch (e) {
-        if (e.name === 'AbortError') return;
-      }
-    }
-
-    const a = document.createElement('a');
-    a.href = dataUrl;
-    a.download = 'sosoking-result.png';
-    a.click();
-    toast.success('카드가 저장됐어요! 📸');
+    const blob = await (await fetch(dataUrl)).blob();
+    return { blob, dataUrl };
   } catch {
-    el.remove();
-    toast.error('카드 만들기에 실패했어요');
+    el?.remove();
+    return null;
   }
+}
+
+export async function downloadShareCard(post) {
+  const h2c = window.html2canvas;
+  if (!h2c) { toast.warn('카드 기능을 불러오는 중이에요. 잠시 후 다시 시도해주세요'); return; }
+  const data = await generateShareCardBlob(post);
+  if (!data) { toast.warn('이 게시글은 카드 저장을 지원하지 않아요'); return; }
+  const a = document.createElement('a');
+  a.href = data.dataUrl;
+  a.download = 'sosoking-result.png';
+  a.click();
+  toast.success('카드가 저장됐어요! 📸');
 }
