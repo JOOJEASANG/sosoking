@@ -1,9 +1,10 @@
 // 관리자 게시글 목록 테이블 정규화 (DOM 주입 제거됨 — 탭은 admin.js에서 관리)
 const TYPE_LABELS = {
-  ai_judge: '미친판사',
-  ai_translate: '만국번역사',
-  ai_match: '궁합점쟁이',
-  ai_naming: '작명의신',
+  ai_judge: '판결소',
+  ai_translate: '창작소',
+  ai_match: '궁합소',
+  ai_naming: '창작소',
+  ai_consult: '상담소',
   vote: '토론방',
   drip: '드립방',
   collect: '일반방',
@@ -12,9 +13,10 @@ const TYPE_LABELS = {
 
 const TYPE_ICONS = {
   ai_judge: '⚖️',
-  ai_translate: '🌍',
+  ai_translate: '✨',
   ai_match: '💘',
-  ai_naming: '🎭',
+  ai_naming: '✨',
+  ai_consult: '💬',
   vote: '🗳️',
   drip: '🤣',
   collect: '📌',

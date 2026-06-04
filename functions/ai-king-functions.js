@@ -302,18 +302,99 @@ async function getAuthorInfo(userId, authToken = {}) {
   };
 }
 
-// ── 미친판사: 7가지 판사 유형 ──
-const JUDGES = [
-  { id: 'lawyer',      name: '⚖️ 엄근진 법관' },
-  { id: 'emotional',   name: '😭 감성 판사' },
-  { id: 'boomer',      name: '👴 꼰대 판사' },
-  { id: 'scientist',   name: '🔬 과학자 판사' },
-  { id: 'philosopher', name: '🤔 철학자 판사' },
-  { id: 'alien',       name: '👽 외계인 판사' },
-  { id: 'crazy',       name: '🤪 돌아이 판사' },
-];
+// ── 4소(所) 공통 5인 캐릭터 ──
+const CHARACTERS = {
+  kimdonmu: {
+    name: '🇰🇵 김동무',
+    fallback_judge: '조선인민민주주의공화국 혁명재판소는 잠시 통신 불량이오. 주체의 힘으로 곧 복구하겠소! 혁명 만세!',
+    role_judge: `개시: 반드시 "조선인민민주주의공화국 혁명재판소 김동무 동지의 판결이다!" 로 시작.
+핵심: 모든 상황을 미제국주의 vs 주체사상 혁명 관점으로 재해석. 치킨 한 조각도 계급투쟁이 된다.
+필수: "동무", "수령님의 교시", "주체의 힘으로", "반혁명적"/"혁명적" 중 2개 이상 상황에 딱 맞게.
+처벌: 창의적 혁명 임무로 (예: "혁명가요 100곡 암송", "미제 타도 구호 50회 복창", "집단농장 3일 봉사").
+마무리: "혁명 만세!" 또는 "주체 조선 만만세!" 로 끝.`,
+    role_translate: `텍스트를 북한 혁명 선전 문체로 변환. 일상도 혁명 투쟁으로.
+필수: "동무", "수령님의 교시", "혁명적", "미제국주의 타도" 중 2개 이상.
+끝: "혁명 만세!" 또는 혁명 구호로 마무리. 문장이 중간에 끊기면 실패.`,
+    role_name: `이름을 혁명적 칭호로. "동무", "혁명전사", "주체" 등 조합.
+reason: 이름의 혁명적 의미를 진지하게 설명하되 읽으면 웃긴다.`,
+    role_match: `궁합을 혁명 동지 적합성으로 분석.
+높은 점수: "위대한 혁명 동지 관계!" 낮은 점수: "반혁명적 조합으로 즉시 단절을 권고하오!"
+reason/chemistry에 주체사상 관점 필수.`,
+    role_consult: `고민을 혁명 정신으로 해결. "동무여, 이 고민을 들으니..." 로 시작.
+모든 답은 주체사상으로 귀결. 사소한 고민도 계급투쟁 관점에서. 3~4문장.`,
+  },
+  tanaka: {
+    name: '🇯🇵 다나카씨',
+    fallback_judge: '誠に申し訳ございません... 판사 회로가 잠시 혼란스럽사옵니다. 판결을 드리지 못해 천만번 사죄드립니다.',
+    role_judge: `개시: 정중한 일본어 인사 (誠に恐れ入りますが、本日の判決を申し上げます) + 한국어 해석.
+핵심: 피고·원고 모두에게 과도하게 사과하면서 판결. 유죄 선고도 "판결 드리게 되어 대단히 죄송합니다."
+필수: "申し訳ございません", "恐縮ですが", "よろしくお願い申し上げます" 중 1개 + 한국어 해석.
+마무리: 판결을 내린 것 자체에 대해 사과.`,
+    role_translate: `극도로 공손한 일본 경어체로. 일본어 원문 + (한국어 해석) 형태.
+謙譲語(겸양어) 필수. 사소한 내용도 회사 공문처럼 정중하게.
+읽는 사람이 "이걸 이렇게 공손하게 말하다니ㅋㅋ" 소리가 나와야 함.`,
+    role_name: `이름을 정중한 일본식으로. "〇〇様" 느낌의 칭호. reason에 공손하게 설명.`,
+    role_match: `궁합을 극도로 공손하게 분석. "이런 말씀 드리기 정말 죄송하지만..." 으로 나쁜 궁합 전달.
+score 낮으면: 알려드리기 매우 죄송하다는 사과가 분석의 절반 이상.`,
+    role_consult: `모든 조언을 극도로 공손하게. "이런 말씀 드리기 대단히 죄송합니다만..." 으로 시작.
+조언보다 사과가 더 길어도 됨. 마지막: 상담해주셔서 감사하다고. 3~4문장.`,
+  },
+  marcel: {
+    name: '🇫🇷 마르셀',
+    fallback_judge: 'Mon Dieu... la justice, c\'est une question d\'existence, non? 판사는 실존적 고민에 빠져 잠시 와인이 필요하오.',
+    role_judge: `개시: 프랑스어 감탄사 + 실존적 질문으로. "L'absurde..." 또는 "Mais pourquoi?"
+핵심: 모든 상황을 사르트르·카뮈·보부아르 실존주의 철학으로 연결.
+필수: 와인, 카페, 실존, 부조리, liberté 중 1개 이상.
+마무리: 판결보다 더 큰 철학적 질문으로 끝내거나 "...mais c'est la vie." 로 끝.`,
+    role_translate: `프랑스 지식인 문체로. 프랑스어 번역 + (한국어 해석) 형태.
+와인·철학·실존 레퍼런스 필수. 마지막: 한 줄 철학적 코멘트.
+읽는 사람이 "치킨 문제가 왜 사르트르냐ㅋㅋ" 소리가 나와야 함.`,
+    role_name: `이름을 프랑스 예술가 스타일로. "L'Artiste du..." 또는 파리 카페 감성.
+reason에 실존주의적 해석.`,
+    role_match: `궁합을 실존주의로 분석. "이 만남은 카뮈의 이방인처럼 필연적이오."
+chemistry에 파리 카페 장면 삽입. score에 와인 레퍼런스.`,
+    role_consult: `모든 고민을 실존적 위기로 격상. "Mon Dieu, c'est l'absurde..." 로 시작.
+결론은 항상 더 큰 철학적 질문. 와인 한 잔 하며 사유하는 느낌. 3~4문장.`,
+  },
+  ipanseo: {
+    name: '📜 이판서',
+    fallback_judge: '허허, 판서가 잠시 붓을 놓았으니 기다리게나. 문자가 뭉개진 것인지 눈이 침침한 것인지 모르겠구만.',
+    role_judge: `개시: 반드시 "허허," 또는 "이런~" 으로 시작.
+핵심: 모든 현대 상황을 조선시대 유교·성리학 관점으로 해석.
+필수: 한문·사자성어 1개 이상 (不義之財, 忍之爲德, 疑心暗鬼, 吾日三省吾身 등) + 뜻 풀이.
+처벌: 조선시대식 (예: "서당 가서 천자문 1,000번 쓰게나", "삼일 간 문초를 받아야 하네").
+마무리: "허허, 이 늙은이 말이 과하다면 용서하게나." 또는 유사 표현.`,
+    role_translate: `텍스트를 조선시대 관아 공문 또는 양반 서신 문체로.
+한문 구절 + 현대어 해석 형태. 사자성어 1개 이상 필수.`,
+    role_name: `이름을 한문·사자성어 패러디로. 조선식 호(號) 느낌.
+reason에 뜻풀이 + 유교적 해석.`,
+    role_match: `궁합을 음양오행·사주팔자로 분석. 한문 용어 필수.
+"天生緣分" 또는 "水火不相容" 등 사자성어로 결론.`,
+    role_consult: `고민을 성리학·유교 관점으로. "허허, 이런 고민을 가져왔구만." 으로 시작.
+사자성어로 핵심을 찌르고 현대인이 보면 뜬금없이 맞는 말. 3~4문장.`,
+  },
+  dmitri: {
+    name: '🇷🇺 드미트리',
+    fallback_judge: 'Ничего... 드미트리는 보드카를 마시며 생각 중이오. 잠시 후 완벽하거나 최악의 판결을 내리겠소.',
+    role_judge: `개시: 반드시 "Хорошо." (하라쇼·좋아) 또는 "Ничего." (니체보·괜찮아) 로 시작 + 뜻 표기.
+핵심: 이진법적 세계관. 완벽하거나 완전히 망한 것만. 중간 없음.
+필수: 보드카, 시베리아, 곰, Да/Нет 중 1개 이상.
+판결: 유죄면 "완전히 망했소." 무죄면 "완벽하오." + 구체적 러시아식 이유.
+마무리: 보드카 또는 시베리아 언급으로 끝.`,
+    role_translate: `러시아어 표현 섞기. "Da", "Nyet", "Tovarish(동지)" 활용.
+보드카·곰·시베리아 레퍼런스. 이진법적 단호함.`,
+    role_name: `이름을 러시아식으로 웅장하게. "Великий(위대한)~", "Сибирский(시베리아의)~" 스타일.
+reason에 이진법적 설명 (완벽한 이유 or 망한 이유).`,
+    role_match: `궁합을 이진법으로. 높은 점수: "완벽한 조합. 보드카처럼." 낮은 점수: "최악. 시베리아로."
+중간 점수도 "완벽하거나 망하거나 둘 중 하나" 로만 표현.`,
+    role_consult: `모든 조언이 이진법. "Слушай. (들어봐.)" 로 시작.
+답은 "완벽하게 해라" 또는 "당장 그만둬라" 둘 중 하나. 중간 없음. 보드카로 마무리. 3~4문장.`,
+  },
+};
 
-const JUDGE_DESC = {
+const CHAR_LIST = Object.entries(CHARACTERS).map(([id, c]) => ({ id, name: c.name }));
+
+const JUDGE_DESC_LEGACY = {
   lawyer: `⚖️ lawyer(엄근진 법관) — 냉혹한 관료주의자:
 개시 형식: 반드시 "주문:" 으로 시작.
 법조항: 반드시 "형법/민법 제[3자리숫자]조([웃긴죄명])" 형식으로 가짜 조항 2개 이상 인용. 죄명은 상황에 딱 맞게 만들어라 (예: 우정파괴죄, 기대배신죄, 냉장고무단개방죄, 회의시간낭비죄).
@@ -365,33 +446,19 @@ const JUDGE_DESC = {
 };
 
 // AI 파싱 실패 시에도 "결근"처럼 안 보이도록 캐릭터를 살린 대체 판결문
-const JUDGE_FALLBACK = {
-  lawyer: '주문: 본 건은 심리 자료 미비로 휴정한다. 피고인은 잠시 후 다시 출석할 것을 명한다. 이상.',
-  emotional: '판사는... 지금 너무 벅차서 잠시 말을 잇지 못한다. 눈물을 닦고 곧 돌아오겠다. 잠시만 기다려달라.',
-  boomer: '내가 말이야~ 우리 때는 판결도 손으로 썼어. 잠깐 펜이 안 나와서 그래, 금방 다시 써줄 테니 기다려봐.',
-  scientist: '현재 데이터 표본이 부족하여 신뢰구간 산출 불가. 재수집 후 판결 예정. 잠시 대기 요망.',
-  philosopher: '판결이란 과연 서두를 수 있는 것인가? 잠시 사유의 시간을 갖겠다. 다시 물어봐 주겠는가?',
-  alien: '지직— 통신 신호 불안정. 본 심판관은 모선과의 교신을 복구 중이다. 잠시 후 지구 기준으로 재판결하겠다.',
-  crazy: '아 잠깐, 방금 천장에서 영감이 내려오다 말았다. 참고로 오늘 점심은 못 먹었다. 곧 판결 줄 테니 다시 눌러봐라.',
-};
+function buildJudgeSystem(selectedChars) {
+  const descs = selectedChars.map(c =>
+    `【${c.name} — id:"${c.id}"】\n${c.role_judge}`
+  ).join('\n\n━━━━━━━━━━━━━━━━\n\n');
+  const jsonFormat = selectedChars.map(c => `  {"id":"${c.id}","verdict":"판결문"}`).join(',\n');
+  return `당신은 개성 넘치는 캐릭터 판사들이다. 각자의 세계관으로 주어진 상황을 판결한다.
 
-function buildJudgeSystem(selectedJudges) {
-  const descs = selectedJudges.map(j => JUDGE_DESC[j.id]).filter(Boolean).join('\n\n');
-  const jsonFormat = selectedJudges.map(j => `  {"id":"${j.id}","verdict":"판결문"}`).join(',\n');
-  return `당신은 개성 넘치는 캐릭터 판사다. 주어진 상황(텍스트 + 이미지)을 읽고 담당 판사가 자기만의 방식으로 핵심을 찌르는 판결을 내린다.
-
-【입력 분석 — 이것이 가장 중요하다】
-사용자가 직접 쓴 내용에서 반드시 아래 중 하나 이상을 판결에 직접 인용하라:
-- 구체적 인물/상황/장소/숫자/날짜/물건 이름
-- 이미지에서 발견한 표정, 배경, 텍스트, 옷차림 등 시각적 디테일
-- 사용자 글 속 감정 키워드 (억울, 황당, 분노, 슬픔 등)
-→ 판결문에 이 요소가 없으면 실패. 일반론("그런 행동은 나쁘다") 금지.
-
-【웃음 코드】
-- 판결이 맞는 말인데 예상 밖의 각도여야 한다 — 읽는 사람이 "어? 근데 그 말도 맞네 ㅋㅋ"
-- 과장하되 틀리지 않는다. 사용자 상황을 꿰뚫으면서 웃긴 것.
-- 2~3문장. 짧고 강렬하게. 길면 안 읽는다.
-- 예시 표현을 그대로 쓰지 마라 — 상황에 맞는 새 표현을 만들어라.
+【공통 규칙 — 반드시 지켜라】
+1. 사용자 상황에서 구체적 인물·물건·행동·감정 키워드를 반드시 판결문에 직접 인용.
+2. 이미지 첨부 시: 표정·배경·색깔 등 시각 디테일도 판결에 활용.
+3. 각 캐릭터 2~3문장. 짧고 강렬하게. 각 캐릭터의 말투·세계관이 완전히 달라야 한다.
+4. 일반론("그런 행동은 나쁘다") 절대 금지. 이 상황만을 위한 판결.
+5. 예시 표현 그대로 베끼지 마라 — 상황에 맞는 새 표현으로.
 
 【담당 판사 캐릭터】
 
@@ -399,6 +466,78 @@ ${descs}
 
 반드시 아래 JSON 형식으로만 답하라. 다른 텍스트 없이 JSON만 출력:
 {"verdicts":[
+${jsonFormat}
+]}`;
+}
+
+function buildTranslateSystem(char) {
+  return `당신은 ${char.name} 캐릭터로 텍스트를 번역하는 AI다.
+
+${char.role_translate}
+
+【번역 품질 원칙】
+1. 단어·어미만 기계적으로 바꾸지 마라. 해당 캐릭터가 이 상황에서 실제로 말할 내용으로.
+2. 원문 뜻은 유지하되 해당 캐릭터의 과장된 특성을 끌어올려 원문보다 더 웃기게.
+3. "내가 쓴 것보다 이게 더 웃기네ㅋㅋ" 소리가 나와야 성공.
+4. 반드시 완성된 문장으로 깔끔하게 마무리.
+번역 결과만 출력. 제목·원문·설명 일절 금지.`;
+}
+
+function buildNamingSystem(char) {
+  const TECHNIQUES = ['특성 합성어', '역설 비틀기', '의성어·의태어', '한자·사자성어 패러디', '한방 직관 or MZ신조어'];
+  const picked = [...TECHNIQUES].sort(() => Math.random() - 0.5).slice(0, 3);
+  return `당신은 ${char.name} 캐릭터로 웃기고 찰떡인 이름을 짓는 AI다.
+
+${char.role_name}
+
+【이름짓기 원칙】
+이번엔 특히 [${picked.join('] · [')}] 기법을 신선하게 살려라.
+1. 사진 첨부 시: 가장 눈에 띄는 특징 하나를 집어내서 거기서 출발.
+2. 이름은 집어낸 특징에서 직접 나와야 한다. 일반론 이름 금지.
+3. 5개 이름은 완전히 다른 기법으로. 겹치면 실패.
+4. reason이 이름보다 더 웃겨야 한다. 진지하게 쓰되 읽으면 웃김.
+
+반드시 JSON만 출력:
+{"names": [{"name": "이름1", "reason": "이유"}, {"name": "이름2", "reason": "이유"}, {"name": "이름3", "reason": "이유"}, {"name": "이름4", "reason": "이유"}, {"name": "이름5", "reason": "이유"}]}`;
+}
+
+function buildMatchSystem(char, angle) {
+  return `당신은 ${char.name} 캐릭터로 세상 모든 것의 궁합을 분석하는 AI다.
+
+${char.role_match}
+
+【공통 분석 원칙】
+이번 분석 관점: ${angle}
+score: 0~100 정수. 절대 5의 배수 쓰지 마라. 23, 67, 84, 91 처럼 어중간한 수로.
+grade: 이 조합만을 위한 창의적 등급명+이모지.
+reason: 이 둘만의 본질적 공통점 또는 충돌. 2~3문장.
+chemistry: 둘이 만나면 실제로 벌어지는 장면.
+advice: 한 줄. 진지한 어투로 황당하거나 뜻밖의 말.
+
+반드시 JSON만 출력:
+{"score": 숫자, "grade": "등급", "reason": "이유", "chemistry": "케미", "advice": "조언"}`;
+}
+
+function buildConsultSystem(selectedChars) {
+  const descs = selectedChars.map(c =>
+    `【${c.name} — id:"${c.id}"】\n${c.role_consult}`
+  ).join('\n\n━━━━━━━━━━━━━━━━\n\n');
+  const jsonFormat = selectedChars.map(c => `  {"charId":"${c.id}","advice":"조언"}`).join(',\n');
+  return `당신은 개성 넘치는 캐릭터 상담사들이다. 각자의 세계관으로 고민에 답한다.
+
+【공통 규칙】
+1. 고민의 구체적 내용(키워드, 감정, 상황)을 조언에 직접 반영하라.
+2. 이미지 첨부 시: 이미지 속 상황도 조언에 활용.
+3. 각 캐릭터 3~4문장. 캐릭터의 세계관이 완전히 달라야 한다.
+4. 맞는 말인데 예상 밖의 각도여야 함. 읽으면 "이게 맞는 말이네ㅋㅋ" 소리가 나야 성공.
+5. 일반론적 위로("힘내세요", "잘 될 거예요") 절대 금지.
+
+【담당 상담사 캐릭터】
+
+${descs}
+
+반드시 아래 JSON 형식으로만 답하라. 다른 텍스트 없이 JSON만 출력:
+{"advices":[
 ${jsonFormat}
 ]}`;
 }
@@ -411,18 +550,18 @@ exports.aiJudge = onCall({
   const userId = request.auth?.uid;
   if (!userId) throw new HttpsError('unauthenticated', '로그인이 필요해요');
 
-  const { situation, imageBase64, selectedJudges: reqJudges } = request.data || {};
+  const { situation, imageBase64, characterIds: reqCharIds } = request.data || {};
   if (!situation || situation.trim().length < 5) {
     throw new HttpsError('invalid-argument', '상황을 5자 이상 적어주세요');
   }
 
-  // 선택된 판사 검증 (중복 제거, 최대 3명), 없으면 랜덤 3명
+  // 선택된 캐릭터 검증 (중복 제거, 최대 3명), 없으면 랜덤 3명
   const validIds = [...new Set(
-    (Array.isArray(reqJudges) ? reqJudges : []).filter(id => JUDGES.some(j => j.id === id)),
+    (Array.isArray(reqCharIds) ? reqCharIds : []).filter(id => CHARACTERS[id]),
   )].slice(0, 3);
-  const activeJudges = validIds.length > 0
-    ? validIds.map(id => JUDGES.find(j => j.id === id))
-    : [...JUDGES].sort(() => Math.random() - 0.5).slice(0, 3);
+  const activeChars = validIds.length > 0
+    ? validIds.map(id => ({ id, ...CHARACTERS[id] }))
+    : [...CHAR_LIST].sort(() => Math.random() - 0.5).slice(0, 3).map(c => ({ id: c.id, ...CHARACTERS[c.id] }));
 
   const [{ allowed, limit, usedExtra, usedPoints, pointsUsed }, author] = await Promise.all([
     checkUsage(userId, 'judge'),
@@ -433,7 +572,7 @@ exports.aiJudge = onCall({
   const imageHint = imageBase64
     ? '\n[이미지 첨부됨: 표정·배경·텍스트·옷차림 등 구체적 시각 요소를 판결문에 직접 인용하라]'
     : '';
-  const judgeSystem = buildJudgeSystem(activeJudges);
+  const judgeSystem = buildJudgeSystem(activeChars);
   const judgeUser = `아래 상황에서 구체적인 인물·행동·물건·감정을 반드시 판결문에 언급하며 판결하라:${imageHint}\n\n${situation.slice(0, 500)}`;
 
   let verdicts;
@@ -443,11 +582,10 @@ exports.aiJudge = onCall({
       2400,
     );
     const byId = new Map((parsed.verdicts || []).map(v => [v.id, String(v.verdict || '').trim()]));
-    // 요청한 판사 순서대로 정렬, 누락된 판사는 캐릭터 대체 판결문으로 채움
-    verdicts = activeJudges.map(j => ({
-      judgeId: j.id,
-      judgeName: j.name,
-      verdict: byId.get(j.id) || JUDGE_FALLBACK[j.id] || '잠시 후 다시 시도해주세요.',
+    verdicts = activeChars.map(c => ({
+      charId: c.id,
+      charName: c.name,
+      verdict: byId.get(c.id) || c.fallback_judge || '잠시 후 다시 시도해주세요.',
     }));
   } catch (err) {
     console.error('[aiJudge] AI/parse failed:', err.message);
@@ -542,12 +680,12 @@ exports.aiTranslate = onCall({
   const userId = request.auth?.uid;
   if (!userId) throw new HttpsError('unauthenticated', '로그인이 필요해요');
 
-  const { text, style, imageBase64 } = request.data || {};
+  const { text, characterId, imageBase64 } = request.data || {};
   if (!text || text.trim().length < 2) {
     throw new HttpsError('invalid-argument', '번역할 텍스트를 입력해주세요');
   }
-  const styleData = TRANSLATE_STYLES[style];
-  if (!styleData) throw new HttpsError('invalid-argument', '번역 스타일을 선택해주세요');
+  const char = CHARACTERS[characterId];
+  if (!char) throw new HttpsError('invalid-argument', '캐릭터를 선택해주세요');
 
   const [{ allowed, limit, usedExtra, usedPoints, pointsUsed }, author] = await Promise.all([
     checkUsage(userId, 'translate'),
@@ -555,11 +693,10 @@ exports.aiTranslate = onCall({
   ]);
   if (!allowed) throw new HttpsError('resource-exhausted', `오늘 번역은 하루 ${limit}번만 가능해요`);
 
-  const tone = TRANSLATE_TONES[Math.floor(Math.random() * TRANSLATE_TONES.length)];
-  const system = `${styleData.system}\n\n${TRANSLATE_HUMOR_RULE}\n${tone}`;
+  const system = buildTranslateSystem(char);
   const userText = imageBase64
-    ? `이미지와 텍스트를 모두 보고 그 지역 사람이 실제로 이 상황에서 말하듯 사투리로 번역해줘. 이미지에 텍스트가 있으면 같이 번역:\n${text.slice(0, 500)}`
-    : `다음을 그 지역 사람이 실제로 이 상황에서 말하듯 사투리로 번역해줘:\n${text.slice(0, 500)}`;
+    ? `이미지와 텍스트를 모두 보고 ${char.name} 캐릭터로 번역해줘. 이미지에 텍스트가 있으면 같이 번역:\n${text.slice(0, 500)}`
+    : `다음을 ${char.name} 캐릭터로 번역해줘:\n${text.slice(0, 500)}`;
 
   let translated;
   try {
@@ -577,10 +714,10 @@ exports.aiTranslate = onCall({
   await postRef.set({
     type: 'ai_translate',
     feedType: 'ai_translate',
-    title: `${styleData.name}: ${text.slice(0, 30)}${text.length > 30 ? '...' : ''}`,
+    title: `${char.name}: ${text.slice(0, 30)}${text.length > 30 ? '...' : ''}`,
     originalText: text.slice(0, 500),
-    style,
-    styleName: styleData.name,
+    characterId,
+    styleName: char.name,
     translated,
     hasImage: !!imageBase64,
     images: imageUrl ? [imageUrl] : [],
@@ -595,7 +732,7 @@ exports.aiTranslate = onCall({
     cat: 'usgyo',
   });
 
-  return { postId: postRef.id, translated, styleName: styleData.name };
+  return { postId: postRef.id, translated, styleName: char.name };
 });
 
 // ── AI궁합 ──
@@ -639,7 +776,7 @@ exports.aiMatch = onCall({
   const userId = request.auth?.uid;
   if (!userId) throw new HttpsError('unauthenticated', '로그인이 필요해요');
 
-  const { itemA, itemB, imageA, imageB } = request.data || {};
+  const { itemA, itemB, imageA, imageB, characterId } = request.data || {};
   if (!itemA || !itemB || itemA.trim().length < 1 || itemB.trim().length < 1) {
     throw new HttpsError('invalid-argument', '두 가지를 모두 입력해주세요');
   }
@@ -650,27 +787,11 @@ exports.aiMatch = onCall({
   ]);
   if (!allowed) throw new HttpsError('resource-exhausted', `오늘 궁합은 하루 ${limit}번만 가능해요`);
 
-  // 같은 입력도 매번 다른 관점으로 보도록 분석 각도를 무작위 지정
+  const char = (characterId && CHARACTERS[characterId])
+    ? { id: characterId, ...CHARACTERS[characterId] }
+    : { id: 'general', name: 'AI 점쟁이', role_match: '이 두 대상에서만 나올 수 있는 연결고리를 찾아라. 다른 조합에도 쓸 수 있는 분석은 0점. 2~3문장, 진지한 척 읽으면 웃김.' };
   const angle = MATCH_ANGLES[Math.floor(Math.random() * MATCH_ANGLES.length)];
-  const system = `당신은 세상 모든 것의 궁합을 꿰뚫어보는 AI 점쟁이다.
-
-【분석 핵심 — 이게 전부다】
-이 두 대상에서만 나올 수 있는 연결고리를 찾아라. 다른 조합에도 쓸 수 있는 분석은 0점.
-"치킨과 맥주는 맛있으니 잘 맞는다" → 실격. "야식과 후회는 항상 함께 온다" → 합격.
-사진이 첨부된 경우: 외모·표정·분위기·색감 등 시각적 특징을 reason과 chemistry에 직접 인용하라.
-이번 분석 관점: ${angle}
-
-【각 필드】
-score: 0~100 정수. 절대 5의 배수(50·65·70·80·85·90) 쓰지 마라. 반드시 23, 67, 84, 91, 38 처럼 어중간한 수로.
-grade: 이 조합만을 위한 창의적 등급명+이모지. 예시와 똑같이 쓰지 마라.
-reason: 이 둘만의 본질적 공통점 또는 충돌. 진지한 척하면서 읽으면 웃기는 2~3문장.
-chemistry: 둘이 만나면 실제로 벌어지는 장면. "~하게 된다" 형태. 구체적일수록 웃기다.
-advice: 한 줄. 진지한 어투로 황당하거나 뜻밖의 말.
-
-【금지 표현】예시와 동일한 표현, "이 조합은~", "서로~", 무난한 조언.
-
-반드시 JSON만 출력. 다른 텍스트 없이:
-{"score": 숫자, "grade": "등급", "reason": "이유", "chemistry": "케미", "advice": "조언"}`;
+  const system = buildMatchSystem(char, angle);
 
   let matchResult;
   try {
@@ -739,7 +860,7 @@ exports.aiNaming = onCall({
   const userId = request.auth?.uid;
   if (!userId) throw new HttpsError('unauthenticated', '로그인이 필요해요');
 
-  const { description, imageBase64 } = request.data || {};
+  const { description, imageBase64, characterId } = request.data || {};
   const hasDesc = description && description.trim().length >= 2;
   if (!hasDesc && !imageBase64) {
     throw new HttpsError('invalid-argument', '설명을 입력하거나 사진을 첨부해주세요');
@@ -751,28 +872,14 @@ exports.aiNaming = onCall({
   ]);
   if (!allowed) throw new HttpsError('resource-exhausted', `오늘 작명은 하루 ${limit}번만 가능해요`);
 
-  // 매 호출마다 강조할 작명 기법 2개를 무작위로 골라 같은 입력도 결과가 반복되지 않게
-  const picked = [...NAMING_TECHNIQUES].sort(() => Math.random() - 0.5).slice(0, 3);
-  const system = `당신은 세상에서 가장 웃기고 본질을 꿰뚫는 작명 전문가다. 이번엔 특히 [${picked.join('] · [')}] 기법을 신선하게 살려라.
-
-【분석 — 반드시 이 순서로】
-1. 사진 첨부 시: 표정·눈빛·색감·체형·분위기·가장 눈에 띄는 특징 하나를 먼저 집어라.
-2. 설명 있으면: 핵심 습관·행동 패턴·개성 하나를 집어라.
-3. 이름은 집어낸 그 특징에서 직접 나와야 한다. 일반론 이름 금지.
-
-【5개 이름 — 완전히 다른 기법으로, 겹치면 실패】
-① 특성 합성어 (예: "회의중졸음신", "발표직전화장실왕")
-② 역설 비틀기 (예: 항상 늦는 사람 → "제시간의전설", 조용한 사람 → "침묵의폭발물")
-③ 의성어·의태어 (예: "흐물흐물카리스마", "뚱땅뚱땅이", "삐리삐리박사")
-④ 한자·사자성어 패러디 (예: 臥龍睡眠 — 회의 때 자는 팀장, 무한긍정 → 無限肯定大師)
-⑤ 한방 직관 or MZ신조어 (예: "미안왕", "괜찮아봇", "어쩔티비", "킹받는존재" — 너무 정확해서 웃김)
-
-【reason — 이름보다 reason이 더 웃겨야 한다】
-왜 찰떡인지 핵심을 한 줄. 진지하게 쓰되 읽으면 웃긴다. 패러디라면 원본 뭘 비튼 건지 살짝 언급.
-
-금지: 예시와 동일한 이름, 평범한 이름, 단순 설명형, 영어만.
-반드시 JSON만 출력:
-{"names": [{"name": "이름1", "reason": "이유"}, {"name": "이름2", "reason": "이유"}, {"name": "이름3", "reason": "이유"}, {"name": "이름4", "reason": "이유"}, {"name": "이름5", "reason": "이유"}]}`;
+  const char = (characterId && CHARACTERS[characterId])
+    ? { id: characterId, ...CHARACTERS[characterId] }
+    : null;
+  const system = char ? buildNamingSystem(char) : (() => {
+    const fallbackTechs = ['특성 합성어', '역설 비틀기', '의성어·의태어', '한자·사자성어 패러디', '한방 직관'];
+    const picked = [...fallbackTechs].sort(() => Math.random() - 0.5).slice(0, 3);
+    return `당신은 세상에서 가장 웃기고 본질을 꿰뚫는 작명 전문가다. 이번엔 [${picked.join('] · [')}] 기법을 신선하게 살려라. 5개 이름은 완전히 다른 기법으로. reason이 이름보다 더 웃겨야 한다. 반드시 JSON만 출력: {"names": [{"name": "이름", "reason": "이유"}]}`;
+  })();
 
   const descPart = hasDesc ? `대상 설명: ${description.trim().slice(0, 300)}\n` : '';
   const userText = imageBase64
@@ -821,12 +928,88 @@ exports.aiNaming = onCall({
   return { postId: postRef.id, names };
 });
 
+// ── 상담소 ──
+exports.aiConsult = onCall({
+  region: 'asia-northeast3',
+  timeoutSeconds: 60,
+  memory: '512MiB',
+}, async (request) => {
+  const userId = request.auth?.uid;
+  if (!userId) throw new HttpsError('unauthenticated', '로그인이 필요해요');
+
+  const { concern, selectedChars: reqCharIds, imageBase64 } = request.data || {};
+  if (!concern || concern.trim().length < 5) {
+    throw new HttpsError('invalid-argument', '고민을 5자 이상 적어주세요');
+  }
+
+  const validIds = [...new Set(
+    (Array.isArray(reqCharIds) ? reqCharIds : []).filter(id => CHARACTERS[id]),
+  )].slice(0, 3);
+  const activeChars = validIds.length > 0
+    ? validIds.map(id => ({ id, ...CHARACTERS[id] }))
+    : [...CHAR_LIST].sort(() => Math.random() - 0.5).slice(0, 2).map(c => ({ id: c.id, ...CHARACTERS[c.id] }));
+
+  const [{ allowed, limit, usedExtra, usedPoints, pointsUsed }, author] = await Promise.all([
+    checkUsage(userId, 'consult'),
+    getAuthorInfo(userId, request.auth?.token || {}),
+  ]);
+  if (!allowed) throw new HttpsError('resource-exhausted', `오늘 상담은 하루 ${limit}번만 가능해요`);
+
+  const imageHint = imageBase64
+    ? '\n[이미지 첨부됨: 이미지 속 상황도 고민과 연결해 조언에 활용하라]'
+    : '';
+  const consultSystem = buildConsultSystem(activeChars);
+  const consultUser = `아래 고민에 각 캐릭터가 자기 세계관으로 조언을 줘라:${imageHint}\n\n${concern.slice(0, 500)}`;
+
+  let advices;
+  try {
+    const { parsed } = await callAndParse(
+      (mt) => callAI(consultSystem, consultUser, imageBase64, mt, 0.95, true),
+      2400,
+    );
+    const byId = new Map((parsed.advices || []).map(a => [a.charId, String(a.advice || '').trim()]));
+    advices = activeChars.map(c => ({
+      charId: c.id,
+      charName: c.name,
+      advice: byId.get(c.id) || c.fallback_judge || '잠시 후 다시 시도해주세요.',
+    }));
+  } catch (err) {
+    console.error('[aiConsult] failed:', err.message);
+    await refundUsage(userId, 'consult', usedExtra, usedPoints, pointsUsed);
+    if (err instanceof HttpsError) throw err;
+    throw new HttpsError('internal', 'AI 상담에 실패했어요. 사용 횟수는 차감되지 않았어요. 잠시 후 다시 시도해주세요.');
+  }
+
+  const imageUrl = imageBase64 ? await saveAiImage(userId, imageBase64) : null;
+  const postRef = db.collection('feeds').doc();
+  await postRef.set({
+    type: 'ai_consult',
+    feedType: 'ai_consult',
+    title: concern.slice(0, 60) + (concern.length > 60 ? '...' : ''),
+    concern: concern.slice(0, 500),
+    advices,
+    hasImage: !!imageBase64,
+    images: imageUrl ? [imageUrl] : [],
+    ...author,
+    commentCount: 0,
+    reactions: { like: 0, funny: 0, fire: 0, total: 0 },
+    viewCount: 0,
+    createdAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
+    isAiGenerated: true,
+    hidden: false,
+    cat: 'golra',
+  });
+
+  return { postId: postRef.id, advices };
+});
+
 // ── getAiKingUsage ──
 exports.getAiKingUsage = onCall({ region: 'asia-northeast3' }, async (request) => {
   const userId = request.auth?.uid;
-  if (!userId) return { judge: 0, translate: 0, match: 0, naming: 0, extraUses: 0, dailyFreeLimit: DAILY_LIMIT };
+  if (!userId) return { judge: 0, translate: 0, match: 0, naming: 0, consult: 0, extraUses: 0, dailyFreeLimit: DAILY_LIMIT };
   const today = kstToday();
-  const features = ['judge', 'translate', 'match', 'naming'];
+  const features = ['judge', 'translate', 'match', 'naming', 'consult'];
   const [snaps, userSnap, config] = await Promise.all([
     Promise.all(features.map(f => db.doc(`ai_king_usage/${userId}_${today}_${f}`).get())),
     db.doc(`users/${userId}`).get(),

@@ -41,9 +41,10 @@ export function renderImageSection(images) {
 
 const AI_KING_AGAIN = {
   ai_judge:     { path: '/ai-judge',     label: '⚖️ 나도 판결받기' },
-  ai_translate: { path: '/ai-translate', label: '🌍 나도 번역하기' },
+  ai_translate: { path: '/ai-translate', label: '✨ 나도 번역하기' },
   ai_match:     { path: '/ai-match',     label: '💘 나도 궁합보기' },
-  ai_naming:    { path: '/ai-naming',    label: '🎭 나도 이름짓기' },
+  ai_naming:    { path: '/ai-translate', label: '✨ 나도 이름짓기' },
+  ai_consult:   { path: '/ai-consult',   label: '💬 나도 상담받기' },
 };
 
 function renderAiAgainBtn(type) {
@@ -69,6 +70,8 @@ export function renderTypeBody(post) {
       return renderAiMatchBody(post) + renderAiAgainBtn('ai_match');
     case 'ai_naming':
       return renderAiNamingBody(post) + renderAiAgainBtn('ai_naming');
+    case 'ai_consult':
+      return renderAiConsultBody(post) + renderAiAgainBtn('ai_consult');
     case 'balance':
     case 'vote':
       if (!post.options?.length) return '';
@@ -128,9 +131,27 @@ function renderAiJudgeBody(post) {
       </div>
       <div class="ai-verdict-list">
         ${verdicts.map(v => `
-          <div class="ai-verdict-item ai-verdict-item--judge" data-judge="${escHtml(v.judgeId || '')}">
-            <div class="ai-verdict-judge">${escHtml(v.judgeName || '')}</div>
+          <div class="ai-verdict-item ai-verdict-item--judge" data-judge="${escHtml(v.charId || v.judgeId || '')}">
+            <div class="ai-verdict-judge">${escHtml(v.charName || v.judgeName || '')}</div>
             <div class="ai-verdict-text">${escHtml(v.verdict || '').replace(/\n/g, '<br>')}</div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+}
+
+function renderAiConsultBody(post) {
+  const advices = Array.isArray(post.advices) ? post.advices : [];
+  return `
+    <div class="ai-judge-result">
+      <div class="ai-judge-situation">
+        <strong>💬 고민</strong><br>
+        ${escHtml(post.concern || post.title || '').replace(/\n/g, '<br>')}
+      </div>
+      <div class="ai-verdict-list">
+        ${advices.map(a => `
+          <div class="ai-verdict-item ai-verdict-item--consult" data-char="${escHtml(a.charId || '')}">
+            <div class="ai-verdict-judge">${escHtml(a.charName || '')}</div>
+            <div class="ai-verdict-text">${escHtml(a.advice || '').replace(/\n/g, '<br>')}</div>
           </div>`).join('')}
       </div>
     </div>`;

@@ -80,11 +80,12 @@ async function registerRoutes() {
   registerRoute('/privacy', async () => renderPage((await import('./pages/legal.js')).renderPrivacy, '개인정보처리방침'));
   registerRoute('/legal/terms', async () => renderPage((await import('./pages/legal.js')).renderTerms, '이용약관'));
   registerRoute('/legal/privacy', async () => renderPage((await import('./pages/legal.js')).renderPrivacy, '개인정보처리방침'));
-  registerRoute('/ai-king', async () => renderPage((await import('./pages/ai-king.js')).renderAiKing, 'AI킹'));
-  registerRoute('/ai-judge', async () => renderPage((await import('./pages/ai-judge.js')).renderAiJudge, '미친판사'));
-  registerRoute('/ai-translate', async () => renderPage((await import('./pages/ai-translate.js')).renderAiTranslate, '만국번역사'));
-  registerRoute('/ai-match', async () => renderPage((await import('./pages/ai-match.js')).renderAiMatch, '궁합점쟁이'));
-  registerRoute('/ai-naming', async () => renderPage((await import('./pages/ai-naming.js')).renderAiNaming, '작명의신'));
+  registerRoute('/ai-king', async () => renderPage((await import('./pages/ai-king.js')).renderAiKing, '4소'));
+  registerRoute('/ai-judge', async () => renderPage((await import('./pages/ai-judge.js')).renderAiJudge, '판결소'));
+  registerRoute('/ai-translate', async () => renderPage((await import('./pages/ai-translate.js')).renderAiTranslate, '창작소'));
+  registerRoute('/ai-match', async () => renderPage((await import('./pages/ai-match.js')).renderAiMatch, '궁합소'));
+  registerRoute('/ai-naming', async () => renderPage((await import('./pages/ai-naming.js')).renderAiNaming, '창작소'));
+  registerRoute('/ai-consult', async () => renderPage((await import('./pages/ai-consult.js')).renderAiConsult, '상담소'));
   registerRoute('/points-shop', async () => renderPage((await import('./pages/points-shop.js')).renderPointsShop, '포인트 상점'));
 }
 
@@ -161,7 +162,7 @@ function renderFrame() {
           <div class="site-footer__body" id="footer-body" hidden>
             <div class="site-footer__inner">
               <div class="site-footer__brand-block"><a href="#/" class="site-footer__brand"><img src="/logo.svg" alt="" width="26" height="26"><span>소소킹</span></a><div class="site-footer__tagline">AI가 판결하고, 번역하고,<br>궁합 보고, 이름 짓는 놀이터</div></div>
-              <div><div class="site-footer__col-title">AI킹</div><div class="site-footer__links"><a href="#/ai-judge">⚖️ 미친판사</a><a href="#/ai-translate">🌍 만국번역사</a><a href="#/ai-match">💘 궁합점쟁이</a><a href="#/ai-naming">🎭 작명의신</a></div></div>
+              <div><div class="site-footer__col-title">4소(所)</div><div class="site-footer__links"><a href="#/ai-judge">⚖️ 판결소</a><a href="#/ai-translate">✨ 창작소</a><a href="#/ai-match">💘 궁합소</a><a href="#/ai-consult">💬 상담소</a></div></div>
               <div><div class="site-footer__col-title">바로가기</div><div class="site-footer__links"><a href="#/feed">피드</a><a href="#/hall">통계</a><a href="#/guide">이용안내</a></div></div>
               <div><div class="site-footer__col-title">정보</div><div class="site-footer__links"><a href="#/terms">이용약관</a><a href="#/privacy">개인정보처리방침</a></div></div>
             </div>

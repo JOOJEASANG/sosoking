@@ -128,10 +128,11 @@ async function renderDashboard(el) {
   const todayStr   = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
   const AI_FEATURES = [
-    { key: 'judge',     icon: '⚖️', label: '미친판사', cat: 'primary' },
-    { key: 'translate', icon: '🌍', label: '번역사',   cat: 'golra'  },
-    { key: 'match',     icon: '💕', label: '궁합',     cat: 'usgyo'  },
-    { key: 'naming',    icon: '✨', label: '작명소',   cat: 'malhe'  },
+    { key: 'judge',     icon: '⚖️', label: '판결소', cat: 'primary' },
+    { key: 'translate', icon: '✨', label: '창작소',  cat: 'golra'  },
+    { key: 'match',     icon: '💘', label: '궁합소',  cat: 'usgyo'  },
+    { key: 'naming',    icon: '✨', label: '작명',    cat: 'malhe'  },
+    { key: 'consult',   icon: '💬', label: '상담소',  cat: 'teal'   },
   ];
 
   const [totalSnap, todaySnap, recentSnap, reportSnap, monthUsageSnap, todayUsageSnap] = await Promise.all([
@@ -589,10 +590,11 @@ async function renderAiSettings(el) {
   const geminiFreeDailyLimit = GEMINI_FREE_DAILY_BY_MODEL[aiKingConfig.geminiModel] ?? 250;
 
   const FEATURES = [
-    { key: 'judge',     label: '⚖️ 미친판사' },
-    { key: 'translate', label: '🌍 번역사' },
-    { key: 'match',     label: '💕 궁합' },
-    { key: 'naming',    label: '✨ 작명소' },
+    { key: 'judge',     label: '⚖️ 판결소' },
+    { key: 'translate', label: '✨ 창작소' },
+    { key: 'match',     label: '💘 궁합소' },
+    { key: 'naming',    label: '✨ 작명(구)' },
+    { key: 'consult',   label: '💬 상담소' },
   ];
 
   // Today stats
@@ -1091,8 +1093,8 @@ async function renderMyInfo(el) {
 /* ── 게시글관리 ── */
 async function renderAdminPosts(el) {
   const POST_TYPE_LABELS = {
-    ai_judge: '⚖️ 미친판사', ai_translate: '🌍 만국번역사',
-    ai_match: '💘 궁합점쟁이', ai_naming: '🎭 작명의신',
+    ai_judge: '⚖️ 판결소', ai_translate: '✨ 창작소',
+    ai_match: '💘 궁합소', ai_naming: '✨ 창작소(구)', ai_consult: '💬 상담소',
     vote: '🗳️ 토론방', drip: '🤣 드립방',
     collect: '📌 일반방', general: '📝 일반',
   };

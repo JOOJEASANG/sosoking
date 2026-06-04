@@ -24,35 +24,33 @@ function resizeImageToBase64(file, maxPx = 512) {
   });
 }
 
-const JUDGES = [
-  { id: 'lawyer',      name: '⚖️ 엄근진 법관' },
-  { id: 'emotional',   name: '😭 감성 판사' },
-  { id: 'boomer',      name: '👴 꼰대 판사' },
-  { id: 'scientist',   name: '🔬 과학자 판사' },
-  { id: 'philosopher', name: '🤔 철학자 판사' },
-  { id: 'alien',       name: '👽 외계인 판사' },
-  { id: 'crazy',       name: '🤪 돌아이 판사' },
+const CHARS = [
+  { id: 'kimdonmu', label: '🇰🇵 김동무',  sub: '혁명재판소' },
+  { id: 'tanaka',   label: '🇯🇵 다나카씨', sub: '사죄전문가' },
+  { id: 'marcel',   label: '🇫🇷 마르셀',  sub: '실존주의자' },
+  { id: 'ipanseo',  label: '📜 이판서',   sub: '조선성리학' },
+  { id: 'dmitri',   label: '🇷🇺 드미트리', sub: '이진법인생' },
+];
+
+const EXAMPLES = [
+  '친구가 내 치킨을 허락도 없이 먹었는데 맛없다고 했음. 유죄?',
+  '카톡 읽씹 3일째인데 갑자기 "ㅋ" 하나 보냄. 이게 맞나요?',
+  '3년 사귄 연인이 생일 선물로 양말 줌. 이건 고의인가요?',
+  '회의 때 내 아이디어 발표했더니 팀장이 "나도 그 생각 했었는데" 라고 함',
+  '샤워하고 나왔더니 자리 뺏김. 1분도 안 됐는데 이게 정당한가요?',
 ];
 
 export function renderAiJudge() {
-  setMeta('미친판사');
+  setMeta('판결소');
   const el = document.getElementById('page-content');
   if (!auth.currentUser) { navigate('/login'); return; }
-
-  const EXAMPLES = [
-    '친구가 내 치킨을 허락도 없이 먹었는데 맛없다고 했음. 유죄?',
-    '카톡 읽씹 3일째인데 갑자기 "ㅋ" 하나 보냄. 이게 맞나요?',
-    '3년 사귄 연인이 생일 선물로 양말 줌. 이건 고의인가요?',
-    '회의 때 내 아이디어 발표했더니 팀장이 "나도 그 생각 했었는데" 라고 함',
-    '샤워하고 나왔더니 자리 뺏김. 1분도 안 됐는데 이게 정당한가요?',
-  ];
 
   el.innerHTML = `
     <div class="ai-king-page">
       <div class="ai-king-header">
         <button class="btn btn--ghost btn--sm" id="btn-back" style="margin-bottom:12px">← 뒤로</button>
-        <div class="ai-king-header__title">⚖️ 미친판사</div>
-        <div class="ai-king-header__sub">억울한 상황을 적으면 최대 3명의 판사가 판결합니다</div>
+        <div class="ai-king-header__title">⚖️ 판결소</div>
+        <div class="ai-king-header__sub">억울한 상황을 적으면 최대 3인의 캐릭터가 각자 판결합니다</div>
       </div>
       <div class="ai-king-form">
         <label class="ai-king-form__label">판결 받을 상황을 적어주세요 *</label>
@@ -64,12 +62,16 @@ export function renderAiJudge() {
         <div class="ai-king-form__charcount"><span id="situation-count">0</span>/500</div>
 
         <label class="ai-king-form__label" style="margin-top:20px">판사 선택 <span style="font-weight:400;font-size:12px;color:var(--color-text-muted)">(최대 3명 · 미선택 시 랜덤 3명)</span></label>
-        <div class="ai-judge-select-grid" id="judge-select-grid">
-          ${JUDGES.map(j => `
-            <button class="ai-judge-chip" data-id="${j.id}" type="button">${j.name}</button>
+        <div class="ai-char-grid" id="char-select-grid">
+          ${CHARS.map(c => `
+            <button class="ai-char-btn" data-id="${c.id}" type="button">
+              <span style="font-size:20px">${c.label.split(' ')[0]}</span>
+              <span style="font-size:12px;font-weight:700">${c.label.split(' ').slice(1).join(' ')}</span>
+              <span style="font-size:10px;color:var(--color-text-muted)">${c.sub}</span>
+            </button>
           `).join('')}
         </div>
-        <div id="judge-select-hint" style="font-size:11px;color:var(--color-text-muted);margin-top:6px">🎲 선택 없이 제출하면 랜덤으로 3명 출동!</div>
+        <div id="char-select-hint" style="font-size:11px;color:var(--color-text-muted);margin-top:6px">🎲 선택 없이 제출하면 랜덤으로 3명 출동!</div>
 
         <label class="ai-king-form__label" style="margin-top:20px">📷 증거 사진 첨부 (선택)</label>
         <div class="ai-king-img-upload" id="judge-img-area">
@@ -98,23 +100,22 @@ export function renderAiJudge() {
     });
   });
 
-  // 판사 선택 (최대 3명 토글)
-  const selectedJudges = new Set();
-  el.querySelectorAll('.ai-judge-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      const id = chip.dataset.id;
-      if (selectedJudges.has(id)) {
-        selectedJudges.delete(id);
-        chip.classList.remove('active');
+  const selectedChars = new Set();
+  el.querySelectorAll('.ai-char-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.id;
+      if (selectedChars.has(id)) {
+        selectedChars.delete(id);
+        btn.classList.remove('active');
       } else {
-        if (selectedJudges.size >= 3) { toast.warn('최대 3명까지 선택할 수 있어요'); return; }
-        selectedJudges.add(id);
-        chip.classList.add('active');
+        if (selectedChars.size >= 3) { toast.warn('최대 3명까지 선택할 수 있어요'); return; }
+        selectedChars.add(id);
+        btn.classList.add('active');
       }
-      const hint = document.getElementById('judge-select-hint');
-      hint.textContent = selectedJudges.size === 0
+      const hint = document.getElementById('char-select-hint');
+      hint.textContent = selectedChars.size === 0
         ? '🎲 선택 없이 제출하면 랜덤으로 3명 출동!'
-        : `✅ ${selectedJudges.size}명 선택됨${selectedJudges.size < 3 ? ` · ${3 - selectedJudges.size}명 더 선택 가능` : ' · 제출 준비 완료!'}`;
+        : `✅ ${selectedChars.size}명 선택됨${selectedChars.size < 3 ? ` · ${3 - selectedChars.size}명 더 선택 가능` : ' · 제출 준비 완료!'}`;
     });
   });
 
@@ -123,7 +124,6 @@ export function renderAiJudge() {
   const imgInput = document.getElementById('judge-img-input');
   const imgPreview = document.getElementById('judge-img-preview');
   const imgRemove = document.getElementById('judge-img-remove');
-
   imgArea.addEventListener('click', (e) => { if (e.target !== imgRemove) imgInput.click(); });
   imgInput.addEventListener('change', async () => {
     const file = imgInput.files[0];
@@ -149,24 +149,23 @@ export function renderAiJudge() {
     const situation = textarea.value.trim();
     if (!situation || situation.length < 5) { toast.warn('상황을 5자 이상 적어주세요'); return; }
 
-    const judgeIds = selectedJudges.size > 0 ? [...selectedJudges] : [];
-    const judgeNames = judgeIds.length > 0
-      ? JUDGES.filter(j => judgeIds.includes(j.id)).map(j => j.name).join(' · ')
+    const characterIds = [...selectedChars];
+    const charNames = characterIds.length > 0
+      ? CHARS.filter(c => characterIds.includes(c.id)).map(c => c.label).join(' · ')
       : '랜덤 3명';
 
     const btn = document.getElementById('btn-judge-submit');
     btn.disabled = true;
     btn.textContent = '판사들 소환 중...';
-
-    el.innerHTML = `<div class="ai-king-page"><div class="ai-king-loading"><div class="spinner spinner--lg"></div><div class="ai-king-loading__text">⚖️ 판사들이 심의 중입니다...</div><div class="ai-king-loading__sub">${judgeNames} 출동 완료 🔍</div></div></div>`;
+    el.innerHTML = `<div class="ai-king-page"><div class="ai-king-loading"><div class="spinner spinner--lg"></div><div class="ai-king-loading__text">⚖️ 판사들이 심의 중입니다...</div><div class="ai-king-loading__sub">${charNames} 출동 완료 🔍</div></div></div>`;
 
     try {
       const fn = httpsCallable(functions, 'aiJudge');
-      const result = await fn({ situation, imageBase64, selectedJudges: judgeIds });
+      const result = await fn({ situation, imageBase64, characterIds });
       navigate(`/detail/${result.data.postId}`);
     } catch (e) {
       if (isQuotaError(e)) {
-        showAiLadderBonus({ feature: 'judge', featureLabel: '미친판사', onReplay: renderAiJudge });
+        showAiLadderBonus({ feature: 'judge', featureLabel: '판결소', onReplay: renderAiJudge });
         return;
       }
       toast.error(e?.message || '판결에 실패했어요');

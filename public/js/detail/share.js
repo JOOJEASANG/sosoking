@@ -1,7 +1,7 @@
 import { toast } from '../components/toast.js';
 import { generateShareCardBlob } from './share-card.js';
 
-const AI_TYPES = ['ai_judge', 'ai_translate', 'ai_match', 'ai_naming'];
+const AI_TYPES = ['ai_judge', 'ai_translate', 'ai_match', 'ai_naming', 'ai_consult'];
 
 async function copyToClipboard(text) {
   try {
@@ -40,10 +40,11 @@ function tryKakaoSDKShare(url, title) {
 }
 
 const AI_SHARE_TEXTS = {
-  ai_judge:     (p, url) => `⚖️ AI판사 판결\n"${(p.situation || p.title || '').slice(0, 60)}"\n\n소소킹에서 판결받기 👉 ${url}`,
-  ai_translate: (p, url) => `🌍 ${p.styleName || ''} 번역\n"${(p.originalText || '').slice(0, 60)}"\n→ "${(p.translated || '').slice(0, 60)}"\n\n소소킹에서 번역하기 👉 ${url}`,
-  ai_match:     (p, url) => `💘 AI궁합 ${p.matchResult?.score || 0}%\n${p.itemA} 💘 ${p.itemB}\n${p.matchResult?.grade || ''}\n\n소소킹에서 궁합보기 👉 ${url}`,
-  ai_naming:    (p, url) => `🎭 AI작명 결과\n${(p.names || []).slice(0, 3).map(n => `"${n.name}"`).join(', ')}\n\n소소킹에서 이름짓기 👉 ${url}`,
+  ai_judge:     (p, url) => `⚖️ 판결소 판결\n"${(p.situation || p.title || '').slice(0, 60)}"\n\n소소킹에서 판결받기 👉 ${url}`,
+  ai_translate: (p, url) => `✨ ${p.styleName || ''} 번역\n"${(p.originalText || '').slice(0, 60)}"\n→ "${(p.translated || '').slice(0, 60)}"\n\n소소킹에서 번역하기 👉 ${url}`,
+  ai_match:     (p, url) => `💘 궁합소 ${p.matchResult?.score || 0}%\n${p.itemA} 💘 ${p.itemB}\n${p.matchResult?.grade || ''}\n\n소소킹에서 궁합보기 👉 ${url}`,
+  ai_naming:    (p, url) => `✨ 창작소 작명\n${(p.names || []).slice(0, 3).map(n => `"${n.name}"`).join(', ')}\n\n소소킹에서 이름짓기 👉 ${url}`,
+  ai_consult:   (p, url) => `💬 상담소 조언\n"${(p.concern || p.title || '').slice(0, 60)}"\n\n소소킹에서 상담받기 👉 ${url}`,
 };
 
 // 카드 이미지가 필요한 버튼에 로딩 스피너 표시

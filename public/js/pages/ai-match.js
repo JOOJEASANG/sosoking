@@ -153,20 +153,37 @@ function setupImgUpload(prefix, store) {
   box.addEventListener('touchcancel', () => { dragging = false; });
 }
 
+const CHARS = [
+  { id: 'kimdonmu', label: '🇰🇵 김동무' },
+  { id: 'tanaka',   label: '🇯🇵 다나카씨' },
+  { id: 'marcel',   label: '🇫🇷 마르셀' },
+  { id: 'ipanseo',  label: '📜 이판서' },
+  { id: 'dmitri',   label: '🇷🇺 드미트리' },
+];
+
 export function renderAiMatch() {
-  setMeta('궁합점쟁이');
+  setMeta('궁합소');
   const el = document.getElementById('page-content');
   if (!auth.currentUser) { navigate('/login'); return; }
+
+  let selectedCharId = null;
 
   el.innerHTML = `
     <div class="ai-king-page">
       <div class="ai-king-header">
         <button class="btn btn--ghost btn--sm" id="btn-back" style="margin-bottom:12px">← 뒤로</button>
-        <div class="ai-king-header__title">💘 궁합점쟁이</div>
-        <div class="ai-king-header__sub">두 가지를 입력하면 AI가 궁합을 봐드립니다<br>사람, 음식, 물건, 동물 뭐든 OK</div>
+        <div class="ai-king-header__title">💘 궁합소</div>
+        <div class="ai-king-header__sub">두 가지를 입력하면 캐릭터가 궁합을 봐드립니다<br>사람, 음식, 물건, 동물 뭐든 OK</div>
       </div>
       <div class="ai-king-form">
-        <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:14px;text-align:center">
+        <label class="ai-king-form__label">점쟁이 선택 <span style="font-weight:400;font-size:12px;color:var(--color-text-muted)">(선택 안 하면 랜덤)</span></label>
+        <div class="ai-char-grid" id="match-char-grid">
+          ${CHARS.map(c => `<button class="ai-char-btn" data-id="${c.id}" type="button">
+            <span style="font-size:20px">${c.label.split(' ')[0]}</span>
+            <span style="font-size:11px;font-weight:700">${c.label.split(' ').slice(1).join(' ')}</span>
+          </button>`).join('')}
+        </div>
+        <div style="font-size:12px;color:var(--color-text-muted);margin:14px 0;text-align:center">
           사람, 음식, 동물, 물건, 개념 — 뭐든 두 가지를 골라보세요<br>
           <span style="color:var(--color-primary);font-weight:700">예) 나 + 우리팀장 / 치킨 + 피자 / MBTI I형 + E형</span>
         </div>
@@ -178,6 +195,20 @@ export function renderAiMatch() {
     </div>`;
 
   document.getElementById('btn-back')?.addEventListener('click', () => navigate('/ai-king'));
+
+  el.querySelectorAll('#match-char-grid .ai-char-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (selectedCharId === btn.dataset.id) {
+        selectedCharId = null;
+        btn.classList.remove('active');
+      } else {
+        selectedCharId = btn.dataset.id;
+        el.querySelectorAll('#match-char-grid .ai-char-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      }
+    });
+  });
+
   const imgA = {};
   const imgB = {};
   setupImgUpload('item-a', imgA);
@@ -192,14 +223,15 @@ export function renderAiMatch() {
     btn.textContent = '궁합 보는 중...';
     const base64A = capturePositioned(imgA);
     const base64B = capturePositioned(imgB);
-    el.innerHTML = `<div class="ai-king-page"><div class="ai-king-loading"><div class="spinner spinner--lg"></div><div class="ai-king-loading__text">💘 AI 점쟁이가 궁합을 보는 중...</div><div class="ai-king-loading__sub">"${esc(itemA)}" 와 "${esc(itemB)}"...</div></div></div>`;
+    const charLabel = selectedCharId ? CHARS.find(c => c.id === selectedCharId)?.label : '랜덤 점쟁이';
+    el.innerHTML = `<div class="ai-king-page"><div class="ai-king-loading"><div class="spinner spinner--lg"></div><div class="ai-king-loading__text">💘 ${charLabel || 'AI'}가 궁합을 보는 중...</div><div class="ai-king-loading__sub">"${esc(itemA)}" 와 "${esc(itemB)}"...</div></div></div>`;
     try {
       const fn = httpsCallable(functions, 'aiMatch');
-      const result = await fn({ itemA, itemB, imageA: base64A, imageB: base64B });
+      const result = await fn({ itemA, itemB, imageA: base64A, imageB: base64B, characterId: selectedCharId });
       navigate(`/detail/${result.data.postId}`);
     } catch (e) {
       if (isQuotaError(e)) {
-        showAiLadderBonus({ feature: 'match', featureLabel: '궁합점쟁이', onReplay: renderAiMatch });
+        showAiLadderBonus({ feature: 'match', featureLabel: '궁합소', onReplay: renderAiMatch });
         return;
       }
       toast.error(e?.message || '궁합 보기에 실패했어요');

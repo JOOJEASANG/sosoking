@@ -4,34 +4,35 @@ import { setMeta } from '../utils/seo.js';
 const AI_KINGS = [
   {
     emoji: '⚖️',
-    name: '미친판사',
+    name: '판결소',
     path: '/ai-judge',
-    desc: '억울한 상황을 적으면 개성 강한 판사 3명이 각자 판결을 내립니다. 판사는 직접 고르거나 랜덤으로 뽑혀요.',
-    examples: ['친구가 내 치킨 허락없이 먹음 → 유죄/무죄?', '카톡 읽씹 → 이게 잘못인가?'],
-    judges: ['⚖️ 엄근진 법관', '😭 감성 판사', '👴 꼰대 판사', '🔬 과학자 판사', '🤔 철학자 판사', '👽 외계인 판사', '🤪 돌아이 판사'],
+    desc: '억울한 상황을 적으면 5인 캐릭터 중 최대 3명이 각자 판결을 내립니다. 판사 조합을 직접 고르거나 랜덤으로!',
+    examples: ['친구가 내 치킨 허락없이 먹음 → 유죄/무죄?', '카톡 읽씹 → 이게 잘못인가?', '발표 자료 마지막에 틀린 부분 발견 → 진행? 취소?'],
+    judges: ['🇰🇵 김동무', '🇯🇵 다나카씨', '🇫🇷 마르셀', '📜 이판서', '🇷🇺 드미트리'],
   },
   {
-    emoji: '🌍',
-    name: '만국번역사',
+    emoji: '✨',
+    name: '창작소',
     path: '/ai-translate',
-    desc: '어떤 말이든 웃긴 세계언어로 번역해드립니다. 사진 속 글자도 번역 가능!',
-    examples: ['오늘 밥 먹었어? → 🇰🇵 동무여! 혁명의 전사는 식사로 체력을 단련해야 하지 않겠습니까!', '카톡 읽씹함 → 🇫🇷 L\'absence de réponse... c\'est aussi une réponse (응답의 부재도 하나의 응답이오)'],
-    styles: ['🇰🇵 북한 주체어', '🇯🇵 일본 공손어', '🇫🇷 프랑스 지식인어', '🇺🇸 미국 Z세대 영어'],
+    desc: '번역하기 + 이름짓기 두 가지를 한 곳에서! 5인 캐릭터 중 한 명이 담당합니다. 사진 속 글자도 OK.',
+    examples: ['오늘 밥 먹었어? → 🇰🇵 동무여! 혁명의 전사는 식사로 체력을 단련해야 하지 않겠습니까!', '회의 때 항상 졸는 팀장 → 📜 이판서: "졸음도사팀장"...'],
+    styles: ['🇰🇵 김동무 번역', '🇯🇵 다나카씨 번역', '🇫🇷 마르셀 번역', '📜 이판서 번역', '🇷🇺 드미트리 번역'],
   },
   {
     emoji: '💘',
-    name: '궁합점쟁이',
+    name: '궁합소',
     path: '/ai-match',
-    desc: '두 가지를 입력하면 궁합 점수와 분석을 해드립니다. 사람도 음식도 뭐든 OK.',
-    examples: ['나 + 우리 팀장 → 천생연분 or 최악의조합?', '치킨 + 맥주 → 궁합 91% 찰떡!'],
+    desc: '두 가지를 입력하면 궁합 점수 + 분석을 해드립니다. 사람도 음식도 개념도 뭐든 OK.',
+    examples: ['나 + 우리 팀장 → 천생연분 or 최악의 조합?', '치킨 + 맥주 → 궁합 91% 찰떡!', '월요일 + 나의 의지 → 결과가 처참합니다'],
     tip: '이름만 써도 되고 사진을 첨부하면 더 재밌는 분석이 나와요.',
   },
   {
-    emoji: '🎭',
-    name: '작명의신',
-    path: '/ai-naming',
-    desc: '설명하거나 사진을 올리면 웃기고 그럴듯한 이름을 5개 지어드립니다. 사람·음식·동물·물건 뭐든 OK.',
-    examples: ['회의 때 항상 졸는 팀장 → "숨참고버티기팀장", "회의의신"...', '매운 듯 안 매운 듯 애매한 떡볶이 → "기묘한매움탕"...'],
+    emoji: '💬',
+    name: '상담소',
+    path: '/ai-consult',
+    desc: '진지한 척 황당한 조언을 드립니다. 5인 캐릭터가 각자의 방식으로 여러분의 고민에 답합니다.',
+    examples: ['직장 상사가 너무 싫어요 → 5명이 각자 솔루션 제시', '취업이 안 돼요 → 김동무: 혁명 정신으로 이겨내야 하오!'],
+    judges: ['🇰🇵 김동무', '🇯🇵 다나카씨', '🇫🇷 마르셀', '📜 이판서', '🇷🇺 드미트리'],
   },
 ];
 
@@ -43,7 +44,7 @@ export function renderGuide() {
       <div class="guide-hero">
         <div class="guide-hero__icon">🤖</div>
         <h1 class="guide-hero__title">소소킹 이용안내</h1>
-        <p class="guide-hero__sub">AI가 판결하고, 번역하고, 궁합 보고, 이름 짓는<br>대한민국 유일무이한 AI 놀이터입니다 ㅋㅋ</p>
+        <p class="guide-hero__sub">판결소·창작소·궁합소·상담소 — 4소(所)와 5인 캐릭터가<br>여러분의 모든 상황을 처리합니다 ㅋㅋ</p>
       </div>
 
       <div class="guide-toc card">
@@ -51,7 +52,7 @@ export function renderGuide() {
         <div class="guide-toc__list">
           ${[
             ['#guide-what',   '소소킹이란?'],
-            ['#guide-kings',  'AI킹 4종 소개'],
+            ['#guide-kings',  '4소(所) 소개'],
             ['#guide-start',  '시작하기'],
             ['#guide-limit',  '일일 사용 제한'],
             ['#guide-ladder', '사다리게임 추가 기회'],
@@ -65,14 +66,14 @@ export function renderGuide() {
       <section id="guide-what" class="guide-section">
         <h2 class="guide-section__title">🤔 소소킹이란?</h2>
         <div class="guide-section__body">
-          <p>소소킹은 <strong>AI를 재미있게 활용하는 커뮤니티</strong>입니다.</p>
-          <p>딱딱한 AI 챗봇이 아니라, <strong>웃기고 황당하고 공감 가는</strong> AI 캐릭터들이 여러분의 요청을 처리합니다.</p>
+          <p>소소킹은 <strong>4소(所) 중심의 AI 커뮤니티</strong>입니다.</p>
+          <p>판결소·창작소·궁합소·상담소, 4가지 AI 서비스에서 <strong>🇰🇵 김동무, 🇯🇵 다나카씨, 🇫🇷 마르셀, 📜 이판서, 🇷🇺 드미트리</strong> — 5인 캐릭터가 각자의 방식으로 여러분의 요청을 처리합니다.</p>
           <p>결과물은 자동으로 게시되어 <strong>다른 사람들이 댓글로 반응</strong>할 수 있어요. 재밌는 결과는 카카오톡으로 공유해보세요!</p>
         </div>
       </section>
 
       <section id="guide-kings" class="guide-section">
-        <h2 class="guide-section__title">👑 AI킹 4종 소개</h2>
+        <h2 class="guide-section__title">👑 4소(所) 소개</h2>
         <div style="display:flex;flex-direction:column;gap:20px;margin-top:16px">
           ${AI_KINGS.map(k => `
             <div class="card" style="padding:20px">
@@ -103,7 +104,7 @@ export function renderGuide() {
         <div style="display:flex;flex-direction:column;gap:12px;margin-top:16px">
           ${[
             ['1', '회원가입', '구글 또는 카카오 계정으로 간편하게 가입할 수 있어요.'],
-            ['2', 'AI킹 선택', '미친판사, 만국번역사, 궁합점쟁이, 작명의신 중 하나를 선택하세요.'],
+            ['2', '4소(所) 선택', '판결소, 창작소, 궁합소, 상담소 중 하나를 선택하세요.'],
             ['3', '내용 입력', '상황, 텍스트, 두 가지 대상, 또는 이름 지을 대상을 입력하세요.'],
             ['4', '결과 확인', '자동으로 결과 페이지로 이동하며 댓글로 반응할 수 있어요.'],
             ['5', '공유하기', '재밌는 결과는 카카오톡이나 링크로 공유해보세요!'],
@@ -131,7 +132,7 @@ export function renderGuide() {
               <th style="padding:8px 12px;text-align:left;border-radius:8px 0 0 0">AI킹</th>
               <th style="padding:8px 12px;text-align:center;border-radius:0 8px 0 0">하루 무료 횟수</th>
             </tr>
-            ${['⚖️ 미친판사', '🌍 만국번역사', '💘 궁합점쟁이', '🎭 작명의신'].map(k => `
+            ${['⚖️ 판결소', '✨ 창작소', '💘 궁합소', '💬 상담소'].map(k => `
               <tr style="border-top:1px solid var(--color-border)">
                 <td style="padding:8px 12px">${k}</td>
                 <td style="padding:8px 12px;text-align:center;font-weight:700">3회</td>
@@ -164,7 +165,7 @@ export function renderGuide() {
               </tr>`).join('')}
           </table>
           <p style="margin-top:12px;font-size:13px;color:var(--color-text-secondary)">
-            💡 추가 이용권은 4가지 AI킹 어디서나 공통으로 사용할 수 있어요.
+            💡 추가 이용권은 4소(所) 어디서나 공통으로 사용할 수 있어요.
           </p>
         </div>
       </section>
