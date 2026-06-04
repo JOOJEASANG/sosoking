@@ -27,6 +27,7 @@ export async function renderPointsShop() {
   ]);
 
   const pointsPerUse = config.pointsPerUse || POINT_COST;
+  const dailyFreeLimit = config.dailyFreeLimit || 3;
   const balance = userData.points || 0;
   const extraUses = userData.extraAiUses || 0;
 
@@ -50,7 +51,7 @@ export async function renderPointsShop() {
         <div class="card__body">
           <div style="font-size:15px;font-weight:900;margin-bottom:4px">⚡ AI킹 추가 사용권</div>
           <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:16px">
-            하루 3회 무료 소진 후 사용권으로 추가 이용 가능 (4가지 AI킹 공통 사용)
+            하루 ${dailyFreeLimit}회 무료 소진 후 사용권으로 추가 이용 가능 (4가지 AI킹 공통 사용)
           </div>
           <div class="points-shop-grid" id="shop-grid">
             ${[
@@ -82,10 +83,10 @@ export async function renderPointsShop() {
             ${[
               { icon: '🎁', action: '첫 가입 보너스', points: '+500p', id: 'signup' },
               { icon: '📅', action: '매일 출석 체크', points: '+20p', id: 'daily' },
-              { icon: '❤️', action: '내 글에 좋아요 받기', points: '+5p' },
-              { icon: '💬', action: '내 글에 댓글 받기', points: '+10p' },
+              { icon: '❤️', action: '내 글에 반응 받기', points: '+1p' },
               { icon: '📝', action: '글 작성', points: '+10p' },
-              { icon: '🎰', action: '사다리 게임 (하루 1회)', points: '+20~150p', soon: true },
+              { icon: '💬', action: '댓글 작성', points: '+3p' },
+              { icon: '🪜', action: '사다리게임 보너스 (하루 1회)', points: 'AI 추가권 1회' },
             ].map(e => `
               <div class="points-earn-item">
                 <span class="points-earn-item__icon">${e.icon}</span>
@@ -110,7 +111,9 @@ export async function renderPointsShop() {
       try {
         const fn = httpsCallable(functions, 'purchaseAiExtraUse');
         const result = await fn({ quantity: qty });
-        toast.success(`사용권 ${qty}회 구매 완료! ⚡`);
+        const received = result.data?.quantity ?? qty;
+        const bonusStr = result.data?.bonus ? ` (+${result.data.bonus} 보너스)` : '';
+        toast.success(`사용권 ${received}회 구매 완료${bonusStr}! ⚡`);
         renderPointsShop();
       } catch (e) {
         toast.error(e.message || '구매에 실패했어요');

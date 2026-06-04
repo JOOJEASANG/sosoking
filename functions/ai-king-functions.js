@@ -872,6 +872,11 @@ exports.purchaseAiExtraUse = onCall({ region: 'asia-northeast3' }, async (reques
   if (!uid) throw new HttpsError('unauthenticated', '로그인이 필요해요');
 
   const quantity = Math.min(Math.max(Math.floor(Number(request.data?.quantity) || 1), 1), 10);
+  // 묶음 구매 보너스: 5개→+1, 10개→+3
+  const BONUS_MAP = { 5: 1, 10: 3 };
+  const bonus = BONUS_MAP[quantity] || 0;
+  const totalQuantity = quantity + bonus;
+
   const config = await getAiKingConfig();
   const pointsPerUse = config.pointsPerUse || 100;
   const totalCost = pointsPerUse * quantity;
@@ -892,10 +897,10 @@ exports.purchaseAiExtraUse = onCall({ region: 'asia-northeast3' }, async (reques
 
     tx.set(userRef, {
       points: FieldValue.increment(-totalCost),
-      extraAiUses: FieldValue.increment(quantity),
+      extraAiUses: FieldValue.increment(totalQuantity),
       updatedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
   });
 
-  return { success: true, quantity, pointsUsed: totalCost };
+  return { success: true, quantity: totalQuantity, bonus, pointsUsed: totalCost };
 });
