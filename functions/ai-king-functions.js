@@ -104,6 +104,7 @@ async function callAI(system, userText, imageBase64 = null, maxTokens = 400, tem
     const model = genAI.getGenerativeModel({
       model: config.geminiModel || 'gemini-2.5-flash',
       systemInstruction: system,
+      generationConfig: { thinkingConfig: { thinkingBudget: 0 } },
     });
     const parts = [];
     if (img) parts.push({ inlineData: { data: img.data, mimeType: img.mime } });
@@ -146,6 +147,7 @@ async function callAIWithImages(system, userText, imageA = null, imageB = null, 
     const model = genAI.getGenerativeModel({
       model: config.geminiModel || 'gemini-2.5-flash',
       systemInstruction: system,
+      generationConfig: { thinkingConfig: { thinkingBudget: 0 } },
     });
     const parts = [];
     if (imgA) parts.push({ inlineData: { data: imgA.data, mimeType: imgA.mime } });
@@ -272,11 +274,15 @@ async function callAndParse(callFn, maxTokens) {
   let raw = '';
   try {
     raw = await callFn(maxTokens);
-    return { parsed: parseJson(raw), raw };
+    const parsed = parseJson(raw);
+    if (!parsed) throw new Error(`AI returned non-JSON: ${raw.slice(0, 120)}`);
+    return { parsed, raw };
   } catch (e1) {
     console.warn('[callAndParse] first attempt failed, retrying with more tokens:', e1.message);
     raw = await callFn(Math.min(Math.round(maxTokens * 1.6), 4000));
-    return { parsed: parseJson(raw), raw };
+    const parsed = parseJson(raw);
+    if (!parsed) throw new Error(`AI returned non-JSON on retry: ${raw.slice(0, 120)}`);
+    return { parsed, raw };
   }
 }
 
