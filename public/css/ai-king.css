@@ -348,3 +348,36 @@
 .ai-verdict-item--judge[data-char="marcel"]    { border-left-color: #3498DB; }
 .ai-verdict-item--judge[data-char="ipanseo"]   { border-left-color: #8E44AD; }
 .ai-verdict-item--judge[data-char="dmitri"]    { border-left-color: #FF5722; }
+.ai-verdict-item--judge[data-char="jungding"]  { border-left-color: #00B894; }
+.ai-verdict-item--judge[data-char="saibi"]     { border-left-color: #A29BFE; }
+.ai-verdict-item--judge[data-char="prophet"]   { border-left-color: #6C5CE7; }
+.ai-verdict-item--judge[data-char="joojeob"]   { border-left-color: #FD79A8; }
+.ai-verdict-item--judge[data-char="chamgyeon"] { border-left-color: #FDCB6E; }
+.ai-verdict-item--judge[data-char="kkondae"]   { border-left-color: #636E72; }
+
+/* ── 온보딩 메인페이지 ── */
+.onboard { max-width: 480px; margin: 0 auto; padding: 0 16px 56px; }
+
+.onboard-hero { text-align: center; padding: 28px 0 20px; }
+.onboard-hero__eyebrow { display: inline-block; padding: 4px 12px; background: var(--color-primary-bg); color: var(--color-primary); border-radius: var(--radius-pill); font-size: 11px; font-weight: 700; margin-bottom: 12px; }
+.onboard-hero__title { font-size: 34px; font-weight: 900; color: var(--color-text-primary); line-height: 1; margin-bottom: 10px; letter-spacing: -1px; }
+.onboard-hero__desc { font-size: 14px; color: var(--color-text-secondary); line-height: 1.7; margin-bottom: 14px; }
+.onboard-hero__badges { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
+
+.onboard-section { margin-top: 28px; }
+.onboard-section__label { font-size: 11px; font-weight: 700; color: var(--color-text-muted); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.3px; }
+
+.onboard-chars-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.onboard-char-card { background: var(--color-surface); border: 1.5px solid var(--color-border); border-radius: var(--radius-md); padding: 13px 6px 11px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: border-color .15s, transform .15s; }
+.onboard-char-card:hover { border-color: var(--color-primary); transform: translateY(-2px); }
+.onboard-char-card__emoji { font-size: 26px; line-height: 1; }
+.onboard-char-card__name { font-size: 11px; font-weight: 800; color: var(--color-text-primary); }
+.onboard-char-card__quote { font-size: 9px; color: var(--color-text-muted); line-height: 1.45; word-break: keep-all; }
+
+.onboard-how { display: flex; align-items: center; gap: 4px; background: var(--color-surface); border: 1.5px solid var(--color-border); border-radius: var(--radius-md); padding: 14px 10px; margin-top: 28px; }
+.onboard-how__step { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.onboard-how__num { width: 22px; height: 22px; background: var(--color-primary); color: #fff; border-radius: 50%; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.onboard-how__label { font-size: 9.5px; color: var(--color-text-secondary); text-align: center; line-height: 1.35; font-weight: 600; }
+.onboard-how__arrow { color: var(--color-text-muted); font-size: 12px; flex-shrink: 0; }
+
+.onboard-footer { text-align: center; font-size: 11px; color: var(--color-text-muted); margin-top: 20px; line-height: 1.7; }

@@ -6,18 +6,19 @@ import { setMeta } from '../utils/seo.js';
 import { escHtml } from '../utils/helpers.js';
 
 const OFFICES = [
-  { id: 'judge',   emoji: '⚖️', name: '판결소', path: '/ai-judge',   desc: '억울한 상황 제출 → 5인 캐릭터 중 최대 3명이 판결', color: '#6C5CE7', feature: 'judge' },
-  { id: 'create',  emoji: '✨', name: '창작소', path: '/ai-translate', desc: '번역하기 + 이름짓기 — 두 가지를 한 곳에서', color: '#00B894', feature: 'translate' },
-  { id: 'match',   emoji: '💘', name: '궁합소', path: '/ai-match',    desc: '뭐든 두 가지 → AI가 궁합 점수+분석 즉시 출력', color: '#E84393', feature: 'match' },
-  { id: 'consult', emoji: '💬', name: '상담소', path: '/ai-consult',  desc: '고민 털어놓기 → 황당하지만 맞는 조언 보장', color: '#F39C12', feature: 'consult' },
+  { id: 'judge',   emoji: '⚖️', name: '판결소', path: '/ai-judge',   desc: '억울한 상황 입력 → 3인이 각자의 세계관으로 판결', color: '#6C5CE7', feature: 'judge' },
+  { id: 'create',  emoji: '✨', name: '창작소', path: '/ai-translate', desc: '번역하기 + 이름짓기 — 3인이 전혀 다른 결과 출력', color: '#00B894', feature: 'translate' },
+  { id: 'match',   emoji: '💘', name: '궁합소', path: '/ai-match',    desc: '뭐든 두 가지 → 3인이 각자 궁합 점수+분석', color: '#E84393', feature: 'match' },
+  { id: 'consult', emoji: '💬', name: '상담소', path: '/ai-consult',  desc: '고민 털어놓기 → 3인의 황당하지만 맞는 조언', color: '#F39C12', feature: 'consult' },
 ];
 
 const CHARS = [
-  { id: 'kimdonmu', emoji: '🇰🇵', name: '김동무',  desc: '혁명재판소 판사' },
-  { id: 'tanaka',   emoji: '🇯🇵', name: '다나카씨', desc: '만사 사죄 전문가' },
-  { id: 'marcel',   emoji: '🇫🇷', name: '마르셀',  desc: '실존주의 철학자' },
-  { id: 'ipanseo',  emoji: '📜',  name: '이판서',  desc: '조선시대 성리학자' },
-  { id: 'dmitri',   emoji: '🇷🇺', name: '드미트리', desc: '이진법 인생관' },
+  { emoji: '🎒', name: '사춘기 중딩', quote: '"어른들 왜 이리 복잡하게 삶ㅋ 팩폭 드림"' },
+  { emoji: '🙏', name: '사이비 교주', quote: '"모든 건 계시입니다. 다음 모임은 토요일"' },
+  { emoji: '🔮', name: '예언가',      quote: '"서쪽을 조심하라... 운명이 그러하니라"' },
+  { emoji: '🤩', name: '주접러',      quote: '"미쳤다 실화임?? 소름ㄷㄷ 어떡해ㅠㅠ"' },
+  { emoji: '👀', name: '참견러',      quote: '"아 그거 내가 다 알아. 옆집도 그랬어"' },
+  { emoji: '👴', name: '꼰대',        quote: '"내가 말이야~ 우리 때는 이런 거 없었어"' },
 ];
 
 export async function renderAiKing() {
@@ -45,51 +46,83 @@ export async function renderAiKing() {
   const lim = usage.dailyFreeLimit || 3;
 
   el.innerHTML = `
-    <div class="soso-hub">
-      <div class="soso-hub__header">
-        <div class="soso-hub__title">소소킹 4소(所)</div>
-        <div class="soso-hub__sub">AI가 판결하고 · 창작하고 · 궁합 보고 · 상담하는 놀이터</div>
-        <div class="soso-hub__points-row">
+    <div class="onboard">
+
+      <!-- ① 히어로 -->
+      <div class="onboard-hero">
+        <div class="onboard-hero__eyebrow">✨ AI 창작 놀이터</div>
+        <div class="onboard-hero__title">소소킹</div>
+        <div class="onboard-hero__desc">6인의 개성 넘치는 캐릭터가<br>판결·번역·궁합·상담을 해드립니다</div>
+        <div class="onboard-hero__badges">
           <span class="ai-king-points-badge">🪙 ${userPoints.toLocaleString()}p</span>
           ${usage.extraUses > 0 ? `<span class="ai-king-points-badge ai-king-points-badge--extra">⚡ 추가권 ${usage.extraUses}회</span>` : ''}
           <a href="#/points-shop" class="ai-king-points-shop-link">상점 →</a>
         </div>
       </div>
 
-      <div class="soso-chars">
-        <div class="soso-chars__title">5인 캐릭터</div>
-        <div class="soso-chars__grid">
+      <!-- ② 캐릭터 소개 -->
+      <div class="onboard-section">
+        <div class="onboard-section__label">👥 오늘의 응답단 6인 — 3명이 랜덤 출동</div>
+        <div class="onboard-chars-grid">
           ${CHARS.map(c => `
-            <div class="soso-char-chip">
-              <span class="soso-char-chip__emoji">${c.emoji}</span>
-              <span class="soso-char-chip__name">${c.name}</span>
-              <span class="soso-char-chip__desc">${c.desc}</span>
+            <div class="onboard-char-card">
+              <span class="onboard-char-card__emoji">${c.emoji}</span>
+              <span class="onboard-char-card__name">${c.name}</span>
+              <span class="onboard-char-card__quote">${escHtml(c.quote)}</span>
             </div>`).join('')}
         </div>
       </div>
 
-      <div class="soso-offices">
-        ${OFFICES.map(o => {
-          const used = o.feature === 'create' ? (usage['translate'] || 0) : (usage[o.feature] || 0);
-          const warn = used >= lim;
-          return `
-            <a class="soso-office" href="#${o.path}" data-path="${o.path}" style="--office-color:${o.color}">
-              <div class="soso-office__head">
-                <span class="soso-office__emoji">${o.emoji}</span>
-                <div>
-                  <div class="soso-office__name">${o.name}</div>
-                  <span class="soso-office__badge${warn ? ' soso-office__badge--warn' : ''}">${used}/${lim}</span>
-                </div>
-              </div>
-              <div class="soso-office__desc">${escHtml(o.desc)}</div>
-              <div class="soso-office__cta">입장하기 →</div>
-            </a>`;
-        }).join('')}
+      <!-- ③ 사용 방법 -->
+      <div class="onboard-how">
+        <div class="onboard-how__step">
+          <div class="onboard-how__num">1</div>
+          <div class="onboard-how__label">소(所)<br>선택</div>
+        </div>
+        <div class="onboard-how__arrow">→</div>
+        <div class="onboard-how__step">
+          <div class="onboard-how__num">2</div>
+          <div class="onboard-how__label">상황·고민<br>입력</div>
+        </div>
+        <div class="onboard-how__arrow">→</div>
+        <div class="onboard-how__step">
+          <div class="onboard-how__num">3</div>
+          <div class="onboard-how__label">캐릭터<br>선택 (선택)</div>
+        </div>
+        <div class="onboard-how__arrow">→</div>
+        <div class="onboard-how__step">
+          <div class="onboard-how__num">4</div>
+          <div class="onboard-how__label">3인<br>결과 확인</div>
+        </div>
       </div>
 
-      <div style="text-align:center;font-size:11px;color:var(--color-text-muted);margin-top:8px">
-        각 소(所)마다 하루 ${lim}회 무료 · 소진 시 사다리게임으로 추가 기회
+      <!-- ④ 4소 선택 -->
+      <div class="onboard-section">
+        <div class="onboard-section__label">🚪 어디 입장할까요?</div>
+        <div class="soso-offices">
+          ${OFFICES.map(o => {
+            const used = o.feature === 'create' ? (usage['translate'] || 0) : (usage[o.feature] || 0);
+            const warn = used >= lim;
+            return `
+              <a class="soso-office" href="#${o.path}" data-path="${o.path}" style="--office-color:${o.color}">
+                <div class="soso-office__head">
+                  <span class="soso-office__emoji">${o.emoji}</span>
+                  <span class="soso-office__badge${warn ? ' soso-office__badge--warn' : ''}">${used}/${lim}</span>
+                </div>
+                <div class="soso-office__name">${o.name}</div>
+                <div class="soso-office__desc">${escHtml(o.desc)}</div>
+                <div class="soso-office__cta">입장하기 →</div>
+              </a>`;
+          }).join('')}
+        </div>
       </div>
+
+      <!-- ⑤ 안내 -->
+      <div class="onboard-footer">
+        각 소(所)마다 하루 ${lim}회 무료<br>
+        소진 시 사다리게임으로 추가 기회 · 포인트로 구매도 가능
+      </div>
+
     </div>`;
 
   el.querySelectorAll('.soso-office[data-path]').forEach(card => {
