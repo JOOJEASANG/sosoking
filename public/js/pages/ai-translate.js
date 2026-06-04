@@ -110,13 +110,13 @@ export function renderAiTranslate(initialTab = 'translate') {
             <label class="ai-king-form__label">캐릭터 선택 *</label>
             ${charSelectHtml('tl', translateCharId)}
 
-            <label class="ai-king-form__label" style="margin-top:20px">번역할 텍스트 *</label>
+            <label class="ai-king-form__label" style="margin-top:20px">번역할 텍스트 <span style="font-size:11px;color:var(--color-text-muted);font-weight:400">(이미지만 올려도 됩니다)</span></label>
             <textarea id="translate-input" class="ai-king-form__textarea" maxlength="500"
-              placeholder="번역할 텍스트를 입력하세요.&#10;예) 오늘 밥 먹었어? 나 배고파 죽겠어.&#10;예) 카톡 읽씹했는데 갑자기 연락이 왔어."></textarea>
+              placeholder="번역할 텍스트를 입력하세요.&#10;예) 오늘 밥 먹었어? 나 배고파 죽겠어.&#10;예) 카톡 읽씹했는데 갑자기 연락이 왔어.&#10;&#10;텍스트 없이 이미지만 올려도 됩니다 📷"></textarea>
             <div class="ai-king-form__charcount"><span id="translate-count">0</span>/500</div>
 
-            <label class="ai-king-form__label" style="margin-top:16px">📷 이미지 첨부 (선택)</label>
-            ${imgUploadHtml('tl', '사진 속 텍스트나 상황도 함께 번역해요')}
+            <label class="ai-king-form__label" style="margin-top:16px">📷 이미지 첨부 (텍스트 없이 이미지만도 OK)</label>
+            ${imgUploadHtml('tl', '사진 속 텍스트나 상황도 번역해요 · 이미지만 올려도 동작해요')}
 
             <button id="btn-translate-submit" class="btn btn--primary btn--full" style="margin-top:20px;font-size:16px;font-weight:800">🌍 번역하기</button>
           ` : `
@@ -161,7 +161,7 @@ export function renderAiTranslate(initialTab = 'translate') {
 
       document.getElementById('btn-translate-submit')?.addEventListener('click', async () => {
         const text = textarea.value.trim();
-        if (!text || text.length < 2) { toast.warn('번역할 텍스트를 입력해주세요'); return; }
+        if (!text && !translateImg) { toast.warn('텍스트를 입력하거나 이미지를 첨부해주세요'); return; }
         const charLabel = CHARS.find(c => c.id === translateCharId)?.label || '';
         el.innerHTML = `<div class="ai-king-page"><div class="ai-king-loading"><div class="spinner spinner--lg"></div><div class="ai-king-loading__text">✨ 번역 중...</div><div class="ai-king-loading__sub">${charLabel} 번역사 긴급 투입 완료 ✅</div></div></div>`;
         try {

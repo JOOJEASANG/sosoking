@@ -681,8 +681,9 @@ exports.aiTranslate = onCall({
   if (!userId) throw new HttpsError('unauthenticated', '로그인이 필요해요');
 
   const { text, characterId, imageBase64 } = request.data || {};
-  if (!text || text.trim().length < 2) {
-    throw new HttpsError('invalid-argument', '번역할 텍스트를 입력해주세요');
+  const trimmedText = (text || '').trim();
+  if (!trimmedText && !imageBase64) {
+    throw new HttpsError('invalid-argument', '텍스트를 입력하거나 이미지를 첨부해주세요');
   }
   const char = CHARACTERS[characterId];
   if (!char) throw new HttpsError('invalid-argument', '캐릭터를 선택해주세요');
@@ -694,9 +695,11 @@ exports.aiTranslate = onCall({
   if (!allowed) throw new HttpsError('resource-exhausted', `오늘 번역은 하루 ${limit}번만 가능해요`);
 
   const system = buildTranslateSystem(char);
-  const userText = imageBase64
-    ? `이미지와 텍스트를 모두 보고 ${char.name} 캐릭터로 번역해줘. 이미지에 텍스트가 있으면 같이 번역:\n${text.slice(0, 500)}`
-    : `다음을 ${char.name} 캐릭터로 번역해줘:\n${text.slice(0, 500)}`;
+  const userText = imageBase64 && !trimmedText
+    ? `이미지를 보고 내용을 파악한 뒤 ${char.name} 캐릭터로 번역하거나 창작해줘`
+    : imageBase64
+      ? `이미지와 텍스트를 모두 보고 ${char.name} 캐릭터로 번역해줘. 이미지에 텍스트가 있으면 같이 번역:\n${trimmedText.slice(0, 500)}`
+      : `다음을 ${char.name} 캐릭터로 번역해줘:\n${trimmedText.slice(0, 500)}`;
 
   let translated;
   try {
@@ -714,8 +717,8 @@ exports.aiTranslate = onCall({
   await postRef.set({
     type: 'ai_translate',
     feedType: 'ai_translate',
-    title: `${char.name}: ${text.slice(0, 30)}${text.length > 30 ? '...' : ''}`,
-    originalText: text.slice(0, 500),
+    title: trimmedText ? `${char.name}: ${trimmedText.slice(0, 30)}${trimmedText.length > 30 ? '...' : ''}` : `${char.name}: 이미지 번역`,
+    originalText: trimmedText.slice(0, 500),
     characterId,
     styleName: char.name,
     translated,
