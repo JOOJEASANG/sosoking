@@ -24,12 +24,72 @@ function resizeImageToBase64(file, maxPx = 512) {
 }
 
 const CHARS = [
-  { id: 'kimdonmu', label: '🇰🇵 김동무',  sub: '혁명 문체' },
-  { id: 'tanaka',   label: '🇯🇵 다나카씨', sub: '사죄 문체' },
-  { id: 'marcel',   label: '🇫🇷 마르셀',  sub: '철학 문체' },
-  { id: 'ipanseo',  label: '📜 이판서',   sub: '고전 문체' },
-  { id: 'dmitri',   label: '🇷🇺 드미트리', sub: '극단 문체' },
+  { id: 'kimdonmu', label: '🇰🇵 김동무',  sub: '혁명체' },
+  { id: 'tanaka',   label: '🇯🇵 다나카씨', sub: '사죄체' },
+  { id: 'marcel',   label: '🇫🇷 마르셀',  sub: '철학체' },
+  { id: 'ipanseo',  label: '📜 이판서',   sub: '고전체' },
+  { id: 'dmitri',   label: '🇷🇺 드미트리', sub: '극단체' },
 ];
+
+function charSectionHtml(prefix) {
+  return `
+    <div class="ai-char-header">
+      <label class="ai-king-form__label" style="margin-bottom:0">캐릭터 선택 <span style="font-weight:400;font-size:11px;color:var(--color-text-muted)">(최대 3명)</span></label>
+      <button class="ai-char-random-btn" id="${prefix}-random-btn" type="button">🎲 랜덤 3인</button>
+    </div>
+    <div class="ai-char-grid" id="${prefix}-char-grid">
+      ${CHARS.map(c => `<button class="ai-char-btn" data-id="${c.id}" type="button">
+        <span class="ai-char-btn__emoji">${c.label.split(' ')[0]}</span>
+        <span class="ai-char-btn__name">${c.label.split(' ').slice(1).join(' ')}</span>
+        <span class="ai-char-btn__sub">${c.sub}</span>
+      </button>`).join('')}
+    </div>
+    <div class="ai-char-hint" id="${prefix}-char-hint">미선택 시 자동으로 랜덤 3인이 출동합니다</div>`;
+}
+
+function fill3(selectedSet) {
+  if (selectedSet.size >= 3) return [...selectedSet].slice(0, 3);
+  const rest = CHARS.map(c => c.id).filter(id => !selectedSet.has(id)).sort(() => Math.random() - 0.5);
+  return [...selectedSet, ...rest].slice(0, 3);
+}
+
+function bindCharSection(prefix, selectedSet) {
+  document.querySelectorAll(`#${prefix}-char-grid .ai-char-btn`).forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.id;
+      if (selectedSet.has(id)) {
+        selectedSet.delete(id);
+        btn.classList.remove('active');
+      } else {
+        if (selectedSet.size >= 3) { toast.warn('최대 3명까지 선택할 수 있어요'); return; }
+        selectedSet.add(id);
+        btn.classList.add('active');
+      }
+      updateHint(prefix, selectedSet);
+    });
+  });
+
+  document.getElementById(`${prefix}-random-btn`)?.addEventListener('click', () => {
+    selectedSet.clear();
+    document.querySelectorAll(`#${prefix}-char-grid .ai-char-btn`).forEach(b => b.classList.remove('active'));
+    const picked = CHARS.map(c => c.id).sort(() => Math.random() - 0.5).slice(0, 3);
+    picked.forEach(id => {
+      selectedSet.add(id);
+      document.querySelector(`#${prefix}-char-grid .ai-char-btn[data-id="${id}"]`)?.classList.add('active');
+    });
+    updateHint(prefix, selectedSet);
+  });
+}
+
+function updateHint(prefix, selectedSet) {
+  const hint = document.getElementById(`${prefix}-char-hint`);
+  if (!hint) return;
+  if (selectedSet.size === 0) { hint.textContent = '미선택 시 자동으로 랜덤 3인이 출동합니다'; return; }
+  const names = CHARS.filter(c => selectedSet.has(c.id)).map(c => c.label.split(' ').slice(1).join(' ')).join(' · ');
+  hint.textContent = selectedSet.size < 3
+    ? `✅ ${names} 선택 · ${3 - selectedSet.size}명 더 추가하거나 그냥 제출하세요`
+    : `✅ ${names} — 준비 완료!`;
+}
 
 function setupImgUpload(prefix, onDone) {
   const area = document.getElementById(`${prefix}-img-area`);
@@ -37,7 +97,6 @@ function setupImgUpload(prefix, onDone) {
   const preview = document.getElementById(`${prefix}-img-preview`);
   const remove = document.getElementById(`${prefix}-img-remove`);
   if (!area) return;
-
   area.addEventListener('click', (e) => { if (e.target !== remove) input.click(); });
   input.addEventListener('change', async () => {
     const file = input.files[0];
@@ -60,17 +119,6 @@ function setupImgUpload(prefix, onDone) {
   });
 }
 
-function charGridHtml(prefix) {
-  return `<div class="ai-char-grid" id="${prefix}-char-grid">
-    ${CHARS.map(c => `<button class="ai-char-btn" data-id="${c.id}" type="button">
-      <span style="font-size:20px">${c.label.split(' ')[0]}</span>
-      <span style="font-size:11px;font-weight:700">${c.label.split(' ').slice(1).join(' ')}</span>
-      <span style="font-size:10px;color:var(--color-text-muted)">${c.sub}</span>
-    </button>`).join('')}
-  </div>
-  <div id="${prefix}-char-hint" style="font-size:11px;color:var(--color-text-muted);margin-top:6px">🎲 선택 없이 제출하면 랜덤 3인 출동!</div>`;
-}
-
 function imgUploadHtml(prefix, hint) {
   return `<div class="ai-king-img-upload" id="${prefix}-img-area">
     <input type="file" id="${prefix}-img-input" accept="image/*" style="display:none">
@@ -90,28 +138,7 @@ export function renderAiTranslate(initialTab = 'translate') {
   const namingChars = new Set();
   let translateImg = null;
   let namingImg = null;
-
   const lim = parseInt(sessionStorage.getItem('sosoking:aiDailyLimit') || '3');
-
-  function bindCharMultiSelect(prefix, selectedSet) {
-    document.querySelectorAll(`#${prefix}-char-grid .ai-char-btn`).forEach(btn => {
-      btn.addEventListener('click', () => {
-        const id = btn.dataset.id;
-        if (selectedSet.has(id)) {
-          selectedSet.delete(id);
-          btn.classList.remove('active');
-        } else {
-          if (selectedSet.size >= 3) { toast.warn('최대 3명까지 선택할 수 있어요'); return; }
-          selectedSet.add(id);
-          btn.classList.add('active');
-        }
-        const hint = document.getElementById(`${prefix}-char-hint`);
-        hint.textContent = selectedSet.size === 0
-          ? '🎲 선택 없이 제출하면 랜덤 3인 출동!'
-          : `✅ ${selectedSet.size}명 선택됨${selectedSet.size < 3 ? ` · ${3 - selectedSet.size}명 더 선택 가능` : ' · 제출 준비 완료!'}`;
-      });
-    });
-  }
 
   function render() {
     el.innerHTML = `
@@ -119,7 +146,7 @@ export function renderAiTranslate(initialTab = 'translate') {
         <div class="ai-king-header">
           <button class="btn btn--ghost btn--sm" id="btn-back" style="margin-bottom:12px">← 뒤로</button>
           <div class="ai-king-header__title">✨ 창작소</div>
-          <div class="ai-king-header__sub">캐릭터가 번역하고, 이름 짓고, 온갖 창작을 해드립니다</div>
+          <div class="ai-king-header__sub">캐릭터가 번역하고, 이름 짓고, 온갖 창작을 해드립니다 · 항상 3인 결과</div>
         </div>
 
         <div class="ai-create-tabs">
@@ -129,8 +156,7 @@ export function renderAiTranslate(initialTab = 'translate') {
 
         <div class="ai-king-form">
           ${activeTab === 'translate' ? `
-            <label class="ai-king-form__label">캐릭터 선택 <span style="font-weight:400;font-size:12px;color:var(--color-text-muted)">(최대 3명 · 미선택 시 랜덤 3명)</span></label>
-            ${charGridHtml('tl')}
+            ${charSectionHtml('tl')}
 
             <label class="ai-king-form__label" style="margin-top:20px">번역할 텍스트 <span style="font-size:11px;color:var(--color-text-muted);font-weight:400">(이미지만 올려도 됩니다)</span></label>
             <textarea id="translate-input" class="ai-king-form__textarea" maxlength="500"
@@ -138,12 +164,11 @@ export function renderAiTranslate(initialTab = 'translate') {
             <div class="ai-king-form__charcount"><span id="translate-count">0</span>/500</div>
 
             <label class="ai-king-form__label" style="margin-top:16px">📷 이미지 첨부 (이미지만도 OK)</label>
-            ${imgUploadHtml('tl', '사진 속 텍스트나 상황도 번역해요 · 이미지만 올려도 동작해요')}
+            ${imgUploadHtml('tl', '사진 속 텍스트나 상황도 번역해요')}
 
-            <button id="btn-translate-submit" class="btn btn--primary btn--full" style="margin-top:20px;font-size:16px;font-weight:800">🌍 번역하기</button>
+            <button id="btn-translate-submit" class="btn btn--primary btn--full" style="margin-top:20px;font-size:16px;font-weight:800">🌍 3인 번역 받기</button>
           ` : `
-            <label class="ai-king-form__label">캐릭터 선택 <span style="font-weight:400;font-size:12px;color:var(--color-text-muted)">(최대 3명 · 미선택 시 랜덤 3명)</span></label>
-            ${charGridHtml('nm')}
+            ${charSectionHtml('nm')}
 
             <label class="ai-king-form__label" style="margin-top:20px">이름 지을 대상 설명</label>
             <textarea id="naming-input" class="ai-king-form__textarea" maxlength="300"
@@ -153,45 +178,35 @@ export function renderAiTranslate(initialTab = 'translate') {
             <label class="ai-king-form__label" style="margin-top:16px">📷 사진 첨부 (선택)</label>
             ${imgUploadHtml('nm', '사진이 있으면 외모·분위기 기반 이름도 나와요')}
 
-            <button id="btn-naming-submit" class="btn btn--primary btn--full" style="margin-top:20px;font-size:16px;font-weight:800">🎭 이름짓기</button>
+            <button id="btn-naming-submit" class="btn btn--primary btn--full" style="margin-top:20px;font-size:16px;font-weight:800">🎭 3인 이름짓기</button>
           `}
           <div style="font-size:11px;color:var(--color-text-muted);text-align:center;margin-top:8px">하루 ${lim}번 무료 · 소진 시 하루 1회 사다리게임 보너스</div>
         </div>
       </div>`;
 
     document.getElementById('btn-back')?.addEventListener('click', () => navigate('/ai-king'));
-
     el.querySelectorAll('.ai-create-tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        activeTab = tab.dataset.tab;
-        render();
-      });
+      tab.addEventListener('click', () => { activeTab = tab.dataset.tab; render(); });
     });
 
     if (activeTab === 'translate') {
       const textarea = document.getElementById('translate-input');
       textarea.addEventListener('input', () => { document.getElementById('translate-count').textContent = textarea.value.length; });
-
-      bindCharMultiSelect('tl', translateChars);
+      bindCharSection('tl', translateChars);
       setupImgUpload('tl', (b64) => { translateImg = b64; });
 
       document.getElementById('btn-translate-submit')?.addEventListener('click', async () => {
         const text = textarea.value.trim();
         if (!text && !translateImg) { toast.warn('텍스트를 입력하거나 이미지를 첨부해주세요'); return; }
-        const charIds = [...translateChars];
-        const charLabel = charIds.length
-          ? CHARS.filter(c => charIds.includes(c.id)).map(c => c.label).join(' · ')
-          : '랜덤 3인';
-        el.innerHTML = `<div class="ai-king-page"><div class="ai-king-loading"><div class="spinner spinner--lg"></div><div class="ai-king-loading__text">✨ 번역 중...</div><div class="ai-king-loading__sub">${charLabel} 출동 완료 ✅</div></div></div>`;
+        const charIds = fill3(translateChars);
+        const charLabel = CHARS.filter(c => charIds.includes(c.id)).map(c => c.label.split(' ').slice(1).join(' ')).join(' · ');
+        el.innerHTML = `<div class="ai-king-page"><div class="ai-king-loading"><div class="spinner spinner--lg"></div><div class="ai-king-loading__text">✨ 3인 번역 중...</div><div class="ai-king-loading__sub">${charLabel} 출동 완료 ✅</div></div></div>`;
         try {
           const fn = httpsCallable(functions, 'aiTranslate');
           const result = await fn({ text, characterIds: charIds, imageBase64: translateImg });
           navigate(`/detail/${result.data.postId}`);
         } catch (e) {
-          if (isQuotaError(e)) {
-            showAiLadderBonus({ feature: 'translate', featureLabel: '창작소', onReplay: renderAiTranslate });
-            return;
-          }
+          if (isQuotaError(e)) { showAiLadderBonus({ feature: 'translate', featureLabel: '창작소', onReplay: renderAiTranslate }); return; }
           toast.error(e?.message || '번역에 실패했어요');
           renderAiTranslate('translate');
         }
@@ -200,27 +215,21 @@ export function renderAiTranslate(initialTab = 'translate') {
     } else {
       const textarea = document.getElementById('naming-input');
       textarea.addEventListener('input', () => { document.getElementById('naming-count').textContent = textarea.value.length; });
-
-      bindCharMultiSelect('nm', namingChars);
+      bindCharSection('nm', namingChars);
       setupImgUpload('nm', (b64) => { namingImg = b64; });
 
       document.getElementById('btn-naming-submit')?.addEventListener('click', async () => {
         const description = textarea.value.trim();
         if (!description && !namingImg) { toast.warn('설명을 입력하거나 사진을 첨부해주세요'); return; }
-        const charIds = [...namingChars];
-        const charLabel = charIds.length
-          ? CHARS.filter(c => charIds.includes(c.id)).map(c => c.label).join(' · ')
-          : '랜덤 3인';
-        el.innerHTML = `<div class="ai-king-page"><div class="ai-king-loading"><div class="spinner spinner--lg"></div><div class="ai-king-loading__text">🎭 작명 중...</div><div class="ai-king-loading__sub">${charLabel} 작명가 긴급 투입 완료 ✅</div></div></div>`;
+        const charIds = fill3(namingChars);
+        const charLabel = CHARS.filter(c => charIds.includes(c.id)).map(c => c.label.split(' ').slice(1).join(' ')).join(' · ');
+        el.innerHTML = `<div class="ai-king-page"><div class="ai-king-loading"><div class="spinner spinner--lg"></div><div class="ai-king-loading__text">🎭 3인 작명 중...</div><div class="ai-king-loading__sub">${charLabel} 출동 완료 ✅</div></div></div>`;
         try {
           const fn = httpsCallable(functions, 'aiNaming');
           const result = await fn({ description, imageBase64: namingImg, characterIds: charIds });
           navigate(`/detail/${result.data.postId}`);
         } catch (e) {
-          if (isQuotaError(e)) {
-            showAiLadderBonus({ feature: 'translate', featureLabel: '창작소', onReplay: () => renderAiTranslate('naming') });
-            return;
-          }
+          if (isQuotaError(e)) { showAiLadderBonus({ feature: 'translate', featureLabel: '창작소', onReplay: () => renderAiTranslate('naming') }); return; }
           toast.error(e?.message || '작명에 실패했어요');
           renderAiTranslate('naming');
         }

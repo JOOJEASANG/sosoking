@@ -40,6 +40,66 @@ const EXAMPLES = [
   '샤워하고 나왔더니 자리 뺏김. 1분도 안 됐는데 이게 정당한가요?',
 ];
 
+function charSectionHtml(prefix, titleLabel) {
+  return `
+    <div class="ai-char-header">
+      <label class="ai-king-form__label" style="margin-bottom:0">${titleLabel} <span style="font-weight:400;font-size:11px;color:var(--color-text-muted)">(최대 3명)</span></label>
+      <button class="ai-char-random-btn" id="${prefix}-random-btn" type="button">🎲 랜덤 3인</button>
+    </div>
+    <div class="ai-char-grid" id="${prefix}-char-grid">
+      ${CHARS.map(c => `<button class="ai-char-btn" data-id="${c.id}" type="button">
+        <span class="ai-char-btn__emoji">${c.label.split(' ')[0]}</span>
+        <span class="ai-char-btn__name">${c.label.split(' ').slice(1).join(' ')}</span>
+        <span class="ai-char-btn__sub">${c.sub}</span>
+      </button>`).join('')}
+    </div>
+    <div class="ai-char-hint" id="${prefix}-char-hint">미선택 시 자동으로 랜덤 3인이 출동합니다</div>`;
+}
+
+function fill3(selectedSet) {
+  if (selectedSet.size >= 3) return [...selectedSet].slice(0, 3);
+  const rest = CHARS.map(c => c.id).filter(id => !selectedSet.has(id)).sort(() => Math.random() - 0.5);
+  return [...selectedSet, ...rest].slice(0, 3);
+}
+
+function bindCharSection(prefix, selectedSet) {
+  document.querySelectorAll(`#${prefix}-char-grid .ai-char-btn`).forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.id;
+      if (selectedSet.has(id)) {
+        selectedSet.delete(id);
+        btn.classList.remove('active');
+      } else {
+        if (selectedSet.size >= 3) { toast.warn('최대 3명까지 선택할 수 있어요'); return; }
+        selectedSet.add(id);
+        btn.classList.add('active');
+      }
+      updateHint(prefix, selectedSet);
+    });
+  });
+
+  document.getElementById(`${prefix}-random-btn`)?.addEventListener('click', () => {
+    selectedSet.clear();
+    document.querySelectorAll(`#${prefix}-char-grid .ai-char-btn`).forEach(b => b.classList.remove('active'));
+    const picked = CHARS.map(c => c.id).sort(() => Math.random() - 0.5).slice(0, 3);
+    picked.forEach(id => {
+      selectedSet.add(id);
+      document.querySelector(`#${prefix}-char-grid .ai-char-btn[data-id="${id}"]`)?.classList.add('active');
+    });
+    updateHint(prefix, selectedSet);
+  });
+}
+
+function updateHint(prefix, selectedSet) {
+  const hint = document.getElementById(`${prefix}-char-hint`);
+  if (!hint) return;
+  if (selectedSet.size === 0) { hint.textContent = '미선택 시 자동으로 랜덤 3인이 출동합니다'; return; }
+  const names = CHARS.filter(c => selectedSet.has(c.id)).map(c => c.label.split(' ').slice(1).join(' ')).join(' · ');
+  hint.textContent = selectedSet.size < 3
+    ? `✅ ${names} 선택 · ${3 - selectedSet.size}명 더 추가하거나 그냥 제출하세요`
+    : `✅ ${names} — 준비 완료!`;
+}
+
 export function renderAiJudge() {
   setMeta('판결소');
   const el = document.getElementById('page-content');
@@ -61,17 +121,7 @@ export function renderAiJudge() {
           placeholder="예) 친구가 내 치킨을 허락도 없이 먹었는데 맛없다고 했습니다. 이건 무죄인가요 유죄인가요?&#10;&#10;억울한 상황을 최대한 자세히 적을수록 더 재밌는 판결이 나옵니다 ㅋㅋ"></textarea>
         <div class="ai-king-form__charcount"><span id="situation-count">0</span>/500</div>
 
-        <label class="ai-king-form__label" style="margin-top:20px">판사 선택 <span style="font-weight:400;font-size:12px;color:var(--color-text-muted)">(최대 3명 · 미선택 시 랜덤 3명)</span></label>
-        <div class="ai-char-grid" id="char-select-grid">
-          ${CHARS.map(c => `
-            <button class="ai-char-btn" data-id="${c.id}" type="button">
-              <span style="font-size:20px">${c.label.split(' ')[0]}</span>
-              <span style="font-size:12px;font-weight:700">${c.label.split(' ').slice(1).join(' ')}</span>
-              <span style="font-size:10px;color:var(--color-text-muted)">${c.sub}</span>
-            </button>
-          `).join('')}
-        </div>
-        <div id="char-select-hint" style="font-size:11px;color:var(--color-text-muted);margin-top:6px">🎲 선택 없이 제출하면 랜덤으로 3명 출동!</div>
+        ${charSectionHtml('judge', '판사 선택')}
 
         <label class="ai-king-form__label" style="margin-top:20px">📷 증거 사진 첨부 (선택)</label>
         <div class="ai-king-img-upload" id="judge-img-area">
@@ -81,7 +131,7 @@ export function renderAiJudge() {
           <div id="judge-img-remove" class="ai-king-img-upload__remove">✕ 사진 제거</div>
         </div>
 
-        <button id="btn-judge-submit" class="btn btn--primary btn--full" style="margin-top:20px;font-size:16px;font-weight:800">⚖️ 판결 받기</button>
+        <button id="btn-judge-submit" class="btn btn--primary btn--full" style="margin-top:20px;font-size:16px;font-weight:800">⚖️ 3인 판결 받기</button>
         <div style="font-size:11px;color:var(--color-text-muted);text-align:center;margin-top:8px">하루 ${parseInt(sessionStorage.getItem('sosoking:aiDailyLimit') || '3')}번 무료 · 소진 시 하루 1회 사다리게임 보너스</div>
       </div>
     </div>`;
@@ -101,23 +151,7 @@ export function renderAiJudge() {
   });
 
   const selectedChars = new Set();
-  el.querySelectorAll('.ai-char-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const id = btn.dataset.id;
-      if (selectedChars.has(id)) {
-        selectedChars.delete(id);
-        btn.classList.remove('active');
-      } else {
-        if (selectedChars.size >= 3) { toast.warn('최대 3명까지 선택할 수 있어요'); return; }
-        selectedChars.add(id);
-        btn.classList.add('active');
-      }
-      const hint = document.getElementById('char-select-hint');
-      hint.textContent = selectedChars.size === 0
-        ? '🎲 선택 없이 제출하면 랜덤으로 3명 출동!'
-        : `✅ ${selectedChars.size}명 선택됨${selectedChars.size < 3 ? ` · ${3 - selectedChars.size}명 더 선택 가능` : ' · 제출 준비 완료!'}`;
-    });
-  });
+  bindCharSection('judge', selectedChars);
 
   let imageBase64 = null;
   const imgArea = document.getElementById('judge-img-area');
@@ -149,15 +183,9 @@ export function renderAiJudge() {
     const situation = textarea.value.trim();
     if (!situation || situation.length < 5) { toast.warn('상황을 5자 이상 적어주세요'); return; }
 
-    const characterIds = [...selectedChars];
-    const charNames = characterIds.length > 0
-      ? CHARS.filter(c => characterIds.includes(c.id)).map(c => c.label).join(' · ')
-      : '랜덤 3명';
-
-    const btn = document.getElementById('btn-judge-submit');
-    btn.disabled = true;
-    btn.textContent = '판사들 소환 중...';
-    el.innerHTML = `<div class="ai-king-page"><div class="ai-king-loading"><div class="spinner spinner--lg"></div><div class="ai-king-loading__text">⚖️ 판사들이 심의 중입니다...</div><div class="ai-king-loading__sub">${charNames} 출동 완료 🔍</div></div></div>`;
+    const characterIds = fill3(selectedChars);
+    const charLabel = CHARS.filter(c => characterIds.includes(c.id)).map(c => c.label.split(' ').slice(1).join(' ')).join(' · ');
+    el.innerHTML = `<div class="ai-king-page"><div class="ai-king-loading"><div class="spinner spinner--lg"></div><div class="ai-king-loading__text">⚖️ 판사들이 심의 중입니다...</div><div class="ai-king-loading__sub">${charLabel} 출동 완료 🔍</div></div></div>`;
 
     try {
       const fn = httpsCallable(functions, 'aiJudge');

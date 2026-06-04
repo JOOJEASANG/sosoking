@@ -27,7 +27,6 @@ function makeImgUpload(prefix, label) {
     </div>`;
 }
 
-// 드래그 위치를 반영한 이미지를 canvas로 캡처해 base64 반환
 function capturePositioned(store) {
   if (!store.hasImage || !store.imgEl) return null;
   const OUT = 512;
@@ -96,7 +95,6 @@ function setupImgUpload(prefix, store) {
     file.value = '';
   }
 
-  // 클릭: 이미지 없을 때만 파일 선택
   box.addEventListener('click', (e) => {
     if (e.target === rm) return;
     if (!store.hasImage) file.click();
@@ -115,7 +113,6 @@ function setupImgUpload(prefix, store) {
 
   rm.addEventListener('click', (e) => { e.stopPropagation(); clearImage(); });
 
-  // ── 드래그 (마우스) ──
   let dragging = false, px = 0, py = 0;
 
   box.addEventListener('mousedown', (e) => {
@@ -136,7 +133,6 @@ function setupImgUpload(prefix, store) {
     if (store.hasImage) box.style.cursor = 'grab';
   });
 
-  // ── 드래그 (터치) ──
   box.addEventListener('touchstart', (e) => {
     if (!store.hasImage || e.target === rm) return;
     dragging = true;
@@ -154,12 +150,72 @@ function setupImgUpload(prefix, store) {
 }
 
 const CHARS = [
-  { id: 'kimdonmu', label: '🇰🇵 김동무' },
-  { id: 'tanaka',   label: '🇯🇵 다나카씨' },
-  { id: 'marcel',   label: '🇫🇷 마르셀' },
-  { id: 'ipanseo',  label: '📜 이판서' },
-  { id: 'dmitri',   label: '🇷🇺 드미트리' },
+  { id: 'kimdonmu', label: '🇰🇵 김동무',  sub: '혁명적 궁합' },
+  { id: 'tanaka',   label: '🇯🇵 다나카씨', sub: '사죄하며 점봐' },
+  { id: 'marcel',   label: '🇫🇷 마르셀',  sub: '철학적 분석' },
+  { id: 'ipanseo',  label: '📜 이판서',   sub: '사주 풀이' },
+  { id: 'dmitri',   label: '🇷🇺 드미트리', sub: '흑백 판정' },
 ];
+
+function charSectionHtml(prefix, titleLabel) {
+  return `
+    <div class="ai-char-header">
+      <label class="ai-king-form__label" style="margin-bottom:0">${titleLabel} <span style="font-weight:400;font-size:11px;color:var(--color-text-muted)">(최대 3명)</span></label>
+      <button class="ai-char-random-btn" id="${prefix}-random-btn" type="button">🎲 랜덤 3인</button>
+    </div>
+    <div class="ai-char-grid" id="${prefix}-char-grid">
+      ${CHARS.map(c => `<button class="ai-char-btn" data-id="${c.id}" type="button">
+        <span class="ai-char-btn__emoji">${c.label.split(' ')[0]}</span>
+        <span class="ai-char-btn__name">${c.label.split(' ').slice(1).join(' ')}</span>
+        <span class="ai-char-btn__sub">${c.sub}</span>
+      </button>`).join('')}
+    </div>
+    <div class="ai-char-hint" id="${prefix}-char-hint">미선택 시 자동으로 랜덤 3인이 출동합니다</div>`;
+}
+
+function fill3(selectedSet) {
+  if (selectedSet.size >= 3) return [...selectedSet].slice(0, 3);
+  const rest = CHARS.map(c => c.id).filter(id => !selectedSet.has(id)).sort(() => Math.random() - 0.5);
+  return [...selectedSet, ...rest].slice(0, 3);
+}
+
+function bindCharSection(prefix, selectedSet) {
+  document.querySelectorAll(`#${prefix}-char-grid .ai-char-btn`).forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.id;
+      if (selectedSet.has(id)) {
+        selectedSet.delete(id);
+        btn.classList.remove('active');
+      } else {
+        if (selectedSet.size >= 3) { toast.warn('최대 3명까지 선택할 수 있어요'); return; }
+        selectedSet.add(id);
+        btn.classList.add('active');
+      }
+      updateHint(prefix, selectedSet);
+    });
+  });
+
+  document.getElementById(`${prefix}-random-btn`)?.addEventListener('click', () => {
+    selectedSet.clear();
+    document.querySelectorAll(`#${prefix}-char-grid .ai-char-btn`).forEach(b => b.classList.remove('active'));
+    const picked = CHARS.map(c => c.id).sort(() => Math.random() - 0.5).slice(0, 3);
+    picked.forEach(id => {
+      selectedSet.add(id);
+      document.querySelector(`#${prefix}-char-grid .ai-char-btn[data-id="${id}"]`)?.classList.add('active');
+    });
+    updateHint(prefix, selectedSet);
+  });
+}
+
+function updateHint(prefix, selectedSet) {
+  const hint = document.getElementById(`${prefix}-char-hint`);
+  if (!hint) return;
+  if (selectedSet.size === 0) { hint.textContent = '미선택 시 자동으로 랜덤 3인이 출동합니다'; return; }
+  const names = CHARS.filter(c => selectedSet.has(c.id)).map(c => c.label.split(' ').slice(1).join(' ')).join(' · ');
+  hint.textContent = selectedSet.size < 3
+    ? `✅ ${names} 선택 · ${3 - selectedSet.size}명 더 추가하거나 그냥 제출하세요`
+    : `✅ ${names} — 준비 완료!`;
+}
 
 export function renderAiMatch() {
   setMeta('궁합소');
@@ -176,44 +232,21 @@ export function renderAiMatch() {
         <div class="ai-king-header__sub">두 가지를 입력하면 캐릭터가 궁합을 봐드립니다<br>사람, 음식, 물건, 동물 뭐든 OK</div>
       </div>
       <div class="ai-king-form">
-        <label class="ai-king-form__label">점쟁이 선택 <span style="font-weight:400;font-size:12px;color:var(--color-text-muted)">(최대 3명 · 미선택 시 랜덤 3명)</span></label>
-        <div class="ai-char-grid" id="match-char-grid">
-          ${CHARS.map(c => `<button class="ai-char-btn" data-id="${c.id}" type="button">
-            <span style="font-size:20px">${c.label.split(' ')[0]}</span>
-            <span style="font-size:11px;font-weight:700">${c.label.split(' ').slice(1).join(' ')}</span>
-          </button>`).join('')}
-        </div>
-        <div id="match-char-hint" style="font-size:11px;color:var(--color-text-muted);margin-top:6px">🎲 선택 없이 제출하면 랜덤 3인 출동!</div>
+        ${charSectionHtml('match', '점쟁이 선택')}
         <div style="font-size:12px;color:var(--color-text-muted);margin:14px 0;text-align:center">
           사람, 음식, 동물, 물건, 개념 — 뭐든 두 가지를 골라보세요<br>
           <span style="color:var(--color-primary);font-weight:700">예) 나 + 우리팀장 / 치킨 + 피자 / MBTI I형 + E형</span>
         </div>
         <div class="ai-match-grid">${makeImgUpload('item-a', '첫 번째')}${makeImgUpload('item-b', '두 번째')}</div>
         <div class="ai-match-vs" style="margin:14px 0">💘 VS 💘</div>
-        <button id="btn-match-submit" class="btn btn--primary btn--full" style="font-size:16px;font-weight:800">💘 궁합 보기</button>
+        <button id="btn-match-submit" class="btn btn--primary btn--full" style="font-size:16px;font-weight:800">💘 3인 궁합 보기</button>
         <div style="font-size:11px;color:var(--color-text-muted);text-align:center;margin-top:8px">하루 ${parseInt(sessionStorage.getItem('sosoking:aiDailyLimit') || '3')}번 무료 · 소진 시 하루 1회 사다리게임 보너스</div>
       </div>
     </div>`;
 
   document.getElementById('btn-back')?.addEventListener('click', () => navigate('/ai-king'));
 
-  el.querySelectorAll('#match-char-grid .ai-char-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const id = btn.dataset.id;
-      if (selectedChars.has(id)) {
-        selectedChars.delete(id);
-        btn.classList.remove('active');
-      } else {
-        if (selectedChars.size >= 3) { toast.warn('최대 3명까지 선택할 수 있어요'); return; }
-        selectedChars.add(id);
-        btn.classList.add('active');
-      }
-      const hint = document.getElementById('match-char-hint');
-      hint.textContent = selectedChars.size === 0
-        ? '🎲 선택 없이 제출하면 랜덤 3인 출동!'
-        : `✅ ${selectedChars.size}명 선택됨${selectedChars.size < 3 ? ` · ${3 - selectedChars.size}명 더 선택 가능` : ' · 제출 준비 완료!'}`;
-    });
-  });
+  bindCharSection('match', selectedChars);
 
   const imgA = {};
   const imgB = {};
@@ -224,16 +257,14 @@ export function renderAiMatch() {
     const itemA = document.getElementById('item-a-text')?.value.trim();
     const itemB = document.getElementById('item-b-text')?.value.trim();
     if (!itemA || !itemB) { toast.warn('두 가지를 모두 입력해주세요'); return; }
-    const charIds = [...selectedChars];
-    const charLabel = charIds.length
-      ? CHARS.filter(c => charIds.includes(c.id)).map(c => c.label).join(' · ')
-      : '랜덤 3인';
+    const characterIds = fill3(selectedChars);
+    const charLabel = CHARS.filter(c => characterIds.includes(c.id)).map(c => c.label.split(' ').slice(1).join(' ')).join(' · ');
     const base64A = capturePositioned(imgA);
     const base64B = capturePositioned(imgB);
-    el.innerHTML = `<div class="ai-king-page"><div class="ai-king-loading"><div class="spinner spinner--lg"></div><div class="ai-king-loading__text">💘 ${charLabel}가 궁합을 보는 중...</div><div class="ai-king-loading__sub">"${esc(itemA)}" 와 "${esc(itemB)}"...</div></div></div>`;
+    el.innerHTML = `<div class="ai-king-page"><div class="ai-king-loading"><div class="spinner spinner--lg"></div><div class="ai-king-loading__text">💘 3인 궁합 분석 중...</div><div class="ai-king-loading__sub">${charLabel} 출동 완료 ✅<br>"${esc(itemA)}" + "${esc(itemB)}"</div></div></div>`;
     try {
       const fn = httpsCallable(functions, 'aiMatch');
-      const result = await fn({ itemA, itemB, imageA: base64A, imageB: base64B, characterIds: charIds });
+      const result = await fn({ itemA, itemB, imageA: base64A, imageB: base64B, characterIds });
       navigate(`/detail/${result.data.postId}`);
     } catch (e) {
       if (isQuotaError(e)) {

@@ -39,6 +39,66 @@ const EXAMPLES = [
   '팀장님이 회의때마다 내 말을 잘라요',
 ];
 
+function charSectionHtml(prefix, titleLabel) {
+  return `
+    <div class="ai-char-header">
+      <label class="ai-king-form__label" style="margin-bottom:0">${titleLabel} <span style="font-weight:400;font-size:11px;color:var(--color-text-muted)">(최대 3명)</span></label>
+      <button class="ai-char-random-btn" id="${prefix}-random-btn" type="button">🎲 랜덤 3인</button>
+    </div>
+    <div class="ai-char-grid" id="${prefix}-char-grid">
+      ${CHARS.map(c => `<button class="ai-char-btn" data-id="${c.id}" type="button">
+        <span class="ai-char-btn__emoji">${c.label.split(' ')[0]}</span>
+        <span class="ai-char-btn__name">${c.label.split(' ').slice(1).join(' ')}</span>
+        <span class="ai-char-btn__sub">${c.sub}</span>
+      </button>`).join('')}
+    </div>
+    <div class="ai-char-hint" id="${prefix}-char-hint">미선택 시 자동으로 랜덤 3인이 출동합니다</div>`;
+}
+
+function fill3(selectedSet) {
+  if (selectedSet.size >= 3) return [...selectedSet].slice(0, 3);
+  const rest = CHARS.map(c => c.id).filter(id => !selectedSet.has(id)).sort(() => Math.random() - 0.5);
+  return [...selectedSet, ...rest].slice(0, 3);
+}
+
+function bindCharSection(prefix, selectedSet) {
+  document.querySelectorAll(`#${prefix}-char-grid .ai-char-btn`).forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.id;
+      if (selectedSet.has(id)) {
+        selectedSet.delete(id);
+        btn.classList.remove('active');
+      } else {
+        if (selectedSet.size >= 3) { toast.warn('최대 3명까지 선택할 수 있어요'); return; }
+        selectedSet.add(id);
+        btn.classList.add('active');
+      }
+      updateHint(prefix, selectedSet);
+    });
+  });
+
+  document.getElementById(`${prefix}-random-btn`)?.addEventListener('click', () => {
+    selectedSet.clear();
+    document.querySelectorAll(`#${prefix}-char-grid .ai-char-btn`).forEach(b => b.classList.remove('active'));
+    const picked = CHARS.map(c => c.id).sort(() => Math.random() - 0.5).slice(0, 3);
+    picked.forEach(id => {
+      selectedSet.add(id);
+      document.querySelector(`#${prefix}-char-grid .ai-char-btn[data-id="${id}"]`)?.classList.add('active');
+    });
+    updateHint(prefix, selectedSet);
+  });
+}
+
+function updateHint(prefix, selectedSet) {
+  const hint = document.getElementById(`${prefix}-char-hint`);
+  if (!hint) return;
+  if (selectedSet.size === 0) { hint.textContent = '미선택 시 자동으로 랜덤 3인이 출동합니다'; return; }
+  const names = CHARS.filter(c => selectedSet.has(c.id)).map(c => c.label.split(' ').slice(1).join(' ')).join(' · ');
+  hint.textContent = selectedSet.size < 3
+    ? `✅ ${names} 선택 · ${3 - selectedSet.size}명 더 추가하거나 그냥 제출하세요`
+    : `✅ ${names} — 준비 완료!`;
+}
+
 export function renderAiConsult() {
   setMeta('상담소');
   const el = document.getElementById('page-content');
@@ -54,16 +114,7 @@ export function renderAiConsult() {
         <div class="ai-king-header__sub">고민을 털어놓으면 황당하지만 의외로 맞는 조언을 드립니다</div>
       </div>
       <div class="ai-king-form">
-        <label class="ai-king-form__label">고민 상담사 선택 <span style="font-weight:400;font-size:12px;color:var(--color-text-muted)">(최대 3명 · 미선택 시 랜덤 3명)</span></label>
-        <div class="ai-char-grid" id="consult-char-grid">
-          ${CHARS.map(c => `
-            <button class="ai-char-btn" data-id="${c.id}" type="button">
-              <span style="font-size:20px">${c.label.split(' ')[0]}</span>
-              <span style="font-size:11px;font-weight:700">${c.label.split(' ').slice(1).join(' ')}</span>
-              <span style="font-size:10px;color:var(--color-text-muted)">${c.sub}</span>
-            </button>`).join('')}
-        </div>
-        <div id="consult-char-hint" style="font-size:11px;color:var(--color-text-muted);margin-top:6px">🎲 선택 없이 제출하면 랜덤 3인 출동!</div>
+        ${charSectionHtml('consult', '고민 상담사 선택')}
 
         <label class="ai-king-form__label" style="margin-top:20px">고민을 적어주세요 *</label>
         <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">
@@ -81,7 +132,7 @@ export function renderAiConsult() {
           <div id="consult-img-remove" class="ai-king-img-upload__remove">✕ 사진 제거</div>
         </div>
 
-        <button id="btn-consult-submit" class="btn btn--primary btn--full" style="margin-top:20px;font-size:16px;font-weight:800">💬 상담받기</button>
+        <button id="btn-consult-submit" class="btn btn--primary btn--full" style="margin-top:20px;font-size:16px;font-weight:800">💬 3인 상담받기</button>
         <div style="font-size:11px;color:var(--color-text-muted);text-align:center;margin-top:8px">하루 ${parseInt(sessionStorage.getItem('sosoking:aiDailyLimit') || '3')}번 무료 · 소진 시 하루 1회 사다리게임 보너스</div>
       </div>
     </div>`;
@@ -101,23 +152,7 @@ export function renderAiConsult() {
   });
 
   const selectedChars = new Set();
-  el.querySelectorAll('#consult-char-grid .ai-char-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const id = btn.dataset.id;
-      if (selectedChars.has(id)) {
-        selectedChars.delete(id);
-        btn.classList.remove('active');
-      } else {
-        if (selectedChars.size >= 3) { toast.warn('최대 3명까지 선택할 수 있어요'); return; }
-        selectedChars.add(id);
-        btn.classList.add('active');
-      }
-      const hint = document.getElementById('consult-char-hint');
-      hint.textContent = selectedChars.size === 0
-        ? '🎲 선택 없이 제출하면 랜덤 3인 출동!'
-        : `✅ ${selectedChars.size}명 선택됨${selectedChars.size < 3 ? ` · ${3 - selectedChars.size}명 더 선택 가능` : ' · 제출 준비 완료!'}`;
-    });
-  });
+  bindCharSection('consult', selectedChars);
 
   const imgArea = document.getElementById('consult-img-area');
   const imgInput = document.getElementById('consult-img-input');
@@ -148,16 +183,13 @@ export function renderAiConsult() {
     const concern = textarea.value.trim();
     if (!concern || concern.length < 5) { toast.warn('고민을 5자 이상 적어주세요'); return; }
 
-    const charIds = [...selectedChars];
-    const charNames = charIds.length > 0
-      ? CHARS.filter(c => charIds.includes(c.id)).map(c => c.label).join(' · ')
-      : '랜덤 2명';
-
-    el.innerHTML = `<div class="ai-king-page"><div class="ai-king-loading"><div class="spinner spinner--lg"></div><div class="ai-king-loading__text">💬 상담사들이 고민 중...</div><div class="ai-king-loading__sub">${charNames} 긴급 소환 완료 🧠</div></div></div>`;
+    const characterIds = fill3(selectedChars);
+    const charLabel = CHARS.filter(c => characterIds.includes(c.id)).map(c => c.label.split(' ').slice(1).join(' ')).join(' · ');
+    el.innerHTML = `<div class="ai-king-page"><div class="ai-king-loading"><div class="spinner spinner--lg"></div><div class="ai-king-loading__text">💬 3인 상담 진행 중...</div><div class="ai-king-loading__sub">${charLabel} 긴급 소환 완료 🧠</div></div></div>`;
 
     try {
       const fn = httpsCallable(functions, 'aiConsult');
-      const result = await fn({ concern, selectedChars: charIds, imageBase64 });
+      const result = await fn({ concern, selectedChars: characterIds, imageBase64 });
       navigate(`/detail/${result.data.postId}`);
     } catch (e) {
       if (isQuotaError(e)) {

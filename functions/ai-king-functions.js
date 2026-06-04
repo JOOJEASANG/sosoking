@@ -977,7 +977,7 @@ exports.aiConsult = onCall({
   )].slice(0, 3);
   const activeChars = validIds.length > 0
     ? validIds.map(id => ({ id, ...CHARACTERS[id] }))
-    : [...CHAR_LIST].sort(() => Math.random() - 0.5).slice(0, 2).map(c => ({ id: c.id, ...CHARACTERS[c.id] }));
+    : [...CHAR_LIST].sort(() => Math.random() - 0.5).slice(0, 3).map(c => ({ id: c.id, ...CHARACTERS[c.id] }));
 
   const [{ allowed, limit, usedExtra, usedPoints, pointsUsed }, author] = await Promise.all([
     checkUsage(userId, 'consult'),
