@@ -109,7 +109,7 @@ async function callAI(system, userText, imageBase64 = null, maxTokens = 400, tem
     const parts = [];
     if (img) parts.push({ inlineData: { data: img.data, mimeType: img.mime } });
     parts.push({ text: userText });
-    const genConfig = { maxOutputTokens: maxTokens, temperature };
+    const genConfig = { maxOutputTokens: maxTokens, temperature, thinkingConfig: { thinkingBudget: 0 } };
     if (jsonMode) genConfig.responseMimeType = 'application/json';
     const result = await model.generateContent({
       contents: [{ role: 'user', parts }],
@@ -153,7 +153,7 @@ async function callAIWithImages(system, userText, imageA = null, imageB = null, 
     if (imgA) parts.push({ inlineData: { data: imgA.data, mimeType: imgA.mime } });
     if (imgB) parts.push({ inlineData: { data: imgB.data, mimeType: imgB.mime } });
     parts.push({ text: userText });
-    const genConfig = { maxOutputTokens: maxTokens, temperature };
+    const genConfig = { maxOutputTokens: maxTokens, temperature, thinkingConfig: { thinkingBudget: 0 } };
     if (jsonMode) genConfig.responseMimeType = 'application/json';
     const result = await model.generateContent({
       contents: [{ role: 'user', parts }],
