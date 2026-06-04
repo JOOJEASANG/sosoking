@@ -133,9 +133,6 @@ export async function renderHall() {
 
   el.innerHTML = `
     <div class="hall-page">
-      <div class="section-header">
-        <h1 class="section-header__title">📊 통계</h1>
-      </div>
       <div id="hall-legend-box"></div>
       <div id="hall-info-box">${renderHallInfo([])}</div>
       <div class="hall-grid" id="hall-grid">
