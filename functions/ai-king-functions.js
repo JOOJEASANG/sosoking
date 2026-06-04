@@ -680,13 +680,18 @@ exports.aiTranslate = onCall({
   const userId = request.auth?.uid;
   if (!userId) throw new HttpsError('unauthenticated', '로그인이 필요해요');
 
-  const { text, characterId, imageBase64 } = request.data || {};
+  const { text, characterId, characterIds: reqCharIds, imageBase64 } = request.data || {};
   const trimmedText = (text || '').trim();
   if (!trimmedText && !imageBase64) {
     throw new HttpsError('invalid-argument', '텍스트를 입력하거나 이미지를 첨부해주세요');
   }
-  const char = CHARACTERS[characterId];
-  if (!char) throw new HttpsError('invalid-argument', '캐릭터를 선택해주세요');
+
+  const selectedIds = Array.isArray(reqCharIds) && reqCharIds.length
+    ? reqCharIds.filter(id => CHARACTERS[id]).slice(0, 3)
+    : (characterId && CHARACTERS[characterId])
+      ? [characterId]
+      : CHAR_LIST.map(c => c.id).sort(() => Math.random() - 0.5).slice(0, 3);
+  if (!selectedIds.length) throw new HttpsError('invalid-argument', '캐릭터를 선택해주세요');
 
   const [{ allowed, limit, usedExtra, usedPoints, pointsUsed }, author] = await Promise.all([
     checkUsage(userId, 'translate'),
@@ -694,17 +699,20 @@ exports.aiTranslate = onCall({
   ]);
   if (!allowed) throw new HttpsError('resource-exhausted', `오늘 번역은 하루 ${limit}번만 가능해요`);
 
-  const system = buildTranslateSystem(char);
-  const userText = imageBase64 && !trimmedText
-    ? `이미지를 보고 내용을 파악한 뒤 ${char.name} 캐릭터로 번역하거나 창작해줘`
-    : imageBase64
-      ? `이미지와 텍스트를 모두 보고 ${char.name} 캐릭터로 번역해줘. 이미지에 텍스트가 있으면 같이 번역:\n${trimmedText.slice(0, 500)}`
-      : `다음을 ${char.name} 캐릭터로 번역해줘:\n${trimmedText.slice(0, 500)}`;
-
-  let translated;
+  let translations;
   try {
-    translated = String(await callAI(system, userText, imageBase64, 2000, 0.95) || '').trim();
-    if (!translated) throw new Error('empty translation');
+    translations = await Promise.all(selectedIds.map(async (charId) => {
+      const char = CHARACTERS[charId];
+      const system = buildTranslateSystem(char);
+      const userText = imageBase64 && !trimmedText
+        ? `이미지를 보고 내용을 파악한 뒤 ${char.name} 캐릭터로 번역하거나 창작해줘`
+        : imageBase64
+          ? `이미지와 텍스트를 모두 보고 ${char.name} 캐릭터로 번역해줘:\n${trimmedText.slice(0, 500)}`
+          : `다음을 ${char.name} 캐릭터로 번역해줘:\n${trimmedText.slice(0, 500)}`;
+      const translated = String(await callAI(system, userText, imageBase64, 2000, 0.95) || '').trim();
+      if (!translated) throw new Error(`empty translation for ${charId}`);
+      return { charId, charName: char.name, translated };
+    }));
   } catch (err) {
     console.error('[aiTranslate] AI call failed:', err.message);
     await refundUsage(userId, 'translate', usedExtra, usedPoints, pointsUsed);
@@ -713,15 +721,19 @@ exports.aiTranslate = onCall({
   }
 
   const imageUrl = imageBase64 ? await saveAiImage(userId, imageBase64) : null;
+  const charNames = translations.map(t => t.charName).join(' · ');
   const postRef = db.collection('feeds').doc();
   await postRef.set({
     type: 'ai_translate',
     feedType: 'ai_translate',
-    title: trimmedText ? `${char.name}: ${trimmedText.slice(0, 30)}${trimmedText.length > 30 ? '...' : ''}` : `${char.name}: 이미지 번역`,
+    title: trimmedText
+      ? `${charNames}: "${trimmedText.slice(0, 25)}${trimmedText.length > 25 ? '...' : ''}"`
+      : `${charNames}: 이미지 번역`,
     originalText: trimmedText.slice(0, 500),
-    characterId,
-    styleName: char.name,
-    translated,
+    characterIds: selectedIds,
+    styleName: charNames,
+    translations,
+    translated: translations[0]?.translated || '',
     hasImage: !!imageBase64,
     images: imageUrl ? [imageUrl] : [],
     ...author,
@@ -735,7 +747,7 @@ exports.aiTranslate = onCall({
     cat: 'usgyo',
   });
 
-  return { postId: postRef.id, translated, styleName: char.name };
+  return { postId: postRef.id, translations };
 });
 
 // ── AI궁합 ──
@@ -779,7 +791,7 @@ exports.aiMatch = onCall({
   const userId = request.auth?.uid;
   if (!userId) throw new HttpsError('unauthenticated', '로그인이 필요해요');
 
-  const { itemA, itemB, imageA, imageB, characterId } = request.data || {};
+  const { itemA, itemB, imageA, imageB, characterId, characterIds: reqCharIds } = request.data || {};
   if (!itemA || !itemB || itemA.trim().length < 1 || itemB.trim().length < 1) {
     throw new HttpsError('invalid-argument', '두 가지를 모두 입력해주세요');
   }
@@ -790,26 +802,33 @@ exports.aiMatch = onCall({
   ]);
   if (!allowed) throw new HttpsError('resource-exhausted', `오늘 궁합은 하루 ${limit}번만 가능해요`);
 
-  const char = (characterId && CHARACTERS[characterId])
-    ? { id: characterId, ...CHARACTERS[characterId] }
-    : { id: 'general', name: 'AI 점쟁이', role_match: '이 두 대상에서만 나올 수 있는 연결고리를 찾아라. 다른 조합에도 쓸 수 있는 분석은 0점. 2~3문장, 진지한 척 읽으면 웃김.' };
-  const angle = MATCH_ANGLES[Math.floor(Math.random() * MATCH_ANGLES.length)];
-  const system = buildMatchSystem(char, angle);
+  const selectedIds = Array.isArray(reqCharIds) && reqCharIds.length
+    ? reqCharIds.filter(id => CHARACTERS[id]).slice(0, 3)
+    : (characterId && CHARACTERS[characterId])
+      ? [characterId]
+      : CHAR_LIST.map(c => c.id).sort(() => Math.random() - 0.5).slice(0, 3);
 
-  let matchResult;
+  const imageHint = (imageA || imageB)
+    ? `\n[이미지 첨부: ${imageA && imageB ? '양쪽 사진 있음' : '한쪽 사진 있음'} — 사진 속 외모·표정·분위기를 reason/chemistry에 직접 인용]`
+    : '';
+
+  let analyses;
   try {
-    const imageHint = (imageA || imageB)
-      ? `\n[이미지 첨부: ${imageA && imageB ? '양쪽 사진 있음' : '한쪽 사진 있음'} — 사진 속 외모·표정·분위기를 reason/chemistry에 직접 인용]`
-      : '';
-    const { parsed } = await callAndParse(
-      (mt) => callAIWithImages(
-        system,
-        `"${itemA.slice(0, 100)}"와 "${itemB.slice(0, 100)}"의 궁합. 이 둘에서만 나올 수 있는 핵심을 찔러라.${imageHint}`,
-        imageA, imageB, mt, 0.95, true,
-      ),
-      900,
-    );
-    matchResult = normalizeMatch(parsed);
+    analyses = await Promise.all(selectedIds.map(async (charId) => {
+      const char = { id: charId, ...CHARACTERS[charId] };
+      const angle = MATCH_ANGLES[Math.floor(Math.random() * MATCH_ANGLES.length)];
+      const system = buildMatchSystem(char, angle);
+      const { parsed } = await callAndParse(
+        (mt) => callAIWithImages(
+          system,
+          `"${itemA.slice(0, 100)}"와 "${itemB.slice(0, 100)}"의 궁합. 이 둘에서만 나올 수 있는 핵심을 찔러라.${imageHint}`,
+          imageA, imageB, mt, 0.95, true,
+        ),
+        900,
+      );
+      const normalized = normalizeMatch(parsed);
+      return { charId, charName: char.name, ...normalized };
+    }));
   } catch (err) {
     console.error('[aiMatch] failed:', err.message);
     await refundUsage(userId, 'match', usedExtra, usedPoints, pointsUsed);
@@ -832,7 +851,8 @@ exports.aiMatch = onCall({
     hasImageA: !!imageA,
     hasImageB: !!imageB,
     images: matchImages,
-    matchResult,
+    analyses,
+    matchResult: analyses[0],
     ...author,
     commentCount: 0,
     reactions: { like: 0, funny: 0, fire: 0, total: 0 },
@@ -844,7 +864,7 @@ exports.aiMatch = onCall({
     cat: 'golra',
   });
 
-  return { postId: postRef.id, matchResult };
+  return { postId: postRef.id, analyses };
 });
 
 // ── AI작명소 ──
@@ -863,7 +883,7 @@ exports.aiNaming = onCall({
   const userId = request.auth?.uid;
   if (!userId) throw new HttpsError('unauthenticated', '로그인이 필요해요');
 
-  const { description, imageBase64, characterId } = request.data || {};
+  const { description, imageBase64, characterId, characterIds: reqCharIds } = request.data || {};
   const hasDesc = description && description.trim().length >= 2;
   if (!hasDesc && !imageBase64) {
     throw new HttpsError('invalid-argument', '설명을 입력하거나 사진을 첨부해주세요');
@@ -875,31 +895,34 @@ exports.aiNaming = onCall({
   ]);
   if (!allowed) throw new HttpsError('resource-exhausted', `오늘 작명은 하루 ${limit}번만 가능해요`);
 
-  const char = (characterId && CHARACTERS[characterId])
-    ? { id: characterId, ...CHARACTERS[characterId] }
-    : null;
-  const system = char ? buildNamingSystem(char) : (() => {
-    const fallbackTechs = ['특성 합성어', '역설 비틀기', '의성어·의태어', '한자·사자성어 패러디', '한방 직관'];
-    const picked = [...fallbackTechs].sort(() => Math.random() - 0.5).slice(0, 3);
-    return `당신은 세상에서 가장 웃기고 본질을 꿰뚫는 작명 전문가다. 이번엔 [${picked.join('] · [')}] 기법을 신선하게 살려라. 5개 이름은 완전히 다른 기법으로. reason이 이름보다 더 웃겨야 한다. 반드시 JSON만 출력: {"names": [{"name": "이름", "reason": "이유"}]}`;
-  })();
+  const selectedIds = Array.isArray(reqCharIds) && reqCharIds.length
+    ? reqCharIds.filter(id => CHARACTERS[id]).slice(0, 3)
+    : (characterId && CHARACTERS[characterId])
+      ? [characterId]
+      : CHAR_LIST.map(c => c.id).sort(() => Math.random() - 0.5).slice(0, 3);
 
   const descPart = hasDesc ? `대상 설명: ${description.trim().slice(0, 300)}\n` : '';
-  const userText = imageBase64
-    ? `${descPart}첨부된 사진에서 가장 눈에 띄는 특징 하나를 집어내서 거기서 출발하는 찰떡 이름 5개.`
-    : `${descPart}이 대상의 핵심 특성에서 출발하는 찰떡 이름 5개.`;
+  const nameCount = selectedIds.length > 1 ? 3 : 5;
 
-  let names;
+  let namingResults;
   try {
-    const { parsed } = await callAndParse(
-      (mt) => callAI(system, userText, imageBase64, mt, 1.0, true),
-      1200,
-    );
-    names = (parsed.names || []).filter(n => n && n.name).map(n => ({
-      name: String(n.name).slice(0, 40),
-      reason: String(n.reason || '').slice(0, 200),
+    namingResults = await Promise.all(selectedIds.map(async (charId) => {
+      const char = { id: charId, ...CHARACTERS[charId] };
+      const system = buildNamingSystem(char);
+      const userText = imageBase64
+        ? `${descPart}첨부된 사진에서 가장 눈에 띄는 특징 하나를 집어내서 거기서 출발하는 찰떡 이름 ${nameCount}개.`
+        : `${descPart}이 대상의 핵심 특성에서 출발하는 찰떡 이름 ${nameCount}개.`;
+      const { parsed } = await callAndParse(
+        (mt) => callAI(system, userText, imageBase64, mt, 1.0, true),
+        1200,
+      );
+      const names = (parsed.names || []).filter(n => n && n.name).slice(0, nameCount).map(n => ({
+        name: String(n.name).slice(0, 40),
+        reason: String(n.reason || '').slice(0, 200),
+      }));
+      if (!names.length) throw new Error(`empty names for ${charId}`);
+      return { charId, charName: char.name, names };
     }));
-    if (names.length === 0) throw new Error('empty names');
   } catch (err) {
     console.error('[aiNaming] failed:', err.message);
     await refundUsage(userId, 'naming', usedExtra, usedPoints, pointsUsed);
@@ -907,14 +930,18 @@ exports.aiNaming = onCall({
     throw new HttpsError('internal', 'AI 작명에 실패했어요. 사용 횟수는 차감되지 않았어요. 잠시 후 다시 시도해주세요.');
   }
 
+  const allNames = namingResults.flatMap(r => r.names);
   const imageUrl = imageBase64 ? await saveAiImage(userId, imageBase64) : null;
   const postRef = db.collection('feeds').doc();
   await postRef.set({
     type: 'ai_naming',
     feedType: 'ai_naming',
-    title: hasDesc ? `작명: ${description.trim().slice(0, 40)}${description.trim().length > 40 ? '...' : ''}` : '작명: 사진으로 요청',
+    title: hasDesc
+      ? `작명: ${description.trim().slice(0, 40)}${description.trim().length > 40 ? '...' : ''}`
+      : '작명: 사진으로 요청',
     description: hasDesc ? description.trim().slice(0, 300) : '',
-    names,
+    namingResults,
+    names: allNames,
     hasImage: !!imageBase64,
     images: imageUrl ? [imageUrl] : [],
     ...author,
@@ -928,7 +955,7 @@ exports.aiNaming = onCall({
     cat: 'usgyo',
   });
 
-  return { postId: postRef.id, names };
+  return { postId: postRef.id, namingResults, names: allNames };
 });
 
 // ── 상담소 ──

@@ -54,7 +54,7 @@ export function renderAiConsult() {
         <div class="ai-king-header__sub">고민을 털어놓으면 황당하지만 의외로 맞는 조언을 드립니다</div>
       </div>
       <div class="ai-king-form">
-        <label class="ai-king-form__label">고민 상담사 선택 <span style="font-weight:400;font-size:12px;color:var(--color-text-muted)">(최대 3명 · 미선택 시 랜덤 2명)</span></label>
+        <label class="ai-king-form__label">고민 상담사 선택 <span style="font-weight:400;font-size:12px;color:var(--color-text-muted)">(최대 3명 · 미선택 시 랜덤 3명)</span></label>
         <div class="ai-char-grid" id="consult-char-grid">
           ${CHARS.map(c => `
             <button class="ai-char-btn" data-id="${c.id}" type="button">
@@ -63,7 +63,7 @@ export function renderAiConsult() {
               <span style="font-size:10px;color:var(--color-text-muted)">${c.sub}</span>
             </button>`).join('')}
         </div>
-        <div id="consult-char-hint" style="font-size:11px;color:var(--color-text-muted);margin-top:6px">🎲 선택 없이 제출하면 랜덤으로 2명 출동!</div>
+        <div id="consult-char-hint" style="font-size:11px;color:var(--color-text-muted);margin-top:6px">🎲 선택 없이 제출하면 랜덤 3인 출동!</div>
 
         <label class="ai-king-form__label" style="margin-top:20px">고민을 적어주세요 *</label>
         <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">
@@ -114,7 +114,7 @@ export function renderAiConsult() {
       }
       const hint = document.getElementById('consult-char-hint');
       hint.textContent = selectedChars.size === 0
-        ? '🎲 선택 없이 제출하면 랜덤으로 2명 출동!'
+        ? '🎲 선택 없이 제출하면 랜덤 3인 출동!'
         : `✅ ${selectedChars.size}명 선택됨${selectedChars.size < 3 ? ` · ${3 - selectedChars.size}명 더 선택 가능` : ' · 제출 준비 완료!'}`;
     });
   });

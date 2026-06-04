@@ -36,11 +36,15 @@ function aiResultSnippet(post) {
       const v = (post.verdicts || [])[0];
       return v ? `<span class="hall-ai-snippet">${escHtml(v.charName || v.judgeName || '')}: "${escHtml((v.verdict || '').slice(0, 50))}..."</span>` : '';
     }
-    case 'ai_translate':
-      return post.styleName ? `<span class="hall-ai-snippet">${escHtml(post.styleName)} 번역</span>` : '';
+    case 'ai_translate': {
+      const firstT = Array.isArray(post.translations) ? post.translations[0] : null;
+      const label = firstT ? escHtml(firstT.charName) : escHtml(post.styleName || '');
+      return label ? `<span class="hall-ai-snippet">${label} 번역</span>` : '';
+    }
     case 'ai_match': {
-      const s = post.matchResult?.score;
-      return s != null ? `<span class="hall-ai-snippet hall-ai-snippet--score">💘 ${s}% ${escHtml(post.matchResult?.grade || '')}</span>` : '';
+      const firstA = Array.isArray(post.analyses) ? post.analyses[0] : post.matchResult;
+      const s = firstA?.score;
+      return s != null ? `<span class="hall-ai-snippet hall-ai-snippet--score">💘 ${s}% ${escHtml(firstA?.grade || '')}</span>` : '';
     }
     case 'ai_naming': {
       const names = (post.names || []).slice(0, 2).map(n => escHtml(n.name)).join(', ');

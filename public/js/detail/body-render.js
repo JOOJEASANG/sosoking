@@ -158,20 +158,44 @@ function renderAiConsultBody(post) {
 }
 
 function renderAiTranslateBody(post) {
+  const translations = Array.isArray(post.translations) && post.translations.length
+    ? post.translations
+    : [{ charId: post.characterId || '', charName: post.styleName || '번역 결과', translated: post.translated || '' }];
   return `
     <div class="ai-translate-result">
-      <div class="ai-translate-original">
+      ${post.originalText ? `<div class="ai-translate-original">
         <div class="ai-translate-original__label">원문</div>
-        ${escHtml(post.originalText || '').replace(/\n/g, '<br>')}
-      </div>
-      <div class="ai-translate-output">
-        <div class="ai-translate-output__label">${escHtml(post.styleName || '')} 번역 결과</div>
-        <div class="ai-translate-output__text">${escHtml(post.translated || '').replace(/\n/g, '<br>')}</div>
+        ${escHtml(post.originalText).replace(/\n/g, '<br>')}
+      </div>` : ''}
+      <div class="ai-verdict-list" style="margin-top:${post.originalText ? '12px' : '0'}">
+        ${translations.map(t => `
+          <div class="ai-verdict-item ai-verdict-item--judge" data-char="${escHtml(t.charId || '')}">
+            <div class="ai-verdict-judge">${escHtml(t.charName || '')} 번역</div>
+            <div class="ai-verdict-text">${escHtml(t.translated || '').replace(/\n/g, '<br>')}</div>
+          </div>`).join('')}
       </div>
     </div>`;
 }
 
 function renderAiNamingBody(post) {
+  const medals = ['🥇','🥈','🥉','4️⃣','5️⃣'];
+  if (Array.isArray(post.namingResults) && post.namingResults.length > 1) {
+    return `
+      <div class="ai-naming-result">
+        ${post.description ? `<div class="ai-judge-situation"><strong>🎭 작명 요청</strong><br>${escHtml(post.description).replace(/\n/g, '<br>')}</div>` : ''}
+        <div class="ai-verdict-list" style="margin-top:12px">
+          ${post.namingResults.map(r => `
+            <div class="ai-verdict-item ai-verdict-item--judge" data-char="${escHtml(r.charId || '')}">
+              <div class="ai-verdict-judge">${escHtml(r.charName || '')} 작명</div>
+              ${r.names.map((n, i) => `
+                <div style="margin-top:8px${i > 0 ? ';border-top:1px solid var(--color-border);padding-top:8px' : ''}">
+                  <div style="font-weight:700;color:var(--color-text-primary)">${medals[i] || ''} ${escHtml(n.name || '')}</div>
+                  <div class="ai-verdict-text" style="margin-top:3px">${escHtml(n.reason || '').replace(/\n/g, '<br>')}</div>
+                </div>`).join('')}
+            </div>`).join('')}
+        </div>
+      </div>`;
+  }
   const names = Array.isArray(post.names) ? post.names : [];
   return `
     <div class="ai-naming-result">
@@ -183,7 +207,7 @@ function renderAiNamingBody(post) {
         ${names.map((n, i) => `
           <div class="ai-verdict-item">
             <div class="ai-verdict-judge" style="font-size:16px">
-              ${['🥇','🥈','🥉','4️⃣','5️⃣'][i] || ''} ${escHtml(n.name || '')}
+              ${medals[i] || ''} ${escHtml(n.name || '')}
             </div>
             <div class="ai-verdict-text">${escHtml(n.reason || '').replace(/\n/g, '<br>')}</div>
           </div>`).join('')}
@@ -191,24 +215,48 @@ function renderAiNamingBody(post) {
     </div>`;
 }
 
-function renderAiMatchBody(post) {
-  const m = post.matchResult || {};
+function renderSingleMatch(post, m) {
   const score = Math.max(0, Math.min(100, parseInt(m.score) || 0));
   return `
-    <div class="ai-match-result">
-      <div class="ai-match-items">
-        <span>${escHtml(post.itemA || '')}</span>
-        <span class="ai-match-items__vs">💘</span>
-        <span>${escHtml(post.itemB || '')}</span>
-      </div>
-      <div class="ai-match-score-ring" style="--score:${score}">
-        <span class="ai-match-score-num">${score}%</span>
-      </div>
-      <div class="ai-match-grade">${escHtml(m.grade || '')}</div>
-      ${m.reason ? `<div class="ai-match-reason"><strong>궁합 분석 🔮</strong><br>${escHtml(m.reason).replace(/\n/g, '<br>')}</div>` : ''}
-      ${m.chemistry ? `<div class="ai-match-chemistry"><strong>둘이 만나면? 💥</strong><br>${escHtml(m.chemistry).replace(/\n/g, '<br>')}</div>` : ''}
-      ${m.advice ? `<div class="ai-match-advice">💡 ${escHtml(m.advice)}</div>` : ''}
-    </div>`;
+    <div class="ai-match-items">
+      <span>${escHtml(post.itemA || '')}</span>
+      <span class="ai-match-items__vs">💘</span>
+      <span>${escHtml(post.itemB || '')}</span>
+    </div>
+    <div class="ai-match-score-ring" style="--score:${score}">
+      <span class="ai-match-score-num">${score}%</span>
+    </div>
+    <div class="ai-match-grade">${escHtml(m.grade || '')}</div>
+    ${m.reason ? `<div class="ai-match-reason"><strong>궁합 분석 🔮</strong><br>${escHtml(m.reason).replace(/\n/g, '<br>')}</div>` : ''}
+    ${m.chemistry ? `<div class="ai-match-chemistry"><strong>둘이 만나면? 💥</strong><br>${escHtml(m.chemistry).replace(/\n/g, '<br>')}</div>` : ''}
+    ${m.advice ? `<div class="ai-match-advice">💡 ${escHtml(m.advice)}</div>` : ''}`;
+}
+
+function renderAiMatchBody(post) {
+  if (Array.isArray(post.analyses) && post.analyses.length > 1) {
+    return `
+      <div class="ai-match-result">
+        <div class="ai-match-items">
+          <span>${escHtml(post.itemA || '')}</span>
+          <span class="ai-match-items__vs">💘</span>
+          <span>${escHtml(post.itemB || '')}</span>
+        </div>
+        <div class="ai-verdict-list" style="margin-top:16px">
+          ${post.analyses.map(m => {
+            const score = Math.max(0, Math.min(100, parseInt(m.score) || 0));
+            return `
+              <div class="ai-verdict-item ai-verdict-item--consult" data-char="${escHtml(m.charId || '')}">
+                <div class="ai-verdict-judge">${escHtml(m.charName || '')} <span style="font-weight:400;font-size:13px">— ${score}% ${escHtml(m.grade || '')}</span></div>
+                ${m.reason ? `<div class="ai-verdict-text" style="margin-top:6px">${escHtml(m.reason).replace(/\n/g, '<br>')}</div>` : ''}
+                ${m.chemistry ? `<div class="ai-verdict-text" style="margin-top:6px;color:var(--color-primary)">${escHtml(m.chemistry).replace(/\n/g, '<br>')}</div>` : ''}
+                ${m.advice ? `<div style="margin-top:6px;font-size:12px;color:var(--color-warning);font-weight:700">💡 ${escHtml(m.advice)}</div>` : ''}
+              </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+  }
+  const m = post.matchResult || (Array.isArray(post.analyses) ? post.analyses[0] : null) || {};
+  return `<div class="ai-match-result">${renderSingleMatch(post, m)}</div>`;
 }
 
 export function renderLegacyInteractive() {

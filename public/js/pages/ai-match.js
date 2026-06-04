@@ -166,7 +166,7 @@ export function renderAiMatch() {
   const el = document.getElementById('page-content');
   if (!auth.currentUser) { navigate('/login'); return; }
 
-  let selectedCharId = null;
+  const selectedChars = new Set();
 
   el.innerHTML = `
     <div class="ai-king-page">
@@ -176,13 +176,14 @@ export function renderAiMatch() {
         <div class="ai-king-header__sub">두 가지를 입력하면 캐릭터가 궁합을 봐드립니다<br>사람, 음식, 물건, 동물 뭐든 OK</div>
       </div>
       <div class="ai-king-form">
-        <label class="ai-king-form__label">점쟁이 선택 <span style="font-weight:400;font-size:12px;color:var(--color-text-muted)">(선택 안 하면 랜덤)</span></label>
+        <label class="ai-king-form__label">점쟁이 선택 <span style="font-weight:400;font-size:12px;color:var(--color-text-muted)">(최대 3명 · 미선택 시 랜덤 3명)</span></label>
         <div class="ai-char-grid" id="match-char-grid">
           ${CHARS.map(c => `<button class="ai-char-btn" data-id="${c.id}" type="button">
             <span style="font-size:20px">${c.label.split(' ')[0]}</span>
             <span style="font-size:11px;font-weight:700">${c.label.split(' ').slice(1).join(' ')}</span>
           </button>`).join('')}
         </div>
+        <div id="match-char-hint" style="font-size:11px;color:var(--color-text-muted);margin-top:6px">🎲 선택 없이 제출하면 랜덤 3인 출동!</div>
         <div style="font-size:12px;color:var(--color-text-muted);margin:14px 0;text-align:center">
           사람, 음식, 동물, 물건, 개념 — 뭐든 두 가지를 골라보세요<br>
           <span style="color:var(--color-primary);font-weight:700">예) 나 + 우리팀장 / 치킨 + 피자 / MBTI I형 + E형</span>
@@ -198,14 +199,19 @@ export function renderAiMatch() {
 
   el.querySelectorAll('#match-char-grid .ai-char-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      if (selectedCharId === btn.dataset.id) {
-        selectedCharId = null;
+      const id = btn.dataset.id;
+      if (selectedChars.has(id)) {
+        selectedChars.delete(id);
         btn.classList.remove('active');
       } else {
-        selectedCharId = btn.dataset.id;
-        el.querySelectorAll('#match-char-grid .ai-char-btn').forEach(b => b.classList.remove('active'));
+        if (selectedChars.size >= 3) { toast.warn('최대 3명까지 선택할 수 있어요'); return; }
+        selectedChars.add(id);
         btn.classList.add('active');
       }
+      const hint = document.getElementById('match-char-hint');
+      hint.textContent = selectedChars.size === 0
+        ? '🎲 선택 없이 제출하면 랜덤 3인 출동!'
+        : `✅ ${selectedChars.size}명 선택됨${selectedChars.size < 3 ? ` · ${3 - selectedChars.size}명 더 선택 가능` : ' · 제출 준비 완료!'}`;
     });
   });
 
@@ -218,16 +224,16 @@ export function renderAiMatch() {
     const itemA = document.getElementById('item-a-text')?.value.trim();
     const itemB = document.getElementById('item-b-text')?.value.trim();
     if (!itemA || !itemB) { toast.warn('두 가지를 모두 입력해주세요'); return; }
-    const btn = document.getElementById('btn-match-submit');
-    btn.disabled = true;
-    btn.textContent = '궁합 보는 중...';
+    const charIds = [...selectedChars];
+    const charLabel = charIds.length
+      ? CHARS.filter(c => charIds.includes(c.id)).map(c => c.label).join(' · ')
+      : '랜덤 3인';
     const base64A = capturePositioned(imgA);
     const base64B = capturePositioned(imgB);
-    const charLabel = selectedCharId ? CHARS.find(c => c.id === selectedCharId)?.label : '랜덤 점쟁이';
-    el.innerHTML = `<div class="ai-king-page"><div class="ai-king-loading"><div class="spinner spinner--lg"></div><div class="ai-king-loading__text">💘 ${charLabel || 'AI'}가 궁합을 보는 중...</div><div class="ai-king-loading__sub">"${esc(itemA)}" 와 "${esc(itemB)}"...</div></div></div>`;
+    el.innerHTML = `<div class="ai-king-page"><div class="ai-king-loading"><div class="spinner spinner--lg"></div><div class="ai-king-loading__text">💘 ${charLabel}가 궁합을 보는 중...</div><div class="ai-king-loading__sub">"${esc(itemA)}" 와 "${esc(itemB)}"...</div></div></div>`;
     try {
       const fn = httpsCallable(functions, 'aiMatch');
-      const result = await fn({ itemA, itemB, imageA: base64A, imageB: base64B, characterId: selectedCharId });
+      const result = await fn({ itemA, itemB, imageA: base64A, imageB: base64B, characterIds: charIds });
       navigate(`/detail/${result.data.postId}`);
     } catch (e) {
       if (isQuotaError(e)) {
