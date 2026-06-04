@@ -325,7 +325,7 @@
 .ai-char-random-btn:hover { background: var(--color-primary); color: #fff; }
 .ai-char-random-btn:active { transform: scale(.95); }
 
-.ai-char-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.ai-char-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
 .ai-char-btn { padding: 10px 4px 8px; border: 1.5px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-bg); cursor: pointer; text-align: center; transition: all .15s; color: var(--color-text-primary); display: flex; flex-direction: column; align-items: center; gap: 3px; }
 .ai-char-btn:hover { border-color: var(--color-primary); background: var(--color-primary-bg); }
 .ai-char-btn.active { border-color: var(--color-primary); background: var(--color-primary); color: #fff; }

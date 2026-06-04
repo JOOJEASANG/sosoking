@@ -24,11 +24,12 @@ function resizeImageToBase64(file, maxPx = 512) {
 }
 
 const CHARS = [
-  { id: 'kimdonmu', label: '🇰🇵 김동무',  sub: '혁명으로 해결' },
-  { id: 'tanaka',   label: '🇯🇵 다나카씨', sub: '죄송하지만 조언' },
-  { id: 'marcel',   label: '🇫🇷 마르셀',  sub: '철학으로 위로' },
-  { id: 'ipanseo',  label: '📜 이판서',   sub: '사자성어 한마디' },
-  { id: 'dmitri',   label: '🇷🇺 드미트리', sub: '할거냐 말거냐' },
+  { id: 'jungding',  label: '🎒 사춘기 중딩', sub: '팩폭 직격' },
+  { id: 'saibi',     label: '🙏 사이비 교주', sub: '포교·계시' },
+  { id: 'prophet',   label: '🔮 예언가',      sub: '운명 예언' },
+  { id: 'joojeob',   label: '🤩 주접러',      sub: '과잉 리액션' },
+  { id: 'chamgyeon', label: '👀 참견러',      sub: '오지랖 만렙' },
+  { id: 'kkondae',   label: '👴 꼰대',        sub: '우리때는~' },
 ];
 
 const EXAMPLES = [

@@ -150,11 +150,12 @@ function setupImgUpload(prefix, store) {
 }
 
 const CHARS = [
-  { id: 'kimdonmu', label: '🇰🇵 김동무',  sub: '혁명적 궁합' },
-  { id: 'tanaka',   label: '🇯🇵 다나카씨', sub: '사죄하며 점봐' },
-  { id: 'marcel',   label: '🇫🇷 마르셀',  sub: '철학적 분석' },
-  { id: 'ipanseo',  label: '📜 이판서',   sub: '사주 풀이' },
-  { id: 'dmitri',   label: '🇷🇺 드미트리', sub: '흑백 판정' },
+  { id: 'jungding',  label: '🎒 사춘기 중딩', sub: '팩폭 직격' },
+  { id: 'saibi',     label: '🙏 사이비 교주', sub: '포교·계시' },
+  { id: 'prophet',   label: '🔮 예언가',      sub: '운명 예언' },
+  { id: 'joojeob',   label: '🤩 주접러',      sub: '과잉 리액션' },
+  { id: 'chamgyeon', label: '👀 참견러',      sub: '오지랖 만렙' },
+  { id: 'kkondae',   label: '👴 꼰대',        sub: '우리때는~' },
 ];
 
 function charSectionHtml(prefix, titleLabel) {
