@@ -56,24 +56,12 @@ const DEBATE_TOPICS = [
   '김밥 꼬다리는 먹는다 vs 버린다',
 ];
 
-// 풀에서 무작위로 하나 — 바로 직전 주제는 피해서 이틀 연속 중복 방지
-function pickRandomTopic(exclude) {
-  const pool = exclude ? DEBATE_TOPICS.filter(t => t !== exclude) : DEBATE_TOPICS;
-  const list = pool.length ? pool : DEBATE_TOPICS;
-  return list[Math.floor(Math.random() * list.length)];
-}
-
-// 가장 최근에 만들어진 티격태격 주제 (직전 중복 회피용)
-async function getLastDebateTopic() {
-  try {
-    const snap = await db.collection('feeds')
-      .where('type', '==', 'ai_debate')
-      .orderBy('createdAt', 'desc')
-      .limit(1)
-      .get();
-    if (snap.empty) return null;
-    return snap.docs[0].data().topic || null;
-  } catch { return null; }
+// KST 날짜(1~31)를 인덱스로 삼아 31개 주제를 순환
+// 매달 1일=주제[0], 2일=주제[1], ..., 31일=주제[30]
+function pickDailyTopic() {
+  const kstDate = new Date(Date.now() + 9 * 3600 * 1000);
+  const dayOfMonth = kstDate.getUTCDate(); // 1~31
+  return DEBATE_TOPICS[dayOfMonth - 1];
 }
 
 function buildDebateSystem(chars, topic) {
@@ -146,8 +134,7 @@ exports.scheduledDailyDebate = onSchedule({
   memory: '512MiB',
 }, async () => {
   try {
-    const lastTopic = await getLastDebateTopic();
-    const topic = pickRandomTopic(lastTopic);
+    const topic = pickDailyTopic();
     const charIds = CHAR_LIST.map(c => c.id);
     const { postId } = await generateDebatePost(topic, charIds);
     console.log('[scheduledDailyDebate] created', postId, '-', topic);
@@ -168,8 +155,7 @@ exports.generateDebateNow = onCall({
   if (!adminSnap.exists) throw new HttpsError('permission-denied', '관리자만 접근 가능해요');
 
   const customTopic = String(request.data?.topic || '').trim().slice(0, 100);
-  const lastTopic = customTopic ? null : await getLastDebateTopic();
-  const topic = customTopic || pickRandomTopic(lastTopic);
+  const topic = customTopic || pickDailyTopic();
 
   const reqIds = Array.isArray(request.data?.characterIds)
     ? request.data.characterIds.filter(id => CHARACTERS[id])
