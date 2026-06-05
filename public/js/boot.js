@@ -36,7 +36,6 @@ async function collectDiagnostics() {
   return [
     `bootVersion=${BOOT_VERSION}`,
     await probe('app-safe.js'),
-    await probe('app.js'),
   ].join('\n');
 }
 
@@ -59,9 +58,5 @@ window.addEventListener('unhandledrejection', async event => {
 
 const safeUrl = `./app-safe.js?v=${encodeURIComponent(BOOT_VERSION)}&t=${Date.now()}`;
 import(safeUrl).then(loadPostBootModules).catch(async safeError => {
-  console.warn('[sosoking boot] safe entry failed, trying legacy app', safeError);
-  const legacyUrl = `./app.js?v=${encodeURIComponent(BOOT_VERSION)}&t=${Date.now()}`;
-  import(legacyUrl).then(loadPostBootModules).catch(async legacyError => {
-    showBootError(legacyError || safeError, await collectDiagnostics());
-  });
+  showBootError(safeError, await collectDiagnostics());
 });
