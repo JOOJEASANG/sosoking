@@ -29,7 +29,7 @@ function makeImgUpload(prefix, label) {
 
 function capturePositioned(store) {
   if (!store.hasImage || !store.imgEl) return null;
-  const OUT = 512;
+  const OUT = 768;
   const canvas = document.createElement('canvas');
   canvas.width = OUT;
   canvas.height = OUT;
