@@ -45,6 +45,7 @@ const AI_KING_AGAIN = {
   ai_match:     { path: '/ai-match',     label: '💘 나도 궁합보기' },
   ai_naming:    { path: '/ai-translate', label: '✨ 나도 이름짓기' },
   ai_consult:   { path: '/ai-consult',   label: '💬 나도 상담받기' },
+  ai_debate:    { path: '/ai-judge',     label: '⚖️ 나도 캐릭터한테 물어보기' },
 };
 
 function renderAiAgainBtn(type) {
@@ -72,6 +73,8 @@ export function renderTypeBody(post) {
       return renderAiNamingBody(post) + renderAiAgainBtn('ai_naming');
     case 'ai_consult':
       return renderAiConsultBody(post) + renderAiAgainBtn('ai_consult');
+    case 'ai_debate':
+      return renderAiDebateBody(post) + renderAiAgainBtn('ai_debate');
     case 'balance':
     case 'vote':
       if (!post.options?.length) return '';
@@ -136,6 +139,25 @@ function renderAiJudgeBody(post) {
             <div class="ai-verdict-text">${escHtml(v.verdict || '').replace(/\n/g, '<br>')}</div>
           </div>`).join('')}
       </div>
+    </div>`;
+}
+
+function renderAiDebateBody(post) {
+  const turns = Array.isArray(post.turns) ? post.turns : [];
+  return `
+    <div class="ai-debate-result">
+      <div class="ai-debate-topic">
+        <span class="ai-debate-topic__label">🗣️ 오늘의 주제</span>
+        <span class="ai-debate-topic__text">${escHtml(post.topic || post.title || '').replace(/\n/g, '<br>')}</span>
+      </div>
+      <div class="ai-debate-thread">
+        ${turns.map(t => `
+          <div class="ai-debate-turn" data-char="${escHtml(t.charId || '')}">
+            <div class="ai-debate-turn__name">${escHtml(t.charName || '')}</div>
+            <div class="ai-debate-turn__bubble">${escHtml(t.text || '').replace(/\n/g, '<br>')}</div>
+          </div>`).join('')}
+      </div>
+      <div class="ai-debate-foot">누가 이겼을까? 댓글로 편 들어주기 👇</div>
     </div>`;
 }
 

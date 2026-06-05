@@ -1122,3 +1122,7 @@ exports.purchaseAiExtraUse = onCall({ region: 'asia-northeast3' }, async (reques
 
   return { success: true, quantity: totalQuantity, bonus, pointsUsed: totalCost };
 });
+
+// ── 다른 모듈(AI 티격태격 등)에서 재사용하는 내부 헬퍼 모음 ──
+// Cloud Function 트리거가 아닌 일반 객체라 배포 대상에서 자동 제외된다.
+module.exports.sharedAi = { CHARACTERS, CHAR_LIST, callAI, callAndParse };

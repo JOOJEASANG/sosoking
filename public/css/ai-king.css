@@ -387,3 +387,36 @@
 .onboard-how__arrow { color: var(--color-text-muted); font-size: 12px; flex-shrink: 0; }
 
 .onboard-footer { text-align: center; font-size: 11px; color: var(--color-text-muted); margin-top: 20px; line-height: 1.7; }
+
+/* ── AI 티격태격 (ai_debate) ── */
+.ai-debate-topic { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; background: var(--color-golra-bg, var(--color-surface-2)); border-radius: 12px; margin-bottom: 14px; }
+.ai-debate-topic__label { font-size: 11px; font-weight: 800; color: var(--color-primary); letter-spacing: .3px; }
+.ai-debate-topic__text { font-size: 15px; font-weight: 800; color: var(--color-text-primary); line-height: 1.5; }
+
+.ai-debate-thread { display: flex; flex-direction: column; gap: 10px; }
+.ai-debate-turn { display: flex; flex-direction: column; gap: 3px; }
+.ai-debate-turn__name { font-size: 12px; font-weight: 800; color: var(--color-text-secondary); padding-left: 2px; }
+.ai-debate-turn__bubble { font-size: 14px; line-height: 1.6; color: var(--color-text-primary); background: var(--color-surface-2); border: 1px solid var(--color-border-light); border-radius: 4px 14px 14px 14px; padding: 10px 14px; align-self: flex-start; max-width: 92%; }
+/* 캐릭터별 살짝 다른 말풍선 색으로 난장판 느낌 */
+.ai-debate-turn[data-char="jungding"]  .ai-debate-turn__bubble { background: #eef6ff; }
+.ai-debate-turn[data-char="saibi"]     .ai-debate-turn__bubble { background: #f3eefe; }
+.ai-debate-turn[data-char="prophet"]   .ai-debate-turn__bubble { background: #eefaf3; }
+.ai-debate-turn[data-char="joojeob"]   .ai-debate-turn__bubble { background: #fff2f5; }
+.ai-debate-turn[data-char="chamgyeon"] .ai-debate-turn__bubble { background: #fff7e8; }
+.ai-debate-turn[data-char="kkondae"]   .ai-debate-turn__bubble { background: #f0f1f3; }
+[data-theme="dark"] .ai-debate-turn__bubble { background: var(--color-surface-2); }
+[data-theme="dark"] .ai-debate-turn[data-char] .ai-debate-turn__bubble { background: rgba(255,255,255,.04); }
+.ai-debate-foot { margin-top: 16px; text-align: center; font-size: 13px; font-weight: 700; color: var(--color-text-secondary); }
+
+/* ── 홈: 오늘의 티격태격 카드 ── */
+.home-debate-card { margin-top: 16px; padding: 16px 18px; border-radius: 18px; cursor: pointer; background: linear-gradient(135deg, #fff4ef 0%, #ffe9f0 100%); border: 1.5px solid var(--color-primary, #ff6b4a); transition: transform .15s, box-shadow .15s; }
+.home-debate-card:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(255,107,74,.18); }
+[data-theme="dark"] .home-debate-card { background: linear-gradient(135deg, rgba(255,107,74,.12) 0%, rgba(255,107,74,.05) 100%); }
+.home-debate-card__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.home-debate-card__label { font-size: 13px; font-weight: 900; color: var(--color-primary, #ff6b4a); }
+.home-debate-card__live { font-size: 10px; font-weight: 800; color: #fff; background: var(--color-primary, #ff6b4a); padding: 3px 8px; border-radius: 999px; }
+.home-debate-card__topic { font-size: 16px; font-weight: 800; color: var(--color-text-primary); line-height: 1.45; margin-bottom: 10px; word-break: keep-all; }
+.home-debate-card__preview { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+.home-debate-card__line { font-size: 12.5px; color: var(--color-text-secondary); line-height: 1.5; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.home-debate-card__line b { color: var(--color-text-primary); font-weight: 800; }
+.home-debate-card__more { font-size: 13px; font-weight: 800; color: var(--color-primary, #ff6b4a); }
