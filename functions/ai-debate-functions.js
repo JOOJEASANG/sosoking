@@ -21,7 +21,7 @@ const DEBATE_PERSONA = {
   kkondae:   '꼰대. "내가 말이야~/우리 때는~/요즘 것들은" 옛날 고생 자랑하며 깎아내림.',
 };
 
-// ── 가볍고 안전한 일상 떡밥 주제 풀 ──
+// ── 가볍고 안전한 일상 떡밥 주제 풀 (한 달치 31개) ──
 const DEBATE_TOPICS = [
   '탕수육은 부먹이 맞다 vs 찍먹이 맞다',
   '민트초코는 음식이다 vs 치약이다',
@@ -48,13 +48,32 @@ const DEBATE_TOPICS = [
   '돈가스엔 소스 부어먹기 vs 찍어먹기',
   '커플 통장 합치기 vs 각자 관리',
   '여행 짐은 미리미리 vs 출발 직전에',
+  '라면에 계란은 풀어서 vs 통째로',
+  '영화관엔 팝콘 필수 vs 없어도 된다',
+  '새우는 머리까지 먹기 vs 빼고 먹기',
+  '선풍기 틀고 자기 vs 끄고 자기',
+  '약속은 무조건 일찍 도착 vs 딱 맞춰 도착',
+  '김밥 꼬다리는 먹는다 vs 버린다',
 ];
 
-// 날짜 기반 회전으로 매일 다른 주제
-function pickDailyTopic() {
-  const day = Math.floor((Date.now() + 9 * 3600 * 1000) / 86400000);
-  const idx = ((day % DEBATE_TOPICS.length) + DEBATE_TOPICS.length) % DEBATE_TOPICS.length;
-  return DEBATE_TOPICS[idx];
+// 풀에서 무작위로 하나 — 바로 직전 주제는 피해서 이틀 연속 중복 방지
+function pickRandomTopic(exclude) {
+  const pool = exclude ? DEBATE_TOPICS.filter(t => t !== exclude) : DEBATE_TOPICS;
+  const list = pool.length ? pool : DEBATE_TOPICS;
+  return list[Math.floor(Math.random() * list.length)];
+}
+
+// 가장 최근에 만들어진 티격태격 주제 (직전 중복 회피용)
+async function getLastDebateTopic() {
+  try {
+    const snap = await db.collection('feeds')
+      .where('type', '==', 'ai_debate')
+      .orderBy('createdAt', 'desc')
+      .limit(1)
+      .get();
+    if (snap.empty) return null;
+    return snap.docs[0].data().topic || null;
+  } catch { return null; }
 }
 
 function buildDebateSystem(chars, topic) {
@@ -127,7 +146,8 @@ exports.scheduledDailyDebate = onSchedule({
   memory: '512MiB',
 }, async () => {
   try {
-    const topic = pickDailyTopic();
+    const lastTopic = await getLastDebateTopic();
+    const topic = pickRandomTopic(lastTopic);
     const charIds = CHAR_LIST.map(c => c.id);
     const { postId } = await generateDebatePost(topic, charIds);
     console.log('[scheduledDailyDebate] created', postId, '-', topic);
@@ -148,7 +168,8 @@ exports.generateDebateNow = onCall({
   if (!adminSnap.exists) throw new HttpsError('permission-denied', '관리자만 접근 가능해요');
 
   const customTopic = String(request.data?.topic || '').trim().slice(0, 100);
-  const topic = customTopic || pickDailyTopic();
+  const lastTopic = customTopic ? null : await getLastDebateTopic();
+  const topic = customTopic || pickRandomTopic(lastTopic);
 
   const reqIds = Array.isArray(request.data?.characterIds)
     ? request.data.characterIds.filter(id => CHARACTERS[id])
