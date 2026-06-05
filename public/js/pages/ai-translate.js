@@ -5,7 +5,7 @@ import { toast } from '../components/toast.js';
 import { setMeta } from '../utils/seo.js';
 import { isQuotaError, showAiLadderBonus } from '../ai-ladder-bonus.js';
 
-function resizeImageToBase64(file, maxPx = 512) {
+function resizeImageToBase64(file, maxPx = 1024) {
   return new Promise((resolve) => {
     const img = new Image();
     const url = URL.createObjectURL(file);

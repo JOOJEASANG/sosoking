@@ -12,6 +12,8 @@ const TYPE_META = {
   ai_translate: { cat: 'usgyo',  catLabel: 'AI\uBC88\uC5ED\uC0AC', icon: '🌍', label: 'AI\uBC88\uC5ED\uC0AC' },
   ai_match:     { cat: 'golra',  catLabel: 'AI\uAD81\uD569', icon: '💘', label: 'AI\uAD81\uD569' },
   ai_naming:    { cat: 'usgyo',  catLabel: 'AI\uC791\uBA85\uC18C', icon: '🎭', label: 'AI\uC791\uBA85\uC18C' },
+  ai_consult:   { cat: 'golra',  catLabel: 'AI\uC0C1\uB2F4\uC18C', icon: '💬', label: 'AI\uC0C1\uB2F4\uC18C' },
+  ai_debate:    { cat: 'golra',  catLabel: '\uD2F0\uACA9\uD0DC\uACA9', icon: '🗣️', label: '\uD2F0\uACA9\uD0DC\uACA9' },
 };
 
 function escAttr(value) {

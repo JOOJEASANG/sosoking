@@ -23,9 +23,10 @@ const ROOMS = [
   { key: 'ai_translate', icon: '✨', label: '창작소', title: '창작소', desc: '번역하기 + 이름짓기 두 가지를 한 곳에서.', path: '/ai-translate' },
   { key: 'ai_match',     icon: '💘', label: '궁합소', title: '궁합소', desc: '뭐든 두 가지 → AI가 궁합 점수+분석 즉시 출력.', path: '/ai-match' },
   { key: 'ai_consult',   icon: '💬', label: '상담소', title: '상담소', desc: '고민 털어놓기 → 황당하지만 맞는 조언 보장.', path: '/ai-consult' },
+  { key: 'ai_debate',    icon: '🗣️', label: '티격태격', title: '티격태격', desc: '매일 한 주제로 캐릭터 6인이 벌이는 말싸움 구경.' },
 ];
 
-const AI_TYPES = ['ai_judge', 'ai_translate', 'ai_match', 'ai_naming', 'ai_consult'];
+const AI_TYPES = ['ai_judge', 'ai_translate', 'ai_match', 'ai_naming', 'ai_consult', 'ai_debate'];
 
 let currentType        = '';
 let currentSearch      = '';
@@ -160,6 +161,7 @@ function getLegacyTypeWhereClause(type) {
     ai_translate: ['ai_translate', 'ai_naming'],
     ai_match:     ['ai_match'],
     ai_consult:   ['ai_consult'],
+    ai_debate:    ['ai_debate'],
   };
   const types = map[type];
   if (!types) return null;

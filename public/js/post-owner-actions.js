@@ -185,7 +185,8 @@ function openEditModal(post) {
 
 function collectMultiModules(post) {
   const original = post.modules || {};
-  const modules = { comments: { enabled: true } };
+  // 기존 모듈 전체를 복사하여 편집 UI에서 처리하지 않는 모듈(naming, drip, acrostic, relay, fill 등)이 삭제되지 않도록 합니다.
+  const modules = { ...original, comments: { enabled: true } };
 
   if (document.getElementById('owner-multi-vote-enabled')?.checked) {
     const inputs = [...document.querySelectorAll('.owner-multi-vote-option')];
@@ -195,11 +196,14 @@ function collectMultiModules(post) {
     })).filter(opt => opt.text);
     if (options.length < 2) throw new Error('투표 선택지는 2개 이상 필요합니다.');
     modules.vote = {
+      ...(original.vote || {}),
       enabled: true,
       question: document.getElementById('owner-multi-vote-question')?.value.trim() || '선택해주세요',
       options,
       votedBy: Array.isArray(original.vote?.votedBy) ? original.vote.votedBy : [],
     };
+  } else {
+    delete modules.vote;
   }
 
   if (document.getElementById('owner-multi-quiz-enabled')?.checked) {
@@ -207,6 +211,8 @@ function collectMultiModules(post) {
     const answer = document.getElementById('owner-multi-quiz-answer')?.value.trim() || '';
     if (!question || !answer) throw new Error('문제와 정답을 모두 입력해주세요.');
     modules.quiz = { enabled: true, question, answer };
+  } else {
+    delete modules.quiz;
   }
 
   return modules;

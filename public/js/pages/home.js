@@ -5,7 +5,7 @@ import { setMeta } from '../utils/seo.js';
 import { escHtml, formatTime } from '../utils/helpers.js';
 import { fetchHotPosts, fetchTodayBest } from '../services/feed-service.js';
 import {
-  collection, collectionGroup, query, orderBy, limit, getDocs,
+  collection, collectionGroup, query, orderBy, limit, getDocs, where,
   doc, getDoc, updateDoc,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { navigate } from '../router.js';
@@ -16,6 +16,7 @@ const TYPE_LABEL = {
   ai_match:     '💘 궁합소',
   ai_naming:    '✨ 창작소',
   ai_consult:   '💬 상담소',
+  ai_debate:    '🗣️ 티격태격',
 };
 
 const AI_KINGS = [
@@ -71,6 +72,40 @@ async function fetchPopularComments(n = 6) {
       .sort((a, b) => b._score !== a._score ? b._score - a._score : (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0))
       .slice(0, n);
   } catch { return []; }
+}
+
+async function fetchLatestDebate() {
+  try {
+    const q = query(
+      collection(db, 'feeds'),
+      where('type', '==', 'ai_debate'),
+      orderBy('createdAt', 'desc'),
+      limit(1),
+    );
+    const snap = await getDocs(q);
+    if (snap.empty) return null;
+    const d = snap.docs[0];
+    const data = d.data();
+    if (data.hidden) return null;
+    return { id: d.id, ...data };
+  } catch { return null; }
+}
+
+function renderDebateCard(post) {
+  if (!post) return '';
+  const turns = Array.isArray(post.turns) ? post.turns.slice(0, 2) : [];
+  return `
+    <div class="home-debate-card" data-id="${post.id}">
+      <div class="home-debate-card__head">
+        <span class="home-debate-card__label">🗣️ 오늘의 티격태격</span>
+        <span class="home-debate-card__live">캐릭터 6인 난장판</span>
+      </div>
+      <div class="home-debate-card__topic">${escHtml(post.topic || post.title || '')}</div>
+      <div class="home-debate-card__preview">
+        ${turns.map(t => `<div class="home-debate-card__line"><b>${escHtml(t.charName || '')}</b> ${escHtml((t.text || '').slice(0, 38))}…</div>`).join('')}
+      </div>
+      <div class="home-debate-card__more">싸움 구경하고 편 들어주기 →</div>
+    </div>`;
 }
 
 function renderHero() {
@@ -160,11 +195,14 @@ export async function renderHome() {
     const user = auth.currentUser;
     if (user) checkStreak(user.uid);
 
-    const [hotPosts, popularComments, todayBest] = await Promise.all([
+    const [hotPosts, popularComments, todayBest, latestDebate] = await Promise.all([
       fetchHotPosts(8),
       fetchPopularComments(6),
       fetchTodayBest(),
+      fetchLatestDebate(),
     ]);
+
+    const debateHTML = renderDebateCard(latestDebate);
 
     const bestHTML = todayBest ? `
       <div class="home-section-header" style="margin-bottom:8px">
@@ -195,7 +233,7 @@ export async function renderHome() {
         </div>
       </div>` : '';
 
-    el.innerHTML = `<div class="home-dash page-enter home-dash--v2">${renderHero()}${bestHTML}${hotHTML}${commentsHTML}</div>`;
+    el.innerHTML = `<div class="home-dash page-enter home-dash--v2">${renderHero()}${debateHTML}${bestHTML}${hotHTML}${commentsHTML}</div>`;
 
     el.querySelector('#hbtn-more-hot')?.addEventListener('click', () => navigate('/feed'));
     el.querySelectorAll('[data-path]').forEach(btn => {
