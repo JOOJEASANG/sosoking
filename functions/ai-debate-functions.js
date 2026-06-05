@@ -21,7 +21,7 @@ const DEBATE_PERSONA = {
   kkondae:   '꼰대. "내가 말이야~/우리 때는~/요즘 것들은" 옛날 고생 자랑하며 깎아내림.',
 };
 
-// ── 가볍고 안전한 일상 떡밥 주제 풀 (한 달치 31개) ──
+// ── 일상 떡밥 주제 풀 (90개, 약 3달 주기 순환) ──
 const DEBATE_TOPICS = [
   '탕수육은 부먹이 맞다 vs 찍먹이 맞다',
   '민트초코는 음식이다 vs 치약이다',
@@ -54,26 +54,72 @@ const DEBATE_TOPICS = [
   '선풍기 틀고 자기 vs 끄고 자기',
   '약속은 무조건 일찍 도착 vs 딱 맞춰 도착',
   '김밥 꼬다리는 먹는다 vs 버린다',
+  '샤워는 아침에 vs 밤에',
+  '짜장면 vs 짬뽕',
+  '영화는 극장에서 봐야 vs 집에서 OTT로',
+  '생일 선물은 현금 vs 직접 고른 선물',
+  '맛집은 웨이팅해서라도 가기 vs 그냥 빈 곳으로',
+  '고기 구울 때 집게로 누르기 vs 절대 누르면 안 된다',
+  '냉면은 비벼서 vs 국물 그대로',
+  '카페에서 공부하기 vs 집에서 공부하기',
+  '택시 탈 때 앞자리 vs 뒷자리',
+  '편의점 삼각김밥은 데우기 vs 그냥 먹기',
+  '드라마는 몰아보기 vs 매주 기다려서 보기',
+  '고양이 vs 강아지',
+  '잠은 8시간 꼭 채워야 vs 5~6시간으로 충분',
+  '헤어질 때 직접 말하기 vs 카톡으로',
+  '국물 요리는 냄비째 먹기 vs 그릇에 덜어서',
+  '여름엔 에어컨 빵빵하게 vs 선풍기로 충분',
+  '버스 vs 지하철',
+  '책은 종이책 vs 전자책',
+  '커피는 아메리카노 vs 라떼',
+  '야식은 먹어야 한다 vs 10시 이후엔 절대 안 먹는다',
+  '여행지 숙소는 호텔 vs 에어비앤비',
+  '식당에서 좀 떠들어도 된다 vs 조용히 먹어야',
+  '눈 오면 무조건 나가야 한다 vs 집에 있어야',
+  '소개팅은 1대1 vs 다대다 미팅',
+  '명절에 고향 가기 vs 집에서 쉬기',
+  '카페는 프랜차이즈 vs 동네 카페',
+  '외식비는 더치페이 앱으로 vs 한 명이 내고 나중에 계산',
+  '침대는 딱딱한 게 좋다 vs 푹신한 게 좋다',
+  '사진은 많이 찍어두기 vs 순간에 집중하기',
+  '추울 때 내복 입기 vs 절대 안 입는다',
+  '냉동만두는 에어프라이어 vs 후라이팬',
+  '생일 케이크 촛불 끄기 전 소원 빌기 vs 그냥 바로 끈다',
+  '영화관 팔걸이는 내 거다 vs 양보해야',
+  '장볼 때 목록 적어가기 vs 보이는 대로 담기',
+  '밥 먹고 바로 눕기 vs 잠깐은 앉아 있기',
+  '겨울 패딩은 롱패딩 vs 숏패딩',
+  '음악은 이어폰 vs 스피커',
+  '잠들기 전 폰 보기 vs 절대 안 본다',
+  '월급은 통장에 쌓아두기 vs 쓸 때 쓰기',
+  '친구한테 솔직하게 말하기 vs 상처받을까봐 참기',
+  '운동화는 신발장에 정리 vs 현관에 그냥 두기',
+  '양치는 밥 먹고 바로 vs 30분 뒤에',
+  '카톡 프로필은 자주 바꾸기 vs 그대로 유지',
+  '집에서 슬리퍼 신기 vs 맨발로',
+  '국수는 후루룩 소리 내며 vs 조용히',
+  '핸드폰 케이스는 투명 vs 컬러',
+  '음식 남기는 건 죄악이다 vs 배부르면 남긴다',
+  '세뱃돈은 모아두기 vs 바로 쓰기',
+  '반찬은 더 달라고 하기 vs 있는 거로만 먹기',
+  '빨래는 매일 조금씩 vs 한꺼번에 모아서',
+  '영수증은 챙기기 vs 그냥 버리기',
+  '주문은 점원 직접 불러서 vs 앱·키오스크로',
+  '약속 장소는 딱 정하기 vs 근처서 연락하기',
+  '선물 포장지는 조심히 뜯기 vs 박박 찢기',
+  '오래된 친구 vs 새로 사귄 친구',
+  '남은 치킨은 냉장고에 vs 그냥 실온에',
+  '카드 vs 현금',
+  '떡볶이는 국물 많은 것 vs 볶음 스타일',
+  '잠 잘 때 불 완전히 끄기 vs 수면등 켜두기',
 ];
 
-// 풀에서 무작위로 하나 — 바로 직전 주제는 피해서 이틀 연속 중복 방지
-function pickRandomTopic(exclude) {
-  const pool = exclude ? DEBATE_TOPICS.filter(t => t !== exclude) : DEBATE_TOPICS;
-  const list = pool.length ? pool : DEBATE_TOPICS;
-  return list[Math.floor(Math.random() * list.length)];
-}
-
-// 가장 최근에 만들어진 티격태격 주제 (직전 중복 회피용)
-async function getLastDebateTopic() {
-  try {
-    const snap = await db.collection('feeds')
-      .where('type', '==', 'ai_debate')
-      .orderBy('createdAt', 'desc')
-      .limit(1)
-      .get();
-    if (snap.empty) return null;
-    return snap.docs[0].data().topic || null;
-  } catch { return null; }
+// KST 기준 오늘이 1970년 1월 1일로부터 몇 번째 날인지 % 90으로 순환
+// → 90일(약 3달) 주기로 같은 주제 반복
+function pickDailyTopic() {
+  const kstDayIndex = Math.floor((Date.now() + 9 * 3600 * 1000) / 86400000);
+  return DEBATE_TOPICS[kstDayIndex % DEBATE_TOPICS.length];
 }
 
 function buildDebateSystem(chars, topic) {
@@ -114,6 +160,7 @@ async function generateDebatePost(topic, charIds) {
   if (turns.length < 2) throw new Error('debate produced too few turns');
 
   const postRef = db.collection('feeds').doc();
+  const createdAt = new Date();
   await postRef.set({
     type: 'ai_debate',
     feedType: 'ai_debate',
@@ -126,6 +173,8 @@ async function generateDebatePost(topic, charIds) {
     authorEmail: '',
     authorPhoto: '',
     commentCount: 0,
+    voteA: 0,
+    voteB: 0,
     reactions: { like: 0, funny: 0, fire: 0, total: 0 },
     viewCount: 0,
     createdAt: FieldValue.serverTimestamp(),
@@ -134,7 +183,53 @@ async function generateDebatePost(topic, charIds) {
     hidden: false,
     cat: 'golra',
   });
+
+  // AI 미끼 댓글 생성 (비동기, 실패해도 포스트 자체는 성공)
+  generateDecoyComments(postRef.id, topic, createdAt).catch(e =>
+    console.warn('[generateDecoyComments] failed:', e.message),
+  );
+
   return { postId: postRef.id, topic, turns };
+}
+
+// ── AI 미끼 댓글: 사람처럼 보이는 가짜 댓글 3개를 AI로 생성해 comments에 숨김 ──
+async function generateDecoyComments(postId, topic, postCreatedAt) {
+  const parts = topic.split(' vs ');
+  const sideA = (parts[0] || 'A').trim();
+  const sideB = (parts[1] || 'B').trim();
+  const system = `너는 "${topic}" 주제 커뮤니티 댓글란에 자연스럽게 섞이는 가짜 유저 댓글 3개를 쓰는 역할이야.
+실제 한국 커뮤니티처럼 짧고 구어체로 (10-50자). 반말 또는 가벼운 존댓말. 자연스러운 한국어.
+닉네임은 각각 자연스러운 한국식 닉네임(2-8자, 예: 민지러버, 팬케이크92, 초코고냥이).
+각 댓글은 "${sideA}(A편)" 또는 "${sideB}(B편)" 입장을 은근히 드는 내용.
+반드시 JSON만 출력, 다른 텍스트 없음:
+{"decoys":[{"nickname":"닉네임","text":"댓글","side":"A"},{"nickname":"닉네임","text":"댓글","side":"B"},{"nickname":"닉네임","text":"댓글","side":"A"}]}`;
+  const { parsed } = await callAndParse(
+    (mt) => callAI(system, '댓글 3개 생성', null, mt, 1.0, true),
+    600,
+  );
+  const decoys = (parsed.decoys || []).slice(0, 3);
+  const revealAt = new Date(postCreatedAt.getTime() + 24 * 3600 * 1000);
+  let added = 0;
+  for (const d of decoys) {
+    if (!d.nickname || !d.text || !['A', 'B'].includes(d.side)) continue;
+    await db.collection('feeds').doc(postId).collection('comments').add({
+      text: String(d.text).trim().slice(0, 200),
+      authorId: 'ai-decoy',
+      authorName: String(d.nickname).trim().slice(0, 12),
+      authorPhoto: '',
+      isGuest: false,
+      isAiDecoy: true,
+      decoyRevealAt: revealAt,
+      side: d.side,
+      reactions: {},
+      reactedWith: {},
+      createdAt: FieldValue.serverTimestamp(),
+    });
+    added++;
+  }
+  if (added > 0) {
+    await db.doc(`feeds/${postId}`).update({ commentCount: FieldValue.increment(added) }).catch(() => {});
+  }
 }
 
 // ── 매일 오전 10시(KST) 자동 생성: 6인 전원 출연 ──
@@ -146,14 +241,43 @@ exports.scheduledDailyDebate = onSchedule({
   memory: '512MiB',
 }, async () => {
   try {
-    const lastTopic = await getLastDebateTopic();
-    const topic = pickRandomTopic(lastTopic);
+    const topic = pickDailyTopic();
     const charIds = CHAR_LIST.map(c => c.id);
     const { postId } = await generateDebatePost(topic, charIds);
     console.log('[scheduledDailyDebate] created', postId, '-', topic);
   } catch (e) {
     console.error('[scheduledDailyDebate] failed:', e.message);
   }
+});
+
+// ── 유저 A/B 투표 ──
+exports.voteDebateSide = onCall({
+  region: 'asia-northeast3',
+  timeoutSeconds: 30,
+  memory: '256MiB',
+}, async (request) => {
+  if (!request.auth) throw new HttpsError('unauthenticated', '로그인 후 투표할 수 있어요');
+  const uid = request.auth.uid;
+  const postId = String(request.data?.postId || '').trim();
+  const side = String(request.data?.side || '').toUpperCase();
+  if (!postId) throw new HttpsError('invalid-argument', '게시글을 찾을 수 없어요');
+  if (!['A', 'B'].includes(side)) throw new HttpsError('invalid-argument', 'A 또는 B를 선택해주세요');
+
+  const voteRef = db.doc(`feeds/${postId}/debate_votes/${uid}`);
+  const existing = await voteRef.get();
+  if (existing.exists()) {
+    const postSnap = await db.doc(`feeds/${postId}`).get();
+    const d = postSnap.exists() ? postSnap.data() : {};
+    return { alreadyVoted: true, side: existing.data().side, voteA: d.voteA || 0, voteB: d.voteB || 0 };
+  }
+
+  await voteRef.set({ uid, side, createdAt: FieldValue.serverTimestamp() });
+  const fieldKey = side === 'A' ? 'voteA' : 'voteB';
+  await db.doc(`feeds/${postId}`).update({ [fieldKey]: FieldValue.increment(1) }).catch(() => {});
+
+  const postSnap = await db.doc(`feeds/${postId}`).get();
+  const d = postSnap.exists() ? postSnap.data() : {};
+  return { alreadyVoted: false, side, voteA: d.voteA || 0, voteB: d.voteB || 0 };
 });
 
 // ── 관리자 수동 생성 ──
