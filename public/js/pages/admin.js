@@ -551,7 +551,6 @@ async function renderAiSettings(el) {
   let aiConfig = { enabled: true, features: {} };
   let todayDocs = [];
   let monthDocs = [];
-  let reports = [];
 
   await Promise.all([
     getDoc(doc(db, 'config', 'ai_king')).then(snap => {
@@ -581,9 +580,6 @@ async function renderAiSettings(el) {
     }).catch(() => {}),
     getDocs(query(collection(db, 'ai_king_usage'), where('date', '>=', monthStart), where('date', '<=', today), limit(2000))).then(snap => {
       monthDocs = snap.docs.map(d => d.data());
-    }).catch(() => {}),
-    getDocs(query(collection(db, 'ai_reports'), orderBy('createdAt', 'desc'), limit(3))).then(snap => {
-      reports = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     }).catch(() => {}),
   ]);
 
@@ -630,9 +626,8 @@ async function renderAiSettings(el) {
   const projectedUSD = dayOfMonth > 0 ? ((monthCostUSD / dayOfMonth) * daysInMonth) : 0;
 
   const featureList = [
-    { key: 'moderation',   label: '🛡️ 게시물 자동 검토',   desc: '새 게시물 AI 모더레이션 (욕설·비방 자동 숨김)' },
-    { key: 'autoReport',   label: '📋 신고 자동 처리',     desc: '접수된 신고 AI 분석 후 명백한 위반 자동 처리' },
-    { key: 'weeklyReport', label: '📊 주간 보고서',         desc: '매주 월요일 AI가 활동 보고서 자동 작성' },
+    { key: 'moderation', label: '🛡️ 게시물 자동 검토', desc: '새 게시물 AI 모더레이션 (욕설·비방 자동 숨김)' },
+    { key: 'autoReport', label: '📋 신고 자동 처리',   desc: '접수된 신고 AI 분석 후 명백한 위반 자동 처리' },
   ];
 
   el.innerHTML = `
@@ -846,19 +841,6 @@ async function renderAiSettings(el) {
         </div>
       </div>
 
-      <!-- 최근 AI 보고서 -->
-      ${reports.length > 0 ? `
-        <div class="card">
-          <div class="card__body">
-            <div style="font-size:14px;font-weight:800;margin-bottom:12px">📄 최근 AI 보고서</div>
-            ${reports.map(r => `
-              <div style="padding:12px;background:var(--color-surface-2);border-radius:var(--radius-md);margin-bottom:8px">
-                <div style="font-size:13px;font-weight:700;margin-bottom:4px">${escHtml(r.title || '보고서')}</div>
-                <div style="font-size:12px;color:var(--color-text-secondary);line-height:1.6">${escHtml(r.summary || '')}</div>
-                ${r.highlights?.length ? `<ul style="font-size:11px;color:var(--color-text-muted);margin:8px 0 0 16px">${r.highlights.map(h => `<li>${escHtml(h)}</li>`).join('')}</ul>` : ''}
-              </div>`).join('')}
-          </div>
-        </div>` : ''}
     </div>`;
 
   // 모델 라디오 스타일 + 비용 안내 실시간 업데이트
