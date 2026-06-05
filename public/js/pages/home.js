@@ -89,6 +89,11 @@ function renderHero() {
         ${streak >= 2 ? `<div class="home-hero-v3__streak">🔥 ${streak}일 연속 방문 중!</div>` : ''}
       </div>
 
+      <button class="home-aiking-hub-btn" data-path="/ai-king" type="button">
+        <span class="home-aiking-hub-btn__icons">⚖️ ✨ 💘 💬</span>
+        <span class="home-aiking-hub-btn__label">소소킹 AI킹 전체보기 →</span>
+      </button>
+
       <div class="home-aiking-grid">
         ${AI_KINGS.map(k => `
           <button class="home-aiking-card" data-path="${k.path}" type="button">

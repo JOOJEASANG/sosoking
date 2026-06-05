@@ -98,6 +98,12 @@
 .home-hero-v3__sub { font-size: 13px; color: var(--color-text-secondary); line-height: 1.5; }
 .home-hero-v3__streak { display: inline-flex; align-items: center; gap: 4px; margin-top: 10px; font-size: 13px; font-weight: 700; color: var(--color-warning); background: var(--color-warning-bg); padding: 5px 12px; border-radius: var(--radius-pill); }
 
+/* 홈 AI킹 허브 진입 버튼 */
+.home-aiking-hub-btn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 13px 16px; background: linear-gradient(135deg, var(--color-primary-bg), var(--color-surface)); border: 2px solid var(--color-primary); border-radius: 12px; cursor: pointer; transition: box-shadow .15s, transform .15s; margin-bottom: 10px; }
+.home-aiking-hub-btn:hover, .home-aiking-hub-btn:focus { box-shadow: 0 4px 14px rgba(0,0,0,.12); transform: translateY(-1px); }
+.home-aiking-hub-btn__icons { font-size: 18px; letter-spacing: 2px; }
+.home-aiking-hub-btn__label { font-size: 14px; font-weight: 800; color: var(--color-primary); }
+
 /* 홈 AI킹 그리드 */
 .home-aiking-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .home-aiking-card { background: var(--color-surface); border: 1.5px solid var(--color-border); border-radius: 12px; padding: 14px 12px; cursor: pointer; text-align: center; transition: box-shadow .15s, transform .15s, border-color .15s; display: flex; flex-direction: column; align-items: center; gap: 4px; }
