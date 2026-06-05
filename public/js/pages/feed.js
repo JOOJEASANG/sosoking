@@ -43,9 +43,27 @@ function useCursorMode() {
 }
 
 function renderRoomTabs() {
+  const activeRoom = ROOMS.find(r => r.key === currentType) || ROOMS[0];
+  const descBar = activeRoom.key
+    ? `<div class="soso-room-desc">
+        <span class="soso-room-desc__icon">${activeRoom.icon}</span>
+        <span class="soso-room-desc__text">${activeRoom.desc}</span>
+        ${activeRoom.path ? `<a class="soso-room-desc__cta" href="#${activeRoom.path}">직접 해보기 →</a>` : ''}
+      </div>`
+    : '';
   return `
-    <div class="soso-room-tabs" aria-label="방별 보기">
-      ${ROOMS.map(room => `<button type="button" class="soso-room-tab ${currentType === room.key ? 'active' : ''}" data-type-filter="${room.key}"><span>${room.icon}</span>${room.label}</button>`).join('')}
+    <div class="soso-room-tabs-wrap">
+      <div class="soso-room-tabs" role="tablist" aria-label="방별 보기">
+        ${ROOMS.map(room => `
+          <button type="button" role="tab"
+            class="soso-room-tab ${currentType === room.key ? 'active' : ''}"
+            data-type-filter="${room.key}"
+            aria-selected="${currentType === room.key}">
+            <span class="soso-room-tab__icon">${room.icon}</span>
+            <span class="soso-room-tab__label">${room.label}</span>
+          </button>`).join('')}
+      </div>
+      ${descBar}
     </div>`;
 }
 
@@ -142,6 +160,26 @@ function refreshFeed() {
   lastDisplayPosts = [];
   updateUrlState();
   updateFeedFilterUI({ type: currentType, search: currentSearch, sort: currentSort });
+  // 탭 active + desc 업데이트
+  document.querySelectorAll('.soso-room-tab').forEach(btn => {
+    const active = btn.dataset.typeFilter === currentType;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-selected', active);
+  });
+  const activeRoom = ROOMS.find(r => r.key === currentType) || ROOMS[0];
+  const descEl = document.querySelector('.soso-room-desc');
+  if (activeRoom.key) {
+    const html = `<span class="soso-room-desc__icon">${activeRoom.icon}</span>
+      <span class="soso-room-desc__text">${activeRoom.desc}</span>
+      ${activeRoom.path ? `<a class="soso-room-desc__cta" href="#${activeRoom.path}">직접 해보기 →</a>` : ''}`;
+    if (descEl) { descEl.innerHTML = html; descEl.hidden = false; }
+    else {
+      const wrap = document.querySelector('.soso-room-tabs-wrap');
+      if (wrap) { const d = document.createElement('div'); d.className = 'soso-room-desc'; d.innerHTML = html; wrap.appendChild(d); }
+    }
+  } else {
+    if (descEl) descEl.hidden = true;
+  }
   loadPosts();
 }
 
