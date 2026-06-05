@@ -41,14 +41,14 @@ function isPrivateIp(address) {
 
 async function assertPublicHost(hostname) {
   const host = String(hostname || '').toLowerCase();
-  if (!host || BLOCKED_HOSTS.includes(host) || host.endsWith('.local') || host.endsWith('.internal')) throw new Error('허용되지 않는 링크입니다.');
-  if (net.isIP(host) && isPrivateIp(host)) throw new Error('허용되지 않는 링크입니다.');
+  if (!host || BLOCKED_HOSTS.includes(host) || host.endsWith('.local') || host.endsWith('.internal')) throw new HttpsError('invalid-argument', '허용되지 않는 링크입니다.');
+  if (net.isIP(host) && isPrivateIp(host)) throw new HttpsError('invalid-argument', '허용되지 않는 링크입니다.');
   try {
     const records = await dns.lookup(host, { all: true, verbatim: true });
-    if (!records.length || records.some(record => isPrivateIp(record.address))) throw new Error('허용되지 않는 링크입니다.');
+    if (!records.length || records.some(record => isPrivateIp(record.address))) throw new HttpsError('invalid-argument', '허용되지 않는 링크입니다.');
   } catch (error) {
-    if (error.message === '허용되지 않는 링크입니다.') throw error;
-    throw new Error('링크 주소를 확인할 수 없습니다.');
+    if (error instanceof HttpsError) throw error;
+    throw new HttpsError('invalid-argument', '링크 주소를 확인할 수 없습니다.');
   }
 }
 
@@ -57,10 +57,9 @@ async function validateUrl(raw) {
   try {
     url = new URL(String(raw || '').trim());
   } catch (_) {
-    const { HttpsError } = require('firebase-functions/v2/https');
     throw new HttpsError('invalid-argument', 'URL 형식이 올바르지 않습니다.');
   }
-  if (url.protocol !== 'https:') throw new Error('https 링크만 요약할 수 있습니다.');
+  if (url.protocol !== 'https:') throw new HttpsError('invalid-argument', 'https 링크만 요약할 수 있습니다.');
   await assertPublicHost(url.hostname);
   return url;
 }
@@ -73,7 +72,7 @@ async function checkRateLimit(userId, action, maxCount, windowSeconds) {
     const snap = await tx.get(ref);
     const data = snap.exists ? snap.data() : {};
     const timestamps = (data[action] || []).filter(ts => Number(ts) > now - windowMs);
-    if (timestamps.length >= maxCount) throw new Error('AI 요약 요청 한도를 초과했습니다. 잠시 후 다시 시도해주세요.');
+    if (timestamps.length >= maxCount) throw new HttpsError('resource-exhausted', 'AI 요약 요청 한도를 초과했습니다. 잠시 후 다시 시도해주세요.');
     tx.set(ref, { [action]: [...timestamps, now].slice(-maxCount) }, { merge: true });
   });
 }
@@ -100,7 +99,7 @@ function extractPage(html, url) {
 
 async function readLimitedText(res) {
   const contentLength = Number(res.headers.get('content-length') || 0);
-  if (contentLength && contentLength > MAX_HTML_BYTES) throw new Error('페이지가 너무 커서 요약할 수 없습니다.');
+  if (contentLength && contentLength > MAX_HTML_BYTES) throw new HttpsError('invalid-argument', '페이지가 너무 커서 요약할 수 없습니다.');
   const reader = res.body?.getReader?.();
   if (!reader) return (await res.text()).slice(0, MAX_HTML_BYTES);
   const chunks = [];
@@ -109,7 +108,7 @@ async function readLimitedText(res) {
     const { done, value } = await reader.read();
     if (done) break;
     received += value.byteLength;
-    if (received > MAX_HTML_BYTES) throw new Error('페이지가 너무 커서 요약할 수 없습니다.');
+    if (received > MAX_HTML_BYTES) throw new HttpsError('invalid-argument', '페이지가 너무 커서 요약할 수 없습니다.');
     chunks.push(value);
   }
   return Buffer.concat(chunks).toString('utf8');
@@ -117,7 +116,7 @@ async function readLimitedText(res) {
 
 async function summarizeWithGemini({ title, description, body, url }) {
   const apiKey = GEMINI_API_KEY.value();
-  if (!apiKey) throw new Error('AI 요약 키가 설정되어 있지 않습니다.');
+  if (!apiKey) throw new HttpsError('failed-precondition', 'AI 요약 키가 설정되어 있지 않습니다.');
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({ model: SUMMARY_MODEL });
   const prompt = `아래 웹페이지를 소소킹 정보공유 피드용으로 요약해줘. 원문을 길게 복사하지 말고 한국어로 짧고 유용하게 정리해.\n\n규칙:\n- 제목 40자 이내\n- 요약 2문장 이내\n- 핵심 포인트 3개\n- 광고성/선정적 표현 제거\n- JSON만 반환\n\nURL: ${url}\n제목: ${title}\n설명: ${description}\n본문 일부: ${body.slice(0, 4500)}\n\n반환 형식: {"title":"","summary":"","points":["","",""]}`;
@@ -137,14 +136,14 @@ async function summarizeWithGemini({ title, description, body, url }) {
 
 const summarizeLink = onCall({ region: 'asia-northeast3', timeoutSeconds: 45, secrets: [GEMINI_API_KEY] }, async (request) => {
   const userId = request.auth?.uid;
-  if (!userId) throw new Error('로그인 후 링크 요약을 사용할 수 있습니다.');
+  if (!userId) throw new HttpsError('unauthenticated', '로그인 후 링크 요약을 사용할 수 있습니다.');
   await checkRateLimit(userId, 'summarizeLink', 20, 86400);
 
   const url = await validateUrl(request.data?.url);
   const source = url.hostname.replace(/^www\./, '');
   let decodedUrl = url.toString();
   try { decodedUrl = decodeURIComponent(decodedUrl); } catch (_) {}
-  if (BLOCK_WORDS.some(word => decodedUrl.includes(word))) throw new Error('요약할 수 없는 링크입니다.');
+  if (BLOCK_WORDS.some(word => decodedUrl.includes(word))) throw new HttpsError('invalid-argument', '요약할 수 없는 링크입니다.');
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
@@ -156,18 +155,18 @@ const summarizeLink = onCall({ region: 'asia-northeast3', timeoutSeconds: 45, se
       headers: { 'user-agent': 'SosokingBot/1.0 (+https://sosoking.co.kr)', 'accept': 'text/html,application/xhtml+xml' }
     });
   } catch {
-    throw new Error('링크 내용을 불러오지 못했습니다.');
+    throw new HttpsError('unavailable', '링크 내용을 불러오지 못했습니다.');
   } finally {
     clearTimeout(timeout);
   }
 
   const finalUrl = new URL(res.url || url.toString());
-  if (finalUrl.protocol !== 'https:') throw new Error('https 링크만 요약할 수 있습니다.');
+  if (finalUrl.protocol !== 'https:') throw new HttpsError('invalid-argument', 'https 링크만 요약할 수 있습니다.');
   await assertPublicHost(finalUrl.hostname);
 
-  if (!res.ok) throw new Error('링크 내용을 불러오지 못했습니다.');
+  if (!res.ok) throw new HttpsError('unavailable', '링크 내용을 불러오지 못했습니다.');
   const contentType = res.headers.get('content-type') || '';
-  if (!contentType.includes('text/html')) throw new Error('HTML 페이지 링크만 요약할 수 있습니다.');
+  if (!contentType.includes('text/html')) throw new HttpsError('invalid-argument', 'HTML 페이지 링크만 요약할 수 있습니다.');
   const html = await readLimitedText(res);
   const page = extractPage(html, finalUrl);
   const ai = await summarizeWithGemini({ ...page, url: finalUrl.toString() });

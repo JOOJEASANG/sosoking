@@ -204,20 +204,21 @@ function buildPost({ preset, draft, userId, token, FieldValue }) {
 }
 
 function register({ exports, onCall, db, FieldValue, GoogleGenerativeAI, geminiKey, getAiKey, logAiUsage }) {
+  const { HttpsError } = require('firebase-functions/v2/https');
   require('./seo-functions').register({ exports, db });
 
   exports.generateAiContentNow = onCall({ region: 'asia-northeast3', timeoutSeconds: 90, memory: '256MiB' }, async (request) => {
     const userId = request.auth?.uid;
-    if (!userId) throw new Error('인증 필요');
+    if (!userId) throw new HttpsError('unauthenticated', '인증 필요');
     const adminSnap = await db.doc(`admins/${userId}`).get();
-    if (!adminSnap.exists) throw new Error('관리자 권한 필요');
+    if (!adminSnap.exists) throw new HttpsError('permission-denied', '관리자 권한 필요');
 
     const preset = ['collect', 'vote', 'quiz', 'drip'].includes(request.data?.preset)
       ? request.data.preset
       : 'collect';
 
     const apiKey = await getAiKey();
-    if (!apiKey) throw new Error('AI API 키가 설정되지 않았어요');
+    if (!apiKey) throw new HttpsError('failed-precondition', 'AI API 키가 설정되지 않았어요');
 
     let draft = fallbackDraft(preset);
     try {

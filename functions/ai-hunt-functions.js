@@ -209,9 +209,9 @@ const interrogateAiHuntSuspect = onCall({ region: 'asia-northeast3', secrets: [g
     throw new HttpsError('resource-exhausted', '오늘의 AI 추리 한도(20회)를 모두 사용했습니다. 내일 다시 도전해보세요!');
   }
   const { caseId, question, pressure = 0, escape = 100 } = request.data || {};
-  if (!caseId) throw new Error('사건 정보가 없습니다');
+  if (!caseId) throw new HttpsError('invalid-argument', '사건 정보가 없습니다');
   const snap = await db.doc(`ai_hunt_cases/${caseId}`).get();
-  if (!snap.exists) throw new Error('사건을 찾을 수 없습니다');
+  if (!snap.exists) throw new HttpsError('not-found', '사건을 찾을 수 없습니다');
   const c = snap.data();
   const safeQuestion = cleanText(question, 120);
   const prompt = `당신은 30분 수사게임의 AI 용의자입니다.
@@ -258,10 +258,10 @@ const attemptAiHuntArrest = onCall({ region: 'asia-northeast3', timeoutSeconds: 
     wrongMoves = 0,
     elapsedMs = 0
   } = request.data || {};
-  if (!caseId) throw new Error('사건 정보가 없습니다');
+  if (!caseId) throw new HttpsError('invalid-argument', '사건 정보가 없습니다');
   const ref = db.doc(`ai_hunt_cases/${caseId}`);
   const snap = await ref.get();
-  if (!snap.exists) throw new Error('사건을 찾을 수 없습니다');
+  if (!snap.exists) throw new HttpsError('not-found', '사건을 찾을 수 없습니다');
   const c = snap.data();
   const now = Date.now();
   const required = Array.isArray(c.arrestEvidence) ? c.arrestEvidence : [];

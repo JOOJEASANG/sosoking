@@ -1,13 +1,13 @@
-const { onCall } = require('firebase-functions/v2/https');
+const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 
 const db = getFirestore();
 
 async function assertAdmin(uid) {
-  if (!uid) throw new Error('인증 필요');
+  if (!uid) throw new HttpsError('unauthenticated', '인증 필요');
   const snap = await db.doc(`admins/${uid}`).get();
-  if (!snap.exists) throw new Error('관리자 권한 필요');
+  if (!snap.exists) throw new HttpsError('permission-denied', '관리자 권한 필요');
 }
 
 function todayKey(date = new Date()) {
