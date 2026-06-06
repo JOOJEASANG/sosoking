@@ -180,6 +180,7 @@ async function generateDebatePost(topic, charIds) {
     createdAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
     isAiGenerated: true,
+    hasAiDecoy: true,
     hidden: false,
     cat: 'golra',
   });
@@ -280,6 +281,92 @@ exports.voteDebateSide = onCall({
   return { alreadyVoted: false, side, voteA: d.voteA || 0, voteB: d.voteB || 0 };
 });
 
+// ── 일반 게시글에 AI 미끼 댓글 1개 주입 (스케줄러용) ──
+async function generatePostDecoyComment(postId, post) {
+  const title = String(post.title || '').slice(0, 100);
+  const type = post.type || post.feedType || '';
+  const isCbattle = type === 'cbattle';
+  const side = isCbattle ? (Math.random() < 0.5 ? 'A' : 'B') : null;
+  const sideHint = isCbattle ? `이 댓글은 "${side === 'A' ? 'A팀' : 'B팀'}" 입장이야.` : '';
+
+  const system = `너는 한국 커뮤니티 "소소킹"의 글에 자연스럽게 섞이는 가짜 유저 댓글 1개를 쓰는 역할이야.
+글 제목: "${title}"
+실제 한국 커뮤니티처럼 짧고 구어체로 (10-50자). 반말 또는 가벼운 존댓말. 자연스러운 한국어.
+닉네임은 자연스러운 한국식 닉네임(2-8자, 예: 민지러버, 팬케이크92, 초코고냥이).
+${sideHint}
+반드시 JSON만 출력, 다른 텍스트 없음:
+{"nickname":"닉네임","text":"댓글"}`;
+
+  const { parsed } = await callAndParse(
+    (mt) => callAI(system, '댓글 1개 생성', null, mt, 1.0, true),
+    200,
+  );
+  if (!parsed.nickname || !parsed.text) throw new Error('invalid decoy response');
+
+  const revealAt = new Date(Date.now() + 24 * 3600 * 1000);
+  const commentData = {
+    text: String(parsed.text).trim().slice(0, 200),
+    authorId: 'ai-decoy',
+    authorName: String(parsed.nickname).trim().slice(0, 12),
+    authorPhoto: '',
+    isGuest: false,
+    isAiDecoy: true,
+    decoyRevealAt: revealAt,
+    reactions: {},
+    reactedWith: {},
+    createdAt: FieldValue.serverTimestamp(),
+  };
+  if (side) commentData.side = side;
+
+  await db.collection('feeds').doc(postId).collection('comments').add(commentData);
+  await db.doc(`feeds/${postId}`).update({
+    commentCount: FieldValue.increment(1),
+    hasAiDecoy: true,
+    aiDecoyInjected: true,
+  }).catch(() => {});
+}
+
+// ── 4시간마다 실행: 활발한 일반 게시글에 AI 미끼 댓글 최대 3개 주입 ──
+exports.scheduledAiDecoyInjector = onSchedule({
+  schedule: '0 */4 * * *',
+  timeZone: 'Asia/Seoul',
+  region: 'asia-northeast3',
+  timeoutSeconds: 120,
+  memory: '512MiB',
+}, async () => {
+  const cutoff = new Date(Date.now() - 48 * 3600 * 1000);
+  const snap = await db.collection('feeds')
+    .where('createdAt', '>', cutoff)
+    .orderBy('createdAt', 'desc')
+    .limit(50)
+    .get();
+
+  const eligible = snap.docs
+    .filter(d => {
+      const data = d.data();
+      return (
+        (data.commentCount || 0) >= 2 &&
+        !data.aiDecoyInjected &&
+        !data.isAiGenerated &&
+        data.type !== 'drip' &&
+        data.type !== 'relay'
+      );
+    })
+    .slice(0, 3);
+
+  let injected = 0;
+  for (const doc of eligible) {
+    try {
+      await generatePostDecoyComment(doc.id, doc.data());
+      console.log('[scheduledAiDecoyInjector] injected into', doc.id);
+      injected++;
+    } catch (e) {
+      console.warn('[scheduledAiDecoyInjector] failed for', doc.id, e.message);
+    }
+  }
+  console.log(`[scheduledAiDecoyInjector] done: ${injected}/${eligible.length} injected`);
+});
+
 // ── 관리자 수동 생성 ──
 exports.generateDebateNow = onCall({
   region: 'asia-northeast3',
@@ -292,8 +379,7 @@ exports.generateDebateNow = onCall({
   if (!adminSnap.exists) throw new HttpsError('permission-denied', '관리자만 접근 가능해요');
 
   const customTopic = String(request.data?.topic || '').trim().slice(0, 100);
-  const lastTopic = customTopic ? null : await getLastDebateTopic();
-  const topic = customTopic || pickRandomTopic(lastTopic);
+  const topic = customTopic || pickDailyTopic();
 
   const reqIds = Array.isArray(request.data?.characterIds)
     ? request.data.characterIds.filter(id => CHARACTERS[id])

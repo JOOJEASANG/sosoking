@@ -3,12 +3,30 @@ import { escHtml, formatTime as timeText } from '../utils/helpers.js';
 import { COMMENT_REACTIONS } from './constants.js';
 import { markBestComment } from './data.js';
 
-export function renderComment(c) {
+function buildDecoyEl(c, huntActive) {
+  if (!huntActive) return '';
+  const revealMs = c.decoyRevealAt?.toDate?.()?.getTime?.() || 0;
+  const now = Date.now();
+  const isRevealed = revealMs > 0 && now > revealMs;
+  const isAi = !!c.isAiDecoy;
+  const userFlagged = !!localStorage.getItem(`decoy_flag_${c.id}`);
+  if (isRevealed) {
+    if (isAi) return userFlagged
+      ? '<span class="debate-decoy-result debate-decoy-result--correct">🤖✅ AI 맞췄어요!</span>'
+      : '<span class="debate-decoy-result debate-decoy-result--ai">🤖 AI였어요!</span>';
+    if (userFlagged) return '<span class="debate-decoy-result debate-decoy-result--wrong">🤖❌ AI 아님</span>';
+    return '';
+  }
+  return `<button class="debate-decoy-btn${userFlagged ? ' active' : ''}" data-comment-id="${escHtml(c.id)}" title="AI 댓글 의심">🤖?</button>`;
+}
+
+export function renderComment(c, huntActive = false) {
   const timeStr = timeText(c.createdAt?.toDate?.() || c.createdAt);
-  const isOwn = auth.currentUser?.uid === c.authorId;
+  const isOwn = auth.currentUser?.uid === c.authorId && c.authorId !== 'ai-decoy';
   const uid = auth.currentUser?.uid || '';
   const myReact = c.reactedWith?.[uid] ?? null;
   const isBest = c._isBest;
+  const decoyEl = buildDecoyEl(c, huntActive);
 
   return `
     <div class="comment-item ${isBest ? 'comment-item--best' : ''}" data-comment-id="${c.id}">
@@ -22,18 +40,20 @@ export function renderComment(c) {
           <div class="comment-reactions">
             ${COMMENT_REACTIONS.map(r => renderCommentReactionButton(c, r, myReact)).join('')}
           </div>
+          ${decoyEl}
           ${isOwn ? `<button class="comment-delete-btn" data-comment-id="${c.id}">삭제</button>` : ''}
         </div>
       </div>
     </div>`;
 }
 
-export function renderLikeableComment(c) {
+export function renderLikeableComment(c, huntActive = false) {
   const timeStr = timeText(c.createdAt?.toDate?.() || c.createdAt);
-  const isOwn = auth.currentUser?.uid === c.authorId;
+  const isOwn = auth.currentUser?.uid === c.authorId && c.authorId !== 'ai-decoy';
   const uid = auth.currentUser?.uid || '';
   const myReact = c.reactedWith?.[uid] ?? null;
   const isBest = c._isBest;
+  const decoyEl = buildDecoyEl(c, huntActive);
 
   return `
     <div class="likeable-comment" data-comment-id="${c.id}">
@@ -46,6 +66,7 @@ export function renderLikeableComment(c) {
         <div class="comment-reactions">
           ${COMMENT_REACTIONS.map(r => renderCommentReactionButton(c, r, myReact)).join('')}
         </div>
+        ${decoyEl}
         ${isOwn ? `<button class="comment-delete-btn" data-comment-id="${c.id}">삭제</button>` : ''}
       </div>
     </div>`;
@@ -57,15 +78,17 @@ function renderCommentReactionButton(c, reaction, myReact) {
   return `<button class="comment-react-btn ${active}" data-comment-id="${c.id}" data-react="${reaction.key}">${reaction.emoji}${count > 0 ? ` <b>${count}</b>` : ''}</button>`;
 }
 
-export function renderCbattleComment(c) {
+export function renderCbattleComment(c, huntActive = false) {
   const timeStr = timeText(c.createdAt?.toDate?.() || c.createdAt);
-  const isOwn = auth.currentUser?.uid === c.authorId;
+  const isOwn = auth.currentUser?.uid === c.authorId && c.authorId !== 'ai-decoy';
+  const decoyEl = buildDecoyEl(c, huntActive);
   return `
     <div class="cbattle-comment cbattle-comment--${escHtml((c.side || 'a').toLowerCase())}" data-comment-id="${c.id}">
       <div class="cbattle-comment__text">${escHtml(c.text || '').replace(/\n/g, '<br>')}</div>
       <div class="cbattle-comment__meta">
         <span>${escHtml(c.authorName || '익명')}</span>
         <span>${timeStr}</span>
+        ${decoyEl}
         ${isOwn ? `<button class="comment-delete-btn" data-comment-id="${c.id}">삭제</button>` : ''}
       </div>
     </div>`;
@@ -116,7 +139,7 @@ export function renderCharCommentSection(post, comments) {
         : `<div style="text-align:center;padding:12px;font-size:13px;color:var(--color-text-muted)"><a href="#/login" style="color:var(--color-primary)">로그인</a> 후 참여 가능</div>`}
       <div id="comment-list">
         ${comments.length
-          ? markBestComment(comments).map(c => renderLikeableComment(c)).join('')
+          ? markBestComment(comments).map(c => renderLikeableComment(c, !!post.hasAiDecoy)).join('')
           : `<div style="text-align:center;padding:24px;font-size:13px;color:var(--color-text-muted)">${emptyMsg}</div>`}
       </div>
     </div>`;
@@ -142,9 +165,14 @@ export function renderCommentSection(post, comments) {
       </div>`;
   }
 
-  if (post.type === 'cbattle') return renderCbattleSection(comments, loggedIn);
+  if (post.type === 'cbattle') return renderCbattleSection(post, comments, loggedIn);
   if (post.type === 'ai_debate') return renderAiDebateCommentSection(post, comments, loggedIn);
   if (post.type === 'drip' || post.feedType === 'drip' || post.modules?.drip?.enabled) return '';
+
+  const huntActive = !!post.hasAiDecoy;
+  const huntHint = huntActive
+    ? '<div class="comment-ai-hunt-hint">🕵️ 이 글에 AI가 숨어 있을 수도 있어요! 찾아봐요 🤖?</div>'
+    : '';
 
   return `
     <div class="comment-section">
@@ -154,17 +182,22 @@ export function renderCommentSection(post, comments) {
         <textarea id="comment-input" placeholder="댓글을 입력하세요"></textarea>
         <button class="btn btn--primary btn--sm" style="align-self:flex-end" id="btn-comment">등록</button>
       </div>
+      ${huntHint}
       <div id="comment-list">
         ${comments.length
-          ? markBestComment(comments).map(c => renderComment(c)).join('')
+          ? markBestComment(comments).map(c => renderComment(c, huntActive)).join('')
           : '<div style="text-align:center;padding:24px;font-size:13px;color:var(--color-text-muted)">첫 댓글을 남겨보세요!</div>'}
       </div>
     </div>`;
 }
 
-function renderCbattleSection(comments, loggedIn) {
+function renderCbattleSection(post, comments, loggedIn) {
   const aList = comments.filter(c => c.side === 'A');
   const bList = comments.filter(c => c.side === 'B');
+  const huntActive = !!post.hasAiDecoy;
+  const huntHint = huntActive
+    ? '<div class="comment-ai-hunt-hint">🕵️ 이 글에 AI가 숨어 있을 수도 있어요! 찾아봐요 🤖?</div>'
+    : '';
   return `
     <div class="comment-section">
       <div class="comment-section__title">⚔️ 토론 의견 (${comments.length}명)</div>
@@ -173,9 +206,10 @@ function renderCbattleSection(comments, loggedIn) {
         <textarea id="comment-input" placeholder="위에서 팀을 선택하고 의견을 입력해주세요"></textarea>
         <button class="btn btn--primary btn--sm" style="align-self:flex-end" id="btn-comment">참여하기</button>
       </div>
+      ${huntHint}
       <div class="cbattle-columns">
-        <div class="cbattle-col cbattle-col--a"><div class="cbattle-col__title">🔴 A팀 ${aList.length}</div>${aList.length ? aList.map(c => renderCbattleComment(c)).join('') : '<div class="cbattle-col__empty">첫 번째로 참여!</div>'}</div>
-        <div class="cbattle-col cbattle-col--b"><div class="cbattle-col__title">🔵 B팀 ${bList.length}</div>${bList.length ? bList.map(c => renderCbattleComment(c)).join('') : '<div class="cbattle-col__empty">첫 번째로 참여!</div>'}</div>
+        <div class="cbattle-col cbattle-col--a"><div class="cbattle-col__title">🔴 A팀 ${aList.length}</div>${aList.length ? aList.map(c => renderCbattleComment(c, huntActive)).join('') : '<div class="cbattle-col__empty">첫 번째로 참여!</div>'}</div>
+        <div class="cbattle-col cbattle-col--b"><div class="cbattle-col__title">🔵 B팀 ${bList.length}</div>${bList.length ? bList.map(c => renderCbattleComment(c, huntActive)).join('') : '<div class="cbattle-col__empty">첫 번째로 참여!</div>'}</div>
       </div>
     </div>`;
 }
@@ -211,6 +245,7 @@ function renderAiDebateCommentSection(post, comments, loggedIn) {
       <div class="comment-write-box" id="comment-write">
         ${commentForm}
       </div>
+      <div class="comment-ai-hunt-hint">🕵️ 진짜 유저인 척 숨어있는 AI를 찾아봐요! 🤖? 버튼으로 의심되는 댓글 표시 → 24시간 후 공개!</div>
       <div class="debate-comment-cols" id="debate-comment-cols">
         <div class="debate-col debate-col--a">
           <div class="debate-col__title">🔴 A편 ${aList.length}명</div>
@@ -275,12 +310,14 @@ function renderDripSection(comments, loggedIn) {
 }
 
 export function renderCommentListHTML(post, comments) {
+  const huntActive = !!post.hasAiDecoy;
+
   if (post.type === 'cbattle') {
     const aList = comments.filter(c => c.side === 'A');
     const bList = comments.filter(c => c.side === 'B');
     return {
-      a: `<div class="cbattle-col__title">🔴 A팀 ${aList.length}</div>${aList.length ? aList.map(c => renderCbattleComment(c)).join('') : '<div class="cbattle-col__empty">첫 번째로 참여!</div>'}`,
-      b: `<div class="cbattle-col__title">🔵 B팀 ${bList.length}</div>${bList.length ? bList.map(c => renderCbattleComment(c)).join('') : '<div class="cbattle-col__empty">첫 번째로 참여!</div>'}`,
+      a: `<div class="cbattle-col__title">🔴 A팀 ${aList.length}</div>${aList.length ? aList.map(c => renderCbattleComment(c, huntActive)).join('') : '<div class="cbattle-col__empty">첫 번째로 참여!</div>'}`,
+      b: `<div class="cbattle-col__title">🔵 B팀 ${bList.length}</div>${bList.length ? bList.map(c => renderCbattleComment(c, huntActive)).join('') : '<div class="cbattle-col__empty">첫 번째로 참여!</div>'}`,
     };
   }
 
@@ -297,12 +334,12 @@ export function renderCommentListHTML(post, comments) {
 
   if (post.type === 'naming' || post.type === 'initial_game' || post.type === 'drip') {
     return comments.length
-      ? markBestComment(comments).map(c => renderLikeableComment(c)).join('')
+      ? markBestComment(comments).map(c => renderLikeableComment(c, huntActive)).join('')
       : '<div style="text-align:center;padding:24px;font-size:13px;color:var(--color-text-muted)">첫 번째로 참여해보세요!</div>';
   }
 
   return comments.length
-    ? markBestComment(comments).map(c => renderComment(c)).join('')
+    ? markBestComment(comments).map(c => renderComment(c, huntActive)).join('')
     : '<div style="text-align:center;padding:24px;font-size:13px;color:var(--color-text-muted)">첫 댓글을 남겨보세요!</div>';
 }
 
