@@ -180,21 +180,15 @@ async function generateDebatePost(topic, charIds) {
     createdAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
     isAiGenerated: true,
-    hasAiDecoy: true,
     hidden: false,
     cat: 'golra',
   });
-
-  // AI 미끼 댓글 생성 (비동기, 실패해도 포스트 자체는 성공)
-  generateDecoyComments(postRef.id, topic, createdAt).catch(e =>
-    console.warn('[generateDecoyComments] failed:', e.message),
-  );
 
   return { postId: postRef.id, topic, turns };
 }
 
 // ── AI 미끼 댓글: 사람처럼 보이는 가짜 댓글 3개를 AI로 생성해 comments에 숨김 ──
-async function generateDecoyComments(postId, topic, postCreatedAt) {
+async function generateDecoyComments(postId, topic) {
   const parts = topic.split(' vs ');
   const sideA = (parts[0] || 'A').trim();
   const sideB = (parts[1] || 'B').trim();
@@ -212,7 +206,7 @@ async function generateDecoyComments(postId, topic, postCreatedAt) {
     600,
   );
   const decoys = (parsed.decoys || []).slice(0, 3);
-  const revealAt = new Date(postCreatedAt.getTime() + 24 * 3600 * 1000);
+  const revealAt = new Date(Date.now() + 24 * 3600 * 1000);
   let added = 0;
   for (const d of decoys) {
     if (!d.nickname || !d.text || !['A', 'B'].includes(d.side)) continue;
@@ -232,7 +226,11 @@ async function generateDecoyComments(postId, topic, postCreatedAt) {
     added++;
   }
   if (added > 0) {
-    await db.doc(`feeds/${postId}`).update({ commentCount: FieldValue.increment(added) }).catch(() => {});
+    await db.doc(`feeds/${postId}`).update({
+      commentCount: FieldValue.increment(added),
+      hasAiDecoy: true,
+      aiDecoyInjected: true,
+    }).catch(() => {});
   }
 }
 
@@ -353,7 +351,6 @@ exports.scheduledAiDecoyInjector = onSchedule({
       return (
         (data.commentCount || 0) >= 2 &&
         !data.aiDecoyInjected &&
-        !data.isAiGenerated &&
         data.type !== 'drip' &&
         data.type !== 'relay'
       );
@@ -362,9 +359,14 @@ exports.scheduledAiDecoyInjector = onSchedule({
 
   let injected = 0;
   for (const doc of eligible) {
+    const data = doc.data();
     try {
-      await generatePostDecoyComment(doc.id, doc.data());
-      console.log('[scheduledAiDecoyInjector] injected into', doc.id);
+      if (data.type === 'ai_debate' || data.feedType === 'ai_debate') {
+        await generateDecoyComments(doc.id, data.topic || data.title || '');
+      } else {
+        await generatePostDecoyComment(doc.id, data);
+      }
+      console.log('[scheduledAiDecoyInjector] injected into', doc.id, '(type:', data.type, ')');
       injected++;
     } catch (e) {
       console.warn('[scheduledAiDecoyInjector] failed for', doc.id, e.message);
