@@ -18,9 +18,10 @@ const TYPE_LABEL = {
 };
 
 const AI_KINGS = [
-  { path: '/ai-judge',   emoji: '⚖️', name: '판결소', desc: '억울함 판결' },
+  { path: '/ai-judge',     emoji: '⚖️', name: '판결소', desc: '억울함 판결' },
   { path: '/ai-translate', emoji: '✨', name: '창작소', desc: '번역+작명' },
-  { path: '/ai-king',    emoji: '🗣️', name: '토론왕', desc: '캐릭터 난장판' },
+  { path: '/ai-king',      emoji: '🗣️', name: '토론왕', desc: '캐릭터 난장판' },
+  { path: '/jabdam',       emoji: '🗨️', name: '수다방', desc: '자유롭게 떠들기' },
 ];
 
 function getKstDateString(date = new Date()) {
@@ -135,14 +136,6 @@ function renderHero() {
           </button>`).join('')}
       </div>
 
-      <div class="home-community-row">
-        <button class="home-community-btn" data-path="/jabdam" type="button">
-          🗨️ <span>수다방</span> <span class="home-community-btn__sub">자유롭게 떠들기</span>
-        </button>
-        <button class="home-community-btn" data-path="/feed" type="button">
-          📋 <span>피드</span> <span class="home-community-btn__sub">전체 글 보기</span>
-        </button>
-      </div>
     </section>`;
 }
 

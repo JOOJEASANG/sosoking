@@ -20,6 +20,42 @@ function linkify(text) {
   );
 }
 
+function getYoutubeId(url) {
+  try {
+    const u = new URL(url);
+    if (u.hostname.includes('youtu.be')) return u.pathname.slice(1).split('?')[0];
+    if (u.hostname.includes('youtube.com')) {
+      return u.searchParams.get('v') || (u.pathname.startsWith('/embed/') ? u.pathname.split('/')[2] : null);
+    }
+  } catch {}
+  return null;
+}
+
+function renderLinkCard(linkUrl) {
+  if (!linkUrl) return '';
+  const ytId = getYoutubeId(linkUrl);
+  if (ytId) {
+    return `
+      <a href="${escHtml(linkUrl)}" target="_blank" rel="noopener noreferrer" class="jabdam-link-card jabdam-link-card--yt">
+        <div class="jabdam-link-card__thumb-wrap">
+          <img src="https://img.youtube.com/vi/${escHtml(ytId)}/hqdefault.jpg" class="jabdam-link-card__thumb" loading="lazy" referrerpolicy="no-referrer">
+          <span class="jabdam-link-card__play">▶</span>
+        </div>
+        <div class="jabdam-link-card__meta">
+          <span class="jabdam-link-card__domain">▶ YouTube</span>
+          <span class="jabdam-link-card__url">${escHtml(linkUrl.length > 60 ? linkUrl.slice(0, 60) + '…' : linkUrl)}</span>
+        </div>
+      </a>`;
+  }
+  let domain = '';
+  try { domain = new URL(linkUrl).hostname.replace(/^www\./, ''); } catch {}
+  return `
+    <a href="${escHtml(linkUrl)}" target="_blank" rel="noopener noreferrer" class="jabdam-link-card">
+      <span class="jabdam-link-card__domain">🔗 ${escHtml(domain)}</span>
+      <span class="jabdam-link-card__url">${escHtml(linkUrl.length > 80 ? linkUrl.slice(0, 80) + '…' : linkUrl)}</span>
+    </a>`;
+}
+
 function renderPost(p, isAdmin) {
   const mine = auth.currentUser?.uid === p.uid;
   const canDelete = mine || isAdmin;
@@ -33,6 +69,7 @@ function renderPost(p, isAdmin) {
       </div>
       ${p.text ? `<div class="jabdam-post__text">${linkify(p.text)}</div>` : ''}
       ${p.imageUrl ? `<div class="jabdam-post__img-wrap"><img src="${escHtml(p.imageUrl)}" class="jabdam-post__img" loading="lazy" referrerpolicy="no-referrer"></div>` : ''}
+      ${renderLinkCard(p.linkUrl)}
       <div class="jabdam-post__foot">
         <button class="jabdam-like-btn ${p._liked ? 'jabdam-like-btn--on' : ''}" data-id="${escHtml(p.id)}">
           👍 ${likesCount > 0 ? likesCount : ''}
@@ -63,6 +100,12 @@ export async function renderJabdam() {
       <div class="jabdam-form card">
         <div class="card__body">
           <textarea id="jabdam-text" class="form-input jabdam-textarea" placeholder="지금 무슨 생각하세요?" maxlength="500" rows="3"></textarea>
+          <div class="jabdam-link-input-wrap">
+            <span class="jabdam-link-input-icon">🔗</span>
+            <input type="url" id="jabdam-link-input" class="form-input jabdam-link-input" placeholder="링크 붙여넣기 (유튜브·커뮤니티·이미지 URL 등)">
+            <button id="jabdam-link-clear" class="jabdam-link-clear" style="display:none" title="링크 지우기">✕</button>
+          </div>
+          <div id="jabdam-link-preview" class="jabdam-link-preview"></div>
           <div class="jabdam-form__foot">
             <label class="jabdam-img-label" title="사진 추가">
               📷
@@ -99,12 +142,39 @@ export async function renderJabdam() {
 
 let _pendingImageUrl = null;
 let _pendingImagePreview = null;
+let _pendingLinkUrl = null;
 
 function attachFormHandlers(el) {
   const imgInput = el.querySelector('#jabdam-img-input');
   const imgPreviewEl = el.querySelector('#jabdam-img-preview');
   const submitBtn = el.querySelector('#jabdam-submit');
   const textEl = el.querySelector('#jabdam-text');
+  const linkInput = el.querySelector('#jabdam-link-input');
+  const linkPreviewEl = el.querySelector('#jabdam-link-preview');
+  const linkClearBtn = el.querySelector('#jabdam-link-clear');
+
+  function updateLinkPreview(url) {
+    _pendingLinkUrl = url || null;
+    if (linkClearBtn) linkClearBtn.style.display = url ? '' : 'none';
+    if (linkPreviewEl) linkPreviewEl.innerHTML = url ? renderLinkCard(url) : '';
+  }
+
+  linkInput?.addEventListener('input', () => {
+    const val = linkInput.value.trim();
+    updateLinkPreview(val.startsWith('http') ? val : '');
+  });
+
+  linkInput?.addEventListener('paste', () => {
+    setTimeout(() => {
+      const val = linkInput.value.trim();
+      updateLinkPreview(val.startsWith('http') ? val : '');
+    }, 0);
+  });
+
+  linkClearBtn?.addEventListener('click', () => {
+    linkInput.value = '';
+    updateLinkPreview('');
+  });
 
   imgInput?.addEventListener('change', async () => {
     const file = imgInput.files?.[0];
@@ -127,7 +197,7 @@ function attachFormHandlers(el) {
 
   submitBtn?.addEventListener('click', async () => {
     const text = textEl?.value.trim() || '';
-    if (!text && !_pendingImageUrl) return;
+    if (!text && !_pendingImageUrl && !_pendingLinkUrl) return;
     submitBtn.disabled = true; submitBtn.textContent = '올리는 중...';
     try {
       const user = auth.currentUser;
@@ -137,12 +207,17 @@ function attachFormHandlers(el) {
         authorName: name,
         text,
         imageUrl: _pendingImageUrl || null,
+        linkUrl: _pendingLinkUrl || null,
         likes: 0,
         createdAt: serverTimestamp(),
       });
       textEl.value = '';
+      if (linkInput) linkInput.value = '';
+      if (linkPreviewEl) linkPreviewEl.innerHTML = '';
+      if (linkClearBtn) linkClearBtn.style.display = 'none';
       _pendingImageUrl = null;
       _pendingImagePreview = null;
+      _pendingLinkUrl = null;
       if (imgPreviewEl) imgPreviewEl.innerHTML = '';
       if (imgInput) imgInput.value = '';
     } catch (e) {

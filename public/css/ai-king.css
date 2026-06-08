@@ -838,6 +838,29 @@
 .jabdam-like-btn { background: none; border: 1px solid var(--color-border); border-radius: 20px; padding: 4px 12px; font-size: 13px; cursor: pointer; color: var(--color-text-secondary); transition: all .15s; display: flex; align-items: center; gap: 4px; }
 .jabdam-like-btn:hover, .jabdam-like-btn--on { background: var(--color-primary-bg); border-color: var(--color-primary); color: var(--color-primary); }
 
+/* 링크 첨부 입력 */
+.jabdam-link-input-wrap { display: flex; align-items: center; gap: 6px; margin-top: 8px; background: var(--color-surface-2); border: 1px solid var(--color-border); border-radius: 10px; padding: 6px 10px; }
+.jabdam-link-input-icon { font-size: 15px; flex-shrink: 0; }
+.jabdam-link-input { flex: 1; border: none; background: transparent; font-size: 13px; color: var(--color-text-primary); outline: none; padding: 0; min-width: 0; }
+.jabdam-link-input::placeholder { color: var(--color-text-muted); }
+.jabdam-link-clear { background: none; border: none; color: var(--color-text-muted); cursor: pointer; font-size: 13px; padding: 0 4px; flex-shrink: 0; }
+.jabdam-link-clear:hover { color: var(--color-danger); }
+.jabdam-link-preview { margin-top: 8px; }
+
+/* 링크 카드 (글 작성 미리보기 & 게시글 표시 공통) */
+.jabdam-link-card { display: flex; align-items: center; gap: 10px; background: var(--color-surface-2); border: 1px solid var(--color-border); border-radius: 12px; padding: 10px 12px; text-decoration: none; color: var(--color-text-primary); transition: border-color .15s, background .15s; margin-bottom: 8px; overflow: hidden; }
+.jabdam-link-card:hover { border-color: var(--color-primary); background: var(--color-primary-bg); }
+.jabdam-link-card__domain { font-size: 12px; font-weight: 700; color: var(--color-primary); white-space: nowrap; flex-shrink: 0; }
+.jabdam-link-card__url { font-size: 11px; color: var(--color-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.jabdam-link-card { flex-direction: column; align-items: flex-start; }
+
+/* 유튜브 카드 */
+.jabdam-link-card--yt { flex-direction: row; align-items: center; padding: 0; overflow: hidden; }
+.jabdam-link-card__thumb-wrap { position: relative; flex-shrink: 0; width: 120px; height: 72px; }
+.jabdam-link-card__thumb { width: 100%; height: 100%; object-fit: cover; display: block; }
+.jabdam-link-card__play { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,.65); color: #fff; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 11px; pointer-events: none; }
+.jabdam-link-card--yt .jabdam-link-card__meta { flex: 1; padding: 10px 12px; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+
 /* 유저가 올린 토론왕 주제 힌트 */
 .ai-debate-user-hint {
   background: linear-gradient(135deg, #f0f4ff, #e8f0fe);
