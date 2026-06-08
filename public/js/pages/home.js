@@ -134,6 +134,15 @@ function renderHero() {
             <span class="home-aiking-card__desc">${k.desc}</span>
           </button>`).join('')}
       </div>
+
+      <div class="home-community-row">
+        <button class="home-community-btn" data-path="/jabdam" type="button">
+          🗨️ <span>수다방</span> <span class="home-community-btn__sub">자유롭게 떠들기</span>
+        </button>
+        <button class="home-community-btn" data-path="/feed" type="button">
+          📋 <span>피드</span> <span class="home-community-btn__sub">전체 글 보기</span>
+        </button>
+      </div>
     </section>`;
 }
 
