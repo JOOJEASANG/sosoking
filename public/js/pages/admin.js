@@ -1121,6 +1121,7 @@ async function renderAdminPosts(el) {
                     : '<span class="badge badge--success">공개</span>'}</td>
                   <td style="text-align:center;white-space:nowrap">
                     <button class="btn btn--ghost btn--sm" data-admin-toggle-post="${escHtml(post.id)}" data-hidden="${post.hidden ? '1' : '0'}">${post.hidden ? '해제' : '숨김'}</button>
+                    <button class="btn btn--danger btn--sm" data-admin-delete-post="${escHtml(post.id)}" style="margin-left:4px">삭제</button>
                   </td>
                 </tr>`).join('')
               : '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--color-text-muted)">게시글이 없습니다.</td></tr>'}
@@ -1143,6 +1144,19 @@ async function renderAdminPosts(el) {
         toast.success(hide ? '게시글을 숨김 처리했어요' : '게시글 숨김을 해제했어요');
         renderAdminPosts(el);
       } catch { toast.error('처리에 실패했어요'); btn.disabled = false; }
+    });
+  });
+
+  el.querySelectorAll('[data-admin-delete-post]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.adminDeletePost;
+      if (!confirm('이 게시글을 완전히 삭제할까요? 되돌릴 수 없어요.')) return;
+      btn.disabled = true;
+      try {
+        await deleteDoc(doc(db, 'feeds', id));
+        toast.success('게시글을 삭제했어요');
+        renderAdminPosts(el);
+      } catch { toast.error('삭제에 실패했어요'); btn.disabled = false; }
     });
   });
 }

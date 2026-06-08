@@ -17,7 +17,7 @@ const DEBATE_PERSONA = {
   saibi:     '사이비 교주. "형제여…" 성스러운 톤. 모든 걸 신의 뜻·시련으로 몰고 은근슬쩍 포교.',
   prophet:   '예언가. "~하리라/~이니라/~을 조심하라" 운명 말투. 모호한데 묘하게 소름.',
   joojeob:   '주접러. "미쳤다/실화임?/소름/ㄷㄷ/ㅠㅠ" 과잉 리액션 폭발. 내용보다 호들갑이 큼.',
-  chamgyeon: '참견러. "아 그거 내가 다 알아" 지인 사례(옆집·사촌언니 등) 들이밀며 오지랖.',
+  chamgyeon: '참견러. 불쑥 끼어들어 지인 사례(옆집 아줌마·사촌언니·친구 남편 등) 들이밀며 오지랖. 시작은 다양하게 — "잠깐 우리 언니도~", "아 그거 저희 동네에서도~", "저도 비슷한 거 봤는데~", "제 친구가 딱 이 상황이었거든요" 등. 항상 본론보다 지인 얘기가 더 길어짐.',
   kkondae:   '꼰대. "내가 말이야~/우리 때는~/요즘 것들은" 옛날 고생 자랑하며 깎아내림.',
 };
 
@@ -160,10 +160,11 @@ async function generateDebatePost(topic, charIds) {
   if (turns.length < 2) throw new Error('debate produced too few turns');
 
   const postRef = db.collection('feeds').doc();
+  const createdAt = new Date();
   await postRef.set({
     type: 'ai_debate',
     feedType: 'ai_debate',
-    title: `🗣️ 오늘의 티격태격: ${topic}`,
+    title: topic,
     topic,
     turns,
     characterIds: charIds,
@@ -172,6 +173,8 @@ async function generateDebatePost(topic, charIds) {
     authorEmail: '',
     authorPhoto: '',
     commentCount: 0,
+    voteA: 0,
+    voteB: 0,
     reactions: { like: 0, funny: 0, fire: 0, total: 0 },
     viewCount: 0,
     createdAt: FieldValue.serverTimestamp(),
@@ -180,7 +183,55 @@ async function generateDebatePost(topic, charIds) {
     hidden: false,
     cat: 'golra',
   });
+
   return { postId: postRef.id, topic, turns };
+}
+
+// ── AI 미끼 댓글: 사람처럼 보이는 가짜 댓글 3개를 AI로 생성해 comments에 숨김 ──
+async function generateDecoyComments(postId, topic) {
+  const parts = topic.split(' vs ');
+  const sideA = (parts[0] || 'A').trim();
+  const sideB = (parts[1] || 'B').trim();
+  const system = `너는 "${topic}" 주제 커뮤니티 댓글란에 자연스럽게 섞이는 가짜 유저 댓글 3개를 쓰는 역할이야.
+실제 한국 커뮤니티처럼 짧고 구어체로 (10-50자). 반말 또는 가벼운 존댓말. 자연스러운 한국어.
+닉네임 규칙(중요):
+- 주제·음식·토론 내용과 전혀 무관한 일상적 닉네임만 사용할 것
+- 이름+숫자, 동물+형용사, 취미 조합 등 주제와 관계없는 닉네임 (예: 하늘별94, 고양이왕, 럭키짱, 뚱냥이22, 봄날기억, 자몽좋아, 달려라말티)
+- 절대 금지: 주제 단어·재료명·행위·브랜드 포함 닉네임
+각 댓글은 "${sideA}(A편)" 또는 "${sideB}(B편)" 입장을 은근히 드는 내용.
+반드시 JSON만 출력, 다른 텍스트 없음:
+{"decoys":[{"nickname":"닉네임","text":"댓글","side":"A"},{"nickname":"닉네임","text":"댓글","side":"B"},{"nickname":"닉네임","text":"댓글","side":"A"}]}`;
+  const { parsed } = await callAndParse(
+    (mt) => callAI(system, '댓글 3개 생성', null, mt, 1.0, true),
+    600,
+  );
+  const decoys = (parsed.decoys || []).slice(0, 3);
+  const revealAt = new Date(Date.now() + 24 * 3600 * 1000);
+  let added = 0;
+  for (const d of decoys) {
+    if (!d.nickname || !d.text || !['A', 'B'].includes(d.side)) continue;
+    await db.collection('feeds').doc(postId).collection('comments').add({
+      text: String(d.text).trim().slice(0, 200),
+      authorId: 'ai-decoy',
+      authorName: String(d.nickname).trim().slice(0, 12),
+      authorPhoto: '',
+      isGuest: false,
+      isAiDecoy: true,
+      decoyRevealAt: revealAt,
+      side: d.side,
+      reactions: {},
+      reactedWith: {},
+      createdAt: FieldValue.serverTimestamp(),
+    });
+    added++;
+  }
+  if (added > 0) {
+    await db.doc(`feeds/${postId}`).update({
+      commentCount: FieldValue.increment(added),
+      hasAiDecoy: true,
+      aiDecoyInjected: true,
+    }).catch(() => {});
+  }
 }
 
 // ── 매일 오전 10시(KST) 자동 생성: 6인 전원 출연 ──
@@ -199,6 +250,129 @@ exports.scheduledDailyDebate = onSchedule({
   } catch (e) {
     console.error('[scheduledDailyDebate] failed:', e.message);
   }
+});
+
+// ── 유저 A/B 투표 ──
+exports.voteDebateSide = onCall({
+  region: 'asia-northeast3',
+  timeoutSeconds: 30,
+  memory: '256MiB',
+}, async (request) => {
+  if (!request.auth) throw new HttpsError('unauthenticated', '로그인 후 투표할 수 있어요');
+  const uid = request.auth.uid;
+  const postId = String(request.data?.postId || '').trim();
+  const side = String(request.data?.side || '').toUpperCase();
+  if (!postId) throw new HttpsError('invalid-argument', '게시글을 찾을 수 없어요');
+  if (!['A', 'B'].includes(side)) throw new HttpsError('invalid-argument', 'A 또는 B를 선택해주세요');
+
+  const voteRef = db.doc(`feeds/${postId}/debate_votes/${uid}`);
+  const existing = await voteRef.get();
+  if (existing.exists()) {
+    const postSnap = await db.doc(`feeds/${postId}`).get();
+    const d = postSnap.exists() ? postSnap.data() : {};
+    return { alreadyVoted: true, side: existing.data().side, voteA: d.voteA || 0, voteB: d.voteB || 0 };
+  }
+
+  await voteRef.set({ uid, side, createdAt: FieldValue.serverTimestamp() });
+  const fieldKey = side === 'A' ? 'voteA' : 'voteB';
+  await db.doc(`feeds/${postId}`).update({ [fieldKey]: FieldValue.increment(1) }).catch(() => {});
+
+  const postSnap = await db.doc(`feeds/${postId}`).get();
+  const d = postSnap.exists() ? postSnap.data() : {};
+  return { alreadyVoted: false, side, voteA: d.voteA || 0, voteB: d.voteB || 0 };
+});
+
+// ── 일반 게시글에 AI 미끼 댓글 1개 주입 (스케줄러용) ──
+async function generatePostDecoyComment(postId, post) {
+  const title = String(post.title || '').slice(0, 100);
+  const type = post.type || post.feedType || '';
+  const isCbattle = type === 'cbattle';
+  const side = isCbattle ? (Math.random() < 0.5 ? 'A' : 'B') : null;
+  const sideHint = isCbattle ? `이 댓글은 "${side === 'A' ? 'A팀' : 'B팀'}" 입장이야.` : '';
+
+  const system = `너는 한국 커뮤니티 "소소킹"의 글에 자연스럽게 섞이는 가짜 유저 댓글 1개를 쓰는 역할이야.
+글 제목: "${title}"
+실제 한국 커뮤니티처럼 짧고 구어체로 (10-50자). 반말 또는 가벼운 존댓말. 자연스러운 한국어.
+닉네임 규칙(중요):
+- 글 제목·내용과 전혀 무관한 일상적 닉네임만 사용할 것
+- 이름+숫자, 동물+형용사, 취미 조합 등 주제와 관계없는 닉네임 (예: 하늘별94, 고양이왕, 럭키짱, 뚱냥이22, 봄날기억, 자몽좋아, 달려라말티)
+- 절대 금지: 글 제목 단어·등장 키워드 포함 닉네임
+${sideHint}
+반드시 JSON만 출력, 다른 텍스트 없음:
+{"nickname":"닉네임","text":"댓글"}`;
+
+  const { parsed } = await callAndParse(
+    (mt) => callAI(system, '댓글 1개 생성', null, mt, 1.0, true),
+    200,
+  );
+  if (!parsed.nickname || !parsed.text) throw new Error('invalid decoy response');
+
+  const revealAt = new Date(Date.now() + 24 * 3600 * 1000);
+  const commentData = {
+    text: String(parsed.text).trim().slice(0, 200),
+    authorId: 'ai-decoy',
+    authorName: String(parsed.nickname).trim().slice(0, 12),
+    authorPhoto: '',
+    isGuest: false,
+    isAiDecoy: true,
+    decoyRevealAt: revealAt,
+    reactions: {},
+    reactedWith: {},
+    createdAt: FieldValue.serverTimestamp(),
+  };
+  if (side) commentData.side = side;
+
+  await db.collection('feeds').doc(postId).collection('comments').add(commentData);
+  await db.doc(`feeds/${postId}`).update({
+    commentCount: FieldValue.increment(1),
+    hasAiDecoy: true,
+    aiDecoyInjected: true,
+  }).catch(() => {});
+}
+
+// ── 4시간마다 실행: 활발한 일반 게시글에 AI 미끼 댓글 최대 3개 주입 ──
+exports.scheduledAiDecoyInjector = onSchedule({
+  schedule: '0 */4 * * *',
+  timeZone: 'Asia/Seoul',
+  region: 'asia-northeast3',
+  timeoutSeconds: 120,
+  memory: '512MiB',
+}, async () => {
+  const cutoff = new Date(Date.now() - 48 * 3600 * 1000);
+  const snap = await db.collection('feeds')
+    .where('createdAt', '>', cutoff)
+    .orderBy('createdAt', 'desc')
+    .limit(50)
+    .get();
+
+  const eligible = snap.docs
+    .filter(d => {
+      const data = d.data();
+      return (
+        (data.commentCount || 0) >= 2 &&
+        !data.aiDecoyInjected &&
+        data.type !== 'drip' &&
+        data.type !== 'relay'
+      );
+    })
+    .slice(0, 3);
+
+  let injected = 0;
+  for (const doc of eligible) {
+    const data = doc.data();
+    try {
+      if (data.type === 'ai_debate' || data.feedType === 'ai_debate') {
+        await generateDecoyComments(doc.id, data.topic || data.title || '');
+      } else {
+        await generatePostDecoyComment(doc.id, data);
+      }
+      console.log('[scheduledAiDecoyInjector] injected into', doc.id, '(type:', data.type, ')');
+      injected++;
+    } catch (e) {
+      console.warn('[scheduledAiDecoyInjector] failed for', doc.id, e.message);
+    }
+  }
+  console.log(`[scheduledAiDecoyInjector] done: ${injected}/${eligible.length} injected`);
 });
 
 // ── 관리자 수동 생성 ──

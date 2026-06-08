@@ -142,8 +142,25 @@ function renderAiJudgeBody(post) {
     </div>`;
 }
 
+function parseDebateSides(topic) {
+  const parts = String(topic || '').split(/ vs /i);
+  return {
+    sideA: (parts[0] || 'A편').trim(),
+    sideB: (parts[1] || 'B편').trim(),
+  };
+}
+
 function renderAiDebateBody(post) {
   const turns = Array.isArray(post.turns) ? post.turns : [];
+  const { sideA, sideB } = parseDebateSides(post.topic || post.title);
+  const voteA = Number(post.voteA || 0);
+  const voteB = Number(post.voteB || 0);
+  const total = voteA + voteB;
+  const pctA = total ? Math.round(voteA / total * 100) : 50;
+  const pctB = total ? Math.round(voteB / total * 100) : 50;
+  const aLabel = total ? `${voteA}표 (${pctA}%)` : '첫 투표!';
+  const bLabel = total ? `${voteB}표 (${pctB}%)` : '첫 투표!';
+
   return `
     <div class="ai-debate-result">
       <div class="ai-debate-topic">
@@ -157,7 +174,24 @@ function renderAiDebateBody(post) {
             <div class="ai-debate-turn__bubble">${escHtml(t.text || '').replace(/\n/g, '<br>')}</div>
           </div>`).join('')}
       </div>
-      <div class="ai-debate-foot">누가 이겼을까? 댓글로 편 들어주기 👇</div>
+      <div class="ai-debate-foot">누가 이겼을까? 편 들고 댓글 남기기 👇</div>
+      <div class="ai-debate-vote" id="debate-vote-area" data-post-id="${escHtml(post.id || '')}">
+        <div class="ai-debate-vote__label">어느 편 손을 들어주겠어요?</div>
+        <div class="ai-debate-vote__btns">
+          <button class="ai-debate-vote-btn" data-side="A">
+            <span class="ai-debate-vote-btn__side">🔴 A편</span>
+            <span class="ai-debate-vote-btn__text">${escHtml(sideA)}</span>
+            <span class="ai-debate-vote-btn__count" id="debate-count-a">${escHtml(aLabel)}</span>
+          </button>
+          <div class="ai-debate-vote__vs">VS</div>
+          <button class="ai-debate-vote-btn ai-debate-vote-btn--b" data-side="B">
+            <span class="ai-debate-vote-btn__side">🔵 B편</span>
+            <span class="ai-debate-vote-btn__text">${escHtml(sideB)}</span>
+            <span class="ai-debate-vote-btn__count" id="debate-count-b">${escHtml(bLabel)}</span>
+          </button>
+        </div>
+        <div class="ai-debate-vote__hint" id="debate-vote-hint">투표하면 댓글을 남길 수 있어요 · 댓글에 AI가 숨어있어요 🤖</div>
+      </div>
     </div>`;
 }
 

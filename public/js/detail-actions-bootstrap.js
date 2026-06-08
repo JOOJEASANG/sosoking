@@ -11,6 +11,7 @@ import {
   handleAcrosticReaction,
   refreshCbattleSideBinding,
 } from './detail/handlers-comments.js';
+import { handleDebateVote, handleAiDecoyFlag } from './detail/debate-actions.js';
 
 document.addEventListener('click', async event => {
   if (!isDetailPath()) return;
@@ -20,6 +21,8 @@ document.addEventListener('click', async event => {
   if (handleGallery(event)) return;
   if (await handleVote(event)) return;
   if (await handleCbattleSide(event)) return;
+  if (await handleDebateVote(event)) return;
+  if (handleAiDecoyFlag(event)) return;
   if (await handleCommentSubmit(event)) return;
   if (await handleCharSubmit(event)) return;
   if (await handleAcrosticSubmit(event)) return;

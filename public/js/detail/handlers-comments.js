@@ -32,10 +32,13 @@ export async function handleCommentSubmit(event) {
 
   const guestName = document.getElementById('comment-guest-name')?.value.trim() || '';
 
+  const debateSide = document.getElementById('debate-side-input')?.value || '';
+
   btn._detailPending = true;
   try {
     const post = await getCurrentPostSummary();
     if (post?.type === 'cbattle') await submitCbattleComment(currentPostId(), text, getSelectedCbattleSide(), guestName);
+    else if (post?.type === 'ai_debate' && debateSide) await submitDetailComment(currentPostId(), { text, side: debateSide, guestName });
     else await submitDetailComment(currentPostId(), { text, guestName });
     if (input) input.value = '';
     toast.success('등록됐어요! 🎉');
