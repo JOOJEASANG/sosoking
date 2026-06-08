@@ -433,6 +433,7 @@ exports.createUserDebateTopic = onCall({ region: REGION, timeoutSeconds: 15 }, a
     commentCount: 0,
     isUserCreated: true,
     authorName,
+    authorId: uid,
     uid,
     hidden: false,
     hasAiDecoy: false,
