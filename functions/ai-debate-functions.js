@@ -164,7 +164,7 @@ async function generateDebatePost(topic, charIds) {
   await postRef.set({
     type: 'ai_debate',
     feedType: 'ai_debate',
-    title: `🗣️ 오늘의 티격태격: ${topic}`,
+    title: topic,
     topic,
     turns,
     characterIds: charIds,
