@@ -40,7 +40,7 @@ export async function renderPointsShop() {
               { icon: '🎁', action: '첫 가입 보너스', points: '+500p', id: 'signup' },
               { icon: '📅', action: '매일 출석 체크', points: '+20p', id: 'daily' },
               { icon: '📝', action: '글 작성', points: '+10p' },
-              { icon: '💬', action: '댓글 작성', points: '+3p' },
+              { icon: '💬', action: '댓글 작성', points: '+20p' },
               { icon: '👍', action: '댓글에 반응 남기기', points: '+1p' },
               { icon: '🗳️', action: '투표 참여', points: '+1p' },
               { icon: '❤️', action: '내 글에 반응 받기', points: '+1p' },

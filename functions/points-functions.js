@@ -9,7 +9,7 @@ const REGION = 'asia-northeast3';
 
 const POINT_RULES = Object.freeze({
   post_create: { points: 10, label: '피드 글 작성' },
-  comment_create: { points: 3, label: '댓글 작성' },
+  comment_create: { points: 20, label: '댓글 작성' },
   reply_create: { points: 2, label: '답글 작성' },
   participation_create: { points: 3, label: '참여글 작성' },
   vote_participate: { points: 1, label: '투표 참여' },
