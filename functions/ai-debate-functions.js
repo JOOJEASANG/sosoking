@@ -405,7 +405,7 @@ exports.generateDebateNow = onCall({
 });
 
 // ── 유저가 직접 주제 올리기 (AI 생성 없음) ──
-exports.createUserDebateTopic = onCall({ region: REGION, timeoutSeconds: 15 }, async (request) => {
+exports.createUserDebateTopic = onCall({ region: 'asia-northeast3', timeoutSeconds: 15 }, async (request) => {
   const uid = request.auth?.uid;
   if (!uid) throw new HttpsError('unauthenticated', '로그인 후 주제를 올릴 수 있어요');
 
