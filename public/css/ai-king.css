@@ -637,43 +637,61 @@
 .debate-comment-cols {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-top: 12px;
+  gap: 0;
+  margin-top: 14px;
+  border: 1.5px solid var(--color-border);
+  border-radius: 16px;
+  overflow: hidden;
 }
-.debate-col { display: flex; flex-direction: column; gap: 6px; }
+.debate-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
+}
+.debate-col--a { border-right: 1.5px solid var(--color-border); }
 .debate-col__title {
   font-size: 12px;
   font-weight: 900;
-  color: var(--color-text-secondary);
-  padding: 6px 10px;
-  background: var(--color-surface-2);
-  border-radius: 8px;
+  padding: 9px 12px;
   text-align: center;
+  letter-spacing: .2px;
+  border-bottom: 1.5px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
-.debate-col--a .debate-col__title { color: #c0392b; background: #fef9f9; }
-.debate-col--b .debate-col__title { color: #1a6fa0; background: #f0f7ff; }
+.debate-col--a .debate-col__title {
+  color: #c0392b;
+  background: #fdf0ef;
+}
+.debate-col--b .debate-col__title {
+  color: #1565c0;
+  background: #eff6ff;
+}
 .debate-col__empty {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--color-text-muted);
   text-align: center;
-  padding: 12px 8px;
+  padding: 20px 8px;
 }
+.debate-col--a .debate-comment { border-left: 3px solid #e74c3c; }
+.debate-col--b .debate-comment { border-left: 3px solid #2980b9; }
 .debate-comment {
   background: var(--color-surface);
-  border: 1px solid var(--color-border-light);
-  border-radius: 10px;
+  border-top: 1px solid var(--color-border-light, var(--color-border));
   padding: 10px 12px;
   font-size: 13px;
-  transition: border-color .15s;
+  transition: background .12s;
+  word-break: break-word;
 }
-.debate-comment--ai {
-  border-color: #f39c12;
-  background: #fffbf0;
-}
-[data-theme="dark"] .debate-comment--ai { background: rgba(243,156,18,.08); }
+.debate-comment:first-of-type { border-top: none; }
+.debate-col--a .debate-comment { background: #fff9f9; }
+.debate-col--b .debate-comment { background: #f6faff; }
+.debate-comment--ai { background: #fffbf0 !important; border-left-color: #f39c12 !important; }
 .debate-comment__text {
   color: var(--color-text-primary);
-  line-height: 1.5;
+  line-height: 1.55;
   margin-bottom: 6px;
 }
 .debate-comment__meta {
@@ -691,6 +709,15 @@
   font-size: 11px;
   color: var(--color-text-muted);
 }
+@media (max-width: 480px) {
+  .debate-comment-cols { grid-template-columns: 1fr; }
+  .debate-col--a { border-right: none; border-bottom: 1.5px solid var(--color-border); }
+}
+[data-theme="dark"] .debate-col--a .debate-col__title { background: rgba(231,76,60,.12); }
+[data-theme="dark"] .debate-col--b .debate-col__title { background: rgba(41,128,185,.12); }
+[data-theme="dark"] .debate-col--a .debate-comment { background: rgba(231,76,60,.04); }
+[data-theme="dark"] .debate-col--b .debate-comment { background: rgba(41,128,185,.04); }
+[data-theme="dark"] .debate-comment--ai { background: rgba(243,156,18,.08) !important; }
 
 /* AI 의심 버튼 */
 .debate-decoy-btn {
@@ -720,8 +747,6 @@
 .debate-decoy-result--ai { background: #fdebd0; color: #ca6f1e; border: 1px solid #f0b27a; }
 .debate-decoy-result--correct { background: #d5f5e3; color: #1e8449; border: 1px solid #82e0aa; }
 .debate-decoy-result--wrong { background: #fadbd8; color: #c0392b; border: 1px solid #f1948a; }
-[data-theme="dark"] .debate-col--a .debate-col__title { background: rgba(231,76,60,.08); }
-[data-theme="dark"] .debate-col--b .debate-col__title { background: rgba(52,152,219,.08); }
 
 /* AI 찾아라 힌트 배너 */
 .comment-ai-hunt-hint {
