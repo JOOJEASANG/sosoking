@@ -1,4 +1,3 @@
-'use strict';
 import { auth, db } from '../firebase.js';
 import { appState } from '../state.js';
 import {

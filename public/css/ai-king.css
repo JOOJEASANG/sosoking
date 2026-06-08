@@ -657,9 +657,6 @@
   text-align: center;
   letter-spacing: .2px;
   border-bottom: 1.5px solid var(--color-border);
-  position: sticky;
-  top: 0;
-  z-index: 1;
 }
 .debate-col--a .debate-col__title {
   color: #c0392b;
@@ -685,7 +682,7 @@
   transition: background .12s;
   word-break: break-word;
 }
-.debate-comment:first-of-type { border-top: none; }
+.debate-col__title + .debate-comment { border-top: none; }
 .debate-col--a .debate-comment { background: #fff9f9; }
 .debate-col--b .debate-comment { background: #f6faff; }
 .debate-comment--ai { background: #fffbf0 !important; border-left-color: #f39c12 !important; }
