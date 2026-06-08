@@ -14,6 +14,7 @@ const POINT_RULES = Object.freeze({
   participation_create: { points: 3, label: '참여글 작성' },
   vote_participate: { points: 1, label: '투표 참여' },
   reaction_received: { points: 1, label: '반응 받음' },
+  reaction_give: { points: 1, label: '댓글에 반응 남기기' },
 });
 
 const CLIENT_CALLABLE_ACTIONS = new Set(['post_create']);

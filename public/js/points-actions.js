@@ -30,4 +30,12 @@ document.addEventListener('click', event => {
     return;
   }
 
+  const reactBtn = target.closest('.comment-react-btn');
+  if (reactBtn) {
+    const commentId = reactBtn.dataset.commentId || '';
+    const react = reactBtn.dataset.react || '';
+    later(() => awardPoints('reaction_give', { postId, onceKey: `${commentId}:${react}` }));
+    return;
+  }
+
 });

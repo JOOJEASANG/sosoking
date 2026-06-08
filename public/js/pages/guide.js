@@ -171,9 +171,9 @@ export function renderGuide() {
       </section>
 
       <section id="guide-points" class="guide-section">
-        <h2 class="guide-section__title">🪙 포인트 사용 안내</h2>
+        <h2 class="guide-section__title">🪙 포인트 안내</h2>
         <div class="guide-section__body">
-          <p>활동 포인트를 모아 <strong>AI킹 추가 이용권</strong>을 구입할 수 있어요.</p>
+          <p>소소킹에서 활동할수록 포인트가 쌓여요!</p>
           <div class="guide-notice" style="margin-top:12px">
             <strong>💡 포인트 적립 방법</strong>
           </div>
@@ -185,22 +185,17 @@ export function renderGuide() {
             ${[
               ['첫 가입 보너스', '+500p'],
               ['매일 출석 체크', '+20p'],
-              ['내 글에 좋아요 받기', '+5p'],
-              ['내 글에 댓글 받기', '+10p'],
               ['글 작성', '+10p'],
+              ['댓글 작성', '+3p'],
+              ['댓글에 반응 남기기', '+1p'],
+              ['투표 참여', '+1p'],
+              ['내 글에 반응 받기', '+1p'],
             ].map(([label, pts]) => `
               <tr style="border-top:1px solid var(--color-border)">
                 <td style="padding:8px 12px">${label}</td>
                 <td style="padding:8px 12px;text-align:center;font-weight:700;color:var(--color-primary)">${pts}</td>
               </tr>`).join('')}
           </table>
-          <div class="guide-notice" style="margin-top:16px">
-            <strong>🛒 포인트 사용처</strong>
-          </div>
-          <p style="margin-top:10px;font-size:13px;color:var(--color-text-secondary)">
-            포인트로 AI킹 추가 이용권을 구입할 수 있어요. 이용권 1회당 100p가 필요하며 10회 구매 시 3회 보너스가 제공됩니다.<br>
-            <a href="#/points-shop" style="color:var(--color-primary);font-weight:700">→ 포인트 상점 바로가기</a>
-          </p>
         </div>
       </section>
 

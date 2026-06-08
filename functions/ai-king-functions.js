@@ -211,35 +211,28 @@ function parseJson(raw) {
   return JSON.parse(sanitizeJson(match[0]));
 }
 
-// ── Usage check with extraAiUses / points fallback ──
-// Returns { allowed, limit, usedExtra, usedPoints, pointsUsed }
+// ── Usage check: free daily limit → extraAiUses ──
+// Returns { allowed, limit, usedExtra }
 async function checkUsage(userId, feature) {
   const today = kstToday();
   const ref = db.doc(`ai_king_usage/${userId}_${today}_${feature}`);
   const config = await getAiKingConfig();
   const dailyLimit = config.dailyFreeLimit || DAILY_LIMIT;
-  const pointsPerUse = config.pointsPerUse || 100;
   const result = await db.runTransaction(async (tx) => {
     const [snap, userSnap] = await Promise.all([tx.get(ref), tx.get(db.doc(`users/${userId}`))]);
     const count = snap.exists ? (snap.data().count || 0) : 0;
     if (count < dailyLimit) {
       tx.set(ref, { count: count + 1, userId, feature, date: today, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-      return { allowed: true, usedExtra: false, usedPoints: false };
+      return { allowed: true, usedExtra: false };
     }
-    const userData = userSnap.exists ? (userSnap.data() || {}) : {};
-    const extra = userData.extraAiUses || 0;
+    const extra = (userSnap.exists ? userSnap.data()?.extraAiUses : 0) || 0;
     if (extra > 0) {
       tx.set(db.doc(`users/${userId}`), { extraAiUses: FieldValue.increment(-1), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-      return { allowed: true, usedExtra: true, usedPoints: false };
+      return { allowed: true, usedExtra: true };
     }
-    const points = userData.points || 0;
-    if (points >= pointsPerUse) {
-      tx.set(db.doc(`users/${userId}`), { points: FieldValue.increment(-pointsPerUse), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-      return { allowed: true, usedExtra: false, usedPoints: true, pointsUsed: pointsPerUse };
-    }
-    return { allowed: false, usedExtra: false, usedPoints: false };
+    return { allowed: false, usedExtra: false };
   });
-  return { allowed: result.allowed, limit: dailyLimit, usedExtra: result.usedExtra || false, usedPoints: result.usedPoints || false, pointsUsed: result.pointsUsed || 0 };
+  return { allowed: result.allowed, limit: dailyLimit, usedExtra: result.usedExtra || false, usedPoints: false, pointsUsed: 0 };
 }
 
 // ── AI 호출 실패 시 차감했던 사용량 환불 ──
@@ -1082,45 +1075,6 @@ exports.saveAiKingConfig = onCall({ region: 'asia-northeast3' }, async (request)
   _aiKingConfigFetchedAt = 0;
 
   return { success: true, updated: Object.keys(update).filter(k => k !== 'updatedAt' && k !== 'updatedBy') };
-});
-
-// ── purchaseAiExtraUse ──
-exports.purchaseAiExtraUse = onCall({ region: 'asia-northeast3' }, async (request) => {
-  const uid = request.auth?.uid;
-  if (!uid) throw new HttpsError('unauthenticated', '로그인이 필요해요');
-
-  const quantity = Math.min(Math.max(Math.floor(Number(request.data?.quantity) || 1), 1), 10);
-  // 묶음 구매 보너스: 5개→+1, 10개→+3
-  const BONUS_MAP = { 5: 1, 10: 3 };
-  const bonus = BONUS_MAP[quantity] || 0;
-  const totalQuantity = quantity + bonus;
-
-  const config = await getAiKingConfig();
-  const pointsPerUse = config.pointsPerUse || 100;
-  const totalCost = pointsPerUse * quantity;
-
-  const userRef = db.doc(`users/${uid}`);
-
-  await db.runTransaction(async (tx) => {
-    const userSnap = await tx.get(userRef);
-    if (!userSnap.exists) throw new HttpsError('not-found', '사용자를 찾을 수 없어요');
-
-    const currentPoints = userSnap.data()?.points || 0;
-    if (currentPoints < totalCost) {
-      throw new HttpsError(
-        'failed-precondition',
-        `포인트가 부족해요. 현재 ${currentPoints}포인트 / 필요 ${totalCost}포인트`,
-      );
-    }
-
-    tx.set(userRef, {
-      points: FieldValue.increment(-totalCost),
-      extraAiUses: FieldValue.increment(totalQuantity),
-      updatedAt: FieldValue.serverTimestamp(),
-    }, { merge: true });
-  });
-
-  return { success: true, quantity: totalQuantity, bonus, pointsUsed: totalCost };
 });
 
 // ── 다른 모듈(AI 티격태격 등)에서 재사용하는 내부 헬퍼 모음 ──

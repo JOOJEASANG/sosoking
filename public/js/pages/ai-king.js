@@ -54,9 +54,8 @@ export async function renderAiKing() {
         <div class="onboard-hero__title">소소킹</div>
         <div class="onboard-hero__desc">6인의 개성 넘치는 캐릭터가<br>판결·번역·궁합·상담을 해드립니다</div>
         <div class="onboard-hero__badges">
-          <span class="ai-king-points-badge">🪙 ${userPoints.toLocaleString()}p</span>
+          <a href="#/points-shop" class="ai-king-points-badge" style="text-decoration:none">🪙 ${userPoints.toLocaleString()}p</a>
           ${usage.extraUses > 0 ? `<span class="ai-king-points-badge ai-king-points-badge--extra">⚡ 추가권 ${usage.extraUses}회</span>` : ''}
-          <a href="#/points-shop" class="ai-king-points-shop-link">상점 →</a>
         </div>
       </div>
 
@@ -120,7 +119,7 @@ export async function renderAiKing() {
       <!-- ⑤ 안내 -->
       <div class="onboard-footer">
         각 소(所)마다 하루 ${lim}회 무료<br>
-        소진 시 사다리게임으로 추가 기회 · 포인트로 구매도 가능
+        소진 시 사다리게임으로 추가 기회
       </div>
 
     </div>`;
