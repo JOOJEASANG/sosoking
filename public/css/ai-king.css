@@ -779,3 +779,33 @@
 .hot-potato-comment-input { flex: 1; }
 [data-theme="dark"] .hot-potato-card__badge--live { background: rgba(243,156,18,.2); color: #f0b429; }
 [data-theme="dark"] .hot-potato-card__holder--mine { background: rgba(243,156,18,.1); border-color: rgba(243,156,18,.4); }
+
+/* ════════════════════════════════════════════
+   수다방 (jabdam)
+   ════════════════════════════════════════════ */
+.jabdam-page { max-width: 680px; margin: 0 auto; padding: 16px 0 48px; }
+.jabdam-header { margin-bottom: 16px; }
+.jabdam-form { margin-bottom: 16px; }
+.jabdam-textarea { width: 100%; resize: vertical; min-height: 72px; font-size: 14px; }
+.jabdam-form__foot { display: flex; align-items: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+.jabdam-img-label { font-size: 22px; cursor: pointer; padding: 4px 6px; border-radius: 8px; transition: background .15s; }
+.jabdam-img-label:hover { background: var(--color-surface-2); }
+.jabdam-img-preview { display: flex; align-items: center; gap: 8px; }
+.jabdam-preview-thumb { width: 48px; height: 48px; object-fit: cover; border-radius: 8px; border: 1px solid var(--color-border); }
+.jabdam-remove-img { background: var(--color-danger); color: #fff; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 11px; cursor: pointer; line-height: 1; display: flex; align-items: center; justify-content: center; }
+.jabdam-login-hint { text-align: center; padding: 16px; margin-bottom: 16px; }
+
+.jabdam-list { display: flex; flex-direction: column; gap: 12px; }
+.jabdam-post { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 16px; padding: 14px 16px; }
+.jabdam-post__head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.jabdam-post__author { font-size: 13px; font-weight: 800; color: var(--color-text-primary); }
+.jabdam-post__time { font-size: 11px; color: var(--color-text-muted); flex: 1; }
+.jabdam-delete-btn { background: none; border: none; color: var(--color-text-muted); cursor: pointer; font-size: 13px; padding: 2px 6px; border-radius: 6px; }
+.jabdam-delete-btn:hover { background: var(--color-danger-bg, #fff0f0); color: var(--color-danger); }
+.jabdam-post__text { font-size: 14px; line-height: 1.65; white-space: pre-wrap; word-break: break-word; margin-bottom: 8px; }
+.jabdam-link { color: var(--color-primary); text-decoration: underline; word-break: break-all; }
+.jabdam-post__img-wrap { margin-bottom: 10px; }
+.jabdam-post__img { max-width: 100%; border-radius: 12px; display: block; max-height: 480px; object-fit: contain; }
+.jabdam-post__foot { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+.jabdam-like-btn { background: none; border: 1px solid var(--color-border); border-radius: 20px; padding: 4px 12px; font-size: 13px; cursor: pointer; color: var(--color-text-secondary); transition: all .15s; display: flex; align-items: center; gap: 4px; }
+.jabdam-like-btn:hover, .jabdam-like-btn--on { background: var(--color-primary-bg); border-color: var(--color-primary); color: var(--color-primary); }

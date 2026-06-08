@@ -35,6 +35,7 @@ export async function renderAdmin() {
   const TOP_MENUS = [
     { key: 'dashboard', icon: '📊', label: '대시보드', short: '통계' },
     { key: 'ai',        icon: '🤖', label: 'AI 관리',  short: 'AI' },
+    { key: 'features',  icon: '⚙️', label: '기능 제어', short: '기능' },
     { key: 'reports',   icon: '🚨', label: '신고·의견', short: '신고' },
     { key: 'users',     icon: '👥', label: '회원관리', short: '회원' },
     { key: 'posts',     icon: '📝', label: '게시글관리', short: '게시글' },
@@ -115,6 +116,7 @@ async function loadTab(tab) {
     case 'reports':   return renderReports(content);
     case 'users':     return renderUsers(content);
     case 'ai':        return renderAiSettings(content);
+    case 'features':  return renderSiteFeatures(content);
     case 'posts':     return renderAdminPosts(content);
     case 'myinfo':    return renderMyInfo(content);
   }
@@ -1067,6 +1069,71 @@ async function renderMyInfo(el) {
       saveBtn.disabled = false;
       saveBtn.textContent = '저장하기';
     }
+  });
+}
+
+/* ── 사이트 기능 제어 ── */
+async function renderSiteFeatures(el) {
+  const { doc: fsDoc, getDoc: fsGetDoc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
+  let siteFeatures = { hotPotato: true, jabdam: true };
+  try {
+    const snap = await fsGetDoc(fsDoc(db, 'config', 'site_features'));
+    if (snap.exists()) siteFeatures = { ...siteFeatures, ...snap.data() };
+  } catch {}
+
+  const SITE_FEATURES = [
+    { key: 'hotPotato', icon: '🔥', label: '핫포테이토', desc: '마지막 댓글 달면 폭탄 터지는 게임. 유저 없으면 꺼두세요.' },
+    { key: 'jabdam',    icon: '🗨️', label: '수다방',    desc: '텍스트·사진·링크 자유롭게 올리는 잡담 공간.' },
+  ];
+
+  el.innerHTML = `
+    <div class="admin-section">
+      <div class="card">
+        <div class="card__body">
+          <div style="font-size:15px;font-weight:900;margin-bottom:4px">⚙️ 사이트 기능 ON/OFF</div>
+          <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:16px">꺼두면 네비게이션에서 숨겨집니다. 페이지 자체는 유지돼요.</div>
+          <div style="display:flex;flex-direction:column;gap:14px">
+            ${SITE_FEATURES.map(f => `
+              <div style="display:flex;align-items:center;gap:12px;padding:14px;border:1px solid var(--color-border);border-radius:12px">
+                <span style="font-size:22px">${f.icon}</span>
+                <div style="flex:1">
+                  <div style="font-size:14px;font-weight:800">${f.label}</div>
+                  <div style="font-size:12px;color:var(--color-text-muted);margin-top:2px">${f.desc}</div>
+                </div>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                  <input type="checkbox" class="site-feature-toggle" data-feature="${f.key}" ${siteFeatures[f.key] !== false ? 'checked' : ''} style="width:18px;height:18px;cursor:pointer">
+                  <span class="site-feature-label" style="font-size:12px;font-weight:700;min-width:30px">${siteFeatures[f.key] !== false ? '켜짐' : '꺼짐'}</span>
+                </label>
+              </div>`).join('')}
+          </div>
+          <div style="display:flex;gap:8px;margin-top:16px">
+            <button class="btn btn--primary btn--sm" id="btn-save-site-features">저장</button>
+          </div>
+          <div id="site-features-result" style="margin-top:8px;font-size:12px;color:var(--color-text-muted)"></div>
+        </div>
+      </div>
+    </div>`;
+
+  el.querySelectorAll('.site-feature-toggle').forEach(cb => {
+    cb.addEventListener('change', () => {
+      cb.nextElementSibling.textContent = cb.checked ? '켜짐' : '꺼짐';
+    });
+  });
+
+  el.querySelector('#btn-save-site-features')?.addEventListener('click', async () => {
+    const btn = el.querySelector('#btn-save-site-features');
+    const result = el.querySelector('#site-features-result');
+    btn.disabled = true; btn.textContent = '저장 중...';
+    const data = {};
+    el.querySelectorAll('.site-feature-toggle').forEach(cb => { data[cb.dataset.feature] = cb.checked; });
+    try {
+      await setDoc(fsDoc(db, 'config', 'site_features'), data, { merge: true });
+      result.textContent = '✅ 저장됐어요';
+      toast.success('기능 설정이 저장됐어요 ✅');
+    } catch (e) {
+      result.textContent = '❌ ' + (e.message || '저장 실패');
+      toast.error(e.message || '저장 실패');
+    } finally { btn.disabled = false; btn.textContent = '저장'; }
   });
 }
 

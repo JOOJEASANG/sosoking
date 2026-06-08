@@ -9,6 +9,15 @@ import { collection, query, where, getDocs, getDoc, doc, limit } from 'https://w
 
 export { appState };
 
+let siteFeatures = { hotPotato: true, jabdam: true };
+
+async function loadSiteFeatures() {
+  try {
+    const snap = await getDoc(doc(db, 'config', 'site_features'));
+    if (snap.exists()) siteFeatures = { hotPotato: true, jabdam: true, ...snap.data() };
+  } catch {}
+}
+
 const OWNER_EMAILS = new Set();
 const ADMIN_ALLOWED_PATHS = new Set(['/admin', '/account', '/terms', '/privacy', '/legal/terms', '/legal/privacy', '/guide', '/login', '/signup']);
 
@@ -86,6 +95,7 @@ async function registerRoutes() {
   registerRoute('/ai-naming', async () => renderPage((await import('./pages/ai-naming.js')).renderAiNaming, '창작소'));
   registerRoute('/points-shop', async () => renderPage((await import('./pages/points-shop.js')).renderPointsShop, '내 포인트'));
   registerRoute('/hot-potato', async () => renderPage((await import('./pages/hot-potato.js')).renderHotPotato, '🔥 핫포테이토'));
+  registerRoute('/jabdam', async () => renderPage((await import('./pages/jabdam.js')).renderJabdam, '🗨️ 수다방'));
 }
 
 async function isStrictAdmin(user) {
@@ -161,7 +171,7 @@ function renderFrame() {
           <div class="site-footer__body" id="footer-body" hidden>
             <div class="site-footer__inner">
               <div class="site-footer__brand-block"><a href="#/" class="site-footer__brand"><img src="/logo.svg" alt="" width="26" height="26"><span>소소킹</span></a><div class="site-footer__tagline">AI가 판결하고 번역하고<br>마피아 게임까지 — 소소킹</div></div>
-              <div><div class="site-footer__col-title">AI 소(所)</div><div class="site-footer__links"><a href="#/ai-judge">⚖️ 판결소</a><a href="#/ai-translate">✨ 창작소</a><a href="#/hot-potato">🔥 핫포테이토</a></div></div>
+              <div><div class="site-footer__col-title">AI 소(所)</div><div class="site-footer__links"><a href="#/ai-judge">⚖️ 판결소</a><a href="#/ai-translate">✨ 창작소</a>${siteFeatures.jabdam !== false ? '<a href="#/jabdam">🗨️ 수다방</a>' : ''}${siteFeatures.hotPotato !== false ? '<a href="#/hot-potato">🔥 핫포테이토</a>' : ''}</div></div>
               <div><div class="site-footer__col-title">바로가기</div><div class="site-footer__links"><a href="#/feed">피드</a><a href="#/hall">통계</a><a href="#/guide">이용안내</a></div></div>
               <div><div class="site-footer__col-title">정보</div><div class="site-footer__links"><a href="#/terms">이용약관</a><a href="#/privacy">개인정보처리방침</a></div></div>
             </div>
@@ -210,6 +220,7 @@ async function handleKakaoCallback() {
 
 async function initApp() {
   initToast();
+  await loadSiteFeatures();
   await handleKakaoCallback();
   await registerRoutes();
   initRouter();
