@@ -4,9 +4,7 @@ import { toast } from '../components/toast.js';
 const CARD_THEMES = {
   ai_judge:     { g1: '#6C5CE7', g2: '#a29bfe', emoji: '⚖️', label: '판결소' },
   ai_translate: { g1: '#00B894', g2: '#55efc4', emoji: '✨', label: '창작소' },
-  ai_match:     { g1: '#E84393', g2: '#fd79a8', emoji: '💘', label: '궁합소' },
   ai_naming:    { g1: '#e17055', g2: '#FF6B4A', emoji: '✨', label: '창작소' },
-  ai_consult:   { g1: '#F39C12', g2: '#F7DC6F', emoji: '💬', label: '상담소' },
 };
 
 function getCardContent(post) {
@@ -27,23 +25,11 @@ function getCardContent(post) {
         result: `→ ${post.styleName || ''}\n"${trl}${(post.translated || '').length > 90 ? '...' : ''}"`,
       };
     }
-    case 'ai_match':
-      return {
-        subject: `${post.itemA || ''} 💘 ${post.itemB || ''}`,
-        result: `궁합 ${post.matchResult?.score || 0}%\n${post.matchResult?.grade || ''}`,
-      };
     case 'ai_naming': {
       const names = (post.names || []).slice(0, 3).map(n => n.name).join(' · ');
       return {
         subject: `"${(post.description || post.title || '').slice(0, 60)}"`,
         result: names,
-      };
-    }
-    case 'ai_consult': {
-      const a = (post.advices || [])[0];
-      return {
-        subject: `"${(post.concern || post.title || '').slice(0, 70)}"`,
-        result: a ? `${a.charName}\n"${(a.advice || '').slice(0, 90)}${(a.advice || '').length > 90 ? '...' : ''}"` : '',
       };
     }
     default:

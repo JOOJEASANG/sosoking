@@ -2,9 +2,7 @@
 const TYPE_LABELS = {
   ai_judge: '판결소',
   ai_translate: '창작소',
-  ai_match: '궁합소',
   ai_naming: '창작소',
-  ai_consult: '상담소',
   vote: '토론방',
   drip: '드립방',
   collect: '일반방',
@@ -14,9 +12,7 @@ const TYPE_LABELS = {
 const TYPE_ICONS = {
   ai_judge: '⚖️',
   ai_translate: '✨',
-  ai_match: '💘',
   ai_naming: '✨',
-  ai_consult: '💬',
   vote: '🗳️',
   drip: '🤣',
   collect: '📌',

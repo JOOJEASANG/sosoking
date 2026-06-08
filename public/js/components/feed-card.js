@@ -10,9 +10,7 @@ const TYPE_META = {
   multi:        { cat: 'multi',  catLabel: '\uBAA8\uC74C\uBC29', icon: '📌', label: '\uBAA8\uC74C\uBC29' },
   ai_judge:     { cat: 'golra',  catLabel: 'AI\uD310\uC0AC', icon: '⚖️', label: 'AI\uD310\uC0AC' },
   ai_translate: { cat: 'usgyo',  catLabel: 'AI\uBC88\uC5ED\uC0AC', icon: '🌍', label: 'AI\uBC88\uC5ED\uC0AC' },
-  ai_match:     { cat: 'golra',  catLabel: 'AI\uAD81\uD569', icon: '💘', label: 'AI\uAD81\uD569' },
   ai_naming:    { cat: 'usgyo',  catLabel: 'AI\uC791\uBA85\uC18C', icon: '🎭', label: 'AI\uC791\uBA85\uC18C' },
-  ai_consult:   { cat: 'golra',  catLabel: 'AI\uC0C1\uB2F4\uC18C', icon: '💬', label: 'AI\uC0C1\uB2F4\uC18C' },
   ai_debate:    { cat: 'golra',  catLabel: '\uD2F0\uACA9\uD0DC\uACA9', icon: '🗣️', label: '\uD2F0\uACA9\uD0DC\uACA9' },
 };
 

@@ -130,9 +130,7 @@ async function renderDashboard(el) {
   const AI_FEATURES = [
     { key: 'judge',     icon: '⚖️', label: '판결소', cat: 'primary' },
     { key: 'translate', icon: '✨', label: '창작소',  cat: 'golra'  },
-    { key: 'match',     icon: '💘', label: '궁합소',  cat: 'usgyo'  },
     { key: 'naming',    icon: '✨', label: '작명',    cat: 'malhe'  },
-    { key: 'consult',   icon: '💬', label: '상담소',  cat: 'teal'   },
   ];
 
   const [totalSnap, todaySnap, recentSnap, reportSnap, monthUsageSnap, todayUsageSnap] = await Promise.all([
@@ -540,7 +538,7 @@ async function renderAiSettings(el) {
   const today = new Date().toISOString().slice(0, 10);
   const monthStart = today.slice(0, 7) + '-01';
 
-  // 운영 텍스트 AI(판사·번역·궁합·작명)에 쓰는 모델만. GPT는 이미지 생성 전용이라 제외.
+  // 운영 텍스트 AI(판사·번역·작명)에 쓰는 모델만. GPT는 이미지 생성 전용이라 제외.
   // Estimated cost per request by model (USD) — approximate based on avg ~400 input / 300 output tokens
   const COST_PER_USE = { claude: 0.0010, gemini: 0.0005 };
   const MODEL_NAMES  = { claude: 'Claude Haiku 4.5', gemini: 'Gemini 2.5 Flash' };
@@ -588,9 +586,7 @@ async function renderAiSettings(el) {
   const FEATURES = [
     { key: 'judge',     label: '⚖️ 판결소' },
     { key: 'translate', label: '✨ 창작소' },
-    { key: 'match',     label: '💘 궁합소' },
     { key: 'naming',    label: '✨ 작명(구)' },
-    { key: 'consult',   label: '💬 상담소' },
   ];
 
   // Today stats
@@ -716,7 +712,7 @@ async function renderAiSettings(el) {
       <div class="card">
         <div class="card__body">
           <div style="font-size:15px;font-weight:900;margin-bottom:4px">🎮 운영 AI 모델</div>
-          <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:16px">AI킹(판사·번역사·궁합·작명소)에 쓰는 텍스트 모델이에요. 하나만 골라서 운영해요.</div>
+          <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:16px">AI킹(판사·번역사·작명소)에 쓰는 텍스트 모델이에요. 하나만 골라서 운영해요.</div>
 
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
             ${[
@@ -916,7 +912,7 @@ async function renderAiSettings(el) {
 
   // AI 전체 중지
   el.querySelector('#btn-ai-emergency-stop')?.addEventListener('click', async () => {
-    if (!confirm('AI 기능을 전체 중지할까요? 판사·번역·궁합·작명 등 사용자 기능이 모두 비활성화됩니다.')) return;
+    if (!confirm('AI 기능을 전체 중지할까요? 판사·번역·작명·토론 등 사용자 기능이 모두 비활성화됩니다.')) return;
     try {
       const allOff = Object.fromEntries(featureList.map(f => [f.key, false]));
       await httpsCallable(functions, 'saveAiConfig')({ features: allOff, enabled: false });
@@ -1078,7 +1074,7 @@ async function renderMyInfo(el) {
 async function renderAdminPosts(el) {
   const POST_TYPE_LABELS = {
     ai_judge: '⚖️ 판결소', ai_translate: '✨ 창작소',
-    ai_match: '💘 궁합소', ai_naming: '✨ 창작소(구)', ai_consult: '💬 상담소',
+    ai_naming: '✨ 창작소(구)',
     vote: '🗳️ 토론방', drip: '🤣 드립방',
     collect: '📌 일반방', general: '📝 일반',
   };

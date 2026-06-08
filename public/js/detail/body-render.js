@@ -42,9 +42,7 @@ export function renderImageSection(images) {
 const AI_KING_AGAIN = {
   ai_judge:     { path: '/ai-judge',     label: '⚖️ 나도 판결받기' },
   ai_translate: { path: '/ai-translate', label: '✨ 나도 번역하기' },
-  ai_match:     { path: '/ai-match',     label: '💘 나도 궁합보기' },
   ai_naming:    { path: '/ai-translate', label: '✨ 나도 이름짓기' },
-  ai_consult:   { path: '/ai-consult',   label: '💬 나도 상담받기' },
   ai_debate:    { path: '/ai-judge',     label: '⚖️ 나도 캐릭터한테 물어보기' },
 };
 
@@ -67,12 +65,8 @@ export function renderTypeBody(post) {
       return renderAiJudgeBody(post) + renderAiAgainBtn('ai_judge');
     case 'ai_translate':
       return renderAiTranslateBody(post) + renderAiAgainBtn('ai_translate');
-    case 'ai_match':
-      return renderAiMatchBody(post) + renderAiAgainBtn('ai_match');
     case 'ai_naming':
       return renderAiNamingBody(post) + renderAiAgainBtn('ai_naming');
-    case 'ai_consult':
-      return renderAiConsultBody(post) + renderAiAgainBtn('ai_consult');
     case 'ai_debate':
       return renderAiDebateBody(post) + renderAiAgainBtn('ai_debate');
     case 'balance':

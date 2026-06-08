@@ -18,15 +18,13 @@ const FILTER_LIMIT = 500;
 const NAV_CONTEXT_KEY = 'sosoking:feedNavContext';
 
 const ROOMS = [
-  { key: '',             icon: '✨', label: '전체',   title: '전체',   desc: '4소(所) 콘텐츠를 한 번에 봅니다.' },
+  { key: '',             icon: '✨', label: '전체',   title: '전체',   desc: '판결소·창작소·티격태격 콘텐츠를 한 번에 봅니다.' },
   { key: 'ai_judge',     icon: '⚖️', label: '판결소', title: '판결소', desc: '억울한 상황 → 5인 캐릭터가 각자 판결합니다.', path: '/ai-judge' },
   { key: 'ai_translate', icon: '✨', label: '창작소', title: '창작소', desc: '번역하기 + 이름짓기 두 가지를 한 곳에서.', path: '/ai-translate' },
-  { key: 'ai_match',     icon: '💘', label: '궁합소', title: '궁합소', desc: '뭐든 두 가지 → AI가 궁합 점수+분석 즉시 출력.', path: '/ai-match' },
-  { key: 'ai_consult',   icon: '💬', label: '상담소', title: '상담소', desc: '고민 털어놓기 → 황당하지만 맞는 조언 보장.', path: '/ai-consult' },
   { key: 'ai_debate',    icon: '🗣️', label: '티격태격', title: '티격태격', desc: '매일 한 주제로 캐릭터 6인이 벌이는 말싸움 구경.' },
 ];
 
-const AI_TYPES = ['ai_judge', 'ai_translate', 'ai_match', 'ai_naming', 'ai_consult', 'ai_debate'];
+const AI_TYPES = ['ai_judge', 'ai_translate', 'ai_naming', 'ai_debate'];
 
 let currentType        = '';
 let currentSearch      = '';
@@ -197,8 +195,6 @@ function getLegacyTypeWhereClause(type) {
   const map = {
     ai_judge:     ['ai_judge'],
     ai_translate: ['ai_translate', 'ai_naming'],
-    ai_match:     ['ai_match'],
-    ai_consult:   ['ai_consult'],
     ai_debate:    ['ai_debate'],
   };
   const types = map[type];

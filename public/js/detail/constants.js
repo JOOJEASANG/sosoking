@@ -10,9 +10,7 @@ export const TYPE_LABELS = {
   general: '일반방',
   ai_judge: 'AI판사',
   ai_translate: 'AI번역사',
-  ai_match: 'AI궁합',
   ai_naming: 'AI작명소',
-  ai_consult: 'AI상담소',
   ai_debate: '티격태격',
 };
 

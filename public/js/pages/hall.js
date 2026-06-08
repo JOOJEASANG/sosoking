@@ -5,15 +5,14 @@ import {
   collection, query, orderBy, limit, getDocs,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-const AI_TYPES = ['ai_judge', 'ai_translate', 'ai_match', 'ai_naming', 'ai_consult'];
+const AI_TYPES = ['ai_judge', 'ai_translate', 'ai_naming', 'ai_debate'];
 
 const HALL_CATS = [
   { key: 'popular',      label: '인기글',  icon: '🔥', type: null,          desc: '반응과 댓글이 많은 글', scoreKey: null },
   { key: 'comment',      label: '댓글많음', icon: '💬', type: null,          desc: '댓글 참여가 많은 글',   scoreKey: 'comment' },
   { key: 'ai_judge',     label: '판결소',  icon: '⚖️', type: 'ai_judge',    desc: '판결 인기글',           scoreKey: null },
   { key: 'ai_translate', label: '창작소',  icon: '✨', type: 'ai_translate', desc: '번역·작명 인기글',      scoreKey: null },
-  { key: 'ai_match',     label: '궁합소',  icon: '💘', type: 'ai_match',    desc: '궁합 인기글',           scoreKey: null },
-  { key: 'ai_consult',   label: '상담소',  icon: '💬', type: 'ai_consult',  desc: '상담 인기글',           scoreKey: null },
+  { key: 'ai_debate',    label: '티격태격', icon: '🗣️', type: 'ai_debate',   desc: '티격태격 인기글',        scoreKey: null },
 ];
 
 function score(p) {
@@ -41,18 +40,9 @@ function aiResultSnippet(post) {
       const label = firstT ? escHtml(firstT.charName) : escHtml(post.styleName || '');
       return label ? `<span class="hall-ai-snippet">${label} 번역</span>` : '';
     }
-    case 'ai_match': {
-      const firstA = Array.isArray(post.analyses) ? post.analyses[0] : post.matchResult;
-      const s = firstA?.score;
-      return s != null ? `<span class="hall-ai-snippet hall-ai-snippet--score">💘 ${s}% ${escHtml(firstA?.grade || '')}</span>` : '';
-    }
     case 'ai_naming': {
       const names = (post.names || []).slice(0, 2).map(n => escHtml(n.name)).join(', ');
       return names ? `<span class="hall-ai-snippet">${names}</span>` : '';
-    }
-    case 'ai_consult': {
-      const a = (post.advices || [])[0];
-      return a ? `<span class="hall-ai-snippet">${escHtml(a.charName || '')}: "${escHtml((a.advice || '').slice(0, 50))}..."</span>` : '';
     }
     default:
       return '';

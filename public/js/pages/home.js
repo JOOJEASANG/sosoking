@@ -13,17 +13,14 @@ import { navigate } from '../router.js';
 const TYPE_LABEL = {
   ai_judge:     '⚖️ 판결소',
   ai_translate: '✨ 창작소',
-  ai_match:     '💘 궁합소',
   ai_naming:    '✨ 창작소',
-  ai_consult:   '💬 상담소',
   ai_debate:    '🗣️ 티격태격',
 };
 
 const AI_KINGS = [
   { path: '/ai-judge',   emoji: '⚖️', name: '판결소', desc: '억울함 판결' },
   { path: '/ai-translate', emoji: '✨', name: '창작소', desc: '번역+작명' },
-  { path: '/ai-match',   emoji: '💘', name: '궁합소', desc: '궁합 분석' },
-  { path: '/ai-consult', emoji: '💬', name: '상담소', desc: '인생 조언' },
+  { path: '/ai-king',    emoji: '🗣️', name: '티격태격', desc: '캐릭터 난장판' },
 ];
 
 function getKstDateString(date = new Date()) {
@@ -120,12 +117,12 @@ function renderHero() {
         <h1 class="home-hero-v3__title">
           ${nick ? `${escHtml(nick)}님,<br>` : ''}AI랑 놀다 가세요 👋
         </h1>
-        <p class="home-hero-v3__sub">판결·번역·궁합·작명 — 다 AI가 해드립니다</p>
+        <p class="home-hero-v3__sub">판결·번역·작명·토론 — 다 AI가 해드립니다</p>
         ${streak >= 2 ? `<div class="home-hero-v3__streak">🔥 ${streak}일 연속 방문 중!</div>` : ''}
       </div>
 
       <button class="home-aiking-hub-btn" data-path="/ai-king" type="button">
-        <span class="home-aiking-hub-btn__icons">⚖️ ✨ 💘 💬</span>
+        <span class="home-aiking-hub-btn__icons">⚖️ ✨ 🗣️</span>
         <span class="home-aiking-hub-btn__label">소소킹 AI킹 전체보기 →</span>
       </button>
 
