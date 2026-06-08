@@ -110,6 +110,7 @@ export function renderFeedCard(post) {
             <span class="feed-card__type-badge feed-card__type-badge--${meta.cat}">
               ${meta.icon} ${escHtml(meta.label)}
             </span>
+            ${post.isUserCreated ? `<span class="tag" style="background:var(--color-primary-bg);color:var(--color-primary);font-size:10px">👤 유저 주제</span>` : ''}
             ${firstTag ? `<span class="tag">#${firstTag}</span>` : ''}
           </div>
           <h3 class="feed-card__title line-clamp-2">${escHtml(title)}</h3>

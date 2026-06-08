@@ -809,3 +809,23 @@
 .jabdam-post__foot { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
 .jabdam-like-btn { background: none; border: 1px solid var(--color-border); border-radius: 20px; padding: 4px 12px; font-size: 13px; cursor: pointer; color: var(--color-text-secondary); transition: all .15s; display: flex; align-items: center; gap: 4px; }
 .jabdam-like-btn:hover, .jabdam-like-btn--on { background: var(--color-primary-bg); border-color: var(--color-primary); color: var(--color-primary); }
+
+/* 유저가 올린 토론왕 주제 힌트 */
+.ai-debate-user-hint {
+  background: linear-gradient(135deg, #f0f4ff, #e8f0fe);
+  border: 1.5px solid #c3d1f7;
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+  margin: 12px 0;
+  text-align: center;
+}
+[data-theme="dark"] .ai-debate-user-hint {
+  background: rgba(99,130,240,.12);
+  border-color: rgba(99,130,240,.3);
+}
+
+/* 피드 - 유저 주제 올리기 폼 */
+.debate-topic-form { margin-bottom: 14px; }

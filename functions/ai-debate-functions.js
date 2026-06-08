@@ -403,3 +403,44 @@ exports.generateDebateNow = onCall({
     throw new HttpsError('internal', 'AI 티격태격 생성에 실패했어요. 잠시 후 다시 시도해주세요.');
   }
 });
+
+// ── 유저가 직접 주제 올리기 (AI 생성 없음) ──
+exports.createUserDebateTopic = onCall({ region: REGION, timeoutSeconds: 15 }, async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError('unauthenticated', '로그인 후 주제를 올릴 수 있어요');
+
+  const topic = String(request.data?.topic || '').trim().slice(0, 100);
+  if (topic.length < 3) throw new HttpsError('invalid-argument', '주제를 3자 이상 입력해주세요');
+
+  // 하루 3개 제한
+  const today = new Date().toISOString().slice(0, 10);
+  const usageRef = db.doc(`ai_debate_user_usage/${uid}_${today}`);
+  const usageSnap = await usageRef.get();
+  const count = usageSnap.exists ? (usageSnap.data().count || 0) : 0;
+  if (count >= 3) throw new HttpsError('resource-exhausted', '하루 3개까지 주제를 올릴 수 있어요');
+
+  const userSnap = await db.doc(`users/${uid}`).get();
+  const authorName = userSnap.data()?.nickname || userSnap.data()?.displayName || '익명';
+
+  const feedRef = await db.collection('feeds').add({
+    type: 'ai_debate',
+    feedType: 'ai_debate',
+    topic,
+    title: topic,
+    turns: [],
+    voteA: 0,
+    voteB: 0,
+    commentCount: 0,
+    isUserCreated: true,
+    authorName,
+    uid,
+    hidden: false,
+    hasAiDecoy: false,
+    aiDecoyInjected: false,
+    createdAt: FieldValue.serverTimestamp(),
+  });
+
+  await usageRef.set({ count: count + 1, date: today }, { merge: true });
+
+  return { success: true, postId: feedRef.id };
+});

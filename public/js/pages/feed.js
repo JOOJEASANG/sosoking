@@ -1,7 +1,8 @@
-import { db } from '../firebase.js';
+import { db, auth, functions } from '../firebase.js';
 import {
   collection, query, orderBy, limit, getDocs, startAfter, where,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
 import { getQueryParams, navigate } from '../router.js';
 import { renderFeedCard, renderSkeletonCards } from '../components/feed-card.js';
 import { setMeta } from '../utils/seo.js';
@@ -12,6 +13,8 @@ import {
   renderFeedSearchBar, renderFeedFilterBar, renderFeedEmptyState,
   updateFeedFilterUI, renderFeedSummary,
 } from '../feed/render.js';
+
+import { toast } from '../components/toast.js';
 
 const PAGE_SIZE    = 20;
 const FILTER_LIMIT = 500;
@@ -87,6 +90,7 @@ export async function renderFeed() {
         ${renderFeedSearchBar({ search: currentSearch })}
         ${renderFeedFilterBar({ type: currentType, search: currentSearch })}
       </div>
+      <div id="debate-topic-form-area"></div>
       <div id="feed-summary" class="soso-feed-summary feed-result-summary"></div>
       <div id="feed-list" class="soso-feed-list">${renderSkeletonCards(5)}</div>
       <div id="feed-pagination" class="feed-pagination"></div>
@@ -94,12 +98,52 @@ export async function renderFeed() {
     </div>`;
 
   bindFeedEvents();
+  renderDebateTopicForm();
   await loadPosts();
 }
 
 function bindFeedEvents() {
   bindSearchEvents();
   bindTypeFilterEvents();
+}
+
+function renderDebateTopicForm() {
+  const area = document.getElementById('debate-topic-form-area');
+  if (!area) return;
+  if (currentType !== 'ai_debate') { area.innerHTML = ''; return; }
+
+  const loggedIn = !!auth.currentUser;
+  area.innerHTML = `
+    <div class="debate-topic-form card" style="margin-bottom:14px">
+      <div class="card__body" style="padding:14px 16px">
+        <div style="font-size:13px;font-weight:800;margin-bottom:10px">💬 주제 직접 올리기 <span style="font-weight:400;color:var(--color-text-muted);font-size:11px">하루 3개 · AI 없이 유저끼리 토론</span></div>
+        <div style="display:flex;gap:8px">
+          <input id="user-debate-input" class="form-input" style="flex:1;font-size:13px"
+            placeholder="${loggedIn ? '예: 치킨 vs 피자, 부먹 vs 찍먹…' : '로그인 후 주제를 올릴 수 있어요'}"
+            maxlength="100" ${!loggedIn ? 'disabled' : ''}>
+          <button id="user-debate-submit" class="btn btn--primary btn--sm" ${!loggedIn ? 'disabled' : ''}>올리기</button>
+        </div>
+      </div>
+    </div>`;
+
+  if (!loggedIn) return;
+  const input = area.querySelector('#user-debate-input');
+  const btn = area.querySelector('#user-debate-submit');
+  input?.addEventListener('keydown', e => { if (e.key === 'Enter') btn?.click(); });
+  btn?.addEventListener('click', async () => {
+    const topic = input?.value.trim();
+    if (!topic || topic.length < 3) { toast.warn('주제를 3자 이상 입력해주세요'); return; }
+    btn.disabled = true; btn.textContent = '올리는 중...';
+    try {
+      const res = await httpsCallable(functions, 'createUserDebateTopic')({ topic });
+      toast.success('주제가 올라갔어요! 🗣️');
+      navigate(`/detail/${res.data.postId}`);
+    } catch (e) {
+      toast.error(e.message || '올리기 실패');
+    } finally {
+      btn.disabled = false; btn.textContent = '올리기';
+    }
+  });
 }
 
 function bindSearchEvents() {
@@ -178,6 +222,7 @@ function refreshFeed() {
   } else {
     if (descEl) descEl.hidden = true;
   }
+  renderDebateTopicForm();
   loadPosts();
 }
 

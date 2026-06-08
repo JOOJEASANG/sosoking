@@ -155,20 +155,23 @@ function renderAiDebateBody(post) {
   const aLabel = total ? `${voteA}표 (${pctA}%)` : '첫 투표!';
   const bLabel = total ? `${voteB}표 (${pctB}%)` : '첫 투표!';
 
+  const isUserCreated = !!post.isUserCreated;
   return `
     <div class="ai-debate-result">
       <div class="ai-debate-topic">
-        <span class="ai-debate-topic__label">🗣️ 오늘의 토론왕 주제</span>
+        <span class="ai-debate-topic__label">${isUserCreated ? '👤 유저가 올린 주제' : '🗣️ 오늘의 토론왕 주제'}</span>
         <span class="ai-debate-topic__text">${escHtml(post.topic || post.title || '').replace(/\n/g, '<br>')}</span>
       </div>
-      <div class="ai-debate-thread">
+      ${isUserCreated && !turns.length
+        ? `<div class="ai-debate-user-hint">💬 AI 없이 유저끼리 직접 토론하는 주제예요! 아래에서 편 들고 댓글로 의견 남겨보세요 🔥</div>`
+        : `<div class="ai-debate-thread">
         ${turns.map(t => `
           <div class="ai-debate-turn" data-char="${escHtml(t.charId || '')}">
             <div class="ai-debate-turn__name">${escHtml(t.charName || '')}</div>
             <div class="ai-debate-turn__bubble">${escHtml(t.text || '').replace(/\n/g, '<br>')}</div>
           </div>`).join('')}
-      </div>
-      <div class="ai-debate-foot">누가 이겼을까? 편 들고 댓글 남기기 👇</div>
+      </div>`}
+      <div class="ai-debate-foot">${isUserCreated ? '어느 편? 투표하고 댓글로 토론해봐요 👇' : '누가 이겼을까? 편 들고 댓글 남기기 👇'}</div>
       <div class="ai-debate-vote" id="debate-vote-area" data-post-id="${escHtml(post.id || '')}">
         <div class="ai-debate-vote__label">어느 편 손을 들어주겠어요?</div>
         <div class="ai-debate-vote__btns">
