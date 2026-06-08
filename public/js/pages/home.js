@@ -14,13 +14,13 @@ const TYPE_LABEL = {
   ai_judge:     '⚖️ 판결소',
   ai_translate: '✨ 창작소',
   ai_naming:    '✨ 창작소',
-  ai_debate:    '🗣️ 티격태격',
+  ai_debate:    '🗣️ 토론왕',
 };
 
 const AI_KINGS = [
   { path: '/ai-judge',   emoji: '⚖️', name: '판결소', desc: '억울함 판결' },
   { path: '/ai-translate', emoji: '✨', name: '창작소', desc: '번역+작명' },
-  { path: '/ai-king',    emoji: '🗣️', name: '티격태격', desc: '캐릭터 난장판' },
+  { path: '/ai-king',    emoji: '🗣️', name: '토론왕', desc: '캐릭터 난장판' },
 ];
 
 function getKstDateString(date = new Date()) {
@@ -94,7 +94,7 @@ function renderDebateCard(post) {
   return `
     <div class="home-debate-card" data-id="${post.id}">
       <div class="home-debate-card__head">
-        <span class="home-debate-card__label">🗣️ 오늘의 티격태격</span>
+        <span class="home-debate-card__label">🗣️ 오늘의 토론왕</span>
         <span class="home-debate-card__live">캐릭터 6인 난장판</span>
       </div>
       <div class="home-debate-card__topic">${escHtml(post.topic || post.title || '')}</div>

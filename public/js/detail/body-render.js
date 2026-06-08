@@ -158,7 +158,7 @@ function renderAiDebateBody(post) {
   return `
     <div class="ai-debate-result">
       <div class="ai-debate-topic">
-        <span class="ai-debate-topic__label">🗣️ 오늘의 주제</span>
+        <span class="ai-debate-topic__label">🗣️ 오늘의 토론왕 주제</span>
         <span class="ai-debate-topic__text">${escHtml(post.topic || post.title || '').replace(/\n/g, '<br>')}</span>
       </div>
       <div class="ai-debate-thread">

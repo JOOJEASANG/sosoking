@@ -12,7 +12,7 @@ const HALL_CATS = [
   { key: 'comment',      label: '댓글많음', icon: '💬', type: null,          desc: '댓글 참여가 많은 글',   scoreKey: 'comment' },
   { key: 'ai_judge',     label: '판결소',  icon: '⚖️', type: 'ai_judge',    desc: '판결 인기글',           scoreKey: null },
   { key: 'ai_translate', label: '창작소',  icon: '✨', type: 'ai_translate', desc: '번역·작명 인기글',      scoreKey: null },
-  { key: 'ai_debate',    label: '티격태격', icon: '🗣️', type: 'ai_debate',   desc: '티격태격 인기글',        scoreKey: null },
+  { key: 'ai_debate',    label: '토론왕', icon: '🗣️', type: 'ai_debate',   desc: '토론왕 인기글',        scoreKey: null },
 ];
 
 function score(p) {

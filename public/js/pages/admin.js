@@ -826,7 +826,7 @@ async function renderAiSettings(el) {
       <!-- 수동 실행 -->
       <div class="card">
         <div class="card__body">
-          <div style="font-size:14px;font-weight:800;margin-bottom:4px">🗣️ AI 티격태격</div>
+          <div style="font-size:14px;font-weight:800;margin-bottom:4px">🗣️ AI 토론왕</div>
           <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:14px">매일 오전 10시 자동 생성돼요. 지금 바로 만들거나 주제를 직접 넣을 수도 있어요.</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
             <input id="debate-topic-input" type="text" placeholder="주제 직접 입력 (비우면 오늘의 주제)" maxlength="100"
@@ -921,7 +921,7 @@ async function renderAiSettings(el) {
     } catch (e) { toast.error(e.message || '중지에 실패했어요'); }
   });
 
-  // AI 티격태격 수동 생성
+  // AI 토론왕 수동 생성
   el.querySelector('#btn-trigger-debate')?.addEventListener('click', async () => {
     const btn = el.querySelector('#btn-trigger-debate');
     const result = el.querySelector('#ai-trigger-result');
@@ -930,7 +930,7 @@ async function renderAiSettings(el) {
     try {
       const res = await httpsCallable(functions, 'generateDebateNow')(topic ? { topic } : {});
       result.innerHTML = `✅ 생성 완료: "${escHtml(res.data.topic || '')}" — <a href="#/detail/${escHtml(res.data.postId)}">바로 보기</a>`;
-      toast.success('AI 티격태격이 생성됐어요 🗣️');
+      toast.success('AI 토론왕이 생성됐어요 🗣️');
     } catch (e) {
       result.textContent = '❌ ' + (e.message || '생성에 실패했어요');
       toast.error(e.message || '생성에 실패했어요');

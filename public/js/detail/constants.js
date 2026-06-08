@@ -11,7 +11,7 @@ export const TYPE_LABELS = {
   ai_judge: 'AI판사',
   ai_translate: 'AI번역사',
   ai_naming: 'AI작명소',
-  ai_debate: '티격태격',
+  ai_debate: '토론왕',
 };
 
 export const CAT_CLASS = {
