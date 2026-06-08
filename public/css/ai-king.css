@@ -740,3 +740,42 @@
   border-color: rgba(243,156,18,.3);
   color: #f0b429;
 }
+
+/* ── 핫포테이토 ── */
+.hot-potato-page { max-width: 600px; margin: 0 auto; padding: 16px; }
+.hot-potato-card {
+  background: var(--color-surface);
+  border: 2px solid var(--color-border);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 16px;
+  transition: border-color .2s;
+}
+.hot-potato-card:not(.hot-potato-card--exploded) { border-color: #f39c12; }
+.hot-potato-card--exploded { border-color: var(--color-border); opacity: .7; }
+.hot-potato-card__header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.hot-potato-card__title { font-size: 15px; font-weight: 900; }
+.hot-potato-card__badge { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; }
+.hot-potato-card__badge--live { background: #fff3cd; color: #856404; }
+.hot-potato-card__badge--exploded { background: var(--color-surface-2); color: var(--color-text-muted); }
+.hot-potato-card__holder {
+  font-size: 13px;
+  background: var(--color-surface-2);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+.hot-potato-card__holder--mine { background: #fff3cd; border: 1px solid #f39c12; }
+.hot-potato-card__timer {
+  font-size: 20px;
+  font-weight: 900;
+  color: #e74c3c;
+  text-align: center;
+  padding: 8px 0;
+  letter-spacing: -.5px;
+}
+.hot-potato-card__meta { font-size: 11px; color: var(--color-text-muted); margin-bottom: 10px; }
+.hot-potato-card__comment-area { display: flex; gap: 8px; }
+.hot-potato-comment-input { flex: 1; }
+[data-theme="dark"] .hot-potato-card__badge--live { background: rgba(243,156,18,.2); color: #f0b429; }
+[data-theme="dark"] .hot-potato-card__holder--mine { background: rgba(243,156,18,.1); border-color: rgba(243,156,18,.4); }

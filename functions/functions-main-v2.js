@@ -17,6 +17,7 @@ const points = require('./points-functions.js');
 const kakaoAuth = require('./kakao-auth-functions.js');
 const aiLadder = require('./ai-ladder-functions.js');
 const aiDebate = require('./ai-debate-functions.js');
+const hotPotato = require('./hot-potato-functions.js');
 
 module.exports = {
   ...coreAi,
@@ -38,6 +39,7 @@ module.exports = {
   ...points,
   ...aiLadder,
   ...aiDebate,
+  ...hotPotato,
   ...uploadImage,
   ...nicknameIcon,
   ...postOwner,

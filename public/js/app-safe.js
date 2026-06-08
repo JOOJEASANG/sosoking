@@ -83,10 +83,9 @@ async function registerRoutes() {
   registerRoute('/ai-king', async () => renderPage((await import('./pages/ai-king.js')).renderAiKing, '4소'));
   registerRoute('/ai-judge', async () => renderPage((await import('./pages/ai-judge.js')).renderAiJudge, '판결소'));
   registerRoute('/ai-translate', async () => renderPage((await import('./pages/ai-translate.js')).renderAiTranslate, '창작소'));
-  registerRoute('/ai-match', async () => renderPage((await import('./pages/ai-match.js')).renderAiMatch, '궁합소'));
   registerRoute('/ai-naming', async () => renderPage((await import('./pages/ai-naming.js')).renderAiNaming, '창작소'));
-  registerRoute('/ai-consult', async () => renderPage((await import('./pages/ai-consult.js')).renderAiConsult, '상담소'));
-  registerRoute('/points-shop', async () => renderPage((await import('./pages/points-shop.js')).renderPointsShop, '포인트 상점'));
+  registerRoute('/points-shop', async () => renderPage((await import('./pages/points-shop.js')).renderPointsShop, '내 포인트'));
+  registerRoute('/hot-potato', async () => renderPage((await import('./pages/hot-potato.js')).renderHotPotato, '🔥 핫포테이토'));
 }
 
 async function isStrictAdmin(user) {
@@ -161,8 +160,8 @@ function renderFrame() {
         <footer class="site-footer" id="site-footer">
           <div class="site-footer__body" id="footer-body" hidden>
             <div class="site-footer__inner">
-              <div class="site-footer__brand-block"><a href="#/" class="site-footer__brand"><img src="/logo.svg" alt="" width="26" height="26"><span>소소킹</span></a><div class="site-footer__tagline">AI가 판결하고, 번역하고,<br>궁합 보고, 이름 짓는 놀이터</div></div>
-              <div><div class="site-footer__col-title">4소(所)</div><div class="site-footer__links"><a href="#/ai-judge">⚖️ 판결소</a><a href="#/ai-translate">✨ 창작소</a><a href="#/ai-match">💘 궁합소</a><a href="#/ai-consult">💬 상담소</a></div></div>
+              <div class="site-footer__brand-block"><a href="#/" class="site-footer__brand"><img src="/logo.svg" alt="" width="26" height="26"><span>소소킹</span></a><div class="site-footer__tagline">AI가 판결하고 번역하고<br>마피아 게임까지 — 소소킹</div></div>
+              <div><div class="site-footer__col-title">AI 소(所)</div><div class="site-footer__links"><a href="#/ai-judge">⚖️ 판결소</a><a href="#/ai-translate">✨ 창작소</a><a href="#/hot-potato">🔥 핫포테이토</a></div></div>
               <div><div class="site-footer__col-title">바로가기</div><div class="site-footer__links"><a href="#/feed">피드</a><a href="#/hall">통계</a><a href="#/guide">이용안내</a></div></div>
               <div><div class="site-footer__col-title">정보</div><div class="site-footer__links"><a href="#/terms">이용약관</a><a href="#/privacy">개인정보처리방침</a></div></div>
             </div>

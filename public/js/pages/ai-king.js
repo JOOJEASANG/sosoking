@@ -8,8 +8,6 @@ import { escHtml } from '../utils/helpers.js';
 const OFFICES = [
   { id: 'judge',   emoji: '⚖️', name: '판결소', path: '/ai-judge',   desc: '억울한 상황 입력 → 3인이 각자의 세계관으로 판결', color: '#6C5CE7', feature: 'judge' },
   { id: 'create',  emoji: '✨', name: '창작소', path: '/ai-translate', desc: '번역하기 + 이름짓기 — 3인이 전혀 다른 결과 출력', color: '#00B894', feature: 'translate' },
-  { id: 'match',   emoji: '💘', name: '궁합소', path: '/ai-match',    desc: '뭐든 두 가지 → 3인이 각자 궁합 점수+분석', color: '#E84393', feature: 'match' },
-  { id: 'consult', emoji: '💬', name: '상담소', path: '/ai-consult',  desc: '고민 털어놓기 → 3인의 황당하지만 맞는 조언', color: '#F39C12', feature: 'consult' },
 ];
 
 const CHARS = [
@@ -25,7 +23,7 @@ export async function renderAiKing() {
   setMeta('소소킹 — 4소(所)');
   const el = document.getElementById('page-content');
 
-  let usage = { judge: 0, translate: 0, match: 0, naming: 0, consult: 0, extraUses: 0, dailyFreeLimit: 3 };
+  let usage = { judge: 0, translate: 0, naming: 0, extraUses: 0, dailyFreeLimit: 3 };
   let userPoints = 0;
   if (auth.currentUser) {
     try {
@@ -52,7 +50,7 @@ export async function renderAiKing() {
       <div class="onboard-hero">
         <div class="onboard-hero__eyebrow">✨ AI 창작 놀이터</div>
         <div class="onboard-hero__title">소소킹</div>
-        <div class="onboard-hero__desc">6인의 개성 넘치는 캐릭터가<br>판결·번역·궁합·상담을 해드립니다</div>
+        <div class="onboard-hero__desc">6인의 개성 넘치는 캐릭터가<br>판결하고 번역하고 이름을 짓습니다</div>
         <div class="onboard-hero__badges">
           <a href="#/points-shop" class="ai-king-points-badge" style="text-decoration:none">🪙 ${userPoints.toLocaleString()}p</a>
           ${usage.extraUses > 0 ? `<span class="ai-king-points-badge ai-king-points-badge--extra">⚡ 추가권 ${usage.extraUses}회</span>` : ''}
