@@ -36,7 +36,7 @@ export function renderPrivacy() {
           <ul class="legal-list">
             <li>회원 가입, 로그인, 본인 확인 및 계정 관리</li>
             <li>피드 작성자 표시, 댓글·답글·리액션 등 커뮤니티 기능 제공</li>
-            <li>AI킹(미친판사·사투리번역사·AI궁합·AI작명소) 기능 제공 및 결과물 피드 게시</li>
+            <li>AI킹(판결소·창작소·궁합소·상담소) 기능 제공 및 결과물 피드 게시</li>
             <li>AI킹 일일 이용 횟수 관리</li>
             <li>익명 글의 화면상 작성자명 숨김 처리와 신고·분쟁 대응</li>
             <li>스크랩, 알림, 통계 등 개인화 기능 제공</li>
@@ -77,8 +77,8 @@ export function renderPrivacy() {
               <tbody>
                 <tr><td>Google Firebase</td><td>인증, 데이터베이스, 파일 저장, 서버리스 기능</td><td>계정 정보, 게시물, 댓글, 이미지, 서비스 이용 데이터</td></tr>
                 <tr><td>카카오</td><td>카카오 계정 소셜 로그인</td><td>카카오 닉네임, 프로필 정보</td></tr>
-                <tr><td>Anthropic (Claude AI)</td><td>AI킹 기능(판결·번역·궁합·작명) 결과 생성</td><td>입력 텍스트, 업로드 이미지(이용자가 선택한 경우)</td></tr>
-                <tr><td>Google (Gemini AI)</td><td>AI킹 기능(판결·번역·궁합·작명) 결과 생성</td><td>입력 텍스트, 업로드 이미지(이용자가 선택한 경우)</td></tr>
+                <tr><td>Anthropic (Claude AI)</td><td>AI킹 기능(판결소·창작소·궁합소·상담소) 결과 생성</td><td>입력 텍스트, 업로드 이미지(이용자가 선택한 경우)</td></tr>
+                <tr><td>Google (Gemini AI)</td><td>AI킹 기능(판결소·창작소·궁합소·상담소) 결과 생성</td><td>입력 텍스트, 업로드 이미지(이용자가 선택한 경우)</td></tr>
                 <tr><td>Google Analytics 또는 유사 분석 도구</td><td>접속 통계 및 서비스 개선</td><td>비식별 이용 기록</td></tr>
               </tbody>
             </table>

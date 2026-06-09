@@ -20,7 +20,7 @@ const TYPE_LABEL = {
 const AI_KINGS = [
   { path: '/ai-judge',     emoji: '⚖️', name: '판결소', desc: '억울함 판결' },
   { path: '/ai-translate', emoji: '✨', name: '창작소', desc: '번역+작명' },
-  { path: '/ai-king',      emoji: '🗣️', name: '토론왕', desc: '캐릭터 난장판' },
+  { path: '/ai-king',      emoji: '🤖', name: 'AI킹 4소', desc: '판결·번역·궁합·상담' },
   { path: '/jabdam',       emoji: '🗨️', name: '수다방', desc: '자유롭게 떠들기' },
 ];
 
@@ -118,7 +118,7 @@ function renderHero() {
         <h1 class="home-hero-v3__title">
           ${nick ? `${escHtml(nick)}님,<br>` : ''}AI랑 놀다 가세요 👋
         </h1>
-        <p class="home-hero-v3__sub">판결·번역·작명·토론 — 다 AI가 해드립니다</p>
+        <p class="home-hero-v3__sub">판결·번역·궁합·상담 — 다 AI가 해드립니다</p>
         ${streak >= 2 ? `<div class="home-hero-v3__streak">🔥 ${streak}일 연속 방문 중!</div>` : ''}
       </div>
 

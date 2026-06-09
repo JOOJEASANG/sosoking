@@ -93,6 +93,8 @@ async function registerRoutes() {
   registerRoute('/ai-judge', async () => renderPage((await import('./pages/ai-judge.js')).renderAiJudge, '판결소'));
   registerRoute('/ai-translate', async () => renderPage((await import('./pages/ai-translate.js')).renderAiTranslate, '창작소'));
   registerRoute('/ai-naming', async () => renderPage((await import('./pages/ai-naming.js')).renderAiNaming, '창작소'));
+  registerRoute('/ai-match', async () => renderPage((await import('./pages/ai-match.js')).renderAiMatch, '궁합소'));
+  registerRoute('/ai-consult', async () => renderPage((await import('./pages/ai-consult.js')).renderAiConsult, '상담소'));
   registerRoute('/points-shop', async () => renderPage((await import('./pages/points-shop.js')).renderPointsShop, '내 포인트'));
   registerRoute('/hot-potato', async () => renderPage((await import('./pages/hot-potato.js')).renderHotPotato, '🔥 핫포테이토'));
   registerRoute('/jabdam', async () => renderPage((await import('./pages/jabdam.js')).renderJabdam, '🗨️ 수다방'));
