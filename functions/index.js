@@ -193,7 +193,6 @@ exports.aiNaming = aiKing.aiNaming;
 exports.aiConsult = aiKing.aiConsult;
 exports.getAiKingUsage = aiKing.getAiKingUsage;
 exports.saveAiKingConfig = aiKing.saveAiKingConfig;
-exports.purchaseAiExtraUse = aiKing.purchaseAiExtraUse;
 
 // ── 이미지 업로드 ──
 const uploadFns = require('./upload-image-functions');
