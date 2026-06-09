@@ -245,7 +245,6 @@ function renderAiDebateCommentSection(post, comments, loggedIn) {
       <div class="comment-write-box" id="comment-write">
         ${commentForm}
       </div>
-      <div class="comment-ai-hunt-hint">🕵️ 진짜 유저인 척 숨어있는 AI를 찾아봐요! 🤖? 버튼으로 의심되는 댓글 표시 → 24시간 후 공개!</div>
       <div class="debate-comment-cols" id="debate-comment-cols">
         <div class="debate-col debate-col--a">
           <div class="debate-col__title">🔴 A편 ${aList.length}명</div>
@@ -262,30 +261,13 @@ function renderAiDebateCommentSection(post, comments, loggedIn) {
 function renderDebateComment(c, revealTime, now) {
   const timeStr = timeText(c.createdAt?.toDate?.() || c.createdAt);
   const isOwn = auth.currentUser?.uid === c.authorId && c.authorId !== 'ai-decoy';
-  const isRevealed = revealTime && now > revealTime;
-  const isAi = !!c.isAiDecoy;
-  const userFlagged = !!localStorage.getItem(`decoy_flag_${c.id}`);
-
-  let flagEl = '';
-  if (isRevealed) {
-    if (isAi) {
-      flagEl = userFlagged
-        ? '<span class="debate-decoy-result debate-decoy-result--correct">🤖✅ AI 맞췄어요!</span>'
-        : '<span class="debate-decoy-result debate-decoy-result--ai">🤖 AI였어요!</span>';
-    } else if (userFlagged) {
-      flagEl = '<span class="debate-decoy-result debate-decoy-result--wrong">🤖❌ AI 아님</span>';
-    }
-  } else {
-    flagEl = `<button class="debate-decoy-btn${userFlagged ? ' active' : ''}" data-comment-id="${escHtml(c.id)}" title="AI 댓글 의심">🤖?</button>`;
-  }
 
   return `
-    <div class="debate-comment${isAi && isRevealed ? ' debate-comment--ai' : ''}" data-comment-id="${escHtml(c.id)}">
+    <div class="debate-comment" data-comment-id="${escHtml(c.id)}">
       <div class="debate-comment__text">${escHtml(c.text || '').replace(/\n/g, '<br>')}</div>
       <div class="debate-comment__meta">
         <span class="debate-comment__name">${escHtml(c.authorName || '익명')}</span>
         <span>${timeStr}</span>
-        ${flagEl}
         ${isOwn ? `<button class="comment-delete-btn" data-comment-id="${escHtml(c.id)}">삭제</button>` : ''}
       </div>
     </div>`;
