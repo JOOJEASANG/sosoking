@@ -411,6 +411,8 @@ exports.createUserDebateTopic = onCall({ region: 'asia-northeast3', timeoutSecon
 
   const topic = String(request.data?.topic || '').trim().slice(0, 100);
   if (topic.length < 3) throw new HttpsError('invalid-argument', '주제를 3자 이상 입력해주세요');
+  const optionA = String(request.data?.optionA || '').trim().slice(0, 40);
+  const optionB = String(request.data?.optionB || '').trim().slice(0, 40);
 
   // 하루 3개 제한
   const today = new Date().toISOString().slice(0, 10);
@@ -427,6 +429,7 @@ exports.createUserDebateTopic = onCall({ region: 'asia-northeast3', timeoutSecon
     feedType: 'ai_debate',
     topic,
     title: topic,
+    ...(optionA && optionB ? { optionA, optionB } : {}),
     turns: [],
     voteA: 0,
     voteB: 0,

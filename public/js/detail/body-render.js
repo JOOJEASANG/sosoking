@@ -136,8 +136,11 @@ function renderAiJudgeBody(post) {
     </div>`;
 }
 
-function parseDebateSides(topic) {
-  const parts = String(topic || '').split(/ vs /i);
+function parseDebateSides(post) {
+  if (post.optionA && post.optionB) {
+    return { sideA: post.optionA.trim(), sideB: post.optionB.trim() };
+  }
+  const parts = String(post.topic || post.title || '').split(/ vs /i);
   return {
     sideA: (parts[0] || 'A편').trim(),
     sideB: (parts[1] || 'B편').trim(),
@@ -145,8 +148,7 @@ function parseDebateSides(topic) {
 }
 
 function renderAiDebateBody(post) {
-  const turns = Array.isArray(post.turns) ? post.turns : [];
-  const { sideA, sideB } = parseDebateSides(post.topic || post.title);
+  const { sideA, sideB } = parseDebateSides(post);
   const voteA = Number(post.voteA || 0);
   const voteB = Number(post.voteB || 0);
   const total = voteA + voteB;
