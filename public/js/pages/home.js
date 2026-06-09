@@ -18,10 +18,10 @@ const TYPE_LABEL = {
 };
 
 const AI_KINGS = [
-  { path: '/ai-judge',     emoji: '⚖️', name: '판결소', desc: '억울함 판결' },
-  { path: '/ai-translate', emoji: '✨', name: '창작소', desc: '번역+작명' },
-  { path: '/ai-king',      emoji: '🤖', name: 'AI킹 4소', desc: '판결·번역·궁합·상담' },
-  { path: '/jabdam',       emoji: '🗨️', name: '수다방', desc: '자유롭게 떠들기' },
+  { path: '/ai-judge',     emoji: '⚖️', name: '판결소', desc: '6인 AI 억울함 판결' },
+  { path: '/ai-translate', emoji: '✨', name: '창작소', desc: '6인 AI 번역+작명' },
+  { path: '/feed',         emoji: '🗣️', name: '토론방', desc: 'A/B 투표 토론' },
+  { path: '/jabdam',       emoji: '🗨️', name: '수다방', desc: '채팅·끝말잇기·초성' },
 ];
 
 function getKstDateString(date = new Date()) {
@@ -118,7 +118,7 @@ function renderHero() {
         <h1 class="home-hero-v3__title">
           ${nick ? `${escHtml(nick)}님,<br>` : ''}AI랑 놀다 가세요 👋
         </h1>
-        <p class="home-hero-v3__sub">판결·번역·궁합·상담 — 다 AI가 해드립니다</p>
+        <p class="home-hero-v3__sub">판결·번역·작명·토론·수다 — 소소하게 즐겨요</p>
         ${streak >= 2 ? `<div class="home-hero-v3__streak">🔥 ${streak}일 연속 방문 중!</div>` : ''}
       </div>
 

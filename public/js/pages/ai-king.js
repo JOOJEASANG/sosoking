@@ -8,8 +8,6 @@ import { escHtml } from '../utils/helpers.js';
 const OFFICES = [
   { id: 'judge',   emoji: '⚖️', name: '판결소', path: '/ai-judge',   desc: '억울한 상황 입력 → 3인이 각자의 세계관으로 판결', color: '#6C5CE7', feature: 'judge' },
   { id: 'create',  emoji: '✨', name: '창작소', path: '/ai-translate', desc: '번역하기 + 이름짓기 — 3인이 전혀 다른 결과 출력', color: '#00B894', feature: 'translate' },
-  { id: 'match',   emoji: '💘', name: '궁합소', path: '/ai-match',   desc: '두 가지 입력 → 궁합 점수와 3인 분석 리포트', color: '#E84393', feature: 'match' },
-  { id: 'consult', emoji: '💬', name: '상담소', path: '/ai-consult', desc: '고민 입력 → 3인이 각자의 방식으로 황당하게 조언', color: '#FF7675', feature: 'consult' },
 ];
 
 const CHARS = [
