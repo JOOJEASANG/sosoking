@@ -302,6 +302,70 @@
   color: rgba(255,255,255,0.85);
 }
 
+/* ── 즉위 aftermath ── */
+.battle-aftermath {
+  background: linear-gradient(135deg, #1a1a2e 0%, #2D1B69 100%);
+  color: #fff;
+  border-radius: 20px;
+  padding: 20px;
+  margin-top: 16px;
+}
+.battle-aftermath__title {
+  font-size: 13px;
+  font-weight: 700;
+  opacity: 0.75;
+  margin-bottom: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.battle-aftermath__decree {
+  font-size: 15px;
+  line-height: 1.65;
+  font-weight: 600;
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 12px;
+  border-left: 3px solid #FDCB6E;
+}
+.battle-aftermath__reactions-title {
+  font-size: 12px;
+  font-weight: 700;
+  opacity: 0.65;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.battle-aftermath__reactions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.battle-aftermath__reaction {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  background: rgba(255,255,255,0.07);
+  border-radius: 10px;
+}
+.battle-aftermath__reaction-emoji { font-size: 20px; flex-shrink: 0; }
+.battle-aftermath__reaction-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.battle-aftermath__reaction-name {
+  font-size: 11px;
+  font-weight: 700;
+  opacity: 0.65;
+}
+.battle-aftermath__reaction-text {
+  font-size: 13px;
+  line-height: 1.5;
+  opacity: 0.9;
+}
+
 /* ── 다크모드 조정 ── */
 [data-theme="dark"] .battle-topic-card,
 [data-theme="dark"] .battle-vote-section {

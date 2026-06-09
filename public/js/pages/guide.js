@@ -38,31 +38,6 @@ const FEATURES = [
     ],
     tip: '사진도 첨부할 수 있어요. 상황 사진만 올려도 판결해 드립니다!',
   },
-  {
-    emoji: '✨',
-    name: '창작소',
-    path: '/ai-translate',
-    badge: '7인 중 3인 랜덤',
-    desc: '번역하기 + 이름짓기 두 탭으로 구성. 7인 귀족 중 3인이 각자의 스타일로 창작합니다. 사진 속 글자도 OK!',
-    examples: [
-      '오늘 밥 먹었어? → 🙏 교주: "형제여, 몸을 위한 성찬으로..."',
-      '회의 때 항상 졸는 팀장 → 👴 꼰대 대감: "졸음극복대감" (우리 때는 졸면...)',
-    ],
-    tip: '텍스트 없이 이미지만 올려도 번역·작명이 가능해요.',
-  },
-  {
-    emoji: '🗨️',
-    name: '수다방',
-    path: '/jabdam',
-    badge: '채팅 + 게임',
-    desc: '자유롭게 글 올리고 수다! 탭으로 끝말잇기·초성게임도 즐길 수 있어요.',
-    examples: [
-      '📝 자유 수다 — 링크·유튜브 첨부도 가능',
-      '🔗 끝말잇기 — 마지막 글자로 이어가기',
-      '🎯 초성게임 — 초성 보고 정답 맞추기',
-    ],
-    tip: '로그인 없이도 글을 읽을 수 있어요. 참여는 로그인 후!',
-  },
 ];
 
 export function renderGuide() {
@@ -73,7 +48,7 @@ export function renderGuide() {
       <div class="guide-hero">
         <div class="guide-hero__icon">🤖</div>
         <h1 class="guide-hero__title">소소킹 이용안내</h1>
-        <p class="guide-hero__sub">왕좌전쟁·판결소·창작소·수다방 — 4가지 기능과<br>왕국의 7인 귀족 AI가 함께합니다</p>
+        <p class="guide-hero__sub">왕좌전쟁·판결소 — 왕국의 7인 귀족 AI가 함께합니다</p>
       </div>
 
       <div class="guide-toc card">
@@ -81,7 +56,7 @@ export function renderGuide() {
         <div class="guide-toc__list">
           ${[
             ['#guide-what',    '소소킹이란?'],
-            ['#guide-features','4가지 기능 소개'],
+            ['#guide-features','2가지 기능 소개'],
             ['#guide-chars',   '7인 AI 귀족'],
             ['#guide-start',   '시작하기'],
             ['#guide-limit',   'AI 이용 제한'],
@@ -97,13 +72,13 @@ export function renderGuide() {
         <h2 class="guide-section__title">🤔 소소킹이란?</h2>
         <div class="guide-section__body">
           <p>소소킹은 <strong>7인 AI 귀족이 다스리는 왕국 놀이터</strong>입니다.</p>
-          <p><strong>왕좌전쟁</strong>에서 매일 왕국 사건이 발생하고 7인 귀족이 난장판 토론을 벌입니다. 유저는 투표로 오늘의 왕을 결정해요. <strong>판결소·창작소</strong>에서는 7인 중 3인이 랜덤 출동해 판결·번역·작명을, <strong>수다방</strong>에서는 자유 채팅과 게임을 즐길 수 있어요!</p>
+          <p><strong>왕좌전쟁</strong>에서 매일 자정 왕국 사건이 발생하고 7인 귀족이 자동으로 난장판 토론을 벌입니다. 유저는 하루 한 표로 오늘의 왕을 결정해요. <strong>판결소</strong>에서는 7인 중 3인이 랜덤 출동해 억울한 상황을 각자의 세계관으로 판결합니다!</p>
           <p>AI 결과물은 자동으로 피드에 게시되어 <strong>다른 사람들이 댓글로 반응</strong>할 수 있어요.</p>
         </div>
       </section>
 
       <section id="guide-features" class="guide-section">
-        <h2 class="guide-section__title">🚀 4가지 기능 소개</h2>
+        <h2 class="guide-section__title">🚀 2가지 기능 소개</h2>
         <div style="display:flex;flex-direction:column;gap:20px;margin-top:16px">
           ${FEATURES.map(f => `
             <div class="card" style="padding:20px">
@@ -133,7 +108,7 @@ export function renderGuide() {
       <section id="guide-chars" class="guide-section">
         <h2 class="guide-section__title">👑 왕국의 7인 귀족</h2>
         <div class="guide-section__body">
-          <p>왕좌전쟁에서 7인 전원이 매일 싸우고, 판결소·창작소에서는 3인이 랜덤 출동합니다.</p>
+          <p>왕좌전쟁에서 7인 전원이 매일 자동으로 싸우고, 판결소에서는 3인이 랜덤 출동합니다.</p>
           <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:14px">
             ${CHARS_7.map(c => `
               <div style="padding:12px;background:var(--color-surface-2);border-radius:12px">
@@ -150,8 +125,8 @@ export function renderGuide() {
         <div style="display:flex;flex-direction:column;gap:12px;margin-top:16px">
           ${[
             ['1', '회원가입', '구글 또는 카카오 계정으로 간편하게 가입할 수 있어요.'],
-            ['2', '기능 선택', '왕좌전쟁, 판결소, 창작소, 수다방 중 원하는 기능으로 이동하세요.'],
-            ['3', '참여하기', '왕좌전쟁은 투표로, 판결소·창작소는 상황 입력으로, 수다방은 글을 올려보세요!'],
+            ['2', '기능 선택', '왕좌전쟁 또는 판결소로 이동하세요.'],
+            ['3', '참여하기', '왕좌전쟁은 하루 1표 투표로, 판결소는 억울한 상황을 입력하면 AI가 판결해요!'],
             ['4', '결과 확인', 'AI 결과는 자동으로 피드에 게시되며, 다른 사람들의 댓글을 받을 수 있어요.'],
             ['5', '공유하기', '재밌는 결과는 링크 복사나 카카오톡으로 친구에게 공유해보세요!'],
           ].map(([num, title, desc]) => `
@@ -170,9 +145,8 @@ export function renderGuide() {
         <div class="guide-section__body">
           <div class="guide-notice">
             <strong>🆓 현재 무료 운영 중!</strong><br>
-            판결소·창작소(AI 기능)는 하루 <strong>3회</strong>까지 무료로 이용할 수 있어요.<br>
-            자정(00:00 KST)에 횟수가 초기화됩니다.<br>
-            <span style="font-size:12px;color:var(--color-text-muted)">토론방·수다방은 이용 횟수 제한 없이 자유롭게 이용 가능해요.</span>
+            판결소(AI 기능)는 하루 <strong>3회</strong>까지 무료로 이용할 수 있어요.<br>
+            자정(00:00 KST)에 횟수가 초기화됩니다.
           </div>
           <table style="width:100%;margin-top:14px;font-size:13px;border-collapse:collapse">
             <tr style="background:var(--color-surface-2)">
@@ -182,8 +156,6 @@ export function renderGuide() {
             ${[
               ['⚔️ 왕좌전쟁 (투표)', '1표/일', true],
               ['⚖️ 판결소', '3회', false],
-              ['✨ 창작소 (번역·작명 각각)', '3회', false],
-              ['🗨️ 수다방', '제한 없음', true],
             ].map(([k, v, free]) => `
               <tr style="border-top:1px solid var(--color-border)">
                 <td style="padding:8px 12px">${k}</td>
@@ -206,9 +178,9 @@ export function renderGuide() {
               <th style="padding:8px 12px;text-align:center;border-radius:0 8px 0 0">내용</th>
             </tr>
             ${[
-              ['참여 방법', '판결소 또는 창작소 횟수 소진 시 사다리게임 화면 자동 안내'],
+              ['참여 방법', '판결소 횟수 소진 시 사다리게임 화면 자동 안내'],
               ['하루 참여', '1일 1회 무료 참여 가능'],
-              ['보상', 'AI 추가 이용권 1회 (판결소·창작소 어디서나 사용)'],
+              ['보상', 'AI 추가 이용권 1회 (판결소에서 사용)'],
               ['초기화', '매일 자정(00:00 KST)에 초기화'],
             ].map(([label, val]) => `
               <tr style="border-top:1px solid var(--color-border)">

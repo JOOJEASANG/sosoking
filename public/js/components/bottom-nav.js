@@ -38,11 +38,11 @@ function isNavActive(navPath, currentPath) {
 function navItems() {
   const unread = appState.unreadNotifications || 0;
   return [
-    { id: 'home',    label: '홈',      path: '/',        icon: iconHome() },
-    { id: 'battle',  label: '왕좌전쟁', path: '/battle',  icon: `<span style="font-size:20px;line-height:1">⚔️</span>` },
-    { id: 'aiking',  label: 'AI킹',    path: '/ai-king', icon: iconAiKing(), isCenter: true },
-    { id: 'jabdam',  label: '수다방',   path: '/jabdam',  icon: `<span style="font-size:20px;line-height:1">🗨️</span>` },
-    { id: 'account', label: '내정보',   path: '/account', icon: iconAccount(), badge: unread },
+    { id: 'home',    label: '홈',      path: '/',             icon: iconHome() },
+    { id: 'battle',  label: '왕좌전쟁', path: '/battle',       icon: `<span style="font-size:20px;line-height:1">⚔️</span>` },
+    { id: 'aiking',  label: 'AI킹',    path: '/ai-king',      icon: iconAiKing(), isCenter: true },
+    { id: 'history', label: '역대왕',   path: '/king-history', icon: `<span style="font-size:20px;line-height:1">👑</span>` },
+    { id: 'account', label: '내정보',   path: '/account',      icon: iconAccount(), badge: unread },
   ];
 }
 

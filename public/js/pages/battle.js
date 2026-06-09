@@ -59,6 +59,28 @@ function renderVoteBar(char, votes, totalVotes, userVote) {
     </div>`;
 }
 
+function renderAftermath(aftermath) {
+  if (!aftermath) return '';
+  const { decree, reactions = [] } = aftermath;
+  return `
+    <div class="battle-aftermath">
+      <div class="battle-aftermath__title">👑 왕의 즉위 칙령</div>
+      <div class="battle-aftermath__decree">${escHtml(decree)}</div>
+      ${reactions.length ? `
+        <div class="battle-aftermath__reactions-title">📣 낙선 귀족들의 반응</div>
+        <div class="battle-aftermath__reactions">
+          ${reactions.map(r => `
+            <div class="battle-aftermath__reaction">
+              <span class="battle-aftermath__reaction-emoji">${r.emoji}</span>
+              <div class="battle-aftermath__reaction-body">
+                <span class="battle-aftermath__reaction-name">${escHtml(r.charName)}</span>
+                <span class="battle-aftermath__reaction-text">${escHtml(r.text)}</span>
+              </div>
+            </div>`).join('')}
+        </div>` : ''}
+    </div>`;
+}
+
 function renderVoteButtons(chars, userVote, status) {
   if (status === 'ended') return '';
   if (userVote) return '';
@@ -89,7 +111,7 @@ export async function renderBattle() {
     const { data } = await getBattleStatus();
 
     const { exists, topic, topicDesc, turns = [], votes = {}, totalVotes = 0,
-      status, userVote, currentKing, chars = [], king } = data;
+      status, userVote, currentKing, chars = [], king, aftermath } = data;
 
     const kingBanner = renderKingBanner(currentKing);
 
@@ -144,6 +166,8 @@ export async function renderBattle() {
               <a href="#/login" class="btn btn--outline" style="width:100%">로그인하고 투표하기</a>
             </div>` : ''}
         </div>
+
+        ${isEnded && aftermath ? renderAftermath(aftermath) : ''}
 
         <button class="btn btn--ghost btn--sm" id="btn-history" style="margin-top:8px;width:100%">👑 역대 왕 기록 →</button>
       </div>`;

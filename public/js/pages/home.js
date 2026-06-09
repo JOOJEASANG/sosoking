@@ -18,10 +18,8 @@ const TYPE_LABEL = {
 };
 
 const AI_KINGS = [
-  { path: '/battle',       emoji: '⚔️', name: '왕좌전쟁', desc: '7인 AI 왕국 정치' },
-  { path: '/ai-judge',     emoji: '⚖️', name: '판결소',   desc: '6인 AI 억울함 판결' },
-  { path: '/ai-translate', emoji: '✨', name: '창작소',   desc: '6인 AI 번역+작명' },
-  { path: '/jabdam',       emoji: '🗨️', name: '수다방',   desc: '채팅·끝말잇기·초성' },
+  { path: '/battle',   emoji: '⚔️', name: '왕좌전쟁', desc: '7인 AI 왕국 정치' },
+  { path: '/ai-judge', emoji: '⚖️', name: '판결소',   desc: '7인 중 3인 AI 판결' },
 ];
 
 function getKstDateString(date = new Date()) {

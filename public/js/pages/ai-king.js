@@ -6,8 +6,7 @@ import { setMeta } from '../utils/seo.js';
 import { escHtml } from '../utils/helpers.js';
 
 const OFFICES = [
-  { id: 'judge',   emoji: '⚖️', name: '판결소', path: '/ai-judge',   desc: '억울한 상황 입력 → 3인이 각자의 세계관으로 판결', color: '#6C5CE7', feature: 'judge' },
-  { id: 'create',  emoji: '✨', name: '창작소', path: '/ai-translate', desc: '번역하기 + 이름짓기 — 3인이 전혀 다른 결과 출력', color: '#00B894', feature: 'translate' },
+  { id: 'judge', emoji: '⚖️', name: '판결소', path: '/ai-judge', desc: '억울한 상황 입력 → 3인이 각자의 세계관으로 판결', color: '#6C5CE7', feature: 'judge' },
 ];
 
 const CHARS = [
