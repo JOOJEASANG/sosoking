@@ -838,6 +838,54 @@
 .jabdam-like-btn { background: none; border: 1px solid var(--color-border); border-radius: 20px; padding: 4px 12px; font-size: 13px; cursor: pointer; color: var(--color-text-secondary); transition: all .15s; display: flex; align-items: center; gap: 4px; }
 .jabdam-like-btn:hover, .jabdam-like-btn--on { background: var(--color-primary-bg); border-color: var(--color-primary); color: var(--color-primary); }
 
+/* 수다방 탭 메뉴 */
+.jabdam-tabs { display: flex; border-bottom: 2px solid var(--color-border); margin-bottom: 16px; gap: 0; }
+.jabdam-tab { flex: 1; padding: 10px 6px; font-size: 13px; font-weight: 700; background: none; border: none; cursor: pointer; color: var(--color-text-secondary); border-bottom: 2px solid transparent; margin-bottom: -2px; transition: color .15s; }
+.jabdam-tab:hover { color: var(--color-primary); }
+.jabdam-tab--active { color: var(--color-primary); border-bottom-color: var(--color-primary); }
+
+/* 게임 공통 */
+.game-input-bar { background: var(--color-surface); border: 1.5px solid var(--color-border); border-radius: 14px; padding: 14px 16px; margin-bottom: 14px; }
+
+/* 끝말잇기 */
+.game-wordchain__prompt { font-size: 14px; font-weight: 600; color: var(--color-text-secondary); }
+.wc-next-char { color: var(--color-primary); font-weight: 900; font-size: 18px; }
+.wc-input { font-size: 16px; font-weight: 700; }
+.wc-chain { margin-top: 4px; }
+.wc-chain-scroll { overflow-x: auto; padding-bottom: 8px; }
+.wc-chain-list { display: flex; flex-wrap: wrap; gap: 6px 4px; align-items: center; padding: 12px; background: var(--color-surface-2); border-radius: 12px; min-height: 60px; }
+.wc-word { display: inline-flex; flex-direction: column; align-items: center; background: var(--color-surface); border: 1.5px solid var(--color-border); border-radius: 10px; padding: 6px 12px; cursor: default; }
+.wc-word--last { border-color: var(--color-primary); background: var(--color-primary-bg); }
+.wc-word__text { font-size: 15px; font-weight: 800; color: var(--color-text-primary); }
+.wc-word--last .wc-word__text { color: var(--color-primary); }
+.wc-word__author { font-size: 10px; color: var(--color-text-muted); font-weight: 400; margin-top: 2px; }
+.wc-arrow { color: var(--color-text-muted); font-size: 12px; flex-shrink: 0; }
+.wc-count { font-size: 12px; color: var(--color-text-muted); text-align: right; margin-top: 6px; }
+.wc-empty { text-align: center; padding: 40px 16px; color: var(--color-text-muted); font-size: 13px; line-height: 1.8; }
+
+/* 초성게임 */
+.cs-create-header { font-size: 13px; font-weight: 800; margin-bottom: 8px; }
+.cs-create-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.cs-create-row .form-input { flex: 1; min-width: 80px; font-size: 13px; }
+.cs-list { display: flex; flex-direction: column; gap: 12px; }
+.cs-card { background: var(--color-surface); border: 1.5px solid var(--color-border); border-radius: 14px; padding: 14px 16px; }
+.cs-card--solved { border-color: #00b894; background: #f0fff8; }
+[data-theme="dark"] .cs-card--solved { background: rgba(0,184,148,.08); border-color: #00b894; }
+.cs-card__head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.cs-badge { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 20px; background: var(--color-surface-2); color: var(--color-text-secondary); }
+.cs-badge--solved { background: #00b894; color: #fff; }
+.cs-card__author { font-size: 12px; color: var(--color-text-muted); }
+.cs-card__time { font-size: 11px; color: var(--color-text-muted); margin-left: auto; }
+.cs-delete-btn { background: none; border: none; color: var(--color-text-muted); cursor: pointer; font-size: 12px; padding: 2px 6px; border-radius: 6px; }
+.cs-delete-btn:hover { color: var(--color-danger); }
+.cs-card__initials { font-size: 32px; font-weight: 900; letter-spacing: 10px; color: var(--color-text-primary); text-align: center; padding: 10px 0; }
+.cs-card__hint { font-size: 12px; color: var(--color-text-muted); margin-bottom: 8px; }
+.cs-card__guess { display: flex; gap: 8px; margin-top: 10px; }
+.cs-guess-input { flex: 1; font-size: 14px; }
+.cs-card__solved { font-size: 13px; color: #00856f; margin-top: 8px; padding: 8px 10px; background: rgba(0,184,148,.12); border-radius: 8px; }
+.cs-card__tried { font-size: 12px; color: var(--color-text-muted); margin-top: 8px; font-style: italic; }
+.cs-card__stats { font-size: 11px; color: var(--color-text-muted); margin-top: 8px; }
+
 /* 링크 첨부 입력 */
 .jabdam-link-input-wrap { display: flex; align-items: center; gap: 6px; margin-top: 8px; background: var(--color-surface-2); border: 1px solid var(--color-border); border-radius: 10px; padding: 6px 10px; }
 .jabdam-link-input-icon { font-size: 15px; flex-shrink: 0; }
