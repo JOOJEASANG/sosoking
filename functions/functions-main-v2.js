@@ -16,8 +16,8 @@ const postView = require('./post-view-functions.js');
 const points = require('./points-functions.js');
 const kakaoAuth = require('./kakao-auth-functions.js');
 const aiLadder = require('./ai-ladder-functions.js');
-const aiDebate = require('./ai-debate-functions.js');
 const hotPotato = require('./hot-potato-functions.js');
+const battle = require('./battle-functions.js');
 
 module.exports = {
   ...coreAi,
@@ -40,6 +40,12 @@ module.exports = {
   ...aiLadder,
   ...aiDebate,
   ...hotPotato,
+  generateDailyBattle: battle.generateDailyBattle,
+  closeDailyBattle: battle.closeDailyBattle,
+  voteForChar: battle.voteForChar,
+  getBattleStatus: battle.getBattleStatus,
+  getKingHistory: battle.getKingHistory,
+  adminGenerateBattle: battle.adminGenerateBattle,
   ...uploadImage,
   ...nicknameIcon,
   ...postOwner,

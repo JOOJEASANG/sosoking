@@ -22,12 +22,11 @@ const NAV_CONTEXT_KEY = 'sosoking:feedNavContext';
 
 const ROOMS = [
   { key: '',             icon: '✨', label: '전체',   title: '전체',   desc: '판결소·창작소·토론왕 콘텐츠를 한 번에 봅니다.' },
-  { key: 'ai_judge',     icon: '⚖️', label: '판결소', title: '판결소', desc: '억울한 상황 → 5인 캐릭터가 각자 판결합니다.', path: '/ai-judge' },
+  { key: 'ai_judge',     icon: '⚖️', label: '판결소', title: '판결소', desc: '억울한 상황 → 3인 캐릭터가 각자 판결합니다.', path: '/ai-judge' },
   { key: 'ai_translate', icon: '✨', label: '창작소', title: '창작소', desc: '번역하기 + 이름짓기 두 가지를 한 곳에서.', path: '/ai-translate' },
-  { key: 'ai_debate',    icon: '🗣️', label: '토론왕', title: '토론왕', desc: '매일 한 주제로 캐릭터 6인이 벌이는 말싸움 구경.' },
 ];
 
-const AI_TYPES = ['ai_judge', 'ai_translate', 'ai_naming', 'ai_debate'];
+const AI_TYPES = ['ai_judge', 'ai_translate', 'ai_naming'];
 
 let currentType        = '';
 let currentSearch      = '';

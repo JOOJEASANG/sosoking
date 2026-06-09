@@ -1,5 +1,5 @@
 /* home.js */
-import { auth, db } from '../firebase.js';
+import { auth, db, functions } from '../firebase.js';
 import { appState } from '../state.js';
 import { setMeta } from '../utils/seo.js';
 import { escHtml, formatTime } from '../utils/helpers.js';
@@ -8,20 +8,20 @@ import {
   collection, collectionGroup, query, orderBy, limit, getDocs, where,
   doc, getDoc, updateDoc,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
 import { navigate } from '../router.js';
 
 const TYPE_LABEL = {
   ai_judge:     '⚖️ 판결소',
   ai_translate: '✨ 창작소',
   ai_naming:    '✨ 창작소',
-  ai_debate:    '🗣️ 토론왕',
 };
 
 const AI_KINGS = [
-  { path: '/ai-judge',     emoji: '⚖️', name: '판결소', desc: '6인 AI 억울함 판결' },
-  { path: '/ai-translate', emoji: '✨', name: '창작소', desc: '6인 AI 번역+작명' },
-  { path: '/feed',         emoji: '🗣️', name: '토론방', desc: 'A/B 투표 토론' },
-  { path: '/jabdam',       emoji: '🗨️', name: '수다방', desc: '채팅·끝말잇기·초성' },
+  { path: '/battle',       emoji: '⚔️', name: '왕좌전쟁', desc: '7인 AI 왕국 정치' },
+  { path: '/ai-judge',     emoji: '⚖️', name: '판결소',   desc: '6인 AI 억울함 판결' },
+  { path: '/ai-translate', emoji: '✨', name: '창작소',   desc: '6인 AI 번역+작명' },
+  { path: '/jabdam',       emoji: '🗨️', name: '수다방',   desc: '채팅·끝말잇기·초성' },
 ];
 
 function getKstDateString(date = new Date()) {
@@ -72,37 +72,36 @@ async function fetchPopularComments(n = 6) {
   } catch { return []; }
 }
 
-async function fetchLatestDebate() {
+async function fetchTodayBattle() {
   try {
-    const q = query(
-      collection(db, 'feeds'),
-      where('type', '==', 'ai_debate'),
-      orderBy('createdAt', 'desc'),
-      limit(1),
-    );
-    const snap = await getDocs(q);
-    if (snap.empty) return null;
-    const d = snap.docs[0];
-    const data = d.data();
-    if (data.hidden) return null;
-    return { id: d.id, ...data };
+    const getBattleStatus = httpsCallable(functions, 'getBattleStatus');
+    const { data } = await getBattleStatus();
+    return data;
   } catch { return null; }
 }
 
-function renderDebateCard(post) {
-  if (!post) return '';
-  const turns = Array.isArray(post.turns) ? post.turns.slice(0, 2) : [];
+function renderBattleCard(battle) {
+  if (!battle) return '';
+  const king = battle.currentKing;
+  const kingText = king
+    ? `${king.emoji} ${king.name}${king.streak > 1 ? ` · 🔥${king.streak}연속` : ''}`
+    : '왕좌 공석';
+  const previewTurns = (battle.turns || []).slice(0, 2);
+  const totalVotes = battle.totalVotes || 0;
+
   return `
-    <div class="home-debate-card" data-id="${post.id}">
-      <div class="home-debate-card__head">
-        <span class="home-debate-card__label">🗣️ 오늘의 토론왕</span>
-        <span class="home-debate-card__live">캐릭터 6인 난장판</span>
+    <div class="home-battle-card" data-path="/battle">
+      <div class="home-battle-card__head">
+        <span class="home-battle-card__king">👑 ${escHtml(kingText)}</span>
+        <span class="home-battle-card__status">${battle.exists ? (totalVotes > 0 ? `${totalVotes}표` : '투표중') : '준비중'}</span>
       </div>
-      <div class="home-debate-card__topic">${escHtml(post.topic || post.title || '')}</div>
-      <div class="home-debate-card__preview">
-        ${turns.map(t => `<div class="home-debate-card__line"><b>${escHtml(t.charName || '')}</b> ${escHtml((t.text || '').slice(0, 38))}…</div>`).join('')}
+      <div class="home-battle-card__topic">${escHtml(battle.topic || '오늘의 왕국 사건')}</div>
+      <div class="home-battle-card__preview">
+        ${previewTurns.map(t =>
+          `<div class="home-battle-card__line">${t.emoji} <b>${escHtml(t.charName || '')}</b> ${escHtml((t.text || '').slice(0, 35))}…</div>`
+        ).join('')}
       </div>
-      <div class="home-debate-card__more">싸움 구경하고 편 들어주기 →</div>
+      <div class="home-battle-card__cta">전쟁 구경하고 한 표 던지기 →</div>
     </div>`;
 }
 
@@ -114,18 +113,13 @@ function renderHero() {
   return `
     <section class="home-hero-v3">
       <div class="home-hero-v3__top">
-        <div class="home-hero-v3__badge">🤖 AI킹 놀이터</div>
+        <div class="home-hero-v3__badge">👑 소소킹 왕국</div>
         <h1 class="home-hero-v3__title">
-          ${nick ? `${escHtml(nick)}님,<br>` : ''}AI랑 놀다 가세요 👋
+          ${nick ? `${escHtml(nick)}님,<br>` : ''}오늘 왕은 누구? 👑
         </h1>
-        <p class="home-hero-v3__sub">판결·번역·작명·토론·수다 — 소소하게 즐겨요</p>
-        ${streak >= 2 ? `<div class="home-hero-v3__streak">🔥 ${streak}일 연속 방문 중!</div>` : ''}
+        <p class="home-hero-v3__sub">7인 AI 귀족들의 왕국 정치 드라마 — 매일 새로운 왕이 탄생합니다</p>
+        ${streak >= 2 ? `<div class="home-hero-v3__streak">🔥 ${streak}일 연속 왕국 방문 중!</div>` : ''}
       </div>
-
-      <button class="home-aiking-hub-btn" data-path="/ai-king" type="button">
-        <span class="home-aiking-hub-btn__icons">⚖️ ✨ 🗣️</span>
-        <span class="home-aiking-hub-btn__label">소소킹 AI킹 전체보기 →</span>
-      </button>
 
       <div class="home-aiking-grid">
         ${AI_KINGS.map(k => `
@@ -194,14 +188,14 @@ export async function renderHome() {
     const user = auth.currentUser;
     if (user) checkStreak(user.uid);
 
-    const [hotPosts, popularComments, todayBest, latestDebate] = await Promise.all([
+    const [hotPosts, popularComments, todayBest, battleData] = await Promise.all([
       fetchHotPosts(8),
       fetchPopularComments(6),
       fetchTodayBest(),
-      fetchLatestDebate(),
+      fetchTodayBattle(),
     ]);
 
-    const debateHTML = renderDebateCard(latestDebate);
+    const battleHTML = renderBattleCard(battleData);
 
     const bestHTML = todayBest ? `
       <div class="home-section-header" style="margin-bottom:8px">
@@ -232,7 +226,7 @@ export async function renderHome() {
         </div>
       </div>` : '';
 
-    el.innerHTML = `<div class="home-dash page-enter home-dash--v2">${renderHero()}${debateHTML}${bestHTML}${hotHTML}${commentsHTML}</div>`;
+    el.innerHTML = `<div class="home-dash page-enter home-dash--v2">${renderHero()}${battleHTML}${bestHTML}${hotHTML}${commentsHTML}</div>`;
 
     el.querySelector('#hbtn-more-hot')?.addEventListener('click', () => navigate('/feed'));
     el.querySelectorAll('[data-path]').forEach(btn => {

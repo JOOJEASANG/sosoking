@@ -1,48 +1,54 @@
 import { navigate } from '../router.js';
 import { setMeta } from '../utils/seo.js';
 
-const CHARS_6 = ['🎒 사춘기 중딩', '🙏 사이비 교주', '🔮 예언가', '🤩 주접러', '👀 참견러', '👴 꼰대'];
+const CHARS_7 = [
+  { emoji: '👴', name: '꼰대 대감',   title: '원로원 수석' },
+  { emoji: '🙏', name: '사이비 교주', title: '대신관' },
+  { emoji: '🎒', name: '반란아',      title: '반란군 두목' },
+  { emoji: '🔮', name: '예언가',      title: '왕실 예언관' },
+  { emoji: '🤩', name: '간신배',      title: '왕실 아첨꾼' },
+  { emoji: '👀', name: '정보부장',    title: '비밀 정보부 수장' },
+  { emoji: '🗡️', name: '음모가',      title: '흑막 재상' },
+];
 
 const FEATURES = [
+  {
+    emoji: '⚔️',
+    name: '왕좌전쟁',
+    path: '/battle',
+    badge: '7인 AI · 매일 자동',
+    desc: '매일 자정 왕국에서 황당한 사건이 발생! 7인 귀족이 자동으로 난장판 토론을 벌입니다. 유저는 구경 후 원하는 귀족에게 한 표.',
+    examples: [
+      '"왕국 금고가 텅 비었다" → 꼰대 대감 vs 반란아 vs 교주 vs 음모가...',
+      '매일 투표 결과로 오늘의 왕 결정',
+      '역대 왕 기록·연속 기록 확인 가능',
+    ],
+    tip: '하루 1표 무료. 누가 가장 왕다운지는 당신이 결정합니다!',
+  },
   {
     emoji: '⚖️',
     name: '판결소',
     path: '/ai-judge',
-    badge: '6인 AI',
-    desc: '억울한 상황을 적으면 6인 캐릭터 중 랜덤 3인이 각자의 세계관으로 판결을 내립니다. 캐릭터를 직접 고를 수도 있어요!',
+    badge: '7인 중 3인 랜덤',
+    desc: '억울한 상황을 적으면 7인 귀족 중 랜덤 3인이 각자의 세계관으로 판결을 내립니다. 원하는 귀족을 직접 고를 수도 있어요!',
     examples: [
       '친구가 내 치킨 허락없이 먹음 → 유죄/무죄?',
       '카톡 읽씹 → 이게 잘못인가?',
       '발표 자료에서 오타 발견 → 진행? 취소?',
     ],
-    extra: `<div style="font-size:12px;color:var(--color-text-muted)">${CHARS_6.join(' · ')}</div>`,
     tip: '사진도 첨부할 수 있어요. 상황 사진만 올려도 판결해 드립니다!',
   },
   {
     emoji: '✨',
     name: '창작소',
     path: '/ai-translate',
-    badge: '6인 AI',
-    desc: '번역하기 + 이름짓기 두 탭으로 구성. 6인 캐릭터 중 3인이 각자의 스타일로 창작합니다. 사진 속 글자도 OK!',
+    badge: '7인 중 3인 랜덤',
+    desc: '번역하기 + 이름짓기 두 탭으로 구성. 7인 귀족 중 3인이 각자의 스타일로 창작합니다. 사진 속 글자도 OK!',
     examples: [
-      '오늘 밥 먹었어? → 🙏 교주: "형제여, 몸을 위한 성찬으로 이 순간을 채우소서"',
-      '회의 때 항상 졸는 팀장 → 👴 꼰대: "졸음극복팀장" (우리 때는 졸면 혼났어)',
+      '오늘 밥 먹었어? → 🙏 교주: "형제여, 몸을 위한 성찬으로..."',
+      '회의 때 항상 졸는 팀장 → 👴 꼰대 대감: "졸음극복대감" (우리 때는 졸면...)',
     ],
-    extra: `<div style="font-size:12px;color:var(--color-text-muted)">${CHARS_6.join(' · ')}</div>`,
     tip: '텍스트 없이 이미지만 올려도 번역·작명이 가능해요.',
-  },
-  {
-    emoji: '🗣️',
-    name: '토론방',
-    path: '/feed',
-    badge: 'A/B 투표',
-    desc: '뜨거운 주제로 A편 vs B편 투표를 하고 댓글로 갑론을박! 직접 주제를 올릴 수도 있어요.',
-    examples: [
-      '치킨 : 부먹 vs 찍먹 → 어느 편?',
-      '카톡 읽씹은 실례인가? → 실례다 vs 아니다',
-      '회식 참석 → 당연히 가야지 vs 칼퇴가 정답',
-    ],
-    tip: '토론 주제를 올릴 때 A편·B편 선택지를 직접 입력해보세요!',
   },
   {
     emoji: '🗨️',
@@ -67,7 +73,7 @@ export function renderGuide() {
       <div class="guide-hero">
         <div class="guide-hero__icon">🤖</div>
         <h1 class="guide-hero__title">소소킹 이용안내</h1>
-        <p class="guide-hero__sub">판결소·창작소·토론방·수다방 — 4가지 기능과<br>개성 넘치는 AI 캐릭터 6인이 함께합니다</p>
+        <p class="guide-hero__sub">왕좌전쟁·판결소·창작소·수다방 — 4가지 기능과<br>왕국의 7인 귀족 AI가 함께합니다</p>
       </div>
 
       <div class="guide-toc card">
@@ -76,7 +82,7 @@ export function renderGuide() {
           ${[
             ['#guide-what',    '소소킹이란?'],
             ['#guide-features','4가지 기능 소개'],
-            ['#guide-chars',   '6인 AI 캐릭터'],
+            ['#guide-chars',   '7인 AI 귀족'],
             ['#guide-start',   '시작하기'],
             ['#guide-limit',   'AI 이용 제한'],
             ['#guide-ladder',  '사다리게임 추가 기회'],
@@ -90,9 +96,9 @@ export function renderGuide() {
       <section id="guide-what" class="guide-section">
         <h2 class="guide-section__title">🤔 소소킹이란?</h2>
         <div class="guide-section__body">
-          <p>소소킹은 <strong>AI와 함께 즐기는 참여형 커뮤니티</strong>입니다.</p>
-          <p><strong>판결소·창작소</strong>에서는 개성 넘치는 AI 캐릭터 6인이 판결하고 번역하고 이름을 짓습니다. <strong>토론방</strong>에서는 뜨거운 주제로 A/B 투표 토론을, <strong>수다방</strong>에서는 자유 채팅과 끝말잇기·초성게임을 즐길 수 있어요!</p>
-          <p>AI 결과물은 자동으로 피드에 게시되어 <strong>다른 사람들이 댓글로 반응</strong>할 수 있고, 재밌는 결과는 카카오톡으로 공유할 수 있어요!</p>
+          <p>소소킹은 <strong>7인 AI 귀족이 다스리는 왕국 놀이터</strong>입니다.</p>
+          <p><strong>왕좌전쟁</strong>에서 매일 왕국 사건이 발생하고 7인 귀족이 난장판 토론을 벌입니다. 유저는 투표로 오늘의 왕을 결정해요. <strong>판결소·창작소</strong>에서는 7인 중 3인이 랜덤 출동해 판결·번역·작명을, <strong>수다방</strong>에서는 자유 채팅과 게임을 즐길 수 있어요!</p>
+          <p>AI 결과물은 자동으로 피드에 게시되어 <strong>다른 사람들이 댓글로 반응</strong>할 수 있어요.</p>
         </div>
       </section>
 
@@ -125,22 +131,15 @@ export function renderGuide() {
       </section>
 
       <section id="guide-chars" class="guide-section">
-        <h2 class="guide-section__title">👥 6인 AI 캐릭터 (판결소·창작소 전용)</h2>
+        <h2 class="guide-section__title">👑 왕국의 7인 귀족</h2>
         <div class="guide-section__body">
-          <p>판결소·창작소에서는 아래 6인의 개성 강한 AI 캐릭터가 활동합니다. 요청 시 랜덤 3인이 출동하거나, 원하는 캐릭터를 직접 골라 3인 조합을 만들 수 있어요.</p>
+          <p>왕좌전쟁에서 7인 전원이 매일 싸우고, 판결소·창작소에서는 3인이 랜덤 출동합니다.</p>
           <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:14px">
-            ${[
-              { emoji: '🎒', name: '사춘기 중딩', desc: '팩폭 직격 · "ㄹㅇ 어른들 왜 이리 복잡하게 삶ㅋ"' },
-              { emoji: '🙏', name: '사이비 교주', desc: '포교·계시 · "형제여, 이것은 신의 뜻이니라"' },
-              { emoji: '🔮', name: '예언가',      desc: '운명 예언 · "~하리라... 서쪽을 조심하라"' },
-              { emoji: '🤩', name: '주접러',      desc: '과잉 리액션 · "미쳤다 실화임?? 소름ㄷㄷ"' },
-              { emoji: '👀', name: '참견러',      desc: '오지랖 만렙 · "아 그거 우리 옆집도 그랬어"' },
-              { emoji: '👴', name: '꼰대',        desc: '우리때는~ · "내가 말이야, 요즘 것들은..."' },
-            ].map(c => `
+            ${CHARS_7.map(c => `
               <div style="padding:12px;background:var(--color-surface-2);border-radius:12px">
                 <div style="font-size:24px;margin-bottom:4px">${c.emoji}</div>
                 <div style="font-size:13px;font-weight:800;color:var(--color-text-primary)">${c.name}</div>
-                <div style="font-size:11px;color:var(--color-text-muted);margin-top:2px;line-height:1.4">${c.desc}</div>
+                <div style="font-size:11px;color:var(--color-text-muted);margin-top:2px;line-height:1.4">${c.title}</div>
               </div>`).join('')}
           </div>
         </div>
@@ -151,8 +150,8 @@ export function renderGuide() {
         <div style="display:flex;flex-direction:column;gap:12px;margin-top:16px">
           ${[
             ['1', '회원가입', '구글 또는 카카오 계정으로 간편하게 가입할 수 있어요.'],
-            ['2', '기능 선택', '판결소, 창작소, 토론방, 수다방 중 원하는 기능으로 이동하세요.'],
-            ['3', '참여하기', 'AI킹 기능은 상황을 입력하고, 토론방은 투표를, 수다방은 글을 올려보세요!'],
+            ['2', '기능 선택', '왕좌전쟁, 판결소, 창작소, 수다방 중 원하는 기능으로 이동하세요.'],
+            ['3', '참여하기', '왕좌전쟁은 투표로, 판결소·창작소는 상황 입력으로, 수다방은 글을 올려보세요!'],
             ['4', '결과 확인', 'AI 결과는 자동으로 피드에 게시되며, 다른 사람들의 댓글을 받을 수 있어요.'],
             ['5', '공유하기', '재밌는 결과는 링크 복사나 카카오톡으로 친구에게 공유해보세요!'],
           ].map(([num, title, desc]) => `
@@ -181,9 +180,9 @@ export function renderGuide() {
               <th style="padding:8px 12px;text-align:center;border-radius:0 8px 0 0">하루 무료 횟수</th>
             </tr>
             ${[
+              ['⚔️ 왕좌전쟁 (투표)', '1표/일', true],
               ['⚖️ 판결소', '3회', false],
               ['✨ 창작소 (번역·작명 각각)', '3회', false],
-              ['🗣️ 토론방', '제한 없음', true],
               ['🗨️ 수다방', '제한 없음', true],
             ].map(([k, v, free]) => `
               <tr style="border-top:1px solid var(--color-border)">

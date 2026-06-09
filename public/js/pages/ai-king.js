@@ -11,12 +11,13 @@ const OFFICES = [
 ];
 
 const CHARS = [
-  { emoji: '🎒', name: '사춘기 중딩', quote: '"어른들 왜 이리 복잡하게 삶ㅋ 팩폭 드림"' },
-  { emoji: '🙏', name: '사이비 교주', quote: '"모든 건 계시입니다. 다음 모임은 토요일"' },
-  { emoji: '🔮', name: '예언가',      quote: '"서쪽을 조심하라... 운명이 그러하니라"' },
-  { emoji: '🤩', name: '주접러',      quote: '"미쳤다 실화임?? 소름ㄷㄷ 어떡해ㅠㅠ"' },
-  { emoji: '👀', name: '참견러',      quote: '"아 그거 내가 다 알아. 옆집도 그랬어"' },
-  { emoji: '👴', name: '꼰대',        quote: '"내가 말이야~ 우리 때는 이런 거 없었어"' },
+  { emoji: '👴', name: '꼰대 대감',   quote: '"내가 말이야~ 우리 때는 이런 거 없었어"',   title: '원로원 수석' },
+  { emoji: '🙏', name: '사이비 교주', quote: '"모든 건 계시입니다. 다음 모임은 토요일"',   title: '대신관' },
+  { emoji: '🎒', name: '반란아',      quote: '"ㄹㅇ 팩폭 드림. 어른들은 왜 이리 복잡ㅋ"', title: '반란군 두목' },
+  { emoji: '🔮', name: '예언가',      quote: '"서쪽을 조심하라... 운명이 그러하니라"',     title: '왕실 예언관' },
+  { emoji: '🤩', name: '간신배',      quote: '"미쳤다 실화임?? 소름ㄷㄷ 역시 최고ㅠㅠ"',  title: '왕실 아첨꾼' },
+  { emoji: '👀', name: '정보부장',    quote: '"아 그거 내가 다 알아. 어제 정보원이..."',   title: '비밀 정보부 수장' },
+  { emoji: '🗡️', name: '음모가',      quote: '"...흥미롭군."',                           title: '흑막 재상' },
 ];
 
 export async function renderAiKing() {
@@ -48,9 +49,9 @@ export async function renderAiKing() {
 
       <!-- ① 히어로 -->
       <div class="onboard-hero">
-        <div class="onboard-hero__eyebrow">✨ AI 창작 놀이터</div>
-        <div class="onboard-hero__title">소소킹</div>
-        <div class="onboard-hero__desc">6인의 개성 넘치는 캐릭터가<br>판결하고 번역하고 이름을 짓습니다</div>
+        <div class="onboard-hero__eyebrow">👑 소소킹 왕국</div>
+        <div class="onboard-hero__title">AI킹</div>
+        <div class="onboard-hero__desc">왕국의 7인 귀족이 판결하고 번역하고<br>매일 왕좌를 두고 싸웁니다</div>
         <div class="onboard-hero__badges">
           <a href="#/points-shop" class="ai-king-points-badge" style="text-decoration:none">🪙 ${userPoints.toLocaleString()}p</a>
           ${usage.extraUses > 0 ? `<span class="ai-king-points-badge ai-king-points-badge--extra">⚡ 추가권 ${usage.extraUses}회</span>` : ''}
@@ -59,7 +60,7 @@ export async function renderAiKing() {
 
       <!-- ② 캐릭터 소개 -->
       <div class="onboard-section">
-        <div class="onboard-section__label">👥 오늘의 응답단 6인 — 3명이 랜덤 출동</div>
+        <div class="onboard-section__label">👑 왕국의 7인 귀족 — 판결소·창작소에서 3인 랜덤 출동, 왕좌전쟁은 7인 전원 참전</div>
         <div class="onboard-chars-grid">
           ${CHARS.map(c => `
             <div class="onboard-char-card">
