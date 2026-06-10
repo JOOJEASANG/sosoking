@@ -20,7 +20,7 @@ const CHARS = [
 ];
 
 export async function renderAiKing() {
-  setMeta('소소킹 — 4소(所)');
+  setMeta('소소킹 — AI킹');
   const el = document.getElementById('page-content');
 
   let usage = { judge: 0, translate: 0, naming: 0, extraUses: 0, dailyFreeLimit: 3 };
@@ -59,7 +59,7 @@ export async function renderAiKing() {
 
       <!-- ② 캐릭터 소개 -->
       <div class="onboard-section">
-        <div class="onboard-section__label">👑 왕국의 7인 귀족 — 판결소·창작소에서 3인 랜덤 출동, 왕좌전쟁은 7인 전원 참전</div>
+        <div class="onboard-section__label">👑 왕국의 7인 귀족 — 판결소에서 3인 랜덤 출동, 왕좌전쟁은 7인 전원 참전</div>
         <div class="onboard-chars-grid">
           ${CHARS.map(c => `
             <div class="onboard-char-card">
@@ -93,7 +93,7 @@ export async function renderAiKing() {
         </div>
       </div>
 
-      <!-- ④ 4소 선택 -->
+      <!-- ④ 소(所) 선택 -->
       <div class="onboard-section">
         <div class="onboard-section__label">🚪 어디 입장할까요?</div>
         <div class="soso-offices">

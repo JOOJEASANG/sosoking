@@ -91,7 +91,7 @@ async function registerRoutes() {
   registerRoute('/privacy', async () => renderPage((await import('./pages/legal.js')).renderPrivacy, '개인정보처리방침'));
   registerRoute('/legal/terms', async () => renderPage((await import('./pages/legal.js')).renderTerms, '이용약관'));
   registerRoute('/legal/privacy', async () => renderPage((await import('./pages/legal.js')).renderPrivacy, '개인정보처리방침'));
-  registerRoute('/ai-king', async () => renderPage((await import('./pages/ai-king.js')).renderAiKing, '4소'));
+  registerRoute('/ai-king', async () => renderPage((await import('./pages/ai-king.js')).renderAiKing, 'AI킹'));
   registerRoute('/ai-judge', async () => renderPage((await import('./pages/ai-judge.js')).renderAiJudge, '판결소'));
   registerRoute('/ai-translate', async () => renderPage((await import('./pages/ai-translate.js')).renderAiTranslate, '창작소'));
   registerRoute('/ai-naming', async () => renderPage((await import('./pages/ai-naming.js')).renderAiNaming, '창작소'));

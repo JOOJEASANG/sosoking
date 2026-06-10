@@ -38,7 +38,6 @@ module.exports = {
   ...memberStats,
   ...points,
   ...aiLadder,
-  ...aiDebate,
   ...hotPotato,
   generateDailyBattle: battle.generateDailyBattle,
   closeDailyBattle: battle.closeDailyBattle,
