@@ -130,9 +130,7 @@ async function renderDashboard(el) {
   const todayStr   = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
   const AI_FEATURES = [
-    { key: 'judge',     icon: '⚖️', label: '판결소', cat: 'primary' },
-    { key: 'translate', icon: '✨', label: '창작소',  cat: 'golra'  },
-    { key: 'naming',    icon: '✨', label: '작명',    cat: 'malhe'  },
+    { key: 'judge', icon: '⚖️', label: '판결소', cat: 'primary' },
   ];
 
   const [totalSnap, todaySnap, recentSnap, reportSnap, monthUsageSnap, todayUsageSnap] = await Promise.all([
@@ -586,9 +584,7 @@ async function renderAiSettings(el) {
   const geminiFreeDailyLimit = GEMINI_FREE_DAILY_BY_MODEL[aiKingConfig.geminiModel] ?? 250;
 
   const FEATURES = [
-    { key: 'judge',     label: '⚖️ 판결소' },
-    { key: 'translate', label: '✨ 창작소' },
-    { key: 'naming',    label: '✨ 작명(구)' },
+    { key: 'judge', label: '⚖️ 판결소' },
   ];
 
   // Today stats
@@ -825,17 +821,19 @@ async function renderAiSettings(el) {
         </div>
       </div>
 
-      <!-- 수동 실행 -->
+      <!-- 왕좌전쟁 수동 생성 -->
       <div class="card">
         <div class="card__body">
-          <div style="font-size:14px;font-weight:800;margin-bottom:4px">🗣️ AI 토론왕</div>
-          <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:14px">매일 오전 10시 자동 생성돼요. 지금 바로 만들거나 주제를 직접 넣을 수도 있어요.</div>
+          <div style="font-size:14px;font-weight:800;margin-bottom:4px">⚔️ 왕좌전쟁 수동 생성</div>
+          <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:14px">매일 자정 자동 생성돼요. 오늘 배틀이 없거나 강제로 재생성할 때 사용하세요.</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-            <input id="debate-topic-input" type="text" placeholder="주제 직접 입력 (비우면 오늘의 주제)" maxlength="100"
-              style="flex:1;min-width:200px;padding:8px 10px;border:1px solid var(--color-border);border-radius:8px;font-size:13px">
-            <button class="btn btn--primary btn--sm" id="btn-trigger-debate">🗣️ 지금 생성</button>
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+              <input type="checkbox" id="battle-force-checkbox" style="width:16px;height:16px">
+              force (이미 있어도 덮어쓰기)
+            </label>
+            <button class="btn btn--primary btn--sm" id="btn-trigger-battle">⚔️ 지금 생성</button>
           </div>
-          <div id="ai-trigger-result" style="margin-top:10px;font-size:12px;color:var(--color-text-muted)"></div>
+          <div id="battle-trigger-result" style="margin-top:10px;font-size:12px;color:var(--color-text-muted)"></div>
         </div>
       </div>
 
@@ -923,20 +921,20 @@ async function renderAiSettings(el) {
     } catch (e) { toast.error(e.message || '중지에 실패했어요'); }
   });
 
-  // AI 토론왕 수동 생성
-  el.querySelector('#btn-trigger-debate')?.addEventListener('click', async () => {
-    const btn = el.querySelector('#btn-trigger-debate');
-    const result = el.querySelector('#ai-trigger-result');
-    const topic = el.querySelector('#debate-topic-input')?.value.trim() || '';
+  // 왕좌전쟁 수동 생성
+  el.querySelector('#btn-trigger-battle')?.addEventListener('click', async () => {
+    const btn = el.querySelector('#btn-trigger-battle');
+    const result = el.querySelector('#battle-trigger-result');
+    const force = el.querySelector('#battle-force-checkbox')?.checked || false;
     btn.disabled = true; btn.textContent = '생성 중...';
     try {
-      const res = await httpsCallable(functions, 'generateDebateNow')(topic ? { topic } : {});
-      result.innerHTML = `✅ 생성 완료: "${escHtml(res.data.topic || '')}" — <a href="#/detail/${escHtml(res.data.postId)}">바로 보기</a>`;
-      toast.success('AI 토론왕이 생성됐어요 🗣️');
+      const res = await httpsCallable(functions, 'adminGenerateBattle')({ force });
+      result.innerHTML = `✅ 생성 완료: "${escHtml(res.data.topic || '')}" (${res.data.turns || 0}턴) — <a href="#/battle">배틀 보기</a>`;
+      toast.success('왕좌전쟁이 생성됐어요 ⚔️');
     } catch (e) {
       result.textContent = '❌ ' + (e.message || '생성에 실패했어요');
       toast.error(e.message || '생성에 실패했어요');
-    } finally { btn.disabled = false; btn.textContent = '🗣️ 지금 생성'; }
+    } finally { btn.disabled = false; btn.textContent = '⚔️ 지금 생성'; }
   });
 }
 
@@ -1072,76 +1070,84 @@ async function renderMyInfo(el) {
   });
 }
 
-/* ── 사이트 기능 제어 ── */
+/* ── 기능 제어 (왕좌전쟁 관리) ── */
 async function renderSiteFeatures(el) {
-  const { doc: fsDoc, getDoc: fsGetDoc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
-  let siteFeatures = { hotPotato: true, jabdam: true };
+  const { doc: fsDoc, getDoc: fsGetDoc } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
+  let battleStatus = null;
   try {
-    const snap = await fsGetDoc(fsDoc(db, 'config', 'site_features'));
-    if (snap.exists()) siteFeatures = { ...siteFeatures, ...snap.data() };
+    const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+    const snap = await fsGetDoc(fsDoc(db, 'battles', today));
+    if (snap.exists()) battleStatus = snap.data();
   } catch {}
 
-  const SITE_FEATURES = [
-    { key: 'hotPotato', icon: '🔥', label: '핫포테이토', desc: '마지막 댓글 달면 폭탄 터지는 게임. 유저 없으면 꺼두세요.' },
-    { key: 'jabdam',    icon: '🗨️', label: '수다방',    desc: '텍스트·사진·링크 자유롭게 올리는 잡담 공간.' },
-  ];
-
   el.innerHTML = `
-    <div class="admin-section">
+    <div class="admin-section" style="display:flex;flex-direction:column;gap:20px;max-width:680px">
+      <h2 class="admin-section-title">⚔️ 왕좌전쟁 관리</h2>
+
+      <!-- 오늘 배틀 상태 -->
       <div class="card">
         <div class="card__body">
-          <div style="font-size:15px;font-weight:900;margin-bottom:4px">⚙️ 사이트 기능 ON/OFF</div>
-          <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:16px">꺼두면 네비게이션에서 숨겨집니다. 페이지 자체는 유지돼요.</div>
-          <div style="display:flex;flex-direction:column;gap:14px">
-            ${SITE_FEATURES.map(f => `
-              <div style="display:flex;align-items:center;gap:12px;padding:14px;border:1px solid var(--color-border);border-radius:12px">
-                <span style="font-size:22px">${f.icon}</span>
-                <div style="flex:1">
-                  <div style="font-size:14px;font-weight:800">${f.label}</div>
-                  <div style="font-size:12px;color:var(--color-text-muted);margin-top:2px">${f.desc}</div>
-                </div>
-                <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-                  <input type="checkbox" class="site-feature-toggle" data-feature="${f.key}" ${siteFeatures[f.key] !== false ? 'checked' : ''} style="width:18px;height:18px;cursor:pointer">
-                  <span class="site-feature-label" style="font-size:12px;font-weight:700;min-width:30px">${siteFeatures[f.key] !== false ? '켜짐' : '꺼짐'}</span>
-                </label>
-              </div>`).join('')}
+          <div style="font-size:15px;font-weight:900;margin-bottom:12px">📋 오늘 배틀 현황</div>
+          ${battleStatus ? `
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px">
+              <div class="admin-stat-card">
+                <div class="admin-stat-card__num" style="font-size:13px;color:var(--color-primary)">${escHtml(battleStatus.topic || '—')}</div>
+                <div class="admin-stat-card__label">오늘 주제</div>
+              </div>
+              <div class="admin-stat-card">
+                <div class="admin-stat-card__num">${battleStatus.totalVotes || 0}</div>
+                <div class="admin-stat-card__label">총 투표수</div>
+              </div>
+              <div class="admin-stat-card">
+                <div class="admin-stat-card__num" style="color:${battleStatus.status === 'ended' ? 'var(--color-success)' : 'var(--color-warning-text)'}">${battleStatus.status === 'ended' ? '종료' : '진행중'}</div>
+                <div class="admin-stat-card__label">상태</div>
+              </div>
+            </div>
+            <a href="#/battle" class="btn btn--ghost btn--sm">⚔️ 배틀 보기</a>
+          ` : `
+            <div style="font-size:14px;color:var(--color-text-muted);margin-bottom:12px">오늘 배틀이 아직 없어요</div>
+          `}
+        </div>
+      </div>
+
+      <!-- 수동 생성 -->
+      <div class="card">
+        <div class="card__body">
+          <div style="font-size:15px;font-weight:900;margin-bottom:4px">🔧 배틀 수동 생성</div>
+          <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:14px">오늘 배틀이 없거나 강제 재생성할 때 사용하세요. 약 30초~1분 소요됩니다.</div>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+              <input type="checkbox" id="sf-battle-force" style="width:16px;height:16px">
+              force (이미 있어도 덮어쓰기)
+            </label>
+            <button class="btn btn--primary btn--sm" id="btn-sf-generate-battle">⚔️ 지금 생성</button>
           </div>
-          <div style="display:flex;gap:8px;margin-top:16px">
-            <button class="btn btn--primary btn--sm" id="btn-save-site-features">저장</button>
-          </div>
-          <div id="site-features-result" style="margin-top:8px;font-size:12px;color:var(--color-text-muted)"></div>
+          <div id="sf-battle-result" style="margin-top:10px;font-size:12px;color:var(--color-text-muted)"></div>
         </div>
       </div>
     </div>`;
 
-  el.querySelectorAll('.site-feature-toggle').forEach(cb => {
-    cb.addEventListener('change', () => {
-      cb.nextElementSibling.textContent = cb.checked ? '켜짐' : '꺼짐';
-    });
-  });
-
-  el.querySelector('#btn-save-site-features')?.addEventListener('click', async () => {
-    const btn = el.querySelector('#btn-save-site-features');
-    const result = el.querySelector('#site-features-result');
-    btn.disabled = true; btn.textContent = '저장 중...';
-    const data = {};
-    el.querySelectorAll('.site-feature-toggle').forEach(cb => { data[cb.dataset.feature] = cb.checked; });
+  el.querySelector('#btn-sf-generate-battle')?.addEventListener('click', async () => {
+    const btn = el.querySelector('#btn-sf-generate-battle');
+    const result = el.querySelector('#sf-battle-result');
+    const force = el.querySelector('#sf-battle-force')?.checked || false;
+    btn.disabled = true; btn.textContent = '생성 중...';
     try {
-      await setDoc(fsDoc(db, 'config', 'site_features'), data, { merge: true });
-      result.textContent = '✅ 저장됐어요';
-      toast.success('기능 설정이 저장됐어요 ✅');
+      const res = await httpsCallable(functions, 'adminGenerateBattle')({ force });
+      result.innerHTML = `✅ 생성 완료: "${escHtml(res.data.topic || '')}" (${res.data.turns || 0}턴) — <a href="#/battle">배틀 보기</a>`;
+      toast.success('왕좌전쟁이 생성됐어요 ⚔️');
+      setTimeout(() => renderSiteFeatures(el), 1500);
     } catch (e) {
-      result.textContent = '❌ ' + (e.message || '저장 실패');
-      toast.error(e.message || '저장 실패');
-    } finally { btn.disabled = false; btn.textContent = '저장'; }
+      result.textContent = '❌ ' + (e.message || '생성에 실패했어요');
+      toast.error(e.message || '생성에 실패했어요');
+    } finally { btn.disabled = false; btn.textContent = '⚔️ 지금 생성'; }
   });
 }
 
 /* ── 게시글관리 ── */
 async function renderAdminPosts(el) {
   const POST_TYPE_LABELS = {
-    ai_judge: '⚖️ 판결소', ai_translate: '✨ 창작소',
-    ai_naming: '✨ 창작소(구)',
+    ai_judge: '⚖️ 판결소',
     vote: '🗳️ 토론방', drip: '🤣 드립방',
     collect: '📌 일반방', general: '📝 일반',
   };

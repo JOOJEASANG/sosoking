@@ -10,20 +10,20 @@ const OFFICES = [
 ];
 
 const CHARS = [
-  { emoji: '👴', name: '꼰대 대감',   quote: '"내가 말이야~ 우리 때는 이런 거 없었어"',   title: '원로원 수석' },
-  { emoji: '🙏', name: '사이비 교주', quote: '"모든 건 계시입니다. 다음 모임은 토요일"',   title: '대신관' },
-  { emoji: '🎒', name: '반란아',      quote: '"ㄹㅇ 팩폭 드림. 어른들은 왜 이리 복잡ㅋ"', title: '반란군 두목' },
-  { emoji: '🔮', name: '예언가',      quote: '"서쪽을 조심하라... 운명이 그러하니라"',     title: '왕실 예언관' },
-  { emoji: '🤩', name: '간신배',      quote: '"미쳤다 실화임?? 소름ㄷㄷ 역시 최고ㅠㅠ"',  title: '왕실 아첨꾼' },
-  { emoji: '👀', name: '정보부장',    quote: '"아 그거 내가 다 알아. 어제 정보원이..."',   title: '비밀 정보부 수장' },
-  { emoji: '🗡️', name: '음모가',      quote: '"...흥미롭군."',                           title: '흑막 재상' },
+  { emoji: '🎙️', name: '3선 의원',        quote: '"제가 30년 정치 생활을 돌이켜보면..."',        title: '국민안정당 원내대표' },
+  { emoji: '📺', name: '정치 유튜버',      quote: '"구독자 여러분~ 오늘 단독 입수했는데요~"',     title: '진실방송당 대표 (구독자 120만)' },
+  { emoji: '📱', name: 'MZ 운동가',        quote: '"이게 공정함인가요? 우리 세대는 바꿀 거예요"', title: '청년혁명당 청년위원장' },
+  { emoji: '📊', name: '여론조사 전문가',  quote: '"통계적으로 분석해보면 ±3.1%p..."',           title: '중도민주당 정책자문위원' },
+  { emoji: '🤝', name: '당 대변인',        quote: '"우리 당의 공식 입장을 말씀드리겠습니다"',     title: '함께미래당 공식 대변인' },
+  { emoji: '🔍', name: '탐사 기자',        quote: '"제가 내부 제보를 받았는데요. 내일 단독 보도"', title: '알권리당 언론인 출신' },
+  { emoji: '⚖️', name: '검사 출신 변호사', quote: '"위법 소지 있습니다."',                       title: '법치정의당 법률위원장' },
 ];
 
 export async function renderAiKing() {
   setMeta('소소킹 — AI킹');
   const el = document.getElementById('page-content');
 
-  let usage = { judge: 0, translate: 0, naming: 0, extraUses: 0, dailyFreeLimit: 3 };
+  let usage = { judge: 0, extraUses: 0, dailyFreeLimit: 3 };
   let userPoints = 0;
   if (auth.currentUser) {
     try {
@@ -48,9 +48,9 @@ export async function renderAiKing() {
 
       <!-- ① 히어로 -->
       <div class="onboard-hero">
-        <div class="onboard-hero__eyebrow">👑 소소킹 왕국</div>
+        <div class="onboard-hero__eyebrow">🏛️ 소소한 정치 게임</div>
         <div class="onboard-hero__title">AI킹</div>
-        <div class="onboard-hero__desc">왕국의 7인 귀족이 판결하고 번역하고<br>매일 왕좌를 두고 싸웁니다</div>
+        <div class="onboard-hero__desc">7인 정치 AI가 소소한 일상을<br>진지한 정치 드라마로 만들어 드립니다</div>
         <div class="onboard-hero__badges">
           <a href="#/points-shop" class="ai-king-points-badge" style="text-decoration:none">🪙 ${userPoints.toLocaleString()}p</a>
           ${usage.extraUses > 0 ? `<span class="ai-king-points-badge ai-king-points-badge--extra">⚡ 추가권 ${usage.extraUses}회</span>` : ''}
@@ -59,7 +59,7 @@ export async function renderAiKing() {
 
       <!-- ② 캐릭터 소개 -->
       <div class="onboard-section">
-        <div class="onboard-section__label">👑 왕국의 7인 귀족 — 판결소에서 3인 랜덤 출동, 왕좌전쟁은 7인 전원 참전</div>
+        <div class="onboard-section__label">🏛️ 7인 정치 AI — 판결소에서 3인 랜덤 출동, 왕좌전쟁은 7인 전원 참전</div>
         <div class="onboard-chars-grid">
           ${CHARS.map(c => `
             <div class="onboard-char-card">

@@ -15,24 +15,24 @@ function renderKingBanner(king) {
   if (!king) {
     return `<div class="battle-king-banner battle-king-banner--empty">
       <span class="battle-king-banner__crown">👑</span>
-      <span class="battle-king-banner__text">아직 왕좌가 비어 있습니다</span>
+      <span class="battle-king-banner__text">아직 집권자가 없습니다</span>
     </div>`;
   }
   const streakText = king.streak > 1 ? ` <span class="battle-king-banner__streak">🔥 ${king.streak}연속</span>` : '';
   return `<div class="battle-king-banner">
-    <span class="battle-king-banner__crown">👑</span>
+    <span class="battle-king-banner__crown">🏛️</span>
     <span class="battle-king-banner__emoji">${king.emoji}</span>
     <span class="battle-king-banner__info">
-      <span class="battle-king-banner__label">현재 왕</span>
+      <span class="battle-king-banner__label">현재 1인자</span>
       <span class="battle-king-banner__name">${escHtml(king.name)} · ${escHtml(king.title)}${streakText}</span>
     </span>
   </div>`;
 }
 
 function renderTurnBubble(turn, index) {
-  const isUmmoja = turn.charId === 'ummoja';
+  const isLast = turn.charId === 'prosecutor';
   return `
-    <div class="battle-turn${isUmmoja ? ' battle-turn--ummoja' : ''}" style="--i:${index}">
+    <div class="battle-turn${isLast ? ' battle-turn--ummoja' : ''}" style="--i:${index}">
       <div class="battle-turn__avatar">${turn.emoji}</div>
       <div class="battle-turn__body">
         <div class="battle-turn__name">${escHtml(turn.charName)}</div>
@@ -64,10 +64,10 @@ function renderAftermath(aftermath) {
   const { decree, reactions = [] } = aftermath;
   return `
     <div class="battle-aftermath">
-      <div class="battle-aftermath__title">👑 왕의 즉위 칙령</div>
+      <div class="battle-aftermath__title">🏛️ 집권 선언</div>
       <div class="battle-aftermath__decree">${escHtml(decree)}</div>
       ${reactions.length ? `
-        <div class="battle-aftermath__reactions-title">📣 낙선 귀족들의 반응</div>
+        <div class="battle-aftermath__reactions-title">📣 낙선자들의 반응</div>
         <div class="battle-aftermath__reactions">
           ${reactions.map(r => `
             <div class="battle-aftermath__reaction">
@@ -121,10 +121,10 @@ export async function renderBattle() {
           ${kingBanner}
           <div class="battle-topic-card">
             <div class="battle-topic-card__badge">⚔️ 오늘의 왕좌전쟁</div>
-            <div class="battle-topic-card__title">전쟁 준비 중...</div>
-            <div class="battle-topic-card__desc">매일 자정 새로운 왕국 사건이 발생합니다</div>
+            <div class="battle-topic-card__title">배틀 준비 중...</div>
+            <div class="battle-topic-card__desc">매일 자정 새로운 소소한 정치 이슈가 발생합니다</div>
           </div>
-          <button class="btn btn--primary" id="btn-history" style="margin-top:16px">👑 역대 왕 기록 보기</button>
+          <button class="btn btn--primary" id="btn-history" style="margin-top:16px">🏛️ 역대 집권 기록 보기</button>
         </div>`;
       el.querySelector('#btn-history')?.addEventListener('click', () => navigate('/king-history'));
       return;
@@ -139,7 +139,7 @@ export async function renderBattle() {
         ${kingBanner}
 
         <div class="battle-topic-card">
-          <div class="battle-topic-card__badge">⚔️ 오늘의 왕국 사건${isEnded ? ' · 종료' : ' · 진행 중'}</div>
+          <div class="battle-topic-card__badge">⚔️ 오늘의 정치 이슈${isEnded ? ' · 종료' : ' · 진행 중'}</div>
           <div class="battle-topic-card__title">${escHtml(topic)}</div>
           ${topicDesc ? `<div class="battle-topic-card__desc">${escHtml(topicDesc)}</div>` : ''}
         </div>
@@ -151,7 +151,7 @@ export async function renderBattle() {
         <div class="battle-vote-section">
           <div class="battle-vote-section__title">
             ${isEnded
-              ? (king ? `👑 오늘의 왕: ${chars.find(c => c.id === king)?.emoji || ''} ${escHtml(chars.find(c => c.id === king)?.name || '')}` : '⚔️ 오늘의 투표 결과')
+              ? (king ? `🏛️ 오늘의 1인자: ${chars.find(c => c.id === king)?.emoji || ''} ${escHtml(chars.find(c => c.id === king)?.name || '')}` : '⚔️ 오늘의 투표 결과')
               : (userVote ? `✅ 투표 완료 · 총 ${fmtNum(totalVotes)}표` : `⚔️ 누구에게 한 표? (오늘 1회)`)}
           </div>
 
@@ -169,7 +169,7 @@ export async function renderBattle() {
 
         ${isEnded && aftermath ? renderAftermath(aftermath) : ''}
 
-        <button class="btn btn--ghost btn--sm" id="btn-history" style="margin-top:8px;width:100%">👑 역대 왕 기록 →</button>
+        <button class="btn btn--ghost btn--sm" id="btn-history" style="margin-top:8px;width:100%">🏛️ 역대 집권 기록 →</button>
       </div>`;
 
     el.querySelector('#btn-history')?.addEventListener('click', () => navigate('/king-history'));

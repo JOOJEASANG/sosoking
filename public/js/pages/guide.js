@@ -2,13 +2,13 @@ import { navigate } from '../router.js';
 import { setMeta } from '../utils/seo.js';
 
 const CHARS_7 = [
-  { emoji: '👴', name: '꼰대 대감',   title: '원로원 수석' },
-  { emoji: '🙏', name: '사이비 교주', title: '대신관' },
-  { emoji: '🎒', name: '반란아',      title: '반란군 두목' },
-  { emoji: '🔮', name: '예언가',      title: '왕실 예언관' },
-  { emoji: '🤩', name: '간신배',      title: '왕실 아첨꾼' },
-  { emoji: '👀', name: '정보부장',    title: '비밀 정보부 수장' },
-  { emoji: '🗡️', name: '음모가',      title: '흑막 재상' },
+  { emoji: '🎙️', name: '3선 의원',        title: '국민안정당 원내대표' },
+  { emoji: '📺', name: '정치 유튜버',      title: '진실방송당 대표 (구독자 120만)' },
+  { emoji: '📱', name: 'MZ 운동가',        title: '청년혁명당 청년위원장' },
+  { emoji: '📊', name: '여론조사 전문가',  title: '중도민주당 정책자문위원' },
+  { emoji: '🤝', name: '당 대변인',        title: '함께미래당 공식 대변인' },
+  { emoji: '🔍', name: '탐사 기자',        title: '알권리당 언론인 출신' },
+  { emoji: '⚖️', name: '검사 출신 변호사', title: '법치정의당 법률위원장' },
 ];
 
 const FEATURES = [
@@ -17,11 +17,11 @@ const FEATURES = [
     name: '왕좌전쟁',
     path: '/battle',
     badge: '7인 AI · 매일 자동',
-    desc: '매일 자정 왕국에서 황당한 사건이 발생! 7인 귀족이 자동으로 난장판 토론을 벌입니다. 유저는 구경 후 원하는 귀족에게 한 표.',
+    desc: '매일 자정 소소한 일상 사건이 터진다! 7인 정치 AI가 이를 국가적 위기인 것처럼 진지하게 토론합니다. 유저는 구경 후 원하는 캐릭터에게 한 표.',
     examples: [
-      '"왕국 금고가 텅 비었다" → 꼰대 대감 vs 반란아 vs 교주 vs 음모가...',
-      '매일 투표 결과로 오늘의 왕 결정',
-      '역대 왕 기록·연속 기록 확인 가능',
+      '"편의점 도시락 150원 인상" → 3선 의원 vs MZ 운동가 vs 탐사 기자...',
+      '매일 투표 결과로 오늘의 1인자 결정',
+      '역대 1인자 기록·연속 기록 확인 가능',
     ],
     tip: '하루 1표 무료. 누가 가장 왕다운지는 당신이 결정합니다!',
   },
@@ -30,7 +30,7 @@ const FEATURES = [
     name: '판결소',
     path: '/ai-judge',
     badge: '7인 중 3인 랜덤',
-    desc: '억울한 상황을 적으면 7인 귀족 중 랜덤 3인이 각자의 세계관으로 판결을 내립니다. 원하는 귀족을 직접 고를 수도 있어요!',
+    desc: '억울한 상황을 적으면 7인 정치 AI 중 랜덤 3인이 각자의 세계관으로 판결을 내립니다. 원하는 캐릭터를 직접 고를 수도 있어요!',
     examples: [
       '친구가 내 치킨 허락없이 먹음 → 유죄/무죄?',
       '카톡 읽씹 → 이게 잘못인가?',
@@ -48,7 +48,7 @@ export function renderGuide() {
       <div class="guide-hero">
         <div class="guide-hero__icon">🤖</div>
         <h1 class="guide-hero__title">소소킹 이용안내</h1>
-        <p class="guide-hero__sub">왕좌전쟁·판결소 — 왕국의 7인 귀족 AI가 함께합니다</p>
+        <p class="guide-hero__sub">왕좌전쟁·판결소 — 7인 정치 AI가 소소한 것도 진지하게 다룹니다</p>
       </div>
 
       <div class="guide-toc card">
@@ -57,7 +57,7 @@ export function renderGuide() {
           ${[
             ['#guide-what',    '소소킹이란?'],
             ['#guide-features','2가지 기능 소개'],
-            ['#guide-chars',   '7인 AI 귀족'],
+            ['#guide-chars',   '7인 정치 AI'],
             ['#guide-start',   '시작하기'],
             ['#guide-limit',   'AI 이용 제한'],
             ['#guide-ladder',  '사다리게임 추가 기회'],
@@ -71,8 +71,8 @@ export function renderGuide() {
       <section id="guide-what" class="guide-section">
         <h2 class="guide-section__title">🤔 소소킹이란?</h2>
         <div class="guide-section__body">
-          <p>소소킹은 <strong>7인 AI 귀족이 다스리는 왕국 놀이터</strong>입니다.</p>
-          <p><strong>왕좌전쟁</strong>에서 매일 자정 왕국 사건이 발생하고 7인 귀족이 자동으로 난장판 토론을 벌입니다. 유저는 하루 한 표로 오늘의 왕을 결정해요. <strong>판결소</strong>에서는 7인 중 3인이 랜덤 출동해 억울한 상황을 각자의 세계관으로 판결합니다!</p>
+          <p>소소킹은 <strong>7인 정치 AI가 매일 소소한 일상을 진지한 정치 드라마로 만드는 게임</strong>입니다.</p>
+          <p><strong>왕좌전쟁</strong>에서 매일 자정 소소한 일상 사건이 터지고 7인 정치 AI가 이를 국가적 위기인 것처럼 토론합니다. 유저는 하루 한 표로 오늘의 1인자를 결정해요. <strong>판결소</strong>에서는 7인 중 3인이 랜덤 출동해 억울한 상황을 각자의 정치적 세계관으로 판결합니다!</p>
           <p>AI 결과물은 자동으로 피드에 게시되어 <strong>다른 사람들이 댓글로 반응</strong>할 수 있어요.</p>
         </div>
       </section>
@@ -106,9 +106,9 @@ export function renderGuide() {
       </section>
 
       <section id="guide-chars" class="guide-section">
-        <h2 class="guide-section__title">👑 왕국의 7인 귀족</h2>
+        <h2 class="guide-section__title">🏛️ 7인 정치 AI 캐릭터</h2>
         <div class="guide-section__body">
-          <p>왕좌전쟁에서 7인 전원이 매일 자동으로 싸우고, 판결소에서는 3인이 랜덤 출동합니다.</p>
+          <p>왕좌전쟁에서 7인 전원이 매일 자동으로 소소한 사건을 진지하게 토론하고, 판결소에서는 3인이 랜덤 출동합니다.</p>
           <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:14px">
             ${CHARS_7.map(c => `
               <div style="padding:12px;background:var(--color-surface-2);border-radius:12px">
@@ -223,8 +223,8 @@ export function renderGuide() {
       <section id="guide-share" class="guide-section">
         <h2 class="guide-section__title">📤 결과 공유하기</h2>
         <div class="guide-section__body">
-          <p>판결소·창작소 결과 페이지에서 <strong>링크 복사 버튼(🔗)</strong>을 누르면 누구에게나 공유할 수 있어요.</p>
-          <p>웃긴 판결문, 황당한 번역, 찰떡 작명 결과를 친구들에게 보내보세요!</p>
+          <p>판결소 결과 페이지에서 <strong>링크 복사 버튼(🔗)</strong>을 누르면 누구에게나 공유할 수 있어요.</p>
+          <p>웃긴 판결문 결과를 친구들에게 보내보세요!</p>
           <p style="color:var(--color-primary);font-weight:700">💡 "야 판결킹한테 우리 상황 올려봤는데 봐봐 ㅋㅋㅋ" 이런 거 기대하고 만들었습니다.</p>
         </div>
       </section>
@@ -233,7 +233,7 @@ export function renderGuide() {
         <h2 class="guide-section__title">📋 이용 규칙</h2>
         <div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">
           ${[
-            ['✅', '허용', '가벼운 유머, 일상 고민, 재미있는 상황, 웃긴 번역 요청'],
+            ['✅', '허용', '가벼운 유머, 일상 고민, 재미있는 상황'],
             ['✅', '허용', '공인에 대한 공개된 사실 (단, 비방 없이)'],
             ['❌', '금지', '특정인 신상 공개, 협박, 성희롱, 혐오 발언'],
             ['❌', '금지', '광고·스팸성 내용'],

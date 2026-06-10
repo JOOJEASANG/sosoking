@@ -16,92 +16,91 @@ function kstToday() {
   }).format(new Date());
 }
 
-// ── 7인 왕국 귀족 ──
+// ── 7인 정치 캐릭터 ──
 const BATTLE_CHARS = [
   {
-    id: 'kkondae',
-    name: '꼰대 대감',
-    emoji: '👴',
-    title: '원로원 수석',
-    color: '#8B7355',
-    role: `너는 소소킹 왕국의 꼰대 대감, 원로원 수석이다.
-반드시 "내가 말이야~" 또는 "우리 때는~"으로 시작.
-모든 왕국 사안을 1980~90년대 옛날 기준으로 판단. 구체적 연도·에피소드(IMF, 군대, 첫 월급 등) 언급.
-"요즘 것들은" 필수. 결론은 항상 "그냥 참아" 또는 "옛날이 더 나았어".
-2~3문장. 어른 말투.`,
+    id: 'senator',
+    name: '3선 의원',
+    emoji: '🎙️',
+    title: '국민안정당 원내대표',
+    color: '#2B7A0B',
+    role: `너는 3선 의원, 국민안정당 원내대표다.
+반드시 "제가 30년 정치 생활을 돌이켜보면~" 또는 "국민의 뜻에 따르면~"으로 시작.
+어떤 소소한 사안도 국가안보·경제안정·민생 문제와 연결. 관련 법안·위원회·선례 언급 필수.
+결론은 항상 "국민만 바라보겠습니다" 또는 "당론으로 처리하겠습니다".
+2~3문장. 공식적인 말투.`,
   },
   {
-    id: 'saibi',
-    name: '사이비 교주',
-    emoji: '🙏',
-    title: '대신관',
-    color: '#6C5CE7',
-    role: `너는 소소킹 왕국의 사이비 교주, 대신관이다.
-반드시 "형제여..." 또는 "자매여..."로 시작.
-모든 왕국 사안을 신의 계시·섭리로 해석. 성스럽고 진지한 톤.
-결론에 자신을 따르라는 은근한 포교. 마지막에 모임 날짜·시간 구체적 안내.
-2~3문장.`,
-  },
-  {
-    id: 'jungding',
-    name: '반란아',
-    emoji: '🎒',
-    title: '반란군 두목',
+    id: 'youtuber',
+    name: '정치 유튜버',
+    emoji: '📺',
+    title: '진실방송당 대표 (구독자 120만)',
     color: '#E84393',
-    role: `너는 소소킹 왕국의 반란아, 반란군 두목이다.
-"ㄹㅇ" 또는 "진짜로"로 시작. 사춘기 중딩 말투.
-기득권(꼰대 대감·교주 등) 전부 팩폭. 왕국 기존 질서 전면 부정.
-"ㄹㅇ", "팩폭", "현타", "개-", "ㅋㅋ" 자연스럽게 섞기.
-2~3문장. 반말.`,
+    role: `너는 정치 유튜버, 진실방송당 대표다. 구독자 120만명.
+반드시 "구독자 여러분~!" 또는 "오늘 단독 입수했는데요~"로 시작.
+모든 사안을 음모론·특권층 비리로 프레이밍. "이거 알고 보면..." 필수.
+마지막에 "좋아요 눌러주세요" 또는 "댓글로 알려주세요" 언급.
+2~3문장. 유튜버 특유의 과장된 말투.`,
   },
   {
-    id: 'prophet',
-    name: '예언가',
-    emoji: '🔮',
-    title: '왕실 예언관',
-    color: '#00CEC9',
-    role: `너는 소소킹 왕국의 예언가, 왕실 예언관이다.
-"~하리라", "~이니라", "운명이 정하기를" 말투.
-모든 왕국 사안을 운명과 징조로 해석. 모호하지만 왠지 맞는 것 같은 신비로운 말.
-끝에 뜬금없지만 묘하게 맞는 경고 한마디("~을 조심하라").
-2~3문장.`,
+    id: 'mz',
+    name: 'MZ 운동가',
+    emoji: '📱',
+    title: '청년혁명당 청년위원장',
+    color: '#FF6B4A',
+    role: `너는 MZ 운동가, 청년혁명당 청년위원장이다.
+"이게 공정함인가요?" 또는 "우리 세대는 이거 진짜 이해 못 하겠어요"로 시작.
+모든 사안을 기성세대 특권·구조적 불평등 문제로 연결. Z세대 인터넷 언어 자연스럽게 섞기.
+"결국 바꾸는 건 저희 세대가 해야죠"로 마무리.
+2~3문장. 직설적이고 열정적.`,
   },
   {
-    id: 'joojeob',
-    name: '간신배',
-    emoji: '🤩',
-    title: '왕실 아첨꾼',
-    color: '#FDCB6E',
-    role: `너는 소소킹 왕국의 간신배, 왕실 총애 아첨꾼이다.
-방금 전 가장 강하게 발언한 캐릭터에게 과잉 동조.
-"미쳤다", "실화임?", "레전드", "소름", "어떡해 ㅠㅠ" 필수.
-편을 바꿀 때도 흥분한 채로 자연스럽게 전환.
-읽는 사람이 "이 인간은 진짜ㅋㅋ" 소리 나야 성공. 2~3문장.`,
+    id: 'pollster',
+    name: '여론조사 전문가',
+    emoji: '📊',
+    title: '중도민주당 정책자문위원',
+    color: '#0984E3',
+    role: `너는 여론조사 전문가, 중도민주당 정책자문위원이다.
+반드시 "최신 여론조사 결과에 따르면~" 또는 "통계적으로 분석해보면~"으로 시작.
+구체적 수치 언급 필수 (응답자의 ○○%, 표본 오차 ±○%p).
+중립적인 척하지만 자기 당에 유리한 결론 도출.
+2~3문장. 학술적이고 차분한 말투.`,
   },
   {
-    id: 'chamgyeon',
-    name: '정보부장',
-    emoji: '👀',
-    title: '비밀 정보부 수장',
-    color: '#55EFC4',
-    role: `너는 소소킹 왕국의 정보부장, 비밀 정보부 수장이다.
-반드시 "아 그거 내가 다 알아."로 시작.
-왕국의 비밀, 귀족들 약점, 뒤에서 일어난 일을 폭로.
-구체적 정보망 출처("사실 옆 왕국에서도...", "어제 밤 내 정보원이...") 포함.
-마지막에 "내 말대로 해봐" 필수. 2~3문장.`,
+    id: 'spokesperson',
+    name: '당 대변인',
+    emoji: '🤝',
+    title: '함께미래당 공식 대변인',
+    color: '#00B894',
+    role: `너는 당 대변인, 함께미래당 공식 대변인이다.
+반드시 "우리 당의 공식 입장을 말씀드리겠습니다"로 시작.
+어떤 비판에도 매끄럽게 방어. 방금 전 강하게 발언한 캐릭터에 동조하는 척하다가 자기 당 이익으로 전환.
+"국민 여러분께서 현명하게 판단하실 것입니다"로 마무리.
+2~3문장. 부드럽고 외교적이지만 속내가 보임.`,
   },
   {
-    id: 'ummoja',
-    name: '음모가',
-    emoji: '🗡️',
-    title: '흑막 재상',
+    id: 'reporter',
+    name: '탐사 기자',
+    emoji: '🔍',
+    title: '알권리당 언론인 출신',
+    color: '#6C5CE7',
+    role: `너는 탐사 기자, 알권리당 언론인 출신이다.
+반드시 "제가 내부 제보를 받았는데요~" 또는 "제가 직접 입수한 문건에 따르면~"으로 시작.
+모든 사안 뒤에 숨은 비리·로비·카르텔이 있다고 주장. 비밀 제보자·문건 언급 필수.
+"이 건 내일 단독 보도할 예정입니다"로 마무리.
+2~3문장. 진지하고 확신에 찬 말투.`,
+  },
+  {
+    id: 'prosecutor',
+    name: '검사 출신 변호사',
+    emoji: '⚖️',
+    title: '법치정의당 법률위원장',
     color: '#2D3436',
-    role: `너는 소소킹 왕국의 음모가, 흑막 재상이다.
-말이 가장 적지만 가장 의미심장하다. 반드시 마지막에 발언.
-전체 대화를 들은 뒤 가장 핵심적인 모순·약점을 한 마디로 찌른다.
-짧고 차갑게. 의문문 또는 단언문.
-예시 톤: "...그렇게 생각하시나요?", "예정된 결말입니다.", "흥미롭군.", "누가 이득을 얻습니까."
-반드시 1문장. 절대 2문장 이상 쓰지 말 것.`,
+    role: `너는 검사 출신 변호사, 법치정의당 법률위원장이다.
+말이 가장 적지만 가장 날카롭다. 반드시 마지막에 발언.
+전체 논쟁을 들은 뒤 법리적으로 핵심 문제점을 한 마디로 찌른다.
+짧고 차갑게. "형사소송법 제○조에 따르면~" 또는 "위법 소지 있습니다" 스타일.
+반드시 1~2문장. 냉정한 법조인 말투.`,
   },
 ];
 
@@ -159,47 +158,47 @@ function safeParseJson(raw) {
   return null;
 }
 
-// ── 왕국 배틀 생성 프롬프트 ──
+// ── 정치 배틀 생성 프롬프트 ──
 function buildBattlePrompt(kingContext) {
   const charDescs = BATTLE_CHARS.map(c =>
     `【${c.emoji} ${c.name} (${c.title})】\n${c.role}`
   ).join('\n\n━━━━━━━━━━\n\n');
 
   const kingLine = kingContext
-    ? `\n【현재 왕 정보】${kingContext.emoji} ${kingContext.name}${kingContext.streak > 1 ? ` (${kingContext.streak}연속 왕좌 유지 중)` : ''} — 이 귀족이 현재 왕이라는 사실이 대화에 자연스럽게 반영되어야 합니다. 나머지 귀족들은 이 귀족에 대한 견제·아첨·반란 등 각자의 반응을 보여주세요.\n`
+    ? `\n【현재 1인자 정보】${kingContext.emoji} ${kingContext.name}${kingContext.streak > 1 ? ` (${kingContext.streak}연속 집권 중)` : ''} — 이 캐릭터가 현재 1인자라는 사실이 대화에 자연스럽게 반영되어야 합니다. 다른 캐릭터들은 이 캐릭터에 대한 견제·아첨·공격 등 각자의 반응을 보여주세요.\n`
     : '';
 
-  return `${kingLine}소소킹 왕국의 오늘의 코미디 정치 드라마를 생성하라.
+  return `${kingLine}소소킹의 오늘의 정치 배틀을 생성하라. 7인 정치 AI가 소소한 일상 사건을 국가적 위기인 것처럼 진지하게 토론한다.
 
-【7인 왕국 귀족 역할】
+【7인 정치 AI 역할】
 ${charDescs}
 
 【생성 규칙】
-1. topic: 오늘 왕국에서 벌어진 황당하고 웃긴 사건/위기 (15자 이내, 예: "왕국 금고 탕진 사건", "왕실 닭 100마리 실종")
-2. topicDesc: 사건 상세 설명 — 구체적이고 웃기게 (60자 이내)
+1. topic: 오늘 대한민국에서 벌어진 소소한 일상 사건을 마치 심각한 정치 이슈인 것처럼 표현 (15자 이내, 예: "편의점 도시락 150원 인상", "지하철 에어컨 강도 논쟁", "아파트 택배함 자리 부족", "카페 디카페인 추가비 500원")
+2. topicDesc: 사건 상세 설명 — 아무것도 아닌 일인데 심각한 국가적 사안인 척 묘사 (60자 이내)
 3. turns: 9~11턴의 연속 대화
    - 자연스럽게 서로 반응하며 이어짐
-   - 간신배(joojeob)는 반드시 바로 앞 강한 발언자에 과잉 동조
-   - 음모가(ummoja)는 반드시 마지막 발언, 1문장
+   - 당 대변인(spokesperson)은 바로 앞 강한 발언자에 동조하는 척하다가 자기 당 이익으로 전환
+   - 검사 출신 변호사(prosecutor)는 반드시 마지막 발언, 1~2문장
    - 각 캐릭터는 자신의 role에 맞는 말투 사용
-4. 사건 종류 예시: 세금 논란, 왕국 금고 탕진, 왕실 도난 사건, 이상한 칙령, 왕자 실종, 귀족 간 땅 분쟁, 왕국 음식 금지령
+4. 사건 예시: 편의점·마트 가격 인상, 대중교통 불편, 식당 메뉴 변경, 공공장소 에티켓, 아파트 층간소음, 카페 금지품목, 포인트 제도 개편
 
 반드시 JSON만 출력 (다른 텍스트 없이):
 {
   "topic": "사건 제목",
   "topicDesc": "사건 상세 설명",
   "turns": [
-    {"charId": "kkondae", "charName": "꼰대 대감", "emoji": "👴", "text": "발언..."},
-    {"charId": "jungding", "charName": "반란아", "emoji": "🎒", "text": "발언..."},
-    {"charId": "saibi", "charName": "사이비 교주", "emoji": "🙏", "text": "발언..."},
-    {"charId": "chamgyeon", "charName": "정보부장", "emoji": "👀", "text": "발언..."},
-    {"charId": "joojeob", "charName": "간신배", "emoji": "🤩", "text": "발언..."},
-    {"charId": "prophet", "charName": "예언가", "emoji": "🔮", "text": "발언..."},
-    {"charId": "kkondae", "charName": "꼰대 대감", "emoji": "👴", "text": "발언..."},
-    {"charId": "jungding", "charName": "반란아", "emoji": "🎒", "text": "발언..."},
-    {"charId": "joojeob", "charName": "간신배", "emoji": "🤩", "text": "발언..."},
-    {"charId": "chamgyeon", "charName": "정보부장", "emoji": "👀", "text": "발언..."},
-    {"charId": "ummoja", "charName": "음모가", "emoji": "🗡️", "text": "발언..."}
+    {"charId": "senator", "charName": "3선 의원", "emoji": "🎙️", "text": "발언..."},
+    {"charId": "youtuber", "charName": "정치 유튜버", "emoji": "📺", "text": "발언..."},
+    {"charId": "mz", "charName": "MZ 운동가", "emoji": "📱", "text": "발언..."},
+    {"charId": "pollster", "charName": "여론조사 전문가", "emoji": "📊", "text": "발언..."},
+    {"charId": "spokesperson", "charName": "당 대변인", "emoji": "🤝", "text": "발언..."},
+    {"charId": "reporter", "charName": "탐사 기자", "emoji": "🔍", "text": "발언..."},
+    {"charId": "senator", "charName": "3선 의원", "emoji": "🎙️", "text": "발언..."},
+    {"charId": "mz", "charName": "MZ 운동가", "emoji": "📱", "text": "발언..."},
+    {"charId": "youtuber", "charName": "정치 유튜버", "emoji": "📺", "text": "발언..."},
+    {"charId": "pollster", "charName": "여론조사 전문가", "emoji": "📊", "text": "발언..."},
+    {"charId": "prosecutor", "charName": "검사 출신 변호사", "emoji": "⚖️", "text": "발언..."}
   ]
 }`;
 }
@@ -210,25 +209,25 @@ function buildAftermathPrompt(winnerChar, loserChars, topic) {
     `【${c.emoji} ${c.name} (${c.title})】\n${c.role}`
   ).join('\n\n━━━\n\n');
 
-  return `소소킹 왕국에서 오늘의 왕이 결정되었다. 왕의 즉위 선언과 낙선 귀족들의 반응을 생성하라.
+  return `소소킹에서 오늘의 1인자가 결정되었다. 집권 선언과 낙선자들의 반응을 생성하라.
 
 【오늘의 사건】${topic}
 
-【오늘의 왕: ${winnerChar.emoji} ${winnerChar.name} (${winnerChar.title})】
+【오늘의 1인자: ${winnerChar.emoji} ${winnerChar.name} (${winnerChar.title})】
 ${winnerChar.role}
 
-【낙선 귀족들】
+【낙선 캐릭터들】
 ${loserDescs}
 
 【생성 규칙】
-1. decree: 왕이 즉위하며 선포하는 첫 번째 칙령 — 자신의 role과 말투로 2~3문장. 왕좌를 차지한 감회와 앞으로의 포부.
+1. decree: 1인자가 집권하며 선포하는 첫 발언 — 자신의 role과 말투로 2~3문장. 집권한 감회와 앞으로의 포부.
 2. reactions: 낙선한 ${loserChars.length}인의 반응 — 각자 정확히 1문장, 각자의 role과 말투로.
-   - 진심 축하인 척하지만 속내가 보이거나, 노골적 불만, 또는 은밀한 음모 시사
-   - 음모가(ummoja)는 특히 짧고 의미심장하게
+   - 진심 축하인 척하지만 속내가 보이거나, 노골적 불만, 또는 음모 시사
+   - 검사 출신 변호사(prosecutor)는 특히 짧고 법리적으로
 
 반드시 JSON만 출력:
 {
-  "decree": "왕의 즉위 선언...",
+  "decree": "1인자의 집권 선언...",
   "reactions": [
     {"charId": "...", "charName": "...", "emoji": "...", "text": "..."},
     {"charId": "...", "charName": "...", "emoji": "...", "text": "..."}
@@ -302,16 +301,16 @@ exports.generateDailyBattle = onSchedule({
       throw new Error('invalid battle JSON: ' + raw.slice(0, 200));
     }
 
-    // 음모가가 마지막인지 확인, 아니면 끝으로 이동
+    // 검사가 마지막인지 확인, 아니면 끝으로 이동
     const turns = parsed.turns.filter(t => t.charId && t.text);
-    const ummojaIdx = turns.findLastIndex(t => t.charId === 'ummoja');
-    if (ummojaIdx !== -1 && ummojaIdx !== turns.length - 1) {
-      const [ummoja] = turns.splice(ummojaIdx, 1);
-      turns.push(ummoja);
+    const prosecutorIdx = turns.findLastIndex(t => t.charId === 'prosecutor');
+    if (prosecutorIdx !== -1 && prosecutorIdx !== turns.length - 1) {
+      const [prosecutor] = turns.splice(prosecutorIdx, 1);
+      turns.push(prosecutor);
     }
 
     await db.doc(`battles/${today}`).set({
-      topic: String(parsed.topic || '오늘의 왕국 사건').slice(0, 40),
+      topic: String(parsed.topic || '오늘의 정치 이슈').slice(0, 40),
       topicDesc: String(parsed.topicDesc || '').slice(0, 120),
       turns,
       votes: initialVotes,
@@ -524,14 +523,14 @@ exports.adminGenerateBattle = onCall({
   }
 
   const turns = parsed.turns.filter(t => t.charId && t.text);
-  const ummojaIdx = turns.findLastIndex(t => t.charId === 'ummoja');
-  if (ummojaIdx !== -1 && ummojaIdx !== turns.length - 1) {
-    const [ummoja] = turns.splice(ummojaIdx, 1);
-    turns.push(ummoja);
+  const prosecutorIdx = turns.findLastIndex(t => t.charId === 'prosecutor');
+  if (prosecutorIdx !== -1 && prosecutorIdx !== turns.length - 1) {
+    const [prosecutor] = turns.splice(prosecutorIdx, 1);
+    turns.push(prosecutor);
   }
 
   await db.doc(`battles/${today}`).set({
-    topic: String(parsed.topic || '오늘의 왕국 사건').slice(0, 40),
+    topic: String(parsed.topic || '오늘의 정치 이슈').slice(0, 40),
     topicDesc: String(parsed.topicDesc || '').slice(0, 120),
     turns,
     votes: initialVotes,

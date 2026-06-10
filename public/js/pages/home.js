@@ -12,13 +12,11 @@ import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { navigate } from '../router.js';
 
 const TYPE_LABEL = {
-  ai_judge:     '⚖️ 판결소',
-  ai_translate: '✨ 창작소',
-  ai_naming:    '✨ 창작소',
+  ai_judge: '⚖️ 판결소',
 };
 
 const AI_KINGS = [
-  { path: '/battle',   emoji: '⚔️', name: '왕좌전쟁', desc: '7인 AI 왕국 정치' },
+  { path: '/battle',   emoji: '⚔️', name: '왕좌전쟁', desc: '7인 정치 AI 매일 배틀' },
   { path: '/ai-judge', emoji: '⚖️', name: '판결소',   desc: '7인 중 3인 AI 판결' },
 ];
 
@@ -83,23 +81,23 @@ function renderBattleCard(battle) {
   const king = battle.currentKing;
   const kingText = king
     ? `${king.emoji} ${king.name}${king.streak > 1 ? ` · 🔥${king.streak}연속` : ''}`
-    : '왕좌 공석';
+    : '집권 대표 없음';
   const previewTurns = (battle.turns || []).slice(0, 2);
   const totalVotes = battle.totalVotes || 0;
 
   return `
     <div class="home-battle-card" data-path="/battle">
       <div class="home-battle-card__head">
-        <span class="home-battle-card__king">👑 ${escHtml(kingText)}</span>
+        <span class="home-battle-card__king">🏛️ ${escHtml(kingText)}</span>
         <span class="home-battle-card__status">${battle.exists ? (totalVotes > 0 ? `${totalVotes}표` : '투표중') : '준비중'}</span>
       </div>
-      <div class="home-battle-card__topic">${escHtml(battle.topic || '오늘의 왕국 사건')}</div>
+      <div class="home-battle-card__topic">${escHtml(battle.topic || '오늘의 정치 이슈')}</div>
       <div class="home-battle-card__preview">
         ${previewTurns.map(t =>
           `<div class="home-battle-card__line">${t.emoji} <b>${escHtml(t.charName || '')}</b> ${escHtml((t.text || '').slice(0, 35))}…</div>`
         ).join('')}
       </div>
-      <div class="home-battle-card__cta">전쟁 구경하고 한 표 던지기 →</div>
+      <div class="home-battle-card__cta">정치 배틀 보고 한 표 던지기 →</div>
     </div>`;
 }
 
@@ -111,12 +109,12 @@ function renderHero() {
   return `
     <section class="home-hero-v3">
       <div class="home-hero-v3__top">
-        <div class="home-hero-v3__badge">👑 소소킹 왕국</div>
+        <div class="home-hero-v3__badge">🏛️ 소소한 정치 배틀</div>
         <h1 class="home-hero-v3__title">
-          ${nick ? `${escHtml(nick)}님,<br>` : ''}오늘 왕은 누구? 👑
+          ${nick ? `${escHtml(nick)}님,<br>` : ''}오늘의 1인자는? 🗳️
         </h1>
-        <p class="home-hero-v3__sub">7인 AI 귀족들의 왕국 정치 드라마 — 매일 새로운 왕이 탄생합니다</p>
-        ${streak >= 2 ? `<div class="home-hero-v3__streak">🔥 ${streak}일 연속 왕국 방문 중!</div>` : ''}
+        <p class="home-hero-v3__sub">7인 정치 AI가 소소한 일상을 진지한 정치 스캔들로 만드는 배틀 — 매일 한 표로 오늘의 1인자를 결정하세요</p>
+        ${streak >= 2 ? `<div class="home-hero-v3__streak">🔥 ${streak}일 연속 방문 중!</div>` : ''}
       </div>
 
       <div class="home-aiking-grid">
