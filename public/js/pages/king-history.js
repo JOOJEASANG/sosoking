@@ -5,7 +5,7 @@ import { setMeta } from '../utils/seo.js';
 import { escHtml } from '../utils/helpers.js';
 
 export async function renderKingHistory() {
-  setMeta('소소킹 · 역대 왕 기록');
+  setMeta('소소킹 · 집권 기록');
   const el = document.getElementById('page-content');
   if (!el) return;
 
@@ -29,8 +29,8 @@ export async function renderKingHistory() {
       <div class="king-history-page page-enter">
 
         <div class="king-history-header">
-          <div class="king-history-header__title">👑 왕국 명예의 전당</div>
-          <div class="king-history-header__sub">누적 왕좌 획득 기록</div>
+          <div class="king-history-header__title">🏛️ 소소킹 명예의 전당</div>
+          <div class="king-history-header__sub">누적 집권 횟수 기록</div>
         </div>
 
         <div class="king-rank-list">
@@ -51,7 +51,7 @@ export async function renderKingHistory() {
         </div>
 
         <div class="king-history-header" style="margin-top:24px">
-          <div class="king-history-header__title">📜 최근 왕국 역사</div>
+          <div class="king-history-header__title">📜 최근 집권 기록</div>
         </div>
 
         ${history.length === 0

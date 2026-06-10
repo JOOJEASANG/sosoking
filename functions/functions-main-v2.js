@@ -42,6 +42,7 @@ module.exports = {
   generateDailyBattle: battle.generateDailyBattle,
   closeDailyBattle: battle.closeDailyBattle,
   voteForChar: battle.voteForChar,
+  addBattleComment: battle.addBattleComment,
   getBattleStatus: battle.getBattleStatus,
   getKingHistory: battle.getKingHistory,
   adminGenerateBattle: battle.adminGenerateBattle,

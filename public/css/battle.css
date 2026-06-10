@@ -366,6 +366,71 @@
   opacity: 0.9;
 }
 
+/* ── 토론 댓글 ── */
+.battle-discuss {
+  margin-top: 16px;
+  background: var(--color-bg-card, #fff);
+  border-radius: 20px;
+  padding: 18px;
+  border: 1px solid var(--color-border, #eee);
+}
+.battle-discuss__title {
+  font-size: 15px;
+  font-weight: 800;
+  margin-bottom: 12px;
+  color: var(--color-text, #111);
+}
+.battle-discuss__form { margin-bottom: 14px; }
+.battle-discuss__input {
+  width: 100%;
+  border: 1.5px solid var(--color-border, #eee);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: none;
+  background: var(--color-bg-2, #fafafa);
+  color: var(--color-text, #111);
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+.battle-discuss__input:focus {
+  outline: none;
+  border-color: var(--color-primary, #FF6B4A);
+}
+.battle-comment-list { display: flex; flex-direction: column; gap: 8px; }
+.battle-comment-empty {
+  text-align: center;
+  font-size: 13px;
+  color: var(--color-text-muted, #888);
+  padding: 16px 0;
+}
+.battle-comment {
+  padding: 10px 12px;
+  background: var(--color-bg-2, #f7f7fb);
+  border-radius: 10px;
+}
+.battle-comment__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.battle-comment__author {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text, #111);
+}
+.battle-comment__time {
+  font-size: 11px;
+  color: var(--color-text-muted, #888);
+}
+.battle-comment__text {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--color-text, #333);
+}
+
 /* ── 다크모드 조정 ── */
 [data-theme="dark"] .battle-topic-card,
 [data-theme="dark"] .battle-vote-section {

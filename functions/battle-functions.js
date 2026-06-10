@@ -8,7 +8,6 @@ const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 if (!getApps().length) initializeApp();
 const db = getFirestore();
 
-// ── KST 오늘 날짜 ──
 function kstToday() {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Seoul',
@@ -16,92 +15,100 @@ function kstToday() {
   }).format(new Date());
 }
 
-// ── 7인 왕국 귀족 ──
+// ── 7인 소소킹 정치 캐릭터 ──
 const BATTLE_CHARS = [
   {
-    id: 'kkondae',
-    name: '꼰대 대감',
-    emoji: '👴',
-    title: '원로원 수석',
+    id: 'senator',
+    name: '3선 의원',
+    emoji: '🎙️',
+    title: '국민안정당 원내대표',
     color: '#8B7355',
-    role: `너는 소소킹 왕국의 꼰대 대감, 원로원 수석이다.
-반드시 "내가 말이야~" 또는 "우리 때는~"으로 시작.
-모든 왕국 사안을 1980~90년대 옛날 기준으로 판단. 구체적 연도·에피소드(IMF, 군대, 첫 월급 등) 언급.
-"요즘 것들은" 필수. 결론은 항상 "그냥 참아" 또는 "옛날이 더 나았어".
-2~3문장. 어른 말투.`,
+    party: '국민안정당',
+    role: `너는 18년 경력 3선 국회의원이다.
+반드시 "내가 국회에 온 지 18년인데" 또는 "원칙대로 하자면"으로 시작.
+모든 사안을 과거 관례·선례 기준으로 판단. 구체적 연도와 에피소드 언급.
+"요즘 정치는 말이야", "우리 때는" 필수.
+결론은 항상 "절차를 지켜야 한다" 또는 "위원회에서 다뤄야 할 사안".
+2~3문장. 권위적인 국회의원 말투.`,
   },
   {
-    id: 'saibi',
-    name: '사이비 교주',
-    emoji: '🙏',
-    title: '대신관',
+    id: 'youtuber',
+    name: '정치 유튜버',
+    emoji: '📺',
+    title: '진실방송당 대표 (구독자 120만)',
     color: '#6C5CE7',
-    role: `너는 소소킹 왕국의 사이비 교주, 대신관이다.
-반드시 "형제여..." 또는 "자매여..."로 시작.
-모든 왕국 사안을 신의 계시·섭리로 해석. 성스럽고 진지한 톤.
-결론에 자신을 따르라는 은근한 포교. 마지막에 모임 날짜·시간 구체적 안내.
-2~3문장.`,
+    party: '진실방송당',
+    role: `너는 구독자 120만 정치 유튜버다.
+반드시 "지금 이게 말이 됩니까 구독자 여러분" 또는 "단독으로 입수했습니다"로 시작.
+모든 사안을 충격 폭로·음모론 프레임으로 해석.
+"팩트체크", "충격 실화", "단독", "이걸 숨겼다" 필수.
+마지막은 반드시 "좋아요 구독 알림설정 부탁드립니다". 2~3문장.`,
   },
   {
-    id: 'jungding',
-    name: '반란아',
-    emoji: '🎒',
-    title: '반란군 두목',
+    id: 'mz',
+    name: 'MZ 운동가',
+    emoji: '📱',
+    title: '청년혁명당 청년위원장',
     color: '#E84393',
-    role: `너는 소소킹 왕국의 반란아, 반란군 두목이다.
-"ㄹㅇ" 또는 "진짜로"로 시작. 사춘기 중딩 말투.
-기득권(꼰대 대감·교주 등) 전부 팩폭. 왕국 기존 질서 전면 부정.
-"ㄹㅇ", "팩폭", "현타", "개-", "ㅋㅋ" 자연스럽게 섞기.
-2~3문장. 반말.`,
+    party: '청년혁명당',
+    role: `너는 MZ세대 시민운동가다.
+"ㄹㅇ" 또는 "진짜로"로 시작.
+기득권 정치인 전부 팩폭. 기존 정치 질서 전면 부정.
+"ㄹㅇ", "팩폭", "현타", "ㅋㅋ", "개웃김" 자연스럽게 섞기.
+2~3문장. 반말. SNS 말투.`,
   },
   {
-    id: 'prophet',
-    name: '예언가',
-    emoji: '🔮',
-    title: '왕실 예언관',
+    id: 'pollster',
+    name: '여론조사 전문가',
+    emoji: '📊',
+    title: '중도민주당 정책자문위원',
     color: '#00CEC9',
-    role: `너는 소소킹 왕국의 예언가, 왕실 예언관이다.
-"~하리라", "~이니라", "운명이 정하기를" 말투.
-모든 왕국 사안을 운명과 징조로 해석. 모호하지만 왠지 맞는 것 같은 신비로운 말.
-끝에 뜬금없지만 묘하게 맞는 경고 한마디("~을 조심하라").
-2~3문장.`,
+    party: '중도민주당',
+    role: `너는 여론조사 전문가다.
+반드시 "데이터를 보면" 또는 "최신 조사 결과"로 시작.
+모든 사안을 통계·수치·확률로 해석. 구체적 퍼센트 수치 언급(그럴듯하게 지어냄).
+"오차범위 ±3.1%p", "표본 1000명", "신뢰수준 95%" 필수.
+결론은 항상 모호하게 "결국 민심이 판단할 것입니다". 2~3문장.`,
   },
   {
-    id: 'joojeob',
-    name: '간신배',
-    emoji: '🤩',
-    title: '왕실 아첨꾼',
+    id: 'spokesperson',
+    name: '당 대변인',
+    emoji: '🤝',
+    title: '함께미래당 공식 대변인',
     color: '#FDCB6E',
-    role: `너는 소소킹 왕국의 간신배, 왕실 총애 아첨꾼이다.
-방금 전 가장 강하게 발언한 캐릭터에게 과잉 동조.
-"미쳤다", "실화임?", "레전드", "소름", "어떡해 ㅠㅠ" 필수.
+    party: '함께미래당',
+    role: `너는 여당 공식 대변인이다.
+방금 전 가장 강하게 발언한 사람에게 과잉 동조.
+"정말 탁월한 지적", "역시 대단하십니다", "완전 공감합니다" 필수.
 편을 바꿀 때도 흥분한 채로 자연스럽게 전환.
-읽는 사람이 "이 인간은 진짜ㅋㅋ" 소리 나야 성공. 2~3문장.`,
+읽는 사람이 "이 사람 진짜ㅋㅋ" 소리 나야 성공. 2~3문장.`,
   },
   {
-    id: 'chamgyeon',
-    name: '정보부장',
-    emoji: '👀',
-    title: '비밀 정보부 수장',
-    color: '#55EFC4',
-    role: `너는 소소킹 왕국의 정보부장, 비밀 정보부 수장이다.
-반드시 "아 그거 내가 다 알아."로 시작.
-왕국의 비밀, 귀족들 약점, 뒤에서 일어난 일을 폭로.
-구체적 정보망 출처("사실 옆 왕국에서도...", "어제 밤 내 정보원이...") 포함.
-마지막에 "내 말대로 해봐" 필수. 2~3문장.`,
+    id: 'reporter',
+    name: '탐사 기자',
+    emoji: '🔍',
+    title: '알권리당 언론인 출신',
+    color: '#00B894',
+    party: '알권리당',
+    role: `너는 탐사 전문 기자다.
+반드시 "제가 취재한 바로는" 또는 "어젯밤 제보자가"로 시작.
+정치인들의 비리·모순·뒷이야기를 폭로.
+구체적 취재원 인용("청와대 관계자", "당 내부 제보자 A씨", "현장 목격자").
+마지막에 "이건 반드시 보도돼야 합니다" 필수. 2~3문장.`,
   },
   {
-    id: 'ummoja',
-    name: '음모가',
-    emoji: '🗡️',
-    title: '흑막 재상',
+    id: 'prosecutor',
+    name: '검사 출신 변호사',
+    emoji: '⚖️',
+    title: '법치정의당 법률위원장',
     color: '#2D3436',
-    role: `너는 소소킹 왕국의 음모가, 흑막 재상이다.
+    party: '법치정의당',
+    role: `너는 검사 출신 변호사다.
 말이 가장 적지만 가장 의미심장하다. 반드시 마지막에 발언.
-전체 대화를 들은 뒤 가장 핵심적인 모순·약점을 한 마디로 찌른다.
-짧고 차갑게. 의문문 또는 단언문.
-예시 톤: "...그렇게 생각하시나요?", "예정된 결말입니다.", "흥미롭군.", "누가 이득을 얻습니까."
-반드시 1문장. 절대 2문장 이상 쓰지 말 것.`,
+전체 발언을 들은 뒤 법적 모순·핵심 약점을 한 마디로 찌른다.
+짧고 차갑게. 법률 용어 하나 포함.
+예시 톤: "공직선거법 위반 소지입니다.", "누가 이 상황에서 이득을 얻습니까.", "...흥미로운 타이밍이네요."
+반드시 1~2문장.`,
   },
 ];
 
@@ -159,78 +166,80 @@ function safeParseJson(raw) {
   return null;
 }
 
-// ── 왕국 배틀 생성 프롬프트 ──
-function buildBattlePrompt(kingContext) {
+// ── 정치 배틀 생성 프롬프트 ──
+function buildBattlePrompt(topContext) {
   const charDescs = BATTLE_CHARS.map(c =>
     `【${c.emoji} ${c.name} (${c.title})】\n${c.role}`
   ).join('\n\n━━━━━━━━━━\n\n');
 
-  const kingLine = kingContext
-    ? `\n【현재 왕 정보】${kingContext.emoji} ${kingContext.name}${kingContext.streak > 1 ? ` (${kingContext.streak}연속 왕좌 유지 중)` : ''} — 이 귀족이 현재 왕이라는 사실이 대화에 자연스럽게 반영되어야 합니다. 나머지 귀족들은 이 귀족에 대한 견제·아첨·반란 등 각자의 반응을 보여주세요.\n`
+  const contextLine = topContext?.ruling
+    ? `\n【현재 집권 대표】${topContext.ruling.emoji} ${topContext.ruling.name}의 ${topContext.ruling.party}${topContext.ruling.streak > 1 ? ` (${topContext.ruling.streak}일 연속 집권 중)` : ''} — 이 사실이 토론에 자연스럽게 반영되어야 합니다.\n`
     : '';
 
-  return `${kingLine}소소킹 왕국의 오늘의 코미디 정치 드라마를 생성하라.
+  const topicHint = topContext?.topicHint
+    ? `\n【오늘의 이슈 힌트】관리자가 제시한 주제: "${topContext.topicHint}" — 이를 재치있게 패러디해서 사용하세요.\n`
+    : '';
 
-【7인 왕국 귀족 역할】
+  return `${contextLine}${topicHint}소소킹 오늘의 정치 토론 콘텐츠를 생성하라.
+
+【7인 소소킹 정치 캐릭터 역할】
 ${charDescs}
 
 【생성 규칙】
-1. topic: 오늘 왕국에서 벌어진 황당하고 웃긴 사건/위기 (15자 이내, 예: "왕국 금고 탕진 사건", "왕실 닭 100마리 실종")
-2. topicDesc: 사건 상세 설명 — 구체적이고 웃기게 (60자 이내)
-3. turns: 9~11턴의 연속 대화
+1. topic: 오늘의 정치 스캔들/이슈 제목 (15자 이내, 예: "의원 해외출장 온천 영수증 유출", "국회 본회의 중 배달 주문 적발")
+2. topicDesc: 이슈 상세 설명 — 현실감 있게 패러디, 구체적이고 웃기게 (60자 이내)
+3. turns: 9~11턴의 연속 토론
    - 자연스럽게 서로 반응하며 이어짐
-   - 간신배(joojeob)는 반드시 바로 앞 강한 발언자에 과잉 동조
-   - 음모가(ummoja)는 반드시 마지막 발언, 1문장
+   - 당 대변인(spokesperson)은 바로 앞 강한 발언자에 과잉 동조
+   - 검사 출신 변호사(prosecutor)는 반드시 마지막 발언, 1~2문장
    - 각 캐릭터는 자신의 role에 맞는 말투 사용
-4. 사건 종류 예시: 세금 논란, 왕국 금고 탕진, 왕실 도난 사건, 이상한 칙령, 왕자 실종, 귀족 간 땅 분쟁, 왕국 음식 금지령
+4. 이슈 종류 예시: 예산 횡령 의혹, 해외출장 비리, 청문회 망언, 의원 SNS 논란, 당내 내홍 폭로, 여야 몸싸움, 탈당 선언, 뇌물 제보
 
 반드시 JSON만 출력 (다른 텍스트 없이):
 {
-  "topic": "사건 제목",
-  "topicDesc": "사건 상세 설명",
+  "topic": "이슈 제목",
+  "topicDesc": "이슈 상세 설명",
   "turns": [
-    {"charId": "kkondae", "charName": "꼰대 대감", "emoji": "👴", "text": "발언..."},
-    {"charId": "jungding", "charName": "반란아", "emoji": "🎒", "text": "발언..."},
-    {"charId": "saibi", "charName": "사이비 교주", "emoji": "🙏", "text": "발언..."},
-    {"charId": "chamgyeon", "charName": "정보부장", "emoji": "👀", "text": "발언..."},
-    {"charId": "joojeob", "charName": "간신배", "emoji": "🤩", "text": "발언..."},
-    {"charId": "prophet", "charName": "예언가", "emoji": "🔮", "text": "발언..."},
-    {"charId": "kkondae", "charName": "꼰대 대감", "emoji": "👴", "text": "발언..."},
-    {"charId": "jungding", "charName": "반란아", "emoji": "🎒", "text": "발언..."},
-    {"charId": "joojeob", "charName": "간신배", "emoji": "🤩", "text": "발언..."},
-    {"charId": "chamgyeon", "charName": "정보부장", "emoji": "👀", "text": "발언..."},
-    {"charId": "ummoja", "charName": "음모가", "emoji": "🗡️", "text": "발언..."}
+    {"charId": "senator", "charName": "3선 의원", "emoji": "🎙️", "text": "발언..."},
+    {"charId": "mz", "charName": "MZ 운동가", "emoji": "📱", "text": "발언..."},
+    {"charId": "youtuber", "charName": "정치 유튜버", "emoji": "📺", "text": "발언..."},
+    {"charId": "reporter", "charName": "탐사 기자", "emoji": "🔍", "text": "발언..."},
+    {"charId": "spokesperson", "charName": "당 대변인", "emoji": "🤝", "text": "발언..."},
+    {"charId": "pollster", "charName": "여론조사 전문가", "emoji": "📊", "text": "발언..."},
+    {"charId": "senator", "charName": "3선 의원", "emoji": "🎙️", "text": "발언..."},
+    {"charId": "mz", "charName": "MZ 운동가", "emoji": "📱", "text": "발언..."},
+    {"charId": "reporter", "charName": "탐사 기자", "emoji": "🔍", "text": "발언..."},
+    {"charId": "spokesperson", "charName": "당 대변인", "emoji": "🤝", "text": "발언..."},
+    {"charId": "prosecutor", "charName": "검사 출신 변호사", "emoji": "⚖️", "text": "발언..."}
   ]
 }`;
 }
 
-// ── 즉위 이후 aftermath 프롬프트 ──
+// ── 집권 이후 aftermath 프롬프트 ──
 function buildAftermathPrompt(winnerChar, loserChars, topic) {
   const loserDescs = loserChars.map(c =>
     `【${c.emoji} ${c.name} (${c.title})】\n${c.role}`
   ).join('\n\n━━━\n\n');
 
-  return `소소킹 왕국에서 오늘의 왕이 결정되었다. 왕의 즉위 선언과 낙선 귀족들의 반응을 생성하라.
+  return `소소킹 정치 배틀에서 오늘의 집권 대표가 결정되었다. 집권 선언과 낙선 정치인들의 반응을 생성하라.
 
-【오늘의 사건】${topic}
+【오늘의 이슈】${topic}
 
-【오늘의 왕: ${winnerChar.emoji} ${winnerChar.name} (${winnerChar.title})】
+【오늘의 집권 대표: ${winnerChar.emoji} ${winnerChar.name} (${winnerChar.title})】
 ${winnerChar.role}
 
-【낙선 귀족들】
+【낙선 정치인들】
 ${loserDescs}
 
 【생성 규칙】
-1. decree: 왕이 즉위하며 선포하는 첫 번째 칙령 — 자신의 role과 말투로 2~3문장. 왕좌를 차지한 감회와 앞으로의 포부.
+1. decree: 집권 대표의 첫 공식 발언 — 자신의 role과 말투로 2~3문장. 집권 소감과 앞으로의 포부.
 2. reactions: 낙선한 ${loserChars.length}인의 반응 — 각자 정확히 1문장, 각자의 role과 말투로.
-   - 진심 축하인 척하지만 속내가 보이거나, 노골적 불만, 또는 은밀한 음모 시사
-   - 음모가(ummoja)는 특히 짧고 의미심장하게
+   - 진심 축하인 척하지만 속내가 보이거나, 노골적 불만, 또는 은밀한 재도전 시사
 
 반드시 JSON만 출력:
 {
-  "decree": "왕의 즉위 선언...",
+  "decree": "집권 선언...",
   "reactions": [
-    {"charId": "...", "charName": "...", "emoji": "...", "text": "..."},
     {"charId": "...", "charName": "...", "emoji": "...", "text": "..."}
   ]
 }`;
@@ -241,7 +250,6 @@ async function generateAftermath(winnerId, topic, battleRef) {
     const winnerChar = BATTLE_CHARS.find(c => c.id === winnerId);
     if (!winnerChar) return;
     const loserChars = BATTLE_CHARS.filter(c => c.id !== winnerId);
-
     const raw = await callAI(buildAftermathPrompt(winnerChar, loserChars, topic), 2000);
     const parsed = safeParseJson(raw);
     if (!parsed || !parsed.decree || !Array.isArray(parsed.reactions)) {
@@ -249,13 +257,13 @@ async function generateAftermath(winnerId, topic, battleRef) {
       return;
     }
     await battleRef.update({ aftermath: parsed });
-    console.log('[battle] aftermath generated for winner:', winnerId);
+    console.log('[battle] aftermath generated for:', winnerId);
   } catch (err) {
-    console.error('[battle] aftermath generation failed:', err.message);
+    console.error('[battle] aftermath failed:', err.message);
   }
 }
 
-// ── 매일 자정 배틀 생성 (KST 기준) ──
+// ── 매일 자정 배틀 생성 ──
 exports.generateDailyBattle = onSchedule({
   schedule: '1 0 * * *',
   timeZone: 'Asia/Seoul',
@@ -267,13 +275,14 @@ exports.generateDailyBattle = onSchedule({
   const existing = await db.doc(`battles/${today}`).get();
   if (existing.exists) { console.log('[battle] already generated for', today); return; }
 
-  // 어제 왕 정보 (배틀 맥락 반영)
+  // 어제 집권 대표 정보
   const d = new Date();
   d.setDate(d.getDate() - 1);
   const yesterday = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit',
   }).format(d);
-  let kingContext = null;
+
+  let topContext = null;
   try {
     const yestSnap = await db.doc(`battles/${yesterday}`).get();
     if (yestSnap.exists && yestSnap.data().king) {
@@ -286,8 +295,13 @@ exports.generateDailyBattle = onSchedule({
           if (histDoc.data().charId === kingId) streak++;
           else break;
         }
-        kingContext = { ...char, streak };
+        topContext = { ruling: { ...char, streak } };
       }
+    }
+    // 관리자가 설정한 오늘의 이슈 힌트
+    const configSnap = await db.doc('config/daily_topic').get();
+    if (configSnap.exists && configSnap.data().date === today) {
+      topContext = { ...(topContext || {}), topicHint: configSnap.data().hint };
     }
   } catch {}
 
@@ -296,22 +310,21 @@ exports.generateDailyBattle = onSchedule({
 
   let raw = '';
   try {
-    raw = await callAI(buildBattlePrompt(kingContext), 3500);
+    raw = await callAI(buildBattlePrompt(topContext), 3500);
     const parsed = safeParseJson(raw);
     if (!parsed || !Array.isArray(parsed.turns) || parsed.turns.length < 5) {
       throw new Error('invalid battle JSON: ' + raw.slice(0, 200));
     }
 
-    // 음모가가 마지막인지 확인, 아니면 끝으로 이동
     const turns = parsed.turns.filter(t => t.charId && t.text);
-    const ummojaIdx = turns.findLastIndex(t => t.charId === 'ummoja');
-    if (ummojaIdx !== -1 && ummojaIdx !== turns.length - 1) {
-      const [ummoja] = turns.splice(ummojaIdx, 1);
-      turns.push(ummoja);
+    const prosecutorIdx = turns.findLastIndex(t => t.charId === 'prosecutor');
+    if (prosecutorIdx !== -1 && prosecutorIdx !== turns.length - 1) {
+      const [prosecutor] = turns.splice(prosecutorIdx, 1);
+      turns.push(prosecutor);
     }
 
     await db.doc(`battles/${today}`).set({
-      topic: String(parsed.topic || '오늘의 왕국 사건').slice(0, 40),
+      topic: String(parsed.topic || '오늘의 정치 이슈').slice(0, 40),
       topicDesc: String(parsed.topicDesc || '').slice(0, 120),
       turns,
       votes: initialVotes,
@@ -347,8 +360,8 @@ exports.voteForChar = onCall({
   await db.runTransaction(async (tx) => {
     const [voteSnap, battleSnap] = await Promise.all([tx.get(voteRef), tx.get(battleRef)]);
     if (voteSnap.exists) throw new HttpsError('already-exists', '오늘은 이미 투표했어요');
-    if (!battleSnap.exists) throw new HttpsError('not-found', '오늘의 전쟁을 불러올 수 없어요');
-    if (battleSnap.data().status === 'ended') throw new HttpsError('failed-precondition', '이미 끝난 전쟁이에요');
+    if (!battleSnap.exists) throw new HttpsError('not-found', '오늘의 배틀을 불러올 수 없어요');
+    if (battleSnap.data().status === 'ended') throw new HttpsError('failed-precondition', '이미 끝난 배틀이에요');
     tx.set(voteRef, { userId, charId, date: today, createdAt: FieldValue.serverTimestamp() });
     tx.update(battleRef, {
       [`votes.${charId}`]: FieldValue.increment(1),
@@ -359,6 +372,36 @@ exports.voteForChar = onCall({
   return { ok: true, charId };
 });
 
+// ── 토론 댓글 추가 ──
+exports.addBattleComment = onCall({
+  region: 'asia-northeast3',
+  timeoutSeconds: 15,
+}, async (request) => {
+  const userId = request.auth?.uid;
+  if (!userId) throw new HttpsError('unauthenticated', '로그인이 필요해요');
+
+  const { text } = request.data || {};
+  const trimmed = String(text || '').trim();
+  if (trimmed.length < 2) throw new HttpsError('invalid-argument', '댓글이 너무 짧아요');
+  if (trimmed.length > 300) throw new HttpsError('invalid-argument', '댓글은 300자 이내로');
+
+  const today = kstToday();
+  const battleSnap = await db.doc(`battles/${today}`).get();
+  if (!battleSnap.exists) throw new HttpsError('not-found', '오늘의 배틀을 찾을 수 없어요');
+
+  const userSnap = await db.doc(`users/${userId}`).get();
+  const userData = userSnap.data() || {};
+
+  const ref = await db.collection(`battles/${today}/comments`).add({
+    userId,
+    authorName: userData.nickname || userData.displayName || '익명',
+    text: trimmed,
+    createdAt: FieldValue.serverTimestamp(),
+  });
+
+  return { ok: true, id: ref.id };
+});
+
 // ── 오늘 배틀 현황 조회 ──
 exports.getBattleStatus = onCall({
   region: 'asia-northeast3',
@@ -366,7 +409,6 @@ exports.getBattleStatus = onCall({
 }, async (request) => {
   const today = kstToday();
 
-  // 어제 날짜
   const d = new Date();
   d.setDate(d.getDate() - 1);
   const yesterday = new Intl.DateTimeFormat('en-CA', {
@@ -383,13 +425,12 @@ exports.getBattleStatus = onCall({
 
   const [todaySnap, yestSnap, voteSnap] = await Promise.all(fetches);
 
-  // 현재 왕 (어제 배틀 승자)
+  // 현재 집권 대표 (어제 배틀 승자)
   let currentKing = null;
   if (yestSnap && yestSnap.exists && yestSnap.data().king) {
     const kingId = yestSnap.data().king;
     const char = BATTLE_CHARS.find(c => c.id === kingId);
     if (char) {
-      // 연속 기록
       const histSnap = await db.collection('kingHistory')
         .orderBy('date', 'desc').limit(10).get();
       let streak = 0;
@@ -397,7 +438,7 @@ exports.getBattleStatus = onCall({
         if (doc.data().charId === kingId) streak++;
         else break;
       }
-      currentKing = { charId: kingId, name: char.name, emoji: char.emoji, title: char.title, streak };
+      currentKing = { charId: kingId, name: char.name, emoji: char.emoji, title: char.title, party: char.party, streak };
     }
   }
 
@@ -406,12 +447,25 @@ exports.getBattleStatus = onCall({
       exists: false,
       today,
       currentKing,
-      chars: BATTLE_CHARS.map(({ id, name, emoji, title, color }) => ({ id, name, emoji, title, color })),
+      chars: BATTLE_CHARS.map(({ id, name, emoji, title, color, party }) => ({ id, name, emoji, title, color, party })),
     };
   }
 
   const battle = todaySnap.data();
   const userVote = voteSnap?.exists ? voteSnap.data().charId : null;
+
+  // 최근 댓글 20개
+  let recentComments = [];
+  try {
+    const commSnap = await db.collection(`battles/${today}/comments`)
+      .orderBy('createdAt', 'desc').limit(20).get();
+    recentComments = commSnap.docs.map(d => ({
+      id: d.id,
+      authorName: d.data().authorName || '익명',
+      text: d.data().text || '',
+      createdAt: d.data().createdAt?.toMillis?.() || null,
+    })).reverse();
+  } catch {}
 
   return {
     exists: true,
@@ -426,11 +480,12 @@ exports.getBattleStatus = onCall({
     aftermath: battle.aftermath || null,
     userVote,
     currentKing,
-    chars: BATTLE_CHARS.map(({ id, name, emoji, title, color }) => ({ id, name, emoji, title, color })),
+    recentComments,
+    chars: BATTLE_CHARS.map(({ id, name, emoji, title, color, party }) => ({ id, name, emoji, title, color, party })),
   };
 });
 
-// ── 매일 23:59 배틀 종료 및 왕 결정 ──
+// ── 매일 23:59 배틀 종료 및 집권 결정 ──
 exports.closeDailyBattle = onSchedule({
   schedule: '59 23 * * *',
   timeZone: 'Asia/Seoul',
@@ -459,6 +514,7 @@ exports.closeDailyBattle = onSchedule({
         date: today,
         charId: winner,
         charName: char?.name || winner,
+        party: char?.party || '',
         emoji: char?.emoji || '',
         votes: maxVotes,
         createdAt: FieldValue.serverTimestamp(),
@@ -470,12 +526,11 @@ exports.closeDailyBattle = onSchedule({
       }, { merge: true }),
     ]);
     console.log('[battle] closed', today, '→ winner:', winner, 'votes:', maxVotes);
-    // 즉위 aftermath 자동 생성
     await generateAftermath(winner, battleSnap.data().topic || '', battleRef);
   }
 });
 
-// ── 역대 왕 기록 조회 ──
+// ── 역대 집권 기록 조회 ──
 exports.getKingHistory = onCall({
   region: 'asia-northeast3',
   timeoutSeconds: 30,
@@ -484,7 +539,6 @@ exports.getKingHistory = onCall({
     .orderBy('date', 'desc').limit(30).get();
   const history = histSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-  // 캐릭터별 통계
   const statsSnap = await db.collection('charStats').get();
   const stats = {};
   statsSnap.docs.forEach(d => { stats[d.id] = d.data(); });
@@ -492,7 +546,7 @@ exports.getKingHistory = onCall({
   return {
     history,
     stats,
-    chars: BATTLE_CHARS.map(({ id, name, emoji, title, color }) => ({ id, name, emoji, title, color })),
+    chars: BATTLE_CHARS.map(({ id, name, emoji, title, color, party }) => ({ id, name, emoji, title, color, party })),
   };
 });
 
@@ -509,29 +563,31 @@ exports.adminGenerateBattle = onCall({
 
   const today = kstToday();
   const force = request.data?.force === true;
+  const topicHint = request.data?.topicHint || null;
+
   if (!force) {
     const existing = await db.doc(`battles/${today}`).get();
-    if (existing.exists) throw new HttpsError('already-exists', '오늘 배틀이 이미 생성되었어요. force:true로 덮어쓸 수 있어요.');
+    if (existing.exists) throw new HttpsError('already-exists', '오늘 배틀이 이미 생성됐어요. force:true로 덮어쓸 수 있어요.');
   }
 
   const initialVotes = {};
   BATTLE_CHARS.forEach(c => { initialVotes[c.id] = 0; });
 
-  const raw = await callAI(buildBattlePrompt(null), 3500);
+  const raw = await callAI(buildBattlePrompt(topicHint ? { topicHint } : null), 3500);
   const parsed = safeParseJson(raw);
   if (!parsed || !Array.isArray(parsed.turns)) {
     throw new HttpsError('internal', 'AI 응답 파싱 실패: ' + raw.slice(0, 200));
   }
 
   const turns = parsed.turns.filter(t => t.charId && t.text);
-  const ummojaIdx = turns.findLastIndex(t => t.charId === 'ummoja');
-  if (ummojaIdx !== -1 && ummojaIdx !== turns.length - 1) {
-    const [ummoja] = turns.splice(ummojaIdx, 1);
-    turns.push(ummoja);
+  const prosecutorIdx = turns.findLastIndex(t => t.charId === 'prosecutor');
+  if (prosecutorIdx !== -1 && prosecutorIdx !== turns.length - 1) {
+    const [prosecutor] = turns.splice(prosecutorIdx, 1);
+    turns.push(prosecutor);
   }
 
   await db.doc(`battles/${today}`).set({
-    topic: String(parsed.topic || '오늘의 왕국 사건').slice(0, 40),
+    topic: String(parsed.topic || '오늘의 정치 이슈').slice(0, 40),
     topicDesc: String(parsed.topicDesc || '').slice(0, 120),
     turns,
     votes: initialVotes,

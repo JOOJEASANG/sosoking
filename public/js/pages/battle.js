@@ -1,4 +1,4 @@
-/* battle.js — 소소킹 왕좌전쟁 */
+/* battle.js — 소소킹 정치 배틀 */
 import { auth, functions } from '../firebase.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
 import { navigate } from '../router.js';
@@ -11,28 +11,34 @@ function fmtNum(n) {
   return String(n || 0);
 }
 
-function renderKingBanner(king) {
+function fmtTime(ms) {
+  if (!ms) return '';
+  const d = new Date(ms);
+  return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+function renderRulingBanner(king) {
   if (!king) {
     return `<div class="battle-king-banner battle-king-banner--empty">
-      <span class="battle-king-banner__crown">👑</span>
-      <span class="battle-king-banner__text">아직 왕좌가 비어 있습니다</span>
+      <span class="battle-king-banner__crown">🏛️</span>
+      <span class="battle-king-banner__text">현재 집권 대표 없음 — 첫 배틀을 기다리는 중</span>
     </div>`;
   }
-  const streakText = king.streak > 1 ? ` <span class="battle-king-banner__streak">🔥 ${king.streak}연속</span>` : '';
+  const streakText = king.streak > 1 ? ` <span class="battle-king-banner__streak">🔥 ${king.streak}일 연속</span>` : '';
   return `<div class="battle-king-banner">
-    <span class="battle-king-banner__crown">👑</span>
+    <span class="battle-king-banner__crown">🏛️</span>
     <span class="battle-king-banner__emoji">${king.emoji}</span>
     <span class="battle-king-banner__info">
-      <span class="battle-king-banner__label">현재 왕</span>
-      <span class="battle-king-banner__name">${escHtml(king.name)} · ${escHtml(king.title)}${streakText}</span>
+      <span class="battle-king-banner__label">현재 집권 대표</span>
+      <span class="battle-king-banner__name">${escHtml(king.name)} · ${escHtml(king.party || king.title)}${streakText}</span>
     </span>
   </div>`;
 }
 
 function renderTurnBubble(turn, index) {
-  const isUmmoja = turn.charId === 'ummoja';
+  const isProsecutor = turn.charId === 'prosecutor';
   return `
-    <div class="battle-turn${isUmmoja ? ' battle-turn--ummoja' : ''}" style="--i:${index}">
+    <div class="battle-turn${isProsecutor ? ' battle-turn--ummoja' : ''}" style="--i:${index}">
       <div class="battle-turn__avatar">${turn.emoji}</div>
       <div class="battle-turn__body">
         <div class="battle-turn__name">${escHtml(turn.charName)}</div>
@@ -59,28 +65,6 @@ function renderVoteBar(char, votes, totalVotes, userVote) {
     </div>`;
 }
 
-function renderAftermath(aftermath) {
-  if (!aftermath) return '';
-  const { decree, reactions = [] } = aftermath;
-  return `
-    <div class="battle-aftermath">
-      <div class="battle-aftermath__title">👑 왕의 즉위 칙령</div>
-      <div class="battle-aftermath__decree">${escHtml(decree)}</div>
-      ${reactions.length ? `
-        <div class="battle-aftermath__reactions-title">📣 낙선 귀족들의 반응</div>
-        <div class="battle-aftermath__reactions">
-          ${reactions.map(r => `
-            <div class="battle-aftermath__reaction">
-              <span class="battle-aftermath__reaction-emoji">${r.emoji}</span>
-              <div class="battle-aftermath__reaction-body">
-                <span class="battle-aftermath__reaction-name">${escHtml(r.charName)}</span>
-                <span class="battle-aftermath__reaction-text">${escHtml(r.text)}</span>
-              </div>
-            </div>`).join('')}
-        </div>` : ''}
-    </div>`;
-}
-
 function renderVoteButtons(chars, userVote, status) {
   if (status === 'ended') return '';
   if (userVote) return '';
@@ -94,8 +78,44 @@ function renderVoteButtons(chars, userVote, status) {
     </div>`;
 }
 
+function renderAftermath(aftermath) {
+  if (!aftermath) return '';
+  const { decree, reactions = [] } = aftermath;
+  return `
+    <div class="battle-aftermath">
+      <div class="battle-aftermath__title">🏛️ 집권 선언</div>
+      <div class="battle-aftermath__decree">${escHtml(decree)}</div>
+      ${reactions.length ? `
+        <div class="battle-aftermath__reactions-title">📣 낙선 정치인들의 반응</div>
+        <div class="battle-aftermath__reactions">
+          ${reactions.map(r => `
+            <div class="battle-aftermath__reaction">
+              <span class="battle-aftermath__reaction-emoji">${r.emoji}</span>
+              <div class="battle-aftermath__reaction-body">
+                <span class="battle-aftermath__reaction-name">${escHtml(r.charName)}</span>
+                <span class="battle-aftermath__reaction-text">${escHtml(r.text)}</span>
+              </div>
+            </div>`).join('')}
+        </div>` : ''}
+    </div>`;
+}
+
+function renderComments(comments) {
+  if (!comments.length) {
+    return `<div class="battle-comment-empty">첫 번째 토론 의견을 남겨보세요!</div>`;
+  }
+  return comments.map(c => `
+    <div class="battle-comment">
+      <div class="battle-comment__head">
+        <span class="battle-comment__author">${escHtml(c.authorName)}</span>
+        <span class="battle-comment__time">${fmtTime(c.createdAt)}</span>
+      </div>
+      <div class="battle-comment__text">${escHtml(c.text)}</div>
+    </div>`).join('');
+}
+
 export async function renderBattle() {
-  setMeta('소소킹 · 왕좌전쟁');
+  setMeta('소소킹 · 정치 배틀');
   const el = document.getElementById('page-content');
   if (!el) return;
 
@@ -111,20 +131,21 @@ export async function renderBattle() {
     const { data } = await getBattleStatus();
 
     const { exists, topic, topicDesc, turns = [], votes = {}, totalVotes = 0,
-      status, userVote, currentKing, chars = [], king, aftermath } = data;
+      status, userVote, currentKing, chars = [], king, aftermath,
+      recentComments = [] } = data;
 
-    const kingBanner = renderKingBanner(currentKing);
+    const rulingBanner = renderRulingBanner(currentKing);
 
     if (!exists) {
       el.innerHTML = `
         <div class="battle-page page-enter">
-          ${kingBanner}
+          ${rulingBanner}
           <div class="battle-topic-card">
-            <div class="battle-topic-card__badge">⚔️ 오늘의 왕좌전쟁</div>
-            <div class="battle-topic-card__title">전쟁 준비 중...</div>
-            <div class="battle-topic-card__desc">매일 자정 새로운 왕국 사건이 발생합니다</div>
+            <div class="battle-topic-card__badge">⚔️ 오늘의 정치 배틀</div>
+            <div class="battle-topic-card__title">이슈 생성 중...</div>
+            <div class="battle-topic-card__desc">매일 자정 새로운 정치 스캔들이 터집니다</div>
           </div>
-          <button class="btn btn--primary" id="btn-history" style="margin-top:16px">👑 역대 왕 기록 보기</button>
+          <button class="btn btn--primary" id="btn-history" style="margin-top:16px">🏛️ 집권 기록 보기</button>
         </div>`;
       el.querySelector('#btn-history')?.addEventListener('click', () => navigate('/king-history'));
       return;
@@ -132,14 +153,15 @@ export async function renderBattle() {
 
     const isEnded = status === 'ended';
     const votedOrEnded = !!userVote || isEnded;
+    const winnerChar = king ? chars.find(c => c.id === king) : null;
 
     el.innerHTML = `
       <div class="battle-page page-enter">
 
-        ${kingBanner}
+        ${rulingBanner}
 
         <div class="battle-topic-card">
-          <div class="battle-topic-card__badge">⚔️ 오늘의 왕국 사건${isEnded ? ' · 종료' : ' · 진행 중'}</div>
+          <div class="battle-topic-card__badge">⚔️ 오늘의 정치 스캔들${isEnded ? ' · 종료' : ' · 진행 중'}</div>
           <div class="battle-topic-card__title">${escHtml(topic)}</div>
           ${topicDesc ? `<div class="battle-topic-card__desc">${escHtml(topicDesc)}</div>` : ''}
         </div>
@@ -151,8 +173,8 @@ export async function renderBattle() {
         <div class="battle-vote-section">
           <div class="battle-vote-section__title">
             ${isEnded
-              ? (king ? `👑 오늘의 왕: ${chars.find(c => c.id === king)?.emoji || ''} ${escHtml(chars.find(c => c.id === king)?.name || '')}` : '⚔️ 오늘의 투표 결과')
-              : (userVote ? `✅ 투표 완료 · 총 ${fmtNum(totalVotes)}표` : `⚔️ 누구에게 한 표? (오늘 1회)`)}
+              ? (winnerChar ? `🏛️ 오늘의 집권 대표: ${winnerChar.emoji} ${escHtml(winnerChar.name)}` : '⚔️ 오늘의 투표 결과')
+              : (userVote ? `✅ 투표 완료 · 총 ${fmtNum(totalVotes)}표` : `⚔️ 누구를 지지합니까? (오늘 1표)`)}
           </div>
 
           ${!votedOrEnded ? renderVoteButtons(chars, userVote, status) : ''}
@@ -169,7 +191,23 @@ export async function renderBattle() {
 
         ${isEnded && aftermath ? renderAftermath(aftermath) : ''}
 
-        <button class="btn btn--ghost btn--sm" id="btn-history" style="margin-top:8px;width:100%">👑 역대 왕 기록 →</button>
+        <!-- 토론 댓글 -->
+        <div class="battle-discuss">
+          <div class="battle-discuss__title">💬 토론 참여하기</div>
+          ${auth.currentUser ? `
+            <div class="battle-discuss__form">
+              <textarea class="battle-discuss__input" id="discuss-input" placeholder="이 사건에 대한 당신의 한마디..." rows="2" maxlength="300"></textarea>
+              <button class="btn btn--primary btn--sm" id="btn-discuss-submit" style="margin-top:8px;width:100%">의견 남기기</button>
+            </div>` : `
+            <div style="margin-bottom:12px">
+              <a href="#/login" class="btn btn--outline btn--sm" style="width:100%">로그인하고 토론 참여하기</a>
+            </div>`}
+          <div class="battle-comment-list" id="comment-list">
+            ${renderComments(recentComments)}
+          </div>
+        </div>
+
+        <button class="btn btn--ghost btn--sm" id="btn-history" style="margin-top:8px;width:100%">🏛️ 집권 기록 보기 →</button>
       </div>`;
 
     el.querySelector('#btn-history')?.addEventListener('click', () => navigate('/king-history'));
@@ -180,12 +218,14 @@ export async function renderBattle() {
       });
     }
 
+    el.querySelector('#btn-discuss-submit')?.addEventListener('click', () => handleComment(el));
+
   } catch (err) {
     console.error('[battle] load error', err);
     el.innerHTML = `
       <div class="empty-state">
         <div class="empty-state__icon">⚔️</div>
-        <div class="empty-state__title">왕좌전쟁을 불러오지 못했어요</div>
+        <div class="empty-state__title">배틀을 불러오지 못했어요</div>
         <button class="btn btn--primary" style="margin-top:16px" id="btn-retry">다시 시도</button>
       </div>`;
     el.querySelector('#btn-retry')?.addEventListener('click', renderBattle);
@@ -202,7 +242,6 @@ async function handleVote(charId, prevData, el) {
     const voteForChar = httpsCallable(functions, 'voteForChar');
     await voteForChar({ charId });
 
-    // 낙관적 업데이트
     const newVotes = { ...prevData.votes };
     newVotes[charId] = (newVotes[charId] || 0) + 1;
     const newTotal = (prevData.totalVotes || 0) + 1;
@@ -221,7 +260,7 @@ async function handleVote(charId, prevData, el) {
     if (titleEl) titleEl.textContent = `✅ 투표 완료 · 총 ${fmtNum(newTotal)}표`;
 
     const char = prevData.chars.find(c => c.id === charId);
-    toast.success(`${char?.emoji || ''} ${char?.name || ''} 에게 한 표!`);
+    toast.success(`${char?.emoji || ''} ${char?.name || ''} 지지!`);
   } catch (err) {
     btns.forEach(b => { b.disabled = false; });
     if (err?.code === 'already-exists') {
@@ -229,5 +268,39 @@ async function handleVote(charId, prevData, el) {
     } else {
       toast.error(err?.message || '투표에 실패했어요');
     }
+  }
+}
+
+async function handleComment(el) {
+  const input = el.querySelector('#discuss-input');
+  const btn = el.querySelector('#btn-discuss-submit');
+  if (!input || !btn) return;
+
+  const text = input.value.trim();
+  if (!text) return;
+
+  btn.disabled = true;
+  try {
+    const addBattleComment = httpsCallable(functions, 'addBattleComment');
+    await addBattleComment({ text });
+
+    const listEl = el.querySelector('#comment-list');
+    if (listEl) {
+      const newComment = {
+        authorName: auth.currentUser?.displayName || '익명',
+        text,
+        createdAt: Date.now(),
+      };
+      const emptyEl = listEl.querySelector('.battle-comment-empty');
+      if (emptyEl) emptyEl.remove();
+      listEl.insertAdjacentHTML('beforeend', renderComments([newComment]));
+    }
+
+    input.value = '';
+    toast.success('의견을 남겼어요!');
+  } catch (err) {
+    toast.error(err?.message || '댓글 등록에 실패했어요');
+  } finally {
+    btn.disabled = false;
   }
 }

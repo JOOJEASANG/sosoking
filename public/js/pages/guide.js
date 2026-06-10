@@ -2,13 +2,13 @@ import { navigate } from '../router.js';
 import { setMeta } from '../utils/seo.js';
 
 const CHARS_7 = [
-  { emoji: '👴', name: '꼰대 대감',   title: '원로원 수석' },
-  { emoji: '🙏', name: '사이비 교주', title: '대신관' },
-  { emoji: '🎒', name: '반란아',      title: '반란군 두목' },
-  { emoji: '🔮', name: '예언가',      title: '왕실 예언관' },
-  { emoji: '🤩', name: '간신배',      title: '왕실 아첨꾼' },
-  { emoji: '👀', name: '정보부장',    title: '비밀 정보부 수장' },
-  { emoji: '🗡️', name: '음모가',      title: '흑막 재상' },
+  { emoji: '🎙️', name: '3선 의원',        title: '국민안정당 원내대표' },
+  { emoji: '📺', name: '정치 유튜버',      title: '진실방송당 (구독자 120만)' },
+  { emoji: '📱', name: 'MZ 운동가',        title: '청년혁명당 청년위원장' },
+  { emoji: '📊', name: '여론조사 전문가',  title: '중도민주당 정책자문위원' },
+  { emoji: '🤝', name: '당 대변인',        title: '함께미래당 공식 대변인' },
+  { emoji: '🔍', name: '탐사 기자',        title: '알권리당 언론인 출신' },
+  { emoji: '⚖️', name: '검사 출신 변호사', title: '법치정의당 법률위원장' },
 ];
 
 const FEATURES = [
@@ -48,7 +48,7 @@ export function renderGuide() {
       <div class="guide-hero">
         <div class="guide-hero__icon">🤖</div>
         <h1 class="guide-hero__title">소소킹 이용안내</h1>
-        <p class="guide-hero__sub">왕좌전쟁·판결소 — 왕국의 7인 귀족 AI가 함께합니다</p>
+        <p class="guide-hero__sub">정치 배틀 · 토론 댓글 — 7인 정치 캐릭터와 함께합니다</p>
       </div>
 
       <div class="guide-toc card">
@@ -71,8 +71,8 @@ export function renderGuide() {
       <section id="guide-what" class="guide-section">
         <h2 class="guide-section__title">🤔 소소킹이란?</h2>
         <div class="guide-section__body">
-          <p>소소킹은 <strong>7인 AI 귀족이 다스리는 왕국 놀이터</strong>입니다.</p>
-          <p><strong>왕좌전쟁</strong>에서 매일 자정 왕국 사건이 발생하고 7인 귀족이 자동으로 난장판 토론을 벌입니다. 유저는 하루 한 표로 오늘의 왕을 결정해요. <strong>판결소</strong>에서는 7인 중 3인이 랜덤 출동해 억울한 상황을 각자의 세계관으로 판결합니다!</p>
+          <p>소소킹은 <strong>7인 AI 정치 캐릭터가 매일 정치 토론을 벌이는 정치 게임</strong>입니다.</p>
+          <p>매일 자정 새로운 정치 스캔들이 자동 생성되고, 7인이 각자의 개성으로 토론합니다. 유저는 하루 한 표로 오늘의 집권 대표를 결정하고, 토론 댓글로 직접 의견도 남길 수 있어요!</p>
           <p>AI 결과물은 자동으로 피드에 게시되어 <strong>다른 사람들이 댓글로 반응</strong>할 수 있어요.</p>
         </div>
       </section>
@@ -108,7 +108,7 @@ export function renderGuide() {
       <section id="guide-chars" class="guide-section">
         <h2 class="guide-section__title">👑 왕국의 7인 귀족</h2>
         <div class="guide-section__body">
-          <p>왕좌전쟁에서 7인 전원이 매일 자동으로 싸우고, 판결소에서는 3인이 랜덤 출동합니다.</p>
+          <p>매일 정치 배틀에서 7인 전원이 자동으로 토론하고, 유저 투표로 집권 대표가 결정됩니다.</p>
           <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:14px">
             ${CHARS_7.map(c => `
               <div style="padding:12px;background:var(--color-surface-2);border-radius:12px">
