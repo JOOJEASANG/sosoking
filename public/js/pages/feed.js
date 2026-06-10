@@ -1,9 +1,8 @@
-import { db, auth, functions } from '../firebase.js';
+import { db } from '../firebase.js';
 import {
   collection, query, orderBy, limit, getDocs, startAfter, where,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
-import { getQueryParams, navigate } from '../router.js';
+import { getQueryParams } from '../router.js';
 import { renderFeedCard, renderSkeletonCards } from '../components/feed-card.js';
 import { setMeta } from '../utils/seo.js';
 import {
@@ -14,19 +13,16 @@ import {
   updateFeedFilterUI, renderFeedSummary,
 } from '../feed/render.js';
 
-import { toast } from '../components/toast.js';
-
 const PAGE_SIZE    = 20;
 const FILTER_LIMIT = 500;
 const NAV_CONTEXT_KEY = 'sosoking:feedNavContext';
 
 const ROOMS = [
-  { key: '',             icon: '✨', label: '전체',   title: '전체',   desc: '판결소·창작소·토론왕 콘텐츠를 한 번에 봅니다.' },
-  { key: 'ai_judge',     icon: '⚖️', label: '판결소', title: '판결소', desc: '억울한 상황 → 3인 캐릭터가 각자 판결합니다.', path: '/ai-judge' },
-  { key: 'ai_translate', icon: '✨', label: '창작소', title: '창작소', desc: '번역하기 + 이름짓기 두 가지를 한 곳에서.', path: '/ai-translate' },
+  { key: '',         icon: '✨', label: '전체',   title: '전체',   desc: '판결소 콘텐츠를 한 번에 봅니다.' },
+  { key: 'ai_judge', icon: '⚖️', label: '판결소', title: '판결소', desc: '억울한 상황 → 3인 캐릭터가 각자 판결합니다.', path: '/ai-judge' },
 ];
 
-const AI_TYPES = ['ai_judge', 'ai_translate', 'ai_naming'];
+const AI_TYPES = ['ai_judge'];
 
 let currentType        = '';
 let currentSearch      = '';
@@ -89,7 +85,6 @@ export async function renderFeed() {
         ${renderFeedSearchBar({ search: currentSearch })}
         ${renderFeedFilterBar({ type: currentType, search: currentSearch })}
       </div>
-      <div id="debate-topic-form-area"></div>
       <div id="feed-summary" class="soso-feed-summary feed-result-summary"></div>
       <div id="feed-list" class="soso-feed-list">${renderSkeletonCards(5)}</div>
       <div id="feed-pagination" class="feed-pagination"></div>
@@ -97,7 +92,6 @@ export async function renderFeed() {
     </div>`;
 
   bindFeedEvents();
-  renderDebateTopicForm();
   await loadPosts();
 }
 
@@ -106,54 +100,6 @@ function bindFeedEvents() {
   bindTypeFilterEvents();
 }
 
-function renderDebateTopicForm() {
-  const area = document.getElementById('debate-topic-form-area');
-  if (!area) return;
-  if (currentType !== 'ai_debate') { area.innerHTML = ''; return; }
-
-  const loggedIn = !!auth.currentUser;
-  area.innerHTML = `
-    <div class="debate-topic-form card" style="margin-bottom:14px">
-      <div class="card__body" style="padding:14px 16px">
-        <div style="font-size:13px;font-weight:800;margin-bottom:10px">💬 주제 직접 올리기 <span style="font-weight:400;color:var(--color-text-muted);font-size:11px">하루 3개 · 유저끼리 토론</span></div>
-        <input id="user-debate-input" class="form-input" style="font-size:13px;margin-bottom:8px;width:100%"
-          placeholder="${loggedIn ? '토론 주제를 입력하세요 (예: 부먹 vs 찍먹 뭐가 맞아?)' : '로그인 후 주제를 올릴 수 있어요'}"
-          maxlength="100" ${!loggedIn ? 'disabled' : ''}>
-        <div style="display:flex;gap:8px;margin-bottom:8px">
-          <input id="user-debate-option-a" class="form-input" style="flex:1;font-size:13px"
-            placeholder="🔴 A편 선택지" maxlength="40" ${!loggedIn ? 'disabled' : ''}>
-          <input id="user-debate-option-b" class="form-input" style="flex:1;font-size:13px"
-            placeholder="🔵 B편 선택지" maxlength="40" ${!loggedIn ? 'disabled' : ''}>
-        </div>
-        <div style="display:flex;justify-content:flex-end">
-          <button id="user-debate-submit" class="btn btn--primary btn--sm" ${!loggedIn ? 'disabled' : ''}>올리기</button>
-        </div>
-      </div>
-    </div>`;
-
-  if (!loggedIn) return;
-  const input = area.querySelector('#user-debate-input');
-  const optionA = area.querySelector('#user-debate-option-a');
-  const optionB = area.querySelector('#user-debate-option-b');
-  const btn = area.querySelector('#user-debate-submit');
-  btn?.addEventListener('click', async () => {
-    const topic = input?.value.trim();
-    if (!topic || topic.length < 3) { toast.warn('주제를 3자 이상 입력해주세요'); return; }
-    const oA = optionA?.value.trim() || '';
-    const oB = optionB?.value.trim() || '';
-    if ((oA && !oB) || (!oA && oB)) { toast.warn('A편·B편 선택지를 둘 다 입력해주세요'); return; }
-    btn.disabled = true; btn.textContent = '올리는 중...';
-    try {
-      const res = await httpsCallable(functions, 'createUserDebateTopic')({ topic, optionA: oA, optionB: oB });
-      toast.success('주제가 올라갔어요! 🗣️');
-      navigate(`/detail/${res.data.postId}`);
-    } catch (e) {
-      toast.error(e.message || '올리기 실패');
-    } finally {
-      btn.disabled = false; btn.textContent = '올리기';
-    }
-  });
-}
 
 function bindSearchEvents() {
   const searchInput = document.getElementById('feed-search-input');
@@ -231,7 +177,6 @@ function refreshFeed() {
   } else {
     if (descEl) descEl.hidden = true;
   }
-  renderDebateTopicForm();
   loadPosts();
 }
 
@@ -246,14 +191,8 @@ function updateUrlState() {
 }
 
 function getLegacyTypeWhereClause(type) {
-  const map = {
-    ai_judge:     ['ai_judge'],
-    ai_translate: ['ai_translate', 'ai_naming'],
-    ai_debate:    ['ai_debate'],
-  };
-  const types = map[type];
-  if (!types) return null;
-  return types.length === 1 ? where('type', '==', types[0]) : where('type', 'in', types.slice(0, 10));
+  if (type === 'ai_judge') return where('type', '==', 'ai_judge');
+  return null;
 }
 
 function onlyAiPosts(posts) {

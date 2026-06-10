@@ -9,14 +9,6 @@ import { collection, query, where, getDocs, getDoc, doc, limit } from 'https://w
 
 export { appState };
 
-let siteFeatures = { hotPotato: true, jabdam: true };
-
-async function loadSiteFeatures() {
-  try {
-    const snap = await getDoc(doc(db, 'config', 'site_features'));
-    if (snap.exists()) siteFeatures = { hotPotato: true, jabdam: true, ...snap.data() };
-  } catch {}
-}
 
 const OWNER_EMAILS = new Set();
 const ADMIN_ALLOWED_PATHS = new Set(['/admin', '/account', '/terms', '/privacy', '/legal/terms', '/legal/privacy', '/guide', '/login', '/signup']);
@@ -93,11 +85,7 @@ async function registerRoutes() {
   registerRoute('/legal/privacy', async () => renderPage((await import('./pages/legal.js')).renderPrivacy, '개인정보처리방침'));
   registerRoute('/ai-king', async () => renderPage((await import('./pages/ai-king.js')).renderAiKing, 'AI킹'));
   registerRoute('/ai-judge', async () => renderPage((await import('./pages/ai-judge.js')).renderAiJudge, '판결소'));
-  registerRoute('/ai-translate', async () => renderPage((await import('./pages/ai-translate.js')).renderAiTranslate, '창작소'));
-  registerRoute('/ai-naming', async () => renderPage((await import('./pages/ai-naming.js')).renderAiNaming, '창작소'));
   registerRoute('/points-shop', async () => renderPage((await import('./pages/points-shop.js')).renderPointsShop, '내 포인트'));
-  registerRoute('/hot-potato', async () => renderPage((await import('./pages/hot-potato.js')).renderHotPotato, '🔥 핫포테이토'));
-  registerRoute('/jabdam', async () => renderPage((await import('./pages/jabdam.js')).renderJabdam, '🗨️ 수다방'));
 }
 
 async function isStrictAdmin(user) {
@@ -172,8 +160,8 @@ function renderFrame() {
         <footer class="site-footer" id="site-footer">
           <div class="site-footer__body" id="footer-body" hidden>
             <div class="site-footer__inner">
-              <div class="site-footer__brand-block"><a href="#/" class="site-footer__brand"><img src="/logo.svg" alt="" width="26" height="26"><span>소소킹</span></a><div class="site-footer__tagline">7인 AI 귀족의 왕국 정치 드라마<br>매일 새로운 왕이 탄생합니다</div></div>
-              <div><div class="site-footer__col-title">왕국 기능</div><div class="site-footer__links"><a href="#/battle">⚔️ 왕좌전쟁</a><a href="#/ai-judge">⚖️ 판결소</a><a href="#/king-history">👑 역대왕</a></div></div>
+              <div class="site-footer__brand-block"><a href="#/" class="site-footer__brand"><img src="/logo.svg" alt="" width="26" height="26"><span>소소킹</span></a><div class="site-footer__tagline">7인 정치 AI의 매일 배틀<br>당신의 한 표로 집권 대표가 결정됩니다</div></div>
+              <div><div class="site-footer__col-title">소소킹</div><div class="site-footer__links"><a href="#/battle">⚔️ 왕좌전쟁</a><a href="#/king-history">🏛️ 집권기록</a></div></div>
               <div><div class="site-footer__col-title">바로가기</div><div class="site-footer__links"><a href="#/feed">피드</a><a href="#/guide">이용안내</a><a href="#/ai-king">AI킹</a></div></div>
               <div><div class="site-footer__col-title">정보</div><div class="site-footer__links"><a href="#/terms">이용약관</a><a href="#/privacy">개인정보처리방침</a></div></div>
             </div>
@@ -222,7 +210,6 @@ async function handleKakaoCallback() {
 
 async function initApp() {
   initToast();
-  await loadSiteFeatures();
   await handleKakaoCallback();
   await registerRoutes();
   initRouter();

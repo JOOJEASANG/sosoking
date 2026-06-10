@@ -1,9 +1,6 @@
 // 관리자 게시글 목록 테이블 정규화 (DOM 주입 제거됨 — 탭은 admin.js에서 관리)
 const TYPE_LABELS = {
   ai_judge: '판결소',
-  ai_translate: '창작소',
-  ai_naming: '창작소',
-  ai_debate: '토론왕',
   vote: '토론방',
   drip: '드립방',
   collect: '일반방',
@@ -12,9 +9,6 @@ const TYPE_LABELS = {
 
 const TYPE_ICONS = {
   ai_judge: '⚖️',
-  ai_translate: '✨',
-  ai_naming: '✨',
-  ai_debate: '🗣️',
   vote: '🗳️',
   drip: '🤣',
   collect: '📌',
