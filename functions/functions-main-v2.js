@@ -67,6 +67,7 @@ module.exports = {
   getElectionHistory: politics.getElectionHistory,
   getDailyNews: politics.getDailyNews,
   ratePresidentDecree: politics.ratePresidentDecree,
+  claimRulingBonus: politics.claimRulingBonus,
   getWeeklyCrisis: politics.getWeeklyCrisis,
   voteOnCrisis: politics.voteOnCrisis,
   ...uploadImage,

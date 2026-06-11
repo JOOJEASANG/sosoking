@@ -264,13 +264,17 @@ function renderGuestHero() {
 }
 
 // 로그인 유저용 정치 신분증 카드 (출세 사다리 진행)
-function renderRankCard(status) {
+function renderRankCard(status, isRulingParty = false) {
   const nick = appState.nickname || auth.currentUser?.displayName || '시민';
   const rank = getPoliticalRank(status.power || 0);
   const streak = appState.streak || 0;
 
+  const rulingBadge = isRulingParty
+    ? ` <span class="home-id-card__ruling-badge">🔑 집권당</span>`
+    : '';
+
   const partyLine = status.partyId
-    ? `<span class="home-id-card__party${status.isLeader ? ' home-id-card__party--leader' : ''}" style="--party-color:${status.partyColor}">${status.partyEmoji} ${escHtml(status.partyName)}${status.isLeader ? ' 👑 당대표' : (status.partyRank ? ` · 당내 ${status.partyRank}위` : '')}</span>`
+    ? `<span class="home-id-card__party${status.isLeader ? ' home-id-card__party--leader' : ''}" style="--party-color:${status.partyColor}">${status.partyEmoji} ${escHtml(status.partyName)}${status.isLeader ? ' 👑 당대표' : (status.partyRank ? ` · 당내 ${status.partyRank}위` : '')}${rulingBadge}</span>`
     : `<button class="home-id-card__join" data-path="/parties" type="button">+ 입당하고 정치력 쌓기</button>`;
 
   const nextLine = rank.isMax
@@ -322,7 +326,7 @@ function renderLeaderCard(status) {
 }
 
 // 오늘의 정치 일정 (일일 미션 체크리스트)
-function renderMissions(status, battleData) {
+function renderMissions(status, battleData, isRulingParty = false) {
   const votedBattle = !!(battleData && battleData.userVote);
   const votedElection = !!status.votedElection;
   const attended = (appState.streak || 0) >= 1;
@@ -345,6 +349,7 @@ function renderMissions(status, battleData) {
     { done: attended,       label: '오늘 출석',     path: '/',         cta: '완료',       reward: dailyReward, icon: '📅' },
     { done: votedBattle,    label: '정치배틀 투표', path: '/battle',   cta: '투표하기',   reward: '+5P',  icon: '🗳️' },
     { done: votedElection,  label: elecLabel,       path: '/election', cta: '투표하기',   reward: '+5P',  icon: '👑' },
+    ...(isRulingParty ? [{ done: true, label: '집권당 일일 특전', path: '/', cta: '수령 완료', reward: '+3P 🔑', icon: '🏛️' }] : []),
   ];
   const doneCount = missions.filter(m => m.done).length;
   const allDone = doneCount === missions.length;
@@ -461,9 +466,11 @@ export async function renderHome() {
 
     if (user && myStatus?.loggedIn) checkRankUp(user.uid, myStatus.power);
 
+    const isRulingParty = !!(myStatus?.loggedIn && myStatus.partyId && presidentData?.partyId && presidentData.partyId === myStatus.partyId);
+
     // 로그인 유저: 정치 신분증 + 당대표 특전 + 오늘의 정치 일정 / 게스트: 가입 유도 히어로
     const headerHTML = (myStatus && myStatus.loggedIn)
-      ? `${renderRankCard(myStatus)}${renderLeaderCard(myStatus)}${renderMissions(myStatus, battleData)}${renderQuickActions()}`
+      ? `${renderRankCard(myStatus, isRulingParty)}${renderLeaderCard(myStatus)}${renderMissions(myStatus, battleData, isRulingParty)}${renderQuickActions()}`
       : `${renderGuestHero()}${renderQuickActions()}`;
 
     const newsHTML = renderNewsCard(newsData || generateFallbackNews(battleData, presidentData));
@@ -549,6 +556,13 @@ export async function renderHome() {
         }
       });
     });
+
+    // 집권당 보너스 (fire-and-forget — 포인트 팝업 표시)
+    if (isRulingParty && user) {
+      httpsCallable(functions, 'claimRulingBonus')({})
+        .then(({ data }) => { if (data.awarded) showPointPopup(3); })
+        .catch(() => {});
+    }
 
     // 세력도 + 대선 경쟁 + 위기 이벤트 + 정당 활동 피드 비동기 로드
     if (user) loadNotifications(user.uid, el.querySelector('#home-notif-slot'));

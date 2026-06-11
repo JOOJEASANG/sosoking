@@ -688,6 +688,41 @@ exports.getMyStatus = onCall({ region: REGION, timeoutSeconds: 10 }, async reque
   };
 });
 
+// ── 집권당 일일 특전 +3P ──
+exports.claimRulingBonus = onCall({ region: REGION, timeoutSeconds: 15 }, async request => {
+  const uid = request.auth && request.auth.uid;
+  if (!uid) return { ok: false };
+
+  const today = kstToday();
+  const { prevKey } = weekPeriod();
+
+  const [userSnap, presSnap, bonusSnap] = await Promise.all([
+    db.doc(`users/${uid}`).get(),
+    db.doc(`elections/${prevKey}`).get(),
+    db.doc(`point_awards/presbonus_${uid}_${today}`).get(),
+  ]);
+
+  const user = userSnap.exists ? (userSnap.data() || {}) : {};
+  const partyId = PARTY_BY_ID[user.partyId] ? user.partyId : null;
+  if (!partyId) return { ok: false, reason: 'no_party' };
+
+  const isRulingParty = presSnap.exists && presSnap.data().winner
+    && presSnap.data().winner.partyId === partyId;
+  if (!isRulingParty) return { ok: true, isRulingParty: false, awarded: false };
+  if (bonusSnap.exists) return { ok: true, isRulingParty: true, awarded: false, alreadyClaimed: true };
+
+  const batch = db.batch();
+  batch.set(db.doc(`point_awards/presbonus_${uid}_${today}`), {
+    uid, type: 'ruling_bonus', date: today, points: 3, createdAt: FieldValue.serverTimestamp(),
+  });
+  batch.set(db.doc(`users/${uid}`), {
+    totalPoints: FieldValue.increment(3), updatedAt: FieldValue.serverTimestamp(),
+  }, { merge: true });
+  await batch.commit();
+
+  return { ok: true, isRulingParty: true, awarded: true };
+});
+
 // ── 현직 대통령 (홈 화면용 경량 조회) ──
 exports.getPresident = onCall({ region: REGION, timeoutSeconds: 10 }, async request => {
   const uid = request.auth && request.auth.uid;

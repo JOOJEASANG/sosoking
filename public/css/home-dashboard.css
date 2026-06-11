@@ -108,6 +108,21 @@
   font-weight: 800;
 }
 
+/* 집권당 배지 */
+.home-id-card__ruling-badge {
+  display: inline-block;
+  background: linear-gradient(90deg, #7c3aed44, #2563eb33);
+  border: 1px solid #7c3aed88;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #c4b5fd;
+  padding: 1px 6px;
+  margin-left: 6px;
+  vertical-align: middle;
+  letter-spacing: .02em;
+}
+
 /* ── 당대표 특전 카드 ── */
 .home-leader-card {
   background: linear-gradient(135deg, #0f0c29 0%, #302b63 55%, #1a2a4a 100%);
