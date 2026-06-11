@@ -1,5 +1,15 @@
 /* election.js — 소소공화국 대통령 선거 */
 import { auth, functions } from '../firebase.js';
+
+const PARTY_INFO = {
+  national: { name: '국민안정당', emoji: '🎙️', color: '#8B7355' },
+  truth:    { name: '진실방송당', emoji: '📺', color: '#6C5CE7' },
+  youth:    { name: '청년혁명당', emoji: '📱', color: '#E84393' },
+  center:   { name: '중도민주당', emoji: '📊', color: '#00CEC9' },
+  future:   { name: '함께미래당', emoji: '🤝', color: '#FDCB6E' },
+  rights:   { name: '알권리당',   emoji: '🔍', color: '#00B894' },
+  justice:  { name: '법치정의당', emoji: '⚖️', color: '#2D3436' },
+};
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
 import { navigate } from '../router.js';
 import { setMeta } from '../utils/seo.js';
@@ -450,22 +460,72 @@ async function loadElectionHistory(host) {
     const history = (data.history || []).filter(h => !h.seeded);
     if (!history.length) return;
 
+    function marginTag(winV, total) {
+      if (!total) return '';
+      const pct = Math.round((winV / total) * 100);
+      if (pct >= 60) return `<span class="elec-margin elec-margin--landslide">압도적 ${pct}%</span>`;
+      if (pct >= 50) return `<span class="elec-margin elec-margin--majority">과반 ${pct}%</span>`;
+      return `<span class="elec-margin elec-margin--close">박빙 ${pct}%</span>`;
+    }
+
+    function renderBreakdown(h) {
+      const voteMap = h.votes || {};
+      const total = h.totalVotes || Object.values(voteMap).reduce((s, v) => s + Number(v), 0);
+      if (!total) return '<div class="elec-breakdown"><div class="elec-breakdown__total">투표 데이터 없음</div></div>';
+      const sorted = Object.entries(voteMap).filter(([, v]) => Number(v) > 0).sort((a, b) => Number(b[1]) - Number(a[1]));
+      if (!sorted.length) return '';
+      const maxV = Number(sorted[0][1]);
+      return `<div class="elec-breakdown">
+        ${sorted.map(([pid, v]) => {
+          const info = PARTY_INFO[pid] || { name: pid, emoji: '🏛️', color: '#888' };
+          const n = Number(v);
+          const pct = Math.round((n / total) * 100);
+          const barW = Math.round((n / maxV) * 100);
+          const isWin = pid === h.winner?.partyId;
+          return `<div class="elec-breakdown__row${isWin ? ' elec-breakdown__row--win' : ''}">
+            <span class="elec-breakdown__party">${info.emoji} <span class="elec-breakdown__pname">${escHtml(info.name)}</span></span>
+            <div class="elec-breakdown__track"><div class="elec-breakdown__fill" style="width:${barW}%;background:${info.color}"></div></div>
+            <span class="elec-breakdown__pct">${pct}%</span>
+            <span class="elec-breakdown__votes">${fmtNum(n)}표</span>
+            <span class="elec-breakdown__crown">${isWin ? '👑' : ''}</span>
+          </div>`;
+        }).join('')}
+        <div class="elec-breakdown__total">총 ${fmtNum(total)}표 · ${sorted.length}개 정당 참여</div>
+      </div>`;
+    }
+
     host.innerHTML = `
       <div class="elec-history">
         <div class="elec-history__title">📜 역대 대통령 기록</div>
         ${history.map((h, i) => {
           const w = h.winner;
+          const voteMap = h.votes || {};
+          const total = h.totalVotes || Object.values(voteMap).reduce((s, v) => s + Number(v), 0);
+          const winV = Number(voteMap[w.partyId] || w.votes || 0);
           return `
           <div class="elec-history-item" style="--party-color:${w.color}">
             <span class="elec-history-item__medal">${i === 0 ? '👑' : `${i + 1}`}</span>
             <span class="elec-history-item__emoji">${w.emoji}</span>
             <div class="elec-history-item__body">
-              <div class="elec-history-item__name">${escHtml(w.candidateName)}</div>
-              <div class="elec-history-item__meta">${escHtml(w.partyName)} · ${h.periodId}${h.totalVotes ? ` · ${fmtNum(h.totalVotes)}표` : ''}</div>
+              <div class="elec-history-item__name">${escHtml(w.candidateName)} ${marginTag(winV, total)}</div>
+              <div class="elec-history-item__meta">${escHtml(w.partyName)} · ${h.periodId}${total ? ` · 총 ${fmtNum(total)}표` : ''}</div>
               ${h.decree ? `<div class="elec-history-item__decree">"${escHtml(h.decree)}"</div>` : ''}
+              <button class="elec-history-detail-btn" data-period="${escHtml(h.periodId)}">📊 투표 현황 보기</button>
+              <div id="elec-detail-${escHtml(h.periodId)}" hidden>${renderBreakdown(h)}</div>
             </div>
           </div>`;
         }).join('')}
       </div>`;
+
+    host.querySelectorAll('.elec-history-detail-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const pid = btn.dataset.period;
+        const detail = host.querySelector(`#elec-detail-${pid}`);
+        if (!detail) return;
+        const isOpen = !detail.hidden;
+        detail.hidden = isOpen;
+        btn.textContent = isOpen ? '📊 투표 현황 보기' : '📊 닫기';
+      });
+    });
   } catch { /* non-critical */ }
 }

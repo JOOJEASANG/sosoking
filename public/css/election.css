@@ -193,6 +193,58 @@
   margin-top: 3px; line-height: 1.4;
 }
 
+/* ── 승리 마진 태그 ── */
+.elec-margin {
+  display: inline-block;
+  font-size: 10px; font-weight: 800;
+  padding: 1px 6px; border-radius: 99px;
+  margin-left: 5px; vertical-align: middle;
+  letter-spacing: -0.3px;
+}
+.elec-margin--landslide { background: #fff0c0; color: #a67c00; }
+.elec-margin--majority  { background: #d4edda; color: #1a6632; }
+.elec-margin--close     { background: #fde8d8; color: #c0440a; }
+
+/* ── 역대 선거 결과 상세 보기 ── */
+.elec-history-detail-btn {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 11px; font-weight: 700;
+  color: var(--color-primary);
+  background: none; border: none; padding: 0; cursor: pointer;
+  text-decoration: underline; text-underline-offset: 2px;
+}
+.elec-breakdown {
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: var(--color-surface-2, #f6f6f9);
+  border-radius: 8px;
+}
+.elec-breakdown__row {
+  display: grid;
+  grid-template-columns: 100px 1fr 32px 40px 18px;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 5px;
+}
+.elec-breakdown__row--win .elec-breakdown__pname { font-weight: 800; color: var(--color-text-primary); }
+.elec-breakdown__party { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.elec-breakdown__pname { font-size: 11px; }
+.elec-breakdown__track {
+  height: 8px;
+  background: var(--color-border);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.elec-breakdown__fill { height: 100%; border-radius: 99px; transition: width .4s; }
+.elec-breakdown__pct { font-size: 10px; font-weight: 700; text-align: right; color: var(--color-text-muted); }
+.elec-breakdown__votes { font-size: 10px; color: var(--color-text-muted); }
+.elec-breakdown__crown { font-size: 12px; }
+.elec-breakdown__total {
+  font-size: 10px; color: var(--color-text-muted);
+  margin-top: 7px; text-align: right; font-weight: 600;
+}
+
 /* ── 후보 공약 표시 ── */
 .elec-cand__pledge {
   font-size: 11px;

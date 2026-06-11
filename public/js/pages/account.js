@@ -14,6 +14,16 @@ import { escHtml, formatTime, computeTitle } from '../utils/helpers.js';
 import { renderFeedCard } from '../components/feed-card.js';
 import { appState } from '../state.js';
 import { getPoliticalRank } from '../utils/political-rank.js';
+
+const RANK_PERKS = {
+  2: ['배틀 투표 가능', '일일 포인트 획득'],
+  3: ['대선 투표 +2P 보너스', '당원 칭호'],
+  4: ['유세 캠페인 참여', '당 간부 배지'],
+  5: ['위기투표 영향력 ↑', '위원장 칭호'],
+  6: ['포인트샵 5% 할인', '국회의원 배지'],
+  7: ['배틀 토론 영향력 ↑', '당 중진 칭호'],
+  8: ['모든 혜택 해금', '대통령 후보 1순위'],
+};
 import { setMeta } from '../utils/seo.js';
 import { renderSidebar } from '../components/sidebar.js';
 import { renderBottomNav } from '../components/bottom-nav.js';
@@ -101,6 +111,7 @@ export async function renderAccount() {
           <div class="account-rank-progress">
             <div class="account-rank-progress__bar"><div class="account-rank-progress__fill" style="width:${polRank.progress}%;background:${polRank.color}"></div></div>
             <div class="account-rank-progress__label">${polRank.isMax ? '최고 등급 달성! 🎉' : `${polRank.next.emoji} ${polRank.next.title}까지 ${polRank.remain.toLocaleString()}P`}</div>
+            ${!polRank.isMax && RANK_PERKS[polRank.next.level] ? `<div class="account-rank-perks">${RANK_PERKS[polRank.next.level].map(p => `<span class="account-rank-perk-item">🔓 ${escHtml(p)}</span>`).join('')}</div>` : ''}
           </div>
           <div class="account-stats">
             <div class="account-stat">
