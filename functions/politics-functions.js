@@ -1636,6 +1636,11 @@ exports.campaignForParty = onCall({ region: REGION, timeoutSeconds: 15 }, async 
     tx.set(db.doc(`users/${uid}`), { totalPoints: FieldValue.increment(-COST), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
     tx.set(db.doc(`parties/${partyId}`), { totalPower: FieldValue.increment(BOOST), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
     tx.set(campaignRef, { uid, partyId, count: count + 1, date: today, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+    tx.set(db.doc(`campaign_totals/${today}`), {
+      total: FieldValue.increment(1),
+      [`byParty.${partyId}`]: FieldValue.increment(1),
+      updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
 
     return { count: count + 1, partyId };
   });

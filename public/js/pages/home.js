@@ -623,11 +623,14 @@ export async function renderHome() {
   }
 }
 
-function renderCampaignSlot(slot, status, count, MAX, COST, BOOST) {
+function renderCampaignSlot(slot, status, count, MAX, COST, BOOST, totalToday = 0) {
   const canCampaign = count < MAX && (status.power || 0) >= COST;
   const pips = Array.from({ length: MAX }, (_, i) =>
     `<span class="home-campaign-pip${i < count ? ' home-campaign-pip--done' : ''}"></span>`
   ).join('');
+  const totalLine = totalToday > 0
+    ? `<span class="home-campaign-card__total">🗺️ 오늘 공화국 전체 ${totalToday}회 유세</span>`
+    : '';
   slot.innerHTML = `
     <div class="home-campaign-card">
       <div class="home-campaign-card__top">
@@ -639,7 +642,7 @@ function renderCampaignSlot(slot, status, count, MAX, COST, BOOST) {
         <div class="home-campaign-pips">${pips}</div>
       </div>
       <div class="home-campaign-card__body">
-        <span class="home-campaign-card__desc">-${COST}P 소모 → 당 정치력 +${BOOST}</span>
+        <span class="home-campaign-card__desc">-${COST}P 소모 → 당 정치력 +${BOOST}${totalLine}</span>
         <button class="home-campaign-btn${!canCampaign ? ' home-campaign-btn--disabled' : ''}" id="home-campaign-btn" ${!canCampaign ? 'disabled' : ''}>
           ${count >= MAX ? '오늘 유세 완료 ✓' : (status.power || 0) < COST ? `포인트 부족 (${COST}P 필요)` : `유세하기 · -${COST}P`}
         </button>
@@ -654,7 +657,7 @@ function renderCampaignSlot(slot, status, count, MAX, COST, BOOST) {
       const { data } = await httpsCallable(functions, 'campaignForParty')({});
       if (data?.ok) {
         status.power = Math.max(0, (status.power || 0) - data.cost);
-        renderCampaignSlot(slot, status, data.campaignsToday, data.maxCampaigns, COST, BOOST);
+        renderCampaignSlot(slot, status, data.campaignsToday, data.maxCampaigns, COST, BOOST, (totalToday || 0) + 1);
         showPointPopup(data.boost);
         toast.success(`${status.partyEmoji} ${escHtml(status.partyName)} 정치력 +${data.boost}! 🎤`);
       }
@@ -674,9 +677,13 @@ async function loadCampaignCard(slot, status) {
   const BOOST = 15;
   const MAX = 3;
   try {
-    const campSnap = await getDoc(doc(db, 'campaign_records', `${uid}_${today}`));
+    const [campSnap, totalsSnap] = await Promise.all([
+      getDoc(doc(db, 'campaign_records', `${uid}_${today}`)),
+      getDoc(doc(db, 'campaign_totals', today)),
+    ]);
     const count = campSnap.exists() ? Number(campSnap.data().count || 0) : 0;
-    renderCampaignSlot(slot, status, count, MAX, COST, BOOST);
+    const totalToday = totalsSnap.exists() ? Number(totalsSnap.data().total || 0) : 0;
+    renderCampaignSlot(slot, status, count, MAX, COST, BOOST, totalToday);
   } catch { /* non-critical */ }
 }
 
@@ -689,7 +696,10 @@ async function loadPartyPowerChart(slot) {
       .map(d => {
         const meta = PARTY_COLORS[d.id];
         if (!meta) return null;
-        return { id: d.id, ...meta, totalPower: Number(d.data().totalPower || 0), memberCount: Number(d.data().memberCount || 0) };
+        const totalPower = Number(d.data().totalPower || 0);
+        const prevDayPower = Number(d.data().prevDayPower || 0);
+        const diff = prevDayPower > 0 ? totalPower - prevDayPower : 0;
+        return { id: d.id, ...meta, totalPower, memberCount: Number(d.data().memberCount || 0), diff };
       })
       .filter(Boolean)
       .sort((a, b) => b.totalPower - a.totalPower);
@@ -700,6 +710,9 @@ async function loadPartyPowerChart(slot) {
     const bars = parties.map(p => {
       const pct = Math.round((p.totalPower / total) * 100);
       const width = Math.max(2, pct);
+      const trendHTML = Math.abs(p.diff) >= 5
+        ? `<span class="home-power-row__trend home-power-row__trend--${p.diff > 0 ? 'up' : 'down'}">${p.diff > 0 ? '▲' : '▼'}${fmtNum(Math.abs(p.diff))}</span>`
+        : '';
       return `
         <div class="home-power-row" style="--party-c:${p.color}">
           <span class="home-power-row__emoji">${p.emoji}</span>
@@ -707,7 +720,7 @@ async function loadPartyPowerChart(slot) {
           <div class="home-power-row__track">
             <div class="home-power-row__fill" style="width:${width}%"></div>
           </div>
-          <span class="home-power-row__pct">${pct}%</span>
+          <span class="home-power-row__pct">${pct}%${trendHTML}</span>
         </div>`;
     }).join('');
 

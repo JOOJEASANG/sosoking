@@ -718,3 +718,23 @@
   cursor: not-allowed;
   transform: none;
 }
+
+/* ── 세력도 트렌드 배지 ── */
+.home-power-row__trend {
+  font-size: 10px;
+  font-weight: 700;
+  margin-left: 4px;
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+.home-power-row__trend--up   { color: #16a34a; background: #dcfce7; }
+.home-power-row__trend--down { color: #dc2626; background: #fee2e2; }
+
+/* ── 유세 카드 - 전체 집계 라인 ── */
+.home-campaign-card__total {
+  display: block;
+  font-size: 11px;
+  color: #7c3aed;
+  margin-top: 3px;
+  font-weight: 600;
+}
