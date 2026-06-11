@@ -64,6 +64,19 @@ function renderDecreeApproval(p) {
   return barHTML + (p.decree ? btnsHTML : '');
 }
 
+function renderPresidentCrisis(p) {
+  const approveCount = Number(p.decreeApprove || 0);
+  const disapproveCount = Number(p.decreeDisapprove || 0);
+  const total = approveCount + disapproveCount;
+  if (total < 5 || !p.decree) return '';
+  const pct = Math.round((approveCount / total) * 100);
+  if (pct < 15) return `<div class="elec-prez-crisis elec-prez-crisis--critical">🚨 헌정 위기! 지지율 ${pct}% — 탄핵 임박</div>`;
+  if (pct < 30) return `<div class="elec-prez-crisis elec-prez-crisis--danger">⚠️ 탄핵 경보: 지지율 ${pct}% — 내각 위기</div>`;
+  if (pct < 45) return `<div class="elec-prez-crisis elec-prez-crisis--warning">📉 지지율 위기: ${pct}% — 정국 불안</div>`;
+  if (pct >= 80) return `<div class="elec-prez-crisis elec-prez-crisis--high">⭐ 높은 지지율: ${pct}% — 안정적 국정 운영</div>`;
+  return '';
+}
+
 function renderPresident(p, isPresident) {
   if (!p) {
     return `<div class="prez-banner prez-banner--empty">
@@ -79,6 +92,7 @@ function renderPresident(p, isPresident) {
     <div class="prez-banner__party">${escHtml(p.partyName)}${p.isAI ? ' · AI 정치인' : ' · 당대표'}</div>
     ${p.decree ? `<div class="prez-banner__decree" id="prez-decree-text">"${escHtml(p.decree)}"</div>` : `<div class="prez-banner__decree prez-banner__decree--empty" id="prez-decree-text">포고령 준비 중…</div>`}
     ${renderDecreeApproval(p)}
+    ${renderPresidentCrisis(p)}
     ${isPresident ? `<button class="prez-decree-edit-btn" id="prez-decree-btn">📜 포고령 수정하기</button>` : ''}
   </div>
   ${isPresident ? `

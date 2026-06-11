@@ -16,6 +16,20 @@ function fmtNum(n) {
   return String(n || 0);
 }
 
+function getKstMidnight() {
+  const kstNow = new Date(Date.now() + 9 * 60 * 60 * 1000);
+  return Date.UTC(kstNow.getUTCFullYear(), kstNow.getUTCMonth(), kstNow.getUTCDate() + 1, -9, 0, 0, 0);
+}
+
+function fmtDeadline(deadline) {
+  const ms = deadline - Date.now();
+  if (ms <= 0) return '투표 마감';
+  const h = Math.floor(ms / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  if (h === 0) return `⏰ 마감 ${m}분 전`;
+  return `⏰ 마감 ${h}시간 ${m}분 전`;
+}
+
 function fmtTime(ms) {
   if (!ms) return '';
   const d = new Date(ms);
@@ -292,6 +306,7 @@ export async function renderBattle() {
               <span class="battle-live-counter__dot"></span>
               총 ${fmtNum(totalVotes)}명 참여
             </span>
+            ${!isEnded ? `<span class="battle-deadline-timer" id="battle-deadline-timer">${fmtDeadline(getKstMidnight())}</span>` : `<span class="battle-deadline-timer battle-deadline-timer--ended">투표 마감</span>`}
           </div>
         </div>
 
@@ -410,6 +425,18 @@ export async function renderBattle() {
         }
       } catch { /* user cancelled or unsupported */ }
     });
+
+    if (!isEnded) {
+      const timerEl = el.querySelector('#battle-deadline-timer');
+      if (timerEl) {
+        const deadline = getKstMidnight();
+        const tickTimer = setInterval(() => {
+          if (!document.contains(timerEl)) { clearInterval(tickTimer); return; }
+          timerEl.textContent = fmtDeadline(deadline);
+        }, 60000);
+        window.addEventListener('hashchange', () => clearInterval(tickTimer), { once: true });
+      }
+    }
 
   } catch (err) {
     console.error('[battle] load error', err);

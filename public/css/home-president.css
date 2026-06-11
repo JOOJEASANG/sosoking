@@ -96,3 +96,29 @@
 .home-prez-rate-btn:hover { background: var(--color-surface-2); }
 .home-prez-rate-btn--active[data-approve="true"]  { background: #dcfce7; border-color: #16a34a; color: #15803d; }
 .home-prez-rate-btn--active[data-approve="false"] { background: #fee2e2; border-color: #dc2626; color: #b91c1c; }
+
+/* ── 대통령 지지율 위기 인디케이터 ── */
+.home-prez-crisis {
+  margin-top: 8px;
+  padding: 7px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
+}
+.home-prez-crisis--warning {
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  color: #92400e;
+}
+.home-prez-crisis--danger {
+  background: #fee2e2;
+  border: 1px solid #ef4444;
+  color: #991b1b;
+  animation: pulse-badge 2s infinite;
+}
+.home-prez-crisis--high {
+  background: #dcfce7;
+  border: 1px solid #16a34a;
+  color: #15803d;
+}

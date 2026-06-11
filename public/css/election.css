@@ -497,3 +497,34 @@
   border: 1px solid rgba(100,100,100,.25);
   color: var(--color-text-muted, #888);
 }
+
+/* ── 대통령 지지율 위기 배너 ── */
+.elec-prez-crisis {
+  margin: 10px 0 4px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 800;
+  text-align: center;
+}
+.elec-prez-crisis--high {
+  background: rgba(22, 163, 74, .12);
+  border: 1.5px solid #16a34a;
+  color: #15803d;
+}
+.elec-prez-crisis--warning {
+  background: rgba(245, 158, 11, .12);
+  border: 1.5px solid #f59e0b;
+  color: #92400e;
+}
+.elec-prez-crisis--danger {
+  background: rgba(220, 38, 38, .15);
+  border: 1.5px solid #dc2626;
+  color: #991b1b;
+}
+.elec-prez-crisis--critical {
+  background: linear-gradient(135deg, #7f1d1d, #991b1b);
+  border: 2px solid #ef4444;
+  color: #fff;
+  animation: pulse-badge 1.5s infinite;
+}

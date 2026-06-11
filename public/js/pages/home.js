@@ -27,6 +27,7 @@ const QUICK_ACTIONS = [
   { path: '/parties',  emoji: '🏛️', name: '정당',     desc: '입당·정치력' },
   { path: '/election', emoji: '👑', name: '대선',     desc: '대통령 선출' },
   { path: '/ranking',  emoji: '🏆', name: '랭킹',     desc: '출세 순위' },
+  { path: '/news',     emoji: '📰', name: '소소신문', desc: '오늘의 정치', wide: true },
 ];
 
 function getKstDateString(date = new Date()) {
@@ -195,6 +196,14 @@ function renderPresidentCard(p) {
       </div>`
     : '';
 
+  const crisisHTML = (() => {
+    if (approvePct === null || totalRatings < 5 || !p.decree) return '';
+    if (approvePct < 30) return `<div class="home-prez-crisis home-prez-crisis--danger">🔴 탄핵 경보 — 지지율 ${approvePct}%</div>`;
+    if (approvePct < 45) return `<div class="home-prez-crisis home-prez-crisis--warning">⚠️ 지지율 위기 — ${approvePct}%</div>`;
+    if (approvePct >= 80) return `<div class="home-prez-crisis home-prez-crisis--high">⭐ 높은 지지 — ${approvePct}%</div>`;
+    return '';
+  })();
+
   return `
     <div class="home-prez-card" style="--party-color:${p.color}">
       <div class="home-prez-card__top" data-path="/election" style="cursor:pointer">
@@ -205,6 +214,7 @@ function renderPresidentCard(p) {
       ${p.decree ? `<div class="home-prez-card__decree">"${escHtml(p.decree)}"</div>` : ''}
       ${approvalHTML}
       ${rateHTML}
+      ${crisisHTML}
     </div>`;
 
 function renderBattleCard(battle) {
@@ -425,7 +435,7 @@ function renderQuickActions() {
   return `
     <div class="home-aiking-grid">
       ${QUICK_ACTIONS.map(k => `
-        <button class="home-aiking-card" data-path="${k.path}" type="button">
+        <button class="home-aiking-card${k.wide ? ' home-aiking-card--wide' : ''}" data-path="${k.path}" type="button">
           <span class="home-aiking-card__emoji">${k.emoji}</span>
           <span class="home-aiking-card__name">${k.name}</span>
           <span class="home-aiking-card__desc">${k.desc}</span>
