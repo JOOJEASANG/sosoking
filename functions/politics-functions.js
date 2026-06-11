@@ -67,6 +67,57 @@ const PARTIES = Object.freeze([
 const PARTY_BY_ID = Object.freeze(Object.fromEntries(PARTIES.map(p => [p.id, p])));
 const PARTY_IDS = PARTIES.map(p => p.id);
 
+// ── AI 정치인 NPC ──
+// 실제 유저가 0명이어도 정당·랭킹·당대표·대선후보가 항상 채워지도록 각 정당에 NPC를 시드한다.
+// 각 정당 첫 번째 NPC(페르소나)가 최강 → 기본 당대표. 유저가 정치력을 쌓으면 NPC를 제칠 수 있다.
+const PARTY_NPCS = Object.freeze({
+  national: [
+    { name: '김중진', emoji: '🎩', power: 2400 }, { name: '박관록', emoji: '📜', power: 1500 },
+    { name: '이원로', emoji: '🏅', power: 900 },  { name: '정선배', emoji: '☕', power: 520 },
+    { name: '최고참', emoji: '🗂️', power: 280 },
+  ],
+  truth: [
+    { name: '폭로왕', emoji: '📣', power: 2200 }, { name: '단독맨', emoji: '🎬', power: 1400 },
+    { name: '속보러', emoji: '⚡', power: 820 },  { name: '구독요정', emoji: '🔔', power: 480 },
+    { name: '댓글픽', emoji: '💬', power: 240 },
+  ],
+  youth: [
+    { name: '갈아엎자', emoji: '🔥', power: 2000 }, { name: '영끌이', emoji: '🚀', power: 1300 },
+    { name: '공정좌', emoji: '⚖️', power: 760 },   { name: '이생망', emoji: '😤', power: 440 },
+    { name: '팩폭러', emoji: '🥊', power: 220 },
+  ],
+  center: [
+    { name: '김퍼센트', emoji: '📊', power: 2100 }, { name: '박표본', emoji: '🧮', power: 1350 },
+    { name: '이오차', emoji: '📈', power: 780 },    { name: '중도층', emoji: '🤔', power: 460 },
+    { name: '여론바람', emoji: '🌬️', power: 230 },
+  ],
+  future: [
+    { name: '무조건찬성', emoji: '🙌', power: 1900 }, { name: '박수만', emoji: '👏', power: 1250 },
+    { name: '늘긍정', emoji: '😄', power: 720 },      { name: '함께해요', emoji: '🤝', power: 420 },
+    { name: '미래로', emoji: '🌈', power: 210 },
+  ],
+  rights: [
+    { name: '김탐사', emoji: '🔦', power: 2050 }, { name: '제보받음', emoji: '📨', power: 1320 },
+    { name: '취재중', emoji: '🎙️', power: 750 },  { name: '단독입수', emoji: '📂', power: 450 },
+    { name: '팩트체크', emoji: '✅', power: 225 },
+  ],
+  justice: [
+    { name: '법대로', emoji: '⚖️', power: 2300 }, { name: '원칙주의', emoji: '📕', power: 1450 },
+    { name: '무관용', emoji: '🚫', power: 850 },   { name: '정의구현', emoji: '🛡️', power: 500 },
+    { name: '엄벌해', emoji: '🔨', power: 260 },
+  ],
+});
+
+function npcMembers(partyId) {
+  return (PARTY_NPCS[partyId] || []).map((n, i) => ({
+    uid: `npc_${partyId}_${i + 1}`,
+    nickname: n.name,
+    icon: { type: 'emoji', value: n.emoji },
+    power: n.power,
+    isNpc: true,
+  }));
+}
+
 function kstToday() {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit',
@@ -88,23 +139,53 @@ function assertPartyId(value) {
 function partyRef(id) { return db.doc(`parties/${id}`); }
 function memberRef(partyId, uid) { return db.doc(`parties/${partyId}/members/${uid}`); }
 
-// 정당 문서가 없으면 기본 통계로 생성한다 (최초 1회).
+// 정당 문서가 없으면 기본 통계로 생성하고, AI NPC 당원을 시드한다 (최초 1회, 멱등).
 async function ensureParties() {
   const refs = PARTY_IDS.map(partyRef);
   const snaps = await db.getAll(...refs);
-  const missing = [];
-  snaps.forEach((snap, i) => { if (!snap.exists) missing.push(PARTIES[i]); });
-  if (!missing.length) return;
+
   const batch = db.batch();
-  for (const p of missing) {
-    batch.set(partyRef(p.id), {
-      id: p.id, name: p.name, emoji: p.emoji, color: p.color,
-      leaderName: p.leaderName, slogan: p.slogan,
-      memberCount: 0, totalPower: 0,
-      createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp(),
+  const toSeedNpc = [];
+  let dirty = false;
+
+  snaps.forEach((snap, i) => {
+    const p = PARTIES[i];
+    const data = snap.exists ? (snap.data() || {}) : null;
+    if (!snap.exists) {
+      batch.set(partyRef(p.id), {
+        id: p.id, name: p.name, emoji: p.emoji, color: p.color,
+        leaderName: p.leaderName, slogan: p.slogan,
+        memberCount: 0, totalPower: 0,
+        createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp(),
+      }, { merge: true });
+      dirty = true;
+    }
+    // NPC 미시드 정당은 시드 대상에 추가
+    if (!data || !data.npcSeeded) toSeedNpc.push(p.id);
+  });
+
+  // AI NPC 당원 시드
+  for (const pid of toSeedNpc) {
+    const npcs = npcMembers(pid);
+    if (!npcs.length) continue;
+    let powerSum = 0;
+    for (const npc of npcs) {
+      powerSum += npc.power;
+      batch.set(memberRef(pid, npc.uid), {
+        ...npc,
+        joinedAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp(),
+      }, { merge: true });
+    }
+    batch.set(partyRef(pid), {
+      npcSeeded: true,
+      memberCount: FieldValue.increment(npcs.length),
+      totalPower: FieldValue.increment(powerSum),
+      updatedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
+    dirty = true;
   }
-  await batch.commit();
+
+  if (dirty) await batch.commit();
 }
 
 function publicMember(uid, userData) {
@@ -123,7 +204,7 @@ async function topMemberOf(partyId) {
     if (q.empty) return null;
     const d = q.docs[0];
     const m = d.data() || {};
-    return { uid: d.id, nickname: m.nickname || '시민', icon: m.icon || null, power: Number(m.power || 0) };
+    return { uid: d.id, nickname: m.nickname || '시민', icon: m.icon || null, power: Number(m.power || 0), isNpc: !!m.isNpc };
   } catch {
     return null;
   }
@@ -303,12 +384,13 @@ async function buildCandidates() {
   return PARTIES.map((meta, i) => {
     const data = snaps[i].exists ? (snaps[i].data() || {}) : {};
     const leader = leaders[i];
-    const hasHuman = leader && leader.power > 0;
+    // 당대표(당내 1위)가 후보. NPC면 AI 후보로 표기, 실제 유저면 인간 후보.
+    const isHuman = leader && leader.power > 0 && !leader.isNpc;
     return {
       partyId: meta.id, partyName: meta.name, emoji: meta.emoji, color: meta.color,
-      candidateName: hasHuman ? leader.nickname : meta.leaderName,
-      candidateUid: hasHuman ? (leader.uid || null) : null,
-      isAI: !hasHuman,
+      candidateName: leader ? leader.nickname : meta.leaderName,
+      candidateUid: isHuman ? (leader.uid || null) : null,
+      isAI: !isHuman,
       power: Number(data.totalPower || 0),
     };
   }).sort((a, b) => b.power - a.power);
@@ -384,7 +466,24 @@ async function ensureElection() {
       candidates, votes: {}, totalVotes: 0,
       createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
-    await finalizeElection(prevKey); // 지난 주 당선자 확정
+
+    // 지난 주 선거가 있으면 마감, 없으면 초기 대통령을 무투표 당선으로 시드
+    // (유저가 0명이어도 1주차부터 현직 대통령이 존재하도록)
+    const prevRef = db.doc(`elections/${prevKey}`);
+    const prevSnap = await prevRef.get();
+    if (prevSnap.exists) {
+      await finalizeElection(prevKey);
+    } else {
+      const winner = candidates[0] || null; // 정치력 1위 정당 후보
+      await prevRef.set({
+        periodId: prevKey, status: 'closed', startKey: prevKey, endKey: key,
+        candidates, votes: {}, totalVotes: 0, seeded: true,
+        winnerPartyId: winner ? winner.partyId : null, winner: winner || null,
+        createdAt: FieldValue.serverTimestamp(), closedAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      }, { merge: true });
+      if (winner) generateDecreeFor(prevKey, winner).catch(() => {});
+    }
   }
   return key;
 }
