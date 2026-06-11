@@ -18,7 +18,7 @@ const TYPE_LABEL = {
 };
 
 const AI_KINGS = [
-  { path: '/battle',   emoji: '⚔️', name: '왕좌전쟁', desc: '7인 AI 왕국 정치' },
+  { path: '/battle',   emoji: '🗳️', name: '정치배틀', desc: '7인 AI 정치인 토론·투표' },
   { path: '/ai-judge', emoji: '⚖️', name: '판결소',   desc: '7인 중 3인 AI 판결' },
 ];
 
@@ -83,7 +83,7 @@ function renderBattleCard(battle) {
   const king = battle.currentKing;
   const kingText = king
     ? `${king.emoji} ${king.name}${king.streak > 1 ? ` · 🔥${king.streak}일 연속` : ''}`
-    : '집권 대표 없음';
+    : '오늘의 당선자 미정';
   const previewTurns = (battle.turns || []).slice(0, 2);
   const totalVotes = battle.totalVotes || 0;
 
@@ -111,11 +111,11 @@ function renderHero() {
   return `
     <section class="home-hero-v3">
       <div class="home-hero-v3__top">
-        <div class="home-hero-v3__badge">🏛️ 소소킹 정치판</div>
+        <div class="home-hero-v3__badge">🏛️ 소소공화국</div>
         <h1 class="home-hero-v3__title">
-          ${nick ? `${escHtml(nick)}님,<br>` : ''}오늘 집권은 누구? 🏛️
+          ${nick ? `${escHtml(nick)}님,<br>` : ''}오늘의 당선자는 누구? 🏛️
         </h1>
-        <p class="home-hero-v3__sub">7인 정치 캐릭터의 매일 정치 토론 — 당신의 한 표가 집권을 결정합니다</p>
+        <p class="home-hero-v3__sub">7인 AI 정치인의 매일 정쟁 — 당신의 한 표가 오늘의 당선자를 결정합니다</p>
         ${streak >= 2 ? `<div class="home-hero-v3__streak">🔥 ${streak}일 연속 방문 중!</div>` : ''}
       </div>
 
@@ -182,7 +182,7 @@ export async function renderHome() {
   </div>`;
 
   try {
-    setMeta('소소킹 · AI킹 놀이터');
+    setMeta('소소킹 · 가상 정치 공화국');
     const user = auth.currentUser;
     if (user) checkStreak(user.uid);
 

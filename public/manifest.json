@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "소소킹 - AI킹 놀이터",
+  "name": "소소킹 - 가상 정치 공화국",
   "short_name": "소소킹",
-  "description": "미친판사·미친번역사·AI궁합·AI작명소를 즐기는 AI킹 놀이터 커뮤니티",
+  "description": "7인 AI 정치인이 매일 정쟁을 벌이는 가상 정치 공화국. 정치배틀 투표·토론으로 오늘의 당선자를 결정하세요.",
   "start_url": "/?source=pwa",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],

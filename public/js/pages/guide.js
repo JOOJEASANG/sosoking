@@ -13,24 +13,24 @@ const CHARS_7 = [
 
 const FEATURES = [
   {
-    emoji: '⚔️',
-    name: '왕좌전쟁',
+    emoji: '🗳️',
+    name: '정치배틀',
     path: '/battle',
     badge: '7인 AI · 매일 자동',
-    desc: '매일 자정 왕국에서 황당한 사건이 발생! 7인 귀족이 자동으로 난장판 토론을 벌입니다. 유저는 구경 후 원하는 귀족에게 한 표.',
+    desc: '매일 자정 새로운 정치 안건이 터집니다! 7인 AI 정치인이 자동으로 난장판 정쟁을 벌여요. 유저는 토론을 보고 원하는 정치인에게 한 표.',
     examples: [
-      '"왕국 금고가 텅 비었다" → 꼰대 대감 vs 반란아 vs 교주 vs 음모가...',
-      '매일 투표 결과로 오늘의 왕 결정',
-      '역대 왕 기록·연속 기록 확인 가능',
+      '"국고가 텅 비었다" → 3선 의원 vs MZ 운동가 vs 탐사 기자...',
+      '매일 투표 결과로 오늘의 당선자 결정',
+      '역대 당선자 기록·연속 기록 확인 가능',
     ],
-    tip: '하루 1표 무료. 누가 가장 왕다운지는 당신이 결정합니다!',
+    tip: '하루 1표 무료. 오늘의 당선자는 당신의 표심이 결정합니다!',
   },
   {
     emoji: '⚖️',
     name: '판결소',
     path: '/ai-judge',
     badge: '7인 중 3인 랜덤',
-    desc: '억울한 상황을 적으면 7인 귀족 중 랜덤 3인이 각자의 세계관으로 판결을 내립니다. 원하는 귀족을 직접 고를 수도 있어요!',
+    desc: '억울한 상황을 적으면 7인 정치인 중 랜덤 3인이 각자의 시각으로 판결을 내립니다. 원하는 정치인을 직접 고를 수도 있어요!',
     examples: [
       '친구가 내 치킨 허락없이 먹음 → 유죄/무죄?',
       '카톡 읽씹 → 이게 잘못인가?',
@@ -57,7 +57,7 @@ export function renderGuide() {
           ${[
             ['#guide-what',    '소소킹이란?'],
             ['#guide-features','2가지 기능 소개'],
-            ['#guide-chars',   '7인 AI 귀족'],
+            ['#guide-chars',   '7인 AI 정치인'],
             ['#guide-start',   '시작하기'],
             ['#guide-limit',   'AI 이용 제한'],
             ['#guide-ladder',  '사다리게임 추가 기회'],
@@ -106,9 +106,9 @@ export function renderGuide() {
       </section>
 
       <section id="guide-chars" class="guide-section">
-        <h2 class="guide-section__title">👑 왕국의 7인 귀족</h2>
+        <h2 class="guide-section__title">🏛️ 소소공화국 7인 정치인</h2>
         <div class="guide-section__body">
-          <p>매일 정치 배틀에서 7인 전원이 자동으로 토론하고, 유저 투표로 집권 대표가 결정됩니다.</p>
+          <p>매일 정치배틀에서 7인 전원이 자동으로 토론하고, 유저 투표로 오늘의 당선자가 결정됩니다.</p>
           <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:14px">
             ${CHARS_7.map(c => `
               <div style="padding:12px;background:var(--color-surface-2);border-radius:12px">
@@ -125,8 +125,8 @@ export function renderGuide() {
         <div style="display:flex;flex-direction:column;gap:12px;margin-top:16px">
           ${[
             ['1', '회원가입', '구글 또는 카카오 계정으로 간편하게 가입할 수 있어요.'],
-            ['2', '기능 선택', '왕좌전쟁 또는 판결소로 이동하세요.'],
-            ['3', '참여하기', '왕좌전쟁은 하루 1표 투표로, 판결소는 억울한 상황을 입력하면 AI가 판결해요!'],
+            ['2', '기능 선택', '정치배틀 또는 판결소로 이동하세요.'],
+            ['3', '참여하기', '정치배틀은 하루 1표 투표로, 판결소는 억울한 상황을 입력하면 AI가 판결해요!'],
             ['4', '결과 확인', 'AI 결과는 자동으로 피드에 게시되며, 다른 사람들의 댓글을 받을 수 있어요.'],
             ['5', '공유하기', '재밌는 결과는 링크 복사나 카카오톡으로 친구에게 공유해보세요!'],
           ].map(([num, title, desc]) => `
@@ -154,7 +154,7 @@ export function renderGuide() {
               <th style="padding:8px 12px;text-align:center;border-radius:0 8px 0 0">하루 무료 횟수</th>
             </tr>
             ${[
-              ['⚔️ 왕좌전쟁 (투표)', '1표/일', true],
+              ['🗳️ 정치배틀 (투표)', '1표/일', true],
               ['⚖️ 판결소', '3회', false],
             ].map(([k, v, free]) => `
               <tr style="border-top:1px solid var(--color-border)">

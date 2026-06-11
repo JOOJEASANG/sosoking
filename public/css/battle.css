@@ -1,4 +1,4 @@
-/* battle.css — 왕좌전쟁 */
+/* battle.css — 정치배틀 */
 
 /* ── 왕 배너 ── */
 .battle-king-banner {
@@ -246,7 +246,7 @@
 .king-log-item__name { flex: 1; font-size: 13px; font-weight: 600; }
 .king-log-item__votes { font-size: 12px; color: var(--color-text-muted); }
 
-/* ── 홈 왕국 카드 ── */
+/* ── 홈 정치배틀 카드 ── */
 .home-battle-card {
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%);
   color: #fff;

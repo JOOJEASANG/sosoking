@@ -1,11 +1,11 @@
-/* king-history.js — 역대 왕 기록 */
+/* king-history.js — 역대 당선자 기록 */
 import { functions } from '../firebase.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
 import { setMeta } from '../utils/seo.js';
 import { escHtml } from '../utils/helpers.js';
 
 export async function renderKingHistory() {
-  setMeta('소소킹 · 집권 기록');
+  setMeta('소소킹 · 역대 당선자');
   const el = document.getElementById('page-content');
   if (!el) return;
 
@@ -29,8 +29,8 @@ export async function renderKingHistory() {
       <div class="king-history-page page-enter">
 
         <div class="king-history-header">
-          <div class="king-history-header__title">🏛️ 소소킹 명예의 전당</div>
-          <div class="king-history-header__sub">누적 집권 횟수 기록</div>
+          <div class="king-history-header__title">🏛️ 소소공화국 명예의 전당</div>
+          <div class="king-history-header__sub">누적 당선 횟수 기록</div>
         </div>
 
         <div class="king-rank-list">

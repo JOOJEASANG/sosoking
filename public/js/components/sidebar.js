@@ -123,7 +123,7 @@ export function renderSidebar() {
 
     <div class="sidebar__write">
       <button class="sidebar__write-btn" id="sb-write-btn" aria-label="AI킹">
-        <span style="font-size:18px">🤖</span><span>AI킹 놀이터</span>
+        <span style="font-size:18px">🤖</span><span>AI킹 정치소</span>
       </button>
     </div>
 
