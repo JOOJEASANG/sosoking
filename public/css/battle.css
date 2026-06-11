@@ -530,12 +530,49 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.home-battle-card__status--ended { color: rgba(255,255,255,.45); }
 .home-battle-card__cta {
   margin-top: 14px;
   font-size: 13px;
   font-weight: 800;
   color: rgba(255,255,255,.85);
 }
+
+/* 홈 배틀 카드 미니 투표 바 */
+.home-battle-mini-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 10px;
+}
+.home-battle-mini-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.home-battle-mini-bar__emoji { font-size: 14px; line-height: 1; flex-shrink: 0; }
+.home-battle-mini-bar__track {
+  flex: 1;
+  height: 6px;
+  background: rgba(255,255,255,.15);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.home-battle-mini-bar__fill {
+  height: 100%;
+  border-radius: 99px;
+  opacity: .85;
+  transition: width .5s cubic-bezier(.34,1.56,.64,1);
+}
+.home-battle-mini-bar--voted .home-battle-mini-bar__fill { opacity: 1; }
+.home-battle-mini-bar__pct {
+  font-size: 11px;
+  font-weight: 800;
+  color: rgba(255,255,255,.7);
+  min-width: 28px;
+  text-align: right;
+}
+.home-battle-mini-bar--voted .home-battle-mini-bar__pct { color: #fff; }
 
 /* 판결소 연계 버튼 */
 .battle-judge-cta {
