@@ -485,7 +485,7 @@ export async function renderHome() {
         </div>
       </div>` : '';
 
-    el.innerHTML = `<div class="home-dash page-enter home-dash--v2">${headerHTML}${battleHTML}${newsHTML}${prezHTML}${bestHTML}${hotHTML}${commentsHTML}</div>`;
+    el.innerHTML = `<div class="home-dash page-enter home-dash--v2">${headerHTML}${battleHTML}${newsHTML}${prezHTML}${bestHTML}${hotHTML}${commentsHTML}<div id="home-party-activity-slot"></div></div>`;
 
     el.querySelector('#hbtn-more-hot')?.addEventListener('click', () => navigate('/feed'));
     el.querySelectorAll('[data-path]').forEach(btn => {
@@ -494,6 +494,9 @@ export async function renderHome() {
     el.querySelectorAll('[data-id]').forEach(item =>
       item.addEventListener('click', () => navigate(`/detail/${item.dataset.id}`))
     );
+
+    // 정당 활동 피드 비동기 로드
+    loadHomePartyActivity(el.querySelector('#home-party-activity-slot'));
   } catch (err) {
     console.error('[home] renderHome error', err);
     el.innerHTML = `
@@ -504,4 +507,34 @@ export async function renderHome() {
       </div>`;
     el.querySelector('#btn-reload')?.addEventListener('click', () => location.reload());
   }
+}
+
+async function loadHomePartyActivity(slot) {
+  if (!slot) return;
+  try {
+    const call = httpsCallable(functions, 'getPartyActivities');
+    const { data } = await call();
+    const activities = (data.activities || []).slice(0, 4);
+    if (!activities.length) return;
+    slot.innerHTML = `
+      <div>
+        <div class="home-section-header">
+          <span class="home-section-title">🏛️ 오늘의 정치판</span>
+          <button class="home-section-more home-section-more--button" data-path="/parties">정당 보기</button>
+        </div>
+        <div class="home-party-activity-list">
+          ${activities.map(a => `
+            <div class="home-party-activity-item" style="--party-c:${a.color}">
+              <span class="home-party-activity-item__emoji">${a.emoji}</span>
+              <div class="home-party-activity-item__body">
+                <span class="home-party-activity-item__name">${escHtml(a.charName)} <em>${escHtml(a.partyName)}</em></span>
+                <p class="home-party-activity-item__text">${escHtml(a.text)}</p>
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>`;
+    slot.querySelectorAll('[data-path]').forEach(btn => {
+      btn.addEventListener('click', () => navigate(btn.dataset.path));
+    });
+  } catch { /* non-critical */ }
 }
