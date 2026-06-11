@@ -438,7 +438,10 @@
   gap: 8px;
   margin-bottom: 5px;
 }
-.battle-comment__author { font-size: 12px; font-weight: 800; color: var(--color-text-primary, #111); }
+.battle-comment__author {
+  font-size: 12px; font-weight: 800; color: var(--color-text-primary, #111);
+  display: inline-flex; align-items: center; gap: 3px;
+}
 .battle-comment__time { font-size: 11px; color: var(--color-text-muted, #888); }
 .battle-comment__text {
   font-size: 13px;

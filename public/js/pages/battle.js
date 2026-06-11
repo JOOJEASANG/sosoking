@@ -5,6 +5,9 @@ import { navigate } from '../router.js';
 import { setMeta } from '../utils/seo.js';
 import { escHtml } from '../utils/helpers.js';
 import { toast } from '../components/toast.js';
+import { renderPartyBadge } from '../utils/party-badge.js';
+import { getPoliticalRank } from '../utils/political-rank.js';
+import { appState } from '../state.js';
 
 function fmtNum(n) {
   if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
@@ -104,14 +107,18 @@ function renderComments(comments) {
   if (!comments.length) {
     return `<div class="battle-comment-empty">첫 번째 토론 의견을 남겨보세요!</div>`;
   }
-  return comments.map(c => `
+  return comments.map(c => {
+    const rank = getPoliticalRank(c.power || 0);
+    const partyBadge = c.partyId ? renderPartyBadge(c.partyId) : '';
+    return `
     <div class="battle-comment">
       <div class="battle-comment__head">
-        <span class="battle-comment__author">${escHtml(c.authorName)}</span>
+        <span class="battle-comment__author">${partyBadge}<span class="comment-rank-emoji" title="${escHtml(rank.title)}">${escHtml(rank.emoji)}</span>${escHtml(c.authorName)}</span>
         <span class="battle-comment__time">${fmtTime(c.createdAt)}</span>
       </div>
       <div class="battle-comment__text">${escHtml(c.text)}</div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 export async function renderBattle() {
@@ -316,8 +323,10 @@ async function handleComment(el) {
     const listEl = el.querySelector('#comment-list');
     if (listEl) {
       const newComment = {
-        authorName: auth.currentUser?.displayName || '익명',
+        authorName: appState.nickname || auth.currentUser?.displayName || '익명',
         text,
+        partyId: appState.partyId || null,
+        power: appState.points || 0,
         createdAt: Date.now(),
       };
       const emptyEl = listEl.querySelector('.battle-comment-empty');

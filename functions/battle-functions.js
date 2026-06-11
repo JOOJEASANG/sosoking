@@ -397,10 +397,15 @@ exports.addBattleComment = onCall({
   const userSnap = await db.doc(`users/${userId}`).get();
   const userData = userSnap.data() || {};
 
+  const partyId = userData.partyId || null;
+  const power = Math.max(0, Number(userData.totalPoints || userData.points || 0));
+
   const ref = await db.collection(`battles/${today}/comments`).add({
     userId,
     authorName: userData.nickname || userData.displayName || '익명',
     text: trimmed,
+    ...(partyId ? { partyId } : {}),
+    power,
     createdAt: FieldValue.serverTimestamp(),
   });
 
