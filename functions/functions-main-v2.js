@@ -54,6 +54,7 @@ module.exports = {
   getElection: politics.getElection,
   voteForPresident: politics.voteForPresident,
   getPartyActivities: politics.getPartyActivities,
+  getRankings: politics.getRankings,
   ...uploadImage,
   ...nicknameIcon,
   ...postOwner,

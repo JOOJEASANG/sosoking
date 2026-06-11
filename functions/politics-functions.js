@@ -414,6 +414,62 @@ exports.voteForPresident = onCall({ region: REGION, timeoutSeconds: 30 }, async 
   });
 });
 
+// ── 정치력 랭킹 — 전 정당 상위 유저 통합 순위 ──
+exports.getRankings = onCall({ region: REGION, timeoutSeconds: 30 }, async request => {
+  await ensureParties();
+
+  // 각 정당 상위 10명씩 수집 후 통합 정렬
+  const queries = PARTY_IDS.map(pid =>
+    partyRef(pid).collection('members').orderBy('power', 'desc').limit(10).get()
+  );
+  const results = await Promise.all(queries);
+
+  const seen = new Set();
+  const allMembers = [];
+  results.forEach((snap, i) => {
+    const partyMeta = PARTIES[PARTY_IDS.indexOf(PARTY_IDS[i])];
+    snap.docs.forEach(d => {
+      if (seen.has(d.id)) return;
+      seen.add(d.id);
+      const m = d.data() || {};
+      if (Number(m.power || 0) <= 0) return;
+      allMembers.push({
+        uid: d.id,
+        nickname: m.nickname || '시민',
+        icon: m.icon || null,
+        power: Number(m.power || 0),
+        partyId: partyMeta.id,
+        partyName: partyMeta.name,
+        partyEmoji: partyMeta.emoji,
+        partyColor: partyMeta.color,
+      });
+    });
+  });
+
+  allMembers.sort((a, b) => b.power - a.power);
+  const top30 = allMembers.slice(0, 30).map((m, i) => ({ ...m, rank: i + 1 }));
+
+  // 정당별 당대표 (이미 상위 1명씩이므로 재활용)
+  const leaders = PARTIES.map((meta, i) => {
+    const snap = results[PARTY_IDS.indexOf(meta.id)];
+    if (!snap || snap.empty) return { ...meta, leader: null };
+    const d = snap.docs[0];
+    const m = d.data() || {};
+    const power = Number(m.power || 0);
+    return {
+      ...meta,
+      leader: power > 0
+        ? { uid: d.id, nickname: m.nickname || '시민', icon: m.icon || null, power }
+        : null,
+    };
+  });
+
+  const myUid = request.auth && request.auth.uid;
+  const myEntry = myUid ? top30.find(m => m.uid === myUid) || null : null;
+
+  return { top30, leaders, myEntry };
+});
+
 // ── 오늘의 정당 활동 — AI가 정당별 한마디 생성 (lazy, 하루 1회) ──
 const PARTY_ROLES = {
   national: `너는 18년 경력 3선 국회의원이다. 권위적·느긋한 말투. 관례·선례 강조. 경력 자랑 뉘앙스.`,
