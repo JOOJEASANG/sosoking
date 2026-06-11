@@ -1690,3 +1690,98 @@ exports.campaignForParty = onCall({ region: REGION, timeoutSeconds: 15 }, async 
   const party = PARTY_BY_ID[result.partyId];
   return { ok: true, cost: COST, boost: BOOST, campaignsToday: result.count, maxCampaigns: MAX_DAILY, partyName: party?.name || result.partyId };
 });
+
+// ── 불신임 투표 청원 현황 조회 ──
+exports.getImpeachmentStatus = onCall({ region: REGION, timeoutSeconds: 10 }, async request => {
+  const uid = request.auth ? request.auth.uid : null;
+  const { prevKey } = weekPeriod();
+  const THRESHOLD = 5;
+
+  const elecSnap = await db.doc(`elections/${prevKey}`).get();
+  if (!elecSnap.exists || elecSnap.data().status !== 'closed' || !elecSnap.data().winner) {
+    return { eligible: false };
+  }
+  const d = elecSnap.data() || {};
+  if (!d.decree) return { eligible: false, reason: 'no_decree' };
+
+  const approveCount = Number(d.decreeApprove || 0);
+  const disapproveCount = Number(d.decreeDisapprove || 0);
+  const total = approveCount + disapproveCount;
+  if (total < 5) return { eligible: false, reason: 'insufficient_ratings', current: total, needed: 5 };
+
+  const pct = Math.round((approveCount / total) * 100);
+  if (pct >= 40) return { eligible: false, reason: 'approval_too_high', approvePct: pct };
+
+  const petitionSnap = await db.doc(`impeachment_petitions/${prevKey}`).get();
+  const count = petitionSnap.exists ? Number(petitionSnap.data().count || 0) : 0;
+  const triggered = petitionSnap.exists ? !!petitionSnap.data().triggered : false;
+
+  let mySigned = false;
+  if (uid) {
+    const sigSnap = await db.doc(`impeachment_sigs/${prevKey}_${uid}`).get();
+    mySigned = sigSnap.exists;
+  }
+
+  return { eligible: true, approvePct: pct, total, count, threshold: THRESHOLD, triggered, mySigned };
+});
+
+// ── 불신임 투표 서명 ──
+exports.signImpeachmentPetition = onCall({ region: REGION, timeoutSeconds: 15 }, async request => {
+  const uid = requireUid(request);
+  const { prevKey } = weekPeriod();
+  const THRESHOLD = 5;
+
+  const elecSnap = await db.doc(`elections/${prevKey}`).get();
+  if (!elecSnap.exists || elecSnap.data().status !== 'closed' || !elecSnap.data().winner) {
+    throw new HttpsError('not-found', '현직 대통령이 없어요');
+  }
+  const d = elecSnap.data() || {};
+  if (!d.decree) throw new HttpsError('failed-precondition', '포고령 발표 후 서명 가능합니다');
+
+  const approveCount = Number(d.decreeApprove || 0);
+  const disapproveCount = Number(d.decreeDisapprove || 0);
+  const total = approveCount + disapproveCount;
+  if (total < 5) throw new HttpsError('failed-precondition', '포고령 평가 인원이 부족합니다 (5명 필요)');
+  const pct = Math.round((approveCount / total) * 100);
+  if (pct >= 40) throw new HttpsError('failed-precondition', '지지율 40% 이상이라 불신임 발의 불가합니다');
+
+  return db.runTransaction(async tx => {
+    const petitionRef = db.doc(`impeachment_petitions/${prevKey}`);
+    const sigRef = db.doc(`impeachment_sigs/${prevKey}_${uid}`);
+    const awardRef = db.doc(`point_awards/impeach_${prevKey}_${uid}`);
+
+    const [petitionSnap, sigSnap, awardSnap] = await Promise.all([
+      tx.get(petitionRef), tx.get(sigRef), tx.get(awardRef),
+    ]);
+
+    if (sigSnap.exists) {
+      const curCount = petitionSnap.exists ? Number(petitionSnap.data().count || 0) : 0;
+      return { alreadySigned: true, count: curCount, threshold: THRESHOLD };
+    }
+
+    const curCount = petitionSnap.exists ? Number(petitionSnap.data().count || 0) : 0;
+    const newCount = curCount + 1;
+
+    tx.set(sigRef, { uid, createdAt: FieldValue.serverTimestamp() });
+    tx.set(petitionRef, {
+      count: FieldValue.increment(1),
+      periodId: prevKey,
+      triggered: newCount >= THRESHOLD,
+      updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+
+    let pointsAwarded = 0;
+    if (!awardSnap.exists) {
+      tx.set(awardRef, {
+        uid, type: 'impeach_sign', periodKey: prevKey,
+        points: 5, createdAt: FieldValue.serverTimestamp(),
+      });
+      tx.set(db.doc(`users/${uid}`), {
+        totalPoints: FieldValue.increment(5), updatedAt: FieldValue.serverTimestamp(),
+      }, { merge: true });
+      pointsAwarded = 5;
+    }
+
+    return { ok: true, count: newCount, threshold: THRESHOLD, triggered: newCount >= THRESHOLD, pointsAwarded };
+  });
+});

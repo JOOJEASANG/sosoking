@@ -233,6 +233,7 @@ export async function renderElection() {
         <button class="btn btn--primary btn--sm" id="elec-pledge-submit">공약 발표 📢</button>
       </div>
     </div>` : ''}
+    <div id="elec-impeach-section"></div>
     <div id="elec-endorsements-section"></div>
     <div id="elec-history-section"></div>
   </div>`;
@@ -397,11 +398,67 @@ export async function renderElection() {
     });
   }
 
+  // 불신임 투표 청원 (비동기 로드)
+  loadImpeachmentSection(el.querySelector('#elec-impeach-section'));
+
   // 지지 선언 피드 (비동기 로드 + 투표 후 작성 폼)
   loadEndorsements(el.querySelector('#elec-endorsements-section'), myVote, election.status);
 
   // 역대 대선 결과 (비동기 로드)
   loadElectionHistory(el.querySelector('#elec-history-section'));
+}
+
+async function loadImpeachmentSection(host) {
+  if (!host) return;
+  try {
+    const { data } = await httpsCallable(functions, 'getImpeachmentStatus')();
+    if (!data.eligible) return;
+
+    const { approvePct, count, threshold, triggered, mySigned } = data;
+    const progress = Math.min(100, Math.round((count / threshold) * 100));
+
+    host.innerHTML = `
+      <div class="elec-impeach-box${triggered ? ' elec-impeach-box--triggered' : ''}">
+        <div class="elec-impeach-box__header">
+          <span class="elec-impeach-box__badge">🗳️ 불신임 투표 발의</span>
+          ${triggered ? `<span class="elec-impeach-box__triggered-tag">발의 성공!</span>` : ''}
+        </div>
+        <p class="elec-impeach-box__desc">
+          현직 대통령 지지율 <b>${approvePct}%</b> — 불신임 투표를 발의할 수 있습니다.
+          ${threshold}명이 서명하면 공식 불신임 투표가 시작됩니다.
+        </p>
+        <div class="elec-impeach-progress">
+          <div class="elec-impeach-progress__fill" style="width:${progress}%"></div>
+        </div>
+        <div class="elec-impeach-count">${count} / ${threshold}명 서명</div>
+        ${!triggered && !mySigned
+          ? `<button class="btn btn--sm elec-impeach-sign-btn" id="elec-impeach-sign">✍️ 서명하기 (+5P)</button>`
+          : mySigned
+            ? `<div class="elec-impeach-signed">✅ 서명 완료</div>`
+            : `<div class="elec-impeach-signed">발의 완료 — 불신임 투표 진행 중</div>`}
+      </div>`;
+
+    host.querySelector('#elec-impeach-sign')?.addEventListener('click', async () => {
+      if (!auth.currentUser) { navigate('/login'); return; }
+      const btn = host.querySelector('#elec-impeach-sign');
+      btn.disabled = true;
+      btn.textContent = '서명 중…';
+      try {
+        const { data: sData } = await httpsCallable(functions, 'signImpeachmentPetition')();
+        if (sData.pointsAwarded) {
+          toast.success('+5P 획득! 불신임 서명 완료');
+          showPointPopup(sData.pointsAwarded);
+        } else {
+          toast.success('불신임 서명 완료');
+        }
+        loadImpeachmentSection(host);
+      } catch (e) {
+        toast.error(e?.message || '서명에 실패했어요');
+        btn.disabled = false;
+        btn.textContent = '✍️ 서명하기 (+5P)';
+      }
+    });
+  } catch { /* non-critical */ }
 }
 
 async function loadEndorsements(host, myVote, status) {

@@ -73,6 +73,8 @@ module.exports = {
   getWeeklyCrisis: politics.getWeeklyCrisis,
   voteOnCrisis: politics.voteOnCrisis,
   campaignForParty: politics.campaignForParty,
+  getImpeachmentStatus: politics.getImpeachmentStatus,
+  signImpeachmentPetition: politics.signImpeachmentPetition,
   ...uploadImage,
   ...nicknameIcon,
   ...postOwner,
