@@ -140,6 +140,36 @@
   background: none; border: none; padding: 0;
   font-size: 12px; font-weight: 700; color: var(--color-primary); cursor: pointer;
 }
+.party-manifesto-btn {
+  background: none; border: none; padding: 0;
+  font-size: 12px; font-weight: 700; color: var(--party-color, var(--color-primary)); cursor: pointer;
+  white-space: nowrap;
+}
+.party-manifesto-display {
+  margin: 0 0 8px;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.party-manifesto-display__loading {
+  padding: 10px 14px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+.party-manifesto-display__box {
+  border: 1.5px solid var(--color-border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: var(--color-surface);
+}
+.party-manifesto-display__box--empty { opacity: 0.75; }
+.party-manifesto-display__label {
+  font-size: 10px; font-weight: 800; color: var(--color-text-muted);
+  text-transform: uppercase; letter-spacing: .04em; margin-bottom: 5px;
+}
+.party-manifesto-display__text {
+  font-size: 13px; color: var(--color-text-primary);
+  line-height: 1.6; margin: 0; font-style: italic;
+}
 .party-card__action { flex-shrink: 0; }
 .party-card__mine-tag {
   font-size: 11px; font-weight: 800; color: var(--party-color, var(--color-primary));

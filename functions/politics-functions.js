@@ -1125,16 +1125,17 @@ exports.getDailyNews = onCall({ region: REGION, timeoutSeconds: 60 }, async () =
   try {
     const { prevKey } = weekPeriod();
 
-    // 병렬 데이터 수집: 배틀·대통령·정당활동·정당별 랭킹 1위
+    // 병렬 데이터 수집: 배틀·대통령·정당활동·정당별 랭킹 1위·위기
     const memberQueries = PARTY_IDS.map(pid =>
       partyRef(pid).collection('members').orderBy('power', 'desc').limit(1).get()
     );
     const { key: elecKey } = weekPeriod();
-    const [battleSnap, presSnap, actSnap, elecSnap, ...memberSnaps] = await Promise.all([
+    const [battleSnap, presSnap, actSnap, elecSnap, crisisSnap, ...memberSnaps] = await Promise.all([
       db.doc(`battles/${today}`).get(),
       db.doc(`elections/${prevKey}`).get(),
       db.doc(`party_activities/${today}`).get(),
       db.doc(`elections/${elecKey}`).get(),
+      db.doc(`political_crises/${prevKey}`).get().catch(() => null),
       ...memberQueries,
     ]);
 
@@ -1170,11 +1171,24 @@ exports.getDailyNews = onCall({ region: REGION, timeoutSeconds: 60 }, async () =
       if (best === 0) elecLeader = null;
     }
 
+    // 지난 주 국정 위기 결과
+    let crisisResult = null;
+    if (crisisSnap && crisisSnap.exists) {
+      const cd = crisisSnap.data();
+      const total = Number(cd.votesA || 0) + Number(cd.votesB || 0);
+      if (cd.title && total > 0) {
+        const pctA = Math.round((Number(cd.votesA || 0) / total) * 100);
+        const winner = pctA >= 50 ? cd.optionA : cd.optionB;
+        crisisResult = `지난 주 국정 위기 결과: "${cd.title}" — ${winner} 채택 (${total}명 참여)${cd.consequence ? ` / 결말: "${cd.consequence}"` : ''}`;
+      }
+    }
+
     const lines = [
       battle ? `정치배틀 이슈: "${battle.topic}"${battleWinner ? ` → ${battleWinner.emoji} ${battleWinner.name} 승리` : ' (진행 중)'}` : null,
       pres && pres.winner ? `현직 대통령: ${pres.winner.candidateName} (${pres.winner.partyName})${pres.decree ? ` / 포고령: "${pres.decree}"` : ''}` : null,
       elecLeader ? `이번 주 대선 선두: ${elecLeader.candidateName} (${elecLeader.partyName}) ${elecLeader.votes || 0}표` : null,
       topMember ? `정치력 1위: ${topMember.nickname} (${topMember.partyName}) ${topMember.power}P` : null,
+      crisisResult,
       `오늘의 이슈: "${actTopic}"`,
     ].filter(Boolean).join('\n');
 

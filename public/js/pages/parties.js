@@ -229,11 +229,13 @@ function renderPartyCard(p, me, isTopPower, presPartyId, winCount) {
         <div class=”party-card__meta”>
           <span class=”party-card__power”>⚡ 정당 정치력 <b>${fmtNum(p.totalPower)}</b>${renderTrendBadge(p.powerDiff)}${winBadge}</span>
           <button class=”party-members-btn” data-party=”${p.id}”>당원 보기</button>
+          <button class=”party-manifesto-btn” data-party=”${p.id}”>📜 당론</button>
         </div>
       </div>
       <div class=”party-card__action”>${btn}</div>
     </div>
-    <div class=”party-members” id=”members-${p.id}” hidden></div>`;
+    <div class=”party-members” id=”members-${p.id}” hidden></div>
+    <div class=”party-manifesto-display” id=”manifesto-display-${p.id}” hidden></div>`;
 }
 
 function showJoinCeremony(partyId, name, color, emoji) {
@@ -594,6 +596,39 @@ export async function renderParties() {
       } else {
         host.hidden = true;
         btn.textContent = '당원 보기';
+      }
+    });
+  });
+
+  el.querySelectorAll('.party-manifesto-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const pid = btn.dataset.party;
+      const host = el.querySelector(`#manifesto-display-${pid}`);
+      if (!host) return;
+      if (!host.hidden) {
+        host.hidden = true;
+        btn.textContent = '📜 당론';
+        return;
+      }
+      host.hidden = false;
+      btn.textContent = '📜 닫기';
+      if (host.dataset.loaded) return;
+      host.dataset.loaded = '1';
+      host.innerHTML = `<div class="party-manifesto-display__loading">당론 불러오는 중…</div>`;
+      try {
+        const { data } = await httpsCallable(functions, 'getPartyManifesto')({ partyId: pid });
+        const partyMeta = PARTY_META[pid];
+        host.innerHTML = data.manifesto
+          ? `<div class="party-manifesto-display__box">
+               <div class="party-manifesto-display__label">📜 이번 주 당론 성명</div>
+               <p class="party-manifesto-display__text">"${escHtml(data.manifesto)}"</p>
+             </div>`
+          : `<div class="party-manifesto-display__box party-manifesto-display__box--empty">
+               <div class="party-manifesto-display__label">📜 당론 성명</div>
+               <p class="party-manifesto-display__text">${partyMeta ? escHtml(partyMeta.policy) : '당론 성명이 아직 없습니다.'}</p>
+             </div>`;
+      } catch {
+        host.innerHTML = `<div class="party-manifesto-display__box party-manifesto-display__box--empty"><p class="party-manifesto-display__text">불러오지 못했어요.</p></div>`;
       }
     });
   });
