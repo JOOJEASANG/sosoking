@@ -77,6 +77,7 @@ async function renderGuideSafe() { const module = await import('./pages/guide.js
 async function registerRoutes() {
   registerRoute('/', async () => renderPage((await import('./pages/home.js')).renderHome, '홈'));
   registerRoute('/battle', async () => renderPage((await import('./pages/battle.js')).renderBattle, '정치배틀'));
+  registerRoute('/parties', async () => renderPage((await import('./pages/parties.js')).renderParties, '정당'));
   registerRoute('/king-history', async () => renderPage((await import('./pages/king-history.js')).renderKingHistory, '역대 당선자'));
   registerRoute('/feed', async () => renderPage((await import('./pages/feed.js')).renderFeed, '피드'));
   registerRoute('/hall', async () => renderPage((await import('./pages/hall.js')).renderHall, '통계'));
@@ -173,7 +174,7 @@ function renderFrame() {
           <div class="site-footer__body" id="footer-body" hidden>
             <div class="site-footer__inner">
               <div class="site-footer__brand-block"><a href="#/" class="site-footer__brand"><img src="/logo.svg" alt="" width="26" height="26"><span>소소킹</span></a><div class="site-footer__tagline">7인 AI 정치인의 가상 정치 드라마<br>매일 새로운 당선자가 탄생합니다</div></div>
-              <div><div class="site-footer__col-title">공화국 메뉴</div><div class="site-footer__links"><a href="#/battle">🗳️ 정치배틀</a><a href="#/ai-judge">⚖️ 판결소</a><a href="#/king-history">🏛️ 역대 당선자</a></div></div>
+              <div><div class="site-footer__col-title">공화국 메뉴</div><div class="site-footer__links"><a href="#/battle">🗳️ 정치배틀</a><a href="#/parties">🏛️ 정당</a><a href="#/ai-judge">⚖️ 판결소</a><a href="#/king-history">🏛️ 역대 당선자</a></div></div>
               <div><div class="site-footer__col-title">바로가기</div><div class="site-footer__links"><a href="#/feed">피드</a><a href="#/guide">이용안내</a><a href="#/ai-king">AI킹</a></div></div>
               <div><div class="site-footer__col-title">정보</div><div class="site-footer__links"><a href="#/terms">이용약관</a><a href="#/privacy">개인정보처리방침</a></div></div>
             </div>

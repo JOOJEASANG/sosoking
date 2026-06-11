@@ -1,0 +1,100 @@
+/* parties.css — 소소공화국 정당 페이지 */
+
+.parties-page { padding-bottom: 24px; }
+
+.parties-hero {
+  text-align: center;
+  padding: 22px 16px 18px;
+  background: linear-gradient(135deg, var(--color-primary-bg, #fff0ec), var(--color-surface, #fff));
+  border-radius: 18px;
+  margin-bottom: 14px;
+}
+.parties-hero__badge {
+  display: inline-block;
+  font-size: 12px; font-weight: 800;
+  color: var(--color-primary, #ff6b4a);
+  background: var(--color-surface, #fff);
+  padding: 4px 12px; border-radius: 99px; margin-bottom: 8px;
+}
+.parties-hero__title { font-size: 22px; font-weight: 900; margin: 0 0 6px; color: var(--color-text-primary); }
+.parties-hero__sub { font-size: 13px; color: var(--color-text-secondary); line-height: 1.5; margin: 0; }
+
+/* 내 소속 배너 */
+.party-mine {
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-border);
+  border-radius: 16px; padding: 16px 18px; margin-bottom: 16px;
+}
+.party-mine--guest, .party-mine--none { text-align: center; }
+.party-mine__label { font-size: 11px; font-weight: 800; color: var(--color-text-muted); letter-spacing: .04em; }
+.party-mine__name { font-size: 19px; font-weight: 900; color: var(--color-text-primary); margin: 2px 0 4px; }
+.party-mine__power { font-size: 13px; color: var(--color-text-secondary); }
+.party-mine__power b { color: var(--color-primary); }
+.party-mine__hint, .party-mine__desc { font-size: 12px; color: var(--color-text-muted); margin-top: 6px; line-height: 1.5; }
+.party-mine__title { font-size: 16px; font-weight: 900; color: var(--color-text-primary); margin-bottom: 6px; }
+.party-mine--guest .btn, .party-mine--none .btn { margin-top: 10px; }
+
+.parties-standings-title {
+  font-size: 15px; font-weight: 900; color: var(--color-text-primary);
+  margin: 4px 4px 10px; display: flex; align-items: baseline; gap: 8px;
+}
+.parties-standings-title span { font-size: 11px; font-weight: 700; color: var(--color-text-muted); }
+
+.parties-list { display: flex; flex-direction: column; gap: 10px; }
+
+/* 정당 카드 */
+.party-card {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--party-color, #ff6b4a);
+  border-radius: 14px; padding: 14px 14px;
+}
+.party-card--mine { box-shadow: 0 0 0 2px var(--party-color, #ff6b4a) inset; }
+.party-card__rank {
+  min-width: 26px; text-align: center; font-size: 16px; font-weight: 900;
+  color: var(--color-text-secondary);
+}
+.party-card__emoji { font-size: 30px; line-height: 1; }
+.party-card__body { flex: 1; min-width: 0; }
+.party-card__top { display: flex; align-items: center; gap: 8px; }
+.party-card__name { font-size: 16px; font-weight: 900; color: var(--color-text-primary); }
+.party-card__count { font-size: 11px; font-weight: 700; color: var(--color-text-muted); }
+.party-card__slogan { font-size: 12px; color: var(--color-text-secondary); margin: 2px 0 4px; font-style: italic; }
+.party-card__leader { font-size: 12px; color: var(--color-text-secondary); }
+.party-card__leader b { color: var(--party-color, var(--color-primary)); }
+.party-card__meta { display: flex; align-items: center; gap: 12px; margin-top: 6px; }
+.party-card__power { font-size: 12px; font-weight: 700; color: var(--color-text-secondary); }
+.party-card__power b { color: var(--color-text-primary); }
+.party-members-btn {
+  background: none; border: none; padding: 0;
+  font-size: 12px; font-weight: 700; color: var(--color-primary); cursor: pointer;
+}
+.party-card__action { flex-shrink: 0; }
+.party-card__mine-tag {
+  font-size: 11px; font-weight: 800; color: var(--party-color, var(--color-primary));
+  border: 1px solid var(--party-color, var(--color-primary));
+  padding: 4px 10px; border-radius: 99px; white-space: nowrap;
+}
+
+/* 당원 목록 */
+.party-members {
+  background: var(--color-surface-2, #f6f6f9);
+  border-radius: 12px; padding: 8px 12px; margin: -2px 0 2px;
+}
+.party-members__loading, .party-members__empty {
+  font-size: 12px; color: var(--color-text-muted); text-align: center; padding: 10px 0;
+}
+.party-member {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 4px; border-bottom: 1px solid var(--color-border);
+}
+.party-member:last-child { border-bottom: none; }
+.party-member--leader { font-weight: 800; }
+.party-member__rank { min-width: 24px; text-align: center; font-weight: 800; font-size: 13px; color: var(--color-text-secondary); }
+.party-member__name { flex: 1; font-size: 13px; color: var(--color-text-primary); }
+.party-member__badge {
+  font-size: 10px; font-weight: 800; color: #fff; background: var(--color-primary);
+  padding: 1px 6px; border-radius: 99px; margin-left: 4px;
+}
+.party-member__power { font-size: 12px; font-weight: 800; color: var(--color-primary); }

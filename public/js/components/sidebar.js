@@ -56,6 +56,7 @@ export function renderSidebar() {
   const MAIN_NAV = [
     { label: '홈',     path: '/',        icon: iconHome() },
     { label: '피드',   path: '/feed',    icon: iconFeed() },
+    { label: '🏛️ 정당', path: '/parties', icon: '' },
     { label: '🤖 AI킹', path: '/ai-king', icon: '' },
     { label: '통계',   path: '/hall',    icon: iconStats() },
   ];

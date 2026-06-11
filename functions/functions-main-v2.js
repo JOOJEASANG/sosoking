@@ -18,6 +18,7 @@ const kakaoAuth = require('./kakao-auth-functions.js');
 const aiLadder = require('./ai-ladder-functions.js');
 const hotPotato = require('./hot-potato-functions.js');
 const battle = require('./battle-functions.js');
+const politics = require('./politics-functions.js');
 
 module.exports = {
   ...coreAi,
@@ -46,6 +47,10 @@ module.exports = {
   getBattleStatus: battle.getBattleStatus,
   getKingHistory: battle.getKingHistory,
   adminGenerateBattle: battle.adminGenerateBattle,
+  getPoliticsOverview: politics.getPoliticsOverview,
+  getPartyMembers: politics.getPartyMembers,
+  joinParty: politics.joinParty,
+  leaveParty: politics.leaveParty,
   ...uploadImage,
   ...nicknameIcon,
   ...postOwner,
