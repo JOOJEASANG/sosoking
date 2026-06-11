@@ -76,7 +76,7 @@ async function checkStreak(uid) {
     const maxStreak = Math.max(newStreak, Number(snap.data().maxStreak || 0));
     await updateDoc(userRef, { lastVisit: today, streak: newStreak, maxStreak });
     appState.streak = newStreak;
-    httpsCallable(functions, 'claimDailyBonus')({}).then(() => showPointPopup(20)).catch(() => {});
+    httpsCallable(functions, 'claimDailyBonus')({}).then(res => showPointPopup(res?.data?.points || 20)).catch(() => {});
   } catch { /* non-critical */ }
 }
 
@@ -313,7 +313,7 @@ function renderLeaderCard(status) {
       </div>
       <div class="home-leader-card__perks">
         <div class="home-leader-card__perk">🗳️ 이번 주 대통령 선거 출마 중</div>
-        <div class="home-leader-card__perk">⚡ 리더 보너스 — 매일 활동 시 정치력 2배</div>
+        <div class="home-leader-card__perk">⚡ 리더 보너스 — 매일 출석 보너스 +30P (일반 +20P)</div>
         <div class="home-leader-card__perk">📢 당원들이 당신의 활동을 주목합니다</div>
       </div>
       <div class="home-leader-card__cta">대선 현황 확인 →</div>
@@ -326,8 +326,9 @@ function renderMissions(status, battleData) {
   const votedElection = !!status.votedElection;
   const attended = (appState.streak || 0) >= 1;
 
+  const dailyReward = status.isLeader ? '+30P 👑' : '+20P';
   const missions = [
-    { done: attended,       label: '오늘 출석',     path: '/',         cta: '완료',      reward: '+20P', icon: '📅' },
+    { done: attended,       label: '오늘 출석',     path: '/',         cta: '완료',      reward: dailyReward, icon: '📅' },
     { done: votedBattle,    label: '정치배틀 투표', path: '/battle',   cta: '투표하기',  reward: '+5P',  icon: '🗳️' },
     { done: votedElection,  label: '대선 투표',     path: '/election', cta: '투표하기',  reward: '+5P',  icon: '👑' },
   ];

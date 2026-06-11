@@ -157,20 +157,39 @@ const claimDailyBonus = onCall({ region: REGION, timeoutSeconds: 20 }, async req
   const dailyRef = db.doc(`point_awards/${uid}_daily_${today}`);
   const userRef = db.doc(`users/${uid}`);
   let awarded = false;
+  let basePoints = 20;
+  let isLeader = false;
+
+  // 당대표 보너스 확인 (출석 보너스 +10P 추가)
+  try {
+    const userSnap = await userRef.get();
+    const userData = userSnap.exists ? userSnap.data() || {} : {};
+    const partyId = userData.partyId;
+    if (partyId) {
+      const { getFirestore } = require('firebase-admin/firestore');
+      const db2 = getFirestore();
+      const top = await db2.collection(`parties/${partyId}/members`)
+        .orderBy('power', 'desc').limit(1).get();
+      if (!top.empty && top.docs[0].id === uid) {
+        isLeader = true;
+        basePoints = 30;
+      }
+    }
+  } catch {}
 
   await db.runTransaction(async tx => {
     const dailySnap = await tx.get(dailyRef);
     if (dailySnap.exists) return;
     awarded = true;
-    tx.set(dailyRef, { uid, date: today, createdAt: FieldValue.serverTimestamp() });
+    tx.set(dailyRef, { uid, date: today, isLeader, points: basePoints, createdAt: FieldValue.serverTimestamp() });
     tx.set(userRef, {
-      points: FieldValue.increment(20),
-      totalPoints: FieldValue.increment(20),
+      points: FieldValue.increment(basePoints),
+      totalPoints: FieldValue.increment(basePoints),
       updatedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
   });
 
-  return { ok: true, awarded, points: awarded ? 20 : 0 };
+  return { ok: true, awarded, points: awarded ? basePoints : 0, isLeader };
 });
 
 module.exports = { awardUserPoints, claimSignupBonus, claimDailyBonus };
