@@ -436,6 +436,69 @@
 .welcome-modal__party-btn { width: 100%; font-weight: 900; }
 .welcome-modal__skip-btn { width: 100%; font-size: 12px; }
 
+/* 공화국 의석 현황 */
+.parl-chart {
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+.parl-chart__title {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  margin-bottom: 10px;
+}
+.parl-chart__sub {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--color-text-muted);
+  margin-left: 4px;
+}
+.parl-blocks {
+  display: flex;
+  height: 36px;
+  border-radius: 8px;
+  overflow: hidden;
+  gap: 1px;
+  margin-bottom: 10px;
+}
+.parl-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 800;
+  color: rgba(255,255,255,.9);
+  min-width: 0;
+  overflow: hidden;
+  cursor: default;
+  line-height: 1.2;
+  transition: flex .6s ease;
+}
+.parl-block__seats { font-size: 9px; }
+.parl-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+}
+.parl-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  font-weight: 600;
+}
+.parl-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
 /* 정당 정치력 트렌드 배지 */
 .party-trend {
   display: inline-block;

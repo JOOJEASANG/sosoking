@@ -155,6 +155,40 @@ function renderMyBanner(me) {
   </div>`;
 }
 
+function renderParliamentChart(parties) {
+  const totalPower = parties.reduce((s, p) => s + (p.totalPower || 0), 0);
+  if (totalPower === 0) return '';
+  const TOTAL_SEATS = 100;
+  const seats = parties.map(p => ({
+    ...p,
+    seats: Math.max(1, Math.round(((p.totalPower || 0) / totalPower) * TOTAL_SEATS)),
+  }));
+  // 의석 합이 100이 되도록 최대값 조정
+  let sum = seats.reduce((s, p) => s + p.seats, 0);
+  if (sum !== TOTAL_SEATS) {
+    const idx = seats.indexOf(seats.reduce((a, b) => (a.seats > b.seats ? a : b)));
+    seats[idx].seats += TOTAL_SEATS - sum;
+  }
+
+  const blocks = seats.map(p => {
+    const label = p.seats >= 8 ? `${p.emoji}<br><span class="parl-block__seats">${p.seats}</span>` : `<span class="parl-block__seats">${p.seats}</span>`;
+    return `<div class="parl-block" style="flex:${p.seats};background:${p.color}" title="${p.name} ${p.seats}석">
+      ${label}
+    </div>`;
+  }).join('');
+
+  const legend = seats.map(p =>
+    `<span class="parl-legend-item"><span class="parl-legend-dot" style="background:${p.color}"></span>${p.emoji} ${p.seats}석</span>`
+  ).join('');
+
+  return `
+    <div class="parl-chart">
+      <div class="parl-chart__title">🏛️ 공화국 의석 현황 <span class="parl-chart__sub">총 ${TOTAL_SEATS}석 · 정치력 비례</span></div>
+      <div class="parl-blocks">${blocks}</div>
+      <div class="parl-legend">${legend}</div>
+    </div>`;
+}
+
 function renderTrendBadge(diff) {
   if (!diff || Math.abs(diff) < 5) return '';
   if (diff > 0) return `<span class=”party-trend party-trend--up”>▲ +${fmtNum(diff)}</span>`;
@@ -448,6 +482,8 @@ export async function renderParties() {
       </div>
     </div>`;
 
+  const parliamentHTML = renderParliamentChart(parties);
+
   el.innerHTML = `<div class="parties-page page-enter">
     <div class="parties-hero">
       <div class="parties-hero__badge">🏛️ 소소공화국 정당정치</div>
@@ -455,6 +491,7 @@ export async function renderParties() {
       <p class="parties-hero__sub">입당해 정치력을 쌓고 당내 1위 <b>당대표</b>로, 매주 <b>대선</b>에서 <b>대통령</b>에 도전하세요.</p>
     </div>
     ${stateHTML}
+    ${parliamentHTML}
     ${activityHTML}
     ${renderMyBanner(me)}
     <div class="parties-standings-title">📊 정당 세력 순위 <span>정치력 기준</span>
