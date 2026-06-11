@@ -578,6 +578,7 @@ exports.closeDailyBattle = onSchedule({
         emoji: char?.emoji || '',
         votes: maxVotes,
         totalVotes: battleSnap.data().totalVotes || 0,
+        topic: battleSnap.data().topic || '',
         createdAt: FieldValue.serverTimestamp(),
       }),
       db.doc(`charStats/${winner}`).set({

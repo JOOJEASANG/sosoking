@@ -660,6 +660,53 @@
 .king-log-item__votes { font-size: 12px; color: var(--color-text-muted); font-weight: 600; }
 .king-log-item__pct { font-size: 10px; font-weight: 800; color: var(--char-color, var(--color-primary)); }
 .king-log-item__streak-dot { font-size: 12px; }
+.king-log-item__topic {
+  font-size: 10px; font-weight: 600;
+  color: var(--color-text-muted);
+  background: var(--color-bg-alt, #f5f5f5);
+  border-radius: 6px; padding: 1px 6px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 120px;
+}
+
+/* ─── 정당 패권 순위 ─── */
+.kh-party-rank-list { display: flex; flex-direction: column; gap: 7px; }
+.kh-party-rank-item {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--color-card-bg, #fff);
+  border: 1px solid var(--color-border, #eee);
+  border-radius: 10px; padding: 9px 12px;
+}
+.kh-party-rank-item__medal { font-size: 16px; width: 28px; text-align: center; flex-shrink: 0; }
+.kh-party-rank-item__emoji { font-size: 20px; flex-shrink: 0; }
+.kh-party-rank-item__info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.kh-party-rank-item__name { font-size: 13px; font-weight: 700; color: var(--color-text-primary); }
+.kh-party-rank-item__bar-wrap { height: 5px; background: var(--color-border, #eee); border-radius: 3px; overflow: hidden; }
+.kh-party-rank-item__bar { height: 100%; background: var(--p-color, var(--color-primary)); border-radius: 3px; transition: width .4s; }
+.kh-party-rank-item__wins { font-size: 15px; font-weight: 900; color: var(--p-color, var(--color-primary)); flex-shrink: 0; }
+
+/* ─── 역대 대선 기록 ─── */
+.kh-elec-history-list { display: flex; flex-direction: column; gap: 7px; }
+.kh-elec-item {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--color-card-bg, #fff);
+  border: 1px solid var(--color-border, #eee);
+  border-left: 3px solid var(--p-color, var(--color-primary));
+  border-radius: 10px; padding: 10px 12px;
+}
+.kh-elec-item--latest { background: linear-gradient(135deg, rgba(var(--p-color-rgb,100,100,100),.08) 0%, var(--color-card-bg,#fff) 100%); }
+.kh-elec-item__left { display: flex; flex-direction: column; gap: 2px; min-width: 72px; flex-shrink: 0; }
+.kh-elec-item__period { font-size: 11px; color: var(--color-text-muted); font-weight: 600; }
+.kh-elec-item__badge {
+  font-size: 9px; font-weight: 800; letter-spacing: .3px;
+  background: var(--p-color, var(--color-primary)); color: #fff;
+  border-radius: 99px; padding: 1px 5px; width: fit-content;
+}
+.kh-elec-item__emoji { font-size: 22px; flex-shrink: 0; }
+.kh-elec-item__info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.kh-elec-item__name { font-size: 13px; font-weight: 800; color: var(--color-text-primary); }
+.kh-elec-item__decree { font-size: 11px; color: var(--color-text-muted); font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kh-elec-item__pct { font-size: 15px; font-weight: 900; color: var(--p-color, var(--color-primary)); flex-shrink: 0; }
 
 /* ─── 홈 정치배틀 카드 ─── */
 .home-battle-card {
