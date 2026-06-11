@@ -288,3 +288,24 @@
   font-size: 16px; color: var(--color-text-muted); cursor: pointer;
   line-height: 1; padding: 2px 4px;
 }
+
+/* ── 정치력 획득 팝업 (+NP 플로팅) ── */
+.point-popup {
+  position: fixed;
+  z-index: 4000;
+  pointer-events: none;
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--color-primary, #ff6b4a);
+  text-shadow: 0 1px 4px rgba(0,0,0,.15);
+  opacity: 0;
+  white-space: nowrap;
+}
+.point-popup--fly {
+  animation: point-fly 1s ease-out forwards;
+}
+@keyframes point-fly {
+  0%  { opacity: 1; transform: translateX(-50%) translateY(0)    scale(1.15); }
+  60% { opacity: 1; transform: translateX(-50%) translateY(-40px) scale(1); }
+  100%{ opacity: 0; transform: translateX(-50%) translateY(-70px) scale(.85); }
+}

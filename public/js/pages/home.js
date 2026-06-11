@@ -11,6 +11,7 @@ import {
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
 import { navigate } from '../router.js';
 import { getPoliticalRank } from '../utils/political-rank.js';
+import { showPointPopup } from '../utils/point-popup.js';
 
 const TYPE_LABEL = {
   ai_judge:     '⚖️ 판결소',
@@ -73,7 +74,7 @@ async function checkStreak(uid) {
     const newStreak = lastVisit === yesterday ? streak + 1 : 1;
     await updateDoc(userRef, { lastVisit: today, streak: newStreak });
     appState.streak = newStreak;
-    httpsCallable(functions, 'claimDailyBonus')({}).catch(() => {});
+    httpsCallable(functions, 'claimDailyBonus')({}).then(() => showPointPopup(20)).catch(() => {});
   } catch { /* non-critical */ }
 }
 

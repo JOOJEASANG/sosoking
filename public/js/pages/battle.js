@@ -8,6 +8,7 @@ import { toast } from '../components/toast.js';
 import { renderPartyBadge } from '../utils/party-badge.js';
 import { getPoliticalRank } from '../utils/political-rank.js';
 import { appState } from '../state.js';
+import { showPointPopup } from '../utils/point-popup.js';
 
 function fmtNum(n) {
   if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
@@ -297,6 +298,7 @@ async function handleVote(charId, prevData, el) {
 
     const char = prevData.chars.find(c => c.id === charId);
     toast.success(`${char?.emoji || ''} ${char?.name || ''} 지지!`);
+    showPointPopup(5);
   } catch (err) {
     btns.forEach(b => { b.disabled = false; });
     if (err?.code === 'already-exists') {

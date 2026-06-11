@@ -5,6 +5,7 @@ import { navigate } from '../router.js';
 import { setMeta } from '../utils/seo.js';
 import { escHtml } from '../utils/helpers.js';
 import { toast } from '../components/toast.js';
+import { showPointPopup } from '../utils/point-popup.js';
 
 function fmtNum(n) {
   n = Number(n || 0);
@@ -132,6 +133,7 @@ export async function renderElection() {
         const call = httpsCallable(functions, 'voteForPresident');
         await call({ partyId });
         toast.success(`${name} 후보에게 투표했어요! 🗳️`);
+        showPointPopup(5);
         renderElection();
       } catch (e) {
         toast.error(e?.message || '투표에 실패했어요.');
