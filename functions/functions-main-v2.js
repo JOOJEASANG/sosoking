@@ -70,6 +70,7 @@ module.exports = {
   claimRulingBonus: politics.claimRulingBonus,
   getWeeklyCrisis: politics.getWeeklyCrisis,
   voteOnCrisis: politics.voteOnCrisis,
+  campaignForParty: politics.campaignForParty,
   ...uploadImage,
   ...nicknameIcon,
   ...postOwner,

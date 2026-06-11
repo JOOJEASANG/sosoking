@@ -14,6 +14,7 @@ import { getPoliticalRank } from '../utils/political-rank.js';
 import { showPointPopup } from '../utils/point-popup.js';
 import { checkRankUp } from '../utils/rank-up.js';
 import { renderPartyBadge } from '../utils/party-badge.js';
+import { toast } from '../components/toast.js';
 
 const TYPE_LABEL = {
   ai_judge:     '⚖️ 판결소',
@@ -541,7 +542,7 @@ export async function renderHome() {
         </div>
       </div>` : '';
 
-    el.innerHTML = `<div class="home-dash page-enter home-dash--v2"><div id="home-notif-slot"></div>${newPrezHTML}${headerHTML}${battleHTML}${newsHTML}${prezHTML}<div id="home-crisis-slot"></div>${bestHTML}${hotHTML}${commentsHTML}<div id="home-party-power-slot"></div><div id="home-election-race-slot"></div><div id="home-party-activity-slot"></div></div>`;
+    el.innerHTML = `<div class="home-dash page-enter home-dash--v2"><div id="home-notif-slot"></div>${newPrezHTML}${headerHTML}<div id="home-campaign-slot"></div>${battleHTML}${newsHTML}${prezHTML}<div id="home-crisis-slot"></div>${bestHTML}${hotHTML}${commentsHTML}<div id="home-party-power-slot"></div><div id="home-election-race-slot"></div><div id="home-party-activity-slot"></div></div>`;
 
     el.querySelector('.home-new-prez-announce__close')?.addEventListener('click', () => {
       el.querySelector('#home-new-prez-announce')?.remove();
@@ -603,8 +604,9 @@ export async function renderHome() {
         .catch(() => {});
     }
 
-    // 세력도 + 대선 경쟁 + 위기 이벤트 + 정당 활동 피드 비동기 로드
+    // 유세 카드 + 세력도 + 대선 경쟁 + 위기 이벤트 + 정당 활동 피드 비동기 로드
     if (user) loadNotifications(user.uid, el.querySelector('#home-notif-slot'));
+    if (user && myStatus?.loggedIn && myStatus.partyId) loadCampaignCard(el.querySelector('#home-campaign-slot'), myStatus);
     loadPartyPowerChart(el.querySelector('#home-party-power-slot'));
     loadElectionRace(el.querySelector('#home-election-race-slot'));
     loadWeeklyCrisis(el.querySelector('#home-crisis-slot'));
@@ -619,6 +621,63 @@ export async function renderHome() {
       </div>`;
     el.querySelector('#btn-reload')?.addEventListener('click', () => location.reload());
   }
+}
+
+function renderCampaignSlot(slot, status, count, MAX, COST, BOOST) {
+  const canCampaign = count < MAX && (status.power || 0) >= COST;
+  const pips = Array.from({ length: MAX }, (_, i) =>
+    `<span class="home-campaign-pip${i < count ? ' home-campaign-pip--done' : ''}"></span>`
+  ).join('');
+  slot.innerHTML = `
+    <div class="home-campaign-card">
+      <div class="home-campaign-card__top">
+        <span class="home-campaign-card__icon">🎤</span>
+        <div class="home-campaign-card__info">
+          <span class="home-campaign-card__title">유세 활동</span>
+          <span class="home-campaign-card__sub">${status.partyEmoji} ${escHtml(status.partyName)} 정치력 부스트</span>
+        </div>
+        <div class="home-campaign-pips">${pips}</div>
+      </div>
+      <div class="home-campaign-card__body">
+        <span class="home-campaign-card__desc">-${COST}P 소모 → 당 정치력 +${BOOST}</span>
+        <button class="home-campaign-btn${!canCampaign ? ' home-campaign-btn--disabled' : ''}" id="home-campaign-btn" ${!canCampaign ? 'disabled' : ''}>
+          ${count >= MAX ? '오늘 유세 완료 ✓' : (status.power || 0) < COST ? `포인트 부족 (${COST}P 필요)` : `유세하기 · -${COST}P`}
+        </button>
+      </div>
+    </div>`;
+  slot.querySelector('#home-campaign-btn')?.addEventListener('click', async () => {
+    const btn = slot.querySelector('#home-campaign-btn');
+    if (!btn || btn.disabled) return;
+    btn.disabled = true;
+    btn.textContent = '유세 중...';
+    try {
+      const { data } = await httpsCallable(functions, 'campaignForParty')({});
+      if (data?.ok) {
+        status.power = Math.max(0, (status.power || 0) - data.cost);
+        renderCampaignSlot(slot, status, data.campaignsToday, data.maxCampaigns, COST, BOOST);
+        showPointPopup(data.boost);
+        toast.success(`${status.partyEmoji} ${escHtml(status.partyName)} 정치력 +${data.boost}! 🎤`);
+      }
+    } catch (e) {
+      btn.disabled = false;
+      btn.textContent = `유세하기 · -${COST}P`;
+      toast.error(e?.message || '유세 실패. 다시 시도해주세요.');
+    }
+  });
+}
+
+async function loadCampaignCard(slot, status) {
+  if (!slot || !status?.partyId || !auth.currentUser) return;
+  const uid = auth.currentUser.uid;
+  const today = getKstDateString();
+  const COST = 20;
+  const BOOST = 15;
+  const MAX = 3;
+  try {
+    const campSnap = await getDoc(doc(db, 'campaign_records', `${uid}_${today}`));
+    const count = campSnap.exists() ? Number(campSnap.data().count || 0) : 0;
+    renderCampaignSlot(slot, status, count, MAX, COST, BOOST);
+  } catch { /* non-critical */ }
 }
 
 async function loadPartyPowerChart(slot) {

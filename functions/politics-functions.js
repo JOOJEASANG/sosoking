@@ -1606,3 +1606,40 @@ exports.voteOnCrisis = onCall({ region: REGION, timeoutSeconds: 15 }, async requ
     votesB: Number(updated.votesB || 0),
   };
 });
+
+// ── 유세 활동 — 포인트를 소모해 정당 정치력 부스트 ──
+exports.campaignForParty = onCall({ region: REGION, timeoutSeconds: 15 }, async request => {
+  const uid = requireUid(request);
+  const today = kstToday();
+  const COST = 20;
+  const BOOST = 15;
+  const MAX_DAILY = 3;
+
+  const campaignRef = db.doc(`campaign_records/${uid}_${today}`);
+
+  const result = await db.runTransaction(async tx => {
+    const [userDoc, campDoc] = await Promise.all([
+      tx.get(db.doc(`users/${uid}`)),
+      tx.get(campaignRef),
+    ]);
+
+    const userData = userDoc.exists ? (userDoc.data() || {}) : {};
+    const partyId = PARTY_BY_ID[userData.partyId] ? userData.partyId : null;
+    if (!partyId) throw new HttpsError('failed-precondition', '정당에 가입하세요');
+
+    const count = campDoc.exists ? Number(campDoc.data().count || 0) : 0;
+    if (count >= MAX_DAILY) throw new HttpsError('failed-precondition', '오늘 유세를 모두 완료했습니다 (최대 3회)');
+
+    const points = Number(userData.totalPoints || userData.points || 0);
+    if (points < COST) throw new HttpsError('failed-precondition', `포인트가 부족합니다 (필요: ${COST}P)`);
+
+    tx.set(db.doc(`users/${uid}`), { totalPoints: FieldValue.increment(-COST), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+    tx.set(db.doc(`parties/${partyId}`), { totalPower: FieldValue.increment(BOOST), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+    tx.set(campaignRef, { uid, partyId, count: count + 1, date: today, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+
+    return { count: count + 1, partyId };
+  });
+
+  const party = PARTY_BY_ID[result.partyId];
+  return { ok: true, cost: COST, boost: BOOST, campaignsToday: result.count, maxCampaigns: MAX_DAILY, partyName: party?.name || result.partyId };
+});
