@@ -153,14 +153,15 @@ function renderMyBanner(me) {
   </div>`;
 }
 
-function renderPartyCard(p, me) {
+function renderPartyCard(p, me, isRuling) {
   const isMine = me && me.partyId === p.id;
   const meta = PARTY_META[p.id];
   const btn = isMine
     ? `<span class="party-card__mine-tag">내 정당</span>`
     : `<button class="btn btn--primary btn--sm party-join-btn" data-party="${p.id}" data-name="${escHtml(p.name)}">${me && me.partyId ? '이적' : '입당'}</button>`;
   return `
-    <div class="party-card${isMine ? ' party-card--mine' : ''}" style="--party-color:${p.color}">
+    <div class="party-card${isMine ? ' party-card--mine' : ''}${isRuling ? ' party-card--ruling' : ''}" style="--party-color:${p.color}">
+      ${isRuling ? `<span class="party-card__ruling-tag">👑 제1당</span>` : ''}
       <div class="party-card__rank">${medal(p.rank)}</div>
       <div class="party-card__emoji">${p.emoji}</div>
       <div class="party-card__body">
@@ -300,19 +301,19 @@ function openQuiz() {
 function renderActivityFeed(activities, topic) {
   if (!activities || !activities.length) return '';
   return `
-    <div class=”party-activity-section”>
-      <div class=”party-activity-header”>
-        <span class=”party-activity-live”>🔴 LIVE</span>
-        <span class=”party-activity-title”>오늘의 정당 활동</span>
-        <span class=”party-activity-topic”>”${escHtml(topic || '')}”</span>
+    <div class="party-activity-section">
+      <div class="party-activity-header">
+        <span class="party-activity-live">🔴 LIVE</span>
+        <span class="party-activity-title">오늘의 정당 활동</span>
+        <span class="party-activity-topic">"${escHtml(topic || '')}"</span>
       </div>
-      <div class=”party-activity-list”>
+      <div class="party-activity-list">
         ${activities.map(a => `
-          <div class=”party-activity-item” style=”--party-c:${a.color}”>
-            <span class=”party-activity-emoji”>${a.emoji}</span>
-            <div class=”party-activity-body”>
-              <span class=”party-activity-name”>${escHtml(a.charName)} <em>${escHtml(a.partyName)}</em></span>
-              <p class=”party-activity-text”>${escHtml(a.text)}</p>
+          <div class="party-activity-item" style="--party-c:${a.color}">
+            <span class="party-activity-emoji">${a.emoji}</span>
+            <div class="party-activity-body">
+              <span class="party-activity-name">${escHtml(a.charName)} <em>${escHtml(a.partyName)}</em></span>
+              <p class="party-activity-text">${escHtml(a.text)}</p>
             </div>
           </div>`).join('')}
       </div>
@@ -324,24 +325,28 @@ export async function renderParties() {
   const el = document.getElementById('page-content');
   if (!el) return;
 
-  el.innerHTML = `<div class=”parties-page page-enter”>
-    <div class=”skeleton” style=”height:120px;border-radius:16px;margin-bottom:12px”></div>
-    <div class=”skeleton” style=”height:320px;border-radius:16px”></div>
+  el.innerHTML = `<div class="parties-page page-enter">
+    <div class="skeleton" style="height:120px;border-radius:16px;margin-bottom:12px"></div>
+    <div class="skeleton" style="height:320px;border-radius:16px"></div>
   </div>`;
 
-  let overview, activitiesData;
+  let overview, activitiesData, president = null;
   try {
     const callOverview = httpsCallable(functions, 'getPoliticsOverview');
     const callActivities = httpsCallable(functions, 'getPartyActivities');
-    const [overviewRes, activitiesRes] = await Promise.all([callOverview(), callActivities()]);
+    const callPresident = httpsCallable(functions, 'getPresident');
+    const [overviewRes, activitiesRes, presidentRes] = await Promise.all([
+      callOverview(), callActivities(), callPresident().catch(() => null),
+    ]);
     overview = overviewRes.data;
     activitiesData = activitiesRes.data;
+    president = presidentRes?.data?.president || null;
   } catch (err) {
     console.error('[parties] load error', err);
-    el.innerHTML = `<div class=”empty-state”>
-      <div class=”empty-state__icon”>⚠️</div>
-      <div class=”empty-state__title”>정당 현황을 불러오지 못했어요</div>
-      <button class=”btn btn--primary” style=”margin-top:16px” id=”party-retry”>다시 시도</button>
+    el.innerHTML = `<div class="empty-state">
+      <div class="empty-state__icon">⚠️</div>
+      <div class="empty-state__title">정당 현황을 불러오지 못했어요</div>
+      <button class="btn btn--primary" style="margin-top:16px" id="party-retry">다시 시도</button>
     </div>`;
     el.querySelector('#party-retry')?.addEventListener('click', renderParties);
     return;
@@ -350,28 +355,41 @@ export async function renderParties() {
   const { parties = [], me = null } = overview;
   _partiesCache = parties;
 
-  const topQuote = parties.length ? (() => {
-    const p = parties[0];
-    const meta = PARTY_META[p.id];
-    return meta ? `${p.emoji} <b>${escHtml(p.name)}</b> “${escHtml(pick(meta.quotes))}”` : '';
-  })() : '';
-
+  const ruling = parties[0] || null; // 제1당 (정치력 최강)
   const activityHTML = renderActivityFeed(activitiesData?.activities, activitiesData?.topic);
 
-  el.innerHTML = `<div class=”parties-page page-enter”>
-    <div class=”parties-hero”>
-      <div class=”parties-hero__badge”>🏛️ 소소공화국</div>
-      <h1 class=”parties-hero__title”>정당 정치 1번지</h1>
-      <p class=”parties-hero__sub”>입당하고 활동하면 정치력이 쌓입니다. 당내 1위는 당대표, 정치력 최강 정당이 제1당!</p>
-      ${topQuote ? `<div class=”parties-hero__quote”>📢 ${topQuote}</div>` : ''}
+  // 현재 정세 요약 — 제1당 + 현직 대통령
+  const stateHTML = `
+    <div class="republic-state">
+      <div class="republic-state__item">
+        <span class="republic-state__label">제1당</span>
+        ${ruling
+          ? `<span class="republic-state__value" style="--party-color:${ruling.color}">${ruling.emoji} ${escHtml(ruling.name)}</span>`
+          : `<span class="republic-state__value">집계 중</span>`}
+      </div>
+      <div class="republic-state__divider"></div>
+      <div class="republic-state__item">
+        <span class="republic-state__label">현직 대통령</span>
+        ${president
+          ? `<span class="republic-state__value" style="--party-color:${president.color}">👑 ${escHtml(president.candidateName)}</span>`
+          : `<span class="republic-state__value">선출 전</span>`}
+      </div>
+    </div>`;
+
+  el.innerHTML = `<div class="parties-page page-enter">
+    <div class="parties-hero">
+      <div class="parties-hero__badge">🏛️ 소소공화국 정당정치</div>
+      <h1 class="parties-hero__title">7개 정당, 단 하나의 권력</h1>
+      <p class="parties-hero__sub">입당해 정치력을 쌓고 당내 1위 <b>당대표</b>로, 매주 <b>대선</b>에서 <b>대통령</b>에 도전하세요.</p>
     </div>
+    ${stateHTML}
     ${activityHTML}
     ${renderMyBanner(me)}
-    <div class=”parties-standings-title”>📊 정당 순위 <span>정치력 기준</span>
-      <button class=”parties-quiz-btn” id=”party-quiz-top”>🧭 내 정당 찾기</button>
+    <div class="parties-standings-title">📊 정당 세력 순위 <span>정치력 기준</span>
+      <button class="parties-quiz-btn" id="party-quiz-top">🧭 내 정당 찾기</button>
     </div>
-    <div class=”parties-list”>
-      ${parties.map(p => renderPartyCard(p, me)).join('')}
+    <div class="parties-list">
+      ${parties.map((p, i) => renderPartyCard(p, me, i === 0)).join('')}
     </div>
   </div>`;
 

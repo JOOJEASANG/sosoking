@@ -18,8 +18,8 @@ function iconPlus() {
   return svgIcon('<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>', '2.5');
 }
 
-function iconAiKing() {
-  return `<span style="font-size:22px;line-height:1">🤖</span>`;
+function iconParty() {
+  return `<span style="font-size:22px;line-height:1">🏛️</span>`;
 }
 
 function iconStats() {
@@ -40,7 +40,7 @@ function navItems() {
   return [
     { id: 'home',    label: '홈',      path: '/',          icon: iconHome() },
     { id: 'battle',  label: '정치배틀', path: '/battle',    icon: `<span style="font-size:20px;line-height:1">🗳️</span>` },
-    { id: 'aiking',  label: 'AI킹',    path: '/ai-king',   icon: iconAiKing(), isCenter: true },
+    { id: 'party',   label: '정당',    path: '/parties',   icon: iconParty(), isCenter: true },
     { id: 'ranking', label: '랭킹',     path: '/ranking',   icon: `<span style="font-size:20px;line-height:1">🏆</span>` },
     { id: 'account', label: '내정보',   path: '/account',   icon: iconAccount(), badge: unread },
   ];
