@@ -746,3 +746,13 @@
   opacity: 0.85;
   title: "어제 배틀 집권당";
 }
+
+/* ── 배틀 승리 알림 배너 ── */
+.home-notif-banner--battle-win {
+  background: linear-gradient(135deg, #14532d, #166534);
+  border-color: #16a34a;
+  color: #fff;
+}
+.home-notif-banner--battle-win .home-notif-banner__title { color: #86efac; }
+.home-notif-banner--battle-win .home-notif-banner__body  { color: #d1fae5; }
+.home-notif-banner--battle-win .home-notif-banner__close { color: #86efac; }

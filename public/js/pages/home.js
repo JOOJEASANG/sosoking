@@ -605,7 +605,7 @@ export async function renderHome() {
     }
 
     // 유세 카드 + 세력도 + 대선 경쟁 + 위기 이벤트 + 정당 활동 피드 비동기 로드
-    if (user) loadNotifications(user.uid, el.querySelector('#home-notif-slot'));
+    if (user) loadNotifications(user.uid, el.querySelector('#home-notif-slot'), myStatus?.partyId || null);
     if (user && myStatus?.loggedIn && myStatus.partyId) loadCampaignCard(el.querySelector('#home-campaign-slot'), myStatus);
     loadPartyPowerChart(el.querySelector('#home-party-power-slot'), battleData);
     loadElectionRace(el.querySelector('#home-election-race-slot'));
@@ -930,26 +930,48 @@ async function loadHomePartyActivity(slot) {
   } catch { /* non-critical */ }
 }
 
-async function loadNotifications(uid, slot) {
+async function loadNotifications(uid, slot, myPartyId = null) {
   if (!uid || !slot) return;
   try {
-    const q = query(
-      collection(db, 'notifications'),
-      where('userId', '==', uid),
-      limit(15)
-    );
-    const snap = await getDocs(q);
+    const today = getKstDateString();
+    const yesterday = getKstDateString(new Date(Date.now() - 86400000));
+
+    const [snap, evtSnap] = await Promise.all([
+      getDocs(query(collection(db, 'notifications'), where('userId', '==', uid), limit(15))),
+      myPartyId
+        ? getDocs(query(collection(db, 'global_events'), where('partyId', '==', myPartyId), limit(5)))
+        : Promise.resolve(null),
+    ]);
+
     const unread = snap.docs
       .map(d => ({ id: d.id, ...d.data() }))
       .filter(n => !n.read)
       .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-    if (!unread.length) return;
 
-    const latest = unread[0];
-    const moreCount = unread.length - 1;
+    // 최근 2일치 글로벌 배틀 승리 이벤트 (로컬 dismissed 체크)
+    const dismissedEvents = (() => { try { return JSON.parse(localStorage.getItem('sosoking_dismissed_events') || '{}'); } catch { return {}; } })();
+    const battleEvents = evtSnap
+      ? evtSnap.docs
+          .map(d => ({ id: d.id, ...d.data() }))
+          .filter(e => (e.date === today || e.date === yesterday) && !dismissedEvents[d.id])
+          .map(e => ({
+            id: `evt_${e.id}`,
+            isGlobalEvent: true,
+            title: `⚔️ 우리 당 배틀 집권!`,
+            body: `${e.charEmoji} ${e.charName} 집권 대표 당선 → 당 정치력 +${e.bonus}`,
+            eventDocId: e.id,
+          }))
+      : [];
+
+    const allNotifs = [...battleEvents, ...unread];
+    if (!allNotifs.length) return;
+
+    const latest = allNotifs[0];
+    const moreCount = allNotifs.length - 1;
+    const isBattleWin = !!latest.isGlobalEvent;
 
     slot.innerHTML = `
-      <div class="home-notif-banner">
+      <div class="home-notif-banner${isBattleWin ? ' home-notif-banner--battle-win' : ''}">
         <div class="home-notif-banner__content">
           <span class="home-notif-banner__title">${escHtml(latest.title || '')}</span>
           ${latest.body ? `<span class="home-notif-banner__body">${escHtml(latest.body)}</span>` : ''}
@@ -961,6 +983,11 @@ async function loadNotifications(uid, slot) {
     slot.querySelector('.home-notif-banner__close')?.addEventListener('click', async () => {
       slot.innerHTML = '';
       try {
+        if (isBattleWin && latest.eventDocId) {
+          const dismissed = (() => { try { return JSON.parse(localStorage.getItem('sosoking_dismissed_events') || '{}'); } catch { return {}; } })();
+          dismissed[latest.eventDocId] = true;
+          localStorage.setItem('sosoking_dismissed_events', JSON.stringify(dismissed));
+        }
         const now = Date.now();
         await Promise.all(unread.map(n =>
           updateDoc(doc(db, 'notifications', n.id), { read: true, readAtMs: now })

@@ -587,6 +587,16 @@ exports.closeDailyBattle = onSchedule({
           createdAt: FieldValue.serverTimestamp(),
         });
         console.log(`[battle] victory bonus +${bonus} → ${winPartyId}`);
+
+        // 글로벌 이벤트 기록 (홈 알림용)
+        await db.doc(`global_events/${today}_battle`).set({
+          type: 'battle_win',
+          partyId: winPartyId,
+          charName: char?.name || winner,
+          charEmoji: char?.emoji || '🏛️',
+          bonus, votes: maxVotes, date: today,
+          createdAt: FieldValue.serverTimestamp(),
+        });
       } catch (e) {
         console.error('[battle] victory bonus error', e);
       }
