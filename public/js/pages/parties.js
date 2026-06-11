@@ -195,15 +195,26 @@ function renderTrendBadge(diff) {
   return `<span class=”party-trend party-trend--down”>▼ ${fmtNum(diff)}</span>`;
 }
 
-function renderPartyCard(p, me, isRuling) {
+function renderPartyCard(p, me, isTopPower, presPartyId, winCount) {
   const isMine = me && me.partyId === p.id;
+  const isPrezParty = presPartyId && p.id === presPartyId;
   const meta = PARTY_META[p.id];
   const btn = isMine
     ? `<span class=”party-card__mine-tag”>내 정당</span>`
     : `<button class=”btn btn--primary btn--sm party-join-btn” data-party=”${p.id}” data-name=”${escHtml(p.name)}”>${me && me.partyId ? '이적' : '입당'}</button>`;
+
+  const topBadgesHTML = [
+    isTopPower ? `<span class=”party-card__ruling-tag”>👑 제1당</span>` : '',
+    isPrezParty ? `<span class=”party-card__prez-tag”>🏛️ 집권당</span>` : '',
+  ].filter(Boolean).join('');
+
+  const winBadge = winCount > 0
+    ? `<span class=”party-card__win-badge”>🏆 역대 ${winCount}회 집권</span>`
+    : '';
+
   return `
-    <div class=”party-card${isMine ? ' party-card--mine' : ''}${isRuling ? ' party-card--ruling' : ''}” style=”--party-color:${p.color}”>
-      ${isRuling ? `<span class=”party-card__ruling-tag”>👑 제1당</span>` : ''}
+    <div class=”party-card${isMine ? ' party-card--mine' : ''}${isTopPower ? ' party-card--ruling' : ''}${isPrezParty ? ' party-card--prez' : ''}” style=”--party-color:${p.color}”>
+      ${topBadgesHTML}
       <div class=”party-card__rank”>${medal(p.rank)}</div>
       <div class=”party-card__emoji”>${p.emoji}</div>
       <div class=”party-card__body”>
@@ -216,7 +227,7 @@ function renderPartyCard(p, me, isRuling) {
         ${meta ? `<div class=”party-card__policy”>📌 ${escHtml(meta.policy)}</div>` : ''}
         <div class=”party-card__leader”>${leaderLine(p)}</div>
         <div class=”party-card__meta”>
-          <span class=”party-card__power”>⚡ 정당 정치력 <b>${fmtNum(p.totalPower)}</b>${renderTrendBadge(p.powerDiff)}</span>
+          <span class=”party-card__power”>⚡ 정당 정치력 <b>${fmtNum(p.totalPower)}</b>${renderTrendBadge(p.powerDiff)}${winBadge}</span>
           <button class=”party-members-btn” data-party=”${p.id}”>당원 보기</button>
         </div>
       </div>
@@ -436,17 +447,25 @@ export async function renderParties() {
     <div class="skeleton" style="height:320px;border-radius:16px"></div>
   </div>`;
 
-  let overview, activitiesData, president = null;
+  let overview, activitiesData, president = null, electionWins = {};
   try {
     const callOverview = httpsCallable(functions, 'getPoliticsOverview');
     const callActivities = httpsCallable(functions, 'getPartyActivities');
     const callPresident = httpsCallable(functions, 'getPresident');
-    const [overviewRes, activitiesRes, presidentRes] = await Promise.all([
-      callOverview(), callActivities(), callPresident().catch(() => null),
+    const callHistory = httpsCallable(functions, 'getElectionHistory');
+    const [overviewRes, activitiesRes, presidentRes, historyRes] = await Promise.all([
+      callOverview(), callActivities(),
+      callPresident().catch(() => null),
+      callHistory().catch(() => null),
     ]);
     overview = overviewRes.data;
     activitiesData = activitiesRes.data;
     president = presidentRes?.data?.president || null;
+    (historyRes?.data?.history || []).forEach(h => {
+      if (h.winner?.partyId && !h.seeded) {
+        electionWins[h.winner.partyId] = (electionWins[h.winner.partyId] || 0) + 1;
+      }
+    });
   } catch (err) {
     console.error('[parties] load error', err);
     el.innerHTML = `<div class="empty-state">
@@ -498,7 +517,7 @@ export async function renderParties() {
       <button class="parties-quiz-btn" id="party-quiz-top">🧭 내 정당 찾기</button>
     </div>
     <div class="parties-list">
-      ${parties.map((p, i) => renderPartyCard(p, me, i === 0)).join('')}
+      ${parties.map((p, i) => renderPartyCard(p, me, i === 0, president?.partyId || null, electionWins[p.id] || 0)).join('')}
     </div>
   </div>`;
 
