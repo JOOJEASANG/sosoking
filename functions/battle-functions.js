@@ -482,7 +482,7 @@ exports.getBattleStatus = onCall({
         if (doc.data().charId === kingId) streak++;
         else break;
       }
-      currentKing = { charId: kingId, name: char.name, emoji: char.emoji, title: char.title, party: char.party, streak };
+      currentKing = { charId: kingId, name: char.name, emoji: char.emoji, title: char.title, party: char.party, partyId: CHAR_TO_PARTY[kingId] || null, streak };
     }
   }
 

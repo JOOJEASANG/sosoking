@@ -607,7 +607,7 @@ export async function renderHome() {
     // 유세 카드 + 세력도 + 대선 경쟁 + 위기 이벤트 + 정당 활동 피드 비동기 로드
     if (user) loadNotifications(user.uid, el.querySelector('#home-notif-slot'));
     if (user && myStatus?.loggedIn && myStatus.partyId) loadCampaignCard(el.querySelector('#home-campaign-slot'), myStatus);
-    loadPartyPowerChart(el.querySelector('#home-party-power-slot'));
+    loadPartyPowerChart(el.querySelector('#home-party-power-slot'), battleData);
     loadElectionRace(el.querySelector('#home-election-race-slot'));
     loadWeeklyCrisis(el.querySelector('#home-crisis-slot'));
     loadHomePartyActivity(el.querySelector('#home-party-activity-slot'));
@@ -687,8 +687,9 @@ async function loadCampaignCard(slot, status) {
   } catch { /* non-critical */ }
 }
 
-async function loadPartyPowerChart(slot) {
+async function loadPartyPowerChart(slot, battleData) {
   if (!slot) return;
+  const battleWinPartyId = battleData?.currentKing?.partyId || null;
   try {
     const { PARTY_COLORS } = await import('../utils/party-badge.js');
     const snap = await getDocs(collection(db, 'parties'));
@@ -713,10 +714,13 @@ async function loadPartyPowerChart(slot) {
       const trendHTML = Math.abs(p.diff) >= 5
         ? `<span class="home-power-row__trend home-power-row__trend--${p.diff > 0 ? 'up' : 'down'}">${p.diff > 0 ? '▲' : '▼'}${fmtNum(Math.abs(p.diff))}</span>`
         : '';
+      const battleBadge = battleWinPartyId === p.id
+        ? `<span class="home-power-row__battle-win">⚔️</span>`
+        : '';
       return `
         <div class="home-power-row" style="--party-c:${p.color}">
           <span class="home-power-row__emoji">${p.emoji}</span>
-          <span class="home-power-row__name">${escHtml(p.name)}</span>
+          <span class="home-power-row__name">${escHtml(p.name)}${battleBadge}</span>
           <div class="home-power-row__track">
             <div class="home-power-row__fill" style="width:${width}%"></div>
           </div>

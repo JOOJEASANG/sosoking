@@ -738,3 +738,11 @@
   margin-top: 3px;
   font-weight: 600;
 }
+
+/* ── 세력도 어제 집권 배지 ── */
+.home-power-row__battle-win {
+  margin-left: 3px;
+  font-size: 12px;
+  opacity: 0.85;
+  title: "어제 배틀 집권당";
+}
