@@ -247,3 +247,44 @@
   border-radius: 6px;
   padding: 1px 6px;
 }
+
+/* ── 등급 상승 알림 배너 ── */
+.home-rankup-banner {
+  position: fixed;
+  top: 20px; left: 50%; transform: translateX(-50%) translateY(-80px);
+  z-index: 3000;
+  width: min(360px, calc(100vw - 32px));
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--rank-c, #ff6b4a) 22%, var(--color-surface, #fff)),
+    var(--color-surface, #fff));
+  border: 2px solid var(--rank-c, #ff6b4a);
+  border-radius: 16px;
+  box-shadow: 0 12px 32px rgba(0,0,0,.2);
+  padding: 14px 16px;
+  opacity: 0;
+  transition: transform .45s cubic-bezier(.34,1.56,.64,1), opacity .3s ease;
+}
+.home-rankup-banner--in {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+.home-rankup-banner__inner {
+  display: flex; align-items: center; gap: 12px;
+}
+.home-rankup-banner__emoji {
+  font-size: 36px; line-height: 1; flex-shrink: 0;
+  filter: drop-shadow(0 2px 8px color-mix(in srgb, var(--rank-c) 40%, transparent));
+}
+.home-rankup-banner__title {
+  font-size: 11px; font-weight: 800; letter-spacing: .06em;
+  color: var(--rank-c, var(--color-primary));
+}
+.home-rankup-banner__name {
+  font-size: 18px; font-weight: 900; color: var(--color-text-primary);
+}
+.home-rankup-banner__close {
+  margin-left: auto; flex-shrink: 0;
+  background: none; border: none;
+  font-size: 16px; color: var(--color-text-muted); cursor: pointer;
+  line-height: 1; padding: 2px 4px;
+}
