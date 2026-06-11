@@ -451,7 +451,21 @@ async function finalizeElection(periodId) {
     justClosed = true; closedWinner = win;
   });
   // 트랜잭션 완료 후 포고령 생성 (비동기, 실패 무시)
-  if (justClosed && closedWinner) generateDecreeFor(periodId, closedWinner).catch(() => {});
+  if (justClosed && closedWinner) {
+    generateDecreeFor(periodId, closedWinner).catch(() => {});
+    // 인간 당대표가 대통령 당선 시 알림
+    if (closedWinner.candidateUid) {
+      db.collection('notifications').add({
+        userId: closedWinner.candidateUid,
+        type: 'president',
+        title: `🎉 대통령 당선!`,
+        body: `${closedWinner.candidateName}님이 소소공화국 대통령으로 선출됐어요! 포고령을 발표하세요.`,
+        partyId: closedWinner.partyId,
+        read: false,
+        createdAt: FieldValue.serverTimestamp(),
+      }).catch(() => {});
+    }
+  }
 }
 
 // 이번 주 선거 보장 + 지난 주 선거 마감 처리
@@ -870,6 +884,30 @@ exports.syncPartyMemberPower = onCall({ region: REGION, timeoutSeconds: 15 }, as
     tx.update(mRef, { power: newPower, updatedAt: FieldValue.serverTimestamp() });
     tx.update(pRef, { totalPower: FieldValue.increment(diff), updatedAt: FieldValue.serverTimestamp() });
   });
+
+  // 당대표 등극 알림 (1위 → 처음 달성 시, 비동기)
+  try {
+    const top = await partyRef(partyId).collection('members').orderBy('power', 'desc').limit(1).get();
+    if (!top.empty && top.docs[0].id === uid) {
+      const party = PARTY_BY_ID[partyId];
+      const weekKey = kstToday().slice(0, 7); // YYYY-MM
+      const notifKey = `leader_${uid}_${partyId}_${weekKey}`;
+      const notifRef = db.doc(`notifications/${notifKey}`);
+      const existing = await notifRef.get();
+      if (!existing.exists) {
+        await notifRef.set({
+          userId: uid,
+          type: 'leader',
+          title: `👑 ${party?.name || partyId} 당대표 등극!`,
+          body: `정치력 1위로 당대표가 되셨어요. 이번 주 대선에 후보로 자동 출마됩니다!`,
+          partyId,
+          read: false,
+          createdAt: FieldValue.serverTimestamp(),
+        });
+      }
+    }
+  } catch {}
+
   return { ok: true, changed: true, oldPower, newPower };
 });
 
