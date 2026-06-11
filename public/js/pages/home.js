@@ -41,6 +41,8 @@ async function checkStreak(uid) {
     const newStreak = lastVisit === yesterday ? streak + 1 : 1;
     await updateDoc(userRef, { lastVisit: today, streak: newStreak });
     appState.streak = newStreak;
+    // Claim daily political power bonus (+20P) — idempotent
+    httpsCallable(functions, 'claimDailyBonus')({}).catch(() => {});
   } catch { /* non-critical */ }
 }
 
@@ -247,7 +249,7 @@ function renderMissions(status, battleData) {
   const attended = (appState.streak || 0) >= 1;
 
   const missions = [
-    { done: attended,       label: '오늘 출석',     path: '/',         cta: '완료',      reward: '+3P',  icon: '📅' },
+    { done: attended,       label: '오늘 출석',     path: '/',         cta: '완료',      reward: '+20P', icon: '📅' },
     { done: votedBattle,    label: '정치배틀 투표', path: '/battle',   cta: '투표하기',  reward: '+5P',  icon: '🗳️' },
     { done: votedElection,  label: '대선 투표',     path: '/election', cta: '투표하기',  reward: '+5P',  icon: '👑' },
   ];

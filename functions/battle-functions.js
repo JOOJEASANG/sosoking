@@ -367,6 +367,11 @@ exports.voteForChar = onCall({
       [`votes.${charId}`]: FieldValue.increment(1),
       totalVotes: FieldValue.increment(1),
     });
+    // Award +5 political power for voting
+    const awardRef = db.doc(`point_awards/${userId}_battle_vote_${today}`);
+    const userRef = db.doc(`users/${userId}`);
+    tx.set(awardRef, { uid: userId, action: 'battle_vote', points: 5, date: today, createdAt: FieldValue.serverTimestamp() }, { merge: false });
+    tx.set(userRef, { totalPoints: FieldValue.increment(5), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
   });
 
   return { ok: true, charId };

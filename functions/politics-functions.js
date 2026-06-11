@@ -544,6 +544,11 @@ exports.voteForPresident = onCall({ region: REGION, timeoutSeconds: 30 }, async 
       totalVotes: FieldValue.increment(1),
       updatedAt: FieldValue.serverTimestamp(),
     });
+    // Award +5 political power for election vote
+    const awardRef = db.doc(`point_awards/${uid}_election_vote_${key}`);
+    const userRef = db.doc(`users/${uid}`);
+    tx.set(awardRef, { uid, action: 'election_vote', points: 5, weekKey: key, createdAt: FieldValue.serverTimestamp() }, { merge: false });
+    tx.set(userRef, { totalPoints: FieldValue.increment(5), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
     return { ok: true, partyId };
   });
 });
