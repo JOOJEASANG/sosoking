@@ -70,6 +70,16 @@ function renderVoteBar(char, votes, totalVotes, userVote) {
     </div>`;
 }
 
+const BATTLE_PARTY_INFO = {
+  national: { name: '국민안정당', emoji: '🎙️', color: '#8B7355' },
+  truth:    { name: '진실방송당', emoji: '📺', color: '#6C5CE7' },
+  youth:    { name: '청년혁명당', emoji: '📱', color: '#E84393' },
+  center:   { name: '중도민주당', emoji: '📊', color: '#00CEC9' },
+  future:   { name: '함께미래당', emoji: '🤝', color: '#FDCB6E' },
+  rights:   { name: '알권리당',   emoji: '🔍', color: '#00B894' },
+  justice:  { name: '법치정의당', emoji: '⚖️', color: '#2D3436' },
+};
+
 function renderPartyVoteSummary(partyVotes, chars, partyId) {
   if (!partyVotes || !partyId || !partyVotes[partyId]) return '';
   const pVotes = partyVotes[partyId];
@@ -96,6 +106,39 @@ function renderPartyVoteSummary(partyVotes, chars, partyId) {
         }).join('')}
       </div>
       <div class="battle-party-vote__hint">우리 당 ${partyTotal}명 투표 · ${top.emoji} ${escHtml(top.name)} ${topPct}% 지지</div>
+    </div>`;
+}
+
+function renderAllPartyVoteSummary(partyVotes, chars) {
+  if (!partyVotes) return '';
+  const partyIds = Object.keys(partyVotes).filter(pid => {
+    const pv = partyVotes[pid];
+    return Object.values(pv).some(v => Number(v) > 0);
+  });
+  if (partyIds.length < 2) return '';
+
+  const rows = partyIds.map(pid => {
+    const pInfo = BATTLE_PARTY_INFO[pid];
+    if (!pInfo) return '';
+    const pVotes = partyVotes[pid];
+    const partyTotal = Object.values(pVotes).reduce((s, v) => s + Number(v || 0), 0);
+    if (!partyTotal) return '';
+    const topChar = [...chars].sort((a, b) => Number(pVotes[b.id] || 0) - Number(pVotes[a.id] || 0))[0];
+    const topPct = Math.round((Number(pVotes[topChar.id] || 0) / partyTotal) * 100);
+    return `<div class="battle-all-party-row" style="--party-c:${pInfo.color}">
+      <span class="battle-all-party-row__party">${pInfo.emoji} ${escHtml(pInfo.name)}</span>
+      <span class="battle-all-party-row__arrow">→</span>
+      <span class="battle-all-party-row__pick">${topChar.emoji} ${escHtml(topChar.name)}</span>
+      <span class="battle-all-party-row__pct">${topPct}%</span>
+      <span class="battle-all-party-row__total">(${partyTotal}명)</span>
+    </div>`;
+  }).filter(Boolean);
+
+  if (!rows.length) return '';
+  return `
+    <div class="battle-all-party-summary">
+      <div class="battle-all-party-summary__title">📊 정당별 지지 성향</div>
+      ${rows.join('')}
     </div>`;
 }
 
@@ -238,6 +281,7 @@ export async function renderBattle() {
 
           ${userVote ? `<div class="battle-power-hint">⚡ 오늘 배틀 투표로 정치력 +5를 획득했어요!</div>` : ''}
           ${votedOrEnded && appState.partyId ? renderPartyVoteSummary(partyVotes, chars, appState.partyId) : ''}
+          ${votedOrEnded ? renderAllPartyVoteSummary(partyVotes, chars) : ''}
           ${!auth.currentUser && !isEnded ? `
             <div class="battle-login-hint">
               <a href="#/login" class="btn btn--outline" style="width:100%">로그인하고 투표하기</a>

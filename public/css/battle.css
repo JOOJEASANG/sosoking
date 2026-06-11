@@ -679,3 +679,35 @@
   padding-top: 6px;
   border-top: 1px solid var(--color-border);
 }
+
+/* ── 전체 정당별 투표 성향 ── */
+.battle-all-party-summary {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: var(--color-surface-2, #f6f6f9);
+  border-radius: 10px;
+}
+.battle-all-party-summary__title {
+  font-size: 12px; font-weight: 800;
+  color: var(--color-text-secondary);
+  margin-bottom: 8px;
+}
+.battle-all-party-row {
+  display: grid;
+  grid-template-columns: 110px 16px 1fr 32px 40px;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 0;
+  border-left: 3px solid var(--party-c, #888);
+  padding-left: 8px;
+  margin-bottom: 4px;
+}
+.battle-all-party-row__party {
+  font-size: 11px; font-weight: 700;
+  color: var(--party-c, var(--color-text-secondary));
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.battle-all-party-row__arrow { font-size: 11px; color: var(--color-text-muted); }
+.battle-all-party-row__pick { font-size: 11px; font-weight: 700; color: var(--color-text-primary); }
+.battle-all-party-row__pct { font-size: 11px; font-weight: 800; color: var(--party-c, var(--color-primary)); text-align: right; }
+.battle-all-party-row__total { font-size: 10px; color: var(--color-text-muted); }

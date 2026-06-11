@@ -507,6 +507,8 @@ exports.getBattleStatus = onCall({
       id: d.id,
       authorName: d.data().authorName || '익명',
       text: d.data().text || '',
+      partyId: d.data().partyId || null,
+      power: Number(d.data().power || 0),
       createdAt: d.data().createdAt?.toMillis?.() || null,
     })).reverse();
   } catch {}
