@@ -466,38 +466,83 @@
 .king-history-header { margin-bottom: 14px; }
 .king-history-header__title { font-size: 18px; font-weight: 900; color: var(--color-text-primary, #111); }
 .king-history-header__sub { font-size: 13px; color: var(--color-text-muted, #888); margin-top: 3px; }
+
+/* ── 명예의 전당 히어로 ── */
+.kh-hero { text-align: center; padding: 20px 0 16px; }
+.kh-hero__badge {
+  display: inline-block; font-size: 11px; font-weight: 800;
+  background: #fff0e0; color: #c06000; border-radius: 99px;
+  padding: 3px 10px; margin-bottom: 8px;
+}
+.kh-hero__title { font-size: 22px; font-weight: 900; color: var(--color-text-primary); margin: 0 0 4px; }
+.kh-hero__sub { font-size: 13px; color: var(--color-text-muted); }
+.kh-streak-banner {
+  display: flex; align-items: center; gap: 8px; justify-content: center;
+  background: linear-gradient(90deg, #fff4e0, #fffbe0);
+  border: 1.5px solid #f0c040;
+  border-radius: 10px; padding: 8px 14px; margin-bottom: 12px;
+}
+.kh-streak-banner__fire { font-size: 20px; }
+.kh-streak-banner__text { font-size: 13px; font-weight: 700; color: #b07000; }
+.kh-rank-section { margin-bottom: 8px; }
+.kh-section-title {
+  font-size: 13px; font-weight: 800;
+  color: var(--color-text-secondary);
+  margin-bottom: 10px;
+}
 .king-rank-list { display: flex; flex-direction: column; gap: 8px; }
 .king-rank-item {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px 16px;
+  padding: 12px 16px;
   background: var(--color-surface, #fff);
   border-radius: 14px;
   border: 1px solid var(--color-border);
   border-left: 4px solid var(--char-color, #ccc);
   box-shadow: 0 1px 6px rgba(0,0,0,.06);
 }
-.king-rank-item__medal { font-size: 18px; width: 26px; text-align: center; }
-.king-rank-item__emoji { font-size: 26px; }
-.king-rank-item__info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.king-rank-item--current {
+  border-color: var(--char-color, var(--color-primary));
+  background: color-mix(in srgb, var(--char-color, #ff6b4a) 6%, var(--color-surface, #fff));
+}
+.king-rank-item__medal { font-size: 18px; width: 26px; text-align: center; flex-shrink: 0; }
+.king-rank-item__emoji { font-size: 26px; flex-shrink: 0; }
+.king-rank-item__info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.king-rank-item__name-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .king-rank-item__name { font-size: 14px; font-weight: 800; color: var(--color-text-primary); }
-.king-rank-item__title { font-size: 11px; color: var(--color-text-muted, #888); }
-.king-rank-item__wins { font-size: 16px; font-weight: 900; color: var(--color-primary, #FF6B4A); }
-.king-log-list { display: flex; flex-direction: column; gap: 6px; }
+.king-rank-item__party { font-size: 10px; font-weight: 700; }
+.king-rank-item__streak { font-size: 10px; font-weight: 800; background: #fff0c0; color: #a07000; padding: 1px 5px; border-radius: 99px; }
+.king-rank-item__bar-wrap {
+  height: 5px; background: var(--color-surface-2, #eee); border-radius: 99px; overflow: hidden;
+}
+.king-rank-item__bar {
+  height: 100%; background: var(--char-color, var(--color-primary)); border-radius: 99px; max-width: 100%;
+}
+.king-rank-item__stats { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; flex-shrink: 0; }
+.king-rank-item__wins { font-size: 16px; font-weight: 900; color: var(--char-color, var(--color-primary)); line-height: 1; }
+.king-rank-item__rate { font-size: 10px; color: var(--color-text-muted); font-weight: 600; }
+.king-log-list { display: flex; flex-direction: column; gap: 5px; }
 .king-log-item {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 14px;
+  padding: 9px 14px;
   background: var(--color-surface, #fff);
   border-radius: 10px;
   border: 1px solid var(--color-border, #eee);
+  border-left: 3px solid var(--char-color, #ccc);
 }
-.king-log-item__date { font-size: 11px; color: var(--color-text-muted); width: 80px; flex-shrink: 0; }
-.king-log-item__emoji { font-size: 18px; }
-.king-log-item__name { flex: 1; font-size: 13px; font-weight: 700; }
-.king-log-item__votes { font-size: 12px; color: var(--color-text-muted); }
+.king-log-item--streak { border-color: var(--char-color, var(--color-primary)); }
+.king-log-item__date { font-size: 11px; color: var(--color-text-muted); width: 76px; flex-shrink: 0; }
+.king-log-item__emoji { font-size: 18px; flex-shrink: 0; }
+.king-log-item__body { flex: 1; display: flex; align-items: center; gap: 5px; min-width: 0; }
+.king-log-item__name { font-size: 13px; font-weight: 700; }
+.king-log-item__party { font-size: 13px; }
+.king-log-item__right { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+.king-log-item__votes { font-size: 12px; color: var(--color-text-muted); font-weight: 600; }
+.king-log-item__pct { font-size: 10px; font-weight: 800; color: var(--char-color, var(--color-primary)); }
+.king-log-item__streak-dot { font-size: 12px; }
 
 /* ─── 홈 정치배틀 카드 ─── */
 .home-battle-card {

@@ -491,7 +491,7 @@ exports.getBattleStatus = onCall({
       exists: false,
       today,
       currentKing,
-      chars: BATTLE_CHARS.map(({ id, name, emoji, title, color, party }) => ({ id, name, emoji, title, color, party })),
+      chars: BATTLE_CHARS.map(({ id, name, emoji, title, color, party }) => ({ id, name, emoji, title, color, party, partyId: CHAR_TO_PARTY[id] || null })),
     };
   }
 
@@ -528,7 +528,7 @@ exports.getBattleStatus = onCall({
     currentKing,
     recentComments,
     partyVotes: battle.partyVotes || null,
-    chars: BATTLE_CHARS.map(({ id, name, emoji, title, color, party }) => ({ id, name, emoji, title, color, party })),
+    chars: BATTLE_CHARS.map(({ id, name, emoji, title, color, party }) => ({ id, name, emoji, title, color, party, partyId: CHAR_TO_PARTY[id] || null })),
   };
 });
 
@@ -562,8 +562,10 @@ exports.closeDailyBattle = onSchedule({
         charId: winner,
         charName: char?.name || winner,
         party: char?.party || '',
+        partyId: CHAR_TO_PARTY[winner] || null,
         emoji: char?.emoji || '',
         votes: maxVotes,
+        totalVotes: battleSnap.data().totalVotes || 0,
         createdAt: FieldValue.serverTimestamp(),
       }),
       db.doc(`charStats/${winner}`).set({
@@ -624,7 +626,7 @@ exports.getKingHistory = onCall({
   return {
     history,
     stats,
-    chars: BATTLE_CHARS.map(({ id, name, emoji, title, color, party }) => ({ id, name, emoji, title, color, party })),
+    chars: BATTLE_CHARS.map(({ id, name, emoji, title, color, party }) => ({ id, name, emoji, title, color, party, partyId: CHAR_TO_PARTY[id] || null })),
   };
 });
 
