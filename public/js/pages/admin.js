@@ -39,6 +39,7 @@ export async function renderAdmin() {
     { key: 'reports',   icon: '🚨', label: '신고·의견', short: '신고' },
     { key: 'users',     icon: '👥', label: '회원관리', short: '회원' },
     { key: 'posts',     icon: '📝', label: '게시글관리', short: '게시글' },
+    { key: 'parties',   icon: '🏛️', label: '정당관리', short: '정당' },
   ];
   const BOTTOM_MENUS = [
     { key: 'myinfo', icon: '👤', label: '내 정보', short: '내정보' },
@@ -118,8 +119,59 @@ async function loadTab(tab) {
     case 'ai':        return renderAiSettings(content);
     case 'features':  return renderSiteFeatures(content);
     case 'posts':     return renderAdminPosts(content);
+    case 'parties':   return renderAdminParties(content);
     case 'myinfo':    return renderMyInfo(content);
   }
+}
+
+/* ── 정당 관리 (읽기 전용 현황) ── */
+async function renderAdminParties(el) {
+  el.innerHTML = `<div class="loading-center"><div class="spinner spinner--lg"></div></div>`;
+  let parties = [];
+  try {
+    const call = httpsCallable(functions, 'getPoliticsOverview');
+    const { data } = await call();
+    parties = (data && data.parties) || [];
+  } catch (e) {
+    el.innerHTML = `<div class="admin-section"><div class="admin-card">정당 현황을 불러오지 못했어요: ${escHtml(e?.message || '오류')}</div></div>`;
+    return;
+  }
+
+  const totalMembers = parties.reduce((s, p) => s + (p.memberCount || 0), 0);
+  const totalPower = parties.reduce((s, p) => s + (p.totalPower || 0), 0);
+  const ruling = parties[0];
+
+  const rows = parties.map(p => `
+    <tr>
+      <td style="font-weight:800">${p.rank}</td>
+      <td><span style="font-size:16px">${p.emoji}</span> <b>${escHtml(p.name)}</b><div style="font-size:11px;color:var(--color-text-muted)">${escHtml(p.slogan || '')}</div></td>
+      <td style="text-align:center">${(p.memberCount || 0).toLocaleString()}</td>
+      <td style="text-align:right;font-weight:800">${(p.totalPower || 0).toLocaleString()}</td>
+      <td>${p.leader && p.leader.power > 0 ? `👑 ${escHtml(p.leader.nickname)} <span style="color:var(--color-text-muted)">(${(p.leader.power||0).toLocaleString()})</span>` : '<span style="color:var(--color-text-muted)">공석</span>'}</td>
+    </tr>`).join('');
+
+  el.innerHTML = `
+    <div class="admin-section">
+      <div class="admin-section-head">
+        <h2 class="admin-section-title">🏛️ 정당 관리</h2>
+        <button class="btn btn--ghost btn--sm" id="admin-parties-reload">새로고침</button>
+      </div>
+      <div class="admin-stat-grid" style="margin-bottom:16px">
+        <div class="admin-stat-card"><div class="admin-stat-card__icon">🏛️</div><div class="admin-stat-card__num">${parties.length}</div><div class="admin-stat-card__label">총 정당</div></div>
+        <div class="admin-stat-card"><div class="admin-stat-card__icon">👥</div><div class="admin-stat-card__num">${totalMembers.toLocaleString()}</div><div class="admin-stat-card__label">총 당원</div></div>
+        <div class="admin-stat-card"><div class="admin-stat-card__icon">⚡</div><div class="admin-stat-card__num">${totalPower.toLocaleString()}</div><div class="admin-stat-card__label">총 정치력</div></div>
+        <div class="admin-stat-card"><div class="admin-stat-card__icon">🥇</div><div class="admin-stat-card__num" style="font-size:16px">${ruling ? `${ruling.emoji} ${escHtml(ruling.name)}` : '-'}</div><div class="admin-stat-card__label">제1당</div></div>
+      </div>
+      <div class="admin-table-wrap" style="overflow:auto">
+        <table class="admin-table" style="width:100%;min-width:560px">
+          <thead><tr><th>순위</th><th>정당</th><th style="text-align:center">당원</th><th style="text-align:right">정치력</th><th>현 당대표</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <p style="font-size:12px;color:var(--color-text-muted);margin-top:12px">정당·당원·정치력은 서버에서만 변경됩니다. 정치력은 회원 활동(누적 포인트)과 동기화됩니다.</p>
+    </div>`;
+
+  el.querySelector('#admin-parties-reload')?.addEventListener('click', () => renderAdminParties(el));
 }
 
 /* ── 대시보드 ── */
