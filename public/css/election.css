@@ -340,6 +340,23 @@
   padding: 12px 0;
 }
 
+/* 투표 차이 표시 */
+.elec-cand__gap {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 10px;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+.elec-cand__gap--tight { background: #fef3c7; color: #b45309; animation: tight-blink 1.2s ease-in-out infinite; }
+.elec-cand__gap--chase { background: #ede9fe; color: #7c3aed; }
+@keyframes tight-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: .55; }
+}
+
 /* 포고령 지지율 */
 .prez-approval-bar-wrap {
   display: flex;

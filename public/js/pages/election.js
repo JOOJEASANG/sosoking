@@ -83,13 +83,30 @@ function renderPresident(p, isPresident) {
   </div>` : ''}`;
 }
 
-function renderCandidate(c, total, myVote, canVote, isLeading) {
+function renderCandidate(c, total, myVote, canVote, isLeading, leaderVotes) {
   const pct = total > 0 ? Math.round((c.votes / total) * 100) : 0;
   const mine = myVote === c.partyId;
   const showResults = myVote != null || !canVote;
   const action = canVote && myVote == null
     ? `<button class="elec-vote-btn" data-party="${c.partyId}" data-name="${escHtml(c.partyName)}">지지 선언 🗳️</button>`
     : `<span class="elec-cand__pct${mine ? ' elec-cand__pct--mine' : ''}">${pct}%</span>`;
+
+  let voteGapHTML = '';
+  if (showResults && total > 0) {
+    if (isLeading && leaderVotes != null && total > 1) {
+      // 동률 또는 1표 차이면 긴박감 강조
+      const gap = c.votes - (leaderVotes.second || 0);
+      if (gap <= 3 && gap > 0) {
+        voteGapHTML = `<span class="elec-cand__gap elec-cand__gap--tight">⚡ ${gap}표 차이!</span>`;
+      }
+    } else if (!isLeading && leaderVotes != null) {
+      const gap = leaderVotes.first - c.votes;
+      if (gap > 0 && gap <= 5) {
+        voteGapHTML = `<span class="elec-cand__gap elec-cand__gap--chase">↑ ${gap}표 추격 중</span>`;
+      }
+    }
+  }
+
   const leadTag = isLeading && total > 0
     ? `<span class="elec-cand__lead-tag">🏆 선두</span>`
     : '';
@@ -102,7 +119,7 @@ function renderCandidate(c, total, myVote, canVote, isLeading) {
       <div class="elec-cand__body">
         <div class="elec-cand__top">
           <span class="elec-cand__name">${escHtml(c.candidateName)} ${c.isAI ? '🤖' : '👑'}</span>
-          ${leadTag}
+          ${leadTag}${voteGapHTML}
           <span class="elec-cand__party">${escHtml(c.partyName)}</span>
         </div>
         ${pledgeHTML}
@@ -146,6 +163,9 @@ export async function renderElection() {
   const myVote = election.myVote;
   const isPresident = !!(president && president.candidateUid && auth.currentUser && president.candidateUid === auth.currentUser.uid);
   const myCandidate = auth.currentUser ? cands.find(c => c.candidateUid === auth.currentUser.uid) || null : null;
+  const leaderVotes = cands.length >= 2
+    ? { first: cands[0].votes, second: cands[1].votes }
+    : (cands.length === 1 ? { first: cands[0].votes, second: 0 } : null);
 
   const voteStateMsg = !loggedIn
     ? `<button class="btn btn--primary btn--sm" id="elec-login">로그인하고 투표하기</button>`
@@ -162,7 +182,7 @@ export async function renderElection() {
       <div class="elec-head__state">${voteStateMsg}</div>
     </div>
     <div class="elec-list">
-      ${cands.map((c, i) => renderCandidate(c, total, myVote, loggedIn, i === 0)).join('')}
+      ${cands.map((c, i) => renderCandidate(c, total, myVote, loggedIn, i === 0, leaderVotes)).join('')}
     </div>
     <p class="elec-note">후보는 각 정당의 당대표(정치력 1위)이며, 당대표가 없는 정당은 AI 정치인이 출마합니다. 매주 월요일 새 선거가 시작됩니다.</p>
     ${myCandidate ? `
