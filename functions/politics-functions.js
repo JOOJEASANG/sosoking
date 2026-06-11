@@ -821,10 +821,12 @@ exports.getDailyNews = onCall({ region: REGION, timeoutSeconds: 60 }, async () =
     const memberQueries = PARTY_IDS.map(pid =>
       partyRef(pid).collection('members').orderBy('power', 'desc').limit(1).get()
     );
-    const [battleSnap, presSnap, actSnap, ...memberSnaps] = await Promise.all([
+    const { key: elecKey } = weekPeriod();
+    const [battleSnap, presSnap, actSnap, elecSnap, ...memberSnaps] = await Promise.all([
       db.doc(`battles/${today}`).get(),
       db.doc(`elections/${prevKey}`).get(),
       db.doc(`party_activities/${today}`).get(),
+      db.doc(`elections/${elecKey}`).get(),
       ...memberQueries,
     ]);
 
@@ -846,9 +848,24 @@ exports.getDailyNews = onCall({ region: REGION, timeoutSeconds: 60 }, async () =
     const pres = presSnap.exists && presSnap.data().status === 'closed' ? presSnap.data() : null;
     const actTopic = (actSnap.exists && actSnap.data().topic) ? actSnap.data().topic : pickTodayTopic();
 
+    // 이번 주 대선 선두 후보
+    let elecLeader = null;
+    if (elecSnap.exists && elecSnap.data().status !== 'closed') {
+      const eData = elecSnap.data() || {};
+      const cands = eData.candidates || [];
+      const votes = eData.votes || {};
+      let best = -1;
+      cands.forEach(c => {
+        const v = Number(votes[c.partyId] || 0);
+        if (v > best) { best = v; elecLeader = c; }
+      });
+      if (best === 0) elecLeader = null;
+    }
+
     const lines = [
       battle ? `정치배틀 이슈: "${battle.topic}"${battleWinner ? ` → ${battleWinner.emoji} ${battleWinner.name} 승리` : ' (진행 중)'}` : null,
       pres && pres.winner ? `현직 대통령: ${pres.winner.candidateName} (${pres.winner.partyName})${pres.decree ? ` / 포고령: "${pres.decree}"` : ''}` : null,
+      elecLeader ? `이번 주 대선 선두: ${elecLeader.candidateName} (${elecLeader.partyName}) ${elecLeader.votes || 0}표` : null,
       topMember ? `정치력 1위: ${topMember.nickname} (${topMember.partyName}) ${topMember.power}P` : null,
       `오늘의 이슈: "${actTopic}"`,
     ].filter(Boolean).join('\n');

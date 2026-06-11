@@ -482,6 +482,36 @@ function getPostTypeBucket(p) {
   return 'general';
 }
 
+const BADGE_DEFS = [
+  { id: 'joined',      emoji: '🌱', label: '소소공화국 시민',  desc: '입장!',                    check: (s) => true },
+  { id: 'battle1',     emoji: '🗳️', label: '배틀 참전',        desc: '배틀 1회 투표',             check: (s) => s.battleVotes >= 1 },
+  { id: 'battle10',    emoji: '⚔️', label: '투표 전사',         desc: '배틀 10회 투표',            check: (s) => s.battleVotes >= 10 },
+  { id: 'battle30',    emoji: '🏛️', label: '배틀 고수',         desc: '배틀 30회 투표',            check: (s) => s.battleVotes >= 30 },
+  { id: 'election1',   emoji: '👑', label: '대선 투사',         desc: '대선 1회 투표',             check: (s) => s.electionVotes >= 1 },
+  { id: 'streak3',     emoji: '🔥', label: '불꽃 정치인',       desc: '3일 연속 출석',             check: (s) => s.maxStreak >= 3 },
+  { id: 'streak7',     emoji: '💎', label: '강철 의지',          desc: '7일 연속 출석',             check: (s) => s.maxStreak >= 7 },
+  { id: 'post5',       emoji: '📜', label: '논설위원',           desc: '게시물 5개 작성',           check: (s) => s.postCount >= 5 },
+  { id: 'power100',    emoji: '⚡', label: '100P 달성',          desc: '정치력 100P',               check: (s) => s.power >= 100 },
+  { id: 'power1000',   emoji: '🎖️', label: '1000P 달성',        desc: '정치력 1000P',              check: (s) => s.power >= 1000 },
+  { id: 'power3000',   emoji: '🏆', label: '국회의원 등극',      desc: '정치력 3000P',              check: (s) => s.power >= 3000 },
+];
+
+function renderBadges(stats) {
+  const rows = BADGE_DEFS.map(b => {
+    const earned = b.check(stats);
+    return `<div class="stat-badge${earned ? ' stat-badge--earned' : ''}" title="${b.desc}">
+      <span class="stat-badge__emoji">${b.emoji}</span>
+      <span class="stat-badge__label">${b.label}</span>
+    </div>`;
+  });
+  const earnedCount = BADGE_DEFS.filter(b => b.check(stats)).length;
+  return `
+    <div class="stats-badges-card">
+      <div class="stats-badges-card__title">🏅 정치 업적 <span class="stats-badges-card__count">${earnedCount}/${BADGE_DEFS.length}</span></div>
+      <div class="stats-badges-grid">${rows.join('')}</div>
+    </div>`;
+}
+
 /* ── 통계 탭 ── */
 async function renderStatsTab(content, uid) {
   try {
@@ -548,6 +578,8 @@ async function renderStatsTab(content, uid) {
           </div>
           ${signupDate ? `<div class="stats-pol-card__since">소소공화국 입성일 ${signupDate}</div>` : ''}
         </div>
+
+        ${renderBadges({ battleVotes, electionVotes, streak, maxStreak, postCount: posts.length, power: appState.points || 0 })}
 
         <div class="stats-grid" style="margin-top:12px">
           <div class="stats-card"><div class="stats-card__num">${posts.length}</div><div class="stats-card__label">총 게시물</div></div>

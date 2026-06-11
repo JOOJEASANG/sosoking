@@ -2819,3 +2819,63 @@
 .home-power-row__fill  { height: 100%; background: var(--party-c, #888); border-radius: 4px; transition: width 0.6s cubic-bezier(.22,1,.36,1); }
 .home-power-row__pct   { width: 34px; text-align: right; font-size: 11px; font-weight: 700; color: var(--color-text-secondary); flex-shrink: 0; }
 [data-theme="dark"] .home-power-chart { background: var(--color-surface); }
+
+/* ── 정치 업적 배지 ── */
+.stats-badges-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  padding: 14px 14px 12px;
+  margin: 10px 0;
+}
+.stats-badges-card__title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.stats-badges-card__count {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  margin-left: auto;
+}
+.stats-badges-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.stat-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 8px 4px;
+  border-radius: 10px;
+  background: var(--color-surface-2);
+  opacity: 0.35;
+  transition: opacity 0.2s;
+  text-align: center;
+}
+.stat-badge--earned {
+  opacity: 1;
+  background: color-mix(in srgb, var(--color-primary) 10%, var(--color-surface));
+  border: 1px solid color-mix(in srgb, var(--color-primary) 25%, transparent);
+}
+.stat-badge__emoji {
+  font-size: 20px;
+  line-height: 1;
+}
+.stat-badge__label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  line-height: 1.3;
+  word-break: keep-all;
+}
+.stat-badge--earned .stat-badge__label {
+  color: var(--color-text-primary);
+}
