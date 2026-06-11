@@ -155,3 +155,40 @@
 .prez-decree-form__input:focus { outline: none; border-color: var(--color-primary); }
 .prez-decree-form__hint { font-size: 11px; color: var(--color-text-muted); text-align: right; margin: 4px 0 10px; }
 .prez-decree-form__actions { display: flex; gap: 8px; }
+
+/* 역대 대통령 기록 */
+.elec-history {
+  margin-top: 20px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.elec-history__title {
+  font-size: 13px; font-weight: 800; color: var(--color-text-primary);
+  padding: 12px 14px; border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface-2, #f6f6f9);
+}
+.elec-history-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--color-border);
+  border-left: 3px solid var(--party-color, #ff6b4a);
+}
+.elec-history-item:last-child { border-bottom: none; }
+.elec-history-item__medal {
+  font-size: 15px; line-height: 1; flex-shrink: 0; min-width: 20px; text-align: center;
+}
+.elec-history-item__emoji { font-size: 20px; line-height: 1; flex-shrink: 0; }
+.elec-history-item__body { flex: 1; min-width: 0; }
+.elec-history-item__name {
+  font-size: 13px; font-weight: 800; color: var(--color-text-primary);
+}
+.elec-history-item__meta {
+  font-size: 11px; color: var(--color-text-muted); margin-top: 1px;
+}
+.elec-history-item__decree {
+  font-size: 11px; font-style: italic;
+  color: var(--party-color, var(--color-primary));
+  margin-top: 3px; line-height: 1.4;
+}

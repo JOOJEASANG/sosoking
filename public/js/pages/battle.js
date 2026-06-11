@@ -298,6 +298,7 @@ async function handleVote(charId, prevData, el) {
 
     const char = prevData.chars.find(c => c.id === charId);
     toast.success(`${char?.emoji || ''} ${char?.name || ''} 지지!`);
+    appState.points = (appState.points || 0) + 5;
     showPointPopup(5);
     httpsCallable(functions, 'syncPartyMemberPower')({}).catch(() => {});
   } catch (err) {

@@ -6,6 +6,7 @@ import { setMeta } from '../utils/seo.js';
 import { escHtml } from '../utils/helpers.js';
 import { toast } from '../components/toast.js';
 import { showPointPopup } from '../utils/point-popup.js';
+import { appState } from '../state.js';
 
 function fmtNum(n) {
   n = Number(n || 0);
@@ -134,6 +135,7 @@ export async function renderElection() {
       ${cands.map((c, i) => renderCandidate(c, total, myVote, loggedIn, i === 0)).join('')}
     </div>
     <p class="elec-note">후보는 각 정당의 당대표(정치력 1위)이며, 당대표가 없는 정당은 AI 정치인이 출마합니다. 매주 월요일 새 선거가 시작됩니다.</p>
+    <div id="elec-history-section"></div>
   </div>`;
 
   el.querySelector('#elec-login')?.addEventListener('click', () => navigate('/login'));
@@ -209,6 +211,7 @@ export async function renderElection() {
         const call = httpsCallable(functions, 'voteForPresident');
         await call({ partyId });
         toast.success(`${name} 후보에게 투표했어요! 🗳️`);
+        appState.points = (appState.points || 0) + 5;
         showPointPopup(5);
         httpsCallable(functions, 'syncPartyMemberPower')({}).catch(() => {});
         renderElection();
@@ -219,4 +222,35 @@ export async function renderElection() {
       }
     });
   });
+
+  // 역대 대선 결과 (비동기 로드)
+  loadElectionHistory(el.querySelector('#elec-history-section'));
+}
+
+async function loadElectionHistory(host) {
+  if (!host) return;
+  try {
+    const call = httpsCallable(functions, 'getElectionHistory');
+    const { data } = await call();
+    const history = (data.history || []).filter(h => !h.seeded);
+    if (!history.length) return;
+
+    host.innerHTML = `
+      <div class="elec-history">
+        <div class="elec-history__title">📜 역대 대통령 기록</div>
+        ${history.map((h, i) => {
+          const w = h.winner;
+          return `
+          <div class="elec-history-item" style="--party-color:${w.color}">
+            <span class="elec-history-item__medal">${i === 0 ? '👑' : `${i + 1}`}</span>
+            <span class="elec-history-item__emoji">${w.emoji}</span>
+            <div class="elec-history-item__body">
+              <div class="elec-history-item__name">${escHtml(w.candidateName)}</div>
+              <div class="elec-history-item__meta">${escHtml(w.partyName)} · ${h.periodId}${h.totalVotes ? ` · ${fmtNum(h.totalVotes)}표` : ''}</div>
+              ${h.decree ? `<div class="elec-history-item__decree">"${escHtml(h.decree)}"</div>` : ''}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>`;
+  } catch { /* non-critical */ }
 }

@@ -903,3 +903,30 @@ exports.getUserPoliticsStats = onCall({ region: REGION, timeoutSeconds: 15 }, as
     signupDate: user.createdAt ? user.createdAt.toDate().toISOString().slice(0, 10) : null,
   };
 });
+
+// ── 역대 대통령 선거 기록 ──
+exports.getElectionHistory = onCall({ region: REGION, timeoutSeconds: 15 }, async () => {
+  const snap = await db.collection('elections')
+    .where('status', '==', 'closed')
+    .orderBy('periodId', 'desc')
+    .limit(10)
+    .get();
+
+  const history = snap.docs
+    .map(d => {
+      const data = d.data();
+      if (!data.winner) return null;
+      return {
+        periodId: d.id,
+        endKey: data.endKey || null,
+        winner: data.winner,
+        decree: data.decree || null,
+        totalVotes: Number(data.totalVotes || 0),
+        votes: data.votes || {},
+        seeded: data.seeded || false,
+      };
+    })
+    .filter(Boolean);
+
+  return { history };
+});
