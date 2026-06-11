@@ -485,7 +485,7 @@ export async function renderHome() {
         </div>
       </div>` : '';
 
-    el.innerHTML = `<div class="home-dash page-enter home-dash--v2">${headerHTML}${battleHTML}${newsHTML}${prezHTML}${bestHTML}${hotHTML}${commentsHTML}<div id="home-party-activity-slot"></div></div>`;
+    el.innerHTML = `<div class="home-dash page-enter home-dash--v2">${headerHTML}${battleHTML}${newsHTML}${prezHTML}${bestHTML}${hotHTML}${commentsHTML}<div id="home-party-power-slot"></div><div id="home-party-activity-slot"></div></div>`;
 
     el.querySelector('#hbtn-more-hot')?.addEventListener('click', () => navigate('/feed'));
     el.querySelectorAll('[data-path]').forEach(btn => {
@@ -495,7 +495,8 @@ export async function renderHome() {
       item.addEventListener('click', () => navigate(`/detail/${item.dataset.id}`))
     );
 
-    // 정당 활동 피드 비동기 로드
+    // 세력도 + 정당 활동 피드 비동기 로드
+    loadPartyPowerChart(el.querySelector('#home-party-power-slot'));
     loadHomePartyActivity(el.querySelector('#home-party-activity-slot'));
   } catch (err) {
     console.error('[home] renderHome error', err);
@@ -507,6 +508,51 @@ export async function renderHome() {
       </div>`;
     el.querySelector('#btn-reload')?.addEventListener('click', () => location.reload());
   }
+}
+
+async function loadPartyPowerChart(slot) {
+  if (!slot) return;
+  try {
+    const { PARTY_COLORS } = await import('../utils/party-badge.js');
+    const snap = await getDocs(collection(db, 'parties'));
+    const parties = snap.docs
+      .map(d => {
+        const meta = PARTY_COLORS[d.id];
+        if (!meta) return null;
+        return { id: d.id, ...meta, totalPower: Number(d.data().totalPower || 0), memberCount: Number(d.data().memberCount || 0) };
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.totalPower - a.totalPower);
+
+    const total = parties.reduce((s, p) => s + p.totalPower, 0);
+    if (!total) return;
+
+    const bars = parties.map(p => {
+      const pct = Math.round((p.totalPower / total) * 100);
+      const width = Math.max(2, pct);
+      return `
+        <div class="home-power-row" style="--party-c:${p.color}">
+          <span class="home-power-row__emoji">${p.emoji}</span>
+          <span class="home-power-row__name">${escHtml(p.name)}</span>
+          <div class="home-power-row__track">
+            <div class="home-power-row__fill" style="width:${width}%"></div>
+          </div>
+          <span class="home-power-row__pct">${pct}%</span>
+        </div>`;
+    }).join('');
+
+    slot.innerHTML = `
+      <div>
+        <div class="home-section-header">
+          <span class="home-section-title">🗺️ 공화국 세력도</span>
+          <button class="home-section-more home-section-more--button" data-path="/ranking">랭킹 →</button>
+        </div>
+        <div class="home-power-chart">${bars}</div>
+      </div>`;
+    slot.querySelectorAll('[data-path]').forEach(btn => {
+      btn.addEventListener('click', () => navigate(btn.dataset.path));
+    });
+  } catch { /* non-critical */ }
 }
 
 async function loadHomePartyActivity(slot) {
