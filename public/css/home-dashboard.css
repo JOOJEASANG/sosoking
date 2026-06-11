@@ -215,6 +215,37 @@
 }
 .home-mission--done .home-mission__cta { color: var(--color-text-muted); font-weight: 600; }
 
+/* ── 미션 완료 후 추가 활동 제안 ── */
+.home-missions__bonus {
+  margin-top: 10px;
+  padding: 10px 14px;
+  background: color-mix(in srgb, var(--color-success, #34a853) 8%, var(--color-surface-2, #f6f6f9));
+  border-radius: 12px;
+  border-left: 3px solid var(--color-success, #34a853);
+}
+.home-missions__bonus-title {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--color-success, #34a853);
+  display: block;
+  margin-bottom: 8px;
+  letter-spacing: .03em;
+}
+.home-missions__bonus-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.home-missions__bonus-item {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-border);
+  border-radius: 99px;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: transform .1s;
+}
+.home-missions__bonus-item:active { transform: scale(.96); }
+.home-missions__bonus-item em { color: var(--color-success, #34a853); font-style: normal; margin-left: 2px; }
+
 /* ── 계정 프로필 등급 진행바 ── */
 .account-rank-progress { margin: 10px auto 4px; max-width: 240px; }
 .account-rank-progress__bar {

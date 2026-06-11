@@ -326,6 +326,15 @@ function renderMissions(status, battleData) {
             <span class="home-mission__cta">${m.done ? '완료 ✓' : m.cta}</span>
           </button>`).join('')}
       </div>
+      ${allDone ? `
+      <div class="home-missions__bonus">
+        <span class="home-missions__bonus-title">추가 정치력 획득 방법</span>
+        <div class="home-missions__bonus-list">
+          <button class="home-missions__bonus-item" data-path="/battle" type="button">💬 배틀 토론 <em>+20P</em></button>
+          <button class="home-missions__bonus-item" data-path="/feed" type="button">✍️ 글·댓글 <em>+10~20P</em></button>
+          <button class="home-missions__bonus-item" data-path="/parties" type="button">🏛️ 정당 랭킹 <em>확인</em></button>
+        </div>
+      </div>` : ''}
     </section>`;
 }
 
