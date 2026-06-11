@@ -230,36 +230,43 @@ function renderBattleCard(battle) {
 
   const chars = battle.chars || [];
   const votes = battle.votes || {};
+  const winnerChar = isEnded && battle.king ? chars.find(c => c.id === battle.king) : null;
   const miniVoteBars = chars.length > 0 && (hasVoted || isEnded || totalVotes > 0) ? `
     <div class="home-battle-mini-bars">
       ${chars.map(c => {
         const count = votes[c.id] || 0;
         const pct = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
         const isVoted = battle.userVote === c.id;
-        return `<div class="home-battle-mini-bar${isVoted ? ' home-battle-mini-bar--voted' : ''}">
+        const isWinner = isEnded && c.id === battle.king;
+        return `<div class="home-battle-mini-bar${isVoted ? ' home-battle-mini-bar--voted' : ''}${isWinner ? ' home-battle-mini-bar--winner' : ''}">
           <span class="home-battle-mini-bar__emoji">${c.emoji}</span>
           <div class="home-battle-mini-bar__track">
             <div class="home-battle-mini-bar__fill" style="width:${pct}%;background:${c.color}"></div>
           </div>
-          <span class="home-battle-mini-bar__pct">${pct}%</span>
+          <span class="home-battle-mini-bar__pct">${pct}%${isWinner ? ' 👑' : ''}</span>
         </div>`;
       }).join('')}
     </div>` : '';
+
+  const decreeHTML = isEnded && battle.aftermath?.decree
+    ? `<div class="home-battle-card__decree">${winnerChar ? `${winnerChar.emoji} ` : ''}집권 선언: "${escHtml(battle.aftermath.decree.slice(0, 50))}${battle.aftermath.decree.length > 50 ? '…' : ''}"</div>`
+    : '';
 
   return `
     <div class="home-battle-card" data-path="/battle">
       <div class="home-battle-card__head">
         <span class="home-battle-card__king">🏛️ ${escHtml(kingText)}</span>
-        <span class="home-battle-card__status${isEnded ? ' home-battle-card__status--ended' : ''}">${isEnded ? '종료' : battle.exists ? (totalVotes > 0 ? `${totalVotes}표` : '🔴 투표중') : '준비중'}</span>
+        <span class="home-battle-card__status${isEnded ? ' home-battle-card__status--ended' : ''}">${isEnded ? `종료 · ${fmtNum(totalVotes)}표` : battle.exists ? (totalVotes > 0 ? `${fmtNum(totalVotes)}표` : '🔴 투표중') : '준비중'}</span>
       </div>
       <div class="home-battle-card__topic">${escHtml(battle.topic || '오늘의 정치 스캔들')}</div>
-      <div class="home-battle-card__preview">
+      ${!isEnded ? `<div class="home-battle-card__preview">
         ${previewTurns.map(t =>
           `<div class="home-battle-card__line">${t.emoji} <b>${escHtml(t.charName || '')}</b> ${escHtml((t.text || '').slice(0, 35))}…</div>`
         ).join('')}
-      </div>
+      </div>` : ''}
       ${miniVoteBars}
-      <div class="home-battle-card__cta">${hasVoted ? '✅ 투표 완료 · 자세히 보기 →' : '토론 보고 한 표 던지기 →'}</div>
+      ${decreeHTML}
+      <div class="home-battle-card__cta">${isEnded ? '결과 자세히 보기 →' : hasVoted ? '✅ 투표 완료 · 자세히 보기 →' : '토론 보고 한 표 던지기 →'}</div>
     </div>`;
 }
 
