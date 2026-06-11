@@ -192,3 +192,56 @@
   color: var(--party-color, var(--color-primary));
   margin-top: 3px; line-height: 1.4;
 }
+
+/* ── 후보 공약 표시 ── */
+.elec-cand__pledge {
+  font-size: 11px;
+  font-style: italic;
+  color: var(--party-color, var(--color-primary));
+  margin: 3px 0;
+  line-height: 1.4;
+  padding: 3px 6px;
+  background: color-mix(in srgb, var(--party-color, var(--color-primary)) 8%, transparent);
+  border-radius: 4px;
+}
+
+/* ── 공약 작성 폼 (후보자 전용) ── */
+.elec-pledge-section {
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-primary);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin: 12px 0;
+}
+.elec-pledge-section__title {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--color-primary);
+  margin-bottom: 4px;
+}
+.elec-pledge-section__hint {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin-bottom: 8px;
+}
+.elec-pledge-input {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+  resize: none;
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  box-sizing: border-box;
+}
+.elec-pledge-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 6px;
+}
+.elec-pledge-len {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}

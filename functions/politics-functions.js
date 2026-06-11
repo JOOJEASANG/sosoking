@@ -512,7 +512,8 @@ exports.getElection = onCall({ region: REGION, timeoutSeconds: 30 }, async reque
   const snap = await ref.get();
   const d = snap.data() || {};
   const votes = d.votes || {};
-  const candidates = (d.candidates || []).map(c => ({ ...c, votes: Number(votes[c.partyId] || 0) }));
+  const pledges = d.pledges || {};
+  const candidates = (d.candidates || []).map(c => ({ ...c, votes: Number(votes[c.partyId] || 0), pledge: pledges[c.partyId] || null }));
 
   let myVote = null;
   if (uid) {
@@ -638,6 +639,26 @@ exports.setPresidentialDecree = onCall({ region: REGION, timeoutSeconds: 10 }, a
 
   await ref.update({ decree: text, updatedAt: FieldValue.serverTimestamp() });
   return { ok: true, decree: text };
+});
+
+// ── 선거 공약 작성 (당대표 전용) ──
+exports.setCampaignPledge = onCall({ region: REGION, timeoutSeconds: 10 }, async request => {
+  const uid = requireUid(request);
+  const text = String((request.data && request.data.pledge) || '').trim();
+  if (!text) throw new HttpsError('invalid-argument', '공약 내용을 입력해주세요.');
+  if (text.length > 80) throw new HttpsError('invalid-argument', '공약은 80자 이내로 작성해주세요.');
+
+  const key = await ensureElection();
+  const ref = db.doc(`elections/${key}`);
+  const snap = await ref.get();
+  if (!snap.exists) throw new HttpsError('not-found', '현재 선거 기록이 없습니다.');
+  const d = snap.data() || {};
+  if (d.status === 'closed') throw new HttpsError('failed-precondition', '이미 종료된 선거입니다.');
+  const candidate = (d.candidates || []).find(c => c.candidateUid === uid);
+  if (!candidate) throw new HttpsError('permission-denied', '이번 선거 후보만 공약을 작성할 수 있어요.');
+
+  await ref.update({ [`pledges.${candidate.partyId}`]: text, updatedAt: FieldValue.serverTimestamp() });
+  return { ok: true, pledge: text, partyId: candidate.partyId };
 });
 
 // ── 정치력 랭킹 — 전 정당 상위 유저 통합 순위 ──

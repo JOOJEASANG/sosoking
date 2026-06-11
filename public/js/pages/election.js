@@ -69,6 +69,9 @@ function renderCandidate(c, total, myVote, canVote, isLeading) {
   const leadTag = isLeading && total > 0
     ? `<span class="elec-cand__lead-tag">🏆 선두</span>`
     : '';
+  const pledgeHTML = c.pledge
+    ? `<div class="elec-cand__pledge">📜 "${escHtml(c.pledge)}"</div>`
+    : '';
   return `
     <div class="elec-cand${mine ? ' elec-cand--mine' : ''}${isLeading && total > 0 ? ' elec-cand--leading' : ''}" style="--party-color:${c.color}">
       <div class="elec-cand__emoji">${c.emoji}</div>
@@ -78,6 +81,7 @@ function renderCandidate(c, total, myVote, canVote, isLeading) {
           ${leadTag}
           <span class="elec-cand__party">${escHtml(c.partyName)}</span>
         </div>
+        ${pledgeHTML}
         ${showResults ? `<div class="elec-bar"><div class="elec-bar__fill" style="width:${pct}%"></div></div>
         <div class="elec-cand__votes">${fmtNum(c.votes)}표${mine ? ' · 내 선택 ✅' : ''}</div>` : `<div class="elec-cand__sub">${c.isAI ? 'AI 정치인 후보' : '당대표 후보'}</div>`}
       </div>
@@ -117,6 +121,7 @@ export async function renderElection() {
   const loggedIn = !!auth.currentUser;
   const myVote = election.myVote;
   const isPresident = !!(president && president.candidateUid && auth.currentUser && president.candidateUid === auth.currentUser.uid);
+  const myCandidate = auth.currentUser ? cands.find(c => c.candidateUid === auth.currentUser.uid) || null : null;
 
   const voteStateMsg = !loggedIn
     ? `<button class="btn btn--primary btn--sm" id="elec-login">로그인하고 투표하기</button>`
@@ -136,6 +141,16 @@ export async function renderElection() {
       ${cands.map((c, i) => renderCandidate(c, total, myVote, loggedIn, i === 0)).join('')}
     </div>
     <p class="elec-note">후보는 각 정당의 당대표(정치력 1위)이며, 당대표가 없는 정당은 AI 정치인이 출마합니다. 매주 월요일 새 선거가 시작됩니다.</p>
+    ${myCandidate ? `
+    <div class="elec-pledge-section">
+      <div class="elec-pledge-section__title">📢 내 선거 공약 ${myCandidate.pledge ? '(수정 가능)' : '(아직 없음)'}</div>
+      <p class="elec-pledge-section__hint">유권자에게 보여줄 짧은 공약을 작성해보세요 (80자 이내)</p>
+      <textarea class="elec-pledge-input" id="elec-pledge-input" maxlength="80" placeholder="예) 모든 시민에게 정치력 2배 보너스를!" rows="2">${escHtml(myCandidate.pledge || '')}</textarea>
+      <div class="elec-pledge-actions">
+        <span class="elec-pledge-len"><span id="elec-pledge-len">${myCandidate.pledge ? myCandidate.pledge.length : 0}</span>/80</span>
+        <button class="btn btn--primary btn--sm" id="elec-pledge-submit">공약 발표 📢</button>
+      </div>
+    </div>` : ''}
     <div id="elec-history-section"></div>
   </div>`;
 
@@ -224,6 +239,32 @@ export async function renderElection() {
       }
     });
   });
+
+  // 선거 공약 편집기
+  if (myCandidate) {
+    const pledgeInput = el.querySelector('#elec-pledge-input');
+    const pledgeLen = el.querySelector('#elec-pledge-len');
+    const pledgeSubmit = el.querySelector('#elec-pledge-submit');
+    pledgeInput?.addEventListener('input', () => {
+      if (pledgeLen) pledgeLen.textContent = pledgeInput.value.length;
+    });
+    pledgeSubmit?.addEventListener('click', async () => {
+      const text = pledgeInput?.value.trim();
+      if (!text) { toast.warn('공약 내용을 입력해주세요'); return; }
+      pledgeSubmit.disabled = true;
+      pledgeSubmit.textContent = '발표 중…';
+      try {
+        const call = httpsCallable(functions, 'setCampaignPledge');
+        await call({ pledge: text });
+        toast.success('공약을 발표했어요! 📢');
+        renderElection();
+      } catch (e) {
+        toast.error(e?.message || '공약 발표에 실패했어요');
+        pledgeSubmit.disabled = false;
+        pledgeSubmit.textContent = '공약 발표 📢';
+      }
+    });
+  }
 
   // 역대 대선 결과 (비동기 로드)
   loadElectionHistory(el.querySelector('#elec-history-section'));

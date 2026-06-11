@@ -1,5 +1,7 @@
 import { auth, functions } from '../firebase.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
+import { appState } from '../state.js';
+import { checkRankUp } from './rank-up.js';
 
 export const POINT_RULES = {
   post_create: { points: 10, label: '피드 글 작성' },
@@ -33,7 +35,12 @@ export async function awardPoints(action, meta = {}) {
         type: meta.type || '',
       },
     });
-    return !!result.data?.awarded;
+    const awarded = !!result.data?.awarded;
+    if (awarded && rule?.points) {
+      appState.points = (appState.points || 0) + rule.points;
+      if (auth.currentUser) checkRankUp(auth.currentUser.uid, appState.points);
+    }
+    return awarded;
   } catch (error) {
     console.warn('[points] award failed', error);
     sessionAwards.delete(dedupeKey);
