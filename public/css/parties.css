@@ -305,3 +305,75 @@
   display: block; margin: 10px auto 0; background: none; border: none;
   font-size: 12px; color: var(--color-text-muted); cursor: pointer; text-decoration: underline;
 }
+
+/* ── 입당 세리머니 ── */
+.join-ceremony {
+  position: fixed; inset: 0; z-index: 2000;
+  background: rgba(0,0,0,.6); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+  opacity: 0; transition: opacity .25s ease;
+}
+.join-ceremony--visible { opacity: 1; }
+.join-ceremony__card {
+  position: relative; overflow: hidden; text-align: center;
+  width: 100%; max-width: 360px;
+  background: linear-gradient(160deg,
+    color-mix(in srgb, var(--party-color, #ff6b4a) 18%, var(--color-surface, #fff)),
+    var(--color-surface, #fff) 55%);
+  border: 2px solid var(--party-color, #ff6b4a);
+  border-radius: 24px; padding: 28px 22px 24px;
+  box-shadow: 0 24px 60px rgba(0,0,0,.25), 0 0 0 6px color-mix(in srgb, var(--party-color) 15%, transparent);
+  transform: scale(.88); transition: transform .3s cubic-bezier(.34,1.56,.64,1);
+}
+.join-ceremony--visible .join-ceremony__card { transform: scale(1); }
+
+.join-ceremony__burst {
+  position: absolute; top: 0; left: 0; right: 0;
+  display: flex; justify-content: space-around; padding: 8px 4px;
+  pointer-events: none;
+  animation: burst-drop .9s ease-out both;
+}
+@keyframes burst-drop {
+  from { opacity: 0; transform: translateY(-20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.join-ceremony__burst span { font-size: 22px; }
+
+.join-ceremony__emoji {
+  font-size: 64px; line-height: 1; margin: 8px 0 4px;
+  filter: drop-shadow(0 4px 12px color-mix(in srgb, var(--party-color) 40%, transparent));
+  animation: pop-in .4s .15s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes pop-in {
+  from { transform: scale(.4); opacity: 0; }
+  to   { transform: scale(1);  opacity: 1; }
+}
+.join-ceremony__congrats {
+  font-size: 13px; font-weight: 800; letter-spacing: .08em;
+  color: var(--party-color, var(--color-primary)); margin-bottom: 2px;
+}
+.join-ceremony__name {
+  font-size: 26px; font-weight: 900; letter-spacing: -.02em;
+  color: var(--color-text-primary); margin-bottom: 8px;
+}
+.join-ceremony__perk {
+  display: inline-block; font-size: 12px; font-weight: 800;
+  color: #fff;
+  background: var(--party-color, var(--color-primary));
+  padding: 4px 14px; border-radius: 99px; margin-bottom: 12px;
+}
+.join-ceremony__quote {
+  font-size: 13px; color: var(--color-text-secondary); font-style: italic;
+  background: var(--color-surface-2, #f6f6f9); border-radius: 10px;
+  padding: 10px 14px; margin-bottom: 12px; line-height: 1.5;
+}
+.join-ceremony__hint {
+  font-size: 12px; color: var(--color-text-muted); line-height: 1.5;
+  margin-bottom: 18px;
+}
+.join-ceremony__hint b { color: var(--party-color, var(--color-primary)); }
+.join-ceremony__go { width: 100%; font-weight: 900; letter-spacing: .01em; }
+.join-ceremony__close {
+  display: block; margin: 10px auto 0; background: none; border: none;
+  font-size: 12px; color: var(--color-text-muted); cursor: pointer; text-decoration: underline;
+}

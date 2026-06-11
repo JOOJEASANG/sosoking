@@ -183,10 +183,43 @@ function renderPartyCard(p, me, isRuling) {
     <div class="party-members" id="members-${p.id}" hidden></div>`;
 }
 
+function showJoinCeremony(partyId, name, color, emoji) {
+  const meta = PARTY_META[partyId];
+  const quote = meta ? pick(meta.quotes) : '';
+  const perk = meta ? meta.perk : '';
+
+  const overlay = document.createElement('div');
+  overlay.className = 'join-ceremony';
+  overlay.innerHTML = `
+    <div class="join-ceremony__card" style="--party-color:${color}">
+      <div class="join-ceremony__burst" aria-hidden="true">
+        <span>🎊</span><span>🎉</span><span>✨</span><span>🎊</span><span>🎉</span>
+      </div>
+      <div class="join-ceremony__emoji">${emoji}</div>
+      <div class="join-ceremony__congrats">입당 완료!</div>
+      <div class="join-ceremony__name">${escHtml(name)}</div>
+      ${perk ? `<div class="join-ceremony__perk">${escHtml(perk)} 획득</div>` : ''}
+      ${quote ? `<div class="join-ceremony__quote">"${escHtml(quote)}"</div>` : ''}
+      <div class="join-ceremony__hint">활동할수록 정치력이 쌓여 당내 1위 <b>당대표</b>가 됩니다</div>
+      <button class="btn btn--primary join-ceremony__go" id="jc-go">지금 활동하러 가기 →</button>
+      <button class="join-ceremony__close" id="jc-close">닫기</button>
+    </div>`;
+
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => overlay.classList.add('join-ceremony--visible'));
+
+  overlay.querySelector('#jc-go').addEventListener('click', () => { overlay.remove(); navigate('/battle'); });
+  overlay.querySelector('#jc-close').addEventListener('click', () => overlay.remove());
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
 async function doJoin(partyId, name) {
   const call = httpsCallable(functions, 'joinParty');
   await call({ partyId });
-  toast.success(`${name}에 입당했어요! 🎉`);
+  const found = _partiesCache.find(p => p.id === partyId);
+  const color = found?.color || '#ff6b4a';
+  const emoji = found?.emoji || '🏛️';
+  showJoinCeremony(partyId, name, color, emoji);
   renderParties();
 }
 
