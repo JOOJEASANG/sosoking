@@ -28,6 +28,123 @@
   margin: 0;
 }
 
+/* ── 출세 사다리 ── */
+.rank-ladder {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 14px 16px 12px;
+  margin-bottom: 12px;
+}
+.rank-ladder__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.rank-ladder__title {
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--color-text-primary);
+}
+.rank-ladder__cur {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+.rank-ladder__cur b { color: var(--color-text-primary); font-weight: 800; }
+.rank-ladder__track {
+  display: flex;
+  align-items: flex-start;
+  padding-top: 22px;
+}
+.rank-ladder__step {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+/* connector line: from center of this step to center of next */
+.rank-ladder__step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 14px; /* vertical center of 32px node - 2px for border */
+  left: 50%;
+  width: 100%;
+  height: 3px;
+  background: var(--color-border);
+  z-index: 0;
+}
+.rank-ladder__step.connected:not(:last-child)::after {
+  background: var(--color-primary);
+}
+.rank-ladder__node {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  background: var(--color-surface-2);
+  border: 2px solid var(--color-border);
+  position: relative;
+  z-index: 1;
+  transition: all .2s;
+}
+.rank-ladder__step.active .rank-ladder__node {
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface));
+}
+.rank-ladder__step.current .rank-ladder__node {
+  width: 36px;
+  height: 36px;
+  font-size: 18px;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-primary) 20%, transparent);
+  margin-top: -2px;
+}
+.rank-ladder__you {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 9px;
+  font-weight: 900;
+  color: #fff;
+  background: var(--color-primary);
+  border-radius: 99px;
+  padding: 1px 6px;
+  white-space: nowrap;
+  z-index: 2;
+}
+.rank-ladder__label {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  margin-top: 5px;
+  white-space: nowrap;
+}
+.rank-ladder__step.current .rank-ladder__label {
+  color: var(--color-primary);
+  font-weight: 900;
+}
+.rank-ladder__footer {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  justify-content: flex-end;
+}
+.rank-ladder__next {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+.rank-ladder__next b { color: var(--color-primary); font-weight: 800; }
+.rank-ladder__next--max { color: #b8860b; font-weight: 700; }
+
 /* 내 순위 배너 */
 .rank-my-banner {
   display: flex;

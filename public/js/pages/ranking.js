@@ -3,7 +3,7 @@ import { auth, functions } from '../firebase.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
 import { setMeta } from '../utils/seo.js';
 import { escHtml } from '../utils/helpers.js';
-import { getPoliticalRank } from '../utils/political-rank.js';
+import { getPoliticalRank, RANKS } from '../utils/political-rank.js';
 
 function fmtPower(n) {
   n = Number(n || 0);
@@ -31,6 +31,34 @@ function renderUserRow(m, myUid) {
       </span>
       <span class="rank-power">${fmtPower(m.power)}P</span>
     </div>`;
+}
+
+function renderLadder(myPower) {
+  const power = Number(myPower || 0);
+  const cur = getPoliticalRank(power);
+  const steps = RANKS.map((r, i) => {
+    const isActive = cur.level >= r.level;
+    const isCurrent = cur.level === r.level;
+    const connected = cur.level > r.level;
+    return `<div class="rank-ladder__step${isActive ? ' active' : ''}${isCurrent ? ' current' : ''}${connected ? ' connected' : ''}">
+      ${isCurrent ? '<div class="rank-ladder__you">나</div>' : ''}
+      <div class="rank-ladder__node">${r.emoji}</div>
+      <div class="rank-ladder__label">Lv.${r.level}</div>
+    </div>`;
+  }).join('');
+  const footerRight = cur.isMax
+    ? `<span class="rank-ladder__next rank-ladder__next--max">🏆 최고 등급 달성!</span>`
+    : `<span class="rank-ladder__next">다음: ${cur.next.emoji} ${cur.next.title} · <b>${cur.remain.toLocaleString()}P</b> 필요</span>`;
+  return `<div class="rank-ladder">
+    <div class="rank-ladder__header">
+      <span class="rank-ladder__title">출세 사다리</span>
+      <span class="rank-ladder__cur">${cur.emoji} <b>${cur.title}</b> · ${power.toLocaleString()}P</span>
+    </div>
+    <div class="rank-ladder__track">${steps}</div>
+    <div class="rank-ladder__footer">
+      ${footerRight}
+    </div>
+  </div>`;
 }
 
 function renderLeaderCard(party) {
@@ -100,6 +128,8 @@ export async function renderRanking() {
       <h1 class="ranking-hero__title">정치력 랭킹</h1>
       <p class="ranking-hero__sub">활동할수록 정치력이 쌓이고, 당내 1위는 당대표가 됩니다</p>
     </div>
+
+    ${renderLadder(myEntry?.power)}
 
     ${myBanner}
 
