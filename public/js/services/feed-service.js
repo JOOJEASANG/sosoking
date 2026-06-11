@@ -1,6 +1,7 @@
 /* feed-service.js — 피드 Firestore CRUD 서비스 */
 import { db, auth } from '../firebase.js';
 import { appState } from '../state.js';
+import { getPoliticalRank } from '../utils/political-rank.js';
 import {
   collection, query, orderBy, limit, startAfter,
   getDocs, getDoc, addDoc, updateDoc, deleteDoc,
@@ -88,6 +89,7 @@ export async function createPost(data) {
     authorId:    user.uid,
     authorName:  appState.nickname || user.displayName || '익명',
     authorPhoto: user.photoURL || '',
+    rankEmoji:   getPoliticalRank(appState.points || 0).emoji,
     reactions:   { total: 0 },
     commentCount: 0,
     viewCount:    0,

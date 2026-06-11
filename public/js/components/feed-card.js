@@ -118,7 +118,7 @@ export function renderFeedCard(post) {
           ${desc ? `<p class="feed-card__desc line-clamp-2">${escHtml(desc)}</p>` : ''}
           ${renderModuleChips(post)}
           <div class="feed-card__meta">
-            <span>${renderPresidentCrown(post.authorId)}${renderPartyBadge(post.partyId)}${escHtml(post.authorName || '\uC775\uBA85')}</span>
+            <span>${renderPresidentCrown(post.authorId)}${renderPartyBadge(post.partyId)}${post.rankEmoji ? `<span class="comment-rank-emoji" title="\uC815\uCE58 \uB4F1\uAE09">${escHtml(post.rankEmoji)}</span>` : ''}${escHtml(post.authorName || '\uC775\uBA85')}</span>
             <span class="feed-card__meta-dot"></span>
             <span>${timeStr}</span>
             ${viewCount ? `<span class="feed-card__meta-dot"></span><span>👁 ${Number(viewCount || 0).toLocaleString()}</span>` : ''}
