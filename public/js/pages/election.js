@@ -150,6 +150,7 @@ export async function renderElection() {
         await call({ partyId });
         toast.success(`${name} 후보에게 투표했어요! 🗳️`);
         showPointPopup(5);
+        httpsCallable(functions, 'syncPartyMemberPower')({}).catch(() => {});
         renderElection();
       } catch (e) {
         toast.error(e?.message || '투표에 실패했어요.');

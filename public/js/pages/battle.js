@@ -299,6 +299,7 @@ async function handleVote(charId, prevData, el) {
     const char = prevData.chars.find(c => c.id === charId);
     toast.success(`${char?.emoji || ''} ${char?.name || ''} 지지!`);
     showPointPopup(5);
+    httpsCallable(functions, 'syncPartyMemberPower')({}).catch(() => {});
   } catch (err) {
     btns.forEach(b => { b.disabled = false; });
     if (err?.code === 'already-exists') {
