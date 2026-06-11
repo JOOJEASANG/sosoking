@@ -293,12 +293,25 @@ exports.getPoliticsOverview = onCall({ region: REGION, timeoutSeconds: 30 }, asy
 // ── 당원 목록(정치력 순) ──
 exports.getPartyMembers = onCall({ region: REGION, timeoutSeconds: 30 }, async request => {
   const partyId = assertPartyId(request.data && request.data.partyId);
-  const q = await partyRef(partyId).collection('members').orderBy('power', 'desc').limit(30).get();
-  const members = q.docs.map((d, i) => {
+  const currentWeekKey = kstMondayKey();
+  const [powerQ, gainQ] = await Promise.all([
+    partyRef(partyId).collection('members').orderBy('power', 'desc').limit(30).get(),
+    partyRef(partyId).collection('members').orderBy('weeklyGain', 'desc').limit(3).get(),
+  ]);
+  const members = powerQ.docs.map((d, i) => {
     const m = d.data() || {};
     return { rank: i + 1, nickname: m.nickname || '시민', icon: m.icon || null, power: Number(m.power || 0) };
   });
-  return { ok: true, partyId, party: PARTY_BY_ID[partyId], members };
+  const weeklyStars = gainQ.docs
+    .filter(d => {
+      const m = d.data() || {};
+      return m.weekKey === currentWeekKey && Number(m.weeklyGain || 0) > 0;
+    })
+    .map(d => {
+      const m = d.data() || {};
+      return { uid: d.id, nickname: m.nickname || '시민', icon: m.icon || null, weeklyGain: Number(m.weeklyGain || 0) };
+    });
+  return { ok: true, partyId, party: PARTY_BY_ID[partyId], members, weeklyStars };
 });
 
 // ── 입당 / 정당 변경 ──

@@ -237,11 +237,22 @@ async function loadMembers(partyId, host) {
     const call = httpsCallable(functions, 'getPartyMembers');
     const { data } = await call({ partyId });
     const members = data.members || [];
+    const weeklyStars = data.weeklyStars || [];
     if (!members.length) {
       host.innerHTML = `<div class="party-members__empty">아직 당원이 없어요. 첫 당원이 되어보세요!</div>`;
       return;
     }
-    host.innerHTML = members.map(m => {
+    const starsHTML = weeklyStars.length ? `
+      <div class="party-weekly-stars">
+        <div class="party-weekly-stars__title">🔥 이번 주 급부상</div>
+        ${weeklyStars.map((m, i) => `
+          <span class="party-weekly-star">
+            ${['🥇','🥈','🥉'][i] || ''}
+            ${m.icon?.value ? m.icon.value + ' ' : ''}${escHtml(m.nickname)}
+            <em>+${fmtNum(m.weeklyGain)}P</em>
+          </span>`).join('')}
+      </div>` : '';
+    host.innerHTML = starsHTML + members.map(m => {
       const polRank = getPoliticalRank(m.power || 0);
       return `
       <div class="party-member${m.rank === 1 ? ' party-member--leader' : ''}">
