@@ -897,6 +897,18 @@ const DAILY_TOPICS = [
   '소소공화국의 미래 방향성을 놓고 갑론을박이 벌어졌다',
   '국민 청원 상위권 이슈가 공개됐다',
   '정치인 자질 논쟁이 또다시 터졌다',
+  '고위직 인사 청문회에서 충격 발언이 나왔다',
+  '물가 폭등으로 민심이 흉흉해졌다',
+  '야당이 전격 장외투쟁을 선언했다',
+  '당대표 비리 의혹이 제기됐다',
+  '특검 도입을 두고 여야가 정면충돌했다',
+  '국회의원 특권 폐지 청원에 100만 서명이 모였다',
+  '부동산 대책 발표 후 여론이 엇갈렸다',
+  '핵심 공약 파기 논란에 지지율이 흔들렸다',
+  '당내 갈등으로 집단 탈당 사태가 벌어졌다',
+  '외교 실책으로 국제 망신이라는 비판이 쏟아졌다',
+  '선거 자금 의혹이 특수부 수사로 이어졌다',
+  '복지 예산 삭감 발표에 시민단체가 강력 반발했다',
 ];
 
 function pickTodayTopic() {
@@ -919,8 +931,15 @@ exports.getPartyActivities = onCall({ region: REGION, timeoutSeconds: 60 }, asyn
   if (snap.exists && snap.data().generating) return { activities: snap.data().activities || [], topic: snap.data().topic || '', date: today };
   await ref.set({ generating: true, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
 
+  // 오늘의 배틀 토픽이 있으면 연계 (정당 활동 ↔ 배틀 이슈 통일)
+  let battleTopic = null;
   try {
-    const topic = pickTodayTopic();
+    const bSnap = await db.doc(`battles/${today}`).get();
+    if (bSnap.exists && bSnap.data().topic) battleTopic = bSnap.data().topic;
+  } catch {}
+
+  try {
+    const topic = battleTopic || pickTodayTopic();
     const raw = await callAI(buildActivityPrompt(topic), 1200);
     const parsed = safeParseJson(raw);
     if (!Array.isArray(parsed) || parsed.length < 7) throw new Error('AI 응답 파싱 실패');
@@ -942,7 +961,7 @@ exports.getPartyActivities = onCall({ region: REGION, timeoutSeconds: 60 }, asyn
     await ref.set({ generating: false, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
     console.error('[getPartyActivities] AI error', e);
     // AI 실패 시 기본 활동 반환 (게임이 멈추지 않도록)
-    const topic = pickTodayTopic();
+    const topic = battleTopic || pickTodayTopic();
     const fallback = PARTIES.map(p => ({
       partyId: p.id, partyName: p.name, emoji: p.emoji, color: p.color,
       charName: p.leaderName, text: p.slogan + '.',

@@ -1,5 +1,5 @@
 // sw.js — 배포 후 오래된 정적 자산이 남지 않도록 캐시 버전을 관리합니다.
-const CACHE = 'sosoking-v111';
+const CACHE = 'sosoking-v112';
 const FRESH_EXTENSIONS = ['.html', '.js', '.css', '.json', '.webmanifest'];
 
 self.addEventListener('install', event => {
