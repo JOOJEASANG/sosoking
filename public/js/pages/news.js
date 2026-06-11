@@ -196,9 +196,14 @@ async function loadKingRecap(slot) {
       <div class="news-king-row${i === 0 ? ' news-king-row--latest' : ''}">
         <span class="news-king-row__date">${h.date || ''}</span>
         <span class="news-king-row__emoji">${h.emoji || ''}</span>
-        <span class="news-king-row__name">${escHtml(h.charName || '')}</span>
-        ${h.totalVotes > 0 ? `<span class="news-king-row__pct">${Math.round((h.votes / h.totalVotes) * 100)}%</span>` : `<span class="news-king-row__pct">${h.votes}표</span>`}
-        ${i === 0 ? '<span class="news-king-row__badge">최신</span>' : ''}
+        <div class="news-king-row__body">
+          <span class="news-king-row__name">${escHtml(h.charName || '')}</span>
+          ${h.topic ? `<span class="news-king-row__topic">${escHtml(h.topic)}</span>` : ''}
+        </div>
+        <div class="news-king-row__right">
+          ${h.totalVotes > 0 ? `<span class="news-king-row__pct">${Math.round((h.votes / h.totalVotes) * 100)}%</span>` : `<span class="news-king-row__pct">${h.votes}표</span>`}
+          ${i === 0 ? '<span class="news-king-row__badge">최신</span>' : ''}
+        </div>
       </div>`).join('');
 
     slot.innerHTML = `
