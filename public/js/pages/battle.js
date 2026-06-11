@@ -70,6 +70,35 @@ function renderVoteBar(char, votes, totalVotes, userVote) {
     </div>`;
 }
 
+function renderPartyVoteSummary(partyVotes, chars, partyId) {
+  if (!partyVotes || !partyId || !partyVotes[partyId]) return '';
+  const pVotes = partyVotes[partyId];
+  const partyTotal = Object.values(pVotes).reduce((s, v) => s + Number(v || 0), 0);
+  if (partyTotal === 0) return '';
+  const sorted = [...chars].sort((a, b) => (Number(pVotes[b.id] || 0)) - (Number(pVotes[a.id] || 0)));
+  const top = sorted[0];
+  const topPct = Math.round((Number(pVotes[top.id] || 0) / partyTotal) * 100);
+  return `
+    <div class="battle-party-vote">
+      <div class="battle-party-vote__title">🏛️ 우리 당 지지 현황</div>
+      <div class="battle-party-vote__list">
+        ${sorted.map(c => {
+          const cnt = Number(pVotes[c.id] || 0);
+          const pct = partyTotal > 0 ? Math.round((cnt / partyTotal) * 100) : 0;
+          return `<div class="battle-party-vote__row">
+            <span class="battle-party-vote__emoji">${c.emoji}</span>
+            <span class="battle-party-vote__name">${escHtml(c.name)}</span>
+            <div class="battle-party-vote__bar-wrap">
+              <div class="battle-party-vote__bar" style="width:${pct}%;background:${c.color}"></div>
+            </div>
+            <span class="battle-party-vote__pct">${pct}%</span>
+          </div>`;
+        }).join('')}
+      </div>
+      <div class="battle-party-vote__hint">우리 당 ${partyTotal}명 투표 · ${top.emoji} ${escHtml(top.name)} ${topPct}% 지지</div>
+    </div>`;
+}
+
 function renderVoteButtons(chars, userVote, status) {
   if (status === 'ended') return '';
   if (userVote) return '';
@@ -141,7 +170,7 @@ export async function renderBattle() {
 
     const { exists, topic, topicDesc, turns = [], votes = {}, totalVotes = 0,
       status, userVote, currentKing, chars = [], king, aftermath,
-      recentComments = [] } = data;
+      recentComments = [], partyVotes = null } = data;
 
     const rulingBanner = renderRulingBanner(currentKing);
 
@@ -208,6 +237,7 @@ export async function renderBattle() {
           </div>
 
           ${userVote ? `<div class="battle-power-hint">⚡ 오늘 배틀 투표로 정치력 +5를 획득했어요!</div>` : ''}
+          ${votedOrEnded && appState.partyId ? renderPartyVoteSummary(partyVotes, chars, appState.partyId) : ''}
           ${!auth.currentUser && !isEnded ? `
             <div class="battle-login-hint">
               <a href="#/login" class="btn btn--outline" style="width:100%">로그인하고 투표하기</a>

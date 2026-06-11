@@ -357,16 +357,24 @@ exports.voteForChar = onCall({
   const voteRef = db.doc(`battleVotes/${userId}_${today}`);
   const battleRef = db.doc(`battles/${today}`);
 
+  // 사용자 정당 조회 (정당별 투표 집계용)
+  const userSnap = await db.doc(`users/${userId}`).get();
+  const userPartyId = userSnap.exists ? (userSnap.data().partyId || null) : null;
+
   await db.runTransaction(async (tx) => {
     const [voteSnap, battleSnap] = await Promise.all([tx.get(voteRef), tx.get(battleRef)]);
     if (voteSnap.exists) throw new HttpsError('already-exists', '오늘은 이미 투표했어요');
     if (!battleSnap.exists) throw new HttpsError('not-found', '오늘의 배틀을 불러올 수 없어요');
     if (battleSnap.data().status === 'ended') throw new HttpsError('failed-precondition', '이미 끝난 배틀이에요');
-    tx.set(voteRef, { userId, charId, date: today, createdAt: FieldValue.serverTimestamp() });
-    tx.update(battleRef, {
+    tx.set(voteRef, { userId, charId, date: today, partyId: userPartyId || null, createdAt: FieldValue.serverTimestamp() });
+    const battleUpdate = {
       [`votes.${charId}`]: FieldValue.increment(1),
       totalVotes: FieldValue.increment(1),
-    });
+    };
+    if (userPartyId) {
+      battleUpdate[`partyVotes.${userPartyId}.${charId}`] = FieldValue.increment(1);
+    }
+    tx.update(battleRef, battleUpdate);
     // Award +5 political power for voting
     const awardRef = db.doc(`point_awards/${userId}_battle_vote_${today}`);
     const userRef = db.doc(`users/${userId}`);
@@ -491,6 +499,7 @@ exports.getBattleStatus = onCall({
     userVote,
     currentKing,
     recentComments,
+    partyVotes: battle.partyVotes || null,
     chars: BATTLE_CHARS.map(({ id, name, emoji, title, color, party }) => ({ id, name, emoji, title, color, party })),
   };
 });
