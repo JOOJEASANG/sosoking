@@ -1155,6 +1155,85 @@ exports.getUserPoliticsStats = onCall({ region: REGION, timeoutSeconds: 15 }, as
   };
 });
 
+// ── 주간 정당 당론 성명 (AI 생성, 정당별 1회) ──
+const MANIFESTO_VOICES = {
+  national: `너는 국민안정당 3선 의원이다. 권위 있고 느긋한 어투. 안정과 경험을 강조. 한두 문장.`,
+  truth:    `너는 진실방송당 정치 유튜버다. 과장되고 자극적인 어투. 폭로·단독 프레임. 한두 문장.`,
+  youth:    `너는 청년혁명당 MZ 운동가다. 반말·직설·팩폭 스타일. 기득권 비판. 한두 문장.`,
+  center:   `너는 중도민주당 여론조사 전문가다. 냉정·분석적. 통계 자주 언급. 결론은 애매하게. 한두 문장.`,
+  future:   `너는 함께미래당 대변인이다. 과잉 긍정·동조. 화합·미래 강조. 한두 문장.`,
+  rights:   `너는 알권리당 탐사 기자다. 침착하고 날카롭게. 내부 제보 프레임. 한두 문장.`,
+  justice:  `너는 법치정의당 검사 출신 변호사다. 딱딱하고 원칙적. 법 근거 강조. 한두 문장.`,
+};
+
+exports.getPartyManifesto = onCall({ region: REGION, timeoutSeconds: 30 }, async request => {
+  const partyId = assertPartyId(request.data && request.data.partyId);
+  const { key: weekKey } = weekPeriod();
+  const refKey = `${weekKey}_${partyId}`;
+  const ref = db.doc(`party_manifestos/${refKey}`);
+  const snap = await ref.get();
+
+  if (snap.exists && snap.data().text) return { manifesto: snap.data().text, partyId, weekKey };
+  if (snap.exists && snap.data().generating) return { manifesto: null, partyId, weekKey };
+
+  await ref.set({ generating: true, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+
+  try {
+    // 현재 정세 수집
+    const [partySnap, elecSnap, battleSnap] = await Promise.all([
+      partyRef(partyId).get(),
+      db.doc(`elections/${weekKey}`).get(),
+      db.doc(`battles/${kstToday()}`).get(),
+    ]);
+
+    const pData = partySnap.exists ? partySnap.data() : {};
+    const party = PARTY_BY_ID[partyId];
+
+    // 전체 정당 순위 파악
+    const refs = PARTY_IDS.map(partyRef);
+    const allSnaps = await db.getAll(...refs);
+    const ranked = allSnaps
+      .map((s, i) => ({ id: PARTY_IDS[i], power: Number((s.exists ? s.data().totalPower : 0) || 0) }))
+      .sort((a, b) => b.power - a.power);
+    const myRank = ranked.findIndex(p => p.id === partyId) + 1;
+
+    const elecData = elecSnap.exists ? elecSnap.data() : {};
+    const votes = elecData.votes || {};
+    const myCandVotes = votes[partyId] || 0;
+    const totalVotes = elecData.totalVotes || 0;
+
+    const battleData = battleSnap.exists ? battleSnap.data() : {};
+    const battleTopic = battleData.topic || '정치 현안';
+
+    const context = [
+      `현재 ${party.name}은 정치력 ${myRank}위 (전체 ${PARTY_IDS.length}개 정당 중)`,
+      totalVotes > 0 ? `이번 주 대선 투표: ${myCandVotes}표/${totalVotes}표 (${Math.round(myCandVotes/totalVotes*100)}%)` : '이번 주 대선 진행 중',
+      `오늘 배틀 이슈: "${battleTopic}"`,
+    ].join('. ');
+
+    const voice = MANIFESTO_VOICES[partyId] || `너는 ${party.name} 대변인이다. 한두 문장.`;
+    const prompt = `${voice}
+
+이번 주 소소공화국 정세: ${context}
+
+이 상황에 대한 ${party.name}의 공식 입장 성명을 한두 문장으로 발표하세요. 캐릭터에 완전히 충실하게.
+
+JSON으로만 응답: {"text":"성명 내용"}`;
+
+    const raw = await callAI(prompt, 200);
+    const parsed = safeParseJson(raw);
+    if (!parsed || !parsed.text) throw new Error('파싱 실패');
+
+    const text = String(parsed.text).trim().slice(0, 150);
+    await ref.set({ text, partyId, weekKey, generating: false, generatedAt: FieldValue.serverTimestamp() });
+    return { manifesto: text, partyId, weekKey };
+  } catch (e) {
+    await ref.set({ generating: false, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+    console.error('[getPartyManifesto] error', e);
+    return { manifesto: null, partyId, weekKey };
+  }
+});
+
 // ── 역대 대통령 선거 기록 ──
 exports.getElectionHistory = onCall({ region: REGION, timeoutSeconds: 15 }, async () => {
   const snap = await db.collection('elections')

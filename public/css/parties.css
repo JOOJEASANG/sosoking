@@ -448,3 +448,33 @@
 }
 .party-trend--up   { color: #16a34a; background: #dcfce7; }
 .party-trend--down { color: #dc2626; background: #fee2e2; }
+
+/* 주간 당론 성명 */
+.party-manifesto {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: color-mix(in srgb, var(--party-color, #888) 8%, var(--color-bg));
+  border: 1px solid color-mix(in srgb, var(--party-color, #888) 25%, transparent);
+  border-radius: 10px;
+}
+.party-manifesto--loading {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  text-align: center;
+  padding: 8px;
+}
+.party-manifesto__title {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--party-color, var(--color-primary));
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.party-manifesto__text {
+  font-size: 13px;
+  color: var(--color-text-primary);
+  margin: 0;
+  line-height: 1.6;
+  font-style: italic;
+}

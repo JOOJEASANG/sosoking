@@ -145,6 +145,7 @@ function renderMyBanner(me) {
       <div class="party-mine__name">${escHtml(me.partyName)}</div>
       <div class="party-mine__power">내 정치력 <b>${fmtNum(me.power)}</b>${meta ? ` · ${escHtml(meta.perk)}` : ''}</div>
       <div class="party-mine__hint">글·댓글·투표로 활동할수록 정치력이 오르고, 당내 1위가 당대표가 됩니다.</div>
+      <div id="party-manifesto-slot"></div>
     </div>`;
   }
   return `<div class="party-mine party-mine--none">
@@ -364,6 +365,22 @@ function renderActivityFeed(activities, topic) {
     </div>`;
 }
 
+async function loadPartyManifesto(slot, partyId) {
+  if (!slot || !partyId) return;
+  try {
+    slot.innerHTML = `<div class="party-manifesto party-manifesto--loading">당론 성명 불러오는 중…</div>`;
+    const call = httpsCallable(functions, 'getPartyManifesto');
+    const { data } = await call({ partyId });
+    if (!data.manifesto) { slot.innerHTML = ''; return; }
+    const party = slot.closest('[data-party-id]') || null;
+    slot.innerHTML = `
+      <div class="party-manifesto">
+        <div class="party-manifesto__title">📜 이번 주 당론 성명</div>
+        <p class="party-manifesto__text">"${escHtml(data.manifesto)}"</p>
+      </div>`;
+  } catch { slot.innerHTML = ''; }
+}
+
 export async function renderParties() {
   setMeta('소소공화국 정당');
   const el = document.getElementById('page-content');
@@ -440,6 +457,11 @@ export async function renderParties() {
   el.querySelector('#party-login')?.addEventListener('click', () => navigate('/login'));
   el.querySelector('#party-quiz-open')?.addEventListener('click', openQuiz);
   el.querySelector('#party-quiz-top')?.addEventListener('click', openQuiz);
+
+  // 내 정당 당론 성명 비동기 로드
+  if (me && me.partyId) {
+    loadPartyManifesto(el.querySelector('#party-manifesto-slot'), me.partyId);
+  }
 
   el.querySelectorAll('.party-members-btn').forEach(btn => {
     btn.addEventListener('click', () => {

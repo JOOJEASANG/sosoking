@@ -320,6 +320,12 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // 주간 정당 당론 성명 — Cloud Functions에서 AI가 생성
+    match /party_manifestos/{docId} {
+      allow read:  if true;
+      allow write: if false;
+    }
+
     // 소소공화국 정당 — 모든 쓰기는 Cloud Functions(joinParty/leaveParty 등)에서만 처리한다.
     match /parties/{partyId} {
       allow read:  if true;
