@@ -34,7 +34,7 @@ export function renderComment(c, huntActive = false) {
       ${isBest ? '<div class="best-badge">🏆 베스트</div>' : ''}
       <div class="avatar avatar--sm">${escHtml((c.authorName || '?')[0])}</div>
       <div class="comment-item__body">
-        <div class="comment-item__author">${renderPresidentCrown(c.authorId)}${renderPartyBadge(c.partyId)}${escHtml(c.authorName || '익명')}</div>
+        <div class="comment-item__author">${renderPresidentCrown(c.authorId)}${renderPartyBadge(c.partyId)}${c.rankEmoji ? `<span class="comment-rank-emoji" title="${escHtml(c.rankLabel || '')}">${escHtml(c.rankEmoji)}</span>` : ''}${escHtml(c.authorName || '익명')}</div>
         <div class="comment-item__text">${escHtml(c.text || '').replace(/\n/g, '<br>')}</div>
         <div class="comment-item__meta">
           <span>${timeStr}</span>
@@ -61,7 +61,7 @@ export function renderLikeableComment(c, huntActive = false) {
       ${isBest ? '<div class="best-badge">🏆 베스트</div>' : ''}
       <div class="likeable-comment__content">
         <span class="likeable-comment__text">${escHtml(c.text || '')}</span>
-        <span class="likeable-comment__meta">${renderPresidentCrown(c.authorId)}${renderPartyBadge(c.partyId)}${escHtml(c.authorName || '익명')} · ${timeStr}</span>
+        <span class="likeable-comment__meta">${renderPresidentCrown(c.authorId)}${renderPartyBadge(c.partyId)}${c.rankEmoji ? `<span class="comment-rank-emoji" title="${escHtml(c.rankLabel || '')}">${escHtml(c.rankEmoji)}</span>` : ''}${escHtml(c.authorName || '익명')} · ${timeStr}</span>
       </div>
       <div class="likeable-comment__actions">
         <div class="comment-reactions">

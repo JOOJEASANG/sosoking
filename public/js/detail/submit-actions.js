@@ -2,6 +2,7 @@ import { auth, db } from '../firebase.js';
 import { appState } from '../state.js';
 import { addDoc, collection, doc, increment, serverTimestamp, updateDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { ensureAnonymousActor } from './action-utils.js';
+import { getPoliticalRank } from '../utils/political-rank.js';
 
 function authorPayload() {
   return {
@@ -35,6 +36,11 @@ export async function submitDetailComment(postId, data = {}) {
   };
 
   if (!isAnonymousUser && appState.partyId) payload.partyId = appState.partyId;
+  if (!isAnonymousUser) {
+    const rank = getPoliticalRank(appState.points || 0);
+    payload.rankEmoji = rank.emoji;
+    payload.rankLabel = rank.label;
+  }
   if (data.side) payload.side = data.side;
 
   const ref = await addDoc(collection(db, 'feeds', postId, 'comments'), payload);

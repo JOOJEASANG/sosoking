@@ -39,3 +39,11 @@
   align-items: center;
   gap: 2px;
 }
+
+.comment-rank-emoji {
+  font-size: 12px;
+  line-height: 1;
+  vertical-align: middle;
+  flex-shrink: 0;
+  cursor: default;
+}
