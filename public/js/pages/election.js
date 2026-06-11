@@ -13,6 +13,16 @@ function fmtNum(n) {
   return String(n);
 }
 
+// 마감일(endKey, YYYY-MM-DD)까지 남은 일수 → D-day 라벨
+function dDay(endKey) {
+  if (!endKey) return '';
+  const end = new Date(`${endKey}T00:00:00+09:00`).getTime();
+  const nowKst = Date.now();
+  const days = Math.ceil((end - nowKst) / 86400000);
+  if (days <= 0) return 'D-DAY';
+  return `D-${days}`;
+}
+
 function renderPresident(p) {
   if (!p) {
     return `<div class="prez-banner prez-banner--empty">
@@ -93,6 +103,7 @@ export async function renderElection() {
   el.innerHTML = `<div class="election-page page-enter">
     ${renderPresident(president)}
     <div class="elec-head">
+      <div class="elec-head__dday">${dDay(election.endKey)}</div>
       <div class="elec-head__title">🗳️ 이번 주 대통령 선거</div>
       <div class="elec-head__meta">총 ${fmtNum(total)}표 · 마감 ${escHtml(election.endKey)}</div>
       <div class="elec-head__state">${voteStateMsg}</div>
