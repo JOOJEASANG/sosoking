@@ -14,13 +14,18 @@ function fmtNum(n) {
   return String(n);
 }
 
-// 마감일(endKey, YYYY-MM-DD)까지 남은 일수 → D-day 라벨
+// 마감일(endKey, YYYY-MM-DD)까지 남은 시간 → D-day 라벨 (긴박감 표시)
 function dDay(endKey) {
   if (!endKey) return '';
-  const end = new Date(`${endKey}T00:00:00+09:00`).getTime();
+  const end = new Date(`${endKey}T23:59:59+09:00`).getTime();
   const nowKst = Date.now();
-  const days = Math.ceil((end - nowKst) / 86400000);
-  if (days <= 0) return 'D-DAY';
+  const msLeft = end - nowKst;
+  if (msLeft <= 0) return '집계 중';
+  const minsLeft = Math.ceil(msLeft / 60000);
+  if (minsLeft <= 60) return `⚡ ${minsLeft}분 남음`;
+  const hoursLeft = Math.ceil(msLeft / 3600000);
+  if (hoursLeft <= 24) return `D-DAY · ${hoursLeft}시간`;
+  const days = Math.ceil(msLeft / 86400000);
   return `D-${days}`;
 }
 
@@ -108,7 +113,7 @@ export async function renderElection() {
   el.innerHTML = `<div class="election-page page-enter">
     ${renderPresident(president)}
     <div class="elec-head">
-      <div class="elec-head__dday">${dDay(election.endKey)}</div>
+      <div class="elec-head__dday" data-urgent="${dDay(election.endKey).startsWith('⚡') || dDay(election.endKey).startsWith('D-DAY') ? 'true' : 'false'}">${dDay(election.endKey)}</div>
       <div class="elec-head__title">🗳️ 이번 주 대통령 선거</div>
       <div class="elec-head__meta">총 ${fmtNum(total)}표 · 마감 ${escHtml(election.endKey)}</div>
       <div class="elec-head__state">${voteStateMsg}</div>

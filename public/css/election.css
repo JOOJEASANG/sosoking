@@ -33,6 +33,14 @@
   letter-spacing: .03em;
   box-shadow: 0 2px 8px rgba(255,75,43,.35);
 }
+.elec-head__dday:is([data-urgent='true']) {
+  background: #e74c3c;
+  animation: dday-pulse .8s ease infinite alternate;
+}
+@keyframes dday-pulse {
+  from { box-shadow: 0 2px 8px rgba(231,76,60,.4); }
+  to   { box-shadow: 0 2px 16px rgba(231,76,60,.7); }
+}
 .elec-head__title { font-size: 17px; font-weight: 900; color: var(--color-text-primary); }
 .elec-head__meta { font-size: 12px; color: var(--color-text-muted); margin: 3px 0 8px; }
 .elec-open { font-size: 13px; font-weight: 700; color: var(--color-primary); }
