@@ -226,3 +226,142 @@ exports.leaveParty = onCall({ region: REGION, timeoutSeconds: 30 }, async reques
 
   return { ok: true, ...result };
 });
+
+// ──────────────────────────────────────────────
+//  대통령 선거 — 매주(월요일~일요일) 7개 정당 후보로 진행
+//  후보 = 당대표(당내 정치력 1위 인간) / 없으면 AI 정치인이 후보
+//  유저가 없어도 항상 후보가 존재해 매주 대통령이 선출된다.
+// ──────────────────────────────────────────────
+
+// 이번 주(KST 월요일 기준) / 다음 주 / 지난 주 키
+function weekPeriod() {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short',
+  }).formatToParts(new Date());
+  const o = {}; parts.forEach(p => { o[p.type] = p.value; });
+  const wmap = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  const off = (wmap[o.weekday] + 6) % 7; // 월요일로부터 지난 일수
+  const base = Date.UTC(Number(o.year), Number(o.month) - 1, Number(o.day));
+  const monMs = base - off * 86400000;
+  const iso = ms => new Date(ms).toISOString().slice(0, 10);
+  return { key: iso(monMs), endKey: iso(monMs + 7 * 86400000), prevKey: iso(monMs - 7 * 86400000) };
+}
+
+// 7개 정당 후보 스냅샷 (정치력 순)
+async function buildCandidates() {
+  await ensureParties();
+  const refs = PARTY_IDS.map(partyRef);
+  const snaps = await db.getAll(...refs);
+  const leaders = await Promise.all(PARTY_IDS.map(topMemberOf));
+  return PARTIES.map((meta, i) => {
+    const data = snaps[i].exists ? (snaps[i].data() || {}) : {};
+    const leader = leaders[i];
+    const hasHuman = leader && leader.power > 0;
+    return {
+      partyId: meta.id, partyName: meta.name, emoji: meta.emoji, color: meta.color,
+      candidateName: hasHuman ? leader.nickname : meta.leaderName,
+      isAI: !hasHuman,
+      power: Number(data.totalPower || 0),
+    };
+  }).sort((a, b) => b.power - a.power);
+}
+
+async function finalizeElection(periodId) {
+  const ref = db.doc(`elections/${periodId}`);
+  await db.runTransaction(async tx => {
+    const s = await tx.get(ref);
+    if (!s.exists) return;
+    const d = s.data() || {};
+    if (d.status === 'closed') return;
+    const cands = d.candidates || [];
+    const votes = d.votes || {};
+    let win = null, best = -1;
+    cands.forEach(c => {
+      const v = Number(votes[c.partyId] || 0);
+      if (v > best) { best = v; win = c; } // 동률 시 정치력 상위(후보 정렬 순) 우선
+    });
+    tx.update(ref, {
+      status: 'closed',
+      winnerPartyId: win ? win.partyId : null,
+      winner: win || null,
+      closedAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+  });
+}
+
+// 이번 주 선거 보장 + 지난 주 선거 마감 처리
+async function ensureElection() {
+  const { key, endKey, prevKey } = weekPeriod();
+  const ref = db.doc(`elections/${key}`);
+  const snap = await ref.get();
+  if (!snap.exists) {
+    const candidates = await buildCandidates();
+    await ref.set({
+      periodId: key, status: 'open', startKey: key, endKey,
+      candidates, votes: {}, totalVotes: 0,
+      createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+    await finalizeElection(prevKey); // 지난 주 당선자 확정
+  }
+  return key;
+}
+
+// ── 현재 선거 현황 + 현 대통령 ──
+exports.getElection = onCall({ region: REGION, timeoutSeconds: 30 }, async request => {
+  const key = await ensureElection();
+  const { prevKey } = weekPeriod();
+  const uid = request.auth && request.auth.uid;
+
+  const ref = db.doc(`elections/${key}`);
+  const snap = await ref.get();
+  const d = snap.data() || {};
+  const votes = d.votes || {};
+  const candidates = (d.candidates || []).map(c => ({ ...c, votes: Number(votes[c.partyId] || 0) }));
+
+  let myVote = null;
+  if (uid) {
+    const b = await ref.collection('ballots').doc(uid).get();
+    if (b.exists) myVote = b.data().partyId || null;
+  }
+
+  let president = null;
+  const prevSnap = await db.doc(`elections/${prevKey}`).get();
+  if (prevSnap.exists && prevSnap.data().status === 'closed' && prevSnap.data().winner) {
+    president = { ...prevSnap.data().winner, periodId: prevKey };
+  }
+
+  return {
+    ok: true,
+    election: { periodId: key, endKey: d.endKey, totalVotes: Number(d.totalVotes || 0), candidates, myVote },
+    president,
+  };
+});
+
+// ── 대통령 후보 투표 (1인 1표) ──
+exports.voteForPresident = onCall({ region: REGION, timeoutSeconds: 30 }, async request => {
+  const uid = requireUid(request);
+  const partyId = assertPartyId(request.data && request.data.partyId);
+  const key = await ensureElection();
+  const ref = db.doc(`elections/${key}`);
+
+  return db.runTransaction(async tx => {
+    const s = await tx.get(ref);
+    if (!s.exists) throw new HttpsError('failed-precondition', '선거가 준비되지 않았습니다.');
+    const d = s.data() || {};
+    if (d.status !== 'open') throw new HttpsError('failed-precondition', '종료된 선거입니다.');
+    if (!(d.candidates || []).some(c => c.partyId === partyId)) {
+      throw new HttpsError('invalid-argument', '후보 정당이 아닙니다.');
+    }
+    const ballotRef = ref.collection('ballots').doc(uid);
+    const b = await tx.get(ballotRef);
+    if (b.exists) throw new HttpsError('failed-precondition', '이미 투표했습니다.');
+    tx.set(ballotRef, { partyId, createdAt: FieldValue.serverTimestamp() });
+    tx.update(ref, {
+      [`votes.${partyId}`]: FieldValue.increment(1),
+      totalVotes: FieldValue.increment(1),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+    return { ok: true, partyId };
+  });
+});

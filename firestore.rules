@@ -328,6 +328,16 @@ service cloud.firestore {
       }
     }
 
+    // 대통령 선거 — 투표는 Cloud Functions(voteForPresident)에서만 처리한다.
+    match /elections/{periodId} {
+      allow read:  if true;
+      allow write: if false;
+      match /ballots/{uid} {
+        allow read:  if signedIn() && request.auth.uid == uid;
+        allow write: if false;
+      }
+    }
+
     match /{document=**} { allow read, write: if false; }
   }
 }

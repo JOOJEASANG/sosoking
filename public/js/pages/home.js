@@ -20,6 +20,7 @@ const TYPE_LABEL = {
 const AI_KINGS = [
   { path: '/battle',   emoji: '🗳️', name: '정치배틀', desc: '7인 AI 정치인 토론·투표' },
   { path: '/parties',  emoji: '🏛️', name: '정당',     desc: '입당하고 정치력 쌓기' },
+  { path: '/election', emoji: '🗳️', name: '대선',     desc: '매주 대통령 선출' },
   { path: '/ai-judge', emoji: '⚖️', name: '판결소',   desc: '7인 중 3인 AI 판결' },
 ];
 
