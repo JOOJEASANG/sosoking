@@ -552,6 +552,8 @@ async function renderStatsTab(content, uid) {
     const signupDate = polStats.signupDate || null;
     const battleVotes = polStats.battleVotes || 0;
     const electionVotes = polStats.electionVotes || 0;
+    const crisisVotes = polStats.crisisVotes || 0;
+    const battleComments = polStats.battleComments || 0;
 
     content.innerHTML = `
       <div class="stats-page">
@@ -566,6 +568,14 @@ async function renderStatsTab(content, uid) {
             <div class="stats-pol-item">
               <div class="stats-pol-item__num">${electionVotes}</div>
               <div class="stats-pol-item__label">👑 대선 투표</div>
+            </div>
+            <div class="stats-pol-item">
+              <div class="stats-pol-item__num">${crisisVotes}</div>
+              <div class="stats-pol-item__label">🚨 위기 투표</div>
+            </div>
+            <div class="stats-pol-item">
+              <div class="stats-pol-item__num">${battleComments}</div>
+              <div class="stats-pol-item__label">💬 배틀 토론</div>
             </div>
             <div class="stats-pol-item">
               <div class="stats-pol-item__num">${streak}일</div>

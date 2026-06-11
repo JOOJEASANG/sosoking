@@ -113,6 +113,17 @@ const BATTLE_CHARS = [
 
 exports.BATTLE_CHARS = BATTLE_CHARS;
 
+// 배틀 캐릭터 → 정당 ID 매핑 (politics-functions.js의 PARTIES와 일치)
+const CHAR_TO_PARTY = {
+  senator:     'national',
+  youtuber:    'truth',
+  mz:          'youth',
+  pollster:    'center',
+  spokesperson:'future',
+  reporter:    'rights',
+  prosecutor:  'justice',
+};
+
 // ── config/ai_king 기반 AI 호출 ──
 let _config = null;
 let _configAt = 0;
@@ -560,6 +571,27 @@ exports.closeDailyBattle = onSchedule({
       }, { merge: true }),
     ]);
     console.log('[battle] closed', today, '→ winner:', winner, 'votes:', maxVotes);
+
+    // 승리 정당 정치력 보너스 (최대 40, 득표수 비례)
+    const winPartyId = CHAR_TO_PARTY[winner];
+    if (winPartyId) {
+      const bonus = Math.min(40, Math.max(10, maxVotes));
+      try {
+        await db.doc(`parties/${winPartyId}`).set(
+          { totalPower: FieldValue.increment(bonus), updatedAt: FieldValue.serverTimestamp() },
+          { merge: true }
+        );
+        await db.doc(`battle_victory_log/${today}`).set({
+          winner, winPartyId, bonus, votes: maxVotes,
+          topic: battleSnap.data().topic || '',
+          createdAt: FieldValue.serverTimestamp(),
+        });
+        console.log(`[battle] victory bonus +${bonus} → ${winPartyId}`);
+      } catch (e) {
+        console.error('[battle] victory bonus error', e);
+      }
+    }
+
     await generateAftermath(winner, battleSnap.data().topic || '', battleRef);
   }
 });
