@@ -1,0 +1,169 @@
+/* home-dashboard.css — 정치 대시보드 (신분증 카드 + 일일 미션 + 등급 뱃지) */
+
+/* ── 정치 신분증 카드 ── */
+.home-id-card {
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--rank-c, #c5a000) 14%, var(--color-surface)),
+    var(--color-surface));
+  border: 1.5px solid color-mix(in srgb, var(--rank-c, #c5a000) 35%, var(--color-border));
+  border-radius: 18px;
+  padding: 16px 18px;
+  margin-bottom: 14px;
+}
+.home-id-card__top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.home-id-card__emoji {
+  font-size: 40px;
+  line-height: 1;
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,.12));
+}
+.home-id-card__info { flex: 1; min-width: 0; }
+.home-id-card__title {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.home-id-card__rank {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--rank-c, var(--color-primary));
+  margin-top: 2px;
+}
+.home-id-card__more {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 99px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+.home-id-card__progress { margin-top: 12px; }
+.home-id-card__bar {
+  height: 8px;
+  background: color-mix(in srgb, var(--rank-c, #c5a000) 15%, var(--color-surface-2, #eee));
+  border-radius: 99px;
+  overflow: hidden;
+}
+.home-id-card__fill {
+  height: 100%;
+  background: var(--rank-c, var(--color-primary));
+  border-radius: 99px;
+  transition: width .5s ease;
+}
+.home-id-card__next {
+  display: block;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-top: 6px;
+}
+.home-id-card__next b { color: var(--rank-c, var(--color-primary)); font-weight: 800; }
+.home-id-card__party-row { margin-top: 10px; }
+.home-id-card__party {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--party-color, var(--color-text-secondary));
+  background: color-mix(in srgb, var(--party-color, #888) 12%, transparent);
+  border-radius: 99px;
+  padding: 4px 12px;
+}
+.home-id-card__join {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-primary);
+  background: var(--color-primary-bg);
+  border: 1px dashed var(--color-primary);
+  border-radius: 99px;
+  padding: 5px 14px;
+  cursor: pointer;
+}
+
+/* ── 오늘의 정치 일정 (미션) ── */
+.home-missions {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+}
+.home-missions__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.home-missions__title { font-size: 14px; font-weight: 800; color: var(--color-text-primary); }
+.home-missions__count {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-primary);
+  background: var(--color-primary-bg);
+  border-radius: 99px;
+  padding: 2px 10px;
+}
+.home-missions__list { display: flex; flex-direction: column; gap: 6px; }
+.home-mission {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  background: var(--color-surface-2, #f7f7fa);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: background .12s;
+}
+.home-mission:hover { background: var(--color-primary-bg); }
+.home-mission--done { opacity: .6; }
+.home-mission__check { font-size: 16px; flex-shrink: 0; }
+.home-mission__label { flex: 1; text-align: left; font-size: 13px; font-weight: 600; color: var(--color-text-primary); }
+.home-mission__cta {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+.home-mission--done .home-mission__cta { color: var(--color-text-muted); }
+
+/* ── 계정 프로필 등급 진행바 ── */
+.account-rank-progress { margin: 10px auto 4px; max-width: 240px; }
+.account-rank-progress__bar {
+  height: 7px;
+  background: var(--color-surface-2, #eee);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.account-rank-progress__fill { height: 100%; border-radius: 99px; transition: width .5s ease; }
+.account-rank-progress__label {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  text-align: center;
+  margin-top: 5px;
+  font-weight: 600;
+}
+
+/* ── 인라인 등급 뱃지 (랭킹·프로필·댓글) ── */
+.rank-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--rank-c, var(--color-text-secondary));
+}
+.rank-badge__title {
+  font-size: 11px;
+  background: color-mix(in srgb, var(--rank-c, #888) 14%, transparent);
+  border-radius: 6px;
+  padding: 1px 6px;
+}

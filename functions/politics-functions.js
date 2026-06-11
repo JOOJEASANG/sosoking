@@ -449,6 +449,49 @@ exports.voteForPresident = onCall({ region: REGION, timeoutSeconds: 30 }, async 
   });
 });
 
+// ── 내 정치 현황 (홈 대시보드용 경량 조회) ──
+exports.getMyStatus = onCall({ region: REGION, timeoutSeconds: 10 }, async request => {
+  const uid = request.auth && request.auth.uid;
+  if (!uid) return { loggedIn: false };
+
+  const userSnap = await db.doc(`users/${uid}`).get();
+  const user = userSnap.exists ? (userSnap.data() || {}) : {};
+  const power = Math.max(0, Number(user.totalPoints || user.points || 0));
+  const partyId = PARTY_BY_ID[user.partyId] ? user.partyId : null;
+  const party = partyId ? PARTY_BY_ID[partyId] : null;
+
+  // 당내 순위 (당원일 때만, 경량: 상위 30명 중 내 위치)
+  let partyRank = null, isLeader = false;
+  if (partyId) {
+    try {
+      const q = await partyRef(partyId).collection('members').orderBy('power', 'desc').limit(30).get();
+      const ids = q.docs.map(d => d.id);
+      const i = ids.indexOf(uid);
+      if (i >= 0) { partyRank = i + 1; isLeader = i === 0; }
+    } catch {}
+  }
+
+  // 이번 주 대선 투표 여부 (미션 체크리스트용)
+  let votedElection = false;
+  try {
+    const { key } = weekPeriod();
+    const b = await db.doc(`elections/${key}/ballots/${uid}`).get();
+    votedElection = b.exists;
+  } catch {}
+
+  return {
+    loggedIn: true,
+    power,
+    partyId,
+    partyName: party ? party.name : null,
+    partyEmoji: party ? party.emoji : null,
+    partyColor: party ? party.color : null,
+    partyRank,
+    isLeader,
+    votedElection,
+  };
+});
+
 // ── 현직 대통령 (홈 화면용 경량 조회) ──
 exports.getPresident = onCall({ region: REGION, timeoutSeconds: 10 }, async () => {
   const { prevKey } = weekPeriod();

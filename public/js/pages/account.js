@@ -13,6 +13,7 @@ import { toast } from '../components/toast.js';
 import { escHtml, formatTime, computeTitle } from '../utils/helpers.js';
 import { renderFeedCard } from '../components/feed-card.js';
 import { appState } from '../state.js';
+import { getPoliticalRank } from '../utils/political-rank.js';
 import { setMeta } from '../utils/seo.js';
 import { renderSidebar } from '../components/sidebar.js';
 import { renderBottomNav } from '../components/bottom-nav.js';
@@ -73,6 +74,8 @@ export async function renderAccount() {
 
   const userData = userSnap?.exists() ? userSnap.data() : {};
   const title    = computeTitle(postCount);
+  const power    = Math.max(0, Number(userData.totalPoints || userData.points || 0));
+  const polRank  = getPoliticalRank(power);
   const streak   = appState.streak || userData.streak || 0;
   const nickname = appState.nickname || user.displayName || user.email?.split('@')[0] || '익명';
 
@@ -92,10 +95,18 @@ export async function renderAccount() {
           </div>
           <div class="account-nickname">${escHtml(nickname)}</div>
           <div class="account-level">
-            <span class="title-badge">${title}</span>
+            <span class="title-badge" style="background:color-mix(in srgb,${polRank.color} 16%,transparent);color:${polRank.color}">${polRank.emoji} ${polRank.title}</span>
             ${streak > 0 ? `<span class="streak-pill" style="margin-left:6px">🔥 ${streak}일 연속</span>` : ''}
           </div>
+          <div class="account-rank-progress">
+            <div class="account-rank-progress__bar"><div class="account-rank-progress__fill" style="width:${polRank.progress}%;background:${polRank.color}"></div></div>
+            <div class="account-rank-progress__label">${polRank.isMax ? '최고 등급 달성! 🎉' : `${polRank.next.emoji} ${polRank.next.title}까지 ${polRank.remain.toLocaleString()}P`}</div>
+          </div>
           <div class="account-stats">
+            <div class="account-stat">
+              <div class="account-stat__num" style="color:${polRank.color}">${power.toLocaleString()}</div>
+              <div class="account-stat__label">정치력</div>
+            </div>
             <div class="account-stat">
               <div class="account-stat__num">${postCount}</div>
               <div class="account-stat__label">작성한 글</div>

@@ -3,6 +3,7 @@ import { auth, functions } from '../firebase.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
 import { setMeta } from '../utils/seo.js';
 import { escHtml } from '../utils/helpers.js';
+import { getPoliticalRank } from '../utils/political-rank.js';
 
 function fmtPower(n) {
   n = Number(n || 0);
@@ -20,12 +21,14 @@ function rankMedal(rank) {
 
 function renderUserRow(m, myUid) {
   const isMe = myUid && m.uid === myUid;
+  const rank = getPoliticalRank(m.power);
   return `
     <div class="rank-row${isMe ? ' rank-row--me' : ''}">
       ${rankMedal(m.rank)}
       <span class="rank-party-dot" style="background:${m.partyColor}" title="${escHtml(m.partyName)}"></span>
-      <span class="rank-nickname">${m.icon?.value ? `${m.icon.value} ` : ''}${escHtml(m.nickname)}${isMe ? ' <em>(나)</em>' : ''}</span>
-      <span class="rank-party-name">${m.partyEmoji} ${escHtml(m.partyName)}</span>
+      <span class="rank-nickname">${m.icon?.value ? `${m.icon.value} ` : ''}${escHtml(m.nickname)}${isMe ? ' <em>(나)</em>' : ''}
+        <span class="rank-grade" style="--rank-c:${rank.color}">${rank.emoji} ${rank.title}</span>
+      </span>
       <span class="rank-power">${fmtPower(m.power)}P</span>
     </div>`;
 }

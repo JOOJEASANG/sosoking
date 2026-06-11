@@ -120,6 +120,31 @@ export function renderGuide() {
         </div>
       </section>
 
+      <section id="guide-rank" class="guide-section">
+        <h2 class="guide-section__title">👑 출세 사다리 — 정치력으로 등급 올리기</h2>
+        <div class="guide-section__body">
+          <p>글·댓글·투표 등 모든 활동이 <b>정치력(P)</b>이 됩니다. 정치력이 쌓이면 등급이 오르고, 무명 시민에서 거물 정치인까지 출세할 수 있어요!</p>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-top:14px">
+            ${[
+              ['🌱','무명 시민','0P'],
+              ['📢','동네 운동가','100P'],
+              ['🪧','청년 당원','300P'],
+              ['🎖️','당 간부','700P'],
+              ['🏛️','지역 위원장','1,500P'],
+              ['⚖️','국회의원','3,000P'],
+              ['👔','당 중진','6,000P'],
+              ['👑','거물 정치인','10,000P'],
+            ].map(([emoji, title, p]) => `
+              <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--color-surface-2);border-radius:10px">
+                <span style="font-size:18px">${emoji}</span>
+                <span style="flex:1;font-size:13px;font-weight:700;color:var(--color-text-primary)">${title}</span>
+                <span style="font-size:12px;color:var(--color-text-muted)">${p}~</span>
+              </div>`).join('')}
+          </div>
+          <p style="margin-top:12px">당내 정치력 1위는 <b>당대표</b>가 되어 매주 <b>대선 후보</b>로 출마합니다. 대선에서 이기면 <b>대통령</b>이 되어 포고령을 내릴 수 있어요!</p>
+        </div>
+      </section>
+
       <section id="guide-start" class="guide-section">
         <h2 class="guide-section__title">📖 시작하기</h2>
         <div style="display:flex;flex-direction:column;gap:12px;margin-top:16px">

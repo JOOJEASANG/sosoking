@@ -124,6 +124,13 @@
   white-space: nowrap;
 }
 .rank-nickname em { font-style: normal; font-size: 11px; color: var(--color-primary); }
+.rank-grade {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--rank-c, var(--color-text-muted));
+  margin-top: 1px;
+}
 
 .rank-party-name {
   font-size: 11px;
