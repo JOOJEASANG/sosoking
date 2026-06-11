@@ -83,7 +83,7 @@ function renderPresident(p, isPresident) {
   </div>` : ''}`;
 }
 
-function renderCandidate(c, total, myVote, canVote, isLeading, leaderVotes) {
+function renderCandidate(c, total, myVote, canVote, isLeading, leaderVotes, rulingPartyId) {
   const pct = total > 0 ? Math.round((c.votes / total) * 100) : 0;
   const mine = myVote === c.partyId;
   const showResults = myVote != null || !canVote;
@@ -94,7 +94,6 @@ function renderCandidate(c, total, myVote, canVote, isLeading, leaderVotes) {
   let voteGapHTML = '';
   if (showResults && total > 0) {
     if (isLeading && leaderVotes != null && total > 1) {
-      // 동률 또는 1표 차이면 긴박감 강조
       const gap = c.votes - (leaderVotes.second || 0);
       if (gap <= 3 && gap > 0) {
         voteGapHTML = `<span class="elec-cand__gap elec-cand__gap--tight">⚡ ${gap}표 차이!</span>`;
@@ -106,6 +105,11 @@ function renderCandidate(c, total, myVote, canVote, isLeading, leaderVotes) {
       }
     }
   }
+
+  const isRulingParty = rulingPartyId && c.partyId === rulingPartyId;
+  const partyStatusBadge = isRulingParty
+    ? `<span class="elec-cand__gov-badge elec-cand__gov-badge--ruling">여당</span>`
+    : `<span class="elec-cand__gov-badge elec-cand__gov-badge--opp">야당</span>`;
 
   const leadTag = isLeading && total > 0
     ? `<span class="elec-cand__lead-tag">🏆 선두</span>`
@@ -119,7 +123,7 @@ function renderCandidate(c, total, myVote, canVote, isLeading, leaderVotes) {
       <div class="elec-cand__body">
         <div class="elec-cand__top">
           <span class="elec-cand__name">${escHtml(c.candidateName)} ${c.isAI ? '🤖' : '👑'}</span>
-          ${leadTag}${voteGapHTML}
+          ${partyStatusBadge}${leadTag}${voteGapHTML}
           <span class="elec-cand__party">${escHtml(c.partyName)}</span>
         </div>
         ${pledgeHTML}
@@ -166,6 +170,11 @@ export async function renderElection() {
   const leaderVotes = cands.length >= 2
     ? { first: cands[0].votes, second: cands[1].votes }
     : (cands.length === 1 ? { first: cands[0].votes, second: 0 } : null);
+  const rulingPartyId = president ? president.partyId : null;
+
+  const ddayStr = dDay(election.endKey);
+  const isUrgent = ddayStr.startsWith('⚡') || ddayStr.startsWith('D-DAY');
+  const isElectionDay = ddayStr === '집계 중' || ddayStr.startsWith('D-DAY') || ddayStr.startsWith('⚡');
 
   const voteStateMsg = !loggedIn
     ? `<button class="btn btn--primary btn--sm" id="elec-login">로그인하고 투표하기</button>`
@@ -173,16 +182,21 @@ export async function renderElection() {
       ? `<span class="elec-voted">✅ 투표 완료 — 결과는 ${escHtml(election.endKey)}에 확정</span>`
       : `<span class="elec-open">한 명에게 한 표! 마감 ${escHtml(election.endKey)}</span>`;
 
+  const electionDayBannerHTML = isElectionDay && myVote == null && loggedIn
+    ? `<div class="elec-day-banner">⚡ 오늘 대선 마감! 지금 투표하면 <b>+10P 특별 보너스</b> 🎉</div>`
+    : '';
+
   el.innerHTML = `<div class="election-page page-enter">
+    ${electionDayBannerHTML}
     ${renderPresident(president, isPresident)}
     <div class="elec-head">
-      <div class="elec-head__dday" data-urgent="${dDay(election.endKey).startsWith('⚡') || dDay(election.endKey).startsWith('D-DAY') ? 'true' : 'false'}">${dDay(election.endKey)}</div>
+      <div class="elec-head__dday" data-urgent="${isUrgent ? 'true' : 'false'}">${ddayStr}</div>
       <div class="elec-head__title">🗳️ 이번 주 대통령 선거</div>
       <div class="elec-head__meta">총 ${fmtNum(total)}표 · 마감 ${escHtml(election.endKey)}</div>
       <div class="elec-head__state">${voteStateMsg}</div>
     </div>
     <div class="elec-list">
-      ${cands.map((c, i) => renderCandidate(c, total, myVote, loggedIn, i === 0, leaderVotes)).join('')}
+      ${cands.map((c, i) => renderCandidate(c, total, myVote, loggedIn, i === 0, leaderVotes, rulingPartyId)).join('')}
     </div>
     <p class="elec-note">후보는 각 정당의 당대표(정치력 1위)이며, 당대표가 없는 정당은 AI 정치인이 출마합니다. 매주 월요일 새 선거가 시작됩니다.</p>
     ${myCandidate ? `
@@ -317,10 +331,11 @@ export async function renderElection() {
       btn.classList.remove('elec-vote-btn--confirm');
       try {
         const call = httpsCallable(functions, 'voteForPresident');
-        await call({ partyId });
-        toast.success(`${name} 후보에게 투표했어요! 🗳️`);
-        appState.points = (appState.points || 0) + 5;
-        showPointPopup(5);
+        const { data: vData } = await call({ partyId });
+        const earnedPoints = vData.points || 5;
+        toast.success(`${name} 후보에게 투표했어요! 🗳️${vData.electionDay ? ' 선거 당일 보너스 +10P! 🎉' : ''}`);
+        appState.points = (appState.points || 0) + earnedPoints;
+        showPointPopup(earnedPoints);
         if (auth.currentUser) checkRankUp(auth.currentUser.uid, appState.points);
         httpsCallable(functions, 'syncPartyMemberPower')({}).catch(() => {});
         renderElection();

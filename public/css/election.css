@@ -409,3 +409,39 @@
 .prez-rate-btn:hover { background: rgba(255,255,255,.2); }
 .prez-rate-btn--active-approve   { background: #dcfce7; border-color: #16a34a; color: #15803d; }
 .prez-rate-btn--active-disapprove { background: #fee2e2; border-color: #dc2626; color: #b91c1c; }
+
+/* ── 선거 당일 특별 배너 ── */
+.elec-day-banner {
+  background: linear-gradient(135deg, #7c3aed, #2563eb);
+  color: #fff;
+  border-radius: 14px;
+  padding: 12px 16px;
+  font-size: .88rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 12px;
+  animation: pulse-badge 1.5s infinite;
+}
+.elec-day-banner b { font-size: 1rem; }
+
+/* ── 여당 / 야당 배지 ── */
+.elec-cand__gov-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 800;
+  border-radius: 5px;
+  padding: 1px 6px;
+  margin-left: 4px;
+  vertical-align: middle;
+  letter-spacing: .02em;
+}
+.elec-cand__gov-badge--ruling {
+  background: linear-gradient(90deg, #7c3aed22, #2563eb22);
+  border: 1px solid #7c3aed66;
+  color: #a78bfa;
+}
+.elec-cand__gov-badge--opp {
+  background: rgba(100,100,100,.12);
+  border: 1px solid rgba(100,100,100,.25);
+  color: var(--color-text-muted, #888);
+}

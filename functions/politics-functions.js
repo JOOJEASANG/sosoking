@@ -600,6 +600,13 @@ exports.voteForPresident = onCall({ region: REGION, timeoutSeconds: 30 }, async 
   const key = await ensureElection();
   const ref = db.doc(`elections/${key}`);
 
+  // D-0 당일 투표 시 +10P, 일반 +5P
+  const today = kstToday();
+  const { endKey } = weekPeriod();
+  const msLeft = new Date(`${endKey}T23:59:59+09:00`).getTime() - Date.now();
+  const daysLeft = Math.ceil(msLeft / 86400000);
+  const points = daysLeft <= 0 ? 10 : 5;
+
   return db.runTransaction(async tx => {
     const s = await tx.get(ref);
     if (!s.exists) throw new HttpsError('failed-precondition', '선거가 준비되지 않았습니다.');
@@ -617,12 +624,11 @@ exports.voteForPresident = onCall({ region: REGION, timeoutSeconds: 30 }, async 
       totalVotes: FieldValue.increment(1),
       updatedAt: FieldValue.serverTimestamp(),
     });
-    // Award +5 political power for election vote
     const awardRef = db.doc(`point_awards/${uid}_election_vote_${key}`);
     const userRef = db.doc(`users/${uid}`);
-    tx.set(awardRef, { uid, action: 'election_vote', points: 5, weekKey: key, createdAt: FieldValue.serverTimestamp() }, { merge: false });
-    tx.set(userRef, { totalPoints: FieldValue.increment(5), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-    return { ok: true, partyId };
+    tx.set(awardRef, { uid, action: 'election_vote', points, weekKey: key, electionDay: daysLeft <= 0, createdAt: FieldValue.serverTimestamp() }, { merge: false });
+    tx.set(userRef, { totalPoints: FieldValue.increment(points), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+    return { ok: true, partyId, points, electionDay: daysLeft <= 0 };
   });
 });
 
