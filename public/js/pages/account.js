@@ -1,8 +1,9 @@
-import { auth, db, signOut } from '../firebase.js';
+import { auth, db, signOut, functions } from '../firebase.js';
 import {
   collection, query, where, orderBy, limit, getDocs, getCountFromServer,
   doc, getDoc, updateDoc, writeBatch, deleteDoc, serverTimestamp, setDoc,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
 import {
   updateProfile, deleteUser, EmailAuthProvider, reauthenticateWithCredential,
   GoogleAuthProvider, reauthenticateWithPopup,
@@ -115,6 +116,7 @@ export async function renderAccount() {
       <div class="account-tabs" aria-label="내 정보 메뉴">
         ${tabButton(activeTab, 'posts', '📝', `내 글 ${postCount ? postCount : ''}`)}
         ${tabButton(activeTab, 'scraps', '🔖', '스크랩')}
+        ${tabButton(activeTab, 'party', '🏛️', '정당')}
         ${tabButton(activeTab, 'stats', '📊', '통계')}
         ${tabButton(activeTab, 'follows', '👥', '팔로우')}
         ${tabButton(activeTab, 'notifications', '🔔', '알림', appState.unreadNotifications > 0 ? `<span class="notif-badge-sm account-tab__badge">${appState.unreadNotifications}</span>` : '')}
@@ -236,6 +238,9 @@ export async function renderAccount() {
         : `<div class="empty-state"><div class="empty-state__icon">🔔</div>
            <div class="empty-state__title">아직 알림이 없어요</div>
            <div class="empty-state__desc">글을 올리면 반응이 오기 시작해요.</div></div>`;
+
+    } else if (tab === 'party') {
+      await renderPartyTab(content, user.uid);
 
     } else if (tab === 'stats') {
       await renderStatsTab(content, user.uid);
@@ -584,6 +589,107 @@ export async function followUser(targetUid, targetName) {
     });
     toast.success(`${targetName}님을 팔로우했어요`);
   } catch { toast.error('팔로우에 실패했어요'); }
+}
+
+const PARTY_COLORS_ACCT = {
+  national: { emoji: '🎙️', name: '국민안정당', color: '#8B7355' },
+  truth:    { emoji: '📺', name: '진실방송당', color: '#6C5CE7' },
+  youth:    { emoji: '📱', name: '청년혁명당', color: '#E84393' },
+  center:   { emoji: '📊', name: '중도민주당', color: '#00CEC9' },
+  future:   { emoji: '🤝', name: '함께미래당', color: '#FDCB6E' },
+  rights:   { emoji: '🔍', name: '알권리당',   color: '#00B894' },
+  justice:  { emoji: '⚖️', name: '법치정의당', color: '#2D3436' },
+};
+
+function fmtPower(n) {
+  n = Number(n || 0);
+  if (n >= 10000) return (n / 10000).toFixed(1).replace(/\.0$/, '') + '만';
+  if (n >= 1000)  return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+  return String(n);
+}
+
+async function renderPartyTab(content, uid) {
+  content.innerHTML = `<div class="loading-center"><div class="spinner"></div></div>`;
+  try {
+    const call = httpsCallable(functions, 'getPoliticsOverview');
+    const { data } = await call();
+    const me = data?.me || null;
+    const parties = data?.parties || [];
+    const myParty = me?.partyId ? parties.find(p => p.id === me.partyId) : null;
+    const partyMeta = me?.partyId ? PARTY_COLORS_ACCT[me.partyId] : null;
+
+    const isLeader = myParty?.leader?.uid === uid;
+
+    let rankHtml = '';
+    if (myParty) {
+      try {
+        const callMembers = httpsCallable(functions, 'getPartyMembers');
+        const { data: mbData } = await callMembers({ partyId: me.partyId });
+        const members = mbData?.members || [];
+        const myRank = members.findIndex(m => m.uid === uid || m.nickname === (appState.nickname)) + 1;
+        if (myRank > 0) {
+          rankHtml = `<span class="acct-party-rank">당내 ${myRank}위</span>`;
+        }
+      } catch {}
+    }
+
+    if (me?.partyId && partyMeta) {
+      content.innerHTML = `
+        <div class="acct-party-card" style="--party-c:${partyMeta.color}">
+          <div class="acct-party-card__top">
+            <span class="acct-party-card__emoji">${partyMeta.emoji}</span>
+            <div class="acct-party-card__info">
+              <div class="acct-party-card__name">
+                ${isLeader ? '<span class="acct-party-leader-crown">👑 당대표</span>' : ''}
+                ${escHtml(partyMeta.name)}
+              </div>
+              <div class="acct-party-card__power">정치력 ${fmtPower(me.power)}P ${rankHtml}</div>
+            </div>
+          </div>
+          ${myParty ? `<div class="acct-party-card__stats">
+            <span>👥 당원 ${myParty.memberCount}명</span>
+            <span>⚡ 당 총 정치력 ${fmtPower(myParty.totalPower)}</span>
+            <span>📊 전체 ${myParty.rank}위 정당</span>
+          </div>` : ''}
+          <div class="acct-party-card__actions">
+            <button class="btn btn--primary btn--sm" onclick="navigate('/parties')">정당 페이지 →</button>
+            <button class="btn btn--ghost btn--sm" onclick="navigate('/ranking')">랭킹 보기</button>
+          </div>
+        </div>
+
+        <div class="acct-party-tip">
+          <b>정치력</b>을 쌓으면 당내 순위가 올라가고, 1위가 되면 <b>당대표</b>가 됩니다.<br>
+          당대표는 매주 대통령 선거에 자동 출마합니다!
+        </div>
+
+        <div style="margin-top:16px">
+          <div class="section-title" style="font-size:14px;margin-bottom:10px">📊 전체 정당 순위</div>
+          <div class="acct-party-standings">
+            ${parties.map((p, i) => `
+              <div class="acct-party-row${p.id === me.partyId ? ' acct-party-row--mine' : ''}" style="--party-c:${PARTY_COLORS_ACCT[p.id]?.color || '#ccc'}">
+                <span class="acct-party-row__rank">${i + 1}</span>
+                <span class="acct-party-row__emoji">${p.emoji}</span>
+                <span class="acct-party-row__name">${escHtml(p.name)}</span>
+                <span class="acct-party-row__power">${fmtPower(p.totalPower)}P</span>
+              </div>`).join('')}
+          </div>
+        </div>`;
+    } else {
+      content.innerHTML = `
+        <div class="acct-party-empty">
+          <div class="acct-party-empty__icon">🏛️</div>
+          <div class="acct-party-empty__title">아직 정당에 가입하지 않았어요</div>
+          <p class="acct-party-empty__desc">정당에 입당하면 정치력을 쌓고 당대표, 대통령 후보가 될 수 있어요!</p>
+          <div style="display:flex;gap:8px;justify-content:center;margin-top:12px">
+            <button class="btn btn--primary" onclick="navigate('/parties')">🏛️ 정당 보러 가기</button>
+            <button class="btn btn--ghost" onclick="navigate('/ranking')">🏆 랭킹 보기</button>
+          </div>
+        </div>`;
+    }
+  } catch (e) {
+    console.error('[party tab]', e);
+    content.innerHTML = `<div class="empty-state"><div class="empty-state__icon">⚠️</div><div class="empty-state__title">정당 정보를 불러오지 못했어요</div></div>`;
+  }
 }
 
 async function fetchMyPosts(uid) {
