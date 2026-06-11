@@ -153,6 +153,23 @@ function renderNewsCard(news) {
     </div>`;
 }
 
+function renderPresidentAnnouncement(p) {
+  if (!p || !p.periodId) return '';
+  try {
+    const lastSeen = localStorage.getItem('sosoking_last_prez_period');
+    if (lastSeen === p.periodId) return '';
+    localStorage.setItem('sosoking_last_prez_period', p.periodId);
+  } catch { return ''; }
+  return `
+    <div class="home-new-prez-announce" id="home-new-prez-announce">
+      <div class="home-new-prez-announce__confetti" aria-hidden="true">🎊🎉🎊🎉🎊</div>
+      <div class="home-new-prez-announce__title">🏛️ 신임 대통령 취임!</div>
+      <div class="home-new-prez-announce__name">${p.emoji} ${escHtml(p.candidateName)}</div>
+      <div class="home-new-prez-announce__party">${escHtml(p.partyName)}${p.isAI ? ' · AI 정치인' : ' · 당대표'} 당선</div>
+      <button class="home-new-prez-announce__close" type="button">확인 ✓</button>
+    </div>`;
+}
+
 function renderPresidentCard(p) {
   if (!p) return '';
   const approveCount = Number(p.decreeApprove || 0);
@@ -493,6 +510,7 @@ export async function renderHome() {
     const newsHTML = renderNewsCard(newsData || generateFallbackNews(battleData, presidentData));
     const prezHTML = renderPresidentCard(presidentData);
     const battleHTML = renderBattleCard(battleData);
+    const newPrezHTML = renderPresidentAnnouncement(presidentData);
 
     const bestHTML = todayBest ? `
       <div class="home-section-header" style="margin-bottom:8px">
@@ -523,7 +541,11 @@ export async function renderHome() {
         </div>
       </div>` : '';
 
-    el.innerHTML = `<div class="home-dash page-enter home-dash--v2"><div id="home-notif-slot"></div>${headerHTML}${battleHTML}${newsHTML}${prezHTML}<div id="home-crisis-slot"></div>${bestHTML}${hotHTML}${commentsHTML}<div id="home-party-power-slot"></div><div id="home-election-race-slot"></div><div id="home-party-activity-slot"></div></div>`;
+    el.innerHTML = `<div class="home-dash page-enter home-dash--v2"><div id="home-notif-slot"></div>${newPrezHTML}${headerHTML}${battleHTML}${newsHTML}${prezHTML}<div id="home-crisis-slot"></div>${bestHTML}${hotHTML}${commentsHTML}<div id="home-party-power-slot"></div><div id="home-election-race-slot"></div><div id="home-party-activity-slot"></div></div>`;
+
+    el.querySelector('.home-new-prez-announce__close')?.addEventListener('click', () => {
+      el.querySelector('#home-new-prez-announce')?.remove();
+    });
 
     el.querySelector('#hbtn-more-hot')?.addEventListener('click', () => navigate('/feed'));
     el.querySelectorAll('[data-path]').forEach(btn => {

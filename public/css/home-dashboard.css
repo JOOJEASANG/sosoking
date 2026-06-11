@@ -605,3 +605,62 @@
   border-radius: 20px;
   padding: 3px 9px;
 }
+
+/* ── 신임 대통령 취임 발표 카드 ── */
+.home-new-prez-announce {
+  background: linear-gradient(135deg, #0f0c29 0%, #302b63 60%, #1a2a4a 100%);
+  border: 1.5px solid rgba(255,255,255,.2);
+  border-radius: 18px;
+  padding: 18px 16px 14px;
+  margin-bottom: 14px;
+  text-align: center;
+  color: #fff;
+  animation: slideDown .4s ease, glow-in .6s ease;
+  position: relative;
+}
+@keyframes glow-in {
+  0%  { box-shadow: 0 0 0 0 rgba(253,203,110,0); }
+  50% { box-shadow: 0 0 24px 4px rgba(253,203,110,.3); }
+  100%{ box-shadow: 0 0 8px 1px rgba(253,203,110,.1); }
+}
+.home-new-prez-announce__confetti {
+  font-size: 20px;
+  letter-spacing: 4px;
+  margin-bottom: 6px;
+  animation: wave 1.5s ease infinite;
+}
+@keyframes wave {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-4px); }
+}
+.home-new-prez-announce__title {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  color: #FDCB6E;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.home-new-prez-announce__name {
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: -.01em;
+  margin-bottom: 3px;
+}
+.home-new-prez-announce__party {
+  font-size: 12px;
+  color: rgba(255,255,255,.7);
+  margin-bottom: 12px;
+}
+.home-new-prez-announce__close {
+  background: rgba(255,255,255,.15);
+  border: 1px solid rgba(255,255,255,.25);
+  border-radius: 99px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 18px;
+  cursor: pointer;
+  transition: background .15s;
+}
+.home-new-prez-announce__close:hover { background: rgba(255,255,255,.25); }
