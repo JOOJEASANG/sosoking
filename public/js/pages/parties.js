@@ -1,10 +1,107 @@
-/* parties.js — 소소공화국 정당: 입당·정당 순위·당대표 */
+/* parties.js — 소소공화국 정당: 입당·정당 순위·당대표 + 정치성향 테스트 */
 import { auth, functions } from '../firebase.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
 import { navigate } from '../router.js';
 import { setMeta } from '../utils/seo.js';
 import { escHtml } from '../utils/helpers.js';
 import { toast } from '../components/toast.js';
+
+// 정당별 강점·정책·입당 혜택·한마디 (표시용 메타)
+const PARTY_META = {
+  national: {
+    strengths: ['안정', '경험', '절차'],
+    policy: '검증된 정책만 신중하게 — 흔들림 없는 안정',
+    perk: '🎖️ 경력직 배지',
+    quotes: ['18년 경력으로 말하자면, 서두를 일이 아닙니다.', '먼저 전례를 봐야 합니다.', '그건 위원회에 회부하시죠.'],
+  },
+  truth: {
+    strengths: ['폭로', '화제성', '이슈몰이'],
+    policy: '숨겨진 진실을 전면 공개 — 알 건 알아야죠',
+    perk: '📡 단독특종 배지',
+    quotes: ['이거 단독입니다, 구독 누르세요!', '충격적인 사실을 입수했습니다.', '이게 말이 됩니까 여러분?'],
+  },
+  youth: {
+    strengths: ['변화', '개혁', 'MZ파워'],
+    policy: '기득권 타파, 청년 우선 — 갈아엎자',
+    perk: '🔥 혁명가 배지',
+    quotes: ['ㄹㅇ 이건 갈아엎어야 됨', '기득권 팩폭 들어간다', '아 답답해서 내가 나선다'],
+  },
+  center: {
+    strengths: ['데이터', '중도', '합리'],
+    policy: '여론·통계 기반 합리 정치 — 숫자가 곧 민심',
+    perk: '📈 분석가 배지',
+    quotes: ['수치를 보면 민심은 이렇습니다.', '오차범위 내 접전이네요.', '데이터가 답을 알고 있죠.'],
+  },
+  future: {
+    strengths: ['화합', '긍정', '분위기'],
+    policy: '갈등 봉합, 다 함께 미래로 — 우리는 한편',
+    perk: '🎉 분위기메이커 배지',
+    quotes: ['역시 다들 혜안이 다르십니다!', '완전 공감입니다 여러분!', '우리는 늘 한편이에요!'],
+  },
+  rights: {
+    strengths: ['정보', '탐사', '투명'],
+    policy: '국민의 알 권리 최우선 — 끝까지 추적',
+    perk: '🔎 탐사원 배지',
+    quotes: ['어젯밤 제보를 받았습니다.', '취재원이 확인해줬어요.', '내부 문서를 입수했습니다.'],
+  },
+  justice: {
+    strengths: ['원칙', '법치', '냉철'],
+    policy: '법 앞의 평등, 무관용 — 예외는 없다',
+    perk: '⚖️ 법봉 배지',
+    quotes: ['법대로 합시다.', '수사 착수 요건이 됩니다.', '...타이밍이 흥미롭네요.'],
+  },
+};
+
+// 정치성향 테스트 (각 선택지가 정당 친화도에 가중치)
+const QUIZ = [
+  {
+    q: '정치에서 가장 중요한 건?',
+    opts: [
+      { t: '안정과 경험', w: { national: 2 } },
+      { t: '변화와 개혁', w: { youth: 2 } },
+      { t: '진실과 투명', w: { rights: 2, truth: 1 } },
+      { t: '원칙과 법', w: { justice: 2 } },
+    ],
+  },
+  {
+    q: '갈등이 터졌다, 당신은?',
+    opts: [
+      { t: '데이터부터 본다', w: { center: 2 } },
+      { t: '일단 분위기를 푼다', w: { future: 2 } },
+      { t: '누가 거짓말하나 캔다', w: { rights: 1, truth: 1 } },
+      { t: '원칙대로 따진다', w: { justice: 2 } },
+    ],
+  },
+  {
+    q: 'SNS에서 당신은?',
+    opts: [
+      { t: '폭로·이슈 공유러', w: { truth: 2 } },
+      { t: '팩폭 댓글러', w: { youth: 2 } },
+      { t: '팩트·통계 정리러', w: { center: 2 } },
+      { t: '점잖게 안 함', w: { national: 2 } },
+    ],
+  },
+  {
+    q: '당신의 말투는?',
+    opts: [
+      { t: '느긋하고 권위 있게', w: { national: 2 } },
+      { t: '화끈하고 자극적으로', w: { truth: 2 } },
+      { t: '직설적이고 솔직하게', w: { youth: 2 } },
+      { t: '짧고 냉정하게', w: { justice: 2 } },
+    ],
+  },
+  {
+    q: '이상적인 나라는?',
+    opts: [
+      { t: '흔들림 없는 안정', w: { national: 2 } },
+      { t: '다 함께 웃는 화합', w: { future: 2 } },
+      { t: '모두가 아는 투명한', w: { rights: 2 } },
+      { t: '데이터로 굴러가는 합리', w: { center: 2 } },
+    ],
+  },
+];
+
+let _partiesCache = [];
 
 function fmtNum(n) {
   n = Number(n || 0);
@@ -17,11 +114,19 @@ function medal(rank) {
   return rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `${rank}`;
 }
 
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
 function leaderLine(p) {
   if (p.leader && p.leader.power > 0) {
     return `현 당대표 <b>${escHtml(p.leader.nickname)}</b> · 정치력 ${fmtNum(p.leader.power)}`;
   }
   return `당대표 공석 — 입당 후 활동 1위가 당대표!`;
+}
+
+function strengthChips(id) {
+  const meta = PARTY_META[id];
+  if (!meta) return '';
+  return `<div class="party-chips">${meta.strengths.map(s => `<span class="party-chip">#${escHtml(s)}</span>`).join('')}</div>`;
 }
 
 function renderMyBanner(me) {
@@ -33,24 +138,27 @@ function renderMyBanner(me) {
     </div>`;
   }
   if (me && me.partyId) {
+    const meta = PARTY_META[me.partyId];
     return `<div class="party-mine">
       <div class="party-mine__label">내 소속 정당</div>
       <div class="party-mine__name">${escHtml(me.partyName)}</div>
-      <div class="party-mine__power">내 정치력 <b>${fmtNum(me.power)}</b></div>
+      <div class="party-mine__power">내 정치력 <b>${fmtNum(me.power)}</b>${meta ? ` · ${escHtml(meta.perk)}` : ''}</div>
       <div class="party-mine__hint">글·댓글·투표로 활동할수록 정치력이 오르고, 당내 1위가 당대표가 됩니다.</div>
     </div>`;
   }
   return `<div class="party-mine party-mine--none">
     <div class="party-mine__title">아직 소속 정당이 없어요</div>
-    <div class="party-mine__desc">7개 정당 중 하나를 골라 입당하세요. 내 활동 ${me ? `(정치력 ${fmtNum(me.power)})` : ''}이 그대로 정당의 힘이 됩니다.</div>
+    <div class="party-mine__desc">정치성향 테스트로 30초 만에 내 정당을 찾거나, 아래에서 직접 골라 입당하세요.</div>
+    <button class="btn btn--primary btn--sm" id="party-quiz-open">🧭 내 정당 찾기 (30초 테스트)</button>
   </div>`;
 }
 
 function renderPartyCard(p, me) {
   const isMine = me && me.partyId === p.id;
+  const meta = PARTY_META[p.id];
   const btn = isMine
     ? `<span class="party-card__mine-tag">내 정당</span>`
-    : `<button class="btn btn--primary btn--sm party-join-btn" data-party="${p.id}" data-name="${escHtml(p.name)}">${me && me.partyId ? '이 당으로 이적' : '입당'}</button>`;
+    : `<button class="btn btn--primary btn--sm party-join-btn" data-party="${p.id}" data-name="${escHtml(p.name)}">${me && me.partyId ? '이적' : '입당'}</button>`;
   return `
     <div class="party-card${isMine ? ' party-card--mine' : ''}" style="--party-color:${p.color}">
       <div class="party-card__rank">${medal(p.rank)}</div>
@@ -61,6 +169,8 @@ function renderPartyCard(p, me) {
           <span class="party-card__count">당원 ${fmtNum(p.memberCount)}</span>
         </div>
         <div class="party-card__slogan">“${escHtml(p.slogan)}”</div>
+        ${strengthChips(p.id)}
+        ${meta ? `<div class="party-card__policy">📌 ${escHtml(meta.policy)}</div>` : ''}
         <div class="party-card__leader">${leaderLine(p)}</div>
         <div class="party-card__meta">
           <span class="party-card__power">⚡ 정당 정치력 <b>${fmtNum(p.totalPower)}</b></span>
@@ -70,6 +180,13 @@ function renderPartyCard(p, me) {
       <div class="party-card__action">${btn}</div>
     </div>
     <div class="party-members" id="members-${p.id}" hidden></div>`;
+}
+
+async function doJoin(partyId, name) {
+  const call = httpsCallable(functions, 'joinParty');
+  await call({ partyId });
+  toast.success(`${name}에 입당했어요! 🎉`);
+  renderParties();
 }
 
 async function loadMembers(partyId, host) {
@@ -91,6 +208,93 @@ async function loadMembers(partyId, host) {
   } catch (e) {
     host.innerHTML = `<div class="party-members__empty">당원 목록을 불러오지 못했어요.</div>`;
   }
+}
+
+// ── 정치성향 테스트 ──
+function openQuiz() {
+  if (!auth.currentUser) { navigate('/login'); return; }
+  const overlay = document.createElement('div');
+  overlay.className = 'quiz-overlay';
+  const answers = new Array(QUIZ.length).fill(-1);
+
+  const renderBody = () => {
+    overlay.innerHTML = `
+      <div class="quiz-modal">
+        <button class="quiz-close" id="quiz-close" aria-label="닫기">✕</button>
+        <div class="quiz-title">🧭 내 정당 찾기</div>
+        <div class="quiz-sub">5문항 · 30초 — 내 정치성향에 맞는 정당을 추천해드려요</div>
+        <div class="quiz-body">
+          ${QUIZ.map((item, qi) => `
+            <div class="quiz-q">
+              <div class="quiz-q__title">Q${qi + 1}. ${escHtml(item.q)}</div>
+              <div class="quiz-opts">
+                ${item.opts.map((o, oi) => `
+                  <button class="quiz-opt${answers[qi] === oi ? ' selected' : ''}" data-q="${qi}" data-o="${oi}">${escHtml(o.t)}</button>
+                `).join('')}
+              </div>
+            </div>`).join('')}
+        </div>
+        <button class="btn btn--primary quiz-submit" id="quiz-submit">결과 보기</button>
+      </div>`;
+
+    overlay.querySelector('#quiz-close').addEventListener('click', () => overlay.remove());
+    overlay.querySelectorAll('.quiz-opt').forEach(b => {
+      b.addEventListener('click', () => {
+        const qi = Number(b.dataset.q), oi = Number(b.dataset.o);
+        answers[qi] = oi;
+        overlay.querySelectorAll(`.quiz-opt[data-q="${qi}"]`).forEach(x => x.classList.toggle('selected', Number(x.dataset.o) === oi));
+      });
+    });
+    overlay.querySelector('#quiz-submit').addEventListener('click', () => {
+      if (answers.includes(-1)) { toast.warn('모든 문항에 답해주세요!'); return; }
+      showResult();
+    });
+  };
+
+  const showResult = () => {
+    const score = {};
+    QUIZ.forEach((item, qi) => {
+      const w = item.opts[answers[qi]].w;
+      for (const k in w) score[k] = (score[k] || 0) + w[k];
+    });
+    const ranked = _partiesCache.length
+      ? [..._partiesCache].sort((a, b) => (score[b.id] || 0) - (score[a.id] || 0))
+      : [];
+    const best = ranked[0];
+    if (!best) { overlay.remove(); return; }
+    const meta = PARTY_META[best.id];
+
+    overlay.innerHTML = `
+      <div class="quiz-modal quiz-result" style="--party-color:${best.color}">
+        <button class="quiz-close" id="quiz-close2" aria-label="닫기">✕</button>
+        <div class="quiz-result__label">당신과 가장 잘 맞는 정당은</div>
+        <div class="quiz-result__emoji">${best.emoji}</div>
+        <div class="quiz-result__name">${escHtml(best.name)}</div>
+        <div class="quiz-result__slogan">“${escHtml(best.slogan)}”</div>
+        ${meta ? `<div class="quiz-result__chips">${meta.strengths.map(s => `<span class="party-chip">#${escHtml(s)}</span>`).join('')}</div>` : ''}
+        ${meta ? `<div class="quiz-result__policy">📌 ${escHtml(meta.policy)}</div><div class="quiz-result__perk">입당 혜택 ${escHtml(meta.perk)}</div>` : ''}
+        <button class="btn btn--primary quiz-join" id="quiz-join">${best.emoji} ${escHtml(best.name)} 입당하기</button>
+        <button class="quiz-retry" id="quiz-retry">다시 테스트</button>
+      </div>`;
+
+    overlay.querySelector('#quiz-close2').addEventListener('click', () => overlay.remove());
+    overlay.querySelector('#quiz-retry').addEventListener('click', () => { answers.fill(-1); renderBody(); });
+    overlay.querySelector('#quiz-join').addEventListener('click', async (e) => {
+      const b = e.currentTarget;
+      b.disabled = true; b.textContent = '입당 중…';
+      try {
+        await doJoin(best.id, best.name);
+        overlay.remove();
+      } catch (err) {
+        toast.error(err?.message || '입당에 실패했어요.');
+        b.disabled = false; b.textContent = `${best.emoji} ${best.name} 입당하기`;
+      }
+    });
+  };
+
+  renderBody();
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
 }
 
 export async function renderParties() {
@@ -120,21 +324,33 @@ export async function renderParties() {
   }
 
   const { parties = [], me = null } = overview;
+  _partiesCache = parties;
+
+  const topQuote = parties.length ? (() => {
+    const p = parties[0];
+    const meta = PARTY_META[p.id];
+    return meta ? `${p.emoji} <b>${escHtml(p.name)}</b> “${escHtml(pick(meta.quotes))}”` : '';
+  })() : '';
 
   el.innerHTML = `<div class="parties-page page-enter">
     <div class="parties-hero">
       <div class="parties-hero__badge">🏛️ 소소공화국</div>
       <h1 class="parties-hero__title">정당 정치 1번지</h1>
       <p class="parties-hero__sub">입당하고 활동하면 정치력이 쌓입니다. 당내 1위는 당대표, 정치력 최강 정당이 제1당!</p>
+      ${topQuote ? `<div class="parties-hero__quote">📢 ${topQuote}</div>` : ''}
     </div>
     ${renderMyBanner(me)}
-    <div class="parties-standings-title">📊 정당 순위 <span>정치력 기준</span></div>
+    <div class="parties-standings-title">📊 정당 순위 <span>정치력 기준</span>
+      <button class="parties-quiz-btn" id="party-quiz-top">🧭 내 정당 찾기</button>
+    </div>
     <div class="parties-list">
       ${parties.map(p => renderPartyCard(p, me)).join('')}
     </div>
   </div>`;
 
   el.querySelector('#party-login')?.addEventListener('click', () => navigate('/login'));
+  el.querySelector('#party-quiz-open')?.addEventListener('click', openQuiz);
+  el.querySelector('#party-quiz-top')?.addEventListener('click', openQuiz);
 
   el.querySelectorAll('.party-members-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -161,10 +377,7 @@ export async function renderParties() {
       btn.disabled = true;
       btn.textContent = '처리 중…';
       try {
-        const call = httpsCallable(functions, 'joinParty');
-        await call({ partyId });
-        toast.success(`${name}에 입당했어요! 🎉`);
-        renderParties();
+        await doJoin(partyId, name);
       } catch (e) {
         toast.error(e?.message || '입당에 실패했어요.');
         btn.disabled = false;
