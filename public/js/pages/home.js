@@ -143,7 +143,7 @@ function renderNewsCard(news) {
   const d = new Date();
   const dateStr = `${d.getMonth() + 1}월 ${d.getDate()}일`;
   return `
-    <div class="home-news-card" data-path="/parties">
+    <div class="home-news-card" data-path="/news">
       <div class="home-news-card__header">
         <span class="home-news-card__masthead">📰 소소신문</span>
         <span class="home-news-card__date">${dateStr}자</span>
