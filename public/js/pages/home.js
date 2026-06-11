@@ -247,24 +247,26 @@ function renderMissions(status, battleData) {
   const attended = (appState.streak || 0) >= 1;
 
   const missions = [
-    { done: attended,       label: '오늘 출석',     path: '/',        cta: '완료' },
-    { done: votedBattle,    label: '정치배틀 투표', path: '/battle',  cta: '투표하기' },
-    { done: votedElection,  label: '대선 투표',     path: '/election',cta: '투표하기' },
+    { done: attended,       label: '오늘 출석',     path: '/',         cta: '완료',      reward: '+3P',  icon: '📅' },
+    { done: votedBattle,    label: '정치배틀 투표', path: '/battle',   cta: '투표하기',  reward: '+5P',  icon: '🗳️' },
+    { done: votedElection,  label: '대선 투표',     path: '/election', cta: '투표하기',  reward: '+5P',  icon: '👑' },
   ];
   const doneCount = missions.filter(m => m.done).length;
+  const allDone = doneCount === missions.length;
 
   return `
     <section class="home-missions">
       <div class="home-missions__head">
         <span class="home-missions__title">📋 오늘의 정치 일정</span>
-        <span class="home-missions__count">${doneCount}/${missions.length} 완료</span>
+        <span class="home-missions__count${allDone ? ' home-missions__count--all' : ''}">${doneCount}/${missions.length} 완료${allDone ? ' 🎉' : ''}</span>
       </div>
       <div class="home-missions__list">
         ${missions.map(m => `
           <button class="home-mission${m.done ? ' home-mission--done' : ''}" data-path="${m.path}" type="button">
-            <span class="home-mission__check">${m.done ? '✅' : '⬜'}</span>
+            <span class="home-mission__icon">${m.icon}</span>
             <span class="home-mission__label">${m.label}</span>
-            <span class="home-mission__cta">${m.done ? '완료' : m.cta}</span>
+            <span class="home-mission__reward">${m.reward}</span>
+            <span class="home-mission__cta">${m.done ? '완료 ✓' : m.cta}</span>
           </button>`).join('')}
       </div>
     </section>`;

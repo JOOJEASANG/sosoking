@@ -176,6 +176,10 @@
   border-radius: 99px;
   padding: 2px 10px;
 }
+.home-missions__count--all {
+  color: #1e8449;
+  background: color-mix(in srgb, #27ae60 12%, transparent);
+}
 .home-missions__list { display: flex; flex-direction: column; gap: 6px; }
 .home-mission {
   display: flex;
@@ -190,15 +194,26 @@
   transition: background .12s;
 }
 .home-mission:hover { background: var(--color-primary-bg); }
-.home-mission--done { opacity: .6; }
-.home-mission__check { font-size: 16px; flex-shrink: 0; }
+.home-mission--done { opacity: .65; }
+.home-mission__icon { font-size: 18px; flex-shrink: 0; line-height: 1; }
 .home-mission__label { flex: 1; text-align: left; font-size: 13px; font-weight: 600; color: var(--color-text-primary); }
+.home-mission__reward {
+  font-size: 11px;
+  font-weight: 800;
+  color: #1e8449;
+  background: color-mix(in srgb, #27ae60 12%, transparent);
+  border-radius: 99px;
+  padding: 2px 7px;
+  flex-shrink: 0;
+}
+.home-mission--done .home-mission__reward { opacity: .5; }
 .home-mission__cta {
   font-size: 12px;
   font-weight: 700;
   color: var(--color-primary);
+  flex-shrink: 0;
 }
-.home-mission--done .home-mission__cta { color: var(--color-text-muted); }
+.home-mission--done .home-mission__cta { color: var(--color-text-muted); font-weight: 600; }
 
 /* ── 계정 프로필 등급 진행바 ── */
 .account-rank-progress { margin: 10px auto 4px; max-width: 240px; }
