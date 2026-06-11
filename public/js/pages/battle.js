@@ -209,6 +209,25 @@ function renderComments(comments) {
   }).join('');
 }
 
+function commentReactionScore(c) {
+  const r = c.reactions || {};
+  return (r.like || 0) + (r.fire || 0) * 2 + (r.funny || 0);
+}
+
+function renderBestComment(comments) {
+  if (!comments || comments.length < 3) return '';
+  const best = [...comments].sort((a, b) => commentReactionScore(b) - commentReactionScore(a))[0];
+  if (!best || commentReactionScore(best) === 0) return '';
+  const rank = getPoliticalRank(best.power || 0);
+  const partyBadge = best.partyId ? renderPartyBadge(best.partyId) : '';
+  return `
+    <div class="battle-best-comment">
+      <div class="battle-best-comment__label">✨ 오늘의 토론 명장면</div>
+      <div class="battle-best-comment__text">"${escHtml(best.text)}"</div>
+      <div class="battle-best-comment__author">${partyBadge}<span class="comment-rank-emoji">${escHtml(rank.emoji)}</span>${escHtml(best.authorName)}</div>
+    </div>`;
+}
+
 export async function renderBattle() {
   setMeta('소소킹 · 정치 배틀');
   const el = document.getElementById('page-content');
@@ -296,6 +315,7 @@ export async function renderBattle() {
           ${userVote ? `<div class="battle-power-hint">⚡ 오늘 배틀 투표로 정치력 +5를 획득했어요!</div>` : ''}
           ${votedOrEnded && appState.partyId ? renderPartyVoteSummary(partyVotes, chars, appState.partyId) : ''}
           ${votedOrEnded ? renderAllPartyVoteSummary(partyVotes, chars) : ''}
+          ${votedOrEnded ? `<button class="battle-share-btn" id="btn-share-battle" type="button">📤 결과 공유하기</button>` : ''}
           ${!auth.currentUser && !isEnded ? `
             <div class="battle-login-hint">
               <a href="#/login" class="btn btn--outline" style="width:100%">로그인하고 투표하기</a>
@@ -305,6 +325,8 @@ export async function renderBattle() {
         ${isEnded && aftermath ? renderAftermath(aftermath) : ''}
 
         <button class="battle-judge-cta" id="btn-to-judge" type="button">⚖️ 이 사건, AI 판결소에서 판결받기</button>
+
+        ${renderBestComment(recentComments)}
 
         <!-- 토론 댓글 -->
         <div class="battle-discuss">
@@ -371,6 +393,22 @@ export async function renderBattle() {
       } catch {
         btn.disabled = false;
       }
+    });
+
+    el.querySelector('#btn-share-battle')?.addEventListener('click', async () => {
+      const votedChar = userVote ? chars.find(c => c.id === userVote) : null;
+      const winChar = king ? chars.find(c => c.id === king) : null;
+      const shareText = isEnded && winChar
+        ? `🏛️ 소소공화국 오늘의 정치배틀 결과\n👑 집권 대표: ${winChar.emoji} ${winChar.name}\n📰 "${topic}"\n총 ${fmtNum(totalVotes)}명 참여\nhttps://sosoking.co.kr`
+        : `🗳️ 소소공화국 정치배틀\n"${topic}"\n${votedChar ? `나는 ${votedChar.emoji} ${votedChar.name} 지지!` : ''}\nhttps://sosoking.co.kr`;
+      try {
+        if (navigator.share) {
+          await navigator.share({ title: '소소공화국 정치배틀', text: shareText, url: 'https://sosoking.co.kr' });
+        } else {
+          await navigator.clipboard.writeText(shareText);
+          toast.success('결과가 클립보드에 복사됐어요! 📋');
+        }
+      } catch { /* user cancelled or unsupported */ }
     });
 
   } catch (err) {

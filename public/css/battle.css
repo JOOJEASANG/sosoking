@@ -496,6 +496,72 @@
   min-width: 12px;
 }
 
+/* ─── 결과 공유 버튼 ─── */
+.battle-share-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px 16px;
+  border: 1.5px dashed var(--color-border, #e5e7eb);
+  border-radius: 12px;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-muted, #888);
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background .15s, border-color .15s, color .15s;
+}
+.battle-share-btn:hover {
+  background: var(--color-surface-2, #f7f7fb);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+/* ─── 오늘의 토론 명장면 ─── */
+.battle-best-comment {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border: 1.5px solid #fde68a;
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  position: relative;
+  overflow: hidden;
+}
+.battle-best-comment::before {
+  content: '✨';
+  position: absolute;
+  top: -6px;
+  right: 12px;
+  font-size: 32px;
+  opacity: .15;
+}
+.battle-best-comment__label {
+  font-size: 10px;
+  font-weight: 800;
+  color: #92400e;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  margin-bottom: 7px;
+}
+.battle-best-comment__text {
+  font-size: 14px;
+  font-weight: 700;
+  color: #451a03;
+  line-height: 1.55;
+  margin-bottom: 8px;
+  font-style: italic;
+}
+.battle-best-comment__author {
+  font-size: 11px;
+  color: #78350f;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
 /* ─── 역대 왕 기록 ─── */
 .king-history-page { max-width: 600px; margin: 0 auto; padding: 16px; }
 .king-history-header { margin-bottom: 14px; }
