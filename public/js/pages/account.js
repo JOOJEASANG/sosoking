@@ -89,6 +89,10 @@ export async function renderAccount() {
   const streak   = appState.streak || userData.streak || 0;
   const nickname = appState.nickname || user.displayName || user.email?.split('@')[0] || '익명';
 
+  const _pjAt = userData?.partyJoinedAt?.toDate ? userData.partyJoinedAt.toDate() : null;
+  const partyLoyaltyDays = _pjAt ? Math.floor((Date.now() - _pjAt.getTime()) / 86400000) : 0;
+  const myPartyMeta = userData?.partyId ? PARTY_COLORS_ACCT[userData.partyId] : null;
+
   if (userSnap?.exists()) {
     updateDoc(doc(db, 'users', user.uid), { title }).catch(() => {});
     appState.userTitle = title;
@@ -107,6 +111,7 @@ export async function renderAccount() {
           <div class="account-level">
             <span class="title-badge" style="background:color-mix(in srgb,${polRank.color} 16%,transparent);color:${polRank.color}">${polRank.emoji} ${polRank.title}</span>
             ${streak > 0 ? `<span class="streak-pill" style="margin-left:6px">🔥 ${streak}일 연속</span>` : ''}
+            ${myPartyMeta && partyLoyaltyDays > 0 ? `<span class="party-loyalty-pill" style="--party-c:${myPartyMeta.color};margin-left:6px">${myPartyMeta.emoji} 당원 경력 ${partyLoyaltyDays}일</span>` : ''}
           </div>
           <div class="account-rank-progress">
             <div class="account-rank-progress__bar"><div class="account-rank-progress__fill" style="width:${polRank.progress}%;background:${polRank.color}"></div></div>
@@ -755,11 +760,22 @@ async function renderPartyTab(content, uid) {
               <div class="acct-party-card__power">정치력 ${fmtPower(me.power)}P ${rankHtml}</div>
             </div>
           </div>
-          ${myParty ? `<div class="acct-party-card__stats">
-            <span>👥 당원 ${myParty.memberCount}명</span>
-            <span>⚡ 당 총 정치력 ${fmtPower(myParty.totalPower)}</span>
-            <span>📊 전체 ${myParty.rank}위 정당</span>
-          </div>` : ''}
+          ${myParty ? (() => {
+            const myContrib = myParty.totalPower > 0 ? Math.round((me.power / myParty.totalPower) * 100) : 0;
+            const toLeader = myParty.leader && myParty.leader.power > me.power ? myParty.leader.power - me.power : 0;
+            return `<div class="acct-party-card__stats">
+              <span>👥 당원 ${myParty.memberCount}명</span>
+              <span>⚡ 당 총 정치력 ${fmtPower(myParty.totalPower)}</span>
+              <span>📊 전체 ${myParty.rank}위</span>
+            </div>
+            <div class="acct-party-card__contrib">
+              <div class="acct-party-card__contrib-label">내 기여도 ${myContrib}%</div>
+              <div class="acct-party-card__contrib-bar">
+                <div class="acct-party-card__contrib-fill" style="width:${Math.min(100, myContrib)}%"></div>
+              </div>
+              ${toLeader > 0 ? `<div class="acct-party-card__to-leader">당대표까지 <b>${fmtPower(toLeader)}P</b> 더 필요</div>` : isLeader ? `<div class="acct-party-card__to-leader" style="color:#e8b000">👑 당대표 — 대선 자동 출마 중!</div>` : ''}
+            </div>`;
+          })() : ''}
           <div class="acct-party-card__actions">
             <button class="btn btn--primary btn--sm" onclick="navigate('/parties')">정당 페이지 →</button>
             <button class="btn btn--ghost btn--sm" onclick="navigate('/ranking')">랭킹 보기</button>

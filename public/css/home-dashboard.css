@@ -299,6 +299,14 @@
   color: var(--color-text-muted);
   border: 1px solid var(--color-border);
 }
+.party-loyalty-pill {
+  display: inline-block;
+  font-size: 11px; font-weight: 700;
+  padding: 2px 9px; border-radius: 99px;
+  background: color-mix(in srgb, var(--party-c, #888) 12%, transparent);
+  color: var(--party-c, #888);
+  border: 1px solid color-mix(in srgb, var(--party-c, #888) 30%, transparent);
+}
 
 /* ── 인라인 등급 뱃지 (랭킹·프로필·댓글) ── */
 .rank-badge {
