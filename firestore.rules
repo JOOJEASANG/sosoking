@@ -89,9 +89,9 @@ service cloud.firestore {
     }
     function validNotificationReadUpdate() {
       let changed = request.resource.data.diff(resource.data).affectedKeys();
+      let isOwner = (resource.data.uid == request.auth.uid || resource.data.userId == request.auth.uid);
       return signedIn()
-        && resource.data.uid == request.auth.uid
-        && request.resource.data.uid == resource.data.uid
+        && isOwner
         && changed.hasOnly(['read', 'readAt', 'readAtMs'])
         && request.resource.data.read == true
         && (!('readAtMs' in request.resource.data) || request.resource.data.readAtMs is number)
@@ -217,7 +217,7 @@ service cloud.firestore {
     }
 
     match /notifications/{noticeId} {
-      allow read: if signedIn() && resource.data.uid == request.auth.uid;
+      allow read: if signedIn() && (resource.data.uid == request.auth.uid || resource.data.userId == request.auth.uid);
       allow update: if validNotificationReadUpdate();
       allow create, delete: if false;
     }

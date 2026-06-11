@@ -438,9 +438,9 @@ function setupWithdrawal(user, isGoogle, isKakao, nickname) {
 
 function renderNotifItem(n) {
   const timeStr = formatTime(n.createdAt?.toDate?.() || n.createdAt);
-  if (n.type === 'leader' || n.type === 'president') {
-    const icon = n.type === 'president' ? '🎉' : '👑';
-    const dest = n.type === 'president' ? '/election' : '/parties';
+  if (n.type === 'leader' || n.type === 'president' || n.type === 'rankup') {
+    const icon = n.type === 'president' ? '🎉' : n.type === 'rankup' ? '⬆️' : '👑';
+    const dest = n.type === 'president' ? '/election' : n.type === 'rankup' ? '/ranking' : '/parties';
     return `
       <div class="notif-item notif-item--political ${n.read ? '' : 'notif-item--unread'}" onclick="navigate('${dest}')">
         <span class="notif-item__icon">${icon}</span>

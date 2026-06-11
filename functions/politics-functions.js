@@ -923,6 +923,34 @@ exports.syncPartyMemberPower = onCall({ region: REGION, timeoutSeconds: 15 }, as
     tx.update(pRef, { totalPower: FieldValue.increment(diff), updatedAt: FieldValue.serverTimestamp() });
   });
 
+  const RANK_THRESHOLDS = [0, 100, 300, 700, 1500, 3000, 6000, 10000];
+  const RANK_META = ['', '📢 동네 운동가', '🪧 청년 당원', '🎖️ 당 간부', '🏛️ 지역 위원장', '⚖️ 국회의원', '👔 당 중진', '👑 거물 정치인'];
+  function getRankLevel(p) { let l = 1; for (let i = 1; i < RANK_THRESHOLDS.length; i++) { if (p >= RANK_THRESHOLDS[i]) l = i + 1; } return l; }
+
+  const oldLevel = getRankLevel(oldPower);
+  const newLevel = getRankLevel(newPower);
+
+  // 등급 상승 알림
+  if (newLevel > oldLevel) {
+    try {
+      const notifKey = `rankup_${uid}_${newLevel}`;
+      const notifRef = db.doc(`notifications/${notifKey}`);
+      const existing = await notifRef.get();
+      if (!existing.exists) {
+        await notifRef.set({
+          userId: uid,
+          type: 'rankup',
+          title: `🎉 등급 상승! ${RANK_META[newLevel - 1] || `Lv.${newLevel}`}`,
+          body: `축하해요! 정치력 ${newPower.toLocaleString()}P로 새 등급에 도달했어요.`,
+          rankLevel: newLevel,
+          power: newPower,
+          read: false,
+          createdAt: FieldValue.serverTimestamp(),
+        });
+      }
+    } catch {}
+  }
+
   // 당대표 등극 알림 (1위 → 처음 달성 시, 비동기)
   try {
     const top = await partyRef(partyId).collection('members').orderBy('power', 'desc').limit(1).get();
