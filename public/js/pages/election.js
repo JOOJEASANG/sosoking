@@ -40,23 +40,27 @@ function renderPresident(p) {
   </div>`;
 }
 
-function renderCandidate(c, total, myVote, canVote) {
+function renderCandidate(c, total, myVote, canVote, isLeading) {
   const pct = total > 0 ? Math.round((c.votes / total) * 100) : 0;
   const mine = myVote === c.partyId;
   const showResults = myVote != null || !canVote;
   const action = canVote && myVote == null
-    ? `<button class="elec-vote-btn" data-party="${c.partyId}" data-name="${escHtml(c.partyName)}">투표</button>`
+    ? `<button class="elec-vote-btn" data-party="${c.partyId}" data-name="${escHtml(c.partyName)}">지지 선언 🗳️</button>`
     : `<span class="elec-cand__pct${mine ? ' elec-cand__pct--mine' : ''}">${pct}%</span>`;
+  const leadTag = isLeading && total > 0
+    ? `<span class="elec-cand__lead-tag">🏆 선두</span>`
+    : '';
   return `
-    <div class="elec-cand${mine ? ' elec-cand--mine' : ''}" style="--party-color:${c.color}">
+    <div class="elec-cand${mine ? ' elec-cand--mine' : ''}${isLeading && total > 0 ? ' elec-cand--leading' : ''}" style="--party-color:${c.color}">
       <div class="elec-cand__emoji">${c.emoji}</div>
       <div class="elec-cand__body">
         <div class="elec-cand__top">
           <span class="elec-cand__name">${escHtml(c.candidateName)} ${c.isAI ? '🤖' : '👑'}</span>
+          ${leadTag}
           <span class="elec-cand__party">${escHtml(c.partyName)}</span>
         </div>
         ${showResults ? `<div class="elec-bar"><div class="elec-bar__fill" style="width:${pct}%"></div></div>
-        <div class="elec-cand__votes">${fmtNum(c.votes)}표${mine ? ' · 내 선택' : ''}</div>` : `<div class="elec-cand__sub">${c.isAI ? 'AI 정치인 후보' : '당대표 후보'}</div>`}
+        <div class="elec-cand__votes">${fmtNum(c.votes)}표${mine ? ' · 내 선택 ✅' : ''}</div>` : `<div class="elec-cand__sub">${c.isAI ? 'AI 정치인 후보' : '당대표 후보'}</div>`}
       </div>
       <div class="elec-cand__action">${action}</div>
     </div>`;
@@ -109,7 +113,7 @@ export async function renderElection() {
       <div class="elec-head__state">${voteStateMsg}</div>
     </div>
     <div class="elec-list">
-      ${cands.map(c => renderCandidate(c, total, myVote, loggedIn)).join('')}
+      ${cands.map((c, i) => renderCandidate(c, total, myVote, loggedIn, i === 0)).join('')}
     </div>
     <p class="elec-note">후보는 각 정당의 당대표(정치력 1위)이며, 당대표가 없는 정당은 AI 정치인이 출마합니다. 매주 월요일 새 선거가 시작됩니다.</p>
   </div>`;
