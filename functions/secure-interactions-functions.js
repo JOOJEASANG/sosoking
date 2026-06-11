@@ -4,6 +4,23 @@ const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 
 const db = getFirestore();
+
+async function tryAwardCommentReactionReceived(postId, commentId, reactorId) {
+  const commentSnap = await db.doc(`feeds/${postId}/comments/${commentId}`).get();
+  if (!commentSnap.exists) return;
+  const authorId = commentSnap.data().authorId;
+  if (!authorId || authorId === reactorId) return;
+  const id = `${authorId}_reaction_received_comment_${commentId}_${reactorId}`;
+  const ref = db.doc(`point_awards/${id}`);
+  const snap = await ref.get();
+  if (snap.exists) return;
+  await db.runTransaction(async tx => {
+    const a = await tx.get(ref);
+    if (a.exists) return;
+    tx.set(ref, { uid: authorId, action: 'reaction_received', points: 1, postId, commentId, reactorId, createdAt: FieldValue.serverTimestamp(), createdAtMs: Date.now() });
+    tx.set(db.doc(`users/${authorId}`), { points: FieldValue.increment(1), totalPoints: FieldValue.increment(1), 'pointStats.reaction_received': FieldValue.increment(1), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+  });
+}
 const REGION = 'asia-northeast3';
 const POST_REACTIONS = ['like', 'funny', 'fire', 'skull'];
 const COMMENT_REACTIONS = ['funny', 'fire', 'like'];
@@ -154,6 +171,9 @@ exports.reactToComment = onCall({ region: REGION, timeoutSeconds: 30 }, async re
   await assertPostVisible(postRef);
   const ref = postRef.collection('comments').doc(commentId);
   const result = await toggleReactionOnRef(ref, uid, key, COMMENT_REACTIONS, null);
+  if (result.active && !result.previousReaction) {
+    tryAwardCommentReactionReceived(postId, commentId, uid).catch(() => {});
+  }
   return { ok: true, ...result };
 });
 

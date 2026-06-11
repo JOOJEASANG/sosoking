@@ -17,7 +17,7 @@ const POINT_RULES = Object.freeze({
   reaction_give: { points: 1, label: '댓글에 반응 남기기' },
 });
 
-const CLIENT_CALLABLE_ACTIONS = new Set(['post_create', 'comment_create']);
+const CLIENT_CALLABLE_ACTIONS = new Set(['post_create', 'comment_create', 'reaction_give']);
 
 function todayKey() {
   return new Intl.DateTimeFormat('en-CA', {
@@ -73,6 +73,20 @@ async function validateClientAward(uid, action, meta) {
     if (q.empty) throw new HttpsError('failed-precondition', '댓글을 찾을 수 없습니다.');
     const commentTime = q.docs[0].data().createdAt?.toDate?.();
     if (commentTime && commentTime < cutoff) throw new HttpsError('failed-precondition', '댓글 작성 시간이 초과됐습니다.');
+    return;
+  }
+
+  if (action === 'reaction_give') {
+    const postId = clean(meta.postId, 180);
+    const onceKey = clean(meta.onceKey, 180);
+    if (!postId) throw new HttpsError('invalid-argument', '게시글 정보가 없습니다.');
+    // onceKey 형태: {commentId}:{reactionKey} — commentId가 있으면 댓글 반응
+    const [commentId] = onceKey.split(':');
+    if (commentId) {
+      const commentRef = db.doc(`feeds/${postId}/comments/${commentId}`);
+      const snap = await commentRef.get();
+      if (!snap.exists) throw new HttpsError('not-found', '댓글을 찾을 수 없습니다.');
+    }
     return;
   }
 
