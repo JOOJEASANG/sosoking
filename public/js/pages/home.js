@@ -285,6 +285,22 @@ function renderRankCard(status, isRulingParty = false) {
     ? `<div class="home-id-card__chase">🎯 당대표까지 <b>${fmtNum(status.pointsToLeader)}P</b> — 활동하면 따라잡을 수 있어요!</div>`
     : '';
 
+  // 즉시 계산 가능한 마이크로 업적
+  const badges = [
+    status.partyId         && { icon: '🏛️', label: '당원' },
+    status.isLeader        && { icon: '👑', label: '당대표' },
+    isRulingParty          && { icon: '🔑', label: '집권당' },
+    status.votedElection   && { icon: '🗳️', label: '선거 투표' },
+    streak >= 7            && { icon: '🔥', label: `${streak}일 연속` },
+    streak >= 3 && streak < 7 && { icon: '🔥', label: `${streak}일 연속` },
+    (status.power || 0) >= 10000 && { icon: '👔', label: '거물 정치인' },
+    (status.power || 0) >= 3000  && (status.power || 0) < 10000 && { icon: '⚖️', label: '국회의원' },
+  ].filter(Boolean).slice(0, 5);
+
+  const badgesHTML = badges.length
+    ? `<div class="home-id-card__badges">${badges.map(b => `<span class="home-id-card__badge-chip">${b.icon} ${b.label}</span>`).join('')}</div>`
+    : '';
+
   return `
     <section class="home-id-card page-enter" style="--rank-c:${rank.color}">
       <div class="home-id-card__top">
@@ -300,6 +316,7 @@ function renderRankCard(status, isRulingParty = false) {
         ${nextLine}
       </div>
       <div class="home-id-card__party-row">${partyLine}</div>
+      ${badgesHTML}
       ${leaderChaseHTML}
     </section>`;
 }
