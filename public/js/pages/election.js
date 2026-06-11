@@ -151,6 +151,7 @@ export async function renderElection() {
         <button class="btn btn--primary btn--sm" id="elec-pledge-submit">공약 발표 📢</button>
       </div>
     </div>` : ''}
+    <div id="elec-endorsements-section"></div>
     <div id="elec-history-section"></div>
   </div>`;
 
@@ -280,8 +281,73 @@ export async function renderElection() {
     });
   }
 
+  // 지지 선언 피드 (비동기 로드 + 투표 후 작성 폼)
+  loadEndorsements(el.querySelector('#elec-endorsements-section'), myVote, election.status);
+
   // 역대 대선 결과 (비동기 로드)
   loadElectionHistory(el.querySelector('#elec-history-section'));
+}
+
+async function loadEndorsements(host, myVote, status) {
+  if (!host) return;
+  try {
+    const call = httpsCallable(functions, 'getElectionEndorsements');
+    const { data } = await call();
+    const items = data.endorsements || [];
+    const myUid = auth.currentUser?.uid || '';
+
+    const canEndorse = !!auth.currentUser && myVote != null && status === 'open';
+    const myItem = items.find(e => e.uid === myUid);
+
+    const listHTML = items.length
+      ? items.map(e => `
+        <div class="elec-endorsement${e.uid === myUid ? ' elec-endorsement--mine' : ''}" style="--party-c:${e.partyColor || '#aaa'}">
+          <span class="elec-endorsement__emoji">${e.partyEmoji || '🏛️'}</span>
+          <div class="elec-endorsement__body">
+            <span class="elec-endorsement__nick">${escHtml(e.nickname)}</span>
+            <p class="elec-endorsement__text">"${escHtml(e.text)}"</p>
+          </div>
+        </div>`).join('')
+      : `<div class="elec-endorsement-empty">아직 지지 선언이 없어요. 첫 번째로 남겨보세요!</div>`;
+
+    const formHTML = canEndorse && !myItem ? `
+      <div class="elec-endorsement-form">
+        <textarea class="elec-endorsement-input" id="elec-endorsement-input" maxlength="60"
+          placeholder="후보에 대한 짧은 지지 선언을 남겨보세요 (60자 이내)" rows="2"></textarea>
+        <div class="elec-endorsement-actions">
+          <span class="elec-endorsement-len"><span id="elec-endorsement-len">0</span>/60</span>
+          <button class="btn btn--primary btn--sm" id="elec-endorsement-submit">지지 선언 📣</button>
+        </div>
+      </div>` : '';
+
+    host.innerHTML = `
+      <div class="elec-endorsements">
+        <div class="elec-endorsements__title">📣 지지 선언 <span>${items.length}명</span></div>
+        ${formHTML}
+        <div class="elec-endorsements__list">${listHTML}</div>
+      </div>`;
+
+    const input = host.querySelector('#elec-endorsement-input');
+    const lenEl = host.querySelector('#elec-endorsement-len');
+    const submit = host.querySelector('#elec-endorsement-submit');
+
+    input?.addEventListener('input', () => { if (lenEl) lenEl.textContent = input.value.length; });
+    submit?.addEventListener('click', async () => {
+      const text = input?.value.trim();
+      if (!text) { toast.warn('지지 선언 내용을 입력해주세요'); return; }
+      submit.disabled = true;
+      submit.textContent = '…';
+      try {
+        await httpsCallable(functions, 'addElectionEndorsement')({ text });
+        toast.success('지지 선언을 남겼어요! 📣');
+        loadEndorsements(host, myVote, status);
+      } catch (e) {
+        toast.error(e?.message || '실패했어요. 다시 시도해주세요.');
+        submit.disabled = false;
+        submit.textContent = '지지 선언 📣';
+      }
+    });
+  } catch { /* non-critical */ }
 }
 
 async function loadElectionHistory(host) {

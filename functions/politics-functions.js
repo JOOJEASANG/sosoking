@@ -692,6 +692,63 @@ exports.setCampaignPledge = onCall({ region: REGION, timeoutSeconds: 10 }, async
   return { ok: true, pledge: text, partyId: candidate.partyId };
 });
 
+// ── 선거 지지 선언 (투표한 유저만, 1인 1선언) ──
+exports.addElectionEndorsement = onCall({ region: REGION, timeoutSeconds: 15 }, async request => {
+  const uid = requireUid(request);
+  const text = String((request.data && request.data.text) || '').trim();
+  if (!text) throw new HttpsError('invalid-argument', '지지 선언 내용을 입력해주세요.');
+  if (text.length > 60) throw new HttpsError('invalid-argument', '지지 선언은 60자 이내로 작성해주세요.');
+
+  const key = await ensureElection();
+  const elecRef = db.doc(`elections/${key}`);
+  const ballotRef = elecRef.collection('ballots').doc(uid);
+  const ballot = await ballotRef.get();
+  if (!ballot.exists) throw new HttpsError('failed-precondition', '먼저 투표해야 지지 선언을 남길 수 있어요.');
+
+  const userSnap = await db.doc(`users/${uid}`).get();
+  const user = userSnap.exists ? (userSnap.data() || {}) : {};
+  const partyId = PARTY_BY_ID[user.partyId] ? user.partyId : null;
+  const party = partyId ? PARTY_BY_ID[partyId] : null;
+
+  const endorsementRef = elecRef.collection('endorsements').doc(uid);
+  await endorsementRef.set({
+    uid,
+    nickname: String(user.nickname || user.displayName || '시민').slice(0, 20),
+    icon: (user.nicknameIcon && typeof user.nicknameIcon === 'object') ? user.nicknameIcon : null,
+    partyId: partyId || null,
+    partyName: party ? party.name : null,
+    partyEmoji: party ? party.emoji : null,
+    partyColor: party ? party.color : null,
+    votedPartyId: ballot.data().partyId,
+    text,
+    power: Math.max(0, Number(user.totalPoints || user.points || 0)),
+    createdAt: FieldValue.serverTimestamp(),
+    createdAtMs: Date.now(),
+  });
+  return { ok: true };
+});
+
+exports.getElectionEndorsements = onCall({ region: REGION, timeoutSeconds: 10 }, async () => {
+  const key = await ensureElection();
+  const snap = await db.doc(`elections/${key}`).collection('endorsements')
+    .orderBy('createdAtMs', 'desc').limit(20).get();
+  const endorsements = snap.docs.map(d => {
+    const m = d.data() || {};
+    return {
+      uid: d.id,
+      nickname: m.nickname || '시민',
+      icon: m.icon || null,
+      partyEmoji: m.partyEmoji || null,
+      partyColor: m.partyColor || null,
+      partyName: m.partyName || null,
+      votedPartyId: m.votedPartyId || null,
+      text: m.text || '',
+      power: Number(m.power || 0),
+    };
+  });
+  return { endorsements };
+});
+
 // ── 정치력 랭킹 — 전 정당 상위 유저 통합 순위 ──
 exports.getRankings = onCall({ region: REGION, timeoutSeconds: 30 }, async request => {
   await ensureParties();

@@ -245,3 +245,97 @@
   font-size: 11px;
   color: var(--color-text-muted);
 }
+
+/* ── 지지 선언 피드 ── */
+.elec-endorsements {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+.elec-endorsements__title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.elec-endorsements__title span {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  background: var(--color-surface-2);
+  border-radius: 20px;
+  padding: 1px 7px;
+}
+.elec-endorsement-form {
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+.elec-endorsement-input {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+  resize: none;
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  box-sizing: border-box;
+}
+.elec-endorsement-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 6px;
+}
+.elec-endorsement-len {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+.elec-endorsements__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.elec-endorsement {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--party-c, var(--color-primary));
+  border-radius: 0 8px 8px 0;
+}
+.elec-endorsement--mine {
+  background: var(--color-primary-bg);
+  border-color: var(--color-primary);
+  border-left-color: var(--color-primary);
+}
+.elec-endorsement__emoji { font-size: 18px; flex-shrink: 0; }
+.elec-endorsement__body { flex: 1; min-width: 0; }
+.elec-endorsement__nick {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--party-c, var(--color-primary));
+  display: block;
+  margin-bottom: 2px;
+}
+.elec-endorsement__text {
+  font-size: 13px;
+  color: var(--color-text-primary);
+  margin: 0;
+  line-height: 1.5;
+  word-break: break-word;
+}
+.elec-endorsement-empty {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  text-align: center;
+  padding: 12px 0;
+}
