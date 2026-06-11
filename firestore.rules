@@ -43,7 +43,8 @@ service cloud.firestore {
           'anonymous', 'anonymousMode', 'authorId', 'authorName', 'authorPhoto', 'authorEmail',
           'reactions', 'commentCount', 'acrosticCount', 'viewCount', 'pointsScore',
           'options', 'initials', 'hint', 'keyword', 'evidence',
-          'startSentence', 'characters', 'charCount', 'deadline', 'deadlineAt', 'createdAt', 'updatedAt'
+          'startSentence', 'characters', 'charCount', 'deadline', 'deadlineAt', 'createdAt', 'updatedAt',
+          'partyId', 'rankEmoji'
         ])
         && !request.resource.data.keys().hasAny(['hidden', 'hideReason', 'votedBy', 'reactedWith'])
         && validInitialCounter('commentCount')
@@ -73,7 +74,8 @@ service cloud.firestore {
           'reactions', 'reactedWith', 'commentCount', 'acrosticCount',
           'viewCount', 'votedBy', 'pointsScore',
           'options', 'modules',
-          'hidden', 'hideReason'
+          'hidden', 'hideReason',
+          'partyId', 'rankEmoji'
         ]);
     }
     function isMultiItemReactionOrReplyCountUpdate() { return false; }

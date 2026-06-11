@@ -93,8 +93,6 @@ export async function createPost(data) {
     reactions:   { total: 0 },
     commentCount: 0,
     viewCount:    0,
-    votedBy:      [],
-    hidden:       false,
     createdAt:    serverTimestamp(),
   };
   if (appState.partyId) postData.partyId = appState.partyId;

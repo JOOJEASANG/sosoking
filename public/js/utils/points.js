@@ -39,6 +39,10 @@ export async function awardPoints(action, meta = {}) {
     if (awarded && rule?.points) {
       appState.points = (appState.points || 0) + rule.points;
       if (auth.currentUser) checkRankUp(auth.currentUser.uid, appState.points);
+      // 포인트가 충분히 클 때만 정당 정치력 동기화 (fire-and-forget)
+      if (rule.points >= 10) {
+        httpsCallable(functions, 'syncPartyMemberPower')({}).catch(() => {});
+      }
     }
     return awarded;
   } catch (error) {
