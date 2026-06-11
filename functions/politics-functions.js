@@ -621,13 +621,30 @@ exports.getMyStatus = onCall({ region: REGION, timeoutSeconds: 10 }, async reque
     } catch {}
   }
 
-  // 이번 주 대선 투표 여부 (미션 체크리스트용)
+  // 이번 주 대선 투표 여부 + 마감일 (미션 체크리스트용)
   let votedElection = false;
+  let electionEndKey = null;
   try {
-    const { key } = weekPeriod();
-    const b = await db.doc(`elections/${key}/ballots/${uid}`).get();
+    const { key, endKey } = weekPeriod();
+    const [b, elecSnap] = await Promise.all([
+      db.doc(`elections/${key}/ballots/${uid}`).get(),
+      db.doc(`elections/${key}`).get(),
+    ]);
     votedElection = b.exists;
+    electionEndKey = elecSnap.exists ? (elecSnap.data().endKey || endKey) : endKey;
   } catch {}
+
+  // 당대표까지 남은 포인트 (2위 또는 그 이상일 때)
+  let pointsToLeader = null;
+  if (partyId && partyRank && partyRank > 1) {
+    try {
+      const leaderSnap = await partyRef(partyId).collection('members').orderBy('power', 'desc').limit(1).get();
+      if (!leaderSnap.empty) {
+        const leaderPower = Number(leaderSnap.docs[0].data().power || 0);
+        pointsToLeader = Math.max(0, leaderPower - power + 1);
+      }
+    } catch {}
+  }
 
   return {
     loggedIn: true,
@@ -639,6 +656,8 @@ exports.getMyStatus = onCall({ region: REGION, timeoutSeconds: 10 }, async reque
     partyRank,
     isLeader,
     votedElection,
+    electionEndKey,
+    pointsToLeader,
   };
 });
 

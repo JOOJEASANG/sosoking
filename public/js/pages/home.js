@@ -254,6 +254,10 @@ function renderRankCard(status) {
     ? `<span class="home-id-card__next">최고 등급 달성! 🎉</span>`
     : `<span class="home-id-card__next">${rank.next.emoji} ${rank.next.title}까지 <b>${fmtNum(rank.remain)}P</b></span>`;
 
+  const leaderChaseHTML = status.pointsToLeader && status.pointsToLeader <= 200
+    ? `<div class="home-id-card__chase">🎯 당대표까지 <b>${fmtNum(status.pointsToLeader)}P</b> — 활동하면 따라잡을 수 있어요!</div>`
+    : '';
+
   return `
     <section class="home-id-card page-enter" style="--rank-c:${rank.color}">
       <div class="home-id-card__top">
@@ -269,6 +273,7 @@ function renderRankCard(status) {
         ${nextLine}
       </div>
       <div class="home-id-card__party-row">${partyLine}</div>
+      ${leaderChaseHTML}
     </section>`;
 }
 
@@ -300,10 +305,23 @@ function renderMissions(status, battleData) {
   const attended = (appState.streak || 0) >= 1;
 
   const dailyReward = status.isLeader ? '+30P 👑' : '+20P';
+
+  // 선거 마감 D-day 계산
+  let elecLabel = '대선 투표';
+  if (status.electionEndKey && !votedElection) {
+    const end = new Date(`${status.electionEndKey}T23:59:59+09:00`).getTime();
+    const ms = end - Date.now();
+    if (ms > 0) {
+      const days = Math.ceil(ms / 86400000);
+      if (days <= 1) elecLabel = '대선 투표 · 오늘 마감!';
+      else elecLabel = `대선 투표 · D-${days}`;
+    }
+  }
+
   const missions = [
-    { done: attended,       label: '오늘 출석',     path: '/',         cta: '완료',      reward: dailyReward, icon: '📅' },
-    { done: votedBattle,    label: '정치배틀 투표', path: '/battle',   cta: '투표하기',  reward: '+5P',  icon: '🗳️' },
-    { done: votedElection,  label: '대선 투표',     path: '/election', cta: '투표하기',  reward: '+5P',  icon: '👑' },
+    { done: attended,       label: '오늘 출석',     path: '/',         cta: '완료',       reward: dailyReward, icon: '📅' },
+    { done: votedBattle,    label: '정치배틀 투표', path: '/battle',   cta: '투표하기',   reward: '+5P',  icon: '🗳️' },
+    { done: votedElection,  label: elecLabel,       path: '/election', cta: '투표하기',   reward: '+5P',  icon: '👑' },
   ];
   const doneCount = missions.filter(m => m.done).length;
   const allDone = doneCount === missions.length;
