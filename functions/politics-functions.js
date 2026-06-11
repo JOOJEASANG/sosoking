@@ -1420,6 +1420,39 @@ JSON으로만 응답: {"text":"성명 내용"}`;
   }
 });
 
+// ── 당대표 당론 성명 직접 입력 ──
+exports.setPartyManifesto = onCall({ region: REGION, timeoutSeconds: 15 }, async request => {
+  const uid = requireUid(request);
+  const text = String(request.data?.text || '').trim();
+  if (!text || text.length < 5) throw new HttpsError('invalid-argument', '성명이 너무 짧습니다 (5자 이상)');
+  if (text.length > 150) throw new HttpsError('invalid-argument', '성명은 150자 이내여야 합니다');
+
+  // 사용자 정당 확인
+  const userSnap = await db.doc(`users/${uid}`).get();
+  const userData = userSnap.exists ? userSnap.data() : {};
+  const partyId = PARTY_BY_ID[userData.partyId] ? userData.partyId : null;
+  if (!partyId) throw new HttpsError('failed-precondition', '정당에 먼저 입당해야 합니다');
+
+  // 현재 당대표(정치력 1위)인지 확인
+  const leader = await topMemberOf(partyId);
+  if (!leader || leader.uid !== uid) {
+    throw new HttpsError('permission-denied', '당대표만 당론 성명을 입력할 수 있습니다');
+  }
+
+  const { key: weekKey } = weekPeriod();
+  const refKey = `${weekKey}_${partyId}`;
+  await db.doc(`party_manifestos/${refKey}`).set({
+    text,
+    partyId,
+    weekKey,
+    authorUid: uid,
+    generating: false,
+    generatedAt: FieldValue.serverTimestamp(),
+    isLeaderWritten: true,
+  });
+  return { ok: true, text };
+});
+
 // ── 역대 대통령 선거 기록 ──
 exports.getElectionHistory = onCall({ region: REGION, timeoutSeconds: 15 }, async () => {
   const snap = await db.collection('elections')

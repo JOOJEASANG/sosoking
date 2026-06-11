@@ -498,19 +498,31 @@ exports.getBattleStatus = onCall({
   const battle = todaySnap.data();
   const userVote = voteSnap?.exists ? voteSnap.data().charId : null;
 
-  // 최근 댓글 20개
+  // 최근 댓글 20개 (반응 포함)
   let recentComments = [];
   try {
     const commSnap = await db.collection(`battles/${today}/comments`)
       .orderBy('createdAt', 'desc').limit(20).get();
-    recentComments = commSnap.docs.map(d => ({
-      id: d.id,
-      authorName: d.data().authorName || '익명',
-      text: d.data().text || '',
-      partyId: d.data().partyId || null,
-      power: Number(d.data().power || 0),
-      createdAt: d.data().createdAt?.toMillis?.() || null,
-    })).reverse();
+    const uid = request.auth?.uid || null;
+    recentComments = commSnap.docs.map(d => {
+      const data = d.data();
+      const reactions = data.reactions || {};
+      const reactedWith = data.reactedWith || {};
+      return {
+        id: d.id,
+        authorName: data.authorName || '익명',
+        text: data.text || '',
+        partyId: data.partyId || null,
+        power: Number(data.power || 0),
+        createdAt: data.createdAt?.toMillis?.() || null,
+        reactions: {
+          like: Number(reactions.like || 0),
+          fire: Number(reactions.fire || 0),
+          funny: Number(reactions.funny || 0),
+        },
+        myReaction: uid ? (reactedWith[uid] || null) : null,
+      };
+    }).reverse();
   } catch {}
 
   return {
@@ -679,4 +691,56 @@ exports.adminGenerateBattle = onCall({
   });
 
   return { ok: true, topic: parsed.topic, turns: turns.length };
+});
+
+// ── 배틀 댓글 공감 반응 ──
+const BATTLE_COMMENT_REACTIONS = ['like', 'fire', 'funny'];
+
+exports.reactToBattleComment = onCall({
+  region: 'asia-northeast3',
+  timeoutSeconds: 15,
+}, async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError('unauthenticated', '로그인이 필요해요');
+
+  const { commentId, reaction } = request.data || {};
+  if (!commentId || !BATTLE_COMMENT_REACTIONS.includes(reaction)) {
+    throw new HttpsError('invalid-argument', '올바르지 않은 요청입니다');
+  }
+
+  const today = kstToday();
+  const ref = db.doc(`battles/${today}/comments/${commentId}`);
+
+  return db.runTransaction(async tx => {
+    const snap = await tx.get(ref);
+    if (!snap.exists) throw new HttpsError('not-found', '댓글을 찾을 수 없어요');
+
+    const data = snap.data() || {};
+    const reactedWith = data.reactedWith || {};
+    const currentKey = reactedWith[uid] || null;
+    const updates = {};
+
+    if (currentKey === reaction) {
+      // 같은 반응 → 취소
+      updates[`reactions.${reaction}`] = FieldValue.increment(-1);
+      updates[`reactedWith.${uid}`] = FieldValue.delete();
+      tx.update(ref, updates);
+      return { active: false, reaction: null };
+    }
+
+    if (currentKey && BATTLE_COMMENT_REACTIONS.includes(currentKey)) {
+      // 다른 반응으로 교체
+      updates[`reactions.${currentKey}`] = FieldValue.increment(-1);
+      updates[`reactions.${reaction}`] = FieldValue.increment(1);
+      updates[`reactedWith.${uid}`] = reaction;
+      tx.update(ref, updates);
+      return { active: true, reaction };
+    }
+
+    // 새 반응
+    updates[`reactions.${reaction}`] = FieldValue.increment(1);
+    updates[`reactedWith.${uid}`] = reaction;
+    tx.update(ref, updates);
+    return { active: true, reaction };
+  });
 });

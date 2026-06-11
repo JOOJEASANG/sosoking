@@ -177,6 +177,12 @@ function renderAftermath(aftermath) {
     </div>`;
 }
 
+const BATTLE_REACTIONS = [
+  { key: 'like',  label: '👍', title: '공감' },
+  { key: 'fire',  label: '🔥', title: '뜨거워' },
+  { key: 'funny', label: '🤣', title: '웃겨' },
+];
+
 function renderComments(comments) {
   if (!comments.length) {
     return `<div class="battle-comment-empty">첫 번째 토론 의견을 남겨보세요!</div>`;
@@ -184,13 +190,21 @@ function renderComments(comments) {
   return comments.map(c => {
     const rank = getPoliticalRank(c.power || 0);
     const partyBadge = c.partyId ? renderPartyBadge(c.partyId) : '';
+    const reactions = c.reactions || {};
+    const myReaction = c.myReaction || null;
+    const reactBtns = BATTLE_REACTIONS.map(r => {
+      const count = reactions[r.key] || 0;
+      const isActive = myReaction === r.key;
+      return `<button class="battle-comment-react${isActive ? ' battle-comment-react--active' : ''}" data-comment-id="${escHtml(c.id)}" data-reaction="${r.key}" title="${r.title}" type="button">${r.label}${count > 0 ? ` <span class="battle-comment-react__count">${count}</span>` : ''}</button>`;
+    }).join('');
     return `
-    <div class="battle-comment">
+    <div class="battle-comment" data-comment-id="${escHtml(c.id)}">
       <div class="battle-comment__head">
         <span class="battle-comment__author">${partyBadge}<span class="comment-rank-emoji" title="${escHtml(rank.title)}">${escHtml(rank.emoji)}</span>${escHtml(c.authorName)}</span>
         <span class="battle-comment__time">${fmtTime(c.createdAt)}</span>
       </div>
       <div class="battle-comment__text">${escHtml(c.text)}</div>
+      <div class="battle-comment__reactions">${reactBtns}</div>
     </div>`;
   }).join('');
 }
@@ -323,6 +337,41 @@ export async function renderBattle() {
     }
 
     el.querySelector('#btn-discuss-submit')?.addEventListener('click', () => handleComment(el));
+
+    el.querySelector('#comment-list')?.addEventListener('click', async e => {
+      const btn = e.target.closest('.battle-comment-react');
+      if (!btn) return;
+      if (!auth.currentUser) { navigate('/login'); return; }
+      const commentId = btn.dataset.commentId;
+      const reaction = btn.dataset.reaction;
+      if (!commentId || !reaction) return;
+      btn.disabled = true;
+      try {
+        const { data: rData } = await httpsCallable(functions, 'reactToBattleComment')({ commentId, reaction });
+        const commentEl = el.querySelector(`.battle-comment[data-comment-id="${commentId}"]`);
+        if (!commentEl) return;
+        commentEl.querySelectorAll('.battle-comment-react').forEach(b => {
+          const isThis = b.dataset.reaction === reaction;
+          const wasActive = b.classList.contains('battle-comment-react--active');
+          const countEl = b.querySelector('.battle-comment-react__count');
+          const reactionLabel = BATTLE_REACTIONS.find(r => r.key === b.dataset.reaction)?.label || '';
+          if (isThis) {
+            b.classList.toggle('battle-comment-react--active', !!rData.active);
+            const prev = countEl ? parseInt(countEl.textContent) || 0 : 0;
+            const newCount = rData.active ? prev + 1 : Math.max(0, prev - 1);
+            b.innerHTML = `${reactionLabel}${newCount > 0 ? ` <span class="battle-comment-react__count">${newCount}</span>` : ''}`;
+          } else if (wasActive) {
+            b.classList.remove('battle-comment-react--active');
+            const prev = countEl ? parseInt(countEl.textContent) || 0 : 0;
+            const newCount = Math.max(0, prev - 1);
+            b.innerHTML = `${reactionLabel}${newCount > 0 ? ` <span class="battle-comment-react__count">${newCount}</span>` : ''}`;
+          }
+          b.disabled = false;
+        });
+      } catch {
+        btn.disabled = false;
+      }
+    });
 
   } catch (err) {
     console.error('[battle] load error', err);

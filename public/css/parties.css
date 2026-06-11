@@ -574,6 +574,46 @@
   line-height: 1.6;
   font-style: italic;
 }
+.party-manifesto--empty .party-manifesto__text {
+  color: var(--color-text-muted);
+  font-style: normal;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+.party-manifesto__title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.party-manifesto__edit-btn {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--party-color, var(--color-primary));
+  background: none;
+  border: 1px solid color-mix(in srgb, var(--party-color, var(--color-primary)) 40%, transparent);
+  border-radius: 6px;
+  padding: 2px 7px;
+  cursor: pointer;
+  font-weight: 700;
+  transition: background .15s;
+}
+.party-manifesto__edit-btn:hover { background: color-mix(in srgb, var(--party-color, var(--color-primary)) 12%, transparent); }
+.party-manifesto--editing .party-manifesto__title { margin-bottom: 8px; }
+.party-manifesto__input {
+  width: 100%;
+  border: 1px solid color-mix(in srgb, var(--party-color, #888) 30%, var(--color-border));
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+  line-height: 1.6;
+  resize: vertical;
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  font-family: inherit;
+  margin-bottom: 8px;
+}
+.party-manifesto__input:focus { outline: none; border-color: var(--party-color, var(--color-primary)); }
+.party-manifesto__actions { display: flex; gap: 6px; }
 
 /* 이번 주 급부상 당원 */
 .party-weekly-stars {

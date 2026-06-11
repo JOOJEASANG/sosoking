@@ -421,19 +421,69 @@ function renderActivityFeed(activities, topic) {
     </div>`;
 }
 
-async function loadPartyManifesto(slot, partyId) {
+async function loadPartyManifesto(slot, partyId, isLeader = false) {
   if (!slot || !partyId) return;
   try {
     slot.innerHTML = `<div class="party-manifesto party-manifesto--loading">당론 성명 불러오는 중…</div>`;
     const call = httpsCallable(functions, 'getPartyManifesto');
     const { data } = await call({ partyId });
-    if (!data.manifesto) { slot.innerHTML = ''; return; }
-    const party = slot.closest('[data-party-id]') || null;
-    slot.innerHTML = `
-      <div class="party-manifesto">
-        <div class="party-manifesto__title">📜 이번 주 당론 성명</div>
-        <p class="party-manifesto__text">"${escHtml(data.manifesto)}"</p>
-      </div>`;
+
+    const editBtn = isLeader
+      ? `<button class="party-manifesto__edit-btn" id="party-manifesto-edit" type="button">✏️ 수정</button>`
+      : '';
+
+    if (!data.manifesto) {
+      slot.innerHTML = isLeader
+        ? `<div class="party-manifesto party-manifesto--empty">
+            <div class="party-manifesto__title">📜 이번 주 당론 성명</div>
+            <p class="party-manifesto__text">아직 없습니다. 당대표로서 성명을 입력해보세요!</p>
+            <button class="btn btn--primary btn--sm" id="party-manifesto-write" type="button">✍️ 당론 성명 작성</button>
+          </div>`
+        : '';
+    } else {
+      slot.innerHTML = `
+        <div class="party-manifesto">
+          <div class="party-manifesto__title">📜 이번 주 당론 성명${editBtn}</div>
+          <p class="party-manifesto__text">"${escHtml(data.manifesto)}"</p>
+        </div>`;
+    }
+
+    if (isLeader) {
+      const openEditor = () => {
+        slot.innerHTML = `
+          <div class="party-manifesto party-manifesto--editing">
+            <div class="party-manifesto__title">✍️ 당론 성명 입력 (최대 150자)</div>
+            <textarea class="party-manifesto__input" id="party-manifesto-input" maxlength="150" rows="3" placeholder="이번 주 ${PARTY_META[partyId]?.strengths?.[0] || ''} 관련 당론을 밝혀주세요...">${data.manifesto || ''}</textarea>
+            <div class="party-manifesto__actions">
+              <button class="btn btn--primary btn--sm" id="party-manifesto-save">저장</button>
+              <button class="btn btn--ghost btn--sm" id="party-manifesto-cancel">취소</button>
+            </div>
+          </div>`;
+        slot.querySelector('#party-manifesto-cancel')?.addEventListener('click', () =>
+          loadPartyManifesto(slot, partyId, true)
+        );
+        slot.querySelector('#party-manifesto-save')?.addEventListener('click', async () => {
+          const saveBtn = slot.querySelector('#party-manifesto-save');
+          const inputEl = slot.querySelector('#party-manifesto-input');
+          if (!inputEl || !saveBtn) return;
+          const newText = inputEl.value.trim();
+          if (!newText || newText.length < 5) { toast.warn('5자 이상 입력해주세요'); return; }
+          saveBtn.disabled = true;
+          saveBtn.textContent = '저장 중…';
+          try {
+            await httpsCallable(functions, 'setPartyManifesto')({ text: newText });
+            toast.success('당론 성명을 발표했습니다! 📜');
+            loadPartyManifesto(slot, partyId, true);
+          } catch (e) {
+            toast.error(e?.message || '저장에 실패했어요');
+            saveBtn.disabled = false;
+            saveBtn.textContent = '저장';
+          }
+        });
+      };
+      slot.querySelector('#party-manifesto-edit')?.addEventListener('click', openEditor);
+      slot.querySelector('#party-manifesto-write')?.addEventListener('click', openEditor);
+    }
   } catch { slot.innerHTML = ''; }
 }
 
@@ -527,7 +577,9 @@ export async function renderParties() {
 
   // 내 정당 당론 성명 비동기 로드
   if (me && me.partyId) {
-    loadPartyManifesto(el.querySelector('#party-manifesto-slot'), me.partyId);
+    const myPartyData = parties.find(p => p.id === me.partyId);
+    const isMyPartyLeader = !!(auth.currentUser && myPartyData?.leader?.uid === auth.currentUser.uid);
+    loadPartyManifesto(el.querySelector('#party-manifesto-slot'), me.partyId, isMyPartyLeader);
   }
 
   el.querySelectorAll('.party-members-btn').forEach(btn => {
