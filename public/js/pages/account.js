@@ -472,10 +472,12 @@ function getPostTypeBucket(p) {
 /* ── 통계 탭 ── */
 async function renderStatsTab(content, uid) {
   try {
-    const postsSnap = await getDocs(
-      query(collection(db, 'feeds'), where('authorId', '==', uid), orderBy('createdAt', 'desc'), limit(100))
-    );
+    const [postsSnap, polStatsRes] = await Promise.all([
+      getDocs(query(collection(db, 'feeds'), where('authorId', '==', uid), orderBy('createdAt', 'desc'), limit(100))),
+      httpsCallable(functions, 'getUserPoliticsStats')().catch(() => null),
+    ]);
     const posts = postsSnap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.hidden);
+    const polStats = polStatsRes?.data || {};
 
     const typeCounts = { general: 0, vote: 0, naming: 0, drip: 0, quiz: 0 };
     let totalReactions = 0, totalComments = 0, bestPost = null, bestScore = -1;
@@ -502,16 +504,46 @@ async function renderStatsTab(content, uid) {
     ];
     const total = posts.length || 1;
 
+    const streak = polStats.streak || appState.streak || 0;
+    const maxStreak = polStats.maxStreak || streak;
+    const signupDate = polStats.signupDate || null;
+    const battleVotes = polStats.battleVotes || 0;
+    const electionVotes = polStats.electionVotes || 0;
+
     content.innerHTML = `
       <div class="stats-page">
-        <div class="stats-grid">
+
+        <div class="stats-pol-card">
+          <div class="stats-pol-card__title">⚡ 정치 활동 기록</div>
+          <div class="stats-pol-grid">
+            <div class="stats-pol-item">
+              <div class="stats-pol-item__num">${battleVotes}</div>
+              <div class="stats-pol-item__label">⚔️ 배틀 투표</div>
+            </div>
+            <div class="stats-pol-item">
+              <div class="stats-pol-item__num">${electionVotes}</div>
+              <div class="stats-pol-item__label">👑 대선 투표</div>
+            </div>
+            <div class="stats-pol-item">
+              <div class="stats-pol-item__num">${streak}일</div>
+              <div class="stats-pol-item__label">🔥 현재 연속</div>
+            </div>
+            <div class="stats-pol-item">
+              <div class="stats-pol-item__num">${maxStreak}일</div>
+              <div class="stats-pol-item__label">🏅 최장 연속</div>
+            </div>
+          </div>
+          ${signupDate ? `<div class="stats-pol-card__since">소소공화국 입성일 ${signupDate}</div>` : ''}
+        </div>
+
+        <div class="stats-grid" style="margin-top:12px">
           <div class="stats-card"><div class="stats-card__num">${posts.length}</div><div class="stats-card__label">총 게시물</div></div>
           <div class="stats-card"><div class="stats-card__num" style="color:var(--color-primary)">${totalReactions}</div><div class="stats-card__label">받은 반응</div></div>
           <div class="stats-card"><div class="stats-card__num" style="color:var(--color-malhe)">${totalComments}</div><div class="stats-card__label">달린 댓글</div></div>
           <div class="stats-card"><div class="stats-card__num" style="color:var(--color-success)">${weekPosts}</div><div class="stats-card__label">이번 주 활동</div></div>
         </div>
 
-        <div class="card" style="margin-top:16px">
+        <div class="card" style="margin-top:12px">
           <div class="card__body">
             <div style="font-size:14px;font-weight:800;margin-bottom:14px">📂 피드 활동</div>
             ${typeMeta.map(c => `

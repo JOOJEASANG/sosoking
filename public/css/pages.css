@@ -1855,6 +1855,40 @@
   font-weight: 600;
 }
 
+/* ── 정치 활동 통계 카드 ── */
+.stats-pol-card {
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--color-primary) 8%, var(--color-surface)),
+    var(--color-surface));
+  border: 1.5px solid color-mix(in srgb, var(--color-primary) 20%, var(--color-border));
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+}
+.stats-pol-card__title {
+  font-size: 13px; font-weight: 800; color: var(--color-primary);
+  margin-bottom: 10px; letter-spacing: .02em;
+}
+.stats-pol-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+@media (max-width: 480px) {
+  .stats-pol-grid { grid-template-columns: repeat(2, 1fr); }
+}
+.stats-pol-item { text-align: center; }
+.stats-pol-item__num {
+  font-size: 20px; font-weight: 900; color: var(--color-text-primary);
+  letter-spacing: -.5px; line-height: 1.1;
+}
+.stats-pol-item__label {
+  font-size: 11px; color: var(--color-text-muted); font-weight: 600; margin-top: 2px;
+}
+.stats-pol-card__since {
+  font-size: 11px; color: var(--color-text-muted); margin-top: 10px;
+  text-align: center; font-weight: 600;
+}
+
 /* ════════════════════════
    팔로우 탭
 ════════════════════════ */

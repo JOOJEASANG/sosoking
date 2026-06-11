@@ -6,7 +6,7 @@
 
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getApps, initializeApp } = require('firebase-admin/app');
-const { getFirestore, FieldValue } = require('firebase-admin/firestore');
+const { getFirestore, FieldValue, FieldPath } = require('firebase-admin/firestore');
 
 // AI API (config/ai_king에서 키 로드)
 let _aiConfig = null, _aiConfigAt = 0;
@@ -871,4 +871,35 @@ exports.syncPartyMemberPower = onCall({ region: REGION, timeoutSeconds: 15 }, as
     tx.update(pRef, { totalPower: FieldValue.increment(diff), updatedAt: FieldValue.serverTimestamp() });
   });
   return { ok: true, changed: true, oldPower, newPower };
+});
+
+// ── 유저 정치 활동 통계 (계정 통계 탭용) ──
+exports.getUserPoliticsStats = onCall({ region: REGION, timeoutSeconds: 15 }, async request => {
+  const uid = request.auth && request.auth.uid;
+  if (!uid) return { loggedIn: false };
+
+  const [userSnap, battleCountSnap, electionCountSnap] = await Promise.all([
+    db.doc(`users/${uid}`).get(),
+    db.collection('point_awards')
+      .where(FieldPath.documentId(), '>=', `${uid}_battle_vote_`)
+      .where(FieldPath.documentId(), '<', `${uid}_battle_vote_￿`)
+      .count().get().catch(() => null),
+    db.collection('point_awards')
+      .where(FieldPath.documentId(), '>=', `${uid}_election_vote_`)
+      .where(FieldPath.documentId(), '<', `${uid}_election_vote_￿`)
+      .count().get().catch(() => null),
+  ]);
+
+  const user = userSnap.exists ? (userSnap.data() || {}) : {};
+  const battleVotes = battleCountSnap ? battleCountSnap.data().count : 0;
+  const electionVotes = electionCountSnap ? electionCountSnap.data().count : 0;
+
+  return {
+    loggedIn: true,
+    battleVotes,
+    electionVotes,
+    streak: Number(user.streak || 0),
+    maxStreak: Number(user.maxStreak || user.streak || 0),
+    signupDate: user.createdAt ? user.createdAt.toDate().toISOString().slice(0, 10) : null,
+  };
 });
