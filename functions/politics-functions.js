@@ -1384,3 +1384,128 @@ exports.getElectionHistory = onCall({ region: REGION, timeoutSeconds: 15 }, asyn
 
   return { history };
 });
+
+// ── 주간 정치 위기 이벤트 ──
+const CRISIS_SCENARIOS = [
+  { conflict: '소소공화국 예산 위기 — 복지 예산 30% 삭감안이 국회에 제출됐습니다. 서민들은 분노하고, 재정부는 불가피하다고 주장합니다.', optionA: '삭감안 수용 — 재정 건전성 우선', optionB: '삭감 반대 — 복지 예산 사수' },
+  { conflict: '대형 정치 스캔들 — 여당 핵심 의원이 기업으로부터 비공개 후원금을 받은 정황이 폭로됐습니다. 진실 공방이 이어지고 있습니다.', optionA: '특검 도입 요구 — 철저한 수사', optionB: '당내 자체 조사 — 지금은 단결이 중요' },
+  { conflict: '소소공화국 언론자유 논란 — 정부가 가짜뉴스 대응을 명목으로 미디어 규제 법안을 추진합니다. 언론계는 강력 반발 중입니다.', optionA: '규제 지지 — 허위정보 차단이 우선', optionB: '규제 반대 — 언론 자유 침해 불가' },
+  { conflict: '국회 장외투쟁 — 야당이 여당의 단독 처리에 반발해 국회를 이탈했습니다. 국정은 마비 상태입니다.', optionA: '여당 강행 처리 지지 — 민의 따라야', optionB: '야당 복귀 촉구 — 타협으로 해결해야' },
+  { conflict: '공무원 성과급 폐지 논란 — 공무원 노조가 성과급 폐지를 요구하며 파업을 예고했습니다. 행정 공백 우려가 커지고 있습니다.', optionA: '파업 수용 — 공무원 처우 개선 필요', optionB: '파업 불허 — 공익 훼손 용납 불가' },
+];
+
+function buildCrisisPrompt(scenario, context) {
+  return `소소공화국에서 다음 정치 위기가 발생했습니다:
+
+상황: "${scenario.conflict}"
+게임 정세: ${context}
+
+이 위기에 대한 두 가지 정책 선택지를 구체적으로 제시하세요.
+각 선택지는 현실적이고 각 정당 지지자가 공감할 수 있어야 합니다.
+
+JSON으로만 응답:
+{"title":"위기 제목 (20자 이내)","desc":"상황 설명 (80자 이내)","optionA":"선택지 A 라벨 (20자 이내)","optionB":"선택지 B 라벨 (20자 이내)","optionADesc":"선택지 A 설명 (40자 이내)","optionBDesc":"선택지 B 설명 (40자 이내)"}`;
+}
+
+exports.getWeeklyCrisis = onCall({ region: REGION, timeoutSeconds: 30 }, async request => {
+  const uid = request.auth && request.auth.uid;
+  const { key } = weekPeriod();
+  const ref = db.doc(`political_crises/${key}`);
+  const snap = await ref.get();
+
+  let myVote = null;
+  if (uid && snap.exists) {
+    try {
+      const vSnap = await db.doc(`political_crises/${key}/votes/${uid}`).get();
+      if (vSnap.exists) myVote = vSnap.data().option;
+    } catch {}
+  }
+
+  if (snap.exists && snap.data().title && !snap.data().generating) {
+    const d = snap.data();
+    return { crisis: { weekKey: key, ...d }, myVote };
+  }
+  if (snap.exists && snap.data().generating) return { crisis: null, myVote };
+
+  await ref.set({ generating: true, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+  try {
+    // 컨텍스트: 현재 정세 요약
+    const { prevKey } = weekPeriod();
+    const [presSnap, actSnap] = await Promise.all([
+      db.doc(`elections/${prevKey}`).get(),
+      db.doc(`party_activities/${kstToday()}`).get(),
+    ]);
+    const pres = presSnap.exists && presSnap.data().winner
+      ? `현 대통령: ${presSnap.data().winner.candidateName}(${presSnap.data().winner.partyName})`
+      : '대통령 공석';
+    const topic = actSnap.exists ? actSnap.data().topic || '' : '';
+    const context = [pres, topic ? `오늘 이슈: ${topic}` : ''].filter(Boolean).join(' / ');
+
+    // 날짜 기반으로 시나리오 선택
+    const dayNum = Number(key.replace(/-/g, ''));
+    const scenario = CRISIS_SCENARIOS[dayNum % CRISIS_SCENARIOS.length];
+
+    const raw = await callAI(buildCrisisPrompt(scenario, context), 400);
+    const parsed = safeParseJson(raw);
+    if (!parsed || !parsed.title) throw new Error('파싱 실패');
+
+    const crisis = {
+      weekKey: key,
+      title: String(parsed.title || scenario.conflict.slice(0, 20)).trim().slice(0, 30),
+      desc: String(parsed.desc || scenario.conflict).trim().slice(0, 100),
+      optionA: String(parsed.optionA || scenario.optionA).trim().slice(0, 25),
+      optionB: String(parsed.optionB || scenario.optionB).trim().slice(0, 25),
+      optionADesc: String(parsed.optionADesc || '').trim().slice(0, 50),
+      optionBDesc: String(parsed.optionBDesc || '').trim().slice(0, 50),
+      votesA: 0, votesB: 0,
+      generating: false,
+      generatedAt: FieldValue.serverTimestamp(),
+    };
+    await ref.set(crisis);
+    return { crisis, myVote };
+  } catch (e) {
+    await ref.set({ generating: false, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+    console.error('[getWeeklyCrisis] error', e);
+    return { crisis: null, myVote };
+  }
+});
+
+exports.voteOnCrisis = onCall({ region: REGION, timeoutSeconds: 15 }, async request => {
+  const uid = requireUid(request);
+  const option = request.data && (request.data.option === 'A' || request.data.option === 'B')
+    ? request.data.option : null;
+  if (!option) throw new HttpsError('invalid-argument', 'option은 A 또는 B여야 합니다.');
+
+  const { key } = weekPeriod();
+  const crisisRef = db.doc(`political_crises/${key}`);
+  const voteRef = db.doc(`political_crises/${key}/votes/${uid}`);
+
+  const [crisisSnap, voteSnap] = await Promise.all([crisisRef.get(), voteRef.get()]);
+  if (!crisisSnap.exists || !crisisSnap.data().title) {
+    throw new HttpsError('not-found', '이번 주 정치 위기가 없습니다.');
+  }
+  if (voteSnap.exists) throw new HttpsError('failed-precondition', '이미 투표했습니다.');
+
+  const batch = db.batch();
+  batch.set(voteRef, { option, uid, createdAt: FieldValue.serverTimestamp() });
+  batch.update(crisisRef, {
+    [option === 'A' ? 'votesA' : 'votesB']: FieldValue.increment(1),
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+
+  // 첫 투표 +5P
+  const awardRef = db.doc(`point_awards/${uid}_crisis_${key}`);
+  const awardSnap = await awardRef.get();
+  if (!awardSnap.exists) {
+    batch.set(awardRef, { uid, type: 'crisis_vote', weekKey: key, points: 5, createdAt: FieldValue.serverTimestamp() });
+    batch.set(db.doc(`users/${uid}`), { totalPoints: FieldValue.increment(5), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+  }
+  await batch.commit();
+
+  const updated = (await crisisRef.get()).data() || {};
+  return {
+    ok: true, option, firstVote: !awardSnap.exists,
+    votesA: Number(updated.votesA || 0),
+    votesB: Number(updated.votesB || 0),
+  };
+});

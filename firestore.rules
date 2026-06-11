@@ -366,6 +366,16 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // 주간 정치 위기 이벤트 — Cloud Functions에서만 쓰기
+    match /political_crises/{weekKey} {
+      allow read:  if true;
+      allow write: if false;
+      match /votes/{uid} {
+        allow read:  if signedIn() && request.auth.uid == uid;
+        allow write: if false;
+      }
+    }
+
     match /{document=**} { allow read, write: if false; }
   }
 }

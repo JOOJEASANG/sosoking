@@ -330,6 +330,98 @@
   line-height: 1; padding: 2px 4px;
 }
 
+/* ── 이번 주 정치 위기 이벤트 ── */
+.home-crisis-card {
+  background: #fefce8;
+  border: 1.5px solid #fde68a;
+  border-left: 4px solid #f59e0b;
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+.home-crisis-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.home-crisis-card__badge {
+  font-size: 11px;
+  font-weight: 900;
+  color: #92400e;
+  letter-spacing: .03em;
+}
+.home-crisis-card__reward {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--color-primary);
+  background: #fff;
+  border: 1px solid var(--color-primary);
+  border-radius: 10px;
+  padding: 1px 7px;
+}
+.home-crisis-card__title {
+  font-size: 15px;
+  font-weight: 900;
+  color: #1c1917;
+  margin-bottom: 4px;
+  line-height: 1.3;
+}
+.home-crisis-card__desc {
+  font-size: 12px;
+  color: #78716c;
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
+.home-crisis-results { margin-bottom: 8px; }
+.home-crisis-opt-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 5px;
+  background: rgba(0,0,0,.04);
+  border-radius: 6px;
+  padding: 5px 8px;
+  position: relative;
+  overflow: hidden;
+}
+.home-crisis-opt-bar::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: var(--pct);
+  background: var(--clr);
+  opacity: .12;
+  transition: width .5s ease;
+}
+.home-crisis-opt-label { font-size: 12px; font-weight: 700; color: #1c1917; flex: 1; position: relative; }
+.home-crisis-opt-pct  { font-size: 11px; font-weight: 800; color: #78716c; position: relative; }
+.home-crisis-votes { font-size: 11px; color: #78716c; text-align: right; margin-top: 2px; }
+.home-crisis-btns { display: flex; gap: 8px; }
+.home-crisis-btn {
+  flex: 1;
+  padding: 8px 10px;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all .15s;
+  line-height: 1.3;
+  text-align: left;
+}
+.home-crisis-btn--a { background: #eff6ff; border-color: #93c5fd; color: #1d4ed8; }
+.home-crisis-btn--a:hover { background: #dbeafe; }
+.home-crisis-btn--b { background: #fff1f2; border-color: #fca5a5; color: #b91c1c; }
+.home-crisis-btn--b:hover { background: #fee2e2; }
+.home-crisis-voted {
+  font-size: 12px;
+  font-weight: 700;
+  color: #16a34a;
+  text-align: center;
+  padding: 6px 0;
+}
+
 /* ── 이번 주 대선 경쟁 현황 ── */
 .home-section-more--urgent {
   color: #dc2626;

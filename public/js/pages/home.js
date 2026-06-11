@@ -499,7 +499,7 @@ export async function renderHome() {
         </div>
       </div>` : '';
 
-    el.innerHTML = `<div class="home-dash page-enter home-dash--v2">${headerHTML}${battleHTML}${newsHTML}${prezHTML}${bestHTML}${hotHTML}${commentsHTML}<div id="home-party-power-slot"></div><div id="home-election-race-slot"></div><div id="home-party-activity-slot"></div></div>`;
+    el.innerHTML = `<div class="home-dash page-enter home-dash--v2">${headerHTML}${battleHTML}${newsHTML}${prezHTML}${bestHTML}${hotHTML}${commentsHTML}<div id="home-party-power-slot"></div><div id="home-election-race-slot"></div><div id="home-crisis-slot"></div><div id="home-party-activity-slot"></div></div>`;
 
     el.querySelector('#hbtn-more-hot')?.addEventListener('click', () => navigate('/feed'));
     el.querySelectorAll('[data-path]').forEach(btn => {
@@ -550,9 +550,10 @@ export async function renderHome() {
       });
     });
 
-    // 세력도 + 대선 경쟁 + 정당 활동 피드 비동기 로드
+    // 세력도 + 대선 경쟁 + 위기 이벤트 + 정당 활동 피드 비동기 로드
     loadPartyPowerChart(el.querySelector('#home-party-power-slot'));
     loadElectionRace(el.querySelector('#home-election-race-slot'));
+    loadWeeklyCrisis(el.querySelector('#home-crisis-slot'));
     loadHomePartyActivity(el.querySelector('#home-party-activity-slot'));
   } catch (err) {
     console.error('[home] renderHome error', err);
@@ -663,6 +664,92 @@ async function loadElectionRace(slot) {
       </div>`;
     slot.querySelectorAll('[data-path]').forEach(btn => {
       btn.addEventListener('click', () => navigate(btn.dataset.path));
+    });
+  } catch { /* non-critical */ }
+}
+
+async function loadWeeklyCrisis(slot) {
+  if (!slot) return;
+  try {
+    const call = httpsCallable(functions, 'getWeeklyCrisis');
+    const { data } = await call();
+    const { crisis, myVote } = data;
+    if (!crisis || !crisis.title) return;
+
+    const total = (crisis.votesA || 0) + (crisis.votesB || 0);
+    const pctA = total > 0 ? Math.round((crisis.votesA / total) * 100) : 50;
+    const pctB = 100 - pctA;
+    const voted = myVote != null;
+
+    const resultsHTML = (voted || total > 0) ? `
+      <div class="home-crisis-results">
+        <div class="home-crisis-opt-bar" style="--pct:${pctA}%;--clr:#2563eb">
+          <span class="home-crisis-opt-label">🔵 ${escHtml(crisis.optionA)}</span>
+          <span class="home-crisis-opt-pct">${pctA}%</span>
+        </div>
+        <div class="home-crisis-opt-bar" style="--pct:${pctB}%;--clr:#dc2626">
+          <span class="home-crisis-opt-label">🔴 ${escHtml(crisis.optionB)}</span>
+          <span class="home-crisis-opt-pct">${pctB}%</span>
+        </div>
+        <div class="home-crisis-votes">${total}명 참여 · 이번 주 시민 투표</div>
+      </div>` : '';
+
+    const btnsHTML = !voted ? `
+      <div class="home-crisis-btns">
+        <button class="home-crisis-btn home-crisis-btn--a" id="crisis-vote-a" data-option="A">
+          🔵 ${escHtml(crisis.optionA)}
+        </button>
+        <button class="home-crisis-btn home-crisis-btn--b" id="crisis-vote-b" data-option="B">
+          🔴 ${escHtml(crisis.optionB)}
+        </button>
+      </div>` : `<div class="home-crisis-voted">✅ 투표 완료 — ${myVote === 'A' ? escHtml(crisis.optionA) : escHtml(crisis.optionB)} 선택</div>`;
+
+    slot.innerHTML = `
+      <div class="home-crisis-card">
+        <div class="home-crisis-card__header">
+          <span class="home-crisis-card__badge">🚨 이번 주 정치 위기</span>
+          <span class="home-crisis-card__reward">+5P</span>
+        </div>
+        <div class="home-crisis-card__title">${escHtml(crisis.title)}</div>
+        <div class="home-crisis-card__desc">${escHtml(crisis.desc)}</div>
+        ${resultsHTML}
+        ${btnsHTML}
+      </div>`;
+
+    slot.querySelectorAll('.home-crisis-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!auth.currentUser) { navigate('/login'); return; }
+        const option = btn.dataset.option;
+        btn.disabled = true;
+        slot.querySelectorAll('.home-crisis-btn').forEach(b => b.disabled = true);
+        try {
+          const voteCall = httpsCallable(functions, 'voteOnCrisis');
+          const { data: vData } = await voteCall({ option });
+          if (vData.firstRating || vData.firstVote) showPointPopup(5);
+          // Re-render with results
+          const total2 = vData.votesA + vData.votesB;
+          const pctA2 = total2 > 0 ? Math.round((vData.votesA / total2) * 100) : 50;
+          const pctB2 = 100 - pctA2;
+          const optLabel = option === 'A' ? crisis.optionA : crisis.optionB;
+          const crisisCard = slot.querySelector('.home-crisis-card');
+          if (crisisCard) {
+            crisisCard.querySelector('.home-crisis-btns, .home-crisis-voted')?.remove();
+            crisisCard.querySelector('.home-crisis-results')?.remove();
+            const resultsEl = document.createElement('div');
+            resultsEl.innerHTML = `
+              <div class="home-crisis-results">
+                <div class="home-crisis-opt-bar" style="--pct:${pctA2}%;--clr:#2563eb"><span class="home-crisis-opt-label">${escHtml(crisis.optionA)}</span><span class="home-crisis-opt-pct">${pctA2}%</span></div>
+                <div class="home-crisis-opt-bar" style="--pct:${pctB2}%;--clr:#dc2626"><span class="home-crisis-opt-label">${escHtml(crisis.optionB)}</span><span class="home-crisis-opt-pct">${pctB2}%</span></div>
+                <div class="home-crisis-votes">${total2}명 참여 · 이번 주 시민 투표</div>
+              </div>
+              <div class="home-crisis-voted">✅ 투표 완료 — ${escHtml(optLabel)} 선택</div>`;
+            crisisCard.querySelector('.home-crisis-card__desc').insertAdjacentElement('afterend', resultsEl.children[1]);
+            crisisCard.querySelector('.home-crisis-card__desc').insertAdjacentElement('afterend', resultsEl.children[0]);
+          }
+        } catch (e) {
+          slot.querySelectorAll('.home-crisis-btn').forEach(b => b.disabled = false);
+        }
+      });
     });
   } catch { /* non-critical */ }
 }
