@@ -476,7 +476,7 @@ export async function renderHome() {
         </div>
       </div>` : '';
 
-    el.innerHTML = `<div class="home-dash page-enter home-dash--v2">${headerHTML}${battleHTML}${newsHTML}${prezHTML}${bestHTML}${hotHTML}${commentsHTML}<div id="home-party-power-slot"></div><div id="home-party-activity-slot"></div></div>`;
+    el.innerHTML = `<div class="home-dash page-enter home-dash--v2">${headerHTML}${battleHTML}${newsHTML}${prezHTML}${bestHTML}${hotHTML}${commentsHTML}<div id="home-party-power-slot"></div><div id="home-election-race-slot"></div><div id="home-party-activity-slot"></div></div>`;
 
     el.querySelector('#hbtn-more-hot')?.addEventListener('click', () => navigate('/feed'));
     el.querySelectorAll('[data-path]').forEach(btn => {
@@ -486,8 +486,9 @@ export async function renderHome() {
       item.addEventListener('click', () => navigate(`/detail/${item.dataset.id}`))
     );
 
-    // 세력도 + 정당 활동 피드 비동기 로드
+    // 세력도 + 대선 경쟁 + 정당 활동 피드 비동기 로드
     loadPartyPowerChart(el.querySelector('#home-party-power-slot'));
+    loadElectionRace(el.querySelector('#home-election-race-slot'));
     loadHomePartyActivity(el.querySelector('#home-party-activity-slot'));
   } catch (err) {
     console.error('[home] renderHome error', err);
@@ -539,6 +540,62 @@ async function loadPartyPowerChart(slot) {
           <button class="home-section-more home-section-more--button" data-path="/ranking">랭킹 →</button>
         </div>
         <div class="home-power-chart">${bars}</div>
+      </div>`;
+    slot.querySelectorAll('[data-path]').forEach(btn => {
+      btn.addEventListener('click', () => navigate(btn.dataset.path));
+    });
+  } catch { /* non-critical */ }
+}
+
+async function loadElectionRace(slot) {
+  if (!slot) return;
+  try {
+    const call = httpsCallable(functions, 'getElection');
+    const { data } = await call();
+    const election = data && data.election;
+    if (!election || election.status === 'closed') return;
+
+    const cands = [...(election.candidates || [])].sort((a, b) => b.votes - a.votes || b.power - a.power);
+    if (!cands.length) return;
+
+    const total = election.totalVotes || 0;
+    const topCands = cands.slice(0, 3);
+    const leader = topCands[0];
+    const end = new Date(`${election.endKey}T23:59:59+09:00`).getTime();
+    const msLeft = end - Date.now();
+    const daysLeft = Math.ceil(msLeft / 86400000);
+    const ddayLabel = msLeft <= 0 ? '집계 중' : daysLeft <= 0 ? '⚡ D-DAY' : `D-${daysLeft}`;
+    const urgent = msLeft > 0 && daysLeft <= 1;
+
+    const barsHTML = topCands.map((c, i) => {
+      const pct = total > 0 ? Math.round((c.votes / total) * 100) : 0;
+      const medals = ['🥇', '🥈', '🥉'];
+      return `
+        <div class="home-race-row" style="--party-c:${c.color}">
+          <span class="home-race-row__medal">${medals[i] || ''}</span>
+          <span class="home-race-row__emoji">${c.emoji}</span>
+          <div class="home-race-row__center">
+            <span class="home-race-row__name">${escHtml(c.candidateName)}</span>
+            <div class="home-race-bar">
+              <div class="home-race-bar__fill" style="width:${Math.max(4, pct)}%"></div>
+            </div>
+          </div>
+          <span class="home-race-row__pct">${total > 0 ? pct + '%' : '-'}</span>
+        </div>`;
+    }).join('');
+
+    slot.innerHTML = `
+      <div>
+        <div class="home-section-header">
+          <span class="home-section-title">🗳️ 이번 주 대선 경쟁</span>
+          <button class="home-section-more home-section-more--button${urgent ? ' home-section-more--urgent' : ''}" data-path="/election">${ddayLabel} →</button>
+        </div>
+        <div class="home-race-card" data-path="/election">
+          ${total > 0
+            ? `<div class="home-race-leader">현재 선두: <b>${leader.emoji} ${escHtml(leader.candidateName)}</b> (${escHtml(leader.partyName)}) · ${fmtNum(total)}표 집계</div>`
+            : `<div class="home-race-leader">아직 투표가 없어요 — 첫 번째로 투표해보세요!</div>`}
+          <div class="home-race-rows">${barsHTML}</div>
+        </div>
       </div>`;
     slot.querySelectorAll('[data-path]').forEach(btn => {
       btn.addEventListener('click', () => navigate(btn.dataset.path));
