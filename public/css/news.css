@@ -117,3 +117,137 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* ─── 정치 데이터 공통 ─── */
+.news-section-title {
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--color-text-primary);
+  margin-bottom: 10px;
+  letter-spacing: -.01em;
+}
+
+/* ─── 배틀 속보 ─── */
+.news-bulletin {
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  cursor: pointer;
+  transition: box-shadow .15s;
+}
+.news-bulletin:hover { box-shadow: 0 4px 16px rgba(0,0,0,.08); }
+.news-bulletin__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.news-bulletin__label { font-size: 12px; font-weight: 800; color: var(--color-text-primary); }
+.news-bulletin__status {
+  font-size: 10px;
+  font-weight: 800;
+  border-radius: 20px;
+  padding: 2px 8px;
+}
+.news-bulletin__status--live { background: #fef2f2; color: #dc2626; }
+.news-bulletin__status--ended { background: #f0fdf4; color: #16a34a; }
+.news-bulletin__topic {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+.news-bulletin__bars { display: flex; flex-direction: column; gap: 5px; margin-bottom: 6px; }
+.news-bulletin__bar-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.news-bulletin__bar-row--winner .news-bulletin__bar-name { font-weight: 900; color: var(--color-text-primary); }
+.news-bulletin__bar-emoji { font-size: 14px; flex-shrink: 0; }
+.news-bulletin__bar-name { font-size: 11px; font-weight: 700; width: 80px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.news-bulletin__bar-track { flex: 1; height: 7px; background: var(--color-surface-2, #f3f4f6); border-radius: 4px; overflow: hidden; }
+.news-bulletin__bar-fill { height: 100%; border-radius: 4px; transition: width .6s ease; }
+.news-bulletin__bar-pct { font-size: 11px; font-weight: 800; color: var(--color-text-muted); width: 28px; text-align: right; flex-shrink: 0; }
+.news-bulletin__bar-crown { font-size: 12px; flex-shrink: 0; }
+.news-bulletin__total { font-size: 11px; color: var(--color-text-muted); }
+.news-bulletin__king { font-size: 12px; color: var(--color-text-secondary); margin-top: 5px; font-weight: 600; }
+.news-bulletin__king b { color: var(--color-text-primary); }
+
+/* ─── 대통령 블록 ─── */
+.news-prez-block {
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  cursor: pointer;
+  transition: box-shadow .15s;
+}
+.news-prez-block:hover { box-shadow: 0 4px 16px rgba(0,0,0,.08); }
+.news-prez-block__content { display: flex; align-items: flex-start; gap: 12px; }
+.news-prez-block__emoji { font-size: 32px; flex-shrink: 0; }
+.news-prez-block__info { flex: 1; min-width: 0; }
+.news-prez-block__name { font-size: 16px; font-weight: 900; color: var(--color-text-primary); }
+.news-prez-block__party { font-size: 12px; color: var(--party-c, var(--color-primary)); font-weight: 700; margin-bottom: 4px; }
+.news-prez-block__decree { font-size: 12px; color: var(--color-text-secondary); font-style: italic; margin-bottom: 6px; line-height: 1.5; }
+.news-prez-block__approval { margin-top: 6px; }
+.news-prez-block__bar { height: 6px; background: var(--color-surface-2); border-radius: 3px; overflow: hidden; margin-bottom: 3px; }
+.news-prez-block__fill { height: 100%; background: var(--party-c, var(--color-primary)); border-radius: 3px; transition: width .6s; }
+.news-prez-block__pct { font-size: 11px; color: var(--color-text-muted); }
+
+/* ─── 정당 세력 현황 ─── */
+.news-party-standings {
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  cursor: pointer;
+  transition: box-shadow .15s;
+}
+.news-party-standings:hover { box-shadow: 0 4px 16px rgba(0,0,0,.08); }
+.news-party-rows { display: flex; flex-direction: column; gap: 7px; margin-bottom: 8px; }
+.news-party-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.news-party-row__rank { font-size: 13px; width: 22px; text-align: center; flex-shrink: 0; }
+.news-party-row__emoji { font-size: 15px; flex-shrink: 0; }
+.news-party-row__name { font-size: 12px; font-weight: 700; width: 76px; flex-shrink: 0; color: var(--color-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.news-party-row__bar-wrap { flex: 1; height: 7px; background: var(--color-surface-2); border-radius: 4px; overflow: hidden; }
+.news-party-row__bar { height: 100%; background: var(--party-c); border-radius: 4px; transition: width .6s ease; }
+.news-party-row__pct { font-size: 11px; font-weight: 800; color: var(--color-text-muted); width: 28px; text-align: right; flex-shrink: 0; }
+.news-party-standings__footer { font-size: 11px; color: var(--color-text-muted); }
+
+/* ─── 최근 집권 기록 ─── */
+.news-king-recap {
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  cursor: pointer;
+  transition: box-shadow .15s;
+}
+.news-king-recap:hover { box-shadow: 0 4px 16px rgba(0,0,0,.08); }
+.news-king-rows { display: flex; flex-direction: column; gap: 0; margin-bottom: 8px; }
+.news-king-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.news-king-row:last-child { border-bottom: none; }
+.news-king-row--latest { background: linear-gradient(90deg, rgba(253,203,110,.1) 0%, transparent 100%); margin: 0 -4px; padding: 7px 4px; border-radius: 6px; }
+.news-king-row__date { font-size: 10px; color: var(--color-text-muted); width: 60px; flex-shrink: 0; }
+.news-king-row__emoji { font-size: 15px; flex-shrink: 0; }
+.news-king-row__name { font-size: 13px; font-weight: 700; flex: 1; color: var(--color-text-primary); }
+.news-king-row__pct { font-size: 11px; color: var(--color-text-muted); font-weight: 700; }
+.news-king-row__badge { font-size: 9px; font-weight: 800; background: #fef3c7; color: #92400e; border-radius: 20px; padding: 2px 6px; }
+.news-king-recap__more { font-size: 12px; color: var(--color-primary); font-weight: 700; text-align: right; }
