@@ -31,6 +31,29 @@ function dDay(endKey) {
   return `D-${days}`;
 }
 
+function renderDecreeApproval(p) {
+  const approveCount = Number(p.decreeApprove || 0);
+  const disapproveCount = Number(p.decreeDisapprove || 0);
+  const total = approveCount + disapproveCount;
+  const pct = total > 0 ? Math.round((approveCount / total) * 100) : null;
+
+  const barHTML = pct != null
+    ? `<div class="prez-approval-bar-wrap">
+        <div class="prez-approval-bar"><div class="prez-approval-bar__fill" style="width:${pct}%"></div></div>
+        <span class="prez-approval-label">지지 ${pct}% · ${total}명 평가</span>
+      </div>`
+    : '';
+
+  const btnsHTML = `
+    <div class="prez-rate-row" id="prez-rate-row">
+      <span class="prez-rate-label">포고령 평가</span>
+      <button class="prez-rate-btn${p.myDecreeRating === true ? ' prez-rate-btn--active-approve' : ''}" data-approve="true" id="prez-rate-approve">👍 찬성</button>
+      <button class="prez-rate-btn${p.myDecreeRating === false ? ' prez-rate-btn--active-disapprove' : ''}" data-approve="false" id="prez-rate-disapprove">👎 반대</button>
+    </div>`;
+
+  return barHTML + (p.decree ? btnsHTML : '');
+}
+
 function renderPresident(p, isPresident) {
   if (!p) {
     return `<div class="prez-banner prez-banner--empty">
@@ -45,6 +68,7 @@ function renderPresident(p, isPresident) {
     <div class="prez-banner__name">${escHtml(p.candidateName)}</div>
     <div class="prez-banner__party">${escHtml(p.partyName)}${p.isAI ? ' · AI 정치인' : ' · 당대표'}</div>
     ${p.decree ? `<div class="prez-banner__decree" id="prez-decree-text">"${escHtml(p.decree)}"</div>` : `<div class="prez-banner__decree prez-banner__decree--empty" id="prez-decree-text">포고령 준비 중…</div>`}
+    ${renderDecreeApproval(p)}
     ${isPresident ? `<button class="prez-decree-edit-btn" id="prez-decree-btn">📜 포고령 수정하기</button>` : ''}
   </div>
   ${isPresident ? `
@@ -156,6 +180,39 @@ export async function renderElection() {
   </div>`;
 
   el.querySelector('#elec-login')?.addEventListener('click', () => navigate('/login'));
+
+  // 포고령 찬반 평가
+  el.querySelectorAll('.prez-rate-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!auth.currentUser) { navigate('/login'); return; }
+      const approve = btn.dataset.approve === 'true';
+      btn.disabled = true;
+      try {
+        const { data: rData } = await httpsCallable(functions, 'ratePresidentDecree')({ approve });
+        el.querySelectorAll('.prez-rate-btn').forEach(b => {
+          b.classList.toggle('prez-rate-btn--active-approve', b.dataset.approve === 'true' && rData.approve === true);
+          b.classList.toggle('prez-rate-btn--active-disapprove', b.dataset.approve === 'false' && rData.approve === false);
+          b.disabled = false;
+        });
+        const total = rData.approveCount + rData.disapproveCount;
+        const pct = total > 0 ? Math.round((rData.approveCount / total) * 100) : 0;
+        let barWrap = el.querySelector('.prez-approval-bar-wrap');
+        if (!barWrap && total > 0) {
+          barWrap = document.createElement('div');
+          barWrap.className = 'prez-approval-bar-wrap';
+          el.querySelector('#prez-rate-row')?.insertAdjacentElement('beforebegin', barWrap);
+        }
+        if (barWrap) {
+          barWrap.innerHTML = `<div class="prez-approval-bar"><div class="prez-approval-bar__fill" style="width:${pct}%"></div></div>
+            <span class="prez-approval-label">지지 ${pct}% · ${total}명 평가</span>`;
+        }
+        if (rData.firstRating) { toast.success('+3P 획득! 포고령 평가 완료 🏛️'); showPointPopup(3); }
+      } catch (e) {
+        toast.error(e?.message || '평가에 실패했어요');
+        btn.disabled = false;
+      }
+    });
+  });
 
   // 실시간 마감 카운트다운 (1분마다 업데이트)
   const ddayEl = el.querySelector('.elec-head__dday');

@@ -45,3 +45,54 @@
   line-height: 1.5;
   margin-top: 4px;
 }
+.home-prez-card__approval {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.home-prez-card__approval-bar {
+  flex: 1;
+  height: 6px;
+  background: #fee2e2;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.home-prez-card__approval-fill {
+  height: 100%;
+  background: #16a34a;
+  border-radius: 3px;
+  transition: width .5s ease;
+}
+.home-prez-card__approval-label {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+.home-prez-card__rate-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-border);
+}
+.home-prez-card__rate-label {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  flex: 1;
+}
+.home-prez-rate-btn {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border: 1.5px solid var(--color-border);
+  border-radius: 20px;
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all .15s;
+}
+.home-prez-rate-btn:hover { background: var(--color-surface-2); }
+.home-prez-rate-btn--active[data-approve="true"]  { background: #dcfce7; border-color: #16a34a; color: #15803d; }
+.home-prez-rate-btn--active[data-approve="false"] { background: #fee2e2; border-color: #dc2626; color: #b91c1c; }

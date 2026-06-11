@@ -66,6 +66,7 @@ module.exports = {
   getPartyManifesto: politics.getPartyManifesto,
   getElectionHistory: politics.getElectionHistory,
   getDailyNews: politics.getDailyNews,
+  ratePresidentDecree: politics.ratePresidentDecree,
   ...uploadImage,
   ...nicknameIcon,
   ...postOwner,

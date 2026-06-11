@@ -675,14 +675,34 @@ exports.getMyStatus = onCall({ region: REGION, timeoutSeconds: 10 }, async reque
 });
 
 // ── 현직 대통령 (홈 화면용 경량 조회) ──
-exports.getPresident = onCall({ region: REGION, timeoutSeconds: 10 }, async () => {
+exports.getPresident = onCall({ region: REGION, timeoutSeconds: 10 }, async request => {
+  const uid = request.auth && request.auth.uid;
   const { prevKey } = weekPeriod();
   const prevSnap = await db.doc(`elections/${prevKey}`).get();
   if (!prevSnap.exists || prevSnap.data().status !== 'closed' || !prevSnap.data().winner) {
     return { president: null };
   }
   const d = prevSnap.data();
-  return { president: { ...d.winner, decree: d.decree || null, periodId: prevKey } };
+
+  // 내 찬반 평가 (로그인 시)
+  let myDecreeRating = null;
+  if (uid && d.decree) {
+    try {
+      const rSnap = await db.doc(`elections/${prevKey}/decree_ratings/${uid}`).get();
+      if (rSnap.exists) myDecreeRating = rSnap.data().approve;
+    } catch {}
+  }
+
+  return {
+    president: {
+      ...d.winner,
+      decree: d.decree || null,
+      periodId: prevKey,
+      decreeApprove: Number(d.decreeApprove || 0),
+      decreeDisapprove: Number(d.decreeDisapprove || 0),
+      myDecreeRating,
+    },
+  };
 });
 
 // ── 대통령 포고령 직접 작성 ──
@@ -702,6 +722,64 @@ exports.setPresidentialDecree = onCall({ region: REGION, timeoutSeconds: 10 }, a
 
   await ref.update({ decree: text, updatedAt: FieldValue.serverTimestamp() });
   return { ok: true, decree: text };
+});
+
+// ── 현직 대통령 포고령 찬반 평가 ──
+exports.ratePresidentDecree = onCall({ region: REGION, timeoutSeconds: 15 }, async request => {
+  const uid = requireUid(request);
+  const approve = request.data && request.data.approve != null ? !!request.data.approve : null;
+  if (approve === null) throw new HttpsError('invalid-argument', 'approve 값이 필요합니다.');
+
+  const { prevKey } = weekPeriod();
+  const elecRef = db.doc(`elections/${prevKey}`);
+  const elecSnap = await elecRef.get();
+  if (!elecSnap.exists || elecSnap.data().status !== 'closed' || !elecSnap.data().winner) {
+    throw new HttpsError('failed-precondition', '현직 대통령이 없습니다.');
+  }
+  if (!elecSnap.data().decree) {
+    throw new HttpsError('failed-precondition', '포고령이 아직 발표되지 않았습니다.');
+  }
+
+  const ratingRef = db.doc(`elections/${prevKey}/decree_ratings/${uid}`);
+  const ratingSnap = await ratingRef.get();
+  const prev = ratingSnap.exists ? ratingSnap.data() : null;
+
+  const batch = db.batch();
+  batch.set(ratingRef, { approve, uid, updatedAt: FieldValue.serverTimestamp() });
+
+  if (!prev) {
+    batch.update(elecRef, {
+      [approve ? 'decreeApprove' : 'decreeDisapprove']: FieldValue.increment(1),
+    });
+  } else if (prev.approve !== approve) {
+    batch.update(elecRef, {
+      [approve ? 'decreeApprove' : 'decreeDisapprove']: FieldValue.increment(1),
+      [approve ? 'decreeDisapprove' : 'decreeApprove']: FieldValue.increment(-1),
+    });
+  }
+
+  await batch.commit();
+
+  // 첫 평가 시 3P 지급
+  if (!prev) {
+    try {
+      const awardRef = db.doc(`point_awards/${uid}_decree_${prevKey}`);
+      const awardSnap = await awardRef.get();
+      if (!awardSnap.exists) {
+        await awardRef.set({ uid, type: 'decree_rate', periodId: prevKey, points: 3, createdAt: FieldValue.serverTimestamp() });
+        await db.doc(`users/${uid}`).update({ totalPoints: FieldValue.increment(3), updatedAt: FieldValue.serverTimestamp() });
+      }
+    } catch {}
+  }
+
+  const updated = (await elecRef.get()).data() || {};
+  return {
+    ok: true, approve,
+    approveCount: Number(updated.decreeApprove || 0),
+    disapproveCount: Number(updated.decreeDisapprove || 0),
+    myRating: approve,
+    firstRating: !prev,
+  };
 });
 
 // ── 선거 공약 작성 (당대표 전용) ──

@@ -155,16 +155,39 @@ function renderNewsCard(news) {
 
 function renderPresidentCard(p) {
   if (!p) return '';
+  const approveCount = Number(p.decreeApprove || 0);
+  const disapproveCount = Number(p.decreeDisapprove || 0);
+  const totalRatings = approveCount + disapproveCount;
+  const approvePct = totalRatings > 0 ? Math.round((approveCount / totalRatings) * 100) : null;
+
+  const approvalHTML = p.decree && totalRatings > 0
+    ? `<div class="home-prez-card__approval">
+        <div class="home-prez-card__approval-bar">
+          <div class="home-prez-card__approval-fill" style="width:${approvePct}%"></div>
+        </div>
+        <span class="home-prez-card__approval-label">지지 ${approvePct}% · ${totalRatings}명 평가</span>
+      </div>`
+    : '';
+
+  const rateHTML = p.decree
+    ? `<div class="home-prez-card__rate-row" id="prez-rate-row">
+        <span class="home-prez-card__rate-label">포고령 평가</span>
+        <button class="home-prez-rate-btn${p.myDecreeRating === true ? ' home-prez-rate-btn--active' : ''}" data-approve="true" id="prez-rate-approve">👍 찬성</button>
+        <button class="home-prez-rate-btn${p.myDecreeRating === false ? ' home-prez-rate-btn--active' : ''}" data-approve="false" id="prez-rate-disapprove">👎 반대</button>
+      </div>`
+    : '';
+
   return `
-    <div class="home-prez-card" data-path="/election" style="--party-color:${p.color}">
-      <div class="home-prez-card__top">
+    <div class="home-prez-card" style="--party-color:${p.color}">
+      <div class="home-prez-card__top" data-path="/election" style="cursor:pointer">
         <span class="home-prez-card__label">👑 현직 대통령</span>
         <span class="home-prez-card__party">${p.emoji} ${escHtml(p.partyName)}</span>
       </div>
-      <div class="home-prez-card__name">${escHtml(p.candidateName)}</div>
+      <div class="home-prez-card__name" data-path="/election" style="cursor:pointer">${escHtml(p.candidateName)}</div>
       ${p.decree ? `<div class="home-prez-card__decree">"${escHtml(p.decree)}"</div>` : ''}
+      ${approvalHTML}
+      ${rateHTML}
     </div>`;
-}
 
 function renderBattleCard(battle) {
   if (!battle) return '';
@@ -485,6 +508,47 @@ export async function renderHome() {
     el.querySelectorAll('[data-id]').forEach(item =>
       item.addEventListener('click', () => navigate(`/detail/${item.dataset.id}`))
     );
+
+    // 포고령 찬반 버튼
+    el.querySelectorAll('.home-prez-rate-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!auth.currentUser) { navigate('/login'); return; }
+        const approve = btn.dataset.approve === 'true';
+        btn.disabled = true;
+        try {
+          const { data: rData } = await httpsCallable(functions, 'ratePresidentDecree')({ approve });
+          // 버튼 상태 업데이트
+          el.querySelectorAll('.home-prez-rate-btn').forEach(b => {
+            b.classList.toggle('home-prez-rate-btn--active', b.dataset.approve === String(rData.approve));
+            b.disabled = false;
+          });
+          // 지지율 표시 업데이트
+          const total = rData.approveCount + rData.disapproveCount;
+          const pct = total > 0 ? Math.round((rData.approveCount / total) * 100) : 0;
+          let approvalEl = el.querySelector('.home-prez-card__approval');
+          if (!approvalEl && total > 0) {
+            const decreeEl = el.querySelector('.home-prez-card__decree');
+            if (decreeEl) {
+              approvalEl = document.createElement('div');
+              approvalEl.className = 'home-prez-card__approval';
+              decreeEl.insertAdjacentElement('afterend', approvalEl);
+            }
+          }
+          if (approvalEl) {
+            approvalEl.innerHTML = `
+              <div class="home-prez-card__approval-bar">
+                <div class="home-prez-card__approval-fill" style="width:${pct}%"></div>
+              </div>
+              <span class="home-prez-card__approval-label">지지 ${pct}% · ${total}명 평가</span>`;
+          }
+          if (rData.firstRating) {
+            showPointPopup(3);
+          }
+        } catch (e) {
+          btn.disabled = false;
+        }
+      });
+    });
 
     // 세력도 + 대선 경쟁 + 정당 활동 피드 비동기 로드
     loadPartyPowerChart(el.querySelector('#home-party-power-slot'));

@@ -339,3 +339,56 @@
   text-align: center;
   padding: 12px 0;
 }
+
+/* 포고령 지지율 */
+.prez-approval-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.prez-approval-bar {
+  flex: 1;
+  height: 6px;
+  background: #fee2e2;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.prez-approval-bar__fill {
+  height: 100%;
+  background: #16a34a;
+  border-radius: 3px;
+  transition: width .5s ease;
+}
+.prez-approval-label {
+  font-size: 11px;
+  color: rgba(255,255,255,.75);
+  white-space: nowrap;
+}
+.prez-rate-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255,255,255,.15);
+}
+.prez-rate-label {
+  font-size: 11px;
+  color: rgba(255,255,255,.65);
+  flex: 1;
+}
+.prez-rate-btn {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border: 1.5px solid rgba(255,255,255,.25);
+  border-radius: 20px;
+  background: rgba(255,255,255,.1);
+  color: rgba(255,255,255,.8);
+  cursor: pointer;
+  transition: all .15s;
+}
+.prez-rate-btn:hover { background: rgba(255,255,255,.2); }
+.prez-rate-btn--active-approve   { background: #dcfce7; border-color: #16a34a; color: #15803d; }
+.prez-rate-btn--active-disapprove { background: #fee2e2; border-color: #dc2626; color: #b91c1c; }
