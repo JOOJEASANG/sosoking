@@ -88,6 +88,29 @@ async function fetchPresident() {
   } catch { return null; }
 }
 
+async function fetchDailyNews() {
+  try {
+    const getDailyNews = httpsCallable(functions, 'getDailyNews');
+    const { data } = await getDailyNews();
+    return (data && data.headline) ? data : null;
+  } catch { return null; }
+}
+
+function renderNewsCard(news) {
+  if (!news) return '';
+  const d = new Date();
+  const dateStr = `${d.getMonth() + 1}월 ${d.getDate()}일`;
+  return `
+    <div class="home-news-card" data-path="/parties">
+      <div class="home-news-card__header">
+        <span class="home-news-card__masthead">📰 소소신문</span>
+        <span class="home-news-card__date">${dateStr}자</span>
+      </div>
+      <div class="home-news-card__headline">${escHtml(news.headline)}</div>
+      ${news.body ? `<div class="home-news-card__body">${escHtml(news.body)}</div>` : ''}
+    </div>`;
+}
+
 function renderPresidentCard(p) {
   if (!p) return '';
   return `
@@ -209,14 +232,16 @@ export async function renderHome() {
     const user = auth.currentUser;
     if (user) checkStreak(user.uid);
 
-    const [hotPosts, popularComments, todayBest, battleData, presidentData] = await Promise.all([
+    const [hotPosts, popularComments, todayBest, battleData, presidentData, newsData] = await Promise.all([
       fetchHotPosts(8),
       fetchPopularComments(6),
       fetchTodayBest(),
       fetchTodayBattle(),
       fetchPresident(),
+      fetchDailyNews(),
     ]);
 
+    const newsHTML = renderNewsCard(newsData);
     const prezHTML = renderPresidentCard(presidentData);
     const battleHTML = renderBattleCard(battleData);
 
@@ -249,7 +274,7 @@ export async function renderHome() {
         </div>
       </div>` : '';
 
-    el.innerHTML = `<div class="home-dash page-enter home-dash--v2">${renderHero()}${prezHTML}${battleHTML}${bestHTML}${hotHTML}${commentsHTML}</div>`;
+    el.innerHTML = `<div class="home-dash page-enter home-dash--v2">${renderHero()}${newsHTML}${prezHTML}${battleHTML}${bestHTML}${hotHTML}${commentsHTML}</div>`;
 
     el.querySelector('#hbtn-more-hot')?.addEventListener('click', () => navigate('/feed'));
     el.querySelectorAll('[data-path]').forEach(btn => {

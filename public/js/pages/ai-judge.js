@@ -143,6 +143,15 @@ export function renderAiJudge() {
   const count = document.getElementById('situation-count');
   textarea.addEventListener('input', () => { count.textContent = textarea.value.length; });
 
+  // 배틀 페이지에서 이슈 주제를 갖고 올 경우 자동 채우기
+  const qParams = new URLSearchParams(window.location.hash.slice(1).split('?')[1] || '');
+  const prefill = qParams.get('topic');
+  if (prefill) {
+    textarea.value = `[오늘의 정치 배틀 이슈] "${decodeURIComponent(prefill)}" — 이 사건의 잘잘못을 판결해주세요!`;
+    count.textContent = textarea.value.length;
+    textarea.focus();
+  }
+
   el.querySelectorAll('.ai-example-chip').forEach(chip => {
     chip.addEventListener('click', () => {
       textarea.value = EXAMPLES[Number(chip.dataset.ex)];

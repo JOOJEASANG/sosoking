@@ -55,7 +55,10 @@ export function renderBottomNav() {
   el.innerHTML = `<div class="bottom-nav__inner">${items.map(item => {
     const isActive = isNavActive(item.path, path);
     if (item.isCenter) {
-      return `<div class="bottom-nav__write"><button class="bottom-nav__write-btn${isActive ? ' active' : ''}" data-nav-path="${item.path}" aria-label="${item.label}" aria-current="${isActive ? 'page' : 'false'}">${item.icon}</button></div>`;
+      return `<button class="bottom-nav__item${isActive ? ' active' : ''}" data-nav-path="${item.path}" aria-label="${item.label}" aria-current="${isActive ? 'page' : 'false'}">
+        <span class="bottom-nav__icon-wrap">${item.icon}</span>
+        <span class="bottom-nav__label">${item.label}</span>
+      </button>`;
     }
     const badgeHTML = (item.badge > 0)
       ? `<span class="bottom-nav__badge">${item.badge > 99 ? '99+' : item.badge}</span>`

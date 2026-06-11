@@ -602,3 +602,83 @@ exports.getPartyActivities = onCall({ region: REGION, timeoutSeconds: 60 }, asyn
     return { activities: fallback, topic, date: today };
   }
 });
+
+// ── 소소신문 — AI 일간 정치 뉴스 ──
+exports.getDailyNews = onCall({ region: REGION, timeoutSeconds: 60 }, async () => {
+  const today = kstToday();
+  const ref = db.doc(`daily_news/${today}`);
+  const snap = await ref.get();
+  if (snap.exists && snap.data().headline) return { ...snap.data(), date: today };
+  if (snap.exists && snap.data().generating) return { headline: null, body: null, date: today };
+
+  await ref.set({ generating: true, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+
+  try {
+    const { prevKey } = weekPeriod();
+
+    // 병렬 데이터 수집: 배틀·대통령·정당활동·정당별 랭킹 1위
+    const memberQueries = PARTY_IDS.map(pid =>
+      partyRef(pid).collection('members').orderBy('power', 'desc').limit(1).get()
+    );
+    const [battleSnap, presSnap, actSnap, ...memberSnaps] = await Promise.all([
+      db.doc(`battles/${today}`).get(),
+      db.doc(`elections/${prevKey}`).get(),
+      db.doc(`party_activities/${today}`).get(),
+      ...memberQueries,
+    ]);
+
+    // 전체 랭킹 1위
+    let topMember = null, topPower = 0;
+    memberSnaps.forEach((s, i) => {
+      if (!s.empty) {
+        const d = s.docs[0].data();
+        if (Number(d.power || 0) > topPower) {
+          topPower = Number(d.power || 0);
+          topMember = { nickname: d.nickname || '시민', partyName: PARTIES[i].name, power: topPower };
+        }
+      }
+    });
+
+    const battle = battleSnap.exists ? battleSnap.data() : null;
+    const battleWinner = battle && battle.king
+      ? (battle.chars || []).find(c => c.id === battle.king) : null;
+    const pres = presSnap.exists && presSnap.data().status === 'closed' ? presSnap.data() : null;
+    const actTopic = (actSnap.exists && actSnap.data().topic) ? actSnap.data().topic : pickTodayTopic();
+
+    const lines = [
+      battle ? `정치배틀 이슈: "${battle.topic}"${battleWinner ? ` → ${battleWinner.emoji} ${battleWinner.name} 승리` : ' (진행 중)'}` : null,
+      pres && pres.winner ? `현직 대통령: ${pres.winner.candidateName} (${pres.winner.partyName})${pres.decree ? ` / 포고령: "${pres.decree}"` : ''}` : null,
+      topMember ? `정치력 1위: ${topMember.nickname} (${topMember.partyName}) ${topMember.power}P` : null,
+      `오늘의 이슈: "${actTopic}"`,
+    ].filter(Boolean).join('\n');
+
+    const prompt = `소소공화국 일간지 "소소신문" 오늘자 기사를 작성하세요.
+
+오늘의 정보:
+${lines}
+
+기사 스타일:
+- 선정적·과장된 한국 타블로이드 신문체
+- 헤드라인: 클릭 욕구 자극, 15자 내외, 위 정보 중 가장 재미있는 것 활용
+- 본문: 2~3문장, 위 정보를 재미있게 버무려서, 소소공화국 세계관 내 이야기
+
+JSON으로만 응답: {"headline":"제목","body":"본문"}`;
+
+    const raw = await callAI(prompt, 400);
+    const parsed = safeParseJson(raw);
+    if (!parsed || !parsed.headline) throw new Error('파싱 실패');
+
+    const news = {
+      headline: String(parsed.headline).trim().slice(0, 60),
+      body: String(parsed.body || '').trim().slice(0, 400),
+      date: today, generating: false,
+      generatedAt: FieldValue.serverTimestamp(),
+    };
+    await ref.set(news);
+    return news;
+  } catch (e) {
+    await ref.set({ generating: false, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+    console.error('[getDailyNews] error', e);
+    return { headline: null, body: null, date: today };
+  }
+});

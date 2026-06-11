@@ -191,6 +191,8 @@ export async function renderBattle() {
 
         ${isEnded && aftermath ? renderAftermath(aftermath) : ''}
 
+        <button class="battle-judge-cta" id="btn-to-judge" type="button">⚖️ 이 사건, AI 판결소에서 판결받기</button>
+
         <!-- 토론 댓글 -->
         <div class="battle-discuss">
           <div class="battle-discuss__title">💬 토론 참여하기</div>
@@ -211,6 +213,9 @@ export async function renderBattle() {
       </div>`;
 
     el.querySelector('#btn-history')?.addEventListener('click', () => navigate('/king-history'));
+    el.querySelector('#btn-to-judge')?.addEventListener('click', () =>
+      navigate(`/ai-judge?topic=${encodeURIComponent(topic || '')}`)
+    );
 
     if (!votedOrEnded && auth.currentUser) {
       el.querySelectorAll('.battle-vote-btn').forEach(btn => {

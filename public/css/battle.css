@@ -450,3 +450,21 @@
 [data-theme="dark"] .king-log-item {
   background: var(--color-bg-card);
 }
+
+/* 판결소 연계 버튼 */
+.battle-judge-cta {
+  display: block;
+  width: 100%;
+  margin: 8px 0 4px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-primary);
+  background: var(--color-primary-bg, #fff3ef);
+  border: 1.5px dashed var(--color-primary);
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: center;
+  transition: background .15s;
+}
+.battle-judge-cta:hover { background: color-mix(in srgb, var(--color-primary) 15%, transparent); }

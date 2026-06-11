@@ -344,6 +344,12 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // 소소신문 — Cloud Functions에서 AI가 생성, 모든 사용자 읽기 가능
+    match /daily_news/{dateId} {
+      allow read:  if true;
+      allow write: if false;
+    }
+
     match /{document=**} { allow read, write: if false; }
   }
 }
