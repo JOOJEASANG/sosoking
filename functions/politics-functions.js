@@ -829,3 +829,27 @@ JSON으로만 응답: {"headline":"제목","body":"본문"}`;
     return { headline: null, body: null, date: today };
   }
 });
+
+// ── 당원 정치력 동기화 (홈 방문 시 fire-and-forget) ──
+exports.syncPartyMemberPower = onCall({ region: REGION, timeoutSeconds: 15 }, async request => {
+  const uid = request.auth && request.auth.uid;
+  if (!uid) return { ok: false };
+  const userSnap = await db.doc(`users/${uid}`).get();
+  if (!userSnap.exists) return { ok: false };
+  const user = userSnap.data() || {};
+  const partyId = PARTY_BY_ID[user.partyId] ? user.partyId : null;
+  if (!partyId) return { ok: false, reason: 'no_party' };
+  const newPower = Math.max(0, Number(user.totalPoints || user.points || 0));
+  const mRef = memberRef(partyId, uid);
+  const mSnap = await mRef.get();
+  if (!mSnap.exists) return { ok: false, reason: 'not_member' };
+  const oldPower = Number(mSnap.data().power || 0);
+  if (oldPower === newPower) return { ok: true, changed: false };
+  const diff = newPower - oldPower;
+  const pRef = partyRef(partyId);
+  await db.runTransaction(async tx => {
+    tx.update(mRef, { power: newPower, updatedAt: FieldValue.serverTimestamp() });
+    tx.update(pRef, { totalPower: FieldValue.increment(diff), updatedAt: FieldValue.serverTimestamp() });
+  });
+  return { ok: true, changed: true, oldPower, newPower };
+});

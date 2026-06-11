@@ -340,7 +340,10 @@ export async function renderHome() {
   try {
     setMeta('소소킹 · 가상 정치 공화국');
     const user = auth.currentUser;
-    if (user) checkStreak(user.uid);
+    if (user) {
+      checkStreak(user.uid);
+      httpsCallable(functions, 'syncPartyMemberPower')({}).catch(() => {});
+    }
 
     const [hotPosts, popularComments, todayBest, battleData, presidentData, newsData, myStatus] = await Promise.all([
       fetchHotPosts(8),
