@@ -285,5 +285,5 @@ export function renderGuide() {
   el.querySelectorAll('[data-path]').forEach(btn => {
     btn.addEventListener('click', () => navigate(btn.dataset.path));
   });
-  el.querySelector('#btn-guide-start')?.addEventListener('click', () => navigate('/ai-king'));
+  el.querySelector('#btn-guide-start')?.addEventListener('click', () => navigate('/battle'));
 }
