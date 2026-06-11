@@ -66,11 +66,13 @@ async function checkStreak(uid) {
     const snap      = await getDoc(userRef);
     if (!snap.exists()) return;
     const { lastVisit = '', streak = 0 } = snap.data();
-    if (lastVisit === today) return;
+    if (lastVisit === today) {
+      appState.streak = streak;
+      return;
+    }
     const newStreak = lastVisit === yesterday ? streak + 1 : 1;
     await updateDoc(userRef, { lastVisit: today, streak: newStreak });
     appState.streak = newStreak;
-    // Claim daily political power bonus (+20P) — idempotent
     httpsCallable(functions, 'claimDailyBonus')({}).catch(() => {});
   } catch { /* non-critical */ }
 }
@@ -370,7 +372,6 @@ export async function renderHome() {
     setMeta('소소킹 · 가상 정치 공화국');
     const user = auth.currentUser;
     if (user) {
-      checkStreak(user.uid);
       httpsCallable(functions, 'syncPartyMemberPower')({}).catch(() => {});
     }
 
@@ -382,6 +383,7 @@ export async function renderHome() {
       fetchPresident(),
       fetchDailyNews(),
       fetchMyStatus(),
+      user ? checkStreak(user.uid) : Promise.resolve(),
     ]);
 
     if (user && myStatus?.loggedIn) checkRankUp(user.uid, myStatus.power);
