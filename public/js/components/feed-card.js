@@ -1,5 +1,6 @@
 import { navigate } from '../router.js';
 import { escHtml, formatTime } from '../utils/helpers.js';
+import { renderPartyBadge, renderPresidentCrown } from '../utils/party-badge.js';
 
 const TYPE_META = {
   tournament:   { cat: 'multi',  catLabel: '\uB05D\uD310\uC655', icon: '🏆', label: '\uB05D\uD310\uC655' },
@@ -117,7 +118,7 @@ export function renderFeedCard(post) {
           ${desc ? `<p class="feed-card__desc line-clamp-2">${escHtml(desc)}</p>` : ''}
           ${renderModuleChips(post)}
           <div class="feed-card__meta">
-            <span>${escHtml(post.authorName || '\uC775\uBA85')}</span>
+            <span>${renderPresidentCrown(post.authorId)}${renderPartyBadge(post.partyId)}${escHtml(post.authorName || '\uC775\uBA85')}</span>
             <span class="feed-card__meta-dot"></span>
             <span>${timeStr}</span>
             ${viewCount ? `<span class="feed-card__meta-dot"></span><span>👁 ${Number(viewCount || 0).toLocaleString()}</span>` : ''}

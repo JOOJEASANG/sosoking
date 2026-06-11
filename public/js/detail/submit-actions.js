@@ -34,6 +34,7 @@ export async function submitDetailComment(postId, data = {}) {
     createdAt: serverTimestamp(),
   };
 
+  if (!isAnonymousUser && appState.partyId) payload.partyId = appState.partyId;
   if (data.side) payload.side = data.side;
 
   const ref = await addDoc(collection(db, 'feeds', postId, 'comments'), payload);

@@ -132,6 +132,7 @@ async function fetchUserProfile(user) {
       appState.nickname = data.nickname || user.displayName || user.email?.split('@')[0] || '';
       appState.nicknameIcon = data.nicknameIcon || null;
       appState.points = Number(data.points || data.totalPoints || 0);
+      appState.partyId = data.partyId || '';
       if (!data.signupBonusClaimed) {
         import('./firebase.js').then(({ functions }) =>
           import('https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js').then(({ httpsCallable }) =>
@@ -141,6 +142,7 @@ async function fetchUserProfile(user) {
       }
     } else {
       appState.nickname = user.displayName || user.email?.split('@')[0] || '';
+      appState.partyId = '';
     }
     appState.isAdmin = await isStrictAdmin(user);
   } catch (error) {
@@ -222,6 +224,15 @@ async function handleKakaoCallback() {
   }
 }
 
+async function loadPresidentUid() {
+  try {
+    const { httpsCallable } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js');
+    const { functions } = await import('./firebase.js');
+    const { data } = await httpsCallable(functions, 'getElection')();
+    appState.presidentUid = data?.president?.candidateUid || '';
+  } catch {}
+}
+
 async function initApp() {
   initToast();
   await loadSiteFeatures();
@@ -229,11 +240,12 @@ async function initApp() {
   await registerRoutes();
   initRouter();
   loadOptionalModules();
+  loadPresidentUid();
   onAuthStateChanged(auth, async user => {
     appState.user = user || null;
     appState.isAuthenticated = !!user;
     if (user) await fetchUserProfile(user);
-    else { appState.nickname = ''; appState.nicknameIcon = null; appState.points = 0; appState.isAdmin = false; }
+    else { appState.nickname = ''; appState.nicknameIcon = null; appState.points = 0; appState.isAdmin = false; appState.partyId = ''; }
     if (appState.isAdmin && !isAdminAllowedPath(currentPath())) navigate('/admin');
     rerenderCurrentRouteSoon();
   });

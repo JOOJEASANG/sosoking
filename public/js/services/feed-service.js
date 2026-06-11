@@ -83,7 +83,7 @@ export async function fetchMyPosts(uid, n = 20) {
 export async function createPost(data) {
   const user = auth.currentUser;
   if (!user) throw new Error('로그인이 필요해요');
-  return addDoc(collection(db, FEEDS), {
+  const postData = {
     ...data,
     authorId:    user.uid,
     authorName:  appState.nickname || user.displayName || '익명',
@@ -94,7 +94,9 @@ export async function createPost(data) {
     votedBy:      [],
     hidden:       false,
     createdAt:    serverTimestamp(),
-  });
+  };
+  if (appState.partyId) postData.partyId = appState.partyId;
+  return addDoc(collection(db, FEEDS), postData);
 }
 
 /** 조회수 증가 */

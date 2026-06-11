@@ -9,4 +9,6 @@ export const appState = {
   nickname: '',
   nicknameIcon: null,
   installPrompt: null,
+  partyId: '',
+  presidentUid: '',
 };

@@ -260,6 +260,7 @@ async function buildCandidates() {
     return {
       partyId: meta.id, partyName: meta.name, emoji: meta.emoji, color: meta.color,
       candidateName: hasHuman ? leader.nickname : meta.leaderName,
+      candidateUid: hasHuman ? (leader.uid || null) : null,
       isAI: !hasHuman,
       power: Number(data.totalPower || 0),
     };
