@@ -338,6 +338,12 @@ service cloud.firestore {
       }
     }
 
+    // 오늘의 정당 활동 — Cloud Functions에서 AI가 생성, 모든 사용자 읽기 가능
+    match /party_activities/{dateId} {
+      allow read:  if true;
+      allow write: if false;
+    }
+
     match /{document=**} { allow read, write: if false; }
   }
 }

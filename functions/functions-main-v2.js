@@ -53,6 +53,7 @@ module.exports = {
   leaveParty: politics.leaveParty,
   getElection: politics.getElection,
   voteForPresident: politics.voteForPresident,
+  getPartyActivities: politics.getPartyActivities,
   ...uploadImage,
   ...nicknameIcon,
   ...postOwner,

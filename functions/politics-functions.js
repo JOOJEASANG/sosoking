@@ -8,6 +8,47 @@ const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getApps, initializeApp } = require('firebase-admin/app');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 
+// AI API (config/ai_king에서 키 로드)
+let _aiConfig = null, _aiConfigAt = 0;
+async function getAiConfig() {
+  if (_aiConfig && Date.now() - _aiConfigAt < 30_000) return _aiConfig;
+  const snap = await db.doc('config/ai_king').get();
+  _aiConfig = snap.exists ? snap.data() : {};
+  _aiConfigAt = Date.now();
+  return _aiConfig;
+}
+async function callAI(prompt, maxTokens = 800) {
+  const config = await getAiConfig();
+  if (config.activeModel === 'gemini') {
+    if (!config.geminiApiKey) throw new Error('AI 키 미설정');
+    const { GoogleGenerativeAI } = require('@google/generative-ai');
+    const genAI = new GoogleGenerativeAI(config.geminiApiKey);
+    const model = genAI.getGenerativeModel({ model: config.geminiModel || 'gemini-2.5-flash' });
+    const result = await model.generateContent({
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: { maxOutputTokens: maxTokens, temperature: 1.0, responseMimeType: 'application/json' },
+    });
+    return result.response.text();
+  }
+  if (!config.claudeApiKey) throw new Error('AI 키 미설정');
+  const Anthropic = require('@anthropic-ai/sdk');
+  const anthropic = new Anthropic({ apiKey: config.claudeApiKey });
+  const msg = await anthropic.messages.create({
+    model: config.claudeModel || 'claude-haiku-4-5-20251001',
+    max_tokens: maxTokens,
+    temperature: 1.0,
+    messages: [{ role: 'user', content: prompt }],
+  });
+  return msg.content.find(b => b.type === 'text')?.text || '';
+}
+function safeParseJson(raw) {
+  const cleaned = String(raw || '').replace(/```json|```/g, '').trim();
+  try { return JSON.parse(cleaned); } catch {}
+  const m = cleaned.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+  if (m) { try { return JSON.parse(m[0]); } catch {} }
+  return null;
+}
+
 if (!getApps().length) initializeApp();
 const db = getFirestore();
 const REGION = 'asia-northeast3';
@@ -25,6 +66,12 @@ const PARTIES = Object.freeze([
 
 const PARTY_BY_ID = Object.freeze(Object.fromEntries(PARTIES.map(p => [p.id, p])));
 const PARTY_IDS = PARTIES.map(p => p.id);
+
+function kstToday() {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date());
+}
 
 function requireUid(request) {
   const uid = request.auth && request.auth.uid;
@@ -365,4 +412,91 @@ exports.voteForPresident = onCall({ region: REGION, timeoutSeconds: 30 }, async 
     });
     return { ok: true, partyId };
   });
+});
+
+// ── 오늘의 정당 활동 — AI가 정당별 한마디 생성 (lazy, 하루 1회) ──
+const PARTY_ROLES = {
+  national: `너는 18년 경력 3선 국회의원이다. 권위적·느긋한 말투. 관례·선례 강조. 경력 자랑 뉘앙스.`,
+  truth:    `너는 구독자 120만 정치 유튜버다. 과장·흥분·충격 말투. 폭로·단독 프레임. 구독 유도.`,
+  youth:    `너는 MZ세대 시민운동가다. 반말·SNS체·직설 말투. 기득권 비판. ㅋㅋ·ㄹㅇ·팩폭 자연스럽게.`,
+  center:   `너는 여론조사 전문가다. 냉정·분석적·모호한 말투. 퍼센트·통계 활용. 결론은 항상 애매하게.`,
+  future:   `너는 여당 공식 대변인이다. 과잉 동조·흥분·아첨 말투. 무조건 긍정적 프레임.`,
+  rights:   `너는 탐사 기자다. 침착하고 날카로운 말투. 내부 제보·문서 프레임. 사실 추적.`,
+  justice:  `너는 검사 출신 변호사다. 딱딱하고 원칙적인 말투. 법적 근거 강조. 무관용 원칙.`,
+};
+
+function buildActivityPrompt(topic) {
+  const entries = PARTIES.map(p => `- partyId: "${p.id}" (${p.name}, ${p.emoji})\n  역할: ${PARTY_ROLES[p.id]}`).join('\n');
+  return `오늘의 소소공화국 정치 이슈: "${topic}"
+
+아래 7명의 정치인이 각자의 캐릭터로 이 이슈에 한마디 합니다.
+각 발언은 1~2문장, 캐릭터에 완전히 충실하게, 한국어로.
+
+${entries}
+
+JSON 배열로만 응답하세요 (다른 텍스트 금지):
+[{"partyId":"national","text":"..."},{"partyId":"truth","text":"..."},{"partyId":"youth","text":"..."},{"partyId":"center","text":"..."},{"partyId":"future","text":"..."},{"partyId":"rights","text":"..."},{"partyId":"justice","text":"..."}]`;
+}
+
+const DAILY_TOPICS = [
+  '오늘 국회에서 예산안 심의가 진행됐다',
+  '여론조사에서 지지율 변동이 나타났다',
+  '유명 정치인의 발언이 논란을 일으켰다',
+  '정당 간 정책 대결이 뜨겁게 달아올랐다',
+  '선거구 개편안을 둘러싼 공방이 벌어졌다',
+  '소소공화국의 미래 방향성을 놓고 갑론을박이 벌어졌다',
+  '국민 청원 상위권 이슈가 공개됐다',
+  '정치인 자질 논쟁이 또다시 터졌다',
+];
+
+function pickTodayTopic() {
+  const today = kstToday();
+  const idx = today.replace(/-/g, '').split('').reduce((a, c) => a + Number(c), 0) % DAILY_TOPICS.length;
+  return DAILY_TOPICS[idx];
+}
+
+exports.getPartyActivities = onCall({ region: REGION, timeoutSeconds: 60 }, async () => {
+  const today = kstToday();
+  const ref = db.doc(`party_activities/${today}`);
+  const snap = await ref.get();
+
+  if (snap.exists) {
+    const d = snap.data();
+    if (d.activities && d.activities.length === 7) return { activities: d.activities, topic: d.topic, date: today };
+  }
+
+  // 중복 생성 방지: generating 플래그 체크
+  if (snap.exists && snap.data().generating) return { activities: snap.data().activities || [], topic: snap.data().topic || '', date: today };
+  await ref.set({ generating: true, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+
+  try {
+    const topic = pickTodayTopic();
+    const raw = await callAI(buildActivityPrompt(topic), 1200);
+    const parsed = safeParseJson(raw);
+    if (!Array.isArray(parsed) || parsed.length < 7) throw new Error('AI 응답 파싱 실패');
+
+    const activities = parsed.map(item => {
+      const party = PARTY_BY_ID[item.partyId];
+      if (!party) return null;
+      return {
+        partyId: party.id, partyName: party.name,
+        emoji: party.emoji, color: party.color,
+        charName: party.leaderName,
+        text: String(item.text || '').trim().slice(0, 200),
+      };
+    }).filter(Boolean);
+
+    await ref.set({ activities, topic, date: today, generating: false, generatedAt: FieldValue.serverTimestamp() });
+    return { activities, topic, date: today };
+  } catch (e) {
+    await ref.set({ generating: false, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+    console.error('[getPartyActivities] AI error', e);
+    // AI 실패 시 기본 활동 반환 (게임이 멈추지 않도록)
+    const topic = pickTodayTopic();
+    const fallback = PARTIES.map(p => ({
+      partyId: p.id, partyName: p.name, emoji: p.emoji, color: p.color,
+      charName: p.leaderName, text: p.slogan + '.',
+    }));
+    return { activities: fallback, topic, date: today };
+  }
 });

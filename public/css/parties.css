@@ -147,6 +147,80 @@
 .quiz-opt.selected { border-color: var(--color-primary); background: var(--color-primary-bg, #fff0ec); color: var(--color-primary); }
 .quiz-submit { width: 100%; margin-top: 6px; font-weight: 900; }
 
+/* ── 오늘의 정당 활동 피드 ── */
+.party-activity-section {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.party-activity-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--color-primary-bg);
+  border-bottom: 1px solid var(--color-border);
+}
+.party-activity-live {
+  font-size: 11px;
+  font-weight: 800;
+  color: #e74c3c;
+  animation: live-blink 1.4s infinite;
+}
+@keyframes live-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+.party-activity-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+.party-activity-topic {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  flex: 1;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.party-activity-list { padding: 8px 0; }
+.party-activity-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 14px;
+  border-left: 3px solid var(--party-c, #ccc);
+  margin: 4px 12px;
+  border-radius: 0 8px 8px 0;
+  background: var(--color-background);
+}
+.party-activity-emoji { font-size: 20px; flex-shrink: 0; line-height: 1.2; }
+.party-activity-body { flex: 1; min-width: 0; }
+.party-activity-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  display: block;
+  margin-bottom: 2px;
+}
+.party-activity-name em {
+  font-style: normal;
+  font-weight: 400;
+  color: var(--color-text-muted);
+  margin-left: 4px;
+}
+.party-activity-text {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin: 0;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
 /* 결과 화면 */
 .quiz-result { text-align: center; border-top: 5px solid var(--party-color, var(--color-primary)); }
 .quiz-result__label { font-size: 13px; color: var(--color-text-muted); margin-top: 6px; }
