@@ -140,6 +140,29 @@ async function fetchMyStatus() {
   } catch { return { loggedIn: false }; }
 }
 
+function generateFallbackNews(battleData, presidentData) {
+  const d = new Date();
+  const day = ['일', '월', '화', '수', '목', '금', '토'][d.getDay()];
+  if (presidentData) {
+    const p = presidentData;
+    return {
+      headline: `대통령 ${escHtml(p.candidateName)} "${p.decree ? escHtml(p.decree.slice(0, 30)) : '국민과 함께 나아가겠다'}"`,
+      body: `현직 대통령 ${escHtml(p.candidateName)}(${escHtml(p.partyName)})이 ${day}요일 국정 운영 방침을 밝혔다. 소소공화국 시민들의 이목이 집중되고 있다.`,
+    };
+  }
+  if (battleData && battleData.currentKing) {
+    const k = battleData.currentKing;
+    return {
+      headline: `"${escHtml(k.name)}" 연일 집권 — 소소공화국 정치판 뒤흔들어`,
+      body: `오늘의 정치 배틀 결과 ${escHtml(k.name)}(${escHtml(k.party || k.title)})이 집권 대표 지위를 유지하고 있다. ${battleData.totalVotes || 0}명이 참여한 이번 배틀은 공화국 역사에 기록될 전망이다.`,
+    };
+  }
+  return {
+    headline: `소소공화국 ${d.getMonth() + 1}월 ${d.getDate()}일 — 오늘의 정치는 당신이 만듭니다`,
+    body: `정치배틀 투표, 대선 지지, 정당 활동으로 정치력을 쌓으세요. 당내 1위는 당대표가 되어 대통령 후보로 출마합니다.`,
+  };
+}
+
 function renderNewsCard(news) {
   if (!news) return '';
   const d = new Date();
@@ -394,7 +417,7 @@ export async function renderHome() {
       ? `${renderRankCard(myStatus)}${renderLeaderCard(myStatus)}${renderMissions(myStatus, battleData)}${renderQuickActions()}`
       : `${renderGuestHero()}${renderQuickActions()}`;
 
-    const newsHTML = renderNewsCard(newsData);
+    const newsHTML = renderNewsCard(newsData || generateFallbackNews(battleData, presidentData));
     const prezHTML = renderPresidentCard(presidentData);
     const battleHTML = renderBattleCard(battleData);
 
