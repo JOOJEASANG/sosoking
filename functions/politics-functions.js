@@ -314,8 +314,39 @@ async function buildCandidates() {
   }).sort((a, b) => b.power - a.power);
 }
 
+// 대통령 포고령 생성 프롬프트
+function buildDecreePrompt(winner) {
+  const party = PARTY_BY_ID[winner.partyId] || {};
+  const role = PARTY_ROLES[winner.partyId] || '대통령 캐릭터에 맞게';
+  return `소소공화국 대통령 선거에서 ${party.name}(${party.emoji}) 후보 "${winner.candidateName}"이 당선됐습니다.
+
+당선자의 첫 번째 대통령 포고령을 작성하세요.
+캐릭터: ${role}
+정당 슬로건: "${party.slogan}"
+- 1~2문장, 구체적·재미있게, 한국어
+- 당의 핵심 정책을 반영한 취임 선언 스타일
+
+JSON으로만 응답: {"decree":"포고령 내용"}`;
+}
+
+// 포고령 생성 (비동기 fire-and-forget, 게임플로우 차단 안 함)
+async function generateDecreeFor(periodId, winner) {
+  const ref = db.doc(`elections/${periodId}`);
+  const snap = await ref.get();
+  if (!snap.exists || snap.data().decree) return;
+  try {
+    const raw = await callAI(buildDecreePrompt(winner), 300);
+    const parsed = safeParseJson(raw);
+    const decree = parsed && parsed.decree ? String(parsed.decree).trim().slice(0, 200) : null;
+    if (decree) await ref.update({ decree, updatedAt: FieldValue.serverTimestamp() });
+  } catch (e) {
+    console.error('[decree] AI error', e);
+  }
+}
+
 async function finalizeElection(periodId) {
   const ref = db.doc(`elections/${periodId}`);
+  let justClosed = false, closedWinner = null;
   await db.runTransaction(async tx => {
     const s = await tx.get(ref);
     if (!s.exists) return;
@@ -335,7 +366,10 @@ async function finalizeElection(periodId) {
       closedAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     });
+    justClosed = true; closedWinner = win;
   });
+  // 트랜잭션 완료 후 포고령 생성 (비동기, 실패 무시)
+  if (justClosed && closedWinner) generateDecreeFor(periodId, closedWinner).catch(() => {});
 }
 
 // 이번 주 선거 보장 + 지난 주 선거 마감 처리
@@ -376,7 +410,8 @@ exports.getElection = onCall({ region: REGION, timeoutSeconds: 30 }, async reque
   let president = null;
   const prevSnap = await db.doc(`elections/${prevKey}`).get();
   if (prevSnap.exists && prevSnap.data().status === 'closed' && prevSnap.data().winner) {
-    president = { ...prevSnap.data().winner, periodId: prevKey };
+    const d = prevSnap.data();
+    president = { ...d.winner, decree: d.decree || null, periodId: prevKey };
   }
 
   return {
@@ -412,6 +447,17 @@ exports.voteForPresident = onCall({ region: REGION, timeoutSeconds: 30 }, async 
     });
     return { ok: true, partyId };
   });
+});
+
+// ── 현직 대통령 (홈 화면용 경량 조회) ──
+exports.getPresident = onCall({ region: REGION, timeoutSeconds: 10 }, async () => {
+  const { prevKey } = weekPeriod();
+  const prevSnap = await db.doc(`elections/${prevKey}`).get();
+  if (!prevSnap.exists || prevSnap.data().status !== 'closed' || !prevSnap.data().winner) {
+    return { president: null };
+  }
+  const d = prevSnap.data();
+  return { president: { ...d.winner, decree: d.decree || null, periodId: prevKey } };
 });
 
 // ── 정치력 랭킹 — 전 정당 상위 유저 통합 순위 ──

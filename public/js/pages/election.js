@@ -26,6 +26,7 @@ function renderPresident(p) {
     <div class="prez-banner__emoji">${p.emoji}</div>
     <div class="prez-banner__name">${escHtml(p.candidateName)}</div>
     <div class="prez-banner__party">${escHtml(p.partyName)}${p.isAI ? ' · AI 정치인' : ' · 당대표'}</div>
+    ${p.decree ? `<div class="prez-banner__decree">"${escHtml(p.decree)}"</div>` : ''}
   </div>`;
 }
 
