@@ -1407,11 +1407,57 @@ JSON으로만 응답:
 {"title":"위기 제목 (20자 이내)","desc":"상황 설명 (80자 이내)","optionA":"선택지 A 라벨 (20자 이내)","optionB":"선택지 B 라벨 (20자 이내)","optionADesc":"선택지 A 설명 (40자 이내)","optionBDesc":"선택지 B 설명 (40자 이내)"}`;
 }
 
+async function generateCrisisConsequence(weekKey, crisisData) {
+  const ref = db.doc(`political_crises/${weekKey}`);
+  try {
+    await ref.update({ generatingConsequence: true });
+    const total = Number(crisisData.votesA || 0) + Number(crisisData.votesB || 0);
+    const pctA = total > 0 ? Math.round((Number(crisisData.votesA || 0) / total) * 100) : 50;
+    const winnerLabel = pctA >= 50
+      ? `${crisisData.optionA} (${pctA}%)`
+      : `${crisisData.optionB} (${100 - pctA}%)`;
+    const prompt = `소소공화국에서 "${crisisData.title}" 위기에 대한 시민 투표가 완료됐습니다.
+결과: ${winnerLabel} 채택 (총 ${total}표)
+
+이 정치 위기의 결말을 드라마틱하게 1문장(40자 이내)으로 작성하세요. 소소공화국 세계관으로.
+JSON으로만: {"consequence":"결말 1문장"}`;
+    const raw = await callAI(prompt, 200);
+    const parsed = safeParseJson(raw);
+    const text = parsed && parsed.consequence ? String(parsed.consequence).trim().slice(0, 60) : null;
+    await ref.update({ consequence: text || null, generatingConsequence: false });
+  } catch {
+    try { await ref.update({ generatingConsequence: false }); } catch {}
+  }
+}
+
 exports.getWeeklyCrisis = onCall({ region: REGION, timeoutSeconds: 30 }, async request => {
   const uid = request.auth && request.auth.uid;
-  const { key } = weekPeriod();
+  const { key, prevKey } = weekPeriod();
   const ref = db.doc(`political_crises/${key}`);
-  const snap = await ref.get();
+
+  // 현재 위기 + 지난 주 위기 병렬 조회
+  const [snap, prevSnap] = await Promise.all([
+    ref.get(),
+    db.doc(`political_crises/${prevKey}`).get().catch(() => null),
+  ]);
+
+  // 지난 주 위기 결과 구성
+  let prevCrisis = null;
+  if (prevSnap && prevSnap.exists && prevSnap.data().title) {
+    const pd = prevSnap.data();
+    prevCrisis = {
+      weekKey: prevKey,
+      title: pd.title || '',
+      optionA: pd.optionA || '',
+      optionB: pd.optionB || '',
+      votesA: Number(pd.votesA || 0),
+      votesB: Number(pd.votesB || 0),
+      consequence: pd.consequence || null,
+    };
+    if ((prevCrisis.votesA + prevCrisis.votesB) > 0 && !prevCrisis.consequence && !pd.generatingConsequence) {
+      generateCrisisConsequence(prevKey, pd).catch(() => {});
+    }
+  }
 
   let myVote = null;
   if (uid && snap.exists) {
@@ -1423,14 +1469,13 @@ exports.getWeeklyCrisis = onCall({ region: REGION, timeoutSeconds: 30 }, async r
 
   if (snap.exists && snap.data().title && !snap.data().generating) {
     const d = snap.data();
-    return { crisis: { weekKey: key, ...d }, myVote };
+    return { crisis: { weekKey: key, ...d }, myVote, prevCrisis };
   }
-  if (snap.exists && snap.data().generating) return { crisis: null, myVote };
+  if (snap.exists && snap.data().generating) return { crisis: null, myVote, prevCrisis };
 
   await ref.set({ generating: true, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
   try {
     // 컨텍스트: 현재 정세 요약
-    const { prevKey } = weekPeriod();
     const [presSnap, actSnap] = await Promise.all([
       db.doc(`elections/${prevKey}`).get(),
       db.doc(`party_activities/${kstToday()}`).get(),
@@ -1441,7 +1486,6 @@ exports.getWeeklyCrisis = onCall({ region: REGION, timeoutSeconds: 30 }, async r
     const topic = actSnap.exists ? actSnap.data().topic || '' : '';
     const context = [pres, topic ? `오늘 이슈: ${topic}` : ''].filter(Boolean).join(' / ');
 
-    // 날짜 기반으로 시나리오 선택
     const dayNum = Number(key.replace(/-/g, ''));
     const scenario = CRISIS_SCENARIOS[dayNum % CRISIS_SCENARIOS.length];
 
@@ -1462,11 +1506,11 @@ exports.getWeeklyCrisis = onCall({ region: REGION, timeoutSeconds: 30 }, async r
       generatedAt: FieldValue.serverTimestamp(),
     };
     await ref.set(crisis);
-    return { crisis, myVote };
+    return { crisis, myVote, prevCrisis };
   } catch (e) {
     await ref.set({ generating: false, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
     console.error('[getWeeklyCrisis] error', e);
-    return { crisis: null, myVote };
+    return { crisis: null, myVote, prevCrisis };
   }
 });
 

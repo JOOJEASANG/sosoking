@@ -499,7 +499,7 @@ export async function renderHome() {
         </div>
       </div>` : '';
 
-    el.innerHTML = `<div class="home-dash page-enter home-dash--v2">${headerHTML}${battleHTML}${newsHTML}${prezHTML}<div id="home-crisis-slot"></div>${bestHTML}${hotHTML}${commentsHTML}<div id="home-party-power-slot"></div><div id="home-election-race-slot"></div><div id="home-party-activity-slot"></div></div>`;
+    el.innerHTML = `<div class="home-dash page-enter home-dash--v2"><div id="home-notif-slot"></div>${headerHTML}${battleHTML}${newsHTML}${prezHTML}<div id="home-crisis-slot"></div>${bestHTML}${hotHTML}${commentsHTML}<div id="home-party-power-slot"></div><div id="home-election-race-slot"></div><div id="home-party-activity-slot"></div></div>`;
 
     el.querySelector('#hbtn-more-hot')?.addEventListener('click', () => navigate('/feed'));
     el.querySelectorAll('[data-path]').forEach(btn => {
@@ -551,6 +551,7 @@ export async function renderHome() {
     });
 
     // 세력도 + 대선 경쟁 + 위기 이벤트 + 정당 활동 피드 비동기 로드
+    if (user) loadNotifications(user.uid, el.querySelector('#home-notif-slot'));
     loadPartyPowerChart(el.querySelector('#home-party-power-slot'));
     loadElectionRace(el.querySelector('#home-election-race-slot'));
     loadWeeklyCrisis(el.querySelector('#home-crisis-slot'));
@@ -598,12 +599,24 @@ async function loadPartyPowerChart(slot) {
         </div>`;
     }).join('');
 
+    let rivalryHTML = '';
+    if (parties.length >= 2) {
+      const gap = parties[0].totalPower - parties[1].totalPower;
+      const gapPct = total > 0 ? Math.round((gap / total) * 100) : 100;
+      if (gapPct <= 5) {
+        rivalryHTML = `<div class="home-rivalry-badge home-rivalry-badge--tight">⚡ ${escHtml(parties[0].emoji)} ${escHtml(parties[0].name)} vs ${escHtml(parties[1].emoji)} ${escHtml(parties[1].name)} — 초박빙!</div>`;
+      } else if (gapPct <= 12) {
+        rivalryHTML = `<div class="home-rivalry-badge">🔥 ${escHtml(parties[0].emoji)} ${escHtml(parties[0].name)} vs ${escHtml(parties[1].emoji)} ${escHtml(parties[1].name)} — 라이벌 대결</div>`;
+      }
+    }
+
     slot.innerHTML = `
       <div>
         <div class="home-section-header">
           <span class="home-section-title">🗺️ 공화국 세력도</span>
           <button class="home-section-more home-section-more--button" data-path="/ranking">랭킹 →</button>
         </div>
+        ${rivalryHTML}
         <div class="home-power-chart">${bars}</div>
       </div>`;
     slot.querySelectorAll('[data-path]').forEach(btn => {
@@ -668,83 +681,89 @@ async function loadElectionRace(slot) {
   } catch { /* non-critical */ }
 }
 
+function buildCrisisCardHTML(crisis, myVote, prevCrisis) {
+  const total = (crisis.votesA || 0) + (crisis.votesB || 0);
+  const pctA = total > 0 ? Math.round((crisis.votesA / total) * 100) : 50;
+  const pctB = 100 - pctA;
+  const voted = myVote != null;
+
+  let prevCrisisHTML = '';
+  if (prevCrisis && (prevCrisis.votesA + prevCrisis.votesB) > 0) {
+    const pt = prevCrisis.votesA + prevCrisis.votesB;
+    const ppA = Math.round((prevCrisis.votesA / pt) * 100);
+    const winnerLabel = ppA >= 50 ? escHtml(prevCrisis.optionA) : escHtml(prevCrisis.optionB);
+    const winPct = ppA >= 50 ? ppA : 100 - ppA;
+    prevCrisisHTML = `
+      <div class="home-prev-crisis">
+        <span class="home-prev-crisis__label">📋 지난 주</span>
+        <span class="home-prev-crisis__title">${escHtml(prevCrisis.title)}</span>
+        <span class="home-prev-crisis__sep">→</span>
+        <span class="home-prev-crisis__winner">${winnerLabel} ${winPct}%</span>
+        ${prevCrisis.consequence ? `<span class="home-prev-crisis__consequence">${escHtml(prevCrisis.consequence)}</span>` : ''}
+      </div>`;
+  }
+
+  const resultsHTML = (voted || total > 0) ? `
+    <div class="home-crisis-results">
+      <div class="home-crisis-opt-bar" style="--pct:${pctA}%;--clr:#2563eb">
+        <span class="home-crisis-opt-label">🔵 ${escHtml(crisis.optionA)}</span>
+        <span class="home-crisis-opt-pct">${pctA}%</span>
+      </div>
+      <div class="home-crisis-opt-bar" style="--pct:${pctB}%;--clr:#dc2626">
+        <span class="home-crisis-opt-label">🔴 ${escHtml(crisis.optionB)}</span>
+        <span class="home-crisis-opt-pct">${pctB}%</span>
+      </div>
+      <div class="home-crisis-votes">${total}명 참여 · 이번 주 시민 투표</div>
+    </div>` : '';
+
+  const btnsHTML = !voted ? `
+    <div class="home-crisis-btns">
+      <button class="home-crisis-btn home-crisis-btn--a" data-option="A">
+        🔵 ${escHtml(crisis.optionA)}
+      </button>
+      <button class="home-crisis-btn home-crisis-btn--b" data-option="B">
+        🔴 ${escHtml(crisis.optionB)}
+      </button>
+    </div>` : `<div class="home-crisis-voted">✅ 투표 완료 — ${myVote === 'A' ? escHtml(crisis.optionA) : escHtml(crisis.optionB)} 선택</div>`;
+
+  return `
+    <div class="home-crisis-card">
+      ${prevCrisisHTML}
+      <div class="home-crisis-card__header">
+        <span class="home-crisis-card__badge">🚨 이번 주 정치 위기</span>
+        ${!voted ? '<span class="home-crisis-card__reward">+5P</span>' : ''}
+      </div>
+      <div class="home-crisis-card__title">${escHtml(crisis.title)}</div>
+      <div class="home-crisis-card__desc">${escHtml(crisis.desc)}</div>
+      ${resultsHTML}
+      ${btnsHTML}
+    </div>`;
+}
+
 async function loadWeeklyCrisis(slot) {
   if (!slot) return;
   try {
     const call = httpsCallable(functions, 'getWeeklyCrisis');
     const { data } = await call();
-    const { crisis, myVote } = data;
+    const { crisis, myVote, prevCrisis } = data;
     if (!crisis || !crisis.title) return;
 
-    const total = (crisis.votesA || 0) + (crisis.votesB || 0);
-    const pctA = total > 0 ? Math.round((crisis.votesA / total) * 100) : 50;
-    const pctB = 100 - pctA;
-    const voted = myVote != null;
-
-    const resultsHTML = (voted || total > 0) ? `
-      <div class="home-crisis-results">
-        <div class="home-crisis-opt-bar" style="--pct:${pctA}%;--clr:#2563eb">
-          <span class="home-crisis-opt-label">🔵 ${escHtml(crisis.optionA)}</span>
-          <span class="home-crisis-opt-pct">${pctA}%</span>
-        </div>
-        <div class="home-crisis-opt-bar" style="--pct:${pctB}%;--clr:#dc2626">
-          <span class="home-crisis-opt-label">🔴 ${escHtml(crisis.optionB)}</span>
-          <span class="home-crisis-opt-pct">${pctB}%</span>
-        </div>
-        <div class="home-crisis-votes">${total}명 참여 · 이번 주 시민 투표</div>
-      </div>` : '';
-
-    const btnsHTML = !voted ? `
-      <div class="home-crisis-btns">
-        <button class="home-crisis-btn home-crisis-btn--a" id="crisis-vote-a" data-option="A">
-          🔵 ${escHtml(crisis.optionA)}
-        </button>
-        <button class="home-crisis-btn home-crisis-btn--b" id="crisis-vote-b" data-option="B">
-          🔴 ${escHtml(crisis.optionB)}
-        </button>
-      </div>` : `<div class="home-crisis-voted">✅ 투표 완료 — ${myVote === 'A' ? escHtml(crisis.optionA) : escHtml(crisis.optionB)} 선택</div>`;
-
-    slot.innerHTML = `
-      <div class="home-crisis-card">
-        <div class="home-crisis-card__header">
-          <span class="home-crisis-card__badge">🚨 이번 주 정치 위기</span>
-          <span class="home-crisis-card__reward">+5P</span>
-        </div>
-        <div class="home-crisis-card__title">${escHtml(crisis.title)}</div>
-        <div class="home-crisis-card__desc">${escHtml(crisis.desc)}</div>
-        ${resultsHTML}
-        ${btnsHTML}
-      </div>`;
+    slot.innerHTML = buildCrisisCardHTML(crisis, myVote, prevCrisis || null);
 
     slot.querySelectorAll('.home-crisis-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         if (!auth.currentUser) { navigate('/login'); return; }
         const option = btn.dataset.option;
-        btn.disabled = true;
         slot.querySelectorAll('.home-crisis-btn').forEach(b => b.disabled = true);
         try {
-          const voteCall = httpsCallable(functions, 'voteOnCrisis');
-          const { data: vData } = await voteCall({ option });
+          const { data: vData } = await httpsCallable(functions, 'voteOnCrisis')({ option });
           if (vData.firstVote) showPointPopup(5);
-          const total2 = vData.votesA + vData.votesB;
-          const pctA2 = total2 > 0 ? Math.round((vData.votesA / total2) * 100) : 50;
-          const pctB2 = 100 - pctA2;
-          const optLabel = option === 'A' ? crisis.optionA : crisis.optionB;
-          slot.innerHTML = `
-            <div class="home-crisis-card">
-              <div class="home-crisis-card__header">
-                <span class="home-crisis-card__badge">🚨 이번 주 정치 위기</span>
-              </div>
-              <div class="home-crisis-card__title">${escHtml(crisis.title)}</div>
-              <div class="home-crisis-card__desc">${escHtml(crisis.desc)}</div>
-              <div class="home-crisis-results">
-                <div class="home-crisis-opt-bar" style="--pct:${pctA2}%;--clr:#2563eb"><span class="home-crisis-opt-label">🔵 ${escHtml(crisis.optionA)}</span><span class="home-crisis-opt-pct">${pctA2}%</span></div>
-                <div class="home-crisis-opt-bar" style="--pct:${pctB2}%;--clr:#dc2626"><span class="home-crisis-opt-label">🔴 ${escHtml(crisis.optionB)}</span><span class="home-crisis-opt-pct">${pctB2}%</span></div>
-                <div class="home-crisis-votes">${total2}명 참여 · 이번 주 시민 투표</div>
-              </div>
-              <div class="home-crisis-voted">✅ 투표 완료 — ${escHtml(optLabel)} 선택</div>
-            </div>`;
-        } catch (e) {
+          slot.innerHTML = buildCrisisCardHTML(
+            { ...crisis, votesA: vData.votesA, votesB: vData.votesB },
+            option,
+            prevCrisis || null,
+          );
+        } catch {
           slot.querySelectorAll('.home-crisis-btn').forEach(b => b.disabled = false);
         }
       });
@@ -778,6 +797,46 @@ async function loadHomePartyActivity(slot) {
       </div>`;
     slot.querySelectorAll('[data-path]').forEach(btn => {
       btn.addEventListener('click', () => navigate(btn.dataset.path));
+    });
+  } catch { /* non-critical */ }
+}
+
+async function loadNotifications(uid, slot) {
+  if (!uid || !slot) return;
+  try {
+    const q = query(
+      collection(db, 'notifications'),
+      where('userId', '==', uid),
+      limit(15)
+    );
+    const snap = await getDocs(q);
+    const unread = snap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .filter(n => !n.read)
+      .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+    if (!unread.length) return;
+
+    const latest = unread[0];
+    const moreCount = unread.length - 1;
+
+    slot.innerHTML = `
+      <div class="home-notif-banner">
+        <div class="home-notif-banner__content">
+          <span class="home-notif-banner__title">${escHtml(latest.title || '')}</span>
+          ${latest.body ? `<span class="home-notif-banner__body">${escHtml(latest.body)}</span>` : ''}
+          ${moreCount > 0 ? `<span class="home-notif-count">+${moreCount}개</span>` : ''}
+        </div>
+        <button class="home-notif-banner__close" type="button">✕</button>
+      </div>`;
+
+    slot.querySelector('.home-notif-banner__close')?.addEventListener('click', async () => {
+      slot.innerHTML = '';
+      try {
+        const now = Date.now();
+        await Promise.all(unread.map(n =>
+          updateDoc(doc(db, 'notifications', n.id), { read: true, readAtMs: now })
+        ));
+      } catch {}
     });
   } catch { /* non-critical */ }
 }
