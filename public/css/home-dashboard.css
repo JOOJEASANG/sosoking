@@ -88,6 +88,71 @@
   cursor: pointer;
 }
 
+/* leader badge variant */
+.home-id-card__party--leader {
+  background: linear-gradient(90deg,
+    color-mix(in srgb, var(--party-color, #888) 18%, transparent),
+    color-mix(in srgb, #c5a000 15%, transparent));
+  border: 1px solid color-mix(in srgb, #c5a000 40%, transparent);
+  color: var(--party-color, #b8860b);
+  font-weight: 800;
+}
+
+/* ── 당대표 특전 카드 ── */
+.home-leader-card {
+  background: linear-gradient(135deg, #0f0c29 0%, #302b63 55%, #1a2a4a 100%);
+  border-radius: 18px;
+  padding: 16px 18px;
+  margin-bottom: 14px;
+  color: #fff;
+  cursor: pointer;
+  border: 1px solid rgba(255,255,255,.1);
+  box-shadow: 0 6px 20px rgba(0,0,0,.18);
+  transition: transform .12s;
+}
+.home-leader-card:active { transform: scale(.98); }
+.home-leader-card__top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.home-leader-card__crown {
+  font-size: 34px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 8px rgba(253,203,110,.55));
+}
+.home-leader-card__info { flex: 1; min-width: 0; }
+.home-leader-card__title {
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: -.01em;
+}
+.home-leader-card__sub {
+  font-size: 12px;
+  opacity: .65;
+  margin-top: 2px;
+}
+.home-leader-card__perks {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 12px;
+}
+.home-leader-card__perk {
+  font-size: 12px;
+  opacity: .85;
+  padding: 6px 10px;
+  background: rgba(255,255,255,.07);
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,.06);
+}
+.home-leader-card__cta {
+  font-size: 13px;
+  font-weight: 800;
+  color: #FDCB6E;
+}
+
 /* ── 오늘의 정치 일정 (미션) ── */
 .home-missions {
   background: var(--color-surface);

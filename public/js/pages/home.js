@@ -179,7 +179,7 @@ function renderRankCard(status) {
   const streak = appState.streak || 0;
 
   const partyLine = status.partyId
-    ? `<span class="home-id-card__party" style="--party-color:${status.partyColor}">${status.partyEmoji} ${escHtml(status.partyName)}${status.isLeader ? ' · 👑당대표' : (status.partyRank ? ` · 당내 ${status.partyRank}위` : '')}</span>`
+    ? `<span class="home-id-card__party${status.isLeader ? ' home-id-card__party--leader' : ''}" style="--party-color:${status.partyColor}">${status.partyEmoji} ${escHtml(status.partyName)}${status.isLeader ? ' 👑 당대표' : (status.partyRank ? ` · 당내 ${status.partyRank}위` : '')}</span>`
     : `<button class="home-id-card__join" data-path="/parties" type="button">+ 입당하고 정치력 쌓기</button>`;
 
   const nextLine = rank.isMax
@@ -201,6 +201,27 @@ function renderRankCard(status) {
         ${nextLine}
       </div>
       <div class="home-id-card__party-row">${partyLine}</div>
+    </section>`;
+}
+
+// 당대표 전용 특전 카드
+function renderLeaderCard(status) {
+  if (!status.isLeader) return '';
+  return `
+    <section class="home-leader-card" data-path="/election">
+      <div class="home-leader-card__top">
+        <span class="home-leader-card__crown">👑</span>
+        <div class="home-leader-card__info">
+          <div class="home-leader-card__title">${status.partyEmoji} ${escHtml(status.partyName)} 당대표</div>
+          <div class="home-leader-card__sub">대선 후보로 자동 등록되었습니다</div>
+        </div>
+      </div>
+      <div class="home-leader-card__perks">
+        <div class="home-leader-card__perk">🗳️ 이번 주 대통령 선거 출마 중</div>
+        <div class="home-leader-card__perk">⚡ 리더 보너스 — 매일 활동 시 정치력 2배</div>
+        <div class="home-leader-card__perk">📢 당원들이 당신의 활동을 주목합니다</div>
+      </div>
+      <div class="home-leader-card__cta">대선 현황 확인 →</div>
     </section>`;
 }
 
@@ -312,9 +333,9 @@ export async function renderHome() {
       fetchMyStatus(),
     ]);
 
-    // 로그인 유저: 정치 신분증 + 오늘의 정치 일정 / 게스트: 가입 유도 히어로
+    // 로그인 유저: 정치 신분증 + 당대표 특전 + 오늘의 정치 일정 / 게스트: 가입 유도 히어로
     const headerHTML = (myStatus && myStatus.loggedIn)
-      ? `${renderRankCard(myStatus)}${renderMissions(myStatus, battleData)}${renderQuickActions()}`
+      ? `${renderRankCard(myStatus)}${renderLeaderCard(myStatus)}${renderMissions(myStatus, battleData)}${renderQuickActions()}`
       : `${renderGuestHero()}${renderQuickActions()}`;
 
     const newsHTML = renderNewsCard(newsData);
