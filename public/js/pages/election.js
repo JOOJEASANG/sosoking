@@ -7,6 +7,7 @@ import { escHtml } from '../utils/helpers.js';
 import { toast } from '../components/toast.js';
 import { showPointPopup } from '../utils/point-popup.js';
 import { appState } from '../state.js';
+import { checkRankUp } from '../utils/rank-up.js';
 
 function fmtNum(n) {
   n = Number(n || 0);
@@ -213,6 +214,7 @@ export async function renderElection() {
         toast.success(`${name} 후보에게 투표했어요! 🗳️`);
         appState.points = (appState.points || 0) + 5;
         showPointPopup(5);
+        if (auth.currentUser) checkRankUp(auth.currentUser.uid, appState.points);
         httpsCallable(functions, 'syncPartyMemberPower')({}).catch(() => {});
         renderElection();
       } catch (e) {

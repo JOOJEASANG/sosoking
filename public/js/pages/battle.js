@@ -9,6 +9,7 @@ import { renderPartyBadge } from '../utils/party-badge.js';
 import { getPoliticalRank } from '../utils/political-rank.js';
 import { appState } from '../state.js';
 import { showPointPopup } from '../utils/point-popup.js';
+import { checkRankUp } from '../utils/rank-up.js';
 
 function fmtNum(n) {
   if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
@@ -300,6 +301,7 @@ async function handleVote(charId, prevData, el) {
     toast.success(`${char?.emoji || ''} ${char?.name || ''} 지지!`);
     appState.points = (appState.points || 0) + 5;
     showPointPopup(5);
+    if (auth.currentUser) checkRankUp(auth.currentUser.uid, appState.points);
     httpsCallable(functions, 'syncPartyMemberPower')({}).catch(() => {});
   } catch (err) {
     btns.forEach(b => { b.disabled = false; });
