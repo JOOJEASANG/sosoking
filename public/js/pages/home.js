@@ -542,7 +542,7 @@ export async function renderHome() {
         </div>
       </div>` : '';
 
-    el.innerHTML = `<div class="home-dash page-enter home-dash--v2"><div id="home-notif-slot"></div>${newPrezHTML}${headerHTML}<div id="home-campaign-slot"></div>${battleHTML}${newsHTML}${prezHTML}<div id="home-crisis-slot"></div>${bestHTML}${hotHTML}${commentsHTML}<div id="home-party-power-slot"></div><div id="home-election-race-slot"></div><div id="home-party-activity-slot"></div></div>`;
+    el.innerHTML = `<div class="home-dash page-enter home-dash--v2"><div id="home-notif-slot"></div>${newPrezHTML}${headerHTML}<div id="home-campaign-slot"></div><div id="home-manifesto-slot"></div>${battleHTML}${newsHTML}${prezHTML}<div id="home-crisis-slot"></div>${bestHTML}${hotHTML}${commentsHTML}<div id="home-party-power-slot"></div><div id="home-election-race-slot"></div><div id="home-party-activity-slot"></div></div>`;
 
     el.querySelector('.home-new-prez-announce__close')?.addEventListener('click', () => {
       el.querySelector('#home-new-prez-announce')?.remove();
@@ -607,6 +607,7 @@ export async function renderHome() {
     // 유세 카드 + 세력도 + 대선 경쟁 + 위기 이벤트 + 정당 활동 피드 비동기 로드
     if (user) loadNotifications(user.uid, el.querySelector('#home-notif-slot'), myStatus?.partyId || null);
     if (user && myStatus?.loggedIn && myStatus.partyId) loadCampaignCard(el.querySelector('#home-campaign-slot'), myStatus);
+    if (user && myStatus?.loggedIn && myStatus.partyId) loadHomeManifesto(el.querySelector('#home-manifesto-slot'), myStatus);
     loadPartyPowerChart(el.querySelector('#home-party-power-slot'), battleData);
     loadElectionRace(el.querySelector('#home-election-race-slot'));
     loadWeeklyCrisis(el.querySelector('#home-crisis-slot'));
@@ -684,6 +685,24 @@ async function loadCampaignCard(slot, status) {
     const count = campSnap.exists() ? Number(campSnap.data().count || 0) : 0;
     const totalToday = totalsSnap.exists() ? Number(totalsSnap.data().total || 0) : 0;
     renderCampaignSlot(slot, status, count, MAX, COST, BOOST, totalToday);
+  } catch { /* non-critical */ }
+}
+
+async function loadHomeManifesto(slot, status) {
+  if (!slot || !status?.partyId) return;
+  try {
+    const call = httpsCallable(functions, 'getPartyManifesto');
+    const { data } = await call({ partyId: status.partyId });
+    if (!data?.manifesto) return;
+    slot.innerHTML = `
+      <div class="home-manifesto-card" style="--party-c:${status.partyColor || '#7c3aed'}">
+        <div class="home-manifesto-card__header">
+          <span class="home-manifesto-card__party">${status.partyEmoji} ${escHtml(status.partyName)}</span>
+          <span class="home-manifesto-card__tag">📜 이번 주 당론</span>
+        </div>
+        <p class="home-manifesto-card__text">"${escHtml(data.manifesto)}"</p>
+      </div>`;
+    slot.querySelector('[data-path]')?.addEventListener('click', () => navigate('/parties'));
   } catch { /* non-critical */ }
 }
 

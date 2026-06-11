@@ -756,3 +756,36 @@
 .home-notif-banner--battle-win .home-notif-banner__title { color: #86efac; }
 .home-notif-banner--battle-win .home-notif-banner__body  { color: #d1fae5; }
 .home-notif-banner--battle-win .home-notif-banner__close { color: #86efac; }
+
+/* ── 홈 당론 성명 카드 ── */
+.home-manifesto-card {
+  background: var(--surface, #fff);
+  border: 1.5px solid var(--party-c, #7c3aed);
+  border-left: 4px solid var(--party-c, #7c3aed);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+.home-manifesto-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.home-manifesto-card__party {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--party-c, #7c3aed);
+}
+.home-manifesto-card__tag {
+  font-size: 11px;
+  color: var(--text-secondary, #888);
+  font-weight: 600;
+}
+.home-manifesto-card__text {
+  font-size: 13px;
+  color: var(--text-primary, #222);
+  line-height: 1.5;
+  font-style: italic;
+  margin: 0;
+}
