@@ -124,6 +124,16 @@ function kstToday() {
   }).format(new Date());
 }
 
+// 현재 KST 기준 이번 주 월요일 날짜 (YYYY-MM-DD)
+function kstMondayKey() {
+  const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
+  const day = kst.getUTCDay(); // 0=일, 1=월 … 6=토
+  const diff = day === 0 ? -6 : 1 - day;
+  const monday = new Date(kst);
+  monday.setUTCDate(kst.getUTCDate() + diff);
+  return monday.toISOString().slice(0, 10);
+}
+
 function requireUid(request) {
   const uid = request.auth && request.auth.uid;
   if (!uid) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
@@ -244,12 +254,33 @@ exports.getPoliticsOverview = onCall({ region: REGION, timeoutSeconds: 30 }, asy
   const snaps = await db.getAll(...refs);
   const leaders = await Promise.all(PARTY_IDS.map(topMemberOf));
 
+  // 어제 정치력 스냅샷 업데이트 (하루 1회)
+  const today = kstToday();
+  const batch = db.batch();
+  let snapshotDirty = false;
+  snaps.forEach((snap, i) => {
+    if (!snap.exists) return;
+    const d = snap.data() || {};
+    if (d.powerSnapshotDate !== today) {
+      batch.update(partyRef(PARTY_IDS[i]), {
+        powerSnapshotDate: today,
+        prevDayPower: Number(d.totalPower || 0),
+      });
+      snapshotDirty = true;
+    }
+  });
+  if (snapshotDirty) batch.commit().catch(() => {});
+
   const parties = PARTIES.map((meta, i) => {
     const data = snaps[i].exists ? (snaps[i].data() || {}) : {};
+    const totalPower = Number(data.totalPower || 0);
+    const prevDayPower = Number(data.prevDayPower || 0);
+    const powerDiff = prevDayPower > 0 ? totalPower - prevDayPower : 0;
     return {
       ...meta,
       memberCount: Number(data.memberCount || 0),
-      totalPower: Number(data.totalPower || 0),
+      totalPower,
+      powerDiff,
       leader: leaders[i], // 당대표(활동 1위) — 없으면 null
     };
   }).sort((a, b) => b.totalPower - a.totalPower || b.memberCount - a.memberCount);
@@ -714,7 +745,34 @@ exports.getRankings = onCall({ region: REGION, timeoutSeconds: 30 }, async reque
   const myUid = request.auth && request.auth.uid;
   const myEntry = myUid ? top30.find(m => m.uid === myUid) || null : null;
 
-  return { top30, leaders, myEntry };
+  // 이번 주 급부상 정치인 (정당별 주간 증가 상위 5명씩 수집, 전체 top 10)
+  const currentWeekKey = kstMondayKey();
+  const gainQueries = PARTY_IDS.map(pid =>
+    partyRef(pid).collection('members').orderBy('weeklyGain', 'desc').limit(5).get()
+  );
+  const gainResults = await Promise.all(gainQueries);
+  const seenGain = new Set();
+  const gainers = [];
+  gainResults.forEach((snap, i) => {
+    const partyMeta = PARTIES[i];
+    snap.docs.forEach(d => {
+      if (seenGain.has(d.id)) return;
+      const m = d.data() || {};
+      const weeklyGain = Number(m.weeklyGain || 0);
+      if (weeklyGain <= 0 || m.weekKey !== currentWeekKey) return;
+      seenGain.add(d.id);
+      gainers.push({
+        uid: d.id, nickname: m.nickname || '시민', icon: m.icon || null,
+        weeklyGain, power: Number(m.power || 0),
+        partyId: partyMeta.id, partyName: partyMeta.name,
+        partyEmoji: partyMeta.emoji, partyColor: partyMeta.color,
+      });
+    });
+  });
+  gainers.sort((a, b) => b.weeklyGain - a.weeklyGain);
+  const topGainers = gainers.slice(0, 10).map((m, i) => ({ ...m, rank: i + 1 }));
+
+  return { top30, leaders, myEntry, topGainers };
 });
 
 // ── 오늘의 정당 활동 — AI가 정당별 한마디 생성 (lazy, 하루 1회) ──
@@ -914,12 +972,25 @@ exports.syncPartyMemberPower = onCall({ region: REGION, timeoutSeconds: 15 }, as
   const mRef = memberRef(partyId, uid);
   const mSnap = await mRef.get();
   if (!mSnap.exists) return { ok: false, reason: 'not_member' };
-  const oldPower = Number(mSnap.data().power || 0);
+  const mData = mSnap.data() || {};
+  const oldPower = Number(mData.power || 0);
   if (oldPower === newPower) return { ok: true, changed: false };
   const diff = newPower - oldPower;
+
+  // 주간 정치력 증가 추적
+  const currentWeekKey = kstMondayKey();
+  let weeklyFields;
+  if (mData.weekKey !== currentWeekKey) {
+    // 새 주 시작: 현재 포인트를 주 시작값으로 스냅샷
+    weeklyFields = { weekKey: currentWeekKey, weekStartPower: oldPower, weeklyGain: Math.max(0, diff) };
+  } else {
+    const weekStartPower = Number(mData.weekStartPower || 0);
+    weeklyFields = { weeklyGain: Math.max(0, newPower - weekStartPower) };
+  }
+
   const pRef = partyRef(partyId);
   await db.runTransaction(async tx => {
-    tx.update(mRef, { power: newPower, updatedAt: FieldValue.serverTimestamp() });
+    tx.update(mRef, { power: newPower, ...weeklyFields, updatedAt: FieldValue.serverTimestamp() });
     tx.update(pRef, { totalPower: FieldValue.increment(diff), updatedAt: FieldValue.serverTimestamp() });
   });
 

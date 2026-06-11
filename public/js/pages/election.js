@@ -156,6 +156,20 @@ export async function renderElection() {
 
   el.querySelector('#elec-login')?.addEventListener('click', () => navigate('/login'));
 
+  // 실시간 마감 카운트다운 (1분마다 업데이트)
+  const ddayEl = el.querySelector('.elec-head__dday');
+  if (ddayEl && election.endKey && election.status === 'open') {
+    const tick = () => {
+      if (!document.contains(ddayEl)) return;
+      const label = dDay(election.endKey);
+      ddayEl.textContent = label;
+      ddayEl.dataset.urgent = (label.startsWith('⚡') || label.startsWith('D-DAY')) ? 'true' : 'false';
+    };
+    const timer = setInterval(tick, 60000);
+    const cleanup = () => clearInterval(timer);
+    window.addEventListener('hashchange', cleanup, { once: true });
+  }
+
   // 대통령 포고령 편집기
   if (isPresident) {
     const decreeBtn = el.querySelector('#prez-decree-btn');

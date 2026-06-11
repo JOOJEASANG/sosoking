@@ -435,3 +435,16 @@
 .welcome-modal__actions { display: flex; flex-direction: column; gap: 8px; }
 .welcome-modal__party-btn { width: 100%; font-weight: 900; }
 .welcome-modal__skip-btn { width: 100%; font-size: 12px; }
+
+/* 정당 정치력 트렌드 배지 */
+.party-trend {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 800;
+  border-radius: 6px;
+  padding: 1px 6px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+.party-trend--up   { color: #16a34a; background: #dcfce7; }
+.party-trend--down { color: #dc2626; background: #fee2e2; }

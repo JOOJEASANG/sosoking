@@ -154,34 +154,40 @@ function renderMyBanner(me) {
   </div>`;
 }
 
+function renderTrendBadge(diff) {
+  if (!diff || Math.abs(diff) < 5) return '';
+  if (diff > 0) return `<span class=”party-trend party-trend--up”>▲ +${fmtNum(diff)}</span>`;
+  return `<span class=”party-trend party-trend--down”>▼ ${fmtNum(diff)}</span>`;
+}
+
 function renderPartyCard(p, me, isRuling) {
   const isMine = me && me.partyId === p.id;
   const meta = PARTY_META[p.id];
   const btn = isMine
-    ? `<span class="party-card__mine-tag">내 정당</span>`
-    : `<button class="btn btn--primary btn--sm party-join-btn" data-party="${p.id}" data-name="${escHtml(p.name)}">${me && me.partyId ? '이적' : '입당'}</button>`;
+    ? `<span class=”party-card__mine-tag”>내 정당</span>`
+    : `<button class=”btn btn--primary btn--sm party-join-btn” data-party=”${p.id}” data-name=”${escHtml(p.name)}”>${me && me.partyId ? '이적' : '입당'}</button>`;
   return `
-    <div class="party-card${isMine ? ' party-card--mine' : ''}${isRuling ? ' party-card--ruling' : ''}" style="--party-color:${p.color}">
-      ${isRuling ? `<span class="party-card__ruling-tag">👑 제1당</span>` : ''}
-      <div class="party-card__rank">${medal(p.rank)}</div>
-      <div class="party-card__emoji">${p.emoji}</div>
-      <div class="party-card__body">
-        <div class="party-card__top">
-          <span class="party-card__name">${escHtml(p.name)}</span>
-          <span class="party-card__count">당원 ${fmtNum(p.memberCount)}</span>
+    <div class=”party-card${isMine ? ' party-card--mine' : ''}${isRuling ? ' party-card--ruling' : ''}” style=”--party-color:${p.color}”>
+      ${isRuling ? `<span class=”party-card__ruling-tag”>👑 제1당</span>` : ''}
+      <div class=”party-card__rank”>${medal(p.rank)}</div>
+      <div class=”party-card__emoji”>${p.emoji}</div>
+      <div class=”party-card__body”>
+        <div class=”party-card__top”>
+          <span class=”party-card__name”>${escHtml(p.name)}</span>
+          <span class=”party-card__count”>당원 ${fmtNum(p.memberCount)}</span>
         </div>
-        <div class="party-card__slogan">“${escHtml(p.slogan)}”</div>
+        <div class=”party-card__slogan”>”${escHtml(p.slogan)}”</div>
         ${strengthChips(p.id)}
-        ${meta ? `<div class="party-card__policy">📌 ${escHtml(meta.policy)}</div>` : ''}
-        <div class="party-card__leader">${leaderLine(p)}</div>
-        <div class="party-card__meta">
-          <span class="party-card__power">⚡ 정당 정치력 <b>${fmtNum(p.totalPower)}</b></span>
-          <button class="party-members-btn" data-party="${p.id}">당원 보기</button>
+        ${meta ? `<div class=”party-card__policy”>📌 ${escHtml(meta.policy)}</div>` : ''}
+        <div class=”party-card__leader”>${leaderLine(p)}</div>
+        <div class=”party-card__meta”>
+          <span class=”party-card__power”>⚡ 정당 정치력 <b>${fmtNum(p.totalPower)}</b>${renderTrendBadge(p.powerDiff)}</span>
+          <button class=”party-members-btn” data-party=”${p.id}”>당원 보기</button>
         </div>
       </div>
-      <div class="party-card__action">${btn}</div>
+      <div class=”party-card__action”>${btn}</div>
     </div>
-    <div class="party-members" id="members-${p.id}" hidden></div>`;
+    <div class=”party-members” id=”members-${p.id}” hidden></div>`;
 }
 
 function showJoinCeremony(partyId, name, color, emoji) {

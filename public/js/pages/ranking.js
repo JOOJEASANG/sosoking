@@ -33,6 +33,20 @@ function renderUserRow(m, myUid) {
     </div>`;
 }
 
+function renderGainerRow(m, myUid) {
+  const isMe = myUid && m.uid === myUid;
+  const rank = getPoliticalRank(m.power);
+  return `
+    <div class="rank-row${isMe ? ' rank-row--me' : ''}">
+      ${rankMedal(m.rank)}
+      <span class="rank-party-dot" style="background:${m.partyColor}" title="${escHtml(m.partyName)}"></span>
+      <span class="rank-nickname">${m.icon?.value ? `${m.icon.value} ` : ''}${escHtml(m.nickname)}${isMe ? ' <em>(나)</em>' : ''}
+        <span class="rank-grade" style="--rank-c:${rank.color}">${rank.emoji} ${rank.title}</span>
+      </span>
+      <span class="rank-gain">+${fmtPower(m.weeklyGain)}P</span>
+    </div>`;
+}
+
 function renderLadder(myPower) {
   const power = Number(myPower || 0);
   const cur = getPoliticalRank(power);
@@ -105,7 +119,7 @@ export async function renderRanking() {
     return;
   }
 
-  const { top30 = [], leaders = [], myEntry = null } = data;
+  const { top30 = [], leaders = [], myEntry = null, topGainers = [] } = data;
   const myUid = auth.currentUser?.uid || '';
 
   const myBanner = myEntry
@@ -135,7 +149,8 @@ export async function renderRanking() {
 
     <div class="ranking-tabs" id="rank-tabs">
       <button class="ranking-tab active" data-tab="overall">🏅 전체 순위</button>
-      <button class="ranking-tab" data-tab="leaders">👑 당대표 현황</button>
+      <button class="ranking-tab" data-tab="gainers">🔥 이번 주</button>
+      <button class="ranking-tab" data-tab="leaders">👑 당대표</button>
     </div>
 
     <div id="rank-panel-overall" class="rank-panel">
@@ -145,6 +160,20 @@ export async function renderRanking() {
             <div class="empty-state__icon">🌱</div>
             <div class="empty-state__title">아직 활동 중인 당원이 없어요</div>
             <div class="empty-state__desc">첫 번째로 입당하고 정치력 1위가 되어보세요!</div>
+           </div>`}
+    </div>
+
+    <div id="rank-panel-gainers" class="rank-panel rank-panel--hidden">
+      <div class="rank-gainers-header">
+        <span class="rank-gainers-badge">이번 주 월요일 리셋</span>
+        <span class="rank-gainers-desc">이번 주 정치력을 가장 많이 쌓은 정치인</span>
+      </div>
+      ${topGainers.length
+        ? topGainers.map(m => renderGainerRow(m, myUid)).join('')
+        : `<div class="empty-state" style="padding:40px 0">
+            <div class="empty-state__icon">🔥</div>
+            <div class="empty-state__title">이번 주 활동 기록이 없어요</div>
+            <div class="empty-state__desc">배틀·글·댓글로 활동하면 바로 등장합니다!</div>
            </div>`}
     </div>
 
@@ -161,6 +190,7 @@ export async function renderRanking() {
       tab.classList.add('active');
       const target = tab.dataset.tab;
       el.querySelector('#rank-panel-overall').classList.toggle('rank-panel--hidden', target !== 'overall');
+      el.querySelector('#rank-panel-gainers').classList.toggle('rank-panel--hidden', target !== 'gainers');
       el.querySelector('#rank-panel-leaders').classList.toggle('rank-panel--hidden', target !== 'leaders');
     });
   });
