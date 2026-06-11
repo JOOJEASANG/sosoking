@@ -57,7 +57,7 @@ function renderVoteBar(char, votes, totalVotes, userVote) {
         <span class="battle-vote-row__emoji">${char.emoji}</span>
         <span class="battle-vote-row__name">${escHtml(char.name)}</span>
         ${isVoted ? '<span class="battle-vote-row__check">✓ 내 선택</span>' : ''}
-        <span class="battle-vote-row__count">${fmtNum(count)}표 (${pct}%)</span>
+        <span class="battle-vote-row__count">${fmtNum(count)}표 · ${pct}%</span>
       </div>
       <div class="battle-vote-row__bar-wrap">
         <div class="battle-vote-row__bar" style="width:${pct}%;background:${char.color}"></div>
@@ -71,7 +71,7 @@ function renderVoteButtons(chars, userVote, status) {
   return `
     <div class="battle-vote-grid">
       ${chars.map(c => `
-        <button class="battle-vote-btn" data-char-id="${c.id}" type="button">
+        <button class="battle-vote-btn" data-char-id="${c.id}" type="button" style="--char-color:${c.color}">
           <span class="battle-vote-btn__emoji">${c.emoji}</span>
           <span class="battle-vote-btn__name">${escHtml(c.name)}</span>
         </button>`).join('')}
@@ -141,9 +141,13 @@ export async function renderBattle() {
         <div class="battle-page page-enter">
           ${rulingBanner}
           <div class="battle-topic-card">
-            <div class="battle-topic-card__badge">⚔️ 오늘의 정치 배틀</div>
-            <div class="battle-topic-card__title">이슈 생성 중...</div>
-            <div class="battle-topic-card__desc">매일 자정 새로운 정치 스캔들이 터집니다</div>
+            <div class="battle-topic-card__header">
+              <div class="battle-topic-card__badge">⚔️ 오늘의 정치 스캔들</div>
+            </div>
+            <div class="battle-topic-card__body">
+              <div class="battle-topic-card__title">이슈 생성 중...</div>
+              <div class="battle-topic-card__desc">매일 자정 새로운 정치 스캔들이 터집니다</div>
+            </div>
           </div>
           <button class="btn btn--primary" id="btn-history" style="margin-top:16px">🏛️ 집권 기록 보기</button>
         </div>`;
@@ -161,9 +165,20 @@ export async function renderBattle() {
         ${rulingBanner}
 
         <div class="battle-topic-card">
-          <div class="battle-topic-card__badge">⚔️ 오늘의 정치 스캔들${isEnded ? ' · 종료' : ' · 진행 중'}</div>
-          <div class="battle-topic-card__title">${escHtml(topic)}</div>
-          ${topicDesc ? `<div class="battle-topic-card__desc">${escHtml(topicDesc)}</div>` : ''}
+          <div class="battle-topic-card__header">
+            <div class="battle-topic-card__badge">⚔️ 오늘의 정치 스캔들${isEnded ? ' · 종료' : ''}</div>
+            ${!isEnded ? '<span class="battle-topic-card__live">🔴 LIVE</span>' : ''}
+          </div>
+          <div class="battle-topic-card__body">
+            <div class="battle-topic-card__title">${escHtml(topic)}</div>
+            ${topicDesc ? `<div class="battle-topic-card__desc">${escHtml(topicDesc)}</div>` : ''}
+          </div>
+          <div class="battle-topic-card__footer">
+            <span class="battle-live-counter">
+              <span class="battle-live-counter__dot"></span>
+              총 ${fmtNum(totalVotes)}명 참여
+            </span>
+          </div>
         </div>
 
         <div class="battle-turns">
@@ -183,6 +198,7 @@ export async function renderBattle() {
             ${chars.map(c => renderVoteBar(c, votes, totalVotes, userVote)).join('')}
           </div>
 
+          ${userVote ? `<div class="battle-power-hint">⚡ 오늘 배틀 투표로 정치력 +5를 획득했어요!</div>` : ''}
           ${!auth.currentUser && !isEnded ? `
             <div class="battle-login-hint">
               <a href="#/login" class="btn btn--outline" style="width:100%">로그인하고 투표하기</a>
@@ -263,6 +279,14 @@ async function handleVote(charId, prevData, el) {
 
     const titleEl = el.querySelector('.battle-vote-section__title');
     if (titleEl) titleEl.textContent = `✅ 투표 완료 · 총 ${fmtNum(newTotal)}표`;
+
+    const barsSection = el.querySelector('.battle-vote-section');
+    if (barsSection && !barsSection.querySelector('.battle-power-hint')) {
+      const hint = document.createElement('div');
+      hint.className = 'battle-power-hint';
+      hint.textContent = '⚡ 오늘 배틀 투표로 정치력 +5를 획득했어요!';
+      barsSection.appendChild(hint);
+    }
 
     const char = prevData.chars.find(c => c.id === charId);
     toast.success(`${char?.emoji || ''} ${char?.name || ''} 지지!`);
