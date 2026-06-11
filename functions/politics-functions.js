@@ -568,13 +568,27 @@ exports.getElection = onCall({ region: REGION, timeoutSeconds: 30 }, async reque
   let president = null;
   const prevSnap = await db.doc(`elections/${prevKey}`).get();
   if (prevSnap.exists && prevSnap.data().status === 'closed' && prevSnap.data().winner) {
-    const d = prevSnap.data();
-    president = { ...d.winner, decree: d.decree || null, periodId: prevKey };
+    const pData = prevSnap.data();
+    let myDecreeRating = null;
+    if (uid && pData.decree) {
+      try {
+        const rSnap = await db.doc(`elections/${prevKey}/decree_ratings/${uid}`).get();
+        if (rSnap.exists) myDecreeRating = rSnap.data().approve;
+      } catch {}
+    }
+    president = {
+      ...pData.winner,
+      decree: pData.decree || null,
+      periodId: prevKey,
+      decreeApprove: Number(pData.decreeApprove || 0),
+      decreeDisapprove: Number(pData.decreeDisapprove || 0),
+      myDecreeRating,
+    };
   }
 
   return {
     ok: true,
-    election: { periodId: key, endKey: d.endKey, totalVotes: Number(d.totalVotes || 0), candidates, myVote },
+    election: { periodId: key, endKey: d.endKey, totalVotes: Number(d.totalVotes || 0), candidates, myVote, status: d.status || 'open' },
     president,
   };
 });
