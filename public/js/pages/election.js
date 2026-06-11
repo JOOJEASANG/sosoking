@@ -126,9 +126,25 @@ export async function renderElection() {
       if (!auth.currentUser) { navigate('/login'); return; }
       const partyId = btn.dataset.party;
       const name = btn.dataset.name;
-      if (!confirm(`'${name}' 후보에게 투표할까요? (이번 주 1회만 가능)`)) return;
+
+      if (btn.dataset.confirming !== '1') {
+        btn.dataset.confirming = '1';
+        btn.textContent = '한 번만 가능! 확인 →';
+        btn.classList.add('elec-vote-btn--confirm');
+        setTimeout(() => {
+          if (btn.dataset.confirming === '1') {
+            btn.dataset.confirming = '';
+            btn.textContent = '지지 선언 🗳️';
+            btn.classList.remove('elec-vote-btn--confirm');
+          }
+        }, 3000);
+        return;
+      }
+
+      btn.dataset.confirming = '';
       btn.disabled = true;
       btn.textContent = '…';
+      btn.classList.remove('elec-vote-btn--confirm');
       try {
         const call = httpsCallable(functions, 'voteForPresident');
         await call({ partyId });
@@ -138,7 +154,7 @@ export async function renderElection() {
       } catch (e) {
         toast.error(e?.message || '투표에 실패했어요.');
         btn.disabled = false;
-        btn.textContent = '투표';
+        btn.textContent = '지지 선언 🗳️';
       }
     });
   });

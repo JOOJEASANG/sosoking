@@ -93,6 +93,15 @@
 }
 .elec-vote-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 16px color-mix(in srgb, var(--party-color, #ff6b4a) 50%, transparent); }
 .elec-vote-btn:active { transform: scale(.96); }
+.elec-vote-btn--confirm {
+  background: #f0a500;
+  box-shadow: 0 4px 12px rgba(240,165,0,.4);
+  animation: confirm-pulse .5s ease infinite alternate;
+}
+@keyframes confirm-pulse {
+  from { opacity: .85; }
+  to   { opacity: 1; }
+}
 .elec-cand__pct { font-size: 18px; font-weight: 900; color: var(--color-text-secondary); }
 .elec-cand__pct--mine { color: var(--party-color, var(--color-primary)); }
 .elec-note { font-size: 11px; color: var(--color-text-muted); margin-top: 14px; line-height: 1.5; text-align: center; }
