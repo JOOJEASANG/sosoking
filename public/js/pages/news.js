@@ -1,10 +1,12 @@
 /* news.js — 소소신문 전용 페이지 */
-import { db, functions } from '../firebase.js';
+import { db, auth, functions } from '../firebase.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
 import { collection, query, orderBy, limit, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { setMeta } from '../utils/seo.js';
 import { escHtml } from '../utils/helpers.js';
 import { navigate } from '../router.js';
+import { toast } from '../components/toast.js';
+import { showPointPopup } from '../utils/point-popup.js';
 
 const KST_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
 
@@ -210,6 +212,88 @@ async function loadKingRecap(slot) {
   } catch { /* non-critical */ }
 }
 
+async function loadNewsCrisis(slot) {
+  if (!slot) return;
+  try {
+    const { data } = await httpsCallable(functions, 'getWeeklyCrisis')();
+    const { crisis, myVote, prevCrisis } = data;
+    if (!crisis || !crisis.title) return;
+
+    const totalVotes = Number(crisis.votesA || 0) + Number(crisis.votesB || 0);
+    const pctA = totalVotes > 0 ? Math.round((Number(crisis.votesA || 0) / totalVotes) * 100) : 50;
+    const pctB = 100 - pctA;
+    const isWinnerA = pctA >= pctB;
+
+    const barHTML = totalVotes > 0 ? `
+      <div class="news-crisis__bar-wrap">
+        <div class="news-crisis__bar-row">
+          <span class="news-crisis__bar-label news-crisis__bar-label--a${myVote === 'A' ? ' news-crisis__bar-label--chosen' : ''}">A</span>
+          <div class="news-crisis__bar-track">
+            <div class="news-crisis__bar-fill--a" style="width:${pctA}%"></div>
+          </div>
+          <span class="news-crisis__bar-pct">${pctA}%</span>
+        </div>
+        <div class="news-crisis__bar-row">
+          <span class="news-crisis__bar-label news-crisis__bar-label--b${myVote === 'B' ? ' news-crisis__bar-label--chosen' : ''}">B</span>
+          <div class="news-crisis__bar-track">
+            <div class="news-crisis__bar-fill--b" style="width:${pctB}%"></div>
+          </div>
+          <span class="news-crisis__bar-pct">${pctB}%</span>
+        </div>
+        <div class="news-crisis__total">${fmtNum(totalVotes)}명 참여 · ${isWinnerA ? escHtml(crisis.optionA) : escHtml(crisis.optionB)} 우세</div>
+      </div>` : '';
+
+    const actionHTML = myVote
+      ? `<div class="news-crisis__voted">✅ 투표 완료 — "${myVote === 'A' ? escHtml(crisis.optionA) : escHtml(crisis.optionB)}" 선택</div>`
+      : `<div class="news-crisis__options">
+           <button class="news-crisis__btn" data-option="A">A. ${escHtml(crisis.optionA)}<span class="news-crisis__btn-reward">+5P</span></button>
+           <button class="news-crisis__btn" data-option="B">B. ${escHtml(crisis.optionB)}<span class="news-crisis__btn-reward">+5P</span></button>
+         </div>`;
+
+    const prevHTML = prevCrisis && (prevCrisis.votesA + prevCrisis.votesB) > 0 ? (() => {
+      const prevTotal = prevCrisis.votesA + prevCrisis.votesB;
+      const prevPctA = Math.round((prevCrisis.votesA / prevTotal) * 100);
+      const prevWinner = prevPctA >= 50 ? prevCrisis.optionA : prevCrisis.optionB;
+      return `<div class="news-crisis__prev">
+        <span class="news-crisis__prev-label">지난 주:</span>
+        <span class="news-crisis__prev-result">${escHtml(prevCrisis.title)} → ${escHtml(prevWinner)} 채택</span>
+        ${prevCrisis.consequence ? `<span class="news-crisis__prev-consequence">"${escHtml(prevCrisis.consequence)}"</span>` : ''}
+      </div>`;
+    })() : '';
+
+    slot.innerHTML = `
+      <section class="news-crisis">
+        <div class="news-section-title">🚨 이번 주 국정 위기 국민투표</div>
+        <div class="news-crisis__title">${escHtml(crisis.title)}</div>
+        <p class="news-crisis__desc">${escHtml(crisis.desc || '')}</p>
+        ${barHTML}
+        ${actionHTML}
+        ${prevHTML}
+      </section>`;
+
+    slot.querySelectorAll('.news-crisis__btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!auth.currentUser) { navigate('/login'); return; }
+        const option = btn.dataset.option;
+        slot.querySelectorAll('.news-crisis__btn').forEach(b => b.disabled = true);
+        try {
+          const { data: vData } = await httpsCallable(functions, 'voteOnCrisis')({ option });
+          if (vData.firstVote) {
+            toast.success('+5P 획득! 국정 위기 투표 완료 🗳️');
+            showPointPopup(5);
+          } else {
+            toast.success('국정 위기 투표 완료');
+          }
+          loadNewsCrisis(slot);
+        } catch (e) {
+          slot.querySelectorAll('.news-crisis__btn').forEach(b => b.disabled = false);
+          toast.error(e?.message || '투표에 실패했어요');
+        }
+      });
+    });
+  } catch { /* non-critical */ }
+}
+
 async function loadPresidentBlock(slot) {
   if (!slot) return;
   try {
@@ -287,6 +371,7 @@ export async function renderNews() {
         ${featuredHTML}
         <div id="news-battle-slot"></div>
         <div id="news-prez-slot"></div>
+        <div id="news-crisis-slot"></div>
         <div id="news-party-slot"></div>
         <div id="news-king-slot"></div>
         ${archiveHTML}
@@ -298,6 +383,7 @@ export async function renderNews() {
   if (inner) {
     loadBattleBulletin(inner.querySelector('#news-battle-slot'));
     loadPresidentBlock(inner.querySelector('#news-prez-slot'));
+    loadNewsCrisis(inner.querySelector('#news-crisis-slot'));
     loadPartyStandings(inner.querySelector('#news-party-slot'));
     loadKingRecap(inner.querySelector('#news-king-slot'));
   }
