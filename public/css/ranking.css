@@ -76,6 +76,7 @@
 
 /* 랭킹 행 */
 .rank-panel { display: flex; flex-direction: column; gap: 6px; }
+.rank-panel.rank-panel--hidden { display: none; }
 .rank-row {
   display: flex;
   align-items: center;

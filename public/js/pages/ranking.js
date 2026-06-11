@@ -24,7 +24,7 @@ function renderUserRow(m, myUid) {
     <div class="rank-row${isMe ? ' rank-row--me' : ''}">
       ${rankMedal(m.rank)}
       <span class="rank-party-dot" style="background:${m.partyColor}" title="${escHtml(m.partyName)}"></span>
-      <span class="rank-nickname">${m.icon ? `${m.icon} ` : ''}${escHtml(m.nickname)}${isMe ? ' <em>(나)</em>' : ''}</span>
+      <span class="rank-nickname">${m.icon?.value ? `${m.icon.value} ` : ''}${escHtml(m.nickname)}${isMe ? ' <em>(나)</em>' : ''}</span>
       <span class="rank-party-name">${m.partyEmoji} ${escHtml(m.partyName)}</span>
       <span class="rank-power">${fmtPower(m.power)}P</span>
     </div>`;
@@ -41,7 +41,7 @@ function renderLeaderCard(party) {
       ${leader
         ? `<div class="leader-card__leader">
             <span class="leader-card__crown">👑</span>
-            <span class="leader-card__nick">${leader.icon ? `${leader.icon} ` : ''}${escHtml(leader.nickname)}</span>
+            <span class="leader-card__nick">${leader.icon?.value ? `${leader.icon.value} ` : ''}${escHtml(leader.nickname)}</span>
             <span class="leader-card__power">${fmtPower(leader.power)}P</span>
            </div>`
         : `<div class="leader-card__empty">당대표 없음 — 입당하면 당대표!</div>`}
@@ -115,7 +115,7 @@ export async function renderRanking() {
            </div>`}
     </div>
 
-    <div id="rank-panel-leaders" class="rank-panel" hidden>
+    <div id="rank-panel-leaders" class="rank-panel rank-panel--hidden">
       <div class="leaders-grid">
         ${leaders.map(renderLeaderCard).join('')}
       </div>
@@ -127,8 +127,8 @@ export async function renderRanking() {
       el.querySelectorAll('.ranking-tab').forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
       const target = tab.dataset.tab;
-      el.querySelector('#rank-panel-overall').hidden = (target !== 'overall');
-      el.querySelector('#rank-panel-leaders').hidden = (target !== 'leaders');
+      el.querySelector('#rank-panel-overall').classList.toggle('rank-panel--hidden', target !== 'overall');
+      el.querySelector('#rank-panel-leaders').classList.toggle('rank-panel--hidden', target !== 'leaders');
     });
   });
 }
