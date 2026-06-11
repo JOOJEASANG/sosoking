@@ -12,6 +12,7 @@ import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { navigate } from '../router.js';
 import { getPoliticalRank } from '../utils/political-rank.js';
 import { showPointPopup } from '../utils/point-popup.js';
+import { renderPartyBadge } from '../utils/party-badge.js';
 
 const TYPE_LABEL = {
   ai_judge:     '⚖️ 판결소',
@@ -384,11 +385,13 @@ function renderTodayBest(post) {
 function renderPopularComment(comment, index) {
   const timeStr = formatTime(comment.createdAt?.toDate?.() || comment.createdAt);
   const score = comment._score || 0;
+  const rankEmoji = comment.rankEmoji || '';
+  const partyBadge = comment.partyId ? renderPartyBadge(comment.partyId) : '';
   return `
     <button class="home-compact-feed-item" type="button" data-id="${comment.postId}">
       <span class="home-compact-feed-item__badge">💬 ${index + 1}</span>
       <span class="home-compact-feed-item__title">${escHtml(comment.text || '').slice(0, 100)}</span>
-      <span class="home-compact-feed-item__meta">${escHtml(comment.authorName || '익명')} · ${timeStr}${score ? ` · 반응 ${fmtNum(score)}` : ''}</span>
+      <span class="home-compact-feed-item__meta">${partyBadge}${rankEmoji ? `<span class="comment-rank-emoji">${escHtml(rankEmoji)}</span>` : ''}${escHtml(comment.authorName || '익명')} · ${timeStr}${score ? ` · 반응 ${fmtNum(score)}` : ''}</span>
     </button>`;
 }
 
