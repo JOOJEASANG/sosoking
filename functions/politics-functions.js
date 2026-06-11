@@ -1294,7 +1294,7 @@ exports.getUserPoliticsStats = onCall({ region: REGION, timeoutSeconds: 15 }, as
   const uid = request.auth && request.auth.uid;
   if (!uid) return { loggedIn: false };
 
-  const [userSnap, battleCountSnap, electionCountSnap] = await Promise.all([
+  const [userSnap, battleCountSnap, electionCountSnap, crisisCountSnap, commentCountSnap] = await Promise.all([
     db.doc(`users/${uid}`).get(),
     db.collection('point_awards')
       .where(FieldPath.documentId(), '>=', `${uid}_battle_vote_`)
@@ -1304,16 +1304,28 @@ exports.getUserPoliticsStats = onCall({ region: REGION, timeoutSeconds: 15 }, as
       .where(FieldPath.documentId(), '>=', `${uid}_election_vote_`)
       .where(FieldPath.documentId(), '<', `${uid}_election_vote_￿`)
       .count().get().catch(() => null),
+    db.collection('point_awards')
+      .where(FieldPath.documentId(), '>=', `${uid}_crisis_`)
+      .where(FieldPath.documentId(), '<', `${uid}_crisis_￿`)
+      .count().get().catch(() => null),
+    db.collection('point_awards')
+      .where(FieldPath.documentId(), '>=', `battle_comment_${uid}_`)
+      .where(FieldPath.documentId(), '<', `battle_comment_${uid}_￿`)
+      .count().get().catch(() => null),
   ]);
 
   const user = userSnap.exists ? (userSnap.data() || {}) : {};
   const battleVotes = battleCountSnap ? battleCountSnap.data().count : 0;
   const electionVotes = electionCountSnap ? electionCountSnap.data().count : 0;
+  const crisisVotes = crisisCountSnap ? crisisCountSnap.data().count : 0;
+  const battleComments = commentCountSnap ? commentCountSnap.data().count : 0;
 
   return {
     loggedIn: true,
     battleVotes,
     electionVotes,
+    crisisVotes,
+    battleComments,
     streak: Number(user.streak || 0),
     maxStreak: Number(user.maxStreak || user.streak || 0),
     signupDate: user.createdAt ? user.createdAt.toDate().toISOString().slice(0, 10) : null,

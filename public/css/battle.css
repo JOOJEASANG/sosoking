@@ -401,6 +401,17 @@
   color: var(--color-text-primary, #111);
   letter-spacing: -.01em;
 }
+.battle-discuss__reward {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 800;
+  color: #1e8449;
+  background: color-mix(in srgb, #27ae60 12%, transparent);
+  border-radius: 8px;
+  padding: 1px 7px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
 .battle-discuss__form { margin-bottom: 16px; }
 .battle-discuss__input {
   width: 100%;

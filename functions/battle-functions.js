@@ -417,7 +417,22 @@ exports.addBattleComment = onCall({
     createdAt: FieldValue.serverTimestamp(),
   });
 
-  return { ok: true, id: ref.id };
+  // 첫 번째 배틀 댓글 +10P (하루 1회)
+  let pointsAwarded = 0;
+  try {
+    const awardKey = `battle_comment_${userId}_${today}`;
+    const awardRef = db.doc(`point_awards/${awardKey}`);
+    const awardSnap = await awardRef.get();
+    if (!awardSnap.exists) {
+      const batch = db.batch();
+      batch.set(awardRef, { uid: userId, type: 'battle_comment', date: today, points: 10, createdAt: FieldValue.serverTimestamp() });
+      batch.set(db.doc(`users/${userId}`), { totalPoints: FieldValue.increment(10), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+      await batch.commit();
+      pointsAwarded = 10;
+    }
+  } catch {}
+
+  return { ok: true, id: ref.id, pointsAwarded };
 });
 
 // ── 오늘 배틀 현황 조회 ──

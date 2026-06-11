@@ -250,7 +250,7 @@ export async function renderBattle() {
 
         <!-- 토론 댓글 -->
         <div class="battle-discuss">
-          <div class="battle-discuss__title">💬 토론 참여하기</div>
+          <div class="battle-discuss__title">💬 토론 참여하기 <span class="battle-discuss__reward">첫 의견 +10P</span></div>
           ${auth.currentUser ? `
             <div class="battle-discuss__form">
               <textarea class="battle-discuss__input" id="discuss-input" placeholder="이 사건에 대한 당신의 한마디..." rows="2" maxlength="300"></textarea>
@@ -354,7 +354,7 @@ async function handleComment(el) {
   btn.disabled = true;
   try {
     const addBattleComment = httpsCallable(functions, 'addBattleComment');
-    await addBattleComment({ text });
+    const { data: res } = await addBattleComment({ text });
 
     const listEl = el.querySelector('#comment-list');
     if (listEl) {
@@ -371,7 +371,12 @@ async function handleComment(el) {
     }
 
     input.value = '';
-    toast.success('의견을 남겼어요!');
+    if (res?.pointsAwarded) {
+      showPointPopup(res.pointsAwarded);
+      toast.success(`의견을 남겼어요! +${res.pointsAwarded}P 🎉`);
+    } else {
+      toast.success('의견을 남겼어요!');
+    }
   } catch (err) {
     toast.error(err?.message || '댓글 등록에 실패했어요');
   } finally {
