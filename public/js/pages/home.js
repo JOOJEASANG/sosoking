@@ -162,12 +162,27 @@ function renderBattleCard(battle) {
 // 비로그인 게스트용 히어로
 function renderGuestHero() {
   return `
-    <section class="home-hero-v3">
-      <div class="home-hero-v3__top">
-        <div class="home-hero-v3__badge">🏛️ 소소공화국</div>
-        <h1 class="home-hero-v3__title">무명 시민에서<br>거물 정치인까지 👑</h1>
-        <p class="home-hero-v3__sub">7인 AI 정치인의 매일 정쟁에 참여해 정치력을 쌓고, 출세 사다리를 올라 대통령에 도전하세요</p>
-        <button class="btn btn--primary" data-path="/signup" style="margin-top:14px">정치 인생 시작하기 →</button>
+    <section class="home-landing-hero page-enter">
+      <div class="home-landing-hero__bg home-landing-hero__bg--one"></div>
+      <div class="home-landing-hero__bg home-landing-hero__bg--two"></div>
+      <div class="home-landing-hero__content">
+        <div class="home-landing-hero__badge">
+          <span>🏛️</span>
+          <b>소소공화국</b>
+          <small>정치 게임</small>
+        </div>
+        <h1>무명 시민에서<br>거물 정치인까지 👑</h1>
+        <p>AI 정치인들의 매일 정쟁에 참여해 정치력을 쌓고,<br>당대표로 선출된 뒤 대통령에 도전하세요</p>
+        <div class="home-landing-hero__actions">
+          <button class="home-landing-hero__primary" data-path="/signup">정치 인생 시작하기 →</button>
+          <button class="home-landing-hero__secondary" data-path="/battle">오늘의 배틀 구경 →</button>
+        </div>
+        <div class="home-landing-hero__chips">
+          <span>🗳️ 매일 배틀 투표</span>
+          <span>🏛️ 정당 입당</span>
+          <span>👑 대통령 선거</span>
+          <span>📰 AI 신문</span>
+        </div>
       </div>
     </section>`;
 }
