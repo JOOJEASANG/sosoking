@@ -657,14 +657,21 @@ exports.getMyStatus = onCall({ region: REGION, timeoutSeconds: 10 }, async reque
   // 이번 주 대선 투표 여부 + 마감일 (미션 체크리스트용)
   let votedElection = false;
   let electionEndKey = null;
+  let votedCrisis = false;
+  let campaignsToday = 0;
+  const today = kstToday();
   try {
     const { key, endKey } = weekPeriod();
-    const [b, elecSnap] = await Promise.all([
+    const [b, elecSnap, crisisVoteSnap, campaignSnap] = await Promise.all([
       db.doc(`elections/${key}/ballots/${uid}`).get(),
       db.doc(`elections/${key}`).get(),
+      db.doc(`political_crises/${key}/votes/${uid}`).get().catch(() => null),
+      db.doc(`campaign_records/${uid}_${today}`).get().catch(() => null),
     ]);
     votedElection = b.exists;
     electionEndKey = elecSnap.exists ? (elecSnap.data().endKey || endKey) : endKey;
+    votedCrisis = !!(crisisVoteSnap && crisisVoteSnap.exists);
+    campaignsToday = campaignSnap && campaignSnap.exists ? Number(campaignSnap.data().count || 0) : 0;
   } catch {}
 
   // 당대표까지 남은 포인트 (2위 또는 그 이상일 때)
@@ -691,6 +698,8 @@ exports.getMyStatus = onCall({ region: REGION, timeoutSeconds: 10 }, async reque
     votedElection,
     electionEndKey,
     pointsToLeader,
+    votedCrisis,
+    campaignsToday,
   };
 });
 

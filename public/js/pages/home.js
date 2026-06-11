@@ -364,6 +364,8 @@ function renderLeaderCard(status) {
 function renderMissions(status, battleData, isRulingParty = false) {
   const votedBattle = !!(battleData && battleData.userVote);
   const votedElection = !!status.votedElection;
+  const votedCrisis = !!status.votedCrisis;
+  const campaignsToday = Number(status.campaignsToday || 0);
   const attended = (appState.streak || 0) >= 1;
 
   const dailyReward = status.isLeader ? '+30P 👑' : '+20P';
@@ -381,9 +383,11 @@ function renderMissions(status, battleData, isRulingParty = false) {
   }
 
   const missions = [
-    { done: attended,       label: '오늘 출석',     path: '/',         cta: '완료',       reward: dailyReward, icon: '📅' },
-    { done: votedBattle,    label: '정치배틀 투표', path: '/battle',   cta: '투표하기',   reward: '+5P',  icon: '🗳️' },
-    { done: votedElection,  label: elecLabel,       path: '/election', cta: '투표하기',   reward: '+5P',  icon: '👑' },
+    { done: attended,       label: '오늘 출석',        path: '/',         cta: '완료',       reward: dailyReward, icon: '📅' },
+    { done: votedBattle,    label: '정치배틀 투표',     path: '/battle',   cta: '투표하기',   reward: '+5P',       icon: '🗳️' },
+    { done: votedElection,  label: elecLabel,           path: '/election', cta: '투표하기',   reward: '+5P',       icon: '👑' },
+    { done: votedCrisis,    label: '이번 주 위기 투표', path: '/',         cta: '참여하기',   reward: '+5P',       icon: '🚨' },
+    ...(status.partyId ? [{ done: campaignsToday >= 1, label: `유세 캠페인 (${campaignsToday}/3)`, path: '/parties', cta: '유세하기', reward: '-20P → 당 +15P', icon: '📢' }] : []),
     ...(isRulingParty ? [{ done: true, label: '집권당 일일 특전', path: '/', cta: '수령 완료', reward: '+3P 🔑', icon: '🏛️' }] : []),
   ];
   const doneCount = missions.filter(m => m.done).length;
