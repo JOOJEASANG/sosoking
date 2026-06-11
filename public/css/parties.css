@@ -162,6 +162,7 @@
 .party-member:last-child { border-bottom: none; }
 .party-member--leader { font-weight: 800; }
 .party-member__rank { min-width: 24px; text-align: center; font-weight: 800; font-size: 13px; color: var(--color-text-secondary); }
+.party-member__pol-rank { font-size: 14px; line-height: 1; flex-shrink: 0; cursor: default; }
 .party-member__name { flex: 1; font-size: 13px; color: var(--color-text-primary); }
 .party-member__badge {
   font-size: 10px; font-weight: 800; color: #fff; background: var(--color-primary);

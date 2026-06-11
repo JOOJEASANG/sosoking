@@ -5,6 +5,7 @@ import { navigate } from '../router.js';
 import { setMeta } from '../utils/seo.js';
 import { escHtml } from '../utils/helpers.js';
 import { toast } from '../components/toast.js';
+import { getPoliticalRank } from '../utils/political-rank.js';
 
 // 정당별 강점·정책·입당 혜택·한마디 (표시용 메타)
 const PARTY_META = {
@@ -233,12 +234,16 @@ async function loadMembers(partyId, host) {
       host.innerHTML = `<div class="party-members__empty">아직 당원이 없어요. 첫 당원이 되어보세요!</div>`;
       return;
     }
-    host.innerHTML = members.map(m => `
+    host.innerHTML = members.map(m => {
+      const polRank = getPoliticalRank(m.power || 0);
+      return `
       <div class="party-member${m.rank === 1 ? ' party-member--leader' : ''}">
         <span class="party-member__rank">${m.rank === 1 ? '👑' : m.rank}</span>
+        <span class="party-member__pol-rank" title="${escHtml(polRank.label)}">${polRank.emoji}</span>
         <span class="party-member__name">${escHtml(m.nickname)}${m.rank === 1 ? ' <span class="party-member__badge">당대표</span>' : ''}</span>
         <span class="party-member__power">${fmtNum(m.power)}</span>
-      </div>`).join('');
+      </div>`;
+    }).join('');
   } catch (e) {
     host.innerHTML = `<div class="party-members__empty">당원 목록을 불러오지 못했어요.</div>`;
   }

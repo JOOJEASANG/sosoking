@@ -607,6 +607,25 @@ exports.getPresident = onCall({ region: REGION, timeoutSeconds: 10 }, async () =
   return { president: { ...d.winner, decree: d.decree || null, periodId: prevKey } };
 });
 
+// ── 대통령 포고령 직접 작성 ──
+exports.setPresidentialDecree = onCall({ region: REGION, timeoutSeconds: 10 }, async request => {
+  const uid = requireUid(request);
+  const text = String((request.data && request.data.decree) || '').trim();
+  if (!text) throw new HttpsError('invalid-argument', '포고령 내용을 입력해주세요.');
+  if (text.length > 200) throw new HttpsError('invalid-argument', '포고령은 200자 이내로 작성해주세요.');
+
+  const { prevKey } = weekPeriod();
+  const ref = db.doc(`elections/${prevKey}`);
+  const snap = await ref.get();
+  if (!snap.exists) throw new HttpsError('not-found', '현 임기 선거 기록이 없습니다.');
+  const d = snap.data() || {};
+  if (d.status !== 'closed' || !d.winner) throw new HttpsError('failed-precondition', '현직 대통령이 없습니다.');
+  if (d.winner.candidateUid !== uid) throw new HttpsError('permission-denied', '현직 대통령만 포고령을 발표할 수 있어요.');
+
+  await ref.update({ decree: text, updatedAt: FieldValue.serverTimestamp() });
+  return { ok: true, decree: text };
+});
+
 // ── 정치력 랭킹 — 전 정당 상위 유저 통합 순위 ──
 exports.getRankings = onCall({ region: REGION, timeoutSeconds: 30 }, async request => {
   await ensureParties();

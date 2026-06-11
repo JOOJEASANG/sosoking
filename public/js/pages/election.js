@@ -29,7 +29,7 @@ function dDay(endKey) {
   return `D-${days}`;
 }
 
-function renderPresident(p) {
+function renderPresident(p, isPresident) {
   if (!p) {
     return `<div class="prez-banner prez-banner--empty">
       <div class="prez-banner__label">현직 대통령</div>
@@ -42,8 +42,19 @@ function renderPresident(p) {
     <div class="prez-banner__emoji">${p.emoji}</div>
     <div class="prez-banner__name">${escHtml(p.candidateName)}</div>
     <div class="prez-banner__party">${escHtml(p.partyName)}${p.isAI ? ' · AI 정치인' : ' · 당대표'}</div>
-    ${p.decree ? `<div class="prez-banner__decree">"${escHtml(p.decree)}"</div>` : ''}
-  </div>`;
+    ${p.decree ? `<div class="prez-banner__decree" id="prez-decree-text">"${escHtml(p.decree)}"</div>` : `<div class="prez-banner__decree prez-banner__decree--empty" id="prez-decree-text">포고령 준비 중…</div>`}
+    ${isPresident ? `<button class="prez-decree-edit-btn" id="prez-decree-btn">📜 포고령 수정하기</button>` : ''}
+  </div>
+  ${isPresident ? `
+  <div class="prez-decree-form" id="prez-decree-form" hidden>
+    <div class="prez-decree-form__label">📜 대통령 포고령 발표</div>
+    <textarea class="prez-decree-form__input" id="prez-decree-input" maxlength="200" placeholder="소소공화국 국민 여러분께 포고합니다…" rows="3">${escHtml(p.decree || '')}</textarea>
+    <div class="prez-decree-form__hint"><span id="prez-decree-len">${p.decree ? p.decree.length : 0}</span>/200자</div>
+    <div class="prez-decree-form__actions">
+      <button class="btn btn--primary btn--sm" id="prez-decree-submit">포고령 발표 🏛️</button>
+      <button class="btn btn--ghost btn--sm" id="prez-decree-cancel">취소</button>
+    </div>
+  </div>` : ''}`;
 }
 
 function renderCandidate(c, total, myVote, canVote, isLeading) {
@@ -103,6 +114,7 @@ export async function renderElection() {
   const total = election.totalVotes || 0;
   const loggedIn = !!auth.currentUser;
   const myVote = election.myVote;
+  const isPresident = !!(president && president.candidateUid && auth.currentUser && president.candidateUid === auth.currentUser.uid);
 
   const voteStateMsg = !loggedIn
     ? `<button class="btn btn--primary btn--sm" id="elec-login">로그인하고 투표하기</button>`
@@ -111,7 +123,7 @@ export async function renderElection() {
       : `<span class="elec-open">한 명에게 한 표! 마감 ${escHtml(election.endKey)}</span>`;
 
   el.innerHTML = `<div class="election-page page-enter">
-    ${renderPresident(president)}
+    ${renderPresident(president, isPresident)}
     <div class="elec-head">
       <div class="elec-head__dday" data-urgent="${dDay(election.endKey).startsWith('⚡') || dDay(election.endKey).startsWith('D-DAY') ? 'true' : 'false'}">${dDay(election.endKey)}</div>
       <div class="elec-head__title">🗳️ 이번 주 대통령 선거</div>
@@ -125,6 +137,49 @@ export async function renderElection() {
   </div>`;
 
   el.querySelector('#elec-login')?.addEventListener('click', () => navigate('/login'));
+
+  // 대통령 포고령 편집기
+  if (isPresident) {
+    const decreeBtn = el.querySelector('#prez-decree-btn');
+    const decreeForm = el.querySelector('#prez-decree-form');
+    const decreeInput = el.querySelector('#prez-decree-input');
+    const decreeLen = el.querySelector('#prez-decree-len');
+    const decreeSubmit = el.querySelector('#prez-decree-submit');
+    const decreeCancel = el.querySelector('#prez-decree-cancel');
+
+    decreeBtn?.addEventListener('click', () => {
+      decreeForm.hidden = !decreeForm.hidden;
+      decreeBtn.textContent = decreeForm.hidden ? '📜 포고령 수정하기' : '📜 편집 닫기';
+      if (!decreeForm.hidden) decreeInput?.focus();
+    });
+    decreeInput?.addEventListener('input', () => {
+      if (decreeLen) decreeLen.textContent = decreeInput.value.length;
+    });
+    decreeCancel?.addEventListener('click', () => {
+      decreeForm.hidden = true;
+      decreeBtn.textContent = '📜 포고령 수정하기';
+    });
+    decreeSubmit?.addEventListener('click', async () => {
+      const text = decreeInput?.value.trim();
+      if (!text) { toast.warn('포고령 내용을 입력해주세요'); return; }
+      decreeSubmit.disabled = true;
+      decreeSubmit.textContent = '발표 중…';
+      try {
+        const call = httpsCallable(functions, 'setPresidentialDecree');
+        const res = await call({ decree: text });
+        const decreeTextEl = el.querySelector('#prez-decree-text');
+        if (decreeTextEl) decreeTextEl.textContent = `"${res.data.decree}"`;
+        decreeForm.hidden = true;
+        decreeBtn.textContent = '📜 포고령 수정하기';
+        toast.success('포고령을 발표했어요! 🏛️');
+      } catch (e) {
+        toast.error(e?.message || '발표에 실패했어요');
+      } finally {
+        decreeSubmit.disabled = false;
+        decreeSubmit.textContent = '포고령 발표 🏛️';
+      }
+    });
+  }
 
   el.querySelectorAll('.elec-vote-btn').forEach(btn => {
     btn.addEventListener('click', async () => {

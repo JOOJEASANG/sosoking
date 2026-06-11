@@ -121,3 +121,37 @@
   color: var(--party-color, var(--color-primary));
   background: color-mix(in srgb, var(--party-color, #ff6b4a) 10%, transparent);
 }
+.prez-banner__decree--empty { opacity: .5; font-style: normal; }
+
+/* 대통령 포고령 편집 버튼 */
+.prez-decree-edit-btn {
+  margin-top: 10px;
+  font-size: 12px; font-weight: 800; color: var(--party-color, var(--color-primary));
+  background: color-mix(in srgb, var(--party-color, #ff6b4a) 10%, var(--color-surface));
+  border: 1.5px dashed var(--party-color, var(--color-primary));
+  border-radius: 99px; padding: 6px 16px; cursor: pointer;
+  transition: opacity .15s;
+}
+.prez-decree-edit-btn:hover { opacity: .8; }
+
+/* 포고령 편집 폼 */
+.prez-decree-form {
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-top: 8px;
+}
+.prez-decree-form__label {
+  font-size: 13px; font-weight: 800; color: var(--color-text-primary); margin-bottom: 8px;
+}
+.prez-decree-form__input {
+  width: 100%; box-sizing: border-box;
+  font-size: 13px; line-height: 1.5;
+  border: 1px solid var(--color-border); border-radius: 10px;
+  padding: 10px 12px; background: var(--color-surface-2, #f7f7fa);
+  color: var(--color-text-primary); resize: none; font-family: inherit;
+}
+.prez-decree-form__input:focus { outline: none; border-color: var(--color-primary); }
+.prez-decree-form__hint { font-size: 11px; color: var(--color-text-muted); text-align: right; margin: 4px 0 10px; }
+.prez-decree-form__actions { display: flex; gap: 8px; }
