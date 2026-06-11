@@ -7,6 +7,22 @@ const db = getFirestore();
 const REGION = 'asia-northeast3';
 const ALLOWED_REACTIONS = ['like', 'funny', 'fire', 'skull'];
 
+// 반응 받음 1P — 작성자가 자신의 글에 반응 줄 때는 제외, idempotent 보장
+async function tryAwardReactionReceived(authorId, reactorId, postId) {
+  if (!authorId || authorId === reactorId) return;
+  const id = `${authorId}_reaction_received_${postId}_${reactorId}`;
+  const ref = db.doc(`point_awards/${id}`);
+  const snap = await ref.get();
+  if (snap.exists) return;
+  const userRef = db.doc(`users/${authorId}`);
+  await db.runTransaction(async tx => {
+    const a = await tx.get(ref);
+    if (a.exists) return;
+    tx.set(ref, { uid: authorId, action: 'reaction_received', points: 1, postId, reactorId, createdAt: FieldValue.serverTimestamp(), createdAtMs: Date.now() });
+    tx.set(userRef, { points: FieldValue.increment(1), totalPoints: FieldValue.increment(1), 'pointStats.reaction_received': FieldValue.increment(1), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+  });
+}
+
 function cleanId(value, max = 160) {
   return String(value || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, max);
 }
@@ -115,10 +131,15 @@ const toggleFeedReaction = onCall({ region: REGION, timeoutSeconds: 20 }, async 
     }
 
     tx.update(postRef, patch);
-    return { reactions, myReaction };
+    return { reactions, myReaction, authorId: post.authorId || null, isNewReaction: !current && myReaction != null };
   });
 
-  return { ok: true, ...result };
+  // 새 반응(토글 OFF·교체 아님)이면 게시글 작성자에게 +1P
+  if (result.isNewReaction && result.authorId) {
+    tryAwardReactionReceived(result.authorId, userId, safePostId).catch(() => {});
+  }
+
+  return { ok: true, reactions: result.reactions, myReaction: result.myReaction };
 });
 
 const registerPostView = onCall({ region: REGION, timeoutSeconds: 15 }, async (request) => {

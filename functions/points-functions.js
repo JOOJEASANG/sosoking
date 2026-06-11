@@ -17,7 +17,7 @@ const POINT_RULES = Object.freeze({
   reaction_give: { points: 1, label: '댓글에 반응 남기기' },
 });
 
-const CLIENT_CALLABLE_ACTIONS = new Set(['post_create']);
+const CLIENT_CALLABLE_ACTIONS = new Set(['post_create', 'comment_create']);
 
 function todayKey() {
   return new Intl.DateTimeFormat('en-CA', {
@@ -57,6 +57,22 @@ async function validateClientAward(uid, action, meta) {
     const post = snap.data() || {};
     if (post.authorId !== uid) throw new HttpsError('permission-denied', '본인이 작성한 글에만 포인트를 지급할 수 있습니다.');
     if (post.hidden === true) throw new HttpsError('failed-precondition', '숨김 글에는 포인트를 지급할 수 없습니다.');
+    return;
+  }
+
+  if (action === 'comment_create') {
+    const postId = clean(meta.postId, 180);
+    if (!postId) throw new HttpsError('invalid-argument', '게시글 정보가 없습니다.');
+    // 해당 포스트에 이 유저의 댓글이 실제로 존재하는지 확인 (최근 3분 이내)
+    const cutoff = new Date(Date.now() - 3 * 60 * 1000);
+    const q = await db.collection(`feeds/${postId}/comments`)
+      .where('authorId', '==', uid)
+      .orderBy('createdAt', 'desc')
+      .limit(1)
+      .get();
+    if (q.empty) throw new HttpsError('failed-precondition', '댓글을 찾을 수 없습니다.');
+    const commentTime = q.docs[0].data().createdAt?.toDate?.();
+    if (commentTime && commentTime < cutoff) throw new HttpsError('failed-precondition', '댓글 작성 시간이 초과됐습니다.');
     return;
   }
 
