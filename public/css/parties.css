@@ -378,3 +378,60 @@
   display: block; margin: 10px auto 0; background: none; border: none;
   font-size: 12px; color: var(--color-text-muted); cursor: pointer; text-decoration: underline;
 }
+
+/* ── 신규 유저 환영 모달 ── */
+.welcome-modal {
+  position: fixed; inset: 0; z-index: 3000;
+  background: rgba(0,0,0,.65); backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+  opacity: 0; transition: opacity .3s ease;
+}
+.welcome-modal--visible { opacity: 1; }
+.welcome-modal__card {
+  background: var(--color-surface, #fff);
+  border-radius: 22px; padding: 28px 24px;
+  width: min(360px, 100%); text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,.25);
+  transform: scale(.9);
+  transition: transform .45s cubic-bezier(.34,1.56,.64,1);
+}
+.welcome-modal--visible .welcome-modal__card { transform: scale(1); }
+.welcome-modal__confetti {
+  font-size: 20px; letter-spacing: 4px; margin-bottom: 6px;
+  display: block;
+}
+.welcome-modal__emoji { font-size: 52px; line-height: 1; margin-bottom: 8px; }
+.welcome-modal__title {
+  font-size: 18px; font-weight: 900; color: var(--color-text-primary); margin-bottom: 4px;
+}
+.welcome-modal__nick {
+  font-size: 14px; color: var(--color-text-secondary); margin-bottom: 16px; font-weight: 700;
+}
+.welcome-modal__bonus {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--color-primary) 30%, transparent);
+  border-radius: 12px; padding: 10px 18px; margin-bottom: 18px;
+}
+.welcome-modal__bonus-label {
+  font-size: 12px; font-weight: 800; color: var(--color-text-secondary);
+}
+.welcome-modal__bonus-pts {
+  font-size: 22px; font-weight: 900; color: var(--color-primary);
+}
+.welcome-modal__steps {
+  display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; text-align: left;
+}
+.welcome-modal__step {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 13px; font-weight: 600; color: var(--color-text-primary);
+}
+.welcome-modal__step span {
+  flex-shrink: 0; width: 22px; height: 22px;
+  background: var(--color-primary); color: #fff;
+  font-size: 11px; font-weight: 900;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+}
+.welcome-modal__actions { display: flex; flex-direction: column; gap: 8px; }
+.welcome-modal__party-btn { width: 100%; font-weight: 900; }
+.welcome-modal__skip-btn { width: 100%; font-size: 12px; }

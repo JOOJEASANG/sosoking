@@ -50,6 +50,41 @@ function currentPath() {
   return hash.split('?')[0] || '/';
 }
 
+function showWelcomeModal(nickname) {
+  if (document.getElementById('welcome-modal')) return;
+  const el = document.createElement('div');
+  el.id = 'welcome-modal';
+  el.className = 'welcome-modal';
+  el.innerHTML = `
+    <div class="welcome-modal__card">
+      <div class="welcome-modal__confetti" aria-hidden="true">🎊 🎉 ✨ 🎊 🎉</div>
+      <div class="welcome-modal__emoji">🏛️</div>
+      <div class="welcome-modal__title">소소공화국에 오신 걸 환영해요!</div>
+      <div class="welcome-modal__nick">${esc(nickname || '정치인')}님</div>
+      <div class="welcome-modal__bonus">
+        <span class="welcome-modal__bonus-label">입국 보너스</span>
+        <span class="welcome-modal__bonus-pts">+500P</span>
+      </div>
+      <div class="welcome-modal__steps">
+        <div class="welcome-modal__step"><span>1</span> 정당에 입당해 소속감 만들기</div>
+        <div class="welcome-modal__step"><span>2</span> 매일 배틀 투표로 +5P 획득</div>
+        <div class="welcome-modal__step"><span>3</span> 정치력 1위가 되어 당대표 → 대통령!</div>
+      </div>
+      <div class="welcome-modal__actions">
+        <button class="btn btn--primary welcome-modal__party-btn" id="wm-party">🏛️ 정당 입당하기</button>
+        <button class="btn btn--ghost welcome-modal__skip-btn" id="wm-skip">나중에</button>
+      </div>
+    </div>`;
+  document.body.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('welcome-modal--visible'));
+  el.querySelector('#wm-party').addEventListener('click', () => {
+    el.remove();
+    navigate('/parties');
+  });
+  el.querySelector('#wm-skip').addEventListener('click', () => el.remove());
+  el.addEventListener('click', e => { if (e.target === el) el.remove(); });
+}
+
 function isAdminAllowedPath(path) {
   return ADMIN_ALLOWED_PATHS.has(path) || path.startsWith('/admin');
 }
@@ -137,7 +172,9 @@ async function fetchUserProfile(user) {
       if (!data.signupBonusClaimed) {
         import('./firebase.js').then(({ functions }) =>
           import('https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js').then(({ httpsCallable }) =>
-            httpsCallable(functions, 'claimSignupBonus')().catch(() => {})
+            httpsCallable(functions, 'claimSignupBonus')().then(res => {
+              if (res.data?.awarded) showWelcomeModal(appState.nickname);
+            }).catch(() => {})
           )
         );
       }
