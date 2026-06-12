@@ -21,11 +21,11 @@ const TYPE_LABEL = {
 };
 
 const QUICK_ACTIONS = [
-  { path: '/battle',   emoji: '🗳️', name: '정치배틀', desc: '오늘의 정쟁 투표' },
-  { path: '/parties',  emoji: '🏛️', name: '정당',     desc: '입당·정치력' },
+  { path: '/republic', emoji: '🏛️', name: '공화국',   desc: '정당·대선·국회' },
+  { path: '/battle',   emoji: '⚔️', name: '배틀',     desc: '오늘의 정쟁 투표' },
   { path: '/election', emoji: '👑', name: '대선',     desc: '대통령 선출' },
+  { path: '/news',     emoji: '📰', name: '소소신문', desc: '오늘의 정치' },
   { path: '/ranking',  emoji: '🏆', name: '랭킹',     desc: '출세 순위' },
-  { path: '/news',     emoji: '📰', name: '소소신문', desc: '오늘의 정치', wide: true },
 ];
 
 function getKstDateString(date = new Date()) {
@@ -419,7 +419,7 @@ function renderMissions(status, battleData, isRulingParty = false) {
     { done: votedElection,  label: elecLabel,           path: '/election', cta: '투표하기',   reward: '+5P',       icon: '👑' },
     { done: votedCrisis,    label: '이번 주 위기 투표', path: '/news',     cta: '참여하기',   reward: '+5P',       icon: '🚨' },
     { done: askedQA,        label: '대통령에게 질문',   path: '/election', cta: '질문하기',   reward: '+3P',       icon: '🎙️' },
-    ...(status.partyId ? [{ done: campaignsToday >= 1, label: `유세 캠페인 (${campaignsToday}/3)`, path: '/parties', cta: '유세하기', reward: '-20P → 당 +15P', icon: '📢' }] : []),
+    ...(status.partyId ? [{ done: campaignsToday >= 1, label: `유세 캠페인 (${campaignsToday}/3)`, path: '/republic', cta: '유세하기', reward: '-20P → 당 +15P', icon: '📢' }] : []),
     ...(isRulingParty ? [{ done: true, label: '집권당 일일 특전', path: '/', cta: '수령 완료', reward: '+3P 🔑', icon: '🏛️' }] : []),
   ];
   const doneCount = missions.filter(m => m.done).length;
@@ -465,7 +465,7 @@ function renderMissions(status, battleData, isRulingParty = false) {
         <div class="home-missions__bonus-list">
           <button class="home-missions__bonus-item" data-path="/battle" type="button">💬 배틀 토론 <em>+20P</em></button>
           <button class="home-missions__bonus-item" data-path="/feed" type="button">✍️ 글·댓글 <em>+10~20P</em></button>
-          <button class="home-missions__bonus-item" data-path="/parties" type="button">🏛️ 정당 랭킹 <em>확인</em></button>
+          <button class="home-missions__bonus-item" data-path="/republic" type="button">🏛️ 공화국 허브 <em>확인</em></button>
         </div>
       </div>` : ''}
     </section>`;
@@ -589,10 +589,8 @@ export async function renderHome() {
       httpsCallable(functions, 'syncPartyMemberPower')({}).catch(() => {});
     }
 
-    const [hotPosts, popularComments, todayBest, battleData, presidentData, newsData, myStatus] = await Promise.all([
-      fetchHotPosts(8),
-      fetchPopularComments(6),
-      fetchTodayBest(),
+    const [hotPosts, battleData, presidentData, newsData, myStatus] = await Promise.all([
+      fetchHotPosts(4),
       fetchTodayBattle(),
       fetchPresident(),
       fetchDailyNews(),
@@ -604,47 +602,44 @@ export async function renderHome() {
 
     const isRulingParty = !!(myStatus?.loggedIn && myStatus.partyId && presidentData?.partyId && presidentData.partyId === myStatus.partyId);
 
-    // 로그인 유저: 정치 신분증 + 당대표 특전 + 오늘의 정치 일정 / 게스트: 가입 유도 히어로
-    const headerHTML = (myStatus && myStatus.loggedIn)
-      ? `${renderRankCard(myStatus, isRulingParty)}${renderLeaderCard(myStatus)}${renderMissions(myStatus, battleData, isRulingParty)}${renderQuickActions()}`
-      : `${renderGuestHero()}${renderQuickActions()}`;
-
-    const tickerHTML = renderNewsTicker(presidentData, battleData, newsData);
-    const newsHTML = renderNewsCard(newsData || generateFallbackNews(battleData, presidentData));
-    const prezHTML = renderPresidentCard(presidentData);
-    const battleHTML = renderBattleCard(battleData);
     const newPrezHTML = renderPresidentAnnouncement(presidentData);
+    const tickerHTML = renderNewsTicker(presidentData, battleData, newsData);
+    const battleHTML = renderBattleCard(battleData);
 
-    const bestHTML = todayBest ? `
-      <div class="home-section-header" style="margin-bottom:8px">
-        <span class="home-section-title">⭐ 오늘의 베스트</span>
-      </div>
-      ${renderTodayBest(todayBest)}` : '';
-
-    const hotHTML = `
-      <div>
+    const hotHTML = hotPosts.length ? `
+      <div class="home-hot-section">
         <div class="home-section-header">
-          <span class="home-section-title">🔥 인기 모음</span>
+          <span class="home-section-title">🔥 인기글</span>
           <button class="home-section-more home-section-more--button" id="hbtn-more-hot">더 보기</button>
         </div>
         <div class="home-rank-list">
-          ${hotPosts.length
-            ? hotPosts.map(renderPopularPost).join('')
-            : '<div class="empty-state"><div class="empty-state__title">아직 없어요. 첫 번째가 되어보세요!</div></div>'}
-        </div>
-      </div>`;
-
-    const commentsHTML = popularComments.length ? `
-      <div>
-        <div class="home-section-header">
-          <span class="home-section-title">💬 따끈한 댓글</span>
-        </div>
-        <div class="home-compact-feed-list">
-          ${popularComments.map(renderPopularComment).join('')}
+          ${hotPosts.map(renderPopularPost).join('')}
         </div>
       </div>` : '';
 
-    el.innerHTML = `<div class="home-dash page-enter home-dash--v2"><div id="home-notif-slot"></div>${newPrezHTML}${tickerHTML}${headerHTML}<div id="home-campaign-slot"></div><div id="home-manifesto-slot"></div>${battleHTML}${newsHTML}${prezHTML}<div id="home-crisis-slot"></div>${bestHTML}${hotHTML}${commentsHTML}<div id="home-party-power-slot"></div></div>`;
+    if (myStatus && myStatus.loggedIn) {
+      // 로그인: 미션 → 배틀 → 인기글
+      el.innerHTML = `
+        <div class="home-dash page-enter home-dash--v2">
+          <div id="home-notif-slot"></div>
+          ${newPrezHTML}
+          ${tickerHTML}
+          ${renderRankCard(myStatus, isRulingParty)}
+          ${renderMissions(myStatus, battleData, isRulingParty)}
+          <div id="home-campaign-slot"></div>
+          ${battleHTML}
+          <div id="home-crisis-slot"></div>
+          ${hotHTML}
+        </div>`;
+    } else {
+      // 비로그인: 히어로 → 배틀 → 인기글
+      el.innerHTML = `
+        <div class="home-dash page-enter home-dash--v2">
+          ${renderGuestHero()}
+          ${battleHTML}
+          ${hotHTML}
+        </div>`;
+    }
 
     el.querySelector('.home-new-prez-announce__close')?.addEventListener('click', () => {
       el.querySelector('#home-new-prez-announce')?.remove();
