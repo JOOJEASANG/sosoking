@@ -12,7 +12,7 @@ export function renderTerms() {
       <div class="card legal-card">
         <div class="legal-body">
           <div class="legal-notice">
-            소소킹은 7인 AI 정치인이 이끄는 <b>가상 정치 공화국 '소소공화국'</b>을 배경으로 한 참여형 커뮤니티입니다.
+            소소킹은 3개 정당 소속 AI 정치인들이 이끄는 <b>가상 정치 공화국 '소소공화국'</b>을 배경으로 한 참여형 커뮤니티입니다.
             모든 정당·정치인·선거·정치력은 <b>오락 목적의 가상 콘텐츠</b>이며, 서비스를 이용하면 본 약관에 동의한 것으로 봅니다.
           </div>
 

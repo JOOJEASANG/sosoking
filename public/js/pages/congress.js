@@ -27,9 +27,10 @@ function allocateSeats(parties) {
 }
 
 function renderSeats(seats, rulingPartyId) {
+  const ORDINALS = ['제1당', '제2당', '제3당'];
   return seats.map((p, idx) => {
-    const isRuling = p.id === rulingPartyId;
-    const role = isRuling ? '여당' : idx === 0 ? '제1당' : '야당';
+    const isRuling = !!rulingPartyId && p.id === rulingPartyId;
+    const role = isRuling ? '여당' : (rulingPartyId ? '야당' : (ORDINALS[idx] || `제${idx + 1}당`));
     return `<div class="congress-seat-card">
       <div class="congress-seat-card__top">
         <span class="congress-seat-card__name">${esc(p.emoji)} ${esc(p.name)}</span>
@@ -180,7 +181,7 @@ export async function renderCongress() {
   const bills = Array.isArray(billData.bills) ? billData.bills : [];
   const myVotes = billData.myVotes || {};
   const president = presidentRes.value?.data?.president || null;
-  const rulingPartyId = president?.partyId || parties[0]?.id || '';
+  const rulingPartyId = president?.partyId || null;
   const seats = allocateSeats(parties);
 
   el.innerHTML = `<div class="page-section">

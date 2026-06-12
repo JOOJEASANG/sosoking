@@ -139,10 +139,12 @@ function renderCandidate(c, total, myVote, canVote, isLeading, leaderVotes, ruli
     }
   }
 
-  const isRulingParty = rulingPartyId && c.partyId === rulingPartyId;
-  const partyStatusBadge = isRulingParty
-    ? `<span class="elec-cand__gov-badge elec-cand__gov-badge--ruling">여당</span>`
-    : `<span class="elec-cand__gov-badge elec-cand__gov-badge--opp">야당</span>`;
+  const isRulingParty = !!rulingPartyId && c.partyId === rulingPartyId;
+  const partyStatusBadge = rulingPartyId
+    ? (isRulingParty
+        ? `<span class="elec-cand__gov-badge elec-cand__gov-badge--ruling">여당</span>`
+        : `<span class="elec-cand__gov-badge elec-cand__gov-badge--opp">야당</span>`)
+    : '';
 
   const leadTag = isLeading && total > 0
     ? `<span class="elec-cand__lead-tag">🏆 선두</span>`

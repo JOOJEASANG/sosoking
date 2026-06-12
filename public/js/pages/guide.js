@@ -3,26 +3,44 @@ import { setMeta } from '../utils/seo.js';
 
 const CHARS_7 = [
   { emoji: '🎙️', name: '3선 의원',        title: '국민안정당 원내대표' },
-  { emoji: '📺', name: '정치 유튜버',      title: '진실방송당 (구독자 120만)' },
+  { emoji: '🔍', name: '탐사 기자',        title: '국민안정당 언론 담당' },
   { emoji: '📱', name: 'MZ 운동가',        title: '청년혁명당 청년위원장' },
+  { emoji: '📺', name: '정치 유튜버',      title: '청년혁명당 미디어 위원' },
   { emoji: '📊', name: '여론조사 전문가',  title: '중도민주당 정책자문위원' },
-  { emoji: '🤝', name: '당 대변인',        title: '함께미래당 공식 대변인' },
-  { emoji: '🔍', name: '탐사 기자',        title: '알권리당 언론인 출신' },
-  { emoji: '⚖️', name: '검사 출신 변호사', title: '법치정의당 법률위원장' },
+  { emoji: '🤝', name: '당 대변인',        title: '중도민주당 공식 대변인' },
+  { emoji: '⚖️', name: '검사 출신 변호사', title: '중도민주당 법률위원장' },
 ];
 
 const FEATURES = [
   {
-    emoji: '🗳️', name: '정치배틀', path: '/battle', badge: '7인 AI · 매일 자동',
-    desc: '매일 자정 새로운 정치 안건이 터집니다! 7인 AI 정치인이 자동으로 난장판 정쟁을 벌여요. 유저는 토론을 보고 원하는 정치인에게 한 표.',
-    examples: ['"국고가 텅 비었다" → 3선 의원 vs MZ 운동가 vs 탐사 기자...', '매일 투표 결과로 오늘의 당선자 결정', '역대 당선자 기록·연속 기록 확인 가능'],
+    emoji: '🗳️', name: '정치배틀', path: '/battle', badge: 'AI 7인 · 매일 자동',
+    desc: '매일 자정 새로운 정치 안건이 터집니다! 3개 정당 소속 7인 AI 정치인이 자동으로 정쟁을 벌여요. 유저는 토론을 보고 원하는 정치인에게 한 표.',
+    examples: ['"국고가 텅 비었다" → 3선 의원 vs MZ 운동가 vs 여론조사 전문가...', '매일 투표 결과로 오늘의 당선자 결정', '역대 당선자 기록·연속 기록 확인'],
     tip: '하루 1표 무료. 오늘의 당선자는 당신의 표심이 결정합니다!',
   },
   {
-    emoji: '🏛️', name: '헌법재판소', path: '/constitutional-court', badge: 'AI 재판관 3인',
+    emoji: '🏛️', name: '정당', path: '/parties', badge: '3개 정당 · 입당 가능',
+    desc: '국민안정당·청년혁명당·중도민주당 중 한 곳에 입당하세요. 활동으로 정치력을 쌓으면 당대표가 되고 대통령 선거에 출마할 수 있어요.',
+    examples: ['입당 → 유세 활동 → 정치력 획득', '당내 1위 = 당대표, 대선 후보 자동 등록', '집권당 소속이면 매일 보너스 포인트'],
+    tip: '정당에 입당해야 모든 정치 활동에 참여할 수 있어요!',
+  },
+  {
+    emoji: '🗳️', name: '대통령 선거', path: '/election', badge: '매주 월요일 리셋',
+    desc: '3개 정당 당대표(또는 AI 정치인)가 대선에 출마합니다. 매주 월요일 새 선거가 시작되며, 유저 투표로 공화국 대통령을 결정해요.',
+    examples: ['각 정당 당대표가 후보로 자동 등록', '지지 선언으로 당선자 결정', '당선자는 포고령 발표 + 포인트 지급'],
+    tip: '당대표가 없는 정당은 AI 정치인이 대신 출마합니다.',
+  },
+  {
+    emoji: '🏛️', name: '소소국회', path: '/congress', badge: '3당 의석 · 주간 법안',
+    desc: '3개 정당의 의석 구도를 확인하고 주간 법안에 찬반 표결하세요. 탄핵소추 청원도 여기서 진행됩니다.',
+    examples: ['정치력 비율로 의석 자동 배분', '주간 법안에 찬성/반대 투표', '탄핵 청원 기준 달성 시 헌법재판소로 이관'],
+    tip: null,
+  },
+  {
+    emoji: '⚖️', name: '헌법재판소', path: '/constitutional-court', badge: 'AI 재판관 3인',
     desc: '국회 탄핵소추가 성립하면 헌법재판소 심판이 열립니다. AI 재판관 3인이 각자의 개성으로 탄핵 의견을 밝혀요.',
-    examples: ['탄핵 청원 → AI 재판관 의견 생성', '인용(파면) vs 기각 여부 표시', '역대 탄핵심판 기록 열람'],
-    tip: '국회에서 탄핵소추를 진행한 뒤 헌법재판소가 활성화됩니다!',
+    examples: ['탄핵 청원 → 국회 소추 → AI 재판관 의견', '인용(파면) vs 기각 여부 표시', '역대 탄핵심판 기록 열람'],
+    tip: '국회 탄핵소추가 통과돼야 헌법재판소가 활성화됩니다!',
   },
 ];
 
@@ -70,27 +88,27 @@ export function renderGuide() {
       <div class="guide-hero">
         <div class="guide-hero__icon">🤖</div>
         <h1 class="guide-hero__title">소소킹 이용안내</h1>
-        <p class="guide-hero__sub">정치 배틀 · 국회 · 헌법재판소 — 7인 정치 캐릭터와 함께합니다</p>
+        <p class="guide-hero__sub">정치 배틀 · 국회 · 헌법재판소 — 3개 정당 7인 AI 정치인과 함께합니다</p>
       </div>
 
       <div class="guide-toc card">
         <div class="guide-toc__title">📌 목차</div>
         <div class="guide-toc__list">
-          ${[['#guide-what','소소킹이란?'],['#guide-features','2가지 기능'],['#guide-chars','7인 AI'],['#guide-rank','출세 사다리'],['#guide-start','시작하기'],['#guide-limit','AI 이용 제한'],['#guide-points','포인트 안내'],['#guide-rules','이용 규칙']].map(([href, label]) => `<a class="guide-toc__item" href="${href}">${label}</a>`).join('')}
+          ${[['#guide-what','소소킹이란?'],['#guide-features','주요 기능'],['#guide-chars','7인 AI 정치인'],['#guide-rank','출세 사다리'],['#guide-start','시작하기'],['#guide-limit','AI 이용 제한'],['#guide-points','포인트 안내'],['#guide-rules','이용 규칙']].map(([href, label]) => `<a class="guide-toc__item" href="${href}">${label}</a>`).join('')}
         </div>
       </div>
 
       <section id="guide-what" class="guide-section">
         <h2 class="guide-section__title">🤔 소소킹이란?</h2>
         <div class="guide-section__body">
-          <p>소소킹은 <strong>7인 AI 정치 캐릭터가 매일 정치 토론을 벌이는 정치 게임</strong>입니다.</p>
-          <p>매일 자정 새로운 정치 스캔들이 자동 생성되고, 7인이 각자의 개성으로 토론합니다. 유저는 하루 한 표로 오늘의 집권 대표를 결정하고, 토론 댓글로 직접 의견도 남길 수 있어요!</p>
+          <p>소소킹은 <strong>3개 정당 소속 7인 AI 정치인이 매일 정쟁을 벌이는 가상 정치 공화국</strong>입니다.</p>
+          <p>매일 자정 새로운 정치 안건이 자동 생성되고, 7인이 각자의 개성으로 배틀을 펼칩니다. 유저는 하루 한 표로 오늘의 당선자를 결정하고, 정당에 입당해 대통령까지 노릴 수 있어요!</p>
           <p>AI 결과물은 자동으로 피드에 게시되어 <strong>다른 사람들이 댓글로 반응</strong>할 수 있어요.</p>
         </div>
       </section>
 
       <section id="guide-features" class="guide-section">
-        <h2 class="guide-section__title">🚀 2가지 기능 소개</h2>
+        <h2 class="guide-section__title">🚀 주요 기능 소개</h2>
         <div class="guide-feature-list">
           ${FEATURES.map(f => `
             <div class="guide-feature-item">
@@ -117,9 +135,9 @@ export function renderGuide() {
       </section>
 
       <section id="guide-chars" class="guide-section">
-        <h2 class="guide-section__title">🏛️ 소소공화국 7인 정치인</h2>
+        <h2 class="guide-section__title">🏛️ 소소공화국 7인 AI 정치인</h2>
         <div class="guide-section__body">
-          <p>매일 정치배틀에서 7인 전원이 자동으로 토론하고, 유저 투표로 오늘의 당선자가 결정됩니다.</p>
+          <p>3개 정당(국민안정당·청년혁명당·중도민주당)에 소속된 7인이 매일 배틀에서 자동으로 토론하고, 유저 투표로 오늘의 당선자가 결정됩니다.</p>
           <div class="guide-char-grid">
             ${CHARS_7.map(c => `
               <div class="guide-char-card">
