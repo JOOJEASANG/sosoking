@@ -19,6 +19,7 @@ const aiLadder = require('./ai-ladder-functions.js');
 const hotPotato = require('./hot-potato-functions.js');
 const battle = require('./battle-functions.js');
 const politics = require('./politics-functions.js');
+const gameDeadline = require('./game-deadline-functions.js');
 
 module.exports = {
   ...coreAi,
@@ -53,10 +54,10 @@ module.exports = {
   joinParty: politics.joinParty,
   leaveParty: politics.leaveParty,
   getElection: politics.getElection,
-  voteForPresident: politics.voteForPresident,
+  voteForPresident: gameDeadline.voteForPresident,
   getPartyActivities: politics.getPartyActivities,
   getRankings: politics.getRankings,
-  getMyStatus: politics.getMyStatus,
+  getMyStatus: gameDeadline.getMyStatus,
   getPresident: politics.getPresident,
   setPresidentialDecree: politics.setPresidentialDecree,
   setCampaignPledge: politics.setCampaignPledge,
