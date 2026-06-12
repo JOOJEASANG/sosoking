@@ -28,42 +28,53 @@ function todayKey() {
   }).format(new Date());
 }
 
+function kstMondayKey() {
+  const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
+  const day = kst.getUTCDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  const monday = new Date(kst);
+  monday.setUTCDate(kst.getUTCDate() + diff);
+  return monday.toISOString().slice(0, 10);
+}
+
 function clean(value, max = 160) {
   return String(value || '').replace(/[<>]/g, '').trim().slice(0, max);
 }
 
-function awardId(uid, action, meta) {
+function cleanDocId(value, name) {
+  const id = clean(value, 180);
+  if (!id || id.includes('/')) throw new HttpsError('invalid-argument', `${name} 정보가 올바르지 않습니다.`);
+  return id;
+}
+
+function makeAwardId(uid, action, target) {
   const raw = JSON.stringify({
     uid,
     action,
-    postId: clean(meta.postId, 180),
-    itemId: clean(meta.itemId, 180),
-    onceKey: clean(meta.onceKey, 180),
-    type: clean(meta.type, 80),
+    postId: clean(target.postId, 180),
+    itemId: clean(target.itemId, 180),
+    onceKey: clean(target.onceKey, 180),
   });
   return createHash('sha256').update(raw).digest('hex');
 }
 
 async function validateClientAward(uid, action, meta) {
   if (!CLIENT_CALLABLE_ACTIONS.has(action)) {
-    throw new HttpsError('permission-denied', '이 포인트 항목은 서버 검증 액션에서만 지급됩니다.');
+    throw new HttpsError('permission-denied', '서버 지급 항목입니다.');
   }
 
   if (action === 'post_create') {
-    const postId = clean(meta.postId, 180);
-    if (!postId) throw new HttpsError('invalid-argument', '게시글 정보가 없습니다.');
+    const postId = cleanDocId(meta.postId, '게시글');
     const snap = await db.doc(`feeds/${postId}`).get();
     if (!snap.exists) throw new HttpsError('not-found', '게시글을 찾을 수 없습니다.');
     const post = snap.data() || {};
-    if (post.authorId !== uid) throw new HttpsError('permission-denied', '본인이 작성한 글에만 포인트를 지급할 수 있습니다.');
-    if (post.hidden === true) throw new HttpsError('failed-precondition', '숨김 글에는 포인트를 지급할 수 없습니다.');
-    return;
+    if (post.authorId !== uid) throw new HttpsError('permission-denied', '본인 글만 인정됩니다.');
+    if (post.hidden === true) throw new HttpsError('failed-precondition', '숨김 글은 제외됩니다.');
+    return { postId, itemId: '', onceKey: 'post_create' };
   }
 
   if (action === 'comment_create') {
-    const postId = clean(meta.postId, 180);
-    if (!postId) throw new HttpsError('invalid-argument', '게시글 정보가 없습니다.');
-    // 해당 포스트에 이 유저의 댓글이 실제로 존재하는지 확인 (최근 3분 이내)
+    const postId = cleanDocId(meta.postId, '게시글');
     const cutoff = new Date(Date.now() - 3 * 60 * 1000);
     const q = await db.collection(`feeds/${postId}/comments`)
       .where('authorId', '==', uid)
@@ -71,41 +82,81 @@ async function validateClientAward(uid, action, meta) {
       .limit(1)
       .get();
     if (q.empty) throw new HttpsError('failed-precondition', '댓글을 찾을 수 없습니다.');
-    const commentTime = q.docs[0].data().createdAt?.toDate?.();
-    if (commentTime && commentTime < cutoff) throw new HttpsError('failed-precondition', '댓글 작성 시간이 초과됐습니다.');
-    return;
+    const latest = q.docs[0];
+    const commentTime = latest.data().createdAt?.toDate?.();
+    if (commentTime && commentTime < cutoff) throw new HttpsError('failed-precondition', '댓글 시간이 초과됐습니다.');
+    return { postId, itemId: latest.id, onceKey: 'comment_create' };
   }
 
   if (action === 'reaction_give') {
-    const postId = clean(meta.postId, 180);
+    const postId = cleanDocId(meta.postId, '게시글');
     const onceKey = clean(meta.onceKey, 180);
-    if (!postId) throw new HttpsError('invalid-argument', '게시글 정보가 없습니다.');
-    // onceKey 형태: {commentId}:{reactionKey} — commentId가 있으면 댓글 반응
-    const [commentId] = onceKey.split(':');
-    if (commentId) {
-      const commentRef = db.doc(`feeds/${postId}/comments/${commentId}`);
-      const snap = await commentRef.get();
-      if (!snap.exists) throw new HttpsError('not-found', '댓글을 찾을 수 없습니다.');
+    const [commentIdRaw, reactionRaw] = onceKey.split(':');
+    const commentId = cleanDocId(commentIdRaw, '댓글');
+    const reaction = clean(reactionRaw, 40);
+    if (!reaction) throw new HttpsError('invalid-argument', '반응 정보가 없습니다.');
+    const snap = await db.doc(`feeds/${postId}/comments/${commentId}`).get();
+    if (!snap.exists) throw new HttpsError('not-found', '댓글을 찾을 수 없습니다.');
+    const reactedWith = (snap.data() || {}).reactedWith || {};
+    if (reactedWith[uid] !== reaction) {
+      throw new HttpsError('failed-precondition', '반응 기록을 확인할 수 없습니다.');
     }
-    return;
+    return { postId, itemId: commentId, onceKey: 'reaction_give' };
   }
 
-  throw new HttpsError('permission-denied', '허용되지 않은 포인트 항목입니다.');
+  throw new HttpsError('permission-denied', '허용되지 않은 항목입니다.');
 }
 
-const awardUserPoints = onCall({ region: REGION, timeoutSeconds: 20 }, async request => {
-  const uid = request.auth?.uid;
-  if (!uid) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+function weeklyPowerFields(memberData, oldPower, newPower) {
+  const weekKey = kstMondayKey();
+  if ((memberData || {}).weekKey !== weekKey) {
+    return {
+      weekKey,
+      weekStartPower: oldPower,
+      weeklyGain: Math.max(0, newPower - oldPower),
+    };
+  }
+  const weekStartPower = Number((memberData || {}).weekStartPower || 0);
+  return { weeklyGain: Math.max(0, newPower - weekStartPower) };
+}
 
-  const action = clean(request.data?.action, 60);
-  const rule = POINT_RULES[action];
-  if (!rule) throw new HttpsError('invalid-argument', '지원하지 않는 포인트 항목입니다.');
+async function readPartySync(tx, userSnap, uid) {
+  if (!userSnap.exists) return null;
+  const user = userSnap.data() || {};
+  const partyId = clean(user.partyId, 80);
+  if (!partyId || partyId.includes('/')) return null;
+  const memberRef = db.doc(`parties/${partyId}/members/${uid}`);
+  const memberSnap = await tx.get(memberRef);
+  if (!memberSnap.exists) return null;
+  return { partyId, memberRef, memberSnap };
+}
 
-  const meta = request.data?.meta && typeof request.data.meta === 'object' ? request.data.meta : {};
-  await validateClientAward(uid, action, meta);
+function writePartySync(tx, sync, userData, pointsToAdd) {
+  if (!sync) return;
+  const oldPower = Number(sync.memberSnap.data().power || 0);
+  const currentTotal = Math.max(0, Number(userData.totalPoints || userData.points || 0));
+  const newPower = Math.max(0, currentTotal + pointsToAdd);
+  const delta = newPower - oldPower;
+  const memberData = sync.memberSnap.data() || {};
 
-  const id = awardId(uid, action, meta);
-  const awardRef = db.doc(`point_awards/${id}`);
+  tx.update(sync.memberRef, {
+    power: newPower,
+    nickname: String(userData.nickname || userData.displayName || memberData.nickname || '시민').slice(0, 20),
+    icon: (userData.nicknameIcon && typeof userData.nicknameIcon === 'object') ? userData.nicknameIcon : (memberData.icon || null),
+    ...weeklyPowerFields(memberData, oldPower, newPower),
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+
+  if (delta !== 0) {
+    tx.set(db.doc(`parties/${sync.partyId}`), {
+      totalPower: FieldValue.increment(delta),
+      updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+  }
+}
+
+async function grantPoints(uid, action, rule, target) {
+  const awardRef = db.doc(`point_awards/${makeAwardId(uid, action, target)}`);
   const userRef = db.doc(`users/${uid}`);
   const logRef = userRef.collection('point_logs').doc();
   const date = todayKey();
@@ -115,15 +166,18 @@ const awardUserPoints = onCall({ region: REGION, timeoutSeconds: 20 }, async req
     const awardSnap = await tx.get(awardRef);
     if (awardSnap.exists) return;
 
+    const userSnap = await tx.get(userRef);
+    const userData = userSnap.exists ? (userSnap.data() || {}) : {};
+    const sync = await readPartySync(tx, userSnap, uid);
+
     awarded = true;
     tx.set(awardRef, {
       uid,
       action,
       points: rule.points,
-      postId: clean(meta.postId, 180),
-      itemId: clean(meta.itemId, 180),
-      onceKey: clean(meta.onceKey, 180),
-      type: clean(meta.type, 80),
+      postId: clean(target.postId, 180),
+      itemId: clean(target.itemId, 180),
+      onceKey: clean(target.onceKey, 180),
       createdAt: FieldValue.serverTimestamp(),
       createdAtMs: Date.now(),
     });
@@ -135,21 +189,36 @@ const awardUserPoints = onCall({ region: REGION, timeoutSeconds: 20 }, async req
       lastPointAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
+    writePartySync(tx, sync, userData, rule.points);
     tx.set(logRef, {
       action,
       label: rule.label,
       points: rule.points,
       meta: {
-        postId: clean(meta.postId, 180),
-        itemId: clean(meta.itemId, 180),
-        type: clean(meta.type, 80),
+        postId: clean(target.postId, 180),
+        itemId: clean(target.itemId, 180),
+        onceKey: clean(target.onceKey, 180),
       },
       createdAt: FieldValue.serverTimestamp(),
       createdAtMs: Date.now(),
     });
   });
 
-  return { ok: true, awarded, points: awarded ? rule.points : 0 };
+  return { awarded, points: awarded ? rule.points : 0 };
+}
+
+const awardUserPoints = onCall({ region: REGION, timeoutSeconds: 20 }, async request => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+
+  const action = clean(request.data?.action, 60);
+  const rule = POINT_RULES[action];
+  if (!rule) throw new HttpsError('invalid-argument', '지원하지 않는 포인트 항목입니다.');
+
+  const meta = request.data?.meta && typeof request.data.meta === 'object' ? request.data.meta : {};
+  const target = await validateClientAward(uid, action, meta);
+  const result = await grantPoints(uid, action, rule, target);
+  return { ok: true, ...result };
 });
 
 const claimSignupBonus = onCall({ region: REGION, timeoutSeconds: 20 }, async request => {
@@ -163,14 +232,20 @@ const claimSignupBonus = onCall({ region: REGION, timeoutSeconds: 20 }, async re
   await db.runTransaction(async tx => {
     const bonusSnap = await tx.get(bonusRef);
     if (bonusSnap.exists) return;
+
+    const userSnap = await tx.get(userRef);
+    const userData = userSnap.exists ? (userSnap.data() || {}) : {};
+    const sync = await readPartySync(tx, userSnap, uid);
+
     awarded = true;
-    tx.set(bonusRef, { uid, claimed: true, createdAt: FieldValue.serverTimestamp() });
+    tx.set(bonusRef, { uid, claimed: true, points: 500, createdAt: FieldValue.serverTimestamp() });
     tx.set(userRef, {
       points: FieldValue.increment(500),
       totalPoints: FieldValue.increment(500),
       signupBonusClaimed: true,
       updatedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
+    writePartySync(tx, sync, userData, 500);
   });
 
   return { ok: true, awarded, points: awarded ? 500 : 0 };
@@ -180,25 +255,19 @@ const claimDailyBonus = onCall({ region: REGION, timeoutSeconds: 20 }, async req
   const uid = request.auth?.uid;
   if (!uid) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
 
-  const today = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit',
-  }).format(new Date());
-
+  const today = todayKey();
   const dailyRef = db.doc(`point_awards/${uid}_daily_${today}`);
   const userRef = db.doc(`users/${uid}`);
   let awarded = false;
   let basePoints = 20;
   let isLeader = false;
 
-  // 당대표 보너스 확인 (출석 보너스 +10P 추가)
   try {
     const userSnap = await userRef.get();
     const userData = userSnap.exists ? userSnap.data() || {} : {};
-    const partyId = userData.partyId;
-    if (partyId) {
-      const { getFirestore } = require('firebase-admin/firestore');
-      const db2 = getFirestore();
-      const top = await db2.collection(`parties/${partyId}/members`)
+    const partyId = clean(userData.partyId, 80);
+    if (partyId && !partyId.includes('/')) {
+      const top = await db.collection(`parties/${partyId}/members`)
         .orderBy('power', 'desc').limit(1).get();
       if (!top.empty && top.docs[0].id === uid) {
         isLeader = true;
@@ -210,6 +279,11 @@ const claimDailyBonus = onCall({ region: REGION, timeoutSeconds: 20 }, async req
   await db.runTransaction(async tx => {
     const dailySnap = await tx.get(dailyRef);
     if (dailySnap.exists) return;
+
+    const userSnap = await tx.get(userRef);
+    const userData = userSnap.exists ? (userSnap.data() || {}) : {};
+    const sync = await readPartySync(tx, userSnap, uid);
+
     awarded = true;
     tx.set(dailyRef, { uid, date: today, isLeader, points: basePoints, createdAt: FieldValue.serverTimestamp() });
     tx.set(userRef, {
@@ -217,6 +291,7 @@ const claimDailyBonus = onCall({ region: REGION, timeoutSeconds: 20 }, async req
       totalPoints: FieldValue.increment(basePoints),
       updatedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
+    writePartySync(tx, sync, userData, basePoints);
   });
 
   return { ok: true, awarded, points: awarded ? basePoints : 0, isLeader };
