@@ -217,6 +217,37 @@ async function loadKingRecap(slot) {
   } catch { /* non-critical */ }
 }
 
+async function loadPresidentQAHighlight(slot) {
+  if (!slot) return;
+  try {
+    const { data } = await httpsCallable(functions, 'getPresidentQA')();
+    const answered = (data.questions || []).filter(q => q.answer);
+    if (!answered.length) return;
+
+    const items = answered.slice(0, 3).map(q => `
+      <div class="news-qa-item">
+        <div class="news-qa-item__q">
+          <span style="color:${q.partyColor}">${q.partyEmoji}</span>
+          <span class="news-qa-item__nick">${escHtml(q.nickname)}</span>
+          <span class="news-qa-item__text">"${escHtml(q.question)}"</span>
+        </div>
+        <div class="news-qa-item__a">
+          <span>👑</span>
+          <span class="news-qa-item__a-text">${escHtml(q.answer)}</span>
+        </div>
+      </div>`).join('');
+
+    slot.innerHTML = `
+      <section class="news-qa-highlight" data-path="/election">
+        <div class="news-section-title">🎙️ 대정부 질의응답</div>
+        <div class="news-qa-items">${items}</div>
+        <div class="news-qa-highlight__more">전체 질문 보기 →</div>
+      </section>`;
+
+    slot.querySelector('[data-path]')?.addEventListener('click', () => navigate('/election'));
+  } catch { /* non-critical */ }
+}
+
 async function loadNewsCrisis(slot) {
   if (!slot) return;
   try {
@@ -376,6 +407,7 @@ export async function renderNews() {
         ${featuredHTML}
         <div id="news-battle-slot"></div>
         <div id="news-prez-slot"></div>
+        <div id="news-qa-slot"></div>
         <div id="news-crisis-slot"></div>
         <div id="news-party-slot"></div>
         <div id="news-king-slot"></div>
@@ -388,6 +420,7 @@ export async function renderNews() {
   if (inner) {
     loadBattleBulletin(inner.querySelector('#news-battle-slot'));
     loadPresidentBlock(inner.querySelector('#news-prez-slot'));
+    loadPresidentQAHighlight(inner.querySelector('#news-qa-slot'));
     loadNewsCrisis(inner.querySelector('#news-crisis-slot'));
     loadPartyStandings(inner.querySelector('#news-party-slot'));
     loadKingRecap(inner.querySelector('#news-king-slot'));
