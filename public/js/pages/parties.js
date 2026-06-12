@@ -591,7 +591,12 @@ export async function renderParties() {
   const ruling = parties[0] || null; // 제1당 (정치력 최강)
   const activityHTML = renderActivityFeed(activitiesData?.activities, activitiesData?.topic);
 
-  // 현재 정세 요약 — 제1당 + 현직 대통령
+  // 공화국 집계 통계
+  const totalCitizens = parties.reduce((s, p) => s + (p.memberCount || 0), 0);
+  const totalPower = parties.reduce((s, p) => s + (p.totalPower || 0), 0);
+  const topGrowthParty = [...parties].sort((a, b) => (b.powerDiff || 0) - (a.powerDiff || 0))[0];
+
+  // 현재 정세 요약 — 제1당 + 현직 대통령 + 공화국 통계
   const stateHTML = `
     <div class="republic-state">
       <div class="republic-state__item">
@@ -607,6 +612,22 @@ export async function renderParties() {
           ? `<span class="republic-state__value" style="--party-color:${president.color}">👑 ${escHtml(president.candidateName)}</span>`
           : `<span class="republic-state__value">선출 전</span>`}
       </div>
+      <div class="republic-state__divider"></div>
+      <div class="republic-state__item">
+        <span class="republic-state__label">소소시민</span>
+        <span class="republic-state__value">👥 ${fmtNum(totalCitizens)}명</span>
+      </div>
+      <div class="republic-state__divider"></div>
+      <div class="republic-state__item">
+        <span class="republic-state__label">총 정치력</span>
+        <span class="republic-state__value">⚡ ${fmtNum(totalPower)}P</span>
+      </div>
+      ${topGrowthParty && (topGrowthParty.powerDiff || 0) > 0 ? `
+      <div class="republic-state__divider"></div>
+      <div class="republic-state__item">
+        <span class="republic-state__label">급성장</span>
+        <span class="republic-state__value" style="--party-color:${topGrowthParty.color}">${topGrowthParty.emoji} +${fmtNum(topGrowthParty.powerDiff)}</span>
+      </div>` : ''}
     </div>`;
 
   const parliamentHTML = renderParliamentChart(parties);

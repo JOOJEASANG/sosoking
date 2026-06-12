@@ -63,29 +63,33 @@
 .republic-state {
   display: flex;
   align-items: stretch;
+  flex-wrap: wrap;
   background: linear-gradient(135deg, var(--color-text-primary), color-mix(in srgb, var(--color-text-primary) 78%, #3a3f63));
   border-radius: 14px;
-  padding: 12px 8px;
+  padding: 10px 8px;
   margin-bottom: 14px;
   box-shadow: 0 6px 18px rgba(0,0,0,.16);
+  gap: 0;
 }
 .republic-state__item {
   flex: 1;
+  min-width: 60px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   text-align: center;
-  padding: 2px 6px;
+  padding: 3px 5px;
 }
 .republic-state__label {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 800;
-  letter-spacing: .08em;
-  color: rgba(255,255,255,.6);
+  letter-spacing: .06em;
+  color: rgba(255,255,255,.55);
+  text-transform: uppercase;
 }
 .republic-state__value {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 900;
   color: #fff;
   white-space: nowrap;
@@ -93,7 +97,7 @@
   text-overflow: ellipsis;
   max-width: 100%;
 }
-.republic-state__divider { width: 1px; background: rgba(255,255,255,.18); margin: 4px 0; }
+.republic-state__divider { width: 1px; background: rgba(255,255,255,.15); margin: 4px 0; }
 
 /* 정당 카드 */
 .party-card {

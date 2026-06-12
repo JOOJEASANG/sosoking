@@ -1021,7 +1021,17 @@ exports.getRankings = onCall({ region: REGION, timeoutSeconds: 30 }, async reque
   gainers.sort((a, b) => b.weeklyGain - a.weeklyGain);
   const topGainers = gainers.slice(0, 10).map((m, i) => ({ ...m, rank: i + 1 }));
 
-  return { top30, leaders, myEntry, topGainers };
+  // 공화국 통계: 정당 컬렉션에서 집계
+  const partySnaps = await Promise.all(PARTY_IDS.map(pid => partyRef(pid).get().catch(() => null)));
+  let republicCitizens = 0, republicPower = 0;
+  partySnaps.forEach(s => {
+    if (s && s.exists) {
+      republicCitizens += Number(s.data().memberCount || 0);
+      republicPower += Number(s.data().totalPower || 0);
+    }
+  });
+
+  return { top30, leaders, myEntry, topGainers, republicStats: { citizens: republicCitizens, power: republicPower } };
 });
 
 // ── 오늘의 정당 활동 — AI가 정당별 한마디 생성 (lazy, 하루 1회) ──

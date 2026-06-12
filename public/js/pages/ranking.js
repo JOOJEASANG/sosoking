@@ -119,8 +119,28 @@ export async function renderRanking() {
     return;
   }
 
-  const { top30 = [], leaders = [], myEntry = null, topGainers = [] } = data;
+  const { top30 = [], leaders = [], myEntry = null, topGainers = [], republicStats = null } = data;
   const myUid = auth.currentUser?.uid || '';
+
+  const republicStatsHTML = republicStats
+    ? `<div class="rank-republic-stats">
+        <div class="rank-republic-stat">
+          <span class="rank-republic-stat__label">소소시민</span>
+          <span class="rank-republic-stat__value">👥 ${fmtPower(republicStats.citizens)}명</span>
+        </div>
+        <div class="rank-republic-stat__divider"></div>
+        <div class="rank-republic-stat">
+          <span class="rank-republic-stat__label">총 정치력</span>
+          <span class="rank-republic-stat__value">⚡ ${fmtPower(republicStats.power)}P</span>
+        </div>
+        ${topGainers[0] ? `
+        <div class="rank-republic-stat__divider"></div>
+        <div class="rank-republic-stat">
+          <span class="rank-republic-stat__label">이번 주 1위</span>
+          <span class="rank-republic-stat__value">🔥 ${escHtml(topGainers[0].nickname)} +${fmtPower(topGainers[0].weeklyGain)}</span>
+        </div>` : ''}
+      </div>`
+    : '';
 
   const myBanner = myEntry
     ? `<div class="rank-my-banner">
@@ -142,6 +162,8 @@ export async function renderRanking() {
       <h1 class="ranking-hero__title">정치력 랭킹</h1>
       <p class="ranking-hero__sub">활동할수록 정치력이 쌓이고, 당내 1위는 당대표가 됩니다</p>
     </div>
+
+    ${republicStatsHTML}
 
     ${renderLadder(myEntry?.power)}
 
