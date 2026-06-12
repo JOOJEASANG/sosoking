@@ -699,3 +699,85 @@
   padding: 2px 7px;
   white-space: nowrap;
 }
+
+/* ── 정당 라이벌 매치 ── */
+.party-rivalry {
+  background: linear-gradient(135deg,#1a1a2e 0%,#16213e 60%,#0f3460 100%);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 14px;
+  color: #fff;
+}
+.party-rivalry__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.party-rivalry__badge {
+  font-size: 13px;
+  font-weight: 800;
+  color: #fde68a;
+}
+.party-rivalry__gap {
+  font-size: 11px;
+  color: rgba(255,255,255,.6);
+}
+.party-rivalry__match {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.party-rivalry__side {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.party-rivalry__side--right {
+  align-items: flex-end;
+}
+.party-rivalry__emoji { font-size: 22px; }
+.party-rivalry__name {
+  font-size: 11px;
+  font-weight: 800;
+  color: rgba(255,255,255,.9);
+  text-align: center;
+}
+.party-rivalry__side--right .party-rivalry__name { text-align: right; }
+.party-rivalry__pwr {
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--rc, #fde68a);
+}
+.party-rivalry__trend {
+  font-size: 10px;
+  font-weight: 700;
+  color: #4ade80;
+}
+.party-rivalry__elec {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255,255,255,.7);
+}
+.party-rivalry__camp {
+  font-size: 10px;
+  font-weight: 700;
+  color: #fbbf24;
+}
+.party-rivalry__bar {
+  width: 80px;
+  flex-shrink: 0;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  background: rgba(255,255,255,.1);
+}
+.party-rivalry__bar-fill {
+  height: 100%;
+  transition: width .6s ease;
+}
+.party-rivalry__bar-fill--left { border-radius: 4px 0 0 4px; }
+.party-rivalry__bar-fill--right { border-radius: 0 4px 4px 0; }

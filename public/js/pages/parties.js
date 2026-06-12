@@ -155,6 +155,50 @@ function renderMyBanner(me) {
   </div>`;
 }
 
+function renderRivalry(parties, electionByParty, electionTotal, campaignByParty) {
+  if (parties.length < 2) return '';
+  const top = parties[0], second = parties[1];
+  const gapPower = (top.totalPower || 0) - (second.totalPower || 0);
+  const totalPower = (top.totalPower || 0) + (second.totalPower || 0);
+  const topPct = totalPower > 0 ? Math.round(((top.totalPower || 0) / totalPower) * 100) : 50;
+  const secPct = 100 - topPct;
+  const topElecPct = electionTotal > 0 ? Math.round(((electionByParty[top.id] || 0) / electionTotal) * 100) : null;
+  const secElecPct = electionTotal > 0 ? Math.round(((electionByParty[second.id] || 0) / electionTotal) * 100) : null;
+  const topCamp = campaignByParty[top.id] || 0;
+  const secCamp = campaignByParty[second.id] || 0;
+  const topTrend = (top.powerDiff || 0) > (second.powerDiff || 0) ? '▲ 상승 중' : '';
+  const secTrend = (second.powerDiff || 0) > (top.powerDiff || 0) ? '▲ 상승 중' : '';
+  return `
+    <div class="party-rivalry">
+      <div class="party-rivalry__header">
+        <span class="party-rivalry__badge">⚔️ 이번 주 최대 라이벌</span>
+        <span class="party-rivalry__gap">정치력 차: ${fmtNum(gapPower)}</span>
+      </div>
+      <div class="party-rivalry__match">
+        <div class="party-rivalry__side party-rivalry__side--left" style="--rc:${top.color}">
+          <span class="party-rivalry__emoji">${top.emoji}</span>
+          <span class="party-rivalry__name">${escHtml(top.name)}</span>
+          <span class="party-rivalry__pwr">${fmtNum(top.totalPower)}P</span>
+          ${topTrend ? `<span class="party-rivalry__trend">${topTrend}</span>` : ''}
+          ${topElecPct != null ? `<span class="party-rivalry__elec">${topElecPct}% 🗳️</span>` : ''}
+          ${topCamp > 0 ? `<span class="party-rivalry__camp">🎤 ${topCamp}</span>` : ''}
+        </div>
+        <div class="party-rivalry__bar">
+          <div class="party-rivalry__bar-fill party-rivalry__bar-fill--left" style="width:${topPct}%;background:${top.color}"></div>
+          <div class="party-rivalry__bar-fill party-rivalry__bar-fill--right" style="width:${secPct}%;background:${second.color}"></div>
+        </div>
+        <div class="party-rivalry__side party-rivalry__side--right" style="--rc:${second.color}">
+          <span class="party-rivalry__emoji">${second.emoji}</span>
+          <span class="party-rivalry__name">${escHtml(second.name)}</span>
+          <span class="party-rivalry__pwr">${fmtNum(second.totalPower)}P</span>
+          ${secTrend ? `<span class="party-rivalry__trend">${secTrend}</span>` : ''}
+          ${secElecPct != null ? `<span class="party-rivalry__elec">${secElecPct}% 🗳️</span>` : ''}
+          ${secCamp > 0 ? `<span class="party-rivalry__camp">🎤 ${secCamp}</span>` : ''}
+        </div>
+      </div>
+    </div>`;
+}
+
 function renderParliamentChart(parties) {
   const totalPower = parties.reduce((s, p) => s + (p.totalPower || 0), 0);
   if (totalPower === 0) return '';
@@ -566,6 +610,7 @@ export async function renderParties() {
     </div>`;
 
   const parliamentHTML = renderParliamentChart(parties);
+  const rivalryHTML = renderRivalry(parties, electionByParty, electionTotal, campaignByParty);
 
   el.innerHTML = `<div class="parties-page page-enter">
     <div class="parties-hero">
@@ -574,6 +619,7 @@ export async function renderParties() {
       <p class="parties-hero__sub">입당해 정치력을 쌓고 당내 1위 <b>당대표</b>로, 매주 <b>대선</b>에서 <b>대통령</b>에 도전하세요.</p>
     </div>
     ${stateHTML}
+    ${rivalryHTML}
     ${parliamentHTML}
     ${activityHTML}
     ${renderMyBanner(me)}
