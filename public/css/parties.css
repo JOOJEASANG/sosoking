@@ -679,3 +679,23 @@
   font-size: 11px;
   font-weight: 800;
 }
+
+/* ── 정당 카드 대선 득표율 + 유세 배지 ── */
+.party-card__elec-pct {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--party-color, var(--color-primary));
+  background: rgba(0,0,0,.05);
+  border-radius: 20px;
+  padding: 2px 7px;
+  white-space: nowrap;
+}
+.party-card__campaign-count {
+  font-size: 11px;
+  font-weight: 800;
+  color: #d97706;
+  background: rgba(245,158,11,.1);
+  border-radius: 20px;
+  padding: 2px 7px;
+  white-space: nowrap;
+}

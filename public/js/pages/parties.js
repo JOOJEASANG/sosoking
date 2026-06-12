@@ -195,7 +195,7 @@ function renderTrendBadge(diff) {
   return `<span class=”party-trend party-trend--down”>▼ ${fmtNum(diff)}</span>`;
 }
 
-function renderPartyCard(p, me, isTopPower, presPartyId, winCount) {
+function renderPartyCard(p, me, isTopPower, presPartyId, winCount, elecVotes = 0, elecTotal = 0, campaignCount = 0) {
   const isMine = me && me.partyId === p.id;
   const isPrezParty = presPartyId && p.id === presPartyId;
   const meta = PARTY_META[p.id];
@@ -228,6 +228,8 @@ function renderPartyCard(p, me, isTopPower, presPartyId, winCount) {
         <div class=”party-card__leader”>${leaderLine(p)}</div>
         <div class=”party-card__meta”>
           <span class=”party-card__power”>⚡ 정당 정치력 <b>${fmtNum(p.totalPower)}</b>${renderTrendBadge(p.powerDiff)}${winBadge}</span>
+          ${elecTotal > 0 ? `<span class=”party-card__elec-pct” title=”이번 주 대선 득표율”>${Math.round((elecVotes / elecTotal) * 100)}% 🗳️</span>` : ''}
+          ${campaignCount > 0 ? `<span class=”party-card__campaign-count” title=”오늘 유세 횟수”>🎤${campaignCount}</span>` : ''}
           <button class=”party-members-btn” data-party=”${p.id}”>당원 보기</button>
           <button class=”party-manifesto-btn” data-party=”${p.id}”>📜 당론</button>
         </div>
@@ -499,16 +501,20 @@ export async function renderParties() {
     <div class="skeleton" style="height:320px;border-radius:16px"></div>
   </div>`;
 
-  let overview, activitiesData, president = null, electionWins = {};
+  let overview, activitiesData, president = null, electionWins = {}, electionByParty = {}, electionTotal = 0, campaignByParty = {};
   try {
     const callOverview = httpsCallable(functions, 'getPoliticsOverview');
     const callActivities = httpsCallable(functions, 'getPartyActivities');
     const callPresident = httpsCallable(functions, 'getPresident');
     const callHistory = httpsCallable(functions, 'getElectionHistory');
-    const [overviewRes, activitiesRes, presidentRes, historyRes] = await Promise.all([
+    const callElection = httpsCallable(functions, 'getElection');
+    const callMomentum = httpsCallable(functions, 'getCampaignMomentum');
+    const [overviewRes, activitiesRes, presidentRes, historyRes, elecRes, momentumRes] = await Promise.all([
       callOverview(), callActivities(),
       callPresident().catch(() => null),
       callHistory().catch(() => null),
+      callElection().catch(() => null),
+      callMomentum().catch(() => null),
     ]);
     overview = overviewRes.data;
     activitiesData = activitiesRes.data;
@@ -518,6 +524,12 @@ export async function renderParties() {
         electionWins[h.winner.partyId] = (electionWins[h.winner.partyId] || 0) + 1;
       }
     });
+    const elec = elecRes?.data?.election;
+    if (elec && elec.status === 'open') {
+      electionTotal = elec.totalVotes || 0;
+      (elec.candidates || []).forEach(c => { if (c.partyId) electionByParty[c.partyId] = c.votes || 0; });
+    }
+    (momentumRes?.data?.byParty || []).forEach(p => { campaignByParty[p.partyId] = p.count; });
   } catch (err) {
     console.error('[parties] load error', err);
     el.innerHTML = `<div class="empty-state">
@@ -569,7 +581,7 @@ export async function renderParties() {
       <button class="parties-quiz-btn" id="party-quiz-top">🧭 내 정당 찾기</button>
     </div>
     <div class="parties-list">
-      ${parties.map((p, i) => renderPartyCard(p, me, i === 0, president?.partyId || null, electionWins[p.id] || 0)).join('')}
+      ${parties.map((p, i) => renderPartyCard(p, me, i === 0, president?.partyId || null, electionWins[p.id] || 0, electionByParty[p.id] || 0, electionTotal, campaignByParty[p.id] || 0)).join('')}
     </div>
   </div>`;
 
