@@ -15,12 +15,6 @@ const PARTY_META = {
     perk: '🎖️ 경력직 배지',
     quotes: ['18년 경력으로 말하자면, 서두를 일이 아닙니다.', '먼저 전례를 봐야 합니다.', '그건 위원회에 회부하시죠.'],
   },
-  truth: {
-    strengths: ['폭로', '화제성', '이슈몰이'],
-    policy: '숨겨진 진실을 전면 공개 — 알 건 알아야죠',
-    perk: '📡 단독특종 배지',
-    quotes: ['이거 단독입니다, 구독 누르세요!', '충격적인 사실을 입수했습니다.', '이게 말이 됩니까 여러분?'],
-  },
   youth: {
     strengths: ['변화', '개혁', 'MZ파워'],
     policy: '기득권 타파, 청년 우선 — 갈아엎자',
@@ -33,24 +27,6 @@ const PARTY_META = {
     perk: '📈 분석가 배지',
     quotes: ['수치를 보면 민심은 이렇습니다.', '오차범위 내 접전이네요.', '데이터가 답을 알고 있죠.'],
   },
-  future: {
-    strengths: ['화합', '긍정', '분위기'],
-    policy: '갈등 봉합, 다 함께 미래로 — 우리는 한편',
-    perk: '🎉 분위기메이커 배지',
-    quotes: ['역시 다들 혜안이 다르십니다!', '완전 공감입니다 여러분!', '우리는 늘 한편이에요!'],
-  },
-  rights: {
-    strengths: ['정보', '탐사', '투명'],
-    policy: '국민의 알 권리 최우선 — 끝까지 추적',
-    perk: '🔎 탐사원 배지',
-    quotes: ['어젯밤 제보를 받았습니다.', '취재원이 확인해줬어요.', '내부 문서를 입수했습니다.'],
-  },
-  justice: {
-    strengths: ['원칙', '법치', '냉철'],
-    policy: '법 앞의 평등, 무관용 — 예외는 없다',
-    perk: '⚖️ 법봉 배지',
-    quotes: ['법대로 합시다.', '수사 착수 요건이 됩니다.', '...타이밍이 흥미롭네요.'],
-  },
 };
 
 // 정치성향 테스트 (각 선택지가 정당 친화도에 가중치)
@@ -60,43 +36,38 @@ const QUIZ = [
     opts: [
       { t: '안정과 경험', w: { national: 2 } },
       { t: '변화와 개혁', w: { youth: 2 } },
-      { t: '진실과 투명', w: { rights: 2, truth: 1 } },
-      { t: '원칙과 법', w: { justice: 2 } },
+      { t: '합리와 데이터', w: { center: 2 } },
     ],
   },
   {
     q: '갈등이 터졌다, 당신은?',
     opts: [
-      { t: '데이터부터 본다', w: { center: 2 } },
-      { t: '일단 분위기를 푼다', w: { future: 2 } },
-      { t: '누가 거짓말하나 캔다', w: { rights: 1, truth: 1 } },
-      { t: '원칙대로 따진다', w: { justice: 2 } },
+      { t: '선례와 절차부터 확인', w: { national: 2 } },
+      { t: '직접 나서서 해결', w: { youth: 2 } },
+      { t: '데이터로 원인 분석', w: { center: 2 } },
     ],
   },
   {
     q: 'SNS에서 당신은?',
     opts: [
-      { t: '폭로·이슈 공유러', w: { truth: 2 } },
+      { t: '점잖게 안 함', w: { national: 2 } },
       { t: '팩폭 댓글러', w: { youth: 2 } },
       { t: '팩트·통계 정리러', w: { center: 2 } },
-      { t: '점잖게 안 함', w: { national: 2 } },
     ],
   },
   {
     q: '당신의 말투는?',
     opts: [
       { t: '느긋하고 권위 있게', w: { national: 2 } },
-      { t: '화끈하고 자극적으로', w: { truth: 2 } },
       { t: '직설적이고 솔직하게', w: { youth: 2 } },
-      { t: '짧고 냉정하게', w: { justice: 2 } },
+      { t: '짧고 냉정하게', w: { center: 2 } },
     ],
   },
   {
     q: '이상적인 나라는?',
     opts: [
       { t: '흔들림 없는 안정', w: { national: 2 } },
-      { t: '다 함께 웃는 화합', w: { future: 2 } },
-      { t: '모두가 아는 투명한', w: { rights: 2 } },
+      { t: '기득권 없는 공정', w: { youth: 2 } },
       { t: '데이터로 굴러가는 합리', w: { center: 2 } },
     ],
   },
@@ -145,7 +116,6 @@ function renderMyBanner(me) {
       <div class="party-mine__name">${escHtml(me.partyName)}</div>
       <div class="party-mine__power">내 정치력 <b>${fmtNum(me.power)}</b>${meta ? ` · ${escHtml(meta.perk)}` : ''}</div>
       <div class="party-mine__hint">글·댓글·투표로 활동할수록 정치력이 오르고, 당내 1위가 당대표가 됩니다.</div>
-      <div id="party-manifesto-slot"></div>
     </div>`;
   }
   return `<div class="party-mine party-mine--none">
@@ -278,42 +248,58 @@ function renderPartyCard(p, me, isTopPower, presPartyId, winCount, elecVotes = 0
   const isMine = me && me.partyId === p.id;
   const isPrezParty = presPartyId && p.id === presPartyId;
   const meta = PARTY_META[p.id];
-  const btn = isMine
-    ? `<span class=”party-card__mine-tag”>내 정당</span>`
-    : `<button class=”btn btn--primary btn--sm party-join-btn” data-party=”${p.id}” data-name=”${escHtml(p.name)}”>${me && me.partyId ? '이적' : '입당'}</button>`;
+  const elecPct = elecTotal > 0 ? Math.round((elecVotes / elecTotal) * 100) : null;
 
-  const topBadgesHTML = [
-    isTopPower ? `<span class=”party-card__ruling-tag”>👑 제1당</span>` : '',
-    isPrezParty ? `<span class=”party-card__prez-tag”>🏛️ 집권당</span>` : '',
+  const topBadges = [
+    isTopPower ? `<span class=”pcard-badge pcard-badge--top”>👑 제1당</span>` : '',
+    isPrezParty ? `<span class=”pcard-badge pcard-badge--prez”>🏛️ 집권당</span>` : '',
+    isMine      ? `<span class=”pcard-badge pcard-badge--mine”>✅ 내 정당</span>` : '',
   ].filter(Boolean).join('');
 
-  const winBadge = winCount > 0
-    ? `<span class=”party-card__win-badge”>🏆 역대 ${winCount}회 집권</span>`
-    : '';
+  const joinBtn = isMine
+    ? ''
+    : `<button class=”btn btn--primary btn--full party-join-btn” data-party=”${p.id}” data-name=”${escHtml(p.name)}”>${me && me.partyId ? '⟳ 이적' : '입당하기'}</button>`;
 
   return `
-    <div class=”party-card${isMine ? ' party-card--mine' : ''}${isTopPower ? ' party-card--ruling' : ''}${isPrezParty ? ' party-card--prez' : ''}” style=”--party-color:${p.color}”>
-      ${topBadgesHTML}
-      <div class=”party-card__rank”>${medal(p.rank)}</div>
-      <div class=”party-card__emoji”>${p.emoji}</div>
-      <div class=”party-card__body”>
-        <div class=”party-card__top”>
-          <span class=”party-card__name”>${escHtml(p.name)}</span>
-          <span class=”party-card__count”>당원 ${fmtNum(p.memberCount)}</span>
+    <div class=”pcard${isMine ? ' pcard--mine' : ''}${isTopPower ? ' pcard--top' : ''}${isPrezParty ? ' pcard--prez' : ''}” style=”--party-color:${p.color}”>
+      <div class=”pcard__header”>
+        ${topBadges ? `<div class=”pcard__badges”>${topBadges}</div>` : ''}
+        <div class=”pcard__rank”>${medal(p.rank)}</div>
+        <div class=”pcard__emoji”>${p.emoji}</div>
+        <div class=”pcard__name”>${escHtml(p.name)}</div>
+        <div class=”pcard__slogan”>”${escHtml(p.slogan)}”</div>
+      </div>
+      <div class=”pcard__body”>
+        ${meta ? `<div class=”pcard__chips”>${meta.strengths.map(s => `<span class=”pcard__chip”>#${escHtml(s)}</span>`).join('')}</div>` : ''}
+        ${meta ? `<div class=”pcard__policy”>📌 ${escHtml(meta.policy)}</div>` : ''}
+        <div class=”pcard__leader”>${leaderLine(p)}</div>
+        <div class=”pcard__stats”>
+          <div class=”pcard__stat”>
+            <span class=”pcard__stat-label”>정치력</span>
+            <span class=”pcard__stat-value”>⚡ ${fmtNum(p.totalPower)}P${renderTrendBadge(p.powerDiff)}</span>
+          </div>
+          <div class=”pcard__stat”>
+            <span class=”pcard__stat-label”>당원</span>
+            <span class=”pcard__stat-value”>👥 ${fmtNum(p.memberCount)}</span>
+          </div>
+          ${elecPct !== null ? `<div class=”pcard__stat”>
+            <span class=”pcard__stat-label”>득표율</span>
+            <span class=”pcard__stat-value”>🗳️ ${elecPct}%</span>
+          </div>` : ''}
+          ${winCount > 0 ? `<div class=”pcard__stat”>
+            <span class=”pcard__stat-label”>역대 집권</span>
+            <span class=”pcard__stat-value”>🏆 ${winCount}회</span>
+          </div>` : ''}
         </div>
-        <div class=”party-card__slogan”>”${escHtml(p.slogan)}”</div>
-        ${strengthChips(p.id)}
-        ${meta ? `<div class=”party-card__policy”>📌 ${escHtml(meta.policy)}</div>` : ''}
-        <div class=”party-card__leader”>${leaderLine(p)}</div>
-        <div class=”party-card__meta”>
-          <span class=”party-card__power”>⚡ 정당 정치력 <b>${fmtNum(p.totalPower)}</b>${renderTrendBadge(p.powerDiff)}${winBadge}</span>
-          ${elecTotal > 0 ? `<span class=”party-card__elec-pct” title=”이번 주 대선 득표율”>${Math.round((elecVotes / elecTotal) * 100)}% 🗳️</span>` : ''}
-          ${campaignCount > 0 ? `<span class=”party-card__campaign-count” title=”오늘 유세 횟수”>🎤${campaignCount}</span>` : ''}
-          <button class=”party-members-btn” data-party=”${p.id}”>당원 보기</button>
-          <button class=”party-manifesto-btn” data-party=”${p.id}”>📜 당론</button>
+        <div class=”pcard__footer”>
+          <div class=”pcard__footer-btns”>
+            <button class=”pcard__text-btn party-members-btn” data-party=”${p.id}”>👥 당원</button>
+            <button class=”pcard__text-btn party-manifesto-btn” data-party=”${p.id}”>📜 당론</button>
+          </div>
+          ${joinBtn}
         </div>
       </div>
-      <div class=”party-card__action”>${btn}</div>
+      ${meta && isMine ? `<div id=”party-manifesto-slot”></div>` : ''}
     </div>
     <div class=”party-members” id=”members-${p.id}” hidden></div>
     <div class=”party-manifesto-display” id=”manifesto-display-${p.id}” hidden></div>`;
@@ -703,7 +689,8 @@ export async function renderParties() {
   if (me && me.partyId) {
     const myPartyData = parties.find(p => p.id === me.partyId);
     const isMyPartyLeader = !!(auth.currentUser && myPartyData?.leader?.uid === auth.currentUser.uid);
-    loadPartyManifesto(el.querySelector('#party-manifesto-slot'), me.partyId, isMyPartyLeader);
+    const manifestoSlot = el.querySelector(`#pcard-${me.partyId} #party-manifesto-slot`) || el.querySelector('#party-manifesto-slot');
+    loadPartyManifesto(manifestoSlot, me.partyId, isMyPartyLeader);
   }
 
   el.querySelectorAll('.party-members-btn').forEach(btn => {

@@ -113,15 +113,15 @@ const BATTLE_CHARS = [
 
 exports.BATTLE_CHARS = BATTLE_CHARS;
 
-// 배틀 캐릭터 → 정당 ID 매핑 (politics-functions.js의 PARTIES와 일치)
+// 배틀 캐릭터 → 3개 정당 매핑
 const CHAR_TO_PARTY = {
-  senator:     'national',
-  youtuber:    'truth',
-  mz:          'youth',
-  pollster:    'center',
-  spokesperson:'future',
-  reporter:    'rights',
-  prosecutor:  'justice',
+  senator:      'national',
+  spokesperson: 'national',
+  mz:           'youth',
+  youtuber:     'youth',
+  pollster:     'center',
+  reporter:     'center',
+  prosecutor:   'center',
 };
 
 // ── config/ai_king 기반 AI 호출 ──

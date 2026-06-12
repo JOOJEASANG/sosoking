@@ -139,12 +139,8 @@ async function loadPartyStandings(slot) {
     const snap = await getDocs(collection(db, 'parties'));
     const PARTY_COLORS_NEWS = {
       national: { name: '국민안정당', emoji: '🎙️', color: '#8B7355' },
-      truth:    { name: '진실방송당', emoji: '📺', color: '#6C5CE7' },
       youth:    { name: '청년혁명당', emoji: '📱', color: '#E84393' },
       center:   { name: '중도민주당', emoji: '📊', color: '#00CEC9' },
-      future:   { name: '함께미래당', emoji: '🤝', color: '#FDCB6E' },
-      rights:   { name: '알권리당',   emoji: '🔍', color: '#00B894' },
-      justice:  { name: '법치정의당', emoji: '⚖️', color: '#2D3436' },
     };
     const parties = snap.docs
       .map(d => {
@@ -250,12 +246,8 @@ async function loadPresidentQAHighlight(slot) {
 
 const CRISIS_PARTY_INFO = {
   national: { name: '국민안정당', emoji: '🎙️', color: '#8B7355' },
-  truth:    { name: '진실방송당', emoji: '📺', color: '#6C5CE7' },
   youth:    { name: '청년혁명당', emoji: '📱', color: '#E84393' },
   center:   { name: '중도민주당', emoji: '📊', color: '#00CEC9' },
-  future:   { name: '함께미래당', emoji: '🤝', color: '#FDCB6E' },
-  rights:   { name: '알권리당',   emoji: '🔍', color: '#00B894' },
-  justice:  { name: '법치정의당', emoji: '⚖️', color: '#2D3436' },
 };
 
 function renderCrisisPartyBreakdown(partyVotes, optionA, optionB) {

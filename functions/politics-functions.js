@@ -1023,13 +1023,13 @@ function buildActivityPrompt(topic) {
   const entries = PARTIES.map(p => `- partyId: "${p.id}" (${p.name}, ${p.emoji})\n  역할: ${PARTY_ROLES[p.id]}`).join('\n');
   return `오늘의 소소공화국 정치 이슈: "${topic}"
 
-아래 7명의 정치인이 각자의 캐릭터로 이 이슈에 한마디 합니다.
+아래 3명의 정치인이 각자의 캐릭터로 이 이슈에 한마디 합니다.
 각 발언은 1~2문장, 캐릭터에 완전히 충실하게, 한국어로.
 
 ${entries}
 
 JSON 배열로만 응답하세요 (다른 텍스트 금지):
-[{"partyId":"national","text":"..."},{"partyId":"truth","text":"..."},{"partyId":"youth","text":"..."},{"partyId":"center","text":"..."},{"partyId":"future","text":"..."},{"partyId":"rights","text":"..."},{"partyId":"justice","text":"..."}]`;
+[{"partyId":"national","text":"..."},{"partyId":"youth","text":"..."},{"partyId":"center","text":"..."}]`;
 }
 
 const DAILY_TOPICS = [
@@ -1068,7 +1068,7 @@ exports.getPartyActivities = onCall({ region: REGION, timeoutSeconds: 60 }, asyn
 
   if (snap.exists) {
     const d = snap.data();
-    if (d.activities && d.activities.length === 7) return { activities: d.activities, topic: d.topic, date: today };
+    if (d.activities && d.activities.length >= 3) return { activities: d.activities, topic: d.topic, date: today };
   }
 
   // 중복 생성 방지: generating 플래그 체크
@@ -1086,7 +1086,7 @@ exports.getPartyActivities = onCall({ region: REGION, timeoutSeconds: 60 }, asyn
     const topic = battleTopic || pickTodayTopic();
     const raw = await callAI(buildActivityPrompt(topic), 1200);
     const parsed = safeParseJson(raw);
-    if (!Array.isArray(parsed) || parsed.length < 7) throw new Error('AI 응답 파싱 실패');
+    if (!Array.isArray(parsed) || parsed.length < 3) throw new Error('AI 응답 파싱 실패');
 
     const activities = parsed.map(item => {
       const party = PARTY_BY_ID[item.partyId];
@@ -1441,12 +1441,8 @@ exports.getUserPoliticsStats = onCall({ region: REGION, timeoutSeconds: 15 }, as
 // ── 주간 정당 당론 성명 (AI 생성, 정당별 1회) ──
 const MANIFESTO_VOICES = {
   national: `너는 국민안정당 3선 의원이다. 권위 있고 느긋한 어투. 안정과 경험을 강조. 한두 문장.`,
-  truth:    `너는 진실방송당 정치 유튜버다. 과장되고 자극적인 어투. 폭로·단독 프레임. 한두 문장.`,
   youth:    `너는 청년혁명당 MZ 운동가다. 반말·직설·팩폭 스타일. 기득권 비판. 한두 문장.`,
   center:   `너는 중도민주당 여론조사 전문가다. 냉정·분석적. 통계 자주 언급. 결론은 애매하게. 한두 문장.`,
-  future:   `너는 함께미래당 대변인이다. 과잉 긍정·동조. 화합·미래 강조. 한두 문장.`,
-  rights:   `너는 알권리당 탐사 기자다. 침착하고 날카롭게. 내부 제보 프레임. 한두 문장.`,
-  justice:  `너는 법치정의당 검사 출신 변호사다. 딱딱하고 원칙적. 법 근거 강조. 한두 문장.`,
 };
 
 exports.getPartyManifesto = onCall({ region: REGION, timeoutSeconds: 30 }, async request => {
