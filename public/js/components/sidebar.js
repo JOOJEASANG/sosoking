@@ -57,7 +57,7 @@ export function renderSidebar() {
     { label: '홈',     path: '/',        icon: iconHome() },
     { label: '피드',   path: '/feed',    icon: iconFeed() },
     { label: '🏛️ 정당', path: '/parties', icon: '' },
-    { label: '🤖 AI킹', path: '/ai-king', icon: '' },
+    { label: '🏛️ 헌법재판소', path: '/constitutional-court', icon: '' },
     { label: '통계',   path: '/hall',    icon: iconStats() },
   ];
 
@@ -147,7 +147,7 @@ export function renderSidebar() {
   });
 
   document.getElementById('sb-write-btn')?.addEventListener('click', () => {
-    navigate('/ai-king');
+    navigate('/constitutional-court');
   });
 
   document.getElementById('sb-avatar')?.addEventListener('click', () => navigate('/account'));

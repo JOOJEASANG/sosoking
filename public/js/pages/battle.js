@@ -370,7 +370,7 @@ export async function renderBattle() {
 
     el.querySelector('#btn-history')?.addEventListener('click', () => navigate('/king-history'));
     el.querySelector('#btn-to-judge')?.addEventListener('click', () =>
-      navigate(`/ai-judge?topic=${encodeURIComponent(topic || '')}`)
+      navigate('/constitutional-court')
     );
 
     if (!votedOrEnded && auth.currentUser) {

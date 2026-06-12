@@ -17,9 +17,7 @@ import { renderPartyBadge } from '../utils/party-badge.js';
 import { toast } from '../components/toast.js';
 
 const TYPE_LABEL = {
-  ai_judge:     '⚖️ 판결소',
-  ai_translate: '✨ 창작소',
-  ai_naming:    '✨ 창작소',
+  ai_judge: '🏛️ 재판기록',
 };
 
 const QUICK_ACTIONS = [

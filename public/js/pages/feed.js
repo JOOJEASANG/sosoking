@@ -21,12 +21,11 @@ const FILTER_LIMIT = 500;
 const NAV_CONTEXT_KEY = 'sosoking:feedNavContext';
 
 const ROOMS = [
-  { key: '',             icon: '✨', label: '전체',   title: '전체',   desc: '판결소·창작소·토론왕 콘텐츠를 한 번에 봅니다.' },
-  { key: 'ai_judge',     icon: '⚖️', label: '판결소', title: '판결소', desc: '억울한 상황 → 3인 캐릭터가 각자 판결합니다.', path: '/ai-judge' },
-  { key: 'ai_translate', icon: '✨', label: '창작소', title: '창작소', desc: '번역하기 + 이름짓기 두 가지를 한 곳에서.', path: '/ai-translate' },
+  { key: '',         icon: '✨', label: '전체',    title: '전체',    desc: '헌법재판소·정치 콘텐츠를 한 번에 봅니다.' },
+  { key: 'ai_judge', icon: '🏛️', label: '재판기록', title: '재판기록', desc: '헌법재판소 AI 재판관 판결 기록입니다.', path: '/constitutional-court' },
 ];
 
-const AI_TYPES = ['ai_judge', 'ai_translate', 'ai_naming'];
+const AI_TYPES = ['ai_judge'];
 
 let currentType        = '';
 let currentSearch      = '';
@@ -195,8 +194,7 @@ function updateUrlState() {
 
 function getLegacyTypeWhereClause(type) {
   const map = {
-    ai_judge:     ['ai_judge'],
-    ai_translate: ['ai_translate', 'ai_naming'],
+    ai_judge: ['ai_judge'],
   };
   const types = map[type];
   if (!types) return null;

@@ -5,13 +5,12 @@ import {
   collection, query, orderBy, limit, getDocs,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-const AI_TYPES = ['ai_judge', 'ai_translate', 'ai_naming'];
+const AI_TYPES = ['ai_judge'];
 
 const HALL_CATS = [
-  { key: 'popular',      label: '인기글',  icon: '🔥', type: null,          desc: '반응과 댓글이 많은 글', scoreKey: null },
-  { key: 'comment',      label: '댓글많음', icon: '💬', type: null,          desc: '댓글 참여가 많은 글',   scoreKey: 'comment' },
-  { key: 'ai_judge',     label: '판결소',  icon: '⚖️', type: 'ai_judge',    desc: '판결 인기글',           scoreKey: null },
-  { key: 'ai_translate', label: '창작소',  icon: '✨', type: 'ai_translate', desc: '번역·작명 인기글',      scoreKey: null },
+  { key: 'popular',  label: '인기글',  icon: '🔥', type: null,       desc: '반응과 댓글이 많은 글', scoreKey: null },
+  { key: 'comment',  label: '댓글많음', icon: '💬', type: null,       desc: '댓글 참여가 많은 글',   scoreKey: 'comment' },
+  { key: 'ai_judge', label: '재판기록', icon: '🏛️', type: 'ai_judge', desc: '헌법재판소 AI 판결 인기글', scoreKey: null },
 ];
 
 function score(p) {
@@ -33,15 +32,6 @@ function aiResultSnippet(post) {
     case 'ai_judge': {
       const v = (post.verdicts || [])[0];
       return v ? `<span class="hall-ai-snippet">${escHtml(v.charName || v.judgeName || '')}: "${escHtml((v.verdict || '').slice(0, 50))}..."</span>` : '';
-    }
-    case 'ai_translate': {
-      const firstT = Array.isArray(post.translations) ? post.translations[0] : null;
-      const label = firstT ? escHtml(firstT.charName) : escHtml(post.styleName || '');
-      return label ? `<span class="hall-ai-snippet">${label} 번역</span>` : '';
-    }
-    case 'ai_naming': {
-      const names = (post.names || []).slice(0, 2).map(n => escHtml(n.name)).join(', ');
-      return names ? `<span class="hall-ai-snippet">${names}</span>` : '';
     }
     default:
       return '';

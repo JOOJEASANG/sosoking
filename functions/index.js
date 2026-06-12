@@ -184,13 +184,9 @@ ${textToCheck.slice(0, 600)}
 // ── SEO 라우트(seoPost·sitemapXml) 등록 ──
 require('./seo-functions').register({ exports, db });
 
-// ── AI킹 4소 (판결·번역·궁합·작명·상담) ──
+// ── 헌법재판소 AI 판결 ──
 const aiKing = require('./ai-king-functions');
 exports.aiJudge = aiKing.aiJudge;
-exports.aiTranslate = aiKing.aiTranslate;
-exports.aiMatch = aiKing.aiMatch;
-exports.aiNaming = aiKing.aiNaming;
-exports.aiConsult = aiKing.aiConsult;
 exports.getAiKingUsage = aiKing.getAiKingUsage;
 exports.saveAiKingConfig = aiKing.saveAiKingConfig;
 

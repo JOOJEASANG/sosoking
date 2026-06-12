@@ -1163,8 +1163,7 @@ async function renderSiteFeatures(el) {
 /* ── 게시글관리 ── */
 async function renderAdminPosts(el) {
   const POST_TYPE_LABELS = {
-    ai_judge: '⚖️ 판결소', ai_translate: '✨ 창작소',
-    ai_naming: '✨ 창작소(구)',
+    ai_judge: '🏛️ 재판기록',
     vote: '🗳️ 토론방', drip: '🤣 드립방',
     collect: '📌 일반방', general: '📝 일반',
   };

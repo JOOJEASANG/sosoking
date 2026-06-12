@@ -9,8 +9,6 @@ export const TYPE_LABELS = {
   multi: '일반방',
   general: '일반방',
   ai_judge: 'AI판사',
-  ai_translate: 'AI번역사',
-  ai_naming: 'AI작명소',
 };
 
 export const CAT_CLASS = {

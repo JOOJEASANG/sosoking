@@ -3,6 +3,8 @@ import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { navigate } from '../router.js';
 import { setMeta } from '../utils/seo.js';
 
+const callGenerateCourtAiVerdict = httpsCallable(functions, 'generateCourtAiVerdict');
+
 function esc(value) {
   return String(value || '').replace(/[&<>]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[ch]));
 }
@@ -52,6 +54,53 @@ function history(reviews, current) {
   </section>`;
 }
 
+function aiVerdictSection(verdicts) {
+  if (verdicts && verdicts.length > 0) {
+    return `<section style="margin-top:14px;padding:16px;border-radius:18px;background:var(--color-surface);border:1px solid var(--color-border)">
+      <div style="font-size:16px;font-weight:900;margin-bottom:12px">⚖️ AI 재판관 의견</div>
+      <div id="ai-verdict-list">
+        ${verdicts.map(v => `
+          <div style="padding:12px;border-radius:12px;background:var(--color-surface-2);margin-bottom:8px">
+            <div style="font-size:12px;font-weight:800;color:var(--color-primary);margin-bottom:4px">${esc(v.charName)}</div>
+            <div style="font-size:13px;line-height:1.6;color:var(--color-text-primary)">${esc(v.verdict).replace(/\n/g, '<br>')}</div>
+          </div>`).join('')}
+      </div>
+    </section>`;
+  }
+  return `<section style="margin-top:14px;padding:16px;border-radius:18px;background:var(--color-surface);border:1px solid var(--color-border)">
+    <div style="font-size:16px;font-weight:900;margin-bottom:6px">⚖️ AI 재판관 의견</div>
+    <div style="font-size:13px;color:var(--color-text-muted);margin-bottom:12px">AI 재판관 3인이 탄핵심판에 대한 의견을 밝힙니다.</div>
+    <button class="btn btn--primary btn--full" id="btn-ai-verdict">🏛️ AI 재판관 의견 생성</button>
+    <div id="ai-verdict-list" style="margin-top:12px"></div>
+  </section>`;
+}
+
+function bindAiVerdict(reviewId) {
+  const btn = document.getElementById('btn-ai-verdict');
+  if (!btn) return;
+  btn.addEventListener('click', async () => {
+    btn.disabled = true;
+    btn.textContent = '생성 중...';
+    const listEl = document.getElementById('ai-verdict-list');
+    try {
+      const res = await callGenerateCourtAiVerdict({ reviewId });
+      const verdicts = res.data?.verdicts || [];
+      if (listEl) {
+        listEl.innerHTML = verdicts.map(v => `
+          <div style="padding:12px;border-radius:12px;background:var(--color-surface-2);margin-bottom:8px">
+            <div style="font-size:12px;font-weight:800;color:var(--color-primary);margin-bottom:4px">${esc(v.charName)}</div>
+            <div style="font-size:13px;line-height:1.6;color:var(--color-text-primary)">${esc(v.verdict).replace(/\n/g, '<br>')}</div>
+          </div>`).join('');
+      }
+      btn.remove();
+    } catch (e) {
+      btn.disabled = false;
+      btn.textContent = '🏛️ AI 재판관 의견 생성';
+      if (listEl) listEl.innerHTML = `<div style="color:var(--color-warning);font-size:13px">⚠️ 생성 실패: ${esc(e.message || '다시 시도해주세요')}</div>`;
+    }
+  });
+}
+
 export async function renderConstitutionalCourt() {
   setMeta('헌법재판소', '소소공화국 헌법재판소');
   const el = document.getElementById('page-content');
@@ -70,7 +119,9 @@ export async function renderConstitutionalCourt() {
       <div style="font-size:13px;color:var(--color-text-secondary);margin-top:6px;line-height:1.55">국회 탄핵소추 이후 열리는 탄핵심판 전용 기관입니다.</div>
     </div>
     ${card(current)}
+    ${current ? aiVerdictSection([]) : ''}
     ${history(reviews, current)}
   </div>`;
   document.getElementById('btn-go-congress')?.addEventListener('click', () => navigate('/congress'));
+  if (current) bindAiVerdict(current.id);
 }
