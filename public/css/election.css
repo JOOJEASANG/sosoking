@@ -801,3 +801,19 @@
   white-space: nowrap;
   margin-left: auto;
 }
+
+/* 투표 바 입장 애니메이션 */
+.elec-bar__fill {
+  transform-origin: left;
+  animation: elec-bar-grow .75s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes elec-bar-grow {
+  from { transform: scaleX(0); opacity: 0; }
+  to   { transform: scaleX(1); opacity: 1; }
+}
+.elec-cand:nth-child(2) .elec-bar__fill { animation-delay: .07s; }
+.elec-cand:nth-child(3) .elec-bar__fill { animation-delay: .14s; }
+.elec-cand:nth-child(4) .elec-bar__fill { animation-delay: .21s; }
+.elec-cand:nth-child(5) .elec-bar__fill { animation-delay: .28s; }
+.elec-cand:nth-child(6) .elec-bar__fill { animation-delay: .35s; }
+.elec-cand:nth-child(7) .elec-bar__fill { animation-delay: .42s; }
