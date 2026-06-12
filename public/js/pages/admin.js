@@ -1158,6 +1158,77 @@ async function renderSiteFeatures(el) {
       toast.error(e.message || '저장 실패');
     } finally { btn.disabled = false; btn.textContent = '저장'; }
   });
+
+  // ── 데이터 초기화 섹션 ──
+  const resetSection = document.createElement('div');
+  resetSection.className = 'admin-section';
+  resetSection.style.marginTop = '16px';
+  resetSection.innerHTML = `
+    <div class="card">
+      <div class="card__body">
+        <div style="font-size:15px;font-weight:900;margin-bottom:4px;color:#dc2626">⚠️ 데이터 초기화</div>
+        <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:16px">
+          한 번 초기화하면 되돌릴 수 없습니다. 신중하게 사용하세요.
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="padding:14px;border:1px solid #fca5a5;border-radius:12px;background:rgba(239,68,68,.04)">
+            <div style="font-size:13px;font-weight:800;margin-bottom:4px">🗑️ 배틀 데이터 초기화</div>
+            <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:10px">
+              battles, kingHistory, battleVotes, battle_victory_log, charStats, global_events 컬렉션을 전부 삭제합니다.
+            </div>
+            <button class="btn btn--sm" id="btn-reset-battle" style="background:#dc2626;color:#fff;border-color:transparent">배틀 데이터 초기화</button>
+            <div id="reset-battle-result" style="margin-top:6px;font-size:12px"></div>
+          </div>
+          <div style="padding:14px;border:1px solid #fca5a5;border-radius:12px;background:rgba(239,68,68,.04)">
+            <div style="font-size:13px;font-weight:800;margin-bottom:4px">💰 전체 포인트 초기화</div>
+            <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:10px">
+              모든 유저의 totalPoints를 0으로, 모든 정당의 totalPower를 0으로, point_awards를 전부 삭제합니다.
+            </div>
+            <button class="btn btn--sm" id="btn-reset-points" style="background:#dc2626;color:#fff;border-color:transparent">전체 포인트 초기화</button>
+            <div id="reset-points-result" style="margin-top:6px;font-size:12px"></div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  el.appendChild(resetSection);
+
+  el.querySelector('#btn-reset-battle')?.addEventListener('click', async () => {
+    if (!confirm('배틀 데이터를 전부 삭제할까요?\nbattles, kingHistory, battleVotes 등이 모두 삭제됩니다.\n\n되돌릴 수 없습니다!')) return;
+    const btn = el.querySelector('#btn-reset-battle');
+    const res = el.querySelector('#reset-battle-result');
+    btn.disabled = true; btn.textContent = '초기화 중...';
+    res.style.color = 'var(--color-text-muted)'; res.textContent = '삭제 중...';
+    try {
+      const fn = httpsCallable(functions, 'adminResetBattleData');
+      const { data: r } = await fn();
+      res.style.color = '#16a34a';
+      res.textContent = `✅ 완료 — ${JSON.stringify(r.deleted)}`;
+      toast.success('배틀 데이터 초기화 완료');
+    } catch (e) {
+      res.style.color = '#dc2626';
+      res.textContent = '❌ ' + (e.message || '실패');
+      toast.error(e.message || '초기화 실패');
+    } finally { btn.disabled = false; btn.textContent = '배틀 데이터 초기화'; }
+  });
+
+  el.querySelector('#btn-reset-points')?.addEventListener('click', async () => {
+    if (!confirm('모든 유저의 포인트를 0으로 초기화할까요?\n정당 totalPower도 함께 초기화됩니다.\n\n되돌릴 수 없습니다!')) return;
+    const btn = el.querySelector('#btn-reset-points');
+    const res = el.querySelector('#reset-points-result');
+    btn.disabled = true; btn.textContent = '초기화 중...';
+    res.style.color = 'var(--color-text-muted)'; res.textContent = '처리 중 (시간이 걸릴 수 있어요)...';
+    try {
+      const fn = httpsCallable(functions, 'adminResetAllPoints');
+      const { data: r } = await fn();
+      res.style.color = '#16a34a';
+      res.textContent = `✅ 완료 — 유저 ${r.usersReset}명 / 정당 ${r.partiesReset}개 초기화`;
+      toast.success('포인트 초기화 완료');
+    } catch (e) {
+      res.style.color = '#dc2626';
+      res.textContent = '❌ ' + (e.message || '실패');
+      toast.error(e.message || '초기화 실패');
+    } finally { btn.disabled = false; btn.textContent = '전체 포인트 초기화'; }
+  });
 }
 
 /* ── 게시글관리 ── */
