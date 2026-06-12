@@ -473,6 +473,52 @@ function renderMissions(status, battleData, isRulingParty = false) {
     </section>`;
 }
 
+// 소소공화국 속보 티커
+function renderNewsTicker(presidentData, battleData, newsData) {
+  const items = [];
+
+  if (presidentData) {
+    const approveCount = Number(presidentData.decreeApprove || 0);
+    const disapproveCount = Number(presidentData.decreeDisapprove || 0);
+    const total = approveCount + disapproveCount;
+    const pct = total >= 3 ? Math.round((approveCount / total) * 100) : null;
+    const approval = pct !== null ? ` · 지지율 ${pct}%` : '';
+    items.push({ text: `🏛️ ${escHtml(presidentData.candidateName)} 대통령 재임 중${approval}`, path: '/election' });
+
+    const impeachCount = Number(presidentData.impeachCount || 0);
+    if (impeachCount > 0) {
+      const impeachThreshold = Number(presidentData.impeachThreshold || 5);
+      if (presidentData.impeachTriggered) {
+        items.push({ text: `✍️ 탄핵 청원 가결 — ${impeachCount}/${impeachThreshold}명 서명`, path: '/election' });
+      } else {
+        items.push({ text: `✍️ 탄핵 청원 진행 중 — ${impeachCount}/${impeachThreshold}명 서명`, path: '/election' });
+      }
+    }
+  }
+
+  if (battleData && battleData.totalVotes > 0) {
+    const king = battleData.currentKing;
+    const kingText = king ? `${king.emoji} ${escHtml(king.name)} 집권 중` : '집권자 미정';
+    items.push({ text: `⚔️ 정치배틀 ${fmtNum(battleData.totalVotes)}명 참여 — ${kingText}`, path: '/battle' });
+  }
+
+  if (newsData && newsData.headline) {
+    items.push({ text: `📰 ${escHtml(newsData.headline.slice(0, 50))}${newsData.headline.length > 50 ? '…' : ''}`, path: '/news' });
+  }
+
+  if (items.length === 0) return '';
+
+  const dupItems = [...items, ...items];
+  const tickerContent = dupItems.map((item, i) =>
+    `<span class="home-ticker__item" data-path="${item.path}">🔴 속보 &nbsp; ${item.text}</span><span class="home-ticker__sep" aria-hidden="true"> ▪ </span>`
+  ).join('');
+
+  return `<div class="home-ticker" role="marquee" aria-label="소소공화국 속보">
+    <span class="home-ticker__badge">속보</span>
+    <div class="home-ticker__track"><div class="home-ticker__inner">${tickerContent}</div></div>
+  </div>`;
+}
+
 // 빠른 이동 (정치 시스템 4종)
 function renderQuickActions() {
   return `
@@ -565,6 +611,7 @@ export async function renderHome() {
       ? `${renderRankCard(myStatus, isRulingParty)}${renderLeaderCard(myStatus)}${renderMissions(myStatus, battleData, isRulingParty)}${renderQuickActions()}`
       : `${renderGuestHero()}${renderQuickActions()}`;
 
+    const tickerHTML = renderNewsTicker(presidentData, battleData, newsData);
     const newsHTML = renderNewsCard(newsData || generateFallbackNews(battleData, presidentData));
     const prezHTML = renderPresidentCard(presidentData);
     const battleHTML = renderBattleCard(battleData);
@@ -599,7 +646,7 @@ export async function renderHome() {
         </div>
       </div>` : '';
 
-    el.innerHTML = `<div class="home-dash page-enter home-dash--v2"><div id="home-notif-slot"></div>${newPrezHTML}${headerHTML}<div id="home-campaign-slot"></div><div id="home-manifesto-slot"></div>${battleHTML}${newsHTML}${prezHTML}<div id="home-crisis-slot"></div>${bestHTML}${hotHTML}${commentsHTML}<div id="home-party-power-slot"></div><div id="home-election-race-slot"></div><div id="home-party-activity-slot"></div></div>`;
+    el.innerHTML = `<div class="home-dash page-enter home-dash--v2"><div id="home-notif-slot"></div>${newPrezHTML}${tickerHTML}${headerHTML}<div id="home-campaign-slot"></div><div id="home-manifesto-slot"></div>${battleHTML}${newsHTML}${prezHTML}<div id="home-crisis-slot"></div>${bestHTML}${hotHTML}${commentsHTML}<div id="home-party-power-slot"></div><div id="home-election-race-slot"></div><div id="home-party-activity-slot"></div></div>`;
 
     el.querySelector('.home-new-prez-announce__close')?.addEventListener('click', () => {
       el.querySelector('#home-new-prez-announce')?.remove();

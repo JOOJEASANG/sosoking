@@ -957,3 +957,61 @@
 }
 .home-week-bar--urgent .home-week-bar__remain { color: #dc2626; animation: impeach-pulse 1.4s ease-in-out infinite; }
 .home-week-bar--urgent .home-week-bar__fill { background: #dc2626; }
+
+/* 소소공화국 속보 티커 */
+.home-ticker {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 12px;
+  height: 36px;
+}
+.home-ticker__badge {
+  flex-shrink: 0;
+  background: #dc2626;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 0 10px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  letter-spacing: .04em;
+}
+.home-ticker__track {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  height: 100%;
+}
+.home-ticker__inner {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  white-space: nowrap;
+  animation: ticker-scroll 28s linear infinite;
+  height: 100%;
+}
+.home-ticker:hover .home-ticker__inner { animation-play-state: paused; }
+.home-ticker__item {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  padding: 0 12px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.home-ticker__item:hover { color: var(--color-primary); }
+.home-ticker__sep {
+  color: var(--color-text-muted);
+  opacity: .4;
+  flex-shrink: 0;
+}
+@keyframes ticker-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
