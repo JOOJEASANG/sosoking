@@ -20,6 +20,7 @@ const hotPotato = require('./hot-potato-functions.js');
 const battle = require('./battle-functions.js');
 const politics = require('./politics-functions.js');
 const gameDeadline = require('./game-deadline-functions.js');
+const partyLeague = require('./party-war-functions.js');
 
 module.exports = {
   ...coreAi,
@@ -41,6 +42,7 @@ module.exports = {
   ...points,
   ...aiLadder,
   ...hotPotato,
+  ...partyLeague,
   generateDailyBattle: battle.generateDailyBattle,
   closeDailyBattle: battle.closeDailyBattle,
   voteForChar: battle.voteForChar,
