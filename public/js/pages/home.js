@@ -228,6 +228,7 @@ function renderPresidentCard(p) {
       ${crisisHTML}
       ${impeachHTML}
     </div>`;
+}
 
 function renderBattleCard(battle) {
   if (!battle) return '';
