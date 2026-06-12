@@ -22,6 +22,7 @@ const politics = require('./politics-functions.js');
 const coreParties = require('./three-party-functions.js');
 const gameDeadline = require('./game-deadline-functions.js');
 const partyLeague = require('./party-war-functions.js');
+const congress = require('./congress-functions.js');
 
 module.exports = {
   ...coreAi,
@@ -44,6 +45,7 @@ module.exports = {
   ...aiLadder,
   ...hotPotato,
   ...partyLeague,
+  ...congress,
   generateDailyBattle: battle.generateDailyBattle,
   closeDailyBattle: battle.closeDailyBattle,
   voteForChar: battle.voteForChar,
