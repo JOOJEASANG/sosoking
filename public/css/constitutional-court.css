@@ -3,6 +3,23 @@
 /* ── 페이지 래퍼 ── */
 .court-page { display: flex; flex-direction: column; gap: 14px; }
 
+/* ── 게임 컨텍스트 바 ── */
+.court-game-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 9px 14px;
+  background: var(--color-surface-2, #f6f6f9);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+.court-game-bar__sep { color: var(--color-text-muted); }
+.court-game-bar b { color: var(--color-primary); font-weight: 800; }
+.court-game-bar__link { color: var(--color-primary); font-weight: 700; text-decoration: none; }
+
 /* ── 히어로 헤더 ── */
 .court-hero {
   padding: 20px;

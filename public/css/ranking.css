@@ -2,6 +2,24 @@
 
 .ranking-page { max-width: 680px; margin: 0 auto; padding: 0 0 40px; }
 
+/* ── 정치력 획득 방법 바 ── */
+.rank-earn-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 9px 14px;
+  background: var(--color-surface-2, #f6f6f9);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  margin-bottom: 12px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+.rank-earn-bar__label { font-weight: 800; color: var(--color-text-primary); }
+.rank-earn-bar__sep { color: var(--color-text-muted); }
+.rank-earn-bar__item b { color: var(--color-primary); font-weight: 800; }
+
 .ranking-hero {
   text-align: center;
   padding: 28px 16px 20px;

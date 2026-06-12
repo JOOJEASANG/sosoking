@@ -164,20 +164,20 @@ export async function renderRanking() {
       <p class="ranking-hero__sub">활동할수록 정치력이 쌓이고, 당내 1위는 당대표가 됩니다</p>
     </div>
 
+    <div class="rank-earn-bar">
+      <span class="rank-earn-bar__label">⚡ 정치력 획득 방법</span>
+      <span class="rank-earn-bar__item">배틀 투표 <b>+5P</b></span>
+      <span class="rank-earn-bar__sep">·</span>
+      <span class="rank-earn-bar__item">댓글 <b>+10P</b></span>
+      <span class="rank-earn-bar__sep">·</span>
+      <span class="rank-earn-bar__item">대선 투표 <b>+5P</b></span>
+      <span class="rank-earn-bar__sep">·</span>
+      <span class="rank-earn-bar__item">출석 <b>+20P</b></span>
+    </div>
+
     ${republicStatsHTML}
 
     ${renderLadder(myEntry?.power)}
-
-    ${auth.currentUser ? `<div class="rank-campaign-cta" id="rank-campaign-cta">
-      <div class="rank-campaign-cta__body">
-        <span class="rank-campaign-cta__icon">📣</span>
-        <div>
-          <div class="rank-campaign-cta__title">정당 유세 — 포인트로 정치력 부스트</div>
-          <div class="rank-campaign-cta__desc">유세하면 내 정당 정치력이 올라갑니다. 당내 1위는 당대표로 대선 출마!</div>
-        </div>
-      </div>
-      <button class="btn btn--primary btn--sm" id="btn-rank-campaign">📣 유세하기</button>
-    </div>` : ''}
 
     ${myBanner}
 
@@ -216,6 +216,17 @@ export async function renderRanking() {
         ${leaders.map(renderLeaderCard).join('')}
       </div>
     </div>
+
+    ${auth.currentUser ? `<div class="rank-campaign-cta" id="rank-campaign-cta">
+      <div class="rank-campaign-cta__body">
+        <span class="rank-campaign-cta__icon">📣</span>
+        <div>
+          <div class="rank-campaign-cta__title">정당 유세로 정치력 부스트</div>
+          <div class="rank-campaign-cta__desc">유세하면 내 정당 정치력이 올라갑니다 · 하루 최대 3회</div>
+        </div>
+      </div>
+      <button class="btn btn--primary btn--sm" id="btn-rank-campaign">📣 유세하기</button>
+    </div>` : ''}
   </div>`;
 
   el.querySelectorAll('.ranking-tab').forEach(tab => {

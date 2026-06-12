@@ -149,6 +149,13 @@ export async function renderConstitutionalCourt() {
         <div class="court-hero__title">🏛️ 헌법재판소</div>
         <div class="court-hero__desc">국회 탄핵소추 이후 열리는 탄핵심판 전용 기관입니다.</div>
       </div>
+      <div class="court-game-bar">
+        <span>탄핵 <b>인용</b> → 조기 대선 실시</span>
+        <span class="court-game-bar__sep">·</span>
+        <span>탄핵 <b>기각</b> → 대통령 임기 유지</span>
+        <span class="court-game-bar__sep">·</span>
+        <span>청원 서명은 <a class="court-game-bar__link" href="#/election">선거 페이지</a>에서 <b>+5P</b></span>
+      </div>
       ${renderCard(current)}
       ${current ? renderVerdictSection([]) : ''}
       ${renderHistory(reviews, current)}

@@ -83,6 +83,14 @@ export async function renderFeed() {
 
   el.innerHTML = `
     <div class="soso-feed-page layout-main layout-main--full feed-page-clean">
+      <div class="feed-earn-bar">
+        <span class="feed-earn-bar__label">⚡ 정치력 획득</span>
+        <a class="feed-earn-bar__item" href="#/battle">배틀 댓글 <b>+10P</b></a>
+        <span class="feed-earn-bar__sep">·</span>
+        <span class="feed-earn-bar__item">글 작성 <b>+20P</b></span>
+        <span class="feed-earn-bar__sep">·</span>
+        <span class="feed-earn-bar__item">댓글 <b>+10P</b></span>
+      </div>
       <div class="soso-feed-toolbar">
         ${renderRoomTabs()}
         ${renderFeedSearchBar({ search: currentSearch })}

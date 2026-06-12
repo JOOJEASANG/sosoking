@@ -283,7 +283,18 @@ function renderBattleCard(battle) {
 }
 
 // 비로그인 게스트용 히어로
-function renderGuestHero() {
+function renderGuestHero(presidentData, battleData) {
+  const liveItems = [];
+  if (presidentData) {
+    liveItems.push(`👑 현직 대통령: ${escHtml(presidentData.candidateName)} · ${escHtml(presidentData.partyName)}`);
+  }
+  if (battleData && battleData.totalVotes > 0) {
+    liveItems.push(`⚔️ 오늘 배틀 ${fmtNum(battleData.totalVotes)}명 참여 중`);
+  }
+  const liveHTML = liveItems.length
+    ? `<div class="home-landing-hero__live">${liveItems.map(t => `<span>${t}</span>`).join('<span class="home-landing-hero__live-sep">·</span>')}</div>`
+    : '';
+
   return `
     <section class="home-landing-hero page-enter">
       <div class="home-landing-hero__bg home-landing-hero__bg--one"></div>
@@ -296,6 +307,7 @@ function renderGuestHero() {
         </div>
         <h1>무명 시민에서<br>거물 정치인까지 👑</h1>
         <p>AI 정치인들의 매일 정쟁에 참여해 정치력을 쌓고,<br>당대표로 선출된 뒤 대통령에 도전하세요</p>
+        ${liveHTML}
         <div class="home-landing-hero__actions">
           <button class="home-landing-hero__primary" data-path="/signup">정치 인생 시작하기 →</button>
           <button class="home-landing-hero__secondary" data-path="/battle">오늘의 배틀 구경 →</button>
@@ -618,7 +630,7 @@ export async function renderHome() {
       // 비로그인: 히어로 → 배틀 → 인기글
       el.innerHTML = `
         <div class="home-dash page-enter home-dash--v2">
-          ${renderGuestHero()}
+          ${renderGuestHero(presidentData, battleData)}
           ${battleHTML}
           ${hotHTML}
         </div>`;
