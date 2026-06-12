@@ -393,6 +393,21 @@ async function loadNewsCrisis(slot) {
   } catch { /* non-critical */ }
 }
 
+async function loadAiColumn(slot) {
+  if (!slot) return;
+  try {
+    const { data } = await httpsCallable(functions, 'generateNewsColumn')();
+    if (!data?.column) return;
+    slot.innerHTML = `
+      <section class="news-column">
+        <div class="news-section-title">✍️ 오늘의 시론</div>
+        ${data.headline ? `<div class="news-column__headline">${escHtml(data.headline)}</div>` : ''}
+        <p class="news-column__body">${escHtml(data.column)}</p>
+        <div class="news-column__footer">AI 칼럼니스트 · 소소공화국 특파원</div>
+      </section>`;
+  } catch { /* non-critical */ }
+}
+
 async function loadBreakingAlerts(slot) {
   if (!slot) return;
   try {
@@ -527,6 +542,7 @@ export async function renderNews() {
       <div class="news-page__inner">
         <div id="news-breaking-slot"></div>
         ${featuredHTML}
+        <div id="news-column-slot"></div>
         <div id="news-battle-slot"></div>
         <div id="news-prez-slot"></div>
         <div id="news-qa-slot"></div>
@@ -541,6 +557,7 @@ export async function renderNews() {
   const inner = el.querySelector('.news-page__inner');
   if (inner) {
     loadBreakingAlerts(inner.querySelector('#news-breaking-slot'));
+    loadAiColumn(inner.querySelector('#news-column-slot'));
     loadBattleBulletin(inner.querySelector('#news-battle-slot'));
     loadPresidentBlock(inner.querySelector('#news-prez-slot'));
     loadPresidentQAHighlight(inner.querySelector('#news-qa-slot'));

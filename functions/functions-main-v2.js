@@ -78,6 +78,7 @@ module.exports = {
   setPartyManifesto: politics.setPartyManifesto,
   getElectionHistory: politics.getElectionHistory,
   getDailyNews: politics.getDailyNews,
+  generateNewsColumn: politics.generateNewsColumn,
   ratePresidentDecree: politics.ratePresidentDecree,
   claimRulingBonus: politics.claimRulingBonus,
   getWeeklyCrisis: politics.getWeeklyCrisis,

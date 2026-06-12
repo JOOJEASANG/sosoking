@@ -204,6 +204,20 @@
   color: var(--color-text-muted);
   margin-top: 8px;
 }
+.congress-bill__consequence {
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(99,102,241,.07);
+  border-left: 3px solid #6366f1;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  font-style: italic;
+}
+[data-theme="dark"] .congress-bill__consequence {
+  background: rgba(99,102,241,.12);
+}
 
 .congress-bill-empty {
   padding: 18px;

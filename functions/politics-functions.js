@@ -1270,6 +1270,59 @@ JSON으로만 응답: {"headline":"제목","body":"본문"}`;
   }
 });
 
+// ── 소소신문 AI 시론 ──
+exports.generateNewsColumn = onCall({ region: REGION, timeoutSeconds: 60 }, async () => {
+  const today = kstToday();
+  const ref = db.doc(`news_column/${today}`);
+  const snap = await ref.get();
+  if (snap.exists && snap.data().column && !snap.data().generating) return snap.data();
+
+  if (snap.exists && snap.data().generating) return snap.data();
+  await ref.set({ generating: true }, { merge: true });
+
+  try {
+    const [presidentSnap, crisisSnap, billsSnap] = await Promise.all([
+      db.collection('elections').orderBy('createdAtMs', 'desc').limit(1).get(),
+      db.collection('weekly_crisis').orderBy('weekKey', 'desc').limit(1).get(),
+      db.collection('congress_bills').orderBy('createdAtMs', 'desc').limit(3).get(),
+    ]);
+
+    const presData = presidentSnap.docs[0]?.data() || {};
+    const presName = presData.winner?.candidateName || '대통령';
+    const crisisData = crisisSnap.docs[0]?.data() || {};
+    const billTitles = billsSnap.docs.map(d => d.data().title || '').filter(Boolean).join(', ');
+
+    const prompt = `당신은 소소공화국의 신랄한 정치 칼럼니스트입니다. 오늘의 시론을 작성하세요.
+
+현재 상황:
+- 현직 대통령: ${presName}
+- 최근 국정 위기: ${crisisData.title || '없음'}
+- 최근 법안: ${billTitles || '없음'}
+
+JSON 형식으로만 답하세요:
+{
+  "headline": "시론 제목 (20자 이내)",
+  "column": "오늘의 정치 시론 (100~150자). 현재 정세를 분석하는 짧고 날카로운 논평. 재미있고 풍자적으로."
+}`;
+
+    const raw = await callAI(prompt, 400);
+    const parsed = safeParseJson(raw);
+    const result = {
+      date: today,
+      headline: String(parsed?.headline || '소소공화국 오늘의 시론').trim().slice(0, 40),
+      column: String(parsed?.column || '').trim().slice(0, 200),
+      generating: false,
+      generatedAt: FieldValue.serverTimestamp(),
+    };
+    await ref.set(result);
+    return result;
+  } catch (e) {
+    await ref.set({ generating: false }, { merge: true });
+    console.error('[generateNewsColumn] error', e);
+    return { headline: null, column: null, date: today };
+  }
+});
+
 // ── 당원 정치력 동기화 (홈 방문 시 fire-and-forget) ──
 exports.syncPartyMemberPower = onCall({ region: REGION, timeoutSeconds: 15 }, async request => {
   const uid = request.auth && request.auth.uid;

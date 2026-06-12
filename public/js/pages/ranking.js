@@ -4,6 +4,7 @@ import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { setMeta } from '../utils/seo.js';
 import { escHtml } from '../utils/helpers.js';
 import { getPoliticalRank, RANKS } from '../utils/political-rank.js';
+import { toast } from '../components/toast.js';
 
 function fmtPower(n) {
   n = Number(n || 0);
@@ -167,6 +168,17 @@ export async function renderRanking() {
 
     ${renderLadder(myEntry?.power)}
 
+    ${auth.currentUser ? `<div class="rank-campaign-cta" id="rank-campaign-cta">
+      <div class="rank-campaign-cta__body">
+        <span class="rank-campaign-cta__icon">📣</span>
+        <div>
+          <div class="rank-campaign-cta__title">정당 유세 — 포인트로 정치력 부스트</div>
+          <div class="rank-campaign-cta__desc">유세하면 내 정당 정치력이 올라갑니다. 당내 1위는 당대표로 대선 출마!</div>
+        </div>
+      </div>
+      <button class="btn btn--primary btn--sm" id="btn-rank-campaign">📣 유세하기</button>
+    </div>` : ''}
+
     ${myBanner}
 
     <div class="ranking-tabs" id="rank-tabs">
@@ -215,5 +227,23 @@ export async function renderRanking() {
       el.querySelector('#rank-panel-gainers').classList.toggle('rank-panel--hidden', target !== 'gainers');
       el.querySelector('#rank-panel-leaders').classList.toggle('rank-panel--hidden', target !== 'leaders');
     });
+  });
+
+  el.querySelector('#btn-rank-campaign')?.addEventListener('click', async btn => {
+    const button = el.querySelector('#btn-rank-campaign');
+    if (button) button.disabled = true;
+    try {
+      const { data } = await httpsCallable(functions, 'campaignForParty')({});
+      if (data?.ok) {
+        toast.success(data.message || '유세 완료! 정당 정치력이 올랐습니다 📣');
+        renderRanking();
+      } else {
+        toast.info(data?.message || '유세할 수 없는 상태입니다');
+        if (button) button.disabled = false;
+      }
+    } catch (e) {
+      toast.error(e?.message || '유세에 실패했어요');
+      if (button) button.disabled = false;
+    }
   });
 }

@@ -107,6 +107,7 @@ function renderBills(bills, myVotes) {
         </button>
       </div>
       ${myVote ? `<div class="congress-bill__myvote">내 표결: ${myVote === 'for' ? '✅ 찬성' : '❌ 반대'}</div>` : ''}
+      ${isClosed && bill.consequence ? `<div class="congress-bill__consequence">📋 ${esc(bill.consequence)}</div>` : ''}
     </article>`;
   }).join('');
 }

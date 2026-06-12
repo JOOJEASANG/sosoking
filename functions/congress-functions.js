@@ -6,6 +6,41 @@ const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const db = getFirestore();
 const REGION = 'asia-northeast3';
 
+async function getAiConfig() {
+  try { const snap = await db.doc('config/ai_king').get(); return snap.exists ? snap.data() : {}; } catch { return {}; }
+}
+
+async function callAI(prompt, maxTokens = 400) {
+  const config = await getAiConfig();
+  if (config.activeModel === 'gemini' && config.geminiApiKey) {
+    const { GoogleGenerativeAI } = require('@google/generative-ai');
+    const genAI = new GoogleGenerativeAI(config.geminiApiKey);
+    const model = genAI.getGenerativeModel({ model: config.geminiModel || 'gemini-2.5-flash' });
+    const result = await model.generateContent({
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: { maxOutputTokens: maxTokens, temperature: 1.0, responseMimeType: 'application/json' },
+    });
+    return result.response.text();
+  }
+  if (!config.claudeApiKey) throw new Error('AI 키 미설정');
+  const Anthropic = require('@anthropic-ai/sdk');
+  const anthropic = new Anthropic({ apiKey: config.claudeApiKey });
+  const msg = await anthropic.messages.create({
+    model: config.claudeModel || 'claude-haiku-4-5-20251001',
+    max_tokens: maxTokens, temperature: 1.0,
+    messages: [{ role: 'user', content: prompt }],
+  });
+  return msg.content.find(b => b.type === 'text')?.text || '';
+}
+
+function safeParseJson(raw) {
+  const cleaned = String(raw || '').replace(/```json|```/g, '').trim();
+  try { return JSON.parse(cleaned); } catch {}
+  const m = cleaned.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+  if (m) { try { return JSON.parse(m[0]); } catch {} }
+  return null;
+}
+
 const PARTIES = Object.freeze([
   { id: 'national', name: '국민안정당', emoji: '🎙️', color: '#8B7355' },
   { id: 'youth', name: '청년혁명당', emoji: '📱', color: '#E84393' },
@@ -42,6 +77,32 @@ function kstMondayKey() {
 
 function billRef(id) { return db.doc(`congress_bills/${id}`); }
 function partyRef(id) { return db.doc(`parties/${id}`); }
+
+async function generateBillConsequence(billId, billData) {
+  try {
+    const result = billData.result === 'passed' ? '가결' : '부결';
+    const votesFor = Number(billData.votesFor || 0);
+    const votesAgainst = Number(billData.votesAgainst || 0);
+    const prompt = `소소공화국 의회 법안 표결이 끝났습니다. 결과에 따른 짧은 정치 논평을 작성하세요.
+
+법안명: ${billData.title}
+내용: ${billData.desc || ''}
+찬성 선택지: ${billData.optionFor || '찬성'}
+반대 선택지: ${billData.optionAgainst || '반대'}
+표결 결과: ${result} (찬성 ${votesFor}표, 반대 ${votesAgainst}표)
+
+JSON 형식으로만 답하세요:
+{"consequence": "이 법안 결과가 소소공화국에 미치는 정치·사회적 파장을 2~3문장으로. 구체적이고 생동감 있게."}`;
+    const raw = await callAI(prompt, 300);
+    const parsed = safeParseJson(raw);
+    const consequence = typeof parsed?.consequence === 'string' ? parsed.consequence.trim() : '';
+    if (consequence) {
+      await billRef(billId).set({ consequence }, { merge: true });
+    }
+  } catch (e) {
+    console.error('[generateBillConsequence]', e.message);
+  }
+}
 
 function defaultBillForWeek(weekKey, seed = 0) {
   const pool = [
@@ -104,6 +165,7 @@ function publicBill(data) {
     totalVotes,
     partyVotes: data.partyVotes || {},
     result,
+    consequence: data.consequence || null,
   };
 }
 
@@ -184,7 +246,9 @@ const closeCongressBill = onCall({ region: REGION, timeoutSeconds: 20 }, async r
   const data = snap.data() || {};
   const result = Number(data.votesFor || 0) >= Number(data.votesAgainst || 0) ? 'passed' : 'rejected';
   await ref.set({ status: 'closed', result, closedAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-  return { ok: true, bill: publicBill({ id: billId, ...data, status: 'closed', result }) };
+  const closedBillData = { ...data, status: 'closed', result };
+  generateBillConsequence(billId, closedBillData).catch(() => {});
+  return { ok: true, bill: publicBill({ id: billId, ...closedBillData }) };
 });
 
 const seedCongressBillFromCrisis = onCall({ region: REGION, timeoutSeconds: 20 }, async request => {

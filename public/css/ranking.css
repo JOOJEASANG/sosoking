@@ -184,6 +184,30 @@
 .rank-ladder__next b { color: var(--color-primary); font-weight: 800; }
 .rank-ladder__next--max { color: #b8860b; font-weight: 700; }
 
+/* 유세 CTA */
+.rank-campaign-cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: linear-gradient(135deg, rgba(255,107,74,.08), rgba(255,138,0,.05));
+  border: 1px solid var(--color-primary-border);
+  border-radius: 16px;
+  padding: 14px 16px;
+  margin: 0 0 12px;
+  flex-wrap: wrap;
+}
+.rank-campaign-cta__body {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+.rank-campaign-cta__icon { font-size: 22px; flex-shrink: 0; margin-top: 2px; }
+.rank-campaign-cta__title { font-size: 14px; font-weight: 900; color: var(--color-text-primary); }
+.rank-campaign-cta__desc { font-size: 12px; color: var(--color-text-muted); margin-top: 2px; line-height: 1.4; }
+
 /* 내 순위 배너 */
 .rank-my-banner {
   display: flex;
