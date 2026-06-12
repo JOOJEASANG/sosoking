@@ -196,6 +196,39 @@ export async function renderElection() {
     : (cands.length === 1 ? { first: cands[0].votes, second: 0 } : null);
   const rulingPartyId = president ? president.partyId : null;
 
+  // 공화국 현황 계산
+  const approveCount = president ? Number(president.decreeApprove || 0) : 0;
+  const disapproveCount = president ? Number(president.decreeDisapprove || 0) : 0;
+  const approveTotal = approveCount + disapproveCount;
+  const approvePct = approveTotal >= 3 ? Math.round((approveCount / approveTotal) * 100) : null;
+  let republicStatus = 'stable';
+  if (approvePct !== null) {
+    if (approvePct < 25) republicStatus = 'crisis';
+    else if (approvePct < 40) republicStatus = 'danger';
+    else if (approvePct >= 75) republicStatus = 'high';
+  }
+  const STATUS_CONFIG = {
+    stable:  { label: '안정', emoji: '🟢', color: '#16a34a' },
+    high:    { label: '고지지', emoji: '⭐', color: '#2563eb' },
+    danger:  { label: '불안', emoji: '🟡', color: '#d97706' },
+    crisis:  { label: '위기', emoji: '🔴', color: '#dc2626' },
+  };
+  const sc = STATUS_CONFIG[republicStatus] || STATUS_CONFIG.stable;
+  const elecLeader = cands[0];
+  const gapVotes = leaderVotes && cands.length >= 2 ? leaderVotes.first - leaderVotes.second : null;
+  const isTight = gapVotes != null && total >= 4 && (gapVotes <= 5 || Math.round((gapVotes / total) * 100) <= 10);
+
+  const republicStatusHTML = `
+    <div class="elec-republic-bar">
+      <div class="elec-republic-status" style="--sc:${sc.color}">
+        <span class="elec-republic-status__dot">${sc.emoji}</span>
+        <span class="elec-republic-status__label">${sc.label}</span>
+      </div>
+      ${approvePct !== null ? `<span class="elec-republic-approval">지지율 ${approvePct}%</span>` : ''}
+      ${elecLeader && total > 0 ? `<span class="elec-republic-leader" style="color:${elecLeader.color}">${elecLeader.emoji} ${escHtml(elecLeader.candidateName)} 선두${isTight ? ' ⚡박빙' : ''}</span>` : ''}
+      <span class="elec-republic-votes">${fmtNum(total)}표 집계</span>
+    </div>`;
+
   const ddayStr = dDay(election.endKey);
   const isUrgent = ddayStr.startsWith('⚡') || ddayStr.startsWith('D-DAY');
   const isElectionDay = ddayStr === '집계 중' || ddayStr.startsWith('D-DAY') || ddayStr.startsWith('⚡');
@@ -211,6 +244,7 @@ export async function renderElection() {
     : '';
 
   el.innerHTML = `<div class="election-page page-enter">
+    ${republicStatusHTML}
     ${electionDayBannerHTML}
     ${renderPresident(president, isPresident)}
     <div class="elec-head">
