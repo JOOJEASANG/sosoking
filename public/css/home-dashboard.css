@@ -920,3 +920,40 @@
   margin-top: 10px;
   border: 1px solid rgba(124,58,237,.3);
 }
+
+/* 이번 주 대선 마감 진행 바 */
+.home-week-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--color-surface-2);
+  border-radius: 10px 10px 0 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 12px;
+}
+.home-week-bar__label {
+  font-weight: 700;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+.home-week-bar__track {
+  flex: 1;
+  height: 5px;
+  background: var(--color-border);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.home-week-bar__fill {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: 99px;
+  transition: width .5s ease;
+}
+.home-week-bar__remain {
+  font-weight: 700;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+.home-week-bar--urgent .home-week-bar__remain { color: #dc2626; animation: impeach-pulse 1.4s ease-in-out infinite; }
+.home-week-bar--urgent .home-week-bar__fill { background: #dc2626; }

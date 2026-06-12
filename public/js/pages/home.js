@@ -419,7 +419,7 @@ function renderMissions(status, battleData, isRulingParty = false) {
     { done: attended,       label: '오늘 출석',        path: '/',         cta: '완료',       reward: dailyReward, icon: '📅' },
     { done: votedBattle,    label: '정치배틀 투표',     path: '/battle',   cta: '투표하기',   reward: '+5P',       icon: '🗳️' },
     { done: votedElection,  label: elecLabel,           path: '/election', cta: '투표하기',   reward: '+5P',       icon: '👑' },
-    { done: votedCrisis,    label: '이번 주 위기 투표', path: '/',         cta: '참여하기',   reward: '+5P',       icon: '🚨' },
+    { done: votedCrisis,    label: '이번 주 위기 투표', path: '/news',     cta: '참여하기',   reward: '+5P',       icon: '🚨' },
     { done: askedQA,        label: '대통령에게 질문',   path: '/election', cta: '질문하기',   reward: '+3P',       icon: '🎙️' },
     ...(status.partyId ? [{ done: campaignsToday >= 1, label: `유세 캠페인 (${campaignsToday}/3)`, path: '/parties', cta: '유세하기', reward: '-20P → 당 +15P', icon: '📢' }] : []),
     ...(isRulingParty ? [{ done: true, label: '집권당 일일 특전', path: '/', cta: '수령 완료', reward: '+3P 🔑', icon: '🏛️' }] : []),
@@ -427,8 +427,27 @@ function renderMissions(status, battleData, isRulingParty = false) {
   const doneCount = missions.filter(m => m.done).length;
   const allDone = doneCount === missions.length;
 
+  // 이번 주 대선 마감일 → 주간 진행 바
+  const weekBarHTML = (() => {
+    const endKey = status.electionEndKey;
+    if (!endKey) return '';
+    const endMs = new Date(`${endKey}T23:59:59+09:00`).getTime();
+    const startMs = endMs - 6 * 86400000;
+    const now = Date.now();
+    const weekPct = Math.min(100, Math.max(0, Math.round(((now - startMs) / (endMs - startMs)) * 100)));
+    const daysLeft = Math.ceil((endMs - now) / 86400000);
+    const label = daysLeft <= 0 ? '집계 중' : daysLeft === 1 ? '오늘 마감!' : `${daysLeft}일 남음`;
+    const urgentClass = daysLeft <= 1 ? ' home-week-bar--urgent' : '';
+    return `<div class="home-week-bar${urgentClass}">
+      <span class="home-week-bar__label">🗓️ 이번 주 대선</span>
+      <div class="home-week-bar__track"><div class="home-week-bar__fill" style="width:${weekPct}%"></div></div>
+      <span class="home-week-bar__remain">${label}</span>
+    </div>`;
+  })();
+
   return `
     <section class="home-missions">
+      ${weekBarHTML}
       <div class="home-missions__head">
         <span class="home-missions__title">📋 오늘의 정치 일정</span>
         <span class="home-missions__count${allDone ? ' home-missions__count--all' : ''}">${doneCount}/${missions.length} 완료${allDone ? ' 🎉' : ''}</span>
