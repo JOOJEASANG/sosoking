@@ -376,3 +376,40 @@
   font-weight: 700;
   cursor: pointer;
 }
+
+/* 뉴스 대통령 탄핵 진행 바 */
+.news-prez-impeach {
+  margin-top: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: rgba(220,38,38,.08);
+  border: 1px solid rgba(220,38,38,.2);
+}
+.news-prez-impeach__label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #dc2626;
+  margin-bottom: 4px;
+}
+.news-prez-impeach__bar-wrap {
+  height: 4px;
+  background: rgba(220,38,38,.15);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.news-prez-impeach__bar {
+  height: 100%;
+  background: #dc2626;
+  border-radius: 99px;
+}
+.news-prez-impeach--urgent .news-prez-impeach__label { animation: impeach-pulse 1.2s ease-in-out infinite; }
+.news-prez-impeach--triggered {
+  font-size: 11px;
+  font-weight: 700;
+  color: #7c3aed;
+  background: rgba(124,58,237,.08);
+  border: 1px solid rgba(124,58,237,.3);
+  padding: 6px 8px;
+  border-radius: 6px;
+  margin-top: 8px;
+}

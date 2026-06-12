@@ -879,3 +879,44 @@
   color: var(--color-text-muted);
   margin-left: auto;
 }
+
+/* 탄핵 청원 진행 바 */
+.home-prez-impeach {
+  margin-top: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(220,38,38,.08);
+  border: 1px solid rgba(220,38,38,.2);
+  cursor: pointer;
+}
+.home-prez-impeach__label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #dc2626;
+  margin-bottom: 5px;
+}
+.home-prez-impeach__bar-wrap {
+  height: 5px;
+  background: rgba(220,38,38,.15);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.home-prez-impeach__bar {
+  height: 100%;
+  background: #dc2626;
+  border-radius: 99px;
+  transition: width .4s ease;
+}
+.home-prez-impeach--urgent .home-prez-impeach__label { animation: impeach-pulse 1.2s ease-in-out infinite; }
+@keyframes impeach-pulse { 0%,100%{opacity:1} 50%{opacity:.55} }
+.home-prez-impeach--triggered {
+  font-size: 12px;
+  font-weight: 700;
+  color: #7c3aed;
+  background: rgba(124,58,237,.08);
+  border-color: rgba(124,58,237,.3);
+  padding: 8px 10px;
+  border-radius: 8px;
+  margin-top: 10px;
+  border: 1px solid rgba(124,58,237,.3);
+}

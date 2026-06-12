@@ -340,6 +340,19 @@ async function loadPresidentBlock(slot) {
     const disapproveCount = Number(p.decreeDisapprove || 0);
     const total = approveCount + disapproveCount;
     const approvePct = total > 0 ? Math.round((approveCount / total) * 100) : null;
+
+    const impeachCount = Number(p.impeachCount || 0);
+    const impeachThreshold = Number(p.impeachThreshold || 5);
+    const impeachPct = Math.min(100, Math.round((impeachCount / impeachThreshold) * 100));
+    const impeachNewsHTML = impeachCount > 0 ? (() => {
+      if (p.impeachTriggered) return `<div class="news-prez-impeach news-prez-impeach--triggered">✍️ 탄핵 청원 가결 — ${impeachCount}/${impeachThreshold}명</div>`;
+      const urgencyClass = impeachPct >= 60 ? ' news-prez-impeach--urgent' : '';
+      return `<div class="news-prez-impeach${urgencyClass}">
+        <div class="news-prez-impeach__label">✍️ 탄핵 청원 ${impeachCount}/${impeachThreshold}명 서명</div>
+        <div class="news-prez-impeach__bar-wrap"><div class="news-prez-impeach__bar" style="width:${impeachPct}%"></div></div>
+      </div>`;
+    })() : '';
+
     slot.innerHTML = `
       <section class="news-prez-block" data-path="/election">
         <div class="news-section-title">🏛️ 현직 대통령</div>
@@ -354,6 +367,7 @@ async function loadPresidentBlock(slot) {
                 <div class="news-prez-block__bar"><div class="news-prez-block__fill" style="width:${approvePct}%"></div></div>
                 <span class="news-prez-block__pct">지지율 ${approvePct}% (${total}명 평가)</span>
               </div>` : ''}
+            ${impeachNewsHTML}
           </div>
         </div>
       </section>`;

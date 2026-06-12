@@ -30,11 +30,14 @@ function fmtNum(n) {
 function dDay(endKey) {
   if (!endKey) return '';
   const end = new Date(`${endKey}T23:59:59+09:00`).getTime();
-  const nowKst = Date.now();
-  const msLeft = end - nowKst;
+  const msLeft = end - Date.now();
   if (msLeft <= 0) return '집계 중';
-  const minsLeft = Math.ceil(msLeft / 60000);
-  if (minsLeft <= 60) return `⚡ ${minsLeft}분 남음`;
+  const totalSecs = Math.ceil(msLeft / 1000);
+  if (totalSecs <= 3600) {
+    const m = Math.floor(totalSecs / 60);
+    const s = totalSecs % 60;
+    return `⚡ ${m}분 ${String(s).padStart(2, '0')}초`;
+  }
   const hoursLeft = Math.ceil(msLeft / 3600000);
   if (hoursLeft <= 24) return `D-DAY · ${hoursLeft}시간`;
   const days = Math.ceil(msLeft / 86400000);
@@ -308,18 +311,29 @@ export async function renderElection() {
     });
   });
 
-  // 실시간 마감 카운트다운 (1분마다 업데이트)
+  // 실시간 마감 카운트다운 (1시간 미만이면 1초마다, 그 외 1분마다)
   const ddayEl = el.querySelector('.elec-head__dday');
   if (ddayEl && election.endKey && election.status === 'open') {
+    const endMs = new Date(`${election.endKey}T23:59:59+09:00`).getTime();
+    let timerId = null;
+    let usingSeconds = false;
+
     const tick = () => {
-      if (!document.contains(ddayEl)) return;
+      if (!document.contains(ddayEl)) { clearInterval(timerId); return; }
       const label = dDay(election.endKey);
       ddayEl.textContent = label;
       ddayEl.dataset.urgent = (label.startsWith('⚡') || label.startsWith('D-DAY')) ? 'true' : 'false';
+      const nowSubHour = (endMs - Date.now()) <= 3600000;
+      if (nowSubHour && !usingSeconds) {
+        clearInterval(timerId);
+        usingSeconds = true;
+        timerId = setInterval(tick, 1000);
+      }
     };
-    const timer = setInterval(tick, 60000);
-    const cleanup = () => clearInterval(timer);
-    window.addEventListener('hashchange', cleanup, { once: true });
+
+    usingSeconds = (endMs - Date.now()) <= 3600000;
+    timerId = setInterval(tick, usingSeconds ? 1000 : 60000);
+    window.addEventListener('hashchange', () => clearInterval(timerId), { once: true });
   }
 
   // 대통령 포고령 편집기

@@ -659,19 +659,22 @@ exports.getMyStatus = onCall({ region: REGION, timeoutSeconds: 10 }, async reque
   let electionEndKey = null;
   let votedCrisis = false;
   let campaignsToday = 0;
+  let askedQAThisWeek = false;
   const today = kstToday();
   try {
-    const { key, endKey } = weekPeriod();
-    const [b, elecSnap, crisisVoteSnap, campaignSnap] = await Promise.all([
+    const { key, endKey, prevKey } = weekPeriod();
+    const [b, elecSnap, crisisVoteSnap, campaignSnap, qaAwardSnap] = await Promise.all([
       db.doc(`elections/${key}/ballots/${uid}`).get(),
       db.doc(`elections/${key}`).get(),
       db.doc(`political_crises/${key}/votes/${uid}`).get().catch(() => null),
       db.doc(`campaign_records/${uid}_${today}`).get().catch(() => null),
+      db.doc(`point_awards/president_q_${prevKey}_${uid}`).get().catch(() => null),
     ]);
     votedElection = b.exists;
     electionEndKey = elecSnap.exists ? (elecSnap.data().endKey || endKey) : endKey;
     votedCrisis = !!(crisisVoteSnap && crisisVoteSnap.exists);
     campaignsToday = campaignSnap && campaignSnap.exists ? Number(campaignSnap.data().count || 0) : 0;
+    askedQAThisWeek = !!(qaAwardSnap && qaAwardSnap.exists);
   } catch {}
 
   // 당대표까지 남은 포인트 (2위 또는 그 이상일 때)
@@ -700,6 +703,7 @@ exports.getMyStatus = onCall({ region: REGION, timeoutSeconds: 10 }, async reque
     pointsToLeader,
     votedCrisis,
     campaignsToday,
+    askedQAThisWeek,
   };
 });
 
@@ -748,14 +752,16 @@ exports.getPresident = onCall({ region: REGION, timeoutSeconds: 10 }, async requ
   }
   const d = prevSnap.data();
 
-  // 내 찬반 평가 (로그인 시)
-  let myDecreeRating = null;
-  if (uid && d.decree) {
-    try {
-      const rSnap = await db.doc(`elections/${prevKey}/decree_ratings/${uid}`).get();
-      if (rSnap.exists) myDecreeRating = rSnap.data().approve;
-    } catch {}
-  }
+  const [ratingSnap, petitionSnap] = await Promise.all([
+    uid && d.decree
+      ? db.doc(`elections/${prevKey}/decree_ratings/${uid}`).get().catch(() => null)
+      : Promise.resolve(null),
+    db.doc(`impeachment_petitions/${prevKey}`).get().catch(() => null),
+  ]);
+
+  const myDecreeRating = ratingSnap && ratingSnap.exists ? ratingSnap.data().approve : null;
+  const impeachCount = petitionSnap && petitionSnap.exists ? Number(petitionSnap.data().count || 0) : 0;
+  const impeachTriggered = petitionSnap && petitionSnap.exists ? !!petitionSnap.data().triggered : false;
 
   return {
     president: {
@@ -765,6 +771,9 @@ exports.getPresident = onCall({ region: REGION, timeoutSeconds: 10 }, async requ
       decreeApprove: Number(d.decreeApprove || 0),
       decreeDisapprove: Number(d.decreeDisapprove || 0),
       myDecreeRating,
+      impeachCount,
+      impeachThreshold: 5,
+      impeachTriggered,
     },
   };
 });

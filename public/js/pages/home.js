@@ -204,6 +204,19 @@ function renderPresidentCard(p) {
     return '';
   })();
 
+  const impeachCount = Number(p.impeachCount || 0);
+  const impeachThreshold = Number(p.impeachThreshold || 5);
+  const impeachTriggered = !!p.impeachTriggered;
+  const impeachPct = Math.min(100, Math.round((impeachCount / impeachThreshold) * 100));
+  const impeachHTML = impeachCount > 0 ? (() => {
+    if (impeachTriggered) return `<div class="home-prez-impeach home-prez-impeach--triggered">✍️ 탄핵 청원 가결 — ${impeachCount}/${impeachThreshold}명 서명 완료</div>`;
+    const urgencyClass = impeachPct >= 60 ? ' home-prez-impeach--urgent' : '';
+    return `<div class="home-prez-impeach${urgencyClass}" data-path="/election">
+      <div class="home-prez-impeach__label">✍️ 탄핵 청원 진행 중 ${impeachCount}/${impeachThreshold}명</div>
+      <div class="home-prez-impeach__bar-wrap"><div class="home-prez-impeach__bar" style="width:${impeachPct}%"></div></div>
+    </div>`;
+  })() : '';
+
   return `
     <div class="home-prez-card" style="--party-color:${p.color}">
       <div class="home-prez-card__top" data-path="/election" style="cursor:pointer">
@@ -215,6 +228,7 @@ function renderPresidentCard(p) {
       ${approvalHTML}
       ${rateHTML}
       ${crisisHTML}
+      ${impeachHTML}
     </div>`;
 
 function renderBattleCard(battle) {
@@ -399,11 +413,14 @@ function renderMissions(status, battleData, isRulingParty = false) {
     }
   }
 
+  const askedQA = !!status.askedQAThisWeek;
+
   const missions = [
     { done: attended,       label: '오늘 출석',        path: '/',         cta: '완료',       reward: dailyReward, icon: '📅' },
     { done: votedBattle,    label: '정치배틀 투표',     path: '/battle',   cta: '투표하기',   reward: '+5P',       icon: '🗳️' },
     { done: votedElection,  label: elecLabel,           path: '/election', cta: '투표하기',   reward: '+5P',       icon: '👑' },
     { done: votedCrisis,    label: '이번 주 위기 투표', path: '/',         cta: '참여하기',   reward: '+5P',       icon: '🚨' },
+    { done: askedQA,        label: '대통령에게 질문',   path: '/election', cta: '질문하기',   reward: '+3P',       icon: '🎙️' },
     ...(status.partyId ? [{ done: campaignsToday >= 1, label: `유세 캠페인 (${campaignsToday}/3)`, path: '/parties', cta: '유세하기', reward: '-20P → 당 +15P', icon: '📢' }] : []),
     ...(isRulingParty ? [{ done: true, label: '집권당 일일 특전', path: '/', cta: '수령 완료', reward: '+3P 🔑', icon: '🏛️' }] : []),
   ];
