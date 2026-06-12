@@ -583,6 +583,8 @@ exports.getElection = onCall({ region: REGION, timeoutSeconds: 30 }, async reque
       decreeApprove: Number(pData.decreeApprove || 0),
       decreeDisapprove: Number(pData.decreeDisapprove || 0),
       myDecreeRating,
+      presidentRemoved: !!pData.presidentRemoved,
+      earlyElectionRequired: !!pData.earlyElectionRequired,
     };
   }
 

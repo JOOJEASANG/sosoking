@@ -1,0 +1,236 @@
+/* constitutional-court.css */
+
+/* ── 페이지 래퍼 ── */
+.court-page { display: flex; flex-direction: column; gap: 14px; }
+
+/* ── 히어로 헤더 ── */
+.court-hero {
+  padding: 20px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, rgba(127,29,29,.1), rgba(255,255,255,.85));
+  border: 1px solid var(--color-border);
+}
+[data-theme="dark"] .court-hero {
+  background: linear-gradient(135deg, rgba(127,29,29,.3), rgba(30,30,40,.9));
+}
+.court-hero__eyebrow {
+  font-size: 11px;
+  font-weight: 900;
+  color: var(--color-text-muted);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.court-hero__title {
+  font-size: 27px;
+  font-weight: 900;
+  margin-top: 5px;
+  color: var(--color-text-primary);
+}
+.court-hero__desc {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin-top: 6px;
+  line-height: 1.55;
+}
+
+/* ── 빈 상태 카드 ── */
+.court-empty-card {
+  padding: 22px;
+  border-radius: 20px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+}
+.court-empty-card__title {
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--color-text-primary);
+}
+.court-empty-card__desc {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin-top: 7px;
+  line-height: 1.55;
+}
+
+/* ── 활성 심판 카드 ── */
+.court-card {
+  padding: 20px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, rgba(15,23,42,.96), rgba(51,65,85,.92));
+  color: #fff;
+  box-shadow: 0 16px 36px rgba(15,23,42,.18);
+}
+.court-card__top {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.court-card__eyebrow {
+  font-size: 11px;
+  font-weight: 900;
+  color: rgba(255,255,255,.6);
+  letter-spacing: .1em;
+}
+.court-card__title {
+  font-size: 22px;
+  font-weight: 900;
+  margin-top: 6px;
+  line-height: 1.25;
+}
+.court-card__charge {
+  font-size: 13px;
+  color: rgba(255,255,255,.72);
+  margin-top: 6px;
+  line-height: 1.5;
+}
+.court-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.14);
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.court-badge--accept { background: rgba(239,68,68,.3); }
+.court-badge--reject { background: rgba(34,197,94,.3); }
+
+/* ── 통계 그리드 ── */
+.court-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 16px;
+}
+.court-stat {
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(255,255,255,.11);
+  text-align: center;
+}
+.court-stat small {
+  display: block;
+  font-size: 11px;
+  color: rgba(255,255,255,.6);
+  margin-bottom: 4px;
+}
+.court-stat b {
+  font-size: 18px;
+  font-weight: 900;
+}
+
+/* ── 재판관 9석 시각화 ── */
+.court-judges {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  gap: 5px;
+  margin-top: 14px;
+}
+.court-judge-box {
+  height: 34px;
+  border-radius: 10px;
+  opacity: .9;
+  transition: transform .15s;
+}
+.court-judge-box:hover { transform: scale(1.08); }
+.court-judge-box--accept { background: #ef4444; }
+.court-judge-box--reject { background: #22c55e; }
+.court-hint {
+  font-size: 11px;
+  color: rgba(255,255,255,.62);
+  margin-top: 8px;
+  line-height: 1.4;
+}
+
+/* ── AI 재판관 의견 섹션 ── */
+.court-verdict {
+  padding: 18px;
+  border-radius: 18px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+}
+.court-verdict__title {
+  font-size: 16px;
+  font-weight: 900;
+  margin-bottom: 6px;
+  color: var(--color-text-primary);
+}
+.court-verdict__desc {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin-bottom: 14px;
+}
+.court-verdict-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.court-verdict-item {
+  padding: 14px;
+  border-radius: 12px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border-light);
+}
+.court-verdict-item__name {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--color-primary);
+  margin-bottom: 5px;
+}
+.court-verdict-item__text {
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--color-text-primary);
+}
+
+/* ── 심판 기록 ── */
+.court-history { margin-top: 4px; }
+.court-history__title {
+  font-size: 18px;
+  font-weight: 900;
+  margin-bottom: 10px;
+  color: var(--color-text-primary);
+}
+.court-history-list { display: flex; flex-direction: column; gap: 8px; }
+.court-history-item {
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+}
+.court-history-item__name {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--color-text-primary);
+}
+.court-history-item__badge {
+  font-size: 12px;
+  font-weight: 900;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+.court-history-item__badge--accepted {
+  background: rgba(239,68,68,.12);
+  color: #dc2626;
+}
+.court-history-item__badge--rejected {
+  background: rgba(34,197,94,.12);
+  color: #16a34a;
+}
+.court-history-item__badge--pending {
+  background: rgba(99,102,241,.12);
+  color: #4f46e5;
+}
+
+/* ── 반응형 ── */
+@media (max-width: 480px) {
+  .court-card__title { font-size: 18px; }
+  .court-stats { grid-template-columns: repeat(3, 1fr); gap: 7px; }
+  .court-stat b { font-size: 16px; }
+  .court-judges { gap: 3px; }
+  .court-judge-box { height: 28px; border-radius: 7px; }
+}

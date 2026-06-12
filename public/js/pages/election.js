@@ -87,6 +87,16 @@ function renderPresident(p, isPresident) {
       <div class="prez-banner__none">아직 선출 전 — 이번 주 첫 대통령을 뽑아주세요!</div>
     </div>`;
   }
+  if (p.presidentRemoved) {
+    return `<div class="prez-banner prez-banner--removed" style="--party-color:${p.color || '#64748b'}">
+      <div class="prez-banner__removed-badge">🏛️ 헌법재판소 탄핵 인용</div>
+      <div class="prez-banner__emoji" style="opacity:.45;filter:grayscale(1)">${p.emoji}</div>
+      <div class="prez-banner__name" style="text-decoration:line-through;opacity:.6">${escHtml(p.candidateName)}</div>
+      <div class="prez-banner__party" style="opacity:.6">${escHtml(p.partyName)} · 직위 박탈</div>
+      <div class="prez-banner__removed-desc">헌법재판소 탄핵 인용으로 대통령이 파면되었습니다.<br>다음 주 조기 대선이 실시됩니다.</div>
+      <a class="btn btn--ghost btn--sm prez-banner__court-link" href="#/constitutional-court">🏛️ 헌법재판소 심판 기록</a>
+    </div>`;
+  }
   return `<div class="prez-banner" style="--party-color:${p.color}">
     <div class="prez-banner__crown">👑</div>
     <div class="prez-banner__label">소소공화국 대통령</div>
