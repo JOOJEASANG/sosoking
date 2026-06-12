@@ -797,9 +797,11 @@ async function loadPartyPowerChart(slot, battleData) {
 async function loadElectionRace(slot) {
   if (!slot) return;
   try {
-    const call = httpsCallable(functions, 'getElection');
-    const { data } = await call();
-    const election = data && data.election;
+    const [elecRes, momentumRes] = await Promise.all([
+      httpsCallable(functions, 'getElection')(),
+      httpsCallable(functions, 'getCampaignMomentum')().catch(() => ({ data: { totalToday: 0, byParty: [] } })),
+    ]);
+    const election = elecRes.data && elecRes.data.election;
     if (!election || election.status === 'closed') return;
 
     const cands = [...(election.candidates || [])].sort((a, b) => b.votes - a.votes || b.power - a.power);
@@ -808,21 +810,37 @@ async function loadElectionRace(slot) {
     const total = election.totalVotes || 0;
     const topCands = cands.slice(0, 3);
     const leader = topCands[0];
+    const second = topCands[1];
     const end = new Date(`${election.endKey}T23:59:59+09:00`).getTime();
     const msLeft = end - Date.now();
     const daysLeft = Math.ceil(msLeft / 86400000);
     const ddayLabel = msLeft <= 0 ? '집계 중' : daysLeft <= 0 ? '⚡ D-DAY' : `D-${daysLeft}`;
     const urgent = msLeft > 0 && daysLeft <= 1;
 
+    // 박빙 경보: 1위-2위 차이가 투표 수의 10% 이내이거나 절대 표수 5표 이내
+    const gapVotes = total > 1 && second ? leader.votes - second.votes : Infinity;
+    const gapPct = total > 0 && second ? Math.round((gapVotes / total) * 100) : 100;
+    const isTight = total >= 4 && (gapVotes <= 5 || gapPct <= 10);
+
+    const { totalToday = 0, byParty: campaignParties = [] } = momentumRes.data || {};
+
     const barsHTML = topCands.map((c, i) => {
       const pct = total > 0 ? Math.round((c.votes / total) * 100) : 0;
       const medals = ['🥇', '🥈', '🥉'];
+      const gapTag = i === 0 && isTight
+        ? `<span class="home-race-tight-tag">⚡ 박빙 ${gapVotes}표 차</span>`
+        : i === 1 && isTight
+          ? `<span class="home-race-chase-tag">↑ ${gapVotes}표 추격</span>`
+          : '';
       return `
-        <div class="home-race-row" style="--party-c:${c.color}">
+        <div class="home-race-row${i === 0 && isTight ? ' home-race-row--tight' : ''}" style="--party-c:${c.color}">
           <span class="home-race-row__medal">${medals[i] || ''}</span>
           <span class="home-race-row__emoji">${c.emoji}</span>
           <div class="home-race-row__center">
-            <span class="home-race-row__name">${escHtml(c.candidateName)}</span>
+            <div class="home-race-row__name-row">
+              <span class="home-race-row__name">${escHtml(c.candidateName)}</span>
+              ${gapTag}
+            </div>
             <div class="home-race-bar">
               <div class="home-race-bar__fill" style="width:${Math.max(4, pct)}%"></div>
             </div>
@@ -831,17 +849,32 @@ async function loadElectionRace(slot) {
         </div>`;
     }).join('');
 
+    const campaignHTML = campaignParties.length > 0
+      ? `<div class="home-race-campaign">
+          <span class="home-race-campaign__label">🎤 오늘 유세</span>
+          ${campaignParties.slice(0, 3).map(p => `
+            <span class="home-race-campaign__party" style="color:${p.color}">${p.emoji} <b>${p.count}</b></span>`).join('')}
+          <span class="home-race-campaign__total">총 ${totalToday}회</span>
+        </div>`
+      : '';
+
+    const tightBannerHTML = isTight
+      ? `<div class="home-race-tight-banner">⚡ 대선 박빙! ${leader.emoji} ${escHtml(leader.candidateName)} vs ${second.emoji} ${escHtml(second.candidateName)} — 단 ${gapVotes}표 차이</div>`
+      : '';
+
     slot.innerHTML = `
       <div>
         <div class="home-section-header">
           <span class="home-section-title">🗳️ 이번 주 대선 경쟁</span>
           <button class="home-section-more home-section-more--button${urgent ? ' home-section-more--urgent' : ''}" data-path="/election">${ddayLabel} →</button>
         </div>
-        <div class="home-race-card" data-path="/election">
+        <div class="home-race-card${isTight ? ' home-race-card--tight' : ''}" data-path="/election">
+          ${tightBannerHTML}
           ${total > 0
-            ? `<div class="home-race-leader">현재 선두: <b>${leader.emoji} ${escHtml(leader.candidateName)}</b> (${escHtml(leader.partyName)}) · ${fmtNum(total)}표 집계</div>`
+            ? `<div class="home-race-leader">선두: <b>${leader.emoji} ${escHtml(leader.candidateName)}</b> · ${fmtNum(total)}표 집계</div>`
             : `<div class="home-race-leader">아직 투표가 없어요 — 첫 번째로 투표해보세요!</div>`}
           <div class="home-race-rows">${barsHTML}</div>
+          ${campaignHTML}
         </div>
       </div>`;
     slot.querySelectorAll('[data-path]').forEach(btn => {

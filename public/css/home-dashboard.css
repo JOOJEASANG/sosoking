@@ -809,3 +809,73 @@
   font-style: italic;
   margin: 0;
 }
+
+/* ── 대선 박빙 경보 + 유세 열기 ── */
+.home-race-card--tight {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 2px rgba(239,68,68,.15);
+}
+.home-race-tight-banner {
+  font-size: 12px;
+  font-weight: 800;
+  color: #dc2626;
+  background: linear-gradient(90deg,rgba(239,68,68,.1),rgba(239,68,68,.05));
+  border-radius: 8px;
+  padding: 7px 10px;
+  margin-bottom: 10px;
+  animation: tight-pulse 1.8s ease-in-out infinite;
+}
+@keyframes tight-pulse {
+  0%,100% { opacity:1; }
+  50% { opacity:.65; }
+}
+.home-race-row__name-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 3px;
+  flex-wrap: wrap;
+}
+.home-race-row__name { font-size: 12px; font-weight: 700; color: var(--color-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.home-race-tight-tag {
+  font-size: 10px;
+  font-weight: 800;
+  color: #dc2626;
+  background: rgba(239,68,68,.1);
+  border-radius: 20px;
+  padding: 1px 6px;
+  white-space: nowrap;
+}
+.home-race-chase-tag {
+  font-size: 10px;
+  font-weight: 800;
+  color: #d97706;
+  background: rgba(245,158,11,.1);
+  border-radius: 20px;
+  padding: 1px 6px;
+  white-space: nowrap;
+}
+.home-race-row--tight .home-race-bar__fill { animation: tight-pulse 1.8s ease-in-out infinite; }
+.home-race-campaign {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-border);
+  flex-wrap: wrap;
+}
+.home-race-campaign__label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+.home-race-campaign__party {
+  font-size: 12px;
+  font-weight: 700;
+}
+.home-race-campaign__total {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin-left: auto;
+}

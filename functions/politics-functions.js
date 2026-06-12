@@ -1913,3 +1913,17 @@ exports.answerPresidentQuestion = onCall({ region: REGION, timeoutSeconds: 15 },
   await qRef.update({ answer, answeredAt: FieldValue.serverTimestamp() });
   return { ok: true };
 });
+
+// ── 유세 열기 현황 (홈 화면 대선 카드용) ──
+exports.getCampaignMomentum = onCall({ region: REGION, timeoutSeconds: 10 }, async () => {
+  const today = kstToday();
+  const snap = await db.doc(`campaign_totals/${today}`).get().catch(() => null);
+  if (!snap || !snap.exists) return { totalToday: 0, byParty: [] };
+  const d = snap.data() || {};
+  const totalToday = Number(d.total || 0);
+  const byParty = PARTY_IDS.map(id => {
+    const party = PARTY_BY_ID[id];
+    return { partyId: id, emoji: party.emoji, name: party.name, color: party.color, count: Number((d.byParty || {})[id] || 0) };
+  }).filter(p => p.count > 0).sort((a, b) => b.count - a.count);
+  return { totalToday, byParty };
+});
