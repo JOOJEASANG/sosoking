@@ -6,14 +6,11 @@ const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const db = getFirestore();
 const REGION = 'asia-northeast3';
 
+// 3당 운영 체제: 대선 후보는 핵심 3개 정당 중심으로 생성한다.
 const PARTIES = Object.freeze([
-  { id: 'national',  name: '국민안정당', emoji: '🎙️', color: '#8B7355', leaderName: '3선 의원' },
-  { id: 'truth',     name: '진실방송당', emoji: '📺', color: '#6C5CE7', leaderName: '정치 유튜버' },
-  { id: 'youth',     name: '청년혁명당', emoji: '📱', color: '#E84393', leaderName: 'MZ 운동가' },
-  { id: 'center',    name: '중도민주당', emoji: '📊', color: '#00CEC9', leaderName: '여론조사 전문가' },
-  { id: 'future',    name: '함께미래당', emoji: '🤝', color: '#FDCB6E', leaderName: '당 대변인' },
-  { id: 'rights',    name: '알권리당',   emoji: '🔍', color: '#00B894', leaderName: '탐사 기자' },
-  { id: 'justice',   name: '법치정의당', emoji: '⚖️', color: '#2D3436', leaderName: '검사 출신 변호사' },
+  { id: 'national',  name: '국민안정당', emoji: '🎙️', color: '#8B7355', leaderName: '안정파 대표' },
+  { id: 'youth',     name: '청년혁명당', emoji: '📱', color: '#E84393', leaderName: '개혁파 대표' },
+  { id: 'center',    name: '중도민주당', emoji: '📊', color: '#00CEC9', leaderName: '실용파 대표' },
 ]);
 const PARTY_BY_ID = Object.freeze(Object.fromEntries(PARTIES.map(p => [p.id, p])));
 const PARTY_IDS = PARTIES.map(p => p.id);
@@ -26,7 +23,7 @@ function requireUid(request) {
 
 function assertPartyId(value) {
   const id = String(value || '').trim();
-  if (!PARTY_BY_ID[id]) throw new HttpsError('invalid-argument', '존재하지 않는 정당입니다.');
+  if (!PARTY_BY_ID[id]) throw new HttpsError('invalid-argument', '현재 대선은 국민안정당·청년혁명당·중도민주당 후보만 투표할 수 있습니다.');
   return id;
 }
 
@@ -105,11 +102,22 @@ async function ensureElectionLite() {
       candidates,
       votes: {},
       totalVotes: 0,
+      mode: 'three-party',
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
-  } else if (!snap.data().voteDeadlineKey) {
-    await ref.set({ voteDeadlineKey, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+  } else {
+    const data = snap.data() || {};
+    const candidates = Array.isArray(data.candidates) ? data.candidates : [];
+    const hasLegacy = candidates.some(c => !PARTY_BY_ID[c.partyId]);
+    if (!data.voteDeadlineKey || data.mode !== 'three-party' || hasLegacy) {
+      await ref.set({
+        voteDeadlineKey,
+        mode: 'three-party',
+        candidates: await buildCandidates(),
+        updatedAt: FieldValue.serverTimestamp(),
+      }, { merge: true });
+    }
   }
   return key;
 }
@@ -176,6 +184,7 @@ const voteForPresident = onCall({ region: REGION, timeoutSeconds: 30 }, async re
       [`votes.${partyId}`]: FieldValue.increment(1),
       totalVotes: FieldValue.increment(1),
       voteDeadlineKey,
+      mode: 'three-party',
       updatedAt: FieldValue.serverTimestamp(),
     });
 
