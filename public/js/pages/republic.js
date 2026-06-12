@@ -4,6 +4,7 @@ import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { navigate } from '../router.js';
 import { setMeta } from '../utils/seo.js';
 import { escHtml } from '../utils/helpers.js';
+import { toast } from '../components/toast.js';
 
 function fmtNum(n) {
   n = Number(n || 0);
@@ -260,9 +261,10 @@ export async function renderRepublic() {
       btn.textContent = '처리 중...';
       try {
         await httpsCallable(functions, 'joinParty')({ partyId });
-        await renderRepublic();
+        toast.success(`🎉 ${partyName} 입당 완료! 이제 활동으로 정치력을 쌓아 당대표에 도전하세요.`);
+        navigate('/');
       } catch (e) {
-        alert(e?.message || '입당에 실패했습니다.');
+        toast.error(e?.message || '입당에 실패했습니다.');
         btn.disabled = false;
         btn.textContent = '입당';
       }

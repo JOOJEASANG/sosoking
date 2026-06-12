@@ -68,6 +68,14 @@
 }
 .home-id-card__next b { color: var(--rank-c, var(--color-primary)); font-weight: 800; }
 .home-id-card__party-row { margin-top: 10px; }
+.home-id-card__party-row-inner { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.home-id-card__party-rank {
+  font-size: 11px; font-weight: 800;
+  color: var(--color-primary);
+  background: var(--color-primary-bg, #fff0ec);
+  border: 1px solid var(--color-primary-border, #ffd4c5);
+  border-radius: 99px; padding: 2px 8px;
+}
 .home-id-card__chase {
   margin-top: 8px;
   font-size: 12px;

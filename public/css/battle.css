@@ -1,5 +1,56 @@
 /* battle.css — 정치배틀 */
 
+/* ─── 게임 컨텍스트 바 ─── */
+.battle-game-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 8px 14px;
+  background: var(--color-surface-2, #f6f6f9);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  margin-bottom: 12px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+.battle-game-bar__label { font-weight: 800; color: var(--color-text-primary); }
+.battle-game-bar__sep { color: var(--color-text-muted); }
+.battle-game-bar__rewards b { color: var(--color-primary); }
+
+/* ─── 투표 후 다음 액션 ─── */
+.battle-next-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 0;
+}
+.battle-next-btn {
+  width: 100%;
+  padding: 11px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .13s, opacity .13s;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-2, #f6f6f9);
+  color: var(--color-text-secondary);
+}
+.battle-next-btn--primary {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: transparent;
+}
+.battle-next-btn--primary:hover { opacity: .88; }
+.battle-next-btn:not(.battle-next-btn--primary):hover { background: var(--color-surface-alt, #ebebf3); }
+
+/* ─── 판결소 CTA 톤 다운 ─── */
+.battle-judge-cta--secondary {
+  opacity: .65;
+  font-size: 13px;
+}
+
 /* ─── 집권 대표 배너 (Throne) ─── */
 .battle-king-banner {
   display: flex;

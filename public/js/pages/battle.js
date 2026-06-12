@@ -294,6 +294,15 @@ export async function renderBattle() {
 
         ${rulingBanner}
 
+        <div class="battle-game-bar">
+          <span class="battle-game-bar__label">📋 데일리 퀘스트</span>
+          <span class="battle-game-bar__rewards">투표 <b>+5P</b></span>
+          <span class="battle-game-bar__sep">·</span>
+          <span class="battle-game-bar__rewards">댓글 <b>+10P</b></span>
+          <span class="battle-game-bar__sep">·</span>
+          <span class="battle-game-bar__rewards">집권 정당에 <b>보너스</b></span>
+        </div>
+
         <div class="battle-topic-card">
           <div class="battle-topic-card__header">
             <div class="battle-topic-card__badge">⚔️ 오늘의 정치 스캔들${isEnded ? ' · 종료' : ''}</div>
@@ -320,7 +329,7 @@ export async function renderBattle() {
           <div class="battle-vote-section__title">
             ${isEnded
               ? (winnerChar ? `🏛️ 오늘의 집권 대표: ${winnerChar.emoji} ${escHtml(winnerChar.name)}` : '⚔️ 오늘의 투표 결과')
-              : (userVote ? `✅ 투표 완료 · 총 ${fmtNum(totalVotes)}표` : `⚔️ 누구를 지지합니까? (오늘 1표)`)}
+              : (userVote ? `✅ 투표 완료 · 총 ${fmtNum(totalVotes)}표` : `⚔️ 오늘 논쟁의 승자는 누구? (1표 +5P)`)}
           </div>
 
           ${!votedOrEnded ? renderVoteButtons(chars, userVote, status) : ''}
@@ -329,7 +338,12 @@ export async function renderBattle() {
             ${chars.map(c => renderVoteBar(c, votes, totalVotes, userVote)).join('')}
           </div>
 
-          ${userVote ? `<div class="battle-power-hint">⚡ 오늘 배틀 투표로 정치력 +5를 획득했어요!</div>` : ''}
+          ${userVote ? `<div class="battle-power-hint">⚡ 배틀 투표 완료 · 정치력 +5P 획득!</div>` : ''}
+          ${userVote ? `
+            <div class="battle-next-actions">
+              <button class="battle-next-btn battle-next-btn--primary" id="btn-next-home" type="button">📋 오늘 미션 이어서 완료하기</button>
+              <button class="battle-next-btn" id="btn-next-republic" type="button">🏛️ 공화국 현황 보기</button>
+            </div>` : ''}
           ${votedOrEnded && appState.partyId ? renderPartyVoteSummary(partyVotes, chars, appState.partyId) : ''}
           ${votedOrEnded ? renderAllPartyVoteSummary(partyVotes, chars) : ''}
           ${votedOrEnded ? `<button class="battle-share-btn" id="btn-share-battle" type="button">📤 결과 공유하기</button>` : ''}
@@ -341,7 +355,7 @@ export async function renderBattle() {
 
         ${isEnded && aftermath ? renderAftermath(aftermath) : ''}
 
-        <button class="battle-judge-cta" id="btn-to-judge" type="button">⚖️ 이 사건, AI 판결소에서 판결받기</button>
+        <button class="battle-judge-cta battle-judge-cta--secondary" id="btn-to-judge" type="button">⚖️ AI 판결소에서 판결받기</button>
 
         ${renderBestComment(recentComments)}
 
@@ -365,9 +379,9 @@ export async function renderBattle() {
       </div>`;
 
     el.querySelector('#btn-history')?.addEventListener('click', () => navigate('/king-history'));
-    el.querySelector('#btn-to-judge')?.addEventListener('click', () =>
-      navigate('/constitutional-court')
-    );
+    el.querySelector('#btn-to-judge')?.addEventListener('click', () => navigate('/constitutional-court'));
+    el.querySelector('#btn-next-home')?.addEventListener('click', () => navigate('/'));
+    el.querySelector('#btn-next-republic')?.addEventListener('click', () => navigate('/republic'));
 
     if (!votedOrEnded && auth.currentUser) {
       el.querySelectorAll('.battle-vote-btn').forEach(btn => {
@@ -495,8 +509,17 @@ async function handleVote(charId, prevData, el) {
     if (barsSection && !barsSection.querySelector('.battle-power-hint')) {
       const hint = document.createElement('div');
       hint.className = 'battle-power-hint';
-      hint.textContent = '⚡ 오늘 배틀 투표로 정치력 +5를 획득했어요!';
+      hint.textContent = '⚡ 배틀 투표 완료 · 정치력 +5P 획득!';
       barsSection.appendChild(hint);
+
+      const nextActions = document.createElement('div');
+      nextActions.className = 'battle-next-actions';
+      nextActions.innerHTML = `
+        <button class="battle-next-btn battle-next-btn--primary" id="btn-next-home" type="button">📋 오늘 미션 이어서 완료하기</button>
+        <button class="battle-next-btn" id="btn-next-republic" type="button">🏛️ 공화국 현황 보기</button>`;
+      barsSection.appendChild(nextActions);
+      nextActions.querySelector('#btn-next-home').addEventListener('click', () => navigate('/'));
+      nextActions.querySelector('#btn-next-republic').addEventListener('click', () => navigate('/republic'));
     }
 
     const char = prevData.chars.find(c => c.id === charId);

@@ -321,15 +321,18 @@ function renderRankCard(status, isRulingParty = false) {
     : '';
 
   const partyLine = status.partyId
-    ? `<span class="home-id-card__party${status.isLeader ? ' home-id-card__party--leader' : ''}" style="--party-color:${status.partyColor}">${status.partyEmoji} ${escHtml(status.partyName)}${status.isLeader ? ' 👑 당대표' : (status.partyRank ? ` · 당내 ${status.partyRank}위` : '')}${rulingBadge}</span>`
-    : `<button class="home-id-card__join" data-path="/parties" type="button">+ 입당하고 정치력 쌓기</button>`;
+    ? `<div class="home-id-card__party-row-inner">
+        <span class="home-id-card__party${status.isLeader ? ' home-id-card__party--leader' : ''}" style="--party-color:${status.partyColor}">${status.partyEmoji} ${escHtml(status.partyName)}${status.isLeader ? ' 👑 당대표' : ''}${rulingBadge}</span>
+        ${!status.isLeader && status.partyRank ? `<span class="home-id-card__party-rank">당내 ${status.partyRank}위</span>` : ''}
+      </div>`
+    : `<button class="home-id-card__join" data-path="/republic" type="button">🏛️ 입당하고 대통령 도전하기</button>`;
 
   const nextLine = rank.isMax
     ? `<span class="home-id-card__next">최고 등급 달성! 🎉</span>`
     : `<span class="home-id-card__next">${rank.next.emoji} ${rank.next.title}까지 <b>${fmtNum(rank.remain)}P</b></span>`;
 
-  const leaderChaseHTML = status.pointsToLeader && status.pointsToLeader <= 200
-    ? `<div class="home-id-card__chase">🎯 당대표까지 <b>${fmtNum(status.pointsToLeader)}P</b> — 활동하면 따라잡을 수 있어요!</div>`
+  const leaderChaseHTML = !status.isLeader && status.partyId && status.pointsToLeader > 0 && status.pointsToLeader <= 1000
+    ? `<div class="home-id-card__chase">🎯 당대표까지 <b>${fmtNum(status.pointsToLeader)}P</b> — 당대표 → 대통령 후보 출마!</div>`
     : '';
 
   // 즉시 계산 가능한 마이크로 업적

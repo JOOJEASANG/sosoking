@@ -107,7 +107,7 @@ function renderBills(bills, myVotes) {
           반대 · ${esc(bill.optionAgainst || '반대')}
         </button>
       </div>
-      ${myVote ? `<div class="congress-bill__myvote">내 표결: ${myVote === 'for' ? '✅ 찬성' : '❌ 반대'}</div>` : ''}
+      ${myVote ? `<div class="congress-bill__myvote">내 표결: ${myVote === 'for' ? '✅ 찬성' : '❌ 반대'} · 표결 참여 +3P</div>` : ''}
       ${isClosed && bill.consequence ? `<div class="congress-bill__consequence">📋 ${esc(bill.consequence)}</div>` : ''}
     </article>`;
   }).join('');
@@ -190,6 +190,12 @@ export async function renderCongress() {
         <div class="congress-hero__eyebrow">SOSO NATIONAL ASSEMBLY</div>
         <div class="congress-hero__title">🏛️ 소소국회</div>
         <div class="congress-hero__desc">3당 의석 구도, 주간 법안 표결, 탄핵소추 절차를 확인하는 입법 기관입니다.</div>
+      </div>
+
+      <div class="congress-game-bar">
+        <span>⚖️ 법안 찬반 투표 참여로 공화국 정치 방향을 결정하세요</span>
+        <span class="congress-game-bar__sep">·</span>
+        <span>가결된 법안은 <b>여당 정치력에 영향</b></span>
       </div>
 
       <section>

@@ -3,6 +3,22 @@
 /* ── 페이지 ── */
 .congress-page { display: flex; flex-direction: column; gap: 16px; }
 
+/* ── 게임 컨텍스트 바 ── */
+.congress-game-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 9px 14px;
+  background: var(--color-surface-2, #f6f6f9);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+.congress-game-bar__sep { color: var(--color-text-muted); }
+.congress-game-bar b { color: var(--color-primary); }
+
 /* ── 히어로 ── */
 .congress-hero {
   padding: 22px;
