@@ -19,6 +19,8 @@ const aiLadder = require('./ai-ladder-functions.js');
 const hotPotato = require('./hot-potato-functions.js');
 const battle = require('./battle-functions.js');
 const politics = require('./politics-functions.js');
+const jabdam = require('./jabdam-functions.js');
+const chosung = require('./chosung-functions.js');
 
 module.exports = {
   ...coreAi,
@@ -40,6 +42,8 @@ module.exports = {
   ...points,
   ...aiLadder,
   ...hotPotato,
+  ...jabdam,
+  ...chosung,
   generateDailyBattle: battle.generateDailyBattle,
   closeDailyBattle: battle.closeDailyBattle,
   voteForChar: battle.voteForChar,
