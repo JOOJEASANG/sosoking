@@ -17,10 +17,7 @@ function allocateSeats(parties) {
   const list = Array.isArray(parties) ? parties.slice(0, 3) : [];
   if (!list.length) return [];
   const totalPower = list.reduce((sum, p) => sum + Number(p.totalPower || 0), 0);
-  if (totalPower <= 0) {
-    const fallback = [34, 33, 33];
-    return list.map((p, i) => ({ ...p, seats: fallback[i] || 0 }));
-  }
+  if (totalPower <= 0) return list.map((p, i) => ({ ...p, seats: [34, 33, 33][i] || 0 }));
   let seats = list.map(p => ({ ...p, seats: Math.max(1, Math.round((Number(p.totalPower || 0) / totalPower) * 100)) }));
   let diff = 100 - seats.reduce((sum, p) => sum + p.seats, 0);
   seats.sort((a, b) => Number(b.totalPower || 0) - Number(a.totalPower || 0));
@@ -59,29 +56,50 @@ function seatsHtml(seats, rulingPartyId) {
   }).join('');
 }
 
-function billHtml(crisis) {
-  if (!crisis) {
+function billProgress(bill) {
+  const total = Number(bill.totalVotes || 0);
+  const forPct = total > 0 ? Math.round((Number(bill.votesFor || 0) / total) * 100) : 50;
+  const againstPct = 100 - forPct;
+  return `<div style="margin-top:12px">
+    <div style="height:10px;border-radius:999px;background:rgba(239,68,68,.18);overflow:hidden;display:flex">
+      <i style="display:block;width:${forPct}%;height:100%;background:#2563eb"></i>
+      <i style="display:block;width:${againstPct}%;height:100%;background:#ef4444"></i>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--color-text-secondary);margin-top:6px">
+      <span>찬성 ${fmtNum(bill.votesFor)}표</span><span>반대 ${fmtNum(bill.votesAgainst)}표</span>
+    </div>
+  </div>`;
+}
+
+function congressBillsHtml(bills, myVotes) {
+  if (!bills.length) {
     return `<div style="padding:16px;border-radius:18px;background:var(--color-surface);border:1px solid var(--color-border)">
       <div style="font-size:13px;font-weight:900;color:var(--color-text-muted)">현재 계류 의안</div>
       <div style="font-size:18px;font-weight:1000;margin-top:6px">의안 접수 대기</div>
-      <div style="font-size:13px;color:var(--color-text-secondary);margin-top:6px">이번 주 정치 위기가 생성되면 국회 안건으로 자동 상정됩니다.</div>
+      <div style="font-size:13px;color:var(--color-text-secondary);margin-top:6px">서버에서 주간 법안이 생성되면 이곳에 표시됩니다.</div>
     </div>`;
   }
-  return `<div style="padding:16px;border-radius:18px;background:var(--color-surface);border:1px solid var(--color-border)">
-    <div style="display:flex;justify-content:space-between;gap:10px;align-items:start;flex-wrap:wrap">
-      <div>
-        <div style="font-size:13px;font-weight:900;color:var(--color-text-muted)">현재 계류 의안</div>
-        <div style="font-size:20px;font-weight:1000;margin-top:5px">${esc(crisis.title || '국정 현안')}</div>
+  return bills.slice(0, 3).map((bill, idx) => {
+    const myVote = myVotes[bill.id];
+    const isClosed = bill.status === 'closed';
+    const resultLabel = bill.result === 'passed' ? '가결' : bill.result === 'rejected' ? '부결' : '표결 진행';
+    return `<article style="padding:16px;border-radius:18px;background:var(--color-surface);border:1px solid var(--color-border);margin-bottom:${idx === 2 ? 0 : 10}px">
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:start;flex-wrap:wrap">
+        <div>
+          <div style="font-size:13px;font-weight:900;color:var(--color-text-muted)">현재 계류 의안</div>
+          <div style="font-size:20px;font-weight:1000;margin-top:5px">${esc(bill.title)}</div>
+        </div>
+        ${statusBadge(resultLabel, bill.result === 'rejected' ? 'danger' : bill.result === 'passed' ? 'ok' : 'neutral')}
       </div>
-      ${statusBadge('시민 표결 진행')}
-    </div>
-    <div style="font-size:13px;color:var(--color-text-secondary);line-height:1.55;margin-top:8px">${esc(crisis.desc || '')}</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">
-      <div style="padding:10px;border-radius:14px;background:rgba(59,130,246,.08)"><b>A안</b><br><span style="font-size:12px;color:var(--color-text-secondary)">${esc(crisis.optionA || '')}</span></div>
-      <div style="padding:10px;border-radius:14px;background:rgba(239,68,68,.08)"><b>B안</b><br><span style="font-size:12px;color:var(--color-text-secondary)">${esc(crisis.optionB || '')}</span></div>
-    </div>
-    <button class="btn btn--primary btn--full" id="btn-go-crisis" style="margin-top:12px">국정 위기 표결하러 가기</button>
-  </div>`;
+      <div style="font-size:13px;color:var(--color-text-secondary);line-height:1.55;margin-top:8px">${esc(bill.desc || '')}</div>
+      ${billProgress(bill)}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">
+        <button class="btn ${myVote === 'for' ? 'btn--primary' : 'btn--ghost'} btn--full congress-vote" data-bill-id="${esc(bill.id)}" data-choice="for" ${myVote || isClosed ? 'disabled' : ''}>찬성 · ${esc(bill.optionFor || '찬성')}</button>
+        <button class="btn ${myVote === 'against' ? 'btn--primary' : 'btn--ghost'} btn--full congress-vote" data-bill-id="${esc(bill.id)}" data-choice="against" ${myVote || isClosed ? 'disabled' : ''}>반대 · ${esc(bill.optionAgainst || '반대')}</button>
+      </div>
+      ${myVote ? `<div style="font-size:12px;color:var(--color-text-muted);margin-top:8px">내 표결: ${myVote === 'for' ? '찬성' : '반대'}</div>` : ''}
+    </article>`;
+  }).join('');
 }
 
 function impeachmentHtml(president) {
@@ -110,20 +128,37 @@ function impeachmentHtml(president) {
   </div>`;
 }
 
+async function handleVote(btn) {
+  const billId = btn.dataset.billId;
+  const choice = btn.dataset.choice;
+  btn.disabled = true;
+  btn.textContent = '표결 처리 중...';
+  try {
+    await httpsCallable(functions, 'voteCongressBill')({ billId, choice });
+    await renderCongress();
+  } catch (error) {
+    console.error('[congress vote]', error);
+    alert(error?.message || '표결 처리에 실패했습니다.');
+    await renderCongress();
+  }
+}
+
 export async function renderCongress() {
   setMeta('국회', '소소공화국 국회 — 의석, 법안, 탄핵소추를 확인하세요');
   const el = document.getElementById('page-content');
   if (!el) return;
   el.innerHTML = `<div class="page-section"><div class="empty-state"><div class="spinner spinner--lg"></div><div class="empty-state__title">국회 본회의장 입장 중…</div></div></div>`;
 
-  const [overviewRes, crisisRes, presidentRes] = await Promise.allSettled([
+  const [overviewRes, billsRes, presidentRes] = await Promise.allSettled([
     httpsCallable(functions, 'getPoliticsOverview')({}),
-    httpsCallable(functions, 'getWeeklyCrisis')({}),
+    httpsCallable(functions, 'getCongressBills')({}),
     httpsCallable(functions, 'getPresident')({}),
   ]);
   const overview = overviewRes.value?.data || {};
+  const billData = billsRes.value?.data || {};
   const parties = Array.isArray(overview.parties) ? overview.parties.slice(0, 3) : [];
-  const crisis = crisisRes.value?.data?.crisis || null;
+  const bills = Array.isArray(billData.bills) ? billData.bills : [];
+  const myVotes = billData.myVotes || {};
   const president = presidentRes.value?.data?.president || null;
   const rulingPartyId = president?.partyId || parties[0]?.id || '';
   const seats = allocateSeats(parties);
@@ -132,7 +167,7 @@ export async function renderCongress() {
     <div style="padding:20px;border-radius:24px;background:linear-gradient(135deg,rgba(15,23,42,.95),rgba(51,65,85,.9));color:#fff;margin-bottom:16px;box-shadow:0 16px 36px rgba(15,23,42,.16)">
       <div style="font-size:12px;font-weight:900;letter-spacing:.08em;color:rgba(255,255,255,.62)">SOSO NATIONAL ASSEMBLY</div>
       <div style="font-size:27px;font-weight:1000;margin-top:5px">🏛️ 소소국회</div>
-      <div style="font-size:13px;color:rgba(255,255,255,.72);margin-top:6px;line-height:1.55">3당 의석 구도, 국정 의안, 탄핵소추 절차를 확인하는 입법 기관입니다.</div>
+      <div style="font-size:13px;color:rgba(255,255,255,.72);margin-top:6px;line-height:1.55">3당 의석 구도, 주간 법안 표결, 탄핵소추 절차를 확인하는 입법 기관입니다.</div>
     </div>
 
     <section style="margin-bottom:16px">
@@ -140,18 +175,24 @@ export async function renderCongress() {
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px">${seatsHtml(seats, rulingPartyId)}</div>
     </section>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px" class="congress-grid">
-      ${billHtml(crisis)}
-      ${impeachmentHtml(president)}
+    <div style="display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr);gap:12px" class="congress-grid">
+      <section>
+        <div style="font-size:18px;font-weight:1000;margin-bottom:10px">법안 표결</div>
+        ${congressBillsHtml(bills, myVotes)}
+      </section>
+      <section>
+        <div style="font-size:18px;font-weight:1000;margin-bottom:10px">대통령 견제</div>
+        ${impeachmentHtml(president)}
+      </section>
     </div>
   </div>`;
 
   if (!document.getElementById('congress-style')) {
     const style = document.createElement('style');
     style.id = 'congress-style';
-    style.textContent = '@media(max-width:760px){.congress-grid{grid-template-columns:1fr!important}}';
+    style.textContent = '@media(max-width:760px){.congress-grid{grid-template-columns:1fr!important}.congress-vote{font-size:12px!important;padding-left:6px!important;padding-right:6px!important}}';
     document.head.appendChild(style);
   }
-  document.getElementById('btn-go-crisis')?.addEventListener('click', () => navigate('/election'));
+  document.querySelectorAll('.congress-vote').forEach(btn => btn.addEventListener('click', () => handleVote(btn)));
   document.getElementById('btn-go-election')?.addEventListener('click', () => navigate('/election'));
 }
