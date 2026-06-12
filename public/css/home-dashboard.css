@@ -517,6 +517,23 @@
   to   { transform: scaleX(1); opacity: 1; }
 }
 .home-race-row__pct { font-size: 11px; font-weight: 800; color: var(--color-text-muted); width: 30px; text-align: right; flex-shrink: 0; }
+.home-race-row--mypick .home-race-row__name { color: var(--color-primary); }
+.home-race-row--mypick .home-race-bar__fill { opacity: 1; filter: brightness(1.1); }
+.home-race-row__mypick-tag {
+  font-size: 9px; font-weight: 800; color: #fff;
+  background: var(--color-primary, #FF6B4A);
+  border-radius: 99px; padding: 1px 5px; flex-shrink: 0;
+}
+.home-race-vote-cta {
+  display: block; width: 100%; margin-top: 10px;
+  padding: 9px 14px; border-radius: 10px;
+  background: var(--color-primary-bg, #fff3ef);
+  border: 1.5px dashed var(--color-primary);
+  color: var(--color-primary); font-size: 12px; font-weight: 800;
+  cursor: pointer; text-align: center;
+  transition: background .15s;
+}
+.home-race-vote-cta:hover { background: color-mix(in srgb, var(--color-primary) 15%, transparent); }
 
 /* ── 정치력 획득 팝업 (+NP 플로팅) ── */
 .point-popup {

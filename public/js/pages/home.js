@@ -907,22 +907,25 @@ async function loadElectionRace(slot) {
 
     const { totalToday = 0, byParty: campaignParties = [] } = momentumRes.data || {};
 
+    const myVote = election.myVote || null;
+
     const barsHTML = topCands.map((c, i) => {
       const pct = total > 0 ? Math.round((c.votes / total) * 100) : 0;
       const medals = ['🥇', '🥈', '🥉'];
+      const isMyPick = myVote === c.partyId;
       const gapTag = i === 0 && isTight
         ? `<span class="home-race-tight-tag">⚡ 박빙 ${gapVotes}표 차</span>`
         : i === 1 && isTight
           ? `<span class="home-race-chase-tag">↑ ${gapVotes}표 추격</span>`
           : '';
       return `
-        <div class="home-race-row${i === 0 && isTight ? ' home-race-row--tight' : ''}" style="--party-c:${c.color}">
+        <div class="home-race-row${i === 0 && isTight ? ' home-race-row--tight' : ''}${isMyPick ? ' home-race-row--mypick' : ''}" style="--party-c:${c.color}">
           <span class="home-race-row__medal">${medals[i] || ''}</span>
           <span class="home-race-row__emoji">${c.emoji}</span>
           <div class="home-race-row__center">
             <div class="home-race-row__name-row">
               <span class="home-race-row__name">${escHtml(c.candidateName)}</span>
-              ${gapTag}
+              ${isMyPick ? '<span class="home-race-row__mypick-tag">✓ 내 선택</span>' : gapTag}
             </div>
             <div class="home-race-bar">
               <div class="home-race-bar__fill" style="width:${Math.max(4, pct)}%"></div>
@@ -931,6 +934,10 @@ async function loadElectionRace(slot) {
           <span class="home-race-row__pct">${total > 0 ? pct + '%' : '-'}</span>
         </div>`;
     }).join('');
+
+    const ctaHTML = !myVote && election.status === 'open'
+      ? `<button class="home-race-vote-cta" data-path="/election">🗳️ 지금 투표하기 (+5P)</button>`
+      : '';
 
     const campaignHTML = campaignParties.length > 0
       ? `<div class="home-race-campaign">
@@ -958,6 +965,7 @@ async function loadElectionRace(slot) {
             : `<div class="home-race-leader">아직 투표가 없어요 — 첫 번째로 투표해보세요!</div>`}
           <div class="home-race-rows">${barsHTML}</div>
           ${campaignHTML}
+          ${ctaHTML}
         </div>
       </div>`;
     slot.querySelectorAll('[data-path]').forEach(btn => {
