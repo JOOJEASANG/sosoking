@@ -425,27 +425,9 @@ function renderMissions(status, battleData, isRulingParty = false) {
   const doneCount = missions.filter(m => m.done).length;
   const allDone = doneCount === missions.length;
 
-  // 이번 주 대선 마감일 → 주간 진행 바
-  const weekBarHTML = (() => {
-    const endKey = status.electionEndKey;
-    if (!endKey) return '';
-    const endMs = new Date(`${endKey}T23:59:59+09:00`).getTime();
-    const startMs = endMs - 6 * 86400000;
-    const now = Date.now();
-    const weekPct = Math.min(100, Math.max(0, Math.round(((now - startMs) / (endMs - startMs)) * 100)));
-    const daysLeft = Math.ceil((endMs - now) / 86400000);
-    const label = daysLeft <= 0 ? '집계 중' : daysLeft === 1 ? '오늘 마감!' : `${daysLeft}일 남음`;
-    const urgentClass = daysLeft <= 1 ? ' home-week-bar--urgent' : '';
-    return `<div class="home-week-bar${urgentClass}">
-      <span class="home-week-bar__label">🗓️ 이번 주 대선</span>
-      <div class="home-week-bar__track"><div class="home-week-bar__fill" style="width:${weekPct}%"></div></div>
-      <span class="home-week-bar__remain">${label}</span>
-    </div>`;
-  })();
-
   return `
     <section class="home-missions">
-      ${weekBarHTML}
+
       <div class="home-missions__head">
         <span class="home-missions__title">📋 오늘의 정치 일정</span>
         <span class="home-missions__count${allDone ? ' home-missions__count--all' : ''}">${doneCount}/${missions.length} 완료${allDone ? ' 🎉' : ''}</span>
@@ -603,7 +585,6 @@ export async function renderHome() {
     const isRulingParty = !!(myStatus?.loggedIn && myStatus.partyId && presidentData?.partyId && presidentData.partyId === myStatus.partyId);
 
     const newPrezHTML = renderPresidentAnnouncement(presidentData);
-    const tickerHTML = renderNewsTicker(presidentData, battleData, newsData);
     const battleHTML = renderBattleCard(battleData);
 
     const hotHTML = hotPosts.length ? `
@@ -623,7 +604,6 @@ export async function renderHome() {
         <div class="home-dash page-enter home-dash--v2">
           <div id="home-notif-slot"></div>
           ${newPrezHTML}
-          ${tickerHTML}
           ${renderRankCard(myStatus, isRulingParty)}
           ${renderMissions(myStatus, battleData, isRulingParty)}
           <div id="home-campaign-slot"></div>
