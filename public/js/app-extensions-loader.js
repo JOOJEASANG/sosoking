@@ -15,6 +15,7 @@ const EXTENSION_MODULES = [
   './detail-post-nav.js',
   './points-actions.js',
   './party-war-ui.js',
+  './three-party-ui.js',
   './republic-polish.js',
   './republic-dashboard.js',
   './feedback-actions.js',
