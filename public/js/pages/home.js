@@ -1004,10 +1004,12 @@ function buildCrisisCardHTML(crisis, myVote, prevCrisis) {
   const btnsHTML = !voted ? `
     <div class="home-crisis-btns">
       <button class="home-crisis-btn home-crisis-btn--a" data-option="A">
-        🔵 ${escHtml(crisis.optionA)}
+        <span class="home-crisis-btn__label">🔵 ${escHtml(crisis.optionA)}</span>
+        ${crisis.optionADesc ? `<span class="home-crisis-btn__desc">${escHtml(crisis.optionADesc)}</span>` : ''}
       </button>
       <button class="home-crisis-btn home-crisis-btn--b" data-option="B">
-        🔴 ${escHtml(crisis.optionB)}
+        <span class="home-crisis-btn__label">🔴 ${escHtml(crisis.optionB)}</span>
+        ${crisis.optionBDesc ? `<span class="home-crisis-btn__desc">${escHtml(crisis.optionBDesc)}</span>` : ''}
       </button>
     </div>` : `<div class="home-crisis-voted">✅ 투표 완료 — ${myVote === 'A' ? escHtml(crisis.optionA) : escHtml(crisis.optionB)} 선택</div>`;
 

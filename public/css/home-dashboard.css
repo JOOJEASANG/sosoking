@@ -437,6 +437,7 @@
   flex: 1;
   padding: 8px 10px;
   border: 2px solid transparent;
+  display: flex; flex-direction: column; gap: 2px;
   border-radius: 10px;
   font-size: 12px;
   font-weight: 800;
@@ -449,6 +450,8 @@
 .home-crisis-btn--a:hover { background: #dbeafe; }
 .home-crisis-btn--b { background: #fff1f2; border-color: #fca5a5; color: #b91c1c; }
 .home-crisis-btn--b:hover { background: #fee2e2; }
+.home-crisis-btn__label { font-weight: 700; font-size: 12px; }
+.home-crisis-btn__desc { font-size: 10px; font-weight: 500; opacity: .75; line-height: 1.4; }
 .home-crisis-voted {
   font-size: 12px;
   font-weight: 700;
@@ -487,13 +490,32 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  animation: home-race-row-in .35s ease both;
+}
+.home-race-rows .home-race-row:nth-child(1) { animation-delay: .0s; }
+.home-race-rows .home-race-row:nth-child(2) { animation-delay: .07s; }
+.home-race-rows .home-race-row:nth-child(3) { animation-delay: .14s; }
+@keyframes home-race-row-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 .home-race-row__medal { font-size: 14px; width: 20px; text-align: center; flex-shrink: 0; }
 .home-race-row__emoji { font-size: 16px; flex-shrink: 0; }
 .home-race-row__center { flex: 1; min-width: 0; }
 .home-race-row__name { font-size: 12px; font-weight: 700; color: var(--color-text-primary); display: block; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .home-race-bar { height: 6px; background: var(--color-surface-2, #f3f4f6); border-radius: 3px; overflow: hidden; }
-.home-race-bar__fill { height: 100%; background: var(--party-c, var(--color-primary)); border-radius: 3px; transition: width .6s ease; }
+.home-race-bar__fill {
+  height: 100%; background: var(--party-c, var(--color-primary)); border-radius: 3px;
+  transform-origin: left;
+  animation: home-race-fill-in .6s cubic-bezier(.34,1.56,.64,1) both;
+}
+.home-race-rows .home-race-row:nth-child(1) .home-race-bar__fill { animation-delay: .05s; }
+.home-race-rows .home-race-row:nth-child(2) .home-race-bar__fill { animation-delay: .12s; }
+.home-race-rows .home-race-row:nth-child(3) .home-race-bar__fill { animation-delay: .19s; }
+@keyframes home-race-fill-in {
+  from { transform: scaleX(0); opacity: 0; }
+  to   { transform: scaleX(1); opacity: 1; }
+}
 .home-race-row__pct { font-size: 11px; font-weight: 800; color: var(--color-text-muted); width: 30px; text-align: right; flex-shrink: 0; }
 
 /* ── 정치력 획득 팝업 (+NP 플로팅) ── */
