@@ -24,10 +24,16 @@ function getKstMidnight() {
 function fmtDeadline(deadline) {
   const ms = deadline - Date.now();
   if (ms <= 0) return '투표 마감';
+  const totalSecs = Math.ceil(ms / 1000);
+  if (totalSecs <= 3600) {
+    const m = Math.floor(totalSecs / 60);
+    const s = totalSecs % 60;
+    return `⚡ ${m}:${String(s).padStart(2, '0')} 남음`;
+  }
   const h = Math.floor(ms / 3600000);
-  const m = Math.floor((ms % 3600000) / 60000);
-  if (h === 0) return `⏰ 마감 ${m}분 전`;
-  return `⏰ 마감 ${h}시간 ${m}분 전`;
+  const m2 = Math.floor((ms % 3600000) / 60000);
+  if (h === 0) return `⏰ 마감 ${m2}분 전`;
+  return `⏰ 마감 ${h}시간 ${m2}분 전`;
 }
 
 function fmtTime(ms) {
@@ -430,10 +436,22 @@ export async function renderBattle() {
       const timerEl = el.querySelector('#battle-deadline-timer');
       if (timerEl) {
         const deadline = getKstMidnight();
-        const tickTimer = setInterval(() => {
+        let usingSeconds = false;
+        let tickTimer = null;
+        const tick = () => {
           if (!document.contains(timerEl)) { clearInterval(tickTimer); return; }
-          timerEl.textContent = fmtDeadline(deadline);
-        }, 60000);
+          const label = fmtDeadline(deadline);
+          timerEl.textContent = label;
+          timerEl.dataset.urgent = label.startsWith('⚡') ? 'true' : 'false';
+          const nowSubHour = (deadline - Date.now()) <= 3600000;
+          if (nowSubHour && !usingSeconds) {
+            clearInterval(tickTimer);
+            usingSeconds = true;
+            tickTimer = setInterval(tick, 1000);
+          }
+        };
+        usingSeconds = (deadline - Date.now()) <= 3600000;
+        tickTimer = setInterval(tick, usingSeconds ? 1000 : 60000);
         window.addEventListener('hashchange', () => clearInterval(tickTimer), { once: true });
       }
     }
@@ -525,7 +543,7 @@ async function handleComment(el) {
       };
       const emptyEl = listEl.querySelector('.battle-comment-empty');
       if (emptyEl) emptyEl.remove();
-      listEl.insertAdjacentHTML('beforeend', renderComments([newComment]));
+      listEl.insertAdjacentHTML('afterbegin', renderComments([newComment]));
     }
 
     input.value = '';
