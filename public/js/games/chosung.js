@@ -1,13 +1,15 @@
-import { auth, db } from '../firebase.js';
-import { appState } from '../state.js';
+import { auth, db, functions } from '../firebase.js';
 import {
   collection, query, orderBy, limit, onSnapshot,
-  addDoc, updateDoc, doc, increment, serverTimestamp,
+  doc,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
 import { escHtml, formatTime } from '../utils/helpers.js';
 import { toast } from '../components/toast.js';
 
 const COLL = 'chosung_puzzles';
+const callCreateChosungPuzzle = httpsCallable(functions, 'createChosungPuzzle');
+const callSubmitChosungGuess = httpsCallable(functions, 'submitChosungGuess');
 
 function guessedKey(id) { return `cs_done_${id}`; }
 
@@ -42,6 +44,7 @@ export function mount(container, loggedIn) {
     const myUid = auth.currentUser?.uid;
     const isMine = myUid && myUid === p.uid;
     const done = !!localStorage.getItem(guessedKey(p.id));
+    const displayAnswer = p.solvedAnswer || p.answer || '';
 
     return `
       <div class="cs-card${isSolved ? ' cs-card--solved' : ''}" data-id="${escHtml(p.id)}">
@@ -56,7 +59,7 @@ export function mount(container, loggedIn) {
         <div class="cs-card__initials">${escHtml(p.initials || '')}</div>
         ${p.hint ? `<div class="cs-card__hint">💡 힌트: ${escHtml(p.hint)}</div>` : ''}
         ${isSolved
-          ? `<div class="cs-card__solved">정답: <strong>${escHtml(p.answer || '')}</strong> — 🏆 ${escHtml(p.firstSolvedName || '?')}님이 맞췄어요!</div>`
+          ? `<div class="cs-card__solved">정답: <strong>${escHtml(displayAnswer)}</strong> — 🏆 ${escHtml(p.firstSolvedName || '?')}님이 맞췄어요!</div>`
           : loggedIn && !done
             ? `<div class="cs-card__guess">
                 <input class="form-input cs-guess-input" data-id="${escHtml(p.id)}" placeholder="정답 입력" maxlength="30">
@@ -90,21 +93,13 @@ export function mount(container, loggedIn) {
 
         btn.disabled = true;
         try {
-          const correct = guess.toLowerCase() === (puzzle.answer || '').toLowerCase().trim();
-          if (correct) {
-            const user = auth.currentUser;
-            const name = appState.nickname || user?.displayName || '익명';
-            await updateDoc(doc(db, COLL, id), {
-              guessCount: increment(1),
-              solved: true,
-              firstSolvedBy: user.uid,
-              firstSolvedName: name,
-            });
-            localStorage.setItem(guessedKey(id), '1');
+          const res = await callSubmitChosungGuess({ puzzleId: id, guess });
+          localStorage.setItem(guessedKey(id), '1');
+          if (res.data?.alreadyTried) {
+            toast.warn('이미 제출한 문제예요');
+          } else if (res.data?.correct) {
             toast.success('🎉 정답이에요! 대단해요!');
           } else {
-            await updateDoc(doc(db, COLL, id), { guessCount: increment(1) });
-            localStorage.setItem(guessedKey(id), '1');
             toast.error('아쉽! 틀렸어요 😅');
           }
         } catch (e) {
@@ -153,14 +148,7 @@ export function mount(container, loggedIn) {
 
     createBtn.disabled = true; createBtn.textContent = '...';
     try {
-      const user = auth.currentUser;
-      const name = appState.nickname || user?.displayName || '익명';
-      await addDoc(collection(db, COLL), {
-        initials, answer, hint,
-        authorName: name, uid: user.uid,
-        solved: false, firstSolvedBy: null, firstSolvedName: null,
-        guessCount: 0, createdAt: serverTimestamp(),
-      });
+      await callCreateChosungPuzzle({ initials, answer, hint });
       if (initialsEl) initialsEl.value = '';
       if (answerEl) answerEl.value = '';
       if (hintEl) hintEl.value = '';
