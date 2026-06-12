@@ -51,11 +51,177 @@
 .party-mine__title { font-size: 16px; font-weight: 900; color: var(--color-text-primary); margin-bottom: 6px; }
 .party-mine--guest .btn, .party-mine--none .btn { margin-top: 10px; }
 
-.parties-standings-title {
-  font-size: 15px; font-weight: 900; color: var(--color-text-primary);
-  margin: 4px 4px 10px; display: flex; align-items: baseline; gap: 8px;
+/* ── 정당 세력 순위 섹션 ── */
+.standings-section {
+  margin-bottom: 16px;
 }
-.parties-standings-title span { font-size: 11px; font-weight: 700; color: var(--color-text-muted); }
+.standings-section__header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding: 0 2px;
+}
+.standings-section__eyebrow {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .1em;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+}
+.standings-section__title {
+  font-size: 17px;
+  font-weight: 900;
+  color: var(--color-text-primary);
+  margin-top: 3px;
+}
+
+/* ── 순위표 ── */
+.standings-board {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+.standings-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-border);
+  transition: background .13s;
+  position: relative;
+}
+.standings-row:last-child { border-bottom: none; }
+.standings-row--top {
+  background: linear-gradient(100deg,
+    color-mix(in srgb, var(--party-color) 10%, var(--color-surface)),
+    var(--color-surface) 70%);
+}
+.standings-row:not(.standings-row--top):hover {
+  background: var(--color-surface-2, #f8f8fc);
+}
+.standings-row::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--party-color);
+  border-radius: 0 2px 2px 0;
+  opacity: 0;
+  transition: opacity .13s;
+}
+.standings-row--top::before { opacity: 1; }
+.standings-row:hover::before { opacity: 1; }
+
+.standings-row__rank {
+  min-width: 28px;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 900;
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+.standings-row__party {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 140px;
+  min-width: 0;
+}
+.standings-row__emoji { font-size: 20px; line-height: 1; flex-shrink: 0; }
+.standings-row__info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.standings-row__name {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.standings-row__leader {
+  font-size: 10px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.standings-row__bar-wrap {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--color-border);
+  overflow: hidden;
+  min-width: 40px;
+}
+.standings-row__bar {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--party-color);
+  transition: width .7s ease;
+}
+
+.standings-row__stats {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+.standings-row__power {
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--color-text-primary);
+  min-width: 44px;
+  text-align: right;
+}
+.standings-row__members {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  background: var(--color-surface-2, #f0f0f5);
+  border-radius: 99px;
+  padding: 2px 6px;
+  white-space: nowrap;
+}
+.standings-row__elec {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--party-color);
+  white-space: nowrap;
+}
+.standings-row__trend {
+  font-size: 11px;
+  font-weight: 900;
+  color: #16a34a;
+}
+
+/* ── 상세 정보 소제목 ── */
+.parties-detail-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--color-text-muted);
+  letter-spacing: .03em;
+  margin: 4px 2px 10px;
+  padding-left: 4px;
+  border-left: 3px solid var(--color-primary);
+}
+
+/* ── 반응형 ── */
+@media (max-width: 480px) {
+  .standings-row { padding: 10px 12px; gap: 7px; }
+  .standings-row__party { flex: 0 0 110px; }
+  .standings-row__members { display: none; }
+  .standings-row__elec { display: none; }
+}
 
 .parties-list { display: flex; flex-direction: column; gap: 10px; }
 

@@ -239,6 +239,41 @@ function renderTrendBadge(diff) {
   return `<span class=”party-trend party-trend--down”>▼ ${fmtNum(Math.abs(diff))}</span>`;
 }
 
+function renderStandingsBoard(parties, electionByParty, electionTotal) {
+  if (!parties.length) return '';
+  const maxPower = Math.max(...parties.map(p => p.totalPower || 0), 1);
+
+  const rows = parties.map(p => {
+    const pct = Math.round(((p.totalPower || 0) / maxPower) * 100);
+    const elecPct = electionTotal > 0
+      ? Math.round(((electionByParty[p.id] || 0) / electionTotal) * 100)
+      : null;
+    const isTop = p.rank === 1;
+    return `
+      <div class=”standings-row${isTop ? ' standings-row--top' : ''}” style=”--party-color:${p.color}”>
+        <div class=”standings-row__rank”>${medal(p.rank)}</div>
+        <div class=”standings-row__party”>
+          <span class=”standings-row__emoji”>${p.emoji}</span>
+          <div class=”standings-row__info”>
+            <span class=”standings-row__name”>${escHtml(p.name)}</span>
+            ${p.leader?.nickname ? `<span class=”standings-row__leader”>👑 ${escHtml(p.leader.nickname)}</span>` : '<span class=”standings-row__leader”>공석</span>'}
+          </div>
+        </div>
+        <div class=”standings-row__bar-wrap”>
+          <div class=”standings-row__bar” style=”width:${Math.max(2, pct)}%”></div>
+        </div>
+        <div class=”standings-row__stats”>
+          <span class=”standings-row__power”>${fmtNum(p.totalPower)}P</span>
+          ${elecPct !== null ? `<span class=”standings-row__elec”>${elecPct}%🗳</span>` : ''}
+          ${(p.powerDiff || 0) > 0 ? `<span class=”standings-row__trend”>▲</span>` : ''}
+          <span class=”standings-row__members”>${fmtNum(p.memberCount)}명</span>
+        </div>
+      </div>`;
+  }).join('');
+
+  return `<div class=”standings-board”>${rows}</div>`;
+}
+
 function renderPartyCard(p, me, isTopPower, presPartyId, winCount, elecVotes = 0, elecTotal = 0, campaignCount = 0) {
   const isMine = me && me.partyId === p.id;
   const isPrezParty = presPartyId && p.id === presPartyId;
@@ -644,9 +679,17 @@ export async function renderParties() {
     ${parliamentHTML}
     ${activityHTML}
     ${renderMyBanner(me)}
-    <div class="parties-standings-title">📊 정당 세력 순위 <span>정치력 기준</span>
-      <button class="parties-quiz-btn" id="party-quiz-top">🧭 내 정당 찾기</button>
+    <div class="standings-section">
+      <div class="standings-section__header">
+        <div>
+          <div class="standings-section__eyebrow">PARTY POWER RANKING</div>
+          <div class="standings-section__title">📊 정당 세력 순위</div>
+        </div>
+        <button class="parties-quiz-btn" id="party-quiz-top">🧭 내 정당 찾기</button>
+      </div>
+      ${renderStandingsBoard(parties, electionByParty, electionTotal)}
     </div>
+    <div class="parties-detail-title">정당 상세 정보 · 입당</div>
     <div class="parties-list">
       ${parties.map((p, i) => renderPartyCard(p, me, i === 0, president?.partyId || null, electionWins[p.id] || 0, electionByParty[p.id] || 0, electionTotal, campaignByParty[p.id] || 0)).join('')}
     </div>
