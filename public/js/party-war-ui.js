@@ -3,6 +3,10 @@ import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { navigate } from './router.js';
 import { toast } from './components/toast.js';
 
+let pendingTimer = null;
+let observer = null;
+let loading = false;
+
 function fmtNum(n) {
   n = Number(n || 0);
   if (n >= 10000) return (n / 10000).toFixed(1).replace(/\.0$/, '') + '만';
@@ -15,7 +19,9 @@ function esc(value) {
 }
 
 function currentPath() {
-  return (window.location.hash.slice(1) || '/').split('?')[0] || '/';
+  const hashPath = (window.location.hash.slice(1) || '').split('?')[0];
+  if (hashPath && hashPath !== '/') return hashPath;
+  return window.location.pathname || '/';
 }
 
 function cardHtml(data) {
@@ -54,14 +60,33 @@ function cardHtml(data) {
     </section>`;
 }
 
+function bindClaimButton(holder, data) {
+  holder.querySelector('#party-war-claim')?.addEventListener('click', async e => {
+    if (!auth.currentUser) { navigate('/login'); return; }
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    btn.textContent = '수령 중…';
+    try {
+      const res = await httpsCallable(functions, 'claimWeeklyPartyWarReward')({});
+      if (res.data?.awarded) toast.success(`주간 정당전 보상 +${res.data.points || 30}P`);
+      else toast.info?.('이미 수령했어요');
+      holder.remove();
+      scheduleInject(200);
+    } catch (err) {
+      toast.error(err?.message || '보상 수령 실패');
+      btn.disabled = false;
+      btn.textContent = `보상 받기 +${data.reward || 30}P`;
+    }
+  });
+}
+
 async function injectPartyWarCard() {
-  if (currentPath() !== '/parties') return;
+  if (currentPath() !== '/parties' || loading || document.getElementById('party-war-card')) return;
   const page = document.querySelector('.parties-page');
-  if (!page || document.getElementById('party-war-card')) return;
+  const anchor = page?.querySelector('.parties-standings-title');
+  if (!page || !anchor) return;
 
-  const anchor = page.querySelector('.parties-standings-title') || page.firstElementChild;
-  if (!anchor) return;
-
+  loading = true;
   const holder = document.createElement('div');
   holder.id = 'party-war-card-holder';
   holder.innerHTML = `<section class="party-war-card" id="party-war-card" style="margin:16px 0;padding:18px;border-radius:20px;border:1px solid var(--color-border)">🏆 주간 정당전 불러오는 중…</section>`;
@@ -70,33 +95,31 @@ async function injectPartyWarCard() {
   try {
     const { data } = await httpsCallable(functions, 'getWeeklyPartyWar')({});
     holder.innerHTML = cardHtml(data || {});
-    holder.querySelector('#party-war-claim')?.addEventListener('click', async e => {
-      if (!auth.currentUser) { navigate('/login'); return; }
-      const btn = e.currentTarget;
-      btn.disabled = true;
-      btn.textContent = '수령 중…';
-      try {
-        const res = await httpsCallable(functions, 'claimWeeklyPartyWarReward')({});
-        if (res.data?.awarded) toast.success(`주간 정당전 보상 +${res.data.points || 30}P`);
-        else toast.info?.('이미 수령했어요');
-        holder.remove();
-        setTimeout(injectPartyWarCard, 300);
-      } catch (err) {
-        toast.error(err?.message || '보상 수령 실패');
-        btn.disabled = false;
-        btn.textContent = `보상 받기 +${data.reward || 30}P`;
-      }
-    });
+    bindClaimButton(holder, data || {});
   } catch (err) {
     console.warn('[party-war-ui]', err);
     holder.remove();
+  } finally {
+    loading = false;
   }
 }
 
-function scheduleInject() {
-  setTimeout(injectPartyWarCard, 500);
+function scheduleInject(delay = 500) {
+  clearTimeout(pendingTimer);
+  pendingTimer = setTimeout(injectPartyWarCard, delay);
 }
 
-window.addEventListener('hashchange', scheduleInject);
-window.addEventListener('sosoking:extensions-ready', scheduleInject);
-scheduleInject();
+function observePageChanges() {
+  if (observer) return;
+  const root = document.getElementById('page-content') || document.body;
+  observer = new MutationObserver(() => {
+    if (currentPath() === '/parties') scheduleInject(150);
+  });
+  observer.observe(root, { childList: true, subtree: true });
+}
+
+window.addEventListener('hashchange', () => scheduleInject(250));
+window.addEventListener('popstate', () => scheduleInject(250));
+window.addEventListener('sosoking:extensions-ready', () => scheduleInject(250));
+observePageChanges();
+scheduleInject(250);
