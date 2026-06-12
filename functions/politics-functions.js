@@ -1679,18 +1679,26 @@ exports.voteOnCrisis = onCall({ region: REGION, timeoutSeconds: 15 }, async requ
   const crisisRef = db.doc(`political_crises/${key}`);
   const voteRef = db.doc(`political_crises/${key}/votes/${uid}`);
 
-  const [crisisSnap, voteSnap] = await Promise.all([crisisRef.get(), voteRef.get()]);
+  const [crisisSnap, voteSnap, userSnap] = await Promise.all([
+    crisisRef.get(), voteRef.get(),
+    db.doc(`users/${uid}`).get().catch(() => null),
+  ]);
   if (!crisisSnap.exists || !crisisSnap.data().title) {
     throw new HttpsError('not-found', '이번 주 정치 위기가 없습니다.');
   }
   if (voteSnap.exists) throw new HttpsError('failed-precondition', '이미 투표했습니다.');
 
+  const voterPartyId = userSnap && userSnap.exists && PARTY_BY_ID[userSnap.data().partyId]
+    ? userSnap.data().partyId : null;
+
   const batch = db.batch();
-  batch.set(voteRef, { option, uid, createdAt: FieldValue.serverTimestamp() });
-  batch.update(crisisRef, {
+  batch.set(voteRef, { option, uid, partyId: voterPartyId || null, createdAt: FieldValue.serverTimestamp() });
+  const crisisUpdate = {
     [option === 'A' ? 'votesA' : 'votesB']: FieldValue.increment(1),
     updatedAt: FieldValue.serverTimestamp(),
-  });
+  };
+  if (voterPartyId) crisisUpdate[`partyVotes.${voterPartyId}.${option}`] = FieldValue.increment(1);
+  batch.update(crisisRef, crisisUpdate);
 
   // 첫 투표 +5P
   const awardRef = db.doc(`point_awards/${uid}_crisis_${key}`);
@@ -1706,6 +1714,7 @@ exports.voteOnCrisis = onCall({ region: REGION, timeoutSeconds: 15 }, async requ
     ok: true, option, firstVote: !awardSnap.exists,
     votesA: Number(updated.votesA || 0),
     votesB: Number(updated.votesB || 0),
+    partyVotes: updated.partyVotes || null,
   };
 });
 

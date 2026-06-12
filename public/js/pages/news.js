@@ -248,6 +248,58 @@ async function loadPresidentQAHighlight(slot) {
   } catch { /* non-critical */ }
 }
 
+const CRISIS_PARTY_INFO = {
+  national: { name: '국민안정당', emoji: '🎙️', color: '#8B7355' },
+  truth:    { name: '진실방송당', emoji: '📺', color: '#6C5CE7' },
+  youth:    { name: '청년혁명당', emoji: '📱', color: '#E84393' },
+  center:   { name: '중도민주당', emoji: '📊', color: '#00CEC9' },
+  future:   { name: '함께미래당', emoji: '🤝', color: '#FDCB6E' },
+  rights:   { name: '알권리당',   emoji: '🔍', color: '#00B894' },
+  justice:  { name: '법치정의당', emoji: '⚖️', color: '#2D3436' },
+};
+
+function renderCrisisPartyBreakdown(partyVotes, optionA, optionB) {
+  if (!partyVotes) return '';
+  const rows = Object.entries(partyVotes)
+    .map(([pid, pv]) => {
+      const info = CRISIS_PARTY_INFO[pid];
+      if (!info) return null;
+      const a = Number(pv.A || 0), b = Number(pv.B || 0), tot = a + b;
+      if (!tot) return null;
+      const pctA = Math.round((a / tot) * 100);
+      const pctB = 100 - pctA;
+      const leanA = pctA > pctB;
+      return { info, tot, pctA, pctB, leanA };
+    })
+    .filter(Boolean)
+    .sort((x, y) => y.tot - x.tot);
+  if (rows.length < 2) return '';
+  return `
+    <div class="news-crisis__party-breakdown">
+      <div class="news-crisis__party-breakdown__title">📊 정당별 투표 성향</div>
+      ${rows.map(r => `
+        <div class="news-crisis__party-row" style="--p-color:${r.info.color}">
+          <span class="news-crisis__party-row__em">${r.info.emoji}</span>
+          <span class="news-crisis__party-row__name">${escHtml(r.info.name)}</span>
+          <div class="news-crisis__party-row__bars">
+            <div class="news-crisis__party-row__bar--a" style="width:${r.pctA}%" title="A. ${escHtml(optionA)}"></div>
+            <div class="news-crisis__party-row__bar--b" style="width:${r.pctB}%" title="B. ${escHtml(optionB)}"></div>
+          </div>
+          <span class="news-crisis__party-row__lean${r.leanA ? ' news-crisis__party-row__lean--a' : ' news-crisis__party-row__lean--b'}">${r.leanA ? 'A ' + r.pctA + '%' : 'B ' + r.pctB + '%'}</span>
+        </div>`).join('')}
+      <div class="news-crisis__party-breakdown__legend">
+        <span class="news-crisis__legend--a">■ A. ${escHtml(optionA)}</span>
+        <span class="news-crisis__legend--b">■ B. ${escHtml(optionB)}</span>
+      </div>
+    </div>`;
+}
+
+function crisisWeekEnd(weekKey) {
+  if (!weekKey) return null;
+  const ms = new Date(`${weekKey}T00:00:00+09:00`).getTime() + 7 * 86400000 - 1000;
+  return ms;
+}
+
 async function loadNewsCrisis(slot) {
   if (!slot) return;
   try {
@@ -259,6 +311,11 @@ async function loadNewsCrisis(slot) {
     const pctA = totalVotes > 0 ? Math.round((Number(crisis.votesA || 0) / totalVotes) * 100) : 50;
     const pctB = 100 - pctA;
     const isWinnerA = pctA >= pctB;
+
+    // Days remaining in this week's vote
+    const endMs = crisisWeekEnd(crisis.weekKey);
+    const daysLeft = endMs ? Math.max(0, Math.ceil((endMs - Date.now()) / 86400000)) : null;
+    const daysLabel = daysLeft === null ? '' : daysLeft === 0 ? '오늘 마감' : daysLeft === 1 ? '내일 마감' : `${daysLeft}일 남음`;
 
     const barHTML = totalVotes > 0 ? `
       <div class="news-crisis__bar-wrap">
@@ -279,12 +336,17 @@ async function loadNewsCrisis(slot) {
         <div class="news-crisis__total">${fmtNum(totalVotes)}명 참여 · ${isWinnerA ? escHtml(crisis.optionA) : escHtml(crisis.optionB)} 우세</div>
       </div>` : '';
 
+    const descA = crisis.optionADesc ? `<span class="news-crisis__btn-desc">${escHtml(crisis.optionADesc)}</span>` : '';
+    const descB = crisis.optionBDesc ? `<span class="news-crisis__btn-desc">${escHtml(crisis.optionBDesc)}</span>` : '';
+
     const actionHTML = myVote
       ? `<div class="news-crisis__voted">✅ 투표 완료 — "${myVote === 'A' ? escHtml(crisis.optionA) : escHtml(crisis.optionB)}" 선택</div>`
       : `<div class="news-crisis__options">
-           <button class="news-crisis__btn" data-option="A">A. ${escHtml(crisis.optionA)}<span class="news-crisis__btn-reward">+5P</span></button>
-           <button class="news-crisis__btn" data-option="B">B. ${escHtml(crisis.optionB)}<span class="news-crisis__btn-reward">+5P</span></button>
+           <button class="news-crisis__btn" data-option="A">A. ${escHtml(crisis.optionA)}${descA}<span class="news-crisis__btn-reward">+5P</span></button>
+           <button class="news-crisis__btn" data-option="B">B. ${escHtml(crisis.optionB)}${descB}<span class="news-crisis__btn-reward">+5P</span></button>
          </div>`;
+
+    const partyBreakdownHTML = (myVote || totalVotes > 0) ? renderCrisisPartyBreakdown(crisis.partyVotes, crisis.optionA, crisis.optionB) : '';
 
     const prevHTML = prevCrisis && (prevCrisis.votesA + prevCrisis.votesB) > 0 ? (() => {
       const prevTotal = prevCrisis.votesA + prevCrisis.votesB;
@@ -299,11 +361,12 @@ async function loadNewsCrisis(slot) {
 
     slot.innerHTML = `
       <section class="news-crisis">
-        <div class="news-section-title">🚨 이번 주 국정 위기 국민투표</div>
+        <div class="news-section-title">🚨 이번 주 국정 위기 국민투표${daysLabel ? ` <span class="news-crisis__days">${daysLabel}</span>` : ''}</div>
         <div class="news-crisis__title">${escHtml(crisis.title)}</div>
         <p class="news-crisis__desc">${escHtml(crisis.desc || '')}</p>
         ${barHTML}
         ${actionHTML}
+        ${partyBreakdownHTML}
         ${prevHTML}
       </section>`;
 

@@ -317,6 +317,57 @@
 .news-crisis__prev-result { font-size: 11px; color: rgba(255,255,255,.65); }
 .news-crisis__prev-consequence { font-size: 11px; color: #fde68a; font-style: italic; }
 
+/* 위기투표 days 뱃지 */
+.news-crisis__days {
+  font-size: 10px; font-weight: 800;
+  background: rgba(253,230,138,.18); color: #fde68a;
+  border-radius: 99px; padding: 1px 7px; margin-left: 6px; vertical-align: middle;
+}
+
+/* 선택지 설명 */
+.news-crisis__btn { flex-wrap: wrap; gap: 4px; }
+.news-crisis__btn-desc {
+  flex-basis: 100%; font-size: 10px; font-weight: 500;
+  color: rgba(255,255,255,.5); line-height: 1.4; padding-left: 2px;
+}
+
+/* 정당별 위기투표 성향 */
+.news-crisis__party-breakdown {
+  background: rgba(255,255,255,.06);
+  border-radius: 10px; padding: 10px 12px; margin: 8px 0 6px;
+}
+.news-crisis__party-breakdown__title {
+  font-size: 10px; font-weight: 800; color: rgba(255,255,255,.5);
+  text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px;
+}
+.news-crisis__party-row {
+  display: grid; grid-template-columns: 18px 72px 1fr 38px;
+  align-items: center; gap: 5px; margin-bottom: 5px;
+}
+.news-crisis__party-row__em { font-size: 13px; }
+.news-crisis__party-row__name {
+  font-size: 10px; font-weight: 700; color: rgba(255,255,255,.75);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.news-crisis__party-row__bars {
+  height: 6px; border-radius: 3px; overflow: hidden;
+  display: flex;
+}
+.news-crisis__party-row__bar--a { height: 100%; background: #60a5fa; }
+.news-crisis__party-row__bar--b { height: 100%; background: #f87171; }
+.news-crisis__party-row__lean {
+  font-size: 10px; font-weight: 900; text-align: right;
+}
+.news-crisis__party-row__lean--a { color: #60a5fa; }
+.news-crisis__party-row__lean--b { color: #f87171; }
+.news-crisis__party-breakdown__legend {
+  display: flex; gap: 12px; margin-top: 6px;
+  padding-top: 6px; border-top: 1px solid rgba(255,255,255,.1);
+  font-size: 9px; color: rgba(255,255,255,.45); font-weight: 600;
+}
+.news-crisis__legend--a { color: #93c5fd; }
+.news-crisis__legend--b { color: #fca5a5; }
+
 /* ── 대정부 질의응답 하이라이트 ── */
 .news-qa-highlight {
   background: var(--color-surface);
