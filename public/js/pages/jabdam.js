@@ -1,9 +1,10 @@
-import { auth, db } from '../firebase.js';
+import { auth, db, functions } from '../firebase.js';
 import { appState } from '../state.js';
 import {
   collection, query, orderBy, limit, onSnapshot,
-  addDoc, deleteDoc, doc, serverTimestamp, updateDoc, increment, getDoc,
+  addDoc, deleteDoc, doc, serverTimestamp, getDoc,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
 import { setMeta } from '../utils/seo.js';
 import { escHtml, formatTime } from '../utils/helpers.js';
 import { toast } from '../components/toast.js';
@@ -15,6 +16,7 @@ let _isAdmin = false;
 let _currentTab = 'chat';
 
 const URL_RE = /https?:\/\/[^\s<>"']+/gi;
+const callLikeJabdamPost = httpsCallable(functions, 'likeJabdamPost');
 
 function linkify(text) {
   return escHtml(text).replace(URL_RE, url =>
@@ -286,9 +288,15 @@ function attachPostHandlers(listEl) {
   listEl.querySelectorAll('.jabdam-like-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
       if (!auth.currentUser) { toast.warn('로그인이 필요해요'); return; }
+      btn.disabled = true;
       try {
-        await updateDoc(doc(db, 'jabdam_posts', btn.dataset.id), { likes: increment(1) });
-      } catch (e) { /* ignore */ }
+        const res = await callLikeJabdamPost({ postId: btn.dataset.id });
+        if (!res.data?.liked) toast.info?.('이미 좋아요를 눌렀어요');
+      } catch (e) {
+        toast.error(e.message || '좋아요 실패');
+      } finally {
+        btn.disabled = false;
+      }
     });
   });
 }
