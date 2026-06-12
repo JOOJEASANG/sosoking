@@ -127,25 +127,21 @@ function weeklyPowerFields(memberData, oldPower, newPower) {
   return { weeklyGain: Math.max(0, newPower - weekStartPower) };
 }
 
-function syncPartyPowerInTx(tx, uid, user, points) {
+function writePartyPowerInTx(tx, uid, user, memberSnap, points) {
   const partyId = PARTY_BY_ID[user.partyId] ? user.partyId : null;
-  if (!partyId) return Promise.resolve(null);
-  const mRef = memberRef(partyId, uid);
-  return tx.get(mRef).then(mSnap => {
-    if (!mSnap.exists) return null;
-    const oldPower = Number(mSnap.data().power || 0);
-    const newPower = Math.max(0, Number(user.totalPoints || user.points || 0) + points);
-    const delta = newPower - oldPower;
-    tx.update(mRef, {
-      power: newPower,
-      ...weeklyPowerFields(mSnap.data() || {}, oldPower, newPower),
-      updatedAt: FieldValue.serverTimestamp(),
-    });
-    if (delta !== 0) {
-      tx.set(partyRef(partyId), { totalPower: FieldValue.increment(delta), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-    }
-    return null;
+  if (!partyId || !memberSnap || !memberSnap.exists) return;
+
+  const oldPower = Number(memberSnap.data().power || 0);
+  const newPower = Math.max(0, Number(user.totalPoints || user.points || 0) + points);
+  const delta = newPower - oldPower;
+  tx.update(memberRef(partyId, uid), {
+    power: newPower,
+    ...weeklyPowerFields(memberSnap.data() || {}, oldPower, newPower),
+    updatedAt: FieldValue.serverTimestamp(),
   });
+  if (delta !== 0) {
+    tx.set(partyRef(partyId), { totalPower: FieldValue.increment(delta), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+  }
 }
 
 const voteForPresident = onCall({ region: REGION, timeoutSeconds: 30 }, async request => {
@@ -158,20 +154,21 @@ const voteForPresident = onCall({ region: REGION, timeoutSeconds: 30 }, async re
   const points = isFinalDay ? 10 : 5;
 
   return db.runTransaction(async tx => {
-    const [s, userSnap] = await Promise.all([
-      tx.get(ref),
-      tx.get(db.doc(`users/${uid}`)),
-    ]);
+    const userRef = db.doc(`users/${uid}`);
+    const ballotRef = ref.collection('ballots').doc(uid);
+    const [s, userSnap, b] = await Promise.all([tx.get(ref), tx.get(userRef), tx.get(ballotRef)]);
+
     if (!s.exists) throw new HttpsError('failed-precondition', '선거가 준비되지 않았습니다.');
     const d = s.data() || {};
     if (d.status !== 'open') throw new HttpsError('failed-precondition', '종료된 선거입니다.');
     if (!(d.candidates || []).some(c => c.partyId === partyId)) {
       throw new HttpsError('invalid-argument', '후보 정당이 아닙니다.');
     }
-
-    const ballotRef = ref.collection('ballots').doc(uid);
-    const b = await tx.get(ballotRef);
     if (b.exists) throw new HttpsError('failed-precondition', '이미 투표했습니다.');
+
+    const user = userSnap.exists ? (userSnap.data() || {}) : {};
+    const myPartyId = PARTY_BY_ID[user.partyId] ? user.partyId : null;
+    const memberSnap = myPartyId ? await tx.get(memberRef(myPartyId, uid)) : null;
 
     tx.set(ballotRef, { partyId, createdAt: FieldValue.serverTimestamp() });
     tx.update(ref, {
@@ -182,7 +179,6 @@ const voteForPresident = onCall({ region: REGION, timeoutSeconds: 30 }, async re
     });
 
     const awardRef = db.doc(`point_awards/${uid}_election_vote_${key}`);
-    const userRef = db.doc(`users/${uid}`);
     tx.set(awardRef, {
       uid,
       action: 'election_vote',
@@ -196,8 +192,8 @@ const voteForPresident = onCall({ region: REGION, timeoutSeconds: 30 }, async re
       totalPoints: FieldValue.increment(points),
       updatedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
+    writePartyPowerInTx(tx, uid, user, memberSnap, points);
 
-    if (userSnap.exists) await syncPartyPowerInTx(tx, uid, userSnap.data() || {}, points);
     return { ok: true, partyId, points, electionDay: isFinalDay, finalDay: isFinalDay };
   });
 });
@@ -234,6 +230,7 @@ const getMyStatus = onCall({ region: REGION, timeoutSeconds: 10 }, async request
   let votedCrisis = false;
   let campaignsToday = 0;
   let askedQAThisWeek = false;
+  let electionEndKey = weekPeriod().voteDeadlineKey;
   const today = kstToday();
   try {
     const { key, voteDeadlineKey, prevKey } = weekPeriod();
@@ -247,10 +244,8 @@ const getMyStatus = onCall({ region: REGION, timeoutSeconds: 10 }, async request
     votedCrisis = !!(crisisVoteSnap && crisisVoteSnap.exists);
     campaignsToday = campaignSnap && campaignSnap.exists ? Number(campaignSnap.data().count || 0) : 0;
     askedQAThisWeek = !!(qaAwardSnap && qaAwardSnap.exists);
-    var electionEndKey = voteDeadlineKey;
-  } catch {
-    var electionEndKey = weekPeriod().voteDeadlineKey;
-  }
+    electionEndKey = voteDeadlineKey;
+  } catch {}
 
   let pointsToLeader = null;
   if (partyId && partyRank && partyRank > 1) {
