@@ -43,7 +43,6 @@ const AI_KING_AGAIN = {
   ai_judge:     { path: '/ai-judge',     label: '⚖️ 나도 판결받기' },
   ai_translate: { path: '/ai-translate', label: '✨ 나도 번역하기' },
   ai_naming:    { path: '/ai-translate', label: '✨ 나도 이름짓기' },
-  ai_debate:    { path: '/ai-judge',     label: '⚖️ 나도 캐릭터한테 물어보기' },
 };
 
 function renderAiAgainBtn(type) {
@@ -67,8 +66,6 @@ export function renderTypeBody(post) {
       return renderAiTranslateBody(post) + renderAiAgainBtn('ai_translate');
     case 'ai_naming':
       return renderAiNamingBody(post) + renderAiAgainBtn('ai_naming');
-    case 'ai_debate':
-      return renderAiDebateBody(post) + renderAiAgainBtn('ai_debate');
     case 'balance':
     case 'vote':
       if (!post.options?.length) return '';
@@ -132,54 +129,6 @@ function renderAiJudgeBody(post) {
             <div class="ai-verdict-judge">${escHtml(v.charName || v.judgeName || '')}</div>
             <div class="ai-verdict-text">${escHtml(v.verdict || '').replace(/\n/g, '<br>')}</div>
           </div>`).join('')}
-      </div>
-    </div>`;
-}
-
-function parseDebateSides(post) {
-  if (post.optionA && post.optionB) {
-    return { sideA: post.optionA.trim(), sideB: post.optionB.trim() };
-  }
-  const parts = String(post.topic || post.title || '').split(/ vs /i);
-  return {
-    sideA: (parts[0] || 'A편').trim(),
-    sideB: (parts[1] || 'B편').trim(),
-  };
-}
-
-function renderAiDebateBody(post) {
-  const { sideA, sideB } = parseDebateSides(post);
-  const voteA = Number(post.voteA || 0);
-  const voteB = Number(post.voteB || 0);
-  const total = voteA + voteB;
-  const pctA = total ? Math.round(voteA / total * 100) : 50;
-  const pctB = total ? Math.round(voteB / total * 100) : 50;
-  const aLabel = total ? `${voteA}표 (${pctA}%)` : '첫 투표!';
-  const bLabel = total ? `${voteB}표 (${pctB}%)` : '첫 투표!';
-
-  return `
-    <div class="ai-debate-result">
-      <div class="ai-debate-topic">
-        <span class="ai-debate-topic__label">🗣️ 토론 주제</span>
-        <span class="ai-debate-topic__text">${escHtml(post.topic || post.title || '').replace(/\n/g, '<br>')}</span>
-      </div>
-      <div class="ai-debate-foot">어느 편? 투표하고 댓글로 토론해봐요 👇</div>
-      <div class="ai-debate-vote" id="debate-vote-area" data-post-id="${escHtml(post.id || '')}">
-        <div class="ai-debate-vote__label">어느 편 손을 들어주겠어요?</div>
-        <div class="ai-debate-vote__btns">
-          <button class="ai-debate-vote-btn" data-side="A">
-            <span class="ai-debate-vote-btn__side">🔴 A편</span>
-            <span class="ai-debate-vote-btn__text">${escHtml(sideA)}</span>
-            <span class="ai-debate-vote-btn__count" id="debate-count-a">${escHtml(aLabel)}</span>
-          </button>
-          <div class="ai-debate-vote__vs">VS</div>
-          <button class="ai-debate-vote-btn ai-debate-vote-btn--b" data-side="B">
-            <span class="ai-debate-vote-btn__side">🔵 B편</span>
-            <span class="ai-debate-vote-btn__text">${escHtml(sideB)}</span>
-            <span class="ai-debate-vote-btn__count" id="debate-count-b">${escHtml(bLabel)}</span>
-          </button>
-        </div>
-        <div class="ai-debate-vote__hint" id="debate-vote-hint">투표하면 댓글을 남길 수 있어요</div>
       </div>
     </div>`;
 }

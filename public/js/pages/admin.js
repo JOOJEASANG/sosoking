@@ -877,20 +877,6 @@ async function renderAiSettings(el) {
         </div>
       </div>
 
-      <!-- 수동 실행 -->
-      <div class="card">
-        <div class="card__body">
-          <div style="font-size:14px;font-weight:800;margin-bottom:4px">🗣️ AI 토론왕</div>
-          <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:14px">매일 오전 10시 자동 생성돼요. 지금 바로 만들거나 주제를 직접 넣을 수도 있어요.</div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-            <input id="debate-topic-input" type="text" placeholder="주제 직접 입력 (비우면 오늘의 주제)" maxlength="100"
-              style="flex:1;min-width:200px;padding:8px 10px;border:1px solid var(--color-border);border-radius:8px;font-size:13px">
-            <button class="btn btn--primary btn--sm" id="btn-trigger-debate">🗣️ 지금 생성</button>
-          </div>
-          <div id="ai-trigger-result" style="margin-top:10px;font-size:12px;color:var(--color-text-muted)"></div>
-        </div>
-      </div>
-
     </div>`;
 
   // 모델 라디오 스타일 + 비용 안내 실시간 업데이트
@@ -975,21 +961,6 @@ async function renderAiSettings(el) {
     } catch (e) { toast.error(e.message || '중지에 실패했어요'); }
   });
 
-  // AI 토론왕 수동 생성
-  el.querySelector('#btn-trigger-debate')?.addEventListener('click', async () => {
-    const btn = el.querySelector('#btn-trigger-debate');
-    const result = el.querySelector('#ai-trigger-result');
-    const topic = el.querySelector('#debate-topic-input')?.value.trim() || '';
-    btn.disabled = true; btn.textContent = '생성 중...';
-    try {
-      const res = await httpsCallable(functions, 'generateDebateNow')(topic ? { topic } : {});
-      result.innerHTML = `✅ 생성 완료: "${escHtml(res.data.topic || '')}" — <a href="#/detail/${escHtml(res.data.postId)}">바로 보기</a>`;
-      toast.success('AI 토론왕이 생성됐어요 🗣️');
-    } catch (e) {
-      result.textContent = '❌ ' + (e.message || '생성에 실패했어요');
-      toast.error(e.message || '생성에 실패했어요');
-    } finally { btn.disabled = false; btn.textContent = '🗣️ 지금 생성'; }
-  });
 }
 
 /* ── 내 정보 설정 ── */

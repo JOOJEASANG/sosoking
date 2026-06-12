@@ -134,9 +134,6 @@ function renderDetailPage(el, post, comments, isScrapped = false) {
   initReactionBar(post.id);
   appendSimilarPosts(post);
   appendDetailNav(post, el.querySelector('[data-detail-root]'));
-  if (post.type === 'ai_debate') {
-    import('../detail/debate-actions.js').then(m => m.initDebateVote(post.id)).catch(() => {});
-  }
 }
 
 async function appendDetailNav(post, root) {

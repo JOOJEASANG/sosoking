@@ -5,14 +5,13 @@ import {
   collection, query, orderBy, limit, getDocs,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-const AI_TYPES = ['ai_judge', 'ai_translate', 'ai_naming', 'ai_debate'];
+const AI_TYPES = ['ai_judge', 'ai_translate', 'ai_naming'];
 
 const HALL_CATS = [
   { key: 'popular',      label: '인기글',  icon: '🔥', type: null,          desc: '반응과 댓글이 많은 글', scoreKey: null },
   { key: 'comment',      label: '댓글많음', icon: '💬', type: null,          desc: '댓글 참여가 많은 글',   scoreKey: 'comment' },
   { key: 'ai_judge',     label: '판결소',  icon: '⚖️', type: 'ai_judge',    desc: '판결 인기글',           scoreKey: null },
   { key: 'ai_translate', label: '창작소',  icon: '✨', type: 'ai_translate', desc: '번역·작명 인기글',      scoreKey: null },
-  { key: 'ai_debate',    label: '토론왕', icon: '🗣️', type: 'ai_debate',   desc: '토론왕 인기글',        scoreKey: null },
 ];
 
 function score(p) {
