@@ -643,14 +643,22 @@ exports.getMyStatus = onCall({ region: REGION, timeoutSeconds: 10 }, async reque
   const partyId = PARTY_BY_ID[user.partyId] ? user.partyId : null;
   const party = partyId ? PARTY_BY_ID[partyId] : null;
 
-  // 당내 순위 (당원일 때만, 경량: 상위 30명 중 내 위치)
-  let partyRank = null, isLeader = false;
+  // 당내 순위 + 이번 주 획득 정치력 (당원일 때만)
+  let partyRank = null, isLeader = false, weeklyGain = 0;
   if (partyId) {
     try {
-      const q = await partyRef(partyId).collection('members').orderBy('power', 'desc').limit(30).get();
-      const ids = q.docs.map(d => d.id);
+      const [rankSnap, memberSnap] = await Promise.all([
+        partyRef(partyId).collection('members').orderBy('power', 'desc').limit(30).get(),
+        partyRef(partyId).collection('members').doc(uid).get().catch(() => null),
+      ]);
+      const ids = rankSnap.docs.map(d => d.id);
       const i = ids.indexOf(uid);
       if (i >= 0) { partyRank = i + 1; isLeader = i === 0; }
+      if (memberSnap && memberSnap.exists) {
+        const md = memberSnap.data() || {};
+        const currentWeekKey = kstMondayKey();
+        weeklyGain = md.weekKey === currentWeekKey ? Number(md.weeklyGain || 0) : 0;
+      }
     } catch {}
   }
 
@@ -704,6 +712,7 @@ exports.getMyStatus = onCall({ region: REGION, timeoutSeconds: 10 }, async reque
     votedCrisis,
     campaignsToday,
     askedQAThisWeek,
+    weeklyGain,
   };
 });
 

@@ -356,7 +356,7 @@ function renderRankCard(status, isRulingParty = false) {
         <div class="home-id-card__emoji">${rank.emoji}</div>
         <div class="home-id-card__info">
           <div class="home-id-card__title">${escHtml(nick)}</div>
-          <div class="home-id-card__rank">${rank.title} · ${fmtNum(rank.power)}P${streak >= 2 ? ` · 🔥${streak}일` : ''}</div>
+          <div class="home-id-card__rank">${rank.title} · ${fmtNum(rank.power)}P${streak >= 2 ? ` · 🔥${streak}일` : ''}${status.weeklyGain > 0 ? ` · <span style="color:#16a34a">+${fmtNum(status.weeklyGain)}P↑</span>` : ''}</div>
         </div>
         <button class="home-id-card__more" data-path="/ranking" type="button">랭킹 →</button>
       </div>
