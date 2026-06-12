@@ -7,7 +7,7 @@
   text-align: center;
   padding: 26px 18px 20px;
   background:
-    radial-gradient(circle at 50% -20%, color-mix(in srgb, var(--color-primary) 16%, transparent), transparent 60%),
+    radial-gradient(circle at 50% -20%, var(--color-primary-soft, rgba(255,75,43,0.12)), transparent 60%),
     linear-gradient(135deg, var(--color-primary-bg, #fff0ec), var(--color-surface, #fff));
   border: 1px solid var(--color-border);
   border-radius: 18px;
@@ -96,9 +96,20 @@
 }
 .standings-row:last-child { border-bottom: none; }
 .standings-row--top {
-  background: linear-gradient(100deg,
-    color-mix(in srgb, var(--party-color) 10%, var(--color-surface)),
-    var(--color-surface) 70%);
+  background: var(--color-surface);
+}
+.standings-row--top::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--party-color);
+  opacity: 0.07;
+  pointer-events: none;
+  z-index: 0;
+}
+.standings-row--top > * {
+  position: relative;
+  z-index: 1;
 }
 .standings-row:not(.standings-row--top):hover {
   background: var(--color-surface-2, #f8f8fc);
@@ -230,7 +241,7 @@
   display: flex;
   align-items: stretch;
   flex-wrap: wrap;
-  background: linear-gradient(135deg, var(--color-text-primary), color-mix(in srgb, var(--color-text-primary) 78%, #3a3f63));
+  background: linear-gradient(135deg, #1e2646, #0f1535);
   border-radius: 14px;
   padding: 10px 8px;
   margin-bottom: 14px;
@@ -278,7 +289,7 @@
 .party-card--ruling {
   border: 1.5px solid var(--party-color, #ff6b4a);
   border-left-width: 4px;
-  background: linear-gradient(135deg, color-mix(in srgb, var(--party-color, #ff6b4a) 8%, var(--color-surface)), var(--color-surface));
+  background: var(--color-surface);
 }
 .party-card__ruling-tag {
   position: absolute;
@@ -349,10 +360,8 @@
 
 /* 집권당 배지 */
 .party-card--prez {
-  border: 1.5px solid color-mix(in srgb, #7c3aed 50%, var(--party-color, #7c3aed));
-  background: linear-gradient(135deg,
-    color-mix(in srgb, #7c3aed 6%, var(--color-surface)),
-    var(--color-surface));
+  border: 1.5px solid #7c3aed;
+  background: var(--color-surface);
 }
 .party-card__prez-tag {
   position: absolute;
@@ -369,8 +378,8 @@
 /* 역대 집권 배지 */
 .party-card__win-badge {
   display: inline-block;
-  background: color-mix(in srgb, #f59e0b 15%, transparent);
-  border: 1px solid color-mix(in srgb, #f59e0b 40%, transparent);
+  background: rgba(245,158,11,0.15);
+  border: 1px solid rgba(245,158,11,0.40);
   color: #fbbf24;
   font-size: 10px;
   font-weight: 800;
@@ -407,7 +416,7 @@
 .party-chips { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0; }
 .party-chip {
   font-size: 10px; font-weight: 800; color: var(--party-color, var(--color-primary));
-  background: color-mix(in srgb, var(--party-color, #ff6b4a) 12%, transparent);
+  background: var(--color-surface-2, #f0f0f5);
   padding: 2px 7px; border-radius: 99px;
 }
 .party-card__policy { font-size: 11px; color: var(--color-text-muted); margin: 2px 0 4px; }
@@ -551,12 +560,11 @@
 .join-ceremony__card {
   position: relative; overflow: hidden; text-align: center;
   width: 100%; max-width: 360px;
-  background: linear-gradient(160deg,
-    color-mix(in srgb, var(--party-color, #ff6b4a) 18%, var(--color-surface, #fff)),
-    var(--color-surface, #fff) 55%);
+  background-color: var(--color-surface, #fff);
+  background-image: linear-gradient(160deg, rgba(0,0,0,0.03), transparent 55%);
   border: 2px solid var(--party-color, #ff6b4a);
   border-radius: 24px; padding: 28px 22px 24px;
-  box-shadow: 0 24px 60px rgba(0,0,0,.25), 0 0 0 6px color-mix(in srgb, var(--party-color) 15%, transparent);
+  box-shadow: 0 24px 60px rgba(0,0,0,.25);
   transform: scale(.88); transition: transform .3s cubic-bezier(.34,1.56,.64,1);
 }
 .join-ceremony--visible .join-ceremony__card { transform: scale(1); }
@@ -575,7 +583,7 @@
 
 .join-ceremony__emoji {
   font-size: 64px; line-height: 1; margin: 8px 0 4px;
-  filter: drop-shadow(0 4px 12px color-mix(in srgb, var(--party-color) 40%, transparent));
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.20));
   animation: pop-in .4s .15s cubic-bezier(.34,1.56,.64,1) both;
 }
 @keyframes pop-in {
@@ -642,8 +650,8 @@
 }
 .welcome-modal__bonus {
   display: inline-flex; align-items: center; gap: 8px;
-  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
-  border: 1.5px solid color-mix(in srgb, var(--color-primary) 30%, transparent);
+  background: var(--color-primary-bg, #fff0ec);
+  border: 1.5px solid var(--color-primary-border, #ffd4c5);
   border-radius: 12px; padding: 10px 18px; margin-bottom: 18px;
 }
 .welcome-modal__bonus-label {
@@ -749,8 +757,8 @@
 .party-manifesto {
   margin-top: 10px;
   padding: 10px 12px;
-  background: color-mix(in srgb, var(--party-color, #888) 8%, var(--color-bg));
-  border: 1px solid color-mix(in srgb, var(--party-color, #888) 25%, transparent);
+  background: var(--color-surface-2, #f0f0f5);
+  border: 1px solid var(--color-border);
   border-radius: 10px;
 }
 .party-manifesto--loading {
@@ -790,18 +798,18 @@
   font-size: 11px;
   color: var(--party-color, var(--color-primary));
   background: none;
-  border: 1px solid color-mix(in srgb, var(--party-color, var(--color-primary)) 40%, transparent);
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   padding: 2px 7px;
   cursor: pointer;
   font-weight: 700;
   transition: background .15s;
 }
-.party-manifesto__edit-btn:hover { background: color-mix(in srgb, var(--party-color, var(--color-primary)) 12%, transparent); }
+.party-manifesto__edit-btn:hover { background: var(--color-surface-2, #f0f0f5); border-color: var(--party-color, var(--color-primary)); }
 .party-manifesto--editing .party-manifesto__title { margin-bottom: 8px; }
 .party-manifesto__input {
   width: 100%;
-  border: 1px solid color-mix(in srgb, var(--party-color, #888) 30%, var(--color-border));
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   padding: 8px 10px;
   font-size: 13px;
@@ -983,25 +991,23 @@
   transition: box-shadow .2s, transform .2s;
 }
 .pcard:hover {
-  box-shadow: 0 8px 28px color-mix(in srgb, var(--party-color) 18%, rgba(0,0,0,.1));
+  box-shadow: 0 8px 28px rgba(0,0,0,.15);
   transform: translateY(-2px);
 }
 .pcard--mine {
   border-color: var(--party-color);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--party-color) 30%, transparent);
+  border-width: 2px;
+  box-shadow: 0 0 0 1px var(--party-color);
 }
 .pcard--top .pcard__header {
-  background: linear-gradient(155deg,
-    color-mix(in srgb, var(--party-color) 85%, #000),
-    color-mix(in srgb, var(--party-color) 65%, #1a1a2e));
+  background-image: linear-gradient(155deg, rgba(255,255,255,0.12) 0%, rgba(0,0,0,0.20) 100%);
 }
 
 /* 헤더 */
 .pcard__header {
   position: relative;
-  background: linear-gradient(155deg,
-    color-mix(in srgb, var(--party-color) 75%, #1a1a2e),
-    color-mix(in srgb, var(--party-color) 55%, #2d2d3e));
+  background-color: var(--party-color);
+  background-image: linear-gradient(155deg, rgba(255,255,255,0.06) 0%, rgba(0,0,0,0.28) 100%);
   padding: 20px 16px 16px;
   text-align: center;
   color: #fff;
@@ -1072,8 +1078,8 @@
   font-size: 10px;
   font-weight: 800;
   color: var(--party-color);
-  background: color-mix(in srgb, var(--party-color) 10%, transparent);
-  border: 1px solid color-mix(in srgb, var(--party-color) 25%, transparent);
+  background: var(--color-surface-2, #f0f0f5);
+  border: 1px solid var(--color-border);
   padding: 2px 8px;
   border-radius: 99px;
 }
@@ -1144,12 +1150,22 @@
   text-align: center;
 }
 .pcard__text-btn:hover {
-  background: color-mix(in srgb, var(--party-color) 8%, transparent);
+  background: var(--color-surface-2, #f0f0f5);
   color: var(--party-color);
-  border-color: color-mix(in srgb, var(--party-color) 30%, transparent);
+  border-color: var(--party-color);
 }
 
 @media (max-width: 480px) {
   .pcard__emoji { font-size: 36px; }
   .pcard__name  { font-size: 14px; }
 }
+
+/* ── 다크 모드 오버라이드 ── */
+[data-theme="dark"] .party-trend--up   { color: #4ade80; background: rgba(74,222,128,0.15); }
+[data-theme="dark"] .party-trend--down { color: #f87171; background: rgba(248,113,113,0.15); }
+[data-theme="dark"] .standings-row__trend { color: #4ade80; }
+[data-theme="dark"] .republic-state { box-shadow: 0 6px 18px rgba(0,0,0,.35); }
+[data-theme="dark"] .pcard { box-shadow: 0 2px 8px rgba(0,0,0,.3); }
+[data-theme="dark"] .pcard:hover { box-shadow: 0 8px 28px rgba(0,0,0,.35); }
+[data-theme="dark"] .pcard__leader { background: var(--color-surface-2); }
+[data-theme="dark"] .pcard__stat  { background: var(--color-surface-2); }
