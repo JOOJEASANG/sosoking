@@ -1799,3 +1799,117 @@ exports.signImpeachmentPetition = onCall({ region: REGION, timeoutSeconds: 15 },
     return { ok: true, count: newCount, threshold: THRESHOLD, triggered: newCount >= THRESHOLD, pointsAwarded };
   });
 });
+
+// ── 대정부 질문 ──
+exports.getPresidentQA = onCall({ region: REGION, timeoutSeconds: 15 }, async request => {
+  const uid = request.auth && request.auth.uid;
+  const { prevKey } = weekPeriod();
+
+  const [presSnap, qSnap] = await Promise.all([
+    db.doc(`elections/${prevKey}`).get().catch(() => null),
+    db.collection('president_qa')
+      .where('periodKey', '==', prevKey)
+      .orderBy('createdAt', 'desc')
+      .limit(20)
+      .get().catch(() => null),
+  ]);
+
+  const presData = presSnap && presSnap.exists ? presSnap.data() : null;
+  const presidentUid = presData && presData.status === 'closed' && presData.winner
+    ? (presData.winner.candidateUid || null)
+    : null;
+
+  const questions = qSnap
+    ? qSnap.docs.map(d => {
+        const dt = d.data();
+        return {
+          id: d.id,
+          question: dt.question || '',
+          answer: dt.answer || null,
+          nickname: dt.nickname || '익명',
+          partyEmoji: dt.partyEmoji || '🏛️',
+          partyColor: dt.partyColor || '#aaa',
+          askerUid: dt.uid || null,
+          isMe: uid ? dt.uid === uid : false,
+          createdAt: dt.createdAt ? dt.createdAt.toDate().toISOString().slice(0, 16) : '',
+          answeredAt: dt.answeredAt ? dt.answeredAt.toDate().toISOString().slice(0, 16) : null,
+        };
+      })
+    : [];
+
+  const myQuestion = uid ? questions.find(q => q.isMe) : null;
+
+  return { questions, presidentUid, periodKey: prevKey, myQuestion: myQuestion || null };
+});
+
+exports.askPresidentQuestion = onCall({ region: REGION, timeoutSeconds: 15 }, async request => {
+  const uid = requireUid(request);
+  const question = String((request.data && request.data.question) || '').trim();
+  if (!question || question.length < 5 || question.length > 100) {
+    throw new HttpsError('invalid-argument', '질문은 5~100자 사이로 입력해주세요');
+  }
+
+  const { prevKey } = weekPeriod();
+  const awardId = `president_q_${prevKey}_${uid}`;
+
+  return db.runTransaction(async tx => {
+    const [userSnap, awardSnap] = await Promise.all([
+      tx.get(db.doc(`users/${uid}`)),
+      tx.get(db.doc(`point_awards/${awardId}`)),
+    ]);
+
+    if (awardSnap.exists) throw new HttpsError('already-exists', '이번 주에 이미 질문하셨어요');
+
+    const user = userSnap.exists ? userSnap.data() : {};
+    const party = PARTY_BY_ID[user.partyId] || null;
+
+    const qRef = db.collection('president_qa').doc();
+    tx.set(qRef, {
+      uid,
+      nickname: user.nickname || user.displayName || '익명',
+      partyId: user.partyId || null,
+      partyEmoji: party ? party.emoji : '🏛️',
+      partyColor: party ? party.color : '#aaa',
+      question,
+      answer: null,
+      periodKey: prevKey,
+      createdAt: FieldValue.serverTimestamp(),
+    });
+
+    tx.set(db.doc(`point_awards/${awardId}`), {
+      uid, type: 'president_question', periodKey: prevKey,
+      points: 3, createdAt: FieldValue.serverTimestamp(),
+    });
+    tx.set(db.doc(`users/${uid}`), {
+      totalPoints: FieldValue.increment(3), updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+
+    return { ok: true, pointsAwarded: 3, questionId: qRef.id };
+  });
+});
+
+exports.answerPresidentQuestion = onCall({ region: REGION, timeoutSeconds: 15 }, async request => {
+  const uid = requireUid(request);
+  const questionId = String((request.data && request.data.questionId) || '').trim();
+  const answer = String((request.data && request.data.answer) || '').trim();
+  if (!questionId) throw new HttpsError('invalid-argument', '질문 ID가 없어요');
+  if (!answer || answer.length < 2 || answer.length > 200) {
+    throw new HttpsError('invalid-argument', '답변은 2~200자 사이로 입력해주세요');
+  }
+
+  const { prevKey } = weekPeriod();
+  const presSnap = await db.doc(`elections/${prevKey}`).get().catch(() => null);
+  if (!presSnap || !presSnap.exists) throw new HttpsError('not-found', '현직 대통령 정보를 찾을 수 없어요');
+  const presData = presSnap.data();
+  if (!presData.winner || presData.winner.candidateUid !== uid) {
+    throw new HttpsError('permission-denied', '대통령만 답변할 수 있어요');
+  }
+
+  const qRef = db.doc(`president_qa/${questionId}`);
+  const qSnap = await qRef.get();
+  if (!qSnap.exists) throw new HttpsError('not-found', '질문을 찾을 수 없어요');
+  if (qSnap.data().periodKey !== prevKey) throw new HttpsError('permission-denied', '이번 주 질문에만 답변할 수 있어요');
+
+  await qRef.update({ answer, answeredAt: FieldValue.serverTimestamp() });
+  return { ok: true };
+});

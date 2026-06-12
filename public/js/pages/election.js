@@ -234,6 +234,7 @@ export async function renderElection() {
       </div>
     </div>` : ''}
     <div id="elec-impeach-section"></div>
+    <div id="elec-qa-section"></div>
     <div id="elec-endorsements-section"></div>
     <div id="elec-history-section"></div>
   </div>`;
@@ -400,6 +401,9 @@ export async function renderElection() {
 
   // 불신임 투표 청원 (비동기 로드)
   loadImpeachmentSection(el.querySelector('#elec-impeach-section'));
+
+  // 대정부 질문 (비동기 로드)
+  loadPresidentQA(el.querySelector('#elec-qa-section'), isPresident);
 
   // 지지 선언 피드 (비동기 로드 + 투표 후 작성 폼)
   loadEndorsements(el.querySelector('#elec-endorsements-section'), myVote, election.status);
@@ -596,6 +600,113 @@ async function loadElectionHistory(host) {
         const isOpen = !detail.hidden;
         detail.hidden = isOpen;
         btn.textContent = isOpen ? '📊 투표 현황 보기' : '📊 닫기';
+      });
+    });
+  } catch { /* non-critical */ }
+}
+
+async function loadPresidentQA(host, isPresident) {
+  if (!host) return;
+  try {
+    const { data } = await httpsCallable(functions, 'getPresidentQA')();
+    const { questions, presidentUid, myQuestion } = data;
+    const loggedIn = !!auth.currentUser;
+    const myUid = auth.currentUser?.uid || '';
+
+    const canAsk = loggedIn && !myQuestion;
+    const noPresYet = !presidentUid;
+
+    const qHTML = questions.length
+      ? questions.map(q => {
+          const answered = !!q.answer;
+          const isMyQ = q.askerUid === myUid;
+          return `
+          <div class="elec-qa-item${answered ? ' elec-qa-item--answered' : ''}${isMyQ ? ' elec-qa-item--mine' : ''}">
+            <div class="elec-qa-item__q">
+              <span class="elec-qa-item__party" style="color:${q.partyColor}">${q.partyEmoji}</span>
+              <span class="elec-qa-item__nick">${escHtml(q.nickname)}</span>
+              <span class="elec-qa-item__text">"${escHtml(q.question)}"</span>
+            </div>
+            ${answered ? `
+            <div class="elec-qa-item__a">
+              <span class="elec-qa-item__a-crown">👑</span>
+              <span class="elec-qa-item__a-text">${escHtml(q.answer)}</span>
+              ${isPresident && myUid === presidentUid
+                ? `<button class="elec-qa-edit-btn" data-qid="${escHtml(q.id)}" data-ans="${escHtml(q.answer)}">수정</button>`
+                : ''}
+            </div>` : isPresident && myUid === presidentUid ? `
+            <div class="elec-qa-item__reply-form" id="elec-qa-reply-${escHtml(q.id)}">
+              <textarea class="elec-qa-reply-input" placeholder="답변을 입력하세요 (2~200자)" maxlength="200" rows="2"></textarea>
+              <button class="btn btn--primary btn--sm elec-qa-reply-submit" data-qid="${escHtml(q.id)}">답변 달기 🏛️</button>
+            </div>` : `<div class="elec-qa-item__waiting">대통령 답변 대기 중…</div>`}
+          </div>`;
+        }).join('')
+      : `<div class="elec-qa-empty">아직 질문이 없어요. 첫 번째 질문을 남겨보세요!</div>`;
+
+    const formHTML = noPresYet ? '' : canAsk ? `
+      <div class="elec-qa-form">
+        <textarea class="elec-qa-input" id="elec-qa-input" maxlength="100"
+          placeholder="대통령에게 묻고 싶은 것을 남겨보세요 (5~100자)" rows="2"></textarea>
+        <div class="elec-qa-form__row">
+          <span class="elec-qa-len"><span id="elec-qa-len">0</span>/100</span>
+          <button class="btn btn--primary btn--sm" id="elec-qa-submit">질문하기 (+3P)</button>
+        </div>
+      </div>` : myQuestion ? `
+      <div class="elec-qa-asked">✅ 이번 주 질문 완료 — 대통령 답변을 기다려보세요</div>` : `
+      <div class="elec-qa-login"><button class="btn btn--ghost btn--sm" id="elec-qa-login-btn">로그인하고 질문하기</button></div>`;
+
+    host.innerHTML = `
+      <div class="elec-qa-section">
+        <div class="elec-qa-section__title">🎙️ 대정부 질문 <span class="elec-qa-count">${questions.length}개</span></div>
+        <p class="elec-qa-section__desc">${noPresYet ? '대통령이 선출되면 질문할 수 있어요.' : '현직 대통령에게 직접 물어보세요. 답변 받으면 공개됩니다. (주 1회 · +3P)'}</p>
+        ${formHTML}
+        <div class="elec-qa-list">${qHTML}</div>
+      </div>`;
+
+    host.querySelector('#elec-qa-login-btn')?.addEventListener('click', () => navigate('/login'));
+
+    const qaInput = host.querySelector('#elec-qa-input');
+    const qaLen = host.querySelector('#elec-qa-len');
+    qaInput?.addEventListener('input', () => { if (qaLen) qaLen.textContent = qaInput.value.length; });
+
+    host.querySelector('#elec-qa-submit')?.addEventListener('click', async () => {
+      const text = qaInput?.value.trim();
+      if (!text || text.length < 5) { toast.warn('5자 이상 입력해주세요'); return; }
+      const btn = host.querySelector('#elec-qa-submit');
+      btn.disabled = true; btn.textContent = '…';
+      try {
+        await httpsCallable(functions, 'askPresidentQuestion')({ question: text });
+        toast.success('+3P 획득! 질문을 남겼어요 🎙️');
+        showPointPopup(3);
+        loadPresidentQA(host, isPresident);
+      } catch (e) {
+        toast.error(e?.message || '질문에 실패했어요');
+        btn.disabled = false; btn.textContent = '질문하기 (+3P)';
+      }
+    });
+
+    host.querySelectorAll('.elec-qa-reply-submit, .elec-qa-edit-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const qid = btn.dataset.qid;
+        let answerText;
+        if (btn.classList.contains('elec-qa-edit-btn')) {
+          const newAns = prompt('답변 수정 (2~200자):', btn.dataset.ans);
+          if (!newAns || newAns.trim().length < 2) return;
+          answerText = newAns.trim();
+        } else {
+          const form = host.querySelector(`#elec-qa-reply-${qid}`);
+          answerText = form?.querySelector('.elec-qa-reply-input')?.value.trim();
+          if (!answerText || answerText.length < 2) { toast.warn('2자 이상 입력해주세요'); return; }
+        }
+        btn.disabled = true; btn.textContent = '…';
+        try {
+          await httpsCallable(functions, 'answerPresidentQuestion')({ questionId: qid, answer: answerText });
+          toast.success('답변을 등록했어요 🏛️');
+          loadPresidentQA(host, isPresident);
+        } catch (e) {
+          toast.error(e?.message || '답변에 실패했어요');
+          btn.disabled = false; btn.textContent = btn.classList.contains('elec-qa-edit-btn') ? '수정' : '답변 달기 🏛️';
+        }
       });
     });
   } catch { /* non-critical */ }
