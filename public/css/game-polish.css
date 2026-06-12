@@ -1,0 +1,281 @@
+/* game-polish.css
+   정치 게임 몰입도 강화 — 시각적 디테일 & 정치 사이트 느낌
+*/
+
+/* ═══════════════════════════════════════════════
+   1. 정치 카드 공통 — 서비스 전체 고급 카드 느낌
+═══════════════════════════════════════════════ */
+
+/* 정당 색상 accent border */
+.rep-president,
+.home-prez-card,
+.home-leader-card {
+  border-left: 3px solid var(--party-color, var(--color-primary));
+}
+
+/* 섹션 구분선 — 보도자료 스타일 */
+.rep-section__title::before,
+.court-hero__eyebrow::before,
+.rank-ladder__title::before {
+  /* 이미 아이콘 있음 — 그대로 유지 */
+}
+
+/* ═══════════════════════════════════════════════
+   2. 라이브 인디케이터 개선
+═══════════════════════════════════════════════ */
+
+.battle-topic-card__live {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 900;
+  color: #ef4444;
+  letter-spacing: .05em;
+  animation: live-pulse 1.6s ease-in-out infinite;
+}
+.battle-topic-card__live::before {
+  content: '';
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ef4444;
+  animation: live-dot 1.6s ease-in-out infinite;
+}
+@keyframes live-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: .4; transform: scale(.7); }
+}
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: .7; }
+}
+
+/* ═══════════════════════════════════════════════
+   3. 정당 대항전 카드 — 배틀 페이지 개선
+═══════════════════════════════════════════════ */
+
+/* 카드 진입 애니메이션 */
+.battle-party-card {
+  animation: card-slide-in .25s ease both;
+}
+.battle-party-card:nth-child(1) { animation-delay: .04s; }
+.battle-party-card:nth-child(2) { animation-delay: .1s; }
+.battle-party-card:nth-child(3) { animation-delay: .16s; }
+@keyframes card-slide-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ═══════════════════════════════════════════════
+   4. 정치 신분증 강화 (홈)
+═══════════════════════════════════════════════ */
+
+/* ID 카드 상단 장식선 */
+.home-id-card {
+  position: relative;
+  overflow: hidden;
+}
+.home-id-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--rank-c, var(--color-primary)), transparent);
+  border-radius: 18px 18px 0 0;
+}
+
+/* 정치력 바 부드러운 트랜지션 */
+.home-id-card__fill {
+  transition: width .6s cubic-bezier(.34,1.0,.64,1);
+}
+
+/* ═══════════════════════════════════════════════
+   5. 공화국 페이지 — 정부 느낌
+═══════════════════════════════════════════════ */
+
+/* 정당 파워 바 그라디언트 */
+.rep-pbar__fill {
+  background: linear-gradient(90deg, var(--party-color, var(--color-primary)), color-mix(in srgb, var(--party-color, var(--color-primary)) 70%, #fff)) !important;
+}
+
+/* 집권당 강조 */
+.rep-party--ruling {
+  position: relative;
+}
+.rep-party--ruling::after {
+  content: '집권';
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 9px;
+  font-weight: 900;
+  padding: 2px 6px;
+  border-radius: 99px;
+  background: var(--color-primary);
+  color: #fff;
+  letter-spacing: .05em;
+}
+
+/* ═══════════════════════════════════════════════
+   6. 선거 페이지 — 투표 분위기
+═══════════════════════════════════════════════ */
+
+/* 후보 카드 진입 */
+.elec-cand {
+  transition: transform .15s, box-shadow .15s;
+}
+.elec-cand:active { transform: scale(.98); }
+
+/* 1위 후보 강조 */
+.elec-cand--leading {
+  border-left: 3px solid var(--party-color, var(--color-primary));
+}
+
+/* ═══════════════════════════════════════════════
+   7. 헌법재판소 — 법원 분위기
+═══════════════════════════════════════════════ */
+
+/* 판관석 hover */
+.court-judge-box {
+  cursor: default;
+}
+
+/* ═══════════════════════════════════════════════
+   8. 피드 페이지
+═══════════════════════════════════════════════ */
+
+/* 포인트 획득 바 강조 */
+.feed-earn-bar {
+  border-left: 3px solid var(--color-primary);
+}
+
+/* ═══════════════════════════════════════════════
+   9. 랭킹 페이지 — 정치 위계 느낌
+═══════════════════════════════════════════════ */
+
+/* 1위 발광 효과 */
+.rank-item--1 .rank-item__num,
+.sidebar-rank-item:nth-child(1) .sidebar-rank-num {
+  box-shadow: 0 0 10px rgba(255,184,0,.4);
+}
+
+/* 정치력 상승 숫자 애니메이션 */
+.rank-gain {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.rank-gain::before {
+  content: '▲';
+  font-size: 9px;
+}
+
+/* ═══════════════════════════════════════════════
+   10. 홈 대통령 카드 개선
+═══════════════════════════════════════════════ */
+
+/* 대통령 카드 pulse border */
+.home-prez-card {
+  position: relative;
+}
+
+/* ═══════════════════════════════════════════════
+   11. 게임바 공통 스타일 통일
+═══════════════════════════════════════════════ */
+
+/* 모든 게임 컨텍스트 바에 공통 left accent */
+.battle-game-bar,
+.congress-game-bar,
+.court-game-bar,
+.feed-earn-bar,
+.rank-earn-bar {
+  border-left: 3px solid var(--color-primary);
+}
+
+/* ═══════════════════════════════════════════════
+   12. 알림 배지 pulse — 새로운 이벤트 있을 때
+═══════════════════════════════════════════════ */
+
+/* 기록 아이템 hover */
+.court-history-item,
+.congress-bill-item,
+.court-verdict-item {
+  transition: background .12s, border-color .12s;
+}
+.court-history-item:hover { background: var(--color-surface-2); }
+
+/* ═══════════════════════════════════════════════
+   13. 모바일 하단 내비 — 활성 탭 강조
+═══════════════════════════════════════════════ */
+
+/* 공화국 버튼 (center) 더 눈에 띄게 */
+.bottom-nav__item.active .bottom-nav__icon-wrap {
+  transform: scale(1.08);
+}
+
+/* ═══════════════════════════════════════════════
+   14. 정치 사이트 분위기 — 공통 타이포
+═══════════════════════════════════════════════ */
+
+/* 섹션 타이틀 언더라인 */
+.court-history__title,
+.rank-section-title {
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--color-border);
+}
+
+/* 정당 이름 항상 bold */
+.court-game-bar b,
+.congress-game-bar b,
+.feed-earn-bar b,
+.rank-earn-bar b,
+.battle-game-bar b {
+  color: var(--color-primary);
+}
+
+/* ═══════════════════════════════════════════════
+   15. 다크모드 게임 카드 — 더 깊은 느낌
+═══════════════════════════════════════════════ */
+
+[data-theme="dark"] .home-id-card {
+  background: linear-gradient(160deg, var(--color-surface) 0%, color-mix(in srgb, var(--rank-c, var(--color-primary)) 5%, var(--color-surface)) 100%);
+}
+
+[data-theme="dark"] .battle-party-card {
+  background: var(--color-surface);
+}
+
+[data-theme="dark"] .battle-topic-card {
+  box-shadow: 0 4px 24px rgba(0,0,0,.3);
+}
+
+/* 다크모드 집권 배너 더 선명하게 */
+[data-theme="dark"] .battle-king-banner {
+  border-color: rgba(255,255,255,.15);
+  box-shadow: 0 8px 32px rgba(0,0,0,.35);
+}
+
+/* ═══════════════════════════════════════════════
+   16. 게스트 랜딩 히어로 개선
+═══════════════════════════════════════════════ */
+
+/* 히어로 칩 hover */
+.home-landing-hero__chips span {
+  transition: background .12s, transform .12s;
+}
+.home-landing-hero__chips span:hover {
+  transform: translateY(-1px);
+  background: rgba(255,255,255,.25);
+}
+
+/* 버튼 미세 개선 */
+.home-landing-hero__primary {
+  box-shadow: 0 4px 20px rgba(255,75,43,.35);
+  transition: transform .12s, box-shadow .12s;
+}
+.home-landing-hero__primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 28px rgba(255,75,43,.45);
+}
