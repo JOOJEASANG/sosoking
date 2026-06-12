@@ -5,18 +5,9 @@ import { renderBottomNav } from './components/bottom-nav.js';
 import { renderSidebar } from './components/sidebar.js';
 import { initToast, toast } from './components/toast.js';
 import { appState } from './state.js';
-import { collection, query, where, getDocs, getDoc, doc, limit } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { getDoc, doc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 export { appState };
-
-let siteFeatures = { hotPotato: true, jabdam: true };
-
-async function loadSiteFeatures() {
-  try {
-    const snap = await getDoc(doc(db, 'config', 'site_features'));
-    if (snap.exists()) siteFeatures = { hotPotato: true, jabdam: true, ...snap.data() };
-  } catch {}
-}
 
 const OWNER_EMAILS = new Set();
 const ADMIN_ALLOWED_PATHS = new Set(['/admin', '/account', '/terms', '/privacy', '/legal/terms', '/legal/privacy', '/guide', '/login', '/signup']);
@@ -135,7 +126,6 @@ async function registerRoutes() {
   registerRoute('/ai-naming', async () => renderPage((await import('./pages/ai-naming.js')).renderAiNaming, '창작소'));
   registerRoute('/points-shop', async () => renderPage((await import('./pages/points-shop.js')).renderPointsShop, '내 포인트'));
   registerRoute('/hot-potato', async () => renderPage((await import('./pages/hot-potato.js')).renderHotPotato, '🔥 핫포테이토'));
-  registerRoute('/jabdam', async () => renderPage((await import('./pages/jabdam.js')).renderJabdam, '🗨️ 수다방'));
   registerRoute('/news', async () => renderPage((await import('./pages/news.js')).renderNews, '📰 소소신문'));
 }
 
@@ -274,7 +264,6 @@ async function loadPresidentUid() {
 
 async function initApp() {
   initToast();
-  await loadSiteFeatures();
   await handleKakaoCallback();
   await registerRoutes();
   initRouter();
