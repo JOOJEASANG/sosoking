@@ -53,15 +53,11 @@ if (!getApps().length) initializeApp();
 const db = getFirestore();
 const REGION = 'asia-northeast3';
 
-// ── 7개 정당 (battle-functions.js의 AI 캐릭터 소속과 일치) ──
+// ── 3개 정당 ──
 const PARTIES = Object.freeze([
-  { id: 'national',  name: '국민안정당', emoji: '🎙️', color: '#8B7355', leaderName: '3선 의원',        slogan: '검증된 경험, 흔들림 없는 안정' },
-  { id: 'truth',     name: '진실방송당', emoji: '📺', color: '#6C5CE7', leaderName: '정치 유튜버',      slogan: '숨겨진 진실을 폭로한다' },
-  { id: 'youth',     name: '청년혁명당', emoji: '📱', color: '#E84393', leaderName: 'MZ 운동가',        slogan: '기득권을 갈아엎자' },
-  { id: 'center',    name: '중도민주당', emoji: '📊', color: '#00CEC9', leaderName: '여론조사 전문가',  slogan: '데이터가 곧 민심이다' },
-  { id: 'future',    name: '함께미래당', emoji: '🤝', color: '#FDCB6E', leaderName: '당 대변인',        slogan: '우리는 늘 여러분 편입니다' },
-  { id: 'rights',    name: '알권리당',   emoji: '🔍', color: '#00B894', leaderName: '탐사 기자',        slogan: '국민은 알 권리가 있다' },
-  { id: 'justice',   name: '법치정의당', emoji: '⚖️', color: '#2D3436', leaderName: '검사 출신 변호사', slogan: '법 앞에 예외는 없다' },
+  { id: 'national', name: '국민안정당', emoji: '🎙️', color: '#8B7355', leaderName: '3선 의원',       slogan: '검증된 경험, 흔들림 없는 안정' },
+  { id: 'youth',    name: '청년혁명당', emoji: '📱', color: '#E84393', leaderName: 'MZ 운동가',       slogan: '기득권을 갈아엎자' },
+  { id: 'center',   name: '중도민주당', emoji: '📊', color: '#00CEC9', leaderName: '여론조사 전문가', slogan: '데이터가 곧 민심이다' },
 ]);
 
 const PARTY_BY_ID = Object.freeze(Object.fromEntries(PARTIES.map(p => [p.id, p])));
@@ -76,11 +72,6 @@ const PARTY_NPCS = Object.freeze({
     { name: '이원로', emoji: '🏅', power: 900 },  { name: '정선배', emoji: '☕', power: 520 },
     { name: '최고참', emoji: '🗂️', power: 280 },
   ],
-  truth: [
-    { name: '폭로왕', emoji: '📣', power: 2200 }, { name: '단독맨', emoji: '🎬', power: 1400 },
-    { name: '속보러', emoji: '⚡', power: 820 },  { name: '구독요정', emoji: '🔔', power: 480 },
-    { name: '댓글픽', emoji: '💬', power: 240 },
-  ],
   youth: [
     { name: '갈아엎자', emoji: '🔥', power: 2000 }, { name: '영끌이', emoji: '🚀', power: 1300 },
     { name: '공정좌', emoji: '⚖️', power: 760 },   { name: '이생망', emoji: '😤', power: 440 },
@@ -90,21 +81,6 @@ const PARTY_NPCS = Object.freeze({
     { name: '김퍼센트', emoji: '📊', power: 2100 }, { name: '박표본', emoji: '🧮', power: 1350 },
     { name: '이오차', emoji: '📈', power: 780 },    { name: '중도층', emoji: '🤔', power: 460 },
     { name: '여론바람', emoji: '🌬️', power: 230 },
-  ],
-  future: [
-    { name: '무조건찬성', emoji: '🙌', power: 1900 }, { name: '박수만', emoji: '👏', power: 1250 },
-    { name: '늘긍정', emoji: '😄', power: 720 },      { name: '함께해요', emoji: '🤝', power: 420 },
-    { name: '미래로', emoji: '🌈', power: 210 },
-  ],
-  rights: [
-    { name: '김탐사', emoji: '🔦', power: 2050 }, { name: '제보받음', emoji: '📨', power: 1320 },
-    { name: '취재중', emoji: '🎙️', power: 750 },  { name: '단독입수', emoji: '📂', power: 450 },
-    { name: '팩트체크', emoji: '✅', power: 225 },
-  ],
-  justice: [
-    { name: '법대로', emoji: '⚖️', power: 2300 }, { name: '원칙주의', emoji: '📕', power: 1450 },
-    { name: '무관용', emoji: '🚫', power: 850 },   { name: '정의구현', emoji: '🛡️', power: 500 },
-    { name: '엄벌해', emoji: '🔨', power: 260 },
   ],
 });
 
@@ -1039,12 +1015,8 @@ exports.getRankings = onCall({ region: REGION, timeoutSeconds: 30 }, async reque
 // ── 오늘의 정당 활동 — AI가 정당별 한마디 생성 (lazy, 하루 1회) ──
 const PARTY_ROLES = {
   national: `너는 18년 경력 3선 국회의원이다. 권위적·느긋한 말투. 관례·선례 강조. 경력 자랑 뉘앙스.`,
-  truth:    `너는 구독자 120만 정치 유튜버다. 과장·흥분·충격 말투. 폭로·단독 프레임. 구독 유도.`,
   youth:    `너는 MZ세대 시민운동가다. 반말·SNS체·직설 말투. 기득권 비판. ㅋㅋ·ㄹㅇ·팩폭 자연스럽게.`,
   center:   `너는 여론조사 전문가다. 냉정·분석적·모호한 말투. 퍼센트·통계 활용. 결론은 항상 애매하게.`,
-  future:   `너는 여당 공식 대변인이다. 과잉 동조·흥분·아첨 말투. 무조건 긍정적 프레임.`,
-  rights:   `너는 탐사 기자다. 침착하고 날카로운 말투. 내부 제보·문서 프레임. 사실 추적.`,
-  justice:  `너는 검사 출신 변호사다. 딱딱하고 원칙적인 말투. 법적 근거 강조. 무관용 원칙.`,
 };
 
 function buildActivityPrompt(topic) {
