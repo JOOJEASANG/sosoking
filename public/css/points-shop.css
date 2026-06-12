@@ -1,0 +1,147 @@
+/* points-shop.css */
+
+.pts-page { display: flex; flex-direction: column; gap: 16px; max-width: 640px; margin: 0 auto; }
+
+/* ── 히어로 ── */
+.pts-hero {
+  padding: 20px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, rgba(255,75,43,.12), rgba(255,138,0,.06));
+  border: 1px solid var(--color-primary-border);
+}
+.pts-hero__eyebrow { font-size: 11px; font-weight: 900; color: var(--color-text-muted); letter-spacing: .1em; }
+.pts-hero__title { font-size: 24px; font-weight: 900; color: var(--color-text-primary); margin-top: 5px; }
+.pts-hero__sub { font-size: 13px; color: var(--color-text-secondary); margin-top: 5px; }
+
+/* ── 잔액 카드 ── */
+.pts-balance-card {
+  border-radius: 20px;
+  background: var(--gradient-brand);
+  color: #fff;
+  padding: 22px 20px;
+}
+.pts-balance-card__inner { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.pts-balance-card__label { font-size: 13px; opacity: .8; margin-bottom: 4px; }
+.pts-balance-card__amount { font-size: 46px; font-weight: 900; line-height: 1; }
+.pts-balance-card__amount span { font-size: 22px; margin-left: 3px; opacity: .8; }
+.pts-balance-card__extras { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; margin-top: 4px; }
+.pts-extra-badge {
+  display: inline-flex; align-items: center; padding: 4px 10px;
+  border-radius: 999px; background: rgba(255,255,255,.2);
+  font-size: 12px; font-weight: 700;
+}
+.pts-party-badge {
+  display: inline-flex; align-items: center; padding: 4px 10px;
+  border-radius: 999px; background: rgba(255,255,255,.15);
+  font-size: 12px; font-weight: 700; text-decoration: none; color: #fff;
+}
+.pts-party-badge--cta { background: rgba(255,255,255,.25); border: 1px solid rgba(255,255,255,.4); }
+
+/* ── 랭크 카드 ── */
+.pts-rank-card {
+  padding: 16px;
+  border-radius: 18px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--rank-color, var(--color-primary));
+  position: relative;
+  overflow: hidden;
+}
+.pts-rank-card__left { display: flex; align-items: center; gap: 12px; }
+.pts-rank-card__emoji { font-size: 28px; }
+.pts-rank-card__name { font-size: 18px; font-weight: 900; color: var(--rank-color, var(--color-text-primary)); }
+.pts-rank-card__sub { font-size: 12px; color: var(--color-text-muted); margin-top: 2px; }
+.pts-rank-card .pts-rank-card__left { margin-bottom: 12px; }
+.pts-rank-card__right {
+  position: absolute; right: 16px; top: 16px; text-align: right;
+}
+.pts-rank-card__pts { font-size: 22px; font-weight: 900; color: var(--color-text-primary); }
+.pts-rank-card__pts span { font-size: 14px; color: var(--color-text-muted); }
+.pts-rank-card__to-next { font-size: 11px; color: var(--color-text-muted); margin-top: 2px; }
+.pts-rank-bar {
+  height: 6px; border-radius: 999px; background: var(--color-border); overflow: hidden;
+  margin-top: 4px;
+}
+.pts-rank-bar__fill {
+  height: 100%; border-radius: 999px;
+  background: var(--rank-color, var(--color-primary));
+  transition: width .6s ease;
+}
+
+/* ── 섹션 타이틀 ── */
+.pts-section-title {
+  font-size: 15px; font-weight: 900; color: var(--color-text-primary); margin-bottom: 10px;
+}
+
+/* ── 빠른 수령 ── */
+.pts-quick-earn {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+  padding: 16px;
+}
+.pts-quick-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.pts-quick-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 12px 6px;
+  border-radius: 14px; background: var(--color-surface-2);
+  border: 1px solid var(--color-border-light);
+  cursor: pointer; text-decoration: none; color: inherit;
+  transition: background .15s, transform .15s;
+}
+.pts-quick-btn:hover { background: var(--color-primary-bg); transform: translateY(-2px); }
+.pts-quick-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+.pts-quick-btn__icon { font-size: 22px; }
+.pts-quick-btn__label { font-size: 11px; font-weight: 700; color: var(--color-text-secondary); }
+.pts-quick-btn__pts { font-size: 12px; font-weight: 900; color: var(--color-primary); }
+
+/* ── 적립 가이드 ── */
+.pts-earn-guide {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+  padding: 16px;
+}
+.pts-earn-list { display: flex; flex-direction: column; gap: 0; }
+.pts-earn-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-border-light);
+  font-size: 13px;
+}
+.pts-earn-item:last-child { border-bottom: none; }
+.pts-earn-item__icon { font-size: 18px; flex-shrink: 0; }
+.pts-earn-item__label { flex: 1; color: var(--color-text-secondary); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.pts-earn-item__note { font-size: 11px; color: var(--color-text-muted); background: var(--color-surface-alt); padding: 2px 7px; border-radius: 999px; }
+.pts-earn-item__pts { font-size: 13px; font-weight: 900; color: var(--color-primary); flex-shrink: 0; }
+.pts-claim-btn { flex-shrink: 0; margin-left: 4px; font-size: 11px; }
+
+/* ── 랭크 테이블 ── */
+.pts-rank-guide {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+  padding: 16px;
+  padding-bottom: 20px;
+}
+.pts-rank-table { display: flex; flex-direction: column; gap: 0; }
+.pts-rank-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--color-border-light);
+  font-size: 13px; opacity: .5;
+  transition: opacity .2s;
+}
+.pts-rank-row:last-child { border-bottom: none; }
+.pts-rank-row--reached { opacity: 1; }
+.pts-rank-row__emoji { font-size: 18px; }
+.pts-rank-row__label { flex: 1; font-weight: 700; }
+.pts-rank-row__min { font-size: 12px; color: var(--color-text-muted); font-weight: 600; }
+
+/* ── 반응형 ── */
+@media (max-width: 480px) {
+  .pts-quick-grid { grid-template-columns: repeat(2, 1fr); }
+  .pts-balance-card__amount { font-size: 36px; }
+  .pts-rank-card__right { position: static; text-align: left; margin-top: 8px; }
+  .pts-rank-card { padding-right: 16px; }
+}
