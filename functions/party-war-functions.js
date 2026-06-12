@@ -30,18 +30,28 @@ function weekKey() {
 
 function partyRef(id) { return db.doc(`parties/${id}`); }
 function memberRef(partyId, uid) { return db.doc(`parties/${partyId}/members/${uid}`); }
+function toStanding(meta, snap) {
+  const data = snap.exists ? snap.data() || {} : {};
+  return {
+    ...meta,
+    totalPower: Number(data.totalPower || 0),
+    memberCount: Number(data.memberCount || 0),
+    weeklyWins: Number(data.weeklyWins || 0),
+  };
+}
+function sortStandings(list) {
+  return list.sort((a, b) => b.totalPower - a.totalPower || b.memberCount - a.memberCount || a.id.localeCompare(b.id));
+}
 
 async function loadStandings() {
   const snaps = await db.getAll(...PARTY_IDS.map(partyRef));
-  return PARTIES.map((meta, i) => {
-    const data = snaps[i].exists ? snaps[i].data() || {} : {};
-    return {
-      ...meta,
-      totalPower: Number(data.totalPower || 0),
-      memberCount: Number(data.memberCount || 0),
-      weeklyWins: Number(data.weeklyWins || 0),
-    };
-  }).sort((a, b) => b.totalPower - a.totalPower || b.memberCount - a.memberCount || a.id.localeCompare(b.id));
+  return sortStandings(PARTIES.map((meta, i) => toStanding(meta, snaps[i])));
+}
+
+async function loadStandingsInTx(tx) {
+  const refs = PARTY_IDS.map(partyRef);
+  const snaps = await Promise.all(refs.map(ref => tx.get(ref)));
+  return sortStandings(PARTIES.map((meta, i) => toStanding(meta, snaps[i])));
 }
 
 function weeklyPowerFields(memberData, oldPower, newPower) {
@@ -95,12 +105,14 @@ exports.claimWeeklyPartyWarReward = onCall({ region: REGION, timeoutSeconds: 20 
   const currentWeekKey = weekKey();
   const claimRef = db.doc(`point_awards/partywar_${currentWeekKey}_${uid}`);
   const userRef = db.doc(`users/${uid}`);
-  const standings = await loadStandings();
-  const winner = standings[0] || null;
-  if (!winner) throw new HttpsError('failed-precondition', '정당전이 아직 준비되지 않았습니다.');
-
   let awarded = false;
+  let winner = null;
+
   await db.runTransaction(async tx => {
+    const standings = await loadStandingsInTx(tx);
+    winner = standings[0] || null;
+    if (!winner) throw new HttpsError('failed-precondition', '정당전이 아직 준비되지 않았습니다.');
+
     const [claimSnap, userSnap] = await Promise.all([tx.get(claimRef), tx.get(userRef)]);
     if (claimSnap.exists) return;
     if (!userSnap.exists) throw new HttpsError('not-found', '회원 정보를 찾을 수 없습니다.');
