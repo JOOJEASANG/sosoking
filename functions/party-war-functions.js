@@ -6,14 +6,11 @@ const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const db = getFirestore();
 const REGION = 'asia-northeast3';
 
+// 3당 운영 체제: 신규 정당전은 핵심 3개 정당 기준으로만 집계한다.
 const PARTIES = Object.freeze([
   { id: 'national',  name: '국민안정당', emoji: '🎙️', color: '#8B7355' },
-  { id: 'truth',     name: '진실방송당', emoji: '📺', color: '#6C5CE7' },
   { id: 'youth',     name: '청년혁명당', emoji: '📱', color: '#E84393' },
   { id: 'center',    name: '중도민주당', emoji: '📊', color: '#00CEC9' },
-  { id: 'future',    name: '함께미래당', emoji: '🤝', color: '#FDCB6E' },
-  { id: 'rights',    name: '알권리당',   emoji: '🔍', color: '#00B894' },
-  { id: 'justice',   name: '법치정의당', emoji: '⚖️', color: '#2D3436' },
 ]);
 const PARTY_BY_ID = Object.freeze(Object.fromEntries(PARTIES.map(p => [p.id, p])));
 const PARTY_IDS = PARTIES.map(p => p.id);
@@ -88,6 +85,7 @@ exports.getWeeklyPartyWar = onCall({ region: REGION, timeoutSeconds: 20 }, async
 
   return {
     ok: true,
+    mode: 'three-party',
     weekKey: currentWeekKey,
     reward: WEEKLY_REWARD,
     winner,
