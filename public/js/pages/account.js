@@ -504,12 +504,20 @@ const BADGE_DEFS = [
   { id: 'battle10',    emoji: '⚔️', label: '투표 전사',         desc: '배틀 10회 투표',            check: (s) => s.battleVotes >= 10 },
   { id: 'battle30',    emoji: '🏛️', label: '배틀 고수',         desc: '배틀 30회 투표',            check: (s) => s.battleVotes >= 30 },
   { id: 'election1',   emoji: '👑', label: '대선 투사',         desc: '대선 1회 투표',             check: (s) => s.electionVotes >= 1 },
-  { id: 'streak3',     emoji: '🔥', label: '불꽃 정치인',       desc: '3일 연속 출석',             check: (s) => s.maxStreak >= 3 },
-  { id: 'streak7',     emoji: '💎', label: '강철 의지',          desc: '7일 연속 출석',             check: (s) => s.maxStreak >= 7 },
-  { id: 'post5',       emoji: '📜', label: '논설위원',           desc: '게시물 5개 작성',           check: (s) => s.postCount >= 5 },
-  { id: 'power100',    emoji: '⚡', label: '100P 달성',          desc: '정치력 100P',               check: (s) => s.power >= 100 },
-  { id: 'power1000',   emoji: '🎖️', label: '1000P 달성',        desc: '정치력 1000P',              check: (s) => s.power >= 1000 },
-  { id: 'power3000',   emoji: '🏆', label: '국회의원 등극',      desc: '정치력 3000P',              check: (s) => s.power >= 3000 },
+  { id: 'election5',   emoji: '🗳️', label: '대선 단골',         desc: '대선 5회 투표',             check: (s) => s.electionVotes >= 5 },
+  { id: 'crisis1',     emoji: '🚨', label: '위기 대응',          desc: '국정 위기 1회 투표',        check: (s) => s.crisisVotes >= 1 },
+  { id: 'crisis5',     emoji: '🆘', label: '위기 관리자',        desc: '국정 위기 5회 투표',        check: (s) => s.crisisVotes >= 5 },
+  { id: 'qa',          emoji: '🎙️', label: '대정부 질문',        desc: '대통령에게 질문',           check: (s) => s.presidentQA >= 1 },
+  { id: 'impeach',     emoji: '✍️', label: '불신임 서명',        desc: '불신임 청원 서명',          check: (s) => s.impeachSigned },
+  { id: 'streak3',     emoji: '🔥', label: '불꽃 정치인',        desc: '3일 연속 출석',             check: (s) => s.maxStreak >= 3 },
+  { id: 'streak7',     emoji: '💎', label: '강철 의지',           desc: '7일 연속 출석',             check: (s) => s.maxStreak >= 7 },
+  { id: 'streak14',    emoji: '🏅', label: '철인 정치가',         desc: '14일 연속 출석',            check: (s) => s.maxStreak >= 14 },
+  { id: 'debate1',     emoji: '💬', label: '배틀 토론가',         desc: '배틀 토론 1회 참여',        check: (s) => s.battleComments >= 1 },
+  { id: 'debate10',    emoji: '🗣️', label: '열변 정치인',         desc: '배틀 토론 10회 참여',       check: (s) => s.battleComments >= 10 },
+  { id: 'post5',       emoji: '📜', label: '논설위원',            desc: '게시물 5개 작성',           check: (s) => s.postCount >= 5 },
+  { id: 'power100',    emoji: '⚡', label: '100P 달성',           desc: '정치력 100P',               check: (s) => s.power >= 100 },
+  { id: 'power1000',   emoji: '🎖️', label: '1000P 달성',         desc: '정치력 1000P',              check: (s) => s.power >= 1000 },
+  { id: 'power3000',   emoji: '🏆', label: '국회의원 등극',       desc: '정치력 3000P',              check: (s) => s.power >= 3000 },
 ];
 
 function renderBadges(stats) {
@@ -570,6 +578,8 @@ async function renderStatsTab(content, uid) {
     const electionVotes = polStats.electionVotes || 0;
     const crisisVotes = polStats.crisisVotes || 0;
     const battleComments = polStats.battleComments || 0;
+    const presidentQA = polStats.presidentQA || 0;
+    const impeachSigned = !!(polStats.impeachSigned);
 
     content.innerHTML = `
       <div class="stats-page">
@@ -594,6 +604,14 @@ async function renderStatsTab(content, uid) {
               <div class="stats-pol-item__label">💬 배틀 토론</div>
             </div>
             <div class="stats-pol-item">
+              <div class="stats-pol-item__num">${presidentQA}</div>
+              <div class="stats-pol-item__label">🎙️ 대정부 질문</div>
+            </div>
+            <div class="stats-pol-item">
+              <div class="stats-pol-item__num">${impeachSigned ? '✅' : '—'}</div>
+              <div class="stats-pol-item__label">✍️ 불신임 서명</div>
+            </div>
+            <div class="stats-pol-item">
               <div class="stats-pol-item__num">${streak}일</div>
               <div class="stats-pol-item__label">🔥 현재 연속</div>
             </div>
@@ -605,7 +623,7 @@ async function renderStatsTab(content, uid) {
           ${signupDate ? `<div class="stats-pol-card__since">소소공화국 입성일 ${signupDate}</div>` : ''}
         </div>
 
-        ${renderBadges({ battleVotes, electionVotes, streak, maxStreak, postCount: posts.length, power: appState.points || 0 })}
+        ${renderBadges({ battleVotes, electionVotes, crisisVotes, battleComments, presidentQA, impeachSigned, streak, maxStreak, postCount: posts.length, power: appState.points || 0 })}
 
         <div class="stats-grid" style="margin-top:12px">
           <div class="stats-card"><div class="stats-card__num">${posts.length}</div><div class="stats-card__label">총 게시물</div></div>

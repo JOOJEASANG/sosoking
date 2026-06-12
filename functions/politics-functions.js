@@ -1317,7 +1317,8 @@ exports.getUserPoliticsStats = onCall({ region: REGION, timeoutSeconds: 15 }, as
   const uid = request.auth && request.auth.uid;
   if (!uid) return { loggedIn: false };
 
-  const [userSnap, battleCountSnap, electionCountSnap, crisisCountSnap, commentCountSnap] = await Promise.all([
+  const { prevKey } = weekPeriod();
+  const [userSnap, battleCountSnap, electionCountSnap, crisisCountSnap, commentCountSnap, qaCountSnap, imperSnap] = await Promise.all([
     db.doc(`users/${uid}`).get(),
     db.collection('point_awards')
       .where(FieldPath.documentId(), '>=', `${uid}_battle_vote_`)
@@ -1335,6 +1336,12 @@ exports.getUserPoliticsStats = onCall({ region: REGION, timeoutSeconds: 15 }, as
       .where(FieldPath.documentId(), '>=', `battle_comment_${uid}_`)
       .where(FieldPath.documentId(), '<', `battle_comment_${uid}_￿`)
       .count().get().catch(() => null),
+    db.collection('point_awards')
+      .where(FieldPath.documentId(), '>=', `president_q_`)
+      .where(FieldPath.documentId(), '<', `president_q_￿`)
+      .where('uid', '==', uid)
+      .count().get().catch(() => null),
+    db.doc(`impeachment_sigs/${prevKey}_${uid}`).get().catch(() => null),
   ]);
 
   const user = userSnap.exists ? (userSnap.data() || {}) : {};
@@ -1342,6 +1349,8 @@ exports.getUserPoliticsStats = onCall({ region: REGION, timeoutSeconds: 15 }, as
   const electionVotes = electionCountSnap ? electionCountSnap.data().count : 0;
   const crisisVotes = crisisCountSnap ? crisisCountSnap.data().count : 0;
   const battleComments = commentCountSnap ? commentCountSnap.data().count : 0;
+  const presidentQA = qaCountSnap ? qaCountSnap.data().count : 0;
+  const impeachSigned = !!(imperSnap && imperSnap.exists);
 
   return {
     loggedIn: true,
@@ -1349,6 +1358,8 @@ exports.getUserPoliticsStats = onCall({ region: REGION, timeoutSeconds: 15 }, as
     electionVotes,
     crisisVotes,
     battleComments,
+    presidentQA,
+    impeachSigned,
     streak: Number(user.streak || 0),
     maxStreak: Number(user.maxStreak || user.streak || 0),
     signupDate: user.createdAt ? user.createdAt.toDate().toISOString().slice(0, 10) : null,
