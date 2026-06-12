@@ -657,7 +657,7 @@ export async function renderParties() {
   el.innerHTML = `<div class="parties-page page-enter">
     <div class="parties-hero">
       <div class="parties-hero__badge">🏛️ 소소공화국 정당정치</div>
-      <h1 class="parties-hero__title">7개 정당, 단 하나의 권력</h1>
+      <h1 class="parties-hero__title">3개 정당, 단 하나의 권력</h1>
       <p class="parties-hero__sub">입당해 정치력을 쌓고 당내 1위 <b>당대표</b>로, 매주 <b>대선</b>에서 <b>대통령</b>에 도전하세요.</p>
     </div>
     ${stateHTML}
@@ -677,7 +677,7 @@ export async function renderParties() {
     </div>
     <div class="parties-detail-title">정당 상세 정보 · 입당</div>
     <div class="parties-list">
-      ${parties.map((p, i) => renderPartyCard(p, me, i === 0, president?.partyId || null, electionWins[p.id] || 0, electionByParty[p.id] || 0, electionTotal, campaignByParty[p.id] || 0)).join('')}
+      ${parties.map((p, i) => `<div class="pcard-wrap">${renderPartyCard(p, me, i === 0, president?.partyId || null, electionWins[p.id] || 0, electionByParty[p.id] || 0, electionTotal, campaignByParty[p.id] || 0)}</div>`).join('')}
     </div>
   </div>`;
 

@@ -498,10 +498,9 @@ export async function renderNews() {
   el.innerHTML = `
     <div class="news-page page-enter">
       <div class="news-page__inner">
-        <div class="news-loading">
-          <span class="news-loading__icon">📰</span>
-          <span>소소신문 불러오는 중…</span>
-        </div>
+        <div class="skeleton" style="height:220px;border-radius:16px;margin-bottom:12px"></div>
+        <div class="skeleton" style="height:120px;border-radius:16px;margin-bottom:12px"></div>
+        <div class="skeleton" style="height:180px;border-radius:16px"></div>
       </div>
     </div>`;
 

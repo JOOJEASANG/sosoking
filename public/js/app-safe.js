@@ -122,6 +122,8 @@ async function registerRoutes() {
   registerRoute('/legal/privacy', async () => renderPage((await import('./pages/legal.js')).renderPrivacy, '개인정보처리방침'));
   registerRoute('/points-shop', async () => renderPage((await import('./pages/points-shop.js')).renderPointsShop, '내 포인트'));
   registerRoute('/news', async () => renderPage((await import('./pages/news.js')).renderNews, '📰 소소신문'));
+  registerRoute('/constitutional-court', async () => renderPage((await import('./pages/constitutional-court.js')).renderConstitutionalCourt, '🏛️ 헌법재판소'));
+  registerRoute('/congress', async () => renderPage((await import('./pages/congress.js')).renderCongress, '🏛️ 국회'));
 }
 
 async function isStrictAdmin(user) {

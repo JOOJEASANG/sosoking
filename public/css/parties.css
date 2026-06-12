@@ -962,6 +962,17 @@
   align-items: start;
 }
 
+/* 각 카드+확장패널 그룹 — 하나의 그리드 셀 */
+.pcard-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+@media (max-width: 760px) {
+  .parties-list { grid-template-columns: 1fr; }
+}
+
 .pcard {
   display: flex;
   flex-direction: column;
@@ -1138,10 +1149,6 @@
   border-color: color-mix(in srgb, var(--party-color) 30%, transparent);
 }
 
-/* 반응형 */
-@media (max-width: 760px) {
-  .parties-list { grid-template-columns: 1fr; }
-}
 @media (max-width: 480px) {
   .pcard__emoji { font-size: 36px; }
   .pcard__name  { font-size: 14px; }

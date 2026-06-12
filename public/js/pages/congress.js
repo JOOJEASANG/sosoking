@@ -163,7 +163,11 @@ export async function renderCongress() {
   setMeta('국회', '소소공화국 국회 — 의석, 법안, 탄핵소추를 확인하세요');
   const el = document.getElementById('page-content');
   if (!el) return;
-  el.innerHTML = `<div class="page-section"><div class="empty-state"><div class="spinner spinner--lg"></div><div class="empty-state__title">국회 본회의장 입장 중…</div></div></div>`;
+  el.innerHTML = `<div class="page-section">
+    <div class="skeleton" style="height:100px;border-radius:16px;margin-bottom:12px"></div>
+    <div class="skeleton" style="height:200px;border-radius:16px;margin-bottom:12px"></div>
+    <div class="skeleton" style="height:300px;border-radius:16px"></div>
+  </div>`;
 
   const [overviewRes, billsRes, presidentRes] = await Promise.allSettled([
     httpsCallable(functions, 'getPoliticsOverview')({}),

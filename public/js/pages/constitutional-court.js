@@ -124,7 +124,11 @@ export async function renderConstitutionalCourt() {
   setMeta('헌법재판소', '소소공화국 헌법재판소');
   const el = document.getElementById('page-content');
   if (!el) return;
-  el.innerHTML = `<div class="page-section"><div class="empty-state"><div class="spinner spinner--lg"></div><div class="empty-state__title">헌법재판소 사건 확인 중…</div></div></div>`;
+  el.innerHTML = `<div class="page-section">
+    <div class="skeleton" style="height:100px;border-radius:16px;margin-bottom:12px"></div>
+    <div class="skeleton" style="height:220px;border-radius:16px;margin-bottom:12px"></div>
+    <div class="skeleton" style="height:160px;border-radius:16px"></div>
+  </div>`;
 
   let data = {};
   try {
