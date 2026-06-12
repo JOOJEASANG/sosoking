@@ -834,7 +834,7 @@ async function loadPartyPowerChart(slot, battleData) {
     const bars = parties.map(p => {
       const pct = Math.round((p.totalPower / total) * 100);
       const width = Math.max(2, pct);
-      const trendHTML = Math.abs(p.diff) >= 5
+      const trendHTML = p.diff !== 0
         ? `<span class="home-power-row__trend home-power-row__trend--${p.diff > 0 ? 'up' : 'down'}">${p.diff > 0 ? '▲' : '▼'}${fmtNum(Math.abs(p.diff))}</span>`
         : '';
       const battleBadge = battleWinPartyId === p.id

@@ -413,3 +413,53 @@
   border-radius: 6px;
   margin-top: 8px;
 }
+
+/* 뉴스 속보 알림 */
+.news-breaking-alerts { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.news-breaking-alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+.news-breaking-alert--critical {
+  background: rgba(220,38,38,.1);
+  border-color: rgba(220,38,38,.3);
+  color: #dc2626;
+  animation: news-breaking-pulse 1.5s ease-in-out infinite;
+}
+.news-breaking-alert--warning {
+  background: rgba(245,158,11,.1);
+  border-color: rgba(245,158,11,.3);
+  color: #d97706;
+}
+.news-breaking-alert--high {
+  background: rgba(37,99,235,.08);
+  border-color: rgba(37,99,235,.2);
+  color: #2563eb;
+}
+.news-breaking-alert--info {
+  background: var(--color-surface-2);
+  border-color: var(--color-border);
+  color: var(--color-text-secondary);
+}
+.news-breaking-alert__badge {
+  font-size: 10px;
+  font-weight: 900;
+  background: currentColor;
+  color: #fff;
+  padding: 1px 5px;
+  border-radius: 4px;
+  letter-spacing: .03em;
+  flex-shrink: 0;
+}
+.news-breaking-alert--critical .news-breaking-alert__badge { background: #dc2626; }
+.news-breaking-alert--warning .news-breaking-alert__badge { background: #d97706; }
+.news-breaking-alert--high .news-breaking-alert__badge { background: #2563eb; }
+.news-breaking-alert--info .news-breaking-alert__badge { background: var(--color-text-muted); }
+@keyframes news-breaking-pulse { 0%,100%{opacity:1} 50%{opacity:.65} }

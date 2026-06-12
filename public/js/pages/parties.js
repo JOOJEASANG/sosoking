@@ -234,9 +234,9 @@ function renderParliamentChart(parties) {
 }
 
 function renderTrendBadge(diff) {
-  if (!diff || Math.abs(diff) < 5) return '';
+  if (!diff) return '';
   if (diff > 0) return `<span class=”party-trend party-trend--up”>▲ +${fmtNum(diff)}</span>`;
-  return `<span class=”party-trend party-trend--down”>▼ ${fmtNum(diff)}</span>`;
+  return `<span class=”party-trend party-trend--down”>▼ ${fmtNum(Math.abs(diff))}</span>`;
 }
 
 function renderPartyCard(p, me, isTopPower, presPartyId, winCount, elecVotes = 0, elecTotal = 0, campaignCount = 0) {

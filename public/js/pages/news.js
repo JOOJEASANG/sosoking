@@ -330,6 +330,50 @@ async function loadNewsCrisis(slot) {
   } catch { /* non-critical */ }
 }
 
+async function loadBreakingAlerts(slot) {
+  if (!slot) return;
+  try {
+    const { data } = await httpsCallable(functions, 'getPresident')();
+    const p = data?.president;
+    const alerts = [];
+
+    if (p) {
+      const approveCount = Number(p.decreeApprove || 0);
+      const disapproveCount = Number(p.decreeDisapprove || 0);
+      const total = approveCount + disapproveCount;
+      const approvePct = total >= 5 ? Math.round((approveCount / total) * 100) : null;
+
+      if (approvePct !== null && approvePct < 25) {
+        alerts.push({ level: 'critical', icon: '🚨', text: `대통령 지지율 ${approvePct}% — 헌정 위기 경보`, path: '/election' });
+      } else if (approvePct !== null && approvePct >= 80) {
+        alerts.push({ level: 'high', icon: '⭐', text: `대통령 지지율 ${approvePct}% — 높은 국민 신뢰`, path: '/election' });
+      }
+
+      const impeachCount = Number(p.impeachCount || 0);
+      const impeachThreshold = Number(p.impeachThreshold || 5);
+      if (p.impeachTriggered) {
+        alerts.push({ level: 'critical', icon: '✍️', text: `탄핵 청원 가결! ${impeachCount}/${impeachThreshold}명 서명 완료`, path: '/election' });
+      } else if (impeachCount > 0) {
+        const pct = Math.round((impeachCount / impeachThreshold) * 100);
+        const level = pct >= 60 ? 'warning' : 'info';
+        alerts.push({ level, icon: '✍️', text: `탄핵 청원 진행 중 — ${impeachCount}/${impeachThreshold}명 (${pct}%)`, path: '/election' });
+      }
+    }
+
+    if (!alerts.length) return;
+
+    slot.innerHTML = `<div class="news-breaking-alerts">
+      ${alerts.map(a => `
+        <div class="news-breaking-alert news-breaking-alert--${a.level}" data-path="${a.path}">
+          <span class="news-breaking-alert__badge">🔴 속보</span>
+          <span class="news-breaking-alert__icon">${a.icon}</span>
+          <span class="news-breaking-alert__text">${escHtml(a.text)}</span>
+        </div>`).join('')}
+    </div>`;
+    slot.querySelectorAll('[data-path]').forEach(el => el.addEventListener('click', () => navigate(el.dataset.path)));
+  } catch { /* non-critical */ }
+}
+
 async function loadPresidentBlock(slot) {
   if (!slot) return;
   try {
@@ -418,6 +462,7 @@ export async function renderNews() {
   el.innerHTML = `
     <div class="news-page page-enter">
       <div class="news-page__inner">
+        <div id="news-breaking-slot"></div>
         ${featuredHTML}
         <div id="news-battle-slot"></div>
         <div id="news-prez-slot"></div>
@@ -432,6 +477,7 @@ export async function renderNews() {
   // 비동기 정치 데이터 섹션 로드
   const inner = el.querySelector('.news-page__inner');
   if (inner) {
+    loadBreakingAlerts(inner.querySelector('#news-breaking-slot'));
     loadBattleBulletin(inner.querySelector('#news-battle-slot'));
     loadPresidentBlock(inner.querySelector('#news-prez-slot'));
     loadPresidentQAHighlight(inner.querySelector('#news-qa-slot'));

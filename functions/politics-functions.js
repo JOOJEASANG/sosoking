@@ -1139,12 +1139,13 @@ exports.getDailyNews = onCall({ region: REGION, timeoutSeconds: 60 }, async () =
       partyRef(pid).collection('members').orderBy('power', 'desc').limit(1).get()
     );
     const { key: elecKey } = weekPeriod();
-    const [battleSnap, presSnap, actSnap, elecSnap, crisisSnap, ...memberSnaps] = await Promise.all([
+    const [battleSnap, presSnap, actSnap, elecSnap, crisisSnap, impeachSnap, ...memberSnaps] = await Promise.all([
       db.doc(`battles/${today}`).get(),
       db.doc(`elections/${prevKey}`).get(),
       db.doc(`party_activities/${today}`).get(),
       db.doc(`elections/${elecKey}`).get(),
       db.doc(`political_crises/${prevKey}`).get().catch(() => null),
+      db.doc(`impeachment_petitions/${prevKey}`).get().catch(() => null),
       ...memberQueries,
     ]);
 
@@ -1192,9 +1193,25 @@ exports.getDailyNews = onCall({ region: REGION, timeoutSeconds: 60 }, async () =
       }
     }
 
+    // 탄핵 청원 상태
+    let impeachLine = null;
+    if (impeachSnap && impeachSnap.exists && pres && pres.winner) {
+      const iData = impeachSnap.data() || {};
+      const iCount = Number(iData.count || 0);
+      if (iCount > 0) {
+        const THRESHOLD = 5;
+        if (iData.triggered) {
+          impeachLine = `탄핵 청원 가결: 대통령 ${pres.winner.candidateName} 탄핵 청원 ${iCount}명 서명으로 가결됨`;
+        } else {
+          impeachLine = `탄핵 청원 진행 중: 대통령 ${pres.winner.candidateName} 탄핵 청원 ${iCount}/${THRESHOLD}명 서명 수집 중`;
+        }
+      }
+    }
+
     const lines = [
       battle ? `정치배틀 이슈: "${battle.topic}"${battleWinner ? ` → ${battleWinner.emoji} ${battleWinner.name} 승리` : ' (진행 중)'}` : null,
       pres && pres.winner ? `현직 대통령: ${pres.winner.candidateName} (${pres.winner.partyName})${pres.decree ? ` / 포고령: "${pres.decree}"` : ''}` : null,
+      impeachLine,
       elecLeader ? `이번 주 대선 선두: ${elecLeader.candidateName} (${elecLeader.partyName}) ${elecLeader.votes || 0}표` : null,
       topMember ? `정치력 1위: ${topMember.nickname} (${topMember.partyName}) ${topMember.power}P` : null,
       crisisResult,
