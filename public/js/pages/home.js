@@ -102,7 +102,7 @@ async function fetchDailyNews() {
   try {
     const getDailyNews = httpsCallable(functions, 'getDailyNews');
     const { data } = await getDailyNews();
-    if (data && data.newsPoints > 0) toast(`📰 소소신문 읽기 +${data.newsPoints}P 획득!`, 'success');
+    if (data && data.newsPoints > 0) toast.success(`📰 소소신문 읽기 +${data.newsPoints}P 획득!`);
     return (data && data.headline) ? data : null;
   } catch { return null; }
 }
@@ -415,7 +415,8 @@ function renderMissions(status, battleData, isRulingParty = false) {
   const votedCrisis = !!status.votedCrisis;
   const readNewsToday = !!status.readNewsToday;
   const campaignsToday = Number(status.campaignsToday || 0);
-  const attended = (appState.streak || 0) >= 1;
+  const streak = appState.streak || 0;
+  const attended = streak >= 1;
 
   const dailyReward = status.isLeader ? '+30P 👑' : '+20P';
 
