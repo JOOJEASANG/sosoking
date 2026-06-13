@@ -87,12 +87,22 @@ async function buildCandidates() {
   }).sort((a, b) => b.power - a.power);
 }
 
+function seedAiVotes(candidates) {
+  const totalAiVotes = 24 + Math.floor(Math.random() * 12);
+  const totalPower = candidates.reduce((s, c) => s + c.power, 0) || 1;
+  const votes = {};
+  candidates.forEach(c => { votes[c.partyId] = Math.max(3, Math.round((c.power / totalPower) * totalAiVotes)); });
+  const total = Object.values(votes).reduce((s, v) => s + v, 0);
+  return { votes, total };
+}
+
 async function ensureElectionLite() {
   const { key, endKey, voteDeadlineKey } = weekPeriod();
   const ref = db.doc(`elections/${key}`);
   const snap = await ref.get();
   if (!snap.exists) {
     const candidates = await buildCandidates();
+    const { votes: aiVotes, total: aiTotal } = seedAiVotes(candidates);
     await ref.set({
       periodId: key,
       status: 'open',
@@ -100,9 +110,10 @@ async function ensureElectionLite() {
       endKey,
       voteDeadlineKey,
       candidates,
-      votes: {},
-      totalVotes: 0,
+      votes: aiVotes,
+      totalVotes: aiTotal,
       mode: 'three-party',
+      aiSeeded: true,
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
@@ -240,20 +251,23 @@ const getMyStatus = onCall({ region: REGION, timeoutSeconds: 10 }, async request
   let votedCrisis = false;
   let campaignsToday = 0;
   let askedQAThisWeek = false;
+  let readNewsToday = false;
   let electionEndKey = weekPeriod().voteDeadlineKey;
   const today = kstToday();
   try {
     const { key, voteDeadlineKey, prevKey } = weekPeriod();
-    const [b, crisisVoteSnap, campaignSnap, qaAwardSnap] = await Promise.all([
+    const [b, crisisVoteSnap, campaignSnap, qaAwardSnap, newsAwardSnap] = await Promise.all([
       db.doc(`elections/${key}/ballots/${uid}`).get(),
       db.doc(`political_crises/${key}/votes/${uid}`).get().catch(() => null),
       db.doc(`campaign_records/${uid}_${today}`).get().catch(() => null),
       db.doc(`point_awards/president_q_${prevKey}_${uid}`).get().catch(() => null),
+      db.doc(`point_awards/${uid}_news_${today}`).get().catch(() => null),
     ]);
     votedElection = b.exists;
     votedCrisis = !!(crisisVoteSnap && crisisVoteSnap.exists);
     campaignsToday = campaignSnap && campaignSnap.exists ? Number(campaignSnap.data().count || 0) : 0;
     askedQAThisWeek = !!(qaAwardSnap && qaAwardSnap.exists);
+    readNewsToday = !!(newsAwardSnap && newsAwardSnap.exists);
     electionEndKey = voteDeadlineKey;
   } catch {}
 
@@ -283,6 +297,7 @@ const getMyStatus = onCall({ region: REGION, timeoutSeconds: 10 }, async request
     votedCrisis,
     campaignsToday,
     askedQAThisWeek,
+    readNewsToday,
     weeklyGain,
   };
 });

@@ -167,7 +167,6 @@ export function renderCommentSection(post, comments) {
   }
 
   if (post.type === 'cbattle') return renderCbattleSection(post, comments, loggedIn);
-  if (post.type === 'ai_debate') return renderAiDebateCommentSection(post, comments, loggedIn);
   if (post.type === 'drip' || post.feedType === 'drip' || post.modules?.drip?.enabled) return '';
 
   const huntActive = !!post.hasAiDecoy;
@@ -215,65 +214,6 @@ function renderCbattleSection(post, comments, loggedIn) {
     </div>`;
 }
 
-function renderDebateCommentForm(side, loggedIn) {
-  return `
-    <div class="debate-comment-side-badge debate-comment-side-badge--${side.toLowerCase()}" id="debate-side-badge">
-      ${side === 'A' ? '🔴 A편' : '🔵 B편'} 으로 댓글 남기기
-    </div>
-    ${!loggedIn ? '<input id="comment-guest-name" class="form-input" placeholder="닉네임 (선택, 최대 12자)" maxlength="12" style="margin-bottom:6px">' : ''}
-    <textarea id="comment-input" placeholder="한 마디 남겨봐요!"></textarea>
-    <input type="hidden" id="debate-side-input" value="${side}">
-    <button class="btn btn--primary btn--sm" style="align-self:flex-end" id="btn-comment">등록</button>`;
-}
-
-export { renderDebateCommentForm };
-
-function renderAiDebateCommentSection(post, comments, loggedIn) {
-  const myVotedSide = localStorage.getItem(`debate_vote_${post.id}`) || '';
-  const revealTime = post.createdAt?.toDate?.()?.getTime?.() + 24 * 3600 * 1000;
-  const now = Date.now();
-  const aList = comments.filter(c => c.side === 'A');
-  const bList = comments.filter(c => c.side === 'B');
-  const total = (post.voteA || 0) + (post.voteB || 0);
-
-  const commentForm = myVotedSide
-    ? renderDebateCommentForm(myVotedSide, loggedIn)
-    : `<div class="debate-vote-prompt">👆 위에서 편을 고르고 투표하면 댓글을 남길 수 있어요!</div>`;
-
-  return `
-    <div class="comment-section">
-      <div class="comment-section__title">💬 의견 ${total > 0 ? `· A ${post.voteA || 0}표 vs B ${post.voteB || 0}표` : ''} (${comments.length})</div>
-      <div class="comment-write-box" id="comment-write">
-        ${commentForm}
-      </div>
-      <div class="debate-comment-cols" id="debate-comment-cols">
-        <div class="debate-col debate-col--a">
-          <div class="debate-col__title">🔴 A편 ${aList.length}명</div>
-          ${aList.length ? aList.map(c => renderDebateComment(c, revealTime, now)).join('') : '<div class="debate-col__empty">첫 번째로 참여!</div>'}
-        </div>
-        <div class="debate-col debate-col--b">
-          <div class="debate-col__title">🔵 B편 ${bList.length}명</div>
-          ${bList.length ? bList.map(c => renderDebateComment(c, revealTime, now)).join('') : '<div class="debate-col__empty">첫 번째로 참여!</div>'}
-        </div>
-      </div>
-    </div>`;
-}
-
-function renderDebateComment(c, revealTime, now) {
-  const timeStr = timeText(c.createdAt?.toDate?.() || c.createdAt);
-  const isOwn = auth.currentUser?.uid === c.authorId && c.authorId !== 'ai-decoy';
-
-  return `
-    <div class="debate-comment" data-comment-id="${escHtml(c.id)}">
-      <div class="debate-comment__text">${escHtml(c.text || '').replace(/\n/g, '<br>')}</div>
-      <div class="debate-comment__meta">
-        <span class="debate-comment__name">${escHtml(c.authorName || '익명')}</span>
-        <span>${timeStr}</span>
-        ${isOwn ? `<button class="comment-delete-btn" data-comment-id="${escHtml(c.id)}">삭제</button>` : ''}
-      </div>
-    </div>`;
-}
-
 function renderDripSection(comments, loggedIn) {
   const cfg = { title: '🎤 드립 올리기', placeholder: '한 줄 드립을 올려보세요!', btn: '올리기', empty: '첫 번째로 드립을 올려보세요!' };
   return `
@@ -304,17 +244,6 @@ export function renderCommentListHTML(post, comments) {
     };
   }
 
-  if (post.type === 'ai_debate') {
-    const aList = comments.filter(c => c.side === 'A');
-    const bList = comments.filter(c => c.side === 'B');
-    const revealTime = post.createdAt?.toDate?.()?.getTime?.() + 24 * 3600 * 1000;
-    const now = Date.now();
-    return {
-      a: `<div class="debate-col__title">🔴 A편 ${aList.length}명</div>${aList.length ? aList.map(c => renderDebateComment(c, revealTime, now)).join('') : '<div class="debate-col__empty">첫 번째로 참여!</div>'}`,
-      b: `<div class="debate-col__title">🔵 B편 ${bList.length}명</div>${bList.length ? bList.map(c => renderDebateComment(c, revealTime, now)).join('') : '<div class="debate-col__empty">첫 번째로 참여!</div>'}`,
-    };
-  }
-
   if (post.type === 'naming' || post.type === 'initial_game' || post.type === 'drip') {
     return comments.length
       ? markBestComment(comments).map(c => renderLikeableComment(c, huntActive)).join('')
@@ -339,15 +268,6 @@ export function refreshCommentListUI(post, comments) {
     const html = renderCommentListHTML(post, comments);
     const aCol = document.querySelector('.cbattle-col--a');
     const bCol = document.querySelector('.cbattle-col--b');
-    if (aCol) aCol.innerHTML = html.a;
-    if (bCol) bCol.innerHTML = html.b;
-    return;
-  }
-
-  if (post.type === 'ai_debate') {
-    const html = renderCommentListHTML(post, comments);
-    const aCol = document.querySelector('.debate-col--a');
-    const bCol = document.querySelector('.debate-col--b');
     if (aCol) aCol.innerHTML = html.a;
     if (bCol) bCol.innerHTML = html.b;
     return;

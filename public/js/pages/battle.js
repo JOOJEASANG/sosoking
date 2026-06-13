@@ -1,4 +1,4 @@
-/* battle.js — 소소킹 정치 배틀 */
+/* battle.js — 소소공화국 정당 대항전 */
 import { auth, functions } from '../firebase.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
 import { navigate } from '../router.js';
@@ -42,154 +42,93 @@ function fmtTime(ms) {
   return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
 }
 
+// 집권 정당 배너
 function renderRulingBanner(king) {
   if (!king) {
     return `<div class="battle-king-banner battle-king-banner--empty">
       <span class="battle-king-banner__crown">🏛️</span>
-      <span class="battle-king-banner__text">현재 집권 대표 없음 — 첫 배틀을 기다리는 중</span>
+      <span class="battle-king-banner__text">현재 집권 정당 없음 — 첫 논쟁을 기다리는 중</span>
     </div>`;
   }
   const streakText = king.streak > 1 ? ` <span class="battle-king-banner__streak">🔥 ${king.streak}일 연속</span>` : '';
-  return `<div class="battle-king-banner">
+  return `<div class="battle-king-banner" style="--king-color:${king.color || '#8B7355'}">
     <span class="battle-king-banner__crown">🏛️</span>
     <span class="battle-king-banner__emoji">${king.emoji}</span>
     <span class="battle-king-banner__info">
-      <span class="battle-king-banner__label">현재 집권 대표</span>
-      <span class="battle-king-banner__name">${escHtml(king.name)} · ${escHtml(king.party || king.title)}${streakText}</span>
+      <span class="battle-king-banner__label">어제의 논쟁 승리 정당</span>
+      <span class="battle-king-banner__name">${escHtml(king.name)}${streakText}</span>
     </span>
   </div>`;
 }
 
-function renderTurnBubble(turn, index) {
-  const isProsecutor = turn.charId === 'prosecutor';
-  return `
-    <div class="battle-turn${isProsecutor ? ' battle-turn--ummoja' : ''}" style="--i:${index}">
-      <div class="battle-turn__avatar">${turn.emoji}</div>
-      <div class="battle-turn__body">
-        <div class="battle-turn__name">${escHtml(turn.charName)}</div>
-        <div class="battle-turn__text">${escHtml(turn.text)}</div>
-      </div>
-    </div>`;
-}
-
-function renderVoteBar(char, votes, totalVotes, userVote) {
-  const count = votes[char.id] || 0;
+// 정당 토론 카드
+function renderPartyDebateCard(partyId, partyInfo, debate, votes, totalVotes, userVote, isEnded, myPartyId) {
+  if (!debate) return '';
+  const count = votes[partyId] || 0;
   const pct = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
-  const isVoted = userVote === char.id;
-  return `
-    <div class="battle-vote-row${isVoted ? ' battle-vote-row--voted' : ''}" data-char-id="${char.id}">
-      <div class="battle-vote-row__head">
-        <span class="battle-vote-row__emoji">${char.emoji}</span>
-        <span class="battle-vote-row__name">${escHtml(char.name)}</span>
-        ${isVoted ? '<span class="battle-vote-row__check">✓ 내 선택</span>' : ''}
-        <span class="battle-vote-row__count">${fmtNum(count)}표 · ${pct}%</span>
+  const isVoted = userVote === partyId;
+  const isMyParty = myPartyId === partyId;
+  const isWinner = isEnded && userVote !== null && count === Math.max(...Object.values(votes));
+
+  const stmtsHTML = (debate.statements || []).map(s => `
+    <div class="battle-party-stmt">
+      <span class="battle-party-stmt__emoji">${s.emoji}</span>
+      <div class="battle-party-stmt__body">
+        <span class="battle-party-stmt__name">${escHtml(s.charName)}</span>
+        <p class="battle-party-stmt__text">${escHtml(s.text)}</p>
       </div>
-      <div class="battle-vote-row__bar-wrap">
-        <div class="battle-vote-row__bar" style="width:${pct}%;background:${char.color}"></div>
+    </div>`).join('');
+
+  const barHTML = (userVote !== null || isEnded) ? `
+    <div class="battle-party-card__result">
+      <div class="battle-party-card__bar-wrap">
+        <div class="battle-party-card__bar" style="width:${pct}%;background:${partyInfo.color}"></div>
       </div>
-    </div>`;
-}
+      <span class="battle-party-card__pct">${pct}% · ${fmtNum(count)}표</span>
+    </div>` : '';
 
-const BATTLE_PARTY_INFO = {
-  national: { name: '국민안정당', emoji: '🎙️', color: '#8B7355' },
-  truth:    { name: '진실방송당', emoji: '📺', color: '#6C5CE7' },
-  youth:    { name: '청년혁명당', emoji: '📱', color: '#E84393' },
-  center:   { name: '중도민주당', emoji: '📊', color: '#00CEC9' },
-  future:   { name: '함께미래당', emoji: '🤝', color: '#FDCB6E' },
-  rights:   { name: '알권리당',   emoji: '🔍', color: '#00B894' },
-  justice:  { name: '법치정의당', emoji: '⚖️', color: '#2D3436' },
-};
+  const voteBtn = (!userVote && !isEnded) ? `
+    <button class="battle-party-vote-btn" data-party-id="${partyId}" type="button" style="--party-color:${partyInfo.color}">
+      ${partyInfo.emoji} 이 정당 지지 (+5P)
+    </button>` : '';
 
-function renderPartyVoteSummary(partyVotes, chars, partyId) {
-  if (!partyVotes || !partyId || !partyVotes[partyId]) return '';
-  const pVotes = partyVotes[partyId];
-  const partyTotal = Object.values(pVotes).reduce((s, v) => s + Number(v || 0), 0);
-  if (partyTotal === 0) return '';
-  const sorted = [...chars].sort((a, b) => (Number(pVotes[b.id] || 0)) - (Number(pVotes[a.id] || 0)));
-  const top = sorted[0];
-  const topPct = Math.round((Number(pVotes[top.id] || 0) / partyTotal) * 100);
   return `
-    <div class="battle-party-vote">
-      <div class="battle-party-vote__title">🏛️ 우리 당 지지 현황</div>
-      <div class="battle-party-vote__list">
-        ${sorted.map(c => {
-          const cnt = Number(pVotes[c.id] || 0);
-          const pct = partyTotal > 0 ? Math.round((cnt / partyTotal) * 100) : 0;
-          return `<div class="battle-party-vote__row">
-            <span class="battle-party-vote__emoji">${c.emoji}</span>
-            <span class="battle-party-vote__name">${escHtml(c.name)}</span>
-            <div class="battle-party-vote__bar-wrap">
-              <div class="battle-party-vote__bar" style="width:${pct}%;background:${c.color}"></div>
-            </div>
-            <span class="battle-party-vote__pct">${pct}%</span>
-          </div>`;
-        }).join('')}
+    <div class="battle-party-card${isVoted ? ' battle-party-card--voted' : ''}${isMyParty ? ' battle-party-card--mine' : ''}${isWinner && count >= Math.max(...Object.values(votes)) && isEnded ? ' battle-party-card--winner' : ''}" data-party-id="${partyId}" style="--party-color:${partyInfo.color}">
+      <div class="battle-party-card__head">
+        <div class="battle-party-card__party-info">
+          <span class="battle-party-card__emoji">${partyInfo.emoji}</span>
+          <div>
+            <div class="battle-party-card__name">${escHtml(partyInfo.name)}</div>
+            ${debate.stance ? `<div class="battle-party-card__stance">"${escHtml(debate.stance)}"</div>` : ''}
+          </div>
+        </div>
+        ${isMyParty ? `<span class="battle-party-card__my-badge">내 당</span>` : ''}
+        ${isVoted ? `<span class="battle-party-card__voted-badge">✓ 지지</span>` : ''}
+        ${isEnded && userVote !== null && count === Math.max(...Object.values(votes)) ? `<span class="battle-party-card__win-badge">🏆 승리</span>` : ''}
       </div>
-      <div class="battle-party-vote__hint">우리 당 ${partyTotal}명 투표 · ${top.emoji} ${escHtml(top.name)} ${topPct}% 지지</div>
+      <div class="battle-party-stmts">${stmtsHTML}</div>
+      ${barHTML}
+      ${voteBtn}
     </div>`;
 }
 
-function renderAllPartyVoteSummary(partyVotes, chars) {
-  if (!partyVotes) return '';
-  const partyIds = Object.keys(partyVotes).filter(pid => {
-    const pv = partyVotes[pid];
-    return Object.values(pv).some(v => Number(v) > 0);
-  });
-  if (partyIds.length < 2) return '';
-
-  const rows = partyIds.map(pid => {
-    const pInfo = BATTLE_PARTY_INFO[pid];
-    if (!pInfo) return '';
-    const pVotes = partyVotes[pid];
-    const partyTotal = Object.values(pVotes).reduce((s, v) => s + Number(v || 0), 0);
-    if (!partyTotal) return '';
-    const topChar = [...chars].sort((a, b) => Number(pVotes[b.id] || 0) - Number(pVotes[a.id] || 0))[0];
-    const topPct = Math.round((Number(pVotes[topChar.id] || 0) / partyTotal) * 100);
-    return `<div class="battle-all-party-row" style="--party-c:${pInfo.color}">
-      <span class="battle-all-party-row__party">${pInfo.emoji} ${escHtml(pInfo.name)}</span>
-      <span class="battle-all-party-row__arrow">→</span>
-      <span class="battle-all-party-row__pick">${topChar.emoji} ${escHtml(topChar.name)}</span>
-      <span class="battle-all-party-row__pct">${topPct}%</span>
-      <span class="battle-all-party-row__total">(${partyTotal}명)</span>
-    </div>`;
-  }).filter(Boolean);
-
-  if (!rows.length) return '';
-  return `
-    <div class="battle-all-party-summary">
-      <div class="battle-all-party-summary__title">📊 정당별 지지 성향</div>
-      ${rows.join('')}
-    </div>`;
-}
-
-function renderVoteButtons(chars, userVote, status) {
-  if (status === 'ended') return '';
-  if (userVote) return '';
-  return `
-    <div class="battle-vote-grid">
-      ${chars.map(c => `
-        <button class="battle-vote-btn" data-char-id="${c.id}" type="button" style="--char-color:${c.color}">
-          <span class="battle-vote-btn__emoji">${c.emoji}</span>
-          <span class="battle-vote-btn__name">${escHtml(c.name)}</span>
-        </button>`).join('')}
-    </div>`;
-}
-
-function renderAftermath(aftermath) {
+// aftermath (논쟁 결과)
+function renderAftermath(aftermath, winningParty, partyInfo) {
   if (!aftermath) return '';
   const { decree, reactions = [] } = aftermath;
+  const wInfo = winningParty && partyInfo ? partyInfo[winningParty] : null;
   return `
     <div class="battle-aftermath">
-      <div class="battle-aftermath__title">🏛️ 집권 선언</div>
+      <div class="battle-aftermath__title">🏛️ 집권 선언${wInfo ? ` — ${wInfo.emoji} ${wInfo.name}` : ''}</div>
       <div class="battle-aftermath__decree">${escHtml(decree)}</div>
       ${reactions.length ? `
-        <div class="battle-aftermath__reactions-title">📣 낙선 정치인들의 반응</div>
+        <div class="battle-aftermath__reactions-title">📣 패배 정당들의 반응</div>
         <div class="battle-aftermath__reactions">
           ${reactions.map(r => `
             <div class="battle-aftermath__reaction">
-              <span class="battle-aftermath__reaction-emoji">${r.emoji}</span>
+              <span class="battle-aftermath__reaction-emoji">${r.emoji || ''}</span>
               <div class="battle-aftermath__reaction-body">
-                <span class="battle-aftermath__reaction-name">${escHtml(r.charName)}</span>
+                <span class="battle-aftermath__reaction-name">${escHtml(r.partyName || r.charName || '')}</span>
                 <span class="battle-aftermath__reaction-text">${escHtml(r.text)}</span>
               </div>
             </div>`).join('')}
@@ -249,7 +188,7 @@ function renderBestComment(comments) {
 }
 
 export async function renderBattle() {
-  setMeta('소소킹 · 정치 배틀');
+  setMeta('소소공화국 · 정당 대항전');
   const el = document.getElementById('page-content');
   if (!el) return;
 
@@ -257,18 +196,19 @@ export async function renderBattle() {
     <div class="battle-page page-enter">
       <div class="skeleton" style="height:64px;border-radius:16px;margin-bottom:12px"></div>
       <div class="skeleton" style="height:120px;border-radius:16px;margin-bottom:12px"></div>
-      <div class="skeleton" style="height:360px;border-radius:16px"></div>
+      <div class="skeleton" style="height:400px;border-radius:16px"></div>
     </div>`;
 
   try {
     const getBattleStatus = httpsCallable(functions, 'getBattleStatus');
     const { data } = await getBattleStatus();
 
-    const { exists, topic, topicDesc, turns = [], votes = {}, totalVotes = 0,
-      status, userVote, currentKing, chars = [], king, aftermath,
-      recentComments = [], partyVotes = null } = data;
+    const { exists, topic, topicDesc, partyDebates = {}, votes = {}, totalVotes = 0,
+      status, userVote, currentKing, winningParty, aftermath,
+      recentComments = [], partyInfo = {} } = data;
 
     const rulingBanner = renderRulingBanner(currentKing);
+    const myPartyId = appState.partyId || null;
 
     if (!exists) {
       el.innerHTML = `
@@ -276,31 +216,48 @@ export async function renderBattle() {
           ${rulingBanner}
           <div class="battle-topic-card">
             <div class="battle-topic-card__header">
-              <div class="battle-topic-card__badge">⚔️ 오늘의 정치 스캔들</div>
+              <div class="battle-topic-card__badge">⚔️ 오늘의 정당 대항전</div>
             </div>
             <div class="battle-topic-card__body">
-              <div class="battle-topic-card__title">이슈 생성 중...</div>
-              <div class="battle-topic-card__desc">매일 자정 새로운 정치 스캔들이 터집니다</div>
+              <div class="battle-topic-card__title">오늘의 논쟁 생성 중...</div>
+              <div class="battle-topic-card__desc">매일 자정 새로운 정치 이슈로 3당이 맞붙습니다</div>
             </div>
           </div>
-          <button class="btn btn--primary" id="btn-history" style="margin-top:16px">🏛️ 집권 기록 보기</button>
+          <button class="btn btn--primary" id="btn-history" style="margin-top:16px">🏛️ 논쟁 기록 보기</button>
         </div>`;
       el.querySelector('#btn-history')?.addEventListener('click', () => navigate('/king-history'));
       return;
     }
 
     const isEnded = status === 'ended';
-    const votedOrEnded = !!userVote || isEnded;
-    const winnerChar = king ? chars.find(c => c.id === king) : null;
+    const votedOrEnded = userVote !== null || isEnded;
+    const winnerPartyInfo = winningParty && partyInfo ? partyInfo[winningParty] : null;
+
+    const partyOrder = ['national', 'youth', 'center'];
+    const partyCardsHTML = partyOrder.map(pid => {
+      const info = partyInfo[pid];
+      const debate = partyDebates[pid];
+      if (!info || !debate) return '';
+      return renderPartyDebateCard(pid, info, debate, votes, totalVotes, userVote, isEnded, myPartyId);
+    }).join('');
 
     el.innerHTML = `
       <div class="battle-page page-enter">
 
         ${rulingBanner}
 
+        <div class="battle-game-bar">
+          <span class="battle-game-bar__label">📋 데일리 퀘스트</span>
+          <span class="battle-game-bar__rewards">투표 <b>+5P</b></span>
+          <span class="battle-game-bar__sep">·</span>
+          <span class="battle-game-bar__rewards">댓글 <b>+10P</b></span>
+          <span class="battle-game-bar__sep">·</span>
+          <span class="battle-game-bar__rewards">승리 정당에 <b>정치력 보너스</b></span>
+        </div>
+
         <div class="battle-topic-card">
           <div class="battle-topic-card__header">
-            <div class="battle-topic-card__badge">⚔️ 오늘의 정치 스캔들${isEnded ? ' · 종료' : ''}</div>
+            <div class="battle-topic-card__badge">⚔️ 오늘의 정당 대항전${isEnded ? ' · 종료' : ''}</div>
             ${!isEnded ? '<span class="battle-topic-card__live">🔴 LIVE</span>' : ''}
           </div>
           <div class="battle-topic-card__body">
@@ -316,26 +273,23 @@ export async function renderBattle() {
           </div>
         </div>
 
-        <div class="battle-turns">
-          ${turns.map((t, i) => renderTurnBubble(t, i)).join('')}
-        </div>
-
         <div class="battle-vote-section">
           <div class="battle-vote-section__title">
             ${isEnded
-              ? (winnerChar ? `🏛️ 오늘의 집권 대표: ${winnerChar.emoji} ${escHtml(winnerChar.name)}` : '⚔️ 오늘의 투표 결과')
-              : (userVote ? `✅ 투표 완료 · 총 ${fmtNum(totalVotes)}표` : `⚔️ 누구를 지지합니까? (오늘 1표)`)}
+              ? (winnerPartyInfo ? `🏆 논쟁 승리: ${winnerPartyInfo.emoji} ${escHtml(winnerPartyInfo.name)}` : '⚔️ 논쟁 결과')
+              : (userVote ? `✅ 투표 완료 · 총 ${fmtNum(totalVotes)}명` : `⚔️ 어느 정당의 입장이 맞다고 생각하세요? (+5P)`)}
           </div>
 
-          ${!votedOrEnded ? renderVoteButtons(chars, userVote, status) : ''}
-
-          <div class="battle-vote-bars" id="vote-bars">
-            ${chars.map(c => renderVoteBar(c, votes, totalVotes, userVote)).join('')}
+          <div class="battle-party-cards" id="party-cards">
+            ${partyCardsHTML}
           </div>
 
-          ${userVote ? `<div class="battle-power-hint">⚡ 오늘 배틀 투표로 정치력 +5를 획득했어요!</div>` : ''}
-          ${votedOrEnded && appState.partyId ? renderPartyVoteSummary(partyVotes, chars, appState.partyId) : ''}
-          ${votedOrEnded ? renderAllPartyVoteSummary(partyVotes, chars) : ''}
+          ${userVote ? `<div class="battle-power-hint">⚡ 투표 완료 · 정치력 +5P 획득!</div>` : ''}
+          ${userVote ? `
+            <div class="battle-next-actions">
+              <button class="battle-next-btn battle-next-btn--primary" id="btn-next-home" type="button">📋 오늘 미션 이어서 완료하기</button>
+              <button class="battle-next-btn" id="btn-next-republic" type="button">🏛️ 공화국 현황 보기</button>
+            </div>` : ''}
           ${votedOrEnded ? `<button class="battle-share-btn" id="btn-share-battle" type="button">📤 결과 공유하기</button>` : ''}
           ${!auth.currentUser && !isEnded ? `
             <div class="battle-login-hint">
@@ -343,9 +297,7 @@ export async function renderBattle() {
             </div>` : ''}
         </div>
 
-        ${isEnded && aftermath ? renderAftermath(aftermath) : ''}
-
-        <button class="battle-judge-cta" id="btn-to-judge" type="button">⚖️ 이 사건, AI 판결소에서 판결받기</button>
+        ${isEnded && aftermath ? renderAftermath(aftermath, winningParty, partyInfo) : ''}
 
         ${renderBestComment(recentComments)}
 
@@ -354,7 +306,7 @@ export async function renderBattle() {
           <div class="battle-discuss__title">💬 토론 참여하기 <span class="battle-discuss__reward">첫 의견 +10P</span></div>
           ${auth.currentUser ? `
             <div class="battle-discuss__form">
-              <textarea class="battle-discuss__input" id="discuss-input" placeholder="이 사건에 대한 당신의 한마디..." rows="2" maxlength="300"></textarea>
+              <textarea class="battle-discuss__input" id="discuss-input" placeholder="이 논쟁에 대한 당신의 한마디..." rows="2" maxlength="300"></textarea>
               <button class="btn btn--primary btn--sm" id="btn-discuss-submit" style="margin-top:8px;width:100%">의견 남기기</button>
             </div>` : `
             <div style="margin-bottom:12px">
@@ -365,17 +317,16 @@ export async function renderBattle() {
           </div>
         </div>
 
-        <button class="btn btn--ghost btn--sm" id="btn-history" style="margin-top:8px;width:100%">🏛️ 집권 기록 보기 →</button>
+        <button class="btn btn--ghost btn--sm" id="btn-history" style="margin-top:8px;width:100%">🏛️ 논쟁 기록 보기 →</button>
       </div>`;
 
     el.querySelector('#btn-history')?.addEventListener('click', () => navigate('/king-history'));
-    el.querySelector('#btn-to-judge')?.addEventListener('click', () =>
-      navigate(`/ai-judge?topic=${encodeURIComponent(topic || '')}`)
-    );
+    el.querySelector('#btn-next-home')?.addEventListener('click', () => navigate('/'));
+    el.querySelector('#btn-next-republic')?.addEventListener('click', () => navigate('/republic'));
 
     if (!votedOrEnded && auth.currentUser) {
-      el.querySelectorAll('.battle-vote-btn').forEach(btn => {
-        btn.addEventListener('click', () => handleVote(btn.dataset.charId, data, el));
+      el.querySelectorAll('.battle-party-vote-btn').forEach(btn => {
+        btn.addEventListener('click', () => handleVote(btn.dataset.partyId, data, el));
       });
     }
 
@@ -417,19 +368,18 @@ export async function renderBattle() {
     });
 
     el.querySelector('#btn-share-battle')?.addEventListener('click', async () => {
-      const votedChar = userVote ? chars.find(c => c.id === userVote) : null;
-      const winChar = king ? chars.find(c => c.id === king) : null;
-      const shareText = isEnded && winChar
-        ? `🏛️ 소소공화국 오늘의 정치배틀 결과\n👑 집권 대표: ${winChar.emoji} ${winChar.name}\n📰 "${topic}"\n총 ${fmtNum(totalVotes)}명 참여\nhttps://sosoking.co.kr`
-        : `🗳️ 소소공화국 정치배틀\n"${topic}"\n${votedChar ? `나는 ${votedChar.emoji} ${votedChar.name} 지지!` : ''}\nhttps://sosoking.co.kr`;
+      const winInfo = winnerPartyInfo;
+      const shareText = isEnded && winInfo
+        ? `🏛️ 소소공화국 오늘의 정당 대항전 결과\n🏆 승리: ${winInfo.emoji} ${winInfo.name}\n📰 "${topic}"\n총 ${fmtNum(totalVotes)}명 참여\nhttps://sosoking.co.kr`
+        : `⚔️ 소소공화국 정당 대항전\n"${topic}"\n${userVote && partyInfo[userVote] ? `나는 ${partyInfo[userVote].emoji} ${partyInfo[userVote].name} 지지!` : ''}\nhttps://sosoking.co.kr`;
       try {
         if (navigator.share) {
-          await navigator.share({ title: '소소공화국 정치배틀', text: shareText, url: 'https://sosoking.co.kr' });
+          await navigator.share({ title: '소소공화국 정당 대항전', text: shareText, url: 'https://sosoking.co.kr' });
         } else {
           await navigator.clipboard.writeText(shareText);
           toast.success('결과가 클립보드에 복사됐어요! 📋');
         }
-      } catch { /* user cancelled or unsupported */ }
+      } catch { /* user cancelled */ }
     });
 
     if (!isEnded) {
@@ -461,101 +411,122 @@ export async function renderBattle() {
     el.innerHTML = `
       <div class="empty-state">
         <div class="empty-state__icon">⚔️</div>
-        <div class="empty-state__title">배틀을 불러오지 못했어요</div>
+        <div class="empty-state__title">정당 대항전을 불러오지 못했어요</div>
         <button class="btn btn--primary" style="margin-top:16px" id="btn-retry">다시 시도</button>
       </div>`;
     el.querySelector('#btn-retry')?.addEventListener('click', renderBattle);
   }
 }
 
-async function handleVote(charId, prevData, el) {
+async function handleVote(partyId, prevData, el) {
   if (!auth.currentUser) { navigate('/login'); return; }
 
-  const btns = el.querySelectorAll('.battle-vote-btn');
+  const btns = el.querySelectorAll('.battle-party-vote-btn');
   btns.forEach(b => { b.disabled = true; });
 
   try {
-    const voteForChar = httpsCallable(functions, 'voteForChar');
-    await voteForChar({ charId });
+    const voteForParty = httpsCallable(functions, 'voteForParty');
+    await voteForParty({ partyId });
 
     const newVotes = { ...prevData.votes };
-    newVotes[charId] = (newVotes[charId] || 0) + 1;
+    newVotes[partyId] = (newVotes[partyId] || 0) + 1;
     const newTotal = (prevData.totalVotes || 0) + 1;
+    const partyInfo = prevData.partyInfo || {};
 
-    const voteGrid = el.querySelector('.battle-vote-grid');
-    if (voteGrid) voteGrid.remove();
-
-    const barsEl = el.querySelector('#vote-bars');
-    if (barsEl) {
-      barsEl.innerHTML = prevData.chars.map(c =>
-        renderVoteBar(c, newVotes, newTotal, charId)
-      ).join('');
+    // 카드 업데이트
+    const cardsEl = el.querySelector('#party-cards');
+    if (cardsEl) {
+      const partyOrder = ['national', 'youth', 'center'];
+      cardsEl.innerHTML = partyOrder.map(pid => {
+        const info = partyInfo[pid];
+        const debate = (prevData.partyDebates || {})[pid];
+        if (!info || !debate) return '';
+        return renderPartyDebateCard(pid, info, debate, newVotes, newTotal, partyId, false, appState.partyId || null);
+      }).join('');
     }
 
     const titleEl = el.querySelector('.battle-vote-section__title');
-    if (titleEl) titleEl.textContent = `✅ 투표 완료 · 총 ${fmtNum(newTotal)}표`;
+    if (titleEl) titleEl.textContent = `✅ 투표 완료 · 총 ${fmtNum(newTotal)}명`;
 
-    const barsSection = el.querySelector('.battle-vote-section');
-    if (barsSection && !barsSection.querySelector('.battle-power-hint')) {
+    const voteSection = el.querySelector('.battle-vote-section');
+    if (voteSection && !voteSection.querySelector('.battle-power-hint')) {
       const hint = document.createElement('div');
       hint.className = 'battle-power-hint';
-      hint.textContent = '⚡ 오늘 배틀 투표로 정치력 +5를 획득했어요!';
-      barsSection.appendChild(hint);
+      hint.textContent = '⚡ 투표 완료 · 정치력 +5P 획득!';
+      voteSection.appendChild(hint);
+
+      const nextActions = document.createElement('div');
+      nextActions.className = 'battle-next-actions';
+      nextActions.innerHTML = `
+        <button class="battle-next-btn battle-next-btn--primary" id="btn-next-home2" type="button">📋 오늘 미션 이어서 완료하기</button>
+        <button class="battle-next-btn" id="btn-next-republic2" type="button">🏛️ 공화국 현황 보기</button>`;
+      voteSection.appendChild(nextActions);
+      voteSection.querySelector('#btn-next-home2')?.addEventListener('click', () => navigate('/'));
+      voteSection.querySelector('#btn-next-republic2')?.addEventListener('click', () => navigate('/republic'));
     }
 
-    const char = prevData.chars.find(c => c.id === charId);
-    toast.success(`${char?.emoji || ''} ${char?.name || ''} 지지!`);
-    appState.points = (appState.points || 0) + 5;
-    showPointPopup(5);
-    if (auth.currentUser) checkRankUp(auth.currentUser.uid, appState.points);
-    httpsCallable(functions, 'syncPartyMemberPower')({}).catch(() => {});
+    showPointPopup(5, '배틀 투표');
+    await checkRankUp();
+
   } catch (err) {
     btns.forEach(b => { b.disabled = false; });
-    if (err?.code === 'already-exists') {
-      toast.warn('오늘은 이미 투표했어요');
+    if (err.code === 'already-exists') {
+      toast.error('오늘은 이미 투표했어요');
     } else {
-      toast.error(err?.message || '투표에 실패했어요');
+      toast.error('투표 중 오류가 발생했어요');
+      console.error('[battle] vote error', err);
     }
   }
 }
 
 async function handleComment(el) {
+  if (!auth.currentUser) { navigate('/login'); return; }
   const input = el.querySelector('#discuss-input');
+  const text = input?.value?.trim() || '';
+  if (text.length < 2) { toast.error('댓글은 2자 이상 입력해주세요'); return; }
+
   const btn = el.querySelector('#btn-discuss-submit');
-  if (!input || !btn) return;
+  if (btn) btn.disabled = true;
 
-  const text = input.value.trim();
-  if (!text) return;
-
-  btn.disabled = true;
   try {
     const addBattleComment = httpsCallable(functions, 'addBattleComment');
-    const { data: res } = await addBattleComment({ text });
+    const { data } = await addBattleComment({ text });
+
+    if (input) input.value = '';
 
     const listEl = el.querySelector('#comment-list');
     if (listEl) {
-      const newComment = {
-        authorName: appState.nickname || auth.currentUser?.displayName || '익명',
-        text,
-        partyId: appState.partyId || null,
-        power: appState.points || 0,
-        createdAt: Date.now(),
-      };
+      const rank = getPoliticalRank(appState.power || 0);
+      const partyBadge = appState.partyId ? renderPartyBadge(appState.partyId) : '';
+      const reactBtns = BATTLE_REACTIONS.map(r =>
+        `<button class="battle-comment-react" data-comment-id="${escHtml(data.id)}" data-reaction="${r.key}" title="${r.title}" type="button">${r.label}</button>`
+      ).join('');
+      const newItem = document.createElement('div');
+      newItem.className = 'battle-comment';
+      newItem.dataset.commentId = data.id;
+      newItem.innerHTML = `
+        <div class="battle-comment__head">
+          <span class="battle-comment__author">${partyBadge}<span class="comment-rank-emoji">${escHtml(rank.emoji)}</span>${escHtml(appState.nickname || '나')}</span>
+          <span class="battle-comment__time">방금</span>
+        </div>
+        <div class="battle-comment__text">${escHtml(text)}</div>
+        <div class="battle-comment__reactions">${reactBtns}</div>`;
+      listEl.insertBefore(newItem, listEl.firstChild);
+
       const emptyEl = listEl.querySelector('.battle-comment-empty');
       if (emptyEl) emptyEl.remove();
-      listEl.insertAdjacentHTML('afterbegin', renderComments([newComment]));
     }
 
-    input.value = '';
-    if (res?.pointsAwarded) {
-      showPointPopup(res.pointsAwarded);
-      toast.success(`의견을 남겼어요! +${res.pointsAwarded}P 🎉`);
+    if (data.pointsAwarded > 0) {
+      showPointPopup(data.pointsAwarded, '배틀 댓글');
+      await checkRankUp();
     } else {
       toast.success('의견을 남겼어요!');
     }
   } catch (err) {
-    toast.error(err?.message || '댓글 등록에 실패했어요');
+    toast.error('댓글 작성 중 오류가 발생했어요');
+    console.error('[battle] comment error', err);
   } finally {
-    btn.disabled = false;
+    if (btn) btn.disabled = false;
   }
 }

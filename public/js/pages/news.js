@@ -139,12 +139,8 @@ async function loadPartyStandings(slot) {
     const snap = await getDocs(collection(db, 'parties'));
     const PARTY_COLORS_NEWS = {
       national: { name: '국민안정당', emoji: '🎙️', color: '#8B7355' },
-      truth:    { name: '진실방송당', emoji: '📺', color: '#6C5CE7' },
       youth:    { name: '청년혁명당', emoji: '📱', color: '#E84393' },
       center:   { name: '중도민주당', emoji: '📊', color: '#00CEC9' },
-      future:   { name: '함께미래당', emoji: '🤝', color: '#FDCB6E' },
-      rights:   { name: '알권리당',   emoji: '🔍', color: '#00B894' },
-      justice:  { name: '법치정의당', emoji: '⚖️', color: '#2D3436' },
     };
     const parties = snap.docs
       .map(d => {
@@ -250,12 +246,8 @@ async function loadPresidentQAHighlight(slot) {
 
 const CRISIS_PARTY_INFO = {
   national: { name: '국민안정당', emoji: '🎙️', color: '#8B7355' },
-  truth:    { name: '진실방송당', emoji: '📺', color: '#6C5CE7' },
   youth:    { name: '청년혁명당', emoji: '📱', color: '#E84393' },
   center:   { name: '중도민주당', emoji: '📊', color: '#00CEC9' },
-  future:   { name: '함께미래당', emoji: '🤝', color: '#FDCB6E' },
-  rights:   { name: '알권리당',   emoji: '🔍', color: '#00B894' },
-  justice:  { name: '법치정의당', emoji: '⚖️', color: '#2D3436' },
 };
 
 function renderCrisisPartyBreakdown(partyVotes, optionA, optionB) {
@@ -393,6 +385,21 @@ async function loadNewsCrisis(slot) {
   } catch { /* non-critical */ }
 }
 
+async function loadAiColumn(slot) {
+  if (!slot) return;
+  try {
+    const { data } = await httpsCallable(functions, 'generateNewsColumn')();
+    if (!data?.column) return;
+    slot.innerHTML = `
+      <section class="news-column">
+        <div class="news-section-title">✍️ 오늘의 시론</div>
+        ${data.headline ? `<div class="news-column__headline">${escHtml(data.headline)}</div>` : ''}
+        <p class="news-column__body">${escHtml(data.column)}</p>
+        <div class="news-column__footer">AI 칼럼니스트 · 소소공화국 특파원</div>
+      </section>`;
+  } catch { /* non-critical */ }
+}
+
 async function loadBreakingAlerts(slot) {
   if (!slot) return;
   try {
@@ -491,10 +498,9 @@ export async function renderNews() {
   el.innerHTML = `
     <div class="news-page page-enter">
       <div class="news-page__inner">
-        <div class="news-loading">
-          <span class="news-loading__icon">📰</span>
-          <span>소소신문 불러오는 중…</span>
-        </div>
+        <div class="skeleton" style="height:220px;border-radius:16px;margin-bottom:12px"></div>
+        <div class="skeleton" style="height:120px;border-radius:16px;margin-bottom:12px"></div>
+        <div class="skeleton" style="height:180px;border-radius:16px"></div>
       </div>
     </div>`;
 
@@ -527,6 +533,7 @@ export async function renderNews() {
       <div class="news-page__inner">
         <div id="news-breaking-slot"></div>
         ${featuredHTML}
+        <div id="news-column-slot"></div>
         <div id="news-battle-slot"></div>
         <div id="news-prez-slot"></div>
         <div id="news-qa-slot"></div>
@@ -541,6 +548,7 @@ export async function renderNews() {
   const inner = el.querySelector('.news-page__inner');
   if (inner) {
     loadBreakingAlerts(inner.querySelector('#news-breaking-slot'));
+    loadAiColumn(inner.querySelector('#news-column-slot'));
     loadBattleBulletin(inner.querySelector('#news-battle-slot'));
     loadPresidentBlock(inner.querySelector('#news-prez-slot'));
     loadPresidentQAHighlight(inner.querySelector('#news-qa-slot'));

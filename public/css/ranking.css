@@ -2,6 +2,24 @@
 
 .ranking-page { max-width: 680px; margin: 0 auto; padding: 0 0 40px; }
 
+/* ── 정치력 획득 방법 바 ── */
+.rank-earn-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 9px 14px;
+  background: var(--color-surface-2, #f6f6f9);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  margin-bottom: 12px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+.rank-earn-bar__label { font-weight: 800; color: var(--color-text-primary); }
+.rank-earn-bar__sep { color: var(--color-text-muted); }
+.rank-earn-bar__item b { color: var(--color-primary); font-weight: 800; }
+
 .ranking-hero {
   text-align: center;
   padding: 28px 16px 20px;
@@ -183,6 +201,30 @@
 }
 .rank-ladder__next b { color: var(--color-primary); font-weight: 800; }
 .rank-ladder__next--max { color: #b8860b; font-weight: 700; }
+
+/* 유세 CTA */
+.rank-campaign-cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: linear-gradient(135deg, rgba(255,107,74,.08), rgba(255,138,0,.05));
+  border: 1px solid var(--color-primary-border);
+  border-radius: 16px;
+  padding: 14px 16px;
+  margin: 0 0 12px;
+  flex-wrap: wrap;
+}
+.rank-campaign-cta__body {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+.rank-campaign-cta__icon { font-size: 22px; flex-shrink: 0; margin-top: 2px; }
+.rank-campaign-cta__title { font-size: 14px; font-weight: 900; color: var(--color-text-primary); }
+.rank-campaign-cta__desc { font-size: 12px; color: var(--color-text-muted); margin-top: 2px; line-height: 1.4; }
 
 /* 내 순위 배너 */
 .rank-my-banner {

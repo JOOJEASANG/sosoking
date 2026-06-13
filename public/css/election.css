@@ -817,3 +817,35 @@
 .elec-cand:nth-child(5) .elec-bar__fill { animation-delay: .28s; }
 .elec-cand:nth-child(6) .elec-bar__fill { animation-delay: .35s; }
 .elec-cand:nth-child(7) .elec-bar__fill { animation-delay: .42s; }
+
+/* ── 대통령 파면 배너 ── */
+.prez-banner--removed {
+  background: linear-gradient(135deg, rgba(239,68,68,.12), rgba(255,255,255,.85));
+  border: 2px solid rgba(239,68,68,.3);
+  text-align: center;
+}
+[data-theme="dark"] .prez-banner--removed {
+  background: linear-gradient(135deg, rgba(239,68,68,.25), rgba(20,20,30,.9));
+}
+.prez-banner__removed-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: rgba(239,68,68,.15);
+  color: #dc2626;
+  font-size: 13px;
+  font-weight: 900;
+  margin-bottom: 10px;
+}
+.prez-banner__removed-desc {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin: 10px 0 14px;
+}
+.prez-banner__court-link {
+  display: inline-flex;
+  margin: 0 auto;
+}

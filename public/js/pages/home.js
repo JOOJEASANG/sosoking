@@ -17,17 +17,15 @@ import { renderPartyBadge } from '../utils/party-badge.js';
 import { toast } from '../components/toast.js';
 
 const TYPE_LABEL = {
-  ai_judge:     '⚖️ 판결소',
-  ai_translate: '✨ 창작소',
-  ai_naming:    '✨ 창작소',
+  ai_judge: '🏛️ 재판기록',
 };
 
 const QUICK_ACTIONS = [
-  { path: '/battle',   emoji: '🗳️', name: '정치배틀', desc: '오늘의 정쟁 투표' },
-  { path: '/parties',  emoji: '🏛️', name: '정당',     desc: '입당·정치력' },
+  { path: '/republic', emoji: '🏛️', name: '공화국',   desc: '정당·대선·국회' },
+  { path: '/battle',   emoji: '⚔️', name: '배틀',     desc: '오늘의 정쟁 투표' },
   { path: '/election', emoji: '👑', name: '대선',     desc: '대통령 선출' },
+  { path: '/news',     emoji: '📰', name: '소소신문', desc: '오늘의 정치' },
   { path: '/ranking',  emoji: '🏆', name: '랭킹',     desc: '출세 순위' },
-  { path: '/news',     emoji: '📰', name: '소소신문', desc: '오늘의 정치', wide: true },
 ];
 
 function getKstDateString(date = new Date()) {
@@ -104,6 +102,7 @@ async function fetchDailyNews() {
   try {
     const getDailyNews = httpsCallable(functions, 'getDailyNews');
     const { data } = await getDailyNews();
+    if (data && data.newsPoints > 0) toast.success(`📰 소소신문 읽기 +${data.newsPoints}P 획득!`);
     return (data && data.headline) ? data : null;
   } catch { return null; }
 }
@@ -230,6 +229,7 @@ function renderPresidentCard(p) {
       ${crisisHTML}
       ${impeachHTML}
     </div>`;
+}
 
 function renderBattleCard(battle) {
   if (!battle) return '';
@@ -285,7 +285,18 @@ function renderBattleCard(battle) {
 }
 
 // 비로그인 게스트용 히어로
-function renderGuestHero() {
+function renderGuestHero(presidentData, battleData) {
+  const liveItems = [];
+  if (presidentData) {
+    liveItems.push(`👑 현직 대통령: ${escHtml(presidentData.candidateName)} · ${escHtml(presidentData.partyName)}`);
+  }
+  if (battleData && battleData.totalVotes > 0) {
+    liveItems.push(`⚔️ 오늘 배틀 ${fmtNum(battleData.totalVotes)}명 참여 중`);
+  }
+  const liveHTML = liveItems.length
+    ? `<div class="home-landing-hero__live">${liveItems.map(t => `<span>${t}</span>`).join('<span class="home-landing-hero__live-sep">·</span>')}</div>`
+    : '';
+
   return `
     <section class="home-landing-hero page-enter">
       <div class="home-landing-hero__bg home-landing-hero__bg--one"></div>
@@ -298,6 +309,7 @@ function renderGuestHero() {
         </div>
         <h1>무명 시민에서<br>거물 정치인까지 👑</h1>
         <p>AI 정치인들의 매일 정쟁에 참여해 정치력을 쌓고,<br>당대표로 선출된 뒤 대통령에 도전하세요</p>
+        ${liveHTML}
         <div class="home-landing-hero__actions">
           <button class="home-landing-hero__primary" data-path="/signup">정치 인생 시작하기 →</button>
           <button class="home-landing-hero__secondary" data-path="/battle">오늘의 배틀 구경 →</button>
@@ -323,15 +335,18 @@ function renderRankCard(status, isRulingParty = false) {
     : '';
 
   const partyLine = status.partyId
-    ? `<span class="home-id-card__party${status.isLeader ? ' home-id-card__party--leader' : ''}" style="--party-color:${status.partyColor}">${status.partyEmoji} ${escHtml(status.partyName)}${status.isLeader ? ' 👑 당대표' : (status.partyRank ? ` · 당내 ${status.partyRank}위` : '')}${rulingBadge}</span>`
-    : `<button class="home-id-card__join" data-path="/parties" type="button">+ 입당하고 정치력 쌓기</button>`;
+    ? `<div class="home-id-card__party-row-inner">
+        <span class="home-id-card__party${status.isLeader ? ' home-id-card__party--leader' : ''}" style="--party-color:${status.partyColor}">${status.partyEmoji} ${escHtml(status.partyName)}${status.isLeader ? ' 👑 당대표' : ''}${rulingBadge}</span>
+        ${!status.isLeader && status.partyRank ? `<span class="home-id-card__party-rank">당내 ${status.partyRank}위</span>` : ''}
+      </div>`
+    : `<button class="home-id-card__join" data-path="/republic" type="button">🏛️ 입당하고 대통령 도전하기</button>`;
 
   const nextLine = rank.isMax
     ? `<span class="home-id-card__next">최고 등급 달성! 🎉</span>`
     : `<span class="home-id-card__next">${rank.next.emoji} ${rank.next.title}까지 <b>${fmtNum(rank.remain)}P</b></span>`;
 
-  const leaderChaseHTML = status.pointsToLeader && status.pointsToLeader <= 200
-    ? `<div class="home-id-card__chase">🎯 당대표까지 <b>${fmtNum(status.pointsToLeader)}P</b> — 활동하면 따라잡을 수 있어요!</div>`
+  const leaderChaseHTML = !status.isLeader && status.partyId && status.pointsToLeader > 0 && status.pointsToLeader <= 1000
+    ? `<div class="home-id-card__chase">🎯 당대표까지 <b>${fmtNum(status.pointsToLeader)}P</b> — 당대표 → 대통령 후보 출마!</div>`
     : '';
 
   // 즉시 계산 가능한 마이크로 업적
@@ -350,6 +365,8 @@ function renderRankCard(status, isRulingParty = false) {
     ? `<div class="home-id-card__badges">${badges.map(b => `<span class="home-id-card__badge-chip">${b.icon} ${b.label}</span>`).join('')}</div>`
     : '';
 
+  const nearNext = !rank.isMax && rank.progress >= 70;
+
   return `
     <section class="home-id-card page-enter" style="--rank-c:${rank.color}">
       <div class="home-id-card__top">
@@ -361,8 +378,8 @@ function renderRankCard(status, isRulingParty = false) {
         <button class="home-id-card__more" data-path="/ranking" type="button">랭킹 →</button>
       </div>
       <div class="home-id-card__progress">
-        <div class="home-id-card__bar"><div class="home-id-card__fill" style="width:${rank.progress}%"></div></div>
-        ${nextLine}
+        <div class="home-id-card__bar"><div class="home-id-card__fill${nearNext ? ' home-id-card__fill--near' : ''}" style="width:${rank.progress}%"></div></div>
+        ${nextLine}${nearNext ? ` <span style="color:var(--rank-c);font-size:11px;font-weight:900">▲ 승급 임박!</span>` : ''}
       </div>
       <div class="home-id-card__party-row">${partyLine}</div>
       ${badgesHTML}
@@ -396,8 +413,10 @@ function renderMissions(status, battleData, isRulingParty = false) {
   const votedBattle = !!(battleData && battleData.userVote);
   const votedElection = !!status.votedElection;
   const votedCrisis = !!status.votedCrisis;
+  const readNewsToday = !!status.readNewsToday;
   const campaignsToday = Number(status.campaignsToday || 0);
-  const attended = (appState.streak || 0) >= 1;
+  const streak = appState.streak || 0;
+  const attended = streak >= 1;
 
   const dailyReward = status.isLeader ? '+30P 👑' : '+20P';
 
@@ -417,37 +436,29 @@ function renderMissions(status, battleData, isRulingParty = false) {
 
   const missions = [
     { done: attended,       label: '오늘 출석',        path: '/',         cta: '완료',       reward: dailyReward, icon: '📅' },
+    { done: readNewsToday,  label: '소소신문 읽기',     path: '/news',     cta: '읽으러 가기', reward: '+3P',      icon: '📰' },
     { done: votedBattle,    label: '정치배틀 투표',     path: '/battle',   cta: '투표하기',   reward: '+5P',       icon: '🗳️' },
     { done: votedElection,  label: elecLabel,           path: '/election', cta: '투표하기',   reward: '+5P',       icon: '👑' },
     { done: votedCrisis,    label: '이번 주 위기 투표', path: '/news',     cta: '참여하기',   reward: '+5P',       icon: '🚨' },
     { done: askedQA,        label: '대통령에게 질문',   path: '/election', cta: '질문하기',   reward: '+3P',       icon: '🎙️' },
-    ...(status.partyId ? [{ done: campaignsToday >= 1, label: `유세 캠페인 (${campaignsToday}/3)`, path: '/parties', cta: '유세하기', reward: '-20P → 당 +15P', icon: '📢' }] : []),
+    ...(status.partyId ? [{ done: campaignsToday >= 1, label: `유세 캠페인 (${campaignsToday}/3)`, path: '/republic', cta: '유세하기', reward: '-20P → 당 +15P', icon: '📢' }] : []),
     ...(isRulingParty ? [{ done: true, label: '집권당 일일 특전', path: '/', cta: '수령 완료', reward: '+3P 🔑', icon: '🏛️' }] : []),
   ];
   const doneCount = missions.filter(m => m.done).length;
   const allDone = doneCount === missions.length;
 
-  // 이번 주 대선 마감일 → 주간 진행 바
-  const weekBarHTML = (() => {
-    const endKey = status.electionEndKey;
-    if (!endKey) return '';
-    const endMs = new Date(`${endKey}T23:59:59+09:00`).getTime();
-    const startMs = endMs - 6 * 86400000;
-    const now = Date.now();
-    const weekPct = Math.min(100, Math.max(0, Math.round(((now - startMs) / (endMs - startMs)) * 100)));
-    const daysLeft = Math.ceil((endMs - now) / 86400000);
-    const label = daysLeft <= 0 ? '집계 중' : daysLeft === 1 ? '오늘 마감!' : `${daysLeft}일 남음`;
-    const urgentClass = daysLeft <= 1 ? ' home-week-bar--urgent' : '';
-    return `<div class="home-week-bar${urgentClass}">
-      <span class="home-week-bar__label">🗓️ 이번 주 대선</span>
-      <div class="home-week-bar__track"><div class="home-week-bar__fill" style="width:${weekPct}%"></div></div>
-      <span class="home-week-bar__remain">${label}</span>
-    </div>`;
-  })();
+  // 스트릭 위기: 밤 9시 이후 아직 출석 안 했으면 경고
+  const kstHour = new Date(Date.now() + 9 * 3600000).getUTCHours();
+  const streakWarningHTML = (!attended && streak >= 2 && kstHour >= 21)
+    ? `<div class="home-streak-warning">
+        <span class="home-streak-warning__flame">🔥</span>
+        <span><b>${streak}일 연속 스트릭 위기!</b> 자정 전에 출석 체크하세요!</span>
+      </div>`
+    : '';
 
   return `
-    <section class="home-missions">
-      ${weekBarHTML}
+    <section class="home-missions${allDone ? ' home-missions--all-done' : ''}">
+      ${streakWarningHTML}
       <div class="home-missions__head">
         <span class="home-missions__title">📋 오늘의 정치 일정</span>
         <span class="home-missions__count${allDone ? ' home-missions__count--all' : ''}">${doneCount}/${missions.length} 완료${allDone ? ' 🎉' : ''}</span>
@@ -467,7 +478,7 @@ function renderMissions(status, battleData, isRulingParty = false) {
         <div class="home-missions__bonus-list">
           <button class="home-missions__bonus-item" data-path="/battle" type="button">💬 배틀 토론 <em>+20P</em></button>
           <button class="home-missions__bonus-item" data-path="/feed" type="button">✍️ 글·댓글 <em>+10~20P</em></button>
-          <button class="home-missions__bonus-item" data-path="/parties" type="button">🏛️ 정당 랭킹 <em>확인</em></button>
+          <button class="home-missions__bonus-item" data-path="/republic" type="button">🏛️ 공화국 허브 <em>확인</em></button>
         </div>
       </div>` : ''}
     </section>`;
@@ -591,10 +602,8 @@ export async function renderHome() {
       httpsCallable(functions, 'syncPartyMemberPower')({}).catch(() => {});
     }
 
-    const [hotPosts, popularComments, todayBest, battleData, presidentData, newsData, myStatus] = await Promise.all([
-      fetchHotPosts(8),
-      fetchPopularComments(6),
-      fetchTodayBest(),
+    const [hotPosts, battleData, presidentData, newsData, myStatus] = await Promise.all([
+      fetchHotPosts(4),
       fetchTodayBattle(),
       fetchPresident(),
       fetchDailyNews(),
@@ -606,47 +615,42 @@ export async function renderHome() {
 
     const isRulingParty = !!(myStatus?.loggedIn && myStatus.partyId && presidentData?.partyId && presidentData.partyId === myStatus.partyId);
 
-    // 로그인 유저: 정치 신분증 + 당대표 특전 + 오늘의 정치 일정 / 게스트: 가입 유도 히어로
-    const headerHTML = (myStatus && myStatus.loggedIn)
-      ? `${renderRankCard(myStatus, isRulingParty)}${renderLeaderCard(myStatus)}${renderMissions(myStatus, battleData, isRulingParty)}${renderQuickActions()}`
-      : `${renderGuestHero()}${renderQuickActions()}`;
-
-    const tickerHTML = renderNewsTicker(presidentData, battleData, newsData);
-    const newsHTML = renderNewsCard(newsData || generateFallbackNews(battleData, presidentData));
-    const prezHTML = renderPresidentCard(presidentData);
-    const battleHTML = renderBattleCard(battleData);
     const newPrezHTML = renderPresidentAnnouncement(presidentData);
+    const battleHTML = renderBattleCard(battleData);
 
-    const bestHTML = todayBest ? `
-      <div class="home-section-header" style="margin-bottom:8px">
-        <span class="home-section-title">⭐ 오늘의 베스트</span>
-      </div>
-      ${renderTodayBest(todayBest)}` : '';
-
-    const hotHTML = `
-      <div>
+    const hotHTML = hotPosts.length ? `
+      <div class="home-hot-section">
         <div class="home-section-header">
-          <span class="home-section-title">🔥 인기 모음</span>
+          <span class="home-section-title">🔥 인기글</span>
           <button class="home-section-more home-section-more--button" id="hbtn-more-hot">더 보기</button>
         </div>
         <div class="home-rank-list">
-          ${hotPosts.length
-            ? hotPosts.map(renderPopularPost).join('')
-            : '<div class="empty-state"><div class="empty-state__title">아직 없어요. 첫 번째가 되어보세요!</div></div>'}
-        </div>
-      </div>`;
-
-    const commentsHTML = popularComments.length ? `
-      <div>
-        <div class="home-section-header">
-          <span class="home-section-title">💬 따끈한 댓글</span>
-        </div>
-        <div class="home-compact-feed-list">
-          ${popularComments.map(renderPopularComment).join('')}
+          ${hotPosts.map(renderPopularPost).join('')}
         </div>
       </div>` : '';
 
-    el.innerHTML = `<div class="home-dash page-enter home-dash--v2"><div id="home-notif-slot"></div>${newPrezHTML}${tickerHTML}${headerHTML}<div id="home-campaign-slot"></div><div id="home-manifesto-slot"></div>${battleHTML}${newsHTML}${prezHTML}<div id="home-crisis-slot"></div>${bestHTML}${hotHTML}${commentsHTML}<div id="home-party-power-slot"></div><div id="home-election-race-slot"></div><div id="home-party-activity-slot"></div></div>`;
+    if (myStatus && myStatus.loggedIn) {
+      // 로그인: 미션 → 배틀 → 인기글
+      el.innerHTML = `
+        <div class="home-dash page-enter home-dash--v2">
+          <div id="home-notif-slot"></div>
+          ${newPrezHTML}
+          ${renderRankCard(myStatus, isRulingParty)}
+          ${renderMissions(myStatus, battleData, isRulingParty)}
+          <div id="home-campaign-slot"></div>
+          ${battleHTML}
+          <div id="home-crisis-slot"></div>
+          ${hotHTML}
+        </div>`;
+    } else {
+      // 비로그인: 히어로 → 배틀 → 인기글
+      el.innerHTML = `
+        <div class="home-dash page-enter home-dash--v2">
+          ${renderGuestHero(presidentData, battleData)}
+          ${battleHTML}
+          ${hotHTML}
+        </div>`;
+    }
 
     el.querySelector('.home-new-prez-announce__close')?.addEventListener('click', () => {
       el.querySelector('#home-new-prez-announce')?.remove();
@@ -708,14 +712,12 @@ export async function renderHome() {
         .catch(() => {});
     }
 
-    // 유세 카드 + 세력도 + 대선 경쟁 + 위기 이벤트 + 정당 활동 피드 비동기 로드
+    // 유세 카드 + 세력도 + 위기 이벤트 비동기 로드
     if (user) loadNotifications(user.uid, el.querySelector('#home-notif-slot'), myStatus?.partyId || null);
     if (user && myStatus?.loggedIn && myStatus.partyId) loadCampaignCard(el.querySelector('#home-campaign-slot'), myStatus);
     if (user && myStatus?.loggedIn && myStatus.partyId) loadHomeManifesto(el.querySelector('#home-manifesto-slot'), myStatus);
     loadPartyPowerChart(el.querySelector('#home-party-power-slot'), battleData);
-    loadElectionRace(el.querySelector('#home-election-race-slot'));
     loadWeeklyCrisis(el.querySelector('#home-crisis-slot'));
-    loadHomePartyActivity(el.querySelector('#home-party-activity-slot'));
   } catch (err) {
     console.error('[home] renderHome error', err);
     el.innerHTML = `

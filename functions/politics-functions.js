@@ -53,15 +53,11 @@ if (!getApps().length) initializeApp();
 const db = getFirestore();
 const REGION = 'asia-northeast3';
 
-// ── 7개 정당 (battle-functions.js의 AI 캐릭터 소속과 일치) ──
+// ── 3개 정당 ──
 const PARTIES = Object.freeze([
-  { id: 'national',  name: '국민안정당', emoji: '🎙️', color: '#8B7355', leaderName: '3선 의원',        slogan: '검증된 경험, 흔들림 없는 안정' },
-  { id: 'truth',     name: '진실방송당', emoji: '📺', color: '#6C5CE7', leaderName: '정치 유튜버',      slogan: '숨겨진 진실을 폭로한다' },
-  { id: 'youth',     name: '청년혁명당', emoji: '📱', color: '#E84393', leaderName: 'MZ 운동가',        slogan: '기득권을 갈아엎자' },
-  { id: 'center',    name: '중도민주당', emoji: '📊', color: '#00CEC9', leaderName: '여론조사 전문가',  slogan: '데이터가 곧 민심이다' },
-  { id: 'future',    name: '함께미래당', emoji: '🤝', color: '#FDCB6E', leaderName: '당 대변인',        slogan: '우리는 늘 여러분 편입니다' },
-  { id: 'rights',    name: '알권리당',   emoji: '🔍', color: '#00B894', leaderName: '탐사 기자',        slogan: '국민은 알 권리가 있다' },
-  { id: 'justice',   name: '법치정의당', emoji: '⚖️', color: '#2D3436', leaderName: '검사 출신 변호사', slogan: '법 앞에 예외는 없다' },
+  { id: 'national', name: '국민안정당', emoji: '🎙️', color: '#8B7355', leaderName: '3선 의원',       slogan: '검증된 경험, 흔들림 없는 안정' },
+  { id: 'youth',    name: '청년혁명당', emoji: '📱', color: '#E84393', leaderName: 'MZ 운동가',       slogan: '기득권을 갈아엎자' },
+  { id: 'center',   name: '중도민주당', emoji: '📊', color: '#00CEC9', leaderName: '여론조사 전문가', slogan: '데이터가 곧 민심이다' },
 ]);
 
 const PARTY_BY_ID = Object.freeze(Object.fromEntries(PARTIES.map(p => [p.id, p])));
@@ -76,11 +72,6 @@ const PARTY_NPCS = Object.freeze({
     { name: '이원로', emoji: '🏅', power: 900 },  { name: '정선배', emoji: '☕', power: 520 },
     { name: '최고참', emoji: '🗂️', power: 280 },
   ],
-  truth: [
-    { name: '폭로왕', emoji: '📣', power: 2200 }, { name: '단독맨', emoji: '🎬', power: 1400 },
-    { name: '속보러', emoji: '⚡', power: 820 },  { name: '구독요정', emoji: '🔔', power: 480 },
-    { name: '댓글픽', emoji: '💬', power: 240 },
-  ],
   youth: [
     { name: '갈아엎자', emoji: '🔥', power: 2000 }, { name: '영끌이', emoji: '🚀', power: 1300 },
     { name: '공정좌', emoji: '⚖️', power: 760 },   { name: '이생망', emoji: '😤', power: 440 },
@@ -90,21 +81,6 @@ const PARTY_NPCS = Object.freeze({
     { name: '김퍼센트', emoji: '📊', power: 2100 }, { name: '박표본', emoji: '🧮', power: 1350 },
     { name: '이오차', emoji: '📈', power: 780 },    { name: '중도층', emoji: '🤔', power: 460 },
     { name: '여론바람', emoji: '🌬️', power: 230 },
-  ],
-  future: [
-    { name: '무조건찬성', emoji: '🙌', power: 1900 }, { name: '박수만', emoji: '👏', power: 1250 },
-    { name: '늘긍정', emoji: '😄', power: 720 },      { name: '함께해요', emoji: '🤝', power: 420 },
-    { name: '미래로', emoji: '🌈', power: 210 },
-  ],
-  rights: [
-    { name: '김탐사', emoji: '🔦', power: 2050 }, { name: '제보받음', emoji: '📨', power: 1320 },
-    { name: '취재중', emoji: '🎙️', power: 750 },  { name: '단독입수', emoji: '📂', power: 450 },
-    { name: '팩트체크', emoji: '✅', power: 225 },
-  ],
-  justice: [
-    { name: '법대로', emoji: '⚖️', power: 2300 }, { name: '원칙주의', emoji: '📕', power: 1450 },
-    { name: '무관용', emoji: '🚫', power: 850 },   { name: '정의구현', emoji: '🛡️', power: 500 },
-    { name: '엄벌해', emoji: '🔨', power: 260 },
   ],
 });
 
@@ -513,15 +489,25 @@ async function finalizeElection(periodId) {
 }
 
 // 이번 주 선거 보장 + 지난 주 선거 마감 처리
+function seedAiVotes(candidates) {
+  const totalAiVotes = 24 + Math.floor(Math.random() * 12); // 24~35 표
+  const totalPower = candidates.reduce((s, c) => s + c.power, 0) || 1;
+  const votes = {};
+  candidates.forEach(c => { votes[c.partyId] = Math.max(3, Math.round((c.power / totalPower) * totalAiVotes)); });
+  const total = Object.values(votes).reduce((s, v) => s + v, 0);
+  return { votes, total };
+}
+
 async function ensureElection() {
   const { key, endKey, prevKey } = weekPeriod();
   const ref = db.doc(`elections/${key}`);
   const snap = await ref.get();
   if (!snap.exists) {
     const candidates = await buildCandidates();
+    const { votes: aiVotes, total: aiTotal } = seedAiVotes(candidates);
     await ref.set({
       periodId: key, status: 'open', startKey: key, endKey,
-      candidates, votes: {}, totalVotes: 0,
+      candidates, votes: aiVotes, totalVotes: aiTotal, aiSeeded: true,
       createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
 
@@ -583,6 +569,8 @@ exports.getElection = onCall({ region: REGION, timeoutSeconds: 30 }, async reque
       decreeApprove: Number(pData.decreeApprove || 0),
       decreeDisapprove: Number(pData.decreeDisapprove || 0),
       myDecreeRating,
+      presidentRemoved: !!pData.presidentRemoved,
+      earlyElectionRequired: !!pData.earlyElectionRequired,
     };
   }
 
@@ -1037,25 +1025,21 @@ exports.getRankings = onCall({ region: REGION, timeoutSeconds: 30 }, async reque
 // ── 오늘의 정당 활동 — AI가 정당별 한마디 생성 (lazy, 하루 1회) ──
 const PARTY_ROLES = {
   national: `너는 18년 경력 3선 국회의원이다. 권위적·느긋한 말투. 관례·선례 강조. 경력 자랑 뉘앙스.`,
-  truth:    `너는 구독자 120만 정치 유튜버다. 과장·흥분·충격 말투. 폭로·단독 프레임. 구독 유도.`,
   youth:    `너는 MZ세대 시민운동가다. 반말·SNS체·직설 말투. 기득권 비판. ㅋㅋ·ㄹㅇ·팩폭 자연스럽게.`,
   center:   `너는 여론조사 전문가다. 냉정·분석적·모호한 말투. 퍼센트·통계 활용. 결론은 항상 애매하게.`,
-  future:   `너는 여당 공식 대변인이다. 과잉 동조·흥분·아첨 말투. 무조건 긍정적 프레임.`,
-  rights:   `너는 탐사 기자다. 침착하고 날카로운 말투. 내부 제보·문서 프레임. 사실 추적.`,
-  justice:  `너는 검사 출신 변호사다. 딱딱하고 원칙적인 말투. 법적 근거 강조. 무관용 원칙.`,
 };
 
 function buildActivityPrompt(topic) {
   const entries = PARTIES.map(p => `- partyId: "${p.id}" (${p.name}, ${p.emoji})\n  역할: ${PARTY_ROLES[p.id]}`).join('\n');
   return `오늘의 소소공화국 정치 이슈: "${topic}"
 
-아래 7명의 정치인이 각자의 캐릭터로 이 이슈에 한마디 합니다.
+아래 3명의 정치인이 각자의 캐릭터로 이 이슈에 한마디 합니다.
 각 발언은 1~2문장, 캐릭터에 완전히 충실하게, 한국어로.
 
 ${entries}
 
 JSON 배열로만 응답하세요 (다른 텍스트 금지):
-[{"partyId":"national","text":"..."},{"partyId":"truth","text":"..."},{"partyId":"youth","text":"..."},{"partyId":"center","text":"..."},{"partyId":"future","text":"..."},{"partyId":"rights","text":"..."},{"partyId":"justice","text":"..."}]`;
+[{"partyId":"national","text":"..."},{"partyId":"youth","text":"..."},{"partyId":"center","text":"..."}]`;
 }
 
 const DAILY_TOPICS = [
@@ -1094,7 +1078,7 @@ exports.getPartyActivities = onCall({ region: REGION, timeoutSeconds: 60 }, asyn
 
   if (snap.exists) {
     const d = snap.data();
-    if (d.activities && d.activities.length === 7) return { activities: d.activities, topic: d.topic, date: today };
+    if (d.activities && d.activities.length >= 3) return { activities: d.activities, topic: d.topic, date: today };
   }
 
   // 중복 생성 방지: generating 플래그 체크
@@ -1112,7 +1096,7 @@ exports.getPartyActivities = onCall({ region: REGION, timeoutSeconds: 60 }, asyn
     const topic = battleTopic || pickTodayTopic();
     const raw = await callAI(buildActivityPrompt(topic), 1200);
     const parsed = safeParseJson(raw);
-    if (!Array.isArray(parsed) || parsed.length < 7) throw new Error('AI 응답 파싱 실패');
+    if (!Array.isArray(parsed) || parsed.length < 3) throw new Error('AI 응답 파싱 실패');
 
     const activities = parsed.map(item => {
       const party = PARTY_BY_ID[item.partyId];
@@ -1141,12 +1125,32 @@ exports.getPartyActivities = onCall({ region: REGION, timeoutSeconds: 60 }, asyn
 });
 
 // ── 소소신문 — AI 일간 정치 뉴스 ──
-exports.getDailyNews = onCall({ region: REGION, timeoutSeconds: 60 }, async () => {
+exports.getDailyNews = onCall({ region: REGION, timeoutSeconds: 60 }, async (request) => {
   const today = kstToday();
+  const uid = request.auth && request.auth.uid;
+
+  // 소소신문 읽기 +3P (하루 1회)
+  let newsPoints = 0;
+  if (uid) {
+    const awardRef = db.doc(`point_awards/${uid}_news_${today}`);
+    const awardSnap = await awardRef.get();
+    if (!awardSnap.exists) {
+      newsPoints = 3;
+      const batch = db.batch();
+      batch.set(awardRef, { uid, action: 'read_news', points: newsPoints, date: today, createdAt: FieldValue.serverTimestamp() });
+      batch.set(db.doc(`users/${uid}`), {
+        points: FieldValue.increment(newsPoints),
+        totalPoints: FieldValue.increment(newsPoints),
+        updatedAt: FieldValue.serverTimestamp(),
+      }, { merge: true });
+      await batch.commit();
+    }
+  }
+
   const ref = db.doc(`daily_news/${today}`);
   const snap = await ref.get();
-  if (snap.exists && snap.data().headline) return { ...snap.data(), date: today };
-  if (snap.exists && snap.data().generating) return { headline: null, body: null, date: today };
+  if (snap.exists && snap.data().headline) return { ...snap.data(), date: today, newsPoints };
+  if (snap.exists && snap.data().generating) return { headline: null, body: null, date: today, newsPoints };
 
   await ref.set({ generating: true, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
 
@@ -1260,11 +1264,64 @@ JSON으로만 응답: {"headline":"제목","body":"본문"}`;
       generatedAt: FieldValue.serverTimestamp(),
     };
     await ref.set(news);
-    return news;
+    return { ...news, newsPoints };
   } catch (e) {
     await ref.set({ generating: false, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
     console.error('[getDailyNews] error', e);
-    return { headline: null, body: null, date: today };
+    return { headline: null, body: null, date: today, newsPoints };
+  }
+});
+
+// ── 소소신문 AI 시론 ──
+exports.generateNewsColumn = onCall({ region: REGION, timeoutSeconds: 60 }, async () => {
+  const today = kstToday();
+  const ref = db.doc(`news_column/${today}`);
+  const snap = await ref.get();
+  if (snap.exists && snap.data().column && !snap.data().generating) return snap.data();
+
+  if (snap.exists && snap.data().generating) return snap.data();
+  await ref.set({ generating: true }, { merge: true });
+
+  try {
+    const [presidentSnap, crisisSnap, billsSnap] = await Promise.all([
+      db.collection('elections').orderBy('createdAtMs', 'desc').limit(1).get(),
+      db.collection('weekly_crisis').orderBy('weekKey', 'desc').limit(1).get(),
+      db.collection('congress_bills').orderBy('createdAtMs', 'desc').limit(3).get(),
+    ]);
+
+    const presData = presidentSnap.docs[0]?.data() || {};
+    const presName = presData.winner?.candidateName || '대통령';
+    const crisisData = crisisSnap.docs[0]?.data() || {};
+    const billTitles = billsSnap.docs.map(d => d.data().title || '').filter(Boolean).join(', ');
+
+    const prompt = `당신은 소소공화국의 신랄한 정치 칼럼니스트입니다. 오늘의 시론을 작성하세요.
+
+현재 상황:
+- 현직 대통령: ${presName}
+- 최근 국정 위기: ${crisisData.title || '없음'}
+- 최근 법안: ${billTitles || '없음'}
+
+JSON 형식으로만 답하세요:
+{
+  "headline": "시론 제목 (20자 이내)",
+  "column": "오늘의 정치 시론 (100~150자). 현재 정세를 분석하는 짧고 날카로운 논평. 재미있고 풍자적으로."
+}`;
+
+    const raw = await callAI(prompt, 400);
+    const parsed = safeParseJson(raw);
+    const result = {
+      date: today,
+      headline: String(parsed?.headline || '소소공화국 오늘의 시론').trim().slice(0, 40),
+      column: String(parsed?.column || '').trim().slice(0, 200),
+      generating: false,
+      generatedAt: FieldValue.serverTimestamp(),
+    };
+    await ref.set(result);
+    return result;
+  } catch (e) {
+    await ref.set({ generating: false }, { merge: true });
+    console.error('[generateNewsColumn] error', e);
+    return { headline: null, column: null, date: today };
   }
 });
 
@@ -1414,12 +1471,8 @@ exports.getUserPoliticsStats = onCall({ region: REGION, timeoutSeconds: 15 }, as
 // ── 주간 정당 당론 성명 (AI 생성, 정당별 1회) ──
 const MANIFESTO_VOICES = {
   national: `너는 국민안정당 3선 의원이다. 권위 있고 느긋한 어투. 안정과 경험을 강조. 한두 문장.`,
-  truth:    `너는 진실방송당 정치 유튜버다. 과장되고 자극적인 어투. 폭로·단독 프레임. 한두 문장.`,
   youth:    `너는 청년혁명당 MZ 운동가다. 반말·직설·팩폭 스타일. 기득권 비판. 한두 문장.`,
   center:   `너는 중도민주당 여론조사 전문가다. 냉정·분석적. 통계 자주 언급. 결론은 애매하게. 한두 문장.`,
-  future:   `너는 함께미래당 대변인이다. 과잉 긍정·동조. 화합·미래 강조. 한두 문장.`,
-  rights:   `너는 알권리당 탐사 기자다. 침착하고 날카롭게. 내부 제보 프레임. 한두 문장.`,
-  justice:  `너는 법치정의당 검사 출신 변호사다. 딱딱하고 원칙적. 법 근거 강조. 한두 문장.`,
 };
 
 exports.getPartyManifesto = onCall({ region: REGION, timeoutSeconds: 30 }, async request => {

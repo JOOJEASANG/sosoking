@@ -7,7 +7,7 @@
   text-align: center;
   padding: 26px 18px 20px;
   background:
-    radial-gradient(circle at 50% -20%, color-mix(in srgb, var(--color-primary) 16%, transparent), transparent 60%),
+    radial-gradient(circle at 50% -20%, var(--color-primary-soft, rgba(255,75,43,0.12)), transparent 60%),
     linear-gradient(135deg, var(--color-primary-bg, #fff0ec), var(--color-surface, #fff));
   border: 1px solid var(--color-border);
   border-radius: 18px;
@@ -51,11 +51,188 @@
 .party-mine__title { font-size: 16px; font-weight: 900; color: var(--color-text-primary); margin-bottom: 6px; }
 .party-mine--guest .btn, .party-mine--none .btn { margin-top: 10px; }
 
-.parties-standings-title {
-  font-size: 15px; font-weight: 900; color: var(--color-text-primary);
-  margin: 4px 4px 10px; display: flex; align-items: baseline; gap: 8px;
+/* ── 정당 세력 순위 섹션 ── */
+.standings-section {
+  margin-bottom: 16px;
 }
-.parties-standings-title span { font-size: 11px; font-weight: 700; color: var(--color-text-muted); }
+.standings-section__header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding: 0 2px;
+}
+.standings-section__eyebrow {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .1em;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+}
+.standings-section__title {
+  font-size: 17px;
+  font-weight: 900;
+  color: var(--color-text-primary);
+  margin-top: 3px;
+}
+
+/* ── 순위표 ── */
+.standings-board {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+.standings-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-border);
+  transition: background .13s;
+  position: relative;
+}
+.standings-row:last-child { border-bottom: none; }
+.standings-row--top {
+  background: var(--color-surface);
+}
+.standings-row--top::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--party-color);
+  opacity: 0.07;
+  pointer-events: none;
+  z-index: 0;
+}
+.standings-row--top > * {
+  position: relative;
+  z-index: 1;
+}
+.standings-row:not(.standings-row--top):hover {
+  background: var(--color-surface-2, #f8f8fc);
+}
+.standings-row::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--party-color);
+  border-radius: 0 2px 2px 0;
+  opacity: 0;
+  transition: opacity .13s;
+}
+.standings-row--top::before { opacity: 1; }
+.standings-row:hover::before { opacity: 1; }
+
+.standings-row__rank {
+  min-width: 28px;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 900;
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+.standings-row__party {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 140px;
+  min-width: 0;
+}
+.standings-row__emoji { font-size: 20px; line-height: 1; flex-shrink: 0; }
+.standings-row__info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.standings-row__name {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.standings-row__leader {
+  font-size: 10px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.standings-row__bar-wrap {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--color-border);
+  overflow: hidden;
+  min-width: 40px;
+}
+.standings-row__bar {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--party-color);
+  transition: width .7s ease;
+}
+
+.standings-row__stats {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+.standings-row__power {
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--color-text-primary);
+  min-width: 44px;
+  text-align: right;
+}
+.standings-row__members {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  background: var(--color-surface-2, #f0f0f5);
+  border-radius: 99px;
+  padding: 2px 6px;
+  white-space: nowrap;
+}
+.standings-row__elec {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--party-color);
+  white-space: nowrap;
+}
+.standings-row__trend {
+  font-size: 11px;
+  font-weight: 900;
+  color: #16a34a;
+}
+
+/* ── 상세 정보 소제목 ── */
+.parties-detail-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--color-text-muted);
+  letter-spacing: .03em;
+  margin: 4px 2px 10px;
+  padding-left: 4px;
+  border-left: 3px solid var(--color-primary);
+}
+
+/* ── 반응형 ── */
+@media (max-width: 480px) {
+  .standings-row { padding: 10px 12px; gap: 7px; }
+  .standings-row__party { flex: 0 0 110px; }
+  .standings-row__members { display: none; }
+  .standings-row__elec { display: none; }
+}
 
 .parties-list { display: flex; flex-direction: column; gap: 10px; }
 
@@ -64,7 +241,7 @@
   display: flex;
   align-items: stretch;
   flex-wrap: wrap;
-  background: linear-gradient(135deg, var(--color-text-primary), color-mix(in srgb, var(--color-text-primary) 78%, #3a3f63));
+  background: linear-gradient(135deg, #1e2646, #0f1535);
   border-radius: 14px;
   padding: 10px 8px;
   margin-bottom: 14px;
@@ -112,7 +289,7 @@
 .party-card--ruling {
   border: 1.5px solid var(--party-color, #ff6b4a);
   border-left-width: 4px;
-  background: linear-gradient(135deg, color-mix(in srgb, var(--party-color, #ff6b4a) 8%, var(--color-surface)), var(--color-surface));
+  background: var(--color-surface);
 }
 .party-card__ruling-tag {
   position: absolute;
@@ -183,10 +360,8 @@
 
 /* 집권당 배지 */
 .party-card--prez {
-  border: 1.5px solid color-mix(in srgb, #7c3aed 50%, var(--party-color, #7c3aed));
-  background: linear-gradient(135deg,
-    color-mix(in srgb, #7c3aed 6%, var(--color-surface)),
-    var(--color-surface));
+  border: 1.5px solid #7c3aed;
+  background: var(--color-surface);
 }
 .party-card__prez-tag {
   position: absolute;
@@ -203,8 +378,8 @@
 /* 역대 집권 배지 */
 .party-card__win-badge {
   display: inline-block;
-  background: color-mix(in srgb, #f59e0b 15%, transparent);
-  border: 1px solid color-mix(in srgb, #f59e0b 40%, transparent);
+  background: rgba(245,158,11,0.15);
+  border: 1px solid rgba(245,158,11,0.40);
   color: #fbbf24;
   font-size: 10px;
   font-weight: 800;
@@ -241,7 +416,7 @@
 .party-chips { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0; }
 .party-chip {
   font-size: 10px; font-weight: 800; color: var(--party-color, var(--color-primary));
-  background: color-mix(in srgb, var(--party-color, #ff6b4a) 12%, transparent);
+  background: var(--color-surface-2, #f0f0f5);
   padding: 2px 7px; border-radius: 99px;
 }
 .party-card__policy { font-size: 11px; color: var(--color-text-muted); margin: 2px 0 4px; }
@@ -385,12 +560,11 @@
 .join-ceremony__card {
   position: relative; overflow: hidden; text-align: center;
   width: 100%; max-width: 360px;
-  background: linear-gradient(160deg,
-    color-mix(in srgb, var(--party-color, #ff6b4a) 18%, var(--color-surface, #fff)),
-    var(--color-surface, #fff) 55%);
+  background-color: var(--color-surface, #fff);
+  background-image: linear-gradient(160deg, rgba(0,0,0,0.03), transparent 55%);
   border: 2px solid var(--party-color, #ff6b4a);
   border-radius: 24px; padding: 28px 22px 24px;
-  box-shadow: 0 24px 60px rgba(0,0,0,.25), 0 0 0 6px color-mix(in srgb, var(--party-color) 15%, transparent);
+  box-shadow: 0 24px 60px rgba(0,0,0,.25);
   transform: scale(.88); transition: transform .3s cubic-bezier(.34,1.56,.64,1);
 }
 .join-ceremony--visible .join-ceremony__card { transform: scale(1); }
@@ -409,7 +583,7 @@
 
 .join-ceremony__emoji {
   font-size: 64px; line-height: 1; margin: 8px 0 4px;
-  filter: drop-shadow(0 4px 12px color-mix(in srgb, var(--party-color) 40%, transparent));
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.20));
   animation: pop-in .4s .15s cubic-bezier(.34,1.56,.64,1) both;
 }
 @keyframes pop-in {
@@ -476,8 +650,8 @@
 }
 .welcome-modal__bonus {
   display: inline-flex; align-items: center; gap: 8px;
-  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
-  border: 1.5px solid color-mix(in srgb, var(--color-primary) 30%, transparent);
+  background: var(--color-primary-bg, #fff0ec);
+  border: 1.5px solid var(--color-primary-border, #ffd4c5);
   border-radius: 12px; padding: 10px 18px; margin-bottom: 18px;
 }
 .welcome-modal__bonus-label {
@@ -583,8 +757,8 @@
 .party-manifesto {
   margin-top: 10px;
   padding: 10px 12px;
-  background: color-mix(in srgb, var(--party-color, #888) 8%, var(--color-bg));
-  border: 1px solid color-mix(in srgb, var(--party-color, #888) 25%, transparent);
+  background: var(--color-surface-2, #f0f0f5);
+  border: 1px solid var(--color-border);
   border-radius: 10px;
 }
 .party-manifesto--loading {
@@ -624,18 +798,18 @@
   font-size: 11px;
   color: var(--party-color, var(--color-primary));
   background: none;
-  border: 1px solid color-mix(in srgb, var(--party-color, var(--color-primary)) 40%, transparent);
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   padding: 2px 7px;
   cursor: pointer;
   font-weight: 700;
   transition: background .15s;
 }
-.party-manifesto__edit-btn:hover { background: color-mix(in srgb, var(--party-color, var(--color-primary)) 12%, transparent); }
+.party-manifesto__edit-btn:hover { background: var(--color-surface-2, #f0f0f5); border-color: var(--party-color, var(--color-primary)); }
 .party-manifesto--editing .party-manifesto__title { margin-bottom: 8px; }
 .party-manifesto__input {
   width: 100%;
-  border: 1px solid color-mix(in srgb, var(--party-color, #888) 30%, var(--color-border));
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   padding: 8px 10px;
   font-size: 13px;
@@ -785,3 +959,213 @@
 }
 .party-rivalry__bar-fill--left { border-radius: 4px 0 0 4px; }
 .party-rivalry__bar-fill--right { border-radius: 0 4px 4px 0; }
+
+/* ══════════════════════════════════════════
+   PCARD — 정당 카드 (3개 정당 수직 카드)
+   ══════════════════════════════════════════ */
+.parties-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+/* 각 카드+확장패널 그룹 — 하나의 그리드 셀 */
+.pcard-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+@media (max-width: 760px) {
+  .parties-list { grid-template-columns: 1fr; }
+}
+
+.pcard {
+  display: flex;
+  flex-direction: column;
+  border-radius: 20px;
+  overflow: hidden;
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  transition: box-shadow .2s, transform .2s;
+}
+.pcard:hover {
+  box-shadow: 0 8px 28px rgba(0,0,0,.15);
+  transform: translateY(-2px);
+}
+.pcard--mine {
+  border-color: var(--party-color);
+  border-width: 2px;
+  box-shadow: 0 0 0 1px var(--party-color);
+}
+.pcard--top .pcard__header {
+  background-image: linear-gradient(155deg, rgba(255,255,255,0.12) 0%, rgba(0,0,0,0.20) 100%);
+}
+
+/* 헤더 */
+.pcard__header {
+  position: relative;
+  background-color: var(--party-color);
+  background-image: linear-gradient(155deg, rgba(255,255,255,0.06) 0%, rgba(0,0,0,0.28) 100%);
+  padding: 20px 16px 16px;
+  text-align: center;
+  color: #fff;
+}
+.pcard__badges {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+.pcard-badge {
+  font-size: 9px;
+  font-weight: 900;
+  padding: 2px 7px;
+  border-radius: 99px;
+  white-space: nowrap;
+  letter-spacing: .03em;
+}
+.pcard-badge--top  { background: rgba(251,191,36,.9); color: #78350f; }
+.pcard-badge--prez { background: rgba(167,139,250,.9); color: #3b0764; }
+.pcard-badge--mine { background: rgba(255,255,255,.25); color: #fff; border: 1px solid rgba(255,255,255,.5); }
+.pcard__rank {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  font-size: 18px;
+  line-height: 1;
+  opacity: .9;
+}
+.pcard__emoji {
+  font-size: 44px;
+  line-height: 1;
+  margin: 8px 0 6px;
+  filter: drop-shadow(0 3px 8px rgba(0,0,0,.25));
+}
+.pcard__name {
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: -.01em;
+  margin-bottom: 4px;
+}
+.pcard__slogan {
+  font-size: 11px;
+  opacity: .8;
+  font-style: italic;
+  line-height: 1.4;
+  padding: 0 4px;
+}
+
+/* 바디 */
+.pcard__body {
+  padding: 14px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+.pcard__chips {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.pcard__chip {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--party-color);
+  background: var(--color-surface-2, #f0f0f5);
+  border: 1px solid var(--color-border);
+  padding: 2px 8px;
+  border-radius: 99px;
+}
+.pcard__policy {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+.pcard__leader {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  padding: 8px 10px;
+  background: var(--color-surface-2, #f6f6f9);
+  border-radius: 10px;
+  line-height: 1.4;
+}
+.pcard__leader b { color: var(--party-color); }
+
+/* 통계 그리드 */
+.pcard__stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+.pcard__stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 7px 9px;
+  background: var(--color-surface-2, #f6f6f9);
+  border-radius: 10px;
+}
+.pcard__stat-label {
+  font-size: 9px;
+  font-weight: 800;
+  color: var(--color-text-muted);
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+.pcard__stat-value {
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--color-text-primary);
+}
+
+/* 하단 액션 */
+.pcard__footer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: auto;
+}
+.pcard__footer-btns {
+  display: flex;
+  gap: 8px;
+}
+.pcard__text-btn {
+  flex: 1;
+  background: none;
+  border: 1px solid var(--color-border);
+  padding: 7px 6px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background .13s, color .13s;
+  text-align: center;
+}
+.pcard__text-btn:hover {
+  background: var(--color-surface-2, #f0f0f5);
+  color: var(--party-color);
+  border-color: var(--party-color);
+}
+
+@media (max-width: 480px) {
+  .pcard__emoji { font-size: 36px; }
+  .pcard__name  { font-size: 14px; }
+}
+
+/* ── 다크 모드 오버라이드 ── */
+[data-theme="dark"] .party-trend--up   { color: #4ade80; background: rgba(74,222,128,0.15); }
+[data-theme="dark"] .party-trend--down { color: #f87171; background: rgba(248,113,113,0.15); }
+[data-theme="dark"] .standings-row__trend { color: #4ade80; }
+[data-theme="dark"] .republic-state { box-shadow: 0 6px 18px rgba(0,0,0,.35); }
+[data-theme="dark"] .pcard { box-shadow: 0 2px 8px rgba(0,0,0,.3); }
+[data-theme="dark"] .pcard:hover { box-shadow: 0 8px 28px rgba(0,0,0,.35); }
+[data-theme="dark"] .pcard__leader { background: var(--color-surface-2); }
+[data-theme="dark"] .pcard__stat  { background: var(--color-surface-2); }

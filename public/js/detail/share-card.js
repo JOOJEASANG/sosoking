@@ -2,9 +2,7 @@ import { escHtml } from '../utils/helpers.js';
 import { toast } from '../components/toast.js';
 
 const CARD_THEMES = {
-  ai_judge:     { g1: '#6C5CE7', g2: '#a29bfe', emoji: '⚖️', label: '판결소' },
-  ai_translate: { g1: '#00B894', g2: '#55efc4', emoji: '✨', label: '창작소' },
-  ai_naming:    { g1: '#e17055', g2: '#FF6B4A', emoji: '✨', label: '창작소' },
+  ai_judge: { g1: '#6C5CE7', g2: '#a29bfe', emoji: '🏛️', label: '재판기록' },
 };
 
 function getCardContent(post) {
@@ -15,21 +13,6 @@ function getCardContent(post) {
       return {
         subject: `"${sit}${(post.situation || post.title || '').length > 70 ? '...' : ''}"`,
         result: v ? `${v.judgeName}\n"${(v.verdict || '').slice(0, 90)}${(v.verdict || '').length > 90 ? '...' : ''}"` : '',
-      };
-    }
-    case 'ai_translate': {
-      const orig = (post.originalText || '').slice(0, 60);
-      const trl = (post.translated || '').slice(0, 90);
-      return {
-        subject: `"${orig}${(post.originalText || '').length > 60 ? '...' : ''}"`,
-        result: `→ ${post.styleName || ''}\n"${trl}${(post.translated || '').length > 90 ? '...' : ''}"`,
-      };
-    }
-    case 'ai_naming': {
-      const names = (post.names || []).slice(0, 3).map(n => n.name).join(' · ');
-      return {
-        subject: `"${(post.description || post.title || '').slice(0, 60)}"`,
-        result: names,
       };
     }
     default:

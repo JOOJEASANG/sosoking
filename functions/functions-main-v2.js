@@ -25,6 +25,8 @@ const partyLeague = require('./party-war-functions.js');
 const congress = require('./congress-functions.js');
 const constitutionalCourt = require('./constitutional-court-functions.js');
 
+const adminSeed = require('./admin-seed-functions.js');
+
 module.exports = {
   ...coreAi,
   ...secureAiConfig,
@@ -47,15 +49,19 @@ module.exports = {
   ...hotPotato,
   ...partyLeague,
   ...congress,
-  ...constitutionalCourt,
+  getConstitutionalCourtStatus: constitutionalCourt.getConstitutionalCourtStatus,
+  decideConstitutionalReview: constitutionalCourt.decideConstitutionalReview,
+  generateCourtAiVerdict: constitutionalCourt.generateCourtAiVerdict,
   generateDailyBattle: battle.generateDailyBattle,
   closeDailyBattle: battle.closeDailyBattle,
-  voteForChar: battle.voteForChar,
+  voteForParty: battle.voteForParty,
   addBattleComment: battle.addBattleComment,
   getBattleStatus: battle.getBattleStatus,
   getKingHistory: battle.getKingHistory,
   adminGenerateBattle: battle.adminGenerateBattle,
   reactToBattleComment: battle.reactToBattleComment,
+  adminResetBattleData: battle.adminResetBattleData,
+  adminResetAllPoints: battle.adminResetAllPoints,
   getPoliticsOverview: coreParties.getPoliticsOverview,
   getPartyMembers: coreParties.getPartyMembers,
   joinParty: coreParties.joinParty,
@@ -76,6 +82,7 @@ module.exports = {
   setPartyManifesto: politics.setPartyManifesto,
   getElectionHistory: politics.getElectionHistory,
   getDailyNews: politics.getDailyNews,
+  generateNewsColumn: politics.generateNewsColumn,
   ratePresidentDecree: politics.ratePresidentDecree,
   claimRulingBonus: politics.claimRulingBonus,
   getWeeklyCrisis: politics.getWeeklyCrisis,
@@ -88,4 +95,5 @@ module.exports = {
   ...postOwner,
   ...postView,
   ...kakaoAuth,
+  adminSeedWorldHistory: adminSeed.adminSeedWorldHistory,
 };

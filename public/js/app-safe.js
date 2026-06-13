@@ -70,7 +70,7 @@ function showWelcomeModal(nickname) {
   requestAnimationFrame(() => el.classList.add('welcome-modal--visible'));
   el.querySelector('#wm-party').addEventListener('click', () => {
     el.remove();
-    navigate('/parties');
+    navigate('/republic');
   });
   el.querySelector('#wm-skip').addEventListener('click', () => el.remove());
   el.addEventListener('click', e => { if (e.target === el) el.remove(); });
@@ -103,6 +103,7 @@ async function renderGuideSafe() { const module = await import('./pages/guide.js
 async function registerRoutes() {
   registerRoute('/', async () => renderPage((await import('./pages/home.js')).renderHome, '홈'));
   registerRoute('/battle', async () => renderPage((await import('./pages/battle.js')).renderBattle, '정치배틀'));
+  registerRoute('/republic', async () => renderPage((await import('./pages/republic.js')).renderRepublic, '🏛️ 소소공화국'));
   registerRoute('/parties', async () => renderPage((await import('./pages/parties.js')).renderParties, '정당'));
   registerRoute('/election', async () => renderPage((await import('./pages/election.js')).renderElection, '대통령 선거'));
   registerRoute('/ranking', async () => renderPage((await import('./pages/ranking.js')).renderRanking, '정치력 랭킹'));
@@ -120,10 +121,10 @@ async function registerRoutes() {
   registerRoute('/privacy', async () => renderPage((await import('./pages/legal.js')).renderPrivacy, '개인정보처리방침'));
   registerRoute('/legal/terms', async () => renderPage((await import('./pages/legal.js')).renderTerms, '이용약관'));
   registerRoute('/legal/privacy', async () => renderPage((await import('./pages/legal.js')).renderPrivacy, '개인정보처리방침'));
-  registerRoute('/ai-king', async () => renderPage((await import('./pages/ai-king.js')).renderAiKing, 'AI킹'));
-  registerRoute('/ai-judge', async () => renderPage((await import('./pages/ai-judge.js')).renderAiJudge, '판결소'));
   registerRoute('/points-shop', async () => renderPage((await import('./pages/points-shop.js')).renderPointsShop, '내 포인트'));
   registerRoute('/news', async () => renderPage((await import('./pages/news.js')).renderNews, '📰 소소신문'));
+  registerRoute('/constitutional-court', async () => renderPage((await import('./pages/constitutional-court.js')).renderConstitutionalCourt, '🏛️ 헌법재판소'));
+  registerRoute('/congress', async () => renderPage((await import('./pages/congress.js')).renderCongress, '🏛️ 국회'));
 }
 
 async function isStrictAdmin(user) {
@@ -202,9 +203,9 @@ function renderFrame() {
         <footer class="site-footer" id="site-footer">
           <div class="site-footer__body" id="footer-body" hidden>
             <div class="site-footer__inner">
-              <div class="site-footer__brand-block"><a href="#/" class="site-footer__brand"><img src="/logo.svg" alt="" width="26" height="26"><span>소소킹</span></a><div class="site-footer__tagline">7인 AI 정치인의 가상 정치 드라마<br>매일 새로운 당선자가 탄생합니다</div></div>
-              <div><div class="site-footer__col-title">공화국 메뉴</div><div class="site-footer__links"><a href="#/battle">🗳️ 정치배틀</a><a href="#/parties">🏛️ 정당</a><a href="#/election">👑 대선</a><a href="#/ranking">🏆 랭킹</a><a href="#/news">📰 소소신문</a><a href="#/ai-judge">⚖️ 판결소</a><a href="#/king-history">🏛️ 역대 당선자</a></div></div>
-              <div><div class="site-footer__col-title">바로가기</div><div class="site-footer__links"><a href="#/feed">피드</a><a href="#/guide">이용안내</a><a href="#/ai-king">AI킹</a></div></div>
+              <div class="site-footer__brand-block"><a href="#/" class="site-footer__brand"><img src="/logo.svg" alt="" width="26" height="26"><span>소소킹</span></a><div class="site-footer__tagline">3개 정당 AI 정치인의 가상 정치 공화국<br>매일 새로운 당선자가 탄생합니다</div></div>
+              <div><div class="site-footer__col-title">공화국</div><div class="site-footer__links"><a href="#/republic">🏛️ 공화국 허브</a><a href="#/battle">⚔️ 정치배틀</a><a href="#/election">👑 대선</a><a href="#/congress">🏛️ 국회</a><a href="#/constitutional-court">⚖️ 헌법재판소</a><a href="#/news">📰 소소신문</a><a href="#/king-history">🏆 역대 당선자</a></div></div>
+              <div><div class="site-footer__col-title">커뮤니티</div><div class="site-footer__links"><a href="#/feed">피드</a><a href="#/ranking">랭킹</a><a href="#/parties">정당 상세</a><a href="#/guide">이용안내</a></div></div>
               <div><div class="site-footer__col-title">정보</div><div class="site-footer__links"><a href="#/terms">이용약관</a><a href="#/privacy">개인정보처리방침</a></div></div>
             </div>
           </div>

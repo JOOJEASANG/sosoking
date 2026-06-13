@@ -1,5 +1,56 @@
 /* battle.css — 정치배틀 */
 
+/* ─── 게임 컨텍스트 바 ─── */
+.battle-game-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 8px 14px;
+  background: var(--color-surface-2, #f6f6f9);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  margin-bottom: 12px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+.battle-game-bar__label { font-weight: 800; color: var(--color-text-primary); }
+.battle-game-bar__sep { color: var(--color-text-muted); }
+.battle-game-bar__rewards b { color: var(--color-primary); }
+
+/* ─── 투표 후 다음 액션 ─── */
+.battle-next-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 0;
+}
+.battle-next-btn {
+  width: 100%;
+  padding: 11px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .13s, opacity .13s;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-2, #f6f6f9);
+  color: var(--color-text-secondary);
+}
+.battle-next-btn--primary {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: transparent;
+}
+.battle-next-btn--primary:hover { opacity: .88; }
+.battle-next-btn:not(.battle-next-btn--primary):hover { background: var(--color-surface-alt, #ebebf3); }
+
+/* ─── 판결소 CTA 톤 다운 ─── */
+.battle-judge-cta--secondary {
+  opacity: .65;
+  font-size: 13px;
+}
+
 /* ─── 집권 대표 배너 (Throne) ─── */
 .battle-king-banner {
   display: flex;
@@ -976,3 +1027,165 @@
 .battle-all-party-row__pick { font-size: 11px; font-weight: 700; color: var(--color-text-primary); }
 .battle-all-party-row__pct { font-size: 11px; font-weight: 800; color: var(--party-c, var(--color-primary)); text-align: right; }
 .battle-all-party-row__total { font-size: 10px; color: var(--color-text-muted); }
+
+/* ─── 정당 대항전 카드 ─── */
+.battle-party-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 12px 0;
+}
+
+.battle-party-card {
+  border-radius: 18px;
+  border: 2px solid var(--color-border);
+  background: var(--color-surface);
+  padding: 16px;
+  transition: border-color .15s, box-shadow .15s;
+  position: relative;
+}
+.battle-party-card--mine {
+  border-color: color-mix(in srgb, var(--party-color, #6366f1) 40%, transparent);
+}
+.battle-party-card--voted {
+  border-color: var(--party-color, #6366f1);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--party-color, #6366f1) 18%, transparent);
+}
+.battle-party-card--winner {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--party-color, #6366f1) 8%, var(--color-surface)), var(--color-surface));
+}
+
+.battle-party-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.battle-party-card__party-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.battle-party-card__emoji {
+  font-size: 26px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.battle-party-card__name {
+  font-size: 15px;
+  font-weight: 900;
+  color: var(--color-text-primary);
+}
+.battle-party-card__stance {
+  font-size: 12px;
+  color: var(--party-color, var(--color-primary));
+  font-weight: 700;
+  margin-top: 2px;
+}
+.battle-party-card__my-badge {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--party-color, #6366f1) 15%, transparent);
+  color: var(--party-color, var(--color-primary));
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.battle-party-card__voted-badge {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(34,197,94,.15);
+  color: #16a34a;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.battle-party-card__win-badge {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(251,191,36,.15);
+  color: #b45309;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* 개별 발언 */
+.battle-party-stmts { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+.battle-party-stmt {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.battle-party-stmt__emoji { font-size: 20px; line-height: 1.2; flex-shrink: 0; }
+.battle-party-stmt__body { flex: 1; min-width: 0; }
+.battle-party-stmt__name {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--party-color, var(--color-primary));
+  display: block;
+  margin-bottom: 2px;
+}
+.battle-party-stmt__text {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+/* 투표 결과 바 */
+.battle-party-card__result {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.battle-party-card__bar-wrap {
+  flex: 1;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--color-border);
+  overflow: hidden;
+}
+.battle-party-card__bar {
+  height: 100%;
+  border-radius: 999px;
+  transition: width .5s ease;
+}
+.battle-party-card__pct {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  min-width: 72px;
+  text-align: right;
+}
+
+/* 투표 버튼 */
+.battle-party-vote-btn {
+  width: 100%;
+  margin-top: 10px;
+  padding: 11px 16px;
+  border-radius: 12px;
+  border: 2px solid var(--party-color, #6366f1);
+  background: color-mix(in srgb, var(--party-color, #6366f1) 10%, transparent);
+  color: var(--party-color, #6366f1);
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background .12s, opacity .12s;
+}
+.battle-party-vote-btn:hover {
+  background: color-mix(in srgb, var(--party-color, #6366f1) 20%, transparent);
+}
+.battle-party-vote-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+@media (max-width: 480px) {
+  .battle-party-card { padding: 12px; border-radius: 14px; }
+  .battle-party-card__emoji { font-size: 22px; }
+  .battle-party-stmt__text { font-size: 12px; }
+}

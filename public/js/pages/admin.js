@@ -33,17 +33,14 @@ export async function renderAdmin() {
   }
 
   const TOP_MENUS = [
-    { key: 'dashboard', icon: '📊', label: '대시보드', short: '통계' },
-    { key: 'ai',        icon: '🤖', label: 'AI 관리',  short: 'AI' },
-    { key: 'features',  icon: '⚙️', label: '기능 제어', short: '기능' },
-    { key: 'reports',   icon: '🚨', label: '신고·의견', short: '신고' },
-    { key: 'users',     icon: '👥', label: '회원관리', short: '회원' },
-    { key: 'posts',     icon: '📝', label: '게시글관리', short: '게시글' },
-    { key: 'parties',   icon: '🏛️', label: '정당관리', short: '정당' },
+    { key: 'dashboard', icon: '📊', label: '정치 현황판', short: '현황' },
+    { key: 'ai',        icon: '🤖', label: 'AI 관리',    short: 'AI' },
+    { key: 'features',  icon: '⚙️', label: '게임 관리',  short: '게임' },
+    { key: 'users',     icon: '👥', label: '시민 관리',  short: '시민' },
+    { key: 'posts',     icon: '📝', label: '피드 관리',  short: '피드' },
+    { key: 'parties',   icon: '🏛️', label: '정당 현황', short: '정당' },
   ];
-  const BOTTOM_MENUS = [
-    { key: 'myinfo', icon: '👤', label: '내 정보', short: '내정보' },
-  ];
+  const BOTTOM_MENUS = [];
   const MENUS = [...TOP_MENUS, ...BOTTOM_MENUS];
 
   const renderMenuItem = (m, isBottom = false) => `
@@ -114,13 +111,11 @@ async function loadTab(tab) {
 
   switch (tab) {
     case 'dashboard': return renderDashboard(content);
-    case 'reports':   return renderReports(content);
     case 'users':     return renderUsers(content);
     case 'ai':        return renderAiSettings(content);
     case 'features':  return renderSiteFeatures(content);
     case 'posts':     return renderAdminPosts(content);
     case 'parties':   return renderAdminParties(content);
-    case 'myinfo':    return renderMyInfo(content);
   }
 }
 
@@ -153,7 +148,7 @@ async function renderAdminParties(el) {
   el.innerHTML = `
     <div class="admin-section">
       <div class="admin-section-head">
-        <h2 class="admin-section-title">🏛️ 정당 관리</h2>
+        <h2 class="admin-section-title">🏛️ 정당 현황</h2>
         <button class="btn btn--ghost btn--sm" id="admin-parties-reload">새로고침</button>
       </div>
       <div class="admin-stat-grid" style="margin-bottom:16px">
@@ -182,23 +177,19 @@ async function renderDashboard(el) {
   const todayStr   = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
   const AI_FEATURES = [
-    { key: 'judge',     icon: '⚖️', label: '판결소', cat: 'primary' },
-    { key: 'translate', icon: '✨', label: '창작소',  cat: 'golra'  },
-    { key: 'naming',    icon: '✨', label: '작명',    cat: 'malhe'  },
+    { key: 'judge', icon: '⚖️', label: '판결소', cat: 'primary' },
   ];
 
-  const [totalSnap, todaySnap, recentSnap, reportSnap, monthUsageSnap, todayUsageSnap] = await Promise.all([
+  const [totalSnap, todaySnap, recentSnap, monthUsageSnap, todayUsageSnap] = await Promise.all([
     getCountFromServer(collection(db, 'feeds')).catch(() => null),
     getDocs(query(collection(db, 'feeds'), where('createdAt', '>=', Timestamp.fromDate(todayStart)), limit(99))).catch(() => null),
     getDocs(query(collection(db, 'feeds'), orderBy('createdAt', 'desc'), limit(5))).catch(() => null),
-    getCountFromServer(query(collection(db, 'reports'), where('resolved', '==', false))).catch(() => null),
     getDocs(query(collection(db, 'ai_king_usage'), where('date', '>=', monthStart), where('date', '<=', todayStr), limit(2000))).catch(() => null),
     getDocs(query(collection(db, 'ai_king_usage'), where('date', '==', todayStr), limit(500))).catch(() => null),
   ]);
 
   const total   = totalSnap?.data?.().count ?? 0;
   const todayPosts = todaySnap?.size ?? 0;
-  const pending = reportSnap?.data?.().count ?? 0;
   const recent  = recentSnap?.docs.map(d => ({ id: d.id, ...d.data() })) ?? [];
 
   // AI킹 이번달 서비스별 사용량 집계
@@ -224,14 +215,12 @@ async function renderDashboard(el) {
   }));
 
   const FEED_TYPE_LABEL = {
-    tournament: '대결방', vote: '토론방', drip: '드립방',
-    collect: '일반방', general: '일반', fill: '빈칸', naming: '작명',
-    acrostic: '행시', relay: '릴레이',
+    tournament: '대결방', vote: '토론방', ai_judge: '판결소',
   };
 
   el.innerHTML = `
     <div class="admin-dashboard">
-      <h2 class="admin-section-title">📊 대시보드</h2>
+      <h2 class="admin-section-title">📊 정치 현황판</h2>
 
       <div class="admin-stat-grid">
         <div class="admin-stat-card">
@@ -243,11 +232,6 @@ async function renderDashboard(el) {
           <div class="admin-stat-card__icon">✨</div>
           <div class="admin-stat-card__num" style="color:var(--color-success)">${todayAiTotal}</div>
           <div class="admin-stat-card__label">오늘 AI 사용</div>
-        </div>
-        <div class="admin-stat-card">
-          <div class="admin-stat-card__icon">🚨</div>
-          <div class="admin-stat-card__num" style="color:${pending > 0 ? 'var(--color-danger)' : 'var(--color-success)'}">${pending}</div>
-          <div class="admin-stat-card__label">미처리 신고</div>
         </div>
       </div>
 
@@ -286,191 +270,6 @@ async function renderDashboard(el) {
       currentTab = btn.dataset.tabSwitch;
       document.querySelectorAll('[data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === currentTab));
       loadTab(currentTab);
-    });
-  });
-}
-
-/* ── 신고·의견 관리 ── */
-async function renderReports(el, _subtab) {
-  let subtab = _subtab || 'reports';
-
-  // --- 신고 데이터 ---
-  const [pendingSnap, resolvedSnap, feedbackSnap] = await Promise.all([
-    getDocs(query(collection(db, 'reports'), where('resolved', '==', false), orderBy('createdAt', 'desc'), limit(30))).catch(() => null),
-    getDocs(query(collection(db, 'reports'), where('resolved', '==', true), orderBy('createdAt', 'desc'), limit(10))).catch(() => null),
-    getDocs(query(collection(db, 'feedback'), orderBy('createdAt', 'desc'), limit(80))).catch(() => null),
-  ]);
-
-  const pending  = pendingSnap?.docs.map(d => ({ id: d.id, ...d.data() })) ?? [];
-  const resolved = resolvedSnap?.docs.map(d => ({ id: d.id, ...d.data() })) ?? [];
-  const feedbacks = feedbackSnap?.docs.map(d => ({ id: d.id, ...d.data() })) ?? [];
-  const fbCounts = {
-    new: feedbacks.filter(i => (i.status || 'new') === 'new').length,
-    reviewing: feedbacks.filter(i => i.status === 'reviewing').length,
-    done: feedbacks.filter(i => i.status === 'done').length,
-  };
-
-  const statusLabel = s => s === 'done' ? '처리완료' : s === 'reviewing' ? '확인중' : '신규';
-  const typeLabel = t => t === 'opinion' ? '💡 의견' : t === 'feature' ? '✨ 기능제안' : '🐞 버그';
-
-  const renderReportRow = (r, isDone) => `
-    <tr data-report-row="${r.id}">
-      <td>${escHtml(r.reason || '')}</td>
-      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-        ${r.postId ? `<a href="#/detail/${r.postId}" style="color:var(--color-primary)">${escHtml(r.postTitle || r.postId)}</a>` : '-'}
-      </td>
-      <td style="color:var(--color-text-muted)">${escHtml(r.reporterName || '익명')}</td>
-      <td>
-        ${!isDone ? `
-          <div style="display:flex;gap:6px;flex-wrap:wrap">
-            <button class="btn btn--ghost btn--sm" data-view-post="${r.postId}" style="font-size:11px">글 보기</button>
-            <button class="btn btn--primary btn--sm" data-resolve="${r.id}" style="font-size:11px">처리완료</button>
-            ${r.postId ? `<button class="btn btn--danger btn--sm" data-delete-post="${r.postId}" data-resolve="${r.id}" style="font-size:11px">글 삭제</button>` : ''}
-          </div>` : `<span style="font-size:11px;color:var(--color-text-muted)">처리완료</span>`}
-      </td>
-    </tr>`;
-
-  const renderFeedbackItem = item => `
-    <div class="admin-feedback-item" data-feedback-id="${escHtml(item.id)}">
-      <div class="admin-feedback-item__top">
-        <div>
-          <div class="admin-feedback-item__title">${typeLabel(item.type)} ${escHtml(item.title || '(제목없음)')}</div>
-          <div class="admin-feedback-item__meta">${escHtml(item.reporterName || '익명')} · ${item.createdAt?.toDate?.().toLocaleString('ko-KR') || '-'}</div>
-        </div>
-        <span class="feedback-status-badge feedback-status-badge--${escHtml(item.status || 'new')}">${statusLabel(item.status || 'new')}</span>
-      </div>
-      <div class="admin-feedback-item__message">${escHtml(item.message || '').replace(/\n/g, '<br>')}</div>
-      ${item.contact ? `<div class="admin-feedback-item__line"><b>연락처</b> ${escHtml(item.contact)}</div>` : ''}
-      ${item.page?.url ? `<div class="admin-feedback-item__line"><b>페이지</b> <a href="${escHtml(item.page.url)}" target="_blank" rel="noopener" style="color:var(--color-primary);word-break:break-all">${escHtml(item.page.url)}</a></div>` : ''}
-      <div class="admin-feedback-item__actions">
-        <button class="btn btn--ghost btn--sm" data-feedback-status="reviewing" data-id="${escHtml(item.id)}">확인중</button>
-        <button class="btn btn--ghost btn--sm" data-feedback-status="done" data-id="${escHtml(item.id)}">처리완료</button>
-        <button class="btn btn--ghost btn--sm" data-feedback-delete="${escHtml(item.id)}" style="color:var(--color-danger)">삭제</button>
-      </div>
-    </div>`;
-
-  el.innerHTML = `
-    <div class="admin-reports-wrap">
-      <h2 class="admin-section-title">🚨 신고·의견 관리</h2>
-
-      <!-- 서브탭 -->
-      <div class="admin-sub-tabs">
-        <button class="admin-sub-tab ${subtab === 'reports' ? 'active' : ''}" data-subtab="reports">
-          🚨 신고
-          ${pending.length > 0 ? `<span class="admin-sub-tab__badge">${pending.length}</span>` : ''}
-        </button>
-        <button class="admin-sub-tab ${subtab === 'feedback' ? 'active' : ''}" data-subtab="feedback">
-          💬 의견·버그
-          ${fbCounts.new > 0 ? `<span class="admin-sub-tab__badge">${fbCounts.new}</span>` : ''}
-        </button>
-      </div>
-
-      <!-- 신고 탭 -->
-      <div id="subtab-reports" style="display:${subtab === 'reports' ? 'flex' : 'none'};flex-direction:column;gap:16px;margin-top:20px">
-        <div class="admin-stat-grid" style="grid-template-columns:repeat(2,1fr)">
-          <div class="admin-stat-card">
-            <div class="admin-stat-card__num" style="color:${pending.length > 0 ? 'var(--color-danger)' : 'var(--color-text-muted)'}">${pending.length}</div>
-            <div class="admin-stat-card__label">미처리 신고</div>
-          </div>
-          <div class="admin-stat-card">
-            <div class="admin-stat-card__num" style="color:var(--color-success)">${resolved.length}</div>
-            <div class="admin-stat-card__label">처리완료 (최근)</div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card__body--lg" style="overflow-x:auto">
-            <div style="font-size:14px;font-weight:800;margin-bottom:12px">⚠️ 처리 대기 (${pending.length}건)</div>
-            ${pending.length === 0 ? `<div style="text-align:center;padding:24px;color:var(--color-text-muted);font-size:13px">처리할 신고가 없어요 ✅</div>` : `
-            <table class="admin-table">
-              <thead><tr>
-                <th>사유</th><th>게시물</th><th>신고자</th><th style="width:200px">작업</th>
-              </tr></thead>
-              <tbody>${pending.map(r => renderReportRow(r, false)).join('')}</tbody>
-            </table>`}
-          </div>
-        </div>
-        ${resolved.length > 0 ? `
-        <div class="card">
-          <div class="card__body--lg" style="overflow-x:auto">
-            <div style="font-size:14px;font-weight:800;margin-bottom:12px;color:var(--color-text-muted)">✅ 처리 완료 (최근 ${resolved.length}건)</div>
-            <table class="admin-table">
-              <thead><tr>
-                <th>사유</th><th>게시물</th><th>신고자</th><th>상태</th>
-              </tr></thead>
-              <tbody>${resolved.map(r => renderReportRow(r, true)).join('')}</tbody>
-            </table>
-          </div>
-        </div>` : ''}
-      </div>
-
-      <!-- 의견·버그 탭 -->
-      <div id="subtab-feedback" style="display:${subtab === 'feedback' ? 'flex' : 'none'};flex-direction:column;gap:16px;margin-top:20px">
-        <div class="admin-stat-grid" style="grid-template-columns:repeat(3,1fr)">
-          <div class="admin-stat-card">
-            <div class="admin-stat-card__num" style="color:var(--color-primary)">${fbCounts.new}</div>
-            <div class="admin-stat-card__label">신규</div>
-          </div>
-          <div class="admin-stat-card">
-            <div class="admin-stat-card__num" style="color:var(--color-warning-text)">${fbCounts.reviewing}</div>
-            <div class="admin-stat-card__label">확인중</div>
-          </div>
-          <div class="admin-stat-card">
-            <div class="admin-stat-card__num" style="color:var(--color-success)">${fbCounts.done}</div>
-            <div class="admin-stat-card__label">처리완료</div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card__body--lg">
-            ${feedbacks.length
-              ? feedbacks.map(renderFeedbackItem).join('')
-              : '<div style="text-align:center;padding:28px;color:var(--color-text-muted);font-size:13px">접수된 의견이나 버그가 없습니다.</div>'}
-          </div>
-        </div>
-      </div>
-    </div>`;
-
-  // 서브탭 전환
-  el.querySelectorAll('[data-subtab]').forEach(btn => {
-    btn.addEventListener('click', () => renderReports(el, btn.dataset.subtab));
-  });
-
-  // 신고 처리
-  el.querySelectorAll('[data-resolve]').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const reportId = btn.dataset.resolve;
-      const postId   = btn.dataset.deletePost;
-      try {
-        if (postId) {
-          if (!confirm('신고된 글을 삭제하고 신고를 처리할까요?')) return;
-          await deleteDoc(doc(db, 'feeds', postId));
-        }
-        await updateDoc(doc(db, 'reports', reportId), { resolved: true, resolvedAt: serverTimestamp() });
-        toast.success('처리완료했어요');
-        btn.closest('[data-report-row]')?.remove();
-      } catch { toast.error('처리에 실패했어요'); }
-    });
-  });
-
-  // 의견·버그 상태 변경
-  el.querySelectorAll('[data-feedback-status]').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      try {
-        await updateDoc(doc(db, 'feedback', btn.dataset.id), { status: btn.dataset.feedbackStatus, updatedAt: serverTimestamp() });
-        toast.success('상태를 변경했어요');
-        renderReports(el, 'feedback');
-      } catch { toast.error('상태 변경에 실패했어요'); }
-    });
-  });
-
-  // 의견·버그 삭제
-  el.querySelectorAll('[data-feedback-delete]').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      if (!confirm('이 접수 항목을 삭제할까요?')) return;
-      try {
-        await deleteDoc(doc(db, 'feedback', btn.dataset.feedbackDelete));
-        toast.success('삭제했어요');
-        renderReports(el, 'feedback');
-      } catch { toast.error('삭제에 실패했어요'); }
     });
   });
 }
@@ -516,7 +315,7 @@ async function renderUsers(el) {
         <h2 class="admin-section-title">👥 회원관리</h2>
         <div class="empty-state">
           <div class="empty-state__icon">⚠️</div>
-          <div class="empty-state__title">회원 목록을 불러오지 못했어요</div>
+          <div class="empty-state__title">시민 목록을 불러오지 못했어요</div>
           <div class="empty-state__desc">${escHtml(loadError.message || 'Functions 배포 후 다시 시도해주세요.')}</div>
           <button class="btn btn--ghost btn--sm" id="btn-users-retry" style="margin-top:12px">다시 시도</button>
         </div>
@@ -531,7 +330,7 @@ async function renderUsers(el) {
       ${accordion}
 
       <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
-        <h2 class="admin-section-title">👥 회원관리</h2>
+        <h2 class="admin-section-title">👥 시민 관리</h2>
         <button class="btn btn--ghost btn--sm" id="btn-users-refresh">새로고침</button>
       </div>
       <div class="admin-stat-grid" style="grid-template-columns:repeat(2,1fr)">
@@ -877,20 +676,6 @@ async function renderAiSettings(el) {
         </div>
       </div>
 
-      <!-- 수동 실행 -->
-      <div class="card">
-        <div class="card__body">
-          <div style="font-size:14px;font-weight:800;margin-bottom:4px">🗣️ AI 토론왕</div>
-          <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:14px">매일 오전 10시 자동 생성돼요. 지금 바로 만들거나 주제를 직접 넣을 수도 있어요.</div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-            <input id="debate-topic-input" type="text" placeholder="주제 직접 입력 (비우면 오늘의 주제)" maxlength="100"
-              style="flex:1;min-width:200px;padding:8px 10px;border:1px solid var(--color-border);border-radius:8px;font-size:13px">
-            <button class="btn btn--primary btn--sm" id="btn-trigger-debate">🗣️ 지금 생성</button>
-          </div>
-          <div id="ai-trigger-result" style="margin-top:10px;font-size:12px;color:var(--color-text-muted)"></div>
-        </div>
-      </div>
-
     </div>`;
 
   // 모델 라디오 스타일 + 비용 안내 실시간 업데이트
@@ -975,21 +760,6 @@ async function renderAiSettings(el) {
     } catch (e) { toast.error(e.message || '중지에 실패했어요'); }
   });
 
-  // AI 토론왕 수동 생성
-  el.querySelector('#btn-trigger-debate')?.addEventListener('click', async () => {
-    const btn = el.querySelector('#btn-trigger-debate');
-    const result = el.querySelector('#ai-trigger-result');
-    const topic = el.querySelector('#debate-topic-input')?.value.trim() || '';
-    btn.disabled = true; btn.textContent = '생성 중...';
-    try {
-      const res = await httpsCallable(functions, 'generateDebateNow')(topic ? { topic } : {});
-      result.innerHTML = `✅ 생성 완료: "${escHtml(res.data.topic || '')}" — <a href="#/detail/${escHtml(res.data.postId)}">바로 보기</a>`;
-      toast.success('AI 토론왕이 생성됐어요 🗣️');
-    } catch (e) {
-      result.textContent = '❌ ' + (e.message || '생성에 실패했어요');
-      toast.error(e.message || '생성에 실패했어요');
-    } finally { btn.disabled = false; btn.textContent = '🗣️ 지금 생성'; }
-  });
 }
 
 /* ── 내 정보 설정 ── */
@@ -1127,22 +897,23 @@ async function renderMyInfo(el) {
 /* ── 사이트 기능 제어 ── */
 async function renderSiteFeatures(el) {
   const { doc: fsDoc, getDoc: fsGetDoc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
-  let siteFeatures = { hotPotato: true, jabdam: true };
+  let siteFeatures = { congress: true, constitutionalCourt: true };
   try {
     const snap = await fsGetDoc(fsDoc(db, 'config', 'site_features'));
     if (snap.exists()) siteFeatures = { ...siteFeatures, ...snap.data() };
   } catch {}
 
   const SITE_FEATURES = [
-    { key: 'hotPotato', icon: '🔥', label: '핫포테이토', desc: '마지막 댓글 달면 폭탄 터지는 게임. 유저 없으면 꺼두세요.' },
-    { key: 'jabdam',    icon: '🗨️', label: '수다방',    desc: '텍스트·사진·링크 자유롭게 올리는 잡담 공간.' },
+    { key: 'congress',           icon: '🏛️', label: '국회',       desc: '국회의원 법안 발의·표결 기능. 비활성화 시 네비에서 숨겨집니다.' },
+    { key: 'constitutionalCourt', icon: '⚖️', label: '헌법재판소', desc: '탄핵 심판·위헌 심사 기능. 비활성화 시 네비에서 숨겨집니다.' },
+    { key: 'battle',             icon: '⚔️', label: '정치배틀',   desc: '매일 두 정당이 격돌하는 배틀 기능.' },
   ];
 
   el.innerHTML = `
     <div class="admin-section">
       <div class="card">
         <div class="card__body">
-          <div style="font-size:15px;font-weight:900;margin-bottom:4px">⚙️ 사이트 기능 ON/OFF</div>
+          <div style="font-size:15px;font-weight:900;margin-bottom:4px">🎮 게임 기능 ON/OFF</div>
           <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:16px">꺼두면 네비게이션에서 숨겨집니다. 페이지 자체는 유지돼요.</div>
           <div style="display:flex;flex-direction:column;gap:14px">
             ${SITE_FEATURES.map(f => `
@@ -1187,15 +958,130 @@ async function renderSiteFeatures(el) {
       toast.error(e.message || '저장 실패');
     } finally { btn.disabled = false; btn.textContent = '저장'; }
   });
+
+  // ── 세계관 히스토리 시드 섹션 ──
+  const seedSection = document.createElement('div');
+  seedSection.className = 'admin-section';
+  seedSection.style.marginTop = '16px';
+  seedSection.innerHTML = `
+    <div class="card">
+      <div class="card__body">
+        <div style="font-size:15px;font-weight:900;margin-bottom:4px;color:#2563eb">🌍 세계관 히스토리 생성</div>
+        <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:16px">
+          처음 서비스를 오픈하거나 신규 유저가 접속했을 때 게임이 이미 운영 중인 것처럼 보이도록<br>
+          과거 4주치 선거·배틀·국회 법안·정치 위기·소소신문 이력을 자동 생성합니다.<br>
+          <b>이미 존재하는 데이터는 건드리지 않습니다.</b>
+        </div>
+        <div style="padding:14px;border:1px solid #93c5fd;border-radius:12px;background:rgba(59,130,246,.04)">
+          <div style="font-size:13px;font-weight:800;margin-bottom:4px">📜 과거 정치 역사 시드</div>
+          <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:10px">
+            • 과거 4주 선거 결과 (승자·포고령 포함)<br>
+            • 과거 14일 정치배틀 이력<br>
+            • 과거 4주 국회 법안 (가결/부결 결과)<br>
+            • 과거 2주 정치 위기<br>
+            • 과거 7일 소소신문
+          </div>
+          <button class="btn btn--sm" id="btn-seed-world" style="background:#2563eb;color:#fff;border-color:transparent">세계관 히스토리 생성</button>
+          <div id="seed-world-result" style="margin-top:6px;font-size:12px"></div>
+        </div>
+      </div>
+    </div>`;
+  el.appendChild(seedSection);
+
+  el.querySelector('#btn-seed-world')?.addEventListener('click', async () => {
+    const btn = el.querySelector('#btn-seed-world');
+    const res = el.querySelector('#seed-world-result');
+    btn.disabled = true; btn.textContent = '생성 중... (30~60초 소요)';
+    res.style.color = 'var(--color-text-muted)'; res.textContent = '데이터 생성 중입니다. 잠시만 기다려주세요...';
+    try {
+      const fn = httpsCallable(functions, 'adminSeedWorldHistory');
+      const { data: r } = await fn();
+      res.style.color = '#16a34a';
+      res.textContent = `✅ ${r.message}`;
+    } catch (e) {
+      res.style.color = '#dc2626';
+      res.textContent = '❌ ' + (e.message || '생성 실패');
+    } finally { btn.disabled = false; btn.textContent = '세계관 히스토리 생성'; }
+  });
+
+  // ── 데이터 초기화 섹션 ──
+  const resetSection = document.createElement('div');
+  resetSection.className = 'admin-section';
+  resetSection.style.marginTop = '16px';
+  resetSection.innerHTML = `
+    <div class="card">
+      <div class="card__body">
+        <div style="font-size:15px;font-weight:900;margin-bottom:4px;color:#dc2626">⚠️ 데이터 초기화</div>
+        <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:16px">
+          한 번 초기화하면 되돌릴 수 없습니다. 신중하게 사용하세요.
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="padding:14px;border:1px solid #fca5a5;border-radius:12px;background:rgba(239,68,68,.04)">
+            <div style="font-size:13px;font-weight:800;margin-bottom:4px">🗑️ 배틀 데이터 초기화</div>
+            <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:10px">
+              battles, kingHistory, battleVotes, battle_victory_log, charStats, global_events 컬렉션을 전부 삭제합니다.
+            </div>
+            <button class="btn btn--sm" id="btn-reset-battle" style="background:#dc2626;color:#fff;border-color:transparent">배틀 데이터 초기화</button>
+            <div id="reset-battle-result" style="margin-top:6px;font-size:12px"></div>
+          </div>
+          <div style="padding:14px;border:1px solid #fca5a5;border-radius:12px;background:rgba(239,68,68,.04)">
+            <div style="font-size:13px;font-weight:800;margin-bottom:4px">💰 전체 포인트 초기화</div>
+            <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:10px">
+              모든 유저의 totalPoints를 0으로, 모든 정당의 totalPower를 0으로, point_awards를 전부 삭제합니다.
+            </div>
+            <button class="btn btn--sm" id="btn-reset-points" style="background:#dc2626;color:#fff;border-color:transparent">전체 포인트 초기화</button>
+            <div id="reset-points-result" style="margin-top:6px;font-size:12px"></div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  el.appendChild(resetSection);
+
+  el.querySelector('#btn-reset-battle')?.addEventListener('click', async () => {
+    if (!confirm('배틀 데이터를 전부 삭제할까요?\nbattles, kingHistory, battleVotes 등이 모두 삭제됩니다.\n\n되돌릴 수 없습니다!')) return;
+    const btn = el.querySelector('#btn-reset-battle');
+    const res = el.querySelector('#reset-battle-result');
+    btn.disabled = true; btn.textContent = '초기화 중...';
+    res.style.color = 'var(--color-text-muted)'; res.textContent = '삭제 중...';
+    try {
+      const fn = httpsCallable(functions, 'adminResetBattleData');
+      const { data: r } = await fn();
+      res.style.color = '#16a34a';
+      res.textContent = `✅ 완료 — ${JSON.stringify(r.deleted)}`;
+      toast.success('배틀 데이터 초기화 완료');
+    } catch (e) {
+      res.style.color = '#dc2626';
+      res.textContent = '❌ ' + (e.message || '실패');
+      toast.error(e.message || '초기화 실패');
+    } finally { btn.disabled = false; btn.textContent = '배틀 데이터 초기화'; }
+  });
+
+  el.querySelector('#btn-reset-points')?.addEventListener('click', async () => {
+    if (!confirm('모든 유저의 포인트를 0으로 초기화할까요?\n정당 totalPower도 함께 초기화됩니다.\n\n되돌릴 수 없습니다!')) return;
+    const btn = el.querySelector('#btn-reset-points');
+    const res = el.querySelector('#reset-points-result');
+    btn.disabled = true; btn.textContent = '초기화 중...';
+    res.style.color = 'var(--color-text-muted)'; res.textContent = '처리 중 (시간이 걸릴 수 있어요)...';
+    try {
+      const fn = httpsCallable(functions, 'adminResetAllPoints');
+      const { data: r } = await fn();
+      res.style.color = '#16a34a';
+      res.textContent = `✅ 완료 — 유저 ${r.usersReset}명 / 정당 ${r.partiesReset}개 초기화`;
+      toast.success('포인트 초기화 완료');
+    } catch (e) {
+      res.style.color = '#dc2626';
+      res.textContent = '❌ ' + (e.message || '실패');
+      toast.error(e.message || '초기화 실패');
+    } finally { btn.disabled = false; btn.textContent = '전체 포인트 초기화'; }
+  });
 }
 
-/* ── 게시글관리 ── */
+/* ── 피드 관리 ── */
 async function renderAdminPosts(el) {
   const POST_TYPE_LABELS = {
-    ai_judge: '⚖️ 판결소', ai_translate: '✨ 창작소',
-    ai_naming: '✨ 창작소(구)',
-    vote: '🗳️ 토론방', drip: '🤣 드립방',
-    collect: '📌 일반방', general: '📝 일반',
+    ai_judge:   '🏛️ 재판기록',
+    vote:       '🗳️ 토론방',
+    tournament: '⚔️ 대결방',
   };
   function postTypeLabel(post) {
     const key = post.type || post.feedType || post.subtype || 'general';
@@ -1211,7 +1097,7 @@ async function renderAdminPosts(el) {
 
   el.innerHTML = `
     <div class="admin-posts-panel">
-      <h2 class="admin-section-title">📝 게시글관리</h2>
+      <h2 class="admin-section-title">📝 피드 관리</h2>
       <div class="card"><div class="card__body">
         <div style="font-size:13px;color:var(--color-text-muted);margin-bottom:12px">최신 게시글 100개 기준 · 숨김/해제 작업 가능</div>
         <div class="admin-table-wrap" style="overflow:auto">
