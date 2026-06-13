@@ -68,45 +68,9 @@ export function renderTypeBody(post) {
     case 'battle':
       return renderLegacyBattleVs(post);
 
-    case 'story':
-      return post.feeling
-        ? `<div style="padding:12px 16px;background:var(--color-malhe-bg);border-left:3px solid var(--color-malhe);border-radius:8px;font-size:13px;margin-top:8px"><strong>💚 느낀 점</strong><br>${escHtml(post.feeling).replace(/\n/g, '<br>')}</div>`
-        : '';
-
-    case 'laugh': {
-      const diffMap = { easy: '😌 쉬움', normal: '😬 보통', hard: '😤 어려움', extreme: '💀 극한' };
-      return post.difficulty
-        ? `<div style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:var(--color-warning-bg);border-radius:var(--radius-pill);font-size:13px;font-weight:700;margin-top:8px">웃참 난이도: ${escHtml(diffMap[post.difficulty] || post.difficulty)}</div>`
-        : '';
-    }
-
-    case 'howto':
-      return renderHowtoBody(post);
-
-    case 'fail':
-      return `
-        ${post.lesson ? `<div style="padding:12px 16px;background:var(--color-malhe-bg);border-radius:10px;font-size:13px;margin-top:8px"><strong>알게 된 점:</strong> ${escHtml(post.lesson)}</div>` : ''}
-        ${post.redo ? `<div style="padding:12px 16px;background:var(--color-golra-bg);border-radius:10px;font-size:13px;margin-top:8px"><strong>다시 한다면:</strong> ${escHtml(post.redo)}</div>` : ''}`;
-
     default:
       return '';
   }
-}
-
-function renderHowtoBody(post) {
-  return `
-    ${post.summary ? `<div style="padding:12px 16px;background:var(--color-primary-bg);border-radius:10px;font-weight:700;color:var(--color-primary);margin-bottom:12px">💡 ${escHtml(post.summary)}</div>` : ''}
-    ${post.materials ? `<div style="font-size:13px;margin-bottom:8px"><strong>준비물:</strong> ${escHtml(post.materials)}</div>` : ''}
-    ${post.steps?.length ? `
-      <div class="howto-steps-display">
-        <div class="howto-steps-display__title">단계별 순서</div>
-        ${post.steps.map((step, i) => `
-          <div class="howto-step-display">
-            <div class="howto-step-display__num">${i + 1}</div>
-            <div class="howto-step-display__text">${escHtml(step).replace(/\n/g, '<br>')}</div>
-          </div>`).join('')}
-      </div>` : ''}
-    ${post.caution ? `<div style="font-size:13px;color:var(--color-warning);padding:10px 12px;background:var(--color-warning-bg);border-radius:8px;margin-top:8px">⚠️ ${escHtml(post.caution)}</div>` : ''}`;
 }
 
 function renderAiJudgeBody(post) {
@@ -127,6 +91,3 @@ function renderAiJudgeBody(post) {
     </div>`;
 }
 
-export function renderLegacyInteractive() {
-  return '';
-}

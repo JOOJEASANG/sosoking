@@ -6,7 +6,7 @@ import { setMeta } from '../utils/seo.js';
 import { escHtml, formatTime } from '../utils/helpers.js';
 import { TYPE_LABELS, CAT_CLASS } from '../detail/constants.js';
 import { fetchComments, fetchAdjacentPosts } from '../detail/data.js';
-import { renderImageSection, renderTypeBody, renderLegacyInteractive } from '../detail/body-render.js';
+import { renderImageSection, renderTypeBody } from '../detail/body-render.js';
 import { renderCommentSection } from '../detail/comment-render.js';
 import { appendSimilarPosts } from '../detail/similar-render.js';
 
@@ -126,7 +126,6 @@ function renderDetailPage(el, post, comments, isScrapped = false) {
 
         <div class="divider" style="margin:0"></div>
 
-        ${renderLegacyInteractive()}
         ${renderCommentSection(post, comments)}
       </div>
     </div>`;
