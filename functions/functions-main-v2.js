@@ -26,6 +26,7 @@ const congress = require('./congress-functions.js');
 const constitutionalCourt = require('./constitutional-court-functions.js');
 
 const adminSeed = require('./admin-seed-functions.js');
+const parody = require('./parody-issue-functions.js');
 
 module.exports = {
   ...coreAi,
@@ -96,4 +97,6 @@ module.exports = {
   ...postView,
   ...kakaoAuth,
   adminSeedWorldHistory: adminSeed.adminSeedWorldHistory,
+  generateDailyParodyIssues: parody.generateDailyParodyIssues,
+  triggerParodyIssues: parody.triggerParodyIssues,
 };
