@@ -1,6 +1,5 @@
 import { auth } from './firebase.js';
 import { toast } from './components/toast.js';
-import { navigate } from './router.js';
 import { appState } from './state.js';
 
 function isAdminPage() {
@@ -29,13 +28,11 @@ function ensureAdminProfileCard() {
       <div class="admin-mobile-profile-card__desc">관리자 정보 · ${email}</div>
     </div>
     <div class="admin-mobile-profile-card__actions">
-      <button class="btn btn--primary btn--sm" id="admin-profile-write-btn">글쓰기</button>
       <button class="btn btn--ghost btn--sm" id="admin-password-btn">비밀번호</button>
     </div>
   `;
 
   content.insertAdjacentElement('afterbegin', card);
-  document.getElementById('admin-profile-write-btn')?.addEventListener('click', () => navigate('/write'));
   document.getElementById('admin-password-btn')?.addEventListener('click', openPasswordDialog);
 }
 
