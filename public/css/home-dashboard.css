@@ -1,5 +1,190 @@
 /* home-dashboard.css — 정치 대시보드 (신분증 카드 + 일일 미션 + 등급 뱃지) */
 
+/* ── 소소공화국 국가현황 카드 ── */
+.home-rs {
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: 20px;
+  padding: 18px;
+  margin-bottom: 14px;
+  position: relative;
+  overflow: hidden;
+}
+.home-rs::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-primary), transparent);
+  border-radius: 20px 20px 0 0;
+}
+.home-rs__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  position: relative;
+}
+.home-rs__eyebrow {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  color: var(--color-text-secondary);
+}
+.home-rs__title {
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--color-text-primary);
+  margin-top: 4px;
+}
+.home-rs__headline {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin-top: 4px;
+}
+.home-rs__grade-box {
+  min-width: 80px;
+  text-align: center;
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--color-primary) 8%, var(--color-surface));
+  border: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+.home-rs__grade-label {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  font-weight: 800;
+}
+.home-rs__grade-value {
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--color-primary);
+  line-height: 1.1;
+}
+.home-rs__tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+.home-rs__tile {
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--color-primary) 4%, var(--color-surface));
+  border: 1px solid var(--color-border);
+}
+.home-rs__tile-l {
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--color-text-secondary);
+  margin-bottom: 4px;
+}
+.home-rs__tile-v {
+  display: block;
+  font-size: 14px;
+  font-weight: 900;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.home-rs__tile-s {
+  display: block;
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.home-rs__lower {
+  display: grid;
+  grid-template-columns: 1.15fr .85fr;
+  gap: 12px;
+  margin-top: 12px;
+}
+.home-rs__metrics,
+.home-rs__parties {
+  padding: 12px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--color-primary) 4%, var(--color-surface));
+  border: 1px solid var(--color-border);
+}
+.home-rs__metric {
+  display: grid;
+  grid-template-columns: 80px 1fr 32px;
+  gap: 8px;
+  align-items: center;
+  margin: 7px 0;
+}
+.home-rs__metric-l {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  font-weight: 700;
+}
+.home-rs__metric-t {
+  height: 7px;
+  border-radius: 999px;
+  background: var(--color-border);
+  overflow: hidden;
+}
+.home-rs__metric-f {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--color-primary);
+}
+.home-rs__metric-v {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  text-align: right;
+}
+.home-rs__parties-title {
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--color-text-secondary);
+  margin-bottom: 8px;
+}
+.home-rs__party-row {
+  display: grid;
+  grid-template-columns: 22px 1fr auto;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 0;
+  border-top: 1px solid var(--color-border);
+}
+.home-rs__party-row:first-of-type { border-top: 0; }
+.home-rs__party-num {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  font-weight: 900;
+}
+.home-rs__party-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.home-rs__party-role {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  font-weight: 800;
+  font-style: normal;
+}
+.home-rs__party-empty {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+@media (max-width: 680px) {
+  .home-rs__lower { grid-template-columns: 1fr; }
+}
+
 /* ── 정치 신분증 카드 ── */
 .home-id-card {
   background: linear-gradient(135deg,

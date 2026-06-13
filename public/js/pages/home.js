@@ -107,6 +107,96 @@ async function fetchDailyNews() {
   } catch { return null; }
 }
 
+async function fetchPoliticsOverview() {
+  try {
+    const { data } = await httpsCallable(functions, 'getPoliticsOverview')();
+    return data || null;
+  } catch { return null; }
+}
+
+function rsCalcMetrics(president, parties) {
+  const approve = Number(president?.decreeApprove || 0);
+  const disapprove = Number(president?.decreeDisapprove || 0);
+  const total = approve + disapprove;
+  const approval = total > 0
+    ? Math.max(1, Math.min(99, Math.round((approve / total) * 100)))
+    : (president?.candidateName ? 52 : 0);
+  const topPower = Number(parties?.[0]?.totalPower || 0);
+  const secondPower = Number(parties?.[1]?.totalPower || 0);
+  const competition = topPower > 0 ? Math.round(Math.min(30, (secondPower / topPower) * 30)) : 15;
+  const base = president?.candidateName ? 50 : 42;
+  const stability = Math.max(25, Math.min(95, base + Math.round(approval * 0.25) + (topPower > secondPower ? 8 : 0)));
+  const economy = Math.max(30, Math.min(92, 56 + Math.round(approval * 0.18) + Math.round(competition * 0.2)));
+  const welfare = Math.max(30, Math.min(92, 52 + Math.round(approval * 0.15) + (parties?.length ? 4 : 0)));
+  const order = Math.max(30, Math.min(92, 58 + Math.round(stability * 0.18)));
+  const media = Math.max(30, Math.min(92, 50 + Math.round(competition * 0.8)));
+  const avg = Math.round((stability + economy + welfare + order + media) / 5);
+  const grade = avg >= 85 ? 'A+' : avg >= 75 ? 'A' : avg >= 65 ? 'B+' : avg >= 55 ? 'B' : avg >= 45 ? 'C' : 'D';
+  return { approval, stability, economy, welfare, order, media, grade };
+}
+
+function rsMetricBar(label, value) {
+  return `<div class="home-rs__metric">
+    <span class="home-rs__metric-l">${label}</span>
+    <span class="home-rs__metric-t"><i class="home-rs__metric-f" style="width:${value}%"></i></span>
+    <b class="home-rs__metric-v">${value}</b>
+  </div>`;
+}
+
+function renderRepublicStatus(presidentData, overviewData, newsData) {
+  if (!presidentData && !overviewData) return '';
+  const parties = Array.isArray(overviewData?.parties) ? overviewData.parties : [];
+  const rulingPartyId = presidentData?.partyId || parties[0]?.id || '';
+  const rulingParty = parties.find(p => p.id === rulingPartyId) || parties[0];
+  const opposition = parties.find(p => p.id !== rulingPartyId);
+  const metrics = rsCalcMetrics(presidentData, parties);
+  const headline = newsData?.headline || '오늘의 정세가 곧 갱신됩니다';
+  const presidentName = presidentData?.candidateName || '공석';
+  const presidentPartyName = presidentData?.partyName || rulingParty?.name || '미정';
+
+  const partyRowsHtml = parties.slice(0, 3).map((p, idx) => {
+    const role = p.id === rulingPartyId ? '여당' : idx === 0 ? '제1당' : '야당';
+    return `<div class="home-rs__party-row">
+      <span class="home-rs__party-num">${idx + 1}</span>
+      <b class="home-rs__party-name">${escHtml(p.emoji)} ${escHtml(p.name)}</b>
+      <em class="home-rs__party-role">${role}</em>
+    </div>`;
+  }).join('') || `<div class="home-rs__party-empty">정당 집계 대기중</div>`;
+
+  return `
+    <section class="home-rs">
+      <div class="home-rs__header">
+        <div>
+          <div class="home-rs__eyebrow">SOSO REPUBLIC STATUS</div>
+          <div class="home-rs__title">🏛️ 소소공화국 국가 현황</div>
+          <div class="home-rs__headline">${escHtml(headline)}</div>
+        </div>
+        <div class="home-rs__grade-box">
+          <div class="home-rs__grade-label">국가등급</div>
+          <div class="home-rs__grade-value">${metrics.grade}</div>
+        </div>
+      </div>
+      <div class="home-rs__tiles">
+        <div class="home-rs__tile"><span class="home-rs__tile-l">대통령</span><b class="home-rs__tile-v">${escHtml(presidentName)}</b><small class="home-rs__tile-s">${escHtml(presidentPartyName)}</small></div>
+        <div class="home-rs__tile"><span class="home-rs__tile-l">대통령 지지율</span><b class="home-rs__tile-v">${metrics.approval ? `${metrics.approval}%` : '대기중'}</b><small class="home-rs__tile-s">${metrics.approval < 30 && metrics.approval ? '탄핵 위험권' : '국정 평가 반영'}</small></div>
+        <div class="home-rs__tile"><span class="home-rs__tile-l">여당</span><b class="home-rs__tile-v">${escHtml(rulingParty?.emoji || '')} ${escHtml(rulingParty?.name || '미정')}</b><small class="home-rs__tile-s">${escHtml(rulingParty?.leader?.nickname || '당대표 집계중')}</small></div>
+        <div class="home-rs__tile"><span class="home-rs__tile-l">제1야당</span><b class="home-rs__tile-v">${escHtml(opposition?.emoji || '')} ${escHtml(opposition?.name || '미정')}</b><small class="home-rs__tile-s">견제 세력</small></div>
+      </div>
+      <div class="home-rs__lower">
+        <div class="home-rs__metrics">
+          ${rsMetricBar('국정 안정도', metrics.stability)}
+          ${rsMetricBar('경제 체감도', metrics.economy)}
+          ${rsMetricBar('복지 만족도', metrics.welfare)}
+          ${rsMetricBar('치안 질서', metrics.order)}
+          ${rsMetricBar('언론 신뢰도', metrics.media)}
+        </div>
+        <div class="home-rs__parties">
+          <div class="home-rs__parties-title">정당 판세</div>
+          ${partyRowsHtml}
+        </div>
+      </div>
+    </section>`;
+
 async function fetchMyStatus() {
   if (!auth.currentUser) return { loggedIn: false };
   try {
@@ -602,12 +692,13 @@ export async function renderHome() {
       httpsCallable(functions, 'syncPartyMemberPower')({}).catch(() => {});
     }
 
-    const [hotPosts, battleData, presidentData, newsData, myStatus] = await Promise.all([
+    const [hotPosts, battleData, presidentData, newsData, myStatus, overviewData] = await Promise.all([
       fetchHotPosts(4),
       fetchTodayBattle(),
       fetchPresident(),
       fetchDailyNews(),
       fetchMyStatus(),
+      fetchPoliticsOverview(),
       user ? checkStreak(user.uid) : Promise.resolve(),
     ]);
 
@@ -629,13 +720,16 @@ export async function renderHome() {
         </div>
       </div>` : '';
 
+    const republicStatusHTML = renderRepublicStatus(presidentData, overviewData, newsData);
+
     if (myStatus && myStatus.loggedIn) {
-      // 로그인: 미션 → 배틀 → 인기글
+      // 로그인: 신분증 → 국가현황 → 미션 → 배틀 → 인기글
       el.innerHTML = `
         <div class="home-dash page-enter home-dash--v2">
           <div id="home-notif-slot"></div>
           ${newPrezHTML}
           ${renderRankCard(myStatus, isRulingParty)}
+          ${republicStatusHTML}
           ${renderMissions(myStatus, battleData, isRulingParty)}
           <div id="home-campaign-slot"></div>
           ${battleHTML}
@@ -643,10 +737,11 @@ export async function renderHome() {
           ${hotHTML}
         </div>`;
     } else {
-      // 비로그인: 히어로 → 배틀 → 인기글
+      // 비로그인: 히어로 → 국가현황 → 배틀 → 인기글
       el.innerHTML = `
         <div class="home-dash page-enter home-dash--v2">
           ${renderGuestHero(presidentData, battleData)}
+          ${republicStatusHTML}
           ${battleHTML}
           ${hotHTML}
         </div>`;

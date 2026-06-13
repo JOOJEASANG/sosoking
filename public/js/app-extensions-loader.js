@@ -19,7 +19,6 @@ const EXTENSION_MODULES = [
   './congress-route.js',
   './constitutional-court-route.js',
   './republic-polish.js',
-  './republic-dashboard.js',
   './feedback-actions.js',
   './admin-ui-cleanup.js',
   './notifications-ui.js',
