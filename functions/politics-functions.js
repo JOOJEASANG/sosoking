@@ -489,15 +489,25 @@ async function finalizeElection(periodId) {
 }
 
 // 이번 주 선거 보장 + 지난 주 선거 마감 처리
+function seedAiVotes(candidates) {
+  const totalAiVotes = 24 + Math.floor(Math.random() * 12); // 24~35 표
+  const totalPower = candidates.reduce((s, c) => s + c.power, 0) || 1;
+  const votes = {};
+  candidates.forEach(c => { votes[c.partyId] = Math.max(3, Math.round((c.power / totalPower) * totalAiVotes)); });
+  const total = Object.values(votes).reduce((s, v) => s + v, 0);
+  return { votes, total };
+}
+
 async function ensureElection() {
   const { key, endKey, prevKey } = weekPeriod();
   const ref = db.doc(`elections/${key}`);
   const snap = await ref.get();
   if (!snap.exists) {
     const candidates = await buildCandidates();
+    const { votes: aiVotes, total: aiTotal } = seedAiVotes(candidates);
     await ref.set({
       periodId: key, status: 'open', startKey: key, endKey,
-      candidates, votes: {}, totalVotes: 0,
+      candidates, votes: aiVotes, totalVotes: aiTotal, aiSeeded: true,
       createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
 
@@ -1115,12 +1125,32 @@ exports.getPartyActivities = onCall({ region: REGION, timeoutSeconds: 60 }, asyn
 });
 
 // ── 소소신문 — AI 일간 정치 뉴스 ──
-exports.getDailyNews = onCall({ region: REGION, timeoutSeconds: 60 }, async () => {
+exports.getDailyNews = onCall({ region: REGION, timeoutSeconds: 60 }, async (request) => {
   const today = kstToday();
+  const uid = request.auth && request.auth.uid;
+
+  // 소소신문 읽기 +3P (하루 1회)
+  let newsPoints = 0;
+  if (uid) {
+    const awardRef = db.doc(`point_awards/${uid}_news_${today}`);
+    const awardSnap = await awardRef.get();
+    if (!awardSnap.exists) {
+      newsPoints = 3;
+      const batch = db.batch();
+      batch.set(awardRef, { uid, action: 'read_news', points: newsPoints, date: today, createdAt: FieldValue.serverTimestamp() });
+      batch.set(db.doc(`users/${uid}`), {
+        points: FieldValue.increment(newsPoints),
+        totalPoints: FieldValue.increment(newsPoints),
+        updatedAt: FieldValue.serverTimestamp(),
+      }, { merge: true });
+      await batch.commit();
+    }
+  }
+
   const ref = db.doc(`daily_news/${today}`);
   const snap = await ref.get();
-  if (snap.exists && snap.data().headline) return { ...snap.data(), date: today };
-  if (snap.exists && snap.data().generating) return { headline: null, body: null, date: today };
+  if (snap.exists && snap.data().headline) return { ...snap.data(), date: today, newsPoints };
+  if (snap.exists && snap.data().generating) return { headline: null, body: null, date: today, newsPoints };
 
   await ref.set({ generating: true, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
 
@@ -1234,11 +1264,11 @@ JSON으로만 응답: {"headline":"제목","body":"본문"}`;
       generatedAt: FieldValue.serverTimestamp(),
     };
     await ref.set(news);
-    return news;
+    return { ...news, newsPoints };
   } catch (e) {
     await ref.set({ generating: false, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
     console.error('[getDailyNews] error', e);
-    return { headline: null, body: null, date: today };
+    return { headline: null, body: null, date: today, newsPoints };
   }
 });
 

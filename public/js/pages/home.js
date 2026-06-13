@@ -102,6 +102,7 @@ async function fetchDailyNews() {
   try {
     const getDailyNews = httpsCallable(functions, 'getDailyNews');
     const { data } = await getDailyNews();
+    if (data && data.newsPoints > 0) toast(`📰 소소신문 읽기 +${data.newsPoints}P 획득!`, 'success');
     return (data && data.headline) ? data : null;
   } catch { return null; }
 }
@@ -410,6 +411,7 @@ function renderMissions(status, battleData, isRulingParty = false) {
   const votedBattle = !!(battleData && battleData.userVote);
   const votedElection = !!status.votedElection;
   const votedCrisis = !!status.votedCrisis;
+  const readNewsToday = !!status.readNewsToday;
   const campaignsToday = Number(status.campaignsToday || 0);
   const attended = (appState.streak || 0) >= 1;
 
@@ -431,6 +433,7 @@ function renderMissions(status, battleData, isRulingParty = false) {
 
   const missions = [
     { done: attended,       label: '오늘 출석',        path: '/',         cta: '완료',       reward: dailyReward, icon: '📅' },
+    { done: readNewsToday,  label: '소소신문 읽기',     path: '/news',     cta: '읽으러 가기', reward: '+3P',      icon: '📰' },
     { done: votedBattle,    label: '정치배틀 투표',     path: '/battle',   cta: '투표하기',   reward: '+5P',       icon: '🗳️' },
     { done: votedElection,  label: elecLabel,           path: '/election', cta: '투표하기',   reward: '+5P',       icon: '👑' },
     { done: votedCrisis,    label: '이번 주 위기 투표', path: '/news',     cta: '참여하기',   reward: '+5P',       icon: '🚨' },
