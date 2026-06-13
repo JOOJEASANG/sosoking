@@ -33,19 +33,24 @@ export async function fetchPost(id) {
   return snap.exists() ? { id: snap.id, ...snap.data() } : null;
 }
 
+const VALID_POST_TYPES = new Set(['ai_judge', 'vote', 'tournament']);
+function isVisiblePost(p) {
+  return !p.hidden && VALID_POST_TYPES.has(p.type || p.feedType || '');
+}
+
 /** 인기 피드 (반응 많은 순) */
 export async function fetchHotPosts(n = 5) {
   try {
     const snap = await getDocs(
-      query(collection(db, FEEDS), orderBy('reactions.total', 'desc'), limit(n + 10))
+      query(collection(db, FEEDS), orderBy('reactions.total', 'desc'), limit(n * 8))
     );
-    return snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.hidden).slice(0, n);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(isVisiblePost).slice(0, n);
   } catch {
     try {
       const snap = await getDocs(
-        query(collection(db, FEEDS), orderBy('createdAt', 'desc'), limit(n + 10))
+        query(collection(db, FEEDS), orderBy('createdAt', 'desc'), limit(n * 8))
       );
-      return snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.hidden).slice(0, n);
+      return snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(isVisiblePost).slice(0, n);
     } catch {
       return [];
     }
@@ -57,11 +62,9 @@ export async function fetchTodayBest() {
   try {
     const since = new Date(Date.now() - 86400000);
     const snap = await getDocs(
-      query(collection(db, FEEDS), orderBy('reactions.total', 'desc'), limit(30))
+      query(collection(db, FEEDS), orderBy('reactions.total', 'desc'), limit(80))
     );
-    const posts = snap.docs
-      .map(d => ({ id: d.id, ...d.data() }))
-      .filter(p => !p.hidden);
+    const posts = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(isVisiblePost);
     const today = posts.find(p => {
       const t = p.createdAt?.toDate?.() || p.createdAt;
       return t && new Date(t) >= since;
