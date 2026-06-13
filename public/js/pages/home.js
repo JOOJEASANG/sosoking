@@ -205,6 +205,7 @@ function renderRepublicStatus(presidentData, overviewData, newsData) {
         </div>
       </div>
     </section>`;
+}
 
 async function fetchMyStatus() {
   if (!auth.currentUser) return { loggedIn: false };
