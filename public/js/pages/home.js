@@ -365,6 +365,8 @@ function renderRankCard(status, isRulingParty = false) {
     ? `<div class="home-id-card__badges">${badges.map(b => `<span class="home-id-card__badge-chip">${b.icon} ${b.label}</span>`).join('')}</div>`
     : '';
 
+  const nearNext = !rank.isMax && rank.progress >= 70;
+
   return `
     <section class="home-id-card page-enter" style="--rank-c:${rank.color}">
       <div class="home-id-card__top">
@@ -376,8 +378,8 @@ function renderRankCard(status, isRulingParty = false) {
         <button class="home-id-card__more" data-path="/ranking" type="button">랭킹 →</button>
       </div>
       <div class="home-id-card__progress">
-        <div class="home-id-card__bar"><div class="home-id-card__fill" style="width:${rank.progress}%"></div></div>
-        ${nextLine}
+        <div class="home-id-card__bar"><div class="home-id-card__fill${nearNext ? ' home-id-card__fill--near' : ''}" style="width:${rank.progress}%"></div></div>
+        ${nextLine}${nearNext ? ` <span style="color:var(--rank-c);font-size:11px;font-weight:900">▲ 승급 임박!</span>` : ''}
       </div>
       <div class="home-id-card__party-row">${partyLine}</div>
       ${badgesHTML}
@@ -444,9 +446,18 @@ function renderMissions(status, battleData, isRulingParty = false) {
   const doneCount = missions.filter(m => m.done).length;
   const allDone = doneCount === missions.length;
 
-  return `
-    <section class="home-missions">
+  // 스트릭 위기: 밤 9시 이후 아직 출석 안 했으면 경고
+  const kstHour = new Date(Date.now() + 9 * 3600000).getUTCHours();
+  const streakWarningHTML = (!attended && streak >= 2 && kstHour >= 21)
+    ? `<div class="home-streak-warning">
+        <span class="home-streak-warning__flame">🔥</span>
+        <span><b>${streak}일 연속 스트릭 위기!</b> 자정 전에 출석 체크하세요!</span>
+      </div>`
+    : '';
 
+  return `
+    <section class="home-missions${allDone ? ' home-missions--all-done' : ''}">
+      ${streakWarningHTML}
       <div class="home-missions__head">
         <span class="home-missions__title">📋 오늘의 정치 일정</span>
         <span class="home-missions__count${allDone ? ' home-missions__count--all' : ''}">${doneCount}/${missions.length} 완료${allDone ? ' 🎉' : ''}</span>

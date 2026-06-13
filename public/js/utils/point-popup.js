@@ -3,7 +3,10 @@
 export function showPointPopup(amount, anchorEl = null) {
   const el = document.createElement('div');
   el.className = 'point-popup';
-  el.textContent = `+${amount}P`;
+  if (amount >= 20) el.classList.add('point-popup--big');
+
+  const label = amount >= 20 ? `+${amount}P 🎉` : `+${amount}P`;
+  el.textContent = label;
 
   if (anchorEl) {
     const rect = anchorEl.getBoundingClientRect();
@@ -11,12 +14,12 @@ export function showPointPopup(amount, anchorEl = null) {
     el.style.left = `${rect.left + rect.width / 2}px`;
     el.style.transform = 'translate(-50%, 0)';
   } else {
-    el.style.bottom = '80px';
+    el.style.bottom = '100px';
     el.style.left = '50%';
     el.style.transform = 'translateX(-50%)';
   }
 
   document.body.appendChild(el);
   requestAnimationFrame(() => el.classList.add('point-popup--fly'));
-  setTimeout(() => el.remove(), 1100);
+  setTimeout(() => el.remove(), 1400);
 }

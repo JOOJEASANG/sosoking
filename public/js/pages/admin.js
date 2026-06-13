@@ -1159,6 +1159,51 @@ async function renderSiteFeatures(el) {
     } finally { btn.disabled = false; btn.textContent = '저장'; }
   });
 
+  // ── 세계관 히스토리 시드 섹션 ──
+  const seedSection = document.createElement('div');
+  seedSection.className = 'admin-section';
+  seedSection.style.marginTop = '16px';
+  seedSection.innerHTML = `
+    <div class="card">
+      <div class="card__body">
+        <div style="font-size:15px;font-weight:900;margin-bottom:4px;color:#2563eb">🌍 세계관 히스토리 생성</div>
+        <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:16px">
+          처음 서비스를 오픈하거나 신규 유저가 접속했을 때 게임이 이미 운영 중인 것처럼 보이도록<br>
+          과거 4주치 선거·배틀·국회 법안·정치 위기·소소신문 이력을 자동 생성합니다.<br>
+          <b>이미 존재하는 데이터는 건드리지 않습니다.</b>
+        </div>
+        <div style="padding:14px;border:1px solid #93c5fd;border-radius:12px;background:rgba(59,130,246,.04)">
+          <div style="font-size:13px;font-weight:800;margin-bottom:4px">📜 과거 정치 역사 시드</div>
+          <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:10px">
+            • 과거 4주 선거 결과 (승자·포고령 포함)<br>
+            • 과거 14일 정치배틀 이력<br>
+            • 과거 4주 국회 법안 (가결/부결 결과)<br>
+            • 과거 2주 정치 위기<br>
+            • 과거 7일 소소신문
+          </div>
+          <button class="btn btn--sm" id="btn-seed-world" style="background:#2563eb;color:#fff;border-color:transparent">세계관 히스토리 생성</button>
+          <div id="seed-world-result" style="margin-top:6px;font-size:12px"></div>
+        </div>
+      </div>
+    </div>`;
+  el.appendChild(seedSection);
+
+  el.querySelector('#btn-seed-world')?.addEventListener('click', async () => {
+    const btn = el.querySelector('#btn-seed-world');
+    const res = el.querySelector('#seed-world-result');
+    btn.disabled = true; btn.textContent = '생성 중... (30~60초 소요)';
+    res.style.color = 'var(--color-text-muted)'; res.textContent = '데이터 생성 중입니다. 잠시만 기다려주세요...';
+    try {
+      const fn = httpsCallable(functions, 'adminSeedWorldHistory');
+      const { data: r } = await fn();
+      res.style.color = '#16a34a';
+      res.textContent = `✅ ${r.message}`;
+    } catch (e) {
+      res.style.color = '#dc2626';
+      res.textContent = '❌ ' + (e.message || '생성 실패');
+    } finally { btn.disabled = false; btn.textContent = '세계관 히스토리 생성'; }
+  });
+
   // ── 데이터 초기화 섹션 ──
   const resetSection = document.createElement('div');
   resetSection.className = 'admin-section';

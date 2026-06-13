@@ -25,6 +25,8 @@ const partyLeague = require('./party-war-functions.js');
 const congress = require('./congress-functions.js');
 const constitutionalCourt = require('./constitutional-court-functions.js');
 
+const adminSeed = require('./admin-seed-functions.js');
+
 module.exports = {
   ...coreAi,
   ...secureAiConfig,
@@ -93,4 +95,5 @@ module.exports = {
   ...postOwner,
   ...postView,
   ...kakaoAuth,
+  adminSeedWorldHistory: adminSeed.adminSeedWorldHistory,
 };

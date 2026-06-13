@@ -548,20 +548,103 @@
   position: fixed;
   z-index: 4000;
   pointer-events: none;
-  font-size: 20px;
+  font-size: 28px;
   font-weight: 900;
   color: var(--color-primary, #ff6b4a);
-  text-shadow: 0 1px 4px rgba(0,0,0,.15);
+  text-shadow: 0 2px 8px rgba(0,0,0,.18);
+  letter-spacing: -.02em;
   opacity: 0;
   white-space: nowrap;
 }
+.point-popup--big {
+  font-size: 36px;
+  color: #16a34a;
+}
 .point-popup--fly {
-  animation: point-fly 1s ease-out forwards;
+  animation: point-fly 1.3s cubic-bezier(.22,1,.36,1) forwards;
 }
 @keyframes point-fly {
-  0%  { opacity: 1; transform: translateX(-50%) translateY(0)    scale(1.15); }
-  60% { opacity: 1; transform: translateX(-50%) translateY(-40px) scale(1); }
-  100%{ opacity: 0; transform: translateX(-50%) translateY(-70px) scale(.85); }
+  0%   { opacity: 0;   transform: translateX(-50%) translateY(10px)  scale(2.2); }
+  15%  { opacity: 1;   transform: translateX(-50%) translateY(0px)   scale(1.1); }
+  60%  { opacity: 1;   transform: translateX(-50%) translateY(-50px) scale(1); }
+  100% { opacity: 0;   transform: translateX(-50%) translateY(-90px) scale(.8); }
+}
+
+/* ── 투표바 진입 애니메이션 ── */
+.elec-cand__fill,
+.battle-party-vote-fill,
+.prez-approval-fill {
+  transform-origin: left;
+  animation: bar-fill-in .65s cubic-bezier(.34,1.1,.64,1) both;
+}
+@keyframes bar-fill-in {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+/* ── 등급 진행바 근접 시 빛남 ── */
+.home-id-card__fill--near {
+  animation: bar-near-pulse 1.6s ease-in-out infinite;
+}
+@keyframes bar-near-pulse {
+  0%, 100% { filter: brightness(1) saturate(1); }
+  50%       { filter: brightness(1.35) saturate(1.4); }
+}
+
+/* ── 스트릭 위기 배너 ── */
+.home-streak-warning {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  background: #fef3c7;
+  border: 1.5px solid #fbbf24;
+  border-left: 4px solid #f59e0b;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #92400e;
+  animation: streak-shake .5s ease both;
+}
+[data-theme="dark"] .home-streak-warning {
+  background: rgba(245,158,11,.12);
+  border-color: rgba(251,191,36,.5);
+  color: #FCD34D;
+}
+@keyframes streak-shake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-3px); }
+  40%       { transform: translateX(3px); }
+  60%       { transform: translateX(-2px); }
+  80%       { transform: translateX(2px); }
+}
+.home-streak-warning__flame { font-size: 20px; animation: streak-pulse 1s ease infinite; }
+@keyframes streak-pulse {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.2); }
+}
+
+/* ── 미션 전체 완료 ── */
+.home-missions--all-done {
+  position: relative;
+  overflow: hidden;
+}
+.home-missions--all-done::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg,
+    rgba(22,163,74,.06) 0%,
+    transparent 50%,
+    rgba(22,163,74,.06) 100%);
+  pointer-events: none;
+  border-radius: inherit;
+  animation: done-shimmer 2.5s ease-in-out infinite;
+}
+@keyframes done-shimmer {
+  0%, 100% { opacity: 0; }
+  50%       { opacity: 1; }
 }
 
 /* ── 알림 배너 ── */
