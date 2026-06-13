@@ -107,6 +107,15 @@ async function fetchDailyNews() {
   } catch { return null; }
 }
 
+async function loadRepublicStatus(slot, presidentData, newsData) {
+  if (!slot) return;
+  try {
+    const overviewData = await fetchPoliticsOverview();
+    const html = renderRepublicStatus(presidentData, overviewData, newsData);
+    if (html) slot.innerHTML = html;
+  } catch { /* non-critical */ }
+}
+
 async function fetchPoliticsOverview() {
   try {
     const { data } = await httpsCallable(functions, 'getPoliticsOverview')();
@@ -692,13 +701,12 @@ export async function renderHome() {
       httpsCallable(functions, 'syncPartyMemberPower')({}).catch(() => {});
     }
 
-    const [hotPosts, battleData, presidentData, newsData, myStatus, overviewData] = await Promise.all([
+    const [hotPosts, battleData, presidentData, newsData, myStatus] = await Promise.all([
       fetchHotPosts(4),
       fetchTodayBattle(),
       fetchPresident(),
       fetchDailyNews(),
       fetchMyStatus(),
-      fetchPoliticsOverview(),
       user ? checkStreak(user.uid) : Promise.resolve(),
     ]);
 
@@ -720,16 +728,14 @@ export async function renderHome() {
         </div>
       </div>` : '';
 
-    const republicStatusHTML = renderRepublicStatus(presidentData, overviewData, newsData);
-
     if (myStatus && myStatus.loggedIn) {
-      // 로그인: 신분증 → 국가현황 → 미션 → 배틀 → 인기글
+      // 로그인: 신분증 → 국가현황(비동기) → 미션 → 배틀 → 인기글
       el.innerHTML = `
         <div class="home-dash page-enter home-dash--v2">
           <div id="home-notif-slot"></div>
           ${newPrezHTML}
           ${renderRankCard(myStatus, isRulingParty)}
-          ${republicStatusHTML}
+          <div id="home-rs-slot"></div>
           ${renderMissions(myStatus, battleData, isRulingParty)}
           <div id="home-campaign-slot"></div>
           ${battleHTML}
@@ -737,11 +743,11 @@ export async function renderHome() {
           ${hotHTML}
         </div>`;
     } else {
-      // 비로그인: 히어로 → 국가현황 → 배틀 → 인기글
+      // 비로그인: 히어로 → 국가현황(비동기) → 배틀 → 인기글
       el.innerHTML = `
         <div class="home-dash page-enter home-dash--v2">
           ${renderGuestHero(presidentData, battleData)}
-          ${republicStatusHTML}
+          <div id="home-rs-slot"></div>
           ${battleHTML}
           ${hotHTML}
         </div>`;
@@ -806,6 +812,9 @@ export async function renderHome() {
         .then(({ data }) => { if (data.awarded) showPointPopup(3); })
         .catch(() => {});
     }
+
+    // 국가현황 비동기 로드 (메인 렌더 완료 후 별도 fetch)
+    loadRepublicStatus(el.querySelector('#home-rs-slot'), presidentData, newsData);
 
     // 유세 카드 + 세력도 + 위기 이벤트 비동기 로드
     if (user) loadNotifications(user.uid, el.querySelector('#home-notif-slot'), myStatus?.partyId || null);
