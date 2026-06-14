@@ -45,10 +45,18 @@ async function loadExtension(path) {
 }
 
 Promise.allSettled(EXTENSION_MODULES.map(loadExtension)).then(results => {
-  const failed = results
-    .map(result => result.value)
-    .filter(item => item && !item.ok)
-    .map(item => item.path);
+  const states = results.map(result => result.value).filter(Boolean);
+  const failed = states.filter(item => !item.ok).map(item => item.path);
+  const loaded = states.filter(item => item.ok).map(item => item.path);
+  const status = {
+    total: EXTENSION_MODULES.length,
+    loaded,
+    failed,
+    ok: failed.length === 0,
+    updatedAt: Date.now(),
+  };
+
+  window.__sosokingExtensionStatus = status;
   if (failed.length) console.warn('[sosoking extensions] failed modules:', failed);
-  window.dispatchEvent(new CustomEvent('sosoking:extensions-ready', { detail: { failed } }));
+  window.dispatchEvent(new CustomEvent('sosoking:extensions-ready', { detail: status }));
 });
