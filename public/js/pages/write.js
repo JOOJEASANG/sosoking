@@ -4,7 +4,6 @@ import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { navigate } from '../router.js';
 import { appState } from '../state.js';
 import { setMeta } from '../utils/seo.js';
-import { escHtml } from '../utils/helpers.js';
 import { toast } from '../components/toast.js';
 
 const awardUserPoints = httpsCallable(functions, 'awardUserPoints');
@@ -113,12 +112,12 @@ function bindWriteEvents() {
     const tags = splitTags(tagsEl.value);
 
     if (title.length < 2) {
-      toast.warning?.('제목을 2자 이상 입력해주세요.');
+      toast.warn?.('제목을 2자 이상 입력해주세요.');
       titleEl.focus();
       return;
     }
     if (desc.length < 10) {
-      toast.warning?.('내용을 10자 이상 입력해주세요.');
+      toast.warn?.('내용을 10자 이상 입력해주세요.');
       descEl.focus();
       return;
     }
