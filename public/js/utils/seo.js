@@ -1,5 +1,5 @@
-const BASE_TITLE = '소소킹 - 글과 사진으로 즐기는 게임형 커뮤니티';
-const BASE_DESC  = '투표·판정·토론, 작명소, 드립, 퀴즈, 일반 피드까지 — 짧게 올리고 바로 노는 참여형 커뮤니티';
+const BASE_TITLE = '소소킹 - 가상 정치 공화국 커뮤니티';
+const BASE_DESC  = '정당에 입당하고 정치배틀에 참여하며 대선, 국회, 헌법재판소까지 이어지는 가상 정치 시뮬레이션 커뮤니티';
 const BASE_IMAGE = 'https://sosoking.co.kr/og-image.png';
 const SITE_URL   = 'https://sosoking.co.kr';
 
