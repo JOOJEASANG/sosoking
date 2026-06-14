@@ -23,6 +23,7 @@ const EXTENSION_MODULES = [
   './president-decree-helper.js',
   './election-consistency-fix.js',
   './court-consistency-fix.js',
+  './political-extra-cleanup.js',
   './admin-dashboard-polish.js',
   './admin-feed-safety-fix.js',
   './admin-reports-panel.js',
