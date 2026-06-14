@@ -21,8 +21,8 @@ const FILTER_LIMIT = 500;
 const NAV_CONTEXT_KEY = 'sosoking:feedNavContext';
 
 const ROOMS = [
-  { key: '',         icon: '✨', label: '전체',    title: '전체',    desc: '헌법재판소·정치 콘텐츠를 한 번에 봅니다.' },
-  { key: 'ai_judge', icon: '🏛️', label: '재판기록', title: '재판기록', desc: '헌법재판소 AI 재판관 판결 기록입니다.', path: '/constitutional-court' },
+  { key: '',         icon: '🏛️', label: '전체여론', title: '전체여론', desc: '정당 홍보·공약 토론·정치 의견·헌재 기록을 한 번에 봅니다.' },
+  { key: 'ai_judge', icon: '⚖️', label: '헌재기록', title: '헌재기록', desc: '헌법재판소 AI 재판관 판결 기록입니다.', path: '/constitutional-court' },
 ];
 
 const AI_TYPES = ['ai_judge'];
@@ -68,7 +68,7 @@ function renderRoomTabs() {
 
 export async function renderFeed() {
   isLoading = false;
-  setMeta('소소킹 피드');
+  setMeta('소소킹 시민광장');
   const el     = document.getElementById('page-content');
   const params = getQueryParams();
   currentType   = params.type === 'tournament' ? '' : (params.type || '');
@@ -87,9 +87,9 @@ export async function renderFeed() {
         <span class="feed-earn-bar__label">⚡ 정치력 획득</span>
         <a class="feed-earn-bar__item" href="#/battle">배틀 댓글 <b>+10P</b></a>
         <span class="feed-earn-bar__sep">·</span>
-        <span class="feed-earn-bar__item">글 작성 <b>+20P</b></span>
+        <span class="feed-earn-bar__item">시민발언 <b>+20P</b></span>
         <span class="feed-earn-bar__sep">·</span>
-        <span class="feed-earn-bar__item">댓글 <b>+10P</b></span>
+        <span class="feed-earn-bar__item">시민토론 <b>+10P</b></span>
       </div>
       <div class="soso-feed-toolbar">
         ${renderRoomTabs()}
@@ -229,7 +229,7 @@ async function loadPosts() {
     console.error('피드 로드 실패', err);
     if (listEl) {
       listEl.classList.add('is-empty');
-      listEl.innerHTML = `<div class="empty-state"><div class="empty-state__icon">⚠️</div><div class="empty-state__title">피드를 불러오지 못했어요</div><div class="empty-state__desc">잠시 후 다시 시도해주세요.</div></div>`;
+      listEl.innerHTML = `<div class="empty-state"><div class="empty-state__icon">⚠️</div><div class="empty-state__title">시민광장을 불러오지 못했어요</div><div class="empty-state__desc">잠시 후 다시 시도해주세요.</div></div>`;
     }
   }
   if (loaderEl) loaderEl.style.display = 'none';
@@ -258,74 +258,90 @@ async function loadFilteredPosts() {
       const snap = await getDocs(query(collection(db, 'feeds'), where('feedType', '==', currentType), orderBy('createdAt', 'desc'), limit(FILTER_LIMIT)));
       posts = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.hidden);
     } catch (error) {
-      console.warn('[feed] feedType query failed, fallback legacy query', error);
-      const constraints = [orderBy('createdAt', 'desc'), limit(FILTER_LIMIT)];
-      const typeWhere = getLegacyTypeWhereClause(currentType);
-      if (typeWhere) constraints.unshift(typeWhere);
-      const snap = await getDocs(query(collection(db, 'feeds'), ...constraints));
+      const legacy = getLegacyTypeWhereClause(currentType);
+      if (!legacy) throw error;
+      const snap = await getDocs(query(collection(db, 'feeds'), legacy, orderBy('createdAt', 'desc'), limit(FILTER_LIMIT)));
       posts = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.hidden);
-      posts = posts.filter(p => postMatchesType(p, currentType));
     }
   } else {
-    const snap = await getDocs(query(collection(db, 'feeds'), where('type', 'in', AI_TYPES), orderBy('createdAt', 'desc'), limit(FILTER_LIMIT)));
+    const snap = await getDocs(query(collection(db, 'feeds'), orderBy('createdAt', 'desc'), limit(FILTER_LIMIT)));
     posts = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.hidden);
   }
-  posts = onlyAiPosts(posts);
-  if (currentSearch) posts = posts.filter(p => postMatchesSearch(p, currentSearch));
-  if (currentType && currentSearch) posts = posts.filter(p => postMatchesType(p, currentType));
-  cachedPosts = sortFeedPosts(posts, currentSort);
-}
-
-function persistNavContext(posts) {
-  lastDisplayPosts = posts || [];
-  try {
-    sessionStorage.setItem(NAV_CONTEXT_KEY, JSON.stringify({ ids: lastDisplayPosts.map(p => p.id).filter(Boolean), page: currentPage, type: currentType, search: currentSearch, sort: currentSort, href: window.location.hash || '#/feed', savedAt: Date.now() }));
-    sessionStorage.setItem('sosoking:detailPostNav', JSON.stringify({ ids: lastDisplayPosts.map(p => p.id).filter(Boolean), savedAt: Date.now() }));
-  } catch {}
+  if (currentType) posts = posts.filter(post => postMatchesType(post, currentType));
+  else posts = onlyAiPosts(posts);
+  if (currentSearch) posts = posts.filter(post => postMatchesSearch(post, currentSearch));
+  posts = sortFeedPosts(posts, currentSort);
+  cachedPosts = posts;
+  cursorTotal = Math.max(1, Math.ceil(posts.length / PAGE_SIZE));
 }
 
 function renderCurrentPage() {
   const listEl = document.getElementById('feed-list');
   const summaryEl = document.getElementById('feed-summary');
+  const paginationEl = document.getElementById('feed-pagination');
   if (!listEl) return;
-  const displayPosts = cachedPosts;
-  if (useCursorMode()) {
-    if (summaryEl) summaryEl.innerHTML = renderFeedSummary({ total: null, page: currentPage, totalPages: null, search: currentSearch, type: currentType, sort: currentSort });
-    persistNavContext(displayPosts);
-    listEl.classList.toggle('is-empty', !displayPosts.length);
-    listEl.innerHTML = displayPosts.length ? displayPosts.map(p => renderFeedCard(p)).join('') : renderFeedEmptyState({ search: currentSearch });
-    renderCursorPagination();
-  } else {
-    const totalPages = Math.max(1, Math.ceil(displayPosts.length / PAGE_SIZE));
-    currentPage = Math.min(Math.max(1, currentPage), totalPages);
+  bindSortEvents();
+  let displayPosts = cachedPosts;
+  if (!useCursorMode()) {
     const start = (currentPage - 1) * PAGE_SIZE;
-    const pagePosts = displayPosts.slice(start, start + PAGE_SIZE);
-    if (summaryEl) summaryEl.innerHTML = renderFeedSummary({ total: displayPosts.length, page: currentPage, totalPages, search: currentSearch, type: currentType, sort: currentSort });
-    persistNavContext(pagePosts);
-    listEl.classList.toggle('is-empty', !pagePosts.length);
-    listEl.innerHTML = pagePosts.length ? pagePosts.map(p => renderFeedCard(p)).join('') : renderFeedEmptyState({ search: currentSearch });
-    renderOffsetPagination(totalPages);
+    displayPosts = cachedPosts.slice(start, start + PAGE_SIZE);
   }
-  bindSortEvents(); updateUrlState();
+  lastDisplayPosts = displayPosts;
+  if (summaryEl) {
+    summaryEl.innerHTML = renderFeedSummary({
+      posts: displayPosts,
+      total: useCursorMode() ? null : cachedPosts.length,
+      page: currentPage,
+      pages: cursorTotal,
+      type: currentType,
+      search: currentSearch,
+      sort: currentSort,
+    });
+  }
+  if (!displayPosts.length) {
+    listEl.classList.add('is-empty');
+    listEl.innerHTML = renderFeedEmptyState({ search: currentSearch, type: currentType });
+    if (paginationEl) paginationEl.innerHTML = '';
+    return;
+  }
+  listEl.classList.remove('is-empty');
+  listEl.innerHTML = displayPosts.map(renderFeedCard).join('');
+  bindFeedCardClicks();
+  renderPagination();
 }
 
-function renderCursorPagination() {
-  const el = document.getElementById('feed-pagination');
-  if (!el) return;
-  const hasPrev = currentPage > 1;
-  const hasNext = cursorStack[currentPage - 1] !== undefined;
-  if (!hasPrev && !hasNext) { el.innerHTML = ''; return; }
-  el.innerHTML = `<button class="feed-page-btn" data-cursor-page="prev" ${!hasPrev ? 'disabled' : ''}>이전 페이지</button><span class="feed-page-current">${currentPage}페이지</span><button class="feed-page-btn" data-cursor-page="next" ${!hasNext ? 'disabled' : ''}>다음 페이지</button>`;
-  el.querySelector('[data-cursor-page="prev"]')?.addEventListener('click', async () => { if (currentPage <= 1) return; currentPage -= 1; await loadPosts(); document.querySelector('.soso-feed-page')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
-  el.querySelector('[data-cursor-page="next"]')?.addEventListener('click', async () => { currentPage += 1; await loadPosts(); document.querySelector('.soso-feed-page')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+function bindFeedCardClicks() {
+  document.querySelectorAll('.feed-card').forEach((card, index) => {
+    card.addEventListener('click', e => {
+      if (e.target.closest('button,a')) return;
+      const id = card.dataset.id;
+      if (!id) return;
+      sessionStorage.setItem(NAV_CONTEXT_KEY, JSON.stringify({
+        ids: lastDisplayPosts.map(p => p.id),
+        currentIndex: index,
+        page: currentPage,
+        type: currentType,
+        search: currentSearch,
+        sort: currentSort,
+        savedAt: Date.now(),
+      }));
+      navigate(`/detail/${id}`);
+    });
+  });
 }
 
-function renderOffsetPagination(totalPages) {
-  const el = document.getElementById('feed-pagination');
-  if (!el) return;
-  if (totalPages <= 1) { el.innerHTML = ''; return; }
-  const start = Math.max(1, Math.min(currentPage - 2, Math.max(1, totalPages - 4)));
-  const end = Math.min(totalPages, start + 4);
-  el.innerHTML = `<button class="feed-page-btn" data-feed-page="prev" ${currentPage <= 1 ? 'disabled' : ''}>이전 페이지</button><div class="feed-page-numbers">${Array.from({ length: end - start + 1 }, (_, i) => start + i).map(p => `<button class="feed-page-num ${p === currentPage ? 'active' : ''}" data-feed-page="${p}">${p}</button>`).join('')}</div><button class="feed-page-btn" data-feed-page="next" ${currentPage >= totalPages ? 'disabled' : ''}>다음 페이지</button>`;
-  el.querySelectorAll('[data-feed-page]').forEach(btn => btn.addEventListener('click', () => { const v = btn.dataset.feedPage; if (v === 'prev') currentPage -= 1; else if (v === 'next') currentPage += 1; else currentPage = Number(v || 1); renderCurrentPage(); document.querySelector('.soso-feed-page')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }));
+function renderPagination() {
+  const paginationEl = document.getElementById('feed-pagination');
+  if (!paginationEl) return;
+  if (cursorTotal <= 1) { paginationEl.innerHTML = ''; return; }
+  paginationEl.innerHTML = `
+    <button class="btn btn--outline btn--sm" id="feed-prev" ${currentPage <= 1 ? 'disabled' : ''}>이전</button>
+    <span class="feed-pagination__info">${currentPage} / ${cursorTotal}</span>
+    <button class="btn btn--outline btn--sm" id="feed-next" ${currentPage >= cursorTotal ? 'disabled' : ''}>다음</button>`;
+  paginationEl.querySelector('#feed-prev')?.addEventListener('click', () => {
+    if (currentPage > 1) { currentPage -= 1; updateUrlState(); loadPosts(); }
+  });
+  paginationEl.querySelector('#feed-next')?.addEventListener('click', () => {
+    if (currentPage < cursorTotal) { currentPage += 1; updateUrlState(); loadPosts(); }
+  });
 }
