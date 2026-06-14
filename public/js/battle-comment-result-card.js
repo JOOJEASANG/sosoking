@@ -33,7 +33,13 @@ function ensureStyle() {
     .battle-comment-result__metric b{display:block;color:var(--color-text-primary);font-size:12px;margin-bottom:2px}
     .battle-comment-result__attack{border-radius:11px;background:rgba(15,23,42,.055);padding:7px 8px;line-height:1.45;color:var(--color-text-secondary)}
     .battle-comment-result__attack b{color:var(--color-text-primary)}
-    @media(max-width:420px){.battle-comment-result__grid{grid-template-columns:repeat(2,1fr)}}
+    .battle-comment--speech{border-color:rgba(245,158,11,.42)!important;box-shadow:0 10px 24px rgba(245,158,11,.12)}
+    .battle-comment--legend-speech{border-color:rgba(239,68,68,.42)!important;box-shadow:0 12px 30px rgba(239,68,68,.14)}
+    .battle-speech-badge{display:inline-flex;align-items:center;gap:4px;margin-left:6px;border-radius:999px;padding:3px 7px;background:linear-gradient(135deg,#f59e0b,#f97316);color:#fff;font-size:10px;font-weight:1000;vertical-align:middle;box-shadow:0 4px 10px rgba(245,158,11,.22)}
+    .battle-speech-badge--legend{background:linear-gradient(135deg,#ef4444,#9333ea);box-shadow:0 4px 12px rgba(147,51,234,.22)}
+    .battle-comment-result--speech{background:linear-gradient(135deg,rgba(245,158,11,.12),rgba(255,255,255,.96));border-color:rgba(245,158,11,.36)}
+    .battle-comment-result--legend{background:linear-gradient(135deg,rgba(239,68,68,.12),rgba(147,51,234,.08));border-color:rgba(239,68,68,.34)}
+    @media(max-width:420px){.battle-comment-result__grid{grid-template-columns:repeat(2,1fr)}.battle-speech-badge{margin-left:0;margin-top:4px}}
   `;
   document.head.appendChild(style);
 }
@@ -112,13 +118,27 @@ function buildResult(text) {
   return { score: scoreComment(text), attack: opponentAttack(text) };
 }
 
+function speechLevel(total) {
+  if (Number(total || 0) >= 90) return 'legend';
+  if (Number(total || 0) >= 80) return 'speech';
+  return '';
+}
+
+function speechBadge(level) {
+  if (level === 'legend') return '<span class="battle-speech-badge battle-speech-badge--legend">👑 전설의 연설</span>';
+  if (level === 'speech') return '<span class="battle-speech-badge">🔥 명연설</span>';
+  return '';
+}
+
 function renderCard(result) {
   const s = result.score || result;
   const attack = result.attack || '상대 반박 예상 없음';
+  const level = speechLevel(s.total);
+  const extraClass = level === 'legend' ? ' battle-comment-result--legend' : level === 'speech' ? ' battle-comment-result--speech' : '';
   return `
-    <div class="battle-comment-result" data-battle-comment-result="true">
+    <div class="battle-comment-result${extraClass}" data-battle-comment-result="true">
       <div class="battle-comment-result__top">
-        <span class="battle-comment-result__title">🎯 내 토론 결과</span>
+        <span class="battle-comment-result__title">🎯 내 토론 결과 ${speechBadge(level)}</span>
         <span class="battle-comment-result__score">${s.total}점</span>
       </div>
       <div class="battle-comment-result__grid">
@@ -132,12 +152,26 @@ function renderCard(result) {
     </div>`;
 }
 
+function markSpeechComment(commentEl, result) {
+  const total = result?.score?.total ?? result?.total;
+  const level = speechLevel(total);
+  if (!commentEl || !level) return;
+  commentEl.classList.add(level === 'legend' ? 'battle-comment--legend-speech' : 'battle-comment--speech');
+  const author = commentEl.querySelector('.battle-comment__author');
+  if (author && !author.querySelector('.battle-speech-badge')) {
+    author.insertAdjacentHTML('beforeend', speechBadge(level));
+  }
+}
+
 function attachResultToComment(commentEl, result, text) {
-  if (!commentEl || commentEl.querySelector('[data-battle-comment-result]')) return;
+  if (!commentEl) return;
   const textEl = commentEl.querySelector('.battle-comment__text');
   const reactionsEl = commentEl.querySelector('.battle-comment__reactions');
   if (!textEl) return;
-  textEl.insertAdjacentHTML('afterend', renderCard(result));
+  if (!commentEl.querySelector('[data-battle-comment-result]')) {
+    textEl.insertAdjacentHTML('afterend', renderCard(result));
+  }
+  markSpeechComment(commentEl, result);
   if (reactionsEl) reactionsEl.style.marginTop = '8px';
   saveResult(commentEl.dataset.commentId || null, text || textEl.textContent || '', result);
 }
@@ -146,7 +180,6 @@ function restoreCards() {
   if (currentPath() !== '/battle') return;
   ensureStyle();
   document.querySelectorAll('.battle-comment').forEach(commentEl => {
-    if (commentEl.querySelector('[data-battle-comment-result]')) return;
     const text = commentEl.querySelector('.battle-comment__text')?.textContent || '';
     const stored = getStoredResult(commentEl.dataset.commentId || null, text);
     if (stored) attachResultToComment(commentEl, stored, text);
