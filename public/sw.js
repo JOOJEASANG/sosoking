@@ -1,5 +1,5 @@
 // sw.js — 배포 후 오래된 정적 자산이 남지 않도록 캐시 버전을 관리합니다.
-const CACHE = 'sosoking-v187';
+const CACHE = 'sosoking-v188';
 const FRESH_EXTENSIONS = ['.html', '.js', '.css', '.json', '.webmanifest', '.xml'];
 
 self.addEventListener('install', event => {
@@ -39,13 +39,11 @@ self.addEventListener('fetch', event => {
 
   if (shouldBypass(event.request, url)) return;
 
-  // HTML/JS/CSS/JSON/manifest/sitemap은 캐시에 저장하지 않고 항상 최신 네트워크 응답을 사용합니다.
   if (shouldAlwaysFetchFresh(event.request, url)) {
     event.respondWith(fetch(event.request, { cache: 'no-store' }).catch(() => fetch(event.request)));
     return;
   }
 
-  // 이미지/아이콘 등 정적 자산만 캐시합니다. 실패 시 캐시가 있으면 fallback합니다.
   event.respondWith(
     caches.match(event.request).then(cached => {
       if (cached) return cached;
