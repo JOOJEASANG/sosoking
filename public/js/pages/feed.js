@@ -1,8 +1,7 @@
-import { db, auth, functions } from '../firebase.js';
+import { db } from '../firebase.js';
 import {
   collection, query, orderBy, limit, getDocs, startAfter, where,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
 import { getQueryParams, navigate } from '../router.js';
 import { renderFeedCard, renderSkeletonCards } from '../components/feed-card.js';
 import { setMeta } from '../utils/seo.js';
@@ -14,18 +13,16 @@ import {
   updateFeedFilterUI, renderFeedSummary,
 } from '../feed/render.js';
 
-import { toast } from '../components/toast.js';
-
 const PAGE_SIZE    = 20;
 const FILTER_LIMIT = 500;
 const NAV_CONTEXT_KEY = 'sosoking:feedNavContext';
+const PLAZA_TYPES = ['citizen_speech', 'ai_judge'];
 
 const ROOMS = [
-  { key: '',         icon: '🏛️', label: '전체여론', title: '전체여론', desc: '정당 홍보·공약 토론·정치 의견·헌재 기록을 한 번에 봅니다.' },
+  { key: '', icon: '🏛️', label: '전체여론', title: '전체여론', desc: '정당 홍보·공약 토론·정치 의견·헌재 기록을 한 번에 봅니다.' },
+  { key: 'citizen_speech', icon: '🗣️', label: '시민발언', title: '시민발언', desc: '정당 홍보, 공약 토론, 정치 의견을 모아봅니다.', path: '/write' },
   { key: 'ai_judge', icon: '⚖️', label: '헌재기록', title: '헌재기록', desc: '헌법재판소 AI 재판관 판결 기록입니다.', path: '/constitutional-court' },
 ];
-
-const AI_TYPES = ['ai_judge'];
 
 let currentType        = '';
 let currentSearch      = '';
@@ -47,12 +44,12 @@ function renderRoomTabs() {
     ? `<div class="soso-room-desc">
         <span class="soso-room-desc__icon">${activeRoom.icon}</span>
         <span class="soso-room-desc__text">${activeRoom.desc}</span>
-        ${activeRoom.path ? `<a class="soso-room-desc__cta" href="#${activeRoom.path}">직접 해보기 →</a>` : ''}
+        ${activeRoom.path ? `<a class="soso-room-desc__cta" href="#${activeRoom.path}">${activeRoom.key === 'citizen_speech' ? '작성하기 →' : '직접 해보기 →'}</a>` : ''}
       </div>`
     : '';
   return `
     <div class="soso-room-tabs-wrap">
-      <div class="soso-room-tabs" role="tablist" aria-label="방별 보기">
+      <div class="soso-room-tabs" role="tablist" aria-label="시민광장 보기">
         ${ROOMS.map(room => `
           <button type="button" role="tab"
             class="soso-room-tab ${currentType === room.key ? 'active' : ''}"
@@ -87,7 +84,7 @@ export async function renderFeed() {
         <span class="feed-earn-bar__label">⚡ 정치력 획득</span>
         <a class="feed-earn-bar__item" href="#/battle">배틀 댓글 <b>+10P</b></a>
         <span class="feed-earn-bar__sep">·</span>
-        <span class="feed-earn-bar__item">시민발언 <b>+20P</b></span>
+        <a class="feed-earn-bar__item" href="#/write">시민발언 <b>+20P</b></a>
         <span class="feed-earn-bar__sep">·</span>
         <span class="feed-earn-bar__item">시민토론 <b>+10P</b></span>
       </div>
@@ -167,7 +164,6 @@ function refreshFeed() {
   lastDisplayPosts = [];
   updateUrlState();
   updateFeedFilterUI({ type: currentType, search: currentSearch, sort: currentSort });
-  // 탭 active + desc 업데이트
   document.querySelectorAll('.soso-room-tab').forEach(btn => {
     const active = btn.dataset.typeFilter === currentType;
     btn.classList.toggle('active', active);
@@ -178,7 +174,7 @@ function refreshFeed() {
   if (activeRoom.key) {
     const html = `<span class="soso-room-desc__icon">${activeRoom.icon}</span>
       <span class="soso-room-desc__text">${activeRoom.desc}</span>
-      ${activeRoom.path ? `<a class="soso-room-desc__cta" href="#${activeRoom.path}">직접 해보기 →</a>` : ''}`;
+      ${activeRoom.path ? `<a class="soso-room-desc__cta" href="#${activeRoom.path}">${activeRoom.key === 'citizen_speech' ? '작성하기 →' : '직접 해보기 →'}</a>` : ''}`;
     if (descEl) { descEl.innerHTML = html; descEl.hidden = false; }
     else {
       const wrap = document.querySelector('.soso-room-tabs-wrap');
@@ -203,14 +199,15 @@ function updateUrlState() {
 function getLegacyTypeWhereClause(type) {
   const map = {
     ai_judge: ['ai_judge'],
+    citizen_speech: ['citizen_speech'],
   };
   const types = map[type];
   if (!types) return null;
   return types.length === 1 ? where('type', '==', types[0]) : where('type', 'in', types.slice(0, 10));
 }
 
-function onlyAiPosts(posts) {
-  return posts.filter(p => AI_TYPES.includes(p.feedType || p.type));
+function onlyPlazaPosts(posts) {
+  return posts.filter(p => PLAZA_TYPES.includes(p.feedType || p.type || p.subtype));
 }
 
 async function loadPosts() {
@@ -226,7 +223,7 @@ async function loadPosts() {
     else await loadFilteredPosts();
     renderCurrentPage();
   } catch (err) {
-    console.error('피드 로드 실패', err);
+    console.error('시민광장 로드 실패', err);
     if (listEl) {
       listEl.classList.add('is-empty');
       listEl.innerHTML = `<div class="empty-state"><div class="empty-state__icon">⚠️</div><div class="empty-state__title">시민광장을 불러오지 못했어요</div><div class="empty-state__desc">잠시 후 다시 시도해주세요.</div></div>`;
@@ -238,7 +235,7 @@ async function loadPosts() {
 
 async function loadCursorPage(page) {
   const startCursor = page > 1 ? cursorStack[page - 2] : null;
-  const constraints = [where('type', 'in', AI_TYPES), orderBy('createdAt', 'desc'), limit(PAGE_SIZE + 1)];
+  const constraints = [where('type', 'in', PLAZA_TYPES), orderBy('createdAt', 'desc'), limit(PAGE_SIZE + 1)];
   if (startCursor) constraints.push(startAfter(startCursor));
   const snap = await getDocs(query(collection(db, 'feeds'), ...constraints));
   const docs = snap.docs;
@@ -268,7 +265,7 @@ async function loadFilteredPosts() {
     posts = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.hidden);
   }
   if (currentType) posts = posts.filter(post => postMatchesType(post, currentType));
-  else posts = onlyAiPosts(posts);
+  else posts = onlyPlazaPosts(posts);
   if (currentSearch) posts = posts.filter(post => postMatchesSearch(post, currentSearch));
   posts = sortFeedPosts(posts, currentSort);
   cachedPosts = posts;
@@ -292,7 +289,7 @@ function renderCurrentPage() {
       posts: displayPosts,
       total: useCursorMode() ? null : cachedPosts.length,
       page: currentPage,
-      pages: cursorTotal,
+      totalPages: cursorTotal,
       type: currentType,
       search: currentSearch,
       sort: currentSort,
