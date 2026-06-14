@@ -3,7 +3,7 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { getApps, initializeApp } = require('firebase-admin/app');
-const { getFirestore, FieldValue } = require('firebase-admin/firestore');
+const { getFirestore, FieldValue, Timestamp } = require('firebase-admin/firestore');
 
 if (!getApps().length) initializeApp();
 const db = getFirestore();
@@ -305,6 +305,139 @@ async function generateAftermath(winnerPartyId, topic, battleRef) {
   }
 }
 
+// ── AI 시민단: 빈 광장을 막기 위해 배틀에 시민 투표·토론 댓글을 시딩한다 ──
+const CITIZEN_NICK_POOL = [
+  '한강뷰주민', '오늘도출근중', '떡볶이연정', '민초는진리', '강남삼구', '퇴근빌런',
+  '정치구경꾼', '소소시민A', '월급루팡', '국밥한그릇', '동네이장님', '키보드워리어',
+  '아아주세요', '주말순삭', '치킨이진리', 'ादो시민', '광장단골', '뉴스중독자',
+  '평범한1인', '시민의식만렙', '오지랖러', '팩트체커', '중립기어', '아무말대잔치',
+];
+
+function pickCitizenNick(used) {
+  for (let i = 0; i < 8; i++) {
+    const n = CITIZEN_NICK_POOL[Math.floor(Math.random() * CITIZEN_NICK_POOL.length)];
+    if (!used.has(n)) { used.add(n); return n; }
+  }
+  const n = '시민' + Math.floor(100 + Math.random() * 899);
+  used.add(n);
+  return n;
+}
+
+function buildCitizenPrompt(topic, topicDesc, partyDebates) {
+  const stances = Object.entries(partyDebates || {})
+    .map(([pid, d]) => `- ${PARTY_INFO[pid]?.name || pid}(${pid}): ${(d && d.stance) || ''}`).join('\n');
+  return `소소공화국 "오늘의 정치 배틀" 댓글창에 평범한 시민들이 다는 반응을 만들어줘.
+
+[오늘의 논쟁] ${topic}
+${topicDesc || ''}
+[각 정당 입장]
+${stances}
+
+규칙:
+- 서로 다른 시민 10명이 각자 한 줄 반응을 단다.
+- 각 시민은 national / youth / center 중 한 쪽을 지지한다. 세 정당에 고르게 분포(한쪽이 약간 우세해도 됨).
+- 진짜 인터넷 댓글처럼 다양하게: ㅋㅋ·ㄹㅇ 섞기, 반말/존댓말 혼합, 짧고 임팩트. 1~2문장.
+- 닉네임은 한국 커뮤니티풍 재치있는 닉(공백 없이 8자 이내).
+- 욕설·혐오·실존 인물 비방 금지. 가볍고 유머러스하게.
+
+JSON만 출력:
+{"comments":[{"nick":"닉네임","side":"national","text":"한줄 반응"}]}`;
+}
+
+function fallbackCitizenComments(partyDebates) {
+  // AI 실패 시: 각 정당 입장(stance)을 시민 한마디로 변환해 최소한의 활기를 보장한다.
+  const out = [];
+  for (const [pid, d] of Object.entries(partyDebates || {})) {
+    const stance = (d && d.stance) ? String(d.stance) : '';
+    if (!stance) continue;
+    out.push({ side: pid, text: `${stance} 이거 ㄹㅇ 공감함ㅋㅋ`.slice(0, 120) });
+    out.push({ side: pid, text: `난 이 입장 지지! ${stance}`.slice(0, 120) });
+  }
+  return out;
+}
+
+async function seedCitizenActivity(today, battleData, topContext) {
+  const battleRef = db.doc(`battles/${today}`);
+  const partyDebates = (battleData && battleData.partyDebates) || {};
+  const pids = ['national', 'youth', 'center'];
+
+  // 1) 시민 기본 투표 시딩 (AI 불필요 — 항상 동작)
+  try {
+    const lean = (topContext && topContext.ruling && topContext.ruling.partyId) || null;
+    const weights = { national: 1, youth: 1, center: 1 };
+    if (lean && weights[lean] != null) weights[lean] += 0.6 + Math.random() * 0.6;
+    // 한 정당을 추가로 살짝 띄워 접전 구도를 만든다
+    const spice = pids[Math.floor(Math.random() * 3)];
+    weights[spice] += 0.4 + Math.random() * 0.7;
+
+    const base = 28 + Math.floor(Math.random() * 45); // 28~72명
+    const wsum = pids.reduce((s, p) => s + weights[p], 0);
+    const seeded = {};
+    let assigned = 0;
+    pids.forEach((p, i) => {
+      if (i < 2) { seeded[p] = Math.max(3, Math.round(base * (weights[p] / wsum))); assigned += seeded[p]; }
+      else { seeded[p] = Math.max(3, base - assigned); }
+    });
+    const total = pids.reduce((s, p) => s + seeded[p], 0);
+
+    await battleRef.set({
+      votes: seeded,
+      totalVotes: total,
+      citizenSeeded: true,
+      citizenSeedTotal: total,
+      citizenSeedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+  } catch (e) {
+    console.error('[battle] citizen vote seed failed:', e.message);
+  }
+
+  // 2) 시민 토론 댓글 시딩 (AI, 실패 시 폴백)
+  let comments = [];
+  try {
+    const raw = await callAI(buildCitizenPrompt(battleData.topic, battleData.topicDesc, partyDebates), 1800);
+    const parsed = safeParseJson(raw);
+    comments = Array.isArray(parsed && parsed.comments) ? parsed.comments : [];
+  } catch (e) {
+    console.error('[battle] citizen comment AI failed:', e.message);
+  }
+  comments = comments
+    .filter(c => c && c.text)
+    .map(c => ({ nick: c.nick, side: c.side, text: String(c.text) }));
+  if (comments.length < 4) comments = comments.concat(fallbackCitizenComments(partyDebates));
+  comments = comments.slice(0, 12);
+
+  try {
+    const batch = db.batch();
+    const now = Date.now();
+    const usedNicks = new Set();
+    comments.forEach((c, i) => {
+      const pid = pids.includes(c.side) ? c.side : pids[Math.floor(Math.random() * 3)];
+      const nick = (c.nick && String(c.nick).trim()) ? String(c.nick).trim().slice(0, 12) : pickCitizenNick(usedNicks);
+      const ms = now - (comments.length - i) * (45000 + Math.floor(Math.random() * 90000));
+      const ref = db.collection(`battles/${today}/comments`).doc();
+      batch.set(ref, {
+        userId: 'npc',
+        isCitizen: true,
+        authorName: nick,
+        text: String(c.text).slice(0, 200),
+        partyId: pid,
+        power: 15 + Math.floor(Math.random() * 420),
+        reactions: {
+          like: Math.floor(Math.random() * 9),
+          fire: Math.floor(Math.random() * 5),
+          funny: Math.floor(Math.random() * 4),
+        },
+        createdAt: Timestamp.fromMillis(ms),
+        createdAtMs: ms,
+      });
+    });
+    await batch.commit();
+    console.log('[battle] citizen activity seeded:', comments.length, 'comments for', today);
+  } catch (e) {
+    console.error('[battle] citizen comment write failed:', e.message);
+  }
+}
+
 // ── 매일 자정 배틀 생성 ──
 exports.generateDailyBattle = onSchedule({
   schedule: '1 0 * * *',
@@ -386,6 +519,11 @@ exports.generateDailyBattle = onSchedule({
       createdAt: FieldValue.serverTimestamp(),
     });
     console.log('[battle] generated for', today, ':', parsed.topic);
+
+    // AI 시민단 투표·토론 시딩으로 빈 광장을 막는다 (실패해도 배틀은 정상)
+    await seedCitizenActivity(today, {
+      topic: parsed.topic, topicDesc: parsed.topicDesc, partyDebates: parsed.partyDebates,
+    }, topContext);
   } catch (err) {
     console.error('[battle] generation failed:', err.message, 'raw:', raw.slice(0, 300));
   }
@@ -691,6 +829,16 @@ exports.adminGenerateBattle = onCall({
     throw new HttpsError('internal', 'AI 응답 파싱 실패: ' + raw.slice(0, 200));
   }
 
+  // 재생성 시 기존 댓글(시민/실유저)을 정리해 중복 누적을 막는다
+  try {
+    const oldComments = await db.collection(`battles/${today}/comments`).limit(400).get();
+    if (!oldComments.empty) {
+      const delBatch = db.batch();
+      oldComments.docs.forEach(d => delBatch.delete(d.ref));
+      await delBatch.commit();
+    }
+  } catch (e) { console.error('[battle] admin comment cleanup failed:', e.message); }
+
   await db.doc(`battles/${today}`).set({
     topic: String(parsed.topic || '오늘의 정치 이슈').slice(0, 40),
     topicDesc: String(parsed.topicDesc || '').slice(0, 120),
@@ -703,8 +851,13 @@ exports.adminGenerateBattle = onCall({
     createdAt: FieldValue.serverTimestamp(),
   });
 
+  // AI 시민단 투표·토론 시딩
+  await seedCitizenActivity(today, {
+    topic: parsed.topic, topicDesc: parsed.topicDesc, partyDebates: parsed.partyDebates,
+  }, topicHint ? { topicHint } : null);
+
   const stmtCount = Object.values(parsed.partyDebates).reduce((s, p) => s + (p.statements?.length || 0), 0);
-  return { ok: true, topic: parsed.topic, statements: stmtCount };
+  return { ok: true, topic: parsed.topic, statements: stmtCount, citizensSeeded: true };
 });
 
 // ── 배틀 댓글 공감 반응 ──

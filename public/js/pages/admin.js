@@ -1023,6 +1023,14 @@ async function renderSiteFeatures(el) {
             </div>
             <button class="btn btn--sm" id="btn-reset-battle" style="background:#dc2626;color:#fff;border-color:transparent">배틀 데이터 초기화</button>
             <div id="reset-battle-result" style="margin-top:6px;font-size:12px"></div>
+            <div style="margin-top:12px;padding-top:12px;border-top:1px dashed #fca5a5">
+              <div style="font-size:13px;font-weight:800;margin-bottom:4px">⚔️ 오늘 배틀 재생성 (AI 시민 포함)</div>
+              <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:10px">
+                오늘 배틀을 새 주제로 다시 만들고, AI 시민단의 투표·토론 댓글을 함께 채웁니다. (기존 오늘 댓글은 정리됩니다)
+              </div>
+              <button class="btn btn--sm" id="btn-regen-battle" style="background:#16a34a;color:#fff;border-color:transparent">오늘 배틀 재생성</button>
+              <div id="regen-battle-result" style="margin-top:6px;font-size:12px"></div>
+            </div>
           </div>
           <div style="padding:14px;border:1px solid #fca5a5;border-radius:12px;background:rgba(239,68,68,.04)">
             <div style="font-size:13px;font-weight:800;margin-bottom:4px">💰 전체 포인트 초기화</div>
@@ -1054,6 +1062,25 @@ async function renderSiteFeatures(el) {
       res.textContent = '❌ ' + (e.message || '실패');
       toast.error(e.message || '초기화 실패');
     } finally { btn.disabled = false; btn.textContent = '배틀 데이터 초기화'; }
+  });
+
+  el.querySelector('#btn-regen-battle')?.addEventListener('click', async () => {
+    if (!confirm('오늘 배틀을 새로 생성하고 AI 시민 활동을 채울까요?\n오늘 작성된 기존 댓글은 정리됩니다.')) return;
+    const btn = el.querySelector('#btn-regen-battle');
+    const res = el.querySelector('#regen-battle-result');
+    btn.disabled = true; btn.textContent = '생성 중... (최대 1분)';
+    res.style.color = 'var(--color-text-muted)'; res.textContent = 'AI가 오늘의 논쟁과 시민 반응을 만드는 중...';
+    try {
+      const fn = httpsCallable(functions, 'adminGenerateBattle');
+      const { data: r } = await fn({ force: true });
+      res.style.color = '#16a34a';
+      res.textContent = `✅ 완료 — "${r.topic}" (시민 활동 시딩됨)`;
+      toast.success('오늘 배틀 재생성 완료');
+    } catch (e) {
+      res.style.color = '#dc2626';
+      res.textContent = '❌ ' + (e.message || '실패');
+      toast.error(e.message || '재생성 실패');
+    } finally { btn.disabled = false; btn.textContent = '오늘 배틀 재생성'; }
   });
 
   el.querySelector('#btn-reset-points')?.addEventListener('click', async () => {
