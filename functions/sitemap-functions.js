@@ -32,6 +32,8 @@ const sitemapXml = onRequest({ region: 'asia-northeast3' }, async (req, res) => 
     { loc: `${SITE_URL}/battle`,     priority: '0.9', changefreq: 'daily'  },
     { loc: `${SITE_URL}/parties`,    priority: '0.8', changefreq: 'daily'  },
     { loc: `${SITE_URL}/election`,   priority: '0.8', changefreq: 'daily'  },
+    { loc: `${SITE_URL}/congress`,   priority: '0.7', changefreq: 'weekly' },
+    { loc: `${SITE_URL}/constitutional-court`, priority: '0.7', changefreq: 'weekly' },
     { loc: `${SITE_URL}/ranking`,    priority: '0.7', changefreq: 'daily'  },
     { loc: `${SITE_URL}/news`,       priority: '0.7', changefreq: 'daily'  },
     { loc: `${SITE_URL}/guide`,      priority: '0.6', changefreq: 'monthly' },
