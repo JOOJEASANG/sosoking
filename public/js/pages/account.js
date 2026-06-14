@@ -622,12 +622,13 @@ async function renderStatsTab(content, uid) {
 
     // 정치 성향 분석
     const totalActivity = battleVotes + electionVotes + crisisVotes + battleComments;
+    const statsPower = appState.points || 0;
     const approvalEst = Math.min(100, Math.max(0, Math.round(
       40 +
       Math.min(25, maxStreak * 3) +
       (polStats.partyId ? 8 : 0) +
       Math.min(15, Math.floor(totalActivity / 3)) +
-      (power >= 10000 ? 7 : power >= 3000 ? 5 : power >= 500 ? 3 : 0)
+      (statsPower >= 10000 ? 7 : statsPower >= 3000 ? 5 : statsPower >= 500 ? 3 : 0)
     )));
     const approvalColor = approvalEst >= 70 ? '#16a34a' : approvalEst >= 50 ? '#2563eb' : '#dc2626';
 
