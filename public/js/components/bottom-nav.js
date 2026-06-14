@@ -36,7 +36,7 @@ function isNavActive(navPath, currentPath) {
 }
 
 const MORE_ITEMS = [
-  { path: '/feed',                 emoji: '🧾', label: '피드' },
+  { path: '/feed',                 emoji: '🏛️', label: '시민광장' },
   { path: '/ranking',              emoji: '🏆', label: '랭킹' },
   { path: '/news',                 emoji: '📰', label: '소소신문' },
   { path: '/constitutional-court', emoji: '⚖️', label: '헌법재판소' },
