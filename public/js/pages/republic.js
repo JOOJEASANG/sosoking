@@ -17,6 +17,79 @@ function powerBar(pct, color) {
   return `<div class="rep-pbar"><div class="rep-pbar__fill" style="width:${pct}%;background:${color}"></div></div>`;
 }
 
+function renderPowerLadder(status, election, president) {
+  const loggedIn = !!status?.loggedIn;
+  const hasParty = !!status?.partyId;
+  const isLeader = !!status?.isLeader;
+  const isPresident = !!(president && status?.uid && president.candidateUid === status.uid);
+  const electionEndKey = status?.electionEndKey || election?.endKey || election?.electionEndKey;
+
+  let electionLabel = '진행 중';
+  if (electionEndKey) {
+    const endMs = new Date(`${electionEndKey}T23:59:59+09:00`).getTime();
+    const daysLeft = Math.ceil((endMs - Date.now()) / 86400000);
+    electionLabel = daysLeft <= 0 ? '집계 중' : daysLeft === 1 ? '오늘 마감' : `D-${daysLeft}`;
+  }
+
+  const steps = [
+    {
+      num: 1,
+      title: '입당',
+      desc: hasParty ? `${status.partyEmoji || ''} ${status.partyName || '내 정당'}` : '3당 중 선택',
+      active: !hasParty,
+      done: hasParty,
+      path: '/republic',
+    },
+    {
+      num: 2,
+      title: '당대표',
+      desc: isLeader ? '대선 후보 등록' : hasParty && status.pointsToLeader ? `${fmtNum(status.pointsToLeader)}P 남음` : '정치력 1위 도전',
+      active: hasParty && !isLeader,
+      done: isLeader,
+      path: hasParty ? '/ranking' : '/republic',
+    },
+    {
+      num: 3,
+      title: '대통령',
+      desc: isPresident ? '현직 대통령' : `대선 ${electionLabel}`,
+      active: isLeader && !isPresident,
+      done: isPresident,
+      path: '/election',
+    },
+    {
+      num: 4,
+      title: '국회·헌재',
+      desc: president?.impeachTriggered ? '탄핵심판 대기' : '법안·탄핵 견제',
+      active: !!president?.impeachTriggered,
+      done: false,
+      path: president?.impeachTriggered ? '/constitutional-court' : '/congress',
+    },
+  ];
+
+  const mainPath = loggedIn ? (hasParty ? '/battle' : '/republic') : '/signup';
+  const mainText = loggedIn ? (hasParty ? '오늘 정치 활동 시작 →' : '입당하고 시작 →') : '정치 인생 시작 →';
+
+  return `
+    <div class="rep-section" style="background:linear-gradient(135deg,rgba(15,23,42,.96),rgba(51,65,85,.92));color:#fff;border:0;box-shadow:0 16px 36px rgba(15,23,42,.18)">
+      <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:14px">
+        <div>
+          <div style="font-size:12px;font-weight:900;letter-spacing:.08em;color:rgba(255,255,255,.62)">POWER LADDER</div>
+          <div style="font-size:23px;font-weight:1000;margin-top:4px">👑 권력 사다리</div>
+          <div style="font-size:13px;color:rgba(255,255,255,.72);line-height:1.55;margin-top:5px">입당 → 당대표 → 대통령 → 국회·헌재까지 이어지는 소소공화국 핵심 진행도입니다.</div>
+        </div>
+        <button class="btn btn--primary btn--sm" data-path="${mainPath}" style="box-shadow:0 10px 22px rgba(255,107,74,.25)">${mainText}</button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px" class="rep-power-ladder-grid">
+        ${steps.map(s => `
+          <button data-path="${s.path}" style="text-align:left;border:1px solid ${s.active ? 'rgba(255,255,255,.42)' : 'rgba(255,255,255,.12)'};background:${s.done ? 'rgba(34,197,94,.16)' : s.active ? 'rgba(255,255,255,.17)' : 'rgba(255,255,255,.09)'};border-radius:16px;padding:12px;color:#fff;font-family:inherit;cursor:pointer">
+            <span style="display:inline-flex;width:24px;height:24px;border-radius:999px;align-items:center;justify-content:center;background:${s.done ? 'rgba(34,197,94,.95)' : s.active ? 'rgba(255,255,255,.9)' : 'rgba(255,255,255,.16)'};color:${s.active && !s.done ? '#111827' : '#fff'};font-size:12px;font-weight:1000">${s.num}</span>
+            <b style="display:block;font-size:14px;margin-top:8px;color:#fff">${s.title}</b>
+            <small style="display:block;font-size:11px;margin-top:3px;color:rgba(255,255,255,.72);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(s.desc)}</small>
+          </button>`).join('')}
+      </div>
+    </div>`;
+}
+
 function renderPresidentSection(president) {
   if (!president) {
     return `
@@ -75,7 +148,7 @@ function renderElectionSection(election, president) {
   const cands = election.candidates || [];
   const totalVotes = election.totalVotes || 0;
   const myVote = election.myVote || null;
-  const endKey = election.electionEndKey || null;
+  const endKey = election.electionEndKey || election.endKey || null;
 
   let countdownHTML = '';
   if (endKey) {
@@ -211,26 +284,22 @@ export async function renderRepublic() {
 
   const user = auth.currentUser;
 
-  const [overviewRes, presidentRes, electionRes, billsRes] = await Promise.allSettled([
+  const [overviewRes, presidentRes, electionRes, billsRes, myStatusRes] = await Promise.allSettled([
     httpsCallable(functions, 'getPoliticsOverview')({}),
     httpsCallable(functions, 'getPresident')({}),
     httpsCallable(functions, 'getElection')(),
     httpsCallable(functions, 'getCongressBills')({}),
+    user ? httpsCallable(functions, 'getMyStatus')() : Promise.resolve({ data: { loggedIn: false } }),
   ]);
 
   const overview = overviewRes.value?.data || {};
-  const president = presidentRes.value?.data?.president || null;
-  const election = electionRes.value?.data || null;
+  const electionPayload = electionRes.value?.data || null;
+  const election = electionPayload?.election || electionPayload || null;
+  const president = presidentRes.value?.data?.president || electionPayload?.president || null;
   const bills = billsRes.value?.data?.bills || [];
   const parties = Array.isArray(overview.parties) ? overview.parties.slice(0, 3) : [];
-
-  let myPartyId = null;
-  if (user) {
-    try {
-      const { data } = await httpsCallable(functions, 'getMyStatus')();
-      myPartyId = data?.partyId || null;
-    } catch { /* non-critical */ }
-  }
+  const myStatus = myStatusRes.value?.data || { loggedIn: false };
+  const myPartyId = myStatus?.partyId || null;
 
   el.innerHTML = `
     <div class="rep-page page-enter">
@@ -240,6 +309,7 @@ export async function renderRepublic() {
         <p class="rep-hero__sub">정당 · 대선 · 국회 · 헌법재판소</p>
       </div>
       <div class="page-section rep-content">
+        ${renderPowerLadder(myStatus, election, president)}
         ${renderPresidentSection(president)}
         ${renderElectionSection(election, president)}
         ${renderPartiesSection(parties, myPartyId)}
