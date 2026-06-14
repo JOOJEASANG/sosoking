@@ -22,6 +22,7 @@ const EXTENSION_MODULES = [
   './republic-game-flow.js',
   './battle-opponent-reaction.js',
   './battle-comment-result-card.js',
+  './civic-plaza-copy.js',
   './president-decree-helper.js',
   './election-consistency-fix.js',
   './court-consistency-fix.js',
