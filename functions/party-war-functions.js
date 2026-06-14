@@ -106,12 +106,16 @@ exports.claimWeeklyPartyWarReward = onCall({ region: REGION, timeoutSeconds: 20 
   let awarded = false;
   let winner = null;
 
+  const resultRef = db.doc(`party_war_results/${currentWeekKey}`);
+
   await db.runTransaction(async tx => {
     const standings = await loadStandingsInTx(tx);
     winner = standings[0] || null;
     if (!winner) throw new HttpsError('failed-precondition', '정당전이 아직 준비되지 않았습니다.');
 
-    const [claimSnap, userSnap] = await Promise.all([tx.get(claimRef), tx.get(userRef)]);
+    const [claimSnap, userSnap, resultSnap] = await Promise.all([
+      tx.get(claimRef), tx.get(userRef), tx.get(resultRef),
+    ]);
     if (claimSnap.exists) return;
     if (!userSnap.exists) throw new HttpsError('not-found', '회원 정보를 찾을 수 없습니다.');
 
@@ -125,7 +129,6 @@ exports.claimWeeklyPartyWarReward = onCall({ region: REGION, timeoutSeconds: 20 
     const mSnap = await tx.get(mRef);
     const oldPower = mSnap.exists ? Number(mSnap.data().power || 0) : Number(user.totalPoints || user.points || 0);
     const newPower = Math.max(0, Number(user.totalPoints || user.points || 0) + WEEKLY_REWARD);
-    const delta = newPower - oldPower;
 
     awarded = true;
     tx.set(claimRef, {
@@ -148,11 +151,20 @@ exports.claimWeeklyPartyWarReward = onCall({ region: REGION, timeoutSeconds: 20 
       ...weeklyPowerFields(mSnap.exists ? mSnap.data() || {} : {}, oldPower, newPower),
       updatedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
+    // 정당 정치력은 실제 지급 포인트만큼만 증가시키고(누적 인플레이션 방지),
+    // weeklyWins는 주당 첫 수령 시 1회만 증가시킨다.
     tx.set(partyRef(partyId), {
-      totalPower: FieldValue.increment(delta || WEEKLY_REWARD),
-      weeklyWins: FieldValue.increment(1),
+      totalPower: FieldValue.increment(WEEKLY_REWARD),
+      ...(resultSnap.exists ? {} : { weeklyWins: FieldValue.increment(1) }),
       updatedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
+    if (!resultSnap.exists) {
+      tx.set(resultRef, {
+        weekKey: currentWeekKey,
+        winnerPartyId: partyId,
+        createdAt: FieldValue.serverTimestamp(),
+      });
+    }
   });
 
   return { ok: true, awarded, points: awarded ? WEEKLY_REWARD : 0, party: winner };

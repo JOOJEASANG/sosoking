@@ -69,7 +69,17 @@ const deleteMyAccount = onCall({ region: 'asia-northeast3', timeoutSeconds: 60 }
     deletedAtMs: Date.now(),
   }, { merge: true });
   batch.delete(userRef);
-  if (nickname) batch.delete(db.doc(`nicknames/${String(nickname).slice(0, 150)}`));
+  // 닉네임 예약 문서는 본인 소유일 때만 삭제한다 (타인 예약 삭제 방지).
+  const safeNickname = String(nickname || '').slice(0, 150);
+  if (safeNickname) {
+    const nickRef = db.doc(`nicknames/${safeNickname}`);
+    const nickSnap = await nickRef.get().catch(() => null);
+    if (nickSnap && nickSnap.exists) {
+      const data = nickSnap.data() || {};
+      const owner = data.uid || data.userId;
+      if (!owner || owner === userId) batch.delete(nickRef);
+    }
+  }
   await batch.commit();
 
   try {

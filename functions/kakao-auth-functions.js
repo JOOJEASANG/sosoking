@@ -94,22 +94,27 @@ function fetchKakaoUser(accessToken) {
 }
 
 exports.kakaoLogin = onCall({ region: 'asia-northeast3' }, async (request) => {
-  let { accessToken, code, redirectUri } = request.data || {};
+  const { code, redirectUri } = request.data || {};
 
-  if (!accessToken && code) {
-    if (!redirectUri || typeof redirectUri !== 'string') {
-      throw new HttpsError('invalid-argument', 'redirectUri가 필요해요');
-    }
-    try {
-      accessToken = await exchangeKakaoCode(code, redirectUri);
-    } catch (e) {
-      console.error('[kakaoLogin] code exchange error:', e.message);
-      throw new HttpsError('unauthenticated', '카카오 인증 코드 교환 실패: ' + e.message);
-    }
+  // 보안: 클라이언트가 직접 보낸 accessToken은 발급 대상(app_id)을 검증할 수 없어
+  // 다른 카카오 앱 토큰 재생으로 계정 도용이 가능하다. 서버측 code 교환만 허용한다.
+  if (!code || typeof code !== 'string') {
+    throw new HttpsError('invalid-argument', '카카오 인증 코드가 필요해요');
+  }
+  if (!redirectUri || typeof redirectUri !== 'string') {
+    throw new HttpsError('invalid-argument', 'redirectUri가 필요해요');
+  }
+
+  let accessToken;
+  try {
+    accessToken = await exchangeKakaoCode(code, redirectUri);
+  } catch (e) {
+    console.error('[kakaoLogin] code exchange error:', e.message);
+    throw new HttpsError('unauthenticated', '카카오 인증 코드 교환 실패: ' + e.message);
   }
 
   if (!accessToken || typeof accessToken !== 'string' || accessToken.length < 10) {
-    throw new HttpsError('invalid-argument', '카카오 액세스 토큰 또는 인증 코드가 필요해요');
+    throw new HttpsError('invalid-argument', '카카오 인증 코드가 필요해요');
   }
 
   let kakaoUser;

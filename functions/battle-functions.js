@@ -591,11 +591,12 @@ exports.closeDailyBattle = onSchedule({
   if (!battleSnap.exists || battleSnap.data().status === 'ended') return;
 
   const votes = battleSnap.data().votes || { national: 0, youth: 0, center: 0 };
-  let maxVotes = -1;
+  let maxVotes = 0;
   let winnerPartyId = null;
   for (const [pid, count] of Object.entries(votes)) {
-    if (count > maxVotes) { maxVotes = count; winnerPartyId = pid; }
+    if (Number(count) > maxVotes) { maxVotes = Number(count); winnerPartyId = pid; }
   }
+  // 득표가 0인 날(무투표/전부 0표)에는 집권 정당을 선정하지 않는다.
 
   await battleRef.update({ winningParty: winnerPartyId, status: 'ended' });
 
@@ -717,7 +718,8 @@ exports.reactToBattleComment = onCall({
   if (!uid) throw new HttpsError('unauthenticated', '로그인이 필요해요');
 
   const { commentId, reaction } = request.data || {};
-  if (!commentId || !BATTLE_COMMENT_REACTIONS.includes(reaction)) {
+  if (!commentId || typeof commentId !== 'string' || !/^[A-Za-z0-9_-]{1,64}$/.test(commentId)
+      || !BATTLE_COMMENT_REACTIONS.includes(reaction)) {
     throw new HttpsError('invalid-argument', '올바르지 않은 요청입니다');
   }
 
