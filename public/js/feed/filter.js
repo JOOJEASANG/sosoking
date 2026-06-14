@@ -107,7 +107,7 @@ export function sortScore(post, sort) {
 
 export function sortFeedPosts(posts, sort) {
   return posts.sort((a, b) => {
-    const diff = sortScore(b, sort) - sortScore(a);
+    const diff = sortScore(b, sort) - sortScore(a, sort);
     if (diff) return diff;
     return postDateValue(b) - postDateValue(a);
   });
