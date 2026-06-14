@@ -36,9 +36,9 @@ function isNavActive(navPath, currentPath) {
 }
 
 const MORE_ITEMS = [
+  { path: '/feed',                 emoji: '🧾', label: '피드' },
   { path: '/ranking',              emoji: '🏆', label: '랭킹' },
   { path: '/news',                 emoji: '📰', label: '소소신문' },
-  { path: '/election',             emoji: '👑', label: '대선' },
   { path: '/constitutional-court', emoji: '⚖️', label: '헌법재판소' },
   { path: '/congress',             emoji: '📜', label: '국회' },
   { path: '/hall',                 emoji: '🏅', label: '명예의전당' },
@@ -55,7 +55,7 @@ function navItems() {
     { id: 'home',     label: '홈',    path: '/',         icon: iconHome() },
     { id: 'battle',   label: '배틀',  path: '/battle',   icon: `<span style="font-size:20px;line-height:1">⚔️</span>` },
     { id: 'republic', label: '공화국', path: '/republic', icon: `<span style="font-size:22px;line-height:1">🏛️</span>`, isCenter: true },
-    { id: 'feed',     label: '피드',  path: '/feed',     icon: iconFeed() },
+    { id: 'election', label: '대선',  path: '/election', icon: `<span style="font-size:20px;line-height:1">👑</span>` },
     { id: 'more',     label: '더보기', path: null,        icon: iconMore(), isMore: true },
   ];
 }
