@@ -17,6 +17,7 @@ const EXTENSION_MODULES = [
   './party-war-ui.js',
   './three-party-ui.js',
   './party-ranking-polish.js',
+  './campaign-help-polish.js',
   './congress-route.js',
   './constitutional-court-route.js',
   './republic-polish.js',
