@@ -524,6 +524,53 @@ function renderLeaderCard(status) {
 }
 
 // 오늘의 정치 일정 (일일 미션 체크리스트)
+// 오늘의 국정 브리핑 — 홈 최상단. "오늘 왜 들어왔나"에 즉답하는 일일 앵커.
+function renderDailyBriefing(status, battleData, presidentData, newsData) {
+  const kstHour = new Date(Date.now() + 9 * 3600000).getUTCHours();
+  const greet = kstHour < 6 ? '늦은 밤이네요' : kstHour < 12 ? '좋은 아침이에요' : kstHour < 18 ? '오늘도 수고 많아요' : '좋은 저녁이에요';
+  const nick = appState.nickname || status.nickname || '시민';
+  const streak = appState.streak || 0;
+
+  // 오늘 남은 핵심 행동(우선순위) — 첫 미완료를 메인 CTA로
+  const focus = [
+    { done: !!(battleData && battleData.userVote), label: '오늘의 배틀 투표', sub: battleData?.topic ? `쟁점: ${battleData.topic}` : '세 정당의 격돌', path: '/battle', reward: '+5P', icon: '🗳️' },
+    { done: !!status.readNewsToday, label: '소소신문 읽기', sub: newsData?.headline || '오늘의 정세 확인', path: '/news', reward: '+3P', icon: '📰' },
+    { done: !!status.votedElection || !status.electionEndKey, label: '대통령 선거 투표', sub: '한 표가 공화국을 바꿉니다', path: '/election', reward: '+5P', icon: '👑' },
+    { done: !!status.votedCrisis, label: '이번 주 위기 투표', sub: '국가 위기에 한 표', path: '/news?scroll=crisis', reward: '+5P', icon: '🚨' },
+  ];
+  const pending = focus.filter(f => !f.done);
+  const next = pending[0] || null;
+  const doneCount = focus.filter(f => f.done).length;
+
+  // 헤드라인: 오늘의 배틀 쟁점 우선, 없으면 신문 헤드라인
+  const headline = (battleData && battleData.topic)
+    ? `오늘의 쟁점 — ${escHtml(battleData.topic)}`
+    : escHtml(newsData?.headline || '오늘의 정세가 곧 갱신됩니다');
+
+  const ctaHTML = next
+    ? `<button class="home-brief__cta" data-path="${next.path}" type="button">
+         <span class="home-brief__cta-icon">${next.icon}</span>
+         <span class="home-brief__cta-body">
+           <span class="home-brief__cta-label">${escHtml(next.label)}</span>
+           <span class="home-brief__cta-sub">${escHtml(next.sub)}</span>
+         </span>
+         <span class="home-brief__cta-reward">${next.reward}</span>
+         <span class="home-brief__cta-go">→</span>
+       </button>`
+    : `<div class="home-brief__done">🎉 오늘의 핵심 국정을 모두 완수했어요! 내일도 만나요</div>`;
+
+  return `
+    <section class="home-brief">
+      <div class="home-brief__top">
+        <div class="home-brief__greet">${greet}, <b>${escHtml(nick)}</b>님 👋</div>
+        ${streak >= 1 ? `<div class="home-brief__streak">🔥 ${streak}일 연속</div>` : ''}
+      </div>
+      <div class="home-brief__headline">📢 ${headline}</div>
+      ${ctaHTML}
+      <div class="home-brief__progress">오늘 핵심 미션 ${doneCount}/${focus.length} 완료${pending.length ? ` · ${pending.length}개 남음` : ' 🎉'}</div>
+    </section>`;
+}
+
 function renderMissions(status, battleData, isRulingParty = false) {
   const votedBattle = !!(battleData && battleData.userVote);
   const votedElection = !!status.votedElection;
@@ -757,6 +804,7 @@ export async function renderHome() {
         <div class="home-dash page-enter home-dash--v2">
           <div id="home-notif-slot"></div>
           ${newPrezHTML}
+          ${renderDailyBriefing(myStatus, battleData, presidentData, newsData)}
           ${renderRankCard(myStatus, isRulingParty)}
           <div id="home-rs-slot"></div>
           ${renderMissions(myStatus, battleData, isRulingParty)}

@@ -1356,3 +1356,68 @@
   0%   { transform: translateX(0); }
   100% { transform: translateX(-50%); }
 }
+
+/* ─── 오늘의 국정 브리핑 (홈 최상단 일일 앵커) ─── */
+.home-brief {
+  background: linear-gradient(135deg, #1e3a8a 0%, #4338ca 55%, #6d28d9 100%);
+  color: #fff;
+  border-radius: 18px;
+  padding: 16px 16px 14px;
+  margin-bottom: 16px;
+  box-shadow: 0 12px 28px rgba(67,56,202,.28);
+}
+.home-brief__top {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+}
+.home-brief__greet { font-size: 14px; font-weight: 700; opacity: .96; }
+.home-brief__greet b { font-weight: 900; }
+.home-brief__streak {
+  flex-shrink: 0;
+  background: rgba(255,255,255,.18);
+  border: 1px solid rgba(255,255,255,.25);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 12px; font-weight: 800;
+}
+.home-brief__headline {
+  margin-top: 10px;
+  font-size: 15px; font-weight: 900; line-height: 1.4;
+  letter-spacing: -.3px;
+}
+.home-brief__cta {
+  width: 100%;
+  margin-top: 12px;
+  display: flex; align-items: center; gap: 12px;
+  background: rgba(255,255,255,.96);
+  border: none; border-radius: 14px;
+  padding: 12px 14px;
+  cursor: pointer; text-align: left;
+  box-shadow: 0 6px 16px rgba(0,0,0,.16);
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.home-brief__cta:active { transform: scale(.98); }
+.home-brief__cta-icon { font-size: 24px; flex-shrink: 0; }
+.home-brief__cta-body { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.home-brief__cta-label { font-size: 14px; font-weight: 900; color: #1f2937; }
+.home-brief__cta-sub {
+  font-size: 11.5px; font-weight: 600; color: #6b7280;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.home-brief__cta-reward {
+  flex-shrink: 0;
+  background: #ecfdf5; color: #059669;
+  font-size: 12px; font-weight: 900;
+  border-radius: 999px; padding: 4px 9px;
+}
+.home-brief__cta-go { flex-shrink: 0; font-size: 18px; font-weight: 900; color: #4338ca; }
+.home-brief__done {
+  margin-top: 12px;
+  background: rgba(255,255,255,.16);
+  border: 1px solid rgba(255,255,255,.22);
+  border-radius: 12px; padding: 12px;
+  font-size: 13px; font-weight: 800; text-align: center;
+}
+.home-brief__progress {
+  margin-top: 10px;
+  font-size: 11.5px; font-weight: 700; opacity: .9; text-align: right;
+}
