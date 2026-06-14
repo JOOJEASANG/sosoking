@@ -830,15 +830,16 @@ exports.ratePresidentDecree = onCall({ region: REGION, timeoutSeconds: 15 }, asy
 
   await batch.commit();
 
-  // 첫 평가 시 3P 지급
+  // 첫 평가 시 3P 지급 (동시 요청 중복지급 방지를 위해 트랜잭션으로 처리)
   if (!prev) {
     try {
       const awardRef = db.doc(`point_awards/${uid}_decree_${prevKey}`);
-      const awardSnap = await awardRef.get();
-      if (!awardSnap.exists) {
-        await awardRef.set({ uid, type: 'decree_rate', periodId: prevKey, points: 3, createdAt: FieldValue.serverTimestamp() });
-        await db.doc(`users/${uid}`).update({ totalPoints: FieldValue.increment(3), updatedAt: FieldValue.serverTimestamp() });
-      }
+      await db.runTransaction(async tx => {
+        const awardSnap = await tx.get(awardRef);
+        if (awardSnap.exists) return;
+        tx.set(awardRef, { uid, type: 'decree_rate', periodId: prevKey, points: 3, createdAt: FieldValue.serverTimestamp() });
+        tx.set(db.doc(`users/${uid}`), { totalPoints: FieldValue.increment(3), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+      });
     } catch {}
   }
 
@@ -1129,22 +1130,24 @@ exports.getDailyNews = onCall({ region: REGION, timeoutSeconds: 60 }, async (req
   const today = kstToday();
   const uid = request.auth && request.auth.uid;
 
-  // 소소신문 읽기 +3P (하루 1회)
+  // 소소신문 읽기 +3P (하루 1회, 동시 요청 중복지급 방지를 위해 트랜잭션으로 처리)
   let newsPoints = 0;
   if (uid) {
     const awardRef = db.doc(`point_awards/${uid}_news_${today}`);
-    const awardSnap = await awardRef.get();
-    if (!awardSnap.exists) {
-      newsPoints = 3;
-      const batch = db.batch();
-      batch.set(awardRef, { uid, action: 'read_news', points: newsPoints, date: today, createdAt: FieldValue.serverTimestamp() });
-      batch.set(db.doc(`users/${uid}`), {
-        points: FieldValue.increment(newsPoints),
-        totalPoints: FieldValue.increment(newsPoints),
-        updatedAt: FieldValue.serverTimestamp(),
-      }, { merge: true });
-      await batch.commit();
-    }
+    try {
+      newsPoints = await db.runTransaction(async tx => {
+        const awardSnap = await tx.get(awardRef);
+        if (awardSnap.exists) return 0;
+        const pts = 3;
+        tx.set(awardRef, { uid, action: 'read_news', points: pts, date: today, createdAt: FieldValue.serverTimestamp() });
+        tx.set(db.doc(`users/${uid}`), {
+          points: FieldValue.increment(pts),
+          totalPoints: FieldValue.increment(pts),
+          updatedAt: FieldValue.serverTimestamp(),
+        }, { merge: true });
+        return pts;
+      });
+    } catch { newsPoints = 0; }
   }
 
   const ref = db.doc(`daily_news/${today}`);
@@ -1742,40 +1745,41 @@ exports.voteOnCrisis = onCall({ region: REGION, timeoutSeconds: 15 }, async requ
   const { key } = weekPeriod();
   const crisisRef = db.doc(`political_crises/${key}`);
   const voteRef = db.doc(`political_crises/${key}/votes/${uid}`);
-
-  const [crisisSnap, voteSnap, userSnap] = await Promise.all([
-    crisisRef.get(), voteRef.get(),
-    db.doc(`users/${uid}`).get().catch(() => null),
-  ]);
-  if (!crisisSnap.exists || !crisisSnap.data().title) {
-    throw new HttpsError('not-found', '이번 주 정치 위기가 없습니다.');
-  }
-  if (voteSnap.exists) throw new HttpsError('failed-precondition', '이미 투표했습니다.');
-
-  const voterPartyId = userSnap && userSnap.exists && PARTY_BY_ID[userSnap.data().partyId]
-    ? userSnap.data().partyId : null;
-
-  const batch = db.batch();
-  batch.set(voteRef, { option, uid, partyId: voterPartyId || null, createdAt: FieldValue.serverTimestamp() });
-  const crisisUpdate = {
-    [option === 'A' ? 'votesA' : 'votesB']: FieldValue.increment(1),
-    updatedAt: FieldValue.serverTimestamp(),
-  };
-  if (voterPartyId) crisisUpdate[`partyVotes.${voterPartyId}.${option}`] = FieldValue.increment(1);
-  batch.update(crisisRef, crisisUpdate);
-
-  // 첫 투표 +5P
   const awardRef = db.doc(`point_awards/${uid}_crisis_${key}`);
-  const awardSnap = await awardRef.get();
-  if (!awardSnap.exists) {
-    batch.set(awardRef, { uid, type: 'crisis_vote', weekKey: key, points: 5, createdAt: FieldValue.serverTimestamp() });
-    batch.set(db.doc(`users/${uid}`), { totalPoints: FieldValue.increment(5), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-  }
-  await batch.commit();
+  const userRef = db.doc(`users/${uid}`);
+
+  // 동시 요청으로 인한 중복투표/중복지급을 막기 위해 전체를 트랜잭션으로 처리한다.
+  const result = await db.runTransaction(async tx => {
+    const [crisisSnap, voteSnap, userSnap, awardSnap] = await Promise.all([
+      tx.get(crisisRef), tx.get(voteRef), tx.get(userRef), tx.get(awardRef),
+    ]);
+    if (!crisisSnap.exists || !crisisSnap.data().title) {
+      throw new HttpsError('not-found', '이번 주 정치 위기가 없습니다.');
+    }
+    if (voteSnap.exists) throw new HttpsError('failed-precondition', '이미 투표했습니다.');
+
+    const voterPartyId = userSnap.exists && PARTY_BY_ID[userSnap.data().partyId]
+      ? userSnap.data().partyId : null;
+
+    tx.set(voteRef, { option, uid, partyId: voterPartyId || null, createdAt: FieldValue.serverTimestamp() });
+    const crisisUpdate = {
+      [option === 'A' ? 'votesA' : 'votesB']: FieldValue.increment(1),
+      updatedAt: FieldValue.serverTimestamp(),
+    };
+    if (voterPartyId) crisisUpdate[`partyVotes.${voterPartyId}.${option}`] = FieldValue.increment(1);
+    tx.update(crisisRef, crisisUpdate);
+
+    const firstVote = !awardSnap.exists;
+    if (firstVote) {
+      tx.set(awardRef, { uid, type: 'crisis_vote', weekKey: key, points: 5, createdAt: FieldValue.serverTimestamp() });
+      tx.set(userRef, { totalPoints: FieldValue.increment(5), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+    }
+    return { firstVote };
+  });
 
   const updated = (await crisisRef.get()).data() || {};
   return {
-    ok: true, option, firstVote: !awardSnap.exists,
+    ok: true, option, firstVote: result.firstVote,
     votesA: Number(updated.votesA || 0),
     votesB: Number(updated.votesB || 0),
     partyVotes: updated.partyVotes || null,
@@ -1948,7 +1952,6 @@ exports.getPresidentQA = onCall({ region: REGION, timeoutSeconds: 15 }, async re
           nickname: dt.nickname || '익명',
           partyEmoji: dt.partyEmoji || '🏛️',
           partyColor: dt.partyColor || '#aaa',
-          askerUid: dt.uid || null,
           isMe: uid ? dt.uid === uid : false,
           createdAt: dt.createdAt ? dt.createdAt.toDate().toISOString().slice(0, 16) : '',
           answeredAt: dt.answeredAt ? dt.answeredAt.toDate().toISOString().slice(0, 16) : null,
@@ -2011,7 +2014,7 @@ exports.answerPresidentQuestion = onCall({ region: REGION, timeoutSeconds: 15 },
   const uid = requireUid(request);
   const questionId = String((request.data && request.data.questionId) || '').trim();
   const answer = String((request.data && request.data.answer) || '').trim();
-  if (!questionId) throw new HttpsError('invalid-argument', '질문 ID가 없어요');
+  if (!questionId || !/^[A-Za-z0-9_-]{1,128}$/.test(questionId)) throw new HttpsError('invalid-argument', '질문 ID가 없어요');
   if (!answer || answer.length < 2 || answer.length > 200) {
     throw new HttpsError('invalid-argument', '답변은 2~200자 사이로 입력해주세요');
   }

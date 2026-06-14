@@ -1,6 +1,6 @@
 'use strict';
 
-const { onCall } = require('firebase-functions/v2/https');
+const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getAuth } = require('firebase-admin/auth');
 
 const REGION = 'asia-northeast3';
@@ -16,7 +16,12 @@ function isRegisteredAuthUser(user) {
   return providers.length > 0 || !!user.email || !!user.phoneNumber;
 }
 
-const getRegisteredMemberCount = onCall({ region: REGION, timeoutSeconds: 30, memory: '256MiB' }, async () => {
+const getRegisteredMemberCount = onCall({ region: REGION, timeoutSeconds: 30, memory: '256MiB' }, async request => {
+  // 전체 Auth 사용자 스캔 비용이 있으므로 로그인 사용자만 호출 가능.
+  if (!(request.auth && request.auth.uid)) {
+    throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+  }
+
   let pageToken;
   let registeredCount = 0;
   let scanned = 0;

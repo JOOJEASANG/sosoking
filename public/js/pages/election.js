@@ -675,7 +675,7 @@ async function loadPresidentQA(host, isPresident) {
     const qHTML = questions.length
       ? questions.map(q => {
           const answered = !!q.answer;
-          const isMyQ = q.askerUid === myUid;
+          const isMyQ = !!q.isMe;
           return `
           <div class="elec-qa-item${answered ? ' elec-qa-item--answered' : ''}${isMyQ ? ' elec-qa-item--mine' : ''}">
             <div class="elec-qa-item__q">

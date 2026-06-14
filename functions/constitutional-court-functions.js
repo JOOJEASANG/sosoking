@@ -227,6 +227,12 @@ const decideConstitutionalReview = onCall({ region: REGION, timeoutSeconds: 20 }
   const today = kstToday();
 
   await db.runTransaction(async tx => {
+    // Firestore 트랜잭션은 모든 읽기를 쓰기보다 먼저 실행해야 하므로 get을 선행한다.
+    const elecRef = result === 'accepted' && periodId ? db.doc(`elections/${periodId}`) : null;
+    const petitionRef = result !== 'accepted' && periodId ? db.doc(`impeachment_petitions/${periodId}`) : null;
+    const elecSnap = elecRef ? await tx.get(elecRef) : null;
+    const petitionSnap = petitionRef ? await tx.get(petitionRef) : null;
+
     // 헌법재판소 심판 확정
     tx.set(ref, {
       status: 'decided',
@@ -239,18 +245,14 @@ const decideConstitutionalReview = onCall({ region: REGION, timeoutSeconds: 20 }
 
     if (result === 'accepted') {
       // 해당 election 문서에 대통령 파면 표시
-      if (periodId) {
-        const elecRef = db.doc(`elections/${periodId}`);
-        const elecSnap = await tx.get(elecRef);
-        if (elecSnap.exists) {
-          tx.set(elecRef, {
-            presidentRemoved: true,
-            presidentRemovedAt: FieldValue.serverTimestamp(),
-            presidentRemovedReason: 'constitutional_court_impeachment',
-            earlyElectionRequired: true,
-            updatedAt: FieldValue.serverTimestamp(),
-          }, { merge: true });
-        }
+      if (elecRef && elecSnap && elecSnap.exists) {
+        tx.set(elecRef, {
+          presidentRemoved: true,
+          presidentRemovedAt: FieldValue.serverTimestamp(),
+          presidentRemovedReason: 'constitutional_court_impeachment',
+          earlyElectionRequired: true,
+          updatedAt: FieldValue.serverTimestamp(),
+        }, { merge: true });
       }
       // 조기선거 플래그 생성
       tx.set(db.doc(`election_flags/early_${today}`), {
@@ -262,16 +264,12 @@ const decideConstitutionalReview = onCall({ region: REGION, timeoutSeconds: 20 }
       }, { merge: true });
     } else {
       // 기각 시: 탄핵 청원 초기화
-      if (periodId) {
-        const petitionRef = db.doc(`impeachment_petitions/${periodId}`);
-        const petitionSnap = await tx.get(petitionRef);
-        if (petitionSnap.exists) {
-          tx.set(petitionRef, {
-            triggered: false,
-            impeachmentRejectedAt: FieldValue.serverTimestamp(),
-            updatedAt: FieldValue.serverTimestamp(),
-          }, { merge: true });
-        }
+      if (petitionRef && petitionSnap && petitionSnap.exists) {
+        tx.set(petitionRef, {
+          triggered: false,
+          impeachmentRejectedAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        }, { merge: true });
       }
     }
   });

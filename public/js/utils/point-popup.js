@@ -8,7 +8,7 @@ export function showPointPopup(amount, anchorEl = null) {
   const label = amount >= 20 ? `+${amount}P 🎉` : `+${amount}P`;
   el.textContent = label;
 
-  if (anchorEl) {
+  if (anchorEl && typeof anchorEl.getBoundingClientRect === 'function') {
     const rect = anchorEl.getBoundingClientRect();
     el.style.top = `${rect.top + window.scrollY - 10}px`;
     el.style.left = `${rect.left + rect.width / 2}px`;

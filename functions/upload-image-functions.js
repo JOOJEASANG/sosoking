@@ -85,10 +85,11 @@ const uploadFeedImage = onCall({ region: REGION, timeoutSeconds: 60, memory: '25
   const safeUid = cleanUid(uid);
   if (!safeUid) throw new HttpsError('unauthenticated', '사용자 정보를 확인할 수 없습니다.');
 
-  await reserveUploadQuota(safeUid);
-
+  // 이미지 검증을 먼저 수행한 뒤 쿼터를 차감한다 (잘못된 업로드로 한도가 소모되지 않도록).
   const { dataUrl } = request.data || {};
   const { buffer, contentType } = parseDataUrl(dataUrl);
+
+  await reserveUploadQuota(safeUid);
   const ext = contentType === 'image/png' ? 'png' : contentType === 'image/webp' ? 'webp' : contentType === 'image/gif' ? 'gif' : 'jpg';
   const path = `feeds/${safeUid}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
   const token = randomUUID();

@@ -260,24 +260,19 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    // 게임 방(실시간 멀티플레이) 기능은 정치게임 전환으로 더 이상 사용하지 않는다.
+    // 레거시 데이터 조회만 허용하고 클라이언트 쓰기는 모두 비활성화한다.
     match /game_rooms/{roomId} {
       allow read: if true;
-      allow create: if signedIn();
-      allow update: if isAdmin() || isGameHost(roomId);
+      allow create, update: if false;
       allow delete: if isAdmin();
       match /players/{playerId} {
         allow read: if true;
-        allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
-        allow update: if signedIn() && (playerId == request.auth.uid || resource.data.uid == request.auth.uid || isGameHost(roomId));
-        allow delete: if isAdmin() || isGameHost(roomId) || isAuthor(playerId);
+        allow write: if false;
       }
       match /chats/{chatId} {
         allow read: if true;
-        allow create: if (isGameRoomPlayer(roomId) || isGameHost(roomId))
-          && validText(request.resource.data.get('text', ''), 500)
-          && request.resource.data.uid == request.auth.uid;
-        allow update: if false;
-        allow delete: if isAdmin() || isGameHost(roomId);
+        allow write: if false;
       }
     }
 
