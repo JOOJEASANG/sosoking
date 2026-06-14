@@ -4,7 +4,7 @@ import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { collection, query, orderBy, limit, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { setMeta } from '../utils/seo.js';
 import { escHtml } from '../utils/helpers.js';
-import { navigate } from '../router.js';
+import { navigate, getQueryParams } from '../router.js';
 import { toast } from '../components/toast.js';
 import { showPointPopup } from '../utils/point-popup.js';
 
@@ -552,7 +552,12 @@ export async function renderNews() {
     loadBattleBulletin(inner.querySelector('#news-battle-slot'));
     loadPresidentBlock(inner.querySelector('#news-prez-slot'));
     loadPresidentQAHighlight(inner.querySelector('#news-qa-slot'));
-    loadNewsCrisis(inner.querySelector('#news-crisis-slot'));
+    const crisisSlot = inner.querySelector('#news-crisis-slot');
+    loadNewsCrisis(crisisSlot).then(() => {
+      if (getQueryParams().scroll === 'crisis' && crisisSlot) {
+        setTimeout(() => crisisSlot.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+      }
+    });
     loadPartyStandings(inner.querySelector('#news-party-slot'));
     loadKingRecap(inner.querySelector('#news-king-slot'));
   }

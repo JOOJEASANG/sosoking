@@ -21,11 +21,15 @@ const TYPE_LABEL = {
 };
 
 const QUICK_ACTIONS = [
-  { path: '/republic', emoji: '🏛️', name: '공화국',   desc: '정당·대선·국회' },
-  { path: '/battle',   emoji: '⚔️', name: '배틀',     desc: '오늘의 정쟁 투표' },
-  { path: '/election', emoji: '👑', name: '대선',     desc: '대통령 선출' },
-  { path: '/news',     emoji: '📰', name: '소소신문', desc: '오늘의 정치' },
-  { path: '/ranking',  emoji: '🏆', name: '랭킹',     desc: '출세 순위' },
+  { path: '/republic',             emoji: '🏛️', name: '공화국',    desc: '정당·대선·국회' },
+  { path: '/battle',               emoji: '⚔️', name: '배틀',      desc: '오늘의 정쟁 투표' },
+  { path: '/election',             emoji: '👑', name: '대선',      desc: '대통령 선출' },
+  { path: '/news',                 emoji: '📰', name: '소소신문',  desc: '오늘의 뉴스' },
+  { path: '/constitutional-court', emoji: '⚖️', name: '헌법재판소', desc: 'AI 탄핵 심판' },
+  { path: '/congress',             emoji: '📜', name: '국회',      desc: '법안 발의·표결' },
+  { path: '/ranking',              emoji: '🏆', name: '랭킹',      desc: '출세 순위' },
+  { path: '/feed',                 emoji: '💬', name: '피드',      desc: '시민 토론·이슈' },
+  { path: '/guide',                emoji: '📖', name: '가이드',    desc: '게임 안내' },
 ];
 
 function getKstDateString(date = new Date()) {
@@ -539,13 +543,14 @@ function renderMissions(status, battleData, isRulingParty = false) {
     { done: readNewsToday,  label: '소소신문 읽기',     path: '/news',     cta: '읽으러 가기', reward: '+3P',      icon: '📰' },
     { done: votedBattle,    label: '정치배틀 투표',     path: '/battle',   cta: '투표하기',   reward: '+5P',       icon: '🗳️' },
     { done: votedElection,  label: elecLabel,           path: '/election', cta: '투표하기',   reward: '+5P',       icon: '👑' },
-    { done: votedCrisis,    label: '이번 주 위기 투표', path: '/news',     cta: '참여하기',   reward: '+5P',       icon: '🚨' },
+    { done: votedCrisis,    label: '이번 주 위기 투표', path: '/news?scroll=crisis', cta: '참여하기', reward: '+5P', icon: '🚨' },
     { done: askedQA,        label: '대통령에게 질문',   path: '/election', cta: '질문하기',   reward: '+3P',       icon: '🎙️' },
     ...(status.partyId ? [{ done: campaignsToday >= 1, label: `유세 캠페인 (${campaignsToday}/3)`, path: '/republic', cta: '유세하기', reward: '-20P → 당 +15P', icon: '📢' }] : []),
     ...(isRulingParty ? [{ done: true, label: '집권당 일일 특전', path: '/', cta: '수령 완료', reward: '+3P 🔑', icon: '🏛️' }] : []),
   ];
   const doneCount = missions.filter(m => m.done).length;
   const allDone = doneCount === missions.length;
+  const totalRewardLabel = `최대 ${status.isLeader ? '71' : '61'}P 획득 가능`;
 
   // 스트릭 위기: 밤 9시 이후 아직 출석 안 했으면 경고
   const kstHour = new Date(Date.now() + 9 * 3600000).getUTCHours();
@@ -561,7 +566,10 @@ function renderMissions(status, battleData, isRulingParty = false) {
       ${streakWarningHTML}
       <div class="home-missions__head">
         <span class="home-missions__title">📋 오늘의 정치 일정</span>
-        <span class="home-missions__count${allDone ? ' home-missions__count--all' : ''}">${doneCount}/${missions.length} 완료${allDone ? ' 🎉' : ''}</span>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
+          <span class="home-missions__count${allDone ? ' home-missions__count--all' : ''}">${doneCount}/${missions.length} 완료${allDone ? ' 🎉' : ''}</span>
+          <span style="font-size:10px;color:var(--color-text-muted);font-weight:600">${totalRewardLabel}</span>
+        </div>
       </div>
       <div class="home-missions__list">
         ${missions.map(m => `
@@ -630,12 +638,15 @@ function renderNewsTicker(presidentData, battleData, newsData) {
   </div>`;
 }
 
-// 빠른 이동 (정치 시스템 4종)
+// 전체 기능 바로가기 그리드
 function renderQuickActions() {
   return `
+    <div class="home-section-header" style="margin-bottom:8px">
+      <span class="home-section-title">🗺️ 전체 기능</span>
+    </div>
     <div class="home-aiking-grid">
       ${QUICK_ACTIONS.map(k => `
-        <button class="home-aiking-card${k.wide ? ' home-aiking-card--wide' : ''}" data-path="${k.path}" type="button">
+        <button class="home-aiking-card" data-path="${k.path}" type="button">
           <span class="home-aiking-card__emoji">${k.emoji}</span>
           <span class="home-aiking-card__name">${k.name}</span>
           <span class="home-aiking-card__desc">${k.desc}</span>
