@@ -1,8 +1,6 @@
 // republic-polish.js
 // 가상현실 정치게임 몰입을 깨는 일반 AI 도구식 문구를 공화국 세계관 문구로 보정합니다.
 
-import { runRepublicGameFlow } from './republic-game-flow.js';
-
 function replaceTextNode(root, from, to) {
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   const nodes = [];
@@ -58,7 +56,6 @@ function runPolish() {
   polishGlobalCopy();
   enhanceImpeachmentCopy();
   addConstitutionalCourtNotice();
-  runRepublicGameFlow();
 }
 
 let timer = null;
