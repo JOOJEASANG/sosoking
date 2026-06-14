@@ -9,6 +9,23 @@ function currentPath() {
   return window.location.pathname || '/';
 }
 
+function ensureGameFlowStyle() {
+  if (document.getElementById('republic-game-flow-style')) return;
+  const style = document.createElement('style');
+  style.id = 'republic-game-flow-style';
+  style.textContent = `
+    @media(max-width:640px){
+      .daily-routine-grid,.checks-balance-steps,.rep-power-ladder-grid{grid-template-columns:repeat(2,1fr)!important}
+      #checks-balance-panel,#daily-routine-panel{border-radius:18px!important;padding:14px!important}
+    }
+    @media(max-width:420px){
+      .daily-routine-grid,.checks-balance-steps,.rep-power-ladder-grid{grid-template-columns:1fr!important}
+      #checks-balance-panel button,#daily-routine-panel button{width:100%;justify-content:center}
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 function addHomeRepublicEntry() {
   if (currentPath() !== '/') return;
   if (document.getElementById('home-republic-entry')) return;
@@ -203,9 +220,22 @@ function addDailyRoutinePanel() {
 }
 
 export function runRepublicGameFlow() {
+  ensureGameFlowStyle();
   addHomeRepublicEntry();
   addPledgeRecommendButton();
   addBattleImpactNotice();
   addChecksBalancePanel();
   addDailyRoutinePanel();
 }
+
+let flowTimer = null;
+function scheduleGameFlow() {
+  clearTimeout(flowTimer);
+  flowTimer = setTimeout(runRepublicGameFlow, 120);
+}
+
+window.addEventListener('hashchange', scheduleGameFlow);
+window.addEventListener('popstate', scheduleGameFlow);
+window.addEventListener('sosoking:extensions-ready', scheduleGameFlow);
+new MutationObserver(scheduleGameFlow).observe(document.body, { childList: true, subtree: true });
+scheduleGameFlow();
