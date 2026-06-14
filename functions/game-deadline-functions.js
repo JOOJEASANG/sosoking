@@ -248,25 +248,22 @@ const getMyStatus = onCall({ region: REGION, timeoutSeconds: 10 }, async request
   }
 
   let votedElection = false;
-  let votedCrisis = false;
+  let votedBattleToday = false;
   let campaignsToday = 0;
-  let askedQAThisWeek = false;
   let readNewsToday = false;
   let electionEndKey = weekPeriod().voteDeadlineKey;
   const today = kstToday();
   try {
-    const { key, voteDeadlineKey, prevKey } = weekPeriod();
-    const [b, crisisVoteSnap, campaignSnap, qaAwardSnap, newsAwardSnap] = await Promise.all([
+    const { key, voteDeadlineKey } = weekPeriod();
+    const [electionBallot, battleAwardSnap, campaignSnap, newsAwardSnap] = await Promise.all([
       db.doc(`elections/${key}/ballots/${uid}`).get(),
-      db.doc(`political_crises/${key}/votes/${uid}`).get().catch(() => null),
+      db.doc(`point_awards/${uid}_battle_vote_${today}`).get().catch(() => null),
       db.doc(`campaign_records/${uid}_${today}`).get().catch(() => null),
-      db.doc(`point_awards/president_q_${prevKey}_${uid}`).get().catch(() => null),
       db.doc(`point_awards/${uid}_news_${today}`).get().catch(() => null),
     ]);
-    votedElection = b.exists;
-    votedCrisis = !!(crisisVoteSnap && crisisVoteSnap.exists);
+    votedElection = electionBallot.exists;
+    votedBattleToday = !!(battleAwardSnap && battleAwardSnap.exists);
     campaignsToday = campaignSnap && campaignSnap.exists ? Number(campaignSnap.data().count || 0) : 0;
-    askedQAThisWeek = !!(qaAwardSnap && qaAwardSnap.exists);
     readNewsToday = !!(newsAwardSnap && newsAwardSnap.exists);
     electionEndKey = voteDeadlineKey;
   } catch {}
@@ -289,6 +286,9 @@ const getMyStatus = onCall({ region: REGION, timeoutSeconds: 10 }, async request
     Math.min(25, streak * 3) +
     (isLeader ? 15 : partyId ? 8 : 0) +
     Math.min(10, Math.floor(weeklyGain / 50)) +
+    (votedBattleToday ? 4 : 0) +
+    (votedElection ? 4 : 0) +
+    Math.min(6, campaignsToday * 2) +
     (power >= 25000 ? 10 : power >= 10000 ? 7 : power >= 3000 ? 5 : power >= 500 ? 3 : 0)
   )));
 
@@ -302,11 +302,10 @@ const getMyStatus = onCall({ region: REGION, timeoutSeconds: 10 }, async request
     partyRank,
     isLeader,
     votedElection,
+    votedBattleToday,
     electionEndKey,
     pointsToLeader,
-    votedCrisis,
     campaignsToday,
-    askedQAThisWeek,
     readNewsToday,
     weeklyGain,
     approvalRating,
