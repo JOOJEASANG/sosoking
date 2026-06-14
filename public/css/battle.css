@@ -414,6 +414,54 @@
   color: #1e8449;
 }
 
+/* ─── 투표 즉시 피드백 배너 (내 한 표의 임팩트) ─── */
+.battle-vote-impact {
+  margin-top: 14px;
+  padding: 16px 18px;
+  border-radius: 16px;
+  color: #fff;
+  font-weight: 900;
+  text-align: center;
+  line-height: 1.45;
+  box-shadow: 0 10px 28px rgba(0,0,0,.22);
+  animation: voteImpactPop .5s cubic-bezier(.18,.89,.32,1.28) both;
+}
+.battle-vote-impact__title { font-size: 18px; letter-spacing: -.3px; }
+.battle-vote-impact__sub { margin-top: 6px; font-size: 12.5px; font-weight: 700; opacity: .95; }
+.battle-vote-impact__bar {
+  margin-top: 12px; height: 8px; border-radius: 99px;
+  background: rgba(255,255,255,.28); overflow: hidden;
+}
+.battle-vote-impact__bar > i {
+  display: block; height: 100%; border-radius: 99px;
+  background: rgba(255,255,255,.92);
+  animation: voteImpactBar .9s ease-out both;
+}
+.battle-vote-impact--takeLead { background: linear-gradient(135deg,#f7971e,#ff512f); }
+.battle-vote-impact--lead     { background: linear-gradient(135deg,#11998e,#38ef7d); }
+.battle-vote-impact--closing  { background: linear-gradient(135deg,#fc4a1a,#f7b733); }
+.battle-vote-impact--joined   { background: linear-gradient(135deg,#4e54c8,#8f94fb); }
+@keyframes voteImpactPop {
+  0% { opacity: 0; transform: scale(.82) translateY(8px); }
+  60% { transform: scale(1.03); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes voteImpactBar { from { width: 0; } to { width: var(--impact-w, 50%); } }
+
+/* 컨페티 (역전 선두 순간) */
+.battle-confetti-host {
+  position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 5;
+}
+.battle-vote-section { position: relative; }
+.battle-confetti-host > i {
+  position: absolute; top: -12px; width: 8px; height: 12px; border-radius: 2px;
+  animation: confettiFall 1.4s cubic-bezier(.3,.6,.4,1) forwards;
+}
+@keyframes confettiFall {
+  0% { opacity: 1; transform: translateY(0) rotate(0); }
+  100% { opacity: 0; transform: translateY(360px) rotate(540deg); }
+}
+
 /* 로그인 힌트 */
 .battle-login-hint { margin-top: 16px; }
 

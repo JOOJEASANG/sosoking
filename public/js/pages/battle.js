@@ -16,6 +16,23 @@ function fmtNum(n) {
   return String(n || 0);
 }
 
+// 가벼운 컨페티 — 역전 선두 등 큰 순간에만 (의존성 없음)
+function confettiBurst(anchor) {
+  try {
+    const host = document.createElement('div');
+    host.className = 'battle-confetti-host';
+    host.setAttribute('aria-hidden', 'true');
+    const colors = ['#f7971e', '#ff512f', '#38ef7d', '#4e54c8', '#f7b733', '#00cec9'];
+    for (let i = 0; i < 18; i++) {
+      const p = document.createElement('i');
+      p.style.cssText = `left:${10 + Math.random() * 80}%;background:${colors[i % colors.length]};animation-delay:${(Math.random() * 0.25).toFixed(2)}s;transform:rotate(${Math.random() * 360}deg)`;
+      host.appendChild(p);
+    }
+    (anchor || document.body).appendChild(host);
+    setTimeout(() => host.remove(), 1600);
+  } catch {}
+}
+
 function getKstMidnight() {
   const kstNow = new Date(Date.now() + 9 * 60 * 60 * 1000);
   return Date.UTC(kstNow.getUTCFullYear(), kstNow.getUTCMonth(), kstNow.getUTCDate() + 1, -9, 0, 0, 0);
@@ -426,12 +443,16 @@ async function handleVote(partyId, prevData, el) {
 
   try {
     const voteForParty = httpsCallable(functions, 'voteForParty');
-    await voteForParty({ partyId });
+    const { data: res } = await voteForParty({ partyId });
 
-    const newVotes = { ...prevData.votes };
-    newVotes[partyId] = (newVotes[partyId] || 0) + 1;
-    const newTotal = (prevData.totalVotes || 0) + 1;
     const partyInfo = prevData.partyInfo || {};
+    // 서버가 돌려준 실제 집계 우선, 없으면 낙관적 +1
+    const newVotes = res?.votes ? { ...res.votes } : (() => {
+      const v = { ...prevData.votes }; v[partyId] = (v[partyId] || 0) + 1; return v;
+    })();
+    const newTotal = res?.totalVotes != null
+      ? res.totalVotes
+      : (prevData.totalVotes || 0) + 1;
 
     // 카드 업데이트
     const cardsEl = el.querySelector('#party-cards');
@@ -449,6 +470,29 @@ async function handleVote(partyId, prevData, el) {
     if (titleEl) titleEl.textContent = `✅ 투표 완료 · 총 ${fmtNum(newTotal)}명`;
 
     const voteSection = el.querySelector('.battle-vote-section');
+
+    // 내 한 표의 임팩트 — 판세 변화 연출
+    if (voteSection && res?.kind && !voteSection.querySelector('.battle-vote-impact')) {
+      const myName = partyInfo[partyId]?.name || '내 정당';
+      const leadName = partyInfo[res.leader]?.name || '선두';
+      const pct = newTotal > 0 ? Math.round((newVotes[partyId] / newTotal) * 100) : 0;
+      const copy = {
+        takeLead: { t: `🔥 역전 선두 등극!`, s: `당신의 한 표로 <b>${myName}</b>이(가) 1위로 올라섰어요!` },
+        lead:     { t: `👑 ${myName} 선두 굳히기`, s: `당신의 한 표가 1위에 힘을 보탰어요 (${pct}%)` },
+        closing:  { t: `⚔️ 추격 ${res.gapToLead}표 차!`, s: `${leadName}을(를) 거의 따라잡았어요. 친구를 불러 뒤집어요!` },
+        joined:   { t: `🗳️ ${myName}에 한 표!`, s: `판세가 움직이기 시작했어요 (현재 ${pct}%)` },
+      }[res.kind] || { t: `🗳️ 투표 완료`, s: `현재 ${pct}%` };
+      const banner = document.createElement('div');
+      banner.className = `battle-vote-impact battle-vote-impact--${res.kind}`;
+      banner.style.setProperty('--impact-w', `${Math.max(8, Math.min(100, pct))}%`);
+      banner.innerHTML = `
+        <div class="battle-vote-impact__title">${copy.t}</div>
+        <div class="battle-vote-impact__sub">${copy.s}</div>
+        <div class="battle-vote-impact__bar"><i></i></div>`;
+      voteSection.appendChild(banner);
+      if (res.kind === 'takeLead') confettiBurst(voteSection);
+    }
+
     if (voteSection && !voteSection.querySelector('.battle-power-hint')) {
       const hint = document.createElement('div');
       hint.className = 'battle-power-hint';

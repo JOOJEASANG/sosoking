@@ -546,11 +546,42 @@ exports.voteForParty = onCall({
   const voteRef = db.doc(`battleVotes/${userId}_${today}`);
   const battleRef = db.doc(`battles/${today}`);
 
+  let outcome = null;
   await db.runTransaction(async (tx) => {
     const [voteSnap, battleSnap] = await Promise.all([tx.get(voteRef), tx.get(battleRef)]);
     if (voteSnap.exists) throw new HttpsError('already-exists', '오늘은 이미 투표했어요');
     if (!battleSnap.exists) throw new HttpsError('not-found', '오늘의 논쟁을 불러올 수 없어요');
     if (battleSnap.data().status === 'ended') throw new HttpsError('failed-precondition', '이미 끝난 논쟁이에요');
+
+    // 판세 변화 계산용 — 투표 전/후 비교
+    const before = battleSnap.data().votes || { national: 0, youth: 0, center: 0 };
+    const beforeVotes = {
+      national: Number(before.national || 0),
+      youth: Number(before.youth || 0),
+      center: Number(before.center || 0),
+    };
+    const afterVotes = { ...beforeVotes, [partyId]: beforeVotes[partyId] + 1 };
+    const leaderOf = (v) => Object.keys(v).reduce((a, b) => (v[b] > v[a] ? b : a), 'national');
+    const prevLeader = (beforeVotes.national + beforeVotes.youth + beforeVotes.center) > 0 ? leaderOf(beforeVotes) : null;
+    const newLeader = leaderOf(afterVotes);
+    const sorted = Object.entries(afterVotes).sort((a, b) => b[1] - a[1]);
+    const myRank = sorted.findIndex(([p]) => p === partyId) + 1;
+    const gapToLead = afterVotes[newLeader] - afterVotes[partyId];
+
+    let kind = 'joined';
+    if (newLeader === partyId && prevLeader && prevLeader !== partyId) kind = 'takeLead';   // 역전 선두!
+    else if (newLeader === partyId) kind = 'lead';                                            // 선두 유지/달성
+    else if (gapToLead <= 2) kind = 'closing';                                                // 추격 접전
+
+    outcome = {
+      votes: afterVotes,
+      totalVotes: afterVotes.national + afterVotes.youth + afterVotes.center,
+      myRank,
+      leader: newLeader,
+      gapToLead,
+      kind,
+    };
+
     tx.set(voteRef, { userId, partyId, date: today, createdAt: FieldValue.serverTimestamp() });
     tx.update(battleRef, {
       [`votes.${partyId}`]: FieldValue.increment(1),
@@ -563,7 +594,7 @@ exports.voteForParty = onCall({
     tx.set(userRef, { totalPoints: FieldValue.increment(5), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
   });
 
-  return { ok: true, partyId };
+  return { ok: true, partyId, ...(outcome || {}) };
 });
 
 // ── 토론 댓글 추가 ──
