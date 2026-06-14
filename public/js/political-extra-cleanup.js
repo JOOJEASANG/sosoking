@@ -33,13 +33,17 @@ function cleanupNewsExtras() {
 }
 
 function cleanupHomeMissionExtras() {
-  const path = currentPath();
-  if (path !== '/') return;
-
   const hiddenLabels = ['이번 주 위기 투표', '대통령에게 질문'];
-  document.querySelectorAll('.home-mission').forEach(button => {
-    const label = button.querySelector('.home-mission__label')?.textContent?.trim() || '';
-    if (hiddenLabels.some(text => label.includes(text))) button.remove();
+  let removed = false;
+
+  document.querySelectorAll('.home-mission, .home-missions button, button[data-path]').forEach(button => {
+    const label = button.querySelector?.('.home-mission__label')?.textContent?.trim() || button.textContent?.trim() || '';
+    const path = button.getAttribute?.('data-path') || '';
+    const shouldHide = hiddenLabels.some(text => label.includes(text)) || path.includes('scroll=crisis');
+    if (shouldHide) {
+      button.remove();
+      removed = true;
+    }
   });
 
   const missionBox = document.querySelector('.home-missions');
@@ -56,6 +60,8 @@ function cleanupHomeMissionExtras() {
 
   const rewardLabel = missionBox.querySelector('.home-missions__head span[style*="font-size:10px"]');
   if (rewardLabel) rewardLabel.textContent = '핵심 일정만 표시';
+
+  if (removed) missionBox.dataset.politicalExtrasCleaned = '1';
 }
 
 function cleanupPoliticalExtras() {
@@ -67,20 +73,28 @@ function cleanupPoliticalExtras() {
 let timer = null;
 function scheduleCleanup() {
   clearTimeout(timer);
-  timer = setTimeout(cleanupPoliticalExtras, 80);
+  timer = setTimeout(cleanupPoliticalExtras, 20);
 }
 
 window.addEventListener('hashchange', scheduleCleanup);
 window.addEventListener('popstate', scheduleCleanup);
 window.addEventListener('sosoking:extensions-ready', scheduleCleanup);
+window.addEventListener('load', scheduleCleanup);
 
 function observeBody() {
   if (!document.body) {
     document.addEventListener('DOMContentLoaded', observeBody, { once: true });
     return;
   }
-  new MutationObserver(scheduleCleanup).observe(document.body, { childList: true, subtree: true });
+  new MutationObserver(scheduleCleanup).observe(document.body, { childList: true, subtree: true, characterData: true });
   scheduleCleanup();
+
+  let runs = 0;
+  const interval = setInterval(() => {
+    cleanupPoliticalExtras();
+    runs += 1;
+    if (runs >= 120) clearInterval(interval);
+  }, 250);
 }
 
 observeBody();
