@@ -3,13 +3,14 @@ import { escHtml, formatTime } from '../utils/helpers.js';
 import { renderPartyBadge, renderPresidentCrown } from '../utils/party-badge.js';
 
 const TYPE_META = {
-  tournament:   { cat: 'multi',  catLabel: '\uB05D\uD310\uC655', icon: '🏆', label: '\uB05D\uD310\uC655' },
-  collect:      { cat: 'multi',  catLabel: '\uBAA8\uC74C\uBC29', icon: '📌', label: '\uBAA8\uC74C\uBC29' },
-  vote:         { cat: 'multi',  catLabel: '\uD1A0\uB860\uBC29', icon: '🗳️', label: '\uD1A0\uB860\uBC29' },
-  drip:         { cat: 'multi',  catLabel: '\uB4DC\uB9BD\uBC29', icon: '🤣', label: '\uB4DC\uB9BD\uBC29' },
-  quiz:         { cat: 'multi',  catLabel: '\uD034\uC988\uBC29', icon: '🧠', label: '\uD034\uC988\uBC29' },
-  multi:        { cat: 'multi',  catLabel: '\uBAA8\uC74C\uBC29', icon: '📌', label: '\uBAA8\uC74C\uBC29' },
-  ai_judge:     { cat: 'golra',  catLabel: 'AI\uD310\uC0AC', icon: '⚖️', label: 'AI\uD310\uC0AC' },
+  citizen_speech:{ cat: 'multi',  catLabel: '시민발언', icon: '🗣️', label: '시민발언' },
+  tournament:   { cat: 'multi',  catLabel: '끝판왕', icon: '🏆', label: '끝판왕' },
+  collect:      { cat: 'multi',  catLabel: '모음방', icon: '📌', label: '모음방' },
+  vote:         { cat: 'multi',  catLabel: '토론방', icon: '🗳️', label: '토론방' },
+  drip:         { cat: 'multi',  catLabel: '드립방', icon: '🤣', label: '드립방' },
+  quiz:         { cat: 'multi',  catLabel: '퀴즈방', icon: '🧠', label: '퀴즈방' },
+  multi:        { cat: 'multi',  catLabel: '모음방', icon: '📌', label: '모음방' },
+  ai_judge:     { cat: 'golra',  catLabel: '헌재기록', icon: '⚖️', label: '헌재기록' },
 };
 
 function escAttr(value) {
@@ -49,6 +50,7 @@ function safeTag(value) {
 }
 
 function getMultiSubtype(post) {
+  if (post.feedType === 'citizen_speech' || post.type === 'citizen_speech' || post.subtype === 'citizen_speech') return 'citizen_speech';
   if (post.modules?.tournament?.enabled || post.subtype === 'tournament') return 'tournament';
   if (post.subtype && TYPE_META[post.subtype]) return post.subtype;
   if (post.feedType && TYPE_META[post.feedType]) return post.feedType;
@@ -60,17 +62,18 @@ function getMultiSubtype(post) {
 }
 
 function getTypeMeta(post) {
+  if (post.feedType === 'citizen_speech' || post.type === 'citizen_speech' || post.subtype === 'citizen_speech') return TYPE_META.citizen_speech;
   if (post.type === 'multi') {
     const subtype = getMultiSubtype(post);
     return TYPE_META[subtype] || TYPE_META.collect;
   }
-  return TYPE_META[post.type] || { cat: 'multi', catLabel: '', icon: '📝', label: '\uC77C\uBC18' };
+  return TYPE_META[post.type] || { cat: 'multi', catLabel: '', icon: '📝', label: '일반' };
 }
 
 function displayTitle(post) {
   const title = plainText(post.title || '').trim();
   const desc = plainText(post.desc || '').trim();
-  return title || desc || '\uC81C\uBAA9 \uC5C6\uC74C';
+  return title || desc || '제목 없음';
 }
 
 function displayDesc(post) {
@@ -80,8 +83,8 @@ function displayDesc(post) {
 function renderModuleChips(post) {
   if (post.type !== 'multi' || !post.modules) return '';
   const labels = [];
-  if (post.anonymous || post.modules.anonymous?.enabled) labels.push('\uC775\uBA85');
-  if (post.modules.tournament?.enabled) labels.push('\uD1A0\uB108\uBA3C\uD2B8');
+  if (post.anonymous || post.modules.anonymous?.enabled) labels.push('익명');
+  if (post.modules.tournament?.enabled) labels.push('토너먼트');
   if (!labels.length) return '';
   return `<div class="feed-card__multi-chips">${labels.map(label => `<span>${escHtml(label)}</span>`).join('')}</div>`;
 }
@@ -101,7 +104,7 @@ export function renderFeedCard(post) {
   const title = displayTitle(post).slice(0, 120);
 
   return `
-    <article class="card card--hover feed-card feed-card--${meta.cat}" onclick="navigate('/detail/${escAttr(post.id)}')">
+    <article class="card card--hover feed-card feed-card--${meta.cat}" data-id="${escAttr(post.id)}" onclick="navigate('/detail/${escAttr(post.id)}')">
       <div class="feed-card__header">
         <div class="feed-card__content">
           <div class="feed-card__badge-row">
@@ -115,7 +118,7 @@ export function renderFeedCard(post) {
           ${desc ? `<p class="feed-card__desc line-clamp-2">${escHtml(desc)}</p>` : ''}
           ${renderModuleChips(post)}
           <div class="feed-card__meta">
-            <span>${renderPresidentCrown(post.authorId)}${renderPartyBadge(post.partyId)}${post.rankEmoji ? `<span class="comment-rank-emoji" title="\uC815\uCE58 \uB4F1\uAE09">${escHtml(post.rankEmoji)}</span>` : ''}${escHtml(post.authorName || '\uC775\uBA85')}</span>
+            <span>${renderPresidentCrown(post.authorId)}${renderPartyBadge(post.partyId)}${post.rankEmoji ? `<span class="comment-rank-emoji" title="정치 등급">${escHtml(post.rankEmoji)}</span>` : ''}${escHtml(post.authorName || '익명')}</span>
             <span class="feed-card__meta-dot"></span>
             <span>${timeStr}</span>
             ${viewCount ? `<span class="feed-card__meta-dot"></span><span>👁 ${Number(viewCount || 0).toLocaleString()}</span>` : ''}
@@ -126,8 +129,8 @@ export function renderFeedCard(post) {
         ${images.length === 1 ? `<div class="feed-card__thumb"><img src="${escAttr(images[0])}" alt="" loading="lazy" referrerpolicy="no-referrer"></div>` : ''}
       </div>
       ${images.length > 1 ? renderImageGrid(images) : ''}
-      ${images.length > 3 ? `<div class="feed-card__image-count">\uC0AC\uC9C4 ${images.length}\uC7A5</div>` : ''}
-      ${temp > 0 ? `<div class="feed-temp-bar" style="--temp-pct:${temp}%;--temp-color:${tempColor}" title="\uCC38\uC5EC \uC628\uB3C4 ${temp}°C"></div>` : ''}
+      ${images.length > 3 ? `<div class="feed-card__image-count">사진 ${images.length}장</div>` : ''}
+      ${temp > 0 ? `<div class="feed-temp-bar" style="--temp-pct:${temp}%;--temp-color:${tempColor}" title="참여 온도 ${temp}°C"></div>` : ''}
       <div class="feed-card__actions" onclick="event.stopPropagation()">
         <button class="feed-share-btn" type="button" data-feed-share="${escAttr(post.id)}" data-feed-title="${escAttr(title || '소소킹')}">🔗 공유</button>
       </div>
@@ -167,7 +170,7 @@ document.addEventListener('click', async event => {
     if (navigator.share) await navigator.share({ title, url });
     else {
       await navigator.clipboard.writeText(url);
-      window.showToast?.('\uB9C1\uD06C\uAC00 \uBCF5\uC0AC\uB410\uC5B4\uC694', 'success');
+      window.showToast?.('링크가 복사됐어요', 'success');
     }
   } catch {
     // intentionally ignored
