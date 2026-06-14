@@ -220,6 +220,39 @@ function addChecksBalancePanel() {
   anchor.insertAdjacentElement('beforebegin', panel);
 }
 
+function addDailyRoutinePanel() {
+  if (currentPath() !== '/republic') return;
+  if (document.getElementById('daily-routine-panel')) return;
+  const content = document.querySelector('.rep-content') || document.getElementById('page-content');
+  if (!content) return;
+  const firstSection = content.querySelector('.rep-section');
+  if (!firstSection) return;
+
+  const panel = document.createElement('div');
+  panel.id = 'daily-routine-panel';
+  panel.className = 'rep-section';
+  panel.style.cssText = 'background:linear-gradient(135deg,rgba(255,255,255,.98),rgba(248,250,252,.94));border:1px solid rgba(100,116,139,.18);box-shadow:0 12px 28px rgba(15,23,42,.07)';
+  panel.innerHTML = `
+    <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:12px">
+      <div>
+        <div style="font-size:12px;font-weight:1000;letter-spacing:.06em;color:var(--color-primary)">DAILY ROUTINE</div>
+        <div style="font-size:20px;font-weight:1000;color:var(--color-text-primary);margin-top:3px">📋 오늘 정치 루틴</div>
+        <div style="font-size:13px;color:var(--color-text-secondary);line-height:1.5;margin-top:4px">처음 온 유저도 아래 순서대로만 누르면 정치력이 쌓이고 대선까지 이어집니다.</div>
+      </div>
+      <button type="button" data-routine-path="/battle" style="border:0;border-radius:999px;padding:9px 12px;background:var(--color-primary);color:#fff;font-weight:1000;font-family:inherit;cursor:pointer">오늘 배틀 시작</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px" class="daily-routine-grid">
+      <button type="button" data-routine-path="/battle" style="text-align:left;border:1px solid rgba(100,116,139,.18);border-radius:16px;background:#fff;padding:12px;font-family:inherit;cursor:pointer"><b>1. 정치배틀</b><br><small>투표하고 +5P</small></button>
+      <button type="button" data-routine-path="/parties" style="text-align:left;border:1px solid rgba(100,116,139,.18);border-radius:16px;background:#fff;padding:12px;font-family:inherit;cursor:pointer"><b>2. 정당전</b><br><small>내 당 세력 키우기</small></button>
+      <button type="button" data-routine-path="/election" style="text-align:left;border:1px solid rgba(100,116,139,.18);border-radius:16px;background:#fff;padding:12px;font-family:inherit;cursor:pointer"><b>3. 대선</b><br><small>당대표·대통령 도전</small></button>
+      <button type="button" data-routine-path="/congress" style="text-align:left;border:1px solid rgba(100,116,139,.18);border-radius:16px;background:#fff;padding:12px;font-family:inherit;cursor:pointer"><b>4. 국회</b><br><small>법안·탄핵 정국</small></button>
+    </div>`;
+  panel.querySelectorAll('[data-routine-path]').forEach(btn => {
+    btn.addEventListener('click', () => navigate(btn.dataset.routinePath));
+  });
+  firstSection.insertAdjacentElement('afterend', panel);
+}
+
 function runPolish() {
   polishGlobalCopy();
   enhanceImpeachmentCopy();
@@ -228,6 +261,7 @@ function runPolish() {
   addPledgeRecommendButton();
   addBattleImpactNotice();
   addChecksBalancePanel();
+  addDailyRoutinePanel();
 }
 
 let timer = null;
