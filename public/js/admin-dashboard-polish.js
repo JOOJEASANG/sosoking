@@ -17,13 +17,17 @@ function addPanel() {
   panel.innerHTML = `
     <div class="admin-section-head">
       <h2 class="admin-section-title">🏛️ 현재 시스템 빠른 점검</h2>
+      <span style="font-size:12px;color:var(--color-text-muted)">관리자 계정은 보안상 일반 화면 이동이 제한됩니다.</span>
     </div>
     <div class="admin-stat-grid" style="margin-bottom:14px">
-      <a class="admin-stat-card" href="#/republic" style="text-decoration:none;color:inherit"><div class="admin-stat-card__icon">🏛️</div><div class="admin-stat-card__num" style="font-size:17px">공화국</div><div class="admin-stat-card__label">허브</div></a>
-      <a class="admin-stat-card" href="#/battle" style="text-decoration:none;color:inherit"><div class="admin-stat-card__icon">⚔️</div><div class="admin-stat-card__num" style="font-size:17px">배틀</div><div class="admin-stat-card__label">일일 투표</div></a>
-      <a class="admin-stat-card" href="#/election" style="text-decoration:none;color:inherit"><div class="admin-stat-card__icon">👑</div><div class="admin-stat-card__num" style="font-size:17px">대선</div><div class="admin-stat-card__label">후보·포고령</div></a>
-      <a class="admin-stat-card" href="#/congress" style="text-decoration:none;color:inherit"><div class="admin-stat-card__icon">🏛️</div><div class="admin-stat-card__num" style="font-size:17px">국회</div><div class="admin-stat-card__label">법안·탄핵</div></a>
-      <a class="admin-stat-card" href="#/constitutional-court" style="text-decoration:none;color:inherit"><div class="admin-stat-card__icon">⚖️</div><div class="admin-stat-card__num" style="font-size:17px">헌재</div><div class="admin-stat-card__label">심판</div></a>
+      <div class="admin-stat-card"><div class="admin-stat-card__icon">🏛️</div><div class="admin-stat-card__num" style="font-size:17px">공화국</div><div class="admin-stat-card__label">허브·권력사다리</div></div>
+      <div class="admin-stat-card"><div class="admin-stat-card__icon">⚔️</div><div class="admin-stat-card__num" style="font-size:17px">배틀</div><div class="admin-stat-card__label">일일 투표</div></div>
+      <div class="admin-stat-card"><div class="admin-stat-card__icon">👑</div><div class="admin-stat-card__num" style="font-size:17px">대선</div><div class="admin-stat-card__label">후보·포고령</div></div>
+      <div class="admin-stat-card"><div class="admin-stat-card__icon">🏛️</div><div class="admin-stat-card__num" style="font-size:17px">국회</div><div class="admin-stat-card__label">법안·탄핵</div></div>
+      <div class="admin-stat-card"><div class="admin-stat-card__icon">⚖️</div><div class="admin-stat-card__num" style="font-size:17px">헌재</div><div class="admin-stat-card__label">탄핵심판</div></div>
+    </div>
+    <div class="card" style="padding:13px;border:1px solid rgba(100,116,139,.18);background:rgba(15,23,42,.03);font-size:13px;line-height:1.55;color:var(--color-text-secondary)">
+      점검 순서: 정치배틀 생성 → 정당 정치력 → 대선 후보/투표 → 대통령 포고령 → 국회·헌재 탄핵 흐름. 일반 화면 확인은 관리자 계정이 아닌 일반 계정으로 진행하세요.
     </div>`;
   content.insertBefore(panel, content.firstElementChild);
 }
@@ -34,7 +38,10 @@ function normalizeCopy() {
     ['AI킹 서비스별 사용 현황', 'AI·자동 생성 기능 사용 현황'],
     ['이번달 AI 사용', '이번달 자동 생성'],
     ['오늘 AI 사용', '오늘 자동 생성'],
+    ['AI킹 외 사이트 자동화 기능', '정치게임 자동화 기능'],
+    ['AI킹(판사·번역사·작명소)', '정치게임 자동 생성'],
     ['판결소', '헌법재판소'],
+    ['재판기록', '국민신문고'],
   ];
   const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
   const nodes = [];
