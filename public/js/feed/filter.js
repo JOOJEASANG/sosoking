@@ -1,6 +1,8 @@
-export const FILTER_TYPES = ['tournament', 'collect', 'vote', 'quiz', 'drip'];
+export const FILTER_TYPES = ['citizen_speech', 'ai_judge', 'tournament', 'collect', 'vote', 'quiz', 'drip'];
 
 export const TYPE_LABELS = {
+  citizen_speech: '시민발언',
+  ai_judge: '헌재기록',
   tournament: '대결방',
   collect: '일반방',
   collection: '일반방',
@@ -35,6 +37,8 @@ export function normalizeFeedSort(sort) {
 }
 
 export function getPostTypeKey(post) {
+  if (post.feedType === 'citizen_speech' || post.type === 'citizen_speech' || post.subtype === 'citizen_speech') return 'citizen_speech';
+  if (post.feedType === 'ai_judge' || post.type === 'ai_judge') return 'ai_judge';
   if (post.feedType === 'tournament' || post.subtype === 'tournament' || post.modules?.tournament?.enabled) return 'tournament';
   if (post.feedType === 'collect' || post.subtype === 'collect' || post.modules?.collect?.enabled) return 'collect';
   if (post.subtype === 'ox') return 'vote';
@@ -103,7 +107,7 @@ export function sortScore(post, sort) {
 
 export function sortFeedPosts(posts, sort) {
   return posts.sort((a, b) => {
-    const diff = sortScore(b, sort) - sortScore(a, sort);
+    const diff = sortScore(b, sort) - sortScore(a);
     if (diff) return diff;
     return postDateValue(b) - postDateValue(a);
   });
