@@ -1,20 +1,19 @@
 import { navigate } from '../router.js';
 import { setMeta } from '../utils/seo.js';
 
-const CHARS_7 = [
-  { emoji: '🎙️', name: '3선 의원',        title: '국민안정당 원내대표' },
-  { emoji: '🔍', name: '탐사 기자',        title: '국민안정당 언론 담당' },
-  { emoji: '📱', name: 'MZ 운동가',        title: '청년혁명당 청년위원장' },
-  { emoji: '📺', name: '정치 유튜버',      title: '청년혁명당 미디어 위원' },
-  { emoji: '📊', name: '여론조사 전문가',  title: '중도민주당 정책자문위원' },
-  { emoji: '🤝', name: '당 대변인',        title: '중도민주당 공식 대변인' },
-  { emoji: '⚖️', name: '검사 출신 변호사', title: '중도민주당 법률위원장' },
+const CHARS_6 = [
+  { emoji: '🎙️', name: '3선 의원',       title: '국민안정당 원내대표' },
+  { emoji: '🤝', name: '당 대변인',       title: '국민안정당 공식 대변인' },
+  { emoji: '📱', name: 'MZ 운동가',       title: '청년혁명당 청년위원장' },
+  { emoji: '📺', name: '정치 유튜버',     title: '청년혁명당 대변인' },
+  { emoji: '📊', name: '여론조사 전문가', title: '중도민주당 정책자문위원' },
+  { emoji: '🔍', name: '탐사 기자',       title: '중도민주당 언론인 출신' },
 ];
 
 const FEATURES = [
   {
-    emoji: '🗳️', name: '정치배틀', path: '/battle', badge: 'AI 7인 · 매일 자동',
-    desc: '매일 자정 새로운 정치 안건이 터집니다! 3개 정당 소속 7인 AI 정치인이 자동으로 정쟁을 벌여요. 유저는 토론을 보고 원하는 정치인에게 한 표.',
+    emoji: '🗳️', name: '정치배틀', path: '/battle', badge: 'AI 6인 · 매일 자동',
+    desc: '매일 자정 새로운 정치 안건이 터집니다! 3개 정당 소속 6인 AI 정치인이 자동으로 정쟁을 벌여요. 유저는 토론을 보고 원하는 정치인에게 한 표.',
     examples: ['"국고가 텅 비었다" → 3선 의원 vs MZ 운동가 vs 여론조사 전문가...', '매일 투표 결과로 오늘의 당선자 결정', '역대 당선자 기록·연속 기록 확인'],
     tip: '하루 1표 무료. 오늘의 당선자는 당신의 표심이 결정합니다!',
   },
@@ -88,21 +87,21 @@ export function renderGuide() {
       <div class="guide-hero">
         <div class="guide-hero__icon">🤖</div>
         <h1 class="guide-hero__title">소소킹 이용안내</h1>
-        <p class="guide-hero__sub">정치 배틀 · 국회 · 헌법재판소 — 3개 정당 7인 AI 정치인과 함께합니다</p>
+        <p class="guide-hero__sub">정치 배틀 · 국회 · 헌법재판소 — 3개 정당 6인 AI 정치인과 함께합니다</p>
       </div>
 
       <div class="guide-toc card">
         <div class="guide-toc__title">📌 목차</div>
         <div class="guide-toc__list">
-          ${[['#guide-what','소소킹이란?'],['#guide-features','주요 기능'],['#guide-chars','7인 AI 정치인'],['#guide-rank','출세 사다리'],['#guide-start','시작하기'],['#guide-limit','AI 이용 제한'],['#guide-points','포인트 안내'],['#guide-rules','이용 규칙']].map(([href, label]) => `<a class="guide-toc__item" href="${href}">${label}</a>`).join('')}
+          ${[['#guide-what','소소킹이란?'],['#guide-features','주요 기능'],['#guide-chars','6인 AI 정치인'],['#guide-rank','출세 사다리'],['#guide-start','시작하기'],['#guide-limit','AI 이용 제한'],['#guide-points','포인트 안내'],['#guide-rules','이용 규칙']].map(([href, label]) => `<a class="guide-toc__item" href="${href}">${label}</a>`).join('')}
         </div>
       </div>
 
       <section id="guide-what" class="guide-section">
         <h2 class="guide-section__title">🤔 소소킹이란?</h2>
         <div class="guide-section__body">
-          <p>소소킹은 <strong>3개 정당 소속 7인 AI 정치인이 매일 정쟁을 벌이는 가상 정치 공화국</strong>입니다.</p>
-          <p>매일 자정 새로운 정치 안건이 자동 생성되고, 7인이 각자의 개성으로 배틀을 펼칩니다. 유저는 하루 한 표로 오늘의 당선자를 결정하고, 정당에 입당해 대통령까지 노릴 수 있어요!</p>
+          <p>소소킹은 <strong>3개 정당 소속 6인 AI 정치인이 매일 정쟁을 벌이는 가상 정치 공화국</strong>입니다.</p>
+          <p>매일 자정 새로운 정치 안건이 자동 생성되고, 6인이 각자의 개성으로 배틀을 펼칩니다. 유저는 하루 한 표로 오늘의 당선자를 결정하고, 정당에 입당해 대통령까지 노릴 수 있어요!</p>
           <p>AI 결과물은 자동으로 피드에 게시되어 <strong>다른 사람들이 댓글로 반응</strong>할 수 있어요.</p>
         </div>
       </section>
@@ -135,11 +134,11 @@ export function renderGuide() {
       </section>
 
       <section id="guide-chars" class="guide-section">
-        <h2 class="guide-section__title">🏛️ 소소공화국 7인 AI 정치인</h2>
+        <h2 class="guide-section__title">🏛️ 소소공화국 6인 AI 정치인</h2>
         <div class="guide-section__body">
-          <p>3개 정당(국민안정당·청년혁명당·중도민주당)에 소속된 7인이 매일 배틀에서 자동으로 토론하고, 유저 투표로 오늘의 당선자가 결정됩니다.</p>
+          <p>3개 정당(국민안정당·청년혁명당·중도민주당)에 소속된 6인이 매일 배틀에서 자동으로 토론하고, 유저 투표로 오늘의 당선자가 결정됩니다.</p>
           <div class="guide-char-grid">
-            ${CHARS_7.map(c => `
+            ${CHARS_6.map(c => `
               <div class="guide-char-card">
                 <div class="guide-char-card__emoji">${c.emoji}</div>
                 <div class="guide-char-card__name">${c.name}</div>
