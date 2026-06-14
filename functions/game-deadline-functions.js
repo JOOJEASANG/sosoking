@@ -282,6 +282,16 @@ const getMyStatus = onCall({ region: REGION, timeoutSeconds: 10 }, async request
     } catch {}
   }
 
+  // 시민 지지율: 출석·정당·활동량·정치력 기반 0~100%
+  const streak = Number(user.streak || 0);
+  const approvalRating = Math.min(100, Math.max(0, Math.round(
+    40 +
+    Math.min(25, streak * 3) +
+    (isLeader ? 15 : partyId ? 8 : 0) +
+    Math.min(10, Math.floor(weeklyGain / 50)) +
+    (power >= 25000 ? 10 : power >= 10000 ? 7 : power >= 3000 ? 5 : power >= 500 ? 3 : 0)
+  )));
+
   return {
     loggedIn: true,
     power,
@@ -299,6 +309,7 @@ const getMyStatus = onCall({ region: REGION, timeoutSeconds: 10 }, async request
     askedQAThisWeek,
     readNewsToday,
     weeklyGain,
+    approvalRating,
   };
 });
 

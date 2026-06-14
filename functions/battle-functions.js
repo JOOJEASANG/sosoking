@@ -173,6 +173,18 @@ function safeParseJson(raw) {
   return null;
 }
 
+// 이번 주 월요일 기준 prevKey 계산 (politics-functions.js의 weekPeriod와 동일)
+function getBattlePrevKey() {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short',
+  }).formatToParts(new Date());
+  const o = {}; parts.forEach(p => { o[p.type] = p.value; });
+  const wmap = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  const off = (wmap[o.weekday] + 6) % 7;
+  const monMs = Date.UTC(Number(o.year), Number(o.month) - 1, Number(o.day)) - off * 86400000;
+  return new Date(monMs - 7 * 86400000).toISOString().slice(0, 10);
+}
+
 // ── 정당 대항전 생성 프롬프트 ──
 function buildBattlePrompt(topContext) {
   const partyDescs = [
@@ -193,7 +205,11 @@ function buildBattlePrompt(topContext) {
     ? `\n【오늘의 이슈 힌트】관리자가 제시한 주제: "${topContext.topicHint}" — 이를 재치있게 패러디해서 사용하세요.\n`
     : '';
 
-  return `${contextLine}${topicHint}소소공화국 오늘의 정당 대항전 콘텐츠를 생성하라.
+  const decreeContext = topContext?.presidentDecree
+    ? `\n【현직 대통령 포고령】${topContext.presidentDecree.presidentName}(${topContext.presidentDecree.partyName}) 대통령이 발표한 포고령: "${topContext.presidentDecree.decree}" — 오늘 논쟁 주제는 이 포고령과 자연스럽게 연결되거나 반응하는 내용일 수 있습니다.\n`
+    : '';
+
+  return `${contextLine}${topicHint}${decreeContext}소소공화국 오늘의 정당 대항전 콘텐츠를 생성하라.
 3개 정당이 오늘의 정치 이슈에 대해 각자의 입장을 밝힌다.
 각 정당의 대표 2명이 자신의 캐릭터 스타일로 발언한다.
 
@@ -329,6 +345,23 @@ exports.generateDailyBattle = onSchedule({
     if (configSnap.exists && configSnap.data().date === today) {
       topContext = { ...(topContext || {}), topicHint: configSnap.data().hint };
     }
+
+    // 현직 대통령 포고령 (배틀 이슈의 문맥으로 활용)
+    try {
+      const prevKey = getBattlePrevKey();
+      const prevElecSnap = await db.doc(`elections/${prevKey}`).get();
+      if (prevElecSnap.exists && prevElecSnap.data().decree && prevElecSnap.data().status === 'closed') {
+        const ed = prevElecSnap.data();
+        topContext = {
+          ...(topContext || {}),
+          presidentDecree: {
+            decree: ed.decree,
+            presidentName: ed.winner?.candidateName || '대통령',
+            partyName: ed.winner?.partyName || '',
+          },
+        };
+      }
+    } catch {}
   } catch {}
 
   const initialVotes = { national: 0, youth: 0, center: 0 };

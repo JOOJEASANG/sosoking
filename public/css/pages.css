@@ -1889,6 +1889,56 @@
   text-align: center; font-weight: 600;
 }
 
+/* 정치 성향 분석 카드 */
+.stats-tendency-card {
+  background: linear-gradient(135deg,
+    color-mix(in srgb, #7c3aed 8%, var(--color-surface)),
+    var(--color-surface));
+  border: 1.5px solid color-mix(in srgb, #7c3aed 25%, var(--color-border));
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+}
+.stats-tendency-card__top {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  margin-bottom: 12px;
+}
+.stats-tendency-card__label {
+  font-size: 11px; font-weight: 700; color: #7c3aed; margin-bottom: 4px;
+}
+.stats-tendency-card__type {
+  font-size: 16px; font-weight: 900; color: var(--color-text-primary); margin-bottom: 4px;
+}
+.stats-tendency-card__desc {
+  font-size: 12px; color: var(--color-text-secondary); line-height: 1.4;
+}
+.stats-tendency-card__gauge {
+  text-align: center; flex-shrink: 0;
+}
+.stats-tendency-card__gauge-val {
+  font-size: 22px; font-weight: 900; line-height: 1;
+}
+.stats-tendency-card__gauge-lbl {
+  font-size: 10px; color: var(--color-text-muted); font-weight: 700; margin-top: 2px;
+}
+.stats-tendency-bar-row {
+  display: flex; align-items: center; gap: 8px;
+}
+.stats-tendency-bar-lbl {
+  font-size: 11px; font-weight: 700; color: var(--color-text-secondary);
+  white-space: nowrap; flex-shrink: 0;
+}
+.stats-tendency-track {
+  flex: 1; height: 6px;
+  background: var(--color-surface-2, #eee);
+  border-radius: 99px; overflow: hidden;
+}
+.stats-tendency-fill {
+  height: 100%; border-radius: 99px; transition: width .6s ease;
+}
+.stats-tendency-pct {
+  font-size: 11px; font-weight: 800; white-space: nowrap; flex-shrink: 0;
+}
+
 /* ════════════════════════
    팔로우 탭
 ════════════════════════ */

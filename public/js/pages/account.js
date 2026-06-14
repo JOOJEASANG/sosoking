@@ -620,8 +620,56 @@ async function renderStatsTab(content, uid) {
     const presidentQA = polStats.presidentQA || 0;
     const impeachSigned = !!(polStats.impeachSigned);
 
+    // 정치 성향 분석
+    const totalActivity = battleVotes + electionVotes + crisisVotes + battleComments;
+    const approvalEst = Math.min(100, Math.max(0, Math.round(
+      40 +
+      Math.min(25, maxStreak * 3) +
+      (polStats.partyId ? 8 : 0) +
+      Math.min(15, Math.floor(totalActivity / 3)) +
+      (power >= 10000 ? 7 : power >= 3000 ? 5 : power >= 500 ? 3 : 0)
+    )));
+    const approvalColor = approvalEst >= 70 ? '#16a34a' : approvalEst >= 50 ? '#2563eb' : '#dc2626';
+
+    let tendencyLabel = '원외 관망형';
+    let tendencyDesc = '아직 정치 활동이 많지 않아요. 배틀 투표나 입당으로 지지율을 높여보세요.';
+    if (polStats.partyId && totalActivity >= 20) {
+      if (battleComments >= battleVotes * 0.3) {
+        tendencyLabel = '설전형 정치인'; tendencyDesc = '토론을 즐기는 적극적인 논객이에요.';
+      } else if (electionVotes >= crisisVotes && electionVotes >= battleVotes) {
+        tendencyLabel = '선거 전략가'; tendencyDesc = '대선에 강한 관심을 가진 전략적 유권자에요.';
+      } else if (crisisVotes >= electionVotes) {
+        tendencyLabel = '위기 대응형'; tendencyDesc = '국정 위기에 민감하게 반응하는 실무형 정치인이에요.';
+      } else {
+        tendencyLabel = '배틀 전사'; tendencyDesc = '매일 정쟁에 참전하는 열혈 정치 게이머에요.';
+      }
+    } else if (polStats.partyId) {
+      tendencyLabel = '당원 초보형'; tendencyDesc = '입당은 했지만 아직 활동이 적어요. 배틀 투표로 시작해보세요.';
+    } else if (totalActivity >= 5) {
+      tendencyLabel = '무소속 활동가'; tendencyDesc = '정당 없이도 활발히 참여하는 독립파예요.';
+    }
+
     content.innerHTML = `
       <div class="stats-page">
+
+        <div class="stats-tendency-card">
+          <div class="stats-tendency-card__top">
+            <div>
+              <div class="stats-tendency-card__label">🧭 나의 정치 성향</div>
+              <div class="stats-tendency-card__type">${tendencyLabel}</div>
+              <div class="stats-tendency-card__desc">${tendencyDesc}</div>
+            </div>
+            <div class="stats-tendency-card__gauge">
+              <div class="stats-tendency-card__gauge-val" style="color:${approvalColor}">${approvalEst}%</div>
+              <div class="stats-tendency-card__gauge-lbl">지지율</div>
+            </div>
+          </div>
+          <div class="stats-tendency-bar-row">
+            <span class="stats-tendency-bar-lbl">📊 시민 지지율</span>
+            <div class="stats-tendency-track"><div class="stats-tendency-fill" style="width:${approvalEst}%;background:${approvalColor}"></div></div>
+            <span class="stats-tendency-pct" style="color:${approvalColor}">${approvalEst}%</span>
+          </div>
+        </div>
 
         <div class="stats-pol-card">
           <div class="stats-pol-card__title">⚡ 정치 활동 기록</div>

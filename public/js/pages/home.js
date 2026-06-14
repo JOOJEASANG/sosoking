@@ -470,6 +470,9 @@ function renderRankCard(status, isRulingParty = false) {
     : '';
 
   const nearNext = !rank.isMax && rank.progress >= 70;
+  const approval = status.approvalRating;
+  const approvalColor = approval >= 70 ? '#16a34a' : approval >= 50 ? '#2563eb' : '#dc2626';
+  const approvalLabel = approval >= 80 ? '높은 지지' : approval >= 60 ? '안정적' : approval >= 45 ? '보통' : '위기';
 
   return `
     <section class="home-id-card page-enter" style="--rank-c:${rank.color}">
@@ -481,6 +484,14 @@ function renderRankCard(status, isRulingParty = false) {
         </div>
         <button class="home-id-card__more" data-path="/ranking" type="button">랭킹 →</button>
       </div>
+      ${approval !== undefined ? `
+      <div class="home-id-card__approval-row">
+        <span class="home-id-card__approval-lbl">📊 시민 지지율</span>
+        <div class="home-id-card__approval-track">
+          <div class="home-id-card__approval-fill" style="width:${approval}%;background:${approvalColor}"></div>
+        </div>
+        <span class="home-id-card__approval-num" style="color:${approvalColor}">${approval}% <em>${approvalLabel}</em></span>
+      </div>` : ''}
       <div class="home-id-card__progress">
         <div class="home-id-card__bar"><div class="home-id-card__fill${nearNext ? ' home-id-card__fill--near' : ''}" style="width:${rank.progress}%"></div></div>
         ${nextLine}${nearNext ? ` <span style="color:var(--rank-c);font-size:11px;font-weight:900">▲ 승급 임박!</span>` : ''}
