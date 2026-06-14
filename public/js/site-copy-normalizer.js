@@ -11,13 +11,25 @@ function ensureFooterLinks() {
             <img src="/logo.svg" alt="" width="26" height="26">
             <span>소소킹</span>
           </a>
-          <div class="site-footer__tagline">유튜브·웃긴그림·퀴즈·토론·한줄드립을<br>짧게 모아보는 소소한 모음방</div>
+          <div class="site-footer__tagline">정당에 입당하고 대통령까지 도전하는<br>가상 정치 공화국 소소킹</div>
         </div>
         <div>
-          <div class="site-footer__col-title">바로가기</div>
+          <div class="site-footer__col-title">공화국</div>
+          <div class="site-footer__links">
+            <a href="#/republic">🏛️ 공화국 허브</a>
+            <a href="#/battle">⚔️ 정치배틀</a>
+            <a href="#/election">👑 대선</a>
+            <a href="#/congress">🏛️ 국회</a>
+            <a href="#/constitutional-court">⚖️ 헌법재판소</a>
+            <a href="#/news">📰 소소신문</a>
+          </div>
+        </div>
+        <div>
+          <div class="site-footer__col-title">커뮤니티</div>
           <div class="site-footer__links">
             <a href="#/feed">피드</a>
-            <a href="#/write?type=multi&preset=collect">올리기</a>
+            <a href="#/ranking">랭킹</a>
+            <a href="#/parties">정당 상세</a>
             <a href="#/guide">이용안내</a>
           </div>
         </div>
