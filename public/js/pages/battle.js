@@ -465,7 +465,7 @@ async function handleVote(partyId, prevData, el) {
       voteSection.querySelector('#btn-next-republic2')?.addEventListener('click', () => navigate('/republic'));
     }
 
-    showPointPopup(5, '배틀 투표');
+    showPointPopup(5);
     await checkRankUp();
 
   } catch (err) {
@@ -518,7 +518,7 @@ async function handleComment(el) {
     }
 
     if (data.pointsAwarded > 0) {
-      showPointPopup(data.pointsAwarded, '배틀 댓글');
+      showPointPopup(data.pointsAwarded);
       await checkRankUp();
     } else {
       toast.success('의견을 남겼어요!');
