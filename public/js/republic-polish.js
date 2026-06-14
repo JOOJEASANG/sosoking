@@ -36,12 +36,13 @@ function enhanceImpeachmentCopy() {
 }
 
 function addConstitutionalCourtNotice() {
+  const path = (window.location.hash.slice(1).split('?')[0] || '/');
+  if (path !== '/constitutional-court' && path !== '/congress') return;
+
   const page = document.getElementById('page-content');
   if (!page || document.getElementById('constitutional-court-notice')) return;
-  const text = page.innerText || '';
-  if (!text.includes('탄핵')) return;
 
-  const target = page.querySelector('.impeachment-card, .election-impeachment, [data-impeachment], section, .card');
+  const target = page.querySelector('section, .card');
   if (!target) return;
 
   const notice = document.createElement('div');
