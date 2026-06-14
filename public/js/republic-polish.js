@@ -154,12 +154,40 @@ function addPledgeRecommendButton() {
   actions.insertBefore(btn, actions.querySelector('#elec-pledge-submit'));
 }
 
+function addBattleImpactNotice() {
+  if (currentPath() !== '/battle') return;
+  if (document.getElementById('battle-impact-notice')) return;
+  const gameBar = document.querySelector('.battle-game-bar');
+  const topicCard = document.querySelector('.battle-topic-card');
+  const anchor = gameBar || topicCard;
+  if (!anchor) return;
+
+  const titleText = document.querySelector('.battle-vote-section__title')?.textContent || '';
+  const isEnded = titleText.includes('논쟁 승리');
+  const notice = document.createElement('div');
+  notice.id = 'battle-impact-notice';
+  notice.style.cssText = 'margin:10px 0 12px;padding:13px 14px;border-radius:18px;background:linear-gradient(135deg,rgba(255,107,74,.12),rgba(15,23,42,.04));border:1px solid rgba(255,107,74,.22);font-size:13px;line-height:1.55;color:var(--color-text-secondary)';
+  notice.innerHTML = `
+    <div style="font-weight:1000;color:var(--color-text-primary);margin-bottom:4px">${isEnded ? '🏆 오늘의 정국 영향 확정' : '⚡ 오늘 배틀은 정국에 영향을 줍니다'}</div>
+    <div>${isEnded ? '승리 정당은 오늘 여론을 장악한 것으로 기록됩니다. 공화국 현황과 대선 판세를 이어서 확인하세요.' : '배틀 투표는 단순 인기투표가 아니라 정당전·대선 분위기를 만드는 데일리 정치 행동입니다.'}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+      <button type="button" data-battle-impact-path="/republic" style="border:0;border-radius:999px;padding:8px 10px;background:var(--color-primary);color:#fff;font-weight:900;font-family:inherit;cursor:pointer">공화국 현황</button>
+      <button type="button" data-battle-impact-path="/election" style="border:1px solid rgba(100,116,139,.25);border-radius:999px;padding:8px 10px;background:rgba(255,255,255,.65);color:var(--color-text-primary);font-weight:900;font-family:inherit;cursor:pointer">대선 판세</button>
+      <button type="button" data-battle-impact-path="/parties" style="border:1px solid rgba(100,116,139,.25);border-radius:999px;padding:8px 10px;background:rgba(255,255,255,.65);color:var(--color-text-primary);font-weight:900;font-family:inherit;cursor:pointer">정당전</button>
+    </div>`;
+  notice.querySelectorAll('[data-battle-impact-path]').forEach(btn => {
+    btn.addEventListener('click', () => navigate(btn.dataset.battleImpactPath));
+  });
+  anchor.insertAdjacentElement('afterend', notice);
+}
+
 function runPolish() {
   polishGlobalCopy();
   enhanceImpeachmentCopy();
   addConstitutionalCourtNotice();
   addHomeRepublicEntry();
   addPledgeRecommendButton();
+  addBattleImpactNotice();
 }
 
 let timer = null;
