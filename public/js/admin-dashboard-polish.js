@@ -7,9 +7,32 @@ function pathNow() {
   return (window.location.hash.slice(1) || '/').split('?')[0] || '/';
 }
 
+function extensionStatusText() {
+  const status = window.__sosokingExtensionStatus;
+  if (!status) return '확장 모듈 상태 확인 중';
+  if (status.ok) return `확장 모듈 정상 로드 (${status.loaded.length}/${status.total})`;
+  return `확장 모듈 오류 ${status.failed.length}개: ${status.failed.join(', ')}`;
+}
+
+function extensionStatusColor() {
+  const status = window.__sosokingExtensionStatus;
+  if (!status) return 'var(--color-text-muted)';
+  return status.ok ? 'var(--color-success)' : 'var(--color-danger)';
+}
+
+function updateExtensionStatusLine() {
+  const line = document.getElementById('admin-extension-status-line');
+  if (!line) return;
+  line.textContent = extensionStatusText();
+  line.style.color = extensionStatusColor();
+}
+
 function addPanel() {
   if (pathNow() !== '/admin') return;
-  if (document.getElementById('admin-current-system-panel')) return;
+  if (document.getElementById('admin-current-system-panel')) {
+    updateExtensionStatusLine();
+    return;
+  }
   const content = document.getElementById('admin-content');
   if (!content || !content.firstElementChild || content.querySelector('.loading-center')) return;
   const panel = document.createElement('div');
@@ -30,8 +53,10 @@ function addPanel() {
     </div>
     <div class="card" style="padding:13px;border:1px solid rgba(100,116,139,.18);background:rgba(15,23,42,.03);font-size:13px;line-height:1.55;color:var(--color-text-secondary)">
       점검 순서: 정치배틀 생성 → 정당 정치력 → 대선 후보/투표 → 대통령 포고령 → 국회·헌재 탄핵 흐름. 일반 화면 확인은 관리자 계정이 아닌 일반 계정으로 진행하세요.
+      <div id="admin-extension-status-line" style="margin-top:8px;font-weight:900;color:${extensionStatusColor()}">${extensionStatusText()}</div>
     </div>`;
   content.insertBefore(panel, content.firstElementChild);
+  updateExtensionStatusLine();
 }
 
 function normalizeCopy() {
