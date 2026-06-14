@@ -510,7 +510,8 @@ async function handleVote(partyId, prevData, el) {
     }
 
     showPointPopup(5);
-    await checkRankUp();
+    appState.points = (appState.points || 0) + 5;
+    checkRankUp(auth.currentUser?.uid, appState.points);
 
   } catch (err) {
     btns.forEach(b => { b.disabled = false; });
@@ -540,7 +541,7 @@ async function handleComment(el) {
 
     const listEl = el.querySelector('#comment-list');
     if (listEl) {
-      const rank = getPoliticalRank(appState.power || 0);
+      const rank = getPoliticalRank(appState.points || 0);
       const partyBadge = appState.partyId ? renderPartyBadge(appState.partyId) : '';
       const reactBtns = BATTLE_REACTIONS.map(r =>
         `<button class="battle-comment-react" data-comment-id="${escHtml(data.id)}" data-reaction="${r.key}" title="${r.title}" type="button">${r.label}</button>`
@@ -563,7 +564,8 @@ async function handleComment(el) {
 
     if (data.pointsAwarded > 0) {
       showPointPopup(data.pointsAwarded);
-      await checkRankUp();
+      appState.points = (appState.points || 0) + data.pointsAwarded;
+      checkRankUp(auth.currentUser?.uid, appState.points);
     } else {
       toast.success('의견을 남겼어요!');
     }

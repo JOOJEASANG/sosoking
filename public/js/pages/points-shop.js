@@ -4,6 +4,19 @@ import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
 import { toast } from '../components/toast.js';
 import { setMeta } from '../utils/seo.js';
+import { RANKS, getPoliticalRank } from '../utils/political-rank.js';
+
+// 등급별 한 줄 의미 — 출세 트랙을 더 와닿게 (political-rank.js와 동일 순서)
+const RANK_PERKS = {
+  '무명 시민':   '이제 막 정치에 입문',
+  '동네 운동가': '동네에서 목소리를 내기 시작',
+  '청년 당원':   '정당의 일원으로 인정받음',
+  '당 간부':     '당내 영향력을 가진 핵심 인사',
+  '지역 위원장': '한 지역을 책임지는 실력자',
+  '국회의원':    '공화국을 대표하는 입법자',
+  '당 중진':     '정치판을 움직이는 베테랑',
+  '거물 정치인': '모두가 주목하는 정치 거물',
+};
 
 const EARN_ITEMS = [
   { icon: '🎁', action: '첫 가입 보너스',             pts: '+500P', id: 'signup',  cta: '받기' },
@@ -22,51 +35,27 @@ const EARN_ITEMS = [
   { icon: '🪜', action: '사다리게임 보너스 (하루 1회)', pts: 'AI 추가권 1회' },
 ];
 
-const RANK_LEVELS = [
-  { min: 0,     label: '평민',     emoji: '👤', color: '#9ca3af' },
-  { min: 100,   label: '동민',     emoji: '🏡', color: '#6b7280' },
-  { min: 300,   label: '향사',     emoji: '📜', color: '#78716c' },
-  { min: 700,   label: '군수',     emoji: '🏛️', color: '#b45309' },
-  { min: 1500,  label: '부사',     emoji: '⚔️', color: '#7c3aed' },
-  { min: 3000,  label: '사대부',   emoji: '🎓', color: '#2563eb' },
-  { min: 6000,  label: '당대표',   emoji: '👑', color: '#d97706' },
-  { min: 12000, label: '국무총리', emoji: '🏅', color: '#dc2626' },
-  { min: 25000, label: '대통령',   emoji: '🌟', color: '#FF4B2B' },
-];
-
-function getRank(pts) {
-  let rank = RANK_LEVELS[0];
-  for (const r of RANK_LEVELS) { if (pts >= r.min) rank = r; }
-  const idx = RANK_LEVELS.indexOf(rank);
-  const next = RANK_LEVELS[idx + 1] || null;
-  return { ...rank, next };
-}
-
 function esc(v) {
   return String(v || '').replace(/[&<>]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[ch]));
 }
 
 function renderRankCard(points) {
-  const rank = getRank(points);
-  const nextMin = rank.next ? rank.next.min : null;
-  const toNext = nextMin ? nextMin - points : null;
-  const pct = rank.next
-    ? Math.min(100, Math.round(((points - rank.min) / (rank.next.min - rank.min)) * 100))
-    : 100;
+  // 앱 전체와 동일한 정식 출세 등급(political-rank.js)을 사용한다
+  const rank = getPoliticalRank(points);
   return `<div class="pts-rank-card" style="--rank-color:${rank.color}">
     <div class="pts-rank-card__left">
       <div class="pts-rank-card__emoji">${rank.emoji}</div>
       <div>
-        <div class="pts-rank-card__name">${rank.label}</div>
-        <div class="pts-rank-card__sub">${rank.next ? `다음: ${rank.next.emoji} ${rank.next.label}` : '최고 등급'}</div>
+        <div class="pts-rank-card__name">${esc(rank.title)}</div>
+        <div class="pts-rank-card__sub">${rank.next ? `다음: ${rank.next.emoji} ${esc(rank.next.title)}` : '🏆 최고 등급 달성'}</div>
       </div>
     </div>
     <div class="pts-rank-card__right">
       <div class="pts-rank-card__pts">${points.toLocaleString()}<span>P</span></div>
-      ${toNext !== null ? `<div class="pts-rank-card__to-next">${toNext.toLocaleString()}P 더 모으면 승급</div>` : ''}
+      ${!rank.isMax ? `<div class="pts-rank-card__to-next">${rank.remain.toLocaleString()}P 더 모으면 승급</div>` : ''}
     </div>
     <div class="pts-rank-bar">
-      <div class="pts-rank-bar__fill" style="width:${pct}%"></div>
+      <div class="pts-rank-bar__fill" style="width:${rank.progress}%"></div>
     </div>
   </div>`;
 }
@@ -160,16 +149,23 @@ export async function renderPointsShop() {
         </div>
       </div>
 
-      <!-- 정치 랭크 안내 -->
+      <!-- 정치 랭크 안내 (출세 로드맵) -->
       <div class="pts-rank-guide">
-        <div class="pts-section-title">🏆 정치 등급 체계</div>
+        <div class="pts-section-title">🏆 출세 로드맵</div>
         <div class="pts-rank-table">
-          ${RANK_LEVELS.map(r => `
-            <div class="pts-rank-row ${balance >= r.min ? 'pts-rank-row--reached' : ''}">
+          ${RANKS.map(r => {
+            const reached = balance >= r.min;
+            const isCurrent = r.level === getPoliticalRank(balance).level;
+            return `
+            <div class="pts-rank-row ${reached ? 'pts-rank-row--reached' : ''} ${isCurrent ? 'pts-rank-row--current' : ''}">
               <span class="pts-rank-row__emoji">${r.emoji}</span>
-              <span class="pts-rank-row__label" style="color:${r.color}">${r.label}</span>
+              <span class="pts-rank-row__label" style="color:${r.color}">
+                ${esc(r.title)}${isCurrent ? ' <b>· 현재</b>' : ''}
+                <span class="pts-rank-row__perk">${esc(RANK_PERKS[r.title] || '')}</span>
+              </span>
               <span class="pts-rank-row__min">${r.min.toLocaleString()}P~</span>
-            </div>`).join('')}
+            </div>`;
+          }).join('')}
         </div>
       </div>
 
