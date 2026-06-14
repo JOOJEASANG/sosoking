@@ -1,5 +1,6 @@
 // campaign-help-polish.js
 // 홈의 유세 활동 카드가 무엇을 의미하는지 쉽게 이해되도록 설명과 진행 상태를 보강합니다.
+import './party-detail-polish.js';
 
 function currentPath() {
   const hashPath = (window.location.hash.slice(1) || '').split('?')[0];
