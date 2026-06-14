@@ -28,8 +28,17 @@ const sitemapXml = onRequest({ region: 'asia-northeast3' }, async (req, res) => 
   // 해시(#) URL은 검색엔진이 크롤링하지 않으므로 제외
   const staticUrls = [
     { loc: `${SITE_URL}/`,           priority: '1.0', changefreq: 'daily'  },
-    { loc: `${SITE_URL}/game/liar`,  priority: '0.8', changefreq: 'weekly' },
-    { loc: `${SITE_URL}/game/mafia`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${SITE_URL}/republic`,   priority: '0.9', changefreq: 'daily'  },
+    { loc: `${SITE_URL}/battle`,     priority: '0.9', changefreq: 'daily'  },
+    { loc: `${SITE_URL}/parties`,    priority: '0.8', changefreq: 'daily'  },
+    { loc: `${SITE_URL}/election`,   priority: '0.8', changefreq: 'daily'  },
+    { loc: `${SITE_URL}/ranking`,    priority: '0.7', changefreq: 'daily'  },
+    { loc: `${SITE_URL}/news`,       priority: '0.7', changefreq: 'daily'  },
+    { loc: `${SITE_URL}/guide`,      priority: '0.6', changefreq: 'monthly' },
+    { loc: `${SITE_URL}/terms`,      priority: '0.3', changefreq: 'yearly' },
+    { loc: `${SITE_URL}/privacy`,    priority: '0.3', changefreq: 'yearly' },
+    { loc: `${SITE_URL}/game/liar`,  priority: '0.5', changefreq: 'monthly' },
+    { loc: `${SITE_URL}/game/mafia`, priority: '0.5', changefreq: 'monthly' },
   ];
 
   let postUrls = [];
