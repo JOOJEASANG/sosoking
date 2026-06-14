@@ -21,6 +21,7 @@ const EXTENSION_MODULES = [
   './republic-polish.js',
   './republic-game-flow.js',
   './president-decree-helper.js',
+  './election-consistency-fix.js',
   './admin-dashboard-polish.js',
   './feedback-actions.js',
   './admin-ui-cleanup.js',
