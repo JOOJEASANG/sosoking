@@ -147,6 +147,45 @@ function addBattleImpactNotice() {
   anchor.insertAdjacentElement('afterend', notice);
 }
 
+function battleCommentSuggestions(topic) {
+  const base = [
+    '이 사안은 명분보다 실제 시민에게 돌아갈 효과를 먼저 따져봐야 합니다.',
+    '좋은 방향이지만 재원과 실행 순서가 빠지면 공약이 아니라 구호에 그칠 수 있습니다.',
+    '저는 이 정책이 공정성과 실효성 둘 다 챙길 수 있는지 지켜봐야 한다고 봅니다.',
+    '정당의 입장보다 지금 공화국에 필요한 우선순위가 무엇인지가 핵심입니다.',
+    '찬반보다 중요한 건 실행했을 때 누가 이익을 보고 누가 부담을 지는지입니다.',
+  ];
+  if ((topic || '').includes('청년')) base.unshift('청년 문제는 단기 지원과 장기 기회 확대를 같이 봐야 합니다.');
+  if ((topic || '').includes('세금') || (topic || '').includes('예산')) base.unshift('예산 정책은 인기보다 지속 가능성이 먼저 검증돼야 합니다.');
+  if ((topic || '').includes('탄핵') || (topic || '').includes('대통령')) base.unshift('권력 견제는 필요하지만 정국 혼란 비용도 함께 계산해야 합니다.');
+  return base;
+}
+
+function addBattleCommentSuggestButton() {
+  if (currentPath() !== '/battle') return;
+  if (document.getElementById('battle-comment-suggest')) return;
+  const input = document.getElementById('discuss-input');
+  const submit = document.getElementById('btn-discuss-submit');
+  const form = document.querySelector('.battle-discuss__form');
+  if (!input || !submit || !form) return;
+
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.id = 'battle-comment-suggest';
+  btn.className = 'btn btn--ghost btn--sm';
+  btn.style.cssText = 'margin-top:8px;width:100%';
+  btn.textContent = '✨ 토론 멘트 추천';
+  btn.addEventListener('click', () => {
+    const topic = document.querySelector('.battle-topic-card__title')?.textContent || '';
+    const list = battleCommentSuggestions(topic);
+    const next = list[Math.floor(Math.random() * list.length)].slice(0, 300);
+    input.value = next;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.focus();
+  });
+  form.insertBefore(btn, submit);
+}
+
 function addChecksBalancePanel() {
   const path = currentPath();
   if (path !== '/congress' && path !== '/constitutional-court') return;
@@ -224,6 +263,7 @@ export function runRepublicGameFlow() {
   addHomeRepublicEntry();
   addPledgeRecommendButton();
   addBattleImpactNotice();
+  addBattleCommentSuggestButton();
   addChecksBalancePanel();
   addDailyRoutinePanel();
 }
