@@ -32,9 +32,36 @@ function cleanupNewsExtras() {
   removeElement('.news-crisis');
 }
 
+function cleanupHomeMissionExtras() {
+  const path = currentPath();
+  if (path !== '/') return;
+
+  const hiddenLabels = ['이번 주 위기 투표', '대통령에게 질문'];
+  document.querySelectorAll('.home-mission').forEach(button => {
+    const label = button.querySelector('.home-mission__label')?.textContent?.trim() || '';
+    if (hiddenLabels.some(text => label.includes(text))) button.remove();
+  });
+
+  const missionBox = document.querySelector('.home-missions');
+  if (!missionBox) return;
+
+  const missions = [...missionBox.querySelectorAll('.home-mission')];
+  const done = missions.filter(el => el.classList.contains('home-mission--done')).length;
+  const count = missionBox.querySelector('.home-missions__count');
+  if (count) {
+    const allDone = missions.length > 0 && done === missions.length;
+    count.textContent = `${done}/${missions.length} 완료${allDone ? ' 🎉' : ''}`;
+    count.classList.toggle('home-missions__count--all', allDone);
+  }
+
+  const rewardLabel = missionBox.querySelector('.home-missions__head span[style*="font-size:10px"]');
+  if (rewardLabel) rewardLabel.textContent = '핵심 일정만 표시';
+}
+
 function cleanupPoliticalExtras() {
   cleanupElectionExtras();
   cleanupNewsExtras();
+  cleanupHomeMissionExtras();
 }
 
 let timer = null;
