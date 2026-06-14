@@ -181,6 +181,45 @@ function addBattleImpactNotice() {
   anchor.insertAdjacentElement('afterend', notice);
 }
 
+function addChecksBalancePanel() {
+  const path = currentPath();
+  if (path !== '/congress' && path !== '/constitutional-court') return;
+  if (document.getElementById('checks-balance-panel')) return;
+  const page = document.getElementById('page-content');
+  if (!page) return;
+  const anchor = page.querySelector('section, .card, .page-section, .congress-page, .court-page') || page.firstElementChild;
+  if (!anchor) return;
+
+  const isCourt = path === '/constitutional-court';
+  const panel = document.createElement('div');
+  panel.id = 'checks-balance-panel';
+  panel.style.cssText = 'margin:0 0 14px;padding:16px;border-radius:22px;background:linear-gradient(135deg,rgba(15,23,42,.96),rgba(67,56,202,.88));color:#fff;box-shadow:0 14px 32px rgba(15,23,42,.18);font-size:13px;line-height:1.55';
+  panel.innerHTML = `
+    <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap">
+      <div>
+        <div style="font-size:11px;font-weight:1000;letter-spacing:.08em;color:rgba(255,255,255,.6)">CHECKS & BALANCE</div>
+        <div style="font-size:21px;font-weight:1000;margin-top:3px">${isCourt ? '⚖️ 탄핵심판 최종 단계' : '🏛️ 권력 견제 국면'}</div>
+        <div style="color:rgba(255,255,255,.72);margin-top:4px">${isCourt ? '국회 탄핵소추가 넘어오면 헌법재판소가 최종 판단하고, 인용 시 조기 대선 국면으로 전환됩니다.' : '국회는 법안 표결과 탄핵소추로 대통령 권력을 견제합니다. 정국이 흔들리면 헌재와 조기대선까지 이어집니다.'}</div>
+      </div>
+      <button type="button" data-checks-path="/election" style="border:0;border-radius:999px;padding:9px 12px;background:var(--color-primary);color:#fff;font-weight:1000;font-family:inherit;cursor:pointer">대선 판세 →</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:14px" class="checks-balance-steps">
+      <div style="border-radius:13px;background:rgba(255,255,255,.1);padding:10px;text-align:center"><b>1</b><br>지지율 하락</div>
+      <div style="border-radius:13px;background:${isCourt ? 'rgba(255,255,255,.1)' : 'rgba(255,255,255,.2)'};padding:10px;text-align:center"><b>2</b><br>국회 소추</div>
+      <div style="border-radius:13px;background:${isCourt ? 'rgba(255,255,255,.2)' : 'rgba(255,255,255,.1)'};padding:10px;text-align:center"><b>3</b><br>헌재 심판</div>
+      <div style="border-radius:13px;background:rgba(255,255,255,.1);padding:10px;text-align:center"><b>4</b><br>조기 대선</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+      <button type="button" data-checks-path="/congress" style="border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:8px 10px;background:rgba(255,255,255,.1);color:#fff;font-weight:900;font-family:inherit;cursor:pointer">소소국회</button>
+      <button type="button" data-checks-path="/constitutional-court" style="border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:8px 10px;background:rgba(255,255,255,.1);color:#fff;font-weight:900;font-family:inherit;cursor:pointer">헌법재판소</button>
+      <button type="button" data-checks-path="/republic" style="border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:8px 10px;background:rgba(255,255,255,.1);color:#fff;font-weight:900;font-family:inherit;cursor:pointer">공화국 현황</button>
+    </div>`;
+  panel.querySelectorAll('[data-checks-path]').forEach(btn => {
+    btn.addEventListener('click', () => navigate(btn.dataset.checksPath));
+  });
+  anchor.insertAdjacentElement('beforebegin', panel);
+}
+
 function runPolish() {
   polishGlobalCopy();
   enhanceImpeachmentCopy();
@@ -188,6 +227,7 @@ function runPolish() {
   addHomeRepublicEntry();
   addPledgeRecommendButton();
   addBattleImpactNotice();
+  addChecksBalancePanel();
 }
 
 let timer = null;
