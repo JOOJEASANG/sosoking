@@ -108,11 +108,58 @@ function addHomeRepublicEntry() {
   anchor.insertAdjacentElement('afterend', btn);
 }
 
+function pledgeSuggestions(partyName) {
+  if (partyName.includes('청년') || partyName.includes('혁명')) {
+    return [
+      '청년 월세·교통·알바권리 3대 생존 패키지 추진',
+      '기득권 특혜를 줄이고 청년 정치력 보너스를 확대하겠습니다',
+      '모든 시민이 하루 한 번 정책 제안권을 갖는 직접정치제 도입',
+    ];
+  }
+  if (partyName.includes('중도') || partyName.includes('민주')) {
+    return [
+      '데이터 공개와 민생 우선 예산으로 실용 공화국을 만들겠습니다',
+      '갈등 법안은 시민투표와 국회 조정을 거쳐 합리적으로 처리',
+      '정당 간 협치 보너스를 도입해 싸움보다 결과로 평가받겠습니다',
+    ];
+  }
+  return [
+    '흔들림 없는 질서와 민생 안정 패키지를 최우선 추진하겠습니다',
+    '검증된 행정과 책임정치로 공화국 안정도를 높이겠습니다',
+    '무리한 공약보다 매일 체감되는 생활 안정 정책을 실행하겠습니다',
+  ];
+}
+
+function addPledgeRecommendButton() {
+  if (currentPath() !== '/election') return;
+  if (document.getElementById('elec-pledge-recommend')) return;
+  const input = document.getElementById('elec-pledge-input');
+  const actions = document.querySelector('.elec-pledge-actions');
+  const section = document.querySelector('.elec-pledge-section');
+  if (!input || !actions || !section) return;
+
+  const partyName = section.querySelector('.elec-pledge-section__title')?.textContent || document.body.innerText || '';
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.id = 'elec-pledge-recommend';
+  btn.className = 'btn btn--ghost btn--sm';
+  btn.textContent = '✨ 공약 추천';
+  btn.addEventListener('click', () => {
+    const list = pledgeSuggestions(partyName);
+    const next = list[Math.floor(Math.random() * list.length)].slice(0, 80);
+    input.value = next;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.focus();
+  });
+  actions.insertBefore(btn, actions.querySelector('#elec-pledge-submit'));
+}
+
 function runPolish() {
   polishGlobalCopy();
   enhanceImpeachmentCopy();
   addConstitutionalCourtNotice();
   addHomeRepublicEntry();
+  addPledgeRecommendButton();
 }
 
 let timer = null;
