@@ -20,6 +20,7 @@ const EXTENSION_MODULES = [
   './constitutional-court-route.js',
   './republic-polish.js',
   './republic-game-flow.js',
+  './president-decree-helper.js',
   './feedback-actions.js',
   './admin-ui-cleanup.js',
   './notifications-ui.js',
