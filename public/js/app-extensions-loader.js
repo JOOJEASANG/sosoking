@@ -25,6 +25,7 @@ const EXTENSION_MODULES = [
   './court-consistency-fix.js',
   './admin-dashboard-polish.js',
   './admin-feed-safety-fix.js',
+  './admin-reports-panel.js',
   './feedback-actions.js',
   './admin-ui-cleanup.js',
   './notifications-ui.js',
