@@ -93,6 +93,12 @@ export async function renderAccount() {
   const partyLoyaltyDays = _pjAt ? Math.floor((Date.now() - _pjAt.getTime()) / 86400000) : 0;
   const myPartyMeta = userData?.partyId ? PARTY_COLORS_ACCT[userData.partyId] : null;
 
+  // 빠른 배지 쇼케이스 (stats API 없이 즉시 계산 가능한 항목)
+  const quickStats = { power, partyId: userData.partyId || null, maxStreak: userData.maxStreak || streak };
+  const quickEarned = BADGE_DEFS.filter(b => ['joined','party_join','streak3','streak7','streak14','streak30','power100','power1000','power3000','power10000','power25000'].includes(b.id) && b.check(quickStats));
+  const quickEarnedCount = quickEarned.length;
+  const showcaseBadges = quickEarned.slice(-5).reverse(); // 가장 최근 획득한 5개
+
   if (userSnap?.exists()) {
     updateDoc(doc(db, 'users', user.uid), { title }).catch(() => {});
     appState.userTitle = title;
@@ -139,6 +145,18 @@ export async function renderAccount() {
           <button class="btn btn--ghost btn--sm" id="btn-logout">로그아웃</button>
         </div>
       </div>
+
+      ${showcaseBadges.length > 0 ? `
+      <div class="account-badge-showcase" role="button" data-tab-target="stats" title="업적 전체 보기">
+        <div class="account-badge-showcase__left">
+          <span class="account-badge-showcase__title">🏅 업적</span>
+          <span class="account-badge-showcase__count">${quickEarnedCount}개 달성</span>
+        </div>
+        <div class="account-badge-showcase__chips">
+          ${showcaseBadges.map(b => `<span class="account-badge-chip" title="${b.label}">${b.emoji}</span>`).join('')}
+        </div>
+        <span class="account-badge-showcase__more">전체 보기 →</span>
+      </div>` : ''}
 
       <div class="account-tabs" aria-label="내 정보 메뉴">
         ${tabButton(activeTab, 'posts', '📝', `내 글 ${postCount ? postCount : ''}`)}
@@ -289,6 +307,11 @@ export async function renderAccount() {
       if (window.location.hash !== nextHash) history.replaceState(null, '', nextHash);
       renderTab(tab);
     });
+  });
+
+  document.querySelector('.account-badge-showcase')?.addEventListener('click', () => {
+    const statsBtn = document.querySelector('.account-tab[data-tab="stats"]');
+    statsBtn?.click();
   });
 
   renderTab(activeTab);
@@ -499,25 +522,41 @@ function getPostTypeBucket(p) {
 }
 
 const BADGE_DEFS = [
-  { id: 'joined',      emoji: '🌱', label: '소소공화국 시민',  desc: '입장!',                    check: (s) => true },
-  { id: 'battle1',     emoji: '🗳️', label: '배틀 참전',        desc: '배틀 1회 투표',             check: (s) => s.battleVotes >= 1 },
-  { id: 'battle10',    emoji: '⚔️', label: '투표 전사',         desc: '배틀 10회 투표',            check: (s) => s.battleVotes >= 10 },
-  { id: 'battle30',    emoji: '🏛️', label: '배틀 고수',         desc: '배틀 30회 투표',            check: (s) => s.battleVotes >= 30 },
-  { id: 'election1',   emoji: '👑', label: '대선 투사',         desc: '대선 1회 투표',             check: (s) => s.electionVotes >= 1 },
-  { id: 'election5',   emoji: '🗳️', label: '대선 단골',         desc: '대선 5회 투표',             check: (s) => s.electionVotes >= 5 },
-  { id: 'crisis1',     emoji: '🚨', label: '위기 대응',          desc: '국정 위기 1회 투표',        check: (s) => s.crisisVotes >= 1 },
-  { id: 'crisis5',     emoji: '🆘', label: '위기 관리자',        desc: '국정 위기 5회 투표',        check: (s) => s.crisisVotes >= 5 },
-  { id: 'qa',          emoji: '🎙️', label: '대정부 질문',        desc: '대통령에게 질문',           check: (s) => s.presidentQA >= 1 },
-  { id: 'impeach',     emoji: '✍️', label: '불신임 서명',        desc: '불신임 청원 서명',          check: (s) => s.impeachSigned },
-  { id: 'streak3',     emoji: '🔥', label: '불꽃 정치인',        desc: '3일 연속 출석',             check: (s) => s.maxStreak >= 3 },
-  { id: 'streak7',     emoji: '💎', label: '강철 의지',           desc: '7일 연속 출석',             check: (s) => s.maxStreak >= 7 },
-  { id: 'streak14',    emoji: '🏅', label: '철인 정치가',         desc: '14일 연속 출석',            check: (s) => s.maxStreak >= 14 },
-  { id: 'debate1',     emoji: '💬', label: '배틀 토론가',         desc: '배틀 토론 1회 참여',        check: (s) => s.battleComments >= 1 },
-  { id: 'debate10',    emoji: '🗣️', label: '열변 정치인',         desc: '배틀 토론 10회 참여',       check: (s) => s.battleComments >= 10 },
-  { id: 'post5',       emoji: '📜', label: '논설위원',            desc: '게시물 5개 작성',           check: (s) => s.postCount >= 5 },
-  { id: 'power100',    emoji: '⚡', label: '100P 달성',           desc: '정치력 100P',               check: (s) => s.power >= 100 },
-  { id: 'power1000',   emoji: '🎖️', label: '1000P 달성',         desc: '정치력 1000P',              check: (s) => s.power >= 1000 },
-  { id: 'power3000',   emoji: '🏆', label: '국회의원 등극',       desc: '정치력 3000P',              check: (s) => s.power >= 3000 },
+  // 입문
+  { id: 'joined',      emoji: '🌱', label: '소소공화국 시민',  desc: '소소공화국에 입장',           check: (s) => true },
+  { id: 'party_join',  emoji: '🏛️', label: '입당 완료',        desc: '정당에 가입',                 check: (s) => !!s.partyId },
+  // 배틀
+  { id: 'battle1',     emoji: '🗳️', label: '배틀 참전',        desc: '배틀 1회 투표',               check: (s) => s.battleVotes >= 1 },
+  { id: 'battle10',    emoji: '⚔️', label: '투표 전사',         desc: '배틀 10회 투표',              check: (s) => s.battleVotes >= 10 },
+  { id: 'battle30',    emoji: '🔱', label: '배틀 고수',         desc: '배틀 30회 투표',              check: (s) => s.battleVotes >= 30 },
+  { id: 'battle100',   emoji: '💥', label: '배틀 레전드',       desc: '배틀 100회 투표',             check: (s) => s.battleVotes >= 100 },
+  // 토론
+  { id: 'debate1',     emoji: '💬', label: '배틀 토론가',       desc: '배틀 토론 1회 참여',          check: (s) => s.battleComments >= 1 },
+  { id: 'debate10',    emoji: '🗣️', label: '열변 정치인',       desc: '배틀 토론 10회 참여',         check: (s) => s.battleComments >= 10 },
+  { id: 'debate50',    emoji: '📢', label: '국민 대변인',       desc: '배틀 토론 50회 참여',         check: (s) => s.battleComments >= 50 },
+  // 대선
+  { id: 'election1',   emoji: '👑', label: '대선 투사',         desc: '대선 1회 투표',               check: (s) => s.electionVotes >= 1 },
+  { id: 'election5',   emoji: '🗳️', label: '대선 단골',         desc: '대선 5회 투표',               check: (s) => s.electionVotes >= 5 },
+  { id: 'election10',  emoji: '🎖️', label: '선거 박사',         desc: '대선 10회 투표',              check: (s) => s.electionVotes >= 10 },
+  // 위기·탄핵
+  { id: 'crisis1',     emoji: '🚨', label: '위기 대응',          desc: '국정 위기 1회 투표',          check: (s) => s.crisisVotes >= 1 },
+  { id: 'crisis5',     emoji: '🆘', label: '위기 관리자',        desc: '국정 위기 5회 투표',          check: (s) => s.crisisVotes >= 5 },
+  { id: 'impeach',     emoji: '✍️', label: '탄핵 서명',          desc: '탄핵 청원 서명',              check: (s) => s.impeachSigned },
+  // 소통
+  { id: 'qa',          emoji: '🎙️', label: '대정부 질문',        desc: '대통령에게 직접 질문',        check: (s) => s.presidentQA >= 1 },
+  { id: 'post5',       emoji: '📜', label: '논설위원',            desc: '게시물 5개 작성',             check: (s) => s.postCount >= 5 },
+  { id: 'post20',      emoji: '✍️', label: '정치 칼럼니스트',    desc: '게시물 20개 작성',            check: (s) => s.postCount >= 20 },
+  // 출석
+  { id: 'streak3',     emoji: '🔥', label: '불꽃 정치인',        desc: '3일 연속 출석',               check: (s) => s.maxStreak >= 3 },
+  { id: 'streak7',     emoji: '💎', label: '강철 의지',           desc: '7일 연속 출석',               check: (s) => s.maxStreak >= 7 },
+  { id: 'streak14',    emoji: '🏅', label: '철인 정치가',         desc: '14일 연속 출석',              check: (s) => s.maxStreak >= 14 },
+  { id: 'streak30',    emoji: '🌟', label: '소소공화국의 별',     desc: '30일 연속 출석',              check: (s) => s.maxStreak >= 30 },
+  // 정치력
+  { id: 'power100',    emoji: '⚡', label: '100P 달성',           desc: '정치력 100P',                 check: (s) => s.power >= 100 },
+  { id: 'power1000',   emoji: '💪', label: '1000P 달성',         desc: '정치력 1000P',                check: (s) => s.power >= 1000 },
+  { id: 'power3000',   emoji: '🏆', label: '국회의원 등극',       desc: '정치력 3000P',                check: (s) => s.power >= 3000 },
+  { id: 'power10000',  emoji: '👔', label: '거물 정치인',         desc: '정치력 10000P',               check: (s) => s.power >= 10000 },
+  { id: 'power25000',  emoji: '🌟', label: '대통령급 위상',       desc: '정치력 25000P',               check: (s) => s.power >= 25000 },
 ];
 
 function renderBadges(stats) {
@@ -623,7 +662,7 @@ async function renderStatsTab(content, uid) {
           ${signupDate ? `<div class="stats-pol-card__since">소소공화국 입성일 ${signupDate}</div>` : ''}
         </div>
 
-        ${renderBadges({ battleVotes, electionVotes, crisisVotes, battleComments, presidentQA, impeachSigned, streak, maxStreak, postCount: posts.length, power: appState.points || 0 })}
+        ${renderBadges({ battleVotes, electionVotes, crisisVotes, battleComments, presidentQA, impeachSigned, streak, maxStreak, postCount: posts.length, power: appState.points || 0, partyId: polStats.partyId || null })}
 
         <div class="stats-grid" style="margin-top:12px">
           <div class="stats-card"><div class="stats-card__num">${posts.length}</div><div class="stats-card__label">총 게시물</div></div>

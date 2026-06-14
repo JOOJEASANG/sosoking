@@ -1462,6 +1462,7 @@ exports.getUserPoliticsStats = onCall({ region: REGION, timeoutSeconds: 15 }, as
     battleComments,
     presidentQA,
     impeachSigned,
+    partyId: user.partyId || null,
     streak: Number(user.streak || 0),
     maxStreak: Number(user.maxStreak || user.streak || 0),
     signupDate: user.createdAt ? user.createdAt.toDate().toISOString().slice(0, 10) : null,

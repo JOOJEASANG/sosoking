@@ -2906,6 +2906,60 @@
 .stat-badge--earned .stat-badge__label {
   color: var(--color-text-primary);
 }
+.stats-badges-grid {
+  grid-template-columns: repeat(4, 1fr);
+}
+@media (max-width: 400px) {
+  .stats-badges-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* ── 업적 쇼케이스 (계정 헤더) ── */
+.account-badge-showcase {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: color-mix(in srgb, var(--color-primary) 6%, var(--color-surface));
+  border: 1px solid color-mix(in srgb, var(--color-primary) 18%, transparent);
+  border-radius: 14px;
+  padding: 10px 14px;
+  margin: 0 0 10px;
+  cursor: pointer;
+  transition: background .15s;
+}
+.account-badge-showcase:hover {
+  background: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface));
+}
+.account-badge-showcase__left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 60px;
+}
+.account-badge-showcase__title {
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--color-primary);
+}
+.account-badge-showcase__count {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  font-weight: 700;
+}
+.account-badge-showcase__chips {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+}
+.account-badge-chip {
+  font-size: 20px;
+  line-height: 1;
+}
+.account-badge-showcase__more {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  font-weight: 700;
+  white-space: nowrap;
+}
 
 /* ── guide 보조 클래스 ── */
 .guide-toc__title { font-size: 13px; font-weight: 900; color: var(--color-text-muted); margin-bottom: 10px; letter-spacing: .04em; }
