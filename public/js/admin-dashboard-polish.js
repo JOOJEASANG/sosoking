@@ -1,6 +1,8 @@
 // admin-dashboard-polish.js
 // 관리자 화면의 현재 서비스 구조 안내를 보강합니다.
 
+import './mobile-layout-polish.js';
+
 function pathNow() {
   return (window.location.hash.slice(1) || '/').split('?')[0] || '/';
 }
