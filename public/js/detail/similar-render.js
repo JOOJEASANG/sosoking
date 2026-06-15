@@ -5,11 +5,11 @@ import { fetchSimilarPosts } from './data.js';
 export function renderSimilarPosts(similar) {
   if (!similar?.length) return '';
   return `
-    <div class="similar-posts__title">🎮 비슷한 놀이판</div>
+    <div class="similar-posts__title">🏛️ 관련 시민광장 글</div>
     <div class="similar-posts__list">
       ${similar.map(item => `
         <div class="similar-post-card" onclick="navigate('/detail/${item.id}')">
-          <span class="similar-post-card__type">${TYPE_LABELS[item.feedType] || TYPE_LABELS[item.type] || item.type}</span>
+          <span class="similar-post-card__type">${TYPE_LABELS[item.feedType] || TYPE_LABELS[item.type] || '시민발언'}</span>
           <div class="similar-post-card__title">${escHtml(item.title || '')}</div>
           <div class="similar-post-card__meta">❤️${item.reactions?.total || 0} 💬${item.commentCount || 0}</div>
         </div>`).join('')}
