@@ -152,22 +152,30 @@ function renderCard(data) {
     </section>`;
 }
 
+let polishing = false;
 async function polishAccount() {
   if (currentPath() !== '/account') return;
   if (!auth.currentUser) return;
+  if (polishing) return; // 비동기 로딩 중 MutationObserver 재진입으로 인한 신분증 중복 삽입 방지
   const wrap = document.querySelector('.account-page-wrap');
   const profile = document.querySelector('.account-profile-card');
   if (!wrap || !profile || document.getElementById('account-republic-card')) return;
+  polishing = true;
   ensureStyle();
 
   try {
     const data = await loadStatus();
-    profile.insertAdjacentHTML('afterend', renderCard(data));
-    wrap.querySelectorAll('[data-account-go]').forEach(btn => {
+    // await 사이에 DOM이 바뀌었을 수 있으니 삽입 직전 다시 확인한다
+    const liveProfile = document.querySelector('.account-profile-card');
+    if (!liveProfile || document.getElementById('account-republic-card')) return;
+    liveProfile.insertAdjacentHTML('afterend', renderCard(data));
+    document.querySelectorAll('[data-account-go]').forEach(btn => {
       btn.addEventListener('click', () => navigate(btn.dataset.accountGo));
     });
   } catch (error) {
     console.warn('[account-republic-polish] failed', error);
+  } finally {
+    polishing = false;
   }
 }
 
