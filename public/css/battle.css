@@ -43,6 +43,12 @@
   border-color: transparent;
 }
 .battle-next-btn--primary:hover { opacity: .88; }
+.battle-next-btn--share {
+  background: linear-gradient(135deg, #f7971e, #ff512f);
+  color: #fff;
+  border-color: transparent;
+}
+.battle-next-btn--share:hover { opacity: .9; }
 .battle-next-btn:not(.battle-next-btn--primary):hover { background: var(--color-surface-alt, #ebebf3); }
 
 /* ─── 판결소 CTA 톤 다운 ─── */

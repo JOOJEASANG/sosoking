@@ -384,20 +384,11 @@ export async function renderBattle() {
       }
     });
 
-    el.querySelector('#btn-share-battle')?.addEventListener('click', async () => {
-      const winInfo = winnerPartyInfo;
-      const shareText = isEnded && winInfo
-        ? `🏛️ 소소공화국 오늘의 정당 대항전 결과\n🏆 승리: ${winInfo.emoji} ${winInfo.name}\n📰 "${topic}"\n총 ${fmtNum(totalVotes)}명 참여\nhttps://sosoking.co.kr`
-        : `⚔️ 소소공화국 정당 대항전\n"${topic}"\n${userVote && partyInfo[userVote] ? `나는 ${partyInfo[userVote].emoji} ${partyInfo[userVote].name} 지지!` : ''}\nhttps://sosoking.co.kr`;
-      try {
-        if (navigator.share) {
-          await navigator.share({ title: '소소공화국 정당 대항전', text: shareText, url: 'https://sosoking.co.kr' });
-        } else {
-          await navigator.clipboard.writeText(shareText);
-          toast.success('결과가 클립보드에 복사됐어요! 📋');
-        }
-      } catch { /* user cancelled */ }
-    });
+    el.querySelector('#btn-share-battle')?.addEventListener('click', () =>
+      shareBattle(topic, {
+        myParty: userVote && partyInfo[userVote] ? `${partyInfo[userVote].emoji} ${partyInfo[userVote].name}` : null,
+        winnerName: isEnded && winnerPartyInfo ? `${winnerPartyInfo.emoji} ${winnerPartyInfo.name}` : null,
+      }));
 
     if (!isEnded) {
       const timerEl = el.querySelector('#battle-deadline-timer');
@@ -433,6 +424,45 @@ export async function renderBattle() {
       </div>`;
     el.querySelector('#btn-retry')?.addEventListener('click', renderBattle);
   }
+}
+
+// 배틀 결과 공유 — 유입 루프. navigator.share → 카카오 SDK → 클립보드 폴백
+async function shareBattle(topic, opts = {}) {
+  const { myParty = null, winnerName = null } = opts;
+  const url = 'https://sosoking.co.kr/#/battle';
+  const title = '소소킹 · 오늘의 정치 배틀';
+  const text = winnerName
+    ? `🏆 오늘의 정당 대항전 승리: ${winnerName}\n📰 쟁점 "${topic || '정치 배틀'}"\n너의 선택은 달랐을까? 👉 ${url}`
+    : myParty
+      ? `🗳️ 오늘의 쟁점 "${topic || '정치 배틀'}"\n나는 ${myParty}에 한 표! 너의 선택은?\n👉 ${url}`
+      : `🗳️ 오늘의 쟁점 "${topic || '정치 배틀'}" — 세 정당의 격돌!\n너의 한 표를 던져봐 👉 ${url}`;
+  try {
+    if (navigator.share) {
+      await navigator.share({ title, text, url });
+      return;
+    }
+  } catch (err) {
+    if (err?.name === 'AbortError') return;
+  }
+  try {
+    const K = window.Kakao;
+    if (K?.Share?.sendDefault && K.isInitialized()) {
+      K.Share.sendDefault({
+        objectType: 'feed',
+        content: { title: topic || title, description: '소소킹 정치 배틀에 참여해보세요!', link: { mobileWebUrl: url, webUrl: url } },
+        buttons: [{ title: '배틀 참여하기', link: { mobileWebUrl: url, webUrl: url } }],
+      });
+      return;
+    }
+  } catch {}
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+  }
+  toast.success('공유 문구를 복사했어요! 친구에게 붙여넣기 하세요 📤');
 }
 
 async function handleVote(partyId, prevData, el) {
@@ -502,9 +532,14 @@ async function handleVote(partyId, prevData, el) {
       const nextActions = document.createElement('div');
       nextActions.className = 'battle-next-actions';
       nextActions.innerHTML = `
+        <button class="battle-next-btn battle-next-btn--share" id="btn-share-battle" type="button">📤 결과 공유하고 친구 부르기</button>
         <button class="battle-next-btn battle-next-btn--primary" id="btn-next-home2" type="button">📋 오늘 미션 이어서 완료하기</button>
         <button class="battle-next-btn" id="btn-next-republic2" type="button">🏛️ 공화국 현황 보기</button>`;
       voteSection.appendChild(nextActions);
+      voteSection.querySelector('#btn-share-battle')?.addEventListener('click', () =>
+        shareBattle(prevData.topic, {
+          myParty: partyInfo[partyId] ? `${partyInfo[partyId].emoji} ${partyInfo[partyId].name}` : null,
+        }));
       voteSection.querySelector('#btn-next-home2')?.addEventListener('click', () => navigate('/'));
       voteSection.querySelector('#btn-next-republic2')?.addEventListener('click', () => navigate('/republic'));
     }
