@@ -20,6 +20,14 @@
       "collectionGroup": "feeds",
       "queryScope": "COLLECTION",
       "fields": [
+        { "fieldPath": "feedType",  "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "feeds",
+      "queryScope": "COLLECTION",
+      "fields": [
         { "fieldPath": "authorId",  "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
