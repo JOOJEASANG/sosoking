@@ -5,6 +5,7 @@ import { navigate } from './router.js';
 const STORE_KEY = 'sosoking:detailPostNav';
 const FEED_CONTEXT_KEY = 'sosoking:feedNavContext';
 const MAX_NAV_POSTS = 120;
+const PLAZA_TYPES = ['citizen_speech', 'ai_judge'];
 
 function detailId() {
   const match = (window.location.hash || '').match(/^#\/detail\/([^/?#]+)/);
@@ -22,24 +23,20 @@ function readContext() {
     ? direct.ids.filter(Boolean)
     : Array.isArray(feed.ids) ? feed.ids.filter(Boolean) : [];
   const type = direct.type ?? feed.type ?? '';
-  const collectKind = direct.collectKind ?? feed.collectKind ?? '';
-  return { ...feed, ...direct, ids, type, collectKind };
+  return { ...feed, ...direct, ids, type };
 }
 
 function labelForContext(ctx = {}) {
-  if (ctx.type === 'tournament') return '대결방';
-  if (ctx.type === 'collect') return '일반방';
-  if (ctx.type === 'vote') return '토론방';
-  if (ctx.type === 'drip') return '드립방';
-  return '전체글';
+  if (ctx.type === 'ai_judge') return '헌재기록';
+  if (ctx.type === 'citizen_speech') return '시민발언';
+  return '전체여론';
 }
 
 function writeStoredContext(ctx = {}) {
   try {
     sessionStorage.setItem(STORE_KEY, JSON.stringify({
       ids: Array.isArray(ctx.ids) ? ctx.ids.filter(Boolean) : [],
-      type: ctx.type || '',
-      collectKind: ctx.collectKind || '',
+      type: PLAZA_TYPES.includes(ctx.type) ? ctx.type : '',
       label: labelForContext(ctx),
       savedAt: Date.now(),
     }));
@@ -98,27 +95,20 @@ function captureVisibleFeedList() {
   writeStoredContext({ ...feed, ids });
 }
 
-function legacyMatchesContext(post, ctx = {}) {
-  if (!ctx.type) return true;
-  if (post.feedType === ctx.type) return true;
-  if (ctx.type === 'collect') return post.type === 'multi' && (post.subtype === 'collect' || post.modules?.collect?.enabled);
-  if (ctx.type === 'vote') return post.modules?.vote?.enabled || post.subtype === 'vote';
-  if (ctx.type === 'drip') return post.modules?.drip?.enabled || post.subtype === 'drip';
-  return true;
+function isPoliticalPost(post) {
+  return PLAZA_TYPES.includes(post.feedType || post.type || post.subtype);
 }
 
 async function fallbackIds(currentId, ctx = {}) {
   try {
+    const safeType = PLAZA_TYPES.includes(ctx.type) ? ctx.type : null;
     const constraints = [orderBy('createdAt', 'desc'), limit(MAX_NAV_POSTS)];
-    if (ctx.type) constraints.unshift(where('feedType', '==', ctx.type));
+    if (safeType) constraints.unshift(where('type', '==', safeType));
+    else constraints.unshift(where('type', 'in', PLAZA_TYPES));
     const snap = await getDocs(query(collection(db, 'feeds'), ...constraints));
-    let posts = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.hidden);
-    if (ctx.type) posts = posts.filter(p => legacyMatchesContext(p, ctx));
-    if (ctx.type === 'collect' && ctx.collectKind) {
-      posts = posts.filter(p => p.modules?.collect?.kind === ctx.collectKind);
-    }
+    const posts = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.hidden && isPoliticalPost(p));
     const ids = posts.map(p => p.id);
-    if (ids.length) writeStoredContext({ ...ctx, ids });
+    if (ids.length) writeStoredContext({ ...ctx, ids, type: safeType || '' });
     return ids.includes(currentId) ? ids : [currentId, ...ids.filter(id => id !== currentId)];
   } catch {
     return [currentId];
@@ -182,7 +172,6 @@ async function ensureDetailNav() {
     return;
   }
 
-  // Re-use existing nav if it already belongs to this post
   const currentPostId = detailRoot.dataset.postId || '';
   if (existingNav && existingNav.dataset.forPostId === currentPostId) return;
   existingNav?.remove();
@@ -193,7 +182,6 @@ async function ensureDetailNav() {
   const index = ids.indexOf(currentId);
   if (index < 0) return;
 
-  // Attach to body so position:fixed works regardless of parent overflow/transform
   document.body.insertAdjacentHTML('beforeend', navHtml(index, ids.length, ctx, currentPostId));
   const navEl = document.querySelector('[data-detail-post-nav]');
   navEl.querySelector('[data-detail-nav="prev"]')?.addEventListener('click', () => goBy(ids, currentId, -1));
