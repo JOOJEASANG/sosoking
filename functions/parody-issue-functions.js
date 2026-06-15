@@ -11,6 +11,8 @@ if (!getApps().length) initializeApp();
 const db = getFirestore();
 const REGION = 'asia-northeast3';
 
+const { buildInspirationBlock } = require('./topic-pools');
+
 const BOT_AUTHOR = Object.freeze({
   authorId: 'system_parody',
   authorName: '🎭 소소공화국 시사통신',
@@ -86,12 +88,14 @@ async function loadGameContext() {
   };
 }
 
-async function generateParodyIssues(ctx) {
+async function generateParodyIssues(ctx, today) {
   const prompt = `당신은 소소공화국의 시사 풍자 작가입니다.
 소소공화국 현황:
 - 현 대통령: ${ctx.presidentName}${ctx.presidentParty ? ` (${ctx.presidentParty})` : ''}
 - 오늘의 뉴스 헤드라인: ${ctx.newsHeadline || '특이사항 없음'}
 - 오늘의 정당 배틀 주제: ${ctx.battleTopic || '미지정'}
+
+${buildInspirationBlock(today)}
 
 위 상황을 참고해 오늘의 풍자 시사 이슈 3개를 JSON으로 생성하세요.
 실제 한국 정치를 직접 언급하지 말고 소소공화국 내의 가상 상황으로만 패러디하세요.
@@ -186,7 +190,7 @@ async function runGenerateDailyParodyIssues() {
   }
 
   const ctx = await loadGameContext();
-  const issues = await generateParodyIssues(ctx);
+  const issues = await generateParodyIssues(ctx, today);
   if (!issues) throw new Error('AI 이슈 파싱 실패');
 
   await createParodyFeedPosts(issues, today);

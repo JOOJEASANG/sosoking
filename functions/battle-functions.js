@@ -8,6 +8,8 @@ const { getFirestore, FieldValue, Timestamp } = require('firebase-admin/firestor
 if (!getApps().length) initializeApp();
 const db = getFirestore();
 
+const { buildInspirationBlock } = require('./topic-pools');
+
 function kstToday() {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Seoul',
@@ -186,7 +188,7 @@ function getBattlePrevKey() {
 }
 
 // ── 정당 대항전 생성 프롬프트 ──
-function buildBattlePrompt(topContext) {
+function buildBattlePrompt(topContext, today) {
   const partyDescs = [
     { key: 'national', chars: BATTLE_CHARS.filter(c => c.partyKey === 'national') },
     { key: 'youth',    chars: BATTLE_CHARS.filter(c => c.partyKey === 'youth') },
@@ -209,7 +211,9 @@ function buildBattlePrompt(topContext) {
     ? `\n【현직 대통령 포고령】${topContext.presidentDecree.presidentName}(${topContext.presidentDecree.partyName}) 대통령이 발표한 포고령: "${topContext.presidentDecree.decree}" — 오늘 논쟁 주제는 이 포고령과 자연스럽게 연결되거나 반응하는 내용일 수 있습니다.\n`
     : '';
 
-  return `${contextLine}${topicHint}${decreeContext}소소공화국 오늘의 정당 대항전 콘텐츠를 생성하라.
+  const inspiration = `\n${buildInspirationBlock(today)}\n`;
+
+  return `${contextLine}${topicHint}${decreeContext}${inspiration}소소공화국 오늘의 정당 대항전 콘텐츠를 생성하라.
 3개 정당이 오늘의 정치 이슈에 대해 각자의 입장을 밝힌다.
 각 정당의 대표 2명이 자신의 캐릭터 스타일로 발언한다.
 
@@ -222,7 +226,7 @@ ${partyDescs}
 3. partyDebates: 각 정당의 입장
    - stance: 해당 정당의 한 줄 핵심 입장 (20자 이내)
    - statements: 2명의 발언 (각자 자신의 [말투 스타일] 유지, 2~3문장)
-4. 이슈 종류 예시: 예산 횡령 의혹, 해외출장 비리, 청문회 망언, 의원 SNS 논란, 당내 내홍 폭로, 여야 몸싸움, 탈당 선언, 뇌물 제보
+4. 이슈 종류는 위 '주제 결/영감'을 살려 가볍게: 일상 밸런스 논쟁(부먹/찍먹급)부터 가상 정책 법안(월요일 폐지법급)까지. 무거운 비리보다 사소한 것을 국가대사처럼 진지하게 다루는 코미디를 우선.
 
 반드시 JSON만 출력 (다른 텍스트 없이):
 {
@@ -501,7 +505,7 @@ exports.generateDailyBattle = onSchedule({
 
   let raw = '';
   try {
-    raw = await callAI(buildBattlePrompt(topContext), 3500);
+    raw = await callAI(buildBattlePrompt(topContext, today), 3500);
     const parsed = safeParseJson(raw);
     if (!parsed || !parsed.partyDebates || typeof parsed.partyDebates !== 'object') {
       throw new Error('invalid battle JSON: ' + raw.slice(0, 200));
