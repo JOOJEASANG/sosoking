@@ -29,6 +29,8 @@ export function showRankUpBanner(rank) {
     </div>`;
   document.body.appendChild(el);
   requestAnimationFrame(() => el.classList.add('home-rankup-banner--in'));
+  // 게임감: 승급 사운드 + 진동 + 반짝임
+  try { window.SosoGame?.celebrate(el.querySelector('.home-rankup-banner__emoji')); } catch {}
   el.querySelector('.home-rankup-banner__close').addEventListener('click', () => el.remove());
   setTimeout(() => el.classList.contains('home-rankup-banner--in') && el.remove(), 5000);
 }

@@ -38,6 +38,7 @@ const EXTENSION_MODULES = [
   './account-request-cleanup.js',
   './ui-final-interactions.js',
   './ux-improvements.js',
+  './game-feel.js',
 ];
 
 async function loadExtension(path) {

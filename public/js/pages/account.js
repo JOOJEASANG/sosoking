@@ -354,6 +354,26 @@ function renderSettingsTab(content, user, userData, nickname) {
       </div>
     </div>
 
+    <div class="card game-pref-card" style="margin-bottom:12px">
+      <div class="card__body--lg">
+        <div class="section-title" style="font-size:15px;margin-bottom:6px">🎮 게임 효과</div>
+        <div class="game-pref-row">
+          <div>
+            <div class="game-pref-row__label">효과음</div>
+            <div class="game-pref-row__sub">투표·반응 등에 가벼운 사운드</div>
+          </div>
+          <button class="game-switch" id="pref-sfx" role="switch" type="button"></button>
+        </div>
+        <div class="game-pref-row">
+          <div>
+            <div class="game-pref-row__label">진동(햅틱)</div>
+            <div class="game-pref-row__sub">탭할 때 가벼운 진동 (지원 기기)</div>
+          </div>
+          <button class="game-switch" id="pref-haptic" role="switch" type="button"></button>
+        </div>
+      </div>
+    </div>
+
     <div class="card" style="border-color:var(--color-danger);opacity:0.9">
       <div class="card__body--lg">
         <div class="section-title" style="font-size:15px;color:var(--color-danger);margin-bottom:8px">⚠️ 회원 탈퇴</div>
@@ -367,6 +387,32 @@ function renderSettingsTab(content, user, userData, nickname) {
 
   setupNicknameEdit(user, nickname);
   setupWithdrawal(user, isGoogle, isKakao, nickname);
+  setupGamePrefs();
+}
+
+function setupGamePrefs() {
+  const g = window.SosoGame;
+  const bind = (id, isOn, setOn, demo) => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    const sync = () => btn.setAttribute('aria-checked', isOn() ? 'true' : 'false');
+    sync();
+    btn.addEventListener('click', () => {
+      const next = btn.getAttribute('aria-checked') !== 'true';
+      setOn(next);
+      sync();
+      if (next && demo) demo();
+    });
+  };
+  // SosoGame이 아직 로드 전이면 localStorage로 폴백
+  const sfxOn = () => g ? g.sfxEnabled() : localStorage.getItem('soso-sfx') !== 'off';
+  const hapOn = () => g ? g.hapticEnabled() : localStorage.getItem('soso-haptic') !== 'off';
+  bind('pref-sfx', sfxOn,
+    (on) => g ? g.setSfx(on) : localStorage.setItem('soso-sfx', on ? 'on' : 'off'),
+    () => g?.playSfx('success'));
+  bind('pref-haptic', hapOn,
+    (on) => g ? g.setHaptic(on) : localStorage.setItem('soso-haptic', on ? 'on' : 'off'),
+    () => g?.haptic([10, 30, 10]));
 }
 
 function setupNicknameEdit(user, currentNickname) {
