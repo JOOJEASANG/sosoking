@@ -14,7 +14,7 @@ function cleanText(value, max) {
 
 function splitTags(value) {
   return String(value || '')
-    .split(/[#,\s]+/)
+    .split(/[#,.\s]+/)
     .map(v => cleanText(v, 18))
     .filter(Boolean)
     .slice(0, 5);
@@ -238,8 +238,6 @@ function bindWriteEvents() {
         authorId: user.uid,
         authorName: appState.nickname || user.displayName || user.email?.split('@')[0] || '시민',
         partyId: appState.partyId || '',
-        isUserCreated: true,
-        hidden: false,
         commentCount: 0,
         viewCount: 0,
         reactions: { total: 0 },
