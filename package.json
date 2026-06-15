@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "check": "node --check functions/*.js",
+    "check": "node --check functions/*.js && find public/js -name '*.js' -print0 | xargs -0 -n1 node --check",
     "build": "npm run check && node -e \"console.log('Static Firebase Hosting app: no build step')\"",
     "deploy": "npx firebase-tools deploy",
     "deploy:hosting": "npx firebase-tools deploy --only hosting",
