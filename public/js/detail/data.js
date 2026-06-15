@@ -22,13 +22,14 @@ export async function fetchAdjacentPosts(postId, createdAt) {
         collection(db, 'feeds'),
         where('type', 'in', PLAZA_TYPES),
         where('createdAt', '>', createdAt),
-        orderBy('createdAt', 'asc'),
+        orderBy('createdAt', 'desc'),
         limit(5),
       )),
     ]);
     const toPost = d => ({ id: d.id, ...d.data() });
     const prev = prevSnap.docs.map(toPost).find(p => !p.hidden && p.id !== postId && isPoliticalFeedPost(p)) || null;
-    const next = nextSnap.docs.map(toPost).find(p => !p.hidden && p.id !== postId && isPoliticalFeedPost(p)) || null;
+    const nextCandidates = nextSnap.docs.map(toPost).filter(p => !p.hidden && p.id !== postId && isPoliticalFeedPost(p));
+    const next = nextCandidates.length ? nextCandidates[nextCandidates.length - 1] : null;
     return { prev, next };
   } catch {
     return { prev: null, next: null };
