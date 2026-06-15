@@ -1,5 +1,4 @@
 import { escHtml } from '../utils/helpers.js';
-import { renderLegacyVoteOptions, renderLegacyBattleVs } from './vote-actions.js';
 
 function escAttr(value) {
   return escHtml(value).replace(/`/g, '&#96;');
@@ -39,12 +38,12 @@ export function renderImageSection(images) {
     </div>`;
 }
 
-const AI_KING_AGAIN = {
+const POLITICAL_RESULT_ACTIONS = {
   ai_judge: { path: '/constitutional-court', label: '🏛️ 헌법재판소 보기' },
 };
 
-function renderAiAgainBtn(type) {
-  const info = AI_KING_AGAIN[type];
+function renderPoliticalResultActions(type) {
+  const info = POLITICAL_RESULT_ACTIONS[type];
   if (!info) return '';
   return `
     <div class="ai-result-actions">
@@ -57,20 +56,10 @@ function renderAiAgainBtn(type) {
 }
 
 export function renderTypeBody(post) {
-  switch (post.type) {
-    case 'ai_judge':
-      return renderAiJudgeBody(post) + renderAiAgainBtn('ai_judge');
-    case 'balance':
-    case 'vote':
-      if (!post.options?.length) return '';
-      return `<div id="vote-area" class="quiz-options" style="margin-top:16px">${renderLegacyVoteOptions(post)}</div>`;
-
-    case 'battle':
-      return renderLegacyBattleVs(post);
-
-    default:
-      return '';
+  if (post.type === 'ai_judge' || post.feedType === 'ai_judge') {
+    return renderAiJudgeBody(post) + renderPoliticalResultActions('ai_judge');
   }
+  return '';
 }
 
 function renderAiJudgeBody(post) {
@@ -90,4 +79,3 @@ function renderAiJudgeBody(post) {
       </div>
     </div>`;
 }
-
