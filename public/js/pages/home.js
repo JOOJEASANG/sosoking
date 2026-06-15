@@ -524,6 +524,32 @@ function renderLeaderCard(status) {
 }
 
 // 오늘의 정치 일정 (일일 미션 체크리스트)
+// 어제의 결과 리워드 — 재방문 시 내가 투표한 배틀의 승패를 보여주고 오늘로 연결.
+function renderYesterdayResult(yr) {
+  if (!yr || !yr.myParty || !yr.winner) return '';
+  try {
+    const seenKey = `battleResultSeen_${yr.date}`;
+    if (localStorage.getItem(seenKey)) return '';
+    localStorage.setItem(seenKey, '1'); // 하루 한 번만 노출
+  } catch {}
+  const won = !!yr.won;
+  const mp = yr.myParty;
+  const wn = yr.winner;
+  const title = won ? '🎉 어제의 승전보!' : '🥊 어제는 아쉬웠어요';
+  const body = won
+    ? `당신이 민 <b>${escHtml(mp.emoji)} ${escHtml(mp.name)}</b>이(가) 어제 논쟁에서 <b>승리</b>했어요!`
+    : `<b>${escHtml(mp.emoji)} ${escHtml(mp.name)}</b>이(가) ${escHtml(wn.emoji)} ${escHtml(wn.name)}에게 밀렸어요.`;
+  const cta = won ? '오늘도 연승 이어가기' : '오늘 배틀에서 설욕하기';
+  return `
+    <section class="home-yresult home-yresult--${won ? 'win' : 'lose'}">
+      <button class="home-yresult__close" aria-label="닫기" type="button">✕</button>
+      <div class="home-yresult__title">${title}</div>
+      <div class="home-yresult__body">${body}</div>
+      ${yr.topic ? `<div class="home-yresult__topic">📰 ${escHtml(yr.topic)}</div>` : ''}
+      <button class="home-yresult__cta" data-path="/battle" type="button">⚔️ ${cta} →</button>
+    </section>`;
+}
+
 // 오늘의 국정 브리핑 — 홈 최상단. "오늘 왜 들어왔나"에 즉답하는 일일 앵커.
 function renderDailyBriefing(status, battleData, presidentData, newsData) {
   const kstHour = new Date(Date.now() + 9 * 3600000).getUTCHours();
@@ -804,6 +830,7 @@ export async function renderHome() {
         <div class="home-dash page-enter home-dash--v2">
           <div id="home-notif-slot"></div>
           ${newPrezHTML}
+          ${renderYesterdayResult(battleData?.yesterdayResult)}
           ${renderDailyBriefing(myStatus, battleData, presidentData, newsData)}
           ${renderRankCard(myStatus, isRulingParty)}
           <div id="home-rs-slot"></div>
@@ -826,6 +853,10 @@ export async function renderHome() {
 
     el.querySelector('.home-new-prez-announce__close')?.addEventListener('click', () => {
       el.querySelector('#home-new-prez-announce')?.remove();
+    });
+
+    el.querySelector('.home-yresult__close')?.addEventListener('click', () => {
+      el.querySelector('.home-yresult')?.remove();
     });
 
     el.querySelector('#hbtn-more-hot')?.addEventListener('click', () => navigate('/feed'));

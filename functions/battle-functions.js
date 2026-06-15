@@ -666,9 +666,27 @@ exports.getBattleStatus = onCall({
   ];
   if (request.auth?.uid) {
     fetches.push(db.doc(`battleVotes/${request.auth.uid}_${today}`).get());
+    fetches.push(db.doc(`battleVotes/${request.auth.uid}_${yesterday}`).get());
   }
 
-  const [todaySnap, yestSnap, voteSnap] = await Promise.all(fetches);
+  const [todaySnap, yestSnap, voteSnap, yestVoteSnap] = await Promise.all(fetches);
+
+  // 어제 내가 투표한 배틀의 결과 — 재방문 보상(승리 자축/설욕 동기)
+  let yesterdayResult = null;
+  if (yestSnap && yestSnap.exists && yestSnap.data().winningParty
+      && yestVoteSnap && yestVoteSnap.exists) {
+    const myPartyId = yestVoteSnap.data().partyId;
+    const winnerPartyId = yestSnap.data().winningParty;
+    if (PARTY_INFO[myPartyId] && PARTY_INFO[winnerPartyId]) {
+      yesterdayResult = {
+        date: yesterday,
+        topic: yestSnap.data().topic || '',
+        won: myPartyId === winnerPartyId,
+        myParty: { partyId: myPartyId, ...PARTY_INFO[myPartyId] },
+        winner: { partyId: winnerPartyId, ...PARTY_INFO[winnerPartyId] },
+      };
+    }
+  }
 
   // 현재 집권 정당 (어제 논쟁 승리 정당)
   let currentKing = null;
@@ -692,6 +710,7 @@ exports.getBattleStatus = onCall({
       exists: false,
       today,
       currentKing,
+      yesterdayResult,
       partyInfo: PARTY_INFO,
       chars: BATTLE_CHARS.map(({ id, name, emoji, title, color, party, partyKey }) => ({ id, name, emoji, title, color, party, partyKey })),
     };
@@ -740,6 +759,7 @@ exports.getBattleStatus = onCall({
     aftermath: battle.aftermath || null,
     userVote,
     currentKing,
+    yesterdayResult,
     recentComments,
     partyInfo: PARTY_INFO,
     chars: BATTLE_CHARS.map(({ id, name, emoji, title, color, party, partyKey }) => ({ id, name, emoji, title, color, party, partyKey })),

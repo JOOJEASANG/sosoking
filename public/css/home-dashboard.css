@@ -1421,3 +1421,45 @@
   margin-top: 10px;
   font-size: 11.5px; font-weight: 700; opacity: .9; text-align: right;
 }
+
+/* ─── 어제의 결과 리워드 카드 ─── */
+.home-yresult {
+  position: relative;
+  border-radius: 18px;
+  padding: 16px 16px 14px;
+  margin-bottom: 16px;
+  color: #fff;
+  box-shadow: 0 12px 28px rgba(0,0,0,.22);
+  animation: yresultPop .45s cubic-bezier(.18,.89,.32,1.28) both;
+}
+@keyframes yresultPop {
+  0% { opacity: 0; transform: scale(.85) translateY(8px); }
+  60% { transform: scale(1.02); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+.home-yresult--win  { background: linear-gradient(135deg, #f7971e 0%, #ffd200 100%); color: #5b3a00; }
+.home-yresult--lose { background: linear-gradient(135deg, #434343 0%, #1f2937 100%); }
+.home-yresult__close {
+  position: absolute; top: 10px; right: 10px;
+  width: 26px; height: 26px; border-radius: 50%;
+  border: none; cursor: pointer;
+  background: rgba(0,0,0,.14); color: inherit;
+  font-size: 13px; font-weight: 900; line-height: 1;
+}
+.home-yresult__title { font-size: 17px; font-weight: 900; letter-spacing: -.3px; padding-right: 28px; }
+.home-yresult__body { margin-top: 6px; font-size: 13.5px; font-weight: 700; line-height: 1.45; }
+.home-yresult__topic {
+  margin-top: 8px; font-size: 12px; font-weight: 700;
+  opacity: .82;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.home-yresult__cta {
+  width: 100%; margin-top: 12px;
+  padding: 11px 14px; border-radius: 12px;
+  border: none; cursor: pointer;
+  font-size: 14px; font-weight: 900;
+  background: rgba(255,255,255,.95); color: #1f2937;
+  box-shadow: 0 4px 12px rgba(0,0,0,.15);
+  transition: transform .12s ease;
+}
+.home-yresult__cta:active { transform: scale(.98); }
