@@ -15,6 +15,7 @@ on:
       - '.firebaserc'
       - 'firestore.rules'
       - 'firestore.indexes.json'
+      - 'package.json'
       - '.github/workflows/firebase-deploy.yml'
       - '.github/deploy-trigger.txt'
   workflow_dispatch:
@@ -51,6 +52,9 @@ jobs:
         run: npm ci
         working-directory: functions
 
+      - name: Static check
+        run: npm run check
+
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
 
@@ -64,8 +68,11 @@ jobs:
           echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/firebase-service-account.json" >> "$GITHUB_ENV"
 
       - name: Register GEMINI_API_KEY in Secret Manager
-        if: ${{ env.GEMINI_API_KEY != '' }}
         run: |
+          if [ -z "$GEMINI_API_KEY" ]; then
+            echo "GEMINI_API_KEY secret 없음 — 건너뜀"
+            exit 0
+          fi
           printf '%s' "$GEMINI_API_KEY" | \
             firebase functions:secrets:set GEMINI_API_KEY \
               --data-file=- --project "$FIREBASE_PROJECT_ID" || \
@@ -74,8 +81,11 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
       - name: Register ANTHROPIC_API_KEY in Secret Manager
-        if: ${{ env.ANTHROPIC_API_KEY != '' }}
         run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "ANTHROPIC_API_KEY secret 없음 — 건너뜀"
+            exit 0
+          fi
           printf '%s' "$ANTHROPIC_API_KEY" | \
             firebase functions:secrets:set ANTHROPIC_API_KEY \
               --data-file=- --project "$FIREBASE_PROJECT_ID" || \
@@ -86,8 +96,8 @@ jobs:
       - name: Deploy Firestore rules & indexes
         run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only firestore:rules,firestore:indexes
 
-      - name: Deploy Hosting
-        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only hosting
-
       - name: Deploy Functions
         run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only functions --force
+
+      - name: Deploy Hosting
+        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only hosting
