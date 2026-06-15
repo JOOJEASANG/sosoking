@@ -23,26 +23,12 @@ async function registerDetailView(id) {
   }
 }
 
-function shouldHideMainDesc(post) {
-  if (post.type === 'cbattle') return true;
-  return post.type === 'multi' && (
-    post.modules?.drip?.enabled === true ||
-    post.modules?.vote?.enabled === true
-  );
+function displayDetailTitle(post) {
+  return post.title || post.situation || '';
 }
 
-function displayDetailTitle(post) {
-  if (post.type === 'multi' && post.modules?.drip?.enabled) {
-    const title = String(post.title || '').trim();
-    const topic = String(post.modules.drip.prompt || post.desc || '').trim();
-    return ['오늘의 드립 주제', '오늘의 한줄', '드립방 AI 글'].includes(title) ? (topic || title) : title || topic;
-  }
-  if (post.type === 'multi' && post.modules?.vote?.enabled) {
-    const title = String(post.title || '').trim();
-    const topic = String(post.modules.vote.question || post.desc || '').trim();
-    return title || topic || '토론 주제';
-  }
-  return post.title || '';
+function isPoliticalDetail(post) {
+  return ['citizen_speech', 'ai_judge'].includes(post.feedType || post.type || post.subtype);
 }
 
 export async function renderDetail(id) {
@@ -57,7 +43,12 @@ export async function renderDetail(id) {
     }
 
     const post = { id: snap.id, ...snap.data() };
-    setMeta(displayDetailTitle(post), post.desc, post.images?.[0], `https://sosoking.co.kr/p/${id}`);
+    if (!isPoliticalDetail(post)) {
+      el.innerHTML = `<div class="empty-state"><div class="empty-state__icon">🏛️</div><div class="empty-state__title">정치게임 콘텐츠가 아니에요</div><div class="empty-state__desc">현재 소소킹은 정치게임 콘텐츠만 표시합니다.</div></div>`;
+      return;
+    }
+
+    setMeta(displayDetailTitle(post), post.desc || post.situation, post.images?.[0], `https://sosoking.co.kr/p/${id}`);
 
     const uid = auth.currentUser?.uid;
     const [comments, isScrapped, viewResult] = await Promise.all([
@@ -76,13 +67,12 @@ export async function renderDetail(id) {
 
 function resolvePostTypeLabel(post) {
   if (post.feedType && TYPE_LABELS[post.feedType]) return TYPE_LABELS[post.feedType];
-  if (post.modules?.tournament?.enabled) return '대결방';
-  return TYPE_LABELS[post.type] || post.type;
+  return TYPE_LABELS[post.type] || '시민발언';
 }
 
 function resolvePostCatClass(post) {
-  if (post.feedType === 'tournament' || post.modules?.tournament?.enabled) return 'multi';
-  return CAT_CLASS[post.cat] || CAT_CLASS[post.type] || 'malhe';
+  if (post.feedType === 'ai_judge' || post.type === 'ai_judge') return 'golra';
+  return CAT_CLASS[post.cat] || CAT_CLASS[post.type] || 'multi';
 }
 
 function renderDetailPage(el, post, comments, isScrapped = false) {
@@ -90,7 +80,6 @@ function renderDetailPage(el, post, comments, isScrapped = false) {
   const catClass = resolvePostCatClass(post);
   const timeStr = formatTime(post.createdAt?.toDate?.() || post.createdAt);
   const detailTitle = displayDetailTitle(post);
-  const hideMainDesc = shouldHideMainDesc(post);
 
   el.innerHTML = `
     <div data-detail-root data-post-id="${escHtml(post.id)}" style="max-width:720px;margin:0 auto">
@@ -115,8 +104,8 @@ function renderDetailPage(el, post, comments, isScrapped = false) {
 
         ${post.images?.length ? renderImageSection(post.images) : ''}
 
-        <div class="detail-body ${hideMainDesc ? 'detail-body--module-only' : ''}">
-          ${post.desc && !hideMainDesc ? `<p>${escHtml(post.desc).replace(/\n/g, '<br>')}</p>` : ''}
+        <div class="detail-body">
+          ${post.desc ? `<p>${escHtml(post.desc).replace(/\n/g, '<br>')}</p>` : ''}
           ${renderTypeBody(post)}
         </div>
 
