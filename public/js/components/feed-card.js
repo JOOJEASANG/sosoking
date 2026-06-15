@@ -3,14 +3,8 @@ import { escHtml, formatTime } from '../utils/helpers.js';
 import { renderPartyBadge, renderPresidentCrown } from '../utils/party-badge.js';
 
 const TYPE_META = {
-  citizen_speech:{ cat: 'multi',  catLabel: '시민발언', icon: '🗣️', label: '시민발언' },
-  tournament:   { cat: 'multi',  catLabel: '끝판왕', icon: '🏆', label: '끝판왕' },
-  collect:      { cat: 'multi',  catLabel: '모음방', icon: '📌', label: '모음방' },
-  vote:         { cat: 'multi',  catLabel: '토론방', icon: '🗳️', label: '토론방' },
-  drip:         { cat: 'multi',  catLabel: '드립방', icon: '🤣', label: '드립방' },
-  quiz:         { cat: 'multi',  catLabel: '퀴즈방', icon: '🧠', label: '퀴즈방' },
-  multi:        { cat: 'multi',  catLabel: '모음방', icon: '📌', label: '모음방' },
-  ai_judge:     { cat: 'golra',  catLabel: '헌재기록', icon: '⚖️', label: '헌재기록' },
+  citizen_speech: { cat: 'multi',  catLabel: '시민발언', icon: '🗣️', label: '시민발언' },
+  ai_judge:       { cat: 'golra',  catLabel: '헌재기록', icon: '⚖️', label: '헌재기록' },
 };
 
 function escAttr(value) {
@@ -49,44 +43,19 @@ function safeTag(value) {
   return escHtml(String(value || '').replace(/^#/, '').trim().slice(0, 24));
 }
 
-function getMultiSubtype(post) {
-  if (post.feedType === 'citizen_speech' || post.type === 'citizen_speech' || post.subtype === 'citizen_speech') return 'citizen_speech';
-  if (post.modules?.tournament?.enabled || post.subtype === 'tournament') return 'tournament';
-  if (post.subtype && TYPE_META[post.subtype]) return post.subtype;
-  if (post.feedType && TYPE_META[post.feedType]) return post.feedType;
-  if (post.modules?.vote?.enabled) return 'vote';
-  if (post.modules?.drip?.enabled) return 'drip';
-  if (post.modules?.quiz?.enabled) return 'quiz';
-  if (post.modules?.collect?.enabled) return 'collect';
-  return 'collect';
-}
-
 function getTypeMeta(post) {
-  if (post.feedType === 'citizen_speech' || post.type === 'citizen_speech' || post.subtype === 'citizen_speech') return TYPE_META.citizen_speech;
-  if (post.type === 'multi') {
-    const subtype = getMultiSubtype(post);
-    return TYPE_META[subtype] || TYPE_META.collect;
-  }
-  return TYPE_META[post.type] || { cat: 'multi', catLabel: '', icon: '📝', label: '일반' };
+  if (post.feedType === 'ai_judge' || post.type === 'ai_judge') return TYPE_META.ai_judge;
+  return TYPE_META.citizen_speech;
 }
 
 function displayTitle(post) {
   const title = plainText(post.title || '').trim();
-  const desc = plainText(post.desc || '').trim();
+  const desc = plainText(post.desc || post.situation || '').trim();
   return title || desc || '제목 없음';
 }
 
 function displayDesc(post) {
-  return plainText(post.desc || '').slice(0, 220);
-}
-
-function renderModuleChips(post) {
-  if (post.type !== 'multi' || !post.modules) return '';
-  const labels = [];
-  if (post.anonymous || post.modules.anonymous?.enabled) labels.push('익명');
-  if (post.modules.tournament?.enabled) labels.push('토너먼트');
-  if (!labels.length) return '';
-  return `<div class="feed-card__multi-chips">${labels.map(label => `<span>${escHtml(label)}</span>`).join('')}</div>`;
+  return plainText(post.desc || post.situation || '').slice(0, 220);
 }
 
 export function renderFeedCard(post) {
@@ -111,12 +80,10 @@ export function renderFeedCard(post) {
             <span class="feed-card__type-badge feed-card__type-badge--${meta.cat}">
               ${meta.icon} ${escHtml(meta.label)}
             </span>
-            ${post.isUserCreated ? `<span class="tag" style="background:var(--color-primary-bg);color:var(--color-primary);font-size:10px">👤 유저 주제</span>` : ''}
             ${firstTag ? `<span class="tag">#${firstTag}</span>` : ''}
           </div>
           <h3 class="feed-card__title line-clamp-2">${escHtml(title)}</h3>
           ${desc ? `<p class="feed-card__desc line-clamp-2">${escHtml(desc)}</p>` : ''}
-          ${renderModuleChips(post)}
           <div class="feed-card__meta">
             <span>${renderPresidentCrown(post.authorId)}${renderPartyBadge(post.partyId)}${post.rankEmoji ? `<span class="comment-rank-emoji" title="정치 등급">${escHtml(post.rankEmoji)}</span>` : ''}${escHtml(post.authorName || '익명')}</span>
             <span class="feed-card__meta-dot"></span>
