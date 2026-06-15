@@ -1,8 +1,11 @@
-import { auth, db } from '../firebase.js';
+import { auth, db, functions } from '../firebase.js';
 import { navigate } from '../router.js';
 import { toast } from '../components/toast.js';
-import { doc, updateDoc, deleteDoc, increment, deleteField } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { doc, updateDoc, deleteDoc, increment } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { signInAnonymously } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
+
+const reactToComment = httpsCallable(functions, 'reactToComment');
 
 export async function ensureCommentActor() {
   if (auth.currentUser) return true;
@@ -44,38 +47,15 @@ export function adjustReactCount(btn, delta) {
   if (countEl) {
     const next = Math.max(0, parseInt(countEl.textContent || '0', 10) + delta);
     if (next === 0) countEl.remove();
-    else countEl.textContent = next;
+    else countEl.textContent = String(next);
   } else if (delta > 0) {
     btn.insertAdjacentHTML('beforeend', ` <b>1</b>`);
   }
 }
 
-export async function toggleCommentReaction(postId, commentId, key, currentKey) {
-  const uid = auth.currentUser.uid;
-  const ref = doc(db, 'feeds', postId, 'comments', commentId);
-
-  if (currentKey === key) {
-    await updateDoc(ref, {
-      [`reactions.${key}`]: increment(-1),
-      [`reactedWith.${uid}`]: deleteField(),
-    });
-    return 'removed';
-  }
-
-  if (currentKey) {
-    await updateDoc(ref, {
-      [`reactions.${currentKey}`]: increment(-1),
-      [`reactions.${key}`]: increment(1),
-      [`reactedWith.${uid}`]: key,
-    });
-    return 'switched';
-  }
-
-  await updateDoc(ref, {
-    [`reactions.${key}`]: increment(1),
-    [`reactedWith.${uid}`]: key,
-  });
-  return 'added';
+export async function toggleCommentReaction(postId, commentId, key) {
+  const result = await reactToComment({ postId, commentId, reaction: key });
+  return result.data || { ok: true };
 }
 
 export function bindCommentLikes(postId, root = document) {
@@ -93,7 +73,6 @@ export function bindCommentLikes(postId, root = document) {
       const activeBtn = parent?.querySelector('.comment-react-btn.active');
       const currentKey = activeBtn?.dataset.react ?? null;
 
-      // 낙관적 업데이트 전 현재 상태 스냅샷 저장
       const prevActiveKey = currentKey;
       const prevActiveBtnEl = activeBtn;
 
@@ -110,9 +89,8 @@ export function bindCommentLikes(postId, root = document) {
           btn.classList.add('active');
           adjustReactCount(btn, 1);
         }
-        await toggleCommentReaction(postId, commentId, key, currentKey);
+        await toggleCommentReaction(postId, commentId, key);
       } catch {
-        // 실패 시 낙관적 업데이트 롤백
         if (prevActiveKey === key) {
           btn.classList.add('active');
           adjustReactCount(btn, 1);
