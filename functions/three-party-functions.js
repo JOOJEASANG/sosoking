@@ -5,6 +5,7 @@ const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 
 const db = getFirestore();
 const REGION = 'asia-northeast3';
+const LEAVE_PARTY_PENALTY = 30;
 
 const PARTIES = Object.freeze([
   {
@@ -43,58 +44,16 @@ const PARTY_IDS = PARTIES.map(p => p.id);
 
 const PARTY_NPCS = Object.freeze({
   national: [
-    {
-      name: '강도윤',
-      emoji: '🛡️',
-      power: 2600,
-      role: '국민질서당 대표',
-      profile: '군사독재 이후 혼란을 경계하며 안보와 국가 운영의 연속성을 강조하는 보수파 정치인',
-      flaw: '위기 대응에는 강하지만 권위주의 논란에 자주 휘말린다.',
-    },
-    {
-      name: '서문하',
-      emoji: '📈',
-      power: 1700,
-      role: '경제·언론 전략가',
-      profile: '성장, 시장, 언론 프레임을 다루는 냉정한 전략가',
-      flaw: '정책의 인간적 비용을 과소평가한다는 비판을 받는다.',
-    },
+    { name: '강도윤', emoji: '🛡️', power: 2600, role: '국민질서당 대표', profile: '군사독재 이후 혼란을 경계하며 안보와 국가 운영의 연속성을 강조하는 보수파 정치인', flaw: '위기 대응에는 강하지만 권위주의 논란에 자주 휘말린다.' },
+    { name: '서문하', emoji: '📈', power: 1700, role: '경제·언론 전략가', profile: '성장, 시장, 언론 프레임을 다루는 냉정한 전략가', flaw: '정책의 인간적 비용을 과소평가한다는 비판을 받는다.' },
   ],
   youth: [
-    {
-      name: '한서윤',
-      emoji: '🕯️',
-      power: 2500,
-      role: '시민개혁당 대표',
-      profile: '광장과 시민권을 정치의 중심에 두는 개혁파 정치인',
-      flaw: '개혁 속도가 빠를수록 재정·갈등 관리 논란이 커진다.',
-    },
-    {
-      name: '백진우',
-      emoji: '📜',
-      power: 1650,
-      role: '제도개혁 참모',
-      profile: '권력기관, 노동, 재벌 개혁 이슈를 파고드는 원칙주의자',
-      flaw: '타협을 배신으로 보는 경향 때문에 연정에 약하다.',
-    },
+    { name: '한서윤', emoji: '🕯️', power: 2500, role: '시민개혁당 대표', profile: '광장과 시민권을 정치의 중심에 두는 개혁파 정치인', flaw: '개혁 속도가 빠를수록 재정·갈등 관리 논란이 커진다.' },
+    { name: '백진우', emoji: '📜', power: 1650, role: '제도개혁 참모', profile: '권력기관, 노동, 재벌 개혁 이슈를 파고드는 원칙주의자', flaw: '타협을 배신으로 보는 경향 때문에 연정에 약하다.' },
   ],
   center: [
-    {
-      name: '윤태건',
-      emoji: '⚖️',
-      power: 2400,
-      role: '국민통합당 대표',
-      profile: '진영 갈등보다 협치와 제도 안정성을 앞세우는 중도파 정치인',
-      flaw: '결정적 순간마다 우유부단하다는 공격을 받는다.',
-    },
-    {
-      name: '오하린',
-      emoji: '🧭',
-      power: 1600,
-      role: '여론·세대 분석가',
-      profile: '세대, 지역, 온라인 여론을 분석해 판세를 읽는 현실주의자',
-      flaw: '정치가 숫자로만 움직인다고 보는 냉소적 태도가 약점이다.',
-    },
+    { name: '윤태건', emoji: '⚖️', power: 2400, role: '국민통합당 대표', profile: '진영 갈등보다 협치와 제도 안정성을 앞세우는 중도파 정치인', flaw: '결정적 순간마다 우유부단하다는 공격을 받는다.' },
+    { name: '오하린', emoji: '🧭', power: 1600, role: '여론·세대 분석가', profile: '세대, 지역, 온라인 여론을 분석해 판세를 읽는 현실주의자', flaw: '정치가 숫자로만 움직인다고 보는 냉소적 태도가 약점이다.' },
   ],
 });
 
@@ -142,9 +101,7 @@ function partyRef(id) { return db.doc(`parties/${id}`); }
 function memberRef(partyId, uid) { return db.doc(`parties/${partyId}/members/${uid}`); }
 
 function kstToday() {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit',
-  }).format(new Date());
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
 }
 
 function kstMondayKey() {
@@ -174,17 +131,8 @@ async function ensureThreeParties() {
     const p = PARTIES[i];
     const data = snap.exists ? snap.data() || {} : {};
     batch.set(partyRef(p.id), {
-      id: p.id,
-      name: p.name,
-      emoji: p.emoji,
-      color: p.color,
-      leaderName: p.leaderName,
-      slogan: p.slogan,
-      ideology: p.ideology,
-      keywords: p.keywords,
-      active: true,
-      system: 'three-party-historical',
-      updatedAt: FieldValue.serverTimestamp(),
+      id: p.id, name: p.name, emoji: p.emoji, color: p.color, leaderName: p.leaderName, slogan: p.slogan, ideology: p.ideology, keywords: p.keywords,
+      active: true, system: 'three-party-historical', updatedAt: FieldValue.serverTimestamp(),
       ...(snap.exists ? {} : { memberCount: 0, totalPower: 0, createdAt: FieldValue.serverTimestamp() }),
     }, { merge: true });
     dirty = true;
@@ -195,24 +143,11 @@ async function ensureThreeParties() {
         const npcUid = `npc_${p.id}_historical_${idx + 1}`;
         powerSum += Number(npc.power || 0);
         batch.set(memberRef(p.id, npcUid), {
-          uid: npcUid,
-          nickname: npc.name,
-          icon: { type: 'emoji', value: npc.emoji },
-          power: Number(npc.power || 0),
-          role: npc.role,
-          profile: npc.profile,
-          flaw: npc.flaw,
-          isNpc: true,
-          joinedAt: FieldValue.serverTimestamp(),
-          updatedAt: FieldValue.serverTimestamp(),
+          uid: npcUid, nickname: npc.name, icon: { type: 'emoji', value: npc.emoji }, power: Number(npc.power || 0), role: npc.role, profile: npc.profile, flaw: npc.flaw, isNpc: true,
+          joinedAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp(),
         }, { merge: true });
       });
-      batch.set(partyRef(p.id), {
-        npcSeededHistoricalSix: true,
-        memberCount: FieldValue.increment((PARTY_NPCS[p.id] || []).length),
-        totalPower: FieldValue.increment(powerSum),
-        updatedAt: FieldValue.serverTimestamp(),
-      }, { merge: true });
+      batch.set(partyRef(p.id), { npcSeededHistoricalSix: true, memberCount: FieldValue.increment((PARTY_NPCS[p.id] || []).length), totalPower: FieldValue.increment(powerSum), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
       dirty = true;
     }
   });
@@ -225,14 +160,11 @@ async function topMemberOf(partyId) {
     const q = await partyRef(partyId).collection('members').orderBy('power', 'desc').limit(30).get();
     const docSnap = q.docs.find(isVisibleMemberDoc);
     return docSnap ? publicMemberFromDoc(docSnap) : null;
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
 const getPoliticsOverview = onCall({ region: REGION, timeoutSeconds: 30 }, async request => {
   await ensureThreeParties();
-
   const uid = request.auth && request.auth.uid;
   let me = null;
 
@@ -269,10 +201,7 @@ const getPoliticsOverview = onCall({ region: REGION, timeoutSeconds: 30 }, async
     if (!snap.exists) return;
     const d = snap.data() || {};
     if (d.powerSnapshotDate !== today) {
-      batch.update(partyRef(PARTY_IDS[i]), {
-        powerSnapshotDate: today,
-        prevDayPower: Number(d.totalPower || 0),
-      });
+      batch.update(partyRef(PARTY_IDS[i]), { powerSnapshotDate: today, prevDayPower: Number(d.totalPower || 0) });
       snapshotDirty = true;
     }
   });
@@ -283,13 +212,7 @@ const getPoliticsOverview = onCall({ region: REGION, timeoutSeconds: 30 }, async
     const totalPower = Number(data.totalPower || 0);
     const prevDayPower = Number(data.prevDayPower || 0);
     const powerDiff = prevDayPower > 0 ? totalPower - prevDayPower : 0;
-    return {
-      ...meta,
-      memberCount: Number(data.memberCount || 0),
-      totalPower,
-      powerDiff,
-      leader: leaders[i],
-    };
+    return { ...meta, memberCount: Number(data.memberCount || 0), totalPower, powerDiff, leader: leaders[i] };
   }).sort((a, b) => b.totalPower - a.totalPower || b.memberCount - a.memberCount);
 
   parties.forEach((p, i) => { p.rank = i + 1; });
@@ -303,21 +226,14 @@ const getPartyMembers = onCall({ region: REGION, timeoutSeconds: 30 }, async req
     partyRef(partyId).collection('members').orderBy('power', 'desc').limit(50).get(),
     partyRef(partyId).collection('members').orderBy('weeklyGain', 'desc').limit(10).get(),
   ]);
-  const members = powerQ.docs
-    .filter(isVisibleMemberDoc)
-    .slice(0, 30)
-    .map((d, i) => publicMemberFromDoc(d, i + 1));
-  const weeklyStars = gainQ.docs
-    .filter(isVisibleMemberDoc)
-    .filter(d => {
-      const m = d.data() || {};
-      return m.weekKey === currentWeekKey && Number(m.weeklyGain || 0) > 0;
-    })
-    .slice(0, 3)
-    .map(d => {
-      const m = d.data() || {};
-      return { uid: d.id, nickname: m.nickname || '시민', icon: m.icon || null, weeklyGain: Number(m.weeklyGain || 0) };
-    });
+  const members = powerQ.docs.filter(isVisibleMemberDoc).slice(0, 30).map((d, i) => publicMemberFromDoc(d, i + 1));
+  const weeklyStars = gainQ.docs.filter(isVisibleMemberDoc).filter(d => {
+    const m = d.data() || {};
+    return m.weekKey === currentWeekKey && Number(m.weeklyGain || 0) > 0;
+  }).slice(0, 3).map(d => {
+    const m = d.data() || {};
+    return { uid: d.id, nickname: m.nickname || '시민', icon: m.icon || null, weeklyGain: Number(m.weeklyGain || 0) };
+  });
   return { ok: true, partyId, party: PARTY_BY_ID[partyId], members, weeklyStars };
 });
 
@@ -330,7 +246,6 @@ const joinParty = onCall({ region: REGION, timeoutSeconds: 30 }, async request =
   const result = await db.runTransaction(async tx => {
     const userSnap = await tx.get(userRef);
     if (!userSnap.exists) throw new HttpsError('not-found', '회원 정보를 찾을 수 없습니다.');
-
     const user = userSnap.data() || {};
     const oldPartyId = safePartyId(user.partyId);
     if (oldPartyId === newPartyId) return { changed: false, partyId: newPartyId };
@@ -341,10 +256,7 @@ const joinParty = onCall({ region: REGION, timeoutSeconds: 30 }, async request =
     const newPSnap = await tx.get(newPRef);
     if (!newPSnap.exists) throw new HttpsError('failed-precondition', '정당 정보가 아직 준비되지 않았습니다.');
 
-    let oldPRef = null;
-    let oldMRef = null;
-    let oldPSnap = null;
-    let oldMSnap = null;
+    let oldPRef = null, oldMRef = null, oldPSnap = null, oldMSnap = null;
     if (oldPartyId && oldPartyId !== newPartyId) {
       oldPRef = partyRef(oldPartyId);
       oldMRef = memberRef(oldPartyId, uid);
@@ -354,23 +266,12 @@ const joinParty = onCall({ region: REGION, timeoutSeconds: 30 }, async request =
     if (oldPartyId && oldPartyId !== newPartyId && oldMSnap && oldMSnap.exists) {
       const oldPower = Number(oldMSnap.data().power || 0);
       tx.delete(oldMRef);
-      if (oldPSnap && oldPSnap.exists) {
-        tx.update(oldPRef, {
-          memberCount: FieldValue.increment(-1),
-          totalPower: FieldValue.increment(-oldPower),
-          updatedAt: FieldValue.serverTimestamp(),
-        });
-      }
+      if (oldPSnap && oldPSnap.exists) tx.update(oldPRef, { memberCount: FieldValue.increment(-1), totalPower: FieldValue.increment(-oldPower), updatedAt: FieldValue.serverTimestamp() });
     }
 
     tx.set(newMRef, { ...publicMember(uid, user), power, joinedAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-    tx.update(newPRef, {
-      memberCount: FieldValue.increment(1),
-      totalPower: FieldValue.increment(power),
-      updatedAt: FieldValue.serverTimestamp(),
-    });
+    tx.update(newPRef, { memberCount: FieldValue.increment(1), totalPower: FieldValue.increment(power), updatedAt: FieldValue.serverTimestamp() });
     tx.set(userRef, { partyId: newPartyId, partyJoinedAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-
     return { changed: true, partyId: newPartyId, switched: !!oldPartyId };
   });
 
@@ -386,23 +287,42 @@ const leaveParty = onCall({ region: REGION, timeoutSeconds: 30 }, async request 
     if (!userSnap.exists) throw new HttpsError('not-found', '회원 정보를 찾을 수 없습니다.');
     const user = userSnap.data() || {};
     const partyId = safePartyId(user.partyId);
-    if (!partyId) return { left: false };
+    if (!partyId) return { left: false, penalty: 0, pointsAfter: Math.max(0, Number(user.points || user.totalPoints || 0)) };
 
     const pRef = partyRef(partyId);
     const mRef = memberRef(partyId, uid);
     const [pSnap, mSnap] = await Promise.all([tx.get(pRef), tx.get(mRef)]);
-    const power = mSnap.exists ? Number(mSnap.data().power || 0) : 0;
+    const memberPower = mSnap.exists ? Number(mSnap.data().power || 0) : Math.max(0, Number(user.totalPoints || user.points || 0));
+    const currentPoints = Math.max(0, Number(user.points ?? user.totalPoints ?? 0));
+    const currentTotalPoints = Math.max(0, Number(user.totalPoints ?? user.points ?? 0));
+    const penalty = Math.min(LEAVE_PARTY_PENALTY, Math.max(currentPoints, currentTotalPoints));
+    const nextPoints = Math.max(0, currentPoints - penalty);
+    const nextTotalPoints = Math.max(0, currentTotalPoints - penalty);
 
     if (mSnap.exists) tx.delete(mRef);
     if (pSnap.exists) {
       tx.update(pRef, {
         memberCount: FieldValue.increment(mSnap.exists ? -1 : 0),
-        totalPower: FieldValue.increment(-power),
+        totalPower: FieldValue.increment(-memberPower),
         updatedAt: FieldValue.serverTimestamp(),
       });
     }
-    tx.set(userRef, { partyId: FieldValue.delete(), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-    return { left: true };
+    tx.set(userRef, {
+      partyId: FieldValue.delete(),
+      partyLeftAt: FieldValue.serverTimestamp(),
+      lastPartyId: partyId,
+      points: nextPoints,
+      totalPoints: nextTotalPoints,
+      updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+    tx.set(db.doc(`point_awards/${uid}_leave_party_${Date.now()}`), {
+      uid,
+      action: 'leave_party_penalty',
+      points: -penalty,
+      partyId,
+      createdAt: FieldValue.serverTimestamp(),
+    }, { merge: false });
+    return { left: true, partyId, penalty, pointsAfter: nextPoints, totalPointsAfter: nextTotalPoints };
   });
 
   return { ok: true, ...result };
