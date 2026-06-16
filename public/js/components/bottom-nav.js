@@ -36,6 +36,7 @@ function isNavActive(navPath, currentPath) {
 }
 
 const MORE_ITEMS = [
+  { path: '/history',              emoji: '📚', label: '역사자료' },
   { path: '/feed',                 emoji: '🏛️', label: '시민광장' },
   { path: '/ranking',              emoji: '🏆', label: '랭킹' },
   { path: '/news',                 emoji: '📰', label: '소소신문' },
@@ -55,7 +56,7 @@ function navItems() {
     { id: 'home',     label: '홈',    path: '/',         icon: iconHome() },
     { id: 'battle',   label: '배틀',  path: '/battle',   icon: `<span style="font-size:20px;line-height:1">⚔️</span>` },
     { id: 'republic', label: '공화국', path: '/republic', icon: `<span style="font-size:22px;line-height:1">🏛️</span>`, isCenter: true },
-    { id: 'election', label: '대선',  path: '/election', icon: `<span style="font-size:20px;line-height:1">👑</span>` },
+    { id: 'history',  label: '역사',  path: '/history',  icon: `<span style="font-size:20px;line-height:1">📚</span>` },
     { id: 'more',     label: '더보기', path: null,        icon: iconMore(), isMore: true },
   ];
 }
