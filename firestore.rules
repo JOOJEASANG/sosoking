@@ -97,10 +97,18 @@ service cloud.firestore {
         && validText(request.resource.data.get('provider', ''), 40)
         && validOptionalText('photoURL', 500);
     }
+    function validReservedNickname(userId) {
+      return !('nickname' in request.resource.data)
+        || request.resource.data.nickname == resource.data.get('nickname', '')
+        || (validNickname(request.resource.data.nickname)
+          && exists(/databases/$(database)/documents/nicknames/$(request.resource.data.nickname))
+          && get(/databases/$(database)/documents/nicknames/$(request.resource.data.nickname)).data.uid == userId);
+    }
     function validUserSelfUpdate(userId) {
       let changed = request.resource.data.diff(resource.data).affectedKeys();
       return isAuthor(userId)
-        && changed.hasOnly(['nicknameIcon', 'updatedAt'])
+        && changed.hasOnly(['nickname', 'nicknameIcon', 'updatedAt'])
+        && validReservedNickname(userId)
         && (!('nicknameIcon' in request.resource.data)
           || request.resource.data.nicknameIcon == null
           || request.resource.data.nicknameIcon is map);
