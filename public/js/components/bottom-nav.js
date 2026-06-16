@@ -16,7 +16,7 @@ function isNavActive(navPath, currentPath) {
 function navItems() {
   return [
     { id: 'home',     label: '홈',     path: '/',         icon: iconHome() },
-    { id: 'battle',   label: '게임',   path: '/battle',   icon: `<span style="font-size:19px;line-height:1">⚔️</span>` },
+    { id: 'battle',   label: '논쟁',   path: '/battle',   icon: `<span style="font-size:19px;line-height:1">⚔️</span>` },
     { id: 'republic', label: '정당',   path: '/republic', icon: `<span style="font-size:20px;line-height:1">🏛️</span>` },
     { id: 'forces',   label: '세력',   path: '/forces',   icon: `<span style="font-size:19px;line-height:1">⚡</span>` },
     { id: 'history',  label: '역사',   path: '/history',  icon: `<span style="font-size:19px;line-height:1">📚</span>` },
