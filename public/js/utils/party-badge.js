@@ -2,9 +2,9 @@
 import { appState } from '../state.js';
 
 export const PARTY_COLORS = {
-  national: { emoji: '🎙️', name: '국민안정당', color: '#8B7355', bg: '#f5f0eb' },
-  youth:    { emoji: '📱', name: '청년혁명당', color: '#E84393', bg: '#fde8f3' },
-  center:   { emoji: '📊', name: '중도민주당', color: '#00CEC9', bg: '#e0faf9' },
+  national: { emoji: '🛡️', name: '국민질서당', color: '#263B66', bg: '#e9eef8' },
+  youth:    { emoji: '🕯️', name: '시민개혁당', color: '#B8323B', bg: '#fdecee' },
+  center:   { emoji: '⚖️', name: '국민통합당', color: '#2F7D6E', bg: '#e6f3f0' },
 };
 
 export function renderPartyBadge(partyId) {
