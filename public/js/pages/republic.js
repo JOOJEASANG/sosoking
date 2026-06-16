@@ -1,10 +1,14 @@
-/* republic.js — 소소공화국 허브 */
+/* republic.js — 정당·대선 핵심 허브 */
 import { auth, functions } from '../firebase.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
 import { navigate } from '../router.js';
 import { setMeta } from '../utils/seo.js';
 import { escHtml } from '../utils/helpers.js';
 import { toast } from '../components/toast.js';
+
+function call(name, payload = {}) {
+  return httpsCallable(functions, name)(payload).then(res => res.data || {}).catch(error => ({ error }));
+}
 
 function fmtNum(n) {
   n = Number(n || 0);
@@ -13,331 +17,103 @@ function fmtNum(n) {
   return String(n);
 }
 
-function powerBar(pct, color) {
-  return `<div class="rep-pbar"><div class="rep-pbar__fill" style="width:${pct}%;background:${color}"></div></div>`;
+function ensureStyle() {
+  if (document.getElementById('republic-core-style')) return;
+  const style = document.createElement('style');
+  style.id = 'republic-core-style';
+  style.textContent = `
+    .rep-core{display:grid;gap:14px;padding-bottom:24px}.rep-core-hero{border-radius:28px;padding:24px 20px;background:linear-gradient(135deg,rgba(15,23,42,.97),rgba(47,125,110,.86));color:#fff;box-shadow:0 18px 42px rgba(15,23,42,.18)}.rep-core-hero__eyebrow{font-size:11px;font-weight:1000;letter-spacing:.1em;color:rgba(255,255,255,.62)}.rep-core-hero__title{font-size:28px;line-height:1.18;font-weight:1000;margin:7px 0;color:#fff}.rep-core-hero__desc{font-size:14px;line-height:1.6;color:rgba(255,255,255,.76);margin:0;max-width:760px}.rep-core-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}.rep-core-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.rep-core-card{border:1px solid rgba(100,116,139,.16);border-radius:22px;background:var(--color-surface,#fff);padding:15px;box-shadow:0 10px 26px rgba(15,23,42,.055)}.rep-core-card__title{font-size:16px;font-weight:1000;color:var(--color-text-primary);margin-bottom:6px}.rep-core-card__text{font-size:13px;line-height:1.55;color:var(--color-text-secondary);margin-bottom:12px}.rep-party-card{position:relative;overflow:hidden}.rep-party-card:before{content:'';position:absolute;inset:0 0 auto 0;height:5px;background:var(--party-color,#6366f1)}.rep-party-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-top:4px}.rep-party-name{font-size:17px;font-weight:1000;color:var(--color-text-primary)}.rep-party-meta{font-size:12px;color:var(--color-text-muted);margin-top:2px}.rep-party-power{font-size:16px;font-weight:1000;color:var(--party-color,#6366f1)}.rep-party-leader{font-size:12px;color:var(--color-text-secondary);margin:10px 0}.rep-mine{display:inline-flex;border-radius:999px;padding:5px 8px;font-size:11px;font-weight:1000;background:rgba(34,197,94,.1);color:#16a34a}.rep-core-status{display:grid;grid-template-columns:1fr 1fr;gap:12px}.rep-core-kv{display:flex;justify-content:space-between;gap:10px;border-radius:14px;background:rgba(248,250,252,.9);padding:10px 11px;font-size:13px}.rep-core-kv span{color:var(--color-text-muted)}.rep-core-kv b{color:var(--color-text-primary)}@media(max-width:880px){.rep-core-grid,.rep-core-status{grid-template-columns:1fr}.rep-core-hero__title{font-size:23px}}
+  `;
+  document.head.appendChild(style);
 }
 
-function renderPowerLadder(status, election, president) {
+function renderHero(status) {
   const loggedIn = !!status?.loggedIn;
-  const hasParty = !!status?.partyId;
-  const isLeader = !!status?.isLeader;
-  const isPresident = !!(president && status?.uid && president.candidateUid === status.uid);
-  const electionEndKey = status?.electionEndKey || election?.endKey || election?.electionEndKey;
-
-  let electionLabel = '진행 중';
-  if (electionEndKey) {
-    const endMs = new Date(`${electionEndKey}T23:59:59+09:00`).getTime();
-    const daysLeft = Math.ceil((endMs - Date.now()) / 86400000);
-    electionLabel = daysLeft <= 0 ? '집계 중' : daysLeft === 1 ? '오늘 마감' : `D-${daysLeft}`;
-  }
-
-  const steps = [
-    {
-      num: 1,
-      title: '입당',
-      desc: hasParty ? `${status.partyEmoji || ''} ${status.partyName || '내 정당'}` : '3당 중 선택',
-      active: !hasParty,
-      done: hasParty,
-      path: '/republic',
-    },
-    {
-      num: 2,
-      title: '당대표',
-      desc: isLeader ? '대선 후보 등록' : hasParty && status.pointsToLeader ? `${fmtNum(status.pointsToLeader)}P 남음` : '정치력 1위 도전',
-      active: hasParty && !isLeader,
-      done: isLeader,
-      path: hasParty ? '/ranking' : '/republic',
-    },
-    {
-      num: 3,
-      title: '대통령',
-      desc: isPresident ? '현직 대통령' : `대선 ${electionLabel}`,
-      active: isLeader && !isPresident,
-      done: isPresident,
-      path: '/election',
-    },
-    {
-      num: 4,
-      title: '국회·헌재',
-      desc: president?.impeachTriggered ? '탄핵심판 대기' : '법안·탄핵 견제',
-      active: !!president?.impeachTriggered,
-      done: false,
-      path: president?.impeachTriggered ? '/constitutional-court' : '/congress',
-    },
-  ];
-
-  const mainPath = loggedIn ? (hasParty ? '/battle' : '/republic') : '/signup';
-  const mainText = loggedIn ? (hasParty ? '오늘 정치 활동 시작 →' : '입당하고 시작 →') : '정치 인생 시작 →';
-
-  return `
-    <div class="rep-section" style="background:linear-gradient(135deg,rgba(15,23,42,.96),rgba(51,65,85,.92));color:#fff;border:0;box-shadow:0 16px 36px rgba(15,23,42,.18)">
-      <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:14px">
-        <div>
-          <div style="font-size:12px;font-weight:900;letter-spacing:.08em;color:rgba(255,255,255,.62)">POWER LADDER</div>
-          <div style="font-size:23px;font-weight:1000;margin-top:4px">👑 권력 사다리</div>
-          <div style="font-size:13px;color:rgba(255,255,255,.72);line-height:1.55;margin-top:5px">입당 → 당대표 → 대통령 → 국회·헌재까지 이어지는 소소공화국 핵심 진행도입니다.</div>
-        </div>
-        <button class="btn btn--primary btn--sm" data-path="${mainPath}" style="box-shadow:0 10px 22px rgba(255,107,74,.25)">${mainText}</button>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px" class="rep-power-ladder-grid">
-        ${steps.map(s => `
-          <button data-path="${s.path}" style="text-align:left;border:1px solid ${s.active ? 'rgba(255,255,255,.42)' : 'rgba(255,255,255,.12)'};background:${s.done ? 'rgba(34,197,94,.16)' : s.active ? 'rgba(255,255,255,.17)' : 'rgba(255,255,255,.09)'};border-radius:16px;padding:12px;color:#fff;font-family:inherit;cursor:pointer">
-            <span style="display:inline-flex;width:24px;height:24px;border-radius:999px;align-items:center;justify-content:center;background:${s.done ? 'rgba(34,197,94,.95)' : s.active ? 'rgba(255,255,255,.9)' : 'rgba(255,255,255,.16)'};color:${s.active && !s.done ? '#111827' : '#fff'};font-size:12px;font-weight:1000">${s.num}</span>
-            <b style="display:block;font-size:14px;margin-top:8px;color:#fff">${s.title}</b>
-            <small style="display:block;font-size:11px;margin-top:3px;color:rgba(255,255,255,.72);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(s.desc)}</small>
-          </button>`).join('')}
-      </div>
-    </div>`;
+  const party = status?.partyName || '무소속';
+  return `<section class="rep-core-hero">
+    <div class="rep-core-hero__eyebrow">PARTY ACTIVITY HUB</div>
+    <div class="rep-core-hero__title">🏛️ 정당을 고르고 정치력을 키우세요</div>
+    <p class="rep-core-hero__desc">이 화면에서는 입당, 유세, 대통령 선거만 관리합니다. 국회·헌재 같은 보조 기능은 정리하고 핵심 성장 루프만 남겼습니다.</p>
+    <div class="rep-core-actions">
+      <button class="btn btn--primary" data-go="/battle">⚔️ 오늘게임</button>
+      <button class="btn btn--ghost" data-go="/election">👑 대통령 선거</button>
+      ${loggedIn ? `<span class="rep-mine">내 상태 · ${escHtml(party)} · ${fmtNum(status.power || 0)}P</span>` : `<button class="btn btn--ghost" data-go="/login">로그인</button>`}
+    </div>
+  </section>`;
 }
 
-function renderPresidentSection(president) {
-  if (!president) {
-    return `
-      <div class="rep-president rep-president--vacant">
-        <div class="rep-president__label">현직 대통령</div>
-        <div class="rep-president__vacant-title">공석 👤</div>
-        <div class="rep-president__vacant-desc">대통령 선거에서 유저 투표로 결정됩니다</div>
-        <button class="btn btn--primary btn--sm" data-path="/election">대선 투표하기 →</button>
-      </div>`;
-  }
-
-  const approveCount = Number(president.decreeApprove || 0);
-  const disapproveCount = Number(president.decreeDisapprove || 0);
-  const total = approveCount + disapproveCount;
-  const approvePct = total >= 3 ? Math.round((approveCount / total) * 100) : null;
-
-  const approvalChip = approvePct !== null
-    ? `<span class="rep-president__approval${approvePct < 40 ? ' rep-president__approval--danger' : approvePct >= 70 ? ' rep-president__approval--good' : ''}">${approvePct < 40 ? '⚠️' : approvePct >= 70 ? '⭐' : '📊'} 지지율 ${approvePct}%</span>`
-    : '';
-
-  const impeachCount = Number(president.impeachCount || 0);
-  const impeachThreshold = Number(president.impeachThreshold || 5);
-  const impeachHTML = impeachCount > 0
-    ? `<div class="rep-president__impeach${president.impeachTriggered ? ' rep-president__impeach--triggered' : ''}">
-        ${president.impeachTriggered ? '⚡ 헌재 심판 대기' : `✍️ 탄핵 청원 ${impeachCount}/${impeachThreshold}`}
-      </div>`
-    : '';
-
-  return `
-    <div class="rep-president" style="--party-color:${president.color || '#ff6b4a'}">
-      <div class="rep-president__top">
-        <div>
-          <div class="rep-president__label">현직 대통령</div>
-          <div class="rep-president__name">${president.emoji || ''} ${escHtml(president.candidateName)}</div>
-          <div class="rep-president__party">${escHtml(president.partyName)}${president.isAI ? ' · AI' : ''}</div>
-        </div>
-        <div class="rep-president__right">
-          ${approvalChip}
-          ${impeachHTML}
-        </div>
-      </div>
-      ${president.decree ? `<div class="rep-president__decree">"${escHtml(president.decree.slice(0, 60))}${president.decree.length > 60 ? '…' : ''}"</div>` : ''}
-      <button class="rep-president__btn" data-path="/election">선거 현황 보기 →</button>
-    </div>`;
+function renderStatus(status, election) {
+  const joined = !!status?.partyId;
+  const campaignText = joined ? `${Number(status.campaignsToday || 0)}/${Number(status.campaignDailyLimit || 3)}` : '-';
+  const voteText = election?.election?.myVote ? '투표 완료' : '투표 가능';
+  return `<section class="rep-core-card">
+    <div class="rep-core-card__title">오늘 할 일</div>
+    <div class="rep-core-status">
+      <div class="rep-core-kv"><span>입당</span><b>${joined ? '완료' : '필요'}</b></div>
+      <div class="rep-core-kv"><span>오늘 유세</span><b>${campaignText}</b></div>
+      <div class="rep-core-kv"><span>대선 투표</span><b>${voteText}</b></div>
+      <div class="rep-core-kv"><span>당대표</span><b>${status?.isLeader ? '내가 당대표' : status?.pointsToLeader ? `${fmtNum(status.pointsToLeader)}P 남음` : '-'}</b></div>
+    </div>
+  </section>`;
 }
 
-function renderElectionSection(election, president) {
-  if (!election) {
-    return `
-      <div class="rep-section">
-        <div class="rep-section__title">🗳️ 대통령 선거</div>
-        <div class="rep-empty">선거 정보 불러오는 중...</div>
-      </div>`;
-  }
-
-  const cands = election.candidates || [];
-  const totalVotes = election.totalVotes || 0;
-  const myVote = election.myVote || null;
-  const endKey = election.electionEndKey || election.endKey || null;
-
-  let countdownHTML = '';
-  if (endKey) {
-    const endMs = new Date(`${endKey}T23:59:59+09:00`).getTime();
-    const daysLeft = Math.ceil((endMs - Date.now()) / 86400000);
-    const label = daysLeft <= 0 ? '집계 중' : daysLeft === 1 ? '오늘 마감! ⚡' : `D-${daysLeft}`;
-    const pct = Math.min(100, Math.max(0, Math.round(((Date.now() - (endMs - 6 * 86400000)) / (6 * 86400000)) * 100)));
-    countdownHTML = `
-      <div class="rep-elec-countdown">
-        <span class="rep-elec-countdown__label">이번 주 선거</span>
-        <div class="rep-elec-countdown__track"><div class="rep-elec-countdown__fill" style="width:${pct}%"></div></div>
-        <span class="rep-elec-countdown__remain${daysLeft <= 1 ? ' rep-elec-countdown__remain--urgent' : ''}">${label}</span>
-      </div>`;
-  }
-
-  const topCands = cands.slice(0, 3).map(c => {
-    const pct = totalVotes > 0 ? Math.round((c.votes / totalVotes) * 100) : 0;
-    const isMine = myVote === c.partyId;
-    return `
-      <div class="rep-cand${isMine ? ' rep-cand--mine' : ''}" style="--party-color:${c.color}">
-        <span class="rep-cand__emoji">${c.emoji}</span>
-        <div class="rep-cand__info">
-          <span class="rep-cand__name">${escHtml(c.candidateName)}${c.isAI ? ' 🤖' : ''}</span>
-          <span class="rep-cand__party">${escHtml(c.partyName)}</span>
-        </div>
-        <div class="rep-cand__right">
-          ${myVote != null ? `<span class="rep-cand__pct">${pct}%</span>` : ''}
-          ${isMine ? `<span class="rep-cand__voted">내 선택 ✅</span>` : ''}
-        </div>
-      </div>`;
-  }).join('');
-
-  const voteCTA = myVote == null
-    ? `<button class="btn btn--primary btn--full" data-path="/election">🗳️ 지금 대선 투표하기 +5P</button>`
-    : `<button class="btn btn--ghost btn--full" data-path="/election">선거 상세 보기 →</button>`;
-
-  return `
-    <div class="rep-section">
-      <div class="rep-section__title">🗳️ 대통령 선거</div>
-      ${countdownHTML}
-      <div class="rep-cand-list">${topCands || '<div class="rep-empty">후보 없음</div>'}</div>
-      ${totalVotes > 0 ? `<div class="rep-elec-votes">총 ${fmtNum(totalVotes)}표 참여</div>` : ''}
-      ${voteCTA}
-    </div>`;
-}
-
-function renderPartiesSection(parties, myPartyId) {
-  if (!parties.length) {
-    return `<div class="rep-section"><div class="rep-section__title">🏛️ 정당</div><div class="rep-empty">정당 정보 없음</div></div>`;
-  }
-
-  const totalPower = parties.reduce((s, p) => s + Number(p.totalPower || 0), 0);
-
-  const cards = parties.map((p, idx) => {
+function renderParties(parties, status) {
+  const myPartyId = status?.partyId || '';
+  const cards = (parties || []).slice(0, 3).map(p => {
     const isMine = p.id === myPartyId;
-    const pct = totalPower > 0 ? Math.round((Number(p.totalPower || 0) / totalPower) * 100) : 0;
-    const MEDALS = ['🥇', '🥈', '🥉'];
-    return `
-      <div class="rep-party${isMine ? ' rep-party--mine' : ''}" style="--party-color:${p.color || '#888'}">
-        <div class="rep-party__top">
-          <span class="rep-party__emoji">${MEDALS[idx] || ''} ${p.emoji}</span>
-          <div class="rep-party__info">
-            <span class="rep-party__name">${escHtml(p.name)}</span>
-            <span class="rep-party__stats">당원 ${fmtNum(p.memberCount)}명 · ⚡ ${fmtNum(p.totalPower)}P</span>
-          </div>
-          ${isMine
-            ? `<span class="rep-party__mine-tag">내 정당</span>`
-            : `<button class="rep-party__join btn btn--sm btn--ghost" data-party-id="${p.id}" data-party-name="${escHtml(p.name)}">입당</button>`}
-        </div>
-        ${powerBar(pct, p.color || '#888')}
-        ${p.leader ? `<div class="rep-party__leader">👑 당대표: ${escHtml(p.leader.nickname)}</div>` : `<div class="rep-party__leader rep-party__leader--empty">당대표 없음 — 활동하면 당대표!</div>`}
-      </div>`;
-  }).join('');
-
-  return `
-    <div class="rep-section">
-      <div class="rep-section__header">
-        <span class="rep-section__title">🏛️ 3개 정당</span>
-        <button class="rep-section__more" data-path="/parties">전체 보기 →</button>
+    return `<section class="rep-core-card rep-party-card" style="--party-color:${escHtml(p.color || '#6366f1')}">
+      <div class="rep-party-head">
+        <div><div class="rep-party-name">${escHtml(p.emoji || '🏛️')} ${escHtml(p.name || '')}</div><div class="rep-party-meta">${escHtml(p.ideology || '')} · 당원 ${fmtNum(p.memberCount || 0)}명</div></div>
+        <div class="rep-party-power">${fmtNum(p.totalPower || 0)}P</div>
       </div>
-      <div class="rep-parties">${cards}</div>
-      ${!myPartyId ? `<p class="rep-join-hint">💡 정당에 입당하면 대선 투표 · 유세 활동 · 랭킹 참여가 가능해요!</p>` : ''}
-    </div>`;
+      <div class="rep-party-leader">대표 · ${escHtml(p.leader?.nickname || p.leaderName || '가상 후보')}</div>
+      ${isMine ? '<span class="rep-mine">내 정당</span>' : ''}
+      <div class="rep-core-actions">
+        ${isMine ? `<button class="btn btn--primary btn--sm" data-campaign="${escHtml(p.id)}">유세하기 +3P</button>` : `<button class="btn btn--ghost btn--sm" data-join="${escHtml(p.id)}">입당하기</button>`}
+      </div>
+    </section>`;
+  }).join('');
+  return `<div class="rep-core-grid">${cards}</div>`;
 }
 
-function renderGovLinks(congressBills) {
-  const billCount = Array.isArray(congressBills) ? congressBills.filter(b => b.status !== 'closed').length : 0;
-
-  const links = [
-    { emoji: '🏛️', name: '소소국회', desc: billCount > 0 ? `법안 ${billCount}건 표결 진행 중` : '법안 표결', path: '/congress', highlight: billCount > 0 },
-    { emoji: '⚖️', name: '헌법재판소', desc: 'AI 재판관 3인', path: '/constitutional-court' },
-    { emoji: '📰', name: '소소신문', desc: '오늘의 AI 뉴스', path: '/news' },
-    { emoji: '🏆', name: '정치력 랭킹', desc: '출세 사다리 확인', path: '/ranking' },
-    { emoji: '📜', name: '역대 당선자', desc: '공화국 역사', path: '/king-history' },
-  ];
-
-  return `
-    <div class="rep-section">
-      <div class="rep-section__title">🔗 국가 기관</div>
-      <div class="rep-gov-links">
-        ${links.map(l => `
-          <button class="rep-gov-link${l.highlight ? ' rep-gov-link--highlight' : ''}" data-path="${l.path}">
-            <span class="rep-gov-link__emoji">${l.emoji}</span>
-            <div class="rep-gov-link__info">
-              <span class="rep-gov-link__name">${l.name}</span>
-              <span class="rep-gov-link__desc">${l.desc}</span>
-            </div>
-            <span class="rep-gov-link__arrow">→</span>
-          </button>`).join('')}
-      </div>
-    </div>`;
+async function bindActions(el) {
+  el.querySelectorAll('[data-go]').forEach(btn => btn.addEventListener('click', () => navigate(btn.dataset.go)));
+  el.querySelectorAll('[data-join]').forEach(btn => btn.addEventListener('click', async () => {
+    if (!auth.currentUser) { navigate('/login'); return; }
+    btn.disabled = true;
+    const res = await call('joinParty', { partyId: btn.dataset.join });
+    if (res?.error) toast.error('입당에 실패했습니다.');
+    else toast.success('입당 완료 🏛️');
+    renderRepublic();
+  }));
+  el.querySelectorAll('[data-campaign]').forEach(btn => btn.addEventListener('click', async () => {
+    if (!auth.currentUser) { navigate('/login'); return; }
+    btn.disabled = true;
+    const res = await call('campaignForParty', { partyId: btn.dataset.campaign });
+    if (res?.error) toast.error(res.error.message || '유세에 실패했습니다.');
+    else toast.success(`유세 완료 +${res.points || 3}P`);
+    renderRepublic();
+  }));
 }
 
 export async function renderRepublic() {
-  setMeta('소소공화국', '정당 · 대선 · 국회 · 헌법재판소 — 공화국 전체를 한눈에');
+  setMeta('정당·대선 허브');
+  ensureStyle();
   const el = document.getElementById('page-content');
   if (!el) return;
+  el.innerHTML = `<div class="rep-core"><div class="skeleton" style="height:190px;border-radius:28px"></div><div class="skeleton" style="height:340px;border-radius:22px"></div></div>`;
 
-  el.innerHTML = `
-    <div class="rep-page page-enter">
-      <div class="rep-hero">
-        <div class="rep-hero__eyebrow">SOSO REPUBLIC</div>
-        <h1 class="rep-hero__title">🏛️ 소소공화국</h1>
-        <p class="rep-hero__sub">정당 · 대선 · 국회 · 헌법재판소</p>
-      </div>
-      <div class="page-section">
-        <div class="skeleton" style="height:100px;border-radius:16px;margin-bottom:12px"></div>
-        <div class="skeleton" style="height:180px;border-radius:16px;margin-bottom:12px"></div>
-        <div class="skeleton" style="height:240px;border-radius:16px;margin-bottom:12px"></div>
-        <div class="skeleton" style="height:200px;border-radius:16px"></div>
-      </div>
-    </div>`;
-
-  const user = auth.currentUser;
-
-  const [overviewRes, presidentRes, electionRes, billsRes, myStatusRes] = await Promise.allSettled([
-    httpsCallable(functions, 'getPoliticsOverview')({}),
-    httpsCallable(functions, 'getPresident')({}),
-    httpsCallable(functions, 'getElection')(),
-    httpsCallable(functions, 'getCongressBills')({}),
-    user ? httpsCallable(functions, 'getMyStatus')() : Promise.resolve({ data: { loggedIn: false } }),
+  const [overview, status, election] = await Promise.all([
+    call('getPoliticsOverview'),
+    call('getMyStatus'),
+    call('getElection'),
   ]);
 
-  const overview = overviewRes.value?.data || {};
-  const electionPayload = electionRes.value?.data || null;
-  const election = electionPayload?.election || electionPayload || null;
-  const president = presidentRes.value?.data?.president || electionPayload?.president || null;
-  const bills = billsRes.value?.data?.bills || [];
-  const parties = Array.isArray(overview.parties) ? overview.parties.slice(0, 3) : [];
-  const myStatus = myStatusRes.value?.data || { loggedIn: false };
-  const myPartyId = myStatus?.partyId || null;
-
-  el.innerHTML = `
-    <div class="rep-page page-enter">
-      <div class="rep-hero">
-        <div class="rep-hero__eyebrow">SOSO REPUBLIC</div>
-        <h1 class="rep-hero__title">🏛️ 소소공화국</h1>
-        <p class="rep-hero__sub">정당 · 대선 · 국회 · 헌법재판소</p>
-      </div>
-      <div class="page-section rep-content">
-        ${renderPowerLadder(myStatus, election, president)}
-        ${renderPresidentSection(president)}
-        ${renderElectionSection(election, president)}
-        ${renderPartiesSection(parties, myPartyId)}
-        ${renderGovLinks(bills)}
-      </div>
-    </div>`;
-
-  el.querySelectorAll('[data-path]').forEach(btn => {
-    btn.addEventListener('click', () => navigate(btn.dataset.path));
-  });
-
-  el.querySelectorAll('[data-party-id]').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      if (!user) { navigate('/login'); return; }
-      const partyId = btn.dataset.partyId;
-      const partyName = btn.dataset.partyName;
-      if (!confirm(`${partyName}에 입당하시겠습니까?`)) return;
-      btn.disabled = true;
-      btn.textContent = '처리 중...';
-      try {
-        await httpsCallable(functions, 'joinParty')({ partyId });
-        toast.success(`🎉 ${partyName} 입당 완료! 이제 활동으로 정치력을 쌓아 당대표에 도전하세요.`);
-        navigate('/');
-      } catch (e) {
-        toast.error(e?.message || '입당에 실패했습니다.');
-        btn.disabled = false;
-        btn.textContent = '입당';
-      }
-    });
-  });
+  const parties = Array.isArray(overview?.parties) ? overview.parties : [];
+  el.innerHTML = `<div class="rep-core page-enter">
+    ${renderHero(status)}
+    ${renderStatus(status, election)}
+    ${renderParties(parties, status)}
+  </div>`;
+  bindActions(el);
 }
