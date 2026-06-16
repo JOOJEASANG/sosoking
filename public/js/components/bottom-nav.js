@@ -7,11 +7,7 @@ function svgIcon(path, strokeWidth = '1.8') {
 }
 
 function iconHome() {
-  return svgIcon('<path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12 12 3l9.75 9M4.5 10.5V20.25c0 .414.336.75.75.75H9.75v-4.5c0-.414.336-.75.75-.75h3c.414 0 .75.336.75.75v4.5h4.5a.75.75 0 0 0 .75-.75V10.5"/>');
-}
-
-function iconFeed() {
-  return svgIcon('<path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/>');
+  return svgIcon('<path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12 12 3l9.75 9M4.5 10.5V20.25c0 .414.336.75.75.75H9.75v-4.5c0-.414.336.75.75.75h3c.414 0 .75.336.75.75v4.5h4.5a.75.75 0 0 0 .75-.75V10.5"/>');
 }
 
 function isNavActive(navPath, currentPath) {
@@ -20,7 +16,6 @@ function isNavActive(navPath, currentPath) {
 }
 
 const MORE_ITEMS = [
-  { path: '/history',              emoji: '📚', label: '역사자료' },
   { path: '/election',             emoji: '👑', label: '대통령 선거' },
   { path: '/feed',                 emoji: '🏛️', label: '시민광장' },
   { path: '/ranking',              emoji: '🏆', label: '랭킹' },
