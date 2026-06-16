@@ -15,8 +15,6 @@ const postOwner = require('./post-owner-functions.js');
 const postView = require('./post-view-functions.js');
 const points = require('./points-functions.js');
 const kakaoAuth = require('./kakao-auth-functions.js');
-const aiLadder = require('./ai-ladder-functions.js');
-const hotPotato = require('./hot-potato-functions.js');
 const battle = require('./battle-functions.js');
 const politics = require('./politics-functions-v2.js');
 const coreParties = require('./three-party-functions.js');
@@ -46,8 +44,6 @@ module.exports = {
   ...adminData,
   ...memberStats,
   ...points,
-  ...aiLadder,
-  ...hotPotato,
   ...partyLeague,
   ...congress,
   getConstitutionalCourtStatus: constitutionalCourt.getConstitutionalCourtStatus,
