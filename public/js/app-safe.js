@@ -19,6 +19,7 @@ const OPTIONAL_MODULES = [
   './admin-password-actions.js',
   './admin-post-list-normalizer.js',
   './admin-history-issue-actions.js',
+  './admin-battle-actions.js',
   './battle-history-context-actions.js',
   './nickname-icon-actions.js',
   './site-copy-normalizer.js'
