@@ -266,6 +266,7 @@ async function loadPresidentUid() {
 
 async function initApp() {
   initToast();
+  renderFrame();
   await handleKakaoCallback();
   await registerRoutes();
   initRouter();
@@ -279,7 +280,6 @@ async function initApp() {
     if (appState.isAdmin && !isAdminAllowedPath(currentPath())) navigate('/admin');
     rerenderCurrentRouteSoon();
   });
-  renderFrame();
 }
 
 initApp().catch(error => { console.error('[app init failed]', error); showPageError('앱 초기화 실패', error); });
