@@ -31,6 +31,44 @@ function isPoliticalDetail(post) {
   return ['citizen_speech', 'ai_judge'].includes(post.feedType || post.type || post.subtype);
 }
 
+function historyDayLabel(post) {
+  return post.historyDay ? `Day ${String(post.historyDay).padStart(3, '0')}` : '오늘의 역사';
+}
+
+function renderHistoryBadges(post) {
+  if (!post.isHistoryIssue) return '';
+  return `
+    <span class="feed-card__type-badge feed-card__type-badge--multi">📜 ${escHtml(historyDayLabel(post))}</span>
+    ${post.historyEra ? `<span class="tag">${escHtml(post.historyEra)}</span>` : ''}
+    ${post.motifYear ? `<span class="tag">${escHtml(`${post.motifYear}년 모티브`)}</span>` : ''}`;
+}
+
+function renderHistoryContext(post) {
+  if (!post.isHistoryIssue) return '';
+  const stances = post.partyStances || {};
+  const effects = post.effects || {};
+  const effectEntries = Object.entries(effects)
+    .filter(([, value]) => value !== undefined && value !== null && value !== 0)
+    .map(([key, value]) => `<span class="tag">${escHtml(key)} ${Number(value) > 0 ? '+' : ''}${escHtml(String(value))}</span>`)
+    .join('');
+
+  return `<section class="history-issue-box" style="margin:18px 0;padding:16px;border:1px solid var(--border,#e5e7eb);border-radius:16px;background:rgba(17,24,39,.03)">
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+      <span class="feed-card__type-badge feed-card__type-badge--multi">📜 ${escHtml(historyDayLabel(post))}</span>
+      ${post.historyEra ? `<span class="tag">${escHtml(post.historyEra)}</span>` : ''}
+      ${post.motifYear ? `<span class="tag">${escHtml(`${post.motifYear}년 모티브`)}</span>` : ''}
+    </div>
+    ${post.motif ? `<div style="font-size:13px;color:var(--muted,#6b7280);margin-bottom:8px">실제 흐름 모티브 · ${escHtml(post.motif)}</div>` : ''}
+    ${post.eventQuestion ? `<div style="font-weight:800;margin-bottom:12px">쟁점 · ${escHtml(post.eventQuestion)}</div>` : ''}
+    <div style="display:grid;gap:8px">
+      ${stances.national ? `<div><b>🛡️ 국민질서당</b><p style="margin:4px 0 0">${escHtml(stances.national)}</p></div>` : ''}
+      ${stances.youth ? `<div><b>🕯️ 시민개혁당</b><p style="margin:4px 0 0">${escHtml(stances.youth)}</p></div>` : ''}
+      ${stances.center ? `<div><b>⚖️ 국민통합당</b><p style="margin:4px 0 0">${escHtml(stances.center)}</p></div>` : ''}
+    </div>
+    ${effectEntries ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:12px"><span style="font-size:12px;color:var(--muted,#6b7280)">게임 효과</span>${effectEntries}</div>` : ''}
+  </section>`;
+}
+
 export async function renderDetail(id) {
   const el = document.getElementById('page-content');
   el.innerHTML = `<div class="loading-center"><div class="spinner spinner--lg"></div></div>`;
@@ -85,8 +123,9 @@ function renderDetailPage(el, post, comments, isScrapped = false) {
     <div data-detail-root data-post-id="${escHtml(post.id)}" style="max-width:720px;margin:0 auto">
       <div class="card">
         <div class="detail-header">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
             <span class="feed-card__type-badge feed-card__type-badge--${catClass}">${typeLabel}</span>
+            ${renderHistoryBadges(post)}
             ${post.tags?.map(t => `<span class="tag">#${escHtml(t)}</span>`).join('') || ''}
           </div>
           <h1 class="detail-title">${escHtml(detailTitle || '')}</h1>
@@ -105,6 +144,7 @@ function renderDetailPage(el, post, comments, isScrapped = false) {
         ${post.images?.length ? renderImageSection(post.images) : ''}
 
         <div class="detail-body">
+          ${renderHistoryContext(post)}
           ${post.desc ? `<p>${escHtml(post.desc).replace(/\n/g, '<br>')}</p>` : ''}
           ${renderTypeBody(post)}
         </div>
