@@ -64,7 +64,7 @@ module.exports = {
   getKingHistory: battle.getKingHistory,
   adminGenerateBattle: battle.adminGenerateBattle,
   reactToBattleComment: battle.reactToBattleComment,
-  adminResetBattleData: battle.adminResetAllPoints,
+  adminResetBattleData: battle.adminResetBattleData,
   adminResetAllPoints: battle.adminResetAllPoints,
   getPoliticsOverview: coreParties.getPoliticsOverview,
   getPartyMembers: coreParties.getPartyMembers,
