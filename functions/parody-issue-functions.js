@@ -86,6 +86,27 @@ function fallbackIssue(event) {
   };
 }
 
+async function requireAdmin(req) {
+  if (!req.auth) throw new HttpsError('unauthenticated', '로그인 필요');
+  const adminSnap = await db.doc(`admins/${req.auth.uid}`).get();
+  if (!adminSnap.exists) throw new HttpsError('permission-denied', '관리자 전용');
+  return req.auth.uid;
+}
+
+function publicEvent(event) {
+  return {
+    day: event.day,
+    era: event.era,
+    motifYear: event.motifYear,
+    motif: event.motif,
+    parodyTitle: event.parodyTitle,
+    issueSummary: event.issueSummary,
+    question: event.question,
+    stances: event.stances,
+    effects: event.effects || {},
+  };
+}
+
 async function generateHistoricalIssue(event) {
   const prompt = `당신은 소소킹의 역사 풍자 정치게임 작가입니다.
 군사독재가 끝나고 새 공화국이 시작된 뒤의 한국 현대정치 흐름을 모티브로 하되, 실제 인물명·실제 정당명은 쓰지 말고 모두 가상 국가 "소소공화국"의 사건처럼 변형하세요.
@@ -210,10 +231,21 @@ exports.generateDailyParodyIssues = onSchedule(
   async () => { await runGenerateDailyParodyIssues(); },
 );
 
+exports.previewHistoryIssue = onCall({ region: REGION, timeoutSeconds: 30 }, async req => {
+  await requireAdmin(req);
+  const date = req.data?.date || kstToday();
+  const event = req.data?.day ? eventByDay(req.data.day) : eventForDate(date);
+  const cacheSnap = await db.doc(`daily_history_issues/${date}`).get().catch(() => null);
+  return {
+    ok: true,
+    date,
+    event: publicEvent(event),
+    cached: cacheSnap && cacheSnap.exists ? cacheSnap.data() : null,
+  };
+});
+
 exports.triggerParodyIssues = onCall({ region: REGION, timeoutSeconds: 60 }, async req => {
-  if (!req.auth) throw new HttpsError('unauthenticated', '로그인 필요');
-  const adminSnap = await db.doc(`admins/${req.auth.uid}`).get();
-  if (!adminSnap.exists) throw new HttpsError('permission-denied', '관리자 전용');
+  await requireAdmin(req);
   const result = await runGenerateDailyParodyIssues({
     force: !!req.data?.force,
     day: req.data?.day,
