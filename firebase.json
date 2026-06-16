@@ -4,8 +4,6 @@
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
       { "source": "/p/**", "function": "seoPost" },
-      { "source": "/game/liar", "function": "seoGameLiar" },
-      { "source": "/game/mafia", "function": "seoGameMafia" },
       { "source": "/sitemap.xml", "function": "sitemapXml" },
       { "source": "**", "destination": "/index.html" }
     ],
