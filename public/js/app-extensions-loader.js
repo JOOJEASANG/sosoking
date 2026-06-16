@@ -1,46 +1,12 @@
 // app-extensions-loader.js
-//
-// index.html에 흩어져 있던 기능 보정/확장 모듈을 한 곳에서 관리합니다.
-// 각 모듈은 독립 실행형으로 만들어져 있으므로 실패해도 앱 전체 부팅을 막지 않습니다.
+// 핵심 게임 흐름만 남기기 위해 보조 UI 확장 모듈은 기본 로드에서 제외합니다.
+// 필요한 기능은 각 핵심 페이지 안에서 직접 제공합니다.
 
 const EXTENSION_MODULES = [
   './layout-id-repair.js',
-  './admin-visibility-guard.js',
-  './admin-shortcuts-pwa.js',
-  './account-ui.js',
-  './account-notifications-uid-fix.js',
   './pc-sidebar-spacing.js',
-  './history-sidebar-link.js',
-  './detail-actions-bootstrap.js',
-  './post-owner-actions.js',
-  './detail-post-nav.js',
-  './points-actions.js',
-  './party-war-ui.js',
-  './three-party-ui.js',
-  './party-ranking-polish.js',
-  './campaign-help-polish.js',
-  './congress-route.js',
-  './constitutional-court-route.js',
-  './republic-polish.js',
-  './republic-game-flow.js',
-  './republic-detail-panel.js',
-  './battle-opponent-reaction.js',
-  './battle-comment-result-card.js',
-  './civic-plaza-copy.js',
-  './president-decree-helper.js',
-  './election-consistency-fix.js',
-  './court-consistency-fix.js',
-  './political-extra-cleanup.js',
-  './admin-dashboard-polish.js',
-  './admin-feed-safety-fix.js',
-  './admin-reports-panel.js',
-  './feedback-actions.js',
-  './admin-ui-cleanup.js',
-  './notifications-ui.js',
-  './account-request-cleanup.js',
-  './ui-final-interactions.js',
-  './ux-improvements.js',
-  './game-feel.js',
+  './account-ui.js',
+  './nickname-icon-actions.js',
 ];
 
 async function loadExtension(path) {
@@ -57,14 +23,7 @@ Promise.allSettled(EXTENSION_MODULES.map(loadExtension)).then(results => {
   const states = results.map(result => result.value).filter(Boolean);
   const failed = states.filter(item => !item.ok).map(item => item.path);
   const loaded = states.filter(item => item.ok).map(item => item.path);
-  const status = {
-    total: EXTENSION_MODULES.length,
-    loaded,
-    failed,
-    ok: failed.length === 0,
-    updatedAt: Date.now(),
-  };
-
+  const status = { total: EXTENSION_MODULES.length, loaded, failed, ok: failed.length === 0, updatedAt: Date.now() };
   window.__sosokingExtensionStatus = status;
   if (failed.length) console.warn('[sosoking extensions] failed modules:', failed);
   window.dispatchEvent(new CustomEvent('sosoking:extensions-ready', { detail: status }));
