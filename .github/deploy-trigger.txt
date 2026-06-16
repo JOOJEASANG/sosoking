@@ -1,2 +1,2 @@
-2026-06-15 18:05 KST
-Trigger Firebase deploy after political feed cleanup.
+2026-06-16 09:35 KST
+Trigger Firebase deploy for historical issue tools and admin generation controls.
