@@ -30,6 +30,7 @@ const sitemapXml = onRequest({ region: 'asia-northeast3' }, async (req, res) => 
     { loc: `${SITE_URL}/`,           priority: '1.0', changefreq: 'daily'  },
     { loc: `${SITE_URL}/republic`,   priority: '0.9', changefreq: 'daily'  },
     { loc: `${SITE_URL}/battle`,     priority: '0.9', changefreq: 'daily'  },
+    { loc: `${SITE_URL}/history`,    priority: '0.9', changefreq: 'weekly' },
     { loc: `${SITE_URL}/parties`,    priority: '0.8', changefreq: 'daily'  },
     { loc: `${SITE_URL}/election`,   priority: '0.8', changefreq: 'daily'  },
     { loc: `${SITE_URL}/congress`,   priority: '0.7', changefreq: 'weekly' },
@@ -92,8 +93,7 @@ ${urls.map(item => `  <url>
 </urlset>`;
 
   res.set('Content-Type', 'application/xml; charset=utf-8');
-  res.set('Cache-Control', 'public, max-age=3600'); // 1시간 캐시
-  res.status(200).send(xml);
+  res.send(xml);
 });
 
 module.exports = { sitemapXml };
