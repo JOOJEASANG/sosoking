@@ -8,6 +8,7 @@ const EXTENSION_MODULES = [
   './account-ui.js',
   './nickname-icon-actions.js',
   './forces-route-extension.js',
+  './forces-sidebar-link.js',
 ];
 
 async function loadExtension(path) {
