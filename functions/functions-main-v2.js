@@ -102,5 +102,6 @@ module.exports = {
   ...kakaoAuth,
   adminSeedWorldHistory: adminSeed.adminSeedWorldHistory,
   generateDailyParodyIssues: parody.generateDailyParodyIssues,
+  previewHistoryIssue: parody.previewHistoryIssue,
   triggerParodyIssues: parody.triggerParodyIssues,
 };
