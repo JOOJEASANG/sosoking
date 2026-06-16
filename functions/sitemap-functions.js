@@ -39,8 +39,6 @@ const sitemapXml = onRequest({ region: 'asia-northeast3' }, async (req, res) => 
     { loc: `${SITE_URL}/guide`,      priority: '0.6', changefreq: 'monthly' },
     { loc: `${SITE_URL}/terms`,      priority: '0.3', changefreq: 'yearly' },
     { loc: `${SITE_URL}/privacy`,    priority: '0.3', changefreq: 'yearly' },
-    { loc: `${SITE_URL}/game/liar`,  priority: '0.5', changefreq: 'monthly' },
-    { loc: `${SITE_URL}/game/mafia`, priority: '0.5', changefreq: 'monthly' },
   ];
 
   let postUrls = [];
