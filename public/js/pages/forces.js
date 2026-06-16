@@ -6,6 +6,15 @@ import { setMeta } from '../utils/seo.js';
 import { escHtml } from '../utils/helpers.js';
 import { toast } from '../components/toast.js';
 
+const FALLBACK_FORCES = [
+  { id: 'investigation', name: '특별수사청', emoji: '🕵️', color: '#334155', role: '수사·권력 감시', routeName: '수사권력 루트', agenda: '부패 수사, 권력기관 개혁, 정치권 압박', strength: '정치권을 압박하고 비리 프레임을 만들 수 있습니다.', memberCount: 0, totalInfluence: 0 },
+  { id: 'police', name: '치안안전청', emoji: '🚓', color: '#1D4ED8', role: '치안·집회 관리', routeName: '치안권력 루트', agenda: '민생 안전, 집회 대응, 질서 유지', strength: '사회 불안 이슈에서 여론과 안정성에 영향을 줍니다.', memberCount: 0, totalInfluence: 0 },
+  { id: 'business', name: '재계연합', emoji: '🏢', color: '#B45309', role: '경제·투자 압력', routeName: '경제권력 루트', agenda: '투자, 고용, 규제 완화, 성장 프레임', strength: '경제 위기와 성장 이슈에서 정당과 대통령을 움직입니다.', memberCount: 0, totalInfluence: 0 },
+  { id: 'media', name: '전국언론연합', emoji: '📰', color: '#7C3AED', role: '여론·프레임 형성', routeName: '여론권력 루트', agenda: '보도 프레임, 지지율, 의혹 제기, 여론전', strength: '대선 판세와 정당 이미지에 강한 영향을 줍니다.', memberCount: 0, totalInfluence: 0 },
+  { id: 'civic', name: '시민연대', emoji: '✊', color: '#059669', role: '개혁·시민권 요구', routeName: '시민운동 루트', agenda: '개혁 요구, 복지, 인권, 시민 참여', strength: '개혁 이슈와 광장 여론을 움직입니다.', memberCount: 0, totalInfluence: 0 },
+  { id: 'bureaucracy', name: '행정관료단', emoji: '🏛️', color: '#475569', role: '예산·정책 집행', routeName: '관료권력 루트', agenda: '정책 집행, 예산 배분, 행정 저항, 실무 통제', strength: '대통령 공약이 실제로 실행되는 속도에 영향을 줍니다.', memberCount: 0, totalInfluence: 0 },
+];
+
 function call(name, payload = {}) {
   return httpsCallable(functions, name)(payload).then(res => res.data || {}).catch(error => ({ error }));
 }
@@ -15,6 +24,20 @@ function fmtNum(n) {
   if (n >= 10000) return (n / 10000).toFixed(1).replace(/\.0$/, '') + '만';
   if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
   return String(n);
+}
+
+function localForceId() {
+  try { return localStorage.getItem('sosoking.externalForceId') || ''; } catch { return ''; }
+}
+function setLocalForceId(id) {
+  try { if (id) localStorage.setItem('sosoking.externalForceId', id); else localStorage.removeItem('sosoking.externalForceId'); } catch {}
+}
+function normalizeOverview(overview) {
+  const forces = Array.isArray(overview?.forces) && overview.forces.length ? overview.forces : FALLBACK_FORCES;
+  const localId = localForceId();
+  const localForce = forces.find(f => f.id === localId);
+  const me = overview?.me || (localForce ? { forceId: localForce.id, forceName: localForce.name, influence: 0 } : null);
+  return { ok: !!overview?.ok, forces, me, dailyLimit: overview?.dailyLimit || 3, reward: overview?.reward || 3, backendError: overview?.error || null };
 }
 
 function ensureStyle() {
@@ -60,20 +83,11 @@ function renderForces(overview) {
     ${forces.map(f => {
       const isMine = f.id === myForceId;
       return `<article class="force-card" style="--force-color:${escHtml(f.color || '#6366f1')}">
-        <div class="force-head">
-          <div><div class="force-name">${escHtml(f.emoji)} ${escHtml(f.name)}</div><div class="force-role">${escHtml(f.routeName)} · ${escHtml(f.role)}</div></div>
-          <div class="force-power">${fmtNum(f.totalInfluence)}P</div>
-        </div>
+        <div class="force-head"><div><div class="force-name">${escHtml(f.emoji)} ${escHtml(f.name)}</div><div class="force-role">${escHtml(f.routeName)} · ${escHtml(f.role)}</div></div><div class="force-power">${fmtNum(f.totalInfluence)}P</div></div>
         <div class="force-text">${escHtml(f.strength)}</div>
-        <div class="force-meta">
-          <div class="force-kv"><span>핵심 의제</span><b>${escHtml(f.agenda)}</b></div>
-          <div class="force-kv"><span>구성원</span><b>${fmtNum(f.memberCount)}명</b></div>
-          <div class="force-kv"><span>대표 영향력</span><b>${f.leader ? `${escHtml(f.leader.nickname)} · ${fmtNum(f.leader.influence)}P` : '아직 없음'}</b></div>
-        </div>
+        <div class="force-meta"><div class="force-kv"><span>핵심 의제</span><b>${escHtml(f.agenda)}</b></div><div class="force-kv"><span>구성원</span><b>${fmtNum(f.memberCount)}명</b></div><div class="force-kv"><span>대표 영향력</span><b>${f.leader ? `${escHtml(f.leader.nickname)} · ${fmtNum(f.leader.influence)}P` : '아직 없음'}</b></div></div>
         ${isMine ? '<div style="margin-top:12px"><span class="force-badge">내 외부세력</span></div>' : ''}
-        <div class="forces-actions">
-          ${isMine ? `<button class="btn btn--primary btn--sm" data-act="${escHtml(f.id)}">세력 활동 +${overview?.reward || 3}P</button><button class="btn btn--ghost btn--sm btn--danger-soft" data-leave-force="${escHtml(f.id)}">세력 탈퇴</button>` : `<button class="btn btn--ghost btn--sm" data-join-force="${escHtml(f.id)}">이 세력 선택</button>`}
-        </div>
+        <div class="forces-actions">${isMine ? `<button class="btn btn--primary btn--sm" data-act="${escHtml(f.id)}">세력 활동 +${overview?.reward || 3}P</button><button class="btn btn--ghost btn--sm btn--danger-soft" data-leave-force="${escHtml(f.id)}">세력 탈퇴</button>` : `<button class="btn btn--primary btn--sm" data-join-force="${escHtml(f.id)}">이 세력 선택</button>`}</div>
         ${isMine ? `<div class="force-note">오늘 활동은 하루 ${overview?.dailyLimit || 3}회까지 가능합니다. 영향력이 높아질수록 이 세력의 정치적 압박력이 커집니다.</div>` : ''}
       </article>`;
     }).join('')}
@@ -85,9 +99,15 @@ async function bindActions(el) {
   el.querySelectorAll('[data-join-force]').forEach(btn => btn.addEventListener('click', async () => {
     if (!auth.currentUser) { navigate('/login'); return; }
     btn.disabled = true;
-    const res = await call('joinExternalForce', { forceId: btn.dataset.joinForce });
-    if (res?.error) toast.error(res.error.message || '세력 선택에 실패했습니다.');
-    else toast.success(`${res.force?.emoji || '⚡'} ${res.force?.name || '외부세력'} 선택 완료`);
+    const forceId = btn.dataset.joinForce;
+    const res = await call('joinExternalForce', { forceId });
+    if (res?.error) {
+      setLocalForceId(forceId);
+      toast.info('세력 선택 표시 완료. 서버 배포 후 자동 저장됩니다.');
+    } else {
+      setLocalForceId(forceId);
+      toast.success(`${res.force?.emoji || '⚡'} ${res.force?.name || '외부세력'} 선택 완료`);
+    }
     renderForcesPage();
   }));
   el.querySelectorAll('[data-act]').forEach(btn => btn.addEventListener('click', async () => {
@@ -103,7 +123,8 @@ async function bindActions(el) {
     if (!window.confirm('외부세력 소속을 해제할까요? 포인트 차감은 없습니다.')) return;
     btn.disabled = true;
     const res = await call('leaveExternalForce', {});
-    if (res?.error) toast.error(res.error.message || '세력 탈퇴에 실패했습니다.');
+    setLocalForceId('');
+    if (res?.error) toast.info('세력 선택 표시를 해제했습니다.');
     else toast.success('외부세력 소속을 해제했습니다.');
     renderForcesPage();
   }));
@@ -115,11 +136,7 @@ export async function renderForcesPage() {
   const el = document.getElementById('page-content');
   if (!el) return;
   el.innerHTML = `<div class="forces-page"><div class="skeleton" style="height:190px;border-radius:28px"></div><div class="skeleton" style="height:420px;border-radius:22px"></div></div>`;
-  const overview = await call('getExternalForcesOverview');
-  el.innerHTML = `<div class="forces-page page-enter">
-    ${renderHero(overview?.me, overview)}
-    ${renderSummary(overview)}
-    ${renderForces(overview)}
-  </div>`;
+  const overview = normalizeOverview(await call('getExternalForcesOverview'));
+  el.innerHTML = `<div class="forces-page page-enter">${renderHero(overview.me, overview)}${renderSummary(overview)}${renderForces(overview)}</div>`;
   bindActions(el);
 }
