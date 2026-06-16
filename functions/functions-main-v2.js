@@ -18,6 +18,7 @@ const kakaoAuth = require('./kakao-auth-functions.js');
 const battle = require('./battle-functions.js');
 const politics = require('./politics-functions-v2.js');
 const politicsDetail = require('./politics-detail-functions.js');
+const historyArchive = require('./history-archive-functions.js');
 const coreParties = require('./three-party-functions.js');
 const gameDeadline = require('./game-deadline-functions.js');
 const partyLeague = require('./party-war-functions.js');
@@ -92,6 +93,8 @@ module.exports = {
   askPresidentQuestion: politics.askPresidentQuestion,
   answerPresidentQuestion: politics.answerPresidentQuestion,
   getCampaignMomentum: politicsDetail.getCampaignMomentum,
+  getHistoryArchive: historyArchive.getHistoryArchive,
+  getHistoryEvent: historyArchive.getHistoryEvent,
   ...uploadImage,
   ...nicknameIcon,
   ...postOwner,
