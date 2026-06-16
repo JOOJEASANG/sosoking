@@ -22,6 +22,7 @@ const gameDeadline = require('./game-deadline-functions.js');
 const partyLeague = require('./party-war-functions.js');
 const congress = require('./congress-functions.js');
 const constitutionalCourt = require('./constitutional-court-functions.js');
+const legacyDisabled = require('./legacy-disabled-functions.js');
 
 const adminSeed = require('./admin-seed-functions.js');
 const parody = require('./parody-issue-functions.js');
@@ -95,6 +96,7 @@ module.exports = {
   ...postOwner,
   ...postView,
   ...kakaoAuth,
+  ...legacyDisabled,
   adminSeedWorldHistory: adminSeed.adminSeedWorldHistory,
   generateDailyParodyIssues: parody.generateDailyParodyIssues,
   previewHistoryIssue: parody.previewHistoryIssue,
