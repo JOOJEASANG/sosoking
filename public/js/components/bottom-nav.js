@@ -7,7 +7,7 @@ function svgIcon(path, strokeWidth = '1.8') {
 }
 
 function iconHome() {
-  return svgIcon('<path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12 12 3l9.75 9M4.5 10.5V20.25c0 .414.336.75.75.75H9.75v-4.5c0-.414.336-.75.75-.75h3c.414 0 .75.336.75.75v4.5h4.5a.75.75 0 0 0 .75-.75V10.5"/>');
+  return svgIcon('<path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12 12 3l9.75 9M4.5 10.5V20.25c0 .414.336.75.75.75H9.75v-4.5c0-.414.336.75.75.75h3c.414 0 .75.336.75.75v4.5h4.5a.75.75 0 0 0 .75-.75V10.5"/>');
 }
 
 function iconFeed() {
@@ -37,6 +37,7 @@ function isNavActive(navPath, currentPath) {
 
 const MORE_ITEMS = [
   { path: '/history',              emoji: '📚', label: '역사자료' },
+  { path: '/election',             emoji: '👑', label: '대통령 선거' },
   { path: '/feed',                 emoji: '🏛️', label: '시민광장' },
   { path: '/ranking',              emoji: '🏆', label: '랭킹' },
   { path: '/news',                 emoji: '📰', label: '소소신문' },
@@ -137,6 +138,6 @@ window.addEventListener('hashchange', () => {
   el.querySelectorAll('[data-nav-path]').forEach(btn => {
     const isActive = isNavActive(btn.dataset.navPath, path);
     btn.classList.toggle('active', isActive);
-    btn.setAttribute('aria-current', isActive ? 'page' : 'false');
+    btn.setAttribute('aria-current', active ? 'page' : 'false');
   });
 });
