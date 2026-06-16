@@ -106,6 +106,7 @@ async function renderGuideSafe() { const module = await import('./pages/guide.js
 async function registerRoutes() {
   registerRoute('/', async () => renderPage((await import('./pages/home.js')).renderHome, '홈'));
   registerRoute('/battle', async () => renderPage((await import('./pages/battle.js')).renderBattle, '정치배틀'));
+  registerRoute('/history', async () => renderPage((await import('./pages/history.js')).renderHistory, '역사정치 자료실'));
   registerRoute('/republic', async () => renderPage((await import('./pages/republic.js')).renderRepublic, '🏛️ 소소공화국'));
   registerRoute('/parties', async () => renderPage((await import('./pages/parties.js')).renderParties, '정당'));
   registerRoute('/election', async () => renderPage((await import('./pages/election.js')).renderElection, '대통령 선거'));
@@ -207,8 +208,8 @@ function renderFrame() {
         <footer class="site-footer" id="site-footer">
           <div class="site-footer__body" id="footer-body" hidden>
             <div class="site-footer__inner">
-              <div class="site-footer__brand-block"><a href="#/" class="site-footer__brand"><img src="/logo.svg" alt="" width="26" height="26"><span>소소킹</span></a><div class="site-footer__tagline">3개 정당 AI 정치인의 가상 정치 공화국<br>매일 새로운 당선자가 탄생합니다</div></div>
-              <div><div class="site-footer__col-title">공화국</div><div class="site-footer__links"><a href="#/republic">🏛️ 공화국 허브</a><a href="#/battle">⚔️ 정치배틀</a><a href="#/election">👑 대선</a><a href="#/congress">🏛️ 국회</a><a href="#/constitutional-court">⚖️ 헌법재판소</a><a href="#/news">📰 소소신문</a><a href="#/king-history">🏆 역대 당선자</a></div></div>
+              <div class="site-footer__brand-block"><a href="#/" class="site-footer__brand"><img src="/logo.svg" alt="" width="26" height="26"><span>소소킹</span></a><div class="site-footer__tagline">실제 역사 모티브와 가상 정당이 만나는<br>역사정치 시뮬레이션</div></div>
+              <div><div class="site-footer__col-title">공화국</div><div class="site-footer__links"><a href="#/republic">🏛️ 공화국 허브</a><a href="#/battle">⚔️ 정치배틀</a><a href="#/history">📚 역사자료</a><a href="#/election">👑 대선</a><a href="#/congress">🏛️ 국회</a><a href="#/constitutional-court">⚖️ 헌법재판소</a><a href="#/news">📰 소소신문</a><a href="#/king-history">🏆 역대 당선자</a></div></div>
               <div><div class="site-footer__col-title">커뮤니티</div><div class="site-footer__links"><a href="#/feed">시민광장</a><a href="#/ranking">랭킹</a><a href="#/parties">정당 상세</a><a href="#/guide">이용안내</a></div></div>
               <div><div class="site-footer__col-title">정보</div><div class="site-footer__links"><a href="#/terms">이용약관</a><a href="#/privacy">개인정보처리방침</a></div></div>
             </div>
@@ -218,50 +219,32 @@ function renderFrame() {
         <nav id="bottom-nav" class="bottom-nav"></nav>
       </div>
     </div>`;
-  renderSidebar(); renderHeader(); renderBottomNav(); bindFooterToggle();
+  renderHeader();
+  renderSidebar();
+  renderBottomNav();
+  bindFooterToggle();
 }
-
-function rerenderCurrentRouteSoon() { setTimeout(() => { renderFrame(); window.dispatchEvent(new HashChangeEvent('hashchange')); }, 0); }
 
 async function handleKakaoCallback() {
   const params = new URLSearchParams(window.location.search);
   const code = params.get('code');
-  const oauthError = params.get('error');
-  if (!code && !oauthError) return;
-  window.history.replaceState({}, '', '/');
-  if (oauthError) { setTimeout(() => toast.warn('카카오 로그인이 취소됐어요'), 800); return; }
-  const returnTo = sessionStorage.getItem('kakao_return_to') || '/';
-  sessionStorage.removeItem('kakao_return_to');
-  const processingEl = document.getElementById('app');
-  if (processingEl) processingEl.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:sans-serif"><div style="text-align:center"><div class="spinner spinner--lg"></div><p>카카오 로그인 처리 중...</p></div></div>';
-  try {
-    const { getFunctions, httpsCallable } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js');
-    const { getApp } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');
-    const { signInWithCustomToken, updateProfile } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
-    const fns = getFunctions(getApp(), 'asia-northeast3');
-    const { data } = await httpsCallable(fns, 'kakaoLogin')({ code, redirectUri: 'https://sosoking.co.kr/' });
-    await signInWithCustomToken(auth, data.customToken);
-    if (auth.currentUser && (data.displayName || data.photoURL)) {
-      await updateProfile(auth.currentUser, { displayName: data.displayName || auth.currentUser.displayName || null, photoURL: data.photoURL || auth.currentUser.photoURL || null }).catch(() => {});
-    }
-    toast.success('카카오 로그인됐어요!');
-    window.location.hash = '#' + (returnTo.startsWith('/') ? returnTo : '/' + returnTo);
-  } catch (e) {
-    console.error('[kakao callback]', e);
-    const label = e?.code ? `${e?.message || String(e)} (${e.code})` : (e?.message || String(e));
-    const backPage = sessionStorage.getItem('kakao_page') || 'login';
-    sessionStorage.removeItem('kakao_page');
-    setTimeout(() => { toast.error('카카오 로그인 실패: ' + label); window.location.hash = '#/' + backPage; }, 300);
-  }
-}
+  const state = params.get('state');
+  if (!code || state !== 'kakao_login') return;
 
-async function loadPresidentUid() {
   try {
-    const { httpsCallable } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js');
-    const { functions } = await import('./firebase.js');
-    const { data } = await httpsCallable(functions, 'getElection')();
-    appState.presidentUid = data?.president?.candidateUid || '';
-  } catch {}
+    const { data } = await import('./firebase.js').then(({ functions }) =>
+      import('https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js').then(({ httpsCallable }) =>
+        httpsCallable(functions, 'kakaoLogin')({ code, redirectUri: window.location.origin + '/' })
+      )
+    );
+    if (!data.customToken) throw new Error('토큰 발급 실패');
+    const { signInWithCustomToken } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
+    await signInWithCustomToken(auth, data.customToken);
+    history.replaceState(null, '', '/');
+  } catch (error) {
+    console.error('[kakao callback]', error);
+    toast.error?.('카카오 로그인 처리에 실패했습니다.');
+  }
 }
 
 async function initApp() {
@@ -271,15 +254,17 @@ async function initApp() {
   await registerRoutes();
   initRouter();
   loadOptionalModules();
-  loadPresidentUid();
+
   onAuthStateChanged(auth, async user => {
-    appState.user = user || null;
-    appState.isAuthenticated = !!user;
-    if (user) await fetchUserProfile(user);
-    else { appState.nickname = ''; appState.nicknameIcon = null; appState.points = 0; appState.isAdmin = false; appState.partyId = ''; }
-    if (appState.isAdmin && !isAdminAllowedPath(currentPath())) navigate('/admin');
-    rerenderCurrentRouteSoon();
+    appState.user = user;
+    await fetchUserProfile(user);
+    renderHeader();
+    renderSidebar();
+    renderBottomNav();
   });
 }
 
-initApp().catch(error => { console.error('[app init failed]', error); showPageError('앱 초기화 실패', error); });
+initApp().catch(error => {
+  console.error('[app init failed]', error);
+  showPageError('앱 초기화 실패', error);
+});
