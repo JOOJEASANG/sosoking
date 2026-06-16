@@ -1,6 +1,6 @@
 'use strict';
 
-// parody-issue-functions.js — 매일 오전 8시 새공화국 역사 풍자 이슈 1건 생성
+// parody-issue-functions.js — 매일 오전 8시 새공화국 역사정치 이슈 3건 생성
 
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
@@ -10,8 +10,10 @@ const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 if (!getApps().length) initializeApp();
 const db = getFirestore();
 const REGION = 'asia-northeast3';
+const DAILY_HISTORY_ISSUE_COUNT = 3;
+const MAX_HISTORY_ISSUE_COUNT = 5;
 
-const { eventForDate, eventByDay, buildHistoryPromptBlock } = require('./republic-history-events');
+const { HISTORY_EVENTS, eventForDate, eventByDay, buildHistoryPromptBlock } = require('./republic-history-events');
 
 const BOT_AUTHOR = Object.freeze({
   authorId: 'system_new_republic',
@@ -75,6 +77,23 @@ function clean(value, max) {
 
 function cleanArray(value, maxLen = 160, limit = 5) {
   return Array.isArray(value) ? value.map(v => clean(v, maxLen)).filter(Boolean).slice(0, limit) : [];
+}
+
+function clampIssueCount(value) {
+  const n = Number(value || DAILY_HISTORY_ISSUE_COUNT);
+  if (!Number.isFinite(n)) return DAILY_HISTORY_ISSUE_COUNT;
+  return Math.max(1, Math.min(MAX_HISTORY_ISSUE_COUNT, Math.floor(n)));
+}
+
+function slotId(slot) {
+  return String(Number(slot || 0) + 1).padStart(2, '0');
+}
+
+function pickEventForSlot(date, slot, startDay = null) {
+  const total = HISTORY_EVENTS.length || 30;
+  const baseDay = startDay ? Number(startDay) : Number(eventForDate(`${date}_base`)?.day || 1);
+  const day = (((baseDay - 1 + Number(slot || 0)) % total) + 1);
+  return eventByDay(day);
 }
 
 function fallbackIssue(event) {
@@ -217,8 +236,9 @@ function renderDesc(issue, event) {
   return lines.filter(Boolean).join('\n').replace(/\n{3,}/g, '\n\n');
 }
 
-async function createHistoricalFeedPost(issue, event, today) {
-  const ref = db.collection('feeds').doc(`history_${today}`);
+async function createHistoricalFeedPost(issue, event, today, slot = 0) {
+  const id = `history_${today}_${slotId(slot)}`;
+  const ref = db.collection('feeds').doc(id);
   const now = FieldValue.serverTimestamp();
   const tags = Array.isArray(issue.tags) && issue.tags.length
     ? issue.tags.map(t => clean(t, 18)).filter(Boolean).slice(0, 6)
@@ -242,6 +262,7 @@ async function createHistoricalFeedPost(issue, event, today) {
     isAiGenerated: true,
     isHistoryIssue: true,
     historyDate: today,
+    historySlot: Number(slot || 0) + 1,
     historyDay: event.day,
     historyEra: event.era,
     motifYear: event.motifYear,
@@ -271,57 +292,86 @@ async function createHistoricalFeedPost(issue, event, today) {
 
 async function runGenerateDailyParodyIssues(options = {}) {
   const today = options.date || kstToday();
-  const event = options.day ? eventByDay(options.day) : eventForDate(today);
+  const count = clampIssueCount(options.count);
+  const startDay = options.day ? Number(options.day) : null;
   const cacheRef = db.doc(`daily_history_issues/${today}`);
   const cacheSnap = await cacheRef.get();
+  const cachedItems = Array.isArray(cacheSnap.data()?.items) ? cacheSnap.data().items : [];
 
-  if (cacheSnap.exists && cacheSnap.data()?.done && !options.force) {
-    console.log('[history-parody] already generated for', today);
-    return { skipped: true, date: today, postId: cacheSnap.data()?.postId || null };
+  if (cacheSnap.exists && cacheSnap.data()?.done && cachedItems.length >= count && !options.force) {
+    console.log('[history-parody] already generated for', today, cachedItems.length);
+    return { skipped: true, date: today, count: cachedItems.length, items: cachedItems };
   }
 
-  const issue = await generateHistoricalIssue(event);
-  const postId = await createHistoricalFeedPost(issue, event, today);
+  const items = options.force ? [] : [...cachedItems];
+  const existingSlots = new Set(items.map(item => Number(item.slot || 0)).filter(Boolean));
+
+  for (let slot = 0; slot < count; slot += 1) {
+    const publicSlot = slot + 1;
+    if (!options.force && existingSlots.has(publicSlot)) continue;
+    const event = pickEventForSlot(today, slot, startDay);
+    const issue = await generateHistoricalIssue(event);
+    const postId = await createHistoricalFeedPost(issue, event, today, slot);
+    items.push({
+      slot: publicSlot,
+      postId,
+      historyDay: event.day,
+      motifYear: event.motifYear,
+      motif: event.motif,
+      title: clean(issue.title || event.parodyTitle, 70),
+    });
+  }
+
+  items.sort((a, b) => Number(a.slot || 0) - Number(b.slot || 0));
   await cacheRef.set({
-    done: true,
-    postId,
+    done: items.length >= count,
+    postId: items[0]?.postId || null,
+    postIds: items.map(item => item.postId).filter(Boolean),
+    items,
+    count: items.length,
+    targetCount: count,
     date: today,
-    historyDay: event.day,
-    motifYear: event.motifYear,
-    motif: event.motif,
-    title: clean(issue.title || event.parodyTitle, 70),
+    historyDay: items[0]?.historyDay || null,
+    motifYear: items[0]?.motifYear || null,
+    motif: items[0]?.motif || null,
+    title: items[0]?.title || null,
     detailed: true,
     generatedAt: FieldValue.serverTimestamp(),
   }, { merge: true });
 
-  console.log('[history-parody] generated daily issue', today, postId);
-  return { skipped: false, date: today, postId, eventDay: event.day, detailed: true };
+  console.log('[history-parody] generated daily issues', today, items.length);
+  return { skipped: false, date: today, count: items.length, items, detailed: true };
 }
 
 exports.generateDailyParodyIssues = onSchedule(
-  { schedule: '0 8 * * *', timeZone: 'Asia/Seoul', region: REGION, timeoutSeconds: 90, memory: '512MiB' },
-  async () => { await runGenerateDailyParodyIssues(); },
+  { schedule: '0 8 * * *', timeZone: 'Asia/Seoul', region: REGION, timeoutSeconds: 240, memory: '512MiB' },
+  async () => { await runGenerateDailyParodyIssues({ count: DAILY_HISTORY_ISSUE_COUNT }); },
 );
 
 exports.previewHistoryIssue = onCall({ region: REGION, timeoutSeconds: 30 }, async req => {
   await requireAdmin(req);
   const date = req.data?.date || kstToday();
-  const event = req.data?.day ? eventByDay(req.data.day) : eventForDate(date);
+  const count = clampIssueCount(req.data?.count || DAILY_HISTORY_ISSUE_COUNT);
+  const startDay = req.data?.day ? Number(req.data.day) : null;
+  const events = Array.from({ length: count }, (_, slot) => publicEvent(pickEventForSlot(date, slot, startDay)));
   const cacheSnap = await db.doc(`daily_history_issues/${date}`).get().catch(() => null);
   return {
     ok: true,
     date,
-    event: publicEvent(event),
+    count,
+    event: events[0],
+    events,
     cached: cacheSnap && cacheSnap.exists ? cacheSnap.data() : null,
   };
 });
 
-exports.triggerParodyIssues = onCall({ region: REGION, timeoutSeconds: 90, memory: '512MiB' }, async req => {
+exports.triggerParodyIssues = onCall({ region: REGION, timeoutSeconds: 240, memory: '512MiB' }, async req => {
   await requireAdmin(req);
   const result = await runGenerateDailyParodyIssues({
     force: !!req.data?.force,
     day: req.data?.day,
     date: req.data?.date,
+    count: req.data?.count || DAILY_HISTORY_ISSUE_COUNT,
   });
   return { ok: true, ...result };
 });
