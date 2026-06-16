@@ -1,6 +1,6 @@
 'use strict';
 
-// parody-issue-functions.js — 매일 오전 8시 AI 풍자 정치 이슈 3건 자동 생성
+// parody-issue-functions.js — 매일 오전 8시 새공화국 역사 풍자 이슈 1건 생성
 
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
@@ -11,16 +11,17 @@ if (!getApps().length) initializeApp();
 const db = getFirestore();
 const REGION = 'asia-northeast3';
 
-const { buildInspirationBlock } = require('./topic-pools');
+const { eventForDate, eventByDay, buildHistoryPromptBlock } = require('./republic-history-events');
 
 const BOT_AUTHOR = Object.freeze({
-  authorId: 'system_parody',
-  authorName: '🎭 소소공화국 시사통신',
+  authorId: 'system_new_republic',
+  authorName: '🏛️ 새공화국 기록관',
   authorPhoto: '',
-  rankEmoji: '🎭',
+  rankEmoji: '🏛️',
 });
 
-let _aiConfig = null, _aiConfigAt = 0;
+let _aiConfig = null;
+let _aiConfigAt = 0;
 async function getAiConfig() {
   if (_aiConfig && Date.now() - _aiConfigAt < 30_000) return _aiConfig;
   const snap = await db.doc('config/ai_king').get();
@@ -38,7 +39,7 @@ async function callAI(prompt, maxTokens = 1200) {
     const model = genAI.getGenerativeModel({ model: config.geminiModel || 'gemini-2.5-flash' });
     const result = await model.generateContent({
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      generationConfig: { maxOutputTokens: maxTokens, temperature: 1.1, responseMimeType: 'application/json' },
+      generationConfig: { maxOutputTokens: maxTokens, temperature: 0.85, responseMimeType: 'application/json' },
     });
     return result.response.text();
   }
@@ -48,7 +49,7 @@ async function callAI(prompt, maxTokens = 1200) {
   const msg = await anthropic.messages.create({
     model: config.claudeModel || 'claude-haiku-4-5-20251001',
     max_tokens: maxTokens,
-    temperature: 1.0,
+    temperature: 0.8,
     messages: [{ role: 'user', content: prompt }],
   });
   return msg.content.find(b => b.type === 'text')?.text || '';
@@ -68,134 +69,140 @@ function kstToday() {
   }).format(new Date());
 }
 
-async function loadGameContext() {
-  const today = kstToday();
-  const [presidentSnap, newsSnap, battleSnap] = await Promise.all([
-    db.doc('president/current').get(),
-    db.doc(`daily_news/${today}`).get(),
-    db.doc(`daily_battle/${today}`).get(),
-  ]);
+function clean(value, max) {
+  return String(value || '').replace(/[<>]/g, '').trim().slice(0, max);
+}
 
-  const presidentData = presidentSnap.exists ? presidentSnap.data() : null;
-  const newsData = newsSnap.exists ? newsSnap.data() : null;
-  const battleData = battleSnap.exists ? battleSnap.data() : null;
-
+function fallbackIssue(event) {
   return {
-    presidentName: presidentData?.presidentName || '미선출',
-    presidentParty: presidentData?.partyName || '',
-    newsHeadline: newsData?.headline || newsData?.title || '',
-    battleTopic: battleData?.title || '',
+    title: event.parodyTitle,
+    desc: event.issueSummary,
+    brief: `${event.era} · ${event.motifYear}년 모티브`,
+    question: event.question,
+    conservative: event.stances.national,
+    progressive: event.stances.youth,
+    centrist: event.stances.center,
+    tags: ['새공화국', '현대사', '정치풍자'],
   };
 }
 
-async function generateParodyIssues(ctx, today) {
-  const prompt = `당신은 소소공화국의 시사 풍자 작가입니다.
-소소공화국 현황:
-- 현 대통령: ${ctx.presidentName}${ctx.presidentParty ? ` (${ctx.presidentParty})` : ''}
-- 오늘의 뉴스 헤드라인: ${ctx.newsHeadline || '특이사항 없음'}
-- 오늘의 정당 배틀 주제: ${ctx.battleTopic || '미지정'}
+async function generateHistoricalIssue(event) {
+  const prompt = `당신은 소소킹의 역사 풍자 정치게임 작가입니다.
+군사독재가 끝나고 새 공화국이 시작된 뒤의 한국 현대정치 흐름을 모티브로 하되, 실제 인물명·실제 정당명은 쓰지 말고 모두 가상 국가 "소소공화국"의 사건처럼 변형하세요.
+피해 사건을 조롱하지 말고, 제도·권력·여론·정당 전략을 풍자하세요.
 
-${buildInspirationBlock(today)}
+${buildHistoryPromptBlock(event)}
 
-위 상황을 참고해 오늘의 풍자 시사 이슈 3개를 JSON으로 생성하세요.
-실제 한국 정치를 직접 언급하지 말고 소소공화국 내의 가상 상황으로만 패러디하세요.
-
-JSON 형식 (반드시 아래 형식 그대로):
+아래 JSON으로만 응답하세요.
 {
-  "vote": {
-    "title": "찬반 투표 제목 (30자 이내, 소소공화국 내 상황)",
-    "desc": "투표 배경 설명 (80자 이내, 풍자적)",
-    "optionA": "선택지 A (10자 이내)",
-    "optionB": "선택지 B (10자 이내)"
-  },
-  "tournament": {
-    "title": "양자 대결 제목 (30자 이내)",
-    "desc": "대결 배경 설명 (80자 이내, 풍자적)",
-    "optionA": "후보 A (10자 이내)",
-    "optionB": "후보 B (10자 이내)"
-  },
-  "court": {
-    "title": "헌법재판 안건 제목 (30자 이내)",
-    "situation": "탄핵·위헌 심판 상황 설명 (120자 이내, 풍자적)"
-  }
+  "title": "오늘의 역사 풍자 카드 제목, 35자 이내",
+  "desc": "사건 배경 설명, 120자 이내",
+  "brief": "한 줄 시대 해설, 60자 이내",
+  "question": "유저에게 던질 정치적 질문, 45자 이내",
+  "conservative": "국민질서당 입장, 80자 이내",
+  "progressive": "시민개혁당 입장, 80자 이내",
+  "centrist": "국민통합당 입장, 80자 이내",
+  "tags": ["태그1", "태그2", "태그3"]
 }`;
 
-  const raw = await callAI(prompt, 1000);
-  return safeParseJson(raw);
+  try {
+    const raw = await callAI(prompt, 1100);
+    const parsed = safeParseJson(raw);
+    if (!parsed || !parsed.title || !parsed.desc) return fallbackIssue(event);
+    return parsed;
+  } catch (error) {
+    console.warn('[history-parody] AI generation failed, fallback used:', error.message);
+    return fallbackIssue(event);
+  }
 }
 
-async function createParodyFeedPosts(issues, today) {
-  const batch = db.batch();
+function renderDesc(issue, event) {
+  const lines = [
+    `📜 ${clean(issue.brief, 80) || `${event.era} · ${event.motifYear}년 모티브`}`,
+    '',
+    clean(issue.desc, 180),
+    '',
+    `쟁점: ${clean(issue.question || event.question, 80)}`,
+    '',
+    `🛡️ 국민질서당: ${clean(issue.conservative || event.stances.national, 120)}`,
+    `🕯️ 시민개혁당: ${clean(issue.progressive || event.stances.youth, 120)}`,
+    `⚖️ 국민통합당: ${clean(issue.centrist || event.stances.center, 120)}`,
+    '',
+    '댓글로 어느 정당의 해석이 더 설득력 있는지 남겨보세요.',
+  ];
+  return lines.filter(line => line !== null && line !== undefined).join('\n');
+}
+
+async function createHistoricalFeedPost(issue, event, today) {
+  const ref = db.collection('feeds').doc(`history_${today}`);
   const now = FieldValue.serverTimestamp();
-  const base = { ...BOT_AUTHOR, isParody: true, isAiGenerated: true, createdAt: now, viewCount: 0, commentCount: 0, likeCount: 0, cat: 'debate' };
+  const tags = Array.isArray(issue.tags) && issue.tags.length
+    ? issue.tags.map(t => clean(t, 18)).filter(Boolean).slice(0, 5)
+    : ['새공화국', '현대사', '정치풍자'];
 
-  if (issues.vote) {
-    const { title, desc, optionA, optionB } = issues.vote;
-    const ref = db.collection('feeds').doc();
-    batch.set(ref, {
-      ...base,
-      type: 'vote',
-      title: String(title || '').slice(0, 60),
-      desc: String(desc || '').slice(0, 200),
-      options: [
-        { text: String(optionA || 'A').slice(0, 20), votes: 0 },
-        { text: String(optionB || 'B').slice(0, 20), votes: 0 },
-      ],
-      votedBy: [],
-      parodyDate: today,
-    });
-  }
+  const payload = {
+    ...BOT_AUTHOR,
+    type: 'citizen_speech',
+    feedType: 'citizen_speech',
+    subtype: 'history_parody',
+    cat: 'multi',
+    title: clean(issue.title || event.parodyTitle, 70),
+    desc: renderDesc(issue, event),
+    tags,
+    images: [],
+    partyId: '',
+    commentCount: 0,
+    viewCount: 0,
+    reactions: { total: 0 },
+    isParody: true,
+    isAiGenerated: true,
+    isHistoryIssue: true,
+    historyDate: today,
+    historyDay: event.day,
+    historyEra: event.era,
+    motifYear: event.motifYear,
+    motif: event.motif,
+    eventQuestion: clean(issue.question || event.question, 100),
+    partyStances: {
+      national: clean(issue.conservative || event.stances.national, 160),
+      youth: clean(issue.progressive || event.stances.youth, 160),
+      center: clean(issue.centrist || event.stances.center, 160),
+    },
+    effects: event.effects || {},
+    createdAt: now,
+    updatedAt: now,
+  };
 
-  if (issues.tournament) {
-    const { title, desc, optionA, optionB } = issues.tournament;
-    const ref = db.collection('feeds').doc();
-    batch.set(ref, {
-      ...base,
-      type: 'vote',
-      feedType: 'tournament',
-      title: String(title || '').slice(0, 60),
-      desc: String(desc || '').slice(0, 200),
-      options: [
-        { text: String(optionA || 'A').slice(0, 20), votes: 0 },
-        { text: String(optionB || 'B').slice(0, 20), votes: 0 },
-      ],
-      votedBy: [],
-      parodyDate: today,
-    });
-  }
-
-  if (issues.court) {
-    const { title, situation } = issues.court;
-    const ref = db.collection('feeds').doc();
-    batch.set(ref, {
-      ...base,
-      type: 'ai_judge',
-      title: String(title || '').slice(0, 60),
-      situation: String(situation || '').slice(0, 300),
-      verdicts: [],
-      parodyDate: today,
-    });
-  }
-
-  await batch.commit();
+  await ref.set(payload, { merge: false });
+  return ref.id;
 }
 
-async function runGenerateDailyParodyIssues() {
-  const today = kstToday();
-  const cacheRef = db.doc(`daily_parody/${today}`);
+async function runGenerateDailyParodyIssues(options = {}) {
+  const today = options.date || kstToday();
+  const event = options.day ? eventByDay(options.day) : eventForDate(today);
+  const cacheRef = db.doc(`daily_history_issues/${today}`);
   const cacheSnap = await cacheRef.get();
-  if (cacheSnap.exists && cacheSnap.data()?.done) {
-    console.log('[parody] already generated for', today);
-    return;
+
+  if (cacheSnap.exists && cacheSnap.data()?.done && !options.force) {
+    console.log('[history-parody] already generated for', today);
+    return { skipped: true, date: today, postId: cacheSnap.data()?.postId || null };
   }
 
-  const ctx = await loadGameContext();
-  const issues = await generateParodyIssues(ctx, today);
-  if (!issues) throw new Error('AI 이슈 파싱 실패');
+  const issue = await generateHistoricalIssue(event);
+  const postId = await createHistoricalFeedPost(issue, event, today);
+  await cacheRef.set({
+    done: true,
+    postId,
+    date: today,
+    historyDay: event.day,
+    motifYear: event.motifYear,
+    motif: event.motif,
+    title: clean(issue.title || event.parodyTitle, 70),
+    generatedAt: FieldValue.serverTimestamp(),
+  }, { merge: true });
 
-  await createParodyFeedPosts(issues, today);
-  await cacheRef.set({ done: true, generatedAt: FieldValue.serverTimestamp(), ctx });
-  console.log('[parody] generated 3 issues for', today);
+  console.log('[history-parody] generated daily issue', today, postId);
+  return { skipped: false, date: today, postId, eventDay: event.day };
 }
 
 exports.generateDailyParodyIssues = onSchedule(
@@ -203,10 +210,14 @@ exports.generateDailyParodyIssues = onSchedule(
   async () => { await runGenerateDailyParodyIssues(); },
 );
 
-exports.triggerParodyIssues = onCall({ region: REGION }, async (req) => {
+exports.triggerParodyIssues = onCall({ region: REGION, timeoutSeconds: 60 }, async req => {
   if (!req.auth) throw new HttpsError('unauthenticated', '로그인 필요');
   const adminSnap = await db.doc(`admins/${req.auth.uid}`).get();
   if (!adminSnap.exists) throw new HttpsError('permission-denied', '관리자 전용');
-  await runGenerateDailyParodyIssues();
-  return { ok: true };
+  const result = await runGenerateDailyParodyIssues({
+    force: !!req.data?.force,
+    day: req.data?.day,
+    date: req.data?.date,
+  });
+  return { ok: true, ...result };
 });
