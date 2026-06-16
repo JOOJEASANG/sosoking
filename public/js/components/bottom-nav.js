@@ -22,7 +22,7 @@ function navItems() {
     { id: 'home',     label: '홈',     path: '/',         icon: iconHome() },
     { id: 'battle',   label: '오늘게임', path: '/battle',   icon: `<span style="font-size:20px;line-height:1">⚔️</span>` },
     { id: 'republic', label: '정당',   path: '/republic', icon: `<span style="font-size:22px;line-height:1">🏛️</span>`, isCenter: true },
-    { id: 'history',  label: '역사',   path: '/history',  icon: `<span style="font-size:20px;line-height:1">📚</span>` },
+    { id: 'forces',   label: '세력',   path: '/forces',   icon: `<span style="font-size:20px;line-height:1">⚡</span>` },
     { id: 'election', label: '대선',   path: '/election', icon: iconElection() },
   ];
 }
