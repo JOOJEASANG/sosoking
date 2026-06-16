@@ -7,28 +7,94 @@ const db = getFirestore();
 const REGION = 'asia-northeast3';
 
 const PARTIES = Object.freeze([
-  { id: 'national', name: '국민안정당', emoji: '🎙️', color: '#8B7355', leaderName: '안정파 대표', slogan: '검증된 경험, 흔들림 없는 안정' },
-  { id: 'youth', name: '청년혁명당', emoji: '📱', color: '#E84393', leaderName: '개혁파 대표', slogan: '기득권을 바꾸는 개혁 정치' },
-  { id: 'center', name: '중도민주당', emoji: '📊', color: '#00CEC9', leaderName: '실용파 대표', slogan: '데이터와 민심으로 움직이는 실용 정치' },
+  {
+    id: 'national',
+    name: '국민질서당',
+    emoji: '🛡️',
+    color: '#263B66',
+    leaderName: '강도윤',
+    slogan: '흔들림 없는 안보, 질서 있는 개혁',
+    ideology: '보수파',
+    keywords: ['안보', '질서', '성장', '책임'],
+  },
+  {
+    id: 'youth',
+    name: '시민개혁당',
+    emoji: '🕯️',
+    color: '#B8323B',
+    leaderName: '한서윤',
+    slogan: '시민이 만든 권력, 시민에게 돌아가는 개혁',
+    ideology: '진보파',
+    keywords: ['개혁', '복지', '시민권', '공정'],
+  },
+  {
+    id: 'center',
+    name: '국민통합당',
+    emoji: '⚖️',
+    color: '#2F7D6E',
+    leaderName: '윤태건',
+    slogan: '갈라진 광장을 하나로 묶는 실용 정치',
+    ideology: '중도파',
+    keywords: ['협치', '균형', '실용', '통합'],
+  },
 ]);
 const PARTY_BY_ID = Object.freeze(Object.fromEntries(PARTIES.map(p => [p.id, p])));
 const PARTY_IDS = PARTIES.map(p => p.id);
 
 const PARTY_NPCS = Object.freeze({
   national: [
-    { name: '김중진', emoji: '🎩', power: 2400 },
-    { name: '박관록', emoji: '📜', power: 1500 },
-    { name: '정선배', emoji: '☕', power: 520 },
+    {
+      name: '강도윤',
+      emoji: '🛡️',
+      power: 2600,
+      role: '국민질서당 대표',
+      profile: '군사독재 이후 혼란을 경계하며 안보와 국가 운영의 연속성을 강조하는 보수파 정치인',
+      flaw: '위기 대응에는 강하지만 권위주의 논란에 자주 휘말린다.',
+    },
+    {
+      name: '서문하',
+      emoji: '📈',
+      power: 1700,
+      role: '경제·언론 전략가',
+      profile: '성장, 시장, 언론 프레임을 다루는 냉정한 전략가',
+      flaw: '정책의 인간적 비용을 과소평가한다는 비판을 받는다.',
+    },
   ],
   youth: [
-    { name: '갈아엎자', emoji: '🔥', power: 2200 },
-    { name: '공정좌', emoji: '⚖️', power: 1300 },
-    { name: '팩폭러', emoji: '🥊', power: 520 },
+    {
+      name: '한서윤',
+      emoji: '🕯️',
+      power: 2500,
+      role: '시민개혁당 대표',
+      profile: '광장과 시민권을 정치의 중심에 두는 개혁파 정치인',
+      flaw: '개혁 속도가 빠를수록 재정·갈등 관리 논란이 커진다.',
+    },
+    {
+      name: '백진우',
+      emoji: '📜',
+      power: 1650,
+      role: '제도개혁 참모',
+      profile: '권력기관, 노동, 재벌 개혁 이슈를 파고드는 원칙주의자',
+      flaw: '타협을 배신으로 보는 경향 때문에 연정에 약하다.',
+    },
   ],
   center: [
-    { name: '김퍼센트', emoji: '📊', power: 2100 },
-    { name: '박표본', emoji: '🧮', power: 1350 },
-    { name: '여론바람', emoji: '🌬️', power: 520 },
+    {
+      name: '윤태건',
+      emoji: '⚖️',
+      power: 2400,
+      role: '국민통합당 대표',
+      profile: '진영 갈등보다 협치와 제도 안정성을 앞세우는 중도파 정치인',
+      flaw: '결정적 순간마다 우유부단하다는 공격을 받는다.',
+    },
+    {
+      name: '오하린',
+      emoji: '🧭',
+      power: 1600,
+      role: '여론·세대 분석가',
+      profile: '세대, 지역, 온라인 여론을 분석해 판세를 읽는 현실주의자',
+      flaw: '정치가 숫자로만 움직인다고 보는 냉소적 태도가 약점이다.',
+    },
   ],
 });
 
@@ -91,30 +157,35 @@ async function ensureThreeParties() {
       color: p.color,
       leaderName: p.leaderName,
       slogan: p.slogan,
+      ideology: p.ideology,
+      keywords: p.keywords,
       active: true,
-      system: 'three-party',
+      system: 'three-party-historical',
       updatedAt: FieldValue.serverTimestamp(),
       ...(snap.exists ? {} : { memberCount: 0, totalPower: 0, createdAt: FieldValue.serverTimestamp() }),
     }, { merge: true });
     dirty = true;
 
-    if (!data.npcSeededThreeParty) {
+    if (!data.npcSeededHistoricalSix) {
       let powerSum = 0;
       (PARTY_NPCS[p.id] || []).forEach((npc, idx) => {
-        const npcUid = `npc_${p.id}_three_${idx + 1}`;
+        const npcUid = `npc_${p.id}_historical_${idx + 1}`;
         powerSum += Number(npc.power || 0);
         batch.set(memberRef(p.id, npcUid), {
           uid: npcUid,
           nickname: npc.name,
           icon: { type: 'emoji', value: npc.emoji },
           power: Number(npc.power || 0),
+          role: npc.role,
+          profile: npc.profile,
+          flaw: npc.flaw,
           isNpc: true,
           joinedAt: FieldValue.serverTimestamp(),
           updatedAt: FieldValue.serverTimestamp(),
         }, { merge: true });
       });
       batch.set(partyRef(p.id), {
-        npcSeededThreeParty: true,
+        npcSeededHistoricalSix: true,
         memberCount: FieldValue.increment((PARTY_NPCS[p.id] || []).length),
         totalPower: FieldValue.increment(powerSum),
         updatedAt: FieldValue.serverTimestamp(),
@@ -132,7 +203,16 @@ async function topMemberOf(partyId) {
     if (q.empty) return null;
     const d = q.docs[0];
     const m = d.data() || {};
-    return { uid: d.id, nickname: m.nickname || '시민', icon: m.icon || null, power: Number(m.power || 0), isNpc: !!m.isNpc };
+    return {
+      uid: d.id,
+      nickname: m.nickname || '시민',
+      icon: m.icon || null,
+      power: Number(m.power || 0),
+      role: m.role || null,
+      profile: m.profile || null,
+      flaw: m.flaw || null,
+      isNpc: !!m.isNpc,
+    };
   } catch {
     return null;
   }
@@ -201,7 +281,7 @@ const getPoliticsOverview = onCall({ region: REGION, timeoutSeconds: 30 }, async
   }).sort((a, b) => b.totalPower - a.totalPower || b.memberCount - a.memberCount);
 
   parties.forEach((p, i) => { p.rank = i + 1; });
-  return { ok: true, mode: 'three-party', parties, me };
+  return { ok: true, mode: 'three-party-historical', parties, me };
 });
 
 const getPartyMembers = onCall({ region: REGION, timeoutSeconds: 30 }, async request => {
@@ -213,7 +293,16 @@ const getPartyMembers = onCall({ region: REGION, timeoutSeconds: 30 }, async req
   ]);
   const members = powerQ.docs.map((d, i) => {
     const m = d.data() || {};
-    return { rank: i + 1, nickname: m.nickname || '시민', icon: m.icon || null, power: Number(m.power || 0) };
+    return {
+      rank: i + 1,
+      nickname: m.nickname || '시민',
+      icon: m.icon || null,
+      power: Number(m.power || 0),
+      role: m.role || null,
+      profile: m.profile || null,
+      flaw: m.flaw || null,
+      isNpc: !!m.isNpc,
+    };
   });
   const weeklyStars = gainQ.docs
     .filter(d => {
