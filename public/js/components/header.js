@@ -14,10 +14,14 @@ function iconMoon(){return svgIcon('<path stroke-linecap="round" stroke-linejoin
 function renderHeaderAvatar(user) {
   const nickname = appState.nickname || user?.displayName || user?.email?.split('@')[0] || '나';
   const icon = normalizeNicknameIcon(appState.nicknameIcon);
-  if (icon?.type === 'image') return `<img class="site-header__avatar-img" src="${escHtml(icon.url)}" alt="" aria-hidden="true">`;
-  if (icon?.type === 'emoji') return `<span class="site-header__avatar-emoji" aria-hidden="true">${escHtml(icon.value)}</span>`;
-  if (user?.photoURL) return `<img class="site-header__avatar-img" src="${escHtml(user.photoURL)}" alt="" aria-hidden="true">`;
+  if (icon?.type === 'image') return `<img class="site-header__avatar-img" src="${escHtml(icon.url)}" alt="" aria-hidden="true" style="width:100%;height:100%;object-fit:cover;border-radius:999px;display:block">`;
+  if (icon?.type === 'emoji') return `<span class="site-header__avatar-emoji" aria-hidden="true" style="font-size:18px;line-height:1">${escHtml(icon.value)}</span>`;
+  if (user?.photoURL) return `<img class="site-header__avatar-img" src="${escHtml(user.photoURL)}" alt="" aria-hidden="true" style="width:100%;height:100%;object-fit:cover;border-radius:999px;display:block">`;
   return escHtml((nickname || '나')[0]);
+}
+
+function fixedIconStyle(extra = '') {
+  return `display:inline-flex!important;align-items:center!important;justify-content:center!important;width:34px!important;height:34px!important;min-width:34px!important;min-height:34px!important;max-width:34px!important;max-height:34px!important;padding:0!important;border-radius:12px!important;flex:0 0 34px!important;white-space:nowrap!important;${extra}`;
 }
 
 export function renderHeader() {
@@ -26,13 +30,18 @@ export function renderHeader() {
   const user = appState.user;
   const dark = isDark();
   const nickname = appState.nickname || user?.displayName || user?.email?.split('@')[0] || '내 정보';
+  const innerStyle = 'display:flex!important;align-items:center!important;gap:8px!important;flex-wrap:nowrap!important;width:100%!important;min-width:0!important;box-sizing:border-box!important;';
+  const logoStyle = 'display:inline-flex!important;align-items:center!important;gap:6px!important;min-width:0!important;overflow:hidden!important;white-space:nowrap!important;flex:0 1 auto!important;';
+  const logoTextStyle = 'display:inline-block!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;';
+  const spacerStyle = 'flex:1 1 auto!important;min-width:8px!important;';
+  const loginStyle = 'display:inline-flex!important;align-items:center!important;justify-content:center!important;height:34px!important;padding:0 12px!important;border-radius:12px!important;flex:0 0 auto!important;white-space:nowrap!important;';
 
   el.innerHTML = `
-    <div class="site-header__inner">
-      <a href="#/" class="site-header__logo" data-logo-nav aria-label="소소킹 홈"><img src="/logo.svg" alt="" width="24" height="24"><span>소소킹</span></a>
-      <div class="site-header__spacer"></div>
-      <button class="site-header__icon-btn site-header__theme-btn" id="hdr-theme-btn" aria-label="${dark ? '라이트 모드로 전환' : '다크 모드로 전환'}" title="${dark ? '라이트 모드' : '다크 모드'}">${dark ? iconSun() : iconMoon()}</button>
-      ${user ? `<button class="site-header__icon-btn site-header__avatar" id="hdr-avatar" aria-label="내 정보" title="${escHtml(nickname)}">${renderHeaderAvatar(user)}</button>` : `<button class="btn btn--primary btn--sm" id="hdr-login">로그인</button>`}
+    <div class="site-header__inner" style="${innerStyle}">
+      <a href="#/" class="site-header__logo" data-logo-nav aria-label="소소킹 홈" style="${logoStyle}"><img src="/logo.svg" alt="" width="24" height="24" style="flex:0 0 24px"><span style="${logoTextStyle}">소소킹</span></a>
+      <div class="site-header__spacer" style="${spacerStyle}"></div>
+      <button class="site-header__icon-btn site-header__theme-btn" id="hdr-theme-btn" aria-label="${dark ? '라이트 모드로 전환' : '다크 모드로 전환'}" title="${dark ? '라이트 모드' : '다크 모드'}" style="${fixedIconStyle()}">${dark ? iconSun() : iconMoon()}</button>
+      ${user ? `<button class="site-header__icon-btn site-header__avatar" id="hdr-avatar" aria-label="내 정보" title="${escHtml(nickname)}" style="${fixedIconStyle('border-radius:999px!important;overflow:hidden!important;font-weight:900!important;')}">${renderHeaderAvatar(user)}</button>` : `<button class="btn btn--primary btn--sm" id="hdr-login" style="${loginStyle}">로그인</button>`}
     </div>`;
 
   el.querySelector('[data-logo-nav]')?.addEventListener('click', e => { e.preventDefault(); navigate('/'); });
