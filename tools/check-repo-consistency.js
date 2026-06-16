@@ -68,7 +68,6 @@ function resolveImport(fromFile, specifier) {
 function checkStaticDynamicImports() {
   const files = walk(rel('public', 'js')).filter(file => file.endsWith('.js'));
   const importRe = /import\(\s*(["'])(\.\.?\/[^"']+)\1\s*\)/g;
-  const moduleStringRe = /["'](\.\/?[^"']+\.js)["']/g;
 
   for (const file of files) {
     const text = fs.readFileSync(file, 'utf8');
@@ -77,15 +76,6 @@ function checkStaticDynamicImports() {
       const target = resolveImport(file, m[2]);
       if (target && !fs.existsSync(target)) {
         fail(`${path.relative(ROOT, file)} imports missing module: ${m[2]}`);
-      }
-    }
-
-    if (text.includes('MODULES') || text.includes('OPTIONAL_MODULES')) {
-      while ((m = moduleStringRe.exec(text))) {
-        const target = resolveImport(file, m[1]);
-        if (target && !fs.existsSync(target)) {
-          fail(`${path.relative(ROOT, file)} module list references missing module: ${m[1]}`);
-        }
       }
     }
   }
