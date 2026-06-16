@@ -52,7 +52,8 @@ function ensureHistoryStyle() {
     .history-result__title{font-size:15px;font-weight:1000;color:#fff;margin-bottom:6px}
     .history-result__text{font-size:13px;line-height:1.6;color:rgba(255,255,255,.76)}
     .history-score{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
-    .history-score span{border-radius:999px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.12);padding:5px 8px;font-size:11px;font-weight:900;color:#fff}
+    .history-score span{border-radius:999px;background:rgba(99,102,241,.09);border:1px solid rgba(99,102,241,.12);padding:5px 8px;font-size:11px;font-weight:900;color:#4f46e5}
+    .history-result .history-score span{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.12);color:#fff}
     .history-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
     @media(max-width:760px){.history-grid,.history-choice-grid{grid-template-columns:1fr}.history-hero__title{font-size:23px}}
   `;
