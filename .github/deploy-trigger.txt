@@ -1,2 +1,2 @@
-2026-06-16 09:42 KST
-Trigger Firebase deploy for citizen plaza historical issue spotlight.
+2026-06-16 09:49 KST
+Deploy latest app changes.
