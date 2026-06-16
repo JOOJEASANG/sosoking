@@ -98,6 +98,29 @@ const PARTY_NPCS = Object.freeze({
   ],
 });
 
+const HISTORICAL_NPC_UIDS = new Set(PARTY_IDS.flatMap(pid => (PARTY_NPCS[pid] || []).map((_, idx) => `npc_${pid}_historical_${idx + 1}`)));
+
+function isVisibleMemberDoc(docSnap) {
+  const m = docSnap.data() || {};
+  if (!m.isNpc) return true;
+  return HISTORICAL_NPC_UIDS.has(docSnap.id);
+}
+
+function publicMemberFromDoc(docSnap, rank = null) {
+  const m = docSnap.data() || {};
+  return {
+    ...(rank != null ? { rank } : {}),
+    uid: docSnap.id,
+    nickname: m.nickname || '시민',
+    icon: m.icon || null,
+    power: Number(m.power || 0),
+    role: m.role || null,
+    profile: m.profile || null,
+    flaw: m.flaw || null,
+    isNpc: !!m.isNpc,
+  };
+}
+
 function requireUid(request) {
   const uid = request.auth && request.auth.uid;
   if (!uid) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
@@ -199,20 +222,9 @@ async function ensureThreeParties() {
 
 async function topMemberOf(partyId) {
   try {
-    const q = await partyRef(partyId).collection('members').orderBy('power', 'desc').limit(1).get();
-    if (q.empty) return null;
-    const d = q.docs[0];
-    const m = d.data() || {};
-    return {
-      uid: d.id,
-      nickname: m.nickname || '시민',
-      icon: m.icon || null,
-      power: Number(m.power || 0),
-      role: m.role || null,
-      profile: m.profile || null,
-      flaw: m.flaw || null,
-      isNpc: !!m.isNpc,
-    };
+    const q = await partyRef(partyId).collection('members').orderBy('power', 'desc').limit(30).get();
+    const docSnap = q.docs.find(isVisibleMemberDoc);
+    return docSnap ? publicMemberFromDoc(docSnap) : null;
   } catch {
     return null;
   }
@@ -288,27 +300,20 @@ const getPartyMembers = onCall({ region: REGION, timeoutSeconds: 30 }, async req
   const partyId = assertPartyId(request.data && request.data.partyId);
   const currentWeekKey = kstMondayKey();
   const [powerQ, gainQ] = await Promise.all([
-    partyRef(partyId).collection('members').orderBy('power', 'desc').limit(30).get(),
-    partyRef(partyId).collection('members').orderBy('weeklyGain', 'desc').limit(3).get(),
+    partyRef(partyId).collection('members').orderBy('power', 'desc').limit(50).get(),
+    partyRef(partyId).collection('members').orderBy('weeklyGain', 'desc').limit(10).get(),
   ]);
-  const members = powerQ.docs.map((d, i) => {
-    const m = d.data() || {};
-    return {
-      rank: i + 1,
-      nickname: m.nickname || '시민',
-      icon: m.icon || null,
-      power: Number(m.power || 0),
-      role: m.role || null,
-      profile: m.profile || null,
-      flaw: m.flaw || null,
-      isNpc: !!m.isNpc,
-    };
-  });
+  const members = powerQ.docs
+    .filter(isVisibleMemberDoc)
+    .slice(0, 30)
+    .map((d, i) => publicMemberFromDoc(d, i + 1));
   const weeklyStars = gainQ.docs
+    .filter(isVisibleMemberDoc)
     .filter(d => {
       const m = d.data() || {};
       return m.weekKey === currentWeekKey && Number(m.weeklyGain || 0) > 0;
     })
+    .slice(0, 3)
     .map(d => {
       const m = d.data() || {};
       return { uid: d.id, nickname: m.nickname || '시민', icon: m.icon || null, weeklyGain: Number(m.weeklyGain || 0) };
