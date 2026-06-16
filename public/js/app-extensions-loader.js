@@ -7,6 +7,7 @@ const EXTENSION_MODULES = [
   './pc-sidebar-spacing.js',
   './account-ui.js',
   './nickname-icon-actions.js',
+  './forces-route-extension.js',
 ];
 
 async function loadExtension(path) {
