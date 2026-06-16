@@ -42,9 +42,9 @@ function safeParseJson(raw) {
 }
 
 const PARTIES = Object.freeze([
-  { id: 'national', name: '국민안정당', emoji: '🎙️', color: '#8B7355' },
-  { id: 'youth', name: '청년혁명당', emoji: '📱', color: '#E84393' },
-  { id: 'center', name: '중도민주당', emoji: '📊', color: '#00CEC9' },
+  { id: 'national', name: '국민질서당', emoji: '🛡️', color: '#263B66' },
+  { id: 'youth', name: '시민개혁당', emoji: '🕯️', color: '#B8323B' },
+  { id: 'center', name: '국민통합당', emoji: '⚖️', color: '#2F7D6E' },
 ]);
 const PARTY_BY_ID = Object.freeze(Object.fromEntries(PARTIES.map(p => [p.id, p])));
 const PARTY_IDS = PARTIES.map(p => p.id);
@@ -54,6 +54,12 @@ function requireUid(request) {
   const uid = request.auth && request.auth.uid;
   if (!uid) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
   return uid;
+}
+
+async function isAdmin(uid) {
+  if (!uid) return false;
+  const snap = await db.doc(`admins/${uid}`).get().catch(() => null);
+  return !!snap?.exists;
 }
 
 function clean(value, max = 120) {
@@ -236,9 +242,7 @@ const closeCongressBill = onCall({ region: REGION, timeoutSeconds: 20 }, async r
   const billId = clean(request.data && request.data.billId, 140);
   if (!billId || billId.includes('/')) throw new HttpsError('invalid-argument', '법안 정보가 올바르지 않습니다.');
 
-  const userSnap = await db.doc(`users/${uid}`).get();
-  const user = userSnap.exists ? userSnap.data() || {} : {};
-  if (!user.isAdmin) throw new HttpsError('permission-denied', '관리자만 종료할 수 있습니다.');
+  if (!(await isAdmin(uid))) throw new HttpsError('permission-denied', '관리자만 종료할 수 있습니다.');
 
   const ref = billRef(billId);
   const snap = await ref.get();
@@ -253,9 +257,7 @@ const closeCongressBill = onCall({ region: REGION, timeoutSeconds: 20 }, async r
 
 const seedCongressBillFromCrisis = onCall({ region: REGION, timeoutSeconds: 20 }, async request => {
   const uid = requireUid(request);
-  const userSnap = await db.doc(`users/${uid}`).get();
-  const user = userSnap.exists ? userSnap.data() || {} : {};
-  if (!user.isAdmin) throw new HttpsError('permission-denied', '관리자만 생성할 수 있습니다.');
+  if (!(await isAdmin(uid))) throw new HttpsError('permission-denied', '관리자만 생성할 수 있습니다.');
 
   const title = clean(request.data && request.data.title, 40) || '긴급 국정 현안';
   const desc = clean(request.data && request.data.desc, 120) || '국정 위기 대응 안건입니다.';
