@@ -18,6 +18,7 @@ const kakaoAuth = require('./kakao-auth-functions.js');
 const battle = require('./battle-functions.js');
 const politics = require('./politics-functions-v2.js');
 const politicsDetail = require('./politics-detail-functions.js');
+const electionNormalized = require('./election-normalized-functions.js');
 const historyArchive = require('./history-archive-functions.js');
 const coreParties = require('./three-party-functions.js');
 const gameDeadline = require('./game-deadline-functions.js');
@@ -65,12 +66,12 @@ module.exports = {
   getPartyMembers: coreParties.getPartyMembers,
   joinParty: coreParties.joinParty,
   leaveParty: coreParties.leaveParty,
-  getElection: politics.getElection,
-  voteForPresident: politics.voteForPresident || gameDeadline.voteForPresident,
+  getElection: electionNormalized.getElection,
+  voteForPresident: electionNormalized.voteForPresident || politics.voteForPresident || gameDeadline.voteForPresident,
   getPartyActivities: politicsDetail.getPartyActivities,
   getRankings: politics.getRankings,
   getMyStatus: politicsDetail.getMyStatus,
-  getPresident: politics.getPresident,
+  getPresident: electionNormalized.getPresident,
   setPresidentialDecree: politics.setPresidentialDecree,
   setCampaignPledge: politics.setCampaignPledge,
   addElectionEndorsement: politics.addElectionEndorsement,
@@ -79,7 +80,7 @@ module.exports = {
   getUserPoliticsStats: politics.getUserPoliticsStats,
   getPartyManifesto: politics.getPartyManifesto,
   setPartyManifesto: politics.setPartyManifesto,
-  getElectionHistory: politics.getElectionHistory,
+  getElectionHistory: electionNormalized.getElectionHistory,
   getDailyNews: politicsDetail.getDailyNews,
   generateNewsColumn: politicsDetail.generateNewsColumn,
   ratePresidentDecree: politics.ratePresidentDecree,
