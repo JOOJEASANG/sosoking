@@ -1,6 +1,6 @@
 'use strict';
 
-// parody-issue-functions.js — 매일 오전 8시 새공화국 역사정치 이슈 3건 생성
+// parody-issue-functions.js — 매일 오전 8시 새공화국 역사정치 이슈 1건 자동 생성
 
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
@@ -10,7 +10,7 @@ const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 if (!getApps().length) initializeApp();
 const db = getFirestore();
 const REGION = 'asia-northeast3';
-const DAILY_HISTORY_ISSUE_COUNT = 3;
+const DAILY_HISTORY_ISSUE_COUNT = 1;
 const MAX_HISTORY_ISSUE_COUNT = 5;
 
 const { HISTORY_EVENTS, eventForDate, eventByDay, buildHistoryPromptBlock } = require('./republic-history-events');
