@@ -17,6 +17,7 @@ const points = require('./points-functions.js');
 const kakaoAuth = require('./kakao-auth-functions.js');
 const battle = require('./battle-functions.js');
 const politics = require('./politics-functions-v2.js');
+const politicsDetail = require('./politics-detail-functions.js');
 const coreParties = require('./three-party-functions.js');
 const gameDeadline = require('./game-deadline-functions.js');
 const partyLeague = require('./party-war-functions.js');
@@ -65,9 +66,9 @@ module.exports = {
   leaveParty: coreParties.leaveParty,
   getElection: politics.getElection,
   voteForPresident: politics.voteForPresident || gameDeadline.voteForPresident,
-  getPartyActivities: politics.getPartyActivities,
+  getPartyActivities: politicsDetail.getPartyActivities,
   getRankings: politics.getRankings,
-  getMyStatus: politics.getMyStatus || gameDeadline.getMyStatus,
+  getMyStatus: politicsDetail.getMyStatus,
   getPresident: politics.getPresident,
   setPresidentialDecree: politics.setPresidentialDecree,
   setCampaignPledge: politics.setCampaignPledge,
@@ -78,8 +79,8 @@ module.exports = {
   getPartyManifesto: politics.getPartyManifesto,
   setPartyManifesto: politics.setPartyManifesto,
   getElectionHistory: politics.getElectionHistory,
-  getDailyNews: politics.getDailyNews,
-  generateNewsColumn: politics.generateNewsColumn,
+  getDailyNews: politicsDetail.getDailyNews,
+  generateNewsColumn: politicsDetail.generateNewsColumn,
   ratePresidentDecree: politics.ratePresidentDecree,
   claimRulingBonus: politics.claimRulingBonus,
   getWeeklyCrisis: politics.getWeeklyCrisis,
@@ -90,7 +91,7 @@ module.exports = {
   getPresidentQA: politics.getPresidentQA,
   askPresidentQuestion: politics.askPresidentQuestion,
   answerPresidentQuestion: politics.answerPresidentQuestion,
-  getCampaignMomentum: politics.getCampaignMomentum,
+  getCampaignMomentum: politicsDetail.getCampaignMomentum,
   ...uploadImage,
   ...nicknameIcon,
   ...postOwner,
