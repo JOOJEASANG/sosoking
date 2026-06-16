@@ -21,6 +21,7 @@ const politicsDetail = require('./politics-detail-functions.js');
 const electionNormalized = require('./election-normalized-functions.js');
 const historyArchive = require('./history-archive-functions.js');
 const coreParties = require('./three-party-functions.js');
+const externalForces = require('./external-force-functions.js');
 const gameDeadline = require('./game-deadline-functions.js');
 const partyLeague = require('./party-war-functions.js');
 const congress = require('./congress-functions.js');
@@ -48,6 +49,7 @@ module.exports = {
   ...memberStats,
   ...points,
   ...partyLeague,
+  ...externalForces,
   ...congress,
   getConstitutionalCourtStatus: constitutionalCourt.getConstitutionalCourtStatus,
   decideConstitutionalReview: constitutionalCourt.decideConstitutionalReview,
