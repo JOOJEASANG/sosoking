@@ -1,6 +1,5 @@
 /* bottom-nav.js — 핵심 게임 하단 탭 */
 import { navigate } from '../router.js';
-import { appState } from '../state.js';
 
 function svgIcon(path, strokeWidth = '1.8') {
   return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="${strokeWidth}" aria-hidden="true">${path}</svg>`;
@@ -10,12 +9,12 @@ function iconHome() {
   return svgIcon('<path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12 12 3l9.75 9M4.5 10.5V20.25c0 .414.336.75.75.75H9.75v-4.5c0-.414.336-.75.75-.75h3c.414 0 .75.336.75.75v4.5h4.5a.75.75 0 0 0 .75-.75V10.5"/>');
 }
 
-function iconAccount() {
-  return svgIcon('<path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>');
+function iconElection() {
+  return svgIcon('<path stroke-linecap="round" stroke-linejoin="round" d="M12 3.75 14.25 8l4.75.68-3.43 3.34.81 4.73L12 14.5l-4.38 2.25.81-4.73L5 8.68 9.75 8 12 3.75Z"/>');
 }
 
 function isNavActive(navPath, currentPath) {
-  return currentPath === navPath || (navPath === '/account' && currentPath === '/login');
+  return currentPath === navPath;
 }
 
 function navItems() {
@@ -24,7 +23,7 @@ function navItems() {
     { id: 'battle',   label: '오늘게임', path: '/battle',   icon: `<span style="font-size:20px;line-height:1">⚔️</span>` },
     { id: 'republic', label: '정당',   path: '/republic', icon: `<span style="font-size:22px;line-height:1">🏛️</span>`, isCenter: true },
     { id: 'history',  label: '역사',   path: '/history',  icon: `<span style="font-size:20px;line-height:1">📚</span>` },
-    { id: 'account',  label: '내정보', path: appState.user ? '/account' : '/login', icon: iconAccount() },
+    { id: 'election', label: '대선',   path: '/election', icon: iconElection() },
   ];
 }
 
