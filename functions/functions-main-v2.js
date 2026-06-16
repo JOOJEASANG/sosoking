@@ -37,7 +37,6 @@ module.exports = {
   votePostOption: secureInteractions.votePostOption,
   reactToPost: secureInteractions.reactToPost,
   reactToComment: secureInteractions.reactToComment,
-  reactToAcrostic: secureInteractions.reactToAcrostic,
   ...sitemap,
   ...account,
   ...adminUsers,
