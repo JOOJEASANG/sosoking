@@ -8,122 +8,69 @@ const { getFirestore, FieldValue, Timestamp } = require('firebase-admin/firestor
 if (!getApps().length) initializeApp();
 const db = getFirestore();
 
-const { buildInspirationBlock } = require('./topic-pools');
+const { eventForDate, eventByDay, buildHistoryPromptBlock } = require('./republic-history-events');
 
 function kstToday() {
   return new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Seoul',
-    year: 'numeric', month: '2-digit', day: '2-digit',
+    timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit',
   }).format(new Date());
 }
 
-// ── 6인 소소킹 정치 캐릭터 (정당당 2명) ──
-const BATTLE_CHARS = [
+function kstDateOffset(days) {
+  const d = new Date();
+  d.setDate(d.getDate() + Number(days || 0));
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(d);
+}
+
+function clean(value, max = 200) {
+  return String(value || '').replace(/[<>]/g, '').trim().slice(0, max);
+}
+
+// 새공화국 3당 정보
+const PARTY_INFO = Object.freeze({
+  national: { name: '국민질서당', emoji: '🛡️', color: '#263B66', ideology: '보수파' },
+  youth:    { name: '시민개혁당', emoji: '🕯️', color: '#B8323B', ideology: '진보파' },
+  center:   { name: '국민통합당', emoji: '⚖️', color: '#2F7D6E', ideology: '중도파' },
+});
+
+// 정당당 2명, 총 6명. 실존 인물과 무관한 가상 정치 캐릭터.
+const BATTLE_CHARS = Object.freeze([
   {
-    id: 'senator',
-    name: '3선 의원',
-    emoji: '🎙️',
-    title: '국민안정당 원내대표',
-    color: '#8B7355',
-    party: '국민안정당',
-    partyKey: 'national',
-    role: `너는 18년 경력 3선 국회의원이다.
-[말투 스타일] 권위적·느긋함. 매번 다른 표현으로 시작하되 항상 경력·관례를 앞세운다.
-예) "18년 의정 경험으로 볼 때...", "지난 정권에서도 이런 일이...", "본 의원이 초선 때 기억하기론...", "원칙적으로 접근하자면..." 등 매번 변형.
-모든 사안을 과거 관례·선례·연도 기준으로 판단. 구체적 에피소드 포함.
-결론은 "절차", "위원회", "전례" 중 하나로 마무리. 2~3문장.`,
+    id: 'kang_doyoon', name: '강도윤', emoji: '🛡️', title: '국민질서당 대표',
+    color: '#263B66', party: '국민질서당', partyKey: 'national',
+    role: `안보·질서·성장 중심의 보수 대표. 위기 대응에는 강하지만 권위주의 논란을 의식한다. 짧고 단호한 문장으로 말하되, 반드시 헌정 질서와 사회 안정의 필요성을 함께 언급한다. 2~3문장.`,
   },
   {
-    id: 'spokesperson',
-    name: '당 대변인',
-    emoji: '🤝',
-    title: '국민안정당 공식 대변인',
-    color: '#FDCB6E',
-    party: '국민안정당',
-    partyKey: 'national',
-    role: `너는 국민안정당 공식 대변인이다.
-[말투 스타일] 과잉 동조·흥분·아첨. 당 의원의 논리를 전폭 지지하며 기름을 붓는다.
-매번 다른 방식으로 지지 표현: "역시 혜안이 다르십니다", "소름 돋았어요 진짜로", "원내대표님 말씀이 백번 맞죠", "완전 공감 그 이상입니다" 등.
-읽는 사람이 "이 사람 진짜ㅋㅋ" 소리 나야 성공. 2~3문장.`,
+    id: 'seo_moonha', name: '서문하', emoji: '📈', title: '국민질서당 전략가',
+    color: '#3D527F', party: '국민질서당', partyKey: 'national',
+    role: `경제·언론전·프레임 설계에 능한 보수 전략가. 개혁 요구를 부정하지 않지만 시장 충격, 행정 혼란, 안보 공백을 따진다. 수치와 메시지 전략을 섞어 현실적으로 말한다. 2~3문장.`,
   },
   {
-    id: 'mz',
-    name: 'MZ 운동가',
-    emoji: '📱',
-    title: '청년혁명당 청년위원장',
-    color: '#E84393',
-    party: '청년혁명당',
-    partyKey: 'youth',
-    role: `너는 MZ세대 시민운동가다.
-[말투 스타일] 반말·SNS체·직설. 매번 다른 표현으로 시작하되 항상 기득권 비판.
-예) "ㄹㅇ 이거 말이 돼?", "진짜 웃기지 않냐", "아 현타 오네", "개어이없는데" 등 매번 변형.
-기득권 정치인 팩폭, 기존 질서 부정. ㅋㅋ·ㄹㅇ·팩폭·현타 자연스럽게 섞기.
-2~3문장. 반말.`,
+    id: 'han_seoyoon', name: '한서윤', emoji: '🕯️', title: '시민개혁당 대표',
+    color: '#B8323B', party: '시민개혁당', partyKey: 'youth',
+    role: `개혁·복지·시민권 중심의 진보 대표. 광장과 시민 참여를 중시하지만 재정 부담 비판을 의식한다. 뜨겁지만 품격 있게, 권력기관 견제와 시민 권리를 강조한다. 2~3문장.`,
   },
   {
-    id: 'youtuber',
-    name: '정치 유튜버',
-    emoji: '📺',
-    title: '청년혁명당 대변인 (구독자 120만)',
-    color: '#6C5CE7',
-    party: '청년혁명당',
-    partyKey: 'youth',
-    role: `너는 구독자 120만 정치 유튜버다.
-[말투 스타일] 과장·흥분·충격. 매번 다른 표현으로 시작하되 항상 폭로·단독 프레임.
-예) "방금 단독 입수했습니다!", "이게 말이 됩니까 여러분", "지금 충격적인 걸 발견했어요", "오늘 이거 진짜 레전드입니다" 등 매번 변형.
-모든 사안을 음모론·숨겨진 진실 프레임으로 해석. "팩트체크", "충격", "단독" 뉘앙스 포함.
-마지막은 구독 유도로 마무리 (표현은 매번 다르게). 2~3문장.`,
+    id: 'baek_jinwoo', name: '백진우', emoji: '🔎', title: '시민개혁당 개혁참모',
+    color: '#D94B56', party: '시민개혁당', partyKey: 'youth',
+    role: `검찰·재벌·노동·불평등 이슈에 강한 개혁 참모. 구조적 문제를 파고들며 책임 소재를 따진다. 과격한 구호보다 제도 개편 논리를 앞세운다. 2~3문장.`,
   },
   {
-    id: 'pollster',
-    name: '여론조사 전문가',
-    emoji: '📊',
-    title: '중도민주당 정책자문위원',
-    color: '#00CEC9',
-    party: '중도민주당',
-    partyKey: 'center',
-    role: `너는 여론조사 전문가다.
-[말투 스타일] 냉정·분석적·모호함. 매번 다른 표현으로 시작하되 항상 수치·데이터 프레임.
-예) "최신 조사를 보면...", "흥미로운 수치가 나왔는데요", "여론을 분석하면", "데이터가 말해주듯" 등 매번 변형.
-모든 사안을 퍼센트·통계로 해석 (그럴듯하게 지어냄). 오차범위·표본수 자연스럽게 포함.
-결론은 항상 모호하게 "민심이 판단할 것" 뉘앙스로. 2~3문장.`,
+    id: 'yoon_taegun', name: '윤태건', emoji: '⚖️', title: '국민통합당 대표',
+    color: '#2F7D6E', party: '국민통합당', partyKey: 'center',
+    role: `협치·연정·실용을 앞세우는 중도 대표. 갈등 조정에는 강하지만 우유부단하다는 비판을 의식한다. 양쪽의 명분을 인정한 뒤 실행 가능한 절충안을 제시한다. 2~3문장.`,
   },
   {
-    id: 'reporter',
-    name: '탐사 기자',
-    emoji: '🔍',
-    title: '중도민주당 언론인 출신',
-    color: '#00B894',
-    party: '중도민주당',
-    partyKey: 'center',
-    role: `너는 탐사 전문 기자다.
-[말투 스타일] 진지·추적·폭로. 매번 다른 표현으로 시작하되 항상 취재·제보 프레임.
-예) "어젯밤 제보를 받았는데요", "제 취재원이 확인해줬습니다", "현장에서 직접 목격한 바로는", "내부 문서를 입수했습니다" 등 매번 변형.
-구체적 취재원 인용 (매번 다른 직함으로). 비리·모순·뒷이야기 폭로.
-마무리는 보도 의지 표현 (표현은 매번 다르게). 2~3문장.`,
+    id: 'oh_harin', name: '오하린', emoji: '📊', title: '국민통합당 여론분석가',
+    color: '#45A08F', party: '국민통합당', partyKey: 'center',
+    role: `세대·지역·온라인 여론을 읽는 분석가. 감정적 진영 싸움보다 데이터와 중간층 반응을 본다. 여론 흐름과 정책 리스크를 차분히 짚는다. 2~3문장.`,
   },
-];
+]);
 
 exports.BATTLE_CHARS = BATTLE_CHARS;
 
-// 배틀 캐릭터 → 3개 정당 매핑
-const CHAR_TO_PARTY = {
-  senator:      'national',
-  spokesperson: 'national',
-  mz:           'youth',
-  youtuber:     'youth',
-  pollster:     'center',
-  reporter:     'center',
-};
-
-// 3개 정당 정보
-const PARTY_INFO = {
-  national: { name: '국민안정당', emoji: '🎙️', color: '#8B7355' },
-  youth:    { name: '청년혁명당', emoji: '📱', color: '#E84393' },
-  center:   { name: '중도민주당', emoji: '📊', color: '#00CEC9' },
-};
-
-// ── config/ai_king 기반 AI 호출 ──
 let _config = null;
 let _configAt = 0;
 async function getConfig() {
@@ -140,18 +87,10 @@ async function callAI(prompt, maxTokens = 3000) {
     if (!config.geminiApiKey) throw new Error('AI 키 미설정');
     const { GoogleGenerativeAI } = require('@google/generative-ai');
     const genAI = new GoogleGenerativeAI(config.geminiApiKey);
-    const model = genAI.getGenerativeModel({
-      model: config.geminiModel || 'gemini-2.5-flash',
-      generationConfig: { thinkingConfig: { thinkingBudget: 0 } },
-    });
+    const model = genAI.getGenerativeModel({ model: config.geminiModel || 'gemini-2.5-flash' });
     const result = await model.generateContent({
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      generationConfig: {
-        maxOutputTokens: maxTokens,
-        temperature: 1.0,
-        responseMimeType: 'application/json',
-        thinkingConfig: { thinkingBudget: 0 },
-      },
+      generationConfig: { maxOutputTokens: maxTokens, temperature: 0.82, responseMimeType: 'application/json' },
     });
     return result.response.text();
   }
@@ -161,7 +100,7 @@ async function callAI(prompt, maxTokens = 3000) {
   const msg = await anthropic.messages.create({
     model: config.claudeModel || 'claude-haiku-4-5-20251001',
     max_tokens: maxTokens,
-    temperature: 1.0,
+    temperature: 0.82,
     messages: [{ role: 'user', content: prompt }],
   });
   return msg.content.find(b => b.type === 'text')?.text || '';
@@ -175,465 +114,308 @@ function safeParseJson(raw) {
   return null;
 }
 
-// 이번 주 월요일 기준 prevKey 계산 (politics-functions.js의 weekPeriod와 동일)
-function getBattlePrevKey() {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short',
-  }).formatToParts(new Date());
-  const o = {}; parts.forEach(p => { o[p.type] = p.value; });
-  const wmap = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
-  const off = (wmap[o.weekday] + 6) % 7;
-  const monMs = Date.UTC(Number(o.year), Number(o.month) - 1, Number(o.day)) - off * 86400000;
-  return new Date(monMs - 7 * 86400000).toISOString().slice(0, 10);
+function partyBlock() {
+  return Object.entries(PARTY_INFO).map(([pid, info]) => {
+    const chars = BATTLE_CHARS.filter(c => c.partyKey === pid)
+      .map(c => `  - ${c.emoji} ${c.name}(${c.title}): ${c.role}`).join('\n');
+    return `▶ ${info.emoji} ${info.name} / ${info.ideology} / partyKey: ${pid}\n${chars}`;
+  }).join('\n\n');
 }
 
-// ── 정당 대항전 생성 프롬프트 ──
-function buildBattlePrompt(topContext, today) {
-  const partyDescs = [
-    { key: 'national', chars: BATTLE_CHARS.filter(c => c.partyKey === 'national') },
-    { key: 'youth',    chars: BATTLE_CHARS.filter(c => c.partyKey === 'youth') },
-    { key: 'center',   chars: BATTLE_CHARS.filter(c => c.partyKey === 'center') },
-  ].map(({ key, chars }) => {
-    const info = PARTY_INFO[key];
-    const charDescs = chars.map(c => `  【${c.emoji} ${c.name} (${c.title})】\n  ${c.role}`).join('\n\n');
-    return `▶ ${info.emoji} ${info.name} (partyKey: "${key}")\n${charDescs}`;
-  }).join('\n\n━━━━━━━━━━━━━━━\n\n');
+async function getRulingContext(today) {
+  const yesterday = kstDateOffset(-1);
+  let ruling = null;
+  try {
+    const yestSnap = await db.doc(`battles/${yesterday}`).get();
+    const winPartyId = yestSnap.exists ? yestSnap.data().winningParty : null;
+    if (PARTY_INFO[winPartyId]) {
+      const histSnap = await db.collection('kingHistory').orderBy('date', 'desc').limit(10).get();
+      let streak = 0;
+      for (const histDoc of histSnap.docs) {
+        if (histDoc.data().partyId === winPartyId) streak++;
+        else break;
+      }
+      ruling = { partyId: winPartyId, partyName: PARTY_INFO[winPartyId].name, streak };
+    }
+  } catch {}
 
-  const contextLine = topContext?.ruling
-    ? `\n【어제의 논쟁 승리 정당】${topContext.ruling.partyName}${topContext.ruling.streak > 1 ? ` (${topContext.ruling.streak}일 연속 승리 중)` : ''} — 오늘 논쟁에 이 사실이 자연스럽게 반영되어야 합니다.\n`
+  let topicHint = '';
+  try {
+    const configSnap = await db.doc('config/daily_topic').get();
+    if (configSnap.exists && configSnap.data().date === today) topicHint = String(configSnap.data().hint || '');
+  } catch {}
+
+  return { ruling, topicHint };
+}
+
+function buildBattlePrompt(historyEvent, context, today) {
+  const rulingText = context?.ruling
+    ? `\n【어제의 논쟁 승리 정당】${context.ruling.partyName}${context.ruling.streak > 1 ? ` · ${context.ruling.streak}일 연속 승리` : ''}\n`
+    : '';
+  const hintText = context?.topicHint
+    ? `\n【관리자 추가 힌트】${context.topicHint}\n`
     : '';
 
-  const topicHint = topContext?.topicHint
-    ? `\n【오늘의 이슈 힌트】관리자가 제시한 주제: "${topContext.topicHint}" — 이를 재치있게 패러디해서 사용하세요.\n`
-    : '';
+  return `당신은 소소킹의 역사 기반 풍자 정치 시뮬레이션 작가입니다.
+오늘 날짜는 ${today}입니다.
+실제 인물명·실제 정당명은 절대 쓰지 말고, 실제 현대정치 흐름은 모두 가상 국가 "소소공화국"의 사건처럼 변형하세요.
+피해자·참사·사회적 고통을 조롱하지 말고, 제도·권력·여론·정당 전략을 풍자하세요.
+너무 가볍게만 가지 말고 역사와 게임성이 같이 느껴져야 합니다.
 
-  const decreeContext = topContext?.presidentDecree
-    ? `\n【현직 대통령 포고령】${topContext.presidentDecree.presidentName}(${topContext.presidentDecree.partyName}) 대통령이 발표한 포고령: "${topContext.presidentDecree.decree}" — 오늘 논쟁 주제는 이 포고령과 자연스럽게 연결되거나 반응하는 내용일 수 있습니다.\n`
-    : '';
+${buildHistoryPromptBlock(historyEvent)}
+${rulingText}${hintText}
+【정당과 캐릭터】
+${partyBlock()}
 
-  const inspiration = `\n${buildInspirationBlock(today)}\n`;
-
-  return `${contextLine}${topicHint}${decreeContext}${inspiration}소소공화국 오늘의 정당 대항전 콘텐츠를 생성하라.
-3개 정당이 오늘의 정치 이슈에 대해 각자의 입장을 밝힌다.
-각 정당의 대표 2명이 자신의 캐릭터 스타일로 발언한다.
-
-【3개 정당 캐릭터 역할】
-${partyDescs}
-
-【생성 규칙】
-1. topic: 오늘의 정치 스캔들/이슈 제목 (15자 이내, 예: "의원 해외출장 온천 영수증 유출", "국회 본회의 중 배달 주문 적발")
-2. topicDesc: 이슈 상세 설명 — 현실감 있게 패러디, 구체적이고 웃기게 (60자 이내)
-3. partyDebates: 각 정당의 입장
-   - stance: 해당 정당의 한 줄 핵심 입장 (20자 이내)
-   - statements: 2명의 발언 (각자 자신의 [말투 스타일] 유지, 2~3문장)
-4. 이슈 종류는 위 '주제 결/영감'을 살려 가볍게: 일상 밸런스 논쟁(부먹/찍먹급)부터 가상 정책 법안(월요일 폐지법급)까지. 무거운 비리보다 사소한 것을 국가대사처럼 진지하게 다루는 코미디를 우선.
-
-반드시 JSON만 출력 (다른 텍스트 없이):
+아래 JSON으로만 응답하세요.
 {
-  "topic": "이슈 제목",
-  "topicDesc": "이슈 상세 설명",
+  "topic": "오늘의 정당 대항전 제목, 24자 이내",
+  "topicDesc": "역사 모티브를 가상 사건으로 바꾼 설명, 90자 이내",
+  "historyQuestion": "오늘 유저가 판단할 핵심 질문, 50자 이내",
+  "historyDay": ${historyEvent.day},
+  "historyEra": "${historyEvent.era}",
+  "motifYear": ${historyEvent.motifYear},
+  "motif": "${historyEvent.motif}",
   "partyDebates": {
     "national": {
-      "stance": "국민안정당의 한 줄 입장",
+      "stance": "국민질서당 핵심 입장, 24자 이내",
       "statements": [
-        {"charId": "senator", "charName": "3선 의원", "emoji": "🎙️", "text": "발언..."},
-        {"charId": "spokesperson", "charName": "당 대변인", "emoji": "🤝", "text": "발언..."}
+        {"charId":"kang_doyoon","charName":"강도윤","emoji":"🛡️","text":"발언"},
+        {"charId":"seo_moonha","charName":"서문하","emoji":"📈","text":"발언"}
       ]
     },
     "youth": {
-      "stance": "청년혁명당의 한 줄 입장",
+      "stance": "시민개혁당 핵심 입장, 24자 이내",
       "statements": [
-        {"charId": "mz", "charName": "MZ 운동가", "emoji": "📱", "text": "발언..."},
-        {"charId": "youtuber", "charName": "정치 유튜버", "emoji": "📺", "text": "발언..."}
+        {"charId":"han_seoyoon","charName":"한서윤","emoji":"🕯️","text":"발언"},
+        {"charId":"baek_jinwoo","charName":"백진우","emoji":"🔎","text":"발언"}
       ]
     },
     "center": {
-      "stance": "중도민주당의 한 줄 입장",
+      "stance": "국민통합당 핵심 입장, 24자 이내",
       "statements": [
-        {"charId": "pollster", "charName": "여론조사 전문가", "emoji": "📊", "text": "발언..."},
-        {"charId": "reporter", "charName": "탐사 기자", "emoji": "🔍", "text": "발언..."}
+        {"charId":"yoon_taegun","charName":"윤태건","emoji":"⚖️","text":"발언"},
+        {"charId":"oh_harin","charName":"오하린","emoji":"📊","text":"발언"}
       ]
     }
   }
 }`;
 }
 
-// ── 집권 이후 aftermath 프롬프트 ──
-function buildAftermathPrompt(winnerPartyId, topic) {
-  const winInfo = PARTY_INFO[winnerPartyId];
-  const winChars = BATTLE_CHARS.filter(c => c.partyKey === winnerPartyId);
-  const loserParties = Object.entries(PARTY_INFO)
-    .filter(([k]) => k !== winnerPartyId)
-    .map(([k, v]) => {
-      const chars = BATTLE_CHARS.filter(c => c.partyKey === k);
-      return `【${v.emoji} ${v.name}】\n${chars.map(c => `  ${c.emoji} ${c.name}: ${c.role.split('\n')[0]}`).join('\n')}`;
-    }).join('\n\n');
-
-  return `소소공화국 오늘의 정당 대항전에서 집권 정당이 결정되었다. 집권 선언과 패배 정당들의 반응을 생성하라.
-
-【오늘의 이슈】${topic}
-
-【오늘의 집권 정당: ${winInfo.emoji} ${winInfo.name}】
-${winChars.map(c => `  ${c.emoji} ${c.name} (${c.title}): ${c.role.split('\n')[0]}`).join('\n')}
-
-【패배 정당들】
-${loserParties}
-
-【생성 규칙】
-1. decree: 집권 정당 대표의 공식 선언 — 집권 소감과 포부, 각 캐릭터 말투 섞어 2~3문장
-2. reactions: 패배 정당 대표들의 반응 — 각 정당 대표 1인씩, 각자의 말투로 1문장
-   - 진심 축하인 척하지만 속내가 보이거나, 노골적 불만, 또는 은밀한 재도전 시사
-
-반드시 JSON만 출력:
-{
-  "decree": "집권 선언...",
-  "reactions": [
-    {"partyId": "...", "partyName": "...", "charName": "...", "emoji": "...", "text": "..."}
-  ]
-}`;
+function fallbackBattle(historyEvent) {
+  return {
+    topic: clean(historyEvent.parodyTitle, 40),
+    topicDesc: clean(historyEvent.issueSummary, 120),
+    historyQuestion: historyEvent.question,
+    historyDay: historyEvent.day,
+    historyEra: historyEvent.era,
+    motifYear: historyEvent.motifYear,
+    motif: historyEvent.motif,
+    partyDebates: {
+      national: {
+        stance: '질서 있는 전환',
+        statements: [
+          { charId: 'kang_doyoon', charName: '강도윤', emoji: '🛡️', text: historyEvent.stances.national },
+          { charId: 'seo_moonha', charName: '서문하', emoji: '📈', text: '개혁의 방향은 인정하지만 시장과 행정이 흔들리면 시민이 먼저 피해를 봅니다. 절차와 속도를 함께 관리해야 합니다.' },
+        ],
+      },
+      youth: {
+        stance: '시민 개혁 우선',
+        statements: [
+          { charId: 'han_seoyoon', charName: '한서윤', emoji: '🕯️', text: historyEvent.stances.youth },
+          { charId: 'baek_jinwoo', charName: '백진우', emoji: '🔎', text: '문제는 늘 구조 안에 숨어 있습니다. 오늘의 쟁점도 책임 소재와 제도 개편을 분리해서 볼 수 없습니다.' },
+        ],
+      },
+      center: {
+        stance: '합의와 실행',
+        statements: [
+          { charId: 'yoon_taegun', charName: '윤태건', emoji: '⚖️', text: historyEvent.stances.center },
+          { charId: 'oh_harin', charName: '오하린', emoji: '📊', text: '중간층은 명분보다 실행 가능성을 봅니다. 갈등을 낮추면서도 결과가 보이는 합의안이 필요합니다.' },
+        ],
+      },
+    },
+  };
 }
 
-async function generateAftermath(winnerPartyId, topic, battleRef) {
-  try {
-    if (!PARTY_INFO[winnerPartyId]) return;
-    const raw = await callAI(buildAftermathPrompt(winnerPartyId, topic), 2000);
-    const parsed = safeParseJson(raw);
-    if (!parsed || !parsed.decree || !Array.isArray(parsed.reactions)) {
-      console.error('[battle] aftermath parse failed:', raw.slice(0, 200));
-      return;
-    }
-    await battleRef.update({ aftermath: parsed });
-    console.log('[battle] aftermath generated for party:', winnerPartyId);
-  } catch (err) {
-    console.error('[battle] aftermath failed:', err.message);
+function normalizeBattle(parsed, historyEvent) {
+  const base = fallbackBattle(historyEvent);
+  const out = parsed && typeof parsed === 'object' ? parsed : base;
+  const debates = out.partyDebates && typeof out.partyDebates === 'object' ? out.partyDebates : base.partyDebates;
+  for (const pid of Object.keys(PARTY_INFO)) {
+    if (!debates[pid]) debates[pid] = base.partyDebates[pid];
+    debates[pid].stance = clean(debates[pid].stance || base.partyDebates[pid].stance, 40);
+    debates[pid].statements = Array.isArray(debates[pid].statements) && debates[pid].statements.length
+      ? debates[pid].statements.slice(0, 2).map((s, idx) => {
+          const fallback = base.partyDebates[pid].statements[idx] || base.partyDebates[pid].statements[0];
+          return {
+            charId: clean(s.charId || fallback.charId, 40),
+            charName: clean(s.charName || fallback.charName, 20),
+            emoji: clean(s.emoji || fallback.emoji, 4),
+            text: clean(s.text || fallback.text, 320),
+          };
+        })
+      : base.partyDebates[pid].statements;
   }
-}
-
-// ── AI 시민단: 빈 광장을 막기 위해 배틀에 시민 투표·토론 댓글을 시딩한다 ──
-const CITIZEN_NICK_POOL = [
-  '한강뷰주민', '오늘도출근중', '떡볶이연정', '민초는진리', '강남삼구', '퇴근빌런',
-  '정치구경꾼', '소소시민A', '월급루팡', '국밥한그릇', '동네이장님', '키보드워리어',
-  '아아주세요', '주말순삭', '치킨이진리', 'ादो시민', '광장단골', '뉴스중독자',
-  '평범한1인', '시민의식만렙', '오지랖러', '팩트체커', '중립기어', '아무말대잔치',
-];
-
-function pickCitizenNick(used) {
-  for (let i = 0; i < 8; i++) {
-    const n = CITIZEN_NICK_POOL[Math.floor(Math.random() * CITIZEN_NICK_POOL.length)];
-    if (!used.has(n)) { used.add(n); return n; }
-  }
-  const n = '시민' + Math.floor(100 + Math.random() * 899);
-  used.add(n);
-  return n;
-}
-
-function buildCitizenPrompt(topic, topicDesc, partyDebates) {
-  const stances = Object.entries(partyDebates || {})
-    .map(([pid, d]) => `- ${PARTY_INFO[pid]?.name || pid}(${pid}): ${(d && d.stance) || ''}`).join('\n');
-  return `소소공화국 "오늘의 정치 배틀" 댓글창에 평범한 시민들이 다는 반응을 만들어줘.
-
-[오늘의 논쟁] ${topic}
-${topicDesc || ''}
-[각 정당 입장]
-${stances}
-
-규칙:
-- 서로 다른 시민 10명이 각자 한 줄 반응을 단다.
-- 각 시민은 national / youth / center 중 한 쪽을 지지한다. 세 정당에 고르게 분포(한쪽이 약간 우세해도 됨).
-- 진짜 인터넷 댓글처럼 다양하게: ㅋㅋ·ㄹㅇ 섞기, 반말/존댓말 혼합, 짧고 임팩트. 1~2문장.
-- 닉네임은 한국 커뮤니티풍 재치있는 닉(공백 없이 8자 이내).
-- 욕설·혐오·실존 인물 비방 금지. 가볍고 유머러스하게.
-
-JSON만 출력:
-{"comments":[{"nick":"닉네임","side":"national","text":"한줄 반응"}]}`;
+  return {
+    topic: clean(out.topic || base.topic, 40),
+    topicDesc: clean(out.topicDesc || base.topicDesc, 120),
+    historyQuestion: clean(out.historyQuestion || historyEvent.question, 80),
+    historyDay: Number(out.historyDay || historyEvent.day),
+    historyEra: clean(out.historyEra || historyEvent.era, 40),
+    motifYear: Number(out.motifYear || historyEvent.motifYear),
+    motif: clean(out.motif || historyEvent.motif, 100),
+    partyDebates: debates,
+  };
 }
 
 function fallbackCitizenComments(partyDebates) {
-  // AI 실패 시: 각 정당 입장(stance)을 시민 한마디로 변환해 최소한의 활기를 보장한다.
   const out = [];
   for (const [pid, d] of Object.entries(partyDebates || {})) {
-    const stance = (d && d.stance) ? String(d.stance) : '';
+    const stance = clean(d?.stance || '', 60);
     if (!stance) continue;
-    out.push({ side: pid, text: `${stance} 이거 ㄹㅇ 공감함ㅋㅋ`.slice(0, 120) });
-    out.push({ side: pid, text: `난 이 입장 지지! ${stance}`.slice(0, 120) });
+    out.push({ side: pid, text: `${PARTY_INFO[pid]?.name || pid} 쪽 ${stance}, 오늘 쟁점엔 이게 더 현실적임.` });
+    out.push({ side: pid, text: `난 ${stance}에 한 표. 역사에서 배운 게 있다면 반복하지 말자는 거지.` });
   }
   return out;
 }
 
-async function seedCitizenActivity(today, battleData, topContext) {
-  const battleRef = db.doc(`battles/${today}`);
-  const partyDebates = (battleData && battleData.partyDebates) || {};
-  const pids = ['national', 'youth', 'center'];
+async function seedCitizenActivity(date, battleData, context) {
+  const battleRef = db.doc(`battles/${date}`);
+  const pids = Object.keys(PARTY_INFO);
+  const batch = db.batch();
+  const votes = { national: 0, youth: 0, center: 0 };
+  const lean = context?.ruling?.partyId || pids[Math.floor(Math.random() * pids.length)];
+  const total = 30 + Math.floor(Math.random() * 36);
+  for (let i = 0; i < total; i++) {
+    const pool = [...pids, lean];
+    const pid = pool[Math.floor(Math.random() * pool.length)];
+    votes[pid] += 1;
+  }
+  batch.set(battleRef, { votes, totalVotes: votes.national + votes.youth + votes.center }, { merge: true });
 
-  // 1) 시민 기본 투표 시딩 (AI 불필요 — 항상 동작)
-  try {
-    const lean = (topContext && topContext.ruling && topContext.ruling.partyId) || null;
-    const weights = { national: 1, youth: 1, center: 1 };
-    if (lean && weights[lean] != null) weights[lean] += 0.6 + Math.random() * 0.6;
-    // 한 정당을 추가로 살짝 띄워 접전 구도를 만든다
-    const spice = pids[Math.floor(Math.random() * 3)];
-    weights[spice] += 0.4 + Math.random() * 0.7;
-
-    const base = 28 + Math.floor(Math.random() * 45); // 28~72명
-    const wsum = pids.reduce((s, p) => s + weights[p], 0);
-    const seeded = {};
-    let assigned = 0;
-    pids.forEach((p, i) => {
-      if (i < 2) { seeded[p] = Math.max(3, Math.round(base * (weights[p] / wsum))); assigned += seeded[p]; }
-      else { seeded[p] = Math.max(3, base - assigned); }
+  const comments = fallbackCitizenComments(battleData.partyDebates).slice(0, 9);
+  const now = Date.now();
+  const names = ['광장단골', '중립기어', '헌법읽는밤', '정치구경꾼', '뉴스중독자', '직장인시민', '동네이장님', '팩트체커', '소소시민A'];
+  comments.forEach((c, i) => {
+    const pid = PARTY_INFO[c.side] ? c.side : pids[i % pids.length];
+    const ref = db.collection(`battles/${date}/comments`).doc();
+    batch.set(ref, {
+      userId: 'npc', isCitizen: true, authorName: names[i % names.length],
+      text: clean(c.text, 200), partyId: pid, power: 30 + Math.floor(Math.random() * 500),
+      reactions: { like: Math.floor(Math.random() * 8), fire: Math.floor(Math.random() * 4), funny: Math.floor(Math.random() * 3) },
+      createdAt: Timestamp.fromMillis(now - (comments.length - i) * 65000),
+      createdAtMs: now - (comments.length - i) * 65000,
     });
-    const total = pids.reduce((s, p) => s + seeded[p], 0);
-
-    await battleRef.set({
-      votes: seeded,
-      totalVotes: total,
-      citizenSeeded: true,
-      citizenSeedTotal: total,
-      citizenSeedAt: FieldValue.serverTimestamp(),
-    }, { merge: true });
-  } catch (e) {
-    console.error('[battle] citizen vote seed failed:', e.message);
-  }
-
-  // 2) 시민 토론 댓글 시딩 (AI, 실패 시 폴백)
-  let comments = [];
-  try {
-    const raw = await callAI(buildCitizenPrompt(battleData.topic, battleData.topicDesc, partyDebates), 1800);
-    const parsed = safeParseJson(raw);
-    comments = Array.isArray(parsed && parsed.comments) ? parsed.comments : [];
-  } catch (e) {
-    console.error('[battle] citizen comment AI failed:', e.message);
-  }
-  comments = comments
-    .filter(c => c && c.text)
-    .map(c => ({ nick: c.nick, side: c.side, text: String(c.text) }));
-  if (comments.length < 4) comments = comments.concat(fallbackCitizenComments(partyDebates));
-  comments = comments.slice(0, 12);
-
-  try {
-    const batch = db.batch();
-    const now = Date.now();
-    const usedNicks = new Set();
-    comments.forEach((c, i) => {
-      const pid = pids.includes(c.side) ? c.side : pids[Math.floor(Math.random() * 3)];
-      const nick = (c.nick && String(c.nick).trim()) ? String(c.nick).trim().slice(0, 12) : pickCitizenNick(usedNicks);
-      const ms = now - (comments.length - i) * (45000 + Math.floor(Math.random() * 90000));
-      const ref = db.collection(`battles/${today}/comments`).doc();
-      batch.set(ref, {
-        userId: 'npc',
-        isCitizen: true,
-        authorName: nick,
-        text: String(c.text).slice(0, 200),
-        partyId: pid,
-        power: 15 + Math.floor(Math.random() * 420),
-        reactions: {
-          like: Math.floor(Math.random() * 9),
-          fire: Math.floor(Math.random() * 5),
-          funny: Math.floor(Math.random() * 4),
-        },
-        createdAt: Timestamp.fromMillis(ms),
-        createdAtMs: ms,
-      });
-    });
-    await batch.commit();
-    console.log('[battle] citizen activity seeded:', comments.length, 'comments for', today);
-  } catch (e) {
-    console.error('[battle] citizen comment write failed:', e.message);
-  }
+  });
+  await batch.commit();
 }
 
-// ── 매일 자정 배틀 생성 ──
-exports.generateDailyBattle = onSchedule({
-  schedule: '1 0 * * *',
-  timeZone: 'Asia/Seoul',
-  region: 'asia-northeast3',
-  timeoutSeconds: 180,
-  memory: '512MiB',
-}, async () => {
-  const today = kstToday();
-  const existing = await db.doc(`battles/${today}`).get();
-  if (existing.exists) { console.log('[battle] already generated for', today); return; }
+async function createBattleForDate(date, options = {}) {
+  const battleRef = db.doc(`battles/${date}`);
+  const existing = await battleRef.get();
+  if (existing.exists && !options.force) return { skipped: true, date, topic: existing.data().topic || '', postId: battleRef.id };
 
-  // 어제 집권 대표 정보
-  const d = new Date();
-  d.setDate(d.getDate() - 1);
-  const yesterday = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit',
-  }).format(d);
-
-  let topContext = null;
+  const historyEvent = options.day ? eventByDay(options.day) : eventForDate(date);
+  const context = await getRulingContext(date);
+  let parsed = null;
   try {
-    const yestSnap = await db.doc(`battles/${yesterday}`).get();
-    if (yestSnap.exists && yestSnap.data().winningParty) {
-      const winPartyId = yestSnap.data().winningParty;
-      const partyInfo = PARTY_INFO[winPartyId];
-      if (partyInfo) {
-        const histSnap = await db.collection('kingHistory').orderBy('date', 'desc').limit(10).get();
-        let streak = 0;
-        for (const histDoc of histSnap.docs) {
-          if (histDoc.data().partyId === winPartyId) streak++;
-          else break;
-        }
-        topContext = { ruling: { partyName: partyInfo.name, partyId: winPartyId, streak } };
-      }
-    }
-    // 관리자가 설정한 오늘의 이슈 힌트
-    const configSnap = await db.doc('config/daily_topic').get();
-    if (configSnap.exists && configSnap.data().date === today) {
-      topContext = { ...(topContext || {}), topicHint: configSnap.data().hint };
-    }
-
-    // 현직 대통령 포고령 (배틀 이슈의 문맥으로 활용)
-    try {
-      const prevKey = getBattlePrevKey();
-      const prevElecSnap = await db.doc(`elections/${prevKey}`).get();
-      if (prevElecSnap.exists && prevElecSnap.data().decree && prevElecSnap.data().status === 'closed') {
-        const ed = prevElecSnap.data();
-        topContext = {
-          ...(topContext || {}),
-          presidentDecree: {
-            decree: ed.decree,
-            presidentName: ed.winner?.candidateName || '대통령',
-            partyName: ed.winner?.partyName || '',
-          },
-        };
-      }
-    } catch {}
-  } catch {}
-
-  const initialVotes = { national: 0, youth: 0, center: 0 };
-
-  let raw = '';
-  try {
-    raw = await callAI(buildBattlePrompt(topContext, today), 3500);
-    const parsed = safeParseJson(raw);
-    if (!parsed || !parsed.partyDebates || typeof parsed.partyDebates !== 'object') {
-      throw new Error('invalid battle JSON: ' + raw.slice(0, 200));
-    }
-
-    await db.doc(`battles/${today}`).set({
-      topic: String(parsed.topic || '오늘의 정치 이슈').slice(0, 40),
-      topicDesc: String(parsed.topicDesc || '').slice(0, 120),
-      partyDebates: parsed.partyDebates,
-      votes: initialVotes,
-      totalVotes: 0,
-      winningParty: null,
-      status: 'live',
-      date: today,
-      createdAt: FieldValue.serverTimestamp(),
-    });
-    console.log('[battle] generated for', today, ':', parsed.topic);
-
-    // AI 시민단 투표·토론 시딩으로 빈 광장을 막는다 (실패해도 배틀은 정상)
-    await seedCitizenActivity(today, {
-      topic: parsed.topic, topicDesc: parsed.topicDesc, partyDebates: parsed.partyDebates,
-    }, topContext);
+    const raw = await callAI(buildBattlePrompt(historyEvent, context, date), 3600);
+    parsed = safeParseJson(raw);
   } catch (err) {
-    console.error('[battle] generation failed:', err.message, 'raw:', raw.slice(0, 300));
+    console.warn('[battle] AI generation fallback:', err.message);
   }
+  const battle = normalizeBattle(parsed, historyEvent);
+
+  await battleRef.set({
+    ...battle,
+    historyLinked: true,
+    historySource: 'republic-history-events',
+    votes: { national: 0, youth: 0, center: 0 },
+    totalVotes: 0,
+    winningParty: null,
+    status: 'live',
+    date,
+    createdAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
+  }, { merge: false });
+
+  await seedCitizenActivity(date, battle, context);
+  return { skipped: false, date, topic: battle.topic, eventDay: battle.historyDay };
+}
+
+async function requireAdmin(request) {
+  if (!request.auth?.uid) throw new HttpsError('unauthenticated', '로그인이 필요해요');
+  const adminSnap = await db.doc(`admins/${request.auth.uid}`).get();
+  if (!adminSnap.exists) throw new HttpsError('permission-denied', '관리자 전용');
+}
+
+exports.generateDailyBattle = onSchedule({
+  schedule: '1 0 * * *', timeZone: 'Asia/Seoul', region: 'asia-northeast3', timeoutSeconds: 180, memory: '512MiB',
+}, async () => {
+  await createBattleForDate(kstToday());
 });
 
-// ── 정당에 투표 ──
-exports.voteForParty = onCall({
-  region: 'asia-northeast3',
-  timeoutSeconds: 30,
-}, async (request) => {
+exports.adminGenerateBattle = onCall({ region: 'asia-northeast3', timeoutSeconds: 180, memory: '512MiB' }, async request => {
+  await requireAdmin(request);
+  const date = request.data?.date || kstToday();
+  const result = await createBattleForDate(date, { force: !!request.data?.force, day: request.data?.day });
+  return { ok: true, ...result };
+});
+
+exports.voteForParty = onCall({ region: 'asia-northeast3', timeoutSeconds: 30 }, async request => {
   const userId = request.auth?.uid;
   if (!userId) throw new HttpsError('unauthenticated', '로그인이 필요해요');
-
   const { partyId } = request.data || {};
+  if (!PARTY_INFO[partyId]) throw new HttpsError('invalid-argument', '유효하지 않은 정당이에요');
   const today = kstToday();
-  if (!PARTY_INFO[partyId]) {
-    throw new HttpsError('invalid-argument', '유효하지 않은 정당이에요');
-  }
-
   const voteRef = db.doc(`battleVotes/${userId}_${today}`);
   const battleRef = db.doc(`battles/${today}`);
-
   let outcome = null;
-  await db.runTransaction(async (tx) => {
+
+  await db.runTransaction(async tx => {
     const [voteSnap, battleSnap] = await Promise.all([tx.get(voteRef), tx.get(battleRef)]);
     if (voteSnap.exists) throw new HttpsError('already-exists', '오늘은 이미 투표했어요');
     if (!battleSnap.exists) throw new HttpsError('not-found', '오늘의 논쟁을 불러올 수 없어요');
     if (battleSnap.data().status === 'ended') throw new HttpsError('failed-precondition', '이미 끝난 논쟁이에요');
-
-    // 판세 변화 계산용 — 투표 전/후 비교
     const before = battleSnap.data().votes || { national: 0, youth: 0, center: 0 };
-    const beforeVotes = {
-      national: Number(before.national || 0),
-      youth: Number(before.youth || 0),
-      center: Number(before.center || 0),
-    };
+    const beforeVotes = { national: Number(before.national || 0), youth: Number(before.youth || 0), center: Number(before.center || 0) };
     const afterVotes = { ...beforeVotes, [partyId]: beforeVotes[partyId] + 1 };
-    const leaderOf = (v) => Object.keys(v).reduce((a, b) => (v[b] > v[a] ? b : a), 'national');
+    const leaderOf = v => Object.keys(v).reduce((a, b) => (v[b] > v[a] ? b : a), 'national');
     const prevLeader = (beforeVotes.national + beforeVotes.youth + beforeVotes.center) > 0 ? leaderOf(beforeVotes) : null;
     const newLeader = leaderOf(afterVotes);
     const sorted = Object.entries(afterVotes).sort((a, b) => b[1] - a[1]);
-    const myRank = sorted.findIndex(([p]) => p === partyId) + 1;
     const gapToLead = afterVotes[newLeader] - afterVotes[partyId];
-
     let kind = 'joined';
-    if (newLeader === partyId && prevLeader && prevLeader !== partyId) kind = 'takeLead';   // 역전 선두!
-    else if (newLeader === partyId) kind = 'lead';                                            // 선두 유지/달성
-    else if (gapToLead <= 2) kind = 'closing';                                                // 추격 접전
-
-    outcome = {
-      votes: afterVotes,
-      totalVotes: afterVotes.national + afterVotes.youth + afterVotes.center,
-      myRank,
-      leader: newLeader,
-      gapToLead,
-      kind,
-    };
-
+    if (newLeader === partyId && prevLeader && prevLeader !== partyId) kind = 'takeLead';
+    else if (newLeader === partyId) kind = 'lead';
+    else if (gapToLead <= 2) kind = 'closing';
+    outcome = { votes: afterVotes, totalVotes: afterVotes.national + afterVotes.youth + afterVotes.center, myRank: sorted.findIndex(([p]) => p === partyId) + 1, leader: newLeader, gapToLead, kind };
     tx.set(voteRef, { userId, partyId, date: today, createdAt: FieldValue.serverTimestamp() });
-    tx.update(battleRef, {
-      [`votes.${partyId}`]: FieldValue.increment(1),
-      totalVotes: FieldValue.increment(1),
-    });
-    // +5P 정치력 지급
+    tx.update(battleRef, { [`votes.${partyId}`]: FieldValue.increment(1), totalVotes: FieldValue.increment(1) });
     const awardRef = db.doc(`point_awards/${userId}_battle_vote_${today}`);
-    const userRef = db.doc(`users/${userId}`);
     tx.set(awardRef, { uid: userId, action: 'battle_vote', points: 5, date: today, createdAt: FieldValue.serverTimestamp() }, { merge: false });
-    tx.set(userRef, { totalPoints: FieldValue.increment(5), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+    tx.set(db.doc(`users/${userId}`), { totalPoints: FieldValue.increment(5), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
   });
 
   return { ok: true, partyId, ...(outcome || {}) };
 });
 
-// ── 토론 댓글 추가 ──
-exports.addBattleComment = onCall({
-  region: 'asia-northeast3',
-  timeoutSeconds: 15,
-}, async (request) => {
+exports.addBattleComment = onCall({ region: 'asia-northeast3', timeoutSeconds: 15 }, async request => {
   const userId = request.auth?.uid;
   if (!userId) throw new HttpsError('unauthenticated', '로그인이 필요해요');
-
-  const { text } = request.data || {};
-  const trimmed = String(text || '').trim();
+  const trimmed = clean(request.data?.text, 300);
   if (trimmed.length < 2) throw new HttpsError('invalid-argument', '댓글이 너무 짧아요');
-  if (trimmed.length > 300) throw new HttpsError('invalid-argument', '댓글은 300자 이내로');
-
   const today = kstToday();
   const battleSnap = await db.doc(`battles/${today}`).get();
   if (!battleSnap.exists) throw new HttpsError('not-found', '오늘의 배틀을 찾을 수 없어요');
-
   const userSnap = await db.doc(`users/${userId}`).get();
   const userData = userSnap.data() || {};
-
-  const partyId = userData.partyId || null;
-  const power = Math.max(0, Number(userData.totalPoints || userData.points || 0));
-
   const ref = await db.collection(`battles/${today}/comments`).add({
-    userId,
-    authorName: userData.nickname || userData.displayName || '익명',
-    text: trimmed,
-    ...(partyId ? { partyId } : {}),
-    power,
+    userId, authorName: userData.nickname || userData.displayName || '익명', text: trimmed,
+    ...(userData.partyId ? { partyId: userData.partyId } : {}),
+    power: Math.max(0, Number(userData.totalPoints || userData.points || 0)),
     createdAt: FieldValue.serverTimestamp(),
   });
-
-  // 첫 번째 배틀 댓글 +10P (하루 1회)
   let pointsAwarded = 0;
   try {
     const awardKey = `battle_comment_${userId}_${today}`;
@@ -647,413 +429,141 @@ exports.addBattleComment = onCall({
       pointsAwarded = 10;
     }
   } catch {}
-
   return { ok: true, id: ref.id, pointsAwarded };
 });
 
-// ── 오늘 배틀 현황 조회 ──
-exports.getBattleStatus = onCall({
-  region: 'asia-northeast3',
-  timeoutSeconds: 30,
-}, async (request) => {
-  const today = kstToday();
+async function buildYesterdayResult(request, yesterday, yestSnap) {
+  if (!request.auth?.uid || !yestSnap?.exists || !yestSnap.data().winningParty) return null;
+  const yestVoteSnap = await db.doc(`battleVotes/${request.auth.uid}_${yesterday}`).get();
+  if (!yestVoteSnap.exists) return null;
+  const myPartyId = yestVoteSnap.data().partyId;
+  const winnerPartyId = yestSnap.data().winningParty;
+  if (!PARTY_INFO[myPartyId] || !PARTY_INFO[winnerPartyId]) return null;
+  return { date: yesterday, topic: yestSnap.data().topic || '', won: myPartyId === winnerPartyId, myParty: { partyId: myPartyId, ...PARTY_INFO[myPartyId] }, winner: { partyId: winnerPartyId, ...PARTY_INFO[winnerPartyId] } };
+}
 
-  const d = new Date();
-  d.setDate(d.getDate() - 1);
-  const yesterday = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit',
-  }).format(d);
-
-  const fetches = [
-    db.doc(`battles/${today}`).get(),
-    db.doc(`battles/${yesterday}`).get(),
-  ];
-  if (request.auth?.uid) {
-    fetches.push(db.doc(`battleVotes/${request.auth.uid}_${today}`).get());
-    fetches.push(db.doc(`battleVotes/${request.auth.uid}_${yesterday}`).get());
-  }
-
-  const [todaySnap, yestSnap, voteSnap, yestVoteSnap] = await Promise.all(fetches);
-
-  // 어제 내가 투표한 배틀의 결과 — 재방문 보상(승리 자축/설욕 동기)
-  let yesterdayResult = null;
-  if (yestSnap && yestSnap.exists && yestSnap.data().winningParty
-      && yestVoteSnap && yestVoteSnap.exists) {
-    const myPartyId = yestVoteSnap.data().partyId;
-    const winnerPartyId = yestSnap.data().winningParty;
-    if (PARTY_INFO[myPartyId] && PARTY_INFO[winnerPartyId]) {
-      yesterdayResult = {
-        date: yesterday,
-        topic: yestSnap.data().topic || '',
-        won: myPartyId === winnerPartyId,
-        myParty: { partyId: myPartyId, ...PARTY_INFO[myPartyId] },
-        winner: { partyId: winnerPartyId, ...PARTY_INFO[winnerPartyId] },
-      };
-    }
-  }
-
-  // 현재 집권 정당 (어제 논쟁 승리 정당)
-  let currentKing = null;
-  if (yestSnap && yestSnap.exists && yestSnap.data().winningParty) {
-    const winPartyId = yestSnap.data().winningParty;
-    const partyInfo = PARTY_INFO[winPartyId];
-    if (partyInfo) {
-      const histSnap = await db.collection('kingHistory')
-        .orderBy('date', 'desc').limit(10).get();
-      let streak = 0;
-      for (const doc of histSnap.docs) {
-        if (doc.data().partyId === winPartyId) streak++;
-        else break;
-      }
-      currentKing = { partyId: winPartyId, name: partyInfo.name, emoji: partyInfo.emoji, color: partyInfo.color, streak };
-    }
-  }
-
-  if (!todaySnap.exists) {
-    return {
-      exists: false,
-      today,
-      currentKing,
-      yesterdayResult,
-      partyInfo: PARTY_INFO,
-      chars: BATTLE_CHARS.map(({ id, name, emoji, title, color, party, partyKey }) => ({ id, name, emoji, title, color, party, partyKey })),
-    };
-  }
-
-  const battle = todaySnap.data();
-  const userVote = voteSnap?.exists ? voteSnap.data().partyId : null;
-
-  // 최근 댓글 20개 (반응 포함)
-  let recentComments = [];
+async function recentBattleComments(today, uid) {
   try {
-    const commSnap = await db.collection(`battles/${today}/comments`)
-      .orderBy('createdAt', 'desc').limit(20).get();
-    const uid = request.auth?.uid || null;
-    recentComments = commSnap.docs.map(d => {
+    const commSnap = await db.collection(`battles/${today}/comments`).orderBy('createdAt', 'desc').limit(20).get();
+    return commSnap.docs.map(d => {
       const data = d.data();
       const reactions = data.reactions || {};
       const reactedWith = data.reactedWith || {};
       return {
-        id: d.id,
-        authorName: data.authorName || '익명',
-        text: data.text || '',
-        partyId: data.partyId || null,
-        power: Number(data.power || 0),
-        createdAt: data.createdAt?.toMillis?.() || null,
-        reactions: {
-          like: Number(reactions.like || 0),
-          fire: Number(reactions.fire || 0),
-          funny: Number(reactions.funny || 0),
-        },
+        id: d.id, authorName: data.authorName || '익명', text: data.text || '', partyId: data.partyId || null,
+        power: Number(data.power || 0), createdAt: data.createdAt?.toMillis?.() || data.createdAtMs || null,
+        reactions: { like: Number(reactions.like || 0), fire: Number(reactions.fire || 0), funny: Number(reactions.funny || 0) },
         myReaction: uid ? (reactedWith[uid] || null) : null,
       };
     }).reverse();
-  } catch {}
+  } catch { return []; }
+}
 
+exports.getBattleStatus = onCall({ region: 'asia-northeast3', timeoutSeconds: 30 }, async request => {
+  const today = kstToday();
+  const yesterday = kstDateOffset(-1);
+  const [todaySnap, yestSnap, voteSnap] = await Promise.all([
+    db.doc(`battles/${today}`).get(),
+    db.doc(`battles/${yesterday}`).get(),
+    request.auth?.uid ? db.doc(`battleVotes/${request.auth.uid}_${today}`).get() : Promise.resolve(null),
+  ]);
+  const currentKing = yestSnap.exists && PARTY_INFO[yestSnap.data().winningParty]
+    ? { partyId: yestSnap.data().winningParty, name: PARTY_INFO[yestSnap.data().winningParty].name, emoji: PARTY_INFO[yestSnap.data().winningParty].emoji, color: PARTY_INFO[yestSnap.data().winningParty].color, streak: 1 }
+    : null;
+  const yesterdayResult = await buildYesterdayResult(request, yesterday, yestSnap);
+  if (!todaySnap.exists) {
+    return { exists: false, today, currentKing, yesterdayResult, partyInfo: PARTY_INFO, chars: BATTLE_CHARS.map(({ id, name, emoji, title, color, party, partyKey }) => ({ id, name, emoji, title, color, party, partyKey })) };
+  }
+  const battle = todaySnap.data();
   return {
-    exists: true,
-    today,
-    topic: battle.topic,
-    topicDesc: battle.topicDesc,
-    partyDebates: battle.partyDebates || {},
-    votes: battle.votes || { national: 0, youth: 0, center: 0 },
-    totalVotes: battle.totalVotes || 0,
-    status: battle.status,
-    winningParty: battle.winningParty || null,
-    aftermath: battle.aftermath || null,
-    userVote,
-    currentKing,
-    yesterdayResult,
-    recentComments,
-    partyInfo: PARTY_INFO,
+    exists: true, today, topic: battle.topic, topicDesc: battle.topicDesc, historyQuestion: battle.historyQuestion || '',
+    historyDay: battle.historyDay || null, historyEra: battle.historyEra || '', motifYear: battle.motifYear || null, motif: battle.motif || '',
+    partyDebates: battle.partyDebates || {}, votes: battle.votes || { national: 0, youth: 0, center: 0 }, totalVotes: battle.totalVotes || 0,
+    status: battle.status, winningParty: battle.winningParty || null, aftermath: battle.aftermath || null,
+    userVote: voteSnap?.exists ? voteSnap.data().partyId : null, currentKing, yesterdayResult,
+    recentComments: await recentBattleComments(today, request.auth?.uid || null), partyInfo: PARTY_INFO,
     chars: BATTLE_CHARS.map(({ id, name, emoji, title, color, party, partyKey }) => ({ id, name, emoji, title, color, party, partyKey })),
   };
 });
 
-// ── 매일 23:59 배틀 종료 및 집권 결정 ──
-exports.closeDailyBattle = onSchedule({
-  schedule: '59 23 * * *',
-  timeZone: 'Asia/Seoul',
-  region: 'asia-northeast3',
-  timeoutSeconds: 180,
-  memory: '512MiB',
-}, async () => {
+function buildAftermath(winnerPartyId, battle) {
+  const w = PARTY_INFO[winnerPartyId];
+  if (!w) return null;
+  const losers = Object.entries(PARTY_INFO).filter(([pid]) => pid !== winnerPartyId);
+  return {
+    decree: `${w.emoji} ${w.name}이(가) 오늘의 역사 쟁점 "${clean(battle.topic, 30)}"에서 가장 설득력 있는 해석을 얻었습니다. 새공화국의 다음 논쟁도 시민의 표로 결정됩니다.`,
+    reactions: losers.map(([pid, info]) => ({ partyId: pid, partyName: info.name, emoji: info.emoji, text: `${info.name}은 결과를 존중하지만, 다음 쟁점에서 다시 시민의 판단을 받겠습니다.` })),
+  };
+}
+
+exports.closeDailyBattle = onSchedule({ schedule: '59 23 * * *', timeZone: 'Asia/Seoul', region: 'asia-northeast3', timeoutSeconds: 180, memory: '512MiB' }, async () => {
   const today = kstToday();
   const battleRef = db.doc(`battles/${today}`);
   const battleSnap = await battleRef.get();
   if (!battleSnap.exists || battleSnap.data().status === 'ended') return;
-
-  const votes = battleSnap.data().votes || { national: 0, youth: 0, center: 0 };
+  const battle = battleSnap.data();
+  const votes = battle.votes || { national: 0, youth: 0, center: 0 };
   let maxVotes = 0;
   let winnerPartyId = null;
   for (const [pid, count] of Object.entries(votes)) {
     if (Number(count) > maxVotes) { maxVotes = Number(count); winnerPartyId = pid; }
   }
-  // 득표가 0인 날(무투표/전부 0표)에는 집권 정당을 선정하지 않는다.
-
-  await battleRef.update({ winningParty: winnerPartyId, status: 'ended' });
-
+  await battleRef.update({ winningParty: winnerPartyId, status: 'ended', aftermath: buildAftermath(winnerPartyId, battle), updatedAt: FieldValue.serverTimestamp() });
   if (winnerPartyId && PARTY_INFO[winnerPartyId]) {
-    const partyInfo = PARTY_INFO[winnerPartyId];
-    await db.collection('kingHistory').add({
-      date: today,
-      partyId: winnerPartyId,
-      partyName: partyInfo.name,
-      emoji: partyInfo.emoji,
-      votes: maxVotes,
-      totalVotes: battleSnap.data().totalVotes || 0,
-      topic: battleSnap.data().topic || '',
-      createdAt: FieldValue.serverTimestamp(),
-    });
-    console.log('[battle] closed', today, '→ winner party:', winnerPartyId, 'votes:', maxVotes);
-
-    // 승리 정당 정치력 보너스 (최대 40, 득표수 비례)
-    const bonus = Math.min(40, Math.max(10, maxVotes));
-    try {
-      await db.doc(`parties/${winnerPartyId}`).set(
-        { totalPower: FieldValue.increment(bonus), updatedAt: FieldValue.serverTimestamp() },
-        { merge: true }
-      );
-      await db.doc(`battle_victory_log/${today}`).set({
-        winnerPartyId, partyName: partyInfo.name, bonus, votes: maxVotes,
-        topic: battleSnap.data().topic || '',
-        createdAt: FieldValue.serverTimestamp(),
-      });
-      console.log(`[battle] victory bonus +${bonus} → ${winnerPartyId}`);
-
-      await db.doc(`global_events/${today}_battle`).set({
-        type: 'battle_win',
-        partyId: winnerPartyId,
-        partyName: partyInfo.name,
-        partyEmoji: partyInfo.emoji,
-        bonus, votes: maxVotes, date: today,
-        createdAt: FieldValue.serverTimestamp(),
-      });
-    } catch (e) {
-      console.error('[battle] victory bonus error', e);
-    }
-
-    await generateAftermath(winnerPartyId, battleSnap.data().topic || '', battleRef);
+    await db.collection('kingHistory').add({ date: today, partyId: winnerPartyId, partyName: PARTY_INFO[winnerPartyId].name, emoji: PARTY_INFO[winnerPartyId].emoji, topic: battle.topic || '', totalVotes: Number(battle.totalVotes || 0), createdAt: FieldValue.serverTimestamp() });
   }
 });
 
-// ── 역대 집권 기록 조회 ──
-exports.getKingHistory = onCall({
-  region: 'asia-northeast3',
-  timeoutSeconds: 30,
-}, async () => {
-  const histSnap = await db.collection('kingHistory')
-    .orderBy('date', 'desc').limit(30).get();
-  const history = histSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-
-  const statsSnap = await db.collection('charStats').get();
-  const stats = {};
-  statsSnap.docs.forEach(d => { stats[d.id] = d.data(); });
-
-  return {
-    history,
-    stats,
-    partyInfo: PARTY_INFO,
-    chars: BATTLE_CHARS.map(({ id, name, emoji, title, color, party, partyKey }) => ({ id, name, emoji, title, color, party, partyKey })),
-  };
+exports.getKingHistory = onCall({ region: 'asia-northeast3', timeoutSeconds: 30 }, async () => {
+  const snap = await db.collection('kingHistory').orderBy('date', 'desc').limit(30).get();
+  return { history: snap.docs.map(d => ({ id: d.id, ...d.data() })) };
 });
 
-// ── 관리자: 배틀 수동 생성 ──
-exports.adminGenerateBattle = onCall({
-  region: 'asia-northeast3',
-  timeoutSeconds: 180,
-  memory: '512MiB',
-}, async (request) => {
-  const userId = request.auth?.uid;
-  if (!userId) throw new HttpsError('unauthenticated', '인증 필요');
-  const adminSnap = await db.doc(`admins/${userId}`).get();
-  if (!adminSnap.exists) throw new HttpsError('permission-denied', '관리자 권한 필요');
-
-  const today = kstToday();
-  const force = request.data?.force === true;
-  const topicHint = request.data?.topicHint || null;
-
-  if (!force) {
-    const existing = await db.doc(`battles/${today}`).get();
-    if (existing.exists) throw new HttpsError('already-exists', '오늘 배틀이 이미 생성됐어요. force:true로 덮어쓸 수 있어요.');
-  }
-
-  const raw = await callAI(buildBattlePrompt(topicHint ? { topicHint } : null), 3500);
-  const parsed = safeParseJson(raw);
-  if (!parsed || !parsed.partyDebates || typeof parsed.partyDebates !== 'object') {
-    throw new HttpsError('internal', 'AI 응답 파싱 실패: ' + raw.slice(0, 200));
-  }
-
-  // 재생성 시 기존 댓글(시민/실유저)을 정리해 중복 누적을 막는다
-  try {
-    const oldComments = await db.collection(`battles/${today}/comments`).limit(400).get();
-    if (!oldComments.empty) {
-      const delBatch = db.batch();
-      oldComments.docs.forEach(d => delBatch.delete(d.ref));
-      await delBatch.commit();
-    }
-  } catch (e) { console.error('[battle] admin comment cleanup failed:', e.message); }
-
-  await db.doc(`battles/${today}`).set({
-    topic: String(parsed.topic || '오늘의 정치 이슈').slice(0, 40),
-    topicDesc: String(parsed.topicDesc || '').slice(0, 120),
-    partyDebates: parsed.partyDebates,
-    votes: { national: 0, youth: 0, center: 0 },
-    totalVotes: 0,
-    winningParty: null,
-    status: 'live',
-    date: today,
-    createdAt: FieldValue.serverTimestamp(),
-  });
-
-  // AI 시민단 투표·토론 시딩
-  await seedCitizenActivity(today, {
-    topic: parsed.topic, topicDesc: parsed.topicDesc, partyDebates: parsed.partyDebates,
-  }, topicHint ? { topicHint } : null);
-
-  const stmtCount = Object.values(parsed.partyDebates).reduce((s, p) => s + (p.statements?.length || 0), 0);
-  return { ok: true, topic: parsed.topic, statements: stmtCount, citizensSeeded: true };
-});
-
-// ── 배틀 댓글 공감 반응 ──
-const BATTLE_COMMENT_REACTIONS = ['like', 'fire', 'funny'];
-
-exports.reactToBattleComment = onCall({
-  region: 'asia-northeast3',
-  timeoutSeconds: 15,
-}, async (request) => {
+exports.reactToBattleComment = onCall({ region: 'asia-northeast3', timeoutSeconds: 15 }, async request => {
   const uid = request.auth?.uid;
   if (!uid) throw new HttpsError('unauthenticated', '로그인이 필요해요');
-
   const { commentId, reaction } = request.data || {};
-  if (!commentId || typeof commentId !== 'string' || !/^[A-Za-z0-9_-]{1,64}$/.test(commentId)
-      || !BATTLE_COMMENT_REACTIONS.includes(reaction)) {
-    throw new HttpsError('invalid-argument', '올바르지 않은 요청입니다');
-  }
-
+  if (!['like', 'fire', 'funny'].includes(reaction)) throw new HttpsError('invalid-argument', '유효하지 않은 반응');
   const today = kstToday();
   const ref = db.doc(`battles/${today}/comments/${commentId}`);
-
-  return db.runTransaction(async tx => {
+  let active = false;
+  await db.runTransaction(async tx => {
     const snap = await tx.get(ref);
     if (!snap.exists) throw new HttpsError('not-found', '댓글을 찾을 수 없어요');
-
-    const data = snap.data() || {};
-    const reactedWith = data.reactedWith || {};
-    const currentKey = reactedWith[uid] || null;
+    const prev = snap.data().reactedWith?.[uid] || null;
     const updates = {};
-
-    if (currentKey === reaction) {
-      // 같은 반응 → 취소
+    if (prev === reaction) {
       updates[`reactions.${reaction}`] = FieldValue.increment(-1);
       updates[`reactedWith.${uid}`] = FieldValue.delete();
-      tx.update(ref, updates);
-      return { active: false, reaction: null };
-    }
-
-    if (currentKey && BATTLE_COMMENT_REACTIONS.includes(currentKey)) {
-      // 다른 반응으로 교체
-      updates[`reactions.${currentKey}`] = FieldValue.increment(-1);
+      active = false;
+    } else {
+      if (prev) updates[`reactions.${prev}`] = FieldValue.increment(-1);
       updates[`reactions.${reaction}`] = FieldValue.increment(1);
       updates[`reactedWith.${uid}`] = reaction;
-      tx.update(ref, updates);
-      return { active: true, reaction };
+      active = true;
     }
-
-    // 새 반응
-    updates[`reactions.${reaction}`] = FieldValue.increment(1);
-    updates[`reactedWith.${uid}`] = reaction;
     tx.update(ref, updates);
-    return { active: true, reaction };
   });
+  return { ok: true, active, reaction };
 });
 
-// ── 관리자: 배틀 데이터 초기화 ──
-exports.adminResetBattleData = onCall({
-  region: 'asia-northeast3',
-  timeoutSeconds: 300,
-  memory: '512MiB',
-}, async (request) => {
-  const userId = request.auth?.uid;
-  if (!userId) throw new HttpsError('unauthenticated', '인증 필요');
-  const adminSnap = await db.doc(`admins/${userId}`).get();
-  if (!adminSnap.exists) throw new HttpsError('permission-denied', '관리자 권한 필요');
-
-  async function deleteCollection(colPath, batchSize = 400) {
-    let deleted = 0;
-    let snap;
-    do {
-      snap = await db.collection(colPath).limit(batchSize).get();
-      if (snap.empty) break;
-      const batch = db.batch();
-      snap.docs.forEach(d => batch.delete(d.ref));
-      await batch.commit();
-      deleted += snap.size;
-    } while (snap.size >= batchSize);
-    return deleted;
-  }
-
-  const collections = ['battles', 'kingHistory', 'battleVotes', 'battle_victory_log', 'charStats', 'global_events'];
-  const results = {};
-  for (const col of collections) {
-    results[col] = await deleteCollection(col);
-  }
-
-  console.log('[admin] battle data reset:', results);
-  return { ok: true, deleted: results };
+exports.adminResetBattleData = onCall({ region: 'asia-northeast3', timeoutSeconds: 120 }, async request => {
+  await requireAdmin(request);
+  const date = request.data?.date || kstToday();
+  const battleRef = db.doc(`battles/${date}`);
+  const commSnap = await db.collection(`battles/${date}/comments`).limit(300).get();
+  const batch = db.batch();
+  commSnap.docs.forEach(d => batch.delete(d.ref));
+  batch.delete(battleRef);
+  await batch.commit();
+  return { ok: true, date, deletedComments: commSnap.size };
 });
 
-// ── 관리자: 전체 포인트 초기화 ──
-exports.adminResetAllPoints = onCall({
-  region: 'asia-northeast3',
-  timeoutSeconds: 300,
-  memory: '512MiB',
-}, async (request) => {
-  const userId = request.auth?.uid;
-  if (!userId) throw new HttpsError('unauthenticated', '인증 필요');
-  const adminSnap = await db.doc(`admins/${userId}`).get();
-  if (!adminSnap.exists) throw new HttpsError('permission-denied', '관리자 권한 필요');
-
-  let totalReset = 0;
-  let lastDoc = null;
-  const batchSize = 400;
-
-  do {
-    let q = db.collection('users').limit(batchSize);
-    if (lastDoc) q = q.startAfter(lastDoc);
-    const snap = await q.get();
-    if (snap.empty) break;
-
-    const batch = db.batch();
-    snap.docs.forEach(d => {
-      batch.update(d.ref, { totalPoints: 0, points: 0, updatedAt: FieldValue.serverTimestamp() });
-    });
-    await batch.commit();
-    totalReset += snap.size;
-    lastDoc = snap.docs[snap.docs.length - 1];
-  } while (true);
-
-  // 정당 totalPower도 초기화
-  const partySnap = await db.collection('parties').get();
-  if (!partySnap.empty) {
-    const batch = db.batch();
-    partySnap.docs.forEach(d => batch.update(d.ref, { totalPower: 0, updatedAt: FieldValue.serverTimestamp() }));
-    await batch.commit();
-  }
-
-  // point_awards도 초기화
-  async function deleteCollection(colPath, bs = 400) {
-    let snap;
-    do {
-      snap = await db.collection(colPath).limit(bs).get();
-      if (snap.empty) break;
-      const b = db.batch();
-      snap.docs.forEach(d => b.delete(d.ref));
-      await b.commit();
-    } while (snap.size >= bs);
-  }
-  await deleteCollection('point_awards');
-
-  console.log('[admin] points reset for', totalReset, 'users');
-  return { ok: true, usersReset: totalReset, partiesReset: partySnap.size };
+exports.adminResetAllPoints = onCall({ region: 'asia-northeast3', timeoutSeconds: 300 }, async request => {
+  await requireAdmin(request);
+  const usersSnap = await db.collection('users').limit(500).get();
+  const batch = db.batch();
+  usersSnap.docs.forEach(d => batch.set(d.ref, { totalPoints: 0, points: 0, updatedAt: FieldValue.serverTimestamp() }, { merge: true }));
+  await batch.commit();
+  return { ok: true, count: usersSnap.size };
 });
