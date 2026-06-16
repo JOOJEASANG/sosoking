@@ -24,7 +24,6 @@ async function tryAwardCommentReactionReceived(postId, commentId, reactorId) {
 const REGION = 'asia-northeast3';
 const POST_REACTIONS = ['like', 'funny', 'fire', 'skull'];
 const COMMENT_REACTIONS = ['funny', 'fire', 'like'];
-const ACROSTIC_REACTIONS = ['like', 'funny', 'fire'];
 
 function requireUid(request) {
   const uid = request.auth && request.auth.uid;
@@ -174,17 +173,5 @@ exports.reactToComment = onCall({ region: REGION, timeoutSeconds: 30 }, async re
   if (result.active && !result.previousReaction) {
     tryAwardCommentReactionReceived(postId, commentId, uid).catch(() => {});
   }
-  return { ok: true, ...result };
-});
-
-exports.reactToAcrostic = onCall({ region: REGION, timeoutSeconds: 30 }, async request => {
-  const uid = requireUid(request);
-  const postId = cleanId(request.data && request.data.postId, 'postId');
-  const acrosticId = cleanId(request.data && request.data.acrosticId, 'acrosticId');
-  const key = assertKey(request.data && request.data.reaction, ACROSTIC_REACTIONS, 'reaction');
-  const postRef = db.doc(`feeds/${postId}`);
-  await assertPostVisible(postRef);
-  const ref = postRef.collection('acrostics').doc(acrosticId);
-  const result = await toggleReactionOnRef(ref, uid, key, ACROSTIC_REACTIONS, null);
   return { ok: true, ...result };
 });
