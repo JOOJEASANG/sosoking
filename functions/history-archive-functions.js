@@ -53,39 +53,65 @@ function cleanText(value, max = 500) {
 }
 
 function scoreFromEffects(effects, bias = {}) {
-  const entries = Object.entries(effects || {});
-  return entries.map(([key, value]) => {
+  return Object.entries(effects || {}).map(([key, value]) => {
     const raw = Number(value || 0) + Number(bias[key] || 0);
     return { key, label: METRIC_LABELS[key] || key, value: Math.max(-5, Math.min(5, raw)) };
   });
+}
+
+function metricNames(effects) {
+  return Object.keys(effects || {}).map(k => METRIC_LABELS[k] || k).slice(0, 5);
+}
+
+function buildDetailedContext(event) {
+  const metrics = metricNames(event.effects || {});
+  const mainMetrics = metrics.length ? metrics.join('·') : '제도·여론·정당 전략';
+  const motif = cleanText(event.motif, 160);
+  const era = cleanText(event.era, 80);
+  const year = Number(event.motifYear || 0);
+
+  return {
+    background: [
+      `${era}의 핵심 배경은 ${motif}입니다. 이 국면에서는 단순히 한 사건의 승패보다, 국가가 어떤 규칙으로 권력을 제한하고 시민 요구를 제도 안으로 받아들일지가 중요했습니다.`,
+      `당시 정치 쟁점은 ${mainMetrics} 문제로 번졌고, 정당·언론·시민사회는 같은 사건을 서로 다른 언어로 해석했습니다.`,
+    ],
+    timeline: [
+      { label: '배경', text: `${year ? `${year}년 전후` : '당시'} 누적된 사회 변화와 제도 불신이 사건의 바탕이 됐습니다.` },
+      { label: '전개', text: `${motif}를 둘러싸고 안정, 개혁, 타협 중 어느 방향을 택할지 정치적 선택이 요구됐습니다.` },
+      { label: '결과', text: RESULT_NOTES[event.day] || '실제 결과는 이후 정치 제도와 시민 여론에 장기적 영향을 남겼습니다.' },
+    ],
+    keyIssues: [
+      `정치권은 ${event.question}`,
+      `시민 입장에서는 ${mainMetrics} 중 어느 가치를 우선할지가 핵심 판단 기준이 됩니다.`,
+      '제도 변화가 필요한지, 기존 질서를 유지하며 조정해야 하는지에 따라 선택 결과가 달라집니다.',
+    ],
+    whyImportant: `${motif}는 단순한 과거 사건이 아니라, 현재의 선거·국회·헌법·시민권 논쟁을 이해하는 기준점으로 활용할 수 있습니다.`,
+    terms: metrics.map(label => ({ term: label, desc: `${label} 지표는 이 사건을 게임 선택으로 바꿀 때 결과 변화를 보여주는 기준입니다.` })),
+    discussionQuestions: [
+      event.question,
+      '당시 시민이었다면 안정과 개혁 중 무엇을 우선했을까요?',
+      '오늘날 같은 사건이 반복된다면 국회·정부·법원은 어떤 역할을 해야 할까요?',
+    ],
+  };
 }
 
 function buildChoices(event) {
   const base = event.effects || {};
   return [
     {
-      id: 'national',
-      partyId: 'national',
-      title: PARTY_META.national.name + '식 선택',
-      emoji: PARTY_META.national.emoji,
+      id: 'national', partyId: 'national', title: PARTY_META.national.name + '식 선택', emoji: PARTY_META.national.emoji,
       stance: event.stances.national,
       result: '질서와 행정 안정은 높아지지만, 개혁 요구가 늦춰졌다는 비판을 받을 수 있습니다.',
       scores: scoreFromEffects(base, { stability: 2, security: 1, reform: -1, conflict: -1 }),
     },
     {
-      id: 'youth',
-      partyId: 'youth',
-      title: PARTY_META.youth.name + '식 선택',
-      emoji: PARTY_META.youth.emoji,
+      id: 'youth', partyId: 'youth', title: PARTY_META.youth.name + '식 선택', emoji: PARTY_META.youth.emoji,
       stance: event.stances.youth,
       result: '개혁성과 시민 참여는 강해지지만, 사회 갈등과 재정·행정 부담이 커질 수 있습니다.',
       scores: scoreFromEffects(base, { reform: 2, democracy: 1, welfare: 1, conflict: 1, stability: -1 }),
     },
     {
-      id: 'center',
-      partyId: 'center',
-      title: PARTY_META.center.name + '식 선택',
-      emoji: PARTY_META.center.emoji,
+      id: 'center', partyId: 'center', title: PARTY_META.center.name + '식 선택', emoji: PARTY_META.center.emoji,
       stance: event.stances.center,
       result: '갈등을 줄이고 실행 가능성을 높이지만, 선명성이 약하다는 공격을 받을 수 있습니다.',
       scores: scoreFromEffects(base, { coalition: 2, stability: 1, conflict: -1, reform: 0 }),
@@ -113,14 +139,16 @@ function toPublicEvent(event, detail = false) {
       youth: cleanText(event.stances.youth, 220),
       center: cleanText(event.stances.center, 220),
     },
+    detail: buildDetailedContext(event),
     choices: buildChoices(event),
     partyMeta: PARTY_META,
     effects: scoreFromEffects(event.effects || {}),
-    notice: '사건·제도·시대 배경은 실제 한국 현대사를 모티브로 하지만, 게임 속 인물과 정당은 모두 가상입니다.',
+    notice: '사건·제도·시대 배경은 실제 한국 현대사를 모티브로 하지만, 게임 속 인물과 정당은 모두 가상입니다. 자료 설명은 교육용 요약이며, 정밀한 인용 자료는 별도 출처 검증을 붙여 확장하는 구조입니다.',
     sourceGuide: [
       `${event.motifYear}년 ${event.motif}`,
       `${event.era} 한국 현대사`,
       `${event.motif} 배경 결과`,
+      `${event.motif} 국회 헌법 선거 시민사회`,
     ],
   };
 }
