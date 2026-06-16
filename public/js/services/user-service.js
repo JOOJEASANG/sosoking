@@ -114,7 +114,9 @@ export async function registerNickname(nickname) {
     throw new Error('이미 사용 중인 닉네임이에요');
   }
 
-  await setDoc(doc(db, 'nicknames', nickname), { uid: user.uid, createdAt: serverTimestamp() }, { merge: false });
+  if (!exists.exists()) {
+    await setDoc(doc(db, 'nicknames', nickname), { uid: user.uid, createdAt: serverTimestamp() }, { merge: false });
+  }
   await saveUserProfile(user.uid, { nickname });
 
   if (oldNickname && oldNickname !== nickname) {
