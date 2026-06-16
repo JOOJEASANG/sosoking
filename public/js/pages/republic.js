@@ -6,6 +6,8 @@ import { setMeta } from '../utils/seo.js';
 import { escHtml } from '../utils/helpers.js';
 import { toast } from '../components/toast.js';
 
+const LEAVE_PARTY_PENALTY = 30;
+
 function call(name, payload = {}) {
   return httpsCallable(functions, name)(payload).then(res => res.data || {}).catch(error => ({ error }));
 }
@@ -22,7 +24,7 @@ function ensureStyle() {
   const style = document.createElement('style');
   style.id = 'republic-core-style';
   style.textContent = `
-    .rep-core{display:grid;gap:14px;padding-bottom:24px}.rep-core-hero{border-radius:28px;padding:24px 20px;background:linear-gradient(135deg,rgba(15,23,42,.97),rgba(47,125,110,.86));color:#fff;box-shadow:0 18px 42px rgba(15,23,42,.18)}.rep-core-hero__eyebrow{font-size:11px;font-weight:1000;letter-spacing:.1em;color:rgba(255,255,255,.62)}.rep-core-hero__title{font-size:28px;line-height:1.18;font-weight:1000;margin:7px 0;color:#fff}.rep-core-hero__desc{font-size:14px;line-height:1.6;color:rgba(255,255,255,.76);margin:0;max-width:760px}.rep-core-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}.rep-core-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.rep-core-card{border:1px solid rgba(100,116,139,.16);border-radius:22px;background:var(--color-surface,#fff);padding:15px;box-shadow:0 10px 26px rgba(15,23,42,.055)}.rep-core-card__title{font-size:16px;font-weight:1000;color:var(--color-text-primary);margin-bottom:6px}.rep-core-card__text{font-size:13px;line-height:1.55;color:var(--color-text-secondary);margin-bottom:12px}.rep-party-card{position:relative;overflow:hidden}.rep-party-card:before{content:'';position:absolute;inset:0 0 auto 0;height:5px;background:var(--party-color,#6366f1)}.rep-party-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-top:4px}.rep-party-name{font-size:17px;font-weight:1000;color:var(--color-text-primary)}.rep-party-meta{font-size:12px;color:var(--color-text-muted);margin-top:2px}.rep-party-power{font-size:16px;font-weight:1000;color:var(--party-color,#6366f1)}.rep-party-leader{font-size:12px;color:var(--color-text-secondary);margin:10px 0}.rep-mine{display:inline-flex;border-radius:999px;padding:5px 8px;font-size:11px;font-weight:1000;background:rgba(34,197,94,.1);color:#16a34a}.rep-core-status{display:grid;grid-template-columns:1fr 1fr;gap:12px}.rep-core-kv{display:flex;justify-content:space-between;gap:10px;border-radius:14px;background:rgba(248,250,252,.9);padding:10px 11px;font-size:13px}.rep-core-kv span{color:var(--color-text-muted)}.rep-core-kv b{color:var(--color-text-primary)}@media(max-width:880px){.rep-core-grid,.rep-core-status{grid-template-columns:1fr}.rep-core-hero__title{font-size:23px}}
+    .rep-core{display:grid;gap:14px;padding-bottom:24px}.rep-core-hero{border-radius:28px;padding:24px 20px;background:linear-gradient(135deg,rgba(15,23,42,.97),rgba(47,125,110,.86));color:#fff;box-shadow:0 18px 42px rgba(15,23,42,.18)}.rep-core-hero__eyebrow{font-size:11px;font-weight:1000;letter-spacing:.1em;color:rgba(255,255,255,.62)}.rep-core-hero__title{font-size:28px;line-height:1.18;font-weight:1000;margin:7px 0;color:#fff}.rep-core-hero__desc{font-size:14px;line-height:1.6;color:rgba(255,255,255,.76);margin:0;max-width:760px}.rep-core-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}.rep-core-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.rep-core-card{border:1px solid rgba(100,116,139,.16);border-radius:22px;background:var(--color-surface,#fff);padding:15px;box-shadow:0 10px 26px rgba(15,23,42,.055)}.rep-core-card__title{font-size:16px;font-weight:1000;color:var(--color-text-primary);margin-bottom:6px}.rep-core-card__text{font-size:13px;line-height:1.55;color:var(--color-text-secondary);margin-bottom:12px}.rep-party-card{position:relative;overflow:hidden}.rep-party-card:before{content:'';position:absolute;inset:0 0 auto 0;height:5px;background:var(--party-color,#6366f1)}.rep-party-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-top:4px}.rep-party-name{font-size:17px;font-weight:1000;color:var(--color-text-primary)}.rep-party-meta{font-size:12px;color:var(--color-text-muted);margin-top:2px}.rep-party-power{font-size:16px;font-weight:1000;color:var(--party-color,#6366f1)}.rep-party-leader{font-size:12px;color:var(--color-text-secondary);margin:10px 0}.rep-mine{display:inline-flex;border-radius:999px;padding:5px 8px;font-size:11px;font-weight:1000;background:rgba(34,197,94,.1);color:#16a34a}.rep-core-status{display:grid;grid-template-columns:1fr 1fr;gap:12px}.rep-core-kv{display:flex;justify-content:space-between;gap:10px;border-radius:14px;background:rgba(248,250,252,.9);padding:10px 11px;font-size:13px}.rep-core-kv span{color:var(--color-text-muted)}.rep-core-kv b{color:var(--color-text-primary)}.rep-leave-note{font-size:11px;line-height:1.45;color:var(--color-text-muted);margin-top:8px}.btn--danger-soft{border:1px solid rgba(239,68,68,.22)!important;background:rgba(239,68,68,.08)!important;color:#dc2626!important}@media(max-width:880px){.rep-core-grid,.rep-core-status{grid-template-columns:1fr}.rep-core-hero__title{font-size:23px}}
   `;
   document.head.appendChild(style);
 }
@@ -33,7 +35,7 @@ function renderHero(status) {
   return `<section class="rep-core-hero">
     <div class="rep-core-hero__eyebrow">PARTY ACTIVITY HUB</div>
     <div class="rep-core-hero__title">🏛️ 정당을 고르고 정치력을 키우세요</div>
-    <p class="rep-core-hero__desc">이 화면에서는 입당, 유세, 대통령 선거만 관리합니다. 국회·헌재 같은 보조 기능은 정리하고 핵심 성장 루프만 남겼습니다.</p>
+    <p class="rep-core-hero__desc">이 화면에서는 입당, 유세, 탈당, 대통령 선거만 관리합니다. 핵심 성장 루프만 남겼습니다.</p>
     <div class="rep-core-actions">
       <button class="btn btn--primary" data-go="/battle">⚔️ 오늘게임</button>
       <button class="btn btn--ghost" data-go="/election">👑 대통령 선거</button>
@@ -69,8 +71,9 @@ function renderParties(parties, status) {
       <div class="rep-party-leader">대표 · ${escHtml(p.leader?.nickname || p.leaderName || '가상 후보')}</div>
       ${isMine ? '<span class="rep-mine">내 정당</span>' : ''}
       <div class="rep-core-actions">
-        ${isMine ? `<button class="btn btn--primary btn--sm" data-campaign="${escHtml(p.id)}">유세하기 +3P</button>` : `<button class="btn btn--ghost btn--sm" data-join="${escHtml(p.id)}">입당하기</button>`}
+        ${isMine ? `<button class="btn btn--primary btn--sm" data-campaign="${escHtml(p.id)}">유세하기 +3P</button><button class="btn btn--ghost btn--sm btn--danger-soft" data-leave="${escHtml(p.id)}">탈당 -${LEAVE_PARTY_PENALTY}P</button>` : `<button class="btn btn--ghost btn--sm" data-join="${escHtml(p.id)}">입당하기</button>`}
       </div>
+      ${isMine ? `<div class="rep-leave-note">탈당하면 정당 소속이 해제되고 정치력 ${LEAVE_PARTY_PENALTY}P가 차감됩니다.</div>` : ''}
     </section>`;
   }).join('');
   return `<div class="rep-core-grid">${cards}</div>`;
@@ -92,6 +95,17 @@ async function bindActions(el) {
     const res = await call('campaignForParty', { partyId: btn.dataset.campaign });
     if (res?.error) toast.error(res.error.message || '유세에 실패했습니다.');
     else toast.success(`유세 완료 +${res.points || 3}P`);
+    renderRepublic();
+  }));
+  el.querySelectorAll('[data-leave]').forEach(btn => btn.addEventListener('click', async () => {
+    if (!auth.currentUser) { navigate('/login'); return; }
+    const ok = window.confirm(`정말 탈당할까요? 정치력 ${LEAVE_PARTY_PENALTY}P가 차감됩니다.`);
+    if (!ok) return;
+    btn.disabled = true;
+    const res = await call('leaveParty', {});
+    if (res?.error) toast.error(res.error.message || '탈당에 실패했습니다.');
+    else if (res.left) toast.success(`탈당 완료 · -${res.penalty || LEAVE_PARTY_PENALTY}P`);
+    else toast.info('소속 정당이 없습니다.');
     renderRepublic();
   }));
 }
