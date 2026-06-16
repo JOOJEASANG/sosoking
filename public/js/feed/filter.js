@@ -31,6 +31,36 @@ export function postMatchesType(post, type) {
   return getPostTypeKey(post) === type;
 }
 
+function historySearchFields(post) {
+  if (!post?.isHistoryIssue) return [];
+  const stances = post.partyStances || {};
+  return [
+    '역사',
+    '현대사',
+    '새공화국',
+    '정치풍자',
+    '역사이슈',
+    post.historyDate,
+    post.historyDay ? `day ${post.historyDay}` : '',
+    post.historyDay ? `day${post.historyDay}` : '',
+    post.historyDay ? `데이 ${post.historyDay}` : '',
+    post.historyEra,
+    post.motifYear,
+    post.motifYear ? `${post.motifYear}년` : '',
+    post.motif,
+    post.eventQuestion,
+    stances.national,
+    stances.youth,
+    stances.center,
+    '국민질서당',
+    '시민개혁당',
+    '국민통합당',
+    '보수파',
+    '진보파',
+    '중도파',
+  ];
+}
+
 export function postMatchesSearch(post, rawSearch) {
   const search = String(rawSearch || '').trim().toLowerCase();
   if (!search) return true;
@@ -40,6 +70,7 @@ export function postMatchesSearch(post, rawSearch) {
     post.authorName,
     getPostTypeLabel(post),
     ...(Array.isArray(post.tags) ? post.tags : []),
+    ...historySearchFields(post),
   ].join(' ').toLowerCase();
   return haystack.includes(search);
 }
