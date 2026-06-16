@@ -1,6 +1,6 @@
 /* user-service.js — 사용자 프로필 서비스 */
 import { db, auth } from '../firebase.js';
-import { doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { doc, getDoc, setDoc, deleteDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const NICK_RE = /^[가-힣a-zA-Z0-9_]{2,12}$/;
 
@@ -101,9 +101,14 @@ export async function checkNickname(nickname) {
 export async function registerNickname(nickname) {
   const user = auth.currentUser;
   if (!user) throw new Error('로그인이 필요해요');
+  if (!NICK_RE.test(nickname)) throw new Error('닉네임은 2~12자의 한글·영문·숫자·_만 사용할 수 있어요');
 
-  // NOTE: TOCTOU race condition 가능. 실제 중복 방지는 Firestore Rules의 create 조건으로 처리.
-  // 동시 등록 시도가 매우 드물고, 규칙에서 최종 방어.
+  const userRef = doc(db, 'users', user.uid);
+  const profileSnap = await getDoc(userRef).catch(() => null);
+  const oldNickname = profileSnap?.exists() ? profileSnap.data()?.nickname || '' : '';
+  if (oldNickname === nickname) return nickname;
+
+  // NOTE: 최종 중복 방지는 Firestore Rules의 nicknames create 조건으로 처리.
   const exists = await getDoc(doc(db, 'nicknames', nickname));
   if (exists.exists() && exists.data().uid !== user.uid) {
     throw new Error('이미 사용 중인 닉네임이에요');
@@ -111,4 +116,10 @@ export async function registerNickname(nickname) {
 
   await setDoc(doc(db, 'nicknames', nickname), { uid: user.uid, createdAt: serverTimestamp() }, { merge: false });
   await saveUserProfile(user.uid, { nickname });
+
+  if (oldNickname && oldNickname !== nickname) {
+    await deleteDoc(doc(db, 'nicknames', oldNickname)).catch(() => {});
+  }
+
+  return nickname;
 }
