@@ -221,45 +221,63 @@ function renderFrame() {
 
 function rerenderCurrentRouteSoon() { setTimeout(() => { renderFrame(); window.dispatchEvent(new HashChangeEvent('hashchange')); }, 0); }
 
-async function handleKakaoRedirectOnce() {
+async function handleKakaoCallback() {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
+  const oauthError = params.get('error');
+  if (!code && !oauthError) return;
+  window.history.replaceState({}, '', '/');
+  if (oauthError) { setTimeout(() => toast.warn('카카오 로그인이 취소됐어요'), 800); return; }
+  const returnTo = sessionStorage.getItem('kakao_return_to') || '/';
+  sessionStorage.removeItem('kakao_return_to');
+  const processingEl = document.getElementById('app');
+  if (processingEl) processingEl.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:sans-serif"><div style="text-align:center"><div class="spinner spinner--lg"></div><p>카카오 로그인 처리 중...</p></div></div>';
   try {
-    const params = new URLSearchParams(location.search || '');
-    const code = params.get('code');
-    if (!code) return false;
-    const storedState = sessionStorage.getItem('kakao_oauth_state') || '';
-    const state = params.get('state') || '';
-    if (storedState && state && storedState !== state) return false;
-    const { signInWithCustomToken } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
-    const { httpsCallable } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js');
-    const { functions } = await import('./firebase.js');
-    const result = await httpsCallable(functions, 'kakaoExchangeCode')({ code, redirectUri: `${location.origin}/` });
-    const token = result?.data?.customToken;
-    if (!token) throw new Error('카카오 로그인 토큰을 받지 못했습니다.');
-    await signInWithCustomToken(auth, token);
-    sessionStorage.removeItem('kakao_oauth_state');
-    history.replaceState(null, '', `${location.origin}/#/`);
-    toast.success?.('카카오 로그인 완료');
-    return true;
-  } catch (error) {
-    console.error('[kakao redirect]', error);
-    toast.error?.(error.message || '카카오 로그인 실패');
-    history.replaceState(null, '', `${location.origin}/#/login`);
-    return true;
+    const { getFunctions, httpsCallable } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js');
+    const { getApp } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');
+    const { signInWithCustomToken, updateProfile } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
+    const fns = getFunctions(getApp(), 'asia-northeast3');
+    const { data } = await httpsCallable(fns, 'kakaoLogin')({ code, redirectUri: 'https://sosoking.co.kr/' });
+    await signInWithCustomToken(auth, data.customToken);
+    if (auth.currentUser && (data.displayName || data.photoURL)) {
+      await updateProfile(auth.currentUser, { displayName: data.displayName || auth.currentUser.displayName || null, photoURL: data.photoURL || auth.currentUser.photoURL || null }).catch(() => {});
+    }
+    toast.success('카카오 로그인됐어요!');
+    window.location.hash = '#' + (returnTo.startsWith('/') ? returnTo : '/' + returnTo);
+  } catch (e) {
+    console.error('[kakao callback]', e);
+    const label = e?.code ? `${e?.message || String(e)} (${e.code})` : (e?.message || String(e));
+    const backPage = sessionStorage.getItem('kakao_page') || 'login';
+    sessionStorage.removeItem('kakao_page');
+    setTimeout(() => { toast.error('카카오 로그인 실패: ' + label); window.location.hash = '#/' + backPage; }, 300);
   }
 }
 
-async function main() {
-  initToast();
-  renderFrame();
-  await handleKakaoRedirectOnce();
-  await registerRoutes();
-  onAuthStateChanged(auth, async user => {
-    appState.user = user;
-    await fetchUserProfile(user);
-    renderHeader(); renderSidebar(); renderBottomNav(); loadOptionalModules();
-    initRouter();
-    rerenderCurrentRouteSoon();
-  });
+async function loadPresidentUid() {
+  try {
+    const { httpsCallable } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js');
+    const { functions } = await import('./firebase.js');
+    const { data } = await httpsCallable(functions, 'getElection')();
+    appState.presidentUid = data?.president?.candidateUid || '';
+  } catch {}
 }
 
-main().catch(error => showPageError('앱 시작', error));
+async function initApp() {
+  initToast();
+  await handleKakaoCallback();
+  await registerRoutes();
+  initRouter();
+  loadOptionalModules();
+  loadPresidentUid();
+  onAuthStateChanged(auth, async user => {
+    appState.user = user || null;
+    appState.isAuthenticated = !!user;
+    if (user) await fetchUserProfile(user);
+    else { appState.nickname = ''; appState.nicknameIcon = null; appState.points = 0; appState.isAdmin = false; appState.partyId = ''; }
+    if (appState.isAdmin && !isAdminAllowedPath(currentPath())) navigate('/admin');
+    rerenderCurrentRouteSoon();
+  });
+  renderFrame();
+}
+
+initApp().catch(error => { console.error('[app init failed]', error); showPageError('앱 초기화 실패', error); });
