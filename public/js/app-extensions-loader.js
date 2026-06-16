@@ -22,6 +22,7 @@ const EXTENSION_MODULES = [
   './constitutional-court-route.js',
   './republic-polish.js',
   './republic-game-flow.js',
+  './republic-detail-panel.js',
   './battle-opponent-reaction.js',
   './battle-comment-result-card.js',
   './civic-plaza-copy.js',
