@@ -42,6 +42,14 @@ function ensureHistoryStyle() {
     .history-box{border-radius:18px;border:1px solid rgba(100,116,139,.14);background:rgba(248,250,252,.78);padding:14px}
     .history-box__title{font-size:14px;font-weight:1000;color:var(--color-text-primary);margin-bottom:7px}
     .history-box__text{font-size:13px;line-height:1.65;color:var(--color-text-secondary)}
+    .history-box__text p{margin:0 0 8px}.history-box__text p:last-child{margin-bottom:0}
+    .history-list{display:grid;gap:7px;margin:0;padding:0;list-style:none}
+    .history-list li{font-size:13px;line-height:1.6;color:var(--color-text-secondary);padding-left:16px;position:relative}
+    .history-list li:before{content:'•';position:absolute;left:0;color:#6366f1;font-weight:1000}
+    .history-timeline{display:grid;gap:8px}
+    .history-timeline__item{display:grid;grid-template-columns:72px 1fr;gap:10px;align-items:start}
+    .history-timeline__label{border-radius:999px;background:rgba(99,102,241,.09);color:#4f46e5;font-size:11px;font-weight:1000;padding:5px 7px;text-align:center}
+    .history-timeline__text{font-size:13px;line-height:1.6;color:var(--color-text-secondary)}
     .history-choice-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
     .history-choice{border:1px solid rgba(100,116,139,.16);border-radius:18px;background:#fff;padding:13px;text-align:left;font-family:inherit;cursor:pointer;color:inherit}
     .history-choice.active{border-color:var(--party-color,#6366f1);box-shadow:0 0 0 3px color-mix(in srgb,var(--party-color,#6366f1) 15%,transparent)}
@@ -55,7 +63,7 @@ function ensureHistoryStyle() {
     .history-score span{border-radius:999px;background:rgba(99,102,241,.09);border:1px solid rgba(99,102,241,.12);padding:5px 8px;font-size:11px;font-weight:900;color:#4f46e5}
     .history-result .history-score span{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.12);color:#fff}
     .history-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-    @media(max-width:760px){.history-grid,.history-choice-grid{grid-template-columns:1fr}.history-hero__title{font-size:23px}}
+    @media(max-width:760px){.history-grid,.history-choice-grid{grid-template-columns:1fr}.history-timeline__item{grid-template-columns:1fr}.history-timeline__label{text-align:left;width:max-content}.history-hero__title{font-size:23px}}
   `;
   document.head.appendChild(style);
 }
@@ -93,7 +101,24 @@ function renderScores(scores) {
   return (scores || []).map(s => `<span>${escHtml(s.label)} ${s.value > 0 ? '+' : ''}${s.value}</span>`).join('');
 }
 
+function renderParagraphs(items) {
+  return (items || []).map(text => `<p>${escHtml(text)}</p>`).join('');
+}
+
+function renderList(items) {
+  return `<ul class="history-list">${(items || []).map(text => `<li>${escHtml(text)}</li>`).join('')}</ul>`;
+}
+
+function renderTimeline(items) {
+  return `<div class="history-timeline">${(items || []).map(item => `<div class="history-timeline__item"><div class="history-timeline__label">${escHtml(item.label)}</div><div class="history-timeline__text">${escHtml(item.text)}</div></div>`).join('')}</div>`;
+}
+
+function renderTerms(items) {
+  return `<ul class="history-list">${(items || []).map(item => `<li><b>${escHtml(item.term)}</b> · ${escHtml(item.desc)}</li>`).join('')}</ul>`;
+}
+
 function renderDetail(event) {
+  const detail = event.detail || {};
   return `<div class="history-detail">
     <div class="history-detail__head">
       <button type="button" class="history-detail__back" id="history-back">← 자료실 전체</button>
@@ -111,6 +136,18 @@ function renderDetail(event) {
         <div class="history-box__text"><b>${escHtml(event.motif)}</b><br>${escHtml(event.actualResult)}</div>
       </div>
       <div class="history-box">
+        <div class="history-box__title">🧭 시대 배경</div>
+        <div class="history-box__text">${renderParagraphs(detail.background)}</div>
+      </div>
+      <div class="history-box">
+        <div class="history-box__title">🕰️ 전개 흐름</div>
+        ${renderTimeline(detail.timeline)}
+      </div>
+      <div class="history-box">
+        <div class="history-box__title">⚖️ 핵심 쟁점</div>
+        ${renderList(detail.keyIssues)}
+      </div>
+      <div class="history-box">
         <div class="history-box__title">🎮 게임 질문</div>
         <div class="history-box__text">${escHtml(event.question)}</div>
       </div>
@@ -126,6 +163,18 @@ function renderDetail(event) {
           }).join('')}
         </div>
         <div class="history-result" id="history-result"></div>
+      </div>
+      <div class="history-box">
+        <div class="history-box__title">🧠 왜 중요한가</div>
+        <div class="history-box__text">${escHtml(detail.whyImportant || '')}</div>
+      </div>
+      <div class="history-box">
+        <div class="history-box__title">📖 용어/지표 이해</div>
+        ${renderTerms(detail.terms)}
+      </div>
+      <div class="history-box">
+        <div class="history-box__title">💬 토론 질문</div>
+        ${renderList(detail.discussionQuestions)}
       </div>
       <div class="history-box">
         <div class="history-box__title">🔎 실제/가상 구분</div>
