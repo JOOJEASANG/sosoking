@@ -10,6 +10,7 @@ const EXTENSION_MODULES = [
   './account-ui.js',
   './account-notifications-uid-fix.js',
   './pc-sidebar-spacing.js',
+  './history-sidebar-link.js',
   './detail-actions-bootstrap.js',
   './post-owner-actions.js',
   './detail-post-nav.js',
