@@ -20,6 +20,7 @@ const politics = require('./politics-functions-v2.js');
 const politicsDetail = require('./politics-detail-functions.js');
 const electionNormalized = require('./election-normalized-functions.js');
 const historyArchive = require('./history-archive-functions.js');
+const historyComments = require('./history-comment-functions.js');
 const coreParties = require('./three-party-functions.js');
 const externalForces = require('./external-force-functions.js');
 const gameDeadline = require('./game-deadline-functions.js');
@@ -50,6 +51,7 @@ module.exports = {
   ...points,
   ...partyLeague,
   ...externalForces,
+  ...historyComments,
   ...congress,
   getConstitutionalCourtStatus: constitutionalCourt.getConstitutionalCourtStatus,
   decideConstitutionalReview: constitutionalCourt.decideConstitutionalReview,
@@ -62,7 +64,7 @@ module.exports = {
   getKingHistory: battle.getKingHistory,
   adminGenerateBattle: battle.adminGenerateBattle,
   reactToBattleComment: battle.reactToBattleComment,
-  adminResetBattleData: battle.adminResetBattleData,
+  adminResetBattleData: battle.adminResetAllPoints,
   adminResetAllPoints: battle.adminResetAllPoints,
   getPoliticsOverview: coreParties.getPoliticsOverview,
   getPartyMembers: coreParties.getPartyMembers,
