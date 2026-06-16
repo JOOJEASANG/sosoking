@@ -1,2 +1,2 @@
-2026-06-16 09:35 KST
-Trigger Firebase deploy for historical issue tools and admin generation controls.
+2026-06-16 09:42 KST
+Trigger Firebase deploy for citizen plaza historical issue spotlight.
