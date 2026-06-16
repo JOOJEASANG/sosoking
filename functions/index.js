@@ -198,9 +198,9 @@ exports.uploadFeedImage = uploadFns.uploadFeedImage;
 const postOwnerFns = require('./post-owner-functions');
 exports.deleteOwnPost = postOwnerFns.deleteOwnPost;
 
-// ── AI 사다리 보너스 ──
-const ladderFns = require('./ai-ladder-functions');
-exports.playAiLadderBonus = ladderFns.playAiLadderBonus;
+// ── 비활성 레거시 호환 함수 ──
+const legacyDisabledFns = require('./legacy-disabled-functions');
+exports.playAiLadderBonus = legacyDisabledFns.playAiLadderBonus;
 
 // ── 포인트 ──
 const pointsFns = require('./points-functions');
