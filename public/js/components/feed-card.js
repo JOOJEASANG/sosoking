@@ -58,6 +58,17 @@ function displayDesc(post) {
   return plainText(post.desc || post.situation || '').slice(0, 220);
 }
 
+function renderHistoryBadges(post) {
+  if (!post.isHistoryIssue) return '';
+  const day = post.historyDay ? `Day ${String(post.historyDay).padStart(3, '0')}` : '오늘의 역사';
+  const era = post.historyEra || '새공화국 기록';
+  const year = post.motifYear ? `${post.motifYear}년 모티브` : '역사 모티브';
+  return `
+    <span class="feed-card__type-badge feed-card__type-badge--multi">📜 ${escHtml(day)}</span>
+    <span class="tag">${escHtml(era)}</span>
+    <span class="tag">${escHtml(year)}</span>`;
+}
+
 export function renderFeedCard(post) {
   const meta = getTypeMeta(post);
   const images = getSafeImages(post.images);
@@ -80,9 +91,11 @@ export function renderFeedCard(post) {
             <span class="feed-card__type-badge feed-card__type-badge--${meta.cat}">
               ${meta.icon} ${escHtml(meta.label)}
             </span>
+            ${renderHistoryBadges(post)}
             ${firstTag ? `<span class="tag">#${firstTag}</span>` : ''}
           </div>
           <h3 class="feed-card__title line-clamp-2">${escHtml(title)}</h3>
+          ${post.eventQuestion ? `<p class="feed-card__desc line-clamp-2"><b>쟁점</b> · ${escHtml(String(post.eventQuestion).slice(0, 120))}</p>` : ''}
           ${desc ? `<p class="feed-card__desc line-clamp-2">${escHtml(desc)}</p>` : ''}
           <div class="feed-card__meta">
             <span>${renderPresidentCrown(post.authorId)}${renderPartyBadge(post.partyId)}${post.rankEmoji ? `<span class="comment-rank-emoji" title="정치 등급">${escHtml(post.rankEmoji)}</span>` : ''}${escHtml(post.authorName || '익명')}</span>
