@@ -34,6 +34,15 @@ let cursorTotal   = 0;
 let cachedPosts   = [];
 let lastDisplayPosts = [];
 
+function esc(value) {
+  return String(value || '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+}
+
+function plainText(value) {
+  const text = String(value || '');
+  return text.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+}
+
 function useCursorMode() {
   return !currentType && !currentSearch && currentSort === 'latest';
 }
@@ -61,6 +70,60 @@ function renderRoomTabs() {
       </div>
       ${descBar}
     </div>`;
+}
+
+function renderHistorySpotlight(post) {
+  if (!post) {
+    return `<div class="card" style="padding:16px;border-radius:18px;background:linear-gradient(135deg,rgba(124,58,237,.08),rgba(37,99,235,.06));border:1px solid rgba(124,58,237,.18)">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">
+        <span class="feed-card__type-badge feed-card__type-badge--multi">📜 오늘의 새공화국</span>
+        <span class="tag">역사 이슈 대기</span>
+      </div>
+      <div style="font-size:17px;font-weight:950;margin-bottom:4px">아직 생성된 역사 이슈가 없어요</div>
+      <div style="font-size:13px;color:var(--color-text-muted);line-height:1.55;margin-bottom:12px">관리자가 Day 이슈를 생성하거나 매일 오전 8시 자동 생성이 완료되면 여기에 표시됩니다.</div>
+      <a class="btn btn--ghost btn--sm" href="#/feed?q=역사">이전 역사 이슈 검색</a>
+    </div>`;
+  }
+
+  const day = post.historyDay ? `Day ${String(post.historyDay).padStart(3, '0')}` : '오늘의 역사';
+  const title = post.title || post.parodyTitle || '새공화국 역사 이슈';
+  const desc = plainText(post.eventQuestion || post.desc || '').slice(0, 150);
+  const era = post.historyEra || '새공화국 기록';
+  const year = post.motifYear ? `${post.motifYear}년 모티브` : '역사 모티브';
+
+  return `<div class="card" style="padding:16px;border-radius:18px;background:linear-gradient(135deg,rgba(124,58,237,.10),rgba(37,99,235,.06));border:1px solid rgba(124,58,237,.20)">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+      <span class="feed-card__type-badge feed-card__type-badge--multi">📜 ${esc(day)}</span>
+      <span class="tag">${esc(era)}</span>
+      <span class="tag">${esc(year)}</span>
+    </div>
+    <div style="display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap">
+      <div style="min-width:240px;flex:1">
+        <div style="font-size:18px;font-weight:950;letter-spacing:-.3px;margin-bottom:5px">${esc(title)}</div>
+        ${desc ? `<div style="font-size:13px;color:var(--color-text-muted);line-height:1.55">쟁점 · ${esc(desc)}</div>` : ''}
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <a class="btn btn--primary btn--sm" href="#/detail/${esc(post.id)}">오늘 이슈 열기</a>
+        <a class="btn btn--ghost btn--sm" href="#/feed?q=역사">역사 검색</a>
+      </div>
+    </div>
+  </div>`;
+}
+
+async function loadHistorySpotlight() {
+  const slot = document.getElementById('history-spotlight');
+  if (!slot) return;
+  try {
+    const snap = await getDocs(query(collection(db, 'feeds'), orderBy('createdAt', 'desc'), limit(80)));
+    const post = snap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .find(p => p.isHistoryIssue && !p.hidden);
+    if (!slot.isConnected) return;
+    slot.innerHTML = renderHistorySpotlight(post || null);
+  } catch (error) {
+    console.warn('[feed] history spotlight failed', error);
+    slot.innerHTML = renderHistorySpotlight(null);
+  }
 }
 
 export async function renderFeed() {
@@ -93,6 +156,7 @@ export async function renderFeed() {
         ${renderFeedSearchBar({ search: currentSearch })}
         ${renderFeedFilterBar({ type: currentType, search: currentSearch })}
       </div>
+      <div id="history-spotlight" style="margin:0 0 14px">${renderHistorySpotlight(null)}</div>
       <div id="feed-summary" class="soso-feed-summary feed-result-summary"></div>
       <div id="feed-list" class="soso-feed-list">${renderSkeletonCards(5)}</div>
       <div id="feed-pagination" class="feed-pagination"></div>
@@ -100,6 +164,7 @@ export async function renderFeed() {
     </div>`;
 
   bindFeedEvents();
+  loadHistorySpotlight();
   await loadPosts();
 }
 
