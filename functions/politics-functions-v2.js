@@ -16,6 +16,7 @@ const PARTIES = Object.freeze([
 
 const PARTY_BY_ID = Object.freeze(Object.fromEntries(PARTIES.map(p => [p.id, p])));
 const PARTY_IDS = PARTIES.map(p => p.id);
+const CAMPAIGN_DAILY_LIMIT = 3;
 
 function requireUid(request) {
   const uid = request.auth?.uid;
@@ -27,6 +28,30 @@ function assertPartyId(value) {
   const id = String(value || '').trim();
   if (!PARTY_BY_ID[id]) throw new HttpsError('invalid-argument', '존재하지 않는 정당입니다.');
   return id;
+}
+
+async function isAdmin(uid) {
+  if (!uid) return false;
+  const snap = await db.doc(`admins/${uid}`).get().catch(() => null);
+  return !!snap?.exists;
+}
+
+async function assertPartyLeaderOrAdmin(uid, partyId) {
+  if (await isAdmin(uid)) return;
+
+  const userSnap = await db.doc(`users/${uid}`).get();
+  const user = userSnap.exists ? userSnap.data() || {} : {};
+  if (user.partyId !== partyId) {
+    throw new HttpsError('permission-denied', '해당 정당 소속만 수정할 수 있습니다.');
+  }
+
+  const top = await partyRef(partyId).collection('members')
+    .orderBy('power', 'desc')
+    .limit(1)
+    .get();
+  if (top.empty || top.docs[0].id !== uid) {
+    throw new HttpsError('permission-denied', '당대표 또는 관리자만 수정할 수 있습니다.');
+  }
 }
 
 function kstToday() {
@@ -159,6 +184,15 @@ async function currentPresident(uid = null) {
   return { ...d.winner, decree: d.decree || null, periodId: prevKey, decreeApprove: Number(d.decreeApprove || 0), decreeDisapprove: Number(d.decreeDisapprove || 0), myDecreeRating, presidentRemoved: !!d.presidentRemoved, earlyElectionRequired: !!d.earlyElectionRequired };
 }
 
+function publicMember(uid, userData) {
+  return {
+    uid,
+    nickname: String(userData.nickname || userData.displayName || '시민').slice(0, 20),
+    icon: (userData.nicknameIcon && typeof userData.nicknameIcon === 'object') ? userData.nicknameIcon : null,
+    power: Math.max(0, Number(userData.totalPoints || userData.points || 0)),
+  };
+}
+
 exports.getElection = onCall({ region: REGION, timeoutSeconds: 30 }, async request => {
   const key = await ensureElection();
   const uid = request.auth?.uid || null;
@@ -191,7 +225,7 @@ exports.voteForPresident = onCall({ region: REGION, timeoutSeconds: 30 }, async 
     tx.set(ballotRef, { partyId, createdAt: FieldValue.serverTimestamp() });
     tx.update(ref, { [`votes.${partyId}`]: FieldValue.increment(1), totalVotes: FieldValue.increment(1), updatedAt: FieldValue.serverTimestamp() });
     tx.set(db.doc(`point_awards/${uid}_election_vote_${key}`), { uid, action: 'election_vote', points, weekKey: key, createdAt: FieldValue.serverTimestamp() }, { merge: false });
-    tx.set(db.doc(`users/${uid}`), { totalPoints: FieldValue.increment(points), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+    tx.set(db.doc(`users/${uid}`), { points: FieldValue.increment(points), totalPoints: FieldValue.increment(points), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
   });
   return { ok: true, partyId, points };
 });
@@ -209,12 +243,13 @@ exports.getMyStatus = onCall({ region: REGION, timeoutSeconds: 15 }, async reque
     db.doc(`elections/${key}/ballots/${uid}`).get().catch(() => null),
     db.doc(`campaign_records/${uid}_${kstToday()}`).get().catch(() => null),
   ]);
-  return { loggedIn: true, partyId, partyName: partyId ? PARTY_BY_ID[partyId].name : null, power: Number(user.totalPoints || user.points || 0), votedElection: !!ballotSnap?.exists, electionEndKey: endKey, campaignsToday: campaignSnap?.exists ? Number(campaignSnap.data().count || 0) : 0 };
+  return { loggedIn: true, partyId, partyName: partyId ? PARTY_BY_ID[partyId].name : null, power: Number(user.totalPoints || user.points || 0), votedElection: !!ballotSnap?.exists, electionEndKey: endKey, campaignsToday: campaignSnap?.exists ? Number(campaignSnap.data().count || 0) : 0, campaignDailyLimit: CAMPAIGN_DAILY_LIMIT };
 });
 
 exports.setCampaignPledge = onCall({ region: REGION, timeoutSeconds: 20 }, async request => {
   const uid = requireUid(request);
   const partyId = assertPartyId(request.data?.partyId);
+  await assertPartyLeaderOrAdmin(uid, partyId);
   const pledge = String(request.data?.pledge || '').trim().slice(0, 120);
   if (pledge.length < 3) throw new HttpsError('invalid-argument', '공약이 너무 짧습니다.');
   const key = await ensureElection();
@@ -283,8 +318,9 @@ exports.getPartyManifesto = onCall({ region: REGION, timeoutSeconds: 20 }, async
 });
 
 exports.setPartyManifesto = onCall({ region: REGION, timeoutSeconds: 20 }, async request => {
-  requireUid(request);
+  const uid = requireUid(request);
   const partyId = assertPartyId(request.data?.partyId);
+  await assertPartyLeaderOrAdmin(uid, partyId);
   const manifesto = String(request.data?.manifesto || '').trim().slice(0, 500);
   await partyRef(partyId).set({ manifesto, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
   return { ok: true, partyId, manifesto };
@@ -331,7 +367,7 @@ exports.claimRulingBonus = onCall({ region: REGION, timeoutSeconds: 20 }, async 
   const awardSnap = await awardRef.get();
   if (awardSnap.exists) return { ok: true, points: 0, already: true };
   await awardRef.set({ uid, points: 10, type: 'ruling_bonus', createdAt: FieldValue.serverTimestamp() });
-  await db.doc(`users/${uid}`).set({ totalPoints: FieldValue.increment(10), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+  await db.doc(`users/${uid}`).set({ points: FieldValue.increment(10), totalPoints: FieldValue.increment(10), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
   return { ok: true, points: 10 };
 });
 
@@ -370,10 +406,73 @@ exports.campaignForParty = onCall({ region: REGION, timeoutSeconds: 20 }, async 
   const uid = requireUid(request);
   const partyId = assertPartyId(request.data?.partyId);
   const today = kstToday();
-  const ref = db.doc(`campaign_records/${uid}_${today}`);
-  await ref.set({ uid, partyId, date: today, count: FieldValue.increment(1), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-  await db.doc(`users/${uid}`).set({ totalPoints: FieldValue.increment(3), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-  return { ok: true, partyId, points: 3 };
+  const { key: weekKey } = weekPeriod();
+  const campaignRef = db.doc(`campaign_records/${uid}_${today}`);
+  const userRef = db.doc(`users/${uid}`);
+  await ensureParties();
+
+  let response = { ok: true, partyId, points: 0, count: 0, dailyLimit: CAMPAIGN_DAILY_LIMIT };
+  await db.runTransaction(async tx => {
+    const [userSnap, campaignSnap] = await Promise.all([
+      tx.get(userRef),
+      tx.get(campaignRef),
+    ]);
+
+    if (!userSnap.exists) throw new HttpsError('not-found', '회원 정보를 찾을 수 없습니다.');
+    const user = userSnap.data() || {};
+    if (user.partyId !== partyId) {
+      throw new HttpsError('permission-denied', '소속 정당만 선거운동할 수 있습니다.');
+    }
+
+    const count = Number(campaignSnap.exists ? campaignSnap.data().count || 0 : 0);
+    if (count >= CAMPAIGN_DAILY_LIMIT) {
+      throw new HttpsError('resource-exhausted', '오늘 선거운동 한도를 초과했습니다.');
+    }
+
+    const points = 3;
+    const currentPower = Math.max(0, Number(user.totalPoints || user.points || 0));
+    const nextPower = currentPower + points;
+    const memberDocRef = memberRef(partyId, uid);
+    const memberSnap = await tx.get(memberDocRef);
+    const oldMemberPower = memberSnap.exists ? Number(memberSnap.data().power || 0) : 0;
+    const memberData = memberSnap.exists ? memberSnap.data() || {} : {};
+    const partyDelta = nextPower - oldMemberPower;
+
+    const memberPatch = {
+      ...publicMember(uid, { ...user, totalPoints: nextPower, points: nextPower }),
+      updatedAt: FieldValue.serverTimestamp(),
+    };
+    if (memberData.weekKey === weekKey) {
+      memberPatch.weeklyGain = FieldValue.increment(points);
+    } else {
+      memberPatch.weekKey = weekKey;
+      memberPatch.weekStartPower = oldMemberPower;
+      memberPatch.weeklyGain = Math.max(0, nextPower - oldMemberPower);
+    }
+
+    tx.set(campaignRef, {
+      uid,
+      partyId,
+      date: today,
+      count: FieldValue.increment(1),
+      dailyLimit: CAMPAIGN_DAILY_LIMIT,
+      updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+    tx.set(userRef, {
+      points: FieldValue.increment(points),
+      totalPoints: FieldValue.increment(points),
+      updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+    tx.set(memberDocRef, memberPatch, { merge: true });
+    tx.set(partyRef(partyId), {
+      ...(memberSnap.exists ? {} : { memberCount: FieldValue.increment(1) }),
+      totalPower: FieldValue.increment(partyDelta),
+      updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+
+    response = { ok: true, partyId, points, count: count + 1, dailyLimit: CAMPAIGN_DAILY_LIMIT };
+  });
+  return response;
 });
 
 exports.getImpeachmentStatus = onCall({ region: REGION, timeoutSeconds: 20 }, async () => ({ ok: true, status: { active: false, signatures: 0, threshold: 100 } }));
