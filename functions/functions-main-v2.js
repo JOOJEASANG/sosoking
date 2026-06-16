@@ -18,7 +18,7 @@ const kakaoAuth = require('./kakao-auth-functions.js');
 const aiLadder = require('./ai-ladder-functions.js');
 const hotPotato = require('./hot-potato-functions.js');
 const battle = require('./battle-functions.js');
-const politics = require('./politics-functions.js');
+const politics = require('./politics-functions-v2.js');
 const coreParties = require('./three-party-functions.js');
 const gameDeadline = require('./game-deadline-functions.js');
 const partyLeague = require('./party-war-functions.js');
@@ -68,10 +68,10 @@ module.exports = {
   joinParty: coreParties.joinParty,
   leaveParty: coreParties.leaveParty,
   getElection: politics.getElection,
-  voteForPresident: gameDeadline.voteForPresident,
+  voteForPresident: politics.voteForPresident || gameDeadline.voteForPresident,
   getPartyActivities: politics.getPartyActivities,
   getRankings: politics.getRankings,
-  getMyStatus: gameDeadline.getMyStatus,
+  getMyStatus: politics.getMyStatus || gameDeadline.getMyStatus,
   getPresident: politics.getPresident,
   setPresidentialDecree: politics.setPresidentialDecree,
   setCampaignPledge: politics.setCampaignPledge,
