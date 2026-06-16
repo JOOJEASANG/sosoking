@@ -13,16 +13,8 @@ const OWNER_EMAILS = new Set();
 const ADMIN_ALLOWED_PATHS = new Set(['/admin', '/account', '/terms', '/privacy', '/legal/terms', '/legal/privacy', '/guide', '/login', '/signup']);
 
 const OPTIONAL_MODULES = [
-  './secure-interactions-actions.js',
   './account-secure-actions.js',
-  './admin-session-guard.js',
-  './admin-password-actions.js',
-  './admin-post-list-normalizer.js',
-  './admin-history-issue-actions.js',
-  './admin-battle-actions.js',
-  './battle-history-context-actions.js',
-  './nickname-icon-actions.js',
-  './site-copy-normalizer.js'
+  './nickname-icon-actions.js'
 ];
 
 function loadOptionalModules() {
@@ -51,31 +43,21 @@ function showWelcomeModal(nickname) {
   el.className = 'welcome-modal';
   el.innerHTML = `
     <div class="welcome-modal__card">
-      <div class="welcome-modal__confetti" aria-hidden="true">🎊 🎉 ✨ 🎊 🎉</div>
       <div class="welcome-modal__emoji">🏛️</div>
-      <div class="welcome-modal__title">소소공화국에 오신 걸 환영해요!</div>
-      <div class="welcome-modal__nick">${esc(nickname || '정치인')}님</div>
-      <div class="welcome-modal__bonus">
-        <span class="welcome-modal__bonus-label">입국 보너스</span>
-        <span class="welcome-modal__bonus-pts">+500P</span>
-      </div>
+      <div class="welcome-modal__title">소소공화국 입장 완료</div>
+      <div class="welcome-modal__nick">${esc(nickname || '시민')}님</div>
+      <div class="welcome-modal__bonus"><span class="welcome-modal__bonus-label">입국 보너스</span><span class="welcome-modal__bonus-pts">+500P</span></div>
       <div class="welcome-modal__steps">
-        <div class="welcome-modal__step"><span>1</span> 정당에 입당해 소속감 만들기</div>
-        <div class="welcome-modal__step"><span>2</span> 매일 배틀 투표로 +5P 획득</div>
-        <div class="welcome-modal__step"><span>3</span> 정치력 1위가 되어 당대표 → 대통령!</div>
+        <div class="welcome-modal__step"><span>1</span> 오늘게임에서 역사 사건 선택</div>
+        <div class="welcome-modal__step"><span>2</span> 정당에 입당하고 정치력 쌓기</div>
+        <div class="welcome-modal__step"><span>3</span> 대통령 선거에서 지지 선언</div>
       </div>
-      <div class="welcome-modal__actions">
-        <button class="btn btn--primary welcome-modal__party-btn" id="wm-party">🏛️ 정당 입당하기</button>
-        <button class="btn btn--ghost welcome-modal__skip-btn" id="wm-skip">나중에</button>
-      </div>
+      <div class="welcome-modal__actions"><button class="btn btn--primary" id="wm-play">오늘게임 시작</button><button class="btn btn--ghost" id="wm-skip">닫기</button></div>
     </div>`;
   document.body.appendChild(el);
   requestAnimationFrame(() => el.classList.add('welcome-modal--visible'));
-  el.querySelector('#wm-party').addEventListener('click', () => {
-    el.remove();
-    navigate('/republic');
-  });
-  el.querySelector('#wm-skip').addEventListener('click', () => el.remove());
+  el.querySelector('#wm-play')?.addEventListener('click', () => { el.remove(); navigate('/battle'); });
+  el.querySelector('#wm-skip')?.addEventListener('click', () => el.remove());
   el.addEventListener('click', e => { if (e.target === el) el.remove(); });
 }
 
@@ -103,20 +85,18 @@ async function renderAccountSafe() { const module = await import('./pages/accoun
 async function renderDetailSafe(id) { const module = await import('./pages/detail.js'); return module.renderDetail(id); }
 async function renderGuideSafe() { const module = await import('./pages/guide.js'); return module.renderGuide(); }
 
+function redirectTo(path) {
+  return async () => navigate(path);
+}
+
 async function registerRoutes() {
   registerRoute('/', async () => renderPage((await import('./pages/home.js')).renderHome, '홈'));
-  registerRoute('/battle', async () => renderPage((await import('./pages/battle.js')).renderBattle, '정치배틀'));
-  registerRoute('/history', async () => renderPage((await import('./pages/history.js')).renderHistory, '역사정치 자료실'));
-  registerRoute('/republic', async () => renderPage((await import('./pages/republic.js')).renderRepublic, '🏛️ 소소공화국'));
-  registerRoute('/parties', async () => renderPage((await import('./pages/parties.js')).renderParties, '정당'));
+  registerRoute('/battle', async () => renderPage((await import('./pages/battle.js')).renderBattle, '오늘게임'));
+  registerRoute('/history', async () => renderPage((await import('./pages/history.js')).renderHistory, '역사자료'));
+  registerRoute('/republic', async () => renderPage((await import('./pages/republic.js')).renderRepublic, '정당·대선'));
   registerRoute('/election', async () => renderPage((await import('./pages/election.js')).renderElection, '대통령 선거'));
-  registerRoute('/ranking', async () => renderPage((await import('./pages/ranking.js')).renderRanking, '정치력 랭킹'));
-  registerRoute('/king-history', async () => renderPage((await import('./pages/king-history.js')).renderKingHistory, '역대 당선자'));
-  registerRoute('/feed', async () => renderPage((await import('./pages/feed.js')).renderFeed, '시민광장'));
-  registerRoute('/write', async () => renderPage((await import('./pages/write.js')).renderWrite, '시민발언 작성'));
-  registerRoute('/hall', async () => renderPage((await import('./pages/hall.js')).renderHall, '통계'));
+  registerRoute('/ranking', async () => renderPage((await import('./pages/ranking.js')).renderRanking, '랭킹'));
   registerRoute('/account', async () => renderPage(renderAccountSafe, '내 정보'));
-  registerRoute('/scraps', async () => renderPage((await import('./pages/scraps.js')).renderScraps, '스크랩'));
   registerRoute('/admin', async () => renderPage(renderAdminSafe, '관리자'));
   registerRoute('/detail/:id', async ({ id }) => renderPage(() => renderDetailSafe(id), '상세'));
   registerRoute('/login', async () => renderPage((await import('./pages/login.js')).renderLogin, '로그인'));
@@ -126,10 +106,11 @@ async function registerRoutes() {
   registerRoute('/privacy', async () => renderPage((await import('./pages/legal.js')).renderPrivacy, '개인정보처리방침'));
   registerRoute('/legal/terms', async () => renderPage((await import('./pages/legal.js')).renderTerms, '이용약관'));
   registerRoute('/legal/privacy', async () => renderPage((await import('./pages/legal.js')).renderPrivacy, '개인정보처리방침'));
-  registerRoute('/points-shop', async () => renderPage((await import('./pages/points-shop.js')).renderPointsShop, '내 포인트'));
-  registerRoute('/news', async () => renderPage((await import('./pages/news.js')).renderNews, '📰 소소신문'));
-  registerRoute('/constitutional-court', async () => renderPage((await import('./pages/constitutional-court.js')).renderConstitutionalCourt, '🏛️ 헌법재판소'));
-  registerRoute('/congress', async () => renderPage((await import('./pages/congress.js')).renderCongress, '🏛️ 국회'));
+
+  // 간소화 후 보조 기능은 핵심 흐름으로 돌립니다.
+  ['/feed', '/write', '/hall', '/scraps', '/points-shop', '/news', '/congress', '/constitutional-court', '/king-history', '/parties'].forEach(path => {
+    registerRoute(path, path === '/news' ? redirectTo('/history') : redirectTo('/republic'));
+  });
 }
 
 async function isStrictAdmin(user) {
@@ -147,7 +128,13 @@ async function isStrictAdmin(user) {
 }
 
 async function fetchUserProfile(user) {
-  if (!user) return;
+  if (!user) {
+    appState.nickname = '';
+    appState.partyId = '';
+    appState.points = 0;
+    appState.isAdmin = false;
+    return;
+  }
   try {
     let snap = await getDoc(doc(db, 'users', user.uid));
     if (!snap.exists() && !user.isAnonymous) {
@@ -192,7 +179,7 @@ function bindFooterToggle() {
     toggle.setAttribute('aria-expanded', String(!expanded));
     toggle.classList.toggle('open', !expanded);
     body.hidden = expanded;
-    toggle.lastChild.textContent = expanded ? ' 더보기' : ' 접기';
+    toggle.textContent = expanded ? '더보기' : '접기';
   });
 }
 
@@ -208,13 +195,13 @@ function renderFrame() {
         <footer class="site-footer" id="site-footer">
           <div class="site-footer__body" id="footer-body" hidden>
             <div class="site-footer__inner">
-              <div class="site-footer__brand-block"><a href="#/" class="site-footer__brand"><img src="/logo.svg" alt="" width="26" height="26"><span>소소킹</span></a><div class="site-footer__tagline">실제 역사 모티브와 가상 정당이 만나는<br>역사정치 시뮬레이션</div></div>
-              <div><div class="site-footer__col-title">공화국</div><div class="site-footer__links"><a href="#/republic">🏛️ 공화국 허브</a><a href="#/battle">⚔️ 정치배틀</a><a href="#/history">📚 역사자료</a><a href="#/election">👑 대선</a><a href="#/congress">🏛️ 국회</a><a href="#/constitutional-court">⚖️ 헌법재판소</a><a href="#/news">📰 소소신문</a><a href="#/king-history">🏆 역대 당선자</a></div></div>
-              <div><div class="site-footer__col-title">커뮤니티</div><div class="site-footer__links"><a href="#/feed">시민광장</a><a href="#/ranking">랭킹</a><a href="#/parties">정당 상세</a><a href="#/guide">이용안내</a></div></div>
+              <div class="site-footer__brand-block"><a href="#/" class="site-footer__brand"><img src="/logo.svg" alt="" width="26" height="26"><span>소소킹</span></a><div class="site-footer__tagline">오늘의 역사 사건을 선택하고<br>정당을 키우는 역사정치 게임</div></div>
+              <div><div class="site-footer__col-title">핵심 메뉴</div><div class="site-footer__links"><a href="#/battle">⚔️ 오늘게임</a><a href="#/history">📚 역사자료</a><a href="#/republic">🏛️ 정당·대선</a><a href="#/election">👑 대통령 선거</a></div></div>
+              <div><div class="site-footer__col-title">내 정보</div><div class="site-footer__links"><a href="#/account">내정보</a><a href="#/ranking">랭킹</a><a href="#/guide">이용안내</a></div></div>
               <div><div class="site-footer__col-title">정보</div><div class="site-footer__links"><a href="#/terms">이용약관</a><a href="#/privacy">개인정보처리방침</a></div></div>
             </div>
           </div>
-          <div class="site-footer__copy-bar"><div class="site-footer__copy">© ${new Date().getFullYear()} 소소킹. All rights reserved.</div><button class="site-footer__toggle" id="btn-footer-toggle" aria-expanded="false" title="푸터 펼치기">더보기</button></div>
+          <div class="site-footer__copy-bar"><div class="site-footer__copy">© ${new Date().getFullYear()} 소소킹</div><button class="site-footer__toggle" id="btn-footer-toggle" aria-expanded="false" title="푸터 펼치기">더보기</button></div>
         </footer>
         <nav id="bottom-nav" class="bottom-nav"></nav>
       </div>
@@ -230,7 +217,6 @@ async function handleKakaoCallback() {
   const code = params.get('code');
   const state = params.get('state');
   if (!code || state !== 'kakao_login') return;
-
   try {
     const { data } = await import('./firebase.js').then(({ functions }) =>
       import('https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js').then(({ httpsCallable }) =>
