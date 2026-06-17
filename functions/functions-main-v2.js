@@ -3,6 +3,7 @@
 const { getApps, initializeApp } = require('firebase-admin/app');
 if (!getApps().length) initializeApp();
 
+const coreAi = require('./index.js');
 const secureAiConfig = require('./secure-ai-config-functions.js');
 const secureFeed = require('./secure-feed-functions.js');
 const sitemap = require('./sitemap-functions.js');
@@ -20,12 +21,13 @@ const legacyDisabled = require('./legacy-disabled-functions.js');
 const sosoMaterials = require('./soso-material-functions.js');
 
 module.exports = {
+  ...coreAi,
   ...secureAiConfig,
-  seoPost: secureFeed.seoPost,
+  seoPost: secureFeed.seoPost || coreAi.seoPost,
   castFeedVote: secureFeed.castFeedVote,
   toggleFeedReaction: secureFeed.toggleFeedReaction,
   registerPostView: secureFeed.registerPostView,
-  ...sitemap,
+  sitemapXml: sitemap.sitemapXml || coreAi.sitemapXml,
   ...account,
   ...adminUsers,
   ...adminData,
