@@ -13,6 +13,7 @@ const postOwner = require('./post-owner-functions.js');
 const postView = require('./post-view-functions.js');
 const points = require('./points-functions.js');
 const kakaoAuth = require('./kakao-auth-functions.js');
+const legacyDisabled = require('./legacy-disabled-functions.js');
 const sosoMaterials = require('./soso-material-functions.js');
 
 module.exports = {
@@ -32,5 +33,6 @@ module.exports = {
   ...postOwner,
   ...postView,
   ...kakaoAuth,
+  ...legacyDisabled,
   ...sosoMaterials,
 };
