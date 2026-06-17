@@ -1,9 +1,7 @@
 'use strict';
 
-const coreAi = require('./index.js');
 const secureAiConfig = require('./secure-ai-config-functions.js');
 const secureFeed = require('./secure-feed-functions.js');
-const secureInteractions = require('./secure-interactions-functions.js');
 const sitemap = require('./sitemap-functions.js');
 const account = require('./account-functions.js');
 const adminUsers = require('./admin-user-functions.js');
@@ -15,101 +13,24 @@ const postOwner = require('./post-owner-functions.js');
 const postView = require('./post-view-functions.js');
 const points = require('./points-functions.js');
 const kakaoAuth = require('./kakao-auth-functions.js');
-const battle = require('./battle-functions.js');
-const politics = require('./politics-functions-v2.js');
-const politicsDetail = require('./politics-detail-functions.js');
-const electionNormalized = require('./election-normalized-functions.js');
-const historyArchive = require('./history-archive-functions.js');
-const historyComments = require('./history-comment-functions.js');
-const coreParties = require('./three-party-functions.js');
-const externalForces = require('./external-force-functions.js');
-const gameDeadline = require('./game-deadline-functions.js');
-const partyLeague = require('./party-war-functions.js');
-const congress = require('./congress-functions.js');
-const constitutionalCourt = require('./constitutional-court-functions.js');
-const legacyDisabled = require('./legacy-disabled-functions.js');
-
-const adminSeed = require('./admin-seed-functions.js');
-const parody = require('./parody-issue-functions.js');
 const sosoMaterials = require('./soso-material-functions.js');
 
 module.exports = {
-  ...coreAi,
   ...secureAiConfig,
+  seoPost: secureFeed.seoPost,
   castFeedVote: secureFeed.castFeedVote,
   toggleFeedReaction: secureFeed.toggleFeedReaction,
   registerPostView: secureFeed.registerPostView,
-  seoPost: secureFeed.seoPost,
-  incrementPostView: secureInteractions.incrementPostView,
-  votePostOption: secureInteractions.votePostOption,
-  reactToPost: secureInteractions.reactToPost,
-  reactToComment: secureInteractions.reactToComment,
   ...sitemap,
   ...account,
   ...adminUsers,
   ...adminData,
   ...memberStats,
   ...points,
-  ...partyLeague,
-  ...externalForces,
-  ...historyComments,
-  ...congress,
-  getConstitutionalCourtStatus: constitutionalCourt.getConstitutionalCourtStatus,
-  decideConstitutionalReview: constitutionalCourt.decideConstitutionalReview,
-  generateCourtAiVerdict: constitutionalCourt.generateCourtAiVerdict,
-  generateDailyBattle: battle.generateDailyBattle,
-  closeDailyBattle: battle.closeDailyBattle,
-  voteForParty: battle.voteForParty,
-  addBattleComment: battle.addBattleComment,
-  getBattleStatus: battle.getBattleStatus,
-  getKingHistory: battle.getKingHistory,
-  adminGenerateBattle: battle.adminGenerateBattle,
-  reactToBattleComment: battle.reactToBattleComment,
-  adminResetBattleData: battle.adminResetBattleData,
-  adminResetAllPoints: battle.adminResetAllPoints,
-  getPoliticsOverview: coreParties.getPoliticsOverview,
-  getPartyMembers: coreParties.getPartyMembers,
-  joinParty: coreParties.joinParty,
-  leaveParty: coreParties.leaveParty,
-  getElection: electionNormalized.getElection,
-  voteForPresident: electionNormalized.voteForPresident || politics.voteForPresident || gameDeadline.voteForPresident,
-  getPartyActivities: politicsDetail.getPartyActivities,
-  getRankings: politics.getRankings,
-  getMyStatus: politicsDetail.getMyStatus,
-  getPresident: electionNormalized.getPresident,
-  setPresidentialDecree: politics.setPresidentialDecree,
-  setCampaignPledge: politics.setCampaignPledge,
-  addElectionEndorsement: politics.addElectionEndorsement,
-  getElectionEndorsements: politics.getElectionEndorsements,
-  syncPartyMemberPower: politics.syncPartyMemberPower,
-  getUserPoliticsStats: politics.getUserPoliticsStats,
-  getPartyManifesto: politics.getPartyManifesto,
-  setPartyManifesto: politics.setPartyManifesto,
-  getElectionHistory: electionNormalized.getElectionHistory,
-  getDailyNews: politicsDetail.getDailyNews,
-  generateNewsColumn: politicsDetail.generateNewsColumn,
-  ratePresidentDecree: politics.ratePresidentDecree,
-  claimRulingBonus: politics.claimRulingBonus,
-  getWeeklyCrisis: politics.getWeeklyCrisis,
-  voteOnCrisis: politics.voteOnCrisis,
-  campaignForParty: politics.campaignForParty,
-  getImpeachmentStatus: politics.getImpeachmentStatus,
-  signImpeachmentPetition: politics.signImpeachmentPetition,
-  getPresidentQA: politics.getPresidentQA,
-  askPresidentQuestion: politics.askPresidentQuestion,
-  answerPresidentQuestion: politics.answerPresidentQuestion,
-  getCampaignMomentum: politicsDetail.getCampaignMomentum,
-  getHistoryArchive: historyArchive.getHistoryArchive,
-  getHistoryEvent: historyArchive.getHistoryEvent,
   ...uploadImage,
   ...nicknameIcon,
   ...postOwner,
   ...postView,
   ...kakaoAuth,
-  ...legacyDisabled,
-  adminSeedWorldHistory: adminSeed.adminSeedWorldHistory,
-  generateDailyParodyIssues: parody.generateDailyParodyIssues,
-  previewHistoryIssue: parody.previewHistoryIssue,
-  triggerParodyIssues: parody.triggerParodyIssues,
   ...sosoMaterials,
 };
