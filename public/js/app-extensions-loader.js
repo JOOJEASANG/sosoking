@@ -10,6 +10,7 @@ const EXTENSION_MODULES = [
   './forces-route-extension.js',
   './forces-sidebar-link.js',
   './core-nav-visibility-fix.js',
+  './home-card-layout-fix.js',
 ];
 
 async function loadExtension(path) {
