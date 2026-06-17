@@ -1,12 +1,10 @@
-// app-extensions-loader.js
+// app-extensions-loader.js — 소소킹 보조 UI 확장
 
 const EXTENSION_MODULES = [
   './layout-id-repair.js',
   './pc-sidebar-spacing.js',
   './account-ui.js',
   './nickname-icon-actions.js',
-  './forces-route-extension.js',
-  './forces-sidebar-link.js',
   './core-nav-visibility-fix.js',
   './home-card-layout-fix.js',
   './points-removal-ui.js',
