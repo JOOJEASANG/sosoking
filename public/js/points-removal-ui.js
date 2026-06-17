@@ -13,10 +13,16 @@ const TEXT_REPLACERS = [
   [/데일리\s*퀘스트/g, '오늘 자료'],
   [/오늘게임/g, '오늘자료'],
   [/정당\s*대항전/g, '오늘의 쟁점'],
+  [/정당·대선/g, '관심 분야'],
+  [/대통령\s*선거/g, '댓글·랭킹'],
   [/공화국\s*현황/g, '자료 현황'],
   [/유세하기/g, '자료 참여'],
   [/탈당/g, '관심 분야 변경'],
+  [/정당\s*활동/g, '관심 분야'],
+  [/정당\s*관리/g, '관심 분야'],
 ];
+
+const WATCH_RE = /(P\b|정치력|포인트|데일리\s*퀘스트|오늘게임|정당\s*대항전|정당·대선|대통령\s*선거|공화국\s*현황|유세하기|탈당|정당\s*활동|정당\s*관리)/;
 
 function cleanText(text) {
   return TEXT_REPLACERS.reduce((next, [pattern, replace]) => next.replace(pattern, replace), text).replace(/\s{2,}/g, ' ').trimStart();
@@ -28,9 +34,7 @@ function sanitizeTextNodes(root = document.body) {
     acceptNode(node) {
       const parent = node.parentElement;
       if (!parent || SKIP_TAGS.has(parent.tagName)) return NodeFilter.FILTER_REJECT;
-      if (!node.nodeValue || !/(P\b|정치력|포인트|데일리\s*퀘스트|오늘게임|정당\s*대항전|공화국\s*현황|유세하기|탈당)/.test(node.nodeValue)) {
-        return NodeFilter.FILTER_REJECT;
-      }
+      if (!node.nodeValue || !WATCH_RE.test(node.nodeValue)) return NodeFilter.FILTER_REJECT;
       return NodeFilter.FILTER_ACCEPT;
     },
   });
