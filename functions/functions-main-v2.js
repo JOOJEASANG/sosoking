@@ -31,6 +31,7 @@ const legacyDisabled = require('./legacy-disabled-functions.js');
 
 const adminSeed = require('./admin-seed-functions.js');
 const parody = require('./parody-issue-functions.js');
+const sosoMaterials = require('./soso-material-functions.js');
 
 module.exports = {
   ...coreAi,
@@ -110,4 +111,5 @@ module.exports = {
   generateDailyParodyIssues: parody.generateDailyParodyIssues,
   previewHistoryIssue: parody.previewHistoryIssue,
   triggerParodyIssues: parody.triggerParodyIssues,
+  ...sosoMaterials,
 };
