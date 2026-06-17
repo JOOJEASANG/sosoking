@@ -1,260 +1,29 @@
-/* ranking.js — 소소공화국 정치력 랭킹 */
-import { auth, functions } from '../firebase.js';
+/* ranking.js — 토론 많은 자료 */
+import { functions } from '../firebase.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
+import { navigate } from '../router.js';
 import { setMeta } from '../utils/seo.js';
 import { escHtml } from '../utils/helpers.js';
-import { getPoliticalRank, RANKS } from '../utils/political-rank.js';
-import { toast } from '../components/toast.js';
 
-function fmtPower(n) {
-  n = Number(n || 0);
-  if (n >= 10000) return (n / 10000).toFixed(1).replace(/\.0$/, '') + '만';
-  if (n >= 1000)  return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
-  return String(n);
+function call(name, payload = {}) { return httpsCallable(functions, name)(payload).then(res => res.data || {}).catch(error => ({ ok: false, error })); }
+function ensureStyle() {
+  if (document.getElementById('debate-page-style')) return;
+  const s = document.createElement('style');
+  s.id = 'debate-page-style';
+  s.textContent = `.debate-page{display:grid;gap:14px;padding-bottom:26px}.debate-hero{border-radius:28px;padding:24px 20px;background:linear-gradient(135deg,#0f172a,#475569);color:#fff}.debate-hero h1{margin:4px 0 6px;font-size:28px;color:#fff}.debate-hero p{margin:0;color:rgba(255,255,255,.76);font-size:14px;line-height:1.6}.debate-list{display:grid;gap:10px}.debate-card{display:grid;grid-template-columns:52px 1fr auto;gap:12px;align-items:center;border:1px solid rgba(100,116,139,.16);border-radius:20px;background:var(--color-surface,#fff);padding:14px;text-align:left;font-family:inherit;color:inherit;box-shadow:0 10px 26px rgba(15,23,42,.055);cursor:pointer}.debate-rank{width:52px;height:52px;border-radius:18px;background:rgba(47,125,110,.10);color:#2f7d6e;display:flex;align-items:center;justify-content:center;font-weight:1000}.debate-title{font-size:16px;font-weight:1000;color:var(--color-text-primary);margin-bottom:4px}.debate-text{font-size:13px;line-height:1.55;color:var(--color-text-secondary)}.debate-stats{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.debate-stats span{border-radius:999px;background:rgba(47,125,110,.10);color:#2f7d6e;padding:5px 8px;font-size:11px;font-weight:1000}@media(max-width:760px){.debate-card{grid-template-columns:42px 1fr}.debate-stats{grid-column:2;justify-content:flex-start}}`;
+  document.head.appendChild(s);
 }
-
-function rankMedal(rank) {
-  if (rank === 1) return '<span class="rank-medal rank-medal--1">🥇</span>';
-  if (rank === 2) return '<span class="rank-medal rank-medal--2">🥈</span>';
-  if (rank === 3) return '<span class="rank-medal rank-medal--3">🥉</span>';
-  return `<span class="rank-medal rank-medal--rest">${rank}</span>`;
+function card(m, i) {
+  return `<button class="debate-card" data-id="${escHtml(m.id)}"><div class="debate-rank">${i + 1}</div><div><div class="debate-title">${escHtml(m.title)}</div><div class="debate-text">${escHtml(m.summary)}</div></div><div class="debate-stats"><span>댓글 ${Number(m.commentCount || 0)}</span><span>찬성 ${Number(m.agreeCount || 0)}</span><span>반대 ${Number(m.disagreeCount || 0)}</span></div></button>`;
 }
-
-function renderUserRow(m, myUid) {
-  const isMe = myUid && m.uid === myUid;
-  const rank = getPoliticalRank(m.power);
-  return `
-    <div class="rank-row${isMe ? ' rank-row--me' : ''}">
-      ${rankMedal(m.rank)}
-      <span class="rank-party-dot" style="background:${m.partyColor}" title="${escHtml(m.partyName)}"></span>
-      <span class="rank-nickname">${m.icon?.value ? `${m.icon.value} ` : ''}${escHtml(m.nickname)}${isMe ? ' <em>(나)</em>' : ''}
-        <span class="rank-grade" style="--rank-c:${rank.color}">${rank.emoji} ${rank.title}</span>
-      </span>
-      <span class="rank-power">${fmtPower(m.power)}P</span>
-    </div>`;
-}
-
-function renderGainerRow(m, myUid) {
-  const isMe = myUid && m.uid === myUid;
-  const rank = getPoliticalRank(m.power);
-  return `
-    <div class="rank-row${isMe ? ' rank-row--me' : ''}">
-      ${rankMedal(m.rank)}
-      <span class="rank-party-dot" style="background:${m.partyColor}" title="${escHtml(m.partyName)}"></span>
-      <span class="rank-nickname">${m.icon?.value ? `${m.icon.value} ` : ''}${escHtml(m.nickname)}${isMe ? ' <em>(나)</em>' : ''}
-        <span class="rank-grade" style="--rank-c:${rank.color}">${rank.emoji} ${rank.title}</span>
-      </span>
-      <span class="rank-gain">+${fmtPower(m.weeklyGain)}P</span>
-    </div>`;
-}
-
-function renderLadder(myPower) {
-  const power = Number(myPower || 0);
-  const cur = getPoliticalRank(power);
-  const steps = RANKS.map((r, i) => {
-    const isActive = cur.level >= r.level;
-    const isCurrent = cur.level === r.level;
-    const connected = cur.level > r.level;
-    return `<div class="rank-ladder__step${isActive ? ' active' : ''}${isCurrent ? ' current' : ''}${connected ? ' connected' : ''}">
-      ${isCurrent ? '<div class="rank-ladder__you">나</div>' : ''}
-      <div class="rank-ladder__node">${r.emoji}</div>
-      <div class="rank-ladder__label">Lv.${r.level}</div>
-    </div>`;
-  }).join('');
-  const footerRight = cur.isMax
-    ? `<span class="rank-ladder__next rank-ladder__next--max">🏆 최고 등급 달성!</span>`
-    : `<span class="rank-ladder__next">다음: ${cur.next.emoji} ${cur.next.title} · <b>${cur.remain.toLocaleString()}P</b> 필요</span>`;
-  return `<div class="rank-ladder">
-    <div class="rank-ladder__header">
-      <span class="rank-ladder__title">출세 사다리</span>
-      <span class="rank-ladder__cur">${cur.emoji} <b>${cur.title}</b> · ${power.toLocaleString()}P</span>
-    </div>
-    <div class="rank-ladder__track">${steps}</div>
-    <div class="rank-ladder__footer">
-      ${footerRight}
-    </div>
-  </div>`;
-}
-
-function renderLeaderCard(party) {
-  const { leader } = party;
-  return `
-    <div class="leader-card" style="--party-c:${party.color}">
-      <div class="leader-card__party">
-        <span class="leader-card__emoji">${party.emoji}</span>
-        <span class="leader-card__name">${escHtml(party.name)}</span>
-      </div>
-      ${leader
-        ? `<div class="leader-card__leader">
-            <span class="leader-card__crown">👑</span>
-            <span class="leader-card__nick">${leader.icon?.value ? `${leader.icon.value} ` : ''}${escHtml(leader.nickname)}</span>
-            <span class="leader-card__power">${fmtPower(leader.power)}P</span>
-           </div>`
-        : `<div class="leader-card__empty">당대표 없음 — 입당하면 당대표!</div>`}
-    </div>`;
-}
-
 export async function renderRanking() {
-  setMeta('소소공화국 정치력 랭킹');
+  setMeta('토론 많은 자료', '댓글과 찬반 참여가 많은 소소자료');
+  ensureStyle();
   const el = document.getElementById('page-content');
   if (!el) return;
-
-  el.innerHTML = `<div class="ranking-page page-enter">
-    <div class="skeleton" style="height:100px;border-radius:16px;margin-bottom:12px"></div>
-    <div class="skeleton" style="height:400px;border-radius:16px"></div>
-  </div>`;
-
-  let data;
-  try {
-    const call = httpsCallable(functions, 'getRankings');
-    const res = await call();
-    data = res.data;
-  } catch (err) {
-    console.error('[ranking] load error', err);
-    el.innerHTML = `<div class="empty-state">
-      <div class="empty-state__icon">⚠️</div>
-      <div class="empty-state__title">랭킹을 불러오지 못했어요</div>
-      <button class="btn btn--primary" style="margin-top:16px" id="rank-retry">다시 시도</button>
-    </div>`;
-    el.querySelector('#rank-retry')?.addEventListener('click', renderRanking);
-    return;
-  }
-
-  const { top30 = [], leaders = [], myEntry = null, topGainers = [], republicStats = null } = data;
-  const myUid = auth.currentUser?.uid || '';
-
-  const republicStatsHTML = republicStats
-    ? `<div class="rank-republic-stats">
-        <div class="rank-republic-stat">
-          <span class="rank-republic-stat__label">소소시민</span>
-          <span class="rank-republic-stat__value">👥 ${fmtPower(republicStats.citizens)}명</span>
-        </div>
-        <div class="rank-republic-stat__divider"></div>
-        <div class="rank-republic-stat">
-          <span class="rank-republic-stat__label">총 정치력</span>
-          <span class="rank-republic-stat__value">⚡ ${fmtPower(republicStats.power)}P</span>
-        </div>
-        ${topGainers[0] ? `
-        <div class="rank-republic-stat__divider"></div>
-        <div class="rank-republic-stat">
-          <span class="rank-republic-stat__label">이번 주 1위</span>
-          <span class="rank-republic-stat__value">🔥 ${escHtml(topGainers[0].nickname)} +${fmtPower(topGainers[0].weeklyGain)}</span>
-        </div>` : ''}
-      </div>`
-    : '';
-
-  const myBanner = myEntry
-    ? `<div class="rank-my-banner">
-        <span>내 순위</span>
-        <strong>${myEntry.rank}위</strong>
-        <span>${myEntry.partyEmoji} ${escHtml(myEntry.partyName)}</span>
-        <strong>${fmtPower(myEntry.power)}P</strong>
-       </div>`
-    : !auth.currentUser
-      ? `<div class="rank-my-banner rank-my-banner--guest">
-          입당하고 정치력을 쌓으면 랭킹에 등장합니다!
-          <a href="#/parties" style="color:var(--color-primary);font-weight:700">입당하기 →</a>
-         </div>`
-      : `<div class="rank-my-banner rank-my-banner--guest">아직 정치력이 없어요. 활동하면 바로 등장합니다!</div>`;
-
-  el.innerHTML = `<div class="ranking-page page-enter">
-    <div class="ranking-hero">
-      <div class="ranking-hero__badge">🏆 소소공화국</div>
-      <h1 class="ranking-hero__title">정치력 랭킹</h1>
-      <p class="ranking-hero__sub">활동할수록 정치력이 쌓이고, 당내 1위는 당대표가 됩니다</p>
-    </div>
-
-    <div class="rank-earn-bar">
-      <span class="rank-earn-bar__label">⚡ 정치력 획득 방법</span>
-      <span class="rank-earn-bar__item">배틀 투표 <b>+5P</b></span>
-      <span class="rank-earn-bar__sep">·</span>
-      <span class="rank-earn-bar__item">댓글 <b>+10P</b></span>
-      <span class="rank-earn-bar__sep">·</span>
-      <span class="rank-earn-bar__item">대선 투표 <b>+5P</b></span>
-      <span class="rank-earn-bar__sep">·</span>
-      <span class="rank-earn-bar__item">출석 <b>+20P</b></span>
-    </div>
-
-    ${republicStatsHTML}
-
-    ${renderLadder(myEntry?.power)}
-
-    ${myBanner}
-
-    <div class="ranking-tabs" id="rank-tabs">
-      <button class="ranking-tab active" data-tab="overall">🏅 전체 순위</button>
-      <button class="ranking-tab" data-tab="gainers">🔥 이번 주</button>
-      <button class="ranking-tab" data-tab="leaders">👑 당대표</button>
-    </div>
-
-    <div id="rank-panel-overall" class="rank-panel">
-      ${top30.length
-        ? top30.map(m => renderUserRow(m, myUid)).join('')
-        : `<div class="empty-state" style="padding:40px 0">
-            <div class="empty-state__icon">🌱</div>
-            <div class="empty-state__title">아직 활동 중인 당원이 없어요</div>
-            <div class="empty-state__desc">첫 번째로 입당하고 정치력 1위가 되어보세요!</div>
-           </div>`}
-    </div>
-
-    <div id="rank-panel-gainers" class="rank-panel rank-panel--hidden">
-      <div class="rank-gainers-header">
-        <span class="rank-gainers-badge">이번 주 월요일 리셋</span>
-        <span class="rank-gainers-desc">이번 주 정치력을 가장 많이 쌓은 정치인</span>
-      </div>
-      ${topGainers.length
-        ? topGainers.map(m => renderGainerRow(m, myUid)).join('')
-        : `<div class="empty-state" style="padding:40px 0">
-            <div class="empty-state__icon">🔥</div>
-            <div class="empty-state__title">이번 주 활동 기록이 없어요</div>
-            <div class="empty-state__desc">배틀·글·댓글로 활동하면 바로 등장합니다!</div>
-           </div>`}
-    </div>
-
-    <div id="rank-panel-leaders" class="rank-panel rank-panel--hidden">
-      <div class="leaders-grid">
-        ${leaders.map(renderLeaderCard).join('')}
-      </div>
-    </div>
-
-    ${auth.currentUser ? `<div class="rank-campaign-cta" id="rank-campaign-cta">
-      <div class="rank-campaign-cta__body">
-        <span class="rank-campaign-cta__icon">📣</span>
-        <div>
-          <div class="rank-campaign-cta__title">정당 유세로 정치력 부스트</div>
-          <div class="rank-campaign-cta__desc">유세하면 내 정당 정치력이 올라갑니다 · 하루 최대 3회</div>
-        </div>
-      </div>
-      <button class="btn btn--primary btn--sm" id="btn-rank-campaign">📣 유세하기</button>
-    </div>` : ''}
-  </div>`;
-
-  el.querySelectorAll('.ranking-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      el.querySelectorAll('.ranking-tab').forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-      const target = tab.dataset.tab;
-      el.querySelector('#rank-panel-overall').classList.toggle('rank-panel--hidden', target !== 'overall');
-      el.querySelector('#rank-panel-gainers').classList.toggle('rank-panel--hidden', target !== 'gainers');
-      el.querySelector('#rank-panel-leaders').classList.toggle('rank-panel--hidden', target !== 'leaders');
-    });
-  });
-
-  el.querySelector('#btn-rank-campaign')?.addEventListener('click', async btn => {
-    const button = el.querySelector('#btn-rank-campaign');
-    if (button) button.disabled = true;
-    try {
-      const { data } = await httpsCallable(functions, 'campaignForParty')({});
-      if (data?.ok) {
-        toast.success(data.message || '유세 완료! 정당 정치력이 올랐습니다 📣');
-        renderRanking();
-      } else {
-        toast.info(data?.message || '유세할 수 없는 상태입니다');
-        if (button) button.disabled = false;
-      }
-    } catch (e) {
-      toast.error(e?.message || '유세에 실패했어요');
-      if (button) button.disabled = false;
-    }
-  });
+  el.innerHTML = `<div class="debate-page"><div class="skeleton" style="height:150px;border-radius:28px"></div><div class="skeleton" style="height:420px;border-radius:20px"></div></div>`;
+  const res = await call('getDebateSummary', { limit: 30 });
+  const items = Array.isArray(res.materials) ? res.materials : [];
+  el.innerHTML = `<div class="debate-page page-enter"><section class="debate-hero"><div style="font-size:11px;font-weight:1000;letter-spacing:.1em;color:rgba(255,255,255,.62)">ACTIVE DEBATES</div><h1>토론 많은 자료</h1><p>댓글과 찬성·반대 참여가 많은 자료를 모아봅니다.</p></section><div class="debate-list">${items.length ? items.map(card).join('') : '<div class="empty-state"><div class="empty-state__title">아직 토론 자료가 없습니다.</div></div>'}</div></div>`;
+  el.querySelectorAll('[data-id]').forEach(btn => btn.addEventListener('click', () => navigate(`/material/${btn.dataset.id}`)));
 }
