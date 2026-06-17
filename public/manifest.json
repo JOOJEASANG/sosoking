@@ -1,21 +1,21 @@
 {
   "id": "/",
-  "name": "소소킹 - 가상 정치 공화국",
+  "name": "소소킹 - 소소한 논쟁커뮤니티",
   "short_name": "소소킹",
-  "description": "6인 AI 정치인이 매일 정쟁을 벌이는 가상 정치 공화국. 정치배틀 투표·토론으로 오늘의 당선자를 결정하세요.",
+  "description": "생활분쟁, 민원, 신고, 소송, 소비자 문제를 짧은 자료로 정리하고 찬성·반대 투표와 댓글로 토론하는 커뮤니티입니다.",
   "start_url": "/?source=pwa",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "background_color": "#F5F5F7",
-  "theme_color": "#FF6B4A",
+  "theme_color": "#2F7D6E",
   "lang": "ko",
   "orientation": "portrait-primary",
   "scope": "/",
   "icons": [
-    { "src": "/icon-192.png",        "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/icon-512.png",        "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/icon-192-maskable.png","sizes": "192x192","type": "image/png", "purpose": "maskable" },
-    { "src": "/icon-512-maskable.png","sizes": "512x512","type": "image/png", "purpose": "maskable" }
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
-  "categories": ["entertainment", "social"]
+  "categories": ["social", "news"]
 }
