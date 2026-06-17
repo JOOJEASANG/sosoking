@@ -1,4 +1,4 @@
-/* bottom-nav.js — 핵심 게임 하단 탭 */
+/* bottom-nav.js — 핵심 자료 하단 탭 */
 import { navigate } from '../router.js';
 
 function svgIcon(path, strokeWidth = '1.8') {
@@ -15,12 +15,11 @@ function isNavActive(navPath, currentPath) {
 
 function navItems() {
   return [
-    { id: 'home',     label: '홈',     path: '/',         icon: iconHome() },
-    { id: 'battle',   label: '논쟁',   path: '/battle',   icon: `<span style="font-size:19px;line-height:1">⚔️</span>` },
-    { id: 'republic', label: '정당',   path: '/republic', icon: `<span style="font-size:20px;line-height:1">🏛️</span>` },
-    { id: 'forces',   label: '세력',   path: '/forces',   icon: `<span style="font-size:19px;line-height:1">⚡</span>` },
-    { id: 'history',  label: '역사',   path: '/history',  icon: `<span style="font-size:19px;line-height:1">📚</span>` },
-    { id: 'election', label: '대선',   path: '/election', icon: `<span style="font-size:19px;line-height:1">👑</span>` },
+    { id: 'home',     label: '홈',       path: '/',         icon: iconHome() },
+    { id: 'battle',   label: '오늘자료', path: '/battle',   icon: `<span style="font-size:19px;line-height:1">📰</span>` },
+    { id: 'history',  label: '역사',     path: '/history',  icon: `<span style="font-size:19px;line-height:1">📚</span>` },
+    { id: 'republic', label: '관심',     path: '/republic', icon: `<span style="font-size:20px;line-height:1">🏛️</span>` },
+    { id: 'ranking',  label: '댓글',     path: '/ranking',  icon: `<span style="font-size:19px;line-height:1">💬</span>` },
   ];
 }
 
@@ -30,7 +29,7 @@ export function renderBottomNav() {
   const path = window.location.hash.slice(1).split('?')[0] || '/';
   const items = navItems();
 
-  el.innerHTML = `<div class="bottom-nav__inner bottom-nav__inner--six">${items.map(item => {
+  el.innerHTML = `<div class="bottom-nav__inner">${items.map(item => {
     const isActive = isNavActive(item.path, path);
     return `<button class="bottom-nav__item${isActive ? ' active' : ''}" data-nav-path="${item.path}" aria-label="${item.label}" aria-current="${isActive ? 'page' : 'false'}">
       <span class="bottom-nav__icon-wrap">${item.icon}</span>
