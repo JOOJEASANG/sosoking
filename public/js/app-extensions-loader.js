@@ -1,6 +1,4 @@
 // app-extensions-loader.js
-// 핵심 게임 흐름만 남기기 위해 보조 UI 확장 모듈은 기본 로드에서 제외합니다.
-// 필요한 기능은 각 핵심 페이지 안에서 직접 제공합니다.
 
 const EXTENSION_MODULES = [
   './layout-id-repair.js',
@@ -11,6 +9,7 @@ const EXTENSION_MODULES = [
   './forces-sidebar-link.js',
   './core-nav-visibility-fix.js',
   './home-card-layout-fix.js',
+  './points-removal-ui.js',
 ];
 
 async function loadExtension(path) {
