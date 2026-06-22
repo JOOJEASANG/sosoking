@@ -1,31 +1,33 @@
 name: Deploy Firebase Hosting
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'public/**'
+      - 'firebase.json'
+      - '.firebaserc'
+      - '.github/workflows/firebase-hosting.yml'
   workflow_dispatch:
 
-permissions:
-  contents: read
+concurrency:
+  group: firebase-hosting-live
+  cancel-in-progress: true
 
 jobs:
-  deploy-hosting:
-    name: Deploy hosting
+  deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Deploy Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
         with:
-          node-version: 22
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Check functions syntax
-        run: npm run check
-
-      - name: Deploy Firebase Hosting
-        run: npx firebase-tools deploy --only hosting --project sosoking-481e6 --non-interactive
-        env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 }}'
+          channelId: live
+          projectId: sosoking-481e6
