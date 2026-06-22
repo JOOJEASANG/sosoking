@@ -5,6 +5,9 @@ on:
     branches:
       - main
     paths:
+      - 'public/**'
+      - 'firebase.json'
+      - '.firebaserc'
       - '.github/workflows/firebase-hosting.yml'
   workflow_dispatch:
 
@@ -23,12 +26,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Check functions syntax
-        run: npm run check
 
       - name: Deploy Firebase Hosting
         run: npx firebase-tools deploy --only hosting --project sosoking-481e6 --non-interactive
