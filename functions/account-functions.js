@@ -60,6 +60,10 @@ const deleteMyAccount = onCall({ region: 'asia-northeast3', timeoutSeconds: 60 }
   const userData = userSnap.exists ? userSnap.data() || {} : {};
   const nickname = userData.nickname || request.auth?.token?.name || '';
 
+  // 개인 AI 결과는 계정 문서의 하위 컬렉션이라 사용자 문서만 삭제해도 남을 수 있다.
+  // 계정 삭제 전에 서버에서 재귀 삭제하여 입력 내용과 결과를 함께 제거한다.
+  await db.recursiveDelete(db.collection(`users/${userId}/ai_results`));
+
   const batch = db.batch();
   batch.set(db.doc(`deleted_users/${userId}`), {
     userId,
@@ -69,7 +73,7 @@ const deleteMyAccount = onCall({ region: 'asia-northeast3', timeoutSeconds: 60 }
     deletedAtMs: Date.now(),
   }, { merge: true });
   batch.delete(userRef);
-  // 닉네임 예약 문서는 본인 소유일 때만 삭제한다 (타인 예약 삭제 방지).
+
   const safeNickname = String(nickname || '').slice(0, 150);
   if (safeNickname) {
     const nickRef = db.doc(`nicknames/${safeNickname}`);
@@ -85,7 +89,6 @@ const deleteMyAccount = onCall({ region: 'asia-northeast3', timeoutSeconds: 60 }
   try {
     await admin.auth().deleteUser(userId);
   } catch (authErr) {
-    // 이미 삭제됐거나 존재하지 않는 경우는 무시 (Firestore 정리는 완료됨)
     if (authErr.code !== 'auth/user-not-found') throw authErr;
   }
   return { ok: true };
