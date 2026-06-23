@@ -15,6 +15,7 @@ const playground = read('public', 'js', 'pages', 'playground.js');
 const account = read('public', 'js', 'pages', 'account.js');
 const loader = read('public', 'js', 'app-extensions-loader.js');
 const index = read('public', 'index.html');
+const previewWorkflow = read('.github', 'workflows', 'firebase-preview.yml');
 const mainFunctions = require(path.join(ROOT, 'functions', 'functions-main-v2.js'));
 const legacyFunctions = require(path.join(ROOT, 'functions', 'legacy-disabled-functions.js'));
 
@@ -73,6 +74,10 @@ for (const retiredFunction of [
 ]) {
   if (retiredFunction in mainFunctions) failures.push(`retired function remains in deployment surface: ${retiredFunction}`);
 }
+
+requireText(previewWorkflow, 'check-preview-ui.cjs', 'preview browser check is not wired');
+requireText(previewWorkflow, 'preview-ui-screenshots', 'preview screenshot artifact is not wired');
+if (!fs.existsSync(path.join(ROOT, 'tools', 'check-preview-ui.cjs'))) failures.push('preview browser check file is missing');
 
 if (failures.length) {
   console.error('AI playground contract check failed:');
