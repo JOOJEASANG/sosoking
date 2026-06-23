@@ -70,8 +70,11 @@ jobs:
           echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/firebase-service-account.json" >> "$GITHUB_ENV"
 
       - name: Register GEMINI_API_KEY when supplied
-        if: env.GEMINI_API_KEY != ''
         run: |
+          if [ -z "$GEMINI_API_KEY" ]; then
+            echo "GEMINI_API_KEY GitHub secret이 비어 있어 기존 Secret Manager 값을 유지합니다."
+            exit 0
+          fi
           printf '%s' "$GEMINI_API_KEY" | \
             firebase functions:secrets:set GEMINI_API_KEY \
               --data-file=- --project "$FIREBASE_PROJECT_ID"
@@ -79,8 +82,11 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
       - name: Register ANTHROPIC_API_KEY when supplied
-        if: env.ANTHROPIC_API_KEY != ''
         run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "ANTHROPIC_API_KEY GitHub secret이 비어 있어 기존 Secret Manager 값을 유지합니다."
+            exit 0
+          fi
           printf '%s' "$ANTHROPIC_API_KEY" | \
             firebase functions:secrets:set ANTHROPIC_API_KEY \
               --data-file=- --project "$FIREBASE_PROJECT_ID"
