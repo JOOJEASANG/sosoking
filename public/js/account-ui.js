@@ -1,4 +1,5 @@
 import { appState } from './state.js';
+import { auth, onAuthStateChanged } from './firebase.js';
 
 function isStandalone() {
   return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
@@ -88,6 +89,16 @@ function schedule() {
   clearTimeout(timer);
   timer = setTimeout(ensureAccountInstallButton, 120);
 }
+
+onAuthStateChanged(auth, user => {
+  const shouldRefreshAccount = appState.loading && isAccountPage();
+  appState.user = user;
+  appState.loading = false;
+  if (shouldRefreshAccount) {
+    queueMicrotask(() => window.dispatchEvent(new HashChangeEvent('hashchange')));
+  }
+  schedule();
+});
 
 window.addEventListener('beforeinstallprompt', schedule);
 window.addEventListener('appinstalled', () => {
