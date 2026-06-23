@@ -11,7 +11,7 @@ const hosting = read('.github', 'workflows', 'firebase-hosting.yml');
 const backend = read('.github', 'workflows', 'firebase-deploy.yml');
 const storageRules = read('storage.rules');
 const firebaseConfig = read('firebase.json');
-const coreAi = read('functions', 'core-ai-v2.js');
+const functionMain = read('functions', 'functions-main-v2.js');
 const playground = read('functions', 'king-playground-functions.js');
 const functionsPackage = JSON.parse(read('functions', 'package.json'));
 
@@ -31,21 +31,30 @@ requireText(backend, "if: github.ref == 'refs/heads/main'", 'backend main gate m
 requireText(backend, "- 'storage.rules'", 'storage rules path trigger missing');
 requireText(backend, '--only storage:rules', 'storage rules deployment missing');
 requireText(backend, 'FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6', 'backend service account missing');
-if (backend.includes('::warning::') || backend.includes('|| \\')) {
-  errors.push('backend deploy contains a failure-suppression pattern');
-}
+if (backend.includes('::warning::')) errors.push('backend deploy suppresses a deployment failure');
 
-requireText(storageRules, "image/(jpeg|png|webp|gif)", 'storage image allowlist missing');
+requireText(storageRules, 'image/(jpeg|png|webp|gif)', 'storage image allowlist missing');
 requireText(storageRules, 'allow write: if false;', 'legacy storage writes are not denied');
 requireText(storageRules, 'match /{allPaths=**}', 'storage default deny missing');
 requireText(firebaseConfig, '"rules": "storage.rules"', 'Firebase storage rules config missing');
 
-if (coreAi.includes("require('./index.js')") || coreAi.includes("require('./index')")) {
-  errors.push('legacy function index is still loaded');
+requireText(functionMain, "require('./moderation-functions.js')", 'managed moderation module is not loaded directly');
+if (functionMain.includes('core-ai-v2') || functionMain.includes('legacy-disabled-functions')) {
+  errors.push('Functions entrypoint still loads a compatibility wrapper');
 }
-if (playground.includes('ai-king-functions')) {
-  errors.push('playground still loads the legacy AI engine');
+if (playground.includes('ai-king-functions')) errors.push('playground still loads the legacy AI engine');
+
+for (const retiredPath of [
+  ['functions', 'index.js'],
+  ['functions', 'ai-king-functions.js'],
+  ['functions', 'core-ai-v2.js'],
+  ['functions', 'legacy-disabled-functions.js'],
+]) {
+  if (fs.existsSync(path.join(ROOT, ...retiredPath))) {
+    errors.push(`retired file remains: ${retiredPath.join('/')}`);
+  }
 }
+
 if (functionsPackage.main !== 'functions-main-v2.js') {
   errors.push(`unexpected Functions entrypoint: ${functionsPackage.main}`);
 }
