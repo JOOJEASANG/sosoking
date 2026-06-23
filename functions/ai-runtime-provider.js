@@ -1,14 +1,34 @@
 'use strict';
 
 const { HttpsError } = require('firebase-functions/v2/https');
-const { getFirestore } = require('firebase-admin/firestore');
+const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 
 const db = getFirestore();
 const AI_RUNTIME_SECRETS = ['GEMINI_API_KEY', 'ANTHROPIC_API_KEY'];
 
 async function readRuntimeConfig() {
-  const snap = await db.doc('config/ai_king').get().catch(() => null);
+  const ref = db.doc('config/ai_king');
+  const snap = await ref.get().catch(() => null);
   const data = snap?.exists ? snap.data() || {} : {};
+
+  const hasRetiredFields = [
+    'geminiApiKey',
+    'claudeApiKey',
+    'openaiApiKey',
+  ].some(field => Object.prototype.hasOwnProperty.call(data, field));
+
+  if (hasRetiredFields) {
+    await ref.set({
+      geminiApiKey: FieldValue.delete(),
+      claudeApiKey: FieldValue.delete(),
+      openaiApiKey: FieldValue.delete(),
+      keyStorage: 'managed-secret-only',
+      credentialsPurgedAt: FieldValue.serverTimestamp(),
+    }, { merge: true }).catch(error => {
+      console.warn('[ai-runtime-provider] retired field cleanup failed:', error.message);
+    });
+  }
+
   return {
     provider: data.activeModel === 'gemini' ? 'gemini' : 'anthropic',
     geminiModel: String(data.geminiModel || 'gemini-2.5-flash').slice(0, 100),
@@ -71,6 +91,7 @@ async function callAndParse(factory, maxTokens) {
     const raw = await factory(maxTokens);
     return { parsed: parseJson(raw), raw };
   } catch (firstError) {
+    if (firstError instanceof HttpsError) throw firstError;
     const raw = await factory(Math.min(Math.round(maxTokens * 1.6), 4000));
     return { parsed: parseJson(raw), raw };
   }
