@@ -6,7 +6,7 @@
     "deploy": "npx firebase-tools deploy",
     "deploy:hosting": "npx firebase-tools deploy --only hosting",
     "deploy:functions": "npm run check && npx firebase-tools deploy --only functions",
-    "deploy:rules": "npx firebase-tools deploy --only firestore:rules,storage:rules",
+    "deploy:rules": "npx firebase-tools deploy --only firestore:rules,storage",
     "deploy:indexes": "npx firebase-tools deploy --only firestore:indexes"
   },
   "devDependencies": {
