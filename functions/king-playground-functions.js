@@ -110,6 +110,16 @@ async function refundUsage(uid, feature, usedExtra) {
   }
 }
 
+function judgeSystem(characters) {
+  const descriptions = characters
+    .map(character => `【${character.name} / id:${character.id}】\n${character.role_judge}`)
+    .join('\n\n');
+  const shape = characters
+    .map(character => `{"id":"${character.id}","verdict":"상황을 직접 언급한 캐릭터 판결"}`)
+    .join(',');
+  return `당신은 소소킹의 AI 캐릭터 판사단이다.\n각 판사는 사용자의 상황 속 인물과 행동을 직접 언급하고 자기 말투로 독립적인 판결을 한다.\n실제 법률 자문이나 사실 확정처럼 표현하지 않고 재미와 참고 목적임을 지킨다.\n\n${descriptions}\n\n반드시 아래 JSON만 출력한다.\n{"verdicts":[${shape}]}`;
+}
+
 function translateSystem(character) {
   return `당신은 ${character.name} 캐릭터로 문장을 바꾸는 AI다.\n\n${character.role_translate}\n\n원문의 핵심 의미는 유지한다. 결과 문장만 출력하고 설명이나 제목은 붙이지 마라.`;
 }
@@ -128,6 +138,47 @@ function consultSystem(characters) {
 
   return `당신은 서로 성격이 완전히 다른 캐릭터 상담단이다.\n사용자의 구체적인 상황과 감정을 직접 언급하고, 뻔한 위로 대신 각 캐릭터다운 조언을 한다.\n\n${descriptions}\n\n반드시 아래 JSON만 출력하라.\n{"advices":[${shape}]}`;
 }
+
+const aiJudge = onCall({
+  region: REGION,
+  timeoutSeconds: 60,
+  memory: '512MiB',
+  secrets: AI_RUNTIME_SECRETS,
+}, async request => {
+  const uid = requireUser(request);
+  const situation = cleanText(request.data?.situation, 500);
+  const characters = getCharacters(request.data?.characterIds, 3);
+  if (situation.length < 5) throw new HttpsError('invalid-argument', '상황을 5자 이상 적어주세요.');
+
+  const usage = await consumeUsage(uid, 'judge');
+  if (!usage.allowed) throw new HttpsError('resource-exhausted', `오늘 판결은 하루 ${usage.limit}번까지 가능해요.`);
+
+  try {
+    const { parsed } = await callAndParse(
+      maxTokens => callAI(
+        judgeSystem(characters),
+        `다음 상황을 판결하라:\n\n${situation}`,
+        maxTokens,
+        0.95,
+        true,
+      ),
+      2400,
+    );
+    const byId = new Map((Array.isArray(parsed.verdicts) ? parsed.verdicts : [])
+      .map(item => [cleanText(item?.id, 40), cleanText(item?.verdict, 1500)]));
+    const verdicts = characters.map(character => ({
+      charId: character.id,
+      charName: character.name,
+      verdict: byId.get(character.id) || character.fallback_judge || '잠시 후 다시 시도해주세요.',
+    }));
+    return { ok: true, postId: null, privateResult: true, verdicts };
+  } catch (error) {
+    await refundUsage(uid, 'judge', usage.usedExtra);
+    if (error instanceof HttpsError) throw error;
+    console.error('[aiJudge]', error);
+    throw new HttpsError('internal', 'AI 판결에 실패했어요. 사용 횟수는 복구했습니다.');
+  }
+});
 
 const aiTranslateV2 = onCall({
   region: REGION,
@@ -262,6 +313,7 @@ const getKingPlaygroundUsage = onCall({ region: REGION, timeoutSeconds: 20 }, as
 });
 
 module.exports = {
+  aiJudge,
   aiTranslateV2,
   aiNameV2,
   aiConsultV2,
