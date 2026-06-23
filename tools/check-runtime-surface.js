@@ -6,16 +6,21 @@ const path = require('path');
 const ROOT = path.resolve(__dirname, '..');
 const FUNCTIONS = path.join(ROOT, 'functions');
 const errors = [];
-const ignored = new Set(['index.js', 'ai-king-functions.js']);
+
+for (const retiredFile of ['index.js', 'ai-king-functions.js']) {
+  if (fs.existsSync(path.join(FUNCTIONS, retiredFile))) {
+    errors.push(`retired runtime file returned: ${retiredFile}`);
+  }
+}
 
 for (const entry of fs.readdirSync(FUNCTIONS, { withFileTypes: true })) {
-  if (!entry.isFile() || !entry.name.endsWith('.js') || ignored.has(entry.name)) continue;
+  if (!entry.isFile() || !entry.name.endsWith('.js')) continue;
   const source = fs.readFileSync(path.join(FUNCTIONS, entry.name), 'utf8');
   if (source.includes("require('./index.js')") || source.includes("require('./index')")) {
-    errors.push(`${entry.name} still loads the legacy function index`);
+    errors.push(`${entry.name} loads the retired function index`);
   }
   if (source.includes("require('./ai-king-functions')") || source.includes("require('./ai-king-functions.js')")) {
-    errors.push(`${entry.name} still loads the legacy AI engine`);
+    errors.push(`${entry.name} loads the retired AI engine`);
   }
 }
 
