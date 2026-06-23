@@ -1,32 +1,33 @@
-name: Deploy Firebase
+name: Deploy Firebase Backend
 
-# 모든 자동 배포는 이 워크플로 하나로 통일합니다.
-# 현재 서비스 계정은 Firebase Storage 기본 버킷 조회 권한이 없어 Storage rules 자동 배포를 제외합니다.
-# Storage rules 배포가 필요하면 Firebase 콘솔/IAM에서 권한 또는 기본 버킷을 먼저 정리한 뒤 수동 배포하세요.
+# 운영 백엔드는 main 브랜치에서 관련 파일이 변경될 때만 배포합니다.
+# 화면(public)은 firebase-hosting.yml에서 별도로 검사 후 배포합니다.
+# Storage rules는 현재 서비스 계정 권한 문제로 자동 배포 대상에서 제외합니다.
 on:
   push:
     branches:
       - main
-      - 'claude/**'
     paths:
-      - 'public/**'
       - 'functions/**'
       - 'firebase.json'
       - '.firebaserc'
       - 'firestore.rules'
       - 'firestore.indexes.json'
+      - 'functions/package.json'
+      - 'functions/package-lock.json'
       - 'package.json'
+      - 'package-lock.json'
+      - 'tools/**'
       - '.github/workflows/firebase-deploy.yml'
-      - '.github/deploy-trigger.txt'
   workflow_dispatch:
 
 concurrency:
-  group: firebase-full-${{ github.ref }}
+  group: firebase-backend-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   deploy:
-    name: Deploy to Firebase
+    name: Check and deploy backend
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -93,11 +94,8 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
-      - name: Deploy Firestore rules & indexes
+      - name: Deploy Firestore rules and indexes
         run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only firestore:rules,firestore:indexes
 
       - name: Deploy Functions
         run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only functions --force
-
-      - name: Deploy Hosting
-        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only hosting
