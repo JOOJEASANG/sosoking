@@ -34,10 +34,11 @@ async function registerRoutes() {
   registerRoute('/', async () => renderPage((await import('./pages/home.js')).renderHome, '홈'));
   registerRoute('/playground', async () => renderPage(() => renderPlaygroundSafe('judge'), 'AI 놀이터'));
   registerRoute('/playground/:mode', async ({ mode }) => renderPage(() => renderPlaygroundSafe(mode), 'AI 놀이터'));
-  registerRoute('/today', async () => renderPage((await import('./pages/battle.js')).renderBattle, '오늘의 논쟁'));
+  registerRoute('/today', async () => renderPage((await import('./pages/battle.js')).renderBattle, '오늘의 콘텐츠'));
   registerRoute('/materials', async () => renderPage((await import('./pages/history.js')).renderHistory, '자료실'));
   registerRoute('/material/:id', async ({ id }) => renderPage(() => import('./pages/history.js').then(m => m.renderMaterialDetail(id)), '자료상세'));
-  registerRoute('/debates', async () => renderPage((await import('./pages/ranking.js')).renderRanking, '토론'));
+  registerRoute('/debates', async () => renderPage((await import('./pages/ranking.js')).renderRanking, '토론실'));
+  registerRoute('/debate/:id', async ({ id }) => renderPage(() => import('./pages/ranking.js').then(m => m.renderDebateDetail(id)), '토론상세'));
   registerRoute('/account', async () => renderPage(renderAccountSafe, '내 정보'));
   registerRoute('/admin', async () => renderPage(renderAdminSafe, '관리자'));
   registerRoute('/login', async () => renderPage((await import('./pages/login.js')).renderLogin, '로그인'));
@@ -120,7 +121,7 @@ function bindFooterToggle() {
 function renderFrame() {
   const app = document.getElementById('app');
   if (!app) return;
-  app.innerHTML = `<div class="app-shell"><aside id="site-sidebar" class="site-sidebar"></aside><div class="app-main site-main"><header id="site-header" class="site-header"></header><main id="page-content" class="page-container"></main><footer class="site-footer" id="site-footer"><div class="site-footer__body" id="footer-body" hidden><div class="site-footer__inner"><div class="site-footer__brand-block"><a href="#/" class="site-footer__brand"><img src="/logo.svg" alt="" width="26" height="26"><span>소소킹</span></a><div class="site-footer__tagline">생활 고민을 AI 캐릭터와<br>판결하고 만들고 토론합니다</div></div><div><div class="site-footer__col-title">AI 놀이터</div><div class="site-footer__links"><a href="#/playground/judge">판결소</a><a href="#/playground/create">창작소</a><a href="#/playground/consult">상담소</a></div></div><div><div class="site-footer__col-title">커뮤니티</div><div class="site-footer__links"><a href="#/today">오늘의 논쟁</a><a href="#/materials">자료실</a><a href="#/debates">토론</a></div></div><div><div class="site-footer__col-title">정보</div><div class="site-footer__links"><a href="#/guide">이용안내</a><a href="#/terms">이용약관</a><a href="#/privacy">개인정보처리방침</a></div></div></div></div><div class="site-footer__copy-bar"><div class="site-footer__copy">© ${new Date().getFullYear()} 소소킹</div><button class="site-footer__toggle" id="btn-footer-toggle" aria-expanded="false">더보기</button></div></footer><nav id="bottom-nav" class="bottom-nav"></nav></div></div>`;
+  app.innerHTML = `<div class="app-shell"><aside id="site-sidebar" class="site-sidebar"></aside><div class="app-main site-main"><header id="site-header" class="site-header"></header><main id="page-content" class="page-container"></main><footer class="site-footer" id="site-footer"><div class="site-footer__body" id="footer-body" hidden><div class="site-footer__inner"><div class="site-footer__brand-block"><a href="#/" class="site-footer__brand"><img src="/logo.svg" alt="" width="26" height="26"><span>소소킹</span></a><div class="site-footer__tagline">생활 고민을 AI 캐릭터와<br>판결하고 만들고 토론합니다</div></div><div><div class="site-footer__col-title">AI 놀이터</div><div class="site-footer__links"><a href="#/playground/judge">판결소</a><a href="#/playground/create">창작소</a><a href="#/playground/consult">상담소</a></div></div><div><div class="site-footer__col-title">콘텐츠</div><div class="site-footer__links"><a href="#/today">오늘의 콘텐츠</a><a href="#/materials">자료실</a><a href="#/debates">토론실</a></div></div><div><div class="site-footer__col-title">정보</div><div class="site-footer__links"><a href="#/guide">이용안내</a><a href="#/terms">이용약관</a><a href="#/privacy">개인정보처리방침</a></div></div></div></div><div class="site-footer__copy-bar"><div class="site-footer__copy">© ${new Date().getFullYear()} 소소킹</div><button class="site-footer__toggle" id="btn-footer-toggle" aria-expanded="false">더보기</button></div></footer><nav id="bottom-nav" class="bottom-nav"></nav></div></div>`;
   renderHeader();
   renderSidebar();
   renderBottomNav();
