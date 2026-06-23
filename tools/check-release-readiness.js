@@ -15,6 +15,8 @@ const functionMain = read('functions', 'functions-main-v2.js');
 const playground = read('functions', 'king-playground-functions.js');
 const functionsPackage = JSON.parse(read('functions', 'package.json'));
 const rootPackage = JSON.parse(read('package.json'));
+const readme = read('README.md');
+const releaseGuidePath = path.join(ROOT, 'docs', 'PRODUCTION_RELEASE.md');
 
 function requireText(source, text, label) {
   if (!source.includes(text)) errors.push(`${label}: ${text}`);
@@ -66,6 +68,15 @@ for (const retiredPath of [
 
 if (functionsPackage.main !== 'functions-main-v2.js') {
   errors.push(`unexpected Functions entrypoint: ${functionsPackage.main}`);
+}
+
+if (!fs.existsSync(releaseGuidePath)) errors.push('production release guide is missing');
+requireText(readme, 'docs/PRODUCTION_RELEASE.md', 'README does not reference the release guide');
+if (fs.existsSync(releaseGuidePath)) {
+  const releaseGuide = fs.readFileSync(releaseGuidePath, 'utf8');
+  for (const section of ['병합 전 필수 확인', '배포 직후 점검', '장애 발생 시 복구', '운영 승인 원칙']) {
+    requireText(releaseGuide, section, 'release guide section missing');
+  }
 }
 
 if (errors.length) {
