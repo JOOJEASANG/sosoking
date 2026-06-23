@@ -2,7 +2,6 @@ name: Deploy Firebase Backend
 
 # 운영 백엔드는 main 브랜치에서 관련 파일이 변경될 때만 배포합니다.
 # 화면(public)은 firebase-hosting.yml에서 별도로 검사 후 배포합니다.
-# Storage rules는 현재 서비스 계정 권한 문제로 자동 배포 대상에서 제외합니다.
 on:
   push:
     branches:
@@ -13,6 +12,7 @@ on:
       - '.firebaserc'
       - 'firestore.rules'
       - 'firestore.indexes.json'
+      - 'storage.rules'
       - 'functions/package.json'
       - 'functions/package-lock.json'
       - 'package.json'
@@ -27,6 +27,7 @@ concurrency:
 
 jobs:
   deploy:
+    if: github.ref == 'refs/heads/main'
     name: Check and deploy backend
     runs-on: ubuntu-latest
     permissions:
@@ -65,37 +66,32 @@ jobs:
             echo "FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 secret이 설정되지 않았습니다."
             exit 1
           fi
-          echo "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-service-account.json"
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-service-account.json"
           echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/firebase-service-account.json" >> "$GITHUB_ENV"
 
-      - name: Register GEMINI_API_KEY in Secret Manager
+      - name: Register GEMINI_API_KEY when supplied
+        if: env.GEMINI_API_KEY != ''
         run: |
-          if [ -z "$GEMINI_API_KEY" ]; then
-            echo "GEMINI_API_KEY secret 없음 — 건너뜀"
-            exit 0
-          fi
           printf '%s' "$GEMINI_API_KEY" | \
             firebase functions:secrets:set GEMINI_API_KEY \
-              --data-file=- --project "$FIREBASE_PROJECT_ID" || \
-            echo "::warning::GEMINI_API_KEY Secret Manager 등록 실패 (권한 확인 필요)"
+              --data-file=- --project "$FIREBASE_PROJECT_ID"
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
-      - name: Register ANTHROPIC_API_KEY in Secret Manager
+      - name: Register ANTHROPIC_API_KEY when supplied
+        if: env.ANTHROPIC_API_KEY != ''
         run: |
-          if [ -z "$ANTHROPIC_API_KEY" ]; then
-            echo "ANTHROPIC_API_KEY secret 없음 — 건너뜀"
-            exit 0
-          fi
           printf '%s' "$ANTHROPIC_API_KEY" | \
             firebase functions:secrets:set ANTHROPIC_API_KEY \
-              --data-file=- --project "$FIREBASE_PROJECT_ID" || \
-            echo "::warning::ANTHROPIC_API_KEY Secret Manager 등록 실패 (권한 확인 필요)"
+              --data-file=- --project "$FIREBASE_PROJECT_ID"
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
       - name: Deploy Firestore rules and indexes
-        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only firestore:rules,firestore:indexes
+        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only firestore:rules,firestore:indexes --non-interactive
+
+      - name: Deploy Storage rules
+        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only storage:rules --non-interactive
 
       - name: Deploy Functions
-        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only functions --force
+        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only functions --force --non-interactive
