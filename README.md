@@ -48,3 +48,4 @@ Pull Request에서는 Firebase Hosting 미리보기 배포 후 Chromium으로 PC
 - 운영 배포는 `main` 브랜치에서만 실행합니다.
 - Backend는 Firestore Rules·Indexes, Storage Rules, Functions 순서로 배포합니다.
 - 상세 점검과 복구 절차는 `docs/PRODUCTION_RELEASE.md`를 따릅니다.
+- PR은 명시적인 운영 승인 전까지 초안 상태로 유지하며 자동 병합하지 않습니다.
