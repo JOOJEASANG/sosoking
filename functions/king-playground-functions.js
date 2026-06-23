@@ -4,13 +4,14 @@ const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getApps, initializeApp } = require('firebase-admin/app');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const { sharedAi } = require('./ai-king-functions');
+const { AI_RUNTIME_SECRETS, callAI, callAndParse } = require('./ai-runtime-provider');
 
 if (!getApps().length) initializeApp();
 
 const db = getFirestore();
 const REGION = 'asia-northeast3';
 const DAILY_LIMIT = 3;
-const { CHARACTERS, CHAR_LIST, callAI, callAndParse } = sharedAi;
+const { CHARACTERS, CHAR_LIST } = sharedAi;
 
 function todayKst() {
   return new Intl.DateTimeFormat('en-CA', {
@@ -32,18 +33,19 @@ function cleanText(value, maxLength) {
 }
 
 function getCharacter(id) {
-  const charId = CHARACTERS[id] ? id : CHAR_LIST[0]?.id;
-  const character = charId ? CHARACTERS[charId] : null;
-  if (!character) throw new HttpsError('failed-precondition', 'AI 캐릭터 설정을 찾을 수 없어요.');
+  const charId = cleanText(id, 40);
+  const character = CHARACTERS[charId];
+  if (!character) throw new HttpsError('invalid-argument', 'AI 캐릭터 선택이 올바르지 않아요.');
   return { id: charId, ...character };
 }
 
-function getCharacters(ids, max = 3) {
-  const unique = [...new Set(Array.isArray(ids) ? ids : [])]
-    .filter(id => CHARACTERS[id])
-    .slice(0, max);
-  const selected = unique.length ? unique : CHAR_LIST.slice(0, max).map(item => item.id);
-  return selected.map(getCharacter);
+function getCharacters(ids, expectedCount = 3) {
+  const unique = [...new Set(Array.isArray(ids) ? ids.map(id => cleanText(id, 40)) : [])]
+    .filter(id => CHARACTERS[id]);
+  if (unique.length !== expectedCount) {
+    throw new HttpsError('invalid-argument', `AI 캐릭터를 정확히 ${expectedCount}명 선택해주세요.`);
+  }
+  return unique.map(getCharacter);
 }
 
 async function consumeUsage(uid, feature) {
@@ -51,12 +53,15 @@ async function consumeUsage(uid, feature) {
   const usageRef = db.doc(`ai_king_usage/${uid}_${date}_${feature}`);
   const userRef = db.doc(`users/${uid}`);
 
-  return db.runTransaction(async tx => {
-    const [usageSnap, userSnap] = await Promise.all([tx.get(usageRef), tx.get(userRef)]);
+  return db.runTransaction(async transaction => {
+    const [usageSnap, userSnap] = await Promise.all([
+      transaction.get(usageRef),
+      transaction.get(userRef),
+    ]);
     const count = Number(usageSnap.exists ? usageSnap.data()?.count || 0 : 0);
 
     if (count < DAILY_LIMIT) {
-      tx.set(usageRef, {
+      transaction.set(usageRef, {
         userId: uid,
         feature,
         date,
@@ -68,7 +73,7 @@ async function consumeUsage(uid, feature) {
 
     const extra = Number(userSnap.exists ? userSnap.data()?.extraAiUses || 0 : 0);
     if (extra > 0) {
-      tx.set(userRef, {
+      transaction.set(userRef, {
         extraAiUses: FieldValue.increment(-1),
         updatedAt: FieldValue.serverTimestamp(),
       }, { merge: true });
@@ -90,11 +95,11 @@ async function refundUsage(uid, feature, usedExtra) {
     }
 
     const usageRef = db.doc(`ai_king_usage/${uid}_${todayKst()}_${feature}`);
-    await db.runTransaction(async tx => {
-      const snap = await tx.get(usageRef);
+    await db.runTransaction(async transaction => {
+      const snap = await transaction.get(usageRef);
       const count = Number(snap.exists ? snap.data()?.count || 0 : 0);
       if (count > 0) {
-        tx.set(usageRef, {
+        transaction.set(usageRef, {
           count: count - 1,
           updatedAt: FieldValue.serverTimestamp(),
         }, { merge: true });
@@ -124,7 +129,12 @@ function consultSystem(characters) {
   return `당신은 서로 성격이 완전히 다른 캐릭터 상담단이다.\n사용자의 구체적인 상황과 감정을 직접 언급하고, 뻔한 위로 대신 각 캐릭터다운 조언을 한다.\n\n${descriptions}\n\n반드시 아래 JSON만 출력하라.\n{"advices":[${shape}]}`;
 }
 
-const aiTranslateV2 = onCall({ region: REGION, timeoutSeconds: 60, memory: '512MiB' }, async request => {
+const aiTranslateV2 = onCall({
+  region: REGION,
+  timeoutSeconds: 60,
+  memory: '512MiB',
+  secrets: AI_RUNTIME_SECRETS,
+}, async request => {
   const uid = requireUser(request);
   const text = cleanText(request.data?.text, 1200);
   const character = getCharacter(request.data?.characterId);
@@ -137,12 +147,16 @@ const aiTranslateV2 = onCall({ region: REGION, timeoutSeconds: 60, memory: '512M
     const result = await callAI(
       translateSystem(character),
       `다음 문장을 캐릭터 말투로 바꿔라:\n\n${text}`,
-      null,
       900,
       0.9,
       false,
     );
-    return { ok: true, characterId: character.id, characterName: character.name, result: cleanText(result, 3000) };
+    return {
+      ok: true,
+      characterId: character.id,
+      characterName: character.name,
+      result: cleanText(result, 3000),
+    };
   } catch (error) {
     await refundUsage(uid, 'translate', usage.usedExtra);
     if (error instanceof HttpsError) throw error;
@@ -151,7 +165,12 @@ const aiTranslateV2 = onCall({ region: REGION, timeoutSeconds: 60, memory: '512M
   }
 });
 
-const aiNameV2 = onCall({ region: REGION, timeoutSeconds: 60, memory: '512MiB' }, async request => {
+const aiNameV2 = onCall({
+  region: REGION,
+  timeoutSeconds: 60,
+  memory: '512MiB',
+  secrets: AI_RUNTIME_SECRETS,
+}, async request => {
   const uid = requireUser(request);
   const subject = cleanText(request.data?.subject, 800);
   const character = getCharacter(request.data?.characterId);
@@ -165,7 +184,6 @@ const aiNameV2 = onCall({ region: REGION, timeoutSeconds: 60, memory: '512MiB' }
       maxTokens => callAI(
         namingSystem(character),
         `다음 대상의 특징을 살린 이름을 지어라:\n\n${subject}`,
-        null,
         maxTokens,
         0.95,
         true,
@@ -189,7 +207,12 @@ const aiNameV2 = onCall({ region: REGION, timeoutSeconds: 60, memory: '512MiB' }
   }
 });
 
-const aiConsultV2 = onCall({ region: REGION, timeoutSeconds: 60, memory: '512MiB' }, async request => {
+const aiConsultV2 = onCall({
+  region: REGION,
+  timeoutSeconds: 60,
+  memory: '512MiB',
+  secrets: AI_RUNTIME_SECRETS,
+}, async request => {
   const uid = requireUser(request);
   const concern = cleanText(request.data?.concern, 1400);
   const characters = getCharacters(request.data?.characterIds, 3);
@@ -203,7 +226,6 @@ const aiConsultV2 = onCall({ region: REGION, timeoutSeconds: 60, memory: '512MiB
       maxTokens => callAI(
         consultSystem(characters),
         `다음 고민에 답하라:\n\n${concern}`,
-        null,
         maxTokens,
         0.9,
         true,
@@ -231,8 +253,11 @@ const getKingPlaygroundUsage = onCall({ region: REGION, timeoutSeconds: 20 }, as
   if (!uid) return { ok: true, dailyLimit: DAILY_LIMIT, usage: {} };
   const date = todayKst();
   const features = ['judge', 'translate', 'name', 'consult'];
-  const snaps = await Promise.all(features.map(feature => db.doc(`ai_king_usage/${uid}_${date}_${feature}`).get()));
-  const usage = Object.fromEntries(features.map((feature, index) => [feature, Number(snaps[index].exists ? snaps[index].data()?.count || 0 : 0)]));
+  const snapshots = await Promise.all(features.map(feature => db.doc(`ai_king_usage/${uid}_${date}_${feature}`).get()));
+  const usage = Object.fromEntries(features.map((feature, index) => [
+    feature,
+    Number(snapshots[index].exists ? snapshots[index].data()?.count || 0 : 0),
+  ]));
   return { ok: true, dailyLimit: DAILY_LIMIT, usage };
 });
 
@@ -241,4 +266,5 @@ module.exports = {
   aiNameV2,
   aiConsultV2,
   getKingPlaygroundUsage,
+  CHARACTER_IDS: CHAR_LIST.map(item => item.id),
 };
