@@ -4,3 +4,4 @@ require('./check-king-contract.js');
 require('./check-backend-hardening.js');
 require('./check-legal-content.js');
 require('./check-runtime-surface.js');
+require('./check-release-readiness.js');
