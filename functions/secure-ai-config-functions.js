@@ -12,6 +12,11 @@ async function assertAdmin(uid) {
   if (!snap.exists) throw new HttpsError('permission-denied', '관리자 권한 필요');
 }
 
+function cleanModel(value, fallback) {
+  const model = String(value || fallback).trim().slice(0, 100);
+  return model || fallback;
+}
+
 const saveAiConfig = onCall({ region: REGION, timeoutSeconds: 20 }, async request => {
   await assertAdmin(request.auth?.uid);
   const features = request.data?.features && typeof request.data.features === 'object'
@@ -23,13 +28,42 @@ const saveAiConfig = onCall({ region: REGION, timeoutSeconds: 20 }, async reques
     features,
     apiKey: FieldValue.delete(),
     updatedAt: FieldValue.serverTimestamp(),
-    keyStorage: 'secret-manager-only',
+    keyStorage: 'managed-secret-only',
   }, { merge: true });
 
   return {
     ok: true,
-    message: 'AI 설정을 저장했습니다. API 키는 Firebase Secret Manager의 GEMINI_API_KEY를 사용합니다.',
+    message: 'AI 설정을 저장했습니다. 인증 정보는 관리형 비밀 저장소에서만 사용합니다.',
   };
 });
 
-module.exports = { saveAiConfig };
+const saveAiKingConfig = onCall({ region: REGION, timeoutSeconds: 20 }, async request => {
+  const uid = request.auth?.uid;
+  await assertAdmin(uid);
+  const data = request.data || {};
+  const activeModel = data.activeModel === 'gemini' ? 'gemini' : 'anthropic';
+  const dailyFreeLimit = Math.max(1, Math.min(20, Number(data.dailyFreeLimit || 3)));
+  const monthlyCap = Math.max(0, Math.min(100000, Number(data.monthlyCap || 0)));
+
+  await db.doc('config/ai_king').set({
+    activeModel,
+    geminiModel: cleanModel(data.geminiModel, 'gemini-2.5-flash'),
+    claudeModel: cleanModel(data.claudeModel, 'claude-haiku-4-5-20251001'),
+    dailyFreeLimit,
+    monthlyCap,
+    geminiApiKey: FieldValue.delete(),
+    claudeApiKey: FieldValue.delete(),
+    openaiApiKey: FieldValue.delete(),
+    updatedAt: FieldValue.serverTimestamp(),
+    updatedBy: uid,
+    keyStorage: 'managed-secret-only',
+  }, { merge: true });
+
+  return {
+    success: true,
+    updated: ['activeModel', 'geminiModel', 'claudeModel', 'dailyFreeLimit', 'monthlyCap'],
+    message: '모델 설정만 저장했습니다. 인증 정보는 Firestore에 저장하지 않습니다.',
+  };
+});
+
+module.exports = { saveAiConfig, saveAiKingConfig };
