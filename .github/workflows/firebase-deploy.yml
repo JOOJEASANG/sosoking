@@ -21,6 +21,10 @@ on:
       - '.github/workflows/firebase-deploy.yml'
   workflow_dispatch:
 
+permissions:
+  contents: read
+  issues: write
+
 concurrency:
   group: firebase-backend-${{ github.ref }}
   cancel-in-progress: true
@@ -30,8 +34,6 @@ jobs:
     if: github.ref == 'refs/heads/main'
     name: Check and deploy backend
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
 
     env:
       FIREBASE_PROJECT_ID: sosoking-481e6
@@ -101,3 +103,12 @@ jobs:
 
       - name: Deploy Functions
         run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only functions --force --non-interactive
+
+      - name: Report production Backend result
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RESULT: ${{ job.status }}
+        run: |
+          gh issue comment 182 --repo "$GITHUB_REPOSITORY" \
+            --body "운영 Backend 배포 결과: **${RESULT}** · 커밋 \`${GITHUB_SHA}\`"
