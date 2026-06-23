@@ -7,7 +7,12 @@ const ROOT = path.resolve(__dirname, '..');
 const FUNCTIONS = path.join(ROOT, 'functions');
 const errors = [];
 
-for (const retiredFile of ['index.js', 'ai-king-functions.js']) {
+for (const retiredFile of [
+  'index.js',
+  'ai-king-functions.js',
+  'core-ai-v2.js',
+  'legacy-disabled-functions.js',
+]) {
   if (fs.existsSync(path.join(FUNCTIONS, retiredFile))) {
     errors.push(`retired runtime file returned: ${retiredFile}`);
   }
@@ -16,11 +21,15 @@ for (const retiredFile of ['index.js', 'ai-king-functions.js']) {
 for (const entry of fs.readdirSync(FUNCTIONS, { withFileTypes: true })) {
   if (!entry.isFile() || !entry.name.endsWith('.js')) continue;
   const source = fs.readFileSync(path.join(FUNCTIONS, entry.name), 'utf8');
-  if (source.includes("require('./index.js')") || source.includes("require('./index')")) {
-    errors.push(`${entry.name} loads the retired function index`);
-  }
-  if (source.includes("require('./ai-king-functions')") || source.includes("require('./ai-king-functions.js')")) {
-    errors.push(`${entry.name} loads the retired AI engine`);
+  for (const retiredImport of [
+    "require('./index.js')",
+    "require('./index')",
+    "require('./ai-king-functions')",
+    "require('./ai-king-functions.js')",
+    "require('./core-ai-v2.js')",
+    "require('./legacy-disabled-functions.js')",
+  ]) {
+    if (source.includes(retiredImport)) errors.push(`${entry.name} loads ${retiredImport}`);
   }
 }
 
