@@ -1,43 +1,112 @@
-/* home.js — 소소한 논쟁커뮤니티 홈 */
+/* home.js — 소소킹 AI 놀이터 홈 */
 import { functions } from '../firebase.js';
+import { appState } from '../state.js';
 import { setMeta } from '../utils/seo.js';
 import { escHtml } from '../utils/helpers.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
 import { navigate } from '../router.js';
 
-function call(name, payload = {}) { return httpsCallable(functions, name)(payload).then(res => res.data || {}).catch(error => ({ ok: false, error })); }
-function materialCard(m, label = '') {
-  return `<button class="soso-card" data-material-id="${escHtml(m.id)}">
-    <div class="soso-card__meta"><span>${escHtml(label || m.category || '생활논쟁')}</span><span>찬성 ${Number(m.agreeCount || 0)}</span><span>반대 ${Number(m.disagreeCount || 0)}</span><span>댓글 ${Number(m.commentCount || 0)}</span></div>
-    <div class="soso-card__title">${escHtml(m.title || '자료')}</div>
-    <div class="soso-card__text">${escHtml(m.summary || '')}</div>
+const CHARACTERS = [
+  ['🎒', '사춘기 중딩'],
+  ['🙏', '사이비 교주'],
+  ['🔮', '예언가'],
+  ['🤩', '주접러'],
+  ['👀', '참견러'],
+  ['👴', '꼰대'],
+];
+
+const FEATURES = [
+  { icon: '⚖️', title: '판결소', desc: '억울한 상황을 적으면 캐릭터 판사 3명이 각자 판결합니다.', path: '/playground/judge', bg: '#fff0ec' },
+  { icon: '✨', title: '창작소', desc: '평범한 문장을 캐릭터 말투로 바꾸고 찰떡 이름도 지어줍니다.', path: '/playground/create', bg: '#fff8dd' },
+  { icon: '🫂', title: '상담소', desc: '뻔한 위로 대신 캐릭터마다 완전히 다른 조언을 들어보세요.', path: '/playground/consult', bg: '#eef7ff' },
+  { icon: '💬', title: '토론방', desc: '오늘의 생활 논쟁에 투표하고 다른 사람 의견을 확인합니다.', path: '/today', bg: '#effbf6' },
+];
+
+function call(name, payload = {}) {
+  return httpsCallable(functions, name)(payload)
+    .then(response => response.data || {})
+    .catch(error => ({ ok: false, error }));
+}
+
+function materialCard(material) {
+  return `<button class="king-material-card" data-material-id="${escHtml(material.id)}">
+    <div class="king-material-card__meta">
+      <span>${escHtml(material.category || '생활논쟁')}</span>
+      <span>투표 ${Number(material.totalVotes || 0)}</span>
+      <span>댓글 ${Number(material.commentCount || 0)}</span>
+    </div>
+    <h3>${escHtml(material.title || '소소자료')}</h3>
+    <p>${escHtml(material.summary || '')}</p>
   </button>`;
 }
-function ensureStyle() {
-  if (document.getElementById('soso-home-style')) return;
-  const style = document.createElement('style');
-  style.id = 'soso-home-style';
-  style.textContent = `
-    .soso-home{display:grid;gap:14px;padding-bottom:26px}.soso-hero{border-radius:30px;padding:28px 20px;background:linear-gradient(135deg,rgba(15,23,42,.98),rgba(47,125,110,.88));color:#fff;box-shadow:0 18px 42px rgba(15,23,42,.18)}
-    .soso-hero__eyebrow{font-size:11px;font-weight:1000;letter-spacing:.1em;color:rgba(255,255,255,.64)}.soso-hero__title{margin:8px 0;font-size:31px;line-height:1.16;font-weight:1000;color:#fff}.soso-hero__desc{max-width:760px;margin:0;color:rgba(255,255,255,.78);font-size:14px;line-height:1.65}.soso-actions,.soso-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}.soso-chips span{border-radius:999px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.14);padding:6px 9px;font-size:12px;font-weight:900}
-    .soso-section{border:1px solid rgba(100,116,139,.16);background:var(--color-surface,#fff);border-radius:24px;padding:16px;box-shadow:0 10px 26px rgba(15,23,42,.055)}.soso-section__head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:12px}.soso-section__title{font-size:18px;font-weight:1000;color:var(--color-text-primary)}.soso-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.soso-card{display:block;width:100%;text-align:left;border:1px solid rgba(100,116,139,.14);border-radius:20px;background:rgba(248,250,252,.82);padding:14px;font-family:inherit;color:inherit;cursor:pointer}.soso-card:hover{transform:translateY(-1px)}.soso-card__meta{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}.soso-card__meta span{border-radius:999px;background:rgba(47,125,110,.10);color:#2f7d6e;font-size:11px;font-weight:1000;padding:5px 7px}.soso-card__title{font-size:15px;font-weight:1000;color:var(--color-text-primary);line-height:1.32;margin-bottom:6px}.soso-card__text{font-size:13px;line-height:1.55;color:var(--color-text-secondary)}@media(max-width:860px){.soso-grid{grid-template-columns:1fr}.soso-hero__title{font-size:25px}}
-  `;
-  document.head.appendChild(style);
+
+function voteRow(label, count, total) {
+  const percent = total > 0 ? Math.round((count / total) * 100) : 50;
+  return `<div class="king-vote-preview__row"><span>${escHtml(label)}</span><div class="king-vote-preview__bar"><span style="width:${percent}%"></span></div><b>${percent}%</b></div>`;
 }
+
 export async function renderHome() {
-  setMeta('소소킹 — 소소한 논쟁커뮤니티', '생활분쟁·민원·소송·소비자 이슈를 자료로 정리하고 찬반으로 토론하는 커뮤니티');
-  ensureStyle();
-  const el = document.getElementById('page-content');
-  if (!el) return;
-  el.innerHTML = `<div class="soso-home"><div class="skeleton" style="height:220px;border-radius:30px"></div><div class="skeleton" style="height:320px;border-radius:24px"></div></div>`;
-  const [today, debates] = await Promise.all([call('getTodayMaterials'), call('getDebateSummary', { limit: 6 })]);
-  const todayItems = Array.isArray(today.materials) ? today.materials : [];
-  const debateItems = Array.isArray(debates.materials) ? debates.materials : [];
-  el.innerHTML = `<div class="soso-home page-enter">
-    <section class="soso-hero"><div class="soso-hero__eyebrow">SOSO DEBATE COMMUNITY</div><h1 class="soso-hero__title">소소한 문제도<br>근거가 있으면 강해집니다</h1><p class="soso-hero__desc">생활분쟁, 민원, 신고, 소송, 소비자 문제를 짧은 자료로 정리하고 찬성·반대 의견과 댓글로 토론합니다.</p><div class="soso-chips"><span>하루 3개 자료</span><span>찬성·반대 투표</span><span>댓글 토론</span><span>실제자료 확장 예정</span></div><div class="soso-actions"><button class="btn btn--primary" data-go="/today">오늘자료 보기</button><button class="btn btn--ghost" data-go="/materials">자료실 전체</button></div></section>
-    <section class="soso-section"><div class="soso-section__head"><div class="soso-section__title">오늘의 소소자료</div><button class="btn btn--ghost btn--sm" data-go="/today">전체 보기</button></div><div class="soso-grid">${todayItems.length ? todayItems.map((m, i) => materialCard(m, `오늘 ${i + 1}`)).join('') : '<div class="empty-state">오늘 자료를 준비 중입니다.</div>'}</div></section>
-    <section class="soso-section"><div class="soso-section__head"><div class="soso-section__title">토론 많은 자료</div><button class="btn btn--ghost btn--sm" data-go="/debates">토론 보기</button></div><div class="soso-grid">${debateItems.length ? debateItems.slice(0, 6).map(m => materialCard(m)).join('') : '<div class="empty-state">아직 토론 자료가 없습니다.</div>'}</div></section>
+  setMeta('소소킹 — AI와 노는 소소한 놀이터', '생활 고민을 AI 캐릭터가 판결하고, 바꿔 말하고, 상담하고, 함께 토론하는 참여형 커뮤니티');
+
+  const element = document.getElementById('page-content');
+  if (!element) return;
+  element.innerHTML = '<div class="king-home"><div class="skeleton" style="height:350px;border-radius:30px"></div></div>';
+
+  const [todayResult, debateResult, usageResult] = await Promise.all([
+    call('getTodayMaterials'),
+    call('getDebateSummary', { limit: 6 }),
+    call('getKingPlaygroundUsage'),
+  ]);
+
+  const todayItems = Array.isArray(todayResult.materials) ? todayResult.materials : [];
+  const debateItems = Array.isArray(debateResult.materials) ? debateResult.materials : [];
+  const featured = todayItems[0] || debateItems[0] || null;
+  const nickname = appState.nickname || appState.user?.displayName || '소소러';
+  const used = Number(usageResult.usage?.judge || 0);
+  const limit = Number(usageResult.dailyLimit || 3);
+  const usagePercent = Math.min(100, Math.round((used / Math.max(1, limit)) * 100));
+
+  element.innerHTML = `<div class="king-home page-enter">
+    <section class="king-hero">
+      <div class="king-hero__content">
+        <div class="king-kicker">🤖 AI 캐릭터 놀이터</div>
+        <h1>${escHtml(nickname)}님,<br><em>오늘은 뭐가 억울해요?</em></h1>
+        <p class="king-hero__desc">판결·말투변환·작명·상담·생활토론을 한곳에서 즐겨보세요. 정답을 주는 딱딱한 정보사이트가 아니라, 내 이야기를 꺼내면 캐릭터들이 반응하는 참여형 놀이터입니다.</p>
+        <div class="king-hero__actions">
+          <button class="king-primary" data-go="/playground/judge">⚖️ 지금 판결받기</button>
+          <button class="king-secondary" data-go="/playground">AI킹 전체보기</button>
+        </div>
+        <div class="king-usage"><span>오늘 판결 ${used}/${limit}</span><div class="king-usage__bar"><span style="width:${usagePercent}%"></span></div><span>${appState.user ? '로그인 이용 중' : '로그인 후 이용 가능'}</span></div>
+      </div>
+      <div class="king-hero__visual" aria-hidden="true">
+        <div class="king-orbit"><div class="king-orbit__core">🤖</div>${CHARACTERS.map(([emoji]) => `<div class="king-orbit__char">${emoji}</div>`).join('')}</div>
+      </div>
+    </section>
+
+    <section class="king-section">
+      <div class="king-section__head"><div><div class="king-section__eyebrow">KING PLAYGROUND</div><h2 class="king-section__title">어디에서 놀아볼까요?</h2><p class="king-section__desc">입력하면 바로 결과가 나오는 네 가지 핵심 공간입니다.</p></div></div>
+      <div class="king-feature-grid">${FEATURES.map(feature => `<button class="king-feature" data-go="${feature.path}" style="--feature-bg:${feature.bg}"><span class="king-feature__arrow">↗</span><span class="king-feature__icon">${feature.icon}</span><div class="king-feature__title">${feature.title}</div><div class="king-feature__desc">${feature.desc}</div></button>`).join('')}</div>
+    </section>
+
+    <section class="king-section">
+      <div class="king-section__head"><div><div class="king-section__eyebrow">CHARACTER CREW</div><h2 class="king-section__title">말 한마디도 평범하지 않은 6인방</h2></div></div>
+      <div class="king-character-strip">${CHARACTERS.map(([emoji, name]) => `<div class="king-character-mini"><div class="king-character-mini__emoji">${emoji}</div><div class="king-character-mini__name">${name}</div></div>`).join('')}</div>
+    </section>
+
+    ${featured ? `<section class="king-section">
+      <div class="king-section__head"><div><div class="king-section__eyebrow">TODAY'S DEBATE</div><h2 class="king-section__title">오늘의 논쟁 한판</h2></div><button class="king-ghost" data-go="/today">전체 보기</button></div>
+      <div class="king-today-card">
+        <div><div class="king-section__eyebrow">${escHtml(featured.category || '생활논쟁')}</div><h3>${escHtml(featured.title)}</h3><p>${escHtml(featured.summary || '')}</p><div class="king-inline-actions"><button class="king-primary" data-material-id="${escHtml(featured.id)}">투표하고 의견 보기</button></div></div>
+        <div class="king-vote-preview">${voteRow(featured.agreeTitle || '찬성', Number(featured.agreeCount || 0), Number(featured.totalVotes || 0))}${voteRow(featured.disagreeTitle || '반대', Number(featured.disagreeCount || 0), Number(featured.totalVotes || 0))}</div>
+      </div>
+    </section>` : ''}
+
+    <section class="king-section">
+      <div class="king-section__head"><div><div class="king-section__eyebrow">HOT STORIES</div><h2 class="king-section__title">사람들이 이야기 중인 주제</h2></div><button class="king-ghost" data-go="/materials">자료실</button></div>
+      <div class="king-material-grid">${debateItems.length ? debateItems.slice(0, 6).map(materialCard).join('') : '<div class="king-empty">토론 자료를 준비하고 있습니다.</div>'}</div>
+    </section>
   </div>`;
-  el.querySelectorAll('[data-go]').forEach(btn => btn.addEventListener('click', () => navigate(btn.dataset.go)));
-  el.querySelectorAll('[data-material-id]').forEach(btn => btn.addEventListener('click', () => navigate(`/material/${btn.dataset.materialId}`)));
+
+  element.querySelectorAll('[data-go]').forEach(button => button.addEventListener('click', () => navigate(button.dataset.go)));
+  element.querySelectorAll('[data-material-id]').forEach(button => button.addEventListener('click', () => navigate(`/material/${button.dataset.materialId}`)));
 }

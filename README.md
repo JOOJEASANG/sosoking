@@ -1,40 +1,51 @@
-# sosoking
+# 소소킹
 
-Firebase Hosting + Cloud Functions 기반 게임형 커뮤니티 웹앱입니다.
+생활 고민을 AI 캐릭터와 판결하고, 문장을 바꾸고, 이름을 짓고, 상담하고, 토론하는 Firebase 기반 웹앱입니다.
 
-## 배포 전 확인
+## 핵심 기능
+
+- 판결소: 선택한 캐릭터 판사 3명의 판결
+- 창작소: 캐릭터 말투 변환과 작명
+- 상담소: 캐릭터 상담사 3명의 조언
+- 자료실·토론방: 생활 논쟁 자료, 투표, 댓글
+- 내정보: 개인 AI 결과 다시 보기, 복사, 공유, 삭제
+
+AI 결과는 자동으로 공개 게시되지 않습니다. 사용자 전용 영역에 최근 50개까지만 저장되며 개별 삭제 또는 회원 탈퇴 시 삭제됩니다.
+
+## 운영 구조
+
+- Functions 진입점은 `functions/functions-main-v2.js` 하나만 사용합니다.
+- AI 캐릭터 정의는 `king-character-catalog.js`, AI 실행은 `ai-runtime-provider.js`, 자동 검토는 `moderation-functions.js`로 분리되어 있습니다.
+- 과거 통합 AI 엔진과 호환용 진입점은 운영 코드에서 삭제했습니다.
+- AI 인증 정보는 관리형 비밀 저장소를 통해서만 Functions에 연결됩니다.
+- 자동 검토는 관리자 확인을 돕는 위험 신호와 우선순위만 기록하며 게시물을 자동 삭제하지 않습니다.
+
+## 검사
 
 ```bash
-firebase login
-firebase use sosoking-481e6
-cd functions
-npm install
-cd ..
-firebase deploy --only firestore:rules,firestore:indexes,functions,hosting
+npm ci
+cd functions && npm ci && cd ..
+npm run check
 ```
 
-## 필수 Secret
+검사 범위:
 
-Gemini 기능을 사용하는 Functions는 Firebase Secret Manager의 `GEMINI_API_KEY`를 사용합니다.
+- Functions export와 Hosting rewrite
+- JavaScript 문법과 로컬 파일 참조
+- AI 놀이터 기능 연결
+- 자료 ID·날짜·투표·댓글 정책 단위 테스트
+- 백엔드 보안 계약과 최종 배포 표면
+- Hosting·Backend의 main 브랜치 배포 제한
+- Storage Rules와 배포 명령 정합성
+- 이용약관과 개인정보처리방침 정합성
+- 제거된 정치게임·구형 AI 기능 재노출 방지
 
-```bash
-firebase functions:secrets:set GEMINI_API_KEY
-```
+Pull Request에서는 Firebase Hosting 미리보기 배포 후 Chromium으로 PC와 모바일 주요 화면을 검사하고 캡처를 보관합니다.
 
-AI 기능(헌법재판소·정치배틀·국회·대선·AI킹·패러디 이슈 등)은 Firestore `config/ai_king`(또는 `config/ai`) 문서에 저장된 키를 사용합니다. `activeModel`이 `claude`이고 `claudeApiKey`가 있으면 Anthropic을, 그 외에는 Gemini를 사용하며, Gemini 키가 없을 때는 `GEMINI_API_KEY` Secret을 폴백으로 사용합니다. 이 설정 문서는 Firestore 규칙상 관리자만 읽고 쓸 수 있습니다.
+## 운영 배포
 
-## 운영상 주요 보안 구조
-
-- 퀴즈/OX 정답 확인은 `checkQuizAnswer` Callable Function을 통해 서버에서 처리합니다.
-- 투표는 `votePostOption` Callable Function 트랜잭션으로 처리합니다.
-- 게시글/댓글/삼행시 반응은 `reactToPost`, `reactToComment`, `reactToAcrostic` Callable Function으로 처리합니다.
-- 조회수는 `incrementPostView` Callable Function으로 처리합니다.
-- Firestore Rules는 일반 사용자의 직접 반응 카운터 조작을 막도록 강화되어 있습니다.
-
-## Firebase 런타임
-
-`firebase.json`과 `functions/package.json` 모두 Node 22 기준입니다.
-
-## 인덱스
-
-`firestore.indexes.json`에는 관리자 신고 관리 화면용 `reports(resolved, createdAt desc)` 인덱스가 포함되어 있습니다.
+- Hosting과 Backend는 서비스 계정으로 인증합니다.
+- 운영 배포는 `main` 브랜치에서만 실행합니다.
+- Backend는 Firestore Rules·Indexes, Storage Rules, Functions 순서로 배포합니다.
+- 상세 점검과 복구 절차는 `docs/PRODUCTION_RELEASE.md`를 따릅니다.
+- PR은 명시적인 운영 승인 전까지 초안 상태로 유지하며 자동 병합하지 않습니다.

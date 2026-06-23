@@ -15,9 +15,13 @@ function escapeXml(value) {
 const sitemapXml = onRequest({ region: 'asia-northeast3' }, async (req, res) => {
   const urls = [
     { loc: `${SITE_URL}/`, priority: '1.0', changefreq: 'daily' },
-    { loc: `${SITE_URL}/today`, priority: '0.9', changefreq: 'daily' },
-    { loc: `${SITE_URL}/materials`, priority: '0.9', changefreq: 'daily' },
-    { loc: `${SITE_URL}/debates`, priority: '0.8', changefreq: 'daily' },
+    { loc: `${SITE_URL}/playground`, priority: '0.9', changefreq: 'weekly' },
+    { loc: `${SITE_URL}/playground/judge`, priority: '0.9', changefreq: 'weekly' },
+    { loc: `${SITE_URL}/playground/create`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${SITE_URL}/playground/consult`, priority: '0.8', changefreq: 'weekly' },
+    { loc: `${SITE_URL}/today`, priority: '0.8', changefreq: 'daily' },
+    { loc: `${SITE_URL}/materials`, priority: '0.7', changefreq: 'daily' },
+    { loc: `${SITE_URL}/debates`, priority: '0.7', changefreq: 'daily' },
     { loc: `${SITE_URL}/guide`, priority: '0.5', changefreq: 'monthly' },
     { loc: `${SITE_URL}/terms`, priority: '0.3', changefreq: 'yearly' },
     { loc: `${SITE_URL}/privacy`, priority: '0.3', changefreq: 'yearly' },
