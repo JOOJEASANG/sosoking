@@ -25,7 +25,7 @@ concurrency:
 
 jobs:
   preview:
-    name: Check and deploy preview channel
+    name: Check preview in desktop and mobile browsers
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -48,9 +48,27 @@ jobs:
         run: npm run check
 
       - name: Deploy Firebase Hosting preview
+        id: preview
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 }}'
           projectId: sosoking-481e6
           expires: 7d
+
+      - name: Install Chromium smoke-test runtime
+        run: |
+          npm install --no-save playwright@1.52.0
+          npx playwright install --with-deps chromium
+
+      - name: Check preview UI
+        run: node tools/check-preview-ui.cjs '${{ steps.preview.outputs.details_url }}'
+
+      - name: Upload preview screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: preview-ui-screenshots
+          path: preview-screenshots
+          if-no-files-found: ignore
+          retention-days: 7
