@@ -12,6 +12,8 @@ const requireText = (text, needle, label) => {
 
 const app = read('public', 'js', 'app-safe.js');
 const playground = read('public', 'js', 'pages', 'playground.js');
+const home = read('public', 'js', 'pages', 'home.js');
+const characterCatalog = read('functions', 'king-character-catalog.js');
 const account = read('public', 'js', 'pages', 'account.js');
 const loader = read('public', 'js', 'app-extensions-loader.js');
 const index = read('public', 'index.html');
@@ -47,6 +49,32 @@ for (const stylesheet of [
   '/css/king-account.css',
 ]) {
   requireText(index, stylesheet, 'missing playground stylesheet');
+}
+
+for (const persona of [
+  ['empathy', '감성형'],
+  ['principle', '원칙형'],
+  ['kkondae', '꼰대형'],
+  ['coldblood', '냉혈형'],
+  ['cider', '사이다형'],
+  ['realist', '현실형'],
+]) {
+  requireText(characterCatalog, `${persona[0]}:`, 'server persona missing');
+  requireText(characterCatalog, persona[1], 'server persona label missing');
+  requireText(playground, `id: '${persona[0]}'`, 'client persona missing');
+  requireText(home, persona[1], 'home persona missing');
+}
+
+for (const retiredPersona of ['jungding', 'saibi', 'prophet', 'joojeob', 'chamgyeon']) {
+  if (characterCatalog.includes(`${retiredPersona}:`) || playground.includes(`id: '${retiredPersona}'`)) {
+    failures.push(`retired persona remains: ${retiredPersona}`);
+  }
+}
+
+requireText(playground, 'AI 놀이터 메뉴', 'AI playground side menu missing');
+if (playground.includes('다른 공간 둘러보기')) failures.push('old side panel title remains');
+for (const modePath of ['/playground/judge', '/playground/create', '/playground/consult', '/playground/lounge']) {
+  requireText(playground, modePath, 'side menu mode path missing');
 }
 
 for (const removedExtension of [
