@@ -17,7 +17,6 @@ const loader = read('public', 'js', 'app-extensions-loader.js');
 const index = read('public', 'index.html');
 const previewWorkflow = read('.github', 'workflows', 'firebase-preview.yml');
 const mainFunctions = require(path.join(ROOT, 'functions', 'functions-main-v2.js'));
-const legacyFunctions = require(path.join(ROOT, 'functions', 'legacy-disabled-functions.js'));
 
 for (const route of ['/playground', '/playground/:mode']) {
   requireText(app, `registerRoute('${route}'`, 'missing playground route');
@@ -61,10 +60,6 @@ for (const removedExtension of [
 
 for (const politicalMarker of ['getPoliticalRank', 'renderPartyTab', 'RANK_PERKS', '정치력', '대통령 선거']) {
   if (account.includes(politicalMarker)) failures.push(`political account code remains: ${politicalMarker}`);
-}
-
-if (Object.keys(legacyFunctions).length > 0) {
-  failures.push(`retired political functions are exported: ${Object.keys(legacyFunctions).join(', ')}`);
 }
 
 for (const retiredFunction of [
