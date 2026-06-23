@@ -45,3 +45,4 @@ npm run deploy:indexes
 - Functions는 Node.js 22 환경을 사용합니다.
 - AI 비밀키는 Secret Manager와 GitHub Actions secret을 사용합니다.
 - PR 브랜치는 운영 채널이 아니라 만료되는 미리보기 채널에만 배포됩니다.
+- 초안 PR에서는 검사와 미리보기만 수행하며 운영 반영은 병합 후 시작됩니다.
