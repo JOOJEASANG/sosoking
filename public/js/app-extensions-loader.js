@@ -1,13 +1,9 @@
-// app-extensions-loader.js — 소소킹 보조 UI 확장
+// app-extensions-loader.js — 계정과 프로필에 필요한 최소 보조 모듈만 로드합니다.
 
 const EXTENSION_MODULES = [
-  './layout-id-repair.js',
   './pc-sidebar-spacing.js',
   './account-ui.js',
   './nickname-icon-actions.js',
-  './core-nav-visibility-fix.js',
-  './home-card-layout-fix.js',
-  './points-removal-ui.js',
 ];
 
 async function loadExtension(path) {
@@ -24,7 +20,13 @@ Promise.allSettled(EXTENSION_MODULES.map(loadExtension)).then(results => {
   const states = results.map(result => result.value).filter(Boolean);
   const failed = states.filter(item => !item.ok).map(item => item.path);
   const loaded = states.filter(item => item.ok).map(item => item.path);
-  const status = { total: EXTENSION_MODULES.length, loaded, failed, ok: failed.length === 0, updatedAt: Date.now() };
+  const status = {
+    total: EXTENSION_MODULES.length,
+    loaded,
+    failed,
+    ok: failed.length === 0,
+    updatedAt: Date.now(),
+  };
   window.__sosokingExtensionStatus = status;
   if (failed.length) console.warn('[sosoking extensions] failed modules:', failed);
   window.dispatchEvent(new CustomEvent('sosoking:extensions-ready', { detail: status }));
