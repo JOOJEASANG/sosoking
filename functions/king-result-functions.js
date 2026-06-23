@@ -10,6 +10,8 @@ const db = getFirestore();
 const REGION = 'asia-northeast3';
 const ALLOWED_MODES = new Set(['judge', 'create', 'consult']);
 const ALLOWED_SUBMODES = new Set(['', 'translate', 'name']);
+const MAX_HISTORY_ITEMS = 50;
+const MAX_DAILY_SAVES = 100;
 
 function requireUser(request) {
   const uid = request.auth?.uid;
@@ -34,6 +36,41 @@ function normalizeCharacterIds(value) {
   return [...new Set(value.map(item => cleanText(item, 40)).filter(Boolean))].slice(0, 3);
 }
 
+function seoulDateKey() {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date());
+}
+
+async function enforceSaveLimit(uid) {
+  const ref = db.doc(`rate_limits/king-result-${uid}-${seoulDateKey()}`);
+  await db.runTransaction(async transaction => {
+    const snap = await transaction.get(ref);
+    const count = Number(snap.data()?.count || 0);
+    if (count >= MAX_DAILY_SAVES) {
+      throw new HttpsError('resource-exhausted', '오늘 저장할 수 있는 AI 결과 수를 초과했어요.');
+    }
+    transaction.set(ref, {
+      uid,
+      type: 'king-result-save',
+      count: count + 1,
+      updatedAt: FieldValue.serverTimestamp(),
+      expiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+    }, { merge: true });
+  });
+}
+
+async function trimHistory(uid) {
+  const snap = await db.collection(`users/${uid}/ai_results`)
+    .orderBy('createdAt', 'desc')
+    .limit(MAX_HISTORY_ITEMS + 10)
+    .get();
+  if (snap.size <= MAX_HISTORY_ITEMS) return;
+  const batch = db.batch();
+  snap.docs.slice(MAX_HISTORY_ITEMS).forEach(docSnap => batch.delete(docSnap.ref));
+  await batch.commit();
+}
+
 const saveKingPlaygroundResult = onCall({ region: REGION, timeoutSeconds: 20 }, async request => {
   const uid = requireUser(request);
   const mode = cleanText(request.data?.mode, 20);
@@ -47,6 +84,8 @@ const saveKingPlaygroundResult = onCall({ region: REGION, timeoutSeconds: 20 }, 
   if (!ALLOWED_SUBMODES.has(submode)) throw new HttpsError('invalid-argument', '저장할 세부 종류가 올바르지 않아요.');
   if (!title || !input || !cards.length) throw new HttpsError('invalid-argument', '저장할 결과가 비어 있어요.');
 
+  await enforceSaveLimit(uid);
+
   const resultRef = db.collection(`users/${uid}/ai_results`).doc();
   await resultRef.set({
     ownerId: uid,
@@ -59,6 +98,7 @@ const saveKingPlaygroundResult = onCall({ region: REGION, timeoutSeconds: 20 }, 
     createdAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
   });
+  await trimHistory(uid);
 
   return { ok: true, resultId: resultRef.id };
 });
