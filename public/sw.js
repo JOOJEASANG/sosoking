@@ -1,5 +1,5 @@
 // sw.js — 배포 후 오래된 정적 자산이 남지 않도록 캐시 버전을 관리합니다.
-const CACHE = 'sosoking-v212-persona-redesign';
+const CACHE = 'sosoking-v213-separate-content';
 const FRESH_EXTENSIONS = ['.html', '.js', '.css', '.json', '.webmanifest', '.xml'];
 
 self.addEventListener('install', event => {
@@ -36,7 +36,6 @@ function shouldAlwaysFetchFresh(request, url) {
 
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
-
   if (shouldBypass(event.request, url)) return;
 
   if (shouldAlwaysFetchFresh(event.request, url)) {
