@@ -1,6 +1,20 @@
-name: Deploy Firebase Hosting
+name: Check and Deploy Firebase Hosting
 
 on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'public/**'
+      - 'functions/**'
+      - 'tools/**'
+      - 'firebase.json'
+      - 'firestore.rules'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'functions/package.json'
+      - 'functions/package-lock.json'
+      - '.github/workflows/firebase-hosting.yml'
   push:
     branches:
       - main
@@ -22,8 +36,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy-hosting:
-    name: Check and deploy hosting
+  check-and-deploy:
+    name: Check repository and deploy hosting
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -46,6 +60,7 @@ jobs:
         run: npm run check
 
       - name: Deploy Firebase Hosting
+        if: github.event_name != 'pull_request'
         run: npx firebase-tools deploy --only hosting --project sosoking-481e6 --non-interactive
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
