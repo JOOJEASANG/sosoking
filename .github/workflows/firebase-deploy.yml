@@ -97,7 +97,7 @@ jobs:
         run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only firestore:rules,firestore:indexes --non-interactive
 
       - name: Deploy Storage rules
-        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only storage:rules --non-interactive
+        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only storage --non-interactive
 
       - name: Deploy Functions
         run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only functions --force --non-interactive
