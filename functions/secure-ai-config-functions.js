@@ -17,6 +17,12 @@ function cleanModel(value, fallback) {
   return model || fallback;
 }
 
+function clampNumber(value, fallback, minimum, maximum) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.max(minimum, Math.min(maximum, Math.floor(parsed)));
+}
+
 const saveAiConfig = onCall({ region: REGION, timeoutSeconds: 20 }, async request => {
   await assertAdmin(request.auth?.uid);
   const features = request.data?.features && typeof request.data.features === 'object'
@@ -42,8 +48,8 @@ const saveAiKingConfig = onCall({ region: REGION, timeoutSeconds: 20 }, async re
   await assertAdmin(uid);
   const data = request.data || {};
   const activeModel = data.activeModel === 'gemini' ? 'gemini' : 'anthropic';
-  const dailyFreeLimit = Math.max(1, Math.min(20, Number(data.dailyFreeLimit || 3)));
-  const monthlyCap = Math.max(0, Math.min(100000, Number(data.monthlyCap || 0)));
+  const dailyFreeLimit = clampNumber(data.dailyFreeLimit, 3, 1, 20);
+  const monthlyCap = clampNumber(data.monthlyCap, 0, 0, 100000);
 
   await db.doc('config/ai_king').set({
     activeModel,
@@ -66,4 +72,4 @@ const saveAiKingConfig = onCall({ region: REGION, timeoutSeconds: 20 }, async re
   };
 });
 
-module.exports = { saveAiConfig, saveAiKingConfig };
+module.exports = { saveAiConfig, saveAiKingConfig, clampNumber };
