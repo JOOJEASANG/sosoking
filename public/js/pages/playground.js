@@ -7,19 +7,19 @@ import { escHtml } from '../utils/helpers.js';
 import { toast } from '../components/toast.js';
 
 const CHARACTERS = [
-  { id: 'jungding', emoji: '🎒', name: '사춘기 중딩' },
-  { id: 'saibi', emoji: '🙏', name: '사이비 교주' },
-  { id: 'prophet', emoji: '🔮', name: '예언가' },
-  { id: 'joojeob', emoji: '🤩', name: '주접러' },
-  { id: 'chamgyeon', emoji: '👀', name: '참견러' },
-  { id: 'kkondae', emoji: '👴', name: '꼰대' },
+  { id: 'empathy', emoji: '💗', name: '감성형', desc: '상처와 관계를 먼저 봐요', accent: '#e85b86', soft: '#fff0f5' },
+  { id: 'principle', emoji: '⚖️', name: '원칙형', desc: '약속과 책임이 기준이에요', accent: '#5367c9', soft: '#eef1ff' },
+  { id: 'kkondae', emoji: '👴', name: '꼰대형', desc: '예의와 기본을 따져요', accent: '#9a6846', soft: '#f8efe8' },
+  { id: 'coldblood', emoji: '🧊', name: '냉혈형', desc: '감정 OFF, 결과만 계산해요', accent: '#52758c', soft: '#eaf4f8' },
+  { id: 'cider', emoji: '🔥', name: '사이다형', desc: '잘못을 시원하게 짚어요', accent: '#ef5a38', soft: '#fff0eb' },
+  { id: 'realist', emoji: '🧮', name: '현실형', desc: '시간·돈·증거를 따져요', accent: '#398b70', soft: '#eaf8f2' },
 ];
 
 const MODES = {
-  judge: { icon: '⚖️', label: '판결소', title: '내 억울함, 캐릭터 판사에게 맡기기', desc: '상황을 구체적으로 적고 판사 3명을 골라보세요. 같은 사건도 캐릭터마다 전혀 다른 판결이 나옵니다.' },
-  create: { icon: '✨', label: '창작소', title: '평범한 문장을 캐릭터 작품으로', desc: '말투를 완전히 바꾸거나 대상에 찰떡인 이름 5개를 만들어보세요.' },
-  consult: { icon: '🫂', label: '상담소', title: '고민을 3인 상담단에게 털어놓기', desc: '뻔한 위로 대신 각자 세계관이 확실한 캐릭터들이 예상 밖의 조언을 건넵니다.' },
-  lounge: { icon: '💬', label: '토론방', title: '오늘의 소소한 논쟁에 참여하기', desc: '자료를 읽고 찬성·반대에 투표한 뒤, 내 경험과 의견을 댓글로 나눠보세요.' },
+  judge: { icon: '⚖️', label: '판결소', title: '내 억울함, 성향별 판사에게 맡기기', desc: '감성·원칙·냉혈 등 판단 기준이 전혀 다른 판사 3명을 골라 같은 사건의 판결 차이를 확인해보세요.', side: '성향이 다른 판사 3명의 판결' },
+  create: { icon: '✨', label: '창작소', title: '평범한 문장을 캐릭터 작품으로', desc: '말투를 완전히 바꾸거나 대상에 찰떡인 이름 5개를 만들어보세요.', side: '말투 변환과 이름 만들기' },
+  consult: { icon: '🫂', label: '상담소', title: '고민을 3인 상담단에게 털어놓기', desc: '뻔한 위로 대신 각자 판단 기준이 확실한 캐릭터들이 서로 다른 조언을 건넵니다.', side: '세 가지 관점의 현실 조언' },
+  lounge: { icon: '💬', label: '토론방', title: '오늘의 소소한 논쟁에 참여하기', desc: '자료를 읽고 찬성·반대에 투표한 뒤, 내 경험과 의견을 댓글로 나눠보세요.', side: '오늘의 찬반 주제와 댓글' },
 };
 
 function call(name, payload = {}) {
@@ -33,7 +33,7 @@ function modeNavigation(activeMode) {
 function characterButtons(selected, multiple) {
   return CHARACTERS.map(character => {
     const active = selected.includes(character.id);
-    return `<button type="button" class="king-char-option${active ? ' selected' : ''}" data-char-id="${character.id}" data-multiple="${multiple ? 'true' : 'false'}" aria-pressed="${active ? 'true' : 'false'}"><span class="king-char-option__emoji" aria-hidden="true">${character.emoji}</span><span class="king-char-option__name">${character.name}</span></button>`;
+    return `<button type="button" class="king-char-option${active ? ' selected' : ''}" data-char-id="${character.id}" data-multiple="${multiple ? 'true' : 'false'}" aria-pressed="${active ? 'true' : 'false'}" style="--char-accent:${character.accent};--char-soft:${character.soft}"><span class="king-char-option__emoji" aria-hidden="true">${character.emoji}</span><span class="king-char-option__copy"><span class="king-char-option__name">${character.name}</span><span class="king-char-option__desc">${character.desc}</span></span><span class="king-char-option__check" aria-hidden="true">✓</span></button>`;
   }).join('');
 }
 
@@ -42,20 +42,20 @@ function textCounter(max) {
 }
 
 function judgeForm() {
-  return `<div class="king-tool-card"><h2>⚖️ 판결 신청서</h2><p class="king-tool-card__desc">누가, 언제, 무엇을 했고 왜 억울한지 적을수록 판결이 구체적으로 나옵니다.</p><div class="king-form"><div class="king-field"><label for="king-main-text">상황 설명</label><textarea id="king-main-text" maxlength="500" placeholder="예: 친구가 약속시간에 한 시간 늦었는데 미안하다는 말도 없이 내가 예민하다고 합니다. 누가 더 잘못했나요?"></textarea>${textCounter(500)}</div><div class="king-field"><div class="king-field__label">판사 3명 선택</div><div class="king-char-select" id="king-char-select" role="group" aria-label="캐릭터 판사 선택">${characterButtons(['jungding','prophet','kkondae'], true)}</div></div><div class="king-tool-note">AI 캐릭터의 결과는 재미와 참고를 위한 내용이며 실제 법률·의료·전문 판단을 대신하지 않습니다.</div><button class="king-primary king-submit" id="king-submit">판결 시작하기</button></div></div>`;
+  return `<div class="king-tool-card"><div class="king-tool-card__heading"><div><div class="king-section__eyebrow">JUDGMENT LAB</div><h2>⚖️ 성향별 판결 신청서</h2></div><span class="king-tool-card__badge">판사 3명</span></div><p class="king-tool-card__desc">누가, 언제, 무엇을 했고 왜 억울한지 적어주세요. 같은 사건도 감성형·원칙형·냉혈형의 결론은 완전히 다릅니다.</p><div class="king-form"><div class="king-field"><label for="king-main-text">상황 설명</label><textarea id="king-main-text" maxlength="500" placeholder="예: 친구가 약속시간에 한 시간 늦었는데 미안하다는 말도 없이 내가 예민하다고 합니다. 누가 더 잘못했나요?"></textarea>${textCounter(500)}</div><div class="king-field"><div class="king-field__label">판사 3명 선택</div><div class="king-char-select" id="king-char-select" role="group" aria-label="캐릭터 판사 선택">${characterButtons(['empathy','principle','coldblood'], true)}</div></div><div class="king-tool-note">AI 캐릭터의 결과는 재미와 참고를 위한 내용이며 실제 법률·의료·전문 판단을 대신하지 않습니다.</div><button class="king-primary king-submit" id="king-submit">선택한 판사에게 판결받기</button></div></div>`;
 }
 
 function createForm() {
-  return `<div class="king-tool-card"><h2>✨ 캐릭터 창작소</h2><p class="king-tool-card__desc">말투 변환과 작명 중 하나를 고른 뒤 캐릭터를 선택하세요.</p><div class="king-form"><div class="king-field"><label for="king-create-kind">만들기 종류</label><select id="king-create-kind"><option value="translate">캐릭터 말투로 바꾸기</option><option value="name">이름 5개 짓기</option></select></div><div class="king-field"><label for="king-main-text">원문 또는 대상 설명</label><textarea id="king-main-text" maxlength="1200" placeholder="말투를 바꿀 문장이나 이름을 지을 대상의 특징을 적어주세요."></textarea>${textCounter(1200)}</div><div class="king-field"><div class="king-field__label">캐릭터 1명 선택</div><div class="king-char-select" id="king-char-select" role="group" aria-label="창작 캐릭터 선택">${characterButtons(['joojeob'], false)}</div></div><button class="king-primary king-submit" id="king-submit">결과 만들기</button></div></div>`;
+  return `<div class="king-tool-card"><div class="king-tool-card__heading"><div><div class="king-section__eyebrow">CREATIVE LAB</div><h2>✨ 캐릭터 창작소</h2></div><span class="king-tool-card__badge">캐릭터 1명</span></div><p class="king-tool-card__desc">말투 변환과 작명 중 하나를 고른 뒤 원하는 성향을 선택하세요.</p><div class="king-form"><div class="king-field"><label for="king-create-kind">만들기 종류</label><select id="king-create-kind"><option value="translate">캐릭터 말투로 바꾸기</option><option value="name">이름 5개 짓기</option></select></div><div class="king-field"><label for="king-main-text">원문 또는 대상 설명</label><textarea id="king-main-text" maxlength="1200" placeholder="말투를 바꿀 문장이나 이름을 지을 대상의 특징을 적어주세요."></textarea>${textCounter(1200)}</div><div class="king-field"><div class="king-field__label">캐릭터 1명 선택</div><div class="king-char-select" id="king-char-select" role="group" aria-label="창작 캐릭터 선택">${characterButtons(['cider'], false)}</div></div><button class="king-primary king-submit" id="king-submit">결과 만들기</button></div></div>`;
 }
 
 function consultForm() {
-  return `<div class="king-tool-card"><h2>🫂 캐릭터 상담소</h2><p class="king-tool-card__desc">고민을 솔직하고 구체적으로 적고 상담사 3명을 고르세요.</p><div class="king-form"><div class="king-field"><label for="king-main-text">고민 또는 상황</label><textarea id="king-main-text" maxlength="1400" placeholder="예: 직장에서 나만 계속 어려운 일을 맡는데 거절하면 무능력하게 볼까 봐 말하지 못하고 있어요."></textarea>${textCounter(1400)}</div><div class="king-field"><div class="king-field__label">상담사 3명 선택</div><div class="king-char-select" id="king-char-select" role="group" aria-label="캐릭터 상담사 선택">${characterButtons(['jungding','chamgyeon','kkondae'], true)}</div></div><div class="king-tool-note">위기 상황이나 전문 상담이 필요한 문제는 관련 기관과 전문가의 도움을 우선 이용하세요.</div><button class="king-primary king-submit" id="king-submit">상담 시작하기</button></div></div>`;
+  return `<div class="king-tool-card"><div class="king-tool-card__heading"><div><div class="king-section__eyebrow">ADVICE LAB</div><h2>🫂 성향별 상담소</h2></div><span class="king-tool-card__badge">상담사 3명</span></div><p class="king-tool-card__desc">고민을 솔직하고 구체적으로 적고 서로 다른 관점의 상담사 3명을 고르세요.</p><div class="king-form"><div class="king-field"><label for="king-main-text">고민 또는 상황</label><textarea id="king-main-text" maxlength="1400" placeholder="예: 직장에서 나만 계속 어려운 일을 맡는데 거절하면 무능력하게 볼까 봐 말하지 못하고 있어요."></textarea>${textCounter(1400)}</div><div class="king-field"><div class="king-field__label">상담사 3명 선택</div><div class="king-char-select" id="king-char-select" role="group" aria-label="캐릭터 상담사 선택">${characterButtons(['empathy','realist','principle'], true)}</div></div><div class="king-tool-note">위기 상황이나 전문 상담이 필요한 문제는 관련 기관과 전문가의 도움을 우선 이용하세요.</div><button class="king-primary king-submit" id="king-submit">상담 시작하기</button></div></div>`;
 }
 
 function loungeForm(materials) {
   const cards = materials.length ? materials.map(material => `<button class="king-material-card" data-material-id="${escHtml(material.id)}"><div class="king-material-card__meta"><span>${escHtml(material.category || '생활논쟁')}</span><span>찬성 ${Number(material.agreeCount || 0)}</span><span>반대 ${Number(material.disagreeCount || 0)}</span></div><h3>${escHtml(material.title || '오늘의 논쟁')}</h3><p>${escHtml(material.summary || '')}</p></button>`).join('') : '<div class="king-empty">오늘의 논쟁을 준비하고 있습니다.</div>';
-  return `<div class="king-tool-card"><h2>💬 오늘의 토론 주제</h2><p class="king-tool-card__desc">관심 있는 주제를 눌러 자료를 읽고 투표와 댓글에 참여하세요.</p><div class="king-material-grid" style="margin-top:16px">${cards}</div><div class="king-inline-actions"><button class="king-secondary" data-go="/materials">자료실 전체보기</button><button class="king-primary" data-go="/debates">토론 많은 순서</button></div></div>`;
+  return `<div class="king-tool-card"><div class="king-tool-card__heading"><div><div class="king-section__eyebrow">COMMUNITY LAB</div><h2>💬 오늘의 토론 주제</h2></div><span class="king-tool-card__badge">투표·댓글</span></div><p class="king-tool-card__desc">관심 있는 주제를 눌러 자료를 읽고 투표와 댓글에 참여하세요.</p><div class="king-material-grid" style="margin-top:16px">${cards}</div><div class="king-inline-actions"><button class="king-secondary" data-go="/materials">자료실 전체보기</button><button class="king-primary" data-go="/debates">토론 많은 순서</button></div></div>`;
 }
 
 function toolForm(mode, materials) {
@@ -65,8 +65,9 @@ function toolForm(mode, materials) {
   return judgeForm();
 }
 
-function sidePanel() {
-  return `<aside class="king-side-card"><h3>다른 공간 둘러보기</h3><p>결과를 만든 뒤 오늘의 논쟁과 자료실에도 참여해보세요.</p><div class="king-side-list"><button data-go="/today"><span>🔥</span><span><strong>오늘의 논쟁</strong><small>매일 바뀌는 찬반 주제</small></span></button><button data-go="/materials"><span>📚</span><span><strong>소소자료실</strong><small>생활분쟁과 소비자 이슈</small></span></button><button data-go="/debates"><span>🏆</span><span><strong>토론 많은 글</strong><small>사람들이 많이 말한 주제</small></span></button><button data-go="/account"><span>👤</span><span><strong>내 정보</strong><small>닉네임과 이용 상태 확인</small></span></button></div><div class="king-history-head"><h3>최근 AI 결과</h3><small>나에게만 보입니다</small></div><div id="king-history" class="king-history" aria-live="polite"><div class="king-history__empty">불러오는 중…</div></div></aside>`;
+function sidePanel(activeMode) {
+  const menu = Object.entries(MODES).map(([key, mode]) => `<button type="button" class="king-play-menu__item${key === activeMode ? ' active' : ''}" data-go="/playground/${key}" aria-current="${key === activeMode ? 'page' : 'false'}"><span class="king-play-menu__icon">${mode.icon}</span><span class="king-play-menu__copy"><strong>${mode.label}</strong><small>${mode.side}</small></span><span class="king-play-menu__state">${key === activeMode ? '이용 중' : '열기'}</span></button>`).join('');
+  return `<aside class="king-side-card king-play-menu"><div class="king-play-menu__intro"><div class="king-section__eyebrow">AI PLAYGROUND</div><h3>AI 놀이터 메뉴</h3><p>판결부터 창작·상담·토론까지 이곳에서 바로 이동하세요.</p></div><div class="king-side-list king-side-list--playground">${menu}</div><div class="king-history-head"><h3>최근 AI 결과</h3><small>나에게만 보입니다</small></div><div id="king-history" class="king-history" aria-live="polite"><div class="king-history__empty">불러오는 중…</div></div></aside>`;
 }
 
 function selectedCharacterIds(container) {
@@ -243,10 +244,10 @@ async function handleSubmit(root, mode) {
     let result;
     if (mode === 'judge') {
       const data = await call('aiJudge', { situation: text, characterIds });
-      result = { mode, submode: '', title: 'AI 캐릭터 판결 결과', input: text, characterIds, cards: (data.verdicts || []).map(item => ({ name: item.charName || '캐릭터 판사', text: item.verdict || '' })) };
+      result = { mode, submode: '', title: '성향별 AI 판결 결과', input: text, characterIds, cards: (data.verdicts || []).map(item => ({ name: item.charName || '캐릭터 판사', text: item.verdict || '' })) };
     } else if (mode === 'consult') {
       const data = await call('aiConsultV2', { concern: text, characterIds });
-      result = { mode, submode: '', title: 'AI 캐릭터 상담 결과', input: text, characterIds, cards: (data.advices || []).map(item => ({ name: item.charName || '캐릭터 상담사', text: item.advice || '' })) };
+      result = { mode, submode: '', title: '성향별 AI 상담 결과', input: text, characterIds, cards: (data.advices || []).map(item => ({ name: item.charName || '캐릭터 상담사', text: item.advice || '' })) };
     } else if (mode === 'create') {
       const submode = root.querySelector('#king-create-kind')?.value || 'translate';
       const characterId = characterIds[0];
@@ -314,7 +315,7 @@ export async function renderPlayground(mode = 'judge') {
     }
   }
 
-  root.innerHTML = `<div class="king-playground page-enter"><section class="king-playground__hero"><div><div class="king-kicker">${config.icon} ${config.label}</div><h1>${config.title}</h1><p>${config.desc}</p></div><button class="king-secondary" data-go="/">홈으로</button></section><nav class="king-mode-nav" aria-label="AI 놀이터 메뉴">${modeNavigation(activeMode)}</nav><div class="king-tool-layout">${toolForm(activeMode, materials)}${sidePanel()}</div></div>`;
+  root.innerHTML = `<div class="king-playground page-enter"><section class="king-playground__hero"><div><div class="king-kicker">${config.icon} ${config.label}</div><h1>${config.title}</h1><p>${config.desc}</p></div><button class="king-secondary" data-go="/">홈으로</button></section><nav class="king-mode-nav" aria-label="AI 놀이터 메뉴">${modeNavigation(activeMode)}</nav><div class="king-tool-layout">${toolForm(activeMode, materials)}${sidePanel(activeMode)}</div></div>`;
 
   root.querySelectorAll('[data-mode]').forEach(button => button.addEventListener('click', () => navigate(`/playground/${button.dataset.mode}`)));
   root.querySelectorAll('[data-go]').forEach(button => button.addEventListener('click', () => navigate(button.dataset.go)));
