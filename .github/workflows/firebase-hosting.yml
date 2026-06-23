@@ -52,8 +52,27 @@ jobs:
       - name: Install functions dependencies for repository checks
         run: npm ci
         working-directory: functions
-      - name: Static check
-        run: npm run check > /tmp/static-check.log 2>&1 || (tail -n 120 /tmp/static-check.log && exit 1)
+      - name: Run static check
+        id: static_check
+        shell: bash
+        run: |
+          set +e
+          npm run check > static-check.log 2>&1
+          code=$?
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          exit 0
+      - name: Upload static check report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: static-check-report
+          path: static-check.log
+          retention-days: 3
+      - name: Enforce static check result
+        if: steps.static_check.outputs.exit_code != '0'
+        run: |
+          cat static-check.log
+          exit 1
       - name: Deploy Firebase Hosting
         if: github.event_name != 'pull_request'
         run: npx firebase-tools deploy --only hosting --project sosoking-481e6 --non-interactive
