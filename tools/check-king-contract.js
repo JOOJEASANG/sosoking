@@ -12,6 +12,7 @@ const requireText = (text, needle, label) => {
 
 const app = read('public', 'js', 'app-safe.js');
 const playground = read('public', 'js', 'pages', 'playground.js');
+const account = read('public', 'js', 'pages', 'account.js');
 const loader = read('public', 'js', 'app-extensions-loader.js');
 const index = read('public', 'index.html');
 const mainFunctions = require(path.join(ROOT, 'functions', 'functions-main-v2.js'));
@@ -33,11 +34,16 @@ for (const functionName of [
   requireText(playground, `'${functionName}'`, 'playground does not call function');
 }
 
+for (const functionName of ['getKingPlaygroundHistory', 'deleteKingPlaygroundResult', 'deleteMyAccount']) {
+  requireText(account, `'${functionName}'`, 'account does not call function');
+}
+
 for (const stylesheet of [
   '/css/king-foundation.css',
   '/css/king-home.css',
   '/css/king-playground-layout.css',
   '/css/king-playground-form.css',
+  '/css/king-account.css',
 ]) {
   requireText(index, stylesheet, 'missing playground stylesheet');
 }
@@ -49,6 +55,10 @@ for (const removedExtension of [
   'layout-id-repair.js',
 ]) {
   if (loader.includes(removedExtension)) failures.push(`obsolete extension still loaded: ${removedExtension}`);
+}
+
+for (const politicalMarker of ['getPoliticalRank', 'renderPartyTab', 'RANK_PERKS', '정치력', '대통령 선거']) {
+  if (account.includes(politicalMarker)) failures.push(`political account code remains: ${politicalMarker}`);
 }
 
 if (failures.length) {
