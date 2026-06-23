@@ -3,7 +3,7 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getApps, initializeApp } = require('firebase-admin/app');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
-const { sharedAi } = require('./ai-king-functions');
+const { CHARACTERS, CHAR_LIST } = require('./king-character-catalog');
 const { AI_RUNTIME_SECRETS, callAI, callAndParse } = require('./ai-runtime-provider');
 
 if (!getApps().length) initializeApp();
@@ -11,7 +11,6 @@ if (!getApps().length) initializeApp();
 const db = getFirestore();
 const REGION = 'asia-northeast3';
 const DAILY_LIMIT = 3;
-const { CHARACTERS, CHAR_LIST } = sharedAi;
 
 function todayKst() {
   return new Intl.DateTimeFormat('en-CA', {
@@ -318,5 +317,6 @@ module.exports = {
   aiNameV2,
   aiConsultV2,
   getKingPlaygroundUsage,
+  getAiKingUsage: getKingPlaygroundUsage,
   CHARACTER_IDS: CHAR_LIST.map(item => item.id),
 };
