@@ -1,971 +1,41 @@
 import { auth, db, signOut, functions } from '../firebase.js';
 import {
   collection, query, where, orderBy, limit, getDocs, getCountFromServer,
-  doc, getDoc, updateDoc, writeBatch, deleteDoc, serverTimestamp, setDoc,
+  doc, getDoc, writeBatch, deleteDoc,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
-import {
-  updateProfile, deleteUser, EmailAuthProvider, reauthenticateWithCredential,
-  GoogleAuthProvider, reauthenticateWithPopup,
-} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { updateProfile } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { navigate } from '../router.js';
 import { toast } from '../components/toast.js';
 import { escHtml, formatTime, computeTitle } from '../utils/helpers.js';
 import { renderFeedCard } from '../components/feed-card.js';
 import { appState } from '../state.js';
-import { getPoliticalRank } from '../utils/political-rank.js';
-
-const RANK_PERKS = {
-  2: ['배틀 투표 가능', '일일 포인트 획득'],
-  3: ['대선 투표 +2P 보너스', '당원 칭호'],
-  4: ['유세 캠페인 참여', '당 간부 배지'],
-  5: ['위기투표 영향력 ↑', '위원장 칭호'],
-  6: ['포인트샵 5% 할인', '국회의원 배지'],
-  7: ['배틀 토론 영향력 ↑', '당 중진 칭호'],
-  8: ['모든 혜택 해금', '대통령 후보 1순위'],
-};
 import { setMeta } from '../utils/seo.js';
 import { renderSidebar } from '../components/sidebar.js';
 import { renderBottomNav } from '../components/bottom-nav.js';
 import { normalizeNicknameIcon } from '../utils/nickname-icon.js';
 
+const MODE_META = {
+  judge: { icon: '⚖️', label: '판결소' },
+  create: { icon: '✨', label: '창작소' },
+  consult: { icon: '🫂', label: '상담소' },
+};
+
+function call(name, payload = {}) {
+  return httpsCallable(functions, name)(payload).then(response => response.data || {});
+}
+
 function renderAccountAvatar(user, nickname) {
   const icon = normalizeNicknameIcon(appState.nicknameIcon);
-  if (icon?.type === 'image') {
-    return `<img class="account-avatar__img" src="${escHtml(icon.url)}" alt="" aria-hidden="true">`;
-  }
-  if (icon?.type === 'emoji') {
-    return `<span class="account-avatar__emoji" aria-hidden="true">${escHtml(icon.value)}</span>`;
-  }
-  if (user.photoURL) {
-    return `<img class="account-avatar__img" src="${escHtml(user.photoURL)}" alt="" aria-hidden="true">`;
-  }
+  if (icon?.type === 'image') return `<img class="account-avatar__img" src="${escHtml(icon.url)}" alt="" aria-hidden="true">`;
+  if (icon?.type === 'emoji') return `<span class="account-avatar__emoji" aria-hidden="true">${escHtml(icon.value)}</span>`;
+  if (user.photoURL) return `<img class="account-avatar__img" src="${escHtml(user.photoURL)}" alt="" aria-hidden="true">`;
   return escHtml((nickname || '나')[0]);
 }
 
 function tabButton(activeTab, key, icon, label, extra = '') {
   const active = activeTab === key;
-  return `
-    <button class="account-tab ${active ? 'active' : ''}" data-tab="${key}" aria-label="${label}" title="${label}">
-      <span class="account-tab__icon">${icon}</span>
-      <span class="account-tab__label">${label}</span>
-      ${extra}
-    </button>`;
-}
-
-export async function renderAccount() {
-  setMeta('내 정보');
-  const el   = document.getElementById('page-content');
-  const user = appState.user;
-
-  if (!user) {
-    if (appState.loading) {
-      el.innerHTML = `<div class="loading-center"><div class="spinner spinner--lg"></div></div>`;
-      return;
-    }
-    el.innerHTML = `
-      <div class="empty-state">
-        <div class="empty-state__icon">👤</div>
-        <div class="empty-state__title">로그인이 필요해요</div>
-        <button class="btn btn--primary" style="margin-top:16px" onclick="navigate('/login?return=/account')">로그인하기</button>
-      </div>`;
-    return;
-  }
-
-  el.innerHTML = `<div class="loading-center"><div class="spinner spinner--lg"></div></div>`;
-
-  const [{ count: postCount, posts: myPosts }, userSnap, adminSnap] = await Promise.all([
-    fetchMyPosts(user.uid),
-    getDoc(doc(db, 'users', user.uid)).catch(() => null),
-    getDoc(doc(db, 'admins', user.uid)).catch(() => null),
-  ]);
-
-  const isAdmin = adminSnap?.exists() === true;
-
-  const userData = userSnap?.exists() ? userSnap.data() : {};
-  const title    = computeTitle(postCount);
-  const power    = Math.max(0, Number(userData.totalPoints || userData.points || 0));
-  const polRank  = getPoliticalRank(power);
-  const streak   = appState.streak || userData.streak || 0;
-  const nickname = appState.nickname || user.displayName || user.email?.split('@')[0] || '익명';
-
-  const _pjAt = userData?.partyJoinedAt?.toDate ? userData.partyJoinedAt.toDate() : null;
-  const partyLoyaltyDays = _pjAt ? Math.floor((Date.now() - _pjAt.getTime()) / 86400000) : 0;
-  const myPartyMeta = userData?.partyId ? PARTY_COLORS_ACCT[userData.partyId] : null;
-
-  // 빠른 배지 쇼케이스 (stats API 없이 즉시 계산 가능한 항목)
-  const quickStats = { power, partyId: userData.partyId || null, maxStreak: userData.maxStreak || streak };
-  const quickEarned = BADGE_DEFS.filter(b => ['joined','party_join','streak3','streak7','streak14','streak30','power100','power1000','power3000','power10000','power25000'].includes(b.id) && b.check(quickStats));
-  const quickEarnedCount = quickEarned.length;
-  const showcaseBadges = quickEarned.slice(-5).reverse(); // 가장 최근 획득한 5개
-
-  if (userSnap?.exists()) {
-    updateDoc(doc(db, 'users', user.uid), { title }).catch(() => {});
-    appState.userTitle = title;
-  }
-
-  const activeTab = new URLSearchParams(window.location.hash.split('?')[1] || '').get('tab') || 'posts';
-
-  el.innerHTML = `
-    <div class="account-page-wrap">
-      <div class="card account-profile-card">
-        <div class="account-header">
-          <div class="avatar account-avatar ${normalizeNicknameIcon(appState.nicknameIcon) || user.photoURL ? 'avatar--nickname-icon' : ''}" style="width:72px;height:72px;font-size:24px;font-weight:800">
-            ${renderAccountAvatar(user, nickname)}
-          </div>
-          <div class="account-nickname">${escHtml(nickname)}</div>
-          <div class="account-level">
-            <span class="title-badge" style="background:color-mix(in srgb,${polRank.color} 16%,transparent);color:${polRank.color}">${polRank.emoji} ${polRank.title}</span>
-            ${streak > 0 ? `<span class="streak-pill" style="margin-left:6px">🔥 ${streak}일 연속</span>` : ''}
-            ${myPartyMeta && partyLoyaltyDays > 0 ? `<span class="party-loyalty-pill" style="--party-c:${myPartyMeta.color};margin-left:6px">${myPartyMeta.emoji} 당원 경력 ${partyLoyaltyDays}일</span>` : ''}
-          </div>
-          <div class="account-rank-progress">
-            <div class="account-rank-progress__bar"><div class="account-rank-progress__fill" style="width:${polRank.progress}%;background:${polRank.color}"></div></div>
-            <div class="account-rank-progress__label">${polRank.isMax ? '최고 등급 달성! 🎉' : `${polRank.next.emoji} ${polRank.next.title}까지 ${polRank.remain.toLocaleString()}P`}</div>
-            ${!polRank.isMax && RANK_PERKS[polRank.next.level] ? `<div class="account-rank-perks">${RANK_PERKS[polRank.next.level].map(p => `<span class="account-rank-perk-item">🔓 ${escHtml(p)}</span>`).join('')}</div>` : ''}
-          </div>
-          <div class="account-stats">
-            <div class="account-stat">
-              <div class="account-stat__num" style="color:${polRank.color}">${power.toLocaleString()}</div>
-              <div class="account-stat__label">정치력</div>
-            </div>
-            <div class="account-stat">
-              <div class="account-stat__num">${postCount}</div>
-              <div class="account-stat__label">작성한 글</div>
-            </div>
-            <div class="account-stat">
-              <div class="account-stat__num">${appState.unreadNotifications || 0}</div>
-              <div class="account-stat__label">새 알림</div>
-            </div>
-          </div>
-        </div>
-        <div class="card__footer account-profile-actions">
-          ${isAdmin ? `<button class="btn btn--primary btn--sm" onclick="navigate('/admin')">⚙️ 관리자</button>` : ''}
-          ${(!window.matchMedia('(display-mode: standalone)').matches && !navigator.standalone) && (appState.installPrompt || /iPhone|iPad|iPod/.test(navigator.userAgent)) ? `<button class="btn btn--ghost btn--sm" id="btn-pwa-install">📲 앱 설치</button>` : ''}
-          <button class="btn btn--ghost btn--sm" id="btn-logout">로그아웃</button>
-        </div>
-      </div>
-
-      ${showcaseBadges.length > 0 ? `
-      <div class="account-badge-showcase" role="button" data-tab-target="stats" title="업적 전체 보기">
-        <div class="account-badge-showcase__left">
-          <span class="account-badge-showcase__title">🏅 업적</span>
-          <span class="account-badge-showcase__count">${quickEarnedCount}개 달성</span>
-        </div>
-        <div class="account-badge-showcase__chips">
-          ${showcaseBadges.map(b => `<span class="account-badge-chip" title="${b.label}">${b.emoji}</span>`).join('')}
-        </div>
-        <span class="account-badge-showcase__more">전체 보기 →</span>
-      </div>` : ''}
-
-      <div class="account-tabs" aria-label="내 정보 메뉴">
-        ${tabButton(activeTab, 'posts', '📝', `내 글 ${postCount ? postCount : ''}`)}
-        ${tabButton(activeTab, 'scraps', '🔖', '스크랩')}
-        ${tabButton(activeTab, 'party', '🏛️', '정당')}
-        ${tabButton(activeTab, 'stats', '📊', '통계')}
-        ${tabButton(activeTab, 'follows', '👥', '팔로우')}
-        ${tabButton(activeTab, 'notifications', '🔔', '알림', appState.unreadNotifications > 0 ? `<span class="notif-badge-sm account-tab__badge">${appState.unreadNotifications}</span>` : '')}
-        ${tabButton(activeTab, 'settings', '⚙️', '설정')}
-      </div>
-      <div id="account-tab-content"></div>
-    </div>`;
-
-  document.getElementById('btn-pwa-install')?.addEventListener('click', async () => {
-    const prompt = appState.installPrompt;
-    if (prompt) {
-      prompt.prompt();
-      const { outcome } = await prompt.userChoice;
-      if (outcome === 'accepted') {
-        appState.installPrompt = null;
-        document.getElementById('btn-pwa-install')?.remove();
-      }
-    } else {
-      alert('Safari 하단 공유 버튼(⬆)을 탭한 뒤 "홈 화면에 추가"를 선택하세요.');
-    }
-  });
-
-  document.getElementById('btn-logout')?.addEventListener('click', async () => {
-    await signOut(auth);
-    toast.success('로그아웃됐어요');
-    navigate('/');
-  });
-
-  const renderTab = async (tab) => {
-    const content = document.getElementById('account-tab-content');
-    if (!content) return;
-    content.innerHTML = `<div class="loading-center"><div class="spinner"></div></div>`;
-
-    if (tab === 'posts') {
-      content.innerHTML = myPosts.length
-        ? myPosts.map(p => renderFeedCard(p)).join('')
-        : `<div class="empty-state"><div class="empty-state__icon">✏️</div>
-           <div class="empty-state__title">아직 올린 글이 없어요</div>
-           <div class="empty-state__desc">피드에 첫 글을 올려보세요.</div>
-           <button class="btn btn--primary" style="margin-top:16px" onclick="navigate('/write')">+ 글쓰기</button></div>`;
-
-    } else if (tab === 'scraps') {
-      const scrapSnap = await getDocs(
-        query(collection(db, 'users', user.uid, 'scraps'), orderBy('scrappedAt', 'desc'))
-      ).catch(() => null);
-      const ids = scrapSnap?.docs.map(d => d.id) || [];
-      const posts = ids.length
-        ? (await Promise.all(ids.map(id => getDoc(doc(db, 'feeds', id)))))
-            .filter(s => s.exists()).map(s => ({ id: s.id, ...s.data() })).filter(p => !p.hidden)
-        : [];
-
-      const wrapScrap = (post) => `
-        <div class="scrap-item" id="acct-scrap-${post.id}">
-          <button class="scrap-delete-btn" onclick="window.__acctScrapDelete('${post.id}')" title="스크랩 삭제">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-            </svg>
-            삭제
-          </button>
-          ${renderFeedCard(post)}
-        </div>`;
-
-      content.innerHTML = posts.length
-        ? `<div style="display:flex;justify-content:flex-end;margin-bottom:8px">
-             <button class="btn btn--ghost btn--sm" id="btn-acct-scrap-all" style="color:var(--color-danger)">전체 삭제</button>
-           </div>
-           ${posts.map(p => wrapScrap(p)).join('')}`
-        : `<div class="empty-state"><div class="empty-state__icon">🔖</div>
-           <div class="empty-state__title">아직 스크랩한 글이 없어요</div>
-           <div class="empty-state__desc">재밌는 글 발견하면 🔖 꾹 눌러두세요!</div></div>`;
-
-      window.__acctScrapDelete = async (postId) => {
-        try {
-          await deleteDoc(doc(db, 'users', user.uid, 'scraps', postId));
-          document.getElementById(`acct-scrap-${postId}`)?.remove();
-          if (!document.querySelectorAll('.scrap-item').length) {
-            content.innerHTML = `<div class="empty-state"><div class="empty-state__icon">🔖</div>
-              <div class="empty-state__title">스크랩이 모두 비워졌어요</div></div>`;
-          }
-          toast.success('스크랩을 삭제했어요');
-        } catch { toast.error('삭제에 실패했어요'); }
-      };
-
-      document.getElementById('btn-acct-scrap-all')?.addEventListener('click', async () => {
-        if (!confirm('스크랩한 글을 전부 삭제할까요?')) return;
-        try {
-          const allSnap = await getDocs(collection(db, 'users', user.uid, 'scraps'));
-          if (!allSnap.empty) {
-            const batch = writeBatch(db);
-            allSnap.docs.forEach(d => batch.delete(d.ref));
-            await batch.commit();
-          }
-          content.innerHTML = `<div class="empty-state"><div class="empty-state__icon">🔖</div>
-            <div class="empty-state__title">스크랩한 글이 없어요</div></div>`;
-          toast.success('전체 스크랩을 삭제했어요');
-        } catch { toast.error('삭제에 실패했어요'); }
-      });
-
-    } else if (tab === 'notifications') {
-      const q = query(
-        collection(db, 'notifications'),
-        where('userId', '==', user.uid),
-        orderBy('createdAt', 'desc'),
-        limit(50),
-      );
-      const notifSnap = await getDocs(q).catch(() => null);
-      const notifs = notifSnap?.docs.map(d => ({ id: d.id, ...d.data() })) || [];
-
-      const unread = notifSnap?.docs.filter(d => !d.data().read) || [];
-      if (unread.length) {
-        const batch = writeBatch(db);
-        unread.forEach(d => batch.update(d.ref, { read: true }));
-        batch.commit().then(() => { appState.unreadNotifications = 0; renderSidebar(); renderBottomNav(); }).catch(() => {});
-      }
-
-      content.innerHTML = notifs.length
-        ? `<div class="notif-list">${notifs.map(n => renderNotifItem(n)).join('')}</div>`
-        : `<div class="empty-state"><div class="empty-state__icon">🔔</div>
-           <div class="empty-state__title">아직 알림이 없어요</div>
-           <div class="empty-state__desc">글을 올리면 반응이 오기 시작해요.</div></div>`;
-
-    } else if (tab === 'party') {
-      await renderPartyTab(content, user.uid);
-
-    } else if (tab === 'stats') {
-      await renderStatsTab(content, user.uid);
-
-    } else if (tab === 'follows') {
-      await renderFollowsTab(content, user.uid);
-
-    } else if (tab === 'settings') {
-      renderSettingsTab(content, user, userData, nickname);
-    }
-  };
-
-  document.querySelectorAll('.account-tab').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.account-tab').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const tab = btn.dataset.tab;
-      const nextHash = `#/account?tab=${tab}`;
-      if (window.location.hash !== nextHash) history.replaceState(null, '', nextHash);
-      renderTab(tab);
-    });
-  });
-
-  document.querySelector('.account-badge-showcase')?.addEventListener('click', () => {
-    const statsBtn = document.querySelector('.account-tab[data-tab="stats"]');
-    statsBtn?.click();
-  });
-
-  renderTab(activeTab);
-}
-
-/* ── 설정 탭 ── */
-function renderSettingsTab(content, user, userData, nickname) {
-  const isGoogle = user.providerData?.some(p => p.providerId === 'google.com');
-  const isEmail  = user.providerData?.some(p => p.providerId === 'password');
-  const isKakao  = !isGoogle && !isEmail;
-  // 카카오 커스텀 토큰 사용자는 Firebase Auth에 email이 없어 Firestore에서 보완
-  const displayEmail = user.email || userData?.email || '';
-
-  content.innerHTML = `
-    <div class="card" style="margin-bottom:12px">
-      <div class="card__body--lg">
-        <div class="section-title" style="font-size:15px;margin-bottom:16px">👤 닉네임 변경</div>
-        <div class="form-group">
-          <label class="form-label">새 닉네임 <span class="required">*</span></label>
-          <input id="new-nickname" class="form-input" type="text"
-            value="${escHtml(nickname)}"
-            placeholder="2~12자, 한글/영문/숫자/_"
-            maxlength="12">
-          <div class="form-hint">2~12자, 한글·영문·숫자·_(밑줄)만 사용 가능해요</div>
-          <div id="nickname-feedback" style="font-size:12px;margin-top:6px;min-height:18px"></div>
-        </div>
-        <button class="btn btn--primary btn--sm" id="btn-save-nickname">저장하기</button>
-      </div>
-    </div>
-
-    <div class="card" style="margin-bottom:12px">
-      <div class="card__body--lg">
-        <div class="section-title" style="font-size:15px;margin-bottom:8px">🔐 계정 정보</div>
-        <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:4px">
-          이메일: <strong>${escHtml(displayEmail || '—')}</strong>
-        </div>
-        <div style="font-size:13px;color:var(--color-text-secondary)">
-          로그인 방식: <strong>${isGoogle ? '구글 소셜 로그인' : isKakao ? '카카오 소셜 로그인' : '이메일/비밀번호'}</strong>
-        </div>
-      </div>
-    </div>
-
-    <div class="card game-pref-card" style="margin-bottom:12px">
-      <div class="card__body--lg">
-        <div class="section-title" style="font-size:15px;margin-bottom:6px">🎮 게임 효과</div>
-        <div class="game-pref-row">
-          <div>
-            <div class="game-pref-row__label">효과음</div>
-            <div class="game-pref-row__sub">투표·반응 등에 가벼운 사운드</div>
-          </div>
-          <button class="game-switch" id="pref-sfx" role="switch" type="button"></button>
-        </div>
-        <div class="game-pref-row">
-          <div>
-            <div class="game-pref-row__label">진동(햅틱)</div>
-            <div class="game-pref-row__sub">탭할 때 가벼운 진동 (지원 기기)</div>
-          </div>
-          <button class="game-switch" id="pref-haptic" role="switch" type="button"></button>
-        </div>
-      </div>
-    </div>
-
-    <div class="card" style="border-color:var(--color-danger);opacity:0.9">
-      <div class="card__body--lg">
-        <div class="section-title" style="font-size:15px;color:var(--color-danger);margin-bottom:8px">⚠️ 회원 탈퇴</div>
-        <p style="font-size:13px;color:var(--color-text-secondary);margin-bottom:16px;line-height:1.6">
-          탈퇴 시 계정이 삭제되며 <strong>복구할 수 없어요.</strong><br>
-          작성한 글·댓글은 즉시 삭제되지 않을 수 있어요.
-        </p>
-        <button class="btn btn--danger btn--sm" id="btn-withdraw">회원 탈퇴</button>
-      </div>
-    </div>`;
-
-  setupNicknameEdit(user, nickname);
-  setupWithdrawal(user, isGoogle, isKakao, nickname);
-  setupGamePrefs();
-}
-
-function setupGamePrefs() {
-  const g = window.SosoGame;
-  const bind = (id, isOn, setOn, demo) => {
-    const btn = document.getElementById(id);
-    if (!btn) return;
-    const sync = () => btn.setAttribute('aria-checked', isOn() ? 'true' : 'false');
-    sync();
-    btn.addEventListener('click', () => {
-      const next = btn.getAttribute('aria-checked') !== 'true';
-      setOn(next);
-      sync();
-      if (next && demo) demo();
-    });
-  };
-  // SosoGame이 아직 로드 전이면 localStorage로 폴백
-  const sfxOn = () => g ? g.sfxEnabled() : localStorage.getItem('soso-sfx') !== 'off';
-  const hapOn = () => g ? g.hapticEnabled() : localStorage.getItem('soso-haptic') !== 'off';
-  bind('pref-sfx', sfxOn,
-    (on) => g ? g.setSfx(on) : localStorage.setItem('soso-sfx', on ? 'on' : 'off'),
-    () => g?.playSfx('success'));
-  bind('pref-haptic', hapOn,
-    (on) => g ? g.setHaptic(on) : localStorage.setItem('soso-haptic', on ? 'on' : 'off'),
-    () => g?.haptic([10, 30, 10]));
-}
-
-function setupNicknameEdit(user, currentNickname) {
-  const input    = document.getElementById('new-nickname');
-  const feedback = document.getElementById('nickname-feedback');
-  const saveBtn  = document.getElementById('btn-save-nickname');
-
-  const NICK_RE = /^[가-힣a-zA-Z0-9_]{2,12}$/;
-
-  let nickCheckTimer = null;
-  input?.addEventListener('input', () => {
-    const v = input.value.trim();
-    feedback.textContent = '';
-    clearTimeout(nickCheckTimer);
-    if (!v) return;
-    if (!NICK_RE.test(v)) {
-      feedback.style.color = 'var(--color-danger)';
-      feedback.textContent = '2~12자, 한글·영문·숫자·_ 만 가능해요';
-      return;
-    }
-    if (v === currentNickname) {
-      feedback.style.color = 'var(--color-text-muted)';
-      feedback.textContent = '현재 닉네임이에요';
-      return;
-    }
-    feedback.style.color = 'var(--color-text-muted)';
-    feedback.textContent = '확인 중...';
-    nickCheckTimer = setTimeout(async () => {
-      try {
-        const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
-        const snap = await getDoc(doc(db, 'nicknames', v));
-        if (input.value.trim() !== v) return; // 입력값 바뀌었으면 무시
-        if (snap.exists() && snap.data()?.uid !== user.uid) {
-          feedback.style.color = 'var(--color-danger)';
-          feedback.textContent = '이미 사용 중인 닉네임이에요';
-        } else {
-          feedback.style.color = 'var(--color-success)';
-          feedback.textContent = '사용 가능한 닉네임이에요 ✓';
-        }
-      } catch {
-        feedback.style.color = 'var(--color-text-muted)';
-        feedback.textContent = '올바른 형식이에요';
-      }
-    }, 500);
-  });
-
-  saveBtn?.addEventListener('click', async () => {
-    const newNick = input?.value.trim();
-    if (!newNick) { toast.error('닉네임을 입력해주세요'); return; }
-    if (!NICK_RE.test(newNick)) { toast.error('닉네임 형식이 맞지 않아요'); return; }
-    if (newNick === currentNickname) { toast.info('현재 닉네임과 같아요'); return; }
-
-    saveBtn.disabled = true;
-    saveBtn.textContent = '저장 중...';
-    try {
-      // 닉네임 변경은 서버 트랜잭션(updateNickname)으로 처리한다.
-      // 클라이언트에서 users.nickname을 직접 수정하면 보안 규칙에 막힌다.
-      const { getFunctions, httpsCallable } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js');
-      const { getApp } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');
-      const fns = getFunctions(getApp(), 'asia-northeast3');
-      await httpsCallable(fns, 'updateNickname')({ nickname: newNick });
-
-      await updateProfile(user, { displayName: newNick }).catch(() => {});
-
-      if (appState.user) appState.user.displayName = newNick;
-      appState.nickname = newNick;
-      renderSidebar();
-      renderBottomNav();
-
-      feedback.style.color = 'var(--color-success)';
-      feedback.textContent = '저장됐어요!';
-      toast.success('닉네임이 변경됐어요');
-    } catch (e) {
-      console.error(e);
-      toast.error(e?.message || '저장에 실패했어요. 다시 시도해주세요');
-    } finally {
-      saveBtn.disabled = false;
-      saveBtn.textContent = '저장하기';
-    }
-  });
-}
-
-function setupWithdrawal(user, isGoogle, isKakao, nickname) {
-  // 실제 탈퇴 처리는 account-secure-actions.js(capture 단계)가 가로챔.
-  // 보안 모듈 미로드 시 fallback으로만 동작.
-  document.getElementById('btn-withdraw')?.addEventListener('click', async () => {
-    const confirmed = window.confirm('정말 탈퇴하시겠어요?\n\n계정이 삭제되며 복구할 수 없어요.');
-    if (!confirmed) return;
-
-    const btn = document.getElementById('btn-withdraw');
-    if (btn) { btn.disabled = true; btn.textContent = '처리 중...'; }
-
-    try {
-      const { getFunctions, httpsCallable } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js');
-      const { getApp } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');
-      const fns = getFunctions(getApp(), 'asia-northeast3');
-      await httpsCallable(fns, 'deleteMyAccount')({});
-      await signOut(auth).catch(() => {});
-      toast.success('탈퇴가 완료됐어요. 이용해주셔서 감사합니다');
-      navigate('/');
-    } catch (e) {
-      console.error('[탈퇴]', e);
-      if (btn) { btn.disabled = false; btn.textContent = '회원 탈퇴'; }
-      toast.error((e?.message || '탈퇴 처리 중 오류가 발생했어요') + (e?.code ? ` (${e.code})` : ''));
-    }
-  });
-}
-
-function renderNotifItem(n) {
-  const timeStr = formatTime(n.createdAt?.toDate?.() || n.createdAt);
-  if (n.type === 'leader' || n.type === 'president' || n.type === 'rankup') {
-    const icon = n.type === 'president' ? '🎉' : n.type === 'rankup' ? '⬆️' : '👑';
-    const dest = n.type === 'president' ? '/election' : n.type === 'rankup' ? '/ranking' : '/parties';
-    return `
-      <div class="notif-item notif-item--political ${n.read ? '' : 'notif-item--unread'}" onclick="navigate('${dest}')">
-        <span class="notif-item__icon">${icon}</span>
-        <div class="notif-item__body">
-          <div class="notif-item__text"><strong>${escHtml(n.title || '')}</strong></div>
-          ${n.body ? `<div class="notif-item__text" style="font-weight:400">${escHtml(n.body)}</div>` : ''}
-          <div class="notif-item__time">${timeStr}</div>
-        </div>
-      </div>`;
-  }
-  const icon = n.type === 'comment' ? '💬' : '❤️';
-  return `
-    <div class="notif-item ${n.read ? '' : 'notif-item--unread'}" onclick="navigate('/detail/${n.postId}')">
-      <span class="notif-item__icon">${icon}</span>
-      <div class="notif-item__body">
-        <div class="notif-item__text">
-          <strong>${escHtml(n.actorName || '익명')}</strong>님이
-          <strong>${escHtml(n.postTitle || '내 글')}</strong>에 ${n.type === 'comment' ? '댓글을 달았어요' : '반응했어요'}
-        </div>
-        <div class="notif-item__time">${timeStr}</div>
-      </div>
-    </div>`;
-}
-
-function getPostTypeBucket(p) {
-  if (p.type === 'multi' || p.type === 'general') {
-    if (p.preset) return p.preset;
-    if (p.modules?.vote) return 'vote';
-    if (p.modules?.naming) return 'naming';
-    if (p.modules?.drip) return 'drip';
-    if (p.modules?.quiz) return 'quiz';
-    return 'general';
-  }
-  const t = p.type || 'general';
-  if (t === 'vote' || t === 'balance' || t === 'judgment' || t === 'debate') return 'vote';
-  if (t === 'naming') return 'naming';
-  if (t === 'quiz') return 'quiz';
-  if (t === 'drip' || t === 'cbattle') return 'drip';
-  return 'general';
-}
-
-const BADGE_DEFS = [
-  // 입문
-  { id: 'joined',      emoji: '🌱', label: '소소공화국 시민',  desc: '소소공화국에 입장',           check: (s) => true },
-  { id: 'party_join',  emoji: '🏛️', label: '입당 완료',        desc: '정당에 가입',                 check: (s) => !!s.partyId },
-  // 배틀
-  { id: 'battle1',     emoji: '🗳️', label: '배틀 참전',        desc: '배틀 1회 투표',               check: (s) => s.battleVotes >= 1 },
-  { id: 'battle10',    emoji: '⚔️', label: '투표 전사',         desc: '배틀 10회 투표',              check: (s) => s.battleVotes >= 10 },
-  { id: 'battle30',    emoji: '🔱', label: '배틀 고수',         desc: '배틀 30회 투표',              check: (s) => s.battleVotes >= 30 },
-  { id: 'battle100',   emoji: '💥', label: '배틀 레전드',       desc: '배틀 100회 투표',             check: (s) => s.battleVotes >= 100 },
-  // 토론
-  { id: 'debate1',     emoji: '💬', label: '배틀 토론가',       desc: '배틀 토론 1회 참여',          check: (s) => s.battleComments >= 1 },
-  { id: 'debate10',    emoji: '🗣️', label: '열변 정치인',       desc: '배틀 토론 10회 참여',         check: (s) => s.battleComments >= 10 },
-  { id: 'debate50',    emoji: '📢', label: '국민 대변인',       desc: '배틀 토론 50회 참여',         check: (s) => s.battleComments >= 50 },
-  // 대선
-  { id: 'election1',   emoji: '👑', label: '대선 투사',         desc: '대선 1회 투표',               check: (s) => s.electionVotes >= 1 },
-  { id: 'election5',   emoji: '🗳️', label: '대선 단골',         desc: '대선 5회 투표',               check: (s) => s.electionVotes >= 5 },
-  { id: 'election10',  emoji: '🎖️', label: '선거 박사',         desc: '대선 10회 투표',              check: (s) => s.electionVotes >= 10 },
-  // 위기·탄핵
-  { id: 'crisis1',     emoji: '🚨', label: '위기 대응',          desc: '국정 위기 1회 투표',          check: (s) => s.crisisVotes >= 1 },
-  { id: 'crisis5',     emoji: '🆘', label: '위기 관리자',        desc: '국정 위기 5회 투표',          check: (s) => s.crisisVotes >= 5 },
-  { id: 'impeach',     emoji: '✍️', label: '탄핵 서명',          desc: '탄핵 청원 서명',              check: (s) => s.impeachSigned },
-  // 소통
-  { id: 'qa',          emoji: '🎙️', label: '대정부 질문',        desc: '대통령에게 직접 질문',        check: (s) => s.presidentQA >= 1 },
-  { id: 'post5',       emoji: '📜', label: '논설위원',            desc: '게시물 5개 작성',             check: (s) => s.postCount >= 5 },
-  { id: 'post20',      emoji: '✍️', label: '정치 칼럼니스트',    desc: '게시물 20개 작성',            check: (s) => s.postCount >= 20 },
-  // 출석
-  { id: 'streak3',     emoji: '🔥', label: '불꽃 정치인',        desc: '3일 연속 출석',               check: (s) => s.maxStreak >= 3 },
-  { id: 'streak7',     emoji: '💎', label: '강철 의지',           desc: '7일 연속 출석',               check: (s) => s.maxStreak >= 7 },
-  { id: 'streak14',    emoji: '🏅', label: '철인 정치가',         desc: '14일 연속 출석',              check: (s) => s.maxStreak >= 14 },
-  { id: 'streak30',    emoji: '🌟', label: '소소공화국의 별',     desc: '30일 연속 출석',              check: (s) => s.maxStreak >= 30 },
-  // 정치력
-  { id: 'power100',    emoji: '⚡', label: '100P 달성',           desc: '정치력 100P',                 check: (s) => s.power >= 100 },
-  { id: 'power1000',   emoji: '💪', label: '1000P 달성',         desc: '정치력 1000P',                check: (s) => s.power >= 1000 },
-  { id: 'power3000',   emoji: '🏆', label: '국회의원 등극',       desc: '정치력 3000P',                check: (s) => s.power >= 3000 },
-  { id: 'power10000',  emoji: '👔', label: '거물 정치인',         desc: '정치력 10000P',               check: (s) => s.power >= 10000 },
-  { id: 'power25000',  emoji: '🌟', label: '대통령급 위상',       desc: '정치력 25000P',               check: (s) => s.power >= 25000 },
-];
-
-function renderBadges(stats) {
-  const rows = BADGE_DEFS.map(b => {
-    const earned = b.check(stats);
-    return `<div class="stat-badge${earned ? ' stat-badge--earned' : ''}" title="${b.desc}">
-      <span class="stat-badge__emoji">${b.emoji}</span>
-      <span class="stat-badge__label">${b.label}</span>
-    </div>`;
-  });
-  const earnedCount = BADGE_DEFS.filter(b => b.check(stats)).length;
-  return `
-    <div class="stats-badges-card">
-      <div class="stats-badges-card__title">🏅 정치 업적 <span class="stats-badges-card__count">${earnedCount}/${BADGE_DEFS.length}</span></div>
-      <div class="stats-badges-grid">${rows.join('')}</div>
-    </div>`;
-}
-
-/* ── 통계 탭 ── */
-async function renderStatsTab(content, uid) {
-  try {
-    const [postsSnap, polStatsRes] = await Promise.all([
-      getDocs(query(collection(db, 'feeds'), where('authorId', '==', uid), orderBy('createdAt', 'desc'), limit(100))),
-      httpsCallable(functions, 'getUserPoliticsStats')().catch(() => null),
-    ]);
-    const posts = postsSnap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.hidden);
-    const polStats = polStatsRes?.data || {};
-
-    const typeCounts = { general: 0, vote: 0, naming: 0, drip: 0, quiz: 0 };
-    let totalReactions = 0, totalComments = 0, bestPost = null, bestScore = -1;
-    const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);
-    let weekPosts = 0;
-
-    for (const p of posts) {
-      const bucket = getPostTypeBucket(p);
-      typeCounts[bucket] = (typeCounts[bucket] || 0) + 1;
-      totalReactions += p.reactions?.total || 0;
-      totalComments += p.commentCount || 0;
-      const score = (p.reactions?.total || 0) * 2 + (p.commentCount || 0) * 3;
-      if (score > bestScore) { bestScore = score; bestPost = p; }
-      const d = p.createdAt?.toDate?.();
-      if (d && d >= weekAgo) weekPosts++;
-    }
-
-    const typeMeta = [
-      { key: 'general', label: '📝 일반글', color: 'var(--color-primary)' },
-      { key: 'vote', label: '🗳️ 투표·판정', color: 'var(--color-golra)' },
-      { key: 'naming', label: '😜 작명소', color: 'var(--color-usgyo)' },
-      { key: 'drip', label: '🤣 드립', color: '#FF9B21' },
-      { key: 'quiz', label: '🧠 퀴즈', color: 'var(--color-success)' },
-    ];
-    const total = posts.length || 1;
-
-    const streak = polStats.streak || appState.streak || 0;
-    const maxStreak = polStats.maxStreak || streak;
-    const signupDate = polStats.signupDate || null;
-    const battleVotes = polStats.battleVotes || 0;
-    const electionVotes = polStats.electionVotes || 0;
-    const crisisVotes = polStats.crisisVotes || 0;
-    const battleComments = polStats.battleComments || 0;
-    const presidentQA = polStats.presidentQA || 0;
-    const impeachSigned = !!(polStats.impeachSigned);
-
-    // 정치 성향 분석
-    const totalActivity = battleVotes + electionVotes + crisisVotes + battleComments;
-    const approvalEst = Math.min(100, Math.max(0, Math.round(
-      40 +
-      Math.min(25, maxStreak * 3) +
-      (polStats.partyId ? 8 : 0) +
-      Math.min(15, Math.floor(totalActivity / 3)) +
-      (power >= 10000 ? 7 : power >= 3000 ? 5 : power >= 500 ? 3 : 0)
-    )));
-    const approvalColor = approvalEst >= 70 ? '#16a34a' : approvalEst >= 50 ? '#2563eb' : '#dc2626';
-
-    let tendencyLabel = '원외 관망형';
-    let tendencyDesc = '아직 정치 활동이 많지 않아요. 배틀 투표나 입당으로 지지율을 높여보세요.';
-    if (polStats.partyId && totalActivity >= 20) {
-      if (battleComments >= battleVotes * 0.3) {
-        tendencyLabel = '설전형 정치인'; tendencyDesc = '토론을 즐기는 적극적인 논객이에요.';
-      } else if (electionVotes >= crisisVotes && electionVotes >= battleVotes) {
-        tendencyLabel = '선거 전략가'; tendencyDesc = '대선에 강한 관심을 가진 전략적 유권자에요.';
-      } else if (crisisVotes >= electionVotes) {
-        tendencyLabel = '위기 대응형'; tendencyDesc = '국정 위기에 민감하게 반응하는 실무형 정치인이에요.';
-      } else {
-        tendencyLabel = '배틀 전사'; tendencyDesc = '매일 정쟁에 참전하는 열혈 정치 게이머에요.';
-      }
-    } else if (polStats.partyId) {
-      tendencyLabel = '당원 초보형'; tendencyDesc = '입당은 했지만 아직 활동이 적어요. 배틀 투표로 시작해보세요.';
-    } else if (totalActivity >= 5) {
-      tendencyLabel = '무소속 활동가'; tendencyDesc = '정당 없이도 활발히 참여하는 독립파예요.';
-    }
-
-    content.innerHTML = `
-      <div class="stats-page">
-
-        <div class="stats-tendency-card">
-          <div class="stats-tendency-card__top">
-            <div>
-              <div class="stats-tendency-card__label">🧭 나의 정치 성향</div>
-              <div class="stats-tendency-card__type">${tendencyLabel}</div>
-              <div class="stats-tendency-card__desc">${tendencyDesc}</div>
-            </div>
-            <div class="stats-tendency-card__gauge">
-              <div class="stats-tendency-card__gauge-val" style="color:${approvalColor}">${approvalEst}%</div>
-              <div class="stats-tendency-card__gauge-lbl">지지율</div>
-            </div>
-          </div>
-          <div class="stats-tendency-bar-row">
-            <span class="stats-tendency-bar-lbl">📊 시민 지지율</span>
-            <div class="stats-tendency-track"><div class="stats-tendency-fill" style="width:${approvalEst}%;background:${approvalColor}"></div></div>
-            <span class="stats-tendency-pct" style="color:${approvalColor}">${approvalEst}%</span>
-          </div>
-        </div>
-
-        <div class="stats-pol-card">
-          <div class="stats-pol-card__title">⚡ 정치 활동 기록</div>
-          <div class="stats-pol-grid">
-            <div class="stats-pol-item">
-              <div class="stats-pol-item__num">${battleVotes}</div>
-              <div class="stats-pol-item__label">⚔️ 배틀 투표</div>
-            </div>
-            <div class="stats-pol-item">
-              <div class="stats-pol-item__num">${electionVotes}</div>
-              <div class="stats-pol-item__label">👑 대선 투표</div>
-            </div>
-            <div class="stats-pol-item">
-              <div class="stats-pol-item__num">${crisisVotes}</div>
-              <div class="stats-pol-item__label">🚨 위기 투표</div>
-            </div>
-            <div class="stats-pol-item">
-              <div class="stats-pol-item__num">${battleComments}</div>
-              <div class="stats-pol-item__label">💬 배틀 토론</div>
-            </div>
-            <div class="stats-pol-item">
-              <div class="stats-pol-item__num">${presidentQA}</div>
-              <div class="stats-pol-item__label">🎙️ 대정부 질문</div>
-            </div>
-            <div class="stats-pol-item">
-              <div class="stats-pol-item__num">${impeachSigned ? '✅' : '—'}</div>
-              <div class="stats-pol-item__label">✍️ 불신임 서명</div>
-            </div>
-            <div class="stats-pol-item">
-              <div class="stats-pol-item__num">${streak}일</div>
-              <div class="stats-pol-item__label">🔥 현재 연속</div>
-            </div>
-            <div class="stats-pol-item">
-              <div class="stats-pol-item__num">${maxStreak}일</div>
-              <div class="stats-pol-item__label">🏅 최장 연속</div>
-            </div>
-          </div>
-          ${signupDate ? `<div class="stats-pol-card__since">소소공화국 입성일 ${signupDate}</div>` : ''}
-        </div>
-
-        ${renderBadges({ battleVotes, electionVotes, crisisVotes, battleComments, presidentQA, impeachSigned, streak, maxStreak, postCount: posts.length, power: appState.points || 0, partyId: polStats.partyId || null })}
-
-        <div class="stats-grid" style="margin-top:12px">
-          <div class="stats-card"><div class="stats-card__num">${posts.length}</div><div class="stats-card__label">총 게시물</div></div>
-          <div class="stats-card"><div class="stats-card__num" style="color:var(--color-primary)">${totalReactions}</div><div class="stats-card__label">받은 반응</div></div>
-          <div class="stats-card"><div class="stats-card__num" style="color:var(--color-malhe)">${totalComments}</div><div class="stats-card__label">달린 댓글</div></div>
-          <div class="stats-card"><div class="stats-card__num" style="color:var(--color-success)">${weekPosts}</div><div class="stats-card__label">이번 주 활동</div></div>
-        </div>
-
-        <div class="card" style="margin-top:12px">
-          <div class="card__body">
-            <div style="font-size:14px;font-weight:800;margin-bottom:14px">📂 피드 활동</div>
-            ${typeMeta.map(c => `
-              <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
-                <div style="width:92px;font-size:12px;font-weight:700">${c.label}</div>
-                <div style="flex:1;background:var(--color-surface-2);border-radius:4px;height:10px;overflow:hidden">
-                  <div style="height:100%;background:${c.color};width:${Math.round((typeCounts[c.key]||0)/total*100)}%;transition:width 0.5s"></div>
-                </div>
-                <div style="width:40px;text-align:right;font-size:12px;font-weight:700;color:${c.color}">${typeCounts[c.key]||0}개</div>
-              </div>`).join('')}
-          </div>
-        </div>
-
-        ${bestPost ? `
-          <div class="card" style="margin-top:12px;border:1.5px solid var(--color-primary)">
-            <div class="card__body">
-              <div style="font-size:13px;font-weight:800;margin-bottom:8px;color:var(--color-primary)">🏆 내 최고 인기 글</div>
-              <div style="font-size:15px;font-weight:700;margin-bottom:6px;cursor:pointer;color:var(--color-text-primary)" onclick="navigate('/detail/${bestPost.id}')">
-                ${escHtml(bestPost.title || '제목 없음')}
-              </div>
-              <div style="font-size:12px;color:var(--color-text-muted)">
-                ❤️ 반응 ${bestPost.reactions?.total || 0}개 &nbsp;·&nbsp; 💬 댓글 ${bestPost.commentCount || 0}개
-              </div>
-            </div>
-          </div>` : ''}
-      </div>`;
-  } catch {
-    content.innerHTML = `<div class="empty-state"><div class="empty-state__icon">📊</div><div class="empty-state__title">통계를 불러올 수 없어요</div></div>`;
-  }
-}
-
-/* ── 팔로우 탭 ── */
-async function renderFollowsTab(content, uid) {
-  const [followingSnap, followersSnap] = await Promise.all([
-    getDocs(query(collection(db, 'follows'), where('followerId', '==', uid), orderBy('createdAt', 'desc'), limit(50))).catch(() => null),
-    getDocs(query(collection(db, 'follows'), where('followedId', '==', uid), orderBy('createdAt', 'desc'), limit(50))).catch(() => null),
-  ]);
-
-  const following = followingSnap?.docs.map(d => ({ id: d.id, ...d.data() })) || [];
-  const followers = followersSnap?.docs.map(d => ({ id: d.id, ...d.data() })) || [];
-
-  const renderList = (list, isFollowing) => list.length
-    ? list.map(f => `
-        <div class="follow-item">
-          <div class="follow-item__avatar">${(isFollowing ? f.followedName : f.followerName)?.[0] || '?'}</div>
-          <div class="follow-item__name">${escHtml(isFollowing ? f.followedName : f.followerName || '알 수 없음')}</div>
-          ${isFollowing ? `<button class="btn btn--ghost btn--sm follow-unfollow-btn" data-follow-id="${f.id}" data-followed-id="${f.followedId}">언팔로우</button>` : ''}
-        </div>`).join('')
-    : `<div style="padding:24px;text-align:center;font-size:13px;color:var(--color-text-muted)">${isFollowing ? '팔로우하는 사람이 없어요' : '팔로워가 없어요'}</div>`;
-
-  content.innerHTML = `
-    <div class="follows-page">
-      <div class="follows-section">
-        <div class="follows-section__title">팔로잉 <span class="follows-count">${following.length}</span></div>
-        <div class="follows-list">${renderList(following, true)}</div>
-      </div>
-      <div class="follows-section">
-        <div class="follows-section__title">팔로워 <span class="follows-count">${followers.length}</span></div>
-        <div class="follows-list">${renderList(followers, false)}</div>
-      </div>
-    </div>`;
-
-  content.querySelectorAll('.follow-unfollow-btn').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      try {
-        await deleteDoc(doc(db, 'follows', btn.dataset.followId));
-        btn.closest('.follow-item')?.remove();
-        toast.success('언팔로우했어요');
-      } catch { toast.error('잠시 후 다시 시도해주세요'); }
-    });
-  });
-}
-
-export async function followUser(targetUid, targetName) {
-  const user = auth.currentUser;
-  if (!user) { toast.error('로그인이 필요해요'); return; }
-  if (user.uid === targetUid) { toast.error('자신은 팔로우할 수 없어요'); return; }
-  const followId = `${user.uid}_${targetUid}`;
-  try {
-    await setDoc(doc(db, 'follows', followId), {
-      followerId: user.uid,
-      followerName: user.displayName || '익명',
-      followedId: targetUid,
-      followedName: targetName || '익명',
-      createdAt: serverTimestamp(),
-    });
-    toast.success(`${targetName}님을 팔로우했어요`);
-  } catch { toast.error('팔로우에 실패했어요'); }
-}
-
-const PARTY_COLORS_ACCT = {
-  national: { emoji: '🎙️', name: '국민안정당', color: '#8B7355' },
-  truth:    { emoji: '📺', name: '진실방송당', color: '#6C5CE7' },
-  youth:    { emoji: '📱', name: '청년혁명당', color: '#E84393' },
-  center:   { emoji: '📊', name: '중도민주당', color: '#00CEC9' },
-  future:   { emoji: '🤝', name: '함께미래당', color: '#FDCB6E' },
-  rights:   { emoji: '🔍', name: '알권리당',   color: '#00B894' },
-  justice:  { emoji: '⚖️', name: '법치정의당', color: '#2D3436' },
-};
-
-function fmtPower(n) {
-  n = Number(n || 0);
-  if (n >= 10000) return (n / 10000).toFixed(1).replace(/\.0$/, '') + '만';
-  if (n >= 1000)  return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
-  return String(n);
-}
-
-async function renderPartyTab(content, uid) {
-  content.innerHTML = `<div class="loading-center"><div class="spinner"></div></div>`;
-  try {
-    const call = httpsCallable(functions, 'getPoliticsOverview');
-    const { data } = await call();
-    const me = data?.me || null;
-    const parties = data?.parties || [];
-    const myParty = me?.partyId ? parties.find(p => p.id === me.partyId) : null;
-    const partyMeta = me?.partyId ? PARTY_COLORS_ACCT[me.partyId] : null;
-
-    const isLeader = myParty?.leader?.uid === uid;
-
-    let rankHtml = '';
-    if (myParty) {
-      try {
-        const callMembers = httpsCallable(functions, 'getPartyMembers');
-        const { data: mbData } = await callMembers({ partyId: me.partyId });
-        const members = mbData?.members || [];
-        const myRank = members.findIndex(m => m.uid === uid || m.nickname === (appState.nickname)) + 1;
-        if (myRank > 0) {
-          rankHtml = `<span class="acct-party-rank">당내 ${myRank}위</span>`;
-        }
-      } catch {}
-    }
-
-    if (me?.partyId && partyMeta) {
-      content.innerHTML = `
-        <div class="acct-party-card" style="--party-c:${partyMeta.color}">
-          <div class="acct-party-card__top">
-            <span class="acct-party-card__emoji">${partyMeta.emoji}</span>
-            <div class="acct-party-card__info">
-              <div class="acct-party-card__name">
-                ${isLeader ? '<span class="acct-party-leader-crown">👑 당대표</span>' : ''}
-                ${escHtml(partyMeta.name)}
-              </div>
-              <div class="acct-party-card__power">정치력 ${fmtPower(me.power)}P ${rankHtml}</div>
-            </div>
-          </div>
-          ${myParty ? (() => {
-            const myContrib = myParty.totalPower > 0 ? Math.round((me.power / myParty.totalPower) * 100) : 0;
-            const toLeader = myParty.leader && myParty.leader.power > me.power ? myParty.leader.power - me.power : 0;
-            return `<div class="acct-party-card__stats">
-              <span>👥 당원 ${myParty.memberCount}명</span>
-              <span>⚡ 당 총 정치력 ${fmtPower(myParty.totalPower)}</span>
-              <span>📊 전체 ${myParty.rank}위</span>
-            </div>
-            <div class="acct-party-card__contrib">
-              <div class="acct-party-card__contrib-label">내 기여도 ${myContrib}%</div>
-              <div class="acct-party-card__contrib-bar">
-                <div class="acct-party-card__contrib-fill" style="width:${Math.min(100, myContrib)}%"></div>
-              </div>
-              ${toLeader > 0 ? `<div class="acct-party-card__to-leader">당대표까지 <b>${fmtPower(toLeader)}P</b> 더 필요</div>` : isLeader ? `<div class="acct-party-card__to-leader" style="color:#e8b000">👑 당대표 — 대선 자동 출마 중!</div>` : ''}
-            </div>`;
-          })() : ''}
-          <div class="acct-party-card__actions">
-            <button class="btn btn--primary btn--sm" onclick="navigate('/parties')">정당 페이지 →</button>
-            <button class="btn btn--ghost btn--sm" onclick="navigate('/ranking')">랭킹 보기</button>
-          </div>
-        </div>
-
-        <div class="acct-party-tip">
-          <b>정치력</b>을 쌓으면 당내 순위가 올라가고, 1위가 되면 <b>당대표</b>가 됩니다.<br>
-          당대표는 매주 대통령 선거에 자동 출마합니다!
-        </div>
-
-        <div style="margin-top:16px">
-          <div class="section-title" style="font-size:14px;margin-bottom:10px">📊 전체 정당 순위</div>
-          <div class="acct-party-standings">
-            ${parties.map((p, i) => `
-              <div class="acct-party-row${p.id === me.partyId ? ' acct-party-row--mine' : ''}" style="--party-c:${PARTY_COLORS_ACCT[p.id]?.color || '#ccc'}">
-                <span class="acct-party-row__rank">${i + 1}</span>
-                <span class="acct-party-row__emoji">${p.emoji}</span>
-                <span class="acct-party-row__name">${escHtml(p.name)}</span>
-                <span class="acct-party-row__power">${fmtPower(p.totalPower)}P</span>
-              </div>`).join('')}
-          </div>
-        </div>`;
-    } else {
-      content.innerHTML = `
-        <div class="acct-party-empty">
-          <div class="acct-party-empty__icon">🏛️</div>
-          <div class="acct-party-empty__title">아직 정당에 가입하지 않았어요</div>
-          <p class="acct-party-empty__desc">정당에 입당하면 정치력을 쌓고 당대표, 대통령 후보가 될 수 있어요!</p>
-          <div style="display:flex;gap:8px;justify-content:center;margin-top:12px">
-            <button class="btn btn--primary" onclick="navigate('/parties')">🏛️ 정당 보러 가기</button>
-            <button class="btn btn--ghost" onclick="navigate('/ranking')">🏆 랭킹 보기</button>
-          </div>
-        </div>`;
-    }
-  } catch (e) {
-    console.error('[party tab]', e);
-    content.innerHTML = `<div class="empty-state"><div class="empty-state__icon">⚠️</div><div class="empty-state__title">정당 정보를 불러오지 못했어요</div></div>`;
-  }
+  return `<button class="account-tab ${active ? 'active' : ''}" data-tab="${key}" aria-label="${label}" aria-current="${active ? 'page' : 'false'}"><span class="account-tab__icon">${icon}</span><span class="account-tab__label">${label}</span>${extra}</button>`;
 }
 
 async function fetchMyPosts(uid) {
@@ -973,11 +43,326 @@ async function fetchMyPosts(uid) {
     const base = query(collection(db, 'feeds'), where('authorId', '==', uid));
     const [countSnap, postsSnap] = await Promise.all([
       getCountFromServer(base),
-      getDocs(query(base, orderBy('createdAt', 'desc'), limit(30))),
+      getDocs(query(collection(db, 'feeds'), where('authorId', '==', uid), orderBy('createdAt', 'desc'), limit(50))),
     ]);
     return {
-      count: countSnap.data().count,
-      posts: postsSnap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.hidden),
+      count: countSnap.data().count || 0,
+      posts: postsSnap.docs.map(item => ({ id: item.id, ...item.data() })).filter(item => !item.hidden),
     };
-  } catch { return { count: 0, posts: [] }; }
+  } catch (error) {
+    console.warn('[account posts]', error);
+    return { count: 0, posts: [] };
+  }
+}
+
+async function fetchAiHistory(limitCount = 30) {
+  try {
+    const data = await call('getKingPlaygroundHistory', { limit: limitCount });
+    return Array.isArray(data.results) ? data.results : [];
+  } catch (error) {
+    console.warn('[account AI history]', error);
+    return [];
+  }
+}
+
+function formatDate(value) {
+  if (!value) return '';
+  return new Intl.DateTimeFormat('ko-KR', {
+    year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit',
+  }).format(new Date(value));
+}
+
+function resultText(result) {
+  const lines = [result.title, '', `입력: ${result.input}`, ''];
+  (result.cards || []).forEach(card => lines.push(`[${card.name}]`, card.text, ''));
+  lines.push(`소소킹 ${location.origin}/#/playground/${result.mode}`);
+  return lines.join('\n').trim();
+}
+
+async function copyText(text) {
+  if (navigator.clipboard?.writeText) return navigator.clipboard.writeText(text);
+  const input = document.createElement('textarea');
+  input.value = text;
+  input.style.position = 'fixed';
+  input.style.opacity = '0';
+  document.body.appendChild(input);
+  input.select();
+  document.execCommand('copy');
+  input.remove();
+}
+
+function renderAiHistory(results) {
+  if (!results.length) {
+    return `<div class="empty-state"><div class="empty-state__icon">🤖</div><div class="empty-state__title">아직 저장된 AI 결과가 없어요</div><div class="empty-state__desc">판결소·창작소·상담소에서 첫 결과를 만들어보세요.</div><button class="btn btn--primary" style="margin-top:16px" data-go="/playground">AI 놀이터 시작</button></div>`;
+  }
+  return `<div class="account-ai-list">${results.map(result => {
+    const meta = MODE_META[result.mode] || { icon: '🤖', label: 'AI 결과' };
+    return `<article class="account-ai-card" data-result-id="${escHtml(result.id)}"><details><summary><span class="account-ai-card__icon">${meta.icon}</span><span class="account-ai-card__summary"><b>${escHtml(result.title || meta.label)}</b><small>${escHtml(meta.label)} · ${escHtml(formatDate(result.createdAt))}</small></span><span class="account-ai-card__arrow">⌄</span></summary><div class="account-ai-card__body"><div class="account-ai-card__input"><b>입력 내용</b><p>${escHtml(result.input || '')}</p></div>${(result.cards || []).map(card => `<div class="account-ai-answer"><b>${escHtml(card.name || '캐릭터')}</b><p>${escHtml(card.text || '')}</p></div>`).join('')}<div class="account-ai-actions"><button class="btn btn--ghost btn--sm" data-ai-copy="${escHtml(result.id)}">복사</button><button class="btn btn--ghost btn--sm" data-ai-share="${escHtml(result.id)}">공유</button><button class="btn btn--ghost btn--sm account-ai-delete" data-ai-delete="${escHtml(result.id)}">삭제</button></div></div></details></article>`;
+  }).join('')}</div>`;
+}
+
+function renderNotifItem(notification) {
+  const time = formatTime(notification.createdAt?.toDate?.() || notification.createdAt);
+  const isComment = notification.type === 'comment';
+  const isReaction = notification.type === 'reaction' || notification.type === 'like';
+  const icon = isComment ? '💬' : isReaction ? '❤️' : '🔔';
+  const destination = notification.postId ? `/material/${notification.postId}` : '/account?tab=notifications';
+  const text = notification.title || notification.body || (isComment ? '내 글에 댓글이 달렸어요.' : isReaction ? '내 글에 반응이 도착했어요.' : '새 알림이 도착했어요.');
+  return `<button class="notif-item ${notification.read ? '' : 'notif-item--unread'}" data-go="${destination}"><span class="notif-item__icon">${icon}</span><span class="notif-item__body"><span class="notif-item__text">${escHtml(text)}</span><span class="notif-item__time">${escHtml(time)}</span></span></button>`;
+}
+
+export async function renderAccount() {
+  setMeta('내 정보 | 소소킹', '내 AI 결과와 작성 글, 스크랩, 알림, 계정 설정을 관리합니다.');
+  const element = document.getElementById('page-content');
+  const user = appState.user;
+
+  if (!user) {
+    if (appState.loading) {
+      element.innerHTML = `<div class="loading-center"><div class="spinner spinner--lg"></div></div>`;
+      return;
+    }
+    element.innerHTML = `<div class="empty-state"><div class="empty-state__icon">👤</div><div class="empty-state__title">로그인이 필요해요</div><button class="btn btn--primary" style="margin-top:16px" onclick="navigate('/login?return=/account')">로그인하기</button></div>`;
+    return;
+  }
+
+  element.innerHTML = `<div class="loading-center"><div class="spinner spinner--lg"></div></div>`;
+  const [{ count: postCount, posts: myPosts }, userSnap, adminSnap, initialAiHistory] = await Promise.all([
+    fetchMyPosts(user.uid),
+    getDoc(doc(db, 'users', user.uid)).catch(() => null),
+    getDoc(doc(db, 'admins', user.uid)).catch(() => null),
+    fetchAiHistory(30),
+  ]);
+
+  const userData = userSnap?.exists() ? userSnap.data() : {};
+  const isAdmin = adminSnap?.exists() === true;
+  const nickname = appState.nickname || user.displayName || user.email?.split('@')[0] || '익명';
+  const title = computeTitle(postCount);
+  const requestedTab = new URLSearchParams(window.location.hash.split('?')[1] || '').get('tab') || 'ai';
+  const activeTab = ['ai', 'posts', 'scraps', 'notifications', 'settings'].includes(requestedTab) ? requestedTab : 'ai';
+
+  element.innerHTML = `<div class="account-page-wrap account-page-wrap--king"><div class="card account-profile-card"><div class="account-header"><div class="avatar account-avatar ${normalizeNicknameIcon(appState.nicknameIcon) || user.photoURL ? 'avatar--nickname-icon' : ''}" style="width:72px;height:72px;font-size:24px;font-weight:800">${renderAccountAvatar(user, nickname)}</div><div class="account-nickname">${escHtml(nickname)}</div><div class="account-level"><span class="title-badge">${escHtml(title)}</span></div><div class="account-stats"><div class="account-stat"><div class="account-stat__num">${initialAiHistory.length}</div><div class="account-stat__label">AI 결과</div></div><div class="account-stat"><div class="account-stat__num">${postCount}</div><div class="account-stat__label">작성한 글</div></div><div class="account-stat"><div class="account-stat__num">${appState.unreadNotifications || 0}</div><div class="account-stat__label">새 알림</div></div></div></div><div class="card__footer account-profile-actions">${isAdmin ? `<button class="btn btn--primary btn--sm" data-go="/admin">⚙️ 관리자</button>` : ''}<button class="btn btn--ghost btn--sm" id="btn-logout">로그아웃</button></div></div><div class="account-tabs" aria-label="내 정보 메뉴">${tabButton(activeTab, 'ai', '🤖', `AI 결과 ${initialAiHistory.length || ''}`)}${tabButton(activeTab, 'posts', '📝', `내 글 ${postCount || ''}`)}${tabButton(activeTab, 'scraps', '🔖', '스크랩')}${tabButton(activeTab, 'notifications', '🔔', '알림', appState.unreadNotifications > 0 ? `<span class="notif-badge-sm account-tab__badge">${appState.unreadNotifications}</span>` : '')}${tabButton(activeTab, 'settings', '⚙️', '설정')}</div><div id="account-tab-content"></div></div>`;
+
+  document.getElementById('btn-logout')?.addEventListener('click', async () => {
+    await signOut(auth);
+    toast.success('로그아웃됐어요.');
+    navigate('/');
+  });
+
+  const renderTab = async tab => {
+    const content = document.getElementById('account-tab-content');
+    if (!content) return;
+    content.innerHTML = `<div class="loading-center"><div class="spinner"></div></div>`;
+
+    if (tab === 'ai') {
+      const results = tab === activeTab ? initialAiHistory : await fetchAiHistory(30);
+      content.innerHTML = renderAiHistory(results);
+      content.dataset.aiResults = JSON.stringify(results);
+      bindAiHistoryActions(content, renderTab);
+    } else if (tab === 'posts') {
+      content.innerHTML = myPosts.length ? myPosts.map(post => renderFeedCard(post)).join('') : `<div class="empty-state"><div class="empty-state__icon">✏️</div><div class="empty-state__title">아직 올린 글이 없어요</div><div class="empty-state__desc">AI 판결 결과나 생활 논쟁에 의견을 남겨보세요.</div><button class="btn btn--primary" style="margin-top:16px" data-go="/playground">AI 놀이터 가기</button></div>`;
+    } else if (tab === 'scraps') {
+      await renderScrapsTab(content, user.uid);
+    } else if (tab === 'notifications') {
+      await renderNotificationsTab(content, user.uid);
+    } else if (tab === 'settings') {
+      renderSettingsTab(content, user, userData, nickname);
+    }
+    bindNavigation(content);
+  };
+
+  document.querySelectorAll('.account-tab').forEach(button => {
+    button.addEventListener('click', () => {
+      document.querySelectorAll('.account-tab').forEach(item => {
+        item.classList.toggle('active', item === button);
+        item.setAttribute('aria-current', item === button ? 'page' : 'false');
+      });
+      const tab = button.dataset.tab;
+      history.replaceState(null, '', `#/account?tab=${tab}`);
+      renderTab(tab);
+    });
+  });
+
+  bindNavigation(element);
+  await renderTab(activeTab);
+}
+
+function bindNavigation(root) {
+  root.querySelectorAll('[data-go]').forEach(button => {
+    if (button.dataset.boundGo === '1') return;
+    button.dataset.boundGo = '1';
+    button.addEventListener('click', () => navigate(button.dataset.go));
+  });
+}
+
+function getStoredResults(content) {
+  try { return JSON.parse(content.dataset.aiResults || '[]'); }
+  catch { return []; }
+}
+
+function bindAiHistoryActions(content, rerender) {
+  content.querySelectorAll('[data-ai-copy]').forEach(button => button.addEventListener('click', async event => {
+    event.preventDefault();
+    const result = getStoredResults(content).find(item => item.id === button.dataset.aiCopy);
+    if (!result) return;
+    await copyText(resultText(result));
+    toast.success('AI 결과를 복사했어요.');
+  }));
+  content.querySelectorAll('[data-ai-share]').forEach(button => button.addEventListener('click', async event => {
+    event.preventDefault();
+    const result = getStoredResults(content).find(item => item.id === button.dataset.aiShare);
+    if (!result) return;
+    const text = resultText(result);
+    if (navigator.share) {
+      try { await navigator.share({ title: result.title, text }); return; }
+      catch (error) { if (error?.name === 'AbortError') return; }
+    }
+    await copyText(text);
+    toast.success('공유할 내용을 복사했어요.');
+  }));
+  content.querySelectorAll('[data-ai-delete]').forEach(button => button.addEventListener('click', async event => {
+    event.preventDefault();
+    if (!confirm('이 AI 결과를 최근 기록에서 삭제할까요?')) return;
+    button.disabled = true;
+    try {
+      await call('deleteKingPlaygroundResult', { resultId: button.dataset.aiDelete });
+      toast.success('AI 결과를 삭제했어요.');
+      await rerender('ai');
+    } catch (error) {
+      button.disabled = false;
+      toast.error(error?.message || 'AI 결과를 삭제하지 못했습니다.');
+    }
+  }));
+}
+
+async function renderScrapsTab(content, uid) {
+  const scrapSnap = await getDocs(query(collection(db, 'users', uid, 'scraps'), orderBy('scrappedAt', 'desc'))).catch(() => null);
+  const ids = scrapSnap?.docs.map(item => item.id) || [];
+  const posts = ids.length ? (await Promise.all(ids.map(id => getDoc(doc(db, 'feeds', id))))).filter(item => item.exists()).map(item => ({ id: item.id, ...item.data() })).filter(item => !item.hidden) : [];
+
+  content.innerHTML = posts.length ? `<div class="account-scrap-actions"><button class="btn btn--ghost btn--sm" id="btn-acct-scrap-all">전체 삭제</button></div>${posts.map(post => `<div class="scrap-item" id="acct-scrap-${post.id}"><button class="scrap-delete-btn" data-scrap-delete="${post.id}">삭제</button>${renderFeedCard(post)}</div>`).join('')}` : `<div class="empty-state"><div class="empty-state__icon">🔖</div><div class="empty-state__title">아직 스크랩한 글이 없어요</div><div class="empty-state__desc">다시 보고 싶은 자료를 스크랩해두세요.</div></div>`;
+
+  content.querySelectorAll('[data-scrap-delete]').forEach(button => button.addEventListener('click', async () => {
+    try {
+      await deleteDoc(doc(db, 'users', uid, 'scraps', button.dataset.scrapDelete));
+      document.getElementById(`acct-scrap-${button.dataset.scrapDelete}`)?.remove();
+      toast.success('스크랩을 삭제했어요.');
+    } catch { toast.error('스크랩을 삭제하지 못했습니다.'); }
+  }));
+
+  document.getElementById('btn-acct-scrap-all')?.addEventListener('click', async () => {
+    if (!confirm('스크랩을 전부 삭제할까요?')) return;
+    try {
+      const allSnap = await getDocs(collection(db, 'users', uid, 'scraps'));
+      const batch = writeBatch(db);
+      allSnap.docs.forEach(item => batch.delete(item.ref));
+      await batch.commit();
+      content.innerHTML = `<div class="empty-state"><div class="empty-state__icon">🔖</div><div class="empty-state__title">스크랩을 모두 비웠어요</div></div>`;
+      toast.success('전체 스크랩을 삭제했어요.');
+    } catch { toast.error('스크랩을 삭제하지 못했습니다.'); }
+  });
+}
+
+async function renderNotificationsTab(content, uid) {
+  const notificationsQuery = query(collection(db, 'notifications'), where('userId', '==', uid), orderBy('createdAt', 'desc'), limit(50));
+  const snap = await getDocs(notificationsQuery).catch(() => null);
+  const notifications = snap?.docs.map(item => ({ id: item.id, ...item.data() })) || [];
+  const unread = snap?.docs.filter(item => !item.data().read) || [];
+  if (unread.length) {
+    const batch = writeBatch(db);
+    unread.forEach(item => batch.update(item.ref, { read: true }));
+    batch.commit().then(() => {
+      appState.unreadNotifications = 0;
+      renderSidebar();
+      renderBottomNav();
+    }).catch(() => {});
+  }
+  content.innerHTML = notifications.length ? `<div class="notif-list">${notifications.map(renderNotifItem).join('')}</div>` : `<div class="empty-state"><div class="empty-state__icon">🔔</div><div class="empty-state__title">아직 알림이 없어요</div><div class="empty-state__desc">활동을 시작하면 반응이 이곳에 표시됩니다.</div></div>`;
+}
+
+function renderSettingsTab(content, user, userData, nickname) {
+  const isGoogle = user.providerData?.some(provider => provider.providerId === 'google.com');
+  const isEmail = user.providerData?.some(provider => provider.providerId === 'password');
+  const loginType = isGoogle ? '구글 소셜 로그인' : isEmail ? '이메일/비밀번호' : '카카오 소셜 로그인';
+  const displayEmail = user.email || userData?.email || '';
+
+  content.innerHTML = `<div class="card" style="margin-bottom:12px"><div class="card__body--lg"><div class="section-title" style="font-size:15px;margin-bottom:16px">👤 닉네임 변경</div><div class="form-group"><label class="form-label" for="new-nickname">새 닉네임</label><input id="new-nickname" class="form-input" type="text" value="${escHtml(nickname)}" placeholder="2~12자, 한글/영문/숫자/_" maxlength="12"><div class="form-hint">2~12자, 한글·영문·숫자·_(밑줄)만 사용할 수 있어요.</div><div id="nickname-feedback" class="account-form-feedback"></div></div><button class="btn btn--primary btn--sm" id="btn-save-nickname">저장하기</button></div></div><div class="card" style="margin-bottom:12px"><div class="card__body--lg"><div class="section-title" style="font-size:15px;margin-bottom:8px">🔐 계정 정보</div><div class="account-info-row"><span>이메일</span><strong>${escHtml(displayEmail || '—')}</strong></div><div class="account-info-row"><span>로그인 방식</span><strong>${escHtml(loginType)}</strong></div><div class="account-info-row"><span>AI 결과 보관</span><strong>본인 전용</strong></div></div></div><div class="card account-danger-card"><div class="card__body--lg"><div class="section-title account-danger-title">⚠️ 회원 탈퇴</div><p>탈퇴하면 계정과 개인 AI 결과가 삭제되며 복구할 수 없습니다. 작성한 공개 글과 댓글은 별도 정책에 따라 남을 수 있습니다.</p><button class="btn btn--danger btn--sm" id="btn-withdraw">회원 탈퇴</button></div></div>`;
+
+  setupNicknameEdit(user, nickname);
+  setupWithdrawal();
+}
+
+function setupNicknameEdit(user, currentNickname) {
+  const input = document.getElementById('new-nickname');
+  const feedback = document.getElementById('nickname-feedback');
+  const saveButton = document.getElementById('btn-save-nickname');
+  const pattern = /^[가-힣a-zA-Z0-9_]{2,12}$/;
+  let timer = null;
+
+  input?.addEventListener('input', () => {
+    const value = input.value.trim();
+    feedback.textContent = '';
+    clearTimeout(timer);
+    if (!value) return;
+    if (!pattern.test(value)) {
+      feedback.dataset.state = 'error';
+      feedback.textContent = '2~12자, 한글·영문·숫자·_만 사용할 수 있어요.';
+      return;
+    }
+    if (value === currentNickname) {
+      feedback.dataset.state = 'normal';
+      feedback.textContent = '현재 닉네임입니다.';
+      return;
+    }
+    feedback.dataset.state = 'normal';
+    feedback.textContent = '확인 중…';
+    timer = setTimeout(async () => {
+      const snap = await getDoc(doc(db, 'nicknames', value)).catch(() => null);
+      if (input.value.trim() !== value) return;
+      const used = snap?.exists() && snap.data()?.uid !== user.uid;
+      feedback.dataset.state = used ? 'error' : 'success';
+      feedback.textContent = used ? '이미 사용 중인 닉네임입니다.' : '사용 가능한 닉네임입니다.';
+    }, 400);
+  });
+
+  saveButton?.addEventListener('click', async () => {
+    const nickname = input?.value.trim();
+    if (!pattern.test(nickname || '')) { toast.error('닉네임 형식을 확인해주세요.'); return; }
+    if (nickname === currentNickname) { toast.info('현재 닉네임과 같습니다.'); return; }
+    saveButton.disabled = true;
+    saveButton.textContent = '저장 중…';
+    try {
+      await call('updateNickname', { nickname });
+      await updateProfile(user, { displayName: nickname }).catch(() => {});
+      appState.nickname = nickname;
+      renderSidebar();
+      renderBottomNav();
+      feedback.dataset.state = 'success';
+      feedback.textContent = '저장됐습니다.';
+      toast.success('닉네임이 변경됐어요.');
+    } catch (error) {
+      toast.error(error?.message || '닉네임을 저장하지 못했습니다.');
+    } finally {
+      saveButton.disabled = false;
+      saveButton.textContent = '저장하기';
+    }
+  });
+}
+
+function setupWithdrawal() {
+  document.getElementById('btn-withdraw')?.addEventListener('click', async () => {
+    if (!confirm('정말 탈퇴하시겠어요?\n\n계정과 개인 AI 결과가 삭제되며 복구할 수 없습니다.')) return;
+    const button = document.getElementById('btn-withdraw');
+    button.disabled = true;
+    button.textContent = '처리 중…';
+    try {
+      await call('deleteMyAccount');
+      await signOut(auth).catch(() => {});
+      toast.success('탈퇴가 완료됐어요.');
+      navigate('/');
+    } catch (error) {
+      button.disabled = false;
+      button.textContent = '회원 탈퇴';
+      toast.error(error?.message || '탈퇴 처리 중 오류가 발생했습니다.');
+    }
+  });
 }
