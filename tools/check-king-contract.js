@@ -72,10 +72,11 @@ for (const retiredPersona of ['jungding', 'saibi', 'prophet', 'joojeob', 'chamgy
 }
 
 requireText(playground, 'AI 놀이터 메뉴', 'AI playground side menu missing');
-if (playground.includes('다른 공간 둘러보기')) failures.push('old side panel title remains');
-for (const modePath of ['/playground/judge', '/playground/create', '/playground/consult', '/playground/lounge']) {
-  requireText(playground, modePath, 'side menu mode path missing');
+requireText(playground, '/playground/${key}', 'dynamic AI playground menu route missing');
+for (const modeKey of ['judge', 'create', 'consult', 'lounge']) {
+  requireText(playground, `${modeKey}: {`, 'AI playground mode missing');
 }
+if (playground.includes('다른 공간 둘러보기')) failures.push('old side panel title remains');
 
 for (const removedExtension of [
   'core-nav-visibility-fix.js',
