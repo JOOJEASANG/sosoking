@@ -8,6 +8,8 @@ on:
       - 'public/**'
       - 'functions/**'
       - 'tools/**'
+      - 'docs/**'
+      - 'README.md'
       - 'firebase.json'
       - 'firestore.rules'
       - 'firestore.indexes.json'
