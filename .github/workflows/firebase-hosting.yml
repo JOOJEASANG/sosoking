@@ -1,6 +1,25 @@
-name: Deploy Firebase Hosting
+name: Check and Deploy Firebase Hosting
 
 on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'public/**'
+      - 'functions/**'
+      - 'tools/**'
+      - 'docs/**'
+      - 'README.md'
+      - 'firebase.json'
+      - 'firestore.rules'
+      - 'firestore.indexes.json'
+      - 'storage.rules'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'functions/package.json'
+      - 'functions/package-lock.json'
+      - '.github/workflows/firebase-hosting.yml'
+      - '.github/workflows/firebase-deploy.yml'
   push:
     branches:
       - main
@@ -8,16 +27,26 @@ on:
       - 'public/**'
       - 'firebase.json'
       - '.firebaserc'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tools/**'
       - '.github/workflows/firebase-hosting.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: firebase-hosting-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  deploy-hosting:
-    name: Deploy hosting
+  check-and-deploy:
+    name: Check repository and deploy hosting
     runs-on: ubuntu-latest
+    env:
+      FIREBASE_PROJECT_ID: sosoking-481e6
+      FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -25,9 +54,50 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: '22'
+          cache: npm
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install functions dependencies for repository checks
+        run: npm ci
+        working-directory: functions
+
+      - name: Run static check
+        id: static_check
+        shell: bash
+        run: |
+          set +e
+          npm run check > static-check.log 2>&1
+          code=$?
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Upload static check report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: static-check-report
+          path: static-check.log
+          retention-days: 3
+
+      - name: Enforce static check result
+        if: steps.static_check.outputs.exit_code != '0'
+        run: |
+          cat static-check.log
+          exit 1
+
+      - name: Write Firebase service account
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
+            echo "FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 secret이 설정되지 않았습니다."
+            exit 1
+          fi
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-service-account.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/firebase-service-account.json" >> "$GITHUB_ENV"
 
       - name: Deploy Firebase Hosting
-        run: npx firebase-tools deploy --only hosting --project sosoking-481e6 --non-interactive
-        env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        run: npx firebase-tools deploy --only hosting --project "$FIREBASE_PROJECT_ID" --non-interactive
