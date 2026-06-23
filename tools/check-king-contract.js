@@ -66,6 +66,14 @@ if (Object.keys(legacyFunctions).length > 0) {
   failures.push(`retired political functions are exported: ${Object.keys(legacyFunctions).join(', ')}`);
 }
 
+for (const retiredFunction of [
+  'playAiLadderBonus', 'getPoliticsOverview', 'joinParty', 'leaveParty',
+  'getElection', 'voteForPresident', 'getCongressStatus', 'proposeBill',
+  'getConstitutionalCourtStatus', 'getDailyNews', 'getWeeklyCrisis',
+]) {
+  if (retiredFunction in mainFunctions) failures.push(`retired function remains in deployment surface: ${retiredFunction}`);
+}
+
 if (failures.length) {
   console.error('AI playground contract check failed:');
   failures.forEach(item => console.error(`- ${item}`));
