@@ -3,7 +3,7 @@
 const { getApps, initializeApp } = require('firebase-admin/app');
 if (!getApps().length) initializeApp();
 
-const coreAi = require('./index.js');
+const coreAi = require('./core-ai-v2.js');
 const secureAiConfig = require('./secure-ai-config-functions.js');
 const secureFeed = require('./secure-feed-functions.js');
 const sitemap = require('./sitemap-functions.js');
