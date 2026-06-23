@@ -33,7 +33,7 @@ function verify(condition, message) {
   const failures = [];
 
   for (const viewport of viewports) {
-    const context = await browser.newContext({ viewport, colorScheme: 'light' });
+    const context = await browser.newContext({ viewport: { width: viewport.width, height: viewport.height }, colorScheme: 'light' });
     for (const route of routes) {
       const page = await context.newPage();
       const pageErrors = [];
@@ -47,7 +47,11 @@ function verify(condition, message) {
       try {
         await page.goto(`${baseUrl}/${route.hash}`, { waitUntil: 'domcontentloaded', timeout: 60000 });
         await page.waitForSelector(route.selector, { state: 'visible', timeout: 60000 });
-        await page.waitForTimeout(1000);
+        if (route.name === 'account') {
+          await page.waitForFunction(() => /로그인이 필요해요|AI 결과|내 글/.test(document.body.innerText), null, { timeout: 12000 });
+        } else {
+          await page.waitForTimeout(1000);
+        }
         const bodyText = await page.locator('body').innerText();
 
         verify(!bodyText.includes('다른 공간 둘러보기'), `${route.name}: old side panel remains`);
