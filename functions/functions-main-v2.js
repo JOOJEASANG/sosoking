@@ -20,6 +20,7 @@ const kakaoAuth = require('./kakao-auth-functions.js');
 const legacyDisabled = require('./legacy-disabled-functions.js');
 const sosoMaterials = require('./soso-material-functions.js');
 const kingPlayground = require('./king-playground-functions.js');
+const kingResults = require('./king-result-functions.js');
 
 module.exports = {
   ...coreAi,
@@ -42,4 +43,5 @@ module.exports = {
   ...legacyDisabled,
   ...sosoMaterials,
   ...kingPlayground,
+  ...kingResults,
 };
