@@ -14,6 +14,7 @@ const firebaseConfig = read('firebase.json');
 const functionMain = read('functions', 'functions-main-v2.js');
 const playground = read('functions', 'king-playground-functions.js');
 const functionsPackage = JSON.parse(read('functions', 'package.json'));
+const rootPackage = JSON.parse(read('package.json'));
 
 function requireText(source, text, label) {
   if (!source.includes(text)) errors.push(`${label}: ${text}`);
@@ -29,9 +30,17 @@ if (hosting.includes('FIREBASE_TOKEN')) errors.push('hosting still uses a long-l
 
 requireText(backend, "if: github.ref == 'refs/heads/main'", 'backend main gate missing');
 requireText(backend, "- 'storage.rules'", 'storage rules path trigger missing');
-requireText(backend, '--only storage:rules', 'storage rules deployment missing');
+requireText(backend, '--only storage --non-interactive', 'official Storage rules deployment target missing');
 requireText(backend, 'FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6', 'backend service account missing');
+if (backend.includes('storage:rules')) errors.push('deprecated Storage deployment target remains');
 if (backend.includes('::warning::')) errors.push('backend deploy suppresses a deployment failure');
+
+if (!String(rootPackage.scripts?.['deploy:rules'] || '').includes('storage')) {
+  errors.push('local rules deployment does not include Storage');
+}
+if (String(rootPackage.scripts?.['deploy:rules'] || '').includes('storage:rules')) {
+  errors.push('local rules deployment uses the old Storage target');
+}
 
 requireText(storageRules, 'image/(jpeg|png|webp|gif)', 'storage image allowlist missing');
 requireText(storageRules, 'allow write: if false;', 'legacy storage writes are not denied');
