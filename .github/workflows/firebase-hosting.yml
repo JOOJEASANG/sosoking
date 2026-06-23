@@ -42,23 +42,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: npm
-
       - name: Install root dependencies
         run: npm ci
-
       - name: Install functions dependencies for repository checks
         run: npm ci
         working-directory: functions
-
       - name: Static check
-        run: npm run check
-
+        run: npm run check > /tmp/static-check.log 2>&1 || (tail -n 120 /tmp/static-check.log && exit 1)
       - name: Deploy Firebase Hosting
         if: github.event_name != 'pull_request'
         run: npx firebase-tools deploy --only hosting --project sosoking-481e6 --non-interactive
