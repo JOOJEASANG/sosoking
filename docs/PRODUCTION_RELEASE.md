@@ -7,13 +7,15 @@
 ### GitHub Actions 설정
 
 - `FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6`가 등록되어 있어야 합니다.
-- 사용하는 AI 공급자의 `GEMINI_API_KEY` 또는 `ANTHROPIC_API_KEY`가 등록되어 있어야 합니다.
+- 사용하는 AI 공급자의 `GEMINI_API_KEY` 또는 `ANTHROPIC_API_KEY`가 등록되어 있거나 Firebase Secret Manager에 기존 값이 있어야 합니다.
 - 서비스 계정은 다음 작업을 수행할 수 있어야 합니다.
   - Firebase Hosting 배포
   - Cloud Functions 배포
   - Firestore Rules와 Indexes 배포
   - Cloud Storage Rules 배포
   - Functions가 사용할 관리형 비밀 참조와 새 버전 등록
+
+위 비밀값의 존재 여부와 IAM 권한은 저장소 정적검사만으로 확인할 수 없으므로 Firebase Console과 GitHub 저장소 설정에서 사람이 직접 확인합니다.
 
 ### Firebase 설정
 
