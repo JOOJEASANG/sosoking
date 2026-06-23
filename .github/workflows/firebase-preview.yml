@@ -1,0 +1,56 @@
+name: Firebase Hosting Preview
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'public/**'
+      - 'firebase.json'
+      - '.firebaserc'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'functions/**'
+      - 'tools/**'
+      - '.github/workflows/firebase-preview.yml'
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+concurrency:
+  group: firebase-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    name: Check and deploy preview channel
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install functions dependencies for checks
+        run: npm ci
+        working-directory: functions
+
+      - name: Static check
+        run: npm run check
+
+      - name: Deploy Firebase Hosting preview
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 }}'
+          projectId: sosoking-481e6
+          expires: 7d
