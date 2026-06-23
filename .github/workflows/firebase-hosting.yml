@@ -8,15 +8,22 @@ on:
       - 'public/**'
       - 'firebase.json'
       - '.firebaserc'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tools/**'
       - '.github/workflows/firebase-hosting.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: firebase-hosting-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   deploy-hosting:
-    name: Deploy hosting
+    name: Check and deploy hosting
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -25,7 +32,18 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: '22'
+          cache: npm
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install functions dependencies for repository checks
+        run: npm ci
+        working-directory: functions
+
+      - name: Static check
+        run: npm run check
 
       - name: Deploy Firebase Hosting
         run: npx firebase-tools deploy --only hosting --project sosoking-481e6 --non-interactive
