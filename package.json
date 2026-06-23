@@ -1,11 +1,12 @@
 {
   "scripts": {
-    "check": "node tools/check-repo-consistency.js && node --check functions/*.js && find public/js -name '*.js' -print0 | xargs -0 -n1 node --check",
+    "test:backend": "node --test tools/test-backend-policies.js",
+    "check": "node tools/check-repo-consistency.js && npm run test:backend && find functions -name '*.js' -not -path '*/node_modules/*' -print0 | xargs -0 -n1 node --check && find public/js -name '*.js' -print0 | xargs -0 -n1 node --check",
     "build": "npm run check && node -e \"console.log('Static Firebase Hosting app: no build step')\"",
     "deploy": "npx firebase-tools deploy",
     "deploy:hosting": "npx firebase-tools deploy --only hosting",
     "deploy:functions": "npm run check && npx firebase-tools deploy --only functions",
-    "deploy:rules": "npx firebase-tools deploy --only firestore:rules,storage:rules",
+    "deploy:rules": "npx firebase-tools deploy --only firestore:rules,storage",
     "deploy:indexes": "npx firebase-tools deploy --only firestore:indexes"
   },
   "devDependencies": {

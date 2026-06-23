@@ -3,7 +3,7 @@
 const { getApps, initializeApp } = require('firebase-admin/app');
 if (!getApps().length) initializeApp();
 
-const coreAi = require('./index.js');
+const moderation = require('./moderation-functions.js');
 const secureAiConfig = require('./secure-ai-config-functions.js');
 const secureFeed = require('./secure-feed-functions.js');
 const sitemap = require('./sitemap-functions.js');
@@ -17,17 +17,18 @@ const postOwner = require('./post-owner-functions.js');
 const postView = require('./post-view-functions.js');
 const points = require('./points-functions.js');
 const kakaoAuth = require('./kakao-auth-functions.js');
-const legacyDisabled = require('./legacy-disabled-functions.js');
 const sosoMaterials = require('./soso-material-functions.js');
+const kingPlayground = require('./king-playground-functions.js');
+const kingResults = require('./king-result-functions.js');
 
 module.exports = {
-  ...coreAi,
+  ...moderation,
   ...secureAiConfig,
-  seoPost: secureFeed.seoPost || coreAi.seoPost,
+  seoPost: secureFeed.seoPost,
   castFeedVote: secureFeed.castFeedVote,
   toggleFeedReaction: secureFeed.toggleFeedReaction,
   registerPostView: secureFeed.registerPostView,
-  sitemapXml: sitemap.sitemapXml || coreAi.sitemapXml,
+  sitemapXml: sitemap.sitemapXml,
   ...account,
   ...adminUsers,
   ...adminData,
@@ -38,6 +39,7 @@ module.exports = {
   ...postOwner,
   ...postView,
   ...kakaoAuth,
-  ...legacyDisabled,
   ...sosoMaterials,
+  ...kingPlayground,
+  ...kingResults,
 };
