@@ -2,24 +2,40 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
 
-    function signedIn()       { return request.auth != null; }
-    function isOwner(userId)  { return signedIn() && request.auth.uid == userId; }
-    function validImage()     {
-      return signedIn()
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    function validImage() {
+      return request.resource != null
+        && request.resource.size > 0
         && request.resource.size <= 8 * 1024 * 1024
-        && request.resource.contentType.matches('image/.*');
+        && request.resource.contentType.matches('image/(jpeg|png|webp|gif)');
     }
 
-    // v2 이미지 경로
+    function validFileName(fileName) {
+      return fileName.matches('^[A-Za-z0-9._-]{1,180}$');
+    }
+
+    // 현재 이미지 경로: 소유자만 제한된 이미지 형식으로 업로드할 수 있습니다.
     match /feeds/{userId}/{fileName} {
-      allow read:  if true;
-      allow write: if isOwner(userId) && validImage();
+      allow read: if true;
+      allow create, update: if isOwner(userId) && validFileName(fileName) && validImage();
+      allow delete: if isOwner(userId);
     }
 
-    // 레거시 경로 (이전 버전 하위 호환)
+    // 이전 버전 파일은 표시만 유지하고 신규 쓰기는 차단합니다.
     match /soso-feed/{userId}/{fileName} {
-      allow read:  if true;
-      allow write: if isOwner(userId) && validImage();
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
     }
   }
 }
