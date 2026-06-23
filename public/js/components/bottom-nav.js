@@ -12,6 +12,7 @@ function iconHome() {
 function isActive(navPath, currentPath) {
   if (navPath === '/playground') return currentPath.startsWith('/playground');
   if (navPath === '/materials') return currentPath === '/materials' || currentPath.startsWith('/material/');
+  if (navPath === '/debates') return currentPath === '/debates' || currentPath.startsWith('/debate/');
   return currentPath === navPath;
 }
 

@@ -13,7 +13,7 @@ function iconAdmin(){return svgIcon('<path stroke-linecap="round" stroke-linejoi
 function iconSun(){return svgIcon('<path stroke-linecap="round" stroke-linejoin="round" d="M12 4V2m0 20v-2m8-8h2M2 12h2m13.66-5.66 1.41-1.41M4.93 19.07l1.41-1.41m0-11.32L4.93 4.93m14.14 14.14-1.41-1.41"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z"/>');}
 function iconMoon(){return svgIcon('<path stroke-linecap="round" stroke-linejoin="round" d="M21 15.5A8.5 8.5 0 0 1 8.5 3 8.5 8.5 0 1 0 21 15.5Z"/>');}
 function isDark(){return document.documentElement.getAttribute('data-theme')==='dark';}
-function isNavActive(navPath,currentPath){if(navPath==='/playground')return currentPath.startsWith('/playground');if(navPath==='/materials')return currentPath==='/materials'||currentPath.startsWith('/material/');return currentPath===navPath;}
+function isNavActive(navPath,currentPath){if(navPath==='/playground')return currentPath.startsWith('/playground');if(navPath==='/materials')return currentPath==='/materials'||currentPath.startsWith('/material/');if(navPath==='/debates')return currentPath==='/debates'||currentPath.startsWith('/debate/');return currentPath===navPath;}
 function renderNavItem(item,currentPath){const active=isNavActive(item.path,currentPath);const cls=['sidebar__nav-item',active?'active':'',item.isAdmin?'sidebar__nav-item--admin':''].filter(Boolean).join(' ');return `<a href="#${item.path}" class="${cls}" aria-current="${active?'page':'false'}" data-nav="${item.path}">${item.icon}<span>${item.label}</span></a>`;}
 
 export function renderSidebar(){
@@ -26,9 +26,9 @@ export function renderSidebar(){
   const mainNav=[
     {label:'홈',path:'/',icon:iconHome()},
     {label:'🤖 AI 놀이터',path:'/playground',icon:''},
-    {label:'🔥 오늘의 논쟁',path:'/today',icon:''},
+    {label:'📅 오늘의 콘텐츠',path:'/today',icon:''},
     {label:'📚 소소자료실',path:'/materials',icon:''},
-    {label:'💬 토론 많은 글',path:'/debates',icon:''},
+    {label:'💬 소소토론실',path:'/debates',icon:''},
   ];
   const personalNav=user?[{label:'내정보',path:'/account',icon:iconAccount()}]:[];
   const adminNav=isAdmin?[{label:'관리 패널',path:'/admin',icon:iconAdmin(),isAdmin:true}]:[];

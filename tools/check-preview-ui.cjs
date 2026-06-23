@@ -15,7 +15,9 @@ const routes = [
   { name: 'judge', hash: '#/playground/judge', selector: '#king-main-text', selected: 3, personas: true, menu: true },
   { name: 'create', hash: '#/playground/create', selector: '#king-main-text', selected: 1, menu: true },
   { name: 'consult', hash: '#/playground/consult', selector: '#king-main-text', selected: 3, menu: true },
-  { name: 'lounge', hash: '#/playground/lounge', selector: '.king-tool-card', menu: true },
+  { name: 'today', hash: '#/today', selector: '.today-page', text: '오늘의 자료와 토론' },
+  { name: 'materials', hash: '#/materials', selector: '.mat-page', text: '소소자료실' },
+  { name: 'debates', hash: '#/debates', selector: '.debate-page', text: '소소토론실' },
   { name: 'account', hash: '#/account', selector: '#page-content' },
 ];
 
@@ -64,6 +66,8 @@ function verify(condition, message) {
           verify(bodyText.includes('AI 놀이터 메뉴'), `${route.name}: playground menu missing`);
           verify(await page.locator('.king-play-menu__item').count() === 4, `${route.name}: playground menu count mismatch`);
         }
+        if (route.name === 'materials') verify(bodyText.includes('찬반 토론은 별도 토론실'), 'materials: separation notice missing');
+        if (route.name === 'debates') verify(bodyText.includes('자료실과 분리된 독립 공간'), 'debates: separation notice missing');
         if (route.name === 'account') verify(/로그인이 필요해요|AI 결과|내 글/.test(bodyText), 'account state did not settle');
 
         const size = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth }));

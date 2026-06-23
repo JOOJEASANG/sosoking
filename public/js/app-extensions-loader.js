@@ -1,6 +1,7 @@
 // app-extensions-loader.js — 계정과 프로필에 필요한 최소 보조 모듈만 로드합니다.
 
 const EXTENSION_MODULES = [
+  './debate-route-redirect.js',
   './pc-sidebar-spacing.js',
   './account-ui.js',
   './nickname-icon-actions.js',

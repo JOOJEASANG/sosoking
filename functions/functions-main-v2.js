@@ -18,6 +18,7 @@ const postView = require('./post-view-functions.js');
 const points = require('./points-functions.js');
 const kakaoAuth = require('./kakao-auth-functions.js');
 const sosoMaterials = require('./soso-material-functions.js');
+const sosoDebates = require('./soso-debate-functions.js');
 const kingPlayground = require('./king-playground-functions.js');
 const kingResults = require('./king-result-functions.js');
 
@@ -40,6 +41,7 @@ module.exports = {
   ...postView,
   ...kakaoAuth,
   ...sosoMaterials,
+  ...sosoDebates,
   ...kingPlayground,
   ...kingResults,
 };
