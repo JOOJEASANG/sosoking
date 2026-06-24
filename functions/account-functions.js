@@ -2,10 +2,12 @@
 
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
+const { getStorage } = require('firebase-admin/storage');
 const admin = require('firebase-admin');
 
 if (!admin.apps.length) admin.initializeApp();
 const db = getFirestore();
+const storage = getStorage();
 const REGION = 'asia-northeast3';
 const BATCH_LIMIT = 350;
 
@@ -82,24 +84,35 @@ async function anonymizePublicContributions(userId) {
 }
 
 async function deletePrivateParticipation(userId) {
-  const [votes, viewEvents, following, followed, rateLimits, aiUsage, aiKingUsage, pointAwards] = await Promise.all([
+  const snapshots = await Promise.all([
     db.collectionGroup('votes').where('uid', '==', userId).get(),
     db.collectionGroup('view_events').where('uid', '==', userId).get(),
     db.collection('follows').where('followerId', '==', userId).get(),
     db.collection('follows').where('followedId', '==', userId).get(),
     db.collection('rate_limits').where('uid', '==', userId).get(),
     db.collection('ai_usage').where('userId', '==', userId).get(),
+    db.collection('ai_usage').where('uid', '==', userId).get(),
     db.collection('ai_king_usage').where('userId', '==', userId).get(),
     db.collection('point_awards').where('userId', '==', userId).get(),
+    db.collection('point_awards').where('uid', '==', userId).get(),
+    db.collection('upload_usage').where('uid', '==', userId).get(),
+    db.collection('notifications').where('uid', '==', userId).get(),
+    db.collection('notifications').where('userId', '==', userId).get(),
   ]);
 
-  const documents = uniqueDocs(votes, viewEvents, following, followed, rateLimits, aiUsage, aiKingUsage, pointAwards);
-  await writeInBatches(documents, (batch, document) => batch.delete(document.ref));
-
+  await writeInBatches(uniqueDocs(...snapshots), (batch, document) => batch.delete(document.ref));
   await db.recursiveDelete(db.collection(`notifications/${userId}/items`));
-  await db.doc(`notifications/${userId}`).delete().catch(error => {
-    if (error.code !== 5 && error.code !== 'not-found') throw error;
-  });
+  await db.doc(`notifications/${userId}`).delete();
+}
+
+async function removeUserFiles(userId) {
+  const bucket = storage.bucket();
+  for (const prefix of [`feeds/${userId}/`, `soso-feed/${userId}/`]) {
+    const [files] = await bucket.getFiles({ prefix });
+    await Promise.all(files.map(file => file.delete().catch(error => {
+      if (error.code !== 404) throw error;
+    })));
+  }
 }
 
 const updateNickname = onCall({ region: REGION, timeoutSeconds: 20 }, async request => {
@@ -160,6 +173,7 @@ const deleteMyAccount = onCall({ region: REGION, timeoutSeconds: 540, memory: '5
   try {
     await anonymizePublicContributions(userId);
     await deletePrivateParticipation(userId);
+    await removeUserFiles(userId);
 
     if (nickname) {
       const nicknameRef = db.doc(`nicknames/${nickname}`);
@@ -171,7 +185,6 @@ const deleteMyAccount = onCall({ region: REGION, timeoutSeconds: 540, memory: '5
       }
     }
 
-    // 사용자 문서와 point_logs, scraps, ai_results 등 모든 하위 컬렉션을 함께 삭제합니다.
     await db.recursiveDelete(userRef);
 
     try {
