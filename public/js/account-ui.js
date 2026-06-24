@@ -1,5 +1,6 @@
 import { appState } from './state.js';
 import { auth, onAuthStateChanged } from './firebase.js';
+import './account-cleanup-ui.js';
 
 function isStandalone() {
   return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
