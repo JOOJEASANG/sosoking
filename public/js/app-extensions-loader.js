@@ -1,11 +1,12 @@
-// app-extensions-loader.js — 계정과 프로필에 필요한 최소 보조 모듈만 로드합니다.
+// app-extensions-loader.js — 계정·프로필·AI 놀이터에 필요한 최소 보조 모듈만 로드합니다.
 
-const EXTENSION_VERSION = '2026-06-24-production-hardening-v1';
+const EXTENSION_VERSION = '2026-06-24-consult-random-v1';
 const EXTENSION_MODULES = [
   './debate-route-redirect.js',
   './pc-sidebar-spacing.js',
   './account-ui.js',
   './nickname-icon-actions.js',
+  './playground-enhance.js',
 ];
 
 async function loadExtension(path) {

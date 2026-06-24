@@ -12,9 +12,9 @@ fs.mkdirSync(outputDir, { recursive: true });
 
 const routes = [
   { name: 'home', hash: '#/', selector: '.king-hero h1', text: '누구 관점으로 판결받을까요', personas: true },
-  { name: 'judge', hash: '#/playground/judge', selector: '#king-main-text', selected: 3, personas: true, menu: true },
+  { name: 'judge', hash: '#/playground/judge', selector: '#king-main-text', selected: 0, randomNotice: true, personas: true, menu: true },
   { name: 'create', hash: '#/playground/create', selector: '#king-main-text', selected: 1, menu: true },
-  { name: 'consult', hash: '#/playground/consult', selector: '#king-main-text', selected: 3, menu: true },
+  { name: 'consult', hash: '#/playground/consult', selector: '#king-main-text', selected: 0, text: '미친 상담소', randomNotice: true, menu: true },
   { name: 'today', hash: '#/today', selector: '.today-page', text: '오늘의 자료와 토론' },
   { name: 'materials', hash: '#/materials', selector: '.mat-page', text: '소소자료실' },
   { name: 'debates', hash: '#/debates', selector: '.debate-page', text: '소소토론실' },
@@ -58,7 +58,8 @@ function verify(condition, message) {
 
         verify(!bodyText.includes('다른 공간 둘러보기'), `${route.name}: old side panel remains`);
         if (route.text) verify(bodyText.includes(route.text), `${route.name}: expected heading missing`);
-        if (route.selected) verify(await page.locator('.king-char-option.selected').count() === route.selected, `${route.name}: selected persona count mismatch`);
+        if (Object.prototype.hasOwnProperty.call(route, 'selected')) verify(await page.locator('.king-char-option.selected').count() === route.selected, `${route.name}: selected persona count mismatch`);
+        if (route.randomNotice) verify(bodyText.includes('선택 안 함 · 제출 시 랜덤 3명'), `${route.name}: random selection notice missing`);
         if (route.personas) {
           for (const label of ['감성형', '원칙형', '꼰대형', '냉혈형', '사이다형', '현실형']) verify(bodyText.includes(label), `${route.name}: ${label} missing`);
         }
