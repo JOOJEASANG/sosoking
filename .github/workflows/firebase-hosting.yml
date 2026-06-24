@@ -36,6 +36,7 @@ on:
 permissions:
   contents: read
   issues: write
+  pull-requests: write
 
 concurrency:
   group: firebase-hosting-${{ github.ref }}
@@ -105,9 +106,12 @@ jobs:
 
       - name: Report production Hosting result
         if: always() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
           RESULT: ${{ job.status }}
         run: |
-          gh issue comment 182 --repo "$GITHUB_REPOSITORY" \
-            --body "운영 Hosting 배포 결과: **${RESULT}** · 커밋 \`${GITHUB_SHA}\`"
+          body="운영 Hosting 배포 결과: **${RESULT}** · 커밋 \`${GITHUB_SHA}\`"
+          if ! gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/182/comments" -f body="$body"; then
+            echo "::warning::배포 결과 댓글을 기록하지 못했습니다. 실제 배포 단계 상태는 Actions 로그를 확인하세요."
+          fi
