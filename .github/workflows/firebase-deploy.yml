@@ -56,11 +56,9 @@ jobs:
         working-directory: functions
 
       - name: Static check
-        id: static_check
         run: npm run check
 
       - name: Write Firebase service account
-        id: firebase_auth
         run: |
           if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
             echo "Firebase service account secret이 설정되지 않았습니다."
@@ -84,49 +82,34 @@ jobs:
         id: deploy_storage
         if: always() && steps.deploy_rules.outcome == 'success' && steps.deploy_indexes.outcome == 'success'
         continue-on-error: true
-        shell: bash
-        run: |
-          set -o pipefail
-          npx firebase-tools deploy --project "$FIREBASE_PROJECT_ID" --only storage --non-interactive 2>&1 | tee storage-deploy.log
+        run: npx firebase-tools deploy --project "$FIREBASE_PROJECT_ID" --only storage --non-interactive
 
       - name: Deploy Functions
         id: deploy_functions
-        if: always() && steps.deploy_rules.outcome == 'success' && steps.deploy_indexes.outcome == 'success'
+        if: always() && steps.deploy_rules.outcome == 'success' && steps.deploy_indexes.outcome == 'success' && steps.deploy_storage.outcome == 'success'
         continue-on-error: true
-        shell: bash
-        run: |
-          set -o pipefail
-          npx firebase-tools deploy --project "$FIREBASE_PROJECT_ID" --only functions --force --non-interactive 2>&1 | tee functions-deploy.log
+        run: npx firebase-tools deploy --project "$FIREBASE_PROJECT_ID" --only functions --force --non-interactive
 
       - name: Report production Backend result
         if: always()
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
-          RESULT: ${{ job.status }}
           RULES_RESULT: ${{ steps.deploy_rules.outcome }}
           INDEXES_RESULT: ${{ steps.deploy_indexes.outcome }}
           STORAGE_RESULT: ${{ steps.deploy_storage.outcome }}
           FUNCTIONS_RESULT: ${{ steps.deploy_functions.outcome }}
         run: |
-          storage_log="$(tail -n 24 storage-deploy.log 2>/dev/null || true)"
-          functions_log="$(tail -n 24 functions-deploy.log 2>/dev/null || true)"
-          body="Backend 배포 결과: **${RESULT}** · 커밋 \`${GITHUB_SHA}\`
+          result="success"
+          for stage in "$RULES_RESULT" "$INDEXES_RESULT" "$STORAGE_RESULT" "$FUNCTIONS_RESULT"; do
+            if [ "$stage" != "success" ]; then result="failure"; fi
+          done
+          body="Backend 배포 결과: **${result}** · 커밋 \`${GITHUB_SHA}\`
 
           - Firestore Rules: ${RULES_RESULT}
           - Firestore Indexes: ${INDEXES_RESULT}
           - Storage Rules: ${STORAGE_RESULT}
-          - Functions: ${FUNCTIONS_RESULT}
-
-          Storage 마지막 로그:
-          \`\`\`
-          ${storage_log}
-          \`\`\`
-
-          Functions 마지막 로그:
-          \`\`\`
-          ${functions_log}
-          \`\`\`"
+          - Functions: ${FUNCTIONS_RESULT}"
           if ! gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/191/comments" -f body="$body"; then
             echo "배포 결과 댓글을 기록하지 못했습니다."
           fi
