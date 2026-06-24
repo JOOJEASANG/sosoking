@@ -65,7 +65,7 @@ async function recentTitles() {
       .orderBy('createdAt', 'desc')
       .limit(30)
       .get();
-    return snap.docs.map(doc => cleanText(doc.data()?.title, 100)).filter(Boolean);
+    return snap.docs.map(document => cleanText(document.data()?.title, 100)).filter(Boolean);
   } catch (error) {
     console.warn('[materials recent titles]', error.message);
     return [];
@@ -123,6 +123,15 @@ ${recentText}
 }`;
 }
 
+function materialReviewSystem() {
+  return `당신은 공개 전 생활정보를 검수하는 편집 책임자다.
+다음 자료에서 사실로 확인할 수 없는 법 조항·판례번호·통계·기관 연락처·금액·기한, 확정적 의료·법률·세무 조언, 개인정보, 광고, 혐오, 위험 행동을 찾아 제거하거나 일반적인 표현으로 고친다.
+최신성이 필요한 내용은 관계 기관의 최신 안내를 확인하라는 문구로 바꾼다.
+안전하게 고칠 수 있으면 수정한 전체 자료를 반환하고 approved를 true로 한다. 안전하게 고칠 수 없으면 approved를 false로 한다.
+반드시 JSON만 출력한다.
+{"approved":true,"reason":"검수 요약","material":{"title":"","summary":"","body":[],"category":"","tags":[],"sourceGuide":[],"disclaimer":""}}`;
+}
+
 function normalizeGenerated(parsed, date) {
   const title = cleanText(parsed?.title, 100);
   const summary = cleanText(parsed?.summary, 260);
@@ -148,6 +157,35 @@ function normalizeGenerated(parsed, date) {
     viewCount: 0,
     createdAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
+  };
+}
+
+async function reviewGeneratedMaterial(material, date) {
+  const reviewInput = {
+    title: material.title,
+    summary: material.summary,
+    body: material.body,
+    category: material.category,
+    tags: material.tags,
+    sourceGuide: material.sourceGuide,
+    disclaimer: material.disclaimer,
+  };
+  const { parsed } = await callAndParse(
+    maxTokens => callAI(
+      materialReviewSystem(),
+      `검수할 생활자료:\n${JSON.stringify(reviewInput)}`,
+      maxTokens,
+      0.1,
+      true,
+    ),
+    1800,
+  );
+  if (parsed?.approved !== true || !parsed?.material) throw new Error('AI 자료 자동 검수를 통과하지 못했습니다.');
+  return {
+    ...normalizeGenerated(parsed.material, date),
+    reviewStatus: 'auto-approved',
+    reviewReason: cleanText(parsed.reason, 300),
+    reviewedAt: FieldValue.serverTimestamp(),
   };
 }
 
@@ -182,8 +220,10 @@ async function generateMaterial(date, options = {}) {
       ),
       1800,
     );
-    await ref.set(normalizeGenerated(parsed, date), { merge: false });
-    await recordGeneration('material', date, 'success', { contentId: id });
+    const generated = normalizeGenerated(parsed, date);
+    const reviewed = await reviewGeneratedMaterial(generated, date);
+    await ref.set(reviewed, { merge: false });
+    await recordGeneration('material', date, 'success', { contentId: id, reviewStatus: 'auto-approved' });
     return { id, date, skipped: false };
   } catch (error) {
     await recordGeneration('material', date, 'failed', { error: cleanText(error?.message || 'unknown', 500) });
@@ -191,11 +231,34 @@ async function generateMaterial(date, options = {}) {
   }
 }
 
+async function registerUniqueView(ref, uid) {
+  if (!uid) return false;
+  const date = todayKst();
+  const eventRef = ref.collection('view_events').doc(`${uid}_${date}`);
+  return db.runTransaction(async transaction => {
+    const eventSnap = await transaction.get(eventRef);
+    if (eventSnap.exists) return false;
+    transaction.set(eventRef, {
+      uid,
+      date,
+      createdAt: FieldValue.serverTimestamp(),
+    });
+    transaction.update(ref, {
+      viewCount: FieldValue.increment(1),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+    return true;
+  }).catch(error => {
+    console.warn('[material view]', error.message);
+    return false;
+  });
+}
+
 exports.generateDailyMaterial = onSchedule({
   schedule: '30 7 * * *',
   timeZone: 'Asia/Seoul',
   region: REGION,
-  timeoutSeconds: 120,
+  timeoutSeconds: 240,
   memory: '512MiB',
   secrets: AI_RUNTIME_SECRETS,
 }, async () => {
@@ -204,7 +267,7 @@ exports.generateDailyMaterial = onSchedule({
 
 exports.triggerDailyMaterial = onCall({
   region: REGION,
-  timeoutSeconds: 120,
+  timeoutSeconds: 240,
   memory: '512MiB',
   secrets: AI_RUNTIME_SECRETS,
 }, async request => {
@@ -241,8 +304,9 @@ exports.getMaterial = onCall({ region: REGION, timeoutSeconds: 30, memory: '256M
   const ref = db.doc(`materials/${id}`);
   const snap = await ref.get().catch(() => null);
   if (!snap?.exists || snap.data()?.status !== 'published') throw new HttpsError('not-found', '자료를 찾을 수 없습니다.');
-  await ref.update({ viewCount: FieldValue.increment(1), updatedAt: FieldValue.serverTimestamp() }).catch(() => null);
-  return { ok: true, material: toPublic(id, snap.data()) };
+  const counted = await registerUniqueView(ref, request.auth?.uid);
+  const data = snap.data() || {};
+  return { ok: true, material: toPublic(id, counted ? { ...data, viewCount: Number(data.viewCount || 0) + 1 } : data) };
 });
 
 exports.adminCreateMaterial = onCall({ region: REGION, timeoutSeconds: 30, memory: '256MiB' }, async request => {
@@ -269,6 +333,7 @@ exports.adminCreateMaterial = onCall({ region: REGION, timeoutSeconds: 30, memor
     status: request.data?.status === 'draft' ? 'draft' : 'published',
     aiGenerated: false,
     imported: true,
+    reviewStatus: 'manual',
     viewCount: 0,
     createdBy: uid,
     createdAt: FieldValue.serverTimestamp(),
