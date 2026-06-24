@@ -4,7 +4,10 @@ const { HttpsError } = require('firebase-functions/v2/https');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 
 const db = getFirestore();
-const AI_RUNTIME_SECRETS = ['GEMINI_API_KEY', 'ANTHROPIC_API_KEY'];
+// 현재 운영 프로젝트에는 Gemini Secret만 등록되어 있습니다.
+// 존재하지 않는 Secret을 선언하면 Firebase가 Functions 배포 자체를 중단하므로
+// Anthropic은 키가 등록되고 별도 배포 설정이 추가되기 전까지 런타임 후보로만 유지합니다.
+const AI_RUNTIME_SECRETS = ['GEMINI_API_KEY'];
 
 function clampInteger(value, fallback, minimum, maximum) {
   const parsed = Number(value);
