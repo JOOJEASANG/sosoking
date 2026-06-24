@@ -61,7 +61,10 @@
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
   },
-  "storage": {
-    "rules": "storage.rules"
-  }
+  "storage": [
+    {
+      "bucket": "sosoking-481e6.firebasestorage.app",
+      "rules": "storage.rules"
+    }
+  ]
 }
