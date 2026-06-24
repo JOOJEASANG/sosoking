@@ -50,8 +50,10 @@ const saveAiKingConfig = onCall({ region: REGION, timeoutSeconds: 20 }, async re
   const activeModel = data.activeModel === 'gemini' ? 'gemini' : 'anthropic';
   const dailyFreeLimit = clampNumber(data.dailyFreeLimit, 3, 1, 20);
   const monthlyCap = clampNumber(data.monthlyCap, 0, 0, 100000);
+  const enabled = data.enabled !== false;
 
   await db.doc('config/ai_king').set({
+    enabled,
     activeModel,
     geminiModel: cleanModel(data.geminiModel, 'gemini-2.5-flash'),
     claudeModel: cleanModel(data.claudeModel, 'claude-haiku-4-5-20251001'),
@@ -67,8 +69,8 @@ const saveAiKingConfig = onCall({ region: REGION, timeoutSeconds: 20 }, async re
 
   return {
     success: true,
-    updated: ['activeModel', 'geminiModel', 'claudeModel', 'dailyFreeLimit', 'monthlyCap'],
-    message: '모델 설정만 저장했습니다. 인증 정보는 Firestore에 저장하지 않습니다.',
+    updated: ['enabled', 'activeModel', 'geminiModel', 'claudeModel', 'dailyFreeLimit', 'monthlyCap'],
+    message: 'AI 실행 설정을 저장했습니다. 인증 정보는 Firestore에 저장하지 않습니다.',
   };
 });
 
