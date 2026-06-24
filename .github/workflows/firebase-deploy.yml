@@ -1,7 +1,5 @@
 name: Deploy Firebase Backend
 
-# 운영 백엔드는 main 브랜치에서 관련 파일이 변경될 때만 배포합니다.
-# 화면(public)은 firebase-hosting.yml에서 별도로 검사 후 배포합니다.
 on:
   push:
     branches:
@@ -86,27 +84,19 @@ jobs:
         id: deploy_storage
         if: always() && steps.deploy_rules.outcome == 'success' && steps.deploy_indexes.outcome == 'success'
         continue-on-error: true
-        run: npx firebase-tools deploy --project "$FIREBASE_PROJECT_ID" --only storage --non-interactive
+        shell: bash
+        run: |
+          set -o pipefail
+          npx firebase-tools deploy --project "$FIREBASE_PROJECT_ID" --only storage --non-interactive 2>&1 | tee storage-deploy.log
 
       - name: Deploy Functions
         id: deploy_functions
-        if: always() && steps.deploy_rules.outcome == 'success' && steps.deploy_indexes.outcome == 'success' && steps.deploy_storage.outcome == 'success'
+        if: always() && steps.deploy_rules.outcome == 'success' && steps.deploy_indexes.outcome == 'success'
         continue-on-error: true
-        run: npx firebase-tools deploy --project "$FIREBASE_PROJECT_ID" --only functions --force --non-interactive
-
-      - name: Enforce backend deployment result
-        if: always()
+        shell: bash
         run: |
-          echo "rules=${{ steps.deploy_rules.outcome }}"
-          echo "indexes=${{ steps.deploy_indexes.outcome }}"
-          echo "storage=${{ steps.deploy_storage.outcome }}"
-          echo "functions=${{ steps.deploy_functions.outcome }}"
-          if [ "${{ steps.deploy_rules.outcome }}" != "success" ] || \
-             [ "${{ steps.deploy_indexes.outcome }}" != "success" ] || \
-             [ "${{ steps.deploy_storage.outcome }}" != "success" ] || \
-             [ "${{ steps.deploy_functions.outcome }}" != "success" ]; then
-            exit 1
-          fi
+          set -o pipefail
+          npx firebase-tools deploy --project "$FIREBASE_PROJECT_ID" --only functions --force --non-interactive 2>&1 | tee functions-deploy.log
 
       - name: Report production Backend result
         if: always()
@@ -119,12 +109,34 @@ jobs:
           STORAGE_RESULT: ${{ steps.deploy_storage.outcome }}
           FUNCTIONS_RESULT: ${{ steps.deploy_functions.outcome }}
         run: |
-          body="운영 Backend 배포 결과: **${RESULT}** · 커밋 \`${GITHUB_SHA}\`
+          storage_log="$(tail -n 24 storage-deploy.log 2>/dev/null || true)"
+          functions_log="$(tail -n 24 functions-deploy.log 2>/dev/null || true)"
+          body="Backend 배포 결과: **${RESULT}** · 커밋 \`${GITHUB_SHA}\`
 
           - Firestore Rules: ${RULES_RESULT}
           - Firestore Indexes: ${INDEXES_RESULT}
           - Storage Rules: ${STORAGE_RESULT}
-          - Functions: ${FUNCTIONS_RESULT}"
-          if ! gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/182/comments" -f body="$body"; then
-            echo "배포 결과 댓글을 기록하지 못했습니다. 실제 배포 단계 상태는 Actions 로그를 확인하세요."
+          - Functions: ${FUNCTIONS_RESULT}
+
+          Storage 마지막 로그:
+          \`\`\`
+          ${storage_log}
+          \`\`\`
+
+          Functions 마지막 로그:
+          \`\`\`
+          ${functions_log}
+          \`\`\`"
+          if ! gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/191/comments" -f body="$body"; then
+            echo "배포 결과 댓글을 기록하지 못했습니다."
+          fi
+
+      - name: Enforce backend deployment result
+        if: always()
+        run: |
+          if [ "${{ steps.deploy_rules.outcome }}" != "success" ] || \
+             [ "${{ steps.deploy_indexes.outcome }}" != "success" ] || \
+             [ "${{ steps.deploy_storage.outcome }}" != "success" ] || \
+             [ "${{ steps.deploy_functions.outcome }}" != "success" ]; then
+            exit 1
           fi
