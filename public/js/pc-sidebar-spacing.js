@@ -1,3 +1,5 @@
+import './crazy-consult-random.js';
+
 const STYLE_ID = 'pc-sidebar-user-spacing-style';
 
 function injectPcSidebarSpacing() {
