@@ -15,32 +15,41 @@
           { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
           { "key": "Cross-Origin-Opener-Policy", "value": "same-origin-allow-popups" },
           { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-          { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" }
+          { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" },
+          { "key": "Content-Security-Policy-Report-Only", "value": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://developers.kakao.com https://t1.kakaocdn.net https://*.kakao.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.cloudfunctions.net https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://*.kakao.com; frame-src https://accounts.google.com https://*.firebaseapp.com https://*.kakao.com; worker-src 'self' blob:; manifest-src 'self'; form-action 'self' https://*.kakao.com; upgrade-insecure-requests" }
         ]
       },
       {
         "source": "**/*.html",
-        "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
+        "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
+      },
+      {
+        "source": "/sw.js",
+        "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
       },
       {
         "source": "**/*.js",
-        "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
+        "headers": [{ "key": "Cache-Control", "value": "public, max-age=300, must-revalidate" }]
       },
       {
         "source": "**/*.css",
-        "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
+        "headers": [{ "key": "Cache-Control", "value": "public, max-age=300, must-revalidate" }]
       },
       {
         "source": "/manifest.json",
-        "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
+        "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
       },
       {
         "source": "**/*.svg",
-        "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
+        "headers": [{ "key": "Cache-Control", "value": "public, max-age=86400, must-revalidate" }]
       },
       {
         "source": "/icon-*.png",
-        "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
+        "headers": [{ "key": "Cache-Control", "value": "public, max-age=86400, must-revalidate" }]
+      },
+      {
+        "source": "/og-image.png",
+        "headers": [{ "key": "Cache-Control", "value": "public, max-age=86400, must-revalidate" }]
       }
     ]
   },

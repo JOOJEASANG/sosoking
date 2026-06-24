@@ -28,7 +28,9 @@ permissions:
 
 concurrency:
   group: firebase-backend-${{ github.ref }}
-  cancel-in-progress: true
+  # Rules → Storage → Functions 순서의 운영 배포가 중간에 취소되면
+  # 서로 다른 버전이 잠시 공존할 수 있으므로 기존 배포를 끝까지 완료합니다.
+  cancel-in-progress: false
 
 jobs:
   deploy:
@@ -114,5 +116,5 @@ jobs:
         run: |
           body="운영 Backend 배포 결과: **${RESULT}** · 커밋 \`${GITHUB_SHA}\`"
           if ! gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/182/comments" -f body="$body"; then
-            echo "::warning::배포 결과 댓글을 기록하지 못했습니다. 실제 배포 단계 상태는 Actions 로그를 확인하세요."
+            echo "배포 결과 댓글을 기록하지 못했습니다. 실제 배포 단계 상태는 Actions 로그를 확인하세요."
           fi

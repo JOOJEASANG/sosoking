@@ -6,6 +6,12 @@ const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const db = getFirestore();
 const AI_RUNTIME_SECRETS = ['GEMINI_API_KEY', 'ANTHROPIC_API_KEY'];
 
+function clampInteger(value, fallback, minimum, maximum) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.max(minimum, Math.min(maximum, Math.floor(parsed)));
+}
+
 async function readRuntimeConfig() {
   const ref = db.doc('config/ai_king');
   const snap = await ref.get().catch(() => null);
@@ -30,9 +36,12 @@ async function readRuntimeConfig() {
   }
 
   return {
+    enabled: data.enabled !== false,
     provider: data.activeModel === 'gemini' ? 'gemini' : 'anthropic',
     geminiModel: String(data.geminiModel || 'gemini-2.5-flash').slice(0, 100),
     anthropicModel: String(data.claudeModel || 'claude-haiku-4-5-20251001').slice(0, 100),
+    dailyFreeLimit: clampInteger(data.dailyFreeLimit, 3, 1, 20),
+    monthlyCap: clampInteger(data.monthlyCap, 0, 0, 100000),
   };
 }
 
@@ -72,6 +81,8 @@ async function runAnthropic(credential, config, system, prompt, maxTokens, tempe
 
 async function callAI(system, prompt, maxTokens = 800, temperature = 0.8, jsonMode = false) {
   const config = await readRuntimeConfig();
+  if (!config.enabled) throw new HttpsError('failed-precondition', 'AI 기능이 현재 일시 중지되어 있습니다.');
+
   const geminiCredential = String(process.env.GEMINI_API_KEY || '').trim();
   const anthropicCredential = String(process.env.ANTHROPIC_API_KEY || '').trim();
 
@@ -97,4 +108,11 @@ async function callAndParse(factory, maxTokens) {
   }
 }
 
-module.exports = { AI_RUNTIME_SECRETS, callAI, callAndParse, parseJson };
+module.exports = {
+  AI_RUNTIME_SECRETS,
+  readRuntimeConfig,
+  callAI,
+  callAndParse,
+  parseJson,
+  clampInteger,
+};

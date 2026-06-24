@@ -1,6 +1,6 @@
-// sw.js — 배포 후 오래된 정적 자산이 남지 않도록 캐시 버전을 관리합니다.
-const CACHE = 'sosoking-v213-separate-content';
-const FRESH_EXTENSIONS = ['.html', '.js', '.css', '.json', '.webmanifest', '.xml'];
+// sw.js — 최신 자산을 우선 사용하고 네트워크 장애 시 직전 정상 자산으로 복구합니다.
+const CACHE = 'sosoking-v214-production-hardening';
+const REVALIDATE_EXTENSIONS = ['.html', '.js', '.css', '.json', '.webmanifest', '.xml'];
 
 self.addEventListener('install', event => {
   self.skipWaiting();
@@ -28,18 +28,31 @@ function shouldBypass(request, url) {
   );
 }
 
-function shouldAlwaysFetchFresh(request, url) {
+function shouldRevalidate(request, url) {
   if (request.mode === 'navigate') return true;
   if (url.origin !== self.location.origin) return false;
-  return FRESH_EXTENSIONS.some(ext => url.pathname.endsWith(ext)) || url.pathname === '/manifest.json';
+  return REVALIDATE_EXTENSIONS.some(extension => url.pathname.endsWith(extension)) || url.pathname === '/manifest.json';
+}
+
+async function networkFirst(request) {
+  const cache = await caches.open(CACHE);
+  try {
+    const response = await fetch(request, { cache: 'no-cache' });
+    if (response.ok) await cache.put(request, response.clone());
+    return response;
+  } catch (error) {
+    const cached = await cache.match(request);
+    if (cached) return cached;
+    throw error;
+  }
 }
 
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
   if (shouldBypass(event.request, url)) return;
 
-  if (shouldAlwaysFetchFresh(event.request, url)) {
-    event.respondWith(fetch(event.request, { cache: 'no-store' }).catch(() => fetch(event.request)));
+  if (shouldRevalidate(event.request, url)) {
+    event.respondWith(networkFirst(event.request));
     return;
   }
 
@@ -52,7 +65,7 @@ self.addEventListener('fetch', event => {
           caches.open(CACHE).then(cache => cache.put(event.request, clone));
         }
         return response;
-      }).catch(() => cached);
+      });
     })
   );
 });

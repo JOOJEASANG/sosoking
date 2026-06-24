@@ -4,13 +4,13 @@ const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getApps, initializeApp } = require('firebase-admin/app');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const { CHARACTERS, CHAR_LIST } = require('./king-character-catalog');
-const { AI_RUNTIME_SECRETS, callAI, callAndParse } = require('./ai-runtime-provider');
+const { AI_RUNTIME_SECRETS, readRuntimeConfig, callAI, callAndParse } = require('./ai-runtime-provider');
 
 if (!getApps().length) initializeApp();
 
 const db = getFirestore();
 const REGION = 'asia-northeast3';
-const DAILY_LIMIT = 3;
+const DEFAULT_DAILY_LIMIT = 3;
 
 function todayKst() {
   return new Intl.DateTimeFormat('en-CA', {
@@ -19,6 +19,10 @@ function todayKst() {
     month: '2-digit',
     day: '2-digit',
   }).format(new Date());
+}
+
+function monthKst() {
+  return todayKst().slice(0, 7);
 }
 
 function requireUser(request) {
@@ -48,18 +52,41 @@ function getCharacters(ids, expectedCount = 3) {
 }
 
 async function consumeUsage(uid, feature) {
+  const config = await readRuntimeConfig();
+  const dailyLimit = Number(config.dailyFreeLimit || DEFAULT_DAILY_LIMIT);
+  const monthlyCap = Math.max(0, Number(config.monthlyCap || 0));
+  if (!config.enabled) {
+    return { allowed: false, reason: 'disabled', dailyLimit, monthlyCap, monthlyUsed: 0, usedExtra: false };
+  }
+
   const date = todayKst();
+  const month = monthKst();
   const usageRef = db.doc(`ai_king_usage/${uid}_${date}_${feature}`);
+  const monthlyRef = db.doc(`ai_king_usage/${uid}_${month}_monthly`);
   const userRef = db.doc(`users/${uid}`);
 
   return db.runTransaction(async transaction => {
-    const [usageSnap, userSnap] = await Promise.all([
+    const [usageSnap, monthlySnap, userSnap] = await Promise.all([
       transaction.get(usageRef),
+      transaction.get(monthlyRef),
       transaction.get(userRef),
     ]);
     const count = Number(usageSnap.exists ? usageSnap.data()?.count || 0 : 0);
+    const monthlyUsed = Number(monthlySnap.exists ? monthlySnap.data()?.count || 0 : 0);
 
-    if (count < DAILY_LIMIT) {
+    if (monthlyCap > 0 && monthlyUsed >= monthlyCap) {
+      return { allowed: false, reason: 'monthly', dailyLimit, monthlyCap, monthlyUsed, usedExtra: false };
+    }
+
+    const monthlyWrite = {
+      userId: uid,
+      type: 'monthly',
+      month,
+      count: monthlyUsed + 1,
+      updatedAt: FieldValue.serverTimestamp(),
+    };
+
+    if (count < dailyLimit) {
       transaction.set(usageRef, {
         userId: uid,
         feature,
@@ -67,7 +94,8 @@ async function consumeUsage(uid, feature) {
         count: count + 1,
         updatedAt: FieldValue.serverTimestamp(),
       }, { merge: true });
-      return { allowed: true, usedExtra: false, limit: DAILY_LIMIT };
+      transaction.set(monthlyRef, monthlyWrite, { merge: true });
+      return { allowed: true, reason: null, usedExtra: false, dailyLimit, monthlyCap, monthlyUsed: monthlyUsed + 1 };
     }
 
     const extra = Number(userSnap.exists ? userSnap.data()?.extraAiUses || 0 : 0);
@@ -76,30 +104,44 @@ async function consumeUsage(uid, feature) {
         extraAiUses: FieldValue.increment(-1),
         updatedAt: FieldValue.serverTimestamp(),
       }, { merge: true });
-      return { allowed: true, usedExtra: true, limit: DAILY_LIMIT };
+      transaction.set(monthlyRef, monthlyWrite, { merge: true });
+      return { allowed: true, reason: null, usedExtra: true, dailyLimit, monthlyCap, monthlyUsed: monthlyUsed + 1 };
     }
 
-    return { allowed: false, usedExtra: false, limit: DAILY_LIMIT };
+    return { allowed: false, reason: 'daily', usedExtra: false, dailyLimit, monthlyCap, monthlyUsed };
   });
 }
 
-async function refundUsage(uid, feature, usedExtra) {
+async function refundUsage(uid, feature, usage) {
+  if (!usage?.allowed) return;
   try {
-    if (usedExtra) {
-      await db.doc(`users/${uid}`).set({
-        extraAiUses: FieldValue.increment(1),
-        updatedAt: FieldValue.serverTimestamp(),
-      }, { merge: true });
-      return;
-    }
-
     const usageRef = db.doc(`ai_king_usage/${uid}_${todayKst()}_${feature}`);
+    const monthlyRef = db.doc(`ai_king_usage/${uid}_${monthKst()}_monthly`);
+    const userRef = db.doc(`users/${uid}`);
+
     await db.runTransaction(async transaction => {
-      const snap = await transaction.get(usageRef);
-      const count = Number(snap.exists ? snap.data()?.count || 0 : 0);
-      if (count > 0) {
+      const [dailySnap, monthlySnap] = await Promise.all([
+        transaction.get(usageRef),
+        transaction.get(monthlyRef),
+      ]);
+      const dailyCount = Number(dailySnap.exists ? dailySnap.data()?.count || 0 : 0);
+      const monthlyCount = Number(monthlySnap.exists ? monthlySnap.data()?.count || 0 : 0);
+
+      if (!usage.usedExtra && dailyCount > 0) {
         transaction.set(usageRef, {
-          count: count - 1,
+          count: dailyCount - 1,
+          updatedAt: FieldValue.serverTimestamp(),
+        }, { merge: true });
+      }
+      if (monthlyCount > 0) {
+        transaction.set(monthlyRef, {
+          count: monthlyCount - 1,
+          updatedAt: FieldValue.serverTimestamp(),
+        }, { merge: true });
+      }
+      if (usage.usedExtra) {
+        transaction.set(userRef, {
+          extraAiUses: FieldValue.increment(1),
           updatedAt: FieldValue.serverTimestamp(),
         }, { merge: true });
       }
@@ -107,6 +149,13 @@ async function refundUsage(uid, feature, usedExtra) {
   } catch (error) {
     console.error('[king-playground] usage refund failed:', error.message);
   }
+}
+
+function assertUsageAllowed(usage, label) {
+  if (usage.allowed) return;
+  if (usage.reason === 'disabled') throw new HttpsError('failed-precondition', 'AI 기능이 현재 일시 중지되어 있어요.');
+  if (usage.reason === 'monthly') throw new HttpsError('resource-exhausted', '이번 달 AI 이용 한도에 도달했어요.');
+  throw new HttpsError('resource-exhausted', `오늘 ${label}은 하루 ${usage.dailyLimit}번까지 가능해요.`);
 }
 
 function judgeSystem(characters) {
@@ -150,7 +199,7 @@ const aiJudge = onCall({
   if (situation.length < 5) throw new HttpsError('invalid-argument', '상황을 5자 이상 적어주세요.');
 
   const usage = await consumeUsage(uid, 'judge');
-  if (!usage.allowed) throw new HttpsError('resource-exhausted', `오늘 판결은 하루 ${usage.limit}번까지 가능해요.`);
+  assertUsageAllowed(usage, '판결');
 
   try {
     const { parsed } = await callAndParse(
@@ -172,7 +221,7 @@ const aiJudge = onCall({
     }));
     return { ok: true, postId: null, privateResult: true, verdicts };
   } catch (error) {
-    await refundUsage(uid, 'judge', usage.usedExtra);
+    await refundUsage(uid, 'judge', usage);
     if (error instanceof HttpsError) throw error;
     console.error('[aiJudge]', error);
     throw new HttpsError('internal', 'AI 판결에 실패했어요. 사용 횟수는 복구했습니다.');
@@ -191,7 +240,7 @@ const aiTranslateV2 = onCall({
   if (text.length < 2) throw new HttpsError('invalid-argument', '바꿀 문장을 2자 이상 입력해주세요.');
 
   const usage = await consumeUsage(uid, 'translate');
-  if (!usage.allowed) throw new HttpsError('resource-exhausted', `오늘 번역은 하루 ${usage.limit}번까지 가능해요.`);
+  assertUsageAllowed(usage, '말투 변환');
 
   try {
     const result = await callAI(
@@ -208,7 +257,7 @@ const aiTranslateV2 = onCall({
       result: cleanText(result, 3000),
     };
   } catch (error) {
-    await refundUsage(uid, 'translate', usage.usedExtra);
+    await refundUsage(uid, 'translate', usage);
     if (error instanceof HttpsError) throw error;
     console.error('[aiTranslateV2]', error);
     throw new HttpsError('internal', '캐릭터 번역에 실패했어요. 사용 횟수는 복구했습니다.');
@@ -227,7 +276,7 @@ const aiNameV2 = onCall({
   if (subject.length < 2) throw new HttpsError('invalid-argument', '이름을 지을 대상을 2자 이상 설명해주세요.');
 
   const usage = await consumeUsage(uid, 'name');
-  if (!usage.allowed) throw new HttpsError('resource-exhausted', `오늘 작명은 하루 ${usage.limit}번까지 가능해요.`);
+  assertUsageAllowed(usage, '작명');
 
   try {
     const { parsed } = await callAndParse(
@@ -250,7 +299,7 @@ const aiNameV2 = onCall({
     if (!names.length) throw new Error('empty names');
     return { ok: true, characterId: character.id, characterName: character.name, names };
   } catch (error) {
-    await refundUsage(uid, 'name', usage.usedExtra);
+    await refundUsage(uid, 'name', usage);
     if (error instanceof HttpsError) throw error;
     console.error('[aiNameV2]', error);
     throw new HttpsError('internal', '작명에 실패했어요. 사용 횟수는 복구했습니다.');
@@ -269,7 +318,7 @@ const aiConsultV2 = onCall({
   if (concern.length < 5) throw new HttpsError('invalid-argument', '고민이나 상황을 5자 이상 적어주세요.');
 
   const usage = await consumeUsage(uid, 'consult');
-  if (!usage.allowed) throw new HttpsError('resource-exhausted', `오늘 상담은 하루 ${usage.limit}번까지 가능해요.`);
+  assertUsageAllowed(usage, '상담');
 
   try {
     const { parsed } = await callAndParse(
@@ -291,7 +340,7 @@ const aiConsultV2 = onCall({
     }));
     return { ok: true, advices };
   } catch (error) {
-    await refundUsage(uid, 'consult', usage.usedExtra);
+    await refundUsage(uid, 'consult', usage);
     if (error instanceof HttpsError) throw error;
     console.error('[aiConsultV2]', error);
     throw new HttpsError('internal', '캐릭터 상담에 실패했어요. 사용 횟수는 복구했습니다.');
@@ -299,16 +348,30 @@ const aiConsultV2 = onCall({
 });
 
 const getKingPlaygroundUsage = onCall({ region: REGION, timeoutSeconds: 20 }, async request => {
+  const config = await readRuntimeConfig();
+  const dailyLimit = Number(config.dailyFreeLimit || DEFAULT_DAILY_LIMIT);
+  const monthlyCap = Math.max(0, Number(config.monthlyCap || 0));
   const uid = request.auth?.uid;
-  if (!uid) return { ok: true, dailyLimit: DAILY_LIMIT, usage: {} };
+  if (!uid) return { ok: true, enabled: config.enabled, dailyLimit, monthlyCap, monthlyUsed: 0, usage: {} };
+
   const date = todayKst();
   const features = ['judge', 'translate', 'name', 'consult'];
-  const snapshots = await Promise.all(features.map(feature => db.doc(`ai_king_usage/${uid}_${date}_${feature}`).get()));
+  const [monthlySnap, ...snapshots] = await Promise.all([
+    db.doc(`ai_king_usage/${uid}_${monthKst()}_monthly`).get(),
+    ...features.map(feature => db.doc(`ai_king_usage/${uid}_${date}_${feature}`).get()),
+  ]);
   const usage = Object.fromEntries(features.map((feature, index) => [
     feature,
     Number(snapshots[index].exists ? snapshots[index].data()?.count || 0 : 0),
   ]));
-  return { ok: true, dailyLimit: DAILY_LIMIT, usage };
+  return {
+    ok: true,
+    enabled: config.enabled,
+    dailyLimit,
+    monthlyCap,
+    monthlyUsed: Number(monthlySnap.exists ? monthlySnap.data()?.count || 0 : 0),
+    usage,
+  };
 });
 
 module.exports = {
@@ -319,4 +382,5 @@ module.exports = {
   getKingPlaygroundUsage,
   getAiKingUsage: getKingPlaygroundUsage,
   CHARACTER_IDS: CHAR_LIST.map(item => item.id),
+  _test: { todayKst, monthKst, assertUsageAllowed },
 };

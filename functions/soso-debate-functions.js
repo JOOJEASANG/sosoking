@@ -70,7 +70,7 @@ async function recentTitles() {
       .orderBy('createdAt', 'desc')
       .limit(40)
       .get();
-    return snap.docs.map(doc => cleanText(doc.data()?.title, 100)).filter(Boolean);
+    return snap.docs.map(document => cleanText(document.data()?.title, 100)).filter(Boolean);
   } catch (error) {
     console.warn('[debates recent titles]', error.message);
     return [];
@@ -138,6 +138,15 @@ ${recentText}
 }`;
 }
 
+function debateReviewSystem() {
+  return `당신은 공개 전 생활 토론을 검수하는 편집 책임자다.
+특정 실존 인물·기업·현재 뉴스 사건·정치 선동·혐오·차별·폭력 조장·성적 또는 선정적 내용·개인정보·광고를 제거한다.
+찬성과 반대가 모두 합리적으로 설명되는지, 한쪽을 정답처럼 몰아가지 않는지 확인한다.
+안전하게 고칠 수 있으면 수정한 전체 토론을 반환하고 approved를 true로 한다. 안전하게 고칠 수 없으면 approved를 false로 한다.
+반드시 JSON만 출력한다.
+{"approved":true,"reason":"검수 요약","debate":{"title":"","summary":"","context":[],"category":"","tags":[],"agreeTitle":"","agreeText":"","disagreeTitle":"","disagreeText":"","questions":[]}}`;
+}
+
 function normalizeGenerated(parsed, date) {
   const title = cleanText(parsed?.title, 100);
   const summary = cleanText(parsed?.summary, 260);
@@ -168,10 +177,43 @@ function normalizeGenerated(parsed, date) {
     imported: false,
     agreeCount: 0,
     disagreeCount: 0,
+    totalVotes: 0,
     commentCount: 0,
     viewCount: 0,
     createdAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
+  };
+}
+
+async function reviewGeneratedDebate(debate, date) {
+  const reviewInput = {
+    title: debate.title,
+    summary: debate.summary,
+    context: debate.context,
+    category: debate.category,
+    tags: debate.tags,
+    agreeTitle: debate.agreeTitle,
+    agreeText: debate.agreeText,
+    disagreeTitle: debate.disagreeTitle,
+    disagreeText: debate.disagreeText,
+    questions: debate.questions,
+  };
+  const { parsed } = await callAndParse(
+    maxTokens => callAI(
+      debateReviewSystem(),
+      `검수할 생활 토론:\n${JSON.stringify(reviewInput)}`,
+      maxTokens,
+      0.1,
+      true,
+    ),
+    1900,
+  );
+  if (parsed?.approved !== true || !parsed?.debate) throw new Error('AI 토론 자동 검수를 통과하지 못했습니다.');
+  return {
+    ...normalizeGenerated(parsed.debate, date),
+    reviewStatus: 'auto-approved',
+    reviewReason: cleanText(parsed.reason, 300),
+    reviewedAt: FieldValue.serverTimestamp(),
   };
 }
 
@@ -204,8 +246,10 @@ async function generateDebate(date, options = {}) {
       ),
       1900,
     );
-    await ref.set(normalizeGenerated(parsed, date), { merge: false });
-    await recordGeneration(date, 'success', { contentId: id });
+    const generated = normalizeGenerated(parsed, date);
+    const reviewed = await reviewGeneratedDebate(generated, date);
+    await ref.set(reviewed, { merge: false });
+    await recordGeneration(date, 'success', { contentId: id, reviewStatus: 'auto-approved' });
     return { id, date, skipped: false };
   } catch (error) {
     await recordGeneration(date, 'failed', { error: cleanText(error?.message || 'unknown', 500) });
@@ -220,11 +264,34 @@ async function getPublishedDebate(id) {
   return { ref, snap, data: snap.data() || {} };
 }
 
+async function registerUniqueView(ref, uid) {
+  if (!uid) return false;
+  const date = todayKst();
+  const eventRef = ref.collection('view_events').doc(`${uid}_${date}`);
+  return db.runTransaction(async transaction => {
+    const eventSnap = await transaction.get(eventRef);
+    if (eventSnap.exists) return false;
+    transaction.set(eventRef, {
+      uid,
+      date,
+      createdAt: FieldValue.serverTimestamp(),
+    });
+    transaction.update(ref, {
+      viewCount: FieldValue.increment(1),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+    return true;
+  }).catch(error => {
+    console.warn('[debate view]', error.message);
+    return false;
+  });
+}
+
 exports.generateDailyDebate = onSchedule({
   schedule: '0 8 * * *',
   timeZone: 'Asia/Seoul',
   region: REGION,
-  timeoutSeconds: 120,
+  timeoutSeconds: 240,
   memory: '512MiB',
   secrets: AI_RUNTIME_SECRETS,
 }, async () => {
@@ -233,7 +300,7 @@ exports.generateDailyDebate = onSchedule({
 
 exports.triggerDailyDebate = onCall({
   region: REGION,
-  timeoutSeconds: 120,
+  timeoutSeconds: 240,
   memory: '512MiB',
   secrets: AI_RUNTIME_SECRETS,
 }, async request => {
@@ -293,13 +360,16 @@ exports.getDebate = onCall({ region: REGION, timeoutSeconds: 30, memory: '256MiB
   const id = validDebateIdOrThrow(request.data?.debateId || request.data?.id);
   const published = await getPublishedDebate(id);
   if (!published) throw new HttpsError('not-found', '토론을 찾을 수 없습니다.');
-  await published.ref.update({ viewCount: FieldValue.increment(1), updatedAt: FieldValue.serverTimestamp() }).catch(() => null);
+  const counted = await registerUniqueView(published.ref, request.auth?.uid);
   let myVote = null;
   if (request.auth?.uid) {
     const voteSnap = await published.ref.collection('votes').doc(request.auth.uid).get().catch(() => null);
     if (voteSnap?.exists) myVote = normalizeVoteSide(voteSnap.data()?.side);
   }
-  return { ok: true, debate: toPublic(id, published.data), myVote };
+  const data = counted
+    ? { ...published.data, viewCount: Number(published.data.viewCount || 0) + 1 }
+    : published.data;
+  return { ok: true, debate: toPublic(id, data), myVote };
 });
 
 exports.voteDebate = onCall({ region: REGION, timeoutSeconds: 30, memory: '256MiB' }, async request => {
@@ -323,7 +393,11 @@ exports.voteDebate = onCall({ region: REGION, timeoutSeconds: 30, memory: '256Mi
       createdAt: voteSnap.exists ? voteSnap.data()?.createdAt || FieldValue.serverTimestamp() : FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
-    transaction.update(debateRef, { ...counts, totalVotes: counts.agreeCount + counts.disagreeCount, updatedAt: FieldValue.serverTimestamp() });
+    transaction.update(debateRef, {
+      ...counts,
+      totalVotes: counts.agreeCount + counts.disagreeCount,
+      updatedAt: FieldValue.serverTimestamp(),
+    });
   });
   return { ok: true, side };
 });
@@ -431,6 +505,7 @@ exports.adminCreateDebate = onCall({ region: REGION, timeoutSeconds: 30, memory:
     status: request.data?.status === 'draft' ? 'draft' : 'published',
     aiGenerated: false,
     imported: true,
+    reviewStatus: 'manual',
     agreeCount: 0,
     disagreeCount: 0,
     totalVotes: 0,

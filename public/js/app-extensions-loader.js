@@ -1,5 +1,6 @@
 // app-extensions-loader.js — 계정과 프로필에 필요한 최소 보조 모듈만 로드합니다.
 
+const EXTENSION_VERSION = '2026-06-24-production-hardening-v1';
 const EXTENSION_MODULES = [
   './debate-route-redirect.js',
   './pc-sidebar-spacing.js',
@@ -9,7 +10,7 @@ const EXTENSION_MODULES = [
 
 async function loadExtension(path) {
   try {
-    await import(`${path}?v=${Date.now()}`);
+    await import(`${path}?v=${encodeURIComponent(EXTENSION_VERSION)}`);
     return { path, ok: true };
   } catch (error) {
     console.warn('[sosoking extensions] failed', path, error);

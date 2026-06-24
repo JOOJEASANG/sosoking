@@ -1,7 +1,7 @@
-const BOOT_VERSION = '2026-05-20-safe-entry-v1';
+const BOOT_VERSION = '2026-06-24-production-hardening-v1';
 
 function escapeHtml(value) {
-  return String(value || '').replace(/[&<>]/g, ch => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[ch]));
+  return String(value || '').replace(/[&<>]/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[character]));
 }
 
 function showBootError(error, diagnostics = '') {
@@ -23,12 +23,12 @@ function showBootError(error, diagnostics = '') {
 
 async function probe(path) {
   try {
-    const url = `/js/${path}?probe=${encodeURIComponent(BOOT_VERSION)}&t=${Date.now()}`;
-    const res = await fetch(url, { cache: 'no-store' });
-    const text = await res.text().catch(() => '');
-    return `${path}: status=${res.status}; type=${res.headers.get('content-type') || ''}; first120=${text.slice(0, 120).replace(/\s+/g, ' ')}`;
-  } catch (e) {
-    return `${path}: error=${e && e.message ? e.message : String(e)}`;
+    const url = `/js/${path}?probe=${encodeURIComponent(BOOT_VERSION)}`;
+    const response = await fetch(url, { cache: 'no-cache' });
+    const text = await response.text().catch(() => '');
+    return `${path}: status=${response.status}; type=${response.headers.get('content-type') || ''}; first120=${text.slice(0, 120).replace(/\s+/g, ' ')}`;
+  } catch (error) {
+    return `${path}: error=${error && error.message ? error.message : String(error)}`;
   }
 }
 
@@ -40,12 +40,11 @@ async function collectDiagnostics() {
 }
 
 async function loadPostBootModules() {
-  const stamp = Date.now();
   const modules = [
     './owner-edit-route-override.js',
     './app-stability-suite.js',
   ];
-  await Promise.allSettled(modules.map(path => import(`${path}?v=${stamp}`)));
+  await Promise.allSettled(modules.map(path => import(`${path}?v=${encodeURIComponent(BOOT_VERSION)}`)));
 }
 
 window.addEventListener('error', async event => {
@@ -56,7 +55,7 @@ window.addEventListener('unhandledrejection', async event => {
   if (!document.querySelector('.app-shell')) showBootError(event.reason, await collectDiagnostics());
 });
 
-const safeUrl = `./app-safe.js?v=${encodeURIComponent(BOOT_VERSION)}&t=${Date.now()}`;
+const safeUrl = `./app-safe.js?v=${encodeURIComponent(BOOT_VERSION)}`;
 import(safeUrl).then(loadPostBootModules).catch(async safeError => {
   showBootError(safeError, await collectDiagnostics());
 });
