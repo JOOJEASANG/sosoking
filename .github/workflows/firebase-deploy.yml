@@ -1,7 +1,7 @@
 name: Deploy Firebase Backend
 
 # 운영 백엔드는 main 브랜치에서 관련 파일이 변경될 때만 배포합니다.
-# 화면(public)은 firebase-hosting.yml에서 별도로 검사 후 배포합니다.
+# AI 키 교체는 운영 배포와 분리하고 Firebase Secret Manager의 기존 값을 사용합니다.
 on:
   push:
     branches:
@@ -28,8 +28,6 @@ permissions:
 
 concurrency:
   group: firebase-backend-${{ github.ref }}
-  # Rules → Storage → Functions 순서의 운영 배포가 중간에 취소되면
-  # 서로 다른 버전이 잠시 공존할 수 있으므로 기존 배포를 끝까지 완료합니다.
   cancel-in-progress: false
 
 jobs:
@@ -37,10 +35,8 @@ jobs:
     if: github.ref == 'refs/heads/main'
     name: Check and deploy backend
     runs-on: ubuntu-latest
-
     env:
       FIREBASE_PROJECT_ID: sosoking-481e6
-      FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 }}
 
     steps:
       - name: Checkout repository
@@ -60,52 +56,26 @@ jobs:
         working-directory: functions
 
       - name: Static check
+        id: static_check
         run: npm run check
 
-      - name: Install Firebase CLI
-        run: npm install -g firebase-tools
-
-      - name: Write Firebase service account
-        run: |
-          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
-            echo "FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 secret이 설정되지 않았습니다."
-            exit 1
-          fi
-          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-service-account.json"
-          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/firebase-service-account.json" >> "$GITHUB_ENV"
-
-      - name: Register GEMINI_API_KEY when supplied
-        run: |
-          if [ -z "$GEMINI_API_KEY" ]; then
-            echo "GEMINI_API_KEY GitHub secret이 비어 있어 기존 Secret Manager 값을 유지합니다."
-            exit 0
-          fi
-          printf '%s' "$GEMINI_API_KEY" | \
-            firebase functions:secrets:set GEMINI_API_KEY \
-              --data-file=- --project "$FIREBASE_PROJECT_ID"
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-
-      - name: Register ANTHROPIC_API_KEY when supplied
-        run: |
-          if [ -z "$ANTHROPIC_API_KEY" ]; then
-            echo "ANTHROPIC_API_KEY GitHub secret이 비어 있어 기존 Secret Manager 값을 유지합니다."
-            exit 0
-          fi
-          printf '%s' "$ANTHROPIC_API_KEY" | \
-            firebase functions:secrets:set ANTHROPIC_API_KEY \
-              --data-file=- --project "$FIREBASE_PROJECT_ID"
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      - name: Authenticate to Google Cloud
+        id: firebase_auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 }}
 
       - name: Deploy Firestore rules and indexes
-        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only firestore:rules,firestore:indexes --non-interactive
+        id: deploy_firestore
+        run: npx firebase-tools deploy --project "$FIREBASE_PROJECT_ID" --only firestore:rules,firestore:indexes --non-interactive
 
       - name: Deploy Storage rules
-        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only storage --non-interactive
+        id: deploy_storage
+        run: npx firebase-tools deploy --project "$FIREBASE_PROJECT_ID" --only storage --non-interactive
 
       - name: Deploy Functions
-        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only functions --force --non-interactive
+        id: deploy_functions
+        run: npx firebase-tools deploy --project "$FIREBASE_PROJECT_ID" --only functions --force --non-interactive
 
       - name: Report production Backend result
         if: always()
@@ -113,8 +83,19 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           RESULT: ${{ job.status }}
+          STATIC_RESULT: ${{ steps.static_check.outcome }}
+          AUTH_RESULT: ${{ steps.firebase_auth.outcome }}
+          FIRESTORE_RESULT: ${{ steps.deploy_firestore.outcome }}
+          STORAGE_RESULT: ${{ steps.deploy_storage.outcome }}
+          FUNCTIONS_RESULT: ${{ steps.deploy_functions.outcome }}
         run: |
-          body="운영 Backend 배포 결과: **${RESULT}** · 커밋 \`${GITHUB_SHA}\`"
+          body="운영 Backend 배포 결과: **${RESULT}** · 커밋 \`${GITHUB_SHA}\`
+
+          - 정적검사: ${STATIC_RESULT}
+          - Google Cloud 인증: ${AUTH_RESULT}
+          - Firestore Rules·Indexes: ${FIRESTORE_RESULT}
+          - Storage Rules: ${STORAGE_RESULT}
+          - Functions: ${FUNCTIONS_RESULT}"
           if ! gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/182/comments" -f body="$body"; then
             echo "배포 결과 댓글을 기록하지 못했습니다. 실제 배포 단계 상태는 Actions 로그를 확인하세요."
           fi
