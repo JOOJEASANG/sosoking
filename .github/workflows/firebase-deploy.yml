@@ -58,15 +58,9 @@ jobs:
         working-directory: functions
 
       - name: Static check
-        id: static_check
         run: npm run check
 
-      - name: Prepare Firebase CLI
-        id: firebase_cli
-        run: npx firebase-tools --version
-
       - name: Write Firebase service account
-        id: firebase_auth
         run: |
           if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
             echo "Firebase service account secret이 설정되지 않았습니다."
@@ -76,15 +70,12 @@ jobs:
           echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/firebase-service-account.json" >> "$GITHUB_ENV"
 
       - name: Deploy Firestore rules and indexes
-        id: deploy_firestore
         run: npx firebase-tools deploy --project "$FIREBASE_PROJECT_ID" --only firestore:rules,firestore:indexes --non-interactive
 
       - name: Deploy Storage rules
-        id: deploy_storage
         run: npx firebase-tools deploy --project "$FIREBASE_PROJECT_ID" --only storage --non-interactive
 
       - name: Deploy Functions
-        id: deploy_functions
         run: npx firebase-tools deploy --project "$FIREBASE_PROJECT_ID" --only functions --force --non-interactive
 
       - name: Report production Backend result
@@ -93,21 +84,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           RESULT: ${{ job.status }}
-          STATIC_RESULT: ${{ steps.static_check.outcome }}
-          CLI_RESULT: ${{ steps.firebase_cli.outcome }}
-          AUTH_RESULT: ${{ steps.firebase_auth.outcome }}
-          FIRESTORE_RESULT: ${{ steps.deploy_firestore.outcome }}
-          STORAGE_RESULT: ${{ steps.deploy_storage.outcome }}
-          FUNCTIONS_RESULT: ${{ steps.deploy_functions.outcome }}
         run: |
-          body="운영 Backend 배포 결과: **${RESULT}** · 커밋 \`${GITHUB_SHA}\`
-
-          - 정적검사: ${STATIC_RESULT}
-          - Firebase CLI: ${CLI_RESULT}
-          - Firebase 인증: ${AUTH_RESULT}
-          - Firestore Rules·Indexes: ${FIRESTORE_RESULT}
-          - Storage Rules: ${STORAGE_RESULT}
-          - Functions: ${FUNCTIONS_RESULT}"
+          body="운영 Backend 배포 결과: **${RESULT}** · 커밋 \`${GITHUB_SHA}\`"
           if ! gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/182/comments" -f body="$body"; then
             echo "배포 결과 댓글을 기록하지 못했습니다. 실제 배포 단계 상태는 Actions 로그를 확인하세요."
           fi
