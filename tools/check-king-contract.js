@@ -11,6 +11,7 @@ const playground = read('public', 'js', 'pages', 'playground.js');
 const home = read('public', 'js', 'pages', 'home.js');
 const history = read('public', 'js', 'pages', 'history.js');
 const ranking = read('public', 'js', 'pages', 'ranking.js');
+const imageUpload = read('public', 'js', 'utils', 'image-upload.js');
 const admin = read('public', 'js', 'pages', 'admin.js');
 const account = read('public', 'js', 'pages', 'account.js');
 const loader = read('public', 'js', 'app-extensions-loader.js');
@@ -22,13 +23,14 @@ for (const name of ['aiJudge','aiTranslateV2','aiNameV2','aiConsultV2','saveKing
   if (!mainFunctions[name]) failures.push(`missing function export: ${name}`);
   need(playground, `'${name}'`, 'playground call missing');
 }
-for (const name of ['getMaterials','getMaterial','createUserMaterial','getMaterialComments','addMaterialComment','getDebates','getDebate','voteDebate','getDebateComments','addDebateComment','createUserDebate']) {
+for (const name of ['getMaterials','getMaterial','createUserMaterial','getMaterialComments','addMaterialComment','getDebates','getDebate','voteDebate','getDebateComments','addDebateComment','createUserDebate','uploadSiteImage','getCommunityImages']) {
   if (!mainFunctions[name]) failures.push(`missing content export: ${name}`);
 }
-for (const name of ['getMaterials','getMaterial','createUserMaterial','getMaterialComments','addMaterialComment']) need(history, `'${name}'`, 'material page call missing');
-for (const marker of ['+ 자료 등록','댓글 등록','사용자 등록']) need(history, marker, 'material community UI missing');
-for (const name of ['getDebates','getDebate','voteDebate','getDebateComments','addDebateComment','createUserDebate']) need(ranking, `'${name}'`, 'debate page call missing');
-for (const marker of ['내 선택은 여기에','debate-vote__letter">A','debate-vote__letter">B','+ 토론 등록']) need(ranking, marker, 'A/B debate UI missing');
+for (const name of ['getMaterials','getMaterial','createUserMaterial','getMaterialComments','addMaterialComment','getCommunityImages']) need(history, `'${name}'`, 'material page call missing');
+for (const marker of ['+ 자료 등록','댓글 등록','사용자 등록','mat-write-image','uploadPreparedImage']) need(history, marker, 'material community UI missing');
+for (const name of ['getDebates','getDebate','voteDebate','getDebateComments','addDebateComment','createUserDebate','getCommunityImages']) need(ranking, `'${name}'`, 'debate page call missing');
+for (const marker of ['내 선택은 여기에','debate-vote__letter">A','debate-vote__letter">B','+ 토론 등록','debate-write-image','uploadPreparedImage']) need(ranking, marker, 'A/B debate UI missing');
+for (const marker of ['MAX_SOURCE_BYTES','MAX_OUTPUT_BYTES','MAX_EDGE','prepareImageFile','uploadSiteImage']) need(imageUpload, marker, 'automatic image optimization missing');
 for (const name of ['adminCreateMaterial','adminCreateDebate','triggerDailyMaterial','triggerDailyDebate']) need(admin, `'${name}'`, 'admin call missing');
 for (const name of ['getKingPlaygroundHistory','deleteKingPlaygroundResult','deleteMyAccount']) need(account, `'${name}'`, 'account call missing');
 need(loader, 'debate-route-redirect.js', 'debate redirect missing');
