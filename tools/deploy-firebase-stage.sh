@@ -5,6 +5,11 @@ TARGET="${1:?Firebase deploy target is required}"
 LOG_FILE="${2:?Log file path is required}"
 PROJECT_ID="${FIREBASE_PROJECT_ID:?FIREBASE_PROJECT_ID is required}"
 ATTEMPTS="${FIREBASE_DEPLOY_ATTEMPTS:-3}"
+EXTRA_ARGS=()
+
+if [[ "$TARGET" == "functions" || "$TARGET" == functions:* ]]; then
+  EXTRA_ARGS+=(--force)
+fi
 
 : > "$LOG_FILE"
 
@@ -14,7 +19,7 @@ for attempt in $(seq 1 "$ATTEMPTS"); do
   npx firebase-tools deploy \
     --project "$PROJECT_ID" \
     --only "$TARGET" \
-    --force \
+    "${EXTRA_ARGS[@]}" \
     --non-interactive 2>&1 | tee -a "$LOG_FILE"
   code=${PIPESTATUS[0]}
   set -e
