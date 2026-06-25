@@ -3,7 +3,7 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getApps, initializeApp } = require('firebase-admin/app');
 const { getAuth } = require('firebase-admin/auth');
-const { getFirestore } = require('firebase-admin/firestore');
+const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const { getStorage } = require('firebase-admin/storage');
 
 if (!getApps().length) initializeApp();
@@ -42,6 +42,35 @@ async function recursiveDeleteDocs(documents) {
   }
 }
 
+function collectCommentParents(documents) {
+  const parents = new Map();
+  for (const document of documents) {
+    if (document.ref.parent.id !== 'comments') continue;
+    const parentRef = document.ref.parent.parent;
+    if (!parentRef) continue;
+    const current = parents.get(parentRef.path) || { ref: parentRef, count: 0 };
+    current.count += 1;
+    parents.set(parentRef.path, current);
+  }
+  return [...parents.values()];
+}
+
+async function decrementCommentCounts(parents) {
+  for (let start = 0; start < parents.length; start += RECURSIVE_CONCURRENCY) {
+    await Promise.all(parents.slice(start, start + RECURSIVE_CONCURRENCY).map(({ ref, count }) => (
+      db.runTransaction(async transaction => {
+        const snapshot = await transaction.get(ref);
+        if (!snapshot.exists) return;
+        const current = Math.max(0, Number(snapshot.data()?.commentCount || 0));
+        transaction.set(ref, {
+          commentCount: Math.max(0, current - count),
+          updatedAt: FieldValue.serverTimestamp(),
+        }, { merge: true });
+      })
+    )));
+  }
+}
+
 async function removeOwnedFeeds(userId) {
   const snapshot = await queryDocs(db.collection('feeds'), 'authorId', userId);
   await recursiveDeleteDocs(snapshot.docs);
@@ -49,22 +78,24 @@ async function removeOwnedFeeds(userId) {
 }
 
 async function removeAuthoredContent(userId) {
-  const querySpecs = [
-    [db.collectionGroup('comments'), 'authorId'],
-    [db.collectionGroup('comments'), 'uid'],
-    [db.collectionGroup('replies'), 'authorId'],
-    [db.collectionGroup('replies'), 'uid'],
-    [db.collectionGroup('acrostics'), 'authorId'],
-    [db.collectionGroup('multi_naming'), 'authorId'],
-    [db.collectionGroup('multi_drip'), 'authorId'],
-    [db.collectionGroup('multi_fill'), 'authorId'],
-    [db.collection('reports'), 'reporterId'],
-    [db.collection('feedback'), 'reporterId'],
-  ];
-  const snapshots = await Promise.all(querySpecs.map(([reference, field]) => queryDocs(reference, field, userId)));
-  const documents = uniqueDocs(...snapshots);
-  await recursiveDeleteDocs(documents);
-  return documents.length;
+  const [commentsByAuthor, commentsByUid, ...otherSnapshots] = await Promise.all([
+    queryDocs(db.collectionGroup('comments'), 'authorId', userId),
+    queryDocs(db.collectionGroup('comments'), 'uid', userId),
+    queryDocs(db.collectionGroup('replies'), 'authorId', userId),
+    queryDocs(db.collectionGroup('replies'), 'uid', userId),
+    queryDocs(db.collectionGroup('acrostics'), 'authorId', userId),
+    queryDocs(db.collectionGroup('multi_naming'), 'authorId', userId),
+    queryDocs(db.collectionGroup('multi_drip'), 'authorId', userId),
+    queryDocs(db.collectionGroup('multi_fill'), 'authorId', userId),
+    queryDocs(db.collection('reports'), 'reporterId', userId),
+    queryDocs(db.collection('feedback'), 'reporterId', userId),
+  ]);
+  const comments = uniqueDocs(commentsByAuthor, commentsByUid);
+  const otherDocuments = uniqueDocs(...otherSnapshots);
+  const commentParents = collectCommentParents(comments);
+  await recursiveDeleteDocs([...comments, ...otherDocuments]);
+  await decrementCommentCounts(commentParents);
+  return comments.length + otherDocuments.length;
 }
 
 async function removePrivateRecords(userId) {
@@ -178,6 +209,8 @@ module.exports = {
   deleteMyAccount,
   _test: {
     uniqueDocs,
+    collectCommentParents,
+    decrementCommentCounts,
     removeOwnedFeeds,
     removeAuthoredContent,
     removePrivateRecords,
