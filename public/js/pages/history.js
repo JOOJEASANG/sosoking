@@ -1,10 +1,11 @@
-/* history.js — 자료실 목록·상세·사용자 등록·댓글 */
+/* history.js — 자료실 목록·상세·사용자 등록·댓글·이미지 */
 import { auth, functions } from '../firebase.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
 import { navigate } from '../router.js';
 import { setMeta } from '../utils/seo.js';
 import { escHtml } from '../utils/helpers.js';
 import { toast } from '../components/toast.js';
+import { prepareImageFile, uploadPreparedImage, releasePreparedImage, formatImageBytes } from '../utils/image-upload.js';
 
 function call(name, payload = {}) {
   return httpsCallable(functions, name)(payload)
@@ -19,11 +20,11 @@ function styleOnce() {
   style.textContent = `
     .mat-page{display:grid;gap:15px;padding-bottom:30px}.mat-hero,.mat-panel{border:1px solid rgba(100,116,139,.16);border-radius:25px;background:var(--color-surface,#fff);padding:19px;box-shadow:0 12px 30px rgba(15,23,42,.055)}
     .mat-hero{padding:26px;background:radial-gradient(circle at 88% 16%,rgba(105,196,171,.24),transparent 28%),linear-gradient(135deg,#10243b,#276653);color:#fff}.mat-hero h1{margin:7px 0 8px;color:#fff;font-size:31px;line-height:1.25}.mat-hero p{max-width:760px;margin:0;color:rgba(255,255,255,.78);line-height:1.7}.mat-hero__eyebrow{font-size:10px;font-weight:1000;letter-spacing:.12em;color:rgba(255,255,255,.64)}
-    .mat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.mat-card{position:relative;display:block;width:100%;min-height:190px;border:1px solid rgba(100,116,139,.16);border-radius:22px;background:var(--color-surface,#fff);padding:18px;text-align:left;font-family:inherit;color:inherit;box-shadow:0 10px 26px rgba(15,23,42,.055);cursor:pointer;transition:transform .18s,border-color .18s,box-shadow .18s}.mat-card:hover{transform:translateY(-3px);border-color:rgba(47,125,110,.34);box-shadow:0 17px 34px rgba(15,23,42,.08)}.mat-card__arrow{position:absolute;right:18px;top:17px;color:#2f7d6e;font-weight:1000}.mat-meta{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:13px}.mat-meta span,.mat-chip{border-radius:999px;background:rgba(47,125,110,.10);color:#2f7d6e;padding:5px 8px;font-size:10px;font-weight:1000}.mat-title{padding-right:28px;font-size:19px;font-weight:1000;line-height:1.4;color:var(--color-text-primary);margin-bottom:8px}.mat-text{font-size:13px;line-height:1.7;color:var(--color-text-secondary)}
-    .mat-body{display:grid;grid-template-columns:minmax(0,1fr) 310px;align-items:start;gap:14px}.mat-main{display:grid;gap:14px}.mat-side{position:sticky;top:18px;display:grid;gap:14px}.mat-panel h2{font-size:17px;margin:0 0 10px;color:var(--color-text-primary)}.mat-panel p{font-size:14px;line-height:1.8;color:var(--color-text-secondary);margin:0 0 10px}.mat-point{display:grid;grid-template-columns:30px minmax(0,1fr);gap:10px;align-items:start;padding:12px 0;border-bottom:1px solid rgba(100,116,139,.10)}.mat-point:last-child{border-bottom:0}.mat-point__num{display:grid;place-items:center;width:28px;height:28px;border-radius:10px;background:rgba(47,125,110,.10);color:#2f7d6e;font-size:11px;font-weight:1000}.mat-tags{display:flex;gap:6px;flex-wrap:wrap}.mat-actions{display:flex;gap:8px;flex-wrap:wrap}.mat-source{font-size:12px;line-height:1.65;color:var(--color-text-muted)}.mat-disclaimer{border-color:rgba(245,158,11,.22);background:rgba(245,158,11,.07)}
-    .mat-compose{display:none}.mat-compose.open{display:block}.mat-form{display:grid;gap:12px}.mat-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.mat-form label{display:grid;gap:6px;color:var(--color-text-primary);font-size:12px;font-weight:900}.mat-form input,.mat-form textarea{width:100%;font:inherit}.mat-form textarea{min-height:100px;resize:vertical}.mat-form__help{font-size:11px;color:var(--color-text-muted);line-height:1.6}.mat-comment-form{display:grid;gap:8px}.mat-comment-form textarea{width:100%;min-height:92px;resize:vertical;font:inherit}.mat-comments{margin-top:15px}.mat-comment{padding:13px 0;border-top:1px solid rgba(100,116,139,.12)}.mat-comment:first-child{border-top:0}.mat-comment b{font-size:12px;color:var(--color-text-primary)}.mat-comment time{margin-left:6px;font-size:10px;color:var(--color-text-muted)}.mat-comment p{margin:6px 0 0;white-space:pre-wrap;font-size:13px}
+    .mat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.mat-card{position:relative;display:block;width:100%;min-height:190px;border:1px solid rgba(100,116,139,.16);border-radius:22px;background:var(--color-surface,#fff);padding:0;text-align:left;font-family:inherit;color:inherit;box-shadow:0 10px 26px rgba(15,23,42,.055);cursor:pointer;overflow:hidden;transition:transform .18s,border-color .18s,box-shadow .18s}.mat-card:hover{transform:translateY(-3px);border-color:rgba(47,125,110,.34);box-shadow:0 17px 34px rgba(15,23,42,.08)}.mat-card__media{height:170px;background:rgba(15,23,42,.06)}.mat-card__media img{width:100%;height:100%;object-fit:cover;display:block}.mat-card__content{position:relative;padding:18px}.mat-card__arrow{position:absolute;right:18px;top:17px;color:#2f7d6e;font-weight:1000}.mat-meta{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:13px}.mat-meta span,.mat-chip{border-radius:999px;background:rgba(47,125,110,.10);color:#2f7d6e;padding:5px 8px;font-size:10px;font-weight:1000}.mat-title{padding-right:28px;font-size:19px;font-weight:1000;line-height:1.4;color:var(--color-text-primary);margin-bottom:8px}.mat-text{font-size:13px;line-height:1.7;color:var(--color-text-secondary)}
+    .mat-body{display:grid;grid-template-columns:minmax(0,1fr) 310px;align-items:start;gap:14px}.mat-main{display:grid;gap:14px}.mat-side{position:sticky;top:18px;display:grid;gap:14px}.mat-panel h2{font-size:17px;margin:0 0 10px;color:var(--color-text-primary)}.mat-panel p{font-size:14px;line-height:1.8;color:var(--color-text-secondary);margin:0 0 10px}.mat-cover{margin:0;border-radius:25px;overflow:hidden;border:1px solid rgba(100,116,139,.16);background:rgba(15,23,42,.06);box-shadow:0 12px 30px rgba(15,23,42,.055)}.mat-cover img{display:block;width:100%;max-height:720px;object-fit:contain;background:#111827}.mat-point{display:grid;grid-template-columns:30px minmax(0,1fr);gap:10px;align-items:start;padding:12px 0;border-bottom:1px solid rgba(100,116,139,.10)}.mat-point:last-child{border-bottom:0}.mat-point__num{display:grid;place-items:center;width:28px;height:28px;border-radius:10px;background:rgba(47,125,110,.10);color:#2f7d6e;font-size:11px;font-weight:1000}.mat-tags{display:flex;gap:6px;flex-wrap:wrap}.mat-actions{display:flex;gap:8px;flex-wrap:wrap}.mat-source{font-size:12px;line-height:1.65;color:var(--color-text-muted)}.mat-disclaimer{border-color:rgba(245,158,11,.22);background:rgba(245,158,11,.07)}
+    .mat-compose{display:none}.mat-compose.open{display:block}.mat-form{display:grid;gap:12px}.mat-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.mat-form label{display:grid;gap:6px;color:var(--color-text-primary);font-size:12px;font-weight:900}.mat-form input,.mat-form textarea{width:100%;font:inherit}.mat-form textarea{min-height:100px;resize:vertical}.mat-form__help{font-size:11px;color:var(--color-text-muted);line-height:1.6}.mat-image-picker{border:1px dashed rgba(47,125,110,.38);border-radius:18px;padding:14px;background:rgba(47,125,110,.045)}.mat-image-picker input{width:100%}.mat-image-preview{display:none;margin-top:10px;grid-template-columns:128px minmax(0,1fr);gap:12px;align-items:center}.mat-image-preview.open{display:grid}.mat-image-preview img{width:128px;height:96px;object-fit:cover;border-radius:14px;background:#e2e8f0}.mat-image-preview__info{display:grid;gap:7px}.mat-comment-form{display:grid;gap:8px}.mat-comment-form textarea{width:100%;min-height:92px;resize:vertical;font:inherit}.mat-comments{margin-top:15px}.mat-comment{padding:13px 0;border-top:1px solid rgba(100,116,139,.12)}.mat-comment:first-child{border-top:0}.mat-comment b{font-size:12px;color:var(--color-text-primary)}.mat-comment time{margin-left:6px;font-size:10px;color:var(--color-text-muted)}.mat-comment p{margin:6px 0 0;white-space:pre-wrap;font-size:13px}
     @media(max-width:900px){.mat-body{grid-template-columns:1fr}.mat-side{position:static}.mat-grid{grid-template-columns:1fr}}
-    @media(max-width:640px){.mat-form-grid{grid-template-columns:1fr}.mat-hero{padding:22px}.mat-hero h1{font-size:27px}}
+    @media(max-width:640px){.mat-form-grid{grid-template-columns:1fr}.mat-hero{padding:22px}.mat-hero h1{font-size:27px}.mat-image-preview{grid-template-columns:92px minmax(0,1fr)}.mat-image-preview img{width:92px;height:76px}.mat-card__media{height:145px}}
   `;
   document.head.appendChild(style);
 }
@@ -35,8 +36,13 @@ function originLabel(material) {
   return '자료';
 }
 
+function imageMarkup(item, className, fallbackAlt = '') {
+  if (!item?.imageUrl) return '';
+  return `<div class="${className}"><img src="${escHtml(item.imageUrl)}" alt="${escHtml(item.imageAlt || fallbackAlt)}" loading="lazy" decoding="async"></div>`;
+}
+
 function listCard(material) {
-  return `<button class="mat-card" data-id="${escHtml(material.id)}"><span class="mat-card__arrow">↗</span><div class="mat-meta"><span>${escHtml(material.category || '생활정보')}</span><span>${originLabel(material)}</span><span>조회 ${Number(material.viewCount || 0)}</span></div><div class="mat-title">${escHtml(material.title)}</div><div class="mat-text">${escHtml(material.summary)}</div></button>`;
+  return `<button class="mat-card" data-id="${escHtml(material.id)}">${imageMarkup(material, 'mat-card__media', material.title)}<div class="mat-card__content"><span class="mat-card__arrow">↗</span><div class="mat-meta"><span>${escHtml(material.category || '생활정보')}</span><span>${originLabel(material)}</span><span>조회 ${Number(material.viewCount || 0)}</span></div><div class="mat-title">${escHtml(material.title)}</div><div class="mat-text">${escHtml(material.summary)}</div></div></button>`;
 }
 
 function splitLines(value, max = 10) {
@@ -47,17 +53,67 @@ function splitTags(value, max = 8) {
   return String(value || '').split(/[,#]+/).map(item => item.trim()).filter(Boolean).slice(0, max);
 }
 
+function imagePickerHtml() {
+  return `<div class="mat-image-picker"><label>대표 이미지<input id="mat-write-image" type="file" accept="image/jpeg,image/png,image/webp,image/gif"></label><div class="mat-form__help" id="mat-image-status">큰 이미지는 긴 변 1,920px 이하, 약 1.8MB 이하로 자동 최적화됩니다.</div><div class="mat-image-preview" id="mat-image-preview"><img id="mat-image-preview-img" alt="선택한 이미지 미리보기"><div class="mat-image-preview__info"><div class="mat-source" id="mat-image-meta"></div><button type="button" class="btn btn--ghost btn--sm" id="mat-image-remove">이미지 제거</button></div></div></div>`;
+}
+
 function composerHtml() {
-  return `<section class="mat-panel mat-compose" id="mat-compose"><h2>자료 등록</h2><p class="mat-source">회원이 직접 공유할 생활정보나 경험을 등록할 수 있습니다. 개인정보와 확인되지 않은 단정적 정보는 제외해주세요.</p><div class="mat-form"><label>제목<input class="form-input" id="mat-write-title" maxlength="100" placeholder="자료 제목"></label><label>요약<textarea class="form-input" id="mat-write-summary" maxlength="260" placeholder="어떤 내용인지 2문장 이내로 설명해주세요."></textarea></label><label>핵심 내용<textarea class="form-input" id="mat-write-body" maxlength="4000" placeholder="핵심 내용을 줄마다 하나씩 적어주세요."></textarea><span class="mat-form__help">줄바꿈 기준으로 핵심 항목이 나뉩니다.</span></label><div class="mat-form-grid"><label>카테고리<input class="form-input" id="mat-write-category" maxlength="40" value="생활정보"></label><label>태그<input class="form-input" id="mat-write-tags" maxlength="160" placeholder="소비, 직장, 주거"></label><label>출처 이름<input class="form-input" id="mat-write-source" maxlength="80" placeholder="선택 입력"></label><label>출처 주소<input class="form-input" id="mat-write-url" maxlength="500" placeholder="https://..."></label></div><button class="btn btn--primary" id="mat-write-submit">자료 등록하기</button></div></section>`;
+  return `<section class="mat-panel mat-compose" id="mat-compose"><h2>자료 등록</h2><p class="mat-source">회원이 직접 공유할 생활정보나 경험을 등록할 수 있습니다. 개인정보와 확인되지 않은 단정적 정보는 제외해주세요.</p><div class="mat-form"><label>제목<input class="form-input" id="mat-write-title" maxlength="100" placeholder="자료 제목"></label><label>요약<textarea class="form-input" id="mat-write-summary" maxlength="260" placeholder="어떤 내용인지 2문장 이내로 설명해주세요."></textarea></label>${imagePickerHtml()}<label>핵심 내용<textarea class="form-input" id="mat-write-body" maxlength="4000" placeholder="핵심 내용을 줄마다 하나씩 적어주세요."></textarea><span class="mat-form__help">줄바꿈 기준으로 핵심 항목이 나뉩니다.</span></label><div class="mat-form-grid"><label>카테고리<input class="form-input" id="mat-write-category" maxlength="40" value="생활정보"></label><label>태그<input class="form-input" id="mat-write-tags" maxlength="160" placeholder="소비, 직장, 주거"></label><label>출처 이름<input class="form-input" id="mat-write-source" maxlength="80" placeholder="선택 입력"></label><label>출처 주소<input class="form-input" id="mat-write-url" maxlength="500" placeholder="https://..."></label></div><button class="btn btn--primary" id="mat-write-submit">자료 등록하기</button></div></section>`;
+}
+
+async function attachImages(type, items) {
+  if (!items.length) return items;
+  const result = await call('getCommunityImages', { type, ids: items.map(item => item.id) });
+  const map = new Map((Array.isArray(result.images) ? result.images : []).map(image => [image.id, image]));
+  return items.map(item => {
+    const image = map.get(item.id);
+    return image ? { ...item, imageUrl: image.url, imageAlt: image.alt, imageWidth: image.width, imageHeight: image.height } : item;
+  });
 }
 
 async function bindComposer(element) {
   const toggle = element.querySelector('#mat-write-open');
   const panel = element.querySelector('#mat-compose');
+  const input = element.querySelector('#mat-write-image');
+  const preview = element.querySelector('#mat-image-preview');
+  const previewImage = element.querySelector('#mat-image-preview-img');
+  const meta = element.querySelector('#mat-image-meta');
+  const status = element.querySelector('#mat-image-status');
+  let preparedImage = null;
+
   toggle?.addEventListener('click', () => {
     if (!auth.currentUser) { navigate('/login?return=/materials'); return; }
     panel?.classList.toggle('open');
     if (panel?.classList.contains('open')) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  input?.addEventListener('change', async () => {
+    const file = input.files?.[0];
+    if (!file) return;
+    releasePreparedImage(preparedImage);
+    preparedImage = null;
+    preview?.classList.remove('open');
+    status.textContent = '이미지를 분석하고 최적화하는 중…';
+    try {
+      preparedImage = await prepareImageFile(file);
+      previewImage.src = preparedImage.previewUrl;
+      meta.textContent = `${preparedImage.width}×${preparedImage.height}px · ${formatImageBytes(preparedImage.originalBytes)} → ${formatImageBytes(preparedImage.outputBytes)}${preparedImage.resized ? ' · 자동 최적화 완료' : ' · 원본 유지'}`;
+      preview?.classList.add('open');
+      status.textContent = '등록할 때 최적화된 이미지가 함께 업로드됩니다.';
+    } catch (error) {
+      input.value = '';
+      status.textContent = '큰 이미지는 자동 최적화됩니다.';
+      toast.error(error.message || '이미지를 처리하지 못했습니다.');
+    }
+  });
+
+  element.querySelector('#mat-image-remove')?.addEventListener('click', () => {
+    releasePreparedImage(preparedImage);
+    preparedImage = null;
+    input.value = '';
+    preview?.classList.remove('open');
+    previewImage.removeAttribute('src');
+    status.textContent = '큰 이미지는 긴 변 1,920px 이하, 약 1.8MB 이하로 자동 최적화됩니다.';
   });
 
   element.querySelector('#mat-write-submit')?.addEventListener('click', async event => {
@@ -77,16 +133,28 @@ async function bindComposer(element) {
       return;
     }
     button.disabled = true;
-    button.textContent = '등록 중…';
-    const result = await call('createUserMaterial', payload);
-    if (!result.ok || !result.id) {
+    button.textContent = preparedImage ? '이미지 업로드 중…' : '등록 중…';
+    try {
+      if (preparedImage) {
+        const uploaded = await uploadPreparedImage(preparedImage, 'material');
+        Object.assign(payload, {
+          imageUrl: uploaded.url,
+          imagePath: uploaded.path,
+          imageWidth: uploaded.width,
+          imageHeight: uploaded.height,
+          imageAlt: payload.title,
+        });
+        button.textContent = '자료 등록 중…';
+      }
+      const result = await call('createUserMaterial', payload);
+      if (!result.ok || !result.id) throw result.error || new Error('자료 등록에 실패했습니다.');
+      toast.success('자료를 등록했습니다.');
+      navigate(`/material/${result.id}`);
+    } catch (error) {
       button.disabled = false;
       button.textContent = '자료 등록하기';
-      toast.error(result.error?.message || '자료 등록에 실패했습니다.');
-      return;
+      toast.error(error.message || '자료 등록에 실패했습니다.');
     }
-    toast.success('자료를 등록했습니다.');
-    navigate(`/material/${result.id}`);
   });
 }
 
@@ -115,10 +183,9 @@ export async function renderHistory() {
   const element = document.getElementById('page-content');
   if (!element) return;
   element.innerHTML = `<div class="mat-page"><div class="skeleton" style="height:170px;border-radius:25px"></div><div class="skeleton" style="height:430px;border-radius:22px"></div></div>`;
-
   const result = await call('getMaterials', { limit: 50 });
-  const items = Array.isArray(result.materials) ? result.materials : [];
-  element.innerHTML = `<div class="mat-page page-enter"><section class="mat-hero"><div class="mat-hero__eyebrow">MATERIAL ARCHIVE</div><h1>소소자료실</h1><p>AI 일일자료와 관리자 자료뿐 아니라 회원이 직접 등록한 생활정보도 함께 나눕니다. 각 자료에서 댓글로 경험과 의견을 이어갈 수 있습니다.</p><div class="mat-actions" style="margin-top:14px"><button class="btn btn--primary" id="mat-write-open">+ 자료 등록</button><button class="btn btn--ghost" data-go="/today">오늘의 콘텐츠</button><button class="btn btn--ghost" data-go="/debates">토론실</button></div></section>${composerHtml()}<div class="mat-grid">${items.length ? items.map(listCard).join('') : '<div class="empty-state"><div class="empty-state__title">등록된 자료가 없습니다.</div><div class="empty-state__desc">첫 자료를 직접 등록해보세요.</div></div>'}</div></div>`;
+  const items = await attachImages('material', Array.isArray(result.materials) ? result.materials : []);
+  element.innerHTML = `<div class="mat-page page-enter"><section class="mat-hero"><div class="mat-hero__eyebrow">MATERIAL ARCHIVE</div><h1>소소자료실</h1><p>AI 일일자료와 관리자 자료뿐 아니라 회원이 직접 등록한 생활정보도 함께 나눕니다. 이미지와 댓글로 경험과 의견을 이어갈 수 있습니다.</p><div class="mat-actions" style="margin-top:14px"><button class="btn btn--primary" id="mat-write-open">+ 자료 등록</button><button class="btn btn--ghost" data-go="/today">오늘의 콘텐츠</button><button class="btn btn--ghost" data-go="/debates">토론실</button></div></section>${composerHtml()}<div class="mat-grid">${items.length ? items.map(listCard).join('') : '<div class="empty-state"><div class="empty-state__title">등록된 자료가 없습니다.</div><div class="empty-state__desc">첫 자료를 직접 등록해보세요.</div></div>'}</div></div>`;
   element.querySelectorAll('[data-id]').forEach(button => button.addEventListener('click', () => navigate(`/material/${button.dataset.id}`)));
   element.querySelectorAll('[data-go]').forEach(button => button.addEventListener('click', () => navigate(button.dataset.go)));
   await bindComposer(element);
@@ -129,22 +196,19 @@ export async function renderMaterialDetail(id) {
   const element = document.getElementById('page-content');
   if (!element) return;
   element.innerHTML = `<div class="mat-page"><div class="skeleton" style="height:560px;border-radius:25px"></div></div>`;
-
   const result = await call('getMaterial', { materialId: id });
   if (!result.ok || !result.material) {
     element.innerHTML = '<div class="empty-state"><div class="empty-state__title">자료를 찾을 수 없습니다.</div><button class="btn btn--primary" id="back-materials">자료실로</button></div>';
     element.querySelector('#back-materials')?.addEventListener('click', () => navigate('/materials'));
     return;
   }
-
-  const material = result.material;
+  const [material] = await attachImages('material', [result.material]);
   setMeta(material.title, material.summary);
   const tags = Array.isArray(material.tags) ? material.tags : [];
   const body = Array.isArray(material.body) ? material.body : [];
   const guides = Array.isArray(material.sourceGuide) ? material.sourceGuide : [];
   const typeLabel = material.sourceType === 'user' ? 'USER MATERIAL' : material.aiGenerated ? 'AI DAILY MATERIAL' : 'ADMIN MATERIAL';
-
-  element.innerHTML = `<div class="mat-page page-enter"><section class="mat-hero"><button class="btn btn--ghost btn--sm" id="mat-back">← 자료실</button><div class="mat-hero__eyebrow" style="margin-top:18px">${typeLabel}</div><h1>${escHtml(material.title)}</h1><p>${escHtml(material.summary)}</p><div class="mat-tags" style="margin-top:13px"><span class="mat-chip">${escHtml(material.category)}</span>${tags.map(tag => `<span class="mat-chip">#${escHtml(tag)}</span>`).join('')}</div></section><div class="mat-body"><div class="mat-main"><section class="mat-panel"><h2>핵심 정리</h2>${body.map((paragraph, index) => `<div class="mat-point"><span class="mat-point__num">${index + 1}</span><p>${escHtml(paragraph)}</p></div>`).join('')}</section><section class="mat-panel mat-disclaimer"><h2>이용 안내</h2><p>${escHtml(material.disclaimer || '일반적인 생활정보이며 개별 상황에 대한 전문적인 판단을 대신하지 않습니다.')}</p></section><section class="mat-panel"><h2>댓글 <span id="material-comment-count" class="mat-chip">0개</span></h2><div class="mat-comment-form"><textarea class="form-input" id="material-comment-text" maxlength="700" placeholder="자료에 대한 경험이나 의견을 남겨주세요."></textarea><button class="btn btn--primary" id="material-comment-submit">댓글 등록</button></div><div id="material-comments" class="mat-comments"><div class="mat-text">댓글을 불러오는 중…</div></div></section></div><aside class="mat-side"><section class="mat-panel"><h2>자료 정보</h2><p class="mat-source"><b>등록 방식</b><br>${escHtml(originLabel(material))}</p><p class="mat-source"><b>등록자·출처</b><br>${escHtml(material.sourceName || '소소킹')}</p>${material.sourceUrl ? `<a class="btn btn--ghost btn--sm" href="${escHtml(material.sourceUrl)}" target="_blank" rel="noopener noreferrer">출처 열기</a>` : ''}</section><section class="mat-panel"><h2>추가 확인 항목</h2><div class="mat-tags">${guides.length ? guides.map(guide => `<span class="mat-chip">${escHtml(guide)}</span>`).join('') : '<span class="mat-source">별도 검색어가 없습니다.</span>'}</div></section><section class="mat-panel"><h2>찬반을 나누고 싶다면</h2><p class="mat-source">A와 B 중 하나를 고르는 토론은 토론실에서 참여할 수 있습니다.</p><button class="btn btn--primary" id="go-debates">토론실 열기</button></section></aside></div></div>`;
+  element.innerHTML = `<div class="mat-page page-enter"><section class="mat-hero"><button class="btn btn--ghost btn--sm" id="mat-back">← 자료실</button><div class="mat-hero__eyebrow" style="margin-top:18px">${typeLabel}</div><h1>${escHtml(material.title)}</h1><p>${escHtml(material.summary)}</p><div class="mat-tags" style="margin-top:13px"><span class="mat-chip">${escHtml(material.category)}</span>${tags.map(tag => `<span class="mat-chip">#${escHtml(tag)}</span>`).join('')}</div></section>${imageMarkup(material, 'mat-cover', material.title)}<div class="mat-body"><div class="mat-main"><section class="mat-panel"><h2>핵심 정리</h2>${body.map((paragraph, index) => `<div class="mat-point"><span class="mat-point__num">${index + 1}</span><p>${escHtml(paragraph)}</p></div>`).join('')}</section><section class="mat-panel mat-disclaimer"><h2>이용 안내</h2><p>${escHtml(material.disclaimer || '일반적인 생활정보이며 개별 상황에 대한 전문적인 판단을 대신하지 않습니다.')}</p></section><section class="mat-panel"><h2>댓글 <span id="material-comment-count" class="mat-chip">0개</span></h2><div class="mat-comment-form"><textarea class="form-input" id="material-comment-text" maxlength="700" placeholder="자료에 대한 경험이나 의견을 남겨주세요."></textarea><button class="btn btn--primary" id="material-comment-submit">댓글 등록</button></div><div id="material-comments" class="mat-comments"><div class="mat-text">댓글을 불러오는 중…</div></div></section></div><aside class="mat-side"><section class="mat-panel"><h2>자료 정보</h2><p class="mat-source"><b>등록 방식</b><br>${escHtml(originLabel(material))}</p><p class="mat-source"><b>등록자·출처</b><br>${escHtml(material.sourceName || '소소킹')}</p>${material.sourceUrl ? `<a class="btn btn--ghost btn--sm" href="${escHtml(material.sourceUrl)}" target="_blank" rel="noopener noreferrer">출처 열기</a>` : ''}</section><section class="mat-panel"><h2>추가 확인 항목</h2><div class="mat-tags">${guides.length ? guides.map(guide => `<span class="mat-chip">${escHtml(guide)}</span>`).join('') : '<span class="mat-source">별도 검색어가 없습니다.</span>'}</div></section><section class="mat-panel"><h2>찬반을 나누고 싶다면</h2><p class="mat-source">A와 B 중 하나를 고르는 토론은 토론실에서 참여할 수 있습니다.</p><button class="btn btn--primary" id="go-debates">토론실 열기</button></section></aside></div></div>`;
   element.querySelector('#mat-back')?.addEventListener('click', () => navigate('/materials'));
   element.querySelector('#go-debates')?.addEventListener('click', () => navigate('/debates'));
   element.querySelector('#material-comment-submit')?.addEventListener('click', async event => {
