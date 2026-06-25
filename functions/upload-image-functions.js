@@ -12,6 +12,7 @@ const db = getFirestore();
 const REGION = 'asia-northeast3';
 const MAX_BASE64_BYTES = 8 * 1024 * 1024;
 const DAILY_UPLOAD_LIMIT = 80;
+const ALLOWED_SCOPES = new Set(['feed', 'material', 'debate']);
 
 function todayKey() {
   return new Intl.DateTimeFormat('en-CA', {
@@ -35,6 +36,16 @@ function cleanUid(value) {
   return String(value || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 128);
 }
 
+function cleanScope(value) {
+  const scope = String(value || 'feed').trim().toLowerCase();
+  return ALLOWED_SCOPES.has(scope) ? scope : 'feed';
+}
+
+function boundedNumber(value, maximum) {
+  const number = Math.floor(Number(value || 0));
+  return Number.isFinite(number) ? Math.max(0, Math.min(maximum, number)) : 0;
+}
+
 function sniffImageType(buffer) {
   if (!Buffer.isBuffer(buffer) || buffer.length < 12) return '';
   if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) return 'image/jpeg';
@@ -51,11 +62,9 @@ function parseDataUrl(value) {
   const declaredType = match[1] === 'image/jpg' ? 'image/jpeg' : match[1];
   const buffer = Buffer.from(match[2], 'base64');
   if (!buffer.length) throw new HttpsError('invalid-argument', '이미지 데이터가 비어 있습니다.');
-  if (buffer.length > MAX_BASE64_BYTES) throw new HttpsError('invalid-argument', '이미지 용량이 너무 큽니다. 최대 8MB까지 올릴 수 있어요.');
+  if (buffer.length > MAX_BASE64_BYTES) throw new HttpsError('invalid-argument', '최적화된 이미지 용량이 너무 큽니다. 이미지를 다시 선택해주세요.');
   const detectedType = sniffImageType(buffer);
-  if (!detectedType || detectedType !== declaredType) {
-    throw new HttpsError('invalid-argument', '이미지 파일 형식이 올바르지 않습니다.');
-  }
+  if (!detectedType || detectedType !== declaredType) throw new HttpsError('invalid-argument', '이미지 파일 형식이 올바르지 않습니다.');
   return { buffer, contentType: detectedType };
 }
 
@@ -65,9 +74,7 @@ async function reserveUploadQuota(uid) {
   await db.runTransaction(async tx => {
     const snap = await tx.get(ref);
     const count = Number(snap.exists ? snap.data().count || 0 : 0);
-    if (count >= DAILY_UPLOAD_LIMIT) {
-      throw new HttpsError('resource-exhausted', '오늘 이미지 업로드 한도를 초과했습니다. 내일 다시 시도해주세요.');
-    }
+    if (count >= DAILY_UPLOAD_LIMIT) throw new HttpsError('resource-exhausted', '오늘 이미지 업로드 한도를 초과했습니다. 내일 다시 시도해주세요.');
     tx.set(ref, {
       uid,
       day,
@@ -79,20 +86,30 @@ async function reserveUploadQuota(uid) {
   });
 }
 
-const uploadFeedImage = onCall({ region: REGION, timeoutSeconds: 60, memory: '256MiB' }, async request => {
-  const uid = request.auth && request.auth.uid;
+function uploadPath(scope, uid, extension) {
+  const name = `${Date.now()}_${randomUUID()}.${extension}`;
+  if (scope === 'material') return `community/materials/${uid}/${name}`;
+  if (scope === 'debate') return `community/debates/${uid}/${name}`;
+  return `feeds/${uid}/${name}`;
+}
+
+async function handleUpload(request) {
+  const uid = request.auth?.uid;
   if (!uid) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
   const safeUid = cleanUid(uid);
   if (!safeUid) throw new HttpsError('unauthenticated', '사용자 정보를 확인할 수 없습니다.');
 
-  // 이미지 검증을 먼저 수행한 뒤 쿼터를 차감한다 (잘못된 업로드로 한도가 소모되지 않도록).
-  const { dataUrl } = request.data || {};
-  const { buffer, contentType } = parseDataUrl(dataUrl);
-
+  const scope = cleanScope(request.data?.scope);
+  const { buffer, contentType } = parseDataUrl(request.data?.dataUrl);
   await reserveUploadQuota(safeUid);
-  const ext = contentType === 'image/png' ? 'png' : contentType === 'image/webp' ? 'webp' : contentType === 'image/gif' ? 'gif' : 'jpg';
-  const path = `feeds/${safeUid}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+
+  const extension = contentType === 'image/png' ? 'png' : contentType === 'image/webp' ? 'webp' : contentType === 'image/gif' ? 'gif' : 'jpg';
+  const path = uploadPath(scope, safeUid, extension);
   const token = randomUUID();
+  const width = boundedNumber(request.data?.width, 12000);
+  const height = boundedNumber(request.data?.height, 12000);
+  const originalBytes = boundedNumber(request.data?.originalBytes, 25 * 1024 * 1024);
+  const resized = request.data?.resized === true;
 
   const bucket = getStorage().bucket(getBucketName());
   const file = bucket.file(path);
@@ -102,7 +119,13 @@ const uploadFeedImage = onCall({ region: REGION, timeoutSeconds: 60, memory: '25
       cacheControl: 'public, max-age=31536000, immutable',
       metadata: {
         owner: safeUid,
+        scope,
         source: 'callable-upload',
+        optimized: resized ? 'true' : 'false',
+        width: String(width),
+        height: String(height),
+        originalBytes: String(originalBytes),
+        uploadedBytes: String(buffer.length),
         firebaseStorageDownloadTokens: token,
       },
     },
@@ -112,7 +135,14 @@ const uploadFeedImage = onCall({ region: REGION, timeoutSeconds: 60, memory: '25
 
   const encodedPath = encodeURIComponent(path);
   const url = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodedPath}?alt=media&token=${token}`;
-  return { ok: true, url, path };
-});
+  return { ok: true, url, path, width, height, bytes: buffer.length, resized, scope };
+}
 
-module.exports = { uploadFeedImage };
+const uploadFeedImage = onCall({ region: REGION, timeoutSeconds: 60, memory: '256MiB' }, handleUpload);
+const uploadSiteImage = onCall({ region: REGION, timeoutSeconds: 60, memory: '256MiB' }, handleUpload);
+
+module.exports = {
+  uploadFeedImage,
+  uploadSiteImage,
+  _test: { cleanScope, sniffImageType, parseDataUrl, uploadPath },
+};
