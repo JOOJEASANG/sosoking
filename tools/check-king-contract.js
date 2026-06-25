@@ -11,10 +11,12 @@ const playground = read('public', 'js', 'pages', 'playground.js');
 const home = read('public', 'js', 'pages', 'home.js');
 const history = read('public', 'js', 'pages', 'history.js');
 const ranking = read('public', 'js', 'pages', 'ranking.js');
+const debateCommentSync = read('public', 'js', 'debate-comment-choice-sync.js');
 const imageUpload = read('public', 'js', 'utils', 'image-upload.js');
 const admin = read('public', 'js', 'pages', 'admin.js');
 const account = read('public', 'js', 'pages', 'account.js');
 const loader = read('public', 'js', 'app-extensions-loader.js');
+const debateCommentFunctions = read('functions', 'debate-comment-functions.js');
 const characterCatalog = read('functions', 'king-character-catalog.js');
 const mainFunctions = require(path.join(ROOT, 'functions', 'functions-main-v2.js'));
 
@@ -30,10 +32,13 @@ for (const name of ['getMaterials','getMaterial','createUserMaterial','getMateri
 for (const marker of ['+ 자료 등록','댓글 등록','사용자 등록','mat-write-image','uploadPreparedImage']) need(history, marker, 'material community UI missing');
 for (const name of ['getDebates','getDebate','voteDebate','getDebateComments','addDebateComment','createUserDebate','getCommunityImages']) need(ranking, `'${name}'`, 'debate page call missing');
 for (const marker of ['내 선택은 여기에','debate-vote__letter">A','debate-vote__letter">B','+ 토론 등록','debate-write-image','uploadPreparedImage']) need(ranking, marker, 'A/B debate UI missing');
+for (const marker of ['selectedVote','먼저 위에서 A 또는 B를 선택해주세요','현재 선택한']) need(debateCommentSync, marker, 'debate comment choice sync missing');
+for (const marker of ['transaction.get(voteRef)','normalizeVoteSide','failed-precondition','side: commentSide']) need(debateCommentFunctions, marker, 'server debate comment vote enforcement missing');
 for (const marker of ['MAX_SOURCE_BYTES','MAX_OUTPUT_BYTES','MAX_EDGE','prepareImageFile','uploadSiteImage']) need(imageUpload, marker, 'automatic image optimization missing');
 for (const name of ['adminCreateMaterial','adminCreateDebate','triggerDailyMaterial','triggerDailyDebate']) need(admin, `'${name}'`, 'admin call missing');
 for (const name of ['getKingPlaygroundHistory','deleteKingPlaygroundResult','deleteMyAccount']) need(account, `'${name}'`, 'account call missing');
 need(loader, 'debate-route-redirect.js', 'debate redirect missing');
+need(loader, 'debate-comment-choice-sync.js', 'debate comment choice sync loader missing');
 need(home, "call('getTodayDebate')", 'home debate missing');
 need(home, "call('getTodayMaterials')", 'home material missing');
 for (const [id, label] of [['empathy','감성형'],['principle','원칙형'],['kkondae','꼰대형'],['coldblood','냉혈형'],['cider','사이다형'],['realist','현실형']]) {

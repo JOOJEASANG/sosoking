@@ -16,8 +16,8 @@ const routes = [
   { name: 'create', hash: '#/playground/create', selector: '#king-main-text', selected: 1, menu: true },
   { name: 'consult', hash: '#/playground/consult', selector: '#king-main-text', selected: 0, text: '미친 상담소', randomNotice: true, menu: true },
   { name: 'today', hash: '#/today', selector: '.today-page', text: '오늘의 자료와 토론' },
-  { name: 'materials', hash: '#/materials', selector: '.mat-page', text: '소소자료실' },
-  { name: 'debates', hash: '#/debates', selector: '.debate-page', text: '소소토론실' },
+  { name: 'materials', hash: '#/materials', selector: '.mat-hero h1', text: '소소자료실' },
+  { name: 'debates', hash: '#/debates', selector: '.debate-hero h1', text: '소소토론실' },
   { name: 'account', hash: '#/account', selector: '#page-content' },
 ];
 
