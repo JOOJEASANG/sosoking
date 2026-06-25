@@ -14,6 +14,10 @@ const MAX_BASE64_BYTES = 8 * 1024 * 1024;
 const DAILY_UPLOAD_LIMIT = 80;
 const ALLOWED_SCOPES = new Set(['feed', 'material', 'debate']);
 
+function cleanText(value, maximum = 500) {
+  return String(value || '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, maximum);
+}
+
 function todayKey() {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Seoul',
@@ -141,8 +145,36 @@ async function handleUpload(request) {
 const uploadFeedImage = onCall({ region: REGION, timeoutSeconds: 60, memory: '256MiB' }, handleUpload);
 const uploadSiteImage = onCall({ region: REGION, timeoutSeconds: 60, memory: '256MiB' }, handleUpload);
 
+const getCommunityImages = onCall({ region: REGION, timeoutSeconds: 30, memory: '256MiB' }, async request => {
+  const type = request.data?.type === 'material' ? 'material' : request.data?.type === 'debate' ? 'debate' : '';
+  if (!type) throw new HttpsError('invalid-argument', '이미지 조회 유형이 올바르지 않습니다.');
+  const ids = Array.isArray(request.data?.ids)
+    ? [...new Set(request.data.ids.map(value => cleanText(value, 80)).filter(value => /^[A-Za-z0-9_-]{1,80}$/.test(value)))].slice(0, 60)
+    : [];
+  if (!ids.length) return { ok: true, images: [] };
+
+  const collection = type === 'material' ? 'materials' : 'debates';
+  const snapshots = await db.getAll(...ids.map(id => db.doc(`${collection}/${id}`)));
+  const images = snapshots.flatMap(snapshot => {
+    if (!snapshot.exists || snapshot.data()?.status !== 'published') return [];
+    const data = snapshot.data() || {};
+    const url = cleanText(data.imageUrl, 1200);
+    const path = cleanText(data.imagePath, 500);
+    if (!url || !path || !/^https:\/\/firebasestorage\.googleapis\.com\/v0\/b\//i.test(url)) return [];
+    return [{
+      id: snapshot.id,
+      url,
+      alt: cleanText(data.imageAlt, 140),
+      width: boundedNumber(data.imageWidth, 12000),
+      height: boundedNumber(data.imageHeight, 12000),
+    }];
+  });
+  return { ok: true, images };
+});
+
 module.exports = {
   uploadFeedImage,
   uploadSiteImage,
+  getCommunityImages,
   _test: { cleanScope, sniffImageType, parseDataUrl, uploadPath },
 };
