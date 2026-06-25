@@ -12,10 +12,12 @@ const playgroundFunctions = require(path.join(ROOT, 'functions', 'king-playgroun
 const secureConfigFunctions = require(path.join(ROOT, 'functions', 'secure-ai-config-functions.js'));
 const materialFunctions = require(path.join(ROOT, 'functions', 'soso-material-functions.js'));
 const debateFunctions = require(path.join(ROOT, 'functions', 'soso-debate-functions.js'));
+const communityFunctions = require(path.join(ROOT, 'functions', 'community-content-functions.js'));
 const runtimeSource = read('functions', 'ai-runtime-provider.js');
 const playgroundSource = read('functions', 'king-playground-functions.js');
 const materialSource = read('functions', 'soso-material-functions.js');
 const debateSource = read('functions', 'soso-debate-functions.js');
+const communitySource = read('functions', 'community-content-functions.js');
 const accountSource = read('functions', 'account-functions.js');
 const loginSource = read('public', 'js', 'pages', 'login.js');
 const appSource = read('public', 'js', 'app-safe.js');
@@ -28,6 +30,9 @@ if (mainFunctions.saveAiKingConfig !== secureConfigFunctions.saveAiKingConfig) e
 if (mainFunctions.generateDailyMaterial !== materialFunctions.generateDailyMaterial) errors.push('daily AI material scheduler is not deployed');
 if (mainFunctions.generateDailyDebate !== debateFunctions.generateDailyDebate) errors.push('daily AI debate scheduler is not deployed');
 if (mainFunctions.getDebates !== debateFunctions.getDebates) errors.push('independent debate service is not deployed');
+for (const name of ['createUserMaterial', 'createUserDebate', 'getMaterialComments', 'addMaterialComment']) {
+  if (mainFunctions[name] !== communityFunctions[name]) errors.push(`community content function is not deployed: ${name}`);
+}
 
 if (!runtimeSource.includes('process.env.GEMINI_API_KEY') || !runtimeSource.includes('process.env.ANTHROPIC_API_KEY')) {
   errors.push('AI runtime is not connected to managed environment credentials');
@@ -48,7 +53,7 @@ for (const contract of ['monthlyUsed', 'usedExtra', 'refundUsage']) {
   if (!playgroundSource.includes(contract)) errors.push(`playground usage protection missing: ${contract}`);
 }
 
-for (const legacy of ['const TOPICS', 'fallbackMaterials', 'voteMaterial', 'addMaterialComment', 'getMaterialComments']) {
+for (const legacy of ['const TOPICS', 'fallbackMaterials', 'voteMaterial']) {
   if (materialSource.includes(legacy)) errors.push(`legacy material debate behavior remains: ${legacy}`);
 }
 for (const required of ['generateDailyMaterial', 'triggerDailyMaterial', 'adminCreateMaterial', 'dailyMaterialId', 'reviewGeneratedMaterial', 'registerUniqueView']) {
@@ -56,6 +61,9 @@ for (const required of ['generateDailyMaterial', 'triggerDailyMaterial', 'adminC
 }
 for (const required of ['generateDailyDebate', 'triggerDailyDebate', 'adminCreateDebate', 'voteDebate', 'addDebateComment', 'COMMENT_DAILY_LIMIT', 'reviewGeneratedDebate', 'registerUniqueView']) {
   if (!debateSource.includes(required)) errors.push(`debate service missing: ${required}`);
+}
+for (const required of ['createUserMaterial', 'createUserDebate', 'getMaterialComments', 'addMaterialComment', 'POST_DAILY_LIMIT', 'COMMENT_DAILY_LIMIT', 'sourceType: \'user\'']) {
+  if (!communitySource.includes(required)) errors.push(`community content service missing: ${required}`);
 }
 
 for (const contract of ['anonymizePublicContributions', 'deletePrivateParticipation', 'recursiveDelete(userRef)']) {

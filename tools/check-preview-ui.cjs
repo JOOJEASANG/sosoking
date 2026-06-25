@@ -67,8 +67,16 @@ function verify(condition, message) {
           verify(bodyText.includes('AI 놀이터 메뉴'), `${route.name}: playground menu missing`);
           verify(await page.locator('.king-play-menu__item').count() === 4, `${route.name}: playground menu count mismatch`);
         }
-        if (route.name === 'materials') verify(bodyText.includes('찬반 토론은 별도 토론실'), 'materials: separation notice missing');
-        if (route.name === 'debates') verify(bodyText.includes('자료실과 분리된 독립 공간'), 'debates: separation notice missing');
+        if (route.name === 'materials') {
+          verify(bodyText.includes('회원이 직접 등록한 생활정보'), 'materials: user submission notice missing');
+          verify(bodyText.includes('+ 자료 등록'), 'materials: create button missing');
+          verify(await page.locator('#mat-write-open').count() === 1, 'materials: create control missing');
+        }
+        if (route.name === 'debates') {
+          verify(bodyText.includes('회원도 직접 토론을 등록'), 'debates: user submission notice missing');
+          verify(bodyText.includes('+ 토론 등록'), 'debates: create button missing');
+          verify(await page.locator('#debate-write-open').count() === 1, 'debates: create control missing');
+        }
         if (route.name === 'account') verify(/로그인이 필요해요|AI 결과|내 글/.test(bodyText), 'account state did not settle');
 
         const size = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth }));
