@@ -142,7 +142,12 @@ async function removeNicknameReservations(userId, nickname) {
 
 async function removeUserFiles(userId) {
   const bucket = storage.bucket();
-  const prefixes = [`feeds/${userId}/`, `soso-feed/${userId}/`];
+  const prefixes = [
+    `feeds/${userId}/`,
+    `soso-feed/${userId}/`,
+    `community/materials/${userId}/`,
+    `community/debates/${userId}/`,
+  ];
   let removed = 0;
   for (const prefix of prefixes) {
     const [files] = await bucket.getFiles({ prefix });
