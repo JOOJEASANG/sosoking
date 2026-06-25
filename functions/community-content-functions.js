@@ -4,6 +4,7 @@ const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getApps, initializeApp } = require('firebase-admin/app');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const { cleanText, clampLimit, isValidMaterialId } = require('./lib/material-policy');
+const communityCleanup = require('./community-cleanup-functions.js');
 
 if (!getApps().length) initializeApp();
 
@@ -26,6 +27,11 @@ function cleanList(value, maximum = 10, length = 200) {
     : [];
 }
 
+function safeSourceUrl(value) {
+  const url = cleanText(value, 500);
+  return /^https?:\/\//i.test(url) ? url : '';
+}
+
 function requireUser(request) {
   const uid = request.auth?.uid;
   if (!uid) throw new HttpsError('unauthenticated', '로그인 후 이용할 수 있습니다.');
@@ -41,9 +47,7 @@ function validId(value, label) {
 async function profileFor(uid) {
   const snap = await db.doc(`users/${uid}`).get().catch(() => null);
   const data = snap?.exists ? snap.data() || {} : {};
-  return {
-    nickname: cleanText(data.nickname || data.displayName || '익명', 30),
-  };
+  return { nickname: cleanText(data.nickname || data.displayName || '익명', 30) };
 }
 
 async function consumeLimit(uid, type, dailyLimit, cooldownMs) {
@@ -58,11 +62,7 @@ async function consumeLimit(uid, type, dailyLimit, cooldownMs) {
     if (nowMs - lastAtMs < cooldownMs) throw new HttpsError('resource-exhausted', '잠시 후 다시 시도해주세요.');
     if (count >= dailyLimit) throw new HttpsError('resource-exhausted', '오늘 등록할 수 있는 횟수를 초과했습니다.');
     transaction.set(ref, {
-      uid,
-      type,
-      day,
-      count: count + 1,
-      lastAtMs: nowMs,
+      uid, type, day, count: count + 1, lastAtMs: nowMs,
       updatedAt: FieldValue.serverTimestamp(),
       expiresAt: new Date(nowMs + 3 * 86400000),
     }, { merge: true });
@@ -89,7 +89,7 @@ const createUserMaterial = onCall({ region: REGION, timeoutSeconds: 30, memory: 
     tags: cleanList(request.data?.tags, 8, 24),
     sourceType: 'user',
     sourceName: cleanText(request.data?.sourceName || profile.nickname, 80),
-    sourceUrl: cleanText(request.data?.sourceUrl, 500),
+    sourceUrl: safeSourceUrl(request.data?.sourceUrl),
     sourceGuide: cleanList(request.data?.sourceGuide, 8, 100),
     disclaimer: cleanText(request.data?.disclaimer || '회원이 직접 등록한 자료입니다. 중요한 정보는 관계 기관의 최신 안내를 확인해주세요.', 300),
     generatedDate: '',
@@ -229,5 +229,6 @@ module.exports = {
   createUserDebate,
   getMaterialComments,
   addMaterialComment,
-  _test: { todayKst, cleanList, validId },
+  ...communityCleanup,
+  _test: { todayKst, cleanList, safeSourceUrl, validId },
 };
