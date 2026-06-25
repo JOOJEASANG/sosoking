@@ -9,6 +9,7 @@ const errors = [];
 
 const hosting = read('.github', 'workflows', 'firebase-hosting.yml');
 const backend = read('.github', 'workflows', 'firebase-deploy.yml');
+const deployHelper = read('tools', 'deploy-firebase-stage.sh');
 const storageRules = read('storage.rules');
 const firebaseConfig = read('firebase.json');
 const functionMain = read('functions', 'functions-main-v2.js');
@@ -32,8 +33,13 @@ if (hosting.includes('FIREBASE_TOKEN')) errors.push('hosting still uses a long-l
 
 requireText(backend, "if: github.ref == 'refs/heads/main'", 'backend main gate missing');
 requireText(backend, "- 'storage.rules'", 'storage rules path trigger missing');
-requireText(backend, '--only storage --non-interactive', 'official Storage rules deployment target missing');
+if (!backend.includes('--only storage --non-interactive') && !backend.includes('deploy-firebase-stage.sh storage')) {
+  errors.push('official Storage rules deployment target missing: storage');
+}
 requireText(backend, 'FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6', 'backend service account missing');
+requireText(backend, 'deploy-firebase-stage.sh functions', 'independent Functions deployment missing');
+requireText(deployHelper, '--only "$TARGET"', 'Firebase deployment helper target missing');
+requireText(deployHelper, 'FIREBASE_DEPLOY_ATTEMPTS', 'Firebase deployment retry configuration missing');
 if (backend.includes('storage:rules')) errors.push('deprecated Storage deployment target remains');
 if (backend.includes('::warning::')) errors.push('backend deploy suppresses a deployment failure');
 
