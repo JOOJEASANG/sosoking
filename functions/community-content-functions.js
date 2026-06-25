@@ -32,6 +32,32 @@ function safeSourceUrl(value) {
   return /^https?:\/\//i.test(url) ? url : '';
 }
 
+function boundedNumber(value, maximum) {
+  const number = Math.floor(Number(value || 0));
+  return Number.isFinite(number) ? Math.max(0, Math.min(maximum, number)) : 0;
+}
+
+function safeOwnedImage(uid, scope, data = {}) {
+  const path = cleanText(data.imagePath, 500);
+  const url = cleanText(data.imageUrl, 1200);
+  if (!path && !url) return { imagePath: '', imageUrl: '', imageAlt: '', imageWidth: 0, imageHeight: 0 };
+  const folder = scope === 'material' ? 'materials' : 'debates';
+  const expectedPrefix = `community/${folder}/${uid}/`;
+  const encodedPath = encodeURIComponent(path);
+  if (!path.startsWith(expectedPrefix)
+    || !/^https:\/\/firebasestorage\.googleapis\.com\/v0\/b\//i.test(url)
+    || !url.includes(`/o/${encodedPath}?`)) {
+    throw new HttpsError('invalid-argument', '첨부 이미지 경로를 확인할 수 없습니다. 이미지를 다시 선택해주세요.');
+  }
+  return {
+    imagePath: path,
+    imageUrl: url,
+    imageAlt: cleanText(data.imageAlt, 140),
+    imageWidth: boundedNumber(data.imageWidth, 12000),
+    imageHeight: boundedNumber(data.imageHeight, 12000),
+  };
+}
+
 function requireUser(request) {
   const uid = request.auth?.uid;
   if (!uid) throw new HttpsError('unauthenticated', '로그인 후 이용할 수 있습니다.');
@@ -74,6 +100,7 @@ const createUserMaterial = onCall({ region: REGION, timeoutSeconds: 30, memory: 
   const title = cleanText(request.data?.title, 100);
   const summary = cleanText(request.data?.summary, 260);
   const body = cleanList(request.data?.body, 10, 800);
+  const image = safeOwnedImage(uid, 'material', request.data || {});
   if (title.length < 3 || summary.length < 10 || body.length < 1) {
     throw new HttpsError('invalid-argument', '제목, 요약, 핵심 내용을 입력해주세요.');
   }
@@ -92,6 +119,7 @@ const createUserMaterial = onCall({ region: REGION, timeoutSeconds: 30, memory: 
     sourceUrl: safeSourceUrl(request.data?.sourceUrl),
     sourceGuide: cleanList(request.data?.sourceGuide, 8, 100),
     disclaimer: cleanText(request.data?.disclaimer || '회원이 직접 등록한 자료입니다. 중요한 정보는 관계 기관의 최신 안내를 확인해주세요.', 300),
+    ...image,
     generatedDate: '',
     status: 'published',
     aiGenerated: false,
@@ -117,6 +145,7 @@ const createUserDebate = onCall({ region: REGION, timeoutSeconds: 30, memory: '2
   const agreeText = cleanText(request.data?.agreeText, 400);
   const disagreeTitle = cleanText(request.data?.disagreeTitle, 60);
   const disagreeText = cleanText(request.data?.disagreeText, 400);
+  const image = safeOwnedImage(uid, 'debate', request.data || {});
   if (title.length < 3 || summary.length < 10 || context.length < 1 || agreeTitle.length < 1 || disagreeTitle.length < 1 || agreeText.length < 3 || disagreeText.length < 3) {
     throw new HttpsError('invalid-argument', '제목, 상황, A·B 선택 내용을 모두 입력해주세요.');
   }
@@ -137,6 +166,7 @@ const createUserDebate = onCall({ region: REGION, timeoutSeconds: 30, memory: '2
     questions: cleanList(request.data?.questions, 5, 140),
     sourceType: 'user',
     sourceName: profile.nickname,
+    ...image,
     generatedDate: '',
     status: 'published',
     aiGenerated: false,
@@ -230,5 +260,5 @@ module.exports = {
   getMaterialComments,
   addMaterialComment,
   ...communityCleanup,
-  _test: { todayKst, cleanList, safeSourceUrl, validId },
+  _test: { todayKst, cleanList, safeSourceUrl, safeOwnedImage, validId },
 };
