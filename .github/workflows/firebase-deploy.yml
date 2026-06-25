@@ -37,6 +37,7 @@ jobs:
     env:
       FIREBASE_PROJECT_ID: sosoking-481e6
       FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 }}
+      FIREBASE_DEPLOY_ATTEMPTS: '3'
 
     steps:
       - name: Checkout repository
@@ -70,25 +71,38 @@ jobs:
       - name: Deploy Firestore rules
         id: deploy_rules
         continue-on-error: true
-        run: npx firebase-tools deploy --project "$FIREBASE_PROJECT_ID" --only firestore:rules --non-interactive
+        run: bash tools/deploy-firebase-stage.sh firestore:rules "$RUNNER_TEMP/firestore-rules.log"
 
       - name: Deploy Firestore indexes
         id: deploy_indexes
-        if: always() && steps.deploy_rules.outcome == 'success'
+        if: always()
         continue-on-error: true
-        run: npx firebase-tools deploy --project "$FIREBASE_PROJECT_ID" --only firestore:indexes --non-interactive
+        run: bash tools/deploy-firebase-stage.sh firestore:indexes "$RUNNER_TEMP/firestore-indexes.log"
 
       - name: Deploy Storage rules
         id: deploy_storage
-        if: always() && steps.deploy_rules.outcome == 'success' && steps.deploy_indexes.outcome == 'success'
+        if: always()
         continue-on-error: true
-        run: npx firebase-tools deploy --project "$FIREBASE_PROJECT_ID" --only storage --non-interactive
+        run: bash tools/deploy-firebase-stage.sh storage "$RUNNER_TEMP/storage-rules.log"
 
       - name: Deploy Functions
         id: deploy_functions
-        if: always() && steps.deploy_rules.outcome == 'success' && steps.deploy_indexes.outcome == 'success' && steps.deploy_storage.outcome == 'success'
+        if: always()
         continue-on-error: true
-        run: npx firebase-tools deploy --project "$FIREBASE_PROJECT_ID" --only functions --force --non-interactive
+        run: bash tools/deploy-firebase-stage.sh functions "$RUNNER_TEMP/functions.log"
+
+      - name: Upload backend deployment logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: firebase-backend-deploy-logs
+          path: |
+            ${{ runner.temp }}/firestore-rules.log
+            ${{ runner.temp }}/firestore-indexes.log
+            ${{ runner.temp }}/storage-rules.log
+            ${{ runner.temp }}/functions.log
+          if-no-files-found: ignore
+          retention-days: 3
 
       - name: Report production Backend result
         if: always()
@@ -104,12 +118,35 @@ jobs:
           for stage in "$RULES_RESULT" "$INDEXES_RESULT" "$STORAGE_RESULT" "$FUNCTIONS_RESULT"; do
             if [ "$stage" != "success" ]; then result="failure"; fi
           done
+
           body="Backend 배포 결과: **${result}** · 커밋 \`${GITHUB_SHA}\`
 
           - Firestore Rules: ${RULES_RESULT}
           - Firestore Indexes: ${INDEXES_RESULT}
           - Storage Rules: ${STORAGE_RESULT}
           - Functions: ${FUNCTIONS_RESULT}"
+
+          append_excerpt() {
+            stage_name="$1"
+            stage_result="$2"
+            log_file="$3"
+            if [ "$stage_result" = "success" ] || [ ! -f "$log_file" ]; then return; fi
+            excerpt=$(tail -n 18 "$log_file" | sed -E $'s/\x1B\[[0-9;]*[mK]//g' | tr -d '\r')
+            body="${body}
+
+          <details><summary>${stage_name} 실패 로그</summary>
+
+          \`\`\`text
+          ${excerpt}
+          \`\`\`
+          </details>"
+          }
+
+          append_excerpt "Firestore Rules" "$RULES_RESULT" "$RUNNER_TEMP/firestore-rules.log"
+          append_excerpt "Firestore Indexes" "$INDEXES_RESULT" "$RUNNER_TEMP/firestore-indexes.log"
+          append_excerpt "Storage Rules" "$STORAGE_RESULT" "$RUNNER_TEMP/storage-rules.log"
+          append_excerpt "Functions" "$FUNCTIONS_RESULT" "$RUNNER_TEMP/functions.log"
+
           if ! gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/191/comments" -f body="$body"; then
             echo "배포 결과 댓글을 기록하지 못했습니다."
           fi
