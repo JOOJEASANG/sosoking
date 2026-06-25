@@ -3,6 +3,7 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getApps, initializeApp } = require('firebase-admin/app');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
+const { getStorage } = require('firebase-admin/storage');
 const { cleanText, clampLimit, isValidMaterialId } = require('./lib/material-policy');
 const communityCleanup = require('./community-cleanup-functions.js');
 
@@ -14,11 +15,21 @@ const COMMENT_DAILY_LIMIT = 40;
 const POST_DAILY_LIMIT = 5;
 const COMMENT_COOLDOWN_MS = 5000;
 const POST_COOLDOWN_MS = 15000;
+const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 
 function todayKst() {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit',
   }).format(new Date());
+}
+
+function getBucketName() {
+  try {
+    const config = JSON.parse(process.env.FIREBASE_CONFIG || '{}');
+    if (config.storageBucket) return config.storageBucket;
+  } catch {}
+  const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT || 'sosoking-481e6';
+  return `${projectId}.firebasestorage.app`;
 }
 
 function cleanList(value, maximum = 10, length = 200) {
@@ -37,24 +48,50 @@ function boundedNumber(value, maximum) {
   return Number.isFinite(number) ? Math.max(0, Math.min(maximum, number)) : 0;
 }
 
-function safeOwnedImage(uid, scope, data = {}) {
+async function verifiedOwnedImage(uid, scope, data = {}) {
   const path = cleanText(data.imagePath, 500);
   const url = cleanText(data.imageUrl, 1200);
   if (!path && !url) return { imagePath: '', imageUrl: '', imageAlt: '', imageWidth: 0, imageHeight: 0 };
+
   const folder = scope === 'material' ? 'materials' : 'debates';
   const expectedPrefix = `community/${folder}/${uid}/`;
-  const encodedPath = encodeURIComponent(path);
-  if (!path.startsWith(expectedPrefix)
-    || !/^https:\/\/firebasestorage\.googleapis\.com\/v0\/b\//i.test(url)
-    || !url.includes(`/o/${encodedPath}?`)) {
+  if (!path.startsWith(expectedPrefix)) {
     throw new HttpsError('invalid-argument', '첨부 이미지 경로를 확인할 수 없습니다. 이미지를 다시 선택해주세요.');
   }
+
+  const bucket = getStorage().bucket(getBucketName());
+  const encodedPath = encodeURIComponent(path);
+  const expectedUrlPrefix = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodedPath}?`;
+  if (!url.startsWith(expectedUrlPrefix)) {
+    throw new HttpsError('invalid-argument', '첨부 이미지 주소를 확인할 수 없습니다. 이미지를 다시 선택해주세요.');
+  }
+
+  let metadata;
+  try {
+    [metadata] = await bucket.file(path).getMetadata();
+  } catch (error) {
+    console.warn('[community image metadata]', path, error.message);
+    throw new HttpsError('invalid-argument', '업로드된 이미지 파일을 찾을 수 없습니다. 이미지를 다시 선택해주세요.');
+  }
+
+  const custom = metadata.metadata || {};
+  const contentType = String(metadata.contentType || '');
+  const size = Number(metadata.size || 0);
+  if (custom.owner !== uid
+    || custom.source !== 'callable-upload'
+    || custom.scope !== scope
+    || !/^image\/(jpeg|png|webp|gif)$/.test(contentType)
+    || size <= 0
+    || size > MAX_IMAGE_BYTES) {
+    throw new HttpsError('invalid-argument', '서버에서 검증되지 않은 이미지는 첨부할 수 없습니다.');
+  }
+
   return {
     imagePath: path,
     imageUrl: url,
     imageAlt: cleanText(data.imageAlt, 140),
-    imageWidth: boundedNumber(data.imageWidth, 12000),
-    imageHeight: boundedNumber(data.imageHeight, 12000),
+    imageWidth: boundedNumber(custom.width, 12000),
+    imageHeight: boundedNumber(custom.height, 12000),
   };
 }
 
@@ -100,11 +137,11 @@ const createUserMaterial = onCall({ region: REGION, timeoutSeconds: 30, memory: 
   const title = cleanText(request.data?.title, 100);
   const summary = cleanText(request.data?.summary, 260);
   const body = cleanList(request.data?.body, 10, 800);
-  const image = safeOwnedImage(uid, 'material', request.data || {});
   if (title.length < 3 || summary.length < 10 || body.length < 1) {
     throw new HttpsError('invalid-argument', '제목, 요약, 핵심 내용을 입력해주세요.');
   }
 
+  const image = await verifiedOwnedImage(uid, 'material', request.data || {});
   await consumeLimit(uid, 'material-create', POST_DAILY_LIMIT, POST_COOLDOWN_MS);
   const profile = await profileFor(uid);
   const ref = db.collection('materials').doc();
@@ -145,11 +182,11 @@ const createUserDebate = onCall({ region: REGION, timeoutSeconds: 30, memory: '2
   const agreeText = cleanText(request.data?.agreeText, 400);
   const disagreeTitle = cleanText(request.data?.disagreeTitle, 60);
   const disagreeText = cleanText(request.data?.disagreeText, 400);
-  const image = safeOwnedImage(uid, 'debate', request.data || {});
   if (title.length < 3 || summary.length < 10 || context.length < 1 || agreeTitle.length < 1 || disagreeTitle.length < 1 || agreeText.length < 3 || disagreeText.length < 3) {
     throw new HttpsError('invalid-argument', '제목, 상황, A·B 선택 내용을 모두 입력해주세요.');
   }
 
+  const image = await verifiedOwnedImage(uid, 'debate', request.data || {});
   await consumeLimit(uid, 'debate-create', POST_DAILY_LIMIT, POST_COOLDOWN_MS);
   const profile = await profileFor(uid);
   const ref = db.collection('debates').doc();
@@ -260,5 +297,5 @@ module.exports = {
   getMaterialComments,
   addMaterialComment,
   ...communityCleanup,
-  _test: { todayKst, cleanList, safeSourceUrl, safeOwnedImage, validId },
+  _test: { todayKst, cleanList, safeSourceUrl, verifiedOwnedImage, validId },
 };

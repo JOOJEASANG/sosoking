@@ -18,10 +18,12 @@ const playgroundSource = read('functions', 'king-playground-functions.js');
 const materialSource = read('functions', 'soso-material-functions.js');
 const debateSource = read('functions', 'soso-debate-functions.js');
 const communitySource = read('functions', 'community-content-functions.js');
+const uploadSource = read('functions', 'upload-image-functions.js');
 const accountSource = read('functions', 'account-functions.js');
 const loginSource = read('public', 'js', 'pages', 'login.js');
 const appSource = read('public', 'js', 'app-safe.js');
 const rulesSource = read('firestore.rules');
+const storageSource = read('storage.rules');
 const indexesSource = read('firestore.indexes.json');
 const packageSource = read('package.json');
 
@@ -32,6 +34,9 @@ if (mainFunctions.generateDailyDebate !== debateFunctions.generateDailyDebate) e
 if (mainFunctions.getDebates !== debateFunctions.getDebates) errors.push('independent debate service is not deployed');
 for (const name of ['createUserMaterial', 'createUserDebate', 'getMaterialComments', 'addMaterialComment']) {
   if (mainFunctions[name] !== communityFunctions[name]) errors.push(`community content function is not deployed: ${name}`);
+}
+for (const name of ['uploadSiteImage', 'getCommunityImages']) {
+  if (!mainFunctions[name]) errors.push(`community image function is not deployed: ${name}`);
 }
 
 if (!runtimeSource.includes('process.env.GEMINI_API_KEY') || !runtimeSource.includes('process.env.ANTHROPIC_API_KEY')) {
@@ -62,8 +67,16 @@ for (const required of ['generateDailyMaterial', 'triggerDailyMaterial', 'adminC
 for (const required of ['generateDailyDebate', 'triggerDailyDebate', 'adminCreateDebate', 'voteDebate', 'addDebateComment', 'COMMENT_DAILY_LIMIT', 'reviewGeneratedDebate', 'registerUniqueView']) {
   if (!debateSource.includes(required)) errors.push(`debate service missing: ${required}`);
 }
-for (const required of ['createUserMaterial', 'createUserDebate', 'getMaterialComments', 'addMaterialComment', 'POST_DAILY_LIMIT', 'COMMENT_DAILY_LIMIT', 'sourceType: \'user\'']) {
+for (const required of ['createUserMaterial', 'createUserDebate', 'getMaterialComments', 'addMaterialComment', 'POST_DAILY_LIMIT', 'COMMENT_DAILY_LIMIT', 'sourceType: \'user\'', 'verifiedOwnedImage', 'custom.source', 'custom.owner']) {
   if (!communitySource.includes(required)) errors.push(`community content service missing: ${required}`);
+}
+for (const required of ['uploadSiteImage', 'getCommunityImages', 'source: \'callable-upload\'', 'community/materials', 'community/debates']) {
+  if (!uploadSource.includes(required)) errors.push(`community image service missing: ${required}`);
+}
+for (const path of ['match /community/materials/{userId}/{fileName}', 'match /community/debates/{userId}/{fileName}']) {
+  const start = storageSource.indexOf(path);
+  const section = start >= 0 ? storageSource.slice(start, start + 180) : '';
+  if (!section.includes('allow write: if false;')) errors.push(`community image path is not server-only: ${path}`);
 }
 
 for (const contract of ['anonymizePublicContributions', 'deletePrivateParticipation', 'recursiveDelete(userRef)']) {

@@ -27,16 +27,15 @@ service firebase.storage {
       allow delete: if isOwner(userId);
     }
 
+    // 자료실·토론실 이미지는 서버 callable을 통해서만 생성합니다.
     match /community/materials/{userId}/{fileName} {
       allow read: if true;
-      allow create, update: if isOwner(userId) && validFileName(fileName) && validImage();
-      allow delete: if isOwner(userId);
+      allow write: if false;
     }
 
     match /community/debates/{userId}/{fileName} {
       allow read: if true;
-      allow create, update: if isOwner(userId) && validFileName(fileName) && validImage();
-      allow delete: if isOwner(userId);
+      allow write: if false;
     }
 
     match /soso-feed/{userId}/{fileName} {
