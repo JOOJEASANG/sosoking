@@ -9,6 +9,7 @@ const secureFeed = require('./secure-feed-functions.js');
 const sitemap = require('./sitemap-functions.js');
 const account = require('./account-functions.js');
 const accountCleanup = require('./account-cleanup-functions.js');
+const communityContent = require('./community-content-functions.js');
 const adminUsers = require('./admin-user-functions.js');
 const adminData = require('./admin-data-functions.js');
 const memberStats = require('./member-stats-functions.js');
@@ -33,6 +34,7 @@ module.exports = {
   sitemapXml: sitemap.sitemapXml,
   updateNickname: account.updateNickname,
   deleteMyAccount: accountCleanup.deleteMyAccount,
+  ...communityContent,
   ...adminUsers,
   ...adminData,
   ...memberStats,
