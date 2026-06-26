@@ -38,9 +38,10 @@ async function readRuntimeConfig() {
     });
   }
 
+  const anthropicAvailable = Boolean(String(process.env.ANTHROPIC_API_KEY || '').trim());
   return {
     enabled: data.enabled !== false,
-    provider: data.activeModel === 'gemini' ? 'gemini' : 'anthropic',
+    provider: data.activeModel === 'anthropic' && anthropicAvailable ? 'anthropic' : 'gemini',
     geminiModel: String(data.geminiModel || 'gemini-2.5-flash').slice(0, 100),
     anthropicModel: String(data.claudeModel || 'claude-haiku-4-5-20251001').slice(0, 100),
     dailyFreeLimit: clampInteger(data.dailyFreeLimit, 3, 1, 20),
