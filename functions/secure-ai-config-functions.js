@@ -47,7 +47,11 @@ const saveAiKingConfig = onCall({ region: REGION, timeoutSeconds: 20 }, async re
   const uid = request.auth?.uid;
   await assertAdmin(uid);
   const data = request.data || {};
-  const activeModel = data.activeModel === 'gemini' ? 'gemini' : 'anthropic';
+  if (data.activeModel === 'anthropic') {
+    throw new HttpsError('failed-precondition', '현재 운영 Functions에는 Gemini Secret만 연결되어 있습니다. Anthropic Secret과 배포 설정을 먼저 추가해주세요.');
+  }
+
+  const activeModel = 'gemini';
   const dailyFreeLimit = clampNumber(data.dailyFreeLimit, 3, 1, 20);
   const monthlyCap = clampNumber(data.monthlyCap, 0, 0, 100000);
   const enabled = data.enabled !== false;
@@ -69,8 +73,8 @@ const saveAiKingConfig = onCall({ region: REGION, timeoutSeconds: 20 }, async re
 
   return {
     success: true,
-    updated: ['enabled', 'activeModel', 'geminiModel', 'claudeModel', 'dailyFreeLimit', 'monthlyCap'],
-    message: 'AI 실행 설정을 저장했습니다. 인증 정보는 Firestore에 저장하지 않습니다.',
+    updated: ['enabled', 'activeModel', 'geminiModel', 'dailyFreeLimit', 'monthlyCap'],
+    message: 'Gemini 실행 설정을 저장했습니다. 인증 정보는 Firestore에 저장하지 않습니다.',
   };
 });
 

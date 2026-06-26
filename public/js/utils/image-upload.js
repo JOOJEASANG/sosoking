@@ -58,12 +58,19 @@ function targetSize(width, height, maxEdge = MAX_EDGE) {
   };
 }
 
+function shrinkSize(width, height, scale = 0.82) {
+  return {
+    width: Math.max(1, Math.min(width, Math.round(width * scale))),
+    height: Math.max(1, Math.min(height, Math.round(height * scale))),
+  };
+}
+
 async function compressBitmap(bitmap, initialWidth, initialHeight) {
   let { width, height } = targetSize(initialWidth, initialHeight);
   let quality = 0.86;
   let blob = null;
 
-  for (let attempt = 0; attempt < 8; attempt += 1) {
+  for (let attempt = 0; attempt < 10; attempt += 1) {
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
@@ -86,12 +93,14 @@ async function compressBitmap(bitmap, initialWidth, initialHeight) {
     if (blob.size <= MAX_OUTPUT_BYTES) break;
     if (quality > 0.58) quality -= 0.08;
     else {
-      width = Math.max(640, Math.round(width * 0.82));
-      height = Math.max(480, Math.round(height * 0.82));
+      const next = shrinkSize(width, height);
+      if (next.width === width && next.height === height) break;
+      width = next.width;
+      height = next.height;
     }
   }
 
-  if (!blob || blob.size > 3 * 1024 * 1024) throw new Error('이미지를 충분히 줄이지 못했습니다. 다른 이미지를 선택해주세요.');
+  if (!blob || blob.size > MAX_OUTPUT_BYTES) throw new Error('이미지를 약 1.8MB 이하로 줄이지 못했습니다. 다른 이미지를 선택해주세요.');
   return { blob, width, height };
 }
 

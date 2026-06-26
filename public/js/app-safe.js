@@ -36,8 +36,9 @@ function clearOAuthQuery() {
 function showPageError(title, error) {
   const element = pageContent();
   if (!element) return;
-  const message = error && (error.stack || error.message) ? String(error.stack || error.message) : String(error || '알 수 없는 오류');
-  element.innerHTML = '<div class="empty-state"><div class="empty-state__icon">⚠️</div><div class="empty-state__title">' + esc(title) + '</div><div style="margin-top:10px;font-size:12px;white-space:pre-wrap;text-align:left;max-width:720px;overflow:auto">' + esc(message) + '</div></div>';
+  console.error('[page error]', title, error);
+  element.innerHTML = '<div class="empty-state"><div class="empty-state__icon">⚠️</div><div class="empty-state__title">' + esc(title) + '</div><div class="empty-state__desc">잠시 후 다시 시도해주세요. 문제가 계속되면 페이지를 새로고침해주세요.</div><button class="btn btn--primary" id="page-error-retry">다시 시도</button></div>';
+  element.querySelector('#page-error-retry')?.addEventListener('click', () => window.location.reload());
 }
 
 async function renderPage(renderer, title) {

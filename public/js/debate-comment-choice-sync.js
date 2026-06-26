@@ -2,6 +2,7 @@
 
 const STYLE_ID = 'debate-comment-choice-sync-style';
 const NOTE_CLASS = 'debate-comment-choice-note';
+let syncScheduled = false;
 
 function ensureStyle() {
   if (document.getElementById(STYLE_ID)) return;
@@ -22,6 +23,10 @@ function selectedVote() {
     : '';
 }
 
+function setIfChanged(element, property, value) {
+  if (element[property] !== value) element[property] = value;
+}
+
 function syncCommentChoice() {
   const form = document.querySelector('.debate-form');
   const sideSelect = document.getElementById('debate-comment-side');
@@ -38,21 +43,34 @@ function syncCommentChoice() {
 
   const vote = selectedVote();
   const ready = Boolean(vote);
-  if (ready) sideSelect.value = vote;
-  sideSelect.setAttribute('aria-hidden', 'true');
-  textarea.disabled = !ready;
-  submit.disabled = !ready;
-  note.dataset.ready = ready ? 'true' : 'false';
-  note.textContent = ready
+  const readyValue = ready ? 'true' : 'false';
+  const message = ready
     ? `현재 선택한 ${vote === 'agree' ? 'A' : 'B'} 의견으로 댓글이 등록됩니다.`
     : '댓글을 작성하려면 먼저 위에서 A 또는 B를 선택해주세요.';
-  textarea.placeholder = ready
+  const placeholder = ready
     ? `선택한 ${vote === 'agree' ? 'A' : 'B'} 의견에 대한 이유를 적어주세요.`
     : '먼저 A 또는 B를 선택해주세요.';
+
+  setIfChanged(sideSelect, 'value', ready ? vote : 'neutral');
+  if (sideSelect.getAttribute('aria-hidden') !== 'true') sideSelect.setAttribute('aria-hidden', 'true');
+  setIfChanged(textarea, 'disabled', !ready);
+  setIfChanged(submit, 'disabled', !ready);
+  if (note.dataset.ready !== readyValue) note.dataset.ready = readyValue;
+  setIfChanged(note, 'textContent', message);
+  setIfChanged(textarea, 'placeholder', placeholder);
+}
+
+function scheduleSync() {
+  if (syncScheduled) return;
+  syncScheduled = true;
+  queueMicrotask(() => {
+    syncScheduled = false;
+    syncCommentChoice();
+  });
 }
 
 ensureStyle();
 syncCommentChoice();
 
-const observer = new MutationObserver(() => syncCommentChoice());
+const observer = new MutationObserver(scheduleSync);
 observer.observe(document.body, { childList: true, subtree: true });

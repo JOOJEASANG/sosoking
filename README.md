@@ -1,15 +1,15 @@
 # 소소킹
 
-생활 고민을 AI 캐릭터와 판결하고, 문장을 바꾸고, 이름을 짓고, 상담하며 매일 새로운 생활자료와 토론을 제공하는 Firebase 기반 웹앱입니다.
+생활 고민을 AI 캐릭터와 판결하고, 문장을 바꾸고, 이름을 짓고, 상담하며 매일 새로운 생활자료와 A/B 토론을 제공하는 Firebase 기반 웹앱입니다.
 
 ## 핵심 기능
 
-- 판결소: 선택한 성향형 캐릭터 판사 3명의 판결
+- 판결소: 캐릭터를 직접 고르거나 무작위 3명의 판결 받기
 - 창작소: 성향별 말투 변환과 작명
-- 상담소: 성향이 다른 상담사 3명의 조언
-- 자료실: AI 일일 생활자료 1건과 관리자 직접 등록 자료를 열람
-- 토론실: AI 일일 토론 1건과 관리자 직접 등록 주제에 찬반투표·댓글 참여
-- 내정보: 개인 AI 결과 다시 보기, 복사, 공유, 삭제
+- 미친 상담소: 재치와 유머를 섞은 캐릭터별 고민 상담
+- 자료실: AI·관리자·회원 자료 열람, 이미지 첨부, 댓글 참여
+- 토론실: AI·관리자·회원 토론 등록, A/B 투표, 선택 입장 연동 댓글
+- 내정보: 개인 AI 결과 다시 보기, 복사, 공유, 삭제와 계정 삭제
 
 AI 놀이터 결과는 자동으로 공개 게시되지 않습니다. 사용자 전용 영역에 최근 50개까지만 저장되며 개별 삭제 또는 회원 탈퇴 시 삭제됩니다.
 
@@ -21,34 +21,44 @@ AI 놀이터 결과는 자동으로 공개 게시되지 않습니다. 사용자 
 
 - 컬렉션: `materials`
 - 자동 생성: 매일 오전 7시 30분, 생활정보 1건
-- 직접 등록: 관리자 `adminCreateMaterial`
-- 목적: 정보 열람
-- 찬반투표와 댓글 기능 없음
+- 직접 등록: 관리자 `adminCreateMaterial`, 회원 `createUserMaterial`
+- 회원 자료 등록: 제목·요약·핵심 내용·태그·출처·대표 이미지
+- 댓글: `materials/{materialId}/comments`
 - 로그인 이용자의 조회수는 자료별 하루 한 번만 반영
 
 ### 토론실
 
 - 컬렉션: `debates`
-- 자동 생성: 매일 오전 8시, 생활 찬반토론 1건
-- 직접 등록: 관리자 `adminCreateDebate`
-- 목적: 찬반투표와 댓글 토론
+- 자동 생성: 매일 오전 8시, 생활 A/B 토론 1건
+- 직접 등록: 관리자 `adminCreateDebate`, 회원 `createUserDebate`
+- 회원 토론 등록: 상황·A/B 입장·태그·대표 이미지
 - 투표·댓글은 각 토론 문서의 하위 컬렉션에 저장
+- 댓글 입장은 사용자의 실제 A/B 투표 기록에서 서버가 자동 결정
 - 로그인 이용자의 조회수는 토론별 하루 한 번만 반영
 
 AI 일일 생성 결과는 별도의 안전·균형 검수 단계를 통과한 경우에만 공개합니다. 생성이나 검수에 실패하면 고정 템플릿을 대신 게시하지 않고 `generation_runs`에 실패 상태를 기록하며, 관리자가 관리자 화면에서 해당 날짜를 다시 실행할 수 있습니다.
 
+## 이미지 처리
+
+- 지원 형식: JPG, PNG, WEBP, GIF
+- 원본 선택 한도: 25MB
+- 큰 이미지는 브라우저에서 긴 변 1,920px 이하, 약 1.8MB 이하로 축소·압축
+- 자료·토론 이미지는 서버 callable을 통해서만 Storage에 생성
+- 글 등록 시 Storage 객체의 소유자·용도·업로드 출처·형식·용량을 다시 검증
+- 회원 탈퇴 시 피드·자료·토론 이미지 파일 삭제
+
 ## 운영 구조
 
 - Functions 진입점은 `functions/functions-main-v2.js` 하나만 사용합니다.
-- AI 캐릭터 정의는 `king-character-catalog.js`, AI 실행은 `ai-runtime-provider.js`, 자동 검토는 `moderation-functions.js`로 분리되어 있습니다.
-- 자료 생성은 `soso-material-functions.js`, 토론 생성·참여는 `soso-debate-functions.js`에서 각각 처리합니다.
-- 과거 통합 AI 엔진과 호환용 진입점은 운영 코드에서 삭제했습니다.
+- AI 캐릭터 정의는 `king-character-catalog.js`, AI 실행은 `ai-runtime-provider.js`, 피드 자동 검토는 `moderation-functions.js`로 분리되어 있습니다.
+- 자료 생성은 `soso-material-functions.js`, 토론 생성·투표·조회는 `soso-debate-functions.js`에서 처리합니다.
+- 회원 자료·토론 등록과 자료 댓글은 `community-content-functions.js`, 투표 연동 토론 댓글은 `debate-comment-functions.js`에서 처리합니다.
 - AI 인증 정보는 관리형 비밀 저장소를 통해서만 Functions에 연결됩니다.
+- 현재 운영 배포에는 `GEMINI_API_KEY`만 연결되어 있으며 Anthropic은 별도 Secret과 배포 설정이 추가되기 전까지 자동 선택 대상으로 사용하지 않습니다.
 - AI 기능 활성화 여부, 일일 무료 한도와 월간 상한은 `config/ai_king` 설정을 실제 실행 시 적용합니다.
 - AI 호출 실패 시 일일·월간 사용량과 추가 이용권을 복구합니다.
-- 자동 검토는 관리자 확인을 돕는 위험 신호와 우선순위만 기록하며 게시물을 자동 삭제하지 않습니다.
 - 카카오 로그인은 OAuth 난수 `state`를 요청과 콜백에서 비교하고 허용된 redirect URI만 서버에서 교환합니다.
-- 회원 탈퇴 시 개인 하위 컬렉션과 참여 기록을 삭제하고 공개 작성물의 작성자 정보는 익명 처리합니다.
+- 회원 탈퇴 시 인증 계정, 회원 문서, 개인 AI 결과, 참여 기록, 작성한 공개 콘텐츠와 업로드 파일을 삭제합니다. 투표 집계처럼 작성자를 식별하지 않는 집계 수치는 남을 수 있습니다.
 - 제거된 게임·정치 컬렉션은 Firestore Rules에서 공개 읽기와 쓰기를 모두 차단합니다.
 
 ## 검사
@@ -61,28 +71,26 @@ npm run check
 
 검사 범위:
 
-- Functions export와 Hosting rewrite
-- JavaScript 문법과 로컬 파일 참조
-- AI 놀이터 기능 연결
+- 모든 Functions·프런트 JavaScript 문법 검사
+- 로컬 import와 Hosting asset·rewrite 정합성
+- AI 놀이터 기능과 관리형 비밀 연결
 - 자료실·토론실의 별도 컬렉션·함수·라우트 계약
-- AI 일일 생성과 자동 검수의 관리형 비밀 연결
-- AI 활성화·일일 한도·월간 상한 적용
+- 사용자 자료·토론·이미지·댓글 기능 연결
+- 토론 댓글 입장과 실제 투표 기록의 서버 강제 연동
 - 카카오 OAuth 요청·콜백 state 검증
-- 회원 탈퇴 데이터 삭제·익명화 계약
-- 토론 ID·날짜·투표·댓글 정책 단위 테스트
+- 회원 탈퇴 데이터·Storage 파일 정리 계약
+- 날짜·ID·투표 수치 정책 단위 테스트
 - 폐기 컬렉션과 서버 전용 컬렉션의 Firestore 차단
-- 백엔드 보안 계약과 최종 배포 표면
 - Hosting·Backend의 main 브랜치 배포 제한
 - Storage Rules와 배포 명령 정합성
-- 이용약관과 개인정보처리방침 정합성
-- 제거된 정치게임·구형 AI 기능 재노출 방지
+- 이용약관·개인정보처리방침 정합성
 
-Pull Request에서는 Firebase Hosting 미리보기 배포 후 Chromium으로 PC와 모바일의 홈, AI 놀이터, 오늘의 콘텐츠, 자료실, 토론실과 내정보 화면을 검사하고 캡처를 보관합니다.
+Pull Request에서는 Firebase Hosting 미리보기 배포 후 Chromium으로 PC와 모바일의 홈, AI 놀이터, 오늘의 콘텐츠, 자료실, 토론실과 내정보 화면을 검사하고 캡처를 보관합니다. 미리보기 배포 자체가 실패하면 정적 검사 성공과 별개로 원인을 확인해야 합니다.
 
 ## 운영 배포
 
 - Hosting과 Backend는 서비스 계정으로 인증합니다.
 - 운영 배포는 `main` 브랜치에서만 실행합니다.
-- Backend 배포는 중간 취소하지 않고 Firestore Rules·Indexes, Storage Rules, Functions 순서로 완료합니다.
+- Backend 배포는 Firestore Rules·Indexes, Storage Rules, Functions 각 단계의 결과를 수집한 뒤 하나라도 실패하면 전체 workflow를 실패 처리합니다.
 - 상세 점검과 복구 절차는 `docs/PRODUCTION_RELEASE.md`를 따릅니다.
-- PR은 검사 성공과 명시적인 운영 승인 후 병합합니다.
+- 실제 사용자 도메인은 Firebase Console의 Hosting 사이트 연결과 DNS·SSL 상태를 별도로 확인해야 합니다.
