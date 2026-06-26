@@ -6,7 +6,7 @@ import { getQueryParams, navigate } from '../router.js';
 import { renderFeedCard, renderSkeletonCards } from '../components/feed-card.js';
 import { setMeta } from '../utils/seo.js';
 import {
-  normalizeFeedSort, postMatchesType, postMatchesSearch, sortFeedPosts,
+  normalizeFeedSort, postMatchesType, postMatchesSearch, sortFeedPosts, isTournamentPost,
 } from '../feed/filter.js';
 import {
   renderFeedSearchBar, renderFeedFilterBar, renderFeedEmptyState,
@@ -17,12 +17,12 @@ const PAGE_SIZE    = 20;
 const FILTER_LIMIT = 120;
 const NAV_CONTEXT_KEY = 'sosoking:feedNavContext';
 
-const ROOMS = [
-  { key: '',           icon: '✨', label: '전체',   title: '전체 모음', desc: '토너먼트 대결, 토론, 퀴즈, 드립을 한 번에 봅니다.', write: 'tournament' },
-  { key: 'tournament', icon: '⚔️', label: '대결방', title: '대결방', desc: '토너먼트 대결로 1위를 가려보세요!', write: 'tournament' },
-  { key: 'vote',       icon: '🗳️', label: '토론방', title: '토론방', desc: '선택지로 빠르게 의견을 모으고 댓글로 이야기합니다.', write: 'vote' },
-  { key: 'quiz',       icon: '🧠', label: '퀴즈방', title: '퀴즈방', desc: '짧은 문제를 보고 바로 맞히는 공간입니다.', write: 'quiz' },
-  { key: 'drip',       icon: '🤣', label: '드립방', title: '드립방', desc: '주제를 보고 50자 이내 한 줄 드립으로 참여하는 공간입니다.', write: 'drip' },
+const BOARD_FILTERS = [
+  { key: '',        icon: '✨', label: '전체',   write: 'collect' },
+  { key: 'collect', icon: '📝', label: '일반글', write: 'collect' },
+  { key: 'vote',    icon: '🗳️', label: '투표',   write: 'vote' },
+  { key: 'quiz',    icon: '🧠', label: '퀴즈',   write: 'quiz' },
+  { key: 'drip',    icon: '🤣', label: '드립',   write: 'drip' },
 ];
 
 let currentType        = '';
@@ -35,43 +35,48 @@ let cursorTotal   = 0;
 let cachedPosts   = [];
 let lastDisplayPosts = [];
 
-function currentRoom() {
-  return ROOMS.find(room => room.key === currentType) || ROOMS[0];
+function currentBoardFilter() {
+  return BOARD_FILTERS.find(item => item.key === currentType) || BOARD_FILTERS[0];
 }
 
 function useCursorMode() {
   return !currentType && !currentSearch && currentSort === 'latest';
 }
 
-function renderRoomTabs() {
+function isAllowedFeedPost(post) {
+  return !post.hidden && !isTournamentPost(post);
+}
+
+function renderBoardTabs() {
   return `
-    <div class="soso-room-tabs" aria-label="방별 보기">
-      ${ROOMS.map(room => `<button type="button" class="soso-room-tab ${currentType === room.key ? 'active' : ''}" data-type-filter="${room.key}"><span>${room.icon}</span>${room.label}</button>`).join('')}
+    <div class="soso-room-tabs" aria-label="게시판 필터">
+      ${BOARD_FILTERS.map(item => `<button type="button" class="soso-room-tab ${currentType === item.key ? 'active' : ''}" data-type-filter="${item.key}"><span>${item.icon}</span>${item.label}</button>`).join('')}
     </div>`;
 }
 
-function renderRoomHead() {
-  const room = currentRoom();
+function renderBoardHead() {
   return `
     <div class="soso-room-head">
-      <div class="soso-room-head__label">${room.icon} ${room.label}</div>
-      <div class="soso-room-head__title">${room.title}</div>
-      <div class="soso-room-head__desc">${room.desc}</div>
+      <div class="soso-room-head__label">📋 통합 게시판</div>
+      <div class="soso-room-head__title">소소킹 게시판</div>
+      <div class="soso-room-head__desc">일반글, 투표, 퀴즈, 드립을 한 곳에서 보고 올립니다.</div>
       <div class="soso-room-head__action">
-        <button class="btn btn--primary btn--sm" type="button" id="room-write-btn">${room.label === '전체' ? '올리기' : `${room.label} 올리기`}</button>
+        <button class="btn btn--primary btn--sm" type="button" id="room-write-btn">글쓰기</button>
       </div>
     </div>`;
 }
 
 export async function renderFeed() {
   isLoading = false;
-  setMeta('소소킹 피드');
+  setMeta('소소킹 게시판');
   const el     = document.getElementById('page-content');
   const params = getQueryParams();
   currentType   = params.type  || '';
   currentSearch = params.q     || '';
   currentSort   = normalizeFeedSort(params.sort);
   currentPage   = Math.max(1, Number(params.page || 1));
+
+  if (currentType === 'tournament') currentType = '';
 
   cursorStack = [];
   cursorTotal = 0;
@@ -81,8 +86,8 @@ export async function renderFeed() {
   el.innerHTML = `
     <div class="soso-feed-page layout-main layout-main--full feed-page-clean">
       <div class="soso-feed-toolbar">
-        ${renderRoomTabs()}
-        ${renderRoomHead()}
+        ${renderBoardTabs()}
+        ${renderBoardHead()}
         ${renderFeedSearchBar({ search: currentSearch })}
         ${renderFeedFilterBar({ type: currentType, search: currentSearch })}
       </div>
@@ -104,8 +109,8 @@ function bindFeedEvents() {
 
 function bindRoomWriteEvent() {
   document.getElementById('room-write-btn')?.addEventListener('click', () => {
-    const room = currentRoom();
-    navigate(`/write?type=multi&preset=${room.write || 'collect'}`);
+    const item = currentBoardFilter();
+    navigate(`/write?type=multi&preset=${item.write || 'collect'}`);
   });
 }
 
@@ -217,7 +222,7 @@ async function loadPosts() {
       listEl.innerHTML = `
         <div class="empty-state">
           <div class="empty-state__icon">⚠️</div>
-          <div class="empty-state__title">모음을 불러오지 못했어요</div>
+          <div class="empty-state__title">게시판을 불러오지 못했어요</div>
           <div class="empty-state__desc">잠시 후 다시 시도해주세요.</div>
         </div>`;
     }
@@ -244,7 +249,7 @@ async function loadCursorPage(page) {
     cursorTotal = Math.max(cursorTotal, page);
   }
 
-  cachedPosts = pageDocs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.hidden);
+  cachedPosts = pageDocs.map(d => ({ id: d.id, ...d.data() })).filter(isAllowedFeedPost);
 }
 
 async function loadFilteredPosts() {
@@ -258,20 +263,20 @@ async function loadFilteredPosts() {
         orderBy('createdAt', 'desc'),
         limit(FILTER_LIMIT),
       ));
-      posts = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.hidden);
+      posts = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(isAllowedFeedPost);
     } catch (error) {
       console.warn('[feed] feedType query failed, fallback legacy query', error);
       const constraints = [orderBy('createdAt', 'desc'), limit(FILTER_LIMIT)];
       const typeWhere = getLegacyTypeWhereClause(currentType);
       if (typeWhere) constraints.unshift(typeWhere);
       const snap = await getDocs(query(collection(db, 'feeds'), ...constraints));
-      posts = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.hidden);
+      posts = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(isAllowedFeedPost);
       posts = posts.filter(p => postMatchesType(p, currentType));
     }
   } else {
     const constraints = [orderBy('createdAt', 'desc'), limit(FILTER_LIMIT)];
     const snap = await getDocs(query(collection(db, 'feeds'), ...constraints));
-    posts = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.hidden);
+    posts = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(isAllowedFeedPost);
   }
 
   if (currentSearch) posts = posts.filter(p => postMatchesSearch(p, currentSearch));
