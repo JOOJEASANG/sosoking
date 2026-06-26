@@ -11,7 +11,7 @@ function moduleToggleInput(key, activeKey) {
 function renderOptionPicker(activeKey) {
   return `
     <div class="mw-room-picker">
-      <div class="mw-room-picker__label">어느 방에 올릴까요?</div>
+      <div class="mw-room-picker__label">글 유형을 선택하세요</div>
       <input type="hidden" id="mw-selected-preset" value="${esc(activeKey)}">
       <div class="mw-room-nav">
         ${WRITER_PRESET_KEYS.map(key => {
@@ -80,7 +80,6 @@ function renderTournamentPanel(activeKey) {
     </div>`);
 }
 
-
 function renderVoteModule(activeKey) {
   return `
     <div class="mw-vote-compact" data-module-card="vote" data-option-panel="vote" ${activeKey === 'vote' ? '' : 'style="display:none"'}>
@@ -98,7 +97,7 @@ function renderVoteModule(activeKey) {
 }
 
 function renderDripModule(activeKey) {
-  return moduleCard('drip', activeKey, '🤣', '드립방 참여 방식', '주제를 던지고, 댓글처럼 한 줄 드립을 받습니다.', `
+  return moduleCard('drip', activeKey, '🤣', '드립 참여 방식', '주제를 던지고, 댓글처럼 한 줄 드립을 받습니다.', `
     <div class="multi-module-inline-note">아래에 드립칠 주제만 적으면, 상세 페이지에서 사람들이 50자 이내 한 줄 드립으로 참여합니다.</div>`);
 }
 
@@ -149,21 +148,21 @@ function renderDripTopicField(activeKey) {
 }
 
 export function renderMultiWriteHTML({ renderKey, presetKey }) {
-  const activeKey = MULTI_PRESETS[presetKey] && !MULTI_PRESETS[presetKey].hiddenFromWriter ? presetKey : 'tournament';
-  const preset = MULTI_PRESETS[activeKey] || MULTI_PRESETS.tournament;
+  const activeKey = MULTI_PRESETS[presetKey] && !MULTI_PRESETS[presetKey].hiddenFromWriter ? presetKey : 'collect';
+  const preset = MULTI_PRESETS[activeKey] || MULTI_PRESETS.collect;
   const isTournament = activeKey === 'tournament';
   const standardHidden = activeKey === 'drip' ? 'style="display:none"' : '';
   const contentHidden = isTournament ? 'style="display:none"' : '';
   const mediaHidden = isTournament ? 'style="display:none"' : '';
-  const titleLabel = activeKey === 'vote' ? '토론 주제' : '제목';
-  const contentLabel = activeKey === 'vote' ? '추가 설명' : activeKey === 'collect' ? '한줄 설명' : '내용';
-  const requiredMark = (activeKey === 'vote' || activeKey === 'collect') ? '' : '<span class="required">*</span>';
+  const titleLabel = activeKey === 'vote' ? '투표 주제' : '제목';
+  const contentLabel = activeKey === 'vote' ? '추가 설명' : activeKey === 'collect' ? '내용' : '내용';
+  const requiredMark = activeKey === 'collect' || activeKey === 'vote' ? '' : '<span class="required">*</span>';
 
   return `
     <div class="write-page multi-write-page" data-render-key="${esc(renderKey)}" data-preset-key="${esc(activeKey)}">
       <div class="write-step-header">
         <button class="write-back-btn" id="multi-back-type" type="button">←</button>
-        <h1 class="write-step-title">소소킹 올리기</h1>
+        <h1 class="write-step-title">게시판 글쓰기</h1>
       </div>
       <div class="card">
         <div class="card__body--lg">
@@ -188,7 +187,7 @@ export function renderMultiWriteHTML({ renderKey, presetKey }) {
           <div data-write-section="vote-panel" ${activeKey === 'vote' ? '' : 'style="display:none"'}>${renderVoteModule(activeKey)}</div>
           <div data-write-section="quiz-panel" ${activeKey === 'quiz' ? '' : 'style="display:none"'}>${renderQuizModule(activeKey)}</div>
           <div data-write-section="drip-panel" ${activeKey === 'drip' ? '' : 'style="display:none"'}>${renderDripModule(activeKey)}</div>
-          <div data-write-section="tournament-panel" ${activeKey === 'tournament' ? '' : 'style="display:none"'}>${renderTournamentPanel(activeKey)}</div>
+          <div data-write-section="tournament-panel" style="display:none">${renderTournamentPanel('collect')}</div>
           <div class="form-group">
             <label class="form-label" for="mw-tags">태그</label>
             <div class="mw-tags-row">
