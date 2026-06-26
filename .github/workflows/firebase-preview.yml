@@ -72,7 +72,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          channel="pr-${{ github.event.pull_request.number }}"
+          channel="pr-${{ github.event.pull_request.number }}-${{ github.run_number }}"
           output="$RUNNER_TEMP/firebase-preview.log"
           npx firebase-tools hosting:channel:deploy "$channel" \
             --expires 7d \
