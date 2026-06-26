@@ -5,7 +5,9 @@ const path = require('path');
 const { chromium } = require('playwright');
 
 const baseUrl = String(process.argv[2] || '').replace(/\/$/, '');
-if (!/^https:\/\//.test(baseUrl)) process.exit(1);
+const validBaseUrl = /^https:\/\//.test(baseUrl)
+  || /^http:\/\/(?:127\.0\.0\.1|localhost)(?::\d+)?$/.test(baseUrl);
+if (!validBaseUrl) process.exit(1);
 
 const outputDir = path.resolve('preview-screenshots');
 fs.mkdirSync(outputDir, { recursive: true });
