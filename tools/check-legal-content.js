@@ -6,15 +6,17 @@ const path = require('path');
 const ROOT = path.resolve(__dirname, '..');
 const terms = fs.readFileSync(path.join(ROOT, 'public/js/pages/terms.js'), 'utf8');
 const privacy = fs.readFileSync(path.join(ROOT, 'public/js/pages/privacy.js'), 'utf8');
+const guide = fs.readFileSync(path.join(ROOT, 'public/js/pages/guide.js'), 'utf8');
+const readme = fs.readFileSync(path.join(ROOT, 'README.md'), 'utf8');
 const errors = [];
 
 for (const phrase of [
   'AI 캐릭터 놀이터',
   '전문적인 판단을 대신하지 않습니다',
-  '개인 AI 결과',
-  '자료실은 정보 열람 중심 공간',
-  '토론실은 자료실과 별도로 운영',
-  'AI가 하루 한 번 생성',
+  '회원이 직접 등록한 자료',
+  'A 또는 B를 선택',
+  '대표 이미지',
+  '회원 탈퇴 시 회원이 작성한 공개 콘텐츠와 업로드 파일은 삭제',
 ]) {
   if (!terms.includes(phrase)) errors.push(`terms missing: ${phrase}`);
 }
@@ -22,20 +24,43 @@ for (const phrase of [
 for (const phrase of [
   '개인 AI 결과',
   '최근 50개',
-  '회원 탈퇴하면 삭제',
+  '자료실·토론실에 직접 등록한 글·댓글·이미지',
+  '업로드한 이미지 파일을 삭제',
+  '작성자를 식별하지 않는 전체 집계',
   '관리형 비밀 저장소',
-  '생활자료실',
-  '독립 토론실',
-  '일일 생활자료와 토론 주제 생성',
 ]) {
   if (!privacy.includes(phrase)) errors.push(`privacy missing: ${phrase}`);
 }
 
-for (const retiredPhrase of ['자료실의 찬반 투표', '공개된 자료에 찬반 투표']) {
-  if (terms.includes(retiredPhrase) || privacy.includes(retiredPhrase)) errors.push(`retired legal phrase remains: ${retiredPhrase}`);
+for (const phrase of [
+  '미친 상담소',
+  '이미지 자동 최적화',
+  'A 또는 B를 먼저 선택',
+]) {
+  if (!guide.includes(phrase)) errors.push(`guide missing: ${phrase}`);
 }
 
-if (!terms.includes('2026년 6월 24일') || !privacy.includes('2026년 6월 24일')) {
+for (const phrase of [
+  '회원 `createUserMaterial`',
+  '회원 `createUserDebate`',
+  '선택 입장 연동 댓글',
+  '약 1.8MB 이하',
+]) {
+  if (!readme.includes(phrase)) errors.push(`README missing: ${phrase}`);
+}
+
+for (const retiredPhrase of [
+  '자료 자체에는 찬반투표와 댓글 기능을 제공하지 않습니다',
+  '찔반투표와 댓글 기능 없음',
+  '공개 댓글은 대화 흐름 유지를 위해 작성자 정보를 익명 처리',
+  '실제 역사·정치·사회 사건 자료',
+]) {
+  if (terms.includes(retiredPhrase) || privacy.includes(retiredPhrase) || guide.includes(retiredPhrase) || readme.includes(retiredPhrase)) {
+    errors.push(`retired legal/service phrase remains: ${retiredPhrase}`);
+  }
+}
+
+if (!terms.includes('2026년 6월 26일') || !privacy.includes('2026년 6월 26일')) {
   errors.push('legal effective date is not synchronized');
 }
 
