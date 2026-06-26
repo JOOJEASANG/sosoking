@@ -71,18 +71,30 @@ jobs:
         id: preview
         shell: bash
         run: |
-          set -euo pipefail
+          set +e
           channel="pr-${{ github.event.pull_request.number }}"
-          output="$RUNNER_TEMP/firebase-preview.json"
+          output="$RUNNER_TEMP/firebase-preview.log"
           npx firebase-tools hosting:channel:deploy "$channel" \
             --expires 7d \
             --project "$FIREBASE_PROJECT_ID" \
             --non-interactive \
-            --json > "$output"
+            --json > "$output" 2>&1
+          code=$?
           cat "$output"
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          if [ "$code" -ne 0 ]; then exit "$code"; fi
           url=$(node -e "const fs=require('fs');const text=fs.readFileSync(process.argv[1],'utf8');const matches=text.match(/https:\/\/[^\"'\\s]+\.web\.app/g)||[];if(!matches.length)process.exit(1);console.log(matches[0]);" "$output")
           echo "url=$url" >> "$GITHUB_OUTPUT"
           echo "Preview URL: $url"
+
+      - name: Upload preview deployment log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: firebase-preview-deploy-log
+          path: ${{ runner.temp }}/firebase-preview.log
+          if-no-files-found: ignore
+          retention-days: 3
 
       - name: Install Chromium smoke-test runtime
         run: |
