@@ -57,8 +57,17 @@ for (const marker of [
   'updateAdminInboxStatus',
   'db.recursiveDelete(ref)',
   "getStorage().bucket().file(imagePath).delete",
+  'async function listAdminContent',
+  'CONTENT_SCAN_BATCH',
+  'CONTENT_SCAN_MAX',
+  'query.startAfter(cursor)',
+  'scanLimited',
 ]) {
   if (!adminContent.includes(marker)) errors.push(`admin content backend missing: ${marker}`);
+}
+
+if (adminContent.includes("items = items.filter(item => item.sourceType === sourceType)")) {
+  errors.push('admin source filtering still happens only after a limited query');
 }
 
 for (const marker of [
