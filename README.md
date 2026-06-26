@@ -102,7 +102,7 @@ npm run check
 - Storage Rules와 배포 명령 정합성
 - 이용안내·이용약관·개인정보처리방침 정합성
 
-Pull Request에서는 Firebase Hosting 미리보기 배포 후 Chromium으로 PC와 모바일의 홈, AI 놀이터, 오늘의 콘텐츠, 자료실, 토론실, 이용안내, 이용약관, 개인정보처리방침과 내정보 화면을 검사하고 캡처를 보관합니다.
+Pull Request에서는 `public` 폴더를 로컬 정적 서버로 제공한 뒤 Chromium으로 PC와 모바일의 홈, AI 놀이터, 오늘의 콘텐츠, 자료실, 토론실, 이용안내, 이용약관, 개인정보처리방침과 내정보 화면을 검사하고 캡처를 보관합니다. 운영 Firebase Hosting 배포는 `main` 병합 후 별도 workflow에서 수행합니다.
 
 ## 운영 배포
 
