@@ -5,7 +5,9 @@ const path = require('path');
 const { chromium } = require('playwright');
 
 const baseUrl = String(process.argv[2] || '').replace(/\/$/, '');
-if (!/^https:\/\//.test(baseUrl)) process.exit(1);
+const validBaseUrl = /^https:\/\//.test(baseUrl)
+  || /^http:\/\/(?:127\.0\.0\.1|localhost)(?::\d+)?$/.test(baseUrl);
+if (!validBaseUrl) process.exit(1);
 
 const outputDir = path.resolve('preview-screenshots');
 fs.mkdirSync(outputDir, { recursive: true });
@@ -18,6 +20,9 @@ const routes = [
   { name: 'today', hash: '#/today', selector: '.today-page', text: '오늘의 자료와 토론' },
   { name: 'materials', hash: '#/materials', selector: '.mat-hero h1', text: '소소자료실' },
   { name: 'debates', hash: '#/debates', selector: '.debate-hero h1', text: '소소토론실' },
+  { name: 'guide', hash: '#/guide', selector: '.guide-hero__title', text: '소소킹 이용안내' },
+  { name: 'terms', hash: '#/terms', selector: '.legal-page__title', text: '이용약관' },
+  { name: 'privacy', hash: '#/privacy', selector: '.legal-page__title', text: '개인정보처리방침' },
   { name: 'account', hash: '#/account', selector: '#page-content' },
 ];
 
@@ -83,6 +88,11 @@ function verify(condition, message) {
           const optimizationNotice = await page.locator('#debate-image-status').textContent();
           verify(String(optimizationNotice || '').includes('자동 최적화'), 'debates: image optimization notice missing');
         }
+        if (route.name === 'guide') {
+          for (const phrase of ['AI 놀이터', '오늘의 콘텐츠', '소소자료실', '소소토론실', '내정보와 탈퇴']) verify(bodyText.includes(phrase), `guide: ${phrase} missing`);
+        }
+        if (route.name === 'terms') verify(bodyText.includes('회원 콘텐츠와 공개 범위'), 'terms: public content section missing');
+        if (route.name === 'privacy') verify(bodyText.includes('개인 AI 결과와 공개 콘텐츠의 구분'), 'privacy: visibility section missing');
         if (route.name === 'account') verify(/로그인이 필요해요|AI 결과|내 글/.test(bodyText), 'account state did not settle');
 
         const size = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth }));

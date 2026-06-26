@@ -12,6 +12,8 @@ const accountCleanup = require('./account-cleanup-functions.js');
 const communityContent = require('./community-content-functions.js');
 const adminUsers = require('./admin-user-functions.js');
 const adminData = require('./admin-data-functions.js');
+const adminContent = require('./admin-content-functions.js');
+const adminCreate = require('./admin-create-functions.js');
 const memberStats = require('./member-stats-functions.js');
 const uploadImage = require('./upload-image-functions.js');
 const nicknameIcon = require('./nickname-icon-functions.js');
@@ -38,6 +40,8 @@ module.exports = {
   ...communityContent,
   ...adminUsers,
   ...adminData,
+  ...adminContent,
+  ...adminCreate,
   ...memberStats,
   ...points,
   ...uploadImage,

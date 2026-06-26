@@ -11,12 +11,13 @@ const readme = fs.readFileSync(path.join(ROOT, 'README.md'), 'utf8');
 const errors = [];
 
 for (const phrase of [
-  'AI 캐릭터 놀이터',
+  'AI 캐릭터 판결·창작·상담',
   '전문적인 판단을 대신하지 않습니다',
-  '회원이 직접 등록한 자료',
-  'A 또는 B를 선택',
+  '회원이 직접 등록한 생활정보',
+  '실제 A/B 투표 기록',
   '대표 이미지',
-  '회원 탈퇴 시 회원이 작성한 공개 콘텐츠와 업로드 파일은 삭제',
+  '작성한 공개 콘텐츠와 업로드 파일을 삭제',
+  '신고 우선순위 보조 AI',
 ]) {
   if (!terms.includes(phrase)) errors.push(`terms missing: ${phrase}`);
 }
@@ -24,18 +25,21 @@ for (const phrase of [
 for (const phrase of [
   '개인 AI 결과',
   '최근 50개',
-  '자료실·토론실에 직접 등록한 글·댓글·이미지',
-  '업로드한 이미지 파일을 삭제',
-  '작성자를 식별하지 않는 전체 집계',
-  '관리형 비밀 저장소',
+  '비회원에게도 공개될 수 있습니다',
+  '회원 UID 경로',
+  '전체 투표수·조회수',
+  'Firebase Secret Manager',
+  '관리자 처리 기록',
 ]) {
   if (!privacy.includes(phrase)) errors.push(`privacy missing: ${phrase}`);
 }
 
 for (const phrase of [
   '미친 상담소',
-  '이미지 자동 최적화',
-  'A 또는 B를 먼저 선택',
+  '약 1.8MB 이하',
+  '실제 현재 투표 기록',
+  '매일 오전 7시 30분',
+  '최근 50개',
 ]) {
   if (!guide.includes(phrase)) errors.push(`guide missing: ${phrase}`);
 }
@@ -54,6 +58,7 @@ for (const retiredPhrase of [
   '찬반투표와 댓글 기능 없음',
   '공개 댓글은 대화 흐름 유지를 위해 작성자 정보를 익명 처리',
   '실제 역사·정치·사회 사건 자료',
+  '자료에는 찬반투표나 댓글이 붙지 않습니다',
 ]) {
   if (terms.includes(retiredPhrase) || privacy.includes(retiredPhrase) || guide.includes(retiredPhrase) || readme.includes(retiredPhrase)) {
     errors.push(`retired legal/service phrase remains: ${retiredPhrase}`);
