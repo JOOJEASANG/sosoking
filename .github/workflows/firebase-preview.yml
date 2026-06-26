@@ -82,8 +82,18 @@ jobs:
           code=$?
           cat "$output"
           echo "exit_code=$code" >> "$GITHUB_OUTPUT"
-          if [ "$code" -ne 0 ]; then exit "$code"; fi
-          url=$(node -e "const fs=require('fs');const text=fs.readFileSync(process.argv[1],'utf8');const matches=text.match(/https:\/\/[^\"'\\s]+\.web\.app/g)||[];if(!matches.length)process.exit(1);console.log(matches[0]);" "$output")
+
+          if [ "$code" -ne 0 ]; then
+            if grep -q "is the current active version" "$output"; then
+              url="https://${FIREBASE_PROJECT_ID}.web.app"
+              echo "Hosting 내용이 운영 버전과 동일하여 운영 기본 주소를 검사합니다."
+            else
+              exit "$code"
+            fi
+          else
+            url=$(node -e "const fs=require('fs');const text=fs.readFileSync(process.argv[1],'utf8');const matches=text.match(/https:\/\/[^\"'\\s]+\.web\.app/g)||[];if(!matches.length)process.exit(1);console.log(matches[0]);" "$output")
+          fi
+
           echo "url=$url" >> "$GITHUB_OUTPUT"
           echo "Preview URL: $url"
 
