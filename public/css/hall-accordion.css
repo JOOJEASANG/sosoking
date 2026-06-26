@@ -1,0 +1,135 @@
+.hall-info-accordion {
+  margin: 0 0 16px;
+  border: 1px solid var(--color-border-light);
+  border-radius: 16px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-xs);
+  overflow: hidden;
+}
+
+.hall-info-accordion summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 16px;
+  cursor: pointer;
+  list-style: none;
+  font-size: 14px;
+  font-weight: 900;
+  color: var(--color-text-primary);
+}
+
+.hall-info-accordion summary::-webkit-details-marker {
+  display: none;
+}
+
+.hall-info-accordion summary::after {
+  content: '펼치기';
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: var(--color-surface-2);
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.hall-info-accordion[open] summary::after {
+  content: '접기';
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
+}
+
+.hall-info-accordion summary small {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.hall-info-accordion__body {
+  padding: 0 16px 16px;
+  border-top: 1px solid var(--color-border-light);
+}
+
+.hall-info-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  padding-top: 14px;
+}
+
+.hall-info-stats div {
+  padding: 12px 10px;
+  border-radius: 13px;
+  background: var(--color-surface-2);
+  text-align: center;
+}
+
+.hall-info-stats b {
+  display: block;
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--color-primary);
+  line-height: 1;
+}
+
+.hall-info-stats span {
+  display: block;
+  margin-top: 5px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--color-text-muted);
+}
+
+.hall-info-rule-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.hall-info-rule {
+  padding: 12px;
+  border: 1px solid var(--color-border-light);
+  border-radius: 13px;
+  background: var(--color-surface);
+}
+
+.hall-info-rule b {
+  display: block;
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--color-text-primary);
+  margin-bottom: 4px;
+}
+
+.hall-info-rule p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--color-text-secondary);
+}
+
+@media (max-width: 640px) {
+  .hall-info-accordion summary {
+    padding: 13px 14px;
+  }
+
+  .hall-info-accordion summary small {
+    display: none;
+  }
+
+  .hall-info-stats,
+  .hall-info-rule-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 420px) {
+  .hall-info-stats,
+  .hall-info-rule-grid {
+    grid-template-columns: 1fr;
+  }
+}

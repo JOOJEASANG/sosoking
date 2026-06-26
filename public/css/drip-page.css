@@ -1,0 +1,197 @@
+/* drip-page.css — 드립방 전용 무한스크롤 페이지 */
+
+.drip-page {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ─── 헤더 ─── */
+.drip-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: 18px;
+  box-shadow: var(--shadow-card);
+}
+
+.drip-header__title {
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  color: var(--color-text-primary);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.drip-header__desc {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  margin: 3px 0 0;
+}
+
+.drip-header__write-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: none;
+  background: var(--color-usgyo-bg);
+  color: var(--color-usgyo-dark);
+  border: 1.5px solid var(--color-usgyo-border);
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 140ms ease, transform 140ms cubic-bezier(0.34,1,0.64,1);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.drip-header__write-btn:hover {
+  background: var(--color-usgyo);
+  color: #fff;
+  border-color: var(--color-usgyo);
+  transform: translateY(-1px);
+}
+
+.drip-header__write-btn:active {
+  transform: scale(0.95);
+}
+
+/* ─── 리스트 ─── */
+.drip-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+
+/* ─── 각 드립 항목 ─── */
+.drip-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 13px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--color-border-light);
+  transition: background 130ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.drip-item:last-child {
+  border-bottom: none;
+}
+
+.drip-item:hover {
+  background: var(--color-surface-2);
+}
+
+.drip-item:active {
+  background: var(--color-surface-alt);
+}
+
+.drip-item__rank {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  font-size: 11px;
+  font-weight: 900;
+  margin-top: 1px;
+}
+
+.drip-item__rank--1 { background: var(--gradient-usgyo); color: #fff; }
+.drip-item__rank--2 { background: rgba(139,92,246,0.15); color: var(--color-usgyo-dark); }
+.drip-item__rank--3 { background: rgba(139,92,246,0.10); color: var(--color-usgyo-dark); }
+.drip-item__rank--rest { background: var(--color-surface-alt); color: var(--color-text-muted); }
+
+.drip-item__text {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  line-height: 1.5;
+  letter-spacing: -0.1px;
+  word-break: break-word;
+}
+
+.drip-item__meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  margin-top: 2px;
+}
+
+/* ─── 빈 상태 ─── */
+.drip-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 24px;
+  gap: 10px;
+}
+
+.drip-empty__icon {
+  font-size: 48px;
+  line-height: 1;
+}
+
+.drip-empty__msg {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  text-align: center;
+  line-height: 1.6;
+}
+
+/* ─── 센티넬 / 로딩 스피너 ─── */
+.drip-sentinel {
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+}
+
+.drip-spinner {
+  width: 24px;
+  height: 24px;
+  border: 2.5px solid var(--color-border);
+  border-top-color: var(--color-usgyo);
+  border-radius: 999px;
+  animation: spin 0.6s linear infinite;
+}
+
+/* ─── 다크 모드 ─── */
+[data-theme="dark"] .drip-header,
+[data-theme="dark"] .drip-list {
+  border-color: rgba(255,255,255,0.07);
+}
+
+[data-theme="dark"] .drip-item {
+  border-bottom-color: rgba(255,255,255,0.05);
+}
+
+[data-theme="dark"] .drip-header__write-btn {
+  background: rgba(139,92,246,0.12);
+  border-color: rgba(139,92,246,0.26);
+  color: #c4b5fd;
+}

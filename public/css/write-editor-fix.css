@@ -1,0 +1,170 @@
+.mw-desc-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  overflow: hidden !important;
+}
+
+.mw-editor-wrap {
+  border: 1px solid var(--color-border-light);
+  border-radius: 18px;
+  background: var(--color-surface);
+  overflow: hidden;
+}
+
+.mw-editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px;
+  border-bottom: 1px solid var(--color-border-light);
+  background: var(--color-surface-2);
+}
+
+.mw-editor-toolbar button {
+  min-height: 30px;
+  padding: 0 9px;
+  border: 1px solid var(--color-border-light);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.mw-editor-toolbar button:active,
+.mw-editor-toolbar button:focus-visible {
+  color: var(--color-primary);
+  border-color: rgba(255,107,74,.4);
+  background: var(--color-primary-bg);
+}
+
+.mw-rich-editor {
+  min-height: 150px;
+  max-height: 600px;
+  padding: 13px 14px;
+  outline: 0;
+  color: var(--color-text-primary);
+  font-size: 15px;
+  line-height: 1.65;
+  word-break: break-word;
+  white-space: normal;
+  resize: vertical;
+  overflow-y: auto;
+}
+
+/* rich editor 없이 textarea 그대로 쓸 때도 리사이즈 가능 */
+.mw-desc-resizable {
+  resize: vertical;
+  min-height: 100px;
+  max-height: 600px;
+}
+
+.mw-rich-editor:empty::before {
+  content: attr(data-placeholder);
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.detail-rich-content {
+  color: var(--color-text-primary);
+  font-size: 15px;
+  line-height: 1.75;
+  word-break: break-word;
+}
+
+.detail-rich-content p,
+.detail-rich-content div {
+  margin: 0 0 10px;
+}
+
+.detail-rich-content b,
+.detail-rich-content strong {
+  font-weight: 950;
+}
+
+@media (max-width: 767px) {
+  .page-container {
+    padding-top: 6px !important;
+  }
+
+  .feed-page-clean,
+  .write-page,
+  .multi-write-page {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+
+  .write-step-header {
+    position: relative !important;
+    top: auto !important;
+    z-index: 1 !important;
+    margin: 0 0 8px !important;
+    padding: 2px 0 6px !important;
+    background: transparent !important;
+  }
+
+  .write-step-title {
+    font-size: 19px !important;
+    line-height: 1.2 !important;
+  }
+
+  .multi-preset-box--simple {
+    margin-top: 0 !important;
+    margin-bottom: 10px !important;
+  }
+
+  .multi-preset-list {
+    padding-top: 0 !important;
+  }
+
+  .mw-editor-toolbar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding: 7px;
+  }
+
+  .mw-editor-toolbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mw-editor-toolbar button {
+    flex: 0 0 auto;
+    min-height: 32px;
+    padding: 0 10px;
+    font-size: 12px;
+  }
+
+  .mw-rich-editor {
+    min-height: 142px;
+    padding: 12px;
+    font-size: 16px;
+  }
+
+  .feed-search-bar {
+    margin-top: 0 !important;
+  }
+}
+
+/* 태그 입력란 + 자동생성 버튼 행 */
+.mw-tags-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+.mw-tags-row .form-input {
+  flex: 1;
+  min-width: 0;
+}
+.mw-tags-row #mw-auto-tags {
+  align-self: stretch;
+  height: auto;
+  padding-top: 0;
+  padding-bottom: 0;
+  border-radius: var(--radius-md);
+}
