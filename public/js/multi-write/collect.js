@@ -58,21 +58,21 @@ function getQuizOptions() {
 export function collectMultiModules() {
   const modules = { comments: { enabled: true } };
   const bodyText = getBodyText();
+  const titleText = getTitleText();
 
   if (isAnonymousWriteChecked()) {
     modules.anonymous = { enabled: true, mode: 'general-option' };
   }
 
   if (enabled('collect')) {
-    const caption = realValue(document.getElementById('mw-collect-caption')) || bodyText;
-    modules.collect = { enabled: true, kind: 'image', label: '웃긴그림', caption };
+    modules.collect = { enabled: true, kind: 'text', label: '일반글', caption: bodyText };
   }
 
   if (enabled('vote')) {
     const options = getVoteOptions();
     const voteMode = document.getElementById('mw-vote-mode')?.value || 'general';
     const question = bodyText || titleText;
-    if (!question) throw new Error('토론 주제를 입력해주세요.');
+    if (!question) throw new Error('투표 주제를 입력해주세요.');
     if (options.length < 2) throw new Error('선택지를 2개 이상 입력해주세요.');
     const voteData = { enabled: true, question, options: options.map(text => ({ text, votes: 0 })) };
     if (voteMode !== 'general') voteData.voteMode = voteMode;
