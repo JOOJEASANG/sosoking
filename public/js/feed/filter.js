@@ -1,25 +1,25 @@
-export const FILTER_TYPES = ['tournament', 'collect', 'vote', 'quiz', 'drip'];
+export const FILTER_TYPES = ['collect', 'vote', 'quiz', 'drip'];
 
 export const TYPE_LABELS = {
   tournament: '대결방',
-  collect: '일반방',
-  collection: '일반방',
-  general: '일반방',
-  multi: '일반방',
-  vote: '토론방',
-  ox: '토론방',
+  collect: '일반글',
+  collection: '일반글',
+  general: '일반글',
+  multi: '일반글',
+  vote: '투표',
+  ox: '투표',
   fill: '빈칸',
   naming: '작명',
-  drip: '드립방',
-  cbattle: '드립방',
+  drip: '드립',
+  cbattle: '드립',
   acrostic: '행시',
   relay: '릴레이',
-  quiz: '퀴즈방',
-  anonymous: '일반방',
-  initial_game: '퀴즈방',
-  crazy_court: '토론방',
-  balance: '토론방',
-  battle: '토론방',
+  quiz: '퀴즈',
+  anonymous: '일반글',
+  initial_game: '퀴즈',
+  crazy_court: '투표',
+  balance: '투표',
+  battle: '투표',
 };
 
 export const SORT_LABELS = {
@@ -51,6 +51,10 @@ export function getPostTypeKey(post) {
   return post.type || 'collect';
 }
 
+export function isTournamentPost(post) {
+  return getPostTypeKey(post) === 'tournament';
+}
+
 export function getPostTypeLabel(post) {
   return TYPE_LABELS[getPostTypeKey(post)] || TYPE_LABELS[post.type] || '소소글';
 }
@@ -67,7 +71,7 @@ export function postMatchesSearch(post, rawSearch) {
     post.title,
     post.desc,
     post.authorName,
-    post.anonymous ? '익명 일반방' : '',
+    post.anonymous ? '익명 일반글' : '',
     getPostTypeLabel(post),
     post.modules?.collect?.label,
     post.modules?.collect?.caption,
