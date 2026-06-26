@@ -4,12 +4,13 @@ import { setMeta } from '../utils/seo.js';
 const LEGACY_REDIRECTS = {
   vote: 'vote',
   crazy_court: 'vote',
-  naming: 'naming',
+  naming: 'collect',
   drip: 'drip',
   quiz: 'quiz',
   initial_game: 'quiz',
-  relay: '',
-  acrostic: '',
+  relay: 'collect',
+  acrostic: 'collect',
+  tournament: 'collect',
 };
 
 function escAttr(value) {
@@ -25,12 +26,12 @@ function showWriteError(error) {
       <div class="empty-state__icon">⚠️</div>
       <div class="empty-state__title">글쓰기 화면 오류</div>
       <div class="empty-state__desc">${message.replace(/[&<>]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[ch]))}</div>
-      <button class="btn btn--primary" style="margin-top:14px" onclick="location.hash='#/write?type=multi'">다시 열기</button>
+      <button class="btn btn--primary" style="margin-top:14px" onclick="location.hash='#/write?type=multi&preset=collect'">다시 열기</button>
     </div>`;
 }
 
 export function renderWrite() {
-  setMeta('피드 글쓰기');
+  setMeta('게시판 글쓰기');
   const el = document.getElementById('page-content');
   if (!el) return;
 
@@ -47,14 +48,13 @@ export function renderWrite() {
   }
 
   if (!type) {
-    navigate('/write?type=multi');
+    navigate('/write?type=multi&preset=collect');
     return;
   }
 
   if (type && type !== 'multi') {
-    const mappedPreset = LEGACY_REDIRECTS[type] || '';
-    const path = mappedPreset ? `/write?type=multi&preset=${mappedPreset}` : '/write?type=multi';
-    navigate(path);
+    const mappedPreset = LEGACY_REDIRECTS[type] || 'collect';
+    navigate(`/write?type=multi&preset=${mappedPreset}`);
     return;
   }
 
@@ -71,5 +71,5 @@ export function renderWrite() {
       showWriteError(error);
     });
 
-  window.dispatchEvent(new CustomEvent('sosoking:render-multi-write', { detail: { preset: preset || '' } }));
+  window.dispatchEvent(new CustomEvent('sosoking:render-multi-write', { detail: { preset: preset || 'collect' } }));
 }
