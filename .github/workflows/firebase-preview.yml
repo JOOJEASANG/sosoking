@@ -27,6 +27,9 @@ jobs:
   preview:
     name: Check preview in desktop and mobile browsers
     runs-on: ubuntu-latest
+    env:
+      FIREBASE_PROJECT_ID: sosoking-481e6
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -47,14 +50,39 @@ jobs:
       - name: Static check
         run: npm run check
 
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 }}
+          project_id: ${{ env.FIREBASE_PROJECT_ID }}
+          create_credentials_file: true
+          export_environment_variables: true
+          cleanup_credentials: true
+
+      - name: Verify Firebase credentials
+        run: |
+          if [ -z "${GOOGLE_APPLICATION_CREDENTIALS:-}" ] || [ ! -s "$GOOGLE_APPLICATION_CREDENTIALS" ]; then
+            echo "Google Cloud 인증 파일이 생성되지 않았습니다."
+            exit 1
+          fi
+          node -e "const fs=require('fs');const p=process.env.GOOGLE_APPLICATION_CREDENTIALS;const j=JSON.parse(fs.readFileSync(p,'utf8'));if(!j.client_email||!j.private_key||!j.project_id)process.exit(1);console.log('Service account:',j.client_email,'Project:',j.project_id);"
+
       - name: Deploy Firebase Hosting preview
         id: preview
-        uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 }}'
-          projectId: sosoking-481e6
-          expires: 7d
+        shell: bash
+        run: |
+          set -euo pipefail
+          channel="pr-${{ github.event.pull_request.number }}"
+          output="$RUNNER_TEMP/firebase-preview.json"
+          npx firebase-tools hosting:channel:deploy "$channel" \
+            --expires 7d \
+            --project "$FIREBASE_PROJECT_ID" \
+            --non-interactive \
+            --json > "$output"
+          cat "$output"
+          url=$(node -e "const fs=require('fs');const text=fs.readFileSync(process.argv[1],'utf8');const matches=text.match(/https:\/\/[^\"'\\s]+\.web\.app/g)||[];if(!matches.length)process.exit(1);console.log(matches[0]);" "$output")
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "Preview URL: $url"
 
       - name: Install Chromium smoke-test runtime
         run: |
@@ -62,7 +90,7 @@ jobs:
           npx playwright install --with-deps chromium
 
       - name: Check preview UI
-        run: node tools/check-preview-ui.cjs '${{ steps.preview.outputs.details_url }}'
+        run: node tools/check-preview-ui.cjs '${{ steps.preview.outputs.url }}'
 
       - name: Upload preview screenshots
         if: always()
