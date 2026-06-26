@@ -8,8 +8,11 @@ const db = getFirestore();
 const REGION = 'asia-northeast3';
 const CONTENT_TYPES = { material: 'materials', debate: 'debates' };
 const CONTENT_STATUSES = new Set(['published', 'draft', 'hidden']);
+const CONTENT_SOURCES = new Set(['ai', 'manual', 'user']);
 const INBOX_COLLECTIONS = new Set(['reports', 'feedback']);
 const INBOX_STATUSES = new Set(['open', 'reviewing', 'resolved']);
+const CONTENT_SCAN_BATCH = 100;
+const CONTENT_SCAN_MAX = 1000;
 
 async function assertAdmin(uid) {
   if (!uid) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
@@ -45,6 +48,14 @@ function list(value, maximum = 8, length = 160) {
   return Array.isArray(value) ? value.map(item => cleanText(item, length)).filter(Boolean).slice(0, maximum) : [];
 }
 
+function resolvedSourceType(data = {}) {
+  const explicit = cleanText(data.sourceType, 30);
+  if (CONTENT_SOURCES.has(explicit)) return explicit;
+  if (data.userGenerated === true) return 'user';
+  if (data.aiGenerated === true) return 'ai';
+  return 'manual';
+}
+
 function contentSummary(id, data = {}, type = 'material') {
   const base = {
     id,
@@ -54,7 +65,7 @@ function contentSummary(id, data = {}, type = 'material') {
     category: cleanText(data.category, 40),
     tags: list(data.tags, 8, 24),
     status: CONTENT_STATUSES.has(data.status) ? data.status : 'published',
-    sourceType: cleanText(data.sourceType || (data.aiGenerated ? 'ai' : 'manual'), 30),
+    sourceType: resolvedSourceType(data),
     sourceName: cleanText(data.sourceName || data.authorName || '소소킹', 80),
     aiGenerated: data.aiGenerated === true,
     userGenerated: data.userGenerated === true,
@@ -92,6 +103,48 @@ async function latestContent(type, limit = 6) {
   const collection = contentCollection(type);
   const snapshot = await db.collection(collection).orderBy('createdAt', 'desc').limit(limit).get().catch(() => ({ docs: [] }));
   return snapshot.docs.map(document => contentSummary(document.id, document.data() || {}, type));
+}
+
+async function listAdminContent({ collection, type, status, sourceType, maximum }) {
+  let baseQuery = db.collection(collection);
+  if (CONTENT_STATUSES.has(status)) baseQuery = baseQuery.where('status', '==', status);
+  baseQuery = baseQuery.orderBy('createdAt', 'desc');
+
+  if (!CONTENT_SOURCES.has(sourceType)) {
+    const snapshot = await baseQuery.limit(maximum).get();
+    return {
+      items: snapshot.docs.map(document => contentSummary(document.id, document.data() || {}, type)),
+      scanned: snapshot.size,
+      scanLimited: false,
+    };
+  }
+
+  const items = [];
+  let cursor = null;
+  let scanned = 0;
+  while (items.length < maximum && scanned < CONTENT_SCAN_MAX) {
+    const batchSize = Math.min(CONTENT_SCAN_BATCH, CONTENT_SCAN_MAX - scanned);
+    let query = baseQuery.limit(batchSize);
+    if (cursor) query = query.startAfter(cursor);
+    const snapshot = await query.get();
+    if (snapshot.empty) break;
+
+    scanned += snapshot.size;
+    for (const document of snapshot.docs) {
+      const item = contentSummary(document.id, document.data() || {}, type);
+      if (item.sourceType === sourceType) items.push(item);
+      if (items.length >= maximum) break;
+    }
+
+    cursor = snapshot.docs[snapshot.docs.length - 1];
+    if (snapshot.size < batchSize) break;
+  }
+
+  return {
+    items,
+    scanned,
+    scanLimited: scanned >= CONTENT_SCAN_MAX && items.length < maximum,
+  };
 }
 
 async function latestGenerationRuns(limit = 12) {
@@ -150,12 +203,16 @@ const getAdminContentList = onCall({ region: REGION, timeoutSeconds: 60, memory:
   const status = cleanText(request.data?.status || 'all', 20);
   const sourceType = cleanText(request.data?.sourceType || 'all', 30);
   const maximum = Math.max(1, Math.min(100, Number(request.data?.limit) || 50));
-  let query = db.collection(collection);
-  if (CONTENT_STATUSES.has(status)) query = query.where('status', '==', status);
-  const snapshot = await query.orderBy('createdAt', 'desc').limit(maximum).get().catch(() => ({ docs: [] }));
-  let items = snapshot.docs.map(document => contentSummary(document.id, document.data() || {}, type));
-  if (sourceType !== 'all') items = items.filter(item => item.sourceType === sourceType);
-  return { ok: true, type, status, sourceType, items };
+  const result = await listAdminContent({ collection, type, status, sourceType, maximum });
+  return {
+    ok: true,
+    type,
+    status,
+    sourceType,
+    items: result.items,
+    scanned: result.scanned,
+    scanLimited: result.scanLimited,
+  };
 });
 
 const setAdminContentStatus = onCall({ region: REGION, timeoutSeconds: 30 }, async request => {
@@ -229,4 +286,14 @@ const updateAdminInboxStatus = onCall({ region: REGION, timeoutSeconds: 30 }, as
   return { ok: true, collection, id, status };
 });
 
-module.exports = { getAdminOverview, getAdminContentList, setAdminContentStatus, deleteAdminContent, getAdminGenerationRuns, getAdminInbox, updateAdminInboxStatus };
+module.exports = {
+  getAdminOverview,
+  getAdminContentList,
+  setAdminContentStatus,
+  deleteAdminContent,
+  getAdminGenerationRuns,
+  getAdminInbox,
+  updateAdminInboxStatus,
+  resolvedSourceType,
+  listAdminContent,
+};
