@@ -72,14 +72,16 @@ function verify(condition, message) {
           verify(bodyText.includes('+ 자료 등록'), 'materials: create button missing');
           verify(await page.locator('#mat-write-open').count() === 1, 'materials: create control missing');
           verify(await page.locator('#mat-write-image').count() === 1, 'materials: image input missing');
-          verify(bodyText.includes('자동 최적화'), 'materials: image optimization notice missing');
+          const optimizationNotice = await page.locator('#mat-image-status').textContent();
+          verify(String(optimizationNotice || '').includes('자동 최적화'), 'materials: image optimization notice missing');
         }
         if (route.name === 'debates') {
           verify(bodyText.includes('회원도 이미지와 함께 직접 토론을 등록'), 'debates: user submission notice missing');
           verify(bodyText.includes('+ 토론 등록'), 'debates: create button missing');
           verify(await page.locator('#debate-write-open').count() === 1, 'debates: create control missing');
           verify(await page.locator('#debate-write-image').count() === 1, 'debates: image input missing');
-          verify(bodyText.includes('자동 최적화'), 'debates: image optimization notice missing');
+          const optimizationNotice = await page.locator('#debate-image-status').textContent();
+          verify(String(optimizationNotice || '').includes('자동 최적화'), 'debates: image optimization notice missing');
         }
         if (route.name === 'account') verify(/로그인이 필요해요|AI 결과|내 글/.test(bodyText), 'account state did not settle');
 
