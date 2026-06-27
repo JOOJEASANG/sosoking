@@ -1,6 +1,7 @@
 'use strict';
 
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
+const { onDocumentCreated } = require('firebase-functions/v2/firestore');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const Anthropic = require('@anthropic-ai/sdk');
 
@@ -155,21 +156,28 @@ async function loadPost(postId) {
   return { ref, postId: safePostId, post };
 }
 
-exports.generateAiCharacterCommentsTest = onCall({ region: REGION, timeoutSeconds: 120, memory: '512MiB' }, async request => {
-  await assertAdmin(request.auth && request.auth.uid);
-  const { postId, characterIds, count, dryRun } = request.data || {};
-  const { ref: postRef, postId: safePostId, post } = await loadPost(postId);
-  const characters = pickCharacters(post, characterIds, count);
-  const generated = await generateComments({ post, characters });
+async function getAutoSettings() {
+  const snap = await db.doc('site_settings/aiCharacters').get().catch(() => null);
+  const data = snap?.exists ? snap.data() || {} : {};
+  return {
+    enabled: data.autoCommentsEnabled !== false,
+    count: Math.max(1, Math.min(Number(data.autoCommentCount || 2), 3)),
+  };
+}
 
-  if (dryRun === true) {
-    return { ok: true, dryRun: true, postId: safePostId, source: generated.source, comments: generated.comments };
-  }
+function shouldSkipAutoPost(post) {
+  if (!post || post.hidden === true) return true;
+  if (post.isAiGenerated === true || post.authorId === 'sosoking-ai') return true;
+  if (post.aiCharacterCommentsDisabled === true) return true;
+  if (post.feedType === 'tournament' || post.modules?.tournament?.enabled) return true;
+  return false;
+}
 
+async function writeCharacterComments({ postRef, postId, post, characters, source, comments, actorId = 'auto' }) {
   const batch = db.batch();
   const now = Date.now();
   const written = [];
-  generated.comments.forEach(item => {
+  comments.forEach(item => {
     const character = CHARACTERS.find(c => c.id === item.id);
     if (!character) return;
     const commentRef = postRef.collection('comments').doc();
@@ -190,16 +198,79 @@ exports.generateAiCharacterCommentsTest = onCall({ region: REGION, timeoutSecond
     batch.set(commentRef, doc);
     written.push({ id: commentRef.id, characterId: character.id, authorName: doc.authorName, text: doc.text });
   });
-  if (!written.length) throw new HttpsError('internal', '생성된 댓글이 없습니다.');
-  batch.update(postRef, { commentCount: FieldValue.increment(written.length), updatedAt: FieldValue.serverTimestamp() });
-  const logRef = db.doc(`system_jobs/ai_character_comments_${safePostId}_${now}`);
+  if (!written.length) return [];
+  batch.update(postRef, {
+    commentCount: FieldValue.increment(written.length),
+    aiCharacterCommented: true,
+    aiCharacterCommentedAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+  const logRef = db.doc(`system_jobs/ai_character_comments_${postId}_${now}`);
   batch.set(logRef, {
-    postId: safePostId,
+    postId,
+    postTitle: cleanText(post.title, 160),
+    characterIds: characters.map(c => c.id),
     count: written.length,
-    source: generated.source,
-    actorId: request.auth.uid,
+    source,
+    actorId,
     createdAt: FieldValue.serverTimestamp(),
   });
   await batch.commit();
+  return written;
+}
+
+exports.generateAiCharacterCommentsTest = onCall({ region: REGION, timeoutSeconds: 120, memory: '512MiB' }, async request => {
+  await assertAdmin(request.auth && request.auth.uid);
+  const { postId, characterIds, count, dryRun } = request.data || {};
+  const { ref: postRef, postId: safePostId, post } = await loadPost(postId);
+  const characters = pickCharacters(post, characterIds, count);
+  const generated = await generateComments({ post, characters });
+
+  if (dryRun === true) {
+    return { ok: true, dryRun: true, postId: safePostId, source: generated.source, comments: generated.comments };
+  }
+
+  const written = await writeCharacterComments({
+    postRef,
+    postId: safePostId,
+    post,
+    characters,
+    source: generated.source,
+    comments: generated.comments,
+    actorId: request.auth.uid,
+  });
+  if (!written.length) throw new HttpsError('internal', '생성된 댓글이 없습니다.');
   return { ok: true, postId: safePostId, source: generated.source, comments: written };
+});
+
+exports.onCreateAiCharacterComments = onDocumentCreated({
+  document: 'feeds/{postId}',
+  region: REGION,
+  timeoutSeconds: 120,
+  memory: '512MiB',
+}, async event => {
+  const post = event.data?.data() || null;
+  const postId = cleanId(event.params.postId);
+  if (!postId || shouldSkipAutoPost(post)) return;
+
+  const settings = await getAutoSettings();
+  if (!settings.enabled) return;
+
+  const markerRef = db.doc(`system_jobs/ai_character_auto_marker_${postId}`);
+  const markerSnap = await markerRef.get();
+  if (markerSnap.exists) return;
+  await markerRef.set({ postId, createdAt: FieldValue.serverTimestamp() }, { merge: true });
+
+  const postRef = db.doc(`feeds/${postId}`);
+  const characters = pickCharacters(post, [], settings.count);
+  const generated = await generateComments({ post, characters });
+  await writeCharacterComments({
+    postRef,
+    postId,
+    post,
+    characters,
+    source: generated.source,
+    comments: generated.comments,
+    actorId: 'auto',
+  });
 });
