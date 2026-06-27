@@ -70,21 +70,22 @@ function renderBoardHead() {
 function renderAiResidentsIntro() {
   const residents = getPublicAiResidents();
   return `
-    <section class="soso-ai-residents" aria-label="AI 주민 소개" style="margin:14px 0;padding:16px;border:1px solid var(--color-border,#e5e7eb);border-radius:18px;background:linear-gradient(135deg,rgba(99,102,241,.08),rgba(236,72,153,.06));">
+    <section class="soso-ai-residents" aria-label="AI 캐릭터 소개" style="margin:14px 0;padding:16px;border:1px solid var(--color-border,#e5e7eb);border-radius:18px;background:linear-gradient(135deg,rgba(99,102,241,.08),rgba(236,72,153,.06));">
       <div style="display:flex;gap:10px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px;">
         <div>
-          <div style="font-size:13px;font-weight:900;color:var(--color-primary,#6366f1);margin-bottom:4px;">AI 주민 입주 준비중</div>
-          <div style="font-size:20px;font-weight:950;color:var(--color-text-primary,#111827);line-height:1.25;">글을 올리면 AI 주민들이 댓글로 같이 놀 예정이에요</div>
-          <div style="font-size:13px;color:var(--color-text-secondary,#6b7280);margin-top:6px;">다음 단계에서 캐릭터별 자동 댓글, 멘션 답변, 상담/토론 기능을 하나씩 연결합니다.</div>
+          <div style="font-size:13px;font-weight:900;color:var(--color-primary,#6366f1);margin-bottom:4px;">AI 캐릭터 커뮤니티 준비중</div>
+          <div style="font-size:20px;font-weight:950;color:var(--color-text-primary,#111827);line-height:1.25;">글을 올리면 성격 다른 캐릭터들이 댓글로 같이 놀 예정이에요</div>
+          <div style="font-size:13px;color:var(--color-text-secondary,#6b7280);margin-top:6px;">자동 댓글은 한 글마다 2~3명만 참여하게 만들어 비용과 오류를 줄입니다.</div>
         </div>
-        <button class="btn btn--ghost btn--sm" type="button" id="ai-residents-write-btn">AI 주민에게 말 걸 글쓰기</button>
+        <button class="btn btn--ghost btn--sm" type="button" id="ai-residents-write-btn">캐릭터에게 말 걸 글쓰기</button>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;">
         ${residents.map(resident => `
           <div style="padding:10px;border-radius:14px;background:rgba(255,255,255,.72);border:1px solid rgba(148,163,184,.28);">
             <div style="display:flex;align-items:center;gap:7px;font-weight:950;color:var(--color-text-primary,#111827);"><span style="font-size:20px">${resident.emoji}</span>${resident.name}</div>
-            <div style="font-size:12px;font-weight:800;color:var(--color-text-secondary,#6b7280);margin-top:3px;">${resident.role}</div>
+            <div style="font-size:12px;font-weight:800;color:var(--color-text-secondary,#6b7280);margin-top:3px;">${resident.role} · ${resident.mbti || ''}</div>
             <div style="font-size:11px;color:var(--color-text-muted,#9ca3af);margin-top:4px;line-height:1.35;">${resident.specialty}</div>
+            <div style="font-size:11px;color:var(--color-primary,#6366f1);margin-top:6px;line-height:1.35;">${(resident.catchphrases || []).slice(0, 1).join('')}</div>
           </div>`).join('')}
       </div>
     </section>`;
