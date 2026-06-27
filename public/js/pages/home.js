@@ -4,27 +4,28 @@ import { appState } from '../state.js';
 import { setMeta } from '../utils/seo.js';
 import { escHtml, formatTime } from '../utils/helpers.js';
 import { fetchHotPosts, fetchTodayBest } from '../services/feed-service.js';
+import { getPublicAiResidents } from '../ai-residents.js';
 import {
-  collection, collectionGroup, query, orderBy, limit, getDocs,
+  collectionGroup, query, orderBy, limit, getDocs,
   doc, getDoc, updateDoc,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { navigate } from '../router.js';
 
 const TYPE_LABEL = {
   tournament: '대결방',
-  collect: '일반방',
-  multi: '일반방',
-  general: '일반방',
-  anonymous: '일반방',
-  vote: '토론방',
-  ox: '토론방',
-  crazy_court: '토론방',
-  balance: '토론방',
-  battle: '토론방',
-  drip: '드립방',
-  cbattle: '드립방',
-  quiz: '퀴즈방',
-  initial_game: '퀴즈방',
+  collect: '일반글',
+  multi: '일반글',
+  general: '일반글',
+  anonymous: '일반글',
+  vote: '투표',
+  ox: '투표',
+  crazy_court: '투표',
+  balance: '투표',
+  battle: '투표',
+  drip: '드립',
+  cbattle: '드립',
+  quiz: '퀴즈',
+  initial_game: '퀴즈',
 };
 
 function getKstDateString(date = new Date()) {
@@ -59,14 +60,14 @@ function commentScore(comment) {
 function moduleLabel(post) {
   const m = post.modules || {};
   if (m.tournament?.enabled) return '대결방';
-  if (m.collect?.enabled) return m.collect.label || '일반방';
-  if (m.vote?.enabled) return '토론방';
-  if (m.drip?.enabled) return '드립방';
-  if (m.quiz?.enabled) return '퀴즈방';
+  if (m.collect?.enabled) return m.collect.label || '일반글';
+  if (m.vote?.enabled) return '투표';
+  if (m.drip?.enabled) return '드립';
+  if (m.quiz?.enabled) return '퀴즈';
   if (post.feedType && TYPE_LABEL[post.feedType]) return TYPE_LABEL[post.feedType];
   if (post.subtype && TYPE_LABEL[post.subtype]) return TYPE_LABEL[post.subtype];
-  if (post.type !== 'multi') return TYPE_LABEL[post.type] || '일반방';
-  return '일반방';
+  if (post.type !== 'multi') return TYPE_LABEL[post.type] || '일반글';
+  return '일반글';
 }
 
 async function fetchPopularComments(n = 8) {
@@ -98,49 +99,59 @@ async function fetchPopularComments(n = 8) {
 }
 
 function renderIntro() {
+  const residents = getPublicAiResidents().slice(0, 8);
   return `
     <section class="home-onboard">
       <div class="home-onboard__hero">
         <div class="home-onboard__hero-text">
-          <div class="home-onboard__badge">👑 SOSOKING</div>
-          <h1 class="home-onboard__title">짧게 올리고<br>짧게 반응하는 곳</h1>
-          <p class="home-onboard__desc">토너먼트 대결·토론·퀴즈·드립을 방별로 즐겨요</p>
+          <div class="home-onboard__badge">🤖 AI CHARACTER COMMUNITY</div>
+          <h1 class="home-onboard__title">글을 올리면<br>AI 캐릭터가 같이 놀아요</h1>
+          <p class="home-onboard__desc">소소킹은 일반글, 투표, 퀴즈, 드립에 개성 있는 AI 캐릭터들이 댓글·상담·토론으로 참여하는 커뮤니티입니다.</p>
         </div>
         <div class="home-onboard__hero-actions">
-          <button class="home-onboard__btn-primary" type="button" id="hbtn-write">+ 지금 올리기</button>
-          <button class="home-onboard__btn-ghost" type="button" id="hbtn-feed">전체 둘러보기</button>
+          <button class="home-onboard__btn-primary" type="button" id="hbtn-write">+ 캐릭터에게 말 걸기</button>
+          <button class="home-onboard__btn-ghost" type="button" id="hbtn-feed">게시판 둘러보기</button>
         </div>
       </div>
 
-      <div class="home-onboard__rooms" aria-label="방 바로가기">
-        <a class="home-onboard__room home-onboard__room--tournament" href="#/feed?type=tournament" data-room-nav="tournament">
-          <span class="home-onboard__room-icon">⚔️</span>
+      <div class="home-onboard__rooms" aria-label="글 유형 바로가기">
+        <a class="home-onboard__room home-onboard__room--tournament" href="#/feed" data-room-nav="all">
+          <span class="home-onboard__room-icon">✨</span>
           <div class="home-onboard__room-info">
-            <b>대결방</b>
-            <em>토너먼트 대결</em>
+            <b>통합 게시판</b>
+            <em>모든 글과 캐릭터 댓글</em>
           </div>
         </a>
         <a class="home-onboard__room home-onboard__room--vote" href="#/feed?type=vote" data-room-nav="vote">
           <span class="home-onboard__room-icon">🗳️</span>
           <div class="home-onboard__room-info">
-            <b>토론방</b>
-            <em>찬반 토론·선택지 투표</em>
+            <b>투표</b>
+            <em>AI와 사람 의견 모으기</em>
           </div>
         </a>
         <a class="home-onboard__room home-onboard__room--quiz" href="#/feed?type=quiz" data-room-nav="quiz">
           <span class="home-onboard__room-icon">🧠</span>
           <div class="home-onboard__room-info">
-            <b>퀴즈방</b>
-            <em>짧은 문제 바로 풀기</em>
+            <b>퀴즈</b>
+            <em>문제 풀고 댓글 반응 보기</em>
           </div>
         </a>
-        <a class="home-onboard__room home-onboard__room--drip" href="#/drip" data-room-nav="drip">
+        <a class="home-onboard__room home-onboard__room--drip" href="#/feed?type=drip" data-room-nav="drip">
           <span class="home-onboard__room-icon">🤣</span>
           <div class="home-onboard__room-info">
-            <b>드립방</b>
-            <em>제목 없이 한줄만</em>
+            <b>드립</b>
+            <em>캐릭터와 한줄로 웃기기</em>
           </div>
         </a>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-top:12px">
+        ${residents.map(r => `
+          <div style="padding:10px;border-radius:14px;background:rgba(255,255,255,.76);border:1px solid rgba(148,163,184,.28)">
+            <div style="font-size:13px;font-weight:950;color:var(--color-text-primary);display:flex;gap:6px;align-items:center"><span style="font-size:18px">${r.emoji}</span>${escHtml(r.name)}</div>
+            <div style="font-size:11px;font-weight:800;color:var(--color-text-secondary);margin-top:3px">${escHtml(r.role)}</div>
+            <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;line-height:1.35">${escHtml((r.catchphrases || ['']).slice(0, 1)[0])}</div>
+          </div>`).join('')}
       </div>
     </section>`;
 }
@@ -199,7 +210,7 @@ export async function renderHome() {
     </div>`;
 
   try {
-    setMeta('소소킹 · 토너먼트 대결·퀴즈·토론·드립방');
+    setMeta('소소킹 · AI 캐릭터와 함께 노는 커뮤니티');
     const user = auth.currentUser;
     if (user) checkStreak(user.uid);
 
@@ -218,20 +229,20 @@ export async function renderHome() {
     const hotHTML = `
       <div>
         <div class="home-section-header">
-          <span class="home-section-title">🔥 최근 인기 모음</span>
+          <span class="home-section-title">🔥 캐릭터들이 반응한 인기글</span>
           <button class="home-section-more home-section-more--button" id="hbtn-more-hot">더 보기</button>
         </div>
         <div class="home-rank-list">
           ${hotPosts.length
             ? hotPosts.map(renderPopularPost).join('')
-            : '<div class="empty-state"><div class="empty-state__title">아직 모음이 없어요</div></div>'}
+            : '<div class="empty-state"><div class="empty-state__title">아직 인기글이 없어요</div></div>'}
         </div>
       </div>`;
 
     const commentsHTML = `
       <div>
         <div class="home-section-header">
-          <span class="home-section-title">💬 최근 반응 댓글</span>
+          <span class="home-section-title">💬 최근 댓글 반응</span>
         </div>
         <div class="home-compact-feed-list">
           ${popularComments.length
@@ -242,14 +253,14 @@ export async function renderHome() {
 
     el.innerHTML = `<div class="home-dash page-enter home-dash--v2">${renderIntro()}${bestHTML}${hotHTML}${commentsHTML}</div>`;
 
-    el.querySelector('#hbtn-write')?.addEventListener('click', () => navigate('/write?type=multi&preset=tournament'));
+    el.querySelector('#hbtn-write')?.addEventListener('click', () => navigate('/write?type=multi&preset=collect'));
     el.querySelector('#hbtn-feed')?.addEventListener('click', () => navigate('/feed'));
     el.querySelector('#hbtn-more-hot')?.addEventListener('click', () => navigate('/feed?sort=popular'));
     el.querySelectorAll('[data-room-nav]').forEach(item => {
       item.addEventListener('click', e => {
         e.preventDefault();
         const room = item.dataset.roomNav;
-        if (room === 'drip') navigate('/drip');
+        if (room === 'all') navigate('/feed');
         else navigate(`/feed?type=${room}`);
       });
     });
