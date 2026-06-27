@@ -219,6 +219,25 @@ async function writeCharacterComments({ postRef, postId, post, characters, sourc
   return written;
 }
 
+exports.getAiCharacterSettings = onCall({ region: REGION, timeoutSeconds: 20 }, async request => {
+  await assertAdmin(request.auth && request.auth.uid);
+  const settings = await getAutoSettings();
+  return { ok: true, settings };
+});
+
+exports.saveAiCharacterSettings = onCall({ region: REGION, timeoutSeconds: 20 }, async request => {
+  await assertAdmin(request.auth && request.auth.uid);
+  const data = request.data || {};
+  const patch = {
+    autoCommentsEnabled: data.autoCommentsEnabled !== false,
+    autoCommentCount: Math.max(1, Math.min(Number(data.autoCommentCount || 2), 3)),
+    updatedAt: FieldValue.serverTimestamp(),
+    updatedBy: request.auth.uid,
+  };
+  await db.doc('site_settings/aiCharacters').set(patch, { merge: true });
+  return { ok: true, settings: { enabled: patch.autoCommentsEnabled, count: patch.autoCommentCount } };
+});
+
 exports.generateAiCharacterCommentsTest = onCall({ region: REGION, timeoutSeconds: 120, memory: '512MiB' }, async request => {
   await assertAdmin(request.auth && request.auth.uid);
   const { postId, characterIds, count, dryRun } = request.data || {};
