@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI 캐릭터 댓글 테스트 · 소소킹</title>
+  <style>
+    body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;margin:0;background:#f8fafc;color:#111827}
+    main{max-width:760px;margin:0 auto;padding:24px}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:18px;padding:18px;margin-bottom:14px;box-shadow:0 8px 24px rgba(15,23,42,.04)}
+    h1{font-size:24px;margin:0 0 8px}.muted{color:#6b7280;font-size:13px;line-height:1.6}
+    label{display:block;font-size:13px;font-weight:800;margin:14px 0 6px}
+    input,select{width:100%;box-sizing:border-box;border:1px solid #d1d5db;border-radius:12px;padding:11px 12px;font-size:14px;background:#fff}
+    .row{display:grid;grid-template-columns:1fr 160px;gap:10px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+    button{border:0;border-radius:12px;padding:10px 14px;font-weight:850;cursor:pointer}.primary{background:#6366f1;color:#fff}.ghost{background:#eef2ff;color:#3730a3}.danger{background:#fee2e2;color:#991b1b}
+    button:disabled{opacity:.55;cursor:not-allowed}.result{white-space:pre-wrap;background:#0f172a;color:#e5e7eb;border-radius:14px;padding:14px;font-size:12px;line-height:1.55;overflow:auto;max-height:360px}
+    .pill{display:inline-flex;align-items:center;gap:6px;padding:5px 9px;background:#f1f5f9;border-radius:999px;font-size:12px;font-weight:800;color:#475569;margin-right:6px}
+    a{color:#4f46e5;text-decoration:none;font-weight:800}
+  </style>
+</head>
+<body>
+  <main>
+    <div class="card">
+      <h1>🤖 AI 캐릭터 댓글 테스트</h1>
+      <div class="muted">관리자 전용 테스트 페이지입니다. 먼저 <a href="/#/login">로그인</a> 후 사용하세요. 미리보기는 댓글을 저장하지 않고, 실제 저장은 게시글 댓글로 등록됩니다.</div>
+      <div style="margin-top:12px">
+        <span class="pill">😂 민수</span><span class="pill">❤️ 다온</span><span class="pill">🧠 지은</span><span class="pill">⚖️ 준호</span><span class="pill">👵 미영</span><span class="pill">😈 철구</span><span class="pill">🎨 하루</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <label for="post-id">게시글 ID</label>
+      <input id="post-id" placeholder="예: feeds 문서 ID">
+      <div class="row">
+        <div>
+          <label for="character-ids">캐릭터 직접 지정 선택사항</label>
+          <input id="character-ids" placeholder="예: minsu,daon,jieun">
+        </div>
+        <div>
+          <label for="count">댓글 수</label>
+          <select id="count">
+            <option value="1">1개</option>
+            <option value="2">2개</option>
+            <option value="3" selected>3개</option>
+          </select>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="ghost" id="btn-dry-run">미리보기</button>
+        <button class="primary" id="btn-write">실제 댓글 저장</button>
+        <button class="danger" id="btn-clear">결과 지우기</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="font-size:14px;font-weight:900;margin-bottom:8px">결과</div>
+      <div id="status" class="muted">대기 중</div>
+      <pre id="result" class="result">아직 실행 전입니다.</pre>
+    </div>
+  </main>
+
+  <script type="module">
+    import { auth, functions, onAuthStateChanged } from './js/firebase.js';
+    import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
+
+    const $ = id => document.getElementById(id);
+    const statusEl = $('status');
+    const resultEl = $('result');
+    const callGenerate = httpsCallable(functions, 'generateAiCharacterCommentsTest');
+
+    function setBusy(isBusy) {
+      $('btn-dry-run').disabled = isBusy;
+      $('btn-write').disabled = isBusy;
+    }
+
+    function payload(dryRun) {
+      const postId = $('post-id').value.trim();
+      const count = Number($('count').value || 3);
+      const characterIds = $('character-ids').value.split(',').map(v => v.trim()).filter(Boolean);
+      return { postId, count, characterIds, dryRun };
+    }
+
+    async function run(dryRun) {
+      const data = payload(dryRun);
+      if (!data.postId) {
+        alert('게시글 ID를 입력하세요.');
+        return;
+      }
+      setBusy(true);
+      statusEl.textContent = dryRun ? '미리보기 생성 중...' : '실제 댓글 저장 중...';
+      try {
+        const res = await callGenerate(data);
+        resultEl.textContent = JSON.stringify(res.data, null, 2);
+        statusEl.textContent = dryRun ? '미리보기 완료' : '댓글 저장 완료';
+      } catch (error) {
+        resultEl.textContent = error.message || String(error);
+        statusEl.textContent = '오류 발생';
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    onAuthStateChanged(auth, user => {
+      statusEl.textContent = user ? `로그인됨: ${user.email || user.uid}` : '로그인이 필요합니다.';
+    });
+
+    $('btn-dry-run').addEventListener('click', () => run(true));
+    $('btn-write').addEventListener('click', () => {
+      if (confirm('실제 댓글을 저장할까요?')) run(false);
+    });
+    $('btn-clear').addEventListener('click', () => {
+      resultEl.textContent = '결과를 지웠습니다.';
+    });
+  </script>
+</body>
+</html>
