@@ -19,6 +19,7 @@ const sosoFeed = require('./soso-feed-functions.js');
 const account = require('./account-functions.js');
 const features = require('./sosoking-features-functions.js');
 const aiContent = require('./ai-content-functions.js');
+const aiCharacterComments = require('./ai-character-comments-functions.js');
 const adminAutomation = require('./ai-admin-automation-functions.js');
 const adminUsers = require('./admin-user-functions.js');
 const adminData = require('./admin-data-functions.js');
@@ -67,6 +68,9 @@ module.exports = {
   // Anthropic 기반 AI 미션/자동 콘텐츠를 대표 구현으로 사용
   ...aiMission,
   ...aiContent,
+
+  // 관리자 테스트용 AI 캐릭터 댓글 생성
+  ...aiCharacterComments,
 
   ...aiHunt,
   ...settlement,
