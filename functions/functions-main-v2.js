@@ -24,6 +24,7 @@ const adminUsers = require('./admin-user-functions.js');
 const adminData = require('./admin-data-functions.js');
 const memberStats = require('./member-stats-functions.js');
 const weeklyAiSchedule = require('./weekly-ai-schedule-functions.js');
+const dailyAutoPost = require('./daily-auto-post-functions.js');
 const uploadImage = require('./upload-image-functions.js');
 const nicknameIcon = require('./nickname-icon-functions.js');
 const postOwner = require('./post-owner-functions.js');
@@ -82,8 +83,11 @@ module.exports = {
   // 서버 검증 기반 포인트 지급
   ...points,
 
-  // 자동 생성 스케줄은 최종적으로 주 1회 버전으로 덮어씁니다.
+  // 주간 자동 생성 유지
   ...weeklyAiSchedule,
+
+  // 매일 3개 게시판 자동 글 생성이 최종 dailyAiContent 기준입니다.
+  ...dailyAutoPost,
 
   // 이미지 업로드 fallback callable
   ...uploadImage,
