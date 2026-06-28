@@ -6,7 +6,7 @@ const Anthropic = require('@anthropic-ai/sdk');
 
 const db = getFirestore();
 const REGION = 'asia-northeast3';
-const DAILY_PRESETS = ['general', 'vote', 'quiz'];
+const DAILY_PRESETS = ['judgment', 'consult', 'vote', 'drip'];
 
 function todayKST() {
   return new Intl.DateTimeFormat('en-CA', {
@@ -63,31 +63,31 @@ function fallbackContent(preset, date) {
   const seed = Number(date.replace(/-/g, '')) || Date.now();
   const pick = list => list[seed % list.length];
   const map = {
-    general: pick([
-      { title: '오늘 소소하게 웃겼던 순간 하나만 적어보자', desc: '거창한 일 아니어도 괜찮아요. 오늘 피식 웃었던 장면이나 말 한마디를 댓글로 남겨보세요.', tags: ['일상', '소소킹'] },
-      { title: '요즘 은근히 자주 하는 작은 습관 있어?', desc: '남들은 별거 아니라고 해도 이상하게 계속 하게 되는 습관을 공유해봐요.', tags: ['공감', '소소킹'] },
+    judgment: pick([
+      { title: '친구가 약속 30분 전에 또 취소함', desc: '이번 달에만 세 번째입니다. 사정은 있다는데 제 시간도 소중한 거 아닌가요? 이거 제가 예민한 건지 판결 부탁합니다.', options: ['글쓴이가 예민함', '상대가 선 넘음', '둘 다 문제 있음'], tags: ['판결', '약속'] },
+      { title: '단톡방에서 대답 안 하면 서운한가요?', desc: '읽은 사람은 많은데 아무도 답이 없습니다. 저만 괜히 민망한 건지, 단톡방 예절이 원래 이런 건지 판결 부탁합니다.', options: ['글쓴이가 예민함', '상대가 선 넘음', '둘 다 문제 있음'], tags: ['판결', '관계'] },
+    ]),
+    consult: pick([
+      { title: '장바구니가 저를 부릅니다', desc: '며칠째 장바구니에서 손짓하는 물건이 있습니다. 사도 되는지 말려야 하는지 상담 부탁합니다.', topic: 'money', style: 'choice', tags: ['상담', '선택'] },
+      { title: '이거 제가 너무 신경 쓰는 건가요?', desc: '별일 아닌 것 같은데 계속 머릿속에 남습니다. 공감, 현실조언, 웃긴 해결책 다 받습니다.', topic: 'daily', style: 'funny', tags: ['상담', '고민'] },
     ]),
     vote: pick([
-      { title: '오늘 저녁 메뉴 하나만 고른다면?', desc: '지금 기분 기준으로 딱 하나만 골라주세요. 이유도 댓글로 남기면 더 재밌어요.', options: ['치킨', '라면', '피자', '김밥'], tags: ['투표', '음식'] },
-      { title: '쉬는 날 제일 좋은 시간대는?', desc: '하루 중 가장 마음 편한 시간을 골라주세요.', options: ['아침', '점심', '저녁', '새벽'], tags: ['투표', '일상'] },
-    ]),
-    quiz: pick([
-      { title: '오늘의 생활 퀴즈', desc: '다음 중 보통 실온 보관이 더 어울리는 식재료는?', mode: 'multiple', noAnswer: false, options: ['토마토', '우유', '생선', '두부'], answerIdx: 0, hint: '식감과 향을 생각해보세요.', explanation: '토마토는 냉장 보관 시 향과 식감이 떨어질 수 있어 실온 보관이 권장되는 경우가 많습니다.', tags: ['퀴즈', '생활상식'] },
-      { title: '정답 없는 상상 퀴즈', desc: '하루 동안 모든 사람이 말끝에 ㅋㅋ를 붙여야 한다면 가장 난감한 순간은 언제일까요?', mode: 'subjective', noAnswer: true, hint: '센스가 정답입니다.', explanation: '정답이 없는 생각 퀴즈입니다. 댓글로 자유롭게 이야기해보세요.', tags: ['퀴즈', '상상'] },
+      { title: '먼저 연락한다 vs 그냥 둔다', desc: '한동안 연락이 뜸한 친구에게 먼저 연락하는 게 좋을까요, 아니면 그냥 자연스럽게 두는 게 좋을까요?', options: ['찬성', '반대'], tags: ['토론', '관계'] },
+      { title: '주말 아침 알람 맞추는 사람 이해된다?', desc: '쉬는 날에도 하루를 길게 쓰려고 알람을 맞추는 사람이 있습니다. 부지런함일까요, 주말을 너무 빡세게 쓰는 걸까요?', options: ['찬성', '반대'], tags: ['토론', '주말'] },
     ]),
     drip: pick([
       { topic: '퇴근 5분 전에 회의 잡힌 사람의 한마디는?', tags: ['드립', '직장인'] },
       { topic: '배달 예상 시간이 계속 늘어날 때 떠오르는 한 줄은?', tags: ['드립', '배달'] },
     ]),
   };
-  return map[preset] || map.general;
+  return map[preset] || map.judgment;
 }
 
 const PROMPTS = {
-  general: '소소킹 통합 게시판에 올릴 일반글 1개를 JSON만 출력해. 필드: title, desc, tags. 가볍고 댓글을 유도하는 일상형 내용.',
-  vote: '소소킹 통합 게시판에 올릴 투표글 1개를 JSON만 출력해. 필드: title, desc, options, tags. options는 2~4개.',
-  quiz: '소소킹 통합 게시판에 올릴 퀴즈글 1개를 JSON만 출력해. 필드: title, desc, mode, noAnswer, options, answer, answerIdx, hint, explanation, tags.',
-  drip: '소소킹 통합 게시판에 올릴 드립 주제 1개를 JSON만 출력해. 필드: topic, tags. 사람들이 한 줄 드립으로 답할 수 있는 주제.',
+  judgment: '소소킹 판결 게임에 올릴 사소한 생활 사건 1개를 JSON만 출력해. 필드: title, desc, options, tags. options는 글쓴이가 예민함, 상대가 선 넘음, 둘 다 문제 있음.',
+  consult: '소소킹 상담 게임에 올릴 작은 고민 1개를 JSON만 출력해. 필드: title, desc, topic, style, tags. 웃기지만 선을 지키는 상담 소재.',
+  vote: '소소킹 토론 게임에 올릴 찬반 주제 1개를 JSON만 출력해. 필드: title, desc, options, tags. options는 찬성, 반대.',
+  drip: '소소킹 드립 게임에 올릴 드립 주제 1개를 JSON만 출력해. 필드: topic, tags. 사람들이 한 줄 드립으로 답할 수 있는 주제.',
 };
 
 async function makeContent(preset, date) {
@@ -100,7 +100,7 @@ async function makeContent(preset, date) {
     const msg = await anthropic.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 800,
-      messages: [{ role: 'user', content: PROMPTS[preset] || PROMPTS.general }],
+      messages: [{ role: 'user', content: PROMPTS[preset] || PROMPTS.judgment }],
     });
     const parsed = parseJson(msg.content.filter(block => block.type === 'text').map(block => block.text).join(''));
     if (parsed) {
@@ -114,18 +114,17 @@ async function makeContent(preset, date) {
 }
 
 function buildPost(preset, content, date, source) {
-  const isGeneral = preset === 'general';
+  const isJudgment = preset === 'judgment';
+  const isConsult = preset === 'consult';
   const isVote = preset === 'vote';
-  const isQuiz = preset === 'quiz';
   const isDrip = preset === 'drip';
-  const typeLabel = isGeneral ? '일반글' : isVote ? '투표' : isQuiz ? '퀴즈' : '드립';
-  const subtype = isGeneral ? 'collect' : preset;
+  const typeLabel = isJudgment ? '판결' : isConsult ? '상담' : isVote ? '토론' : '드립';
   const desc = isDrip ? clean(content.topic || content.desc || content.title, 80) : cleanMultiline(content.desc, 1200);
   const post = {
     type: 'multi',
     cat: 'multi',
-    subtype,
-    feedType: isGeneral ? 'collect' : preset,
+    subtype: preset,
+    feedType: isJudgment || isVote ? 'vote' : isDrip ? 'drip' : 'collect',
     typeLabel,
     title: isDrip ? '오늘의 드립 주제' : clean(content.title || `${typeLabel} AI 글`, 100),
     desc,
@@ -149,56 +148,37 @@ function buildPost(preset, content, date, source) {
     createdAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
   };
-  let secretDoc = null;
 
-  if (isGeneral) {
-    post.modules.collect = { enabled: true, kind: 'text', label: '일반글', caption: desc };
+  if (isJudgment || isVote) {
+    const fallback = isJudgment ? ['글쓴이가 예민함', '상대가 선 넘음', '둘 다 문제 있음'] : ['찬성', '반대'];
+    const opts = Array.isArray(content.options) ? content.options.map(v => clean(typeof v === 'object' ? v.text : v, 80)).filter(Boolean).slice(0, isJudgment ? 3 : 2) : fallback;
+    const safeOpts = opts.length >= 2 ? opts : fallback;
+    post.modules.vote = {
+      enabled: true,
+      voteMode: isJudgment ? 'judgment' : 'pros_cons',
+      question: desc || post.title,
+      options: safeOpts.map(text => ({ text, votes: 0 })),
+    };
   }
 
-  if (isVote) {
-    const opts = Array.isArray(content.options) ? content.options.map(v => clean(typeof v === 'object' ? v.text : v, 80)).filter(Boolean).slice(0, 8) : ['찬성', '반대'];
-    post.modules.vote = { enabled: true, question: desc || post.title, options: opts.length >= 2 ? opts.map(text => ({ text, votes: 0 })) : [{ text: '찬성', votes: 0 }, { text: '반대', votes: 0 }] };
+  if (isConsult) {
+    const topic = clean(content.topic || 'daily', 40);
+    const style = clean(content.style || 'funny', 40);
+    post.modules.consult = {
+      enabled: true,
+      topic,
+      topicLabel: ({ daily: '일상', people: '관계', work: '직장/학교', money: '소비/선택', vent: '하소연' })[topic] || '일상',
+      style,
+      styleLabel: ({ empathy: '공감', realistic: '현실조언', choice: '선택도움', soft: '순한맛', funny: '웃긴해결' })[style] || '웃긴해결',
+      question: desc,
+    };
   }
 
   if (isDrip) {
     post.modules.drip = { enabled: true, prompt: desc, maxLength: 50, responseLabel: '한 줄 드립' };
   }
 
-  if (isQuiz) {
-    const mode = content.mode === 'subjective' ? 'subjective' : 'multiple';
-    const noAnswer = content.noAnswer === true;
-    const opts = Array.isArray(content.options) ? content.options.map(v => clean(typeof v === 'object' ? v.text : v, 80)).filter(Boolean).slice(0, 6) : ['맞다', '아니다'];
-    const safeOpts = opts.length >= 2 ? opts : ['맞다', '아니다'];
-    const answerIdx = Math.max(0, Math.min(Number(content.answerIdx || 0), safeOpts.length - 1));
-    const answer = clean(content.answer || safeOpts[answerIdx], 120);
-    post.modules.quiz = {
-      enabled: true,
-      mode,
-      noAnswer,
-      question: desc,
-      hint: clean(content.hint, 100),
-      explanation: noAnswer ? clean(content.explanation || '정답이 없는 퀴즈입니다. 댓글로 이야기해보세요.', 500) : clean(content.explanation, 500),
-    };
-    if (mode === 'multiple') post.modules.quiz.options = safeOpts.map(text => ({ text }));
-    if (!noAnswer) {
-      if (mode === 'multiple') post.modules.quiz.correctIndex = answerIdx;
-      else post.modules.quiz.answer = answer;
-      secretDoc = {
-        quizMode: mode,
-        mode,
-        answer: mode === 'subjective' ? answer : safeOpts[answerIdx],
-        answerIdx: mode === 'multiple' ? answerIdx : null,
-        correctIndex: mode === 'multiple' ? answerIdx : null,
-        explanation: clean(content.explanation, 500),
-        correctCount: 0,
-        firstCorrect: null,
-        createdAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp(),
-      };
-    }
-  }
-
-  return { post, secretDoc };
+  return { post, secretDoc: null };
 }
 
 async function createOne(preset, date) {
@@ -222,7 +202,8 @@ async function dailyAutoPostJob() {
   if (markerSnap.exists) return { skipped: true, reason: 'already-created', date };
 
   const count = Math.min(settings.dailyCount || 3, 3);
-  const presets = DAILY_PRESETS.slice(0, count);
+  const daySeed = Number(date.replace(/-/g, '')) || 0;
+  const presets = Array.from({ length: count }, (_, index) => DAILY_PRESETS[(daySeed + index) % DAILY_PRESETS.length]);
   const results = [];
   for (const preset of presets) {
     results.push(await createOne(preset, date));
