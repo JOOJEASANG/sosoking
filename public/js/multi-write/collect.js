@@ -51,8 +51,8 @@ function getVoteOptions() {
     .filter(Boolean);
 }
 
-function getQuizOptions() {
-  return [...document.querySelectorAll('.mw-quiz-option')].map(input => realValue(input));
+function optionLabel(map, key, fallback) {
+  return map[key] || fallback || key || '';
 }
 
 export function collectMultiModules() {
@@ -81,28 +81,22 @@ export function collectMultiModules() {
     };
   }
 
-  if (enabled('quiz')) {
-    const mode = document.getElementById('mw-quiz-mode')?.value || 'subjective';
-    const noAnswer = document.getElementById('mw-quiz-no-answer')?.checked === true;
-    const hint = realValue(document.getElementById('mw-quiz-hint'));
-    const explanation = realValue(document.getElementById('mw-quiz-explanation'));
-    if (!bodyText) throw new Error('내용에 퀴즈 문제를 입력해주세요.');
-
-    if (mode === 'multiple') {
-      const rawOptions = getQuizOptions();
-      const options = rawOptions.filter(Boolean);
-      const correctRawIndex = Number(document.querySelector('input[name="mw-quiz-correct"]:checked')?.value || 0);
-      const correctAnswer = rawOptions[correctRawIndex] || '';
-      const correctIndex = options.indexOf(correctAnswer);
-      const answer = correctAnswer;
-      if (options.length < 2) throw new Error('객관식 선택지를 2개 이상 입력해주세요.');
-      if (!noAnswer && !answer.trim()) throw new Error('정답으로 선택한 객관식 선택지를 입력해주세요.');
-      modules.quiz = { enabled: true, mode: 'multiple', noAnswer, question: bodyText, options: options.map(text => ({ text })), answer: noAnswer ? '' : answer, correctIndex: noAnswer ? null : correctIndex, hint, explanation };
-    } else {
-      const answer = realValue(document.getElementById('mw-quiz-answer'));
-      if (!noAnswer && !answer) throw new Error('정답을 입력해주세요. 정답이 없으면 정답 없는 퀴즈를 체크해주세요.');
-      modules.quiz = { enabled: true, mode: 'subjective', noAnswer, question: bodyText, answer: noAnswer ? '' : answer, hint, explanation };
-    }
+  if (enabled('consult')) {
+    if (!bodyText) throw new Error('고민 내용을 입력해주세요.');
+    const topic = realValue(document.getElementById('mw-consult-topic')) || 'daily';
+    const style = realValue(document.getElementById('mw-consult-style')) || 'funny';
+    modules.consult = {
+      enabled: true,
+      topic,
+      topicLabel: optionLabel({
+        daily: '일상', people: '관계', work: '직장/학교', money: '소비/선택', vent: '하소연',
+      }, topic, '일상'),
+      style,
+      styleLabel: optionLabel({
+        empathy: '공감', realistic: '현실조언', choice: '선택도움', soft: '순한맛', funny: '웃긴해결',
+      }, style, '웃긴해결'),
+      question: bodyText,
+    };
   }
 
   return modules;
