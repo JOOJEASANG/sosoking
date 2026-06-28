@@ -21,6 +21,7 @@ const TYPE_LABEL = {
   crazy_court: '찬반토론',
   balance: '찬반토론',
   battle: '찬반토론',
+  consult: '병맛상담',
   quiz: '퀴즈',
   initial_game: '퀴즈',
 };
@@ -58,6 +59,7 @@ function moduleLabel(post) {
   const m = post.modules || {};
   if (m.collect?.enabled) return m.collect.label || '일반글';
   if (m.vote?.enabled) return '찬반토론';
+  if (m.consult?.enabled) return '병맛상담';
   if (m.quiz?.enabled) return '퀴즈';
   if (post.feedType && TYPE_LABEL[post.feedType]) return TYPE_LABEL[post.feedType];
   if (post.subtype && TYPE_LABEL[post.subtype]) return TYPE_LABEL[post.subtype];
@@ -101,7 +103,7 @@ function renderIntro() {
         <div class="home-onboard__hero-text">
           <div class="home-onboard__badge">🤖 AI CHARACTER COMMUNITY</div>
           <h1 class="home-onboard__title">하나의 게시판에서<br>유형만 선택해요</h1>
-          <p class="home-onboard__desc">선택하지 않으면 일반글, 투표를 선택하면 찬반토론, 퀴즈를 선택하면 퀴즈 옵션이 열립니다.</p>
+          <p class="home-onboard__desc">선택하지 않으면 일반글, 투표를 선택하면 찬반토론, 병맛상담을 선택하면 캐릭터들이 고민에 끼어듭니다.</p>
         </div>
         <div class="home-onboard__hero-actions">
           <button class="home-onboard__btn-primary" type="button" id="hbtn-write">+ 글쓰기</button>
@@ -121,14 +123,14 @@ function renderIntro() {
           <span class="home-onboard__room-icon">🗳️</span>
           <div class="home-onboard__room-info">
             <b>찬반토론</b>
-            <em>찬성 / 반대 고정 투표</em>
+            <em>소소판정 · 선택장애 해결</em>
           </div>
         </a>
-        <a class="home-onboard__room home-onboard__room--quiz" href="#/write?type=multi&preset=quiz" data-room-nav="write-quiz">
-          <span class="home-onboard__room-icon">🧠</span>
+        <a class="home-onboard__room home-onboard__room--consult" href="#/write?type=multi&preset=consult" data-room-nav="write-consult">
+          <span class="home-onboard__room-icon">🫠</span>
           <div class="home-onboard__room-info">
-            <b>퀴즈</b>
-            <em>정답과 해설 옵션 사용</em>
+            <b>병맛상담</b>
+            <em>웃기지만 은근 쓸모 있는 상담</em>
           </div>
         </a>
       </div>
@@ -249,7 +251,7 @@ export async function renderHome() {
         e.preventDefault();
         const room = item.dataset.roomNav;
         if (room === 'write-vote') navigate('/write?type=multi&preset=vote');
-        else if (room === 'write-quiz') navigate('/write?type=multi&preset=quiz');
+        else if (room === 'write-consult') navigate('/write?type=multi&preset=consult');
         else navigate('/feed');
       });
     });
