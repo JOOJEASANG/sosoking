@@ -4,10 +4,13 @@ import { setMeta } from '../utils/seo.js';
 const LEGACY_REDIRECTS = {
   vote: 'vote',
   crazy_court: 'vote',
-  naming: 'collect',
-  drip: 'drip',
+  debate: 'vote',
+  discussion: 'vote',
   quiz: 'quiz',
   initial_game: 'quiz',
+  drip: 'collect',
+  cbattle: 'collect',
+  naming: 'collect',
   relay: 'collect',
   acrostic: 'collect',
   tournament: 'collect',
@@ -31,7 +34,7 @@ function showWriteError(error) {
 }
 
 export function renderWrite() {
-  setMeta('게시판 글쓰기');
+  setMeta('일반게시판 글쓰기');
   const el = document.getElementById('page-content');
   if (!el) return;
 
@@ -55,6 +58,11 @@ export function renderWrite() {
   if (type && type !== 'multi') {
     const mappedPreset = LEGACY_REDIRECTS[type] || 'collect';
     navigate(`/write?type=multi&preset=${mappedPreset}`);
+    return;
+  }
+
+  if (preset === 'drip' || preset === 'cbattle' || preset === 'tournament') {
+    navigate('/write?type=multi&preset=collect');
     return;
   }
 
