@@ -11,7 +11,7 @@ function moduleToggleInput(key, activeKey) {
 function renderOptionPicker(activeKey) {
   return `
     <div class="mw-room-picker">
-      <div class="mw-room-picker__label">글 유형을 선택하세요</div>
+      <div class="mw-room-picker__label">글 유형 선택 <small style="font-weight:500;color:var(--color-text-muted)">선택하지 않으면 일반글입니다</small></div>
       <input type="hidden" id="mw-selected-preset" value="${esc(activeKey)}">
       <div class="mw-room-nav">
         ${WRITER_PRESET_KEYS.map(key => {
@@ -54,51 +54,20 @@ function renderCollectHidden(activeKey) {
   return `<div data-option-panel="collect" style="display:none">${moduleToggleInput('collect', activeKey)}<input type="hidden" id="mw-collect-kind" value="auto"></div>`;
 }
 
-function renderTournamentItemRows() {
-  return Array.from({ length: 16 }, (_, i) => `
-    <div class="t-item-row" data-t-item-idx="${i}" ${i >= 8 ? 'style="display:none"' : ''}>
-      <span class="t-item-num">${i + 1}</span>
-      <input class="form-input t-item-name" maxlength="30" placeholder="항목 ${i + 1}" autocomplete="off">
-      <button type="button" class="t-item-img-btn" data-t-img-btn="${i}" title="사진 추가">📷</button>
-      <input type="file" class="t-item-file" accept="image/*" data-item-idx="${i}" style="display:none">
-    </div>`).join('');
-}
-
-function renderTournamentPanel(activeKey) {
-  return moduleCard('tournament', activeKey, '⚔️', '토너먼트 대결 설정', '항목을 입력하고 1위를 가려보세요.', `
-    <div class="form-group">
-      <label class="form-label">대결 규모 <span class="required">*</span></label>
-      <div class="t-size-picker">
-        <button type="button" class="t-size-btn" data-t-size="4">4강</button>
-        <button type="button" class="t-size-btn active" data-t-size="8">8강</button>
-        <button type="button" class="t-size-btn" data-t-size="16">16강</button>
-      </div>
-    </div>
-    <div class="form-group">
-      <label class="form-label">대결 항목 <span class="required">*</span> <small style="font-weight:400;color:var(--color-text-muted)">이름 필수 · 사진 선택</small></label>
-      <div class="t-items-list" id="t-items-list">${renderTournamentItemRows()}</div>
-    </div>`);
-}
-
 function renderVoteModule(activeKey) {
   return `
     <div class="mw-vote-compact" data-module-card="vote" data-option-panel="vote" ${activeKey === 'vote' ? '' : 'style="display:none"'}>
       ${moduleToggleInput('vote', activeKey)}
-      <input type="hidden" id="mw-vote-mode" value="general">
+      <input type="hidden" id="mw-vote-mode" value="pros_cons">
       <div class="form-group">
-        <label class="form-label">선택 옵션 <span class="required">*</span></label>
+        <label class="form-label">찬반 선택지 <span class="required">*</span></label>
         <div class="multi-option-list" id="mw-vote-options">
-          <input class="form-input mw-vote-option" maxlength="80" placeholder="선택지 1">
-          <input class="form-input mw-vote-option" maxlength="80" placeholder="선택지 2">
+          <input class="form-input mw-vote-option" maxlength="80" value="찬성" readonly>
+          <input class="form-input mw-vote-option" maxlength="80" value="반대" readonly>
         </div>
-        <button class="btn btn--ghost btn--sm" type="button" id="mw-add-vote-option" style="margin-top:6px">+ 선택지 추가</button>
+        <div class="form-hint">찬성과 반대가 고정으로 생성되고, 댓글에서 토론할 수 있습니다.</div>
       </div>
     </div>`;
-}
-
-function renderDripModule(activeKey) {
-  return moduleCard('drip', activeKey, '🤣', '드립 참여 방식', '주제를 던지고, 댓글처럼 한 줄 드립을 받습니다.', `
-    <div class="multi-module-inline-note">아래에 드립칠 주제만 적으면, 상세 페이지에서 사람들이 50자 이내 한 줄 드립으로 참여합니다.</div>`);
 }
 
 function renderQuizModule(activeKey) {
@@ -138,56 +107,40 @@ function renderQuizModule(activeKey) {
     </div>`);
 }
 
-function renderDripTopicField(activeKey) {
-  return `
-    <div class="form-group mw-drip-line-box" data-write-section="drip-line" ${activeKey === 'drip' ? '' : 'style="display:none"'}>
-      <label class="form-label">드립 주제 <small style="font-weight:400;color:var(--color-text-muted)">사진 첨부 시 선택사항</small></label>
-      <input id="mw-drip-line" class="form-input mw-drip-line-input" maxlength="80" autocomplete="off" placeholder="예: 퇴근 5분 전 회의 잡힌 내 표정은?">
-      <div class="form-hint">사람들이 한 줄 드립을 칠 수 있는 상황·주제를 던져주세요. 최대 80자.</div>
-    </div>`;
-}
-
 export function renderMultiWriteHTML({ renderKey, presetKey }) {
-  const activeKey = MULTI_PRESETS[presetKey] && !MULTI_PRESETS[presetKey].hiddenFromWriter ? presetKey : 'collect';
+  const activeKey = MULTI_PRESETS[presetKey] ? presetKey : 'collect';
   const preset = MULTI_PRESETS[activeKey] || MULTI_PRESETS.collect;
-  const isTournament = activeKey === 'tournament';
-  const standardHidden = activeKey === 'drip' ? 'style="display:none"' : '';
-  const contentHidden = isTournament ? 'style="display:none"' : '';
-  const mediaHidden = isTournament ? 'style="display:none"' : '';
-  const titleLabel = activeKey === 'vote' ? '투표 주제' : '제목';
-  const contentLabel = activeKey === 'vote' ? '추가 설명' : activeKey === 'collect' ? '내용' : '내용';
-  const requiredMark = activeKey === 'collect' || activeKey === 'vote' ? '' : '<span class="required">*</span>';
+  const titleLabel = activeKey === 'vote' ? '찬반 토론 주제' : '제목';
+  const contentLabel = activeKey === 'vote' ? '토론 설명' : activeKey === 'quiz' ? '퀴즈 문제' : '내용';
+  const requiredMark = activeKey === 'quiz' ? '<span class="required">*</span>' : '';
 
   return `
     <div class="write-page multi-write-page" data-render-key="${esc(renderKey)}" data-preset-key="${esc(activeKey)}">
       <div class="write-step-header">
         <button class="write-back-btn" id="multi-back-type" type="button">←</button>
-        <h1 class="write-step-title">게시판 글쓰기</h1>
+        <h1 class="write-step-title">일반게시판 글쓰기</h1>
       </div>
       <div class="card">
         <div class="card__body--lg">
           ${renderOptionPicker(activeKey)}
           ${renderCollectHidden(activeKey)}
-          ${renderDripTopicField(activeKey)}
-          <div data-write-section="standard-fields" ${standardHidden}>
+          <div data-write-section="standard-fields">
             <div class="form-group">
               <label class="form-label">${titleLabel} <span class="required">*</span></label>
               <input id="mw-title" class="form-input" maxlength="100" placeholder="${esc(preset.titlePlaceholder)}">
             </div>
-            <div class="form-group" data-write-section="content-field" ${contentHidden}>
+            <div class="form-group" data-write-section="content-field">
               <label class="form-label">${contentLabel} ${requiredMark}</label>
               <textarea id="mw-desc" class="form-textarea mw-desc-resizable" rows="4" maxlength="2000" placeholder="${esc(preset.descPlaceholder)}"></textarea>
             </div>
           </div>
-          <div class="form-group" data-write-section="media-field" ${mediaHidden}>
-            <label class="form-label">사진 첨부 ${activeKey === 'drip' ? '' : '<small style="font-weight:400;color:var(--color-text-muted)">선택사항</small>'}</label>
+          <div class="form-group" data-write-section="media-field">
+            <label class="form-label">사진 첨부 <small style="font-weight:400;color:var(--color-text-muted)">선택사항</small></label>
             <div id="mw-img-uploader"></div>
-            <div class="form-hint">${activeKey === 'drip' ? '사진을 올리면 이미지 드립 주제가 됩니다. 주제 텍스트 없이 사진만 올려도 됩니다.' : '사진은 선택사항입니다.'}</div>
+            <div class="form-hint">사진은 선택사항입니다.</div>
           </div>
           <div data-write-section="vote-panel" ${activeKey === 'vote' ? '' : 'style="display:none"'}>${renderVoteModule(activeKey)}</div>
           <div data-write-section="quiz-panel" ${activeKey === 'quiz' ? '' : 'style="display:none"'}>${renderQuizModule(activeKey)}</div>
-          <div data-write-section="drip-panel" ${activeKey === 'drip' ? '' : 'style="display:none"'}>${renderDripModule(activeKey)}</div>
-          <div data-write-section="tournament-panel" style="display:none">${renderTournamentPanel('collect')}</div>
           <div class="form-group">
             <label class="form-label" for="mw-tags">태그</label>
             <div class="mw-tags-row">
