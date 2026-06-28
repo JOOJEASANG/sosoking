@@ -27,18 +27,18 @@ function iconAccount() {
 }
 
 function isNavActive(navPath, currentPath) {
-  if (navPath === '/write?type=multi') return currentPath === '/write';
+  if (navPath.startsWith('/write')) return currentPath === '/write';
   return currentPath === navPath;
 }
 
 function navItems() {
   const unread = appState.unreadNotifications || 0;
   return [
-    { id: 'home',    label: '홈',    path: '/',                 icon: iconHome() },
-    { id: 'feed',    label: '피드',  path: '/feed',             icon: iconFeed() },
-    { id: 'write',   label: '올리기', path: '/write?type=multi', icon: iconPlus(), isCenter: true },
-    { id: 'hall',    label: '통계',  path: '/hall',             icon: iconStats() },
-    { id: 'account', label: '내정보', path: '/account',          icon: iconAccount(), badge: unread },
+    { id: 'home',    label: '홈',    path: '/',                                  icon: iconHome() },
+    { id: 'feed',    label: '피드',  path: '/feed',                              icon: iconFeed() },
+    { id: 'write',   label: '올리기', path: '/write?type=multi&preset=collect',  icon: iconPlus(), isCenter: true },
+    { id: 'hall',    label: '통계',  path: '/hall',                              icon: iconStats() },
+    { id: 'account', label: '내정보', path: '/account',                           icon: iconAccount(), badge: unread },
   ];
 }
 
