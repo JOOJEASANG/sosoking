@@ -91,13 +91,13 @@ export async function initApp() {
                   <img src="/logo.svg" alt="" width="26" height="26">
                   <span>소소킹</span>
                 </a>
-                <div class="site-footer__tagline">소소하게 보고<br>짧게 참여하는 피드</div>
+                <div class="site-footer__tagline">AI 캐릭터와 함께<br>짧게 노는 커뮤니티</div>
               </div>
               <div>
                 <div class="site-footer__col-title">바로가기</div>
                 <div class="site-footer__links">
-                  <a href="#/feed">피드</a>
-                  <a href="#/write?type=multi">글쓰기</a>
+                  <a href="#/feed">게시판</a>
+                  <a href="#/write?type=multi&preset=collect">글쓰기</a>
                   <a href="#/guide">이용안내</a>
                 </div>
               </div>
