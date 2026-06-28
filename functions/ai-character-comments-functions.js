@@ -12,7 +12,7 @@ const CHARACTERS = [
   {
     id: 'minsu', name: '민수', emoji: '😂', role: '드립왕',
     style: '짧고 장난스럽다. ㅋㅋ를 자연스럽게 쓰며 분위기를 가볍게 만든다.',
-    bestFor: ['funny', 'daily', 'drip'],
+    bestFor: ['funny', 'daily', 'drip', 'consult'],
     fallback: '아니 이 상황 뭐냐고ㅋㅋ 이건 댓글 안 달 수가 없네.',
   },
   {
@@ -24,31 +24,31 @@ const CHARACTERS = [
   {
     id: 'jieun', name: '지은', emoji: '🧠', role: '똑똑이',
     style: '논리적이고 간결하다. 원인과 선택지를 나눠서 본다.',
-    bestFor: ['question', 'info', 'tech', 'debate'],
+    bestFor: ['judgment', 'question', 'info', 'tech', 'debate'],
     fallback: '정리하면 핵심은 두 가지로 보여요. 상황과 선택지를 나눠서 보면 더 판단하기 쉬울 것 같아요.',
   },
   {
     id: 'junho', name: '준호', emoji: '⚖️', role: '토론러',
     style: '차분하지만 약간 도전적이다. 반대 관점과 균형을 제시한다.',
-    bestFor: ['vote', 'debate', 'opinion'],
+    bestFor: ['judgment', 'vote', 'debate', 'opinion'],
     fallback: '반대로 보면 다른 해석도 가능해요. 이건 한쪽만 보고 판단하긴 조금 애매합니다.',
   },
   {
     id: 'miyoung', name: '미영', emoji: '👵', role: '인생선배',
     style: '현실적이고 따뜻하다. 짧은 경험담처럼 말한다.',
-    bestFor: ['worry', 'consult', 'life', 'daily'],
+    bestFor: ['judgment', 'worry', 'consult', 'life', 'daily'],
     fallback: '살다 보면 그런 날도 있더라. 너무 급하게 판단하지 말고 밥부터 잘 챙겨요.',
   },
   {
     id: 'cheolgu', name: '철구', emoji: '😈', role: '악동',
     style: '살짝 까칠하지만 선은 넘지 않는다. 다른 시선을 짧게 던진다.',
-    bestFor: ['debate', 'funny', 'opinion'],
+    bestFor: ['judgment', 'debate', 'funny', 'opinion'],
     fallback: '난 좀 다르게 보는데? 좋게 말하면 그럴 수 있고, 나쁘게 말하면 좀 애매하긴 해.',
   },
   {
     id: 'haru', name: '하루', emoji: '🎨', role: '감성러',
     style: '부드럽고 담백하게 감정을 표현한다. 과하게 꾸미지 않는다.',
-    bestFor: ['emotion', 'daily', 'creative'],
+    bestFor: ['emotion', 'daily', 'creative', 'drip'],
     fallback: '이 이야기는 묘하게 오래 남네요. 작아 보여도 마음에는 꽤 크게 남는 장면 같아요.',
   },
   {
@@ -88,11 +88,13 @@ async function assertAdmin(uid) {
 
 function classifyPost(post) {
   const text = `${post.title || ''} ${post.desc || ''} ${Array.isArray(post.tags) ? post.tags.join(' ') : ''}`.toLowerCase();
+  if (post.subtype === 'judgment' || post.modules?.vote?.voteMode === 'judgment') return 'judgment';
   if (post.subtype === 'consult' || post.modules?.consult?.enabled) return 'consult';
-  if (post.feedType === 'vote' || post.modules?.vote?.enabled) return 'debate';
+  if (post.subtype === 'vote' || post.feedType === 'vote' || post.modules?.vote?.enabled) return 'debate';
   if (post.feedType === 'quiz' || post.modules?.quiz?.enabled) return 'question';
-  if (post.feedType === 'drip' || post.modules?.drip?.enabled) return 'funny';
+  if (post.subtype === 'drip' || post.feedType === 'drip' || post.modules?.drip?.enabled) return 'funny';
   if (/고민|힘들|연애|상담|속상|회사|가족|친구|선택장애/.test(text)) return 'worry';
+  if (/판결|재판|누구잘못|누가잘못|예민/.test(text)) return 'judgment';
   if (/질문|방법|왜|어떻게|오류|문제/.test(text)) return 'question';
   if (/웃긴|드립|ㅋㅋ|레전드|병맛/.test(text)) return 'funny';
   return 'daily';
