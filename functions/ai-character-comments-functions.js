@@ -169,6 +169,7 @@ function shouldSkipAutoPost(post) {
   if (!post || post.hidden === true) return true;
   if (post.isAiGenerated === true || post.authorId === 'sosoking-ai') return true;
   if (post.aiCharacterCommentsDisabled === true) return true;
+  if (post.aiCharacterCommented === true) return true;
   if (post.feedType === 'tournament' || post.modules?.tournament?.enabled) return true;
   return false;
 }
@@ -278,12 +279,11 @@ exports.onCreateAiCharacterComments = onDocumentCreated({
   const markerRef = db.doc(`system_jobs/ai_character_auto_marker_${postId}`);
   const markerSnap = await markerRef.get();
   if (markerSnap.exists) return;
-  await markerRef.set({ postId, createdAt: FieldValue.serverTimestamp() }, { merge: true });
 
   const postRef = db.doc(`feeds/${postId}`);
   const characters = pickCharacters(post, [], settings.count);
   const generated = await generateComments({ post, characters });
-  await writeCharacterComments({
+  const written = await writeCharacterComments({
     postRef,
     postId,
     post,
@@ -292,4 +292,13 @@ exports.onCreateAiCharacterComments = onDocumentCreated({
     comments: generated.comments,
     actorId: 'auto',
   });
+
+  if (written.length) {
+    await markerRef.set({
+      postId,
+      count: written.length,
+      characterIds: written.map(item => item.characterId),
+      completedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+  }
 });
