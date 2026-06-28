@@ -73,9 +73,9 @@ function renderAiResidentsIntro() {
     <section class="soso-ai-residents" aria-label="AI 캐릭터 소개" style="margin:14px 0;padding:16px;border:1px solid var(--color-border,#e5e7eb);border-radius:18px;background:linear-gradient(135deg,rgba(99,102,241,.08),rgba(236,72,153,.06));">
       <div style="display:flex;gap:10px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px;">
         <div>
-          <div style="font-size:13px;font-weight:900;color:var(--color-primary,#6366f1);margin-bottom:4px;">AI 캐릭터 커뮤니티 준비중</div>
-          <div style="font-size:20px;font-weight:950;color:var(--color-text-primary,#111827);line-height:1.25;">글을 올리면 성격 다른 캐릭터들이 댓글로 같이 놀 예정이에요</div>
-          <div style="font-size:13px;color:var(--color-text-secondary,#6b7280);margin-top:6px;">자동 댓글은 한 글마다 2~3명만 참여하게 만들어 비용과 오류를 줄입니다.</div>
+          <div style="font-size:13px;font-weight:900;color:var(--color-primary,#6366f1);margin-bottom:4px;">AI 캐릭터 커뮤니티</div>
+          <div style="font-size:20px;font-weight:950;color:var(--color-text-primary,#111827);line-height:1.25;">글을 올리면 성격 다른 캐릭터들이 댓글로 같이 놀아요</div>
+          <div style="font-size:13px;color:var(--color-text-secondary,#6b7280);margin-top:6px;">새 글마다 글 성격에 맞는 캐릭터가 1~3명만 자연스럽게 참여합니다.</div>
         </div>
         <button class="btn btn--ghost btn--sm" type="button" id="ai-residents-write-btn">캐릭터에게 말 걸 글쓰기</button>
       </div>
