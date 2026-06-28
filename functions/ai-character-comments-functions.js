@@ -18,13 +18,13 @@ const CHARACTERS = [
   {
     id: 'daon', name: '다온', emoji: '❤️', role: '상담러',
     style: '따뜻하고 부드럽다. 먼저 감정을 확인하고 조심스럽게 묻는다.',
-    bestFor: ['worry', 'relationship', 'daily'],
+    bestFor: ['worry', 'consult', 'relationship', 'daily'],
     fallback: '그랬다면 마음이 꽤 복잡했겠어요. 조금 더 이야기해봐도 괜찮아요.',
   },
   {
     id: 'jieun', name: '지은', emoji: '🧠', role: '똑똑이',
     style: '논리적이고 간결하다. 원인과 선택지를 나눠서 본다.',
-    bestFor: ['question', 'info', 'tech'],
+    bestFor: ['question', 'info', 'tech', 'debate'],
     fallback: '정리하면 핵심은 두 가지로 보여요. 상황과 선택지를 나눠서 보면 더 판단하기 쉬울 것 같아요.',
   },
   {
@@ -36,7 +36,7 @@ const CHARACTERS = [
   {
     id: 'miyoung', name: '미영', emoji: '👵', role: '인생선배',
     style: '현실적이고 따뜻하다. 짧은 경험담처럼 말한다.',
-    bestFor: ['worry', 'life', 'daily'],
+    bestFor: ['worry', 'consult', 'life', 'daily'],
     fallback: '살다 보면 그런 날도 있더라. 너무 급하게 판단하지 말고 밥부터 잘 챙겨요.',
   },
   {
@@ -55,7 +55,7 @@ const CHARACTERS = [
     id: 'opsbot', name: '운영봇', emoji: '🤖', role: '운영자',
     style: '짧고 명확하게 진행한다. 질문을 던져 참여를 유도한다.',
     bestFor: ['event', 'notice', 'default'],
-    fallback: '이 글은 캐릭터 댓글 테스트에 잘 맞는 글이에요. 다른 분들도 가볍게 의견을 남겨보세요.',
+    fallback: '이 글은 캐릭터 댓글에 잘 맞는 글이에요. 다른 분들도 가볍게 의견을 남겨보세요.',
   },
 ];
 
@@ -88,12 +88,13 @@ async function assertAdmin(uid) {
 
 function classifyPost(post) {
   const text = `${post.title || ''} ${post.desc || ''} ${Array.isArray(post.tags) ? post.tags.join(' ') : ''}`.toLowerCase();
+  if (post.subtype === 'consult' || post.modules?.consult?.enabled) return 'consult';
   if (post.feedType === 'vote' || post.modules?.vote?.enabled) return 'debate';
   if (post.feedType === 'quiz' || post.modules?.quiz?.enabled) return 'question';
   if (post.feedType === 'drip' || post.modules?.drip?.enabled) return 'funny';
-  if (/고민|힘들|연애|상담|속상|회사|가족|친구/.test(text)) return 'worry';
+  if (/고민|힘들|연애|상담|속상|회사|가족|친구|선택장애/.test(text)) return 'worry';
   if (/질문|방법|왜|어떻게|오류|문제/.test(text)) return 'question';
-  if (/웃긴|드립|ㅋㅋ|레전드/.test(text)) return 'funny';
+  if (/웃긴|드립|ㅋㅋ|레전드|병맛/.test(text)) return 'funny';
   return 'daily';
 }
 
@@ -122,7 +123,7 @@ async function generateComments({ post, characters }) {
   if (!apiKey) return { source: 'fallback', comments: fallbackComments(characters) };
 
   const characterPrompt = characters.map(c => `- ${c.name}(${c.role}): ${c.style}`).join('\n');
-  const prompt = `소소킹 게시글에 달 AI 캐릭터 댓글을 만들어줘.\n\n게시글 제목: ${cleanText(post.title, 120)}\n게시글 내용: ${cleanText(post.desc, 800)}\n글 유형: ${post.feedType || post.type || 'general'}\n\n캐릭터 목록:\n${characterPrompt}\n\n규칙:\n- 각 캐릭터는 자기 개성이 확실해야 한다.\n- 댓글은 캐릭터당 1개, 1~3문장.\n- 서로 같은 말투를 쓰지 않는다.\n- 욕설, 무례한 표현, 위험한 조언은 피한다.\n- 반드시 JSON만 출력한다.\n형식: {"comments":[{"id":"minsu","text":"댓글"}]}`;
+  const prompt = `소소킹 게시글에 달 AI 캐릭터 댓글을 만들어줘.\n\n게시글 제목: ${cleanText(post.title, 120)}\n게시글 내용: ${cleanText(post.desc, 800)}\n글 유형: ${post.feedType || post.subtype || post.type || 'general'}\n\n캐릭터 목록:\n${characterPrompt}\n\n규칙:\n- 각 캐릭터는 자기 개성이 확실해야 한다.\n- 댓글은 캐릭터당 1개, 1~3문장.\n- 서로 같은 말투를 쓰지 않는다.\n- 사용자에게 상처 주는 말, 위험한 조언, 전문 판단 단정은 피한다.\n- AI 캐릭터 댓글처럼 자연스럽게 짧게 쓴다.\n- 반드시 JSON만 출력한다.\n형식: {"comments":[{"id":"minsu","text":"댓글"}]}`;
 
   try {
     const anthropic = new Anthropic({ apiKey });
@@ -161,13 +162,12 @@ async function getAutoSettings() {
   const data = snap?.exists ? snap.data() || {} : {};
   return {
     enabled: data.autoCommentsEnabled !== false,
-    count: Math.max(1, Math.min(Number(data.autoCommentCount || 2), 3)),
+    count: Math.max(1, Math.min(Number(data.autoCommentCount || 3), 3)),
   };
 }
 
 function shouldSkipAutoPost(post) {
   if (!post || post.hidden === true) return true;
-  if (post.isAiGenerated === true || post.authorId === 'sosoking-ai') return true;
   if (post.aiCharacterCommentsDisabled === true) return true;
   if (post.aiCharacterCommented === true) return true;
   if (post.feedType === 'tournament' || post.modules?.tournament?.enabled) return true;
@@ -185,11 +185,13 @@ async function writeCharacterComments({ postRef, postId, post, characters, sourc
     const doc = {
       text: item.text,
       authorId: `ai-${character.id}`,
-      authorName: `${character.emoji} ${character.name}`,
+      authorName: `${character.emoji} ${character.name} AI`,
       authorPhoto: '',
+      authorEmail: '',
       isAiCharacter: true,
       aiCharacterId: character.id,
       aiCharacterRole: character.role,
+      aiGenerated: true,
       reactions: { total: 0 },
       reactedWith: {},
       createdAt: FieldValue.serverTimestamp(),
@@ -231,7 +233,7 @@ exports.saveAiCharacterSettings = onCall({ region: REGION, timeoutSeconds: 20 },
   const data = request.data || {};
   const patch = {
     autoCommentsEnabled: data.autoCommentsEnabled !== false,
-    autoCommentCount: Math.max(1, Math.min(Number(data.autoCommentCount || 2), 3)),
+    autoCommentCount: Math.max(1, Math.min(Number(data.autoCommentCount || 3), 3)),
     updatedAt: FieldValue.serverTimestamp(),
     updatedBy: request.auth.uid,
   };
@@ -279,6 +281,7 @@ exports.onCreateAiCharacterComments = onDocumentCreated({
   const markerRef = db.doc(`system_jobs/ai_character_auto_marker_${postId}`);
   const markerSnap = await markerRef.get();
   if (markerSnap.exists) return;
+  await markerRef.set({ postId, status: 'started', startedAt: FieldValue.serverTimestamp() }, { merge: true });
 
   const postRef = db.doc(`feeds/${postId}`);
   const characters = pickCharacters(post, [], settings.count);
@@ -290,12 +293,13 @@ exports.onCreateAiCharacterComments = onDocumentCreated({
     characters,
     source: generated.source,
     comments: generated.comments,
-    actorId: 'auto',
+    actorId: post.isAiGenerated === true ? 'auto-ai-post' : 'auto-user-post',
   });
 
   if (written.length) {
     await markerRef.set({
       postId,
+      status: 'completed',
       count: written.length,
       characterIds: written.map(item => item.characterId),
       completedAt: FieldValue.serverTimestamp(),
