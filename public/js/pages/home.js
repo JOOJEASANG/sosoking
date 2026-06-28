@@ -12,7 +12,6 @@ import {
 import { navigate } from '../router.js';
 
 const TYPE_LABEL = {
-  tournament: '대결방',
   collect: '일반글',
   multi: '일반글',
   general: '일반글',
@@ -59,7 +58,6 @@ function commentScore(comment) {
 
 function moduleLabel(post) {
   const m = post.modules || {};
-  if (m.tournament?.enabled) return '대결방';
   if (m.collect?.enabled) return m.collect.label || '일반글';
   if (m.vote?.enabled) return '투표';
   if (m.drip?.enabled) return '드립';
@@ -115,7 +113,7 @@ function renderIntro() {
       </div>
 
       <div class="home-onboard__rooms" aria-label="글 유형 바로가기">
-        <a class="home-onboard__room home-onboard__room--tournament" href="#/feed" data-room-nav="all">
+        <a class="home-onboard__room" href="#/feed" data-room-nav="all">
           <span class="home-onboard__room-icon">✨</span>
           <div class="home-onboard__room-info">
             <b>통합 게시판</b>
