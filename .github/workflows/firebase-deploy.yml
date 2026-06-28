@@ -87,7 +87,22 @@ jobs:
         run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only firestore:rules,firestore:indexes
 
       - name: Deploy Hosting
-        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only hosting
+        run: |
+          set +e
+          firebase deploy --project "$FIREBASE_PROJECT_ID" --only hosting 2>&1 | tee "$RUNNER_TEMP/firebase-hosting-deploy.log"
+          status=${PIPESTATUS[0]}
+          set -e
+
+          if [ "$status" -eq 0 ]; then
+            exit 0
+          fi
+
+          if grep -q "current active version" "$RUNNER_TEMP/firebase-hosting-deploy.log"; then
+            echo "::notice::Firebase Hosting supplied version is already active. Treating as success."
+            exit 0
+          fi
+
+          exit "$status"
 
       - name: Deploy Functions
         run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only functions --force
