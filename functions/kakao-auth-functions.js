@@ -11,6 +11,18 @@ const adminAuth = getAuth();
 const db = getFirestore();
 
 const KAKAO_JS_APP_KEY = '377995fee0850a5de4167641d343be0e';
+const ALLOWED_REDIRECT_URIS = new Set([
+  'https://sosoking.co.kr',
+  'https://www.sosoking.co.kr',
+]);
+
+function assertAllowedRedirectUri(redirectUri) {
+  const normalized = String(redirectUri || '').trim().replace(/\/$/, '');
+  if (!ALLOWED_REDIRECT_URIS.has(normalized)) {
+    throw new HttpsError('invalid-argument', '허용되지 않은 카카오 로그인 redirectUri입니다.');
+  }
+  return normalized;
+}
 
 function exchangeKakaoCode(code, redirectUri) {
   return new Promise((resolve, reject) => {
@@ -80,9 +92,7 @@ exports.kakaoLogin = onCall({ region: 'asia-northeast3' }, async (request) => {
   let { accessToken, code, redirectUri } = request.data || {};
 
   if (!accessToken && code) {
-    if (!redirectUri || typeof redirectUri !== 'string') {
-      throw new HttpsError('invalid-argument', 'redirectUri가 필요해요');
-    }
+    redirectUri = assertAllowedRedirectUri(redirectUri);
     try {
       accessToken = await exchangeKakaoCode(code, redirectUri);
     } catch (e) {

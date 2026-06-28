@@ -6,6 +6,23 @@ const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const db = getFirestore();
 const REGION = 'asia-northeast3';
 
+const CHILD_COLLECTIONS_WITH_REPLIES = Object.freeze([
+  'comments',
+  'acrostics',
+  'multi_naming',
+  'multi_acrostic',
+  'multi_relay',
+  'multi_drip',
+  'multi_fill',
+]);
+
+const CHILD_COLLECTIONS_SIMPLE = Object.freeze([
+  'quiz_attempts',
+  'viewers',
+  'view_events',
+  'secret',
+]);
+
 function cleanId(value) {
   return String(value || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 180);
 }
@@ -14,6 +31,10 @@ async function isAdmin(uid) {
   if (!uid) return false;
   const snap = await db.doc(`admins/${uid}`).get().catch(() => null);
   return !!snap?.exists;
+}
+
+function countKey(collectionName) {
+  return collectionName.replace(/_([a-z])/g, (_, ch) => ch.toUpperCase());
 }
 
 async function deleteDocsInCollection(path, batchSize = 200) {
@@ -68,34 +89,24 @@ const deleteOwnPost = onCall({ region: REGION, timeoutSeconds: 120, memory: '512
 
   const counts = {};
 
-  // 하위 답글이 있는 컬렉션은 replies를 먼저 명시적으로 삭제합니다.
-  counts.comments = await deleteCollectionWithReplies(`feeds/${postId}/comments`);
-  counts.acrostics = await deleteCollectionWithReplies(`feeds/${postId}/acrostics`);
-  counts.multiNaming = await deleteCollectionWithReplies(`feeds/${postId}/multi_naming`);
-  counts.multiAcrostic = await deleteCollectionWithReplies(`feeds/${postId}/multi_acrostic`);
-  counts.multiRelay = await deleteCollectionWithReplies(`feeds/${postId}/multi_relay`);
+  for (const collectionName of CHILD_COLLECTIONS_WITH_REPLIES) {
+    counts[countKey(collectionName)] = await deleteCollectionWithReplies(`feeds/${postId}/${collectionName}`);
+  }
 
-  // 답글이 없는 보조 컬렉션은 문서만 삭제합니다.
-  counts.quizAttempts = await deleteDocsInCollection(`feeds/${postId}/quiz_attempts`);
-  counts.viewers = await deleteDocsInCollection(`feeds/${postId}/viewers`);
-  counts.viewEvents = await deleteDocsInCollection(`feeds/${postId}/view_events`);
-  counts.secret = await deleteDocsInCollection(`feeds/${postId}/secret`);
+  for (const collectionName of CHILD_COLLECTIONS_SIMPLE) {
+    counts[countKey(collectionName)] = await deleteDocsInCollection(`feeds/${postId}/${collectionName}`);
+  }
 
   // BUG-013: 스크랩이 300건을 초과할 경우 모두 삭제하도록 페이지네이션 루프 처리
-  let scrapLastDoc = null;
-  let scrapHasMore = true;
   counts.scraps = 0;
-  while (scrapHasMore) {
-    let scrapQuery = db.collectionGroup('scraps').where('postId', '==', postId).limit(300);
-    if (scrapLastDoc) scrapQuery = scrapQuery.startAfter(scrapLastDoc);
-    const scrapSnap = await scrapQuery.get().catch(() => null);
+  while (true) {
+    const scrapSnap = await db.collectionGroup('scraps').where('postId', '==', postId).limit(300).get().catch(() => null);
     if (!scrapSnap || scrapSnap.empty) break;
     const batch = db.batch();
     scrapSnap.docs.forEach(docSnap => batch.delete(docSnap.ref));
     await batch.commit();
     counts.scraps += scrapSnap.size;
-    scrapLastDoc = scrapSnap.docs[scrapSnap.docs.length - 1];
-    scrapHasMore = scrapSnap.size === 300;
+    if (scrapSnap.size < 300) break;
   }
 
   await db.collection('deleted_posts').doc(postId).set({

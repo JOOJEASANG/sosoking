@@ -218,6 +218,15 @@ function escapeAttr(value, max = 500) {
     .slice(0, max);
 }
 
+function safeJsonForHtml(value) {
+  return JSON.stringify(value)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
+}
+
 function safeOgImage(value) {
   const raw = String(value || '').trim();
   try {
@@ -256,8 +265,8 @@ const seoPost = onRequest({ region: REGION }, async (req, res) => {
     const published  = post.createdAt?.toDate?.()?.toISOString() || new Date().toISOString();
     const modified   = post.updatedAt?.toDate?.()?.toISOString() || published;
 
-    // JSON-LD 구조화 데이터 (구글 리치 결과용)
-    const jsonLd = JSON.stringify({
+    // JSON-LD 구조화 데이터 (구글 리치 결과용). </script> 탈출 방지를 위해 JSON 문자열도 HTML-safe 처리합니다.
+    const jsonLd = safeJsonForHtml({
       '@context': 'https://schema.org',
       '@type': 'Article',
       headline: post.title || '소소킹 놀이판',
