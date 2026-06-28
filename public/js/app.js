@@ -15,7 +15,6 @@ import './admin-ai-ops-actions.js';
 import './admin-post-list-normalizer.js';
 import './nickname-icon-actions.js';
 import './social-play-enhancer.js';
-import './site-copy-normalizer.js';
 import {
   collection, query, where, getDocs, getDoc, doc, limit,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
@@ -56,7 +55,6 @@ async function loadUserMeta(uid) {
     let data = userSnap.exists() ? userSnap.data() : {};
     const currentUser = auth.currentUser;
     if (!userSnap.exists() && currentUser && !currentUser.isAnonymous) {
-      // 첫 로그인: users 문서 + 고유 닉네임 프로비저닝
       try {
         const { ensureUserProvisioned } = await import('./services/user-service.js');
         await ensureUserProvisioned(currentUser);
@@ -70,10 +68,6 @@ async function loadUserMeta(uid) {
     appState.nickname  = data.nickname  || currentUser?.displayName || currentUser?.email?.split('@')[0] || '익명';
     appState.nicknameIcon = data.nicknameIcon || null;
   } catch { /* non-critical */ }
-}
-
-function renderRemovedGamePage() {
-  navigate('/feed');
 }
 
 export async function initApp() {
@@ -177,11 +171,6 @@ export async function initApp() {
   registerRoute('/feed',       () => renderFeed());
   registerRoute('/drip',       () => renderDrip());
   registerRoute('/write',      () => renderWrite());
-  registerRoute('/sosoland',   () => renderRemovedGamePage());
-  registerRoute('/game/liar',  () => renderRemovedGamePage());
-  registerRoute('/game/liar/:id', () => renderRemovedGamePage());
-  registerRoute('/game/mafia', () => renderRemovedGamePage());
-  registerRoute('/game/mafia/:id', () => renderRemovedGamePage());
   registerRoute('/detail/:id', ({ id }) => renderDetail(id));
   registerRoute('/account',    () => renderAccount());
   registerRoute('/scraps',     () => renderScraps());
