@@ -90,7 +90,7 @@ module.exports = {
   // 주간 자동 생성 유지
   ...weeklyAiSchedule,
 
-  // 매일 3개 게시판 자동 글 생성이 최종 dailyAiContent 기준입니다.
+  // 매일 3개 게임형 콘텐츠 자동 생성이 최종 dailyAiContent 기준입니다.
   ...dailyAutoPost,
 
   // 이미지 업로드 fallback callable
