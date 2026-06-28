@@ -25,31 +25,6 @@ function renderOptionPicker(activeKey) {
     </div>`;
 }
 
-function moduleCard(key, activeKey, icon, title, desc, body) {
-  const hidden = activeKey === key ? '' : 'style="display:none"';
-  return `
-    <div class="multi-module is-enabled multi-module--selected" data-module-card="${key}" data-option-panel="${key}" ${hidden}>
-      ${moduleToggleInput(key, activeKey)}
-      <div class="multi-module__head multi-module__head--static">
-        <span class="multi-module__icon">${icon}</span>
-        <span class="multi-module__text"><b>${title}</b><small>${desc}</small></span>
-      </div>
-      <div class="multi-module__body">${body}</div>
-    </div>`;
-}
-
-export function renderQuizOptionRow(index, checked = false) {
-  return `
-    <div class="multi-quiz-option-row">
-      <label class="multi-quiz-answer-pick"><input type="radio" name="mw-quiz-correct" value="${index}" ${checked ? 'checked' : ''}> 정답</label>
-      <input class="form-input mw-quiz-option" maxlength="80" placeholder="선택지 ${index + 1}">
-    </div>`;
-}
-
-export function renderQuizOptionRows(count = 2) {
-  return Array.from({ length: count }, (_, i) => renderQuizOptionRow(i, i === 0)).join('');
-}
-
 function renderCollectHidden(activeKey) {
   return `<div data-option-panel="collect" style="display:none">${moduleToggleInput('collect', activeKey)}<input type="hidden" id="mw-collect-kind" value="auto"></div>`;
 }
@@ -65,54 +40,45 @@ function renderVoteModule(activeKey) {
           <input class="form-input mw-vote-option" maxlength="80" value="찬성" readonly>
           <input class="form-input mw-vote-option" maxlength="80" value="반대" readonly>
         </div>
-        <div class="form-hint">찬성과 반대가 고정으로 생성되고, 댓글에서 토론할 수 있습니다.</div>
+        <div class="form-hint">판정, 선택, A/B 결정은 이 토론방에서 받으면 됩니다.</div>
       </div>
     </div>`;
 }
 
-function renderQuizModule(activeKey) {
-  const preset = MULTI_PRESETS.quiz;
-  return moduleCard('quiz', activeKey, '🧠', '퀴즈 옵션', '주관식 · 객관식 · 정답 없는 퀴즈를 올립니다.', `
-    <div class="form-group">
-      <label class="form-label">퀴즈 방식 <span class="required">*</span></label>
-      <input type="hidden" id="mw-quiz-mode" value="subjective">
-      <label style="display:flex;align-items:center;gap:7px;margin:0 0 8px;font-size:12px;font-weight:850;color:var(--color-text-secondary)">
-        <input type="checkbox" id="mw-quiz-no-answer" style="width:16px;height:16px"> 정답 없는 퀴즈로 등록
-      </label>
-      <div class="multi-quiz-mode-toggle" role="radiogroup" aria-label="퀴즈 방식 선택">
-        <button type="button" class="multi-quiz-mode-btn active" data-quiz-mode="subjective" role="radio" aria-checked="true">주관식</button>
-        <button type="button" class="multi-quiz-mode-btn" data-quiz-mode="multiple" role="radio" aria-checked="false">객관식</button>
-      </div>
-    </div>
-    <div id="mw-quiz-subjective-box" class="form-group">
-      <label class="form-label">정답</label>
-      <input id="mw-quiz-answer" class="form-input" maxlength="80" placeholder="${esc(preset.quizAnswerPlaceholder)}">
-      <div class="form-hint">정답 없는 퀴즈로 등록하면 비워도 됩니다.</div>
-    </div>
-    <div id="mw-quiz-multiple-box" style="display:none">
+function renderConsultModule(activeKey) {
+  const hidden = activeKey === 'consult' ? '' : 'style="display:none"';
+  return `
+    <div class="mw-vote-compact" data-module-card="consult" data-option-panel="consult" ${hidden}>
+      ${moduleToggleInput('consult', activeKey)}
       <div class="form-group">
-        <label class="form-label">객관식 선택지와 정답</label>
-        <div class="multi-option-list" id="mw-quiz-options">${renderQuizOptionRows(2)}</div>
-        <button class="btn btn--ghost btn--sm" type="button" id="mw-add-quiz-option">+ 선택지 추가</button>
-        <div class="form-hint">정답 없는 퀴즈로 등록하면 정답 선택은 참고용으로만 사용됩니다.</div>
+        <label class="form-label">분야</label>
+        <select id="mw-consult-topic" class="form-input">
+          <option value="daily">일상</option>
+          <option value="people">관계</option>
+          <option value="work">직장/학교</option>
+          <option value="money">소비/선택</option>
+          <option value="vent">하소연</option>
+        </select>
       </div>
-    </div>
-    <div class="form-group">
-      <label class="form-label">힌트</label>
-      <input id="mw-quiz-hint" class="form-input" maxlength="120" placeholder="정답을 바로 알려주지 않는 짧은 힌트">
-    </div>
-    <div class="form-group">
-      <label class="form-label">정답 해설</label>
-      <textarea id="mw-quiz-explanation" class="form-textarea" rows="3" maxlength="500" placeholder="정답 확인 후 보여줄 해설을 입력하세요"></textarea>
-    </div>`);
+      <div class="form-group">
+        <label class="form-label">답변 스타일</label>
+        <select id="mw-consult-style" class="form-input">
+          <option value="empathy">공감</option>
+          <option value="realistic">현실조언</option>
+          <option value="choice">선택도움</option>
+          <option value="soft">순한맛</option>
+          <option value="funny">웃긴해결</option>
+        </select>
+      </div>
+    </div>`;
 }
 
 export function renderMultiWriteHTML({ renderKey, presetKey }) {
   const activeKey = MULTI_PRESETS[presetKey] ? presetKey : 'collect';
   const preset = MULTI_PRESETS[activeKey] || MULTI_PRESETS.collect;
-  const titleLabel = activeKey === 'vote' ? '찬반 토론 주제' : '제목';
-  const contentLabel = activeKey === 'vote' ? '토론 설명' : activeKey === 'quiz' ? '퀴즈 문제' : '내용';
-  const requiredMark = activeKey === 'quiz' ? '<span class="required">*</span>' : '';
+  const titleLabel = activeKey === 'vote' ? '찬반 토론 주제' : activeKey === 'consult' ? '고민 제목' : '제목';
+  const contentLabel = activeKey === 'vote' ? '토론 설명' : activeKey === 'consult' ? '고민 설명' : '내용';
+  const requiredMark = activeKey === 'consult' ? '<span class="required">*</span>' : '';
 
   return `
     <div class="write-page multi-write-page" data-render-key="${esc(renderKey)}" data-preset-key="${esc(activeKey)}">
@@ -140,7 +106,7 @@ export function renderMultiWriteHTML({ renderKey, presetKey }) {
             <div class="form-hint">사진은 선택사항입니다.</div>
           </div>
           <div data-write-section="vote-panel" ${activeKey === 'vote' ? '' : 'style="display:none"'}>${renderVoteModule(activeKey)}</div>
-          <div data-write-section="quiz-panel" ${activeKey === 'quiz' ? '' : 'style="display:none"'}>${renderQuizModule(activeKey)}</div>
+          <div data-write-section="consult-panel" ${activeKey === 'consult' ? '' : 'style="display:none"'}>${renderConsultModule(activeKey)}</div>
           <div class="form-group">
             <label class="form-label" for="mw-tags">태그</label>
             <div class="mw-tags-row">
