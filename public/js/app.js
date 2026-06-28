@@ -15,6 +15,7 @@ import './admin-ai-ops-actions.js';
 import './admin-post-list-normalizer.js';
 import './nickname-icon-actions.js';
 import './social-play-enhancer.js';
+import './single-board-normalizer.js';
 import {
   collection, query, where, getDocs, getDoc, doc, limit,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
