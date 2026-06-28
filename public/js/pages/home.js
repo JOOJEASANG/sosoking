@@ -16,13 +16,11 @@ const TYPE_LABEL = {
   multi: '일반글',
   general: '일반글',
   anonymous: '일반글',
-  vote: '투표',
-  ox: '투표',
-  crazy_court: '투표',
-  balance: '투표',
-  battle: '투표',
-  drip: '드립',
-  cbattle: '드립',
+  vote: '찬반토론',
+  ox: '찬반토론',
+  crazy_court: '찬반토론',
+  balance: '찬반토론',
+  battle: '찬반토론',
   quiz: '퀴즈',
   initial_game: '퀴즈',
 };
@@ -59,8 +57,7 @@ function commentScore(comment) {
 function moduleLabel(post) {
   const m = post.modules || {};
   if (m.collect?.enabled) return m.collect.label || '일반글';
-  if (m.vote?.enabled) return '투표';
-  if (m.drip?.enabled) return '드립';
+  if (m.vote?.enabled) return '찬반토론';
   if (m.quiz?.enabled) return '퀴즈';
   if (post.feedType && TYPE_LABEL[post.feedType]) return TYPE_LABEL[post.feedType];
   if (post.subtype && TYPE_LABEL[post.subtype]) return TYPE_LABEL[post.subtype];
@@ -103,42 +100,35 @@ function renderIntro() {
       <div class="home-onboard__hero">
         <div class="home-onboard__hero-text">
           <div class="home-onboard__badge">🤖 AI CHARACTER COMMUNITY</div>
-          <h1 class="home-onboard__title">글을 올리면<br>AI 캐릭터가 같이 놀아요</h1>
-          <p class="home-onboard__desc">소소킹은 일반글, 투표, 퀴즈, 드립에 개성 있는 AI 캐릭터들이 댓글·상담·토론으로 참여하는 커뮤니티입니다.</p>
+          <h1 class="home-onboard__title">하나의 게시판에서<br>유형만 선택해요</h1>
+          <p class="home-onboard__desc">선택하지 않으면 일반글, 투표를 선택하면 찬반토론, 퀴즈를 선택하면 퀴즈 옵션이 열립니다.</p>
         </div>
         <div class="home-onboard__hero-actions">
-          <button class="home-onboard__btn-primary" type="button" id="hbtn-write">+ 캐릭터에게 말 걸기</button>
+          <button class="home-onboard__btn-primary" type="button" id="hbtn-write">+ 글쓰기</button>
           <button class="home-onboard__btn-ghost" type="button" id="hbtn-feed">게시판 둘러보기</button>
         </div>
       </div>
 
-      <div class="home-onboard__rooms" aria-label="글 유형 바로가기">
+      <div class="home-onboard__rooms" aria-label="글쓰기 유형 안내">
         <a class="home-onboard__room" href="#/feed" data-room-nav="all">
-          <span class="home-onboard__room-icon">✨</span>
+          <span class="home-onboard__room-icon">📝</span>
           <div class="home-onboard__room-info">
-            <b>통합 게시판</b>
-            <em>모든 글과 캐릭터 댓글</em>
+            <b>일반게시판</b>
+            <em>일반글을 기본으로 작성</em>
           </div>
         </a>
-        <a class="home-onboard__room home-onboard__room--vote" href="#/feed?type=vote" data-room-nav="vote">
+        <a class="home-onboard__room home-onboard__room--vote" href="#/write?type=multi&preset=vote" data-room-nav="write-vote">
           <span class="home-onboard__room-icon">🗳️</span>
           <div class="home-onboard__room-info">
-            <b>투표</b>
-            <em>AI와 사람 의견 모으기</em>
+            <b>찬반토론</b>
+            <em>찬성 / 반대 고정 투표</em>
           </div>
         </a>
-        <a class="home-onboard__room home-onboard__room--quiz" href="#/feed?type=quiz" data-room-nav="quiz">
+        <a class="home-onboard__room home-onboard__room--quiz" href="#/write?type=multi&preset=quiz" data-room-nav="write-quiz">
           <span class="home-onboard__room-icon">🧠</span>
           <div class="home-onboard__room-info">
             <b>퀴즈</b>
-            <em>문제 풀고 댓글 반응 보기</em>
-          </div>
-        </a>
-        <a class="home-onboard__room home-onboard__room--drip" href="#/feed?type=drip" data-room-nav="drip">
-          <span class="home-onboard__room-icon">🤣</span>
-          <div class="home-onboard__room-info">
-            <b>드립</b>
-            <em>캐릭터와 한줄로 웃기기</em>
+            <em>정답과 해설 옵션 사용</em>
           </div>
         </a>
       </div>
@@ -208,7 +198,7 @@ export async function renderHome() {
     </div>`;
 
   try {
-    setMeta('소소킹 · AI 캐릭터와 함께 노는 커뮤니티');
+    setMeta('소소킹 · 일반게시판');
     const user = auth.currentUser;
     if (user) checkStreak(user.uid);
 
@@ -227,7 +217,7 @@ export async function renderHome() {
     const hotHTML = `
       <div>
         <div class="home-section-header">
-          <span class="home-section-title">🔥 캐릭터들이 반응한 인기글</span>
+          <span class="home-section-title">🔥 인기글</span>
           <button class="home-section-more home-section-more--button" id="hbtn-more-hot">더 보기</button>
         </div>
         <div class="home-rank-list">
@@ -258,8 +248,9 @@ export async function renderHome() {
       item.addEventListener('click', e => {
         e.preventDefault();
         const room = item.dataset.roomNav;
-        if (room === 'all') navigate('/feed');
-        else navigate(`/feed?type=${room}`);
+        if (room === 'write-vote') navigate('/write?type=multi&preset=vote');
+        else if (room === 'write-quiz') navigate('/write?type=multi&preset=quiz');
+        else navigate('/feed');
       });
     });
     el.querySelectorAll('[data-id]').forEach(item =>
