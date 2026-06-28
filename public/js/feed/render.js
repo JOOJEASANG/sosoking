@@ -40,10 +40,10 @@ export function renderFeedEmptyState({ search = '' } = {}) {
     <div class="empty-state">
       <div class="empty-state__icon">${search ? '🔍' : '🌱'}</div>
       <div class="empty-state__title">${search ? `"${escHtml(search)}" 검색 결과가 없어요` : '아직 아무 글도 없어요'}</div>
-      <div class="empty-state__desc">${search ? '다른 검색어로 다시 찾아보세요.' : '첫 번째 피드 글을 올려볼까요?'}</div>
+      <div class="empty-state__desc">${search ? '다른 검색어로 다시 찾아보세요.' : '첫 번째 글을 올리고 AI 캐릭터 댓글을 받아보세요.'}</div>
       ${search
         ? `<button class="btn btn--ghost" style="margin-top:16px" onclick="navigate('/feed')">전체 피드 보기</button>`
-        : `<button class="btn btn--primary" style="margin-top:16px" onclick="navigate('/write?type=multi')">+ 글쓰기</button>`}
+        : `<button class="btn btn--primary" style="margin-top:16px" onclick="navigate('/write?type=multi&preset=collect')">+ 글쓰기</button>`}
     </div>`;
 }
 
