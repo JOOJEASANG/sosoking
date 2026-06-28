@@ -14,7 +14,6 @@ export function navigate(path) {
 export function getCurrentPath() {
   const hash = window.location.hash.slice(1);
   if (hash) return hash.split('?')[0];
-  // Fallback: if no hash, use pathname (handles hash-stripped links from messaging apps)
   const pathname = window.location.pathname;
   if (pathname && pathname !== '/') return pathname.split('?')[0];
   return '/';
@@ -30,12 +29,9 @@ export function getQueryParams() {
 }
 
 function cleanupStuckOverlays() {
-  document.getElementById('desktop-game-layer')?.remove();
-  document.getElementById('game-info-layer')?.remove();
   document.getElementById('share-sheet')?.remove();
   document.getElementById('admin-password-modal')?.remove();
   document.querySelectorAll('.gallery-overlay').forEach(el => el.remove());
-  document.body.classList.remove('desktop-game-layer-open');
   document.body.style.overflow = '';
 }
 
@@ -60,7 +56,7 @@ async function handleRoute() {
   const el = document.getElementById('page-content');
   if (el) {
     el.classList.remove('page-enter');
-    void el.offsetWidth; // reflow to restart animation
+    void el.offsetWidth;
     el.classList.add('page-enter');
   }
 }
@@ -91,5 +87,4 @@ export function initRouter() {
   handleRoute();
 }
 
-// inline onclick="navigate()" 핸들러에서 사용할 수 있도록 전역 노출
 window.navigate = navigate;
