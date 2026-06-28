@@ -1,69 +1,51 @@
 export const MULTI_PRESETS = {
-  tournament: {
-    label: '대결방',
-    icon: '⚔️',
-    shortDesc: '토너먼트 대결',
-    titlePlaceholder: '대결 제목',
-    descPlaceholder: '',
-    tagsPlaceholder: '#대결, #토너먼트',
-    hiddenFromWriter: true,
-  },
   collect: {
     label: '일반글',
     icon: '📝',
-    shortDesc: '자유롭게 쓰는 게시글',
+    shortDesc: '선택하지 않으면 일반 게시글로 등록됩니다.',
     titlePlaceholder: '제목을 입력하세요',
     descPlaceholder: '내용을 입력하세요.',
-    tagsPlaceholder: '#일상, #피드',
+    tagsPlaceholder: '#일상, #게시판',
   },
   vote: {
-    label: '투표',
+    label: '찬반토론',
     icon: '🗳️',
-    shortDesc: '선택지 투표',
-    titlePlaceholder: '투표 주제를 입력하세요',
-    descPlaceholder: '설명을 입력하세요.',
-    tagsPlaceholder: '#투표',
-    voteOptionPlaceholders: ['선택지 1', '선택지 2'],
+    shortDesc: '찬성/반대 투표와 토론 댓글을 받습니다.',
+    titlePlaceholder: '찬반 토론 주제를 입력하세요',
+    descPlaceholder: '주제에 대한 설명을 입력하세요.',
+    tagsPlaceholder: '#찬반토론, #투표',
+    voteOptionPlaceholders: ['찬성', '반대'],
   },
   quiz: {
     label: '퀴즈',
     icon: '🧠',
-    shortDesc: '주관식 · 객관식 퀴즈',
+    shortDesc: '퀴즈 정답과 해설 옵션을 설정합니다.',
     titlePlaceholder: '퀴즈 제목을 입력하세요',
     descPlaceholder: '문제를 입력하세요.',
     tagsPlaceholder: '#퀴즈',
     quizAnswerPlaceholder: '정답',
   },
-  drip: {
-    label: '드립',
-    icon: '🤣',
-    shortDesc: '주제 던지고 한줄 드립',
-    titlePlaceholder: '드립 주제',
-    descPlaceholder: '드립 주제를 입력하세요.',
-    tagsPlaceholder: '#드립',
-  },
 };
 
-export const WRITER_PRESET_KEYS = ['collect', 'vote', 'quiz', 'drip'];
+export const WRITER_PRESET_KEYS = ['collect', 'vote', 'quiz'];
 
 export const BODY_LABELS = {
   collect: '내용',
-  vote: '투표 설명',
-  drip: '드립 주제',
+  vote: '토론 설명',
   quiz: '퀴즈 문제',
-  tournament: '대결 설명',
 };
 
-export const BODY_REQUIRED_PRESETS = ['vote', 'drip', 'quiz'];
+export const BODY_REQUIRED_PRESETS = ['quiz'];
 
 export function normalizePresetKey(key, { allowHidden = false } = {}) {
-  if (key === 'ox') return 'vote';
-  if (key === 'collection' || key === 'youtube' || key === 'image' || key === 'link') return 'collect';
-  if (key === 'debate' || key === 'discussion') return 'vote';
-  if (key === 'anonymous' || key === 'relay' || key === 'acrostic' || key === 'general') return 'collect';
-  if (key === 'tournament') return allowHidden ? 'tournament' : 'collect';
+  if (key === 'vote' || key === 'ox' || key === 'debate' || key === 'discussion') return 'vote';
+  if (key === 'quiz' || key === 'initial_game') return 'quiz';
+  if (
+    key === 'drip' || key === 'cbattle' || key === 'tournament' || key === 'naming' ||
+    key === 'anonymous' || key === 'relay' || key === 'acrostic' || key === 'general' ||
+    key === 'collection' || key === 'youtube' || key === 'image' || key === 'link'
+  ) return 'collect';
   if (!MULTI_PRESETS[key]) return 'collect';
-  if (!allowHidden && MULTI_PRESETS[key].hiddenFromWriter) return 'collect';
   return key;
 }
 
