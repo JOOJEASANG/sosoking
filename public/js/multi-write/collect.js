@@ -70,17 +70,15 @@ export function collectMultiModules() {
 
   if (enabled('vote')) {
     const options = getVoteOptions();
-    const voteMode = document.getElementById('mw-vote-mode')?.value || 'general';
     const question = bodyText || titleText;
-    if (!question) throw new Error('투표 주제를 입력해주세요.');
-    if (options.length < 2) throw new Error('선택지를 2개 이상 입력해주세요.');
-    const voteData = { enabled: true, question, options: options.map(text => ({ text, votes: 0 })) };
-    if (voteMode !== 'general') voteData.voteMode = voteMode;
-    modules.vote = voteData;
-  }
-
-  if (enabled('drip')) {
-    modules.drip = { enabled: true, prompt: bodyText.slice(0, 80), maxLength: 50, responseLabel: '한 줄 드립' };
+    if (!question) throw new Error('찬반 토론 주제를 입력해주세요.');
+    if (options.length < 2) throw new Error('찬성/반대 선택지를 확인해주세요.');
+    modules.vote = {
+      enabled: true,
+      voteMode: 'pros_cons',
+      question,
+      options: options.map(text => ({ text, votes: 0 })),
+    };
   }
 
   if (enabled('quiz')) {
