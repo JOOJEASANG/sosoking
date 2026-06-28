@@ -7,6 +7,7 @@ const Anthropic = require('@anthropic-ai/sdk');
 
 const db = getFirestore();
 const REGION = 'asia-northeast3';
+const SCHEDULED_PRESETS = ['general', 'vote', 'drip', 'consult'];
 
 // 현재 실제 글쓰기 화면(multi-write)의 공개 프리셋만 사용합니다.
 const POST_PRESETS = [
@@ -22,6 +23,25 @@ function todayKST() {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit',
   }).format(new Date());
+}
+
+function kstHour() {
+  return Number(new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Seoul', hour: '2-digit', hour12: false,
+  }).format(new Date())) || 0;
+}
+
+function scheduledSlot() {
+  const hour = kstHour();
+  if (hour < 12) return 'morning';
+  if (hour < 18) return 'afternoon';
+  return 'evening';
+}
+
+function scheduledPreset(date, slot) {
+  const slotIndex = { morning: 0, afternoon: 1, evening: 2 }[slot] || 0;
+  const seed = Number(String(date || '').replace(/-/g, '')) || 0;
+  return SCHEDULED_PRESETS[(seed + slotIndex) % SCHEDULED_PRESETS.length];
 }
 
 function clean(value, max = 500) {
@@ -106,7 +126,7 @@ async function settings() {
 
 async function reserveUsage(kind) {
   const current = await settings();
-  if (!current.aiAutoContentEnabled && kind === 'manual_content') return { ok: false, reason: 'disabled' };
+  if (!current.aiAutoContentEnabled) return { ok: false, reason: 'disabled' };
   if (current.aiDailyLimit <= 0) return { ok: false, reason: 'limit-zero' };
 
   const date = todayKST();
@@ -259,7 +279,7 @@ function buildDoc(preset, content, date, source) {
   return { mainDoc: doc, secretDoc };
 }
 
-async function generateOnePreset({ preset = 'general', force = true, actorId = 'admin' }) {
+async function generateOnePreset({ preset = 'general', force = true, actorId = 'admin', usageKind = 'manual_content' }) {
   const normalizedPreset = normalizePreset(preset);
   const date = todayKST();
 
@@ -272,7 +292,7 @@ async function generateOnePreset({ preset = 'general', force = true, actorId = '
   let content = fallbackContent(normalizedPreset, date);
   let source = 'fallback';
   const apiKey = process.env.ANTHROPIC_API_KEY;
-  const usage = apiKey ? await reserveUsage('manual_content') : { ok: false, reason: 'no-key' };
+  const usage = apiKey ? await reserveUsage(usageKind) : { ok: false, reason: 'no-key' };
 
   if (apiKey && usage.ok) {
     try {
@@ -308,6 +328,7 @@ async function generateOnePreset({ preset = 'general', force = true, actorId = '
     docId: feedRef.id,
     source,
     actorId,
+    usageKind,
     createdAt: FieldValue.serverTimestamp(),
   }, { merge: true });
 
@@ -339,10 +360,27 @@ async function generateAllAiContent({ force = true, actorId = 'admin' } = {}) {
   };
 }
 
-// 자동 예약 생성은 중지합니다. 관리자 AI관리 화면에서 유형을 선택해 클릭할 때만 생성합니다.
-exports.dailyAiContent = onSchedule({ schedule: '0 9 * * *', timeZone: 'Asia/Seoul', region: REGION, memory: '256MiB', timeoutSeconds: 60 }, async () => {
-  console.log('[ai-content] scheduled auto generation disabled; use admin manual generation.');
-  return null;
+exports.dailyAiContent = onSchedule({ schedule: '0 9,14,20 * * *', timeZone: 'Asia/Seoul', region: REGION, memory: '256MiB', timeoutSeconds: 120 }, async () => {
+  const date = todayKST();
+  const slot = scheduledSlot();
+  const markerRef = db.doc(`system_jobs/ai_content_auto_${date}_${slot}`);
+  const markerSnap = await markerRef.get();
+  if (markerSnap.exists) {
+    console.log(`[ai-content] skipped auto generation for ${date} ${slot}`);
+    return null;
+  }
+
+  const preset = scheduledPreset(date, slot);
+  const result = await generateOnePreset({ preset, force: true, actorId: `scheduler-${slot}`, usageKind: 'auto_content' });
+  await markerRef.set({
+    date,
+    slot,
+    preset,
+    result,
+    createdAt: FieldValue.serverTimestamp(),
+  }, { merge: true });
+  console.log('[ai-content] scheduled auto generation complete', result);
+  return result;
 });
 
 exports.generateAiContentNow = onCall({ region: REGION, timeoutSeconds: 120 }, async request => {
