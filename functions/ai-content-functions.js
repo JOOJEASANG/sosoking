@@ -13,7 +13,7 @@ const POST_PRESETS = [
   { preset: 'general', label: '모음방' },
   { preset: 'vote', label: '토론방' },
   { preset: 'drip', label: '드립방' },
-  { preset: 'quiz', label: '퀴즈방' },
+  { preset: 'consult', label: '병맛상담' },
 ];
 
 const PRESET_META = Object.fromEntries(POST_PRESETS.map(item => [item.preset, item]));
@@ -55,14 +55,15 @@ function normalizePreset(value) {
   const key = String(value || 'general').trim();
   if (key === 'collect' || key === 'collection') return 'general';
   if (key === 'ox' || key === 'crazy_court') return 'vote';
-  if (key === 'initial_game') return 'quiz';
+  if (key === 'quiz' || key === 'initial_game' || key === 'consult' || key === 'advice') return 'consult';
   if (key === 'random_battle' || key === 'relay' || key === 'acrostic' || key === 'naming') return 'general';
   return PRESET_META[key] ? key : 'general';
 }
 
 function feedTypeFromPreset(preset) {
   if (preset === 'general') return 'collect';
-  return ['vote', 'drip', 'quiz'].includes(preset) ? preset : 'collect';
+  if (preset === 'consult') return 'collect';
+  return ['vote', 'drip'].includes(preset) ? preset : 'collect';
 }
 
 function subtypeFromPreset(preset) {
@@ -150,13 +151,10 @@ const TYPE_PROMPTS = {
 반드시 JSON만 출력해:
 {"topic":"80자 이내 드립 주제","tags":["드립","한줄드립","드립주제","소소킹"]}`,
 
-  quiz: `너는 소소킹 커뮤니티 운영자야. 현재 글쓰기 유형 '퀴즈방'에 맞는 게시글 1개를 만들어줘.
-주관식, 객관식, 정답 없는 생각 퀴즈 중 하나를 골라 만들어.
-- 주관식이면 mode는 "subjective", answer를 포함해.
-- 객관식이면 mode는 "multiple", options 2~4개와 answerIdx를 포함해.
-- 정답 없는 퀴즈이면 noAnswer를 true로 하고 answer, answerIdx는 비워. 사용자가 댓글/반응으로 이야기할 수 있는 질문이어야 해.
+  consult: `너는 소소킹 커뮤니티 운영자야. 병맛상담 게시글 1개를 만들어줘.
+생활 속 작은 고민을 재밌게 풀 수 있는 질문으로 만들어.
 반드시 JSON만 출력해:
-{"title":"퀴즈 제목 50자 이내","desc":"문제 본문","mode":"subjective 또는 multiple","noAnswer":false,"options":["선택지1","선택지2"],"answer":"주관식 정답","answerIdx":0,"hint":"힌트 50자 이내","explanation":"정답 해설 또는 정답 없는 퀴즈 안내 1~2문장","tags":["퀴즈","소소킹"]}`,
+{"title":"제목 50자 이내","desc":"상황 설명 2~4문장","topic":"daily","style":"funny","tags":["병맛상담","고민","소소킹"]}`,
 };
 
 function fallbackContent(preset, date) {
@@ -177,9 +175,9 @@ function fallbackContent(preset, date) {
       { topic: '배달 예상시간이 계속 늘어날 때 떠오르는 한 줄은?', tags: ['드립', '배달', '드립주제'] },
       { topic: '월요일 아침 알람을 본 내 영혼에게 이름을 붙인다면?', tags: ['드립', '월요일', '드립주제'] },
     ]),
-    quiz: pick([
-      { title: '오늘의 퀴즈 🧠', desc: '다음 중 일반적으로 냉장 보관하지 않는 것이 더 좋은 식재료는?', mode: 'multiple', noAnswer: false, options: ['토마토', '우유', '생선', '두부'], answerIdx: 0, hint: '맛과 식감이 중요해요.', explanation: '토마토는 냉장 보관 시 향과 식감이 떨어질 수 있어 상온 보관이 권장되는 경우가 많습니다.', tags: ['퀴즈', '생활상식', '소소킹'] },
-      { title: '정답 없는 상상 퀴즈', desc: '만약 하루 동안 모든 사람이 말끝에 “ㅋㅋ”를 붙여야 한다면 제일 난감한 순간은 언제일까요?', mode: 'subjective', noAnswer: true, hint: '정답보다 센스가 중요해요.', explanation: '정답이 없는 생각 퀴즈입니다. 댓글로 가장 웃긴 답을 남겨보세요.', tags: ['퀴즈', '상상퀴즈', '정답없음'] },
+    consult: pick([
+      { title: '이거 제가 예민한 건가요?', desc: '분명 별일 아닌 것 같은데 괜히 신경 쓰입니다. 댓글로 공감, 현실조언, 웃긴 해결책 아무거나 던져주세요.', topic: 'daily', style: 'funny', tags: ['병맛상담', '고민', '소소킹'] },
+      { title: '살까 말까 장바구니가 저를 부릅니다', desc: '며칠째 장바구니에서 손짓하는 물건이 있습니다. 사도 되는지 말려야 하는지 소소판정 부탁합니다.', topic: 'money', style: 'choice', tags: ['병맛상담', '선택', '소소킹'] },
     ]),
   }[preset] || { title: '오늘의 소소 이야기', desc: '가볍게 댓글로 이야기해봐요.', tags: ['소소킹'] };
 }
@@ -241,38 +239,21 @@ function buildDoc(preset, content, date, source) {
     doc.modules.drip = { enabled: true, prompt: topic, maxLength: 50, responseLabel: '한 줄 드립' };
   }
 
-  if (preset === 'quiz') {
-    const mode = content.mode === 'subjective' ? 'subjective' : 'multiple';
-    const noAnswer = content.noAnswer === true;
-    const options = optionTexts(content.options, ['정답 후보 1', '정답 후보 2', '정답 후보 3', '정답 후보 4']).slice(0, 6);
-    const safeOptions = options.length >= 2 ? options : ['맞다', '아니다'];
-    const answerIdx = Math.max(0, Math.min(Number(content.answerIdx || content.correctIndex || 0), safeOptions.length - 1));
-    const answer = clean(content.answer || safeOptions[answerIdx], 120);
-    doc.modules.quiz = {
+  if (preset === 'consult') {
+    const topic = clean(content.topic || 'daily', 40);
+    const style = clean(content.style || 'funny', 40);
+    doc.typeLabel = '병맛상담';
+    doc.subtype = 'consult';
+    doc.feedType = 'collect';
+    doc.tags = toTags(content.tags, ['병맛상담', '고민', '소소킹']);
+    doc.modules.consult = {
       enabled: true,
-      mode,
-      noAnswer,
+      topic,
+      topicLabel: ({ daily: '일상', people: '관계', work: '직장/학교', money: '소비/선택', vent: '하소연' })[topic] || '일상',
+      style,
+      styleLabel: ({ empathy: '공감', realistic: '현실조언', choice: '선택도움', soft: '순한맛', funny: '웃긴해결' })[style] || '웃긴해결',
       question: doc.desc,
-      hint: clean(content.hint, 100),
-      explanation: noAnswer ? clean(content.explanation || '정답이 없는 퀴즈입니다. 댓글로 자유롭게 이야기해보세요.', 500) : clean(content.explanation, 500),
     };
-    if (mode === 'multiple') doc.modules.quiz.options = safeOptions.map(text => ({ text }));
-    if (!noAnswer) {
-      if (mode === 'multiple') doc.modules.quiz.correctIndex = answerIdx;
-      else doc.modules.quiz.answer = answer;
-      secretDoc = {
-        quizMode: mode,
-        mode,
-        answer: mode === 'subjective' ? answer : safeOptions[answerIdx],
-        answerIdx: mode === 'multiple' ? answerIdx : null,
-        correctIndex: mode === 'multiple' ? answerIdx : null,
-        explanation: clean(content.explanation, 500),
-        correctCount: 0,
-        firstCorrect: null,
-        createdAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp(),
-      };
-    }
   }
 
   return { mainDoc: doc, secretDoc };
