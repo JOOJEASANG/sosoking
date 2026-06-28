@@ -12,18 +12,20 @@ import {
 import { navigate } from '../router.js';
 
 const TYPE_LABEL = {
-  collect: '일반글',
-  multi: '일반글',
-  general: '일반글',
-  anonymous: '일반글',
-  vote: '찬반토론',
-  ox: '찬반토론',
-  crazy_court: '찬반토론',
-  balance: '찬반토론',
-  battle: '찬반토론',
-  consult: '병맛상담',
-  quiz: '퀴즈',
-  initial_game: '퀴즈',
+  collect: '상담',
+  multi: '게임',
+  general: '판결',
+  anonymous: '게임',
+  judgment: '판결',
+  vote: '토론',
+  ox: '토론',
+  crazy_court: '판결',
+  balance: '토론',
+  battle: '토론',
+  consult: '상담',
+  drip: '드립',
+  quiz: '상담',
+  initial_game: '상담',
 };
 
 function getKstDateString(date = new Date()) {
@@ -56,15 +58,16 @@ function commentScore(comment) {
 }
 
 function moduleLabel(post) {
-  const m = post.modules || {};
-  if (m.collect?.enabled) return m.collect.label || '일반글';
-  if (m.vote?.enabled) return '찬반토론';
-  if (m.consult?.enabled) return '병맛상담';
-  if (m.quiz?.enabled) return '퀴즈';
-  if (post.feedType && TYPE_LABEL[post.feedType]) return TYPE_LABEL[post.feedType];
+  if (post.typeLabel) return post.typeLabel;
   if (post.subtype && TYPE_LABEL[post.subtype]) return TYPE_LABEL[post.subtype];
-  if (post.type !== 'multi') return TYPE_LABEL[post.type] || '일반글';
-  return '일반글';
+  const m = post.modules || {};
+  if (m.consult?.enabled) return '상담';
+  if (m.drip?.enabled) return '드립';
+  if (m.vote?.enabled) return m.vote.voteMode === 'judgment' ? '판결' : '토론';
+  if (m.quiz?.enabled) return '상담';
+  if (post.feedType && TYPE_LABEL[post.feedType]) return TYPE_LABEL[post.feedType];
+  if (post.type !== 'multi') return TYPE_LABEL[post.type] || '게임';
+  return '게임';
 }
 
 async function fetchPopularComments(n = 8) {
@@ -95,44 +98,38 @@ async function fetchPopularComments(n = 8) {
   }
 }
 
+const GAME_ROOMS = [
+  { key: 'judgment', icon: '⚖️', title: '판결', desc: '사소한 사건을 캐릭터에게 판정받기', nav: 'write-judgment' },
+  { key: 'consult', icon: '🫠', title: '상담', desc: '웃기지만 은근 쓸모 있는 고민 상담', nav: 'write-consult' },
+  { key: 'vote', icon: '🗳️', title: '토론', desc: '찬성·반대 의견으로 가볍게 붙기', nav: 'write-vote' },
+  { key: 'drip', icon: '😂', title: '드립', desc: '한 줄 드립으로 캐릭터와 배틀', nav: 'write-drip' },
+];
+
 function renderIntro() {
   const residents = getPublicAiResidents().slice(0, 8);
   return `
     <section class="home-onboard">
       <div class="home-onboard__hero">
         <div class="home-onboard__hero-text">
-          <div class="home-onboard__badge">🤖 AI CHARACTER COMMUNITY</div>
-          <h1 class="home-onboard__title">하나의 게시판에서<br>유형만 선택해요</h1>
-          <p class="home-onboard__desc">선택하지 않으면 일반글, 투표를 선택하면 찬반토론, 병맛상담을 선택하면 캐릭터들이 고민에 끼어듭니다.</p>
+          <div class="home-onboard__badge">🎮 AI CHARACTER GAME COMMUNITY</div>
+          <h1 class="home-onboard__title">판결 · 상담 · 토론 · 드립<br>4가지로 놀아요</h1>
+          <p class="home-onboard__desc">사소한 이야기도 8명의 AI 캐릭터가 끼어들면 게임이 됩니다.</p>
         </div>
         <div class="home-onboard__hero-actions">
-          <button class="home-onboard__btn-primary" type="button" id="hbtn-write">+ 글쓰기</button>
-          <button class="home-onboard__btn-ghost" type="button" id="hbtn-feed">게시판 둘러보기</button>
+          <button class="home-onboard__btn-primary" type="button" id="hbtn-write">+ 게임 열기</button>
+          <button class="home-onboard__btn-ghost" type="button" id="hbtn-feed">둘러보기</button>
         </div>
       </div>
 
-      <div class="home-onboard__rooms" aria-label="글쓰기 유형 안내">
-        <a class="home-onboard__room" href="#/feed" data-room-nav="all">
-          <span class="home-onboard__room-icon">📝</span>
-          <div class="home-onboard__room-info">
-            <b>일반게시판</b>
-            <em>일반글을 기본으로 작성</em>
-          </div>
-        </a>
-        <a class="home-onboard__room home-onboard__room--vote" href="#/write?type=multi&preset=vote" data-room-nav="write-vote">
-          <span class="home-onboard__room-icon">🗳️</span>
-          <div class="home-onboard__room-info">
-            <b>찬반토론</b>
-            <em>소소판정 · 선택장애 해결</em>
-          </div>
-        </a>
-        <a class="home-onboard__room home-onboard__room--consult" href="#/write?type=multi&preset=consult" data-room-nav="write-consult">
-          <span class="home-onboard__room-icon">🫠</span>
-          <div class="home-onboard__room-info">
-            <b>병맛상담</b>
-            <em>웃기지만 은근 쓸모 있는 상담</em>
-          </div>
-        </a>
+      <div class="home-onboard__rooms" aria-label="게임 유형 안내">
+        ${GAME_ROOMS.map(room => `
+          <a class="home-onboard__room home-onboard__room--${room.key}" href="#/write?type=multi&preset=${room.key}" data-room-nav="${room.nav}">
+            <span class="home-onboard__room-icon">${room.icon}</span>
+            <div class="home-onboard__room-info">
+              <b>${escHtml(room.title)}</b>
+              <em>${escHtml(room.desc)}</em>
+            </div>
+          </a>`).join('')}
       </div>
 
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-top:12px">
@@ -200,7 +197,7 @@ export async function renderHome() {
     </div>`;
 
   try {
-    setMeta('소소킹 · 일반게시판');
+    setMeta('소소킹 · AI 캐릭터 게임 커뮤니티');
     const user = auth.currentUser;
     if (user) checkStreak(user.uid);
 
@@ -219,20 +216,20 @@ export async function renderHome() {
     const hotHTML = `
       <div>
         <div class="home-section-header">
-          <span class="home-section-title">🔥 인기글</span>
+          <span class="home-section-title">🔥 인기 게임</span>
           <button class="home-section-more home-section-more--button" id="hbtn-more-hot">더 보기</button>
         </div>
         <div class="home-rank-list">
           ${hotPosts.length
             ? hotPosts.map(renderPopularPost).join('')
-            : '<div class="empty-state"><div class="empty-state__title">아직 인기글이 없어요</div></div>'}
+            : '<div class="empty-state"><div class="empty-state__title">아직 인기 게임이 없어요</div></div>'}
         </div>
       </div>`;
 
     const commentsHTML = `
       <div>
         <div class="home-section-header">
-          <span class="home-section-title">💬 최근 댓글 반응</span>
+          <span class="home-section-title">💬 캐릭터·유저 댓글 반응</span>
         </div>
         <div class="home-compact-feed-list">
           ${popularComments.length
@@ -243,15 +240,17 @@ export async function renderHome() {
 
     el.innerHTML = `<div class="home-dash page-enter home-dash--v2">${renderIntro()}${bestHTML}${hotHTML}${commentsHTML}</div>`;
 
-    el.querySelector('#hbtn-write')?.addEventListener('click', () => navigate('/write?type=multi&preset=collect'));
+    el.querySelector('#hbtn-write')?.addEventListener('click', () => navigate('/write?type=multi&preset=judgment'));
     el.querySelector('#hbtn-feed')?.addEventListener('click', () => navigate('/feed'));
     el.querySelector('#hbtn-more-hot')?.addEventListener('click', () => navigate('/feed?sort=popular'));
     el.querySelectorAll('[data-room-nav]').forEach(item => {
       item.addEventListener('click', e => {
         e.preventDefault();
         const room = item.dataset.roomNav;
-        if (room === 'write-vote') navigate('/write?type=multi&preset=vote');
+        if (room === 'write-judgment') navigate('/write?type=multi&preset=judgment');
         else if (room === 'write-consult') navigate('/write?type=multi&preset=consult');
+        else if (room === 'write-vote') navigate('/write?type=multi&preset=vote');
+        else if (room === 'write-drip') navigate('/write?type=multi&preset=drip');
         else navigate('/feed');
       });
     });
