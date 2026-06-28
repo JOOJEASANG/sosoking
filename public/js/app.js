@@ -31,7 +31,6 @@ import { renderTerms }   from './pages/terms.js';
 import { renderPrivacy } from './pages/privacy.js';
 import { renderScraps }  from './pages/scraps.js';
 import { renderHall }    from './pages/hall.js';
-import { renderDrip }    from './pages/drip.js';
 
 export { appState };
 
@@ -169,7 +168,6 @@ export async function initApp() {
 
   registerRoute('/',           () => renderHome());
   registerRoute('/feed',       () => renderFeed());
-  registerRoute('/drip',       () => renderDrip());
   registerRoute('/write',      () => renderWrite());
   registerRoute('/detail/:id', ({ id }) => renderDetail(id));
   registerRoute('/account',    () => renderAccount());
