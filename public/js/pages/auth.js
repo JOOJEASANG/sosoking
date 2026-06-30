@@ -1,16 +1,15 @@
-import { auth, db } from '../firebase.js?v=20260630-3';
-import { doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { auth, db, functions } from '../firebase.js?v=20260630-3';
+import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 import {
   GoogleAuthProvider,
   EmailAuthProvider,
-  sendSignInLinkToEmail,
-  isSignInWithEmailLink,
-  signInWithEmailLink,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
   signInWithPopup,
   linkWithPopup,
   linkWithCredential,
   signOut,
-  updateProfile,
   onAuthStateChanged,
   signInAnonymously,
 } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
@@ -19,35 +18,22 @@ import { escapeHtml } from '../utils/sanitize.js?v=20260630-3';
 
 const provider = new GoogleAuthProvider();
 provider.setCustomParameters({ prompt: 'select_account' });
+const checkNicknameFn = httpsCallable(functions, 'checkNickname');
+const setNicknameFn = httpsCallable(functions, 'setNickname');
 
 function cleanNickname(value) {
-  return String(value || '').replace(/\s+/g, ' ').trim().slice(0, 20);
+  return String(value || '').replace(/\s+/g, '').trim().slice(0, 20);
 }
 
 function validEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim());
 }
 
-async function saveProfile(user, nickname = '') {
-  if (!user) return;
-  const profileRef = doc(db, 'users', user.uid);
-  const snap = await getDoc(profileRef).catch(() => null);
-  const existing = snap?.exists() ? snap.data() : {};
-  const finalNickname = cleanNickname(nickname || existing.nickname || user.displayName || '소소한 원고');
-
-  if (finalNickname && user.displayName !== finalNickname) {
-    await updateProfile(user, { displayName: finalNickname }).catch(() => {});
-  }
-
-  await setDoc(profileRef, {
-    uid: user.uid,
-    email: user.email || existing.email || '',
-    nickname: finalNickname,
-    provider: user.providerData?.[0]?.providerId || existing.provider || (user.isAnonymous ? 'anonymous' : 'unknown'),
-    isAnonymous: !!user.isAnonymous,
-    updatedAt: serverTimestamp(),
-    createdAt: existing.createdAt || serverTimestamp(),
-  }, { merge: true });
+function passwordMessage(value) {
+  const pw = String(value || '');
+  if (pw.length < 6) return '비밀번호는 최소 6자 이상이어야 합니다.';
+  if (pw.length > 30) return '비밀번호는 30자 이하로 입력해주세요.';
+  return '';
 }
 
 async function ensureGuestAfterLogout() {
@@ -56,31 +42,10 @@ async function ensureGuestAfterLogout() {
   }
 }
 
-async function completeEmailLinkIfNeeded() {
-  if (!isSignInWithEmailLink(auth, location.href)) return null;
-
-  const pending = JSON.parse(localStorage.getItem('sosoking_email_link') || '{}');
-  const email = pending.email || window.prompt('가입/로그인에 사용한 이메일을 입력해주세요.');
-  const nickname = cleanNickname(pending.nickname || '소소한 원고');
-  if (!email) throw new Error('이메일 확인이 취소되었습니다.');
-
-  let userCred;
-  if (auth.currentUser?.isAnonymous) {
-    const credential = EmailAuthProvider.credentialWithLink(email, location.href);
-    userCred = await linkWithCredential(auth.currentUser, credential).catch(async err => {
-      if (err.code === 'auth/credential-already-in-use' || err.code === 'auth/email-already-in-use') {
-        return signInWithEmailLink(auth, email, location.href);
-      }
-      throw err;
-    });
-  } else {
-    userCred = await signInWithEmailLink(auth, email, location.href);
-  }
-
-  localStorage.removeItem('sosoking_email_link');
-  await saveProfile(userCred.user, nickname);
-  history.replaceState(null, '', `${location.origin}/#/auth`);
-  return userCred.user;
+async function loadProfile(user) {
+  if (!user) return {};
+  const snap = await getDoc(doc(db, 'users', user.uid)).catch(() => null);
+  return snap?.exists() ? snap.data() : {};
 }
 
 export async function renderAuth(container) {
@@ -100,19 +65,15 @@ export async function renderAuth(container) {
     </div>`;
 
   const box = document.getElementById('auth-box');
-
-  try {
-    const linkedUser = await completeEmailLinkIfNeeded();
-    if (linkedUser) showToast('이메일 가입/로그인이 완료되었습니다.', 'success');
-  } catch (err) {
-    console.error(err);
-    showToast(err.message || '이메일 로그인 처리 중 오류가 발생했습니다.', 'error');
-  }
-
   onAuthStateChanged(auth, async user => {
     if (!box) return;
     if (user && !user.isAnonymous) {
-      await renderProfile(box, user);
+      const profile = await loadProfile(user);
+      if (!profile.nickname) {
+        renderNicknameSetup(box, user, profile);
+      } else {
+        renderProfile(box, user, profile);
+      }
     } else {
       renderLoginForm(box);
     }
@@ -123,33 +84,31 @@ function renderLoginForm(box) {
   box.innerHTML = `
     <div style="text-align:center;margin-bottom:22px;">
       <div style="font-size:46px;margin-bottom:8px;">⚖️</div>
-      <div style="font-family:var(--font-serif);font-size:21px;font-weight:700;color:var(--gold);">소소킹 계정 만들기</div>
-      <div style="font-size:13px;color:var(--cream-dim);line-height:1.7;margin-top:8px;">비밀번호 없이 이메일과 닉네임만으로 가입합니다.<br>구글 계정으로도 바로 로그인할 수 있습니다.</div>
+      <div style="font-family:var(--font-serif);font-size:21px;font-weight:700;color:var(--gold);">소소킹 계정</div>
+      <div style="font-size:13px;color:var(--cream-dim);line-height:1.7;margin-top:8px;">이메일 주소와 간단 비밀번호만으로 가입합니다.<br>닉네임은 가입 후 중복 확인을 거쳐 설정합니다.</div>
     </div>
 
     <button class="btn btn-secondary" id="google-login" style="margin-bottom:18px;">Google로 계속하기</button>
 
     <div style="display:flex;align-items:center;gap:10px;margin:20px 0;color:var(--cream-dim);font-size:12px;">
       <div style="height:1px;background:var(--border);flex:1;"></div>
-      <span>또는 이메일 링크</span>
+      <span>또는 이메일</span>
       <div style="height:1px;background:var(--border);flex:1;"></div>
     </div>
 
-    <form id="email-link-form">
+    <form id="email-auth-form">
       <div class="form-group">
         <label class="form-label">이메일</label>
         <input type="email" id="auth-email" class="form-input" placeholder="you@example.com" required>
       </div>
       <div class="form-group">
-        <label class="form-label">닉네임</label>
-        <input type="text" id="auth-nickname" class="form-input" maxlength="20" placeholder="예: 억울한 라면러버" required>
+        <label class="form-label">간단 비밀번호</label>
+        <input type="password" id="auth-password" class="form-input" minlength="6" maxlength="30" placeholder="6자 이상" required>
+        <div style="font-size:11px;color:var(--cream-dim);margin-top:6px;">보안을 위해 최소 6자 이상으로 입력해주세요.</div>
       </div>
-      <button type="submit" class="btn btn-primary" id="email-link-btn">가입/로그인 링크 받기</button>
+      <button type="submit" class="btn btn-primary" id="signup-btn">가입하기</button>
+      <button type="button" class="btn btn-ghost" id="login-btn" style="margin-top:10px;">이미 계정이 있어요 · 로그인</button>
     </form>
-
-    <div class="disclaimer" style="margin-top:18px;font-size:12px;">
-      이메일 링크 방식이라 비밀번호를 만들 필요가 없습니다. 메일함에서 링크를 누르면 가입 또는 로그인이 완료됩니다.
-    </div>
   `;
 
   document.getElementById('google-login').addEventListener('click', async () => {
@@ -165,47 +124,158 @@ function renderLoginForm(box) {
       } else {
         result = await signInWithPopup(auth, provider);
       }
-      await saveProfile(result.user, result.user.displayName || '구글 원고');
-      showToast('구글 로그인 완료', 'success');
-      location.hash = '#/my-cases';
+      showToast('구글 로그인 완료. 닉네임을 설정해주세요.', 'success');
+      renderNicknameSetup(box, result.user, await loadProfile(result.user));
     } catch (err) {
       console.error(err);
       showToast(err.message || '구글 로그인에 실패했습니다.', 'error');
     }
   });
 
-  document.getElementById('email-link-form').addEventListener('submit', async e => {
+  document.getElementById('email-auth-form').addEventListener('submit', async e => {
     e.preventDefault();
-    const email = document.getElementById('auth-email').value.trim();
-    const nickname = cleanNickname(document.getElementById('auth-nickname').value);
-    if (!validEmail(email)) return showToast('이메일 형식을 확인해주세요.', 'error');
-    if (!nickname) return showToast('닉네임을 입력해주세요.', 'error');
-
-    const btn = document.getElementById('email-link-btn');
-    btn.disabled = true;
-    btn.textContent = '메일 보내는 중...';
-
-    try {
-      await sendSignInLinkToEmail(auth, email, {
-        url: `${location.origin}/#/auth`,
-        handleCodeInApp: true,
-      });
-      localStorage.setItem('sosoking_email_link', JSON.stringify({ email, nickname }));
-      showToast('가입/로그인 링크를 이메일로 보냈습니다.', 'success');
-      btn.textContent = '메일함을 확인해주세요';
-    } catch (err) {
-      console.error(err);
-      showToast(err.message || '이메일 발송에 실패했습니다.', 'error');
-      btn.disabled = false;
-      btn.textContent = '가입/로그인 링크 받기';
-    }
+    await handleEmailSignup(box);
+  });
+  document.getElementById('login-btn').addEventListener('click', async () => {
+    await handleEmailLogin(box);
   });
 }
 
-async function renderProfile(box, user) {
-  const snap = await getDoc(doc(db, 'users', user.uid)).catch(() => null);
-  const profile = snap?.exists() ? snap.data() : {};
-  const nickname = cleanNickname(profile.nickname || user.displayName || '소소한 원고');
+async function handleEmailSignup(box) {
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  if (!validEmail(email)) return showToast('이메일 형식을 확인해주세요.', 'error');
+  const pwMsg = passwordMessage(password);
+  if (pwMsg) return showToast(pwMsg, 'error');
+
+  const btn = document.getElementById('signup-btn');
+  btn.disabled = true;
+  btn.textContent = '가입 처리 중...';
+  try {
+    let result;
+    if (auth.currentUser?.isAnonymous) {
+      const credential = EmailAuthProvider.credential(email, password);
+      result = await linkWithCredential(auth.currentUser, credential).catch(async err => {
+        if (err.code === 'auth/credential-already-in-use' || err.code === 'auth/email-already-in-use') {
+          return createUserWithEmailAndPassword(auth, email, password);
+        }
+        throw err;
+      });
+    } else {
+      result = await createUserWithEmailAndPassword(auth, email, password);
+    }
+    showToast('가입 완료. 닉네임을 설정해주세요.', 'success');
+    renderNicknameSetup(box, result.user, await loadProfile(result.user));
+  } catch (err) {
+    console.error(err);
+    const msg = err.code === 'auth/email-already-in-use'
+      ? '이미 가입된 이메일입니다. 로그인 버튼을 눌러주세요.'
+      : (err.message || '가입에 실패했습니다.');
+    showToast(msg, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '가입하기';
+  }
+}
+
+async function handleEmailLogin(box) {
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  if (!validEmail(email)) return showToast('이메일 형식을 확인해주세요.', 'error');
+  if (!password) return showToast('비밀번호를 입력해주세요.', 'error');
+
+  try {
+    const result = await signInWithEmailAndPassword(auth, email, password);
+    const profile = await loadProfile(result.user);
+    showToast('로그인 완료', 'success');
+    if (!profile.nickname) renderNicknameSetup(box, result.user, profile);
+    else location.hash = '#/my-cases';
+  } catch (err) {
+    console.error(err);
+    showToast('이메일 또는 비밀번호를 확인해주세요.', 'error');
+  }
+}
+
+function renderNicknameSetup(box, user, profile = {}) {
+  const current = cleanNickname(profile.nickname || user.displayName || '');
+  box.innerHTML = `
+    <div style="text-align:center;margin-bottom:22px;">
+      <div style="font-size:46px;margin-bottom:8px;">🏷️</div>
+      <div style="font-family:var(--font-serif);font-size:21px;font-weight:700;color:var(--gold);">닉네임 설정</div>
+      <div style="font-size:13px;color:var(--cream-dim);line-height:1.7;margin-top:8px;">사건 접수와 판결문에 표시될 별칭입니다.<br>중복 확인 후 저장할 수 있습니다.</div>
+    </div>
+
+    <form id="nickname-form">
+      <div class="form-group">
+        <label class="form-label">닉네임</label>
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="profile-nickname" class="form-input" maxlength="20" value="${escapeHtml(current)}" placeholder="예: 억울한라면러버" required style="flex:1;">
+          <button type="button" class="btn btn-secondary" id="check-nickname" style="width:112px;padding-left:0;padding-right:0;">중복확인</button>
+        </div>
+        <div id="nickname-status" style="font-size:12px;color:var(--cream-dim);margin-top:8px;">한글, 영문, 숫자, 밑줄 2~20자</div>
+      </div>
+      <button type="submit" class="btn btn-primary" id="save-nickname" disabled>닉네임 저장</button>
+    </form>
+    <button class="btn btn-ghost" id="logout-btn" style="margin-top:10px;">로그아웃</button>
+  `;
+
+  let checkedName = '';
+  let available = false;
+  const input = document.getElementById('profile-nickname');
+  const status = document.getElementById('nickname-status');
+  const saveBtn = document.getElementById('save-nickname');
+
+  input.addEventListener('input', () => {
+    available = false;
+    checkedName = '';
+    saveBtn.disabled = true;
+    status.textContent = '중복 확인이 필요합니다.';
+    status.style.color = 'var(--cream-dim)';
+  });
+
+  document.getElementById('check-nickname').addEventListener('click', async () => {
+    const nickname = cleanNickname(input.value);
+    input.value = nickname;
+    if (!nickname) return showToast('닉네임을 입력해주세요.', 'error');
+    try {
+      const res = await checkNicknameFn({ nickname });
+      available = !!res.data?.available;
+      checkedName = nickname;
+      status.textContent = available ? '사용 가능한 닉네임입니다.' : '이미 사용 중인 닉네임입니다.';
+      status.style.color = available ? '#27ae60' : '#e74c3c';
+      saveBtn.disabled = !available;
+    } catch (err) {
+      console.error(err);
+      available = false;
+      saveBtn.disabled = true;
+      showToast(err.message || '중복 확인에 실패했습니다.', 'error');
+    }
+  });
+
+  document.getElementById('nickname-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const nickname = cleanNickname(input.value);
+    if (!available || nickname !== checkedName) return showToast('닉네임 중복 확인을 먼저 해주세요.', 'error');
+    try {
+      await setNicknameFn({ nickname });
+      showToast('닉네임이 저장되었습니다.', 'success');
+      renderProfile(box, user, await loadProfile(user));
+    } catch (err) {
+      console.error(err);
+      showToast(err.message || '닉네임 저장에 실패했습니다.', 'error');
+    }
+  });
+
+  document.getElementById('logout-btn').addEventListener('click', async () => {
+    await signOut(auth);
+    await ensureGuestAfterLogout();
+    showToast('로그아웃되었습니다.', 'success');
+    location.hash = '#/';
+  });
+}
+
+function renderProfile(box, user, profile = {}) {
+  const nickname = cleanNickname(profile.nickname || user.displayName || '닉네임 미설정');
   const email = user.email || profile.email || '';
 
   box.innerHTML = `
@@ -215,27 +285,12 @@ async function renderProfile(box, user) {
       <div style="font-size:13px;color:var(--cream-dim);margin-top:6px;">${escapeHtml(email || '이메일 정보 없음')}</div>
     </div>
 
-    <form id="profile-form">
-      <div class="form-group">
-        <label class="form-label">닉네임</label>
-        <input type="text" id="profile-nickname" class="form-input" maxlength="20" value="${escapeHtml(nickname)}" required>
-      </div>
-      <button type="submit" class="btn btn-primary">닉네임 저장</button>
-    </form>
-
-    <a href="#/my-cases" class="btn btn-secondary" style="margin-top:10px;">내 사건 보기</a>
+    <button class="btn btn-secondary" id="change-nickname">닉네임 변경</button>
+    <a href="#/my-cases" class="btn btn-primary" style="margin-top:10px;">내 사건 보기</a>
     <button class="btn btn-ghost" id="logout-btn" style="margin-top:10px;">로그아웃</button>
   `;
 
-  document.getElementById('profile-form').addEventListener('submit', async e => {
-    e.preventDefault();
-    const nextNickname = cleanNickname(document.getElementById('profile-nickname').value);
-    if (!nextNickname) return showToast('닉네임을 입력해주세요.', 'error');
-    await saveProfile(user, nextNickname);
-    showToast('닉네임이 저장되었습니다.', 'success');
-    renderProfile(box, auth.currentUser);
-  });
-
+  document.getElementById('change-nickname').addEventListener('click', () => renderNicknameSetup(box, user, profile));
   document.getElementById('logout-btn').addEventListener('click', async () => {
     await signOut(auth);
     await ensureGuestAfterLogout();
