@@ -1,5 +1,6 @@
-import { auth, db } from '../firebase.js?v=20260630-3';
-import { doc, getDoc, runTransaction, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { auth, db, functions } from '../firebase.js?v=20260630-3';
+import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 import {
   GoogleAuthProvider,
   EmailAuthProvider,
@@ -18,13 +19,11 @@ import { escapeHtml } from '../utils/sanitize.js?v=20260630-3';
 
 const provider = new GoogleAuthProvider();
 provider.setCustomParameters({ prompt: 'select_account' });
+const checkNicknameFn = httpsCallable(functions, 'checkNickname');
+const setNicknameFn = httpsCallable(functions, 'setNickname');
 
 function cleanNickname(value) {
   return String(value || '').replace(/\s+/g, '').trim().slice(0, 20);
-}
-
-function nicknameKey(value) {
-  return cleanNickname(value).toLocaleLowerCase('ko-KR');
 }
 
 function nicknameError(value) {
@@ -47,9 +46,7 @@ function passwordMessage(value) {
 }
 
 async function ensureGuestAfterLogout() {
-  if (!auth.currentUser) {
-    await signInAnonymously(auth).catch(() => {});
-  }
+  if (!auth.currentUser) await signInAnonymously(auth).catch(() => {});
 }
 
 async function loadProfile(user) {
@@ -61,54 +58,15 @@ async function loadProfile(user) {
 async function isNicknameAvailable(user, nickname) {
   const err = nicknameError(nickname);
   if (err) throw new Error(err);
-  const key = nicknameKey(nickname);
-  const snap = await getDoc(doc(db, 'user_names', key));
-  return !snap.exists() || snap.data().uid === user.uid;
+  const res = await checkNicknameFn({ nickname: cleanNickname(nickname) });
+  return !!res.data?.available;
 }
 
 async function saveNickname(user, nickname) {
   const finalNickname = cleanNickname(nickname);
   const err = nicknameError(finalNickname);
   if (err) throw new Error(err);
-  const key = nicknameKey(finalNickname);
-  const profileRef = doc(db, 'users', user.uid);
-  const nameRef = doc(db, 'user_names', key);
-
-  await runTransaction(db, async tx => {
-    const [profileSnap, nameSnap] = await Promise.all([
-      tx.get(profileRef),
-      tx.get(nameRef),
-    ]);
-    const existingProfile = profileSnap.exists() ? profileSnap.data() : {};
-    const oldKey = existingProfile.nickname ? nicknameKey(existingProfile.nickname) : '';
-
-    if (nameSnap.exists() && nameSnap.data().uid !== user.uid) {
-      throw new Error('이미 사용 중인 닉네임입니다.');
-    }
-
-    tx.set(nameRef, {
-      uid: user.uid,
-      nickname: finalNickname,
-      key,
-      updatedAt: serverTimestamp(),
-      createdAt: nameSnap.exists() ? nameSnap.data().createdAt : serverTimestamp(),
-    }, { merge: true });
-
-    if (oldKey && oldKey !== key) {
-      tx.delete(doc(db, 'user_names', oldKey));
-    }
-
-    tx.set(profileRef, {
-      uid: user.uid,
-      email: user.email || existingProfile.email || '',
-      nickname: finalNickname,
-      provider: user.providerData?.[0]?.providerId || existingProfile.provider || 'password',
-      isAnonymous: false,
-      updatedAt: serverTimestamp(),
-      createdAt: existingProfile.createdAt || serverTimestamp(),
-    }, { merge: true });
-  });
-
+  await setNicknameFn({ nickname: finalNickname });
   await updateProfile(user, { displayName: finalNickname }).catch(() => {});
 }
 
@@ -177,9 +135,7 @@ function renderLoginForm(box) {
       let result;
       if (auth.currentUser?.isAnonymous) {
         result = await linkWithPopup(auth.currentUser, provider).catch(async err => {
-          if (err.code === 'auth/credential-already-in-use' || err.code === 'auth/email-already-in-use') {
-            return signInWithPopup(auth, provider);
-          }
+          if (err.code === 'auth/credential-already-in-use' || err.code === 'auth/email-already-in-use') return signInWithPopup(auth, provider);
           throw err;
         });
       } else {
@@ -213,8 +169,7 @@ async function handleEmailSignup(box) {
   try {
     let result;
     if (auth.currentUser?.isAnonymous) {
-      const credential = EmailAuthProvider.credential(email, password);
-      result = await linkWithCredential(auth.currentUser, credential);
+      result = await linkWithCredential(auth.currentUser, EmailAuthProvider.credential(email, password));
     } else {
       result = await createUserWithEmailAndPassword(auth, email, password);
     }
@@ -222,9 +177,7 @@ async function handleEmailSignup(box) {
     renderNicknameSetup(box, result.user, await loadProfile(result.user));
   } catch (err) {
     console.error(err);
-    const msg = err.code === 'auth/email-already-in-use'
-      ? '이미 가입된 이메일입니다. 로그인 버튼을 눌러주세요.'
-      : (err.message || '가입에 실패했습니다.');
+    const msg = err.code === 'auth/email-already-in-use' ? '이미 가입된 이메일입니다. 로그인 버튼을 눌러주세요.' : (err.message || '가입에 실패했습니다.');
     showToast(msg, 'error');
   } finally {
     btn.disabled = false;
