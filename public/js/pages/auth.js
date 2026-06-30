@@ -1,6 +1,5 @@
-import { auth, db, functions } from '../firebase.js?v=20260630-3';
-import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
-import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
+import { auth, db } from '../firebase.js?v=20260630-3';
+import { doc, getDoc, runTransaction, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import {
   GoogleAuthProvider,
   EmailAuthProvider,
@@ -10,6 +9,7 @@ import {
   linkWithPopup,
   linkWithCredential,
   signOut,
+  updateProfile,
   onAuthStateChanged,
   signInAnonymously,
 } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
@@ -18,11 +18,21 @@ import { escapeHtml } from '../utils/sanitize.js?v=20260630-3';
 
 const provider = new GoogleAuthProvider();
 provider.setCustomParameters({ prompt: 'select_account' });
-const checkNicknameFn = httpsCallable(functions, 'checkNickname');
-const setNicknameFn = httpsCallable(functions, 'setNickname');
 
 function cleanNickname(value) {
   return String(value || '').replace(/\s+/g, '').trim().slice(0, 20);
+}
+
+function nicknameKey(value) {
+  return cleanNickname(value).toLocaleLowerCase('ko-KR');
+}
+
+function nicknameError(value) {
+  const n = cleanNickname(value);
+  if (n.length < 2) return '닉네임은 2자 이상 입력해주세요.';
+  if (n.length > 20) return '닉네임은 20자 이하로 입력해주세요.';
+  if (!/^[가-힣a-zA-Z0-9_]+$/.test(n)) return '닉네임은 한글, 영문, 숫자, 밑줄만 사용할 수 있습니다.';
+  return '';
 }
 
 function validEmail(value) {
@@ -48,6 +58,60 @@ async function loadProfile(user) {
   return snap?.exists() ? snap.data() : {};
 }
 
+async function isNicknameAvailable(user, nickname) {
+  const err = nicknameError(nickname);
+  if (err) throw new Error(err);
+  const key = nicknameKey(nickname);
+  const snap = await getDoc(doc(db, 'user_names', key));
+  return !snap.exists() || snap.data().uid === user.uid;
+}
+
+async function saveNickname(user, nickname) {
+  const finalNickname = cleanNickname(nickname);
+  const err = nicknameError(finalNickname);
+  if (err) throw new Error(err);
+  const key = nicknameKey(finalNickname);
+  const profileRef = doc(db, 'users', user.uid);
+  const nameRef = doc(db, 'user_names', key);
+
+  await runTransaction(db, async tx => {
+    const [profileSnap, nameSnap] = await Promise.all([
+      tx.get(profileRef),
+      tx.get(nameRef),
+    ]);
+    const existingProfile = profileSnap.exists() ? profileSnap.data() : {};
+    const oldKey = existingProfile.nickname ? nicknameKey(existingProfile.nickname) : '';
+
+    if (nameSnap.exists() && nameSnap.data().uid !== user.uid) {
+      throw new Error('이미 사용 중인 닉네임입니다.');
+    }
+
+    tx.set(nameRef, {
+      uid: user.uid,
+      nickname: finalNickname,
+      key,
+      updatedAt: serverTimestamp(),
+      createdAt: nameSnap.exists() ? nameSnap.data().createdAt : serverTimestamp(),
+    }, { merge: true });
+
+    if (oldKey && oldKey !== key) {
+      tx.delete(doc(db, 'user_names', oldKey));
+    }
+
+    tx.set(profileRef, {
+      uid: user.uid,
+      email: user.email || existingProfile.email || '',
+      nickname: finalNickname,
+      provider: user.providerData?.[0]?.providerId || existingProfile.provider || 'password',
+      isAnonymous: false,
+      updatedAt: serverTimestamp(),
+      createdAt: existingProfile.createdAt || serverTimestamp(),
+    }, { merge: true });
+  });
+
+  await updateProfile(user, { displayName: finalNickname }).catch(() => {});
+}
+
 export async function renderAuth(container) {
   container.innerHTML = `
     <div>
@@ -69,11 +133,8 @@ export async function renderAuth(container) {
     if (!box) return;
     if (user && !user.isAnonymous) {
       const profile = await loadProfile(user);
-      if (!profile.nickname) {
-        renderNicknameSetup(box, user, profile);
-      } else {
-        renderProfile(box, user, profile);
-      }
+      if (!profile.nickname) renderNicknameSetup(box, user, profile);
+      else renderProfile(box, user, profile);
     } else {
       renderLoginForm(box);
     }
@@ -104,7 +165,7 @@ function renderLoginForm(box) {
       <div class="form-group">
         <label class="form-label">간단 비밀번호</label>
         <input type="password" id="auth-password" class="form-input" minlength="6" maxlength="30" placeholder="6자 이상" required>
-        <div style="font-size:11px;color:var(--cream-dim);margin-top:6px;">보안을 위해 최소 6자 이상으로 입력해주세요.</div>
+        <div style="font-size:11px;color:var(--cream-dim);margin-top:6px;">Firebase 기본 정책상 비밀번호는 최소 6자 이상이어야 합니다.</div>
       </div>
       <button type="submit" class="btn btn-primary" id="signup-btn">가입하기</button>
       <button type="button" class="btn btn-ghost" id="login-btn" style="margin-top:10px;">이미 계정이 있어요 · 로그인</button>
@@ -136,9 +197,7 @@ function renderLoginForm(box) {
     e.preventDefault();
     await handleEmailSignup(box);
   });
-  document.getElementById('login-btn').addEventListener('click', async () => {
-    await handleEmailLogin(box);
-  });
+  document.getElementById('login-btn').addEventListener('click', async () => handleEmailLogin(box));
 }
 
 async function handleEmailSignup(box) {
@@ -155,12 +214,7 @@ async function handleEmailSignup(box) {
     let result;
     if (auth.currentUser?.isAnonymous) {
       const credential = EmailAuthProvider.credential(email, password);
-      result = await linkWithCredential(auth.currentUser, credential).catch(async err => {
-        if (err.code === 'auth/credential-already-in-use' || err.code === 'auth/email-already-in-use') {
-          return createUserWithEmailAndPassword(auth, email, password);
-        }
-        throw err;
-      });
+      result = await linkWithCredential(auth.currentUser, credential);
     } else {
       result = await createUserWithEmailAndPassword(auth, email, password);
     }
@@ -238,8 +292,7 @@ function renderNicknameSetup(box, user, profile = {}) {
     input.value = nickname;
     if (!nickname) return showToast('닉네임을 입력해주세요.', 'error');
     try {
-      const res = await checkNicknameFn({ nickname });
-      available = !!res.data?.available;
+      available = await isNicknameAvailable(user, nickname);
       checkedName = nickname;
       status.textContent = available ? '사용 가능한 닉네임입니다.' : '이미 사용 중인 닉네임입니다.';
       status.style.color = available ? '#27ae60' : '#e74c3c';
@@ -257,7 +310,7 @@ function renderNicknameSetup(box, user, profile = {}) {
     const nickname = cleanNickname(input.value);
     if (!available || nickname !== checkedName) return showToast('닉네임 중복 확인을 먼저 해주세요.', 'error');
     try {
-      await setNicknameFn({ nickname });
+      await saveNickname(user, nickname);
       showToast('닉네임이 저장되었습니다.', 'success');
       renderProfile(box, user, await loadProfile(user));
     } catch (err) {
@@ -275,7 +328,7 @@ function renderNicknameSetup(box, user, profile = {}) {
 }
 
 function renderProfile(box, user, profile = {}) {
-  const nickname = cleanNickname(profile.nickname || user.displayName || '닉네임 미설정');
+  const nickname = cleanNickname(profile.nickname || user.displayName || '닉네임미설정');
   const email = user.email || profile.email || '';
 
   box.innerHTML = `
