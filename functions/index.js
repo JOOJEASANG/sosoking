@@ -99,6 +99,17 @@ async function loadSettings() {
   return snap.exists ? snap.data() : {};
 }
 
+async function loadUserNickname(uid) {
+  try {
+    const snap = await db.doc(`users/${uid}`).get();
+    if (!snap.exists) return '';
+    return textValue(snap.data().nickname, 30);
+  } catch (e) {
+    console.error('profile load failed:', e);
+    return '';
+  }
+}
+
 exports.submitCase = onCall({ region: REGION, timeoutSeconds: 30, memory: '256MiB' }, async (request) => {
   if (!request.auth) {
     throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
@@ -111,6 +122,7 @@ exports.submitCase = onCall({ region: REGION, timeoutSeconds: 30, memory: '256Mi
   const desired = textValue(data.desiredVerdict, MAX_DESIRED);
   const grievance = clampNumber(data.grievanceIndex, 5, 1, 10);
   const selectedJudge = selectedJudgeOrBlank(data.selectedJudge);
+  const profileNickname = await loadUserNickname(uid);
 
   if (!title) throw new HttpsError('invalid-argument', '사건명을 입력해주세요.');
   if (!desc) throw new HttpsError('invalid-argument', '사건 경위를 입력해주세요.');
@@ -154,7 +166,7 @@ exports.submitCase = onCall({ region: REGION, timeoutSeconds: 30, memory: '256Mi
       caseTitle: title,
       caseDescription: desc,
       grievanceIndex: grievance,
-      nickname: randomNickname(),
+      nickname: profileNickname || randomNickname(),
       desiredVerdict: desired,
       selectedJudge,
       status: 'pending',
