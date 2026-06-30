@@ -1,8 +1,8 @@
-import { db, functions } from '../firebase.js';
+import { db, functions } from '../firebase.js?v=20260630-3';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
-import { showToast } from '../components/toast.js';
-import { escapeHtml } from '../utils/sanitize.js';
+import { showToast } from '../components/toast.js?v=20260630-3';
+import { escapeHtml } from '../utils/sanitize.js?v=20260630-3';
 
 const MAX_TITLE = 30;
 const MAX_DESC = 200;
