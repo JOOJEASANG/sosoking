@@ -6,6 +6,7 @@ export function renderNav() {
   const hash = location.hash || '#/';
   const isHome = hash === '#/' || hash === '#' || hash === '';
   const isSubmit = hash.startsWith('#/submit');
+  const isBoard = hash.startsWith('#/board');
   const isMy = hash.startsWith('#/my-cases');
   const isAuth = hash.startsWith('#/auth');
   const isLoggedIn = !!auth.currentUser && !auth.currentUser.isAnonymous;
@@ -16,6 +17,10 @@ export function renderNav() {
     <a href="#/" class="nav-item${isHome ? ' active' : ''}">
       <span class="nav-icon">🏠</span>
       <span class="nav-label">홈</span>
+    </a>
+    <a href="#/board" class="nav-item${isBoard ? ' active' : ''}">
+      <span class="nav-icon">🔥</span>
+      <span class="nav-label">게시판</span>
     </a>
     <a href="#/submit" class="nav-item nav-cta${isSubmit ? ' active' : ''}">
       <span class="nav-icon">⚖️</span>
