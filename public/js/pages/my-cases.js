@@ -1,6 +1,6 @@
-import { db, auth } from '../firebase.js';
+import { db, auth } from '../firebase.js?v=20260630-3';
 import { collection, query, where, orderBy, limit, getDocs } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
-import { escapeHtml } from '../utils/sanitize.js';
+import { escapeHtml } from '../utils/sanitize.js?v=20260630-3';
 
 const STATUS = {
   pending:    { label: '접수 완료',   color: '#c9a84c', dot: '🟡' },
@@ -21,7 +21,7 @@ export async function renderMyCases(container) {
   container.innerHTML = `
     <div>
       <div class="page-header">
-        <a href="#/" class="back-btn">‹</a>
+        <a href="#/auth" class="back-btn">‹</a>
         <span class="logo">📋 내 사건 내역</span>
       </div>
       <div class="container" style="padding-top:24px;padding-bottom:80px;">
@@ -31,18 +31,18 @@ export async function renderMyCases(container) {
 
   const user = auth.currentUser;
   const inner = container.querySelector('.container');
-  if (!user) {
+  if (!user || user.isAnonymous) {
     inner.innerHTML = `
       <div style="text-align:center;padding:60px 0;color:var(--cream-dim);">
-        로그인이 필요합니다.<br>
-        <a href="#/" style="color:var(--gold);margin-top:12px;display:inline-block;">처음으로</a>
+        로그인 후 내 사건을 확인할 수 있습니다.<br>
+        <a href="#/auth" class="btn btn-primary" style="margin-top:16px;">로그인하기</a>
       </div>`;
     return;
   }
 
   let docs = [];
   try {
-    const snap = await getDocs(query(collection(db, 'cases'), where('userId', '==', user.uid), orderBy('createdAt', 'desc'), limit(20)));
+    const snap = await getDocs(query(collection(db, 'cases'), where('userId', '==', user.uid), orderBy('createdAt', 'desc'), limit(50)));
     docs = snap.docs;
   } catch (e) {
     console.error(e);
@@ -62,8 +62,9 @@ export async function renderMyCases(container) {
   }
 
   inner.innerHTML = `
-    <div style="font-size:13px;color:var(--cream-dim);margin-bottom:16px;">
-      총 ${docs.length}건의 사건이 있습니다
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:16px;">
+      <div style="font-size:13px;color:var(--cream-dim);">총 ${docs.length}건의 사건이 있습니다</div>
+      <a href="#/auth" style="font-size:12px;color:var(--gold);text-decoration:none;">내 프로필 →</a>
     </div>
     <div style="display:flex;flex-direction:column;gap:10px;">
       ${docs.map(d => _caseRow(d.id, d.data())).join('')}
