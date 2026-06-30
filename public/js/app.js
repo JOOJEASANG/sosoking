@@ -9,7 +9,7 @@ import { renderGuide } from './pages/guide.js?v=20260630-3';
 import { renderAuth } from './pages/auth.js?v=20260630-7';
 import { renderBoard } from './pages/board.js?v=20260630-6';
 import { renderFooter } from './components/footer.js?v=20260630-3';
-import { initTheme } from './components/theme.js?v=20260630-3';
+import { initTheme, renderThemeToggle } from './components/theme.js?v=20260630-10';
 import { renderNav } from './components/nav.js?v=20260630-8';
 
 function route() {
@@ -43,6 +43,7 @@ function route() {
   }
 
   renderNav();
+  renderThemeToggle();
 }
 
 window.addEventListener('hashchange', route);
