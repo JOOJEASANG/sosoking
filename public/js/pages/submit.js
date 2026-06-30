@@ -7,6 +7,7 @@ import { escapeHtml } from '../utils/sanitize.js?v=20260630-3';
 const MAX_TITLE = 30;
 const MAX_DESC = 200;
 const MAX_DESIRED = 100;
+const DAILY_LIMIT = 3;
 
 const JUDGES = [
   { id: '엄벌주의형', icon: '👨‍⚖️', desc: '사소해도 중대 사건으로 격상' },
@@ -62,11 +63,11 @@ async function _loadSubmitSettings() {
     const snap = await getDoc(doc(db, 'site_settings', 'config'));
     const d = snap.exists() ? snap.data() : {};
     return {
-      dailyLimit: Number.isFinite(Number(d.dailyLimit)) ? Number(d.dailyLimit) : 3,
+      dailyLimit: DAILY_LIMIT,
       cooldownSec: Number.isFinite(Number(d.cooldownSec)) ? Number(d.cooldownSec) : 45,
     };
   } catch {
-    return { dailyLimit: 3, cooldownSec: 45 };
+    return { dailyLimit: DAILY_LIMIT, cooldownSec: 45 };
   }
 }
 
@@ -76,10 +77,14 @@ export async function renderSubmit(container) {
     <div>
       <div class="page-header">
         <a href="#/" class="back-btn">‹</a>
-        <span class="logo">사건 접수서</span>
+        <span class="logo">소장 접수</span>
       </div>
       <div class="container" style="padding-top:24px;padding-bottom:80px;">
-        <p style="font-size:13px;color:var(--cream-dim);margin-bottom:28px;">억울한 사건을 접수하면 AI 법정이 과하게 진지하게 열립니다.</p>
+        <div class="card" style="padding:18px;margin-bottom:18px;border-color:rgba(201,168,76,.45);">
+          <div style="font-size:11px;color:var(--gold);font-weight:900;letter-spacing:.12em;margin-bottom:6px;">E-FILING</div>
+          <div style="font-family:var(--font-serif);font-size:21px;font-weight:900;line-height:1.45;">소소킹 판결소 제3생활부</div>
+          <div style="font-size:13px;color:var(--cream-dim);line-height:1.7;margin-top:6px;">접수 후 사건번호가 부여되고, 접수심사 → 증거조사 → 변론 → 선고 순서로 진행됩니다.</div>
+        </div>
         <form id="submit-form">
           <div class="form-group">
             <label class="form-label">사건명 <span style="color:var(--red)">*</span></label>
@@ -88,62 +93,49 @@ export async function renderSubmit(container) {
           </div>
           <div class="form-group">
             <label class="form-label">사건 경위 <span style="color:var(--red)">*</span></label>
-            <textarea id="case-desc" class="form-textarea" style="min-height:100px;" maxlength="${MAX_DESC}" placeholder="누가, 언제, 무엇을 해서, 왜 억울한지 적어주세요. 단, 실명·연락처는 쓰지 마세요." required></textarea>
+            <textarea id="case-desc" class="form-textarea" style="min-height:112px;" maxlength="${MAX_DESC}" placeholder="누가, 언제, 무엇을 해서, 왜 억울한지 적어주세요. 단, 실명·연락처는 쓰지 마세요." required></textarea>
             <div class="char-counter"><span id="desc-count">0</span>/${MAX_DESC}</div>
           </div>
           <div class="form-group">
             <label class="form-label">억울 지수</label>
             <div class="slider-value"><span id="grievance-val">5</span><span style="font-size:14px;color:var(--cream-dim);"> / 10</span></div>
             <input type="range" id="grievance" class="form-range" min="1" max="10" value="5">
-            <div class="slider-labels"><span>🙂 살짝 서운</span><span>😤 생활법정 개정 필요</span></div>
+            <div class="slider-labels"><span>🙂 살짝 서운</span><span>😤 선고 필요</span></div>
           </div>
-          <hr class="divider">
+          <div class="card" style="padding:14px;margin-bottom:18px;background:rgba(255,255,255,.025);">
+            <div style="font-weight:900;color:var(--gold);margin-bottom:8px;">재판 진행 예정</div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-size:11px;color:var(--cream-dim);text-align:center;"><span>1 접수</span><span>2 증거조사</span><span>3 변론</span><span>4 판사배정</span><span>5 판결작성</span><span>6 선고</span></div>
+          </div>
           <div class="form-group">
             <label class="form-label">담당 판사 선택 <span class="optional">선택 안 하면 랜덤 배정</span></label>
             <div class="judge-grid" id="judge-grid">
-              <div class="judge-option active" data-judge="">
-                <span style="font-size:22px;">🎲</span>
-                <div class="judge-option-name">랜덤 배정</div>
-                <div class="judge-option-desc">운명과 서버비에 맡기기</div>
-              </div>
-              ${JUDGES.map(j => `
-                <div class="judge-option" data-judge="${escapeHtml(j.id)}">
-                  <span style="font-size:22px;">${j.icon}</span>
-                  <div class="judge-option-name">${escapeHtml(j.id)}</div>
-                  <div class="judge-option-desc">${escapeHtml(j.desc)}</div>
-                </div>
-              `).join('')}
+              <div class="judge-option active" data-judge=""><span style="font-size:22px;">🎲</span><div class="judge-option-name">랜덤 배정</div><div class="judge-option-desc">재판부가 배당</div></div>
+              ${JUDGES.map(j => `<div class="judge-option" data-judge="${escapeHtml(j.id)}"><span style="font-size:22px;">${j.icon}</span><div class="judge-option-name">${escapeHtml(j.id)}</div><div class="judge-option-desc">${escapeHtml(j.desc)}</div></div>`).join('')}
             </div>
           </div>
-          <hr class="divider">
           <div class="form-group">
             <label class="form-label">원하는 판결 <span class="optional">선택</span></label>
             <input type="text" id="desired-verdict" class="form-input" maxlength="${MAX_DESIRED}" placeholder="예: 사과와 라면 국물 3숟갈 반환">
           </div>
           <div class="disclaimer" style="margin-bottom:24px;">
             <strong>⚠️ 접수 전 확인사항</strong><br>
+            · 하루 접수 한도는 계정당 <strong>${settings.dailyLimit}건</strong>으로 고정됩니다.<br>
+            · 재접수 대기: <strong>${settings.cooldownSec}초</strong><br>
             · 실명·연락처·주민번호 등 개인정보 입력 금지<br>
-            · 타인의 명예를 훼손하는 내용 접수 금지<br>
-            · 하루 접수 한도: <strong>${settings.dailyLimit}건</strong> · 재접수 대기: <strong>${settings.cooldownSec}초</strong><br>
             · 본 서비스는 AI 기반 <strong>오락 목적</strong>이며 법적 효력이 없습니다
           </div>
-          <button type="submit" class="btn btn-primary" id="submit-btn">⚖️ 억울함 공식 접수하기</button>
+          <button type="submit" class="btn btn-primary" id="submit-btn">소장 제출 및 사건번호 발급</button>
         </form>
       </div>
-    </div>
-  `;
+    </div>`;
 
   let selectedJudge = '';
-
-  const setActive = (activeOpt) => {
-    document.querySelectorAll('#judge-grid .judge-option').forEach(el => el.classList.remove('active'));
-    activeOpt.classList.add('active');
-  };
 
   document.getElementById('judge-grid').addEventListener('click', (e) => {
     const opt = e.target.closest('.judge-option');
     if (!opt) return;
-    setActive(opt);
+    document.querySelectorAll('#judge-grid .judge-option').forEach(el => el.classList.remove('active'));
+    opt.classList.add('active');
     selectedJudge = opt.dataset.judge || '';
   });
 
@@ -159,35 +151,21 @@ export async function renderSubmit(container) {
 
   document.getElementById('submit-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-
     const title = document.getElementById('case-title').value.trim();
     const desc = document.getElementById('case-desc').value.trim();
     const desired = document.getElementById('desired-verdict').value.trim();
     const grievance = parseInt(document.getElementById('grievance').value, 10);
-
-    if (!title || !desc) {
-      showToast('사건명과 사건 경위를 입력해주세요.', 'error');
-      return;
-    }
-
+    if (!title || !desc) return showToast('사건명과 사건 경위를 입력해주세요.', 'error');
     if (_isTooSerious(`${title} ${desc}`)) {
       const proceed = await _showSeriousModal();
       if (!proceed) return;
     }
-
     const btn = document.getElementById('submit-btn');
     btn.disabled = true;
-    btn.textContent = '접수 중... 판사님 도장 찾는 중...';
-
+    btn.textContent = '전자소송 접수 중...';
     try {
       const submitCase = httpsCallable(functions, 'submitCase');
-      const res = await submitCase({
-        caseTitle: title,
-        caseDescription: desc,
-        grievanceIndex: grievance,
-        desiredVerdict: desired,
-        selectedJudge,
-      });
+      const res = await submitCase({ caseTitle: title, caseDescription: desc, grievanceIndex: grievance, desiredVerdict: desired, selectedJudge });
       const caseId = res.data?.caseId;
       if (!caseId) throw new Error('caseId missing');
       location.hash = `#/trial/${encodeURIComponent(caseId)}`;
@@ -196,7 +174,7 @@ export async function renderSubmit(container) {
       const msg = err?.message || '접수 중 오류가 발생했습니다.';
       showToast(msg.replace('FirebaseError: ', ''), 'error');
       btn.disabled = false;
-      btn.innerHTML = '⚖️ 억울함 공식 접수하기';
+      btn.textContent = '소장 제출 및 사건번호 발급';
     }
   });
 }
