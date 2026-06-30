@@ -1,5 +1,6 @@
 import { db } from '../firebase.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { escapeHtml } from '../utils/sanitize.js';
 
 export async function renderFooter() {
   const footer = document.getElementById('site-footer');
@@ -10,6 +11,13 @@ export async function renderFooter() {
     if (snap.exists()) biz = snap.data().businessInfo || {};
   } catch {}
 
+  const companyName = escapeHtml(biz.companyName || '소소킹 판결소');
+  const ceoName = escapeHtml(biz.ceoName || '');
+  const businessNumber = escapeHtml(biz.businessNumber || '');
+  const contact = escapeHtml(biz.contact || '');
+  const email = escapeHtml(biz.email || '');
+  const address = escapeHtml(biz.address || '');
+
   footer.innerHTML = `
     <div class="footer-links">
       <a href="#/policy/terms">이용약관</a>
@@ -17,10 +25,10 @@ export async function renderFooter() {
       <a href="#/policy/ai_disclaimer">AI 서비스 안내</a>
     </div>
     <div class="footer-biz">
-      ${biz.companyName || '소소킹 판결소'}${biz.ceoName ? ` | 대표 ${biz.ceoName}` : ''}<br>
-      ${biz.businessNumber ? `사업자등록번호 ${biz.businessNumber}` : ''}${biz.contact ? ` | 연락처 ${biz.contact}` : ''}<br>
-      ${biz.email ? `이메일 ${biz.email}` : ''}${biz.address ? ` | ${biz.address}` : ''}
-      <br><span style="display:block;margin-top:6px;">© 2025 소소킹 판결소 · 이 서비스는 오락 목적이며 법적 효력이 없습니다.</span>
+      ${companyName}${ceoName ? ` | 대표 ${ceoName}` : ''}<br>
+      ${businessNumber ? `사업자등록번호 ${businessNumber}` : ''}${contact ? ` | 연락처 ${contact}` : ''}<br>
+      ${email ? `이메일 ${email}` : ''}${address ? ` | ${address}` : ''}
+      <br><span style="display:block;margin-top:6px;">© 2026 소소킹 판결소 · AI 생활법정 · 법적 효력 없음</span>
     </div>
     <div style="margin-top:16px;">
       <a href="/admin" style="font-size:11px;color:rgba(245,240,232,0.2);text-decoration:none;">관리자</a>
