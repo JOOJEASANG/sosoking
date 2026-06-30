@@ -2,15 +2,15 @@ import { initAuth } from './firebase.js?v=20260630-3';
 import { renderHome } from './pages/home.js?v=20260630-3';
 import { renderSubmit } from './pages/submit.js?v=20260630-3';
 import { renderTrial } from './pages/trial.js?v=20260630-3';
-import { renderResult } from './pages/result.js?v=20260630-3';
+import { renderResult } from './pages/result.js?v=20260630-7';
 import { renderPolicy } from './pages/policy.js?v=20260630-3';
 import { renderMyCases } from './pages/my-cases.js?v=20260630-3';
 import { renderGuide } from './pages/guide.js?v=20260630-3';
-import { renderAuth } from './pages/auth.js?v=20260630-3';
-import { renderBoard } from './pages/board.js?v=20260630-3';
+import { renderAuth } from './pages/auth.js?v=20260630-7';
+import { renderBoard } from './pages/board.js?v=20260630-6';
 import { renderFooter } from './components/footer.js?v=20260630-3';
 import { initTheme } from './components/theme.js?v=20260630-3';
-import { renderNav } from './components/nav.js?v=20260630-3';
+import { renderNav } from './components/nav.js?v=20260630-7';
 
 function route() {
   if (window._pageCleanup) { window._pageCleanup(); window._pageCleanup = null; }
