@@ -23,6 +23,20 @@ service cloud.firestore {
       return caseDoc(caseId).data.isPublic == true;
     }
 
+    function validUserProfile(uid) {
+      return request.resource.data.keys().hasOnly([
+          'uid', 'email', 'nickname', 'provider', 'isAnonymous', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.uid == uid
+        && request.resource.data.nickname is string
+        && request.resource.data.nickname.size() > 0
+        && request.resource.data.nickname.size() <= 20
+        && request.resource.data.email is string
+        && request.resource.data.email.size() <= 120
+        && request.resource.data.provider is string
+        && request.resource.data.provider.size() <= 60;
+    }
+
     function validCaseCreate() {
       return request.resource.data.keys().hasOnly([
           'userId', 'caseTitle', 'caseDescription', 'grievanceIndex', 'nickname',
@@ -51,6 +65,13 @@ service cloud.firestore {
     match /admins/{uid} {
       allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
       allow write: if false;
+    }
+
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow create: if signedIn() && request.auth.uid == uid && validUserProfile(uid);
+      allow update: if signedIn() && request.auth.uid == uid && validUserProfile(uid);
+      allow delete: if isAdmin();
     }
 
     match /cases/{caseId} {
