@@ -12,6 +12,15 @@
           }
         ]
       }
+    ],
+    "rewrites": [
+      { "source": "/board", "destination": "/index.html" },
+      { "source": "/submit", "destination": "/index.html" },
+      { "source": "/guide", "destination": "/index.html" },
+      { "source": "/auth", "destination": "/index.html" },
+      { "source": "/my-cases", "destination": "/index.html" },
+      { "source": "/result/**", "destination": "/index.html" },
+      { "source": "/trial/**", "destination": "/index.html" }
     ]
   },
   "functions": {
