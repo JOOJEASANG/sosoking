@@ -34,7 +34,7 @@ export function renderNav() {
       <span class="nav-icon">⚖️</span>
       <span class="nav-label">접수</span>
     </a>
-    <a href="${isLoggedIn ? '#/my-cases' : '#/auth'}" class="nav-item${isAuth ? ' active' : ''}" id="nav-account-item">
+    <a href="#/auth" class="nav-item${isAuth ? ' active' : ''}" id="nav-account-item">
       <span class="nav-icon" id="nav-account-icon">${isLoggedIn ? '●' : '👤'}</span>
       <span class="nav-label" id="nav-account-label">${isLoggedIn ? '접속 중' : '로그인'}</span>
     </a>
@@ -50,6 +50,6 @@ export function renderNav() {
         icon.innerHTML = `<span style="position:relative;display:inline-block;line-height:0;">${avatarImg(user, profile, 24)}<span style="position:absolute;right:-1px;bottom:-1px;width:8px;height:8px;border-radius:99px;background:#27ae60;border:1.5px solid #101522;"></span></span>`;
       }
       if (label) label.textContent = name;
-    });
+    }).catch(() => {});
   }
 }
