@@ -15,12 +15,24 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/cases/$(caseId));
     }
 
+    function resultDoc(caseId) {
+      return get(/databases/$(database)/documents/results/$(caseId));
+    }
+
     function isCaseOwner(caseId) {
       return signedIn() && caseDoc(caseId).data.userId == request.auth.uid;
     }
 
     function isCasePublic(caseId) {
       return caseDoc(caseId).data.isPublic == true;
+    }
+
+    function isResultPublic(caseId) {
+      return resultDoc(caseId).data.isPublic == true;
+    }
+
+    function canReadPublicCourt(caseId) {
+      return signedIn() && (isCasePublic(caseId) || isResultPublic(caseId) || isCaseOwner(caseId) || isAdmin());
     }
 
     function validUserProfile(uid) {
@@ -134,7 +146,7 @@ service cloud.firestore {
     }
 
     match /result_reactions/{caseId} {
-      allow read: if signedIn() && (isCasePublic(caseId) || isCaseOwner(caseId) || isAdmin());
+      allow read: if canReadPublicCourt(caseId);
       allow write: if false;
       match /votes/{uid} {
         allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
@@ -143,12 +155,12 @@ service cloud.firestore {
     }
 
     match /court_comments/{caseId}/items/{commentId} {
-      allow read: if signedIn() && (isCasePublic(caseId) || isCaseOwner(caseId) || isAdmin());
+      allow read: if canReadPublicCourt(caseId);
       allow write: if false;
     }
 
     match /court_comment_stats/{caseId} {
-      allow read: if signedIn() && (isCasePublic(caseId) || isCaseOwner(caseId) || isAdmin());
+      allow read: if canReadPublicCourt(caseId);
       allow write: if false;
     }
 
