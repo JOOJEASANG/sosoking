@@ -1,6 +1,6 @@
-import { db } from '../firebase.js';
+import { db } from '../firebase.js?v=20260630-3';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
-import { escapeHtml } from '../utils/sanitize.js';
+import { escapeHtml } from '../utils/sanitize.js?v=20260630-3';
 
 const TITLES = { terms: '이용약관', privacy: '개인정보처리방침', ai_disclaimer: 'AI 서비스 안내' };
 
