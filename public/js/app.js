@@ -1,6 +1,6 @@
 import { initAuth } from './firebase.js?v=20260630-3';
 import { renderHome } from './pages/home.js?v=20260630-3';
-import { renderSubmit } from './pages/submit.js?v=20260630-8';
+import { renderSubmit } from './pages/submit-guard.js?v=20260630-13';
 import { renderTrial } from './pages/trial.js?v=20260630-3';
 import { renderResult } from './pages/result.js?v=20260630-7';
 import { renderPolicy } from './pages/policy.js?v=20260630-3';
