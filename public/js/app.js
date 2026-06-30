@@ -1,14 +1,14 @@
-import { initAuth } from './firebase.js';
-import { renderHome } from './pages/home.js';
-import { renderSubmit } from './pages/submit.js';
-import { renderTrial } from './pages/trial.js';
-import { renderResult } from './pages/result.js';
-import { renderPolicy } from './pages/policy.js';
-import { renderMyCases } from './pages/my-cases.js';
-import { renderGuide } from './pages/guide.js';
-import { renderFooter } from './components/footer.js';
-import { initTheme, renderThemeToggle } from './components/theme.js';
-import { renderNav } from './components/nav.js';
+import { initAuth } from './firebase.js?v=20260630-2';
+import { renderHome } from './pages/home.js?v=20260630-2';
+import { renderSubmit } from './pages/submit.js?v=20260630-2';
+import { renderTrial } from './pages/trial.js?v=20260630-2';
+import { renderResult } from './pages/result.js?v=20260630-2';
+import { renderPolicy } from './pages/policy.js?v=20260630-2';
+import { renderMyCases } from './pages/my-cases.js?v=20260630-2';
+import { renderGuide } from './pages/guide.js?v=20260630-2';
+import { renderFooter } from './components/footer.js?v=20260630-2';
+import { initTheme, renderThemeToggle } from './components/theme.js?v=20260630-2';
+import { renderNav } from './components/nav.js?v=20260630-2';
 
 function route() {
   if (window._pageCleanup) { window._pageCleanup(); window._pageCleanup = null; }
