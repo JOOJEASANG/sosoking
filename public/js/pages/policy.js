@@ -1,5 +1,6 @@
 import { db } from '../firebase.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { escapeHtml } from '../utils/sanitize.js';
 
 const TITLES = { terms: '이용약관', privacy: '개인정보처리방침', ai_disclaimer: 'AI 서비스 안내' };
 
@@ -11,7 +12,7 @@ const DEFAULTS = {
 
 제2조 (서비스 이용)
 1. 본 서비스는 오락 목적으로 제공되며 법적 효력이 없습니다.
-2. 이용자는 일일 3건의 사건을 접수할 수 있습니다.
+2. 이용자는 운영 정책에 따른 접수 한도 내에서 사건을 접수할 수 있습니다.
 3. 개인정보, 타인을 비방하는 내용, 불법적인 내용은 접수할 수 없습니다.
 
 제3조 (금지행위)
@@ -37,15 +38,16 @@ const DEFAULTS = {
 2. 개인정보 이용 목적
 - AI 판결 생성 및 서비스 제공
 - 서비스 품질 개선 및 악용 방지
+- 접수 횟수 제한 관리
 
 3. 개인정보 보유 기간
-서비스 운영 기간 동안 보관하며, 관리자의 판단에 따라 삭제될 수 있습니다.
+서비스 운영 기간 동안 보관하며, 관리자의 판단 또는 이용자 요청에 따라 삭제될 수 있습니다.
 
 4. 개인정보 제3자 제공
-수집된 정보는 AI 판결 생성을 위해 Google Gemini API에 전달됩니다. 그 외 제3자에게 제공하지 않습니다.
+수집된 정보는 AI 판결 생성을 위해 Google Gemini API에 전달될 수 있습니다. 그 외 제3자에게 제공하지 않습니다.
 
 5. 이용자의 권리
-이용자는 접수한 사건의 삭제를 요청할 수 있습니다. 아래 운영자 연락처로 문의해주세요.
+이용자는 접수한 사건의 공개 여부를 직접 설정할 수 있으며, 삭제 요청은 운영자 연락처로 문의할 수 있습니다.
 
 6. 쿠키 및 추적 기술
 본 서비스는 Firebase를 통해 익명화된 서비스 이용 통계를 수집할 수 있습니다.`,
@@ -67,14 +69,14 @@ const DEFAULTS = {
 - 판결 결과를 타인에게 공유 시 오락 목적임을 명시해주세요.
 
 4. 사용 AI 모델
-본 서비스는 Google의 Gemini 2.5 Flash 모델을 사용합니다.
+본 서비스는 Google Gemini 2.5 Flash 모델을 사용합니다.
 
 5. 데이터 처리
-입력하신 사건 내용은 AI 판결 생성 목적으로만 사용되며, Google의 개인정보처리방침에 따라 처리됩니다.`
+입력하신 사건 내용은 AI 판결 생성 목적으로만 사용되며, Google 및 Firebase 정책에 따라 처리됩니다.`
 };
 
 function applyBiz(text, biz) {
-  return text
+  return String(text || '')
     .replace(/{companyName}/g, biz.companyName || '소소킹 판결소')
     .replace(/{ceoName}/g, biz.ceoName || '')
     .replace(/{businessNumber}/g, biz.businessNumber || '')
@@ -92,7 +94,7 @@ function bizInfoHtml(biz) {
     biz.contact && `연락처: ${biz.contact}`,
     biz.email && `이메일: ${biz.email}`,
     biz.address && `주소: ${biz.address}`,
-  ].filter(Boolean);
+  ].filter(Boolean).map(escapeHtml);
   if (!rows.length) return '';
   return `
     <div style="margin-top:32px;padding:16px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;">
@@ -102,10 +104,11 @@ function bizInfoHtml(biz) {
 }
 
 export async function renderPolicy(container, type) {
+  const safeType = Object.prototype.hasOwnProperty.call(TITLES, type) ? type : 'terms';
   container.innerHTML = `
     <div class="page-header">
       <a href="#/" class="back-btn">‹</a>
-      <span class="logo">${TITLES[type] || '정책'}</span>
+      <span class="logo">${escapeHtml(TITLES[safeType] || '정책')}</span>
     </div>
     <div class="container" style="padding:28px 20px 60px;">
       <div class="loading-dots"><span></span><span></span><span></span></div>
@@ -113,19 +116,19 @@ export async function renderPolicy(container, type) {
 
   try {
     const [policySnap, settingsSnap] = await Promise.all([
-      getDoc(doc(db, 'policy_docs', type)),
+      getDoc(doc(db, 'policy_docs', safeType)),
       getDoc(doc(db, 'site_settings', 'config')),
     ]);
     const biz = settingsSnap.exists() ? (settingsSnap.data().businessInfo || {}) : {};
     const raw = policySnap.exists() && policySnap.data().content
       ? policySnap.data().content
-      : (DEFAULTS[type] || '아직 등록된 내용이 없습니다.');
+      : (DEFAULTS[safeType] || '아직 등록된 내용이 없습니다.');
     const content = applyBiz(raw, biz);
     container.querySelector('.container').innerHTML =
-      `<div style="font-size:14px;line-height:1.9;color:var(--cream-dim);white-space:pre-wrap;">${content}</div>${bizInfoHtml(biz)}`;
+      `<div style="font-size:14px;line-height:1.9;color:var(--cream-dim);white-space:pre-wrap;">${escapeHtml(content)}</div>${bizInfoHtml(biz)}`;
   } catch {
-    const content = DEFAULTS[type] || '불러오지 못했습니다.';
+    const content = DEFAULTS[safeType] || '불러오지 못했습니다.';
     container.querySelector('.container').innerHTML =
-      `<div style="font-size:14px;line-height:1.9;color:var(--cream-dim);white-space:pre-wrap;">${content}</div>`;
+      `<div style="font-size:14px;line-height:1.9;color:var(--cream-dim);white-space:pre-wrap;">${escapeHtml(content)}</div>`;
   }
 }
