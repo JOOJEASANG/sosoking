@@ -1,6 +1,8 @@
 import { db, auth } from '../firebase.js?v=20260630-3';
 import { collection, query, where, orderBy, limit, getDocs } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { signOut, signInAnonymously } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
 import { escapeHtml } from '../utils/sanitize.js?v=20260630-3';
+import { showToast } from '../components/toast.js?v=20260630-3';
 
 const STATUS = {
   pending:    { label: '접수 완료',   color: '#c9a84c', dot: '🟡' },
@@ -15,6 +17,13 @@ function _fmtDate(ts) {
   if (!ts) return '';
   const d = ts.toDate ? ts.toDate() : new Date(ts);
   return d.toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+async function _logout() {
+  await signOut(auth);
+  await signInAnonymously(auth).catch(() => {});
+  showToast('로그아웃되었습니다.', 'success');
+  location.hash = '#/';
 }
 
 export async function renderMyCases(container) {
@@ -50,18 +59,30 @@ export async function renderMyCases(container) {
     return;
   }
 
+  const header = `
+    <div class="card" style="padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+      <div style="min-width:0;">
+        <div style="font-size:11px;color:#27ae60;font-weight:900;margin-bottom:3px;">● 로그인됨</div>
+        <div style="font-size:13px;color:var(--cream-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(user.email || user.displayName || '로그인 계정')}</div>
+      </div>
+      <button id="mycases-logout" class="btn btn-ghost" style="width:auto;padding:10px 14px;white-space:nowrap;">로그아웃</button>
+    </div>`;
+
   if (docs.length === 0) {
     inner.innerHTML = `
-      <div style="text-align:center;padding:60px 0;">
+      ${header}
+      <div style="text-align:center;padding:46px 0;">
         <div style="font-size:52px;margin-bottom:16px;">😤</div>
         <div style="font-family:var(--font-serif);font-size:18px;font-weight:700;margin-bottom:8px;">아직 접수한 사건이 없습니다</div>
         <div style="font-size:13px;color:var(--cream-dim);margin-bottom:28px;">억울한 일이 없다면 축하드립니다.<br>있다면 생활법정은 이미 개정 준비 중입니다.</div>
         <a href="#/submit" class="btn btn-primary" style="display:inline-flex;width:auto;padding:14px 32px;">⚖️ 첫 사건 접수하기</a>
       </div>`;
+    document.getElementById('mycases-logout')?.addEventListener('click', _logout);
     return;
   }
 
   inner.innerHTML = `
+    ${header}
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:16px;">
       <div style="font-size:13px;color:var(--cream-dim);">총 ${docs.length}건의 사건이 있습니다</div>
       <a href="#/auth" style="font-size:12px;color:var(--gold);text-decoration:none;">내 프로필 →</a>
@@ -69,6 +90,7 @@ export async function renderMyCases(container) {
     <div style="display:flex;flex-direction:column;gap:10px;">
       ${docs.map(d => _caseRow(d.id, d.data())).join('')}
     </div>`;
+  document.getElementById('mycases-logout')?.addEventListener('click', _logout);
 }
 
 function _caseRow(id, c) {
