@@ -1,14 +1,15 @@
-import { initAuth } from './firebase.js?v=20260630-2';
-import { renderHome } from './pages/home.js?v=20260630-2';
-import { renderSubmit } from './pages/submit.js?v=20260630-2';
-import { renderTrial } from './pages/trial.js?v=20260630-2';
-import { renderResult } from './pages/result.js?v=20260630-2';
-import { renderPolicy } from './pages/policy.js?v=20260630-2';
-import { renderMyCases } from './pages/my-cases.js?v=20260630-2';
-import { renderGuide } from './pages/guide.js?v=20260630-2';
-import { renderFooter } from './components/footer.js?v=20260630-2';
-import { initTheme, renderThemeToggle } from './components/theme.js?v=20260630-2';
-import { renderNav } from './components/nav.js?v=20260630-2';
+import { initAuth } from './firebase.js?v=20260630-3';
+import { renderHome } from './pages/home.js?v=20260630-3';
+import { renderSubmit } from './pages/submit.js?v=20260630-3';
+import { renderTrial } from './pages/trial.js?v=20260630-3';
+import { renderResult } from './pages/result.js?v=20260630-3';
+import { renderPolicy } from './pages/policy.js?v=20260630-3';
+import { renderMyCases } from './pages/my-cases.js?v=20260630-3';
+import { renderGuide } from './pages/guide.js?v=20260630-3';
+import { renderAuth } from './pages/auth.js?v=20260630-3';
+import { renderFooter } from './components/footer.js?v=20260630-3';
+import { initTheme } from './components/theme.js?v=20260630-3';
+import { renderNav } from './components/nav.js?v=20260630-3';
 
 function route() {
   if (window._pageCleanup) { window._pageCleanup(); window._pageCleanup = null; }
@@ -32,6 +33,8 @@ function route() {
     renderMyCases(content);
   } else if (hash === '#/guide') {
     renderGuide(content);
+  } else if (hash === '#/auth') {
+    renderAuth(content);
   } else {
     renderHome(content);
   }
@@ -45,6 +48,5 @@ window.addEventListener('hashchange', route);
   initTheme();
   await initAuth();
   renderFooter();
-  renderThemeToggle();
   route();
 })();
