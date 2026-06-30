@@ -9,7 +9,8 @@ import { renderGuide } from './pages/guide.js?v=20260630-3';
 import { renderAuth } from './pages/auth2.js?v=20260630-11';
 import { renderBoard } from './pages/board.js?v=20260630-6';
 import { renderFooter } from './components/footer.js?v=20260630-3';
-import { initTheme, renderThemeToggle } from './components/theme.js?v=20260630-10';
+import { initTheme } from './components/theme.js?v=20260630-10';
+import { renderThemePreference } from './components/theme-preference.js?v=20260630-12';
 import { renderNav } from './components/nav.js?v=20260630-8';
 
 function normalizedRoute() {
@@ -52,6 +53,7 @@ function route() {
     renderGuide(content);
   } else if (hash === '#/auth') {
     renderAuth(content);
+    setTimeout(renderThemePreference, 80);
   } else if (hash === '#/board') {
     renderBoard(content);
   } else {
@@ -59,7 +61,6 @@ function route() {
   }
 
   renderNav();
-  renderThemeToggle();
 }
 
 window.addEventListener('hashchange', route);
