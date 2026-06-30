@@ -35,7 +35,12 @@ jobs:
           fi
           echo "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-service-account.json"
 
-      - name: Deploy Firestore, Functions and Hosting
+      - name: Deploy Firestore rules and Hosting
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-        run: firebase deploy --only firestore:rules,functions,hosting --project sosoking-481e6 --non-interactive
+        run: firebase deploy --only firestore:rules,hosting --project sosoking-481e6 --non-interactive
+
+      - name: Deploy current Functions only
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+        run: firebase deploy --only functions:submitCase,functions:generateTrial --project sosoking-481e6 --non-interactive
