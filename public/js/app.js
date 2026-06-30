@@ -7,6 +7,7 @@ import { renderPolicy } from './pages/policy.js?v=20260630-3';
 import { renderMyCases } from './pages/my-cases.js?v=20260630-3';
 import { renderGuide } from './pages/guide.js?v=20260630-3';
 import { renderAuth } from './pages/auth.js?v=20260630-3';
+import { renderBoard } from './pages/board.js?v=20260630-3';
 import { renderFooter } from './components/footer.js?v=20260630-3';
 import { initTheme } from './components/theme.js?v=20260630-3';
 import { renderNav } from './components/nav.js?v=20260630-3';
@@ -35,6 +36,8 @@ function route() {
     renderGuide(content);
   } else if (hash === '#/auth') {
     renderAuth(content);
+  } else if (hash === '#/board') {
+    renderBoard(content);
   } else {
     renderHome(content);
   }
