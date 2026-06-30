@@ -12,6 +12,11 @@ function nicknameKey(value) {
   return cleanNickname(value).toLocaleLowerCase('ko-KR');
 }
 
+function cleanUrl(value) {
+  const url = String(value || '').trim();
+  return /^https:\/\//.test(url) ? url.slice(0, 500) : '';
+}
+
 function nicknameError(value) {
   const n = cleanNickname(value);
   if (n.length < 2) return '닉네임은 2자 이상 입력해주세요.';
@@ -38,6 +43,8 @@ exports.setNickname = onCall({ region: REGION, timeoutSeconds: 30, memory: '256M
   const err = nicknameError(nickname);
   if (err) throw new HttpsError('invalid-argument', err);
   const key = nicknameKey(nickname);
+  const photoURL = cleanUrl(request.auth.token.picture || request.data?.photoURL || '');
+  const provider = request.auth.token.firebase?.sign_in_provider || 'password';
   const userRef = db.doc(`users/${uid}`);
   const nameRef = db.doc(`user_names/${key}`);
 
@@ -65,12 +72,15 @@ exports.setNickname = onCall({ region: REGION, timeoutSeconds: 30, memory: '256M
       uid,
       email: email || profile.email || '',
       nickname,
-      provider: request.auth.token.firebase?.sign_in_provider || profile.provider || 'password',
+      provider: provider || profile.provider || 'password',
+      photoURL: photoURL || profile.photoURL || '',
+      avatarSeed: profile.avatarSeed || `${uid.slice(0, 8)}-${Date.now().toString(36)}`,
+      avatarType: photoURL || profile.photoURL ? 'google' : 'generated',
       isAnonymous: false,
       updatedAt: FieldValue.serverTimestamp(),
       createdAt: profile.createdAt || FieldValue.serverTimestamp(),
     }, { merge: true });
   });
 
-  return { success: true, nickname };
+  return { success: true, nickname, photoURL };
 });
