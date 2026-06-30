@@ -1,0 +1,17 @@
+{
+  "name": "소소킹 판결소",
+  "short_name": "소소킹",
+  "description": "사소한 억울함을 AI 판사단이 과하게 진지하게 판결해주는 생활법정",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#101522",
+  "theme_color": "#161b2e",
+  "icons": [
+    {
+      "src": "/app-icon.svg?v=20260630-3",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
