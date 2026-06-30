@@ -128,6 +128,25 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    match /result_reactions/{caseId} {
+      allow read: if signedIn() && (isCasePublic(caseId) || isCaseOwner(caseId) || isAdmin());
+      allow write: if false;
+      match /votes/{uid} {
+        allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+        allow write: if false;
+      }
+    }
+
+    match /court_comments/{caseId}/items/{commentId} {
+      allow read: if signedIn() && (isCasePublic(caseId) || isCaseOwner(caseId) || isAdmin());
+      allow write: if false;
+    }
+
+    match /court_comment_stats/{caseId} {
+      allow read: if signedIn() && (isCasePublic(caseId) || isCaseOwner(caseId) || isAdmin());
+      allow write: if false;
+    }
+
     match /usage_stats/{docId} {
       allow read: if isAdmin();
       allow write: if false;
