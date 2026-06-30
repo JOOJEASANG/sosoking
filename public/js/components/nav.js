@@ -5,10 +5,10 @@ export function renderNav() {
 
   const hash = location.hash || '#/';
   const isHome = hash === '#/' || hash === '#' || hash === '';
-  const isSubmit = hash.startsWith('#/submit');
   const isBoard = hash.startsWith('#/board');
-  const isMy = hash.startsWith('#/my-cases');
-  const isAuth = hash.startsWith('#/auth');
+  const isGame = hash.startsWith('#/game');
+  const isSubmit = hash.startsWith('#/submit');
+  const isAuth = hash.startsWith('#/auth') || hash.startsWith('#/my-cases');
   const isLoggedIn = !!auth.currentUser && !auth.currentUser.isAnonymous;
 
   const nav = document.createElement('nav');
@@ -22,17 +22,17 @@ export function renderNav() {
       <span class="nav-icon">🔥</span>
       <span class="nav-label">게시판</span>
     </a>
+    <a href="#/game" class="nav-item${isGame ? ' active' : ''}">
+      <span class="nav-icon">🎮</span>
+      <span class="nav-label">게임</span>
+    </a>
     <a href="#/submit" class="nav-item nav-cta${isSubmit ? ' active' : ''}">
       <span class="nav-icon">⚖️</span>
       <span class="nav-label">접수</span>
     </a>
-    <a href="#/my-cases" class="nav-item${isMy ? ' active' : ''}">
-      <span class="nav-icon">📋</span>
-      <span class="nav-label">내 사건</span>
-    </a>
-    <a href="#/auth" class="nav-item${isAuth ? ' active' : ''}">
+    <a href="${isLoggedIn ? '#/my-cases' : '#/auth'}" class="nav-item${isAuth ? ' active' : ''}">
       <span class="nav-icon">👤</span>
-      <span class="nav-label">${isLoggedIn ? '계정' : '로그인'}</span>
+      <span class="nav-label">${isLoggedIn ? '내 사건' : '로그인'}</span>
     </a>
   `;
   document.body.appendChild(nav);
