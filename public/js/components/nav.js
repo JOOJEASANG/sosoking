@@ -1,3 +1,5 @@
+import { auth } from '../firebase.js?v=20260630-3';
+
 export function renderNav() {
   document.getElementById('bottom-nav')?.remove();
 
@@ -5,6 +7,8 @@ export function renderNav() {
   const isHome = hash === '#/' || hash === '#' || hash === '';
   const isSubmit = hash.startsWith('#/submit');
   const isMy = hash.startsWith('#/my-cases');
+  const isAuth = hash.startsWith('#/auth');
+  const isLoggedIn = !!auth.currentUser && !auth.currentUser.isAnonymous;
 
   const nav = document.createElement('nav');
   nav.id = 'bottom-nav';
@@ -15,11 +19,15 @@ export function renderNav() {
     </a>
     <a href="#/submit" class="nav-item nav-cta${isSubmit ? ' active' : ''}">
       <span class="nav-icon">⚖️</span>
-      <span class="nav-label">접수하기</span>
+      <span class="nav-label">접수</span>
     </a>
     <a href="#/my-cases" class="nav-item${isMy ? ' active' : ''}">
       <span class="nav-icon">📋</span>
       <span class="nav-label">내 사건</span>
+    </a>
+    <a href="#/auth" class="nav-item${isAuth ? ' active' : ''}">
+      <span class="nav-icon">👤</span>
+      <span class="nav-label">${isLoggedIn ? '계정' : '로그인'}</span>
     </a>
   `;
   document.body.appendChild(nav);
