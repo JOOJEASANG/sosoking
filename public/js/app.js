@@ -6,16 +6,32 @@ import { renderResult } from './pages/result.js?v=20260630-7';
 import { renderPolicy } from './pages/policy.js?v=20260630-3';
 import { renderMyCases } from './pages/my-cases.js?v=20260630-9';
 import { renderGuide } from './pages/guide.js?v=20260630-3';
-import { renderAuth } from './pages/auth.js?v=20260630-7';
+import { renderAuth } from './pages/auth.js?v=20260630-11';
 import { renderBoard } from './pages/board.js?v=20260630-6';
 import { renderFooter } from './components/footer.js?v=20260630-3';
 import { initTheme, renderThemeToggle } from './components/theme.js?v=20260630-10';
 import { renderNav } from './components/nav.js?v=20260630-8';
 
+function normalizedRoute() {
+  const hash = location.hash || '';
+  if (hash === '#/' || hash === '' || hash === '#') {
+    const path = location.pathname.replace(/\/$/, '') || '/';
+    if (path === '/') return '#/';
+    if (path === '/board') return '#/board';
+    if (path === '/submit') return '#/submit';
+    if (path === '/guide') return '#/guide';
+    if (path === '/auth') return '#/auth';
+    if (path === '/my-cases') return '#/my-cases';
+    if (path.startsWith('/result/')) return `#/result/${encodeURIComponent(decodeURIComponent(path.replace('/result/', '')))}`;
+    if (path.startsWith('/trial/')) return `#/trial/${encodeURIComponent(decodeURIComponent(path.replace('/trial/', '')))}`;
+  }
+  return hash || '#/';
+}
+
 function route() {
   if (window._pageCleanup) { window._pageCleanup(); window._pageCleanup = null; }
 
-  const hash = location.hash || '#/';
+  const hash = normalizedRoute();
   const content = document.getElementById('page-content');
   if (!content) return;
   window.scrollTo(0, 0);
@@ -47,6 +63,7 @@ function route() {
 }
 
 window.addEventListener('hashchange', route);
+window.addEventListener('popstate', route);
 
 (async () => {
   initTheme();
