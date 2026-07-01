@@ -52,10 +52,15 @@ async function loadSettings() {
   const snap = await db.doc('site_settings/config').get();
   return snap.exists ? snap.data() : {};
 }
-async function isAdmin(uid) {
-  if (!uid) return false;
-  const snap = await db.doc(`admins/${uid}`).get();
-  return snap.exists;
+async function isAdminAuth(auth) {
+  if (!auth?.uid) return false;
+  const uidSnap = await db.doc(`admins/${auth.uid}`).get();
+  if (uidSnap.exists) return true;
+  const email = String(auth.token?.email || '').trim().toLowerCase();
+  if (!email) return false;
+  if (email === ['sosoday1976', 'gmail.com'].join('@')) return true;
+  const emailSnap = await db.doc(`admins/${email}`).get();
+  return emailSnap.exists;
 }
 function fallbackContent(dateKey) {
   return {
@@ -78,7 +83,7 @@ async function buildDailyContent(dateKey, settings = {}) {
     const genAI = new GoogleGenerativeAI(geminiKey.value().trim());
     const model = genAI.getGenerativeModel({ model: cleanText(settings.geminiModel, 50) || 'gemini-2.5-flash' });
     const extra = [settings.dailyAiTopicHints && `주제 힌트: ${settings.dailyAiTopicHints}`, settings.dailyAiPrompt && `추가 지시: ${settings.dailyAiPrompt}`].filter(Boolean).join('\n');
-    const prompt = `소소킹 판결소 게시판에 올릴 오늘의 생활형 AI 사건 1개를 만든다. 사소하고 안전한 일상 소재만 사용한다. 실명, 연락처, 정치, 혐오, 성적 내용, 자해, 실제 범죄 묘사는 금지한다. 반드시 모든 필드를 빈 값 없이 채운다. 출력은 JSON만 한다.\n${extra}\n필드: caseTitle, caseDescription, grievanceIndex, nickname, desiredVerdict, judgeType, reception, investigation, plaintiffArg, defendantArg, verdict, sentence. 판사 유형: ${JUDGES.join(', ')}. 날짜키: ${dateKey}`;
+    const prompt = `소소킹 판결소 게시판에 올릴 오늘의 생활형 AI 사건 1개를 만든다. 사소하고 안전한 일상 소재만 사용한다. 실명, 연락처, 정치, 혐오, 성적 내용, 자해, 실제 범죄 묘사는 금지한다. 사건은 아무것도 아닌데 재판부가 지나치게 엄숙하고 게임처럼 과몰입해서 판결하는 톤으로 작성한다. 반드시 모든 필드를 빈 값 없이 채운다. 출력은 JSON만 한다.\n${extra}\n필드: caseTitle, caseDescription, grievanceIndex, nickname, desiredVerdict, judgeType, reception, investigation, plaintiffArg, defendantArg, verdict, sentence. 판사 유형: ${JUDGES.join(', ')}. 날짜키: ${dateKey}`;
     const result = await model.generateContent(prompt);
     return extractJson(result.response.text());
   } catch (err) {
@@ -125,49 +130,21 @@ async function createDailyAiCase(force = false) {
 
   const batch = db.batch();
   batch.set(caseRef, {
-    userId: 'system-daily-ai',
-    source: 'daily_ai',
-    dailyDate: dateKey,
-    docketNumber: dailyDocket,
-    courtName: '소소킹 판결소',
-    courtroom: '제404호 생활법정',
-    division: '제3생활부',
-    courtStage: 'sentenced',
-    caseTitle: data.caseTitle,
-    caseDescription: data.caseDescription,
-    grievanceIndex: data.grievanceIndex,
-    nickname: data.nickname,
-    desiredVerdict: data.desiredVerdict,
-    selectedJudge: data.judgeType,
-    judgeType: data.judgeType,
-    status: 'completed',
-    isPublic: true,
-    reportCount: 0,
-    createdAt: FieldValue.serverTimestamp(),
-    completedAt: FieldValue.serverTimestamp(),
-    updatedAt: FieldValue.serverTimestamp()
+    userId: 'system-daily-ai', source: 'daily_ai', dailyDate: dateKey, docketNumber: dailyDocket,
+    courtName: '소소킹 판결소', courtroom: '제404호 생활법정', division: '제3생활부', courtStage: 'sentenced',
+    caseTitle: data.caseTitle, caseDescription: data.caseDescription, grievanceIndex: data.grievanceIndex,
+    nickname: data.nickname, desiredVerdict: data.desiredVerdict, selectedJudge: data.judgeType, judgeType: data.judgeType,
+    status: 'completed', isPublic: true, reportCount: 0,
+    createdAt: FieldValue.serverTimestamp(), completedAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp()
   }, { merge: true });
 
   batch.set(resultRef, {
-    source: 'daily_ai',
-    dailyDate: dateKey,
-    docketNumber: dailyDocket,
-    isPublic: true,
-    caseTitle: data.caseTitle,
-    caseDescription: data.caseDescription,
-    grievanceIndex: data.grievanceIndex,
-    nickname: data.nickname,
-    desiredVerdict: data.desiredVerdict,
-    judgeType: data.judgeType,
-    reception: data.reception,
-    investigation: data.investigation,
-    plaintiffArg: data.plaintiffArg,
-    defendantArg: data.defendantArg,
-    verdict: data.verdict,
-    sentence: data.sentence,
-    courtStage: 'sentenced',
-    createdAt: FieldValue.serverTimestamp(),
-    updatedAt: FieldValue.serverTimestamp()
+    source: 'daily_ai', dailyDate: dateKey, docketNumber: dailyDocket, isPublic: true,
+    caseTitle: data.caseTitle, caseDescription: data.caseDescription, grievanceIndex: data.grievanceIndex,
+    nickname: data.nickname, desiredVerdict: data.desiredVerdict, judgeType: data.judgeType,
+    reception: data.reception, investigation: data.investigation, plaintiffArg: data.plaintiffArg,
+    defendantArg: data.defendantArg, verdict: data.verdict, sentence: data.sentence,
+    courtStage: 'sentenced', createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp()
   }, { merge: true });
 
   await batch.commit();
@@ -179,6 +156,6 @@ exports.createDailyAiCase = onSchedule({ region: REGION, schedule: '0 9 * * *', 
   console.log('daily ai case result:', await createDailyAiCase(false));
 });
 exports.generateDailyAiNow = onCall({ region: REGION, secrets: [geminiKey], timeoutSeconds: 300, memory: '512MiB' }, async (request) => {
-  if (!request.auth || !(await isAdmin(request.auth.uid))) throw new HttpsError('permission-denied', '관리자만 실행할 수 있습니다.');
+  if (!request.auth || !(await isAdminAuth(request.auth))) throw new HttpsError('permission-denied', '관리자만 실행할 수 있습니다.');
   return await createDailyAiCase(true);
 });
