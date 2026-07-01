@@ -1,4 +1,4 @@
-import { renderBoard as renderBaseBoard } from './board.js?v=20260702-15';
+import { renderBoard as renderBaseBoard } from './board.js?v=20260702-18';
 
 function ensureBoardGameStyle() {
   if (document.getElementById('board-game-style')) return;
@@ -11,7 +11,7 @@ function ensureBoardGameStyle() {
     .arena-rank-tabs span{display:block;color:var(--text-muted,var(--cream-dim));font-size:10px;margin-top:2px;font-weight:800;}
     .rank-medal{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--gold-light),#ff7166);color:#120d05;font-weight:900;margin-right:6px;}
     .court-board-row:nth-child(1){border-color:var(--gold)!important;box-shadow:0 8px 26px rgba(201,168,76,.12);}
-    .court-board-row:nth-child(1)::after{content:'KING';position:absolute;right:12px;top:12px;color:#120d05;background:var(--gold-light);border-radius:999px;padding:3px 8px;font-size:9px;font-weight:900;}
+    .court-board-row:nth-child(1)::after{content:'SCORE';position:absolute;right:12px;top:12px;color:#120d05;background:var(--gold-light);border-radius:999px;padding:3px 8px;font-size:9px;font-weight:900;}
     #board-list .card{position:relative;}
   `;
   document.head.appendChild(style);
@@ -25,29 +25,29 @@ function decorateBoard(container) {
     intro.style.padding = '20px';
     intro.insertAdjacentHTML('afterbegin', `
       <div style="display:flex;gap:14px;align-items:center;margin-bottom:10px;">
-        <div class="court-seal" style="width:52px;height:52px;font-size:24px;">👑</div>
+        <div class="court-seal" style="width:52px;height:52px;font-size:24px;">😂</div>
         <div>
-          <div class="court-kicker">SOSOKING KING ARENA</div>
+          <div class="court-kicker">SOSOKING FUNNY SCORE ARENA</div>
           <div class="court-title" style="font-size:20px;">소소킹 공개 기록</div>
         </div>
       </div>
       <div class="arena-rank-tabs">
+        <div><strong>점수</strong><span>1~10 웃김</span></div>
         <div><strong>킹</strong><span>소소킹감</span></div>
-        <div><strong>인기</strong><span>시민 의견</span></div>
         <div><strong>최신</strong><span>방금 편성</span></div>
       </div>`);
   }
   const pick = document.getElementById('today-pick')?.firstElementChild;
   if (pick && !pick.classList.contains('court-document')) {
     pick.classList.add('court-document');
-    pick.insertAdjacentHTML('afterbegin', `<div class="court-stamp" style="margin-bottom:8px;">오늘의 KING</div>`);
+    pick.insertAdjacentHTML('afterbegin', `<div class="court-stamp" style="margin-bottom:8px;">웃김 1위</div>`);
   }
   document.querySelectorAll('#board-list .card').forEach((card, idx) => {
     if (card.classList.contains('court-board-row')) return;
     card.classList.add('court-board-row');
     card.style.borderLeft = '3px solid var(--gold)';
     const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : String(idx + 1);
-    card.insertAdjacentHTML('afterbegin', `<div class="court-kicker" style="margin-bottom:7px;"><span class="rank-medal">${medal}</span> SOSO KING RECORD</div>`);
+    card.insertAdjacentHTML('afterbegin', `<div class="court-kicker" style="margin-bottom:7px;"><span class="rank-medal">${medal}</span> FUNNY SCORE RECORD</div>`);
   });
 }
 
