@@ -28,7 +28,7 @@ export function initCourtDesign() {
     @media (prefers-color-scheme: light){:root:not([data-theme]) .court-document{background:#fffdf8;}}
   `;
   document.head.appendChild(style);
-  import('./contrast-fix.js?v=20260702-5').then(m => m.initContrastFix()).catch(() => {});
+  import('./contrast-fix.js?v=20260702-6').then(m => m.initContrastFix()).catch(() => {});
   import('./owner-polish.js?v=20260630-21').then(m => m.initOwnerPolish()).catch(() => {});
   import('./pwa-ui.js?v=20260630-23').then(m => m.initPwa()).catch(() => {});
   import('./admin-redirect.js?v=20260630-18').then(m => m.initAdminRedirect()).catch(() => {});
