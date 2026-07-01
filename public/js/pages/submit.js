@@ -24,7 +24,7 @@ const SERIOUS_KEYWORDS = [
   '성범죄','성폭력','성추행','성희롱','강간','강제추행',
   '가정폭력','학교폭력','직장내괴롭힘','갑질','따돌림','왕따',
   '이혼','위자료','손해배상','형사고소','고발','소송','민사','형사','법원',
-  '자살','자해','응급','정신과','우울증','공황'
+  '응급','정신과','우울증','공황'
 ];
 
 function _isTooSerious(text) {
@@ -117,6 +117,12 @@ export async function renderSubmit(container) {
             <label class="form-label">원하는 판결 <span class="optional">선택</span></label>
             <input type="text" id="desired-verdict" class="form-input" maxlength="${MAX_DESIRED}" placeholder="예: 사과와 라면 국물 3숟갈 반환">
           </div>
+          <div class="card" style="padding:14px;margin-bottom:18px;background:rgba(201,168,76,.08);border-color:rgba(201,168,76,.32);">
+            <label style="display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.65;color:var(--cream);cursor:pointer;">
+              <input type="checkbox" id="is-public" checked style="margin-top:4px;">
+              <span><b style="color:var(--gold);">판결기록에 공개</b><br><span style="color:var(--cream-dim);">체크하면 선고 후 다른 유저들이 판결기록에서 열람할 수 있습니다. 실명·연락처 등 개인정보는 적지 마세요.</span></span>
+            </label>
+          </div>
           <div class="disclaimer" style="margin-bottom:24px;">
             <strong>⚠️ 접수 전 확인사항</strong><br>
             · 하루 접수 한도는 계정당 <strong>${settings.dailyLimit}건</strong>으로 고정됩니다.<br>
@@ -155,6 +161,7 @@ export async function renderSubmit(container) {
     const desc = document.getElementById('case-desc').value.trim();
     const desired = document.getElementById('desired-verdict').value.trim();
     const grievance = parseInt(document.getElementById('grievance').value, 10);
+    const isPublic = document.getElementById('is-public').checked;
     if (!title || !desc) return showToast('사건명과 사건 경위를 입력해주세요.', 'error');
     if (_isTooSerious(`${title} ${desc}`)) {
       const proceed = await _showSeriousModal();
@@ -165,7 +172,7 @@ export async function renderSubmit(container) {
     btn.textContent = '전자소송 접수 중...';
     try {
       const submitCase = httpsCallable(functions, 'submitCase');
-      const res = await submitCase({ caseTitle: title, caseDescription: desc, grievanceIndex: grievance, desiredVerdict: desired, selectedJudge });
+      const res = await submitCase({ caseTitle: title, caseDescription: desc, grievanceIndex: grievance, desiredVerdict: desired, selectedJudge, isPublic });
       const caseId = res.data?.caseId;
       if (!caseId) throw new Error('caseId missing');
       location.hash = `#/trial/${encodeURIComponent(caseId)}`;
