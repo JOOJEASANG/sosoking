@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "소소킹 판결소",
+  "name": "소소킹",
   "short_name": "소소킹",
-  "description": "사소한 억울함을 AI 판사단이 재치 있게 판결해주는 소소한 판결소",
+  "description": "사소한 한 줄 다툼을 긴급속보와 소소분쟁위원회 결정문으로 만들어주는 AI 오락 서비스",
   "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
@@ -14,25 +14,25 @@
   "prefer_related_applications": false,
   "icons": [
     {
-      "src": "/app-icon.svg?v=20260702-6",
+      "src": "/app-icon.svg?v=20260702-10",
       "sizes": "192x192",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "/app-icon.svg?v=20260702-6",
+      "src": "/app-icon.svg?v=20260702-10",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "/maskable-icon.svg?v=20260702-2",
+      "src": "/maskable-icon.svg?v=20260702-4",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "maskable"
     },
     {
-      "src": "/maskable-icon.svg?v=20260702-2",
+      "src": "/maskable-icon.svg?v=20260702-4",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "maskable"
