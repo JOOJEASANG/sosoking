@@ -25,22 +25,21 @@ function ensureGameStyle() {
   const style = document.createElement('style');
   style.id = 'submit-game-style';
   style.textContent = `
-    .game-lv-card{padding:16px;margin-bottom:18px;border-radius:18px;border:1px solid rgba(201,168,76,.36);background:linear-gradient(135deg,rgba(201,168,76,.14),rgba(255,255,255,.035));}
+    .game-lv-card{padding:16px;margin-bottom:18px;border-radius:18px;border:1px solid var(--border);background:linear-gradient(135deg,var(--gold-dim),var(--surface-2,rgba(255,255,255,.035)));}
     .game-lv-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;}
-    .game-lv-title{font-size:12px;font-weight:900;color:#e8c97a;letter-spacing:.12em;}
-    .game-lv-num{font-family:var(--font-serif);font-size:24px;font-weight:900;color:#fff8ec;}
-    .game-lv-bar{height:12px;border-radius:99px;background:rgba(255,255,255,.10);overflow:hidden;border:1px solid rgba(201,168,76,.25);}
-    .game-lv-fill{height:100%;width:50%;border-radius:99px;background:linear-gradient(90deg,#c9a84c,#ffdf7a,#e74c3c);box-shadow:0 0 18px rgba(201,168,76,.35);transition:width .18s ease;}
-    .game-lv-caption{font-size:12px;color:rgba(255,248,236,.82);margin-top:8px;font-weight:800;}
+    .game-lv-title{font-size:12px;font-weight:900;color:var(--gold);letter-spacing:.12em;}
+    .game-lv-num{font-family:var(--font-serif);font-size:24px;font-weight:900;color:var(--text-strong,var(--cream));}
+    .game-lv-bar{height:12px;border-radius:99px;background:var(--surface-2,rgba(255,255,255,.10));overflow:hidden;border:1px solid var(--border);}
+    .game-lv-fill{height:100%;width:50%;border-radius:99px;background:linear-gradient(90deg,var(--gold),var(--gold-light),var(--red));box-shadow:0 0 18px rgba(201,168,76,.35);transition:width .18s ease;}
+    .game-lv-caption{font-size:12px;color:var(--text-muted,var(--cream-dim));margin-top:8px;font-weight:800;}
     .judge-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;}
-    .judge-option{position:relative;min-height:118px!important;padding:13px 10px!important;border-radius:18px!important;border:1px solid rgba(201,168,76,.24)!important;background:linear-gradient(145deg,rgba(255,255,255,.052),rgba(255,255,255,.025))!important;display:flex!important;flex-direction:column;align-items:flex-start!important;text-align:left!important;overflow:hidden;}
-    .judge-option::after{content:'판사 카드';position:absolute;right:9px;top:8px;font-size:9px;color:rgba(255,248,236,.38);font-weight:900;letter-spacing:.08em;}
-    .judge-option.active{border-color:#e8c97a!important;box-shadow:0 0 0 2px rgba(201,168,76,.22),0 12px 26px rgba(0,0,0,.24)!important;background:linear-gradient(145deg,rgba(201,168,76,.22),rgba(255,255,255,.04))!important;}
+    .judge-option{position:relative;min-height:118px!important;padding:13px 10px!important;border-radius:18px!important;border:1px solid var(--border)!important;background:var(--surface-1,var(--navy-card))!important;display:flex!important;flex-direction:column;align-items:flex-start!important;text-align:left!important;overflow:hidden;color:var(--text-strong,var(--cream))!important;}
+    .judge-option::after{content:'판사 카드';position:absolute;right:9px;top:8px;font-size:9px;color:var(--text-soft,var(--cream-dim));font-weight:900;letter-spacing:.08em;}
+    .judge-option.active{border-color:var(--gold)!important;box-shadow:0 0 0 2px var(--gold-dim),0 12px 26px rgba(0,0,0,.16)!important;background:linear-gradient(145deg,var(--gold-dim),var(--surface-2,rgba(255,255,255,.04)))!important;}
     .judge-option span{font-size:28px!important;margin-bottom:7px;}
-    .judge-option-name{font-size:14px!important;font-weight:900!important;color:#fff8ec!important;}
-    .judge-option-desc{font-size:11px!important;line-height:1.45!important;color:rgba(255,248,236,.76)!important;margin-top:4px;}
-    .judge-stat{font-size:10px;color:rgba(255,248,236,.62);line-height:1.35;margin-top:7px;font-weight:800;}
-    [data-theme="light"] .judge-option,:root:not([data-theme="dark"]) .judge-option{background:linear-gradient(145deg,rgba(26,32,53,.96),rgba(13,17,23,.94))!important;}
+    .judge-option-name{font-size:14px!important;font-weight:900!important;color:var(--text-strong,var(--cream))!important;}
+    .judge-option-desc{font-size:11px!important;line-height:1.45!important;color:var(--text-muted,var(--cream-dim))!important;margin-top:4px;}
+    .judge-stat{font-size:10px;color:var(--text-soft,var(--cream-dim));line-height:1.35;margin-top:7px;font-weight:800;}
     @media(max-width:380px){.judge-grid{grid-template-columns:1fr!important}.judge-option{min-height:104px!important}}
   `;
   document.head.appendChild(style);
