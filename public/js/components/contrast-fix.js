@@ -159,6 +159,49 @@ export function initContrastFix() {
     .court-shell .court-desc,.court-shell .court-step-text,.court-shell .court-ledger span,.court-shell p,.court-shell small{color:rgba(255,248,236,.84)!important;}
     .court-shell .court-ledger div,.court-shell .court-step{background:rgba(255,255,255,.060)!important;border-color:rgba(212,181,92,.34)!important;}
 
+    [data-theme="light"] .court-shell{
+      background:linear-gradient(145deg,#fffdf8,#f7efe3)!important;
+      color:var(--text-strong)!important;
+      border-color:var(--border)!important;
+      box-shadow:0 10px 24px rgba(78,52,12,.12),inset 0 1px 0 rgba(255,255,255,.92)!important;
+    }
+    [data-theme="light"] .court-shell .court-title,
+    [data-theme="light"] .court-shell .court-step-title,
+    [data-theme="light"] .court-shell strong,
+    [data-theme="light"] .court-shell h1,
+    [data-theme="light"] .court-shell h2,
+    [data-theme="light"] .court-shell h3{color:var(--text-strong)!important;}
+    [data-theme="light"] .court-shell .court-kicker,
+    [data-theme="light"] .court-shell .court-ledger strong,
+    [data-theme="light"] .court-shell .court-step-num{color:var(--gold)!important;}
+    [data-theme="light"] .court-shell .court-desc,
+    [data-theme="light"] .court-shell .court-step-text,
+    [data-theme="light"] .court-shell .court-ledger span,
+    [data-theme="light"] .court-shell p,
+    [data-theme="light"] .court-shell small{color:var(--text-muted)!important;}
+    [data-theme="light"] .court-shell .court-ledger div,
+    [data-theme="light"] .court-shell .court-step{background:var(--surface-2)!important;border-color:var(--border)!important;}
+
+    @media (prefers-color-scheme: light){
+      :root:not([data-theme]) .court-shell{background:linear-gradient(145deg,#fffdf8,#f7efe3)!important;color:var(--text-strong)!important;border-color:var(--border)!important;box-shadow:0 10px 24px rgba(78,52,12,.12),inset 0 1px 0 rgba(255,255,255,.92)!important;}
+      :root:not([data-theme]) .court-shell .court-title,
+      :root:not([data-theme]) .court-shell .court-step-title,
+      :root:not([data-theme]) .court-shell strong,
+      :root:not([data-theme]) .court-shell h1,
+      :root:not([data-theme]) .court-shell h2,
+      :root:not([data-theme]) .court-shell h3{color:var(--text-strong)!important;}
+      :root:not([data-theme]) .court-shell .court-kicker,
+      :root:not([data-theme]) .court-shell .court-ledger strong,
+      :root:not([data-theme]) .court-shell .court-step-num{color:var(--gold)!important;}
+      :root:not([data-theme]) .court-shell .court-desc,
+      :root:not([data-theme]) .court-shell .court-step-text,
+      :root:not([data-theme]) .court-shell .court-ledger span,
+      :root:not([data-theme]) .court-shell p,
+      :root:not([data-theme]) .court-shell small{color:var(--text-muted)!important;}
+      :root:not([data-theme]) .court-shell .court-ledger div,
+      :root:not([data-theme]) .court-shell .court-step{background:var(--surface-2)!important;border-color:var(--border)!important;}
+    }
+
     .court-document{background:linear-gradient(180deg,var(--surface-1),rgba(255,255,255,.03))!important;border-color:var(--border)!important;color:var(--text-strong)!important;}
     .court-stamp,.verdict-stamp{color:var(--red)!important;border-color:var(--red)!important;}
     .sentence-card{background:linear-gradient(135deg,var(--gold-dim),rgba(255,255,255,.025))!important;border-color:var(--border)!important;}
