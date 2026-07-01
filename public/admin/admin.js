@@ -1,6 +1,6 @@
 import { initializeApp, getApp, getApps } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
-import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, query, where, orderBy, limit, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, query, orderBy, limit, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { firebaseConfig } from '../js/firebase-config.js';
 import { escapeHtml, escapeAttr, compactText } from '../js/utils/sanitize.js?v=20260630-3';
 
@@ -35,8 +35,12 @@ function num(n) { return Number(n || 0).toLocaleString('ko-KR'); }
 async function isAdminUser(user) {
   if (!user) return false;
   try {
-    const snap = await getDoc(doc(db, 'admins', user.uid));
-    return snap.exists();
+    const byUid = await getDoc(doc(db, 'admins', user.uid));
+    if (byUid.exists()) return true;
+    const email = String(user.email || '').trim().toLowerCase();
+    if (!email) return false;
+    const byEmail = await getDoc(doc(db, 'admins', email));
+    return byEmail.exists() || email === 'sosoday1976@gmail.com';
   } catch {
     return false;
   }
@@ -57,7 +61,7 @@ function renderLogin() {
         <div style="text-align:center;margin-bottom:24px;">
           <img src="/app-icon.svg?v=20260630-3" style="width:70px;height:70px;margin-bottom:10px;" alt="">
           <div style="font-family:var(--font-serif);font-size:21px;color:var(--gold);font-weight:800;">소소킹 관리자</div>
-          <div style="font-size:13px;color:var(--cream-dim);margin-top:4px;">사이트 · AI · 게시판 관리</div>
+          <div style="font-size:13px;color:var(--cream-dim);margin-top:4px;">사이트 · AI · 판결기록 관리</div>
         </div>
         <button class="btn btn-secondary" id="google-admin" style="margin-bottom:16px;">Google 관리자 로그인</button>
         <form id="login-form">
@@ -94,7 +98,7 @@ function renderNoAccess() {
       <div class="card" style="max-width:430px;padding:26px;">
         <div style="font-size:46px;margin-bottom:12px;">🚫</div>
         <div style="font-family:var(--font-serif);font-size:20px;color:var(--gold);font-weight:800;margin-bottom:8px;">관리자 권한 없음</div>
-        <div style="font-size:13px;color:var(--cream-dim);line-height:1.8;margin-bottom:20px;">로그인은 되었지만 관리자 명부에 없는 계정입니다.<br>Firestore의 <code>admins/${escapeHtml(currentUser?.uid || '')}</code> 문서가 필요합니다.</div>
+        <div style="font-size:13px;color:var(--cream-dim);line-height:1.8;margin-bottom:20px;">Firestore의 <code>admins/${escapeHtml(currentUser?.uid || '')}</code> 또는 <code>admins/${escapeHtml(currentUser?.email || '')}</code> 문서가 필요합니다.</div>
         <button class="btn btn-secondary" id="noaccess-logout">로그아웃</button>
       </div>
     </div>`;
@@ -103,7 +107,7 @@ function renderNoAccess() {
 
 function renderDashboard() {
   const tabs = [
-    ['overview','대시보드'], ['cases','사건'], ['board','게시판'], ['users','회원'],
+    ['overview','대시보드'], ['records','사건·판결기록'], ['users','회원'],
     ['ai','AI 관리'], ['usage','사용량'], ['site','사이트 설정'], ['biz','사업자'], ['policy','정책']
   ];
   document.getElementById('admin-content').innerHTML = `
@@ -131,8 +135,7 @@ async function loadTab(tab) {
   el.innerHTML = '<div class="loading-dots" style="padding:40px 0;"><span></span><span></span><span></span></div>';
   try {
     if (tab === 'overview') await tabOverview(el);
-    else if (tab === 'cases') await tabCases(el);
-    else if (tab === 'board') await tabBoard(el);
+    else if (tab === 'records') await tabRecords(el);
     else if (tab === 'users') await tabUsers(el);
     else if (tab === 'ai') await tabAi(el);
     else if (tab === 'usage') await tabUsage(el);
@@ -150,23 +153,21 @@ function mini(label, value, sub = '') {
 }
 
 async function tabOverview(el) {
-  const [cases, results, users, reports, settingsSnap] = await Promise.all([
+  const [cases, results, users, settingsSnap] = await Promise.all([
     getDocs(query(collection(db, 'cases'), orderBy('createdAt', 'desc'), limit(80))),
     getDocs(query(collection(db, 'results'), orderBy('createdAt', 'desc'), limit(80))),
     getDocs(query(collection(db, 'users'), orderBy('updatedAt', 'desc'), limit(80))),
-    getDocs(query(collection(db, 'reports'), orderBy('createdAt', 'desc'), limit(80))),
     getDoc(doc(db, 'site_settings', 'config')),
   ]);
   const s = settingsSnap.exists() ? settingsSnap.data() : {};
   const completed = cases.docs.filter(d => d.data().status === 'completed').length;
   const daily = results.docs.filter(d => d.data().source === 'daily_ai').length;
-  const pendingReports = reports.docs.filter(d => (d.data().status || 'pending') === 'pending').length;
   el.innerHTML = `
     <div class="admin-grid">
       ${mini('최근 사건', cases.size + '건', completed + '건 완료')}
-      ${mini('공개 판결', results.docs.filter(d => d.data().isPublic).length + '건', `AI 자동 ${daily}건`)}
+      ${mini('공개 판결기록', results.docs.filter(d => d.data().isPublic).length + '건', `AI 자동 ${daily}건`)}
       ${mini('회원', users.size + '명')}
-      ${mini('미처리 신고', pendingReports + '건')}
+      ${mini('AI 자동 생성', s.dailyAiEnabled === false ? '꺼짐' : '켜짐')}
     </div>
     <div class="card" style="font-size:13px;color:var(--cream-dim);line-height:1.8;margin-bottom:16px;">
       <strong style="color:var(--gold);">AI 자동 사건</strong>: ${s.dailyAiEnabled === false ? '꺼짐' : '켜짐'} · 매일 오전 9시 기준 생성<br>
@@ -174,7 +175,7 @@ async function tabOverview(el) {
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
       <div>${simpleList('최근 사건', cases.docs.slice(0, 6).map(d => [d.data().caseTitle, d.data().status, fmtDate(d.data().createdAt)]))}</div>
-      <div>${simpleList('최근 공개 판결', results.docs.filter(d => d.data().isPublic).slice(0, 6).map(d => [d.data().caseTitle, d.data().source === 'daily_ai' ? 'AI 자동' : '사용자', fmtDate(d.data().createdAt)]))}</div>
+      <div>${simpleList('최근 공개 판결기록', results.docs.filter(d => d.data().isPublic).slice(0, 6).map(d => [d.data().caseTitle, d.data().source === 'daily_ai' ? 'AI 자동' : '사용자', fmtDate(d.data().createdAt)]))}</div>
     </div>`;
 }
 
@@ -182,24 +183,39 @@ function simpleList(title, rows) {
   return `<div class="card"><div style="font-weight:800;color:var(--gold);margin-bottom:10px;">${title}</div>${rows.map(([a,b,c]) => `<div style="padding:8px 0;border-top:1px solid var(--border);font-size:12px;"><div style="font-weight:700;">${escapeHtml(a || '-')}</div><div style="color:var(--cream-dim);margin-top:2px;">${escapeHtml(b || '-')} · ${escapeHtml(c || '-')}</div></div>`).join('') || '<div style="color:var(--cream-dim);font-size:12px;">데이터 없음</div>'}</div>`;
 }
 
-async function tabCases(el) {
-  const snap = await getDocs(query(collection(db, 'cases'), orderBy('createdAt', 'desc'), limit(100)));
-  el.innerHTML = tableWrap(['사건','내용','상태','공개','관리'], snap.docs.map(d => {
+async function tabRecords(el) {
+  const [caseSnap, resultSnap] = await Promise.all([
+    getDocs(query(collection(db, 'cases'), orderBy('createdAt', 'desc'), limit(100))),
+    getDocs(query(collection(db, 'results'), orderBy('createdAt', 'desc'), limit(120)))
+  ]);
+  const results = new Map(resultSnap.docs.map(d => [d.id, d.data()]));
+  const rows = caseSnap.docs.map(d => {
     const c = d.data();
-    return `<tr><td><b>${escapeHtml(c.caseTitle || '-')}</b><div style="font-size:11px;color:var(--cream-dim);">${escapeHtml(c.nickname || '익명')} · ${escapeHtml(fmtDate(c.createdAt))}</div></td><td>${escapeHtml(compactText(c.caseDescription || '', 80))}</td><td>${escapeHtml(c.status || '-')}</td><td>${c.isPublic ? '공개' : '비공개'}</td><td><div class="admin-actions"><button class="admin-btn gold" onclick="location.href='/#/result/${escapeAttr(d.id)}'">보기</button><button class="admin-btn" onclick="window._casePublic('${escapeAttr(d.id)}', ${!c.isPublic})">${c.isPublic ? '비공개' : '공개'}</button><button class="admin-btn red" onclick="window._delCase('${escapeAttr(d.id)}')">삭제</button></div></td></tr>`;
-  }));
-  window._casePublic = async (id, val) => { await updateDoc(doc(db, 'cases', id), { isPublic: val }); try { await updateDoc(doc(db, 'results', id), { isPublic: val, updatedAt: serverTimestamp() }); } catch {} toast('변경 완료', 'success'); loadTab('cases'); };
-  window._delCase = async id => { if (!confirm('사건과 판결 결과를 삭제할까요?')) return; try { await deleteDoc(doc(db, 'results', id)); } catch {} await deleteDoc(doc(db, 'cases', id)); toast('삭제 완료', 'success'); loadTab('cases'); };
-}
-
-async function tabBoard(el) {
-  const snap = await getDocs(query(collection(db, 'results'), orderBy('createdAt', 'desc'), limit(100)));
-  el.innerHTML = tableWrap(['제목','처분','유형','공개','관리'], snap.docs.map(d => {
-    const r = d.data();
-    return `<tr><td><b>${escapeHtml(r.caseTitle || '-')}</b><div style="font-size:11px;color:var(--cream-dim);">${escapeHtml(fmtDate(r.createdAt))}</div></td><td>${escapeHtml(compactText(r.sentence || '', 70))}</td><td>${r.source === 'daily_ai' ? 'AI 자동' : '사용자'} · ${escapeHtml(r.judgeType || '-')}</td><td>${r.isPublic ? '공개' : '비공개'}</td><td><div class="admin-actions"><button class="admin-btn gold" onclick="location.href='/#/result/${escapeAttr(d.id)}'">보기</button><button class="admin-btn" onclick="window._resultPublic('${escapeAttr(d.id)}', ${!r.isPublic})">${r.isPublic ? '비공개' : '공개'}</button><button class="admin-btn red" onclick="window._delResult('${escapeAttr(d.id)}')">삭제</button></div></td></tr>`;
-  }));
-  window._resultPublic = async (id, val) => { await updateDoc(doc(db, 'results', id), { isPublic: val, updatedAt: serverTimestamp() }); try { await updateDoc(doc(db, 'cases', id), { isPublic: val }); } catch {} toast('변경 완료', 'success'); loadTab('board'); };
-  window._delResult = async id => { if (!confirm('게시글/판결 결과를 삭제할까요?')) return; await deleteDoc(doc(db, 'results', id)); toast('삭제 완료', 'success'); loadTab('board'); };
+    const r = results.get(d.id) || {};
+    const isPublic = !!(c.isPublic || r.isPublic);
+    const source = r.source === 'daily_ai' || c.source === 'daily_ai' ? 'AI 자동' : '사용자';
+    return `<tr>
+      <td><b>${escapeHtml(c.caseTitle || r.caseTitle || '-')}</b><div style="font-size:11px;color:var(--cream-dim);">${escapeHtml(c.nickname || r.nickname || '익명')} · ${escapeHtml(fmtDate(c.createdAt || r.createdAt))}</div></td>
+      <td>${escapeHtml(compactText(c.caseDescription || r.caseDescription || r.sentence || '', 86))}</td>
+      <td>${escapeHtml(c.status || r.courtStage || '-')}<div style="font-size:10px;color:var(--cream-dim);margin-top:3px;">${escapeHtml(source)} · ${escapeHtml(r.judgeType || c.judgeType || '-')}</div></td>
+      <td>${isPublic ? '공개' : '비공개'}</td>
+      <td><div class="admin-actions"><button class="admin-btn gold" onclick="location.href='/#/result/${escapeAttr(d.id)}'">보기</button><button class="admin-btn" onclick="window._recordPublic('${escapeAttr(d.id)}', ${!isPublic})">${isPublic ? '비공개' : '공개'}</button><button class="admin-btn red" onclick="window._delRecord('${escapeAttr(d.id)}')">삭제</button></div></td>
+    </tr>`;
+  });
+  el.innerHTML = `<div class="card" style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-bottom:12px;">사건과 판결기록을 하나의 목록에서 관리합니다. 공개 상태는 <code>cases</code>와 <code>results</code>에 함께 반영됩니다.</div>${tableWrap(['사건·판결기록','내용','상태','공개','관리'], rows)}`;
+  window._recordPublic = async (id, val) => {
+    try { await updateDoc(doc(db, 'results', id), { isPublic: val, updatedAt: serverTimestamp() }); } catch {}
+    try { await updateDoc(doc(db, 'cases', id), { isPublic: val, updatedAt: serverTimestamp() }); } catch {}
+    toast('공개 상태 변경 완료', 'success');
+    loadTab('records');
+  };
+  window._delRecord = async id => {
+    if (!confirm('사건과 판결기록을 함께 삭제할까요?')) return;
+    try { await deleteDoc(doc(db, 'results', id)); } catch {}
+    try { await deleteDoc(doc(db, 'cases', id)); } catch {}
+    toast('삭제 완료', 'success');
+    loadTab('records');
+  };
 }
 
 async function tabUsers(el) {
@@ -214,13 +230,14 @@ async function tabUsers(el) {
 async function tabAi(el) {
   const snap = await getDoc(doc(db, 'site_settings', 'config'));
   const d = snap.exists() ? snap.data() : {};
+  const defaultPrompt = '사이트 구조에 맞춰 cases와 results에 모두 들어갈 수 있는 생활형 사건을 생성한다. 사건명은 30자 이내, 사건 경위는 200자 이내, 원하는 판결은 100자 이내로 구성한다. 접수계, 조사관, 원고 측, 피고 측, 판결문, 주문이 모두 자연스럽게 이어지도록 작성한다. 공개 판결기록에 올라가도 어색하지 않은 안전한 일상 소재만 사용한다.';
   el.innerHTML = `
     <form id="ai-form">
       <div class="card" style="margin-bottom:16px;">
         <div style="font-weight:900;color:var(--gold);margin-bottom:12px;">🤖 AI 자동 사건 생성</div>
         <label style="display:flex;align-items:center;gap:8px;margin-bottom:14px;font-size:14px;"><input type="checkbox" id="dailyOn" ${d.dailyAiEnabled === false ? '' : 'checked'}> 매일 자동 사건 생성 켜기</label>
-        <div class="form-group"><label class="form-label">자동 생성 주제 힌트</label><textarea id="dailyHints" class="form-textarea" style="min-height:90px;" placeholder="예: 편의점, 회사, 가족, 친구, 음식, 카톡, 택배">${escapeHtml(d.dailyAiTopicHints || '')}</textarea></div>
-        <div class="form-group"><label class="form-label">AI 추가 지시문</label><textarea id="dailyPrompt" class="form-textarea" style="min-height:150px;" placeholder="예: 너무 자극적인 소재는 피하고, 제목은 짧고 웃기게">${escapeHtml(d.dailyAiPrompt || '')}</textarea></div>
+        <div class="form-group"><label class="form-label">자동 생성 주제 힌트</label><textarea id="dailyHints" class="form-textarea" style="min-height:90px;" placeholder="예: 회사 간식, 가족 리모컨, 친구 약속, 택배, 냉장고, 카톡 답장">${escapeHtml(d.dailyAiTopicHints || '')}</textarea></div>
+        <div class="form-group"><label class="form-label">AI 추가 지시문</label><textarea id="dailyPrompt" class="form-textarea" style="min-height:170px;">${escapeHtml(d.dailyAiPrompt || defaultPrompt)}</textarea></div>
         <div class="form-group"><label class="form-label">Gemini 모델명</label><input type="text" id="model" class="form-input" value="${escapeAttr(d.geminiModel || 'gemini-2.5-flash')}"></div>
       </div>
       <div class="card" style="margin-bottom:16px;">
@@ -229,7 +246,7 @@ async function tabAi(el) {
       </div>
       <button type="submit" class="btn btn-primary">AI 설정 저장</button>
     </form>
-    <div class="disclaimer" style="margin-top:16px;font-size:12px;">자동 사건은 배포된 예약 함수가 매일 오전 9시(KST)에 생성합니다. 같은 날짜 문서가 있으면 중복 생성하지 않습니다.</div>`;
+    <div class="disclaimer" style="margin-top:16px;font-size:12px;">자동 사건은 사이트의 사건·판결기록 구조에 맞춰 매일 오전 9시(KST)에 생성됩니다. 관리자 도구에서 즉시 생성도 가능합니다.</div>`;
   document.getElementById('ai-form').onsubmit = async e => {
     e.preventDefault();
     await setDoc(doc(db, 'site_settings', 'config'), {
@@ -297,13 +314,17 @@ async function tabBiz(el) {
 
 async function tabPolicy(el) {
   const types = [['terms','이용약관'],['privacy','개인정보처리방침'],['ai_disclaimer','AI 서비스 안내']];
-  const defaults = { terms: '소소킹 판결소 이용약관\n\n본 서비스는 AI 기반 오락 서비스이며 실제 법률 자문이 아닙니다.', privacy: '소소킹 판결소 개인정보처리방침\n\n본 서비스는 Firebase 인증과 사건 접수 내용을 처리합니다.', ai_disclaimer: 'AI 서비스 이용 안내\n\nAI가 생성한 판결문은 오락 목적이며 법적 효력이 없습니다.' };
+  const defaults = {
+    terms: '소소킹 판결소 이용약관\n\n제1조 목적\n본 약관은 소소킹 판결소가 제공하는 AI 기반 생활판결 오락 서비스의 이용 조건을 정합니다.\n\n제2조 서비스 성격\n본 서비스는 사용자가 입력한 사소한 생활형 사건을 AI가 판결문 형식의 콘텐츠로 생성하는 오락 서비스입니다. 생성된 내용은 실제 법률 자문, 법원 판결, 분쟁 해결 결과가 아닙니다.\n\n제3조 회원 이용\n사건 접수와 내 사건 관리는 로그인 후 이용할 수 있습니다. 사용자는 실명, 연락처, 주민등록번호, 주소 등 민감한 개인정보를 입력하지 않아야 합니다.\n\n제4조 공개 판결기록\n사용자가 공개를 선택한 판결문은 공개 판결기록에 표시될 수 있습니다. 사용자는 언제든지 공개 상태를 변경할 수 있습니다.\n\n제5조 금지 행위\n타인의 권리를 침해하는 내용, 개인정보, 악의적 명령문, 서비스 운영을 방해하는 행위는 제한될 수 있습니다.\n\n제6조 책임 제한\n본 서비스의 AI 생성물은 오락 목적 콘텐츠이며 실제 판단 자료로 사용할 수 없습니다.',
+    privacy: '소소킹 판결소 개인정보처리방침\n\n1. 처리 목적\n소소킹 판결소는 회원 로그인, 사건 접수, 판결문 생성, 내 사건 확인, 공개 판결기록 운영을 위해 필요한 정보를 처리합니다.\n\n2. 처리 항목\nFirebase 인증 정보, 이메일, 닉네임, 프로필 이미지, 사용자가 입력한 사건명·사건 경위·원하는 판결, 생성된 판결문, 공개 여부, 투표 및 댓글 정보가 처리될 수 있습니다.\n\n3. 보관 및 삭제\n사용자 사건과 판결기록은 서비스 제공을 위해 보관되며, 관리자가 삭제하거나 사용자가 공개 상태를 변경할 수 있습니다.\n\n4. 제3자 서비스\n본 서비스는 Firebase 및 Gemini API를 사용합니다. AI 생성을 위해 입력 내용 일부가 AI 처리에 사용될 수 있습니다.\n\n5. 개인정보 입력 주의\n사용자는 사건 내용에 실명, 연락처, 주소, 계좌번호, 주민등록번호 등 개인정보를 입력하지 않아야 합니다.\n\n6. 문의\n사업자 정보 또는 사이트 하단에 기재된 연락처를 통해 개인정보 관련 문의를 접수할 수 있습니다.',
+    ai_disclaimer: 'AI 서비스 이용 안내\n\n소소킹 판결소의 판결문은 AI가 생성한 오락 콘텐츠입니다. 실제 법률 자문, 소송 조언, 법원 판결, 행정기관 결정이 아닙니다.\n\nAI는 사용자의 입력을 바탕으로 접수계, 조사관, 원고 측, 피고 측, 판사 판결문, 생활형 처분 형식의 글을 생성합니다. 생성 결과는 부정확하거나 과장될 수 있습니다.\n\n실제 법적 문제, 손해배상, 형사 사건, 계약 분쟁, 가족 문제, 노동 문제 등은 변호사, 대한법률구조공단, 관계 기관 등 전문가에게 상담해야 합니다.\n\n공개 판결기록에 공개하기 전 개인정보나 타인의 명예를 침해할 수 있는 표현이 포함되어 있지 않은지 확인해야 합니다.'
+  };
   const snaps = await Promise.all(types.map(([t]) => getDoc(doc(db, 'policy_docs', t))));
   let active = 'terms';
   function render() {
     const idx = types.findIndex(([t]) => t === active);
     const content = snaps[idx].exists() ? snaps[idx].data().content : defaults[active];
-    el.innerHTML = `<div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;">${types.map(([t,l]) => `<button class="admin-tab${active === t ? ' active' : ''}" onclick="window._pt('${t}')">${l}</button>`).join('')}</div><form id="policy-form"><div class="form-group"><label class="form-label">${types[idx][1]}</label><textarea id="pc" class="form-textarea" style="min-height:330px;">${escapeHtml(content)}</textarea></div><button type="submit" class="btn btn-primary">저장</button></form>`;
+    el.innerHTML = `<div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;">${types.map(([t,l]) => `<button class="admin-tab${active === t ? ' active' : ''}" onclick="window._pt('${t}')">${l}</button>`).join('')}</div><form id="policy-form"><div class="form-group"><label class="form-label">${types[idx][1]}</label><textarea id="pc" class="form-textarea" style="min-height:420px;">${escapeHtml(content)}</textarea></div><button type="submit" class="btn btn-primary">저장</button></form>`;
     document.getElementById('policy-form').onsubmit = async e => { e.preventDefault(); const val = document.getElementById('pc').value; await setDoc(doc(db, 'policy_docs', active), { content: val, updatedAt: serverTimestamp() }); snaps[idx] = { exists: () => true, data: () => ({ content: val }) }; toast('저장되었습니다.', 'success'); };
     window._pt = t => { active = t; render(); };
   }
