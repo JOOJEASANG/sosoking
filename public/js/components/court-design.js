@@ -29,4 +29,5 @@ export function initCourtDesign() {
   `;
   document.head.appendChild(style);
   import('./pwa-ui.js?v=20260630-16').then(m => m.initPwa()).catch(() => {});
+  import('./admin-redirect.js?v=20260630-18').then(m => m.initAdminRedirect()).catch(() => {});
 }
