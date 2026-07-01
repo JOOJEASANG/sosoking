@@ -1,4 +1,7 @@
 import { renderResult as renderBaseResult } from './result.js?v=20260702-2';
+import { db } from '../firebase.js?v=20260630-3';
+import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { escapeHtml } from '../utils/sanitize.js?v=20260630-3';
 
 function grievance(container) {
   const text = container.textContent || '';
@@ -20,6 +23,7 @@ function badgesBy(container, lv) {
   if (text.includes('드립형')) badges.push(['🎭', '법정 드립']);
   if (text.includes('엄벌주의형')) badges.push(['👨‍⚖️', '엄숙 재판']);
   if (text.includes('항소심')) badges.push(['🏛️', '항소 경험']);
+  if (text.includes('대법원')) badges.push(['🔨', '최종 확정']);
   if (text.includes('배심원')) badges.push(['🧑‍⚖️', '배심원 공개']);
   return badges.slice(0, 5);
 }
@@ -31,6 +35,10 @@ function ensureResultGameStyle() {
     .reward-card{padding:18px;margin-bottom:14px;border-radius:20px;border:1px solid rgba(201,168,76,.45);background:linear-gradient(135deg,rgba(201,168,76,.18),rgba(231,76,60,.08),rgba(255,255,255,.035));box-shadow:0 12px 34px rgba(0,0,0,.24);}
     .reward-grade{width:70px;height:70px;border-radius:20px;display:flex;align-items:center;justify-content:center;font-family:var(--font-serif);font-size:32px;font-weight:900;color:#111827;background:linear-gradient(135deg,#ffdf7a,#c9a84c);box-shadow:0 10px 26px rgba(201,168,76,.28);}
     .reward-badge{display:inline-flex;align-items:center;gap:5px;border:1px solid rgba(201,168,76,.36);background:rgba(255,255,255,.07);border-radius:999px;padding:7px 10px;font-size:11px;font-weight:900;color:#fff8ec;}
+    .supreme-final-card{padding:20px;margin-bottom:16px;border-radius:18px;border:1px solid rgba(201,168,76,.55);background:linear-gradient(135deg,rgba(201,168,76,.12),rgba(255,255,255,.035));position:relative;overflow:hidden;}
+    .supreme-final-card::after{content:'확정';position:absolute;right:14px;top:14px;border:2px solid rgba(231,76,60,.7);color:#e74c3c;border-radius:8px;padding:4px 9px;font-size:13px;font-weight:900;transform:rotate(-8deg);}
+    .supreme-final-title{font-family:var(--font-serif);font-size:19px;font-weight:900;color:#e8c97a;margin-bottom:9px;}
+    .supreme-final-text{font-size:14px;line-height:1.8;color:var(--cream);padding-right:18px;}
     .invite-defense{padding:16px;margin-bottom:14px;border-radius:18px;border:1px dashed rgba(201,168,76,.48);background:rgba(201,168,76,.07);}
     .invite-defense-title{font-weight:900;color:#e8c97a;margin-bottom:6px;}
     .invite-defense-desc{font-size:12px;color:rgba(255,248,236,.78);line-height:1.7;margin-bottom:12px;}
@@ -58,13 +66,32 @@ function addReward(container) {
       <div style="display:flex;gap:8px;flex-wrap:wrap;">${badges.map(([i, t]) => `<span class="reward-badge">${i} ${t}</span>`).join('')}</div>
     </div>`);
 }
+async function addSupremeFinal(container, caseId) {
+  if (document.getElementById('supreme-final-card')) return;
+  let supremeFinal = '';
+  try {
+    const snap = await getDoc(doc(db, 'results', caseId));
+    supremeFinal = snap.exists() ? String(snap.data().supremeFinal || '').trim() : '';
+  } catch (err) {
+    console.warn('supreme final load failed:', err);
+  }
+  if (!supremeFinal) return;
+  const sentenceCard = container.querySelector('.sentence-card');
+  if (!sentenceCard) return;
+  sentenceCard.insertAdjacentHTML('afterend', `
+    <div id="supreme-final-card" class="supreme-final-card court-document">
+      <div class="court-kicker">SUPREME SOSO COURT</div>
+      <div class="supreme-final-title">대법원 소소부 최종확정</div>
+      <div class="supreme-final-text">${escapeHtml(supremeFinal)}</div>
+    </div>`);
+}
 function addInviteDefense(container) {
   if (document.getElementById('invite-defense-card')) return;
   const actions = container.querySelector('.result-actions');
   if (!actions) return;
   actions.insertAdjacentHTML('beforebegin', `
     <div id="invite-defense-card" class="invite-defense">
-      <div class="invite-defense-title">⚔️ 친구 변호 초대 준비중</div>
+      <div class="invite-defense-title">⚔️ 친구 변론 초대 준비중</div>
       <div class="invite-defense-desc">친구를 원고 측/피고 측 변호인으로 초대해서 서로 변론하는 기능을 붙일 수 있습니다. 지금은 판결 링크를 복사해 공유할 수 있습니다.</div>
       <button class="btn btn-secondary" id="copy-defense-link">친구에게 사건 링크 복사</button>
     </div>`);
@@ -120,4 +147,5 @@ function decorateResult(container) {
 export async function renderResult(container, caseId) {
   await renderBaseResult(container, caseId);
   decorateResult(container);
+  await addSupremeFinal(container, caseId);
 }
