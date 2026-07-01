@@ -17,6 +17,13 @@ function polishHomeCopy(container) {
     replacements.forEach(([from, to]) => { text = text.replace(from, to); });
     if (text !== el.textContent) el.textContent = text;
   });
+  ['.hero-tw', '.cta-section p'].forEach(sel => {
+    const el = container.querySelector(sel);
+    if (!el) return;
+    let html = el.innerHTML;
+    replacements.forEach(([from, to]) => { html = html.replace(from, to); });
+    el.innerHTML = html;
+  });
 }
 
 function addCourtEntrance(container) {
