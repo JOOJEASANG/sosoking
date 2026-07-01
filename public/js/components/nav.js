@@ -27,8 +27,8 @@ export function renderNav() {
       <span class="nav-label">홈</span>
     </a>
     <a href="#/board" class="nav-item${isBoard ? ' active' : ''}">
-      <span class="nav-icon">🔥</span>
-      <span class="nav-label">게시판</span>
+      <span class="nav-icon">📜</span>
+      <span class="nav-label">판결기록</span>
     </a>
     <a href="#/submit" class="nav-item nav-cta${isSubmit ? ' active' : ''}">
       <span class="nav-icon">⚖️</span>
