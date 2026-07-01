@@ -47,7 +47,7 @@ export function renderNav() {
       const label = document.getElementById('nav-account-label');
       const name = String(profile.nickname || user.displayName || '계정').slice(0, 8);
       if (icon) {
-        icon.innerHTML = `<span style="position:relative;display:inline-block;line-height:0;">${avatarImg(user, profile, 24)}<span style="position:absolute;right:-1px;bottom:-1px;width:8px;height:8px;border-radius:99px;background:#27ae60;border:1.5px solid #101522;"></span></span>`;
+        icon.innerHTML = `<span style="position:relative;display:inline-block;line-height:0;">${avatarImg(user, profile, 24)}<span style="position:absolute;right:-1px;bottom:-1px;width:8px;height:8px;border-radius:99px;background:var(--green);border:1.5px solid var(--nav-bg,var(--navy));"></span></span>`;
       }
       if (label) label.textContent = name;
     }).catch(() => {});
