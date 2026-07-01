@@ -1,16 +1,16 @@
 import { initAuth } from './firebase.js?v=20260630-3';
-import { renderHome } from './pages/home-court.js?v=20260630-14';
-import { renderSubmit } from './pages/submit-guard.js?v=20260630-14';
+import { renderHome } from './pages/home-court.js?v=20260630-21';
+import { renderSubmit } from './pages/submit-guard.js?v=20260630-21';
 import { renderTrial } from './pages/trial.js?v=20260630-3';
-import { renderResult } from './pages/result-court.js?v=20260630-14';
+import { renderResult } from './pages/result-court.js?v=20260630-21';
 import { renderPolicy } from './pages/policy.js?v=20260630-3';
 import { renderMyCases } from './pages/my-cases.js?v=20260630-9';
 import { renderGuide } from './pages/guide.js?v=20260630-3';
 import { renderAuth } from './pages/auth2.js?v=20260630-11';
-import { renderBoard } from './pages/board-court.js?v=20260630-14';
+import { renderBoard } from './pages/board-court.js?v=20260630-21';
 import { renderFooter } from './components/footer.js?v=20260630-3';
 import { initTheme } from './components/theme.js?v=20260630-10';
-import { initCourtDesign } from './components/court-design.js?v=20260630-14';
+import { initCourtDesign } from './components/court-design.js?v=20260630-21';
 import { renderThemePreference } from './components/theme-preference.js?v=20260630-12';
 import { renderNav } from './components/nav.js?v=20260630-8';
 
