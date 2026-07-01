@@ -10,7 +10,7 @@ import { renderAuth } from './pages/auth2.js?v=20260630-23';
 import { renderBoard } from './pages/board-court.js?v=20260702-3';
 import { renderFooter } from './components/footer.js?v=20260630-3';
 import { initTheme } from './components/theme.js?v=20260702-5';
-import { initCourtDesign } from './components/court-design.js?v=20260702-5';
+import { initCourtDesign } from './components/court-design.js?v=20260702-6';
 import { renderThemePreference } from './components/theme-preference.js?v=20260702-3';
 import { renderNav } from './components/nav.js?v=20260702-3';
 
