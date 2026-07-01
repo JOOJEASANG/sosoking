@@ -23,12 +23,12 @@ function fmtDate(ts) {
 }
 
 function verdictType(r) {
-  const text = `${r.verdict || ''} ${r.sentence || ''}`;
+  const text = `${r.verdict || ''} ${r.supremeFinal || ''} ${r.sentence || ''}`;
   if (text.includes('기각')) return '기각';
-  if (text.includes('조정')) return '조정권고';
+  if (text.includes('파기환송')) return '파기환송 놀이';
   if (text.includes('쌍방')) return '쌍방과실';
   if (text.includes('일부')) return '일부 인용';
-  return '원고 일부 승소';
+  return '대법원 확정';
 }
 
 function titleBadge(c, r) {
@@ -67,6 +67,18 @@ async function loadSocial(caseId) {
   };
 }
 
+function debateText(r) {
+  const rows = [];
+  if (r.plaintiffArg) rows.push(`원고 측: ${r.plaintiffArg}`);
+  if (r.defendantArg) rows.push(`피고 측: ${r.defendantArg}`);
+  return rows.join('\n\n');
+}
+
+function renderStep(role, label, content) {
+  if (!content) return '';
+  return `<div class="card step-card visible" style="margin-bottom:12px;"><div class="step-role">${escapeHtml(role)} · ${escapeHtml(label)}</div><div class="step-content" style="white-space:pre-line;">${escapeHtml(content)}</div></div>`;
+}
+
 export async function renderResult(container, caseId) {
   container.innerHTML = `<div class="page-header"><span class="logo">⚖️ 판결 결과</span></div><div class="container" style="padding:28px 20px 80px;"><div class="loading-dots"><span></span><span></span><span></span></div></div>`;
 
@@ -96,13 +108,7 @@ export async function renderResult(container, caseId) {
   const type = verdictType(r);
   const badge = titleBadge(c, r);
   const metrics = scoreMetrics(c, r);
-
-  const steps = [
-    ['📋 접수계','소장 접수 및 사건번호 부여', r.reception],
-    ['🔍 조사관','증거조사조서', r.investigation],
-    ['💼 원고 측','준비서면 및 최종변론', r.plaintiffArg],
-    ['🛡️ 피고 측','답변서 및 항변', r.defendantArg],
-  ];
+  const finalVerdict = r.supremeFinal || r.verdict || '';
 
   container.innerHTML = `
     <div>
@@ -125,23 +131,22 @@ export async function renderResult(container, caseId) {
           ${metrics.map(([label, value]) => `<div style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--cream-dim);margin-bottom:5px;"><span>${escapeHtml(label)}</span><span>${value}%</span></div><div style="height:7px;border-radius:999px;background:rgba(255,255,255,.07);overflow:hidden;"><div style="width:${value}%;height:100%;background:linear-gradient(90deg,#8a6f28,#c9a84c);"></div></div></div>`).join('')}
         </div>
 
-        ${steps.map(([role,label,content]) => `<div class="card step-card visible" style="margin-bottom:12px;"><div class="step-role">${escapeHtml(role)} · ${escapeHtml(label)}</div><div class="step-content">${escapeHtml(content || '')}</div></div>`).join('')}
+        ${renderStep('📋 접수', '사건 접수', r.reception)}
+        ${renderStep('🔍 조사', '기록 검토', r.investigation)}
+        ${renderStep('⚔️ 공방', '원고·피고 주장 정리', debateText(r))}
 
         <div class="card verdict-card step-card visible" style="margin-bottom:12px;padding:22px;">
-          <div style="margin-bottom:10px;"><span class="badge badge-gold">최종 판결문</span></div>
-          <div class="verdict-stamp">판결</div>
-          <div class="step-content" style="margin-top:12px;">${escapeHtml(r.verdict || '')}</div>
+          <div style="margin-bottom:10px;"><span class="badge badge-gold">대법원 판결</span></div>
+          <div class="verdict-stamp">확정</div>
+          <div class="step-content" style="margin-top:12px;">${escapeHtml(finalVerdict)}</div>
         </div>
         <div class="card sentence-card step-card visible" style="margin-bottom:16px;">
-          <div style="font-size:11px;color:var(--cream-dim);margin-bottom:8px;letter-spacing:.1em;">📜 주문 · 생활형 처분</div>
+          <div style="font-size:11px;color:var(--cream-dim);margin-bottom:8px;letter-spacing:.1em;">🔨 처분 · 생활형 명령</div>
           <div class="sentence-text">${escapeHtml(r.sentence || '')}</div>
         </div>
 
-        ${r.appeal?.verdict ? `<div class="card" style="padding:20px;margin-bottom:16px;border-color:rgba(201,168,76,.55);"><div style="font-weight:900;color:var(--gold);margin-bottom:8px;">🏛️ 항소심 판결</div><div style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-bottom:10px;">항소이유: ${escapeHtml(r.appeal.reason || '')}</div><div class="step-content">${escapeHtml(r.appeal.verdict || '')}</div></div>` : ''}
-
         ${renderReactions(social, isPublic)}
         ${renderComments(social.comments, isPublic)}
-        ${renderAppeal(isOwner, !!r.appeal?.verdict)}
 
         <div style="text-align:center;margin:16px 0;padding:10px;background:rgba(255,255,255,.04);border-radius:8px;font-size:11px;color:var(--cream-dim);line-height:1.7;">🤖 본 판결문은 AI가 생성한 오락 콘텐츠입니다.<br>실제 법적 효력이 없으며 법률 자문으로 활용할 수 없습니다.</div>
 
@@ -183,16 +188,6 @@ function renderComments(comments, isPublic) {
   </div>`;
 }
 
-function renderAppeal(isOwner, hasAppeal) {
-  if (!isOwner || hasAppeal) return '';
-  return `<div class="card" style="padding:18px;margin-bottom:14px;border-color:rgba(201,168,76,.5);">
-    <div style="font-weight:900;color:var(--gold);margin-bottom:8px;">🏛️ 항소하기</div>
-    <div style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-bottom:12px;">1심 판결이 너무 과하거나 약하다고 느껴지면 항소심을 열 수 있습니다. 항소심도 오락 목적이며 실제 법적 효력은 없습니다.</div>
-    <textarea id="appeal-reason" class="form-textarea" maxlength="160" placeholder="항소이유 예: 피고의 반성 태도가 전혀 보이지 않습니다." style="min-height:76px;margin-bottom:10px;"></textarea>
-    <button id="appeal-btn" class="btn btn-primary">항소장 제출</button>
-  </div>`;
-}
-
 function bindResultActions(container, caseId, c, r, isOwner, isPublic) {
   document.querySelectorAll('.reaction-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
@@ -221,23 +216,6 @@ function bindResultActions(container, caseId, c, r, isOwner, isPublic) {
     }
   });
 
-  document.getElementById('appeal-btn')?.addEventListener('click', async () => {
-    const reason = document.getElementById('appeal-reason')?.value?.trim() || '';
-    const btn = document.getElementById('appeal-btn');
-    btn.disabled = true;
-    btn.textContent = '항소심 재판부 배당 중...';
-    try {
-      await httpsCallable(functions, 'requestAppeal')({ caseId, reason });
-      showToast('항소심 판결이 선고되었습니다.', 'success');
-      renderResult(container, caseId);
-    } catch (err) {
-      console.error(err);
-      showToast((err.message || '항소 처리에 실패했습니다.').replace('FirebaseError: ', ''), 'error');
-      btn.disabled = false;
-      btn.textContent = '항소장 제출';
-    }
-  });
-
   if (isOwner) {
     document.getElementById('btn-share')?.addEventListener('click', async () => {
       const newPublic = !isPublic;
@@ -248,6 +226,8 @@ function bindResultActions(container, caseId, c, r, isOwner, isPublic) {
           grievanceIndex: c.grievanceIndex || r.grievanceIndex || null,
           judgeType: r.judgeType || '',
           sentence: r.sentence || '',
+          verdict: r.verdict || r.supremeFinal || '',
+          supremeFinal: r.supremeFinal || r.verdict || '',
           createdAt: r.createdAt || c.createdAt || new Date()
         });
         await updateDoc(doc(db, 'cases', caseId), { isPublic: newPublic });
