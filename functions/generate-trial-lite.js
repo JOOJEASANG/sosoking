@@ -36,7 +36,7 @@ function safeJson(text) {
 }
 function fallback(c, judgeType) {
   const title = cleanText(c.caseTitle, 30) || '사소한 사건';
-  const verdict = `대법원 소소부는 ${title}에 관하여 원고의 억울함이 일상생활상 무시하기 어려운 수준이라고 본다. 다만 사건의 규모가 밥상 옆 접시 정도인 점을 고려하여 과한 분노는 일부 감액한다. ${judgeType} 재판부의 결론은 피식 웃음 1회와 생활형 처분으로 확정된다. 이 판결은 실제 법적 효력이 없는 오락 콘텐츠다.`;
+  const verdict = `대법원 소소부는 ${title}에 관하여 원고의 억울함이 그냥 넘기기엔 묘하게 찝찝한 수준이라고 본다. 다만 사건의 규모가 밥상 옆 접시 정도인 점을 고려하여 과한 분노는 일부 감액한다. ${judgeType} 재판부의 결론은 피식 웃음 1회와 소소한 처분으로 확정된다. 이 판결은 실제 법적 효력이 없는 오락 콘텐츠다.`;
   return {
     reception: `${title} 접수 완료. 사건은 작지만 원고 표정은 전혀 작지 않았다.`,
     investigation: '조사 결과, 사건의 크기는 미니 사이즈였으나 억울함은 대용량이었다. 증거는 평범했지만 분위기는 이상하게 엄숙했다.',
@@ -99,7 +99,26 @@ exports.generateTrial = onCall({ region: REGION, secrets: [geminiKey], timeoutSe
 
   try {
     const model = new GoogleGenerativeAI(geminiKey.value().trim()).getGenerativeModel({ model: modelName });
-    const prompt = `소소킹 판결소의 공개 판결기록을 JSON으로 작성한다. 핵심은 사소한 사건을 사용자가 웃으며 읽게 만드는 것이다. 재판 여정은 반드시 접수 → 조사 → 공방 → 대법원 판결 → 처분 순서로 느껴지게 한다. 길게 늘이지 말고 짧고 밀도 있게 작성한다.\n\n금지: 실제 법률 자문처럼 보이는 표현, 무거운 범죄 묘사, 개인정보 반복, 장황한 법률 문체, 모욕적 표현, 위험한 처분, 금전 배상처럼 보이는 처분.\n톤: 적당히 진지한 척하지만 재치 있고 웃김. 사용자가 읽다가 피식하게 만든다.\n\n사건명: ${cleanText(c.caseTitle, 30)}\n사건 경위: ${cleanText(c.caseDescription, 200)}\n억울지수: ${Number(c.grievanceIndex || 5)}/10\n원하는 처분: ${cleanText(c.desiredVerdict, 100) || '없음'}\n담당 판사: ${judgeType}\n\n필드별 작성 규칙:\n- reception: 접수. 2문장. 사건번호가 붙은 것처럼 괜히 엄숙하고 웃기게.\n- investigation: 조사. 2문장. 사소함과 억울함의 대비가 느껴지게.\n- plaintiffArg: 공방 중 원고 주장. 1~2문장. 과몰입하지만 공감되게.\n- defendantArg: 공방 중 피고 항변. 1~2문장. 그럴듯하지만 살짝 허술하게.\n- verdict: 대법원 판결. 3~4문장. '대법원 소소부'가 최종 판단하는 느낌으로 작성. 원심/파기환송/확정 같은 표현을 웃기게 활용하되 최종 결론은 분명하게. 마지막 문장에는 실제 효력이 없는 오락 콘텐츠라는 취지를 짧게 포함.\n- sentence: 처분. 반드시 '피고는 ...한다.' 한 문장, 64자 이하. 사과, 양보, 간식 선택권, 리모컨 위치 보고, 마지막 한 입 양보 같은 구체적인 생활형 벌칙으로 재치 있게. '반성한다'처럼 밋밋한 처분 금지.\n\n반드시 JSON만 출력한다. 필드: reception, investigation, plaintiffArg, defendantArg, verdict, sentence.`;
+    const prompt = `소소킹 판결소의 공개 판결기록을 JSON으로 작성한다. 핵심은 사소한 사건을 사용자가 웃으며 읽게 만드는 것이다. 재판 여정은 반드시 접수 → 조사 → 공방 → 대법원 판결 → 처분 순서로 느껴지게 한다. 길게 늘이지 말고 짧고 밀도 있게 작성한다.
+
+금지: 실제 법률 자문처럼 보이는 표현, 무거운 범죄 묘사, 개인정보 반복, 장황한 법률 문체, 모욕적 표현, 위험한 처분, 금전 배상처럼 보이는 처분, '생활법정', '생활형', '생활분쟁' 같은 표현.
+톤: 적당히 진지한 척하지만 재치 있고 웃김. 사용자가 읽다가 피식하게 만든다.
+
+사건명: ${cleanText(c.caseTitle, 30)}
+사건 경위: ${cleanText(c.caseDescription, 200)}
+억울지수: ${Number(c.grievanceIndex || 5)}/10
+원하는 처분: ${cleanText(c.desiredVerdict, 100) || '없음'}
+담당 판사: ${judgeType}
+
+필드별 작성 규칙:
+- reception: 접수. 2문장. 사건번호가 붙은 것처럼 괜히 엄숙하고 웃기게.
+- investigation: 조사. 2문장. 사소함과 억울함의 대비가 느껴지게.
+- plaintiffArg: 공방 중 원고 주장. 1~2문장. 과몰입하지만 공감되게.
+- defendantArg: 공방 중 피고 항변. 1~2문장. 그럴듯하지만 살짝 허술하게.
+- verdict: 대법원 판결. 3~4문장. '대법원 소소부'가 최종 판단하는 느낌으로 작성. 원심/파기환송/확정 같은 표현을 웃기게 활용하되 최종 결론은 분명하게. 마지막 문장에는 실제 효력이 없는 오락 콘텐츠라는 취지를 짧게 포함.
+- sentence: 처분. 반드시 '피고는 ...한다.' 한 문장, 64자 이하. 사과, 양보, 간식 선택권, 리모컨 위치 보고, 마지막 한 입 양보 같은 구체적인 소소한 벌칙으로 재치 있게. '반성한다'처럼 밋밋한 처분 금지.
+
+반드시 JSON만 출력한다. 필드: reception, investigation, plaintiffArg, defendantArg, verdict, sentence.`;
     const result = await model.generateContent(prompt);
     const meta = result.response.usageMetadata || {};
     totals = {
@@ -127,7 +146,7 @@ exports.generateTrial = onCall({ region: REGION, secrets: [geminiKey], timeoutSe
       isPublic,
       docketNumber: c.docketNumber || '',
       courtName: '소소킹 판결소',
-      courtroom: '제404호 판사실',
+      courtroom: '제404호 소소법정',
       division: '소소킹 판결부',
       caseTitle: c.caseTitle || '판결 결과',
       caseDescription: c.caseDescription || '',
