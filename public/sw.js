@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sosoking-app-v20260702-breaking-committee';
+const CACHE_NAME = 'sosoking-app-v20260702-trial-verdict-return';
 const APP_SHELL = ['/', '/index.html', '/site.webmanifest', '/app-icon.svg', '/maskable-icon.svg'];
 const NETWORK_FIRST = /\.(js|css|json|webmanifest|svg)$/i;
 
@@ -8,9 +8,7 @@ self.addEventListener('install', event => {
 });
 
 self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))))
-  );
+  event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key)))));
   self.clients.claim();
 });
 
@@ -28,18 +26,13 @@ self.addEventListener('fetch', event => {
   const url = new URL(req.url);
   if (url.origin !== location.origin) return;
   if (url.pathname.startsWith('/admin')) return;
-
   if (req.mode === 'navigate') {
     event.respondWith(fetch(req).catch(() => caches.match('/index.html')));
     return;
   }
-
   if (NETWORK_FIRST.test(url.pathname)) {
     event.respondWith(fetch(req).then(res => { putCache(req, res); return res; }).catch(() => caches.match(req)));
     return;
   }
-
-  event.respondWith(
-    caches.match(req).then(cached => cached || fetch(req).then(res => { putCache(req, res); return res; }).catch(() => cached))
-  );
+  event.respondWith(caches.match(req).then(cached => cached || fetch(req).then(res => { putCache(req, res); return res; }).catch(() => cached)));
 });
