@@ -20,11 +20,10 @@ function kstDateKey(date = new Date()) {
   return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
 }
 function finalSentence(text) {
-  let s = cleanText(text, 120).replace(/["“”'`]/g, '').trim();
-  s = s.split(/\n/)[0].trim();
-  if (!s) s = '제보자는 오늘 낮잠 20분을 긴급 보장받는다.';
+  let s = cleanText(text, 120).replace(/["“”'`]/g, '').trim().split(/\n/)[0].trim();
+  if (!s) s = '피고 모기는 오늘 밤 피고석에 앉아 반성 비행을 금한다.';
   if (!s.endsWith('.')) s += '.';
-  return s.length > 70 ? '제보자는 오늘 낮잠 20분을 긴급 보장받는다.' : s;
+  return s.length > 76 ? '피고는 오늘 하루 간식 선택권을 원고에게 양도한다.' : s;
 }
 function safeJson(text) {
   const raw = String(text || '').replace(/```json|```/g, '').trim();
@@ -35,15 +34,15 @@ function safeJson(text) {
 }
 function fallback(c, judgeType) {
   const title = cleanText(c.caseTitle, 30) || '사소한 사건';
-  const breakingNews = `긴급: ${title}로 인해 일상 평온 지수가 순간적으로 흔들리는 사태가 발생했다.`;
-  const briefing = '제보자는 “별일 아니라고 하기엔 내 표정이 너무 진지했다”는 입장을 밝혔다. 현장에서는 아무도 출동하지 않았지만 마음속 상황실은 이미 비상 2단계였다.';
-  const issue = '이 정도 사소함이 과연 그냥 넘길 일인가, 아니면 최소한 한 번은 정색하고 말해야 하는가.';
-  const committeeJudgment = `${judgeType} 위원은 본 사안이 하찮아 보인다는 점은 인정한다. 그러나 바로 그 하찮음이 사람을 은근히 무너뜨린다는 점에서 소소킹급 검토가 필요하다고 판단한다. 특히 피해 규모는 작지만 짜증의 울림은 생각보다 오래 간다.`;
-  const finalDecision = '소소긴급위원회는 해당 사건을 오늘의 소소 경보로 지정하고, 당사자의 억울함을 조건부로 인정한다.';
-  const sentence = '제보자는 오늘 낮잠 20분을 긴급 보장받는다.';
-  return { breakingNews, briefing, issue, committeeJudgment, finalDecision, sentence };
+  return {
+    breakingNews: `개정: ${title}이 소소킹 재판소에 긴급 배당되었다. 방청석은 아직 조용하지만 재판부 표정은 이미 대형 사건이다.`,
+    briefing: '재판부는 사건 기록을 살펴본 뒤 “이 정도면 그냥 넘길 수도 있지만 그러면 우리가 할 일이 없다”고 밝혔다. 증거로는 제보자의 정색, 주변의 무관심, 그리고 괜히 억울한 표정 1점이 제출되었다.',
+    issue: '이 사소한 일이 과연 그냥 넘길 일인지, 아니면 판결문까지 받아야 직성이 풀리는 일인지가 쟁점이다.',
+    committeeJudgment: `${judgeType} 재판부는 본 사건이 작다는 점을 인정한다. 그러나 작다고 무시하기엔 제보자의 표정이 지나치게 진지했고, 방청석도 결국 고개를 끄덕였으므로 유죄에 가까운 소소책임이 인정된다. 다만 사회질서가 실제로 무너진 것은 아니므로 형량은 하찮게 정한다.`,
+    finalDecision: '소소킹 재판소는 제보자의 억울함을 일부 인용하고, 본 사건을 웃김점수 평가 대상 판결로 확정한다.',
+    sentence: '피고는 오늘 하루 간식 선택권을 원고에게 양도한다.'
+  };
 }
-
 async function loadSettings() {
   const snap = await db.doc('site_settings/config').get();
   return snap.exists ? snap.data() : {};
@@ -51,7 +50,6 @@ async function loadSettings() {
 
 exports.generateTrial = onCall({ region: REGION, secrets: [geminiKey], timeoutSeconds: 300, memory: '512MiB' }, async request => {
   if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
-
   const uid = request.auth.uid;
   const caseId = cleanText(request.data?.caseId, 180);
   if (!caseId) throw new HttpsError('invalid-argument', 'caseId required');
@@ -60,7 +58,6 @@ exports.generateTrial = onCall({ region: REGION, secrets: [geminiKey], timeoutSe
   const resultRef = db.doc(`results/${caseId}`);
   const caseSnap = await caseRef.get();
   if (!caseSnap.exists) throw new HttpsError('not-found', '사건을 찾을 수 없습니다.');
-
   let c = caseSnap.data();
   if (c.userId !== uid) throw new HttpsError('permission-denied', '본인 사건만 심판할 수 있습니다.');
   if (c.status === 'completed') return { success: true, skipped: 'completed' };
@@ -75,13 +72,7 @@ exports.generateTrial = onCall({ region: REGION, secrets: [geminiKey], timeoutSe
     if (current.userId !== uid) throw new HttpsError('permission-denied', '본인 접수만 심판할 수 있습니다.');
     if (current.status !== 'pending') return;
     c = current;
-    tx.update(caseRef, {
-      status: 'processing',
-      courtStage: 'briefing',
-      judgeType,
-      processingStartedAt: FieldValue.serverTimestamp(),
-      errorMessage: FieldValue.delete()
-    });
+    tx.update(caseRef, { status: 'processing', courtStage: 'briefing', judgeType, processingStartedAt: FieldValue.serverTimestamp(), errorMessage: FieldValue.delete() });
   });
 
   const latest = await caseRef.get();
@@ -95,46 +86,45 @@ exports.generateTrial = onCall({ region: REGION, secrets: [geminiKey], timeoutSe
 
   try {
     const model = new GoogleGenerativeAI(geminiKey.value().trim()).getGenerativeModel({ model: modelName });
-    const prompt = `소소킹의 결과 콘텐츠를 JSON으로 작성한다. 컨셉은 "별것 아닌 한 줄 소소사건을 재난급 긴급속보처럼 터뜨리고, 소소긴급위원회가 국가기관급 엄중한 말투로 즉시 처리하는 것"이다. 목표 웃김 강도는 8.5/10이다. 읽다가 쓰러질 정도까지 무리하지 말고, 정색한 과장과 하찮은 결론의 낙차로 웃기게 만든다.
+    const prompt = `소소킹 재판소의 AI 판결문을 JSON으로 작성한다. 핵심 컨셉은 "한 줄짜리 하찮은 사건을 진짜 재판처럼 과하게 심리해서, 엄숙한 판결문으로 웃기게 끝내는 것"이다. 뉴스는 오프닝 양념일 뿐이고, 본편은 반드시 재판/판결 톤이어야 한다. 목표 웃김 강도는 9/10이다.
 
 매우 중요:
-- 입력이 다툼이 아니어도 된다. 모기 때문에 잠 못 잠, 엘리베이터가 앞에서 닫힘, 치약 다 떨어짐, 비 오는데 우산 없음 같은 개인 소소사건도 처리한다.
-- 웃김의 핵심은 "사건은 먼지급인데 표현은 국가재난급"이다.
-- 억지 개그, 말장난 남발, 유행어 도배, 욕설 없이 웃겨야 한다.
-- 브리핑에는 그럴듯한 현장 묘사 1개와 말도 안 되게 엄숙한 표현 1개를 넣는다.
-- 마지막 처분은 너무 하찮아서 웃겨야 한다.
+- 사용자가 넣은 내용이 분쟁이 아니어도 재판으로 만든다. 예: 모기 때문에 잠 못 잠, 엘리베이터가 앞에서 닫힘, 치약이 다 떨어짐.
+- 웃김의 핵심은 "하찮은 사건 + 과하게 엄숙한 재판 + 말도 안 되게 가벼운 형량"이다.
+- 결과는 읽는 사람이 피식하거나 웃을 수 있게 구체적인 장면과 재판 표현을 섞는다.
+- 기존보다 판결/재판 맛을 더 강하게 살린다. 단, 실제 법률 조언처럼 보이면 안 된다.
 
-금지: 실제 법률 자문처럼 보이는 표현, 실제 법원/대법원/판결소로 오해될 표현, 무거운 범죄 묘사, 개인정보 반복, 모욕적 표현, 위험한 처분, 금전 배상처럼 보이는 처분, 장황한 법률문.
-톤: 뉴스특보 + 공공기관 결정문 + 생활 밀착 정색 개그. 단호하고 엄중하지만 내용은 터무니없이 사소해야 한다.
+금지:
+실제 대법원/실제 법원 명칭, 현실 법률 조언, 장황한 법조문, 무거운 범죄, 개인정보, 욕설, 위험한 처분, 금전 배상처럼 보이는 처분.
 
-한 줄 소소사건: ${cleanText(c.caseDescription || c.caseTitle, 200)}
-자동 제목: ${cleanText(c.caseTitle, 30)}
+톤:
+가짜 재판부가 너무 진지한 척하는 정색 개그. 문장은 단호하고 고급스럽지만, 결론은 너무 사소해야 한다.
+
+입력 사건: ${cleanText(c.caseDescription || c.caseTitle, 200)}
+제목: ${cleanText(c.caseTitle, 30)}
 사소함 레벨: ${Number(c.grievanceIndex || 5)}/10
 원하는 처분: ${cleanText(c.desiredVerdict, 100) || '없음'}
 담당 성향: ${judgeType}
 
-예시 톤:
-입력 "오늘 모기 때문에 잠을 못 잠"이면,
-- 모기를 "정체불명의 야간 비행체"처럼 부른다.
-- 제보자를 "이불 방어선 안쪽으로 후퇴한 시민"처럼 묘사한다.
-- 결론은 "제보자는 낮잠 20분을 긴급 보장받는다"처럼 하찮게 떨어뜨린다.
+예시 방향:
+입력 "오늘 모기 때문에 잠을 못 잠"이라면,
+- 모기를 "피고 모기" 또는 "야간 비행 피고"로 세운다.
+- 제보자를 "이불 방어선 안에서 밤새 진술한 원고"처럼 묘사한다.
+- 증거로 "새벽 3시의 정적, 귓가의 윙 소리, 베개를 뒤집은 횟수" 같은 하찮은 증거를 든다.
+- 주문은 "피고 모기는 오늘 밤 원고 귓가 30cm 접근을 금한다"처럼 웃기게 끝낸다.
 
-필드별 작성 규칙:
-- breakingNews: 긴급 속보 제목+첫 문장. 1~2문장. "긴급:" 또는 "속보:"로 시작. 사소한 일을 재난급으로 과장.
-- briefing: 현장 브리핑. 2문장. 제보자/현장/상황 반응을 뉴스처럼 과장. 웃긴 디테일을 반드시 1개 포함.
-- issue: 핵심 쟁점. 1문장. "~인가" 형식이면 좋다. 별것 아닌 기준을 괜히 엄숙하게 표현.
-- committeeJudgment: 소소긴급위원회 판단. 2~3문장. 공공기관 결정문처럼 엄중하지만 웃기게. 마지막 문장에는 하찮은 반전이 있어야 한다.
-- finalDecision: 최종 결정. 1~2문장. 누구 또는 무엇이 어떻게 처리되는지 분명하게.
-- sentence: 소소 처분. 반드시 한 문장, 70자 이하. "제보자는...", "당사자는...", "피신청인은..." 중 하나로 시작. 낮잠 보장, 간식 선택권, 리모컨 위치 보고, 마지막 한 입 양보, 양말 원상복구 같은 실행 가능한 하찮은 처분.
+필드별 규칙:
+- breakingNews: 1~2문장. "개정:" 또는 "긴급 개정:"으로 시작. 사건이 소소킹 재판소에 올라왔다는 도입.
+- briefing: 2문장. 증거조사/방청석/서기/재판장 같은 재판 장면을 반드시 넣는다.
+- issue: 1문장. "~인지 여부" 또는 "~인가" 형식의 재판 쟁점.
+- committeeJudgment: 2~3문장. 판결이유. 매우 엄숙하게 판단하되 중간에 하찮은 증거를 1개 넣는다.
+- finalDecision: 1~2문장. 주문. 원고 일부승/피고 책임/사건 확정 같은 판결 느낌을 살린다.
+- sentence: 1문장, 76자 이하. "피고는...", "원고는...", "당사자는..." 중 하나로 시작. 형량은 하찮고 실행 가능해야 한다.
 
 반드시 JSON만 출력한다. 필드: breakingNews, briefing, issue, committeeJudgment, finalDecision, sentence.`;
     const result = await model.generateContent(prompt);
     const meta = result.response.usageMetadata || {};
-    totals = {
-      requests: 1,
-      inputTokens: meta.promptTokenCount || 0,
-      outputTokens: meta.candidatesTokenCount || 0
-    };
+    totals = { requests: 1, inputTokens: meta.promptTokenCount || 0, outputTokens: meta.candidatesTokenCount || 0 };
     const parsed = safeJson(result.response.text());
     data = {
       breakingNews: cleanText(parsed.breakingNews, 260) || data.breakingNews,
@@ -148,19 +138,18 @@ exports.generateTrial = onCall({ region: REGION, secrets: [geminiKey], timeoutSe
     console.error('generateTrial AI failed, using fallback:', err);
   }
 
-  const legacyVerdict = `${data.committeeJudgment}\n\n최종 결정: ${data.finalDecision}`;
-
+  const legacyVerdict = `${data.committeeJudgment}\n\n주문: ${data.finalDecision}`;
   try {
     await resultRef.set({
       isPublic,
       docketNumber: c.docketNumber || '',
-      courtName: '소소긴급위원회',
-      courtroom: '긴급소소상황실',
-      division: '한줄소소처리부',
+      courtName: '소소킹 재판소',
+      courtroom: '소소대법정',
+      division: '한줄소송부',
       caseTitle: c.caseTitle || '소소사건 결과',
       caseDescription: c.caseDescription || '',
       grievanceIndex: c.grievanceIndex || 5,
-      nickname: c.nickname || '익명 제보자',
+      nickname: c.nickname || '익명 원고',
       desiredVerdict: c.desiredVerdict || '',
       judgeType,
       breakingNews: data.breakingNews,
@@ -185,36 +174,15 @@ exports.generateTrial = onCall({ region: REGION, secrets: [geminiKey], timeoutSe
       createdAt: c.createdAt || FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp()
     }, { merge: true });
-
-    await caseRef.update({
-      status: 'completed',
-      courtStage: 'sentenced',
-      judgeType,
-      isPublic,
-      completedAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp()
-    });
+    await caseRef.update({ status: 'completed', courtStage: 'sentenced', judgeType, isPublic, completedAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
   } catch (err) {
     await caseRef.update({ status: 'error', courtStage: 'error', errorMessage: err.message || '알 수 없는 오류', updatedAt: FieldValue.serverTimestamp() }).catch(() => null);
     throw err;
   } finally {
     try {
       const today = kstDateKey();
-      await db.doc(`usage_stats/daily_${today}`).set({
-        date: today,
-        geminiRequests: FieldValue.increment(totals.requests),
-        geminiInputTokens: FieldValue.increment(totals.inputTokens),
-        geminiOutputTokens: FieldValue.increment(totals.outputTokens),
-        caseCount: FieldValue.increment(1),
-        firestoreReads: FieldValue.increment(3),
-        firestoreWrites: FieldValue.increment(4),
-        functionInvocations: FieldValue.increment(1),
-        updatedAt: FieldValue.serverTimestamp()
-      }, { merge: true });
-    } catch (e) {
-      console.error('usage log failed:', e);
-    }
+      await db.doc(`usage_stats/daily_${today}`).set({ date: today, geminiRequests: FieldValue.increment(totals.requests), geminiInputTokens: FieldValue.increment(totals.inputTokens), geminiOutputTokens: FieldValue.increment(totals.outputTokens), caseCount: FieldValue.increment(1), firestoreReads: FieldValue.increment(3), firestoreWrites: FieldValue.increment(4), functionInvocations: FieldValue.increment(1), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+    } catch (e) { console.error('usage log failed:', e); }
   }
-
   return { success: true, judgeType, isPublic };
 });
