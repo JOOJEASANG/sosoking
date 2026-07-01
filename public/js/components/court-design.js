@@ -28,7 +28,7 @@ export function initCourtDesign() {
     [data-theme="light"] .court-document{background:#fffaf1;}
   `;
   document.head.appendChild(style);
-  import('./contrast-fix.js?v=20260630-19').then(m => m.initContrastFix()).catch(() => {});
+  import('./contrast-fix.js?v=20260630-20').then(m => m.initContrastFix()).catch(() => {});
   import('./pwa-ui.js?v=20260630-16').then(m => m.initPwa()).catch(() => {});
   import('./admin-redirect.js?v=20260630-18').then(m => m.initAdminRedirect()).catch(() => {});
 }
