@@ -42,6 +42,7 @@ function fallback(c, judgeType) {
     plaintiffArg: '원고는 “이건 그냥 넘어가면 내 하루가 진다”고 주장했다. 말투는 차분했지만 마음속 북소리는 이미 시작된 상태였다.',
     defendantArg: '피고는 “그럴 의도는 아니었다”고 해명했다. 하지만 의도가 없었다는 말이 모든 걸 해결했다면 세상에 사과문은 없었을 것이다.',
     verdict: `${judgeType} 판사는 원고의 억울함을 일부 인정한다. 다만 사건이 너무 거창해지는 것을 막기 위해 웃음 1스푼을 섞어 마무리한다. 이 판결은 실제 법적 효력이 없는 오락 콘텐츠다.`,
+    supremeFinal: '대법원 소소부는 원심의 웃김 판단에 중대한 오해가 없다고 보아 사건을 그대로 확정한다. 주문은 오늘 안에 실천하는 것으로 충분하다.',
     sentence: '피고는 오늘 하루 억울함 접수창을 먼저 열어준다.'
   };
 }
@@ -97,7 +98,7 @@ exports.generateTrial = onCall({ region: REGION, secrets: [geminiKey], timeoutSe
 
   try {
     const model = new GoogleGenerativeAI(geminiKey.value().trim()).getGenerativeModel({ model: modelName });
-    const prompt = `소소킹 판결소의 공개 판결기록을 JSON으로 작성한다. 핵심은 사소한 사건을 사용자가 웃으며 읽게 만드는 것이다. 너무 짧으면 허전하고, 너무 길면 지친다. 각 항목은 2~3문장 정도로 적당히 작성한다.\n\n금지: 생활법정이라는 표현, 실제 법률 자문처럼 보이는 표현, 무거운 범죄 묘사, 개인정보 반복, 장황한 법률 문체.\n톤: 적당히 진지한 척하지만 재치 있고 웃김. 사용자가 읽다가 피식하게 만든다.\n\n사건명: ${cleanText(c.caseTitle, 30)}\n사건 경위: ${cleanText(c.caseDescription, 200)}\n억울지수: ${Number(c.grievanceIndex || 5)}/10\n원하는 처분: ${cleanText(c.desiredVerdict, 100) || '없음'}\n담당 판사: ${judgeType}\n\n필드별 작성 규칙:\n- reception: 접수 멘트. 2문장. 가볍고 웃기게.\n- investigation: 조사 결과. 2~3문장. 사소함과 억울함의 대비가 느껴지게.\n- plaintiffArg: 원고 주장. 2~3문장. 과몰입하지만 공감되게.\n- defendantArg: 피고 항변. 2~3문장. 그럴듯하지만 살짝 허술하게.\n- verdict: 최종 판단. 3~5문장. 가장 재미있는 부분. 마지막 문장에는 실제 효력이 없는 오락 콘텐츠라는 취지를 짧게 포함.\n- sentence: 반드시 '피고는 ...한다.' 한 문장, 58자 이하, 행동형 벌칙.\n\n반드시 JSON만 출력한다. 필드: reception, investigation, plaintiffArg, defendantArg, verdict, sentence.`;
+    const prompt = `소소킹 판결소의 공개 판결기록을 JSON으로 작성한다. 핵심은 사소한 사건을 사용자가 웃으며 읽게 만드는 것이다. 전체 여정은 길게 늘이지 말고, 접수-공방-판결-대법원식 최종확정으로 압축한다. 각 항목은 짧고 밀도 있게 작성한다.\n\n금지: 실제 법률 자문처럼 보이는 표현, 무거운 범죄 묘사, 개인정보 반복, 장황한 법률 문체.\n톤: 적당히 진지한 척하지만 재치 있고 웃김. 사용자가 읽다가 피식하게 만든다.\n\n사건명: ${cleanText(c.caseTitle, 30)}\n사건 경위: ${cleanText(c.caseDescription, 200)}\n억울지수: ${Number(c.grievanceIndex || 5)}/10\n원하는 처분: ${cleanText(c.desiredVerdict, 100) || '없음'}\n담당 판사: ${judgeType}\n\n필드별 작성 규칙:\n- reception: 접수 멘트. 2문장. 가볍고 웃기게.\n- investigation: 조사 결과. 2문장. 사소함과 억울함의 대비가 느껴지게.\n- plaintiffArg: 원고 주장. 2문장. 과몰입하지만 공감되게.\n- defendantArg: 피고 항변. 2문장. 그럴듯하지만 살짝 허술하게.\n- verdict: 1심 최종 판단. 3~4문장. 가장 재미있는 부분. 마지막 문장에는 실제 효력이 없는 오락 콘텐츠라는 취지를 짧게 포함.\n- supremeFinal: 대법원 소소부 최종확정 느낌. 2문장. 너무 길지 않게, 원심 확정/파기환송 같은 표현을 웃기게 활용.\n- sentence: 반드시 '피고는 ...한다.' 한 문장, 58자 이하, 행동형 벌칙.\n\n반드시 JSON만 출력한다. 필드: reception, investigation, plaintiffArg, defendantArg, verdict, supremeFinal, sentence.`;
     const result = await model.generateContent(prompt);
     const meta = result.response.usageMetadata || {};
     totals = {
@@ -112,6 +113,7 @@ exports.generateTrial = onCall({ region: REGION, secrets: [geminiKey], timeoutSe
       plaintiffArg: cleanText(parsed.plaintiffArg, 430) || data.plaintiffArg,
       defendantArg: cleanText(parsed.defendantArg, 430) || data.defendantArg,
       verdict: cleanText(parsed.verdict, 650) || data.verdict,
+      supremeFinal: cleanText(parsed.supremeFinal, 360) || data.supremeFinal,
       sentence: oneSentence(parsed.sentence || data.sentence)
     };
   } catch (err) {
@@ -136,6 +138,7 @@ exports.generateTrial = onCall({ region: REGION, secrets: [geminiKey], timeoutSe
       plaintiffArg: data.plaintiffArg,
       defendantArg: data.defendantArg,
       verdict: data.verdict,
+      supremeFinal: data.supremeFinal,
       sentence: data.sentence,
       reactionTotal: 0,
       commentCount: 0,
