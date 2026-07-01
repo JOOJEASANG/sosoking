@@ -28,4 +28,5 @@ export function initCourtDesign() {
     [data-theme="light"] .court-document{background:#fffaf1;}
   `;
   document.head.appendChild(style);
+  import('./pwa-ui.js?v=20260630-16').then(m => m.initPwa()).catch(() => {});
 }
