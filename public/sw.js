@@ -1,12 +1,6 @@
-const CACHE_NAME = 'sosoking-app-v20260630-16';
-const APP_SHELL = [
-  '/',
-  '/index.html',
-  '/site.webmanifest',
-  '/app-icon.svg',
-  '/css/main.css',
-  '/js/app.js'
-];
+const CACHE_NAME = 'sosoking-app-v20260630-21';
+const APP_SHELL = ['/', '/index.html', '/site.webmanifest', '/app-icon.svg'];
+const NETWORK_FIRST = /\.(js|css|json|webmanifest)$/i;
 
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL).catch(() => null)));
@@ -20,22 +14,32 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
+async function putCache(req, res) {
+  try {
+    if (!res || !res.ok) return;
+    const cache = await caches.open(CACHE_NAME);
+    await cache.put(req, res.clone());
+  } catch {}
+}
+
 self.addEventListener('fetch', event => {
   const req = event.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin !== location.origin) return;
+  if (url.pathname.startsWith('/admin')) return;
 
   if (req.mode === 'navigate') {
     event.respondWith(fetch(req).catch(() => caches.match('/index.html')));
     return;
   }
 
+  if (NETWORK_FIRST.test(url.pathname)) {
+    event.respondWith(fetch(req).then(res => { putCache(req, res); return res; }).catch(() => caches.match(req)));
+    return;
+  }
+
   event.respondWith(
-    caches.match(req).then(cached => cached || fetch(req).then(res => {
-      const copy = res.clone();
-      caches.open(CACHE_NAME).then(cache => cache.put(req, copy)).catch(() => null);
-      return res;
-    }).catch(() => cached))
+    caches.match(req).then(cached => cached || fetch(req).then(res => { putCache(req, res); return res; }).catch(() => cached))
   );
 });
