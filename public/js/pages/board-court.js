@@ -1,4 +1,4 @@
-import { renderBoard as renderBaseBoard } from './board.js?v=20260630-6';
+import { renderBoard as renderBaseBoard } from './board.js?v=20260702-2';
 
 function ensureBoardGameStyle() {
   if (document.getElementById('board-game-style')) return;
@@ -25,16 +25,16 @@ function decorateBoard(container) {
     intro.style.padding = '20px';
     intro.insertAdjacentHTML('afterbegin', `
       <div style="display:flex;gap:14px;align-items:center;margin-bottom:10px;">
-        <div class="court-seal" style="width:52px;height:52px;font-size:24px;">🏟️</div>
+        <div class="court-seal" style="width:52px;height:52px;font-size:24px;">📜</div>
         <div>
-          <div class="court-kicker">SOSOKING ARENA</div>
-          <div class="court-title" style="font-size:20px;">생활법정 아레나</div>
+          <div class="court-kicker">SOSOKING RECORDS</div>
+          <div class="court-title" style="font-size:20px;">공개 판결기록</div>
         </div>
       </div>
       <div class="arena-rank-tabs">
         <div><strong>최신</strong><span>방금 선고</span></div>
         <div><strong>인기</strong><span>배심원 참여</span></div>
-        <div><strong>명판결</strong><span>오늘의 사건</span></div>
+        <div><strong>명판결</strong><span>오늘의 기록</span></div>
       </div>`);
   }
   const pick = document.getElementById('today-pick')?.firstElementChild;
@@ -47,7 +47,7 @@ function decorateBoard(container) {
     card.classList.add('court-board-row');
     card.style.borderLeft = '3px solid rgba(201,168,76,.5)';
     const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : String(idx + 1);
-    card.insertAdjacentHTML('afterbegin', `<div class="court-kicker" style="margin-bottom:7px;"><span class="rank-medal">${medal}</span> ARENA RECORD</div>`);
+    card.insertAdjacentHTML('afterbegin', `<div class="court-kicker" style="margin-bottom:7px;"><span class="rank-medal">${medal}</span> RECORD</div>`);
   });
 }
 
