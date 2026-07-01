@@ -74,9 +74,6 @@ export function initPwa() {
   if (started) return;
   started = true;
   styleOnce();
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js?v=20260702-ui-contrast').catch(() => null));
-  }
   window.addEventListener('beforeinstallprompt', e => {
     e.preventDefault();
     savedPrompt = e;
