@@ -1,11 +1,11 @@
-import { renderSubmit as renderBaseSubmit } from './submit.js?v=20260702-2';
+import { renderSubmit as renderBaseSubmit } from './submit.js?v=20260702-5';
 
 function lvLabel(v) {
   const n = Number(v || 5);
   if (n <= 2) return '살짝 서운';
   if (n <= 4) return '마음에 걸림';
   if (n <= 6) return '주변에 말하고 싶음';
-  if (n <= 8) return '생활법정 개정 필요';
+  if (n <= 8) return '소소법정 개정 필요';
   return '국민참여재판 요청';
 }
 function judgeStat(name) {
@@ -52,8 +52,8 @@ function decorateSubmit(container) {
     topCard.classList.add('court-shell');
     topCard.insertAdjacentHTML('beforeend', `
       <div id="court-submit-docket" class="court-ledger">
-        <div><strong>퀘스트 접수</strong><span>생활분쟁 시작</span></div>
-        <div><strong>제3생활부</strong><span>자동 배당</span></div>
+        <div><strong>한 줄 접수</strong><span>빠른 시작</span></div>
+        <div><strong>제3소소부</strong><span>자동 배당</span></div>
         <div><strong>보상 대기</strong><span>판결문·배지</span></div>
       </div>`);
   }
@@ -83,11 +83,11 @@ function decorateSubmit(container) {
   if (form && !document.getElementById('court-submit-flow')) {
     form.insertAdjacentHTML('afterbegin', `
       <div id="court-submit-flow" class="court-document" style="padding:16px;margin-bottom:18px;">
-        <div class="court-kicker">QUEST BRIEFING</div>
-        <div class="court-title" style="font-size:19px;">아무것도 아닌 일을 중대 사건으로 격상합니다</div>
+        <div class="court-kicker">QUICK BRIEFING</div>
+        <div class="court-title" style="font-size:19px;">한 줄만 적어도 판결문까지 갑니다</div>
         <div class="court-timeline">
-          <div class="court-step"><div class="court-step-num">1</div><div><div class="court-step-title">사소한 사건 포착</div><div class="court-step-text">라면, 충전기, 읽씹 같은 생활분쟁을 대사건처럼 접수합니다.</div></div></div>
-          <div class="court-step"><div class="court-step-num">2</div><div><div class="court-step-title">억울함 레벨 산정</div><div class="court-step-text">Lv이 높을수록 판사가 더 엄숙하게 과몰입합니다.</div></div></div>
+          <div class="court-step"><div class="court-step-num">1</div><div><div class="court-step-title">사소한 사건 포착</div><div class="court-step-text">라면, 충전기, 읽씹 같은 일을 한 문장으로 접수합니다.</div></div></div>
+          <div class="court-step"><div class="court-step-num">2</div><div><div class="court-step-title">자동 사건명 생성</div><div class="court-step-text">필요하면 사건명과 경위를 직접 다듬을 수 있습니다.</div></div></div>
           <div class="court-step"><div class="court-step-num">3</div><div><div class="court-step-title">판사 캐릭터 배정</div><div class="court-step-text">선택한 판사 카드의 성향에 따라 판결 톤이 달라집니다.</div></div></div>
         </div>
       </div>`);
