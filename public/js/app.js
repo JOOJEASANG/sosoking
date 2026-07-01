@@ -1,6 +1,6 @@
 import { initAuth } from './firebase.js?v=20260630-3';
 import { renderHome } from './pages/home-court.js?v=20260702-13';
-import { renderSubmit } from './pages/submit-guard.js?v=20260702-18';
+import { renderSubmit } from './pages/submit-guard.js?v=20260702-21';
 import { renderTrial } from './pages/trial-game.js?v=20260702-12';
 import { renderResult } from './pages/result-court.js?v=20260702-19';
 import { renderPolicy } from './pages/policy.js?v=20260630-3';
@@ -41,41 +41,25 @@ function normalizedRoute() {
 
 function route() {
   if (window._pageCleanup) { window._pageCleanup(); window._pageCleanup = null; }
-
   const hash = normalizedRoute();
   const content = document.getElementById('page-content');
   if (!content) return;
   window.scrollTo(0, 0);
-
-  if (hash === '#/' || hash === '' || hash === '#') {
-    renderHome(content);
-  } else if (hash === '#/submit') {
-    renderSubmit(content);
-  } else if (hash.startsWith('#/trial/')) {
-    renderTrial(content, decodeURIComponent(hash.replace('#/trial/', '')));
-  } else if (hash.startsWith('#/result/')) {
-    renderResult(content, decodeURIComponent(hash.replace('#/result/', '')));
-  } else if (hash.startsWith('#/policy/')) {
-    renderPolicy(content, hash.replace('#/policy/', ''));
-  } else if (hash === '#/my-cases') {
-    renderMyCases(content);
-  } else if (hash === '#/guide') {
-    renderGuide(content);
-  } else if (hash === '#/auth') {
-    renderAuth(content);
-    setTimeout(renderThemePreference, 80);
-  } else if (hash === '#/board') {
-    renderBoard(content);
-  } else {
-    renderHome(content);
-  }
-
+  if (hash === '#/' || hash === '' || hash === '#') renderHome(content);
+  else if (hash === '#/submit') renderSubmit(content);
+  else if (hash.startsWith('#/trial/')) renderTrial(content, decodeURIComponent(hash.replace('#/trial/', '')));
+  else if (hash.startsWith('#/result/')) renderResult(content, decodeURIComponent(hash.replace('#/result/', '')));
+  else if (hash.startsWith('#/policy/')) renderPolicy(content, hash.replace('#/policy/', ''));
+  else if (hash === '#/my-cases') renderMyCases(content);
+  else if (hash === '#/guide') renderGuide(content);
+  else if (hash === '#/auth') { renderAuth(content); setTimeout(renderThemePreference, 80); }
+  else if (hash === '#/board') renderBoard(content);
+  else renderHome(content);
   renderNav();
 }
 
 window.addEventListener('hashchange', route);
 window.addEventListener('popstate', route);
-
 (async () => {
   registerServiceWorker();
   initTheme();
