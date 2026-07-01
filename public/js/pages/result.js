@@ -146,9 +146,9 @@ export async function renderResult(container, caseId) {
         <div style="text-align:center;margin:16px 0;padding:10px;background:rgba(255,255,255,.04);border-radius:8px;font-size:11px;color:var(--cream-dim);line-height:1.7;">🤖 본 판결문은 AI가 생성한 오락 콘텐츠입니다.<br>실제 법적 효력이 없으며 법률 자문으로 활용할 수 없습니다.</div>
 
         <div class="result-actions">
-          ${isOwner ? `<button class="btn ${isPublic ? 'btn-ghost' : 'btn-primary'}" id="btn-share">${isPublic ? '🔒 판결문 비공개로 전환' : '🔗 게시판에 공개하기'}</button>` : ''}
+          ${isOwner ? `<button class="btn ${isPublic ? 'btn-ghost' : 'btn-primary'}" id="btn-share">${isPublic ? '🔒 판결기록 비공개로 전환' : '🔗 판결기록에 공개하기'}</button>` : ''}
           <a href="#/submit" class="btn btn-secondary">새 사건 접수하기</a>
-          <a href="#/board" class="btn btn-ghost">게시판 보기</a>
+          <a href="#/board" class="btn btn-ghost">판결기록 보기</a>
         </div>
       </div>
     </div>`;
@@ -161,7 +161,7 @@ function renderReactions(social, isPublic) {
   const total = Number(social.reactions?.total || Object.values(counts).reduce((a, b) => a + Number(b || 0), 0));
   return `<div class="card" style="padding:18px;margin-bottom:14px;">
     <div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:12px;"><div style="font-weight:900;color:var(--gold);">🧑‍⚖️ 배심원 투표</div><div style="font-size:12px;color:var(--cream-dim);">총 ${total}표</div></div>
-    ${!isPublic ? `<div style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-bottom:10px;">게시판에 공개하면 다른 사람들이 원고 편/피고 편 투표를 할 수 있습니다.</div>` : ''}
+    ${!isPublic ? `<div style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-bottom:10px;">판결기록에 공개하면 다른 사람들이 원고 편/피고 편 투표를 할 수 있습니다.</div>` : ''}
     <div style="display:grid;grid-template-columns:1fr;gap:8px;">
       ${REACTIONS.map(([key,label]) => {
         const n = Number(counts[key] || 0);
@@ -176,7 +176,7 @@ function renderReactions(social, isPublic) {
 function renderComments(comments, isPublic) {
   return `<div class="card" style="padding:18px;margin-bottom:14px;">
     <div style="font-weight:900;color:var(--gold);margin-bottom:12px;">💬 방청석 한마디</div>
-    ${isPublic ? `<div style="display:flex;gap:8px;margin-bottom:12px;"><input id="court-comment-input" class="form-input" maxlength="120" placeholder="예: 판사님 오늘 컨디션 좋으신 듯" style="flex:1;"><button id="court-comment-btn" class="btn btn-secondary" style="width:86px;padding-left:0;padding-right:0;">등록</button></div>` : `<div style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-bottom:12px;">공개 판결문에서 방청석 한마디를 남길 수 있습니다.</div>`}
+    ${isPublic ? `<div style="display:flex;gap:8px;margin-bottom:12px;"><input id="court-comment-input" class="form-input" maxlength="120" placeholder="예: 판사님 오늘 컨디션 좋으신 듯" style="flex:1;"><button id="court-comment-btn" class="btn btn-secondary" style="width:86px;padding-left:0;padding-right:0;">등록</button></div>` : `<div style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-bottom:12px;">공개 판결기록에서 방청석 한마디를 남길 수 있습니다.</div>`}
     <div style="display:flex;flex-direction:column;gap:8px;">
       ${comments.length ? comments.map(cm => `<div style="padding:11px 0;border-top:1px solid var(--border);"><div style="font-size:12px;color:var(--gold);font-weight:800;">${escapeHtml(cm.nickname || '익명 방청객')}</div><div style="font-size:13px;color:var(--cream-dim);line-height:1.65;margin-top:3px;">${escapeHtml(cm.text || '')}</div></div>`).join('') : `<div style="font-size:12px;color:var(--cream-dim);line-height:1.7;">아직 방청석이 조용합니다. 첫 한마디를 남겨보세요.</div>`}
     </div>
@@ -242,7 +242,6 @@ function bindResultActions(container, caseId, c, r, isOwner, isPublic) {
     document.getElementById('btn-share')?.addEventListener('click', async () => {
       const newPublic = !isPublic;
       try {
-        await updateDoc(doc(db, 'cases', caseId), { isPublic: newPublic });
         await updateDoc(doc(db, 'results', caseId), {
           isPublic: newPublic,
           caseTitle: c.caseTitle || r.caseTitle || '판결 결과',
@@ -251,10 +250,11 @@ function bindResultActions(container, caseId, c, r, isOwner, isPublic) {
           sentence: r.sentence || '',
           createdAt: r.createdAt || c.createdAt || new Date()
         });
+        await updateDoc(doc(db, 'cases', caseId), { isPublic: newPublic });
         if (newPublic) {
           const url = `${location.origin}/#/result/${encodeURIComponent(caseId)}`;
           await navigator.clipboard.writeText(url).catch(() => {});
-          showToast('게시판 공개 완료. 링크가 복사되었습니다.', 'success');
+          showToast('판결기록 공개 완료. 링크가 복사되었습니다.', 'success');
         } else {
           showToast('비공개로 전환되었습니다.', 'success');
         }
