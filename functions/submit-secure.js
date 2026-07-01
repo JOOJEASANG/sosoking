@@ -27,6 +27,12 @@ function clampNumber(value, fallback, min, max) {
   if (!Number.isFinite(n)) return fallback;
   return Math.max(min, Math.min(max, Math.floor(n)));
 }
+function boolValue(value, fallback = false) {
+  if (typeof value === 'boolean') return value;
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  return fallback;
+}
 function kstDateKey(date = new Date()) {
   return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
 }
@@ -70,6 +76,7 @@ exports.submitCase = onCall({ region: REGION, timeoutSeconds: 30, memory: '256Mi
   const desired = textValue(data.desiredVerdict, MAX_DESIRED);
   const grievance = clampNumber(data.grievanceIndex, 5, 1, 10);
   const selectedJudge = selectedJudgeOrBlank(data.selectedJudge);
+  const isPublic = boolValue(data.isPublic, true);
   const profileNickname = await loadUserNickname(uid);
 
   if (!title) throw new HttpsError('invalid-argument', '사건명을 입력해주세요.');
@@ -117,7 +124,7 @@ exports.submitCase = onCall({ region: REGION, timeoutSeconds: 30, memory: '256Mi
       desiredVerdict: desired,
       selectedJudge,
       status: 'pending',
-      isPublic: false,
+      isPublic,
       reportCount: 0,
       createdAt: FieldValue.serverTimestamp(),
     });
