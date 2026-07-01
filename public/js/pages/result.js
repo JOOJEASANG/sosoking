@@ -9,11 +9,12 @@ const JUDGE_ICON = {
 };
 
 const REACTIONS = [
+  ['king','👑 소소킹감'],
+  ['funny','😂 속보감이다'],
   ['plaintiff','🙋 제보자 편'],
   ['defendant','🛡️ 상대도 이해됨'],
   ['both','🤝 둘 다 별일 아님'],
-  ['tooMuch','😳 위원회 과합니다'],
-  ['funny','😂 속보감이다']
+  ['tooMuch','😳 위원회 과합니다']
 ];
 
 function fmtDate(ts) {
@@ -31,23 +32,26 @@ function verdictType(r) {
 }
 function titleBadge(c, r) {
   const g = Number(c.grievanceIndex || r.grievanceIndex || 5);
+  const kingCount = Number(r.kingCount || 0);
+  if (kingCount >= 10) return '현직 소소킹';
+  if (kingCount >= 3) return '소소킹 후보';
   if ((r.judgeType || '').includes('드립')) return '속보 드립 제보자';
   if (g >= 9) return '전국민 안건 제보자';
   if (g >= 7) return '긴급회의 소집자';
-  if (g <= 3) return '먼지급 분쟁러';
-  return '소소분쟁 목격자';
+  if (g <= 3) return '먼지급 제보자';
+  return '소소사건 목격자';
 }
 function scoreMetrics(c, r) {
   const g = Number(c.grievanceIndex || r.grievanceIndex || 5);
+  const king = Math.min(15 + Number(r.kingCount || 0) * 12, 99);
   const urgency = Math.min(42 + g * 6 + (r.judgeType === '과몰입형' ? 12 : 0), 99);
   const seriousness = Math.min(50 + g * 4 + (r.judgeType === '엄벌주의형' ? 18 : 0), 99);
-  const joke = Math.min(55 + g * 3 + (r.judgeType === '드립형' ? 24 : 0), 99);
-  const tiny = Math.max(22, 100 - g * 5);
+  const joke = Math.min(55 + g * 3 + (r.judgeType === '드립형' ? 24 : 0) + Number(r.kingCount || 0) * 4, 99);
   return [
+    ['소소킹 가능성', king],
     ['속보 긴급도', urgency],
     ['위원회 엄숙함', seriousness],
-    ['정색 개그력', joke],
-    ['사소함 순도', tiny]
+    ['정색 개그력', joke]
   ];
 }
 async function loadSocial(caseId) {
@@ -69,6 +73,9 @@ function renderStep(role, label, content) {
 function committeeText(r) {
   if (r.committeeJudgment) return r.committeeJudgment;
   return r.verdict || '';
+}
+function kingCountOf(r, social) {
+  return Math.max(Number(r.kingCount || 0), Number(social?.reactions?.counts?.king || 0));
 }
 
 export async function renderResult(container, caseId) {
@@ -94,12 +101,13 @@ export async function renderResult(container, caseId) {
 
   const c = caseSnap.exists() ? caseSnap.data() : {};
   const r = resultSnap.data();
+  const kingCount = kingCountOf(r, social);
   const icon = JUDGE_ICON[r.judgeType] || '📡';
   const isOwner = caseSnap.exists() && c.userId === auth.currentUser?.uid;
   const isPublic = !!(c.isPublic || r.isPublic);
   const type = verdictType(r);
-  const badge = titleBadge(c, r);
-  const metrics = scoreMetrics(c, r);
+  const badge = titleBadge(c, { ...r, kingCount });
+  const metrics = scoreMetrics(c, { ...r, kingCount });
   const finalDecision = r.finalDecision || r.supremeFinal || '';
 
   container.innerHTML = `
@@ -107,10 +115,10 @@ export async function renderResult(container, caseId) {
       <div class="page-header"><span class="logo">🚨 긴급 결정문</span></div>
       <div class="container" style="padding-top:26px;padding-bottom:90px;">
         <div class="card" style="padding:20px;text-align:center;margin-bottom:14px;border-color:rgba(231,76,60,.48);">
-          <div style="font-size:56px;margin-bottom:8px;">${icon}</div>
+          <div style="font-size:56px;margin-bottom:8px;">${kingCount >= 3 ? '👑' : icon}</div>
           <div class="badge badge-gold" style="font-size:13px;padding:5px 14px;">${escapeHtml(r.judgeType || 'AI')} 위원</div>
-          <h2 style="margin:14px 0 6px;font-size:21px;line-height:1.45;">${escapeHtml(c.caseTitle || r.caseTitle || '소소분쟁 결과')}</h2>
-          <div style="font-size:12px;color:var(--cream-dim);line-height:1.7;">${escapeHtml(r.docketNumber || c.docketNumber || '소소킹 접수번호 미상')}<br>사소함 레벨 ${escapeHtml(c.grievanceIndex || r.grievanceIndex || '?')}/10${c.createdAt ? ` · ${escapeHtml(fmtDate(c.createdAt))}` : ''}</div>
+          <h2 style="margin:14px 0 6px;font-size:21px;line-height:1.45;">${escapeHtml(c.caseTitle || r.caseTitle || '소소사건 결과')}</h2>
+          <div style="font-size:12px;color:var(--cream-dim);line-height:1.7;">${escapeHtml(r.docketNumber || c.docketNumber || '소소킹 접수번호 미상')}<br>사소함 레벨 ${escapeHtml(c.grievanceIndex || r.grievanceIndex || '?')}/10 · 👑 ${kingCount}표${c.createdAt ? ` · ${escapeHtml(fmtDate(c.createdAt))}` : ''}</div>
         </div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
@@ -118,8 +126,13 @@ export async function renderResult(container, caseId) {
           <div class="card" style="padding:14px;text-align:center;"><div style="font-size:11px;color:var(--cream-dim);">제보자 칭호</div><div style="font-size:17px;font-weight:900;color:var(--gold);margin-top:4px;">${escapeHtml(badge)}</div></div>
         </div>
 
+        <div class="card" style="padding:16px;margin-bottom:14px;background:linear-gradient(135deg,rgba(201,168,76,.13),rgba(231,76,60,.06));border-color:rgba(201,168,76,.42);">
+          <div style="font-weight:900;color:var(--gold);margin-bottom:6px;">👑 소소킹 투표</div>
+          <div style="font-size:13px;color:var(--cream-dim);line-height:1.7;">이 기록이 제일 웃기면 아래 시민 의견에서 <b style="color:var(--gold);">소소킹감</b>을 눌러주세요. 표가 쌓이면 공개기록에서 킹 후보로 올라갑니다.</div>
+        </div>
+
         <div class="card" style="padding:16px;margin-bottom:14px;">
-          <div style="font-weight:900;color:var(--gold);margin-bottom:12px;">📊 이번 분쟁 처리 성향</div>
+          <div style="font-weight:900;color:var(--gold);margin-bottom:12px;">📊 이번 소소사건 처리 성향</div>
           ${metrics.map(([label, value]) => `<div style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--cream-dim);margin-bottom:5px;"><span>${escapeHtml(label)}</span><span>${value}%</span></div><div style="height:7px;border-radius:999px;background:rgba(255,255,255,.07);overflow:hidden;"><div style="width:${value}%;height:100%;background:linear-gradient(90deg,#8a6f28,#c9a84c,#ff7166);"></div></div></div>`).join('')}
         </div>
 
@@ -128,7 +141,7 @@ export async function renderResult(container, caseId) {
         ${renderStep('🧩 쟁점', '핵심 안건', r.issue || r.plaintiffArg)}
 
         <div class="card verdict-card step-card visible" style="margin-bottom:12px;padding:22px;">
-          <div style="margin-bottom:10px;"><span class="badge badge-gold">소소분쟁위원회 판단</span></div>
+          <div style="margin-bottom:10px;"><span class="badge badge-gold">소소긴급위원회 판단</span></div>
           <div class="verdict-stamp">결정</div>
           <div class="step-content" style="margin-top:12px;">${escapeHtml(committeeText(r))}</div>
         </div>
@@ -148,7 +161,7 @@ export async function renderResult(container, caseId) {
 
         <div class="result-actions">
           ${isOwner ? `<button class="btn ${isPublic ? 'btn-ghost' : 'btn-primary'}" id="btn-share">${isPublic ? '🔒 공개 기록 비공개로 전환' : '🔗 공개 기록에 올리기'}</button>` : ''}
-          <a href="#/submit" class="btn btn-secondary">새 분쟁 접수하기</a>
+          <a href="#/submit" class="btn btn-secondary">새 소소사건 접수하기</a>
           <a href="#/board" class="btn btn-ghost">공개 기록 보기</a>
         </div>
       </div>
@@ -162,13 +175,14 @@ function renderReactions(social, isPublic) {
   const total = Number(social.reactions?.total || Object.values(counts).reduce((a, b) => a + Number(b || 0), 0));
   return `<div class="card" style="padding:18px;margin-bottom:14px;">
     <div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:12px;"><div style="font-weight:900;color:var(--gold);">🧑‍💼 시민 의견</div><div style="font-size:12px;color:var(--cream-dim);">총 ${total}표</div></div>
-    ${!isPublic ? `<div style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-bottom:10px;">공개 기록에 올리면 다른 사람들이 어느 쪽이 맞는지 투표할 수 있습니다.</div>` : ''}
+    ${!isPublic ? `<div style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-bottom:10px;">공개 기록에 올리면 다른 사람들이 가장 웃긴 기록에 투표할 수 있습니다.</div>` : ''}
     <div style="display:grid;grid-template-columns:1fr;gap:8px;">
       ${REACTIONS.map(([key,label]) => {
         const n = Number(counts[key] || 0);
         const pct = total ? Math.round(n / total * 100) : 0;
         const active = social.myReaction === key;
-        return `<button class="reaction-btn" data-reaction="${key}" ${!isPublic ? 'disabled' : ''} style="text-align:left;border:1px solid ${active ? 'rgba(201,168,76,.8)' : 'var(--border)'};background:${active ? 'rgba(201,168,76,.12)' : 'rgba(255,255,255,.03)'};color:var(--cream);border-radius:12px;padding:11px 12px;cursor:${isPublic ? 'pointer' : 'not-allowed'};"><div style="display:flex;justify-content:space-between;font-size:13px;font-weight:800;"><span>${label}</span><span>${n}표 · ${pct}%</span></div><div style="height:5px;border-radius:999px;background:rgba(255,255,255,.06);margin-top:8px;overflow:hidden;"><div style="width:${pct}%;height:100%;background:#c9a84c;"></div></div></button>`;
+        const isKing = key === 'king';
+        return `<button class="reaction-btn" data-reaction="${key}" ${!isPublic ? 'disabled' : ''} style="text-align:left;border:1px solid ${active ? 'rgba(201,168,76,.9)' : (isKing ? 'rgba(201,168,76,.48)' : 'var(--border)')};background:${active ? 'rgba(201,168,76,.15)' : (isKing ? 'linear-gradient(135deg,rgba(201,168,76,.12),rgba(231,76,60,.06))' : 'rgba(255,255,255,.03)')};color:var(--cream);border-radius:12px;padding:11px 12px;cursor:${isPublic ? 'pointer' : 'not-allowed'};"><div style="display:flex;justify-content:space-between;font-size:13px;font-weight:800;"><span>${label}</span><span>${n}표 · ${pct}%</span></div><div style="height:5px;border-radius:999px;background:rgba(255,255,255,.06);margin-top:8px;overflow:hidden;"><div style="width:${pct}%;height:100%;background:${isKing ? 'linear-gradient(90deg,#c9a84c,#ff7166)' : '#c9a84c'};"></div></div></button>`;
       }).join('')}
     </div>
   </div>`;
@@ -177,7 +191,7 @@ function renderReactions(social, isPublic) {
 function renderComments(comments, isPublic) {
   return `<div class="card" style="padding:18px;margin-bottom:14px;">
     <div style="font-weight:900;color:var(--gold);margin-bottom:12px;">💬 속보 댓글석</div>
-    ${isPublic ? `<div style="display:flex;gap:8px;margin-bottom:12px;"><input id="court-comment-input" class="form-input" maxlength="120" placeholder="예: 이건 위원회가 과했습니다" style="flex:1;"><button id="court-comment-btn" class="btn btn-secondary" style="width:86px;padding-left:0;padding-right:0;">등록</button></div>` : `<div style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-bottom:12px;">공개 기록에서 댓글을 남길 수 있습니다.</div>`}
+    ${isPublic ? `<div style="display:flex;gap:8px;margin-bottom:12px;"><input id="court-comment-input" class="form-input" maxlength="120" placeholder="예: 이건 소소킹 후보입니다" style="flex:1;"><button id="court-comment-btn" class="btn btn-secondary" style="width:86px;padding-left:0;padding-right:0;">등록</button></div>` : `<div style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-bottom:12px;">공개 기록에서 댓글을 남길 수 있습니다.</div>`}
     <div style="display:flex;flex-direction:column;gap:8px;">
       ${comments.length ? comments.map(cm => `<div style="padding:11px 0;border-top:1px solid var(--border);"><div style="font-size:12px;color:var(--gold);font-weight:800;">${escapeHtml(cm.nickname || '익명 시청자')}</div><div style="font-size:13px;color:var(--cream-dim);line-height:1.65;margin-top:3px;">${escapeHtml(cm.text || '')}</div></div>`).join('') : `<div style="font-size:12px;color:var(--cream-dim);line-height:1.7;">아직 속보 댓글석이 조용합니다. 첫 한마디를 남겨보세요.</div>`}
     </div>
@@ -189,7 +203,7 @@ function bindResultActions(container, caseId, c, r, isOwner, isPublic) {
     btn.addEventListener('click', async () => {
       try {
         await httpsCallable(functions, 'voteResult')({ caseId, reaction: btn.dataset.reaction });
-        showToast('시민 의견이 기록되었습니다.', 'success');
+        showToast(btn.dataset.reaction === 'king' ? '소소킹 투표가 기록되었습니다.' : '시민 의견이 기록되었습니다.', 'success');
         renderResult(container, caseId);
       } catch (err) {
         console.error(err);
@@ -218,7 +232,7 @@ function bindResultActions(container, caseId, c, r, isOwner, isPublic) {
       try {
         await updateDoc(doc(db, 'results', caseId), {
           isPublic: newPublic,
-          caseTitle: c.caseTitle || r.caseTitle || '소소분쟁 결과',
+          caseTitle: c.caseTitle || r.caseTitle || '소소사건 결과',
           grievanceIndex: c.grievanceIndex || r.grievanceIndex || null,
           judgeType: r.judgeType || '',
           sentence: r.sentence || '',
