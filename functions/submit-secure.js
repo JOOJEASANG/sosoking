@@ -10,13 +10,13 @@ const HARD_DAILY_LIMIT = 3;
 const DEFAULT_COOLDOWN_SEC = 45;
 const JUDGES = ['엄벌주의형','감성형','현실주의형','과몰입형','피곤형','논리집착형','드립형'];
 const NICK_ADJ = ['억울한','분노한','황당한','지친','당황한','슬픈','안타까운','기막힌'];
-const NICK_NOUN = ['직장인','집사','아무개','라면러버','과자지킴이','충전기수호자','리모컨분실자','냉장고파수꾼'];
+const NICK_NOUN = ['제보자','라면러버','과자지킴이','충전기수호자','리모컨분실자','냉장고파수꾼','양말감시관','만두목격자'];
 
 function requireRealLogin(request) {
   if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
   const provider = request.auth.token.firebase?.sign_in_provider || '';
   if (provider === 'anonymous') {
-    throw new HttpsError('unauthenticated', '사건 접수는 구글 또는 이메일 로그인 후 이용할 수 있습니다.');
+    throw new HttpsError('unauthenticated', '한 줄 분쟁 접수는 구글 또는 이메일 로그인 후 이용할 수 있습니다.');
   }
 }
 function textValue(value, maxLen) {
@@ -38,7 +38,7 @@ function kstDateKey(date = new Date()) {
 }
 function makeDocket(today) {
   const compact = today.replace(/-/g, '').slice(2);
-  return `소소${compact}-생활판결-${Math.floor(1000 + Math.random() * 9000)}`;
+  return `소소${compact}-긴급심판-${Math.floor(1000 + Math.random() * 9000)}`;
 }
 function randomNickname() {
   return NICK_ADJ[Math.floor(Math.random() * NICK_ADJ.length)] + NICK_NOUN[Math.floor(Math.random() * NICK_NOUN.length)];
@@ -79,8 +79,8 @@ exports.submitCase = onCall({ region: REGION, timeoutSeconds: 30, memory: '256Mi
   const isPublic = boolValue(data.isPublic, true);
   const profileNickname = await loadUserNickname(uid);
 
-  if (!title) throw new HttpsError('invalid-argument', '사건명을 입력해주세요.');
-  if (!desc) throw new HttpsError('invalid-argument', '사건 경위를 입력해주세요.');
+  if (!title) throw new HttpsError('invalid-argument', '분쟁 제목을 입력해주세요.');
+  if (!desc) throw new HttpsError('invalid-argument', '한 줄 분쟁 내용을 입력해주세요.');
 
   const settings = await loadSettings();
   const cooldownSec = clampNumber(settings.cooldownSec, DEFAULT_COOLDOWN_SEC, 0, 300);
@@ -113,9 +113,9 @@ exports.submitCase = onCall({ region: REGION, timeoutSeconds: 30, memory: '256Mi
     tx.set(caseRef, {
       userId: uid,
       docketNumber,
-      courtName: '소소킹 판결소',
-      courtroom: '제404호 생활법정',
-      division: '제3생활부',
+      courtName: '소소분쟁위원회',
+      courtroom: '긴급소소속보실',
+      division: '한줄분쟁심의부',
       courtStage: 'filed',
       caseTitle: title,
       caseDescription: desc,
