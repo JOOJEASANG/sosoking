@@ -1,4 +1,4 @@
-import { renderTrial as renderBaseTrial } from './trial.js?v=20260702-3';
+import { renderTrial as renderBaseTrial } from './trial.js?v=20260702-7';
 
 function ensureTrialGameStyle() {
   if (document.getElementById('trial-game-style')) return;
