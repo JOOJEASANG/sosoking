@@ -22,9 +22,9 @@ function kstDateKey(date = new Date()) {
 function finalSentence(text) {
   let s = cleanText(text, 120).replace(/["“”'`]/g, '').trim();
   s = s.split(/\n/)[0].trim();
-  if (!s) s = '당사자는 다음 간식 선택권을 공평하게 나눈다.';
+  if (!s) s = '제보자는 오늘 낮잠 20분을 긴급 보장받는다.';
   if (!s.endsWith('.')) s += '.';
-  return s.length > 70 ? '당사자는 다음 간식 선택권을 공평하게 나눈다.' : s;
+  return s.length > 70 ? '제보자는 오늘 낮잠 20분을 긴급 보장받는다.' : s;
 }
 function safeJson(text) {
   const raw = String(text || '').replace(/```json|```/g, '').trim();
@@ -34,13 +34,13 @@ function safeJson(text) {
   return JSON.parse(raw.slice(start, end + 1));
 }
 function fallback(c, judgeType) {
-  const title = cleanText(c.caseTitle, 30) || '사소한 분쟁';
-  const breakingNews = `긴급속보: ${title}을 둘러싼 미세한 긴장감이 소소킹 전역에 포착됐다.`;
-  const briefing = '현장 브리핑 결과, 사건의 크기는 먼지급이었으나 당사자의 표정은 국가 비상회의 수준이었다.';
-  const issue = '핵심 쟁점은 이 정도 사소함을 그냥 넘겨도 되는지, 아니면 한 번쯤 엄중한 표정을 지어야 하는지다.';
-  const committeeJudgment = `${judgeType} 위원은 본 사안이 하찮아 보이지만 방치할 경우 식탁 평화와 단체 채팅방 질서에 은근한 파장을 줄 수 있다고 판단한다.`;
-  const finalDecision = '소소분쟁위원회는 당사자 모두에게 피식 웃음 1회를 권고하고, 해당 분쟁을 소소 주의 사건으로 종결한다.';
-  const sentence = '당사자는 다음 간식 선택권을 공평하게 나눈다.';
+  const title = cleanText(c.caseTitle, 30) || '사소한 사건';
+  const breakingNews = `긴급: ${title}로 인해 일상 평온 지수가 순간적으로 흔들리는 사태가 발생했다.`;
+  const briefing = '제보자는 “별일 아니라고 하기엔 내 표정이 너무 진지했다”는 입장을 밝혔다. 현장에서는 아무도 출동하지 않았지만 마음속 상황실은 이미 비상 2단계였다.';
+  const issue = '이 정도 사소함이 과연 그냥 넘길 일인가, 아니면 최소한 한 번은 정색하고 말해야 하는가.';
+  const committeeJudgment = `${judgeType} 위원은 본 사안이 하찮아 보인다는 점은 인정한다. 그러나 바로 그 하찮음이 사람을 은근히 무너뜨린다는 점에서 소소킹급 검토가 필요하다고 판단한다. 특히 피해 규모는 작지만 짜증의 울림은 생각보다 오래 간다.`;
+  const finalDecision = '소소긴급위원회는 해당 사건을 오늘의 소소 경보로 지정하고, 당사자의 억울함을 조건부로 인정한다.';
+  const sentence = '제보자는 오늘 낮잠 20분을 긴급 보장받는다.';
   return { breakingNews, briefing, issue, committeeJudgment, finalDecision, sentence };
 }
 
@@ -95,24 +95,37 @@ exports.generateTrial = onCall({ region: REGION, secrets: [geminiKey], timeoutSe
 
   try {
     const model = new GoogleGenerativeAI(geminiKey.value().trim()).getGenerativeModel({ model: modelName });
-    const prompt = `소소킹의 결과 콘텐츠를 JSON으로 작성한다. 컨셉은 "먼지처럼 사소한 한 줄 다툼을 긴급 속보처럼 터뜨리고, 소소분쟁위원회가 국가기관급 엄중한 말투로 즉시 결정하는 것"이다. 입력이 짧고 별것 아닐수록 더 웃기게 만든다.
+    const prompt = `소소킹의 결과 콘텐츠를 JSON으로 작성한다. 컨셉은 "별것 아닌 한 줄 소소사건을 재난급 긴급속보처럼 터뜨리고, 소소긴급위원회가 국가기관급 엄중한 말투로 즉시 처리하는 것"이다. 목표 웃김 강도는 8.5/10이다. 읽다가 쓰러질 정도까지 무리하지 말고, 정색한 과장과 하찮은 결론의 낙차로 웃기게 만든다.
+
+매우 중요:
+- 입력이 다툼이 아니어도 된다. 모기 때문에 잠 못 잠, 엘리베이터가 앞에서 닫힘, 치약 다 떨어짐, 비 오는데 우산 없음 같은 개인 소소사건도 처리한다.
+- 웃김의 핵심은 "사건은 먼지급인데 표현은 국가재난급"이다.
+- 억지 개그, 말장난 남발, 유행어 도배, 욕설 없이 웃겨야 한다.
+- 브리핑에는 그럴듯한 현장 묘사 1개와 말도 안 되게 엄숙한 표현 1개를 넣는다.
+- 마지막 처분은 너무 하찮아서 웃겨야 한다.
 
 금지: 실제 법률 자문처럼 보이는 표현, 실제 법원/대법원/판결소로 오해될 표현, 무거운 범죄 묘사, 개인정보 반복, 모욕적 표현, 위험한 처분, 금전 배상처럼 보이는 처분, 장황한 법률문.
-톤: 뉴스특보 + 공공기관 결정문을 섞는다. 단호하고 엄중하지만 내용은 터무니없이 사소해야 한다.
+톤: 뉴스특보 + 공공기관 결정문 + 생활 밀착 정색 개그. 단호하고 엄중하지만 내용은 터무니없이 사소해야 한다.
 
-한 줄 분쟁: ${cleanText(c.caseDescription || c.caseTitle, 200)}
-분쟁 제목: ${cleanText(c.caseTitle, 30)}
-억울 레벨: ${Number(c.grievanceIndex || 5)}/10
+한 줄 소소사건: ${cleanText(c.caseDescription || c.caseTitle, 200)}
+자동 제목: ${cleanText(c.caseTitle, 30)}
+사소함 레벨: ${Number(c.grievanceIndex || 5)}/10
 원하는 처분: ${cleanText(c.desiredVerdict, 100) || '없음'}
 담당 성향: ${judgeType}
 
+예시 톤:
+입력 "오늘 모기 때문에 잠을 못 잠"이면,
+- 모기를 "정체불명의 야간 비행체"처럼 부른다.
+- 제보자를 "이불 방어선 안쪽으로 후퇴한 시민"처럼 묘사한다.
+- 결론은 "제보자는 낮잠 20분을 긴급 보장받는다"처럼 하찮게 떨어뜨린다.
+
 필드별 작성 규칙:
 - breakingNews: 긴급 속보 제목+첫 문장. 1~2문장. "긴급:" 또는 "속보:"로 시작. 사소한 일을 재난급으로 과장.
-- briefing: 현장 브리핑. 2문장. 제보자/현장/당사자 반응을 뉴스처럼 과장.
+- briefing: 현장 브리핑. 2문장. 제보자/현장/상황 반응을 뉴스처럼 과장. 웃긴 디테일을 반드시 1개 포함.
 - issue: 핵심 쟁점. 1문장. "~인가" 형식이면 좋다. 별것 아닌 기준을 괜히 엄숙하게 표현.
-- committeeJudgment: 소소분쟁위원회 판단. 2~3문장. 공공기관 결정문처럼 엄중하지만 웃기게.
-- finalDecision: 최종 결정. 1~2문장. 누가 무엇을 해야 하는지 분명하게.
-- sentence: 소소 처분. 반드시 한 문장, 70자 이하. "피신청인은..." 또는 "당사자는..."로 시작. 양보, 원상복구, 의견조사, 리모컨 위치 보고, 마지막 한 입 양보 같은 실행 가능한 하찮은 처분.
+- committeeJudgment: 소소긴급위원회 판단. 2~3문장. 공공기관 결정문처럼 엄중하지만 웃기게. 마지막 문장에는 하찮은 반전이 있어야 한다.
+- finalDecision: 최종 결정. 1~2문장. 누구 또는 무엇이 어떻게 처리되는지 분명하게.
+- sentence: 소소 처분. 반드시 한 문장, 70자 이하. "제보자는...", "당사자는...", "피신청인은..." 중 하나로 시작. 낮잠 보장, 간식 선택권, 리모컨 위치 보고, 마지막 한 입 양보, 양말 원상복구 같은 실행 가능한 하찮은 처분.
 
 반드시 JSON만 출력한다. 필드: breakingNews, briefing, issue, committeeJudgment, finalDecision, sentence.`;
     const result = await model.generateContent(prompt);
@@ -125,10 +138,10 @@ exports.generateTrial = onCall({ region: REGION, secrets: [geminiKey], timeoutSe
     const parsed = safeJson(result.response.text());
     data = {
       breakingNews: cleanText(parsed.breakingNews, 260) || data.breakingNews,
-      briefing: cleanText(parsed.briefing, 360) || data.briefing,
-      issue: cleanText(parsed.issue, 220) || data.issue,
-      committeeJudgment: cleanText(parsed.committeeJudgment, 520) || data.committeeJudgment,
-      finalDecision: cleanText(parsed.finalDecision, 300) || data.finalDecision,
+      briefing: cleanText(parsed.briefing, 420) || data.briefing,
+      issue: cleanText(parsed.issue, 240) || data.issue,
+      committeeJudgment: cleanText(parsed.committeeJudgment, 620) || data.committeeJudgment,
+      finalDecision: cleanText(parsed.finalDecision, 330) || data.finalDecision,
       sentence: finalSentence(parsed.sentence || data.sentence)
     };
   } catch (err) {
@@ -141,10 +154,10 @@ exports.generateTrial = onCall({ region: REGION, secrets: [geminiKey], timeoutSe
     await resultRef.set({
       isPublic,
       docketNumber: c.docketNumber || '',
-      courtName: '소소분쟁위원회',
-      courtroom: '긴급소소속보실',
-      division: '한줄분쟁심의부',
-      caseTitle: c.caseTitle || '소소분쟁 결과',
+      courtName: '소소긴급위원회',
+      courtroom: '긴급소소상황실',
+      division: '한줄소소처리부',
+      caseTitle: c.caseTitle || '소소사건 결과',
       caseDescription: c.caseDescription || '',
       grievanceIndex: c.grievanceIndex || 5,
       nickname: c.nickname || '익명 제보자',
@@ -163,6 +176,10 @@ exports.generateTrial = onCall({ region: REGION, secrets: [geminiKey], timeoutSe
       supremeFinal: data.finalDecision,
       sentence: data.sentence,
       reactionTotal: 0,
+      kingCount: 0,
+      funScoreSum: 0,
+      funScoreCount: 0,
+      funScoreAvg: 0,
       commentCount: 0,
       courtStage: 'sentenced',
       createdAt: c.createdAt || FieldValue.serverTimestamp(),
