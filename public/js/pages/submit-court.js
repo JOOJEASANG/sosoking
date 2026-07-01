@@ -1,4 +1,4 @@
-import { renderSubmit as renderBaseSubmit } from './submit.js?v=20260630-8';
+import { renderSubmit as renderBaseSubmit } from './submit.js?v=20260702-2';
 
 function lvLabel(v) {
   const n = Number(v || 5);
@@ -10,7 +10,7 @@ function lvLabel(v) {
 }
 function judgeStat(name) {
   const map = {
-    '엄벌주의형': ['엄격함 ★★★★★', '공감력 ★★☆☆☆', '드립력 ★☆☆☆☆'],
+    '엄벌주의형': ['엄격함 ★★★★★', '공감력 ★★☆☆☆', '드립력 ★☆☆☆'],
     '감성형': ['엄격함 ★★☆☆☆', '공감력 ★★★★★', '드립력 ★★☆☆☆'],
     '현실주의형': ['엄격함 ★★★☆☆', '공감력 ★★★☆☆', '팩트력 ★★★★★'],
     '과몰입형': ['엄격함 ★★★★☆', '몰입도 ★★★★★', '확대해석 ★★★★★'],
