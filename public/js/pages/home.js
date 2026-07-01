@@ -4,49 +4,51 @@ import { escapeHtml, compactText } from '../utils/sanitize.js?v=20260630-3';
 
 const EXAMPLES = [
   {
-    title: '라면 국물 무단 음용 사건',
-    sentence: '피고는 30일간 라면 국물의 마지막 한 숟갈을 양보한다.',
-    judgeType: '엄벌주의형'
+    title: '양말 뒤집기 분쟁',
+    sentence: '피신청인은 3일간 양말 입구를 정중히 펴서 제출한다.',
+    judgeType: '엄벌주의형',
+    breakingNews: '속보: 전국 가정 내 양말 처리 질서가 흔들리고 있습니다.'
   },
   {
-    title: '카톡 읽씹 17회 반복 사건',
-    sentence: '피고는 3일간 모든 답장에 문장부호를 붙인다.',
-    judgeType: '논리집착형'
+    title: '라면 순서 분쟁',
+    sentence: '당사자는 다음 라면 조리 전 5초 의견조사를 실시한다.',
+    judgeType: '논리집착형',
+    breakingNews: '긴급: 스프 먼저파와 면 먼저파의 충돌이 냄비 앞에서 포착됐습니다.'
   },
   {
-    title: '공용 리모컨 실종 사건',
-    sentence: '피고는 일주일간 리모컨에게 위치 보고를 한다.',
-    judgeType: '피곤형'
+    title: '마지막 만두 분쟁',
+    sentence: '마지막 만두는 발견자와 목격자가 반으로 나눈다.',
+    judgeType: '드립형',
+    breakingNews: '속보: 마지막 만두를 둘러싼 미세한 눈치싸움이 발생했습니다.'
   }
 ];
 
 const JUDGE_ICON = {
-  '엄벌주의형':'👨‍⚖️','감성형':'🥹','현실주의형':'🤦',
+  '엄벌주의형':'🚨','감성형':'🥹','현실주의형':'🧊',
   '과몰입형':'🔥','피곤형':'😴','논리집착형':'🧮','드립형':'🎭'
 };
 
 const JUDGES = [
-  { name: '엄벌주의형', icon: '👨‍⚖️', desc: '사소함도 중대사안' },
-  { name: '감성형', icon: '🥹', desc: '판사가 먼저 울컥' },
-  { name: '현실주의형', icon: '🤦', desc: '차갑고 정확한 체념' },
-  { name: '과몰입형', icon: '🔥', desc: '생활사 대하드라마' },
-  { name: '피곤형', icon: '😴', desc: '퇴근이 간절한 판결' },
-  { name: '논리집착형', icon: '🧮', desc: '억울지수 소수점 계산' },
-  { name: '드립형', icon: '🎭', desc: '정색하고 웃기는 판사' },
+  { name: '엄벌주의형', icon: '🚨', desc: '먼지급 사안도 긴급안건' },
+  { name: '감성형', icon: '🥹', desc: '서운함에 과하게 공감' },
+  { name: '현실주의형', icon: '🧊', desc: '팩트로 조용히 정리' },
+  { name: '과몰입형', icon: '🔥', desc: '사소함을 국가 의제로 확대' },
+  { name: '피곤형', icon: '😴', desc: '귀찮지만 결정은 냄' },
+  { name: '논리집착형', icon: '🧮', desc: '하찮음을 수치화' },
+  { name: '드립형', icon: '🎭', desc: '정색하고 웃김' },
 ];
 
 const TW_CASES = [
-  '라면 국물 무단 음용 사건',
-  '카톡 읽씹 17회 반복 사건',
-  '파마 안 한다고 해놓고 한 사건',
-  '내 자리에 슬쩍 앉아있던 사건',
-  '밥 먹었냐고 물어보지 않은 사건',
-  '에어컨 온도 독단 조작 사건',
-  '마지막 과자 혼자 다 먹은 사건',
-  '택배 대신 수령 후 3일 방치 사건',
-  '공용 리모컨 실종 사건',
-  '우산 무단 사용 후 반납 불이행 사건',
-  '충전기 끝에 꽂아만 두고 간 사건',
+  '양말은 뒤집어서 벗어도 되는가',
+  '라면은 스프 먼저인가 면 먼저인가',
+  '마지막 만두는 먼저 본 사람이 먹어도 되는가',
+  '읽씹 3시간은 유죄인가',
+  '리모컨은 잡은 사람이 임자인가',
+  '냉장고 마지막 푸딩은 공공재인가',
+  '치킨무 국물은 버려도 되는가',
+  '에어컨 온도 1도 차이는 전쟁인가',
+  '충전기 꽂아놓고 자리 비우면 점유권이 있는가',
+  '마지막 과자는 봉지 든 사람이 먹어도 되는가'
 ];
 
 let _twTimer = null;
@@ -61,26 +63,26 @@ export async function renderHome(container) {
   container.innerHTML = `
     <div style="padding-bottom:60px;">
       <section class="hero-section">
-        <img src="/app-icon.svg?v=20260630-3" alt="소소킹 로고" style="width:92px;height:92px;margin-bottom:14px;display:block;margin-left:auto;margin-right:auto;animation:wiggle 3.5s ease-in-out infinite;" />
-        <div class="hero-badge">⚖️ 사소함 전문 생활법정 · 법적효력 0%</div>
-        <h1 class="hero-h1">억울하죠?<br><span style="font-size:0.58em;color:var(--gold);font-style:italic;">기각하긴 아깝습니다.</span></h1>
-        <p class="hero-sub">아무도 안 들어주는 사소한 억울함을<br><strong>AI 판사단이 너무 진지하게</strong> 심리합니다.<br><span style="font-size:11px;opacity:0.5;">실제 법원은 아니고, 마음속 방청석은 열려 있습니다.</span></p>
+        <img src="/app-icon.svg?v=20260702-10" alt="소소킹 로고" style="width:92px;height:92px;margin-bottom:14px;display:block;margin-left:auto;margin-right:auto;animation:wiggle 3.5s ease-in-out infinite;" />
+        <div class="hero-badge">🚨 소소분쟁위원회 · 한 줄 다툼 긴급 심판</div>
+        <h1 class="hero-h1">별일 아닌데<br><span style="font-size:0.58em;color:var(--gold);font-style:italic;">왜 이렇게 중대하죠?</span></h1>
+        <p class="hero-sub">세상에서 제일 사소한 일을<br><strong>긴급속보와 위원회 결정문으로</strong> 과하게 처리합니다.<br><span style="font-size:11px;opacity:0.5;">짧을수록 좋고, 하찮을수록 더 웃깁니다.</span></p>
 
         <div class="hero-tw">
-          📌 현재 생활법정 심의중: <strong id="tw-text"></strong><span class="cursor-blink" style="color:var(--gold);">|</span>
+          📡 현재 긴급심판 대기중: <strong id="tw-text"></strong><span class="cursor-blink" style="color:var(--gold);">|</span>
         </div>
 
-        <a href="#/submit" class="hero-cta hero-cta-pulse">🚨 억울함 공식 접수하기</a>
-        <div class="hero-disclaimer">무료 · 익명 · 과장됨 · 법적효력 없음</div>
+        <a href="#/submit" class="hero-cta hero-cta-pulse">🚨 한 줄 분쟁 접수하기</a>
+        <div class="hero-disclaimer">무료 · 익명 가능 · 과장됨 · 법적효력 없음</div>
 
         <div class="stats-row">
           <div class="stat-item">
             <div class="stat-num" id="stat-count">847+</div>
-            <div class="stat-label">억울함 처리됨</div>
+            <div class="stat-label">소소분쟁<br><span style="font-size:9px;opacity:0.7;">처리됨</span></div>
           </div>
           <div class="stat-item">
             <div class="stat-num" id="stat-judge">?</div>
-            <div class="stat-label">이번주 인기<br><span style="font-size:9px;opacity:0.7;">판사</span></div>
+            <div class="stat-label">이번주 인기<br><span style="font-size:9px;opacity:0.7;">위원</span></div>
           </div>
           <div class="stat-item">
             <div class="stat-num">0%</div>
@@ -89,16 +91,29 @@ export async function renderHome(container) {
         </div>
       </section>
 
+      <div class="container" style="margin-top:30px;">
+        <div class="court-shell" style="padding:18px;">
+          <div class="court-kicker">ONE-LINE RULE</div>
+          <div class="court-title" style="font-size:21px;">무조건 한 줄, 무조건 별거 아닌 것</div>
+          <div class="court-desc" style="margin-top:6px;">설명이 길어질수록 평범해집니다. 양말, 라면, 리모컨, 마지막 한 입처럼 아무도 회의하지 않을 일을 회의하는 게 핵심입니다.</div>
+          <div class="court-ledger">
+            <div><strong>1줄</strong><span>입력</span></div>
+            <div><strong>6단계</strong><span>속보 처리</span></div>
+            <div><strong>0%</strong><span>현실 효력</span></div>
+          </div>
+        </div>
+      </div>
+
       <div class="container" style="margin-top:44px;">
-        <div style="font-size:13px;color:var(--cream-dim);margin-bottom:4px;">🎲 배정되는 순간 이미 재판은 시작됩니다</div>
-        <div style="font-family:var(--font-serif);font-size:20px;font-weight:700;margin-bottom:4px;">7명의 AI 판사 + 운명 배정 🫡</div>
-        <div class="section-sub">웃기지만 대충 만들지 않는 생활법정 라인업</div>
+        <div style="font-size:13px;color:var(--cream-dim);margin-bottom:4px;">🎲 누가 처리하느냐에 따라 말도 안 되게 달라집니다</div>
+        <div style="font-family:var(--font-serif);font-size:20px;font-weight:700;margin-bottom:4px;">7명의 AI 위원 + 랜덤 긴급배정</div>
+        <div class="section-sub">속보는 가볍게, 결정문은 괜히 엄숙하게</div>
 
         <div class="judge-lineup">
           <div class="judge-card" onclick="location.hash='#/submit'">
             <div class="judge-card-icon">🎲</div>
             <div class="judge-card-name">운명에 맡기기</div>
-            <div class="judge-card-desc" style="color:var(--gold);">서버가 점지합니다</div>
+            <div class="judge-card-desc" style="color:var(--gold);">위원회가 알아서 정색</div>
           </div>
           ${JUDGES.map(j => `
             <div class="judge-card" onclick="location.hash='#/submit'">
@@ -111,10 +126,10 @@ export async function renderHome(container) {
       </div>
 
       <div class="container" style="margin-top:44px;">
-        <div style="font-size:13px;color:var(--cream-dim);margin-bottom:4px;">🔥 실제로 공개된 판결 사례</div>
-        <div style="font-family:var(--font-serif);font-size:20px;font-weight:700;margin-bottom:12px;">최근 생활형 처분</div>
+        <div style="font-size:13px;color:var(--cream-dim);margin-bottom:4px;">🔥 실제로 공개된 긴급 결정 기록</div>
+        <div style="font-family:var(--font-serif);font-size:20px;font-weight:700;margin-bottom:12px;">최근 소소 처분</div>
         <div style="position:relative;margin-bottom:12px;">
-          <input type="text" id="feed-search" class="form-input" placeholder="🔍 사건명으로 검색..." style="font-size:14px;padding-left:14px;">
+          <input type="text" id="feed-search" class="form-input" placeholder="🔍 분쟁명으로 검색..." style="font-size:14px;padding-left:14px;">
         </div>
         <div id="feed-container" style="display:flex;flex-direction:column;gap:10px;">
           ${EXAMPLES.map(c => _caseCard(null, c)).join('')}
@@ -122,14 +137,15 @@ export async function renderHome(container) {
       </div>
 
       <div class="container" style="margin-top:44px;">
-        <div style="font-size:13px;color:var(--cream-dim);margin-bottom:4px;">🎬 절차는 엄숙하게, 내용은 사소하게</div>
-        <div style="font-family:var(--font-serif);font-size:20px;font-weight:700;margin-bottom:20px;">재판 진행 순서</div>
+        <div style="font-size:13px;color:var(--cream-dim);margin-bottom:4px;">🎬 작을수록 크게 터집니다</div>
+        <div style="font-family:var(--font-serif);font-size:20px;font-weight:700;margin-bottom:20px;">긴급 처리 순서</div>
         <div style="display:flex;flex-direction:column;gap:16px;">
           ${[
-            ['01','억울함 접수 📝','사건명과 경위를 적습니다. 실명 대신 억울함만 제출하세요.'],
-            ['02','AI 수사 개시 🔍','수사관이 라면 국물, 읽씹, 리모컨 행방을 과학적으로 과장합니다.'],
-            ['03','법정 공방 ⚔️','원고와 피고 측 변호사가 각자 말이 되는 듯 안 되는 듯 싸웁니다.'],
-            ['04','판사 판결 확정 ⚖️','최종 판결문과 생활형 처분이 내려집니다. 실제 법적 효력은 없습니다.']
+            ['01','긴급속보 🚨','한 줄 다툼을 뉴스특보처럼 크게 터뜨립니다.'],
+            ['02','현장 브리핑 🎙️','제보자와 당사자의 미세한 긴장감을 과장 보도합니다.'],
+            ['03','핵심 쟁점 🧩','별것 아닌 기준을 괜히 엄중한 안건으로 만듭니다.'],
+            ['04','위원회 결정 📋','소소분쟁위원회가 정색하고 결론을 냅니다.'],
+            ['05','소소 처분 🔨','실행 가능하지만 쓸데없이 웃긴 처분을 내립니다.']
           ].map(([num, title, desc]) => `
             <div class="how-step">
               <div class="how-step-num" style="min-width:40px;height:40px;font-size:13px;">${num}</div>
@@ -151,15 +167,15 @@ export async function renderHome(container) {
       <div class="container" style="margin-top:20px;">
         <div class="disclaimer">
           <strong>⚠️ 오락 서비스 안내</strong><br>
-          소소킹 판결소는 실제 법률 자문이 아닌 AI 기반 오락형 서비스입니다. 판결에는 어떠한 법적 효력도 없습니다.
+          소소킹은 실제 기관이나 법률 자문이 아닌 AI 기반 오락형 서비스입니다. 결정에는 어떠한 법적 효력도 없습니다.
         </div>
       </div>
 
       <section class="cta-section" style="margin-top:48px;">
-        <div style="font-size:48px;margin-bottom:12px;animation:wiggle 1.5s infinite;">😤</div>
-        <h2>참으면 억울함이 숙성됩니다</h2>
-        <p>생활법정에 접수하고<br>판사님에게 과하게 진지한 판결을 받아보세요.<br><span style="font-size:12px;opacity:0.5;">단, 실제 법적 문제는 실제 전문가에게.</span></p>
-        <a href="#/submit" class="hero-cta hero-cta-pulse" style="font-size:16px;">🚨 지금 바로 접수하기</a>
+        <div style="font-size:48px;margin-bottom:12px;animation:wiggle 1.5s infinite;">📡</div>
+        <h2>사소할수록 속보감입니다</h2>
+        <p>양말, 라면, 만두, 리모컨까지<br>한 줄로 접수하고 위원회 결정을 받아보세요.<br><span style="font-size:12px;opacity:0.5;">단, 진짜 심각한 문제는 실제 전문가에게.</span></p>
+        <a href="#/submit" class="hero-cta hero-cta-pulse" style="font-size:16px;">🚨 지금 바로 긴급접수</a>
       </section>
     </div>
   `;
@@ -181,7 +197,7 @@ function _updatePopularJudge() {
   }
   const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
   const el = document.getElementById('stat-judge');
-  if (el && top) el.textContent = (JUDGE_ICON[top[0]] || '⚖️') + ' ' + top[0].replace('형', '');
+  if (el && top) el.textContent = (JUDGE_ICON[top[0]] || '📡') + ' ' + top[0].replace('형', '');
 }
 
 function _fmtDate(ts) {
@@ -196,26 +212,27 @@ function _applySearch() {
   if (!feedEl) return;
   const filtered = q ? _feedAll.filter(([, r]) => (r.caseTitle || '').includes(q)) : _feedAll;
   if (filtered.length === 0) {
-    feedEl.innerHTML = `<div style="text-align:center;padding:36px 0;color:var(--cream-dim);font-size:14px;">🔍 "${escapeHtml(q)}"에 대한 판결 사례가 없습니다</div>`;
+    feedEl.innerHTML = `<div style="text-align:center;padding:36px 0;color:var(--cream-dim);font-size:14px;">🔍 "${escapeHtml(q)}"에 대한 소소분쟁 기록이 없습니다</div>`;
   } else {
     feedEl.innerHTML = filtered.map(([id, r]) => _caseCard(id, r)).join('');
   }
 }
 
 function _caseCard(id, r) {
-  const icon = JUDGE_ICON[r.judgeType] || '⚖️';
+  const icon = JUDGE_ICON[r.judgeType] || '📡';
   const href = id ? `onclick="location.hash='#/result/${encodeURIComponent(id)}'"` : `onclick="location.hash='#/submit'"`;
-  const linkLabel = id ? '판결문 보기 →' : '나도 접수하기 →';
+  const linkLabel = id ? '결정문 보기 →' : '나도 접수하기 →';
   const dateStr = _fmtDate(r.createdAt);
+  const summary = r.breakingNews || r.sentence || r.desc || '';
   return `
     <div class="card example-card" ${href} style="padding:18px 20px;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
         <div class="case-title" style="flex:1;">${escapeHtml(r.caseTitle || r.title || '제목 없음')}</div>
         ${dateStr ? `<div style="font-size:11px;color:var(--cream-dim);white-space:nowrap;margin-top:2px;">${escapeHtml(dateStr)}</div>` : ''}
       </div>
-      <div style="font-size:13px;color:var(--cream-dim);margin-top:6px;line-height:1.6;">${escapeHtml(compactText(r.sentence || r.desc || '', 72))}</div>
+      <div style="font-size:13px;color:var(--cream-dim);margin-top:6px;line-height:1.6;">${escapeHtml(compactText(summary, 80))}</div>
       <div class="case-meta" style="margin-top:10px;justify-content:space-between;">
-        <span>${icon} ${escapeHtml(r.judgeType || '?')} 판사</span>
+        <span>${icon} ${escapeHtml(r.judgeType || '?')} 위원</span>
         <span style="color:var(--gold);font-size:12px;">${linkLabel}</span>
       </div>
     </div>`;
@@ -233,10 +250,10 @@ function _startTypewriter() {
       charIdx++;
       el.textContent = current.substring(0, charIdx);
       if (charIdx >= current.length) {
-        _twTimer = setTimeout(() => { deleting = true; _twTimer = setTimeout(tick, 40); }, 2000);
+        _twTimer = setTimeout(() => { deleting = true; _twTimer = setTimeout(tick, 40); }, 1800);
         return;
       }
-      _twTimer = setTimeout(tick, 80);
+      _twTimer = setTimeout(tick, 65);
     } else {
       charIdx--;
       el.textContent = current.substring(0, charIdx);
@@ -246,7 +263,7 @@ function _startTypewriter() {
         _twTimer = setTimeout(tick, 80);
         return;
       }
-      _twTimer = setTimeout(tick, 40);
+      _twTimer = setTimeout(tick, 35);
     }
   }
   _twTimer = setTimeout(tick, 80);
