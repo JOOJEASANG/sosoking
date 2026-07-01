@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sosoking-app-v20260702-icon-refresh';
+const CACHE_NAME = 'sosoking-app-v20260702-quick-icon';
 const APP_SHELL = ['/', '/index.html', '/site.webmanifest', '/app-icon.svg', '/maskable-icon.svg'];
 const NETWORK_FIRST = /\.(js|css|json|webmanifest|svg)$/i;
 
