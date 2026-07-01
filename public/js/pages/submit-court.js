@@ -1,4 +1,4 @@
-import { renderSubmit as renderBaseSubmit } from './submit.js?v=20260702-9';
+import { renderSubmit as renderBaseSubmit } from './submit.js?v=20260702-16';
 
 function lvLabel(v) {
   const n = Number(v || 5);
@@ -6,7 +6,7 @@ function lvLabel(v) {
   if (n <= 4) return '카톡방 안건';
   if (n <= 6) return '속보 편성 가능';
   if (n <= 8) return '위원회 긴급소집';
-  return '전국민 의견조사급';
+  return '전국민 상황실급';
 }
 function judgeStat(name) {
   const map = {
@@ -54,7 +54,7 @@ function decorateSubmit(container) {
       <div id="court-submit-docket" class="court-ledger">
         <div><strong>한 줄 제보</strong><span>짧을수록 유리</span></div>
         <div><strong>긴급속보</strong><span>과장 보도</span></div>
-        <div><strong>위원회 결정</strong><span>소소 처분</span></div>
+        <div><strong>웃김점수</strong><span>소소킹 랭킹</span></div>
       </div>`);
   }
   const rangeGroup = document.getElementById('grievance')?.closest('.form-group');
@@ -83,12 +83,12 @@ function decorateSubmit(container) {
   if (form && !document.getElementById('court-submit-flow')) {
     form.insertAdjacentHTML('afterbegin', `
       <div id="court-submit-flow" class="court-document" style="padding:16px;margin-bottom:18px;">
-        <div class="court-kicker">BREAKING + COMMITTEE</div>
-        <div class="court-title" style="font-size:19px;">소소한 한 줄이 속보와 결정문이 됩니다</div>
+        <div class="court-kicker">BREAKING + FUN SCORE</div>
+        <div class="court-title" style="font-size:19px;">소소한 한 줄이 속보와 랭킹 후보가 됩니다</div>
         <div class="court-timeline">
-          <div class="court-step"><div class="court-step-num">1</div><div><div class="court-step-title">한 줄 다툼 포착</div><div class="court-step-text">양말, 라면, 만두 같은 사안을 짧게 던집니다.</div></div></div>
-          <div class="court-step"><div class="court-step-num">2</div><div><div class="court-step-title">긴급속보 편성</div><div class="court-step-text">사소한 일이 갑자기 국가적 사안처럼 보도됩니다.</div></div></div>
-          <div class="court-step"><div class="court-step-num">3</div><div><div class="court-step-title">위원회 즉시 결정</div><div class="court-step-text">엄중한 말투로 하찮은 소소 처분을 내립니다.</div></div></div>
+          <div class="court-step"><div class="court-step-num">1</div><div><div class="court-step-title">한 줄 소소사건 포착</div><div class="court-step-text">모기, 엘리베이터, 라면, 만두 같은 사안을 짧게 던집니다.</div></div></div>
+          <div class="court-step"><div class="court-step-num">2</div><div><div class="court-step-title">긴급속보 편성</div><div class="court-step-text">별일 아닌 일이 갑자기 국가적 사안처럼 보도됩니다.</div></div></div>
+          <div class="court-step"><div class="court-step-num">3</div><div><div class="court-step-title">웃김점수 경쟁</div><div class="court-step-text">유저들이 1~10점으로 평가하고 소소킹 후보를 정합니다.</div></div></div>
         </div>
       </div>`);
   }
