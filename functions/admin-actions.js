@@ -1,15 +1,11 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
+const { isAdminAuth } = require('./admin-utils');
 
 const db = getFirestore();
 const REGION = 'asia-northeast3';
 const BATCH_LIMIT = 450;
 
-async function isAdmin(uid) {
-  if (!uid) return false;
-  const snap = await db.doc(`admins/${uid}`).get();
-  return snap.exists;
-}
 function cleanId(value) {
   return String(value || '').replace(/[\u0000-\u001F\u007F]/g, '').trim().slice(0, 180);
 }
@@ -29,7 +25,7 @@ async function writeAdminLog(uid, action, caseId, detail = {}) {
 }
 
 exports.deleteCourtPost = onCall({ region: REGION, timeoutSeconds: 120, memory: '256MiB' }, async request => {
-  if (!request.auth || !(await isAdmin(request.auth.uid))) {
+  if (!request.auth || !(await isAdminAuth(request.auth))) {
     throw new HttpsError('permission-denied', '관리자만 삭제할 수 있습니다.');
   }
   const caseId = cleanId(request.data?.caseId);
