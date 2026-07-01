@@ -19,15 +19,15 @@ function injectDailyButton() {
   const content = document.getElementById('tab-content');
   if (!content || document.getElementById('daily-ai-now-box')) return;
   const text = content.textContent || '';
-  if (!text.includes('오늘의 AI') && !text.includes('자동 생성') && !text.includes('주제 힌트')) return;
+  if (!text.includes('AI 자동 사건') && !text.includes('자동 생성') && !text.includes('주제 힌트')) return;
   const box = document.createElement('div');
   box.id = 'daily-ai-now-box';
   box.className = 'card';
   box.style.cssText = 'padding:16px;margin-bottom:14px;border-color:rgba(201,168,76,.45);';
   box.innerHTML = `
-    <div style="font-weight:900;color:var(--gold);margin-bottom:7px;">🤖 오늘의 AI 사건 생성/복구</div>
-    <div style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-bottom:12px;">현재 날짜의 AI 사건을 즉시 생성하거나, 내용이 비어 있으면 복구합니다. 이미 있더라도 강제로 새로 작성됩니다.</div>
-    <button class="btn btn-primary" id="daily-ai-now-btn">오늘의 AI 사건 지금 생성</button>`;
+    <div style="font-weight:900;color:var(--gold);margin-bottom:7px;">🤖 오늘의 AI 판결기록 생성/복구</div>
+    <div style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-bottom:12px;">현재 날짜의 AI 사건과 판결기록을 즉시 생성하거나, 내용이 비어 있으면 복구합니다. 생성 후 공개 판결기록에서 확인할 수 있습니다.</div>
+    <button class="btn btn-primary" id="daily-ai-now-btn">오늘의 AI 판결기록 지금 생성</button>`;
   content.prepend(box);
   document.getElementById('daily-ai-now-btn').onclick = async () => {
     const btn = document.getElementById('daily-ai-now-btn');
@@ -36,13 +36,13 @@ function injectDailyButton() {
     try {
       const res = await generateDailyAiNow({ force: true });
       const id = res.data?.caseId || '';
-      toast(`AI 사건 생성 완료 ${id}`);
+      toast(`AI 판결기록 생성 완료 ${id}`);
       if (id) setTimeout(() => { location.href = `/#/result/${encodeURIComponent(id)}`; }, 500);
     } catch (err) {
       console.error(err);
       alert((err.message || '생성 실패').replace('FirebaseError: ', ''));
       btn.disabled = false;
-      btn.textContent = '오늘의 AI 사건 지금 생성';
+      btn.textContent = '오늘의 AI 판결기록 지금 생성';
     }
   };
 }
