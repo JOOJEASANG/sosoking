@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sosoking-app-v20260630-21';
+const CACHE_NAME = 'sosoking-app-v20260630-22';
 const APP_SHELL = ['/', '/index.html', '/site.webmanifest', '/app-icon.svg'];
 const NETWORK_FIRST = /\.(js|css|json|webmanifest)$/i;
 
