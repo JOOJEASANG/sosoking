@@ -1,13 +1,13 @@
 import { initAuth } from './firebase.js?v=20260630-3';
 import { renderHome } from './pages/home-court.js?v=20260702-13';
-import { renderSubmit } from './pages/submit-guard.js?v=20260702-11';
+import { renderSubmit } from './pages/submit-guard.js?v=20260702-18';
 import { renderTrial } from './pages/trial-game.js?v=20260702-12';
-import { renderResult } from './pages/result-court.js?v=20260702-12';
+import { renderResult } from './pages/result-court.js?v=20260702-19';
 import { renderPolicy } from './pages/policy.js?v=20260630-3';
 import { renderMyCases } from './pages/my-cases-game.js?v=20260702-12';
 import { renderGuide } from './pages/guide.js?v=20260630-3';
 import { renderAuth } from './pages/auth2.js?v=20260630-23';
-import { renderBoard } from './pages/board-court.js?v=20260702-12';
+import { renderBoard } from './pages/board-court.js?v=20260702-19';
 import { renderFooter } from './components/footer.js?v=20260630-3';
 import { initTheme } from './components/theme.js?v=20260702-5';
 import { initCourtDesign } from './components/court-design.js?v=20260702-10';
@@ -33,8 +33,8 @@ function normalizedRoute() {
     if (path === '/guide') return '#/guide';
     if (path === '/auth') return '#/auth';
     if (path === '/my-cases') return '#/my-cases';
-    if (path.startsWith('/result/')) return `#/result/${encodeURIComponent(decodeURIComponent(path.replace('/result/', '')))}`;
-    if (path.startsWith('/trial/')) return `#/trial/${encodeURIComponent(decodeURIComponent(path.replace('/trial/', '')))}`;
+    if (path.startsWith('/result/')) return '#/result/' + encodeURIComponent(decodeURIComponent(path.replace('/result/', '')));
+    if (path.startsWith('/trial/')) return '#/trial/' + encodeURIComponent(decodeURIComponent(path.replace('/trial/', '')));
   }
   return hash || '#/';
 }
