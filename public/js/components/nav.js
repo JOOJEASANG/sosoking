@@ -27,11 +27,11 @@ export function renderNav() {
       <span class="nav-label">홈</span>
     </a>
     <a href="#/board" class="nav-item${isBoard ? ' active' : ''}">
-      <span class="nav-icon">📜</span>
-      <span class="nav-label">판결기록</span>
+      <span class="nav-icon">📡</span>
+      <span class="nav-label">공개기록</span>
     </a>
     <a href="#/submit" class="nav-item nav-cta${isSubmit ? ' active' : ''}">
-      <span class="nav-icon">⚖️</span>
+      <span class="nav-icon">🚨</span>
       <span class="nav-label">접수</span>
     </a>
     <a href="#/auth" class="nav-item${isAuth ? ' active' : ''}" id="nav-account-item">
