@@ -8,14 +8,14 @@ const DOCKET_STEPS = [
   ['evidence','조사','기록 검토'],
   ['hearing','공방','원고·피고 주장'],
   ['verdict','대법원 판결','최종 판단'],
-  ['sentenced','처분','생활형 명령']
+  ['sentenced','처분','소소한 명령']
 ];
 
 const LOADING_MSGS = [
   '접수계가 사소한 사건에 괜히 사건번호를 붙이는 중입니다... 📋',
   '조사관이 별것 아닌 증거를 매우 진지하게 들여다보는 중입니다... 🔍',
   '원고와 피고가 말이 되는 듯 안 되는 듯 공방 중입니다... ⚔️',
-  '대법원 소소부가 생활상 억울함의 한계를 검토 중입니다... 🏛️',
+  '대법원 소소부가 사소한 억울함의 한계를 검토 중입니다... 🏛️',
   '처분문을 웃기지만 실행 가능한 수준으로 다듬는 중입니다... 🔨'
 ];
 
@@ -32,7 +32,7 @@ export async function renderTrial(container, caseId) {
             <div>
               <div style="font-size:11px;color:var(--gold);font-weight:900;letter-spacing:.12em;margin-bottom:5px;">E-COURT DOCKET</div>
               <div id="docket-title" style="font-family:var(--font-serif);font-size:20px;font-weight:900;line-height:1.45;">사건 배당 중</div>
-              <div id="docket-meta" style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-top:6px;">소소킹 판결소 제3생활부 · 제404호 생활법정</div>
+              <div id="docket-meta" style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-top:6px;">소소킹 판결소 제3소소부 · 제404호 소소법정</div>
             </div>
             <div style="text-align:right;min-width:72px;">
               <div style="font-size:28px;">⚖️</div>
@@ -123,7 +123,7 @@ function updateDocket(c) {
   const meta = document.getElementById('docket-meta');
   const status = document.getElementById('docket-status');
   if (title) title.textContent = c.caseTitle || '사건명 미상';
-  if (meta) meta.innerHTML = `${escapeHtml(c.docketNumber || '사건번호 부여중')}<br>${escapeHtml(c.division || '제3생활부')} · ${escapeHtml(c.courtroom || '제404호 생활법정')} · 원고 ${escapeHtml(c.nickname || '익명')}`;
+  if (meta) meta.innerHTML = `${escapeHtml(c.docketNumber || '사건번호 부여중')}<br>${escapeHtml(c.division || '제3소소부')} · ${escapeHtml(c.courtroom || '제404호 소소법정')} · 원고 ${escapeHtml(c.nickname || '익명')}`;
   if (status) status.textContent = stageLabel(c.courtStage || c.status || 'filed');
 }
 
@@ -163,7 +163,7 @@ function renderSteps(data) {
   if (finalVerdict) html += stepCard('🏛️ 대법원', '최종 판결', finalVerdict, '판결확정', true);
   if (data.sentence) {
     html += `<div class="card sentence-card step-card visible" style="margin-bottom:14px;">
-      <div style="font-size:11px;color:var(--cream-dim);margin-bottom:8px;letter-spacing:.1em;">🔨 처분 · 생활형 명령</div>
+      <div style="font-size:11px;color:var(--cream-dim);margin-bottom:8px;letter-spacing:.1em;">🔨 처분 · 소소한 명령</div>
       <div class="sentence-text">${escapeHtml(data.sentence)}</div>
     </div>`;
   }
