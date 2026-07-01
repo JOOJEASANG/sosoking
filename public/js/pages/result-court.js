@@ -8,7 +8,7 @@ function grievance(container) {
 function gradeByLv(lv) {
   if (lv >= 10) return ['SS', '전설의 억울함'];
   if (lv >= 8) return ['S', '국민참여급 사건'];
-  if (lv >= 6) return ['A', '생활법정 주요 사건'];
+  if (lv >= 6) return ['A', '소소법정 주요 사건'];
   if (lv >= 4) return ['B', '주변인 소환 가능'];
   return ['C', '사소하지만 기록됨'];
 }
@@ -22,6 +22,21 @@ function badgesBy(container, lv) {
   if (text.includes('대법원')) badges.push(['🔨', '최종 확정']);
   if (text.includes('배심원')) badges.push(['🧑‍⚖️', '배심원 공개']);
   return badges.slice(0, 5);
+}
+function polishResultCopy(container) {
+  const replacements = [
+    ['생활분쟁 고급반', '소소분쟁 고급반'],
+    ['생활형 처분 강도', '소소한 처분 강도'],
+    ['처분 · 생활형 명령', '처분 · 소소한 명령'],
+    ['생활법정 주요 사건', '소소법정 주요 사건'],
+    ['생활형 처분', '소소한 처분']
+  ];
+  container.querySelectorAll('div, span').forEach(el => {
+    if (el.children.length) return;
+    let text = el.textContent;
+    replacements.forEach(([from, to]) => { text = text.replace(from, to); });
+    if (text !== el.textContent) el.textContent = text;
+  });
 }
 function ensureResultGameStyle() {
   if (document.getElementById('result-game-style')) return;
@@ -76,6 +91,7 @@ function addInviteDefense(container) {
 }
 function decorateResult(container) {
   ensureResultGameStyle();
+  polishResultCopy(container);
   const titleCard = container.querySelector('.container > .card');
   if (titleCard && !document.getElementById('court-result-header')) {
     titleCard.classList.add('court-shell');
