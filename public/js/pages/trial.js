@@ -3,28 +3,20 @@ import { doc, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.12.0/fire
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 import { escapeHtml } from '../utils/sanitize.js?v=20260630-3';
 
-const JUDGE_ICON = {
-  '엄벌주의형':'👨‍⚖️','감성형':'🥹','현실주의형':'🤦','과몰입형':'🔥','피곤형':'😴','논리집착형':'🧮','드립형':'🎭'
-};
-
 const DOCKET_STEPS = [
-  ['filed','소장 접수','사건번호 부여'],
-  ['received','접수 심사','접수관 기록'],
-  ['evidence','증거 조사','증거목록 검토'],
-  ['plaintiff','원고 변론','준비서면 제출'],
-  ['defendant','피고 답변','항변 제출'],
-  ['verdict','판사 심리','판결문 작성'],
-  ['sentenced','선고','생활형 처분']
+  ['filed','접수','사건번호 부여'],
+  ['evidence','조사','기록 검토'],
+  ['hearing','공방','원고·피고 주장'],
+  ['verdict','대법원 판결','최종 판단'],
+  ['sentenced','처분','생활형 명령']
 ];
 
 const LOADING_MSGS = [
-  '접수계 직원이 사건번호에 권위를 부여하는 중입니다... 📋',
-  '재판부가 이 사건을 제404호 생활법정에 배당하는 중입니다... 🏛️',
-  '조사관이 증거목록을 검토하는 중입니다... 🔍',
-  '원고 측 대리인이 억울함을 정리하는 중입니다... 💼',
-  '피고 측 대리인이 항변을 준비 중입니다... 🛡️',
-  '판사님이 판결봉과 양심 사이를 조율하는 중입니다... ⚖️',
-  '서기가 선고문을 정리하는 중입니다... 📝'
+  '접수계가 사소한 사건에 괜히 사건번호를 붙이는 중입니다... 📋',
+  '조사관이 별것 아닌 증거를 매우 진지하게 들여다보는 중입니다... 🔍',
+  '원고와 피고가 말이 되는 듯 안 되는 듯 공방 중입니다... ⚔️',
+  '대법원 소소부가 생활상 억울함의 한계를 검토 중입니다... 🏛️',
+  '처분문을 웃기지만 실행 가능한 수준으로 다듬는 중입니다... 🔨'
 ];
 
 let caseData = null;
@@ -86,7 +78,7 @@ export async function renderTrial(container, caseId) {
 
   const keepWaiting = () => {
     const el = document.getElementById('loading-text');
-    if (el) el.textContent = '재판부 작성 시간이 길어지고 있습니다. 화면을 유지하면 완료 즉시 이동합니다... ⚖️';
+    if (el) el.textContent = '대법원 소소부 작성 시간이 길어지고 있습니다. 화면을 유지하면 완료 즉시 이동합니다... 🏛️';
   };
 
   const unsubscribeCase = onSnapshot(doc(db, 'cases', caseId), (snap) => {
@@ -105,7 +97,7 @@ export async function renderTrial(container, caseId) {
     if (data.sentence) {
       stop();
       const la = document.getElementById('loading-area');
-      if (la) la.innerHTML = `<div class="card" style="padding:18px;text-align:center;border-color:rgba(201,168,76,.55);"><div style="font-size:30px;margin-bottom:6px;">🔨</div><div style="font-weight:900;color:var(--gold);">선고 완료</div><div style="font-size:12px;color:var(--cream-dim);margin-top:4px;">판결문 열람실로 이동합니다.</div></div>`;
+      if (la) la.innerHTML = `<div class="card" style="padding:18px;text-align:center;border-color:rgba(201,168,76,.55);"><div style="font-size:30px;margin-bottom:6px;">🔨</div><div style="font-weight:900;color:var(--gold);">처분 확정</div><div style="font-size:12px;color:var(--cream-dim);margin-top:4px;">판결문 열람실로 이동합니다.</div></div>`;
       setTimeout(() => { location.hash = `#/result/${encodeURIComponent(caseId)}`; }, 1400);
     }
   }, (err) => showError(err.message));
@@ -138,7 +130,8 @@ function updateDocket(c) {
 function stageLabel(stage) {
   const row = DOCKET_STEPS.find(([id]) => id === stage);
   if (row) return row[1];
-  if (stage === 'hearing') return '심리중';
+  if (stage === 'received') return '접수';
+  if (stage === 'plaintiff' || stage === 'defendant') return '공방';
   if (stage === 'error') return '휴정';
   return '진행중';
 }
@@ -146,7 +139,8 @@ function stageLabel(stage) {
 function renderTimeline(activeStage) {
   const el = document.getElementById('docket-timeline');
   if (!el) return;
-  const activeIndex = Math.max(0, DOCKET_STEPS.findIndex(([id]) => id === activeStage));
+  const mapped = activeStage === 'received' ? 'filed' : (activeStage === 'plaintiff' || activeStage === 'defendant' ? 'hearing' : activeStage);
+  const activeIndex = Math.max(0, DOCKET_STEPS.findIndex(([id]) => id === mapped));
   el.innerHTML = DOCKET_STEPS.map(([id, title, sub], i) => {
     const done = i <= activeIndex;
     return `<div style="min-width:104px;padding:10px 9px;border-radius:12px;border:1px solid ${done ? 'rgba(201,168,76,.65)' : 'var(--border)'};background:${done ? 'rgba(201,168,76,.11)' : 'rgba(255,255,255,.025)'};">
@@ -161,22 +155,15 @@ function renderSteps(data) {
   const container = document.getElementById('steps-container');
   if (!container) return;
   let html = '';
-  if (data.reception) html += stepCard('📋 접수계', '소장 접수 및 사건번호 부여', data.reception, '접수완료');
-  if (data.investigation) html += stepCard('🔍 조사관', '증거조사조서 및 조정회부 검토', data.investigation, '증거조사');
-  if (data.plaintiffArg) html += stepCard('💼 원고 측', '준비서면 및 최종변론', data.plaintiffArg, '변론기일');
-  if (data.defendantArg) html += stepCard('🛡️ 피고 측', '답변서 및 항변', data.defendantArg, '반박제출');
-  if (data.judgeType) {
-    html += `<div class="card step-card visible" style="margin-bottom:14px;padding:20px;text-align:center;border-color:rgba(201,168,76,.55);">
-      <div style="font-size:13px;color:var(--cream-dim);margin-bottom:6px;">재판부 배당 결과</div>
-      <div style="font-size:44px;margin-bottom:6px;">${JUDGE_ICON[data.judgeType] || '⚖️'}</div>
-      <div style="font-family:var(--font-serif);font-size:22px;color:var(--gold);font-weight:900;">${escapeHtml(data.judgeType)} 판사</div>
-      <div style="font-size:12px;color:var(--cream-dim);margin-top:6px;">제404호 생활법정 단독재판부</div>
-    </div>`;
-  }
-  if (data.verdict) html += stepCard('⚖️ 재판부', '판결문 초안 및 이유 설시', data.verdict, '판결작성', true);
+  if (data.reception) html += stepCard('📋 접수', '사건 접수', data.reception, '접수완료');
+  if (data.investigation) html += stepCard('🔍 조사', '기록 검토', data.investigation, '조사완료');
+  const debate = [data.plaintiffArg ? `원고 측: ${data.plaintiffArg}` : '', data.defendantArg ? `피고 측: ${data.defendantArg}` : ''].filter(Boolean).join('\n\n');
+  if (debate) html += stepCard('⚔️ 공방', '원고·피고 주장 정리', debate, '공방정리');
+  const finalVerdict = data.supremeFinal || data.verdict;
+  if (finalVerdict) html += stepCard('🏛️ 대법원', '최종 판결', finalVerdict, '판결확정', true);
   if (data.sentence) {
     html += `<div class="card sentence-card step-card visible" style="margin-bottom:14px;">
-      <div style="font-size:11px;color:var(--cream-dim);margin-bottom:8px;letter-spacing:.1em;">🔨 주문 · 생활형 처분</div>
+      <div style="font-size:11px;color:var(--cream-dim);margin-bottom:8px;letter-spacing:.1em;">🔨 처분 · 생활형 명령</div>
       <div class="sentence-text">${escapeHtml(data.sentence)}</div>
     </div>`;
   }
@@ -185,11 +172,11 @@ function renderSteps(data) {
 
 function stepCard(role, label, content, badge, verdict = false) {
   return `<div class="card step-card visible" style="margin-bottom:14px;padding:18px;position:relative;overflow:hidden;">
-    ${verdict ? '<div class="verdict-stamp">판결</div>' : ''}
+    ${verdict ? '<div class="verdict-stamp">확정</div>' : ''}
     <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:9px;">
       <div class="step-role">${escapeHtml(role)} · ${escapeHtml(label)}</div>
       <span class="badge badge-gold">${escapeHtml(badge)}</span>
     </div>
-    <div class="step-content">${escapeHtml(content)}</div>
+    <div class="step-content" style="white-space:pre-line;">${escapeHtml(content)}</div>
   </div>`;
 }
