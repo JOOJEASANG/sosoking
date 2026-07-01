@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="소소킹 판결소 공유 이미지">
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="소소킹 공유 이미지">
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#202742"/>
@@ -30,58 +30,50 @@
   <rect x="42" y="42" width="1116" height="546" fill="none" stroke="#c9a84c" stroke-width="1" opacity="0.35"/>
   <path d="M78 78 H210 M78 78 V170 M1122 78 H990 M1122 78 V170 M78 552 H210 M78 552 V460 M1122 552 H990 M1122 552 V460" stroke="#c9a84c" stroke-width="4" stroke-linecap="round" opacity="0.75"/>
 
-  <!-- central paper and scale icon -->
-  <g transform="translate(600 112)" filter="url(#shadow)">
-    <rect x="-95" y="-26" width="190" height="160" rx="18" fill="#f5f0e8" opacity="0.98"/>
-    <rect x="-62" y="8" width="124" height="7" rx="3.5" fill="#c9a84c" opacity="0.8"/>
-    <rect x="-55" y="30" width="110" height="5" rx="2.5" fill="#161b2e" opacity="0.25"/>
-    <rect x="-55" y="49" width="86" height="5" rx="2.5" fill="#161b2e" opacity="0.2"/>
-    <g transform="translate(0 82) rotate(-9)">
-      <rect x="-5" y="-24" width="10" height="50" rx="5" fill="#c9a84c"/>
-      <rect x="-35" y="21" width="70" height="9" rx="5" fill="#c9a84c"/>
-      <line x1="-72" y1="-24" x2="72" y2="-24" stroke="#c9a84c" stroke-width="7" stroke-linecap="round"/>
-      <circle cx="0" cy="-24" r="10" fill="#e8c97a" stroke="#161b2e" stroke-width="2"/>
-      <line x1="-58" y1="-22" x2="-70" y2="12" stroke="#c9a84c" stroke-width="3"/>
-      <line x1="-82" y1="-22" x2="-70" y2="12" stroke="#c9a84c" stroke-width="3"/>
-      <ellipse cx="-70" cy="20" rx="32" ry="9" fill="#e8c97a"/>
-      <text x="-70" y="24" text-anchor="middle" font-family="Noto Sans KR, sans-serif" font-size="12" font-weight="900" fill="#161b2e">억울</text>
-      <line x1="58" y1="-22" x2="70" y2="3" stroke="#c9a84c" stroke-width="3" opacity="0.58"/>
-      <line x1="82" y1="-22" x2="70" y2="3" stroke="#c9a84c" stroke-width="3" opacity="0.58"/>
-      <ellipse cx="70" cy="10" rx="26" ry="7" fill="#c9a84c" opacity="0.45"/>
-      <text x="70" y="14" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="900" fill="#c9a84c">?</text>
+  <g transform="translate(600 116)" filter="url(#shadow)">
+    <rect x="-108" y="-32" width="216" height="156" rx="20" fill="#f5f0e8" opacity="0.98"/>
+    <rect x="-74" y="4" width="148" height="10" rx="5" fill="#c9a84c" opacity="0.86"/>
+    <rect x="-70" y="36" width="132" height="7" rx="3.5" fill="#161b2e" opacity="0.25"/>
+    <rect x="-70" y="62" width="96" height="7" rx="3.5" fill="#161b2e" opacity="0.20"/>
+    <g transform="translate(54 78) rotate(-10)">
+      <path d="M-18-32L76-66V58L-18 25z" fill="#c9a84c"/>
+      <rect x="-64" y="-34" width="54" height="68" rx="12" fill="#fff0b8" stroke="#161b2e" stroke-width="5"/>
+      <rect x="-54" y="27" width="26" height="55" rx="13" fill="#c9a84c"/>
+      <path d="M84-36c25 16 25 56 0 72" fill="none" stroke="#e74c3c" stroke-width="10" stroke-linecap="round"/>
+      <path d="M110-58c42 28 42 94 0 122" fill="none" stroke="#e74c3c" stroke-width="7" stroke-linecap="round" opacity="0.75"/>
     </g>
   </g>
 
-  <text x="600" y="318" text-anchor="middle" font-family="Noto Serif KR, Apple SD Gothic Neo, Malgun Gothic, serif" font-size="88" font-weight="900" fill="url(#goldGrad)" letter-spacing="4">소소킹 판결소</text>
+  <text x="600" y="318" text-anchor="middle" font-family="Noto Serif KR, Apple SD Gothic Neo, Malgun Gothic, serif" font-size="92" font-weight="900" fill="url(#goldGrad)" letter-spacing="4">소소킹</text>
   <line x1="210" y1="350" x2="470" y2="350" stroke="#c9a84c" stroke-width="1" opacity="0.35"/>
   <circle cx="600" cy="350" r="4" fill="#c9a84c" opacity="0.58"/>
   <line x1="730" y1="350" x2="990" y2="350" stroke="#c9a84c" stroke-width="1" opacity="0.35"/>
 
-  <text x="600" y="405" text-anchor="middle" font-family="Noto Sans KR, Apple SD Gothic Neo, Malgun Gothic, sans-serif" font-size="28" fill="#f5f0e8" opacity="0.82" letter-spacing="0.5">사소한 억울함을 AI 판사단이 과하게 진지하게 심리합니다</text>
-  <text x="600" y="444" text-anchor="middle" font-family="Noto Sans KR, Apple SD Gothic Neo, Malgun Gothic, sans-serif" font-size="18" fill="#f5f0e8" opacity="0.42">무료 · 익명 · 생활형 처분 · 법적효력 0%</text>
+  <text x="600" y="405" text-anchor="middle" font-family="Noto Sans KR, Apple SD Gothic Neo, Malgun Gothic, sans-serif" font-size="31" fill="#f5f0e8" opacity="0.86" letter-spacing="0.5">한 줄 다툼을 긴급속보와 위원회 결정문으로</text>
+  <text x="600" y="446" text-anchor="middle" font-family="Noto Sans KR, Apple SD Gothic Neo, Malgun Gothic, sans-serif" font-size="19" fill="#f5f0e8" opacity="0.46">무료 · 한 줄 입력 · 소소 처분 · 법적효력 0%</text>
 
-  <g transform="translate(945, 455) rotate(-12)">
-    <rect x="-82" y="-40" width="164" height="80" fill="none" stroke="#e74c3c" stroke-width="4" rx="5"/>
-    <rect x="-74" y="-32" width="148" height="64" fill="none" stroke="#e74c3c" stroke-width="1.5" rx="3" opacity="0.48"/>
-    <text x="0" y="15" text-anchor="middle" font-family="Noto Serif KR, serif" font-size="38" font-weight="900" fill="#e74c3c" letter-spacing="7">판결</text>
+  <g transform="translate(952, 455) rotate(-12)">
+    <rect x="-92" y="-40" width="184" height="80" fill="none" stroke="#e74c3c" stroke-width="4" rx="5"/>
+    <rect x="-82" y="-31" width="164" height="62" fill="none" stroke="#e74c3c" stroke-width="1.5" rx="3" opacity="0.48"/>
+    <text x="0" y="14" text-anchor="middle" font-family="Noto Serif KR, serif" font-size="34" font-weight="900" fill="#e74c3c" letter-spacing="5">속보</text>
   </g>
 
-  <g transform="translate(255, 450) rotate(9)">
-    <rect x="-80" y="-34" width="160" height="68" fill="none" stroke="#e74c3c" stroke-width="3" rx="5" opacity="0.62"/>
-    <text x="0" y="12" text-anchor="middle" font-family="Noto Serif KR, serif" font-size="30" font-weight="900" fill="#e74c3c" letter-spacing="5" opacity="0.76">정색</text>
+  <g transform="translate(246, 452) rotate(9)">
+    <rect x="-92" y="-34" width="184" height="68" fill="none" stroke="#e74c3c" stroke-width="3" rx="5" opacity="0.62"/>
+    <text x="0" y="12" text-anchor="middle" font-family="Noto Serif KR, serif" font-size="28" font-weight="900" fill="#e74c3c" letter-spacing="3" opacity="0.76">위원회</text>
   </g>
 
   <g transform="translate(600, 505)">
-    <rect x="-270" y="-18" width="134" height="36" rx="18" fill="#c9a84c" fill-opacity="0.13" stroke="#c9a84c" stroke-opacity="0.45"/>
-    <text x="-203" y="6" text-anchor="middle" font-family="Noto Sans KR, sans-serif" font-size="15" fill="#c9a84c" font-weight="900">⚖️ AI 법정</text>
-    <rect x="-116" y="-18" width="92" height="36" rx="18" fill="#c9a84c" fill-opacity="0.13" stroke="#c9a84c" stroke-opacity="0.45"/>
-    <text x="-70" y="6" text-anchor="middle" font-family="Noto Sans KR, sans-serif" font-size="15" fill="#c9a84c" font-weight="900">무료</text>
-    <rect x="-4" y="-18" width="92" height="36" rx="18" fill="#c9a84c" fill-opacity="0.13" stroke="#c9a84c" stroke-opacity="0.45"/>
-    <text x="42" y="6" text-anchor="middle" font-family="Noto Sans KR, sans-serif" font-size="15" fill="#c9a84c" font-weight="900">익명</text>
-    <rect x="108" y="-18" width="164" height="36" rx="18" fill="#c9a84c" fill-opacity="0.13" stroke="#c9a84c" stroke-opacity="0.45"/>
-    <text x="190" y="6" text-anchor="middle" font-family="Noto Sans KR, sans-serif" font-size="15" fill="#c9a84c" font-weight="900">법적효력 없음</text>
+    <rect x="-286" y="-18" width="150" height="36" rx="18" fill="#c9a84c" fill-opacity="0.13" stroke="#c9a84c" stroke-opacity="0.45"/>
+    <text x="-211" y="6" text-anchor="middle" font-family="Noto Sans KR, sans-serif" font-size="15" fill="#c9a84c" font-weight="900">🚨 긴급속보</text>
+    <rect x="-116" y="-18" width="112" height="36" rx="18" fill="#c9a84c" fill-opacity="0.13" stroke="#c9a84c" stroke-opacity="0.45"/>
+    <text x="-60" y="6" text-anchor="middle" font-family="Noto Sans KR, sans-serif" font-size="15" fill="#c9a84c" font-weight="900">1줄 입력</text>
+    <rect x="16" y="-18" width="130" height="36" rx="18" fill="#c9a84c" fill-opacity="0.13" stroke="#c9a84c" stroke-opacity="0.45"/>
+    <text x="81" y="6" text-anchor="middle" font-family="Noto Sans KR, sans-serif" font-size="15" fill="#c9a84c" font-weight="900">소소 처분</text>
+    <rect x="166" y="-18" width="164" height="36" rx="18" fill="#c9a84c" fill-opacity="0.13" stroke="#c9a84c" stroke-opacity="0.45"/>
+    <text x="248" y="6" text-anchor="middle" font-family="Noto Sans KR, sans-serif" font-size="15" fill="#c9a84c" font-weight="900">법적효력 없음</text>
   </g>
 
   <text x="600" y="570" text-anchor="middle" font-family="Noto Sans KR, monospace, sans-serif" font-size="18" fill="#c9a84c" opacity="0.55" letter-spacing="2">sosoking.co.kr</text>
-  <text x="600" y="595" text-anchor="middle" font-family="Noto Sans KR, sans-serif" font-size="12" fill="#f5f0e8" opacity="0.25" letter-spacing="3">SERIOUSLY SILLY AI VERDICT COURT</text>
+  <text x="600" y="595" text-anchor="middle" font-family="Noto Sans KR, sans-serif" font-size="12" fill="#f5f0e8" opacity="0.25" letter-spacing="3">SERIOUSLY SILLY ONE-LINE DISPUTES</text>
 </svg>
