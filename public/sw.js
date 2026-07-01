@@ -1,6 +1,6 @@
-const CACHE_NAME = 'sosoking-app-v20260702-ui-contrast';
-const APP_SHELL = ['/', '/index.html', '/site.webmanifest', '/app-icon.svg'];
-const NETWORK_FIRST = /\.(js|css|json|webmanifest)$/i;
+const CACHE_NAME = 'sosoking-app-v20260702-icon-refresh';
+const APP_SHELL = ['/', '/index.html', '/site.webmanifest', '/app-icon.svg', '/maskable-icon.svg'];
+const NETWORK_FIRST = /\.(js|css|json|webmanifest|svg)$/i;
 
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL).catch(() => null)));
