@@ -22,11 +22,11 @@ function totalComments(r) {
 export async function renderBoard(container) {
   container.innerHTML = `
     <div>
-      <div class="page-header"><a href="#/" class="back-btn">‹</a><span class="logo">생활판결 게시판</span></div>
+      <div class="page-header"><a href="#/" class="back-btn">‹</a><span class="logo">판결기록</span></div>
       <div class="container" style="padding-top:22px;padding-bottom:90px;">
         <div style="margin-bottom:18px;">
-          <div style="font-family:var(--font-serif);font-size:22px;font-weight:900;color:var(--gold);margin-bottom:6px;">방청석 공개 법정</div>
-          <div style="font-size:13px;color:var(--cream-dim);line-height:1.7;">사소한 사건을 너무 진지하게 판결한 기록입니다. 원고 편·피고 편 투표와 방청석 한마디를 남길 수 있습니다.</div>
+          <div style="font-family:var(--font-serif);font-size:22px;font-weight:900;color:var(--gold);margin-bottom:6px;">공개 판결기록</div>
+          <div style="font-size:13px;color:var(--cream-dim);line-height:1.7;">다른 사람들이 공개한 생활판결 기록입니다. 판결문을 열람하고 원고 편·피고 편 투표와 방청석 한마디를 남길 수 있습니다.</div>
         </div>
         <div id="today-pick"></div>
         <div id="board-list"><div class="loading-dots"><span></span><span></span><span></span></div></div>
@@ -37,23 +37,23 @@ export async function renderBoard(container) {
   try {
     const snap = await getDocs(query(collection(db, 'results'), where('isPublic', '==', true), orderBy('createdAt', 'desc'), limit(40)));
     if (snap.empty) {
-      list.innerHTML = `<div style="text-align:center;padding:52px 0;color:var(--cream-dim);"><div style="font-size:46px;margin-bottom:12px;">📭</div>아직 공개된 판결이 없습니다.<br><a href="#/submit" style="color:var(--gold);margin-top:12px;display:inline-block;">첫 사건 접수하기</a></div>`;
+      list.innerHTML = `<div style="text-align:center;padding:52px 0;color:var(--cream-dim);"><div style="font-size:46px;margin-bottom:12px;">📭</div>아직 공개된 판결기록이 없습니다.<br><a href="#/submit" style="color:var(--gold);margin-top:12px;display:inline-block;">첫 사건 접수하기</a></div>`;
       return;
     }
     const rows = snap.docs.map(d => [d.id, d.data()]);
     const top = [...rows].sort((a, b) => (totalVotes(b[1]) + totalComments(b[1])) - (totalVotes(a[1]) + totalComments(a[1])))[0];
     document.getElementById('today-pick').innerHTML = top ? todayPick(top) : '';
-    list.innerHTML = `<div style="font-size:13px;color:var(--cream-dim);margin:18px 0 8px;">📜 최근 선고 기록</div><div style="display:flex;flex-direction:column;gap:10px;">${rows.map(row => boardRow(...row)).join('')}</div>`;
+    list.innerHTML = `<div style="font-size:13px;color:var(--cream-dim);margin:18px 0 8px;">📜 최근 공개 판결기록</div><div style="display:flex;flex-direction:column;gap:10px;">${rows.map(row => boardRow(...row)).join('')}</div>`;
   } catch (err) {
     console.error(err);
-    list.innerHTML = `<div style="text-align:center;padding:52px 0;color:var(--cream-dim);">게시판을 불러오지 못했습니다.<br><span style="font-size:12px;opacity:.7;">${escapeHtml(err.message || '')}</span></div>`;
+    list.innerHTML = `<div style="text-align:center;padding:52px 0;color:var(--cream-dim);">판결기록을 불러오지 못했습니다.<br><span style="font-size:12px;opacity:.7;">${escapeHtml(err.message || '')}</span></div>`;
   }
 }
 
 function todayPick([id, r]) {
   const icon = JUDGE_ICON[r.judgeType] || '⚖️';
   return `<div class="card" onclick="location.hash='#/result/${encodeURIComponent(id)}'" style="padding:20px;margin-bottom:16px;cursor:pointer;border-color:rgba(201,168,76,.65);background:linear-gradient(135deg,rgba(201,168,76,.12),rgba(255,255,255,.03));">
-    <div style="font-size:12px;color:var(--gold);font-weight:900;letter-spacing:.12em;margin-bottom:8px;">오늘의 명판결</div>
+    <div style="font-size:12px;color:var(--gold);font-weight:900;letter-spacing:.12em;margin-bottom:8px;">오늘의 판결기록</div>
     <div style="font-family:var(--font-serif);font-size:21px;font-weight:900;line-height:1.45;margin-bottom:8px;">${escapeHtml(r.caseTitle || '제목 없음')}</div>
     <div style="font-size:14px;color:var(--cream-dim);line-height:1.65;margin-bottom:12px;">${escapeHtml(compactText(r.sentence || r.verdict || '', 96))}</div>
     <div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--cream-dim);"><span>${icon} ${escapeHtml(r.judgeType || 'AI')} 판사</span><span>🧑‍⚖️ ${totalVotes(r)}표 · 💬 ${totalComments(r)}</span></div>
