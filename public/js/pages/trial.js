@@ -20,11 +20,11 @@ const DOCKET_STEPS = [
 const LOADING_MSGS = [
   '접수계 직원이 사건번호에 권위를 부여하는 중입니다... 📋',
   '재판부가 이 사건을 제404호 생활법정에 배당하는 중입니다... 🏛️',
-  '조사관이 증거목록에 말도 안 되는 번호를 붙이는 중입니다... 🔍',
-  '원고 측 대리인이 억울함을 법률문장처럼 포장하는 중입니다... 💼',
-  '피고 측 대리인이 그럴듯하지만 허술한 항변을 준비 중입니다... 🛡️',
+  '조사관이 증거목록을 검토하는 중입니다... 🔍',
+  '원고 측 대리인이 억울함을 정리하는 중입니다... 💼',
+  '피고 측 대리인이 항변을 준비 중입니다... 🛡️',
   '판사님이 판결봉과 양심 사이를 조율하는 중입니다... ⚖️',
-  '서기가 선고문에 법적 효력 없음 도장을 찍는 중입니다... 📝'
+  '서기가 선고문을 정리하는 중입니다... 📝'
 ];
 
 let caseData = null;
@@ -84,6 +84,11 @@ export async function renderTrial(container, caseId) {
       </div>`;
   };
 
+  const keepWaiting = () => {
+    const el = document.getElementById('loading-text');
+    if (el) el.textContent = '재판부 작성 시간이 길어지고 있습니다. 화면을 유지하면 완료 즉시 이동합니다... ⚖️';
+  };
+
   const unsubscribeCase = onSnapshot(doc(db, 'cases', caseId), (snap) => {
     if (!snap.exists()) return;
     caseData = snap.data();
@@ -112,6 +117,11 @@ export async function renderTrial(container, caseId) {
     await generateTrial({ caseId });
   } catch (e) {
     console.error(e);
+    const msg = `${e?.code || ''} ${e?.message || ''}`.toLowerCase();
+    if (msg.includes('deadline') || msg.includes('timeout')) {
+      keepWaiting();
+      return;
+    }
     showError(e?.message || '재판 호출에 실패했습니다.');
   }
 }
