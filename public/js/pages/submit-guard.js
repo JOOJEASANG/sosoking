@@ -1,5 +1,5 @@
 import { auth } from '../firebase.js?v=20260630-3';
-import { renderSubmit as renderSubmitForm } from './submit-court.js?v=20260630-21';
+import { renderSubmit as renderSubmitForm } from './submit-court.js?v=20260702-2';
 
 function loginRequired(container) {
   container.innerHTML = `
@@ -18,7 +18,7 @@ function loginRequired(container) {
             구글 또는 이메일 로그인이 필요합니다.
           </div>
           <a href="#/auth" class="btn btn-primary">로그인하고 바로 접수하기</a>
-          <a href="#/board" class="btn btn-ghost" style="margin-top:10px;">공개 판결 먼저 보기</a>
+          <a href="#/board" class="btn btn-ghost" style="margin-top:10px;">공개 판결기록 보기</a>
         </div>
       </div>
     </div>`;
