@@ -11,6 +11,11 @@ const REACTIONS = ['king','plaintiff','defendant','both','tooMuch','funny'];
 function cleanText(value, maxLen) {
   return String(value || '').replace(/[\u0000-\u001F\u007F]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, maxLen);
 }
+function clampRating(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return 0;
+  return Math.max(1, Math.min(10, Math.round(n)));
+}
 
 async function loadNickname(uid, fallback = '익명 시청자') {
   const snap = await db.doc(`users/${uid}`).get().catch(() => null);
@@ -60,6 +65,37 @@ exports.voteResult = onCall({ region: REGION, timeoutSeconds: 30, memory: '256Mi
     tx.set(voteRef, { uid, reaction, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
   });
   return { success: true };
+});
+
+exports.rateResult = onCall({ region: REGION, timeoutSeconds: 30, memory: '256MiB' }, async request => {
+  if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+  const uid = request.auth.uid;
+  const caseId = cleanText(request.data?.caseId, 180);
+  const rating = clampRating(request.data?.rating);
+  if (!caseId || !rating) throw new HttpsError('invalid-argument', '1점부터 10점까지 입력해주세요.');
+  const { resultRef } = await assertPublicResult(caseId);
+  const ratingRef = db.doc(`result_ratings/${caseId}/ratings/${uid}`);
+
+  await db.runTransaction(async tx => {
+    const [resultSnap, ratingSnap] = await Promise.all([tx.get(resultRef), tx.get(ratingRef)]);
+    if (!resultSnap.exists) throw new HttpsError('not-found', '결정문을 찾을 수 없습니다.');
+    const r = resultSnap.data();
+    const prev = ratingSnap.exists ? Number(ratingSnap.data().rating || 0) : 0;
+    const oldSum = Number(r.funScoreSum || 0);
+    const oldCount = Number(r.funScoreCount || 0);
+    const nextSum = oldSum - (prev || 0) + rating;
+    const nextCount = prev ? Math.max(1, oldCount) : oldCount + 1;
+    const nextAvg = Math.round((nextSum / nextCount) * 10) / 10;
+
+    tx.set(ratingRef, { uid, rating, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+    tx.set(resultRef, {
+      funScoreSum: nextSum,
+      funScoreCount: nextCount,
+      funScoreAvg: nextAvg,
+      updatedAt: FieldValue.serverTimestamp()
+    }, { merge: true });
+  });
+  return { success: true, rating };
 });
 
 exports.addCourtComment = onCall({ region: REGION, timeoutSeconds: 30, memory: '256MiB' }, async request => {
