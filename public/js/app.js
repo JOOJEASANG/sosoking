@@ -12,7 +12,7 @@ import { renderFooter } from './components/footer.js?v=20260630-3';
 import { initTheme } from './components/theme.js?v=20260702-5';
 import { initCourtDesign } from './components/court-design.js?v=20260702-10';
 import { renderThemePreference } from './components/theme-preference.js?v=20260702-3';
-import { renderNav } from './components/nav.js?v=20260702-3';
+import { renderNav } from './components/nav.js?v=20260702-13';
 
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
