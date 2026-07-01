@@ -14,6 +14,15 @@ import { initCourtDesign } from './components/court-design.js?v=20260630-23';
 import { renderThemePreference } from './components/theme-preference.js?v=20260630-12';
 import { renderNav } from './components/nav.js?v=20260630-8';
 
+function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(err => {
+      console.warn('service worker registration failed:', err);
+    });
+  });
+}
+
 function normalizedRoute() {
   const hash = location.hash || '';
   if (hash === '#/' || hash === '' || hash === '#') {
@@ -68,6 +77,7 @@ window.addEventListener('hashchange', route);
 window.addEventListener('popstate', route);
 
 (async () => {
+  registerServiceWorker();
   initTheme();
   initCourtDesign();
   await initAuth();
