@@ -6,8 +6,8 @@ import { showToast } from '../components/toast.js?v=20260630-3';
 
 const STATUS = {
   pending:    { label: '접수 완료',   color: '#c9a84c', dot: '🟡' },
-  processing: { label: '재판 진행 중', color: '#4a9eff', dot: '🔵' },
-  completed:  { label: '판결 완료',   color: '#27ae60', dot: '🟢' },
+  processing: { label: '긴급심판 중', color: '#4a9eff', dot: '🔵' },
+  completed:  { label: '결정 완료',   color: '#27ae60', dot: '🟢' },
   error:      { label: '오류',        color: '#e74c3c', dot: '🔴' },
   blocked:    { label: '접수 차단',   color: '#e74c3c', dot: '⛔' },
   hidden:     { label: '숨김',        color: '#999', dot: '⚫' },
@@ -31,7 +31,7 @@ export async function renderMyCases(container) {
     <div>
       <div class="page-header">
         <a href="#/auth" class="back-btn">‹</a>
-        <span class="logo">📋 내 사건 내역</span>
+        <span class="logo">📋 내 접수 기록</span>
       </div>
       <div class="container" style="padding-top:24px;padding-bottom:80px;">
         <div class="loading-dots"><span></span><span></span><span></span></div>
@@ -43,7 +43,7 @@ export async function renderMyCases(container) {
   if (!user || user.isAnonymous) {
     inner.innerHTML = `
       <div style="text-align:center;padding:60px 0;color:var(--cream-dim);">
-        로그인 후 내 사건을 확인할 수 있습니다.<br>
+        로그인 후 내 접수 기록을 확인할 수 있습니다.<br>
         <a href="#/auth" class="btn btn-primary" style="margin-top:16px;">로그인하기</a>
       </div>`;
     return;
@@ -55,7 +55,7 @@ export async function renderMyCases(container) {
     docs = snap.docs;
   } catch (e) {
     console.error(e);
-    inner.innerHTML = `<div style="text-align:center;padding:60px 0;color:var(--cream-dim);">사건 목록을 불러오지 못했습니다.<br><span style="font-size:12px;opacity:.7;">${escapeHtml(e.message || '')}</span></div>`;
+    inner.innerHTML = `<div style="text-align:center;padding:60px 0;color:var(--cream-dim);">접수 기록을 불러오지 못했습니다.<br><span style="font-size:12px;opacity:.7;">${escapeHtml(e.message || '')}</span></div>`;
     return;
   }
 
@@ -72,10 +72,10 @@ export async function renderMyCases(container) {
     inner.innerHTML = `
       ${header}
       <div style="text-align:center;padding:46px 0;">
-        <div style="font-size:52px;margin-bottom:16px;">😤</div>
-        <div style="font-family:var(--font-serif);font-size:18px;font-weight:700;margin-bottom:8px;">아직 접수한 사건이 없습니다</div>
-        <div style="font-size:13px;color:var(--cream-dim);margin-bottom:28px;">억울한 일이 없다면 축하드립니다.<br>있다면 생활법정은 이미 개정 준비 중입니다.</div>
-        <a href="#/submit" class="btn btn-primary" style="display:inline-flex;width:auto;padding:14px 32px;">⚖️ 첫 사건 접수하기</a>
+        <div style="font-size:52px;margin-bottom:16px;">📡</div>
+        <div style="font-family:var(--font-serif);font-size:18px;font-weight:700;margin-bottom:8px;">아직 접수한 분쟁이 없습니다</div>
+        <div style="font-size:13px;color:var(--cream-dim);margin-bottom:28px;">평화로운 하루라면 축하드립니다.<br>아니라면 소소분쟁위원회가 대기 중입니다.</div>
+        <a href="#/submit" class="btn btn-primary" style="display:inline-flex;width:auto;padding:14px 32px;">🚨 첫 분쟁 접수하기</a>
       </div>`;
     document.getElementById('mycases-logout')?.addEventListener('click', _logout);
     return;
@@ -84,7 +84,7 @@ export async function renderMyCases(container) {
   inner.innerHTML = `
     ${header}
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:16px;">
-      <div style="font-size:13px;color:var(--cream-dim);">총 ${docs.length}건의 사건이 있습니다</div>
+      <div style="font-size:13px;color:var(--cream-dim);">총 ${docs.length}건의 분쟁이 있습니다</div>
       <a href="#/auth" style="font-size:12px;color:var(--gold);text-decoration:none;">내 프로필 →</a>
     </div>
     <div style="display:flex;flex-direction:column;gap:10px;">
@@ -111,8 +111,8 @@ function _caseRow(id, c) {
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;">
         <span style="font-size:12px;color:${st.color};font-weight:700;">${st.dot} ${escapeHtml(st.label)}</span>
-        <span style="font-size:12px;color:var(--cream-dim);">억울지수 ${escapeHtml(c.grievanceIndex || '?')}/10</span>
+        <span style="font-size:12px;color:var(--cream-dim);">사소함 ${escapeHtml(c.grievanceIndex || '?')}/10</span>
       </div>
-      ${href ? `<div style="font-size:12px;color:var(--gold);margin-top:6px;text-align:right;">${c.status === 'completed' ? '판결문 보기 →' : '재판장 입장 →'}</div>` : ''}
+      ${href ? `<div style="font-size:12px;color:var(--gold);margin-top:6px;text-align:right;">${c.status === 'completed' ? '결정문 보기 →' : '긴급심판 보기 →'}</div>` : ''}
     </div>`;
 }
