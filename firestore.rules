@@ -6,9 +6,15 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function adminEmail() {
+      return signedIn() && request.auth.token.email != null ? request.auth.token.email : '';
+    }
+
     function isAdmin() {
-      return signedIn() &&
-        exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+      return signedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        exists(/databases/$(database)/documents/admins/$(adminEmail()))
+      );
     }
 
     function caseDoc(caseId) {
@@ -89,7 +95,7 @@ service cloud.firestore {
     }
 
     match /admins/{uid} {
-      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow read: if signedIn() && (request.auth.uid == uid || adminEmail() == uid || isAdmin());
       allow write: if false;
     }
 
