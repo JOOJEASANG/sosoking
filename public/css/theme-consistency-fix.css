@@ -1,0 +1,252 @@
+/* theme-consistency-fix.css
+   다크/라이트 모드에서 하드코딩된 카드·패널·입력창 색상이 섞이는 문제를 마지막 단계에서 보정합니다. */
+
+:root {
+  --soso-page-bg: #f7f8fc;
+  --soso-panel-bg: #ffffff;
+  --soso-panel-bg-soft: #f8fafc;
+  --soso-card-bg: #ffffff;
+  --soso-card-bg-soft: #f8fafc;
+  --soso-text-strong: #111827;
+  --soso-text-main: #334155;
+  --soso-text-muted: #64748b;
+  --soso-border-soft: rgba(15, 23, 42, .10);
+  --soso-shadow-soft: 0 14px 36px rgba(15, 23, 42, .08);
+}
+
+html[data-theme="dark"],
+[data-theme="dark"] {
+  --soso-page-bg: #0f1324;
+  --soso-panel-bg: #161b2f;
+  --soso-panel-bg-soft: #1a2035;
+  --soso-card-bg: #20283b;
+  --soso-card-bg-soft: #222b40;
+  --soso-text-strong: #f8fafc;
+  --soso-text-main: #d6deee;
+  --soso-text-muted: #aeb8cc;
+  --soso-border-soft: rgba(255, 255, 255, .09);
+  --soso-shadow-soft: 0 16px 40px rgba(0, 0, 0, .28);
+}
+
+html[data-theme="dark"] body,
+[data-theme="dark"] body,
+html[data-theme="dark"] .app-main,
+[data-theme="dark"] .app-main,
+html[data-theme="dark"] .page-container,
+[data-theme="dark"] .page-container {
+  background: var(--soso-page-bg) !important;
+  color: var(--soso-text-main) !important;
+}
+
+.card,
+.feed-card,
+.empty-state,
+.soso-feed-summary__inner,
+.home-today-best,
+.home-rank-item,
+.home-compact-feed-item,
+.write-room-card,
+.auth-card,
+.account-card,
+.detail-card,
+.admin-card {
+  background: var(--soso-card-bg) !important;
+  color: var(--soso-text-main) !important;
+  border-color: var(--soso-border-soft) !important;
+}
+
+.soso-room-head,
+.soso-ai-residents,
+.home-onboard,
+.home-ai-residents,
+.soso-feed-search,
+.soso-feed-search__input-wrap,
+.soso-feed-toolbar,
+.feed-page-clean .soso-feed-toolbar {
+  background: var(--soso-panel-bg) !important;
+  color: var(--soso-text-main) !important;
+  border-color: var(--soso-border-soft) !important;
+  box-shadow: var(--soso-shadow-soft);
+}
+
+.soso-ai-residents {
+  margin: 14px 0;
+  padding: 16px;
+  border: 1px solid var(--soso-border-soft);
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, .10), rgba(236, 72, 153, .07)), var(--soso-panel-bg) !important;
+}
+
+.soso-ai-residents__head {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.soso-ai-residents__eyebrow {
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--color-primary, #6366f1);
+  margin-bottom: 4px;
+}
+
+.soso-ai-residents__title {
+  font-size: 20px;
+  font-weight: 950;
+  color: var(--soso-text-strong);
+  line-height: 1.25;
+}
+
+.soso-ai-residents__desc {
+  font-size: 13px;
+  color: var(--soso-text-muted);
+  margin-top: 6px;
+}
+
+.soso-ai-residents__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  padding: 4px 2px 2px;
+}
+
+.soso-ai-resident-card,
+.home-ai-resident-card {
+  padding: 14px;
+  border-radius: 16px;
+  min-height: 92px;
+  background: var(--soso-card-bg) !important;
+  border: 1px solid var(--soso-border-soft) !important;
+  color: var(--soso-text-main) !important;
+  box-shadow: none !important;
+}
+
+.soso-ai-resident-card__name,
+.home-ai-resident-card__name,
+.feed-card__title,
+.home-rank-item__title,
+.home-today-best__title,
+.empty-state__title,
+.card__title,
+.section-title,
+.page-title {
+  color: var(--soso-text-strong) !important;
+}
+
+.soso-ai-resident-card__name {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 950;
+}
+
+.soso-ai-resident-card__name span {
+  font-size: 20px;
+}
+
+.soso-ai-resident-card__role,
+.home-ai-resident-card__role,
+.feed-card__desc,
+.feed-card__meta,
+.empty-state__desc,
+.card__desc,
+.form-hint,
+.text-muted {
+  color: var(--soso-text-muted) !important;
+}
+
+.soso-ai-resident-card__specialty {
+  font-size: 11px;
+  color: var(--soso-text-muted);
+  margin-top: 6px;
+  line-height: 1.35;
+}
+
+.soso-ai-resident-card__role {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--soso-text-main);
+  margin-top: 5px;
+}
+
+.soso-ai-resident-card__phrase,
+.home-ai-resident-card__desc {
+  font-size: 11px;
+  color: var(--color-primary, #6366f1) !important;
+  margin-top: 8px;
+  line-height: 1.35;
+}
+
+.soso-feed-search__input,
+.form-input,
+.form-textarea,
+.form-select,
+textarea,
+select {
+  background: var(--soso-card-bg-soft) !important;
+  color: var(--soso-text-strong) !important;
+  border-color: var(--soso-border-soft) !important;
+}
+
+.soso-feed-search__input::placeholder,
+.form-input::placeholder,
+.form-textarea::placeholder,
+textarea::placeholder {
+  color: var(--soso-text-muted) !important;
+  opacity: .85;
+}
+
+.soso-room-tab,
+.feed-page-btn,
+.feed-page-num,
+.soso-feed-sort select,
+.tag,
+.feed-card__multi-chips span {
+  background: var(--soso-card-bg-soft) !important;
+  color: var(--soso-text-main) !important;
+  border-color: var(--soso-border-soft) !important;
+}
+
+.soso-room-tab.active,
+.feed-page-num.active,
+.bottom-nav__item.active {
+  color: var(--color-primary, #ff6b4a) !important;
+}
+
+html[data-theme="dark"] .btn--ghost,
+[data-theme="dark"] .btn--ghost {
+  color: var(--soso-text-main) !important;
+  border-color: var(--soso-border-soft) !important;
+  background: rgba(255, 255, 255, .04) !important;
+}
+
+html[data-theme="dark"] .soso-room-head,
+html[data-theme="dark"] .soso-ai-residents,
+html[data-theme="dark"] .soso-feed-search,
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .feed-card,
+html[data-theme="dark"] .home-ai-resident-card,
+html[data-theme="dark"] .soso-ai-resident-card,
+[data-theme="dark"] .soso-room-head,
+[data-theme="dark"] .soso-ai-residents,
+[data-theme="dark"] .soso-feed-search,
+[data-theme="dark"] .card,
+[data-theme="dark"] .feed-card,
+[data-theme="dark"] .home-ai-resident-card,
+[data-theme="dark"] .soso-ai-resident-card {
+  background-color: var(--soso-card-bg) !important;
+}
+
+@media (max-width: 640px) {
+  .soso-ai-residents__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .soso-ai-resident-card {
+    padding: 12px;
+    min-height: 112px;
+  }
+}
