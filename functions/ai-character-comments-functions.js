@@ -2,64 +2,23 @@
 
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { onDocumentCreated } = require('firebase-functions/v2/firestore');
+const { defineSecret } = require('firebase-functions/params');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const Anthropic = require('@anthropic-ai/sdk');
 
 const db = getFirestore();
 const REGION = 'asia-northeast3';
+const ANTHROPIC_API_KEY = defineSecret('ANTHROPIC_API_KEY');
 
 const CHARACTERS = [
-  {
-    id: 'minsu', name: '민수', emoji: '😂', role: '드립왕',
-    style: '짧고 장난스럽다. ㅋㅋ를 자연스럽게 쓰며 분위기를 가볍게 만든다.',
-    bestFor: ['funny', 'daily', 'drip', 'consult'],
-    fallback: '아니 이 상황 뭐냐고ㅋㅋ 이건 댓글 안 달 수가 없네.',
-  },
-  {
-    id: 'daon', name: '다온', emoji: '❤️', role: '상담러',
-    style: '따뜻하고 부드럽다. 먼저 감정을 확인하고 조심스럽게 묻는다.',
-    bestFor: ['worry', 'consult', 'relationship', 'daily'],
-    fallback: '그랬다면 마음이 꽤 복잡했겠어요. 조금 더 이야기해봐도 괜찮아요.',
-  },
-  {
-    id: 'jieun', name: '지은', emoji: '🧠', role: '똑똑이',
-    style: '논리적이고 간결하다. 원인과 선택지를 나눠서 본다.',
-    bestFor: ['judgment', 'question', 'info', 'tech', 'debate'],
-    fallback: '정리하면 핵심은 두 가지로 보여요. 상황과 선택지를 나눠서 보면 더 판단하기 쉬울 것 같아요.',
-  },
-  {
-    id: 'junho', name: '준호', emoji: '⚖️', role: '토론러',
-    style: '차분하지만 약간 도전적이다. 반대 관점과 균형을 제시한다.',
-    bestFor: ['judgment', 'vote', 'debate', 'opinion'],
-    fallback: '반대로 보면 다른 해석도 가능해요. 이건 한쪽만 보고 판단하긴 조금 애매합니다.',
-  },
-  {
-    id: 'miyoung', name: '미영', emoji: '👵', role: '인생선배',
-    style: '현실적이고 따뜻하다. 짧은 경험담처럼 말한다.',
-    bestFor: ['judgment', 'worry', 'consult', 'life', 'daily'],
-    fallback: '살다 보면 그런 날도 있더라. 너무 급하게 판단하지 말고 밥부터 잘 챙겨요.',
-  },
-  {
-    id: 'cheolgu', name: '철구', emoji: '😈', role: '악동',
-    style: '살짝 까칠하지만 선은 넘지 않는다. 다른 시선을 짧게 던진다.',
-    bestFor: ['judgment', 'debate', 'funny', 'opinion'],
-    fallback: '난 좀 다르게 보는데? 좋게 말하면 그럴 수 있고, 나쁘게 말하면 좀 애매하긴 해.',
-  },
-  {
-    id: 'haru', name: '하루', emoji: '🎨', role: '감성러',
-    style: '부드럽고 담백하게 감정을 표현한다. 과하게 꾸미지 않는다.',
-    bestFor: ['emotion', 'daily', 'creative', 'drip'],
-    fallback: '이 이야기는 묘하게 오래 남네요. 작아 보여도 마음에는 꽤 크게 남는 장면 같아요.',
-  },
-  {
-    id: 'opsbot', name: '운영봇', emoji: '🤖', role: '운영자',
-    style: '짧고 명확하게 진행한다. 질문을 던져 참여를 유도한다.',
-    bestFor: ['event', 'notice', 'default'],
-    fallback: '이 글은 캐릭터 댓글에 잘 맞는 글이에요. 다른 분들도 가볍게 의견을 남겨보세요.',
-  },
+  { id: 'minsu', name: '민수', emoji: '😂', role: '드립왕', style: '짧고 장난스럽다. ㅋㅋ를 자연스럽게 쓰며 분위기를 가볍게 만든다.', bestFor: ['funny', 'daily', 'drip', 'consult'], fallback: '아니 이 상황 뭐냐고ㅋㅋ 이건 댓글 안 달 수가 없네.' },
+  { id: 'daon', name: '다온', emoji: '❤️', role: '상담러', style: '따뜻하고 부드럽다. 먼저 감정을 확인하고 조심스럽게 묻는다.', bestFor: ['consult', 'daily', 'people'], fallback: '그럴 수 있어요. 너무 크게 몰아가기보다 상황을 조금 더 보면 좋겠어요.' },
+  { id: 'chulsu', name: '철수', emoji: '🧊', role: '팩폭러', style: '차분하지만 현실적인 팩트를 짧게 말한다. 공격적 표현은 피한다.', bestFor: ['vote', 'judgment', 'realistic'], fallback: '감정 빼고 보면 핵심은 이거예요. 서로 기준이 달랐던 것 같아요.' },
+  { id: 'nari', name: '나리', emoji: '✨', role: '공감요정', style: '밝고 공감형이다. 분위기를 부드럽게 만든다.', bestFor: ['daily', 'consult', 'soft'], fallback: '이런 소소한 순간 은근히 오래 기억나죠. 댓글들 궁금해요.' },
+  { id: 'bonggu', name: '봉구', emoji: '🐶', role: '막던짐러', style: '엉뚱하지만 선 넘지 않는 농담을 던진다.', bestFor: ['drip', 'funny'], fallback: '저라면 일단 간식 먹고 다시 생각합니다. 판단력은 당에서 나와요.' },
 ];
 
-function cleanId(value, max = 160) {
+function cleanId(value, max = 80) {
   return String(value || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, max);
 }
 
@@ -67,7 +26,7 @@ function cleanText(value, max = 500) {
   return String(value || '')
     .replace(/[<>]/g, '')
     .replace(/[\r\t]+/g, ' ')
-    .replace(/\n{3,}/g, '\n\n')
+    .replace(/\n{4,}/g, '\n\n\n')
     .trim()
     .slice(0, max);
 }
@@ -86,33 +45,19 @@ async function assertAdmin(uid) {
   if (!snap.exists) throw new HttpsError('permission-denied', '관리자만 실행할 수 있습니다.');
 }
 
-function classifyPost(post) {
-  const text = `${post.title || ''} ${post.desc || ''} ${Array.isArray(post.tags) ? post.tags.join(' ') : ''}`.toLowerCase();
-  if (post.subtype === 'judgment' || post.modules?.vote?.voteMode === 'judgment') return 'judgment';
-  if (post.subtype === 'consult' || post.modules?.consult?.enabled) return 'consult';
-  if (post.subtype === 'vote' || post.feedType === 'vote' || post.modules?.vote?.enabled) return 'debate';
-  if (post.feedType === 'quiz' || post.modules?.quiz?.enabled) return 'question';
-  if (post.subtype === 'drip' || post.feedType === 'drip' || post.modules?.drip?.enabled) return 'funny';
-  if (/고민|힘들|연애|상담|속상|회사|가족|친구|선택장애/.test(text)) return 'worry';
-  if (/판결|재판|누구잘못|누가잘못|예민/.test(text)) return 'judgment';
-  if (/질문|방법|왜|어떻게|오류|문제/.test(text)) return 'question';
-  if (/웃긴|드립|ㅋㅋ|레전드|병맛/.test(text)) return 'funny';
-  return 'daily';
-}
-
-function pickCharacters(post, requestedIds = [], count = 3) {
+function pickCharacters(post = {}, requested = [], count = 3) {
+  const requestedIds = Array.isArray(requested) ? requested.map(id => cleanId(id, 40)).filter(Boolean) : [];
+  const requestedSet = new Set(requestedIds);
   const safeCount = Math.max(1, Math.min(Number(count || 3), 3));
-  const byId = new Map(CHARACTERS.map(c => [c.id, c]));
-  const requested = (Array.isArray(requestedIds) ? requestedIds : [])
-    .map(id => byId.get(cleanId(id, 40)))
-    .filter(Boolean);
-  if (requested.length) return requested.slice(0, safeCount);
-
-  const topic = classifyPost(post);
-  const scored = CHARACTERS
-    .filter(c => c.id !== 'opsbot')
-    .map(c => ({ c, score: c.bestFor.includes(topic) ? 10 : c.bestFor.includes('daily') ? 4 : 1 }));
-  scored.sort((a, b) => b.score - a.score || a.c.id.localeCompare(b.c.id));
+  const sourceText = [post.feedType, post.subtype, post.type, post.title, post.desc].map(v => String(v || '').toLowerCase()).join(' ');
+  const scored = CHARACTERS.map(c => {
+    let score = requestedSet.has(c.id) ? 100 : 0;
+    c.bestFor.forEach(key => { if (sourceText.includes(key)) score += 3; });
+    if (sourceText.includes('드립') && c.bestFor.includes('drip')) score += 5;
+    if (sourceText.includes('상담') && c.bestFor.includes('consult')) score += 5;
+    if (sourceText.includes('투표') && c.bestFor.includes('vote')) score += 5;
+    return { c, score };
+  }).sort((a, b) => b.score - a.score);
   return scored.slice(0, safeCount).map(item => item.c);
 }
 
@@ -121,11 +66,11 @@ function fallbackComments(characters) {
 }
 
 async function generateComments({ post, characters }) {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = ANTHROPIC_API_KEY.value();
   if (!apiKey) return { source: 'fallback', comments: fallbackComments(characters) };
 
-  const characterPrompt = characters.map(c => `- ${c.name}(${c.role}): ${c.style}`).join('\n');
-  const prompt = `소소킹 게시글에 달 AI 캐릭터 댓글을 만들어줘.\n\n게시글 제목: ${cleanText(post.title, 120)}\n게시글 내용: ${cleanText(post.desc, 800)}\n글 유형: ${post.feedType || post.subtype || post.type || 'general'}\n\n캐릭터 목록:\n${characterPrompt}\n\n규칙:\n- 각 캐릭터는 자기 개성이 확실해야 한다.\n- 댓글은 캐릭터당 1개, 1~3문장.\n- 서로 같은 말투를 쓰지 않는다.\n- 사용자에게 상처 주는 말, 위험한 조언, 전문 판단 단정은 피한다.\n- AI 캐릭터 댓글처럼 자연스럽게 짧게 쓴다.\n- 반드시 JSON만 출력한다.\n형식: {"comments":[{"id":"minsu","text":"댓글"}]}`;
+  const characterPrompt = characters.map(c => `- ${c.id}: ${c.name}(${c.role}) / ${c.style}`).join('\n');
+  const prompt = `소소킹 게시글에 달 AI 캐릭터 댓글을 만들어줘.\n\n게시글 제목: ${cleanText(post.title, 120)}\n게시글 내용: ${cleanText(post.desc, 800)}\n글 유형: ${post.feedType || post.subtype || post.type || 'general'}\n\n캐릭터 목록:\n${characterPrompt}\n\n규칙:\n- 캐릭터당 댓글 1개\n- 댓글은 1~3문장\n- 서로 같은 말투 금지\n- 상처 주는 말, 위험한 조언, 전문 판단 단정 금지\n- 반드시 JSON만 출력\n형식: {"comments":[{"id":"minsu","text":"댓글"}]}`;
 
   try {
     const anthropic = new Anthropic({ apiKey });
@@ -137,9 +82,7 @@ async function generateComments({ post, characters }) {
     const parsed = parseJson(msg.content.filter(block => block.type === 'text').map(block => block.text).join(''));
     const allowed = new Set(characters.map(c => c.id));
     const comments = Array.isArray(parsed?.comments)
-      ? parsed.comments
-          .map(item => ({ id: cleanId(item.id, 40), text: cleanText(item.text, 400) }))
-          .filter(item => allowed.has(item.id) && item.text)
+      ? parsed.comments.map(item => ({ id: cleanId(item.id, 40), text: cleanText(item.text, 400) })).filter(item => allowed.has(item.id) && item.text)
       : [];
     if (comments.length) return { source: 'ai', comments };
   } catch (error) {
@@ -210,8 +153,7 @@ async function writeCharacterComments({ postRef, postId, post, characters, sourc
     aiCharacterCommentedAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
   });
-  const logRef = db.doc(`system_jobs/ai_character_comments_${postId}_${now}`);
-  batch.set(logRef, {
+  batch.set(db.doc(`system_jobs/ai_character_comments_${postId}_${now}`), {
     postId,
     postTitle: cleanText(post.title, 160),
     characterIds: characters.map(c => c.id),
@@ -243,26 +185,14 @@ exports.saveAiCharacterSettings = onCall({ region: REGION, timeoutSeconds: 20 },
   return { ok: true, settings: { enabled: patch.autoCommentsEnabled, count: patch.autoCommentCount } };
 });
 
-exports.generateAiCharacterCommentsTest = onCall({ region: REGION, timeoutSeconds: 120, memory: '512MiB' }, async request => {
+exports.generateAiCharacterCommentsTest = onCall({ region: REGION, timeoutSeconds: 120, memory: '512MiB', secrets: [ANTHROPIC_API_KEY] }, async request => {
   await assertAdmin(request.auth && request.auth.uid);
   const { postId, characterIds, count, dryRun } = request.data || {};
   const { ref: postRef, postId: safePostId, post } = await loadPost(postId);
   const characters = pickCharacters(post, characterIds, count);
   const generated = await generateComments({ post, characters });
-
-  if (dryRun === true) {
-    return { ok: true, dryRun: true, postId: safePostId, source: generated.source, comments: generated.comments };
-  }
-
-  const written = await writeCharacterComments({
-    postRef,
-    postId: safePostId,
-    post,
-    characters,
-    source: generated.source,
-    comments: generated.comments,
-    actorId: request.auth.uid,
-  });
+  if (dryRun === true) return { ok: true, dryRun: true, postId: safePostId, source: generated.source, comments: generated.comments };
+  const written = await writeCharacterComments({ postRef, postId: safePostId, post, characters, source: generated.source, comments: generated.comments, actorId: request.auth.uid });
   if (!written.length) throw new HttpsError('internal', '생성된 댓글이 없습니다.');
   return { ok: true, postId: safePostId, source: generated.source, comments: written };
 });
@@ -272,11 +202,11 @@ exports.onCreateAiCharacterComments = onDocumentCreated({
   region: REGION,
   timeoutSeconds: 120,
   memory: '512MiB',
+  secrets: [ANTHROPIC_API_KEY],
 }, async event => {
   const post = event.data?.data() || null;
   const postId = cleanId(event.params.postId);
   if (!postId || shouldSkipAutoPost(post)) return;
-
   const settings = await getAutoSettings();
   if (!settings.enabled) return;
 
@@ -298,13 +228,11 @@ exports.onCreateAiCharacterComments = onDocumentCreated({
     actorId: post.isAiGenerated === true ? 'auto-ai-post' : 'auto-user-post',
   });
 
-  if (written.length) {
-    await markerRef.set({
-      postId,
-      status: 'completed',
-      count: written.length,
-      characterIds: written.map(item => item.characterId),
-      completedAt: FieldValue.serverTimestamp(),
-    }, { merge: true });
-  }
+  await markerRef.set({
+    postId,
+    status: written.length ? 'completed' : 'empty',
+    count: written.length,
+    characterIds: written.map(item => item.characterId),
+    completedAt: FieldValue.serverTimestamp(),
+  }, { merge: true });
 });
