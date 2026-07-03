@@ -21,7 +21,7 @@ const features = require('./sosoking-features-functions.js');
 const aiContent = require('./ai-content-functions.js');
 const fourGameAiContent = require('./four-game-ai-content-functions.js');
 const aiCharacterComments = require('./ai-character-comments-functions.js');
-const roleRoom = require('./role-room-functions.js');
+const removedQuizCompat = require('./six-game-functions.js');
 const adminAutomation = require('./ai-admin-automation-functions.js');
 const adminUsers = require('./admin-user-functions.js');
 const adminData = require('./admin-data-functions.js');
@@ -74,7 +74,6 @@ module.exports = {
 
   // 관리자 테스트용 AI 캐릭터 댓글 생성
   ...aiCharacterComments,
-  ...roleRoom,
 
   ...aiHunt,
   ...settlement,
@@ -108,6 +107,9 @@ module.exports = {
 
   // 조회수 중복/관리자 보정
   ...postView,
+
+  // 제거된 퀴즈 호출에 대한 호환 응답
+  checkQuizAnswer: removedQuizCompat.checkQuizAnswer,
 
   // 카카오 소셜 로그인
   ...kakaoAuth,
