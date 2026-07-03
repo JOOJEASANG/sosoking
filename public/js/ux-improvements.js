@@ -12,6 +12,16 @@
 
 import { auth } from './firebase.js';
 
+/* ── 전역 테마 보정 CSS 로드 ── */
+(function loadThemeConsistencyFix() {
+  if (document.querySelector('link[data-soso-theme-consistency="1"]')) return;
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = '/css/theme-consistency-fix.css?v=20260703';
+  link.dataset.sosoThemeConsistency = '1';
+  document.head.appendChild(link);
+})();
+
 /* ── 스타일 주입 ── */
 (function injectStyles() {
   if (document.getElementById('ux-improvements-style')) return;
@@ -246,7 +256,6 @@ function openLightbox(images, startIdx = 0) {
   nextBtn?.addEventListener('click', e => { e.stopPropagation(); show(cur + 1); });
   document.addEventListener('keydown', onKey);
 
-  // 스와이프
   let tx = 0;
   overlay.addEventListener('touchstart', e => { tx = e.touches[0]?.clientX || 0; }, { passive: true });
   overlay.addEventListener('touchend', e => {
