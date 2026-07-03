@@ -13,9 +13,9 @@ import { navigate } from '../router.js';
 
 const TYPE_LABEL = {
   collect: '상담',
-  multi: '게임',
+  multi: '참여',
   general: '판결',
-  anonymous: '게임',
+  anonymous: '참여',
   judgment: '판결',
   vote: '토론',
   ox: '토론',
@@ -58,7 +58,7 @@ function commentScore(comment) {
 }
 
 function moduleLabel(post) {
-  if (post.typeLabel) return post.typeLabel;
+  if (post.typeLabel) return String(post.typeLabel).replace(/게임/g, '참여');
   if (post.subtype && TYPE_LABEL[post.subtype]) return TYPE_LABEL[post.subtype];
   const m = post.modules || {};
   if (m.consult?.enabled) return '상담';
@@ -66,8 +66,8 @@ function moduleLabel(post) {
   if (m.vote?.enabled) return m.vote.voteMode === 'judgment' ? '판결' : '토론';
   if (m.quiz?.enabled) return '상담';
   if (post.feedType && TYPE_LABEL[post.feedType]) return TYPE_LABEL[post.feedType];
-  if (post.type !== 'multi') return TYPE_LABEL[post.type] || '게임';
-  return '게임';
+  if (post.type !== 'multi') return TYPE_LABEL[post.type] || '참여';
+  return '참여';
 }
 
 async function fetchPopularComments(n = 8) {
@@ -98,31 +98,89 @@ async function fetchPopularComments(n = 8) {
   }
 }
 
-const GAME_ROOMS = [
+const CONTENT_ROOMS = [
   { key: 'judgment', icon: '⚖️', title: '판결', desc: '사소한 사건을 캐릭터에게 판정받기', nav: 'write-judgment' },
   { key: 'consult', icon: '🫠', title: '상담', desc: '웃기지만 은근 쓸모 있는 고민 상담', nav: 'write-consult' },
-  { key: 'vote', icon: '🗳️', title: '토론', desc: '찬성·반대 의견으로 가볍게 붙기', nav: 'write-vote' },
-  { key: 'drip', icon: '😂', title: '드립', desc: '한 줄 드립으로 캐릭터와 배틀', nav: 'write-drip' },
+  { key: 'vote', icon: '🗳️', title: '토론', desc: '찬성·반대 의견으로 가볍게 나누기', nav: 'write-vote' },
+  { key: 'drip', icon: '😂', title: '드립', desc: '한 줄 드립으로 댓글놀이 하기', nav: 'write-drip' },
 ];
 
 function renderIntro() {
   const residents = getPublicAiResidents().slice(0, 8);
   return `
+    <style>
+      .home-ai-residents {
+        display:grid;
+        grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+        gap:10px;
+        margin-top:14px;
+      }
+      .home-ai-resident-card {
+        padding:12px;
+        border-radius:16px;
+        background:rgba(255,255,255,.86);
+        border:1px solid rgba(148,163,184,.24);
+        box-shadow:0 10px 24px rgba(15,23,42,.06);
+      }
+      .home-ai-resident-card__name {
+        font-size:13px;
+        font-weight:950;
+        color:#111827;
+        display:flex;
+        gap:6px;
+        align-items:center;
+      }
+      .home-ai-resident-card__emoji { font-size:18px; }
+      .home-ai-resident-card__role {
+        font-size:11px;
+        font-weight:850;
+        color:#64748b;
+        margin-top:4px;
+      }
+      .home-ai-resident-card__desc {
+        font-size:11px;
+        color:#475569;
+        margin-top:5px;
+        line-height:1.4;
+      }
+      [data-theme="dark"] .home-ai-resident-card,
+      html.dark .home-ai-resident-card,
+      html[data-theme="dark"] .home-ai-resident-card {
+        background:#20283b;
+        border-color:rgba(255,255,255,.09);
+        box-shadow:0 12px 28px rgba(0,0,0,.22);
+      }
+      [data-theme="dark"] .home-ai-resident-card__name,
+      html.dark .home-ai-resident-card__name,
+      html[data-theme="dark"] .home-ai-resident-card__name {
+        color:#f8fafc;
+      }
+      [data-theme="dark"] .home-ai-resident-card__role,
+      html.dark .home-ai-resident-card__role,
+      html[data-theme="dark"] .home-ai-resident-card__role {
+        color:#cbd5e1;
+      }
+      [data-theme="dark"] .home-ai-resident-card__desc,
+      html.dark .home-ai-resident-card__desc,
+      html[data-theme="dark"] .home-ai-resident-card__desc {
+        color:#aeb8cc;
+      }
+    </style>
     <section class="home-onboard">
       <div class="home-onboard__hero">
         <div class="home-onboard__hero-text">
-          <div class="home-onboard__badge">🎮 AI CHARACTER GAME COMMUNITY</div>
+          <div class="home-onboard__badge">✨ AI CHARACTER COMMUNITY</div>
           <h1 class="home-onboard__title">판결 · 상담 · 토론 · 드립<br>4가지로 놀아요</h1>
-          <p class="home-onboard__desc">사소한 이야기도 8명의 AI 캐릭터가 끼어들면 게임이 됩니다.</p>
+          <p class="home-onboard__desc">사소한 이야기도 8명의 AI 캐릭터가 끼어들면 재미있는 참여 콘텐츠가 됩니다.</p>
         </div>
         <div class="home-onboard__hero-actions">
-          <button class="home-onboard__btn-primary" type="button" id="hbtn-write">+ 게임 열기</button>
+          <button class="home-onboard__btn-primary" type="button" id="hbtn-write">+ 글 열기</button>
           <button class="home-onboard__btn-ghost" type="button" id="hbtn-feed">둘러보기</button>
         </div>
       </div>
 
-      <div class="home-onboard__rooms" aria-label="게임 유형 안내">
-        ${GAME_ROOMS.map(room => `
+      <div class="home-onboard__rooms" aria-label="참여 유형 안내">
+        ${CONTENT_ROOMS.map(room => `
           <a class="home-onboard__room home-onboard__room--${room.key}" href="#/write?type=multi&preset=${room.key}" data-room-nav="${room.nav}">
             <span class="home-onboard__room-icon">${room.icon}</span>
             <div class="home-onboard__room-info">
@@ -132,12 +190,12 @@ function renderIntro() {
           </a>`).join('')}
       </div>
 
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-top:12px">
+      <div class="home-ai-residents" aria-label="AI 캐릭터 소개">
         ${residents.map(r => `
-          <div style="padding:10px;border-radius:14px;background:rgba(255,255,255,.76);border:1px solid rgba(148,163,184,.28)">
-            <div style="font-size:13px;font-weight:950;color:var(--color-text-primary);display:flex;gap:6px;align-items:center"><span style="font-size:18px">${r.emoji}</span>${escHtml(r.name)}</div>
-            <div style="font-size:11px;font-weight:800;color:var(--color-text-secondary);margin-top:3px">${escHtml(r.role)}</div>
-            <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px;line-height:1.35">${escHtml((r.catchphrases || ['']).slice(0, 1)[0])}</div>
+          <div class="home-ai-resident-card">
+            <div class="home-ai-resident-card__name"><span class="home-ai-resident-card__emoji">${r.emoji}</span>${escHtml(r.name)}</div>
+            <div class="home-ai-resident-card__role">${escHtml(r.role)}</div>
+            <div class="home-ai-resident-card__desc">${escHtml((r.catchphrases || ['']).slice(0, 1)[0])}</div>
           </div>`).join('')}
       </div>
     </section>`;
@@ -197,7 +255,7 @@ export async function renderHome() {
     </div>`;
 
   try {
-    setMeta('소소킹 · AI 캐릭터 게임 커뮤니티');
+    setMeta('소소킹 · AI 캐릭터 참여 커뮤니티');
     const user = auth.currentUser;
     if (user) checkStreak(user.uid);
 
@@ -216,13 +274,13 @@ export async function renderHome() {
     const hotHTML = `
       <div>
         <div class="home-section-header">
-          <span class="home-section-title">🔥 인기 게임</span>
+          <span class="home-section-title">🔥 인기 콘텐츠</span>
           <button class="home-section-more home-section-more--button" id="hbtn-more-hot">더 보기</button>
         </div>
         <div class="home-rank-list">
           ${hotPosts.length
             ? hotPosts.map(renderPopularPost).join('')
-            : '<div class="empty-state"><div class="empty-state__title">아직 인기 게임이 없어요</div></div>'}
+            : '<div class="empty-state"><div class="empty-state__title">아직 인기 콘텐츠가 없어요</div></div>'}
         </div>
       </div>`;
 
