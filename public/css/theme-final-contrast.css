@@ -9,7 +9,7 @@
   --soso-card-text: #111827;
   --soso-card-text-2: #475569;
   --soso-card-muted: #64748b;
-  --soso-card-phrase: #6b7280;
+  --soso-card-phrase: #9a6a4a;
   --soso-panel-bg: rgba(255, 255, 255, 0.86);
   --soso-input-bg: #ffffff;
 }
@@ -23,7 +23,7 @@ html.dark,
   --soso-card-text: #f8fafc;
   --soso-card-text-2: #cbd5e1;
   --soso-card-muted: #aeb8cc;
-  --soso-card-phrase: #d6a39a;
+  --soso-card-phrase: #f0b88e;
   --soso-panel-bg: rgba(19, 24, 40, 0.82);
   --soso-input-bg: #151b2d;
 }
