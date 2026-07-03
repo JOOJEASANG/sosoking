@@ -1,5 +1,29 @@
 /* hall-radius-fix.css
-   랭킹 페이지 카드 모서리 과도한 라운드 보정 */
+   랭킹 페이지 박스가 레이아웃 선에 붙지 않도록 안쪽 여백과 적당한 모서리 보정 */
+
+.hall-page {
+  padding: 16px !important;
+  box-sizing: border-box !important;
+}
+
+.hall-page .section-header {
+  margin-left: 2px !important;
+  margin-right: 2px !important;
+  margin-bottom: 14px !important;
+}
+
+.hall-page .hall-grid {
+  display: grid;
+  gap: 14px !important;
+  padding: 2px !important;
+  box-sizing: border-box !important;
+}
+
+.hall-page #hall-info-box {
+  padding: 2px !important;
+  margin-bottom: 14px !important;
+  box-sizing: border-box !important;
+}
 
 .hall-page .hall-section,
 .hall-page .hall-info-accordion,
@@ -7,6 +31,13 @@
 .hall-page .feed-card,
 .hall-page .skeleton-card {
   border-radius: 12px !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+.hall-page .hall-section {
+  padding: 14px !important;
+  box-sizing: border-box !important;
 }
 
 .hall-page .hall-item,
@@ -26,6 +57,26 @@
 }
 
 @media (max-width: 640px) {
+  .hall-page {
+    padding: 14px 14px 96px !important;
+  }
+
+  .hall-page .section-header {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    margin-bottom: 12px !important;
+  }
+
+  .hall-page .hall-grid {
+    gap: 12px !important;
+    padding: 0 !important;
+  }
+
+  .hall-page #hall-info-box {
+    padding: 0 !important;
+    margin-bottom: 12px !important;
+  }
+
   .hall-page .hall-section,
   .hall-page .hall-info-accordion,
   .hall-page .card,
@@ -34,10 +85,21 @@
     border-radius: 11px !important;
   }
 
+  .hall-page .hall-section {
+    padding: 13px !important;
+  }
+
   .hall-page .hall-item,
   .hall-page .hall-info-stats > div,
   .hall-page .hall-info-rule,
   .hall-page .hall-empty {
     border-radius: 9px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .hall-page {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
   }
 }
