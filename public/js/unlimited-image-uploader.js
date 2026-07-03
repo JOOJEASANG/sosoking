@@ -1,6 +1,7 @@
 import { initImageUploader } from './components/image-uploader.js';
 
-const READY_ATTR = 'data-unlimited-uploader-ready';
+const READY_ATTR = 'data-post-image-uploader-ready';
+const MAX_IMAGES_PER_POST = 30;
 
 function isWritablePage() {
   const hash = window.location.hash || '';
@@ -10,33 +11,33 @@ function isWritablePage() {
 function rewriteHints(root = document) {
   root.querySelectorAll('.form-hint').forEach(hint => {
     const text = hint.textContent || '';
-    if (/최대\s*\d+장/.test(text)) {
-      hint.textContent = text.replace(/최대\s*\d+장\s*·?\s*/g, '사진 개수 제한 없음 · ');
+    if (/최대\s*\d+장/.test(text) || /개수 제한 없음/.test(text)) {
+      hint.textContent = `사진은 최대 ${MAX_IMAGES_PER_POST}장까지 · PC 본문 폭에 맞게 자동 조절돼요`;
     }
   });
 }
 
-function makeUnlimited(container) {
+function applyPostImageLimit(container) {
   if (!container || container.getAttribute(READY_ATTR) === '1') return;
   container.setAttribute(READY_ATTR, '1');
 
-  // 기존 글쓰기 코드가 1장/2장/3장 제한으로 초기화한 뒤에도 여기서 한 번 더 무제한으로 초기화합니다.
-  initImageUploader(container, Infinity);
+  // 기존 글쓰기 코드가 1장/2장/3장/무제한으로 초기화한 뒤에도 여기서 게시글 기준 30장으로 통일합니다.
+  initImageUploader(container, MAX_IMAGES_PER_POST);
 
   const hint = container.querySelector('.img-upload-area__hint');
-  if (hint) hint.textContent = '사진 개수 제한 없이 추가할 수 있어요';
+  if (hint) hint.textContent = `사진은 최대 ${MAX_IMAGES_PER_POST}장까지 · PC 본문 폭에 맞게 자동 조절돼요`;
 }
 
-function applyUnlimitedUploaders() {
+function applyUploaders() {
   if (!isWritablePage()) return;
   rewriteHints();
-  document.querySelectorAll('#img-uploader, #mw-img-uploader').forEach(makeUnlimited);
+  document.querySelectorAll('#img-uploader, #mw-img-uploader').forEach(applyPostImageLimit);
 }
 
 let timer = null;
 function schedule() {
   clearTimeout(timer);
-  timer = setTimeout(applyUnlimitedUploaders, 180);
+  timer = setTimeout(applyUploaders, 180);
 }
 
 window.addEventListener('hashchange', () => setTimeout(schedule, 250));
