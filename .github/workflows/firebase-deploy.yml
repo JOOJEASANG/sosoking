@@ -74,12 +74,15 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
       - name: Register ANTHROPIC_API_KEY in Secret Manager
-        if: ${{ env.ANTHROPIC_API_KEY != '' }}
         run: |
-          printf '%s' "$ANTHROPIC_API_KEY" | \
+          VALUE="$ANTHROPIC_API_KEY"
+          if [ -z "$VALUE" ]; then
+            VALUE="disabled"
+            echo "::warning::GitHub Secret ANTHROPIC_API_KEY가 없어 placeholder Secret을 등록합니다. 실제 Anthropic 생성은 fallback으로 동작합니다."
+          fi
+          printf '%s' "$VALUE" | \
             firebase functions:secrets:set ANTHROPIC_API_KEY \
-              --data-file=- --project "$FIREBASE_PROJECT_ID" || \
-            echo "::warning::ANTHROPIC_API_KEY Secret Manager 등록 실패 (권한 확인 필요)"
+              --data-file=- --project "$FIREBASE_PROJECT_ID"
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
