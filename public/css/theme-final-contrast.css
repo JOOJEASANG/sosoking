@@ -27,6 +27,7 @@ html.dark,
   --soso-input-bg: #151b2d;
 }
 
+/* AI 캐릭터 카드: 홈/커뮤니티 공통 */
 .soso-ai-resident-card,
 .home-ai-resident-card,
 .ai-resident-card,
@@ -37,6 +38,36 @@ html.dark,
   border: 1px solid var(--soso-card-border) !important;
   color: var(--soso-card-text) !important;
   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+}
+
+/* 캐릭터 카드가 부모 레이아웃 선에 붙지 않도록 좌우 여백 확보 */
+.home-ai-residents,
+.soso-ai-residents__grid {
+  padding-left: 14px !important;
+  padding-right: 14px !important;
+  padding-bottom: 16px !important;
+  box-sizing: border-box !important;
+}
+
+.home-ai-residents {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  gap: 12px !important;
+}
+
+.soso-ai-residents__grid {
+  width: 100% !important;
+  max-width: 100% !important;
+  gap: 12px !important;
+}
+
+.home-ai-resident-card,
+.soso-ai-resident-card {
+  min-width: 0 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 html[data-theme="dark"] .soso-ai-resident-card,
@@ -180,4 +211,22 @@ html:not([data-theme="dark"]):not(.dark) .character-card,
 html:not([data-theme="dark"]):not(.dark) .ai-character-card {
   background: #ffffff !important;
   color: #111827 !important;
+}
+
+@media (max-width: 640px) {
+  .home-ai-residents,
+  .soso-ai-residents__grid {
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+    padding-bottom: 18px !important;
+    gap: 12px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .home-ai-residents,
+  .soso-ai-residents__grid {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
 }
