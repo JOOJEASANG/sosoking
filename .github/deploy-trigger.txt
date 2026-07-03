@@ -1,1 +1,1 @@
-deploy image upload limit 30 and resize 2026-07-03
+deploy community wording and theme consistency 2026-07-03
