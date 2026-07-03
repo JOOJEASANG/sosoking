@@ -1,26 +1,26 @@
-import { storage, auth, functions } from '../firebase.js';
-import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
+import { auth, functions } from '../firebase.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
 import { toast } from './toast.js';
 
+const MAX_IMAGES_PER_POST = 30;
+const UPLOAD_MAX_WIDTH = 1280;
+const UPLOAD_MAX_HEIGHT = 1920;
+const UPLOAD_JPEG_QUALITY = 0.82;
+
 let uploadedFiles = []; // { file, dataUrl, storageUrl }
-let maxFiles = Infinity;
+let maxFiles = MAX_IMAGES_PER_POST;
 let uploaderContainer = null;
 
 function normalizeMaxFiles(max) {
   const n = Number(max);
-  return Number.isFinite(n) && n > 0 ? n : Infinity;
+  if (!Number.isFinite(n) || n <= 0) return MAX_IMAGES_PER_POST;
+  return Math.min(Math.floor(n), MAX_IMAGES_PER_POST);
 }
 
-function isUnlimited() {
-  return !Number.isFinite(maxFiles);
-}
-
-export function initImageUploader(container, max = Infinity) {
-  // 모듈 singleton 상태 완전 초기화 (M-03: 재호출 시 상태 충돌 방지)
+export function initImageUploader(container, max = MAX_IMAGES_PER_POST) {
   maxFiles = normalizeMaxFiles(max);
   uploadedFiles = [];
-  uploaderContainer = container; // 새 컨테이너로 업데이트
+  uploaderContainer = container;
   renderUploader(container);
 }
 
@@ -62,37 +62,20 @@ function getImageKind(file) {
 
 export async function uploadSingleImage(file) {
   const kind = getImageKind(file);
-  const blob = kind.animated ? file : await compressImage(file);
+  const blob = kind.animated ? file : await resizeImageForUpload(file);
   if (!blob) throw new Error('이미지 압축 실패');
-  try {
-    return await uploadViaFunction(blob, kind);
-  } catch {
-    return await uploadDirect(blob, kind);
-  }
+  return uploadViaFunction(blob, kind.animated ? kind : { ext: 'jpg', contentType: 'image/jpeg', animated: false });
 }
 
 async function uploadOneImage(item) {
   const kind = getImageKind(item.file);
-  const blob = kind.animated ? item.file : await compressImage(item.file);
+  const blob = kind.animated ? item.file : await resizeImageForUpload(item.file);
   if (!blob) throw new Error('이미지 압축 실패');
-
-  try {
-    return await uploadViaFunction(blob, kind);
-  } catch (serverError) {
-    console.warn('서버 이미지 업로드 실패, Firebase Storage 직접 업로드로 재시도', serverError);
-    return await uploadDirect(blob, kind);
-  }
-}
-
-async function uploadDirect(blob, kind = { ext: 'jpg', contentType: 'image/jpeg' }) {
-  const path = `feeds/${auth.currentUser.uid}/${Date.now()}_${Math.random().toString(36).slice(2)}.${kind.ext}`;
-  const storageRef = ref(storage, path);
-  await uploadBytes(storageRef, blob, { contentType: kind.contentType });
-  return getDownloadURL(storageRef);
+  return uploadViaFunction(blob, kind.animated ? kind : { ext: 'jpg', contentType: 'image/jpeg', animated: false });
 }
 
 async function uploadViaFunction(blob, kind = { contentType: 'image/jpeg' }) {
-  const dataUrl = await readAsDataUrl(blob, kind.contentType);
+  const dataUrl = await readAsDataUrl(blob, kind.contentType || 'image/jpeg');
   const fn = httpsCallable(functions, 'uploadFeedImage');
   const result = await fn({ dataUrl });
   const url = result.data && result.data.url;
@@ -105,7 +88,7 @@ function renderUploader(container) {
     <div class="img-upload-area" id="img-drop-zone">
       <div class="img-upload-area__icon">📷</div>
       <div class="img-upload-area__text">클릭하거나 사진을 끌어다 놓으세요</div>
-      <div class="img-upload-area__hint">사진 개수 제한 없이 추가할 수 있어요</div>
+      <div class="img-upload-area__hint">사진은 최대 ${MAX_IMAGES_PER_POST}장까지, PC 본문 폭에 맞게 자동 조절돼요</div>
       <input type="file" id="img-file-input" accept="image/*" multiple style="display:none">
     </div>
     <div class="img-preview-grid" id="img-preview-grid"></div>
@@ -128,13 +111,15 @@ function renderUploader(container) {
 
 async function handleFiles(files, container) {
   const incoming = [...files];
-  const toProcess = isUnlimited()
-    ? incoming
-    : incoming.slice(0, Math.max(0, maxFiles - uploadedFiles.length));
+  const remaining = Math.max(0, maxFiles - uploadedFiles.length);
+  const toProcess = incoming.slice(0, remaining);
 
-  if (!isUnlimited() && toProcess.length === 0) {
-    toast.warn(`최대 ${maxFiles}장까지 올릴 수 있어요`);
+  if (remaining <= 0) {
+    toast.warn(`게시글당 사진은 최대 ${maxFiles}장까지 올릴 수 있어요`);
     return;
+  }
+  if (incoming.length > toProcess.length) {
+    toast.warn(`사진은 최대 ${maxFiles}장까지 가능해서 ${toProcess.length}장만 추가했어요`);
   }
 
   let skipped = 0;
@@ -321,7 +306,10 @@ function openCropModal(idx, container) {
     const cropCanvas = document.createElement('canvas');
     cropCanvas.width  = Math.round(cropRect.w / scale);
     cropCanvas.height = Math.round(cropRect.h / scale);
-    cropCanvas.getContext('2d').drawImage(
+    const cropCtx = cropCanvas.getContext('2d');
+    cropCtx.fillStyle = '#ffffff';
+    cropCtx.fillRect(0, 0, cropCanvas.width, cropCanvas.height);
+    cropCtx.drawImage(
       img,
       Math.round(cropRect.x / scale), Math.round(cropRect.y / scale),
       cropCanvas.width, cropCanvas.height,
@@ -332,7 +320,7 @@ function openCropModal(idx, container) {
       uploadedFiles[idx] = { file: blob, dataUrl, storageUrl: null };
       overlay.remove();
       renderPreviews(container);
-    }, 'image/jpeg', 0.92);
+    }, 'image/jpeg', UPLOAD_JPEG_QUALITY);
   };
 
   overlay.querySelector('#crop-confirm').addEventListener('click', confirmCrop);
@@ -353,21 +341,23 @@ function readAsDataUrl(file, preferredType = '') {
   });
 }
 
-function compressImage(file, maxSide = 1600, quality = 0.82) {
+function resizeImageForUpload(file, maxWidth = UPLOAD_MAX_WIDTH, maxHeight = UPLOAD_MAX_HEIGHT, quality = UPLOAD_JPEG_QUALITY) {
   return new Promise((resolve) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
     img.onload = () => {
       URL.revokeObjectURL(url);
       let { width, height } = img;
-      if (width > maxSide || height > maxSide) {
-        const ratio = Math.min(maxSide / width, maxSide / height);
-        width  = Math.round(width  * ratio);
-        height = Math.round(height * ratio);
-      }
+      const ratio = Math.min(1, maxWidth / width, maxHeight / height);
+      width  = Math.max(1, Math.round(width  * ratio));
+      height = Math.max(1, Math.round(height * ratio));
       const canvas = document.createElement('canvas');
-      canvas.width = width; canvas.height = height;
-      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, width, height);
+      ctx.drawImage(img, 0, 0, width, height);
       canvas.toBlob(resolve, 'image/jpeg', quality);
     };
     img.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
