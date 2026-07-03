@@ -11,7 +11,7 @@ const PAGE_SIZE = 20;
 const QUERY_LIMIT = 160;
 const NAV_CONTEXT_KEY = 'sosoking:feedNavContext';
 
-const GAME_FILTERS = [
+const CONTENT_FILTERS = [
   { key: '', icon: '✨', label: '전체', write: 'judgment' },
   { key: 'judgment', icon: '⚖️', label: '판결', write: 'judgment' },
   { key: 'consult', icon: '🫠', label: '상담', write: 'consult' },
@@ -26,51 +26,51 @@ let currentPage = 1;
 let cachedPosts = [];
 let isLoading = false;
 
-function normalizeGameType(value = '') {
+function normalizeContentType(value = '') {
   const key = String(value || '').trim();
   if (key === 'collect' || key === 'general' || key === 'category') return 'judgment';
   if (key === 'quiz' || key === 'initial_game') return 'consult';
-  if (GAME_FILTERS.some(item => item.key === key)) return key;
+  if (CONTENT_FILTERS.some(item => item.key === key)) return key;
   return '';
 }
 
-function currentGameFilter() {
-  return GAME_FILTERS.find(item => item.key === currentType) || GAME_FILTERS[0];
+function currentContentFilter() {
+  return CONTENT_FILTERS.find(item => item.key === currentType) || CONTENT_FILTERS[0];
 }
 
-function renderGameTabs() {
-  return `<div class="soso-room-tabs" aria-label="게임 필터">${GAME_FILTERS.map(item => `<button type="button" class="soso-room-tab ${currentType === item.key ? 'active' : ''}" data-type-filter="${item.key}"><span>${item.icon}</span>${item.label}</button>`).join('')}</div>`;
+function renderContentTabs() {
+  return `<div class="soso-room-tabs" aria-label="콘텐츠 필터">${CONTENT_FILTERS.map(item => `<button type="button" class="soso-room-tab ${currentType === item.key ? 'active' : ''}" data-type-filter="${item.key}"><span>${item.icon}</span>${item.label}</button>`).join('')}</div>`;
 }
 
-function renderGameHead() {
+function renderContentHead() {
   return `
     <div class="soso-room-head">
-      <div class="soso-room-head__label">🎮 AI 캐릭터 게임 커뮤니티</div>
+      <div class="soso-room-head__label">✨ AI 캐릭터 참여 커뮤니티</div>
       <div class="soso-room-head__title">판결 · 상담 · 토론 · 드립</div>
-      <div class="soso-room-head__desc">사소한 이야기도 8명의 AI 캐릭터가 끼어들면 게임이 됩니다.</div>
-      <div class="soso-room-head__action"><button class="btn btn--primary btn--sm" type="button" id="room-write-btn">게임 열기</button></div>
+      <div class="soso-room-head__desc">사소한 이야기도 8명의 AI 캐릭터가 끼어들면 재미있는 참여 콘텐츠가 됩니다.</div>
+      <div class="soso-room-head__action"><button class="btn btn--primary btn--sm" type="button" id="room-write-btn">글 열기</button></div>
     </div>`;
 }
 
 function renderAiResidentsIntro() {
   const residents = getPublicAiResidents();
   return `
-    <section class="soso-ai-residents" aria-label="AI 캐릭터 소개" style="margin:14px 0;padding:16px;border:1px solid var(--color-border,#e5e7eb);border-radius:18px;background:linear-gradient(135deg,rgba(99,102,241,.08),rgba(236,72,153,.06));">
-      <div style="display:flex;gap:10px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;margin-bottom:14px;">
+    <section class="soso-ai-residents" aria-label="AI 캐릭터 소개">
+      <div class="soso-ai-residents__head">
         <div>
-          <div style="font-size:13px;font-weight:900;color:var(--color-primary,#6366f1);margin-bottom:4px;">8명 캐릭터 대기중</div>
-          <div style="font-size:20px;font-weight:950;color:var(--color-text-primary,#111827);line-height:1.25;">게임을 열면 성격 다른 캐릭터들이 댓글로 끼어듭니다</div>
-          <div style="font-size:13px;color:var(--color-text-secondary,#6b7280);margin-top:6px;">판결·상담·토론·드립에 맞춰 어울리는 캐릭터가 자연스럽게 참여합니다.</div>
+          <div class="soso-ai-residents__eyebrow">8명 캐릭터 대기중</div>
+          <div class="soso-ai-residents__title">글을 열면 성격 다른 캐릭터들이 댓글로 끼어듭니다</div>
+          <div class="soso-ai-residents__desc">판결·상담·토론·드립에 맞춰 어울리는 캐릭터가 자연스럽게 참여합니다.</div>
         </div>
         <button class="btn btn--ghost btn--sm" type="button" id="ai-residents-write-btn">캐릭터에게 판결받기</button>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;padding:4px 2px 2px;">
+      <div class="soso-ai-residents__grid">
         ${residents.map(resident => `
-          <div style="padding:14px;border-radius:16px;min-height:92px;background:rgba(255,255,255,.72);border:1px solid rgba(148,163,184,.28);">
-            <div style="display:flex;align-items:center;gap:7px;font-weight:950;color:var(--color-text-primary,#111827);"><span style="font-size:20px">${resident.emoji}</span>${resident.name}</div>
-            <div style="font-size:12px;font-weight:800;color:var(--color-text-secondary,#6b7280);margin-top:5px;">${resident.role} · ${resident.mbti || ''}</div>
-            <div style="font-size:11px;color:var(--color-text-muted,#9ca3af);margin-top:6px;line-height:1.35;">${resident.specialty}</div>
-            <div style="font-size:11px;color:var(--color-primary,#6366f1);margin-top:8px;line-height:1.35;">${(resident.catchphrases || []).slice(0, 1).join('')}</div>
+          <div class="soso-ai-resident-card">
+            <div class="soso-ai-resident-card__name"><span>${resident.emoji}</span>${resident.name}</div>
+            <div class="soso-ai-resident-card__role">${resident.role} · ${resident.mbti || ''}</div>
+            <div class="soso-ai-resident-card__specialty">${resident.specialty}</div>
+            <div class="soso-ai-resident-card__phrase">${(resident.catchphrases || []).slice(0, 1).join('')}</div>
           </div>`).join('')}
       </div>
     </section>`;
@@ -79,19 +79,19 @@ function renderAiResidentsIntro() {
 export async function renderFeed() {
   const el = document.getElementById('page-content');
   const params = getQueryParams();
-  currentType = normalizeGameType(params.type || '');
+  currentType = normalizeContentType(params.type || '');
   currentSearch = params.q || '';
   currentSort = normalizeFeedSort(params.sort);
   currentPage = Math.max(1, Number(params.page || 1));
   cachedPosts = [];
   isLoading = false;
-  setMeta('소소킹 게임', '판결·상담·토론·드립 AI 캐릭터 게임');
+  setMeta('소소킹 커뮤니티', '판결·상담·토론·드립 AI 캐릭터 참여 커뮤니티');
 
   el.innerHTML = `
     <div class="soso-feed-page layout-main layout-main--full feed-page-clean">
       <div class="soso-feed-toolbar">
-        ${renderGameTabs()}
-        ${renderGameHead()}
+        ${renderContentTabs()}
+        ${renderContentHead()}
         ${renderAiResidentsIntro()}
         ${renderFeedSearchBar({ search: currentSearch })}
         ${renderFeedFilterBar({ type: currentType, search: currentSearch })}
@@ -107,7 +107,7 @@ export async function renderFeed() {
 }
 
 function bindFeedEvents() {
-  document.getElementById('room-write-btn')?.addEventListener('click', () => navigate(`/write?type=multi&preset=${currentGameFilter().write || 'judgment'}`));
+  document.getElementById('room-write-btn')?.addEventListener('click', () => navigate(`/write?type=multi&preset=${currentContentFilter().write || 'judgment'}`));
   document.getElementById('ai-residents-write-btn')?.addEventListener('click', () => navigate('/write?type=multi&preset=judgment'));
   document.querySelectorAll('[data-type-filter]').forEach(btn => btn.addEventListener('click', () => {
     currentType = btn.dataset.typeFilter || '';
@@ -188,10 +188,10 @@ async function loadPosts() {
     cachedPosts = sortFeedPosts(posts, currentSort);
     renderCurrentPage();
   } catch (error) {
-    console.error('게임 목록 로드 실패', error);
+    console.error('콘텐츠 목록 로드 실패', error);
     if (listEl) {
       listEl.classList.add('is-empty');
-      listEl.innerHTML = '<div class="empty-state"><div class="empty-state__icon">⚠️</div><div class="empty-state__title">게임을 불러오지 못했어요</div><div class="empty-state__desc">잠시 후 다시 시도해주세요.</div></div>';
+      listEl.innerHTML = '<div class="empty-state"><div class="empty-state__icon">⚠️</div><div class="empty-state__title">콘텐츠를 불러오지 못했어요</div><div class="empty-state__desc">잠시 후 다시 시도해주세요.</div></div>';
     }
   }
 
