@@ -9,6 +9,7 @@
   --soso-card-text: #111827;
   --soso-card-text-2: #475569;
   --soso-card-muted: #64748b;
+  --soso-card-phrase: #6b7280;
   --soso-panel-bg: rgba(255, 255, 255, 0.86);
   --soso-input-bg: #ffffff;
 }
@@ -22,6 +23,7 @@ html.dark,
   --soso-card-text: #f8fafc;
   --soso-card-text-2: #cbd5e1;
   --soso-card-muted: #aeb8cc;
+  --soso-card-phrase: #d6a39a;
   --soso-panel-bg: rgba(19, 24, 40, 0.82);
   --soso-input-bg: #151b2d;
 }
@@ -79,7 +81,6 @@ html.dark .ai-character-card,
 }
 
 .soso-ai-resident-card__specialty,
-.soso-ai-resident-card__phrase,
 .home-ai-resident-card__desc,
 .ai-resident-card__desc,
 .character-card .desc,
@@ -90,7 +91,8 @@ html.dark .ai-character-card,
 
 .soso-ai-resident-card__phrase,
 .home-ai-resident-card__phrase {
-  color: var(--color-primary, #ff6b4a) !important;
+  color: var(--soso-card-phrase) !important;
+  font-weight: 800;
 }
 
 /* 커뮤니티 상단 패널/검색/필터 */
@@ -160,7 +162,7 @@ html.dark textarea::placeholder,
 html[data-theme="dark"] .bottom-nav__item.active,
 html.dark .bottom-nav__item.active,
 [data-theme="dark"] .bottom-nav__item.active {
-  background: rgba(255, 107, 74, 0.16) !important;
+  background: rgba(255, 107, 74, 0.14) !important;
   color: #f8fafc !important;
 }
 
