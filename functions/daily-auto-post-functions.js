@@ -1,11 +1,13 @@
 'use strict';
 
 const { onSchedule } = require('firebase-functions/v2/scheduler');
+const { defineSecret } = require('firebase-functions/params');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const Anthropic = require('@anthropic-ai/sdk');
 
 const db = getFirestore();
 const REGION = 'asia-northeast3';
+const ANTHROPIC_API_KEY = defineSecret('ANTHROPIC_API_KEY');
 const DAILY_PRESETS = ['judgment', 'consult', 'vote', 'drip'];
 
 function todayKST() {
@@ -41,59 +43,53 @@ function parseJson(text) {
   try { return JSON.parse(match[0]); } catch { return null; }
 }
 
-function tags(value, fallback = []) {
-  const source = Array.isArray(value) ? value : [];
-  return [...source, ...fallback]
-    .map(tag => clean(tag, 20).replace(/^#/, ''))
-    .filter(Boolean)
-    .filter((tag, index, self) => self.indexOf(tag) === index)
-    .slice(0, 8);
+function pick(list, seed) {
+  return list[Math.abs(seed) % list.length];
 }
 
 async function getSettings() {
-  const snap = await db.doc('site_settings/config').get();
-  const data = snap.exists ? snap.data() || {} : {};
+  const snap = await db.doc('site_settings/dailyAutoPost').get().catch(() => null);
+  const data = snap?.exists ? snap.data() || {} : {};
   return {
-    enabled: data.aiAutoContentEnabled !== false,
-    dailyCount: Math.max(0, Math.min(10, Number(data.aiAutoPostCount ?? 3))),
+    enabled: data.enabled !== false,
+    dailyCount: Math.max(0, Math.min(Number(data.dailyCount || 3), 3)),
   };
 }
 
 function fallbackContent(preset, date) {
   const seed = Number(date.replace(/-/g, '')) || Date.now();
-  const pick = list => list[seed % list.length];
   const map = {
     judgment: pick([
-      { title: '친구가 약속 30분 전에 또 취소함', desc: '이번 달에만 세 번째입니다. 사정은 있다는데 제 시간도 소중한 거 아닌가요? 이거 제가 예민한 건지 판결 부탁합니다.', options: ['글쓴이가 예민함', '상대가 선 넘음', '둘 다 문제 있음'], tags: ['판결', '약속'] },
-      { title: '단톡방에서 대답 안 하면 서운한가요?', desc: '읽은 사람은 많은데 아무도 답이 없습니다. 저만 괜히 민망한 건지, 단톡방 예절이 원래 이런 건지 판결 부탁합니다.', options: ['글쓴이가 예민함', '상대가 선 넘음', '둘 다 문제 있음'], tags: ['판결', '관계'] },
-    ]),
+      { title: '친구가 약속 시간에 항상 10분씩 늦습니다', desc: '본인은 10분은 늦은 것도 아니라고 합니다. 여러분 기준으로 이건 용서 가능한가요?', options: ['글쓴이가 예민함', '상대가 선 넘음', '둘 다 문제 있음'], tags: ['판결', '약속'] },
+      { title: '마지막 치킨 조각을 말없이 먹은 사람', desc: '같이 시킨 치킨의 마지막 한 조각을 아무 말 없이 먹었습니다. 이건 유죄일까요?', options: ['글쓴이가 예민함', '상대가 선 넘음', '둘 다 문제 있음'], tags: ['판결', '음식'] },
+    ], seed),
     consult: pick([
       { title: '장바구니가 저를 부릅니다', desc: '며칠째 장바구니에서 손짓하는 물건이 있습니다. 사도 되는지 말려야 하는지 상담 부탁합니다.', topic: 'money', style: 'choice', tags: ['상담', '선택'] },
       { title: '이거 제가 너무 신경 쓰는 건가요?', desc: '별일 아닌 것 같은데 계속 머릿속에 남습니다. 공감, 현실조언, 웃긴 해결책 다 받습니다.', topic: 'daily', style: 'funny', tags: ['상담', '고민'] },
-    ]),
+    ], seed),
     vote: pick([
       { title: '먼저 연락한다 vs 그냥 둔다', desc: '한동안 연락이 뜸한 친구에게 먼저 연락하는 게 좋을까요, 아니면 그냥 자연스럽게 두는 게 좋을까요?', options: ['찬성', '반대'], tags: ['토론', '관계'] },
-      { title: '주말 아침 알람 맞추는 사람 이해된다?', desc: '쉬는 날에도 하루를 길게 쓰려고 알람을 맞추는 사람이 있습니다. 부지런함일까요, 주말을 너무 빡세게 쓰는 걸까요?', options: ['찬성', '반대'], tags: ['토론', '주말'] },
-    ]),
+      { title: '주말 아침 알람 맞추는 사람 이해된다?', desc: '쉬는 날에도 하루를 길게 쓰려고 알람을 맞추는 사람이 있습니다. 부지런함일까요, 너무 빡센 걸까요?', options: ['찬성', '반대'], tags: ['토론', '주말'] },
+    ], seed),
     drip: pick([
       { topic: '퇴근 5분 전에 회의 잡힌 사람의 한마디는?', tags: ['드립', '직장인'] },
       { topic: '배달 예상 시간이 계속 늘어날 때 떠오르는 한 줄은?', tags: ['드립', '배달'] },
-    ]),
+    ], seed),
   };
   return map[preset] || map.judgment;
 }
 
 const PROMPTS = {
   judgment: '소소킹 판결 게임에 올릴 사소한 생활 사건 1개를 JSON만 출력해. 필드: title, desc, options, tags. options는 글쓴이가 예민함, 상대가 선 넘음, 둘 다 문제 있음.',
-  consult: '소소킹 상담 게임에 올릴 작은 고민 1개를 JSON만 출력해. 필드: title, desc, topic, style, tags. 웃기지만 선을 지키는 상담 소재.',
-  vote: '소소킹 토론 게임에 올릴 찬반 주제 1개를 JSON만 출력해. 필드: title, desc, options, tags. options는 찬성, 반대.',
-  drip: '소소킹 드립 게임에 올릴 드립 주제 1개를 JSON만 출력해. 필드: topic, tags. 사람들이 한 줄 드립으로 답할 수 있는 주제.',
+  consult: '소소킹 상담 게시글에 올릴 작은 고민 1개를 JSON만 출력해. 필드: title, desc, topic, style, tags. 웃기지만 선을 지키는 상담 소재.',
+  vote: '소소킹 토론방에 올릴 찬반 주제 1개를 JSON만 출력해. 필드: title, desc, options, tags. options는 찬성, 반대.',
+  drip: '소소킹 드립방에 올릴 드립 주제 1개를 JSON만 출력해. 필드: topic, tags. 사람들이 한 줄 드립으로 답할 수 있는 주제.',
 };
 
 async function makeContent(preset, date) {
   let content = fallbackContent(preset, date);
   let source = 'fallback';
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = ANTHROPIC_API_KEY.value();
   if (!apiKey) return { content, source };
   try {
     const anthropic = new Anthropic({ apiKey });
@@ -103,10 +99,7 @@ async function makeContent(preset, date) {
       messages: [{ role: 'user', content: PROMPTS[preset] || PROMPTS.judgment }],
     });
     const parsed = parseJson(msg.content.filter(block => block.type === 'text').map(block => block.text).join(''));
-    if (parsed) {
-      content = parsed;
-      source = 'ai';
-    }
+    if (parsed) { content = parsed; source = 'ai'; }
   } catch (error) {
     console.error('[daily-auto-posts] fallback', preset, error);
   }
@@ -118,19 +111,20 @@ function buildPost(preset, content, date, source) {
   const isConsult = preset === 'consult';
   const isVote = preset === 'vote';
   const isDrip = preset === 'drip';
-  const typeLabel = isJudgment ? '판결' : isConsult ? '상담' : isVote ? '토론' : '드립';
-  const desc = isDrip ? clean(content.topic || content.desc || content.title, 80) : cleanMultiline(content.desc, 1200);
+  const title = isDrip ? '오늘의 드립 주제' : clean(content.title || '오늘의 소소 주제', 100);
+  const desc = cleanMultiline(isDrip ? (content.topic || content.desc || '') : (content.desc || ''), 1200);
   const post = {
     type: 'multi',
     cat: 'multi',
-    subtype: preset,
-    feedType: isJudgment || isVote ? 'vote' : isDrip ? 'drip' : 'collect',
-    typeLabel,
-    title: isDrip ? '오늘의 드립 주제' : clean(content.title || `${typeLabel} AI 글`, 100),
+    subtype: isJudgment ? 'judgment' : preset,
+    feedType: isVote ? 'vote' : isDrip ? 'drip' : 'collect',
+    typeLabel: isJudgment ? '판결방' : isConsult ? '병맛상담' : isVote ? '토론방' : '드립방',
+    title,
     desc,
-    tags: tags(content.tags, [typeLabel, '소소킹']),
+    tags: Array.isArray(content.tags) ? content.tags.map(v => clean(v, 20)).filter(Boolean).slice(0, 8) : ['소소킹'],
     images: [],
     modules: { comments: { enabled: true } },
+    deadline: { enabled: false, mode: 'none', status: 'open' },
     anonymous: false,
     anonymousMode: '',
     authorId: 'sosoking-ai',
@@ -151,13 +145,13 @@ function buildPost(preset, content, date, source) {
 
   if (isJudgment || isVote) {
     const fallback = isJudgment ? ['글쓴이가 예민함', '상대가 선 넘음', '둘 다 문제 있음'] : ['찬성', '반대'];
-    const opts = Array.isArray(content.options) ? content.options.map(v => clean(typeof v === 'object' ? v.text : v, 80)).filter(Boolean).slice(0, isJudgment ? 3 : 2) : fallback;
-    const safeOpts = opts.length >= 2 ? opts : fallback;
+    const rawOptions = Array.isArray(content.options) ? content.options : fallback;
+    const options = rawOptions.map(v => clean(typeof v === 'object' ? v.text : v, 80)).filter(Boolean).slice(0, isJudgment ? 3 : 2);
     post.modules.vote = {
       enabled: true,
       voteMode: isJudgment ? 'judgment' : 'pros_cons',
       question: desc || post.title,
-      options: safeOpts.map(text => ({ text, votes: 0 })),
+      options: (options.length >= 2 ? options : fallback).map(text => ({ text, votes: 0 })),
     };
   }
 
@@ -178,24 +172,20 @@ function buildPost(preset, content, date, source) {
     post.modules.drip = { enabled: true, prompt: desc, maxLength: 50, responseLabel: '한 줄 드립' };
   }
 
-  return { post, secretDoc: null };
+  return post;
 }
 
 async function createOne(preset, date) {
   const { content, source } = await makeContent(preset, date);
-  const { post, secretDoc } = buildPost(preset, content, date, source);
+  const post = buildPost(preset, content, date, source);
   const ref = db.collection('feeds').doc();
-  await Promise.all([
-    ref.set(post),
-    secretDoc ? ref.collection('secret').doc('answer').set(secretDoc) : null,
-  ].filter(Boolean));
+  await ref.set(post);
   return { preset, docId: ref.id, title: post.title, source };
 }
 
 async function dailyAutoPostJob() {
   const settings = await getSettings();
   if (!settings.enabled || settings.dailyCount <= 0) return { skipped: true, reason: 'disabled' };
-
   const date = todayKST();
   const markerRef = db.doc(`system_jobs/daily_auto_posts_${date}`);
   const markerSnap = await markerRef.get();
@@ -205,13 +195,14 @@ async function dailyAutoPostJob() {
   const daySeed = Number(date.replace(/-/g, '')) || 0;
   const presets = Array.from({ length: count }, (_, index) => DAILY_PRESETS[(daySeed + index) % DAILY_PRESETS.length]);
   const results = [];
-  for (const preset of presets) {
-    results.push(await createOne(preset, date));
-  }
+  for (const preset of presets) results.push(await createOne(preset, date));
   await markerRef.set({ date, count: results.length, results, createdAt: FieldValue.serverTimestamp() }, { merge: true });
   return { ok: true, date, count: results.length, results };
 }
 
 module.exports = {
-  dailyAiContent: onSchedule({ schedule: '0 9 * * *', timeZone: 'Asia/Seoul', region: REGION, memory: '512MiB', timeoutSeconds: 180 }, async () => dailyAutoPostJob()),
+  dailyAiContent: onSchedule({
+    schedule: '0 9 * * *', timeZone: 'Asia/Seoul', region: REGION, memory: '512MiB', timeoutSeconds: 180,
+    secrets: [ANTHROPIC_API_KEY],
+  }, async () => dailyAutoPostJob()),
 };
