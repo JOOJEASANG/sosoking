@@ -11,7 +11,7 @@ import { collectMultiModules, getBodyText, getBodyHtml, splitTags } from './mult
 import { fillAutoTags } from './multi-write/auto-tags.js';
 import { initRichEditor, syncRichEditor } from './multi-write/editor.js';
 
-const MAX_FEED_IMAGES = 20;
+const MAX_FEED_IMAGES = 30;
 const DRAFT_KEY = 'sosoking:multiWriteDraft';
 let draftTimer = null;
 
@@ -234,7 +234,7 @@ async function submitMultiPost() {
 
     const images = await getUploadedImages();
     if (images.length > MAX_FEED_IMAGES) throw new Error(`사진은 최대 ${MAX_FEED_IMAGES}장까지 올릴 수 있어요.`);
-    btn.textContent = '게임 저장 중...';
+    btn.textContent = '글 저장 중...';
 
     const manualTags = splitTags(document.getElementById('mw-tags')?.value || '');
     const tags = manualTags.length ? manualTags : fillAutoTags({ force: true });
@@ -268,7 +268,7 @@ async function submitMultiPost() {
 
     await awardPoints('post_create', { postId: docRef.id, type: presetKey }).catch(() => {});
     clearDraft();
-    toast.success(`${preset.label} 게임을 열었어요! +10P 🎉`);
+    toast.success(`${preset.label} 글을 열었어요! +10P 🎉`);
     navigate(`/detail/${docRef.id}`);
   } catch (error) {
     console.error(error);
