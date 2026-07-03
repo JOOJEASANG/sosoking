@@ -1,47 +1,36 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
-  <!-- Background: navy rounded square -->
-  <rect width="200" height="200" rx="38" fill="#161b2e"/>
-
-  <!-- Pillar -->
-  <rect x="94" y="88" width="12" height="74" rx="5" fill="#c9a84c"/>
-  <!-- Base -->
-  <rect x="70" y="154" width="60" height="12" rx="6" fill="#c9a84c"/>
-
-  <!-- Beam: dramatically tilted ~22 degrees, left side DOWN -->
-  <!-- Left end: ~(24, 113)  Right end: ~(176, 67) -->
-  <line x1="24" y1="113" x2="176" y2="67" stroke="#c9a84c" stroke-width="7" stroke-linecap="round"/>
-
-  <!-- Pivot cap (gold circle) -->
-  <circle cx="100" cy="90" r="9" fill="#e8c97a" stroke="#161b2e" stroke-width="2.5"/>
-
-  <!-- LEFT SIDE: heavy "억울!" pan -->
-  <!-- Chains hanging down from left beam end -->
-  <line x1="17" y1="114" x2="13" y2="133" stroke="#c9a84c" stroke-width="2.5" stroke-linecap="round" opacity="0.8"/>
-  <line x1="31" y1="114" x2="35" y2="133" stroke="#c9a84c" stroke-width="2.5" stroke-linecap="round" opacity="0.8"/>
-  <!-- Left pan (heavy, sitting almost on the base) -->
-  <ellipse cx="24" cy="137" rx="24" ry="8" fill="#c9a84c"/>
-  <ellipse cx="24" cy="135" rx="24" ry="8" fill="#e8c97a"/>
-  <text x="24" y="138" text-anchor="middle" dominant-baseline="middle"
-        font-size="11" fill="#161b2e" font-family="'Noto Sans KR',sans-serif" font-weight="900">억울!</text>
-
-  <!-- RIGHT SIDE: empty, floating high -->
-  <!-- Chains -->
-  <line x1="169" y1="67" x2="163" y2="50" stroke="#c9a84c" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/>
-  <line x1="183" y1="67" x2="189" y2="50" stroke="#c9a84c" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/>
-  <!-- Right pan (light, almost empty) -->
-  <ellipse cx="176" cy="46" rx="19" ry="6" fill="#c9a84c" opacity="0.35"/>
-  <text x="176" y="47" text-anchor="middle" dominant-baseline="middle"
-        font-size="13" fill="#c9a84c" opacity="0.55" font-family="sans-serif">…</text>
-
-  <!-- SWEAT DROPS (stress near pivot) -->
-  <!-- Drop 1 -->
-  <path d="M116,79 C116,79 119,71 122,73.5 C124.5,76 121,82 116,79Z"
-        fill="#4dabf7" opacity="0.9"/>
-  <!-- Drop 2 smaller -->
-  <path d="M123,68 C123,68 125,63 127,65 C128.5,67 126,70 123,68Z"
-        fill="#4dabf7" opacity="0.7"/>
-
-  <!-- Stress marks !! near beam center -->
-  <text x="108" y="76" font-size="13" fill="#e74c3c" font-weight="900"
-        font-family="sans-serif" opacity="0.85">!!</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="소소킹 로고">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFE85C"/>
+      <stop offset="0.45" stop-color="#FF7A59"/>
+      <stop offset="1" stop-color="#7C5CFF"/>
+    </linearGradient>
+    <linearGradient id="crown" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFF27A"/>
+      <stop offset="1" stop-color="#FFB800"/>
+    </linearGradient>
+    <filter id="pop" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="14" stdDeviation="10" flood-color="#3B246D" flood-opacity=".32"/>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="116" fill="url(#bg)"/>
+  <path d="M54 126c40-46 96-70 170-70 104 0 190 50 238 132" fill="none" stroke="#fff" stroke-width="22" stroke-linecap="round" opacity=".22"/>
+  <path d="M67 394c88 42 190 54 330 10" fill="none" stroke="#fff" stroke-width="28" stroke-linecap="round" opacity=".18"/>
+  <circle cx="74" cy="84" r="14" fill="#fff" opacity=".75"/>
+  <circle cx="438" cy="104" r="10" fill="#fff" opacity=".55"/>
+  <circle cx="425" cy="363" r="18" fill="#fff" opacity=".28"/>
+  <g filter="url(#pop)">
+    <path d="M122 170c0-39 32-70 71-70h126c39 0 71 31 71 70v106c0 39-32 70-71 70h-34l-58 55c-13 12-34 3-34-15v-40h0c-39 0-71-31-71-70V170z" fill="#fff" stroke="#1B2250" stroke-width="14" stroke-linejoin="round"/>
+    <path d="M151 132l26-48 34 42 45-56 41 56 37-42 28 48" fill="url(#crown)" stroke="#1B2250" stroke-width="13" stroke-linejoin="round"/>
+    <circle cx="201" cy="218" r="35" fill="#FFE85C" stroke="#1B2250" stroke-width="10"/>
+    <circle cx="311" cy="218" r="35" fill="#A9F2FF" stroke="#1B2250" stroke-width="10"/>
+    <path d="M184 210q12-12 24 0M296 210q12-12 24 0" fill="none" stroke="#1B2250" stroke-width="8" stroke-linecap="round"/>
+    <path d="M218 260q38 34 76 0" fill="none" stroke="#1B2250" stroke-width="12" stroke-linecap="round"/>
+    <path d="M145 309c54 34 169 38 222 0" fill="none" stroke="#FF7A59" stroke-width="12" stroke-linecap="round" opacity=".78"/>
+    <text x="256" y="382" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-size="54" font-weight="900" fill="#1B2250" stroke="#fff" stroke-width="4" paint-order="stroke">SOSO</text>
+  </g>
+  <g fill="#1B2250" opacity=".9">
+    <path d="M78 242l20 12-20 12-12 20-12-20-20-12 20-12 12-20z"/>
+    <path d="M439 235l15 9-15 9-9 15-9-15-15-9 15-9 9-15z"/>
+  </g>
 </svg>

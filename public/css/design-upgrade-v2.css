@@ -1,0 +1,577 @@
+/* ═══════════════════════════════════════════════════
+   design-upgrade-v2.css — 전체 UI 개선 패치
+   ═══════════════════════════════════════════════════ */
+
+/* ──────────────────────────────────────────────────
+   1. 공통 토큰 보강
+────────────────────────────────────────────────── */
+:root {
+  --shadow-card:       0 1px 2px rgba(0,0,0,.04), 0 4px 14px rgba(0,0,0,.06);
+  --shadow-card-hover: 0 6px 20px rgba(0,0,0,.09), 0 16px 40px rgba(0,0,0,.07);
+  --shadow-btn:        0 2px 8px rgba(255,68,34,.22);
+  --shadow-btn-hover:  0 5px 18px rgba(255,68,34,.38);
+}
+
+/* ──────────────────────────────────────────────────
+   2. 카드 전반 개선
+────────────────────────────────────────────────── */
+.card {
+  border-radius: 20px !important;
+  border: 1px solid var(--color-border-light) !important;
+  box-shadow: var(--shadow-card) !important;
+  transition: transform .22s cubic-bezier(.4,0,.2,1),
+              box-shadow .22s cubic-bezier(.4,0,.2,1),
+              border-color .2s ease !important;
+}
+.card:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: var(--shadow-card-hover) !important;
+  border-color: rgba(255,107,74,.15) !important;
+}
+[data-theme="dark"] .card {
+  border-color: rgba(255,255,255,.07) !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,.24), 0 4px 14px rgba(0,0,0,.18) !important;
+}
+[data-theme="dark"] .card:hover {
+  border-color: rgba(255,107,74,.22) !important;
+  box-shadow: 0 6px 20px rgba(0,0,0,.34), 0 16px 40px rgba(0,0,0,.22) !important;
+}
+
+/* ──────────────────────────────────────────────────
+   3. 피드 카드 개선
+────────────────────────────────────────────────── */
+.feed-card {
+  border-radius: 20px !important;
+  border: 1px solid var(--color-border-light) !important;
+  box-shadow: var(--shadow-card) !important;
+  transition: transform .22s cubic-bezier(.4,0,.2,1),
+              box-shadow .22s cubic-bezier(.4,0,.2,1) !important;
+  overflow: hidden;
+}
+.feed-card:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: var(--shadow-card-hover) !important;
+}
+[data-theme="dark"] .feed-card {
+  border-color: rgba(255,255,255,.07) !important;
+}
+[data-theme="dark"] .feed-card:hover {
+  border-color: rgba(255,107,74,.2) !important;
+}
+.feed-card__header { padding: 16px 18px 12px !important; }
+.feed-card__title  { font-size: 16px !important; font-weight: 800 !important; letter-spacing: -.025em !important; line-height: 1.35 !important; }
+.feed-card__desc   { font-size: 13.5px !important; line-height: 1.55 !important; color: var(--color-text-secondary) !important; }
+
+/* ──────────────────────────────────────────────────
+   4. 버튼 전반 개선
+────────────────────────────────────────────────── */
+.btn {
+  font-weight: 800 !important;
+  letter-spacing: -.015em !important;
+  transition: transform .15s ease, box-shadow .15s ease, background .15s ease !important;
+}
+.btn:active { transform: scale(.96) !important; }
+
+.btn--primary {
+  box-shadow: var(--shadow-btn) !important;
+}
+.btn--primary:hover {
+  box-shadow: var(--shadow-btn-hover) !important;
+  transform: translateY(-1px) !important;
+}
+.btn--primary:active {
+  transform: translateY(0) scale(.97) !important;
+  box-shadow: 0 1px 4px rgba(255,68,34,.18) !important;
+}
+
+/* ──────────────────────────────────────────────────
+   5. 폼 필드 개선
+────────────────────────────────────────────────── */
+.form-input,
+.form-textarea,
+.form-select {
+  border-radius: 12px !important;
+  border: 1.5px solid var(--color-border) !important;
+  font-size: 15px !important;
+  transition: border-color .15s ease, box-shadow .15s ease !important;
+}
+.form-input:focus,
+.form-textarea:focus,
+.form-select:focus {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 3px rgba(255,107,74,.12) !important;
+  outline: none !important;
+}
+
+/* ──────────────────────────────────────────────────
+   6. 모바일 헤더 글래스 모피즘
+────────────────────────────────────────────────── */
+@media (max-width: 1023px) {
+  .site-header {
+    background: rgba(255,255,255,.88) !important;
+    backdrop-filter: blur(18px) saturate(1.6) !important;
+    -webkit-backdrop-filter: blur(18px) saturate(1.6) !important;
+    border-bottom: 1px solid rgba(0,0,0,.055) !important;
+    box-shadow: 0 2px 16px rgba(0,0,0,.05) !important;
+  }
+  [data-theme="dark"] .site-header {
+    background: rgba(15,17,23,.90) !important;
+    border-bottom-color: rgba(255,255,255,.07) !important;
+    box-shadow: 0 2px 16px rgba(0,0,0,.22) !important;
+  }
+
+  .site-header__inner {
+    min-height: 54px !important;
+  }
+
+  /* 로고 텍스트 강화 */
+  .site-header__logo span {
+    font-weight: 950 !important;
+    letter-spacing: -.05em !important;
+    background: linear-gradient(135deg, #FF4422, #FF8C00) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+  }
+}
+
+/* ──────────────────────────────────────────────────
+   7. 모바일 하단 네비게이션 전면 개선
+────────────────────────────────────────────────── */
+@media (max-width: 1023px) {
+  .bottom-nav {
+    background: rgba(255,255,255,.92) !important;
+    backdrop-filter: blur(22px) saturate(1.8) !important;
+    -webkit-backdrop-filter: blur(22px) saturate(1.8) !important;
+    border-top: 1px solid rgba(0,0,0,.055) !important;
+    box-shadow: 0 -6px 28px rgba(0,0,0,.06) !important;
+  }
+  [data-theme="dark"] .bottom-nav {
+    background: rgba(15,17,23,.94) !important;
+    border-top-color: rgba(255,255,255,.07) !important;
+    box-shadow: 0 -6px 28px rgba(0,0,0,.24) !important;
+  }
+
+  .bottom-nav__inner {
+    height: 64px !important;
+    padding: 0 4px !important;
+    align-items: center !important;
+  }
+
+  /* 아이템 베이스 */
+  .bottom-nav__item {
+    position: relative !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    padding: 6px 0 5px !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    color: var(--color-text-muted) !important;
+    transition: color .2s ease, transform .15s ease !important;
+    min-height: 0 !important;
+    height: 100% !important;
+  }
+  .bottom-nav__item:active {
+    transform: scale(.88) !important;
+    transition-duration: .08s !important;
+  }
+
+  /* 아이콘 래퍼 — active 배경 표시용 */
+  .bottom-nav__icon-wrap {
+    width: 40px !important;
+    height: 28px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 12px !important;
+    transition: background .2s ease !important;
+    position: relative !important;
+  }
+  .bottom-nav__item.active .bottom-nav__icon-wrap {
+    background: color-mix(in srgb, currentColor 14%, transparent) !important;
+  }
+
+  /* 알림 뱃지 */
+  .bottom-nav__badge {
+    position: absolute !important;
+    top: -4px !important;
+    right: -2px !important;
+    min-width: 16px !important;
+    height: 16px !important;
+    padding: 0 4px !important;
+    border-radius: 999px !important;
+    background: var(--color-danger, #e53e3e) !important;
+    color: #fff !important;
+    font-size: 9px !important;
+    font-weight: 900 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1 !important;
+    pointer-events: none !important;
+    box-shadow: 0 0 0 2px var(--color-surface, #fff) !important;
+  }
+
+  /* 아이콘 */
+  .bottom-nav__item svg {
+    width: 22px !important;
+    height: 22px !important;
+    stroke-width: 1.8 !important;
+    transition: stroke-width .2s ease !important;
+    flex: none !important;
+  }
+  .bottom-nav__item.active svg {
+    stroke-width: 2.3 !important;
+  }
+
+  /* 라벨 */
+  .bottom-nav__label {
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    letter-spacing: -.02em !important;
+    line-height: 1 !important;
+    transition: font-weight .1s ease !important;
+  }
+  .bottom-nav__item.active .bottom-nav__label {
+    font-weight: 900 !important;
+  }
+
+  /* active 색상 — 항목별 */
+  .bottom-nav__item[data-nav-path="/"].active        { color: #FF6B4A !important; }
+  .bottom-nav__item[data-nav-path="/feed"].active    { color: #3B82F6 !important; }
+  .bottom-nav__item[data-nav-path="/sosoland"].active{ color: #8B5CF6 !important; }
+  .bottom-nav__item[data-nav-path="/account"].active { color: #10B981 !important; }
+
+  /* 인디케이터 점 — active 아이템 상단 */
+  .bottom-nav__item.active::before {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 20px;
+    height: 3px;
+    border-radius: 999px;
+    background: currentColor;
+    opacity: .7;
+  }
+
+  /* 작성 버튼 (중앙 FAB) */
+  .bottom-nav__write {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  .bottom-nav__write-btn {
+    width: 50px !important;
+    height: 50px !important;
+    margin-top: -18px !important;
+    border-radius: 18px !important;
+    background: linear-gradient(145deg, #FF4422 0%, #FF9840 100%) !important;
+    box-shadow: 0 5px 18px rgba(255,68,34,.46),
+                0 0 0 3px white,
+                0 0 0 4.5px rgba(255,68,34,.18) !important;
+    color: #fff !important;
+    border: none !important;
+    transition: transform .22s cubic-bezier(.34,1.56,.64,1), box-shadow .2s ease !important;
+  }
+  [data-theme="dark"] .bottom-nav__write-btn {
+    box-shadow: 0 5px 18px rgba(255,68,34,.46),
+                0 0 0 3px #0f1117,
+                0 0 0 4.5px rgba(255,68,34,.22) !important;
+  }
+  .bottom-nav__write-btn:active {
+    transform: translateY(3px) scale(.92) !important;
+    box-shadow: 0 2px 8px rgba(255,68,34,.32) !important;
+    transition-duration: .08s !important;
+  }
+  .bottom-nav__write-btn svg {
+    width: 22px !important;
+    height: 22px !important;
+    stroke-width: 2.5 !important;
+  }
+}
+
+/* ──────────────────────────────────────────────────
+   8. PC 사이드바 개선
+────────────────────────────────────────────────── */
+@media (min-width: 1024px) {
+  .site-sidebar {
+    border-right: 1px solid var(--color-border-light) !important;
+  }
+  [data-theme="dark"] .site-sidebar {
+    border-right-color: rgba(255,255,255,.08) !important;
+  }
+
+  .sidebar__logo {
+    padding: 22px 18px 18px !important;
+  }
+  .sidebar__brand-name {
+    font-size: 19px !important;
+    font-weight: 950 !important;
+    letter-spacing: -.05em !important;
+    background: linear-gradient(135deg, #FF4422, #FF8C00) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+  }
+
+  .sidebar__nav { padding: 10px 12px !important; }
+
+  .sidebar__nav-item {
+    padding: 10px 14px !important;
+    border-radius: 12px !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    transition: background .15s ease, color .15s ease, transform .15s ease !important;
+  }
+  .sidebar__nav-item:hover {
+    transform: translateX(3px) !important;
+  }
+  .sidebar__nav-item.active {
+    box-shadow: inset 3px 0 0 var(--color-primary) !important;
+    font-weight: 800 !important;
+  }
+
+  .sidebar__write { padding: 12px 14px !important; }
+  .sidebar__write-btn {
+    border-radius: 14px !important;
+    padding: 12px 16px !important;
+    font-size: 14px !important;
+    font-weight: 800 !important;
+    box-shadow: 0 4px 16px rgba(255,68,34,.30) !important;
+    transition: transform .22s cubic-bezier(.34,1.56,.64,1), box-shadow .2s ease !important;
+  }
+  .sidebar__write-btn:hover {
+    transform: translateY(-2px) scale(1.02) !important;
+    box-shadow: 0 8px 28px rgba(255,68,34,.40) !important;
+  }
+  .sidebar__write-btn:active {
+    transform: translateY(0) scale(.98) !important;
+  }
+
+  .sidebar__user-name {
+    font-weight: 700 !important;
+    font-size: 13.5px !important;
+  }
+  .sidebar__logout-btn {
+    border-radius: 10px !important;
+    font-size: 12.5px !important;
+  }
+}
+
+/* ──────────────────────────────────────────────────
+   9. 섹션 헤더 & 타이포그래피
+────────────────────────────────────────────────── */
+.section-title {
+  font-size: 18px !important;
+  font-weight: 950 !important;
+  letter-spacing: -.04em !important;
+}
+
+.home-hero__title {
+  letter-spacing: -.055em !important;
+}
+
+/* 카드 제목들 */
+.card__title,
+h2.card__title {
+  font-weight: 900 !important;
+  letter-spacing: -.03em !important;
+}
+
+/* ──────────────────────────────────────────────────
+   10. 배지 & 태그 개선
+────────────────────────────────────────────────── */
+.badge {
+  font-weight: 800 !important;
+  letter-spacing: -.01em !important;
+  border-radius: 7px !important;
+}
+
+.tag {
+  font-weight: 700 !important;
+  border-radius: 8px !important;
+}
+
+/* ──────────────────────────────────────────────────
+   11. 반응 버튼 개선
+────────────────────────────────────────────────── */
+.reaction-btn {
+  border-radius: 10px !important;
+  font-weight: 800 !important;
+  transition: background .15s ease, color .15s ease, transform .15s ease !important;
+}
+.reaction-btn:hover { transform: scale(1.07) !important; }
+.reaction-btn:active { transform: scale(.92) !important; }
+
+/* ──────────────────────────────────────────────────
+   12. 빈 상태 개선
+────────────────────────────────────────────────── */
+.empty-state {
+  padding: 56px 24px !important;
+}
+.empty-state__icon {
+  font-size: 52px !important;
+  margin-bottom: 14px !important;
+}
+.empty-state__title {
+  font-size: 18px !important;
+  font-weight: 900 !important;
+  letter-spacing: -.03em !important;
+}
+.empty-state__desc {
+  font-size: 14px !important;
+  line-height: 1.65 !important;
+  margin-top: 8px !important;
+}
+
+/* ──────────────────────────────────────────────────
+   13. 토스트 개선
+────────────────────────────────────────────────── */
+.toast {
+  border-radius: 16px !important;
+  font-weight: 700 !important;
+  box-shadow: 0 8px 28px rgba(0,0,0,.13) !important;
+  padding: 12px 18px !important;
+}
+
+/* ──────────────────────────────────────────────────
+   14. 소셜 로그인 버튼
+────────────────────────────────────────────────── */
+.social-btn {
+  border-radius: 14px !important;
+  font-weight: 800 !important;
+  border: 1.5px solid var(--color-border) !important;
+  transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease !important;
+}
+.social-btn:hover {
+  border-color: var(--color-primary-border) !important;
+  box-shadow: 0 4px 14px rgba(255,68,34,.12) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* ──────────────────────────────────────────────────
+   15. 모달 개선
+────────────────────────────────────────────────── */
+.modal {
+  border-radius: 24px !important;
+  box-shadow: 0 24px 64px rgba(0,0,0,.16) !important;
+}
+
+/* ──────────────────────────────────────────────────
+   16. 어드민 패널 개선
+────────────────────────────────────────────────── */
+.admin-stat-card {
+  border-radius: 16px !important;
+  box-shadow: var(--shadow-card) !important;
+}
+.admin-menu-item {
+  border-radius: 12px !important;
+  transition: background .15s ease, transform .15s ease !important;
+}
+.admin-menu-item:hover:not(.active) {
+  transform: translateX(3px) !important;
+}
+
+/* ──────────────────────────────────────────────────
+   17. 스피너 & 로딩
+────────────────────────────────────────────────── */
+.loading-center {
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ──────────────────────────────────────────────────
+   18. PC 컨텐츠 영역
+────────────────────────────────────────────────── */
+@media (min-width: 1024px) {
+  .page-container {
+    padding: 28px 28px 56px !important;
+  }
+}
+
+/* ──────────────────────────────────────────────────
+   19. 필터 칩 개선
+────────────────────────────────────────────────── */
+.filter-chip {
+  border-radius: 999px !important;
+  font-weight: 700 !important;
+  transition: background .15s ease, color .15s ease, border-color .15s ease !important;
+}
+
+/* ──────────────────────────────────────────────────
+   20. 댓글 개선
+────────────────────────────────────────────────── */
+.comment-item {
+  border-radius: 16px !important;
+}
+
+/* ──────────────────────────────────────────────────
+   21. 홈 바로가기 카드
+────────────────────────────────────────────────── */
+.home-quick-links {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+@media (max-width: 639px) {
+  .home-quick-links {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.home-quick-link-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 16px 8px;
+  background: var(--color-bg-card, #fff);
+  border: 1.5px solid var(--color-border-light, rgba(0,0,0,.08));
+  border-radius: 18px;
+  cursor: pointer;
+  text-align: center;
+  transition: transform .22s cubic-bezier(.34,1.56,.64,1),
+              box-shadow .2s ease,
+              border-color .2s ease;
+  box-shadow: var(--shadow-card);
+}
+.home-quick-link-card:hover {
+  transform: translateY(-3px) scale(1.03);
+  box-shadow: var(--shadow-card-hover);
+  border-color: rgba(255,107,74,.2);
+}
+.home-quick-link-card:active {
+  transform: translateY(0) scale(.97);
+}
+.home-quick-link-card__icon {
+  font-size: 24px;
+  line-height: 1;
+}
+.home-quick-link-card__label {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--color-text);
+  letter-spacing: -.02em;
+}
+.home-quick-link-card__sub {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+[data-theme="dark"] .home-quick-link-card {
+  background: var(--color-surface-2);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+[data-theme="dark"] .home-quick-link-card:hover {
+  background: var(--color-surface-alt);
+  border-color: rgba(255, 107, 74, 0.35);
+}

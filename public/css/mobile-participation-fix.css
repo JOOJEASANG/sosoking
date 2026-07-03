@@ -1,0 +1,89 @@
+/* 모바일 작명소/드립 참여 카드 반응 버튼 보정 */
+@media (max-width: 767px) {
+  .likeable-comment {
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+  }
+
+  .likeable-comment__content {
+    min-width: 0;
+  }
+
+  .likeable-comment__text {
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    line-height: 1.45;
+    padding-right: 2px;
+  }
+
+  .likeable-comment__actions {
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: flex-start;
+    gap: 6px;
+    min-width: 88px;
+  }
+
+  .likeable-comment__actions .comment-reactions {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 5px;
+    width: 100%;
+  }
+
+  .likeable-comment__actions .comment-react-btn {
+    min-width: 42px;
+    min-height: 34px;
+    padding: 6px 8px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    font-size: 14px;
+    line-height: 1;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .likeable-comment__actions .comment-react-btn b {
+    font-size: 11px;
+  }
+
+  .likeable-comment__actions .comment-delete-btn {
+    min-height: 28px;
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+
+  .char-participate-box {
+    gap: 8px;
+  }
+
+  .char-boxes-wrap {
+    min-width: 0;
+  }
+
+  .char-box {
+    min-width: 0;
+    touch-action: manipulation;
+  }
+}
+
+@media (max-width: 380px) {
+  .likeable-comment {
+    padding: 11px 12px;
+  }
+
+  .likeable-comment__actions {
+    min-width: 72px;
+  }
+
+  .likeable-comment__actions .comment-react-btn {
+    min-width: 38px;
+    min-height: 32px;
+    font-size: 13px;
+  }
+}

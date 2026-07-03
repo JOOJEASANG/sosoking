@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI 캐릭터 설정 · 소소킹</title>
+  <style>
+    body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;margin:0;background:#f8fafc;color:#111827}
+    main{max-width:680px;margin:0 auto;padding:24px}.card{background:#fff;border:1px solid #e5e7eb;border-radius:18px;padding:18px;margin-bottom:14px;box-shadow:0 8px 24px rgba(15,23,42,.04)}
+    h1{font-size:24px;margin:0 0 8px}.muted{color:#6b7280;font-size:13px;line-height:1.6}label{display:block;font-size:13px;font-weight:900;margin:14px 0 6px}
+    select{width:100%;box-sizing:border-box;border:1px solid #d1d5db;border-radius:12px;padding:11px 12px;font-size:14px;background:#fff}.row{display:grid;grid-template-columns:1fr 160px;gap:12px;align-items:end}
+    .switch{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:14px;padding:14px;margin-top:12px}.switch b{font-size:14px}.switch span{font-size:12px;color:#6b7280}.switch input{width:22px;height:22px}
+    button{border:0;border-radius:12px;padding:11px 15px;font-weight:850;cursor:pointer}.primary{background:#6366f1;color:#fff}.ghost{background:#eef2ff;color:#3730a3}button:disabled{opacity:.55;cursor:not-allowed}
+    .status{white-space:pre-wrap;background:#0f172a;color:#e5e7eb;border-radius:14px;padding:14px;font-size:12px;line-height:1.55;overflow:auto;max-height:260px}a{color:#4f46e5;text-decoration:none;font-weight:800}
+  </style>
+</head>
+<body>
+  <main>
+    <div class="card">
+      <h1>🤖 AI 캐릭터 자동 댓글 설정</h1>
+      <div class="muted">관리자 전용 설정 페이지입니다. 새 글 작성 시 AI 캐릭터가 자동으로 댓글을 달지 여부와 댓글 수를 조정합니다.</div>
+      <div class="muted" style="margin-top:8px">테스트 페이지: <a href="/ai-character-test.html">AI 캐릭터 댓글 테스트</a></div>
+    </div>
+
+    <div class="card">
+      <div class="switch">
+        <div>
+          <b>자동 댓글 사용</b><br>
+          <span>켜면 새 게시글에 캐릭터 댓글이 자동 등록됩니다.</span>
+        </div>
+        <input type="checkbox" id="enabled">
+      </div>
+      <label for="count">게시글당 자동 댓글 수</label>
+      <select id="count">
+        <option value="1">1개 비용 최소</option>
+        <option value="2">2개 추천</option>
+        <option value="3">3개 최대</option>
+      </select>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
+        <button class="primary" id="btn-save">설정 저장</button>
+        <button class="ghost" id="btn-refresh">다시 불러오기</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="font-size:14px;font-weight:900;margin-bottom:8px">상태</div>
+      <pre class="status" id="status">불러오는 중...</pre>
+    </div>
+  </main>
+
+  <script type="module">
+    import { auth, functions, onAuthStateChanged } from './js/firebase.js';
+    import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
+
+    const $ = id => document.getElementById(id);
+    const statusEl = $('status');
+    const getSettings = httpsCallable(functions, 'getAiCharacterSettings');
+    const saveSettings = httpsCallable(functions, 'saveAiCharacterSettings');
+
+    function setBusy(v){ $('btn-save').disabled = v; $('btn-refresh').disabled = v; }
+    function show(obj){ statusEl.textContent = typeof obj === 'string' ? obj : JSON.stringify(obj, null, 2); }
+
+    async function load(){
+      setBusy(true);
+      show('설정을 불러오는 중...');
+      try{
+        const res = await getSettings({});
+        const s = res.data.settings || {};
+        $('enabled').checked = s.enabled !== false;
+        $('count').value = String(Math.max(1, Math.min(Number(s.count || 2), 3)));
+        show({ ok:true, loaded:s });
+      }catch(e){ show(e.message || String(e)); }
+      finally{ setBusy(false); }
+    }
+
+    async function save(){
+      setBusy(true);
+      show('저장 중...');
+      try{
+        const res = await saveSettings({ autoCommentsEnabled: $('enabled').checked, autoCommentCount: Number($('count').value || 2) });
+        show({ ok:true, saved:res.data.settings });
+      }catch(e){ show(e.message || String(e)); }
+      finally{ setBusy(false); }
+    }
+
+    onAuthStateChanged(auth, user => {
+      if (!user) show('로그인이 필요합니다. 먼저 /#/login 에서 관리자 계정으로 로그인하세요.');
+      else load();
+    });
+    $('btn-refresh').addEventListener('click', load);
+    $('btn-save').addEventListener('click', save);
+  </script>
+</body>
+</html>

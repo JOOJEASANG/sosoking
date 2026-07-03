@@ -1,0 +1,258 @@
+/* 요청 반영 정리: 홈/글쓰기/내정보 */
+
+/* PC 메인 히어로: 제목이 세로로 쪼개지지 않도록 가로폭/폰트/미리보기 카드 재정렬 */
+@media (min-width: 861px) {
+  .home-landing-hero {
+    grid-template-columns: minmax(0, 1fr) 300px !important;
+    gap: 28px !important;
+    min-height: 430px !important;
+    padding: 48px 56px !important;
+    align-items: center !important;
+  }
+
+  .home-landing-hero__content {
+    max-width: 520px !important;
+    min-width: 0 !important;
+  }
+
+  .home-landing-hero h1 {
+    max-width: 520px !important;
+    font-size: clamp(36px, 3.4vw, 46px) !important;
+    line-height: 1.12 !important;
+    letter-spacing: -0.055em !important;
+    word-break: keep-all !important;
+    overflow-wrap: normal !important;
+  }
+
+  .home-landing-hero p {
+    max-width: 470px !important;
+    margin-top: 18px !important;
+    font-size: 15px !important;
+    line-height: 1.68 !important;
+    word-break: keep-all !important;
+  }
+
+  .home-landing-hero__mock {
+    min-height: 230px !important;
+    transform: translateX(-4px) !important;
+  }
+
+  .home-mock-card--main {
+    width: 260px !important;
+    padding: 17px !important;
+    border-radius: 22px !important;
+    right: 8px !important;
+    top: 26px !important;
+    transform: rotate(1.2deg) !important;
+  }
+
+  .home-mock-card strong {
+    font-size: 18px !important;
+    line-height: 1.34 !important;
+    word-break: keep-all !important;
+  }
+
+  .home-mock-vote {
+    height: 30px !important;
+  }
+
+  .home-mock-card--float {
+    min-height: 38px !important;
+    padding: 0 13px !important;
+    font-size: 12px !important;
+  }
+
+  .home-mock-card--drip {
+    left: 8px !important;
+    top: 34px !important;
+    transform: rotate(-4deg) !important;
+  }
+
+  .home-mock-card--quiz {
+    right: 0 !important;
+    bottom: 18px !important;
+    transform: rotate(3deg) !important;
+  }
+}
+
+@media (min-width: 861px) and (max-width: 1180px) {
+  .home-landing-hero {
+    grid-template-columns: minmax(0, 1fr) 260px !important;
+    padding: 42px 44px !important;
+    gap: 22px !important;
+  }
+
+  .home-landing-hero h1 {
+    font-size: 38px !important;
+  }
+
+  .home-mock-card--main {
+    width: 235px !important;
+  }
+}
+
+/* 홈 방모음 카드: PC 2개씩 2줄, 모바일 1줄씩 */
+.home-feature-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+.home-feature-card {
+  display: grid !important;
+  grid-template-columns: 48px minmax(0, 1fr) !important;
+  grid-template-rows: auto auto !important;
+  column-gap: 14px !important;
+  row-gap: 4px !important;
+  align-items: center !important;
+  min-height: 118px !important;
+  padding: 18px 20px !important;
+  border-radius: 20px !important;
+  writing-mode: horizontal-tb !important;
+  text-orientation: mixed !important;
+}
+
+.home-feature-card::after {
+  width: 86px !important;
+  height: 86px !important;
+  right: -28px !important;
+  bottom: -32px !important;
+  opacity: .08 !important;
+}
+
+.home-feature-card__icon {
+  grid-column: 1 !important;
+  grid-row: 1 / span 2 !important;
+  width: 46px !important;
+  height: 46px !important;
+  margin: 0 !important;
+  border-radius: 15px !important;
+  font-size: 24px !important;
+}
+
+.home-feature-card b {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  display: block !important;
+  margin: 0 !important;
+  font-size: 19px !important;
+  line-height: 1.25 !important;
+  letter-spacing: -.045em !important;
+  white-space: nowrap !important;
+  writing-mode: horizontal-tb !important;
+  text-orientation: mixed !important;
+}
+
+.home-feature-card em {
+  grid-column: 2 !important;
+  grid-row: 2 !important;
+  display: block !important;
+  margin: 0 !important;
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+  font-weight: 750 !important;
+  word-break: keep-all !important;
+  writing-mode: horizontal-tb !important;
+  text-orientation: mixed !important;
+}
+
+.home-feature-card small {
+  display: none !important;
+}
+
+@media (max-width: 767px) {
+  .home-feature-grid {
+    grid-template-columns: 1fr !important;
+    gap: 9px !important;
+  }
+
+  .home-feature-card {
+    grid-template-columns: 44px minmax(0, 1fr) !important;
+    column-gap: 12px !important;
+    row-gap: 3px !important;
+    min-height: 0 !important;
+    padding: 14px 15px !important;
+    border-radius: 18px !important;
+  }
+
+  .home-feature-card::after {
+    width: 82px !important;
+    height: 82px !important;
+    right: -28px !important;
+    bottom: -32px !important;
+    opacity: .10 !important;
+  }
+
+  .home-feature-card__icon {
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 14px !important;
+    font-size: 22px !important;
+  }
+
+  .home-feature-card b {
+    font-size: 17px !important;
+  }
+
+  .home-feature-card em {
+    font-size: 12.5px !important;
+    line-height: 1.45 !important;
+  }
+}
+
+/* 글쓰기 방 선택 버튼: 방 이름만 한 줄로 */
+.multi-preset-list--compact,
+.multi-preset-list--top {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  gap: 8px !important;
+  overflow-x: auto !important;
+  scrollbar-width: none;
+}
+
+.multi-preset-list--compact::-webkit-scrollbar,
+.multi-preset-list--top::-webkit-scrollbar {
+  display: none;
+}
+
+.multi-preset-btn--compact,
+.multi-preset-list--compact .multi-preset-btn,
+.multi-preset-list--top .multi-preset-btn {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: 0 !important;
+  min-height: 38px !important;
+  padding: 0 14px !important;
+  border-radius: 999px !important;
+  white-space: nowrap !important;
+  text-align: center !important;
+}
+
+.multi-preset-btn--compact .multi-preset-btn__desc,
+.multi-preset-list--compact .multi-preset-btn__desc,
+.multi-preset-list--top .multi-preset-btn__desc {
+  display: none !important;
+}
+
+.multi-preset-btn--compact .multi-preset-btn__label,
+.multi-preset-list--compact .multi-preset-btn__label,
+.multi-preset-list--top .multi-preset-btn__label {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  white-space: nowrap !important;
+  font-size: 13px !important;
+}
+
+.multi-write-option-category__head .multi-preset-box__desc {
+  display: none !important;
+}
+
+/* 내정보: 팔로우 기능 삭제 */
+.account-tab[data-tab="follows"] {
+  display: none !important;
+}
+
+/* 내정보 통계: 피드활동의 작명소 행 삭제
+   구조: 제목 div + 일반글 + 투표 + 작명소 + 드립 + 퀴즈 */
+.stats-page .card .card__body > div:nth-child(4) {
+  display: none !important;
+}
