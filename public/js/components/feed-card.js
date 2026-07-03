@@ -7,7 +7,7 @@ const TYPE_META = {
   vote:     { cat: 'vote',     catLabel: '토론', icon: '🗳️', label: '토론' },
   drip:     { cat: 'drip',     catLabel: '드립', icon: '😂', label: '드립' },
 
-  // 예전 데이터 호환: 화면에는 4게임 이름으로만 표시합니다.
+  // 예전 데이터 호환: 화면에는 현재 콘텐츠 이름으로만 표시합니다.
   multi:        { cat: 'judgment', catLabel: '판결', icon: '⚖️', label: '판결' },
   general:      { cat: 'judgment', catLabel: '판결', icon: '⚖️', label: '판결' },
   collect:      { cat: 'judgment', catLabel: '판결', icon: '⚖️', label: '판결' },
@@ -50,14 +50,14 @@ function safeImageUrl(value) {
 }
 
 function getSafeImages(images) {
-  return (Array.isArray(images) ? images : []).map(safeImageUrl).filter(Boolean).slice(0, 20);
+  return (Array.isArray(images) ? images : []).map(safeImageUrl).filter(Boolean).slice(0, 30);
 }
 
 function safeTag(value) {
   return escHtml(String(value || '').replace(/^#/, '').trim().slice(0, 24));
 }
 
-function getGameSubtype(post) {
+function getContentSubtype(post) {
   if (post.subtype === 'judgment' || post.modules?.vote?.voteMode === 'judgment') return 'judgment';
   if (post.subtype === 'consult' || post.modules?.consult?.enabled || post.modules?.quiz?.enabled || post.type === 'quiz' || post.type === 'initial_game') return 'consult';
   if (post.subtype === 'drip' || post.feedType === 'drip' || post.modules?.drip?.enabled) return 'drip';
@@ -67,7 +67,7 @@ function getGameSubtype(post) {
 }
 
 function getTypeMeta(post) {
-  const subtype = getGameSubtype(post);
+  const subtype = getContentSubtype(post);
   return TYPE_META[subtype] || TYPE_META.judgment;
 }
 
