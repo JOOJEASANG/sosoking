@@ -11,7 +11,7 @@ function moduleToggleInput(key, activeKey) {
 function renderOptionPicker(activeKey) {
   return `
     <div class="mw-room-picker">
-      <div class="mw-room-picker__label">게임 선택 <small style="font-weight:500;color:var(--color-text-muted)">판결 · 상담 · 토론 · 드립</small></div>
+      <div class="mw-room-picker__label">콘텐츠 선택 <small style="font-weight:500;color:var(--color-text-muted)">판결 · 상담 · 토론 · 드립</small></div>
       <input type="hidden" id="mw-selected-preset" value="${esc(activeKey)}">
       <div class="mw-room-nav">
         ${WRITER_PRESET_KEYS.map(key => {
@@ -112,7 +112,7 @@ export function renderMultiWriteHTML({ renderKey, presetKey }) {
     <div class="write-page multi-write-page" data-render-key="${esc(renderKey)}" data-preset-key="${esc(activeKey)}">
       <div class="write-step-header">
         <button class="write-back-btn" id="multi-back-type" type="button">←</button>
-        <h1 class="write-step-title">소소킹 게임 열기</h1>
+        <h1 class="write-step-title">소소킹 글 열기</h1>
       </div>
       <div class="card">
         <div class="card__body--lg">
