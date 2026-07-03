@@ -1,5 +1,6 @@
 'use strict';
 
+const { randomInt } = require('crypto');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { defineSecret } = require('firebase-functions/params');
@@ -36,6 +37,14 @@ function scheduledSlot() {
   if (hour < 12) return 'morning';
   if (hour < 18) return 'afternoon';
   return 'evening';
+}
+
+function makeRunSeed() {
+  return `${Date.now()}-${randomInt(100000, 999999)}`;
+}
+
+function pickRandom(list) {
+  return list[randomInt(0, list.length)];
 }
 
 function clean(value, max = 500) {
@@ -142,6 +151,15 @@ async function assertAdmin(uid) {
   if (!snap.exists) throw new HttpsError('permission-denied', '관리자만 실행할 수 있습니다.');
 }
 
+async function loadRecentTitles(limit = 20) {
+  try {
+    const snap = await db.collection('feeds').orderBy('createdAt', 'desc').limit(limit).get();
+    return snap.docs.map(doc => clean(doc.data().title, 80)).filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
 const TYPE_PROMPTS = {
   general: '소소킹 모음방에 올릴 가벼운 생활형 게시글 1개를 JSON만 출력해. 필드: title, desc, tags. 댓글을 유도하는 자연스러운 문장 포함.',
   vote: '소소킹 토론방에 올릴 찬반/선택형 게시글 1개를 JSON만 출력해. 필드: title, desc, options, tags. options는 2~4개.',
@@ -149,31 +167,41 @@ const TYPE_PROMPTS = {
   consult: '소소킹 병맛상담에 올릴 작은 고민 1개를 JSON만 출력해. 필드: title, desc, topic, style, tags. 웃기지만 선을 지켜.',
 };
 
-function fallbackContent(preset, date) {
-  const seed = Number(date.replace(/-/g, '')) || Date.now();
-  const pick = list => list[seed % list.length];
+function fallbackContent(preset) {
   const map = {
-    general: pick([
+    general: [
       { title: '오늘 하루 중 제일 소소하게 웃겼던 순간은?', desc: '거창한 일 아니어도 괜찮아요. 오늘 나를 피식 웃게 만든 장면 하나만 댓글로 남겨주세요.', tags: ['모음', '소소킹'] },
       { title: '요즘 나만 은근히 빠진 작은 취미 있어?', desc: '남들은 별거 아니라고 해도 계속 하게 되는 소소한 취미를 공유해봐요.', tags: ['취미', '소소킹'] },
-    ]),
-    vote: pick([
+      { title: '생각보다 오래 쓰고 있는 물건 있어?', desc: '별 기대 없이 샀는데 은근히 오래 쓰는 물건을 공유해봐요.', tags: ['생활', '공유'] },
+      { title: '오늘 나를 살짝 당황시킨 순간은?', desc: '크게 문제는 아닌데 순간 멈칫했던 소소한 일을 댓글로 남겨주세요.', tags: ['일상', '공감'] },
+      { title: '남들은 모르는데 나만 편한 습관 있어?', desc: '이상해 보여도 나한테는 편한 작은 습관이 있다면 알려주세요.', tags: ['습관', '일상'] },
+    ],
+    vote: [
       { title: '지금 당장 먹고 싶은 야식은?', desc: '딱 하나만 고를 수 있다면 오늘 밤 메뉴는 무엇인가요?', options: ['치킨', '라면', '피자', '만두'], tags: ['투표', '야식'] },
       { title: '주말 아침, 몇 시 기상이 제일 행복할까?', desc: '쉬는 날 아침 기준으로 가장 마음 편한 기상 시간을 골라주세요.', options: ['7시 이전', '9~10시', '11시쯤', '점심 이후'], tags: ['투표', '주말'] },
-    ]),
-    drip: pick([
+      { title: '카톡 답장 빠른 사람 vs 천천히 하는 사람', desc: '여러분은 어느 쪽이 더 편한가요?', options: ['빠른 답장', '천천히 답장'], tags: ['투표', '관계'] },
+      { title: '점심 메뉴 고를 때 제일 중요한 기준은?', desc: '가격, 맛, 속도, 양 중 하나만 고른다면?', options: ['가격', '맛', '속도', '양'], tags: ['투표', '점심'] },
+      { title: '쉬는 날 밖에 나가기 vs 집에서 쉬기', desc: '완전히 자유로운 하루가 생기면 어느 쪽인가요?', options: ['밖에 나가기', '집에서 쉬기'], tags: ['투표', '휴식'] },
+    ],
+    drip: [
       { topic: '퇴근 5분 전에 회의 잡힌 사람의 한마디는?', tags: ['드립', '직장인'] },
       { topic: '배달 예상시간이 계속 늘어날 때 떠오르는 한 줄은?', tags: ['드립', '배달'] },
-    ]),
-    consult: pick([
+      { topic: '월요일 아침 알람을 본 내 영혼에게 이름을 붙인다면?', tags: ['드립', '월요일'] },
+      { topic: '냉장고를 열었는데 먹을 게 없을 때 나오는 한마디는?', tags: ['드립', '일상'] },
+      { topic: '카드값 알림을 본 사람의 첫 반응은?', tags: ['드립', '월급'] },
+    ],
+    consult: [
       { title: '이거 제가 예민한 건가요?', desc: '분명 별일 아닌 것 같은데 괜히 신경 쓰입니다. 공감, 현실조언, 웃긴 해결책 아무거나 던져주세요.', topic: 'daily', style: 'funny', tags: ['병맛상담', '고민'] },
       { title: '살까 말까 장바구니가 저를 부릅니다', desc: '며칠째 장바구니에서 손짓하는 물건이 있습니다. 사도 되는지 말려야 하는지 소소판정 부탁합니다.', topic: 'money', style: 'choice', tags: ['병맛상담', '선택'] },
-    ]),
+      { title: '친구 답장을 기다리는 제가 너무 진지한가요?', desc: '별말 아닌 대화였는데 답장이 없으니 괜히 신경 쓰입니다. 어떻게 넘기면 좋을까요?', topic: 'people', style: 'empathy', tags: ['상담', '관계'] },
+      { title: '하기 싫은 일을 미루는 저를 설득해주세요', desc: '해야 하는 건 아는데 몸이 안 움직입니다. 현실조언도 좋고 웃긴 처방도 좋습니다.', topic: 'work', style: 'funny', tags: ['상담', '미루기'] },
+      { title: '소소한 소비를 합리화하고 싶습니다', desc: '큰돈은 아닌데 자꾸 고민됩니다. 사도 되는 이유와 말려야 하는 이유를 같이 듣고 싶어요.', topic: 'money', style: 'choice', tags: ['상담', '소비'] },
+    ],
   };
-  return map[preset] || map.general;
+  return pickRandom(map[preset] || map.general);
 }
 
-function buildDoc(preset, content, date, source) {
+function buildDoc(preset, content, date, source, runSeed) {
   const meta = PRESET_META[preset] || PRESET_META.general;
   const doc = {
     type: 'multi',
@@ -201,6 +229,7 @@ function buildDoc(preset, content, date, source) {
     aiGeneratedDate: date,
     aiSource: source,
     aiPreset: preset,
+    aiRunSeed: runSeed,
     createdAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
   };
@@ -233,24 +262,29 @@ function buildDoc(preset, content, date, source) {
 async function generateOnePreset({ preset = 'general', force = true, actorId = 'admin', usageKind = 'manual_content' }) {
   const normalizedPreset = normalizePreset(preset);
   const date = todayKST();
+  const runSeed = makeRunSeed();
+
   if (!force) {
     const markerRef = db.doc(`system_jobs/ai_content_${date}_${normalizedPreset}`);
     const markerSnap = await markerRef.get();
     if (markerSnap.exists) return { skipped: true, preset: normalizedPreset, reason: 'already-generated' };
   }
 
-  let content = fallbackContent(normalizedPreset, date);
+  let content = fallbackContent(normalizedPreset);
   let source = 'fallback';
   const apiKey = ANTHROPIC_API_KEY.value();
   const usage = apiKey ? await reserveUsage(usageKind) : { ok: false, reason: 'no-key' };
 
   if (apiKey && usage.ok) {
     try {
+      const recentTitles = await loadRecentTitles(20);
+      const prompt = `${TYPE_PROMPTS[normalizedPreset] || TYPE_PROMPTS.general}\n\n중복 방지 규칙:\n- 아래 최근 제목과 같은 소재, 같은 제목, 같은 상황을 절대 쓰지 마.\n- 매번 새로운 생활 상황, 새로운 질문, 새로운 표현을 써.\n- 랜덤 시드: ${runSeed}\n- 오늘 날짜: ${date}\n최근 제목: ${recentTitles.length ? recentTitles.join(' / ') : '없음'}`;
       const anthropic = new Anthropic({ apiKey });
       const msg = await anthropic.messages.create({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 900,
-        messages: [{ role: 'user', content: TYPE_PROMPTS[normalizedPreset] || TYPE_PROMPTS.general }],
+        temperature: 0.9,
+        messages: [{ role: 'user', content: prompt }],
       });
       const parsed = parseJson(msg.content.filter(block => block.type === 'text').map(block => block.text).join(''));
       if (parsed) { content = parsed; source = 'ai'; }
@@ -259,7 +293,7 @@ async function generateOnePreset({ preset = 'general', force = true, actorId = '
     }
   }
 
-  const { mainDoc, secretDoc } = buildDoc(normalizedPreset, content, date, source);
+  const { mainDoc, secretDoc } = buildDoc(normalizedPreset, content, date, source, runSeed);
   const feedRef = db.collection('feeds').doc();
   await Promise.all([
     feedRef.set(mainDoc),
@@ -267,11 +301,11 @@ async function generateOnePreset({ preset = 'general', force = true, actorId = '
   ].filter(Boolean));
 
   await db.doc(`system_jobs/ai_content_manual_${date}_${feedRef.id}`).set({
-    date, preset: normalizedPreset, docId: feedRef.id, source, actorId, usageKind,
+    date, preset: normalizedPreset, docId: feedRef.id, source, actorId, usageKind, runSeed, usageReason: usage.reason || '',
     createdAt: FieldValue.serverTimestamp(),
   }, { merge: true });
 
-  return { ok: true, preset: normalizedPreset, typeLabel: mainDoc.typeLabel, docId: feedRef.id, title: mainDoc.title, source };
+  return { ok: true, preset: normalizedPreset, typeLabel: mainDoc.typeLabel, docId: feedRef.id, title: mainDoc.title, source, runSeed };
 }
 
 async function generateAllAiContent({ force = true, actorId = 'admin' } = {}) {
