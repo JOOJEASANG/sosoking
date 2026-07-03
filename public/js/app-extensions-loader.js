@@ -1,3 +1,4 @@
+import './soft-orange-accent-fix.js';
 import { EXTENSION_MODULES, importModuleGroup } from './app-module-registry.js';
 
 importModuleGroup(EXTENSION_MODULES, { label: 'extensions' }).then(failed => {
