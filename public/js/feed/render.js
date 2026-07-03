@@ -14,12 +14,12 @@ export function renderFeedSearchBar({ search = '' } = {}) {
 }
 
 export function renderFeedFilterBar({ search = '' } = {}) {
-  return search ? `<div class="soso-feed-search-label">🔍 "<strong>${escHtml(search)}</strong>" 검색 결과</div>` : '';
+  return search ? `<div class="soso-feed-search-label">검색 결과: <strong>${escHtml(search)}</strong></div>` : '';
 }
 
 export function renderFeedSortSelect({ sort = 'latest' } = {}) {
   return `
-    <label class="soso-feed-sort soso-feed-sort--summary" aria-label="게임 정렬">
+    <label class="soso-feed-sort soso-feed-sort--summary" aria-label="콘텐츠 정렬">
       <span>정렬</span>
       <select id="feed-sort-select">
         ${Object.entries(SORT_LABELS).map(([key, label]) => `<option value="${key}" ${sort === key ? 'selected' : ''}>${label}</option>`).join('')}
@@ -36,14 +36,16 @@ export function renderFeedSummary({ total = 0, page = 1, totalPages = 1, search 
 }
 
 export function renderFeedEmptyState({ search = '' } = {}) {
+  const title = search ? `검색 결과가 없어요` : '아직 열린 콘텐츠가 없어요';
+  const desc = search ? '다른 검색어로 다시 찾아보세요.' : '첫 번째 글을 열고 AI 캐릭터 댓글을 받아보세요.';
+  const buttonText = search ? '전체 콘텐츠 보기' : '+ 글 열기';
+  const target = search ? '#/feed' : '#/write?type=multi&preset=judgment';
   return `
     <div class="empty-state">
-      <div class="empty-state__icon">${search ? '🔍' : '🎮'}</div>
-      <div class="empty-state__title">${search ? `"${escHtml(search)}" 검색 결과가 없어요` : '아직 열린 게임이 없어요'}</div>
-      <div class="empty-state__desc">${search ? '다른 검색어로 다시 찾아보세요.' : '첫 번째 판결 게임을 열고 AI 캐릭터 댓글을 받아보세요.'}</div>
-      ${search
-        ? `<button class="btn btn--ghost" style="margin-top:16px" onclick="navigate('/feed')">전체 게임 보기</button>`
-        : `<button class="btn btn--primary" style="margin-top:16px" onclick="navigate('/write?type=multi&preset=judgment')">+ 게임 열기</button>`}
+      <div class="empty-state__icon">${search ? '🔍' : '✨'}</div>
+      <div class="empty-state__title">${title}</div>
+      <div class="empty-state__desc">${desc}</div>
+      <a class="btn btn--primary" style="margin-top:16px" href="${target}">${buttonText}</a>
     </div>`;
 }
 
