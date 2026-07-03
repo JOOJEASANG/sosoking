@@ -1,0 +1,43 @@
+/* hall-radius-fix.css
+   랭킹 페이지 카드 모서리 과도한 라운드 보정 */
+
+.hall-page .hall-section,
+.hall-page .hall-info-accordion,
+.hall-page .card,
+.hall-page .feed-card,
+.hall-page .skeleton-card {
+  border-radius: 12px !important;
+}
+
+.hall-page .hall-item,
+.hall-page .hall-info-stats > div,
+.hall-page .hall-info-rule,
+.hall-page .hall-empty {
+  border-radius: 10px !important;
+}
+
+.hall-page .hall-section__icon,
+.hall-page .hall-medal {
+  border-radius: 9px !important;
+}
+
+.hall-page .hall-info-accordion summary::after {
+  border-radius: 10px !important;
+}
+
+@media (max-width: 640px) {
+  .hall-page .hall-section,
+  .hall-page .hall-info-accordion,
+  .hall-page .card,
+  .hall-page .feed-card,
+  .hall-page .skeleton-card {
+    border-radius: 11px !important;
+  }
+
+  .hall-page .hall-item,
+  .hall-page .hall-info-stats > div,
+  .hall-page .hall-info-rule,
+  .hall-page .hall-empty {
+    border-radius: 9px !important;
+  }
+}
