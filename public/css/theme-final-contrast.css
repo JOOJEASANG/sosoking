@@ -1,6 +1,5 @@
 /* theme-final-contrast.css
-   마지막에 로드되는 다크/라이트 테마 대비 보정.
-   여러 보정 CSS가 겹치면서 밝은 카드와 다크 텍스트가 섞이는 문제를 여기서 최종 정리합니다. */
+   마지막에 로드되는 다크/라이트 테마 대비 보정. */
 
 :root {
   --soso-card-bg: #ffffff;
@@ -9,7 +8,7 @@
   --soso-card-text: #111827;
   --soso-card-text-2: #475569;
   --soso-card-muted: #64748b;
-  --soso-card-phrase: #9a6a4a;
+  --soso-card-phrase: #e28650;
   --soso-panel-bg: rgba(255, 255, 255, 0.86);
   --soso-input-bg: #ffffff;
 }
@@ -23,12 +22,11 @@ html.dark,
   --soso-card-text: #f8fafc;
   --soso-card-text-2: #cbd5e1;
   --soso-card-muted: #aeb8cc;
-  --soso-card-phrase: #f0b88e;
+  --soso-card-phrase: #ffc9a3;
   --soso-panel-bg: rgba(19, 24, 40, 0.82);
   --soso-input-bg: #151b2d;
 }
 
-/* AI 캐릭터 카드: 홈/커뮤니티 공통 */
 .soso-ai-resident-card,
 .home-ai-resident-card,
 .ai-resident-card,
@@ -81,7 +79,6 @@ html.dark .ai-character-card,
 }
 
 .soso-ai-resident-card__specialty,
-.home-ai-resident-card__desc,
 .ai-resident-card__desc,
 .character-card .desc,
 .ai-character-card .desc,
@@ -90,12 +87,16 @@ html.dark .ai-character-card,
 }
 
 .soso-ai-resident-card__phrase,
-.home-ai-resident-card__phrase {
+.home-ai-resident-card__desc,
+.home-ai-resident-card__phrase,
+.ai-resident-card__phrase,
+.character-card .phrase,
+.ai-character-card .phrase,
+.home-character-card .phrase {
   color: var(--soso-card-phrase) !important;
-  font-weight: 800;
+  font-weight: 850 !important;
 }
 
-/* 커뮤니티 상단 패널/검색/필터 */
 .soso-ai-residents,
 .soso-room-head,
 .soso-feed-toolbar,
@@ -158,7 +159,6 @@ html.dark textarea::placeholder,
   color: rgba(203, 213, 225, 0.58) !important;
 }
 
-/* 하단 탭 active 배경이 너무 밝거나 색이 겹치는 문제 보정 */
 html[data-theme="dark"] .bottom-nav__item.active,
 html.dark .bottom-nav__item.active,
 [data-theme="dark"] .bottom-nav__item.active {
@@ -173,7 +173,6 @@ html.dark .bottom-nav,
   border-top-color: rgba(255, 255, 255, 0.08) !important;
 }
 
-/* 라이트 모드에서 과하게 어두운 카드가 남는 경우 보정 */
 html:not([data-theme="dark"]):not(.dark) .soso-ai-resident-card,
 html:not([data-theme="dark"]):not(.dark) .home-ai-resident-card,
 html:not([data-theme="dark"]):not(.dark) .ai-resident-card,
