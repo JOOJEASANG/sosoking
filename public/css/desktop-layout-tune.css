@@ -1,28 +1,25 @@
-/* desktop-layout-tune.css — PC 전체 폭/본문 여백 통일 */
+/* desktop-layout-tune.css — PC 본문/푸터 폭 통일 보정 */
 
 @media (min-width: 1024px) {
   :root {
-    --desktop-shell-max: 1180px;
-    --desktop-sidebar-w: 240px;
-    --desktop-content-max: 920px;
-    --desktop-content-pad-x: 36px;
-    --desktop-content-pad-y: 28px;
-    --desktop-section-gap: 18px;
+    --desktop-content-max: 720px;
+    --desktop-content-pad-x: 28px;
+    --desktop-content-pad-y: 32px;
   }
 
   .app-shell {
     width: 100%;
-    max-width: var(--desktop-shell-max);
+    max-width: 1060px;
     margin-left: auto;
     margin-right: auto;
   }
 
   .site-sidebar {
-    width: var(--desktop-sidebar-w);
+    width: 240px;
   }
 
   .site-main {
-    align-items: stretch;
+    align-items: center;
     width: 100%;
     min-width: 0;
   }
@@ -32,7 +29,7 @@
     max-width: calc(var(--desktop-content-max) + (var(--desktop-content-pad-x) * 2));
     margin-left: auto;
     margin-right: auto;
-    padding: var(--desktop-content-pad-y) var(--desktop-content-pad-x) 72px;
+    padding: var(--desktop-content-pad-y) var(--desktop-content-pad-x);
     box-sizing: border-box;
   }
 
@@ -53,11 +50,7 @@
   .home-dash,
   .layout-cols,
   .layout-main,
-  .write-page,
-  .soso-feed-page,
-  .hall-page,
-  .detail-page,
-  .account-page {
+  .write-page {
     width: 100%;
     max-width: var(--desktop-content-max);
     margin-left: auto;
@@ -86,16 +79,12 @@
     margin-left: auto;
     margin-right: auto;
     box-sizing: border-box;
-    padding-left: var(--desktop-content-pad-x) !important;
-    padding-right: var(--desktop-content-pad-x) !important;
   }
 
-  .home-dash > *,
-  .soso-feed-page > *,
-  .hall-page > *,
-  .write-page > *,
-  .layout-main > * {
-    box-sizing: border-box;
+  .site-footer__inner,
+  .site-footer__copy-bar {
+    padding-left: var(--desktop-content-pad-x) !important;
+    padding-right: var(--desktop-content-pad-x) !important;
   }
 
   /* 관리자 화면 — 사이트와 동일한 가로폭 사용 */
@@ -123,17 +112,22 @@
 
 @media (min-width: 1280px) {
   :root {
-    --desktop-shell-max: 1240px;
-    --desktop-content-max: 960px;
-    --desktop-content-pad-x: 40px;
+    --desktop-content-max: 740px;
+  }
+
+  .app-shell {
+    max-width: 1100px;
   }
 }
 
 @media (min-width: 1024px) and (max-width: 1180px) {
   :root {
-    --desktop-shell-max: 1080px;
-    --desktop-content-max: 820px;
-    --desktop-content-pad-x: 30px;
+    --desktop-content-max: 660px;
+    --desktop-content-pad-x: 22px;
+  }
+
+  .app-shell {
+    max-width: 940px;
   }
 
   .site-sidebar {
@@ -141,7 +135,7 @@
   }
 }
 
-/* ── PC 홈: 빠른 시작 */
+/* ── PC 홈: 빠른 시작 3열로 표시 (720px 폭에서 6열은 너무 작음) ── */
 @media (min-width: 1024px) {
   .home-quick-grid {
     grid-template-columns: repeat(6, 1fr);
@@ -156,10 +150,12 @@
   .home-quick-btn__icon { font-size: 24px; }
   .home-quick-btn__label { font-size: 12px; }
 
+  /* 랭킹 hover 효과 강화 */
   .home-rank-item:hover {
     box-shadow: var(--shadow-xs);
   }
 
+  /* 통계 카드 hover */
   .home-stat-card:hover {
     box-shadow: var(--shadow-sm);
   }
