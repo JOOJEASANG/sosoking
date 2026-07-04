@@ -1,20 +1,26 @@
 export const MULTI_PRESETS = {
   vote: {
     label: '토론소',
+    buttonLabel: '토론',
     icon: '🗳️',
     shortDesc: '가볍게 갈리는 주제로 웃긴 토론을 엽니다.',
-    titlePlaceholder: '토론소 주제를 입력하세요. 예: 월요일은 공식적으로 사과해야 한다?',
+    titleLabel: '토론 주제',
+    descLabel: '토론 설명',
+    titlePlaceholder: '토론 주제를 입력하세요. 예: 월요일은 공식적으로 사과해야 한다?',
     descPlaceholder: '찬반이 갈릴 만한 상황이나 기준을 짧게 적어주세요.',
-    tagsPlaceholder: '#토론소, #웃긴토론, #찬반',
-    voteOptionPlaceholders: ['찬성', '반대'],
+    tagsPlaceholder: '#토론, #웃긴토론, #찬반',
+    voteOptionPlaceholders: ['왼쪽 선택지 입력', '오른쪽 선택지 입력'],
   },
   drip: {
     label: '드립소',
+    buttonLabel: '드립',
     icon: '😂',
     shortDesc: '작명, 번역, 핑계, 근황까지 웃긴 말로 바꾸는 드립 공간입니다.',
-    titlePlaceholder: '드립소 주제를 입력하세요. 예: 이 상황 이름 지어주세요',
+    titleLabel: '드립 주제',
+    descLabel: '드립 설명',
+    titlePlaceholder: '드립 주제를 입력하세요. 예: 이 상황 이름 지어주세요',
     descPlaceholder: '상황, 사진 설명, 번역할 문장, 작명할 대상을 자유롭게 적어주세요.',
-    tagsPlaceholder: '#드립소, #작명소, #이상한번역소',
+    tagsPlaceholder: '#드립, #작명, #이상한번역',
   },
 };
 
