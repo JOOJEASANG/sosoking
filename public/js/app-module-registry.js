@@ -51,6 +51,7 @@ export const EXTENSION_MODULES = [
   './ux-improvements.js',
   './final-consistency-20260705.js',
   './two-space-ux.js',
+  './home-empty-polish.js',
 ];
 
 export async function importModuleWithStamp(path, stamp = Date.now()) {
