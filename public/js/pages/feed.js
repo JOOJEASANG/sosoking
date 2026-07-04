@@ -3,9 +3,8 @@ import { collection, query, orderBy, limit, getDocs } from 'https://www.gstatic.
 import { getQueryParams, navigate } from '../router.js';
 import { renderFeedCard, renderSkeletonCards } from '../components/feed-card.js';
 import { setMeta } from '../utils/seo.js';
-import { getPublicAiResidents } from '../ai-residents.js';
 import { normalizeFeedSort, postMatchesType, postMatchesSearch, sortFeedPosts } from '../feed/filter.js';
-import { renderFeedSearchBar, renderFeedFilterBar, renderFeedEmptyState, updateFeedFilterUI, renderFeedSummary } from '../feed/render.js';
+import { renderFeedEmptyState, updateFeedFilterUI, renderFeedSummary } from '../feed/render.js';
 
 const PAGE_SIZE = 20;
 const QUERY_LIMIT = 160;
@@ -34,50 +33,10 @@ function normalizeContentType(value = '') {
   return '';
 }
 
-function currentContentFilter() {
-  return CONTENT_FILTERS.find(item => item.key === currentType) || CONTENT_FILTERS[0];
-}
-
-function renderContentTabs() {
-  return `<div class="soso-room-tabs" aria-label="콘텐츠 필터">${CONTENT_FILTERS.map(item => `<button type="button" class="soso-room-tab ${currentType === item.key ? 'active' : ''}" data-type-filter="${item.key}"><span>${item.icon}</span>${item.label}</button>`).join('')}</div>`;
-}
-
-function renderContentHead() {
-  return `
-    <div class="soso-room-head">
-      <div class="soso-room-head__label">✨ AI 캐릭터 참여 커뮤니티</div>
-      <div class="soso-room-head__title">판결 · 상담 · 토론 · 드립</div>
-      <div class="soso-room-head__desc">사소한 이야기도 8명의 AI 캐릭터가 끼어들면 재미있는 참여 콘텐츠가 됩니다.</div>
-      <div class="soso-room-head__action"><button class="btn btn--primary btn--sm" type="button" id="room-write-btn">글 열기</button></div>
-    </div>`;
-}
-
-function renderAiResidentsIntro() {
-  const residents = getPublicAiResidents();
-  return `
-    <section class="soso-ai-residents" aria-label="AI 캐릭터 소개">
-      <div class="soso-ai-residents__head">
-        <div>
-          <div class="soso-ai-residents__eyebrow">8명 캐릭터 대기중</div>
-          <div class="soso-ai-residents__title">글을 열면 성격 다른 캐릭터들이 댓글로 끼어듭니다</div>
-          <div class="soso-ai-residents__desc">판결·상담·토론·드립에 맞춰 어울리는 캐릭터가 자연스럽게 참여합니다.</div>
-        </div>
-        <button class="btn btn--ghost btn--sm" type="button" id="ai-residents-write-btn">캐릭터에게 판결받기</button>
-      </div>
-      <div class="soso-ai-residents__grid">
-        ${residents.map(resident => `
-          <div class="soso-ai-resident-card">
-            <div class="soso-ai-resident-card__name"><span>${resident.emoji}</span>${resident.name}</div>
-            <div class="soso-ai-resident-card__role">${resident.role} · ${resident.mbti || ''}</div>
-            <div class="soso-ai-resident-card__specialty">${resident.specialty}</div>
-            <div class="soso-ai-resident-card__phrase">${(resident.catchphrases || []).slice(0, 1).join('')}</div>
-          </div>`).join('')}
-      </div>
-    </section>`;
-}
-
 export async function renderFeed() {
   const el = document.getElementById('page-content');
+  if (!el) return;
+
   const params = getQueryParams();
   currentType = normalizeContentType(params.type || '');
   currentSearch = params.q || '';
@@ -85,17 +44,10 @@ export async function renderFeed() {
   currentPage = Math.max(1, Number(params.page || 1));
   cachedPosts = [];
   isLoading = false;
-  setMeta('소소킹 커뮤니티', '판결·상담·토론·드립 AI 캐릭터 참여 커뮤니티');
+  setMeta('소소킹 커뮤니티', '소소킹에 업로드된 글 목록');
 
   el.innerHTML = `
-    <div class="soso-feed-page layout-main layout-main--full feed-page-clean">
-      <div class="soso-feed-toolbar">
-        ${renderContentTabs()}
-        ${renderContentHead()}
-        ${renderAiResidentsIntro()}
-        ${renderFeedSearchBar({ search: currentSearch })}
-        ${renderFeedFilterBar({ type: currentType, search: currentSearch })}
-      </div>
+    <div class="soso-feed-page layout-main layout-main--full feed-page-clean feed-page-list-only">
       <div id="feed-summary" class="soso-feed-summary feed-result-summary"></div>
       <div id="feed-list" class="soso-feed-list">${renderSkeletonCards(5)}</div>
       <div id="feed-pagination" class="feed-pagination"></div>
@@ -107,8 +59,6 @@ export async function renderFeed() {
 }
 
 function bindFeedEvents() {
-  document.getElementById('room-write-btn')?.addEventListener('click', () => navigate(`/write?type=multi&preset=${currentContentFilter().write || 'judgment'}`));
-  document.getElementById('ai-residents-write-btn')?.addEventListener('click', () => navigate('/write?type=multi&preset=judgment'));
   document.querySelectorAll('[data-type-filter]').forEach(btn => btn.addEventListener('click', () => {
     currentType = btn.dataset.typeFilter || '';
     currentPage = 1;
@@ -191,7 +141,7 @@ async function loadPosts() {
     console.error('콘텐츠 목록 로드 실패', error);
     if (listEl) {
       listEl.classList.add('is-empty');
-      listEl.innerHTML = '<div class="empty-state"><div class="empty-state__icon">⚠️</div><div class="empty-state__title">콘텐츠를 불러오지 못했어요</div><div class="empty-state__desc">잠시 후 다시 시도해주세요.</div></div>';
+      listEl.innerHTML = '<div class="empty-state"><div class="empty-state__icon">⚠️</div><div class="empty-state__title">글 목록을 불러오지 못했어요</div><div class="empty-state__desc">잠시 후 다시 시도해주세요.</div></div>';
     }
   }
 
