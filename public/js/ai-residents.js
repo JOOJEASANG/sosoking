@@ -4,6 +4,7 @@ export const AI_RESIDENTS = [
     name: '운영봇',
     emoji: '🤖',
     role: '운영자',
+    hiddenFromPublicList: true,
     age: '설정 없음',
     job: '소소킹 진행자',
     mbti: 'ISTJ-like',
@@ -176,18 +177,20 @@ export function getAiResident(id) {
 }
 
 export function getPublicAiResidents() {
-  return AI_RESIDENTS.map(({ id, name, emoji, role, age, job, mbti, specialty, catchphrases, likes }) => ({
-    id,
-    name,
-    emoji,
-    role,
-    age,
-    job,
-    mbti,
-    specialty,
-    catchphrases,
-    likes,
-  }));
+  return AI_RESIDENTS
+    .filter(resident => resident.hiddenFromPublicList !== true)
+    .map(({ id, name, emoji, role, age, job, mbti, specialty, catchphrases, likes }) => ({
+      id,
+      name,
+      emoji,
+      role,
+      age,
+      job,
+      mbti,
+      specialty,
+      catchphrases,
+      likes,
+    }));
 }
 
 export function buildResidentPrompt(resident) {
