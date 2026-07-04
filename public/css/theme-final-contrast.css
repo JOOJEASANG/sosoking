@@ -280,3 +280,30 @@ html:not([data-theme="dark"]):not(.dark) .ai-character-card {
     padding: 12px !important;
   }
 }
+
+/* 홈 메인 캐릭터 박스 최종 보정: 겉 테두리와 카드 묶음 사이를 margin으로 확실히 띄움 */
+.home-onboard > .home-ai-residents {
+  width: auto !important;
+  max-width: none !important;
+  margin: 18px 24px 26px !important;
+  padding: 0 !important;
+  gap: 14px !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 640px) {
+  .home-onboard > .home-ai-residents {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    margin: 18px 24px 26px !important;
+    padding: 0 !important;
+    gap: 14px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .home-onboard > .home-ai-residents {
+    margin-left: 18px !important;
+    margin-right: 18px !important;
+    gap: 12px !important;
+  }
+}
