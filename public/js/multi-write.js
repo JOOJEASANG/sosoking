@@ -139,6 +139,21 @@ function setWriteSectionVisibility(normalized) {
   });
 }
 
+function applyPresetFieldCopy(normalized) {
+  const preset = MULTI_PRESETS[normalized] || MULTI_PRESETS.drip;
+  const titleLabel = document.querySelector('[data-field-label="title"]');
+  const descLabel = document.querySelector('[data-field-label="desc"]');
+  const titleInput = document.getElementById('mw-title');
+  const descInput = document.getElementById('mw-desc');
+  const tagsInput = document.getElementById('mw-tags');
+
+  if (titleLabel) titleLabel.innerHTML = `${preset.titleLabel || '제목'} <span class="required">*</span>`;
+  if (descLabel) descLabel.textContent = preset.descLabel || '내용';
+  if (titleInput) titleInput.placeholder = preset.titlePlaceholder || '';
+  if (descInput) descInput.placeholder = preset.descPlaceholder || '';
+  if (tagsInput) tagsInput.placeholder = preset.tagsPlaceholder || '';
+}
+
 function updateOptionSelection(preset) {
   const normalized = MULTI_PRESETS[preset] ? preset : 'drip';
   const hidden = document.getElementById('mw-selected-preset');
@@ -157,6 +172,7 @@ function updateOptionSelection(preset) {
   });
 
   setWriteSectionVisibility(normalized);
+  applyPresetFieldCopy(normalized);
 
   document.querySelectorAll('[data-module-input]').forEach(input => {
     const key = input.dataset.moduleInput;
@@ -202,8 +218,8 @@ function bindMultiWriteEvents() {
 }
 
 function emptyTitleMessage(presetKey) {
-  if (presetKey === 'vote') return '토론소 주제를 입력해주세요.';
-  if (presetKey === 'drip') return '드립소 주제를 입력해주세요.';
+  if (presetKey === 'vote') return '토론 주제를 입력해주세요.';
+  if (presetKey === 'drip') return '드립 주제를 입력해주세요.';
   return '제목을 입력해주세요.';
 }
 
