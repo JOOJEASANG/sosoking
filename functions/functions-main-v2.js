@@ -20,7 +20,6 @@ const account = require('./account-functions.js');
 const features = require('./sosoking-features-functions.js');
 const aiContent = require('./ai-content-functions.js');
 const fourGameAiContent = require('./four-game-ai-content-functions.js');
-const aiCharacterComments = require('./ai-character-comments-functions.js');
 const removedQuizCompat = require('./six-game-functions.js');
 const adminAutomation = require('./ai-admin-automation-functions.js');
 const adminUsers = require('./admin-user-functions.js');
@@ -71,9 +70,6 @@ module.exports = {
 
   // 관리자 수동 자동글 생성은 4가지 게임형 구조로 덮어씁니다.
   ...fourGameAiContent,
-
-  // 관리자 테스트용 AI 캐릭터 댓글 생성
-  ...aiCharacterComments,
 
   ...aiHunt,
   ...settlement,
