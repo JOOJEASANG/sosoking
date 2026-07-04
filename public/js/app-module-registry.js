@@ -52,6 +52,7 @@ export const EXTENSION_MODULES = [
   './deadline-gate.js',
   './ui-final-interactions.js',
   './ux-improvements.js',
+  './final-consistency-20260705.js',
 ];
 
 export async function importModuleWithStamp(path, stamp = Date.now()) {
