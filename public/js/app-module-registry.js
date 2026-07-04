@@ -31,7 +31,6 @@ export const EXTENSION_MODULES = [
   './multi-detail.js',
   './detail-extras.js',
   './detail-cards.js',
-  './multi-write.js',
   './write-edit-router-fix.js',
   './write-edit-save-fix.js',
   './edit-screen-polish.js',
