@@ -1,21 +1,38 @@
 import { navigate, getQueryParams } from '../router.js';
 import { setMeta } from '../utils/seo.js';
 
+const DEFAULT_PRESET = 'judgment';
+const ALLOWED_PRESETS = new Set(['judgment', 'consult', 'vote', 'drip']);
+
 const LEGACY_REDIRECTS = {
+  collect: 'judgment',
+  general: 'judgment',
+  category: 'judgment',
+  anonymous: 'judgment',
+  judgment: 'judgment',
   vote: 'vote',
+  ox: 'vote',
   crazy_court: 'vote',
   debate: 'vote',
   discussion: 'vote',
-  drip: 'collect',
-  cbattle: 'collect',
-  naming: 'collect',
-  relay: 'collect',
-  acrostic: 'collect',
-  tournament: 'collect',
+  consult: 'consult',
+  quiz: 'consult',
+  initial_game: 'consult',
+  drip: 'drip',
+  cbattle: 'drip',
+  naming: 'drip',
+  relay: 'drip',
+  acrostic: 'drip',
+  tournament: 'drip',
 };
 
 function escAttr(value) {
   return String(value || '').replace(/[&<>"]/g, '');
+}
+
+function normalizePreset(value) {
+  const key = String(value || '').trim();
+  return ALLOWED_PRESETS.has(key) ? key : (LEGACY_REDIRECTS[key] || DEFAULT_PRESET);
 }
 
 function showWriteError(error) {
@@ -27,12 +44,12 @@ function showWriteError(error) {
       <div class="empty-state__icon">⚠️</div>
       <div class="empty-state__title">글쓰기 화면 오류</div>
       <div class="empty-state__desc">${message.replace(/[&<>]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[ch]))}</div>
-      <button class="btn btn--primary" style="margin-top:14px" onclick="location.hash='#/write?type=multi&preset=collect'">다시 열기</button>
+      <button class="btn btn--primary" style="margin-top:14px" onclick="location.hash='#/write?type=multi&preset=judgment'">다시 열기</button>
     </div>`;
 }
 
 export function renderWrite() {
-  setMeta('일반게시판 글쓰기');
+  setMeta('소소킹 글쓰기');
   const el = document.getElementById('page-content');
   if (!el) return;
 
@@ -49,23 +66,19 @@ export function renderWrite() {
   }
 
   if (!type) {
-    navigate('/write?type=multi&preset=collect');
+    navigate(`/write?type=multi&preset=${DEFAULT_PRESET}`);
     return;
   }
 
   if (type && type !== 'multi') {
-    const mappedPreset = LEGACY_REDIRECTS[type] || 'collect';
+    const mappedPreset = normalizePreset(type);
     navigate(`/write?type=multi&preset=${mappedPreset}`);
     return;
   }
 
-  if (preset === 'quiz' || preset === 'initial_game') {
-    navigate('/write?type=multi&preset=collect');
-    return;
-  }
-
-  if (preset === 'drip' || preset === 'cbattle' || preset === 'tournament') {
-    navigate('/write?type=multi&preset=collect');
+  const normalizedPreset = normalizePreset(preset);
+  if (preset !== normalizedPreset) {
+    navigate(`/write?type=multi&preset=${normalizedPreset}`);
     return;
   }
 
@@ -82,5 +95,5 @@ export function renderWrite() {
       showWriteError(error);
     });
 
-  window.dispatchEvent(new CustomEvent('sosoking:render-multi-write', { detail: { preset: preset || 'collect' } }));
+  window.dispatchEvent(new CustomEvent('sosoking:render-multi-write', { detail: { preset: normalizedPreset } }));
 }
