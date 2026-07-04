@@ -1,0 +1,32 @@
+/* community-align-fix.css
+   커뮤니티 상단 묶음(soso-feed-toolbar)만 모바일 헤더 좌우 라인에 맞춤.
+   내부 카테고리 탭, 안내 박스, 캐릭터 박스 디자인은 변경하지 않습니다. */
+
+@media (max-width: 1023px) {
+  .soso-feed-page .soso-feed-toolbar {
+    width: calc(100% + 6px) !important;
+    max-width: calc(100% + 6px) !important;
+    margin-left: -2px !important;
+    margin-right: -4px !important;
+    box-sizing: border-box !important;
+  }
+}
+
+@media (max-width: 374px) {
+  .soso-feed-page .soso-feed-toolbar {
+    width: calc(100% + 4px) !important;
+    max-width: calc(100% + 4px) !important;
+    margin-left: -1px !important;
+    margin-right: -3px !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .soso-feed-page .soso-feed-toolbar {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+}
