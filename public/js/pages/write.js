@@ -1,26 +1,32 @@
 import { navigate, getQueryParams } from '../router.js';
 import { setMeta } from '../utils/seo.js';
 
-const DEFAULT_PRESET = 'judgment';
-const ALLOWED_PRESETS = new Set(['judgment', 'consult', 'vote', 'drip']);
+const DEFAULT_PRESET = 'drip';
+const ALLOWED_PRESETS = new Set(['vote', 'drip']);
 
 const LEGACY_REDIRECTS = {
-  collect: 'judgment',
-  general: 'judgment',
-  category: 'judgment',
-  anonymous: 'judgment',
-  judgment: 'judgment',
+  collect: 'drip',
+  general: 'drip',
+  category: 'drip',
+  anonymous: 'drip',
+  judgment: 'vote',
+  verdict: 'vote',
+  court: 'vote',
   vote: 'vote',
   ox: 'vote',
   crazy_court: 'vote',
   debate: 'vote',
   discussion: 'vote',
-  consult: 'consult',
-  quiz: 'consult',
-  initial_game: 'consult',
+  balance: 'vote',
+  battle: 'vote',
+  consult: 'drip',
+  quiz: 'drip',
+  initial_game: 'drip',
   drip: 'drip',
   cbattle: 'drip',
   naming: 'drip',
+  translation: 'drip',
+  translate: 'drip',
   relay: 'drip',
   acrostic: 'drip',
   tournament: 'drip',
@@ -44,7 +50,7 @@ function showWriteError(error) {
       <div class="empty-state__icon">⚠️</div>
       <div class="empty-state__title">글쓰기 화면 오류</div>
       <div class="empty-state__desc">${message.replace(/[&<>]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[ch]))}</div>
-      <button class="btn btn--primary" style="margin-top:14px" onclick="location.hash='#/write?type=multi&preset=judgment'">다시 열기</button>
+      <button class="btn btn--primary" style="margin-top:14px" onclick="location.hash='#/write?type=multi&preset=drip'">다시 열기</button>
     </div>`;
 }
 
