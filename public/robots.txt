@@ -1,6 +1,14 @@
 User-agent: *
 Allow: /
 Allow: /p/
+Allow: /css/
+Allow: /js/
+Allow: /icon-192.png
+Allow: /icon-512.png
+Allow: /og-image.png
+Disallow: /admin
+Disallow: /login
+Disallow: /my
 Disallow: /p/*?*
 
 Sitemap: https://sosoking.co.kr/sitemap.xml
