@@ -10,13 +10,7 @@ const REGION = 'asia-northeast3';
 const GEMINI_API_KEY = defineSecret('GEMINI_API_KEY');
 
 function clean(value, max = 1000) {
-  return String(value || '')
-    .replace(/[<>]/g, '')
-    .replace(/\r\n/g, '\n')
-    .replace(/\r/g, '\n')
-    .replace(/\n{4,}/g, '\n\n\n')
-    .trim()
-    .slice(0, max);
+  return String(value || '').replace(/[<>]/g, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').replace(/\n{4,}/g, '\n\n\n').trim().slice(0, max);
 }
 
 function parseJson(text) {
@@ -45,19 +39,12 @@ async function isFeatureEnabled() {
     const data = snap.data() || {};
     if (data.enabled === false) return false;
     return data.features?.characterPanel !== false;
-  } catch {
-    return true;
-  }
+  } catch { return true; }
 }
 
 async function isAdmin(uid) {
   if (!uid) return false;
-  try {
-    const snap = await db.doc(`admins/${uid}`).get();
-    return snap.exists;
-  } catch {
-    return false;
-  }
+  try { return (await db.doc(`admins/${uid}`).get()).exists; } catch { return false; }
 }
 
 function postType(post) {
@@ -77,11 +64,8 @@ function safeUrl(value) {
   if (!raw || /[\s"'<>]/.test(raw)) return '';
   try {
     const url = new URL(raw);
-    if (url.protocol !== 'https:') return '';
-    return url.toString();
-  } catch {
-    return '';
-  }
+    return url.protocol === 'https:' ? url.toString() : '';
+  } catch { return ''; }
 }
 
 async function imagePartFromUrl(url) {
@@ -119,29 +103,28 @@ function promptFor(post) {
   const desc = clean(post.desc || post.body || '', 1800);
   const hasImages = Array.isArray(post.images) && post.images.length > 0;
   const modeGuide = type === 'vote'
-    ? `토론소 글이다. 선택지: ${options.length ? options.join(' VS ') : '사용자 선택지 없음'}\n운영봇은 사회자로 쟁점을 선명하게 정리한다. 캐릭터들은 양쪽 논리를 재밌게 정리하고, 왜 갈릴 만한지 보여줘야 한다.`
-    : '드립소 글이다. 운영봇은 사회자로 상황을 요약하고, 캐릭터들은 작명, 이상한 번역, 말투 변환, 근황뉴스, 한 줄 드립 중 가장 어울리는 방식으로 받아친다.';
+    ? `토론소 글이다. 선택지: ${options.length ? options.join(' VS ') : '사용자 선택지 없음'}\n운영봇은 사회자로 쟁점을 정리하고, 캐릭터들은 양쪽 논리를 재밌게 갈라준다.`
+    : '드립소 글이다. 운영봇은 사회자로 상황을 요약하고, 캐릭터들은 작명/번역/근황/한줄드립 중 가장 웃긴 방식으로 받아친다.';
 
   return `너는 소소킹의 핵심 AI 캐릭터 엔진이다.
-목표: 사용자가 올린 제목, 내용, 첨부 이미지까지 모두 파악해서 사람들이 댓글을 달고 싶게 만드는 고품질 토론/드립 결과를 만든다.
+목표: 제목, 내용, 첨부 이미지까지 모두 파악해 사람들이 댓글을 달고 싶게 만드는 고품질 토론/드립 결과를 만든다.
 
 절대 규칙:
-- 운영봇은 드립러가 아니라 사회자다. 항상 판을 열고, 상황을 정리하고, 유저 참여를 유도한다.
-- 뻔한 말, 안전하지만 재미없는 말, 일반적인 상담 멘트 금지.
+- 운영봇은 드립러가 아니라 사회자다. 판을 열고, 상황을 정리하고, 유저 참여를 유도한다.
+- 뻔한 말, 안전하지만 재미없는 말, 일반 상담 멘트 금지.
 - 제목과 본문에서 구체적인 단어를 반드시 집어서 활용한다.
 - 이미지가 있으면 이미지 속 분위기, 물체, 표정, 상황, 구도에서 웃긴 포인트를 찾아 반영한다.
-- 이미지가 있어도 보이지 않는 척하지 말고, 보이는 범위 안에서만 묘사한다.
-- 공격, 혐오, 성희롱, 신상추정, 특정인 조롱은 금지한다. 대상은 사람 자체가 아니라 상황과 말투여야 한다.
+- 보이는 범위 밖의 인물 신상, 정체, 민감정보는 추측하지 않는다.
+- 공격, 혐오, 성희롱, 특정인 조롱 금지. 웃음의 대상은 사람 자체가 아니라 상황과 말투다.
 - 캐릭터는 서로 다른 관점을 가져야 한다. 셋 다 비슷한 말 금지.
-- 각 캐릭터는 한 방이 있어야 한다. 최소 한 줄은 사용자가 댓글로 따라 치고 싶을 정도여야 한다.
-- 한국 인터넷 유머 톤은 가능하지만, 욕설에 의존하지 말고 표현력으로 웃겨라.
+- 각 캐릭터는 최소 한 줄의 강한 punchline을 가져야 한다.
 
 캐릭터 역할:
-- 운영봇 🤖: 사회자. 요약, 쟁점 정리, 룰 안내, 댓글 유도만 한다. 직접 우승 드립을 치지 않는다.
-- 민수 😂: 드립왕. 짧고 커뮤식으로 웃긴 한 줄을 만든다.
-- 지은 🧠: 똑똑이. 상황을 분석하고 마지막에 날카로운 웃긴 표현을 붙인다.
-- 준호 🗳️: 토론러. 양쪽 논리를 분리하고 VS 구도를 재밌게 만든다.
-- 철구 😈: 살짝 매운맛. 선은 넘지 않고 상황의 허점을 찌른다.
+- 운영봇 🤖: 사회자. 요약, 쟁점 정리, 룰 안내, 댓글 유도. 직접 우승 드립을 치지 않는다.
+- 민수 😂: 드립왕. 짧고 커뮤식으로 웃긴 한 줄.
+- 지은 🧠: 똑똑이. 분석 후 날카로운 웃긴 표현.
+- 준호 🗳️: 토론러. 양쪽 논리를 분리하고 VS 구도 설계.
+- 철구 😈: 살짝 매운맛. 선은 넘지 않고 상황의 허점을 찌름.
 
 ${modeGuide}
 
@@ -156,11 +139,7 @@ ${desc || '(없음)'}
   "headline": "AI 캐릭터 패널 제목 30자 이내",
   "imageRead": "이미지가 있으면 이미지 분석 1~2문장, 없으면 빈 문자열",
   "host": {
-    "id": "opsbot",
-    "name": "운영봇",
-    "emoji": "🤖",
-    "role": "사회자",
-    "opening": "사회자처럼 판을 여는 문장 1~2문장",
+    "opening": "운영봇 사회자 멘트 1~2문장",
     "summary": "상황 요약 1문장",
     "question": "유저가 댓글/투표로 참여하고 싶게 만드는 질문 1문장"
   },
@@ -190,14 +169,10 @@ function fallbackPanel(post) {
     kind,
     headline: kind === 'vote' ? 'AI 토론소 개장' : 'AI 드립소 개장',
     imageRead: '',
+    imageCountAnalyzed: 0,
     host: {
-      id: 'opsbot',
-      name: '운영봇',
-      emoji: '🤖',
-      role: '사회자',
-      opening: kind === 'vote'
-        ? `토론소 열었습니다. 오늘 안건은 “${title}”입니다.`
-        : `드립소 열었습니다. 오늘 소재는 “${title}”입니다.`,
+      id: 'opsbot', name: '운영봇', emoji: '🤖', role: '사회자',
+      opening: kind === 'vote' ? `토론소 열었습니다. 오늘 안건은 “${title}”입니다.` : `드립소 열었습니다. 오늘 소재는 “${title}”입니다.`,
       summary: kind === 'vote' && options.length ? `${options.join(' VS ')} 구도로 의견이 갈릴 수 있습니다.` : '짧고 강한 한 줄이 잘 먹히는 소재입니다.',
       question: kind === 'vote' ? '여러분은 어느 쪽입니까?' : '이 상황, 한 줄로 어떻게 살릴까요?',
     },
@@ -210,49 +185,51 @@ function fallbackPanel(post) {
       { id: 'cheolgu', name: '철구', emoji: '😈', role: '매운맛', stance: '허점 찌르기', lines: ['웃긴 건 본인은 진지했을 가능성이 높다는 점입니다.', '그래서 더 드립감입니다.'], punchline: '진심과 대참사는 종이 한 장 차이입니다.' },
       { id: 'jieun', name: '지은', emoji: '🧠', role: '똑똑이', stance: '상황 분석', lines: ['소재의 웃음 포인트는 기대와 현실의 차이입니다.', '댓글은 짧게 갈수록 강합니다.'], punchline: '논리적으로 봐도 이건 드립으로 처리하는 게 맞습니다.' },
     ],
-    bestLines: kind === 'vote' ? ['이건 사소한데 은근히 갈리는 안건입니다.', '오늘도 평화로운 척하던 토론소가 열렸습니다.'] : ['진심과 대참사는 종이 한 장 차이입니다.', '이 상황 이름은 소소한 대참사입니다.'],
-    commentPrompt: kind === 'vote' ? '당신은 어느 쪽인지 투표하고 한 줄 이유를 남겨주세요.' : '이 소재를 더 웃긴 한 줄로 받아쳐주세요.',
+    bestLines: kind === 'vote' ? ['사소한데 은근히 갈리는 안건입니다.', '오늘도 평화로운 척하던 토론소가 열렸습니다.'] : ['진심과 대참사는 종이 한 장 차이입니다.', '이 상황 이름은 소소한 대참사입니다.'],
+    commentPrompt: kind === 'vote' ? '투표하고 한 줄 이유를 남겨주세요.' : '더 웃긴 한 줄로 받아쳐주세요.',
+    model: 'fallback',
   };
 }
 
 function normalizePanel(parsed, post, imageCount) {
   const base = fallbackPanel(post);
   const data = parsed && typeof parsed === 'object' ? parsed : {};
-  const chars = Array.isArray(data.characters) ? data.characters : [];
+  const rawChars = Array.isArray(data.characters) && data.characters.length ? data.characters : base.characters;
   return {
     enabled: true,
-    status: chars.length ? 'ready' : base.status,
+    status: Array.isArray(data.characters) && data.characters.length ? 'ready' : base.status,
     kind: data.kind === 'vote' ? 'vote' : postType(post),
     headline: clean(data.headline, 40) || base.headline,
     imageRead: clean(data.imageRead, 240) || '',
     imageCountAnalyzed: imageCount,
     host: {
-      id: 'opsbot',
-      name: '운영봇',
-      emoji: '🤖',
-      role: '사회자',
+      id: 'opsbot', name: '운영봇', emoji: '🤖', role: '사회자',
       opening: clean(data.host?.opening, 220) || base.host.opening,
       summary: clean(data.host?.summary, 180) || base.host.summary,
       question: clean(data.host?.question, 160) || base.host.question,
     },
-    characters: (chars.length ? chars : base.characters).slice(0, 4).map((item, index) => {
+    characters: rawChars.slice(0, 4).map((item, index) => {
       const fallback = base.characters[index] || base.characters[0];
-      const lines = Array.isArray(item.lines) ? item.lines : [];
+      const lines = Array.isArray(item.lines) ? item.lines.map(line => clean(line, 180)).filter(Boolean).slice(0, 3) : [];
       return {
         id: clean(item.id, 30) || fallback.id,
         name: clean(item.name, 20) || fallback.name,
         emoji: clean(item.emoji, 4) || fallback.emoji,
         role: clean(item.role, 30) || fallback.role,
         stance: clean(item.stance, 60) || fallback.stance,
-        lines: lines.map(line => clean(line, 180)).filter(Boolean).slice(0, 3).length ? lines.map(line => clean(line, 180)).filter(Boolean).slice(0, 3) : fallback.lines,
+        lines: lines.length ? lines : fallback.lines,
         punchline: clean(item.punchline, 160) || fallback.punchline,
       };
     }),
     bestLines: (Array.isArray(data.bestLines) ? data.bestLines : base.bestLines).map(line => clean(line, 140)).filter(Boolean).slice(0, 4),
     commentPrompt: clean(data.commentPrompt, 180) || base.commentPrompt,
     model: 'gemini-2.5-flash',
-    generatedAt: FieldValue.serverTimestamp(),
   };
+}
+
+async function savePanel(ref, panel) {
+  await ref.set({ aiCharacterPanel: { ...panel, generatedAt: FieldValue.serverTimestamp() }, aiCharacterPanelUpdatedAt: FieldValue.serverTimestamp() }, { merge: true });
+  return panel;
 }
 
 exports.generateCharacterPanel = onCall({ region: REGION, timeoutSeconds: 120, memory: '512MiB', secrets: [GEMINI_API_KEY] }, async request => {
@@ -274,8 +251,7 @@ exports.generateCharacterPanel = onCall({ region: REGION, timeoutSeconds: 120, m
   const apiKey = await getAiKey();
   if (!apiKey) {
     const panel = normalizePanel(null, post, 0);
-    await ref.set({ aiCharacterPanel: panel, aiCharacterPanelUpdatedAt: FieldValue.serverTimestamp() }, { merge: true });
-    return { ok: true, fallback: true, reason: 'no-api-key', panel };
+    return { ok: true, fallback: true, reason: 'no-api-key', panel: await savePanel(ref, panel) };
   }
 
   let parsed = null;
@@ -284,19 +260,13 @@ exports.generateCharacterPanel = onCall({ region: REGION, timeoutSeconds: 120, m
     const imageParts = await buildImageParts(post.images || []);
     imageCount = imageParts.length;
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash',
-      generationConfig: { temperature: 0.95, maxOutputTokens: 2200 },
-    });
-    const result = await model.generateContent({
-      contents: [{ role: 'user', parts: [{ text: promptFor(post) }, ...imageParts] }],
-    });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash', generationConfig: { temperature: 0.95, maxOutputTokens: 2200 } });
+    const result = await model.generateContent({ contents: [{ role: 'user', parts: [{ text: promptFor(post) }, ...imageParts] }] });
     parsed = parseJson(result.response.text());
   } catch (error) {
     console.error('[generateCharacterPanel]', error);
   }
 
   const panel = normalizePanel(parsed, post, imageCount);
-  await ref.set({ aiCharacterPanel: panel, aiCharacterPanelUpdatedAt: FieldValue.serverTimestamp() }, { merge: true });
-  return { ok: true, panel };
+  return { ok: true, panel: await savePanel(ref, panel) };
 });
