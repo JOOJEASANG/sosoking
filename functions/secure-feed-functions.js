@@ -171,13 +171,20 @@ function safeOgImage(value) {
   return 'https://sosoking.co.kr/og-image.png';
 }
 
-// HTML 태그 제거 후 plain text 추출 (meta description용)
 function stripHtml(html) {
   return String(html || '')
     .replace(/<[^>]+>/g, ' ')
     .replace(/&[a-z]+;/gi, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+function typeLabel(post) {
+  if (post.typeLabel) return String(post.typeLabel).replace(/게임/g, '콘텐츠');
+  if (post.subtype === 'consult') return '황당상담';
+  if (post.subtype === 'vote') return '납득토론';
+  if (post.subtype === 'drip') return '한줄드립';
+  return '소소판정';
 }
 
 const seoPost = onRequest({ region: REGION }, async (req, res) => {
@@ -190,26 +197,37 @@ const seoPost = onRequest({ region: REGION }, async (req, res) => {
     if (!snap.exists) { res.redirect(`https://sosoking.co.kr/#/detail/${id}`); return; }
 
     const post = snap.data() || {};
-    const title      = escapeAttr(post.title || '소소킹 놀이판', 80);
-    const rawDesc    = stripHtml(post.body || post.desc || post.subtitle || '소소킹에서 즐겨요');
-    const desc       = escapeAttr(rawDesc, 160);
+    if (post.hidden === true) { res.redirect('https://sosoking.co.kr/'); return; }
+
+    const label      = escapeAttr(typeLabel(post), 40);
+    const titleText  = post.title || '황당사건 판정 글';
+    const title      = escapeAttr(titleText, 90);
+    const rawDesc    = stripHtml(post.body || post.desc || post.subtitle || '세상의 황당한 사건과 어이없는 상황을 함께 판정하는 소소킹 글입니다.');
+    const desc       = escapeAttr(rawDesc || '황당사건 판정 커뮤니티 소소킹', 180);
     const image      = safeOgImage(Array.isArray(post.images) ? post.images[0] : post.thumbnailUrl);
     const url        = `https://sosoking.co.kr/p/${id}`;
-    const dest       = `https://sosoking.co.kr/#/detail/${id}`;
+    const appUrl     = `https://sosoking.co.kr/#/detail/${id}`;
     const author     = escapeAttr(post.authorName || '소소러', 40);
     const published  = post.createdAt?.toDate?.()?.toISOString() || new Date().toISOString();
     const modified   = post.updatedAt?.toDate?.()?.toISOString() || published;
+    const reactions  = Number(post.reactions?.total || 0);
+    const comments   = Number(post.commentCount || 0);
+    const views      = Number(post.viewCount || 0);
 
-    // JSON-LD 구조화 데이터 (구글 리치 결과용). </script> 탈출 방지를 위해 JSON 문자열도 HTML-safe 처리합니다.
     const jsonLd = safeJsonForHtml({
       '@context': 'https://schema.org',
-      '@type': 'Article',
-      headline: post.title || '소소킹 놀이판',
-      description: rawDesc.slice(0, 200),
+      '@type': 'DiscussionForumPosting',
+      headline: titleText,
+      description: rawDesc.slice(0, 220),
       image: [image],
       datePublished: published,
       dateModified: modified,
       author: { '@type': 'Person', name: post.authorName || '소소러' },
+      interactionStatistic: [
+        { '@type': 'InteractionCounter', interactionType: 'https://schema.org/CommentAction', userInteractionCount: comments },
+        { '@type': 'InteractionCounter', interactionType: 'https://schema.org/LikeAction', userInteractionCount: reactions },
+        { '@type': 'InteractionCounter', interactionType: 'https://schema.org/ViewAction', userInteractionCount: views },
+      ],
       publisher: {
         '@type': 'Organization',
         name: '소소킹',
@@ -226,6 +244,7 @@ const seoPost = onRequest({ region: REGION }, async (req, res) => {
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>${title} | 소소킹</title>
   <meta name="description" content="${desc}">
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
   <meta property="og:title" content="${title} | 소소킹">
   <meta property="og:description" content="${desc}">
   <meta property="og:image" content="${image}">
@@ -233,6 +252,7 @@ const seoPost = onRequest({ region: REGION }, async (req, res) => {
   <meta property="og:type" content="article">
   <meta property="og:locale" content="ko_KR">
   <meta property="og:site_name" content="소소킹">
+  <meta property="article:section" content="${label}">
   <meta property="article:author" content="${author}">
   <meta property="article:published_time" content="${escapeAttr(published)}">
   <meta property="article:modified_time" content="${escapeAttr(modified)}">
@@ -242,18 +262,24 @@ const seoPost = onRequest({ region: REGION }, async (req, res) => {
   <meta name="twitter:image" content="${image}">
   <link rel="canonical" href="${url}">
   <script type="application/ld+json">${jsonLd}</script>
-  <meta http-equiv="refresh" content="0;url=${dest}">
-  <script>window.location.replace(${JSON.stringify(dest)});</script>
-  <style>body{font-family:-apple-system,sans-serif;max-width:680px;margin:24px auto;padding:0 16px;color:#222}h1{font-size:1.4em;margin-bottom:8px}p{color:#555;line-height:1.6}footer{margin-top:16px;font-size:.85em;color:#888}a{color:#FF4422}</style>
+  <style>
+    body{font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',system-ui,sans-serif;max-width:720px;margin:28px auto;padding:0 18px;color:#1f2937;background:#fff;line-height:1.65}
+    .badge{display:inline-flex;padding:6px 10px;border-radius:999px;background:#fff3ed;color:#e25f2f;font-size:13px;font-weight:900;margin-bottom:12px}
+    h1{font-size:1.55rem;line-height:1.35;margin:0 0 12px;font-weight:900;color:#111827}
+    p{font-size:1rem;color:#374151;white-space:pre-wrap}.meta{font-size:.9rem;color:#6b7280;margin:14px 0 20px}.stats{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0;color:#6b7280;font-size:.9rem}.stats span{background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:6px 9px}.btn{display:inline-flex;margin-top:18px;background:#ff6b4a;color:#fff;text-decoration:none;border-radius:12px;padding:12px 16px;font-weight:900}.home{display:inline-flex;margin-bottom:18px;color:#ff6b4a;text-decoration:none;font-weight:800}
+  </style>
 </head>
 <body>
-  <p><a href="https://sosoking.co.kr">← 소소킹</a></p>
+  <a class="home" href="https://sosoking.co.kr/">← 소소킹 홈</a>
+  <div class="badge">${label}</div>
   <h1>${title}</h1>
+  <div class="meta">${author} · <time datetime="${escapeAttr(published)}">${escapeAttr(published.slice(0, 10))}</time></div>
   <p>${desc}</p>
-  <footer>${author} · <time datetime="${escapeAttr(published)}">${escapeAttr(published.slice(0, 10))}</time></footer>
-  <p style="margin-top:24px"><a href="${dest}">전체 내용 보기 →</a></p>
+  <div class="stats"><span>좋아요 ${reactions}</span><span>댓글 ${comments}</span><span>조회 ${views}</span></div>
+  <a class="btn" href="${appUrl}">앱에서 전체 내용 보기</a>
 </body></html>`);
-  } catch {
+  } catch (error) {
+    console.error('[seoPost] failed', error);
     res.redirect(`https://sosoking.co.kr/#/detail/${id}`);
   }
 });
