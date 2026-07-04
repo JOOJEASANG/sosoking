@@ -2,7 +2,7 @@
 import { auth } from '../firebase.js';
 import { navigate } from '../router.js';
 
-const DEFAULT_WRITE_PATH = '/write?type=multi&preset=judgment';
+const DEFAULT_WRITE_PATH = '/write?type=multi&preset=drip';
 
 function svgIcon(path, strokeWidth = '1.8') {
   return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="${strokeWidth}" aria-hidden="true">${path}</svg>`;
