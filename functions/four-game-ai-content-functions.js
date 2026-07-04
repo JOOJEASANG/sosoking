@@ -5,7 +5,7 @@ const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 
 const db = getFirestore();
 const REGION = 'asia-northeast3';
-const PRESETS = ['judgment', 'consult', 'vote', 'drip'];
+const PRESETS = ['vote', 'drip'];
 const HTTPS_ERROR_CODES = new Set([
   'cancelled', 'unknown', 'invalid-argument', 'deadline-exceeded', 'not-found',
   'already-exists', 'permission-denied', 'resource-exhausted', 'failed-precondition',
@@ -24,12 +24,10 @@ function clean(value, max = 500) {
 }
 
 function normalizePreset(value) {
-  const key = String(value || 'judgment').trim();
-  if (['judgment', 'general', 'collect', 'court', 'solo_room', 'solo'].includes(key)) return 'judgment';
-  if (['consult', 'quiz', 'advice', 'invite_room', 'invite'].includes(key)) return 'consult';
-  if (['vote', 'debate', 'discussion', 'ox', 'day_room', 'day'].includes(key)) return 'vote';
-  if (['drip', 'cbattle', 'ended_room', 'ended'].includes(key)) return 'drip';
-  return PRESETS.includes(key) ? key : 'judgment';
+  const key = String(value || 'drip').trim();
+  if (['vote', 'debate', 'discussion', 'ox', 'day_room', 'day', 'judgment', 'court'].includes(key)) return 'vote';
+  if (['drip', 'cbattle', 'ended_room', 'ended', 'consult', 'quiz', 'advice', 'naming', 'translation'].includes(key)) return 'drip';
+  return PRESETS.includes(key) ? key : 'drip';
 }
 
 function rethrowCallableError(error, scope) {
@@ -38,7 +36,7 @@ function rethrowCallableError(error, scope) {
     throw new HttpsError(code, error.message || '요청을 처리하지 못했습니다.');
   }
   console.error(`[${scope}]`, error);
-  throw new HttpsError('internal', error && error.message ? error.message : '커뮤니티 AI 데이터 생성 중 오류가 발생했습니다.');
+  throw new HttpsError('internal', error && error.message ? error.message : '소소킹 AI 데이터 생성 중 오류가 발생했습니다.');
 }
 
 async function assertAdmin(request) {
@@ -53,40 +51,62 @@ async function assertAdmin(request) {
 }
 
 function sample(preset) {
-  if (preset === 'consult') return {
-    title: '장바구니가 저를 부릅니다',
-    desc: '며칠째 장바구니에서 손짓하는 물건이 있습니다. 사도 되는지 말려야 하는지 상담 부탁합니다.',
-    tags: ['상담', '고민', '소소킹'],
-  };
   if (preset === 'vote') return {
-    title: '먼저 연락한다 vs 그냥 둔다',
-    desc: '한동안 연락이 뜸한 친구에게 먼저 연락하는 게 좋을까요, 아니면 그냥 자연스럽게 두는 게 좋을까요?',
-    tags: ['토론', '찬반', '소소킹'],
-  };
-  if (preset === 'drip') return {
-    title: '오늘의 드립 주제',
-    desc: '퇴근 5분 전에 회의 잡힌 사람의 한마디는?',
-    tags: ['드립', '한줄드립', '소소킹'],
+    title: '배달비 4천원인데 시켜 먹는다 VS 참는다',
+    desc: '배는 고픈데 배달비가 메뉴값처럼 느껴지는 순간입니다. 이건 지갑의 문제일까요, 행복의 문제일까요?',
+    tags: ['토론소', 'VS', '배달비'],
+    options: ['시켜 먹는다', '참는다'],
   };
   return {
-    title: '친구가 약속 30분 전에 또 취소함',
-    desc: '이번 달에만 세 번째입니다. 사정은 있다는데 제 시간도 소중한 거 아닌가요? 가볍게 판결 부탁합니다.',
-    tags: ['판결', '소소재판', '소소킹'],
+    title: '이 상황 이름 지어주세요',
+    desc: '퇴근 5분 전에 “잠깐 회의 가능?” 메시지가 왔을 때의 감정을 한 줄로 살려주세요.',
+    tags: ['드립소', '작명', '직장인'],
+  };
+}
+
+function buildAiPanel(preset, doc) {
+  const isVote = preset === 'vote';
+  return {
+    enabled: true,
+    status: 'fallback',
+    kind: isVote ? 'vote' : 'drip',
+    headline: isVote ? '운영봇이 토론소를 열었습니다' : '운영봇이 드립소를 열었습니다',
+    imageRead: '',
+    imageCountAnalyzed: 0,
+    host: {
+      id: 'opsbot',
+      name: '운영봇',
+      emoji: '🤖',
+      role: '사회자',
+      opening: isVote ? `오늘의 토론소 안건은 “${doc.title}”입니다.` : `오늘의 드립소 소재는 “${doc.title}”입니다.`,
+      summary: isVote ? '사소하지만 은근히 갈릴 만한 VS 주제입니다.' : '짧게 받을수록 더 웃긴 소재입니다.',
+      question: isVote ? '어느 쪽인지 투표하고 이유를 한 줄로 남겨주세요.' : '이 상황을 더 웃긴 한 줄로 받아쳐주세요.',
+    },
+    characters: isVote ? [
+      { id: 'junho', name: '준호', emoji: '🗳️', role: '토론러', stance: 'VS 구도 정리', lines: ['이건 돈을 아끼는 문제가 아니라 만족도를 어디에 두느냐의 문제입니다.'], punchline: '토론소는 사소할수록 더 치열합니다.' },
+      { id: 'jieun', name: '지은', emoji: '🧠', role: '똑똑이', stance: '현실 분석', lines: ['가격보다 중요한 건 후회 확률입니다. 먹고 후회할지, 안 먹고 후회할지부터 봐야 합니다.'], punchline: '이건 소비가 아니라 후회 관리입니다.' },
+      { id: 'cheolgu', name: '철구', emoji: '😈', role: '매운맛', stance: '허점 찌르기', lines: ['참는다고 내일 부자가 되진 않는데, 시키면 오늘은 행복할 수 있습니다.'], punchline: '지갑은 울고 배는 박수칠 안건입니다.' },
+    ] : [
+      { id: 'minsu', name: '민수', emoji: '😂', role: '드립왕', stance: '커뮤식 한 줄', lines: ['퇴근 5분 전 회의는 사실상 현대인의 매복 공격입니다.'], punchline: '이건 회의가 아니라 퇴근길 검문소입니다.' },
+      { id: 'cheolgu', name: '철구', emoji: '😈', role: '매운맛', stance: '현실 찌르기', lines: ['잠깐이라고 한 사람 중에 진짜 잠깐인 사람 거의 못 봤습니다.'], punchline: '잠깐 회의 = 오늘 저녁 압수.' },
+      { id: 'jieun', name: '지은', emoji: '🧠', role: '똑똑이', stance: '상황 분석', lines: ['웃음 포인트는 ‘잠깐’이라는 말과 현실 시간의 괴리입니다.'], punchline: '단어는 잠깐인데 피해는 장기전입니다.' },
+    ],
+    bestLines: isVote ? ['지갑은 울고 배는 박수칠 안건입니다.', '이건 소비가 아니라 후회 관리입니다.'] : ['잠깐 회의 = 오늘 저녁 압수.', '이건 회의가 아니라 퇴근길 검문소입니다.'],
+    commentPrompt: isVote ? '투표하고 한 줄 이유를 남겨주세요.' : '더 웃긴 이름이나 한 줄 드립을 댓글로 남겨주세요.',
+    model: 'fallback',
+    generatedAt: FieldValue.serverTimestamp(),
   };
 }
 
 function buildDoc(preset, actorId) {
   const data = sample(preset);
-  const isJudgment = preset === 'judgment';
-  const isConsult = preset === 'consult';
   const isVote = preset === 'vote';
-  const isDrip = preset === 'drip';
-  const label = isJudgment ? '판결' : isConsult ? '상담' : isVote ? '토론' : '드립';
+  const label = isVote ? '토론소' : '드립소';
   const doc = {
     type: 'multi',
     cat: 'multi',
     subtype: preset,
-    feedType: isJudgment || isVote ? 'vote' : isDrip ? 'drip' : 'collect',
+    feedType: preset,
     typeLabel: label,
     title: clean(data.title, 100),
     desc: clean(data.desc, 1200),
@@ -105,43 +125,19 @@ function buildDoc(preset, actorId) {
     pointsScore: 0,
     isAiGenerated: true,
     aiGeneratedDate: todayKST(),
-    aiSource: 'four-game-community',
+    aiSource: 'two-space-community',
     aiPreset: preset,
     aiActorId: actorId,
     createdAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
   };
-  if (isJudgment) {
-    doc.modules.vote = {
-      enabled: true,
-      voteMode: 'judgment',
-      question: doc.desc,
-      options: ['글쓴이가 예민함', '상대가 선 넘음', '둘 다 문제 있음'].map(text => ({ text, votes: 0 })),
-    };
-  } else if (isVote) {
-    doc.modules.vote = {
-      enabled: true,
-      voteMode: 'pros_cons',
-      question: doc.desc,
-      options: ['찬성', '반대'].map(text => ({ text, votes: 0 })),
-    };
-  } else if (isConsult) {
-    doc.modules.consult = {
-      enabled: true,
-      topic: 'daily',
-      topicLabel: '일상',
-      style: 'funny',
-      styleLabel: '웃긴해결',
-      question: doc.desc,
-    };
-  } else if (isDrip) {
-    doc.modules.drip = {
-      enabled: true,
-      prompt: doc.desc,
-      maxLength: 50,
-      responseLabel: '한 줄 드립',
-    };
+  if (isVote) {
+    const options = Array.isArray(data.options) && data.options.length >= 2 ? data.options : ['찬성', '반대'];
+    doc.modules.vote = { enabled: true, voteMode: 'pros_cons', question: doc.desc, options: options.slice(0, 4).map(text => ({ text, votes: 0 })) };
+  } else {
+    doc.modules.drip = { enabled: true, prompt: doc.desc, maxLength: 50, responseLabel: '한 줄 드립' };
   }
+  doc.aiCharacterPanel = buildAiPanel(preset, doc);
   return doc;
 }
 
@@ -150,7 +146,7 @@ async function createOne(preset, actorId) {
   const ref = db.collection('feeds').doc();
   const doc = buildDoc(normalized, actorId);
   await ref.set(doc);
-  return { ok: true, preset: normalized, typeLabel: doc.typeLabel, docId: ref.id, title: doc.title, path: `/detail/${ref.id}`, source: 'four-game-community' };
+  return { ok: true, preset: normalized, typeLabel: doc.typeLabel, docId: ref.id, title: doc.title, path: `/detail/${ref.id}`, source: 'two-space-community' };
 }
 
 exports.generateAiContentNow = onCall({ region: REGION, timeoutSeconds: 120 }, async request => {
