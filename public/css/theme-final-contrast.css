@@ -45,12 +45,15 @@ html.dark,
   box-sizing: border-box !important;
 }
 
+/* 홈 메인 캐릭터 영역은 겉 박스 테두리와 카드 사이 여백을 유지 */
 .home-ai-residents {
   width: 100% !important;
   max-width: 100% !important;
   margin-left: 0 !important;
   margin-right: 0 !important;
+  padding: 16px !important;
   gap: 12px !important;
+  box-sizing: border-box !important;
 }
 
 .soso-ai-residents__grid {
@@ -244,6 +247,11 @@ html:not([data-theme="dark"]):not(.dark) .ai-character-card {
 }
 
 @media (min-width: 1024px) {
+  .home-ai-residents {
+    padding: 18px !important;
+    gap: 14px !important;
+  }
+
   .soso-feed-page .soso-ai-residents__grid {
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
     gap: 14px !important;
@@ -251,8 +259,19 @@ html:not([data-theme="dark"]):not(.dark) .ai-character-card {
 }
 
 @media (max-width: 640px) {
-  .home-ai-residents,
+  .home-ai-residents {
+    padding: 16px 14px !important;
+    gap: 12px !important;
+  }
+
   .soso-ai-residents__grid {
     gap: 12px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .home-ai-residents {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
   }
 }
