@@ -1,5 +1,8 @@
 /* bottom-nav.js — 모바일 하단 탭바 */
+import { auth } from '../firebase.js';
 import { navigate } from '../router.js';
+
+const DEFAULT_WRITE_PATH = '/write?type=multi&preset=judgment';
 
 function svgIcon(path, strokeWidth = '1.8') {
   return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="${strokeWidth}" aria-hidden="true">${path}</svg>`;
@@ -32,12 +35,20 @@ function isNavActive(navPath, currentPath) {
 
 function navItems() {
   return [
-    { id: 'home',      label: '홈',       path: '/',                                 icon: iconHome() },
-    { id: 'feed',      label: '커뮤니티', path: '/feed',                             icon: iconCommunity() },
-    { id: 'write',     label: '열기',     path: '/write?type=multi&preset=judgment', icon: iconPlus(), isCenter: true },
-    { id: 'hall',      label: '랭킹',     path: '/hall',                             icon: iconStats() },
-    { id: 'account',   label: '내정보',   path: '/account',                          icon: iconAccount() },
+    { id: 'home',      label: '홈',       path: '/',                 icon: iconHome() },
+    { id: 'feed',      label: '커뮤니티', path: '/feed',             icon: iconCommunity() },
+    { id: 'write',     label: '글쓰기',   path: DEFAULT_WRITE_PATH,  icon: iconPlus(), isCenter: true },
+    { id: 'hall',      label: '랭킹',     path: '/hall',             icon: iconStats() },
+    { id: 'account',   label: '내 정보',  path: '/account',          icon: iconAccount() },
   ];
+}
+
+function navigateFromBottom(path) {
+  if (path.startsWith('/write') && !auth.currentUser) {
+    navigate(`/login?return=${encodeURIComponent(path)}`);
+    return;
+  }
+  navigate(path);
 }
 
 export function renderBottomNav() {
@@ -57,7 +68,7 @@ export function renderBottomNav() {
     </button>`;
   }).join('')}</div>`;
 
-  el.querySelectorAll('[data-nav-path]').forEach(btn => btn.addEventListener('click', () => navigate(btn.dataset.navPath)));
+  el.querySelectorAll('[data-nav-path]').forEach(btn => btn.addEventListener('click', () => navigateFromBottom(btn.dataset.navPath)));
 }
 
 window.addEventListener('hashchange', () => {
