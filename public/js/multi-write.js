@@ -1,5 +1,6 @@
-import { auth, db } from './firebase.js';
+import { auth, db, functions } from './firebase.js';
 import { collection, doc, setDoc, deleteDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
 import { navigate } from './router.js';
 import { toast } from './components/toast.js';
 import { appState } from './state.js';
@@ -11,6 +12,7 @@ import { collectMultiModules, getBodyText, getBodyHtml, splitTags } from './mult
 import { fillAutoTags } from './multi-write/auto-tags.js';
 import { initRichEditor, syncRichEditor } from './multi-write/editor.js';
 
+const callGenerateCharacterPanel = httpsCallable(functions, 'generateCharacterPanel');
 const MAX_FEED_IMAGES = 30;
 const DRAFT_KEY = 'sosoking:multiWriteDraft';
 let draftTimer = null;
@@ -81,9 +83,8 @@ function getPresetKey() {
 }
 
 function feedTypeFromPreset(presetKey) {
-  if (presetKey === 'judgment' || presetKey === 'vote') return 'vote';
-  if (presetKey === 'drip') return 'drip';
-  return 'collect';
+  if (presetKey === 'vote') return 'vote';
+  return 'drip';
 }
 
 function updateWriteStateOnly() {
@@ -98,8 +99,7 @@ function clonePublicModules(modules) {
 
 function bindTextStateEvents() {
   function onInput() { updateWriteStateOnly(); scheduleDraftSave(); }
-  ['mw-title', 'mw-desc', 'mw-tags', 'mw-consult-topic', 'mw-consult-style']
-    .forEach(id => document.getElementById(id)?.addEventListener('input', onInput));
+  ['mw-title', 'mw-desc', 'mw-tags'].forEach(id => document.getElementById(id)?.addEventListener('input', onInput));
   document.querySelectorAll('.mw-vote-option').forEach(input => input.addEventListener('input', onInput));
   document.getElementById('mw-desc')?.addEventListener('keyup', updateWriteStateOnly);
 }
@@ -113,7 +113,7 @@ export async function renderMultiWrite() {
       <div class="empty-state">
         <div class="empty-state__icon">✏️</div>
         <div class="empty-state__title">로그인 후 참여할 수 있어요</div>
-        <button class="btn btn--primary" style="margin-top:16px" onclick="navigate('/login?return=/write?type=multi')">로그인하기</button>
+        <button class="btn btn--primary" style="margin-top:16px" onclick="navigate('/login?return=/write?type=multi&preset=drip')">로그인하기</button>
       </div>`;
     return;
   }
@@ -134,15 +134,13 @@ export async function renderMultiWrite() {
 function setWriteSectionVisibility(normalized) {
   document.querySelectorAll('[data-write-section]').forEach(section => {
     const key = section.dataset.writeSection;
-    if (key === 'judgment-panel') section.style.display = normalized === 'judgment' ? '' : 'none';
-    if (key === 'consult-panel') section.style.display = normalized === 'consult' ? '' : 'none';
     if (key === 'vote-panel') section.style.display = normalized === 'vote' ? '' : 'none';
     if (key === 'drip-panel') section.style.display = normalized === 'drip' ? '' : 'none';
   });
 }
 
 function updateOptionSelection(preset) {
-  const normalized = MULTI_PRESETS[preset] ? preset : 'judgment';
+  const normalized = MULTI_PRESETS[preset] ? preset : 'drip';
   const hidden = document.getElementById('mw-selected-preset');
   if (hidden) hidden.value = normalized;
   const page = document.querySelector('.multi-write-page');
@@ -166,21 +164,26 @@ function updateOptionSelection(preset) {
     else input.removeAttribute('data-module-toggle');
   });
 
-  if (normalized === 'judgment' || normalized === 'vote') setVoteMode(normalized);
+  if (normalized === 'vote') setVoteMode(normalized);
   window.dispatchEvent(new Event('sosoking:write-option-changed'));
 }
 
 function setVoteMode(preset = getPresetKey()) {
   const panel = document.querySelector(`[data-option-panel="${preset}"]`);
   const options = [...(panel?.querySelectorAll('.mw-vote-option') || [])];
-  if (preset === 'judgment') {
-    if (options[0]) { options[0].value = '글쓴이가 예민함'; options[0].readOnly = true; }
-    if (options[1]) { options[1].value = '상대가 선 넘음'; options[1].readOnly = true; }
-    if (options[2]) { options[2].value = '둘 다 문제 있음'; options[2].readOnly = true; }
-    return;
+  if (preset !== 'vote') return;
+  if (options[0]) {
+    options[0].readOnly = false;
+    options[0].removeAttribute('readonly');
+    options[0].placeholder = '왼쪽 선택지 입력';
+    if (options[0].value === '찬성') options[0].value = '';
   }
-  if (options[0]) { options[0].value = '찬성'; options[0].readOnly = true; }
-  if (options[1]) { options[1].value = '반대'; options[1].readOnly = true; }
+  if (options[1]) {
+    options[1].readOnly = false;
+    options[1].removeAttribute('readonly');
+    options[1].placeholder = '오른쪽 선택지 입력';
+    if (options[1].value === '반대') options[1].value = '';
+  }
 }
 
 function bindMultiWriteEvents() {
@@ -199,11 +202,18 @@ function bindMultiWriteEvents() {
 }
 
 function emptyTitleMessage(presetKey) {
-  if (presetKey === 'judgment') return '판결받을 사건 제목을 입력해주세요.';
-  if (presetKey === 'consult') return '상담 제목을 입력해주세요.';
-  if (presetKey === 'vote') return '토론 주제를 입력해주세요.';
-  if (presetKey === 'drip') return '드립 주제를 입력해주세요.';
+  if (presetKey === 'vote') return '토론소 주제를 입력해주세요.';
+  if (presetKey === 'drip') return '드립소 주제를 입력해주세요.';
   return '제목을 입력해주세요.';
+}
+
+async function generateCharacterPanelForPost(postId, btn) {
+  try {
+    if (btn) btn.textContent = 'AI 캐릭터 준비 중...';
+    await callGenerateCharacterPanel({ postId });
+  } catch (error) {
+    console.warn('[multi-write] AI 캐릭터 패널 생성 실패', error);
+  }
 }
 
 async function submitMultiPost() {
@@ -216,9 +226,9 @@ async function submitMultiPost() {
   syncRichEditor();
   const btn = document.getElementById('multi-submit');
   let title = document.getElementById('mw-title')?.value.trim() || '';
-  const preset = MULTI_PRESETS[presetKey] || MULTI_PRESETS.judgment;
+  const preset = MULTI_PRESETS[presetKey] || MULTI_PRESETS.drip;
   const bodyValue = getBodyHtml() || getBodyText();
-  const desc = (presetKey === 'judgment' || presetKey === 'vote' || presetKey === 'drip') ? (bodyValue || title) : bodyValue;
+  const desc = bodyValue || title;
 
   if (!title) {
     toast.error(emptyTitleMessage(presetKey));
@@ -265,7 +275,7 @@ async function submitMultiPost() {
     };
 
     await setDoc(docRef, postData);
-
+    await generateCharacterPanelForPost(docRef.id, btn);
     await awardPoints('post_create', { postId: docRef.id, type: presetKey }).catch(() => {});
     clearDraft();
     toast.success(`${preset.label} 글을 열었어요! +10P 🎉`);
