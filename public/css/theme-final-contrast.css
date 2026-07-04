@@ -213,6 +213,115 @@ html:not([data-theme="dark"]):not(.dark) .ai-character-card {
   color: #111827 !important;
 }
 
+/* PC 커뮤니티 화면 전용 정리: 본문 폭, 카드 배열, 여백 */
+@media (min-width: 1024px) {
+  .soso-feed-page.feed-page-clean,
+  .soso-feed-page.layout-main--full,
+  .layout-main--full.feed-page-clean {
+    width: min(100%, 920px) !important;
+    max-width: 920px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding: 18px 28px 90px !important;
+    box-sizing: border-box !important;
+  }
+
+  .soso-feed-toolbar {
+    width: 100% !important;
+    max-width: none !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+  }
+
+  .soso-room-tabs {
+    width: 100% !important;
+    justify-content: flex-start !important;
+    gap: 10px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    flex-wrap: wrap !important;
+  }
+
+  .soso-room-head {
+    width: 100% !important;
+    min-height: 150px !important;
+    padding: 26px 28px !important;
+    border-radius: 20px !important;
+    box-sizing: border-box !important;
+  }
+
+  .soso-ai-residents {
+    width: 100% !important;
+    max-width: none !important;
+    padding: 24px 28px 28px !important;
+    border-radius: 20px !important;
+    box-sizing: border-box !important;
+  }
+
+  .soso-ai-residents__head {
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: space-between !important;
+    gap: 20px !important;
+    margin-bottom: 20px !important;
+  }
+
+  .soso-ai-residents__grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+    padding: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .soso-ai-resident-card {
+    min-height: 152px !important;
+    padding: 16px !important;
+    border-radius: 14px !important;
+  }
+
+  .soso-ai-resident-card__name {
+    font-size: 15px !important;
+    line-height: 1.35 !important;
+    margin-bottom: 10px !important;
+  }
+
+  .soso-ai-resident-card__role,
+  .soso-ai-resident-card__specialty,
+  .soso-ai-resident-card__phrase {
+    font-size: 12px !important;
+    line-height: 1.45 !important;
+  }
+
+  .feed-search-row,
+  .feed-search-box,
+  .feed-search-form,
+  .soso-feed-summary,
+  .soso-feed-list,
+  .feed-pagination,
+  #feed-summary,
+  #feed-list {
+    width: 100% !important;
+    max-width: none !important;
+    box-sizing: border-box !important;
+  }
+
+  .feed-result-summary {
+    margin-top: 14px !important;
+  }
+}
+
+@media (min-width: 1280px) {
+  .soso-feed-page.feed-page-clean,
+  .soso-feed-page.layout-main--full,
+  .layout-main--full.feed-page-clean {
+    width: min(100%, 980px) !important;
+    max-width: 980px !important;
+  }
+}
+
 @media (max-width: 640px) {
   .home-ai-residents,
   .soso-ai-residents__grid {
