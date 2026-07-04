@@ -238,116 +238,278 @@ body {
   padding: 0 2px;
 }
 
-pre,
-code,
-.detail-content,
-.feed-card,
-.comment-item {
-  max-width: 100%;
-  overflow-wrap: anywhere;
+/* 홈 상단 히어로 카드: 첨부 시안 기준 모바일/다크모드 최종 보정 */
+.home-dash--v2 .home-onboard {
+  padding: 0 !important;
+  overflow: hidden !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
-img,
-video,
-canvas,
-iframe {
-  max-width: 100%;
+.home-dash--v2 .home-onboard__hero {
+  position: relative;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
+  gap: 0 !important;
+  min-height: 260px !important;
+  padding: clamp(30px, 5vw, 42px) clamp(26px, 5vw, 40px) clamp(28px, 4.5vw, 36px) !important;
+  border-radius: 28px 28px 0 0 !important;
+  overflow: hidden !important;
+  background:
+    radial-gradient(circle at 14% 78%, rgba(255,255,255,.16) 0, rgba(255,255,255,0) 34%),
+    radial-gradient(circle at 88% 8%, rgba(255,226,94,.32) 0, rgba(255,226,94,0) 38%),
+    linear-gradient(135deg, #ff3d22 0%, #ff6a00 50%, #ffb100 100%) !important;
+  color: #fff !important;
 }
 
-[data-theme="dark"] :where(
-  .card,
-  .auth-card,
-  .home-onboard,
-  .home-today-best,
-  .home-rank-list,
-  .home-compact-feed-list,
-  .home-ai-resident-card,
-  .soso-room-head,
-  .soso-ai-residents,
-  .soso-ai-resident-card,
-  .feed-card,
-  .detail-card,
-  .detail-section,
-  .write-step-card,
-  .multi-write-card,
-  .admin-card,
-  .admin-panel,
-  .empty-state
-) {
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.22);
+.home-dash--v2 .home-onboard__hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,0) 42%),
+    radial-gradient(circle at 96% 96%, rgba(255,255,255,.12), rgba(255,255,255,0) 36%);
 }
 
-@media (min-width: 1024px) {
+.home-dash--v2 .home-onboard__hero-text,
+.home-dash--v2 .home-onboard__hero-actions {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+}
+
+.home-dash--v2 .home-onboard__badge {
+  height: 38px !important;
+  padding: 0 18px !important;
+  margin: 0 0 20px !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(255,255,255,.30) !important;
+  background: rgba(255,255,255,.18) !important;
+  color: rgba(255,255,255,.86) !important;
+  font-size: clamp(11px, 2.9vw, 14px) !important;
+  font-weight: 900 !important;
+  letter-spacing: .08em !important;
+  text-shadow: 0 1px 10px rgba(0,0,0,.10) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.24) !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.home-dash--v2 .home-onboard__title {
+  margin: 0 !important;
+  color: #fff !important;
+  font-size: clamp(31px, 7.4vw, 44px) !important;
+  font-weight: 950 !important;
+  letter-spacing: -.075em !important;
+  line-height: 1.08 !important;
+  text-shadow: 0 3px 18px rgba(0,0,0,.16) !important;
+}
+
+.home-dash--v2 .home-onboard__desc {
+  max-width: 620px;
+  margin: 18px 0 0 !important;
+  color: rgba(255,255,255,.82) !important;
+  font-size: clamp(14px, 3.3vw, 18px) !important;
+  font-weight: 800 !important;
+  letter-spacing: -.045em !important;
+  line-height: 1.55 !important;
+}
+
+.home-dash--v2 .home-onboard__hero-actions {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: clamp(10px, 2.8vw, 16px) !important;
+  align-self: stretch !important;
+  margin-top: 28px !important;
+  padding: 0 !important;
+}
+
+.home-dash--v2 .home-onboard__btn-primary,
+.home-dash--v2 .home-onboard__btn-ghost {
+  width: 100% !important;
+  min-height: 58px !important;
+  height: 58px !important;
+  justify-content: center !important;
+  border-radius: 999px !important;
+  font-size: clamp(15px, 3.8vw, 18px) !important;
+  font-weight: 950 !important;
+  letter-spacing: -.035em !important;
+}
+
+.home-dash--v2 .home-onboard__btn-primary {
+  border: 0 !important;
+  background: #fff !important;
+  color: #e24b35 !important;
+  box-shadow: 0 12px 24px rgba(106, 39, 0, .18) !important;
+}
+
+.home-dash--v2 .home-onboard__btn-ghost {
+  border: 1.5px solid rgba(255,255,255,.46) !important;
+  background: rgba(255,255,255,.10) !important;
+  color: rgba(255,255,255,.92) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.12) !important;
+}
+
+.home-dash--v2 .home-onboard__rooms {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 0 0 28px 28px !important;
+  overflow: hidden !important;
+  background: var(--color-surface) !important;
+  box-shadow: 0 10px 30px rgba(15,23,42,.06) !important;
+}
+
+.home-dash--v2 .home-onboard__room {
+  min-height: 134px !important;
+  padding: clamp(22px, 4.8vw, 30px) clamp(22px, 4.8vw, 32px) !important;
+  gap: 18px !important;
+  border: 0 !important;
+  border-right: 1px solid rgba(15,23,42,.07) !important;
+  border-bottom: 1px solid rgba(15,23,42,.07) !important;
+  background: var(--color-surface) !important;
+}
+
+.home-dash--v2 .home-onboard__room:nth-child(even) {
+  border-right: 0 !important;
+}
+
+.home-dash--v2 .home-onboard__room:nth-last-child(-n+2) {
+  border-bottom: 0 !important;
+}
+
+.home-dash--v2 .home-onboard__room-icon {
+  width: 54px !important;
+  height: 54px !important;
+  border-radius: 18px !important;
+  font-size: 31px !important;
+  background: rgba(255,107,74,.08) !important;
+}
+
+.home-dash--v2 .home-onboard__room-info b {
+  color: var(--color-text-primary) !important;
+  font-size: clamp(18px, 4.8vw, 24px) !important;
+  font-weight: 950 !important;
+  line-height: 1.15 !important;
+  letter-spacing: -.06em !important;
+}
+
+.home-dash--v2 .home-onboard__room-info em {
+  margin-top: 8px !important;
+  color: var(--color-text-muted) !important;
+  font-size: clamp(13px, 3.6vw, 17px) !important;
+  font-weight: 750 !important;
+  line-height: 1.55 !important;
+  letter-spacing: -.055em !important;
+}
+
+[data-theme="dark"] .home-dash--v2 .home-onboard__rooms,
+html[data-theme="dark"] .home-dash--v2 .home-onboard__rooms,
+html.dark .home-dash--v2 .home-onboard__rooms {
+  background: #1b1c31 !important;
+  box-shadow: 0 12px 32px rgba(0,0,0,.28) !important;
+}
+
+[data-theme="dark"] .home-dash--v2 .home-onboard__room,
+html[data-theme="dark"] .home-dash--v2 .home-onboard__room,
+html.dark .home-dash--v2 .home-onboard__room {
+  background: #1b1c31 !important;
+  border-right-color: rgba(255,255,255,.06) !important;
+  border-bottom-color: rgba(255,255,255,.06) !important;
+}
+
+[data-theme="dark"] .home-dash--v2 .home-onboard__room-info b,
+html[data-theme="dark"] .home-dash--v2 .home-onboard__room-info b,
+html.dark .home-dash--v2 .home-onboard__room-info b {
+  color: #fff !important;
+}
+
+[data-theme="dark"] .home-dash--v2 .home-onboard__room-info em,
+html[data-theme="dark"] .home-dash--v2 .home-onboard__room-info em,
+html.dark .home-dash--v2 .home-onboard__room-info em {
+  color: rgba(214,222,240,.64) !important;
+}
+
+[data-theme="dark"] .home-dash--v2 .home-onboard__room-icon,
+html[data-theme="dark"] .home-dash--v2 .home-onboard__room-icon,
+html.dark .home-dash--v2 .home-onboard__room-icon {
+  background: rgba(255,255,255,.06) !important;
+}
+
+.home-dash--v2 .home-ai-residents {
+  margin: 22px clamp(16px, 3.8vw, 24px) 0 !important;
+}
+
+@media (max-width: 480px) {
   .page-container {
-    padding-top: 30px;
+    padding-top: 12px;
   }
 
-  .site-main {
-    padding-left: 0;
-    padding-right: 0;
+  .home-dash--v2 .home-onboard__hero {
+    min-height: 250px !important;
+    padding: 34px 31px 31px !important;
+    border-radius: 25px 25px 0 0 !important;
   }
 
-  .soso-feed-page.feed-page-clean,
-  .layout-main--full {
-    width: min(100%, var(--soso-wide-max));
-  }
-}
-
-@media (max-width: 1023px) {
-  :root {
-    --soso-page-gutter: clamp(14px, 4vw, 20px);
-    --soso-section-gap: 14px;
-    --soso-card-pad: 16px;
-    --soso-card-radius: 18px;
+  .home-dash--v2 .home-onboard__title {
+    font-size: 34px !important;
   }
 
-  .page-container {
-    max-width: none;
-    padding-top: 14px;
-    padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+  .home-dash--v2 .home-onboard__desc {
+    font-size: 16px !important;
   }
 
-  .site-header__inner {
-    padding-left: var(--soso-page-gutter);
-    padding-right: var(--soso-page-gutter);
+  .home-dash--v2 .home-onboard__btn-primary,
+  .home-dash--v2 .home-onboard__btn-ghost {
+    height: 58px !important;
+    min-height: 58px !important;
+    font-size: 17px !important;
   }
 
-  .home-onboard__hero,
-  .soso-ai-residents__head {
-    gap: 14px;
+  .home-dash--v2 .home-onboard__rooms {
+    border-radius: 0 0 25px 25px !important;
   }
 
-  .home-onboard__hero-actions,
-  .soso-room-head__action {
-    width: 100%;
+  .home-dash--v2 .home-onboard__room {
+    min-height: 134px !important;
+    padding: 24px 28px !important;
+    gap: 16px !important;
   }
 
-  .home-onboard__hero-actions > *,
-  .soso-room-head__action > * {
-    width: 100%;
-    justify-content: center;
+  .home-dash--v2 .home-onboard__room-icon {
+    width: 50px !important;
+    height: 50px !important;
+    font-size: 30px !important;
   }
 
-  .bottom-nav__label {
-    font-size: 11px;
-    line-height: 1.15;
+  .home-dash--v2 .home-onboard__room-info b {
+    font-size: 22px !important;
+  }
+
+  .home-dash--v2 .home-onboard__room-info em {
+    font-size: 15.5px !important;
   }
 }
 
-@media (max-width: 420px) {
-  .page-container {
-    padding-left: 12px;
-    padding-right: 12px;
+@media (max-width: 380px) {
+  .home-dash--v2 .home-onboard__hero {
+    padding: 30px 24px 26px !important;
   }
 
-  .home-onboard__title,
-  .soso-room-head__title {
-    font-size: clamp(22px, 7vw, 30px);
+  .home-dash--v2 .home-onboard__title {
+    font-size: 31px !important;
   }
 
-  .home-rank-item,
-  .home-compact-feed-item {
-    padding-left: 12px;
-    padding-right: 12px;
+  .home-dash--v2 .home-onboard__desc {
+    font-size: 14.5px !important;
+  }
+
+  .home-dash--v2 .home-onboard__room {
+    padding: 20px 22px !important;
   }
 }
