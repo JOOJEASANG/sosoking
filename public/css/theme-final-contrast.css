@@ -40,12 +40,8 @@ html.dark,
   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
 }
 
-/* 캐릭터 카드가 부모 레이아웃 선에 붙지 않도록 좌우 여백 확보 */
 .home-ai-residents,
 .soso-ai-residents__grid {
-  padding-left: 14px !important;
-  padding-right: 14px !important;
-  padding-bottom: 16px !important;
   box-sizing: border-box !important;
 }
 
@@ -213,129 +209,50 @@ html:not([data-theme="dark"]):not(.dark) .ai-character-card {
   color: #111827 !important;
 }
 
-/* PC 커뮤니티 화면 전용 정리: 본문 폭, 카드 배열, 여백 */
-@media (min-width: 1024px) {
-  .soso-feed-page.feed-page-clean,
-  .soso-feed-page.layout-main--full,
-  .layout-main--full.feed-page-clean {
-    width: min(100%, 920px) !important;
-    max-width: 920px !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
-    padding: 18px 28px 90px !important;
-    box-sizing: border-box !important;
-  }
-
-  .soso-feed-toolbar {
-    width: 100% !important;
-    max-width: none !important;
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 16px !important;
-  }
-
-  .soso-room-tabs {
-    width: 100% !important;
-    justify-content: flex-start !important;
-    gap: 10px !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    flex-wrap: wrap !important;
-  }
-
-  .soso-room-head {
-    width: 100% !important;
-    min-height: 150px !important;
-    padding: 26px 28px !important;
-    border-radius: 20px !important;
-    box-sizing: border-box !important;
-  }
-
-  .soso-ai-residents {
-    width: 100% !important;
-    max-width: none !important;
-    padding: 24px 28px 28px !important;
-    border-radius: 20px !important;
-    box-sizing: border-box !important;
-  }
-
-  .soso-ai-residents__head {
-    display: flex !important;
-    align-items: flex-start !important;
-    justify-content: space-between !important;
-    gap: 20px !important;
-    margin-bottom: 20px !important;
-  }
-
-  .soso-ai-residents__grid {
-    display: grid !important;
-    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-    gap: 14px !important;
-    padding: 0 !important;
-    width: 100% !important;
-    box-sizing: border-box !important;
-  }
-
-  .soso-ai-resident-card {
-    min-height: 152px !important;
-    padding: 16px !important;
-    border-radius: 14px !important;
-  }
-
-  .soso-ai-resident-card__name {
-    font-size: 15px !important;
-    line-height: 1.35 !important;
-    margin-bottom: 10px !important;
-  }
-
-  .soso-ai-resident-card__role,
-  .soso-ai-resident-card__specialty,
-  .soso-ai-resident-card__phrase {
-    font-size: 12px !important;
-    line-height: 1.45 !important;
-  }
-
-  .feed-search-row,
-  .feed-search-box,
-  .feed-search-form,
-  .soso-feed-summary,
-  .soso-feed-list,
-  .feed-pagination,
-  #feed-summary,
-  #feed-list {
-    width: 100% !important;
-    max-width: none !important;
-    box-sizing: border-box !important;
-  }
-
-  .feed-result-summary {
-    margin-top: 14px !important;
-  }
+/* 커뮤니티는 홈 메인과 같은 기본 본문 폭을 따릅니다. */
+.soso-feed-page.feed-page-clean,
+.soso-feed-page.layout-main--full,
+.layout-main--full.feed-page-clean {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  box-sizing: border-box !important;
 }
 
-@media (min-width: 1280px) {
-  .soso-feed-page.feed-page-clean,
-  .soso-feed-page.layout-main--full,
-  .layout-main--full.feed-page-clean {
-    width: min(100%, 980px) !important;
-    max-width: 980px !important;
+.soso-feed-page .soso-feed-toolbar,
+.soso-feed-page .feed-result-summary,
+.soso-feed-page .soso-feed-list,
+.soso-feed-page .feed-pagination,
+.soso-feed-page #feed-summary,
+.soso-feed-page #feed-list {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.soso-feed-page .soso-ai-residents {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.soso-feed-page .soso-ai-residents__grid {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  box-sizing: border-box !important;
+}
+
+@media (min-width: 1024px) {
+  .soso-feed-page .soso-ai-residents__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 14px !important;
   }
 }
 
 @media (max-width: 640px) {
   .home-ai-residents,
   .soso-ai-residents__grid {
-    padding-left: 14px !important;
-    padding-right: 14px !important;
-    padding-bottom: 18px !important;
     gap: 12px !important;
-  }
-}
-
-@media (max-width: 380px) {
-  .home-ai-residents,
-  .soso-ai-residents__grid {
-    padding-left: 12px !important;
-    padding-right: 12px !important;
   }
 }
