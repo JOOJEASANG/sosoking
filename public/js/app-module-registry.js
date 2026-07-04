@@ -19,7 +19,6 @@ export const SAFE_OPTIONAL_MODULES = [
 
 export const EXTENSION_MODULES = [
   './layout-id-repair.js',
-  './six-game-guard.js',
   './admin-visibility-guard.js',
   './admin-shortcuts-pwa.js',
   './admin-write-sidebar.js',
@@ -30,11 +29,9 @@ export const EXTENSION_MODULES = [
   './post-owner-actions.js',
   './participant-replies.js',
   './multi-detail.js',
-  './tournament-play.js',
   './detail-extras.js',
   './detail-cards.js',
   './multi-write.js',
-  './four-game-polish.js',
   './write-edit-router-fix.js',
   './write-edit-save-fix.js',
   './edit-screen-polish.js',
