@@ -56,68 +56,6 @@
   border-radius: 10px !important;
 }
 
-/* 커뮤니티 페이지: 화면 바깥 여백은 작게, 겉 박스 내부 여백은 충분히 */
-.soso-feed-page.feed-page-clean,
-.soso-feed-page.layout-main--full,
-.layout-main--full.feed-page-clean {
-  padding-left: 10px !important;
-  padding-right: 10px !important;
-  padding-bottom: 96px !important;
-  box-sizing: border-box !important;
-}
-
-.soso-feed-page .soso-feed-toolbar,
-.soso-feed-page .feed-result-summary,
-.soso-feed-page .soso-feed-list,
-.soso-feed-page .feed-pagination,
-.soso-feed-page #feed-summary,
-.soso-feed-page #feed-list {
-  width: 100% !important;
-  max-width: 100% !important;
-  box-sizing: border-box !important;
-}
-
-.soso-feed-page .soso-ai-residents {
-  padding: 22px 20px 22px !important;
-  box-sizing: border-box !important;
-}
-
-.soso-feed-page .soso-ai-residents__head {
-  margin-bottom: 18px !important;
-}
-
-.soso-feed-page .soso-ai-residents__grid {
-  padding-left: 0 !important;
-  padding-right: 0 !important;
-  padding-bottom: 0 !important;
-  gap: 12px !important;
-  box-sizing: border-box !important;
-}
-
-.soso-feed-page .soso-ai-resident-card {
-  padding: 16px 15px !important;
-  border-radius: 16px !important;
-  box-sizing: border-box !important;
-}
-
-@media (min-width: 1024px) {
-  .soso-feed-page.feed-page-clean,
-  .soso-feed-page.layout-main--full,
-  .layout-main--full.feed-page-clean {
-    padding-left: 20px !important;
-    padding-right: 20px !important;
-    padding-bottom: 72px !important;
-  }
-
-  .soso-feed-page .soso-ai-residents {
-    padding: 24px 28px 28px !important;
-  }
-
-  .soso-feed-page .soso-ai-residents__grid {
-    gap: 14px !important;
-  }
-}
-
 @media (max-width: 640px) {
   .hall-page {
     padding: 14px 14px 96px !important;
@@ -157,47 +95,11 @@
   .hall-page .hall-empty {
     border-radius: 9px !important;
   }
-
-  .soso-feed-page.feed-page-clean,
-  .soso-feed-page.layout-main--full,
-  .layout-main--full.feed-page-clean {
-    padding-left: 8px !important;
-    padding-right: 8px !important;
-    padding-bottom: 96px !important;
-  }
-
-  .soso-feed-page .soso-ai-residents {
-    padding: 20px 18px 20px !important;
-  }
-
-  .soso-feed-page .soso-ai-residents__head {
-    margin-bottom: 16px !important;
-  }
-
-  .soso-feed-page .soso-ai-residents__grid {
-    gap: 12px !important;
-  }
-
-  .soso-feed-page .soso-ai-resident-card {
-    padding: 15px 14px !important;
-  }
 }
 
 @media (max-width: 380px) {
   .hall-page {
     padding-left: 12px !important;
     padding-right: 12px !important;
-  }
-
-  .soso-feed-page.feed-page-clean,
-  .soso-feed-page.layout-main--full,
-  .layout-main--full.feed-page-clean {
-    padding-left: 6px !important;
-    padding-right: 6px !important;
-  }
-
-  .soso-feed-page .soso-ai-residents {
-    padding-left: 16px !important;
-    padding-right: 16px !important;
   }
 }
