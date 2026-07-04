@@ -29,6 +29,7 @@ export const EXTENSION_MODULES = [
   './post-owner-actions.js',
   './participant-replies.js',
   './multi-detail.js',
+  './ai-character-panel-ui.js',
   './detail-extras.js',
   './detail-cards.js',
   './write-edit-router-fix.js',
