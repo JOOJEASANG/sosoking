@@ -1,8 +1,8 @@
 'use strict';
 
 // Cloud Functions export를 명시적으로 구성합니다.
-// 여러 모듈이 같은 이름을 export하면 뒤쪽 모듈이 앞쪽 모듈을 조용히 덮어쓰므로,
-// 운영에서 사용하는 대표 함수만 공개하고 레거시/대체 구현은 덮어쓰지 않도록 고정합니다.
+// 같은 이름의 함수가 여러 파일에서 export되어도 운영 함수 기준이 흔들리지 않도록,
+// 토론소/드립소 운영에 필요한 대표 함수만 이 파일에서 공개합니다.
 
 const coreAi = require('./index.js');
 const secureAiConfig = require('./secure-ai-config-functions.js');
@@ -19,7 +19,7 @@ const sosoFeed = require('./soso-feed-functions.js');
 const account = require('./account-functions.js');
 const features = require('./sosoking-features-functions.js');
 const aiContent = require('./ai-content-functions.js');
-const twoSpaceAiContent = require('./four-game-ai-content-functions.js');
+const twoSpaceAiContent = require('./two-space-ai-content-functions.js');
 const aiCharacterPanel = require('./ai-character-panel-functions.js');
 const removedQuizCompat = require('./six-game-functions.js');
 const adminAutomation = require('./ai-admin-automation-functions.js');
@@ -49,7 +49,7 @@ module.exports = {
   registerPostView: secureFeed.registerPostView,
   seoPost: secureFeed.seoPost,
 
-  // 멀티 게시글 전용 보안 액션
+  // 멀티 게시글 전용 보안 액션. 현재 운영 유형은 토론소(vote)와 드립소(drip)만 사용합니다.
   castMultiVote: secureMulti.castMultiVote,
   addMultiParticipation: secureMulti.addMultiParticipation,
   addMultiItemReply: secureMulti.addMultiItemReply,
@@ -69,7 +69,7 @@ module.exports = {
   ...aiMission,
   ...aiContent,
 
-  // 관리자 수동 AI 데이터 생성은 토론/드립 글쓰기 구조로 고정합니다.
+  // 관리자 수동 AI 데이터 생성은 토론/드립 글쓰기 구조와 가상닉네임 작성자로 고정합니다.
   ...twoSpaceAiContent,
 
   // 게시글 작성 후 AI 캐릭터 사회자/토론/드립 패널 생성
@@ -108,7 +108,7 @@ module.exports = {
   // 조회수 중복/관리자 보정
   ...postView,
 
-  // 제거된 기능 호출에 대한 호환 응답
+  // 제거된 퀴즈 호출에 대한 호환 응답
   checkQuizAnswer: removedQuizCompat.checkQuizAnswer,
 
   // 카카오 소셜 로그인

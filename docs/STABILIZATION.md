@@ -1,8 +1,16 @@
-# Stabilization Guide
+# Sosoking Stabilization Guide
 
-이 문서는 소소킹 코드 정리/통합/안정화 기준입니다.
+소소킹은 토론소와 드립소만 운영하는 커뮤니티로 정리합니다. 게임형 라운지, 퀴즈, 오락실 문구와 화면은 신규 운영 기준에서 제외합니다.
 
-## 1. 클라이언트 모듈 로딩
+## 1. 운영 범위
+
+- 유지: 토론소(`vote`), 드립소(`drip`), 댓글, 반응, 신고, 회원, 관리자, AI 캐릭터 패널
+- 운영봇: 공개 캐릭터가 아니라 사회자 역할
+- 공개 캐릭터: `public/js/ai-residents.js`의 8명
+- 자동/수동 샘플 데이터: `functions/two-space-ai-content-functions.js`에서 현재 `feeds` 문서 구조로 생성
+- 자동 생성 글 작성자: 운영봇이 아니라 가상닉네임
+
+## 2. 클라이언트 모듈 로딩
 
 보조 모듈 목록은 `public/js/app-module-registry.js`에서 관리합니다.
 
@@ -12,40 +20,30 @@
 
 새 보정 파일을 추가할 때는 `index.html`에 직접 script를 늘리지 말고 registry에 추가합니다.
 
-## 2. 퀴즈 제거 상태
-
-일반 피드 퀴즈와 멀티 퀴즈 정답 확인 Callable Function은 제거되었습니다.
-
-제거된 항목:
-
-- `checkQuizAnswer`
-- `checkMultiQuizAnswer`
-- 퀴즈 정답 포인트 지급 규칙
-- 정답 없는 퀴즈 polish 모듈
-
-호환 목적으로 `public/css/quiz-share-card.css`는 빈 파일로 유지합니다. 기존 HTML 또는 서비스워커 캐시가 해당 파일을 요청해도 404가 발생하지 않게 하기 위한 목적입니다.
-
 ## 3. CSS 정리 원칙
 
-현재 CSS는 다수의 보정 파일이 누적되어 있으므로 한 번에 삭제하지 않습니다. 아래 순서로 통합합니다.
+현재 CSS는 다수의 보정 파일이 누적되어 있으므로, 삭제보다 마지막 정렬 레이어를 먼저 적용합니다.
 
 1. `base.css`, `layout.css`, `components.css`, `pages.css`, `responsive.css`는 핵심 파일로 유지
-2. `*-fix.css`, `*-polish.css`, `*-final*.css`는 기능별로 묶어 새 파일로 병합
-3. 병합 후 기존 파일은 빈 호환 파일로 1회 배포 유지
-4. 다음 배포에서 HTML 참조 제거
-5. 마지막 배포에서 빈 파일 삭제
-
-이 순서를 지키면 브라우저 캐시와 서비스워커 캐시 때문에 생기는 CSS 404 또는 화면 깨짐을 줄일 수 있습니다.
+2. 모바일 헤더/본문 폭 통일은 `site-operation-cleanup.css`에서 최종 보정
+3. `*-fix.css`, `*-polish.css`, `*-final*.css`는 실제 화면 영향 확인 후 병합
+4. 삭제 대상 파일은 HTML 참조 제거 → 1회 배포 확인 → 파일 삭제 순서로 처리
 
 ## 4. Functions 정리 원칙
 
 `functions/functions-main-v2.js`는 공개 export의 단일 기준입니다.
 
 - 같은 기능 이름을 여러 모듈에서 export하지 않습니다.
-- 레거시 함수가 필요하면 export하지 말고 파일 내부 주석으로만 남깁니다.
+- 토론/드립 AI 샘플 생성은 `two-space-ai-content-functions.js`만 사용합니다.
+- 레거시 함수가 필요하면 export하지 말고 호환 응답 또는 내부 주석으로만 남깁니다.
 - 실제 운영 함수는 `functions-main-v2.js`에 명시적으로 연결합니다.
 
-## 5. 배포 전 확인
+## 5. 삭제/정리 완료 항목
+
+- `functions/four-game-ai-content-functions.js`: 파일명과 역할이 현재 운영 구조와 맞지 않아 `two-space-ai-content-functions.js`로 교체
+- `public/css/arcade-light-theme-fix.css`: 오락실/게임 로비 전용 CSS라 HTML 로딩 대상에서 제거
+
+## 6. 배포 전 확인
 
 ```bash
 npm run check

@@ -13,6 +13,21 @@ const HTTPS_ERROR_CODES = new Set([
   'data-loss', 'unauthenticated',
 ]);
 
+const VIRTUAL_AUTHORS = {
+  vote: [
+    { id: 'virtual-debate-001', name: '논쟁구경꾼' },
+    { id: 'virtual-debate-002', name: '선택장애온사람' },
+    { id: 'virtual-debate-003', name: '반반무많이' },
+    { id: 'virtual-debate-004', name: '한표던지고감' },
+  ],
+  drip: [
+    { id: 'virtual-drip-001', name: '드립수집가' },
+    { id: 'virtual-drip-002', name: '웃참실패자' },
+    { id: 'virtual-drip-003', name: '퇴근5분전' },
+    { id: 'virtual-drip-004', name: '댓글장인연습생' },
+  ],
+};
+
 function todayKST() {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit',
@@ -28,6 +43,14 @@ function normalizePreset(value) {
   if (['vote', 'debate', 'discussion', 'ox', 'day_room', 'day'].includes(key)) return 'vote';
   if (['drip', 'cbattle', 'ended_room', 'ended', 'naming', 'translation'].includes(key)) return 'drip';
   return PRESETS.includes(key) ? key : 'drip';
+}
+
+function pickVirtualAuthor(preset, seed = '') {
+  const pool = VIRTUAL_AUTHORS[preset] || VIRTUAL_AUTHORS.drip;
+  const basis = `${todayKST()}-${preset}-${seed}`;
+  let hash = 0;
+  for (let i = 0; i < basis.length; i += 1) hash = (hash * 31 + basis.charCodeAt(i)) >>> 0;
+  return pool[hash % pool.length];
 }
 
 function rethrowCallableError(error, scope) {
@@ -85,7 +108,7 @@ function buildAiPanel(preset, doc) {
     characters: isVote ? [
       { id: 'rebel', name: '반항아', emoji: '😤', role: '삐딱한 반대충', stance: '일단 반대쪽부터 봄', lines: ['다들 행복을 말하지만 저는 지갑의 표정을 먼저 봅니다.'], punchline: '저는 일단 반대합니다. 이유는 결제창이 알고 있습니다.' },
       { id: 'bothsides', name: '갈팡러', emoji: '🤔', role: '양쪽 다 맞는 중립러', stance: '둘 다 그럴듯함', lines: ['시켜 먹으면 행복하고, 참으면 통장이 웃습니다. 양쪽이 다 너무 설득력 있습니다.'], punchline: '제 결론은 명확합니다. 오늘도 결론을 보류하겠습니다.' },
-      { id: 'fact', name: '팩폭러', emoji: '🧊', role: '차가운 요약러', stance: '핵심만 정리', lines: ['핵심은 하나입니다. 지금 배고픔이 내일 후회보다 센가입니다.'], punchline: '이건 배달비 문제가 아니라 후회비 문제입니다.' },
+      { id: 'fact', name: '팩폭러', emoji: '🧊', role: '핵심 요약러', stance: '핵심만 정리', lines: ['핵심은 하나입니다. 지금 배고픔이 내일 후회보다 센가입니다.'], punchline: '이건 배달비 문제가 아니라 후회비 문제입니다.' },
     ] : [
       { id: 'jujup', name: '주접러', emoji: '😍', role: '호들갑 칭찬러', stance: '소재를 크게 띄움', lines: ['퇴근 5분 전 회의라니, 이건 직장인 세계관 최종 보스입니다.'], punchline: '이 상황은 그냥 지나가면 드립 예의가 아닙니다.' },
       { id: 'madcap', name: '광기러', emoji: '🤪', role: '이상한 상상러', stance: '세계관 확장', lines: ['잠깐 회의는 사실 퇴근을 잡아먹는 포켓몬입니다.'], punchline: '현실이 오늘 퇴근 버튼을 잘못 눌렀습니다.' },
@@ -102,6 +125,7 @@ function buildDoc(preset, actorId) {
   const data = sample(preset);
   const isVote = preset === 'vote';
   const label = isVote ? '토론소' : '드립소';
+  const virtualAuthor = pickVirtualAuthor(preset, actorId);
   const doc = {
     type: 'multi',
     cat: 'multi',
@@ -115,8 +139,8 @@ function buildDoc(preset, actorId) {
     modules: { comments: { enabled: true } },
     anonymous: false,
     anonymousMode: '',
-    authorId: 'sosoking-ai',
-    authorName: '소소킹 운영봇',
+    authorId: virtualAuthor.id,
+    authorName: virtualAuthor.name,
     authorPhoto: '',
     authorEmail: '',
     reactions: { total: 0 },
@@ -128,6 +152,8 @@ function buildDoc(preset, actorId) {
     aiSource: 'two-space-community',
     aiPreset: preset,
     aiActorId: actorId,
+    aiVirtualAuthor: true,
+    aiHostId: 'opsbot',
     createdAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
   };
@@ -146,7 +172,7 @@ async function createOne(preset, actorId) {
   const ref = db.collection('feeds').doc();
   const doc = buildDoc(normalized, actorId);
   await ref.set(doc);
-  return { ok: true, preset: normalized, typeLabel: doc.typeLabel, docId: ref.id, title: doc.title, path: `/detail/${ref.id}`, source: 'two-space-community' };
+  return { ok: true, preset: normalized, typeLabel: doc.typeLabel, docId: ref.id, title: doc.title, authorName: doc.authorName, path: `/detail/${ref.id}`, source: 'two-space-community' };
 }
 
 exports.generateAiContentNow = onCall({ region: REGION, timeoutSeconds: 120 }, async request => {

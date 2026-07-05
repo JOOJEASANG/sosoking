@@ -36,6 +36,10 @@ function escAttr(value) {
   return String(value || '').replace(/[&<>"]/g, '');
 }
 
+function esc(value) {
+  return String(value || '').replace(/[&<>]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[ch]));
+}
+
 function normalizePreset(value) {
   const key = String(value || '').trim();
   return ALLOWED_PRESETS.has(key) ? key : (LEGACY_REDIRECTS[key] || DEFAULT_PRESET);
@@ -49,9 +53,25 @@ function showWriteError(error) {
     <div class="empty-state">
       <div class="empty-state__icon">⚠️</div>
       <div class="empty-state__title">글쓰기 화면 오류</div>
-      <div class="empty-state__desc">${message.replace(/[&<>]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[ch]))}</div>
+      <div class="empty-state__desc">${esc(message)}</div>
       <button class="btn btn--primary" style="margin-top:14px" onclick="location.hash='#/write?type=multi&preset=drip'">다시 열기</button>
     </div>`;
+}
+
+async function openEditScreen(editId) {
+  const el = document.getElementById('page-content');
+  if (!el) return;
+  el.innerHTML = `
+    <div class="write-page write-edit-loading" data-edit-post-id="${escAttr(editId)}">
+      <div class="loading-center"><div class="spinner spinner--lg"></div></div>
+    </div>`;
+  try {
+    await import('../write-edit-router-fix.js');
+    window.dispatchEvent(new CustomEvent('sosoking:render-write-edit', { detail: { postId: editId } }));
+  } catch (error) {
+    console.error('[renderWrite] write edit import failed', error);
+    showWriteError(error);
+  }
 }
 
 export function renderWrite() {
@@ -63,11 +83,7 @@ export function renderWrite() {
   const editId = edit || postId || id || '';
 
   if (editId) {
-    el.innerHTML = `
-      <div class="write-page write-edit-loading" data-edit-post-id="${escAttr(editId)}">
-        <div class="loading-center"><div class="spinner spinner--lg"></div></div>
-      </div>`;
-    window.dispatchEvent(new CustomEvent('sosoking:render-write-edit', { detail: { postId: editId } }));
+    openEditScreen(editId);
     return;
   }
 

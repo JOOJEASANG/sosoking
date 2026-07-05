@@ -82,7 +82,7 @@ async function registerRoutes() {
   registerRoute('/legal/terms', async () => renderPage((await import('./pages/terms.js')).renderTerms, '이용약관'));
   registerRoute('/legal/privacy', async () => renderPage((await import('./pages/privacy.js')).renderPrivacy, '개인정보처리방침'));
 
-  // 마피아/라이어/추리방 기능은 제거했습니다.
+  // 레거시 게임/오락실 라우트는 현재 운영 구조에서 제외하고 피드로 보냅니다.
   registerRoute('/games', async () => navigate('/feed'));
   registerRoute('/sosoland', async () => navigate('/feed'));
   registerRoute('/game/:type', async () => navigate('/feed'));
@@ -158,7 +158,7 @@ function renderFrame() {
         <main id="page-content" class="page-container"></main>
         <footer class="site-footer" id="site-footer">
           <div class="site-footer__body" id="footer-body" hidden>
-            <div><b>소소킹</b> · AI 캐릭터 콘텐츠 커뮤니티</div>
+            <div><b>소소킹</b> · 토론·드립 캐릭터 커뮤니티</div>
             <div class="site-footer__links">
               <a href="#/terms">이용약관</a>
               <a href="#/privacy">개인정보처리방침</a>

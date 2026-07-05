@@ -14,6 +14,13 @@ function esc(value) {
   return String(value || '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 }
 
+function teamLabel(ch, panel) {
+  if (panel.kind !== 'vote') return '';
+  if (ch.team === 'left') return ch.targetOption ? `왼쪽팀 · ${ch.targetOption}` : '왼쪽팀';
+  if (ch.team === 'right') return ch.targetOption ? `오른쪽팀 · ${ch.targetOption}` : '오른쪽팀';
+  return ch.targetOption || '';
+}
+
 function injectStyle() {
   if (document.getElementById(STYLE_ID)) return;
   const style = document.createElement('style');
@@ -121,7 +128,7 @@ function injectStyle() {
     }
     .ai-character-grid {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 12px;
       padding: 0 18px 16px;
     }
@@ -132,8 +139,46 @@ function injectStyle() {
       border: 1px solid rgba(148,163,184,.16);
       box-shadow: 0 8px 20px rgba(15,23,42,.045);
     }
+    .ai-character-card--left {
+      border-color: rgba(59,130,246,.24);
+      background: linear-gradient(180deg, rgba(59,130,246,.055), var(--color-surface));
+    }
+    .ai-character-card--right {
+      border-color: rgba(255,107,74,.26);
+      background: linear-gradient(180deg, rgba(255,107,74,.065), var(--color-surface));
+    }
     .ai-character-card__avatar {
       background: rgba(255,107,74,.10);
+    }
+    .ai-character-card--left .ai-character-card__avatar {
+      background: rgba(59,130,246,.12);
+    }
+    .ai-character-card__team {
+      display: inline-flex;
+      margin-top: 10px;
+      min-height: 24px;
+      align-items: center;
+      padding: 0 9px;
+      border-radius: 999px;
+      background: rgba(15,23,42,.055);
+      color: var(--color-text-muted);
+      font-size: 11px;
+      font-weight: 950;
+      letter-spacing: -.02em;
+    }
+    .ai-character-card--left .ai-character-card__team {
+      background: rgba(59,130,246,.12);
+      color: #2563eb;
+    }
+    .ai-character-card--right .ai-character-card__team {
+      background: rgba(255,107,74,.13);
+      color: #ef4b2f;
+    }
+    .ai-character-card__reply {
+      margin-top: 8px;
+      color: var(--color-text-muted);
+      font-size: 11px;
+      font-weight: 850;
     }
     .ai-character-card__stance {
       margin: 11px 0 8px;
@@ -141,6 +186,9 @@ function injectStyle() {
       font-size: 12px;
       font-weight: 950;
       letter-spacing: -.02em;
+    }
+    .ai-character-card--left .ai-character-card__stance {
+      color: #2563eb;
     }
     .ai-character-card__line {
       margin: 6px 0 0;
@@ -160,6 +208,9 @@ function injectStyle() {
       font-weight: 950;
       line-height: 1.45;
       letter-spacing: -.03em;
+    }
+    .ai-character-card--left .ai-character-card__punch {
+      background: rgba(59,130,246,.09);
     }
     .ai-character-panel__best {
       margin: 0 18px 16px;
@@ -216,6 +267,9 @@ function injectStyle() {
       background: rgba(255,255,255,.06);
       border-color: rgba(255,255,255,.09);
     }
+    @media (max-width: 1100px) {
+      .ai-character-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
     @media (max-width: 820px) {
       .ai-character-grid { grid-template-columns: 1fr; }
     }
@@ -227,10 +281,11 @@ function renderPanel(panel) {
   const host = panel.host || {};
   const characters = Array.isArray(panel.characters) ? panel.characters : [];
   const bestLines = Array.isArray(panel.bestLines) ? panel.bestLines : [];
+  const badge = panel.kind === 'vote' ? 'AI 캐릭터 4대4 토론' : 'AI 캐릭터 드립 참여';
   return `
     <section class="ai-character-panel" data-ai-character-panel-root>
       <div class="ai-character-panel__head">
-        <div class="ai-character-panel__badge">AI 캐릭터 사회자</div>
+        <div class="ai-character-panel__badge">${badge}</div>
         <div class="ai-character-panel__title">${esc(panel.headline || 'AI 캐릭터가 먼저 열어본 판')}</div>
       </div>
       <div class="ai-host-card">
@@ -243,16 +298,22 @@ function renderPanel(panel) {
         ${host.question ? `<div class="ai-host-card__question">${esc(host.question)}</div>` : ''}
       </div>
       ${panel.imageRead ? `<div class="ai-character-panel__image-read">📷 이미지 포인트: ${esc(panel.imageRead)}</div>` : ''}
-      ${characters.length ? `<div class="ai-character-grid">${characters.map(ch => `
-        <article class="ai-character-card">
+      ${characters.length ? `<div class="ai-character-grid">${characters.map(ch => {
+        const team = teamLabel(ch, panel);
+        const teamClass = panel.kind === 'vote' && (ch.team === 'left' || ch.team === 'right') ? ` ai-character-card--${ch.team}` : '';
+        return `
+        <article class="ai-character-card${teamClass}">
           <div class="ai-character-card__top">
             <div class="ai-character-card__avatar">${esc(ch.emoji || '💬')}</div>
             <div><div class="ai-character-card__name">${esc(ch.name || 'AI 캐릭터')}</div><div class="ai-character-card__role">${esc(ch.role || '')}</div></div>
           </div>
+          ${team ? `<div class="ai-character-card__team">${esc(team)}</div>` : ''}
+          ${ch.replyTo ? `<div class="ai-character-card__reply">↳ ${esc(ch.replyTo)} 말에 받아치기</div>` : ''}
           ${ch.stance ? `<div class="ai-character-card__stance">${esc(ch.stance)}</div>` : ''}
           ${(Array.isArray(ch.lines) ? ch.lines : []).map(line => `<p class="ai-character-card__line">${esc(line)}</p>`).join('')}
           ${ch.punchline ? `<div class="ai-character-card__punch">“${esc(ch.punchline)}”</div>` : ''}
-        </article>`).join('')}</div>` : ''}
+        </article>`;
+      }).join('')}</div>` : ''}
       ${bestLines.length ? `<div class="ai-character-panel__best"><div class="ai-character-panel__best-title">바로 써먹기 좋은 한 줄</div><div class="ai-character-panel__best-list">${bestLines.map(line => `<span>${esc(line)}</span>`).join('')}</div></div>` : ''}
       ${panel.commentPrompt ? `<div class="ai-character-panel__footer">${esc(panel.commentPrompt)}</div>` : ''}
     </section>`;

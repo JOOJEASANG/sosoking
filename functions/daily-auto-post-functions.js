@@ -10,6 +10,10 @@ const db = getFirestore();
 const REGION = 'asia-northeast3';
 const ANTHROPIC_API_KEY = defineSecret('ANTHROPIC_API_KEY');
 const DAILY_PRESETS = ['vote', 'drip'];
+const VIRTUAL_AUTHORS = {
+  vote: ['논쟁구경꾼', '선택장애온사람', '반반무많이', '한표던지고감'],
+  drip: ['드립수집가', '웃참실패자', '퇴근5분전', '댓글장인연습생'],
+};
 
 function todayKST() {
   return new Intl.DateTimeFormat('en-CA', {
@@ -57,6 +61,14 @@ function normalizePreset(value) {
   if (['vote', 'debate', 'discussion', 'ox'].includes(key)) return 'vote';
   if (['drip', 'naming', 'translation', 'translate'].includes(key)) return 'drip';
   return DAILY_PRESETS.includes(key) ? key : 'drip';
+}
+
+function pickVirtualAuthor(preset, runSeed) {
+  const normalized = normalizePreset(preset);
+  const names = VIRTUAL_AUTHORS[normalized] || VIRTUAL_AUTHORS.drip;
+  const hash = String(runSeed || '').split('').reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
+  const name = names[Math.abs(hash) % names.length];
+  return { id: `virtual-${normalized}-${name}`, name };
 }
 
 async function getSettings() {
@@ -156,7 +168,7 @@ function buildAiPanel(preset, post) {
     characters: isVote ? [
       { id: 'rebel', name: '반항아', emoji: '😤', role: '삐딱한 반대충', stance: '반대쪽부터 봄', lines: ['저는 일단 반대편부터 보겠습니다. 다들 너무 빨리 결론 내렸습니다.'], punchline: '이 주제는 편하게 고르려는 순간 불편해집니다.' },
       { id: 'bothsides', name: '갈팡러', emoji: '🤔', role: '양쪽 다 맞는 중립러', stance: '둘 다 이해됨', lines: ['이쪽 말도 맞고 저쪽 말도 맞는 것 같습니다. 들을수록 더 모르겠습니다.'], punchline: '저는 오늘도 결론을 보류하겠습니다.' },
-      { id: 'fact', name: '팩폭러', emoji: '🧊', role: '차가운 요약러', stance: '핵심 정리', lines: ['핵심은 간단합니다. 지금 선택하면 나중에 덜 후회하는 쪽입니다.'], punchline: '이건 취향 문제가 아니라 후회 관리입니다.' },
+      { id: 'fact', name: '팩폭러', emoji: '🧊', role: '핵심 요약러', stance: '핵심 정리', lines: ['핵심은 간단합니다. 지금 선택하면 나중에 덜 후회하는 쪽입니다.'], punchline: '이건 취향 문제가 아니라 후회 관리입니다.' },
     ] : [
       { id: 'jujup', name: '주접러', emoji: '😍', role: '호들갑 칭찬러', stance: '소재 띄우기', lines: ['이 소재는 그냥 지나가면 드립 예의가 아닙니다.'], punchline: '지금 박수 치면서 댓글 달아도 됩니다.' },
       { id: 'madcap', name: '광기러', emoji: '🤪', role: '이상한 상상러', stance: '세계관 확장', lines: ['이건 현실이 잠깐 장르를 잘못 고른 순간입니다.'], punchline: '현실이 오늘 업데이트를 잘못 눌렀습니다.' },
@@ -175,6 +187,7 @@ function buildPost(preset, content, date, source, runSeed) {
   const label = isVote ? '토론소' : '드립소';
   const title = clean(content.title || (isVote ? '오늘의 토론 주제' : '오늘의 드립 주제'), 100);
   const desc = cleanMultiline(content.desc || content.topic || title, 1200);
+  const virtualAuthor = pickVirtualAuthor(normalized, runSeed);
   const post = {
     type: 'multi',
     cat: 'multi',
@@ -189,8 +202,8 @@ function buildPost(preset, content, date, source, runSeed) {
     deadline: { enabled: false, mode: 'none', status: 'open' },
     anonymous: false,
     anonymousMode: '',
-    authorId: 'sosoking-ai',
-    authorName: '소소킹 운영봇',
+    authorId: virtualAuthor.id,
+    authorName: virtualAuthor.name,
     authorPhoto: '',
     authorEmail: '',
     reactions: { total: 0 },
@@ -202,6 +215,8 @@ function buildPost(preset, content, date, source, runSeed) {
     aiSource: source,
     aiPreset: normalized,
     aiRunSeed: runSeed,
+    aiVirtualAuthor: true,
+    aiHostId: 'opsbot',
     createdAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
   };
@@ -230,7 +245,7 @@ async function createOne(preset, date) {
   const post = buildPost(normalized, content, date, source, runSeed);
   const ref = db.collection('feeds').doc();
   await ref.set(post);
-  return { preset: normalized, docId: ref.id, title: post.title, source, reason, runSeed, typeLabel: post.typeLabel };
+  return { preset: normalized, docId: ref.id, title: post.title, authorName: post.authorName, source, reason, runSeed, typeLabel: post.typeLabel };
 }
 
 async function dailyAutoPostJob() {
