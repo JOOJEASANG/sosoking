@@ -12,10 +12,8 @@ const REGION = 'asia-northeast3';
 const ANTHROPIC_API_KEY = defineSecret('ANTHROPIC_API_KEY');
 
 const POST_PRESETS = [
-  { preset: 'general', label: '모음방' },
-  { preset: 'vote', label: '토론방' },
-  { preset: 'drip', label: '드립방' },
-  { preset: 'consult', label: '병맛상담' },
+  { preset: 'vote', label: '토론' },
+  { preset: 'drip', label: '드립' },
 ];
 const PRESET_META = Object.fromEntries(POST_PRESETS.map(item => [item.preset, item]));
 const SCHEDULED_PRESETS = POST_PRESETS.map(item => item.preset);
@@ -75,20 +73,10 @@ function parseJson(text) {
 }
 
 function normalizePreset(value) {
-  const key = String(value || 'general').trim();
-  if (['collect', 'collection', 'random_battle', 'relay', 'acrostic', 'naming'].includes(key)) return 'general';
-  if (['ox', 'crazy_court'].includes(key)) return 'vote';
-  if (['quiz', 'initial_game', 'advice'].includes(key)) return 'consult';
-  return PRESET_META[key] ? key : 'general';
-}
-
-function feedTypeFromPreset(preset) {
-  if (preset === 'vote' || preset === 'drip') return preset;
-  return 'collect';
-}
-
-function subtypeFromPreset(preset) {
-  return preset === 'general' ? 'collect' : preset;
+  const key = String(value || 'drip').trim();
+  if (key === 'vote' || key === 'ox' || key === 'debate' || key === 'discussion' || key === 'court' || key === 'judgment') return 'vote';
+  if (key === 'drip' || key === 'naming' || key === 'translation' || key === 'translate' || key === 'quiz' || key === 'advice') return 'drip';
+  return PRESET_META[key] ? key : 'drip';
 }
 
 function toTags(value, fallback = []) {
@@ -102,7 +90,7 @@ function toTags(value, fallback = []) {
 
 function optionTexts(value, fallback = []) {
   const raw = Array.isArray(value) ? value : fallback;
-  return raw.map(item => clean(typeof item === 'object' ? item.text : item, 80)).filter(Boolean).slice(0, 8);
+  return raw.map(item => clean(typeof item === 'object' ? item.text : item, 80)).filter(Boolean).slice(0, 4);
 }
 
 let _settingsCache = null;
@@ -161,27 +149,17 @@ async function loadRecentTitles(limit = 20) {
 }
 
 const TYPE_PROMPTS = {
-  general: '소소킹 모음방에 올릴 가벼운 생활형 게시글 1개를 JSON만 출력해. 필드: title, desc, tags. 댓글을 유도하는 자연스러운 문장 포함.',
-  vote: '소소킹 토론방에 올릴 찬반/선택형 게시글 1개를 JSON만 출력해. 필드: title, desc, options, tags. options는 2~4개.',
-  drip: '소소킹 드립방에 올릴 드립 주제 1개를 JSON만 출력해. 필드: topic, tags. 사람들이 한 줄 드립으로 답할 수 있는 짧은 상황.',
-  consult: '소소킹 병맛상담에 올릴 작은 고민 1개를 JSON만 출력해. 필드: title, desc, topic, style, tags. 웃기지만 선을 지켜.',
+  vote: '소소킹 토론에 올릴 웃긴 VS 게시글 1개를 JSON만 출력해. 필드: title, desc, options, tags. options는 2개만. 가볍고 댓글 달고 싶게.',
+  drip: '소소킹 드립에 올릴 드립 주제 1개를 JSON만 출력해. 필드: topic, tags. 작명, 이상한 번역, 핑계, 근황, 한 줄 반응 중 하나로 답하기 좋은 짧은 상황.',
 };
 
 function fallbackContent(preset) {
   const map = {
-    general: [
-      { title: '오늘 하루 중 제일 소소하게 웃겼던 순간은?', desc: '거창한 일 아니어도 괜찮아요. 오늘 나를 피식 웃게 만든 장면 하나만 댓글로 남겨주세요.', tags: ['모음', '소소킹'] },
-      { title: '요즘 나만 은근히 빠진 작은 취미 있어?', desc: '남들은 별거 아니라고 해도 계속 하게 되는 소소한 취미를 공유해봐요.', tags: ['취미', '소소킹'] },
-      { title: '생각보다 오래 쓰고 있는 물건 있어?', desc: '별 기대 없이 샀는데 은근히 오래 쓰는 물건을 공유해봐요.', tags: ['생활', '공유'] },
-      { title: '오늘 나를 살짝 당황시킨 순간은?', desc: '크게 문제는 아닌데 순간 멈칫했던 소소한 일을 댓글로 남겨주세요.', tags: ['일상', '공감'] },
-      { title: '남들은 모르는데 나만 편한 습관 있어?', desc: '이상해 보여도 나한테는 편한 작은 습관이 있다면 알려주세요.', tags: ['습관', '일상'] },
-    ],
     vote: [
-      { title: '지금 당장 먹고 싶은 야식은?', desc: '딱 하나만 고를 수 있다면 오늘 밤 메뉴는 무엇인가요?', options: ['치킨', '라면', '피자', '만두'], tags: ['투표', '야식'] },
-      { title: '주말 아침, 몇 시 기상이 제일 행복할까?', desc: '쉬는 날 아침 기준으로 가장 마음 편한 기상 시간을 골라주세요.', options: ['7시 이전', '9~10시', '11시쯤', '점심 이후'], tags: ['투표', '주말'] },
-      { title: '카톡 답장 빠른 사람 vs 천천히 하는 사람', desc: '여러분은 어느 쪽이 더 편한가요?', options: ['빠른 답장', '천천히 답장'], tags: ['투표', '관계'] },
-      { title: '점심 메뉴 고를 때 제일 중요한 기준은?', desc: '가격, 맛, 속도, 양 중 하나만 고른다면?', options: ['가격', '맛', '속도', '양'], tags: ['투표', '점심'] },
-      { title: '쉬는 날 밖에 나가기 vs 집에서 쉬기', desc: '완전히 자유로운 하루가 생기면 어느 쪽인가요?', options: ['밖에 나가기', '집에서 쉬기'], tags: ['투표', '휴식'] },
+      { title: '배달비 4천원이면 시킨다 VS 참는다', desc: '메뉴보다 배달비가 더 크게 느껴지는 순간입니다. 이건 행복 비용일까요, 지갑 배신일까요?', options: ['시킨다', '참는다'], tags: ['토론', '배달비'] },
+      { title: '카톡 답장 빠른 사람 VS 천천히 하는 사람', desc: '여러분은 어느 쪽이 더 편한가요?', options: ['빠른 답장', '천천히 답장'], tags: ['토론', '관계'] },
+      { title: '쉬는 날 외출 VS 집콕', desc: '완전히 자유로운 하루가 생기면 어느 쪽인가요?', options: ['외출', '집콕'], tags: ['토론', '휴식'] },
+      { title: '아침형 인간 VS 밤형 인간', desc: '하루 효율은 어느 쪽이 더 낫다고 보나요?', options: ['아침형', '밤형'], tags: ['토론', '생활'] },
     ],
     drip: [
       { topic: '퇴근 5분 전에 회의 잡힌 사람의 한마디는?', tags: ['드립', '직장인'] },
@@ -190,24 +168,18 @@ function fallbackContent(preset) {
       { topic: '냉장고를 열었는데 먹을 게 없을 때 나오는 한마디는?', tags: ['드립', '일상'] },
       { topic: '카드값 알림을 본 사람의 첫 반응은?', tags: ['드립', '월급'] },
     ],
-    consult: [
-      { title: '이거 제가 예민한 건가요?', desc: '분명 별일 아닌 것 같은데 괜히 신경 쓰입니다. 공감, 현실조언, 웃긴 해결책 아무거나 던져주세요.', topic: 'daily', style: 'funny', tags: ['병맛상담', '고민'] },
-      { title: '살까 말까 장바구니가 저를 부릅니다', desc: '며칠째 장바구니에서 손짓하는 물건이 있습니다. 사도 되는지 말려야 하는지 소소판정 부탁합니다.', topic: 'money', style: 'choice', tags: ['병맛상담', '선택'] },
-      { title: '친구 답장을 기다리는 제가 너무 진지한가요?', desc: '별말 아닌 대화였는데 답장이 없으니 괜히 신경 쓰입니다. 어떻게 넘기면 좋을까요?', topic: 'people', style: 'empathy', tags: ['상담', '관계'] },
-      { title: '하기 싫은 일을 미루는 저를 설득해주세요', desc: '해야 하는 건 아는데 몸이 안 움직입니다. 현실조언도 좋고 웃긴 처방도 좋습니다.', topic: 'work', style: 'funny', tags: ['상담', '미루기'] },
-      { title: '소소한 소비를 합리화하고 싶습니다', desc: '큰돈은 아닌데 자꾸 고민됩니다. 사도 되는 이유와 말려야 하는 이유를 같이 듣고 싶어요.', topic: 'money', style: 'choice', tags: ['상담', '소비'] },
-    ],
   };
-  return pickRandom(map[preset] || map.general);
+  return pickRandom(map[preset] || map.drip);
 }
 
 function buildDoc(preset, content, date, source, runSeed) {
-  const meta = PRESET_META[preset] || PRESET_META.general;
+  const normalized = normalizePreset(preset);
+  const meta = PRESET_META[normalized] || PRESET_META.drip;
   const doc = {
     type: 'multi',
     cat: 'multi',
-    subtype: subtypeFromPreset(preset),
-    feedType: feedTypeFromPreset(preset),
+    subtype: normalized,
+    feedType: normalized,
     typeLabel: meta.label,
     title: clean(content.title || `${meta.label} AI 글`, 100),
     desc: cleanMultiline(content.desc || content.topic || '', 1200),
@@ -228,38 +200,25 @@ function buildDoc(preset, content, date, source, runSeed) {
     isAiGenerated: true,
     aiGeneratedDate: date,
     aiSource: source,
-    aiPreset: preset,
+    aiPreset: normalized,
     aiRunSeed: runSeed,
     createdAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
   };
 
-  if (preset === 'vote') {
-    const options = optionTexts(content.options, ['찬성', '반대']);
+  if (normalized === 'vote') {
+    const options = optionTexts(content.options, ['왼쪽', '오른쪽']).slice(0, 2);
     doc.modules.vote = { enabled: true, question: doc.desc, options: options.map(text => ({ text, votes: 0 })) };
-  }
-  if (preset === 'drip') {
+  } else {
     const topic = clean(content.topic || content.prompt || doc.desc || doc.title, 80) || '오늘의 한 줄 드립은?';
-    doc.title = '오늘의 드립 주제';
+    doc.title = clean(content.title || '오늘의 드립 주제', 100);
     doc.desc = topic;
     doc.modules.drip = { enabled: true, prompt: topic, maxLength: 50, responseLabel: '한 줄 드립' };
-  }
-  if (preset === 'consult') {
-    const topic = clean(content.topic || 'daily', 40);
-    const style = clean(content.style || 'funny', 40);
-    doc.modules.consult = {
-      enabled: true,
-      topic,
-      topicLabel: ({ daily: '일상', people: '관계', work: '직장/학교', money: '소비/선택', vent: '하소연' })[topic] || '일상',
-      style,
-      styleLabel: ({ empathy: '공감', realistic: '현실조언', choice: '선택도움', soft: '순한맛', funny: '웃긴해결' })[style] || '웃긴해결',
-      question: doc.desc,
-    };
   }
   return { mainDoc: doc, secretDoc: null };
 }
 
-async function generateOnePreset({ preset = 'general', force = true, actorId = 'admin', usageKind = 'manual_content' }) {
+async function generateOnePreset({ preset = 'drip', force = true, actorId = 'admin', usageKind = 'manual_content' }) {
   const normalizedPreset = normalizePreset(preset);
   const date = todayKST();
   const runSeed = makeRunSeed();
@@ -278,7 +237,7 @@ async function generateOnePreset({ preset = 'general', force = true, actorId = '
   if (apiKey && usage.ok) {
     try {
       const recentTitles = await loadRecentTitles(20);
-      const prompt = `${TYPE_PROMPTS[normalizedPreset] || TYPE_PROMPTS.general}\n\n중복 방지 규칙:\n- 아래 최근 제목과 같은 소재, 같은 제목, 같은 상황을 절대 쓰지 마.\n- 매번 새로운 생활 상황, 새로운 질문, 새로운 표현을 써.\n- 랜덤 시드: ${runSeed}\n- 오늘 날짜: ${date}\n최근 제목: ${recentTitles.length ? recentTitles.join(' / ') : '없음'}`;
+      const prompt = `${TYPE_PROMPTS[normalizedPreset] || TYPE_PROMPTS.drip}\n\n중복 방지 규칙:\n- 아래 최근 제목과 같은 소재, 같은 제목, 같은 상황을 쓰지 마.\n- 매번 새로운 생활 상황, 새로운 질문, 새로운 표현을 써.\n- 랜덤 시드: ${runSeed}\n- 오늘 날짜: ${date}\n최근 제목: ${recentTitles.length ? recentTitles.join(' / ') : '없음'}`;
       const anthropic = new Anthropic({ apiKey });
       const msg = await anthropic.messages.create({
         model: 'claude-haiku-4-5-20251001',
