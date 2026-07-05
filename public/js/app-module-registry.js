@@ -18,6 +18,7 @@ export const SAFE_OPTIONAL_MODULES = [
 ];
 
 export const EXTENSION_MODULES = [
+  './seo-copy-fix.js',
   './layout-id-repair.js',
   './admin-visibility-guard.js',
   './admin-shortcuts-pwa.js',
