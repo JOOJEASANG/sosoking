@@ -11,9 +11,7 @@ const QUERY_LIMIT = 160;
 const NAV_CONTEXT_KEY = 'sosoking:feedNavContext';
 
 const CONTENT_FILTERS = [
-  { key: '', icon: '✨', label: '전체', write: 'judgment' },
-  { key: 'judgment', icon: '⚖️', label: '판결', write: 'judgment' },
-  { key: 'consult', icon: '🫠', label: '상담', write: 'consult' },
+  { key: '', icon: '✨', label: '전체', write: 'drip' },
   { key: 'vote', icon: '🗳️', label: '토론', write: 'vote' },
   { key: 'drip', icon: '😂', label: '드립', write: 'drip' },
 ];
@@ -27,10 +25,9 @@ let isLoading = false;
 
 function normalizeContentType(value = '') {
   const key = String(value || '').trim();
-  if (key === 'collect' || key === 'general' || key === 'category') return 'judgment';
-  if (key === 'quiz' || key === 'initial_game') return 'consult';
-  if (CONTENT_FILTERS.some(item => item.key === key)) return key;
-  return '';
+  if (key === 'vote' || key === 'debate' || key === 'discussion' || key === 'ox') return 'vote';
+  if (key === 'drip' || key === 'naming' || key === 'translation' || key === 'translate') return 'drip';
+  return CONTENT_FILTERS.some(item => item.key === key) ? key : '';
 }
 
 export async function renderFeed() {
@@ -44,7 +41,7 @@ export async function renderFeed() {
   currentPage = Math.max(1, Number(params.page || 1));
   cachedPosts = [];
   isLoading = false;
-  setMeta('소소킹 커뮤니티', '소소킹에 업로드된 글 목록');
+  setMeta('소소킹 커뮤니티', '소소킹 토론과 드립 글 목록');
 
   el.innerHTML = `
     <div class="soso-feed-page layout-main layout-main--full feed-page-clean feed-page-list-only">
@@ -60,7 +57,7 @@ export async function renderFeed() {
 
 function bindFeedEvents() {
   document.querySelectorAll('[data-type-filter]').forEach(btn => btn.addEventListener('click', () => {
-    currentType = btn.dataset.typeFilter || '';
+    currentType = normalizeContentType(btn.dataset.typeFilter || '');
     currentPage = 1;
     refreshFeed();
   }));
