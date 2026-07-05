@@ -110,6 +110,7 @@
   <link rel="stylesheet" href="/css/hall-radius-fix.css">
   <link rel="stylesheet" href="/css/community-align-fix.css">
   <link rel="stylesheet" href="/css/final-consistency-20260705.css">
+  <link rel="stylesheet" href="/css/admin-fixed-scroll.css">
 
   <script type="application/ld+json">
   {
@@ -149,33 +150,10 @@
     ]
   }
   </script>
-  <!-- PWA 설치 이벤트를 모듈 로드보다 먼저 캡처 -->
-  <script>
-    window.__pwaInstallPrompt = null;
-    window.addEventListener('beforeinstallprompt', function(e) {
-      e.preventDefault();
-      window.__pwaInstallPrompt = e;
-    });
-  </script>
 </head>
 <body>
-  <div id="app">
-    <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;font-family:'Noto Sans KR',system-ui,sans-serif;background:#f7f7fb;color:#222;">
-      <div style="text-align:center;max-width:360px;background:#fff;border-radius:20px;padding:28px;box-shadow:0 12px 32px rgba(0,0,0,.08);">
-        <img src="/logo.svg" alt="소소킹 황당사건 판정 커뮤니티" width="48" height="48" style="margin-bottom:12px">
-        <div style="font-size:22px;font-weight:900;margin-bottom:8px">소소킹</div>
-        <div style="font-size:14px;color:#666;line-height:1.6">황당사건 판정 커뮤니티를 불러오는 중입니다.</div>
-      </div>
-    </div>
-  </div>
-
+  <div id="app"></div>
+  <div id="toast-root" class="toast-root"></div>
   <script type="module" src="/js/boot.js"></script>
-  <script type="module" src="/js/app-extensions-loader.js"></script>
-
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').then(reg => reg.update()).catch(() => {});
-    }
-  </script>
 </body>
 </html>
