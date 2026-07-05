@@ -9,7 +9,7 @@ const Anthropic = require('@anthropic-ai/sdk');
 const db = getFirestore();
 const REGION = 'asia-northeast3';
 const ANTHROPIC_API_KEY = defineSecret('ANTHROPIC_API_KEY');
-const DAILY_PRESETS = ['judgment', 'consult', 'vote', 'drip'];
+const DAILY_PRESETS = ['vote', 'drip'];
 
 function todayKST() {
   return new Intl.DateTimeFormat('en-CA', {
@@ -52,12 +52,19 @@ function parseJson(text) {
   try { return JSON.parse(match[0]); } catch { return null; }
 }
 
+function normalizePreset(value) {
+  const key = String(value || 'drip').trim();
+  if (['vote', 'debate', 'discussion', 'ox'].includes(key)) return 'vote';
+  if (['drip', 'naming', 'translation', 'translate'].includes(key)) return 'drip';
+  return DAILY_PRESETS.includes(key) ? key : 'drip';
+}
+
 async function getSettings() {
   const snap = await db.doc('site_settings/dailyAutoPost').get().catch(() => null);
   const data = snap?.exists ? snap.data() || {} : {};
   return {
     enabled: data.enabled !== false,
-    dailyCount: Math.max(0, Math.min(Number(data.dailyCount || 3), 3)),
+    dailyCount: Math.max(0, Math.min(Number(data.dailyCount || 2), 2)),
   };
 }
 
@@ -72,53 +79,38 @@ async function loadRecentTitles(limit = 20) {
 
 function fallbackContent(preset) {
   const map = {
-    judgment: [
-      { title: '친구가 약속 시간에 항상 10분씩 늦습니다', desc: '본인은 10분은 늦은 것도 아니라고 합니다. 여러분 기준으로 이건 용서 가능한가요?', options: ['글쓴이가 예민함', '상대가 선 넘음', '둘 다 문제 있음'], tags: ['판결', '약속'] },
-      { title: '마지막 치킨 조각을 말없이 먹은 사람', desc: '같이 시킨 치킨의 마지막 한 조각을 아무 말 없이 먹었습니다. 이건 유죄일까요?', options: ['글쓴이가 예민함', '상대가 선 넘음', '둘 다 문제 있음'], tags: ['판결', '음식'] },
-      { title: '단톡방 공지 읽고도 아무도 답이 없습니다', desc: '중요한 공지를 올렸는데 읽은 사람은 많은데 답이 없습니다. 이건 누구 잘못일까요?', options: ['글쓴이가 예민함', '상대가 선 넘음', '둘 다 문제 있음'], tags: ['판결', '단톡방'] },
-      { title: '빌린 충전기를 자꾸 안 돌려주는 친구', desc: '빌려간 건 맞는데 본인은 잠깐 보관 중이라고 합니다. 이 정도면 판정이 필요합니다.', options: ['글쓴이가 예민함', '상대가 선 넘음', '둘 다 문제 있음'], tags: ['판결', '친구'] },
-      { title: '같이 먹자고 산 과자를 혼자 거의 다 먹었습니다', desc: '상대는 맛있어서 그랬다고 합니다. 이건 귀여운 실수일까요 선 넘은 행동일까요?', options: ['글쓴이가 예민함', '상대가 선 넘음', '둘 다 문제 있음'], tags: ['판결', '과자'] },
-    ],
-    consult: [
-      { title: '장바구니가 저를 부릅니다', desc: '며칠째 장바구니에서 손짓하는 물건이 있습니다. 사도 되는지 말려야 하는지 상담 부탁합니다.', topic: 'money', style: 'choice', tags: ['상담', '선택'] },
-      { title: '이거 제가 너무 신경 쓰는 건가요?', desc: '별일 아닌 것 같은데 계속 머릿속에 남습니다. 공감, 현실조언, 웃긴 해결책 다 받습니다.', topic: 'daily', style: 'funny', tags: ['상담', '고민'] },
-      { title: '답장을 바로 해야 마음이 편한 편입니다', desc: '상대는 여유롭게 답하는 스타일인데 저는 계속 신경 쓰입니다. 어떻게 받아들이면 좋을까요?', topic: 'people', style: 'empathy', tags: ['상담', '관계'] },
-      { title: '오늘 할 일을 내일의 저에게 넘겼습니다', desc: '내일의 저는 과연 용서해줄까요? 미루는 습관을 웃기게라도 고치고 싶습니다.', topic: 'work', style: 'funny', tags: ['상담', '미루기'] },
-      { title: '작은 소비인데 자꾸 마음에 걸립니다', desc: '커피 한 잔, 간식 하나도 쌓이면 크다는 걸 아는데 또 사고 싶습니다.', topic: 'money', style: 'choice', tags: ['상담', '소비'] },
-    ],
     vote: [
-      { title: '먼저 연락한다 vs 그냥 둔다', desc: '한동안 연락이 뜸한 친구에게 먼저 연락하는 게 좋을까요, 아니면 그냥 자연스럽게 두는 게 좋을까요?', options: ['찬성', '반대'], tags: ['토론', '관계'] },
-      { title: '주말 아침 알람 맞추는 사람 이해된다?', desc: '쉬는 날에도 하루를 길게 쓰려고 알람을 맞추는 사람이 있습니다. 부지런함일까요, 너무 빡센 걸까요?', options: ['찬성', '반대'], tags: ['토론', '주말'] },
-      { title: '점심 메뉴는 빨리 정하는 게 좋다?', desc: '고민이 길수록 점심시간이 줄어듭니다. 빠른 결정이 답일까요?', options: ['찬성', '반대'], tags: ['토론', '점심'] },
-      { title: '메신저 답장은 빠를수록 좋다?', desc: '빠른 답장이 예의인지, 각자 속도를 존중해야 하는지 골라주세요.', options: ['찬성', '반대'], tags: ['토론', '메신저'] },
-      { title: '퇴근 후 연락은 업무가 아니면 안 하는 게 맞다?', desc: '퇴근 후에도 가벼운 연락은 괜찮을까요, 아니면 완전한 개인시간일까요?', options: ['찬성', '반대'], tags: ['토론', '퇴근'] },
+      { title: '배달비 4천원이면 시킨다 VS 참는다', desc: '메뉴보다 배달비가 더 크게 느껴지는 순간입니다. 이건 행복 비용일까요, 지갑 배신일까요?', options: ['시킨다', '참는다'], tags: ['토론', '배달비'] },
+      { title: '카톡 답장 빠른 사람 VS 천천히 하는 사람', desc: '여러분은 어느 쪽이 더 편한가요?', options: ['빠른 답장', '천천히 답장'], tags: ['토론', '관계'] },
+      { title: '쉬는 날 외출 VS 집콕', desc: '완전히 자유로운 하루가 생기면 어느 쪽인가요?', options: ['외출', '집콕'], tags: ['토론', '휴식'] },
+      { title: '아침형 인간 VS 밤형 인간', desc: '하루 효율은 어느 쪽이 더 낫다고 보나요?', options: ['아침형', '밤형'], tags: ['토론', '생활'] },
+      { title: '음식 사진 먼저 찍기 VS 바로 먹기', desc: '맛있는 게 나오면 사진부터 남겨야 할까요, 따뜻할 때 바로 먹어야 할까요?', options: ['사진 먼저', '바로 먹기'], tags: ['토론', '음식'] },
     ],
     drip: [
-      { topic: '퇴근 5분 전에 회의 잡힌 사람의 한마디는?', tags: ['드립', '직장인'] },
-      { topic: '배달 예상 시간이 계속 늘어날 때 떠오르는 한 줄은?', tags: ['드립', '배달'] },
-      { topic: '냉장고를 열었는데 먹을 게 없을 때 나오는 한마디는?', tags: ['드립', '일상'] },
-      { topic: '월급날 하루 뒤 통장을 본 사람의 반응은?', tags: ['드립', '월급'] },
-      { topic: '월요일 아침 알람에게 보내는 한 줄 편지는?', tags: ['드립', '월요일'] },
+      { title: '퇴근 5분 전 회의 이름 지어주세요', desc: '퇴근 5분 전에 “잠깐 회의 가능?” 메시지가 왔을 때의 감정을 한 줄로 살려주세요.', topic: '퇴근 5분 전 회의 이름 지어주세요', tags: ['드립', '작명', '직장인'] },
+      { title: '배달 예상시간이 계속 늘어날 때 한마디', desc: '배달 예상 시간이 20분에서 40분, 다시 55분으로 늘어났을 때 나올 법한 한 줄을 적어주세요.', topic: '배달 예상시간이 계속 늘어날 때 떠오르는 한 줄은?', tags: ['드립', '배달'] },
+      { title: '월요일 아침 알람 별명 짓기', desc: '월요일 아침 알람을 사람처럼 부른다면 어떤 이름이 어울릴까요?', topic: '월요일 아침 알람에게 이름 붙이기', tags: ['드립', '월요일', '작명'] },
+      { title: '냉장고가 비었을 때 나오는 대사', desc: '냉장고를 열었는데 먹을 게 없을 때 내 영혼이 할 법한 말을 적어주세요.', topic: '냉장고를 열었는데 먹을 게 없을 때 한마디', tags: ['드립', '일상'] },
+      { title: '카드값 알림 번역하기', desc: '카드값 알림 문자를 더 잔인하지만 웃긴 말투로 번역해주세요.', topic: '카드값 알림을 웃긴 말투로 번역하기', tags: ['드립', '번역', '월급'] },
     ],
   };
-  return pickRandom(map[preset] || map.judgment);
+  return pickRandom(map[normalizePreset(preset)] || map.drip);
 }
 
 const PROMPTS = {
-  judgment: '소소킹 판결방에 올릴 사소한 생활 사건 1개를 JSON만 출력해. 필드: title, desc, options, tags. options는 글쓴이가 예민함, 상대가 선 넘음, 둘 다 문제 있음.',
-  consult: '소소킹 상담 게시글에 올릴 작은 고민 1개를 JSON만 출력해. 필드: title, desc, topic, style, tags. 웃기지만 선을 지키는 상담 소재.',
-  vote: '소소킹 토론방에 올릴 찬반 주제 1개를 JSON만 출력해. 필드: title, desc, options, tags. options는 찬성, 반대.',
-  drip: '소소킹 드립방에 올릴 드립 주제 1개를 JSON만 출력해. 필드: topic, tags. 사람들이 한 줄 드립으로 답할 수 있는 주제.',
+  vote: '소소킹 글쓰기의 토론 형식에 맞는 웃긴 VS 토론 글 1개를 JSON만 출력해. 필드: title, desc, options, tags. options는 반드시 2개. title은 두 선택지가 보이는 VS 제목으로 작성.',
+  drip: '소소킹 글쓰기의 드립 형식에 맞는 드립 글 1개를 JSON만 출력해. 필드: title, desc, topic, tags. 작명, 번역, 핑계, 근황, 한 줄 드립 중 하나로 답하기 좋은 소재.',
 };
 
 async function makeContent(preset, date, runSeed) {
-  let content = fallbackContent(preset);
+  const normalized = normalizePreset(preset);
+  let content = fallbackContent(normalized);
   let source = 'fallback';
   const apiKey = ANTHROPIC_API_KEY.value();
   if (!apiKey) return { content, source, reason: 'no-key' };
   try {
     const recentTitles = await loadRecentTitles(20);
-    const prompt = `${PROMPTS[preset] || PROMPTS.judgment}\n\n중복 방지 규칙:\n- 아래 최근 제목과 같은 소재, 같은 제목, 같은 상황을 절대 쓰지 마.\n- 같은 날짜에도 매번 새로운 상황과 표현을 써.\n- 랜덤 시드: ${runSeed}\n- 오늘 날짜: ${date}\n최근 제목: ${recentTitles.length ? recentTitles.join(' / ') : '없음'}`;
+    const prompt = `${PROMPTS[normalized] || PROMPTS.drip}\n\n중복 방지 규칙:\n- 아래 최근 제목과 같은 소재, 같은 제목, 같은 상황을 쓰지 마.\n- 매번 새로운 생활 상황과 표현을 써.\n- 랜덤 시드: ${runSeed}\n- 오늘 날짜: ${date}\n최근 제목: ${recentTitles.length ? recentTitles.join(' / ') : '없음'}`;
     const anthropic = new Anthropic({ apiKey });
     const msg = await anthropic.messages.create({
       model: 'claude-haiku-4-5-20251001',
@@ -129,34 +121,76 @@ async function makeContent(preset, date, runSeed) {
     const parsed = parseJson(msg.content.filter(block => block.type === 'text').map(block => block.text).join(''));
     if (parsed) { content = parsed; source = 'ai'; }
   } catch (error) {
-    console.error('[daily-auto-posts] fallback', preset, error);
+    console.error('[daily-auto-posts] fallback', normalized, error);
   }
   return { content, source, reason: source === 'ai' ? 'ai-ok' : 'ai-fallback' };
 }
 
-function buildPost(preset, content, date, source, runSeed) {
-  const isJudgment = preset === 'judgment';
-  const isConsult = preset === 'consult';
+function toTags(content, label) {
+  const tags = Array.isArray(content.tags) ? content.tags : [];
+  return [...tags, label, '소소킹']
+    .map(v => clean(v, 20).replace(/^#/, ''))
+    .filter(Boolean)
+    .filter((tag, index, self) => self.indexOf(tag) === index)
+    .slice(0, 8);
+}
+
+function buildAiPanel(preset, post) {
   const isVote = preset === 'vote';
-  const isDrip = preset === 'drip';
-  const title = isDrip ? '오늘의 드립 주제' : clean(content.title || '오늘의 소소 주제', 100);
-  const desc = cleanMultiline(isDrip ? (content.topic || content.desc || '') : (content.desc || ''), 1200);
+  return {
+    enabled: true,
+    status: 'fallback',
+    kind: preset,
+    headline: isVote ? '운영봇이 토론소를 열었습니다' : '운영봇이 드립소를 열었습니다',
+    imageRead: '',
+    imageCountAnalyzed: 0,
+    host: {
+      id: 'opsbot',
+      name: '운영봇',
+      emoji: '🤖',
+      role: '사회자',
+      opening: isVote ? `오늘의 토론 주제는 “${post.title}”입니다.` : `오늘의 드립 소재는 “${post.title}”입니다.`,
+      summary: isVote ? '사소하지만 은근히 갈릴 만한 VS 주제입니다.' : '짧게 받을수록 더 웃긴 소재입니다.',
+      question: isVote ? '어느 쪽인지 투표하고 이유를 한 줄로 남겨주세요.' : '이 상황을 더 웃긴 한 줄로 받아쳐주세요.',
+    },
+    characters: isVote ? [
+      { id: 'rebel', name: '반항아', emoji: '😤', role: '삐딱한 반대충', stance: '반대쪽부터 봄', lines: ['저는 일단 반대편부터 보겠습니다. 다들 너무 빨리 결론 내렸습니다.'], punchline: '이 주제는 편하게 고르려는 순간 불편해집니다.' },
+      { id: 'bothsides', name: '갈팡러', emoji: '🤔', role: '양쪽 다 맞는 중립러', stance: '둘 다 이해됨', lines: ['이쪽 말도 맞고 저쪽 말도 맞는 것 같습니다. 들을수록 더 모르겠습니다.'], punchline: '저는 오늘도 결론을 보류하겠습니다.' },
+      { id: 'fact', name: '팩폭러', emoji: '🧊', role: '차가운 요약러', stance: '핵심 정리', lines: ['핵심은 간단합니다. 지금 선택하면 나중에 덜 후회하는 쪽입니다.'], punchline: '이건 취향 문제가 아니라 후회 관리입니다.' },
+    ] : [
+      { id: 'jujup', name: '주접러', emoji: '😍', role: '호들갑 칭찬러', stance: '소재 띄우기', lines: ['이 소재는 그냥 지나가면 드립 예의가 아닙니다.'], punchline: '지금 박수 치면서 댓글 달아도 됩니다.' },
+      { id: 'madcap', name: '광기러', emoji: '🤪', role: '이상한 상상러', stance: '세계관 확장', lines: ['이건 현실이 잠깐 장르를 잘못 고른 순간입니다.'], punchline: '현실이 오늘 업데이트를 잘못 눌렀습니다.' },
+      { id: 'ajae', name: '아재봇', emoji: '🧓', role: '썰렁 개그 담당', stance: '말장난', lines: ['제가 한 말씀 올리겠습니다. 웃기지 않아도 기억에는 남습니다.'], punchline: '이건 드립이 아니라 드립커피입니다.' },
+    ],
+    bestLines: isVote ? ['저는 오늘도 결론을 보류하겠습니다.', '이건 취향 문제가 아니라 후회 관리입니다.'] : ['현실이 오늘 업데이트를 잘못 눌렀습니다.', '이건 드립이 아니라 드립커피입니다.'],
+    commentPrompt: isVote ? '투표하고 한 줄 이유를 남겨주세요.' : '더 웃긴 이름이나 한 줄 드립을 댓글로 남겨주세요.',
+    model: 'fallback',
+    generatedAt: FieldValue.serverTimestamp(),
+  };
+}
+
+function buildPost(preset, content, date, source, runSeed) {
+  const normalized = normalizePreset(preset);
+  const isVote = normalized === 'vote';
+  const label = isVote ? '토론소' : '드립소';
+  const title = clean(content.title || (isVote ? '오늘의 토론 주제' : '오늘의 드립 주제'), 100);
+  const desc = cleanMultiline(content.desc || content.topic || title, 1200);
   const post = {
     type: 'multi',
     cat: 'multi',
-    subtype: isJudgment ? 'judgment' : preset,
-    feedType: isVote ? 'vote' : isDrip ? 'drip' : 'collect',
-    typeLabel: isJudgment ? '판결방' : isConsult ? '병맛상담' : isVote ? '토론방' : '드립방',
+    subtype: normalized,
+    feedType: normalized,
+    typeLabel: label,
     title,
     desc,
-    tags: Array.isArray(content.tags) ? content.tags.map(v => clean(v, 20)).filter(Boolean).slice(0, 8) : ['소소킹'],
+    tags: toTags(content, label),
     images: [],
     modules: { comments: { enabled: true } },
     deadline: { enabled: false, mode: 'none', status: 'open' },
     anonymous: false,
     anonymousMode: '',
     authorId: 'sosoking-ai',
-    authorName: source === 'ai' ? '소소킹AI 🤖' : '소소킹 운영봇',
+    authorName: '소소킹 운영봇',
     authorPhoto: '',
     authorEmail: '',
     reactions: { total: 0 },
@@ -166,51 +200,37 @@ function buildPost(preset, content, date, source, runSeed) {
     isAiGenerated: true,
     aiGeneratedDate: date,
     aiSource: source,
-    aiPreset: preset,
+    aiPreset: normalized,
     aiRunSeed: runSeed,
     createdAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
   };
 
-  if (isJudgment || isVote) {
-    const fallback = isJudgment ? ['글쓴이가 예민함', '상대가 선 넘음', '둘 다 문제 있음'] : ['찬성', '반대'];
-    const rawOptions = Array.isArray(content.options) ? content.options : fallback;
-    const options = rawOptions.map(v => clean(typeof v === 'object' ? v.text : v, 80)).filter(Boolean).slice(0, isJudgment ? 3 : 2);
+  if (isVote) {
+    const rawOptions = Array.isArray(content.options) ? content.options : ['왼쪽', '오른쪽'];
+    const options = rawOptions.map(v => clean(typeof v === 'object' ? v.text : v, 80)).filter(Boolean).slice(0, 2);
     post.modules.vote = {
       enabled: true,
-      voteMode: isJudgment ? 'judgment' : 'pros_cons',
-      question: desc || post.title,
-      options: (options.length >= 2 ? options : fallback).map(text => ({ text, votes: 0 })),
+      voteMode: 'pros_cons',
+      question: desc || title,
+      options: (options.length >= 2 ? options : ['왼쪽', '오른쪽']).map(text => ({ text, votes: 0 })),
     };
+  } else {
+    post.modules.drip = { enabled: true, prompt: desc || title, maxLength: 50, responseLabel: '한 줄 드립' };
   }
 
-  if (isConsult) {
-    const topic = clean(content.topic || 'daily', 40);
-    const style = clean(content.style || 'funny', 40);
-    post.modules.consult = {
-      enabled: true,
-      topic,
-      topicLabel: ({ daily: '일상', people: '관계', work: '직장/학교', money: '소비/선택', vent: '하소연' })[topic] || '일상',
-      style,
-      styleLabel: ({ empathy: '공감', realistic: '현실조언', choice: '선택도움', soft: '순한맛', funny: '웃긴해결' })[style] || '웃긴해결',
-      question: desc,
-    };
-  }
-
-  if (isDrip) {
-    post.modules.drip = { enabled: true, prompt: desc, maxLength: 50, responseLabel: '한 줄 드립' };
-  }
-
+  post.aiCharacterPanel = buildAiPanel(normalized, post);
   return post;
 }
 
 async function createOne(preset, date) {
+  const normalized = normalizePreset(preset);
   const runSeed = makeRunSeed();
-  const { content, source, reason } = await makeContent(preset, date, runSeed);
-  const post = buildPost(preset, content, date, source, runSeed);
+  const { content, source, reason } = await makeContent(normalized, date, runSeed);
+  const post = buildPost(normalized, content, date, source, runSeed);
   const ref = db.collection('feeds').doc();
   await ref.set(post);
-  return { preset, docId: ref.id, title: post.title, source, reason, runSeed };
+  return { preset: normalized, docId: ref.id, title: post.title, source, reason, runSeed, typeLabel: post.typeLabel };
 }
 
 async function dailyAutoPostJob() {
@@ -221,7 +241,7 @@ async function dailyAutoPostJob() {
   const markerSnap = await markerRef.get();
   if (markerSnap.exists) return { skipped: true, reason: 'already-created', date };
 
-  const count = Math.min(settings.dailyCount || 3, 3);
+  const count = Math.min(settings.dailyCount || 2, 2);
   const daySeed = Number(date.replace(/-/g, '')) || 0;
   const presets = Array.from({ length: count }, (_, index) => DAILY_PRESETS[(daySeed + index) % DAILY_PRESETS.length]);
   const results = [];
