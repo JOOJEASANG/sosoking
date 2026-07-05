@@ -55,6 +55,36 @@ function injectStyle() {
         box-sizing: border-box !important;
       }
 
+      #page-content .feed-page-list-only #feed-list,
+      #page-content .feed-page-list-only .soso-feed-list {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 14px !important;
+        overflow-x: visible !important;
+        overflow-y: visible !important;
+        scroll-snap-type: none !important;
+        scroll-padding-inline: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+
+      #page-content .feed-page-list-only #feed-list > .feed-card,
+      #page-content .feed-page-list-only #feed-list > .skeleton-card,
+      #page-content .feed-page-list-only #feed-list > .empty-state,
+      #page-content .feed-page-list-only .soso-feed-list > .feed-card,
+      #page-content .feed-page-list-only .soso-feed-list > .skeleton-card,
+      #page-content .feed-page-list-only .soso-feed-list > .empty-state {
+        flex: none !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        scroll-snap-align: none !important;
+        scroll-snap-stop: normal !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        box-sizing: border-box !important;
+      }
+
       #page-content .soso-feed-modern-head {
         padding-left: 16px !important;
         padding-right: 16px !important;
@@ -85,6 +115,7 @@ function fixCommunityWidth() {
   injectStyle();
   const page = document.querySelector('#page-content .feed-page-list-only');
   if (!page) return;
+  const list = page.querySelector('#feed-list, .soso-feed-list');
   if (window.innerWidth <= 1023) {
     const side = window.innerWidth <= 374 ? 12 : 16;
     page.style.width = `calc(100vw - ${side * 2}px)`;
@@ -93,6 +124,21 @@ function fixCommunityWidth() {
     page.style.marginRight = `calc(50% - 50vw + ${side}px)`;
     page.style.paddingLeft = '0';
     page.style.paddingRight = '0';
+    if (list) {
+      list.style.display = 'grid';
+      list.style.gridTemplateColumns = '1fr';
+      list.style.overflowX = 'visible';
+      list.style.padding = '0';
+      list.style.margin = '0';
+    }
+    list?.querySelectorAll('.feed-card, .skeleton-card, .empty-state').forEach(card => {
+      card.style.flex = 'none';
+      card.style.width = '100%';
+      card.style.maxWidth = '100%';
+      card.style.marginLeft = '0';
+      card.style.marginRight = '0';
+      card.style.boxSizing = 'border-box';
+    });
   } else {
     page.style.width = 'min(100%, 920px)';
     page.style.maxWidth = '920px';
