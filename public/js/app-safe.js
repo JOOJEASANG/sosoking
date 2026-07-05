@@ -106,7 +106,13 @@ async function isStrictAdmin(user) {
 }
 
 async function fetchUserProfile(user) {
-  if (!user) return;
+  if (!user) {
+    appState.nickname = '';
+    appState.nicknameIcon = null;
+    appState.points = 0;
+    appState.isAdmin = false;
+    return;
+  }
   try {
     let snap = await getDoc(doc(db, 'users', user.uid));
     if (!snap.exists() && !user.isAnonymous) {
@@ -125,6 +131,8 @@ async function fetchUserProfile(user) {
       appState.points = Number(data.points || data.totalPoints || 0);
     } else {
       appState.nickname = user.displayName || user.email?.split('@')[0] || '';
+      appState.nicknameIcon = null;
+      appState.points = 0;
     }
     appState.isAdmin = await isStrictAdmin(user);
   } catch (error) {
@@ -176,12 +184,20 @@ function renderFrame() {
   bindFooterToggle();
 }
 
+function currentHashPath() {
+  return (window.location.hash || '#/').slice(1).split('?')[0] || '/';
+}
+
 onAuthStateChanged(auth, async user => {
+  appState.loading = true;
   appState.user = user || null;
   await fetchUserProfile(user);
+  appState.loading = false;
   renderHeader();
   renderSidebar();
   renderBottomNav();
+  window.dispatchEvent(new CustomEvent('sosoking:auth-ready', { detail: { loggedIn: !!user } }));
+  if (currentHashPath() === '/account') window.dispatchEvent(new Event('hashchange'));
 });
 
 initToast();
