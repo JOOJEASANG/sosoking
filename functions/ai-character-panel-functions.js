@@ -10,16 +10,30 @@ const REGION = 'asia-northeast3';
 const GEMINI_API_KEY = defineSecret('GEMINI_API_KEY');
 
 const CHARACTER_GUIDE = [
-  '- 운영봇 🤖: 사회자. 제목·내용·이미지를 요약하고, 토론/드립 판을 연다. 직접 드립 우승을 노리지 않는다.',
-  '- 주접러 😍: 뭐든 과하게 띄워주고 호들갑을 떤다. 칭찬이 너무 커서 웃기는 캐릭터.',
-  '- 반항아 😤: 일단 삐딱하게 본다. 모두가 동의할 때 일부러 반대쪽 허점을 찾는다.',
-  '- 갈팡러 🤔: 이쪽도 맞고 저쪽도 맞는 것 같아서 결정을 못 한다. 양쪽 논리를 다 살리며 토론을 더 헷갈리게 만든다.',
-  '- 팩폭러 🧊: 감정 없이 핵심을 찌른다. 차갑지만 짧고 정확해야 한다.',
-  '- 광기러 🤪: 상상력이 이상한 방향으로 튄다. 말도 안 되는데 묘하게 그럴듯해야 한다.',
-  '- 음모론자 👁️: 사소한 상황을 거대한 사건처럼 해석한다. 과몰입 추리로 웃긴다.',
-  '- 아재봇 🧓: 일부러 썰렁한 말장난을 친다. 노잼인데 자꾸 생각나는 톤.',
-  '- 과몰입러 🎭: 작은 일을 영화, 뉴스, 대하드라마처럼 크게 만든다.',
+  '- 주접러 😍: 과한 칭찬과 호들갑으로 분위기를 띄운다.',
+  '- 반항아 😤: 일단 삐딱하게 보고 반대쪽 허점을 찾는다.',
+  '- 갈팡러 🤔: 양쪽을 다 이해해서 흔들린다.',
+  '- 팩폭러 🧊: 감정 없이 핵심을 짧고 차갑게 찌른다.',
+  '- 광기러 🤪: 말도 안 되는 상상과 비유로 튄다.',
+  '- 음모론자 👁️: 사소한 상황을 거대한 사건처럼 해석한다.',
+  '- 아재봇 🧓: 썰렁한 말장난을 짧게 던진다.',
+  '- 과몰입러 🎭: 작은 일을 영화, 뉴스, 대하드라마처럼 키운다.',
 ].join('\n');
+
+const CHARACTER_META = {
+  jujup: { id: 'jujup', name: '주접러', emoji: '😍', role: '호들갑 칭찬러' },
+  rebel: { id: 'rebel', name: '반항아', emoji: '😤', role: '삐딱한 반대충' },
+  bothsides: { id: 'bothsides', name: '갈팡러', emoji: '🤔', role: '양쪽 다 맞는 중립러' },
+  fact: { id: 'fact', name: '팩폭러', emoji: '🧊', role: '핵심 요약러' },
+  madcap: { id: 'madcap', name: '광기러', emoji: '🤪', role: '이상한 상상러' },
+  conspiracy: { id: 'conspiracy', name: '음모론자', emoji: '👁️', role: '과몰입 추리러' },
+  ajae: { id: 'ajae', name: '아재봇', emoji: '🧓', role: '썰렁 개그 담당' },
+  overreact: { id: 'overreact', name: '과몰입러', emoji: '🎭', role: '대서사 담당' },
+};
+
+const VOTE_LEFT = ['rebel', 'fact', 'conspiracy', 'ajae'];
+const VOTE_RIGHT = ['jujup', 'bothsides', 'madcap', 'overreact'];
+const DRIP_ORDER = ['jujup', 'madcap', 'ajae', 'overreact'];
 
 function clean(value, max = 1000) {
   return String(value || '').replace(/[<>]/g, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').replace(/\n{4,}/g, '\n\n\n').trim().slice(0, max);
@@ -111,26 +125,27 @@ async function buildImageParts(images = []) {
 function promptFor(post) {
   const type = postType(post);
   const options = voteOptions(post);
+  const leftOption = options[0] || '왼쪽 선택지';
+  const rightOption = options[1] || '오른쪽 선택지';
   const title = clean(post.title, 160);
   const desc = clean(post.desc || post.body || '', 1800);
   const hasImages = Array.isArray(post.images) && post.images.length > 0;
   const modeGuide = type === 'vote'
-    ? `토론소 글이다. 선택지: ${options.length ? options.join(' VS ') : '사용자 선택지 없음'}\n운영봇은 사회자로 쟁점을 정리한다. 캐릭터들은 서로 다른 성격으로 VS 구도를 밀어붙인다. 갈팡러는 반드시 양쪽 모두 그럴듯하다고 흔들어야 한다.`
-    : '드립소 글이다. 운영봇은 사회자로 상황을 요약한다. 캐릭터들은 작명, 이상한 번역, 근황뉴스, 한 줄 드립 중 가장 잘 맞는 방식으로 받아친다.';
+    ? `토론소 글이다. 선택지: ${options.length ? options.join(' VS ') : '사용자 선택지 없음'}\n캐릭터 8명 전원이 일반 유저처럼 댓글 토론에 참여한다.\n4대4 토론으로 나눈다. 왼쪽 팀 4명은 ${leftOption} 편, 오른쪽 팀 4명은 ${rightOption} 편이다.\n왼쪽 팀: 반항아, 팩폭러, 음모론자, 아재봇. 오른쪽 팀: 주접러, 갈팡러, 광기러, 과몰입러.\n각 캐릭터는 자기 팀 논리, 상대팀 반박, 제목/본문/이미지 디테일, 웃긴 한 줄을 모두 넣는다. 서로 말도 받아쳐야 한다.`
+    : '드립소 글이다. 가장 잘 맞는 캐릭터 4명이 일반 댓글러처럼 참여한다. 제목, 본문, 이미지에서 구체적인 포인트를 뽑아 작명, 번역, 근황뉴스, 한 줄 드립 중 맞는 방식으로 받아친다.';
 
-  return `너는 소소킹의 핵심 AI 캐릭터 엔진이다.
-목표: 제목, 내용, 첨부 이미지까지 모두 파악해 사람들이 댓글을 달고 싶게 만드는 고품질 토론/드립 결과를 만든다.
+  return `너는 소소킹의 AI 캐릭터 엔진이다.
+목표: 제목, 내용, 첨부 이미지를 읽고 사람들이 댓글을 달고 싶게 만드는 토론/드립 결과를 만든다.
 
-절대 규칙:
-- 운영봇은 드립러가 아니라 사회자다. 판을 열고, 상황을 정리하고, 유저 참여를 유도한다.
-- 캐릭터는 실명형 사람이 아니라 닉네임형 캐릭터다. 이름부터 성격이 바로 보여야 한다.
-- 뻔한 말, 안전하지만 재미없는 말, 일반 상담 멘트 금지.
-- 제목과 본문에서 구체적인 단어를 반드시 집어서 활용한다.
-- 이미지가 있으면 이미지 속 분위기, 물체, 표정, 상황, 구도에서 웃긴 포인트를 찾아 반영한다.
-- 보이는 범위 밖의 인물 신상, 정체, 민감정보는 추측하지 않는다.
-- 공격, 혐오, 성희롱, 실제 정신질환 조롱, 특정인 조롱 금지. 웃음의 대상은 사람 자체가 아니라 상황과 말투다.
-- 캐릭터끼리 말투와 관점이 확실히 달라야 한다. 비슷한 말 반복 금지.
-- 각 캐릭터는 최소 한 줄의 강한 punchline을 가져야 한다.
+규칙:
+- 운영봇은 사회자다. 상황을 정리하고 유저 참여를 유도한다.
+- 캐릭터는 닉네임형 커뮤니티 유저처럼 자연스럽게 말한다.
+- 빈말 금지. 제목과 본문의 구체적인 단어를 반드시 사용한다.
+- 이미지가 있으면 물체, 표정, 분위기, 구도를 반영한다.
+- 비슷한 말 반복 금지. 캐릭터마다 관점과 말투가 달라야 한다.
+- 각 캐릭터는 lines 3개와 punchline 1개를 쓴다.
+- 토론소는 8명 전원, 4대4 구도, 서로 반박/맞받아치기 필수다.
+- 드립소는 4명이 깊게 참여한다.
 
 캐릭터 역할:
 ${CHARACTER_GUIDE}
@@ -147,41 +162,50 @@ ${desc || '(없음)'}
   "kind": "${type}",
   "headline": "AI 캐릭터 패널 제목 30자 이내",
   "imageRead": "이미지가 있으면 이미지 분석 1~2문장, 없으면 빈 문자열",
-  "host": {
-    "opening": "운영봇 사회자 멘트 1~2문장",
-    "summary": "상황 요약 1문장",
-    "question": "유저가 댓글/투표로 참여하고 싶게 만드는 질문 1문장"
-  },
+  "host": { "opening": "운영봇 사회자 멘트", "summary": "상황 요약", "question": "댓글/투표 유도 질문" },
   "characters": [
     {
-      "id": "jujup 또는 rebel 또는 bothsides 또는 fact 또는 madcap 또는 conspiracy 또는 ajae 또는 overreact",
-      "name": "주접러/반항아/갈팡러/팩폭러/광기러/음모론자/아재봇/과몰입러 중 하나",
+      "id": "jujup/rebel/bothsides/fact/madcap/conspiracy/ajae/overreact 중 하나",
+      "name": "캐릭터 이름",
       "emoji": "이모지",
       "role": "역할",
+      "team": "토론이면 left 또는 right, 드립이면 drip",
+      "targetOption": "토론이면 자기 팀 선택지, 드립이면 빈 문자열",
+      "replyTo": "받아치는 상대 캐릭터 이름 또는 빈 문자열",
       "stance": "입장 또는 드립 스타일",
-      "lines": ["구체적인 분석/드립 1", "구체적인 분석/드립 2"],
+      "lines": ["구체적인 말 1", "상대 반박 또는 이미지/본문 디테일 2", "댓글러 같은 반응 3"],
       "punchline": "가장 웃긴 한 줄"
     }
   ],
   "bestLines": ["유저가 따라 치고 싶을 한 줄 2~4개"],
-  "commentPrompt": "댓글 유도 문구 1문장"
+  "commentPrompt": "댓글 유도 문구"
 }`;
 }
 
-function fallbackCharacters(kind) {
+function makeCharacter(id, extras = {}) {
+  return { ...CHARACTER_META[id], ...extras };
+}
+
+function fallbackCharacters(kind, options = []) {
+  const left = options[0] || '왼쪽 선택지';
+  const right = options[1] || '오른쪽 선택지';
   if (kind === 'vote') {
     return [
-      { id: 'rebel', name: '반항아', emoji: '😤', role: '삐딱한 반대충', stance: '일단 반대쪽부터 봄', lines: ['남들이 다 맞다고 할수록 더 의심스럽습니다.', '이건 선택지 싸움이 아니라 자존심 걸린 생활 습관 싸움입니다.'], punchline: '저는 일단 반대합니다. 이유는 지금부터 만들겠습니다.' },
-      { id: 'bothsides', name: '갈팡러', emoji: '🤔', role: '양쪽 다 맞는 중립러', stance: '이쪽도 맞고 저쪽도 맞아서 더 헷갈림', lines: ['솔직히 이쪽 말도 맞고 저쪽 말도 맞습니다. 그래서 더 큰일입니다.', 'A를 고르면 B가 아쉽고, B를 고르면 A가 갑자기 설득력 있어집니다.'], punchline: '제 결론은 명확합니다. 저는 결론을 포기하겠습니다.' },
-      { id: 'fact', name: '팩폭러', emoji: '🧊', role: '차가운 요약러', stance: '핵심만 찌름', lines: ['감정 빼고 보면 기준은 하나입니다. 누가 계속 손해 보는가.', '사소해 보여도 반복되면 룰이 됩니다.'], punchline: '이건 기분 문제가 아니라 누가 계속 손해 보느냐 문제입니다.' },
-      { id: 'conspiracy', name: '음모론자', emoji: '👁️', role: '과몰입 추리러', stance: '사소한 일을 거대한 사건으로 해석', lines: ['우연이라고 하기엔 타이밍이 너무 절묘합니다.', '이 사건 뒤에는 분명 생활 패턴이라는 조직이 있습니다.'], punchline: '이건 단순한 VS가 아닙니다. 습관 세력 간의 전쟁입니다.' },
+      makeCharacter('rebel', { team: 'left', targetOption: left, replyTo: '', stance: `${left} 편 · 일단 반대쪽 의심`, lines: [`저는 ${left} 쪽입니다. ${right}가 편해 보일수록 더 수상합니다.`, `이건 취향보다 기준 문제입니다. 처음 기준을 잘못 잡으면 계속 흔들립니다.`, '댓글러 모드로 말하면 편한 선택보다 덜 후회할 선택을 봐야 합니다.'], punchline: `저는 일단 ${left}. 반대부터 해야 토론소가 열립니다.` }),
+      makeCharacter('fact', { team: 'left', targetOption: left, replyTo: '주접러', stance: `${left} 편 · 감정 빼고 계산`, lines: [`감정 빼고 보면 ${left} 쪽 기준이 더 선명합니다.`, `주접러 말처럼 분위기도 중요하지만, 선택 후 손해가 덜 남는 쪽을 봐야 합니다.`, '핵심은 지금의 기분이 아니라 나중의 후회입니다.'], punchline: `정리하면 ${left}. 이건 기분 문제가 아니라 후회 관리입니다.` }),
+      makeCharacter('conspiracy', { team: 'left', targetOption: left, replyTo: '광기러', stance: `${left} 편 · 수상한 흐름 분석`, lines: [`저는 ${left} 뒤의 생활 패턴을 봤습니다. 이건 우연이 아닙니다.`, `${right}가 너무 그럴듯해 보이는 순간이 오히려 함정입니다.`, `광기러가 세계관을 봤다면 저는 작전을 봤습니다. 이건 습관 세력 간 전쟁입니다.`], punchline: `${left}는 선택지가 아닙니다. 생활 질서 회복 작전입니다.` }),
+      makeCharacter('ajae', { team: 'left', targetOption: left, replyTo: '과몰입러', stance: `${left} 편 · 썰렁한 한 표`, lines: [`저는 ${left}에 한 표 올립니다. 표가 아니라 표정 관리입니다.`, `${right}도 좋지만 너무 뜨거우면 국밥도 식습니다.`, `과몰입러가 대서사를 열었으니 저는 짧게 갑니다. ${left}입니다.`], punchline: `${left}로 가야 합니다. 왼쪽이니까 왠지 쪽이 있습니다.` }),
+      makeCharacter('jujup', { team: 'right', targetOption: right, replyTo: '반항아', stance: `${right} 편 · 호들갑 리액션`, lines: [`아니 ${right} 이거 그냥 지나가면 예의가 아닙니다.`, `반항아님 또 의심부터 하시는데, 이건 의심할 게 아니라 박수 칠 타이밍입니다.`, `본문 분위기상 ${right}가 댓글창을 더 살립니다.`], punchline: `${right}는 선택이 아니라 축제입니다. 지금 박수 치면서 눌러야 합니다.` }),
+      makeCharacter('bothsides', { team: 'right', targetOption: right, replyTo: '팩폭러', stance: `${right} 편 · 밀면서도 흔들림`, lines: [`저는 일단 ${right} 쪽인데, 말하면서도 ${left}가 계속 고개를 듭니다.`, `팩폭러 말도 맞습니다. 그런데 ${right}에는 설명하기 어려운 생활의 맛이 있습니다.`, `둘 다 들으니까 더 모르겠지만 오늘은 흔들리면서 ${right}입니다.`], punchline: `제 결론은 ${right}입니다. 물론 3초 뒤에 바뀔 수 있습니다.` }),
+      makeCharacter('madcap', { team: 'right', targetOption: right, replyTo: '음모론자', stance: `${right} 편 · 세계관 확장`, lines: [`${right}로 가는 순간 장르가 바뀝니다. 갑자기 예고편 톤이 됩니다.`, `음모론자님은 작전을 보셨지만 저는 세계관을 봤습니다.`, `이건 평범한 VS가 아니라 현실이 선택지 버튼을 잘못 눌러 열린 포털입니다.`], punchline: `${right} 누르는 순간 현실이 오늘 업데이트를 잘못 눌렀습니다.` }),
+      makeCharacter('overreact', { team: 'right', targetOption: right, replyTo: '아재봇', stance: `${right} 편 · 대서사 담당`, lines: [`이건 단순히 ${right}를 고르는 장면이 아닙니다. 주인공이 결심하는 컷입니다.`, `아재봇님의 말장난까지 들어오니까 이 토론은 이미 클라이맥스입니다.`, `${left}는 안정적인 조연이고, ${right}는 음악 깔리는 선택지입니다.`], punchline: `${right}. 이 장면은 엔딩 크레딧 올라갈 때 박수 나옵니다.` }),
     ];
   }
   return [
-    { id: 'jujup', name: '주접러', emoji: '😍', role: '호들갑 칭찬러', stance: '뭐든 크게 띄움', lines: ['이 정도 소재면 드립계에서는 거의 천연기념물입니다.', '평범한 상황인 척하지만 웃음 포인트가 너무 선명합니다.'], punchline: '이 상황은 그냥 지나가면 예의가 아닙니다.' },
-    { id: 'madcap', name: '광기러', emoji: '🤪', role: '이상한 상상러', stance: '말도 안 되는 방향으로 튐', lines: ['이건 현실이 잠깐 서버 오류 낸 장면입니다.', '상황이 아니라 세계관 설정집 첫 페이지 같습니다.'], punchline: '현실이 오늘 업데이트를 잘못 눌렀습니다.' },
-    { id: 'ajae', name: '아재봇', emoji: '🧓', role: '썰렁 개그 담당', stance: '일부러 낡은 말장난', lines: ['드립은 짧아야 제맛입니다. 길면 국밥도 식습니다.', '이 상황은 웃기려고 한 게 아니라 웃기게 태어났습니다.'], punchline: '이건 드립이 아니라 드립커피처럼 천천히 내려온 웃음입니다.' },
-    { id: 'overreact', name: '과몰입러', emoji: '🎭', role: '대서사 담당', stance: '작은 일을 영화처럼 키움', lines: ['이건 그냥 상황이 아니라 3부작의 시작입니다.', '지금은 웃지만 2화부터 장르가 바뀔 수 있습니다.'], punchline: '이 장면, 엔딩 크레딧 올라갈 때 박수 나옵니다.' },
+    makeCharacter('jujup', { team: 'drip', targetOption: '', replyTo: '', stance: '소재를 크게 띄움', lines: ['이 정도 소재면 그냥 지나가면 안 됩니다.', '제목에 이미 웃음 포인트가 있고, 본문은 댓글러 입장권입니다.', '평범한 척하지만 한 줄만 잘 붙이면 바로 저장감입니다.'], punchline: '이 상황은 그냥 지나가면 예의가 아닙니다.' }),
+    makeCharacter('madcap', { team: 'drip', targetOption: '', replyTo: '주접러', stance: '이상한 상상', lines: ['이건 현실이 잠깐 서버 오류 낸 장면입니다.', '주접러가 박수 치는 사이 저는 세계관 설정집을 열었습니다.', '상황이 아니라 다음 시즌 예고편에 가까운 소재입니다.'], punchline: '현실이 오늘 업데이트를 잘못 눌렀습니다.' }),
+    makeCharacter('ajae', { team: 'drip', targetOption: '', replyTo: '광기러', stance: '짧은 말장난', lines: ['드립은 짧아야 제맛입니다. 길면 국밥도 식습니다.', '광기러님 세계관은 큰데, 저는 한 숟갈만 얹겠습니다.', '이 소재는 웃기려고 한 게 아니라 웃기게 태어났습니다.'], punchline: '이건 드립이 아니라 드립커피처럼 천천히 내려온 웃음입니다.' }),
+    makeCharacter('overreact', { team: 'drip', targetOption: '', replyTo: '아재봇', stance: '영화처럼 키움', lines: ['이건 그냥 상황이 아니라 3부작의 시작입니다.', '아재봇이 분위기를 얼렸고, 이제 제가 배경음악을 깔겠습니다.', '지금은 웃지만 2화부터 장르가 바뀔 수 있습니다.'], punchline: '이 장면, 엔딩 크레딧 올라갈 때 박수 나옵니다.' }),
   ];
 }
 
@@ -193,32 +217,35 @@ function fallbackPanel(post) {
     enabled: true,
     status: 'fallback',
     kind,
-    headline: kind === 'vote' ? '운영봇이 토론소를 열었습니다' : '운영봇이 드립소를 열었습니다',
+    headline: kind === 'vote' ? '운영봇이 4대4 토론소를 열었습니다' : '운영봇이 드립소를 열었습니다',
     imageRead: '',
     imageCountAnalyzed: 0,
     host: {
       id: 'opsbot', name: '운영봇', emoji: '🤖', role: '사회자',
-      opening: kind === 'vote' ? `토론소 열었습니다. 오늘 안건은 “${title}”입니다.` : `드립소 열었습니다. 오늘 소재는 “${title}”입니다.`,
+      opening: kind === 'vote' ? `토론소 열었습니다. 오늘 안건은 “${title}”입니다. 캐릭터 8명이 4대4로 나눠 붙습니다.` : `드립소 열었습니다. 오늘 소재는 “${title}”입니다.`,
       summary: kind === 'vote' && options.length ? `${options.join(' VS ')} 구도로 의견이 갈릴 수 있습니다.` : '짧고 강한 한 줄이 잘 먹히는 소재입니다.',
-      question: kind === 'vote' ? '여러분은 어느 쪽인지 투표하고, 이유를 한 줄로 남겨주세요.' : '이 상황, 누가 제일 웃기게 받아칠까요?',
+      question: kind === 'vote' ? '어느 팀 말이 더 설득되는지 투표하고 이유를 남겨주세요.' : '이 상황, 누가 제일 웃기게 받아칠까요?',
     },
-    characters: fallbackCharacters(kind),
+    characters: fallbackCharacters(kind, options),
     bestLines: kind === 'vote'
-      ? ['제 결론은 명확합니다. 저는 결론을 포기하겠습니다.', '저는 일단 반대합니다. 이유는 지금부터 만들겠습니다.']
+      ? ['제 결론은 명확합니다. 저는 결론을 포기하겠습니다.', '이건 기분 문제가 아니라 후회 관리입니다.', '선택지가 아니라 생활 질서 회복 작전입니다.']
       : ['현실이 오늘 업데이트를 잘못 눌렀습니다.', '이 상황은 그냥 지나가면 예의가 아닙니다.'],
-    commentPrompt: kind === 'vote' ? '투표하고 한 줄 이유를 남겨주세요.' : '더 웃긴 한 줄로 받아쳐주세요.',
+    commentPrompt: kind === 'vote' ? '투표하고 어느 팀 말이 더 웃겼는지도 댓글로 남겨주세요.' : '더 웃긴 한 줄로 받아쳐주세요.',
     model: 'fallback',
   };
 }
 
 function normalizePanel(parsed, post, imageCount) {
   const base = fallbackPanel(post);
+  const kind = postType(post);
+  const options = voteOptions(post);
   const data = parsed && typeof parsed === 'object' ? parsed : {};
   const rawChars = Array.isArray(data.characters) && data.characters.length ? data.characters : base.characters;
+  const charLimit = kind === 'vote' ? 8 : 4;
   return {
     enabled: true,
     status: Array.isArray(data.characters) && data.characters.length ? 'ready' : base.status,
-    kind: data.kind === 'vote' ? 'vote' : postType(post),
+    kind: data.kind === 'vote' ? 'vote' : kind,
     headline: clean(data.headline, 40) || base.headline,
     imageRead: clean(data.imageRead, 240) || '',
     imageCountAnalyzed: imageCount,
@@ -228,17 +255,24 @@ function normalizePanel(parsed, post, imageCount) {
       summary: clean(data.host?.summary, 180) || base.host.summary,
       question: clean(data.host?.question, 160) || base.host.question,
     },
-    characters: rawChars.slice(0, 4).map((item, index) => {
+    characters: rawChars.slice(0, charLimit).map((item, index) => {
       const fallback = base.characters[index] || base.characters[0];
-      const lines = Array.isArray(item.lines) ? item.lines.map(line => clean(line, 180)).filter(Boolean).slice(0, 3) : [];
+      const id = clean(item.id, 30) || fallback.id;
+      const meta = CHARACTER_META[id] || fallback;
+      const defaultTeam = kind === 'vote' ? (index < 4 ? 'left' : 'right') : 'drip';
+      const defaultTarget = kind === 'vote' ? (defaultTeam === 'left' ? options[0] || '' : options[1] || '') : '';
+      const lines = Array.isArray(item.lines) ? item.lines.map(line => clean(line, 220)).filter(Boolean).slice(0, 4) : [];
       return {
-        id: clean(item.id, 30) || fallback.id,
-        name: clean(item.name, 20) || fallback.name,
-        emoji: clean(item.emoji, 4) || fallback.emoji,
-        role: clean(item.role, 30) || fallback.role,
-        stance: clean(item.stance, 60) || fallback.stance,
+        id: id || meta.id,
+        name: clean(item.name, 20) || meta.name,
+        emoji: clean(item.emoji, 4) || meta.emoji,
+        role: clean(item.role, 30) || meta.role,
+        team: clean(item.team, 12) || fallback.team || defaultTeam,
+        targetOption: clean(item.targetOption, 80) || fallback.targetOption || defaultTarget,
+        replyTo: clean(item.replyTo, 20) || fallback.replyTo || '',
+        stance: clean(item.stance, 80) || fallback.stance,
         lines: lines.length ? lines : fallback.lines,
-        punchline: clean(item.punchline, 160) || fallback.punchline,
+        punchline: clean(item.punchline, 180) || fallback.punchline,
       };
     }),
     bestLines: (Array.isArray(data.bestLines) ? data.bestLines : base.bestLines).map(line => clean(line, 140)).filter(Boolean).slice(0, 4),
@@ -280,7 +314,7 @@ exports.generateCharacterPanel = onCall({ region: REGION, timeoutSeconds: 120, m
     const imageParts = await buildImageParts(post.images || []);
     imageCount = imageParts.length;
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash', generationConfig: { temperature: 0.95, maxOutputTokens: 2200 } });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash', generationConfig: { temperature: 1, maxOutputTokens: 4200 } });
     const result = await model.generateContent({ contents: [{ role: 'user', parts: [{ text: promptFor(post) }, ...imageParts] }] });
     parsed = parseJson(result.response.text());
   } catch (error) {
