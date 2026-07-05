@@ -195,12 +195,12 @@ function renderCbattleSection(post, comments, loggedIn) {
       <div class="comment-write-box" id="comment-write">
         ${!loggedIn ? '<input id="comment-guest-name" class="form-input" placeholder="닉네임 (선택, 최대 12자)" maxlength="12" style="margin-bottom:6px">' : ''}
         <div class="cbattle-ox" style="margin-bottom:10px">
-          <button type="button" class="cbattle-ox-btn cbattle-ox-btn--a cbattle-side-btn" data-side="A"><span class="cbattle-ox-emoji">🔴</span><span class="cbattle-ox-label">A팀</span></button>
+          <button type="button" class="cbattle-ox-btn cbattle-ox-btn--a cbattle-side-btn" data-side="A"><span class="cbattle-ox-emoji">🔴</span><span class="cbattle-ox-label">왼쪽 A팀</span></button>
           <div class="cbattle-ox-vs">VS</div>
-          <button type="button" class="cbattle-ox-btn cbattle-ox-btn--b cbattle-side-btn" data-side="B"><span class="cbattle-ox-emoji">🔵</span><span class="cbattle-ox-label">B팀</span></button>
+          <button type="button" class="cbattle-ox-btn cbattle-ox-btn--b cbattle-side-btn" data-side="B"><span class="cbattle-ox-emoji">🔵</span><span class="cbattle-ox-label">오른쪽 B팀</span></button>
         </div>
-        <textarea id="comment-input" placeholder="팀을 선택하고 의견을 입력해주세요"></textarea>
-        <button class="btn btn--primary btn--sm" style="align-self:flex-end" id="btn-comment">토론 참여</button>
+        <textarea id="comment-input" placeholder="왼쪽/오른쪽을 고르고 의견을 입력해주세요"></textarea>
+        <button class="btn btn--primary btn--sm" style="align-self:flex-end" id="btn-comment">선택한 쪽에 등록</button>
       </div>
       <div class="debate-comment-board">${renderDebateCommentBoard(post, comments)}</div>
     </div>`;
@@ -211,18 +211,30 @@ function renderDebateSection(post, comments, loggedIn) {
   return `
     <div class="comment-section comment-section--debate">
       <div class="comment-section__title">🗳️ 토론 참여 (${comments.length}명)</div>
-      <div class="multi-module-hint" style="margin-bottom:10px">선택지를 고른 뒤, 왜 그렇게 생각하는지 한 줄 토론을 남겨보세요.</div>
+      <div class="multi-module-hint" style="margin-bottom:10px">왼쪽/오른쪽 중 하나를 고르면, 등록한 토론 내용이 해당 칸에 표시됩니다.</div>
       <div class="comment-write-box" id="comment-write">
         ${!loggedIn ? '<input id="comment-guest-name" class="form-input" placeholder="닉네임 (선택, 최대 12자)" maxlength="12" style="margin-bottom:6px">' : ''}
         <div class="cbattle-ox" style="margin-bottom:10px">
-          <button type="button" class="cbattle-ox-btn cbattle-ox-btn--a cbattle-side-btn" data-side="A"><span class="cbattle-ox-emoji">🔴</span><span class="cbattle-ox-label">${escHtml(a)}</span></button>
+          <button type="button" class="cbattle-ox-btn cbattle-ox-btn--a cbattle-side-btn" data-side="A"><span class="cbattle-ox-emoji">🔴</span><span class="cbattle-ox-label">왼쪽 · ${escHtml(a)}</span></button>
           <div class="cbattle-ox-vs">VS</div>
-          <button type="button" class="cbattle-ox-btn cbattle-ox-btn--b cbattle-side-btn" data-side="B"><span class="cbattle-ox-emoji">🔵</span><span class="cbattle-ox-label">${escHtml(b)}</span></button>
+          <button type="button" class="cbattle-ox-btn cbattle-ox-btn--b cbattle-side-btn" data-side="B"><span class="cbattle-ox-emoji">🔵</span><span class="cbattle-ox-label">오른쪽 · ${escHtml(b)}</span></button>
         </div>
-        <textarea id="comment-input" placeholder="내 선택과 이유를 적어주세요. 예: 저는 이쪽입니다. 왜냐면..."></textarea>
-        <button class="btn btn--primary btn--sm" style="align-self:flex-end" id="btn-comment">토론 등록</button>
+        <textarea id="comment-input" placeholder="선택한 쪽의 근거를 적어주세요. 예: 저는 왼쪽입니다. 왜냐면..."></textarea>
+        <button class="btn btn--primary btn--sm" style="align-self:flex-end" id="btn-comment">선택한 쪽에 토론 등록</button>
       </div>
       <div class="debate-comment-board">${renderDebateCommentBoard(post, comments)}</div>
+    </div>`;
+}
+
+function renderDebateColumn(label, option, list, side) {
+  const colorDot = side === 'A' ? '🔴' : '🔵';
+  return `
+    <div class="cbattle-col cbattle-col--${side === 'A' ? 'a' : 'b'}">
+      <div class="cbattle-col__title">
+        <div style="font-size:11px;color:var(--color-text-muted);font-weight:950;margin-bottom:4px">${label}</div>
+        <div>${colorDot} ${escHtml(option)} <span style="color:var(--color-text-muted);font-weight:900">${list.length}명</span></div>
+      </div>
+      ${list.length ? list.map(c => renderCbattleComment(c)).join('') : `<div class="cbattle-col__empty">${label} 첫 의견을 남겨보세요!</div>`}
     </div>`;
 }
 
@@ -234,10 +246,10 @@ function renderDebateCommentBoard(post, comments) {
   const neutral = marked.filter(c => c.side !== 'A' && c.side !== 'B');
   return `
     <div class="cbattle-columns">
-      <div class="cbattle-col cbattle-col--a"><div class="cbattle-col__title">🔴 ${escHtml(a)} ${aList.length}</div>${aList.length ? aList.map(c => renderCbattleComment(c)).join('') : '<div class="cbattle-col__empty">이쪽 첫 의견을 남겨보세요!</div>'}</div>
-      <div class="cbattle-col cbattle-col--b"><div class="cbattle-col__title">🔵 ${escHtml(b)} ${bList.length}</div>${bList.length ? bList.map(c => renderCbattleComment(c)).join('') : '<div class="cbattle-col__empty">이쪽 첫 의견을 남겨보세요!</div>'}</div>
+      ${renderDebateColumn('왼쪽 의견', a, aList, 'A')}
+      ${renderDebateColumn('오른쪽 의견', b, bList, 'B')}
     </div>
-    ${neutral.length ? `<div id="comment-list" style="margin-top:12px">${neutral.map(c => renderComment(c)).join('')}</div>` : '<div id="comment-list" style="display:none"></div>'}`;
+    ${neutral.length ? `<div id="comment-list" style="margin-top:12px"><div style="font-size:12px;font-weight:950;color:var(--color-text-muted);margin-bottom:8px">선택 없이 등록된 의견</div>${neutral.map(c => renderComment(c)).join('')}</div>` : '<div id="comment-list" style="display:none"></div>'}`;
 }
 
 function renderDripSection(comments, loggedIn) {
