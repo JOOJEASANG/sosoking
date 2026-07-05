@@ -1,5 +1,6 @@
 'use strict';
 
+const { randomInt } = require('crypto');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 
@@ -25,6 +26,41 @@ const VIRTUAL_AUTHORS = {
     { id: 'virtual-drip-002', name: '웃참실패자' },
     { id: 'virtual-drip-003', name: '퇴근5분전' },
     { id: 'virtual-drip-004', name: '댓글장인연습생' },
+  ],
+};
+
+const CONTENT_POOLS = {
+  vote: [
+    { title: '배달비 4천원인데 시켜 먹는다 VS 참는다', desc: '배는 고픈데 배달비가 메뉴값처럼 느껴지는 순간입니다. 이건 지갑의 문제일까요, 행복의 문제일까요?', tags: ['토론소', 'VS', '배달비'], options: ['시켜 먹는다', '참는다'] },
+    { title: '주말 약속 취소되면 아쉽다 VS 오히려 좋다', desc: '외출 준비까지 마음먹었는데 약속이 취소됐습니다. 이건 실망일까요, 자유일까요?', tags: ['토론소', '주말', '약속'], options: ['아쉽다', '오히려 좋다'] },
+    { title: '카톡 답장은 바로 한다 VS 몰아서 한다', desc: '답장을 빨리 해야 예의라는 쪽과, 여유 있을 때 하는 게 낫다는 쪽이 갈립니다.', tags: ['토론소', '카톡', '관계'], options: ['바로 한다', '몰아서 한다'] },
+    { title: '탕수육은 찍먹 VS 부먹', desc: '소스의 바삭함 보존과 양념의 완성도 사이에서 매번 갈리는 오래된 논쟁입니다.', tags: ['토론소', '음식', '탕수육'], options: ['찍먹', '부먹'] },
+    { title: '아침 30분 더 자기 VS 여유롭게 준비하기', desc: '잠은 달콤하지만 허둥대는 아침은 위험합니다. 어느 쪽이 하루를 더 살릴까요?', tags: ['토론소', '아침', '생활'], options: ['30분 더 자기', '여유롭게 준비'] },
+    { title: '영화관 팝콘은 필수 VS 없어도 된다', desc: '영화 몰입에는 팝콘이 필요하다는 쪽과, 조용히 보는 게 낫다는 쪽의 대결입니다.', tags: ['토론소', '영화', '간식'], options: ['팝콘 필수', '없어도 된다'] },
+    { title: '단톡방 읽씹은 괜찮다 VS 예의 없다', desc: '바쁘면 읽고 넘어갈 수도 있다는 의견과, 최소한 반응은 해야 한다는 의견이 갈립니다.', tags: ['토론소', '단톡방', '관계'], options: ['괜찮다', '예의 없다'] },
+    { title: '비 오는 날 외출 VS 집콕', desc: '빗소리를 들으며 나가는 감성과, 이불 밖은 위험하다는 본능이 맞붙습니다.', tags: ['토론소', '비오는날', '일상'], options: ['외출', '집콕'] },
+    { title: '야식은 치킨 VS 라면', desc: '배고픈 밤, 바삭한 치킨과 뜨끈한 라면 중 하나만 고를 수 있다면?', tags: ['토론소', '야식', '음식'], options: ['치킨', '라면'] },
+    { title: '휴가 때 계획표 필수 VS 즉흥이 최고', desc: '시간 낭비 없는 계획 여행과, 그날 기분 따라 움직이는 즉흥 여행이 갈립니다.', tags: ['토론소', '여행', '휴가'], options: ['계획표 필수', '즉흥이 최고'] },
+  ],
+  drip: [
+    { title: '퇴근 5분 전 회의 이름 지어주세요', desc: '퇴근 5분 전에 “잠깐 회의 가능?” 메시지가 왔을 때의 감정을 한 줄로 살려주세요.', tags: ['드립소', '작명', '직장인'] },
+    { title: '배달 예상시간이 계속 늘어날 때 한마디', desc: '20분이 40분이 되고 다시 55분이 됐을 때, 내 영혼이 할 법한 말을 남겨주세요.', tags: ['드립소', '배달', '한줄드립'] },
+    { title: '월요일 아침 알람 별명 짓기', desc: '월요일 아침에 울리는 알람을 사람처럼 부른다면 어떤 이름이 어울릴까요?', tags: ['드립소', '월요일', '작명'] },
+    { title: '냉장고 열었는데 먹을 게 없을 때 대사', desc: '분명 뭔가 있을 줄 알고 열었는데 물병만 반겨주는 순간의 한 줄을 적어주세요.', tags: ['드립소', '일상', '냉장고'] },
+    { title: '카드값 알림 문자 웃기게 번역하기', desc: '카드값 알림 문자를 더 잔인하지만 웃긴 말투로 번역해주세요.', tags: ['드립소', '번역', '월급'] },
+    { title: '와이파이 느릴 때 나오는 표정 이름 짓기', desc: '영상은 멈추고 로딩 동그라미만 도는 순간의 표정을 이름으로 만들어주세요.', tags: ['드립소', '와이파이', '작명'] },
+    { title: '프린터가 꼭 급할 때만 안 될 때 한마디', desc: '평소엔 조용하다가 급한 출력 앞에서 멈춰버린 프린터에게 한 줄 남겨주세요.', tags: ['드립소', '프린터', '사무실'] },
+    { title: '비밀번호 한 글자 틀렸을 때의 감정 이름', desc: '분명 맞게 친 것 같은데 로그인이 안 되는 순간의 감정을 작명해주세요.', tags: ['드립소', '로그인', '작명'] },
+    { title: '엘리베이터 문 닫히는 순간 누가 타려고 할 때', desc: '열림 버튼을 누를지 모른 척할지 고민되는 그 0.5초를 한 줄로 표현해주세요.', tags: ['드립소', '엘리베이터', '일상'] },
+    { title: '컵라면 물 붓고 젓가락 없는 걸 알았을 때', desc: '모든 준비가 끝난 줄 알았는데 젓가락이 없는 상황을 웃기게 받아쳐주세요.', tags: ['드립소', '컵라면', '위기'] },
+    { title: '파일 이름 최종_진짜최종_수정본 별명 짓기', desc: '최종 파일이 계속 새끼를 치는 상황에 어울리는 이름을 지어주세요.', tags: ['드립소', '파일명', '직장인'] },
+    { title: '핸드폰 배터리 1%의 마지막 유언', desc: '충전기를 찾기 전 꺼져가는 배터리가 남길 법한 마지막 말을 적어주세요.', tags: ['드립소', '배터리', '한줄드립'] },
+    { title: '택배 배송완료인데 문 앞에 없을 때 한마디', desc: '알림은 배송완료인데 현관 앞은 평화로운 빈 공간일 때의 대사를 남겨주세요.', tags: ['드립소', '택배', '상황극'] },
+    { title: '회의 중 마이크 켜진 줄 몰랐을 때 제목 짓기', desc: '혼잣말이 회의실 전체에 생중계된 순간을 뉴스 제목처럼 만들어주세요.', tags: ['드립소', '회의', '뉴스체'] },
+    { title: '아이스 아메리카노 얼음만 남았을 때 이름', desc: '커피는 떠났고 얼음만 남은 컵의 상태를 그럴듯하게 작명해주세요.', tags: ['드립소', '커피', '작명'] },
+    { title: '자동문 앞에서 문이 안 열릴 때의 존엄성', desc: '자동문이 나만 인식하지 못하는 순간을 한 줄 드립으로 살려주세요.', tags: ['드립소', '자동문', '일상'] },
+    { title: '우산 안 가져온 날 비 오는 하늘에게 한마디', desc: '날씨 앱을 믿지 않은 대가를 치르는 순간, 하늘에게 할 말을 남겨주세요.', tags: ['드립소', '비', '한줄드립'] },
+    { title: '치킨무 국물 쏟았을 때 사건명', desc: '식탁 위에 펼쳐진 하얀 참사를 사건명처럼 지어주세요.', tags: ['드립소', '치킨', '사건명'] },
   ],
 };
 
@@ -59,6 +95,11 @@ function normalizePreset(value) {
   return PRESETS.includes(key) ? key : 'drip';
 }
 
+function pickFromPool(preset) {
+  const pool = CONTENT_POOLS[preset] || CONTENT_POOLS.drip;
+  return pool[randomInt(0, pool.length)];
+}
+
 function pickVirtualAuthor(preset, seed = '') {
   const pool = VIRTUAL_AUTHORS[preset] || VIRTUAL_AUTHORS.drip;
   const basis = `${todayKST()}-${preset}-${seed}`;
@@ -85,20 +126,6 @@ async function assertAdmin(request) {
   const snap = await db.doc(`admins/${uid}`).get();
   if (!snap.exists) throw new HttpsError('permission-denied', '관리자 권한을 확인하지 못했습니다. admins 문서 또는 관리자 claim을 확인하세요.');
   return uid;
-}
-
-function sample(preset) {
-  if (preset === 'vote') return {
-    title: '배달비 4천원인데 시켜 먹는다 VS 참는다',
-    desc: '배는 고픈데 배달비가 메뉴값처럼 느껴지는 순간입니다. 이건 지갑의 문제일까요, 행복의 문제일까요?',
-    tags: ['토론소', 'VS', '배달비'],
-    options: ['시켜 먹는다', '참는다'],
-  };
-  return {
-    title: '이 상황 이름 지어주세요',
-    desc: '퇴근 5분 전에 “잠깐 회의 가능?” 메시지가 왔을 때의 감정을 한 줄로 살려주세요.',
-    tags: ['드립소', '작명', '직장인'],
-  };
 }
 
 function character(id, extras = {}) {
@@ -179,15 +206,17 @@ function buildAiPanel(preset, doc) {
 }
 
 function buildDoc(preset, actorId) {
-  const data = sample(preset);
-  const isVote = preset === 'vote';
+  const normalized = normalizePreset(preset);
+  const data = pickFromPool(normalized);
+  const isVote = normalized === 'vote';
   const label = isVote ? '토론소' : '드립소';
-  const virtualAuthor = pickVirtualAuthor(preset, actorId);
+  const seed = `${actorId}-${Date.now()}-${randomInt(100000, 999999)}`;
+  const virtualAuthor = pickVirtualAuthor(normalized, seed);
   const doc = {
     type: 'multi',
     cat: 'multi',
-    subtype: preset,
-    feedType: preset,
+    subtype: normalized,
+    feedType: normalized,
     typeLabel: label,
     title: clean(data.title, 100),
     desc: clean(data.desc, 1200),
@@ -207,8 +236,9 @@ function buildDoc(preset, actorId) {
     isAiGenerated: true,
     aiGeneratedDate: todayKST(),
     aiSource: 'two-space-community',
-    aiPreset: preset,
+    aiPreset: normalized,
     aiActorId: actorId,
+    aiContentSeed: seed,
     aiVirtualAuthor: true,
     aiHostId: 'opsbot',
     createdAt: FieldValue.serverTimestamp(),
@@ -220,7 +250,7 @@ function buildDoc(preset, actorId) {
   } else {
     doc.modules.drip = { enabled: true, prompt: doc.desc, maxLength: 50, responseLabel: '한 줄 드립' };
   }
-  doc.aiCharacterPanel = buildAiPanel(preset, doc);
+  doc.aiCharacterPanel = buildAiPanel(normalized, doc);
   return doc;
 }
 
