@@ -53,6 +53,7 @@ export const EXTENSION_MODULES = [
   './final-consistency-20260705.js',
   './two-space-ux.js',
   './home-empty-polish.js',
+  './community-mobile-center-fix.js',
 ];
 
 export async function importModuleWithStamp(path, stamp = Date.now()) {
