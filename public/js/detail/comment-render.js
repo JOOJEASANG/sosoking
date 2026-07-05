@@ -3,6 +3,32 @@ import { escHtml, formatTime as timeText } from '../utils/helpers.js';
 import { COMMENT_REACTIONS } from './constants.js';
 import { markBestComment } from './data.js';
 
+function isDebatePost(post = {}) {
+  const m = post.modules || {};
+  return post.type === 'cbattle'
+    || post.type === 'vote'
+    || post.type === 'balance'
+    || post.feedType === 'vote'
+    || post.subtype === 'vote'
+    || m.vote?.enabled === true;
+}
+
+function isDripPost(post = {}) {
+  const m = post.modules || {};
+  return post.type === 'drip'
+    || post.feedType === 'drip'
+    || post.subtype === 'drip'
+    || m.drip?.enabled === true;
+}
+
+function debateOptions(post = {}) {
+  const moduleOptions = post.modules?.vote?.options;
+  const legacyOptions = post.options;
+  const source = Array.isArray(moduleOptions) && moduleOptions.length ? moduleOptions : (Array.isArray(legacyOptions) ? legacyOptions : []);
+  const labels = source.map(item => String(item?.text || item || '').trim()).filter(Boolean).slice(0, 2);
+  return [labels[0] || 'A 선택지', labels[1] || 'B 선택지'];
+}
+
 export function renderComment(c) {
   const timeStr = timeText(c.createdAt?.toDate?.() || c.createdAt);
   const isOwn = auth.currentUser?.uid === c.authorId;
@@ -142,8 +168,9 @@ export function renderCommentSection(post, comments) {
       </div>`;
   }
 
-  if (post.type === 'cbattle') return renderCbattleSection(comments, loggedIn);
-  if (post.type === 'drip' || post.feedType === 'drip' || post.modules?.drip?.enabled) return '';
+  if (post.type === 'cbattle') return renderCbattleSection(post, comments, loggedIn);
+  if (isDebatePost(post)) return renderDebateSection(post, comments, loggedIn);
+  if (isDripPost(post)) return renderDripSection(comments, loggedIn);
 
   return `
     <div class="comment-section">
@@ -161,53 +188,80 @@ export function renderCommentSection(post, comments) {
     </div>`;
 }
 
-function renderCbattleSection(comments, loggedIn) {
-  const aList = comments.filter(c => c.side === 'A');
-  const bList = comments.filter(c => c.side === 'B');
+function renderCbattleSection(post, comments, loggedIn) {
   return `
-    <div class="comment-section">
+    <div class="comment-section comment-section--debate">
       <div class="comment-section__title">⚔️ 토론 의견 (${comments.length}명)</div>
       <div class="comment-write-box" id="comment-write">
         ${!loggedIn ? '<input id="comment-guest-name" class="form-input" placeholder="닉네임 (선택, 최대 12자)" maxlength="12" style="margin-bottom:6px">' : ''}
-        <textarea id="comment-input" placeholder="위에서 팀을 선택하고 의견을 입력해주세요"></textarea>
-        <button class="btn btn--primary btn--sm" style="align-self:flex-end" id="btn-comment">참여하기</button>
+        <div class="cbattle-ox" style="margin-bottom:10px">
+          <button type="button" class="cbattle-ox-btn cbattle-ox-btn--a cbattle-side-btn" data-side="A"><span class="cbattle-ox-emoji">🔴</span><span class="cbattle-ox-label">A팀</span></button>
+          <div class="cbattle-ox-vs">VS</div>
+          <button type="button" class="cbattle-ox-btn cbattle-ox-btn--b cbattle-side-btn" data-side="B"><span class="cbattle-ox-emoji">🔵</span><span class="cbattle-ox-label">B팀</span></button>
+        </div>
+        <textarea id="comment-input" placeholder="팀을 선택하고 의견을 입력해주세요"></textarea>
+        <button class="btn btn--primary btn--sm" style="align-self:flex-end" id="btn-comment">토론 참여</button>
       </div>
-      <div class="cbattle-columns">
-        <div class="cbattle-col cbattle-col--a"><div class="cbattle-col__title">🔴 A팀 ${aList.length}</div>${aList.length ? aList.map(c => renderCbattleComment(c)).join('') : '<div class="cbattle-col__empty">첫 번째로 참여!</div>'}</div>
-        <div class="cbattle-col cbattle-col--b"><div class="cbattle-col__title">🔵 B팀 ${bList.length}</div>${bList.length ? bList.map(c => renderCbattleComment(c)).join('') : '<div class="cbattle-col__empty">첫 번째로 참여!</div>'}</div>
-      </div>
+      <div class="debate-comment-board">${renderDebateCommentBoard(post, comments)}</div>
     </div>`;
 }
 
-function renderDripSection(comments, loggedIn) {
-  const cfg = { title: '🎤 드립 올리기', placeholder: '한 줄 드립을 올려보세요!', btn: '올리기', empty: '첫 번째로 드립을 올려보세요!' };
+function renderDebateSection(post, comments, loggedIn) {
+  const [a, b] = debateOptions(post);
   return `
-    <div class="comment-section">
-      <div class="comment-section__title">${cfg.title} (${comments.length}개)</div>
+    <div class="comment-section comment-section--debate">
+      <div class="comment-section__title">🗳️ 토론 참여 (${comments.length}명)</div>
+      <div class="multi-module-hint" style="margin-bottom:10px">선택지를 고른 뒤, 왜 그렇게 생각하는지 한 줄 토론을 남겨보세요.</div>
       <div class="comment-write-box" id="comment-write">
         ${!loggedIn ? '<input id="comment-guest-name" class="form-input" placeholder="닉네임 (선택, 최대 12자)" maxlength="12" style="margin-bottom:6px">' : ''}
-        <textarea id="comment-input" placeholder="${cfg.placeholder}"></textarea>
-        <button class="btn btn--primary btn--sm" style="align-self:flex-end" id="btn-comment">${cfg.btn}</button>
+        <div class="cbattle-ox" style="margin-bottom:10px">
+          <button type="button" class="cbattle-ox-btn cbattle-ox-btn--a cbattle-side-btn" data-side="A"><span class="cbattle-ox-emoji">🔴</span><span class="cbattle-ox-label">${escHtml(a)}</span></button>
+          <div class="cbattle-ox-vs">VS</div>
+          <button type="button" class="cbattle-ox-btn cbattle-ox-btn--b cbattle-side-btn" data-side="B"><span class="cbattle-ox-emoji">🔵</span><span class="cbattle-ox-label">${escHtml(b)}</span></button>
+        </div>
+        <textarea id="comment-input" placeholder="내 선택과 이유를 적어주세요. 예: 저는 이쪽입니다. 왜냐면..."></textarea>
+        <button class="btn btn--primary btn--sm" style="align-self:flex-end" id="btn-comment">토론 등록</button>
+      </div>
+      <div class="debate-comment-board">${renderDebateCommentBoard(post, comments)}</div>
+    </div>`;
+}
+
+function renderDebateCommentBoard(post, comments) {
+  const [a, b] = post.type === 'cbattle' ? ['A팀', 'B팀'] : debateOptions(post);
+  const marked = markBestComment(comments);
+  const aList = marked.filter(c => c.side === 'A');
+  const bList = marked.filter(c => c.side === 'B');
+  const neutral = marked.filter(c => c.side !== 'A' && c.side !== 'B');
+  return `
+    <div class="cbattle-columns">
+      <div class="cbattle-col cbattle-col--a"><div class="cbattle-col__title">🔴 ${escHtml(a)} ${aList.length}</div>${aList.length ? aList.map(c => renderCbattleComment(c)).join('') : '<div class="cbattle-col__empty">이쪽 첫 의견을 남겨보세요!</div>'}</div>
+      <div class="cbattle-col cbattle-col--b"><div class="cbattle-col__title">🔵 ${escHtml(b)} ${bList.length}</div>${bList.length ? bList.map(c => renderCbattleComment(c)).join('') : '<div class="cbattle-col__empty">이쪽 첫 의견을 남겨보세요!</div>'}</div>
+    </div>
+    ${neutral.length ? `<div id="comment-list" style="margin-top:12px">${neutral.map(c => renderComment(c)).join('')}</div>` : '<div id="comment-list" style="display:none"></div>'}`;
+}
+
+function renderDripSection(comments, loggedIn) {
+  return `
+    <div class="comment-section comment-section--drip">
+      <div class="comment-section__title">🤣 드립 댓글 (${comments.length}개)</div>
+      <div class="multi-module-hint" style="margin-bottom:10px">글이나 이미지를 보고 짧고 강한 한 줄 드립을 남겨보세요.</div>
+      <div class="comment-write-box" id="comment-write">
+        ${!loggedIn ? '<input id="comment-guest-name" class="form-input" placeholder="닉네임 (선택, 최대 12자)" maxlength="12" style="margin-bottom:6px">' : ''}
+        <textarea id="comment-input" placeholder="한 줄 드립을 입력하세요. 예: 이건 거의 ○○급 상황..."></textarea>
+        <button class="btn btn--primary btn--sm" style="align-self:flex-end" id="btn-comment">드립 등록</button>
       </div>
       <div id="comment-list">
         ${comments.length
-          ? comments.map(c => renderLikeableComment(c)).join('')
-          : `<div style="text-align:center;padding:24px;font-size:13px;color:var(--color-text-muted)">${cfg.empty}</div>`}
+          ? markBestComment(comments).map(c => renderLikeableComment(c)).join('')
+          : '<div style="text-align:center;padding:24px;font-size:13px;color:var(--color-text-muted)">첫 번째 드립을 남겨보세요!</div>'}
       </div>
     </div>`;
 }
 
 export function renderCommentListHTML(post, comments) {
-  if (post.type === 'cbattle') {
-    const aList = comments.filter(c => c.side === 'A');
-    const bList = comments.filter(c => c.side === 'B');
-    return {
-      a: `<div class="cbattle-col__title">🔴 A팀 ${aList.length}</div>${aList.length ? aList.map(c => renderCbattleComment(c)).join('') : '<div class="cbattle-col__empty">첫 번째로 참여!</div>'}`,
-      b: `<div class="cbattle-col__title">🔵 B팀 ${bList.length}</div>${bList.length ? bList.map(c => renderCbattleComment(c)).join('') : '<div class="cbattle-col__empty">첫 번째로 참여!</div>'}`,
-    };
-  }
+  if (isDebatePost(post)) return renderDebateCommentBoard(post, comments);
 
-  if (post.type === 'naming' || post.type === 'initial_game' || post.type === 'drip') {
+  if (post.type === 'naming' || post.type === 'initial_game' || isDripPost(post)) {
     return comments.length
       ? markBestComment(comments).map(c => renderLikeableComment(c)).join('')
       : '<div style="text-align:center;padding:24px;font-size:13px;color:var(--color-text-muted)">첫 번째로 참여해보세요!</div>';
@@ -227,12 +281,9 @@ export function refreshCommentListUI(post, comments) {
     return;
   }
 
-  if (post.type === 'cbattle') {
-    const html = renderCommentListHTML(post, comments);
-    const aCol = document.querySelector('.cbattle-col--a');
-    const bCol = document.querySelector('.cbattle-col--b');
-    if (aCol) aCol.innerHTML = html.a;
-    if (bCol) bCol.innerHTML = html.b;
+  if (isDebatePost(post)) {
+    const board = document.querySelector('.debate-comment-board');
+    if (board) board.innerHTML = renderDebateCommentBoard(post, comments);
     return;
   }
 
