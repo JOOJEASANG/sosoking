@@ -12,20 +12,20 @@ import {
 import { navigate } from '../router.js';
 
 const TYPE_LABEL = {
-  collect: '상담',
+  collect: '드립',
   multi: '참여',
-  general: '판결',
+  general: '드립',
   anonymous: '참여',
-  judgment: '판결',
+  judgment: '토론',
   vote: '토론',
   ox: '토론',
-  crazy_court: '판결',
+  crazy_court: '토론',
   balance: '토론',
   battle: '토론',
-  consult: '상담',
+  consult: '드립',
   drip: '드립',
-  quiz: '상담',
-  initial_game: '상담',
+  quiz: '드립',
+  initial_game: '드립',
 };
 
 function getKstDateString(date = new Date()) {
@@ -58,13 +58,14 @@ function commentScore(comment) {
 }
 
 function moduleLabel(post) {
-  if (post.typeLabel) return String(post.typeLabel).replace(/게임/g, '참여');
+  const label = String(post.typeLabel || '').trim();
+  if (label === '토론소' || label === '토론') return '토론';
+  if (label === '드립소' || label === '드립') return '드립';
+
   if (post.subtype && TYPE_LABEL[post.subtype]) return TYPE_LABEL[post.subtype];
   const m = post.modules || {};
-  if (m.consult?.enabled) return '상담';
   if (m.drip?.enabled) return '드립';
-  if (m.vote?.enabled) return m.vote.voteMode === 'judgment' ? '판결' : '토론';
-  if (m.quiz?.enabled) return '상담';
+  if (m.vote?.enabled) return '토론';
   if (post.feedType && TYPE_LABEL[post.feedType]) return TYPE_LABEL[post.feedType];
   if (post.type !== 'multi') return TYPE_LABEL[post.type] || '참여';
   return '참여';
@@ -99,10 +100,8 @@ async function fetchPopularComments(n = 8) {
 }
 
 const CONTENT_ROOMS = [
-  { key: 'judgment', icon: '⚖️', title: '판결', desc: '사소한 사건을 캐릭터에게 판정받기', nav: 'write-judgment' },
-  { key: 'consult', icon: '🫠', title: '상담', desc: '웃기지만 은근 쓸모 있는 고민 상담', nav: 'write-consult' },
-  { key: 'vote', icon: '🗳️', title: '토론', desc: '찬성·반대 의견으로 가볍게 나누기', nav: 'write-vote' },
-  { key: 'drip', icon: '😂', title: '드립', desc: '한 줄 드립으로 댓글놀이 하기', nav: 'write-drip' },
+  { key: 'vote', icon: '🗳️', title: '토론', desc: '두 선택지를 직접 적고 VS 투표로 붙이기', nav: 'write-vote' },
+  { key: 'drip', icon: '😂', title: '드립', desc: '작명·번역·핑계·근황을 한 줄 드립으로 받기', nav: 'write-drip' },
 ];
 
 function renderIntro() {
@@ -170,11 +169,11 @@ function renderIntro() {
       <div class="home-onboard__hero">
         <div class="home-onboard__hero-text">
           <div class="home-onboard__badge">✨ AI CHARACTER COMMUNITY</div>
-          <h1 class="home-onboard__title">판결 · 상담 · 토론 · 드립<br>4가지로 놀아요</h1>
-          <p class="home-onboard__desc">사소한 이야기도 8명의 AI 캐릭터가 끼어들면 재미있는 참여 콘텐츠가 됩니다.</p>
+          <h1 class="home-onboard__title">토론소 · 드립소<br>두 곳에서 놀아요</h1>
+          <p class="home-onboard__desc">웃긴토론과 드립</p>
         </div>
         <div class="home-onboard__hero-actions">
-          <button class="home-onboard__btn-primary" type="button" id="hbtn-write">+ 글 열기</button>
+          <button class="home-onboard__btn-primary" type="button" id="hbtn-write">+ 글쓰기</button>
           <button class="home-onboard__btn-ghost" type="button" id="hbtn-feed">둘러보기</button>
         </div>
       </div>
@@ -255,7 +254,7 @@ export async function renderHome() {
     </div>`;
 
   try {
-    setMeta('소소킹 · AI 캐릭터 참여 커뮤니티');
+    setMeta('소소킹 · 웃긴토론과 드립');
     const user = auth.currentUser;
     if (user) checkStreak(user.uid);
 
@@ -298,16 +297,14 @@ export async function renderHome() {
 
     el.innerHTML = `<div class="home-dash page-enter home-dash--v2">${renderIntro()}${bestHTML}${hotHTML}${commentsHTML}</div>`;
 
-    el.querySelector('#hbtn-write')?.addEventListener('click', () => navigate('/write?type=multi&preset=judgment'));
+    el.querySelector('#hbtn-write')?.addEventListener('click', () => navigate('/write?type=multi&preset=drip'));
     el.querySelector('#hbtn-feed')?.addEventListener('click', () => navigate('/feed'));
     el.querySelector('#hbtn-more-hot')?.addEventListener('click', () => navigate('/feed?sort=popular'));
     el.querySelectorAll('[data-room-nav]').forEach(item => {
       item.addEventListener('click', e => {
         e.preventDefault();
         const room = item.dataset.roomNav;
-        if (room === 'write-judgment') navigate('/write?type=multi&preset=judgment');
-        else if (room === 'write-consult') navigate('/write?type=multi&preset=consult');
-        else if (room === 'write-vote') navigate('/write?type=multi&preset=vote');
+        if (room === 'write-vote') navigate('/write?type=multi&preset=vote');
         else if (room === 'write-drip') navigate('/write?type=multi&preset=drip');
         else navigate('/feed');
       });
