@@ -27,7 +27,6 @@ export function hasInteractiveModule(post) {
   return !!(
     modules.vote?.enabled ||
     modules.naming?.enabled ||
-    modules.drip?.enabled ||
     modules.quiz?.enabled ||
     modules.fill?.enabled ||
     modules.tournament?.enabled
