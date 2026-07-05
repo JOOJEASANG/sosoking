@@ -8,6 +8,16 @@ import { submitDetailComment, submitCbattleComment, submitAcrosticEntry, getSele
 
 const callReactAcrostic = httpsCallable(functions, 'reactToAcrostic');
 
+function isDebatePost(post = {}) {
+  const modules = post.modules || {};
+  return post.type === 'cbattle'
+    || post.type === 'vote'
+    || post.type === 'balance'
+    || post.feedType === 'vote'
+    || post.subtype === 'vote'
+    || modules.vote?.enabled === true;
+}
+
 export async function handleCbattleSide(event) {
   const btn = event.target.closest?.('.cbattle-side-btn');
   if (!btn || !isDetailPath()) return false;
@@ -35,7 +45,7 @@ export async function handleCommentSubmit(event) {
   btn._detailPending = true;
   try {
     const post = await getCurrentPostSummary();
-    if (post?.type === 'cbattle') await submitCbattleComment(currentPostId(), text, getSelectedCbattleSide(), guestName);
+    if (isDebatePost(post)) await submitCbattleComment(currentPostId(), text, getSelectedCbattleSide(), guestName);
     else await submitDetailComment(currentPostId(), { text, guestName });
     if (input) input.value = '';
     toast.success('등록됐어요! 🎉');
