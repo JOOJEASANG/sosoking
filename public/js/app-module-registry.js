@@ -60,8 +60,23 @@ export const EXTENSION_MODULES = [
   './community-mobile-center-fix.js',
 ];
 
+function loadedSet() {
+  if (!globalThis.__SOSOKING_LOADED_MODULE_PATHS__) {
+    globalThis.__SOSOKING_LOADED_MODULE_PATHS__ = new Set();
+  }
+  return globalThis.__SOSOKING_LOADED_MODULE_PATHS__;
+}
+
 export async function importModuleWithStamp(path, stamp = Date.now()) {
-  return import(`${path}?v=${stamp}`);
+  const loaded = loadedSet();
+  if (loaded.has(path)) return null;
+  loaded.add(path);
+  try {
+    return await import(`${path}?v=${stamp}`);
+  } catch (error) {
+    loaded.delete(path);
+    throw error;
+  }
 }
 
 export async function importModuleGroup(paths, { label = 'module-group', stamp = Date.now() } = {}) {
