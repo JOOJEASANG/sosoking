@@ -6,13 +6,14 @@ import { renderSidebar } from './components/sidebar.js';
 import { initToast, toast } from './components/toast.js';
 import { appState } from './state.js';
 import { getDoc, doc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import { SAFE_OPTIONAL_MODULES, importModuleGroup } from './app-module-registry.js';
+import { POST_BOOT_MODULES, SAFE_OPTIONAL_MODULES, importModuleGroup } from './app-module-registry.js';
 
 export { appState };
 
 const OWNER_EMAILS = new Set();
 
 function loadOptionalModules() {
+  importModuleGroup(POST_BOOT_MODULES, { label: 'app-safe post-boot' });
   importModuleGroup(SAFE_OPTIONAL_MODULES, { label: 'app-safe optional' });
 }
 
