@@ -2,23 +2,18 @@ import { navigate } from '../router.js';
 import { escHtml, formatTime } from '../utils/helpers.js';
 
 const TYPE_META = {
-  judgment: { cat: 'judgment', catLabel: '판결', icon: '⚖️', label: '판결' },
-  consult:  { cat: 'consult',  catLabel: '상담', icon: '🫠', label: '상담' },
-  vote:     { cat: 'vote',     catLabel: '토론', icon: '🗳️', label: '토론' },
-  drip:     { cat: 'drip',     catLabel: '드립', icon: '😂', label: '드립' },
-
-  // 예전 데이터 호환: 화면에는 현재 콘텐츠 이름으로만 표시합니다.
-  multi:        { cat: 'judgment', catLabel: '판결', icon: '⚖️', label: '판결' },
-  general:      { cat: 'judgment', catLabel: '판결', icon: '⚖️', label: '판결' },
-  collect:      { cat: 'judgment', catLabel: '판결', icon: '⚖️', label: '판결' },
-  anonymous:    { cat: 'judgment', catLabel: '판결', icon: '⚖️', label: '판결' },
-  crazy_court:  { cat: 'judgment', catLabel: '판결', icon: '⚖️', label: '판결' },
-  battle:       { cat: 'vote',     catLabel: '토론', icon: '🗳️', label: '토론' },
-  balance:      { cat: 'vote',     catLabel: '토론', icon: '🗳️', label: '토론' },
-  ox:           { cat: 'vote',     catLabel: '토론', icon: '🗳️', label: '토론' },
-  cbattle:      { cat: 'drip',     catLabel: '드립', icon: '😂', label: '드립' },
-  quiz:         { cat: 'consult',  catLabel: '상담', icon: '🫠', label: '상담' },
-  initial_game: { cat: 'consult',  catLabel: '상담', icon: '🫠', label: '상담' },
+  vote: { cat: 'vote', catLabel: '토론', icon: '🗳️', label: '토론' },
+  drip: { cat: 'drip', catLabel: '드립', icon: '😂', label: '드립' },
+  multi: { cat: 'drip', catLabel: '드립', icon: '😂', label: '드립' },
+  general: { cat: 'drip', catLabel: '드립', icon: '😂', label: '드립' },
+  collect: { cat: 'drip', catLabel: '드립', icon: '😂', label: '드립' },
+  anonymous: { cat: 'drip', catLabel: '드립', icon: '😂', label: '드립' },
+  ox: { cat: 'vote', catLabel: '토론', icon: '🗳️', label: '토론' },
+  battle: { cat: 'vote', catLabel: '토론', icon: '🗳️', label: '토론' },
+  balance: { cat: 'vote', catLabel: '토론', icon: '🗳️', label: '토론' },
+  cbattle: { cat: 'drip', catLabel: '드립', icon: '😂', label: '드립' },
+  quiz: { cat: 'drip', catLabel: '드립', icon: '😂', label: '드립' },
+  initial_game: { cat: 'drip', catLabel: '드립', icon: '😂', label: '드립' },
 };
 
 function escAttr(value) {
@@ -58,17 +53,20 @@ function safeTag(value) {
 }
 
 function getContentSubtype(post) {
-  if (post.subtype === 'judgment' || post.modules?.vote?.voteMode === 'judgment') return 'judgment';
-  if (post.subtype === 'consult' || post.modules?.consult?.enabled || post.modules?.quiz?.enabled || post.type === 'quiz' || post.type === 'initial_game') return 'consult';
   if (post.subtype === 'drip' || post.feedType === 'drip' || post.modules?.drip?.enabled) return 'drip';
   if (post.subtype === 'vote' || post.feedType === 'vote' || post.modules?.vote?.enabled || post.type === 'vote' || post.type === 'ox' || post.type === 'battle' || post.type === 'balance') return 'vote';
+
+  // 오래된 데이터 호환: 예전 분류명은 화면에서 현재 구조로만 표시합니다.
+  if (post.subtype === 'judgment' || post.modules?.vote?.voteMode === 'judgment' || post.type === 'crazy_court') return 'vote';
+  if (post.subtype === 'consult' || post.modules?.consult?.enabled || post.modules?.quiz?.enabled || post.type === 'quiz' || post.type === 'initial_game') return 'drip';
+
   if (post.subtype && TYPE_META[post.subtype]) return post.subtype;
-  return 'judgment';
+  return 'drip';
 }
 
 function getTypeMeta(post) {
   const subtype = getContentSubtype(post);
-  return TYPE_META[subtype] || TYPE_META.judgment;
+  return TYPE_META[subtype] || TYPE_META.drip;
 }
 
 function displayTitle(post) {
@@ -91,10 +89,8 @@ function renderModuleChips(post) {
   if (post.type !== 'multi' || !post.modules) return '';
   const labels = [];
   if (post.anonymous || post.modules.anonymous?.enabled) labels.push('익명');
-  if (post.subtype === 'judgment' || post.modules.vote?.voteMode === 'judgment') labels.push('판결');
-  else if (post.modules.consult?.enabled || post.modules.quiz?.enabled) labels.push('상담');
-  else if (post.modules.vote?.enabled || post.modules.vote?.ox) labels.push('토론');
-  if (post.modules.drip?.enabled) labels.push('드립');
+  if (post.modules.vote?.enabled || post.modules.vote?.ox || post.subtype === 'vote') labels.push('토론');
+  if (post.modules.drip?.enabled || post.subtype === 'drip') labels.push('드립');
   if (!labels.length) return '';
   const unique = labels.filter((label, index, self) => self.indexOf(label) === index);
   return `<div class="feed-card__multi-chips">${unique.map(label => `<span>${escHtml(label)}</span>`).join('')}</div>`;
