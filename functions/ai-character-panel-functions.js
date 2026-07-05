@@ -31,8 +31,7 @@ const CHARACTER_META = {
   overreact: { id: 'overreact', name: '과몰입러', emoji: '🎭', role: '대서사 담당' },
 };
 
-const VOTE_LEFT = ['rebel', 'fact', 'conspiracy', 'ajae'];
-const VOTE_RIGHT = ['jujup', 'bothsides', 'madcap', 'overreact'];
+const CHARACTER_IDS = ['jujup', 'rebel', 'bothsides', 'fact', 'madcap', 'conspiracy', 'ajae', 'overreact'];
 const DRIP_ORDER = ['jujup', 'madcap', 'ajae', 'overreact'];
 
 function clean(value, max = 1000) {
@@ -45,6 +44,37 @@ function parseJson(text) {
   const match = raw.match(/\{[\s\S]*\}/);
   if (!match) return null;
   try { return JSON.parse(match[0]); } catch { return null; }
+}
+
+function hashSeed(value) {
+  let hash = 2166136261;
+  const text = String(value || 'sosoking');
+  for (let i = 0; i < text.length; i += 1) {
+    hash ^= text.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+function seededShuffle(list, seed) {
+  const arr = list.slice();
+  let state = hashSeed(seed) || 1;
+  for (let i = arr.length - 1; i > 0; i -= 1) {
+    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+    const j = state % (i + 1);
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function teamDraftForPost(post, options = voteOptions(post)) {
+  const seed = [post.id, post.title, post.desc || post.body, options.join('|')].map(v => clean(v, 200)).join('::');
+  const shuffled = seededShuffle(CHARACTER_IDS, seed);
+  return { left: shuffled.slice(0, 4), right: shuffled.slice(4, 8) };
+}
+
+function namesFor(ids) {
+  return ids.map(id => CHARACTER_META[id]?.name || id).join(', ');
 }
 
 async function getAiKey() {
@@ -125,13 +155,14 @@ async function buildImageParts(images = []) {
 function promptFor(post) {
   const type = postType(post);
   const options = voteOptions(post);
+  const teams = teamDraftForPost(post, options);
   const leftOption = options[0] || '왼쪽 선택지';
   const rightOption = options[1] || '오른쪽 선택지';
   const title = clean(post.title, 160);
   const desc = clean(post.desc || post.body || '', 1800);
   const hasImages = Array.isArray(post.images) && post.images.length > 0;
   const modeGuide = type === 'vote'
-    ? `토론소 글이다. 선택지: ${options.length ? options.join(' VS ') : '사용자 선택지 없음'}\n캐릭터 8명 전원이 일반 유저처럼 댓글 토론에 참여한다.\n4대4 토론으로 나눈다. 왼쪽 팀 4명은 ${leftOption} 편, 오른쪽 팀 4명은 ${rightOption} 편이다.\n왼쪽 팀: 반항아, 팩폭러, 음모론자, 아재봇. 오른쪽 팀: 주접러, 갈팡러, 광기러, 과몰입러.\n각 캐릭터는 자기 팀 논리, 상대팀 반박, 제목/본문/이미지 디테일, 웃긴 한 줄을 모두 넣는다. 서로 말도 받아쳐야 한다.`
+    ? `토론소 글이다. 선택지: ${options.length ? options.join(' VS ') : '사용자 선택지 없음'}\n캐릭터 8명 전원이 일반 유저처럼 댓글 토론에 참여한다.\n이 글의 팀 배정은 글 기준 랜덤 배정이다. 반드시 아래 배정을 지켜라.\n왼쪽 팀은 ${leftOption} 편: ${namesFor(teams.left)}\n오른쪽 팀은 ${rightOption} 편: ${namesFor(teams.right)}\n각 캐릭터는 자기 팀 논리, 상대팀 반박, 제목/본문/이미지 디테일, 웃긴 한 줄을 모두 넣는다. 서로 말도 받아쳐야 한다.`
     : '드립소 글이다. 가장 잘 맞는 캐릭터 4명이 일반 댓글러처럼 참여한다. 제목, 본문, 이미지에서 구체적인 포인트를 뽑아 작명, 번역, 근황뉴스, 한 줄 드립 중 맞는 방식으로 받아친다.';
 
   return `너는 소소킹의 AI 캐릭터 엔진이다.
@@ -144,7 +175,7 @@ function promptFor(post) {
 - 이미지가 있으면 물체, 표정, 분위기, 구도를 반영한다.
 - 비슷한 말 반복 금지. 캐릭터마다 관점과 말투가 달라야 한다.
 - 각 캐릭터는 lines 3개와 punchline 1개를 쓴다.
-- 토론소는 8명 전원, 4대4 구도, 서로 반박/맞받아치기 필수다.
+- 토론소는 8명 전원, 글마다 랜덤 배정된 4대4 구도, 서로 반박/맞받아치기 필수다.
 - 드립소는 4명이 깊게 참여한다.
 
 캐릭터 역할:
@@ -186,19 +217,55 @@ function makeCharacter(id, extras = {}) {
   return { ...CHARACTER_META[id], ...extras };
 }
 
-function fallbackCharacters(kind, options = []) {
+function fallbackLinesFor(id, team, target, opponent, replyTo) {
+  const meta = CHARACTER_META[id] || CHARACTER_META.jujup;
+  const side = team === 'left' ? '왼쪽팀' : '오른쪽팀';
+  const base = {
+    jujup: [`${target} 쪽 이거 그냥 지나가면 예의가 아닙니다. 선택지에서 이미 주인공 냄새가 납니다.`, `${replyTo} 말도 이해는 하는데, 이건 의심보다 박수가 먼저 나와야 합니다.`, `${side} 입장에서 보면 ${target}는 댓글창 살리는 선택입니다.`],
+    rebel: [`저는 ${target} 쪽입니다. 남들이 반대편을 편하다고 할수록 더 수상합니다.`, `처음 기준을 잘못 잡으면 계속 끌려갑니다. ${opponent}는 그 함정이 보입니다.`, `${replyTo}가 분위기를 말해도 저는 뒤끝과 후회를 먼저 봅니다.`],
+    bothsides: [`저는 ${target} 쪽인데 말하면서도 ${opponent}가 계속 고개를 듭니다.`, `${replyTo} 말도 맞습니다. 그런데 ${target}에는 설명하기 어려운 생활의 맛이 있습니다.`, `둘 다 들으니까 더 모르겠지만 오늘은 흔들리면서 ${target}입니다.`],
+    fact: [`감정 빼고 보면 ${target} 쪽 기준이 더 선명합니다.`, `${replyTo} 말처럼 재미도 중요하지만, 선택 후 손해가 덜 남는 쪽을 봐야 합니다.`, `핵심은 지금의 기분이 아니라 나중의 후회입니다.`],
+    madcap: [`${target}로 가는 순간 장르가 바뀝니다. 갑자기 예고편 톤이 됩니다.`, `${replyTo}는 현실을 봤지만 저는 세계관을 봤습니다.`, `이건 평범한 VS가 아니라 현실이 선택지 버튼을 잘못 눌러 열린 포털입니다.`],
+    conspiracy: [`저는 ${target} 뒤의 생활 패턴을 봤습니다. 이건 우연이 아닙니다.`, `${opponent}가 너무 그럴듯해 보이는 순간이 오히려 함정입니다.`, `${replyTo}가 세계관을 봤다면 저는 작전을 봤습니다. 이건 습관 세력 간 전쟁입니다.`],
+    ajae: [`저는 ${target}에 한 표 올립니다. 표가 아니라 표정 관리입니다.`, `${opponent}도 좋지만 너무 뜨거우면 국밥도 식습니다.`, `${replyTo}가 크게 갔으니 저는 짧게 갑니다. ${target}입니다.`],
+    overreact: [`이건 단순히 ${target}를 고르는 장면이 아닙니다. 주인공이 결심하는 컷입니다.`, `${replyTo} 말까지 들어오니까 이 토론은 이미 클라이맥스입니다.`, `${opponent}는 안정적인 조연이고, ${target}는 음악 깔리는 선택지입니다.`],
+  };
+  const punch = {
+    jujup: `${target}는 선택이 아니라 축제입니다. 지금 박수 치면서 눌러야 합니다.`,
+    rebel: `저는 일단 ${target}. 반대부터 해야 토론소가 열립니다.`,
+    bothsides: `제 결론은 ${target}입니다. 물론 3초 뒤에 바뀔 수 있습니다.`,
+    fact: `정리하면 ${target}. 이건 기분 문제가 아니라 후회 관리입니다.`,
+    madcap: `${target} 누르는 순간 현실이 오늘 업데이트를 잘못 눌렀습니다.`,
+    conspiracy: `${target}는 선택지가 아닙니다. 생활 질서 회복 작전입니다.`,
+    ajae: `${target}로 가야 합니다. 선택은 짧고 후회는 깁니다.`,
+    overreact: `${target}. 이 장면은 엔딩 크레딧 올라갈 때 박수 나옵니다.`,
+  };
+  return { lines: base[id] || base.jujup, punchline: punch[id] || punch.jujup, role: meta.role };
+}
+
+function fallbackCharacters(kind, options = [], teams = null) {
   const left = options[0] || '왼쪽 선택지';
   const right = options[1] || '오른쪽 선택지';
   if (kind === 'vote') {
+    const draft = teams || { left: CHARACTER_IDS.slice(0, 4), right: CHARACTER_IDS.slice(4, 8) };
+    const build = (id, team, index) => {
+      const target = team === 'left' ? left : right;
+      const opponent = team === 'left' ? right : left;
+      const otherTeam = team === 'left' ? draft.right : draft.left;
+      const replyMeta = CHARACTER_META[otherTeam[index % otherTeam.length]] || CHARACTER_META.jujup;
+      const tone = fallbackLinesFor(id, team, target, opponent, replyMeta.name);
+      return makeCharacter(id, {
+        team,
+        targetOption: target,
+        replyTo: replyMeta.name,
+        stance: `${target} 편 · ${tone.role}`,
+        lines: tone.lines,
+        punchline: tone.punchline,
+      });
+    };
     return [
-      makeCharacter('rebel', { team: 'left', targetOption: left, replyTo: '', stance: `${left} 편 · 일단 반대쪽 의심`, lines: [`저는 ${left} 쪽입니다. ${right}가 편해 보일수록 더 수상합니다.`, `이건 취향보다 기준 문제입니다. 처음 기준을 잘못 잡으면 계속 흔들립니다.`, '댓글러 모드로 말하면 편한 선택보다 덜 후회할 선택을 봐야 합니다.'], punchline: `저는 일단 ${left}. 반대부터 해야 토론소가 열립니다.` }),
-      makeCharacter('fact', { team: 'left', targetOption: left, replyTo: '주접러', stance: `${left} 편 · 감정 빼고 계산`, lines: [`감정 빼고 보면 ${left} 쪽 기준이 더 선명합니다.`, `주접러 말처럼 분위기도 중요하지만, 선택 후 손해가 덜 남는 쪽을 봐야 합니다.`, '핵심은 지금의 기분이 아니라 나중의 후회입니다.'], punchline: `정리하면 ${left}. 이건 기분 문제가 아니라 후회 관리입니다.` }),
-      makeCharacter('conspiracy', { team: 'left', targetOption: left, replyTo: '광기러', stance: `${left} 편 · 수상한 흐름 분석`, lines: [`저는 ${left} 뒤의 생활 패턴을 봤습니다. 이건 우연이 아닙니다.`, `${right}가 너무 그럴듯해 보이는 순간이 오히려 함정입니다.`, `광기러가 세계관을 봤다면 저는 작전을 봤습니다. 이건 습관 세력 간 전쟁입니다.`], punchline: `${left}는 선택지가 아닙니다. 생활 질서 회복 작전입니다.` }),
-      makeCharacter('ajae', { team: 'left', targetOption: left, replyTo: '과몰입러', stance: `${left} 편 · 썰렁한 한 표`, lines: [`저는 ${left}에 한 표 올립니다. 표가 아니라 표정 관리입니다.`, `${right}도 좋지만 너무 뜨거우면 국밥도 식습니다.`, `과몰입러가 대서사를 열었으니 저는 짧게 갑니다. ${left}입니다.`], punchline: `${left}로 가야 합니다. 왼쪽이니까 왠지 쪽이 있습니다.` }),
-      makeCharacter('jujup', { team: 'right', targetOption: right, replyTo: '반항아', stance: `${right} 편 · 호들갑 리액션`, lines: [`아니 ${right} 이거 그냥 지나가면 예의가 아닙니다.`, `반항아님 또 의심부터 하시는데, 이건 의심할 게 아니라 박수 칠 타이밍입니다.`, `본문 분위기상 ${right}가 댓글창을 더 살립니다.`], punchline: `${right}는 선택이 아니라 축제입니다. 지금 박수 치면서 눌러야 합니다.` }),
-      makeCharacter('bothsides', { team: 'right', targetOption: right, replyTo: '팩폭러', stance: `${right} 편 · 밀면서도 흔들림`, lines: [`저는 일단 ${right} 쪽인데, 말하면서도 ${left}가 계속 고개를 듭니다.`, `팩폭러 말도 맞습니다. 그런데 ${right}에는 설명하기 어려운 생활의 맛이 있습니다.`, `둘 다 들으니까 더 모르겠지만 오늘은 흔들리면서 ${right}입니다.`], punchline: `제 결론은 ${right}입니다. 물론 3초 뒤에 바뀔 수 있습니다.` }),
-      makeCharacter('madcap', { team: 'right', targetOption: right, replyTo: '음모론자', stance: `${right} 편 · 세계관 확장`, lines: [`${right}로 가는 순간 장르가 바뀝니다. 갑자기 예고편 톤이 됩니다.`, `음모론자님은 작전을 보셨지만 저는 세계관을 봤습니다.`, `이건 평범한 VS가 아니라 현실이 선택지 버튼을 잘못 눌러 열린 포털입니다.`], punchline: `${right} 누르는 순간 현실이 오늘 업데이트를 잘못 눌렀습니다.` }),
-      makeCharacter('overreact', { team: 'right', targetOption: right, replyTo: '아재봇', stance: `${right} 편 · 대서사 담당`, lines: [`이건 단순히 ${right}를 고르는 장면이 아닙니다. 주인공이 결심하는 컷입니다.`, `아재봇님의 말장난까지 들어오니까 이 토론은 이미 클라이맥스입니다.`, `${left}는 안정적인 조연이고, ${right}는 음악 깔리는 선택지입니다.`], punchline: `${right}. 이 장면은 엔딩 크레딧 올라갈 때 박수 나옵니다.` }),
+      ...draft.left.map((id, index) => build(id, 'left', index)),
+      ...draft.right.map((id, index) => build(id, 'right', index)),
     ];
   }
   return [
@@ -213,20 +280,21 @@ function fallbackPanel(post) {
   const kind = postType(post);
   const title = clean(post.title, 80) || '이 상황';
   const options = voteOptions(post);
+  const teams = kind === 'vote' ? teamDraftForPost(post, options) : null;
   return {
     enabled: true,
     status: 'fallback',
     kind,
-    headline: kind === 'vote' ? '운영봇이 4대4 토론소를 열었습니다' : '운영봇이 드립소를 열었습니다',
+    headline: kind === 'vote' ? '운영봇이 랜덤 4대4 토론소를 열었습니다' : '운영봇이 드립소를 열었습니다',
     imageRead: '',
     imageCountAnalyzed: 0,
     host: {
       id: 'opsbot', name: '운영봇', emoji: '🤖', role: '사회자',
-      opening: kind === 'vote' ? `토론소 열었습니다. 오늘 안건은 “${title}”입니다. 캐릭터 8명이 4대4로 나눠 붙습니다.` : `드립소 열었습니다. 오늘 소재는 “${title}”입니다.`,
+      opening: kind === 'vote' ? `토론소 열었습니다. 오늘 안건은 “${title}”입니다. 이 글에서는 캐릭터 8명이 랜덤 4대4로 나눠 붙습니다.` : `드립소 열었습니다. 오늘 소재는 “${title}”입니다.`,
       summary: kind === 'vote' && options.length ? `${options.join(' VS ')} 구도로 의견이 갈릴 수 있습니다.` : '짧고 강한 한 줄이 잘 먹히는 소재입니다.',
       question: kind === 'vote' ? '어느 팀 말이 더 설득되는지 투표하고 이유를 남겨주세요.' : '이 상황, 누가 제일 웃기게 받아칠까요?',
     },
-    characters: fallbackCharacters(kind, options),
+    characters: fallbackCharacters(kind, options, teams),
     bestLines: kind === 'vote'
       ? ['제 결론은 명확합니다. 저는 결론을 포기하겠습니다.', '이건 기분 문제가 아니라 후회 관리입니다.', '선택지가 아니라 생활 질서 회복 작전입니다.']
       : ['현실이 오늘 업데이트를 잘못 눌렀습니다.', '이 상황은 그냥 지나가면 예의가 아닙니다.'],
@@ -239,8 +307,14 @@ function normalizePanel(parsed, post, imageCount) {
   const base = fallbackPanel(post);
   const kind = postType(post);
   const options = voteOptions(post);
+  const teams = kind === 'vote' ? teamDraftForPost(post, options) : null;
   const data = parsed && typeof parsed === 'object' ? parsed : {};
   const rawChars = Array.isArray(data.characters) && data.characters.length ? data.characters : base.characters;
+  const expectedOrder = kind === 'vote' ? [...teams.left, ...teams.right] : DRIP_ORDER;
+  const orderedRawChars = kind === 'vote'
+    ? expectedOrder.map(id => rawChars.find(item => clean(item.id, 30) === id)).filter(Boolean)
+    : rawChars;
+  const sourceChars = orderedRawChars.length >= expectedOrder.length ? orderedRawChars : rawChars;
   const charLimit = kind === 'vote' ? 8 : 4;
   return {
     enabled: true,
@@ -255,11 +329,12 @@ function normalizePanel(parsed, post, imageCount) {
       summary: clean(data.host?.summary, 180) || base.host.summary,
       question: clean(data.host?.question, 160) || base.host.question,
     },
-    characters: rawChars.slice(0, charLimit).map((item, index) => {
-      const fallback = base.characters[index] || base.characters[0];
-      const id = clean(item.id, 30) || fallback.id;
+    characters: sourceChars.slice(0, charLimit).map((item, index) => {
+      const expectedId = expectedOrder[index] || DRIP_ORDER[index] || DRIP_ORDER[0];
+      const fallback = base.characters.find(ch => ch.id === expectedId) || base.characters[index] || base.characters[0];
+      const id = clean(item.id, 30) || expectedId || fallback.id;
       const meta = CHARACTER_META[id] || fallback;
-      const defaultTeam = kind === 'vote' ? (index < 4 ? 'left' : 'right') : 'drip';
+      const defaultTeam = kind === 'vote' ? (teams.left.includes(id) ? 'left' : 'right') : 'drip';
       const defaultTarget = kind === 'vote' ? (defaultTeam === 'left' ? options[0] || '' : options[1] || '') : '';
       const lines = Array.isArray(item.lines) ? item.lines.map(line => clean(line, 220)).filter(Boolean).slice(0, 4) : [];
       return {
