@@ -6,8 +6,6 @@ import { navigate } from './router.js';
 
 const DEFAULT_WRITE_PATH = '/write?type=multi&preset=drip';
 const WRITE_PRESET_BY_ROOM = {
-  'write-judgment': 'vote',
-  'write-consult': 'drip',
   'write-vote': 'vote',
   'write-drip': 'drip',
 };
@@ -22,9 +20,7 @@ function normalizeWritePath(path = '') {
   const value = String(path || '').trim();
   if (!value) return DEFAULT_WRITE_PATH;
   if (value.startsWith('#')) return normalizeWritePath(value.slice(1));
-  if (value.startsWith('/write')) return value
-    .replace('preset=judgment', 'preset=vote')
-    .replace('preset=consult', 'preset=drip');
+  if (value.startsWith('/write')) return value;
   return DEFAULT_WRITE_PATH;
 }
 
@@ -77,7 +73,6 @@ function guardWriteLoginButton(event) {
 }
 
 const TEXT_REPLACEMENTS = [
-  [/판결 · 상담 · 토론 · 드립/g, '토론 · 드립'],
   [/4가지로 놀아요/g, '두 곳에서 놀아요'],
   [/사소한 이야기도 8명의 AI 캐릭터가 끼어들면 재미있는 참여 콘텐츠가 됩니다\./g, '웃긴토론과 드립'],
   [/웃긴 토론과 드립으로 소소한 이야기를 콘텐츠로 바꿉니다\./g, '웃긴토론과 드립'],
@@ -86,13 +81,13 @@ const TEXT_REPLACEMENTS = [
   [/웃긴토론소과 드립소/g, '웃긴토론과 드립'],
   [/웃긴토론소과 드립/g, '웃긴토론과 드립'],
   [/웃긴토론과 드립소/g, '웃긴토론과 드립'],
+  [/전문\s*상담·/g, '전문 조언이나 '],
   [/\+ 글 열기/g, '+ 글쓰기'],
   [/글 열기/g, '글쓰기'],
   [/콘텐츠 쓰기/g, '글쓰기'],
   [/일반게시판 글쓰기/g, '소소킹 글쓰기'],
   [/게임형 커뮤니티/g, '참여형 커뮤니티'],
   [/8명 캐릭터 대기중/g, '8명 캐릭터 대기 중'],
-  [/캐릭터에게 판결받기/g, '드립 열기'],
   [/캐릭터 댓글과 유저 반응은 항상 켜져 있습니다\./g, '유저 댓글과 반응으로 같이 참여할 수 있습니다.'],
 ];
 
@@ -125,10 +120,6 @@ function normalizeTextNodes(root = document.body) {
       const next = replaceText(current);
       if (next !== current) el.setAttribute(attr, next);
     });
-  });
-
-  document.querySelectorAll('.home-onboard__room--judgment, .home-onboard__room--consult').forEach(el => {
-    el.style.display = 'none';
   });
 }
 
