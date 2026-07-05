@@ -6,6 +6,7 @@
 export const POST_BOOT_MODULES = [
   './owner-edit-route-override.js',
   './app-stability-suite.js',
+  './site-operation-cleanup.js',
 ];
 
 export const SAFE_OPTIONAL_MODULES = [
