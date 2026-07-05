@@ -1,7 +1,7 @@
 /* site-operation-cleanup.css
    소소킹을 토론소/드립소 중심으로 운영하기 위한 최종 정렬 레이어입니다.
    마지막에 로드되어 모바일 헤더와 본문 폭을 같은 기준으로 맞춥니다.
-*/
+ */
 
 :root {
   --soso-shell-max: 880px;
@@ -57,6 +57,256 @@
   border-radius: 16px;
   border: 1px solid rgba(255, 107, 74, .22);
   background: rgba(255, 107, 74, .07);
+}
+
+/* 토론/드립 상세 참여 영역 개선 */
+.comment-section--debate,
+.comment-section--drip {
+  margin: 0;
+  padding: 22px 18px 24px;
+  border-top: 1px solid rgba(148, 163, 184, .16);
+  background:
+    radial-gradient(circle at 10% 0%, rgba(255, 107, 74, .10), rgba(255, 107, 74, 0) 34%),
+    linear-gradient(180deg, rgba(255,255,255,.98), rgba(248,250,252,.96));
+}
+
+.comment-section--debate .comment-section__title,
+.comment-section--drip .comment-section__title {
+  margin-bottom: 8px;
+  font-size: 20px;
+  font-weight: 950;
+  letter-spacing: -.045em;
+  color: var(--color-text-primary);
+}
+
+.comment-section--debate .multi-module-hint,
+.comment-section--drip .multi-module-hint {
+  display: block;
+  margin: 0 0 14px !important;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.55;
+  letter-spacing: -.025em;
+}
+
+.comment-section--debate .comment-write-box,
+.comment-section--drip .comment-write-box {
+  display: block !important;
+  padding: 14px;
+  margin: 12px 0 18px;
+  border-radius: 24px;
+  border: 1px solid rgba(148, 163, 184, .18);
+  background: rgba(255, 255, 255, .92);
+  box-shadow: 0 14px 34px rgba(15, 23, 42, .07);
+  box-sizing: border-box;
+}
+
+.comment-section--debate .cbattle-ox {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: stretch;
+  gap: 10px;
+  width: 100%;
+  margin: 0 0 12px !important;
+}
+
+.comment-section--debate .cbattle-ox-btn,
+.detail-body .cbattle-ox-btn {
+  width: 100%;
+  min-width: 0;
+  min-height: 88px;
+  padding: 12px 8px;
+  border-radius: 22px;
+  border: 1px solid rgba(148, 163, 184, .22);
+  background: linear-gradient(180deg, #fff, #f8fafc);
+  box-shadow: 0 8px 22px rgba(15, 23, 42, .055);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: var(--color-text-primary);
+  text-align: center;
+  white-space: normal;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease, background .16s ease;
+}
+
+.comment-section--debate .cbattle-ox-btn.active,
+.detail-body .cbattle-ox-btn.active {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, .11);
+}
+
+.comment-section--debate .cbattle-ox-btn--a.active,
+.detail-body .cbattle-ox-btn--a.active {
+  border-color: rgba(244, 63, 94, .52);
+  background: linear-gradient(180deg, rgba(244, 63, 94, .12), #fff);
+}
+
+.comment-section--debate .cbattle-ox-btn--b.active,
+.detail-body .cbattle-ox-btn--b.active {
+  border-color: rgba(37, 99, 235, .48);
+  background: linear-gradient(180deg, rgba(37, 99, 235, .11), #fff);
+}
+
+.comment-section--debate .cbattle-ox-emoji,
+.detail-body .cbattle-ox-emoji {
+  font-size: 34px;
+  line-height: 1;
+}
+
+.comment-section--debate .cbattle-ox-label,
+.detail-body .cbattle-ox-label {
+  display: block;
+  max-width: 100%;
+  font-size: 15px;
+  font-weight: 950;
+  line-height: 1.25;
+  letter-spacing: -.045em;
+}
+
+.comment-section--debate .cbattle-ox-vs,
+.detail-body .cbattle-ox-vs {
+  align-self: center;
+  justify-self: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border: 1px solid rgba(148, 163, 184, .22);
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 950;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, .065);
+}
+
+.comment-section--debate #comment-input,
+.comment-section--drip #comment-input {
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 104px !important;
+  margin: 0;
+  padding: 14px 15px;
+  border-radius: 18px;
+  border: 1px solid rgba(148, 163, 184, .24);
+  background: #fff;
+  color: var(--color-text-primary);
+  font-size: 15px;
+  font-weight: 750;
+  line-height: 1.55;
+  letter-spacing: -.025em;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.comment-section--debate #comment-input::placeholder,
+.comment-section--drip #comment-input::placeholder {
+  color: rgba(100, 116, 139, .72);
+  font-weight: 700;
+}
+
+.comment-section--debate #btn-comment,
+.comment-section--drip #btn-comment {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  margin-top: 10px;
+  padding: 0 22px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 950;
+  letter-spacing: -.035em;
+  box-shadow: 0 10px 22px rgba(255, 107, 74, .24);
+}
+
+.comment-section--debate #btn-comment {
+  float: right;
+}
+
+.comment-section--debate .debate-comment-board {
+  clear: both;
+  margin-top: 18px;
+}
+
+.comment-section--debate .cbattle-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+  align-items: stretch;
+}
+
+.comment-section--debate .cbattle-col {
+  min-width: 0;
+  padding: 12px;
+  border-radius: 20px;
+  background: rgba(255,255,255,.88);
+  border: 1px solid rgba(148, 163, 184, .16);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, .045);
+}
+
+.comment-section--debate .cbattle-col--a {
+  border-top: 4px solid rgba(244, 63, 94, .72);
+}
+
+.comment-section--debate .cbattle-col--b {
+  border-top: 4px solid rgba(37, 99, 235, .72);
+}
+
+.comment-section--debate .cbattle-col__title {
+  padding: 0 0 10px;
+  border-bottom: 1px solid rgba(148, 163, 184, .16);
+  font-size: 13px;
+  font-weight: 950;
+  line-height: 1.35;
+  color: var(--color-text-primary);
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.comment-section--debate .cbattle-col__empty {
+  padding: 22px 4px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.comment-section--debate .cbattle-comment {
+  margin-top: 10px;
+  padding: 11px 12px;
+  border-radius: 16px;
+  background: rgba(248, 250, 252, .88);
+}
+
+.comment-section--debate .cbattle-comment__text {
+  font-size: 13px;
+  font-weight: 780;
+  line-height: 1.55;
+}
+
+.comment-section--debate .cbattle-comment__meta {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.comment-section--drip #btn-comment {
+  width: 100%;
+}
+
+.comment-section--drip .likeable-comment {
+  border-radius: 18px;
+  background: rgba(255, 255, 255, .92);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, .045);
 }
 
 @media (max-width: 768px) {
@@ -133,6 +383,31 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+
+  .comment-section--debate,
+  .comment-section--drip {
+    padding: 20px 14px 22px;
+  }
+
+  .comment-section--debate .comment-write-box,
+  .comment-section--drip .comment-write-box {
+    padding: 13px;
+    border-radius: 22px;
+  }
+
+  .comment-section--debate #btn-comment {
+    float: none;
+    width: 100%;
+  }
+
+  .comment-section--debate .cbattle-columns {
+    gap: 8px;
+  }
+
+  .comment-section--debate .cbattle-col {
+    padding: 10px;
+    border-radius: 18px;
+  }
 }
 
 @media (max-width: 390px) {
@@ -161,5 +436,32 @@
   .site-header__actions .btn--sm {
     padding-left: 10px;
     padding-right: 10px;
+  }
+
+  .comment-section--debate .cbattle-ox {
+    gap: 8px;
+  }
+
+  .comment-section--debate .cbattle-ox-vs,
+  .detail-body .cbattle-ox-vs {
+    width: 32px;
+    height: 32px;
+    font-size: 11px;
+  }
+
+  .comment-section--debate .cbattle-ox-btn,
+  .detail-body .cbattle-ox-btn {
+    min-height: 82px;
+    border-radius: 19px;
+  }
+
+  .comment-section--debate .cbattle-ox-emoji,
+  .detail-body .cbattle-ox-emoji {
+    font-size: 29px;
+  }
+
+  .comment-section--debate .cbattle-ox-label,
+  .detail-body .cbattle-ox-label {
+    font-size: 13px;
   }
 }
