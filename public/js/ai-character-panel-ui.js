@@ -24,6 +24,7 @@ const CHARACTER_META = {
   overreact: { id: 'overreact', name: '과몰입러', emoji: '🎭', role: '대서사 담당' },
 };
 const CHARACTER_IDS = ['jujup', 'rebel', 'bothsides', 'fact', 'madcap', 'conspiracy', 'ajae', 'overreact'];
+const DRIP_IDS = ['jujup', 'madcap', 'ajae', 'overreact'];
 
 function isPrimaryRuntime() {
   return window.__sosoAiCharacterPanelUiRuntime === RUNTIME_ID;
@@ -35,6 +36,18 @@ function esc(value) {
 
 function clean(value, max = 120) {
   return String(value || '').replace(/[<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, max);
+}
+
+function isVotePost(post = {}) {
+  return post.subtype === 'vote' || post.feedType === 'vote' || post.modules?.vote?.enabled === true || post.type === 'vote' || post.type === 'balance';
+}
+
+function isDripPost(post = {}) {
+  return post.subtype === 'drip' || post.feedType === 'drip' || post.modules?.drip?.enabled === true || post.type === 'drip';
+}
+
+function isAiPanelPost(post = {}) {
+  return post.type === 'multi' && (isVotePost(post) || isDripPost(post));
 }
 
 function voteOptions(post = {}, panel = {}) {
@@ -100,7 +113,7 @@ function fallbackLines(id, team, target, opponent, replyTo) {
   return { lines: lines[id] || lines.jujup, punchline: punchline[id] || punchline.jujup };
 }
 
-function buildVoteCharacters(post, panel) {
+function buildVoteCharacters(post, panel = {}) {
   const options = voteOptions(post, panel);
   const draft = buildTeamDraft(post, options);
   const make = (id, team, index) => {
@@ -115,9 +128,45 @@ function buildVoteCharacters(post, panel) {
   return [...draft.left.map((id, i) => make(id, 'left', i)), ...draft.right.map((id, i) => make(id, 'right', i))];
 }
 
+function buildDripCharacters(post = {}) {
+  const topic = clean(post.title || post.modules?.drip?.prompt || post.desc || '이 상황', 80);
+  const lines = {
+    jujup: { replyTo: '', stance: '소재 띄우기', lines: [`${topic}, 이건 그냥 지나가면 드립 예의가 아닙니다.`, '제목부터 이미 댓글창 입장권입니다.', '한 줄만 잘 붙이면 저장감입니다.'], punchline: '이 상황은 그냥 지나가면 예의가 아닙니다.' },
+    madcap: { replyTo: '주접러', stance: '세계관 확장', lines: ['이건 현실이 잠깐 서버 오류 낸 장면입니다.', '주접러가 박수 치는 사이 저는 세계관 설정집을 열었습니다.', `${topic}은 상황이 아니라 다음 시즌 예고편에 가깝습니다.`], punchline: '현실이 오늘 업데이트를 잘못 눌렀습니다.' },
+    ajae: { replyTo: '광기러', stance: '짧은 말장난', lines: ['드립은 짧아야 제맛입니다. 길면 국밥도 식습니다.', '광기러님 세계관은 큰데 저는 한 숟갈만 얹겠습니다.', '이 소재는 웃기려고 한 게 아니라 웃기게 태어났습니다.'], punchline: '이건 드립이 아니라 드립커피처럼 천천히 내려온 웃음입니다.' },
+    overreact: { replyTo: '아재봇', stance: '영화처럼 키움', lines: ['이건 그냥 상황이 아니라 3부작의 시작입니다.', '아재봇이 분위기를 얼렸고 이제 제가 배경음악을 깔겠습니다.', '지금은 웃지만 2화부터 장르가 바뀔 수 있습니다.'], punchline: '이 장면, 엔딩 크레딧 올라갈 때 박수 나옵니다.' },
+  };
+  return DRIP_IDS.map(id => ({ ...CHARACTER_META[id], team: 'drip', targetOption: '', ...lines[id] }));
+}
+
+function buildFallbackPanel(post = {}) {
+  const vote = isVotePost(post);
+  const characters = vote ? buildVoteCharacters(post, {}) : buildDripCharacters(post);
+  const title = clean(post.title || post.desc || '오늘의 주제', 100);
+  return {
+    enabled: true,
+    status: 'client-fallback',
+    kind: vote ? 'vote' : 'drip',
+    headline: vote ? '운영봇이 4대4 토론소를 열었습니다' : '운영봇이 드립소를 열었습니다',
+    imageRead: '',
+    host: {
+      id: 'opsbot',
+      name: '운영봇',
+      emoji: '🤖',
+      role: '사회자',
+      opening: vote ? `오늘 안건은 “${title}”입니다. 캐릭터 8명이 4대4로 나눠 먼저 붙어봅니다.` : `오늘 드립 소재는 “${title}”입니다. 캐릭터들이 먼저 한 줄씩 받아칩니다.`,
+      summary: vote ? '왼쪽/오른쪽 입장이 갈릴 수 있는 주제입니다.' : '짧게 받을수록 더 웃긴 소재입니다.',
+      question: vote ? '투표하고 내 의견도 남겨보세요.' : '더 웃긴 한 줄 드립을 남겨보세요.',
+    },
+    characters,
+    bestLines: vote ? ['이건 기분 문제가 아니라 후회 관리입니다.', '선택지가 아니라 생활 질서 회복 작전입니다.'] : ['현실이 오늘 업데이트를 잘못 눌렀습니다.', '이 상황은 그냥 지나가면 예의가 아닙니다.'],
+    commentPrompt: vote ? '어느 팀 말이 더 설득됐는지 댓글로 이어주세요.' : '더 웃긴 드립을 아래에 바로 남겨주세요.',
+  };
+}
+
 function normalizePanelForDisplay(panel, post) {
   const normalized = { ...(panel || {}) };
-  normalized.kind = normalized.kind || (post?.subtype === 'vote' || post?.feedType === 'vote' || post?.modules?.vote?.enabled ? 'vote' : 'drip');
+  normalized.kind = normalized.kind || (isVotePost(post) ? 'vote' : 'drip');
   const chars = Array.isArray(normalized.characters) ? normalized.characters : [];
   if (normalized.kind === 'vote') {
     const uniqueIds = new Set(chars.map(ch => ch?.id || ch?.name).filter(Boolean));
@@ -128,6 +177,11 @@ function normalizePanelForDisplay(panel, post) {
       normalized.commentPrompt = normalized.commentPrompt || '투표하고 어느 팀 말이 더 웃겼는지도 댓글로 남겨주세요.';
       normalized._displayUpgraded = true;
     }
+  } else if (chars.length < 4) {
+    normalized.characters = buildDripCharacters(post);
+    normalized.headline = normalized.headline || '운영봇이 드립소를 열었습니다';
+    normalized.commentPrompt = normalized.commentPrompt || '더 웃긴 드립을 아래에 바로 남겨주세요.';
+    normalized._displayUpgraded = true;
   }
   return normalized;
 }
@@ -144,7 +198,7 @@ function injectStyle() {
   const style = document.createElement('style');
   style.id = STYLE_ID;
   style.textContent = `
-    .ai-character-panel{margin:18px 0;border-radius:26px;border:1px solid rgba(255,107,74,.18);background:linear-gradient(135deg,rgba(255,255,255,.98),rgba(248,250,252,.94));box-shadow:0 16px 38px rgba(15,23,42,.065);overflow:hidden}
+    .ai-character-panel{display:block!important;visibility:visible!important;opacity:1!important;margin:18px 0;border-radius:26px;border:1px solid rgba(255,107,74,.18);background:linear-gradient(135deg,rgba(255,255,255,.98),rgba(248,250,252,.94));box-shadow:0 16px 38px rgba(15,23,42,.065);overflow:hidden}
     .ai-character-panel__head{padding:18px;border-bottom:1px solid rgba(148,163,184,.16)}
     .ai-character-panel__badge{display:inline-flex;align-items:center;height:28px;padding:0 11px;border-radius:999px;background:rgba(255,107,74,.11);color:#ef4b2f;font-size:11px;font-weight:950}
     .ai-character-panel__title{margin-top:10px;font-size:clamp(19px,4vw,24px);font-weight:950;line-height:1.25;letter-spacing:-.055em;color:var(--color-text-primary)}
@@ -192,18 +246,21 @@ async function maybeGenerate(postId, post, mountAfter) {
   if (generating.has(postId)) return;
   if (!auth.currentUser || auth.currentUser.uid !== post.authorId) return;
   generating.add(postId);
-  mountAfter.insertAdjacentHTML('afterend', renderLoading());
+  const existing = document.querySelector('[data-ai-character-panel-root]');
+  if (!existing) mountAfter.insertAdjacentHTML('afterend', renderLoading());
   dedupePanels(document);
   try {
     await callGenerateCharacterPanel({ postId });
     const snap = await getDoc(doc(db, 'feeds', postId));
     const next = snap.exists() ? { id: snap.id, ...snap.data() } : null;
-    const root = document.querySelector('[data-ai-character-panel-root]');
-    if (root && next?.aiCharacterPanel?.enabled) root.outerHTML = renderPanel(normalizePanelForDisplay(next.aiCharacterPanel, next));
-    else root?.remove();
+    const panelRoot = document.querySelector('[data-ai-character-panel-root]');
+    if (panelRoot && next?.aiCharacterPanel?.enabled) panelRoot.outerHTML = renderPanel(normalizePanelForDisplay(next.aiCharacterPanel, next));
+    else if (panelRoot?.classList.contains('ai-character-panel--loading')) panelRoot.outerHTML = renderPanel(buildFallbackPanel(post));
   } catch (error) {
     console.warn('[ai-character-panel-ui] generation failed', error);
-    document.querySelector('[data-ai-character-panel-root]')?.remove();
+    const panelRoot = document.querySelector('[data-ai-character-panel-root]');
+    if (panelRoot?.classList.contains('ai-character-panel--loading')) panelRoot.outerHTML = renderPanel(buildFallbackPanel(post));
+    else if (!panelRoot && mountAfter) mountAfter.insertAdjacentHTML('afterend', renderPanel(buildFallbackPanel(post)));
   } finally {
     generating.delete(postId);
     dedupePanels(document);
@@ -231,7 +288,11 @@ async function enhance() {
       dedupePanels(root);
       return;
     }
-    if (post.type === 'multi' && !post.isAiGenerated) await maybeGenerate(postId, post, body);
+    if (isAiPanelPost(post)) {
+      body.insertAdjacentHTML('afterend', renderPanel(buildFallbackPanel(post)));
+      dedupePanels(root);
+      await maybeGenerate(postId, post, body);
+    }
   } catch (error) {
     console.warn('[ai-character-panel-ui] render failed', error);
   }
