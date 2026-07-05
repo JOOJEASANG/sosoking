@@ -1,0 +1,165 @@
+/* site-operation-cleanup.css
+   소소킹을 토론소/드립소 중심으로 운영하기 위한 최종 정렬 레이어입니다.
+   마지막에 로드되어 모바일 헤더와 본문 폭을 같은 기준으로 맞춥니다.
+*/
+
+:root {
+  --soso-shell-max: 880px;
+  --soso-mobile-gutter: clamp(14px, 4.2vw, 22px);
+}
+
+.site-header,
+.page-container,
+.site-footer {
+  box-sizing: border-box;
+}
+
+.site-header__inner,
+.page-container,
+.site-footer {
+  width: 100%;
+  max-width: var(--soso-shell-max);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.site-header__inner {
+  min-width: 0;
+}
+
+.site-header__logo,
+.site-header__actions {
+  min-width: 0;
+}
+
+.site-header__logo span,
+.site-header__actions .btn {
+  white-space: nowrap;
+}
+
+.home-onboard__badge {
+  text-transform: none !important;
+}
+
+.admin-page,
+.admin-layout,
+.admin-page-head,
+.admin-stat-grid,
+.admin-table {
+  min-width: 0;
+}
+
+.admin-layout {
+  width: 100%;
+}
+
+.admin-operation-note {
+  border-radius: 16px;
+  border: 1px solid rgba(255, 107, 74, .22);
+  background: rgba(255, 107, 74, .07);
+}
+
+@media (max-width: 768px) {
+  .site-header {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  .site-header__inner,
+  .page-container,
+  .site-footer {
+    max-width: none;
+    padding-left: var(--soso-mobile-gutter) !important;
+    padding-right: var(--soso-mobile-gutter) !important;
+  }
+
+  .site-header__inner {
+    gap: 8px !important;
+  }
+
+  .site-header__logo {
+    flex: 0 1 auto;
+  }
+
+  .site-header__spacer {
+    flex: 1 1 auto;
+    min-width: 4px;
+  }
+
+  .site-header__actions {
+    flex: 0 0 auto;
+    justify-content: flex-end;
+  }
+
+  .site-header__install-btn span {
+    display: none;
+  }
+
+  .site-header__actions .btn--sm {
+    min-height: 34px;
+    height: 34px;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .home-ai-residents {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .admin-layout {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .admin-sidebar {
+    width: 100% !important;
+  }
+
+  .admin-nav {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .admin-menu-item {
+    justify-content: center;
+    min-width: 0;
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+
+  .admin-menu-item__label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 390px) {
+  :root {
+    --soso-mobile-gutter: 12px;
+  }
+
+  .site-header__logo span {
+    max-width: 54px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .site-header__actions {
+    gap: 5px !important;
+  }
+
+  .site-header__theme-btn,
+  .site-header__icon-btn {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+  }
+
+  .site-header__actions .btn--sm {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+}
