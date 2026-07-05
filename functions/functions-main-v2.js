@@ -19,7 +19,7 @@ const sosoFeed = require('./soso-feed-functions.js');
 const account = require('./account-functions.js');
 const features = require('./sosoking-features-functions.js');
 const aiContent = require('./ai-content-functions.js');
-const fourGameAiContent = require('./four-game-ai-content-functions.js');
+const twoSpaceAiContent = require('./four-game-ai-content-functions.js');
 const aiCharacterPanel = require('./ai-character-panel-functions.js');
 const removedQuizCompat = require('./six-game-functions.js');
 const adminAutomation = require('./ai-admin-automation-functions.js');
@@ -65,12 +65,12 @@ module.exports = {
 
   ...sitemap,
 
-  // Anthropic 기반 AI 미션/자동 콘텐츠 기본 구현
+  // 기본 AI 콘텐츠 구현. 아래 토론/드립 전용 구현이 수동 생성 함수를 덮어씁니다.
   ...aiMission,
   ...aiContent,
 
-  // 관리자 수동 자동글 생성은 4가지 게임형 구조로 덮어씁니다.
-  ...fourGameAiContent,
+  // 관리자 수동 AI 데이터 생성은 토론/드립 글쓰기 구조로 고정합니다.
+  ...twoSpaceAiContent,
 
   // 게시글 작성 후 AI 캐릭터 사회자/토론/드립 패널 생성
   ...aiCharacterPanel,
@@ -93,7 +93,7 @@ module.exports = {
   // 주간 자동 생성 유지
   ...weeklyAiSchedule,
 
-  // 매일 3개 게임형 콘텐츠 자동 생성이 최종 dailyAiContent 기준입니다.
+  // 매일 자동 생성은 토론/드립 글쓰기 구조로 저장합니다.
   ...dailyAutoPost,
 
   // 이미지 업로드 fallback callable
@@ -108,7 +108,7 @@ module.exports = {
   // 조회수 중복/관리자 보정
   ...postView,
 
-  // 제거된 퀴즈 호출에 대한 호환 응답
+  // 제거된 기능 호출에 대한 호환 응답
   checkQuizAnswer: removedQuizCompat.checkQuizAnswer,
 
   // 카카오 소셜 로그인
