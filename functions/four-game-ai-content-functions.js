@@ -25,8 +25,8 @@ function clean(value, max = 500) {
 
 function normalizePreset(value) {
   const key = String(value || 'drip').trim();
-  if (['vote', 'debate', 'discussion', 'ox', 'day_room', 'day', 'judgment', 'court'].includes(key)) return 'vote';
-  if (['drip', 'cbattle', 'ended_room', 'ended', 'consult', 'quiz', 'advice', 'naming', 'translation'].includes(key)) return 'drip';
+  if (['vote', 'debate', 'discussion', 'ox', 'day_room', 'day'].includes(key)) return 'vote';
+  if (['drip', 'cbattle', 'ended_room', 'ended', 'naming', 'translation'].includes(key)) return 'drip';
   return PRESETS.includes(key) ? key : 'drip';
 }
 
@@ -83,15 +83,15 @@ function buildAiPanel(preset, doc) {
       question: isVote ? '어느 쪽인지 투표하고 이유를 한 줄로 남겨주세요.' : '이 상황을 더 웃긴 한 줄로 받아쳐주세요.',
     },
     characters: isVote ? [
-      { id: 'junho', name: '준호', emoji: '🗳️', role: '토론러', stance: 'VS 구도 정리', lines: ['이건 돈을 아끼는 문제가 아니라 만족도를 어디에 두느냐의 문제입니다.'], punchline: '토론소는 사소할수록 더 치열합니다.' },
-      { id: 'jieun', name: '지은', emoji: '🧠', role: '똑똑이', stance: '현실 분석', lines: ['가격보다 중요한 건 후회 확률입니다. 먹고 후회할지, 안 먹고 후회할지부터 봐야 합니다.'], punchline: '이건 소비가 아니라 후회 관리입니다.' },
-      { id: 'cheolgu', name: '철구', emoji: '😈', role: '매운맛', stance: '허점 찌르기', lines: ['참는다고 내일 부자가 되진 않는데, 시키면 오늘은 행복할 수 있습니다.'], punchline: '지갑은 울고 배는 박수칠 안건입니다.' },
+      { id: 'rebel', name: '반항아', emoji: '😤', role: '삐딱한 반대충', stance: '일단 반대쪽부터 봄', lines: ['다들 행복을 말하지만 저는 지갑의 표정을 먼저 봅니다.'], punchline: '저는 일단 반대합니다. 이유는 결제창이 알고 있습니다.' },
+      { id: 'bothsides', name: '갈팡러', emoji: '🤔', role: '양쪽 다 맞는 중립러', stance: '둘 다 그럴듯함', lines: ['시켜 먹으면 행복하고, 참으면 통장이 웃습니다. 양쪽이 다 너무 설득력 있습니다.'], punchline: '제 결론은 명확합니다. 오늘도 결론을 보류하겠습니다.' },
+      { id: 'fact', name: '팩폭러', emoji: '🧊', role: '차가운 요약러', stance: '핵심만 정리', lines: ['핵심은 하나입니다. 지금 배고픔이 내일 후회보다 센가입니다.'], punchline: '이건 배달비 문제가 아니라 후회비 문제입니다.' },
     ] : [
-      { id: 'minsu', name: '민수', emoji: '😂', role: '드립왕', stance: '커뮤식 한 줄', lines: ['퇴근 5분 전 회의는 사실상 현대인의 매복 공격입니다.'], punchline: '이건 회의가 아니라 퇴근길 검문소입니다.' },
-      { id: 'cheolgu', name: '철구', emoji: '😈', role: '매운맛', stance: '현실 찌르기', lines: ['잠깐이라고 한 사람 중에 진짜 잠깐인 사람 거의 못 봤습니다.'], punchline: '잠깐 회의 = 오늘 저녁 압수.' },
-      { id: 'jieun', name: '지은', emoji: '🧠', role: '똑똑이', stance: '상황 분석', lines: ['웃음 포인트는 ‘잠깐’이라는 말과 현실 시간의 괴리입니다.'], punchline: '단어는 잠깐인데 피해는 장기전입니다.' },
+      { id: 'jujup', name: '주접러', emoji: '😍', role: '호들갑 칭찬러', stance: '소재를 크게 띄움', lines: ['퇴근 5분 전 회의라니, 이건 직장인 세계관 최종 보스입니다.'], punchline: '이 상황은 그냥 지나가면 드립 예의가 아닙니다.' },
+      { id: 'madcap', name: '광기러', emoji: '🤪', role: '이상한 상상러', stance: '세계관 확장', lines: ['잠깐 회의는 사실 퇴근을 잡아먹는 포켓몬입니다.'], punchline: '현실이 오늘 퇴근 버튼을 잘못 눌렀습니다.' },
+      { id: 'ajae', name: '아재봇', emoji: '🧓', role: '썰렁 개그 담당', stance: '일부러 낡은 말장난', lines: ['회의가 길어지면 회의감도 길어집니다.'], punchline: '이건 회의가 아니라 회의감입니다.' },
     ],
-    bestLines: isVote ? ['지갑은 울고 배는 박수칠 안건입니다.', '이건 소비가 아니라 후회 관리입니다.'] : ['잠깐 회의 = 오늘 저녁 압수.', '이건 회의가 아니라 퇴근길 검문소입니다.'],
+    bestLines: isVote ? ['이건 배달비 문제가 아니라 후회비 문제입니다.', '제 결론은 명확합니다. 오늘도 결론을 보류하겠습니다.'] : ['현실이 오늘 퇴근 버튼을 잘못 눌렀습니다.', '이건 회의가 아니라 회의감입니다.'],
     commentPrompt: isVote ? '투표하고 한 줄 이유를 남겨주세요.' : '더 웃긴 이름이나 한 줄 드립을 댓글로 남겨주세요.',
     model: 'fallback',
     generatedAt: FieldValue.serverTimestamp(),
@@ -132,8 +132,8 @@ function buildDoc(preset, actorId) {
     updatedAt: FieldValue.serverTimestamp(),
   };
   if (isVote) {
-    const options = Array.isArray(data.options) && data.options.length >= 2 ? data.options : ['찬성', '반대'];
-    doc.modules.vote = { enabled: true, voteMode: 'pros_cons', question: doc.desc, options: options.slice(0, 4).map(text => ({ text, votes: 0 })) };
+    const options = Array.isArray(data.options) && data.options.length >= 2 ? data.options : ['왼쪽', '오른쪽'];
+    doc.modules.vote = { enabled: true, voteMode: 'pros_cons', question: doc.desc, options: options.slice(0, 2).map(text => ({ text, votes: 0 })) };
   } else {
     doc.modules.drip = { enabled: true, prompt: doc.desc, maxLength: 50, responseLabel: '한 줄 드립' };
   }
