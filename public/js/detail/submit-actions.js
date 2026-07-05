@@ -42,7 +42,7 @@ export async function submitDetailComment(postId, data = {}) {
 }
 
 export async function submitCbattleComment(postId, text, side, guestName = '') {
-  if (!side) throw new Error('A팀 또는 B팀을 선택해주세요');
+  if (!side) throw new Error('왼쪽 또는 오른쪽을 선택해주세요');
   return submitDetailComment(postId, { text, side, guestName });
 }
 
@@ -83,6 +83,10 @@ export function bindCbattleSideButtons(root = document) {
       event.preventDefault();
       root.querySelectorAll('.cbattle-side-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
+      const input = root.querySelector('#comment-input');
+      const label = btn.querySelector('.cbattle-ox-label')?.textContent?.trim() || '';
+      const sideText = btn.dataset.side === 'A' ? '왼쪽' : '오른쪽';
+      if (input) input.placeholder = `${sideText} 의견 작성 중 · ${label}을 선택한 이유를 적어주세요.`;
     });
   });
 }
