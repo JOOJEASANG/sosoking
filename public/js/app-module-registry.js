@@ -6,6 +6,9 @@
 export const POST_BOOT_MODULES = [
   './owner-edit-route-override.js',
   './app-stability-suite.js',
+  './detail-actions-bootstrap.js',
+  './multi-detail.js',
+  './ai-character-panel-ui.js',
   './site-operation-cleanup.js',
 ];
 
