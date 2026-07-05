@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "소소킹 - 피드와 게임",
+  "name": "소소킹 - 웃긴토론과 드립",
   "short_name": "소소킹",
-  "description": "투표, 작명, 드립, 퀴즈, 라이어게임, 마피아게임으로 짧게 즐기는 참여형 커뮤니티",
+  "description": "토론과 드립으로 짧게 즐기는 AI 캐릭터 참여형 커뮤니티",
   "start_url": "/?source=pwa",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
