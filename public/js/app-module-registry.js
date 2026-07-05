@@ -9,6 +9,7 @@ export const POST_BOOT_MODULES = [
   './detail-actions-bootstrap.js',
   './multi-detail.js',
   './ai-character-panel-ui.js',
+  './two-space-detail-polish.js',
   './site-operation-cleanup.js',
 ];
 
