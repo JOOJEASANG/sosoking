@@ -7,7 +7,8 @@ const db = getFirestore();
 const REGION = 'asia-northeast3';
 
 const MULTI_KINDS = Object.freeze({
-  naming: { collection: 'multi_naming', module: 'naming', label: '작명 참여' },
+  // Firestore rules already expose multi_items, so naming uses that stable path.
+  naming: { collection: 'multi_items', module: 'naming', label: '작명 참여' },
   drip: { collection: 'multi_drip', module: 'drip', label: '드립 참여' },
   fill: { collection: 'multi_fill', module: 'fill', label: '빈칸채우기 참여' },
 });
@@ -25,6 +26,10 @@ function cleanId(value, max = 160) {
 
 function cleanText(value, max = 500) {
   return String(value || '').replace(/[<>]/g, '').trim().slice(0, max);
+}
+
+function normalizeAnswer(value) {
+  return String(value || '').trim().replace(/\s+/g, '').toLowerCase();
 }
 
 function requireUser(request) {
@@ -196,7 +201,7 @@ const castMultiVote = onCall({ region: REGION, timeoutSeconds: 20 }, async reque
     const options = Array.isArray(vote.options) ? vote.options : [];
     if (!options[optionIdx]) throw new HttpsError('invalid-argument', '선택지가 올바르지 않습니다.');
     const votedBy = Array.isArray(vote.votedBy) ? vote.votedBy : [];
-    if (votedBy.includes(uid)) throw new HttpsError('already-exists', '이미 투표한 게시글입니다.');
+    if (votedBy.includes(uid)) throw new HttpsError('already-exists', '이미 투표했습니다.');
 
     const nextOptions = options.map((option, index) => index === optionIdx
       ? { ...option, votes: Number(option.votes || 0) + 1 }
@@ -350,9 +355,110 @@ const reactMultiItem = onCall({ region: REGION, timeoutSeconds: 20 }, async requ
   return { ok: true, reactionAdded, awarded, points: awarded ? POINT_RULES.reaction_received.points : 0 };
 });
 
+function extractQuizAnswer(quiz = {}, secret = {}) {
+  const values = [
+    quiz.answer,
+    quiz.correctAnswer,
+    quiz.correct,
+    quiz.solution,
+    secret.answer,
+    secret.correctAnswer,
+    secret.correct,
+    secret.solution,
+  ].filter(value => value !== undefined && value !== null);
+
+  const answers = [
+    ...(Array.isArray(quiz.answers) ? quiz.answers : []),
+    ...(Array.isArray(secret.answers) ? secret.answers : []),
+    ...values,
+  ].map(value => normalizeAnswer(typeof value === 'object' ? value.text : value)).filter(Boolean);
+
+  const correctIndex = Number.isInteger(Number(quiz.correctIndex)) ? Number(quiz.correctIndex)
+    : Number.isInteger(Number(quiz.answerIndex)) ? Number(quiz.answerIndex)
+      : Number.isInteger(Number(secret.correctIndex)) ? Number(secret.correctIndex)
+        : Number.isInteger(Number(secret.answerIndex)) ? Number(secret.answerIndex)
+          : null;
+
+  return { answers, correctIndex };
+}
+
+const checkMultiQuizAnswer = onCall({ region: REGION, timeoutSeconds: 20 }, async request => {
+  const uid = requireUser(request);
+  const safePostId = cleanId(request.data && request.data.postId);
+  if (!safePostId) throw new HttpsError('invalid-argument', '게시글 정보가 없습니다.');
+
+  const postRef = db.doc(`feeds/${safePostId}`);
+  const postSnap = await postRef.get();
+  if (!postSnap.exists) throw new HttpsError('not-found', '게시글을 찾을 수 없습니다.');
+  const post = postSnap.data() || {};
+  if (post.hidden === true || post.type !== 'multi' || post.modules?.quiz?.enabled !== true) {
+    throw new HttpsError('failed-precondition', '정답 확인이 가능한 퀴즈가 아닙니다.');
+  }
+
+  const quiz = post.modules.quiz || {};
+  if (quiz.noAnswer === true) {
+    return { ok: true, correct: false, noAnswer: true, explanation: quiz.explanation || '정답 없는 퀴즈입니다.' };
+  }
+
+  const secretSnap = await postRef.collection('secret').doc('answer').get().catch(() => null);
+  const secret = secretSnap && secretSnap.exists ? secretSnap.data() || {} : {};
+  const { answers, correctIndex } = extractQuizAnswer(quiz, secret);
+  const selected = request.data && request.data.selected;
+
+  let correct = false;
+  if (Number.isInteger(Number(selected)) && correctIndex !== null) {
+    correct = Number(selected) === correctIndex;
+  } else {
+    correct = answers.includes(normalizeAnswer(selected));
+  }
+
+  const markerRef = postRef.collection('quiz_answers').doc(uid);
+  let alreadyCorrect = false;
+  let correctCount = Number(quiz.correctCount || 0);
+  let firstCorrect = quiz.firstCorrect || null;
+
+  if (correct) {
+    const user = await getAuthorInfo(uid, request.auth?.token || {});
+    await db.runTransaction(async tx => {
+      const freshPost = await tx.get(postRef);
+      const freshQuiz = freshPost.data()?.modules?.quiz || {};
+      const markerSnap = await tx.get(markerRef);
+      alreadyCorrect = markerSnap.exists && markerSnap.data()?.correct === true;
+      correctCount = Number(freshQuiz.correctCount || 0);
+      firstCorrect = freshQuiz.firstCorrect || null;
+      if (!alreadyCorrect) {
+        correctCount += 1;
+        if (!firstCorrect) firstCorrect = { uid, authorName: user.authorName, createdAtMs: Date.now() };
+        tx.set(markerRef, {
+          uid,
+          selected: cleanText(selected, 200),
+          correct: true,
+          createdAt: FieldValue.serverTimestamp(),
+          createdAtMs: Date.now(),
+        }, { merge: true });
+        tx.set(postRef, {
+          'modules.quiz.correctCount': correctCount,
+          'modules.quiz.firstCorrect': firstCorrect,
+          updatedAt: FieldValue.serverTimestamp(),
+        }, { merge: true });
+      }
+    });
+  }
+
+  return {
+    ok: true,
+    correct,
+    alreadyCorrect,
+    correctCount,
+    firstCorrect,
+    explanation: correct ? (quiz.explanation || secret.explanation || '') : '',
+  };
+});
+
 module.exports = {
   castMultiVote,
   addMultiParticipation,
   addMultiItemReply,
   reactMultiItem,
+  checkMultiQuizAnswer,
 };
