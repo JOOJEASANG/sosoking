@@ -10,8 +10,6 @@ import './write-normalizer.js';
 import './account-secure-actions.js';
 import './admin-session-guard.js';
 import './admin-password-actions.js';
-import './admin-ai-mission-actions.js';
-import './admin-ai-ops-actions.js';
 import './admin-post-list-normalizer.js';
 import './nickname-icon-actions.js';
 import './social-play-enhancer.js';
@@ -44,7 +42,7 @@ async function loadUserMeta(uid) {
     const [notifSnap, userSnap, adminSnap] = await Promise.all([
       getDocs(query(
         collection(db, 'notifications'),
-        where('userId', '==', uid),
+        where('uid', '==', uid),
         where('read', '==', false),
         limit(100),
       )),
@@ -91,7 +89,7 @@ export async function initApp() {
                 <div class="site-footer__col-title">바로가기</div>
                 <div class="site-footer__links">
                   <a href="#/feed">게시판</a>
-                  <a href="#/write?type=multi&preset=collect">글쓰기</a>
+                  <a href="#/write?type=multi&preset=judgment">글쓰기</a>
                   <a href="#/guide">이용안내</a>
                 </div>
               </div>
