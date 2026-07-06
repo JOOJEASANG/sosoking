@@ -77,10 +77,10 @@ async function registerRoutes() {
   registerRoute('/login', async () => renderPage((await import('./pages/login.js')).renderLogin, '로그인'));
   registerRoute('/signup', async () => renderPage((await import('./pages/signup.js')).renderSignup, '회원가입'));
   registerRoute('/guide', async () => renderPage(renderGuideSafe, '이용안내'));
-  registerRoute('/terms', async () => renderPage((await import('./pages/legal.js')).renderTerms, '이용약관'));
-  registerRoute('/privacy', async () => renderPage((await import('./pages/legal.js')).renderPrivacy, '개인정보처리방침'));
-  registerRoute('/legal/terms', async () => renderPage((await import('./pages/legal.js')).renderTerms, '이용약관'));
-  registerRoute('/legal/privacy', async () => renderPage((await import('./pages/legal.js')).renderPrivacy, '개인정보처리방침'));
+  registerRoute('/terms', async () => renderPage((await import('./pages/terms.js')).renderTerms, '이용약관'));
+  registerRoute('/privacy', async () => renderPage((await import('./pages/privacy.js')).renderPrivacy, '개인정보처리방침'));
+  registerRoute('/legal/terms', async () => renderPage((await import('./pages/terms.js')).renderTerms, '이용약관'));
+  registerRoute('/legal/privacy', async () => renderPage((await import('./pages/privacy.js')).renderPrivacy, '개인정보처리방침'));
 }
 
 async function isStrictAdmin(user) {
