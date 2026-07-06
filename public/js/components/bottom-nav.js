@@ -21,23 +21,22 @@ function iconStats() {
   return svgIcon('<path stroke-linecap="round" stroke-linejoin="round" d="M4 19V5m0 14h16M8 16v-5m4 5V8m4 8v-9"/>');
 }
 
-function iconGame() {
-  return svgIcon('<path stroke-linecap="round" stroke-linejoin="round" d="M6.75 7.5h10.5A3.75 3.75 0 0 1 21 11.25v3A3.75 3.75 0 0 1 17.25 18h-.3a2.25 2.25 0 0 1-1.8-.9l-.9-1.2h-4.5l-.9 1.2a2.25 2.25 0 0 1-1.8.9h-.3A3.75 3.75 0 0 1 3 14.25v-3A3.75 3.75 0 0 1 6.75 7.5Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 12h3m-1.5-1.5v3M15.75 11.25h.01M17.25 13.5h.01"/>');
+function iconAccount() {
+  return svgIcon('<path stroke-linecap="round" stroke-linejoin="round" d="M15.75 7.5a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.5 20.25a7.5 7.5 0 0 1 15 0"/>');
 }
 
 function isNavActive(navPath, currentPath) {
   if (navPath.startsWith('/write')) return currentPath === '/write';
-  if (navPath === '/games') return currentPath === '/games' || currentPath.startsWith('/game/');
   return currentPath === navPath;
 }
 
 function navItems() {
   return [
-    { id: 'home',      label: '홈',       path: '/',                                 icon: iconHome() },
-    { id: 'feed',      label: '커뮤니티', path: '/feed',                             icon: iconCommunity() },
-    { id: 'write',     label: '열기',     path: '/write?type=multi&preset=judgment', icon: iconPlus(), isCenter: true },
-    { id: 'hall',      label: '랭킹',     path: '/hall',                             icon: iconStats() },
-    { id: 'games',     label: '게임',     path: '/games',                            icon: iconGame() },
+    { id: 'home',    label: '홈',       path: '/',                                 icon: iconHome() },
+    { id: 'feed',    label: '커뮤니티', path: '/feed',                             icon: iconCommunity() },
+    { id: 'write',   label: '열기',     path: '/write?type=multi&preset=judgment', icon: iconPlus(), isCenter: true },
+    { id: 'hall',    label: '랭킹',     path: '/hall',                             icon: iconStats() },
+    { id: 'account', label: '내 정보',  path: '/account',                          icon: iconAccount() },
   ];
 }
 
