@@ -1,3 +1,0 @@
-deploy trigger for latest main changes
-created_at=2026-05-29
-purpose=trigger firebase hosting workflow after workflow file creation
