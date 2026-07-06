@@ -65,20 +65,9 @@ async function renderGuideSafe() {
   return module.renderGuide();
 }
 
-async function renderCharacterGamesSafe(mode) {
-  const module = await import('./pages/character-games.js');
-  return module.renderCharacterGames(mode);
-}
-
-async function renderRoleRoomSafe(id) {
-  const module = await import('./pages/role-room.js');
-  return module.renderRoleRoom(id);
-}
-
 async function registerRoutes() {
   registerRoute('/', async () => renderPage((await import('./pages/home.js')).renderHome, '홈'));
   registerRoute('/feed', async () => renderPage((await import('./pages/feed.js')).renderFeed, '커뮤니티'));
-  registerRoute('/games', async () => renderPage(() => renderCharacterGamesSafe('mafia'), '캐릭터 게임장'));
   registerRoute('/hall', async () => renderPage((await import('./pages/hall.js')).renderHall, '랭킹'));
   registerRoute('/account', async () => renderPage(renderAccountSafe, '내 정보'));
   registerRoute('/scraps', async () => renderPage((await import('./pages/scraps.js')).renderScraps, '스크랩'));
@@ -92,22 +81,6 @@ async function registerRoutes() {
   registerRoute('/privacy', async () => renderPage((await import('./pages/legal.js')).renderPrivacy, '개인정보처리방침'));
   registerRoute('/legal/terms', async () => renderPage((await import('./pages/legal.js')).renderTerms, '이용약관'));
   registerRoute('/legal/privacy', async () => renderPage((await import('./pages/legal.js')).renderPrivacy, '개인정보처리방침'));
-  registerRoute('/sosoland', async () => renderPage(() => renderCharacterGamesSafe('mafia'), '캐릭터 게임장'));
-  registerRoute('/game/room/:id', async ({ id }) => renderPage(() => renderRoleRoomSafe(id), '추리방'));
-  registerRoute('/game/shadow-room/:id', async ({ id }) => renderPage(() => renderRoleRoomSafe(id), '추리방'));
-  registerRoute('/game/mafia-room/:id', async ({ id }) => renderPage(() => renderRoleRoomSafe(id), '추리방'));
-  registerRoute('/game/mafia', async () => renderPage(() => renderCharacterGamesSafe('mafia'), '마피아'));
-  registerRoute('/game/mafia/:id', async ({ id }) => renderPage(() => renderRoleRoomSafe(id), '추리방'));
-  registerRoute('/game/liar', async () => renderPage(() => renderCharacterGamesSafe('liar'), '라이어'));
-  registerRoute('/game/liar/:id', async ({ id }) => renderPage(() => renderRoleRoomSafe(id), '추리방'));
-  registerRoute('/game/mystery', async () => renderPage(() => renderCharacterGamesSafe('mystery'), '추리'));
-  registerRoute('/game/touch-king', async () => renderPage(() => renderCharacterGamesSafe('mystery'), '추리'));
-  registerRoute('/game/touch-king/:id', async ({ id }) => renderPage(() => renderRoleRoomSafe(id), '추리방'));
-  registerRoute('/game/symbol-spy', async () => renderPage(() => renderCharacterGamesSafe('liar'), '라이어'));
-  registerRoute('/game/symbol-spy/:id', async ({ id }) => renderPage(() => renderRoleRoomSafe(id), '추리방'));
-  registerRoute('/game/soso-defense', async () => renderPage(() => renderCharacterGamesSafe('mystery'), '추리'));
-  registerRoute('/game/soso-code', async () => renderPage(() => renderCharacterGamesSafe('mystery'), '추리'));
-  registerRoute('/game/ai-court', async () => renderPage(() => renderCharacterGamesSafe('mystery'), '추리'));
 }
 
 async function isStrictAdmin(user) {
@@ -179,7 +152,7 @@ function renderFrame() {
         <main id="page-content" class="page-container"></main>
         <footer class="site-footer" id="site-footer">
           <div class="site-footer__body" id="footer-body" hidden>
-            <div><b>소소킹</b> · AI 캐릭터 게임형 커뮤니티</div>
+            <div><b>소소킹</b> · AI 캐릭터 참여형 커뮤니티</div>
             <div class="site-footer__links">
               <a href="#/terms">이용약관</a>
               <a href="#/privacy">개인정보처리방침</a>
