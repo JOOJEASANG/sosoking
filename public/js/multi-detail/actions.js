@@ -7,8 +7,12 @@ const callAddMultiParticipation = httpsCallable(functions, 'addMultiParticipatio
 const callAddMultiItemReply = httpsCallable(functions, 'addMultiItemReply');
 const callReactMultiItem = httpsCallable(functions, 'reactMultiItem');
 
+function collectionForKind(kind) {
+  return kind === 'naming' ? 'multi_items' : `multi_${kind}`;
+}
+
 export async function fetchItems(postId, kind) {
-  const snap = await getDocs(query(collection(db, 'feeds', postId, `multi_${kind}`), orderBy('createdAt', 'asc')));
+  const snap = await getDocs(query(collection(db, 'feeds', postId, collectionForKind(kind)), orderBy('createdAt', 'asc')));
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
 
@@ -18,7 +22,7 @@ export async function addParticipation(postId, kind, data) {
 }
 
 export function itemRef(postId, kind, itemId) {
-  return doc(db, 'feeds', postId, `multi_${kind}`, itemId);
+  return doc(db, 'feeds', postId, collectionForKind(kind), itemId);
 }
 
 export async function addItemReaction(postId, kind, itemId, key) {
@@ -27,7 +31,7 @@ export async function addItemReaction(postId, kind, itemId, key) {
 }
 
 export async function fetchReplies(postId, kind, itemId) {
-  const snap = await getDocs(query(collection(db, 'feeds', postId, `multi_${kind}`, itemId, 'replies'), orderBy('createdAt', 'asc')));
+  const snap = await getDocs(query(collection(db, 'feeds', postId, collectionForKind(kind), itemId, 'replies'), orderBy('createdAt', 'asc')));
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
 
