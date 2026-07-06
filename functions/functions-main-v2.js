@@ -53,6 +53,7 @@ module.exports = {
   addMultiParticipation: secureMulti.addMultiParticipation,
   addMultiItemReply: secureMulti.addMultiItemReply,
   reactMultiItem: secureMulti.reactMultiItem,
+  checkMultiQuizAnswer: secureMulti.checkMultiQuizAnswer,
   finalizeBestReward: bestReward.finalizeBestReward,
 
   // 상세 상호작용 보안 액션
