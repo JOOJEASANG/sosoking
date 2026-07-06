@@ -1,0 +1,108 @@
+name: Deploy Firebase
+
+# 모든 자동 배포는 이 워크플로 하나로 통일합니다.
+# 현재 서비스 계정은 Firebase Storage 기본 버킷 조회 권한이 없어 Storage rules 자동 배포를 제외합니다.
+# Storage rules 배포가 필요하면 Firebase 콘솔/IAM에서 권한 또는 기본 버킷을 먼저 정리한 뒤 수동 배포하세요.
+on:
+  push:
+    branches:
+      - main
+      - 'claude/**'
+    paths:
+      - 'public/**'
+      - 'functions/**'
+      - 'firebase.json'
+      - '.firebaserc'
+      - 'firestore.rules'
+      - 'firestore.indexes.json'
+      - '.github/workflows/firebase-deploy.yml'
+      - '.github/deploy-trigger.txt'
+  workflow_dispatch:
+
+concurrency:
+  group: firebase-full-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy to Firebase
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    env:
+      FIREBASE_PROJECT_ID: sosoking-481e6
+      FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install functions dependencies
+        run: npm ci
+        working-directory: functions
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Write Firebase service account
+        run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
+            echo "FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 secret이 설정되지 않았습니다."
+            exit 1
+          fi
+          echo "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-service-account.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/firebase-service-account.json" >> "$GITHUB_ENV"
+
+      - name: Register GEMINI_API_KEY in Secret Manager
+        if: ${{ env.GEMINI_API_KEY != '' }}
+        run: |
+          printf '%s' "$GEMINI_API_KEY" | \
+            firebase functions:secrets:set GEMINI_API_KEY \
+              --data-file=- --project "$FIREBASE_PROJECT_ID" || \
+            echo "::warning::GEMINI_API_KEY Secret Manager 등록 실패 (권한 확인 필요)"
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+
+      - name: Register ANTHROPIC_API_KEY in Secret Manager
+        if: ${{ env.ANTHROPIC_API_KEY != '' }}
+        run: |
+          printf '%s' "$ANTHROPIC_API_KEY" | \
+            firebase functions:secrets:set ANTHROPIC_API_KEY \
+              --data-file=- --project "$FIREBASE_PROJECT_ID" || \
+            echo "::warning::ANTHROPIC_API_KEY Secret Manager 등록 실패 (권한 확인 필요)"
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      - name: Deploy Firestore rules & indexes
+        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only firestore:rules,firestore:indexes
+
+      - name: Deploy Hosting
+        run: |
+          set +e
+          firebase deploy --project "$FIREBASE_PROJECT_ID" --only hosting 2>&1 | tee "$RUNNER_TEMP/firebase-hosting-deploy.log"
+          status=${PIPESTATUS[0]}
+          set -e
+
+          if [ "$status" -eq 0 ]; then
+            exit 0
+          fi
+
+          if grep -q "current active version" "$RUNNER_TEMP/firebase-hosting-deploy.log"; then
+            echo "::notice::Firebase Hosting supplied version is already active. Treating as success."
+            exit 0
+          fi
+
+          exit "$status"
+
+      - name: Deploy Functions
+        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only functions --force

@@ -1,0 +1,41 @@
+.site-header__logo span,
+.sidebar__brand-name,
+.site-footer__brand span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.site-header__logo span::after,
+.sidebar__brand-name::after,
+.site-footer__brand span::after {
+  content: 'BETA';
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(255, 107, 74, .16), rgba(255, 178, 87, .2));
+  border: 1px solid rgba(255, 107, 74, .35);
+  color: var(--color-primary);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .04em;
+  line-height: 1;
+  transform: translateY(-1px);
+}
+
+.site-footer__brand span::after {
+  height: 16px;
+  font-size: 9px;
+  padding: 0 5px;
+}
+
+@media (max-width: 767px) {
+  .site-header__logo span::after {
+    height: 16px;
+    padding: 0 5px;
+    font-size: 9px;
+  }
+}
