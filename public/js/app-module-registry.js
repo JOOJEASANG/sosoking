@@ -36,7 +36,6 @@ export const EXTENSION_MODULES = [
   './detail-cards.js',
   './multi-write.js',
   './four-game-polish.js',
-  './live-role-room-entry.js',
   './write-edit-router-fix.js',
   './write-edit-save-fix.js',
   './edit-screen-polish.js',
