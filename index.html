@@ -1,0 +1,888 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SOSOKING | 새로운 시작을 위한 스마트 사이트</title>
+  <meta name="description" content="SOSOKING의 새로운 웹사이트입니다. 깔끔한 소개, 서비스 안내, 문의 동선을 담은 반응형 랜딩페이지입니다.">
+  <meta property="og:title" content="SOSOKING">
+  <meta property="og:description" content="빠르고 깔끔하게 완성하는 새로운 사이트">
+  <meta property="og:type" content="website">
+  <style>
+    :root {
+      --bg: #f7f8fb;
+      --panel: rgba(255, 255, 255, 0.88);
+      --text: #111827;
+      --muted: #5f6b7a;
+      --line: rgba(17, 24, 39, 0.1);
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --accent: #16a34a;
+      --shadow: 0 22px 60px rgba(17, 24, 39, 0.12);
+      --radius: 28px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      font-family: Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 8% 12%, rgba(37, 99, 235, 0.16), transparent 34%),
+        radial-gradient(circle at 86% 8%, rgba(22, 163, 74, 0.14), transparent 30%),
+        linear-gradient(180deg, #ffffff 0%, var(--bg) 48%, #ffffff 100%);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .container {
+      width: min(1120px, calc(100% - 40px));
+      margin: 0 auto;
+    }
+
+    .skip-link {
+      position: absolute;
+      top: -48px;
+      left: 20px;
+      background: var(--text);
+      color: #fff;
+      padding: 12px 16px;
+      border-radius: 12px;
+      z-index: 100;
+    }
+
+    .skip-link:focus {
+      top: 20px;
+    }
+
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      backdrop-filter: blur(18px);
+      background: rgba(255, 255, 255, 0.76);
+      border-bottom: 1px solid rgba(17, 24, 39, 0.08);
+    }
+
+    .nav {
+      height: 76px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+    }
+
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      color: #fff;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      box-shadow: 0 12px 28px rgba(37, 99, 235, 0.25);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #3f4a58;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .nav-links a {
+      padding: 10px 14px;
+      border-radius: 999px;
+    }
+
+    .nav-links a:hover {
+      background: rgba(37, 99, 235, 0.08);
+      color: var(--primary);
+    }
+
+    .hero {
+      position: relative;
+      padding: 82px 0 64px;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 54px;
+      align-items: center;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      padding: 9px 14px;
+      border: 1px solid rgba(37, 99, 235, 0.16);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.82);
+      color: var(--primary-dark);
+      font-size: 14px;
+      font-weight: 800;
+      box-shadow: 0 10px 30px rgba(37, 99, 235, 0.08);
+    }
+
+    .pulse {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 8px rgba(22, 163, 74, 0.12);
+    }
+
+    h1 {
+      margin: 24px 0 18px;
+      font-size: clamp(44px, 8vw, 84px);
+      line-height: 0.98;
+      letter-spacing: -0.08em;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 640px;
+      color: var(--muted);
+      font-size: clamp(17px, 2.2vw, 21px);
+      line-height: 1.7;
+      letter-spacing: -0.025em;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 34px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      min-height: 52px;
+      padding: 0 22px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+
+    .button:hover {
+      transform: translateY(-2px);
+    }
+
+    .button.primary {
+      color: #fff;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      box-shadow: 0 18px 34px rgba(37, 99, 235, 0.26);
+    }
+
+    .button.secondary {
+      background: rgba(255, 255, 255, 0.82);
+      border-color: rgba(17, 24, 39, 0.12);
+      color: #263445;
+    }
+
+    .visual-card {
+      position: relative;
+      min-height: 540px;
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      border-radius: 38px;
+      background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.55)),
+        linear-gradient(135deg, rgba(37, 99, 235, 0.14), rgba(22, 163, 74, 0.12));
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      isolation: isolate;
+    }
+
+    .visual-card::before,
+    .visual-card::after {
+      content: "";
+      position: absolute;
+      border-radius: 999px;
+      filter: blur(2px);
+      z-index: -1;
+    }
+
+    .visual-card::before {
+      width: 310px;
+      height: 310px;
+      right: -68px;
+      top: -58px;
+      background: rgba(37, 99, 235, 0.18);
+    }
+
+    .visual-card::after {
+      width: 240px;
+      height: 240px;
+      left: -82px;
+      bottom: -76px;
+      background: rgba(22, 163, 74, 0.16);
+    }
+
+    .phone-frame {
+      position: absolute;
+      right: 46px;
+      top: 64px;
+      width: min(300px, 68%);
+      min-height: 430px;
+      padding: 18px;
+      border: 10px solid #111827;
+      border-radius: 36px;
+      background: #ffffff;
+      box-shadow: 0 28px 70px rgba(17, 24, 39, 0.24);
+    }
+
+    .screen-line {
+      height: 13px;
+      margin-bottom: 12px;
+      border-radius: 999px;
+      background: #e7ecf4;
+    }
+
+    .screen-line:nth-child(2) { width: 58%; }
+    .screen-line:nth-child(3) { width: 82%; }
+    .screen-line:nth-child(4) { width: 68%; }
+
+    .mini-panel {
+      margin-top: 24px;
+      padding: 18px;
+      border-radius: 24px;
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(22, 163, 74, 0.12));
+      border: 1px solid rgba(37, 99, 235, 0.12);
+    }
+
+    .mini-panel strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 20px;
+      letter-spacing: -0.04em;
+    }
+
+    .mini-panel span {
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .floating-note {
+      position: absolute;
+      left: 34px;
+      bottom: 54px;
+      width: 240px;
+      padding: 22px;
+      border-radius: 26px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(17, 24, 39, 0.08);
+      box-shadow: 0 18px 46px rgba(17, 24, 39, 0.14);
+    }
+
+    .floating-note b {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 28px;
+      letter-spacing: -0.05em;
+    }
+
+    .floating-note span {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    section {
+      padding: 72px 0;
+    }
+
+    .section-heading {
+      max-width: 760px;
+      margin-bottom: 30px;
+    }
+
+    .section-heading span {
+      color: var(--primary);
+      font-weight: 900;
+      letter-spacing: -0.02em;
+    }
+
+    .section-heading h2 {
+      margin: 10px 0 12px;
+      font-size: clamp(32px, 5vw, 54px);
+      line-height: 1.08;
+      letter-spacing: -0.07em;
+    }
+
+    .section-heading p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 18px;
+      line-height: 1.7;
+      letter-spacing: -0.025em;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+
+    .card {
+      min-height: 236px;
+      padding: 28px;
+      border: 1px solid rgba(17, 24, 39, 0.08);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: 0 16px 44px rgba(17, 24, 39, 0.07);
+    }
+
+    .card .icon {
+      display: grid;
+      place-items: center;
+      width: 52px;
+      height: 52px;
+      margin-bottom: 24px;
+      border-radius: 18px;
+      background: rgba(37, 99, 235, 0.1);
+      color: var(--primary-dark);
+      font-size: 24px;
+    }
+
+    .card h3 {
+      margin: 0 0 12px;
+      font-size: 23px;
+      letter-spacing: -0.045em;
+    }
+
+    .card p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.65;
+      letter-spacing: -0.02em;
+    }
+
+    .process {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      counter-reset: step;
+    }
+
+    .step {
+      position: relative;
+      padding: 26px;
+      border-radius: 26px;
+      background: #111827;
+      color: #fff;
+      overflow: hidden;
+      min-height: 230px;
+    }
+
+    .step::before {
+      counter-increment: step;
+      content: "0" counter(step);
+      display: inline-flex;
+      margin-bottom: 38px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+      color: rgba(255, 255, 255, 0.78);
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .step::after {
+      content: "";
+      position: absolute;
+      width: 130px;
+      height: 130px;
+      right: -48px;
+      top: -42px;
+      border-radius: 50%;
+      background: rgba(37, 99, 235, 0.32);
+    }
+
+    .step h3 {
+      margin: 0 0 12px;
+      font-size: 22px;
+      letter-spacing: -0.05em;
+    }
+
+    .step p {
+      margin: 0;
+      color: rgba(255, 255, 255, 0.72);
+      line-height: 1.6;
+    }
+
+    .showcase {
+      display: grid;
+      grid-template-columns: 0.95fr 1.05fr;
+      gap: 20px;
+      align-items: stretch;
+    }
+
+    .showcase-main,
+    .showcase-list {
+      border: 1px solid rgba(17, 24, 39, 0.08);
+      border-radius: 34px;
+      background: rgba(255, 255, 255, 0.86);
+      box-shadow: 0 16px 44px rgba(17, 24, 39, 0.07);
+    }
+
+    .showcase-main {
+      padding: 34px;
+      min-height: 460px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background:
+        linear-gradient(140deg, rgba(37, 99, 235, 0.12), rgba(22, 163, 74, 0.1)),
+        rgba(255, 255, 255, 0.86);
+    }
+
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .badge {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.72);
+      color: #334155;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .showcase-main h2 {
+      margin: 26px 0 16px;
+      font-size: clamp(34px, 4vw, 56px);
+      line-height: 1.06;
+      letter-spacing: -0.075em;
+    }
+
+    .showcase-main p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 18px;
+      line-height: 1.7;
+    }
+
+    .showcase-list {
+      padding: 18px;
+    }
+
+    .list-item {
+      display: grid;
+      grid-template-columns: 72px 1fr;
+      gap: 18px;
+      align-items: center;
+      padding: 18px;
+      border-radius: 24px;
+    }
+
+    .list-item + .list-item {
+      margin-top: 8px;
+    }
+
+    .list-item:hover {
+      background: rgba(37, 99, 235, 0.06);
+    }
+
+    .thumb {
+      width: 72px;
+      height: 72px;
+      border-radius: 22px;
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.18), rgba(22, 163, 74, 0.18));
+    }
+
+    .list-item h3 {
+      margin: 0 0 6px;
+      font-size: 19px;
+      letter-spacing: -0.04em;
+    }
+
+    .list-item p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .cta {
+      padding: 46px;
+      border-radius: 38px;
+      background: #111827;
+      color: #fff;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 24px;
+      align-items: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .cta::before {
+      content: "";
+      position: absolute;
+      width: 340px;
+      height: 340px;
+      right: -110px;
+      top: -140px;
+      border-radius: 50%;
+      background: rgba(37, 99, 235, 0.28);
+    }
+
+    .cta h2 {
+      position: relative;
+      margin: 0 0 10px;
+      font-size: clamp(30px, 5vw, 52px);
+      letter-spacing: -0.07em;
+    }
+
+    .cta p {
+      position: relative;
+      margin: 0;
+      color: rgba(255, 255, 255, 0.72);
+      line-height: 1.65;
+      font-size: 17px;
+    }
+
+    .cta .button {
+      position: relative;
+      background: #fff;
+      color: #111827;
+      box-shadow: none;
+      white-space: nowrap;
+    }
+
+    .site-footer {
+      padding: 34px 0 48px;
+      color: #6b7280;
+      font-size: 14px;
+    }
+
+    .footer-inner {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      border-top: 1px solid rgba(17, 24, 39, 0.08);
+      padding-top: 24px;
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 900px) {
+      .nav {
+        height: auto;
+        padding: 16px 0;
+        align-items: flex-start;
+      }
+
+      .nav-links {
+        display: none;
+      }
+
+      .hero {
+        padding-top: 56px;
+      }
+
+      .hero-grid,
+      .showcase,
+      .cta {
+        grid-template-columns: 1fr;
+      }
+
+      .visual-card {
+        min-height: 460px;
+      }
+
+      .phone-frame {
+        right: 26px;
+        top: 42px;
+      }
+
+      .floating-note {
+        left: 24px;
+        bottom: 30px;
+      }
+
+      .cards {
+        grid-template-columns: 1fr;
+      }
+
+      .process {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .container {
+        width: min(100% - 28px, 1120px);
+      }
+
+      .hero-actions,
+      .footer-inner {
+        flex-direction: column;
+      }
+
+      .button {
+        width: 100%;
+      }
+
+      .visual-card {
+        min-height: 420px;
+        border-radius: 28px;
+      }
+
+      .phone-frame {
+        width: 76%;
+        right: 16px;
+        min-height: 360px;
+      }
+
+      .floating-note {
+        width: 210px;
+        padding: 18px;
+      }
+
+      .process {
+        grid-template-columns: 1fr;
+      }
+
+      .showcase-main,
+      .cta {
+        padding: 28px;
+      }
+
+      .list-item {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">본문으로 이동</a>
+
+  <header class="site-header">
+    <div class="container nav">
+      <a class="brand" href="#top" aria-label="SOSOKING 홈">
+        <span class="brand-mark">S</span>
+        <span>SOSOKING</span>
+      </a>
+      <nav class="nav-links" aria-label="주요 메뉴">
+        <a href="#services">서비스</a>
+        <a href="#process">진행 방식</a>
+        <a href="#showcase">구성</a>
+        <a href="#contact">문의</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero" id="top">
+      <div class="container hero-grid">
+        <div class="hero-copy reveal">
+          <span class="eyebrow"><i class="pulse" aria-hidden="true"></i>새로운 사이트 오픈 준비 완료</span>
+          <h1>작고 빠르게,<br>멋지게 시작하는<br>SOSOKING.</h1>
+          <p>브랜드 소개부터 서비스 안내, 문의 연결까지 한 번에 보여주는 반응형 랜딩페이지입니다. 모바일과 PC에서 모두 보기 좋게 구성했습니다.</p>
+          <div class="hero-actions">
+            <a class="button primary" href="#contact">문의 영역 보기</a>
+            <a class="button secondary" href="#services">구성 살펴보기</a>
+          </div>
+        </div>
+
+        <div class="visual-card reveal" aria-label="웹사이트 미리보기 그래픽">
+          <div class="phone-frame">
+            <div class="screen-line"></div>
+            <div class="screen-line"></div>
+            <div class="screen-line"></div>
+            <div class="screen-line"></div>
+            <div class="mini-panel">
+              <strong>깔끔한 첫인상</strong>
+              <span>핵심 문구, 서비스 카드, 문의 버튼을 한 화면에 정리했습니다.</span>
+            </div>
+          </div>
+          <div class="floating-note">
+            <b>100%</b>
+            <span>HTML 한 파일로 구성되어 빠르게 수정하고 바로 배포할 수 있습니다.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="services">
+      <div class="container">
+        <div class="section-heading reveal">
+          <span>SERVICE</span>
+          <h2>필요한 내용을 간단하고 분명하게 보여줍니다.</h2>
+          <p>처음 방문한 사람도 어떤 사이트인지 바로 이해할 수 있도록 주요 영역을 정돈했습니다.</p>
+        </div>
+
+        <div class="cards">
+          <article class="card reveal">
+            <div class="icon" aria-hidden="true">01</div>
+            <h3>브랜드 소개</h3>
+            <p>SOSOKING의 첫 화면을 강하게 보여주고, 한눈에 기억되는 구조로 배치했습니다.</p>
+          </article>
+          <article class="card reveal">
+            <div class="icon" aria-hidden="true">02</div>
+            <h3>서비스 안내</h3>
+            <p>제공할 서비스나 상품을 카드형으로 정리해, 이후 내용 추가가 쉽도록 만들었습니다.</p>
+          </article>
+          <article class="card reveal">
+            <div class="icon" aria-hidden="true">03</div>
+            <h3>문의 연결</h3>
+            <p>하단 CTA 영역을 통해 전화, 카카오, 이메일 등 원하는 문의 방식으로 확장할 수 있습니다.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="process">
+      <div class="container">
+        <div class="section-heading reveal">
+          <span>PROCESS</span>
+          <h2>사이트 운영에 맞춘 간단한 흐름</h2>
+          <p>나중에 실제 사업 정보, 이미지, 연락처만 넣으면 바로 운영용 페이지로 바꿀 수 있습니다.</p>
+        </div>
+
+        <div class="process">
+          <article class="step reveal">
+            <h3>기획</h3>
+            <p>첫 화면, 서비스, 안내 문구, 문의 동선을 기준으로 기본 구조를 잡습니다.</p>
+          </article>
+          <article class="step reveal">
+            <h3>디자인</h3>
+            <p>밝고 전문적인 분위기의 카드형 레이아웃으로 신뢰감을 높입니다.</p>
+          </article>
+          <article class="step reveal">
+            <h3>반응형</h3>
+            <p>휴대폰, 태블릿, PC 화면에서 자연스럽게 보이도록 구성했습니다.</p>
+          </article>
+          <article class="step reveal">
+            <h3>배포</h3>
+            <p>GitHub Pages 배포 워크플로우를 통해 변경 사항을 사이트에 반영합니다.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="showcase">
+      <div class="container showcase">
+        <div class="showcase-main reveal">
+          <div>
+            <div class="badge-row">
+              <span class="badge">Responsive</span>
+              <span class="badge">Static Site</span>
+              <span class="badge">GitHub Pages</span>
+            </div>
+            <h2>수정하기 쉬운 단일 HTML 구조</h2>
+            <p>외부 라이브러리 없이 구성했기 때문에 속도가 빠르고, 문구와 색상, 섹션 추가도 간단합니다.</p>
+          </div>
+          <a class="button secondary" href="#contact">하단 문의 영역으로 이동</a>
+        </div>
+
+        <div class="showcase-list reveal">
+          <article class="list-item">
+            <div class="thumb" aria-hidden="true"></div>
+            <div>
+              <h3>첫 화면 히어로 섹션</h3>
+              <p>브랜드명과 핵심 문구를 크게 노출하는 영역입니다.</p>
+            </div>
+          </article>
+          <article class="list-item">
+            <div class="thumb" aria-hidden="true"></div>
+            <div>
+              <h3>서비스 카드 섹션</h3>
+              <p>업무, 상품, 장점 등을 3개 카드로 정리했습니다.</p>
+            </div>
+          </article>
+          <article class="list-item">
+            <div class="thumb" aria-hidden="true"></div>
+            <div>
+              <h3>작업 흐름 섹션</h3>
+              <p>이용자에게 진행 과정을 간단하게 설명합니다.</p>
+            </div>
+          </article>
+          <article class="list-item">
+            <div class="thumb" aria-hidden="true"></div>
+            <div>
+              <h3>문의 CTA 섹션</h3>
+              <p>연락처를 넣으면 바로 상담 유도 영역으로 사용할 수 있습니다.</p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="contact">
+      <div class="container">
+        <div class="cta reveal">
+          <div>
+            <h2>이제 실제 정보만 넣으면 됩니다.</h2>
+            <p>상호명, 전화번호, 카카오톡 링크, 작업 이미지, 서비스 가격표 등을 추가하면 운영용 사이트로 바로 확장할 수 있습니다.</p>
+          </div>
+          <a class="button" href="mailto:joojeasang@gmail.com">이메일 문의</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <span>© <span id="year"></span> SOSOKING. All rights reserved.</span>
+      <span>Built for GitHub Pages</span>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12 });
+
+    document.querySelectorAll('.reveal').forEach((element) => observer.observe(element));
+  </script>
+</body>
+</html>
