@@ -8,14 +8,6 @@ service cloud.firestore {
       return signedIn()
         && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
-    function isGameHost(roomId) {
-      return signedIn()
-        && get(/databases/$(database)/documents/game_rooms/$(roomId)).data.hostId == request.auth.uid;
-    }
-    function isGameRoomPlayer(roomId) {
-      return signedIn()
-        && exists(/databases/$(database)/documents/game_rooms/$(roomId)/players/$(request.auth.uid));
-    }
 
     function validText(val, maxLen) {
       return val is string && val.size() <= maxLen;
@@ -248,29 +240,6 @@ service cloud.firestore {
         && request.resource.data.reporterId == request.auth.uid
         && validText(request.resource.data.message, 1000);
       allow update, delete: if isAdmin();
-    }
-
-    match /game_rooms/{roomId} {
-      allow read: if true;
-      allow create: if signedIn();
-      allow update: if isAdmin() || isGameHost(roomId);
-      allow delete: if isAdmin();
-
-      match /players/{playerId} {
-        allow read: if true;
-        allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
-        allow update: if signedIn() && (playerId == request.auth.uid || resource.data.uid == request.auth.uid || isGameHost(roomId));
-        allow delete: if isAdmin() || isGameHost(roomId) || isAuthor(playerId);
-      }
-
-      match /chats/{chatId} {
-        allow read: if true;
-        allow create: if (isGameRoomPlayer(roomId) || isGameHost(roomId))
-          && validText(request.resource.data.get('text', ''), 500)
-          && request.resource.data.uid == request.auth.uid;
-        allow update: if false;
-        allow delete: if isAdmin() || isGameHost(roomId);
-      }
     }
 
     match /config/{docId} {
