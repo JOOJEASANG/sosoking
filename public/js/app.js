@@ -1,4 +1,5 @@
 import { initAuth } from './firebase.js?v=20260630-3';
+import './components/seed-case-prefill.js?v=20260707-2';
 import { renderHome } from './pages/home-court.js?v=20260707-2';
 import { renderSubmit } from './pages/submit-guard.js?v=20260707-5';
 import { renderTrial } from './pages/trial-game.js?v=20260707-4';
@@ -7,18 +8,20 @@ import { renderPolicy } from './pages/policy.js?v=20260707-3';
 import { renderMyCases } from './pages/my-cases-game.js?v=20260630-22';
 import { renderGuide } from './pages/guide.js?v=20260630-3';
 import { renderAuth } from './pages/auth2.js?v=20260707-2';
+import { renderAbsurdCases } from './pages/absurd-cases.js?v=20260707-2';
 import { renderBoard } from './pages/board-court.js?v=20260707-2';
-import { renderFooter } from './components/footer.js?v=20260707-2';
+import { renderFooter } from './components/footer.js?v=20260707-3';
 import { initTheme } from './components/theme.js?v=20260630-10';
 import { initCourtDesign } from './components/court-design.js?v=20260630-23';
 import { renderThemePreference } from './components/theme-preference.js?v=20260630-12';
-import { renderNav } from './components/nav.js?v=20260707-2';
+import { renderNav } from './components/nav.js?v=20260707-3';
 
 function normalizedRoute() {
   const hash = location.hash || '';
   if (hash === '#/' || hash === '' || hash === '#') {
     const path = location.pathname.replace(/\/$/, '') || '/';
     if (path === '/') return '#/';
+    if (path === '/absurd-cases') return '#/absurd-cases';
     if (path === '/board') return '#/board';
     if (path === '/submit') return '#/submit';
     if (path === '/guide') return '#/guide';
@@ -55,6 +58,8 @@ function route() {
   } else if (hash === '#/auth') {
     renderAuth(content);
     setTimeout(renderThemePreference, 80);
+  } else if (hash === '#/absurd-cases') {
+    renderAbsurdCases(content);
   } else if (hash === '#/board') {
     renderBoard(content);
   } else {
