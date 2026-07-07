@@ -247,7 +247,7 @@ async function tabUsers(el) {
 async function tabAi(el) {
   const snap = await getDoc(doc(db, 'site_settings', 'config'));
   const d = snap.exists() ? snap.data() : {};
-  const defaultPrompt = '사이트 구조에 맞춰 cases와 results에 모두 들어갈 수 있는 생활형 사건을 생성한다. 안전한 일상 소재만 사용한다.';
+  const defaultPrompt = '사이트 구조에 맞춰 cases와 results에 모두 들어갈 수 있는 황당사건을 생성한다. 안전한 일상 소재만 사용한다.';
   el.innerHTML = `
     <form id="ai-form">
       <div class="card" style="margin-bottom:16px;">
@@ -327,7 +327,7 @@ async function tabBiz(el) {
 async function tabPolicy(el) {
   const types = [['terms','이용약관'],['privacy','개인정보처리방침'],['ai_disclaimer','AI 서비스 안내']];
   const defaults = {
-    terms: '소소킹 판결소 이용약관\n\n본 서비스는 AI 기반 생활판결 오락 서비스이며 실제 법률 자문이나 법원 판결이 아닙니다.',
+    terms: '소소킹 판결소 이용약관\n\n본 서비스는 AI 기반 황당판결 오락 서비스이며 실제 법률 자문이나 법원 판결이 아닙니다.',
     privacy: '소소킹 판결소 개인정보처리방침\n\nFirebase 인증 정보, 이메일, 닉네임, 사건 입력 내용, 생성된 판결문, 공개 여부 등이 서비스 운영을 위해 처리될 수 있습니다.',
     ai_disclaimer: 'AI 서비스 이용 안내\n\nAI가 생성한 판결문은 오락 콘텐츠입니다. 실제 법률 문제는 전문가에게 상담해야 합니다.'
   };
