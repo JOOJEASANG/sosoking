@@ -1,4 +1,4 @@
-import { renderSubmit as renderBaseSubmit } from './submit.js?v=20260707-4';
+import { renderSubmit as renderBaseSubmit } from './submit.js?v=20260707-5';
 
 function lvLabel(v) {
   const n = Number(v || 5);
