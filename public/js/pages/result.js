@@ -21,6 +21,12 @@ function fmtDate(ts) {
   const d = ts.toDate ? ts.toDate() : new Date(ts);
   return d.toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
+function formatBytes(bytes) {
+  const n = Number(bytes || 0);
+  if (n >= 1024 * 1024) return `${(n / 1024 / 1024).toFixed(1)}MB`;
+  if (n >= 1024) return `${Math.round(n / 1024)}KB`;
+  return `${n}B`;
+}
 
 function verdictType(r) {
   const text = `${r.verdict || ''} ${r.sentence || ''}`;
@@ -60,6 +66,28 @@ function paragraphs(text) {
 }
 function arr(v) {
   return Array.isArray(v) ? v.filter(Boolean) : [];
+}
+function imageSrc(image) {
+  if (!image || typeof image !== 'object') return '';
+  const mime = String(image.mimeType || '');
+  const data = String(image.data || '').replace(/^data:image\/[a-zA-Z0-9.+-]+;base64,/, '').replace(/\s/g, '');
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(mime)) return '';
+  if (!data || data.length > 750000 || !/^[A-Za-z0-9+/=]+$/.test(data)) return '';
+  return `data:${mime};base64,${data}`;
+}
+function imageCard(image) {
+  const src = imageSrc(image);
+  if (!src) return '';
+  const meta = [
+    image.width && image.height ? `${Number(image.width)}×${Number(image.height)}` : '',
+    image.resizedSize ? `분석용 ${formatBytes(image.resizedSize)}` : '',
+    image.originalSize ? `원본 ${formatBytes(image.originalSize)}` : ''
+  ].filter(Boolean).join(' · ');
+  return `<div class="card step-card visible" style="margin-bottom:12px;padding:18px;">
+    <div class="step-role" style="margin-bottom:8px;">🖼️ 첨부 이미지 증거 아닌 증거</div>
+    <img src="${src}" alt="첨부 이미지" style="width:100%;max-height:360px;object-fit:contain;border-radius:14px;border:1px solid var(--border);background:rgba(0,0,0,.18);">
+    <div style="font-size:11px;color:var(--cream-dim);line-height:1.6;margin-top:8px;">${escapeHtml(meta || 'AI 분석용으로 자동 리사이즈된 이미지')}</div>
+  </div>`;
 }
 function sectionCard(icon, title, sub, content, badge = '') {
   if (!content) return '';
@@ -154,6 +182,8 @@ export async function renderResult(container, caseId) {
           <div style="font-size:12px;color:var(--cream-dim);line-height:1.8;">본 판결은 법적 효력은 없으나, 마음속 억울함에는 상당한 진정 효과가 있을 수 있습니다. 재판부는 사소한 일을 굳이 크게 만들기 위해 최선을 다했습니다.</div>
         </div>
 
+        ${imageCard(c.imageAttachment)}
+        ${sectionCard('🖼️', 'AI 이미지 감정', '첨부 이미지를 황당법정 참고자료로 분석했습니다.', r.imageAnalysis, '이미지 분석')}
         ${sectionCard('📋', '황당사건 접수기록', `${escapeHtml(r.recordClerk || c.recordClerk || '기록관')} 작성`, r.reception, '접수')}
         ${sectionCard('😳', '재판부의 1차 고민', '이걸 정말 재판까지 해야 하는지에 대한 엄숙한 검토', r.absurdityReview, '황당성 검토')}
         ${listCard('🧷', '핵심 쟁점', '별일 아닌데 굳이 법정 쟁점처럼 정리한 항목입니다.', r.keyIssues, '쟁점 없음')}
