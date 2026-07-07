@@ -1,4 +1,4 @@
-import { renderBoard as renderBaseBoard } from './board.js?v=20260630-6';
+import { renderBoard as renderBaseBoard } from './board.js?v=20260707-2';
 
 function ensureBoardGameStyle() {
   if (document.getElementById('board-game-style')) return;
