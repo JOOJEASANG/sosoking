@@ -1,4 +1,4 @@
-import { renderResult as renderBaseResult } from './result.js?v=20260707-3';
+import { renderResult as renderBaseResult } from './result.js?v=20260707-4';
 
 function grievance(container) {
   const text = container.textContent || '';
@@ -17,6 +17,7 @@ function badgesBy(container, lv) {
   const badges = [];
   badges.push(['📜', '황당판결 발급']);
   if (lv >= 8) badges.push(['🔥', '과몰입 인정']);
+  if (text.includes('이미지 감정')) badges.push(['🖼️', '이미지 증거']);
   if (text.includes('드립형')) badges.push(['🎭', '법정 드립']);
   if (text.includes('엄벌주의형')) badges.push(['👨‍⚖️', '엄숙 재판']);
   if (text.includes('항소심')) badges.push(['🏛️', '항소 경험']);
