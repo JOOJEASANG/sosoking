@@ -3,6 +3,7 @@ const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { defineSecret } = require('firebase-functions/params');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { isAdminAuth } = require('./admin-utils');
 
 const db = getFirestore();
 const geminiKey = defineSecret('GEMINI_API_KEY');
@@ -51,16 +52,6 @@ function isCompleteResult(data = {}) {
 async function loadSettings() {
   const snap = await db.doc('site_settings/config').get();
   return snap.exists ? snap.data() : {};
-}
-async function isAdminAuth(auth) {
-  if (!auth?.uid) return false;
-  const uidSnap = await db.doc(`admins/${auth.uid}`).get();
-  if (uidSnap.exists) return true;
-  const email = String(auth.token?.email || '').trim().toLowerCase();
-  if (!email) return false;
-  if (email === ['sosoday1976', 'gmail.com'].join('@')) return true;
-  const emailSnap = await db.doc(`admins/${email}`).get();
-  return emailSnap.exists;
 }
 function fallbackContent(dateKey) {
   return {
