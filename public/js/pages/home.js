@@ -61,7 +61,7 @@ export async function renderHome(container) {
   container.innerHTML = `
     <div style="padding-bottom:60px;">
       <section class="hero-section">
-        <img src="/app-icon.png?v=20260707-logo2" alt="소소킹 로고" style="width:92px;height:92px;margin-bottom:14px;display:block;margin-left:auto;margin-right:auto;object-fit:contain;animation:wiggle 3.5s ease-in-out infinite;" />
+        <img src="/app-icon-clean.svg?v=20260707-logo3" alt="소소킹 로고" style="width:92px;height:92px;margin-bottom:14px;display:block;margin-left:auto;margin-right:auto;object-fit:contain;animation:wiggle 3.5s ease-in-out infinite;" />
         <div class="hero-badge">⚖️ 사소함 전문 황당재판 · 법적효력 0%</div>
         <h1 class="hero-h1">이런 일로<br><span style="font-size:0.58em;color:var(--gold);font-style:italic;">재판까지?</span></h1>
         <p class="hero-sub">그냥 넘기기엔 억울하고<br>진짜 따지기엔 너무 사소한 일.<br><strong>AI 재판부가 쓸데없이 진지하게</strong> 황당판결을 내려드립니다.<br><span style="font-size:11px;opacity:0.5;">실제 법원은 아니고, 마음속 방청석은 열려 있습니다.</span></p>
