@@ -20,6 +20,7 @@ export async function renderFooter() {
 
   footer.innerHTML = `
     <div class="footer-links">
+      <a href="#/absurd-cases">황당사례 모음</a>
       <a href="#/board">황당판결 기록</a>
       <a href="#/policy/terms">이용약관</a>
       <a href="#/policy/privacy">개인정보처리방침</a>
