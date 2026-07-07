@@ -7,7 +7,7 @@ const db = getFirestore();
 const geminiKey = defineSecret('GEMINI_API_KEY');
 const REGION = 'asia-northeast3';
 const JUDGES = ['엄벌주의형','감성형','현실주의형','과몰입형','피곤형','논리집착형','드립형'];
-const ABSURD_DEPARTMENTS = ['제404호 황당법정', '제101호 사소분쟁법정', '제777호 과몰입법정', '제3호 억울함전담법정'];
+const ABSURD_DEPARTMENTS = ['제404호 황당법정', '제101호 황당분쟁법정', '제777호 과몰입법정', '제3호 억울함전담법정'];
 const CLERKS = ['정기록 서기관', '나과장 기록관', '박진지 참여관', '오억울 서기보', '한과몰입 법정주사'];
 const ANALYSTS = ['억울함 분석관', '황당성 감정관', '사소함 확대관', '황당질서 검토관', '한입만 감별관'];
 
@@ -48,9 +48,30 @@ function funnyDisposition(text, fallbackText) {
   if (!out) return fallbackText;
   return out.length < 90 ? `${out}\n\n추가로 피고는 본 사건의 황당성을 인정하고, 원고 앞에서 조용히 고개를 끄덕인 뒤 같은 실수를 반복하지 않겠다는 황당 다짐을 1회 실시한다.` : out;
 }
+function imageForGemini(value) {
+  if (!value || typeof value !== 'object') return null;
+  const mimeType = cleanText(value.mimeType, 30);
+  const data = String(value.data || '').replace(/^data:image\/[a-zA-Z0-9.+-]+;base64,/, '').replace(/\s/g, '');
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(mimeType)) return null;
+  if (!data || data.length > 700000) return null;
+  if (!/^[A-Za-z0-9+/=]+$/.test(data)) return null;
+  return { mimeType, data };
+}
+function imageMeta(value) {
+  if (!value || typeof value !== 'object') return null;
+  return {
+    mimeType: cleanText(value.mimeType, 30),
+    width: Number(value.width || 0),
+    height: Number(value.height || 0),
+    originalName: cleanText(value.originalName, 80),
+    originalSize: Number(value.originalSize || 0),
+    resizedSize: Number(value.resizedSize || 0)
+  };
+}
 function fallback(c, judgeType) {
   const title = cleanText(c.caseTitle, 40) || '이걸로 재판까지 온 사건';
   const thing = title.replace(/사건$/g, '').trim() || '본 사안';
+  const hasImage = !!imageForGemini(c.imageAttachment);
   return {
     absurdityTitle: `${title} 황당재판 기록`,
     agencyName: '소소킹 황당재판소',
@@ -58,16 +79,17 @@ function fallback(c, judgeType) {
     division: '제3황당재판부',
     recordClerk: pickFrom(CLERKS, title),
     analystName: pickFrom(ANALYSTS, title),
+    imageAnalysis: hasImage ? '첨부 이미지는 황당사건 참고자료로 접수되었다. 재판부는 이미지 속 정황을 사건 경위와 함께 살펴보되, 보이는 장면만으로 실제 사실을 단정하지 않고 오락용 황당판결의 분위기 자료로만 반영한다.' : '',
     reception: `본 황당사건은 ${thing}이라는 지극히 사소해 보이는 사안에서 출발하였다. 그러나 원고가 느낀 억울함의 밀도와 피고의 태도 가능성을 종합하면, 재판부는 이를 그냥 웃고 넘길 수 없다고 보았다. 이에 소소킹 황당재판소는 본 사안을 제404호 황당법정에 배당하고, 당사자 모두가 잠시 민망해질 정도로 진지한 심리에 착수한다.`,
     absurdityReview: `재판부는 먼저 이 사건이 과연 재판까지 올 일인지 검토하였다. 검토 결과, 정상적인 일상에서는 그냥 한숨 쉬고 넘어갈 수 있는 문제임이 명백하다. 그러나 바로 그 점 때문에 본 사건은 황당재판의 관할에 속한다. 별일 아닌데 마음에는 오래 남는 일, 말하자니 쪼잔하고 참자니 억울한 일이야말로 본 법정이 다루는 핵심 대상이다.`,
     keyIssues: [
       `${thing}이 단순 해프닝인지, 아니면 원고의 평온한 하루를 무너뜨린 황당침해인지 여부`,
       `피고가 자신의 행동이 이렇게까지 재판으로 번질 줄 몰랐다는 항변을 믿을 수 있는지 여부`,
       `원고의 억울함이 과장인지, 정당한 황당감정인지 여부`,
-      `원하는 처분이 과한지, 아니면 오히려 약한지 여부`
+      hasImage ? '첨부 이미지가 황당성 판단에 어느 정도 참고될 수 있는지 여부' : `원하는 처분이 과한지, 아니면 오히려 약한지 여부`
     ],
     evidenceList: [
-      '원고의 당시 표정과 말끝에 남아 있던 미세한 서운함',
+      hasImage ? '원고가 제출한 첨부 이미지 1매' : '원고의 당시 표정과 말끝에 남아 있던 미세한 서운함',
       '피고가 대수롭지 않게 넘기려 했던 정황',
       '사건 직후 공기 중에 감지된 어색한 침묵',
       '원고가 굳이 이 사이트에 접수했다는 결정적 사실'
@@ -139,13 +161,16 @@ exports.generateTrial = onCall({ region: REGION, secrets: [geminiKey], timeoutSe
   const isPublic = c.isPublic !== false;
   const settings = await loadSettings();
   const modelName = cleanText(settings.geminiModel, 60) || 'gemini-2.5-flash';
+  const geminiImage = imageForGemini(c.imageAttachment);
   let data = fallback({ ...c, courtroom, recordClerk, analystName }, judgeType);
   let totals = { requests: 0, inputTokens: 0, outputTokens: 0 };
 
   try {
     const model = new GoogleGenerativeAI(geminiKey.value().trim()).getGenerativeModel({ model: modelName });
-    const prompt = `너는 '소소킹 황당재판소'의 AI 재판부다. 사용자가 입력한 아주 사소한 일을 실제 법률문서처럼 오해되지 않게, 하지만 쓸데없이 엄숙하고 과장된 '황당재판 기록'으로 작성한다.\n\n핵심 재미: 사용자가 '내가 이런 걸로 재판까지 받아야 해?'라고 느낄 정도로 사소한 일을 크게 키워라. 결과는 너무 짧으면 안 된다. 각 문단은 구체적이고 웃겨야 한다. 처분 내용은 보고 '와 이건 웃기다' 싶을 정도로 창의적이어야 한다.\n\n금지: 실제 법률 자문처럼 단정하지 말 것, 욕설/혐오/성적 표현/자해/실제 범죄 조장 금지, 실명/연락처 생성 금지. 반드시 오락 콘텐츠임을 자연스럽게 포함할 것.\n\n사건명: ${cleanText(c.caseTitle, 40)}\n사건 경위: ${cleanText(c.caseDescription, 320)}\n억울지수: ${Number(c.grievanceIndex || 5)}/10\n원하는 처분: ${cleanText(c.desiredVerdict, 160) || '없음'}\n담당 판사: ${judgeType}\n사건번호: ${cleanText(c.docketNumber, 80)}\n\n반드시 JSON만 출력한다. 필드는 다음을 모두 포함한다.\n{\n  "absurdityTitle": "사건 제목을 더 황당재판스럽게 바꾼 제목",\n  "reception": "접수계 기록. 4문장 이상. 사소한 일이지만 왜 황당재판으로 접수됐는지 과장",\n  "absurdityReview": "이걸 재판까지 해야 하는지 재판부가 고민하는 내용. 4문장 이상",\n  "keyIssues": ["쟁점 1", "쟁점 2", "쟁점 3", "쟁점 4"],\n  "evidenceList": ["증거 아닌 증거 1", "증거 아닌 증거 2", "증거 아닌 증거 3", "증거 아닌 증거 4", "증거 아닌 증거 5"],\n  "investigation": "억울함/황당성 분석. 5문장 이상",\n  "plaintiffArg": "원고 측 주장. 4문장 이상",\n  "defendantArg": "피고 측 변명 추정. 4문장 이상",\n  "courtOpinion": "재판부 판단. 7문장 이상. 가장 길고 웃기게",\n  "verdict": "최종 판결 이유. 5문장 이상",\n  "sentence": "주문 및 황당 처분. 줄바꿈으로 4개 이상 처분. 웃기고 과장되게. 피고는... 형태를 많이 사용",\n  "executionOrder": "집행명령. 2문장 이상",\n  "appealNotice": "항소 안내. 2문장 이상",\n  "closingComment": "마지막 한 줄 드립"\n}`;
-    const result = await model.generateContent(prompt);
+    const prompt = `너는 '소소킹 황당재판소'의 AI 재판부다. 사용자가 입력한 아주 사소한 일을 실제 법률문서처럼 오해되지 않게, 하지만 쓸데없이 엄숙하고 과장된 '황당재판 기록'으로 작성한다.\n\n핵심 재미: 사용자가 '내가 이런 걸로 재판까지 받아야 해?'라고 느낄 정도로 사소한 일을 크게 키워라. 결과는 너무 짧으면 안 된다. 각 문단은 구체적이고 웃겨야 한다. 처분 내용은 보고 '와 이건 웃기다' 싶을 정도로 창의적이어야 한다.\n\n첨부 이미지가 제공된 경우 이미지를 실제 증거처럼 단정하지 말고, 보이는 장면을 '증거 아닌 증거'와 '이미지 감정'처럼 유머러스하게 참고하라. 이미지가 사건 설명과 다르게 보이면 그 차이도 황당하게 언급하되, 실제 인물 신원·민감정보를 추정하지 말라.\n\n금지: 실제 법률 자문처럼 단정하지 말 것, 욕설/혐오/성적 표현/자해/실제 범죄 조장 금지, 실명/연락처 생성 금지. 반드시 오락 콘텐츠임을 자연스럽게 포함할 것.\n\n사건명: ${cleanText(c.caseTitle, 40)}\n사건 경위: ${cleanText(c.caseDescription, 320)}\n억울지수: ${Number(c.grievanceIndex || 5)}/10\n원하는 처분: ${cleanText(c.desiredVerdict, 160) || '없음'}\n담당 판사: ${judgeType}\n사건번호: ${cleanText(c.docketNumber, 80)}\n첨부 이미지: ${geminiImage ? '있음. 반드시 이미지 감정 내용을 반영할 것.' : '없음'}\n\n반드시 JSON만 출력한다. 필드는 다음을 모두 포함한다.\n{\n  "absurdityTitle": "사건 제목을 더 황당재판스럽게 바꾼 제목",\n  "imageAnalysis": "첨부 이미지 분석. 이미지가 없으면 빈 문자열. 이미지가 있으면 3문장 이상",\n  "reception": "접수계 기록. 4문장 이상. 사소한 일이지만 왜 황당재판으로 접수됐는지 과장",\n  "absurdityReview": "이걸 재판까지 해야 하는지 재판부가 고민하는 내용. 4문장 이상",\n  "keyIssues": ["쟁점 1", "쟁점 2", "쟁점 3", "쟁점 4"],\n  "evidenceList": ["증거 아닌 증거 1", "증거 아닌 증거 2", "증거 아닌 증거 3", "증거 아닌 증거 4", "증거 아닌 증거 5"],\n  "investigation": "억울함/황당성 분석. 5문장 이상",\n  "plaintiffArg": "원고 측 주장. 4문장 이상",\n  "defendantArg": "피고 측 변명 추정. 4문장 이상",\n  "courtOpinion": "재판부 판단. 7문장 이상. 가장 길고 웃기게",\n  "verdict": "최종 판결 이유. 5문장 이상",\n  "sentence": "주문 및 황당 처분. 줄바꿈으로 4개 이상 처분. 웃기고 과장되게. 피고는... 형태를 많이 사용",\n  "executionOrder": "집행명령. 2문장 이상",\n  "appealNotice": "항소 안내. 2문장 이상",\n  "closingComment": "마지막 한 줄 드립"\n}`;
+    const parts = [{ text: prompt }];
+    if (geminiImage) parts.push({ inlineData: geminiImage });
+    const result = await model.generateContent({ contents: [{ role: 'user', parts }] });
     const meta = result.response.usageMetadata || {};
     totals = {
       requests: 1,
@@ -156,6 +181,7 @@ exports.generateTrial = onCall({ region: REGION, secrets: [geminiKey], timeoutSe
     data = {
       ...data,
       absurdityTitle: cleanText(parsed.absurdityTitle, 80) || data.absurdityTitle,
+      imageAnalysis: geminiImage ? (cleanLong(parsed.imageAnalysis, 1200) || data.imageAnalysis) : '',
       reception: cleanLong(parsed.reception, 1400) || data.reception,
       absurdityReview: cleanLong(parsed.absurdityReview, 1400) || data.absurdityReview,
       keyIssues: cleanList(parsed.keyIssues, data.keyIssues, 6, 180),
@@ -185,6 +211,9 @@ exports.generateTrial = onCall({ region: REGION, secrets: [geminiKey], timeoutSe
       analystName,
       caseTitle: c.caseTitle || '황당재판 결과',
       absurdityTitle: data.absurdityTitle,
+      imageAnalysis: data.imageAnalysis || '',
+      hasImageAttachment: !!geminiImage,
+      imageAttachmentMeta: imageMeta(c.imageAttachment),
       caseDescription: c.caseDescription || '',
       grievanceIndex: c.grievanceIndex || 5,
       nickname: c.nickname || '익명 원고',
@@ -235,6 +264,7 @@ exports.generateTrial = onCall({ region: REGION, secrets: [geminiKey], timeoutSe
         geminiInputTokens: FieldValue.increment(totals.inputTokens),
         geminiOutputTokens: FieldValue.increment(totals.outputTokens),
         caseCount: FieldValue.increment(1),
+        imageCaseCount: FieldValue.increment(geminiImage ? 1 : 0),
         firestoreReads: FieldValue.increment(3),
         firestoreWrites: FieldValue.increment(4),
         functionInvocations: FieldValue.increment(1),
@@ -245,5 +275,5 @@ exports.generateTrial = onCall({ region: REGION, secrets: [geminiKey], timeoutSe
     }
   }
 
-  return { success: true, judgeType, isPublic };
+  return { success: true, judgeType, isPublic, hasImageAttachment: !!geminiImage };
 });
