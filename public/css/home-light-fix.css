@@ -1,0 +1,180 @@
+/* Home light-mode readability fixes */
+[data-theme="light"] .hero-section {
+  background: linear-gradient(180deg, #fff7e7 0%, #f4e7ce 72%, #f7f3ed 100%) !important;
+  color: #1a150a !important;
+  border-bottom: 1px solid rgba(154,112,24,.16);
+}
+[data-theme="light"] .hero-section img {
+  filter: drop-shadow(0 10px 18px rgba(60,42,10,.16));
+}
+[data-theme="light"] .hero-badge {
+  background: rgba(154,112,24,.11) !important;
+  border-color: rgba(154,112,24,.35) !important;
+  color: #6f4e0c !important;
+}
+[data-theme="light"] .hero-h1,
+[data-theme="light"] .hero-h1 span {
+  color: #1a150a !important;
+  text-shadow: 0 1px 0 rgba(255,255,255,.8);
+}
+[data-theme="light"] .hero-h1 span {
+  color: #8a610f !important;
+}
+[data-theme="light"] .hero-sub {
+  color: rgba(26,21,10,.78) !important;
+}
+[data-theme="light"] .hero-sub strong {
+  color: #1a150a !important;
+}
+[data-theme="light"] .hero-sub span {
+  color: rgba(26,21,10,.58) !important;
+  opacity: 1 !important;
+}
+[data-theme="light"] .hero-tw {
+  background: rgba(255,255,255,.78) !important;
+  border-color: rgba(154,112,24,.28) !important;
+  color: rgba(26,21,10,.76) !important;
+  box-shadow: 0 6px 18px rgba(60,42,10,.08);
+}
+[data-theme="light"] .hero-tw strong,
+[data-theme="light"] .cursor-blink {
+  color: #8a610f !important;
+}
+[data-theme="light"] .hero-disclaimer {
+  color: rgba(26,21,10,.62) !important;
+}
+[data-theme="light"] .stats-row,
+[data-theme="light"] .stat-item {
+  color: #1a150a !important;
+}
+[data-theme="light"] .stat-item {
+  background: rgba(255,255,255,.68) !important;
+  border: 1px solid rgba(154,112,24,.16) !important;
+  box-shadow: 0 6px 16px rgba(60,42,10,.06);
+}
+[data-theme="light"] .stat-label {
+  color: rgba(26,21,10,.66) !important;
+}
+[data-theme="light"] .judge-card,
+[data-theme="light"] .how-step,
+[data-theme="light"] .example-card,
+[data-theme="light"] .card {
+  background: #fffdf8 !important;
+  color: #1a150a !important;
+  border-color: rgba(154,112,24,.18) !important;
+}
+[data-theme="light"] .judge-card-desc,
+[data-theme="light"] .section-sub,
+[data-theme="light"] .case-meta,
+[data-theme="light"] .example-card div,
+[data-theme="light"] .how-step div,
+[data-theme="light"] .container > div[style*="var(--cream-dim)"] {
+  color: rgba(26,21,10,.68) !important;
+}
+[data-theme="light"] .judge-card-name,
+[data-theme="light"] .case-title {
+  color: #1a150a !important;
+}
+[data-theme="light"] .cta-section {
+  background: linear-gradient(135deg, #fff3d7 0%, #efd6a5 100%) !important;
+  color: #1a150a !important;
+  border-top: 1px solid rgba(154,112,24,.16);
+  border-bottom: 1px solid rgba(154,112,24,.16);
+}
+[data-theme="light"] .cta-section h2,
+[data-theme="light"] .cta-section p,
+[data-theme="light"] .cta-section span {
+  color: #1a150a !important;
+  opacity: 1 !important;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) .hero-section {
+    background: linear-gradient(180deg, #fff7e7 0%, #f4e7ce 72%, #f7f3ed 100%) !important;
+    color: #1a150a !important;
+    border-bottom: 1px solid rgba(154,112,24,.16);
+  }
+  :root:not([data-theme="dark"]) .hero-section img {
+    filter: drop-shadow(0 10px 18px rgba(60,42,10,.16));
+  }
+  :root:not([data-theme="dark"]) .hero-badge {
+    background: rgba(154,112,24,.11) !important;
+    border-color: rgba(154,112,24,.35) !important;
+    color: #6f4e0c !important;
+  }
+  :root:not([data-theme="dark"]) .hero-h1,
+  :root:not([data-theme="dark"]) .hero-h1 span {
+    color: #1a150a !important;
+    text-shadow: 0 1px 0 rgba(255,255,255,.8);
+  }
+  :root:not([data-theme="dark"]) .hero-h1 span {
+    color: #8a610f !important;
+  }
+  :root:not([data-theme="dark"]) .hero-sub {
+    color: rgba(26,21,10,.78) !important;
+  }
+  :root:not([data-theme="dark"]) .hero-sub strong {
+    color: #1a150a !important;
+  }
+  :root:not([data-theme="dark"]) .hero-sub span {
+    color: rgba(26,21,10,.58) !important;
+    opacity: 1 !important;
+  }
+  :root:not([data-theme="dark"]) .hero-tw {
+    background: rgba(255,255,255,.78) !important;
+    border-color: rgba(154,112,24,.28) !important;
+    color: rgba(26,21,10,.76) !important;
+    box-shadow: 0 6px 18px rgba(60,42,10,.08);
+  }
+  :root:not([data-theme="dark"]) .hero-tw strong,
+  :root:not([data-theme="dark"]) .cursor-blink {
+    color: #8a610f !important;
+  }
+  :root:not([data-theme="dark"]) .hero-disclaimer {
+    color: rgba(26,21,10,.62) !important;
+  }
+  :root:not([data-theme="dark"]) .stats-row,
+  :root:not([data-theme="dark"]) .stat-item {
+    color: #1a150a !important;
+  }
+  :root:not([data-theme="dark"]) .stat-item {
+    background: rgba(255,255,255,.68) !important;
+    border: 1px solid rgba(154,112,24,.16) !important;
+    box-shadow: 0 6px 16px rgba(60,42,10,.06);
+  }
+  :root:not([data-theme="dark"]) .stat-label {
+    color: rgba(26,21,10,.66) !important;
+  }
+  :root:not([data-theme="dark"]) .judge-card,
+  :root:not([data-theme="dark"]) .how-step,
+  :root:not([data-theme="dark"]) .example-card,
+  :root:not([data-theme="dark"]) .card {
+    background: #fffdf8 !important;
+    color: #1a150a !important;
+    border-color: rgba(154,112,24,.18) !important;
+  }
+  :root:not([data-theme="dark"]) .judge-card-desc,
+  :root:not([data-theme="dark"]) .section-sub,
+  :root:not([data-theme="dark"]) .case-meta,
+  :root:not([data-theme="dark"]) .example-card div,
+  :root:not([data-theme="dark"]) .how-step div,
+  :root:not([data-theme="dark"]) .container > div[style*="var(--cream-dim)"] {
+    color: rgba(26,21,10,.68) !important;
+  }
+  :root:not([data-theme="dark"]) .judge-card-name,
+  :root:not([data-theme="dark"]) .case-title {
+    color: #1a150a !important;
+  }
+  :root:not([data-theme="dark"]) .cta-section {
+    background: linear-gradient(135deg, #fff3d7 0%, #efd6a5 100%) !important;
+    color: #1a150a !important;
+    border-top: 1px solid rgba(154,112,24,.16);
+    border-bottom: 1px solid rgba(154,112,24,.16);
+  }
+  :root:not([data-theme="dark"]) .cta-section h2,
+  :root:not([data-theme="dark"]) .cta-section p,
+  :root:not([data-theme="dark"]) .cta-section span {
+    color: #1a150a !important;
+    opacity: 1 !important;
+  }
+}
