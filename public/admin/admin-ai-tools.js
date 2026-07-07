@@ -1,3 +1,5 @@
+import './admin-absurd-cases.js?v=20260707-1';
+import './session-helper.js?v=20260707-1';
 import { getApp, getApps, initializeApp } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js';
 import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 import { firebaseConfig } from '../js/firebase-config.js';
