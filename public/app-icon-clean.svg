@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="소소킹 황당재판소 로고">
+  <defs>
+    <clipPath id="logoClip">
+      <rect x="0" y="0" width="1024" height="1024" rx="190" ry="190"/>
+    </clipPath>
+  </defs>
+  <rect width="1024" height="1024" rx="190" fill="#071222"/>
+  <image href="/app-icon.png?v=20260707-logo2" x="-70" y="-70" width="1164" height="1164" preserveAspectRatio="xMidYMid slice" clip-path="url(#logoClip)"/>
+</svg>
