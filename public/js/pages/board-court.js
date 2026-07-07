@@ -28,7 +28,7 @@ function decorateBoard(container) {
         <div class="court-seal" style="width:52px;height:52px;font-size:24px;">🏟️</div>
         <div>
           <div class="court-kicker">SOSOKING ARENA</div>
-          <div class="court-title" style="font-size:20px;">생활법정 아레나</div>
+          <div class="court-title" style="font-size:20px;">황당재판 아레나</div>
         </div>
       </div>
       <div class="arena-rank-tabs">
@@ -47,7 +47,7 @@ function decorateBoard(container) {
     card.classList.add('court-board-row');
     card.style.borderLeft = '3px solid rgba(201,168,76,.5)';
     const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : String(idx + 1);
-    card.insertAdjacentHTML('afterbegin', `<div class="court-kicker" style="margin-bottom:7px;"><span class="rank-medal">${medal}</span> ARENA RECORD</div>`);
+    card.insertAdjacentHTML('afterbegin', `<div class="court-kicker" style="margin-bottom:7px;"><span class="rank-medal">${medal}</span> ABSURD RECORD</div>`);
   });
 }
 
