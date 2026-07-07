@@ -14,15 +14,26 @@ function ensureTrialGameStyle() {
   `;
   document.head.appendChild(style);
 }
+function normalizeWording(container) {
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+  const nodes = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode);
+  nodes.forEach(node => {
+    node.nodeValue = node.nodeValue
+      .replaceAll('생활형 처분', '황당 처분')
+      .replaceAll('생활형', '황당');
+  });
+}
 function decorateTrial(container) {
   ensureTrialGameStyle();
+  normalizeWording(container);
   const docket = document.getElementById('docket-card');
   if (docket && !document.getElementById('trial-game-brief')) {
     docket.insertAdjacentHTML('afterend', `
       <div id="trial-game-brief" class="trial-boss-card">
         <div class="court-kicker">STAGE MODE</div>
         <div class="court-title" style="font-size:18px;">황당사건 재판 진행 중</div>
-        <div class="court-desc">별것 아닌 사건을 재판부가 지나치게 엄숙하게 심리합니다. 모든 스테이지가 끝나면 황당판결 보상이 지급됩니다.</div>
+        <div class="court-desc">별것 아닌 사건과 첨부 이미지까지 재판부가 지나치게 엄숙하게 심리합니다. 모든 스테이지가 끝나면 황당판결 보상이 지급됩니다.</div>
       </div>`);
   }
   document.querySelectorAll('.step-card').forEach((card, idx) => {
