@@ -9,7 +9,7 @@ const MAX_DESC = 320;
 const MAX_DESIRED = 160;
 const DAILY_LIMIT = 3;
 const MAX_ORIGINAL_IMAGE = 25 * 1024 * 1024;
-const MAX_RESIZED_IMAGE = 560 * 1024;
+const MAX_RESIZED_IMAGE = 500 * 1024;
 const MAX_IMAGE_DIM = 1600;
 
 const JUDGES = [
@@ -190,7 +190,7 @@ export async function renderSubmit(container) {
             <label class="form-label">이미지 첨부 <span class="optional">선택 · AI가 함께 분석</span></label>
             <div class="card" style="padding:14px;background:rgba(255,255,255,.025);border-style:dashed;">
               <input type="file" id="case-image" accept="image/jpeg,image/png,image/webp" class="form-input" style="padding:10px;background:rgba(255,255,255,.03);">
-              <div id="image-status" style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-top:8px;">JPG, PNG, WEBP 가능. 큰 이미지는 자동으로 1600px 이하, 약 560KB 이하로 적당히 리사이즈합니다.</div>
+              <div id="image-status" style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-top:8px;">JPG, PNG, WEBP 가능. 큰 이미지는 자동으로 1600px 이하, 약 500KB 이하로 적당히 리사이즈합니다.</div>
               <div id="image-preview" style="display:none;margin-top:12px;"></div>
             </div>
           </div>
@@ -261,7 +261,7 @@ export async function renderSubmit(container) {
     preview.style.display = 'none';
     preview.innerHTML = '';
     if (!file) {
-      status.textContent = 'JPG, PNG, WEBP 가능. 큰 이미지는 자동으로 1600px 이하, 약 560KB 이하로 적당히 리사이즈합니다.';
+      status.textContent = 'JPG, PNG, WEBP 가능. 큰 이미지는 자동으로 1600px 이하, 약 500KB 이하로 적당히 리사이즈합니다.';
       return;
     }
     status.textContent = '이미지를 AI 분석용으로 자동 리사이즈하는 중입니다...';
