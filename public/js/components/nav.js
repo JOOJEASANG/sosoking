@@ -13,7 +13,6 @@ export function renderNav() {
 
   const hash = location.hash || '#/';
   const isHome = hash === '#/' || hash === '#' || hash === '';
-  const isCases = hash.startsWith('#/absurd-cases');
   const isBoard = hash.startsWith('#/board');
   const isSubmit = hash.startsWith('#/submit');
   const isAuth = hash.startsWith('#/auth') || hash.startsWith('#/my-cases');
@@ -27,17 +26,13 @@ export function renderNav() {
       <span class="nav-icon">🏠</span>
       <span class="nav-label">홈</span>
     </a>
-    <a href="#/absurd-cases" class="nav-item${isCases ? ' active' : ''}">
-      <span class="nav-icon">📚</span>
-      <span class="nav-label">사례</span>
+    <a href="#/board" class="nav-item${isBoard ? ' active' : ''}">
+      <span class="nav-icon">📜</span>
+      <span class="nav-label">판결기록</span>
     </a>
     <a href="#/submit" class="nav-item nav-cta${isSubmit ? ' active' : ''}">
       <span class="nav-icon">⚖️</span>
       <span class="nav-label">접수</span>
-    </a>
-    <a href="#/board" class="nav-item${isBoard ? ' active' : ''}">
-      <span class="nav-icon">📜</span>
-      <span class="nav-label">판결</span>
     </a>
     <a href="#/auth" class="nav-item${isAuth ? ' active' : ''}" id="nav-account-item">
       <span class="nav-icon" id="nav-account-icon">${isLoggedIn ? '●' : '👤'}</span>
