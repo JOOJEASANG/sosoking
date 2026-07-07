@@ -90,7 +90,7 @@ function bizInfoHtml(biz) {
   const rows = [
     biz.companyName && `상호: ${biz.companyName}`,
     biz.ceoName && `대표자: ${biz.ceoName}`,
-    biz.businessNumber && `사업자등록번호`,
+    biz.businessNumber && `사업자등록번호: ${biz.businessNumber}`,
     biz.contact && `연락처: ${biz.contact}`,
     biz.email && `이메일: ${biz.email}`,
     biz.address && `주소: ${biz.address}`,
