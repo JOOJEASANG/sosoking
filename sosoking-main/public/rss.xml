@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>소소킹 판결소</title>
+    <link>https://sosoking.co.kr/</link>
+    <description>사소한 억울함을 AI 판사가 진짜 재판처럼 과하게 진지하고 웃기게 판결하는 AI 모의재판 오락 사이트</description>
+    <language>ko-KR</language>
+    <lastBuildDate>Tue, 30 Jun 2026 00:00:00 +0900</lastBuildDate>
+    <item>
+      <title>소소킹 판결소 - AI 모의재판</title>
+      <link>https://sosoking.co.kr/</link>
+      <description>일상의 사소한 사건을 접수하면 AI 판사가 생활법정 판결문을 생성합니다.</description>
+      <pubDate>Tue, 30 Jun 2026 00:00:00 +0900</pubDate>
+    </item>
+    <item>
+      <title>생활판결 게시판</title>
+      <link>https://sosoking.co.kr/#/board</link>
+      <description>공개된 생활판결을 보고 원고 편, 피고 편, 쌍방과실 투표와 방청석 한마디를 남길 수 있습니다.</description>
+      <pubDate>Tue, 30 Jun 2026 00:00:00 +0900</pubDate>
+    </item>
+  </channel>
+</rss>

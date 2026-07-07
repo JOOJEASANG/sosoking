@@ -1,0 +1,36 @@
+{
+  "hosting": {
+    "public": "public",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "headers": [
+      {
+        "source": "**",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, max-age=0, must-revalidate"
+          }
+        ]
+      }
+    ],
+    "rewrites": [
+      { "source": "/admin", "destination": "/admin/index.html" },
+      { "source": "/admin/", "destination": "/admin/index.html" },
+      { "source": "/board", "destination": "/index.html" },
+      { "source": "/submit", "destination": "/index.html" },
+      { "source": "/guide", "destination": "/index.html" },
+      { "source": "/auth", "destination": "/index.html" },
+      { "source": "/my-cases", "destination": "/index.html" },
+      { "source": "/result/**", "destination": "/index.html" },
+      { "source": "/trial/**", "destination": "/index.html" }
+    ]
+  },
+  "functions": {
+    "source": "functions",
+    "runtime": "nodejs20"
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  }
+}
