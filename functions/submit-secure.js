@@ -3,14 +3,21 @@ const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 
 const db = getFirestore();
 const REGION = 'asia-northeast3';
-const MAX_TITLE = 30;
-const MAX_DESC = 200;
-const MAX_DESIRED = 100;
+const MAX_TITLE = 40;
+const MAX_DESC = 320;
+const MAX_DESIRED = 160;
 const HARD_DAILY_LIMIT = 3;
 const DEFAULT_COOLDOWN_SEC = 45;
 const JUDGES = ['엄벌주의형','감성형','현실주의형','과몰입형','피곤형','논리집착형','드립형'];
 const NICK_ADJ = ['억울한','분노한','황당한','지친','당황한','슬픈','안타까운','기막힌'];
 const NICK_NOUN = ['직장인','집사','아무개','라면러버','과자지킴이','충전기수호자','리모컨분실자','냉장고파수꾼'];
+const COURTROOMS = ['제404호 황당법정', '제101호 사소분쟁법정', '제777호 과몰입법정', '제3호 억울함전담법정'];
+const CLERKS = ['정기록 서기관', '나과장 기록관', '박진지 참여관', '오억울 서기보', '한과몰입 법정주사'];
+const ANALYSTS = ['억울함 분석관', '황당성 감정관', '사소함 확대관', '생활질서 검토관', '한입만 감별관'];
+const CATEGORIES = [
+  ['라면','라면'], ['국물','라면'], ['푸딩','간식'], ['과자','간식'], ['커피','카페'], ['치킨','간식'], ['냉장고','냉장고'],
+  ['리모컨','리모컨'], ['카톡','읽씹'], ['읽씹','읽씹'], ['약속','지각'], ['지각','지각'], ['청소','집안일'], ['설거지','집안일']
+];
 
 function requireRealLogin(request) {
   if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
@@ -36,9 +43,18 @@ function boolValue(value, fallback = false) {
 function kstDateKey(date = new Date()) {
   return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
 }
-function makeDocket(today) {
-  const compact = today.replace(/-/g, '').slice(2);
-  return `소소${compact}-생활판결-${Math.floor(1000 + Math.random() * 9000)}`;
+function inferCategory(title, desc) {
+  const text = `${title} ${desc}`;
+  const found = CATEGORIES.find(([kw]) => text.includes(kw));
+  return found ? found[1] : '황당';
+}
+function makeDocket(today, category) {
+  const year = today.slice(0, 4);
+  const seq = Math.floor(1000 + Math.random() * 9000);
+  return `${year}황당-${category}-${seq}`;
+}
+function pickFrom(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
 }
 function randomNickname() {
   return NICK_ADJ[Math.floor(Math.random() * NICK_ADJ.length)] + NICK_NOUN[Math.floor(Math.random() * NICK_NOUN.length)];
@@ -79,8 +95,8 @@ exports.submitCase = onCall({ region: REGION, timeoutSeconds: 30, memory: '256Mi
   const isPublic = boolValue(data.isPublic, true);
   const profileNickname = await loadUserNickname(uid);
 
-  if (!title) throw new HttpsError('invalid-argument', '사건명을 입력해주세요.');
-  if (!desc) throw new HttpsError('invalid-argument', '사건 경위를 입력해주세요.');
+  if (!title) throw new HttpsError('invalid-argument', '황당사건명을 입력해주세요.');
+  if (!desc) throw new HttpsError('invalid-argument', '황당사건 경위를 입력해주세요.');
 
   const settings = await loadSettings();
   const cooldownSec = clampNumber(settings.cooldownSec, DEFAULT_COOLDOWN_SEC, 0, 300);
@@ -90,32 +106,39 @@ exports.submitCase = onCall({ region: REGION, timeoutSeconds: 30, memory: '256Mi
   }
 
   const today = kstDateKey();
-  const docketNumber = makeDocket(today);
+  const category = inferCategory(title, desc);
+  const docketNumber = makeDocket(today, category);
   const caseId = `${uid}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const caseRef = db.doc(`cases/${caseId}`);
   const limitRef = db.doc(`rate_limits/${uid}`);
+  const courtroom = pickFrom(COURTROOMS);
+  const recordClerk = pickFrom(CLERKS);
+  const analystName = pickFrom(ANALYSTS);
 
   await db.runTransaction(async tx => {
     const limitSnap = await tx.get(limitRef);
     const current = limitSnap.exists ? limitSnap.data() : {};
     const count = current.date === today ? Number(current.count || 0) : 0;
     if (count >= HARD_DAILY_LIMIT) {
-      throw new HttpsError('resource-exhausted', '오늘 접수 한도 3건을 초과했습니다.');
+      throw new HttpsError('resource-exhausted', '오늘 접수 한도 3건을 초과했습니다. 황당재판부도 하루에 너무 많은 황당함은 감당하기 어렵습니다.');
     }
     if (current.lastSubmittedAt) {
       const lastMs = current.lastSubmittedAt.toMillis ? current.lastSubmittedAt.toMillis() : new Date(current.lastSubmittedAt).getTime();
       const diffSec = Math.floor((Date.now() - lastMs) / 1000);
       if (cooldownSec > 0 && diffSec < cooldownSec) {
-        throw new HttpsError('resource-exhausted', `${cooldownSec - diffSec}초 후에 다시 접수할 수 있습니다.`);
+        throw new HttpsError('resource-exhausted', `${cooldownSec - diffSec}초 후에 다시 접수할 수 있습니다. 재판부가 방금 전 사건의 황당함을 아직 정리 중입니다.`);
       }
     }
 
     tx.set(caseRef, {
       userId: uid,
       docketNumber,
-      courtName: '소소킹 판결소',
-      courtroom: '제404호 생활법정',
-      division: '제3생활부',
+      courtName: '소소킹 황당재판소',
+      courtroom,
+      division: '제3황당재판부',
+      recordClerk,
+      analystName,
+      caseCategory: category,
       courtStage: 'filed',
       caseTitle: title,
       caseDescription: desc,
