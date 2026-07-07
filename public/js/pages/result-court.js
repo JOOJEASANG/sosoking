@@ -7,15 +7,15 @@ function grievance(container) {
 }
 function gradeByLv(lv) {
   if (lv >= 10) return ['SS', '전설의 억울함'];
-  if (lv >= 8) return ['S', '국민참여급 사건'];
-  if (lv >= 6) return ['A', '생활법정 주요 사건'];
-  if (lv >= 4) return ['B', '주변인 소환 가능'];
+  if (lv >= 8) return ['S', '제404호 긴급사건'];
+  if (lv >= 6) return ['A', '황당재판 주요 사건'];
+  if (lv >= 4) return ['B', '방청석 소환 가능'];
   return ['C', '사소하지만 기록됨'];
 }
 function badgesBy(container, lv) {
   const text = container.textContent || '';
   const badges = [];
-  badges.push(['📜', '판결문 발급']);
+  badges.push(['📜', '황당판결 발급']);
   if (lv >= 8) badges.push(['🔥', '과몰입 인정']);
   if (text.includes('드립형')) badges.push(['🎭', '법정 드립']);
   if (text.includes('엄벌주의형')) badges.push(['👨‍⚖️', '엄숙 재판']);
@@ -52,7 +52,7 @@ function addReward(container) {
         <div style="flex:1;min-width:0;">
           <div class="court-kicker">JUDGEMENT REWARD</div>
           <div class="court-title" style="font-size:20px;">${label}</div>
-          <div class="court-desc">아무것도 아닌 일이 생활법정 게임 기록으로 등록되었습니다.</div>
+          <div class="court-desc">아무것도 아닌 일이 황당재판 기록으로 등록되었습니다.</div>
         </div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">${badges.map(([i, t]) => `<span class="reward-badge">${i} ${t}</span>`).join('')}</div>
@@ -65,7 +65,7 @@ function addInviteDefense(container) {
   actions.insertAdjacentHTML('beforebegin', `
     <div id="invite-defense-card" class="invite-defense">
       <div class="invite-defense-title">⚔️ 친구 변호 초대 준비중</div>
-      <div class="invite-defense-desc">친구를 원고 측/피고 측 변호인으로 초대해서 서로 변론하는 기능을 붙일 수 있습니다. 지금은 판결 링크를 복사해 공유할 수 있습니다.</div>
+      <div class="invite-defense-desc">친구를 원고 측/피고 측 변호인으로 초대해서 서로 변론하는 기능을 붙일 수 있습니다. 지금은 황당판결 링크를 복사해 공유할 수 있습니다.</div>
       <button class="btn btn-secondary" id="copy-defense-link">친구에게 사건 링크 복사</button>
     </div>`);
   document.getElementById('copy-defense-link')?.addEventListener('click', async () => {
@@ -92,7 +92,7 @@ function decorateResult(container) {
     verdictCard.classList.add('court-document');
     verdictCard.insertAdjacentHTML('afterbegin', `
       <div id="court-verdict-label" style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px;">
-        <div><div class="court-kicker">JUDGEMENT DOCUMENT</div><div class="court-title" style="font-size:19px;">생활법정 판결문</div></div>
+        <div><div class="court-kicker">JUDGEMENT DOCUMENT</div><div class="court-title" style="font-size:19px;">황당재판 판결문</div></div>
         <div class="court-seal" style="width:48px;height:48px;font-size:22px;">⚖️</div>
       </div>`);
   }
