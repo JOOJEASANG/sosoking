@@ -1,4 +1,4 @@
-import { renderResult as renderBaseResult } from './result.js?v=20260707-2';
+import { renderResult as renderBaseResult } from './result.js?v=20260707-3';
 
 function grievance(container) {
   const text = container.textContent || '';
