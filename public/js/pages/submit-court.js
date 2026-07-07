@@ -1,4 +1,4 @@
-import { renderSubmit as renderBaseSubmit } from './submit.js?v=20260707-2';
+import { renderSubmit as renderBaseSubmit } from './submit.js?v=20260707-4';
 
 function lvLabel(v) {
   const n = Number(v || 5);
@@ -88,7 +88,7 @@ function decorateSubmit(container) {
         <div class="court-title" style="font-size:19px;">아무것도 아닌 일을 황당사건으로 격상합니다</div>
         <div class="court-timeline">
           <div class="court-step"><div class="court-step-num">1</div><div><div class="court-step-title">사소한 사건 포착</div><div class="court-step-text">라면, 충전기, 읽씹 같은 일을 황당사건으로 접수합니다.</div></div></div>
-          <div class="court-step"><div class="court-step-num">2</div><div><div class="court-step-title">억울함 레벨 산정</div><div class="court-step-text">Lv이 높을수록 재판부가 더 엄숙하게 과몰입합니다.</div></div></div>
+          <div class="court-step"><div class="court-step-num">2</div><div><div class="court-step-title">이미지 증거 첨부</div><div class="court-step-text">사진이 있으면 AI가 증거 아닌 증거로 함께 감정합니다.</div></div></div>
           <div class="court-step"><div class="court-step-num">3</div><div><div class="court-step-title">재판부 카드 배정</div><div class="court-step-text">선택한 재판부의 성향에 따라 판결 톤이 달라집니다.</div></div></div>
         </div>
       </div>`);
