@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "소소킹 판결소",
+  "name": "소소킹 황당재판소",
   "short_name": "소소킹",
-  "description": "사소한 억울함을 AI 판사단이 과하게 진지하게 판결해주는 생활법정",
+  "description": "사소한 억울함을 AI 재판부가 쓸데없이 진지하게 심리하고 황당판결을 내려주는 오락 서비스",
   "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
@@ -13,7 +13,7 @@
   "categories": ["entertainment", "lifestyle"],
   "icons": [
     {
-      "src": "/app-icon.svg?v=20260630-8",
+      "src": "/app-icon.svg?v=20260707-1",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
