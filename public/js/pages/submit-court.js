@@ -2,11 +2,11 @@ import { renderSubmit as renderBaseSubmit } from './submit.js?v=20260630-8';
 
 function lvLabel(v) {
   const n = Number(v || 5);
-  if (n <= 2) return '살짝 서운';
+  if (n <= 2) return '그냥 웃김';
   if (n <= 4) return '마음에 걸림';
-  if (n <= 6) return '주변에 말하고 싶음';
-  if (n <= 8) return '생활법정 개정 필요';
-  return '국민참여재판 요청';
+  if (n <= 6) return '방청석 소환 가능';
+  if (n <= 8) return '황당재판 개정 필요';
+  return '제404호 법정 긴급배당';
 }
 function judgeStat(name) {
   const map = {
@@ -34,7 +34,7 @@ function ensureGameStyle() {
     .game-lv-caption{font-size:12px;color:rgba(255,248,236,.82);margin-top:8px;font-weight:800;}
     .judge-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;}
     .judge-option{position:relative;min-height:118px!important;padding:13px 10px!important;border-radius:18px!important;border:1px solid rgba(201,168,76,.24)!important;background:linear-gradient(145deg,rgba(255,255,255,.052),rgba(255,255,255,.025))!important;display:flex!important;flex-direction:column;align-items:flex-start!important;text-align:left!important;overflow:hidden;}
-    .judge-option::after{content:'판사 카드';position:absolute;right:9px;top:8px;font-size:9px;color:rgba(255,248,236,.38);font-weight:900;letter-spacing:.08em;}
+    .judge-option::after{content:'재판부 카드';position:absolute;right:9px;top:8px;font-size:9px;color:rgba(255,248,236,.38);font-weight:900;letter-spacing:.08em;}
     .judge-option.active{border-color:#e8c97a!important;box-shadow:0 0 0 2px rgba(201,168,76,.22),0 12px 26px rgba(0,0,0,.24)!important;background:linear-gradient(145deg,rgba(201,168,76,.22),rgba(255,255,255,.04))!important;}
     .judge-option span{font-size:28px!important;margin-bottom:7px;}
     .judge-option-name{font-size:14px!important;font-weight:900!important;color:#fff8ec!important;}
@@ -53,8 +53,8 @@ function decorateSubmit(container) {
     topCard.classList.add('court-shell');
     topCard.insertAdjacentHTML('beforeend', `
       <div id="court-submit-docket" class="court-ledger">
-        <div><strong>퀘스트 접수</strong><span>생활분쟁 시작</span></div>
-        <div><strong>제3생활부</strong><span>자동 배당</span></div>
+        <div><strong>황당접수</strong><span>사건 시작</span></div>
+        <div><strong>제3황당재판부</strong><span>자동 배당</span></div>
         <div><strong>보상 대기</strong><span>판결문·배지</span></div>
       </div>`);
   }
@@ -64,7 +64,7 @@ function decorateSubmit(container) {
       <div id="game-lv-card" class="game-lv-card">
         <div class="game-lv-head"><div class="game-lv-title">억울함 레벨</div><div class="game-lv-num">Lv.<span id="game-lv-num">5</span></div></div>
         <div class="game-lv-bar"><div class="game-lv-fill" id="game-lv-fill"></div></div>
-        <div class="game-lv-caption" id="game-lv-caption">주변에 말하고 싶음</div>
+        <div class="game-lv-caption" id="game-lv-caption">방청석 소환 가능</div>
       </div>`);
     const input = document.getElementById('grievance');
     const sync = () => {
@@ -85,11 +85,11 @@ function decorateSubmit(container) {
     form.insertAdjacentHTML('afterbegin', `
       <div id="court-submit-flow" class="court-document" style="padding:16px;margin-bottom:18px;">
         <div class="court-kicker">QUEST BRIEFING</div>
-        <div class="court-title" style="font-size:19px;">아무것도 아닌 일을 중대 사건으로 격상합니다</div>
+        <div class="court-title" style="font-size:19px;">아무것도 아닌 일을 황당사건으로 격상합니다</div>
         <div class="court-timeline">
-          <div class="court-step"><div class="court-step-num">1</div><div><div class="court-step-title">사소한 사건 포착</div><div class="court-step-text">라면, 충전기, 읽씹 같은 생활분쟁을 대사건처럼 접수합니다.</div></div></div>
-          <div class="court-step"><div class="court-step-num">2</div><div><div class="court-step-title">억울함 레벨 산정</div><div class="court-step-text">Lv이 높을수록 판사가 더 엄숙하게 과몰입합니다.</div></div></div>
-          <div class="court-step"><div class="court-step-num">3</div><div><div class="court-step-title">판사 캐릭터 배정</div><div class="court-step-text">선택한 판사 카드의 성향에 따라 판결 톤이 달라집니다.</div></div></div>
+          <div class="court-step"><div class="court-step-num">1</div><div><div class="court-step-title">사소한 사건 포착</div><div class="court-step-text">라면, 충전기, 읽씹 같은 일을 황당사건으로 접수합니다.</div></div></div>
+          <div class="court-step"><div class="court-step-num">2</div><div><div class="court-step-title">억울함 레벨 산정</div><div class="court-step-text">Lv이 높을수록 재판부가 더 엄숙하게 과몰입합니다.</div></div></div>
+          <div class="court-step"><div class="court-step-num">3</div><div><div class="court-step-title">재판부 카드 배정</div><div class="court-step-text">선택한 재판부의 성향에 따라 판결 톤이 달라집니다.</div></div></div>
         </div>
       </div>`);
   }
