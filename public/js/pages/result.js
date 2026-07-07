@@ -169,7 +169,7 @@ export async function renderResult(container, caseId) {
           <div class="step-content" style="margin-top:12px;white-space:pre-line;line-height:1.9;">${paragraphs(r.verdict || '')}</div>
         </div>
         <div class="card sentence-card step-card visible" style="margin-bottom:12px;">
-          <div style="font-size:11px;color:var(--cream-dim);margin-bottom:8px;letter-spacing:.1em;">📜 주문 · 생활형 처분</div>
+          <div style="font-size:11px;color:var(--cream-dim);margin-bottom:8px;letter-spacing:.1em;">📜 주문 · 황당 처분</div>
           <div class="sentence-text" style="white-space:pre-line;line-height:1.9;">${paragraphs(r.sentence || '')}</div>
         </div>
         ${sectionCard('🔨', '집행명령', '선고 즉시 마음속으로 집행됩니다.', r.executionOrder, '집행')}
