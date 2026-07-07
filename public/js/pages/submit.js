@@ -8,6 +8,9 @@ const MAX_TITLE = 40;
 const MAX_DESC = 320;
 const MAX_DESIRED = 160;
 const DAILY_LIMIT = 3;
+const MAX_ORIGINAL_IMAGE = 25 * 1024 * 1024;
+const MAX_RESIZED_IMAGE = 460 * 1024;
+const MAX_IMAGE_DIM = 1280;
 
 const JUDGES = [
   { id: '엄벌주의형', icon: '👨‍⚖️', desc: '사소해도 중대 사건으로 격상' },
@@ -29,6 +32,93 @@ const SERIOUS_KEYWORDS = [
 
 function _isTooSerious(text) {
   return SERIOUS_KEYWORDS.some(kw => text.includes(kw));
+}
+function _formatBytes(bytes) {
+  const n = Number(bytes || 0);
+  if (n >= 1024 * 1024) return `${(n / 1024 / 1024).toFixed(1)}MB`;
+  if (n >= 1024) return `${Math.round(n / 1024)}KB`;
+  return `${n}B`;
+}
+function _blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || '').split(',')[1] || '');
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+function _loadImage(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('이미지를 불러오지 못했습니다.')); };
+    img.src = url;
+  });
+}
+function _canvasToBlob(canvas, quality) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('이미지 압축에 실패했습니다.')), 'image/jpeg', quality);
+  });
+}
+async function _resizeImageForAi(file) {
+  if (!file) return null;
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+    throw new Error('JPG, PNG, WEBP 이미지만 첨부할 수 있습니다.');
+  }
+  if (file.size > MAX_ORIGINAL_IMAGE) {
+    throw new Error('원본 이미지는 25MB 이하만 첨부할 수 있습니다.');
+  }
+  const img = await _loadImage(file);
+  let maxDim = MAX_IMAGE_DIM;
+  let bestBlob = null;
+  let finalWidth = 0;
+  let finalHeight = 0;
+
+  for (let round = 0; round < 5; round++) {
+    const ratio = Math.min(1, maxDim / Math.max(img.naturalWidth || img.width, img.naturalHeight || img.height));
+    const width = Math.max(1, Math.round((img.naturalWidth || img.width) * ratio));
+    const height = Math.max(1, Math.round((img.naturalHeight || img.height) * ratio));
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d', { alpha: false });
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, width, height);
+    ctx.drawImage(img, 0, 0, width, height);
+
+    for (const q of [0.82, 0.72, 0.62, 0.52, 0.42]) {
+      const blob = await _canvasToBlob(canvas, q);
+      bestBlob = blob;
+      finalWidth = width;
+      finalHeight = height;
+      if (blob.size <= MAX_RESIZED_IMAGE) {
+        const data = await _blobToBase64(blob);
+        return {
+          data,
+          mimeType: 'image/jpeg',
+          originalName: file.name || 'attached-image.jpg',
+          originalSize: file.size,
+          resizedSize: blob.size,
+          width,
+          height
+        };
+      }
+    }
+    maxDim = Math.round(maxDim * 0.78);
+  }
+
+  if (!bestBlob) throw new Error('이미지 압축에 실패했습니다.');
+  if (bestBlob.size > MAX_RESIZED_IMAGE) throw new Error('이미지를 자동 압축했지만 아직 큽니다. 더 작은 이미지를 첨부해주세요.');
+  return {
+    data: await _blobToBase64(bestBlob),
+    mimeType: 'image/jpeg',
+    originalName: file.name || 'attached-image.jpg',
+    originalSize: file.size,
+    resizedSize: bestBlob.size,
+    width: finalWidth,
+    height: finalHeight
+  };
 }
 
 function _showSeriousModal() {
@@ -97,6 +187,14 @@ export async function renderSubmit(container) {
             <div class="char-counter"><span id="desc-count">0</span>/${MAX_DESC}</div>
           </div>
           <div class="form-group">
+            <label class="form-label">이미지 첨부 <span class="optional">선택 · AI가 함께 분석</span></label>
+            <div class="card" style="padding:14px;background:rgba(255,255,255,.025);border-style:dashed;">
+              <input type="file" id="case-image" accept="image/jpeg,image/png,image/webp" class="form-input" style="padding:10px;background:rgba(255,255,255,.03);">
+              <div id="image-status" style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-top:8px;">JPG, PNG, WEBP 가능. 큰 이미지는 자동으로 1280px 이하, 약 460KB 이하로 리사이즈합니다.</div>
+              <div id="image-preview" style="display:none;margin-top:12px;"></div>
+            </div>
+          </div>
+          <div class="form-group">
             <label class="form-label">억울 지수</label>
             <div class="slider-value"><span id="grievance-val">5</span><span style="font-size:14px;color:var(--cream-dim);"> / 10</span></div>
             <input type="range" id="grievance" class="form-range" min="1" max="10" value="5">
@@ -104,7 +202,7 @@ export async function renderSubmit(container) {
           </div>
           <div class="card" style="padding:14px;margin-bottom:18px;background:rgba(255,255,255,.025);">
             <div style="font-weight:900;color:var(--gold);margin-bottom:8px;">황당재판 진행 예정</div>
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-size:11px;color:var(--cream-dim);text-align:center;"><span>1 접수</span><span>2 사건번호</span><span>3 황당성 검토</span><span>4 증거 아닌 증거</span><span>5 재판부 판단</span><span>6 처분 선고</span></div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-size:11px;color:var(--cream-dim);text-align:center;"><span>1 접수</span><span>2 사건번호</span><span>3 이미지 분석</span><span>4 증거 아닌 증거</span><span>5 재판부 판단</span><span>6 처분 선고</span></div>
           </div>
           <div class="form-group">
             <label class="form-label">담당 재판부 선택 <span class="optional">선택 안 하면 랜덤 배정</span></label>
@@ -120,12 +218,12 @@ export async function renderSubmit(container) {
           <div class="card" style="padding:14px;margin-bottom:18px;background:rgba(201,168,76,.08);border-color:rgba(201,168,76,.32);">
             <label style="display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.65;color:var(--cream);cursor:pointer;">
               <input type="checkbox" id="is-public" checked style="margin-top:4px;">
-              <span><b style="color:var(--gold);">황당판결 기록에 공개</b><br><span style="color:var(--cream-dim);">체크하면 선고 후 다른 유저들이 판결기록에서 열람할 수 있습니다. 실명·연락처 등 개인정보는 적지 마세요.</span></span>
+              <span><b style="color:var(--gold);">황당판결 기록에 공개</b><br><span style="color:var(--cream-dim);">체크하면 선고 후 다른 유저들이 판결기록에서 열람할 수 있습니다. 첨부 이미지도 사건 자료로 함께 보일 수 있으니 개인정보가 있는 이미지는 올리지 마세요.</span></span>
             </label>
           </div>
           <div class="disclaimer" style="margin-bottom:24px;">
             <strong>⚠️ 접수 전 확인사항</strong><br>
-            · 하루 접수 한도는 계정당 <strong>${settings.dailyLimit}건</strong>으로 고정됩니다.<br>
+            · 일반 회원 접수 한도는 계정당 하루 <strong>${settings.dailyLimit}건</strong>입니다. 관리자는 운영 테스트용으로 한도를 우회합니다.<br>
             · 재접수 대기: <strong>${settings.cooldownSec}초</strong><br>
             · 실명·연락처·주민번호 등 개인정보 입력 금지<br>
             · 본 서비스는 AI 기반 <strong>오락 목적</strong>이며 법적 효력이 없습니다
@@ -136,6 +234,7 @@ export async function renderSubmit(container) {
     </div>`;
 
   let selectedJudge = '';
+  let imageAttachment = null;
 
   document.getElementById('judge-grid').addEventListener('click', (e) => {
     const opt = e.target.closest('.judge-option');
@@ -154,6 +253,44 @@ export async function renderSubmit(container) {
   document.getElementById('grievance').addEventListener('input', function() {
     document.getElementById('grievance-val').textContent = this.value;
   });
+  document.getElementById('case-image').addEventListener('change', async function() {
+    const file = this.files?.[0];
+    const status = document.getElementById('image-status');
+    const preview = document.getElementById('image-preview');
+    imageAttachment = null;
+    preview.style.display = 'none';
+    preview.innerHTML = '';
+    if (!file) {
+      status.textContent = 'JPG, PNG, WEBP 가능. 큰 이미지는 자동으로 1280px 이하, 약 460KB 이하로 리사이즈합니다.';
+      return;
+    }
+    status.textContent = '이미지를 AI 분석용으로 자동 리사이즈하는 중입니다...';
+    try {
+      imageAttachment = await _resizeImageForAi(file);
+      const src = `data:${imageAttachment.mimeType};base64,${imageAttachment.data}`;
+      preview.innerHTML = `
+        <img src="${src}" alt="첨부 이미지 미리보기" style="width:100%;max-height:220px;object-fit:contain;border-radius:12px;border:1px solid var(--border);background:rgba(0,0,0,.18);">
+        <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;margin-top:8px;font-size:11px;color:var(--cream-dim);line-height:1.5;">
+          <span>원본 ${_formatBytes(imageAttachment.originalSize)} → 분석용 ${_formatBytes(imageAttachment.resizedSize)} · ${imageAttachment.width}×${imageAttachment.height}</span>
+          <button type="button" id="remove-image" style="border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--cream-dim);border-radius:8px;padding:5px 8px;cursor:pointer;">삭제</button>
+        </div>`;
+      preview.style.display = 'block';
+      status.textContent = '첨부 완료. AI가 사건 경위와 이미지를 함께 보고 황당판결을 작성합니다.';
+      document.getElementById('remove-image').onclick = () => {
+        imageAttachment = null;
+        this.value = '';
+        preview.style.display = 'none';
+        preview.innerHTML = '';
+        status.textContent = '이미지 첨부가 삭제되었습니다.';
+      };
+    } catch (err) {
+      console.error(err);
+      imageAttachment = null;
+      this.value = '';
+      status.textContent = '이미지 첨부 실패';
+      showToast(err.message || '이미지를 처리하지 못했습니다.', 'error');
+    }
+  });
 
   document.getElementById('submit-form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -169,10 +306,10 @@ export async function renderSubmit(container) {
     }
     const btn = document.getElementById('submit-btn');
     btn.disabled = true;
-    btn.textContent = '황당사건 접수 중...';
+    btn.textContent = imageAttachment ? '이미지 증거와 함께 접수 중...' : '황당사건 접수 중...';
     try {
       const submitCase = httpsCallable(functions, 'submitCase');
-      const res = await submitCase({ caseTitle: title, caseDescription: desc, grievanceIndex: grievance, desiredVerdict: desired, selectedJudge, isPublic });
+      const res = await submitCase({ caseTitle: title, caseDescription: desc, grievanceIndex: grievance, desiredVerdict: desired, selectedJudge, isPublic, imageAttachment });
       const caseId = res.data?.caseId;
       if (!caseId) throw new Error('caseId missing');
       location.hash = `#/trial/${encodeURIComponent(caseId)}`;
