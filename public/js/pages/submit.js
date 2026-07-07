@@ -9,8 +9,8 @@ const MAX_DESC = 320;
 const MAX_DESIRED = 160;
 const DAILY_LIMIT = 3;
 const MAX_ORIGINAL_IMAGE = 25 * 1024 * 1024;
-const MAX_RESIZED_IMAGE = 460 * 1024;
-const MAX_IMAGE_DIM = 1280;
+const MAX_RESIZED_IMAGE = 560 * 1024;
+const MAX_IMAGE_DIM = 1600;
 
 const JUDGES = [
   { id: '엄벌주의형', icon: '👨‍⚖️', desc: '사소해도 중대 사건으로 격상' },
@@ -87,7 +87,7 @@ async function _resizeImageForAi(file) {
     ctx.fillRect(0, 0, width, height);
     ctx.drawImage(img, 0, 0, width, height);
 
-    for (const q of [0.82, 0.72, 0.62, 0.52, 0.42]) {
+    for (const q of [0.86, 0.78, 0.68, 0.58, 0.48]) {
       const blob = await _canvasToBlob(canvas, q);
       bestBlob = blob;
       finalWidth = width;
@@ -105,7 +105,7 @@ async function _resizeImageForAi(file) {
         };
       }
     }
-    maxDim = Math.round(maxDim * 0.78);
+    maxDim = Math.round(maxDim * 0.82);
   }
 
   if (!bestBlob) throw new Error('이미지 압축에 실패했습니다.');
@@ -190,7 +190,7 @@ export async function renderSubmit(container) {
             <label class="form-label">이미지 첨부 <span class="optional">선택 · AI가 함께 분석</span></label>
             <div class="card" style="padding:14px;background:rgba(255,255,255,.025);border-style:dashed;">
               <input type="file" id="case-image" accept="image/jpeg,image/png,image/webp" class="form-input" style="padding:10px;background:rgba(255,255,255,.03);">
-              <div id="image-status" style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-top:8px;">JPG, PNG, WEBP 가능. 큰 이미지는 자동으로 1280px 이하, 약 460KB 이하로 리사이즈합니다.</div>
+              <div id="image-status" style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-top:8px;">JPG, PNG, WEBP 가능. 큰 이미지는 자동으로 1600px 이하, 약 560KB 이하로 적당히 리사이즈합니다.</div>
               <div id="image-preview" style="display:none;margin-top:12px;"></div>
             </div>
           </div>
@@ -261,7 +261,7 @@ export async function renderSubmit(container) {
     preview.style.display = 'none';
     preview.innerHTML = '';
     if (!file) {
-      status.textContent = 'JPG, PNG, WEBP 가능. 큰 이미지는 자동으로 1280px 이하, 약 460KB 이하로 리사이즈합니다.';
+      status.textContent = 'JPG, PNG, WEBP 가능. 큰 이미지는 자동으로 1600px 이하, 약 560KB 이하로 적당히 리사이즈합니다.';
       return;
     }
     status.textContent = '이미지를 AI 분석용으로 자동 리사이즈하는 중입니다...';
@@ -269,7 +269,7 @@ export async function renderSubmit(container) {
       imageAttachment = await _resizeImageForAi(file);
       const src = `data:${imageAttachment.mimeType};base64,${imageAttachment.data}`;
       preview.innerHTML = `
-        <img src="${src}" alt="첨부 이미지 미리보기" style="width:100%;max-height:220px;object-fit:contain;border-radius:12px;border:1px solid var(--border);background:rgba(0,0,0,.18);">
+        <img src="${src}" alt="첨부 이미지 미리보기" style="width:100%;max-height:260px;object-fit:contain;border-radius:12px;border:1px solid var(--border);background:rgba(0,0,0,.18);">
         <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;margin-top:8px;font-size:11px;color:var(--cream-dim);line-height:1.5;">
           <span>원본 ${_formatBytes(imageAttachment.originalSize)} → 분석용 ${_formatBytes(imageAttachment.resizedSize)} · ${imageAttachment.width}×${imageAttachment.height}</span>
           <button type="button" id="remove-image" style="border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--cream-dim);border-radius:8px;padding:5px 8px;cursor:pointer;">삭제</button>
