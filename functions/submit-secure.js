@@ -9,7 +9,7 @@ const MAX_DESC = 320;
 const MAX_DESIRED = 160;
 const HARD_DAILY_LIMIT = 3;
 const DEFAULT_COOLDOWN_SEC = 45;
-const MAX_IMAGE_BASE64_LENGTH = 700000;
+const MAX_IMAGE_BASE64_LENGTH = 820000;
 const JUDGES = ['엄벌주의형','감성형','현실주의형','과몰입형','피곤형','논리집착형','드립형'];
 const NICK_ADJ = ['억울한','분노한','황당한','지친','당황한','슬픈','안타까운','기막힌'];
 const NICK_NOUN = ['직장인','집사','아무개','라면러버','과자지킴이','충전기수호자','리모컨분실자','냉장고파수꾼'];
@@ -147,14 +147,16 @@ exports.submitCase = onCall({ region: REGION, timeoutSeconds: 30, memory: '256Mi
   const analystName = pickFrom(ANALYSTS);
 
   await db.runTransaction(async tx => {
+    let nextCount = 0;
     if (!isAdminSubmitter) {
       const limitSnap = await tx.get(limitRef);
       const current = limitSnap.exists ? limitSnap.data() : {};
       const count = current.date === today ? Number(current.count || 0) : 0;
+      nextCount = count + 1;
       if (count >= HARD_DAILY_LIMIT) {
         throw new HttpsError('resource-exhausted', '오늘 접수 한도 3건을 초과했습니다. 황당재판부도 하루에 너무 많은 황당함은 감당하기 어렵습니다.');
       }
-      if (current.lastSubmittedAt) {
+      if (current.lastSubmittedAt && current.date === today) {
         const lastMs = current.lastSubmittedAt.toMillis ? current.lastSubmittedAt.toMillis() : new Date(current.lastSubmittedAt).getTime();
         const diffSec = Math.floor((Date.now() - lastMs) / 1000);
         if (cooldownSec > 0 && diffSec < cooldownSec) {
@@ -188,7 +190,7 @@ exports.submitCase = onCall({ region: REGION, timeoutSeconds: 30, memory: '256Mi
       createdAt: FieldValue.serverTimestamp(),
     });
     if (!isAdminSubmitter) {
-      tx.set(limitRef, { date: today, count: FieldValue.increment(1), lastSubmittedAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+      tx.set(limitRef, { date: today, count: nextCount, lastSubmittedAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
     }
   });
 
