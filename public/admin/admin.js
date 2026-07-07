@@ -31,13 +31,22 @@ function fmtDate(ts) {
 
 function money(n) { return '₩' + Math.round(Number(n || 0)).toLocaleString('ko-KR'); }
 function num(n) { return Number(n || 0).toLocaleString('ko-KR'); }
+function keyOf(value) { return String(value || '').trim().toLowerCase(); }
+
+async function logoutToHome() {
+  try {
+    await signOut(auth);
+  } finally {
+    location.href = '/#/';
+  }
+}
 
 async function isAdminUser(user) {
   if (!user) return false;
   try {
     const byUid = await getDoc(doc(db, 'admins', user.uid));
     if (byUid.exists()) return true;
-    const email = String(user.email || '').trim().toLowerCase();
+    const email = keyOf(user.email);
     if (!email) return false;
     const byEmail = await getDoc(doc(db, 'admins', email));
     return byEmail.exists();
@@ -102,7 +111,7 @@ function renderNoAccess() {
         <button class="btn btn-secondary" id="noaccess-logout">로그아웃</button>
       </div>
     </div>`;
-  document.getElementById('noaccess-logout').onclick = () => signOut(auth);
+  document.getElementById('noaccess-logout').onclick = logoutToHome;
 }
 
 function renderDashboard() {
@@ -125,7 +134,7 @@ function renderDashboard() {
         <div id="tab-content"></div>
       </div>
     </div>`;
-  window._logout = async () => signOut(auth);
+  window._logout = logoutToHome;
   window._tab = tab => { currentTab = tab; renderDashboard(); };
   loadTab(currentTab);
 }
@@ -219,11 +228,19 @@ async function tabRecords(el) {
 }
 
 async function tabUsers(el) {
-  const snap = await getDocs(query(collection(db, 'users'), orderBy('updatedAt', 'desc'), limit(100)));
-  el.innerHTML = tableWrap(['닉네임','이메일','가입방식','관리'], snap.docs.map(d => {
+  const [userSnap, adminSnap] = await Promise.all([
+    getDocs(query(collection(db, 'users'), orderBy('updatedAt', 'desc'), limit(100))),
+    getDocs(collection(db, 'admins')).catch(() => null)
+  ]);
+  const adminKeys = new Set((adminSnap?.docs || []).map(d => keyOf(d.id)));
+  const rows = userSnap.docs.map(d => {
     const u = d.data();
+    const uid = keyOf(d.id);
+    const email = keyOf(u.email);
+    if (adminKeys.has(uid) || adminKeys.has(email)) return '';
     return `<tr><td><b>${escapeHtml(u.nickname || '-')}</b><div style="font-size:10px;color:var(--cream-dim);">${escapeHtml(d.id)}</div></td><td>${escapeHtml(u.email || '-')}</td><td>${escapeHtml(u.provider || '-')}</td><td><button class="admin-btn red" onclick="window._delUserProfile('${escapeAttr(d.id)}')">프로필 삭제</button></td></tr>`;
-  }));
+  }).filter(Boolean);
+  el.innerHTML = tableWrap(['닉네임','이메일','가입방식','관리'], rows);
   window._delUserProfile = async id => { if (!confirm('Auth 계정은 삭제되지 않고 프로필 문서만 삭제됩니다. 계속할까요?')) return; await deleteDoc(doc(db, 'users', id)); toast('프로필 삭제 완료', 'success'); loadTab('users'); };
 }
 
