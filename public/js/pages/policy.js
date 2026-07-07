@@ -5,14 +5,14 @@ import { escapeHtml } from '../utils/sanitize.js?v=20260630-3';
 const TITLES = { terms: '이용약관', privacy: '개인정보처리방침', ai_disclaimer: 'AI 서비스 안내' };
 
 const DEFAULTS = {
-  terms: `소소킹 판결소 이용약관
+  terms: `소소킹 황당재판소 이용약관
 
 제1조 (목적)
-본 약관은 {companyName}(이하 '서비스')가 제공하는 AI 기반 오락 판결 서비스 이용에 관한 조건 및 절차를 규정합니다.
+본 약관은 {companyName}(이하 '서비스')가 제공하는 AI 기반 황당재판 오락 서비스 이용에 관한 조건 및 절차를 규정합니다.
 
 제2조 (서비스 이용)
 1. 본 서비스는 오락 목적으로 제공되며 법적 효력이 없습니다.
-2. 이용자는 운영 정책에 따른 접수 한도 내에서 사건을 접수할 수 있습니다.
+2. 이용자는 운영 정책에 따른 접수 한도 내에서 황당사건을 접수할 수 있습니다.
 3. 개인정보, 타인을 비방하는 내용, 불법적인 내용은 접수할 수 없습니다.
 
 제3조 (금지행위)
@@ -25,18 +25,18 @@ const DEFAULTS = {
 운영자는 사전 고지 없이 서비스를 변경하거나 중단할 수 있습니다.
 
 제5조 (면책)
-본 서비스의 AI 판결은 어떠한 법적 구속력도 없으며, 서비스 이용으로 인한 손해에 대해 운영자는 책임지지 않습니다.
+본 서비스의 AI 황당판결은 어떠한 법적 구속력도 없으며, 서비스 이용으로 인한 손해에 대해 운영자는 책임지지 않습니다.
 
 제6조 (준거법)
 본 약관은 대한민국 법률에 따라 해석됩니다.`,
 
-  privacy: `소소킹 판결소 개인정보처리방침
+  privacy: `소소킹 황당재판소 개인정보처리방침
 
 1. 수집하는 개인정보
-본 서비스는 Firebase 익명 인증을 사용하며 이름, 이메일 등 개인 식별 정보를 수집하지 않습니다. 서비스 이용 시 입력하는 사건 내용이 서버에 저장됩니다.
+본 서비스는 Firebase 인증을 사용하며, 서비스 이용 시 입력하는 황당사건 내용이 서버에 저장될 수 있습니다.
 
 2. 개인정보 이용 목적
-- AI 판결 생성 및 서비스 제공
+- AI 황당판결 생성 및 서비스 제공
 - 서비스 품질 개선 및 악용 방지
 - 접수 횟수 제한 관리
 
@@ -44,7 +44,7 @@ const DEFAULTS = {
 서비스 운영 기간 동안 보관하며, 관리자의 판단 또는 이용자 요청에 따라 삭제될 수 있습니다.
 
 4. 개인정보 제3자 제공
-수집된 정보는 AI 판결 생성을 위해 Google Gemini API에 전달될 수 있습니다. 그 외 제3자에게 제공하지 않습니다.
+수집된 정보는 AI 황당판결 생성을 위해 Google Gemini API에 전달될 수 있습니다. 그 외 제3자에게 제공하지 않습니다.
 
 5. 이용자의 권리
 이용자는 접수한 사건의 공개 여부를 직접 설정할 수 있으며, 삭제 요청은 운영자 연락처로 문의할 수 있습니다.
@@ -52,32 +52,32 @@ const DEFAULTS = {
 6. 쿠키 및 추적 기술
 본 서비스는 Firebase를 통해 익명화된 서비스 이용 통계를 수집할 수 있습니다.`,
 
-  ai_disclaimer: `소소킹 판결소 AI 서비스 안내
+  ai_disclaimer: `소소킹 황당재판소 AI 서비스 안내
 
 1. 본 서비스의 성격
-소소킹 판결소는 Google Gemini AI를 활용한 순수 오락 목적의 서비스입니다. 실제 법률 자문이 아님을 명확히 알려드립니다.
+소소킹 황당재판소는 Google Gemini AI를 활용한 순수 오락 목적의 서비스입니다. 실제 법률 자문이 아님을 명확히 알려드립니다.
 
-2. AI 판결의 한계
-- AI가 생성한 판결문은 어떠한 법적 효력도 없습니다.
+2. AI 황당판결의 한계
+- AI가 생성한 황당판결문은 어떠한 법적 효력도 없습니다.
 - AI의 판단은 부정확하거나 편향될 수 있습니다.
 - 실제 법적 문제는 반드시 전문 법률가에게 상담받으시기 바랍니다.
 - AI는 유머와 과장을 포함한 오락용 콘텐츠를 생성합니다.
 
 3. 콘텐츠 관련 주의사항
 - AI가 생성한 내용에 오류나 부적절한 표현이 포함될 수 있습니다.
-- 생성된 판결문을 실제 상황에 활용하지 마세요.
+- 생성된 황당판결문을 실제 상황에 활용하지 마세요.
 - 판결 결과를 타인에게 공유 시 오락 목적임을 명시해주세요.
 
 4. 사용 AI 모델
 본 서비스는 Google Gemini 2.5 Flash 모델을 사용합니다.
 
 5. 데이터 처리
-입력하신 사건 내용은 AI 판결 생성 목적으로만 사용되며, Google 및 Firebase 정책에 따라 처리됩니다.`
+입력하신 사건 내용은 AI 황당판결 생성 목적으로만 사용되며, Google 및 Firebase 정책에 따라 처리됩니다.`
 };
 
 function applyBiz(text, biz) {
   return String(text || '')
-    .replace(/{companyName}/g, biz.companyName || '소소킹 판결소')
+    .replace(/{companyName}/g, biz.companyName || '소소킹 황당재판소')
     .replace(/{ceoName}/g, biz.ceoName || '')
     .replace(/{businessNumber}/g, biz.businessNumber || '')
     .replace(/{contact}/g, biz.contact || '')
@@ -90,7 +90,7 @@ function bizInfoHtml(biz) {
   const rows = [
     biz.companyName && `상호: ${biz.companyName}`,
     biz.ceoName && `대표자: ${biz.ceoName}`,
-    biz.businessNumber && `사업자등록번호: ${biz.businessNumber}`,
+    biz.businessNumber && `사업자등록번호`,
     biz.contact && `연락처: ${biz.contact}`,
     biz.email && `이메일: ${biz.email}`,
     biz.address && `주소: ${biz.address}`,
