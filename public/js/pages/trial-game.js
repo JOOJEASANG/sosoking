@@ -1,4 +1,4 @@
-import { renderTrial as renderBaseTrial } from './trial.js?v=20260630-3';
+import { renderTrial as renderBaseTrial } from './trial.js?v=20260707-2';
 
 function ensureTrialGameStyle() {
   if (document.getElementById('trial-game-style')) return;
@@ -21,8 +21,8 @@ function decorateTrial(container) {
     docket.insertAdjacentHTML('afterend', `
       <div id="trial-game-brief" class="trial-boss-card">
         <div class="court-kicker">STAGE MODE</div>
-        <div class="court-title" style="font-size:18px;">생활분쟁 퀘스트 진행 중</div>
-        <div class="court-desc">별것 아닌 사건을 재판부가 지나치게 엄숙하게 심리합니다. 모든 스테이지가 끝나면 판결 보상이 지급됩니다.</div>
+        <div class="court-title" style="font-size:18px;">황당사건 재판 진행 중</div>
+        <div class="court-desc">별것 아닌 사건을 재판부가 지나치게 엄숙하게 심리합니다. 모든 스테이지가 끝나면 황당판결 보상이 지급됩니다.</div>
       </div>`);
   }
   document.querySelectorAll('.step-card').forEach((card, idx) => {
