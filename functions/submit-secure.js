@@ -177,7 +177,7 @@ exports.submitCase = onCall({ region: REGION, timeoutSeconds: 30, memory: '256Mi
       caseTitle: title,
       caseDescription: desc,
       grievanceIndex: grievance,
-      nickname: profileNickname || (isAdminSubmitter ? '관리자 원고' : randomNickname()),
+      nickname: isAdminSubmitter ? (profileNickname || '관리자') : (profileNickname || randomNickname()),
       desiredVerdict: desired,
       selectedJudge,
       imageAttachment,
