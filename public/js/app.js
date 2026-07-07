@@ -1,7 +1,7 @@
 import { initAuth } from './firebase.js?v=20260707-12';
 import './components/seed-case-prefill.js?v=20260707-2';
 import { initSessionTimeout } from './components/session-timeout.js?v=20260707-1';
-import { renderHome } from './pages/home-court.js?v=20260707-logo3';
+import { renderHome } from './pages/home-court.js?v=20260707-logo5';
 import { renderSubmit } from './pages/submit-guard.js?v=20260707-5';
 import { renderTrial } from './pages/trial-game.js?v=20260707-4';
 import { renderResult } from './pages/result-court.js?v=20260707-4';
