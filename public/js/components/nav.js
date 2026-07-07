@@ -29,7 +29,7 @@ export function renderNav() {
     </a>
     <a href="#/absurd-cases" class="nav-item${isCases ? ' active' : ''}">
       <span class="nav-icon">📚</span>
-      <span class="nav-label">사례</span>
+      <span class="nav-label">황당사례</span>
     </a>
     <a href="#/submit" class="nav-item nav-cta${isSubmit ? ' active' : ''}">
       <span class="nav-icon">⚖️</span>
