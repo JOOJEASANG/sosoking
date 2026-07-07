@@ -9,13 +9,13 @@ import { renderPolicy } from './pages/policy.js?v=20260707-3';
 import { renderMyCases } from './pages/my-cases-game.js?v=20260630-22';
 import { renderGuide } from './pages/guide.js?v=20260630-3';
 import { renderAuth } from './pages/auth2.js?v=20260707-2';
-import { renderAbsurdCases } from './pages/absurd-cases.js?v=20260707-3';
+import { renderAbsurdCases } from './pages/absurd-cases.js?v=20260707-4';
 import { renderBoard } from './pages/board-court.js?v=20260707-2';
 import { renderFooter } from './components/footer.js?v=20260707-3';
 import { initTheme } from './components/theme.js?v=20260630-10';
 import { initCourtDesign } from './components/court-design.js?v=20260630-23';
 import { renderThemePreference } from './components/theme-preference.js?v=20260630-12';
-import { renderNav } from './components/nav.js?v=20260707-3';
+import { renderNav } from './components/nav.js?v=20260707-4';
 
 function normalizedRoute() {
   const hash = location.hash || '';
