@@ -294,11 +294,6 @@ button {
 
 /* Judge cards are intentionally dark even in light mode because the card text is styled like game UI. */
 html[data-theme="light"] .judge-option,
-:root[data-theme="light"] .judge-option,
-@media (prefers-color-scheme: light) {
-}
-
-html[data-theme="light"] .judge-option,
 :root[data-theme="light"] .judge-option {
   background: linear-gradient(145deg, #202842, #111827) !important;
   border-color: rgba(232,201,122,.46) !important;
