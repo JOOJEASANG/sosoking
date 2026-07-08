@@ -27,6 +27,9 @@ function formatBytes(bytes) {
   if (n >= 1024) return `${Math.round(n / 1024)}KB`;
   return `${n}B`;
 }
+function emptySocial() {
+  return { reactions: { counts: {}, total: 0 }, myReaction: '', comments: [] };
+}
 
 function verdictType(r) {
   const text = `${r.verdict || ''} ${r.sentence || ''}`;
@@ -36,7 +39,6 @@ function verdictType(r) {
   if (text.includes('인정')) return '억울함 인정';
   return '원고 마음속 일부승소';
 }
-
 function titleBadge(c, r) {
   const g = Number(c.grievanceIndex || r.grievanceIndex || 5);
   if ((r.judgeType || '').includes('드립')) return '법정 드립 감정관';
@@ -46,7 +48,6 @@ function titleBadge(c, r) {
   if (g <= 3) return '소심한 방청객';
   return '억울함 감별사';
 }
-
 function scoreMetrics(c, r) {
   const g = Number(c.grievanceIndex || r.grievanceIndex || 5);
   const strict = (r.judgeType === '엄벌주의형' ? 88 : r.judgeType === '현실주의형' ? 62 : 70) + Math.min(g, 10);
@@ -60,7 +61,6 @@ function scoreMetrics(c, r) {
     ['처분 웃김 강도', Math.min(chaos, 99)]
   ];
 }
-
 function paragraphs(text) {
   return escapeHtml(String(text || '')).replace(/\n/g, '<br>');
 }
@@ -84,7 +84,7 @@ function imageCard(image) {
     image.originalSize ? `원본 ${formatBytes(image.originalSize)}` : ''
   ].filter(Boolean).join(' · ');
   return `<div class="card step-card visible" style="margin-bottom:12px;padding:18px;">
-    <div class="step-role" style="margin-bottom:8px;">🖼️ 첨부 이미지 증거 아닌 증거</div>
+    <div class="step-role" style="margin-bottom:8px;">🖼️ 첨부 이미지 증거 아닌 증거 <span style="font-size:11px;color:var(--cream-dim);font-weight:400;">· 작성자에게만 표시</span></div>
     <img src="${src}" alt="첨부 이미지" style="width:100%;max-height:360px;object-fit:contain;border-radius:14px;border:1px solid var(--border);background:rgba(0,0,0,.18);">
     <div style="font-size:11px;color:var(--cream-dim);line-height:1.6;margin-top:8px;">${escapeHtml(meta || 'AI 분석용으로 자동 리사이즈된 이미지')}</div>
   </div>`;
@@ -128,13 +128,9 @@ async function loadSocial(caseId) {
 export async function renderResult(container, caseId) {
   container.innerHTML = `<div class="page-header"><span class="logo">⚖️ 황당판결문</span></div><div class="container" style="padding:28px 20px 80px;"><div class="loading-dots"><span></span><span></span><span></span></div></div>`;
 
-  let caseSnap, resultSnap, social;
+  let resultSnap;
   try {
-    [caseSnap, resultSnap, social] = await Promise.all([
-      getDoc(doc(db, 'cases', caseId)),
-      getDoc(doc(db, 'results', caseId)),
-      loadSocial(caseId)
-    ]);
+    resultSnap = await getDoc(doc(db, 'results', caseId));
   } catch (err) {
     console.error(err);
     container.innerHTML = `<div class="container" style="padding:60px 20px;text-align:center;color:var(--cream-dim);">결과를 불러올 권한이 없거나 삭제된 황당판결문입니다.<br><a href="#/" style="color:var(--gold);">처음으로</a></div>`;
@@ -146,16 +142,20 @@ export async function renderResult(container, caseId) {
     return;
   }
 
-  const c = caseSnap.exists() ? caseSnap.data() : {};
   const r = resultSnap.data();
+  let caseSnap = null;
+  try { caseSnap = await getDoc(doc(db, 'cases', caseId)); } catch (err) { console.warn('case read skipped:', err.message || err); }
+  const c = caseSnap?.exists() ? caseSnap.data() : {};
+  const social = await loadSocial(caseId).catch(() => emptySocial());
   const icon = JUDGE_ICON[r.judgeType] || '⚖️';
-  const isOwner = caseSnap.exists() && c.userId === auth.currentUser?.uid;
-  const isPublic = !!(c.isPublic || r.isPublic);
+  const isOwner = !!(caseSnap?.exists() && c.userId === auth.currentUser?.uid);
+  const isPublic = r.isPublic === true || (isOwner && c.isPublic === true);
   const type = verdictType(r);
   const badge = titleBadge(c, r);
   const metrics = scoreMetrics(c, r);
-  const resultTitle = r.absurdityTitle || c.caseTitle || r.caseTitle || '황당판결문';
+  const resultTitle = r.absurdityTitle || r.caseTitle || c.caseTitle || '황당판결문';
   const docket = r.docketNumber || c.docketNumber || '황당사건번호 미상';
+  const createdAt = r.createdAt || c.createdAt;
 
   container.innerHTML = `
     <div>
@@ -165,7 +165,7 @@ export async function renderResult(container, caseId) {
           <div style="font-size:56px;margin-bottom:8px;">${icon}</div>
           <div class="badge badge-gold" style="font-size:13px;padding:5px 14px;">${escapeHtml(r.judgeType || 'AI')} 재판부</div>
           <h2 style="margin:14px 0 6px;font-size:21px;line-height:1.45;">${escapeHtml(resultTitle)}</h2>
-          <div style="font-size:12px;color:var(--cream-dim);line-height:1.75;">${escapeHtml(docket)}<br>${escapeHtml(r.courtName || c.courtName || '소소킹 황당재판소')} · ${escapeHtml(r.division || c.division || '제3황당재판부')}<br>${escapeHtml(r.courtroom || c.courtroom || '제404호 황당법정')} · 억울지수 ${escapeHtml(c.grievanceIndex || r.grievanceIndex || '?')}/10${c.createdAt ? ` · ${escapeHtml(fmtDate(c.createdAt))}` : ''}</div>
+          <div style="font-size:12px;color:var(--cream-dim);line-height:1.75;">${escapeHtml(docket)}<br>${escapeHtml(r.courtName || c.courtName || '소소킹 황당재판소')} · ${escapeHtml(r.division || c.division || '제3황당재판부')}<br>${escapeHtml(r.courtroom || c.courtroom || '제404호 황당법정')} · 억울지수 ${escapeHtml(r.grievanceIndex || c.grievanceIndex || '?')}/10${createdAt ? ` · ${escapeHtml(fmtDate(createdAt))}` : ''}</div>
         </div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
@@ -182,7 +182,7 @@ export async function renderResult(container, caseId) {
           <div style="font-size:12px;color:var(--cream-dim);line-height:1.8;">본 판결은 법적 효력은 없으나, 마음속 억울함에는 상당한 진정 효과가 있을 수 있습니다. 재판부는 사소한 일을 굳이 크게 만들기 위해 최선을 다했습니다.</div>
         </div>
 
-        ${imageCard(c.imageAttachment)}
+        ${isOwner ? imageCard(c.imageAttachment) : ''}
         ${sectionCard('🖼️', 'AI 이미지 감정', '첨부 이미지를 황당법정 참고자료로 분석했습니다.', r.imageAnalysis, '이미지 분석')}
         ${sectionCard('📋', '황당사건 접수기록', `${escapeHtml(r.recordClerk || c.recordClerk || '기록관')} 작성`, r.reception, '접수')}
         ${sectionCard('😳', '재판부의 1차 고민', '이걸 정말 재판까지 해야 하는지에 대한 엄숙한 검토', r.absurdityReview, '황당성 검토')}
@@ -312,7 +312,7 @@ function bindResultActions(container, caseId, c, r, isOwner, isPublic) {
       const newPublic = !isPublic;
       try {
         await updateDoc(doc(db, 'results', caseId), { isPublic: newPublic });
-        await updateDoc(doc(db, 'cases', caseId), { isPublic: newPublic });
+        await updateDoc(doc(db, 'cases', caseId), { isPublic: newPublic }).catch(() => null);
         if (newPublic) {
           const url = `${location.origin}/#/result/${encodeURIComponent(caseId)}`;
           await navigator.clipboard.writeText(url).catch(() => {});
