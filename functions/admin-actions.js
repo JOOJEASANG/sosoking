@@ -20,19 +20,7 @@ async function deleteQuerySnapshot(query, counter) {
     if (snap.size < BATCH_LIMIT) break;
   }
 }
-async function writeAdminLog(uid, action, caseId, detail = {}) {
-  await db.collection('admin_logs').add({ uid, action, caseId, detail, createdAt: FieldValue.serverTimestamp() }).catch(() => null);
-}
-
-exports.deleteCourtPost = onCall({ region: REGION, timeoutSeconds: 120, memory: '256MiB' }, async request => {
-  if (!request.auth || !(await isAdminAuth(request.auth))) {
-    throw new HttpsError('permission-denied', '관리자만 삭제할 수 있습니다.');
-  }
-  const caseId = cleanId(request.data?.caseId);
-  if (!caseId) throw new HttpsError('invalid-argument', 'caseId required');
-
-  const counter = { deleted: 0 };
-
+async function deleteCourtData(caseId, counter) {
   await deleteQuerySnapshot(db.collection(`result_reactions/${caseId}/votes`), counter);
   await deleteQuerySnapshot(db.collection(`court_comments/${caseId}/items`), counter);
   await deleteQuerySnapshot(db.collection('reports').where('caseId', '==', caseId), counter);
@@ -48,6 +36,44 @@ exports.deleteCourtPost = onCall({ region: REGION, timeoutSeconds: 120, memory: 
   refs.forEach(ref => batch.delete(ref));
   await batch.commit();
   counter.deleted += refs.length;
+}
+async function writeAdminLog(uid, action, caseId, detail = {}) {
+  await db.collection('admin_logs').add({ uid, action, caseId, detail, createdAt: FieldValue.serverTimestamp() }).catch(() => null);
+}
+
+exports.deleteMyCase = onCall({ region: REGION, timeoutSeconds: 120, memory: '256MiB' }, async request => {
+  if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+  const uid = request.auth.uid;
+  const caseId = cleanId(request.data?.caseId);
+  if (!caseId) throw new HttpsError('invalid-argument', 'caseId required');
+
+  const caseRef = db.doc(`cases/${caseId}`);
+  const caseSnap = await caseRef.get();
+  if (!caseSnap.exists) return { success: true, caseId, alreadyDeleted: true, deleted: 0 };
+
+  const c = caseSnap.data();
+  if (c.userId !== uid) throw new HttpsError('permission-denied', '본인 사건만 삭제할 수 있습니다.');
+  if (c.status === 'processing') {
+    throw new HttpsError('failed-precondition', '재판이 진행 중인 사건은 판결 완료 후 삭제할 수 있습니다.');
+  }
+
+  await caseRef.set({ status: 'deleting', isPublic: false, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+  await db.doc(`results/${caseId}`).set({ isPublic: false, updatedAt: FieldValue.serverTimestamp() }, { merge: true }).catch(() => null);
+
+  const counter = { deleted: 0 };
+  await deleteCourtData(caseId, counter);
+  return { success: true, caseId, deleted: counter.deleted };
+});
+
+exports.deleteCourtPost = onCall({ region: REGION, timeoutSeconds: 120, memory: '256MiB' }, async request => {
+  if (!request.auth || !(await isAdminAuth(request.auth))) {
+    throw new HttpsError('permission-denied', '관리자만 삭제할 수 있습니다.');
+  }
+  const caseId = cleanId(request.data?.caseId);
+  if (!caseId) throw new HttpsError('invalid-argument', 'caseId required');
+
+  const counter = { deleted: 0 };
+  await deleteCourtData(caseId, counter);
 
   await writeAdminLog(request.auth.uid, 'deleteCourtPost', caseId, counter);
   return { success: true, caseId, deleted: counter.deleted };
