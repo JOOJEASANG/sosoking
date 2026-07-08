@@ -29,9 +29,10 @@ export function generatedAvatarUrl(name = '', email = '', seed = '') {
 }
 
 export function profilePhotoUrl(user, profile = {}) {
-  const url = profile.photoURL || user?.photoURL || '';
-  if (typeof url === 'string' && /^https:\/\//.test(url)) return url;
-  return generatedAvatarUrl(profile.nickname || user?.displayName || '', profile.email || user?.email || '', profile.avatarSeed || user?.uid || '');
+  const avatarType = profile.avatarType || (profile.photoURL || user?.photoURL ? 'google' : 'generated');
+  const googleUrl = profile.photoURL || user?.photoURL || '';
+  if (avatarType !== 'generated' && typeof googleUrl === 'string' && /^https:\/\//.test(googleUrl)) return googleUrl;
+  return generatedAvatarUrl(profile.nickname || user?.displayName || '', profile.email || user?.email || '', profile.avatarSeed || user?.uid || 'default');
 }
 
 export function avatarImg(user, profile = {}, size = 44, extra = '') {
@@ -41,5 +42,7 @@ export function avatarImg(user, profile = {}, size = 44, extra = '') {
 }
 
 export function avatarSourceLabel(user, profile = {}) {
-  return (profile.photoURL || user?.photoURL) ? '구글 프로필 사진 사용 중' : '닉네임 기반 자동 생성 아이콘';
+  const avatarType = profile.avatarType || (profile.photoURL || user?.photoURL ? 'google' : 'generated');
+  if (avatarType === 'generated') return '선택한 자동 프로필 아이콘';
+  return (profile.photoURL || user?.photoURL) ? '소셜 로그인 프로필 사진' : '닉네임 기반 자동 생성 아이콘';
 }
