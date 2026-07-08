@@ -3,6 +3,7 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPasswor
 import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, query, orderBy, limit, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { firebaseConfig } from '../js/firebase-config.js';
 import { escapeHtml, escapeAttr, compactText } from '../js/utils/sanitize.js?v=20260630-3';
+import { DEFAULT_POLICY_DOC_TYPES, DEFAULT_POLICY_DOCS, policyDefault } from '../js/data/default-policy-docs.js?v=20260708-1';
 
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -324,20 +325,74 @@ async function tabBiz(el) {
   document.getElementById('biz-form').onsubmit = async e => { e.preventDefault(); const businessInfo = {}; fields.forEach(([k]) => businessInfo[k] = document.getElementById(`b_${k}`).value.trim()); await setDoc(doc(db, 'site_settings', 'config'), { businessInfo, updatedAt: serverTimestamp() }, { merge: true }); toast('저장되었습니다.', 'success'); };
 }
 
+async function seedMissingPolicyDocs(snaps) {
+  const seeded = [];
+  for (let i = 0; i < DEFAULT_POLICY_DOC_TYPES.length; i++) {
+    const [type] = DEFAULT_POLICY_DOC_TYPES[i];
+    if (snaps[i].exists()) continue;
+    const fallback = policyDefault(type);
+    await setDoc(doc(db, 'policy_docs', type), {
+      type,
+      title: fallback.title,
+      content: fallback.content,
+      seededFrom: 'default-policy-docs',
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+    seeded.push(type);
+  }
+  return seeded;
+}
+
 async function tabPolicy(el) {
-  const types = [['terms','이용약관'],['privacy','개인정보처리방침'],['ai_disclaimer','AI 서비스 안내']];
-  const defaults = {
-    terms: '소소킹 판결소 이용약관\n\n본 서비스는 AI 기반 황당판결 오락 서비스이며 실제 법률 자문이나 법원 판결이 아닙니다.',
-    privacy: '소소킹 판결소 개인정보처리방침\n\nFirebase 인증 정보, 이메일, 닉네임, 사건 입력 내용, 생성된 판결문, 공개 여부 등이 서비스 운영을 위해 처리될 수 있습니다.',
-    ai_disclaimer: 'AI 서비스 이용 안내\n\nAI가 생성한 판결문은 오락 콘텐츠입니다. 실제 법률 문제는 전문가에게 상담해야 합니다.'
-  };
-  const snaps = await Promise.all(types.map(([t]) => getDoc(doc(db, 'policy_docs', t))));
-  let active = 'terms';
+  const types = DEFAULT_POLICY_DOC_TYPES;
+  let snaps = await Promise.all(types.map(([t]) => getDoc(doc(db, 'policy_docs', t))));
+  const seeded = await seedMissingPolicyDocs(snaps);
+  if (seeded.length) snaps = await Promise.all(types.map(([t]) => getDoc(doc(db, 'policy_docs', t))));
+  let active = types[0][0];
+
   function render() {
     const idx = types.findIndex(([t]) => t === active);
-    const content = snaps[idx].exists() ? snaps[idx].data().content : defaults[active];
-    el.innerHTML = `<div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;">${types.map(([t,l]) => `<button class="admin-tab${active === t ? ' active' : ''}" onclick="window._pt('${t}')">${l}</button>`).join('')}</div><form id="policy-form"><div class="form-group"><label class="form-label">${types[idx][1]}</label><textarea id="pc" class="form-textarea" style="min-height:420px;">${escapeHtml(content)}</textarea></div><button type="submit" class="btn btn-primary">저장</button></form>`;
-    document.getElementById('policy-form').onsubmit = async e => { e.preventDefault(); const val = document.getElementById('pc').value; await setDoc(doc(db, 'policy_docs', active), { content: val, updatedAt: serverTimestamp() }); snaps[idx] = { exists: () => true, data: () => ({ content: val }) }; toast('저장되었습니다.', 'success'); };
+    const fallback = policyDefault(active);
+    const data = snaps[idx].exists() ? snaps[idx].data() : {};
+    const title = data.title || fallback.title || types[idx][1];
+    const content = data.content || fallback.content || '';
+    const updated = data.updatedAt ? ` · 최근 수정 ${fmtDate(data.updatedAt)}` : '';
+    el.innerHTML = `
+      <div class="card" style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-bottom:14px;">
+        약관, 개인정보처리방침, AI 서비스 안내, 이용안내는 모두 <code>policy_docs</code>에서 읽어옵니다.${seeded.length ? `<br><strong style="color:var(--gold);">누락된 기본 정책 ${seeded.length}개를 Firestore에 자동 생성했습니다.</strong>` : ''}
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;">
+        ${types.map(([t,l]) => `<button class="admin-tab${active === t ? ' active' : ''}" onclick="window._pt('${t}')">${l}</button>`).join('')}
+      </div>
+      <form id="policy-form">
+        <div class="form-group"><label class="form-label">문서 제목</label><input type="text" id="policy-title" class="form-input" value="${escapeAttr(title)}"></div>
+        <div class="form-group"><label class="form-label">${types[idx][1]} 내용<span class="optional">${escapeHtml(updated)}</span></label><textarea id="pc" class="form-textarea" style="min-height:460px;">${escapeHtml(content)}</textarea></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button type="submit" class="btn btn-primary" style="flex:1;min-width:180px;">정책 저장</button>
+          <button type="button" class="btn btn-secondary" id="fill-default" style="flex:1;min-width:180px;">기본 문구로 채우기</button>
+        </div>
+      </form>`;
+    document.getElementById('policy-form').onsubmit = async e => {
+      e.preventDefault();
+      const val = document.getElementById('pc').value;
+      const nextTitle = document.getElementById('policy-title').value.trim() || types[idx][1];
+      await setDoc(doc(db, 'policy_docs', active), {
+        type: active,
+        title: nextTitle,
+        content: val,
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+      snaps[idx] = { exists: () => true, data: () => ({ type: active, title: nextTitle, content: val, updatedAt: new Date() }) };
+      toast('정책이 저장되었습니다. 사이트에 바로 반영됩니다.', 'success');
+      render();
+    };
+    document.getElementById('fill-default').onclick = () => {
+      if (!confirm('현재 입력 중인 내용을 기본 문구로 바꿀까요? 저장 버튼을 눌러야 실제 반영됩니다.')) return;
+      document.getElementById('policy-title').value = fallback.title || types[idx][1];
+      document.getElementById('pc').value = fallback.content || '';
+      toast('기본 문구를 입력창에 불러왔습니다.', 'success');
+    };
     window._pt = t => { active = t; render(); };
   }
   render();
