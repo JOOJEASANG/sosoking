@@ -44,15 +44,6 @@ function titleBadge(c, r) {
   if (g >= 6) return '정식 황당사건 원고';
   return '생활평온권 주장인';
 }
-function scoreMetrics(c, r) {
-  const g = Number(c.grievanceIndex || r.grievanceIndex || 5);
-  return [
-    ['재판부 과몰입', Math.min(64 + g * 4, 99)],
-    ['사건 고유성', r.aiGenerated === false ? 50 : 90],
-    ['소소국과수 정밀도', r.forensicReport ? 93 : 40],
-    ['처분 생활밀착도', Math.min(70 + g * 3, 99)]
-  ];
-}
 function paragraphs(text) {
   return escapeHtml(String(text || '')).replace(/\n/g, '<br>');
 }
@@ -90,7 +81,7 @@ function imageCard(image) {
   return `<div class="card step-card visible" style="margin-bottom:12px;padding:18px;">
     <div class="step-role" style="margin-bottom:8px;">🖼️ 첨부 이미지 참고자료 <span style="font-size:11px;color:var(--cream-dim);font-weight:400;">· 작성자에게만 표시</span></div>
     <img src="${src}" alt="첨부 이미지" style="width:100%;max-height:360px;object-fit:contain;border-radius:14px;border:1px solid var(--border);background:rgba(0,0,0,.18);">
-    <div style="font-size:11px;color:var(--cream-dim);line-height:1.6;margin-top:8px;">${escapeHtml(meta || 'AI 분석용으로 자동 리사이즈된 이미지')}</div>
+    <div style="font-size:11px;color:var(--cream-dim);line-height:1.6;margin-top:8px;">${escapeHtml(meta || '분석용으로 자동 리사이즈된 이미지')}</div>
   </div>`;
 }
 function sectionCard(stage, icon, title, sub, content, badge = '') {
@@ -105,14 +96,6 @@ function sectionCard(stage, icon, title, sub, content, badge = '') {
       ${badge ? `<span class="badge badge-gold">${escapeHtml(badge)}</span>` : ''}
     </div>
     <div class="step-content" style="white-space:pre-line;line-height:1.82;">${paragraphs(content)}</div>
-  </div>`;
-}
-function digestCard(items) {
-  const rows = Array.isArray(items) ? items.filter(Boolean).slice(0, 7) : [];
-  if (!rows.length) return '';
-  return `<div class="card" style="padding:15px 17px;margin-bottom:14px;border-color:rgba(201,168,76,.32);background:rgba(201,168,76,.045);">
-    <div style="font-weight:900;color:var(--gold);margin-bottom:8px;">🧾 AI 7차 정리 요약</div>
-    <div style="display:flex;flex-direction:column;gap:6px;">${rows.map((x, i) => `<div style="font-size:12px;color:var(--cream-dim);line-height:1.6;"><b style="color:var(--gold);">${i + 1}차</b> ${escapeHtml(x)}</div>`).join('')}</div>
   </div>`;
 }
 async function loadSocial(caseId) {
@@ -154,14 +137,14 @@ export async function renderResult(container, caseId) {
   const isPublic = r.isPublic === true || (isOwner && c.isPublic === true);
   const type = verdictType(r);
   const badge = titleBadge(c, r);
-  const metrics = scoreMetrics(c, r);
   const finalTitle = r.refinedCaseTitle || r.caseTitle || c.caseTitle || '황당사건';
   const resultTitle = r.absurdityTitle || `${finalTitle} 기록철`;
   const docket = r.docketNumber || c.docketNumber || '황당사건번호 미상';
   const createdAt = r.createdAt || c.createdAt;
+  const expandedCase = r.expandedCase || r.reception || '';
   const timeline = r.caseTimeline || r.investigation || '';
   const judgment = r.courtOpinion || r.verdict || '';
-  const finalNotice = r.executionOrder || '본 기록은 실제 법적 효력이 없는 소소킹 오락용 문서이며, 법률 자문으로 활용할 수 없습니다.';
+  const finalNotice = r.executionOrder || '본 기록은 실제 법률문서가 아니며, 당사자 사이의 웃음 회복을 위한 임의적 기록입니다.';
   const documentRows = [
     ['사건번호', docket],
     ['사건일시', createdAt ? fmtDate(createdAt) : '기록시각 미상'],
@@ -181,36 +164,30 @@ export async function renderResult(container, caseId) {
           <div style="font-size:46px;margin-bottom:8px;">${icon}</div>
           <div class="badge badge-gold" style="font-size:13px;padding:5px 14px;">최종 사건기록철</div>
           <h2 style="margin:14px 0 6px;font-size:21px;line-height:1.45;">${escapeHtml(resultTitle)}</h2>
-          <div style="font-size:12px;color:var(--cream-dim);line-height:1.75;">7차 정리·보완 후 작성된 소소킹 문서형 판결기록</div>
+          <div style="font-size:12px;color:var(--cream-dim);line-height:1.75;">사건의 배경과 발단을 기록한 황당재판 문서</div>
         </div>
 
         ${documentInfoCard(documentRows)}
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
           <div class="card" style="padding:14px;text-align:center;"><div style="font-size:11px;color:var(--cream-dim);">판결 유형</div><div style="font-size:17px;font-weight:900;color:var(--gold);margin-top:4px;">${escapeHtml(type)}</div></div>
-          <div class="card" style="padding:14px;text-align:center;"><div style="font-size:11px;color:var(--cream-dim);">사용자 칭호</div><div style="font-size:17px;font-weight:900;color:var(--gold);margin-top:4px;">${escapeHtml(badge)}</div></div>
+          <div class="card" style="padding:14px;text-align:center;"><div style="font-size:11px;color:var(--cream-dim);">원고 칭호</div><div style="font-size:17px;font-weight:900;color:var(--gold);margin-top:4px;">${escapeHtml(badge)}</div></div>
         </div>
 
-        <div class="card" style="padding:16px;margin-bottom:14px;">
-          <div style="font-weight:900;color:var(--gold);margin-bottom:12px;">📊 이번 황당재판 성향</div>
-          ${metrics.map(([label, value]) => `<div style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--cream-dim);margin-bottom:5px;"><span>${escapeHtml(label)}</span><span>${value}%</span></div><div style="height:7px;border-radius:999px;background:rgba(255,255,255,.07);overflow:hidden;"><div style="height:100%;width:${value}%;background:#c9a84c;"></div></div></div>`).join('')}
-        </div>
-
-        ${digestCard(r.analysisDigest)}
         ${isOwner ? imageCard(c.imageAttachment) : ''}
-        ${sectionCard(1, '📋', '사건접수조서', `${r.recordClerk || c.recordClerk || '기록관'} 작성`, r.reception, '접수')}
-        ${sectionCard(2, '⏱️', '분초 단위 사건일지', '사건 전말과 주의 공백을 시간순으로 재구성합니다.', timeline, '일지')}
+        ${sectionCard(1, '📖', '사건 배경 및 발단', '짧은 접수 내용에서 확장된 사건의 전말입니다.', expandedCase, '기록')}
+        ${sectionCard(2, '⏱️', '분초 단위 사건일지', '평온이 무너진 순간을 시간순으로 재구성합니다.', timeline, '일지')}
         ${sectionCard(3, '🧬', '소소국과수 감정서', '국립소소과학수사연구소 생활증거분석실 감정의견', r.forensicReport, '감정')}
         ${sectionCard(4, '💼', '황당검사 공소장', `${r.prosecutorName || '황당검사'} 작성`, r.plaintiffArg, '검사')}
         ${sectionCard(5, '🛡️', '피고 측 답변서', `${r.defenderName || '피고측 변호인'} 제출`, r.defendantArg, '변호인')}
-        ${sectionCard(6, '⚖️', '재판부 판단', '공소장·답변서·소소국과수 감정서를 종합한 판단입니다.', judgment, '판단')}
+        ${sectionCard(6, '⚖️', '재판부 판단', '공소장·답변서·감정서를 종합한 판단입니다.', judgment, '판단')}
         ${sectionCard(7, '📜', '주문 및 집행권고', '선고 즉시 마음속 기록철에 편철됩니다.', r.sentence, '주문')}
         ${r.closingComment ? `<div class="card" style="padding:18px;margin-bottom:16px;text-align:center;border-color:rgba(201,168,76,.5);"><div style="font-family:var(--font-serif);font-size:18px;color:var(--gold);font-weight:900;line-height:1.7;">${escapeHtml(r.closingComment)}</div></div>` : ''}
 
         ${renderReactions(social, isPublic)}
         ${renderComments(social.comments, isPublic)}
 
-        <div style="text-align:center;margin:16px 0;padding:10px;background:rgba(255,255,255,.04);border-radius:8px;font-size:11px;color:var(--cream-dim);line-height:1.7;">🤖 ${escapeHtml(finalNotice)}</div>
+        <div style="text-align:center;margin:16px 0;padding:10px;background:rgba(255,255,255,.04);border-radius:8px;font-size:11px;color:var(--cream-dim);line-height:1.7;">${escapeHtml(finalNotice)}</div>
 
         <div class="result-actions">
           ${isOwner ? `<button class="btn ${isPublic ? 'btn-ghost' : 'btn-primary'}" id="btn-share">${isPublic ? '🔒 황당판결 비공개로 전환' : '🔗 황당판결 기록에 공개하기'}</button>` : ''}
