@@ -1,7 +1,7 @@
 import { functions } from '../firebase.js?v=20260630-3';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 import { showToast } from '../components/toast.js?v=20260630-3';
-import { renderResult as renderBaseResult } from './result.js?v=20260709-compact1';
+import { renderResult as renderBaseResult } from './result.js?v=20260709-doc1';
 
 function grievance(container) {
   const text = container.textContent || '';
@@ -41,6 +41,7 @@ function ensureResultGameStyle() {
     .drama-flow span{white-space:nowrap;border:1px solid rgba(201,168,76,.25);border-radius:999px;padding:7px 10px;font-size:11px;color:var(--cream-dim);background:rgba(255,255,255,.035);}
     .owner-delete-case{border-color:rgba(231,76,60,.45)!important;color:#e74c3c!important;}
     .compact-doc-card{border-left:3px solid rgba(201,168,76,.55)!important;}
+    .official-doc-meta{font-family:var(--font-sans);}
     [data-theme="light"] .reward-card,:root:not([data-theme="dark"]) .reward-card{background:linear-gradient(180deg,#fffaf0 0%,#fff7e7 100%)!important;border-color:#e2d3af!important;box-shadow:0 10px 22px rgba(117,85,24,.08)!important;}
     [data-theme="light"] .reward-badge,:root:not([data-theme="dark"]) .reward-badge{color:#6a4b12!important;background:linear-gradient(180deg,#fff8e7 0%,#f3e2b3 100%)!important;border:1px solid #d7bf82!important;box-shadow:0 4px 10px rgba(120,90,25,.10)!important;text-shadow:none!important;}
     [data-theme="light"] .invite-defense,:root:not([data-theme="dark"]) .invite-defense{background:#fff8e8!important;border-color:#d8c48d!important;box-shadow:0 8px 22px rgba(70,46,16,.08)!important;}
@@ -63,7 +64,7 @@ function addReward(container) {
         <div style="flex:1;min-width:0;">
           <div class="court-kicker">JUDGEMENT REWARD</div>
           <div class="court-title" style="font-size:20px;">${label}</div>
-          <div class="court-desc">소소한 일이 7개 사건문서로 압축된 황당사건 기록철로 등록되었습니다.</div>
+          <div class="court-desc">접수 내용이 7차 정리·보완을 거쳐 문서형 황당사건 기록철로 등록되었습니다.</div>
         </div>
       </div>
       <div id="reward-badges" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">${badges.map(([i, t]) => `<span class="reward-badge">${i} ${t}</span>`).join('')}</div>
@@ -77,7 +78,7 @@ function addDramaFlow(container) {
     <div id="drama-flow-card" class="drama-flow-card">
       <div class="court-kicker" style="margin-bottom:8px;">CASE FILE FLOW</div>
       <div class="drama-flow">
-        <span>📋 접수조서</span><span>⏱️ 사건일지</span><span>🧬 소소국과수</span><span>💼 공소장</span><span>🛡️ 답변서</span><span>⚖️ 재판부 판단</span><span>📜 주문</span>
+        <span>1차 사실분해</span><span>2차 피해정리</span><span>3차 반박예상</span><span>4차 감정대상</span><span>5차 제목보완</span><span>6차 문서압축</span><span>7차 최종검수</span>
       </div>
     </div>`);
 }
@@ -132,7 +133,7 @@ function decorateResult(container, caseId) {
     titleCard.insertAdjacentHTML('afterbegin', `
       <div id="court-result-header" style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;">
         <span class="court-stamp">선고</span>
-        <span class="court-kicker">FINAL STAGE CLEAR</span>
+        <span class="court-kicker">FINAL DOCUMENT</span>
       </div>
       <div class="court-bench"></div>`);
   }
