@@ -41,12 +41,12 @@ function injectDailyButton() {
     <div style="font-weight:900;color:var(--gold);margin-bottom:7px;">🤖 AI 판결기록 생성/운영 복구</div>
     <div style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-bottom:12px;">
       오늘의 AI 판결기록을 즉시 생성하거나, 생성 중 멈춘 사건과 기존 투표·댓글 카운트를 보정합니다.
-      배포 직후 한 번씩 실행하면 기존 데이터 정리에 도움이 됩니다.
+      카운트 보정은 최근 판결문 최대 300건 기준으로 실행되며, 매일 새벽 자동 보정도 함께 동작합니다.
     </div>
     <div style="display:flex;flex-wrap:wrap;gap:8px;">
       <button class="btn btn-primary" id="daily-ai-now-btn">오늘의 AI 판결기록 지금 생성</button>
       <button class="btn btn-secondary" id="recover-stale-trials-btn">멈춘 재판 복구</button>
-      <button class="btn btn-secondary" id="repair-social-counters-btn">투표·댓글 카운트 보정</button>
+      <button class="btn btn-secondary" id="repair-social-counters-btn">최근 투표·댓글 카운트 보정</button>
     </div>
     <div id="admin-ai-tool-result" style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-top:10px;"></div>`;
   content.prepend(box);
@@ -91,8 +91,9 @@ function injectDailyButton() {
     try {
       const res = await repairSocialCountersNow({ limit: 300, onlyPublic: false });
       const repaired = Number(res.data?.repairedCount || 0);
+      const unchanged = Number(res.data?.unchangedCount || 0);
       const checked = Number(res.data?.checked || 0);
-      resultBox.textContent = `판결문 카운트 확인 ${checked}건 / 보정 ${repaired}건`;
+      resultBox.textContent = `최근 판결문 카운트 확인 ${checked}건 / 보정 ${repaired}건 / 정상 ${unchanged}건`;
       toast(`카운트 보정 완료: ${repaired}건`);
     } catch (err) {
       console.error(err);
