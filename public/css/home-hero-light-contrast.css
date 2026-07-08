@@ -1,0 +1,157 @@
+/* Home hero light-mode contrast fixes.
+   This file intentionally loads after the general theme files. */
+
+html[data-theme="light"] .home-hero-light-safe,
+:root[data-theme="light"] .home-hero-light-safe {
+  color: #24190c !important;
+}
+
+html[data-theme="light"] .home-hero-light-safe .hero-badge,
+:root[data-theme="light"] .home-hero-light-safe .hero-badge {
+  color: #4a3214 !important;
+  background: rgba(255,248,232,.94) !important;
+  border-color: rgba(112,78,24,.32) !important;
+  box-shadow: 0 8px 18px rgba(70,46,16,.10) !important;
+  opacity: 1 !important;
+}
+
+html[data-theme="light"] .home-hero-light-safe .hero-h1,
+html[data-theme="light"] .home-hero-light-safe .hero-h1 *,
+:root[data-theme="light"] .home-hero-light-safe .hero-h1,
+:root[data-theme="light"] .home-hero-light-safe .hero-h1 * {
+  color: #1a150a !important;
+  opacity: 1 !important;
+  text-shadow: 0 1px 0 rgba(255,255,255,.94) !important;
+}
+
+html[data-theme="light"] .home-hero-light-safe .hero-h1 span,
+:root[data-theme="light"] .home-hero-light-safe .hero-h1 span {
+  color: #6f4700 !important;
+}
+
+html[data-theme="light"] .home-hero-light-safe .hero-sub,
+html[data-theme="light"] .home-hero-light-safe .hero-sub *,
+:root[data-theme="light"] .home-hero-light-safe .hero-sub,
+:root[data-theme="light"] .home-hero-light-safe .hero-sub * {
+  color: #3d2b18 !important;
+  opacity: 1 !important;
+}
+
+html[data-theme="light"] .home-hero-light-safe .hero-sub strong,
+:root[data-theme="light"] .home-hero-light-safe .hero-sub strong {
+  color: #1a150a !important;
+  font-weight: 900 !important;
+}
+
+html[data-theme="light"] .home-hero-light-safe .hero-sub span,
+:root[data-theme="light"] .home-hero-light-safe .hero-sub span {
+  color: #6f563a !important;
+  opacity: 1 !important;
+}
+
+html[data-theme="light"] .home-hero-light-safe .hero-tw,
+html[data-theme="light"] .home-hero-light-safe .hero-tw *,
+:root[data-theme="light"] .home-hero-light-safe .hero-tw,
+:root[data-theme="light"] .home-hero-light-safe .hero-tw * {
+  color: #3d2b18 !important;
+  opacity: 1 !important;
+}
+
+html[data-theme="light"] .home-hero-light-safe #tw-text,
+:root[data-theme="light"] .home-hero-light-safe #tw-text,
+html[data-theme="light"] .home-hero-light-safe .cursor-blink,
+:root[data-theme="light"] .home-hero-light-safe .cursor-blink {
+  color: #7a4d00 !important;
+}
+
+html[data-theme="light"] .home-hero-light-safe .hero-disclaimer,
+:root[data-theme="light"] .home-hero-light-safe .hero-disclaimer {
+  color: #5d4630 !important;
+  opacity: 1 !important;
+}
+
+html[data-theme="light"] .home-hero-light-safe .stat-item,
+:root[data-theme="light"] .home-hero-light-safe .stat-item {
+  background: rgba(255,250,241,.96) !important;
+  border-color: rgba(112,78,24,.28) !important;
+  box-shadow: 0 8px 18px rgba(70,46,16,.10) !important;
+}
+
+html[data-theme="light"] .home-hero-light-safe .stat-num,
+:root[data-theme="light"] .home-hero-light-safe .stat-num {
+  color: #6f4700 !important;
+  opacity: 1 !important;
+}
+
+html[data-theme="light"] .home-hero-light-safe .stat-label,
+html[data-theme="light"] .home-hero-light-safe .stat-label *,
+:root[data-theme="light"] .home-hero-light-safe .stat-label,
+:root[data-theme="light"] .home-hero-light-safe .stat-label * {
+  color: #4f3b25 !important;
+  opacity: 1 !important;
+}
+
+html[data-theme="light"] #court-entrance .court-shell,
+:root[data-theme="light"] #court-entrance .court-shell,
+html[data-theme="light"] #court-procedure-note,
+:root[data-theme="light"] #court-procedure-note {
+  background: #fffaf1 !important;
+  color: #2f2417 !important;
+  border-color: rgba(112,78,24,.32) !important;
+}
+
+html[data-theme="light"] #court-entrance .court-title,
+html[data-theme="light"] #court-procedure-note .court-title,
+:root[data-theme="light"] #court-entrance .court-title,
+:root[data-theme="light"] #court-procedure-note .court-title {
+  color: #1a150a !important;
+}
+
+html[data-theme="light"] #court-entrance .court-desc,
+html[data-theme="light"] #court-procedure-note .court-desc,
+:root[data-theme="light"] #court-entrance .court-desc,
+:root[data-theme="light"] #court-procedure-note .court-desc {
+  color: #4f3b25 !important;
+  opacity: 1 !important;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) .home-hero-light-safe {
+    color: #24190c !important;
+  }
+  :root:not([data-theme="dark"]) .home-hero-light-safe .hero-badge {
+    color: #4a3214 !important;
+    background: rgba(255,248,232,.94) !important;
+    border-color: rgba(112,78,24,.32) !important;
+    opacity: 1 !important;
+  }
+  :root:not([data-theme="dark"]) .home-hero-light-safe .hero-h1,
+  :root:not([data-theme="dark"]) .home-hero-light-safe .hero-h1 * {
+    color: #1a150a !important;
+    opacity: 1 !important;
+    text-shadow: 0 1px 0 rgba(255,255,255,.94) !important;
+  }
+  :root:not([data-theme="dark"]) .home-hero-light-safe .hero-h1 span {
+    color: #6f4700 !important;
+  }
+  :root:not([data-theme="dark"]) .home-hero-light-safe .hero-sub,
+  :root:not([data-theme="dark"]) .home-hero-light-safe .hero-sub *,
+  :root:not([data-theme="dark"]) .home-hero-light-safe .hero-tw,
+  :root:not([data-theme="dark"]) .home-hero-light-safe .hero-tw *,
+  :root:not([data-theme="dark"]) .home-hero-light-safe .hero-disclaimer,
+  :root:not([data-theme="dark"]) .home-hero-light-safe .stat-label,
+  :root:not([data-theme="dark"]) .home-hero-light-safe .stat-label * {
+    color: #3d2b18 !important;
+    opacity: 1 !important;
+  }
+  :root:not([data-theme="dark"]) .home-hero-light-safe #tw-text,
+  :root:not([data-theme="dark"]) .home-hero-light-safe .cursor-blink,
+  :root:not([data-theme="dark"]) .home-hero-light-safe .stat-num {
+    color: #7a4d00 !important;
+    opacity: 1 !important;
+  }
+  :root:not([data-theme="dark"]) .home-hero-light-safe .stat-item {
+    background: rgba(255,250,241,.96) !important;
+    border-color: rgba(112,78,24,.28) !important;
+  }
+}
