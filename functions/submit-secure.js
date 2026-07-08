@@ -49,6 +49,9 @@ function boolValue(value, fallback = false) {
   if (value === 'false') return false;
   return fallback;
 }
+function firstDefined(...values) {
+  return values.find(v => v !== undefined && v !== null);
+}
 function kstDateKey(date = new Date()) {
   return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
 }
@@ -127,11 +130,11 @@ exports.submitCase = onCall({ region: REGION, timeoutSeconds: 30, memory: '256Mi
 
   const uid = request.auth.uid;
   const data = request.data || {};
-  const title = textValue(data.caseTitle, MAX_TITLE);
-  const desc = textValue(data.caseDescription, MAX_DESC);
+  const title = textValue(firstDefined(data.caseTitle, data.title), MAX_TITLE);
+  const desc = textValue(firstDefined(data.caseDescription, data.description), MAX_DESC);
   const desired = textValue(data.desiredVerdict, MAX_DESIRED);
-  const grievance = clampNumber(data.grievanceIndex, 5, 1, 10);
-  const selectedJudge = selectedJudgeOrBlank(data.selectedJudge);
+  const grievance = clampNumber(firstDefined(data.grievanceIndex, data.grievance), 5, 1, 10);
+  const selectedJudge = selectedJudgeOrBlank(firstDefined(data.selectedJudge, data.judgeType));
   const isPublic = boolValue(data.isPublic, true);
   const imageAttachment = normalizeImageAttachment(data.imageAttachment);
   const isAdminSubmitter = await isAdminAuth(request.auth).catch(() => false);
