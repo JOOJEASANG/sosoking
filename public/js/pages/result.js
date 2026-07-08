@@ -47,21 +47,6 @@ function titleBadge(c, r) {
 function paragraphs(text) {
   return escapeHtml(String(text || '')).replace(/\n/g, '<br>');
 }
-function docRow(label, value) {
-  return `<div style="display:grid;grid-template-columns:82px 1fr;gap:10px;padding:8px 0;border-bottom:1px solid rgba(201,168,76,.18);line-height:1.55;">
-    <div style="font-size:12px;color:var(--gold);font-weight:900;white-space:nowrap;">${escapeHtml(label)}</div>
-    <div style="font-size:13px;color:var(--cream);font-weight:700;word-break:keep-all;">${escapeHtml(value || '-')}</div>
-  </div>`;
-}
-function documentInfoCard(rows) {
-  return `<div class="card official-doc-meta" style="padding:16px 18px;margin-bottom:14px;border-color:rgba(201,168,76,.5);background:rgba(255,255,255,.025);">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;">
-      <div class="court-kicker">CASE DOCUMENT INFORMATION</div>
-      <span class="badge badge-gold">기록</span>
-    </div>
-    ${rows.map(([label, value]) => docRow(label, value)).join('')}
-  </div>`;
-}
 function imageSrc(image) {
   if (!image || typeof image !== 'object') return '';
   const mime = String(image.mimeType || '');
@@ -70,6 +55,24 @@ function imageSrc(image) {
   if (!data || data.length > 750000 || !/^[A-Za-z0-9+/=]+$/.test(data)) return '';
   return `data:${mime};base64,${data}`;
 }
+function caseInfoRow(label, value) {
+  return `<div class="case-info-row"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value || '-')}</strong></div>`;
+}
+function caseInfoCard(rows) {
+  return `<section class="case-info-card">
+    ${rows.map(([label, value]) => caseInfoRow(label, value)).join('')}
+  </section>`;
+}
+function pointList(title, items, emptyText) {
+  const rows = Array.isArray(items) ? items.filter(Boolean).slice(0, 8) : [];
+  if (!rows.length) return '';
+  return `<section class="point-card">
+    <div class="point-title">${escapeHtml(title)}</div>
+    <div class="point-list">
+      ${rows.map((x, i) => `<div class="point-item"><em>${String(i + 1).padStart(2, '0')}</em><span>${escapeHtml(x)}</span></div>`).join('')}
+    </div>
+  </section>`;
+}
 function imageCard(image) {
   const src = imageSrc(image);
   if (!src) return '';
@@ -77,25 +80,39 @@ function imageCard(image) {
     image.width && image.height ? `${Number(image.width)}×${Number(image.height)}` : '',
     image.originalSize ? `원본 ${formatBytes(image.originalSize)}` : ''
   ].filter(Boolean).join(' · ');
-  return `<div class="card step-card visible" style="margin-bottom:12px;padding:18px;">
-    <div class="step-role" style="margin-bottom:8px;">🖼️ 첨부 이미지 참고자료 <span style="font-size:11px;color:var(--cream-dim);font-weight:400;">· 작성자에게만 표시</span></div>
-    <img src="${src}" alt="첨부 이미지" style="width:100%;max-height:360px;object-fit:contain;border-radius:14px;border:1px solid var(--border);background:rgba(0,0,0,.18);">
-    <div style="font-size:11px;color:var(--cream-dim);line-height:1.6;margin-top:8px;">${escapeHtml(meta || '첨부 이미지')}</div>
-  </div>`;
+  return `<section class="case-section image-section">
+    <div class="section-head"><span>첨부 이미지 참고자료</span></div>
+    <img src="${src}" alt="첨부 이미지">
+    <p>${escapeHtml(meta || '첨부 이미지')}</p>
+  </section>`;
 }
-function sectionCard(stage, icon, title, sub, content, badge = '') {
+function storySection(title, subtitle, content, mark = '') {
   if (!String(content || '').trim()) return '';
-  return `<div class="card step-card visible compact-doc-card" style="margin-bottom:12px;padding:18px;position:relative;overflow:hidden;">
-    <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:9px;">
-      <div>
-        <div class="court-kicker" style="margin-bottom:6px;">STAGE ${String(stage).padStart(2, '0')}</div>
-        <div class="step-role">${escapeHtml(icon)} ${escapeHtml(title)}</div>
-        ${sub ? `<div style="font-size:11px;color:var(--cream-dim);margin-top:3px;line-height:1.6;">${escapeHtml(sub)}</div>` : ''}
-      </div>
-      ${badge ? `<span class="badge badge-gold">${escapeHtml(badge)}</span>` : ''}
+  return `<section class="case-section">
+    <div class="section-head">
+      <span>${escapeHtml(title)}</span>
+      ${mark ? `<em>${escapeHtml(mark)}</em>` : ''}
     </div>
-    <div class="step-content" style="white-space:pre-line;line-height:1.82;">${paragraphs(content)}</div>
-  </div>`;
+    ${subtitle ? `<div class="section-subtitle">${escapeHtml(subtitle)}</div>` : ''}
+    <div class="section-body">${paragraphs(content)}</div>
+  </section>`;
+}
+function coverCard({ icon, resultTitle, docket, createdAt, finalTitle, type, badge }) {
+  return `<section class="case-cover">
+    <div class="cover-kicker">소소킹 황당재판소 사건기록철</div>
+    <div class="cover-icon">${icon}</div>
+    <h1>${escapeHtml(resultTitle)}</h1>
+    <div class="cover-line"></div>
+    <div class="cover-meta">
+      <span>${escapeHtml(docket)}</span>
+      <span>${escapeHtml(createdAt || '기록시각 미상')}</span>
+    </div>
+    <div class="cover-tags">
+      <span>${escapeHtml(type)}</span>
+      <span>${escapeHtml(badge)}</span>
+    </div>
+    <div class="cover-case-name">${escapeHtml(finalTitle)}</div>
+  </section>`;
 }
 async function loadSocial(caseId) {
   const [reactionSnap, myVoteSnap, commentSnap] = await Promise.all([
@@ -139,14 +156,16 @@ export async function renderResult(container, caseId) {
   const finalTitle = r.refinedCaseTitle || r.caseTitle || c.caseTitle || '황당사건';
   const resultTitle = r.absurdityTitle || `${finalTitle} 기록철`;
   const docket = r.docketNumber || c.docketNumber || '황당사건번호 미상';
-  const createdAt = r.createdAt || c.createdAt;
+  const createdAtText = fmtDate(r.createdAt || c.createdAt);
   const expandedCase = r.expandedCase || r.reception || '';
   const timeline = r.caseTimeline || r.investigation || '';
   const judgment = r.courtOpinion || r.verdict || '';
   const finalNotice = r.executionOrder || '본 기록은 실제 법률문서가 아니며, 당사자 사이의 웃음 회복을 위한 임의적 기록입니다.';
+  const details = Array.isArray(r.absurdDetails) ? r.absurdDetails : [];
+  const evidence = Array.isArray(r.evidenceBits) ? r.evidenceBits : [];
   const documentRows = [
     ['사건번호', docket],
-    ['사건일시', createdAt ? fmtDate(createdAt) : '기록시각 미상'],
+    ['사건일시', createdAtText || '기록시각 미상'],
     ['사건명', finalTitle],
     ['관할', r.courtName || c.courtName || '소소킹 황당재판소'],
     ['재판부', r.division || c.division || '제3황당재판부'],
@@ -158,35 +177,25 @@ export async function renderResult(container, caseId) {
   container.innerHTML = `
     <div>
       <div class="page-header"><span class="logo">⚖️ 황당판결문</span></div>
-      <div class="container" style="padding-top:26px;padding-bottom:90px;">
-        <div class="card" style="padding:20px;text-align:center;margin-bottom:14px;border-color:rgba(201,168,76,.55);">
-          <div style="font-size:46px;margin-bottom:8px;">${icon}</div>
-          <div class="badge badge-gold" style="font-size:13px;padding:5px 14px;">최종 사건기록철</div>
-          <h2 style="margin:14px 0 6px;font-size:21px;line-height:1.45;">${escapeHtml(resultTitle)}</h2>
-          <div style="font-size:12px;color:var(--cream-dim);line-height:1.75;">사건의 배경과 발단을 기록한 황당재판 문서</div>
-        </div>
-
-        ${documentInfoCard(documentRows)}
-
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
-          <div class="card" style="padding:14px;text-align:center;"><div style="font-size:11px;color:var(--cream-dim);">판결 유형</div><div style="font-size:17px;font-weight:900;color:var(--gold);margin-top:4px;">${escapeHtml(type)}</div></div>
-          <div class="card" style="padding:14px;text-align:center;"><div style="font-size:11px;color:var(--cream-dim);">원고 칭호</div><div style="font-size:17px;font-weight:900;color:var(--gold);margin-top:4px;">${escapeHtml(badge)}</div></div>
-        </div>
-
+      <div class="container result-file" style="padding-top:24px;padding-bottom:90px;">
+        ${coverCard({ icon, resultTitle, docket, createdAt: createdAtText, finalTitle, type, badge })}
+        ${caseInfoCard(documentRows)}
+        ${details.length || evidence.length ? `<div class="point-grid">${pointList('황당 포인트', details)}${pointList('현장 증거', evidence)}</div>` : ''}
         ${isOwner ? imageCard(c.imageAttachment) : ''}
-        ${sectionCard(1, '📖', '사건 배경 및 발단', '사건의 원인, 전개, 결정적 장면을 기록합니다.', expandedCase, '기록')}
-        ${sectionCard(2, '⏱️', '분초 단위 사건일지', '평온이 무너진 순간을 시간순으로 재구성합니다.', timeline, '일지')}
-        ${sectionCard(3, '🧬', '소소국과수 감정서', '국립소소과학수사연구소 생활증거분석실 감정의견', r.forensicReport, '감정')}
-        ${sectionCard(4, '💼', '황당검사 공소장', `${r.prosecutorName || '황당검사'} 작성`, r.plaintiffArg, '검사')}
-        ${sectionCard(5, '🛡️', '피고 측 답변서', `${r.defenderName || '피고측 변호인'} 제출`, r.defendantArg, '변호인')}
-        ${sectionCard(6, '⚖️', '재판부 판단', '공소장·답변서·감정서를 종합한 판단입니다.', judgment, '판단')}
-        ${sectionCard(7, '📜', '주문 및 집행권고', '선고 즉시 마음속 기록철에 편철됩니다.', r.sentence, '주문')}
-        ${r.closingComment ? `<div class="card" style="padding:18px;margin-bottom:16px;text-align:center;border-color:rgba(201,168,76,.5);"><div style="font-family:var(--font-serif);font-size:18px;color:var(--gold);font-weight:900;line-height:1.7;">${escapeHtml(r.closingComment)}</div></div>` : ''}
+
+        ${storySection('사건 배경 및 발단', '사건이 시작된 장면과 원고가 잃어버린 작은 평온을 기록합니다.', expandedCase, '기록')}
+        ${storySection('분초 단위 사건일지', '평온이 무너진 순간을 시간순으로 재구성합니다.', timeline, '일지')}
+        ${storySection('소소국과수 감정서', '현장에 남은 사소한 흔적을 지나치게 엄숙하게 감정합니다.', r.forensicReport, '감정')}
+        ${storySection('황당검사 공소장', `${r.prosecutorName || '황당검사'} 작성`, r.plaintiffArg, '공소')}
+        ${storySection('피고 측 답변서', `${r.defenderName || '피고측 변호인'} 제출`, r.defendantArg, '항변')}
+        ${storySection('재판부 판단', '양측 주장과 생활증거 감정결과를 종합한 판단입니다.', judgment, '판단')}
+        ${storySection('주문 및 집행권고', '선고 즉시 마음속 기록철에 편철됩니다.', r.sentence, '주문')}
+        ${r.closingComment ? `<section class="closing-card">${escapeHtml(r.closingComment)}</section>` : ''}
 
         ${renderReactions(social, isPublic)}
         ${renderComments(social.comments, isPublic)}
 
-        <div style="text-align:center;margin:16px 0;padding:10px;background:rgba(255,255,255,.04);border-radius:8px;font-size:11px;color:var(--cream-dim);line-height:1.7;">${escapeHtml(finalNotice)}</div>
+        <div class="legal-note">${escapeHtml(finalNotice)}</div>
 
         <div class="result-actions">
           ${isOwner ? `<button class="btn ${isPublic ? 'btn-ghost' : 'btn-primary'}" id="btn-share">${isPublic ? '🔒 황당판결 비공개로 전환' : '🔗 황당판결 기록에 공개하기'}</button>` : ''}
@@ -202,27 +211,27 @@ export async function renderResult(container, caseId) {
 function renderReactions(social, isPublic) {
   const counts = social.reactions?.counts || {};
   const total = Number(social.reactions?.total || Object.values(counts).reduce((a, b) => a + Number(b || 0), 0));
-  return `<div class="card" style="padding:18px;margin-bottom:14px;">
-    <div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:12px;"><div style="font-weight:900;color:var(--gold);">🧑‍⚖️ 방청객 배심원 투표</div><div style="font-size:12px;color:var(--cream-dim);">총 ${total}표</div></div>
-    ${!isPublic ? `<div style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-bottom:10px;">황당판결 기록에 공개하면 다른 사람들이 원고 편/피고 편 투표를 할 수 있습니다.</div>` : ''}
-    <div style="display:grid;grid-template-columns:1fr;gap:8px;">
+  return `<section class="case-section jury-section">
+    <div class="section-head"><span>방청객 배심원 투표</span><em>총 ${total}표</em></div>
+    ${!isPublic ? `<div class="section-subtitle">황당판결 기록에 공개하면 다른 사람들이 원고 편/피고 편 투표를 할 수 있습니다.</div>` : ''}
+    <div class="reaction-list">
       ${REACTIONS.map(([key,label]) => {
         const n = Number(counts[key] || 0);
         const pct = total ? Math.round(n / total * 100) : 0;
         const active = social.myReaction === key;
-        return `<button class="reaction-btn" data-reaction="${key}" ${!isPublic ? 'disabled' : ''} style="text-align:left;border:1px solid ${active ? 'rgba(201,168,76,.8)' : 'var(--border)'};background:${active ? 'rgba(201,168,76,.12)' : 'rgba(255,255,255,.03)'};color:var(--cream);border-radius:12px;padding:11px 12px;cursor:${isPublic ? 'pointer' : 'not-allowed'};"><div style="display:flex;justify-content:space-between;font-size:13px;font-weight:800;"><span>${label}</span><span>${n}표 · ${pct}%</span></div><div style="height:5px;border-radius:999px;background:rgba(255,255,255,.06);margin-top:8px;overflow:hidden;"><div style="width:${pct}%;height:100%;background:#c9a84c;"></div></div></button>`;
+        return `<button class="reaction-btn ${active ? 'is-active' : ''}" data-reaction="${key}" ${!isPublic ? 'disabled' : ''}><div><span>${label}</span><strong>${n}표 · ${pct}%</strong></div><i><b style="width:${pct}%;"></b></i></button>`;
       }).join('')}
     </div>
-  </div>`;
+  </section>`;
 }
 function renderComments(comments, isPublic) {
-  return `<div class="card" style="padding:18px;margin-bottom:14px;">
-    <div style="font-weight:900;color:var(--gold);margin-bottom:12px;">💬 방청석 한마디</div>
-    ${isPublic ? `<div style="display:flex;gap:8px;margin-bottom:12px;"><input id="court-comment-input" class="form-input" maxlength="120" placeholder="예: 이걸로 재판까지 간 게 제일 웃김" style="flex:1;"><button id="court-comment-btn" class="btn btn-secondary" style="width:86px;padding-left:0;padding-right:0;">등록</button></div>` : `<div style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-bottom:12px;">공개 황당판결 기록에서 방청석 한마디를 남길 수 있습니다.</div>`}
-    <div style="display:flex;flex-direction:column;gap:8px;">
-      ${comments.length ? comments.map(cm => `<div style="padding:11px 0;border-top:1px solid var(--border);"><div style="font-size:12px;color:var(--gold);font-weight:800;">${escapeHtml(cm.nickname || '익명 방청객')}</div><div style="font-size:13px;color:var(--cream-dim);line-height:1.65;margin-top:3px;">${escapeHtml(cm.text || '')}</div></div>`).join('') : `<div style="font-size:12px;color:var(--cream-dim);line-height:1.7;">아직 방청석이 조용합니다. 첫 한마디를 남겨보세요.</div>`}
+  return `<section class="case-section comments-section">
+    <div class="section-head"><span>방청석 한마디</span></div>
+    ${isPublic ? `<div class="comment-write"><input id="court-comment-input" class="form-input" maxlength="120" placeholder="예: 이건 리트리버 쪽도 입장을 들어봐야 함"><button id="court-comment-btn" class="btn btn-secondary">등록</button></div>` : `<div class="section-subtitle">공개 황당판결 기록에서 방청석 한마디를 남길 수 있습니다.</div>`}
+    <div class="comment-list">
+      ${comments.length ? comments.map(cm => `<div class="comment-item"><strong>${escapeHtml(cm.nickname || '익명 방청객')}</strong><p>${escapeHtml(cm.text || '')}</p></div>`).join('') : `<div class="section-subtitle">아직 방청석이 조용합니다. 첫 한마디를 남겨보세요.</div>`}
     </div>
-  </div>`;
+  </section>`;
 }
 function bindResultActions(container, caseId, c, r, isOwner, isPublic) {
   document.querySelectorAll('.reaction-btn').forEach(btn => {
