@@ -18,16 +18,16 @@ const DOCKET_STEPS = [
 ];
 
 const LOADING_MSGS = [
-  '소소경찰서 접수계가 이걸 정말 사건으로 받을지 회의 중입니다... 📋',
-  '사건번호에 쓸데없는 권위를 부여하는 중입니다... 🏷️',
-  '소소경찰이 현장 대신 상상 속 현장검증을 나가는 중입니다... 🚓',
-  '증거 아닌 증거를 비닐봉투에 담는 척 정리하는 중입니다... 🔍',
-  '황당검사가 “이건 그냥 넘어갈 수 없습니다”를 연습하는 중입니다... 💼',
-  '피고측 변호인이 “그 정도는 아니지 않습니까”를 준비하는 중입니다... 🛡️',
-  '재판부가 작은 일을 크게 키울 법적 명분 아닌 명분을 찾는 중입니다... ⚖️',
-  '방청석이 왜인지 조용해지는 중입니다... 🤫',
-  '황당 처분을 웃기지만 은근히 뼈 있게 조율하는 중입니다... 🔨',
-  '기록관이 “이걸 판결문으로 남겨도 되나” 고민하는 중입니다... 📝'
+  '소소경찰서 접수계가 사건번호를 붙이고 서류철 색깔을 고르는 중입니다... 📋',
+  '생활반경 CCTV를 확인하는 척 0.5배속으로 돌려보는 중입니다... 📹',
+  '현장검증팀이 빈자리와 수상한 침묵을 표시하는 중입니다... 🚓',
+  '소과수 감식반이 별일 아닌 흔적을 대형 단서처럼 포장하는 중입니다... 🔍',
+  '탐문수사 결과 “듣다 보니 원고 말도 맞다”는 진술을 확보하는 중입니다... 📝',
+  '황당검사가 작은 일을 공소장 세 장 분량으로 키우는 중입니다... 💼',
+  '피고측 변호인이 말은 되지만 얄미운 반박을 준비하는 중입니다... 🛡️',
+  '재판부가 CCTV 사각지대보다 마음속 사각지대를 더 중하게 보는 중입니다... ⚖️',
+  '방청석이 왜인지 고개를 끄덕이다가 웃음을 참는 중입니다... 🤫',
+  '황당 처분에 간식 배상과 재발방지 자가진단을 끼워 넣는 중입니다... 🔨'
 ];
 
 let caseData = null;
@@ -56,7 +56,7 @@ export async function renderTrial(container, caseId) {
 
         <div class="card" style="padding:14px;margin-bottom:14px;background:rgba(201,168,76,.07);border-color:rgba(201,168,76,.32);">
           <div style="font-weight:900;color:var(--gold);margin-bottom:6px;">소소한 일도 수사·공방·판결까지 갑니다</div>
-          <div style="font-size:12px;color:var(--cream-dim);line-height:1.75;">소소경찰이 수사하고, 황당검사와 피고측 변호인이 괜히 치열하게 다툰 뒤, 재판부가 작은 일을 크게 판결합니다.</div>
+          <div style="font-size:12px;color:var(--cream-dim);line-height:1.75;">소소경찰이 CCTV를 돌려보고, 황당검사와 피고측 변호인이 억지로 다툰 뒤, 재판부가 작은 일을 크게 판결합니다.</div>
         </div>
 
         <div id="docket-timeline" style="display:flex;overflow-x:auto;gap:8px;margin-bottom:16px;padding-bottom:4px;"></div>
@@ -173,12 +173,12 @@ function renderSteps(data) {
   const container = document.getElementById('steps-container');
   if (!container) return;
   let html = '';
-  if (data.reception) html += stepCard('📋 접수계', '황당사건 접수 및 사건번호 부여', data.reception, '접수완료');
-  if (data.investigation) html += stepCard('🚓 소소경찰 수사기록', `${escapeHtml(data.analystName || '사건담당 조사관')}의 초동수사`, data.investigation, '수사보고');
+  if (data.reception) html += stepCard('📋 접수계', '사건번호 부여 및 수사 배당', data.reception, '접수완료');
+  if (data.investigation) html += stepCard('🚓 소소경찰 수사기록', `${escapeHtml(data.analystName || '사건담당 조사관')}의 CCTV·탐문·감식`, data.investigation, '수사보고');
   if (Array.isArray(data.evidenceList) && data.evidenceList.length) html += listCard('🔍 증거채집 목록', data.evidenceList, '증거 아닌 증거');
-  if (data.absurdityReview) html += stepCard('😳 재판부 사전검토', '이걸 재판까지 해야 하는지 검토', data.absurdityReview, '황당성');
+  if (data.absurdityReview) html += stepCard('😳 재판부 사전검토', '작은 일이 대형사건이 된 경위', data.absurdityReview, '사전검토');
   if (Array.isArray(data.keyIssues) && data.keyIssues.length) html += listCard('🧷 공판 쟁점', data.keyIssues, '쟁점정리');
-  if (data.plaintiffArg) html += stepCard('💼 황당검사 측', `${escapeHtml(data.prosecutorName || '황당검사')}의 엄숙한 공소제기`, data.plaintiffArg, '검사');
+  if (data.plaintiffArg) html += stepCard('💼 황당검사 측', `${escapeHtml(data.prosecutorName || '황당검사')}의 억지 공소제기`, data.plaintiffArg, '검사');
   if (data.defendantArg) html += stepCard('🛡️ 피고측 변호인', `${escapeHtml(data.defenderName || '피고측 변호인')}의 말은 되는 반박`, data.defendantArg, '변호인');
   if (data.judgeType) {
     html += `<div class="card step-card visible" style="margin-bottom:14px;padding:20px;text-align:center;border-color:rgba(201,168,76,.55);">
@@ -188,7 +188,7 @@ function renderSteps(data) {
       <div style="font-size:12px;color:var(--cream-dim);margin-top:6px;">${escapeHtml(data.courtroom || '제404호 황당법정')}</div>
     </div>`;
   }
-  if (data.courtOpinion) html += stepCard('⚖️ 재판부', '검사와 변호인 공방에 대한 과몰입 판단', data.courtOpinion, '판단', true);
+  if (data.courtOpinion) html += stepCard('⚖️ 재판부', '검사와 변호인의 공방에 대한 과몰입 판단', data.courtOpinion, '판단', true);
   if (data.verdict) html += stepCard('📜 재판부', '황당판결문 작성', data.verdict, '판결', true);
   if (data.sentence) {
     html += `<div class="card sentence-card step-card visible" style="margin-bottom:14px;">
