@@ -15,6 +15,7 @@ import { renderFooter } from './components/footer.js?v=20260707-3';
 import { initTheme, renderThemeToggle } from './components/theme.js?v=20260708-4';
 import { initCourtDesign } from './components/court-design.js?v=20260707-1';
 import { renderNav } from './components/nav.js?v=20260707-4';
+import { applyEmojiCompat } from './components/emoji-compat.js?v=20260708-1';
 
 function normalizedRoute() {
   const hash = location.hash || '';
@@ -37,6 +38,13 @@ function showThemeToggleSoon() {
   renderThemeToggle();
   setTimeout(renderThemeToggle, 120);
   setTimeout(renderThemeToggle, 900);
+}
+
+function applyEmojiCompatSoon() {
+  const content = document.getElementById('page-content');
+  applyEmojiCompat(content || document.body);
+  setTimeout(() => applyEmojiCompat(content || document.body), 120);
+  setTimeout(() => applyEmojiCompat(content || document.body), 900);
 }
 
 function route() {
@@ -73,6 +81,7 @@ function route() {
 
   renderNav();
   showThemeToggleSoon();
+  applyEmojiCompatSoon();
 }
 
 window.addEventListener('hashchange', route);
