@@ -1,8 +1,15 @@
-import { functions } from '../firebase.js?v=20260630-3';
+import { db, functions } from '../firebase.js?v=20260630-3';
+import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 import { showToast } from '../components/toast.js?v=20260630-3';
 import { renderResult as renderBaseResult } from './result.js?v=20260708-result2';
 
+function escapeHtmlLocal(value) {
+  return String(value || '').replace(/[&<>'"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[ch]));
+}
+function paragraphsLocal(value) {
+  return escapeHtmlLocal(value).replace(/\n/g, '<br>');
+}
 function grievance(container) {
   const text = container.textContent || '';
   const m = text.match(/억울지수\s*(\d+)/);
@@ -41,12 +48,14 @@ function ensureResultGameStyle() {
     .drama-flow{display:flex;gap:7px;overflow-x:auto;padding-bottom:2px;}
     .drama-flow span{white-space:nowrap;border:1px solid rgba(201,168,76,.25);border-radius:999px;padding:7px 10px;font-size:11px;color:var(--cream-dim);background:rgba(255,255,255,.035);}
     .owner-delete-case{border-color:rgba(231,76,60,.45)!important;color:#e74c3c!important;}
+    .forensic-report-card{border-color:rgba(86,156,214,.45)!important;background:linear-gradient(135deg,rgba(86,156,214,.10),rgba(201,168,76,.06))!important;}
     [data-theme="light"] .reward-card,:root:not([data-theme="dark"]) .reward-card{background:linear-gradient(180deg,#fffaf0 0%,#fff7e7 100%)!important;border-color:#e2d3af!important;box-shadow:0 10px 22px rgba(117,85,24,.08)!important;}
     [data-theme="light"] .reward-badge,:root:not([data-theme="dark"]) .reward-badge{color:#6a4b12!important;background:linear-gradient(180deg,#fff8e7 0%,#f3e2b3 100%)!important;border:1px solid #d7bf82!important;box-shadow:0 4px 10px rgba(120,90,25,.10)!important;text-shadow:none!important;}
     [data-theme="light"] .reward-badge:hover,:root:not([data-theme="dark"]) .reward-badge:hover{background:linear-gradient(180deg,#fff3d0 0%,#ecd28d 100%)!important;border-color:#c9a84c!important;}
     [data-theme="light"] .invite-defense,:root:not([data-theme="dark"]) .invite-defense{background:#fff8e8!important;border-color:#d8c48d!important;box-shadow:0 8px 22px rgba(70,46,16,.08)!important;}
     [data-theme="light"] .invite-defense-title,:root:not([data-theme="dark"]) .invite-defense-title{color:#5b3f09!important;}
     [data-theme="light"] .invite-defense-desc,:root:not([data-theme="dark"]) .invite-defense-desc{color:#5f4b35!important;opacity:1!important;}
+    [data-theme="light"] .forensic-report-card,:root:not([data-theme="dark"]) .forensic-report-card{background:#f8fbff!important;border-color:#b8cce0!important;box-shadow:0 8px 20px rgba(40,80,120,.07)!important;}
   `;
   document.head.appendChild(style);
 }
@@ -81,7 +90,7 @@ function addDramaFlow(container) {
     <div id="drama-flow-card" class="drama-flow-card">
       <div class="court-kicker" style="margin-bottom:8px;">CASE DRAMA FLOW</div>
       <div class="drama-flow">
-        <span>📋 사건접수</span><span>🚓 소소경찰 수사</span><span>🔍 증거채집</span><span>💼 황당검사 공소</span><span>🛡️ 변호인 반박</span><span>⚖️ 재판공방</span><span>🔨 판결선고</span>
+        <span>📋 사건접수</span><span>🚓 소소경찰 수사</span><span>🧬 소소국과수 감정</span><span>🔍 증거채집</span><span>💼 황당검사 공소</span><span>🛡️ 변호인 반박</span><span>⚖️ 재판공방</span><span>🔨 판결선고</span>
       </div>
     </div>`);
 }
@@ -99,11 +108,38 @@ function addReward(container) {
         <div style="flex:1;min-width:0;">
           <div class="court-kicker">JUDGEMENT REWARD</div>
           <div class="court-title" style="font-size:20px;">${label}</div>
-          <div class="court-desc">소소한 일이 수사·공방·판결까지 완료된 황당사건 기록으로 등록되었습니다.</div>
+          <div class="court-desc">소소한 일이 수사·감정·공방·판결까지 완료된 황당사건 기록으로 등록되었습니다.</div>
         </div>
       </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">${badges.map(([i, t]) => `<span class="reward-badge">${i} ${t}</span>`).join('')}</div>
+      <div id="reward-badges" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">${badges.map(([i, t]) => `<span class="reward-badge">${i} ${t}</span>`).join('')}</div>
     </div>`);
+}
+async function addForensicReport(container, caseId) {
+  if (document.getElementById('forensic-report-card')) return;
+  let forensicReport = '';
+  try {
+    const snap = await getDoc(doc(db, 'results', caseId));
+    forensicReport = snap.exists() ? String(snap.data().forensicReport || '') : '';
+  } catch (err) {
+    console.warn('forensic report read skipped:', err.message || err);
+  }
+  if (!forensicReport.trim()) return;
+  const target = Array.from(container.querySelectorAll('.card.step-card')).find(el => el.textContent.includes('소소경찰 수사기록') || el.textContent.includes('수사기록'));
+  const html = `
+    <div id="forensic-report-card" class="card step-card visible court-document forensic-report-card" style="margin-bottom:12px;padding:18px;position:relative;overflow:hidden;">
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:9px;">
+        <div>
+          <div class="step-role">🧬 소소국과수 생활증거 감정서</div>
+          <div style="font-size:11px;color:var(--cream-dim);margin-top:3px;">국립소소과학수사연구소 생활증거분석실 감정의견</div>
+        </div>
+        <span class="badge badge-gold">감정</span>
+      </div>
+      <div class="step-content" style="white-space:pre-line;line-height:1.85;">${paragraphsLocal(forensicReport)}</div>
+    </div>`;
+  if (target) target.insertAdjacentHTML('beforebegin', html);
+  else container.querySelector('.container')?.insertAdjacentHTML('beforeend', html);
+  const badgeBox = document.getElementById('reward-badges');
+  if (badgeBox && !badgeBox.textContent.includes('소소국과수')) badgeBox.insertAdjacentHTML('beforeend', '<span class="reward-badge">🧬 소소국과수 감정</span>');
 }
 function addInviteDefense(container) {
   if (document.getElementById('invite-defense-card')) return;
@@ -148,7 +184,7 @@ function addOwnerDelete(container, caseId) {
     }
   });
 }
-function decorateResult(container, caseId) {
+async function decorateResult(container, caseId) {
   ensureResultGameStyle();
   normalizeCourtDramaWording(container);
   const titleCard = container.querySelector('.container > .card');
@@ -163,6 +199,7 @@ function decorateResult(container, caseId) {
   }
   addReward(container);
   addDramaFlow(container);
+  await addForensicReport(container, caseId);
   const verdictCard = container.querySelector('.verdict-card');
   if (verdictCard && !document.getElementById('court-verdict-label')) {
     verdictCard.classList.add('court-document');
@@ -196,5 +233,5 @@ function decorateResult(container, caseId) {
 
 export async function renderResult(container, caseId) {
   await renderBaseResult(container, caseId);
-  decorateResult(container, caseId);
+  await decorateResult(container, caseId);
 }
