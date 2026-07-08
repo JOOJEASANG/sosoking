@@ -9,7 +9,9 @@ const REGION = 'asia-northeast3';
 const JUDGES = ['엄벌주의형','감성형','현실주의형','과몰입형','피곤형','논리집착형','드립형'];
 const ABSURD_DEPARTMENTS = ['제404호 황당법정', '제101호 황당분쟁법정', '제777호 과몰입법정', '제3호 억울함전담법정'];
 const CLERKS = ['정기록 서기관', '나과장 기록관', '박진지 참여관', '오억울 서기보', '한과몰입 법정주사'];
-const ANALYSTS = ['억울함 분석관', '황당성 감정관', '사소함 확대관', '황당질서 검토관', '한입만 감별관', '침묵감식 담당관', '냉장고 평온권 조사관'];
+const ANALYSTS = ['소소경찰 박소소 경위', '황당성 감식반 오억울 조사관', '사소범죄전담 나과몰입 형사', '증거아닌증거팀 정침묵 수사관', '냉장고평온권 특별수사관'];
+const PROSECUTORS = ['황당검사 강엄숙', '생활질서전담 오진지 검사', '한입조항 담당 나과장 검사', '소소공소부 박과몰입 검사'];
+const DEFENDERS = ['피고측 변호인 최그정도', '국선변호인 안대수롭', '생활변호센터 변호사 조그럴수도', '피고방어전담 변호인 임몰랐다'];
 
 function cleanText(value, maxLen) {
   return String(value || '').replace(/[\u0000-\u001F\u007F]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, maxLen);
@@ -76,6 +78,8 @@ function fallback(c, judgeType) {
   const hasImage = !!imageForGemini(c.imageAttachment);
   const docket = cleanText(c.docketNumber, 80) || '2026황당-임시-0001';
   const analyst = c.analystName || pickFrom(ANALYSTS, title);
+  const prosecutorName = c.prosecutorName || pickFrom(PROSECUTORS, title);
+  const defenderName = c.defenderName || pickFrom(DEFENDERS, title);
   return {
     absurdityTitle: `${title} 관련 제404호 과몰입 판결문`,
     agencyName: '소소킹 황당재판소',
@@ -83,13 +87,16 @@ function fallback(c, judgeType) {
     division: '제3황당재판부',
     recordClerk: c.recordClerk || pickFrom(CLERKS, title),
     analystName: analyst,
-    imageAnalysis: hasImage ? '첨부 이미지는 본 사건의 결정적 증거가 아니라 분위기 참고자료로 접수되었다. 다만 재판부는 사진 한 장을 보는 순간 원고가 이 일을 그냥 넘기지 못한 사정을 직감하였다. 이미지 속 정황은 법적 증거가 아니라 마음속 현장검증 자료로만 채택된다.' : '',
-    reception: `사건번호 ${docket}. 접수계는 ${thing}이라는 제목을 확인한 뒤 약 1.7초간 침묵하였다. 처음에는 '이걸 사건으로 받아도 되는가'라는 내부 회의가 열렸으나, 원고가 굳이 소소킹까지 찾아온 점이 중대하게 고려되었다. ${c.recordClerk || '기록관'}은 서류철 위에 '별일 아닌데 자꾸 생각나는 유형'이라는 붉은 메모를 붙였다. 결국 본 사건은 ${c.courtroom || '제404호 황당법정'}으로 긴급 배당되었고, 법정 안의 공기는 필요 이상으로 무거워졌다.`,
+    prosecutorName,
+    defenderName,
+    imageAnalysis: hasImage ? '첨부 이미지는 본 사건의 결정적 증거가 아니라 분위기 참고자료로 접수되었다. 다만 소소경찰은 사진 한 장을 보는 순간 원고가 이 일을 그냥 넘기지 못한 사정을 직감하였다. 이미지 속 정황은 법적 증거가 아니라 마음속 현장검증 자료로만 채택된다.' : '',
+    reception: `사건번호 ${docket}. 접수계는 ${thing}이라는 제목을 확인한 뒤 약 1.7초간 침묵하였다. 처음에는 '이걸 사건으로 받아도 되는가'라는 내부 회의가 열렸으나, 원고가 굳이 소소킹까지 찾아온 점이 중대하게 고려되었다. ${c.recordClerk || '기록관'}은 서류철 위에 '별일 아닌데 자꾸 생각나는 유형'이라는 붉은 메모를 붙였다. 결국 본 사건은 소소경찰 초동수사를 거쳐 ${c.courtroom || '제404호 황당법정'}으로 송치되었고, 법정 안의 공기는 필요 이상으로 무거워졌다.`,
     absurdityReview: `재판부는 이 사건이 실제 법원에 갈 일은 전혀 아니라고 보았다. 그러나 바로 그래서 소소킹 관할이 열린다고 판단하였다. 큰 피해는 없지만 마음속에 아주 작은 모래알이 들어간 사건, 말하자니 쪼잔하고 참자니 계속 떠오르는 사건은 황당재판의 핵심 소재다. 본 재판부는 이 사안을 '하찮음은 작으나 여운은 길다'는 기준으로 정식 심리한다.`,
     keyIssues: [
       `${thing}이 단순 해프닝인지, 원고의 하루 평온권을 침해한 소소 중대사안인지 여부`,
       `피고의 '그 정도는 아니지 않나'라는 태도가 사건을 2.4배 키웠는지 여부`,
-      `원고가 이 일을 설명하면서 스스로 웃긴데도 억울했던 모순이 인정되는지 여부`,
+      `황당검사의 공소제기가 과한지, 아니면 소소킹 기준으로 적정한지 여부`,
+      `피고측 변호인의 '몰랐다' 주장이 마음속 배심원단을 설득할 수 있는지 여부`,
       hasImage ? '첨부 이미지가 황당성 가산점 17점을 발생시키는지 여부' : '증거가 없는데도 분위기상 너무 그럴듯한지 여부'
     ],
     evidenceList: [
@@ -98,17 +105,17 @@ function fallback(c, judgeType) {
       '피고가 대수롭지 않게 넘겼을 가능성',
       '원고가 굳이 사건명을 붙인 정황',
       '평범한 하루가 괜히 찝찝해진 사후 상태',
-      '재판부가 읽다가 고개를 끄덕인 내부 심증'
+      '소소경찰이 수첩에 밑줄을 두 번 그은 내부 심증'
     ],
-    investigation: `${analyst}은 본 사건을 접수한 뒤 현장검증 대신 상상검증을 실시하였다. 조사 결과 사소함 지수는 91점, 억울함 잔향은 ${Number(c.grievanceIndex || 5) * 9}점, 주변인이 들으면 '아 그건 좀 웃기네'라고 말할 가능성은 88점으로 산정되었다. 특히 본 사건은 피해 규모보다 설명할 때의 민망함이 더 큰 유형이다. 조사관은 원고가 이 일을 말하면서도 '내가 지금 뭐 하는 거지'라고 느꼈을 가능성을 인정하였다. 그러나 그 민망함이야말로 소소킹에서 보호하는 핵심 법익이다.`,
-    plaintiffArg: `원고는 본 사건이 그냥 넘길 수 있는 일처럼 보이지만 실제로는 하루의 질서를 살짝 비틀었다고 주장한다. 원고는 피고가 조금만 눈치가 있었더라면 사건번호까지 부여되는 일은 없었을 것이라고 진술한다. 원하는 처분은 '${cleanText(c.desiredVerdict, 120) || '납득 가능한 사과와 황당 반성'}'이다. 원고의 주장은 법률적으로는 가볍지만, 마음속 판례집에는 충분히 등재될 만하다.`,
-    defendantArg: `피고 측은 아마도 '그게 그렇게까지 갈 일인가'라고 항변할 가능성이 높다. 그러나 재판부는 바로 그 문장이 사건을 키운 핵심 촉매일 수 있다고 본다. 황당사건은 보통 행위보다 반응에서 커진다. 피고가 가볍게 넘길수록 원고의 마음속 사건번호는 더 굵어진다. 따라서 피고의 무심함은 일부 참작하되 전부 면책할 수 없다.`,
-    courtOpinion: `${judgeType} 재판부는 본 사건의 법적 무게가 종이컵보다 가볍다는 점을 인정한다. 그러나 감정적 존재감은 냉장고 마지막 디저트, 치킨 마지막 다리, 단체방 읽씹 알림에 버금간다. 실제 법원이라면 접수창구가 잠시 눈을 깜빡였겠지만, 소소킹에서는 바로 그 순간부터 재판이 시작된다. 사건의 핵심은 큰 피해가 아니라 '작은데 자꾸 생각나는 억울함'이다. 피고에게 악의가 없었을 수는 있다. 하지만 원고의 하루에 아주 작은 모래알을 넣은 책임까지 사라지는 것은 아니다. 재판부는 이 사건을 크게 키우는 것이 과하다는 사실을 알면서도, 과하게 키우는 것이 본 법정의 존재 이유라고 판단한다. 따라서 원고의 청구를 일부 인용하되, 처분은 엄숙하지만 어이없게 정한다. 이것이 소소킹식 정의다.`,
-    verdict: `본 황당재판부는 원고의 청구를 상당 부분 받아들인다. 피고의 행위는 일상 속 사소한 선을 넘은 것으로 평가된다. 원고가 '내가 이런 걸로 재판까지 해야 하나'라고 느낀 바로 그 순간, 사건성은 충분히 발생하였다. 다만 본 판결은 오락 목적의 AI 콘텐츠로서 실제 법적 효력은 없다. 효력은 오직 마음속 찝찝함을 웃음으로 정리하는 범위에서만 인정된다.`,
+    investigation: `${analyst}은 본 사건을 접수한 뒤 현장검증 대신 상상검증을 실시하였다. 조사 결과 사소함 지수는 91점, 억울함 잔향은 ${Number(c.grievanceIndex || 5) * 9}점, 주변인이 들으면 '아 그건 좀 웃기네'라고 말할 가능성은 88점으로 산정되었다. 특히 본 사건은 피해 규모보다 설명할 때의 민망함이 더 큰 유형이다. 조사관은 원고가 이 일을 말하면서도 '내가 지금 뭐 하는 거지'라고 느꼈을 가능성을 인정하였다. 그러나 그 민망함이야말로 소소킹 수사기관이 보호하는 핵심 법익이다. 이에 소소경찰은 사건을 황당검찰청으로 송치한다는 의견을 붙였다.`,
+    plaintiffArg: `${prosecutorName}는 본 사건이 그냥 넘길 수 있는 일처럼 보이지만 실제로는 하루의 질서를 살짝 비틀었다고 주장한다. 검사는 피고가 조금만 눈치가 있었더라면 사건번호까지 부여되는 일은 없었을 것이라고 공소장을 낭독하였다. 원하는 처분은 '${cleanText(c.desiredVerdict, 120) || '납득 가능한 사과와 황당 반성'}'이다. 검사는 본 사안이 법률적으로는 가볍지만, 마음속 판례집에는 충분히 등재될 만하다고 강조하였다. 마지막으로 검사는 '이 정도면 그냥 웃고 넘길 수도 있지만, 원고가 이미 접수 버튼을 눌렀다'고 덧붙였다.`,
+    defendantArg: `${defenderName}은 피고 측을 대리하여 '그게 그렇게까지 갈 일인가'라고 항변할 가능성이 높다. 변호인은 피고에게 악의가 없었고, 사건의 물리적 규모가 지나치게 작다고 주장한다. 그러나 그 주장은 너무 그럴듯해서 오히려 황당재판의 긴장감을 높인다. 변호인은 원고가 조금 예민했을 수 있다고 말하지만, 재판부는 바로 그 '조금'이 소소킹 사건의 출발점이라고 본다. 따라서 피고의 변론은 일부 참작하되 전부 면책할 수 없다.`,
+    courtOpinion: `${judgeType} 재판부는 본 사건의 법적 무게가 종이컵보다 가볍다는 점을 인정한다. 그러나 감정적 존재감은 냉장고 마지막 디저트, 치킨 마지막 다리, 단체방 읽씹 알림에 버금간다. 실제 법원이라면 접수창구가 잠시 눈을 깜빡였겠지만, 소소킹에서는 바로 그 순간부터 재판이 시작된다. 소소경찰의 수사기록은 대체로 상상에 기반하고 있으나, 원고의 찝찝함을 설명하는 데에는 이상하게 설득력이 있다. 황당검사의 주장은 과하지만, 이 서비스에서는 과한 것이 직무상 미덕이다. 피고측 변호인의 반박 또한 말은 되지만, 말이 된다고 해서 원고의 마음속 빈자리가 자동으로 채워지는 것은 아니다. 사건의 핵심은 큰 피해가 아니라 '작은데 자꾸 생각나는 억울함'이다. 피고에게 악의가 없었을 수는 있다. 하지만 원고의 하루에 아주 작은 모래알을 넣은 책임까지 사라지는 것은 아니다. 재판부는 이 사건을 크게 키우는 것이 과하다는 사실을 알면서도, 과하게 키우는 것이 본 법정의 존재 이유라고 판단한다. 따라서 원고의 청구를 일부 인용하되, 처분은 엄숙하지만 어이없게 정한다. 이것이 소소킹식 정의다.`,
+    verdict: `본 황당재판부는 원고의 청구를 상당 부분 받아들인다. 피고의 행위는 일상 속 사소한 선을 넘은 것으로 평가된다. 소소경찰의 수사, 황당검사의 공소, 피고측 변호인의 반박을 모두 살펴본 결과 본 사건은 '진짜로 큰일은 아니지만 기분상 그냥 넘어가기 싫은 일'에 해당한다. 원고가 '내가 이런 걸로 재판까지 해야 하나'라고 느낀 바로 그 순간, 사건성은 충분히 발생하였다. 다만 본 판결은 오락 목적의 AI 콘텐츠로서 실제 법적 효력은 없다. 효력은 오직 마음속 찝찝함을 웃음으로 정리하는 범위에서만 인정된다.`,
     sentence: `피고는 원고에게 진심 51%, 민망함 49%가 섞인 사과를 1회 실시한다.\n피고는 향후 3일간 유사 상황에서 '그게 뭐가 문제야?'라는 표현을 사용하지 못한다.\n피고는 원고에게 작은 간식 또는 커피 상당의 황당배상을 제안한다.\n피고는 본 사건이 소소킹까지 온 이유를 10초 이상 생각한 뒤 조용히 고개를 끄덕인다.\n재범 시 피고는 같은 상황에서 먼저 '혹시 이거 소소킹 갈 일인가?'라고 자가진단한다.`,
     executionOrder: '본 처분은 선고 즉시 마음속으로 집행된다. 피고가 불복할 경우 원고는 같은 사건을 더 억울한 제목으로 재접수할 수 있다.',
-    appealNotice: '본 판결에 불복하는 자는 마음속으로 3분 이내 항소할 수 있다. 다만 항소심에서는 평소의 사소한 행동까지 확대 심리될 수 있다.',
-    closingComment: '이걸로 재판까지 온 것은 과하지만, 그래서 소소킹에서는 정상 접수다.'
+    appealNotice: '본 판결에 불복하는 자는 마음속으로 3분 이내 항소할 수 있다. 다만 항소심에서는 소소경찰의 수첩 여백까지 확대 심리될 수 있다.',
+    closingComment: '이걸로 수사까지 한 것은 과하지만, 그래서 판결문이 완성됐다.'
   };
 }
 
@@ -139,6 +146,8 @@ exports.generateTrial = onCall({ region: REGION, secrets: [geminiKey], timeoutSe
   const courtroom = c.courtroom || pickFrom(ABSURD_DEPARTMENTS, c.caseTitle);
   const recordClerk = c.recordClerk || pickFrom(CLERKS, c.caseTitle);
   const analystName = c.analystName || pickFrom(ANALYSTS, c.caseTitle);
+  const prosecutorName = c.prosecutorName || pickFrom(PROSECUTORS, c.caseTitle);
+  const defenderName = c.defenderName || pickFrom(DEFENDERS, c.caseTitle);
 
   await db.runTransaction(async tx => {
     const fresh = await tx.get(caseRef);
@@ -155,6 +164,8 @@ exports.generateTrial = onCall({ region: REGION, secrets: [geminiKey], timeoutSe
       division: '제3황당재판부',
       recordClerk,
       analystName,
+      prosecutorName,
+      defenderName,
       judgeType,
       processingStartedAt: FieldValue.serverTimestamp(),
       errorMessage: FieldValue.delete()
@@ -168,35 +179,35 @@ exports.generateTrial = onCall({ region: REGION, secrets: [geminiKey], timeoutSe
   const settings = await loadSettings();
   const modelName = cleanText(settings.geminiModel, 60) || 'gemini-2.5-flash';
   const geminiImage = imageForGemini(c.imageAttachment);
-  let data = fallback({ ...c, courtroom, recordClerk, analystName }, judgeType);
+  let data = fallback({ ...c, courtroom, recordClerk, analystName, prosecutorName, defenderName }, judgeType);
   let totals = { requests: 0, inputTokens: 0, outputTokens: 0 };
 
   try {
     const model = new GoogleGenerativeAI(geminiKey.value().trim()).getGenerativeModel({ model: modelName });
-    const prompt = `너는 '소소킹 황당재판소'의 예능형 AI 재판부다.
-목표는 법률문서가 아니라, 아주 사소한 일을 사건번호까지 붙여 장황하고 엄숙하게 키운 뒤 읽는 사람이 피식 웃게 만드는 것이다.
+    const prompt = `너는 '소소킹 황당재판소'의 예능형 AI 법정드라마 작가 겸 재판부다.
+목표는 사용자가 올린 제목, 내용, 이미지 파일을 분석해서 사건접수 → 소소경찰 수사 → 증거채집 → 황당검사 공소제기 → 피고측 변호인 반박 → 재판부 공방 → 판결까지 완성하는 것이다.
 
-핵심 재미:
-- 사용자는 짧게 접수했지만, 너는 그 일을 사건번호가 붙은 황당재판 기록으로 확대한다.
-- 접수계, 사건담당 조사관, 기록관, 재판부가 실제로 움직인 것처럼 써라.
-- 증거는 실제 증거가 아니라 증거 아닌 증거다. 예: 말끝의 떨림, 빈자리, 어색한 침묵, 냉장고 내부 공기, 읽씹 후 남은 숫자 1, 접시 위 잔해.
+이 서비스의 핵심:
+- 사용자는 짧게 접수하지만, 너는 그 일을 법정 드라마처럼 장황하게 키운다.
+- 진짜 범죄처럼 만들지 말고, 소소한 생활사건을 과하게 엄숙한 수사극/법정극으로 바꾼다.
+- 경찰, 검사, 변호사, 재판부가 모두 등장하되 실제 법률문서가 아니라 오락 콘텐츠여야 한다.
+- 수사는 '소소경찰'의 상상검증과 정황감식이다. 실제 범죄 판단, 신원 추정, 위험 판단은 하지 않는다.
+- 공방은 치열하지만 내용은 하찮아야 한다.
+
+필수 재미 장치:
+- 접수계가 '이걸 접수해야 하나' 고민하다 사건번호를 부여한다.
+- ${analystName}이 초동수사, 현장 아닌 현장검증, 증거 아닌 증거 채집을 한다.
+- ${prosecutorName}가 작은 일을 너무 엄숙하게 공소제기한다.
+- ${defenderName}은 '그 정도는 아니지 않습니까' 계열의 말은 되는 반박을 한다.
+- 재판부는 양쪽 공방을 듣고 작은 일을 더 크게 키운다.
+- 증거는 실제 증거가 아니라 말끝의 떨림, 빈자리, 어색한 침묵, 이미지 속 분위기, 남은 흔적 같은 '증거 아닌 증거'다.
 - 하찮은데 이름만 거창해야 한다. 예: 젓가락 권한 남용, 푸딩 기대권 침해, 한입 조항 위반, 마지막 조각 우선배당권, 리모컨 소재 은닉 의혹.
-- 웃음은 억지 유행어보다 과하게 진지한 문장과 말도 안 되는 행정 절차에서 나와야 한다.
-- 사용자가 쓴 사건을 벗어나 새 사건을 만들지 말고, 사용자가 쓴 사소한 정황을 크게 키워라.
 
 문체:
 - 판결문처럼 진지하지만 실제 내용은 어이없게 쓴다.
 - 짧은 드립 한 문장 다음에 과하게 엄숙한 긴 문장을 섞어 리듬을 만든다.
 - '사과 1회' 같은 밋밋한 결론으로 끝내지 말고, 금지명령, 재발방지명령, 마음속 집행명령, 간식 상당 배상, 자가진단 의무를 섞는다.
 - 마지막 closingComment는 공유하고 싶은 한 줄이어야 한다.
-
-필수 장면:
-1. 접수계가 '이걸 접수해야 하나' 고민하다 사건번호를 부여한다.
-2. ${analystName}이 현장검증 대신 상상검증/정황감식을 한다.
-3. 증거 아닌 증거 목록을 5개 이상 만든다.
-4. 재판부 판단은 가장 길게 쓴다. 최소 8문장.
-5. 처분은 줄바꿈 5개 이상이며, 피고는...으로 시작하는 문장을 많이 넣는다.
-6. 실제 법률 자문이 아니라 오락 콘텐츠임을 자연스럽게 포함한다.
 
 첨부 이미지가 있으면 이미지를 실제 범죄나 신원 증거처럼 단정하지 말고 분위기 참고자료로만 유머러스하게 다뤄라. 인물 신원, 민감정보, 실제 범죄 여부는 추정하지 않는다.
 
@@ -208,24 +219,26 @@ exports.generateTrial = onCall({ region: REGION, secrets: [geminiKey], timeoutSe
 억울지수: ${Number(c.grievanceIndex || 5)}/10
 원하는 처분: ${cleanText(c.desiredVerdict, 160) || '없음'}
 담당 판사: ${judgeType}
-담당 조사관: ${analystName}
+소소경찰 담당: ${analystName}
+황당검사: ${prosecutorName}
+피고측 변호인: ${defenderName}
 기록관: ${recordClerk}
 법정: ${courtroom}
 첨부 이미지: ${geminiImage ? '있음. 이미지 감정 내용을 분위기 참고자료로 반영할 것.' : '없음'}
 
 반드시 JSON만 출력한다. 필드는 다음을 모두 포함한다.
 {
-  "absurdityTitle": "사건 제목을 더 웃긴 법정식 제목으로 바꾼 제목",
-  "imageAnalysis": "첨부 이미지 분석. 이미지가 없으면 빈 문자열. 이미지가 있으면 3문장 이상",
-  "reception": "접수계 기록. 사건번호, 접수계의 망설임, 결국 엄숙하게 배당되는 흐름. 5문장 이상",
+  "absurdityTitle": "사건 제목을 더 웃긴 법정드라마식 제목으로 바꾼 제목",
+  "imageAnalysis": "첨부 이미지 분석. 이미지가 없으면 빈 문자열. 이미지가 있으면 3문장 이상. 분위기 참고자료로만 다룸",
+  "reception": "사건접수 기록. 사건번호, 접수계의 망설임, 소소경찰로 넘어가는 흐름. 5문장 이상",
   "absurdityReview": "재판까지 올 일인지 재판부가 과몰입해서 고민하는 내용. 5문장 이상",
-  "keyIssues": ["거창하지만 하찮은 쟁점 1", "쟁점 2", "쟁점 3", "쟁점 4"],
-  "evidenceList": ["증거 아닌 증거 1", "증거 아닌 증거 2", "증거 아닌 증거 3", "증거 아닌 증거 4", "증거 아닌 증거 5", "증거 아닌 증거 6"],
-  "investigation": "사건담당 조사관의 조사보고서. 수치와 엉뚱한 기준을 활용. 6문장 이상",
-  "plaintiffArg": "원고 측 주장. 억울하지만 웃기게. 4문장 이상",
-  "defendantArg": "피고 측 변명 추정. 말은 되는데 어이없게. 4문장 이상",
-  "courtOpinion": "재판부 판단. 8문장 이상. 가장 길고 웃기게",
-  "verdict": "최종 판결 이유. 5문장 이상. 오락 콘텐츠임을 자연스럽게 포함",
+  "keyIssues": ["검사와 변호인이 다툴 거창하지만 하찮은 쟁점 1", "쟁점 2", "쟁점 3", "쟁점 4", "쟁점 5"],
+  "evidenceList": ["소소경찰이 채집한 증거 아닌 증거 1", "증거 아닌 증거 2", "증거 아닌 증거 3", "증거 아닌 증거 4", "증거 아닌 증거 5", "증거 아닌 증거 6"],
+  "investigation": "소소경찰 수사보고서. 초동수사, 증거채집, 엉뚱한 수치 분석 포함. 7문장 이상",
+  "plaintiffArg": "황당검사 측 공소제기와 공격. 작지만 중대한 척. 5문장 이상",
+  "defendantArg": "피고측 변호인 반박. 말은 되지만 어이없게. 5문장 이상",
+  "courtOpinion": "재판부 판단. 검사와 변호인 공방을 받은 뒤 판단. 9문장 이상. 가장 길고 웃기게",
+  "verdict": "최종 판결 이유. 수사·증거·공방을 종합. 5문장 이상. 오락 콘텐츠임을 자연스럽게 포함",
   "sentence": "주문 및 황당 처분. 줄바꿈으로 5개 이상. 피고는... 형태를 많이 사용. 하찮은 금지명령과 재발방지 드립 포함",
   "executionOrder": "집행명령. 2문장 이상. 마음속 집행, 간식 집행 같은 표현 활용",
   "appealNotice": "항소 안내. 2문장 이상. 더 사소한 정황까지 심리될 수 있다는 드립 포함",
@@ -249,11 +262,11 @@ exports.generateTrial = onCall({ region: REGION, secrets: [geminiKey], timeoutSe
       absurdityReview: cleanLong(parsed.absurdityReview, 1600) || data.absurdityReview,
       keyIssues: cleanList(parsed.keyIssues, data.keyIssues, 6, 190),
       evidenceList: cleanList(parsed.evidenceList, data.evidenceList, 8, 190),
-      investigation: cleanLong(parsed.investigation, 1900) || data.investigation,
-      plaintiffArg: cleanLong(parsed.plaintiffArg, 1500) || data.plaintiffArg,
-      defendantArg: cleanLong(parsed.defendantArg, 1500) || data.defendantArg,
-      courtOpinion: cleanLong(parsed.courtOpinion, 2600) || data.courtOpinion,
-      verdict: cleanLong(parsed.verdict, 1900) || data.verdict,
+      investigation: cleanLong(parsed.investigation, 2200) || data.investigation,
+      plaintiffArg: cleanLong(parsed.plaintiffArg, 1700) || data.plaintiffArg,
+      defendantArg: cleanLong(parsed.defendantArg, 1700) || data.defendantArg,
+      courtOpinion: cleanLong(parsed.courtOpinion, 2800) || data.courtOpinion,
+      verdict: cleanLong(parsed.verdict, 2000) || data.verdict,
       sentence: funnyDisposition(parsed.sentence, data.sentence),
       executionOrder: cleanLong(parsed.executionOrder, 1000) || data.executionOrder,
       appealNotice: cleanLong(parsed.appealNotice, 800) || data.appealNotice,
@@ -272,6 +285,8 @@ exports.generateTrial = onCall({ region: REGION, secrets: [geminiKey], timeoutSe
       division: '제3황당재판부',
       recordClerk,
       analystName,
+      prosecutorName,
+      defenderName,
       caseTitle: c.caseTitle || '황당재판 결과',
       absurdityTitle: data.absurdityTitle,
       imageAnalysis: data.imageAnalysis || '',
@@ -311,6 +326,8 @@ exports.generateTrial = onCall({ region: REGION, secrets: [geminiKey], timeoutSe
       division: '제3황당재판부',
       recordClerk,
       analystName,
+      prosecutorName,
+      defenderName,
       judgeType,
       isPublic,
       completedAt: FieldValue.serverTimestamp(),
