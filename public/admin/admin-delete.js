@@ -19,9 +19,9 @@ function ensureAdminPolishStyle() {
   `;
   document.head.appendChild(style);
 }
-async function completeDelete(caseId, reloadTab) {
+async function completeDelete(caseId, reloadTab = 'records') {
   const text = '이 게시물과 연결된 사건, 판결문, 투표, 댓글, 신고 데이터를 모두 삭제할까요?\n삭제 후 복구할 수 없습니다.';
-  if (!confirm(text)) return;
+  if (!caseId || !confirm(text)) return;
   try {
     const res = await deleteCourtPost({ caseId });
     alert(`완전 삭제 완료\n삭제 처리: ${res.data?.deleted || 0}개 항목`);
@@ -47,12 +47,12 @@ function wrapAdminDeletes() {
   ensureAdminPolishStyle();
   addHelper();
   if (typeof window._delCase === 'function' && !window._delCase.__completeDelete) {
-    const fn = id => completeDelete(id, 'cases');
+    const fn = id => completeDelete(id, 'records');
     fn.__completeDelete = true;
     window._delCase = fn;
   }
   if (typeof window._delResult === 'function' && !window._delResult.__completeDelete) {
-    const fn = id => completeDelete(id, 'board');
+    const fn = id => completeDelete(id, 'records');
     fn.__completeDelete = true;
     window._delResult = fn;
   }
@@ -62,6 +62,22 @@ function wrapAdminDeletes() {
     window._delRecord = fn;
   }
 }
+function interceptInlineDelete(e) {
+  const btn = e.target?.closest?.('button[onclick]');
+  if (!btn) return;
+  const code = btn.getAttribute('onclick') || '';
+  if (!/_del(?:Case|Result|Record)\(/.test(code)) return;
+  const m = code.match(/_del(?:Case|Result|Record)\(['"]([^'"]+)['"]\)/);
+  if (!m?.[1]) return;
+  e.preventDefault();
+  e.stopImmediatePropagation();
+  completeDelete(m[1], 'records');
+}
 
-setInterval(wrapAdminDeletes, 300);
+wrapAdminDeletes();
+setTimeout(wrapAdminDeletes, 0);
+setTimeout(wrapAdminDeletes, 80);
+setInterval(wrapAdminDeletes, 500);
+window.addEventListener('click', interceptInlineDelete, true);
 window.addEventListener('click', () => setTimeout(wrapAdminDeletes, 0), true);
+new MutationObserver(wrapAdminDeletes).observe(document.body, { childList: true, subtree: true });
