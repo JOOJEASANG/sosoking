@@ -1,5 +1,88 @@
 import { renderSubmit as renderBaseSubmit } from './submit.js?v=20260708-simple1';
 
+const MAX_TITLE = 40;
+const FOOD_WORDS = ['빵','푸딩','과자','커피','치킨','라면','음료','케이크','간식','도시락','아이스크림','샌드위치','김밥','초콜릿','떡볶이','피자','햄버거','사탕','젤리','쿠키'];
+const ANIMAL_WORDS = ['리트리버','강아지','개','고양이','반려견','댕댕이','멍멍이','비둘기','새','까치'];
+const PERSON_WORDS = ['친구','동생','언니','오빠','형','누나','엄마','아빠','남편','아내','직장동료','상사','후배','선배','손님','아이','누군가'];
+
+function hasFinalConsonant(word) {
+  const ch = String(word || '').trim().replace(/[\s"'“”‘’.,!?]+$/g, '').slice(-1);
+  if (!ch) return false;
+  const code = ch.charCodeAt(0);
+  if (code < 0xac00 || code > 0xd7a3) return false;
+  return ((code - 0xac00) % 28) !== 0;
+}
+function subjectParticle(word) { return hasFinalConsonant(word) ? '이' : '가'; }
+function objectParticle(word) { return hasFinalConsonant(word) ? '을' : '를'; }
+function compact(value) {
+  return String(value || '')
+    .replace(/\s+/g, ' ')
+    .replace(/[.!?。！？]+$/g, '')
+    .replace(/^(그|저|이)\s+/g, '')
+    .replace(/\s*(한\s*마리|한마리)$/g, '')
+    .trim();
+}
+function clipTitle(title) {
+  const clean = compact(title).replace(/사건 사건$/g, '사건');
+  return clean.length > MAX_TITLE ? clean.slice(0, MAX_TITLE - 1).trim() + '…' : clean;
+}
+function extractLocation(text) {
+  const matches = [...String(text || '').matchAll(/([가-힣A-Za-z0-9]{1,12}(?:에서|에))\s/g)].map(m => m[1]);
+  const bad = ['사이에','사이','중에','중에서','때에'];
+  return matches.find(x => !bad.some(b => x.includes(b))) || '';
+}
+function extractObject(text) {
+  const food = FOOD_WORDS.join('|');
+  const pattern = new RegExp(`((?:내|제|제가|내가|남겨둔|마지막|아껴둔|사둔|먹던|보관하던)?\\s*(?:[가-힣A-Za-z0-9]+\\s*){0,2}(?:${food}))\\s*(?:을|를|이|가)?\\s*(?:먹|가져|물고|사라|없어|훔쳐|집어)`, 'i');
+  const m = String(text || '').match(pattern);
+  if (m?.[1]) return compact(m[1]);
+
+  const generic = String(text || '').match(/([가-힣A-Za-z0-9\s]{1,16})\s*(?:을|를)\s*(?:먹|가져|물고|사라|없어|훔쳐|집어)/);
+  return generic?.[1] ? compact(generic[1]) : '';
+}
+function extractActor(text) {
+  const source = String(text || '');
+  const animal = ANIMAL_WORDS.join('|');
+  const contextualAnimal = new RegExp(`((?:산책\\s*중이던|산책중이던|지나가던|옆에 있던|근처에 있던)\\s*(?:${animal}))(?:\\s*한\\s*마리)?`, 'i');
+  const ca = source.match(contextualAnimal);
+  if (ca?.[1]) return compact(ca[1].replace(/산책\s*중이던/g, '산책중이던'));
+
+  const plainAnimal = new RegExp(`(${animal})(?:\\s*한\\s*마리)?`, 'i');
+  const pa = source.match(plainAnimal);
+  if (pa?.[1]) return compact(pa[1]);
+
+  const person = PERSON_WORDS.join('|');
+  const pp = source.match(new RegExp(`(${person})\\s*(?:이|가|은|는)?`, 'i'));
+  return pp?.[1] ? compact(pp[1]) : '';
+}
+function smartTitle(desc) {
+  const text = String(desc || '').replace(/\s+/g, ' ').trim();
+  if (!text) return '';
+  const location = extractLocation(text);
+  const actor = extractActor(text);
+  const object = extractObject(text);
+
+  if (object && actor && /먹|물고/.test(text)) {
+    return clipTitle(`${location ? location + ' ' : ''}${actor}${subjectParticle(actor)} ${object}${objectParticle(object)} 먹은 사건`);
+  }
+  if (object && /먹/.test(text)) {
+    return clipTitle(`${location ? location + ' ' : ''}${object}${objectParticle(object)} 누군가 먹은 사건`);
+  }
+  if (object && /가져|집어|훔쳐|물고/.test(text)) {
+    return clipTitle(`${location ? location + ' ' : ''}${actor ? actor + subjectParticle(actor) + ' ' : ''}${object}${objectParticle(object)} 가져간 사건`);
+  }
+  if (object && /사라|없어/.test(text)) {
+    return clipTitle(`${location ? location + ' ' : ''}${object}${subjectParticle(object)} 사라진 사건`);
+  }
+
+  const cleaned = text
+    .replace(/^(제가|내가|나는|저는|나|저)\s*/g, '')
+    .replace(/(하고 있었는데|하고 있었는 데|했는데|하던 중|한눈판사이|한눈 판 사이|잠깐 사이|사이에)/g, ' ')
+    .replace(/[.!?。！？].*$/g, '')
+    .trim();
+  return clipTitle(`${cleaned.slice(0, 28).trim() || '소소한 일상'} 사건`);
+}
+
 function ensureSimpleSubmitStyle() {
   if (document.getElementById('simple-submit-style')) return;
   const style = document.createElement('style');
@@ -15,9 +98,33 @@ function ensureSimpleSubmitStyle() {
     #submit-form .judge-option-desc{font-size:10.5px;line-height:1.45;margin-top:4px;}
     .simple-submit-note{margin:0 0 16px;padding:12px 14px;border:1px solid rgba(201,168,76,.28);border-radius:14px;background:rgba(201,168,76,.07);font-size:12px;color:var(--cream-dim);line-height:1.7;}
     .simple-submit-note strong{color:var(--gold);}
+    .auto-title-note{font-size:11px;color:var(--cream-dim);line-height:1.6;margin-top:6px;}
     @media(max-width:420px){#submit-form .judge-grid{grid-template-columns:1fr 1fr;gap:8px;}#submit-form .judge-option{padding:10px 8px;min-height:92px;}}
   `;
   document.head.appendChild(style);
+}
+
+function bindSmartAutoTitle(container) {
+  const desc = container.querySelector('#case-desc');
+  const title = container.querySelector('#case-title');
+  const count = container.querySelector('#title-count');
+  if (!desc || !title || title.dataset.smartTitleBound === '1') return;
+  title.dataset.smartTitleBound = '1';
+  title.placeholder = '예: 공원에서 리트리버가 내 빵을 먹은 사건';
+  desc.placeholder = '예: 공원에서 빵을 먹고 있었는데 한눈판 사이 산책 중이던 리트리버가 내 빵을 먹었어요.';
+
+  let userEdited = title.value.trim().length > 0;
+  title.insertAdjacentHTML('afterend', '<div id="auto-title-note" class="auto-title-note">사건명을 비워두면 사건 내용에서 핵심을 뽑아 자동 정리합니다.</div>');
+
+  title.addEventListener('input', () => {
+    userEdited = title.value.trim().length > 0;
+  });
+  desc.addEventListener('input', () => {
+    if (userEdited) return;
+    const next = smartTitle(desc.value);
+    title.value = next;
+    if (count) count.textContent = String(next.length);
+  });
 }
 
 function decorateSubmit(container) {
@@ -31,6 +138,7 @@ function decorateSubmit(container) {
         <strong>간단 접수 방식</strong> · 사건을 길게 쓸 필요 없습니다. 한두 문장만 적으면 사건번호, 담당 조사관, 증거 아닌 증거, 황당 처분은 재판부가 알아서 크게 키웁니다.
       </div>`);
   }
+  bindSmartAutoTitle(container);
 }
 
 export async function renderSubmit(container) {
