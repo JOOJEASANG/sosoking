@@ -1,15 +1,8 @@
-import { db, functions } from '../firebase.js?v=20260630-3';
-import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { functions } from '../firebase.js?v=20260630-3';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 import { showToast } from '../components/toast.js?v=20260630-3';
-import { renderResult as renderBaseResult } from './result.js?v=20260708-result2';
+import { renderResult as renderBaseResult } from './result.js?v=20260709-compact1';
 
-function escapeHtmlLocal(value) {
-  return String(value || '').replace(/[&<>'"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[ch]));
-}
-function paragraphsLocal(value) {
-  return escapeHtmlLocal(value).replace(/\n/g, '<br>');
-}
 function grievance(container) {
   const text = container.textContent || '';
   const m = text.match(/억울지수\s*(\d+)/);
@@ -24,14 +17,13 @@ function gradeByLv(lv) {
 }
 function badgesBy(container, lv) {
   const text = container.textContent || '';
-  const badges = [];
-  badges.push(['📜', '황당판결 발급']);
-  if (text.includes('소소경찰') || text.includes('수사')) badges.push(['🚓', '수사기록 생성']);
-  if (text.includes('황당검사') || text.includes('검사')) badges.push(['💼', '공소제기 완료']);
-  if (text.includes('변호인')) badges.push(['🛡️', '변론 공방']);
+  const badges = [['📜', '사건기록철 발급']];
+  if (text.includes('사건일지')) badges.push(['⏱️', '분초 재구성']);
+  if (text.includes('소소국과수')) badges.push(['🧬', '생활증거 감정']);
+  if (text.includes('공소장') || text.includes('검사')) badges.push(['💼', '공소제기 완료']);
+  if (text.includes('답변서') || text.includes('변호인')) badges.push(['🛡️', '변론 공방']);
   if (lv >= 8) badges.push(['🔥', '과몰입 인정']);
-  if (text.includes('이미지 감정')) badges.push(['🖼️', '이미지 증거']);
-  return badges.slice(0, 5);
+  return badges.slice(0, 6);
 }
 function ensureResultGameStyle() {
   if (document.getElementById('result-game-style')) return;
@@ -48,51 +40,14 @@ function ensureResultGameStyle() {
     .drama-flow{display:flex;gap:7px;overflow-x:auto;padding-bottom:2px;}
     .drama-flow span{white-space:nowrap;border:1px solid rgba(201,168,76,.25);border-radius:999px;padding:7px 10px;font-size:11px;color:var(--cream-dim);background:rgba(255,255,255,.035);}
     .owner-delete-case{border-color:rgba(231,76,60,.45)!important;color:#e74c3c!important;}
-    .forensic-report-card{border-color:rgba(86,156,214,.45)!important;background:linear-gradient(135deg,rgba(86,156,214,.10),rgba(201,168,76,.06))!important;}
+    .compact-doc-card{border-left:3px solid rgba(201,168,76,.55)!important;}
     [data-theme="light"] .reward-card,:root:not([data-theme="dark"]) .reward-card{background:linear-gradient(180deg,#fffaf0 0%,#fff7e7 100%)!important;border-color:#e2d3af!important;box-shadow:0 10px 22px rgba(117,85,24,.08)!important;}
     [data-theme="light"] .reward-badge,:root:not([data-theme="dark"]) .reward-badge{color:#6a4b12!important;background:linear-gradient(180deg,#fff8e7 0%,#f3e2b3 100%)!important;border:1px solid #d7bf82!important;box-shadow:0 4px 10px rgba(120,90,25,.10)!important;text-shadow:none!important;}
-    [data-theme="light"] .reward-badge:hover,:root:not([data-theme="dark"]) .reward-badge:hover{background:linear-gradient(180deg,#fff3d0 0%,#ecd28d 100%)!important;border-color:#c9a84c!important;}
     [data-theme="light"] .invite-defense,:root:not([data-theme="dark"]) .invite-defense{background:#fff8e8!important;border-color:#d8c48d!important;box-shadow:0 8px 22px rgba(70,46,16,.08)!important;}
     [data-theme="light"] .invite-defense-title,:root:not([data-theme="dark"]) .invite-defense-title{color:#5b3f09!important;}
     [data-theme="light"] .invite-defense-desc,:root:not([data-theme="dark"]) .invite-defense-desc{color:#5f4b35!important;opacity:1!important;}
-    [data-theme="light"] .forensic-report-card,:root:not([data-theme="dark"]) .forensic-report-card{background:#f8fbff!important;border-color:#b8cce0!important;box-shadow:0 8px 20px rgba(40,80,120,.07)!important;}
   `;
   document.head.appendChild(style);
-}
-function normalizeCourtDramaWording(container) {
-  const map = [
-    ['억울함 분석 결과', '소소경찰 수사기록'],
-    ['억울함/황당성 분석', '초동수사 및 정황감식'],
-    ['증거 아닌 증거 목록', '소소경찰 증거채집 목록'],
-    ['핵심 쟁점', '공판 쟁점'],
-    ['원고 측 주장', '황당검사 측 공소제기'],
-    ['내가 이걸로 재판까지 해야 하나 싶은 바로 그 심정', '작은 일을 중대하게 몰아가는 검사 측 주장'],
-    ['피고 측 변명 추정', '피고측 변호인 반박'],
-    ['피고가 할 법한 말을 재판부가 미리 엄숙하게 정리', '말은 되지만 어쩐지 억울함을 키우는 변호인 주장'],
-    ['재판부 판단', '재판부 공방 판단'],
-    ['가장 쓸데없이 진지한 부분', '검사와 변호인의 공방을 들은 뒤 내린 과몰입 판단'],
-    ['증거능력은 없지만 웃기기에는 충분한 자료입니다.', '소소경찰이 굳이 봉투에 담은 척 정리한 자료입니다.']
-  ];
-  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
-  const nodes = [];
-  while (walker.nextNode()) nodes.push(walker.currentNode);
-  nodes.forEach(node => {
-    let text = node.nodeValue;
-    map.forEach(([a, b]) => { text = text.replaceAll(a, b); });
-    node.nodeValue = text;
-  });
-}
-function addDramaFlow(container) {
-  if (document.getElementById('drama-flow-card')) return;
-  const reward = document.getElementById('game-reward-card');
-  if (!reward) return;
-  reward.insertAdjacentHTML('afterend', `
-    <div id="drama-flow-card" class="drama-flow-card">
-      <div class="court-kicker" style="margin-bottom:8px;">CASE DRAMA FLOW</div>
-      <div class="drama-flow">
-        <span>📋 사건접수</span><span>🚓 소소경찰 수사</span><span>🧬 소소국과수 감정</span><span>🔍 증거채집</span><span>💼 황당검사 공소</span><span>🛡️ 변호인 반박</span><span>⚖️ 재판공방</span><span>🔨 판결선고</span>
-      </div>
-    </div>`);
 }
 function addReward(container) {
   if (document.getElementById('game-reward-card')) return;
@@ -108,38 +63,23 @@ function addReward(container) {
         <div style="flex:1;min-width:0;">
           <div class="court-kicker">JUDGEMENT REWARD</div>
           <div class="court-title" style="font-size:20px;">${label}</div>
-          <div class="court-desc">소소한 일이 수사·감정·공방·판결까지 완료된 황당사건 기록으로 등록되었습니다.</div>
+          <div class="court-desc">소소한 일이 7개 사건문서로 압축된 황당사건 기록철로 등록되었습니다.</div>
         </div>
       </div>
       <div id="reward-badges" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">${badges.map(([i, t]) => `<span class="reward-badge">${i} ${t}</span>`).join('')}</div>
     </div>`);
 }
-async function addForensicReport(container, caseId) {
-  if (document.getElementById('forensic-report-card')) return;
-  let forensicReport = '';
-  try {
-    const snap = await getDoc(doc(db, 'results', caseId));
-    forensicReport = snap.exists() ? String(snap.data().forensicReport || '') : '';
-  } catch (err) {
-    console.warn('forensic report read skipped:', err.message || err);
-  }
-  if (!forensicReport.trim()) return;
-  const target = Array.from(container.querySelectorAll('.card.step-card')).find(el => el.textContent.includes('소소경찰 수사기록') || el.textContent.includes('수사기록'));
-  const html = `
-    <div id="forensic-report-card" class="card step-card visible court-document forensic-report-card" style="margin-bottom:12px;padding:18px;position:relative;overflow:hidden;">
-      <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:9px;">
-        <div>
-          <div class="step-role">🧬 소소국과수 생활증거 감정서</div>
-          <div style="font-size:11px;color:var(--cream-dim);margin-top:3px;">국립소소과학수사연구소 생활증거분석실 감정의견</div>
-        </div>
-        <span class="badge badge-gold">감정</span>
+function addDramaFlow(container) {
+  if (document.getElementById('drama-flow-card')) return;
+  const reward = document.getElementById('game-reward-card');
+  if (!reward) return;
+  reward.insertAdjacentHTML('afterend', `
+    <div id="drama-flow-card" class="drama-flow-card">
+      <div class="court-kicker" style="margin-bottom:8px;">CASE FILE FLOW</div>
+      <div class="drama-flow">
+        <span>📋 접수조서</span><span>⏱️ 사건일지</span><span>🧬 소소국과수</span><span>💼 공소장</span><span>🛡️ 답변서</span><span>⚖️ 재판부 판단</span><span>📜 주문</span>
       </div>
-      <div class="step-content" style="white-space:pre-line;line-height:1.85;">${paragraphsLocal(forensicReport)}</div>
-    </div>`;
-  if (target) target.insertAdjacentHTML('beforebegin', html);
-  else container.querySelector('.container')?.insertAdjacentHTML('beforeend', html);
-  const badgeBox = document.getElementById('reward-badges');
-  if (badgeBox && !badgeBox.textContent.includes('소소국과수')) badgeBox.insertAdjacentHTML('beforeend', '<span class="reward-badge">🧬 소소국과수 감정</span>');
+    </div>`);
 }
 function addInviteDefense(container) {
   if (document.getElementById('invite-defense-card')) return;
@@ -184,9 +124,8 @@ function addOwnerDelete(container, caseId) {
     }
   });
 }
-async function decorateResult(container, caseId) {
+function decorateResult(container, caseId) {
   ensureResultGameStyle();
-  normalizeCourtDramaWording(container);
   const titleCard = container.querySelector('.container > .card');
   if (titleCard && !document.getElementById('court-result-header')) {
     titleCard.classList.add('court-shell');
@@ -199,39 +138,21 @@ async function decorateResult(container, caseId) {
   }
   addReward(container);
   addDramaFlow(container);
-  await addForensicReport(container, caseId);
-  const verdictCard = container.querySelector('.verdict-card');
-  if (verdictCard && !document.getElementById('court-verdict-label')) {
-    verdictCard.classList.add('court-document');
-    verdictCard.insertAdjacentHTML('afterbegin', `
-      <div id="court-verdict-label" style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px;">
-        <div><div class="court-kicker">JUDGEMENT DOCUMENT</div><div class="court-title" style="font-size:19px;">황당재판 판결문</div></div>
-        <div class="court-seal" style="width:48px;height:48px;font-size:22px;">⚖️</div>
-      </div>`);
-  }
   const reactionBox = Array.from(container.querySelectorAll('.card')).find(el => el.textContent.includes('배심원 투표'));
   if (reactionBox && !reactionBox.classList.contains('court-jury-box')) {
     reactionBox.classList.add('court-document', 'court-jury-box');
     reactionBox.insertAdjacentHTML('afterbegin', `<div class="court-kicker" style="margin-bottom:5px;">CITIZEN JURY VERDICT</div>`);
-    reactionBox.querySelectorAll('.reaction-btn').forEach(btn => { if (btn.style.border.includes('201,168,76')) btn.dataset.picked = 'true'; });
   }
   const commentsBox = Array.from(container.querySelectorAll('.card')).find(el => el.textContent.includes('방청석 한마디'));
   if (commentsBox && !commentsBox.classList.contains('court-gallery-box')) {
     commentsBox.classList.add('court-document', 'court-gallery-box');
     commentsBox.insertAdjacentHTML('afterbegin', `<div class="court-kicker" style="margin-bottom:5px;">PUBLIC GALLERY</div>`);
   }
-  const steps = container.querySelectorAll('.step-card');
-  steps.forEach((step, idx) => {
-    if (step.classList.contains('court-step-decorated')) return;
-    step.classList.add('court-step-decorated');
-    step.style.borderLeft = '3px solid rgba(201,168,76,.55)';
-    step.insertAdjacentHTML('afterbegin', `<div class="court-kicker" style="margin-bottom:6px;">STAGE ${String(idx + 1).padStart(2, '0')}</div>`);
-  });
   addInviteDefense(container);
   addOwnerDelete(container, caseId);
 }
 
 export async function renderResult(container, caseId) {
   await renderBaseResult(container, caseId);
-  await decorateResult(container, caseId);
+  decorateResult(container, caseId);
 }
