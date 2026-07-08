@@ -233,6 +233,53 @@ html[data-theme="light"] .home-hero-light-safe ~ .container .how-step > div:last
   }
 }
 
+/* Home bottom CTA: keep the copy above the submit button readable in light mode. */
+html[data-theme="light"] .cta-section,
+:root[data-theme="light"] .cta-section {
+  color: #24190c !important;
+}
+
+html[data-theme="light"] .cta-section h2,
+:root[data-theme="light"] .cta-section h2 {
+  color: #1a150a !important;
+  opacity: 1 !important;
+  text-shadow: 0 1px 0 rgba(255,255,255,.86) !important;
+}
+
+html[data-theme="light"] .cta-section p,
+html[data-theme="light"] .cta-section p *,
+:root[data-theme="light"] .cta-section p,
+:root[data-theme="light"] .cta-section p * {
+  color: #4f3b25 !important;
+  opacity: 1 !important;
+}
+
+html[data-theme="light"] .cta-section p span,
+:root[data-theme="light"] .cta-section p span {
+  color: #6f563a !important;
+  opacity: 1 !important;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) .cta-section {
+    color: #24190c !important;
+  }
+  :root:not([data-theme="dark"]) .cta-section h2 {
+    color: #1a150a !important;
+    opacity: 1 !important;
+    text-shadow: 0 1px 0 rgba(255,255,255,.86) !important;
+  }
+  :root:not([data-theme="dark"]) .cta-section p,
+  :root:not([data-theme="dark"]) .cta-section p * {
+    color: #4f3b25 !important;
+    opacity: 1 !important;
+  }
+  :root:not([data-theme="dark"]) .cta-section p span {
+    color: #6f563a !important;
+    opacity: 1 !important;
+  }
+}
+
 @media (max-width: 520px) {
   .home-hero-light-safe ~ .container .how-step {
     padding: 16px 14px !important;
