@@ -1,3 +1,6 @@
+import { functions } from '../firebase.js?v=20260630-3';
+import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
+import { showToast } from '../components/toast.js?v=20260630-3';
 import { renderResult as renderBaseResult } from './result.js?v=20260708-result1';
 
 function grievance(container) {
@@ -37,6 +40,7 @@ function ensureResultGameStyle() {
     .drama-flow-card{padding:16px;margin-bottom:14px;border-radius:18px;border:1px solid rgba(201,168,76,.35);background:rgba(201,168,76,.07);}
     .drama-flow{display:flex;gap:7px;overflow-x:auto;padding-bottom:2px;}
     .drama-flow span{white-space:nowrap;border:1px solid rgba(201,168,76,.25);border-radius:999px;padding:7px 10px;font-size:11px;color:var(--cream-dim);background:rgba(255,255,255,.035);}
+    .owner-delete-case{border-color:rgba(231,76,60,.45)!important;color:#e74c3c!important;}
     [data-theme="light"] .reward-badge,:root:not([data-theme="dark"]) .reward-badge{color:#fff8ec;background:rgba(13,17,23,.82);}
   `;
   document.head.appendChild(style);
@@ -112,7 +116,34 @@ function addInviteDefense(container) {
     catch { prompt('아래 링크를 복사하세요.', url); }
   });
 }
-function decorateResult(container) {
+function addOwnerDelete(container, caseId) {
+  if (document.getElementById('owner-delete-case')) return;
+  const actions = container.querySelector('.result-actions');
+  if (!actions) return;
+  const ownerShareButton = document.getElementById('btn-share');
+  if (!ownerShareButton) return;
+  actions.insertAdjacentHTML('afterbegin', `<button class="btn btn-ghost owner-delete-case" id="owner-delete-case">🗑️ 이 사건 삭제</button>`);
+  document.getElementById('owner-delete-case')?.addEventListener('click', async () => {
+    const ok = confirm('이 사건을 삭제할까요?\n\n접수내용, 판결문, 투표, 댓글, 신고 데이터가 함께 삭제됩니다. 삭제 후 복구할 수 없습니다.');
+    if (!ok) return;
+    const btn = document.getElementById('owner-delete-case');
+    btn.disabled = true;
+    btn.textContent = '삭제 중...';
+    try {
+      await httpsCallable(functions, 'deleteMyCase')({ caseId });
+      showToast('사건을 삭제했습니다.', 'success');
+      location.hash = '#/my-cases';
+    } catch (err) {
+      console.error(err);
+      const raw = String(err.message || '삭제하지 못했습니다.');
+      const msg = raw.includes('not-found') ? '삭제 함수가 아직 배포되지 않았습니다. Functions 배포가 필요합니다.' : raw.replace('FirebaseError: ', '');
+      showToast(msg, 'error');
+      btn.disabled = false;
+      btn.textContent = '🗑️ 이 사건 삭제';
+    }
+  });
+}
+function decorateResult(container, caseId) {
   ensureResultGameStyle();
   normalizeCourtDramaWording(container);
   const titleCard = container.querySelector('.container > .card');
@@ -155,9 +186,10 @@ function decorateResult(container) {
     step.insertAdjacentHTML('afterbegin', `<div class="court-kicker" style="margin-bottom:6px;">STAGE ${String(idx + 1).padStart(2, '0')}</div>`);
   });
   addInviteDefense(container);
+  addOwnerDelete(container, caseId);
 }
 
 export async function renderResult(container, caseId) {
   await renderBaseResult(container, caseId);
-  decorateResult(container);
+  decorateResult(container, caseId);
 }
