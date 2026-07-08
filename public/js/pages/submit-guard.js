@@ -1,5 +1,5 @@
 import { auth } from '../firebase.js?v=20260630-3';
-import { renderSubmit as renderSubmitForm } from './submit-court.js?v=20260707-5';
+import { renderSubmit as renderSubmitForm } from './submit-court.js?v=20260708-submit1';
 
 function loginRequired(container) {
   container.innerHTML = `
