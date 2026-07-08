@@ -1,6 +1,22 @@
 /* Complete light-mode readability pass.
    Loaded last to catch inline white/cream text that older screens still use. */
 
+.home-logo-frame {
+  width: min(340px, 92vw);
+  margin: 0 auto 18px;
+  border-radius: 18px;
+  line-height: 0;
+}
+
+.home-logo-banner {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: contain;
+  border-radius: 14px;
+  box-shadow: 0 10px 26px rgba(60,42,10,.16);
+}
+
 html[data-theme="light"] body,
 html[data-theme="light"] #app,
 html[data-theme="light"] #page-content,
@@ -10,6 +26,41 @@ html[data-theme="light"] .container,
 :root[data-theme="light"] #page-content,
 :root[data-theme="light"] .container {
   color: #24190c !important;
+}
+
+/* Light mode logo treatment: keep the dark emblem, but place it in a warm frame so it does not float as a harsh black block. */
+html[data-theme="light"] .home-logo-frame,
+:root[data-theme="light"] .home-logo-frame {
+  width: min(330px, 88vw) !important;
+  padding: 7px !important;
+  border-radius: 24px !important;
+  background:
+    linear-gradient(135deg, rgba(255,253,248,.96), rgba(242,224,188,.92)) !important;
+  border: 1px solid rgba(112,78,24,.24) !important;
+  box-shadow: 0 14px 32px rgba(70,46,16,.13), inset 0 1px 0 rgba(255,255,255,.9) !important;
+}
+
+html[data-theme="light"] .home-logo-banner,
+:root[data-theme="light"] .home-logo-banner {
+  border-radius: 18px !important;
+  box-shadow: 0 9px 18px rgba(11,17,27,.18) !important;
+  filter: saturate(.96) brightness(1.06) contrast(.96) !important;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) .home-logo-frame {
+    width: min(330px, 88vw) !important;
+    padding: 7px !important;
+    border-radius: 24px !important;
+    background: linear-gradient(135deg, rgba(255,253,248,.96), rgba(242,224,188,.92)) !important;
+    border: 1px solid rgba(112,78,24,.24) !important;
+    box-shadow: 0 14px 32px rgba(70,46,16,.13), inset 0 1px 0 rgba(255,255,255,.9) !important;
+  }
+  :root:not([data-theme="dark"]) .home-logo-banner {
+    border-radius: 18px !important;
+    box-shadow: 0 9px 18px rgba(11,17,27,.18) !important;
+    filter: saturate(.96) brightness(1.06) contrast(.96) !important;
+  }
 }
 
 /* Catch old inline white/cream text in page content. */
