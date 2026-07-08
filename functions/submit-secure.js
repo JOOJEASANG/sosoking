@@ -36,9 +36,7 @@ const PERSON_WORDS = ['친구','동생','언니','오빠','형','누나','엄마
 function requireRealLogin(request) {
   if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
   const provider = request.auth.token.firebase?.sign_in_provider || '';
-  if (provider === 'anonymous') {
-    throw new HttpsError('unauthenticated', '사건 접수는 구글 또는 이메일 로그인 후 이용할 수 있습니다.');
-  }
+  if (provider === 'anonymous') throw new HttpsError('unauthenticated', '사건 접수는 구글 또는 이메일 로그인 후 이용할 수 있습니다.');
 }
 function textValue(value, maxLen) {
   return String(value || '').replace(/[\u0000-\u001F\u007F]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, maxLen);
@@ -54,9 +52,7 @@ function boolValue(value, fallback = false) {
   if (value === 'false') return false;
   return fallback;
 }
-function firstDefined(...values) {
-  return values.find(v => v !== undefined && v !== null);
-}
+function firstDefined(...values) { return values.find(v => v !== undefined && v !== null); }
 function kstDateKey(date = new Date()) {
   return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
 }
@@ -70,12 +66,8 @@ function makeDocket(today, category) {
   const seq = Math.floor(1000 + Math.random() * 9000);
   return `${year}황당-${category}-${seq}`;
 }
-function pickFrom(arr) {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
-function randomNickname() {
-  return NICK_ADJ[Math.floor(Math.random() * NICK_ADJ.length)] + NICK_NOUN[Math.floor(Math.random() * NICK_NOUN.length)];
-}
+function pickFrom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function randomNickname() { return NICK_ADJ[Math.floor(Math.random() * NICK_ADJ.length)] + NICK_NOUN[Math.floor(Math.random() * NICK_NOUN.length)]; }
 function selectedJudgeOrBlank(value) { return JUDGES.includes(value) ? value : ''; }
 function containsBannedWord(text, bannedWords = []) {
   const source = String(text || '').toLowerCase();
@@ -110,12 +102,7 @@ function clipTitle(title) {
   return clean.length > MAX_TITLE ? `${clean.slice(0, MAX_TITLE - 1).trim()}…` : clean;
 }
 function normalizeDesc(desc) {
-  return String(desc || '')
-    .replace(/한눈판사이/g, '한눈 판 사이')
-    .replace(/산책\s*중이던/g, '산책중이던')
-    .replace(/한\s*마리/g, '한마리')
-    .replace(/\s+/g, ' ')
-    .trim();
+  return String(desc || '').replace(/한눈판사이/g, '한눈 판 사이').replace(/산책\s*중이던/g, '산책중이던').replace(/한\s*마리/g, '한마리').replace(/\s+/g, ' ').trim();
 }
 function lastActionIndex(text) {
   const verbs = /(먹었|먹엇|먹었다|먹은|먹어|먹음|먹고|가져갔|가져간|가져가|들고갔|물고갔|훔쳐갔|사라졌|없어졌|없어짐|독점했|차지했|망가뜨렸|깨뜨렸)/g;
@@ -139,9 +126,7 @@ function extractObject(text) {
   if (owned.length) return owned[owned.length - 1];
   const any = [...beforeAction.matchAll(anyPattern)].map(m => compact(m[1])).filter(Boolean);
   if (any.length) return any[any.length - 1].replace(/^(공원에서|집에서|회사에서|학교에서|카페에서)\s+/, '');
-  const generic = [...beforeAction.matchAll(/([가-힣A-Za-z0-9\s]{1,16})\s*(?:을|를)(?=\s*$)/g)]
-    .map(m => compact(m[1]))
-    .filter(Boolean);
+  const generic = [...beforeAction.matchAll(/([가-힣A-Za-z0-9\s]{1,16})\s*(?:을|를)(?=\s*$)/g)].map(m => compact(m[1])).filter(Boolean);
   return generic.length ? generic[generic.length - 1] : '';
 }
 function extractActor(text) {
@@ -150,9 +135,7 @@ function extractActor(text) {
   const animal = ANIMAL_WORDS.join('|');
   const person = PERSON_WORDS.join('|');
   const actorPattern = new RegExp(`((?:산책중이던|지나가던|옆에 있던|근처에 있던|같이 있던|맞은편에 있던)?\\s*(?:${animal}|${person}))(?:\\s*한마리)?\\s*(?:이|가|은|는)?`, 'g');
-  const matches = [...beforeAction.matchAll(actorPattern)]
-    .map(m => compact(m[1]))
-    .filter(x => x && !['내','제'].includes(x));
+  const matches = [...beforeAction.matchAll(actorPattern)].map(m => compact(m[1])).filter(x => x && !['내','제'].includes(x));
   return matches.length ? matches[matches.length - 1].replace(/^\s+/, '') : '';
 }
 function actionTitle(text, actor, object, location) {
@@ -178,11 +161,7 @@ function makeSmartTitle(desc) {
   const actor = extractActor(text);
   const structured = actionTitle(text, actor, object, location);
   if (structured) return clipTitle(structured);
-  const cleaned = text
-    .replace(/^(제가|내가|나는|저는|나|저)\s*/g, '')
-    .replace(/(하고 있었는데|하고 있었는 데|했는데|하던 중|한눈 판 사이|잠깐 사이|사이에)/g, ' ')
-    .replace(/[.!?。！？].*$/g, '')
-    .trim();
+  const cleaned = text.replace(/^(제가|내가|나는|저는|나|저)\s*/g, '').replace(/(하고 있었는데|하고 있었는 데|했는데|하던 중|한눈 판 사이|잠깐 사이|사이에)/g, ' ').replace(/[.!?。！？].*$/g, '').trim();
   return clipTitle(`${cleaned.slice(0, 28).trim() || '소소한 일상'} 사건`);
 }
 function shouldUseSmartTitle(rawTitle, desc, smartTitle) {
@@ -202,29 +181,14 @@ function shouldUseSmartTitle(rawTitle, desc, smartTitle) {
 function normalizeImageAttachment(value) {
   if (!value || typeof value !== 'object') return null;
   const mimeType = textValue(value.mimeType, 30);
-  if (!['image/jpeg', 'image/png', 'image/webp'].includes(mimeType)) {
-    throw new HttpsError('invalid-argument', '이미지는 JPG, PNG, WEBP 형식만 첨부할 수 있습니다.');
-  }
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(mimeType)) throw new HttpsError('invalid-argument', '이미지는 JPG, PNG, WEBP 형식만 첨부할 수 있습니다.');
   const data = String(value.data || '').replace(/^data:image\/[a-zA-Z0-9.+-]+;base64,/, '').replace(/\s/g, '');
   if (!data) return null;
-  if (data.length > MAX_IMAGE_BASE64_LENGTH) {
-    throw new HttpsError('invalid-argument', '첨부 이미지 용량이 큽니다. 자동 리사이즈 후 다시 시도해주세요.');
-  }
-  if (!/^[A-Za-z0-9+/=]+$/.test(data)) {
-    throw new HttpsError('invalid-argument', '이미지 데이터 형식이 올바르지 않습니다.');
-  }
+  if (data.length > MAX_IMAGE_BASE64_LENGTH) throw new HttpsError('invalid-argument', '첨부 이미지 용량이 큽니다. 자동 리사이즈 후 다시 시도해주세요.');
+  if (!/^[A-Za-z0-9+/=]+$/.test(data)) throw new HttpsError('invalid-argument', '이미지 데이터 형식이 올바르지 않습니다.');
   const width = clampNumber(value.width, 0, 0, 4000);
   const height = clampNumber(value.height, 0, 0, 4000);
-  return {
-    mimeType,
-    data,
-    width,
-    height,
-    originalName: textValue(value.originalName, 80),
-    originalSize: clampNumber(value.originalSize, 0, 0, 25 * 1024 * 1024),
-    resizedSize: clampNumber(value.resizedSize, 0, 0, 1024 * 1024),
-    resized: true
-  };
+  return { mimeType, data, width, height, originalName: textValue(value.originalName, 80), originalSize: clampNumber(value.originalSize, 0, 0, 25 * 1024 * 1024), resizedSize: clampNumber(value.resizedSize, 0, 0, 1024 * 1024), resized: true };
 }
 async function loadSettings() {
   const snap = await db.doc('site_settings/config').get();
@@ -249,7 +213,8 @@ exports.submitCase = onCall({ region: REGION, timeoutSeconds: 30, memory: '256Mi
   const submittedTitle = textValue(firstDefined(data.caseTitle, data.title), MAX_TITLE);
   const desc = textValue(firstDefined(data.caseDescription, data.description), MAX_DESC);
   const smartTitle = makeSmartTitle(desc);
-  const title = shouldUseSmartTitle(submittedTitle, desc, smartTitle) ? smartTitle : submittedTitle;
+  const titleIsManual = boolValue(data.caseTitleManual, false) && !!submittedTitle;
+  const title = titleIsManual ? submittedTitle : (shouldUseSmartTitle(submittedTitle, desc, smartTitle) ? smartTitle : submittedTitle);
   const desired = textValue(data.desiredVerdict, MAX_DESIRED);
   const grievance = clampNumber(firstDefined(data.grievanceIndex, data.grievance), 5, 1, 10);
   const selectedJudge = selectedJudgeOrBlank(firstDefined(data.selectedJudge, data.judgeType));
@@ -266,12 +231,8 @@ exports.submitCase = onCall({ region: REGION, timeoutSeconds: 30, memory: '256Mi
   const cooldownSec = clampNumber(settings.cooldownSec, DEFAULT_COOLDOWN_SEC, 0, 300);
   const bannedWords = Array.isArray(settings.bannedWords) ? settings.bannedWords : [];
   const contentForChecks = `${title} ${desc} ${desired}`;
-  if (containsBannedWord(contentForChecks, bannedWords)) {
-    throw new HttpsError('failed-precondition', '관리자가 제한한 단어가 포함되어 있습니다.');
-  }
-  if (containsSeriousKeyword(contentForChecks)) {
-    throw new HttpsError('failed-precondition', '실제 범죄·소송·학교폭력·가정폭력·의료·정신건강 등 중대한 사안은 소소킹에서 접수할 수 없습니다. 사소한 일상 소재만 오락용으로 접수해주세요.');
-  }
+  if (containsBannedWord(contentForChecks, bannedWords)) throw new HttpsError('failed-precondition', '관리자가 제한한 단어가 포함되어 있습니다.');
+  if (containsSeriousKeyword(contentForChecks)) throw new HttpsError('failed-precondition', '실제 범죄·소송·학교폭력·가정폭력·의료·정신건강 등 중대한 사안은 소소킹에서 접수할 수 없습니다. 사소한 일상 소재만 오락용으로 접수해주세요.');
 
   const today = kstDateKey();
   const category = inferCategory(title, desc);
@@ -290,15 +251,11 @@ exports.submitCase = onCall({ region: REGION, timeoutSeconds: 30, memory: '256Mi
       const current = limitSnap.exists ? limitSnap.data() : {};
       const count = current.date === today ? Number(current.count || 0) : 0;
       nextCount = count + 1;
-      if (count >= dailyLimit) {
-        throw new HttpsError('resource-exhausted', `오늘 접수 한도 ${dailyLimit}건을 초과했습니다. 황당재판부도 하루에 너무 많은 황당함은 감당하기 어렵습니다.`);
-      }
+      if (count >= dailyLimit) throw new HttpsError('resource-exhausted', `오늘 접수 한도 ${dailyLimit}건을 초과했습니다. 황당재판부도 하루에 너무 많은 황당함은 감당하기 어렵습니다.`);
       if (current.lastSubmittedAt && current.date === today) {
         const lastMs = current.lastSubmittedAt.toMillis ? current.lastSubmittedAt.toMillis() : new Date(current.lastSubmittedAt).getTime();
         const diffSec = Math.floor((Date.now() - lastMs) / 1000);
-        if (cooldownSec > 0 && diffSec < cooldownSec) {
-          throw new HttpsError('resource-exhausted', `${cooldownSec - diffSec}초 후에 다시 접수할 수 있습니다. 재판부가 방금 전 사건의 황당함을 아직 정리 중입니다.`);
-        }
+        if (cooldownSec > 0 && diffSec < cooldownSec) throw new HttpsError('resource-exhausted', `${cooldownSec - diffSec}초 후에 다시 접수할 수 있습니다. 재판부가 방금 전 사건의 황당함을 아직 정리 중입니다.`);
       }
     }
 
@@ -316,6 +273,7 @@ exports.submitCase = onCall({ region: REGION, timeoutSeconds: 30, memory: '256Mi
       caseTitle: title,
       originalCaseTitle: submittedTitle || '',
       autoCaseTitle: smartTitle || '',
+      caseTitleManual: titleIsManual,
       caseDescription: desc,
       grievanceIndex: grievance,
       nickname: isAdminSubmitter ? (profileNickname || '관리자') : (profileNickname || randomNickname()),
@@ -328,9 +286,7 @@ exports.submitCase = onCall({ region: REGION, timeoutSeconds: 30, memory: '256Mi
       reportCount: 0,
       createdAt: FieldValue.serverTimestamp(),
     });
-    if (!isAdminSubmitter) {
-      tx.set(limitRef, { date: today, count: nextCount, lastSubmittedAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-    }
+    if (!isAdminSubmitter) tx.set(limitRef, { date: today, count: nextCount, lastSubmittedAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
   });
 
   return { caseId, docketNumber, dailyLimit, adminBypass: isAdminSubmitter, hasImageAttachment: !!imageAttachment, caseTitle: title };
