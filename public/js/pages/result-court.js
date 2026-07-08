@@ -1,7 +1,7 @@
 import { functions } from '../firebase.js?v=20260630-3';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 import { showToast } from '../components/toast.js?v=20260630-3';
-import { renderResult as renderBaseResult } from './result.js?v=20260709-story1';
+import { renderResult as renderBaseResult } from './result.js?v=20260709-story2';
 
 function grievance(container) {
   const text = container.textContent || '';
