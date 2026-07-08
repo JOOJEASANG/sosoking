@@ -1,9 +1,9 @@
-import { renderMyCases as renderBaseMyCases } from './my-cases.js?v=20260630-9';
+import { renderMyCases as renderBaseMyCases } from './my-cases.js?v=20260708-delete1';
 
 function titleByCount(count) {
-  if (count >= 20) return '전설의 생활소송왕';
+  if (count >= 20) return '전설의 황당소송왕';
   if (count >= 10) return '법정 단골 원고';
-  if (count >= 5) return '생활분쟁 수집가';
+  if (count >= 5) return '소소사건 수집가';
   if (count >= 1) return '억울함 초심자';
   return '미등록 원고';
 }
