@@ -40,6 +40,12 @@ function _formatBytes(bytes) {
   if (n >= 1024) return `${Math.round(n / 1024)}KB`;
   return `${n}B`;
 }
+function _autoTitle(desc) {
+  const text = String(desc || '').replace(/\s+/g, ' ').trim();
+  if (!text) return '';
+  const head = text.replace(/[.!?。！？].*$/g, '').slice(0, 24).trim();
+  return `${head || '이걸로'} 사건`.slice(0, MAX_TITLE);
+}
 function _blobToBase64(blob) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -64,18 +70,13 @@ function _canvasToBlob(canvas, quality) {
 }
 async function _resizeImageForAi(file) {
   if (!file) return null;
-  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-    throw new Error('JPG, PNG, WEBP 이미지만 첨부할 수 있습니다.');
-  }
-  if (file.size > MAX_ORIGINAL_IMAGE) {
-    throw new Error('원본 이미지는 25MB 이하만 첨부할 수 있습니다.');
-  }
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) throw new Error('JPG, PNG, WEBP 이미지만 첨부할 수 있습니다.');
+  if (file.size > MAX_ORIGINAL_IMAGE) throw new Error('원본 이미지는 25MB 이하만 첨부할 수 있습니다.');
   const img = await _loadImage(file);
   let maxDim = MAX_IMAGE_DIM;
   let bestBlob = null;
   let finalWidth = 0;
   let finalHeight = 0;
-
   for (let round = 0; round < 5; round++) {
     const ratio = Math.min(1, maxDim / Math.max(img.naturalWidth || img.width, img.naturalHeight || img.height));
     const width = Math.max(1, Math.round((img.naturalWidth || img.width) * ratio));
@@ -87,39 +88,20 @@ async function _resizeImageForAi(file) {
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, width, height);
     ctx.drawImage(img, 0, 0, width, height);
-
     for (const q of [0.86, 0.78, 0.68, 0.58, 0.48]) {
       const blob = await _canvasToBlob(canvas, q);
       bestBlob = blob;
       finalWidth = width;
       finalHeight = height;
       if (blob.size <= MAX_RESIZED_IMAGE) {
-        const data = await _blobToBase64(blob);
-        return {
-          data,
-          mimeType: 'image/jpeg',
-          originalName: file.name || 'attached-image.jpg',
-          originalSize: file.size,
-          resizedSize: blob.size,
-          width,
-          height
-        };
+        return { data: await _blobToBase64(blob), mimeType: 'image/jpeg', originalName: file.name || 'attached-image.jpg', originalSize: file.size, resizedSize: blob.size, width, height };
       }
     }
     maxDim = Math.round(maxDim * 0.82);
   }
-
   if (!bestBlob) throw new Error('이미지 압축에 실패했습니다.');
   if (bestBlob.size > MAX_RESIZED_IMAGE) throw new Error('이미지를 자동 압축했지만 아직 큽니다. 더 작은 이미지를 첨부해주세요.');
-  return {
-    data: await _blobToBase64(bestBlob),
-    mimeType: 'image/jpeg',
-    originalName: file.name || 'attached-image.jpg',
-    originalSize: file.size,
-    resizedSize: bestBlob.size,
-    width: finalWidth,
-    height: finalHeight
-  };
+  return { data: await _blobToBase64(bestBlob), mimeType: 'image/jpeg', originalName: file.name || 'attached-image.jpg', originalSize: file.size, resizedSize: bestBlob.size, width: finalWidth, height: finalHeight };
 }
 
 function _showSeriousModal() {
@@ -130,15 +112,8 @@ function _showSeriousModal() {
       <div style="background:#1a2035;border:2px solid #e74c3c;border-radius:16px;padding:28px 24px;max-width:380px;width:100%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,0.6);">
         <div style="font-size:52px;margin-bottom:12px;">😰</div>
         <div style="font-family:'Noto Serif KR',serif;font-size:19px;font-weight:700;color:#e74c3c;margin-bottom:10px;">잠깐, 황당재판부가 정색했습니다</div>
-        <p style="font-size:14px;color:rgba(245,240,232,0.72);line-height:1.75;margin-bottom:22px;">
-          이 사건은 소소킹에서 다루는 가벼운 오락 소재가 아닐 수 있습니다.<br><br>
-          실제 범죄·폭력·소송·의료·정신건강·학교폭력 같은 내용은 접수할 수 없습니다.<br>
-          사소한 일상 소재로 바꿔 다시 작성해주세요.
-        </p>
-        <div style="display:flex;flex-direction:column;gap:8px;">
-          <a href="https://www.klac.or.kr" target="_blank" rel="noopener" style="display:block;padding:13px;border-radius:12px;background:rgba(231,76,60,0.15);border:1.5px solid rgba(231,76,60,0.4);color:#e74c3c;font-weight:700;font-size:14px;text-decoration:none;">⚖️ 실제 법률 도움 알아보기</a>
-          <button id="_serious-cancel" style="padding:13px;border-radius:12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(245,240,232,0.75);font-size:13px;cursor:pointer;">가벼운 사건으로 다시 작성하기</button>
-        </div>
+        <p style="font-size:14px;color:rgba(245,240,232,0.72);line-height:1.75;margin-bottom:22px;">실제 범죄·소송·학교폭력·의료·정신건강 같은 내용은 접수할 수 없습니다.<br>소소한 일상 사건으로 바꿔 다시 작성해주세요.</p>
+        <button id="_serious-cancel" style="padding:13px;border-radius:12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(245,240,232,0.75);font-size:13px;cursor:pointer;width:100%;">가벼운 사건으로 다시 작성하기</button>
       </div>`;
     document.body.appendChild(overlay);
     overlay.querySelector('#_serious-cancel').onclick = () => { overlay.remove(); resolve(false); };
@@ -165,68 +140,72 @@ export async function renderSubmit(container) {
     <div>
       <div class="page-header">
         <a href="#/" class="back-btn">‹</a>
-        <span class="logo">황당사건 접수</span>
+        <span class="logo">소소사건 접수</span>
       </div>
       <div class="container" style="padding-top:24px;padding-bottom:80px;">
-        <div class="card" style="padding:18px;margin-bottom:18px;border-color:rgba(201,168,76,.45);">
-          <div style="font-size:11px;color:var(--gold);font-weight:900;letter-spacing:.12em;margin-bottom:6px;">ABSURD E-FILING</div>
-          <div style="font-family:var(--font-serif);font-size:21px;font-weight:900;line-height:1.45;">소소킹 황당재판소</div>
-          <div style="font-size:13px;color:var(--cream-dim);line-height:1.7;margin-top:6px;">그냥 넘기기엔 억울하고, 진짜 따지기엔 너무 사소한 일. 접수하면 사건번호가 부여되고 제404호 황당법정에서 쓸데없이 진지하게 심리됩니다.</div>
+        <div class="card" style="padding:20px;margin-bottom:18px;border-color:rgba(201,168,76,.45);">
+          <div style="font-size:11px;color:var(--gold);font-weight:900;letter-spacing:.12em;margin-bottom:6px;">3초 접수 · 장황한 판결</div>
+          <div style="font-family:var(--font-serif);font-size:22px;font-weight:900;line-height:1.45;">짧게 쓰면, 재판부가 크게 키웁니다</div>
+          <div style="font-size:13px;color:var(--cream-dim);line-height:1.7;margin-top:7px;">컵라면 한 입, 푸딩 실종, 충전기 독점처럼 별것 아닌 일을 적어주세요. 사건번호·담당 조사관·증거 아닌 증거·황당 처분은 AI 재판부가 알아서 만듭니다.</div>
         </div>
+
         <form id="submit-form">
           <div class="form-group">
-            <label class="form-label">황당사건명 <span style="color:var(--red)">*</span></label>
-            <input type="text" id="case-title" class="form-input" maxlength="${MAX_TITLE}" placeholder="예: 컵라면 한 입만 사건, 마지막 푸딩 실종 사건" required>
-            <div class="char-counter"><span id="title-count">0</span>/${MAX_TITLE}</div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">황당사건 경위 <span style="color:var(--red)">*</span></label>
-            <textarea id="case-desc" class="form-textarea" style="min-height:132px;" maxlength="${MAX_DESC}" placeholder="누가, 언제, 무엇을 해서, 왜 이렇게까지 억울한지 적어주세요. 사소할수록 재판부가 더 과몰입합니다. 실명·연락처는 쓰지 마세요." required></textarea>
+            <label class="form-label">무슨 일이 있었나요? <span style="color:var(--red)">*</span></label>
+            <textarea id="case-desc" class="form-textarea" style="min-height:150px;" maxlength="${MAX_DESC}" placeholder="예: 냉장고에 마지막 푸딩을 남겨놨는데 누가 먹고 빈 자리만 남겨놨어요. 별일 아닌데 퇴근하고 기대했던 거라 너무 억울합니다." required></textarea>
             <div class="char-counter"><span id="desc-count">0</span>/${MAX_DESC}</div>
           </div>
+
           <div class="form-group">
-            <label class="form-label">이미지 첨부 <span class="optional">선택 · AI가 함께 분석</span></label>
-            <div class="card" style="padding:14px;background:rgba(255,255,255,.025);border-style:dashed;">
+            <label class="form-label">사건명 <span class="optional">선택 · 비워두면 자동 생성</span></label>
+            <input type="text" id="case-title" class="form-input" maxlength="${MAX_TITLE}" placeholder="예: 마지막 푸딩 실종 사건">
+            <div class="char-counter"><span id="title-count">0</span>/${MAX_TITLE}</div>
+          </div>
+
+          <details class="card" style="padding:14px;margin-bottom:18px;background:rgba(255,255,255,.025);">
+            <summary style="cursor:pointer;font-weight:900;color:var(--gold);list-style:none;">선택 옵션 열기 · 사진/억울함/재판부</summary>
+            <div style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin:8px 0 16px;">그냥 접수해도 됩니다. 더 과몰입시키고 싶을 때만 건드리세요.</div>
+
+            <div class="form-group">
+              <label class="form-label">억울함 레벨</label>
+              <div class="slider-value"><span id="grievance-val">5</span><span style="font-size:14px;color:var(--cream-dim);"> / 10</span></div>
+              <input type="range" id="grievance" class="form-range" min="1" max="10" value="5">
+              <div class="slider-labels"><span>🙂 그냥 웃김</span><span>😤 이건 선고 필요</span></div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">원하는 황당 처분 <span class="optional">선택</span></label>
+              <input type="text" id="desired-verdict" class="form-input" maxlength="${MAX_DESIRED}" placeholder="예: 푸딩 2개 배상, 3일간 한입만 금지">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">담당 재판부 <span class="optional">선택 안 하면 랜덤</span></label>
+              <div class="judge-grid" id="judge-grid">
+                <div class="judge-option active" data-judge=""><span class="judge-option-icon">🎲</span><div class="judge-option-name">랜덤 배정</div><div class="judge-option-desc">황당재판부가 알아서 과몰입</div></div>
+                ${JUDGES.map(j => `<div class="judge-option" data-judge="${escapeHtml(j.id)}"><span class="judge-option-icon">${j.icon}</span><div class="judge-option-name">${escapeHtml(j.id)}</div><div class="judge-option-desc">${escapeHtml(j.desc)}</div></div>`).join('')}
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="form-label">이미지 첨부 <span class="optional">선택</span></label>
               <input type="file" id="case-image" accept="image/jpeg,image/png,image/webp" class="form-input" style="padding:10px;background:rgba(255,255,255,.03);">
-              <div id="image-status" style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-top:8px;">JPG, PNG, WEBP 가능. 큰 이미지는 자동으로 1600px 이하, 약 500KB 이하로 적당히 리사이즈합니다.</div>
+              <div id="image-status" style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-top:8px;">사진이 있으면 분위기 참고자료로만 분석합니다. 개인정보가 있는 이미지는 올리지 마세요.</div>
               <div id="image-preview" style="display:none;margin-top:12px;"></div>
             </div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">억울함 레벨</label>
-            <div class="slider-value"><span id="grievance-val">5</span><span style="font-size:14px;color:var(--cream-dim);"> / 10</span></div>
-            <input type="range" id="grievance" class="form-range" min="1" max="10" value="5">
-            <div class="slider-labels"><span>🙂 그냥 웃김</span><span>😤 이건 선고 필요</span></div>
-          </div>
-          <div class="card" style="padding:14px;margin-bottom:18px;background:rgba(255,255,255,.025);">
-            <div style="font-weight:900;color:var(--gold);margin-bottom:8px;">황당재판 진행 예정</div>
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-size:11px;color:var(--cream-dim);text-align:center;"><span>1 접수</span><span>2 사건번호</span><span>3 이미지 분석</span><span>4 증거 아닌 증거</span><span>5 재판부 판단</span><span>6 처분 선고</span></div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">담당 재판부 선택 <span class="optional">선택 안 하면 랜덤 배정</span></label>
-            <div class="judge-grid" id="judge-grid">
-              <div class="judge-option active" data-judge=""><span class="judge-option-icon">🎲</span><div class="judge-option-name">랜덤 배정</div><div class="judge-option-desc">황당재판부가 알아서 과몰입</div></div>
-              ${JUDGES.map(j => `<div class="judge-option" data-judge="${escapeHtml(j.id)}"><span class="judge-option-icon">${j.icon}</span><div class="judge-option-name">${escapeHtml(j.id)}</div><div class="judge-option-desc">${escapeHtml(j.desc)}</div></div>`).join('')}
-            </div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">원하는 처분 <span class="optional">선택</span></label>
-            <input type="text" id="desired-verdict" class="form-input" maxlength="${MAX_DESIRED}" placeholder="예: 사과, 컵라면 1개 배상, 3일간 한입만 금지">
-          </div>
+          </details>
+
           <div class="card" style="padding:14px;margin-bottom:18px;background:rgba(201,168,76,.08);border-color:rgba(201,168,76,.32);">
             <label style="display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.65;color:var(--cream);cursor:pointer;">
               <input type="checkbox" id="is-public" checked style="margin-top:4px;">
-              <span><b style="color:var(--gold);">황당판결 기록에 공개</b><br><span style="color:var(--cream-dim);">체크하면 선고 후 다른 유저들이 판결기록에서 열람할 수 있습니다. 첨부 이미지도 사건 자료로 함께 보일 수 있으니 개인정보가 있는 이미지는 올리지 마세요.</span></span>
+              <span><b style="color:var(--gold);">황당판결 기록에 공개</b><br><span style="color:var(--cream-dim);">닉네임과 판결문이 공개될 수 있습니다. 원본 첨부 이미지는 작성자에게만 표시됩니다.</span></span>
             </label>
           </div>
-          <div class="disclaimer" style="margin-bottom:24px;">
-            <strong>⚠️ 접수 전 확인사항</strong><br>
-            · 일반 회원 접수 한도는 계정당 하루 <strong>${settings.dailyLimit}건</strong>입니다. 관리자는 운영 테스트용으로 한도를 우회합니다.<br>
-            · 재접수 대기: <strong>${settings.cooldownSec}초</strong><br>
-            · 실명·연락처·주민번호 등 개인정보 입력 금지<br>
-            · 본 서비스는 AI 기반 <strong>오락 목적</strong>이며 법적 효력이 없습니다
+
+          <div class="disclaimer" style="margin-bottom:20px;">
+            · 하루 접수 한도 <strong>${settings.dailyLimit}건</strong> · 재접수 대기 <strong>${settings.cooldownSec}초</strong><br>
+            · 실명·연락처·주민번호 입력 금지 · 실제 법적 효력 없음
           </div>
-          <button type="submit" class="btn btn-primary" id="submit-btn">황당사건 접수하고 재판받기</button>
+          <button type="submit" class="btn btn-primary" id="submit-btn">접수하고 황당재판 받기</button>
         </form>
       </div>
     </div>`;
@@ -234,31 +213,24 @@ export async function renderSubmit(container) {
   let selectedJudge = '';
   let imageAttachment = null;
 
-  document.getElementById('judge-grid').addEventListener('click', (e) => {
+  document.getElementById('judge-grid')?.addEventListener('click', (e) => {
     const opt = e.target.closest('.judge-option');
     if (!opt) return;
     document.querySelectorAll('#judge-grid .judge-option').forEach(el => el.classList.remove('active'));
     opt.classList.add('active');
     selectedJudge = opt.dataset.judge || '';
   });
-
-  document.getElementById('case-title').addEventListener('input', function() {
-    document.getElementById('title-count').textContent = this.value.length;
-  });
-  document.getElementById('case-desc').addEventListener('input', function() {
-    document.getElementById('desc-count').textContent = this.value.length;
-  });
-  document.getElementById('grievance').addEventListener('input', function() {
-    document.getElementById('grievance-val').textContent = this.value;
-  });
-  document.getElementById('case-image').addEventListener('change', async function() {
+  document.getElementById('case-title')?.addEventListener('input', function() { document.getElementById('title-count').textContent = this.value.length; });
+  document.getElementById('case-desc')?.addEventListener('input', function() { document.getElementById('desc-count').textContent = this.value.length; });
+  document.getElementById('grievance')?.addEventListener('input', function() { document.getElementById('grievance-val').textContent = this.value; });
+  document.getElementById('case-image')?.addEventListener('change', async function() {
     const file = this.files?.[0];
     const status = document.getElementById('image-status');
     const preview = document.getElementById('image-preview');
     imageAttachment = null;
     preview.style.display = 'none';
     preview.innerHTML = '';
-    if (!file) { status.textContent = 'JPG, PNG, WEBP 가능. 큰 이미지는 자동으로 1600px 이하, 약 500KB 이하로 적당히 리사이즈합니다.'; return; }
+    if (!file) { status.textContent = '사진이 있으면 분위기 참고자료로만 분석합니다. 개인정보가 있는 이미지는 올리지 마세요.'; return; }
     status.textContent = `이미지 확인 중... 원본 ${_formatBytes(file.size)}`;
     try {
       const resized = await _resizeImageForAi(file);
@@ -275,14 +247,15 @@ export async function renderSubmit(container) {
 
   document.getElementById('submit-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const title = document.getElementById('case-title').value.trim();
     const desc = document.getElementById('case-desc').value.trim();
+    const rawTitle = document.getElementById('case-title').value.trim();
+    const title = rawTitle || _autoTitle(desc);
     const grievance = parseInt(document.getElementById('grievance').value, 10);
     const desiredVerdict = document.getElementById('desired-verdict').value.trim();
     const isPublic = document.getElementById('is-public').checked;
 
-    if (title.length < 3) return showToast('사건명은 3자 이상 입력해주세요.', 'error');
-    if (desc.length < 10) return showToast('사건 경위는 10자 이상 입력해주세요.', 'error');
+    if (desc.length < 10) return showToast('무슨 일이 있었는지 10자 이상 적어주세요.', 'error');
+    if (!title || title.length < 3) return showToast('사건명을 적거나, 사건 내용을 조금 더 길게 적어주세요.', 'error');
     const merged = `${title} ${desc} ${desiredVerdict}`;
     if (_isTooSerious(merged)) {
       const ok = await _showSeriousModal();
@@ -291,19 +264,11 @@ export async function renderSubmit(container) {
 
     const btn = document.getElementById('submit-btn');
     btn.disabled = true;
-    btn.textContent = '접수 중...';
+    btn.textContent = '사건번호 부여 중...';
     try {
       const submitCase = httpsCallable(functions, 'submitCase');
-      const res = await submitCase({
-        caseTitle: title,
-        caseDescription: desc,
-        grievanceIndex: grievance,
-        desiredVerdict,
-        selectedJudge,
-        isPublic,
-        imageAttachment
-      });
-      showToast('황당사건 접수 완료!', 'success');
+      const res = await submitCase({ caseTitle: title, caseDescription: desc, grievanceIndex: grievance, desiredVerdict, selectedJudge, isPublic, imageAttachment });
+      showToast(`사건번호 부여 완료: ${res.data?.docketNumber || '황당사건'}`, 'success');
       location.hash = `#/trial/${res.data.caseId}`;
     } catch (err) {
       console.error(err);
@@ -311,7 +276,7 @@ export async function renderSubmit(container) {
       if (String(msg).includes('resource-exhausted') || String(msg).includes('일일 접수')) msg = `오늘 접수 한도(${settings.dailyLimit}건)를 모두 사용했습니다.`;
       showToast(msg, 'error');
       btn.disabled = false;
-      btn.textContent = '황당사건 접수하고 재판받기';
+      btn.textContent = '접수하고 황당재판 받기';
     }
   });
 }
