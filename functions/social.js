@@ -32,18 +32,26 @@ exports.voteResult = onCall({ region: REGION, timeoutSeconds: 30, memory: '256Mi
   const caseId = cleanText(request.data?.caseId, 180);
   const reaction = cleanText(request.data?.reaction, 20);
   if (!caseId || !REACTIONS.includes(reaction)) throw new HttpsError('invalid-argument', '잘못된 반응입니다.');
-  await assertPublicResult(caseId);
+  const { resultRef } = await assertPublicResult(caseId);
 
   const summaryRef = db.doc(`result_reactions/${caseId}`);
   const voteRef = db.doc(`result_reactions/${caseId}/votes/${uid}`);
   await db.runTransaction(async tx => {
     const voteSnap = await tx.get(voteRef);
     const prev = voteSnap.exists ? voteSnap.data().reaction : '';
-    const updates = { updatedAt: FieldValue.serverTimestamp(), total: FieldValue.increment(prev === reaction ? 0 : (prev ? 0 : 1)) };
+    const totalDelta = prev === reaction ? 0 : (prev ? 0 : 1);
+    const updates = { updatedAt: FieldValue.serverTimestamp(), total: FieldValue.increment(totalDelta) };
     if (prev && prev !== reaction) updates[`counts.${prev}`] = FieldValue.increment(-1);
     if (prev !== reaction) updates[`counts.${reaction}`] = FieldValue.increment(1);
     tx.set(summaryRef, updates, { merge: true });
     tx.set(voteRef, { uid, reaction, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+    if (totalDelta) {
+      tx.set(resultRef, {
+        reactionTotal: FieldValue.increment(totalDelta),
+        totalVotes: FieldValue.increment(totalDelta),
+        updatedAt: FieldValue.serverTimestamp()
+      }, { merge: true });
+    }
   });
   return { success: true };
 });
@@ -56,11 +64,14 @@ exports.addCourtComment = onCall({ region: REGION, timeoutSeconds: 30, memory: '
   if (!caseId) throw new HttpsError('invalid-argument', 'caseId required');
   if (text.length < 2) throw new HttpsError('invalid-argument', '방청석 한마디는 2자 이상 입력해주세요.');
   if (/(욕설|시발|씨발|병신|개새끼|죽어|자살|실명|전화번호)/i.test(text)) throw new HttpsError('failed-precondition', '부적절한 표현이 포함되어 있습니다.');
-  await assertPublicResult(caseId);
+  const { resultRef } = await assertPublicResult(caseId);
   const nickname = await loadNickname(uid);
   const commentRef = db.collection(`court_comments/${caseId}/items`).doc();
-  await commentRef.set({ uid, nickname, text, status: 'visible', createdAt: FieldValue.serverTimestamp() });
-  await db.doc(`court_comment_stats/${caseId}`).set({ count: FieldValue.increment(1), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+  const batch = db.batch();
+  batch.set(commentRef, { uid, nickname, text, status: 'visible', createdAt: FieldValue.serverTimestamp() });
+  batch.set(db.doc(`court_comment_stats/${caseId}`), { count: FieldValue.increment(1), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+  batch.set(resultRef, { commentCount: FieldValue.increment(1), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+  await batch.commit();
   return { success: true };
 });
 
