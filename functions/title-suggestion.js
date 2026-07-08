@@ -30,7 +30,7 @@ function normalizeAiTitle(raw, fallbackTitle) {
     const end = title.lastIndexOf('}');
     if (start >= 0 && end > start) {
       const parsed = JSON.parse(title.slice(start, end + 1));
-      title = parsed.caseTitle || parsed.title || title;
+      title = parsed.caseTitle || parsed.refinedTitle || parsed.draftTitle || parsed.title || title;
     }
   } catch (_) {}
   title = textValue(title, MAX_TITLE)
@@ -75,15 +75,25 @@ exports.suggestCaseTitle = onCall({ region: REGION, secrets: [geminiKey], timeou
     const model = new GoogleGenerativeAI(geminiKey.value().trim()).getGenerativeModel({
       model: modelName,
       generationConfig: {
-        temperature: 0.78,
-        topP: 0.92,
+        temperature: 0.82,
+        topP: 0.94,
         topK: 40,
         responseMimeType: 'application/json'
       }
     });
     const prompt = `너는 소소킹 황당재판소의 사건명 작성관이다.
 
-사용자의 사건 내용을 전부 읽고 핵심을 가장 잘 드러내는 사건명 1개만 작성하라.
+사용자의 접수 내용을 바로 제목으로 만들지 말고, 내부적으로 7차까지 정리·보완한 뒤 최종 사건명 1개를 만든다.
+내부 정리 과정은 출력하지 말고, 최종 JSON에 요약 흔적만 짧게 남긴다.
+
+7차 사건명 보정 절차:
+1차: 사용자가 실제로 말한 사건을 한 문장으로 요약한다.
+2차: 핵심 피해대상, 행위자, 장소, 결정적 행동을 분리한다.
+3차: 사이트 구성에 맞게 너무 긴 배경문장과 감정 표현을 제거한다.
+4차: 사건명에 반드시 들어가야 할 구체명사 2개 이상을 고른다.
+5차: '사건'으로 끝나는 1차 사건명 초안을 만든다.
+6차: 초안이 너무 설명식이거나 문장 앞부분을 자른 느낌이면 보완한다.
+7차: 모바일 카드 제목으로 보였을 때 가장 깔끔한 최종 사건명으로 확정한다.
 
 규칙:
 - 18~35자 권장, 최대 40자.
@@ -94,10 +104,10 @@ exports.suggestCaseTitle = onCall({ region: REGION, secrets: [geminiKey], timeou
 - 실제 범죄처럼 보이게 과격하게 쓰지 않는다.
 - 웃기려고 드립을 치지 말고, 너무 진지한 사건명처럼 쓴다.
 - 장소, 행위자, 피해 대상, 핵심 행동이 명확하면 포함한다.
-- 사용자가 직접 쓴 말 중 중요한 단어는 살리되, 어색한 조사와 배경문장은 정리한다.
+- 접수내용에 있는 중요한 단어는 살리되, 어색한 조사와 배경문장은 정리한다.
 
 좋은 예:
-- 공원에서 리트리버가 내 빵을 먹은 사건
+- 공원 리트리버 빵 무단섭취 사건
 - 탕비실 마지막 카누 봉지 방치 사건
 - 동생의 방문 미닫힘 반복 사건
 - 침대 밑 이어폰 한쪽 실종 사건
@@ -114,10 +124,28 @@ exports.suggestCaseTitle = onCall({ region: REGION, secrets: [geminiKey], timeou
 ${desc}
 
 JSON만 출력하라.
-{"caseTitle":"사건명"}`;
+{
+  "draftTitle":"1차 사건명 초안",
+  "refinedTitle":"보완 사건명",
+  "caseTitle":"최종 사건명",
+  "titleBasis":["최종 제목에 반영한 구체명사", "핵심 행동"]
+}`;
     const result = await model.generateContent({ contents: [{ role: 'user', parts: [{ text: prompt }] }] });
-    const caseTitle = normalizeAiTitle(result.response.text(), fallback);
-    return { caseTitle, aiCaseTitle: caseTitle, fallbackCaseTitle: fallback };
+    const parsedText = result.response.text();
+    const caseTitle = normalizeAiTitle(parsedText, fallback);
+    let parsed = {};
+    try {
+      const raw = parsedText.replace(/```json|```/g, '').trim();
+      parsed = JSON.parse(raw.slice(raw.indexOf('{'), raw.lastIndexOf('}') + 1));
+    } catch (_) {}
+    return {
+      caseTitle,
+      aiCaseTitle: caseTitle,
+      draftTitle: textValue(parsed.draftTitle, MAX_TITLE),
+      refinedTitle: textValue(parsed.refinedTitle, MAX_TITLE),
+      titleBasis: Array.isArray(parsed.titleBasis) ? parsed.titleBasis.map(x => textValue(x, 40)).filter(Boolean).slice(0, 4) : [],
+      fallbackCaseTitle: fallback
+    };
   } catch (err) {
     console.error('suggestCaseTitle failed:', err);
     return { caseTitle: fallback, aiCaseTitle: '', fallbackCaseTitle: fallback, fallback: true };
