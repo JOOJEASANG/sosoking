@@ -1,7 +1,7 @@
 import { initAuth } from './firebase.js?v=20260708-1';
 import './components/seed-case-prefill.js?v=20260707-2';
 import { initSessionTimeout } from './components/session-timeout.js?v=20260707-1';
-import { renderHome } from './pages/home-court.js?v=20260708-emoji1';
+import { renderHome } from './pages/home-court.js?v=20260708-homecase1';
 import { renderSubmit } from './pages/submit-guard.js?v=20260708-submit2';
 import { renderTrial } from './pages/trial-game.js?v=20260707-4';
 import { renderResult } from './pages/result-court.js?v=20260707-4';
@@ -15,7 +15,7 @@ import { renderFooter } from './components/footer.js?v=20260707-3';
 import { initTheme, renderThemeToggle } from './components/theme.js?v=20260708-4';
 import { initCourtDesign } from './components/court-design.js?v=20260707-1';
 import { renderNav } from './components/nav.js?v=20260707-4';
-import { applyEmojiCompat, startEmojiCompatObserver } from './components/emoji-compat.js?v=20260708-2';
+import { applyEmojiCompat, startEmojiCompatObserver } from './components/emoji-compat.js?v=20260708-3';
 
 function normalizedRoute() {
   const hash = location.hash || '';
