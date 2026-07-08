@@ -1,5 +1,3 @@
-import { db } from '../firebase.js?v=20260630-3';
-import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { renderSubmit as renderBaseSubmit } from './submit.js?v=20260707-5';
 
 function lvLabel(v) {
@@ -96,24 +94,8 @@ function decorateSubmit(container) {
       </div>`);
   }
 }
-async function syncSubmitSettingsText(container) {
-  const disclaimer = container.querySelector('.disclaimer');
-  if (!disclaimer) return;
-  try {
-    const snap = await getDoc(doc(db, 'site_settings', 'config'));
-    const d = snap.exists() ? snap.data() : {};
-    const dailyLimit = Math.max(1, Math.min(20, Number.isFinite(Number(d.dailyLimit)) ? Math.floor(Number(d.dailyLimit)) : 3));
-    const cooldownSec = Math.max(0, Math.min(300, Number.isFinite(Number(d.cooldownSec)) ? Math.floor(Number(d.cooldownSec)) : 45));
-    disclaimer.innerHTML = disclaimer.innerHTML
-      .replace(/하루\s*<strong>\d+건<\/strong>/, `하루 <strong>${dailyLimit}건</strong>`)
-      .replace(/재접수 대기:\s*<strong>\d+초<\/strong>/, `재접수 대기: <strong>${cooldownSec}초</strong>`);
-  } catch (err) {
-    console.warn('submit settings sync skipped', err);
-  }
-}
 
 export async function renderSubmit(container) {
   await renderBaseSubmit(container);
   decorateSubmit(container);
-  await syncSubmitSettingsText(container);
 }
