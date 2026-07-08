@@ -3,9 +3,9 @@ import { collection, query, where, orderBy, limit, getDocs, getCountFromServer }
 import { escapeHtml, compactText } from '../utils/sanitize.js?v=20260630-3';
 
 const EXAMPLES = [
-  { title: '라면 국물 무단 음용 사건', sentence: '피고는 30일간 라면 국물의 마지막 한 숟갈을 양보한다.', judgeType: '엄벌주의형' },
-  { title: '카톡 읽씹 17회 반복 사건', sentence: '피고는 3일간 모든 답장에 문장부호를 붙인다.', judgeType: '논리집착형' },
-  { title: '공용 리모컨 실종 사건', sentence: '피고는 일주일간 리모컨에게 위치 보고를 한다.', judgeType: '피곤형' }
+  { title: '공용 충전기 장기 점유 사건', sentence: '피고는 3일간 충전 완료 즉시 회수 의무를 부담한다.', judgeType: '현실주의형' },
+  { title: '회의실 온도 독단 조정 사건', sentence: '피고는 다음 회의 1회 에어컨 온도 합의 절차를 이행한다.', judgeType: '논리집착형' },
+  { title: '점심 메뉴 결정 회피 사건', sentence: '피고는 1회 메뉴 후보 3개를 먼저 제시할 의무를 진다.', judgeType: '피곤형' }
 ];
 
 const JUDGE_ICON = {
@@ -24,10 +24,10 @@ const JUDGES = [
 ];
 
 const TW_CASES = [
-  '라면 국물 무단 음용 사건', '카톡 읽씹 17회 반복 사건', '파마 안 한다고 해놓고 한 사건',
-  '내 자리에 슬쩍 앉아있던 사건', '밥 먹었냐고 물어보지 않은 사건', '에어컨 온도 독단 조작 사건',
-  '마지막 과자 혼자 다 먹은 사건', '택배 대신 수령 후 3일 방치 사건', '공용 리모컨 실종 사건',
-  '우산 무단 사용 후 반납 불이행 사건', '충전기 끝에 꽂아만 두고 간 사건'
+  '공용 충전기 장기 점유 사건', '회의실 온도 독단 조정 사건', '점심 메뉴 결정 회피 사건',
+  '단체방 읽음 후 무응답 사건', '냉장고 음료 무단 시음 사건', '택배 대신 수령 후 방치 사건',
+  '공용 우산 반납 지연 사건', '회의 시간 5분 지각 반복 사건', '프린터 용지 마지막 장 미보충 사건',
+  '공용 리모컨 위치 미보고 사건', '아무거나라고 말한 뒤 메뉴 반박 사건'
 ];
 
 let _twTimer = null;
@@ -55,7 +55,7 @@ export async function renderHome(container) {
 
       <div class="container" style="margin-top:44px;">
         <div style="font-size:13px;color:var(--cream-dim);margin-bottom:4px;">🎲 접수되는 순간 이미 재판은 시작됩니다</div>
-        <div style="font-family:var(--font-serif);font-size:20px;font-weight:700;margin-bottom:4px;">7명의 AI 재판부 + 운명 배정 🫡</div>
+        <div style="font-family:var(--font-serif);font-size:20px;font-weight:700;margin-bottom:4px;">7명의 AI 재판부 + 운명 배정 ⚖️</div>
         <div class="section-sub">웃긴 일, 억울한 일, 어이없는 일상 사례까지 과하게 진지하게 판결합니다</div>
         <div class="judge-lineup">
           <div class="judge-card" onclick="location.hash='#/submit'"><div class="judge-card-icon">🎲</div><div class="judge-card-name">운명에 맡기기</div><div class="judge-card-desc" style="color:var(--gold);">서버가 점지합니다</div></div>
