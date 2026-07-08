@@ -1,100 +1,90 @@
 import { functions } from '../firebase.js?v=20260630-3';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 import { showToast } from '../components/toast.js?v=20260630-3';
-import { renderResult as renderBaseResult } from './result.js?v=20260709-story2';
+import { renderResult as renderBaseResult } from './result.js?v=20260709-overhaul1';
 
-function grievance(container) {
-  const text = container.textContent || '';
-  const m = text.match(/억울지수\s*(\d+)/);
-  return Number(m?.[1] || 5);
-}
-function gradeByLv(lv) {
-  if (lv >= 10) return ['SS', '전설의 억울함'];
-  if (lv >= 8) return ['S', '제404호 긴급사건'];
-  if (lv >= 6) return ['A', '황당재판 주요 사건'];
-  if (lv >= 4) return ['B', '방청석 소환 가능'];
-  return ['C', '사소하지만 기록됨'];
-}
-function badgesBy(container, lv) {
-  const text = container.textContent || '';
-  const badges = [['📜', '사건기록철 발급']];
-  if (text.includes('사건일지')) badges.push(['⏱️', '분초 재구성']);
-  if (text.includes('소소국과수')) badges.push(['🧬', '생활증거 감정']);
-  if (text.includes('공소장') || text.includes('검사')) badges.push(['💼', '공소제기 완료']);
-  if (text.includes('답변서') || text.includes('변호인')) badges.push(['🛡️', '변론 공방']);
-  if (lv >= 8) badges.push(['🔥', '과몰입 인정']);
-  return badges.slice(0, 6);
-}
-function ensureResultGameStyle() {
-  if (document.getElementById('result-game-style')) return;
+function ensureResultFileStyle() {
+  if (document.getElementById('result-file-style')) return;
   const style = document.createElement('style');
-  style.id = 'result-game-style';
+  style.id = 'result-file-style';
   style.textContent = `
-    .reward-card{padding:18px;margin-bottom:14px;border-radius:20px;border:1px solid rgba(201,168,76,.45);background:linear-gradient(135deg,rgba(201,168,76,.18),rgba(231,76,60,.08),rgba(255,255,255,.035));box-shadow:0 12px 34px rgba(0,0,0,.24);}
-    .reward-grade{width:70px;height:70px;border-radius:20px;display:flex;align-items:center;justify-content:center;font-family:var(--font-serif);font-size:32px;font-weight:900;color:#111827;background:linear-gradient(135deg,#ffdf7a,#c9a84c);box-shadow:0 10px 26px rgba(201,168,76,.28);}
-    .reward-badge{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(201,168,76,.36);background:rgba(255,255,255,.07);border-radius:999px;padding:8px 12px;font-size:11px;font-weight:900;color:#fff8ec;line-height:1.2;box-shadow:0 4px 10px rgba(0,0,0,.10);}
-    .invite-defense{padding:16px;margin-bottom:14px;border-radius:18px;border:1px dashed rgba(201,168,76,.48);background:rgba(201,168,76,.07);}
-    .invite-defense-title{font-weight:900;color:#e8c97a;margin-bottom:6px;}
-    .invite-defense-desc{font-size:12px;color:rgba(255,248,236,.78);line-height:1.7;margin-bottom:12px;}
-    .drama-flow-card{padding:16px;margin-bottom:14px;border-radius:18px;border:1px solid rgba(201,168,76,.35);background:rgba(201,168,76,.07);}
-    .drama-flow{display:flex;gap:7px;overflow-x:auto;padding-bottom:2px;}
-    .drama-flow span{white-space:nowrap;border:1px solid rgba(201,168,76,.25);border-radius:999px;padding:7px 10px;font-size:11px;color:var(--cream-dim);background:rgba(255,255,255,.035);}
+    .result-file{max-width:760px;}
+    .case-cover{position:relative;overflow:hidden;padding:28px 22px;margin-bottom:14px;border:1px solid rgba(201,168,76,.52);border-radius:24px;background:radial-gradient(circle at 50% 0%,rgba(201,168,76,.16),transparent 36%),linear-gradient(180deg,rgba(28,36,64,.96),rgba(13,18,33,.98));box-shadow:0 18px 44px rgba(0,0,0,.28);text-align:center;}
+    .case-cover:before{content:'';position:absolute;left:18px;right:18px;top:56px;height:1px;background:linear-gradient(90deg,transparent,rgba(201,168,76,.35),transparent);}
+    .cover-kicker{letter-spacing:.22em;color:#e6c874;font-size:11px;font-weight:900;margin-bottom:22px;}
+    .cover-icon{font-size:46px;line-height:1;margin-bottom:12px;filter:drop-shadow(0 10px 22px rgba(0,0,0,.28));}
+    .case-cover h1{font-family:var(--font-serif);font-size:25px;line-height:1.45;margin:8px 0 14px;color:var(--cream);word-break:keep-all;}
+    .cover-line{width:70px;height:3px;border-radius:99px;background:#c9a84c;margin:0 auto 14px;opacity:.85;}
+    .cover-meta{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;color:var(--cream-dim);font-size:12px;line-height:1.5;margin-bottom:10px;}
+    .cover-meta span{border:1px solid rgba(201,168,76,.22);border-radius:999px;padding:5px 9px;background:rgba(255,255,255,.035);}
+    .cover-tags{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;margin:10px 0;}
+    .cover-tags span{font-size:11px;font-weight:900;color:#151515;background:linear-gradient(180deg,#f4db8b,#c9a84c);border-radius:999px;padding:6px 10px;}
+    .cover-case-name{font-size:12px;color:var(--cream-dim);line-height:1.6;margin-top:8px;}
+    .case-info-card,.case-section,.point-card,.closing-card{border:1px solid rgba(201,168,76,.34);border-radius:20px;background:rgba(28,36,64,.86);box-shadow:0 10px 28px rgba(0,0,0,.16);}
+    .case-info-card{padding:12px 16px;margin-bottom:14px;}
+    .case-info-row{display:grid;grid-template-columns:78px 1fr;gap:10px;padding:9px 0;border-bottom:1px solid rgba(201,168,76,.15);line-height:1.55;}
+    .case-info-row:last-child{border-bottom:0;}
+    .case-info-row span{font-size:12px;color:#d9bd69;font-weight:900;white-space:nowrap;}
+    .case-info-row strong{font-size:13px;color:var(--cream);font-weight:800;word-break:keep-all;}
+    .point-grid{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:14px;}
+    .point-card{padding:16px;}
+    .point-title{font-size:16px;font-weight:900;color:#e6c874;margin-bottom:10px;}
+    .point-list{display:flex;flex-direction:column;gap:8px;}
+    .point-item{display:grid;grid-template-columns:34px 1fr;gap:9px;align-items:flex-start;border:1px solid rgba(255,255,255,.08);border-radius:14px;background:rgba(255,255,255,.035);padding:10px 11px;}
+    .point-item em{font-style:normal;font-family:var(--font-serif);color:#c9a84c;font-weight:900;}
+    .point-item span{font-size:13px;line-height:1.55;color:var(--cream);}
+    .case-section{padding:18px;margin-bottom:13px;}
+    .section-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:8px;}
+    .section-head span{font-size:17px;font-weight:900;color:#e6c874;line-height:1.35;}
+    .section-head em{font-style:normal;border:1px solid rgba(201,168,76,.28);border-radius:999px;padding:5px 10px;font-size:11px;color:#e6c874;background:rgba(201,168,76,.08);white-space:nowrap;}
+    .section-subtitle{font-size:12px;color:var(--cream-dim);line-height:1.6;margin-bottom:13px;}
+    .section-body{font-size:16px;line-height:1.86;color:var(--cream);word-break:keep-all;}
+    .section-body b,.section-body strong{color:#e6c874;}
+    .closing-card{padding:20px;margin-bottom:15px;text-align:center;font-family:var(--font-serif);font-size:19px;font-weight:900;line-height:1.75;color:#e6c874;}
+    .image-section img{width:100%;max-height:360px;object-fit:contain;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.16);}
+    .image-section p{font-size:11px;color:var(--cream-dim);margin:8px 0 0;}
+    .reaction-list{display:flex;flex-direction:column;gap:8px;}
+    .reaction-btn{border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.035);color:var(--cream);border-radius:14px;padding:11px 12px;text-align:left;cursor:pointer;}
+    .reaction-btn:disabled{opacity:.55;cursor:not-allowed;}
+    .reaction-btn.is-active{border-color:rgba(201,168,76,.8);background:rgba(201,168,76,.13);}
+    .reaction-btn div{display:flex;justify-content:space-between;gap:10px;font-size:13px;font-weight:800;}
+    .reaction-btn i{display:block;height:5px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:8px;}
+    .reaction-btn b{display:block;height:100%;background:#c9a84c;}
+    .comment-write{display:flex;gap:8px;margin-bottom:12px;}
+    .comment-write .btn{width:82px;padding-left:0;padding-right:0;}
+    .comment-list{display:flex;flex-direction:column;gap:8px;}
+    .comment-item{border-top:1px solid rgba(255,255,255,.08);padding-top:10px;}
+    .comment-item strong{font-size:12px;color:#e6c874;}
+    .comment-item p{font-size:13px;color:var(--cream-dim);line-height:1.65;margin:3px 0 0;}
+    .legal-note{text-align:center;margin:16px 0;padding:10px;background:rgba(255,255,255,.04);border-radius:10px;font-size:11px;color:var(--cream-dim);line-height:1.7;}
     .owner-delete-case{border-color:rgba(231,76,60,.45)!important;color:#e74c3c!important;}
-    .compact-doc-card{border-left:3px solid rgba(201,168,76,.55)!important;}
-    .official-doc-meta{font-family:var(--font-sans);}
-    [data-theme="light"] .reward-card,:root:not([data-theme="dark"]) .reward-card{background:linear-gradient(180deg,#fffaf0 0%,#fff7e7 100%)!important;border-color:#e2d3af!important;box-shadow:0 10px 22px rgba(117,85,24,.08)!important;}
-    [data-theme="light"] .reward-badge,:root:not([data-theme="dark"]) .reward-badge{color:#6a4b12!important;background:linear-gradient(180deg,#fff8e7 0%,#f3e2b3 100%)!important;border:1px solid #d7bf82!important;box-shadow:0 4px 10px rgba(120,90,25,.10)!important;text-shadow:none!important;}
-    [data-theme="light"] .invite-defense,:root:not([data-theme="dark"]) .invite-defense{background:#fff8e8!important;border-color:#d8c48d!important;box-shadow:0 8px 22px rgba(70,46,16,.08)!important;}
-    [data-theme="light"] .invite-defense-title,:root:not([data-theme="dark"]) .invite-defense-title{color:#5b3f09!important;}
-    [data-theme="light"] .invite-defense-desc,:root:not([data-theme="dark"]) .invite-defense-desc{color:#5f4b35!important;opacity:1!important;}
+    .copy-case-link{border:1px dashed rgba(201,168,76,.45);border-radius:18px;background:rgba(201,168,76,.06);padding:15px;margin-bottom:14px;}
+    .copy-case-link strong{display:block;color:#e6c874;margin-bottom:6px;}
+    .copy-case-link p{font-size:12px;color:var(--cream-dim);line-height:1.65;margin:0 0 11px;}
+    @media(min-width:720px){.point-grid{grid-template-columns:1fr 1fr;}.case-cover h1{font-size:30px;}}
+    [data-theme="light"] .case-cover,:root:not([data-theme="dark"]) .case-cover{background:radial-gradient(circle at 50% 0%,#fff3cf,transparent 40%),linear-gradient(180deg,#fffaf0,#fff7e7)!important;border-color:#ddc98f!important;box-shadow:0 12px 28px rgba(117,85,24,.10)!important;}
+    [data-theme="light"] .case-cover h1,:root:not([data-theme="dark"]) .case-cover h1{color:#2b2115!important;}
+    [data-theme="light"] .cover-kicker,:root:not([data-theme="dark"]) .cover-kicker,[data-theme="light"] .cover-case-name,:root:not([data-theme="dark"]) .cover-case-name{color:#6b5431!important;}
+    [data-theme="light"] .cover-meta span,:root:not([data-theme="dark"]) .cover-meta span{color:#5f4b35!important;background:rgba(255,255,255,.58)!important;border-color:#dfc98e!important;}
+    [data-theme="light"] .case-info-card,:root:not([data-theme="dark"]) .case-info-card,[data-theme="light"] .case-section,:root:not([data-theme="dark"]) .case-section,[data-theme="light"] .point-card,:root:not([data-theme="dark"]) .point-card,[data-theme="light"] .closing-card,:root:not([data-theme="dark"]) .closing-card{background:#fffaf0!important;border-color:#e2d3af!important;box-shadow:0 8px 20px rgba(117,85,24,.07)!important;}
+    [data-theme="light"] .case-info-row strong,:root:not([data-theme="dark"]) .case-info-row strong,[data-theme="light"] .section-body,:root:not([data-theme="dark"]) .section-body,[data-theme="light"] .point-item span,:root:not([data-theme="dark"]) .point-item span{color:#342514!important;}
+    [data-theme="light"] .section-subtitle,:root:not([data-theme="dark"]) .section-subtitle,[data-theme="light"] .legal-note,:root:not([data-theme="dark"]) .legal-note{color:#66543c!important;}
   `;
   document.head.appendChild(style);
 }
-function addReward(container) {
-  if (document.getElementById('game-reward-card')) return;
-  const lv = grievance(container);
-  const [grade, label] = gradeByLv(lv);
-  const badges = badgesBy(container, lv);
-  const target = container.querySelector('.container > .card');
-  if (!target) return;
-  target.insertAdjacentHTML('afterend', `
-    <div id="game-reward-card" class="reward-card">
-      <div style="display:flex;gap:14px;align-items:center;margin-bottom:14px;">
-        <div class="reward-grade">${grade}</div>
-        <div style="flex:1;min-width:0;">
-          <div class="court-kicker">JUDGEMENT REWARD</div>
-          <div class="court-title" style="font-size:20px;">${label}</div>
-          <div class="court-desc">사건의 배경, 발단, 감정, 공방, 주문이 하나의 황당사건 기록철로 편철되었습니다.</div>
-        </div>
-      </div>
-      <div id="reward-badges" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">${badges.map(([i, t]) => `<span class="reward-badge">${i} ${t}</span>`).join('')}</div>
-    </div>`);
-}
-function addDramaFlow(container) {
-  if (document.getElementById('drama-flow-card')) return;
-  const reward = document.getElementById('game-reward-card');
-  if (!reward) return;
-  reward.insertAdjacentHTML('afterend', `
-    <div id="drama-flow-card" class="drama-flow-card">
-      <div class="court-kicker" style="margin-bottom:8px;">CASE FILE FLOW</div>
-      <div class="drama-flow">
-        <span>📖 배경</span><span>⚡ 발단</span><span>⏱️ 사건일지</span><span>🧬 감정</span><span>💼 공소</span><span>🛡️ 항변</span><span>⚖️ 판단</span><span>📜 주문</span>
-      </div>
-    </div>`);
-}
-function addInviteDefense(container) {
-  if (document.getElementById('invite-defense-card')) return;
+function addCopyLink(container) {
+  if (document.getElementById('copy-case-link')) return;
   const actions = container.querySelector('.result-actions');
   if (!actions) return;
   actions.insertAdjacentHTML('beforebegin', `
-    <div id="invite-defense-card" class="invite-defense">
-      <div class="invite-defense-title">🔗 사건 링크 공유</div>
-      <div class="invite-defense-desc">판결문 링크를 복사해서 친구에게 보낼 수 있습니다. 링크를 받은 사람은 공개된 황당판결 기록을 볼 수 있습니다.</div>
+    <div id="copy-case-link" class="copy-case-link">
+      <strong>사건 링크 공유</strong>
+      <p>판결문 링크를 복사해서 친구에게 보낼 수 있습니다.</p>
       <button class="btn btn-secondary" id="copy-defense-link">사건 링크 복사</button>
     </div>`);
   document.getElementById('copy-defense-link')?.addEventListener('click', async () => {
     const url = location.href;
-    try { await navigator.clipboard?.writeText(url); alert('사건 링크를 복사했습니다.'); }
+    try { await navigator.clipboard?.writeText(url); showToast('사건 링크를 복사했습니다.', 'success'); }
     catch { prompt('아래 링크를 복사하세요.', url); }
   });
 }
@@ -126,30 +116,8 @@ function addOwnerDelete(container, caseId) {
   });
 }
 function decorateResult(container, caseId) {
-  ensureResultGameStyle();
-  const titleCard = container.querySelector('.container > .card');
-  if (titleCard && !document.getElementById('court-result-header')) {
-    titleCard.classList.add('court-shell');
-    titleCard.insertAdjacentHTML('afterbegin', `
-      <div id="court-result-header" style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;">
-        <span class="court-stamp">선고</span>
-        <span class="court-kicker">FINAL DOCUMENT</span>
-      </div>
-      <div class="court-bench"></div>`);
-  }
-  addReward(container);
-  addDramaFlow(container);
-  const reactionBox = Array.from(container.querySelectorAll('.card')).find(el => el.textContent.includes('배심원 투표'));
-  if (reactionBox && !reactionBox.classList.contains('court-jury-box')) {
-    reactionBox.classList.add('court-document', 'court-jury-box');
-    reactionBox.insertAdjacentHTML('afterbegin', `<div class="court-kicker" style="margin-bottom:5px;">CITIZEN JURY VERDICT</div>`);
-  }
-  const commentsBox = Array.from(container.querySelectorAll('.card')).find(el => el.textContent.includes('방청석 한마디'));
-  if (commentsBox && !commentsBox.classList.contains('court-gallery-box')) {
-    commentsBox.classList.add('court-document', 'court-gallery-box');
-    commentsBox.insertAdjacentHTML('afterbegin', `<div class="court-kicker" style="margin-bottom:5px;">PUBLIC GALLERY</div>`);
-  }
-  addInviteDefense(container);
+  ensureResultFileStyle();
+  addCopyLink(container);
   addOwnerDelete(container, caseId);
 }
 
