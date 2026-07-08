@@ -48,17 +48,21 @@ exports.deleteMyCase = onCall({ region: REGION, timeoutSeconds: 120, memory: '25
   if (!caseId) throw new HttpsError('invalid-argument', 'caseId required');
 
   const caseRef = db.doc(`cases/${caseId}`);
-  const caseSnap = await caseRef.get();
-  if (!caseSnap.exists) return { success: true, caseId, alreadyDeleted: true, deleted: 0 };
+  const resultRef = db.doc(`results/${caseId}`);
+  const [caseSnap, resultSnap] = await Promise.all([caseRef.get(), resultRef.get().catch(() => null)]);
 
-  const c = caseSnap.data();
-  if (c.userId !== uid) throw new HttpsError('permission-denied', '본인 사건만 삭제할 수 있습니다.');
-  if (c.status === 'processing') {
-    throw new HttpsError('failed-precondition', '재판이 진행 중인 사건은 판결 완료 후 삭제할 수 있습니다.');
+  if (!caseSnap.exists && !resultSnap?.exists) {
+    return { success: true, caseId, alreadyDeleted: true, deleted: 0 };
   }
 
-  await caseRef.set({ status: 'deleting', isPublic: false, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-  await db.doc(`results/${caseId}`).set({ isPublic: false, updatedAt: FieldValue.serverTimestamp() }, { merge: true }).catch(() => null);
+  const c = caseSnap.exists ? caseSnap.data() : {};
+  const r = resultSnap?.exists ? resultSnap.data() : {};
+  const ownerId = c.userId || r.userId || r.ownerId || '';
+  if (ownerId && ownerId !== uid) throw new HttpsError('permission-denied', '본인 사건만 삭제할 수 있습니다.');
+  if (!ownerId && caseSnap.exists) throw new HttpsError('permission-denied', '소유자 확인이 불가능한 사건입니다.');
+
+  await caseRef.set({ status: 'deleting', isPublic: false, deleteRequestedBy: uid, updatedAt: FieldValue.serverTimestamp() }, { merge: true }).catch(() => null);
+  await resultRef.set({ isPublic: false, deleteRequestedBy: uid, updatedAt: FieldValue.serverTimestamp() }, { merge: true }).catch(() => null);
 
   const counter = { deleted: 0 };
   await deleteCourtData(caseId, counter);
