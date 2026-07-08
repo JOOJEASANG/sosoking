@@ -126,7 +126,6 @@ service cloud.firestore {
     match /cases/{caseId} {
       allow read: if signedIn() && (
         resource.data.userId == request.auth.uid ||
-        resource.data.isPublic == true ||
         isAdmin()
       );
       // 사건 접수는 submitCase Callable Function(Admin SDK)에서만 처리한다.
