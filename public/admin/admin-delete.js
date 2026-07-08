@@ -1,10 +1,8 @@
 import { getApp, getApps, initializeApp } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js';
-import { getAuth } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
 import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 import { firebaseConfig } from '../js/firebase-config.js';
 
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
-const auth = getAuth(app);
 const functions = getFunctions(app, 'asia-northeast3');
 const deleteCourtPost = httpsCallable(functions, 'deleteCourtPost');
 
