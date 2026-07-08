@@ -161,11 +161,24 @@ async function createDailyAiCase(force = false) {
     reception: data.reception, absurdityReview: data.absurdityReview, keyIssues: data.keyIssues, evidenceList: data.evidenceList,
     investigation: data.investigation, plaintiffArg: data.plaintiffArg, defendantArg: data.defendantArg, courtOpinion: data.courtOpinion,
     verdict: data.verdict, sentence: data.sentence, executionOrder: data.executionOrder, appealNotice: data.appealNotice, closingComment: data.closingComment,
+    reactionTotal: 0, totalVotes: 0, commentCount: 0,
     courtStage: 'sentenced', createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp()
   }, { merge: true });
 
   await batch.commit();
-  await db.doc('site_settings/config').set({ dailyAiLastRunAt: FieldValue.serverTimestamp(), dailyAiLastCaseId: caseId }, { merge: true });
+  await Promise.all([
+    db.doc('site_settings/config').set({ dailyAiLastRunAt: FieldValue.serverTimestamp(), dailyAiLastCaseId: caseId }, { merge: true }),
+    db.doc(`usage_stats/daily_${dateKey}`).set({
+      date: dateKey,
+      geminiRequests: FieldValue.increment(1),
+      caseCount: FieldValue.increment(1),
+      dailyAiCaseCount: FieldValue.increment(1),
+      firestoreReads: FieldValue.increment(3),
+      firestoreWrites: FieldValue.increment(3),
+      functionInvocations: FieldValue.increment(1),
+      updatedAt: FieldValue.serverTimestamp()
+    }, { merge: true })
+  ]);
   return { created: true, caseId, repaired: existing.exists && !isCompleteResult(existing.data()) };
 }
 
