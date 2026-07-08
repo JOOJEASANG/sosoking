@@ -1,7 +1,7 @@
 import { functions } from '../firebase.js?v=20260630-3';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 import { showToast } from '../components/toast.js?v=20260630-3';
-import { renderResult as renderBaseResult } from './result.js?v=20260708-result1';
+import { renderResult as renderBaseResult } from './result.js?v=20260708-result2';
 
 function grievance(container) {
   const text = container.textContent || '';
@@ -42,6 +42,9 @@ function ensureResultGameStyle() {
     .drama-flow span{white-space:nowrap;border:1px solid rgba(201,168,76,.25);border-radius:999px;padding:7px 10px;font-size:11px;color:var(--cream-dim);background:rgba(255,255,255,.035);}
     .owner-delete-case{border-color:rgba(231,76,60,.45)!important;color:#e74c3c!important;}
     [data-theme="light"] .reward-badge,:root:not([data-theme="dark"]) .reward-badge{color:#fff8ec;background:rgba(13,17,23,.82);}
+    [data-theme="light"] .invite-defense,:root:not([data-theme="dark"]) .invite-defense{background:#fff8e8!important;border-color:#d8c48d!important;box-shadow:0 8px 22px rgba(70,46,16,.08)!important;}
+    [data-theme="light"] .invite-defense-title,:root:not([data-theme="dark"]) .invite-defense-title{color:#5b3f09!important;}
+    [data-theme="light"] .invite-defense-desc,:root:not([data-theme="dark"]) .invite-defense-desc{color:#5f4b35!important;opacity:1!important;}
   `;
   document.head.appendChild(style);
 }
@@ -106,9 +109,9 @@ function addInviteDefense(container) {
   if (!actions) return;
   actions.insertAdjacentHTML('beforebegin', `
     <div id="invite-defense-card" class="invite-defense">
-      <div class="invite-defense-title">⚔️ 친구 변호 초대 준비중</div>
-      <div class="invite-defense-desc">친구를 황당검사나 피고측 변호인으로 초대해서 서로 변론하는 기능을 붙일 수 있습니다. 지금은 황당판결 링크를 복사해 공유할 수 있습니다.</div>
-      <button class="btn btn-secondary" id="copy-defense-link">친구에게 사건 링크 복사</button>
+      <div class="invite-defense-title">🔗 사건 링크 공유</div>
+      <div class="invite-defense-desc">판결문 링크를 복사해서 친구에게 보낼 수 있습니다. 링크를 받은 사람은 공개된 황당판결 기록을 볼 수 있습니다.</div>
+      <button class="btn btn-secondary" id="copy-defense-link">사건 링크 복사</button>
     </div>`);
   document.getElementById('copy-defense-link')?.addEventListener('click', async () => {
     const url = location.href;
