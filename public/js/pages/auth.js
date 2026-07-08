@@ -1,23 +1,25 @@
-import { auth, db, functions } from '../firebase.js?v=20260630-3';
+import { auth, db, functions, storage } from '../firebase.js?v=20260708-1';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 import { GoogleAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, updateProfile, onAuthStateChanged, signInAnonymously } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
+import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-storage.js';
 import { showToast } from '../components/toast.js?v=20260630-3';
 import { escapeHtml } from '../utils/sanitize.js?v=20260630-3';
-import { avatarImg, avatarSourceLabel, generatedAvatarUrl } from '../utils/avatar.js?v=20260708-1';
+import { avatarImg, avatarSourceLabel, generatedAvatarUrl, AVATAR_PRESETS } from '../utils/avatar.js?v=20260708-2';
 
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 const checkNickname = httpsCallable(functions, 'checkNickname');
 const setNickname = httpsCallable(functions, 'setNickname');
-const AVATAR_SEEDS = ['sosoking-gold', 'sosoking-green', 'sosoking-purple', 'sosoking-orange', 'sosoking-blue', 'sosoking-pink'];
 
 function cleanNick(v){ return String(v || '').replace(/\s+/g, '').trim().slice(0, 20); }
 function nickError(v){ const n = cleanNick(v); if(n.length < 2) return '닉네임은 2자 이상 입력해주세요.'; if(!/^[가-힣a-zA-Z0-9_]+$/.test(n)) return '한글, 영문, 숫자, 밑줄만 사용할 수 있습니다.'; return ''; }
 function validEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v || '').trim()); }
 function userEmail(user){ return String(user?.email || '').trim().toLowerCase(); }
-function socialPhotoUrl(user, profile = {}) { const url = profile.photoURL || user?.photoURL || ''; return /^https:\/\//.test(String(url)) ? url : ''; }
-function currentAvatarType(user, profile = {}) { if (profile.avatarType === 'generated') return 'generated'; return socialPhotoUrl(user, profile) ? 'google' : 'generated'; }
+function httpsUrl(v){ const url = String(v || '').trim(); return /^https:\/\//.test(url) ? url : ''; }
+function googlePhotoUrl(user, profile = {}){ return httpsUrl(user?.photoURL) || (profile.avatarType === 'google' ? httpsUrl(profile.photoURL) : ''); }
+function uploadPhotoUrl(profile = {}){ return profile.avatarType === 'upload' ? httpsUrl(profile.photoURL) : ''; }
+function currentAvatarType(user, profile = {}) { if (profile.avatarType === 'upload' && uploadPhotoUrl(profile)) return 'upload'; if (profile.avatarType === 'generated') return 'generated'; return googlePhotoUrl(user, profile) ? 'google' : 'generated'; }
 async function isAdminUser(user){
   if(!user || user.isAnonymous) return false;
   const byUid = await getDoc(doc(db, 'admins', user.uid)).catch(() => null);
@@ -79,44 +81,116 @@ async function signInEmail(box){
   catch(e){ console.error(e); showToast('이메일 또는 비밀번호를 확인해주세요.', 'error'); }
 }
 
-function avatarChoiceButton(type, seed, src, label, active) {
-  return `<button type="button" class="avatar-choice ${active ? 'active' : ''}" data-avatar-type="${escapeHtml(type)}" data-avatar-seed="${escapeHtml(seed || '')}" aria-label="${escapeHtml(label)}" style="width:54px;height:54px;border-radius:999px;border:2px solid ${active ? 'rgba(232,201,122,.9)' : 'var(--border)'};background:${active ? 'rgba(201,168,76,.14)' : 'rgba(255,255,255,.035)'};padding:3px;cursor:pointer;box-shadow:${active ? '0 0 0 3px rgba(201,168,76,.18)' : 'none'};"><img src="${escapeHtml(src)}" alt="${escapeHtml(label)}" style="width:100%;height:100%;border-radius:999px;object-fit:cover;display:block;" referrerpolicy="no-referrer"></button>`;
+function avatarChoiceButton(type, seed, icon, src, label, active) {
+  return `<button type="button" class="avatar-choice ${active ? 'active' : ''}" data-avatar-type="${escapeHtml(type)}" data-avatar-seed="${escapeHtml(seed || '')}" data-avatar-icon="${escapeHtml(icon || '')}" aria-label="${escapeHtml(label)}" style="width:52px;height:52px;border-radius:999px;border:2px solid ${active ? 'rgba(232,201,122,.9)' : 'var(--border)'};background:${active ? 'rgba(201,168,76,.14)' : 'rgba(255,255,255,.035)'};padding:3px;cursor:pointer;box-shadow:${active ? '0 0 0 3px rgba(201,168,76,.18)' : 'none'};"><img src="${escapeHtml(src)}" alt="${escapeHtml(label)}" style="width:100%;height:100%;border-radius:999px;object-fit:cover;display:block;" referrerpolicy="no-referrer"></button>`;
+}
+function uploadChoiceButton(active) {
+  return `<label class="avatar-upload-choice ${active ? 'active' : ''}" style="width:52px;height:52px;border-radius:999px;border:2px dashed ${active ? 'rgba(232,201,122,.95)' : 'var(--border)'};background:${active ? 'rgba(201,168,76,.14)' : 'rgba(255,255,255,.035)'};display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;box-shadow:${active ? '0 0 0 3px rgba(201,168,76,.18)' : 'none'};" title="직접 등록"><span>📷</span><input type="file" id="avatar-file" accept="image/*" style="display:none;"></label>`;
 }
 function avatarChoiceHtml(user, profile, nickname, selectedType, selectedSeed) {
   const email = profile.email || user?.email || '';
-  const google = socialPhotoUrl(user, profile);
+  const google = googlePhotoUrl(user, profile);
+  const uploaded = uploadPhotoUrl(profile);
   const items = [];
-  if (google) items.push(avatarChoiceButton('google', '', google, '소셜 로그인 프로필 사진', selectedType === 'google'));
-  AVATAR_SEEDS.forEach(seed => {
-    items.push(avatarChoiceButton('generated', seed, generatedAvatarUrl(nickname, email, seed), `자동 프로필 ${seed}`, selectedType === 'generated' && selectedSeed === seed));
+  if (google) items.push(avatarChoiceButton('google', '', '', google, '소셜 로그인 프로필 사진', selectedType === 'google'));
+  if (uploaded) items.push(avatarChoiceButton('upload', '', '', uploaded, '직접 등록한 프로필 사진', selectedType === 'upload'));
+  items.push(uploadChoiceButton(selectedType === 'upload' && !uploaded));
+  AVATAR_PRESETS.forEach(p => {
+    items.push(avatarChoiceButton('generated', p.seed, p.icon, generatedAvatarUrl(nickname, email, p.seed, p.icon), p.label, selectedType === 'generated' && selectedSeed === p.seed));
   });
   return items.join('');
+}
+function resizeProfileImage(file) {
+  return new Promise((resolve, reject) => {
+    if (!file || !file.type.startsWith('image/')) return reject(new Error('이미지 파일만 등록할 수 있습니다.'));
+    if (file.size > 5 * 1024 * 1024) return reject(new Error('이미지는 5MB 이하만 등록할 수 있습니다.'));
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('이미지를 읽지 못했습니다.'));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('이미지를 처리하지 못했습니다.'));
+      img.onload = () => {
+        const max = 512;
+        const scale = Math.min(1, max / Math.max(img.width, img.height));
+        const w = Math.max(1, Math.round(img.width * scale));
+        const h = Math.max(1, Math.round(img.height * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#101522';
+        ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
+        canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('이미지를 변환하지 못했습니다.')), 'image/jpeg', 0.86);
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+async function uploadProfilePhoto(user, blob) {
+  const fileRef = ref(storage, `profile-photos/${user.uid}/avatar-${Date.now()}.jpg`);
+  await uploadBytes(fileRef, blob, { contentType: 'image/jpeg', cacheControl: 'public,max-age=3600' });
+  return await getDownloadURL(fileRef);
 }
 
 function drawEditProfile(box, user, profile = {}){
   const savedNick = cleanNick(profile.nickname || '');
   const now = cleanNick(profile.nickname || user.displayName || '');
   let selectedAvatarType = currentAvatarType(user, profile);
-  let selectedAvatarSeed = profile.avatarSeed || AVATAR_SEEDS[0];
-  if (selectedAvatarType === 'generated' && !AVATAR_SEEDS.includes(selectedAvatarSeed)) selectedAvatarSeed = AVATAR_SEEDS[0];
-  const initialProfile = selectedAvatarType === 'generated' ? { ...profile, nickname: now, avatarType: 'generated', avatarSeed: selectedAvatarSeed, photoURL: '' } : { ...profile, nickname: now, avatarType: 'google', photoURL: socialPhotoUrl(user, profile) };
-  box.innerHTML = `<div style="text-align:center;margin-bottom:22px;"><div id="profile-preview" style="margin-bottom:10px;">${avatarImg(user, initialProfile, 78)}</div><div style="display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;background:rgba(39,174,96,.13);border:1px solid rgba(39,174,96,.35);color:#27ae60;font-size:12px;font-weight:800;margin-bottom:10px;">● 로그인됨</div><div style="font-family:var(--font-serif);font-size:21px;font-weight:700;color:var(--gold);">${savedNick ? '내 정보 변경' : '내 정보 설정'}</div></div><form id="profile-form"><div class="form-group"><label class="form-label">프로필 사진</label><div id="avatar-choice-wrap" style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:8px 0 10px;">${avatarChoiceHtml(user, profile, now, selectedAvatarType, selectedAvatarSeed)}</div><div style="font-size:12px;color:var(--cream-dim);line-height:1.6;text-align:center;">Google 로그인 사진을 기본으로 사용하고, 원하면 자동 아이콘으로 바꿀 수 있습니다.</div></div><div class="form-group"><label class="form-label">닉네임</label><div style="display:flex;gap:8px;"><input id="nickname" class="form-input" maxlength="20" value="${escapeHtml(now)}" placeholder="예: 억울한라면러버" style="flex:1;"><button type="button" class="btn btn-secondary" id="check-nick" style="width:112px;padding-left:0;padding-right:0;">중복확인</button></div><div id="nick-status" style="font-size:12px;color:var(--cream-dim);margin-top:8px;">${savedNick ? '닉네임을 바꿀 때만 중복 확인이 필요합니다.' : '한글, 영문, 숫자, 밑줄 2~20자'}</div></div><button class="btn btn-primary" id="save-profile" ${savedNick ? '' : 'disabled'}>${savedNick ? '내 정보 저장' : '내 정보 저장'}</button></form><button class="btn btn-ghost" id="logout" style="margin-top:10px;">로그아웃</button>`;
+  let selectedAvatarSeed = profile.avatarSeed || AVATAR_PRESETS[0].seed;
+  let selectedAvatarIcon = profile.avatarIcon || AVATAR_PRESETS.find(p => p.seed === selectedAvatarSeed)?.icon || AVATAR_PRESETS[0].icon;
+  let selectedUploadBlob = null;
+  let selectedUploadPreview = uploadPhotoUrl(profile);
+  if (selectedAvatarType === 'generated' && !AVATAR_PRESETS.some(p => p.seed === selectedAvatarSeed)) {
+    selectedAvatarSeed = AVATAR_PRESETS[0].seed;
+    selectedAvatarIcon = AVATAR_PRESETS[0].icon;
+  }
+  const currentProfileForPreview = () => {
+    const nickname = cleanNick(document.getElementById('nickname')?.value || now) || now;
+    if (selectedAvatarType === 'upload') return { ...profile, nickname, avatarType: 'upload', photoURL: selectedUploadPreview || uploadPhotoUrl(profile) };
+    if (selectedAvatarType === 'google') return { ...profile, nickname, avatarType: 'google', photoURL: googlePhotoUrl(user, profile) };
+    return { ...profile, nickname, avatarType: 'generated', avatarSeed: selectedAvatarSeed, avatarIcon: selectedAvatarIcon, photoURL: '' };
+  };
+  const initialProfile = currentProfileForPreview();
+  box.innerHTML = `<div style="text-align:center;margin-bottom:22px;"><div id="profile-preview" style="margin-bottom:10px;">${avatarImg(user, initialProfile, 78)}</div><div style="display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;background:rgba(39,174,96,.13);border:1px solid rgba(39,174,96,.35);color:#27ae60;font-size:12px;font-weight:800;margin-bottom:10px;">● 로그인됨</div><div style="font-family:var(--font-serif);font-size:21px;font-weight:700;color:var(--gold);">${savedNick ? '내 정보 변경' : '내 정보 설정'}</div></div><form id="profile-form"><div class="form-group"><label class="form-label">프로필 사진</label><div id="avatar-choice-wrap" style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:8px 0 10px;max-height:190px;overflow:auto;padding:6px 2px;">${avatarChoiceHtml(user, profile, now, selectedAvatarType, selectedAvatarSeed)}</div><div style="font-size:12px;color:var(--cream-dim);line-height:1.6;text-align:center;">소셜 사진, 직접 등록, 동물·사물 아이콘 중에서 선택할 수 있습니다.</div></div><div class="form-group"><label class="form-label">닉네임</label><div style="display:flex;gap:8px;"><input id="nickname" class="form-input" maxlength="20" value="${escapeHtml(now)}" placeholder="예: 억울한라면러버" style="flex:1;"><button type="button" class="btn btn-secondary" id="check-nick" style="width:112px;padding-left:0;padding-right:0;">중복확인</button></div><div id="nick-status" style="font-size:12px;color:var(--cream-dim);margin-top:8px;">${savedNick ? '닉네임을 바꿀 때만 중복 확인이 필요합니다.' : '한글, 영문, 숫자, 밑줄 2~20자'}</div></div><button class="btn btn-primary" id="save-profile" ${savedNick ? '' : 'disabled'}>내 정보 저장</button></form><button class="btn btn-ghost" id="logout" style="margin-top:10px;">로그아웃</button>`;
   let ok = !!savedNick, checked = savedNick;
   const input = document.getElementById('nickname'), save = document.getElementById('save-profile'), status = document.getElementById('nick-status'), preview = document.getElementById('profile-preview');
-  const currentProfileForPreview = () => selectedAvatarType === 'generated' ? { ...profile, nickname: cleanNick(input.value) || now, avatarType: 'generated', avatarSeed: selectedAvatarSeed, photoURL: '' } : { ...profile, nickname: cleanNick(input.value) || now, avatarType: 'google', photoURL: socialPhotoUrl(user, profile) };
   const refreshPreview = () => { preview.innerHTML = avatarImg(user, currentProfileForPreview(), 78); };
+  const markActive = target => {
+    document.querySelectorAll('.avatar-choice,.avatar-upload-choice').forEach(el => {
+      const active = el === target;
+      el.classList.toggle('active', active);
+      el.style.borderColor = active ? 'rgba(232,201,122,.9)' : 'var(--border)';
+      el.style.background = active ? 'rgba(201,168,76,.14)' : 'rgba(255,255,255,.035)';
+      el.style.boxShadow = active ? '0 0 0 3px rgba(201,168,76,.18)' : 'none';
+    });
+  };
   document.querySelectorAll('.avatar-choice').forEach(btn => btn.onclick = () => {
     selectedAvatarType = btn.dataset.avatarType || 'generated';
-    selectedAvatarSeed = btn.dataset.avatarSeed || selectedAvatarSeed || AVATAR_SEEDS[0];
-    document.querySelectorAll('.avatar-choice').forEach(el => {
-      el.classList.toggle('active', el === btn);
-      el.style.borderColor = el === btn ? 'rgba(232,201,122,.9)' : 'var(--border)';
-      el.style.background = el === btn ? 'rgba(201,168,76,.14)' : 'rgba(255,255,255,.035)';
-      el.style.boxShadow = el === btn ? '0 0 0 3px rgba(201,168,76,.18)' : 'none';
-    });
+    selectedAvatarSeed = btn.dataset.avatarSeed || selectedAvatarSeed || AVATAR_PRESETS[0].seed;
+    selectedAvatarIcon = btn.dataset.avatarIcon || selectedAvatarIcon || AVATAR_PRESETS[0].icon;
+    if (selectedAvatarType !== 'upload') selectedUploadBlob = null;
+    markActive(btn);
     refreshPreview();
     if (savedNick) save.disabled = false;
   });
+  const fileInput = document.getElementById('avatar-file');
+  if (fileInput) fileInput.onchange = async () => {
+    try {
+      const file = fileInput.files?.[0];
+      if (!file) return;
+      selectedUploadBlob = await resizeProfileImage(file);
+      if (selectedUploadPreview && selectedUploadPreview.startsWith('blob:')) URL.revokeObjectURL(selectedUploadPreview);
+      selectedUploadPreview = URL.createObjectURL(selectedUploadBlob);
+      selectedAvatarType = 'upload';
+      markActive(document.querySelector('.avatar-upload-choice'));
+      refreshPreview();
+      if (savedNick) save.disabled = false;
+      showToast('프로필 사진이 선택되었습니다. 저장을 눌러 반영하세요.', 'success');
+    } catch (err) {
+      showToast(err.message || '이미지 선택 실패', 'error');
+    }
+  };
   input.oninput = () => {
     const n = cleanNick(input.value);
     refreshPreview();
@@ -132,8 +206,14 @@ function drawEditProfile(box, user, profile = {}){
     try{
       save.disabled = true;
       save.textContent = '저장 중...';
-      const photoURL = socialPhotoUrl(user, profile);
-      await setNickname({ nickname: n, photoURL, avatarType: selectedAvatarType, avatarSeed: selectedAvatarSeed });
+      let photoURL = '';
+      if (selectedAvatarType === 'upload') {
+        photoURL = selectedUploadBlob ? await uploadProfilePhoto(user, selectedUploadBlob) : uploadPhotoUrl(profile);
+        if (!photoURL) throw new Error('등록할 프로필 사진을 선택해주세요.');
+      } else if (selectedAvatarType === 'google') {
+        photoURL = googlePhotoUrl(user, profile);
+      }
+      await setNickname({ nickname: n, photoURL, avatarType: selectedAvatarType, avatarSeed: selectedAvatarSeed, avatarIcon: selectedAvatarIcon });
       await updateProfile(user, { displayName: n }).catch(() => {});
       showToast('내 정보가 저장되었습니다.', 'success');
       drawProfile(box, user, await profileOf(user));
