@@ -153,8 +153,8 @@ async function _loadSubmitSettings() {
     const snap = await getDoc(doc(db, 'site_settings', 'config'));
     const d = snap.exists() ? snap.data() : {};
     return {
-      dailyLimit: DAILY_LIMIT,
-      cooldownSec: Number.isFinite(Number(d.cooldownSec)) ? Number(d.cooldownSec) : 45,
+      dailyLimit: Math.max(1, Math.min(20, Number.isFinite(Number(d.dailyLimit)) ? Math.floor(Number(d.dailyLimit)) : DAILY_LIMIT)),
+      cooldownSec: Math.max(0, Math.min(300, Number.isFinite(Number(d.cooldownSec)) ? Math.floor(Number(d.cooldownSec)) : 45)),
     };
   } catch {
     return { dailyLimit: DAILY_LIMIT, cooldownSec: 45 };
