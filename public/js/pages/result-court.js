@@ -33,7 +33,7 @@ function ensureResultGameStyle() {
   style.textContent = `
     .reward-card{padding:18px;margin-bottom:14px;border-radius:20px;border:1px solid rgba(201,168,76,.45);background:linear-gradient(135deg,rgba(201,168,76,.18),rgba(231,76,60,.08),rgba(255,255,255,.035));box-shadow:0 12px 34px rgba(0,0,0,.24);}
     .reward-grade{width:70px;height:70px;border-radius:20px;display:flex;align-items:center;justify-content:center;font-family:var(--font-serif);font-size:32px;font-weight:900;color:#111827;background:linear-gradient(135deg,#ffdf7a,#c9a84c);box-shadow:0 10px 26px rgba(201,168,76,.28);}
-    .reward-badge{display:inline-flex;align-items:center;gap:5px;border:1px solid rgba(201,168,76,.36);background:rgba(255,255,255,.07);border-radius:999px;padding:7px 10px;font-size:11px;font-weight:900;color:#fff8ec;}
+    .reward-badge{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(201,168,76,.36);background:rgba(255,255,255,.07);border-radius:999px;padding:8px 12px;font-size:11px;font-weight:900;color:#fff8ec;line-height:1.2;box-shadow:0 4px 10px rgba(0,0,0,.10);}
     .invite-defense{padding:16px;margin-bottom:14px;border-radius:18px;border:1px dashed rgba(201,168,76,.48);background:rgba(201,168,76,.07);}
     .invite-defense-title{font-weight:900;color:#e8c97a;margin-bottom:6px;}
     .invite-defense-desc{font-size:12px;color:rgba(255,248,236,.78);line-height:1.7;margin-bottom:12px;}
@@ -41,7 +41,9 @@ function ensureResultGameStyle() {
     .drama-flow{display:flex;gap:7px;overflow-x:auto;padding-bottom:2px;}
     .drama-flow span{white-space:nowrap;border:1px solid rgba(201,168,76,.25);border-radius:999px;padding:7px 10px;font-size:11px;color:var(--cream-dim);background:rgba(255,255,255,.035);}
     .owner-delete-case{border-color:rgba(231,76,60,.45)!important;color:#e74c3c!important;}
-    [data-theme="light"] .reward-badge,:root:not([data-theme="dark"]) .reward-badge{color:#fff8ec;background:rgba(13,17,23,.82);}
+    [data-theme="light"] .reward-card,:root:not([data-theme="dark"]) .reward-card{background:linear-gradient(180deg,#fffaf0 0%,#fff7e7 100%)!important;border-color:#e2d3af!important;box-shadow:0 10px 22px rgba(117,85,24,.08)!important;}
+    [data-theme="light"] .reward-badge,:root:not([data-theme="dark"]) .reward-badge{color:#6a4b12!important;background:linear-gradient(180deg,#fff8e7 0%,#f3e2b3 100%)!important;border:1px solid #d7bf82!important;box-shadow:0 4px 10px rgba(120,90,25,.10)!important;text-shadow:none!important;}
+    [data-theme="light"] .reward-badge:hover,:root:not([data-theme="dark"]) .reward-badge:hover{background:linear-gradient(180deg,#fff3d0 0%,#ecd28d 100%)!important;border-color:#c9a84c!important;}
     [data-theme="light"] .invite-defense,:root:not([data-theme="dark"]) .invite-defense{background:#fff8e8!important;border-color:#d8c48d!important;box-shadow:0 8px 22px rgba(70,46,16,.08)!important;}
     [data-theme="light"] .invite-defense-title,:root:not([data-theme="dark"]) .invite-defense-title{color:#5b3f09!important;}
     [data-theme="light"] .invite-defense-desc,:root:not([data-theme="dark"]) .invite-defense-desc{color:#5f4b35!important;opacity:1!important;}
@@ -100,7 +102,7 @@ function addReward(container) {
           <div class="court-desc">소소한 일이 수사·공방·판결까지 완료된 황당사건 기록으로 등록되었습니다.</div>
         </div>
       </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">${badges.map(([i, t]) => `<span class="reward-badge">${i} ${t}</span>`).join('')}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">${badges.map(([i, t]) => `<span class="reward-badge">${i} ${t}</span>`).join('')}</div>
     </div>`);
 }
 function addInviteDefense(container) {
