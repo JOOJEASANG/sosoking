@@ -30,7 +30,7 @@ async function _logout() {
 
 async function _deleteMyCase(caseId, btn, container) {
   if (!caseId || !btn) return;
-  const ok = confirm('이 사건을 삭제할까요?\n\n사건 접수내용, 판결문, 투표, 댓글, 신고 데이터가 함께 삭제됩니다. 삭제 후 복구할 수 없습니다.');
+  const ok = confirm('이 사건을 삭제할까요?\n\n진행 중인 사건도 즉시 중단되고, 접수내용·판결문·투표·댓글·신고 데이터가 함께 삭제됩니다. 삭제 후 복구할 수 없습니다.');
   if (!ok) return;
 
   const oldText = btn.textContent;
@@ -44,8 +44,8 @@ async function _deleteMyCase(caseId, btn, container) {
   } catch (err) {
     console.error(err);
     let msg = err.message || '삭제하지 못했습니다.';
-    if (String(msg).includes('재판이 진행 중')) msg = '재판이 진행 중인 사건은 판결 완료 후 삭제할 수 있습니다.';
-    showToast(msg, 'error');
+    if (String(msg).includes('not-found') || String(msg).includes('internal')) msg = '삭제 함수가 아직 배포되지 않았거나 서버 처리 중 오류가 발생했습니다. Functions 배포를 확인해주세요.';
+    showToast(msg.replace('FirebaseError: ', ''), 'error');
     btn.disabled = false;
     btn.textContent = oldText;
   }
@@ -134,7 +134,7 @@ function _caseRow(id, c) {
       : null;
   const clickable = href ? `onclick="location.hash='${href}'"` : '';
   const cursor = href ? 'cursor:pointer;' : 'opacity:0.86;';
-  const canDelete = c.status !== 'processing' && c.status !== 'deleting';
+  const canDelete = c.status !== 'deleting';
 
   return `
     <div class="card" style="${cursor}border-left:3px solid ${st.color};" ${clickable}>
@@ -150,7 +150,7 @@ function _caseRow(id, c) {
         <div style="font-size:12px;color:var(--gold);">${href ? (c.status === 'completed' ? '판결문 보기 →' : '재판장 입장 →') : ''}</div>
         ${canDelete
           ? `<button type="button" data-delete-case="${escapeHtml(id)}" onclick="event.stopPropagation();" class="btn btn-ghost" style="width:auto;padding:7px 10px;font-size:11px;color:#e74c3c;border-color:rgba(231,76,60,.35);">삭제</button>`
-          : `<span style="font-size:11px;color:var(--cream-dim);">${c.status === 'processing' ? '진행 중 삭제불가' : '삭제 중'}</span>`}
+          : `<span style="font-size:11px;color:var(--cream-dim);">삭제 중</span>`}
       </div>
     </div>`;
 }
