@@ -21,6 +21,11 @@ function reactionTotalFromSummary(data = {}) {
 async function assertAdmin(request) {
   if (!request.auth || !(await isAdminAuth(request.auth))) throw new HttpsError('permission-denied', '관리자만 실행할 수 있습니다.');
 }
+function socialCounterQuery(options, limit) {
+  let query = db.collection('results');
+  if (options.onlyPublic) query = query.where('isPublic', '==', true);
+  return query.orderBy('createdAt', 'desc').limit(limit);
+}
 
 async function recoverStaleProcessingCases() {
   const now = Date.now();
@@ -62,10 +67,13 @@ async function recoverStaleProcessingCases() {
 
 async function repairSocialCounters(options = {}) {
   const limit = Math.max(1, Math.min(MAX_COUNTER_REPAIR_LIMIT, numberValue(options.limit, 200)));
-  let query = db.collection('results').limit(limit);
-  if (options.onlyPublic) query = db.collection('results').where('isPublic', '==', true).limit(limit);
-
-  const resultSnap = await query.get();
+  let resultSnap;
+  try {
+    resultSnap = await socialCounterQuery(options, limit).get();
+  } catch (err) {
+    console.warn('ordered social counter repair query failed, falling back:', err.message || err);
+    resultSnap = await db.collection('results').limit(limit).get();
+  }
   const batch = db.batch();
   const repaired = [];
   const unchanged = [];
