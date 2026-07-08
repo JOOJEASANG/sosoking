@@ -14,7 +14,6 @@ import { renderBoard } from './pages/board-court.js?v=20260707-2';
 import { renderFooter } from './components/footer.js?v=20260707-3';
 import { initTheme, renderThemeToggle } from './components/theme.js?v=20260708-3';
 import { initCourtDesign } from './components/court-design.js?v=20260707-1';
-import { renderThemePreference } from './components/theme-preference.js?v=20260708-2';
 import { renderNav } from './components/nav.js?v=20260707-4';
 
 function normalizedRoute() {
@@ -64,7 +63,6 @@ function route() {
     renderGuide(content);
   } else if (hash === '#/auth') {
     renderAuth(content);
-    setTimeout(renderThemePreference, 80);
   } else if (hash === '#/absurd-cases') {
     renderAbsurdCases(content);
   } else if (hash === '#/board') {
