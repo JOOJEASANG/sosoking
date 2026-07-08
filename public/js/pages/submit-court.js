@@ -8,6 +8,7 @@ function lvLabel(v) {
   if (n <= 8) return '황당재판 개정 필요';
   return '제404호 법정 긴급배당';
 }
+
 function judgeStat(name) {
   const map = {
     '엄벌주의형': ['엄격함 ★★★★★', '공감력 ★★☆☆☆', '드립력 ★☆☆☆☆'],
@@ -20,6 +21,7 @@ function judgeStat(name) {
   };
   return map[name] || ['랜덤성 ★★★★★', '예측불가 ★★★★★', '운명력 ★★★★★'];
 }
+
 function ensureGameStyle() {
   if (document.getElementById('submit-game-style')) return;
   const style = document.createElement('style');
@@ -36,16 +38,18 @@ function ensureGameStyle() {
     .game-lv-caption{font-size:12px;color:rgba(255,248,236,.82);margin-top:8px;font-weight:800;}
     .grievance-unified .form-range{margin-top:8px;}
     .grievance-unified .slider-labels{font-size:12px;font-weight:800;color:rgba(255,248,236,.74)!important;}
+
     .judge-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important;}
     .judge-option{position:relative;min-height:132px!important;padding:16px 14px!important;border-radius:22px!important;border:1.25px solid rgba(201,168,76,.24)!important;background:linear-gradient(145deg,rgba(31,39,63,.94),rgba(17,23,38,.98))!important;display:flex!important;flex-direction:column;align-items:flex-start!important;text-align:left!important;overflow:hidden;box-shadow:0 12px 26px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.05)!important;transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease!important;}
     .judge-option:hover{transform:translateY(-2px);border-color:rgba(232,201,122,.48)!important;box-shadow:0 16px 30px rgba(0,0,0,.26),inset 0 1px 0 rgba(255,255,255,.06)!important;}
     .judge-option::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 14% 0%,rgba(232,201,122,.14),transparent 34%),linear-gradient(180deg,rgba(255,255,255,.045),transparent 50%);pointer-events:none;}
-    .judge-option::after{content:'재판부 카드';position:absolute;right:12px;top:10px;font-size:9px;color:rgba(255,248,236,.38);font-weight:900;letter-spacing:.08em;}
+    .judge-option::after{content:none!important;display:none!important;}
     .judge-option.active{border-color:#e8c97a!important;box-shadow:0 0 0 2px rgba(201,168,76,.22),0 16px 32px rgba(0,0,0,.28)!important;background:linear-gradient(145deg,rgba(201,168,76,.24),rgba(31,39,63,.96))!important;}
     .judge-option-icon{position:relative;z-index:1;font-size:29px!important;line-height:1!important;margin-bottom:10px;display:inline-flex!important;width:34px;height:34px;align-items:center;justify-content:center;font-family:'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif!important;}
     .judge-option-name{position:relative;z-index:1;font-size:15px!important;font-weight:900!important;color:#fff8ec!important;line-height:1.35!important;}
     .judge-option-desc{position:relative;z-index:1;font-size:12px!important;line-height:1.55!important;color:rgba(255,248,236,.76)!important;margin-top:5px!important;}
     .judge-stat{position:relative;z-index:1;font-size:10.5px;color:rgba(255,248,236,.66);line-height:1.45;margin-top:8px;font-weight:800;}
+
     html[data-theme="light"] .game-lv-card,:root[data-theme="light"] .game-lv-card{background:linear-gradient(135deg,#fffdf8,#f3dfba)!important;border-color:rgba(154,112,24,.28)!important;box-shadow:0 13px 28px rgba(70,46,16,.11),inset 0 1px 0 rgba(255,255,255,.95)!important;}
     html[data-theme="light"] .game-lv-title,:root[data-theme="light"] .game-lv-title{color:#9a7018!important;}
     html[data-theme="light"] .game-lv-num,:root[data-theme="light"] .game-lv-num{color:#7a4d00!important;text-shadow:0 1px 0 rgba(255,255,255,.85)!important;}
@@ -54,17 +58,37 @@ function ensureGameStyle() {
     html[data-theme="light"] .grievance-unified .slider-labels,:root[data-theme="light"] .grievance-unified .slider-labels{color:#5d4630!important;}
     html[data-theme="light"] .judge-option,:root[data-theme="light"] .judge-option{background:linear-gradient(145deg,#fffdf8,#f3dfba)!important;border-color:rgba(154,112,24,.26)!important;box-shadow:0 12px 26px rgba(70,46,16,.11),inset 0 1px 0 rgba(255,255,255,.92)!important;}
     html[data-theme="light"] .judge-option::before,:root[data-theme="light"] .judge-option::before{background:radial-gradient(circle at 12% 0%,rgba(154,112,24,.14),transparent 34%),linear-gradient(180deg,rgba(255,255,255,.58),transparent 50%)!important;}
-    html[data-theme="light"] .judge-option::after,:root[data-theme="light"] .judge-option::after{color:rgba(95,68,28,.42)!important;}
+    html[data-theme="light"] .judge-option::after,:root[data-theme="light"] .judge-option::after{content:none!important;display:none!important;}
     html[data-theme="light"] .judge-option.active,:root[data-theme="light"] .judge-option.active{border-color:rgba(154,112,24,.55)!important;background:linear-gradient(145deg,#fff7df,#ecd29d)!important;box-shadow:0 0 0 2px rgba(154,112,24,.13),0 14px 28px rgba(70,46,16,.14)!important;}
     html[data-theme="light"] .judge-option-icon,:root[data-theme="light"] .judge-option-icon{filter:none!important;text-shadow:0 1px 0 rgba(255,255,255,.85)!important;}
     html[data-theme="light"] .judge-option-name,:root[data-theme="light"] .judge-option-name{color:#24190c!important;}
     html[data-theme="light"] .judge-option-desc,:root[data-theme="light"] .judge-option-desc{color:#5a4329!important;}
     html[data-theme="light"] .judge-stat,:root[data-theme="light"] .judge-stat{color:#6a5135!important;}
-    @media(prefers-color-scheme:light){:root:not([data-theme="dark"]) .game-lv-card{background:linear-gradient(135deg,#fffdf8,#f3dfba)!important;border-color:rgba(154,112,24,.28)!important;box-shadow:0 13px 28px rgba(70,46,16,.11),inset 0 1px 0 rgba(255,255,255,.95)!important}:root:not([data-theme="dark"]) .game-lv-title{color:#9a7018!important}:root:not([data-theme="dark"]) .game-lv-num{color:#7a4d00!important}:root:not([data-theme="dark"]) .game-lv-caption,:root:not([data-theme="dark"]) .grievance-unified .slider-labels{color:#5d4630!important}:root:not([data-theme="dark"]) .judge-option{background:linear-gradient(145deg,#fffdf8,#f3dfba)!important;border-color:rgba(154,112,24,.26)!important;box-shadow:0 12px 26px rgba(70,46,16,.11),inset 0 1px 0 rgba(255,255,255,.92)!important}:root:not([data-theme="dark"]) .judge-option-name{color:#24190c!important}:root:not([data-theme="dark"]) .judge-option-desc{color:#5a4329!important}:root:not([data-theme="dark"]) .judge-stat{color:#6a5135!important}}
-    @media(max-width:520px){.judge-grid{grid-template-columns:1fr!important}.judge-option{min-height:118px!important}.grievance-unified>.form-label,.grievance-unified>.slider-value{display:none!important}}
+
+    @media(prefers-color-scheme:light){:root:not([data-theme="dark"]) .game-lv-card{background:linear-gradient(135deg,#fffdf8,#f3dfba)!important;border-color:rgba(154,112,24,.28)!important;box-shadow:0 13px 28px rgba(70,46,16,.11),inset 0 1px 0 rgba(255,255,255,.95)!important}:root:not([data-theme="dark"]) .game-lv-title{color:#9a7018!important}:root:not([data-theme="dark"]) .game-lv-num{color:#7a4d00!important}:root:not([data-theme="dark"]) .game-lv-caption,:root:not([data-theme="dark"]) .grievance-unified .slider-labels{color:#5d4630!important}:root:not([data-theme="dark"]) .judge-option{background:linear-gradient(145deg,#fffdf8,#f3dfba)!important;border-color:rgba(154,112,24,.26)!important;box-shadow:0 12px 26px rgba(70,46,16,.11),inset 0 1px 0 rgba(255,255,255,.92)!important}:root:not([data-theme="dark"]) .judge-option::after{content:none!important;display:none!important}:root:not([data-theme="dark"]) .judge-option-name{color:#24190c!important}:root:not([data-theme="dark"]) .judge-option-desc{color:#5a4329!important}:root:not([data-theme="dark"]) .judge-stat{color:#6a5135!important}}
+
+    @media(max-width:520px){
+      .judge-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important;}
+      .judge-option{min-height:120px!important;padding:12px 9px!important;border-radius:18px!important;}
+      .judge-option::after{content:none!important;display:none!important;}
+      .judge-option-icon{font-size:23px!important;width:28px!important;height:28px!important;margin-bottom:7px!important;}
+      .judge-option-name{font-size:13px!important;line-height:1.25!important;}
+      .judge-option-desc{font-size:10.5px!important;line-height:1.42!important;margin-top:4px!important;}
+      .judge-stat{font-size:9.3px!important;line-height:1.32!important;margin-top:6px!important;}
+      .grievance-unified>.form-label,.grievance-unified>.slider-value{display:none!important;}
+    }
+    @media(max-width:360px){
+      .judge-grid{gap:7px!important;}
+      .judge-option{min-height:112px!important;padding:10px 7px!important;border-radius:16px!important;}
+      .judge-option-icon{font-size:21px!important;width:25px!important;height:25px!important;margin-bottom:6px!important;}
+      .judge-option-name{font-size:12px!important;}
+      .judge-option-desc{font-size:9.5px!important;}
+      .judge-stat{font-size:8.5px!important;}
+    }
   `;
   document.head.appendChild(style);
 }
+
 function decorateSubmit(container) {
   ensureGameStyle();
   const form = container.querySelector('#submit-form');
@@ -78,6 +102,7 @@ function decorateSubmit(container) {
         <div><strong>보상 대기</strong><span>판결문·배지</span></div>
       </div>`);
   }
+
   const rangeGroup = document.getElementById('grievance')?.closest('.form-group');
   if (rangeGroup && !document.getElementById('game-lv-card')) {
     rangeGroup.classList.add('grievance-unified');
@@ -99,11 +124,13 @@ function decorateSubmit(container) {
   } else if (rangeGroup) {
     rangeGroup.classList.add('grievance-unified');
   }
+
   document.querySelectorAll('.judge-option').forEach(opt => {
     if (opt.querySelector('.judge-stat')) return;
     const name = opt.dataset.judge || '랜덤';
     opt.insertAdjacentHTML('beforeend', `<div class="judge-stat">${judgeStat(name).map(s => `<div>${s}</div>`).join('')}</div>`);
   });
+
   if (form && !document.getElementById('court-submit-flow')) {
     form.insertAdjacentHTML('afterbegin', `
       <div id="court-submit-flow" class="court-document" style="padding:16px;margin-bottom:18px;">
