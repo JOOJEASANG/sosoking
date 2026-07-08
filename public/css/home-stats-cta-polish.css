@@ -107,13 +107,17 @@ html[data-theme="light"] .home-hero-light-safe .stat-label *,
 
 /* Bottom CTA text color in light mode. */
 html[data-theme="light"] .cta-section,
-:root[data-theme="light"] .cta-section {
+:root[data-theme="light"] .cta-section,
+html[data-theme="light"] body #app #page-content .cta-section,
+:root[data-theme="light"] body #app #page-content .cta-section {
   background: linear-gradient(135deg, #fffaf1 0%, #f0dec0 100%) !important;
   color: #24190c !important;
 }
 
 html[data-theme="light"] .cta-section h2,
-:root[data-theme="light"] .cta-section h2 {
+:root[data-theme="light"] .cta-section h2,
+html[data-theme="light"] body #app #page-content .cta-section h2,
+:root[data-theme="light"] body #app #page-content .cta-section h2 {
   color: #1a150a !important;
   opacity: 1 !important;
   text-shadow: 0 1px 0 rgba(255,255,255,.86) !important;
@@ -122,13 +126,19 @@ html[data-theme="light"] .cta-section h2,
 html[data-theme="light"] .cta-section p,
 html[data-theme="light"] .cta-section p *,
 :root[data-theme="light"] .cta-section p,
-:root[data-theme="light"] .cta-section p * {
+:root[data-theme="light"] .cta-section p *,
+html[data-theme="light"] body #app #page-content .cta-section p,
+html[data-theme="light"] body #app #page-content .cta-section p *,
+:root[data-theme="light"] body #app #page-content .cta-section p,
+:root[data-theme="light"] body #app #page-content .cta-section p * {
   color: #3f2d1a !important;
   opacity: 1 !important;
 }
 
 html[data-theme="light"] .cta-section p span,
-:root[data-theme="light"] .cta-section p span {
+:root[data-theme="light"] .cta-section p span,
+html[data-theme="light"] body #app #page-content .cta-section p span,
+:root[data-theme="light"] body #app #page-content .cta-section p span {
   color: #6a5135 !important;
   opacity: 1 !important;
 }
@@ -155,14 +165,27 @@ html[data-theme="light"] .cta-section p span,
     opacity: 1 !important;
   }
   :root:not([data-theme="dark"]) .cta-section,
-  :root:not([data-theme="dark"]) .cta-section h2,
-  :root:not([data-theme="dark"]) .cta-section p,
-  :root:not([data-theme="dark"]) .cta-section p * {
+  :root:not([data-theme="dark"]) body #app #page-content .cta-section {
+    background: linear-gradient(135deg, #fffaf1 0%, #f0dec0 100%) !important;
     color: #24190c !important;
+  }
+  :root:not([data-theme="dark"]) .cta-section h2,
+  :root:not([data-theme="dark"]) body #app #page-content .cta-section h2 {
+    color: #1a150a !important;
+    opacity: 1 !important;
+    text-shadow: 0 1px 0 rgba(255,255,255,.86) !important;
+  }
+  :root:not([data-theme="dark"]) .cta-section p,
+  :root:not([data-theme="dark"]) .cta-section p *,
+  :root:not([data-theme="dark"]) body #app #page-content .cta-section p,
+  :root:not([data-theme="dark"]) body #app #page-content .cta-section p * {
+    color: #3f2d1a !important;
     opacity: 1 !important;
   }
-  :root:not([data-theme="dark"]) .cta-section p {
-    color: #3f2d1a !important;
+  :root:not([data-theme="dark"]) .cta-section p span,
+  :root:not([data-theme="dark"]) body #app #page-content .cta-section p span {
+    color: #6a5135 !important;
+    opacity: 1 !important;
   }
 }
 
