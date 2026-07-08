@@ -12,6 +12,7 @@ function applyTheme(theme) {
     btn.classList.toggle('active', active);
     btn.setAttribute('aria-pressed', active ? 'true' : 'false');
   });
+  window.dispatchEvent(new CustomEvent('sosoking-theme-change'));
 }
 
 function ensureStyle() {
@@ -23,11 +24,15 @@ function ensureStyle() {
     .theme-preference-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;}
     .theme-preference-title{font-size:13px;font-weight:900;color:var(--gold);}
     .theme-preference-desc{font-size:11px;color:var(--cream-dim);line-height:1.55;margin-top:2px;}
-    .theme-choice-wrap{display:grid;grid-template-columns:1fr 1fr;gap:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);padding:5px;border-radius:16px;}
-    .theme-choice{height:42px;border:0;border-radius:12px;background:transparent;color:var(--cream-dim);font-family:var(--font-sans);font-size:13px;font-weight:900;display:flex;align-items:center;justify-content:center;gap:7px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all .18s ease;}
-    .theme-choice.active{background:linear-gradient(135deg,var(--gold),var(--gold-light));color:var(--navy);box-shadow:0 6px 18px rgba(201,168,76,.23);}
-    .theme-choice:not(.active):hover{background:rgba(255,255,255,.06);color:var(--cream);}
-    [data-theme="light"] .theme-choice-wrap{background:rgba(0,0,0,.035);border-color:rgba(0,0,0,.06);}
+    .theme-choice-wrap{display:grid;grid-template-columns:1fr 1fr;gap:8px;background:rgba(255,255,255,.06);border:1px solid rgba(201,168,76,.28);padding:5px;border-radius:16px;}
+    .theme-choice{height:42px;border:1px solid rgba(201,168,76,.22);border-radius:12px;background:rgba(255,255,255,.055);color:#f5f0e8;font-family:var(--font-sans);font-size:13px;font-weight:900;display:flex;align-items:center;justify-content:center;gap:7px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all .18s ease;}
+    .theme-choice.active{background:linear-gradient(135deg,var(--gold),var(--gold-light));color:#111827!important;box-shadow:0 6px 18px rgba(201,168,76,.23);border-color:rgba(232,201,122,.62);}
+    .theme-choice:not(.active):hover{background:rgba(255,255,255,.10);color:#ffdf7a;}
+    [data-theme="light"] .theme-preference-card{background:#fffaf1;border-color:rgba(112,78,24,.28);}
+    [data-theme="light"] .theme-preference-desc{color:#66503a;}
+    [data-theme="light"] .theme-choice-wrap{background:rgba(0,0,0,.035);border-color:rgba(112,78,24,.22);}
+    [data-theme="light"] .theme-choice{background:#fffdf8;color:#2f2417;border-color:rgba(112,78,24,.28);}
+    [data-theme="light"] .theme-choice.active{color:#111827!important;background:linear-gradient(135deg,#e6bf4d,#b77d08);}
   `;
   document.head.appendChild(style);
 }
