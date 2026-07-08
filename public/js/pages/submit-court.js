@@ -32,13 +32,18 @@ function extractLocation(text) {
   return matches.find(x => !bad.some(b => x.includes(b))) || '';
 }
 function extractObject(text) {
+  const source = String(text || '');
   const food = FOOD_WORDS.join('|');
-  const pattern = new RegExp(`((?:내|제|제가|내가|남겨둔|마지막|아껴둔|사둔|먹던|보관하던)?\\s*(?:[가-힣A-Za-z0-9]+\\s*){0,2}(?:${food}))\\s*(?:을|를|이|가)?\\s*(?:먹|가져|물고|사라|없어|훔쳐|집어)`, 'i');
-  const m = String(text || '').match(pattern);
-  if (m?.[1]) return compact(m[1]);
+  const pattern = new RegExp(`((?:내|제|제가|내가|남겨둔|마지막|아껴둔|사둔|먹던|보관하던)?\\s*(?:[가-힣A-Za-z0-9]+\\s*){0,2}(?:${food}))\\s*(?:을|를|이|가)?\\s*(?:먹|가져|물고|사라|없어|훔쳐|집어)`, 'gi');
+  const matches = [...source.matchAll(pattern)].map(m => compact(m[1])).filter(Boolean);
+  const owned = matches.findLast(x => /^(내|제|제가|내가|남겨둔|마지막|아껴둔|사둔|먹던|보관하던)/.test(x));
+  if (owned) return owned;
+  if (matches.length) return matches[matches.length - 1];
 
-  const generic = String(text || '').match(/([가-힣A-Za-z0-9\s]{1,16})\s*(?:을|를)\s*(?:먹|가져|물고|사라|없어|훔쳐|집어)/);
-  return generic?.[1] ? compact(generic[1]) : '';
+  const generic = [...source.matchAll(/([가-힣A-Za-z0-9\s]{1,16})\s*(?:을|를)\s*(?:먹|가져|물고|사라|없어|훔쳐|집어)/g)]
+    .map(m => compact(m[1]))
+    .filter(Boolean);
+  return generic.length ? generic[generic.length - 1] : '';
 }
 function extractActor(text) {
   const source = String(text || '');
