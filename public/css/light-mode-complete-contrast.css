@@ -1,0 +1,306 @@
+/* Complete light-mode readability pass.
+   Loaded last to catch inline white/cream text that older screens still use. */
+
+html[data-theme="light"] body,
+html[data-theme="light"] #app,
+html[data-theme="light"] #page-content,
+html[data-theme="light"] .container,
+:root[data-theme="light"] body,
+:root[data-theme="light"] #app,
+:root[data-theme="light"] #page-content,
+:root[data-theme="light"] .container {
+  color: #24190c !important;
+}
+
+/* Catch old inline white/cream text in page content. */
+html[data-theme="light"] #page-content [style*="color:var(--cream"],
+html[data-theme="light"] #page-content [style*="color: var(--cream"],
+html[data-theme="light"] #page-content [style*="color:#fff"],
+html[data-theme="light"] #page-content [style*="color: #fff"],
+html[data-theme="light"] #page-content [style*="color:white"],
+html[data-theme="light"] #page-content [style*="color: white"],
+html[data-theme="light"] #page-content [style*="245,240,232"],
+html[data-theme="light"] #page-content [style*="255,255,255"],
+:root[data-theme="light"] #page-content [style*="color:var(--cream"],
+:root[data-theme="light"] #page-content [style*="color: var(--cream"],
+:root[data-theme="light"] #page-content [style*="color:#fff"],
+:root[data-theme="light"] #page-content [style*="color: #fff"],
+:root[data-theme="light"] #page-content [style*="color:white"],
+:root[data-theme="light"] #page-content [style*="color: white"],
+:root[data-theme="light"] #page-content [style*="245,240,232"],
+:root[data-theme="light"] #page-content [style*="255,255,255"] {
+  color: #3d2b18 !important;
+  opacity: 1 !important;
+}
+
+/* Keep primary CTAs dark text on gold, even if caught above. */
+html[data-theme="light"] .btn-primary,
+html[data-theme="light"] .hero-cta,
+:root[data-theme="light"] .btn-primary,
+:root[data-theme="light"] .hero-cta {
+  color: #111827 !important;
+}
+
+/* Page headers and navigation. */
+html[data-theme="light"] .page-header,
+:root[data-theme="light"] .page-header {
+  background: rgba(255,250,241,.96) !important;
+  border-bottom-color: rgba(112,78,24,.24) !important;
+}
+html[data-theme="light"] .page-header .logo,
+html[data-theme="light"] .back-btn,
+:root[data-theme="light"] .page-header .logo,
+:root[data-theme="light"] .back-btn {
+  color: #6f4700 !important;
+  opacity: 1 !important;
+}
+
+html[data-theme="light"] #bottom-nav,
+:root[data-theme="light"] #bottom-nav {
+  background: rgba(255,250,241,.98) !important;
+  border-top-color: rgba(112,78,24,.24) !important;
+}
+html[data-theme="light"] .nav-item,
+:root[data-theme="light"] .nav-item {
+  color: #5d4630 !important;
+  opacity: 1 !important;
+}
+html[data-theme="light"] .nav-item.active,
+html[data-theme="light"] .nav-item.nav-cta,
+:root[data-theme="light"] .nav-item.active,
+:root[data-theme="light"] .nav-item.nav-cta {
+  color: #7a4d00 !important;
+}
+
+/* General cards and dense UI blocks. */
+html[data-theme="light"] .card,
+html[data-theme="light"] .court-shell,
+html[data-theme="light"] .judge-card,
+html[data-theme="light"] .example-card,
+html[data-theme="light"] .reward-card,
+html[data-theme="light"] .trial-boss-card,
+html[data-theme="light"] .verdict-card,
+html[data-theme="light"] .sentence-card,
+html[data-theme="light"] .theme-preference-card,
+:root[data-theme="light"] .card,
+:root[data-theme="light"] .court-shell,
+:root[data-theme="light"] .judge-card,
+:root[data-theme="light"] .example-card,
+:root[data-theme="light"] .reward-card,
+:root[data-theme="light"] .trial-boss-card,
+:root[data-theme="light"] .verdict-card,
+:root[data-theme="light"] .sentence-card,
+:root[data-theme="light"] .theme-preference-card {
+  background: #fffaf1 !important;
+  border-color: rgba(112,78,24,.28) !important;
+  color: #24190c !important;
+  box-shadow: 0 8px 22px rgba(70,46,16,.10), inset 0 1px 0 rgba(255,255,255,.86) !important;
+}
+
+html[data-theme="light"] .card :where(p,div,span,small,li,td,label,strong),
+html[data-theme="light"] .court-shell :where(p,div,span,small,strong),
+html[data-theme="light"] .judge-card :where(p,div,span,small,strong),
+html[data-theme="light"] .example-card :where(p,div,span,small,strong),
+html[data-theme="light"] .verdict-card :where(p,div,span,small,strong),
+html[data-theme="light"] .sentence-card :where(p,div,span,small,strong),
+:root[data-theme="light"] .card :where(p,div,span,small,li,td,label,strong),
+:root[data-theme="light"] .court-shell :where(p,div,span,small,strong),
+:root[data-theme="light"] .judge-card :where(p,div,span,small,strong),
+:root[data-theme="light"] .example-card :where(p,div,span,small,strong),
+:root[data-theme="light"] .verdict-card :where(p,div,span,small,strong),
+:root[data-theme="light"] .sentence-card :where(p,div,span,small,strong) {
+  color: #3d2b18 !important;
+  opacity: 1 !important;
+}
+
+/* Gold labels remain gold/brown, not pale yellow. */
+html[data-theme="light"] :where(.court-kicker,.step-role,.form-label,.judge-name,.judge-option-name,.judge-card-name,.case-title,.slider-value),
+:root[data-theme="light"] :where(.court-kicker,.step-role,.form-label,.judge-name,.judge-option-name,.judge-card-name,.case-title,.slider-value) {
+  color: #7a4d00 !important;
+  opacity: 1 !important;
+}
+
+html[data-theme="light"] :where(.section-sub,.case-meta,.judge-option-desc,.judge-card-desc,.char-counter,.footer-biz,.hero-disclaimer),
+:root[data-theme="light"] :where(.section-sub,.case-meta,.judge-option-desc,.judge-card-desc,.char-counter,.footer-biz,.hero-disclaimer) {
+  color: #5d4630 !important;
+  opacity: 1 !important;
+}
+
+/* Forms. */
+html[data-theme="light"] :where(.form-input,.form-textarea,select),
+:root[data-theme="light"] :where(.form-input,.form-textarea,select) {
+  background: #fffdf8 !important;
+  border-color: rgba(112,78,24,.35) !important;
+  color: #1a150a !important;
+}
+html[data-theme="light"] :where(.form-input,.form-textarea)::placeholder,
+:root[data-theme="light"] :where(.form-input,.form-textarea)::placeholder {
+  color: #8a765d !important;
+  opacity: 1 !important;
+}
+
+/* Result/trial detail text. */
+html[data-theme="light"] :where(.step-content,.sentence-text,.court-desc,.reward-desc,.trial-desc),
+:root[data-theme="light"] :where(.step-content,.sentence-text,.court-desc,.reward-desc,.trial-desc) {
+  color: #3d2b18 !important;
+  opacity: 1 !important;
+}
+
+html[data-theme="light"] .sentence-text,
+html[data-theme="light"] .verdict-stamp,
+:root[data-theme="light"] .sentence-text,
+:root[data-theme="light"] .verdict-stamp {
+  color: #8a4a00 !important;
+}
+
+/* Admin tables and tags. */
+html[data-theme="light"] .admin-table td,
+html[data-theme="light"] .admin-tab,
+html[data-theme="light"] .tag,
+:root[data-theme="light"] .admin-table td,
+:root[data-theme="light"] .admin-tab,
+:root[data-theme="light"] .tag {
+  color: #3d2b18 !important;
+  background: rgba(255,250,241,.72) !important;
+  opacity: 1 !important;
+}
+html[data-theme="light"] .admin-table th,
+html[data-theme="light"] .admin-tab.active,
+:root[data-theme="light"] .admin-table th,
+:root[data-theme="light"] .admin-tab.active {
+  color: #7a4d00 !important;
+}
+
+/* Disclaimer and warnings. */
+html[data-theme="light"] .disclaimer,
+:root[data-theme="light"] .disclaimer {
+  color: #4f3b25 !important;
+  background: #fff4ec !important;
+  border-color: rgba(192,57,43,.24) !important;
+}
+html[data-theme="light"] .disclaimer *,
+:root[data-theme="light"] .disclaimer * {
+  color: #4f3b25 !important;
+  opacity: 1 !important;
+}
+html[data-theme="light"] .disclaimer strong,
+:root[data-theme="light"] .disclaimer strong {
+  color: #b63123 !important;
+}
+
+/* Footer. */
+html[data-theme="light"] #site-footer,
+:root[data-theme="light"] #site-footer {
+  background: #efe4d3 !important;
+  border-top-color: rgba(112,78,24,.22) !important;
+  color: #4f3b25 !important;
+}
+html[data-theme="light"] #site-footer *,
+:root[data-theme="light"] #site-footer * {
+  color: #4f3b25 !important;
+  opacity: 1 !important;
+}
+html[data-theme="light"] #site-footer a,
+:root[data-theme="light"] #site-footer a {
+  color: #6f4700 !important;
+}
+
+/* Re-apply home hero and bottom CTA contrast after global catches. */
+html[data-theme="light"] .home-hero-light-safe .hero-sub,
+html[data-theme="light"] .home-hero-light-safe .hero-sub *,
+html[data-theme="light"] .home-hero-light-safe .hero-tw,
+html[data-theme="light"] .home-hero-light-safe .hero-tw *,
+:root[data-theme="light"] .home-hero-light-safe .hero-sub,
+:root[data-theme="light"] .home-hero-light-safe .hero-sub *,
+:root[data-theme="light"] .home-hero-light-safe .hero-tw,
+:root[data-theme="light"] .home-hero-light-safe .hero-tw * {
+  color: #3d2b18 !important;
+  opacity: 1 !important;
+}
+html[data-theme="light"] .home-hero-light-safe .hero-h1,
+html[data-theme="light"] .home-hero-light-safe .hero-h1 *,
+html[data-theme="light"] .cta-section h2,
+:root[data-theme="light"] .home-hero-light-safe .hero-h1,
+:root[data-theme="light"] .home-hero-light-safe .hero-h1 *,
+:root[data-theme="light"] .cta-section h2 {
+  color: #1a150a !important;
+  opacity: 1 !important;
+}
+html[data-theme="light"] .home-hero-light-safe .hero-h1 span,
+html[data-theme="light"] .home-hero-light-safe #tw-text,
+html[data-theme="light"] .home-hero-light-safe .cursor-blink,
+:root[data-theme="light"] .home-hero-light-safe .hero-h1 span,
+:root[data-theme="light"] .home-hero-light-safe #tw-text,
+:root[data-theme="light"] .home-hero-light-safe .cursor-blink {
+  color: #7a4d00 !important;
+}
+html[data-theme="light"] .cta-section,
+:root[data-theme="light"] .cta-section {
+  background: linear-gradient(135deg, #fffaf1 0%, #f0dec0 100%) !important;
+  border-top-color: rgba(112,78,24,.22) !important;
+  color: #24190c !important;
+}
+html[data-theme="light"] .cta-section p,
+html[data-theme="light"] .cta-section p *,
+:root[data-theme="light"] .cta-section p,
+:root[data-theme="light"] .cta-section p * {
+  color: #4f3b25 !important;
+  opacity: 1 !important;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) body,
+  :root:not([data-theme="dark"]) #app,
+  :root:not([data-theme="dark"]) #page-content,
+  :root:not([data-theme="dark"]) .container {
+    color: #24190c !important;
+  }
+  :root:not([data-theme="dark"]) #page-content [style*="color:var(--cream"],
+  :root:not([data-theme="dark"]) #page-content [style*="color: var(--cream"],
+  :root:not([data-theme="dark"]) #page-content [style*="color:#fff"],
+  :root:not([data-theme="dark"]) #page-content [style*="color: #fff"],
+  :root:not([data-theme="dark"]) #page-content [style*="color:white"],
+  :root:not([data-theme="dark"]) #page-content [style*="color: white"],
+  :root:not([data-theme="dark"]) #page-content [style*="245,240,232"],
+  :root:not([data-theme="dark"]) #page-content [style*="255,255,255"] {
+    color: #3d2b18 !important;
+    opacity: 1 !important;
+  }
+  :root:not([data-theme="dark"]) :where(.card,.court-shell,.judge-card,.example-card,.reward-card,.trial-boss-card,.verdict-card,.sentence-card) {
+    background: #fffaf1 !important;
+    border-color: rgba(112,78,24,.28) !important;
+    color: #24190c !important;
+  }
+  :root:not([data-theme="dark"]) :where(.card,.court-shell,.judge-card,.example-card,.verdict-card,.sentence-card) :where(p,div,span,small,li,td,label,strong) {
+    color: #3d2b18 !important;
+    opacity: 1 !important;
+  }
+  :root:not([data-theme="dark"]) :where(.section-sub,.case-meta,.judge-option-desc,.judge-card-desc,.char-counter,.footer-biz,.hero-disclaimer) {
+    color: #5d4630 !important;
+    opacity: 1 !important;
+  }
+  :root:not([data-theme="dark"]) :where(.form-input,.form-textarea,select) {
+    background: #fffdf8 !important;
+    border-color: rgba(112,78,24,.35) !important;
+    color: #1a150a !important;
+  }
+  :root:not([data-theme="dark"]) .btn-primary,
+  :root:not([data-theme="dark"]) .hero-cta {
+    color: #111827 !important;
+  }
+  :root:not([data-theme="dark"]) .home-hero-light-safe .hero-h1,
+  :root:not([data-theme="dark"]) .home-hero-light-safe .hero-h1 *,
+  :root:not([data-theme="dark"]) .cta-section h2 {
+    color: #1a150a !important;
+    opacity: 1 !important;
+  }
+  :root:not([data-theme="dark"]) .home-hero-light-safe .hero-sub,
+  :root:not([data-theme="dark"]) .home-hero-light-safe .hero-sub *,
+  :root:not([data-theme="dark"]) .home-hero-light-safe .hero-tw,
+  :root:not([data-theme="dark"]) .home-hero-light-safe .hero-tw *,
+  :root:not([data-theme="dark"]) .cta-section p,
+  :root:not([data-theme="dark"]) .cta-section p * {
+    color: #3d2b18 !important;
+    opacity: 1 !important;
+  }
+}
