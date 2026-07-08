@@ -43,7 +43,7 @@ service cloud.firestore {
 
     function validUserProfile(uid) {
       return request.resource.data.keys().hasOnly([
-          'uid', 'email', 'nickname', 'provider', 'photoURL', 'avatarSeed', 'avatarType', 'isAnonymous', 'createdAt', 'updatedAt'
+          'uid', 'email', 'nickname', 'provider', 'photoURL', 'avatarSeed', 'avatarIcon', 'avatarType', 'isAnonymous', 'createdAt', 'updatedAt'
         ])
         && request.resource.data.uid == uid
         && request.resource.data.nickname is string
@@ -54,10 +54,11 @@ service cloud.firestore {
         && request.resource.data.provider is string
         && request.resource.data.provider.size() <= 60
         && request.resource.data.photoURL is string
-        && request.resource.data.photoURL.size() <= 500
+        && request.resource.data.photoURL.size() <= 1000
         && request.resource.data.avatarSeed is string
         && request.resource.data.avatarSeed.size() <= 80
-        && request.resource.data.avatarType in ['google', 'generated'];
+        && (!('avatarIcon' in request.resource.data) || (request.resource.data.avatarIcon is string && request.resource.data.avatarIcon.size() <= 12))
+        && request.resource.data.avatarType in ['google', 'generated', 'upload'];
     }
 
     function validUserName(key) {
@@ -77,17 +78,17 @@ service cloud.firestore {
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.caseTitle is string
         && request.resource.data.caseTitle.size() > 0
-        && request.resource.data.caseTitle.size() <= 30
+        && request.resource.data.caseTitle.size() <= 40
         && request.resource.data.caseDescription is string
         && request.resource.data.caseDescription.size() > 0
-        && request.resource.data.caseDescription.size() <= 200
+        && request.resource.data.caseDescription.size() <= 320
         && request.resource.data.grievanceIndex is int
         && request.resource.data.grievanceIndex >= 1
         && request.resource.data.grievanceIndex <= 10
         && request.resource.data.nickname is string
         && request.resource.data.nickname.size() <= 30
         && request.resource.data.desiredVerdict is string
-        && request.resource.data.desiredVerdict.size() <= 100
+        && request.resource.data.desiredVerdict.size() <= 160
         && request.resource.data.selectedJudge is string
         && request.resource.data.status == 'pending'
         && request.resource.data.isPublic == false
@@ -96,6 +97,11 @@ service cloud.firestore {
 
     match /admins/{uid} {
       allow read: if signedIn() && (request.auth.uid == uid || adminEmail() == uid || isAdmin());
+      allow write: if false;
+    }
+
+    match /admin_logs/{logId} {
+      allow read: if isAdmin();
       allow write: if false;
     }
 
@@ -121,6 +127,7 @@ service cloud.firestore {
       allow read: if signedIn() && (
         resource.data.userId == request.auth.uid ||
         resource.data.isPublic == true ||
+        isResultPublic(caseId) ||
         isAdmin()
       );
       // 사건 접수는 submitCase Callable Function(Admin SDK)에서만 처리한다.
@@ -177,6 +184,11 @@ service cloud.firestore {
     }
 
     match /rate_limits/{userId} {
+      allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
+      allow write: if false;
+    }
+
+    match /comment_limits/{userId} {
       allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
       allow write: if false;
     }
