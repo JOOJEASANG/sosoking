@@ -17,6 +17,15 @@ function cleanUrl(value) {
   return /^https:\/\//.test(url) ? url.slice(0, 500) : '';
 }
 
+function cleanAvatarSeed(value) {
+  const seed = String(value || '').trim().slice(0, 32);
+  return /^[a-zA-Z0-9_-]{1,32}$/.test(seed) ? seed : '';
+}
+
+function cleanAvatarType(value) {
+  return value === 'generated' || value === 'google' ? value : '';
+}
+
 function nicknameError(value) {
   const n = cleanNickname(value);
   if (n.length < 2) return '닉네임은 2자 이상 입력해주세요.';
@@ -43,16 +52,25 @@ exports.setNickname = onCall({ region: REGION, timeoutSeconds: 30, memory: '256M
   const err = nicknameError(nickname);
   if (err) throw new HttpsError('invalid-argument', err);
   const key = nicknameKey(nickname);
-  const photoURL = cleanUrl(request.auth.token.picture || request.data?.photoURL || '');
+  const requestedAvatarType = cleanAvatarType(request.data?.avatarType);
+  const requestedAvatarSeed = cleanAvatarSeed(request.data?.avatarSeed);
   const provider = request.auth.token.firebase?.sign_in_provider || 'password';
   const userRef = db.doc(`users/${uid}`);
   const nameRef = db.doc(`user_names/${key}`);
+  let savedPhotoURL = '';
+  let savedAvatarType = 'generated';
+  let savedAvatarSeed = '';
 
   await db.runTransaction(async tx => {
     const userSnap = await tx.get(userRef);
     const nameSnap = await tx.get(nameRef);
     const profile = userSnap.exists ? userSnap.data() : {};
     const oldKey = profile.nickname ? nicknameKey(profile.nickname) : '';
+    const googlePhotoURL = cleanUrl(request.auth.token.picture || request.data?.photoURL || profile.photoURL || '');
+    let avatarType = requestedAvatarType || profile.avatarType || (googlePhotoURL ? 'google' : 'generated');
+    if (avatarType === 'google' && !googlePhotoURL) avatarType = 'generated';
+    const avatarSeed = requestedAvatarSeed || cleanAvatarSeed(profile.avatarSeed) || `${uid.slice(0, 8)}-${Date.now().toString(36)}`.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 32);
+    const photoURL = avatarType === 'google' ? googlePhotoURL : '';
 
     if (nameSnap.exists && nameSnap.data().uid !== uid) {
       throw new HttpsError('already-exists', '이미 사용 중인 닉네임입니다.');
@@ -73,14 +91,18 @@ exports.setNickname = onCall({ region: REGION, timeoutSeconds: 30, memory: '256M
       email: email || profile.email || '',
       nickname,
       provider: provider || profile.provider || 'password',
-      photoURL: photoURL || profile.photoURL || '',
-      avatarSeed: profile.avatarSeed || `${uid.slice(0, 8)}-${Date.now().toString(36)}`,
-      avatarType: photoURL || profile.photoURL ? 'google' : 'generated',
+      photoURL,
+      avatarSeed,
+      avatarType,
       isAnonymous: false,
       updatedAt: FieldValue.serverTimestamp(),
       createdAt: profile.createdAt || FieldValue.serverTimestamp(),
     }, { merge: true });
+
+    savedPhotoURL = photoURL;
+    savedAvatarType = avatarType;
+    savedAvatarSeed = avatarSeed;
   });
 
-  return { success: true, nickname, photoURL };
+  return { success: true, nickname, photoURL: savedPhotoURL, avatarType: savedAvatarType, avatarSeed: savedAvatarSeed };
 });
