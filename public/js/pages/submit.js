@@ -30,6 +30,11 @@ const SERIOUS_KEYWORDS = [
   '응급','정신과','우울증','공황','자해','자살','의료','진단','치료'
 ];
 
+const FOOD_WORDS = ['빵','푸딩','과자','커피','치킨','라면','음료','케이크','간식','도시락','아이스크림','샌드위치','김밥','초콜릿','떡볶이','피자','햄버거','사탕','젤리','쿠키','우유','아메리카노','탕후루','붕어빵'];
+const OBJECT_WORDS = [...FOOD_WORDS, '충전기','리모컨','우산','의자','자리','컵','수건','칫솔','마우스','키보드','이어폰','휴지','담요','베개','신발','가방','펜','볼펜','노트'];
+const ANIMAL_WORDS = ['리트리버','강아지','개','고양이','반려견','댕댕이','멍멍이','비둘기','새','까치','까마귀'];
+const PERSON_WORDS = ['친구','동생','언니','오빠','형','누나','엄마','아빠','남편','아내','직장동료','상사','후배','선배','손님','아이','누군가','사장님','알바생','동료'];
+
 function _isTooSerious(text) {
   const source = String(text || '').replace(/\s+/g, '');
   return SERIOUS_KEYWORDS.some(kw => source.includes(kw));
@@ -40,11 +45,119 @@ function _formatBytes(bytes) {
   if (n >= 1024) return `${Math.round(n / 1024)}KB`;
   return `${n}B`;
 }
+function _compact(value) {
+  return String(value || '')
+    .replace(/\s+/g, ' ')
+    .replace(/[.!?。！？]+$/g, '')
+    .replace(/^(그|저|이)\s+/g, '')
+    .replace(/\s*(한\s*마리|한마리)$/g, '')
+    .trim();
+}
+function _hasFinalConsonant(word) {
+  const ch = _compact(word).slice(-1);
+  if (!ch) return false;
+  const code = ch.charCodeAt(0);
+  if (code < 0xac00 || code > 0xd7a3) return false;
+  return ((code - 0xac00) % 28) !== 0;
+}
+function _subjectParticle(word) { return _hasFinalConsonant(word) ? '이' : '가'; }
+function _objectParticle(word) { return _hasFinalConsonant(word) ? '을' : '를'; }
+function _clipTitle(title) {
+  const clean = _compact(title)
+    .replace(/사건\s*사건$/g, '사건')
+    .replace(/\s+/g, ' ');
+  return clean.length > MAX_TITLE ? `${clean.slice(0, MAX_TITLE - 1).trim()}…` : clean;
+}
+function _normalizeDesc(desc) {
+  return String(desc || '')
+    .replace(/한눈판사이/g, '한눈 판 사이')
+    .replace(/산책\s*중이던/g, '산책중이던')
+    .replace(/한\s*마리/g, '한마리')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+function _lastActionIndex(text) {
+  const verbs = /(먹었|먹엇|먹었다|먹은|먹어|먹음|먹고|가져갔|가져간|가져가|들고갔|물고갔|훔쳐갔|사라졌|없어졌|없어짐|독점했|차지했|망가뜨렸|깨뜨렸)/g;
+  let last = null;
+  let m;
+  while ((m = verbs.exec(text)) !== null) last = { index: m.index, verb: m[0] };
+  return last || { index: text.length, verb: '' };
+}
+function _extractLocation(text) {
+  const matches = [...text.matchAll(/([가-힣A-Za-z0-9]{1,14}(?:에서|에))(?=\s|$)/g)].map(m => m[1]);
+  const bad = ['사이에','중에','때에','사이에서','중에서'];
+  return matches.find(x => !bad.some(b => x.includes(b))) || '';
+}
+function _extractObject(text) {
+  const { index } = _lastActionIndex(text);
+  const beforeAction = text.slice(0, Math.max(index, 0));
+  const words = OBJECT_WORDS.join('|');
+  const ownedPattern = new RegExp(`((?:내|제|원고의|내가|제가|남겨둔|마지막|아껴둔|사둔|먹던|보관하던)\\s*(?:[가-힣A-Za-z0-9]{0,8}\\s*)?(?:${words}))(?=\\s*(?:을|를|이|가|은|는|도|만|$))`, 'g');
+  const anyPattern = new RegExp(`((?:[가-힣A-Za-z0-9]{0,8}\\s*)?(?:${words}))(?=\\s*(?:을|를|이|가|은|는|도|만|$))`, 'g');
+  const owned = [...beforeAction.matchAll(ownedPattern)].map(m => _compact(m[1])).filter(Boolean);
+  if (owned.length) return owned[owned.length - 1];
+  const any = [...beforeAction.matchAll(anyPattern)].map(m => _compact(m[1])).filter(Boolean);
+  if (any.length) return any[any.length - 1].replace(/^(공원에서|집에서|회사에서|학교에서|카페에서)\s+/, '');
+
+  const generic = [...beforeAction.matchAll(/([가-힣A-Za-z0-9\s]{1,16})\s*(?:을|를)(?=\s*$)/g)]
+    .map(m => _compact(m[1]))
+    .filter(Boolean);
+  return generic.length ? generic[generic.length - 1] : '';
+}
+function _extractActor(text) {
+  const { index } = _lastActionIndex(text);
+  const beforeAction = text.slice(0, Math.max(index, 0));
+  const animal = ANIMAL_WORDS.join('|');
+  const person = PERSON_WORDS.join('|');
+  const actorPattern = new RegExp(`((?:산책중이던|지나가던|옆에 있던|근처에 있던|같이 있던|맞은편에 있던)?\\s*(?:${animal}|${person}))(?:\\s*한마리)?\\s*(?:이|가|은|는)?`, 'g');
+  const matches = [...beforeAction.matchAll(actorPattern)]
+    .map(m => _compact(m[1]))
+    .filter(x => x && !['내','제'].includes(x));
+  return matches.length ? matches[matches.length - 1].replace(/^\s+/, '') : '';
+}
+function _actionTitle(text, actor, object, location) {
+  const prefix = location ? `${location} ` : '';
+  if (/먹|물고/.test(text) && object) {
+    if (actor) return `${prefix}${actor}${_subjectParticle(actor)} ${object}${_objectParticle(object)} 먹은 사건`;
+    return `${prefix}${object}${_objectParticle(object)} 누군가 먹은 사건`;
+  }
+  if (/가져|들고|훔쳐|물고/.test(text) && object) {
+    if (actor) return `${prefix}${actor}${_subjectParticle(actor)} ${object}${_objectParticle(object)} 가져간 사건`;
+    return `${prefix}${object}${_subjectParticle(object)} 사라진 사건`;
+  }
+  if (/사라|없어/.test(text) && object) return `${prefix}${object}${_subjectParticle(object)} 사라진 사건`;
+  if (/독점|차지/.test(text) && object) return `${prefix}${actor ? actor + _subjectParticle(actor) + ' ' : ''}${object}${_objectParticle(object)} 독점한 사건`;
+  if (/망가|깨뜨/.test(text) && object) return `${prefix}${actor ? actor + _subjectParticle(actor) + ' ' : ''}${object}${_objectParticle(object)} 훼손한 사건`;
+  return '';
+}
 function _autoTitle(desc) {
-  const text = String(desc || '').replace(/\s+/g, ' ').trim();
+  const text = _normalizeDesc(desc);
   if (!text) return '';
-  const head = text.replace(/[.!?。！？].*$/g, '').slice(0, 24).trim();
-  return `${head || '이걸로'} 사건`.slice(0, MAX_TITLE);
+  const location = _extractLocation(text);
+  const object = _extractObject(text);
+  const actor = _extractActor(text);
+  const structured = _actionTitle(text, actor, object, location);
+  if (structured) return _clipTitle(structured);
+
+  const cleaned = text
+    .replace(/^(제가|내가|나는|저는|나|저)\s*/g, '')
+    .replace(/(하고 있었는데|하고 있었는 데|했는데|하던 중|한눈 판 사이|잠깐 사이|사이에)/g, ' ')
+    .replace(/[.!?。！？].*$/g, '')
+    .trim();
+  return _clipTitle(`${cleaned.slice(0, 28).trim() || '소소한 일상'} 사건`);
+}
+function _shouldRebuildTitle(rawTitle, desc, autoTitle) {
+  const title = _compact(rawTitle);
+  if (!title) return true;
+  if (!autoTitle || autoTitle.length < 3) return false;
+  if (/하고 있었는데|한눈판|한눈 판|잠깐 사이|사이에|하던 중/.test(title)) return true;
+  if (title.length >= MAX_TITLE - 2 && !/(먹은|가져간|사라진|독점한|훼손한|실종)/.test(title)) return true;
+  const object = _extractObject(_normalizeDesc(desc));
+  const actor = _extractActor(_normalizeDesc(desc));
+  if (object && actor && autoTitle.includes(object) && autoTitle.includes(actor.replace(/\s+/g, ' '))) {
+    if (!title.includes(object) || !title.includes(actor.split(' ').pop())) return true;
+  }
+  return false;
 }
 function _blobToBase64(blob) {
   return new Promise((resolve, reject) => {
@@ -152,13 +265,13 @@ export async function renderSubmit(container) {
         <form id="submit-form">
           <div class="form-group">
             <label class="form-label">무슨 일이 있었나요? <span style="color:var(--red)">*</span></label>
-            <textarea id="case-desc" class="form-textarea" style="min-height:150px;" maxlength="${MAX_DESC}" placeholder="예: 냉장고에 마지막 푸딩을 남겨놨는데 누가 먹고 빈 자리만 남겨놨어요. 별일 아닌데 퇴근하고 기대했던 거라 너무 억울합니다." required></textarea>
+            <textarea id="case-desc" class="form-textarea" style="min-height:150px;" maxlength="${MAX_DESC}" placeholder="예: 공원에서 빵을 먹고 있었는데 한눈 판 사이 산책중이던 리트리버 한마리가 내 빵을 먹었어요." required></textarea>
             <div class="char-counter"><span id="desc-count">0</span>/${MAX_DESC}</div>
           </div>
 
           <div class="form-group">
             <label class="form-label">사건명 <span class="optional">선택 · 비워두면 자동 생성</span></label>
-            <input type="text" id="case-title" class="form-input" maxlength="${MAX_TITLE}" placeholder="예: 마지막 푸딩 실종 사건">
+            <input type="text" id="case-title" class="form-input" maxlength="${MAX_TITLE}" placeholder="예: 공원에서 산책중이던 리트리버가 내 빵을 먹은 사건">
             <div class="char-counter"><span id="title-count">0</span>/${MAX_TITLE}</div>
           </div>
 
@@ -220,7 +333,10 @@ export async function renderSubmit(container) {
     opt.classList.add('active');
     selectedJudge = opt.dataset.judge || '';
   });
-  document.getElementById('case-title')?.addEventListener('input', function() { document.getElementById('title-count').textContent = this.value.length; });
+  document.getElementById('case-title')?.addEventListener('input', function() {
+    this.dataset.autoGeneratedTitle = '';
+    document.getElementById('title-count').textContent = this.value.length;
+  });
   document.getElementById('case-desc')?.addEventListener('input', function() { document.getElementById('desc-count').textContent = this.value.length; });
   document.getElementById('grievance')?.addEventListener('input', function() { document.getElementById('grievance-val').textContent = this.value; });
   document.getElementById('case-image')?.addEventListener('change', async function() {
@@ -248,8 +364,12 @@ export async function renderSubmit(container) {
   document.getElementById('submit-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const desc = document.getElementById('case-desc').value.trim();
-    const rawTitle = document.getElementById('case-title').value.trim();
-    const title = rawTitle || _autoTitle(desc);
+    const titleInput = document.getElementById('case-title');
+    const rawTitle = titleInput.value.trim();
+    const generatedTitle = _autoTitle(desc);
+    const title = (!rawTitle || titleInput.dataset.autoGeneratedTitle === '1' || _shouldRebuildTitle(rawTitle, desc, generatedTitle)) ? generatedTitle : rawTitle;
+    titleInput.value = title;
+    document.getElementById('title-count').textContent = title.length;
     const grievance = parseInt(document.getElementById('grievance').value, 10);
     const desiredVerdict = document.getElementById('desired-verdict').value.trim();
     const isPublic = document.getElementById('is-public').checked;
