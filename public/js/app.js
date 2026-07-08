@@ -1,8 +1,8 @@
 import { initAuth } from './firebase.js?v=20260708-1';
 import './components/seed-case-prefill.js?v=20260707-2';
 import { initSessionTimeout } from './components/session-timeout.js?v=20260707-1';
-import { renderHome } from './pages/home-court.js?v=20260708-homecase1';
-import { renderSubmit } from './pages/submit-guard.js?v=20260708-submit2';
+import { renderHome } from './pages/home-court.js?v=20260708-homecase2';
+import { renderSubmit } from './pages/submit-guard.js?v=20260708-submit3';
 import { renderTrial } from './pages/trial-game.js?v=20260707-4';
 import { renderResult } from './pages/result-court.js?v=20260707-4';
 import { renderPolicy } from './pages/policy.js?v=20260708-policy1';
