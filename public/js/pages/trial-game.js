@@ -1,4 +1,4 @@
-import { renderTrial as renderBaseTrial } from './trial.js?v=20260708-drama1';
+import { renderTrial as renderBaseTrial } from './trial.js?v=20260708-investigation1';
 
 function ensureTrialGameStyle() {
   if (document.getElementById('trial-game-style')) return;
@@ -33,7 +33,7 @@ function decorateTrial(container) {
       <div id="trial-game-brief" class="trial-boss-card">
         <div class="court-kicker">COURT DRAMA MODE</div>
         <div class="court-title" style="font-size:18px;">수사부터 판결까지 진행 중</div>
-        <div class="court-desc">소소경찰이 수사하고, 황당검사와 피고측 변호인이 괜히 치열하게 다툰 뒤, 재판부가 작은 일을 크게 판결합니다.</div>
+        <div class="court-desc">소소경찰이 CCTV를 돌려보고, 황당검사와 피고측 변호인이 억지로 다툰 뒤, 재판부가 작은 일을 크게 판결합니다.</div>
       </div>`);
   }
   document.querySelectorAll('.step-card').forEach((card, idx) => {
