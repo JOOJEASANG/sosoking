@@ -7,9 +7,14 @@ const db = getFirestore();
 const geminiKey = defineSecret('GEMINI_API_KEY');
 const REGION = 'asia-northeast3';
 const REACTIONS = ['plaintiff','defendant','both','tooMuch','funny'];
+const COMMENT_DAILY_LIMIT = 30;
+const COMMENT_COOLDOWN_SEC = 20;
 
 function cleanText(value, maxLen) {
   return String(value || '').replace(/[\u0000-\u001F\u007F]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, maxLen);
+}
+function kstDateKey(date = new Date()) {
+  return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
 }
 
 async function loadNickname(uid, fallback = '익명 방청객') {
@@ -66,12 +71,30 @@ exports.addCourtComment = onCall({ region: REGION, timeoutSeconds: 30, memory: '
   if (/(욕설|시발|씨발|병신|개새끼|죽어|자살|실명|전화번호)/i.test(text)) throw new HttpsError('failed-precondition', '부적절한 표현이 포함되어 있습니다.');
   const { resultRef } = await assertPublicResult(caseId);
   const nickname = await loadNickname(uid);
+  const today = kstDateKey();
+  const limitRef = db.doc(`comment_limits/${uid}`);
   const commentRef = db.collection(`court_comments/${caseId}/items`).doc();
-  const batch = db.batch();
-  batch.set(commentRef, { uid, nickname, text, status: 'visible', createdAt: FieldValue.serverTimestamp() });
-  batch.set(db.doc(`court_comment_stats/${caseId}`), { count: FieldValue.increment(1), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-  batch.set(resultRef, { commentCount: FieldValue.increment(1), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-  await batch.commit();
+
+  await db.runTransaction(async tx => {
+    const limitSnap = await tx.get(limitRef);
+    const current = limitSnap.exists ? limitSnap.data() : {};
+    const count = current.date === today ? Number(current.count || 0) : 0;
+    if (count >= COMMENT_DAILY_LIMIT) {
+      throw new HttpsError('resource-exhausted', `오늘 방청석 한마디 한도 ${COMMENT_DAILY_LIMIT}개를 모두 사용했습니다.`);
+    }
+    if (current.lastCommentedAt && current.date === today) {
+      const lastMs = current.lastCommentedAt.toMillis ? current.lastCommentedAt.toMillis() : new Date(current.lastCommentedAt).getTime();
+      const diffSec = Math.floor((Date.now() - lastMs) / 1000);
+      if (diffSec < COMMENT_COOLDOWN_SEC) {
+        throw new HttpsError('resource-exhausted', `${COMMENT_COOLDOWN_SEC - diffSec}초 후에 다시 남길 수 있습니다.`);
+      }
+    }
+
+    tx.set(commentRef, { uid, nickname, text, status: 'visible', createdAt: FieldValue.serverTimestamp() });
+    tx.set(db.doc(`court_comment_stats/${caseId}`), { count: FieldValue.increment(1), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+    tx.set(resultRef, { commentCount: FieldValue.increment(1), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+    tx.set(limitRef, { date: today, count: count + 1, lastCommentedAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+  });
   return { success: true };
 });
 
