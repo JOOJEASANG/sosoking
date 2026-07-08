@@ -1,8 +1,11 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
+const { defineSecret } = require('firebase-functions/params');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { isAdminAuth } = require('./admin-utils');
 
 const db = getFirestore();
+const geminiKey = defineSecret('GEMINI_API_KEY');
 const REGION = 'asia-northeast3';
 const MAX_TITLE = 40;
 const MAX_DESC = 320;
@@ -178,6 +181,80 @@ function shouldUseSmartTitle(rawTitle, desc, smartTitle) {
   }
   return false;
 }
+function normalizeAiTitle(raw, fallbackTitle) {
+  let title = String(raw || '').replace(/```json|```/g, '').trim();
+  try {
+    const start = title.indexOf('{');
+    const end = title.lastIndexOf('}');
+    if (start >= 0 && end > start) {
+      const parsed = JSON.parse(title.slice(start, end + 1));
+      title = parsed.caseTitle || parsed.title || title;
+    }
+  } catch (_) {}
+  title = textValue(title, MAX_TITLE)
+    .replace(/^사건명\s*[:：]\s*/g, '')
+    .replace(/["“”'‘’]/g, '')
+    .replace(/[.!?。！？]+$/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!title) return fallbackTitle || '';
+  if (!title.endsWith('사건')) title = `${title} 사건`;
+  return clipTitle(title);
+}
+async function makeAiTitle(desc, fallbackTitle, modelName) {
+  const key = geminiKey.value().trim();
+  if (!key || !desc) return fallbackTitle || '';
+  try {
+    const model = new GoogleGenerativeAI(key).getGenerativeModel({
+      model: modelName || 'gemini-2.5-flash',
+      generationConfig: {
+        temperature: 0.78,
+        topP: 0.92,
+        topK: 40,
+        responseMimeType: 'application/json'
+      }
+    });
+    const prompt = `너는 소소킹 황당재판소의 사건명 작성관이다.
+
+사용자의 사건 내용을 전부 읽고 핵심을 가장 잘 드러내는 사건명 1개만 작성하라.
+
+규칙:
+- 18~35자 권장, 최대 40자.
+- 반드시 사건의 핵심 대상과 핵심 행동을 포함한다.
+- 문장 앞부분을 그대로 자르지 않는다.
+- 너무 설명식으로 길게 쓰지 않는다.
+- 반드시 '사건'으로 끝낸다.
+- 실제 범죄처럼 보이게 과격하게 쓰지 않는다.
+- 웃기려고 드립을 치지 말고, 너무 진지한 사건명처럼 쓴다.
+- 장소, 행위자, 피해 대상, 핵심 행동이 명확하면 포함한다.
+- 사용자가 직접 쓴 말 중 중요한 단어는 살리되, 어색한 조사와 배경문장은 정리한다.
+
+좋은 예:
+- 공원에서 리트리버가 내 빵을 먹은 사건
+- 탕비실 마지막 카누 봉지 방치 사건
+- 동생의 방문 미닫힘 반복 사건
+- 침대 밑 이어폰 한쪽 실종 사건
+- 리모컨 장기 점유 및 채널권 박탈 사건
+
+나쁜 예:
+- 공원에서 빵을 먹고 있었는데 사건
+- 너무 억울한 사건
+- 진짜 열받는 사건
+- 카누 사건
+- 이걸로 재판까지 간 사건
+
+사건 내용:
+${desc}
+
+JSON만 출력하라.
+{"caseTitle":"사건명"}`;
+    const result = await model.generateContent({ contents: [{ role: 'user', parts: [{ text: prompt }] }] });
+    return normalizeAiTitle(result.response.text(), fallbackTitle);
+  } catch (err) {
+    console.error('AI title generation failed:', err);
+    return fallbackTitle || '';
+  }
+}
 function normalizeImageAttachment(value) {
   if (!value || typeof value !== 'object') return null;
   const mimeType = textValue(value.mimeType, 30);
@@ -205,16 +282,22 @@ async function loadUserNickname(uid) {
   }
 }
 
-exports.submitCase = onCall({ region: REGION, timeoutSeconds: 30, memory: '256MiB' }, async (request) => {
+exports.submitCase = onCall({ region: REGION, secrets: [geminiKey], timeoutSeconds: 60, memory: '256MiB' }, async (request) => {
   requireRealLogin(request);
 
   const uid = request.auth.uid;
   const data = request.data || {};
   const submittedTitle = textValue(firstDefined(data.caseTitle, data.title), MAX_TITLE);
   const desc = textValue(firstDefined(data.caseDescription, data.description), MAX_DESC);
+  if (!desc) throw new HttpsError('invalid-argument', '황당사건 경위를 입력해주세요.');
+
+  const settings = await loadSettings();
   const smartTitle = makeSmartTitle(desc);
   const titleIsManual = boolValue(data.caseTitleManual, false) && !!submittedTitle;
-  const title = titleIsManual ? submittedTitle : (shouldUseSmartTitle(submittedTitle, desc, smartTitle) ? smartTitle : submittedTitle);
+  const geminiModel = textValue(settings.geminiModel, 60) || 'gemini-2.5-flash';
+  const aiTitle = titleIsManual ? '' : await makeAiTitle(desc, smartTitle, geminiModel);
+  const autoTitle = aiTitle || smartTitle;
+  const title = titleIsManual ? submittedTitle : (autoTitle || (shouldUseSmartTitle(submittedTitle, desc, smartTitle) ? smartTitle : submittedTitle));
   const desired = textValue(data.desiredVerdict, MAX_DESIRED);
   const grievance = clampNumber(firstDefined(data.grievanceIndex, data.grievance), 5, 1, 10);
   const selectedJudge = selectedJudgeOrBlank(firstDefined(data.selectedJudge, data.judgeType));
@@ -224,9 +307,7 @@ exports.submitCase = onCall({ region: REGION, timeoutSeconds: 30, memory: '256Mi
   const profileNickname = await loadUserNickname(uid);
 
   if (!title) throw new HttpsError('invalid-argument', '황당사건명을 입력해주세요.');
-  if (!desc) throw new HttpsError('invalid-argument', '황당사건 경위를 입력해주세요.');
 
-  const settings = await loadSettings();
   const dailyLimit = clampNumber(settings.dailyLimit, HARD_DAILY_LIMIT, 1, 20);
   const cooldownSec = clampNumber(settings.cooldownSec, DEFAULT_COOLDOWN_SEC, 0, 300);
   const bannedWords = Array.isArray(settings.bannedWords) ? settings.bannedWords : [];
@@ -272,7 +353,9 @@ exports.submitCase = onCall({ region: REGION, timeoutSeconds: 30, memory: '256Mi
       courtStage: 'filed',
       caseTitle: title,
       originalCaseTitle: submittedTitle || '',
-      autoCaseTitle: smartTitle || '',
+      autoCaseTitle: autoTitle || '',
+      smartCaseTitle: smartTitle || '',
+      aiCaseTitle: aiTitle || '',
       caseTitleManual: titleIsManual,
       caseDescription: desc,
       grievanceIndex: grievance,
@@ -289,5 +372,5 @@ exports.submitCase = onCall({ region: REGION, timeoutSeconds: 30, memory: '256Mi
     if (!isAdminSubmitter) tx.set(limitRef, { date: today, count: nextCount, lastSubmittedAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
   });
 
-  return { caseId, docketNumber, dailyLimit, adminBypass: isAdminSubmitter, hasImageAttachment: !!imageAttachment, caseTitle: title };
+  return { caseId, docketNumber, dailyLimit, adminBypass: isAdminSubmitter, hasImageAttachment: !!imageAttachment, caseTitle: title, aiCaseTitle: aiTitle || '' };
 });
