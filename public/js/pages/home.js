@@ -45,9 +45,9 @@ export async function renderHome(container) {
         <p class="hero-sub">이제 소소킹 황당재판소에서<br><strong>AI 재판부에게 판결받아보세요.</strong><br>그냥 넘기기엔 찝찝하고, 진짜 따지기엔 너무 사소한 일까지<br>과하게 진지한 판결문으로 정리해드립니다.<br><span style="font-size:11px;opacity:0.5;">실제 법원은 아니고, 마음속 방청석은 열려 있습니다.</span></p>
         <div class="hero-tw">📌 현재 접수 가능한 소소사건: <strong id="tw-text"></strong><span class="cursor-blink" style="color:var(--gold);">|</span></div>
         <a href="#/submit" class="hero-cta hero-cta-pulse">🚨 소소사건 판결받기</a>
-        <div class="hero-disclaimer">무료 · 익명 · 과장됨 · 법적효력 없음</div>
+        <div class="hero-disclaimer">무료 · 닉네임 공개 가능 · 과장됨 · 법적효력 없음</div>
         <div class="stats-row">
-          <div class="stat-item"><div class="stat-num" id="stat-count">847+</div><div class="stat-label">소소사건<br><span style="font-size:9px;opacity:0.7;">판결 완료</span></div></div>
+          <div class="stat-item"><div class="stat-num" id="stat-count">집계중</div><div class="stat-label">소소사건<br><span style="font-size:9px;opacity:0.7;">판결 완료</span></div></div>
           <div class="stat-item"><div class="stat-num" id="stat-judge">?</div><div class="stat-label">이번주 인기<br><span style="font-size:9px;opacity:0.7;">재판부</span></div></div>
           <div class="stat-item"><div class="stat-num">0%</div><div class="stat-label">법적효력<br><span style="font-size:9px;opacity:0.7;">대신 공감</span></div></div>
         </div>
@@ -65,8 +65,8 @@ export async function renderHome(container) {
 
       <div class="container" style="margin-top:44px;">
         <div style="font-size:13px;color:var(--cream-dim);margin-bottom:4px;">🔥 실제로 공개된 소소판결 사례</div>
-        <div style="font-family:var(--font-serif);font-size:20px;font-weight:700;margin-bottom:12px;">최근 생활형 판결</div>
-        <div style="position:relative;margin-bottom:12px;"><input type="text" id="feed-search" class="form-input" placeholder="🔍 사건명으로 검색..." style="font-size:14px;padding-left:14px;"></div>
+        <div style="font-family:var(--font-serif);font-size:20px;font-weight:700;margin-bottom:12px;">최근 황당판결</div>
+        <div style="position:relative;margin-bottom:12px;"><input type="text" id="feed-search" class="form-input" placeholder="🔍 사건명·판결문으로 검색..." style="font-size:14px;padding-left:14px;"></div>
         <div id="feed-container" style="display:flex;flex-direction:column;gap:10px;">${EXAMPLES.map(c => _caseCard(null, c)).join('')}</div>
       </div>
 
@@ -78,7 +78,7 @@ export async function renderHome(container) {
             ['01','소소사건 접수 📝','일상 속 소소한 사건과 황당한 사례를 적습니다. 실명 대신 상황과 억울함만 제출하세요.'],
             ['02','황당성 검토 🔍','재판부가 이 사건을 얼마나 진지하게 다룰지 엄숙하게 고민합니다.'],
             ['03','법정 공방 ⚔️','원고 주장, 피고 변명, 증거 아닌 증거가 말이 되는 듯 안 되는 듯 펼쳐집니다.'],
-            ['04','소소판결 선고 ⚖️','최종 판결문과 생활형 처분이 내려집니다. 실제 법적 효력은 없습니다.']
+            ['04','소소판결 선고 ⚖️','최종 판결문과 황당 처분이 내려집니다. 실제 법적 효력은 없습니다.']
           ].map(([num, title, desc]) => `<div class="how-step"><div class="how-step-num" style="min-width:40px;height:40px;font-size:13px;">${num}</div><div><div style="font-weight:700;font-size:15px;margin-bottom:3px;">${escapeHtml(title)}</div><div style="font-size:13px;color:var(--cream-dim);">${escapeHtml(desc)}</div></div></div>`).join('')}
         </div>
       </div>
@@ -115,11 +115,14 @@ function _fmtDate(ts) {
   return d.toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
+function _searchText(r) {
+  return [r.absurdityTitle, r.caseTitle, r.title, r.closingComment, r.sentence, r.verdict, r.courtOpinion].filter(Boolean).join(' ');
+}
 function _applySearch() {
   const q = (document.getElementById('feed-search')?.value || '').trim();
   const feedEl = document.getElementById('feed-container');
   if (!feedEl) return;
-  const filtered = q ? _feedAll.filter(([, r]) => (r.caseTitle || '').includes(q)) : _feedAll;
+  const filtered = q ? _feedAll.filter(([, r]) => _searchText(r).includes(q)) : _feedAll;
   if (filtered.length === 0) feedEl.innerHTML = `<div style="text-align:center;padding:36px 0;color:var(--cream-dim);font-size:14px;">🔍 "${escapeHtml(q)}"에 대한 판결 사례가 없습니다</div>`;
   else feedEl.innerHTML = filtered.map(([id, r]) => _caseCard(id, r)).join('');
 }
@@ -152,25 +155,14 @@ function _startTypewriter() {
 }
 
 async function _loadCount() {
+  const el = document.getElementById('stat-count');
   try {
     const snap = await getCountFromServer(query(collection(db, 'cases'), where('status', '==', 'completed')));
     const count = snap.data().count;
-    const el = document.getElementById('stat-count');
-    if (el && count > 0) el.textContent = count.toLocaleString('ko-KR') + '건';
-  } catch { _animateCount(); }
-}
-
-function _animateCount() {
-  const el = document.getElementById('stat-count');
-  if (!el) return;
-  let n = 0;
-  const target = 847;
-  const step = Math.ceil(target / 40);
-  const t = setInterval(() => {
-    n = Math.min(n + step, target);
-    el.textContent = n.toLocaleString('ko-KR') + '+';
-    if (n >= target) clearInterval(t);
-  }, 30);
+    if (el) el.textContent = count > 0 ? count.toLocaleString('ko-KR') + '건' : '0건';
+  } catch {
+    if (el) el.textContent = '집계중';
+  }
 }
 
 async function _loadPublicFeed() {
