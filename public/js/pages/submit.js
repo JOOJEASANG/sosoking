@@ -14,7 +14,7 @@ const MAX_IMAGE_DIM = 1600;
 
 const JUDGES = [
   { id: '엄벌주의형', icon: '👨‍⚖️', desc: '사소해도 중대 사건으로 격상' },
-  { id: '감성형', icon: '🥹', desc: '판사가 먼저 울컥합니다' },
+  { id: '감성형', icon: '😢', desc: '판사가 먼저 울컥합니다' },
   { id: '현실주의형', icon: '🤦', desc: '팩트로 쓸쓸하게 정리' },
   { id: '과몰입형', icon: '🔥', desc: '이걸 재판까지 끌고 갑니다' },
   { id: '피곤형', icon: '😴', desc: '귀찮지만 처분은 매섭게' },
@@ -195,7 +195,7 @@ export async function renderSubmit(container) {
             </div>
           </div>
           <div class="form-group">
-            <label class="form-label">억울 지수</label>
+            <label class="form-label">억울함 레벨</label>
             <div class="slider-value"><span id="grievance-val">5</span><span style="font-size:14px;color:var(--cream-dim);"> / 10</span></div>
             <input type="range" id="grievance" class="form-range" min="1" max="10" value="5">
             <div class="slider-labels"><span>🙂 그냥 웃김</span><span>😤 이건 선고 필요</span></div>
@@ -207,8 +207,8 @@ export async function renderSubmit(container) {
           <div class="form-group">
             <label class="form-label">담당 재판부 선택 <span class="optional">선택 안 하면 랜덤 배정</span></label>
             <div class="judge-grid" id="judge-grid">
-              <div class="judge-option active" data-judge=""><span style="font-size:22px;">🎲</span><div class="judge-option-name">랜덤 배정</div><div class="judge-option-desc">황당재판부가 알아서 과몰입</div></div>
-              ${JUDGES.map(j => `<div class="judge-option" data-judge="${escapeHtml(j.id)}"><span style="font-size:22px;">${j.icon}</span><div class="judge-option-name">${escapeHtml(j.id)}</div><div class="judge-option-desc">${escapeHtml(j.desc)}</div></div>`).join('')}
+              <div class="judge-option active" data-judge=""><span class="judge-option-icon">🎲</span><div class="judge-option-name">랜덤 배정</div><div class="judge-option-desc">황당재판부가 알아서 과몰입</div></div>
+              ${JUDGES.map(j => `<div class="judge-option" data-judge="${escapeHtml(j.id)}"><span class="judge-option-icon">${j.icon}</span><div class="judge-option-name">${escapeHtml(j.id)}</div><div class="judge-option-desc">${escapeHtml(j.desc)}</div></div>`).join('')}
             </div>
           </div>
           <div class="form-group">
@@ -260,35 +260,18 @@ export async function renderSubmit(container) {
     imageAttachment = null;
     preview.style.display = 'none';
     preview.innerHTML = '';
-    if (!file) {
-      status.textContent = 'JPG, PNG, WEBP 가능. 큰 이미지는 자동으로 1600px 이하, 약 500KB 이하로 적당히 리사이즈합니다.';
-      return;
-    }
-    status.textContent = '이미지를 AI 분석용으로 자동 리사이즈하는 중입니다...';
+    if (!file) { status.textContent = 'JPG, PNG, WEBP 가능. 큰 이미지는 자동으로 1600px 이하, 약 500KB 이하로 적당히 리사이즈합니다.'; return; }
+    status.textContent = `이미지 확인 중... 원본 ${_formatBytes(file.size)}`;
     try {
-      imageAttachment = await _resizeImageForAi(file);
-      const src = `data:${imageAttachment.mimeType};base64,${imageAttachment.data}`;
-      preview.innerHTML = `
-        <img src="${src}" alt="첨부 이미지 미리보기" style="width:100%;max-height:260px;object-fit:contain;border-radius:12px;border:1px solid var(--border);background:rgba(0,0,0,.18);">
-        <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;margin-top:8px;font-size:11px;color:var(--cream-dim);line-height:1.5;">
-          <span>원본 ${_formatBytes(imageAttachment.originalSize)} → 분석용 ${_formatBytes(imageAttachment.resizedSize)} · ${imageAttachment.width}×${imageAttachment.height}</span>
-          <button type="button" id="remove-image" style="border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--cream-dim);border-radius:8px;padding:5px 8px;cursor:pointer;">삭제</button>
-        </div>`;
+      const resized = await _resizeImageForAi(file);
+      imageAttachment = resized;
+      status.textContent = `첨부 완료: ${escapeHtml(resized.originalName)} · ${resized.width}×${resized.height} · ${_formatBytes(resized.originalSize)} → ${_formatBytes(resized.resizedSize)}`;
       preview.style.display = 'block';
-      status.textContent = '첨부 완료. AI가 사건 경위와 이미지를 함께 보고 황당판결을 작성합니다.';
-      document.getElementById('remove-image').onclick = () => {
-        imageAttachment = null;
-        this.value = '';
-        preview.style.display = 'none';
-        preview.innerHTML = '';
-        status.textContent = '이미지 첨부가 삭제되었습니다.';
-      };
+      preview.innerHTML = `<img src="data:${resized.mimeType};base64,${resized.data}" alt="첨부 이미지 미리보기" style="width:100%;max-height:220px;object-fit:cover;border-radius:12px;border:1px solid var(--border);">`;
     } catch (err) {
-      console.error(err);
-      imageAttachment = null;
+      status.textContent = err.message || '이미지를 처리하지 못했습니다.';
+      showToast(status.textContent, 'error');
       this.value = '';
-      status.textContent = '이미지 첨부 실패';
-      showToast(err.message || '이미지를 처리하지 못했습니다.', 'error');
     }
   });
 
@@ -296,27 +279,31 @@ export async function renderSubmit(container) {
     e.preventDefault();
     const title = document.getElementById('case-title').value.trim();
     const desc = document.getElementById('case-desc').value.trim();
-    const desired = document.getElementById('desired-verdict').value.trim();
     const grievance = parseInt(document.getElementById('grievance').value, 10);
+    const desiredVerdict = document.getElementById('desired-verdict').value.trim();
     const isPublic = document.getElementById('is-public').checked;
-    if (!title || !desc) return showToast('황당사건명과 사건 경위를 입력해주세요.', 'error');
-    if (_isTooSerious(`${title} ${desc}`)) {
-      const proceed = await _showSeriousModal();
-      if (!proceed) return;
+
+    if (title.length < 3) return showToast('사건명은 3자 이상 입력해주세요.', 'error');
+    if (desc.length < 10) return showToast('사건 경위는 10자 이상 입력해주세요.', 'error');
+    const merged = `${title} ${desc}`;
+    if (_isTooSerious(merged)) {
+      const ok = await _showSeriousModal();
+      if (!ok) return;
     }
+
     const btn = document.getElementById('submit-btn');
     btn.disabled = true;
-    btn.textContent = imageAttachment ? '이미지 증거와 함께 접수 중...' : '황당사건 접수 중...';
+    btn.textContent = '접수 중...';
     try {
       const submitCase = httpsCallable(functions, 'submitCase');
-      const res = await submitCase({ caseTitle: title, caseDescription: desc, grievanceIndex: grievance, desiredVerdict: desired, selectedJudge, isPublic, imageAttachment });
-      const caseId = res.data?.caseId;
-      if (!caseId) throw new Error('caseId missing');
-      location.hash = `#/trial/${encodeURIComponent(caseId)}`;
+      const res = await submitCase({ title, description: desc, grievance, desiredVerdict, judgeType: selectedJudge, isPublic, imageAttachment });
+      showToast('황당사건 접수 완료!', 'success');
+      location.hash = `#/trial/${res.data.caseId}`;
     } catch (err) {
       console.error(err);
-      const msg = err?.message || '접수 중 오류가 발생했습니다.';
-      showToast(msg.replace('FirebaseError: ', ''), 'error');
+      let msg = err.message || '접수 실패';
+      if (String(msg).includes('resource-exhausted') || String(msg).includes('일일 접수')) msg = `오늘 접수 한도(${settings.dailyLimit}건)를 모두 사용했습니다.`;
+      showToast(msg, 'error');
       btn.disabled = false;
       btn.textContent = '황당사건 접수하고 재판받기';
     }
