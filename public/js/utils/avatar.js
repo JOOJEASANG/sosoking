@@ -1,5 +1,23 @@
 import { escapeHtml } from './sanitize.js?v=20260630-3';
 
+const SAFE_EMOJI_REPLACEMENTS = new Map([
+  ['🥹', '😢'],
+  ['🫡', '⚖️'],
+  ['🫠', '😵'],
+  ['🧋', '☕'],
+  ['🧙', '⭐'],
+  ['🥷', '🕵️'],
+  ['🧑‍⚖️', '⚖️']
+]);
+
+function safeEmoji(icon = '') {
+  let out = String(icon || '');
+  SAFE_EMOJI_REPLACEMENTS.forEach((safe, unsafe) => {
+    out = out.replaceAll(unsafe, safe);
+  });
+  return out;
+}
+
 export const AVATAR_PRESETS = [
   { seed: 'dog', icon: '🐶', label: '강아지' },
   { seed: 'cat', icon: '🐱', label: '고양이' },
@@ -64,7 +82,7 @@ export const AVATAR_PRESETS = [
   { seed: 'donut', icon: '🍩', label: '도넛' },
   { seed: 'icecream', icon: '🍦', label: '아이스크림' },
   { seed: 'coffee', icon: '☕', label: '커피' },
-  { seed: 'bubbletea', icon: '🧋', label: '버블티' },
+  { seed: 'bubbletea', icon: '☕', label: '버블티' },
   { seed: 'rocket', icon: '🚀', label: '로켓' },
   { seed: 'moon', icon: '🌙', label: '달' },
   { seed: 'sun', icon: '☀️', label: '해' },
@@ -86,15 +104,15 @@ export const AVATAR_PRESETS = [
   { seed: 'alien', icon: '👽', label: '외계인' },
   { seed: 'robot', icon: '🤖', label: '로봇' },
   { seed: 'detective', icon: '🕵️', label: '탐정' },
-  { seed: 'wizard', icon: '🧙', label: '마법사' },
-  { seed: 'ninja', icon: '🥷', label: '닌자' },
+  { seed: 'wizard', icon: '⭐', label: '마법사' },
+  { seed: 'ninja', icon: '🕵️', label: '닌자' },
   { seed: 'angel', icon: '😇', label: '천사' },
   { seed: 'laugh', icon: '😂', label: '웃음' },
   { seed: 'thinking', icon: '🤔', label: '생각' },
   { seed: 'angry', icon: '😤', label: '억울함' },
   { seed: 'sleepy', icon: '😴', label: '졸림' },
   { seed: 'cool', icon: '😎', label: '멋짐' },
-  { seed: 'melting', icon: '🫠', label: '녹음' }
+  { seed: 'melting', icon: '😵', label: '녹음' }
 ];
 
 function hashCode(text) {
@@ -131,7 +149,7 @@ export function generatedAvatarUrl(name = '', email = '', seed = '', icon = '') 
     ['#1e2a28', '#b8f2e6']
   ];
   const [bg, fg] = palettes[h % palettes.length];
-  const mark = preset?.icon || icon || initialOf(name, email);
+  const mark = safeEmoji(preset?.icon || icon || initialOf(name, email));
   const isEmoji = !!(preset?.icon || icon);
   const textSize = isEmoji ? 72 : 62;
   const textY = isEmoji ? 102 : 98;
