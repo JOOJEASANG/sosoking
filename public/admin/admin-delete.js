@@ -58,6 +58,11 @@ function wrapAdminDeletes() {
     fn.__completeDelete = true;
     window._delResult = fn;
   }
+  if (typeof window._delRecord === 'function' && !window._delRecord.__completeDelete) {
+    const fn = id => completeDelete(id, 'records');
+    fn.__completeDelete = true;
+    window._delRecord = fn;
+  }
 }
 
 setInterval(wrapAdminDeletes, 300);
