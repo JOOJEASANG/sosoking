@@ -1,4 +1,4 @@
-import { renderHome as renderBaseHome } from './home.js?v=20260708-homecase1';
+import { renderHome as renderBaseHome } from './home.js?v=20260708-homecase2';
 
 function addCourtEntrance(container) {
   const hero = container.querySelector('.hero-section');
