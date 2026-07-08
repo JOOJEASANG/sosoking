@@ -112,3 +112,138 @@ html[data-theme="dark"] .theme-choice.active,
 .theme-toggle-floating {
   z-index: 1200 !important;
 }
+
+/* Home main page: make the lower procedure cards feel like polished rounded court cards. */
+#court-procedure-note + div,
+#court-procedure-note ~ div,
+.home-hero-light-safe ~ .container .how-step {
+  position: relative;
+}
+
+.home-hero-light-safe ~ .container .how-step {
+  display: flex !important;
+  gap: 15px !important;
+  align-items: flex-start !important;
+  padding: 18px 16px !important;
+  border-radius: 24px !important;
+  border: 1.25px solid rgba(232,201,122,.34) !important;
+  background: linear-gradient(135deg, rgba(31,39,63,.94), rgba(22,28,44,.98)) !important;
+  box-shadow: 0 14px 30px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.06) !important;
+  overflow: hidden !important;
+  transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease !important;
+}
+
+.home-hero-light-safe ~ .container .how-step::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(232,201,122,.18), transparent 34%),
+    linear-gradient(180deg, rgba(255,255,255,.055), transparent 46%);
+}
+
+.home-hero-light-safe ~ .container .how-step:hover {
+  transform: translateY(-2px);
+  border-color: rgba(232,201,122,.52) !important;
+  box-shadow: 0 18px 34px rgba(0,0,0,.30), inset 0 1px 0 rgba(255,255,255,.08) !important;
+}
+
+.home-hero-light-safe ~ .container .how-step-num {
+  position: relative;
+  z-index: 1;
+  min-width: 48px !important;
+  width: 48px !important;
+  height: 48px !important;
+  border-radius: 16px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: 1px solid rgba(255,223,122,.58) !important;
+  background: linear-gradient(135deg, #ffdf7a, #c9a84c) !important;
+  color: #111827 !important;
+  font-size: 13px !important;
+  font-weight: 900 !important;
+  box-shadow: 0 10px 22px rgba(201,168,76,.28) !important;
+  flex-shrink: 0 !important;
+}
+
+.home-hero-light-safe ~ .container .how-step > div:last-child {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-width: 0;
+}
+
+.home-hero-light-safe ~ .container .how-step > div:last-child > div:first-child {
+  color: #fff8ec !important;
+  font-size: 15px !important;
+  font-weight: 900 !important;
+  line-height: 1.45 !important;
+  margin-bottom: 5px !important;
+}
+
+.home-hero-light-safe ~ .container .how-step > div:last-child > div:last-child {
+  color: rgba(245,240,232,.80) !important;
+  font-size: 13px !important;
+  line-height: 1.75 !important;
+}
+
+html[data-theme="light"] .home-hero-light-safe ~ .container .how-step,
+:root[data-theme="light"] .home-hero-light-safe ~ .container .how-step {
+  background: linear-gradient(135deg, #fffdf8, #f6e4c3) !important;
+  border-color: rgba(112,78,24,.30) !important;
+  box-shadow: 0 14px 28px rgba(70,46,16,.11), inset 0 1px 0 rgba(255,255,255,.92) !important;
+}
+
+html[data-theme="light"] .home-hero-light-safe ~ .container .how-step::before,
+:root[data-theme="light"] .home-hero-light-safe ~ .container .how-step::before {
+  background:
+    radial-gradient(circle at 12% 0%, rgba(201,168,76,.18), transparent 34%),
+    linear-gradient(180deg, rgba(255,255,255,.62), transparent 52%);
+}
+
+html[data-theme="light"] .home-hero-light-safe ~ .container .how-step > div:last-child > div:first-child,
+:root[data-theme="light"] .home-hero-light-safe ~ .container .how-step > div:last-child > div:first-child {
+  color: #24190c !important;
+}
+
+html[data-theme="light"] .home-hero-light-safe ~ .container .how-step > div:last-child > div:last-child,
+:root[data-theme="light"] .home-hero-light-safe ~ .container .how-step > div:last-child > div:last-child {
+  color: #66503a !important;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) .home-hero-light-safe ~ .container .how-step {
+    background: linear-gradient(135deg, #fffdf8, #f6e4c3) !important;
+    border-color: rgba(112,78,24,.30) !important;
+    box-shadow: 0 14px 28px rgba(70,46,16,.11), inset 0 1px 0 rgba(255,255,255,.92) !important;
+  }
+  :root:not([data-theme="dark"]) .home-hero-light-safe ~ .container .how-step::before {
+    background:
+      radial-gradient(circle at 12% 0%, rgba(201,168,76,.18), transparent 34%),
+      linear-gradient(180deg, rgba(255,255,255,.62), transparent 52%);
+  }
+  :root:not([data-theme="dark"]) .home-hero-light-safe ~ .container .how-step > div:last-child > div:first-child {
+    color: #24190c !important;
+  }
+  :root:not([data-theme="dark"]) .home-hero-light-safe ~ .container .how-step > div:last-child > div:last-child {
+    color: #66503a !important;
+  }
+}
+
+@media (max-width: 520px) {
+  .home-hero-light-safe ~ .container .how-step {
+    padding: 16px 14px !important;
+    border-radius: 20px !important;
+    gap: 13px !important;
+  }
+  .home-hero-light-safe ~ .container .how-step-num {
+    min-width: 44px !important;
+    width: 44px !important;
+    height: 44px !important;
+    border-radius: 14px !important;
+    font-size: 12px !important;
+  }
+}
