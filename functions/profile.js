@@ -14,7 +14,7 @@ function nicknameKey(value) {
 
 function cleanUrl(value) {
   const url = String(value || '').trim();
-  return /^https:\/\//.test(url) ? url.slice(0, 500) : '';
+  return /^https:\/\//.test(url) ? url.slice(0, 1000) : '';
 }
 
 function cleanAvatarSeed(value) {
@@ -22,8 +22,12 @@ function cleanAvatarSeed(value) {
   return /^[a-zA-Z0-9_-]{1,32}$/.test(seed) ? seed : '';
 }
 
+function cleanAvatarIcon(value) {
+  return String(value || '').trim().slice(0, 12);
+}
+
 function cleanAvatarType(value) {
-  return value === 'generated' || value === 'google' ? value : '';
+  return ['generated', 'google', 'upload'].includes(value) ? value : '';
 }
 
 function nicknameError(value) {
@@ -54,23 +58,28 @@ exports.setNickname = onCall({ region: REGION, timeoutSeconds: 30, memory: '256M
   const key = nicknameKey(nickname);
   const requestedAvatarType = cleanAvatarType(request.data?.avatarType);
   const requestedAvatarSeed = cleanAvatarSeed(request.data?.avatarSeed);
+  const requestedAvatarIcon = cleanAvatarIcon(request.data?.avatarIcon);
   const provider = request.auth.token.firebase?.sign_in_provider || 'password';
   const userRef = db.doc(`users/${uid}`);
   const nameRef = db.doc(`user_names/${key}`);
   let savedPhotoURL = '';
   let savedAvatarType = 'generated';
   let savedAvatarSeed = '';
+  let savedAvatarIcon = '';
 
   await db.runTransaction(async tx => {
     const userSnap = await tx.get(userRef);
     const nameSnap = await tx.get(nameRef);
     const profile = userSnap.exists ? userSnap.data() : {};
     const oldKey = profile.nickname ? nicknameKey(profile.nickname) : '';
-    const googlePhotoURL = cleanUrl(request.auth.token.picture || request.data?.photoURL || profile.photoURL || '');
+    const googlePhotoURL = cleanUrl(request.auth.token.picture || '');
+    const customPhotoURL = cleanUrl(request.data?.photoURL || profile.photoURL || '');
     let avatarType = requestedAvatarType || profile.avatarType || (googlePhotoURL ? 'google' : 'generated');
     if (avatarType === 'google' && !googlePhotoURL) avatarType = 'generated';
-    const avatarSeed = requestedAvatarSeed || cleanAvatarSeed(profile.avatarSeed) || `${uid.slice(0, 8)}-${Date.now().toString(36)}`.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 32);
-    const photoURL = avatarType === 'google' ? googlePhotoURL : '';
+    if (avatarType === 'upload' && !customPhotoURL) avatarType = googlePhotoURL ? 'google' : 'generated';
+    const avatarSeed = requestedAvatarSeed || cleanAvatarSeed(profile.avatarSeed) || 'dog';
+    const avatarIcon = requestedAvatarIcon || cleanAvatarIcon(profile.avatarIcon) || '🐶';
+    const photoURL = avatarType === 'google' ? googlePhotoURL : (avatarType === 'upload' ? customPhotoURL : '');
 
     if (nameSnap.exists && nameSnap.data().uid !== uid) {
       throw new HttpsError('already-exists', '이미 사용 중인 닉네임입니다.');
@@ -93,6 +102,7 @@ exports.setNickname = onCall({ region: REGION, timeoutSeconds: 30, memory: '256M
       provider: provider || profile.provider || 'password',
       photoURL,
       avatarSeed,
+      avatarIcon,
       avatarType,
       isAnonymous: false,
       updatedAt: FieldValue.serverTimestamp(),
@@ -102,7 +112,8 @@ exports.setNickname = onCall({ region: REGION, timeoutSeconds: 30, memory: '256M
     savedPhotoURL = photoURL;
     savedAvatarType = avatarType;
     savedAvatarSeed = avatarSeed;
+    savedAvatarIcon = avatarIcon;
   });
 
-  return { success: true, nickname, photoURL: savedPhotoURL, avatarType: savedAvatarType, avatarSeed: savedAvatarSeed };
+  return { success: true, nickname, photoURL: savedPhotoURL, avatarType: savedAvatarType, avatarSeed: savedAvatarSeed, avatarIcon: savedAvatarIcon };
 });
