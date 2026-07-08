@@ -16,12 +16,11 @@ function badgesBy(container, lv) {
   const text = container.textContent || '';
   const badges = [];
   badges.push(['📜', '황당판결 발급']);
+  if (text.includes('소소경찰') || text.includes('수사')) badges.push(['🚓', '수사기록 생성']);
+  if (text.includes('황당검사') || text.includes('검사')) badges.push(['💼', '공소제기 완료']);
+  if (text.includes('변호인')) badges.push(['🛡️', '변론 공방']);
   if (lv >= 8) badges.push(['🔥', '과몰입 인정']);
   if (text.includes('이미지 감정')) badges.push(['🖼️', '이미지 증거']);
-  if (text.includes('드립형')) badges.push(['🎭', '법정 드립']);
-  if (text.includes('엄벌주의형')) badges.push(['👨‍⚖️', '엄숙 재판']);
-  if (text.includes('항소심')) badges.push(['🏛️', '항소 경험']);
-  if (text.includes('배심원')) badges.push(['🧑‍⚖️', '배심원 공개']);
   return badges.slice(0, 5);
 }
 function ensureResultGameStyle() {
@@ -35,9 +34,47 @@ function ensureResultGameStyle() {
     .invite-defense{padding:16px;margin-bottom:14px;border-radius:18px;border:1px dashed rgba(201,168,76,.48);background:rgba(201,168,76,.07);}
     .invite-defense-title{font-weight:900;color:#e8c97a;margin-bottom:6px;}
     .invite-defense-desc{font-size:12px;color:rgba(255,248,236,.78);line-height:1.7;margin-bottom:12px;}
+    .drama-flow-card{padding:16px;margin-bottom:14px;border-radius:18px;border:1px solid rgba(201,168,76,.35);background:rgba(201,168,76,.07);}
+    .drama-flow{display:flex;gap:7px;overflow-x:auto;padding-bottom:2px;}
+    .drama-flow span{white-space:nowrap;border:1px solid rgba(201,168,76,.25);border-radius:999px;padding:7px 10px;font-size:11px;color:var(--cream-dim);background:rgba(255,255,255,.035);}
     [data-theme="light"] .reward-badge,:root:not([data-theme="dark"]) .reward-badge{color:#fff8ec;background:rgba(13,17,23,.82);}
   `;
   document.head.appendChild(style);
+}
+function normalizeCourtDramaWording(container) {
+  const map = [
+    ['억울함 분석 결과', '소소경찰 수사기록'],
+    ['억울함/황당성 분석', '초동수사 및 정황감식'],
+    ['증거 아닌 증거 목록', '소소경찰 증거채집 목록'],
+    ['핵심 쟁점', '공판 쟁점'],
+    ['원고 측 주장', '황당검사 측 공소제기'],
+    ['내가 이걸로 재판까지 해야 하나 싶은 바로 그 심정', '작은 일을 중대하게 몰아가는 검사 측 주장'],
+    ['피고 측 변명 추정', '피고측 변호인 반박'],
+    ['피고가 할 법한 말을 재판부가 미리 엄숙하게 정리', '말은 되지만 어쩐지 억울함을 키우는 변호인 주장'],
+    ['재판부 판단', '재판부 공방 판단'],
+    ['가장 쓸데없이 진지한 부분', '검사와 변호인의 공방을 들은 뒤 내린 과몰입 판단'],
+    ['증거능력은 없지만 웃기기에는 충분한 자료입니다.', '소소경찰이 굳이 봉투에 담은 척 정리한 자료입니다.']
+  ];
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+  const nodes = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode);
+  nodes.forEach(node => {
+    let text = node.nodeValue;
+    map.forEach(([a, b]) => { text = text.replaceAll(a, b); });
+    node.nodeValue = text;
+  });
+}
+function addDramaFlow(container) {
+  if (document.getElementById('drama-flow-card')) return;
+  const reward = document.getElementById('game-reward-card');
+  if (!reward) return;
+  reward.insertAdjacentHTML('afterend', `
+    <div id="drama-flow-card" class="drama-flow-card">
+      <div class="court-kicker" style="margin-bottom:8px;">CASE DRAMA FLOW</div>
+      <div class="drama-flow">
+        <span>📋 사건접수</span><span>🚓 소소경찰 수사</span><span>🔍 증거채집</span><span>💼 황당검사 공소</span><span>🛡️ 변호인 반박</span><span>⚖️ 재판공방</span><span>🔨 판결선고</span>
+      </div>
+    </div>`);
 }
 function addReward(container) {
   if (document.getElementById('game-reward-card')) return;
@@ -53,7 +90,7 @@ function addReward(container) {
         <div style="flex:1;min-width:0;">
           <div class="court-kicker">JUDGEMENT REWARD</div>
           <div class="court-title" style="font-size:20px;">${label}</div>
-          <div class="court-desc">아무것도 아닌 일이 황당재판 기록으로 등록되었습니다.</div>
+          <div class="court-desc">소소한 일이 수사·공방·판결까지 완료된 황당사건 기록으로 등록되었습니다.</div>
         </div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">${badges.map(([i, t]) => `<span class="reward-badge">${i} ${t}</span>`).join('')}</div>
@@ -66,7 +103,7 @@ function addInviteDefense(container) {
   actions.insertAdjacentHTML('beforebegin', `
     <div id="invite-defense-card" class="invite-defense">
       <div class="invite-defense-title">⚔️ 친구 변호 초대 준비중</div>
-      <div class="invite-defense-desc">친구를 원고 측/피고 측 변호인으로 초대해서 서로 변론하는 기능을 붙일 수 있습니다. 지금은 황당판결 링크를 복사해 공유할 수 있습니다.</div>
+      <div class="invite-defense-desc">친구를 황당검사나 피고측 변호인으로 초대해서 서로 변론하는 기능을 붙일 수 있습니다. 지금은 황당판결 링크를 복사해 공유할 수 있습니다.</div>
       <button class="btn btn-secondary" id="copy-defense-link">친구에게 사건 링크 복사</button>
     </div>`);
   document.getElementById('copy-defense-link')?.addEventListener('click', async () => {
@@ -77,6 +114,7 @@ function addInviteDefense(container) {
 }
 function decorateResult(container) {
   ensureResultGameStyle();
+  normalizeCourtDramaWording(container);
   const titleCard = container.querySelector('.container > .card');
   if (titleCard && !document.getElementById('court-result-header')) {
     titleCard.classList.add('court-shell');
@@ -88,6 +126,7 @@ function decorateResult(container) {
       <div class="court-bench"></div>`);
   }
   addReward(container);
+  addDramaFlow(container);
   const verdictCard = container.querySelector('.verdict-card');
   if (verdictCard && !document.getElementById('court-verdict-label')) {
     verdictCard.classList.add('court-document');
