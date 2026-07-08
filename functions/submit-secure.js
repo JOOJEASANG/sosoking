@@ -20,6 +20,13 @@ const CATEGORIES = [
   ['라면','라면'], ['국물','라면'], ['푸딩','간식'], ['과자','간식'], ['커피','카페'], ['치킨','간식'], ['냉장고','냉장고'],
   ['리모컨','리모컨'], ['카톡','읽씹'], ['읽씹','읽씹'], ['약속','지각'], ['지각','지각'], ['청소','집안일'], ['설거지','집안일']
 ];
+const SERIOUS_KEYWORDS = [
+  '폭행','폭력','상해','살인','강도','절도','사기','협박','스토킹','납치','감금',
+  '성범죄','성폭력','성추행','성희롱','강간','강제추행',
+  '가정폭력','학교폭력','직장내괴롭힘','갑질','따돌림','왕따',
+  '이혼','위자료','손해배상','형사고소','고발','소송','민사','형사','법원',
+  '응급','정신과','우울증','공황','자해','자살','의료','진단','치료'
+];
 
 function requireRealLogin(request) {
   if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
@@ -68,6 +75,10 @@ function containsBannedWord(text, bannedWords = []) {
     const w = String(word || '').trim().toLowerCase();
     return w && source.includes(w);
   });
+}
+function containsSeriousKeyword(text) {
+  const source = String(text || '').replace(/\s+/g, '');
+  return SERIOUS_KEYWORDS.some(word => source.includes(word));
 }
 function normalizeImageAttachment(value) {
   if (!value || typeof value !== 'object') return null;
@@ -130,10 +141,15 @@ exports.submitCase = onCall({ region: REGION, timeoutSeconds: 30, memory: '256Mi
   if (!desc) throw new HttpsError('invalid-argument', '황당사건 경위를 입력해주세요.');
 
   const settings = await loadSettings();
+  const dailyLimit = clampNumber(settings.dailyLimit, HARD_DAILY_LIMIT, 1, 20);
   const cooldownSec = clampNumber(settings.cooldownSec, DEFAULT_COOLDOWN_SEC, 0, 300);
   const bannedWords = Array.isArray(settings.bannedWords) ? settings.bannedWords : [];
-  if (containsBannedWord(`${title} ${desc} ${desired}`, bannedWords)) {
+  const contentForChecks = `${title} ${desc} ${desired}`;
+  if (containsBannedWord(contentForChecks, bannedWords)) {
     throw new HttpsError('failed-precondition', '관리자가 제한한 단어가 포함되어 있습니다.');
+  }
+  if (containsSeriousKeyword(contentForChecks)) {
+    throw new HttpsError('failed-precondition', '실제 범죄·소송·학교폭력·가정폭력·의료·정신건강 등 중대한 사안은 소소킹에서 접수할 수 없습니다. 사소한 일상 소재만 오락용으로 접수해주세요.');
   }
 
   const today = kstDateKey();
@@ -153,8 +169,8 @@ exports.submitCase = onCall({ region: REGION, timeoutSeconds: 30, memory: '256Mi
       const current = limitSnap.exists ? limitSnap.data() : {};
       const count = current.date === today ? Number(current.count || 0) : 0;
       nextCount = count + 1;
-      if (count >= HARD_DAILY_LIMIT) {
-        throw new HttpsError('resource-exhausted', '오늘 접수 한도 3건을 초과했습니다. 황당재판부도 하루에 너무 많은 황당함은 감당하기 어렵습니다.');
+      if (count >= dailyLimit) {
+        throw new HttpsError('resource-exhausted', `오늘 접수 한도 ${dailyLimit}건을 초과했습니다. 황당재판부도 하루에 너무 많은 황당함은 감당하기 어렵습니다.`);
       }
       if (current.lastSubmittedAt && current.date === today) {
         const lastMs = current.lastSubmittedAt.toMillis ? current.lastSubmittedAt.toMillis() : new Date(current.lastSubmittedAt).getTime();
@@ -194,5 +210,5 @@ exports.submitCase = onCall({ region: REGION, timeoutSeconds: 30, memory: '256Mi
     }
   });
 
-  return { caseId, docketNumber, dailyLimit: HARD_DAILY_LIMIT, adminBypass: isAdminSubmitter, hasImageAttachment: !!imageAttachment };
+  return { caseId, docketNumber, dailyLimit, adminBypass: isAdminSubmitter, hasImageAttachment: !!imageAttachment };
 });
