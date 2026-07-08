@@ -1,5 +1,6 @@
-import { db, auth } from '../firebase.js?v=20260630-3';
+import { db, auth, functions } from '../firebase.js?v=20260630-3';
 import { collection, query, where, orderBy, limit, getDocs } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 import { signOut, signInAnonymously } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
 import { escapeHtml } from '../utils/sanitize.js?v=20260630-3';
 import { showToast } from '../components/toast.js?v=20260630-3';
@@ -11,6 +12,7 @@ const STATUS = {
   error:      { label: '오류',        color: '#e74c3c', dot: '🔴' },
   blocked:    { label: '접수 차단',   color: '#e74c3c', dot: '⛔' },
   hidden:     { label: '숨김',        color: '#999', dot: '⚫' },
+  deleting:   { label: '삭제 중',      color: '#999', dot: '🗑️' },
 };
 
 function _fmtDate(ts) {
@@ -24,6 +26,29 @@ async function _logout() {
   await signInAnonymously(auth).catch(() => {});
   showToast('로그아웃되었습니다.', 'success');
   location.hash = '#/';
+}
+
+async function _deleteMyCase(caseId, btn, container) {
+  if (!caseId || !btn) return;
+  const ok = confirm('이 사건을 삭제할까요?\n\n사건 접수내용, 판결문, 투표, 댓글, 신고 데이터가 함께 삭제됩니다. 삭제 후 복구할 수 없습니다.');
+  if (!ok) return;
+
+  const oldText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '삭제 중...';
+  try {
+    const deleteMyCase = httpsCallable(functions, 'deleteMyCase');
+    await deleteMyCase({ caseId });
+    showToast('사건을 삭제했습니다.', 'success');
+    await renderMyCases(container);
+  } catch (err) {
+    console.error(err);
+    let msg = err.message || '삭제하지 못했습니다.';
+    if (String(msg).includes('재판이 진행 중')) msg = '재판이 진행 중인 사건은 판결 완료 후 삭제할 수 있습니다.';
+    showToast(msg, 'error');
+    btn.disabled = false;
+    btn.textContent = oldText;
+  }
 }
 
 export async function renderMyCases(container) {
@@ -74,7 +99,7 @@ export async function renderMyCases(container) {
       <div style="text-align:center;padding:46px 0;">
         <div style="font-size:52px;margin-bottom:16px;">😤</div>
         <div style="font-family:var(--font-serif);font-size:18px;font-weight:700;margin-bottom:8px;">아직 접수한 사건이 없습니다</div>
-        <div style="font-size:13px;color:var(--cream-dim);margin-bottom:28px;">억울한 일이 없다면 축하드립니다.<br>있다면 생활법정은 이미 개정 준비 중입니다.</div>
+        <div style="font-size:13px;color:var(--cream-dim);margin-bottom:28px;">억울한 일이 없다면 축하드립니다.<br>있다면 황당재판소는 이미 개정 준비 중입니다.</div>
         <a href="#/submit" class="btn btn-primary" style="display:inline-flex;width:auto;padding:14px 32px;">⚖️ 첫 사건 접수하기</a>
       </div>`;
     document.getElementById('mycases-logout')?.addEventListener('click', _logout);
@@ -91,6 +116,13 @@ export async function renderMyCases(container) {
       ${docs.map(d => _caseRow(d.id, d.data())).join('')}
     </div>`;
   document.getElementById('mycases-logout')?.addEventListener('click', _logout);
+  inner.querySelectorAll('[data-delete-case]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      _deleteMyCase(btn.dataset.deleteCase, btn, container);
+    });
+  });
 }
 
 function _caseRow(id, c) {
@@ -101,18 +133,24 @@ function _caseRow(id, c) {
       ? `#/trial/${encodeURIComponent(id)}`
       : null;
   const clickable = href ? `onclick="location.hash='${href}'"` : '';
-  const cursor = href ? 'cursor:pointer;' : 'opacity:0.6;';
+  const cursor = href ? 'cursor:pointer;' : 'opacity:0.86;';
+  const canDelete = c.status !== 'processing' && c.status !== 'deleting';
 
   return `
     <div class="card" style="${cursor}border-left:3px solid ${st.color};" ${clickable}>
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px;">
-        <div style="font-weight:700;font-size:15px;flex:1;">${escapeHtml(c.caseTitle || '제목 없음')}</div>
+        <div style="font-weight:700;font-size:15px;flex:1;min-width:0;">${escapeHtml(c.caseTitle || '제목 없음')}</div>
         <div style="font-size:11px;color:var(--cream-dim);white-space:nowrap;margin-top:2px;">${escapeHtml(_fmtDate(c.createdAt))}</div>
       </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
         <span style="font-size:12px;color:${st.color};font-weight:700;">${st.dot} ${escapeHtml(st.label)}</span>
         <span style="font-size:12px;color:var(--cream-dim);">억울지수 ${escapeHtml(c.grievanceIndex || '?')}/10</span>
       </div>
-      ${href ? `<div style="font-size:12px;color:var(--gold);margin-top:6px;text-align:right;">${c.status === 'completed' ? '판결문 보기 →' : '재판장 입장 →'}</div>` : ''}
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px;">
+        <div style="font-size:12px;color:var(--gold);">${href ? (c.status === 'completed' ? '판결문 보기 →' : '재판장 입장 →') : ''}</div>
+        ${canDelete
+          ? `<button type="button" data-delete-case="${escapeHtml(id)}" onclick="event.stopPropagation();" class="btn btn-ghost" style="width:auto;padding:7px 10px;font-size:11px;color:#e74c3c;border-color:rgba(231,76,60,.35);">삭제</button>`
+          : `<span style="font-size:11px;color:var(--cream-dim);">${c.status === 'processing' ? '진행 중 삭제불가' : '삭제 중'}</span>`}
+      </div>
     </div>`;
 }
