@@ -18,16 +18,16 @@ const DOCKET_STEPS = [
 ];
 
 const LOADING_MSGS = [
-  '소소경찰서 접수계가 사건번호를 붙이고 서류철 색깔을 고르는 중입니다... 📋',
-  '생활반경 CCTV를 확인하는 척 0.5배속으로 돌려보는 중입니다... 📹',
-  '현장검증팀이 빈자리와 수상한 침묵을 표시하는 중입니다... 🚓',
-  '소과수 감식반이 별일 아닌 흔적을 대형 단서처럼 포장하는 중입니다... 🔍',
-  '탐문수사 결과 “듣다 보니 원고 말도 맞다”는 진술을 확보하는 중입니다... 📝',
-  '황당검사가 작은 일을 공소장 세 장 분량으로 키우는 중입니다... 💼',
-  '피고측 변호인이 말은 되지만 얄미운 반박을 준비하는 중입니다... 🛡️',
-  '재판부가 CCTV 사각지대보다 마음속 사각지대를 더 중하게 보는 중입니다... ⚖️',
-  '방청석이 왜인지 고개를 끄덕이다가 웃음을 참는 중입니다... 🤫',
-  '황당 처분에 간식 배상과 재발방지 자가진단을 끼워 넣는 중입니다... 🔨'
+  '접수계가 사건번호를 부여하고 사건표지를 작성하는 중입니다... 📋',
+  '수사관이 수첩에 발생 시각과 관계자 진술 요지를 기재하는 중입니다... 📝',
+  'CCTV 확인 대상 구간을 특정하고 동선을 재구성하는 중입니다... 📹',
+  '현장검증팀이 물건의 위치와 주변 정돈 상태를 확인하는 중입니다... 🚓',
+  '소과수 감식반이 사소한 흔적을 정식 감정의견으로 정리하는 중입니다... 🔍',
+  '탐문수사 결과를 수사보고서 형식으로 편철하는 중입니다... 📁',
+  '황당검사가 작은 사실관계를 공소사실로 확대 구성하는 중입니다... 💼',
+  '피고측 변호인이 상식적이지만 얄미운 반박 의견서를 작성하는 중입니다... 🛡️',
+  '재판부가 수사기록, 공소장, 변호인 의견서를 종합 검토하는 중입니다... ⚖️',
+  '주문에 수첩 기재 의무와 재발방지 조치를 삽입하는 중입니다... 🔨'
 ];
 
 let caseData = null;
@@ -55,8 +55,8 @@ export async function renderTrial(container, caseId) {
         </div>
 
         <div class="card" style="padding:14px;margin-bottom:14px;background:rgba(201,168,76,.07);border-color:rgba(201,168,76,.32);">
-          <div style="font-weight:900;color:var(--gold);margin-bottom:6px;">소소한 일도 수사·공방·판결까지 갑니다</div>
-          <div style="font-size:12px;color:var(--cream-dim);line-height:1.75;">소소경찰이 CCTV를 돌려보고, 황당검사와 피고측 변호인이 억지로 다툰 뒤, 재판부가 작은 일을 크게 판결합니다.</div>
+          <div style="font-weight:900;color:var(--gold);margin-bottom:6px;">수사기록부터 판결문까지 정식 절차로 작성합니다</div>
+          <div style="font-size:12px;color:var(--cream-dim);line-height:1.75;">소소경찰이 CCTV·수첩·탐문·감식 자료를 동원하고, 황당검사와 피고측 변호인이 엄숙하게 다툰 뒤, 재판부가 작은 일을 정식 사건처럼 선고합니다.</div>
         </div>
 
         <div id="docket-timeline" style="display:flex;overflow-x:auto;gap:8px;margin-bottom:16px;padding-bottom:4px;"></div>
@@ -98,7 +98,7 @@ export async function renderTrial(container, caseId) {
 
   const keepWaiting = () => {
     const el = document.getElementById('loading-text');
-    if (el) el.textContent = '수사기록과 공방기록이 장황해지고 있습니다. 판결문 완성 즉시 이동합니다... ⚖️';
+    if (el) el.textContent = '수사기록, 공소장, 변호인 의견서, 판결문이 순차 편철되고 있습니다... ⚖️';
   };
 
   unsubscribeCase = onSnapshot(doc(db, 'cases', caseId), (snap) => {
@@ -174,12 +174,12 @@ function renderSteps(data) {
   if (!container) return;
   let html = '';
   if (data.reception) html += stepCard('📋 접수계', '사건번호 부여 및 수사 배당', data.reception, '접수완료');
-  if (data.investigation) html += stepCard('🚓 소소경찰 수사기록', `${escapeHtml(data.analystName || '사건담당 조사관')}의 CCTV·탐문·감식`, data.investigation, '수사보고');
+  if (data.investigation) html += stepCard('🚓 소소경찰 수사기록', `${escapeHtml(data.analystName || '사건담당 조사관')}의 CCTV·수첩·탐문·감식`, data.investigation, '수사보고');
   if (Array.isArray(data.evidenceList) && data.evidenceList.length) html += listCard('🔍 증거채집 목록', data.evidenceList, '증거 아닌 증거');
-  if (data.absurdityReview) html += stepCard('😳 재판부 사전검토', '작은 일이 대형사건이 된 경위', data.absurdityReview, '사전검토');
+  if (data.absurdityReview) html += stepCard('😳 재판부 사전검토', '작은 일이 정식 사건으로 편철된 경위', data.absurdityReview, '사전검토');
   if (Array.isArray(data.keyIssues) && data.keyIssues.length) html += listCard('🧷 공판 쟁점', data.keyIssues, '쟁점정리');
-  if (data.plaintiffArg) html += stepCard('💼 황당검사 측', `${escapeHtml(data.prosecutorName || '황당검사')}의 억지 공소제기`, data.plaintiffArg, '검사');
-  if (data.defendantArg) html += stepCard('🛡️ 피고측 변호인', `${escapeHtml(data.defenderName || '피고측 변호인')}의 말은 되는 반박`, data.defendantArg, '변호인');
+  if (data.plaintiffArg) html += stepCard('💼 황당검사 측', `${escapeHtml(data.prosecutorName || '황당검사')}의 공소제기`, data.plaintiffArg, '검사');
+  if (data.defendantArg) html += stepCard('🛡️ 피고측 변호인', `${escapeHtml(data.defenderName || '피고측 변호인')}의 반박 의견`, data.defendantArg, '변호인');
   if (data.judgeType) {
     html += `<div class="card step-card visible" style="margin-bottom:14px;padding:20px;text-align:center;border-color:rgba(201,168,76,.55);">
       <div style="font-size:13px;color:var(--cream-dim);margin-bottom:6px;">황당재판부 배당 결과</div>
@@ -188,7 +188,7 @@ function renderSteps(data) {
       <div style="font-size:12px;color:var(--cream-dim);margin-top:6px;">${escapeHtml(data.courtroom || '제404호 황당법정')}</div>
     </div>`;
   }
-  if (data.courtOpinion) html += stepCard('⚖️ 재판부', '검사와 변호인의 공방에 대한 과몰입 판단', data.courtOpinion, '판단', true);
+  if (data.courtOpinion) html += stepCard('⚖️ 재판부', '수사기록과 양측 공방에 대한 판단', data.courtOpinion, '판단', true);
   if (data.verdict) html += stepCard('📜 재판부', '황당판결문 작성', data.verdict, '판결', true);
   if (data.sentence) {
     html += `<div class="card sentence-card step-card visible" style="margin-bottom:14px;">
