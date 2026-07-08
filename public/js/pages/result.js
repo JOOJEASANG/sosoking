@@ -179,19 +179,19 @@ export async function renderResult(container, caseId) {
         </div>
 
         <div class="card" style="padding:16px;margin-bottom:14px;border-color:rgba(201,168,76,.45);background:rgba(201,168,76,.07);">
-          <div style="font-size:12px;color:var(--cream-dim);line-height:1.8;">본 판결은 법적 효력은 없으나, 마음속 억울함에는 상당한 진정 효과가 있을 수 있습니다. 재판부는 사소한 일을 굳이 크게 만들기 위해 최선을 다했습니다.</div>
+          <div style="font-size:12px;color:var(--cream-dim);line-height:1.8;">본 판결은 법적 효력은 없으나, 마음속 억울함에는 상당한 진정 효과가 있을 수 있습니다. 본 사건은 단심으로 종결되며, 재판부는 사소한 일을 굳이 크게 만들기 위해 최선을 다했습니다.</div>
         </div>
 
         ${isOwner ? imageCard(c.imageAttachment) : ''}
         ${sectionCard('🖼️', 'AI 이미지 감정', '첨부 이미지를 황당법정 참고자료로 분석했습니다.', r.imageAnalysis, '이미지 분석')}
-        ${sectionCard('📋', '황당사건 접수기록', `${escapeHtml(r.recordClerk || c.recordClerk || '기록관')} 작성`, r.reception, '접수')}
-        ${sectionCard('😳', '재판부의 1차 고민', '이걸 정말 재판까지 해야 하는지에 대한 엄숙한 검토', r.absurdityReview, '황당성 검토')}
-        ${listCard('🧷', '핵심 쟁점', '별일 아닌데 굳이 법정 쟁점처럼 정리한 항목입니다.', r.keyIssues, '쟁점 없음')}
-        ${listCard('🔍', '증거 아닌 증거 목록', '증거능력은 없지만 웃기기에는 충분한 자료입니다.', r.evidenceList, '증거 아닌 증거가 아직 제출되지 않았습니다.')}
-        ${sectionCard('🧪', '억울함 분석 결과', `${escapeHtml(r.analystName || c.analystName || '억울함 분석관')} 의견`, r.investigation, '분석')}
-        ${sectionCard('💼', '원고 측 주장', '내가 이걸로 재판까지 해야 하나 싶은 바로 그 심정', r.plaintiffArg, '원고')}
-        ${sectionCard('🛡️', '피고 측 변명 추정', '피고가 할 법한 말을 재판부가 미리 엄숙하게 정리', r.defendantArg, '피고')}
-        ${sectionCard('⚖️', '재판부 판단', '가장 쓸데없이 진지한 부분', r.courtOpinion || r.verdict, '판단')}
+        ${sectionCard('📋', '황당사건 접수기록', `${r.recordClerk || c.recordClerk || '기록관'} 작성`, r.reception, '접수')}
+        ${sectionCard('😳', '재판부의 1차 검토', '사소한 일이 정식 사건처럼 커진 경위를 검토합니다.', r.absurdityReview, '검토')}
+        ${listCard('🧷', '핵심 쟁점', '작은 사실관계를 법정 쟁점처럼 정리한 항목입니다.', r.keyIssues, '쟁점 없음')}
+        ${listCard('🔍', '증거 아닌 증거 목록', '소소경찰이 수사기록에 편철한 정황자료입니다.', r.evidenceList, '증거 아닌 증거가 아직 제출되지 않았습니다.')}
+        ${sectionCard('🧪', '소소경찰 수사기록', `${r.analystName || c.analystName || '수사관'} 의견`, r.investigation, '수사')}
+        ${sectionCard('💼', '황당검사 측 공소제기', '작은 사실관계를 엄숙하게 확대 구성한 주장입니다.', r.plaintiffArg, '검사')}
+        ${sectionCard('🛡️', '피고측 변호인 반박', '상식적이지만 얄미운 반박 의견입니다.', r.defendantArg, '변호인')}
+        ${sectionCard('⚖️', '재판부 판단', '수사기록과 양측 공방을 종합한 판단입니다.', r.courtOpinion || r.verdict, '판단')}
 
         <div class="card verdict-card step-card visible" style="margin-bottom:12px;padding:22px;">
           <div style="margin-bottom:10px;"><span class="badge badge-gold">황당판결 선고</span></div>
@@ -203,14 +203,10 @@ export async function renderResult(container, caseId) {
           <div class="sentence-text" style="white-space:pre-line;line-height:1.9;">${paragraphs(r.sentence || '')}</div>
         </div>
         ${sectionCard('🔨', '집행명령', '선고 즉시 마음속으로 집행됩니다.', r.executionOrder, '집행')}
-        ${sectionCard('🏛️', '항소 안내', '불복은 가능하나 더 황당해질 수 있습니다.', r.appealNotice, '항소')}
         ${r.closingComment ? `<div class="card" style="padding:18px;margin-bottom:16px;text-align:center;border-color:rgba(201,168,76,.5);"><div style="font-family:var(--font-serif);font-size:18px;color:var(--gold);font-weight:900;line-height:1.7;">${escapeHtml(r.closingComment)}</div></div>` : ''}
-
-        ${r.appeal?.verdict ? `<div class="card" style="padding:20px;margin-bottom:16px;border-color:rgba(201,168,76,.55);"><div style="font-weight:900;color:var(--gold);margin-bottom:8px;">🏛️ 항소심 판결</div><div style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-bottom:10px;">항소이유: ${escapeHtml(r.appeal.reason || '')}</div><div class="step-content" style="white-space:pre-line;">${paragraphs(r.appeal.verdict || '')}</div></div>` : ''}
 
         ${renderReactions(social, isPublic)}
         ${renderComments(social.comments, isPublic)}
-        ${renderAppeal(isOwner, !!r.appeal?.verdict)}
 
         <div style="text-align:center;margin:16px 0;padding:10px;background:rgba(255,255,255,.04);border-radius:8px;font-size:11px;color:var(--cream-dim);line-height:1.7;">🤖 본 황당판결문은 AI가 생성한 오락 콘텐츠입니다.<br>실제 법적 효력이 없으며 법률 자문으로 활용할 수 없습니다.</div>
 
@@ -252,16 +248,6 @@ function renderComments(comments, isPublic) {
   </div>`;
 }
 
-function renderAppeal(isOwner, hasAppeal) {
-  if (!isOwner || hasAppeal) return '';
-  return `<div class="card" style="padding:18px;margin-bottom:14px;border-color:rgba(201,168,76,.5);">
-    <div style="font-weight:900;color:var(--gold);margin-bottom:8px;">🏛️ 항소하기</div>
-    <div style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-bottom:12px;">1심 황당판결이 너무 과하거나 약하다고 느껴지면 항소심을 열 수 있습니다. 항소심도 오락 목적이며 실제 법적 효력은 없습니다.</div>
-    <textarea id="appeal-reason" class="form-textarea" maxlength="160" placeholder="항소이유 예: 피고의 반성 태도가 전혀 보이지 않습니다." style="min-height:76px;margin-bottom:10px;"></textarea>
-    <button id="appeal-btn" class="btn btn-primary">항소장 제출</button>
-  </div>`;
-}
-
 function bindResultActions(container, caseId, c, r, isOwner, isPublic) {
   document.querySelectorAll('.reaction-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
@@ -287,23 +273,6 @@ function bindResultActions(container, caseId, c, r, isOwner, isPublic) {
     } catch (err) {
       console.error(err);
       showToast((err.message || '등록에 실패했습니다.').replace('FirebaseError: ', ''), 'error');
-    }
-  });
-
-  document.getElementById('appeal-btn')?.addEventListener('click', async () => {
-    const reason = document.getElementById('appeal-reason')?.value?.trim() || '';
-    const btn = document.getElementById('appeal-btn');
-    btn.disabled = true;
-    btn.textContent = '항소심 황당재판부 배당 중...';
-    try {
-      await httpsCallable(functions, 'requestAppeal')({ caseId, reason });
-      showToast('항소심 판결이 선고되었습니다.', 'success');
-      renderResult(container, caseId);
-    } catch (err) {
-      console.error(err);
-      showToast((err.message || '항소 처리에 실패했습니다.').replace('FirebaseError: ', ''), 'error');
-      btn.disabled = false;
-      btn.textContent = '항소장 제출';
     }
   });
 
