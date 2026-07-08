@@ -1,0 +1,197 @@
+/* Home stats and bottom CTA polish.
+   Loaded last so it can override older inline/light-mode rules. */
+
+.home-hero-light-safe .stats-row {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  width: min(560px, calc(100vw - 42px)) !important;
+  margin: 22px auto 0 !important;
+}
+
+.home-hero-light-safe .stat-item {
+  position: relative !important;
+  overflow: hidden !important;
+  min-height: 108px !important;
+  padding: 18px 10px 16px !important;
+  border-radius: 22px !important;
+  border: 1.2px solid rgba(232,201,122,.30) !important;
+  background: linear-gradient(145deg, rgba(31,39,63,.88), rgba(17,23,38,.96)) !important;
+  box-shadow: 0 14px 30px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.06) !important;
+  text-align: center !important;
+  transform: translateZ(0);
+}
+
+.home-hero-light-safe .stat-item::before {
+  content: '⚖️';
+  display: block;
+  margin-bottom: 8px;
+  color: rgba(232,201,122,.30);
+  font-size: 17px;
+  line-height: 1;
+}
+
+.home-hero-light-safe .stat-item::after {
+  content: '';
+  position: absolute;
+  left: 24%;
+  right: 24%;
+  top: 56px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(232,201,122,.42), transparent);
+  pointer-events: none;
+}
+
+.home-hero-light-safe .stat-num {
+  position: relative !important;
+  z-index: 1 !important;
+  font-family: var(--font-serif) !important;
+  font-size: 25px !important;
+  font-weight: 900 !important;
+  line-height: 1.1 !important;
+  color: #e8c97a !important;
+  margin-bottom: 14px !important;
+  text-shadow: 0 2px 10px rgba(0,0,0,.16) !important;
+}
+
+.home-hero-light-safe .stat-label,
+.home-hero-light-safe .stat-label * {
+  position: relative !important;
+  z-index: 1 !important;
+  color: rgba(245,240,232,.82) !important;
+  font-size: 12px !important;
+  line-height: 1.55 !important;
+  font-weight: 700 !important;
+  opacity: 1 !important;
+}
+
+/* Light mode: make the stat boxes soft rounded cards instead of flat square cells. */
+html[data-theme="light"] .home-hero-light-safe .stats-row,
+:root[data-theme="light"] .home-hero-light-safe .stats-row {
+  gap: 14px !important;
+}
+
+html[data-theme="light"] .home-hero-light-safe .stat-item,
+:root[data-theme="light"] .home-hero-light-safe .stat-item {
+  border-radius: 24px !important;
+  border: 1.25px solid rgba(154,112,24,.22) !important;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255,255,255,.88), transparent 46%),
+    linear-gradient(145deg, #fffdf8, #f5e3c4) !important;
+  box-shadow: 0 13px 28px rgba(70,46,16,.11), inset 0 1px 0 rgba(255,255,255,.96) !important;
+}
+
+html[data-theme="light"] .home-hero-light-safe .stat-item::before,
+:root[data-theme="light"] .home-hero-light-safe .stat-item::before {
+  color: rgba(154,112,24,.22) !important;
+}
+
+html[data-theme="light"] .home-hero-light-safe .stat-item::after,
+:root[data-theme="light"] .home-hero-light-safe .stat-item::after {
+  background: linear-gradient(90deg, transparent, rgba(154,112,24,.30), transparent) !important;
+}
+
+html[data-theme="light"] .home-hero-light-safe .stat-num,
+:root[data-theme="light"] .home-hero-light-safe .stat-num {
+  color: #7a4d00 !important;
+  text-shadow: 0 1px 0 rgba(255,255,255,.84) !important;
+}
+
+html[data-theme="light"] .home-hero-light-safe .stat-label,
+html[data-theme="light"] .home-hero-light-safe .stat-label *,
+:root[data-theme="light"] .home-hero-light-safe .stat-label,
+:root[data-theme="light"] .home-hero-light-safe .stat-label * {
+  color: #3f2d1a !important;
+  opacity: 1 !important;
+}
+
+/* Bottom CTA text color in light mode. */
+html[data-theme="light"] .cta-section,
+:root[data-theme="light"] .cta-section {
+  background: linear-gradient(135deg, #fffaf1 0%, #f0dec0 100%) !important;
+  color: #24190c !important;
+}
+
+html[data-theme="light"] .cta-section h2,
+:root[data-theme="light"] .cta-section h2 {
+  color: #1a150a !important;
+  opacity: 1 !important;
+  text-shadow: 0 1px 0 rgba(255,255,255,.86) !important;
+}
+
+html[data-theme="light"] .cta-section p,
+html[data-theme="light"] .cta-section p *,
+:root[data-theme="light"] .cta-section p,
+:root[data-theme="light"] .cta-section p * {
+  color: #3f2d1a !important;
+  opacity: 1 !important;
+}
+
+html[data-theme="light"] .cta-section p span,
+:root[data-theme="light"] .cta-section p span {
+  color: #6a5135 !important;
+  opacity: 1 !important;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) .home-hero-light-safe .stats-row {
+    gap: 14px !important;
+  }
+  :root:not([data-theme="dark"]) .home-hero-light-safe .stat-item {
+    border-radius: 24px !important;
+    border: 1.25px solid rgba(154,112,24,.22) !important;
+    background:
+      radial-gradient(circle at 50% 0%, rgba(255,255,255,.88), transparent 46%),
+      linear-gradient(145deg, #fffdf8, #f5e3c4) !important;
+    box-shadow: 0 13px 28px rgba(70,46,16,.11), inset 0 1px 0 rgba(255,255,255,.96) !important;
+  }
+  :root:not([data-theme="dark"]) .home-hero-light-safe .stat-num {
+    color: #7a4d00 !important;
+    text-shadow: 0 1px 0 rgba(255,255,255,.84) !important;
+  }
+  :root:not([data-theme="dark"]) .home-hero-light-safe .stat-label,
+  :root:not([data-theme="dark"]) .home-hero-light-safe .stat-label * {
+    color: #3f2d1a !important;
+    opacity: 1 !important;
+  }
+  :root:not([data-theme="dark"]) .cta-section,
+  :root:not([data-theme="dark"]) .cta-section h2,
+  :root:not([data-theme="dark"]) .cta-section p,
+  :root:not([data-theme="dark"]) .cta-section p * {
+    color: #24190c !important;
+    opacity: 1 !important;
+  }
+  :root:not([data-theme="dark"]) .cta-section p {
+    color: #3f2d1a !important;
+  }
+}
+
+@media (max-width: 560px) {
+  .home-hero-light-safe .stats-row {
+    width: min(430px, calc(100vw - 30px)) !important;
+    gap: 9px !important;
+  }
+  .home-hero-light-safe .stat-item {
+    min-height: 94px !important;
+    padding: 14px 6px 12px !important;
+    border-radius: 18px !important;
+  }
+  .home-hero-light-safe .stat-item::before {
+    font-size: 14px !important;
+    margin-bottom: 6px !important;
+  }
+  .home-hero-light-safe .stat-item::after {
+    top: 48px !important;
+    left: 20% !important;
+    right: 20% !important;
+  }
+  .home-hero-light-safe .stat-num {
+    font-size: 20px !important;
+    margin-bottom: 12px !important;
+  }
+  .home-hero-light-safe .stat-label,
+  .home-hero-light-safe .stat-label * {
+    font-size: 10.5px !important;
+    line-height: 1.45 !important;
+  }
+}
