@@ -4,17 +4,20 @@ import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/fireba
 import { GoogleAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, updateProfile, onAuthStateChanged, signInAnonymously } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
 import { showToast } from '../components/toast.js?v=20260630-3';
 import { escapeHtml } from '../utils/sanitize.js?v=20260630-3';
-import { avatarImg, avatarSourceLabel } from '../utils/avatar.js?v=20260630-3';
+import { avatarImg, avatarSourceLabel, generatedAvatarUrl } from '../utils/avatar.js?v=20260708-1';
 
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 const checkNickname = httpsCallable(functions, 'checkNickname');
 const setNickname = httpsCallable(functions, 'setNickname');
+const AVATAR_SEEDS = ['sosoking-gold', 'sosoking-green', 'sosoking-purple', 'sosoking-orange', 'sosoking-blue', 'sosoking-pink'];
 
 function cleanNick(v){ return String(v || '').replace(/\s+/g, '').trim().slice(0, 20); }
 function nickError(v){ const n = cleanNick(v); if(n.length < 2) return '닉네임은 2자 이상 입력해주세요.'; if(!/^[가-힣a-zA-Z0-9_]+$/.test(n)) return '한글, 영문, 숫자, 밑줄만 사용할 수 있습니다.'; return ''; }
 function validEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v || '').trim()); }
 function userEmail(user){ return String(user?.email || '').trim().toLowerCase(); }
+function socialPhotoUrl(user, profile = {}) { const url = profile.photoURL || user?.photoURL || ''; return /^https:\/\//.test(String(url)) ? url : ''; }
+function currentAvatarType(user, profile = {}) { if (profile.avatarType === 'generated') return 'generated'; return socialPhotoUrl(user, profile) ? 'google' : 'generated'; }
 async function isAdminUser(user){
   if(!user || user.isAnonymous) return false;
   const byUid = await getDoc(doc(db, 'admins', user.uid)).catch(() => null);
@@ -38,21 +41,21 @@ export async function renderAuth(container){
     if(await goAdmin(r.user)) return;
     const p = await profileOf(r.user);
     showToast('구글 로그인 완료', 'success');
-    p.nickname ? drawProfile(box, r.user, p) : drawNick(box, r.user, p);
+    p.nickname ? drawProfile(box, r.user, p) : drawEditProfile(box, r.user, p);
   }).catch(e => console.warn('redirect login result skipped', e));
   const unsub = onAuthStateChanged(auth, async user => {
     if(!box) return;
-    if(user && !user.isAnonymous){ if(await goAdmin(user)) return; const p = await profileOf(user); p.nickname ? drawProfile(box, user, p) : drawNick(box, user, p); }
+    if(user && !user.isAnonymous){ if(await goAdmin(user)) return; const p = await profileOf(user); p.nickname ? drawProfile(box, user, p) : drawEditProfile(box, user, p); }
     else drawLogin(box);
   });
   window._pageCleanup = unsub;
 }
 
 function drawLogin(box){
-  box.innerHTML = `<div style="text-align:center;margin-bottom:22px;"><div style="font-size:46px;margin-bottom:8px;">⚖️</div><div style="font-family:var(--font-serif);font-size:21px;font-weight:700;color:var(--gold);">소소킹 계정</div><div style="font-size:13px;color:var(--cream-dim);line-height:1.7;margin-top:8px;">로그인하면 닉네임, 프로필 아이콘, 내 황당사건 기록이 표시됩니다.</div></div><button class="btn btn-secondary" id="google-login" style="margin-bottom:18px;">Google로 계속하기</button><div style="display:flex;align-items:center;gap:10px;margin:20px 0;color:var(--cream-dim);font-size:12px;"><div style="height:1px;background:var(--border);flex:1;"></div><span>또는 이메일</span><div style="height:1px;background:var(--border);flex:1;"></div></div><form id="email-form"><div class="form-group"><label class="form-label">이메일</label><input type="email" id="auth-email" class="form-input" required></div><div class="form-group"><label class="form-label">비밀번호</label><input type="password" id="auth-password" class="form-input" minlength="6" maxlength="30" required></div><button type="submit" class="btn btn-primary" id="signup-btn">가입하기</button><button type="button" class="btn btn-ghost" id="login-btn" style="margin-top:10px;">이미 계정이 있어요 · 로그인</button></form>`;
+  box.innerHTML = `<div style="text-align:center;margin-bottom:22px;"><div style="font-size:46px;margin-bottom:8px;">⚖️</div><div style="font-family:var(--font-serif);font-size:21px;font-weight:700;color:var(--gold);">소소킹 계정</div><div style="font-size:13px;color:var(--cream-dim);line-height:1.7;margin-top:8px;">로그인하면 닉네임, 프로필 사진, 내 황당사건 기록이 표시됩니다.</div></div><button class="btn btn-secondary" id="google-login" style="margin-bottom:18px;">Google로 계속하기</button><div style="display:flex;align-items:center;gap:10px;margin:20px 0;color:var(--cream-dim);font-size:12px;"><div style="height:1px;background:var(--border);flex:1;"></div><span>또는 이메일</span><div style="height:1px;background:var(--border);flex:1;"></div></div><form id="email-form"><div class="form-group"><label class="form-label">이메일</label><input type="email" id="auth-email" class="form-input" required></div><div class="form-group"><label class="form-label">비밀번호</label><input type="password" id="auth-password" class="form-input" minlength="6" maxlength="30" required></div><button type="submit" class="btn btn-primary" id="signup-btn">가입하기</button><button type="button" class="btn btn-ghost" id="login-btn" style="margin-top:10px;">이미 계정이 있어요 · 로그인</button></form>`;
   document.getElementById('google-login').onclick = async () => {
     const btn = document.getElementById('google-login'); btn.disabled = true; btn.textContent = 'Google 로그인 중...';
-    try { const r = await signInWithPopup(auth, googleProvider); if(await goAdmin(r.user)) return; const p = await profileOf(r.user); showToast('구글 로그인 완료', 'success'); p.nickname ? drawProfile(box, r.user, p) : drawNick(box, r.user, p); }
+    try { const r = await signInWithPopup(auth, googleProvider); if(await goAdmin(r.user)) return; const p = await profileOf(r.user); showToast('구글 로그인 완료', 'success'); p.nickname ? drawProfile(box, r.user, p) : drawEditProfile(box, r.user, p); }
     catch(e){
       console.error(e);
       if(popupNeedsRedirect(e)) { btn.textContent = 'Google 로그인 화면으로 이동...'; await signInWithRedirect(auth, googleProvider); return; }
@@ -66,30 +69,87 @@ function drawLogin(box){
 async function signUpEmail(box){
   const email = document.getElementById('auth-email').value.trim(); const pw = document.getElementById('auth-password').value;
   if(!validEmail(email)) return showToast('이메일 형식을 확인해주세요.', 'error');
-  try{ const r = await createUserWithEmailAndPassword(auth, email, pw); if(await goAdmin(r.user)) return; showToast('가입 완료. 닉네임을 설정해주세요.', 'success'); drawNick(box, r.user, await profileOf(r.user)); }
+  try{ const r = await createUserWithEmailAndPassword(auth, email, pw); if(await goAdmin(r.user)) return; showToast('가입 완료. 내 정보를 설정해주세요.', 'success'); drawEditProfile(box, r.user, await profileOf(r.user)); }
   catch(e){ console.error(e); showToast(e.code === 'auth/email-already-in-use' ? '이미 가입된 이메일입니다.' : e.message || '가입 실패', 'error'); }
 }
 async function signInEmail(box){
   const email = document.getElementById('auth-email').value.trim(); const pw = document.getElementById('auth-password').value;
   if(!validEmail(email)) return showToast('이메일 형식을 확인해주세요.', 'error');
-  try{ const r = await signInWithEmailAndPassword(auth, email, pw); if(await goAdmin(r.user)) return; const p = await profileOf(r.user); showToast('로그인 완료', 'success'); p.nickname ? drawProfile(box, r.user, p) : drawNick(box, r.user, p); }
+  try{ const r = await signInWithEmailAndPassword(auth, email, pw); if(await goAdmin(r.user)) return; const p = await profileOf(r.user); showToast('로그인 완료', 'success'); p.nickname ? drawProfile(box, r.user, p) : drawEditProfile(box, r.user, p); }
   catch(e){ console.error(e); showToast('이메일 또는 비밀번호를 확인해주세요.', 'error'); }
 }
 
-function drawNick(box, user, profile = {}){
+function avatarChoiceButton(type, seed, src, label, active) {
+  return `<button type="button" class="avatar-choice ${active ? 'active' : ''}" data-avatar-type="${escapeHtml(type)}" data-avatar-seed="${escapeHtml(seed || '')}" aria-label="${escapeHtml(label)}" style="width:54px;height:54px;border-radius:999px;border:2px solid ${active ? 'rgba(232,201,122,.9)' : 'var(--border)'};background:${active ? 'rgba(201,168,76,.14)' : 'rgba(255,255,255,.035)'};padding:3px;cursor:pointer;box-shadow:${active ? '0 0 0 3px rgba(201,168,76,.18)' : 'none'};"><img src="${escapeHtml(src)}" alt="${escapeHtml(label)}" style="width:100%;height:100%;border-radius:999px;object-fit:cover;display:block;" referrerpolicy="no-referrer"></button>`;
+}
+function avatarChoiceHtml(user, profile, nickname, selectedType, selectedSeed) {
+  const email = profile.email || user?.email || '';
+  const google = socialPhotoUrl(user, profile);
+  const items = [];
+  if (google) items.push(avatarChoiceButton('google', '', google, '소셜 로그인 프로필 사진', selectedType === 'google'));
+  AVATAR_SEEDS.forEach(seed => {
+    items.push(avatarChoiceButton('generated', seed, generatedAvatarUrl(nickname, email, seed), `자동 프로필 ${seed}`, selectedType === 'generated' && selectedSeed === seed));
+  });
+  return items.join('');
+}
+
+function drawEditProfile(box, user, profile = {}){
+  const savedNick = cleanNick(profile.nickname || '');
   const now = cleanNick(profile.nickname || user.displayName || '');
-  box.innerHTML = `<div style="text-align:center;margin-bottom:22px;"><div style="margin-bottom:10px;">${avatarImg(user, {...profile, nickname: now}, 72)}</div><div style="display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;background:rgba(39,174,96,.13);border:1px solid rgba(39,174,96,.35);color:#27ae60;font-size:12px;font-weight:800;margin-bottom:10px;">● 로그인됨</div><div style="font-family:var(--font-serif);font-size:21px;font-weight:700;color:var(--gold);">닉네임 설정</div></div><form id="nick-form"><div class="form-group"><label class="form-label">닉네임</label><div style="display:flex;gap:8px;"><input id="nickname" class="form-input" maxlength="20" value="${escapeHtml(now)}" placeholder="예: 억울한라면러버" style="flex:1;"><button type="button" class="btn btn-secondary" id="check-nick" style="width:112px;padding-left:0;padding-right:0;">중복확인</button></div><div id="nick-status" style="font-size:12px;color:var(--cream-dim);margin-top:8px;">한글, 영문, 숫자, 밑줄 2~20자</div></div><button class="btn btn-primary" id="save-nick" disabled>닉네임 저장</button></form><button class="btn btn-ghost" id="logout" style="margin-top:10px;">로그아웃</button>`;
-  let ok = false, checked = ''; const input = document.getElementById('nickname'), save = document.getElementById('save-nick'), status = document.getElementById('nick-status');
-  input.oninput = () => { ok = false; checked = ''; save.disabled = true; status.textContent = '중복 확인이 필요합니다.'; status.style.color = 'var(--cream-dim)'; };
-  document.getElementById('check-nick').onclick = async () => { const n = cleanNick(input.value); input.value = n; const err = nickError(n); if(err) return showToast(err, 'error'); try{ const r = await checkNickname({ nickname: n }); ok = !!r.data?.available; checked = n; status.textContent = ok ? '사용 가능한 닉네임입니다.' : '이미 사용 중인 닉네임입니다.'; status.style.color = ok ? '#27ae60' : '#e74c3c'; save.disabled = !ok; }catch(e){ showToast(e.message || '중복 확인 실패', 'error'); } };
-  document.getElementById('nick-form').onsubmit = async e => { e.preventDefault(); const n = cleanNick(input.value); if(!ok || n !== checked) return showToast('닉네임 중복 확인을 먼저 해주세요.', 'error'); try{ await setNickname({ nickname: n, photoURL: user.photoURL || '' }); await updateProfile(user, { displayName: n }).catch(() => {}); showToast('닉네임이 저장되었습니다.', 'success'); drawProfile(box, user, await profileOf(user)); }catch(err){ showToast(err.message || '닉네임 저장 실패', 'error'); } };
+  let selectedAvatarType = currentAvatarType(user, profile);
+  let selectedAvatarSeed = profile.avatarSeed || AVATAR_SEEDS[0];
+  if (selectedAvatarType === 'generated' && !AVATAR_SEEDS.includes(selectedAvatarSeed)) selectedAvatarSeed = AVATAR_SEEDS[0];
+  const initialProfile = selectedAvatarType === 'generated' ? { ...profile, nickname: now, avatarType: 'generated', avatarSeed: selectedAvatarSeed, photoURL: '' } : { ...profile, nickname: now, avatarType: 'google', photoURL: socialPhotoUrl(user, profile) };
+  box.innerHTML = `<div style="text-align:center;margin-bottom:22px;"><div id="profile-preview" style="margin-bottom:10px;">${avatarImg(user, initialProfile, 78)}</div><div style="display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;background:rgba(39,174,96,.13);border:1px solid rgba(39,174,96,.35);color:#27ae60;font-size:12px;font-weight:800;margin-bottom:10px;">● 로그인됨</div><div style="font-family:var(--font-serif);font-size:21px;font-weight:700;color:var(--gold);">${savedNick ? '내 정보 변경' : '내 정보 설정'}</div></div><form id="profile-form"><div class="form-group"><label class="form-label">프로필 사진</label><div id="avatar-choice-wrap" style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:8px 0 10px;">${avatarChoiceHtml(user, profile, now, selectedAvatarType, selectedAvatarSeed)}</div><div style="font-size:12px;color:var(--cream-dim);line-height:1.6;text-align:center;">Google 로그인 사진을 기본으로 사용하고, 원하면 자동 아이콘으로 바꿀 수 있습니다.</div></div><div class="form-group"><label class="form-label">닉네임</label><div style="display:flex;gap:8px;"><input id="nickname" class="form-input" maxlength="20" value="${escapeHtml(now)}" placeholder="예: 억울한라면러버" style="flex:1;"><button type="button" class="btn btn-secondary" id="check-nick" style="width:112px;padding-left:0;padding-right:0;">중복확인</button></div><div id="nick-status" style="font-size:12px;color:var(--cream-dim);margin-top:8px;">${savedNick ? '닉네임을 바꿀 때만 중복 확인이 필요합니다.' : '한글, 영문, 숫자, 밑줄 2~20자'}</div></div><button class="btn btn-primary" id="save-profile" ${savedNick ? '' : 'disabled'}>${savedNick ? '내 정보 저장' : '내 정보 저장'}</button></form><button class="btn btn-ghost" id="logout" style="margin-top:10px;">로그아웃</button>`;
+  let ok = !!savedNick, checked = savedNick;
+  const input = document.getElementById('nickname'), save = document.getElementById('save-profile'), status = document.getElementById('nick-status'), preview = document.getElementById('profile-preview');
+  const currentProfileForPreview = () => selectedAvatarType === 'generated' ? { ...profile, nickname: cleanNick(input.value) || now, avatarType: 'generated', avatarSeed: selectedAvatarSeed, photoURL: '' } : { ...profile, nickname: cleanNick(input.value) || now, avatarType: 'google', photoURL: socialPhotoUrl(user, profile) };
+  const refreshPreview = () => { preview.innerHTML = avatarImg(user, currentProfileForPreview(), 78); };
+  document.querySelectorAll('.avatar-choice').forEach(btn => btn.onclick = () => {
+    selectedAvatarType = btn.dataset.avatarType || 'generated';
+    selectedAvatarSeed = btn.dataset.avatarSeed || selectedAvatarSeed || AVATAR_SEEDS[0];
+    document.querySelectorAll('.avatar-choice').forEach(el => {
+      el.classList.toggle('active', el === btn);
+      el.style.borderColor = el === btn ? 'rgba(232,201,122,.9)' : 'var(--border)';
+      el.style.background = el === btn ? 'rgba(201,168,76,.14)' : 'rgba(255,255,255,.035)';
+      el.style.boxShadow = el === btn ? '0 0 0 3px rgba(201,168,76,.18)' : 'none';
+    });
+    refreshPreview();
+    if (savedNick) save.disabled = false;
+  });
+  input.oninput = () => {
+    const n = cleanNick(input.value);
+    refreshPreview();
+    if (savedNick && n === savedNick) { ok = true; checked = savedNick; save.disabled = false; status.textContent = '기존 닉네임을 그대로 사용합니다.'; status.style.color = 'var(--cream-dim)'; return; }
+    ok = false; checked = ''; save.disabled = true; status.textContent = '닉네임 중복 확인이 필요합니다.'; status.style.color = 'var(--cream-dim)';
+  };
+  document.getElementById('check-nick').onclick = async () => { const n = cleanNick(input.value); input.value = n; const err = nickError(n); if(err) return showToast(err, 'error'); if(savedNick && n === savedNick){ ok = true; checked = n; save.disabled = false; status.textContent = '기존 닉네임을 그대로 사용합니다.'; status.style.color = '#27ae60'; return; } try{ const r = await checkNickname({ nickname: n }); ok = !!r.data?.available; checked = n; status.textContent = ok ? '사용 가능한 닉네임입니다.' : '이미 사용 중인 닉네임입니다.'; status.style.color = ok ? '#27ae60' : '#e74c3c'; save.disabled = !ok; }catch(e){ showToast(e.message || '중복 확인 실패', 'error'); } };
+  document.getElementById('profile-form').onsubmit = async e => {
+    e.preventDefault();
+    const n = cleanNick(input.value);
+    if (!n) return showToast('닉네임을 입력해주세요.', 'error');
+    if(!ok || n !== checked) return showToast('닉네임 중복 확인을 먼저 해주세요.', 'error');
+    try{
+      save.disabled = true;
+      save.textContent = '저장 중...';
+      const photoURL = socialPhotoUrl(user, profile);
+      await setNickname({ nickname: n, photoURL, avatarType: selectedAvatarType, avatarSeed: selectedAvatarSeed });
+      await updateProfile(user, { displayName: n }).catch(() => {});
+      showToast('내 정보가 저장되었습니다.', 'success');
+      drawProfile(box, user, await profileOf(user));
+    }catch(err){
+      save.disabled = false;
+      save.textContent = '내 정보 저장';
+      showToast(err.message || '내 정보 저장 실패', 'error');
+    }
+  };
   document.getElementById('logout').onclick = logout;
 }
 
 function drawProfile(box, user, profile = {}){
   const nick = cleanNick(profile.nickname || user.displayName || '닉네임미설정');
-  box.innerHTML = `<div style="text-align:center;margin-bottom:20px;"><div style="margin-bottom:10px;">${avatarImg(user, profile, 88)}</div><div style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;background:rgba(39,174,96,.13);border:1px solid rgba(39,174,96,.35);color:#27ae60;font-size:12px;font-weight:900;margin-bottom:10px;">● 로그인됨</div><div style="font-family:var(--font-serif);font-size:23px;font-weight:800;color:var(--gold);">${escapeHtml(nick)}</div><div style="font-size:13px;color:var(--cream-dim);margin-top:6px;line-height:1.7;">${escapeHtml(user.email || profile.email || '이메일 정보 없음')}<br>${escapeHtml(providerName(user, profile))}</div></div><div class="card" style="padding:15px;margin-bottom:14px;background:rgba(255,255,255,.025);"><div style="font-weight:900;color:var(--gold);margin-bottom:8px;">내 프로필 상태</div><div style="display:grid;grid-template-columns:92px 1fr;gap:8px;font-size:13px;color:var(--cream-dim);line-height:1.7;"><div>로그인 상태</div><div style="color:#27ae60;font-weight:800;">접속 중</div><div>프로필 아이콘</div><div>${escapeHtml(avatarSourceLabel(user, profile))}</div><div>닉네임</div><div>${escapeHtml(nick)}</div></div></div><button class="btn btn-secondary" id="change-nick">닉네임 변경</button><a href="#/my-cases" class="btn btn-primary" style="margin-top:10px;">내 사건 보기</a><a href="#/submit" class="btn btn-ghost" style="margin-top:10px;">새 황당사건 접수하기</a><button class="btn btn-ghost" id="logout" style="margin-top:10px;">로그아웃</button>`;
-  document.getElementById('change-nick').onclick = () => drawNick(box, user, profile);
+  box.innerHTML = `<div style="text-align:center;margin-bottom:20px;"><div style="margin-bottom:10px;">${avatarImg(user, profile, 88)}</div><div style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;background:rgba(39,174,96,.13);border:1px solid rgba(39,174,96,.35);color:#27ae60;font-size:12px;font-weight:900;margin-bottom:10px;">● 로그인됨</div><div style="font-family:var(--font-serif);font-size:23px;font-weight:800;color:var(--gold);">${escapeHtml(nick)}</div><div style="font-size:13px;color:var(--cream-dim);margin-top:6px;line-height:1.7;">${escapeHtml(user.email || profile.email || '이메일 정보 없음')}<br>${escapeHtml(providerName(user, profile))}</div></div><div class="card" style="padding:15px;margin-bottom:14px;background:rgba(255,255,255,.025);"><div style="font-weight:900;color:var(--gold);margin-bottom:8px;">내 프로필 상태</div><div style="display:grid;grid-template-columns:92px 1fr;gap:8px;font-size:13px;color:var(--cream-dim);line-height:1.7;"><div>로그인 상태</div><div style="color:#27ae60;font-weight:800;">접속 중</div><div>프로필 사진</div><div>${escapeHtml(avatarSourceLabel(user, profile))}</div><div>닉네임</div><div>${escapeHtml(nick)}</div></div></div><button class="btn btn-secondary" id="change-profile">내 정보 변경</button><a href="#/my-cases" class="btn btn-primary" style="margin-top:10px;">내 사건 보기</a><a href="#/submit" class="btn btn-ghost" style="margin-top:10px;">새 황당사건 접수하기</a><button class="btn btn-ghost" id="logout" style="margin-top:10px;">로그아웃</button>`;
+  document.getElementById('change-profile').onclick = () => drawEditProfile(box, user, profile);
   document.getElementById('logout').onclick = logout;
 }
 
