@@ -27,11 +27,12 @@ const SERIOUS_KEYWORDS = [
   '성범죄','성폭력','성추행','성희롱','강간','강제추행',
   '가정폭력','학교폭력','직장내괴롭힘','갑질','따돌림','왕따',
   '이혼','위자료','손해배상','형사고소','고발','소송','민사','형사','법원',
-  '응급','정신과','우울증','공황'
+  '응급','정신과','우울증','공황','자해','자살','의료','진단','치료'
 ];
 
 function _isTooSerious(text) {
-  return SERIOUS_KEYWORDS.some(kw => text.includes(kw));
+  const source = String(text || '').replace(/\s+/g, '');
+  return SERIOUS_KEYWORDS.some(kw => source.includes(kw));
 }
 function _formatBytes(bytes) {
   const n = Number(bytes || 0);
@@ -130,19 +131,16 @@ function _showSeriousModal() {
         <div style="font-size:52px;margin-bottom:12px;">😰</div>
         <div style="font-family:'Noto Serif KR',serif;font-size:19px;font-weight:700;color:#e74c3c;margin-bottom:10px;">잠깐, 황당재판부가 정색했습니다</div>
         <p style="font-size:14px;color:rgba(245,240,232,0.72);line-height:1.75;margin-bottom:22px;">
-          이 사건은 웃고 넘기기보다<br>
-          <strong style="color:#f5f0e8;">실제 전문가의 도움이 필요할 수 있어요.</strong><br><br>
-          그래도 단순 오락용 각색이라면 계속 진행할 수 있습니다.<br>
-          <span style="font-size:12px;opacity:0.55;">(판사님이 방금 판결봉을 내려놓았습니다)</span>
+          이 사건은 소소킹에서 다루는 가벼운 오락 소재가 아닐 수 있습니다.<br><br>
+          실제 범죄·폭력·소송·의료·정신건강·학교폭력 같은 내용은 접수할 수 없습니다.<br>
+          사소한 일상 소재로 바꿔 다시 작성해주세요.
         </p>
         <div style="display:flex;flex-direction:column;gap:8px;">
           <a href="https://www.klac.or.kr" target="_blank" rel="noopener" style="display:block;padding:13px;border-radius:12px;background:rgba(231,76,60,0.15);border:1.5px solid rgba(231,76,60,0.4);color:#e74c3c;font-weight:700;font-size:14px;text-decoration:none;">⚖️ 실제 법률 도움 알아보기</a>
-          <button id="_serious-confirm" style="padding:13px;border-radius:12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(245,240,232,0.75);font-size:13px;cursor:pointer;">🎭 오락용 황당사건으로만 접수할게요</button>
-          <button id="_serious-cancel" style="padding:10px;border-radius:12px;background:none;border:none;color:rgba(245,240,232,0.38);font-size:13px;cursor:pointer;">취소</button>
+          <button id="_serious-cancel" style="padding:13px;border-radius:12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(245,240,232,0.75);font-size:13px;cursor:pointer;">가벼운 사건으로 다시 작성하기</button>
         </div>
       </div>`;
     document.body.appendChild(overlay);
-    overlay.querySelector('#_serious-confirm').onclick = () => { overlay.remove(); resolve(true); };
     overlay.querySelector('#_serious-cancel').onclick = () => { overlay.remove(); resolve(false); };
     overlay.onclick = (e) => { if (e.target === overlay) { overlay.remove(); resolve(false); } };
   });
@@ -265,7 +263,7 @@ export async function renderSubmit(container) {
     try {
       const resized = await _resizeImageForAi(file);
       imageAttachment = resized;
-      status.textContent = `첨부 완료: ${escapeHtml(resized.originalName)} · ${resized.width}×${resized.height} · ${_formatBytes(resized.originalSize)} → ${_formatBytes(resized.resizedSize)}`;
+      status.textContent = `첨부 완료: ${resized.originalName} · ${resized.width}×${resized.height} · ${_formatBytes(resized.originalSize)} → ${_formatBytes(resized.resizedSize)}`;
       preview.style.display = 'block';
       preview.innerHTML = `<img src="data:${resized.mimeType};base64,${resized.data}" alt="첨부 이미지 미리보기" style="width:100%;max-height:220px;object-fit:cover;border-radius:12px;border:1px solid var(--border);">`;
     } catch (err) {
@@ -285,7 +283,7 @@ export async function renderSubmit(container) {
 
     if (title.length < 3) return showToast('사건명은 3자 이상 입력해주세요.', 'error');
     if (desc.length < 10) return showToast('사건 경위는 10자 이상 입력해주세요.', 'error');
-    const merged = `${title} ${desc}`;
+    const merged = `${title} ${desc} ${desiredVerdict}`;
     if (_isTooSerious(merged)) {
       const ok = await _showSeriousModal();
       if (!ok) return;
@@ -296,7 +294,15 @@ export async function renderSubmit(container) {
     btn.textContent = '접수 중...';
     try {
       const submitCase = httpsCallable(functions, 'submitCase');
-      const res = await submitCase({ title, description: desc, grievance, desiredVerdict, judgeType: selectedJudge, isPublic, imageAttachment });
+      const res = await submitCase({
+        caseTitle: title,
+        caseDescription: desc,
+        grievanceIndex: grievance,
+        desiredVerdict,
+        selectedJudge,
+        isPublic,
+        imageAttachment
+      });
       showToast('황당사건 접수 완료!', 'success');
       location.hash = `#/trial/${res.data.caseId}`;
     } catch (err) {
