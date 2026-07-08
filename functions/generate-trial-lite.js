@@ -71,9 +71,15 @@ function fallbackCaseFile(c, judgeType) {
   const prosecutorName = c.prosecutorName || pickFrom(PROSECUTORS, title);
   const defenderName = c.defenderName || pickFrom(DEFENDERS, title);
   return {
+    refinedCaseTitle: title,
     absurdityTitle: `${title} 기록철`,
+    analysisDigest: [
+      `접수 내용 핵심: ${objectHint}`,
+      `피해 기대: ${objectHint}을 둘러싼 사소한 평온`,
+      `최종 출력: 7개 핵심문서로 압축`
+    ],
     imageAnalysis: imageForGemini(c.imageAttachment) ? `문서명: 첨부사진 현장참고 검토서\n첨부사진은 ${objectHint}의 위치와 장면 분위기를 보조적으로 확인하기 위한 참고자료로만 검토한다. 사진만으로 실제 책임을 단정하지 않으며, 소소킹 세계관의 오락용 감정 범위 안에서만 해석한다.` : '',
-    reception: `문서명: ${title} 접수조서\n사건번호: ${cleanText(c.docketNumber, 80) || '황당사건번호 미상'}\n원고는 '${desc}'라는 취지로 본 사건을 접수하였다. 접수계는 ${objectHint}이 단순한 배경 사물이 아니라 원고가 기대하던 평온의 중심물이었다고 기록한다. 본 조서는 실제 법률문서가 아니라, ${objectHint}을 지나치게 정식으로 다루기 위한 소소킹 사건기록이다.`,
+    reception: `문서명: ${title} 사건접수조서\n사건번호: ${cleanText(c.docketNumber, 80) || '황당사건번호 미상'}\n원고는 '${desc}'라는 취지로 본 사건을 접수하였다. 접수계는 ${objectHint}이 단순한 배경 사물이 아니라 원고가 기대하던 평온의 중심물이었다고 기록한다. 본 조서는 실제 법률문서가 아니라, ${objectHint}을 지나치게 정식으로 다루기 위한 소소킹 사건기록이다.`,
     caseTimeline: `문서명: ${objectHint} 분초 단위 사건일지\n00분 00초, 원고는 ${objectHint}과 관련된 평온한 상태에 있었다.\n00분 07초, 사건 경위에 기재된 결정적 행동이 발생하며 ${objectHint}을 둘러싼 질서가 흔들렸다.\n00분 12초, 원고는 상황이 원래대로 돌아오지 않는다는 사실을 인식하였다.\n00분 20초, 현장은 지나치게 조용했고, 그 조용함은 오히려 ${objectHint} 사건의 중대성을 키웠다.`,
     forensicReport: `문서명: 소소국과수 ${objectHint} 생활증거 감정서\n감정기관: 국립소소과학수사연구소 생활증거분석실\n감정대상: ${objectHint}의 위치, 접촉 가능성, 사라진 기대의 흔적.\n감정방법: 현장진술 대조, 대상물 위치 추정, 사후 정적 분석.\n감정의견: 제출된 자료만으로 실제 책임을 단정할 수는 없으나, 원고가 ${objectHint}을 둘러싼 기대를 잃었다는 정황은 소소킹 감정 기준상 확인된다.`,
     plaintiffArg: `문서명: ${prosecutorName} 공소장\n검사는 ${objectHint}이 우연히 지나간 일이 아니라 원고의 사소한 평온을 정면으로 흔든 사건이라고 주장한다. 원고가 잃은 것은 물건 하나가 아니라 ${objectHint}을 당연히 누릴 수 있으리라는 믿음이었다. 검사는 피고 측이 이를 '그럴 수도 있는 일'로 축소하려는 순간 본 사건의 황당성이 완성된다고 본다.`,
@@ -165,16 +171,14 @@ exports.generateTrial = onCall({ region: REGION, secrets: [geminiKey], timeoutSe
 
     const prompt = `너는 '소소킹 황당재판소'의 수석검사·소소국과수 감정관·대법관이다.
 
-이번 개편의 핵심:
-기존처럼 접수조서, 검토서, 증거목록, 수사보고서, 판단, 판결, 주문을 길게 늘어놓는 방식은 금지한다.
-결과는 반드시 7개 핵심 문서로만 구성한다.
-각 문서는 짧지만 사건 고유 디테일이 강해야 한다.
-사건명만 바꿔도 다른 사건에 쓸 수 있는 문장은 실패다.
+이번 생성은 바로 결과문을 쓰면 실패다.
+반드시 접수내용을 내부적으로 7차까지 정리·보완한 뒤, 사이트 화면에 어울리는 최종 문서만 출력한다.
+내부 1차~7차 정리 내용은 길게 출력하지 말고, analysisDigest에 아주 짧게만 남긴다.
 
 입력 사건:
 - 사건번호: ${cleanText(c.docketNumber, 80)}
-- 사건명: ${cleanText(c.caseTitle, 80)}
-- 사건 경위: ${cleanText(c.caseDescription, 520)}
+- 저장된 사건명: ${cleanText(c.caseTitle, 80)}
+- 접수 내용: ${cleanText(c.caseDescription, 560)}
 - 원하는 처분: ${cleanText(c.desiredVerdict, 180) || '없음'}
 - 억울함 강도: ${Number(c.grievanceIndex || 5)}/10. 숫자는 출력하지 말고 강약만 반영한다.
 - 담당 재판부: ${judgeType}
@@ -186,15 +190,14 @@ exports.generateTrial = onCall({ region: REGION, secrets: [geminiKey], timeoutSe
 - 법정: ${courtroom}
 - 첨부 이미지: ${geminiImage ? '있음. 이미지 내용은 참고자료로만 다룬다.' : '없음'}
 
-먼저 내부적으로 아래 8개를 반드시 뽑아라. 이 분석 자체를 출력하지 말고 모든 문장에 반영하라.
-1. 행위자: 누가 또는 무엇이 사건을 만들었는가.
-2. 피해 대상: 빵, 문고리, 리모컨, 봉지, 이어폰, 마지막 푸딩, 자리, 시간 등.
-3. 장소: 공원, 방, 침대 밑, 회사 탕비실, 냉장고 앞 등.
-4. 결정적 행동: 먹음, 안 닫음, 방치함, 가져감, 사라짐, 독점함 등.
-5. 원고가 잃은 것: 마지막 한입권, 닫힌 방문에 대한 기대, 채널 선택권, 평온, 순서, 기다림의 보상 등.
-6. 피고가 할 법한 반박: 몰랐다, 우연이다, 원래 그랬다, 급했다, 개는 본능이었다 등.
-7. 소소국과수 감정대상: 부스러기, 문틈 각도, 봉지 절취선, 소파 함몰, 냉장고 빈 윤곽, 침대 밑 먼지 밀림, 리모컨 손때 등.
-8. 이 사건만의 이상한 디테일 3개 이상.
+내부 7차 정리 절차:
+1차 사실분해: 접수내용에서 행위자, 장소, 피해대상, 결정적 행동을 분리한다.
+2차 피해정리: 원고가 잃은 물건, 기대, 순서, 평온, 마지막 한입권 같은 사소한 권리를 정리한다.
+3차 반박예상: 피고가 할 법한 변명과 억울한 사정을 만든다.
+4차 감정대상선정: 소소국과수가 분석할 미세증거 4개 이상을 고른다.
+5차 제목보완: 저장된 사건명을 사이트 구성에 맞게 다시 다듬어 refinedCaseTitle을 만든다.
+6차 문서압축: 7개 핵심 문서에 중복 내용을 배분하고, 쓸데없는 반복문을 제거한다.
+7차 최종검수: 모든 문단에 사건 고유명사 또는 구체물이 들어갔는지 확인하고 최종 출력한다.
 
 절대 금지 문장과 표현:
 - 생활질서 미세교란
@@ -214,25 +217,29 @@ exports.generateTrial = onCall({ region: REGION, secrets: [geminiKey], timeoutSe
 - 실제 국과수, 실제 경찰, 실제 검찰을 직접 사칭하는 표현
 
 문체 규칙:
+- 진짜 문서처럼 깔끔하게 쓴다.
+- 한 문장은 너무 길게 쓰지 않는다.
+- 사건번호, 시각, 감정기관, 감정대상 같은 정보는 줄 단위로 정리한다.
 - 절대 가벼운 농담투를 쓰지 않는다.
 - 웃기다는 설명을 하지 않는다.
 - 인터넷 밈, ㅋㅋ, 감탄사 금지.
-- 셰익스피어 비극처럼 장엄하되 문장은 모바일에서 읽기 좋게 짧게 쓴다.
 - 각 문단에는 반드시 사건 고유명사 또는 구체물을 1개 이상 넣는다.
 - 법적 효력 없음 문구는 본문에 넣지 말고 executionOrder 마지막에만 1회 넣는다.
 
 출력 구조는 아래 7개 문서만 쓴다.
-1. reception: 사건접수조서. 사건번호, 장소, 피해대상, 원고의 잃어버린 기대를 5~7문장으로 작성.
-2. caseTimeline: 분·초 단위 사건일지. 00분 00초부터 5~7개 시각으로 재구성. 보안 공백 또는 주의 공백을 포함.
-3. forensicReport: 소소국과수 감정서. 감정기관, 감정대상, 감정방법, 감정결과, 감정의견 포함. 사건별 미세증거 4개 이상. 7~9문장.
-4. plaintiffArg: 황당검사 공소장. 검사가 피를 토하듯 엄숙하게 주장. 구체물과 잃어버린 권리를 중심으로 5~7문장.
+1. reception: 사건접수조서. 사건번호, 사건명, 장소, 피해대상, 원고의 잃어버린 기대를 줄 단위로 깔끔하게 작성.
+2. caseTimeline: 분·초 단위 사건일지. 00분 00초부터 5~7개 시각으로 재구성. 보안 공백 또는 주의 공백 포함.
+3. forensicReport: 소소국과수 감정서. 감정기관, 감정대상, 감정방법, 감정결과, 감정의견 포함. 사건별 미세증거 4개 이상.
+4. plaintiffArg: 황당검사 공소장. 구체물과 잃어버린 권리를 중심으로 5~7문장.
 5. defendantArg: 피고 측 답변서. 말은 되지만 얄미운 궤변. 피고 태도 포함. 5~7문장.
 6. courtOpinion: 재판부 판단. 공소장, 답변서, 소소국과수 감정서를 종합. 판사 성향은 여기서만 반영. 6~8문장.
-7. sentence: 주문 및 집행권고. 사건 맞춤 처분 5개. 실제 위해, 실제 구금, 폭력, 모욕 금지. 현물 배상, 접근 전 확인, 3초 묵념, 봉지 회수, 리모컨 제한, 문고리 점검 같은 생활형 처분.
+7. sentence: 주문 및 집행권고. 사건 맞춤 처분 5개. 실제 위해, 실제 구금, 폭력, 모욕 금지.
 
 JSON만 출력한다.
 {
-  "absurdityTitle": "사건 고유명사를 포함한 기록철 제목",
+  "refinedCaseTitle": "저장된 사건명을 한 번 더 보완한 최종 사건명",
+  "absurdityTitle": "최종 사건명을 포함한 기록철 제목",
+  "analysisDigest": ["1차~7차 정리 결과를 매우 짧게 요약", "구체명사 중심", "출력 전 보완 내용"],
   "imageAnalysis": "이미지가 없으면 빈 문자열. 있으면 첨부사진 참고의견 3문장",
   "reception": "문서명: ... 사건접수조서 로 시작",
   "caseTimeline": "문서명: ... 사건일지 로 시작",
@@ -252,7 +259,9 @@ JSON만 출력한다.
     const parsed = safeJson(result.response.text());
     data = {
       ...data,
+      refinedCaseTitle: cleanText(parsed.refinedCaseTitle, 80) || data.refinedCaseTitle,
       absurdityTitle: cleanText(parsed.absurdityTitle, 120) || data.absurdityTitle,
+      analysisDigest: cleanList(parsed.analysisDigest, data.analysisDigest, 7, 120),
       imageAnalysis: geminiImage ? (cleanLong(parsed.imageAnalysis, 1200) || data.imageAnalysis) : '',
       reception: cleanLong(parsed.reception, 2200) || data.reception,
       caseTimeline: cleanLong(parsed.caseTimeline, 2400) || data.caseTimeline,
@@ -279,8 +288,11 @@ JSON만 출력한다.
       analystName,
       prosecutorName,
       defenderName,
-      caseTitle: c.caseTitle || '황당재판 결과',
+      caseTitle: data.refinedCaseTitle || c.caseTitle || '황당재판 결과',
+      originalCaseTitle: c.caseTitle || '',
+      refinedCaseTitle: data.refinedCaseTitle || c.caseTitle || '',
       absurdityTitle: data.absurdityTitle,
+      analysisDigest: data.analysisDigest || [],
       imageAnalysis: data.imageAnalysis || '',
       hasImageAttachment: !!geminiImage,
       imageAttachmentMeta: imageMeta(c.imageAttachment),
@@ -298,8 +310,7 @@ JSON만 출력한다.
       sentence: data.sentence,
       closingComment: data.closingComment,
       aiGenerated,
-      resultVersion: 'compact-seven-docs-v1',
-      // legacy compatibility
+      resultVersion: 'seven-pass-document-v1',
       absurdityReview: '',
       keyIssues: [],
       evidenceList: [],
@@ -347,6 +358,7 @@ JSON만 출력한다.
         firestoreWrites: FieldValue.increment(4),
         functionInvocations: FieldValue.increment(1),
         compactResultCount: FieldValue.increment(1),
+        sevenPassResultCount: FieldValue.increment(1),
         updatedAt: FieldValue.serverTimestamp()
       }, { merge: true });
     } catch (e) {
@@ -354,5 +366,5 @@ JSON만 출력한다.
     }
   }
 
-  return { success: true, judgeType, isPublic, hasImageAttachment: !!geminiImage, resultVersion: 'compact-seven-docs-v1' };
+  return { success: true, judgeType, isPublic, hasImageAttachment: !!geminiImage, resultVersion: 'seven-pass-document-v1' };
 });
