@@ -75,13 +75,12 @@ function imageCard(image) {
   if (!src) return '';
   const meta = [
     image.width && image.height ? `${Number(image.width)}×${Number(image.height)}` : '',
-    image.resizedSize ? `분석용 ${formatBytes(image.resizedSize)}` : '',
     image.originalSize ? `원본 ${formatBytes(image.originalSize)}` : ''
   ].filter(Boolean).join(' · ');
   return `<div class="card step-card visible" style="margin-bottom:12px;padding:18px;">
     <div class="step-role" style="margin-bottom:8px;">🖼️ 첨부 이미지 참고자료 <span style="font-size:11px;color:var(--cream-dim);font-weight:400;">· 작성자에게만 표시</span></div>
     <img src="${src}" alt="첨부 이미지" style="width:100%;max-height:360px;object-fit:contain;border-radius:14px;border:1px solid var(--border);background:rgba(0,0,0,.18);">
-    <div style="font-size:11px;color:var(--cream-dim);line-height:1.6;margin-top:8px;">${escapeHtml(meta || '분석용으로 자동 리사이즈된 이미지')}</div>
+    <div style="font-size:11px;color:var(--cream-dim);line-height:1.6;margin-top:8px;">${escapeHtml(meta || '첨부 이미지')}</div>
   </div>`;
 }
 function sectionCard(stage, icon, title, sub, content, badge = '') {
@@ -153,7 +152,7 @@ export async function renderResult(container, caseId) {
     ['재판부', r.division || c.division || '제3황당재판부'],
     ['법정', r.courtroom || c.courtroom || '제404호 황당법정'],
     ['기록관', r.recordClerk || c.recordClerk || '기록관 미상'],
-    ['담당판사', `${r.judgeType || 'AI'} 재판부`]
+    ['담당판사', `${r.judgeType || '황당'} 재판부`]
   ];
 
   container.innerHTML = `
@@ -175,7 +174,7 @@ export async function renderResult(container, caseId) {
         </div>
 
         ${isOwner ? imageCard(c.imageAttachment) : ''}
-        ${sectionCard(1, '📖', '사건 배경 및 발단', '짧은 접수 내용에서 확장된 사건의 전말입니다.', expandedCase, '기록')}
+        ${sectionCard(1, '📖', '사건 배경 및 발단', '사건의 원인, 전개, 결정적 장면을 기록합니다.', expandedCase, '기록')}
         ${sectionCard(2, '⏱️', '분초 단위 사건일지', '평온이 무너진 순간을 시간순으로 재구성합니다.', timeline, '일지')}
         ${sectionCard(3, '🧬', '소소국과수 감정서', '국립소소과학수사연구소 생활증거분석실 감정의견', r.forensicReport, '감정')}
         ${sectionCard(4, '💼', '황당검사 공소장', `${r.prosecutorName || '황당검사'} 작성`, r.plaintiffArg, '검사')}
