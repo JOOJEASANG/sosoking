@@ -21,17 +21,18 @@ function ensureStyle() {
   style.id = 'theme-preference-style';
   style.textContent = `
     .theme-preference-card{padding:16px;margin-top:14px;background:linear-gradient(135deg,rgba(201,168,76,.07),rgba(255,255,255,.025));border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 2px 14px rgba(0,0,0,.18);}
-    .theme-preference-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;}
+    .theme-preference-head{display:flex;align-items:center;justify-content:center;text-align:center;margin-bottom:12px;}
     .theme-preference-title{font-size:13px;font-weight:900;color:var(--gold);}
     .theme-preference-desc{font-size:11px;color:var(--cream-dim);line-height:1.55;margin-top:2px;}
-    .theme-choice-wrap{display:grid;grid-template-columns:1fr 1fr;gap:8px;background:rgba(255,255,255,.06);border:1px solid rgba(201,168,76,.28);padding:5px;border-radius:16px;}
-    .theme-choice{height:42px;border:1px solid rgba(201,168,76,.22);border-radius:12px;background:rgba(255,255,255,.055);color:#f5f0e8;font-family:var(--font-sans);font-size:13px;font-weight:900;display:flex;align-items:center;justify-content:center;gap:7px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all .18s ease;}
-    .theme-choice.active{background:linear-gradient(135deg,var(--gold),var(--gold-light));color:#111827!important;box-shadow:0 6px 18px rgba(201,168,76,.23);border-color:rgba(232,201,122,.62);}
-    .theme-choice:not(.active):hover{background:rgba(255,255,255,.10);color:#ffdf7a;}
+    .theme-choice-wrap{display:flex;align-items:center;justify-content:center;gap:12px;background:rgba(255,255,255,.045);border:1px solid rgba(201,168,76,.22);padding:10px;border-radius:999px;width:max-content;max-width:100%;margin:0 auto;}
+    .theme-choice{width:48px;height:48px;border:1.5px solid rgba(201,168,76,.28);border-radius:50%;background:rgba(255,255,255,.055);color:#f5f0e8;font-size:23px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all .18s ease;box-shadow:0 6px 16px rgba(0,0,0,.16);}
+    .theme-choice span{display:block;line-height:1;}
+    .theme-choice.active{background:linear-gradient(135deg,var(--gold),var(--gold-light));color:#111827!important;box-shadow:0 8px 20px rgba(201,168,76,.25);border-color:rgba(232,201,122,.68);transform:scale(1.04);}
+    .theme-choice:not(.active):hover{background:rgba(255,255,255,.10);border-color:rgba(232,201,122,.48);}
     [data-theme="light"] .theme-preference-card{background:#fffaf1;border-color:rgba(112,78,24,.28);}
     [data-theme="light"] .theme-preference-desc{color:#66503a;}
     [data-theme="light"] .theme-choice-wrap{background:rgba(0,0,0,.035);border-color:rgba(112,78,24,.22);}
-    [data-theme="light"] .theme-choice{background:#fffdf8;color:#2f2417;border-color:rgba(112,78,24,.28);}
+    [data-theme="light"] .theme-choice{background:#fffdf8;color:#2f2417;border-color:rgba(112,78,24,.30);box-shadow:0 6px 16px rgba(70,46,16,.10);}
     [data-theme="light"] .theme-choice.active{color:#111827!important;background:linear-gradient(135deg,#e6bf4d,#b77d08);}
   `;
   document.head.appendChild(style);
@@ -50,12 +51,12 @@ export function renderThemePreference() {
     <div class="theme-preference-head">
       <div>
         <div class="theme-preference-title">화면 설정</div>
-        <div class="theme-preference-desc">사이트 분위기에 맞게 보기 모드를 선택하세요.</div>
+        <div class="theme-preference-desc">해·달 아이콘으로 보기 모드를 바꿉니다.</div>
       </div>
     </div>
     <div class="theme-choice-wrap">
-      <button type="button" class="theme-choice ${selected === 'dark' ? 'active' : ''}" data-theme="dark" aria-pressed="${selected === 'dark'}"><span>🌙</span><span>다크</span></button>
-      <button type="button" class="theme-choice ${selected === 'light' ? 'active' : ''}" data-theme="light" aria-pressed="${selected === 'light'}"><span>☀️</span><span>라이트</span></button>
+      <button type="button" class="theme-choice ${selected === 'dark' ? 'active' : ''}" data-theme="dark" aria-label="다크 모드" aria-pressed="${selected === 'dark'}"><span aria-hidden="true">🌙</span></button>
+      <button type="button" class="theme-choice ${selected === 'light' ? 'active' : ''}" data-theme="light" aria-label="라이트 모드" aria-pressed="${selected === 'light'}"><span aria-hidden="true">☀️</span></button>
     </div>`;
   host.appendChild(card);
   card.querySelectorAll('.theme-choice').forEach(btn => btn.addEventListener('click', () => applyTheme(btn.dataset.theme)));
