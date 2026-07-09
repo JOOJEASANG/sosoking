@@ -1,8 +1,10 @@
-import { functions } from '../firebase.js?v=20260630-3';
+import { db, functions } from '../firebase.js?v=20260630-3';
+import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 import { showToast } from '../components/toast.js?v=20260630-3';
 import { addOwnerStorageImage } from '../components/result-storage-image.js?v=20260709-1';
 import { renderResult as renderBaseResult } from './result.js?v=20260709-overhaul1';
+import { escapeHtml } from '../utils/sanitize.js?v=20260630-3';
 
 function ensureResultFileStyle() {
   if (document.getElementById('result-file-style')) return;
@@ -41,6 +43,11 @@ function ensureResultFileStyle() {
     .section-subtitle{font-size:12px;color:var(--cream-dim);line-height:1.6;margin-bottom:13px;}
     .section-body{font-size:16px;line-height:1.86;color:var(--cream);word-break:keep-all;}
     .section-body b,.section-body strong{color:#e6c874;}
+    .judgment-script-section{padding:24px 20px;margin-bottom:16px;}
+    .judgment-script-kicker{font-size:11px;font-weight:900;letter-spacing:.18em;color:#d9bd69;margin-bottom:6px;}
+    .judgment-script-title{font-family:var(--font-serif);font-size:22px;line-height:1.45;color:#e6c874;font-weight:900;margin-bottom:16px;}
+    .judgment-script-body{font-family:var(--font-serif);font-size:16px;line-height:2.05;color:var(--cream);word-break:keep-all;}
+    .judgment-script-body b{color:#f4db8b;}
     .closing-card{padding:20px;margin-bottom:15px;text-align:center;font-family:var(--font-serif);font-size:19px;font-weight:900;line-height:1.75;color:#e6c874;}
     .image-section img{width:100%;max-height:360px;object-fit:contain;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.16);}
     .image-section p{font-size:11px;color:var(--cream-dim);margin:8px 0 0;}
@@ -62,13 +69,13 @@ function ensureResultFileStyle() {
     .copy-case-link{border:1px dashed rgba(201,168,76,.45);border-radius:18px;background:rgba(201,168,76,.06);padding:15px;margin-bottom:14px;}
     .copy-case-link strong{display:block;color:#e6c874;margin-bottom:6px;}
     .copy-case-link p{font-size:12px;color:var(--cream-dim);line-height:1.65;margin:0 0 11px;}
-    @media(min-width:720px){.point-grid{grid-template-columns:1fr 1fr;}.case-cover h1{font-size:30px;}}
+    @media(min-width:720px){.point-grid{grid-template-columns:1fr 1fr;}.case-cover h1{font-size:30px;}.judgment-script-body{font-size:17px;}}
     [data-theme="light"] .case-cover,:root:not([data-theme="dark"]) .case-cover{background:radial-gradient(circle at 50% 0%,#fff3cf,transparent 40%),linear-gradient(180deg,#fffaf0,#fff7e7)!important;border-color:#ddc98f!important;box-shadow:0 12px 28px rgba(117,85,24,.10)!important;}
     [data-theme="light"] .case-cover h1,:root:not([data-theme="dark"]) .case-cover h1{color:#2b2115!important;}
     [data-theme="light"] .cover-kicker,:root:not([data-theme="dark"]) .cover-kicker,[data-theme="light"] .cover-case-name,:root:not([data-theme="dark"]) .cover-case-name{color:#6b5431!important;}
     [data-theme="light"] .cover-meta span,:root:not([data-theme="dark"]) .cover-meta span{color:#5f4b35!important;background:rgba(255,255,255,.58)!important;border-color:#dfc98e!important;}
     [data-theme="light"] .case-info-card,:root:not([data-theme="dark"]) .case-info-card,[data-theme="light"] .case-section,:root:not([data-theme="dark"]) .case-section,[data-theme="light"] .point-card,:root:not([data-theme="dark"]) .point-card,[data-theme="light"] .closing-card,:root:not([data-theme="dark"]) .closing-card{background:#fffaf0!important;border-color:#e2d3af!important;box-shadow:0 8px 20px rgba(117,85,24,.07)!important;}
-    [data-theme="light"] .case-info-row strong,:root:not([data-theme="dark"]) .case-info-row strong,[data-theme="light"] .section-body,:root:not([data-theme="dark"]) .section-body,[data-theme="light"] .point-item span,:root:not([data-theme="dark"]) .point-item span{color:#342514!important;}
+    [data-theme="light"] .case-info-row strong,:root:not([data-theme="dark"]) .case-info-row strong,[data-theme="light"] .section-body,:root:not([data-theme="dark"]) .section-body,[data-theme="light"] .point-item span,:root:not([data-theme="dark"]) .point-item span,[data-theme="light"] .judgment-script-body,:root:not([data-theme="dark"]) .judgment-script-body{color:#342514!important;}
     [data-theme="light"] .section-subtitle,:root:not([data-theme="dark"]) .section-subtitle,[data-theme="light"] .legal-note,:root:not([data-theme="dark"]) .legal-note{color:#66543c!important;}
   `;
   document.head.appendChild(style);
@@ -116,8 +123,69 @@ function addOwnerDelete(container, caseId) {
     }
   });
 }
-function decorateResult(container, caseId) {
+function stripLead(text) {
+  return String(text || '').replace(/^(사건개요|수사 진행 과정|수사보고서|원고 측 주장|피고 측 변론|재판부 판단|판결)\s*\n+/g, '').trim();
+}
+function scriptHtml(text) {
+  return escapeHtml(String(text || '')).replace(/\n/g, '<br>').replace(/(##[^<]+<br>)/g, '<b>$1</b>');
+}
+function buildJudgmentScript(r, c) {
+  const title = r.refinedCaseTitle || r.caseTitle || c.caseTitle || '황당사건';
+  const docket = r.docketNumber || c.docketNumber || '2026고단0000';
+  const grandTitle = r.absurdityTitle || `${title} 중대생활질서문란 사건`;
+  const clerk = r.recordClerk || c.recordClerk || '정기록 서기관';
+  const analyst = r.analystName || c.analystName || '생활증거추적팀 수사관';
+  const prosecutor = r.prosecutorName || c.prosecutorName || '황당검사';
+  const defender = r.defenderName || c.defenderName || '피고측 변호인';
+  const judge = r.judgeType || c.judgeType || '황당';
+  const casePart = stripLead(r.expandedCase || r.reception || '');
+  const timeline = stripLead(r.caseTimeline || '');
+  const forensic = stripLead(r.forensicReport || r.investigation || '');
+  const plaintiff = stripLead(r.plaintiffArg || '');
+  const defendant = stripLead(r.defendantArg || '');
+  const opinion = stripLead(r.courtOpinion || r.verdict || '');
+  const sentence = stripLead(r.sentence || '');
+  const closing = stripLead(r.closingComment || '');
+  if (![casePart, timeline, forensic, plaintiff, defendant, opinion, sentence].some(Boolean)) return '';
+
+  return `## ⚖️ 사건번호 및 사건명\n${docket} ${grandTitle}\n\n${clerk}는 본 사건을 단순한 일상 해프닝으로 축소하지 아니하고, 대한민국 소소분쟁 사법사에 기록될 생활형 중대사건으로 편철하였다.\n\n## 1. 사건의 경위 — 비극의 서막\n${casePart}\n\n원고의 평온은 이 순간 이후 이전과 같을 수 없었고, 사소함이라는 이름 아래 은폐되던 억울함은 마침내 법정의 언어를 요구하기에 이르렀다.\n\n## 2. 치열한 수사 과정 — 국가적 역량 총동원\n${analyst}는 사건 당시의 발언, 침묵, 표정, 머뭇거림, 사후 찝찝함을 전부 수사기록에 편입하였다.\n\n${timeline}\n\n${forensic}\n\n수사기관은 이 사건을 위하여 현장 분위기 480시간 상당을 심리적으로 재생 분석하고, 원고의 억울함이 상승한 지점을 0.1초 단위로 특정하였으며, 관련 정황을 종합하여 본 사안을 재판부 송치가 불가피한 사건으로 판단하였다.\n\n## 3. 검사의 공소사실 — 정의의 단죄\n${prosecutor}: ${plaintiff}\n\n검사는 이 사건이 단순한 불편이나 우연이 아니라, 원고의 하루를 조용히 침범한 생활질서 교란행위라고 주장하였다.\n\n## 4. 변호인의 최후변론 — 궤변의 극치\n${defender}: ${defendant}\n\n변호인은 피고 측의 행위가 고의가 아니라 당시 분위기, 판단 착오, 생활 피로, 우주의 미세한 엇박자가 결합된 결과라고 주장하였으나, 그 주장 자체가 오히려 법정의 정적을 더욱 무겁게 만들었다.\n\n## 👨‍⚖️ 판사의 최종 판결 — 주문\n${judge} 재판부는 기록과 변론 전체를 살펴 다음과 같이 판단하였다.\n\n${opinion}\n\n[주문]\n${sentence}\n\n3. 소송 비용은 피고 측이 부담하되, 그 범위는 커피 기프티콘, 메로나, 또는 원고가 즉시 납득 가능한 동급의 생활형 위로물로 갈음할 수 있다.\n\n${closing}`;
+}
+async function applyJudgmentScript(container, caseId) {
+  try {
+    const [resultSnap, caseSnap] = await Promise.all([
+      getDoc(doc(db, 'results', caseId)),
+      getDoc(doc(db, 'cases', caseId)).catch(() => null)
+    ]);
+    if (!resultSnap.exists()) return;
+    const r = resultSnap.data();
+    const c = caseSnap?.exists() ? caseSnap.data() : {};
+    const script = r.judgmentScript || buildJudgmentScript(r, c);
+    if (!String(script || '').trim()) return;
+
+    container.querySelector('.point-grid')?.remove();
+    const removeTitles = new Set(['사건 배경 및 발단', '분초 단위 사건일지', '소소국과수 감정서', '황당검사 공소장', '피고 측 답변서', '재판부 판단', '주문 및 집행권고']);
+    container.querySelectorAll('.case-section').forEach(section => {
+      const title = section.querySelector('.section-head span')?.textContent?.trim() || '';
+      if (removeTitles.has(title)) section.remove();
+    });
+    document.getElementById('judgment-script-section')?.remove();
+    const html = `<section id="judgment-script-section" class="case-section judgment-script-section">
+      <div class="judgment-script-kicker">FULL JUDGMENT RECORD</div>
+      <div class="judgment-script-title">판결 기록 전문</div>
+      <div class="judgment-script-body">${scriptHtml(script)}</div>
+    </section>`;
+    const image = container.querySelector('.image-section');
+    const info = container.querySelector('.case-info-card');
+    const cover = container.querySelector('.case-cover');
+    const anchor = image || info || cover;
+    anchor?.insertAdjacentHTML('afterend', html);
+  } catch (err) {
+    console.warn('judgment script skipped:', err.message || err);
+  }
+}
+async function decorateResult(container, caseId) {
   ensureResultFileStyle();
+  await applyJudgmentScript(container, caseId);
   addCopyLink(container);
   addOwnerDelete(container, caseId);
   addOwnerStorageImage(container, caseId);
@@ -125,5 +193,5 @@ function decorateResult(container, caseId) {
 
 export async function renderResult(container, caseId) {
   await renderBaseResult(container, caseId);
-  decorateResult(container, caseId);
+  await decorateResult(container, caseId);
 }
