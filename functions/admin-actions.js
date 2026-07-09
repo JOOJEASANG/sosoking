@@ -1,5 +1,6 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
+const { getStorage } = require('firebase-admin/storage');
 const { isAdminAuth } = require('./admin-utils');
 
 const db = getFirestore();
@@ -8,6 +9,17 @@ const BATCH_LIMIT = 450;
 
 function cleanId(value) {
   return String(value || '').replace(/[\u0000-\u001F\u007F]/g, '').trim().slice(0, 180);
+}
+function cleanNickname(value) {
+  return String(value || '').replace(/\s+/g, '').trim().slice(0, 20);
+}
+function nicknameKey(value) {
+  return cleanNickname(value).toLocaleLowerCase('ko-KR');
+}
+async function assertAdmin(request) {
+  if (!request.auth || !(await isAdminAuth(request.auth))) {
+    throw new HttpsError('permission-denied', '관리자만 실행할 수 있습니다.');
+  }
 }
 async function deleteQuerySnapshot(query, counter) {
   while (true) {
@@ -20,7 +32,28 @@ async function deleteQuerySnapshot(query, counter) {
     if (snap.size < BATCH_LIMIT) break;
   }
 }
+async function deleteStoragePrefix(prefix, counter) {
+  if (!prefix) return;
+  try {
+    const [files] = await getStorage().bucket().getFiles({ prefix });
+    await Promise.all(files.map(file => file.delete().catch(() => null)));
+    counter.storageDeleted = (counter.storageDeleted || 0) + files.length;
+  } catch (err) {
+    counter.storageDeleteError = err.message || String(err);
+  }
+}
+async function writeAdminLog(uid, action, targetId, detail = {}) {
+  await db.collection('admin_logs').add({ uid, action, targetId, detail, createdAt: FieldValue.serverTimestamp() }).catch(() => null);
+}
 async function deleteCourtData(caseId, counter) {
+  const [caseSnap, resultSnap] = await Promise.all([
+    db.doc(`cases/${caseId}`).get().catch(() => null),
+    db.doc(`results/${caseId}`).get().catch(() => null),
+  ]);
+  const caseData = caseSnap?.exists ? caseSnap.data() : {};
+  const resultData = resultSnap?.exists ? resultSnap.data() : {};
+  const ownerId = caseData.userId || resultData.userId || resultData.ownerId || '';
+
   await deleteQuerySnapshot(db.collection(`result_reactions/${caseId}/votes`), counter);
   await deleteQuerySnapshot(db.collection(`court_comments/${caseId}/items`), counter);
   await deleteQuerySnapshot(db.collection('reports').where('caseId', '==', caseId), counter);
@@ -36,9 +69,8 @@ async function deleteCourtData(caseId, counter) {
   refs.forEach(ref => batch.delete(ref));
   await batch.commit();
   counter.deleted += refs.length;
-}
-async function writeAdminLog(uid, action, caseId, detail = {}) {
-  await db.collection('admin_logs').add({ uid, action, caseId, detail, createdAt: FieldValue.serverTimestamp() }).catch(() => null);
+
+  if (ownerId) await deleteStoragePrefix(`case-images/${ownerId}/${caseId}/`, counter);
 }
 
 exports.deleteMyCase = onCall({ region: REGION, timeoutSeconds: 120, memory: '256MiB' }, async request => {
@@ -50,7 +82,6 @@ exports.deleteMyCase = onCall({ region: REGION, timeoutSeconds: 120, memory: '25
   const caseRef = db.doc(`cases/${caseId}`);
   const resultRef = db.doc(`results/${caseId}`);
   const [caseSnap, resultSnap] = await Promise.all([caseRef.get(), resultRef.get().catch(() => null)]);
-
   if (!caseSnap.exists && !resultSnap?.exists) {
     return { success: true, caseId, alreadyDeleted: true, deleted: 0 };
   }
@@ -58,27 +89,45 @@ exports.deleteMyCase = onCall({ region: REGION, timeoutSeconds: 120, memory: '25
   const c = caseSnap.exists ? caseSnap.data() : {};
   const r = resultSnap?.exists ? resultSnap.data() : {};
   const ownerId = c.userId || r.userId || r.ownerId || '';
-  if (ownerId && ownerId !== uid) throw new HttpsError('permission-denied', '본인 사건만 삭제할 수 있습니다.');
-  if (!ownerId && caseSnap.exists) throw new HttpsError('permission-denied', '소유자 확인이 불가능한 사건입니다.');
+  if (!ownerId || ownerId !== uid) {
+    throw new HttpsError('permission-denied', '본인 사건만 삭제할 수 있습니다.');
+  }
 
   await caseRef.set({ status: 'deleting', isPublic: false, deleteRequestedBy: uid, updatedAt: FieldValue.serverTimestamp() }, { merge: true }).catch(() => null);
   await resultRef.set({ isPublic: false, deleteRequestedBy: uid, updatedAt: FieldValue.serverTimestamp() }, { merge: true }).catch(() => null);
 
   const counter = { deleted: 0 };
   await deleteCourtData(caseId, counter);
-  return { success: true, caseId, deleted: counter.deleted };
+  return { success: true, caseId, ...counter };
 });
 
 exports.deleteCourtPost = onCall({ region: REGION, timeoutSeconds: 120, memory: '256MiB' }, async request => {
-  if (!request.auth || !(await isAdminAuth(request.auth))) {
-    throw new HttpsError('permission-denied', '관리자만 삭제할 수 있습니다.');
-  }
+  await assertAdmin(request);
   const caseId = cleanId(request.data?.caseId);
   if (!caseId) throw new HttpsError('invalid-argument', 'caseId required');
 
   const counter = { deleted: 0 };
   await deleteCourtData(caseId, counter);
-
   await writeAdminLog(request.auth.uid, 'deleteCourtPost', caseId, counter);
-  return { success: true, caseId, deleted: counter.deleted };
+  return { success: true, caseId, ...counter };
+});
+
+exports.deleteUserProfile = onCall({ region: REGION, timeoutSeconds: 120, memory: '256MiB' }, async request => {
+  await assertAdmin(request);
+  const uid = cleanId(request.data?.uid);
+  if (!uid) throw new HttpsError('invalid-argument', 'uid required');
+  const userRef = db.doc(`users/${uid}`);
+  const snap = await userRef.get();
+  const data = snap.exists ? snap.data() : {};
+  const oldKey = data.nickname ? nicknameKey(data.nickname) : '';
+  const counter = { deleted: 0 };
+
+  const batch = db.batch();
+  if (oldKey) batch.delete(db.doc(`user_names/${oldKey}`));
+  batch.delete(userRef);
+  await batch.commit();
+  counter.deleted += oldKey ? 2 : 1;
+  await deleteStoragePrefix(`profile-photos/${uid}/`, counter);
+  await writeAdminLog(request.auth.uid, 'deleteUserProfile', uid, counter);
+  return { success: true, uid, ...counter };
 });
