@@ -1,4 +1,4 @@
-import { renderBoard as renderBaseBoard } from './board.js?v=20260709-board1';
+import { renderBoard as renderBaseBoard } from './board.js?v=20260709-desc1';
 
 function ensureBoardGameStyle() {
   if (document.getElementById('board-game-style')) return;
@@ -6,53 +6,29 @@ function ensureBoardGameStyle() {
   style.id = 'board-game-style';
   style.textContent = `
     .arena-rank-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0 16px;}
-    .arena-rank-tabs div{border:1px solid rgba(201,168,76,.32);border-radius:14px;background:rgba(201,168,76,.08);padding:10px 8px;text-align:center;}
-    .arena-rank-tabs strong{display:block;color:#e8c97a;font-size:14px;font-weight:900;}
-    .arena-rank-tabs span{display:block;color:rgba(255,248,236,.72);font-size:10px;margin-top:2px;font-weight:800;}
-    .rank-medal{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#ffdf7a,#c9a84c);color:#111827;font-weight:900;margin-right:6px;}
-    .court-board-row:nth-child(1){border-color:rgba(255,223,122,.8)!important;box-shadow:0 8px 26px rgba(201,168,76,.12);}
-    .court-board-row:nth-child(1)::after{content:'HOT';position:absolute;right:12px;top:12px;color:#111827;background:#ffdf7a;border-radius:999px;padding:3px 8px;font-size:9px;font-weight:900;}
-    #board-list .card{position:relative;}
+    .arena-rank-tabs button{border:1px solid rgba(201,168,76,.25);background:rgba(255,255,255,.035);color:var(--cream-dim);border-radius:999px;padding:10px 8px;font-size:12px;font-weight:900;cursor:pointer;}
+    .arena-rank-tabs button.active{background:linear-gradient(180deg,#f4db8b,#c9a84c);color:#151515;border-color:#c9a84c;}
+    .board-arena-banner{border:1px solid rgba(201,168,76,.45);border-radius:22px;background:radial-gradient(circle at 50% 0%,rgba(201,168,76,.15),transparent 42%),rgba(28,36,64,.76);padding:18px;margin-bottom:14px;text-align:center;}
+    .board-arena-banner strong{display:block;font-family:var(--font-serif);font-size:21px;color:var(--gold);margin-bottom:6px;}
+    .board-arena-banner span{font-size:12px;color:var(--cream-dim);line-height:1.7;}
+    [data-theme="light"] .board-arena-banner,:root:not([data-theme="dark"]) .board-arena-banner{background:#fffaf0!important;border-color:#e2d3af!important;}
+    [data-theme="light"] .board-arena-banner span,:root:not([data-theme="dark"]) .board-arena-banner span{color:#6b5431!important;}
   `;
   document.head.appendChild(style);
 }
 function decorateBoard(container) {
   ensureBoardGameStyle();
-  const intro = container.querySelector('.container > div');
-  if (intro && !document.getElementById('court-board-intro')) {
-    intro.classList.add('court-shell');
-    intro.id = 'court-board-intro';
-    intro.style.padding = '20px';
-    intro.insertAdjacentHTML('afterbegin', `
-      <div style="display:flex;gap:14px;align-items:center;margin-bottom:10px;">
-        <div class="court-seal" style="width:52px;height:52px;font-size:24px;">🏟️</div>
-        <div>
-          <div class="court-kicker">SOSOKING ARENA</div>
-          <div class="court-title" style="font-size:20px;">황당재판 아레나</div>
-        </div>
-      </div>
-      <div class="arena-rank-tabs">
-        <div><strong>최신</strong><span>방금 선고</span></div>
-        <div><strong>인기</strong><span>방청석 참여</span></div>
-        <div><strong>명판결</strong><span>인기 기록</span></div>
-      </div>`);
-  }
-  const pick = document.getElementById('today-pick')?.firstElementChild;
-  if (pick && !pick.classList.contains('court-document')) {
-    pick.classList.add('court-document');
-    pick.insertAdjacentHTML('afterbegin', `<div class="court-stamp" style="margin-bottom:8px;">인기 기록</div>`);
-  }
-  document.querySelectorAll('#board-list .card').forEach((card, idx) => {
-    if (card.classList.contains('court-board-row')) return;
-    card.classList.add('court-board-row');
-    card.style.borderLeft = '3px solid rgba(201,168,76,.5)';
-    const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : String(idx + 1);
-    card.insertAdjacentHTML('afterbegin', `<div class="court-kicker" style="margin-bottom:7px;"><span class="rank-medal">${medal}</span> ABSURD RECORD</div>`);
-  });
+  const list = container.querySelector('#board-list');
+  const top = container.querySelector('#today-pick');
+  if (!list || document.getElementById('board-arena-banner')) return;
+  top?.insertAdjacentHTML('beforebegin', `
+    <div id="board-arena-banner" class="board-arena-banner">
+      <strong>방청석 공개 기록실</strong>
+      <span>사건내용을 보고 마음이 움직이면 판결문을 열람해 원고 편, 피고 편, 너무했다 표를 남겨보세요.</span>
+    </div>`);
 }
 
 export async function renderBoard(container) {
   await renderBaseBoard(container);
   decorateBoard(container);
-  setTimeout(() => decorateBoard(container), 250);
 }
