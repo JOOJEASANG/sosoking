@@ -1,6 +1,7 @@
 import { functions } from '../firebase.js?v=20260630-3';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 import { showToast } from '../components/toast.js?v=20260630-3';
+import { addOwnerStorageImage } from '../components/result-storage-image.js?v=20260709-1';
 import { renderResult as renderBaseResult } from './result.js?v=20260709-overhaul1';
 
 function ensureResultFileStyle() {
@@ -119,6 +120,7 @@ function decorateResult(container, caseId) {
   ensureResultFileStyle();
   addCopyLink(container);
   addOwnerDelete(container, caseId);
+  addOwnerStorageImage(container, caseId);
 }
 
 export async function renderResult(container, caseId) {
