@@ -2,7 +2,7 @@ import { db, auth, functions } from '../firebase.js?v=20260630-3';
 import { collection, query, where, orderBy, limit, getDocs } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 import { signOut, signInAnonymously } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
-import { escapeHtml } from '../utils/sanitize.js?v=20260630-3';
+import { escapeHtml, compactText } from '../utils/sanitize.js?v=20260630-3';
 import { showToast } from '../components/toast.js?v=20260630-3';
 
 const STATUS = {
@@ -135,6 +135,7 @@ function _caseRow(id, c) {
   const clickable = href ? `onclick="location.hash='${href}'"` : '';
   const cursor = href ? 'cursor:pointer;' : 'opacity:0.86;';
   const canDelete = c.status !== 'deleting';
+  const desc = compactText(c.caseDescription || c.originalDescription || '', 120);
 
   return `
     <div class="card" style="${cursor}border-left:3px solid ${st.color};" ${clickable}>
@@ -142,6 +143,7 @@ function _caseRow(id, c) {
         <div style="font-weight:700;font-size:15px;flex:1;min-width:0;">${escapeHtml(c.caseTitle || '제목 없음')}</div>
         <div style="font-size:11px;color:var(--cream-dim);white-space:nowrap;margin-top:2px;">${escapeHtml(_fmtDate(c.createdAt))}</div>
       </div>
+      ${desc ? `<div style="font-size:12px;color:var(--cream-dim);line-height:1.65;margin:0 0 9px;word-break:keep-all;"><b style="color:var(--gold);font-weight:800;">사건내용</b> · ${escapeHtml(desc)}</div>` : ''}
       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
         <span style="font-size:12px;color:${st.color};font-weight:700;">${st.dot} ${escapeHtml(st.label)}</span>
         <span style="font-size:12px;color:var(--cream-dim);">억울지수 ${escapeHtml(c.grievanceIndex || '?')}/10</span>
