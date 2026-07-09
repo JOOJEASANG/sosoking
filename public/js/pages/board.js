@@ -14,7 +14,6 @@ function fmtDate(ts) {
 function totalVotes(r) { return Number(r.reactionTotal || r.totalVotes || 0); }
 function totalComments(r) { return Number(r.commentCount || 0); }
 function titleOf(r) { return r.absurdityTitle || r.caseTitle || '제목 없음'; }
-function caseDescOf(r) { return compactText(r.caseDescription || r.originalCaseDescription || '', 120); }
 function previewOf(r) { return compactText(r.closingComment || r.sentence || r.verdict || r.courtOpinion || '', 110); }
 
 export async function renderBoard(container) {
@@ -24,7 +23,7 @@ export async function renderBoard(container) {
       <div class="container" style="padding-top:22px;padding-bottom:90px;">
         <div style="margin-bottom:18px;">
           <div style="font-family:var(--font-serif);font-size:22px;font-weight:900;color:var(--gold);margin-bottom:6px;">공개 황당판결 기록</div>
-          <div style="font-size:13px;color:var(--cream-dim);line-height:1.7;">다른 사람들이 공개한 사소하고 황당한 재판 기록입니다. 사건내용을 확인하고 판결문을 열람할 수 있습니다.</div>
+          <div style="font-size:13px;color:var(--cream-dim);line-height:1.7;">다른 사람들이 공개한 사소하고 황당한 재판 기록입니다. 판결문을 열람하고 원고 편·피고 편 투표와 방청석 한마디를 남길 수 있습니다.</div>
         </div>
         <div id="today-pick"></div>
         <div id="board-list"><div class="loading-dots"><span></span><span></span><span></span></div></div>
@@ -48,17 +47,11 @@ export async function renderBoard(container) {
   }
 }
 
-function descBlock(r, small = false) {
-  const desc = caseDescOf(r);
-  if (!desc) return '';
-  return `<div style="font-size:${small ? '12' : '13'}px;color:var(--cream-dim);line-height:1.6;margin:${small ? '0 0 8px' : '0 0 10px'};word-break:keep-all;"><b style="color:var(--gold);font-weight:900;">사건내용</b> · ${escapeHtml(desc)}</div>`;
-}
 function popularPick([id, r]) {
   const icon = JUDGE_ICON[r.judgeType] || '⚖️';
   return `<div class="card" onclick="location.hash='#/result/${encodeURIComponent(id)}'" style="padding:20px;margin-bottom:16px;cursor:pointer;border-color:rgba(201,168,76,.65);background:linear-gradient(135deg,rgba(201,168,76,.12),rgba(255,255,255,.03));">
     <div style="font-size:12px;color:var(--gold);font-weight:900;letter-spacing:.12em;margin-bottom:8px;">방청석 인기 황당판결</div>
     <div style="font-family:var(--font-serif);font-size:21px;font-weight:900;line-height:1.45;margin-bottom:8px;">${escapeHtml(titleOf(r))}</div>
-    ${descBlock(r)}
     <div style="font-size:14px;color:var(--cream-dim);line-height:1.65;margin-bottom:12px;">${escapeHtml(previewOf(r))}</div>
     <div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--cream-dim);"><span>${icon} ${escapeHtml(r.judgeType || 'AI')} 재판부</span><span>🧑‍⚖️ ${totalVotes(r)}표 · 💬 ${totalComments(r)}</span></div>
   </div>`;
@@ -68,7 +61,6 @@ function boardRow(id, r) {
   const isDaily = r.source === 'daily_ai';
   return `<div class="card" onclick="location.hash='#/result/${encodeURIComponent(id)}'" style="padding:16px 18px;cursor:pointer;">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px;"><div style="font-weight:800;font-size:15px;line-height:1.45;flex:1;">${escapeHtml(titleOf(r))}</div><div style="font-size:11px;color:var(--cream-dim);white-space:nowrap;margin-top:2px;">${escapeHtml(fmtDate(r.createdAt))}</div></div>
-    ${descBlock(r, true)}
     <div style="font-size:13px;color:var(--cream-dim);line-height:1.6;margin-bottom:10px;">${escapeHtml(previewOf(r))}</div>
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;"><span style="color:var(--cream-dim);">${icon} ${escapeHtml(r.judgeType || 'AI')} 재판부 · 억울지수 ${escapeHtml(r.grievanceIndex || '?')}/10</span><span style="color:var(--gold);white-space:nowrap;">🧑‍⚖️ ${totalVotes(r)} · 💬 ${totalComments(r)} →</span></div>
     ${isDaily ? `<div style="margin-top:8px;font-size:11px;color:var(--gold);font-weight:800;">오늘의 AI 황당사건</div>` : ''}
