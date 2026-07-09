@@ -7,6 +7,12 @@ const db = getFirestore();
 const REGION = 'asia-northeast3';
 const STALE_PROCESSING_MS = 10 * 60 * 1000;
 const MAX_COUNTER_REPAIR_LIMIT = 300;
+const ADMIN_CALLABLE_OPTIONS = {
+  region: REGION,
+  timeoutSeconds: 180,
+  memory: '256MiB',
+  cors: true,
+};
 
 function numberValue(value, fallback = 0) {
   const n = Number(value);
@@ -118,12 +124,12 @@ exports.repairSocialCounters = onSchedule({ region: REGION, schedule: '20 3 * * 
   console.log('repairSocialCounters:', await repairSocialCounters({ limit: 200, onlyPublic: false }));
 });
 
-exports.recoverStaleTrialsNow = onCall({ region: REGION, timeoutSeconds: 120, memory: '256MiB' }, async request => {
+exports.recoverStaleTrialsNow = onCall({ ...ADMIN_CALLABLE_OPTIONS, timeoutSeconds: 120 }, async request => {
   await assertAdmin(request);
   return await recoverStaleProcessingCases();
 });
 
-exports.repairSocialCountersNow = onCall({ region: REGION, timeoutSeconds: 180, memory: '256MiB' }, async request => {
+exports.repairSocialCountersNow = onCall(ADMIN_CALLABLE_OPTIONS, async request => {
   await assertAdmin(request);
   const limit = numberValue(request.data?.limit, 200);
   const onlyPublic = request.data?.onlyPublic === true;
