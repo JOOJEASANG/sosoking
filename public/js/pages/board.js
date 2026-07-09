@@ -3,7 +3,7 @@ import { collection, query, where, orderBy, limit, getDocs } from 'https://www.g
 import { escapeHtml, compactText } from '../utils/sanitize.js?v=20260630-3';
 
 const JUDGE_ICON = {
-  '엄벌주의형':'👨‍⚖️','감성형':'🥹','현실주의형':'🤦','현실주의형':'🤦','과몰입형':'🔥','피곤형':'😴','논리집착형':'🧮','드립형':'🎭'
+  '엄벌주의형':'👨‍⚖️','감성형':'🥹','현실주의형':'🤦','과몰입형':'🔥','피곤형':'😴','논리집착형':'🧮','드립형':'🎭'
 };
 
 function fmtDate(ts) {
