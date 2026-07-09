@@ -36,6 +36,29 @@ function cleanText(v, n) {
 function cleanLong(v, n) {
   return String(v || '').replace(/[\u0000-\u001F\u007F]/g, ' ').replace(/\n{3,}/g, '\n\n').trim().slice(0, n);
 }
+const HANGUL_RE = /[\u3131-\u318E\uAC00-\uD7A3]/;
+// 금지 문구를 지우되, '정적' 같은 짧은 항목이 '감정적/안정적/결정적'처럼
+// 더 큰 단어의 일부로 쓰인 경우(앞뒤가 한글로 이어짐)에는 지우지 않는다.
+// 예전에는 replaceAll을 그대로 써서 "감정적으로" -> "감으로" 처럼 문장이 깨졌었음.
+function stripBannedPhrase(text, phrase) {
+  if (!phrase) return text;
+  let result = '';
+  let i = 0;
+  while (i < text.length) {
+    if (text.startsWith(phrase, i)) {
+      const before = text[i - 1];
+      const after = text[i + phrase.length];
+      const boundaryOk = (!before || !HANGUL_RE.test(before)) && (!after || !HANGUL_RE.test(after));
+      if (boundaryOk) {
+        i += phrase.length;
+        continue;
+      }
+    }
+    result += text[i];
+    i++;
+  }
+  return result;
+}
 function sanitize(v, n = 6000) {
   let out = cleanLong(v, n)
     .replaceAll('사이트', '기록철')
@@ -44,7 +67,7 @@ function sanitize(v, n = 6000) {
     .replaceAll('프롬프트', '접수조서')
     .replaceAll('자동 생성', '작성')
     .replaceAll('사용자 입력', '접수진술');
-  for (const phrase of BANNED_OUTPUT_PHRASES) out = out.replaceAll(phrase, '');
+  for (const phrase of BANNED_OUTPUT_PHRASES) out = stripBannedPhrase(out, phrase);
   return out.trim();
 }
 function safeJson(text) {
@@ -173,19 +196,21 @@ async function generateAi(model, c, judgeType, people, geminiImage, fb) {
 2. 결과의 모든 내용은 '무슨 일이 있었나요'에 적힌 사건내용에서 출발한다.
 3. 특정 단어, 증인, 물건, 장소, 드립을 억지로 끼워 넣지 않는다. 사건내용에 없는 요소는 새로 만들더라도 사건의 자연스러운 확장이어야 한다.
 4. 수사는 수사답게, 재판 공방은 공방답게, 판결은 판결문답게 쓴다.
-5. 웃긴 포인트는 각 단계의 상황, 말투, 과장, 모순, 판사의 성격에서 자연스럽게 섞는다.
-6. 같은 문구를 반복하는 템플릿형 결과를 만들지 않는다.
-7. 금지 반복 문구: ${BANNED_OUTPUT_PHRASES.join(', ')}.
+5. 이 재판의 개그 엔진은 '사소한 사건'과 '지나치게 진지한 관료적 형식'의 낙차다. 형식(용어, 어투, 절차)은 끝까지 진지하고 딱딱하게 유지하되, 그 안에 담기는 내용은 단계가 진행될수록 점점 더 터무니없어지도록 확대한다. expandedCase보다 courtOpinion이, courtOpinion보다 sentence가 더 과감하게 나가야 한다.
+6. 뭉뚱그리는 표현(예: "나름의 사정이 있었다", "어느 정도 인정된다", "여러 정황상")을 쓰지 말고, 구체적인 숫자·시간·행동·기준을 만들어서 과장하라. 숫자와 디테일이 웃음을 만든다.
+7. 같은 문구, 같은 문장 구조, 같은 도입부("~는 다음과 같다" 등)를 반복하는 템플릿형 결과를 만들지 않는다. 필드마다 문장 리듬과 시작 방식을 다르게 한다.
+8. 판사의 캐릭터(${judgeType})가 courtOpinion, sentence, closingComment 세 곳 모두에서 말투 차이로 뚜렷하게 느껴져야 한다. 다른 재판장 성격으로 바꿔 써도 말이 되는 밋밋한 문장은 쓰지 않는다.
+9. 금지 반복 문구: ${BANNED_OUTPUT_PHRASES.join(', ')}.
 
 역할별 작성 방식:
 - expandedCase: 접수 담당자가 사건의 핵심 쟁점과 웃긴 포인트를 정리한다. 사건내용을 그대로 복붙하지 말고 요약·확대한다.
-- caseTimeline: 수사관이 실제로 수사하듯 시간순으로 사건을 재구성한다. 정황, 원고 반응, 피고 측 행동을 사건내용에 맞춰 추론한다.
-- forensicReport: 수사관 또는 감식관이 증거와 정황을 분석한다. 실제 증거가 없어도 사건내용에서 파생 가능한 가상 증거만 만든다.
-- plaintiffArg: 검사 또는 원고 측 대리인이 주장한다. 왜 억울한지, 무엇이 문제인지 과장하되 사건내용 안에서 주장한다.
-- defendantArg: 변호사 또는 피고 측이 반박한다. 말도 안 되지만 그럴듯한 변론을 사건내용에 맞춰 만든다.
-- courtOpinion: 판사가 재판장 성격(${judgeType})에 맞춰 쟁점, 판단 이유, 웃긴 해석을 쓴다.
-- sentence: 실제 판결문처럼 주문을 쓴다. 원하는 황당 처분이 있으면 자연스럽게 반영하고, 사건별 맞춤 처분을 선고한다.
-- closingComment: 재판장 성격이 가장 잘 드러나는 마지막 한마디를 새로 만든다.
+- caseTimeline: 수사관이 실제로 수사하듯 시간순으로 사건을 재구성한다. 정황, 원고 반응, 피고 측 행동을 사건내용에 맞춰 추론하고, 각 시점에 구체적인 시각·행동 디테일을 붙인다.
+- forensicReport: 수사관 또는 감식관이 증거와 정황을 분석한다. 실제 증거가 없어도 사건내용에서 파생 가능한 가상 증거를 만들되, 수치나 등급처럼 진지한 척하는 가짜 정량 지표를 하나 이상 만든다.
+- plaintiffArg: 검사 또는 원고 측 대리인이 주장한다. 왜 억울한지, 무엇이 문제인지 과장하되 사건내용 안에서 주장한다. 감정을 억누르지 말고 최대치로 밀어붙인다.
+- defendantArg: 변호사 또는 피고 측이 반박한다. 말도 안 되지만 그럴듯한 변론을 사건내용에 맞춰 만든다. 논리가 이상해도 스스로는 정당하다고 믿는 뻔뻔함을 담는다.
+- courtOpinion: 판사가 재판장 성격(${judgeType})에 맞춰 쟁점, 판단 이유, 웃긴 해석을 쓴다. 이 사건을 훨씬 거창한 무언가에 비유하거나, 재판장만의 독특한 판단 기준을 하나 만들어 적용한다.
+- sentence: 실제 판결문처럼 "주문 1., 2., 3." 형식으로 쓴다. 마지막 항목일수록 더 구체적이고 더 터무니없는 처분이 되도록 단계적으로 수위를 올린다. 원하는 황당 처분이 있으면 그중 한 항목에 자연스럽게 반영한다.
+- closingComment: 재판장 성격이 가장 잘 드러나는, 짧고 인용하고 싶어지는 한 줄을 새로 만든다. 요약이 아니라 펀치라인이어야 한다.
 
 필드:
 refinedCaseTitle, absurdityTitle, expandedCase, caseTimeline, forensicReport, plaintiffArg, defendantArg, courtOpinion, sentence, closingComment, absurdDetails(6~12개), evidenceBits(4~8개), defendantExcuses(3~5개), penaltyIdeas(4~6개).
