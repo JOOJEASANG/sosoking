@@ -61,7 +61,23 @@ async function makeAiTitle(desc, fallbackTitle, modelName) {
   if (!key || !desc) return fallbackTitle || '';
   try {
     const model = new GoogleGenerativeAI(key).getGenerativeModel({ model: modelName || 'gemini-2.5-flash', generationConfig: { temperature: 0.78, topP: 0.92, topK: 40, responseMimeType: 'application/json' } });
-    const prompt = `너는 소소킹 황당재판소의 사건명 작성관이다. 실제 범죄처럼 보이게 과격하게 쓰지 말고, 핵심 대상과 행동이 보이는 사건명 1개를 만든다. 반드시 사건으로 끝내고 JSON만 출력한다.\n사건 내용:\n${desc}\n{"caseTitle":"사건명"}`;
+    const prompt = `너는 소소킹 황당재판소의 사건명 작성관이다.
+
+사용자의 접수 내용을 바로 제목으로 만들지 말고, 내부적으로 정리한 뒤 최종 사건명 1개를 만든다. 내부 정리 과정은 출력하지 않는다.
+
+규칙:
+- 18~35자 권장, 최대 40자.
+- 사건 내용 안에 실제로 등장하는 핵심 대상(누가/무엇을)과 핵심 행동(무슨 일을 했는지)을 반드시 포함한다. 내용에 없는 소재나 사물을 지어내지 않는다.
+- 사건 내용의 앞부분 문장을 그대로 잘라 쓰지 말고, 전체 내용을 읽고 핵심을 요약해서 새로 구성한다.
+- 반드시 '사건'으로 끝낸다.
+- 실제 범죄처럼 보이게 과격하게 쓰지 않는다.
+- 웃기려고 드립을 치지 말고, 너무 진지한 사건명처럼 쓴다.
+
+사건 내용:
+${desc}
+
+JSON만 출력하라.
+{"draftTitle":"1차 사건명 초안","titleBasis":["핵심 대상","핵심 행동"],"caseTitle":"최종 사건명"}`;
     const result = await model.generateContent({ contents: [{ role: 'user', parts: [{ text: prompt }] }] });
     return normalizeAiTitle(result.response.text(), fallbackTitle);
   } catch (err) { console.error('AI title generation failed:', err); return fallbackTitle || ''; }
