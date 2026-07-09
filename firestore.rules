@@ -10,7 +10,7 @@ service cloud.firestore {
       return signedIn()
         && request.auth.token.email != null
         && request.auth.token.email_verified == true
-        ? request.auth.token.email.lower()
+        ? request.auth.token.email
         : '';
     }
 
