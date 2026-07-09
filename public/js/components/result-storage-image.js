@@ -20,8 +20,9 @@ export async function addOwnerStorageImage(container, caseId) {
     const c = caseSnap.data() || {};
     if (c.userId !== auth.currentUser.uid) return;
 
-    const meta = c.imageAttachmentMeta || {};
-    const path = c.imageStoragePath || meta.storagePath || '';
+    const caseImage = c.imageAttachment || {};
+    const meta = c.imageAttachmentMeta || caseImage || {};
+    const path = c.imageStoragePath || meta.storagePath || caseImage.storagePath || '';
     if (!path) return;
 
     const bytes = await getBytes(ref(storage, path), 700 * 1024);
