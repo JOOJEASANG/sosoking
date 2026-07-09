@@ -41,26 +41,6 @@ service cloud.firestore {
       return signedIn() && (isCasePublic(caseId) || isResultPublic(caseId) || isCaseOwner(caseId) || isAdmin());
     }
 
-    function validUserProfile(uid) {
-      return request.resource.data.keys().hasOnly([
-          'uid', 'email', 'nickname', 'provider', 'photoURL', 'avatarSeed', 'avatarIcon', 'avatarType', 'isAnonymous', 'createdAt', 'updatedAt'
-        ])
-        && request.resource.data.uid == uid
-        && request.resource.data.nickname is string
-        && request.resource.data.nickname.size() >= 2
-        && request.resource.data.nickname.size() <= 20
-        && request.resource.data.email is string
-        && request.resource.data.email.size() <= 120
-        && request.resource.data.provider is string
-        && request.resource.data.provider.size() <= 60
-        && request.resource.data.photoURL is string
-        && request.resource.data.photoURL.size() <= 1000
-        && request.resource.data.avatarSeed is string
-        && request.resource.data.avatarSeed.size() <= 80
-        && (!('avatarIcon' in request.resource.data) || (request.resource.data.avatarIcon is string && request.resource.data.avatarIcon.size() <= 12))
-        && request.resource.data.avatarType in ['google', 'generated', 'upload'];
-    }
-
     function validUserName(key) {
       return request.resource.data.keys().hasOnly(['uid', 'nickname', 'key', 'createdAt', 'updatedAt'])
         && request.resource.data.uid == request.auth.uid
@@ -68,31 +48,6 @@ service cloud.firestore {
         && request.resource.data.nickname is string
         && request.resource.data.nickname.size() >= 2
         && request.resource.data.nickname.size() <= 20;
-    }
-
-    function validCaseCreate() {
-      return request.resource.data.keys().hasOnly([
-          'userId', 'caseTitle', 'caseDescription', 'grievanceIndex', 'nickname',
-          'desiredVerdict', 'selectedJudge', 'status', 'isPublic', 'reportCount', 'createdAt'
-        ])
-        && request.resource.data.userId == request.auth.uid
-        && request.resource.data.caseTitle is string
-        && request.resource.data.caseTitle.size() > 0
-        && request.resource.data.caseTitle.size() <= 40
-        && request.resource.data.caseDescription is string
-        && request.resource.data.caseDescription.size() > 0
-        && request.resource.data.caseDescription.size() <= 320
-        && request.resource.data.grievanceIndex is int
-        && request.resource.data.grievanceIndex >= 1
-        && request.resource.data.grievanceIndex <= 10
-        && request.resource.data.nickname is string
-        && request.resource.data.nickname.size() <= 30
-        && request.resource.data.desiredVerdict is string
-        && request.resource.data.desiredVerdict.size() <= 160
-        && request.resource.data.selectedJudge is string
-        && request.resource.data.status == 'pending'
-        && request.resource.data.isPublic == false
-        && request.resource.data.reportCount == 0;
     }
 
     match /admins/{uid} {
@@ -107,8 +62,9 @@ service cloud.firestore {
 
     match /users/{uid} {
       allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
-      allow create: if signedIn() && request.auth.uid == uid && validUserProfile(uid);
-      allow update: if signedIn() && request.auth.uid == uid && validUserProfile(uid);
+      // 사용자 프로필은 setNickname Callable Function(Admin SDK)에서만 생성/수정한다.
+      // 클라이언트 직접 쓰기는 닉네임 예약, 프로필 사진, 익명 상태 검증을 우회할 수 있으므로 차단한다.
+      allow create, update: if false;
       allow delete: if isAdmin();
     }
 
@@ -187,6 +143,11 @@ service cloud.firestore {
     }
 
     match /comment_limits/{userId} {
+      allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
+      allow write: if false;
+    }
+
+    match /title_suggestion_limits/{userId} {
       allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
       allow write: if false;
     }
