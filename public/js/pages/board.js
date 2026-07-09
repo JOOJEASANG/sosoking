@@ -15,6 +15,11 @@ function totalVotes(r) { return Number(r.reactionTotal || r.totalVotes || 0); }
 function totalComments(r) { return Number(r.commentCount || 0); }
 function titleOf(r) { return r.absurdityTitle || r.caseTitle || '제목 없음'; }
 function previewOf(r) { return compactText(r.closingComment || r.sentence || r.verdict || r.courtOpinion || '', 110); }
+function casePreviewOf(r) { return compactText(r.caseDescription || '', 86); }
+function casePreviewHtml(r) {
+  const text = casePreviewOf(r);
+  return text ? `<div style="font-size:12px;color:var(--cream-dim);line-height:1.55;margin:2px 0 8px;opacity:.92;">사건내용 · ${escapeHtml(text)}</div>` : '';
+}
 
 export async function renderBoard(container) {
   container.innerHTML = `
@@ -52,6 +57,7 @@ function popularPick([id, r]) {
   return `<div class="card" onclick="location.hash='#/result/${encodeURIComponent(id)}'" style="padding:20px;margin-bottom:16px;cursor:pointer;border-color:rgba(201,168,76,.65);background:linear-gradient(135deg,rgba(201,168,76,.12),rgba(255,255,255,.03));">
     <div style="font-size:12px;color:var(--gold);font-weight:900;letter-spacing:.12em;margin-bottom:8px;">방청석 인기 황당판결</div>
     <div style="font-family:var(--font-serif);font-size:21px;font-weight:900;line-height:1.45;margin-bottom:8px;">${escapeHtml(titleOf(r))}</div>
+    ${casePreviewHtml(r)}
     <div style="font-size:14px;color:var(--cream-dim);line-height:1.65;margin-bottom:12px;">${escapeHtml(previewOf(r))}</div>
     <div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--cream-dim);"><span>${icon} ${escapeHtml(r.judgeType || 'AI')} 재판부</span><span>🧑‍⚖️ ${totalVotes(r)}표 · 💬 ${totalComments(r)}</span></div>
   </div>`;
@@ -61,6 +67,7 @@ function boardRow(id, r) {
   const isDaily = r.source === 'daily_ai';
   return `<div class="card" onclick="location.hash='#/result/${encodeURIComponent(id)}'" style="padding:16px 18px;cursor:pointer;">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px;"><div style="font-weight:800;font-size:15px;line-height:1.45;flex:1;">${escapeHtml(titleOf(r))}</div><div style="font-size:11px;color:var(--cream-dim);white-space:nowrap;margin-top:2px;">${escapeHtml(fmtDate(r.createdAt))}</div></div>
+    ${casePreviewHtml(r)}
     <div style="font-size:13px;color:var(--cream-dim);line-height:1.6;margin-bottom:10px;">${escapeHtml(previewOf(r))}</div>
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;"><span style="color:var(--cream-dim);">${icon} ${escapeHtml(r.judgeType || 'AI')} 재판부 · 억울지수 ${escapeHtml(r.grievanceIndex || '?')}/10</span><span style="color:var(--gold);white-space:nowrap;">🧑‍⚖️ ${totalVotes(r)} · 💬 ${totalComments(r)} →</span></div>
     ${isDaily ? `<div style="margin-top:8px;font-size:11px;color:var(--gold);font-weight:800;">오늘의 AI 황당사건</div>` : ''}
