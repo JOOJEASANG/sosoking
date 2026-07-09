@@ -13,6 +13,15 @@
         ]
       },
       {
+        "source": "/admin/index.html",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, max-age=0, must-revalidate"
+          }
+        ]
+      },
+      {
         "source": "**/*.{js,css,png,jpg,jpeg,webp,svg,ico,webmanifest}",
         "headers": [
           {
