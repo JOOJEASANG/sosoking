@@ -1,4 +1,4 @@
-import { renderMyCases as renderBaseMyCases } from './my-cases.js?v=20260708-delete2';
+import { renderMyCases as renderBaseMyCases } from './my-cases.js?v=20260709-desc1';
 
 function titleByCount(count) {
   if (count >= 20) return '전설의 황당소송왕';
