@@ -11,65 +11,29 @@ const REGION = 'asia-northeast3';
 const JUDGES = ['엄벌주의형', '감성형', '현실주의형', '과몰입형', '피곤형', '논리집착형', '드립형'];
 const COURTROOMS = ['제404호 황당법정', '제101호 사소분쟁법정', '제777호 과몰입법정', '제3호 억울함전담법정'];
 const CLERKS = ['정기록 서기관', '나과장 기록관', '박진지 참여관', '오억울 서기보'];
-const ANALYSTS = ['소소경찰 박소소 경위', '황당성 감식반 오억울 조사관', '생활증거추적팀 정침묵 수사관'];
+const ANALYSTS = ['생활증거추적팀 정침묵 수사관', '억울함 감식반 오과몰입 조사관', '소소경찰 박소소 경위'];
 const PROSECUTORS = ['황당검사 강엄숙', '생활질서전담 오진지 검사', '소소공소부 박과몰입 검사'];
 const DEFENDERS = ['피고측 변호인 최그정도', '국선변호인 안대수롭', '생활변호센터 조그럴수도 변호사'];
 
-const JUDGE_PERSONA = {
-  '엄벌주의형': '사소한 일도 엄중하게 다룬다. 단호하고 과한 처분에서 웃음이 나와야 한다.',
-  '감성형': '원고의 서운함과 마음의 손상을 크게 본다. 감정이입이 지나쳐야 한다.',
-  '현실주의형': '현실적인 해결책을 이상하게 진지하게 제시한다.',
-  '과몰입형': '작은 일을 거대한 질서 붕괴처럼 확대한다.',
-  '피곤형': '어이없어하면서도 끝까지 판결한다. 건조한 툴툴거림을 쓴다.',
-  '논리집착형': '사소한 쟁점을 지나치게 쪼개고 분석한다.',
-  '드립형': '재판 형식을 유지하며 짧은 비유와 드립을 쓴다. 사건 밖으로 벗어나지 않는다.'
-};
-
-const BANNED_OUTPUT_PHRASES = [
-  '방청석은 웃음을 참되', '웃음을 참되, 억울함은 참지', '긴급속보 자막', '종이컵', '공기청정기',
-  '미세한 흔적', '기록 보존 가치', '정적', '평온', '단순한 배경', '생활형 증거'
+const OBJECTS = [
+  ['라면', '라면'], ['커피', '커피'], ['치킨', '치킨'], ['과자', '과자'], ['푸딩', '푸딩'], ['아이스크림', '아이스크림'], ['떡볶이', '떡볶이'], ['빵', '빵'],
+  ['리모컨', '리모컨'], ['충전기', '충전기'], ['우산', '우산'], ['자리', '자리'], ['주차', '주차자리'], ['카톡', '카톡'], ['문자', '문자'], ['택배', '택배'], ['냉장고', '냉장고'],
+  ['게임', '게임'], ['약속', '약속'], ['청소', '청소'], ['설거지', '설거지'], ['화장실', '화장실'], ['엘리베이터', '엘리베이터'], ['소리', '소리'], ['냄새', '냄새'], ['말', '말'], ['사진', '사진'], ['돈', '돈']
 ];
-const PROMPT_LEAK_PHRASES = [
-  '입력 데이터', '절대 원칙', '역할별 작성 방식', 'JSON만 출력', '필드:', 'refinedCaseTitle',
-  'absurdityTitle', 'expandedCase', 'caseTimeline', 'forensicReport', 'plaintiffArg', 'defendantArg',
-  'courtOpinion', 'closingComment', 'BANNED_OUTPUT_PHRASES', '프롬프트', '지시문', '너는 소소킹'
-];
+const PLACES = ['집', '회사', '카페', '편의점', '식당', '학교', '버스', '지하철', '엘리베이터', '주차장', '사무실', '거실', '방', '매장', '학원', '독서실', 'PC방', '공원'];
+const PROMPT_LEAK = ['입력 데이터', '절대 원칙', '역할별 작성 방식', 'JSON', '필드:', 'refinedCaseTitle', 'expandedCase', 'caseTimeline', 'forensicReport', 'plaintiffArg', 'defendantArg', 'courtOpinion', '프롬프트', '지시문', '너는 소소킹'];
+const EXAMPLE_CONTAMINATION = ['종이컵', '공기청정기', '비둘기', '피고견', '피고묘', '목줄', '빵가루', '벤치', '산책로'];
 
-function cleanText(v, n) {
-  return String(v || '').replace(/[\u0000-\u001F\u007F]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, n);
-}
-function cleanLong(v, n) {
-  return String(v || '').replace(/[\u0000-\u001F\u007F]/g, ' ').replace(/\n{3,}/g, '\n\n').trim().slice(0, n);
-}
-const HANGUL_RE = /[\u3131-\u318E\uAC00-\uD7A3]/;
-function stripPhrase(text, phrase) {
-  if (!phrase) return text;
-  let result = '';
-  let i = 0;
-  while (i < text.length) {
-    if (text.startsWith(phrase, i)) {
-      const before = text[i - 1];
-      const after = text[i + phrase.length];
-      const boundaryOk = (!before || !HANGUL_RE.test(before)) && (!after || !HANGUL_RE.test(after));
-      if (boundaryOk) {
-        i += phrase.length;
-        continue;
-      }
-    }
-    result += text[i++];
-  }
-  return result;
-}
-function sanitize(v, n = 6000) {
-  let out = cleanLong(v, n)
+function cleanText(v, n) { return String(v || '').replace(/[\u0000-\u001F\u007F]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, n); }
+function cleanLong(v, n) { return String(v || '').replace(/[\u0000-\u001F\u007F]/g, ' ').replace(/\n{3,}/g, '\n\n').trim().slice(0, n); }
+function sanitize(v, n = 5000) {
+  return cleanLong(v, n)
     .replaceAll('사이트', '기록철')
     .replaceAll('시스템', '재판부')
     .replaceAll('AI', '재판부')
-    .replaceAll('프롬프트', '지시문')
+    .replaceAll('프롬프트', '접수조서')
     .replaceAll('자동 생성', '작성')
     .replaceAll('사용자 입력', '접수진술');
-  for (const phrase of BANNED_OUTPUT_PHRASES) out = stripPhrase(out, phrase);
-  return out.trim();
 }
 function safeJson(text) {
   const raw = String(text || '').replace(/```json|```/g, '').trim();
@@ -84,24 +48,120 @@ function pickFrom(arr, seed = '') {
   for (let i = 0; i < s.length; i++) x = (x + s.charCodeAt(i) * (i + 1)) % 9973;
   return arr[Math.abs(x) % arr.length];
 }
-function pickJudge(v) {
-  return JUDGES.includes(v) ? v : JUDGES[(Date.now() + Math.floor(Math.random() * 1000000)) % JUDGES.length];
+function pickJudge(v) { return JUDGES.includes(v) ? v : pickFrom(JUDGES, `${Date.now()}${Math.random()}`); }
+function kstDateKey(d = new Date()) { return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d); }
+function includesAny(text, arr) { return arr.some(x => text.includes(x)); }
+function detectObject(text) {
+  const found = OBJECTS.find(([k]) => text.includes(k));
+  if (found) return found[1];
+  const tokens = text.replace(/[.,!?。！？\n]/g, ' ').split(/\s+/).map(t => t.replace(/(을|를|이|가|은|는|에|에서|에게|한테|으로|로|도|만|까지|부터|하고|랑|와|과)$/g, '')).filter(t => t.length >= 2 && t.length <= 8);
+  return tokens[0] || '문제의 대상';
 }
-function kstDateKey(d = new Date()) {
-  return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+function detectPlace(text) { return PLACES.find(p => text.includes(p)) || '사건 현장'; }
+function actorPack(text) {
+  if (includesAny(text, ['강아지', '반려견', '댕댕이', '멍멍이'])) return { actor: '반려견 피고', type: 'dog', defense: '꼬리변호인단', prosecutor: '간식권침해특별검사' };
+  if (includesAny(text, ['고양이', '냥이', '길고양이'])) return { actor: '고양이 피고', type: 'cat', defense: '냥권수호 변호인단', prosecutor: '냥심분석검사' };
+  if (includesAny(text, ['친구', '동료', '남편', '아내', '엄마', '아빠', '가족', '사람', '사장', '알바', '손님', '직원', '선배', '후배'])) return { actor: '생활 피고', type: 'person', defense: '그럴수도 변호인단', prosecutor: '일상질서특별검사' };
+  return { actor: '상대방 측', type: 'unknown', defense: '그럴수도 변호인단', prosecutor: '일상질서특별검사' };
 }
-function list(v, fallback, max, len) {
-  const rows = Array.isArray(v) ? v.map(x => sanitize(x, len)).filter(Boolean).slice(0, max) : [];
-  while (rows.length < Math.min(fallback.length, max)) rows.push(fallback[rows.length]);
+function badText(text, input) {
+  const t = String(text || '');
+  if (!t) return true;
+  if (PROMPT_LEAK.some(p => t.includes(p))) return true;
+  return EXAMPLE_CONTAMINATION.some(p => t.includes(p) && !input.includes(p));
+}
+function safeList(v, input, fallback, max, len) {
+  const rows = Array.isArray(v) ? v.map(x => sanitize(x, len)).filter(x => !badText(x, input)).slice(0, max) : [];
+  for (const f of fallback) if (rows.length < max) rows.push(f);
   return rows.slice(0, max);
 }
+function judgeVoice(judgeType, item) {
+  const map = {
+    '엄벌주의형': { tone: '본 재판부는 사소함이라는 탈을 쓴 생활질서 교란을 가볍게 보지 않는다', line: `“${item} 하나가 무너지면 하루의 질서도 같이 흔들립니다.”`, extra: '엄중주의 특별관리 대상' },
+    '감성형': { tone: '원고의 마음속에 남은 서운함의 자국을 손해로 본다', line: `“상처는 작아 보여도 당사자 마음속에서는 대법정입니다.”`, extra: '감정 회복 우선 대상' },
+    '현실주의형': { tone: '현실적으로는 작지만 반복되면 사람을 은근히 지치게 하는 문제라고 본다', line: `“큰일은 아닌데, 큰일 아닌 척하기엔 이미 늦었습니다.”`, extra: '현실 조정 필요 사건' },
+    '과몰입형': { tone: '이 사건을 일상 우주의 균형이 삐끗한 순간으로 본다', line: `“사건은 작았으나 원고의 세계관은 잠깐 흔들렸습니다.”`, extra: '세계관 흔들림 사건' },
+    '피곤형': { tone: '재판장도 이 사건이 왜 여기까지 왔는지 잠시 천장을 보았으나 결국 판단한다', line: `“별일 아닌데 별일이 됐으면, 이제 별일처럼 처리합니다.”`, extra: '재판장 피로 유발 사건' },
+    '논리집착형': { tone: `${item}을 둘러싼 행위, 침묵, 표정, 사후 태도를 각각 분리해 판단한다`, line: `“사소함도 쪼개면 쟁점이 됩니다.”`, extra: '쟁점 과다 발생 사건' },
+    '드립형': { tone: '재판 형식은 엄숙하게 유지하되 말의 각도는 살짝 비튼다', line: `“이 정도면 사건이 아니라 생활 예능의 증거물입니다.”`, extra: '드립 보존 가치 사건' }
+  };
+  return map[judgeType] || map['현실주의형'];
+}
+function baseFunny(c, judgeType, ai = {}) {
+  const title = cleanText(c.caseTitle, 90) || '소소한 황당사건';
+  const desc = sanitize(c.caseDescription || title, 1200);
+  const desired = sanitize(c.desiredVerdict || '', 220);
+  const input = `${title} ${desc} ${desired}`;
+  const item = detectObject(input);
+  const place = detectPlace(input);
+  const actor = actorPack(input);
+  const voice = judgeVoice(judgeType, item);
+  const grievance = Math.max(1, Math.min(10, Number(c.grievanceIndex || 5)));
+  const absurdScore = Math.min(99, 37 + grievance * 6 + (desc.length % 11));
+
+  const aiTwists = safeList(ai.twists, input, [], 3, 120);
+  const aiExcuses = safeList(ai.excuses, input, [], 2, 140);
+  const aiPenalties = safeList(ai.penalties, input, [], 2, 150);
+  const aiJudgeLine = !badText(ai.judgeLine, input) ? sanitize(ai.judgeLine, 180) : '';
+
+  const evidenceBits = [
+    `원고 진술서: “${desc.slice(0, 70)}${desc.length > 70 ? '…' : ''}”`,
+    `${place} 분위기 감정 결과 억울함 농도 ${absurdScore}% 측정`,
+    `사건 직후 원고의 머릿속 재생 횟수 추정 ${grievance + 3}회`,
+    `${item} 관련 평정심 회복 예상 시간 ${grievance * 9}분`,
+    `피고 측 반응 속도 ${Math.max(1, 11 - grievance)}초 지연 의혹`,
+    ...aiTwists
+  ];
+  const defendantExcuses = [
+    `${actor.actor} 측은 “그 정도로 커질 줄은 몰랐다”고 주장한다.`,
+    `${actor.defense}은 ${item} 문제가 일상에서 흔한 오해라고 항변한다.`,
+    `피고 측은 원고의 억울함 수치가 예상보다 높게 측정된 것은 인정하나 고의성은 부인한다.`,
+    ...aiExcuses
+  ];
+  const penaltyIdeas = [
+    `${actor.actor} 측은 원고 앞에서 억울함 인정 문장 1회를 낭독한다.`,
+    `${item} 관련 행위 전 원고 표정 확인 의무를 3일간 이행한다.`,
+    `피고 측은 “그럴 수도 있지” 발언권을 하루 1회로 제한한다.`,
+    desired ? `원고가 희망한 처분인 “${desired}”을 현실 가능한 선에서 일부 반영한다.` : `원고에게 작은 간식 또는 음료로 감정 항소비용을 납부한다.`,
+    ...aiPenalties
+  ];
+
+  const expandedCase = `사건개요\n${title}은 ${place}에서 발생한 ${item} 관련 생활분쟁이다. 원고는 사건 규모보다 그 순간의 어이없음, 이후에도 계속 생각나는 찝찝함, 그리고 피고 측의 온도 차이에 강한 억울함을 호소하였다.\n\n접수 내용을 검토한 결과, 본 사안은 형식상 사소하나 감정상으로는 이미 원고의 하루 일정표에 빨간 줄을 그은 사건으로 보인다. 재판부는 이를 ${voice.extra}으로 분류하고 정식 심리에 회부한다.`;
+  const caseTimeline = `수사 진행 과정\n1. ${place}에서 ${item} 관련 이상 징후가 발생하였다.\n2. 원고는 최초 2.5초간 “이게 맞나?” 단계에 머물렀고, 이후 억울함이 빠르게 상승하였다.\n3. ${actor.actor} 측은 즉시 사과 또는 해명을 하지 못해 사건을 조기 종결할 기회를 놓쳤다.\n4. 수사관은 원고의 표정, 말끝, 사건 후 재언급 횟수를 종합해 생활질서 교란 가능성을 확인하였다.\n5. 본 사건은 단순 해프닝으로 덮기에는 원고 마음속 재방송이 과다하다고 판단되어 재판부로 송치되었다.`;
+  const forensicReport = `수사보고서\n담당 수사관은 ${item} 자체보다 사건 이후 남은 감정의 잔열에 주목하였다. 원고의 억울함 지수는 ${grievance}/10, 현장 황당성 지수는 ${absurdScore}/100으로 산정된다.\n\n증거로는 원고 진술, 사건 직후의 침묵 길이, 피고 측의 애매한 태도, 그리고 “이걸 그냥 넘어가야 하나”라는 내적 독백이 제출되었다. 감식반은 특히 마지막 독백을 본 사건의 핵심 증거로 본다.`;
+  const plaintiffArg = `원고 측 주장\n${actor.prosecutor}는 “이 사건의 본질은 ${item}이 아니라 원고의 평온한 하루가 갑자기 재판감으로 바뀐 데 있다”고 주장하였다.\n\n원고 측은 피고가 처음부터 대단한 잘못을 저질렀다고까지 말하지는 않으나, 문제를 너무 가볍게 취급한 태도 때문에 사건이 커졌다고 본다. 특히 원고가 속으로 여러 번 반박문을 작성하게 된 점은 중대한 정신적 노동으로 평가해야 한다고 주장한다.`;
+  const defendantArg = `피고 측 변론\n${actor.defense}은 “이 정도 일로 법정까지 오는 것은 생활의 자연스러운 삐걱거림을 과도하게 확대한 것”이라고 항변하였다.\n\n그러나 변론 도중 피고 측은 “그냥 그런 줄 알았다”, “별생각 없었다”, “그렇게 억울한 줄 몰랐다”는 취지의 말을 반복하였고, 재판부는 바로 그 대목에서 원고의 억울함이 다시 1.7배 상승했을 가능성을 배제하기 어렵다고 보았다.\n\n피고 측 추가 변명: ${defendantExcuses.join(' / ')}`;
+  const courtOpinion = `재판부 판단\n${judgeType} 재판부는 다음과 같이 판단한다. ${voice.tone}.\n\n본 재판부가 보는 핵심 쟁점은 세 가지다. 첫째, ${item} 문제가 실제로 원고의 기분을 건드렸는가. 둘째, 피고 측이 이를 너무 작게 본 것은 아닌가. 셋째, 이 사안을 웃으면서도 판결문까지 남길 정도의 황당함으로 볼 수 있는가.\n\n위 증거와 진술을 종합하면, 원고의 억울함은 단순 기분 탓이 아니라 사건 이후에도 반복 재생된 생활형 후유증에 가깝다. 따라서 재판부는 피고 측의 일부 책임을 인정한다. ${aiJudgeLine || voice.line}`;
+  const sentence = `판결\n주문 1. ${actor.actor} 측은 원고가 왜 억울했는지 최소 1회 이상 진지한 얼굴로 인정한다.\n주문 2. 피고 측은 향후 ${item} 관련 상황에서 “별거 아니잖아”라는 취지의 발언을 즉시 사용하지 않는다.\n주문 3. 원고는 본 판결문을 근거로 마음속 항소심을 24시간 이내 종료하도록 노력한다.\n주문 4. ${penaltyIdeas[0]}\n주문 5. ${penaltyIdeas[1]}\n주문 6. ${penaltyIdeas[3] || penaltyIdeas[2]}\n\n본 판결은 실제 법적 효력은 없으나, 원고의 억울함을 웃음으로 정리하는 데에는 상당한 효력이 있는 것으로 본다.`;
+  const closingComment = `재판장 한마디: “${(aiJudgeLine || voice.line).replace(/^재판장 한마디[:：]?\s*/g, '').replace(/[“”"]/g, '')}”`;
+
+  return {
+    refinedCaseTitle: title,
+    absurdityTitle: title,
+    expandedCase,
+    caseTimeline,
+    forensicReport,
+    plaintiffArg,
+    defendantArg,
+    courtOpinion,
+    sentence,
+    closingComment,
+    absurdDetails: [
+      `${item} 문제가 하루의 평정심을 침범함`,
+      `원고 마음속 재방송 ${grievance + 3}회 발생`,
+      `${place} 현장 황당성 ${absurdScore}% 측정`,
+      `피고 측 온도 차이로 사건 확대`,
+      `사소한데 계속 생각나는 후유증 확인`,
+      `재판장 성격상 ${voice.extra}으로 격상`,
+      ...aiTwists
+    ].slice(0, 12),
+    evidenceBits: evidenceBits.slice(0, 8),
+    defendantExcuses: defendantExcuses.slice(0, 5),
+    penaltyIdeas: penaltyIdeas.slice(0, 6)
+  };
+}
 async function loadSettings() {
-  try {
-    const s = await db.doc('site_settings/config').get();
-    return s.exists ? s.data() : {};
-  } catch {
-    return {};
-  }
+  try { const s = await db.doc('site_settings/config').get(); return s.exists ? s.data() : {}; } catch { return {}; }
 }
 async function imageForGemini(c) {
   const img = c?.imageAttachment || c?.imageAttachmentMeta || null;
@@ -128,116 +188,24 @@ function imageMeta(c) {
     resizedSize: Number(img.resizedSize || 0)
   } : null;
 }
-function fallbackFor(c, judgeType) {
-  const title = cleanText(c.caseTitle, 90) || '소소한 황당사건';
-  const desc = cleanText(c.caseDescription, 1200) || title;
-  const persona = JUDGE_PERSONA[judgeType] || JUDGE_PERSONA['현실주의형'];
-  return {
-    refinedCaseTitle: title,
-    absurdityTitle: title,
-    expandedCase: `사건개요\n본 재판부는 접수내용을 기준으로 사건의 핵심을 정리한다. ${desc}\n쟁점은 사건의 크기가 아니라 당사자가 느낀 억울함과 상대방의 온도 차이에 있다.`,
-    caseTimeline: `수사 진행 과정\n1. 접수 진술 확인\n2. 사건 당시 상황과 당사자 반응 재구성\n3. 원고가 억울함을 느낀 지점 특정\n4. 피고 측이 가볍게 본 정황 검토\n5. 재판부 판단 단계로 송치`,
-    forensicReport: `수사보고서\n중심 증거는 접수 진술이다. 감정 결과, 본 사안은 물리적 피해보다 심리적 찝찝함과 어이없음의 잔존 시간이 더 큰 사건으로 분류된다.`,
-    plaintiffArg: `원고 측 주장\n원고는 이 상황이 사소해 보일 수는 있어도 그냥 넘기기 어렵다고 주장한다. 핵심은 상대방이 문제를 작게 취급한 태도라고 본다.`,
-    defendantArg: `피고 측 변론\n피고 측은 악의가 아니라 상황 판단의 차이라고 항변한다. 다만 원고가 불쾌감을 느낀 사실 자체는 쉽게 부정하기 어렵다.`,
-    courtOpinion: `재판부 판단\n${judgeType} 재판부는 ${persona} 이 기준에 따라 원고의 억울함을 일부 인정한다. 본 사건은 실제 법률분쟁이 아니라 일상 속 황당함을 과장해 판결하는 오락용 사건이다.`,
-    sentence: `판결\n주문 1. 피고 측은 원고가 왜 억울했는지 인정한다.\n주문 2. 같은 상황이 반복되지 않도록 주의한다.\n주문 3. 원고는 본 판결문으로 억울함을 일부 해소한 것으로 본다.\n주문 4. 양측은 가능한 경우 가벼운 사과 또는 작은 보상으로 사건을 종결한다.`,
-    closingComment: `재판장 한마디: “사소한 일이라도 마음에 걸리면 기록으로 남길 가치는 있습니다.”`,
-    absurdDetails: ['접수 진술 중심 사건', '원고의 억울함 발생', '피고 측의 온도 차이', '사소하지만 말하면 커지는 상황'],
-    evidenceBits: ['접수된 사건내용', '원고의 감정 반응', '피고 측 추정 입장', '사건 이후 찝찝함'],
-    defendantExcuses: ['그렇게까지 커질 줄 몰랐다는 주장', '별일 아니라고 생각했다는 주장', '고의는 아니었다는 주장'],
-    penaltyIdeas: ['상황 인정', '가벼운 사과', '재발 방지 약속', '작은 보상 또는 화해']
-  };
-}
-function normalize(raw, fb, caseTitle) {
-  const keepTitle = cleanText(caseTitle || fb.refinedCaseTitle, 90) || fb.refinedCaseTitle;
-  return {
-    refinedCaseTitle: keepTitle,
-    absurdityTitle: keepTitle,
-    expandedCase: sanitize(raw.expandedCase || fb.expandedCase, 7600),
-    caseTimeline: sanitize(raw.caseTimeline || fb.caseTimeline, 7000),
-    forensicReport: sanitize(raw.forensicReport || fb.forensicReport, 7000),
-    plaintiffArg: sanitize(raw.plaintiffArg || fb.plaintiffArg, 6200),
-    defendantArg: sanitize(raw.defendantArg || fb.defendantArg, 6200),
-    courtOpinion: sanitize(raw.courtOpinion || fb.courtOpinion, 6200),
-    sentence: sanitize(raw.sentence || fb.sentence, 5200),
-    closingComment: sanitize(raw.closingComment || fb.closingComment, 520),
-    absurdDetails: list(raw.absurdDetails, fb.absurdDetails, 12, 240),
-    evidenceBits: list(raw.evidenceBits, fb.evidenceBits, 8, 240),
-    defendantExcuses: list(raw.defendantExcuses, fb.defendantExcuses, 5, 280),
-    penaltyIdeas: list(raw.penaltyIdeas, fb.penaltyIdeas, 6, 280)
-  };
-}
-function allResultText(data) {
-  return [data.expandedCase, data.caseTimeline, data.forensicReport, data.plaintiffArg, data.defendantArg, data.courtOpinion, data.sentence, data.closingComment, ...(data.absurdDetails || []), ...(data.evidenceBits || []), ...(data.defendantExcuses || []), ...(data.penaltyIdeas || [])].join(' ');
-}
-function hasBadOutput(data) {
-  const joined = allResultText(data);
-  return BANNED_OUTPUT_PHRASES.some(p => joined.includes(p)) || PROMPT_LEAK_PHRASES.some(p => joined.includes(p));
-}
-function trialPrompt({ caseTitle, caseDescription, desiredVerdict, grievanceIndex, judgeType, persona, people }) {
-  return `오락용 황당재판 결과를 JSON 객체 하나로 작성한다.
-
-사건명은 그대로 사용: ${caseTitle}
-사건내용: ${caseDescription}
-원하는 처분: ${desiredVerdict || '없음'}
-억울함: ${grievanceIndex}/10
-재판장: ${judgeType} - ${persona}
-담당자: ${JSON.stringify(people)}
-
-출력 본문에는 이 안내문, 규칙 설명, 필드명 나열, JSON 작성 지시를 절대 쓰지 않는다.
-사건내용을 바탕으로 수사, 공방, 판단, 판결을 각각 실제 절차처럼 작성하되 중간중간 자연스럽게 웃긴 과장을 섞는다.
-사건내용에 없는 물건, 증인, 장소, 고정 드립을 억지로 넣지 않는다.
-판결로 갈수록 더 구체적이고 더 과장되게 만든다.
-재판장 성격은 courtOpinion, sentence, closingComment에 강하게 반영한다.
-
-필요한 키만 가진 JSON 객체를 반환한다:
-{"refinedCaseTitle":"${caseTitle}","absurdityTitle":"${caseTitle}","expandedCase":"","caseTimeline":"","forensicReport":"","plaintiffArg":"","defendantArg":"","courtOpinion":"","sentence":"","closingComment":"","absurdDetails":[],"evidenceBits":[],"defendantExcuses":[],"penaltyIdeas":[]}`;
-}
-function retryPrompt({ caseTitle, caseDescription, desiredVerdict, grievanceIndex, judgeType, persona }) {
-  return `JSON만 반환한다. 설명문과 작성 지시는 본문에 넣지 않는다.
-사건명: ${caseTitle}
-사건내용: ${caseDescription}
-희망처분: ${desiredVerdict || '없음'}
-억울함: ${grievanceIndex}/10
-재판장 성격: ${judgeType}, ${persona}
-
-위 사건 하나만 다룬다. 결과는 수사보고서, 원고 주장, 피고 반박, 재판부 판단, 주문형 판결로 나눈다.
-본문에 '입력 데이터', '절대 원칙', '역할별 작성 방식', '필드', 'JSON만 출력' 같은 작성 안내 문구를 쓰면 실패다.
-{"refinedCaseTitle":"${caseTitle}","absurdityTitle":"${caseTitle}","expandedCase":"","caseTimeline":"","forensicReport":"","plaintiffArg":"","defendantArg":"","courtOpinion":"","sentence":"","closingComment":"","absurdDetails":[],"evidenceBits":[],"defendantExcuses":[],"penaltyIdeas":[]}`;
-}
-async function askModel(model, prompt, geminiImage) {
-  const parts = [{ text: prompt }];
-  if (geminiImage) parts.push({ inlineData: geminiImage });
-  const result = await model.generateContent({ contents: [{ role: 'user', parts }] });
-  return { text: result.response.text(), usage: result.response.usageMetadata || {} };
-}
-async function generateAi(model, c, judgeType, people, geminiImage, fb) {
-  const caseTitle = cleanText(c.caseTitle, 90) || '소소한 황당사건';
-  const args = {
-    caseTitle,
-    caseDescription: cleanText(c.caseDescription, 1200),
-    desiredVerdict: cleanText(c.desiredVerdict, 240),
-    grievanceIndex: Number(c.grievanceIndex || 5),
-    judgeType,
-    persona: JUDGE_PERSONA[judgeType] || JUDGE_PERSONA['현실주의형'],
-    people
-  };
-  let first = await askModel(model, trialPrompt(args), geminiImage);
-  let data = normalize(safeJson(first.text), fb, caseTitle);
-  let usage = { requests: 1, inputTokens: first.usage.promptTokenCount || 0, outputTokens: first.usage.candidatesTokenCount || 0 };
-
-  if (hasBadOutput(data)) {
-    const second = await askModel(model, retryPrompt(args), geminiImage);
-    const retryData = normalize(safeJson(second.text), fb, caseTitle);
-    usage = {
-      requests: 2,
-      inputTokens: usage.inputTokens + (second.usage.promptTokenCount || 0),
-      outputTokens: usage.outputTokens + (second.usage.candidatesTokenCount || 0)
-    };
-    data = hasBadOutput(retryData) ? normalize(fb, fb, caseTitle) : retryData;
+async function aiAssist(model, c, judgeType, geminiImage) {
+  const title = cleanText(c.caseTitle, 90);
+  const desc = cleanText(c.caseDescription, 900);
+  const desired = cleanText(c.desiredVerdict, 180);
+  const prompt = `사건명: ${title}\n사건내용: ${desc}\n희망처분: ${desired || '없음'}\n재판장: ${judgeType}\n\n아래 JSON만 작성한다. 사건내용에 없는 물건, 장소, 동물, 증인을 만들지 않는다. 작성 안내문을 본문에 쓰지 않는다.\n{"twists":["웃긴 핵심 포인트 3개"],"excuses":["피고 측 황당 변명 2개"],"penalties":["구체적인 황당 처분 2개"],"judgeLine":"재판장 한마디 1개"}`;
+  try {
+    const parts = [{ text: prompt }];
+    if (geminiImage) parts.push({ inlineData: geminiImage });
+    const result = await model.generateContent({ contents: [{ role: 'user', parts }] });
+    const raw = safeJson(result.response.text());
+    const text = JSON.stringify(raw);
+    const input = `${title} ${desc} ${desired}`;
+    if (badText(text, input)) return { data: {}, usage: result.response.usageMetadata || {} };
+    return { data: raw, usage: result.response.usageMetadata || {} };
+  } catch (err) {
+    console.warn('ai assist skipped:', err.message || err);
+    return { data: {}, usage: {} };
   }
-  return { data, usage };
 }
 
 exports.generateTrial = onCall({ region: REGION, secrets: [geminiKey], timeoutSeconds: 300, memory: '512MiB', cors: true }, async request => {
@@ -245,6 +213,7 @@ exports.generateTrial = onCall({ region: REGION, secrets: [geminiKey], timeoutSe
   const uid = request.auth.uid;
   const caseId = cleanText(request.data?.caseId, 180);
   if (!caseId) throw new HttpsError('invalid-argument', 'caseId required');
+
   const caseRef = db.doc(`cases/${caseId}`);
   const resultRef = db.doc(`results/${caseId}`);
   const snap = await caseRef.get();
@@ -280,27 +249,26 @@ exports.generateTrial = onCall({ region: REGION, secrets: [geminiKey], timeoutSe
 
   const settings = await loadSettings();
   const modelName = cleanText(settings.geminiModel, 60) || 'gemini-2.5-flash';
-  const caseTitle = cleanText(c.caseTitle, 90) || '소소한 황당사건';
-  const fb = fallbackFor(c, judgeType);
-  const geminiImage = await imageForGemini(c).catch(err => { console.warn('image load skipped:', err.message || err); return null; });
-  let data = normalize(fb, fb, caseTitle);
+  const geminiImage = await imageForGemini(c).catch(() => null);
+  let assist = {};
   let totals = { requests: 0, inputTokens: 0, outputTokens: 0 };
-  let generationMode = 'local-no-prompt-leak-v10';
-  let aiGenerated = false;
 
   try {
-    const model = new GoogleGenerativeAI(geminiKey.value().trim()).getGenerativeModel({
-      model: modelName,
-      generationConfig: { temperature: 1.15, topP: 0.96, topK: 48, maxOutputTokens: 8000, responseMimeType: 'application/json' }
-    });
-    const generated = await generateAi(model, c, judgeType, people, geminiImage, fb);
-    data = generated.data;
-    totals = generated.usage;
-    generationMode = hasBadOutput(data) ? 'local-no-prompt-leak-v10' : 'ai-no-prompt-leak-v10';
-    aiGenerated = generationMode.startsWith('ai-');
+    const key = geminiKey.value().trim();
+    if (key) {
+      const model = new GoogleGenerativeAI(key).getGenerativeModel({ model: modelName, generationConfig: { temperature: 1.05, topP: 0.94, topK: 40, maxOutputTokens: 1800, responseMimeType: 'application/json' } });
+      const ai = await aiAssist(model, c, judgeType, geminiImage);
+      assist = ai.data || {};
+      totals = { requests: 1, inputTokens: ai.usage.promptTokenCount || 0, outputTokens: ai.usage.candidatesTokenCount || 0 };
+    }
   } catch (err) {
-    console.error('document generation skipped:', err);
+    console.warn('ai setup skipped:', err.message || err);
   }
+
+  const data = baseFunny(c, judgeType, assist);
+  const caseTitle = data.refinedCaseTitle;
+  const aiGenerated = !!(assist.twists || assist.excuses || assist.penalties || assist.judgeLine);
+  const generationMode = aiGenerated ? 'ai-assisted-funny-engine-v11' : 'local-funny-engine-v11';
 
   try {
     await resultRef.set({
@@ -309,12 +277,12 @@ exports.generateTrial = onCall({ region: REGION, secrets: [geminiKey], timeoutSe
       isPublic: c.isPublic === true,
       docketNumber: c.docketNumber || '',
       courtName: '소소킹 황당재판소', courtroom: people.courtroom, division: '제3황당재판부', recordClerk: people.recordClerk, analystName: people.analystName, prosecutorName: people.prosecutorName, defenderName: people.defenderName,
-      caseTitle: caseTitle, originalCaseTitle: caseTitle, refinedCaseTitle: caseTitle, absurdityTitle: caseTitle,
+      caseTitle, originalCaseTitle: caseTitle, refinedCaseTitle: caseTitle, absurdityTitle: caseTitle,
       imageAnalysis: '', hasImageAttachment: !!geminiImage, imageAttachmentMeta: imageMeta(c), caseDescription: c.caseDescription || '',
       expandedCase: data.expandedCase, absurdDetails: data.absurdDetails, evidenceBits: data.evidenceBits, defendantExcuses: data.defendantExcuses, penaltyIdeas: data.penaltyIdeas,
       grievanceIndex: c.grievanceIndex || 5, nickname: c.nickname || '익명 원고', desiredVerdict: c.desiredVerdict || '', judgeType,
       reception: data.expandedCase, caseTimeline: data.caseTimeline, forensicReport: data.forensicReport, plaintiffArg: data.plaintiffArg, defendantArg: data.defendantArg, courtOpinion: data.courtOpinion, sentence: data.sentence, closingComment: data.closingComment,
-      aiGenerated, generationMode, resultVersion: 'no-prompt-leak-v10', analysisDigest: data.absurdDetails.slice(0, 4), absurdityReview: `재판부는 ${caseTitle}을 실제 법률 사안이 아닌 예능형 황당재판으로 판단한다.`, keyIssues: data.absurdDetails.slice(0, 4), evidenceList: data.evidenceBits.slice(0, 7), investigation: data.forensicReport, verdict: data.courtOpinion,
+      aiGenerated, generationMode, resultVersion: 'funny-engine-v11', analysisDigest: data.absurdDetails.slice(0, 4), absurdityReview: `재판부는 ${caseTitle}을 실제 법률 사안이 아닌 예능형 황당재판으로 판단한다.`, keyIssues: data.absurdDetails.slice(0, 4), evidenceList: data.evidenceBits.slice(0, 7), investigation: data.forensicReport, verdict: data.courtOpinion,
       executionOrder: '본 기록은 실제 법률문서가 아니며, 당사자 사이의 웃음 회복을 위한 임의적 기록입니다.', appealNotice: '본 사건은 1회에 한하여 마음속 항소가 가능하다. 다만 항소심도 실제 법적 효력은 없다.', reactionTotal: 0, totalVotes: 0, commentCount: 0, courtStage: 'sentenced', createdAt: c.createdAt || FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp()
     }, { merge: true });
     await caseRef.update({ status: 'completed', courtStage: 'sentenced', courtName: '소소킹 황당재판소', courtroom: people.courtroom, division: '제3황당재판부', recordClerk: people.recordClerk, analystName: people.analystName, prosecutorName: people.prosecutorName, defenderName: people.defenderName, judgeType, isPublic: c.isPublic === true, completedAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp(), errorMessage: FieldValue.delete() });
@@ -327,5 +295,5 @@ exports.generateTrial = onCall({ region: REGION, secrets: [geminiKey], timeoutSe
       await db.doc(`usage_stats/daily_${today}`).set({ date: today, geminiRequests: FieldValue.increment(totals.requests), geminiInputTokens: FieldValue.increment(totals.inputTokens), geminiOutputTokens: FieldValue.increment(totals.outputTokens), caseCount: FieldValue.increment(1), imageCaseCount: FieldValue.increment(geminiImage ? 1 : 0), firestoreReads: FieldValue.increment(3), firestoreWrites: FieldValue.increment(4), functionInvocations: FieldValue.increment(1), robustAbsurdCount: FieldValue.increment(1), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
     } catch (e) { console.error('usage log failed:', e); }
   }
-  return { success: true, judgeType, isPublic: c.isPublic === true, hasImageAttachment: !!geminiImage, resultVersion: 'no-prompt-leak-v10', generationMode };
+  return { success: true, judgeType, isPublic: c.isPublic === true, hasImageAttachment: !!geminiImage, resultVersion: 'funny-engine-v11', generationMode };
 });
