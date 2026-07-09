@@ -5,18 +5,10 @@ const db = getFirestore();
 const REGION = 'asia-northeast3';
 
 function clean(value, max = 500) {
-  return String(value || '')
-    .replace(/[\u0000-\u001F\u007F]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, max);
+  return String(value || '').replace(/[\u0000-\u001F\u007F]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max);
 }
 function cleanBlock(value, max = 4000) {
-  return String(value || '')
-    .replace(/[\u0000-\u001F\u007F]/g, ' ')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim()
-    .slice(0, max);
+  return String(value || '').replace(/[\u0000-\u001F\u007F]/g, ' ').replace(/\n{3,}/g, '\n\n').trim().slice(0, max);
 }
 function pick(arr, seed = '') {
   const s = String(seed || Date.now());
@@ -52,14 +44,20 @@ async function loadSettings() {
 function kstDateKey(date = new Date()) {
   return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
 }
+function keywordTokens(text, max = 5) {
+  const stop = new Set(['그리고','그래서','근데','아니','진짜','너무','정말','내가','제가','나를','나의','하는','했다','했는데','있다','없는','같은','그냥','사건','오늘','어제','갑자기','자꾸','계속','때문에','에서','으로','에게','한테','부터','까지']);
+  return Array.from(new Set(String(text || '').match(/[가-힣A-Za-z0-9]{2,}/g) || []))
+    .map(x => clean(x, 20))
+    .filter(x => x && !stop.has(x) && !/^[0-9]+$/.test(x))
+    .slice(0, max);
+}
 function titleFromDescription(desc) {
-  const t = clean(desc, 100);
-  if (/개|강아지|리트리버|반려견|댕댕|견주/.test(t) && /빵|샌드위치|베이글|크루아상|소금빵|간식/.test(t)) return '공원 리트리버 빵 무단섭취 사건';
-  if (/카누|커피|탕비실/.test(t)) return '탕비실 마지막 카누 봉지 방치 사건';
-  if (/방|문|동생/.test(t)) return '동생의 방문 미닫힘 반복 사건';
-  if (/이어폰/.test(t)) return '침대 밑 이어폰 한쪽 실종 사건';
-  const short = t.replace(/[.!?。！？].*$/g, '').slice(0, 28).trim() || '소소한 일상';
-  return short.endsWith('사건') ? short : `${short} 사건`;
+  const t = clean(desc, 160);
+  const tokens = keywordTokens(t, 4);
+  let base = tokens.join(' ');
+  if (!base) base = t.replace(/[.!?。！？].*$/g, '').slice(0, 28).trim() || '소소한 일상';
+  if (base.length > 32) base = base.slice(0, 32).trim();
+  return base.endsWith('사건') ? base : `${base} 사건`;
 }
 
-module.exports = { db, FieldValue, REGION, clean, cleanBlock, pick, docketNumber, safeJson, buildModel, loadSettings, kstDateKey, titleFromDescription };
+module.exports = { db, FieldValue, REGION, clean, cleanBlock, pick, docketNumber, safeJson, buildModel, loadSettings, kstDateKey, keywordTokens, titleFromDescription };
