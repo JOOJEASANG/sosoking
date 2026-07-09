@@ -1,4 +1,4 @@
-import { renderBoard as renderBaseBoard } from './board.js?v=20260707-2';
+import { renderBoard as renderBaseBoard } from './board.js?v=20260709-board1';
 
 function ensureBoardGameStyle() {
   if (document.getElementById('board-game-style')) return;
@@ -33,14 +33,14 @@ function decorateBoard(container) {
       </div>
       <div class="arena-rank-tabs">
         <div><strong>최신</strong><span>방금 선고</span></div>
-        <div><strong>인기</strong><span>배심원 참여</span></div>
-        <div><strong>명판결</strong><span>오늘의 사건</span></div>
+        <div><strong>인기</strong><span>방청석 참여</span></div>
+        <div><strong>명판결</strong><span>인기 기록</span></div>
       </div>`);
   }
   const pick = document.getElementById('today-pick')?.firstElementChild;
   if (pick && !pick.classList.contains('court-document')) {
     pick.classList.add('court-document');
-    pick.insertAdjacentHTML('afterbegin', `<div class="court-stamp" style="margin-bottom:8px;">랭킹 1위</div>`);
+    pick.insertAdjacentHTML('afterbegin', `<div class="court-stamp" style="margin-bottom:8px;">인기 기록</div>`);
   }
   document.querySelectorAll('#board-list .card').forEach((card, idx) => {
     if (card.classList.contains('court-board-row')) return;
