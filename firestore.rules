@@ -6,14 +6,18 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function adminEmail() {
-      return signedIn() && request.auth.token.email != null ? request.auth.token.email : '';
+    function verifiedAdminEmail() {
+      return signedIn()
+        && request.auth.token.email != null
+        && request.auth.token.email_verified == true
+        ? request.auth.token.email.lower()
+        : '';
     }
 
     function isAdmin() {
       return signedIn() && (
         exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
-        exists(/databases/$(database)/documents/admins/$(adminEmail()))
+        exists(/databases/$(database)/documents/admins/$(verifiedAdminEmail()))
       );
     }
 
@@ -41,17 +45,8 @@ service cloud.firestore {
       return signedIn() && (isCasePublic(caseId) || isResultPublic(caseId) || isCaseOwner(caseId) || isAdmin());
     }
 
-    function validUserName(key) {
-      return request.resource.data.keys().hasOnly(['uid', 'nickname', 'key', 'createdAt', 'updatedAt'])
-        && request.resource.data.uid == request.auth.uid
-        && request.resource.data.key == key
-        && request.resource.data.nickname is string
-        && request.resource.data.nickname.size() >= 2
-        && request.resource.data.nickname.size() <= 20;
-    }
-
-    match /admins/{uid} {
-      allow read: if signedIn() && (request.auth.uid == uid || adminEmail() == uid || isAdmin());
+    match /admins/{uidOrEmail} {
+      allow read: if signedIn() && (request.auth.uid == uidOrEmail || verifiedAdminEmail() == uidOrEmail || isAdmin());
       allow write: if false;
     }
 
@@ -62,30 +57,17 @@ service cloud.firestore {
 
     match /users/{uid} {
       allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
-      // 사용자 프로필은 setNickname Callable Function(Admin SDK)에서만 생성/수정한다.
-      // 클라이언트 직접 쓰기는 닉네임 예약, 프로필 사진, 익명 상태 검증을 우회할 수 있으므로 차단한다.
       allow create, update: if false;
-      allow delete: if isAdmin();
+      allow delete: if false;
     }
 
     match /user_names/{key} {
       allow read: if true;
-      allow create: if signedIn()
-        && !exists(/databases/$(database)/documents/user_names/$(key))
-        && validUserName(key);
-      allow update: if signedIn()
-        && resource.data.uid == request.auth.uid
-        && validUserName(key);
-      allow delete: if signedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create, update, delete: if false;
     }
 
     match /cases/{caseId} {
-      allow read: if signedIn() && (
-        resource.data.userId == request.auth.uid ||
-        isAdmin()
-      );
-      // 사건 접수는 submitCase Callable Function(Admin SDK)에서만 처리한다.
-      // 클라이언트 직접 생성은 일일 제한, 쿨다운, 실명 로그인 검사를 우회할 수 있으므로 차단한다.
+      allow read: if signedIn() && (resource.data.userId == request.auth.uid || isAdmin());
       allow create: if false;
       allow update: if isAdmin() || (
         signedIn() &&
@@ -93,24 +75,19 @@ service cloud.firestore {
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isPublic']) &&
         request.resource.data.isPublic is bool
       );
-      allow delete: if isAdmin();
+      allow delete: if false;
     }
 
     match /results/{caseId} {
-      allow read: if signedIn() && (
-        isCaseOwner(caseId) ||
-        resource.data.isPublic == true ||
-        isAdmin()
-      );
+      allow read: if signedIn() && (isCaseOwner(caseId) || resource.data.isPublic == true || isAdmin());
       allow update: if isAdmin() || (
         signedIn() &&
         isCaseOwner(caseId) &&
-        // 사용자는 공개 여부만 변경 가능하다. 판결문, 형량, 제목, 작성일은 서버 또는 관리자만 수정한다.
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isPublic']) &&
         request.resource.data.isPublic is bool
       );
       allow create: if false;
-      allow delete: if isAdmin();
+      allow delete: if false;
     }
 
     match /result_reactions/{caseId} {
@@ -153,14 +130,7 @@ service cloud.firestore {
     }
 
     match /reports/{reportId} {
-      allow create: if signedIn()
-        && request.resource.data.keys().hasOnly(['caseId', 'reason', 'status', 'createdAt', 'userId'])
-        && request.resource.data.userId == request.auth.uid
-        && request.resource.data.caseId is string
-        && request.resource.data.reason is string
-        && request.resource.data.reason.size() > 0
-        && request.resource.data.reason.size() <= 300
-        && request.resource.data.status == 'pending';
+      allow create: if false;
       allow read, update, delete: if isAdmin();
     }
 
@@ -171,7 +141,14 @@ service cloud.firestore {
 
     match /site_settings/{docId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin()
+        && request.resource.data.keys().hasOnly([
+          'dailyLimit', 'cooldownSec', 'businessInfo', 'publicNotice', 'updatedAt'
+        ]);
+    }
+
+    match /admin_settings/{docId} {
+      allow read, write: if isAdmin();
     }
 
     match /policy_docs/{docId} {
