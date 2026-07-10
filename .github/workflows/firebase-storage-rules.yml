@@ -1,0 +1,50 @@
+name: Deploy Firebase Storage Rules
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: firebase-storage-rules
+  cancel-in-progress: false
+
+env:
+  FIREBASE_PROJECT_ID: sosoking-481e6
+
+jobs:
+  deploy-storage-rules:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Validate Storage configuration
+        run: |
+          test -f firebase.json
+          test -f storage.rules
+          grep -q '"storage"' firebase.json
+          grep -q "service firebase.storage" storage.rules
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Prepare Firebase service account
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 }}
+        run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
+            echo "Missing GitHub secret: FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6"
+            exit 1
+          fi
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-service-account.json"
+
+      - name: Deploy Storage Rules
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+        run: firebase deploy --only storage --project "$FIREBASE_PROJECT_ID" --non-interactive
