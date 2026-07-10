@@ -27,13 +27,13 @@
 ## 사용자 흐름
 
 1. **사건 접수** — 사건명, 사건 내용, 판사 성향 등을 입력합니다.
-2. **AI 재판 진행** — 사건의 경위, 수사 과정, 양측 변론을 생성합니다.
-3. **최종 판결** — 판결 이유와 주문, 소소 형량을 선고합니다.
+2. **AI 재판 진행** — Gemini가 재판 기록과 최종 판결문을 생성합니다.
+3. **최종 판결** — `results/{caseId}`의 `judgmentScript`와 기존 호환 필드를 결과 화면에서 표시합니다.
 4. **공개 판결기록** — 사용자가 선택한 판결만 공개합니다.
 5. **방청객 참여** — 반응 투표와 방청석 댓글을 남깁니다.
 6. **항소심** — 사건 소유자는 1심 판결에 대한 항소심을 신청할 수 있습니다.
 
-최종 `judgmentScript`를 판결 데이터의 정본으로 사용하며, 구조화 필드는 자동 동기화됩니다.
+구형 판결문 파서와 자동 구조화·백필 Functions는 제거했습니다. 새 판결 V2가 완성되기 전까지 기존 문서의 호환 필드는 읽기 전용으로만 사용합니다.
 
 ---
 
@@ -74,8 +74,6 @@
 - `submitCase` — 사건 접수, 일일 한도·쿨다운·금칙어 검사
 - `suggestCaseTitle` — 사건명 추천
 - `generateTrial` — AI 재판 및 최종 판결 생성
-- `syncJudgmentStructure` — 최종 판결문을 구조화 필드에 동기화
-- `backfillJudgmentStructures` — 기존 판결 구조 보정
 - `voteResult` — 공개 판결 반응 투표
 - `addCourtComment` — 방청석 댓글
 - `requestAppeal` — 항소심 생성
@@ -83,7 +81,7 @@
 - `deleteCourtPost` / `deleteUserProfile` — 관리자 정리 기능
 - `recoverStaleTrials` / `repairSocialCounters` — 운영 데이터 복구
 
-`functions/main.js`의 export와 GitHub Actions 배포 대상이 다르면 CI가 실패합니다.
+Functions는 하드코딩된 이름 목록이 아니라 `functions/main.js`의 현재 export 전체를 기준으로 배포합니다. 소스에서 제거된 Function은 다음 Core 배포에서 운영 환경에서도 폐기됩니다.
 
 ---
 
@@ -129,11 +127,11 @@ npm run lint --prefix functions
 검증 범위:
 
 - Functions와 브라우저 JavaScript 문법
-- Functions export와 배포 대상 일치
 - Firestore 보안 계약
-- 판결문 파서와 구조 동기화
 - 공개 설정 접근 경로
+- 소스 기준 Functions 전체 배포 계약
 - Firebase Core와 Storage 배포 분리
+- 구형 판결 구조화 Function이 다시 연결되지 않는지 확인
 
 ---
 
