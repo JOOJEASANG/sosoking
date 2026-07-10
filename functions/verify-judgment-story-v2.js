@@ -60,11 +60,16 @@ for (const input of cases) {
   assert.ok(prompt.includes('진지함 60%'), `${input.title}: 조정된 진지함 비율 지시가 없습니다.`);
   assert.ok(prompt.includes('과몰입 개그 40%'), `${input.title}: 강화된 개그 비율 지시가 없습니다.`);
   assert.ok(prompt.includes('웃음 구조는 세 번'), `${input.title}: 세 번의 웃음 구조 지시가 없습니다.`);
-  assert.ok(prompt.includes('국가적 비상은 아니지만'), `${input.title}: 과장 취소 금지 문구가 없습니다.`);
+  assert.ok(prompt.includes('plaintiffClaim'), `${input.title}: 원고측 짧은 주장 지시가 없습니다.`);
+  assert.ok(prompt.includes('defendantClaim'), `${input.title}: 피고측 짧은 반박 지시가 없습니다.`);
   assert.ok(prompt.includes('orders 3개 모두 사건 맞춤형'), `${input.title}: 맞춤형 주문 지시가 없습니다.`);
   assert.ok(isCompleteJudgment(judgment), `${input.title}: 로컬 판결이 V2 계약을 충족하지 못합니다.`);
   assert.equal(evaluation.passed, true, `${input.title}: 긴급 과몰입 검사 실패 ${JSON.stringify(evaluation)}`);
   assert.equal(evaluation.emergencyAnchorHits, 3, `${input.title}: 긴급 브리핑 전 영역에 대표 물건이 없습니다.`);
+  assert.equal(evaluation.claimAnchorHits, 2, `${input.title}: 양측 핵심 주장에 대표 물건이 없습니다.`);
+  assert.ok(evaluation.plaintiffClaimLength >= 55 && evaluation.plaintiffClaimLength <= 320, `${input.title}: 원고측 주장이 너무 짧거나 깁니다.`);
+  assert.ok(evaluation.defendantClaimLength >= 55 && evaluation.defendantClaimLength <= 320, `${input.title}: 피고측 반박이 너무 짧거나 깁니다.`);
+  assert.notEqual(judgment.plaintiffClaim, judgment.defendantClaim, `${input.title}: 양측 주장이 대립하지 않습니다.`);
   assert.ok(evaluation.seriousHumorHits >= 4, `${input.title}: 큰일처럼 부풀리는 장치가 부족합니다.`);
   assert.ok(judgment.incidentLevel.includes('소소위기'), `${input.title}: 사건 경계 단계가 없습니다.`);
   assert.ok(judgment.breakingNews.toLowerCase().includes(profile.mainAnchor.toLowerCase()), `${input.title}: 긴급속보에 핵심어가 없습니다.`);
@@ -78,4 +83,4 @@ for (const input of cases) {
   assert.ok(judgment.orders.filter(order => order.text.toLowerCase().includes(profile.mainAnchor.toLowerCase())).length >= 2, `${input.title}: 사건 맞춤형 주문이 부족합니다.`);
 }
 
-console.log('Verified detailed emergency briefing, three humor beats, crisis escalation and tailored orders.');
+console.log('Verified detailed emergency briefing, short opposing claims, courtroom escalation and tailored orders.');
