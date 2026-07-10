@@ -24,7 +24,7 @@ jobs:
       - name: Install Functions dependencies
         run: npm install --prefix functions --no-audit --no-fund
 
-      - name: Validate Functions syntax
+      - name: Validate Functions syntax and deployment coverage
         run: npm run lint --prefix functions
 
   deploy:
@@ -68,23 +68,5 @@ jobs:
       - name: Deploy all exported Functions
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-        run: >-
-          firebase deploy --only
-          functions:submitCase,
-          functions:suggestCaseTitle,
-          functions:generateTrial,
-          functions:createDailyAiCase,
-          functions:generateDailyAiNow,
-          functions:checkNickname,
-          functions:setNickname,
-          functions:voteResult,
-          functions:addCourtComment,
-          functions:requestAppeal,
-          functions:deleteMyCase,
-          functions:deleteCourtPost,
-          functions:deleteUserProfile,
-          functions:recoverStaleTrials,
-          functions:repairSocialCounters,
-          functions:recoverStaleTrialsNow,
-          functions:repairSocialCountersNow
-          --project sosoking-481e6 --non-interactive
+          FUNCTION_TARGETS: functions:submitCase,functions:suggestCaseTitle,functions:generateTrial,functions:createDailyAiCase,functions:generateDailyAiNow,functions:checkNickname,functions:setNickname,functions:voteResult,functions:addCourtComment,functions:requestAppeal,functions:deleteMyCase,functions:deleteCourtPost,functions:deleteUserProfile,functions:recoverStaleTrials,functions:repairSocialCounters,functions:recoverStaleTrialsNow,functions:repairSocialCountersNow
+        run: firebase deploy --only "$FUNCTION_TARGETS" --project sosoking-481e6 --non-interactive
