@@ -9,7 +9,7 @@ const REQUIRED_HEADINGS = [
 
 function cleanLong(value, maxLength = 18000) {
   return String(value || '')
-    .replace(/[\u0000-\u001F\u007F]/g, ' ')
+    .replace(/[\u0000-\u0009\u000B\u000C\u000E-\u001F\u007F]/g, ' ')
     .replace(/\r/g, '')
     .replace(/\n{4,}/g, '\n\n\n')
     .trim()
