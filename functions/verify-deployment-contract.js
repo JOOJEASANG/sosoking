@@ -14,13 +14,16 @@ const firebaseConfig = JSON.parse(read('../firebase.json'));
 const storageRules = read('../storage.rules');
 const main = read('./main.js');
 const generator = read('./generate-trial-v2.js');
+const story = read('./judgment-story-v2.js');
 const daily = read('./daily.js');
 const social = read('./social.js');
 const repair = read('./repair.js');
 const app = read('../public/js/app.js');
+const index = read('../public/index.html');
 const homePage = read('../public/js/pages/home.js');
 const trialPage = read('../public/js/pages/trial.js');
 const resultPage = read('../public/js/pages/result.js');
+const resultWrapper = read('../public/js/pages/result-case-story.js');
 const boardPage = read('../public/js/pages/board.js');
 const policy = read('../public/js/pages/policy.js');
 const readme = read('../README.md');
@@ -79,22 +82,35 @@ const checks = [
   [resultWrite.includes('schemaVersion: JUDGMENT_SCHEMA_VERSION'), 'V2 generator must save a schema version'],
   [resultWrite.includes('judgment,'), 'V2 generator must save the canonical judgment object'],
   [resultWrite.includes("resultVersion: 'judgment-v2'"), 'V2 generator result version is missing'],
+  [resultWrite.includes('storyVersion: STORY_VERSION'), 'V2 generator must identify the case-story writing version'],
   [duplicatedNarrativeFields.every(field => !resultWrite.includes(`\n      ${field}:`)), 'V2 generator must not write duplicated legacy narrative fields'],
+
+  [generator.includes('buildCaseProfile') && generator.includes('buildStoryPrompt'), 'User judgment generation must build a case-specific story profile and prompt'],
+  [generator.includes('evaluateStorySpecificity') && generator.includes('buildRewriteInstruction'), 'User judgment generation must reject generic AI output and retry'],
+  [generator.includes('buildStoryFallback(profile)'), 'Local fallback must be tailored to the submitted case'],
+  [story.includes('판결문 80%') && story.includes('정색한 과몰입 개그 20%'), 'Serious-humor writing ratio is missing'],
+  [story.includes('orders 3개 중 최소 2개') && story.includes('사건 핵심 단어'), 'Tailored-order requirements are missing'],
+  [story.includes('function evaluateStorySpecificity'), 'Case-specific judgment validation is missing'],
+  [story.includes('normalizeAnchorToken'), 'Korean case-anchor normalization is missing'],
+
   [daily.includes("resultVersion: 'judgment-v2'") && daily.includes('judgment: data.judgment'), 'Daily AI cases must use the V2 judgment schema'],
   [social.includes('resultData.judgment?.orders') && social.includes('resultData.judgment?.opinion'), 'Appeals must read V2 orders and opinion'],
   [repair.includes('isCompleteJudgment(data.judgment)'), 'Stale recovery must recognize completed V2 judgments'],
 
   [app.includes("from './pages/home-court.js?v=20260710-v2judgment1'"), 'App must load the V2-aware home feed'],
   [app.includes("from './pages/trial-game.js?v=20260710-v2judgment1'"), 'App must load the V2-aware trial flow'],
-  [app.includes("from './pages/result.js?v=20260710-v2result1'"), 'App must load the V2-compatible result renderer directly'],
+  [app.includes("from './pages/result-case-story.js?v=20260710-case-story1'"), 'App must load the result wrapper that shows original case content'],
   [app.includes("from './pages/board-court.js?v=20260710-v2judgment1'"), 'App must load the V2-aware board'],
   [!app.includes('result-summary.js') && !app.includes('result-court.js'), 'App must not restore removed result wrappers'],
+  [index.includes('/js/app.js?v=20260710-case-story1'), 'Index must bust the app cache for case-specific judgments'],
   [homePage.includes('result.judgment?.summary') && homePage.includes('result.judgment?.headline'), 'Home feed must read V2 judgment summaries and headlines'],
   [homePage.includes('result.judgment?.facts') && homePage.includes('resultSearchText'), 'Home search must include V2 judgment content'],
   [trialPage.includes('Number(data.schemaVersion) === 2') && trialPage.includes('judgment.orders'), 'Trial flow must recognize completed V2 judgments'],
   [trialPage.includes('if (isCompleteResult(data))'), 'Trial flow must redirect after a V2 judgment is complete'],
   [resultPage.includes('r.judgment') && resultPage.includes('r.judgmentScript'), 'Result page must support both V2 and existing judgment records'],
   [resultPage.includes("mode: 'script'"), 'Existing judgmentScript must be rendered directly without client reconstruction'],
+  [resultWrapper.includes("doc(db, 'results', caseId)") && resultWrapper.includes('result.caseDescription'), 'Result wrapper must load the original submitted case content'],
+  [resultWrapper.includes('사용자가 접수한 실제 사건 내용'), 'Result wrapper must visibly label the original case content'],
   [boardPage.includes('r.judgment?.summary') && boardPage.includes('r.judgment?.headline'), 'Board must read V2 judgment summaries and headlines'],
 
   [storageWorkflow.includes('workflow_dispatch:'), 'Storage workflow must be manually dispatchable'],
@@ -123,4 +139,4 @@ if (failed.length) {
   process.exit(1);
 }
 
-console.log('Verified canonical judgment V2 generation, home feed, trial completion, compatibility rendering and Firebase deployment contracts.');
+console.log('Verified case-specific serious-humor judgments, original-case display and Firebase deployment contracts.');
