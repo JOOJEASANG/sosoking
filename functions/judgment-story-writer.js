@@ -45,7 +45,7 @@ function factList(profile) {
 function buildStoryPrompt(profile) {
   const anchors = profile.anchors.join(', ');
   return `너는 소소킹 판결소의 AI 재판부이자 긴급사건 브리핑 담당관이다.
-목표는 “실제 사건은 한 글자도 놓치지 않고, 규모는 국가적 재난처럼 부풀리며, 마지막에는 너무 사소한 현실로 웃음을 터뜨리는 판결”이다.
+목표는 “실제 사건은 놓치지 않고, 규모는 국가적 재난처럼 부풀리며, 수사·양측 공방·판결의 모든 과정을 읽는 재미가 있는 사건 기록”을 만드는 것이다.
 
 [사건 기록]
 사건명: ${profile.title}
@@ -82,14 +82,16 @@ ${anchors}
 10. impactAssessment는 “이 사태를 방치할 경우”라는 가정 아래 연쇄 피해를 과장하고, 마지막은 ${profile.doctrine.undercut}는 식으로 현실에 착지한다.
 11. facts는 실제 사실을 3~5문단으로 풀어 장면이 보이게 작성한다.
 12. investigation에는 핵심어 최소 3개, 증거물 지정, 통제선 또는 상황실, 0.1초·초 단위·프레임 단위 중 하나를 넣는다. ${profile.doctrine.evidence}
-13. prosecution은 실제 행동을 생활질서 붕괴의 직접 원인처럼 강하게 기소한다.
-14. defense는 실제 사실을 부정하지 말고 터무니없이 진지한 정상참작 논리로 변명한다.
-15. opinion은 재판부가 야간 비상근무까지 한 것처럼 구체적으로 판단한다.
-16. orders 3개 모두 사건 맞춤형이어야 한다. 최소 2개에 “${profile.mainAnchor}”를 넣고 낭독·확인·우선권 같은 실행 장면을 작성한다.
-17. “사소하지만”, “관계 회복”, “생활형 의무” 같은 상투어는 각각 최대 한 번만 사용한다.
-18. “${profile.mainAnchor}”는 breakingNews·emergencyBriefing·impactAssessment와 기존 본문 최소 4곳, orders 최소 2곳에 적는다.
-19. 밈, 욕설, 유행어 남발은 금지한다. 웃음은 과도한 공식성, 정밀 감식, 규모 대비 장엄한 대응에서 만든다.
-20. 실제 법적 효력이 없는 안내는 legalNotice에서만 밝힌다.
+13. plaintiffClaim은 원고가 법정에서 직접 말하는 듯한 1~2문장 핵심 주장이다. “${profile.mainAnchor}”와 실제 피해 장면을 넣고 70~220자로 작성한다.
+14. defendantClaim은 피고가 사실관계는 인정하면서도 악의·계획성·과도한 책임은 부인하는 1~2문장 핵심 반박이다. “${profile.mainAnchor}”를 넣고 70~220자로 작성한다.
+15. prosecution은 plaintiffClaim을 법률 문체로 확대해 실제 행동을 생활질서 붕괴의 직접 원인처럼 강하게 기소한다.
+16. defense는 defendantClaim을 과도하게 진지한 정상참작 논리로 확장하되 실제 사실을 부정하지 않는다.
+17. opinion은 재판부가 야간 비상근무까지 한 것처럼 구체적으로 판단한다.
+18. orders 3개 모두 사건 맞춤형이어야 한다. 최소 2개에 “${profile.mainAnchor}”를 넣고 낭독·확인·우선권 같은 실행 장면을 작성한다.
+19. “사소하지만”, “관계 회복”, “생활형 의무” 같은 상투어는 각각 최대 한 번만 사용한다.
+20. “${profile.mainAnchor}”는 breakingNews·emergencyBriefing·impactAssessment·plaintiffClaim·defendantClaim과 기존 본문 최소 4곳, orders 최소 2곳에 적는다.
+21. 밈, 욕설, 유행어 남발은 금지한다. 웃음은 과도한 공식성, 정밀 감식, 규모 대비 장엄한 대응에서 만든다.
+22. 실제 법적 효력이 없는 안내는 legalNotice에서만 밝힌다.
 
 아래 JSON 객체 하나만 출력한다.
 {
@@ -101,8 +103,10 @@ ${anchors}
   "summary": "사건 사실과 결론, 과장된 위기감이 들어간 2~3문장",
   "facts": "실제 사건의 경위 3~5문단",
   "investigation": "현장 통제와 정밀 감식을 포함한 3~5문단",
-  "prosecution": "구체적 행동을 생활질서 붕괴로 기소하는 2문단",
-  "defense": "같은 사실에 대한 과도하게 진지한 정상참작 변론 2문단",
+  "plaintiffClaim": "원고측 1~2문장 핵심 주장",
+  "defendantClaim": "피고측 1~2문장 핵심 반박",
+  "prosecution": "원고측 핵심 주장을 확대해 구체적 행동을 생활질서 붕괴로 기소하는 2문단",
+  "defense": "피고측 핵심 반박을 확장한 과도하게 진지한 정상참작 변론 2문단",
   "opinion": "웃음과 판단이 함께 있는 재판부 결정 3~5문단",
   "orders": [
     {"number": 1, "text": "사건 맞춤형 공개 사과 또는 원상회복 절차"},
@@ -134,6 +138,8 @@ function buildStoryFallback(profile) {
     .sort((left, right) => right.length - left.length)[0]
     || profile.anchors.filter(anchor => anchor.toLowerCase() !== profile.mainAnchor.toLowerCase() && isConcreteSecondaryAnchor(anchor)).sort((left, right) => right.length - left.length)[0]
     || profile.mainAnchor;
+  const plaintiffClaim = `원고 측은 “${profile.mainAnchor}”와 관련해 ${firstFact}라는 일이 실제로 벌어졌고, 이어 ${secondFact}라는 대응까지 겹치면서 단순한 착오가 아니라 설명과 배려가 동시에 사라진 사건이 됐다고 주장한다.`;
+  const defendantClaim = `피고 측은 “${profile.mainAnchor}” 사태의 사실관계는 인정하지만 계획적인 생활질서 전복은 아니었으며, 순간적 판단 착오와 상황 대응 실패를 국가적 비상행위와 동일하게 볼 수는 없다고 반박한다.`;
 
   return normalizeJudgment({
     headline: `${profile.mainAnchor}발 생활질서 붕괴 및 ${profile.doctrine.doctrine} 비상사건`,
@@ -144,9 +150,11 @@ function buildStoryFallback(profile) {
     summary: `“${profile.mainAnchor}” 사태는 ${profile.incidentLevel}로 분류됐다. 재판부는 ${firstFact}라는 장면이 생활질서 붕괴의 직접 계기가 됐다고 판단하고 사건 맞춤 명령 3개를 선고한다.`,
     facts: `사건 기록은 다음 순서다.\n${factSequence}\n\n첫 장면인 “${firstFact}”와 이어진 “${secondFact}” 사이에서 사태가 확대됐다. ${remainingFacts || '추가 단계는 없었으나 원고의 평온은 이미 흔들렸다.'}\n\n재판부는 사건명 “${profile.title}”, 억울함 지수 ${profile.grievanceIndex}/10, 피고의 사후 태도를 검토했다. 핵심은 “${profile.mainAnchor}”가 걸린 순간에 원고의 기대와 설명 기회가 동시에 사라졌다는 점이다.`,
     investigation: `${profile.doctrine.evidence} 임시 통제선 아래 “${profile.mainAnchor}”, “${secondAnchor}”, 행동 순서를 분석했다.\n\n감식반은 “${firstFact}”를 0.1초 단위로 복원하고 “${secondFact}”가 사태를 진정시켰는지 검토했다. 결론은 후자였다.\n\n수사대는 “${profile.mainAnchor}” 전후의 태도가 피해를 키웠다고 판단했다. 증거는 거창했다. 대상은 여전히 ${profile.mainAnchor}였다.`,
-    prosecution: `황당검사는 “${firstFact}”가 ${profile.doctrine.doctrine}을 흔들었다고 기소했다. 피고가 “${profile.mainAnchor}”의 중요성을 확인하지 않은 순간 생활질서 붕괴가 시작됐다는 주장이다.\n\n검사는 “${secondFact}”를 중대한 사후 태도로 지적했다. 수습 골든타임을 놓쳐 재판부가 야간 비상근무에 들어갔다고 논고했다.`,
-    defense: `피고 측은 “${firstFact}”에 악의가 없었고 순간적 판단 착오와 생활 동선의 충돌이 겹쳤다고 항변했다. 국가적 생활질서 전복을 계획한 증거도 없다고 했다.\n\n변호인은 “${profile.mainAnchor}” 하나로 상황실을 가동한 절차가 장엄하다고 지적했다. 재판부는 기록에 남겼다. 그리고 상황실 운영을 계속했다.`,
-    opinion: `${profile.judgeType} 재판부는 기록을 과도하게 진지하게 검토했다. ${profile.judgeDirection}\n\n기록상 다음 사실이 인정된다.\n${factSequence}\n\n“${profile.mainAnchor}” 자체는 작아 보일 수 있다. 그러나 작은 대상일수록 “그것 때문에 왜 이렇게까지?”라는 말이 나오는 순간 과몰입 재판의 필요성이 완성된다.\n\n현재의 경계 단계는 해제하지 않는다. 공식 분류명은 “${profile.incidentLevel}”이다. 주문이 이행될 때까지 상황실은 유지된다. 재판부의 퇴근도 그 뒤다.\n\n판결문이 “${profile.mainAnchor}”보다 훨씬 커졌다. 그것이 이번 사태의 규모다.`,
+    plaintiffClaim,
+    defendantClaim,
+    prosecution: `황당검사는 원고 측 핵심 주장인 “${plaintiffClaim}”을 토대로 “${firstFact}”가 ${profile.doctrine.doctrine}을 흔들었다고 기소했다. 피고가 “${profile.mainAnchor}”의 중요성을 확인하지 않은 순간 생활질서 붕괴가 시작됐다는 주장이다.\n\n검사는 “${secondFact}”를 중대한 사후 태도로 지적했다. 수습 골든타임을 놓쳐 재판부가 야간 비상근무에 들어갔다고 논고했다.`,
+    defense: `피고 측 변호인은 “${defendantClaim}”이라고 항변했다. “${firstFact}”에 악의가 없었고 순간적 판단 착오와 생활 동선의 충돌이 겹쳤다는 취지다.\n\n변호인은 “${profile.mainAnchor}” 하나로 상황실을 가동한 절차가 장엄하다고 지적했다. 재판부는 기록에 남겼다. 그리고 상황실 운영을 계속했다.`,
+    opinion: `${profile.judgeType} 재판부는 기록과 원고·피고 양측의 짧은 주장을 과도하게 진지하게 검토했다. ${profile.judgeDirection}\n\n기록상 다음 사실이 인정된다.\n${factSequence}\n\n“${profile.mainAnchor}” 자체는 작아 보일 수 있다. 그러나 작은 대상일수록 “그것 때문에 왜 이렇게까지?”라는 말이 나오는 순간 과몰입 재판의 필요성이 완성된다.\n\n현재의 경계 단계는 해제하지 않는다. 공식 분류명은 “${profile.incidentLevel}”이다. 주문이 이행될 때까지 상황실은 유지된다. 재판부의 퇴근도 그 뒤다.\n\n판결문이 “${profile.mainAnchor}”보다 훨씬 커졌다. 그것이 이번 사태의 규모다.`,
     orders: [
       { number: 1, text: tailoredOrder(profile, 1) },
       { number: 2, text: tailoredOrder(profile, 2) },
