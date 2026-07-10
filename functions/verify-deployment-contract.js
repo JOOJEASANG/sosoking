@@ -26,6 +26,11 @@ const readme = read('../README.md');
 const functionDeployIndex = coreWorkflow.indexOf('Deploy Functions from current source');
 const firestoreDeployIndex = coreWorkflow.indexOf('Deploy Firestore rules and indexes');
 const hostingDeployIndex = coreWorkflow.indexOf('Deploy Hosting');
+const resultWriteStart = generator.indexOf('await resultRef.set({');
+const resultWriteEnd = generator.indexOf('\n    });', resultWriteStart);
+const resultWrite = resultWriteStart >= 0 && resultWriteEnd > resultWriteStart
+  ? generator.slice(resultWriteStart, resultWriteEnd)
+  : '';
 const retiredFunctions = [
   'syncJudgmentStructure',
   'backfillJudgmentStructures',
@@ -38,19 +43,19 @@ const removedFiles = [
   '../public/js/pages/result-summary.js',
   '../public/js/pages/result-court.js',
 ];
-const duplicatedNarrativeWrites = [
-  'expandedCase:',
-  'reception:',
-  'caseTimeline:',
-  'forensicReport:',
-  'investigation:',
-  'plaintiffArg:',
-  'defendantArg:',
-  'courtOpinion:',
-  'verdict:',
-  'sentence:',
-  'closingComment:',
-  'judgmentScript:',
+const duplicatedNarrativeFields = [
+  'expandedCase',
+  'reception',
+  'caseTimeline',
+  'forensicReport',
+  'investigation',
+  'plaintiffArg',
+  'defendantArg',
+  'courtOpinion',
+  'verdict',
+  'sentence',
+  'closingComment',
+  'judgmentScript',
 ];
 
 const checks = [
@@ -68,10 +73,11 @@ const checks = [
   [!main.includes("require('./generate-trial-lite')"), 'Functions entry point must not export the legacy judgment generator'],
   [!main.includes("require('./sync-judgment-structure')"), 'Functions entry point still exports legacy judgment synchronization'],
   [removedFiles.every(file => !fs.existsSync(resolve(file))), 'A removed judgment implementation file was restored'],
-  [generator.includes('schemaVersion: JUDGMENT_SCHEMA_VERSION'), 'V2 generator must save a schema version'],
-  [generator.includes('judgment,'), 'V2 generator must save the canonical judgment object'],
-  [generator.includes("resultVersion: 'judgment-v2'"), 'V2 generator result version is missing'],
-  [duplicatedNarrativeWrites.every(field => !generator.includes(field)), 'V2 generator must not write duplicated legacy narrative fields'],
+  [resultWrite.length > 0, 'V2 result write block could not be inspected'],
+  [resultWrite.includes('schemaVersion: JUDGMENT_SCHEMA_VERSION'), 'V2 generator must save a schema version'],
+  [resultWrite.includes('judgment,'), 'V2 generator must save the canonical judgment object'],
+  [resultWrite.includes("resultVersion: 'judgment-v2'"), 'V2 generator result version is missing'],
+  [duplicatedNarrativeFields.every(field => !resultWrite.includes(`\n      ${field}:`)), 'V2 generator must not write duplicated legacy narrative fields'],
   [daily.includes("resultVersion: 'judgment-v2'") && daily.includes('judgment: data.judgment'), 'Daily AI cases must use the V2 judgment schema'],
   [social.includes('resultData.judgment?.orders') && social.includes('resultData.judgment?.opinion'), 'Appeals must read V2 orders and opinion'],
   [repair.includes('isCompleteJudgment(data.judgment)'), 'Stale recovery must recognize completed V2 judgments'],
@@ -98,6 +104,7 @@ const checks = [
   [policy.includes("getDoc(doc(db, 'public_settings', 'config')).catch(() => null)"), 'Public settings failure must be isolated'],
 
   [readme.includes('docs/DEPLOYMENT.md'), 'README must link to the deployment runbook'],
+  [readme.includes('판결 V2 데이터 구조'), 'README must document the canonical judgment schema'],
   [!readme.includes('1~10점'), 'README must not describe the removed 1-10 score system'],
   [retiredFunctions.every(name => !readme.includes(name)), 'README still describes retired judgment maintenance Functions'],
 ];
