@@ -17,6 +17,12 @@ const db = getFirestore();
 const geminiKey = defineSecret('GEMINI_API_KEY');
 const REGION = 'asia-northeast3';
 const JUDGES = ['엄벌주의형', '감성형', '현실주의형', '과몰입형', '피곤형', '논리집착형', '드립형'];
+const REACTIONS = ['plaintiff', 'defendant', 'both', 'tooMuch', 'funny'];
+const LEGACY_RESULT_FIELDS = [
+  'expandedCase', 'reception', 'caseTimeline', 'forensicReport', 'investigation',
+  'plaintiffArg', 'defendantArg', 'courtOpinion', 'verdict', 'sentence',
+  'closingComment', 'judgmentScript', 'quickVerdict', 'primarySentence',
+];
 
 function kstDateKey(date = new Date()) {
   return new Intl.DateTimeFormat('sv-SE', {
@@ -32,6 +38,15 @@ function clampNumber(value, fallback, min, max) {
 function counter(value) {
   const number = Number(value || 0);
   return Number.isFinite(number) && number > 0 ? Math.floor(number) : 0;
+}
+
+function normalizedReactionCounts(value = {}) {
+  return Object.fromEntries(REACTIONS.map(key => [key, counter(value?.[key])]));
+}
+
+function reactionTotal(counts = {}, supplied = 0) {
+  const sum = Object.values(normalizedReactionCounts(counts)).reduce((total, count) => total + count, 0);
+  return sum || counter(supplied);
 }
 
 function docketNumber(dateKey) {
@@ -69,7 +84,6 @@ function fallbackContent(dateKey) {
 function normalizeDailyContent(value, dateKey) {
   const fallback = fallbackContent(dateKey);
   const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
-  const judgeType = JUDGES.includes(source.judgeType) ? source.judgeType : fallback.judgeType;
   const judgment = normalizeJudgment(source.judgment, fallback.judgment);
   return {
     caseTitle: cleanText(source.caseTitle, 80) || fallback.caseTitle,
@@ -78,9 +92,22 @@ function normalizeDailyContent(value, dateKey) {
     grievanceIndex: clampNumber(source.grievanceIndex, fallback.grievanceIndex, 1, 10),
     nickname: cleanText(source.nickname, 30) || fallback.nickname,
     desiredVerdict: cleanText(source.desiredVerdict, 180) || fallback.desiredVerdict,
-    judgeType,
+    judgeType: JUDGES.includes(source.judgeType) ? source.judgeType : fallback.judgeType,
     judgment,
   };
+}
+
+function isCompleteDailyPayload(value = {}) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const grievance = Number(value.grievanceIndex);
+  return cleanText(value.caseTitle, 80).length >= 4
+    && cleanText(value.headline, 160).length >= 8
+    && cleanParagraph(value.caseDescription, 700).length >= 40
+    && Number.isFinite(grievance) && grievance >= 1 && grievance <= 10
+    && cleanText(value.nickname, 30).length >= 2
+    && cleanText(value.desiredVerdict, 180).length >= 4
+    && JUDGES.includes(value.judgeType)
+    && isCompleteJudgment(normalizeJudgment(value.judgment));
 }
 
 function isCompleteResult(data = {}) {
@@ -91,28 +118,24 @@ function isCompleteResult(data = {}) {
 
 async function loadSettings() {
   try {
-    const snap = await db.doc('site_settings/config').get();
-    return snap.exists ? snap.data() : {};
+    const snapshot = await db.doc('site_settings/config').get();
+    return snapshot.exists ? snapshot.data() : {};
   } catch {
     return {};
   }
 }
 
-async function buildDailyContent(dateKey, settings = {}) {
-  const fallback = fallbackContent(dateKey);
-  const key = geminiKey.value().trim();
-  if (!key) return { data: normalizeDailyContent(fallback, dateKey), aiGenerated: false, attempted: false, usage: {} };
-
+function dailyPrompt(dateKey, settings = {}) {
   const extra = [
     settings.dailyAiTopicHints && `주제 힌트: ${cleanText(settings.dailyAiTopicHints, 300)}`,
     settings.dailyAiPrompt && `추가 지시: ${cleanText(settings.dailyAiPrompt, 500)}`,
   ].filter(Boolean).join('\n');
-  const prompt = `소소킹 판결소의 오늘의 공개 판결 한 건을 만든다. 안전하고 사소한 일상 소재만 사용한다. 실명, 연락처, 정치, 혐오, 성적 내용, 자해, 실제 범죄와 법률 조언은 금지한다. 사건은 작지만 재판부는 지나치게 엄숙해야 한다. 주문은 구체적인 생활형 처분 정확히 3개다. 실제 법적 효력이 없는 오락 콘텐츠라는 안내를 포함한다.
+  return `소소킹 판결소의 오늘의 공개 판결 한 건을 만든다. 안전하고 사소한 일상 소재만 사용한다. 실명, 연락처, 정치, 혐오, 성적 내용, 자해, 실제 범죄와 법률 조언은 금지한다. 사건은 작지만 재판부는 지나치게 엄숙해야 한다. 주문은 구체적인 생활형 처분 정확히 3개다. 실제 법적 효력이 없는 오락 콘텐츠라는 안내를 포함한다.
 ${extra}
 날짜: ${dateKey}
 판사 유형: ${JUDGES.join(', ')}
 
-아래 형식의 JSON 객체 하나만 출력한다.
+아래 형식의 JSON 객체 하나만 출력한다. 모든 상위 필드와 judgment 내부 필드를 빠짐없이 작성한다.
 {
   "caseTitle": "짧은 사건명",
   "headline": "과도하게 거창한 공식 사건명",
@@ -138,22 +161,121 @@ ${extra}
     "legalNotice": "오락 콘텐츠 안내"
   }
 }`;
+}
+
+async function buildDailyContent(dateKey, settings = {}) {
+  const fallback = fallbackContent(dateKey);
+  const key = geminiKey.value().trim();
+  if (!key) return { data: normalizeDailyContent(fallback, dateKey), aiGenerated: false, attempted: false, usage: {} };
 
   try {
     const model = new GoogleGenerativeAI(key).getGenerativeModel({
       model: cleanText(settings.geminiModel, 60) || 'gemini-2.5-flash',
       generationConfig: { temperature: 0.86, topP: 0.94, maxOutputTokens: 5000, responseMimeType: 'application/json' },
     });
-    const result = await model.generateContent(prompt);
-    const parsed = extractJson(result.response.text());
-    const rawJudgment = normalizeJudgment(parsed?.judgment);
-    if (!isCompleteJudgment(rawJudgment)) throw new Error('Daily AI judgment did not satisfy the V2 contract');
-    const data = normalizeDailyContent({ ...parsed, judgment: rawJudgment }, dateKey);
-    return { data, aiGenerated: true, attempted: true, usage: result.response.usageMetadata || {} };
+    const response = await model.generateContent(dailyPrompt(dateKey, settings));
+    const parsed = extractJson(response.response.text());
+    if (!isCompleteDailyPayload(parsed)) throw new Error('Daily AI JSON did not satisfy the complete V2 contract');
+    return {
+      data: normalizeDailyContent(parsed, dateKey),
+      aiGenerated: true,
+      attempted: true,
+      usage: response.response.usageMetadata || {},
+    };
   } catch (error) {
     console.error('daily V2 generation failed, using fallback:', error.message || error);
     return { data: normalizeDailyContent(fallback, dateKey), aiGenerated: false, attempted: true, usage: {} };
   }
+}
+
+async function saveDailyResult({ caseId, dateKey, data, generated }) {
+  const caseRef = db.doc(`cases/${caseId}`);
+  const resultRef = db.doc(`results/${caseId}`);
+  const reactionRef = db.doc(`result_reactions/${caseId}`);
+  const commentRef = db.doc(`court_comment_stats/${caseId}`);
+  const dailyDocket = docketNumber(dateKey);
+
+  await db.runTransaction(async transaction => {
+    const caseSnapshot = await transaction.get(caseRef);
+    const resultSnapshot = await transaction.get(resultRef);
+    const reactionSnapshot = await transaction.get(reactionRef);
+    const commentSnapshot = await transaction.get(commentRef);
+
+    const currentCase = caseSnapshot.exists ? caseSnapshot.data() : {};
+    const currentResult = resultSnapshot.exists ? resultSnapshot.data() : {};
+    const summary = reactionSnapshot.exists ? reactionSnapshot.data() : {};
+    const counts = reactionSnapshot.exists
+      ? normalizedReactionCounts(summary.counts)
+      : normalizedReactionCounts(currentResult.reactionCounts);
+    const total = reactionSnapshot.exists
+      ? reactionTotal(counts, summary.total)
+      : reactionTotal(counts, currentResult.reactionTotal ?? currentResult.totalVotes);
+    const comments = commentSnapshot.exists
+      ? counter(commentSnapshot.data()?.count)
+      : counter(currentResult.commentCount);
+    const createdAt = currentResult.createdAt || currentCase.createdAt || FieldValue.serverTimestamp();
+
+    transaction.set(caseRef, {
+      userId: 'system-daily-ai',
+      source: 'daily_ai',
+      dailyDate: dateKey,
+      docketNumber: dailyDocket,
+      courtName: '소소킹 판결소',
+      courtroom: '제404호 황당법정',
+      division: '제2소소재판부',
+      courtStage: 'sentenced',
+      caseTitle: data.caseTitle,
+      caseDescription: data.caseDescription,
+      grievanceIndex: data.grievanceIndex,
+      nickname: data.nickname,
+      desiredVerdict: data.desiredVerdict,
+      selectedJudge: data.judgeType,
+      judgeType: data.judgeType,
+      resultSchemaVersion: JUDGMENT_SCHEMA_VERSION,
+      status: 'completed',
+      isPublic: true,
+      reportCount: counter(currentCase.reportCount),
+      createdAt,
+      completedAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+
+    const resultPayload = {
+      schemaVersion: JUDGMENT_SCHEMA_VERSION,
+      resultVersion: 'judgment-v2',
+      source: 'daily_ai',
+      dailyDate: dateKey,
+      userId: 'system-daily-ai',
+      ownerId: 'system-daily-ai',
+      isPublic: true,
+      docketNumber: dailyDocket,
+      courtName: '소소킹 판결소',
+      courtroom: '제404호 황당법정',
+      division: '제2소소재판부',
+      caseTitle: data.caseTitle,
+      headline: data.judgment.headline || data.headline,
+      caseDescription: data.caseDescription,
+      grievanceIndex: data.grievanceIndex,
+      nickname: data.nickname,
+      desiredVerdict: data.desiredVerdict,
+      judgeType: data.judgeType,
+      judgment: data.judgment,
+      aiGenerated: generated.aiGenerated,
+      generationMode: generated.aiGenerated ? 'daily-gemini-json-v2' : 'daily-local-json-v2',
+      reactionCounts: counts,
+      reactionTotal: total,
+      totalVotes: total,
+      commentCount: comments,
+      reportCount: counter(currentResult.reportCount),
+      courtStage: 'sentenced',
+      createdAt,
+      updatedAt: FieldValue.serverTimestamp(),
+    };
+    if (resultSnapshot.exists) {
+      for (const field of LEGACY_RESULT_FIELDS) resultPayload[field] = FieldValue.delete();
+    }
+    transaction.set(resultRef, resultPayload, { merge: true });
+  });
 }
 
 async function createDailyAiCase(force = false) {
@@ -162,7 +284,6 @@ async function createDailyAiCase(force = false) {
 
   const dateKey = kstDateKey();
   const caseId = `daily_${dateKey.replace(/-/g, '')}`;
-  const caseRef = db.doc(`cases/${caseId}`);
   const resultRef = db.doc(`results/${caseId}`);
   const existing = await resultRef.get();
   const existingData = existing.exists ? existing.data() : {};
@@ -171,73 +292,8 @@ async function createDailyAiCase(force = false) {
   }
 
   const generated = await buildDailyContent(dateKey, settings);
-  const data = generated.data;
-  const dailyDocket = docketNumber(dateKey);
-  const createdAt = existingData.createdAt || FieldValue.serverTimestamp();
-  const reactionCounts = existingData.reactionCounts && typeof existingData.reactionCounts === 'object'
-    ? existingData.reactionCounts
-    : {};
-  const reactionTotal = counter(existingData.reactionTotal ?? existingData.totalVotes);
-  const commentCount = counter(existingData.commentCount);
-  const batch = db.batch();
+  await saveDailyResult({ caseId, dateKey, data: generated.data, generated });
 
-  batch.set(caseRef, {
-    userId: 'system-daily-ai',
-    source: 'daily_ai',
-    dailyDate: dateKey,
-    docketNumber: dailyDocket,
-    courtName: '소소킹 판결소',
-    courtroom: '제404호 황당법정',
-    division: '제2소소재판부',
-    courtStage: 'sentenced',
-    caseTitle: data.caseTitle,
-    caseDescription: data.caseDescription,
-    grievanceIndex: data.grievanceIndex,
-    nickname: data.nickname,
-    desiredVerdict: data.desiredVerdict,
-    selectedJudge: data.judgeType,
-    judgeType: data.judgeType,
-    resultSchemaVersion: JUDGMENT_SCHEMA_VERSION,
-    status: 'completed',
-    isPublic: true,
-    reportCount: 0,
-    createdAt,
-    completedAt: FieldValue.serverTimestamp(),
-    updatedAt: FieldValue.serverTimestamp(),
-  }, { merge: true });
-
-  batch.set(resultRef, {
-    schemaVersion: JUDGMENT_SCHEMA_VERSION,
-    resultVersion: 'judgment-v2',
-    source: 'daily_ai',
-    dailyDate: dateKey,
-    userId: 'system-daily-ai',
-    ownerId: 'system-daily-ai',
-    isPublic: true,
-    docketNumber: dailyDocket,
-    courtName: '소소킹 판결소',
-    courtroom: '제404호 황당법정',
-    division: '제2소소재판부',
-    caseTitle: data.caseTitle,
-    headline: data.judgment.headline || data.headline,
-    caseDescription: data.caseDescription,
-    grievanceIndex: data.grievanceIndex,
-    nickname: data.nickname,
-    desiredVerdict: data.desiredVerdict,
-    judgeType: data.judgeType,
-    judgment: data.judgment,
-    aiGenerated: generated.aiGenerated,
-    generationMode: generated.aiGenerated ? 'daily-gemini-json-v2' : 'daily-local-json-v2',
-    reactionCounts,
-    reactionTotal,
-    totalVotes: reactionTotal,
-    commentCount,
-    courtStage: 'sentenced',
-    createdAt,
-    updatedAt: FieldValue.serverTimestamp(),
-  });
-
-  await batch.commit();
   await Promise.all([
     db.doc('site_settings/config').set({
       dailyAiLastRunAt: FieldValue.serverTimestamp(),
@@ -251,8 +307,8 @@ async function createDailyAiCase(force = false) {
       caseCount: FieldValue.increment(1),
       dailyAiCaseCount: FieldValue.increment(1),
       judgmentV2Count: FieldValue.increment(1),
-      firestoreReads: FieldValue.increment(3),
-      firestoreWrites: FieldValue.increment(3),
+      firestoreReads: FieldValue.increment(7),
+      firestoreWrites: FieldValue.increment(5),
       functionInvocations: FieldValue.increment(1),
       updatedAt: FieldValue.serverTimestamp(),
     }, { merge: true }),
