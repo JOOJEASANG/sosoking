@@ -5,6 +5,7 @@ const { isAdminAuth } = require('./admin-utils');
 
 const db = getFirestore();
 const REGION = 'asia-northeast3';
+const REACTIONS = ['plaintiff','defendant','both','tooMuch','funny'];
 const STALE_PROCESSING_MS = 10 * 60 * 1000;
 const MAX_COUNTER_REPAIR_LIMIT = 300;
 const ADMIN_CALLABLE_OPTIONS = {
@@ -18,11 +19,17 @@ function numberValue(value, fallback = 0) {
   const n = Number(value);
   return Number.isFinite(n) && n >= 0 ? Math.floor(n) : fallback;
 }
+function reactionCountsFromSummary(data = {}) {
+  const source = data.counts && typeof data.counts === 'object' ? data.counts : {};
+  return Object.fromEntries(REACTIONS.map(key => [key, numberValue(source[key])]));
+}
 function reactionTotalFromSummary(data = {}) {
-  const explicitTotal = numberValue(data.total, -1);
-  if (explicitTotal >= 0) return explicitTotal;
-  const counts = data.counts && typeof data.counts === 'object' ? data.counts : {};
-  return Object.values(counts).reduce((sum, value) => sum + numberValue(value), 0);
+  const counts = reactionCountsFromSummary(data);
+  const countTotal = Object.values(counts).reduce((sum, value) => sum + value, 0);
+  return countTotal || numberValue(data.total);
+}
+function sameReactionCounts(left = {}, right = {}) {
+  return REACTIONS.every(key => numberValue(left[key]) === numberValue(right[key]));
 }
 async function assertAdmin(request) {
   if (!request.auth || !(await isAdminAuth(request.auth))) throw new HttpsError('permission-denied', '관리자만 실행할 수 있습니다.');
@@ -92,24 +99,28 @@ async function repairSocialCounters(options = {}) {
       db.doc(`court_comment_stats/${caseId}`).get().catch(() => null)
     ]);
 
-    const reactionTotal = reactionSnap?.exists ? reactionTotalFromSummary(reactionSnap.data()) : 0;
+    const summary = reactionSnap?.exists ? reactionSnap.data() : {};
+    const reactionCounts = reactionCountsFromSummary(summary);
+    const reactionTotal = reactionSnap?.exists ? reactionTotalFromSummary(summary) : 0;
     const commentCount = commentSnap?.exists ? numberValue(commentSnap.data()?.count) : 0;
     const currentReactionTotal = numberValue(result.reactionTotal ?? result.totalVotes);
     const currentCommentCount = numberValue(result.commentCount);
+    const countsMatch = sameReactionCounts(result.reactionCounts, reactionCounts);
 
-    if (currentReactionTotal === reactionTotal && currentCommentCount === commentCount) {
+    if (currentReactionTotal === reactionTotal && currentCommentCount === commentCount && countsMatch) {
       unchanged.push(caseId);
       continue;
     }
 
     batch.set(resultDoc.ref, {
+      reactionCounts,
       reactionTotal,
       totalVotes: reactionTotal,
       commentCount,
       socialCounterRepairedAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp()
     }, { merge: true });
-    repaired.push({ caseId, reactionTotal, commentCount });
+    repaired.push({ caseId, reactionCounts, reactionTotal, commentCount });
   }
 
   if (repaired.length) await batch.commit();
