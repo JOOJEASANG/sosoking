@@ -1,27 +1,72 @@
-# 소소킹 재구축 베이스라인
+# 소소킹 황당재판소
 
-기존 애플리케이션 코드를 제거하고 Firebase 배포와 Gemini Secret 연결에 필요한 최소 파일만 남긴 초기화 상태입니다.
+일상의 사소하고 억울한 사건을 접수하면 AI가 사건의 핵심을 분석하고 원고·피고 공방과 황당판결을 만드는 오락형 서비스입니다.
 
-## 남아 있는 구성
+## 재구축 진행 상태
 
-- Firebase Hosting: `public/index.html` 재구축 안내 페이지
-- Cloud Functions: 인증된 사용자만 호출 가능한 `systemHealth`
-- Gemini Secret: Firebase Secret Manager의 `GEMINI_API_KEY`를 함수에 바인딩
-- Firestore: 기존 데이터는 삭제하지 않고 임시로 모든 클라이언트 접근 차단
-- Storage: 기존 파일은 삭제하지 않고 임시로 모든 접근 차단
-- GitHub Actions: `main` 병합 시 Functions, Firestore, Hosting 자동 배포
-- Storage Rules: 수동 워크플로로만 배포
+### 1단계 — 제품 골격
 
-## GitHub Secrets
+완료 범위:
+
+- 반응형 홈 화면
+- Google 로그인
+- 이메일 회원가입·로그인
+- 로그인 상태 유지와 로그아웃
+- 사건 접수 폼
+- 판사 성향·사건 분류·억울함 정도·희망 판결 입력
+- Cloud Functions를 통한 서버 검증 및 사건 저장
+- 사용자 본인 사건만 읽을 수 있는 Firestore 규칙
+- 30초 중복 접수 제한과 하루 20건 서버 제한
+- 2단계 AI 판결 엔진이 이어받을 수 있는 `generationStatus: not_started` 데이터 구조
+
+## 기술 구성
+
+- Firebase Hosting
+- Firebase Authentication
+- Cloud Firestore
+- Cloud Functions for Firebase
+- Firebase Secret Manager의 `GEMINI_API_KEY`
+- GitHub Actions 자동 검증 및 배포
+- Vanilla JavaScript ES Modules
+
+## 사건 문서 구조
+
+`cases/{caseId}`
+
+- `userId`
+- `title`
+- `caseDescription`
+- `defendantName`
+- `category`
+- `judgeType`
+- `grievanceIndex`
+- `desiredVerdict`
+- `isPublic`
+- `status: received`
+- `generationStatus: not_started`
+- `createdAt`, `updatedAt`
+
+클라이언트는 사건 문서를 직접 생성하거나 수정할 수 없습니다. 모든 사건 접수는 `createCaseDraft` Callable Function에서 검증 후 저장합니다.
+
+## 필요한 Secret
+
+GitHub Actions:
 
 - `FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6`
 
-## Firebase Secrets
+Firebase Secret Manager:
 
 - `GEMINI_API_KEY`
 
-Gemini 실제 키 값은 저장소에 포함하지 않습니다. Firebase Secret Manager에 저장된 기존 값은 코드 초기화로 삭제되지 않습니다.
+실제 Gemini 키 값은 저장소에 포함하지 않습니다.
 
-## 주의
+## 로컬 검증
 
-이 초기화 변경을 `main`에 병합하면 현재 Hosting은 재구축 안내 페이지로 교체되고, 현재 소스에서 내보내지 않는 기존 Cloud Functions는 `--force` 배포 과정에서 제거됩니다. Firestore 문서와 Storage 파일 자체는 삭제하지 않습니다.
+```bash
+npm install --prefix functions
+npm run check --prefix functions
+```
+
+## 다음 단계
+
+2단계에서 사건 핵심 추출, 코미디 생성, 품질검사, 재생성 및 안전한 로컬 대체 결과를 포함하는 AI 판결 엔진을 구축합니다.

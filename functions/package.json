@@ -1,13 +1,16 @@
 {
   "name": "sosoking-functions",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "private": true,
   "engines": {
     "node": "20"
   },
   "main": "main.js",
   "scripts": {
-    "check": "node --check main.js"
+    "check:backend": "node --check main.js && node --check verify-stage1.js",
+    "check:frontend": "node --experimental-default-type=module --check ../public/js/firebase-config.js && node --experimental-default-type=module --check ../public/js/firebase.js && node --experimental-default-type=module --check ../public/js/app.js",
+    "verify": "node verify-stage1.js",
+    "check": "npm run check:backend && npm run check:frontend && npm run verify"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",

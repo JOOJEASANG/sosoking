@@ -1,4 +1,4 @@
-name: Validate and Deploy Clean Firebase Baseline
+name: Validate and Deploy Sosoking
 
 on:
   push:
@@ -31,9 +31,11 @@ jobs:
       - name: Install Functions dependencies
         run: npm install --prefix functions --no-audit --no-fund
 
-      - name: Check clean baseline
+      - name: Validate Stage 1 application
+        run: npm run check --prefix functions
+
+      - name: Validate Firebase files
         run: |
-          npm run check --prefix functions
           test -f firebase.json
           test -f .firebaserc
           test -f firestore.rules
@@ -73,17 +75,17 @@ jobs:
           fi
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-service-account.json"
 
-      - name: Deploy Functions baseline
+      - name: Deploy Functions
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
         run: firebase deploy --only functions --force --project "$FIREBASE_PROJECT_ID" --non-interactive
 
-      - name: Deploy Firestore lock rules and indexes
+      - name: Deploy Firestore rules and indexes
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
         run: firebase deploy --only firestore:rules,firestore:indexes --project "$FIREBASE_PROJECT_ID" --non-interactive
 
-      - name: Deploy maintenance Hosting
+      - name: Deploy Hosting
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
         run: firebase deploy --only hosting --project "$FIREBASE_PROJECT_ID" --non-interactive
