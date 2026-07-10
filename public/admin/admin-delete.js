@@ -20,13 +20,23 @@ function ensureAdminPolishStyle() {
   `;
   document.head.appendChild(style);
 }
-async function completeDelete(caseId, reloadTab = 'records') {
+function ensureHelper() {
+  const shell = document.querySelector('.admin-shell');
+  const nav = shell?.querySelector('.admin-nav');
+  if (!shell || !nav || document.getElementById('admin-helper')) return;
+  const div = document.createElement('div');
+  div.id = 'admin-helper';
+  div.className = 'admin-helper';
+  div.innerHTML = '<strong>운영 모드</strong> · 사건 삭제는 사건/판결/투표/댓글/신고/첨부 이미지까지 함께 정리합니다. 회원 프로필 삭제는 닉네임 예약과 프로필 사진까지 정리합니다.';
+  nav.insertAdjacentElement('afterend', div);
+}
+async function completeDelete(caseId) {
   const text = '이 게시물과 연결된 사건, 판결문, 투표, 댓글, 신고, 첨부 이미지 데이터를 모두 삭제할까요?\n삭제 후 복구할 수 없습니다.';
   if (!caseId || !confirm(text)) return;
   try {
     const res = await deleteCourtPost({ caseId });
     alert(`완전 삭제 완료\nFirestore 삭제: ${res.data?.deleted || 0}개\nStorage 삭제: ${res.data?.storageDeleted || 0}개`);
-    if (typeof window._tab === 'function') window._tab(reloadTab);
+    if (typeof window._tab === 'function') window._tab('records');
     else location.reload();
   } catch (err) {
     console.error(err);
@@ -46,48 +56,26 @@ async function completeUserProfileDelete(uid) {
     alert((err.message || '회원 프로필 정리에 실패했습니다.').replace('FirebaseError: ', ''));
   }
 }
-function addHelper() {
-  const shell = document.querySelector('.admin-shell');
-  if (!shell || document.getElementById('admin-helper')) return;
-  const div = document.createElement('div');
-  div.id = 'admin-helper';
-  div.className = 'admin-helper';
-  div.innerHTML = '<strong>운영 모드</strong> · 사건 삭제는 사건/판결/투표/댓글/신고/첨부 이미지까지 정리합니다. 회원 프로필 삭제는 닉네임 예약과 프로필 사진까지 정리합니다.';
-  const nav = shell.querySelector('.admin-nav');
-  if (nav) nav.insertAdjacentElement('afterend', div);
-  else shell.prepend(div);
-}
-function wrapFn(name, replacement) {
-  if (typeof window[name] === 'function' && !window[name].__completeDelete) {
-    const fn = replacement;
-    fn.__completeDelete = true;
-    window[name] = fn;
-  }
-}
-function wrapAdminDeletes() {
-  ensureAdminPolishStyle();
-  addHelper();
-  wrapFn('_delCase', id => completeDelete(id, 'records'));
-  wrapFn('_delResult', id => completeDelete(id, 'records'));
-  wrapFn('_delRecord', id => completeDelete(id, 'records'));
-  wrapFn('_delUserProfile', id => completeUserProfileDelete(id));
-}
-function interceptInlineDelete(e) {
-  const btn = e.target?.closest?.('button[onclick]');
-  if (!btn) return;
-  const code = btn.getAttribute('onclick') || '';
-  const m = code.match(/_(del(?:Case|Result|Record|UserProfile))\(['"]([^'"]+)['"]\)/);
-  if (!m?.[1] || !m?.[2]) return;
-  e.preventDefault();
-  e.stopImmediatePropagation();
-  if (m[1] === 'delUserProfile') completeUserProfileDelete(m[2]);
-  else completeDelete(m[2], 'records');
+function interceptInlineDelete(event) {
+  const button = event.target?.closest?.('button[onclick]');
+  if (!button) return;
+  const code = button.getAttribute('onclick') || '';
+  const match = code.match(/_(del(?:Case|Result|Record|UserProfile))\(['"]([^'"]+)['"]\)/);
+  if (!match?.[1] || !match?.[2]) return;
+
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  button.disabled = true;
+
+  const action = match[1] === 'delUserProfile'
+    ? completeUserProfileDelete(match[2])
+    : completeDelete(match[2]);
+  Promise.resolve(action).finally(() => { button.disabled = false; });
 }
 
-wrapAdminDeletes();
-setTimeout(wrapAdminDeletes, 0);
-setTimeout(wrapAdminDeletes, 80);
-setInterval(wrapAdminDeletes, 500);
-window.addEventListener('click', interceptInlineDelete, true);
-window.addEventListener('click', () => setTimeout(wrapAdminDeletes, 0), true);
-new MutationObserver(wrapAdminDeletes).observe(document.body, { childList: true, subtree: true });
+ensureAdminPolishStyle();
+setTimeout(ensureHelper, 300);
+window.addEventListener('click', event => {
+  interceptInlineDelete(event);
+  setTimeout(ensureHelper, 0);
+}, true);
