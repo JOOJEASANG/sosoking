@@ -37,8 +37,14 @@ jobs:
       - name: Check frontend syntax
         run: npm run check:frontend --prefix functions
 
-      - name: Verify judgment quality
-        run: npm run check:judgment --prefix functions
+      - name: Verify judgment V2 schema
+        run: node functions/verify-judgment-v2.js
+
+      - name: Verify case-specific serious humor
+        run: node functions/verify-judgment-story-v2.js
+
+      - name: Verify judgment screen integration
+        run: node functions/verify-judgment-v2-integration.js
 
       - name: Verify security contract
         run: npm run check:security --prefix functions
