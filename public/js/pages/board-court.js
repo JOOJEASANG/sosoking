@@ -1,4 +1,4 @@
-import { renderBoard as renderBaseBoard } from './board.js?v=20260709-casepreview1';
+import { renderBoard as renderBaseBoard } from './board.js?v=20260710-ranking1';
 
 function ensureBoardGameStyle() {
   if (document.getElementById('board-game-style')) return;
@@ -6,13 +6,18 @@ function ensureBoardGameStyle() {
   style.id = 'board-game-style';
   style.textContent = `
     .arena-rank-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0 16px;}
-    .arena-rank-tabs div{border:1px solid rgba(201,168,76,.32);border-radius:14px;background:rgba(201,168,76,.08);padding:10px 8px;text-align:center;}
+    .arena-rank-tabs button{appearance:none;border:1px solid rgba(201,168,76,.32);border-radius:14px;background:rgba(201,168,76,.06);padding:10px 8px;text-align:center;cursor:pointer;transition:transform .16s ease,border-color .16s ease,background .16s ease;}
+    .arena-rank-tabs button:hover{transform:translateY(-1px);border-color:rgba(201,168,76,.62);}
+    .arena-rank-tabs button.active{border-color:rgba(255,223,122,.86);background:rgba(201,168,76,.18);box-shadow:0 7px 20px rgba(201,168,76,.1);}
     .arena-rank-tabs strong{display:block;color:#e8c97a;font-size:14px;font-weight:900;}
     .arena-rank-tabs span{display:block;color:rgba(255,248,236,.72);font-size:10px;margin-top:2px;font-weight:800;}
     .rank-medal{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#ffdf7a,#c9a84c);color:#111827;font-weight:900;margin-right:6px;}
-    .court-board-row:nth-child(1){border-color:rgba(255,223,122,.8)!important;box-shadow:0 8px 26px rgba(201,168,76,.12);}
-    .court-board-row:nth-child(1)::after{content:'HOT';position:absolute;right:12px;top:12px;color:#111827;background:#ffdf7a;border-radius:999px;padding:3px 8px;font-size:9px;font-weight:900;}
+    #board-list .court-board-row:first-child{border-color:rgba(255,223,122,.8)!important;box-shadow:0 8px 26px rgba(201,168,76,.12);}
+    #board-list .court-board-row:first-child::after{content:'TOP';position:absolute;right:12px;top:12px;color:#111827;background:#ffdf7a;border-radius:999px;padding:3px 8px;font-size:9px;font-weight:900;}
     #board-list .card{position:relative;}
+    [data-theme="light"] .arena-rank-tabs button,:root:not([data-theme="dark"]) .arena-rank-tabs button{background:#fffaf0;border-color:#dfc98e;}
+    [data-theme="light"] .arena-rank-tabs button.active,:root:not([data-theme="dark"]) .arena-rank-tabs button.active{background:#fff0bd;border-color:#c79e32;}
+    [data-theme="light"] .arena-rank-tabs span,:root:not([data-theme="dark"]) .arena-rank-tabs span{color:#6b5431;}
   `;
   document.head.appendChild(style);
 }
@@ -30,29 +35,20 @@ function decorateBoard(container) {
           <div class="court-kicker">SOSOKING ARENA</div>
           <div class="court-title" style="font-size:20px;">황당재판 아레나</div>
         </div>
-      </div>
-      <div class="arena-rank-tabs">
-        <div><strong>최신</strong><span>방금 선고</span></div>
-        <div><strong>인기</strong><span>방청석 참여</span></div>
-        <div><strong>명판결</strong><span>인기 기록</span></div>
       </div>`);
   }
   const pick = document.getElementById('today-pick')?.firstElementChild;
   if (pick && !pick.classList.contains('court-document')) {
     pick.classList.add('court-document');
-    pick.insertAdjacentHTML('afterbegin', `<div class="court-stamp" style="margin-bottom:8px;">인기 기록</div>`);
   }
-  document.querySelectorAll('#board-list .card').forEach((card, idx) => {
-    if (card.classList.contains('court-board-row')) return;
-    card.classList.add('court-board-row');
-    card.style.borderLeft = '3px solid rgba(201,168,76,.5)';
-    const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : String(idx + 1);
-    card.insertAdjacentHTML('afterbegin', `<div class="court-kicker" style="margin-bottom:7px;"><span class="rank-medal">${medal}</span> ABSURD RECORD</div>`);
-  });
 }
 
 export async function renderBoard(container) {
+  ensureBoardGameStyle();
   await renderBaseBoard(container);
   decorateBoard(container);
-  setTimeout(() => decorateBoard(container), 250);
+  const observer = new MutationObserver(() => decorateBoard(container));
+  observer.observe(container, { childList: true, subtree: true });
+  const oldCleanup = window._pageCleanup;
+  window._pageCleanup = () => { observer.disconnect(); oldCleanup?.(); };
 }

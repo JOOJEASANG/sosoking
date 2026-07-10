@@ -1,12 +1,35 @@
-name: Deploy Firebase
+name: Validate and Deploy Firebase
 
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 jobs:
+  validate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Functions dependencies
+        run: npm install --prefix functions --no-audit --no-fund
+
+      - name: Validate Functions syntax and deployment coverage
+        run: npm run lint --prefix functions
+
   deploy:
+    if: github.event_name != 'pull_request'
+    needs: validate
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -22,11 +45,10 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install Firebase CLI
-        run: npm install -g firebase-tools
-
-      - name: Install Functions dependencies
-        run: npm install --prefix functions
+      - name: Install Firebase CLI and Functions dependencies
+        run: |
+          npm install -g firebase-tools
+          npm install --prefix functions --no-audit --no-fund
 
       - name: Prepare service account
         env:
@@ -38,12 +60,13 @@ jobs:
           fi
           echo "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-service-account.json"
 
-      - name: Deploy Firestore rules and Hosting
+      - name: Deploy rules, indexes, storage and hosting
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-        run: firebase deploy --only firestore:rules,hosting --project sosoking-481e6 --non-interactive
+        run: firebase deploy --only firestore:rules,firestore:indexes,storage,hosting --project sosoking-481e6 --non-interactive
 
-      - name: Deploy current Functions only
+      - name: Deploy all exported Functions
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-        run: firebase deploy --only functions:submitCase,functions:generateTrial,functions:createDailyAiCase,functions:generateDailyAiNow,functions:checkNickname,functions:setNickname,functions:voteResult,functions:addCourtComment,functions:requestAppeal,functions:deleteCourtPost --project sosoking-481e6 --non-interactive
+          FUNCTION_TARGETS: functions:submitCase,functions:suggestCaseTitle,functions:generateTrial,functions:createDailyAiCase,functions:generateDailyAiNow,functions:checkNickname,functions:setNickname,functions:voteResult,functions:addCourtComment,functions:requestAppeal,functions:deleteMyCase,functions:deleteCourtPost,functions:deleteUserProfile,functions:recoverStaleTrials,functions:repairSocialCounters,functions:recoverStaleTrialsNow,functions:repairSocialCountersNow
+        run: firebase deploy --only "$FUNCTION_TARGETS" --project sosoking-481e6 --non-interactive
