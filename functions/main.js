@@ -1,14 +1,21 @@
-const { initializeApp, getApps } = require('firebase-admin/app');
+const { onCall, HttpsError } = require('firebase-functions/v2/https');
+const { defineSecret } = require('firebase-functions/params');
 
-if (!getApps().length) {
-  initializeApp();
-}
+const REGION = 'asia-northeast3';
+const geminiKey = defineSecret('GEMINI_API_KEY');
 
-Object.assign(exports, require('./daily'));
-Object.assign(exports, require('./profile'));
-Object.assign(exports, require('./social'));
-Object.assign(exports, require('./submit-secure'));
-Object.assign(exports, require('./title-suggestion'));
-Object.assign(exports, require('./generate-trial-v2'));
-Object.assign(exports, require('./admin-actions'));
-Object.assign(exports, require('./repair'));
+exports.systemHealth = onCall({
+  region: REGION,
+  secrets: [geminiKey],
+  cors: true,
+}, async request => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+  }
+
+  return {
+    ok: true,
+    service: 'sosoking-clean-baseline',
+    geminiConfigured: Boolean(geminiKey.value().trim()),
+  };
+});
