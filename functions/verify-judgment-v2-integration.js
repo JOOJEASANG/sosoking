@@ -8,6 +8,7 @@ function read(relativePath) {
 const daily = read('./daily.js');
 const trial = read('../public/js/pages/trial.js');
 const home = read('../public/js/pages/home.js');
+const index = read('../public/index.html');
 
 const checks = [
   [daily.includes('function isCompleteDailyPayload'), 'Daily AI full-payload validator is missing'],
@@ -20,6 +21,7 @@ const checks = [
   [trial.includes('if (isCompleteResult(data))'), 'Trial page must redirect when a V2 judgment completes'],
   [home.includes('result.judgment?.headline') && home.includes('result.judgment?.summary'), 'Home feed must display V2 judgment metadata'],
   [home.includes('result.judgment?.facts') && home.includes('resultSearchText'), 'Home search must include V2 judgment content'],
+  [index.includes('/js/app.js?v=20260710-v2judgment1'), 'Index must bust the cached app entry for judgment V2'],
 ];
 
 const failed = checks.filter(([ok]) => !ok).map(([, message]) => message);
@@ -28,4 +30,4 @@ if (failed.length) {
   process.exit(1);
 }
 
-console.log('Verified judgment V2 daily validation, concurrency safety, trial completion and home feed integration.');
+console.log('Verified judgment V2 daily validation, concurrency safety, trial completion, home feed and app cache integration.');
