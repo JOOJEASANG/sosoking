@@ -171,6 +171,7 @@ function buildStoryPrompt(profile) {
 적용할 가상 원칙: ${profile.doctrine.doctrine}
 억울함 지수: ${profile.grievanceIndex}/10
 원고 희망 처분: ${profile.desiredVerdict || '별도 희망 없음'}
+대표 사건 물건·대상: ${profile.mainAnchor}
 
 [반드시 반영할 실제 사건 사실]
 ${factList(profile)}
@@ -189,7 +190,8 @@ ${anchors}
 8. 문체 비율은 판결문 80%, 정색한 과몰입 개그 20%다. 밈, 욕설, 억지 유행어는 금지한다.
 9. 웃음은 구체적 사실을 지나치게 감식하고 거창한 권리로 승격시키는 데서 만든다. 예: 마지막 만두는 ‘최후만두 점유권’, 늦은 답장은 ‘디지털 응답 공백 감식’, 사라진 리모컨은 ‘가정방송권 압수 사건’처럼 다룬다.
 10. 적어도 한 곳에는 0.1초 단위 복원, 증거물 지정, 비상대책회의, 재판부 퇴근 방해 등 정색한 과잉 수사 표현을 사건에 맞게 넣는다.
-11. 정치, 혐오, 성적 내용, 자해, 실제 범죄 조언, 개인정보를 만들지 마라. 실제 법적 효력이 없는 오락 콘텐츠라는 안내를 포함한다.
+11. 대표 사건 물건·대상 “${profile.mainAnchor}”는 summary·facts·investigation·prosecution·defense·opinion·closingComment 중 최소 4곳과 orders 중 최소 2곳에 직접 적는다.
+12. 정치, 혐오, 성적 내용, 자해, 실제 범죄 조언, 개인정보를 만들지 마라. 실제 법적 효력이 없는 오락 콘텐츠라는 안내를 포함한다.
 
 아래 JSON 객체 하나만 출력한다. 마크다운과 설명문은 붙이지 않는다.
 {
@@ -262,25 +264,31 @@ function evaluateStorySpecificity(judgment, profile) {
     judgment.closingComment,
   ];
   const sectionHits = sections.filter(section => sectionContainsAnchor(section, anchors)).length;
+  const primarySectionHits = sections.filter(section => sectionContainsAnchor(section, [profile.mainAnchor])).length;
   const allTexts = sections.concat(judgment.orders.map(order => order.text));
   const mentionedAnchors = anchors.filter(anchor => allTexts.some(section => String(section || '').includes(anchor)));
   const tailoredOrders = judgment.orders.filter(order => sectionContainsAnchor(order.text, anchors)).length;
+  const primaryOrderHits = judgment.orders.filter(order => sectionContainsAnchor(order.text, [profile.mainAnchor])).length;
   const seriousHumorHits = SERIOUS_HUMOR_MARKERS.filter(marker => `${judgment.investigation} ${judgment.opinion} ${judgment.closingComment}`.includes(marker)).length;
   const requiredAnchorCount = anchors.length >= 2 ? 2 : 1;
   return {
     sectionHits,
+    primarySectionHits,
     mentionedAnchorCount: mentionedAnchors.length,
     tailoredOrders,
+    primaryOrderHits,
     seriousHumorHits,
     passed: sectionHits >= 5
+      && primarySectionHits >= 4
       && mentionedAnchors.length >= requiredAnchorCount
       && tailoredOrders >= 2
+      && primaryOrderHits >= 2
       && seriousHumorHits >= 1,
   };
 }
 
 function buildRewriteInstruction(profile, evaluation) {
-  return `\n\n[재작성 명령]\n이전 응답은 사건 고유성 검사에서 탈락했다. 사건 핵심 단어(${profile.anchors.join(', ')})가 충분히 반복되지 않았거나 사건 맞춤형 주문과 정색한 과몰입 개그가 부족했다. 모든 본문 항목을 실제 사건 사실에 다시 연결하고, 주문 3개 중 최소 2개에 사건 핵심 단어를 직접 넣어라. 수사 과정에는 0.1초 복원·증거물 지정·비상대책회의·퇴근 지연 중 사건에 맞는 과잉 표현을 반드시 넣어라. 현재 검사값: sections=${evaluation.sectionHits}, anchors=${evaluation.mentionedAnchorCount}, orders=${evaluation.tailoredOrders}, humor=${evaluation.seriousHumorHits}. JSON 객체만 다시 출력하라.`;
+  return `\n\n[재작성 명령]\n이전 응답은 사건 고유성 검사에서 탈락했다. 사건 핵심 단어(${profile.anchors.join(', ')})가 충분히 반복되지 않았거나 사건 맞춤형 주문과 정색한 과몰입 개그가 부족했다. 대표 사건 물건 “${profile.mainAnchor}”를 본문 최소 4곳과 주문 최소 2곳에 직접 적고, 모든 본문 항목을 실제 사건 사실에 다시 연결하라. 수사 과정에는 0.1초 복원·증거물 지정·비상대책회의·퇴근 지연 중 사건에 맞는 과잉 표현을 반드시 넣어라. 현재 검사값: sections=${evaluation.sectionHits}, primarySections=${evaluation.primarySectionHits || 0}, anchors=${evaluation.mentionedAnchorCount}, orders=${evaluation.tailoredOrders}, primaryOrders=${evaluation.primaryOrderHits || 0}, humor=${evaluation.seriousHumorHits}. JSON 객체만 다시 출력하라.`;
 }
 
 module.exports = {
