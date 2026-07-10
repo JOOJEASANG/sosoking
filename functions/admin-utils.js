@@ -13,7 +13,8 @@ async function isAdminAuth(auth) {
   if (uidSnap.exists) return true;
 
   const email = cleanEmail(auth.token?.email);
-  if (!email) return false;
+  const emailVerified = auth.token?.email_verified === true;
+  if (!email || !emailVerified) return false;
 
   const emailSnap = await db.doc(`admins/${email}`).get();
   return emailSnap.exists;
