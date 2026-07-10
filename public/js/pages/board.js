@@ -30,8 +30,13 @@ function totalVotes(r) { return Number(r.reactionTotal || r.totalVotes || 0); }
 function totalComments(r) { return Number(r.commentCount || 0); }
 function funnyVotes(r) { return Number(r.reactionCounts?.funny || 0); }
 function engagement(r) { return totalVotes(r) + totalComments(r) * 2; }
-function titleOf(r) { return r.absurdityTitle || r.caseTitle || '제목 없음'; }
-function previewOf(r) { return compactText(r.closingComment || r.sentence || r.verdict || r.courtOpinion || '', 110); }
+function titleOf(r) { return r.headline || r.judgment?.headline || r.absurdityTitle || r.caseTitle || '제목 없음'; }
+function previewOf(r) {
+  return compactText(
+    r.judgment?.summary || r.judgment?.closingComment || r.closingComment || r.sentence || r.verdict || r.courtOpinion || '',
+    110
+  );
+}
 function casePreviewOf(r) { return compactText(r.caseDescription || '', 86); }
 function casePreviewHtml(r) {
   const text = casePreviewOf(r);
