@@ -10,12 +10,17 @@ function section(name, nextName) {
   return rules.slice(start, end < 0 ? rules.length : end);
 }
 
+const siteSettings = section('site_settings/{docId}', 'public_settings/{docId}');
+const publicSettings = section('public_settings/{docId}', 'admin_settings/{docId}');
 const checks = [
   [rules.includes('request.auth.token.email_verified == true'), 'Admin email access must require verified email'],
   [section('user_names/{key}', 'cases/{caseId}').includes('allow create, update, delete: if false;'), 'Nickname reservations must be server-only'],
   [section('users/{uid}', 'user_names/{key}').includes('allow create, update, delete: if false;'), 'User profile writes and deletes must be server-only'],
   [section('cases/{caseId}', 'results/{caseId}').includes('allow delete: if false;'), 'Case deletion must use cleanup Functions'],
   [section('results/{caseId}', 'result_reactions/{caseId}').includes('allow create, delete: if false;'), 'Result creation and deletion must be server-only'],
+  [siteSettings.includes('allow read, write: if isAdmin();'), 'Operating settings must be admin-only'],
+  [publicSettings.includes('allow read: if true;'), 'Public settings must remain readable'],
+  [publicSettings.includes("'dailyLimit', 'cooldownSec', 'businessInfo', 'publicNotice', 'updatedAt'"), 'Public settings writes must use the field whitelist'],
   [rules.includes('match /admin_settings/{docId}'), 'Private admin settings collection must exist'],
 ];
 
