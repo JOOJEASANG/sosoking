@@ -1,4 +1,4 @@
-name: Validate and Deploy Firebase
+name: Validate and Deploy Firebase Core
 
 on:
   push:
@@ -6,6 +6,13 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+
+concurrency:
+  group: firebase-core-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  FIREBASE_PROJECT_ID: sosoking-481e6
 
 jobs:
   validate:
@@ -24,18 +31,15 @@ jobs:
       - name: Install Functions dependencies
         run: npm install --prefix functions --no-audit --no-fund
 
-      - name: Validate Functions syntax and deployment coverage
+      - name: Validate source and deployment contracts
         run: npm run lint --prefix functions
 
-  deploy:
+  deploy-core:
     if: github.event_name != 'pull_request'
     needs: validate
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    concurrency:
-      group: firebase-deploy-main
-      cancel-in-progress: false
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -50,7 +54,7 @@ jobs:
           npm install -g firebase-tools
           npm install --prefix functions --no-audit --no-fund
 
-      - name: Prepare service account
+      - name: Prepare Firebase service account
         env:
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 }}
         run: |
@@ -58,30 +62,21 @@ jobs:
             echo "Missing GitHub secret: FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6"
             exit 1
           fi
-          echo "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-service-account.json"
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-service-account.json"
 
-      # Callable Functions must exist before rules disable direct client writes/deletes.
-      - name: Deploy all exported Functions first
+      # Callable Functions must exist before Firestore rules disable direct client writes/deletes.
+      - name: Deploy all exported Functions
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
           FUNCTION_TARGETS: functions:submitCase,functions:suggestCaseTitle,functions:generateTrial,functions:syncJudgmentStructure,functions:backfillJudgmentStructures,functions:backfillJudgmentStructuresNow,functions:createDailyAiCase,functions:generateDailyAiNow,functions:checkNickname,functions:setNickname,functions:voteResult,functions:addCourtComment,functions:requestAppeal,functions:deleteMyCase,functions:deleteCourtPost,functions:deleteUserProfile,functions:recoverStaleTrials,functions:repairSocialCounters,functions:recoverStaleTrialsNow,functions:repairSocialCountersNow
-        run: firebase deploy --only "$FUNCTION_TARGETS" --project sosoking-481e6 --non-interactive
+        run: firebase deploy --only "$FUNCTION_TARGETS" --project "$FIREBASE_PROJECT_ID" --non-interactive
 
-      - name: Deploy Firestore rules, indexes and Hosting
+      - name: Deploy Firestore rules and indexes
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-        run: firebase deploy --only firestore:rules,firestore:indexes,hosting --project sosoking-481e6 --non-interactive
+        run: firebase deploy --only firestore:rules,firestore:indexes --project "$FIREBASE_PROJECT_ID" --non-interactive
 
-      # Storage uses a separate Firebase Storage API permission. Do not block core deployment
-      # while the GitHub Actions service account lacks firebasestorage.defaultBucket.get.
-      - name: Deploy Storage Rules separately
-        id: deploy_storage
-        continue-on-error: true
+      - name: Deploy Hosting
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-        run: firebase deploy --only storage --project sosoking-481e6 --non-interactive
-
-      - name: Report missing Firebase Storage IAM permission
-        if: steps.deploy_storage.outcome == 'failure'
-        run: |
-          echo "::warning title=Firebase Storage Rules not deployed::Grant firebasestorage.defaultBucket.get to the service account in FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6. roles/firebasestorage.viewer is the minimum lookup role; roles/firebasestorage.admin is broader. Functions, Firestore and Hosting were deployed successfully."
+        run: firebase deploy --only hosting --project "$FIREBASE_PROJECT_ID" --non-interactive
