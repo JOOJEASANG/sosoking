@@ -67,8 +67,7 @@ jobs:
           FUNCTION_TARGETS: functions:submitCase,functions:suggestCaseTitle,functions:generateTrial,functions:syncJudgmentStructure,functions:backfillJudgmentStructures,functions:backfillJudgmentStructuresNow,functions:createDailyAiCase,functions:generateDailyAiNow,functions:checkNickname,functions:setNickname,functions:voteResult,functions:addCourtComment,functions:requestAppeal,functions:deleteMyCase,functions:deleteCourtPost,functions:deleteUserProfile,functions:recoverStaleTrials,functions:repairSocialCounters,functions:recoverStaleTrialsNow,functions:repairSocialCountersNow
         run: firebase deploy --only "$FUNCTION_TARGETS" --project sosoking-481e6 --non-interactive
 
-      # Keep this legacy step name until the regression check is updated.
-      - name: Deploy rules, indexes, storage and hosting
+      - name: Deploy Firestore rules, indexes and Hosting
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
         run: firebase deploy --only firestore:rules,firestore:indexes,hosting --project sosoking-481e6 --non-interactive
