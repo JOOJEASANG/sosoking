@@ -1,3 +1,5 @@
+import { db } from '../firebase.js?v=20260630-3';
+import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { renderSubmit as renderBaseSubmit } from './submit.js?v=20260708-title3';
 
 function ensureSimpleSubmitStyle() {
@@ -28,6 +30,21 @@ function applySaferPublicDefault(container) {
     if (text) text.innerHTML = '<b style="color:var(--gold);">판결문 생성 후 공개 선택</b><br><span style="color:var(--cream-dim);">처음에는 비공개로 저장됩니다. 결과 화면에서 내용을 확인한 뒤 공개할 수 있습니다.</span>';
   }
 }
+async function applyPublicLimits(container) {
+  try {
+    const snap = await getDoc(doc(db, 'public_settings', 'config'));
+    if (!snap.exists()) return;
+    const data = snap.data() || {};
+    const dailyLimit = Math.max(1, Math.min(20, Number(data.dailyLimit || 3)));
+    const cooldownSec = Math.max(0, Math.min(300, Number(data.cooldownSec || 45)));
+    const disclaimer = Array.from(container.querySelectorAll('.disclaimer')).find(el => el.textContent.includes('하루 접수 한도'));
+    if (disclaimer) {
+      disclaimer.innerHTML = `· 하루 접수 한도 <strong>${dailyLimit}건</strong> · 재접수 대기 <strong>${cooldownSec}초</strong><br>· 실명·연락처·주민번호 입력 금지 · 실제 법적 효력 없음`;
+    }
+  } catch (err) {
+    console.warn('public submit settings skipped:', err.message || err);
+  }
+}
 function decorateSubmit(container) {
   ensureSimpleSubmitStyle();
   const form = container.querySelector('#submit-form');
@@ -45,4 +62,5 @@ function decorateSubmit(container) {
 export async function renderSubmit(container) {
   await renderBaseSubmit(container);
   decorateSubmit(container);
+  await applyPublicLimits(container);
 }

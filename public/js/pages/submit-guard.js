@@ -1,5 +1,5 @@
 import { auth } from '../firebase.js?v=20260630-3';
-import { renderSubmit as renderSubmitForm } from './submit-court.js?v=20260709-privacy2';
+import { renderSubmit as renderSubmitForm } from './submit-court.js?v=20260710-publicsettings1';
 import { applySubmitPrivacyDefaults } from '../components/submit-privacy-default.js?v=20260709-1';
 
 function loginRequired(container) {

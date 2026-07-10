@@ -20,4 +20,16 @@ async function isAdminAuth(auth) {
   return emailSnap.exists;
 }
 
-module.exports = { isAdminAuth };
+async function loadSettings() {
+  const [publicSnap, privateSnap] = await Promise.all([
+    db.doc('site_settings/config').get().catch(() => null),
+    db.doc('admin_settings/config').get().catch(() => null),
+  ]);
+
+  return {
+    ...(publicSnap?.exists ? publicSnap.data() : {}),
+    ...(privateSnap?.exists ? privateSnap.data() : {}),
+  };
+}
+
+module.exports = { isAdminAuth, loadSettings };

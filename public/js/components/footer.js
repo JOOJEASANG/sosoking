@@ -7,7 +7,7 @@ export async function renderFooter() {
   if (!footer) return;
   let biz = {};
   try {
-    const snap = await getDoc(doc(db, 'site_settings', 'config'));
+    const snap = await getDoc(doc(db, 'public_settings', 'config'));
     if (snap.exists()) biz = snap.data().businessInfo || {};
   } catch {}
 
