@@ -13,13 +13,19 @@
 `main` 푸시 시 다음 순서로 자동 실행됩니다.
 
 1. Functions와 프론트 JavaScript 문법 검사
-2. Functions export와 배포 대상 일치 검사
-3. Firestore 보안 계약 및 배포 계약 검사
-4. 전체 Cloud Functions 배포
+2. Firestore 보안 계약 및 배포 계약 검사
+3. `functions/main.js`의 현재 export 전체 배포
+4. 소스에서 제거된 기존 Cloud Functions 폐기
 5. Firestore Rules와 Indexes 배포
 6. Firebase Hosting 배포
 
-Functions를 Firestore Rules보다 먼저 배포하는 이유는, 규칙이 클라이언트 직접 쓰기·삭제를 차단하기 전에 필요한 Callable Function이 운영 환경에 존재하도록 하기 위해서입니다.
+Functions는 개별 이름 목록을 별도로 관리하지 않습니다. 다음 명령을 사용해 현재 소스 전체를 배포합니다.
+
+```bash
+firebase deploy --only functions --force --project sosoking-481e6 --non-interactive
+```
+
+`--force`는 소스에서 제거된 Function을 운영 환경에서도 정리할 때 확인 질문 없이 진행하기 위해 사용합니다. Functions를 Firestore Rules보다 먼저 배포하는 이유는, 규칙이 클라이언트 직접 쓰기·삭제를 차단하기 전에 필요한 Callable Function이 운영 환경에 존재하도록 하기 위해서입니다.
 
 ### 2. Firebase Storage Rules 수동배포
 
@@ -83,6 +89,8 @@ Storage Rules가 수정된 경우 반드시 이 워크플로를 다시 실행합
 
 Functions, Firestore, Hosting 중 하나가 실제로 배포되지 않은 상태이므로 원인을 수정한 뒤 다시 실행해야 합니다. 실패를 무시하지 않습니다.
 
+Functions 전체 배포 단계가 실패하면 삭제 예정 Function도 운영 환경에 남을 수 있으므로, 다음 단계로 진행하기 전에 반드시 성공 여부를 확인합니다.
+
 ### Storage 워크플로 실패
 
 기존 Storage Rules는 그대로 유지됩니다. 새 규칙만 적용되지 않은 상태입니다. IAM 권한을 보완한 뒤 수동으로 다시 실행합니다.
@@ -99,16 +107,16 @@ npm run lint --prefix functions
 이 검사는 다음 항목을 포함합니다.
 
 - Functions 및 브라우저 모듈 문법
-- Functions export와 배포 대상 일치
 - Firestore 보안 규칙 계약
-- 판결문 파서
+- 소스 기준 Functions 전체 배포와 `--force` 적용
+- 구형 판결 구조화 Functions 재연결 방지
 - Core와 Storage 워크플로 분리
 - 공개 설정 접근 경로
-- 판결 백필 커서와 오래된 필드 정리
 
 ## 운영 원칙
 
 - `main`에는 검증이 끝난 PR만 병합합니다.
+- Functions 이름을 워크플로에 중복 하드코딩하지 않습니다.
 - 배포 오류를 `continue-on-error`로 숨기지 않습니다.
 - Storage 권한 문제는 Core 배포와 분리하되, Storage Rules 변경 시 수동 배포를 누락하지 않습니다.
 - 서비스 계정 JSON이나 Gemini API 키는 저장소 파일에 기록하지 않습니다.

@@ -9,21 +9,30 @@ const coreWorkflow = read('../.github/workflows/firebase-deploy.yml');
 const storageWorkflow = read('../.github/workflows/firebase-storage-rules.yml');
 const firebaseConfig = JSON.parse(read('../firebase.json'));
 const storageRules = read('../storage.rules');
+const main = read('./main.js');
 const policy = read('../public/js/pages/policy.js');
-const sync = read('./sync-judgment-structure.js');
 const readme = read('../README.md');
 
-const functionDeployIndex = coreWorkflow.indexOf('Deploy all exported Functions');
+const functionDeployIndex = coreWorkflow.indexOf('Deploy Functions from current source');
 const firestoreDeployIndex = coreWorkflow.indexOf('Deploy Firestore rules and indexes');
 const hostingDeployIndex = coreWorkflow.indexOf('Deploy Hosting');
+const retiredFunctions = [
+  'syncJudgmentStructure',
+  'backfillJudgmentStructures',
+  'backfillJudgmentStructuresNow',
+];
 
 const checks = [
-  [functionDeployIndex >= 0, 'Core workflow must deploy all exported Functions'],
-  [firestoreDeployIndex > functionDeployIndex, 'Firestore rules must deploy after Callable Functions'],
+  [functionDeployIndex >= 0, 'Core workflow must deploy Functions from current source'],
+  [firestoreDeployIndex > functionDeployIndex, 'Firestore rules must deploy after Functions'],
   [hostingDeployIndex > firestoreDeployIndex, 'Hosting must deploy after Firestore'],
+  [coreWorkflow.includes('firebase deploy --only functions --force'), 'Functions deployment must remove exports retired from source'],
+  [!coreWorkflow.includes('FUNCTION_TARGETS'), 'Functions deployment must not use a duplicated hardcoded target list'],
   [!coreWorkflow.includes('firebase deploy --only storage'), 'Core workflow must not deploy Storage Rules'],
   [!coreWorkflow.includes('continue-on-error'), 'Core deployment must not hide failed steps'],
   [coreWorkflow.includes('FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6'), 'Core workflow service-account secret is missing'],
+  [retiredFunctions.every(name => !coreWorkflow.includes(name)), 'Core workflow still references retired judgment maintenance Functions'],
+  [!main.includes("require('./sync-judgment-structure')"), 'Functions entry point still exports legacy judgment synchronization'],
 
   [storageWorkflow.includes('workflow_dispatch:'), 'Storage workflow must be manually dispatchable'],
   [!storageWorkflow.includes('\n  push:'), 'Storage workflow must not run automatically until IAM is configured'],
@@ -39,13 +48,9 @@ const checks = [
   [policy.includes("getDoc(doc(db, 'policy_docs', safeType)).catch(() => null)"), 'Policy content failure must be isolated'],
   [policy.includes("getDoc(doc(db, 'public_settings', 'config')).catch(() => null)"), 'Public settings failure must be isolated'],
 
-  [sync.includes('FieldPath.documentId()'), 'Judgment backfill must use a stable pagination cursor'],
-  [sync.includes('lastDocumentId'), 'Judgment backfill cursor state is missing'],
-  [sync.includes('closingComment: parsed.closingComment || FieldValue.delete()'), 'Stale closing comments must be deleted'],
-  [sync.includes("STRUCTURE_VERSION = 'judgment-script-v2'"), 'Structure version must force existing results to resync'],
-
   [readme.includes('docs/DEPLOYMENT.md'), 'README must link to the deployment runbook'],
   [!readme.includes('1~10점'), 'README must not describe the removed 1-10 score system'],
+  [retiredFunctions.every(name => !readme.includes(name)), 'README still describes retired judgment maintenance Functions'],
 ];
 
 const failed = checks.filter(([ok]) => !ok).map(([, message]) => message);
@@ -54,4 +59,4 @@ if (failed.length) {
   process.exit(1);
 }
 
-console.log('Verified Firebase deployment, Storage separation, public settings and judgment synchronization contracts.');
+console.log('Verified source-based Functions deployment, retired judgment cleanup, public settings and Firebase deployment separation.');
