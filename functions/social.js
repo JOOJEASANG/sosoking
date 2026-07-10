@@ -35,6 +35,12 @@ async function assertPublicResult(caseId) {
   if (!data.isPublic) throw new HttpsError('permission-denied', '공개 판결문만 참여할 수 있습니다.');
   return { resultRef, data };
 }
+function normalizedReactionCounts(value = {}) {
+  return Object.fromEntries(REACTIONS.map(key => {
+    const n = Number(value?.[key] || 0);
+    return [key, Number.isFinite(n) && n > 0 ? Math.floor(n) : 0];
+  }));
+}
 
 exports.voteResult = onCall({ region: REGION, timeoutSeconds: 30, memory: '256MiB' }, async request => {
   requireRealUser(request, '방청객 투표는 구글 또는 이메일 로그인 후 이용할 수 있습니다.');
@@ -47,21 +53,27 @@ exports.voteResult = onCall({ region: REGION, timeoutSeconds: 30, memory: '256Mi
   const summaryRef = db.doc(`result_reactions/${caseId}`);
   const voteRef = db.doc(`result_reactions/${caseId}/votes/${uid}`);
   await db.runTransaction(async tx => {
-    const voteSnap = await tx.get(voteRef);
+    const [voteSnap, summarySnap] = await Promise.all([
+      tx.get(voteRef),
+      tx.get(summaryRef),
+    ]);
     const prev = voteSnap.exists ? voteSnap.data().reaction : '';
-    const totalDelta = prev === reaction ? 0 : (prev ? 0 : 1);
-    const updates = { updatedAt: FieldValue.serverTimestamp(), total: FieldValue.increment(totalDelta) };
-    if (prev && prev !== reaction) updates[`counts.${prev}`] = FieldValue.increment(-1);
-    if (prev !== reaction) updates[`counts.${reaction}`] = FieldValue.increment(1);
-    tx.set(summaryRef, updates, { merge: true });
-    tx.set(voteRef, { uid, reaction, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-    if (totalDelta) {
-      tx.set(resultRef, {
-        reactionTotal: FieldValue.increment(totalDelta),
-        totalVotes: FieldValue.increment(totalDelta),
-        updatedAt: FieldValue.serverTimestamp()
-      }, { merge: true });
+    const counts = normalizedReactionCounts(summarySnap.exists ? summarySnap.data().counts : {});
+
+    if (prev !== reaction) {
+      if (REACTIONS.includes(prev)) counts[prev] = Math.max(0, counts[prev] - 1);
+      counts[reaction] += 1;
     }
+
+    const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
+    tx.set(summaryRef, { counts, total, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+    tx.set(voteRef, { uid, reaction, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+    tx.set(resultRef, {
+      reactionCounts: counts,
+      reactionTotal: total,
+      totalVotes: total,
+      updatedAt: FieldValue.serverTimestamp()
+    }, { merge: true });
   });
   return { success: true };
 });
