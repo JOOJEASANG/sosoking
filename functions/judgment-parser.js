@@ -36,30 +36,50 @@ function sectionText(lines, start, end) {
 }
 
 function parseOrders(orderText) {
-  const paragraphs = cleanLong(orderText)
-    .split(/\n\s*\n/)
-    .map(paragraph => cleanLong(paragraph, 1200))
-    .filter(Boolean);
+  const lines = cleanLong(orderText).split('\n');
   const orders = [];
-  let lastOrderIndex = -1;
+  const trailingLines = [];
+  let current = null;
 
-  paragraphs.forEach((paragraph, index) => {
-    const match = paragraph.match(/^([1-3])\.\s*([\s\S]+)/);
-    if (!match) return;
-    orders.push({ number: Number(match[1]), text: cleanLong(match[2], 700) });
-    lastOrderIndex = index;
-  });
+  function commitCurrent() {
+    if (!current) return;
+    current.text = cleanLong(current.text, 700);
+    if (current.text) orders.push(current);
+    current = null;
+  }
 
-  orders.sort((a, b) => a.number - b.number);
-  const sentence = orders.map(order => `${order.number}. ${order.text}`).join('\n');
-  const trailing = lastOrderIndex >= 0
-    ? paragraphs.slice(lastOrderIndex + 1).join('\n\n')
-    : '';
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    const numbered = line.match(/^([1-3])\.\s*(.*)$/);
+    if (numbered) {
+      commitCurrent();
+      current = { number: Number(numbered[1]), text: numbered[2] };
+      continue;
+    }
+
+    if (!line) {
+      commitCurrent();
+      if (orders.length >= 3 && trailingLines.length) trailingLines.push('');
+      continue;
+    }
+
+    if (current) {
+      current.text += `\n${line}`;
+    } else if (orders.length) {
+      trailingLines.push(line);
+    }
+  }
+  commitCurrent();
+
+  const uniqueOrders = [];
+  for (const order of orders.sort((a, b) => a.number - b.number)) {
+    if (!uniqueOrders.some(existing => existing.number === order.number)) uniqueOrders.push(order);
+  }
 
   return {
-    orders,
-    sentence: cleanLong(sentence, 2400),
-    trailing: cleanLong(trailing, 1200),
+    orders: uniqueOrders,
+    sentence: cleanLong(uniqueOrders.map(order => `${order.number}. ${order.text}`).join('\n'), 2400),
+    trailing: cleanLong(trailingLines.join('\n'), 1200),
   };
 }
 
@@ -105,7 +125,7 @@ function parseJudgmentScript(value) {
     180
   );
 
-  if (!facts || !investigation || !plaintiff || !defendant || !opinion || !parsedOrders.sentence) {
+  if (!facts || !investigation || !plaintiff || !defendant || !opinion || parsedOrders.orders.length < 3) {
     return null;
   }
 
