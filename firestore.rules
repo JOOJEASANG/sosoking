@@ -61,13 +61,11 @@ service cloud.firestore {
 
     match /users/{uid} {
       allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
-      // 프로필 생성·수정·삭제는 Callable Function에서만 처리한다.
       allow create, update, delete: if false;
     }
 
     match /user_names/{key} {
       allow read: if true;
-      // 닉네임 예약은 setNickname의 서버 트랜잭션으로만 변경한다.
       allow create, update, delete: if false;
     }
 
@@ -76,7 +74,6 @@ service cloud.firestore {
         resource.data.userId == request.auth.uid ||
         isAdmin()
       );
-      // 사건 접수는 submitCase Callable Function에서만 처리한다.
       allow create: if false;
       allow update: if isAdmin() || (
         signedIn() &&
@@ -84,7 +81,6 @@ service cloud.firestore {
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isPublic']) &&
         request.resource.data.isPublic is bool
       );
-      // 삭제는 deleteMyCase 또는 deleteCourtPost에서 연관 데이터를 함께 정리한다.
       allow delete: if false;
     }
 
@@ -159,12 +155,20 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    // Gemini 모델, 프롬프트, 금칙어, 비용 단가 등 운영 설정은 관리자만 읽고 쓴다.
     match /site_settings/{docId} {
-      allow read: if true;
-      allow write: if isAdmin();
+      allow read, write: if isAdmin();
     }
 
-    // 향후 공개 설정과 운영 전용 설정을 분리할 수 있도록 비공개 저장소를 준비한다.
+    // 접수 한도와 사업자 정보 등 사용자 화면에 필요한 값만 별도로 공개한다.
+    match /public_settings/{docId} {
+      allow read: if true;
+      allow write: if isAdmin()
+        && request.resource.data.keys().hasOnly([
+          'dailyLimit', 'cooldownSec', 'businessInfo', 'publicNotice', 'updatedAt'
+        ]);
+    }
+
     match /admin_settings/{docId} {
       allow read, write: if isAdmin();
     }
