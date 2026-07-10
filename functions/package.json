@@ -12,7 +12,7 @@
     "check:judgment": "node verify-judgment-v2.js && node verify-judgment-story-v2.js && node verify-judgment-v2-integration.js",
     "check:site": "node verify-site-audit.js",
     "check:security": "node verify-security-contract.js",
-    "check:deployment": "node verify-deployment-contract.js",
+    "check:deployment": "node verify-site-audit.js && node verify-deployment-contract.js",
     "lint": "npm run check:backend && npm run check:frontend && npm run check:judgment && npm run check:site && npm run check:security && npm run check:deployment"
   },
   "dependencies": {
