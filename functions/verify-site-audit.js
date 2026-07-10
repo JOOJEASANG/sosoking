@@ -17,6 +17,7 @@ const privacyDefault = read('public/js/components/submit-privacy-default.js');
 const trial = read('public/js/pages/trial-game.js');
 const result = read('public/js/pages/result-case-story.js');
 const theme = read('public/js/components/theme.js');
+const courtDesign = read('public/js/components/court-design.js');
 const siteSystem = read('public/css/site-system.css');
 const judgment = read('functions/judgment-v2.js');
 const writer = read('functions/judgment-story-writer.js');
@@ -31,6 +32,7 @@ const removedThemeFiles = [
   'public/css/light-mode-complete-contrast.css',
   'public/css/home-stats-cta-polish.css',
   'public/css/submit-light-fix.css',
+  'public/js/components/contrast-fix.js',
 ];
 
 const checks = [
@@ -40,6 +42,7 @@ const checks = [
   [siteSystem.includes('--ui-bg:') && siteSystem.includes('html[data-theme="light"]'), 'Unified CSS must define dark and light tokens'],
   [siteSystem.includes('.home-logo-frame') && siteSystem.includes('.home-logo-banner'), 'Unified CSS must provide theme-aware logo treatment'],
   [theme.includes('document.documentElement.style.colorScheme'), 'Theme controller must set browser color scheme'],
+  [courtDesign.includes('var(--ui-line-strong') && !courtDesign.includes('contrast-fix.js'), 'Court design must use unified tokens without runtime contrast patches'],
   [app.includes("from './pages/home.js?v=20260710-full-audit1'"), 'App must load the audited home directly'],
   [!exists('public/js/pages/home-court.js'), 'Redundant home decoration wrapper must be removed'],
   [home.includes('사건 접수부터 선고까지 6단계') && home.includes('원고·피고 주장'), 'Home must explain the full court journey'],
@@ -68,4 +71,4 @@ if (failed.length) {
   process.exit(1);
 }
 
-console.log('Verified file cleanup, unified themes, full court journey, policies and opposing claim experience.');
+console.log('Verified cleanup, single theme source, full court journey, policies and opposing claims.');
