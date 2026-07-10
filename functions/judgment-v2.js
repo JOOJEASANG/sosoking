@@ -69,6 +69,8 @@ function normalizeJudgment(value = {}, fallback = {}) {
     summary: cleanParagraph(source.summary, 700) || cleanParagraph(base.summary, 700),
     facts: cleanParagraph(source.facts, 5000) || cleanParagraph(base.facts, 5000),
     investigation: cleanParagraph(source.investigation, 5000) || cleanParagraph(base.investigation, 5000),
+    plaintiffClaim: cleanParagraph(source.plaintiffClaim, 700) || cleanParagraph(base.plaintiffClaim, 700),
+    defendantClaim: cleanParagraph(source.defendantClaim, 700) || cleanParagraph(base.defendantClaim, 700),
     prosecution: cleanParagraph(source.prosecution, 4000) || cleanParagraph(base.prosecution, 4000),
     defense: cleanParagraph(source.defense, 4000) || cleanParagraph(base.defense, 4000),
     opinion: cleanParagraph(source.opinion, 5000) || cleanParagraph(base.opinion, 5000),
