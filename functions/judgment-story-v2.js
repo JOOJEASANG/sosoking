@@ -7,6 +7,12 @@ const STOPWORDS = new Set([
   '같습니다', '이라고', '라고', '하는', '하게', '되어', '되는', '이런', '그런', '있는', '없는',
 ]);
 
+const PARTICLES = [
+  '으로부터', '에게서', '한테서', '이라도', '라도', '에서', '에게', '한테', '께서', '처럼',
+  '보다', '까지', '부터', '으로', '밖에', '마저', '조차', '이나', '나', '은', '는', '이', '가',
+  '을', '를', '에', '로', '와', '과', '도', '만', '의',
+];
+
 const JUDGE_DIRECTIONS = {
   '엄벌주의형': '사소한 행위도 생활질서 붕괴의 전조로 보고, 표정 변화와 사후 태도까지 엄중하게 추궁한다.',
   '감성형': '원고가 느낀 서운함의 잔향을 과도하게 세밀히 묘사하되 감상문이 아니라 판결문 말투를 유지한다.',
@@ -70,19 +76,33 @@ function splitFacts(description) {
   return chunks.slice(0, 5);
 }
 
-function extractAnchors(title, description) {
-  const source = `${description || ''} ${title || ''}`;
-  const tokens = source.match(/[가-힣A-Za-z0-9]+/g) || [];
-  const counts = new Map();
-  for (const tokenValue of tokens) {
-    const token = tokenValue.trim();
-    if (token.length < 2 || STOPWORDS.has(token) || /^\d+$/.test(token)) continue;
-    counts.set(token, (counts.get(token) || 0) + 1);
+function normalizeAnchorToken(value) {
+  let token = String(value || '').trim();
+  if (!token) return '';
+  for (const particle of PARTICLES) {
+    if (token.length > particle.length + 1 && token.endsWith(particle)) {
+      token = token.slice(0, -particle.length);
+      break;
+    }
   }
-  return [...counts.entries()]
-    .sort((left, right) => right[1] - left[1] || right[0].length - left[0].length)
-    .map(([token]) => token)
-    .slice(0, 10);
+  return token;
+}
+
+function extractAnchors(title, description) {
+  const ordered = [];
+  const seen = new Set();
+  const sources = [title || '', description || ''];
+  for (const source of sources) {
+    const tokens = String(source).match(/[가-힣A-Za-z0-9]+/g) || [];
+    for (const tokenValue of tokens) {
+      const token = normalizeAnchorToken(tokenValue);
+      if (token.length < 2 || STOPWORDS.has(token) || /^\d+$/.test(token) || seen.has(token)) continue;
+      seen.add(token);
+      ordered.push(token);
+      if (ordered.length >= 10) return ordered;
+    }
+  }
+  return ordered;
 }
 
 function buildCaseProfile({ title, description, desiredVerdict, grievanceIndex, headline, defendantName, judgeType, category }) {
@@ -218,7 +238,8 @@ function evaluateStorySpecificity(judgment, profile) {
     judgment.closingComment,
   ];
   const sectionHits = sections.filter(section => sectionContainsAnchor(section, anchors)).length;
-  const mentionedAnchors = anchors.filter(anchor => sections.concat(judgment.orders.map(order => order.text)).some(section => String(section || '').includes(anchor)));
+  const allTexts = sections.concat(judgment.orders.map(order => order.text));
+  const mentionedAnchors = anchors.filter(anchor => allTexts.some(section => String(section || '').includes(anchor)));
   const tailoredOrders = judgment.orders.filter(order => sectionContainsAnchor(order.text, anchors)).length;
   const seriousHumorHits = SERIOUS_HUMOR_MARKERS.filter(marker => `${judgment.investigation} ${judgment.opinion} ${judgment.closingComment}`.includes(marker)).length;
   const requiredAnchorCount = anchors.length >= 2 ? 2 : 1;
