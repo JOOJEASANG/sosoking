@@ -70,9 +70,9 @@ function buildLocalJudgment({ title, description, desiredVerdict, grievanceIndex
     headline,
     summary: `${judgeType} 재판부는 사안 자체는 작지만 원고의 억울함은 실제로 발생했다고 보아 피고의 생활형 책임을 인정한다.`,
     facts: `원고는 “${description}”라는 일이 발생하여 평온한 일상이 흔들렸다고 주장하였다. 사건명은 “${title}”로 접수되었고 억울함 지수는 ${grievanceIndex}/10으로 기록되었다. 피고 ${defendantName}은 사소한 일이라고 항변할 수 있으나, 재판부는 사소함이 상대방의 불편을 자동으로 없애지는 않는다고 보았다.`,
-    investigation: `재판부는 사건 당시의 말과 행동, 반응의 속도, 사건 뒤 남은 찝찝함을 생활 증거로 검토하였다. 수사관은 원고의 기억 속 장면을 0.1초 단위로 재생한다는 과도한 자세로 정황을 분석하였고, 사건이 커진 핵심 원인은 행동 자체뿐 아니라 이후의 설명과 배려 부족에도 있다고 판단하였다.`,
+    investigation: '재판부는 사건 당시의 말과 행동, 반응의 속도, 사건 뒤 남은 찝찝함을 생활 증거로 검토하였다. 수사관은 원고의 기억 속 장면을 0.1초 단위로 재생한다는 과도한 자세로 정황을 분석하였고, 사건이 커진 핵심 원인은 행동 자체뿐 아니라 이후의 설명과 배려 부족에도 있다고 판단하였다.',
     prosecution: `검사는 피고 ${defendantName}이 원고의 작은 기대와 생활평온을 충분히 살피지 않았다고 주장하였다. 특히 사건을 대수롭지 않게 여기는 태도가 원고의 억울함을 더 오래 지속시켰으므로 엄숙한 사과와 재발 방지 조치가 필요하다고 의견을 밝혔다.`,
-    defense: `변호인은 피고에게 악의가 없었고 피로, 착오, 주변 상황의 엇박자가 겹쳐 벌어진 일이라고 항변하였다. 또한 사건의 크기에 비해 재판 절차가 지나치게 장엄하다고 주장하였으나, 재판부는 바로 그 차이가 소소킹 판결소의 관할 사유라고 보았다.`,
+    defense: '변호인은 피고에게 악의가 없었고 피로, 착오, 주변 상황의 엇박자가 겹쳐 벌어진 일이라고 항변하였다. 또한 사건의 크기에 비해 재판 절차가 지나치게 장엄하다고 주장하였으나, 재판부는 바로 그 차이가 소소킹 판결소의 관할 사유라고 보았다.',
     opinion: `${judgeType} 재판부는 기록 전체를 검토한 결과 피고에게 실제 형벌을 부과할 사안은 아니지만, 원고의 감정을 인정하고 같은 일이 반복되지 않도록 생활형 의무를 명하는 것이 타당하다고 판단한다. ${requested} 이 판결은 웃음과 관계 회복을 위한 오락적 판단에 한정된다.`,
     orders: [
       { number: 1, text: `${defendantName}은 원고에게 사건 당시 배려가 부족했음을 엄숙한 표정으로 세 문장 이상 사과하라.` },
@@ -159,11 +159,8 @@ function imageMeta(caseData) {
   };
 }
 
-async function generateWithGemini({ settings, prompt, image, fallback }) {
-  const key = geminiKey.value().trim();
-  if (!key) return { judgment: fallback, aiGenerated: false, usage: {} };
-
-  const model = new GoogleGenerativeAI(key).getGenerativeModel({
+async function generateWithGemini({ settings, prompt, image }) {
+  const model = new GoogleGenerativeAI(geminiKey.value().trim()).getGenerativeModel({
     model: cleanText(settings.geminiModel, 60) || 'gemini-2.5-flash',
     generationConfig: {
       temperature: 0.82,
@@ -176,13 +173,9 @@ async function generateWithGemini({ settings, prompt, image, fallback }) {
   if (image) parts.push({ inlineData: image });
   const response = await model.generateContent({ contents: [{ role: 'user', parts }] });
   const raw = extractJson(response.response.text());
-  const judgment = normalizeJudgment(raw, fallback);
+  const judgment = normalizeJudgment(raw);
   if (!isCompleteJudgment(judgment)) throw new Error('AI judgment did not satisfy the V2 contract');
-  return {
-    judgment,
-    aiGenerated: true,
-    usage: response.response.usageMetadata || {},
-  };
+  return { judgment, usage: response.response.usageMetadata || {} };
 }
 
 function kstDateKey(date = new Date()) {
@@ -255,24 +248,28 @@ exports.generateTrial = onCall({
   }));
   let judgment = fallback;
   let aiGenerated = false;
+  let aiAttempted = false;
   let usage = {};
   let image = null;
 
   try {
-    const settings = await loadSettings();
-    image = await imageForGemini(caseData).catch(error => {
-      console.warn('image load skipped:', error.message || error);
-      return null;
-    });
-    const generated = await generateWithGemini({
-      settings,
-      prompt: buildPrompt({ title, description, desiredVerdict, grievanceIndex, headline, defendantName, judgeType, category }),
-      image,
-      fallback,
-    });
-    judgment = generated.judgment;
-    aiGenerated = generated.aiGenerated;
-    usage = generated.usage;
+    const key = geminiKey.value().trim();
+    aiAttempted = !!key;
+    if (key) {
+      const settings = await loadSettings();
+      image = await imageForGemini(caseData).catch(error => {
+        console.warn('image load skipped:', error.message || error);
+        return null;
+      });
+      const generated = await generateWithGemini({
+        settings,
+        prompt: buildPrompt({ title, description, desiredVerdict, grievanceIndex, headline, defendantName, judgeType, category }),
+        image,
+      });
+      judgment = generated.judgment;
+      aiGenerated = true;
+      usage = generated.usage;
+    }
   } catch (error) {
     console.error('V2 AI judgment generation failed, using local judgment:', error.message || error);
   }
@@ -342,7 +339,7 @@ exports.generateTrial = onCall({
       const today = kstDateKey();
       await db.doc(`usage_stats/daily_${today}`).set({
         date: today,
-        geminiRequests: FieldValue.increment(aiGenerated ? 1 : 0),
+        geminiRequests: FieldValue.increment(aiAttempted ? 1 : 0),
         geminiInputTokens: FieldValue.increment(Number(usage.promptTokenCount || 0)),
         geminiOutputTokens: FieldValue.increment(Number(usage.candidatesTokenCount || 0)),
         caseCount: FieldValue.increment(1),
