@@ -40,7 +40,7 @@ for (const input of cases) {
   assert.ok(profile.anchors.length >= 2, `${input.title}: 사건 핵심어 추출이 부족합니다.`);
   assert.ok(prompt.includes(input.description.split('.')[0]), `${input.title}: 원문 사실이 프롬프트에 없습니다.`);
   assert.ok(prompt.includes('판결문 80%'), `${input.title}: 진지함/개그 비율 지시가 없습니다.`);
-  assert.ok(prompt.includes('주문 3개 중 최소 2개'), `${input.title}: 맞춤형 주문 지시가 없습니다.`);
+  assert.ok(prompt.includes('orders 3개 중 최소 2개'), `${input.title}: 맞춤형 주문 지시가 없습니다.`);
   assert.ok(isCompleteJudgment(judgment), `${input.title}: 로컬 판결이 V2 계약을 충족하지 못합니다.`);
   assert.equal(evaluation.passed, true, `${input.title}: 사건 고유성 검사 실패 ${JSON.stringify(evaluation)}`);
   assert.ok(judgment.facts.includes(profile.mainAnchor), `${input.title}: 사건 경위에 핵심어가 없습니다.`);
