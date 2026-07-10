@@ -29,7 +29,6 @@ function isStaleStoredPolicy(type, content = '') {
   if (source.includes('2026년 7월 8일')) return true;
   if (source.includes('웃김 점수') || source.includes('소소 형량')) return true;
   if (type === 'guide' && source.includes('AI가 접수관, 수사관, 변호사, 판사를 혼자 다 합니다')) return true;
-  if (type === 'terms' && !source.includes('원고측') && !source.includes('피고측')) return true;
   return false;
 }
 
