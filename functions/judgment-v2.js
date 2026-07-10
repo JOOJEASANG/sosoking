@@ -62,14 +62,18 @@ function normalizeJudgment(value = {}, fallback = {}) {
   const base = fallback && typeof fallback === 'object' && !Array.isArray(fallback) ? fallback : {};
   return {
     headline: cleanText(source.headline, 180) || cleanText(base.headline, 180),
-    summary: cleanParagraph(source.summary, 500) || cleanParagraph(base.summary, 500),
+    incidentLevel: cleanText(source.incidentLevel, 100) || cleanText(base.incidentLevel, 100),
+    breakingNews: cleanParagraph(source.breakingNews, 700) || cleanParagraph(base.breakingNews, 700),
+    emergencyBriefing: cleanParagraph(source.emergencyBriefing, 5000) || cleanParagraph(base.emergencyBriefing, 5000),
+    impactAssessment: cleanParagraph(source.impactAssessment, 4000) || cleanParagraph(base.impactAssessment, 4000),
+    summary: cleanParagraph(source.summary, 700) || cleanParagraph(base.summary, 700),
     facts: cleanParagraph(source.facts, 5000) || cleanParagraph(base.facts, 5000),
     investigation: cleanParagraph(source.investigation, 5000) || cleanParagraph(base.investigation, 5000),
     prosecution: cleanParagraph(source.prosecution, 4000) || cleanParagraph(base.prosecution, 4000),
     defense: cleanParagraph(source.defense, 4000) || cleanParagraph(base.defense, 4000),
     opinion: cleanParagraph(source.opinion, 5000) || cleanParagraph(base.opinion, 5000),
     orders: normalizeOrders(source.orders, base.orders),
-    closingComment: cleanText(source.closingComment, 300) || cleanText(base.closingComment, 300),
+    closingComment: cleanText(source.closingComment, 400) || cleanText(base.closingComment, 400),
     legalNotice: cleanText(source.legalNotice, 500) || cleanText(base.legalNotice, 500),
   };
 }
