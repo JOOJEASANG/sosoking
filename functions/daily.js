@@ -29,6 +29,11 @@ function clampNumber(value, fallback, min, max) {
   return Number.isFinite(number) ? Math.max(min, Math.min(max, Math.floor(number))) : fallback;
 }
 
+function counter(value) {
+  const number = Number(value || 0);
+  return Number.isFinite(number) && number > 0 ? Math.floor(number) : 0;
+}
+
 function docketNumber(dateKey) {
   return `${dateKey.slice(0, 4)}오늘${dateKey.replace(/-/g, '').slice(4)}01`;
 }
@@ -96,7 +101,7 @@ async function loadSettings() {
 async function buildDailyContent(dateKey, settings = {}) {
   const fallback = fallbackContent(dateKey);
   const key = geminiKey.value().trim();
-  if (!key) return { data: normalizeDailyContent(fallback, dateKey), aiGenerated: false, attempted: false };
+  if (!key) return { data: normalizeDailyContent(fallback, dateKey), aiGenerated: false, attempted: false, usage: {} };
 
   const extra = [
     settings.dailyAiTopicHints && `주제 힌트: ${cleanText(settings.dailyAiTopicHints, 300)}`,
@@ -141,8 +146,9 @@ ${extra}
     });
     const result = await model.generateContent(prompt);
     const parsed = extractJson(result.response.text());
-    const data = normalizeDailyContent(parsed, dateKey);
-    if (!isCompleteJudgment(data.judgment)) throw new Error('Daily judgment did not satisfy the V2 contract');
+    const rawJudgment = normalizeJudgment(parsed?.judgment);
+    if (!isCompleteJudgment(rawJudgment)) throw new Error('Daily AI judgment did not satisfy the V2 contract');
+    const data = normalizeDailyContent({ ...parsed, judgment: rawJudgment }, dateKey);
     return { data, aiGenerated: true, attempted: true, usage: result.response.usageMetadata || {} };
   } catch (error) {
     console.error('daily V2 generation failed, using fallback:', error.message || error);
@@ -159,13 +165,20 @@ async function createDailyAiCase(force = false) {
   const caseRef = db.doc(`cases/${caseId}`);
   const resultRef = db.doc(`results/${caseId}`);
   const existing = await resultRef.get();
-  if (existing.exists && !force && isCompleteResult(existing.data())) {
+  const existingData = existing.exists ? existing.data() : {};
+  if (existing.exists && !force && isCompleteResult(existingData)) {
     return { created: false, caseId, skipped: 'already-complete' };
   }
 
   const generated = await buildDailyContent(dateKey, settings);
   const data = generated.data;
   const dailyDocket = docketNumber(dateKey);
+  const createdAt = existingData.createdAt || FieldValue.serverTimestamp();
+  const reactionCounts = existingData.reactionCounts && typeof existingData.reactionCounts === 'object'
+    ? existingData.reactionCounts
+    : {};
+  const reactionTotal = counter(existingData.reactionTotal ?? existingData.totalVotes);
+  const commentCount = counter(existingData.commentCount);
   const batch = db.batch();
 
   batch.set(caseRef, {
@@ -188,10 +201,10 @@ async function createDailyAiCase(force = false) {
     status: 'completed',
     isPublic: true,
     reportCount: 0,
-    createdAt: FieldValue.serverTimestamp(),
+    createdAt,
     completedAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
-  });
+  }, { merge: true });
 
   batch.set(resultRef, {
     schemaVersion: JUDGMENT_SCHEMA_VERSION,
@@ -215,11 +228,12 @@ async function createDailyAiCase(force = false) {
     judgment: data.judgment,
     aiGenerated: generated.aiGenerated,
     generationMode: generated.aiGenerated ? 'daily-gemini-json-v2' : 'daily-local-json-v2',
-    reactionTotal: 0,
-    totalVotes: 0,
-    commentCount: 0,
+    reactionCounts,
+    reactionTotal,
+    totalVotes: reactionTotal,
+    commentCount,
     courtStage: 'sentenced',
-    createdAt: FieldValue.serverTimestamp(),
+    createdAt,
     updatedAt: FieldValue.serverTimestamp(),
   });
 
@@ -249,7 +263,7 @@ async function createDailyAiCase(force = false) {
     caseId,
     schemaVersion: JUDGMENT_SCHEMA_VERSION,
     aiGenerated: generated.aiGenerated,
-    repaired: existing.exists && !isCompleteResult(existing.data()),
+    repaired: existing.exists && !isCompleteResult(existingData),
   };
 }
 
