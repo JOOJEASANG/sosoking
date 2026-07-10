@@ -1,6 +1,6 @@
 # 소소킹 판결소
 
-일상 속 소소한 억울함과 황당한 사례를 접수하면 AI 재판부가 지나치게 진지한 판결문을 작성하는 Firebase 기반 오락형 서비스입니다.
+일상 속 소소한 억울함과 황당한 사례를 접수하면 AI 재판부가 지나치게 진지한 판결을 내리는 Firebase 기반 오락형 서비스입니다.
 
 실제 법률 상담이나 분쟁 해결 서비스가 아니며, 핵심 재미는 **사소한 사건 + 과한 재판 말투 + 실행 가능한 소소 형량**입니다.
 
@@ -11,7 +11,7 @@
 ### 핵심 콘셉트
 
 - 사람 간 갈등뿐 아니라 모기, 리모컨, 마지막 만두처럼 사소한 대상도 피고가 될 수 있습니다.
-- 입력이 하찮을수록 판결문은 더 엄숙하게 작성합니다.
+- 입력이 하찮을수록 판결은 더 엄숙하게 작성합니다.
 - 결론은 가볍고 공감 가능하며 실제로 해볼 수 있는 소소한 처분으로 마무리합니다.
 - 뉴스·위원회·상황실 표현은 보조 장치로만 사용하고 메인 정체성은 재판과 판결로 유지합니다.
 
@@ -27,13 +27,47 @@
 ## 사용자 흐름
 
 1. **사건 접수** — 사건명, 사건 내용, 판사 성향 등을 입력합니다.
-2. **AI 재판 진행** — Gemini가 재판 기록과 최종 판결문을 생성합니다.
-3. **최종 판결** — `results/{caseId}`의 `judgmentScript`와 기존 호환 필드를 결과 화면에서 표시합니다.
+2. **AI 재판 진행** — Gemini가 구조화된 판결 객체를 생성합니다.
+3. **최종 판결** — 결과 화면이 저장된 판결 객체를 그대로 표시합니다.
 4. **공개 판결기록** — 사용자가 선택한 판결만 공개합니다.
 5. **방청객 참여** — 반응 투표와 방청석 댓글을 남깁니다.
-6. **항소심** — 사건 소유자는 1심 판결에 대한 항소심을 신청할 수 있습니다.
+6. **항소심** — 사건 소유자는 1심 주문과 판단을 기준으로 항소심을 신청할 수 있습니다.
 
-구형 판결문 파서와 자동 구조화·백필 Functions는 제거했습니다. 새 판결 V2가 완성되기 전까지 기존 문서의 호환 필드는 읽기 전용으로만 사용합니다.
+기존 `judgmentScript` 문서는 호환 모드로 전문을 그대로 표시하며, 새 판결로 변환하거나 기존 데이터를 다시 쓰지 않습니다.
+
+---
+
+## 판결 V2 데이터 구조
+
+새 판결은 `results/{caseId}`에 한 번 저장합니다. 판결 본문은 `judgment` 객체가 유일한 정본입니다.
+
+```text
+results/{caseId}
+├─ schemaVersion: 2
+├─ resultVersion: judgment-v2
+├─ caseTitle / headline / docketNumber / judgeType
+├─ userId / ownerId / isPublic
+├─ judgment
+│  ├─ headline
+│  ├─ summary
+│  ├─ facts
+│  ├─ investigation
+│  ├─ prosecution
+│  ├─ defense
+│  ├─ opinion
+│  ├─ orders[]
+│  ├─ closingComment
+│  └─ legalNotice
+├─ reactionTotal / reactionCounts / commentCount
+└─ createdAt / updatedAt
+```
+
+새 판결에는 `expandedCase`, `reception`, `courtOpinion`, `verdict`, `sentence`, `judgmentScript` 같은 중복 본문 필드를 저장하지 않습니다.
+
+- Gemini에는 JSON 객체만 요청합니다.
+- AI 응답이 형식 검사를 통과하지 못하면 동일한 V2 구조의 로컬 판결을 사용합니다.
+- 사용자 판결과 오늘의 AI 판결이 같은 스키마를 사용합니다.
+- 항소심과 운영 복구 작업은 V2 필드를 우선 읽고 기존 문서는 호환 처리합니다.
 
 ---
 
@@ -60,6 +94,9 @@
 - `public/` — Firebase Hosting 정적 프론트엔드
 - `public/js/pages/` — 홈, 접수, 재판, 결과, 게시판, 정책, 내 사건
 - `public/admin/` — 관리자 페이지
+- `functions/judgment-v2.js` — 판결 V2 정규화·검증 계약
+- `functions/generate-trial-v2.js` — 사용자 판결 V2 생성
+- `functions/daily.js` — 오늘의 AI 판결 V2 생성
 - `functions/` — Firebase Cloud Functions와 Gemini 연동
 - `firestore.rules` — Firestore 접근 제어
 - `firestore.indexes.json` — Firestore 복합 인덱스
@@ -73,7 +110,8 @@
 
 - `submitCase` — 사건 접수, 일일 한도·쿨다운·금칙어 검사
 - `suggestCaseTitle` — 사건명 추천
-- `generateTrial` — AI 재판 및 최종 판결 생성
+- `generateTrial` — V2 판결 객체 생성
+- `createDailyAiCase` / `generateDailyAiNow` — 오늘의 AI V2 판결 생성
 - `voteResult` — 공개 판결 반응 투표
 - `addCourtComment` — 방청석 댓글
 - `requestAppeal` — 항소심 생성
@@ -127,11 +165,13 @@ npm run lint --prefix functions
 검증 범위:
 
 - Functions와 브라우저 JavaScript 문법
-- Firestore 보안 계약
-- 공개 설정 접근 경로
+- 판결 V2 정규화·필수 필드·주문 구조
+- 새 생성기의 중복 본문 필드 저장 금지
+- 사용자·오늘의 AI·항소심·복구·게시판의 V2 연결
+- 기존 `judgmentScript` 표시 호환
+- Firestore 보안 계약과 공개 설정 접근 경로
 - 소스 기준 Functions 전체 배포 계약
 - Firebase Core와 Storage 배포 분리
-- 구형 판결 구조화 Function이 다시 연결되지 않는지 확인
 
 ---
 
