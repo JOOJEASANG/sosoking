@@ -1,14 +1,15 @@
 const { onDocumentWritten } = require('firebase-functions/v2/firestore');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
-const { getFirestore, FieldValue } = require('firebase-admin/firestore');
+const { getFirestore, FieldValue, FieldPath } = require('firebase-admin/firestore');
 const { isAdminAuth } = require('./admin-utils');
 const { parseJudgmentScript, scriptFingerprint } = require('./judgment-parser');
 
 const db = getFirestore();
 const REGION = 'asia-northeast3';
-const STRUCTURE_VERSION = 'judgment-script-v1';
+const STRUCTURE_VERSION = 'judgment-script-v2';
 const MAX_BACKFILL_LIMIT = 400;
+const BACKFILL_STATE_PATH = 'maintenance_state/judgment_structure_backfill';
 
 function structureUpdate(data = {}) {
   const judgmentScript = String(data.judgmentScript || '').trim();
@@ -38,19 +39,57 @@ function structureUpdate(data = {}) {
     sentence: parsed.sentence,
     quickVerdict: parsed.quickVerdict,
     primarySentence: parsed.primarySentence,
+    closingComment: parsed.closingComment || FieldValue.delete(),
     structuredFromScriptVersion: STRUCTURE_VERSION,
     structuredScriptFingerprint: fingerprint,
     structuredFromScriptAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
   };
 
-  if (parsed.closingComment) update.closingComment = parsed.closingComment;
   return { update, fingerprint };
 }
 
-async function backfillJudgmentStructures(limit = 200) {
+async function resetBackfillCursor(stateRef, reason) {
+  await stateRef.set({
+    lastDocumentId: FieldValue.delete(),
+    cursorResetAt: FieldValue.serverTimestamp(),
+    cursorResetReason: reason,
+    updatedAt: FieldValue.serverTimestamp(),
+  }, { merge: true });
+}
+
+async function backfillJudgmentStructures(limit = 200, options = {}) {
   const safeLimit = Math.max(1, Math.min(MAX_BACKFILL_LIMIT, Number(limit) || 200));
-  const snap = await db.collection('results').orderBy('createdAt', 'desc').limit(safeLimit).get();
+  const stateRef = db.doc(BACKFILL_STATE_PATH);
+
+  if (options.resetCursor === true) {
+    await resetBackfillCursor(stateRef, 'manual');
+  }
+
+  const stateSnap = await stateRef.get().catch(() => null);
+  const cursorId = options.resetCursor === true
+    ? ''
+    : String(stateSnap?.data()?.lastDocumentId || '').trim();
+
+  let query = db.collection('results')
+    .orderBy(FieldPath.documentId(), 'asc')
+    .limit(safeLimit);
+  if (cursorId) query = query.startAfter(cursorId);
+
+  const snap = await query.get();
+  if (snap.empty) {
+    if (cursorId) await resetBackfillCursor(stateRef, 'end-of-collection');
+    return {
+      checked: 0,
+      updatedCount: 0,
+      skippedCount: 0,
+      cycleCompleted: !!cursorId,
+      previousCursor: cursorId || null,
+      nextCursor: null,
+      updated: [],
+    };
+  }
+
   const batch = db.batch();
   const updated = [];
   const skipped = [];
@@ -65,11 +104,27 @@ async function backfillJudgmentStructures(limit = 200) {
     updated.push({ caseId: resultDoc.id, fingerprint: structured.fingerprint });
   }
 
-  if (updated.length) await batch.commit();
+  const lastDocumentId = snap.docs[snap.docs.length - 1].id;
+  const cycleCompleted = snap.size < safeLimit;
+  batch.set(stateRef, {
+    lastDocumentId: cycleCompleted ? FieldValue.delete() : lastDocumentId,
+    lastCheckedCount: snap.size,
+    lastUpdatedCount: updated.length,
+    lastSkippedCount: skipped.length,
+    lastRunAt: FieldValue.serverTimestamp(),
+    totalUpdated: FieldValue.increment(updated.length),
+    completedCycles: cycleCompleted ? FieldValue.increment(1) : FieldValue.increment(0),
+    updatedAt: FieldValue.serverTimestamp(),
+  }, { merge: true });
+
+  await batch.commit();
   return {
     checked: snap.size,
     updatedCount: updated.length,
     skippedCount: skipped.length,
+    cycleCompleted,
+    previousCursor: cursorId || null,
+    nextCursor: cycleCompleted ? null : lastDocumentId,
     updated,
   };
 }
@@ -91,6 +146,7 @@ exports.syncJudgmentStructure = onDocumentWritten({
   console.log('judgment structure synchronized', {
     caseId: event.params.caseId,
     fingerprint: structured.fingerprint,
+    version: STRUCTURE_VERSION,
   });
 });
 
@@ -113,5 +169,7 @@ exports.backfillJudgmentStructuresNow = onCall({
   if (!request.auth || !(await isAdminAuth(request.auth))) {
     throw new HttpsError('permission-denied', '관리자만 실행할 수 있습니다.');
   }
-  return await backfillJudgmentStructures(request.data?.limit);
+  return await backfillJudgmentStructures(request.data?.limit, {
+    resetCursor: request.data?.resetCursor === true,
+  });
 });
