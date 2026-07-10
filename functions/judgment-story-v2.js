@@ -13,6 +13,21 @@ const PARTICLES = [
   '을', '를', '에', '로', '와', '과', '도', '만', '의',
 ];
 
+const MAIN_ANCHOR_SKIP = new Set([
+  '마지막', '최후', '먼저', '관련', '선점', '은닉', '실종', '무단', '침해', '중대', '반복',
+  '장기', '공용', '공동', '앞으로', '다음', '순간', '사라짐', '분실', '방치',
+]);
+
+const CATEGORY_LABELS = {
+  food: '음식·식탐',
+  late: '약속·지각',
+  love: '연인·관계',
+  work: '직장·학교',
+  digital: '디지털·연락',
+  family: '가족·생활',
+  other: '기타 생활분쟁',
+};
+
 const JUDGE_DIRECTIONS = {
   '엄벌주의형': '사소한 행위도 생활질서 붕괴의 전조로 보고, 표정 변화와 사후 태도까지 엄중하게 추궁한다.',
   '감성형': '원고가 느낀 서운함의 잔향을 과도하게 세밀히 묘사하되 감상문이 아니라 판결문 말투를 유지한다.',
@@ -105,12 +120,21 @@ function extractAnchors(title, description) {
   return ordered;
 }
 
+function resolveStoryCategory(categoryId, anchors, description) {
+  const source = `${anchors.join(' ')} ${description}`;
+  const householdTerms = ['리모컨', '소파', '거실', '주방', '세탁기', '청소', '방', '집안'];
+  if (categoryId === 'digital' && householdTerms.some(term => source.includes(term))) return 'family';
+  return CATEGORY_DOCTRINES[categoryId] ? categoryId : 'other';
+}
+
 function buildCaseProfile({ title, description, desiredVerdict, grievanceIndex, headline, defendantName, judgeType, category }) {
   const safeTitle = cleanText(title, 90) || '소소한 황당사건';
   const safeDescription = cleanParagraph(description, 1800) || safeTitle;
   const facts = splitFacts(safeDescription);
   const anchors = extractAnchors(safeTitle, safeDescription);
-  const categoryId = category?.id && CATEGORY_DOCTRINES[category.id] ? category.id : 'other';
+  const requestedCategoryId = category?.id || 'other';
+  const categoryId = resolveStoryCategory(requestedCategoryId, anchors, safeDescription);
+  const mainAnchor = anchors.find(anchor => !MAIN_ANCHOR_SKIP.has(anchor)) || anchors[0] || safeTitle;
   return {
     title: safeTitle,
     description: safeDescription,
@@ -121,11 +145,11 @@ function buildCaseProfile({ title, description, desiredVerdict, grievanceIndex, 
     judgeType: cleanText(judgeType, 40) || 'AI',
     judgeDirection: JUDGE_DIRECTIONS[judgeType] || JUDGE_DIRECTIONS['드립형'],
     categoryId,
-    categoryLabel: cleanText(category?.label, 60) || '기타 생활분쟁',
+    categoryLabel: CATEGORY_LABELS[categoryId],
     doctrine: CATEGORY_DOCTRINES[categoryId],
     facts,
     anchors: anchors.length ? anchors : [safeTitle],
-    mainAnchor: anchors[0] || safeTitle,
+    mainAnchor,
   };
 }
 
@@ -202,7 +226,7 @@ function tailoredOrder(profile, number) {
 
 function buildStoryFallback(profile) {
   const facts = profile.facts.map((fact, index) => `${index === 0 ? '첫째' : index === 1 ? '둘째' : index === 2 ? '셋째' : `${index + 1}번째`}, ${fact}`).join(' ');
-  const secondAnchor = profile.anchors[1] || profile.mainAnchor;
+  const secondAnchor = profile.anchors.find(anchor => anchor !== profile.mainAnchor) || profile.mainAnchor;
   return normalizeJudgment({
     headline: `${profile.title} 관련 ${profile.doctrine.doctrine} 중대 침해 사건`,
     summary: `재판부는 “${profile.mainAnchor}”를 둘러싼 이번 일이 사소해 보이지만, ${cleanText(profile.facts[0] || profile.description, 180)}라는 구체적 장면에서 원고의 억울함이 실제로 발생했다고 판단하였다. 피고에게 사건 맞춤형 소소 책임을 명한다.`,
