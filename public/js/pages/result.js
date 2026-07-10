@@ -2,7 +2,7 @@ import { db, auth, functions } from '../firebase.js?v=20260708-1';
 import { doc, getDoc, updateDoc, collection, getDocs, query, orderBy, limit } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 import { showToast } from '../components/toast.js?v=20260630-3';
-import { addOwnerStorageImage } from '../components/result-storage-image.js?v=20260709-1';
+import { addOwnerStorageImage } from '../components/result-storage-image.js?v=20260710-v2result1';
 import { escapeHtml } from '../utils/sanitize.js?v=20260630-3';
 
 const REACTIONS = [
@@ -78,7 +78,7 @@ function clean(value, max = 5000) {
 }
 
 function normalizeOrders(value, fallback = '') {
-  if (Array.isArray(value)) {
+  if (Array.isArray(value) && value.length) {
     return value
       .map((item, index) => typeof item === 'string'
         ? { number: index + 1, text: clean(item, 500) }
@@ -87,10 +87,12 @@ function normalizeOrders(value, fallback = '') {
       .slice(0, 5);
   }
 
-  return clean(fallback, 2400)
+  const lines = clean(fallback, 2400)
     .split('\n')
     .map(line => line.trim())
-    .filter(Boolean)
+    .filter(Boolean);
+  const numbered = lines.filter(line => /^\d+\.\s*/.test(line));
+  return (numbered.length ? numbered : lines)
     .map((line, index) => {
       const match = line.match(/^(\d+)\.\s*(.+)$/);
       return { number: Number(match?.[1] || index + 1), text: clean(match?.[2] || line, 500) };
