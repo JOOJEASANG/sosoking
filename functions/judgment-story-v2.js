@@ -111,8 +111,9 @@ function extractAnchors(title, description) {
     const tokens = String(source).match(/[가-힣A-Za-z0-9]+/g) || [];
     for (const tokenValue of tokens) {
       const token = normalizeAnchorToken(tokenValue);
-      if (token.length < 2 || STOPWORDS.has(token) || /^\d+$/.test(token) || seen.has(token)) continue;
-      seen.add(token);
+      const key = token.toLowerCase();
+      if (token.length < 2 || STOPWORDS.has(token) || /^\d+$/.test(token) || seen.has(key)) continue;
+      seen.add(key);
       ordered.push(token);
       if (ordered.length >= 10) return ordered;
     }
@@ -228,7 +229,7 @@ function tailoredOrder(profile, number) {
 
 function buildStoryFallback(profile) {
   const facts = profile.facts.map((fact, index) => `${index === 0 ? '첫째' : index === 1 ? '둘째' : index === 2 ? '셋째' : `${index + 1}번째`}, ${fact}`).join(' ');
-  const secondAnchor = profile.anchors.find(anchor => anchor !== profile.mainAnchor) || profile.mainAnchor;
+  const secondAnchor = profile.anchors.find(anchor => anchor.toLowerCase() !== profile.mainAnchor.toLowerCase()) || profile.mainAnchor;
   return normalizeJudgment({
     headline: `${profile.title} 관련 ${profile.doctrine.doctrine} 중대 침해 사건`,
     summary: `재판부는 “${profile.mainAnchor}”를 둘러싼 이번 일이 사소해 보이지만, ${cleanText(profile.facts[0] || profile.description, 180)}라는 구체적 장면에서 원고의 억울함이 실제로 발생했다고 판단하였다. 피고에게 사건 맞춤형 소소 책임을 명한다.`,
@@ -266,7 +267,7 @@ function evaluateStorySpecificity(judgment, profile) {
   const sectionHits = sections.filter(section => sectionContainsAnchor(section, anchors)).length;
   const primarySectionHits = sections.filter(section => sectionContainsAnchor(section, [profile.mainAnchor])).length;
   const allTexts = sections.concat(judgment.orders.map(order => order.text));
-  const mentionedAnchors = anchors.filter(anchor => allTexts.some(section => String(section || '').includes(anchor)));
+  const mentionedAnchors = anchors.filter(anchor => allTexts.some(section => sectionContainsAnchor(section, [anchor])));
   const tailoredOrders = judgment.orders.filter(order => sectionContainsAnchor(order.text, anchors)).length;
   const primaryOrderHits = judgment.orders.filter(order => sectionContainsAnchor(order.text, [profile.mainAnchor])).length;
   const seriousHumorHits = SERIOUS_HUMOR_MARKERS.filter(marker => `${judgment.investigation} ${judgment.opinion} ${judgment.closingComment}`.includes(marker)).length;
