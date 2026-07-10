@@ -4,6 +4,66 @@ const {
   markerCount,
 } = require('./judgment-story-config');
 
+function words(value) {
+  return String(value || '').toLowerCase().match(/[가-힣a-z0-9]+/g) || [];
+}
+
+function phraseWindows(value, size = 4) {
+  const tokens = words(value);
+  const phrases = new Set();
+  for (let index = 0; index <= tokens.length - size; index += 1) {
+    const phrase = tokens.slice(index, index + size).join(' ');
+    if (phrase.length >= 10) phrases.add(phrase);
+  }
+  return [...phrases];
+}
+
+function normalizedForEcho(value) {
+  return words(value).join(' ');
+}
+
+function countOccurrences(text, needle) {
+  const source = String(text || '').toLowerCase();
+  const target = String(needle || '').toLowerCase();
+  if (!target) return 0;
+  let count = 0;
+  let cursor = 0;
+  while ((cursor = source.indexOf(target, cursor)) >= 0) {
+    count += 1;
+    cursor += target.length;
+  }
+  return count;
+}
+
+function claimOverlap(left, right) {
+  const a = new Set(words(left).filter(token => token.length >= 2));
+  const b = new Set(words(right).filter(token => token.length >= 2));
+  if (!a.size || !b.size) return 1;
+  const shared = [...a].filter(token => b.has(token)).length;
+  return shared / Math.max(1, Math.min(a.size, b.size));
+}
+
+function evaluateSourceEcho(sections, profile) {
+  const sourcePhrases = phraseWindows(profile.description, 4);
+  const matched = new Set();
+  let echoSectionHits = 0;
+  let heavyEchoSectionHits = 0;
+
+  for (const section of sections) {
+    const normalized = normalizedForEcho(section);
+    const hits = sourcePhrases.filter(phrase => normalized.includes(phrase));
+    hits.forEach(phrase => matched.add(phrase));
+    if (hits.length) echoSectionHits += 1;
+    if (hits.length >= 2) heavyEchoSectionHits += 1;
+  }
+
+  return {
+    copiedPhraseHits: matched.size,
+    echoSectionHits,
+    heavyEchoSectionHits,
+  };
+}
+
 function evaluateStorySpecificity(judgment, profile) {
   const anchors = profile.anchors.filter(anchor => anchor.length >= 2);
   const coreSections = [
@@ -21,21 +81,26 @@ function evaluateStorySpecificity(judgment, profile) {
     judgment.impactAssessment,
   ];
   const claimSections = [judgment.plaintiffClaim, judgment.defendantClaim];
-  const allTexts = emergencySections.concat(claimSections, coreSections, judgment.orders.map(order => order.text));
+  const orderSections = judgment.orders.map(order => order.text);
+  const allTexts = emergencySections.concat(claimSections, coreSections, orderSections);
   const sectionHits = coreSections.filter(section => sectionContainsAnchor(section, anchors)).length;
   const primarySectionHits = coreSections.filter(section => sectionContainsAnchor(section, [profile.mainAnchor])).length;
   const emergencyAnchorHits = emergencySections.filter(section => sectionContainsAnchor(section, [profile.mainAnchor])).length;
   const claimAnchorHits = claimSections.filter(section => sectionContainsAnchor(section, [profile.mainAnchor])).length;
   const mentionedAnchors = anchors.filter(anchor => allTexts.some(section => sectionContainsAnchor(section, [anchor])));
-  const tailoredOrders = judgment.orders.filter(order => sectionContainsAnchor(order.text, anchors)).length;
-  const primaryOrderHits = judgment.orders.filter(order => sectionContainsAnchor(order.text, [profile.mainAnchor])).length;
+  const tailoredOrders = orderSections.filter(order => sectionContainsAnchor(order, anchors)).length;
+  const primaryOrderHits = orderSections.filter(order => sectionContainsAnchor(order, [profile.mainAnchor])).length;
   const humorText = `${judgment.breakingNews} ${judgment.emergencyBriefing} ${judgment.impactAssessment} ${judgment.investigation} ${judgment.opinion} ${judgment.closingComment}`;
   const seriousHumorHits = markerCount(humorText, SERIOUS_HUMOR_MARKERS);
-  const requiredAnchorCount = anchors.length >= 3 ? 3 : Math.max(1, anchors.length);
   const expectedLevelCode = profile.incidentLevel.split('·')[0].trim();
   const incidentLevelMatches = String(judgment.incidentLevel || '').includes(expectedLevelCode);
   const plaintiffClaimLength = String(judgment.plaintiffClaim || '').length;
   const defendantClaimLength = String(judgment.defendantClaim || '').length;
+  const mainAnchorMentions = allTexts.reduce((sum, section) => sum + countOccurrences(section, profile.mainAnchor), 0);
+  const distinctSectionCount = new Set(allTexts.map(normalizedForEcho).filter(Boolean)).size;
+  const opposingClaimOverlap = claimOverlap(judgment.plaintiffClaim, judgment.defendantClaim);
+  const echo = evaluateSourceEcho(allTexts, profile);
+  const requiredAnchorCount = anchors.length >= 3 ? 2 : Math.max(1, anchors.length);
 
   return {
     sectionHits,
@@ -51,34 +116,47 @@ function evaluateStorySpecificity(judgment, profile) {
     emergencyDetailLength: String(judgment.emergencyBriefing || '').length,
     impactLength: String(judgment.impactAssessment || '').length,
     incidentLevelMatches,
+    mainAnchorMentions,
+    distinctSectionCount,
+    opposingClaimOverlap,
+    ...echo,
     passed: incidentLevelMatches
-      && String(judgment.breakingNews || '').length >= 60
-      && String(judgment.emergencyBriefing || '').length >= 180
-      && String(judgment.impactAssessment || '').length >= 120
-      && emergencyAnchorHits === 3
-      && claimAnchorHits === 2
-      && plaintiffClaimLength >= 55
-      && plaintiffClaimLength <= 320
-      && defendantClaimLength >= 55
-      && defendantClaimLength <= 320
-      && sectionHits >= 5
-      && primarySectionHits >= 4
+      && String(judgment.breakingNews || '').length >= 55
+      && String(judgment.emergencyBriefing || '').length >= 170
+      && String(judgment.impactAssessment || '').length >= 110
+      && emergencyAnchorHits >= 1
+      && emergencyAnchorHits <= 2
+      && claimAnchorHits >= 1
+      && plaintiffClaimLength >= 45
+      && plaintiffClaimLength <= 300
+      && defendantClaimLength >= 45
+      && defendantClaimLength <= 300
+      && opposingClaimOverlap <= 0.72
+      && sectionHits >= 3
+      && primarySectionHits >= 2
       && mentionedAnchors.length >= requiredAnchorCount
-      && tailoredOrders >= 3
-      && primaryOrderHits >= 2
+      && tailoredOrders >= 2
+      && primaryOrderHits >= 1
+      && mainAnchorMentions >= 3
+      && mainAnchorMentions <= 10
+      && distinctSectionCount >= 10
+      && echo.echoSectionHits <= 2
+      && echo.heavyEchoSectionHits <= 1
+      && echo.copiedPhraseHits <= 7
       && seriousHumorHits >= 4,
   };
 }
 
 function buildRewriteInstruction(profile, evaluation) {
   return `\n\n[재작성 명령]
-이전 응답은 재미·디테일·사건 고유성 검사에서 탈락했다.
-“${profile.mainAnchor}”를 breakingNews, emergencyBriefing, impactAssessment, plaintiffClaim, defendantClaim 모두와 기존 본문 최소 4곳, 주문 최소 2곳에 적어라.
-plaintiffClaim과 defendantClaim은 각각 1~2문장, 70~220자 정도로 서로 분명히 대립하게 작성하라.
-사건을 작다고 해명하지 말고 ${profile.incidentLevel} 상태를 끝까지 유지하라.
-발생 전→결정적 순간→사후 대응 브리핑, 연쇄 피해, 상황실·통제선·증거물·0.1초 감식 중 최소 4개를 넣어라.
-긴 공식 문장 뒤에 짧은 반전 문장을 배치해 최소 세 번 웃음 지점을 만들어라.
-현재 검사값: emergencyAnchors=${evaluation.emergencyAnchorHits || 0}, claimAnchors=${evaluation.claimAnchorHits || 0}, plaintiffLength=${evaluation.plaintiffClaimLength || 0}, defendantLength=${evaluation.defendantClaimLength || 0}, sections=${evaluation.sectionHits}, primarySections=${evaluation.primarySectionHits || 0}, anchors=${evaluation.mentionedAnchorCount}, orders=${evaluation.tailoredOrders}, primaryOrders=${evaluation.primaryOrderHits || 0}, humor=${evaluation.seriousHumorHits}, briefingLength=${evaluation.emergencyDetailLength || 0}, impactLength=${evaluation.impactLength || 0}.
+이전 응답은 사건 재해석·문장 다양성·원문 반복 검사에서 탈락했다.
+접수 원문을 다시 읽어주지 말고, 결정적 행동·실제 불편·웃기는 대비만 남겨 완전히 새로운 문장과 비유로 재구성하라.
+“${profile.mainAnchor}”를 모든 문단에 반복하지 말고 전체에서 3~8회만 자연스럽게 사용하라.
+facts는 핵심 사실을 한 번만 압축하고, 나머지 영역은 원인 분석·양측 해석·가정적 파급효과·판단처럼 서로 다른 역할을 맡겨라.
+plaintiffClaim과 defendantClaim은 각각 1~2문장으로 쓰되 같은 요약을 말투만 바꿔 반복하지 마라.
+원문에서 4개 단어 이상 연속된 표현을 복사하지 말고, orders 3개도 서로 다른 집행 장면으로 작성하라.
+${profile.incidentLevel}의 과몰입 태도와 최소 세 번의 웃음 지점은 유지하라.
+현재 검사값: echoSections=${evaluation.echoSectionHits || 0}, heavyEcho=${evaluation.heavyEchoSectionHits || 0}, copiedPhrases=${evaluation.copiedPhraseHits || 0}, mainAnchorMentions=${evaluation.mainAnchorMentions || 0}, distinctSections=${evaluation.distinctSectionCount || 0}, claimOverlap=${Number(evaluation.opposingClaimOverlap || 0).toFixed(2)}, sections=${evaluation.sectionHits || 0}, orders=${evaluation.tailoredOrders || 0}, humor=${evaluation.seriousHumorHits || 0}.
 JSON 객체만 다시 출력하라.`;
 }
 

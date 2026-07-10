@@ -20,6 +20,7 @@ const home = read('../public/js/pages/home.js');
 const app = read('../public/js/app.js');
 const resultWrapper = read('../public/js/pages/result-case-story.js');
 const index = read('../public/index.html');
+const readability = read('../public/css/site-readability.css');
 
 const checks = [
   [daily.includes('function isCompleteDailyPayload'), 'Daily AI full-payload validator is missing'],
@@ -29,14 +30,15 @@ const checks = [
   [daily.includes('transaction.get(reactionRef)') && daily.includes('transaction.get(commentRef)'), 'Daily regeneration must read live reaction and comment counters'],
   [daily.includes('LEGACY_RESULT_FIELDS') && daily.includes('FieldValue.delete()'), 'Daily V2 repair must remove legacy narrative fields'],
   [generator.includes('buildStoryPrompt(profile)'), 'User judgments must use the case-specific writing prompt'],
-  [generator.includes('evaluateStorySpecificity') && generator.includes('buildRewriteInstruction'), 'Generic AI judgments must be rejected and rewritten'],
+  [generator.includes('evaluateStorySpecificity') && generator.includes('buildRewriteInstruction'), 'Generic or repetitive AI judgments must be rejected and rewritten'],
   [generator.includes('function addUsage') && generator.includes('usage = addUsage(usage'), 'Gemini usage must accumulate across rewrite attempts'],
   [generator.includes('failure.usage = usage') && generator.includes('usage = error.usage || usage'), 'Failed rewrite attempts must still report their token usage'],
   [judgment.includes('incidentLevel: cleanText') && judgment.includes('breakingNews: cleanParagraph'), 'Judgment normalization must preserve emergency metadata'],
   [judgment.includes('emergencyBriefing: cleanParagraph') && judgment.includes('impactAssessment: cleanParagraph'), 'Judgment normalization must preserve detailed emergency sections'],
   [judgment.includes('plaintiffClaim: cleanParagraph') && judgment.includes('defendantClaim: cleanParagraph'), 'Judgment normalization must preserve quick opposing claims'],
-  [story.includes('진지함 60%') && story.includes('과몰입 개그 40%'), 'Emergency-comedy writing ratio is missing'],
-  [story.includes('웃음 구조는 세 번') && story.includes('국가적 비상은 아니지만'), 'Three-beat humor and no-retreat escalation rules are missing'],
+  [story.includes('진지함 55%') && story.includes('자유로운 해석과 정색한 과몰입 개그 45%'), 'Interpretive comedy writing ratio is missing'],
+  [story.includes('원문은 사실 확인용 자료') && story.includes('4개 단어 이상 연속된 표현을 복사하지 마라'), 'Source-copy prevention rules are missing'],
+  [story.includes('mainAnchorMentions <= 10') && story.includes('copiedPhraseHits <= 7'), 'Low-repetition quality gates are missing'],
   [story.includes('"plaintiffClaim"') && story.includes('"defendantClaim"'), 'AI story prompt must request opposing quick claims'],
   [trial.includes('Number(data.schemaVersion) === 2') && trial.includes('judgment.orders'), 'Trial page must recognize completed V2 judgments'],
   [trial.includes('if (isCompleteResult(data))'), 'Trial page must redirect when a V2 judgment completes'],
@@ -44,14 +46,15 @@ const checks = [
   [home.includes('result.judgment?.headline') && home.includes('result.judgment?.summary'), 'Home feed must display V2 judgment metadata'],
   [home.includes('result.judgment?.plaintiffClaim') && home.includes('result.judgment?.defendantClaim'), 'Home search must include quick claims'],
   [home.includes('사건 접수부터 선고까지 6단계'), 'Home must explain the full court process'],
-  [app.includes("home.js?v=20260710-full-audit1"), 'App must load audited home directly'],
-  [app.includes("result-case-story.js?v=20260710-full-audit1"), 'App must load audited result wrapper'],
+  [app.includes("result-case-story.js?v=20260711-interpret1"), 'App must load the interpretive result wrapper with a fresh cache key'],
   [resultWrapper.includes('judgment.breakingNews') && resultWrapper.includes('judgment.emergencyBriefing'), 'Result pages must load emergency judgment sections'],
   [resultWrapper.includes('judgment.plaintiffClaim') && resultWrapper.includes('judgment.defendantClaim'), 'Result pages must load quick opposing claims'],
-  [resultWrapper.includes('claim-showdown') && resultWrapper.includes('법정공방 핵심 요약'), 'Result pages must visibly render claim showdown'],
-  [resultWrapper.includes('result.caseDescription') && resultWrapper.includes('original-case-card'), 'Result pages must show the original submitted case content'],
-  [index.includes('/css/site-system.css?v=20260710-full-audit1'), 'Index must load unified site CSS'],
-  [index.includes('/js/app.js?v=20260710-full-audit1'), 'Index must bust the audited app cache'],
+  [resultWrapper.includes('claim-showdown') && resultWrapper.includes('같은 사건, 다른 해석'), 'Result pages must visibly render independent claim interpretations'],
+  [resultWrapper.includes('<details class="result-card original-case-card">') && resultWrapper.includes('접수 원문은 판결과 분리'), 'Submitted source text must remain collapsed and separate from the judgment'],
+  [resultWrapper.includes('--alert-title') && resultWrapper.includes('var(--ui-text-main'), 'Runtime result styles must use theme-aware text variables'],
+  [readability.includes('html[data-theme="light"] body #page-content') && readability.includes('--readable-body'), 'Final light-mode readability guard is missing'],
+  [index.includes('/css/site-readability.css?v=20260711-interpret1'), 'Index must load the final readability guard'],
+  [index.includes('/js/app.js?v=20260711-interpret1'), 'Index must bust the interpretive app cache'],
 ];
 
 const failed = checks.filter(([ok]) => !ok).map(([, message]) => message);
@@ -60,4 +63,4 @@ if (failed.length) {
   process.exit(1);
 }
 
-console.log('Verified emergency comedy, quick opposing claims, staged trial, audited home and unified theme integration.');
+console.log('Verified interpretive judgments, collapsed source text, staged trial and light-mode readability integration.');
