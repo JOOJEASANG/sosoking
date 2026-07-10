@@ -22,6 +22,8 @@ const checks = [
   [daily.includes('LEGACY_RESULT_FIELDS') && daily.includes('FieldValue.delete()'), 'Daily V2 repair must remove legacy narrative fields'],
   [generator.includes('buildStoryPrompt(profile)'), 'User judgments must use the case-specific writing prompt'],
   [generator.includes('evaluateStorySpecificity') && generator.includes('buildRewriteInstruction'), 'Generic AI judgments must be rejected and rewritten'],
+  [generator.includes('function addUsage') && generator.includes('usage = addUsage(usage'), 'Gemini usage must accumulate across rewrite attempts'],
+  [generator.includes('failure.usage = usage') && generator.includes('usage = error.usage || usage'), 'Failed rewrite attempts must still report their token usage'],
   [generator.includes("generationMode: aiGenerated ? 'gemini-case-story-v1' : 'local-case-story-v1'"), 'Case-story generation mode must be recorded'],
   [trial.includes('Number(data.schemaVersion) === 2') && trial.includes('judgment.orders'), 'Trial page must recognize completed V2 judgments'],
   [trial.includes('if (isCompleteResult(data))'), 'Trial page must redirect when a V2 judgment completes'],
@@ -38,4 +40,4 @@ if (failed.length) {
   process.exit(1);
 }
 
-console.log('Verified case-specific generation, original-case display, trial completion and app cache integration.');
+console.log('Verified case-specific generation, rewrite usage accounting, original-case display, trial completion and app cache integration.');
