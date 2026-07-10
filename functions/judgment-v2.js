@@ -57,6 +57,20 @@ function normalizeOrders(value, fallback = []) {
   }).sort((a, b) => a.number - b.number);
 }
 
+function normalizeStringList(value, fallback = [], limit = 4, maxLength = 180) {
+  const source = Array.isArray(value) && value.length ? value : fallback;
+  const seen = new Set();
+  return source
+    .map(item => cleanText(item, maxLength))
+    .filter(item => {
+      const key = item.toLowerCase();
+      if (!item || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, limit);
+}
+
 function normalizeJudgment(value = {}, fallback = {}) {
   const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
   const base = fallback && typeof fallback === 'object' && !Array.isArray(fallback) ? fallback : {};
@@ -66,6 +80,7 @@ function normalizeJudgment(value = {}, fallback = {}) {
     breakingNews: cleanParagraph(source.breakingNews, 700) || cleanParagraph(base.breakingNews, 700),
     emergencyBriefing: cleanParagraph(source.emergencyBriefing, 5000) || cleanParagraph(base.emergencyBriefing, 5000),
     impactAssessment: cleanParagraph(source.impactAssessment, 4000) || cleanParagraph(base.impactAssessment, 4000),
+    comedyLines: normalizeStringList(source.comedyLines, base.comedyLines, 4, 180),
     summary: cleanParagraph(source.summary, 700) || cleanParagraph(base.summary, 700),
     facts: cleanParagraph(source.facts, 5000) || cleanParagraph(base.facts, 5000),
     investigation: cleanParagraph(source.investigation, 5000) || cleanParagraph(base.investigation, 5000),
@@ -107,6 +122,7 @@ module.exports = {
   cleanParagraph,
   extractJson,
   normalizeOrders,
+  normalizeStringList,
   normalizeJudgment,
   isCompleteJudgment,
   ordersAsText,

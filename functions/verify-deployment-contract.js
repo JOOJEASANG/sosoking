@@ -54,37 +54,34 @@ const checks = [
   [!coreWorkflow.includes('continue-on-error'), 'Core deployment must not hide failed steps'],
   [coreWorkflow.includes('FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6'), 'Core workflow service-account secret is missing'],
   [retiredFunctions.every(name => !coreWorkflow.includes(name)), 'Core workflow still references retired judgment Functions'],
-
   [main.includes("require('./generate-trial-v2')"), 'Functions entry point must export V2 generator'],
   [!main.includes("require('./generate-trial-lite')") && !main.includes("require('./sync-judgment-structure')"), 'Legacy judgment exports must remain removed'],
   [removedFiles.every(file => !fs.existsSync(resolve(file))), 'A removed or consolidated file was restored'],
   [resultWrite.includes('schemaVersion: JUDGMENT_SCHEMA_VERSION') && resultWrite.includes('judgment,'), 'V2 generator must save the canonical judgment object'],
   [resultWrite.includes("resultVersion: 'judgment-v2'") && resultWrite.includes('storyVersion: STORY_VERSION'), 'V2 result version metadata is missing'],
   [duplicatedNarrativeFields.every(field => !resultWrite.includes(`\n      ${field}:`)), 'V2 generator must not write duplicate narrative fields'],
-
   [generator.includes('buildCaseProfile') && generator.includes('buildStoryPrompt'), 'User judgments must use case-specific generation'],
   [generator.includes('evaluateStorySpecificity') && generator.includes('buildRewriteInstruction'), 'Generic or repetitive AI output must be rejected and rewritten'],
   [generator.includes('buildStoryFallback(profile)'), 'Local fallback must stay case-specific'],
   [judgment.includes('incidentLevel: cleanText') && judgment.includes('emergencyBriefing: cleanParagraph'), 'Canonical judgment must preserve emergency fields'],
+  [judgment.includes('comedyLines: normalizeStringList'), 'Canonical judgment must preserve mandatory comedy lines'],
   [judgment.includes('plaintiffClaim: cleanParagraph') && judgment.includes('defendantClaim: cleanParagraph'), 'Canonical judgment must preserve opposing quick claims'],
-  [story.includes('진지함 55%') && story.includes('자유로운 해석과 정색한 과몰입 개그 45%'), 'Interpretive comedy ratio is missing'],
-  [story.includes('원문은 사실 확인용 자료') && story.includes('4개 단어 이상 연속된 표현을 복사하지 마라'), 'Source-copy prevention rules are missing'],
-  [story.includes('mainAnchorMentions <= 10') && story.includes('copiedPhraseHits <= 7'), 'Low-repetition quality gates are incomplete'],
-  [story.includes('opposingClaimOverlap <= 0.72') && story.includes('seriousHumorHits >= 4'), 'Distinct-claim and comedy gates are incomplete'],
+  [story.includes('첫 두 문장 안에') && story.includes('말장난·아재개그'), 'Concrete case opening and comedy instructions are missing'],
+  [story.includes('openingConcreteHits >= 2') && story.includes('comedyLines.length >= 2'), 'Clear-case and mandatory-comedy gates are incomplete'],
+  [story.includes('contrastComedyHits >= 1') && story.includes('genericPhraseHits <= 4'), 'Dry-punchline and generic-text gates are incomplete'],
+  [story.includes('opposingClaimOverlap <= 0.7') && story.includes('seriousHumorHits >= 2'), 'Distinct-claim and supporting comedy gates are incomplete'],
   [story.includes('normalizeAnchorToken'), 'Korean case-anchor normalization is missing'],
-
   [daily.includes("resultVersion: 'judgment-v2'") && daily.includes('judgment: data.judgment'), 'Daily AI cases must use V2 schema'],
   [social.includes('resultData.judgment?.orders') && social.includes('resultData.judgment?.opinion'), 'Appeals must read V2 fields'],
   [repair.includes('isCompleteJudgment(data.judgment)'), 'Stale recovery must recognize completed V2 judgments'],
-
   [app.includes("from './pages/home.js?v=20260710-full-audit1'"), 'App must load the audited home directly'],
   [app.includes("from './pages/trial-game.js?v=20260710-full-audit1'"), 'App must load the staged trial flow'],
-  [app.includes("from './pages/result-case-story.js?v=20260711-interpret1'"), 'App must load the interpretive result wrapper'],
+  [app.includes("from './pages/result-case-story.js?v=20260711-comedy2'"), 'App must load the concrete comedy result wrapper'],
   [app.includes("from './pages/board-court.js?v=20260710-v2judgment1'"), 'App must load V2-aware board'],
   [!app.includes('result-summary.js') && !app.includes('result-court.js') && !app.includes('home-court.js'), 'App must not restore removed wrappers'],
   [index.includes('/css/site-system.css?v=20260710-full-audit1'), 'Index must load unified site CSS'],
   [index.includes('/css/site-readability.css?v=20260711-interpret1'), 'Index must load the final readability guard'],
-  [index.includes('/js/app.js?v=20260711-interpret1'), 'Index must bust interpretive app cache'],
+  [index.includes('/js/app.js?v=20260711-comedy2'), 'Index must bust concrete comedy app cache'],
   [siteSystem.includes('html[data-theme="light"]') && siteSystem.includes('--ui-surface:'), 'Unified CSS must define light and dark surfaces'],
   [readability.includes('html[data-theme="light"] body #page-content') && readability.includes('.result-card:not(.emergency-briefing-card) p'), 'Readability guard must protect runtime result text'],
   [homePage.includes('사건 접수부터 선고까지 6단계') && homePage.includes('result.judgment?.plaintiffClaim'), 'Home must explain and search the full court journey'],
@@ -93,19 +90,17 @@ const checks = [
   [trialWrapper.includes('THEATER_STAGES') && trialWrapper.includes('renderMiniClaims'), 'Trial wrapper must stage the process and show claims'],
   [resultPage.includes('r.judgment') && resultPage.includes('r.judgmentScript') && resultPage.includes("mode: 'script'"), 'Result page must support V2 and legacy scripts'],
   [resultWrapper.includes("doc(db, 'results', caseId)") && resultWrapper.includes('result.caseDescription'), 'Result wrapper must load original case'],
-  [resultWrapper.includes('<details class="result-card original-case-card">') && resultWrapper.includes('같은 사건, 다른 해석'), 'Result wrapper must separate source text and render independent claims'],
-  [resultWrapper.includes('소소킹 긴급사건 특보') && resultWrapper.includes('AI 상황 재구성'), 'Result wrapper must show interpretive emergency briefing'],
+  [resultWrapper.includes('<details class="result-card original-case-card">') && resultWrapper.includes('완전히 다른 변명'), 'Result wrapper must separate source text and render independent claims'],
+  [resultWrapper.includes('판결문에서 건진 결정적 한마디') && resultWrapper.includes('judgment.comedyLines'), 'Result wrapper must show dedicated comedy lines'],
+  [resultWrapper.includes("title === '검사의 주장' || title === '변호인의 주장'"), 'Result wrapper must remove duplicated long courtroom stages'],
   [boardPage.includes('r.judgment?.summary') && boardPage.includes('r.judgment?.headline'), 'Board must read V2 summaries'],
-
   [storageWorkflow.includes('workflow_dispatch:') && !storageWorkflow.includes('\n  push:'), 'Storage workflow must remain manual'],
   [storageWorkflow.includes('firebase deploy --only storage') && !storageWorkflow.includes('continue-on-error'), 'Storage failures must remain visible'],
   [storageWorkflow.includes('FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6'), 'Storage workflow secret is missing'],
   [firebaseConfig.storage?.rules === 'storage.rules' && storageRules.includes('service firebase.storage'), 'Storage rules configuration is invalid'],
-
   [policy.includes("doc(db, 'public_settings', 'config')") && !policy.includes("doc(db, 'site_settings', 'config')"), 'Public policy must read only public settings'],
   [policy.includes("getDoc(doc(db, 'policy_docs', safeType)).catch(() => null)"), 'Policy content failure must be isolated'],
   [policy.includes("getDoc(doc(db, 'public_settings', 'config')).catch(() => null)"), 'Public settings failure must be isolated'],
-
   [readme.includes('docs/DEPLOYMENT.md'), 'README must link deployment runbook'],
   [readme.includes('판결 V2 데이터 구조'), 'README must document V2 schema'],
   [!readme.includes('1~10점') && !readme.includes('소소 형량'), 'README must not describe removed product concepts'],
@@ -118,4 +113,4 @@ if (failed.length) {
   process.exit(1);
 }
 
-console.log('Verified interpretive judgments, light-mode readability and Firebase deployment contracts.');
+console.log('Verified concrete comedy judgments, shorter result flow, light-mode readability and Firebase deployment contracts.');

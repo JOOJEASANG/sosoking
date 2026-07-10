@@ -49,17 +49,20 @@ const checks = [
   [theme.includes('document.documentElement.style.colorScheme'), 'Theme controller must set browser color scheme'],
   [courtDesign.includes('var(--ui-line-strong') && !courtDesign.includes('contrast-fix.js'), 'Court design must use unified tokens without runtime contrast patches'],
   [app.includes("from './pages/home.js?v=20260710-full-audit1'"), 'App must load the audited home directly'],
-  [app.includes("result-case-story.js?v=20260711-interpret1"), 'App must load the interpretive result wrapper'],
+  [app.includes('result-case-story.js?v=20260711-comedy2'), 'App must load the concrete comedy result wrapper'],
   [!exists('public/js/pages/home-court.js'), 'Redundant home decoration wrapper must remain removed'],
   [home.includes('사건 접수부터 선고까지 6단계') && home.includes('원고·피고 주장'), 'Home must explain the full court journey'],
   [home.includes('사건수사') && home.includes('법정공방') && home.includes('최종판결'), 'Home must explain investigation, courtroom and judgment'],
   [trial.includes('THEATER_STAGES') && trial.includes('원고 주장') && trial.includes('피고 반박'), 'Trial must display staged investigation and opposing claims'],
   [trial.includes("doc(db, 'results', caseId)") && trial.includes('renderMiniClaims'), 'Trial must reveal generated quick claims'],
   [judgment.includes('plaintiffClaim: cleanParagraph') && judgment.includes('defendantClaim: cleanParagraph'), 'Judgment schema must preserve quick claims'],
-  [writer.includes('원문은 사실 확인용 자료') && writer.includes('전체 판결에서 3~8회'), 'AI prompt must reinterpret instead of repeating submitted wording'],
-  [quality.includes('copiedPhraseHits <= 7') && quality.includes('mainAnchorMentions <= 10'), 'Quality gate must reject source echo and keyword stuffing'],
-  [quality.includes('opposingClaimOverlap <= 0.72'), 'Quality gate must keep opposing claims distinct'],
-  [result.includes('claim-showdown') && result.includes('같은 사건, 다른 해석'), 'Result page must render contrasting claim interpretations'],
+  [judgment.includes('comedyLines: normalizeStringList'), 'Judgment schema must preserve visible comedy lines'],
+  [writer.includes('첫 두 문장 안에') && writer.includes('말장난·아재개그'), 'AI prompt must make the case clear before adding comedy'],
+  [quality.includes('openingConcreteHits >= 2') && quality.includes('comedyLines.length >= 2'), 'Quality gate must reject unclear and humorless judgments'],
+  [quality.includes('genericPhraseHits <= 4') && quality.includes('contrastComedyHits >= 1'), 'Quality gate must reject generic reports and require a dry punchline'],
+  [result.includes('comedy-lines-card') && result.includes('판결문에서 건진 결정적 한마디'), 'Result page must render dedicated comedy lines'],
+  [result.includes('claim-showdown') && result.includes('완전히 다른 변명'), 'Result page must render contrasting claim interpretations'],
+  [result.includes("title === '검사의 주장' || title === '변호인의 주장'"), 'Result page must remove duplicated long courtroom stages'],
   [result.includes('<details class="result-card original-case-card">') && result.includes('접수 원문은 판결과 분리'), 'Original submission must be collapsed and separated from the AI result'],
   [result.includes('--alert-title') && result.includes('var(--ui-text-main'), 'Result runtime styles must use theme-aware variables'],
   [guide.includes('전체 과정 시작') && guide.includes('원고·피고 주장'), 'Guide must explain the complete experience'],
@@ -80,4 +83,4 @@ if (failed.length) {
   process.exit(1);
 }
 
-console.log('Verified unified themes, final light-mode readability, interpretive judgments and full court journey.');
+console.log('Verified unified themes, clear comedy judgments, shorter result flow and full court journey.');

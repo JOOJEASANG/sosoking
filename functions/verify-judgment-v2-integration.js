@@ -34,11 +34,11 @@ const checks = [
   [generator.includes('function addUsage') && generator.includes('usage = addUsage(usage'), 'Gemini usage must accumulate across rewrite attempts'],
   [generator.includes('failure.usage = usage') && generator.includes('usage = error.usage || usage'), 'Failed rewrite attempts must still report their token usage'],
   [judgment.includes('incidentLevel: cleanText') && judgment.includes('breakingNews: cleanParagraph'), 'Judgment normalization must preserve emergency metadata'],
-  [judgment.includes('emergencyBriefing: cleanParagraph') && judgment.includes('impactAssessment: cleanParagraph'), 'Judgment normalization must preserve detailed emergency sections'],
+  [judgment.includes('comedyLines: normalizeStringList'), 'Judgment normalization must preserve mandatory comedy lines'],
   [judgment.includes('plaintiffClaim: cleanParagraph') && judgment.includes('defendantClaim: cleanParagraph'), 'Judgment normalization must preserve quick opposing claims'],
-  [story.includes('진지함 55%') && story.includes('자유로운 해석과 정색한 과몰입 개그 45%'), 'Interpretive comedy writing ratio is missing'],
-  [story.includes('원문은 사실 확인용 자료') && story.includes('4개 단어 이상 연속된 표현을 복사하지 마라'), 'Source-copy prevention rules are missing'],
-  [story.includes('mainAnchorMentions <= 10') && story.includes('copiedPhraseHits <= 7'), 'Low-repetition quality gates are missing'],
+  [story.includes('첫 두 문장 안에') && story.includes('말장난·아재개그'), 'Concrete case opening and case-specific comedy instructions are missing'],
+  [story.includes('openingConcreteHits >= 2') && story.includes('comedyLines.length >= 2'), 'Concrete opening and mandatory comedy quality gates are missing'],
+  [story.includes('contrastComedyHits >= 1') && story.includes('genericPhraseHits <= 4'), 'Dry punchline and generic-text rejection gates are missing'],
   [story.includes('"plaintiffClaim"') && story.includes('"defendantClaim"'), 'AI story prompt must request opposing quick claims'],
   [trial.includes('Number(data.schemaVersion) === 2') && trial.includes('judgment.orders'), 'Trial page must recognize completed V2 judgments'],
   [trial.includes('if (isCompleteResult(data))'), 'Trial page must redirect when a V2 judgment completes'],
@@ -46,15 +46,16 @@ const checks = [
   [home.includes('result.judgment?.headline') && home.includes('result.judgment?.summary'), 'Home feed must display V2 judgment metadata'],
   [home.includes('result.judgment?.plaintiffClaim') && home.includes('result.judgment?.defendantClaim'), 'Home search must include quick claims'],
   [home.includes('사건 접수부터 선고까지 6단계'), 'Home must explain the full court process'],
-  [app.includes("result-case-story.js?v=20260711-interpret1"), 'App must load the interpretive result wrapper with a fresh cache key'],
+  [app.includes('result-case-story.js?v=20260711-comedy2'), 'App must load the concrete comedy result wrapper with a fresh cache key'],
   [resultWrapper.includes('judgment.breakingNews') && resultWrapper.includes('judgment.emergencyBriefing'), 'Result pages must load emergency judgment sections'],
-  [resultWrapper.includes('judgment.plaintiffClaim') && resultWrapper.includes('judgment.defendantClaim'), 'Result pages must load quick opposing claims'],
-  [resultWrapper.includes('claim-showdown') && resultWrapper.includes('같은 사건, 다른 해석'), 'Result pages must visibly render independent claim interpretations'],
+  [resultWrapper.includes('judgment.comedyLines') && resultWrapper.includes('판결문에서 건진 결정적 한마디'), 'Result pages must visibly render mandatory comedy lines'],
+  [resultWrapper.includes('claim-showdown') && resultWrapper.includes('완전히 다른 변명'), 'Result pages must visibly render independent claim interpretations'],
+  [resultWrapper.includes("title === '검사의 주장' || title === '변호인의 주장'"), 'Redundant long-form courtroom stages must be removed from result display'],
   [resultWrapper.includes('<details class="result-card original-case-card">') && resultWrapper.includes('접수 원문은 판결과 분리'), 'Submitted source text must remain collapsed and separate from the judgment'],
   [resultWrapper.includes('--alert-title') && resultWrapper.includes('var(--ui-text-main'), 'Runtime result styles must use theme-aware text variables'],
   [readability.includes('html[data-theme="light"] body #page-content') && readability.includes('--readable-body'), 'Final light-mode readability guard is missing'],
   [index.includes('/css/site-readability.css?v=20260711-interpret1'), 'Index must load the final readability guard'],
-  [index.includes('/js/app.js?v=20260711-interpret1'), 'Index must bust the interpretive app cache'],
+  [index.includes('/js/app.js?v=20260711-comedy2'), 'Index must bust the concrete comedy app cache'],
 ];
 
 const failed = checks.filter(([ok]) => !ok).map(([, message]) => message);
@@ -63,4 +64,4 @@ if (failed.length) {
   process.exit(1);
 }
 
-console.log('Verified interpretive judgments, collapsed source text, staged trial and light-mode readability integration.');
+console.log('Verified concrete case openings, mandatory comedy lines, shorter result stages and light-mode integration.');

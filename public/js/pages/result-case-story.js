@@ -18,6 +18,11 @@ function ensureOriginalCaseStyle() {
     .emergency-block{padding:12px 13px;border:1px solid rgba(255,255,255,.09);border-radius:14px;background:rgba(255,255,255,.045);}
     .emergency-block strong{display:block;margin-bottom:6px;font-size:11px;letter-spacing:.08em;color:var(--alert-label);}
     .emergency-block p{margin:0!important;font-size:13px!important;line-height:1.8!important;color:var(--alert-text)!important;white-space:pre-wrap;word-break:keep-all;}
+    .comedy-lines-card{padding:0!important;overflow:hidden;border-color:color-mix(in srgb,var(--ui-gold,var(--gold)) 60%,var(--ui-line,var(--border)))!important;}
+    .comedy-lines-head{padding:12px 16px;border-bottom:1px solid var(--ui-line,var(--border));font-size:11px;font-weight:900;letter-spacing:.1em;color:var(--ui-gold,var(--gold));}
+    .comedy-lines-list{display:grid;gap:1px;background:var(--ui-line,var(--border));}
+    .comedy-line{position:relative;padding:15px 16px 15px 44px;background:var(--ui-surface,var(--navy-card));font-family:var(--font-serif);font-size:15px;font-weight:800;line-height:1.75;color:var(--ui-text-main,var(--cream));word-break:keep-all;}
+    .comedy-line::before{content:'ㅋ';position:absolute;left:15px;top:15px;display:grid;place-items:center;width:21px;height:21px;border-radius:50%;background:color-mix(in srgb,var(--ui-gold,var(--gold)) 16%,transparent);color:var(--ui-gold,var(--gold));font-family:var(--font-sans);font-size:11px;font-weight:900;}
     .original-case-card{position:relative;overflow:hidden;border-color:var(--ui-line-strong,var(--border))!important;background:color-mix(in srgb,var(--ui-gold,var(--gold)) 7%,var(--ui-surface,var(--navy-card)))!important;padding:0!important;}
     .original-case-card summary{list-style:none;cursor:pointer;padding:14px 16px;font-size:12px;font-weight:900;letter-spacing:.07em;color:var(--ui-gold,var(--gold));display:flex;align-items:center;justify-content:space-between;gap:12px;}
     .original-case-card summary::-webkit-details-marker{display:none;}
@@ -46,7 +51,7 @@ function ensureOriginalCaseStyle() {
       html:not([data-theme="dark"]) .emergency-level{border-color:#dfa27f!important;background:#fff0e2!important;}
       html:not([data-theme="dark"]) .emergency-block{background:rgba(255,255,255,.66)!important;border-color:#ebc4ac!important;}
     }
-    @media(min-width:720px){.emergency-grid{grid-template-columns:1.15fr .85fr}.emergency-headline{font-size:20px}.claim-showdown-grid{grid-template-columns:1fr auto 1fr}.claim-versus{display:flex;align-items:center;padding:0 9px}}
+    @media(min-width:720px){.emergency-grid{grid-template-columns:1.15fr .85fr}.emergency-headline{font-size:20px}.claim-showdown-grid{grid-template-columns:1fr auto 1fr}.claim-versus{display:flex;align-items:center;padding:0 9px}.comedy-lines-list{grid-template-columns:repeat(2,minmax(0,1fr))}}
   `;
   document.head.appendChild(style);
 }
@@ -58,6 +63,7 @@ function judgmentExtras(result = {}) {
     breakingNews: String(judgment.breakingNews || '').trim(),
     emergencyBriefing: String(judgment.emergencyBriefing || '').trim(),
     impactAssessment: String(judgment.impactAssessment || '').trim(),
+    comedyLines: Array.isArray(judgment.comedyLines) ? judgment.comedyLines.map(item => String(item || '').trim()).filter(Boolean).slice(0, 4) : [],
     plaintiffClaim: String(judgment.plaintiffClaim || '').trim(),
     defendantClaim: String(judgment.defendantClaim || '').trim(),
   };
@@ -68,7 +74,6 @@ async function loadOriginalCase(caseId) {
   const result = resultSnap?.exists() ? resultSnap.data() : {};
   let description = String(result.caseDescription || '').trim();
   let desiredVerdict = String(result.desiredVerdict || '').trim();
-
   if ((!description || !desiredVerdict) && auth.currentUser) {
     const caseSnap = await getDoc(doc(db, 'cases', caseId)).catch(() => null);
     if (caseSnap?.exists()) {
@@ -90,21 +95,32 @@ function decorateEmergencyBriefing(container, extras) {
   if (!cover) return;
   cover.insertAdjacentHTML('afterend', `
     <section class="result-card emergency-briefing-card">
-      <div class="emergency-ticker">소소킹 긴급사건 특보 · AI 재해석 완료</div>
+      <div class="emergency-ticker">소소킹 긴급사건 특보 · 사건 핵심 포착 완료</div>
       <div class="emergency-body">
         ${extras.incidentLevel ? `<div class="emergency-level">${escapeHtml(extras.incidentLevel)}</div>` : ''}
         <h2 class="emergency-headline">${escapeHtml(extras.breakingNews)}</h2>
         <div class="emergency-grid">
-          <div class="emergency-block"><strong>AI 상황 재구성</strong><p>${escapeHtml(extras.emergencyBriefing)}</p></div>
-          <div class="emergency-block"><strong>방치 시 예상 파급효과</strong><p>${escapeHtml(extras.impactAssessment)}</p></div>
+          <div class="emergency-block"><strong>결정적 순간</strong><p>${escapeHtml(extras.emergencyBriefing)}</p></div>
+          <div class="emergency-block"><strong>이대로 두면 벌어질 일</strong><p>${escapeHtml(extras.impactAssessment)}</p></div>
         </div>
       </div>
     </section>`);
 }
 
+function decorateComedyLines(container, extras) {
+  if (!extras?.comedyLines?.length || container.querySelector('.comedy-lines-card')) return;
+  const anchor = container.querySelector('.emergency-briefing-card') || container.querySelector('.result-cover');
+  if (!anchor) return;
+  anchor.insertAdjacentHTML('afterend', `
+    <section class="result-card comedy-lines-card">
+      <div class="comedy-lines-head">판결문에서 건진 결정적 한마디</div>
+      <div class="comedy-lines-list">${extras.comedyLines.map(line => `<div class="comedy-line">${escapeHtml(line)}</div>`).join('')}</div>
+    </section>`);
+}
+
 function decorateOriginalCase(container, original) {
   if (!original.description || container.querySelector('.original-case-card')) return;
-  const anchor = container.querySelector('.emergency-briefing-card') || container.querySelector('.result-cover');
+  const anchor = container.querySelector('.comedy-lines-card') || container.querySelector('.emergency-briefing-card') || container.querySelector('.result-cover');
   if (!anchor) return;
   anchor.insertAdjacentHTML('afterend', `
     <details class="result-card original-case-card">
@@ -119,23 +135,42 @@ function decorateOriginalCase(container, original) {
 
 function decorateClaims(container, extras) {
   if (!extras?.plaintiffClaim || !extras?.defendantClaim || container.querySelector('.claim-showdown')) return;
-  const anchor = container.querySelector('.original-case-card') || container.querySelector('.emergency-briefing-card') || container.querySelector('.result-cover');
+  const anchor = container.querySelector('.original-case-card') || container.querySelector('.comedy-lines-card') || container.querySelector('.emergency-briefing-card') || container.querySelector('.result-cover');
   if (!anchor) return;
   anchor.insertAdjacentHTML('afterend', `
     <section class="result-card claim-showdown">
-      <div class="claim-showdown-head">법정공방 핵심 요약 · 같은 사건, 다른 해석</div>
+      <div class="claim-showdown-head">법정공방 핵심 · 같은 사건, 완전히 다른 변명</div>
       <div class="claim-showdown-grid">
         <div class="claim-side plaintiff"><div class="claim-side-label">⚔️ 원고측 핵심 주장</div><p>${escapeHtml(extras.plaintiffClaim)}</p></div>
         <div class="claim-versus">VS</div>
-        <div class="claim-side defendant"><div class="claim-side-label">🛡️ 피고측 핵심 반박</div><p>${escapeHtml(extras.defendantClaim)}</p></div>
+        <div class="claim-side defendant"><div class="claim-side-label">🛡️ 피고측 황당 반박</div><p>${escapeHtml(extras.defendantClaim)}</p></div>
       </div>
     </section>`);
 }
 
+function simplifyJudgmentStages(container) {
+  const rename = new Map([
+    ['사건의 경위', '사건 핵심'],
+    ['수사 과정', 'AI 감식 결과'],
+    ['재판부 판단', '재판부 최종 판단'],
+  ]);
+  container.querySelectorAll('.judgment-section').forEach(section => {
+    const heading = section.querySelector('h2');
+    const title = heading?.textContent?.trim() || '';
+    if (title === '검사의 주장' || title === '변호인의 주장') {
+      section.remove();
+      return;
+    }
+    if (heading && rename.has(title)) heading.textContent = rename.get(title);
+  });
+}
+
 function decorateResult(container, original) {
   decorateEmergencyBriefing(container, original.extras);
+  decorateComedyLines(container, original.extras);
   decorateOriginalCase(container, original);
   decorateClaims(container, original.extras);
+  simplifyJudgmentStages(container);
 }
 
 export async function renderResult(container, caseId) {
@@ -144,7 +179,6 @@ export async function renderResult(container, caseId) {
   await renderBaseResult(container, caseId);
   const original = await originalPromise;
   decorateResult(container, original);
-
   const observer = new MutationObserver(() => decorateResult(container, original));
   observer.observe(container, { childList: true, subtree: true });
   const previousCleanup = window._pageCleanup;
