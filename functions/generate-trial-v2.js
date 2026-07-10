@@ -70,6 +70,17 @@ function buildDocket(caseId, title, supplied) {
   return `${year}소소${String(stableNumber(`${caseId}:${title}`, 1000, 9999))}`;
 }
 
+function addUsage(total = {}, next = {}) {
+  const keys = [
+    'promptTokenCount',
+    'candidatesTokenCount',
+    'totalTokenCount',
+    'cachedContentTokenCount',
+    'thoughtsTokenCount',
+  ];
+  return Object.fromEntries(keys.map(key => [key, Number(total[key] || 0) + Number(next[key] || 0)]));
+}
+
 async function loadSettings() {
   try {
     const snap = await db.doc('site_settings/config').get();
@@ -123,11 +134,13 @@ async function generateWithGemini({ settings, prompt, image, profile }) {
     },
   });
 
-  let lastEvaluation = { sectionHits: 0, mentionedAnchorCount: 0, tailoredOrders: 0, seriousHumorHits: 0 };
+  let lastEvaluation = { sectionHits: 0, primarySectionHits: 0, mentionedAnchorCount: 0, tailoredOrders: 0, primaryOrderHits: 0, seriousHumorHits: 0 };
   let lastError = null;
   let usage = {};
+  let attempts = 0;
 
   for (let attempt = 0; attempt < 2; attempt += 1) {
+    attempts += 1;
     try {
       const attemptPrompt = attempt === 0
         ? prompt
@@ -135,7 +148,7 @@ async function generateWithGemini({ settings, prompt, image, profile }) {
       const parts = [{ text: attemptPrompt }];
       if (image) parts.push({ inlineData: image });
       const response = await model.generateContent({ contents: [{ role: 'user', parts }] });
-      usage = response.response.usageMetadata || usage;
+      usage = addUsage(usage, response.response.usageMetadata || {});
       const raw = extractJson(response.response.text());
       const judgment = normalizeJudgment(raw);
       if (!isCompleteJudgment(judgment)) {
@@ -147,13 +160,16 @@ async function generateWithGemini({ settings, prompt, image, profile }) {
         lastError = new Error(`AI judgment lacked case specificity: ${JSON.stringify(lastEvaluation)}`);
         continue;
       }
-      return { judgment, usage, evaluation: lastEvaluation, attempts: attempt + 1 };
+      return { judgment, usage, evaluation: lastEvaluation, attempts };
     } catch (error) {
       lastError = error;
     }
   }
 
-  throw lastError || new Error('AI judgment generation failed');
+  const failure = lastError || new Error('AI judgment generation failed');
+  failure.usage = usage;
+  failure.attempts = attempts;
+  throw failure;
 }
 
 function kstDateKey(date = new Date()) {
@@ -223,8 +239,8 @@ exports.generateTrial = onCall({
       division: '제2소소재판부',
       defendantName,
       judgeType,
-      category: category.id,
-      categoryLabel: category.label,
+      category: profile.categoryId,
+      categoryLabel: profile.categoryLabel,
       processingStartedAt: FieldValue.serverTimestamp(),
       errorMessage: FieldValue.delete(),
     });
@@ -261,6 +277,8 @@ exports.generateTrial = onCall({
       usage = generated.usage;
     }
   } catch (error) {
+    aiAttempts = Number(error.attempts || (aiAttempted ? 1 : 0));
+    usage = error.usage || usage;
     console.error('case-specific AI judgment failed, using tailored local judgment:', error.message || error);
   }
 
@@ -285,8 +303,8 @@ exports.generateTrial = onCall({
       division: '제2소소재판부',
       defendantName,
       judgeType,
-      category: category.id,
-      categoryLabel: category.label,
+      category: profile.categoryId,
+      categoryLabel: profile.categoryLabel,
       judgment,
       hasImageAttachment: !!(attachmentMeta?.storagePath || caseData?.imageAttachment?.data),
       imageAttachmentMeta: attachmentMeta,
@@ -309,8 +327,8 @@ exports.generateTrial = onCall({
       courtroom,
       division: '제2소소재판부',
       defendantName,
-      category: category.id,
-      categoryLabel: category.label,
+      category: profile.categoryId,
+      categoryLabel: profile.categoryLabel,
       judgeType,
       resultSchemaVersion: JUDGMENT_SCHEMA_VERSION,
       storyVersion: STORY_VERSION,
