@@ -60,13 +60,14 @@ jobs:
           fi
           echo "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-service-account.json"
 
-      - name: Deploy rules, indexes, storage and hosting
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-        run: firebase deploy --only firestore:rules,firestore:indexes,storage,hosting --project sosoking-481e6 --non-interactive
-
-      - name: Deploy all exported Functions
+      # Callable Functions must exist before rules disable direct client writes/deletes.
+      - name: Deploy all exported Functions first
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
           FUNCTION_TARGETS: functions:submitCase,functions:suggestCaseTitle,functions:generateTrial,functions:syncJudgmentStructure,functions:backfillJudgmentStructures,functions:backfillJudgmentStructuresNow,functions:createDailyAiCase,functions:generateDailyAiNow,functions:checkNickname,functions:setNickname,functions:voteResult,functions:addCourtComment,functions:requestAppeal,functions:deleteMyCase,functions:deleteCourtPost,functions:deleteUserProfile,functions:recoverStaleTrials,functions:repairSocialCounters,functions:recoverStaleTrialsNow,functions:repairSocialCountersNow
         run: firebase deploy --only "$FUNCTION_TARGETS" --project sosoking-481e6 --non-interactive
+
+      - name: Deploy rules, indexes, storage and hosting
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+        run: firebase deploy --only firestore:rules,firestore:indexes,storage,hosting --project sosoking-481e6 --non-interactive
