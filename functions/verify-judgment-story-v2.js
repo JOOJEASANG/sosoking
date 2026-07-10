@@ -17,6 +17,8 @@ const cases = [
     defendantName: '남편',
     judgeType: '과몰입형',
     category: { id: 'food', label: '음식·식탐' },
+    expectedMainAnchor: '만두',
+    expectedCategoryId: 'food',
   },
   {
     title: '리모컨 소파 틈 은닉 사건',
@@ -26,7 +28,9 @@ const cases = [
     headline: '리모컨 소파 틈 은닉 관련 공동생활질서 침해 사건',
     defendantName: '동생',
     judgeType: '논리집착형',
-    category: { id: 'family', label: '가족·생활' },
+    category: { id: 'digital', label: '디지털·연락' },
+    expectedMainAnchor: '리모컨',
+    expectedCategoryId: 'family',
   },
 ];
 
@@ -36,6 +40,8 @@ for (const input of cases) {
   const judgment = buildStoryFallback(profile);
   const evaluation = evaluateStorySpecificity(judgment, profile);
 
+  assert.equal(profile.mainAnchor, input.expectedMainAnchor, `${input.title}: 대표 핵심어가 실제 물건이 아닙니다.`);
+  assert.equal(profile.categoryId, input.expectedCategoryId, `${input.title}: 사건 맥락 분류가 맞지 않습니다.`);
   assert.ok(profile.facts.length >= 2, `${input.title}: 사건 사실 분리가 부족합니다.`);
   assert.ok(profile.anchors.length >= 2, `${input.title}: 사건 핵심어 추출이 부족합니다.`);
   assert.ok(prompt.includes(input.description.split('.')[0]), `${input.title}: 원문 사실이 프롬프트에 없습니다.`);
@@ -51,4 +57,4 @@ for (const input of cases) {
   assert.ok(judgment.orders.filter(order => order.text.includes(profile.mainAnchor)).length >= 2, `${input.title}: 사건 맞춤형 주문이 부족합니다.`);
 }
 
-console.log('Verified case-specific facts, serious tone, over-investigation humor and tailored orders.');
+console.log('Verified concrete case objects, household context, serious tone, over-investigation humor and tailored orders.');
