@@ -32,6 +32,18 @@ const cases = [
     expectedMainAnchor: '리모컨',
     expectedCategoryId: 'family',
   },
+  {
+    title: 'YouTube 자동재생 독점 사건',
+    description: '친구가 내 휴대폰으로 YouTube를 보다가 자동재생을 켜 둔 채 돌려주었다. 다음 날 추천 영상이 전부 친구 취향으로 바뀌었다.',
+    desiredVerdict: '내 추천 알고리즘을 원래대로 복구하는 데 협조했으면 한다.',
+    grievanceIndex: 6,
+    headline: 'YouTube 추천질서 교란 사건',
+    defendantName: '친구',
+    judgeType: '드립형',
+    category: { id: 'digital', label: '디지털·연락' },
+    expectedMainAnchor: 'YouTube',
+    expectedCategoryId: 'digital',
+  },
 ];
 
 for (const input of cases) {
@@ -45,16 +57,25 @@ for (const input of cases) {
   assert.ok(profile.facts.length >= 2, `${input.title}: 사건 사실 분리가 부족합니다.`);
   assert.ok(profile.anchors.length >= 2, `${input.title}: 사건 핵심어 추출이 부족합니다.`);
   assert.ok(prompt.includes(input.description.split('.')[0]), `${input.title}: 원문 사실이 프롬프트에 없습니다.`);
-  assert.ok(prompt.includes('판결문 80%'), `${input.title}: 진지함/개그 비율 지시가 없습니다.`);
-  assert.ok(prompt.includes('orders 3개 중 최소 2개'), `${input.title}: 맞춤형 주문 지시가 없습니다.`);
+  assert.ok(prompt.includes('진지함 60%'), `${input.title}: 조정된 진지함 비율 지시가 없습니다.`);
+  assert.ok(prompt.includes('과몰입 개그 40%'), `${input.title}: 강화된 개그 비율 지시가 없습니다.`);
+  assert.ok(prompt.includes('웃음 구조는 세 번'), `${input.title}: 세 번의 웃음 구조 지시가 없습니다.`);
+  assert.ok(prompt.includes('국가적 비상은 아니지만'), `${input.title}: 과장 취소 금지 문구가 없습니다.`);
+  assert.ok(prompt.includes('orders 3개 모두 사건 맞춤형'), `${input.title}: 맞춤형 주문 지시가 없습니다.`);
   assert.ok(isCompleteJudgment(judgment), `${input.title}: 로컬 판결이 V2 계약을 충족하지 못합니다.`);
-  assert.equal(evaluation.passed, true, `${input.title}: 사건 고유성 검사 실패 ${JSON.stringify(evaluation)}`);
-  assert.ok(judgment.facts.includes(profile.mainAnchor), `${input.title}: 사건 경위에 핵심어가 없습니다.`);
-  assert.ok(judgment.investigation.includes(profile.mainAnchor), `${input.title}: 수사 과정에 핵심어가 없습니다.`);
-  assert.ok(judgment.prosecution.includes(profile.mainAnchor), `${input.title}: 검사 주장에 핵심어가 없습니다.`);
-  assert.ok(judgment.defense.includes(profile.mainAnchor), `${input.title}: 변호인 주장에 핵심어가 없습니다.`);
-  assert.ok(judgment.opinion.includes(profile.mainAnchor), `${input.title}: 재판부 판단에 핵심어가 없습니다.`);
-  assert.ok(judgment.orders.filter(order => order.text.includes(profile.mainAnchor)).length >= 2, `${input.title}: 사건 맞춤형 주문이 부족합니다.`);
+  assert.equal(evaluation.passed, true, `${input.title}: 긴급 과몰입 검사 실패 ${JSON.stringify(evaluation)}`);
+  assert.equal(evaluation.emergencyAnchorHits, 3, `${input.title}: 긴급 브리핑 전 영역에 대표 물건이 없습니다.`);
+  assert.ok(evaluation.seriousHumorHits >= 4, `${input.title}: 큰일처럼 부풀리는 장치가 부족합니다.`);
+  assert.ok(judgment.incidentLevel.includes('소소위기'), `${input.title}: 사건 경계 단계가 없습니다.`);
+  assert.ok(judgment.breakingNews.toLowerCase().includes(profile.mainAnchor.toLowerCase()), `${input.title}: 긴급속보에 핵심어가 없습니다.`);
+  assert.ok(judgment.emergencyBriefing.length >= 180, `${input.title}: 긴급 브리핑 디테일이 부족합니다.`);
+  assert.ok(judgment.impactAssessment.length >= 120, `${input.title}: 연쇄 피해 평가가 부족합니다.`);
+  assert.ok(judgment.facts.toLowerCase().includes(profile.mainAnchor.toLowerCase()), `${input.title}: 사건 경위에 핵심어가 없습니다.`);
+  assert.ok(judgment.investigation.toLowerCase().includes(profile.mainAnchor.toLowerCase()), `${input.title}: 수사 과정에 핵심어가 없습니다.`);
+  assert.ok(judgment.prosecution.toLowerCase().includes(profile.mainAnchor.toLowerCase()), `${input.title}: 검사 주장에 핵심어가 없습니다.`);
+  assert.ok(judgment.defense.toLowerCase().includes(profile.mainAnchor.toLowerCase()), `${input.title}: 변호인 주장에 핵심어가 없습니다.`);
+  assert.ok(judgment.opinion.toLowerCase().includes(profile.mainAnchor.toLowerCase()), `${input.title}: 재판부 판단에 핵심어가 없습니다.`);
+  assert.ok(judgment.orders.filter(order => order.text.toLowerCase().includes(profile.mainAnchor.toLowerCase())).length >= 2, `${input.title}: 사건 맞춤형 주문이 부족합니다.`);
 }
 
-console.log('Verified concrete case objects, household context, serious tone, over-investigation humor and tailored orders.');
+console.log('Verified detailed emergency briefing, three humor beats, crisis escalation and tailored orders.');
