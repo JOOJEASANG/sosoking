@@ -18,6 +18,7 @@ const daily = read('./daily.js');
 const social = read('./social.js');
 const repair = read('./repair.js');
 const app = read('../public/js/app.js');
+const homePage = read('../public/js/pages/home.js');
 const trialPage = read('../public/js/pages/trial.js');
 const resultPage = read('../public/js/pages/result.js');
 const boardPage = read('../public/js/pages/board.js');
@@ -83,10 +84,13 @@ const checks = [
   [social.includes('resultData.judgment?.orders') && social.includes('resultData.judgment?.opinion'), 'Appeals must read V2 orders and opinion'],
   [repair.includes('isCompleteJudgment(data.judgment)'), 'Stale recovery must recognize completed V2 judgments'],
 
+  [app.includes("from './pages/home-court.js?v=20260710-v2judgment1'"), 'App must load the V2-aware home feed'],
   [app.includes("from './pages/trial-game.js?v=20260710-v2judgment1'"), 'App must load the V2-aware trial flow'],
   [app.includes("from './pages/result.js?v=20260710-v2result1'"), 'App must load the V2-compatible result renderer directly'],
   [app.includes("from './pages/board-court.js?v=20260710-v2judgment1'"), 'App must load the V2-aware board'],
   [!app.includes('result-summary.js') && !app.includes('result-court.js'), 'App must not restore removed result wrappers'],
+  [homePage.includes('result.judgment?.summary') && homePage.includes('result.judgment?.headline'), 'Home feed must read V2 judgment summaries and headlines'],
+  [homePage.includes('result.judgment?.facts') && homePage.includes('resultSearchText'), 'Home search must include V2 judgment content'],
   [trialPage.includes('Number(data.schemaVersion) === 2') && trialPage.includes('judgment.orders'), 'Trial flow must recognize completed V2 judgments'],
   [trialPage.includes('if (isCompleteResult(data))'), 'Trial flow must redirect after a V2 judgment is complete'],
   [resultPage.includes('r.judgment') && resultPage.includes('r.judgmentScript'), 'Result page must support both V2 and existing judgment records'],
@@ -119,4 +123,4 @@ if (failed.length) {
   process.exit(1);
 }
 
-console.log('Verified canonical judgment V2 generation, trial completion, compatibility rendering and Firebase deployment contracts.');
+console.log('Verified canonical judgment V2 generation, home feed, trial completion, compatibility rendering and Firebase deployment contracts.');
