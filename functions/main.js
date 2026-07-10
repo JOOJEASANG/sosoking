@@ -12,3 +12,4 @@ Object.assign(exports, require('./title-suggestion'));
 Object.assign(exports, require('./generate-trial-lite'));
 Object.assign(exports, require('./admin-actions'));
 Object.assign(exports, require('./repair'));
+Object.assign(exports, require('./sync-judgment-structure'));
