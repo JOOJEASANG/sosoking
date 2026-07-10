@@ -3,7 +3,7 @@ import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase
 import { escapeHtml } from '../utils/sanitize.js?v=20260630-3';
 import { DEFAULT_POLICY_DOCS, policyDefault } from '../data/default-policy-docs.js?v=20260708-1';
 
-const TITLES = Object.fromEntries(Object.entries(DEFAULT_POLICY_DOCS).map(([key, doc]) => [key, doc.title]));
+const TITLES = Object.fromEntries(Object.entries(DEFAULT_POLICY_DOCS).map(([key, policy]) => [key, policy.title]));
 
 function applyBiz(text, biz) {
   return String(text || '')
@@ -46,19 +46,21 @@ export async function renderPolicy(container, type) {
     </div>`;
 
   try {
+    // Public policy content and public business information must fail independently.
     const [policySnap, settingsSnap] = await Promise.all([
-      getDoc(doc(db, 'policy_docs', safeType)),
-      getDoc(doc(db, 'site_settings', 'config')),
+      getDoc(doc(db, 'policy_docs', safeType)).catch(() => null),
+      getDoc(doc(db, 'public_settings', 'config')).catch(() => null),
     ]);
-    const biz = settingsSnap.exists() ? (settingsSnap.data().businessInfo || {}) : {};
-    const policy = policySnap.exists() ? policySnap.data() : {};
+    const biz = settingsSnap?.exists() ? (settingsSnap.data().businessInfo || {}) : {};
+    const policy = policySnap?.exists() ? policySnap.data() : {};
     const title = policy.title || fallback.title || TITLES[safeType] || '정책';
     const raw = policy.content || fallback.content || '아직 등록된 내용이 없습니다.';
     const content = applyBiz(raw, biz);
     container.querySelector('.page-header .logo').textContent = title;
     container.querySelector('.container').innerHTML =
       `<div class="card" style="font-size:14px;line-height:1.9;color:var(--cream-dim);white-space:pre-wrap;padding:20px;">${escapeHtml(content)}</div>${bizInfoHtml(biz)}`;
-  } catch {
+  } catch (err) {
+    console.error('policy render failed:', err);
     const content = fallback.content || '불러오지 못했습니다.';
     container.querySelector('.container').innerHTML =
       `<div class="card" style="font-size:14px;line-height:1.9;color:var(--cream-dim);white-space:pre-wrap;padding:20px;">${escapeHtml(content)}</div>`;
