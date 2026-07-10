@@ -21,9 +21,7 @@ const sample = `## ⚖️ 사건번호 및 사건명
 
 [주문]
 1. 피고는 푸딩 두 개를 배상하라.
-
 2. 피고는 냉장고 마지막 음식에 손대기 전 허가를 구하라.
-
 3. 소송 비용은 피고가 커피 기프티콘으로 부담하라.
 
 푸딩은 작았지만 판결은 작지 않았다.`;
@@ -39,6 +37,9 @@ assert.equal(parsed.orders.length, 3);
 assert.equal(parsed.primarySentence, '피고는 푸딩 두 개를 배상하라.');
 assert.equal(parsed.closingComment, '푸딩은 작았지만 판결은 작지 않았다.');
 assert.equal(parsed.quickVerdict, '원고 마음속 일부 승소');
+assert.match(parsed.sentence, /^1\./);
+assert.match(parsed.sentence, /\n2\./);
+assert.match(parsed.sentence, /\n3\./);
 assert.equal(scriptFingerprint(sample), scriptFingerprint(sample));
 assert.equal(parseJudgmentScript('불완전한 판결문'), null);
 
