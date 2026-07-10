@@ -10,6 +10,8 @@ const storageWorkflow = read('../.github/workflows/firebase-storage-rules.yml');
 const firebaseConfig = JSON.parse(read('../firebase.json'));
 const storageRules = read('../storage.rules');
 const main = read('./main.js');
+const app = read('../public/js/app.js');
+const resultPage = read('../public/js/pages/result.js');
 const policy = read('../public/js/pages/policy.js');
 const readme = read('../README.md');
 
@@ -33,6 +35,11 @@ const checks = [
   [coreWorkflow.includes('FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6'), 'Core workflow service-account secret is missing'],
   [retiredFunctions.every(name => !coreWorkflow.includes(name)), 'Core workflow still references retired judgment maintenance Functions'],
   [!main.includes("require('./sync-judgment-structure')"), 'Functions entry point still exports legacy judgment synchronization'],
+
+  [app.includes("from './pages/result.js?v=20260710-v2result1'"), 'App must load the V2-compatible result renderer directly'],
+  [!app.includes('result-summary.js') && !app.includes('result-court.js'), 'App must not restore removed result wrappers'],
+  [resultPage.includes('r.judgment') && resultPage.includes('r.judgmentScript'), 'Result page must support both V2 and existing judgment records'],
+  [resultPage.includes("mode: 'script'"), 'Existing judgmentScript must be rendered directly without client reconstruction'],
 
   [storageWorkflow.includes('workflow_dispatch:'), 'Storage workflow must be manually dispatchable'],
   [!storageWorkflow.includes('\n  push:'), 'Storage workflow must not run automatically until IAM is configured'],
@@ -59,4 +66,4 @@ if (failed.length) {
   process.exit(1);
 }
 
-console.log('Verified source-based Functions deployment, retired judgment cleanup, public settings and Firebase deployment separation.');
+console.log('Verified source-based deployment, retired judgment cleanup, V2 result compatibility and Firebase separation.');

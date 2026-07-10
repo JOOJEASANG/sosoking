@@ -36,13 +36,15 @@ export async function addOwnerStorageImage(container, caseId) {
     ].filter(Boolean).join(' · ');
 
     const html = `
-      <section id="owner-storage-image" class="case-section image-section">
+      <section id="owner-storage-image" class="result-card case-section image-section">
         <div class="section-head"><span>첨부 이미지 참고자료</span><em>작성자 전용</em></div>
         <img src="${url}" alt="첨부 이미지" style="width:100%;max-height:360px;object-fit:contain;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.16);">
         <p style="font-size:11px;color:var(--cream-dim);margin:8px 0 0;">${escapeHtml(details || '첨부 이미지')}</p>
       </section>`;
 
-    const anchor = container.querySelector('.point-grid') || container.querySelector('.case-info-card');
+    const anchor = container.querySelector('.point-grid')
+      || container.querySelector('.case-info-card')
+      || container.querySelector('.result-cover');
     if (anchor) anchor.insertAdjacentHTML('afterend', html);
   } catch (err) {
     console.warn('owner storage image skipped:', err.message || err);
