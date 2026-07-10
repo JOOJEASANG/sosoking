@@ -31,8 +31,20 @@ jobs:
       - name: Install Functions dependencies
         run: npm install --prefix functions --no-audit --no-fund
 
-      - name: Validate source and deployment contracts
-        run: npm run lint --prefix functions
+      - name: Check backend syntax
+        run: npm run check:backend --prefix functions
+
+      - name: Check frontend syntax
+        run: npm run check:frontend --prefix functions
+
+      - name: Verify judgment quality
+        run: npm run check:judgment --prefix functions
+
+      - name: Verify security contract
+        run: npm run check:security --prefix functions
+
+      - name: Verify deployment contract
+        run: npm run check:deployment --prefix functions
 
   deploy-core:
     if: github.event_name != 'pull_request'
