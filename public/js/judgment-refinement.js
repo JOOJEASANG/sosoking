@@ -2,7 +2,7 @@ let scheduled = false;
 
 function refineJudgmentResult() {
   const shell = document.querySelector('.result-shell');
-  if (!shell || shell.dataset.conciseJudgment === 'true') return;
+  if (!shell || shell.classList.contains('role-trial-document') || shell.dataset.conciseJudgment === 'true') return;
   shell.dataset.conciseJudgment = 'true';
 
   const comedy = shell.querySelector('.comedy-section');
