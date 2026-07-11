@@ -2,6 +2,7 @@ import { auth, db, waitForAuthReady } from './firebase.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 
+const ROLE_TRIAL_VERSION = 'role-based-trial-v10';
 let user = null;
 let scheduled = false;
 let requestKey = '';
@@ -36,6 +37,11 @@ async function loadResultForDisplay(caseId) {
   }
 }
 
+function isCurrentRoleTrial(result) {
+  return result?.resultVersion === ROLE_TRIAL_VERSION
+    && result?.trialRecord?.resultVersion === ROLE_TRIAL_VERSION;
+}
+
 async function enhanceResultPage() {
   const caseId = resultCaseId();
   const shell = document.querySelector('.result-shell');
@@ -48,27 +54,32 @@ async function enhanceResultPage() {
   const result = await loadResultForDisplay(caseId);
   if (!result || resultCaseId() !== caseId) return;
 
+  if (isCurrentRoleTrial(result)) {
+    shell.dataset.engineEnhanced = 'true';
+    return;
+  }
+
   const label = shell.querySelector('.judgment-engine-label');
   if (label && String(result.generationMode || '').startsWith('gemini')) {
     const judge = result.judgeType || 'AI';
-    label.textContent = `Gemini 3단계 편집 판결 · ${judge} 재판부`;
+    label.textContent = `이전 Gemini 판결 · ${judge} 재판부`;
   }
 
-  const version = Number(result.judgment?.engineVersion || 0);
-  if (!result.ownerView || version >= 3 || shell.querySelector('[data-engine-upgrade]')) {
+  if (!result.ownerView || shell.querySelector('[data-engine-upgrade]')) {
     shell.dataset.engineEnhanced = 'true';
     return;
   }
 
   const panel = document.createElement('section');
-  panel.className = 'card result-section';
+  panel.className = 'card result-section role-engine-upgrade';
   panel.dataset.engineUpgrade = 'true';
   panel.dataset.engineEnhanced = 'true';
   panel.innerHTML = `
-    <div class="result-section-label">새 판결 엔진 사용 가능</div>
-    <p class="result-body">이 판결은 이전 방식으로 작성되었습니다. 사건 분석, 코미디 3안, 최종 편집 검사를 거치는 새 엔진으로 다시 판결받을 수 있습니다.</p>
-    <div class="hero-actions"><a class="button button-primary" href="#/trial/${encodeURIComponent(caseId)}">새 판결 다시 받기</a></div>`;
-  shell.querySelector('.judgment-cover')?.after(panel);
+    <div class="result-section-label">역할 분리형 황당재판 사용 가능</div>
+    <h2>이 사건을 수사기록부터 다시 재판합니다</h2>
+    <p class="result-body">현재 보고 있는 내용은 이전 판결 방식입니다. 사건번호, 수사관, 예능용 가상 CCTV·감식, 검사·변호인 공방과 단계별 주문이 포함된 새 기록철로 다시 만들 수 있습니다.</p>
+    <div class="hero-actions"><a class="button button-primary" href="#/trial/${encodeURIComponent(caseId)}">수사 재판으로 다시 받기</a></div>`;
+  (shell.querySelector('.role-docket-cover') || shell.querySelector('.judgment-cover'))?.after(panel);
 }
 
 window.addEventListener('hashchange', scheduleEnhance);
