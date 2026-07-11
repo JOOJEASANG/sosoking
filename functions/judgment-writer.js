@@ -5,6 +5,7 @@ function buildFallbackJudgment(caseData, analysis) {
   const actor = analysis.actor;
   const target = analysis.target;
   return normalizeJudgment({
+    engineVersion: 3,
     headline: `${actor}의 ${target} 관련 생활질서 이탈 사건`,
     incidentLevel: analysis.incidentLevel,
     opening: `[긴급속보] ${analysis.action}. 그 결과 원고는 ${analysis.consequence} 소소킹 재판부는 사건의 크기보다 확인 한 번으로 막을 수 있었는지를 핵심 쟁점으로 지정했다. ${analysis.drySeed}`,
@@ -69,6 +70,7 @@ ${rewriteInstruction(analysis, evaluation)}
 11. JSON 외의 설명이나 마크다운은 출력하지 않는다.
 
 {
+  "engineVersion": 3,
   "headline": "행위자와 대상을 포함한 짧고 웃긴 사건명",
   "incidentLevel": "${analysis.incidentLevel}",
   "opening": "첫 문장에 사건 전체가 보이고 둘째 문장에 짧은 반전이 있는 속보",
