@@ -4,12 +4,25 @@ import { loadAdminDashboard, adminPageHtml, bindAdminActions } from './admin-ui.
 
 const ADMIN_EMAILS = new Set(['joojeasang@gmail.com']);
 let user = null;
+let adminAllowed = false;
 let cache = null;
 let loading = false;
 let renderToken = 0;
 
 function isAdminRoute() { return (location.hash || '').split('?')[0] === '#/admin'; }
-function isAdminUser(current) { return Boolean(current?.email && ADMIN_EMAILS.has(current.email.toLowerCase())); }
+async function resolveAdminAccess(current) {
+  if (!current) return false;
+  try {
+    const tokenResult = await current.getIdTokenResult();
+    const claimAdmin = tokenResult.claims?.admin === true;
+    const verifiedEmailAdmin = current.emailVerified === true
+      && current.email
+      && ADMIN_EMAILS.has(current.email.toLowerCase());
+    return claimAdmin || verifiedEmailAdmin;
+  } catch {
+    return false;
+  }
+}
 function toast(message, error = false) {
   const root = document.getElementById('toast-root');
   if (!root) return;
@@ -27,8 +40,12 @@ function errorMessage(error) {
 }
 function injectNav() {
   const nav = document.querySelector('.main-nav');
-  if (!nav || !isAdminUser(user)) return;
+  if (!nav) return;
   let link = nav.querySelector('[data-admin-nav]');
+  if (!adminAllowed) {
+    link?.remove();
+    return;
+  }
   if (!link) {
     link = document.createElement('a');
     link.className = 'nav-link';
@@ -46,7 +63,7 @@ function loadingPage() {
   return `<section class="form-page"><div class="container"><div class="card receipt-card"><div class="court-orbit compact"><span>⚖</span></div><h2>운영 현황을 불러오는 중입니다</h2><p>신고와 판결 상태를 확인하고 있습니다.</p></div></div></section>`;
 }
 async function refresh() {
-  if (!isAdminUser(user) || loading) return;
+  if (!adminAllowed || loading) return;
   loading = true;
   const token = ++renderToken;
   const page = document.querySelector('.page');
@@ -60,7 +77,7 @@ function renderAdmin() {
   const page = document.querySelector('.page');
   if (!page) return;
   injectNav();
-  if (!isAdminUser(user)) { page.innerHTML = deniedPage(); return; }
+  if (!adminAllowed) { page.innerHTML = deniedPage(); return; }
   if (cache === null) { refresh(); return; }
   if (cache.__error) {
     page.innerHTML = `<section class="form-page"><div class="container"><div class="card receipt-card"><div class="receipt-check">!</div><h2>운영 현황을 불러오지 못했습니다</h2><p>${cache.__error}</p><button class="button button-primary" id="retry-admin" type="button">다시 불러오기</button></div></div></section>`;
@@ -79,5 +96,10 @@ function scheduleRender() { setTimeout(() => { injectNav(); renderAdmin(); }, 0)
 window.addEventListener('hashchange', scheduleRender);
 new MutationObserver(() => injectNav()).observe(document.getElementById('app'), { childList: true, subtree: true });
 await waitForAuthReady();
-onAuthStateChanged(auth, current => { user = current; cache = null; scheduleRender(); });
+onAuthStateChanged(auth, async current => {
+  user = current;
+  adminAllowed = await resolveAdminAccess(current);
+  cache = null;
+  scheduleRender();
+});
 scheduleRender();
