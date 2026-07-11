@@ -22,6 +22,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          show-progress: false
+
+      - name: Verify judgment engine contract
+        run: node functions/verify-stage2.js
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -58,6 +63,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          show-progress: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
