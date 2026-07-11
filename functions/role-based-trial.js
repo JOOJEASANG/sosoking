@@ -62,6 +62,12 @@ function pickFrom(values, seed = '') {
   return values[Math.abs(score) % values.length];
 }
 
+function seedNumber(seed = '') {
+  let score = 17;
+  for (let index = 0; index < String(seed).length; index += 1) score = (score * 31 + String(seed).charCodeAt(index)) % 10007;
+  return score;
+}
+
 function list(value, fallback = [], max = 8, length = 260) {
   const rows = (Array.isArray(value) ? value : []).map(item => sanitize(item, length)).filter(Boolean).slice(0, max);
   for (const item of fallback) {
@@ -121,21 +127,54 @@ function normalizeTrial(raw = {}, fallback = {}, caseTitle, court, docketNumber)
 function fallbackTrial(caseData, court, docketNumber) {
   const title = cleanText(caseData.title, 90) || '소소한 황당사건';
   const description = cleanParagraph(caseData.caseDescription, 1200) || title;
-  const actor = cleanText(caseData.defendantName, 40) || '피고 측';
+  const analysis = buildCaseAnalysis(caseData);
+  const actor = cleanText(analysis.actor || caseData.defendantName, 60) || '피고 측';
+  const target = cleanText(analysis.target, 60) || '사건 대상';
+  const action = cleanParagraph(analysis.action, 260) || description;
+  const consequence = cleanParagraph(analysis.consequence, 260) || '원고의 예정과 기대가 어긋났다';
+  const remedy = cleanParagraph(caseData.desiredVerdict || analysis.remedy, 260) || `${target}에 관한 구체적인 사과와 보상`;
+  const seed = seedNumber(`${title}:${description}:${actor}:${target}`);
+  const frameStart = 120 + (seed % 280);
+  const frameEnd = frameStart + 7 + (seed % 13);
+  const attentionGap = ((seed % 23) + 7) / 10;
+  const actionScore = 68 + (seed % 29);
+  const controlScore = 21 + (seed % 37);
+
   return normalizeTrial({
     refinedCaseTitle: title,
-    expandedCase: `접수조서에 따르면 ${description}\n재판부는 원고가 실제로 겪은 행동과 결과를 중심으로 본 사건을 심리하기로 했다.`,
-    caseTimeline: '수사 진행기록\n1. 원고의 접수진술을 확인했다.\n2. 피고 측의 행동과 사건 결과를 시간순으로 재구성했다.\n3. 원고가 요구한 해결방안과 피고 측의 가능한 항변을 분리했다.',
-    forensicReport: '예능용 가상 감식보고서\n접수진술을 기준으로 사건 동선과 행동 순서를 재구성했다. 실제 CCTV나 실물 증거를 확인한 것은 아니며 황당재판 형식을 위한 가상 기록이다.',
-    plaintiffArg: `원고 측은 ${description}라는 이유로 자신의 몫과 기대가 침해됐다고 주장한다.`,
-    defendantArg: `${actor} 측은 고의적인 방해가 아니라 순간적인 판단 또는 상황 오해였다고 항변한다.`,
-    courtOpinion: `${court.judgeType} 재판부는 사건의 결과가 실제로 발생했고 원고가 요구한 회복이 사건과 관련된다는 점을 인정한다.`,
-    sentence: '주문 1. 피고 측은 접수 내용에서 확인되는 행동과 결과를 구체적으로 인정하고 사과하라.\n주문 2. 피고 측은 원고가 요구한 해결방안을 사건 범위 안에서 이행하라.\n주문 3. 양측은 같은 상황이 반복될 때 사용할 한 문장짜리 사전 확인 절차를 정하라.',
-    closingComment: '재판장 한마디: “사소한 사건일수록 설명은 구체적이어야 합니다.”',
-    absurdDetails: ['접수진술과 결과 사이의 연결', '피고 측 행동의 타이밍', '원고가 실제로 잃은 몫', '요구한 해결방안의 실행 가능성'],
-    evidenceBits: ['접수된 사건 설명', '원고가 지정한 피고', '사건 뒤 발생한 실제 결과', '원고가 요청한 황당 처분'],
-    defendantExcuses: ['고의는 아니었다는 항변', '상황을 다르게 이해했다는 항변', '결과가 이 정도일 줄 몰랐다는 항변'],
-    penaltyIdeas: ['구체적인 사과', '사건 대상의 회복', '같은 상황의 접근 제한', '재발 시 한 단계 더 진지한 재심'],
+    expandedCase: `접수담당 ${court.recordClerk}은 원고가 제출한 사건명 “${title}”과 접수진술을 대조했다. 접수 내용은 다음과 같다. ${description}\n\n기록을 행동 단위로 정리하면 ${action}. 그 결과 ${consequence}. 원고가 문제 삼는 지점은 단순히 기분이 상했다는 데 그치지 않고, ${target}을 둘러싼 자신의 예정과 선택이 피고의 행동보다 늦게 반영됐다는 데 있다.\n\n피고로 지목된 ${actor}에게는 설명할 기회가 있으나, 접수기록만 놓고 보면 사건의 시작과 결과가 서로 분명히 연결된다. 특히 원고가 요구한 처분은 “${remedy}”로 확인돼 재판부는 이 요구가 사건 내용과 얼마나 맞닿아 있는지 별도로 심리하기로 했다.\n\n따라서 본 기록철은 ${target}의 상태, ${actor}의 행동 순서, 원고가 실제로 겪은 결과를 중심으로 수사·감식·공방·선고 순서로 작성한다.`,
+    caseTimeline: `수사 진행기록 — 담당 ${court.analystName}\n1. 접수 단계에서 원고의 원문을 문장별로 나누고 사건의 행위자를 ${actor}, 핵심 대상을 ${target}으로 특정했다.\n2. 행동 재구성 단계에서 “${action}”는 진술을 중심축으로 삼고, 원고가 행동을 예상하거나 허락했다는 내용이 있는지 확인했으나 접수문에서는 찾지 못했다.\n3. 황당재판용 가상 영상 재구성에서는 프레임 ${frameStart}번부터 ${frameEnd}번 사이를 사건 집중구간으로 지정했다. 이는 실제 CCTV 열람 결과가 아니라 접수진술의 순서를 시각화한 예능용 기록이다.\n4. 결과 확인 단계에서는 “${consequence}”는 점을 원고 측 최종 피해로 기록했다. 사건 행동은 짧았지만 원고가 뒤늦게 상황을 파악했다는 구조가 수사관의 과몰입 대상이 됐다.\n5. 처분 검토 단계에서는 원고의 요구 “${remedy}”와 피고 측 예상 항변을 분리했다. 수사관은 사과, 실제 회복, 같은 상황에서의 접근·행동 제한을 재판부 검토사항으로 넘겼다.`,
+    forensicReport: `예능용 가상 감식보고서 — ${court.analystName}\n본 보고서는 실제 CCTV·휴대전화 영상·실물 증거를 확인한 결과가 아니라 접수진술을 바탕으로 만든 황당재판용 가상 재구성이다.\n\n가상 프레임 분석 결과 프레임 ${frameStart}번에서 원고의 주의가 ${target} 밖으로 이동한 것으로 설정했고, 프레임 ${frameEnd}번에서 ${actor}의 행동이 결과 단계에 도달한 것으로 표시했다. 두 지점의 간격은 재판부 임의 환산값 ${attentionGap.toFixed(1)}초이며 실제 측정 시간이 아니다.\n\n행동 추진력은 100점 만점에 ${actionScore}점, 상황 통제력은 ${controlScore}점으로 산출했다. 이 수치는 ${action}는 행동이 원고의 대응보다 얼마나 앞섰는지를 웃기게 설명하기 위한 가상 감식값이다. 감식반은 ${target} 관련 결정권이 피고에게 정식으로 넘어갔다는 흔적은 발견하지 못했으며, 남은 증거는 접수진술과 “${consequence}”는 결과뿐이라고 결론 냈다.`,
+    plaintiffArg: `${court.prosecutorName}은 원고가 “${description}”라는 구체적인 일을 겪었고, 그 과정에서 ${consequence}고 주장한다. 원고가 ${actor}에게 ${target}을 처리하거나 결정할 권한을 줬다는 내용은 접수문 어디에도 없으며, 결과를 뒤늦게 알게 됐다는 사정이 억울함을 키웠다고 본다. 따라서 원고가 요구한 “${remedy}”는 과도한 보복이 아니라 사건으로 잃은 몫을 되찾기 위한 최소한의 요청이라고 주장한다.`,
+    defendantArg: `${court.defenderName}은 ${actor}의 행동이 계획적인 방해가 아니라 순간적인 오인 또는 상황 판단의 실패였을 가능성을 제기한다. 피고 측은 ${target}이 자신의 행동 범위 안에 들어와 허용된 대상으로 착각했을 뿐, 원고에게 ${consequence}게 하려는 목적은 없었다고 항변한다. 다만 결과가 발생한 뒤 설명과 수습이 충분했는지에 대해서는 명확한 반박 자료를 내지 못했다.`,
+    courtOpinion: `${court.judgeType} 재판부는 먼저 접수 내용에 적힌 행동과 가상 감식 내용을 구분한다. 실제 사실로 판단하는 부분은 “${action}”와 그 결과 “${consequence}”는 점이며, 프레임 번호와 감식 점수는 이 장면을 예능 형식으로 확대하기 위한 장치일 뿐이다.\n\n그럼에도 ${actor}의 행동이 원고의 선택보다 먼저 완료됐고, 원고가 요구한 “${remedy}”가 사건 대상 ${target}과 직접 연결된다는 점은 분명하다. 재판부는 고의가 확인되지 않았다는 사정은 처분 수위를 낮출 이유가 될 수 있지만, 이미 생긴 결과에 대한 설명과 회복까지 없앨 이유는 되지 않는다고 판단한다.\n\n이에 재판부는 피고 측에 사과와 실제 회복을 명하고, 마지막 주문에는 같은 장면이 다시 발생할 경우 현장에서 즉시 사용할 수 있는 지나치게 구체적인 행동 규칙을 붙이기로 한다.`,
+    sentence: `주문 1. ${actor} 측은 “${action}”는 행동과 “${consequence}”는 결과를 빼놓지 말고 원고에게 구체적으로 사과하라.\n주문 2. ${actor} 측은 원고가 요구한 “${remedy}”를 사건 대상 ${target}의 실제 상태와 범위에 맞게 이행하라.\n주문 3. 같은 상황이 다시 발생하면 ${actor} 측은 ${target}에 손대거나 결정을 내리기 전에 현장에서 “이 건은 사건번호 ${docketNumber}의 재범 후보인가”라고 자문한 뒤 원고의 대답을 기록하고 행동하라.`,
+    closingComment: `재판장 한마디: “${target}은 조용히 있었지만 사건번호는 결국 생겼습니다.”`,
+    absurdDetails: [
+      `${target}의 상태 변화가 원고의 상황 파악보다 먼저 끝난 점`,
+      `${actor}의 행동 추진력 ${actionScore}점과 상황 통제력 ${controlScore}점의 차이`,
+      `가상 프레임 ${frameStart}번부터 ${frameEnd}번이 사건 집중구간으로 지정된 점`,
+      `원고의 요구가 “${remedy}”라는 문장으로 재판부까지 도착한 점`,
+      `${consequence}는 결과가 피고 측 변명보다 먼저 확정된 점`,
+      `${target}에게는 진술권이 없는데도 기록철의 중심이 된 점`,
+    ],
+    evidenceBits: [
+      `증 제1호 접수진술서: “${description}”라는 사건의 시작과 결과를 함께 보여준다.`,
+      `증 제2호 가상 프레임 ${frameStart}-${frameEnd}: 실제 영상이 아니라 행동 순서를 예능용으로 재구성한 도표다.`,
+      `증 제3호 ${target} 상태변화표: ${consequence}는 결과를 재판부 임의 양식으로 표시한다.`,
+      `증 제4호 행동 추진력·통제력 비교표: ${actor}의 행동이 원고의 대응보다 앞선 장면을 가상 수치로 설명한다.`,
+    ],
+    defendantExcuses: [
+      `${target}이 허용된 행동 범위 안에 있다고 오인했다는 항변`,
+      `결과가 “${consequence}”는 수준까지 갈 줄은 몰랐다는 항변`,
+      `행동은 짧았고 악의는 더 짧았다는 항변`,
+    ],
+    penaltyIdeas: [
+      `${actor} 측의 사건 경위 3문장 사과`,
+      `원고가 요청한 “${remedy}” 이행`,
+      `${target}에 대한 원고의 우선 결정권 인정`,
+      `동일 장면 발생 시 사건번호를 소리 내어 확인하는 현장 규칙`,
+    ],
   }, {}, title, court, docketNumber);
 }
 

@@ -3,6 +3,7 @@ const {
   ROLE_TRIAL_VERSION,
   makeDocketNumber,
   assignCourt,
+  fallbackTrial,
   normalizeTrial,
   validateTrial,
   buildPrompt,
@@ -38,6 +39,19 @@ assert.ok(prompt.includes('지나치게 진지한 관료적 형식'));
 assert.ok(prompt.includes('원고 측은 억울함을 최대치'));
 assert.ok(prompt.includes('주문 1→2→3'));
 
+const fallback = fallbackTrial(input, court, docketNumber);
+const fallbackQuality = validateTrial(fallback, input);
+assert.equal(fallbackQuality.passed, true, `대체 기록 품질 실패: ${JSON.stringify(fallbackQuality)}`);
+assert.equal(isCompleteRoleTrial(fallback), true);
+assert.equal(fallback.evidenceBits.length, 4);
+assert.ok(fallback.absurdDetails.length >= 6);
+assert.ok(fallback.caseTimeline.includes('5.'));
+assert.ok(fallback.forensicReport.includes('가상 프레임'));
+assert.ok(fallback.forensicReport.includes('실제 CCTV'));
+assert.ok(fallback.expandedCase.includes('리트리버'));
+assert.ok(fallback.expandedCase.includes('빵'));
+assert.equal(buildCompatibilityJudgment(fallback, input).orders.length, 3);
+
 const trial = normalizeTrial({
   refinedCaseTitle: input.title,
   expandedCase: '접수담당자는 공원 벤치에서 빵을 먹던 원고가 휴대폰 화면을 확인하는 사이 리트리버가 남은 빵을 전부 먹었다는 진술을 확인했다. 원고가 고개를 돌린 순간 간식의 점유 상태가 바뀌었고, 원고에게 남은 것은 빈 포장지와 보호자를 바라보는 시간뿐이었다. 이 사건의 핵심은 리트리버의 식욕 자체보다 보호자가 타인의 음식과 산책 동선을 분리하지 못한 데 있다. 원고는 같은 빵과 분명한 사과를 요구하고 있다.',
@@ -67,4 +81,4 @@ assert.equal(judgment.orders.length, 3);
 assert.ok(judgment.investigation.includes('가상 감식보고서'));
 assert.ok(judgment.legalNotice.includes('가상 재구성'));
 
-console.log('Verified role-based trial docket, personnel, investigation timeline, fictional CCTV notice, courtroom arguments and escalating orders.');
+console.log('Verified role-based trial docket, strong fallback, investigation timeline, fictional CCTV notice, courtroom arguments and escalating orders.');
