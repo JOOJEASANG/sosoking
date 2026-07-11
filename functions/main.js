@@ -4,8 +4,18 @@ const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { defineSecret } = require('firebase-functions/params');
 const { logger } = require('firebase-functions');
 const { cleanText, cleanParagraph, buildCaseAnalysis } = require('./case-analysis');
-const { normalizeJudgment, parseJudgmentJson, evaluateJudgment, isCompleteJudgment } = require('./judgment-contract');
-const { buildFallbackJudgment, buildJudgmentPrompt } = require('./judgment-writer');
+const { evaluateJudgment, isCompleteJudgment } = require('./judgment-contract');
+const { buildFallbackJudgment } = require('./judgment-writer');
+const {
+  parseJsonObject,
+  normalizeAiAnalysis,
+  buildAnalysisPrompt,
+  buildConceptPrompt,
+  normalizeConcepts,
+  buildEditorPrompt,
+  parseEditorPackage,
+  editorReviewPassed,
+} = require('./judgment-ai-pipeline');
 
 if (!admin.apps.length) admin.initializeApp();
 
@@ -17,7 +27,7 @@ const CATEGORY_IDS = new Set(['food', 'late', 'relationship', 'family', 'work', 
 const JUDGE_TYPES = new Set(['드립형', '과몰입형', '논리집착형']);
 const DAILY_CASE_LIMIT = 20;
 const CASE_COOLDOWN_MS = 30 * 1000;
-const GENERATION_LOCK_MS = 3 * 60 * 1000;
+const GENERATION_LOCK_MS = 4 * 60 * 1000;
 
 function koreaDayKey(date = new Date()) {
   return new Intl.DateTimeFormat('en-CA', {
@@ -67,55 +77,142 @@ function addUsage(left, right) {
   };
 }
 
-async function generateJudgmentWithFallback(caseData, analysis, apiKey) {
-  const fallback = buildFallbackJudgment(caseData, analysis);
-  const fallbackQuality = evaluateJudgment(fallback, analysis);
-  if (!apiKey) {
-    return { judgment: fallback, quality: fallbackQuality, generationMode: 'local-no-key', aiAttempts: 0, usage: addUsage() };
-  }
-
-  const client = new GoogleGenerativeAI(apiKey);
-  const model = client.getGenerativeModel({
+function createJsonModel(client, temperature, maxOutputTokens) {
+  return client.getGenerativeModel({
     model: MODEL_NAME,
     generationConfig: {
-      temperature: 0.92,
+      temperature,
       topP: 0.95,
-      maxOutputTokens: 4200,
+      maxOutputTokens,
       responseMimeType: 'application/json',
     },
   });
+}
 
-  let evaluation = null;
-  let usage = addUsage();
-  let attempts = 0;
-  for (let index = 0; index < 2; index += 1) {
-    attempts += 1;
-    try {
-      const prompt = buildJudgmentPrompt(caseData, analysis, evaluation);
-      const result = await model.generateContent(prompt);
-      usage = addUsage(usage, usageFromResponse(result.response));
-      const parsed = parseJudgmentJson(result.response.text());
-      const judgment = normalizeJudgment(parsed, fallback);
-      evaluation = evaluateJudgment(judgment, analysis);
-      if (evaluation.passed) {
-        return { judgment, quality: evaluation, generationMode: 'gemini', aiAttempts: attempts, usage };
-      }
-    } catch (error) {
-      logger.warn('Gemini judgment attempt failed', { attempt: attempts, message: error?.message });
-      evaluation = { passed: false, parseOrApiFailure: true };
-    }
+async function callModel(model, prompt) {
+  const result = await model.generateContent(prompt);
+  return {
+    text: result.response.text(),
+    usage: usageFromResponse(result.response),
+  };
+}
+
+async function generateJudgmentWithFallback(caseData, fallbackAnalysis, apiKey) {
+  const fallback = buildFallbackJudgment(caseData, fallbackAnalysis);
+  const fallbackQuality = evaluateJudgment(fallback, fallbackAnalysis);
+  if (!apiKey) {
+    return {
+      analysis: fallbackAnalysis,
+      judgment: fallback,
+      quality: { ...fallbackQuality, pipeline: 'fallback-no-key' },
+      generationMode: 'local-no-key',
+      aiAttempts: 0,
+      usage: addUsage(),
+    };
   }
 
-  return { judgment: fallback, quality: fallbackQuality, generationMode: 'local-quality-fallback', aiAttempts: attempts, usage };
+  const client = new GoogleGenerativeAI(apiKey);
+  const analysisModel = createJsonModel(client, 0.18, 2200);
+  const conceptModel = createJsonModel(client, 1.05, 3000);
+  const editorModel = createJsonModel(client, 0.68, 4400);
+
+  let usage = addUsage();
+  let attempts = 0;
+  let analysis = fallbackAnalysis;
+
+  try {
+    attempts += 1;
+    const analysisResponse = await callModel(analysisModel, buildAnalysisPrompt(caseData));
+    usage = addUsage(usage, analysisResponse.usage);
+    analysis = normalizeAiAnalysis(parseJsonObject(analysisResponse.text), fallbackAnalysis);
+
+    attempts += 1;
+    const conceptResponse = await callModel(conceptModel, buildConceptPrompt(caseData, analysis));
+    usage = addUsage(usage, conceptResponse.usage);
+    const concepts = normalizeConcepts(parseJsonObject(conceptResponse.text));
+    if (concepts.length < 3) throw new Error('Three distinct comedy concepts were not generated');
+
+    attempts += 1;
+    const editorResponse = await callModel(editorModel, buildEditorPrompt(caseData, analysis, concepts));
+    usage = addUsage(usage, editorResponse.usage);
+    let edited = parseEditorPackage(editorResponse.text, fallback);
+    let machineQuality = evaluateJudgment(edited.judgment, analysis);
+    let passed = machineQuality.passed && editorReviewPassed(edited.review);
+
+    if (!passed) {
+      attempts += 1;
+      const repairResponse = await callModel(
+        editorModel,
+        buildEditorPrompt(caseData, analysis, concepts, edited.judgment, {
+          machine: machineQuality,
+          editor: edited.review,
+        }),
+      );
+      usage = addUsage(usage, repairResponse.usage);
+      edited = parseEditorPackage(repairResponse.text, fallback);
+      machineQuality = evaluateJudgment(edited.judgment, analysis);
+      passed = machineQuality.passed && editorReviewPassed(edited.review);
+    }
+
+    if (!passed) {
+      logger.warn('Editorial judgment did not pass final quality gate', {
+        machineQuality,
+        editorReview: edited.review,
+      });
+      return {
+        analysis,
+        judgment: fallback,
+        quality: {
+          ...fallbackQuality,
+          passed: fallbackQuality.passed,
+          pipeline: 'editorial-fallback',
+          rejectedMachineQuality: machineQuality,
+          rejectedEditorReview: edited.review,
+        },
+        generationMode: 'local-quality-fallback',
+        aiAttempts: attempts,
+        usage,
+      };
+    }
+
+    return {
+      analysis,
+      judgment: edited.judgment,
+      quality: {
+        ...machineQuality,
+        passed: true,
+        pipeline: 'analysis-concepts-editor',
+        editorReview: edited.review,
+      },
+      generationMode: 'gemini-editorial',
+      aiAttempts: attempts,
+      usage,
+    };
+  } catch (error) {
+    logger.warn('Gemini editorial pipeline failed', { attempt: attempts, message: error?.message });
+    return {
+      analysis,
+      judgment: fallback,
+      quality: {
+        ...fallbackQuality,
+        pipeline: 'fallback-after-pipeline-error',
+        pipelineError: cleanText(error?.message, 220),
+      },
+      generationMode: 'local-pipeline-fallback',
+      aiAttempts: attempts,
+      usage,
+    };
+  }
 }
 
 exports.systemHealth = onCall({ region: REGION, secrets: [geminiKey], cors: true }, async request => {
   requireUser(request);
   return {
     ok: true,
-    service: 'sosoking-stage2',
+    service: 'sosoking-editorial-judgment',
     geminiConfigured: Boolean(geminiKey.value().trim()),
     model: MODEL_NAME,
+    pipeline: 'analysis-concepts-editor',
     timestamp: new Date().toISOString(),
   };
 });
@@ -174,7 +271,7 @@ exports.generateJudgment = onCall({
   region: REGION,
   secrets: [geminiKey],
   cors: true,
-  timeoutSeconds: 120,
+  timeoutSeconds: 180,
   memory: '512MiB',
   maxInstances: 10,
 }, async request => {
@@ -223,11 +320,11 @@ exports.generateJudgment = onCall({
 
   try {
     const caseData = reserved.caseData;
-    const analysis = buildCaseAnalysis(caseData);
-    const generated = await generateJudgmentWithFallback(caseData, analysis, geminiKey.value().trim());
+    const fallbackAnalysis = buildCaseAnalysis(caseData);
+    const generated = await generateJudgmentWithFallback(caseData, fallbackAnalysis, geminiKey.value().trim());
     const completedAt = admin.firestore.Timestamp.now();
     const resultData = {
-      schemaVersion: 2,
+      schemaVersion: 3,
       caseId,
       userId: auth.uid,
       isPublic: caseData.isPublic === true,
@@ -238,10 +335,10 @@ exports.generateJudgment = onCall({
       judgeType: caseData.judgeType,
       grievanceIndex: caseData.grievanceIndex,
       desiredVerdict: caseData.desiredVerdict,
-      caseAnalysis: analysis,
+      caseAnalysis: generated.analysis,
       judgment: generated.judgment,
       generationMode: generated.generationMode,
-      model: generated.generationMode === 'gemini' ? MODEL_NAME : null,
+      model: generated.generationMode.startsWith('gemini') ? MODEL_NAME : null,
       aiAttempts: generated.aiAttempts,
       usage: generated.usage,
       quality: generated.quality,
@@ -271,7 +368,7 @@ exports.generateJudgment = onCall({
     return {
       caseId,
       judgment: generated.judgment,
-      caseAnalysis: analysis,
+      caseAnalysis: generated.analysis,
       generationMode: generated.generationMode,
       quality: generated.quality,
       reused: false,

@@ -1,13 +1,16 @@
 const { cleanText, cleanParagraph, words } = require('./case-analysis');
 
-const GENERIC_PHRASES = [
-  '기대질서', '생활대응체계', '상호배려질서', '정식 분쟁으로 성장',
-  '사회적 신뢰 붕괴', '관계기관 긴급 소집', '국가적 재난',
+const CANNED_PHRASES = [
+  '기대질서', '생활대응체계', '생활질서 이탈', '상호배려질서', '정식 분쟁으로 성장',
+  '사회적 신뢰 붕괴', '관계기관 긴급 소집', '국가적 재난', '사건의 크기보다',
+  '한 번의 확인이면', '확인 먼저, 행동 나중', '원상회복과 재발방지',
+  '시간·기분·편의 중 하나 이상', '사소한 행동 하나가', '정식 심리 개시',
 ];
 
 const CONTRAST_MARKERS = [
-  '했지만', '였지만', '성공', '실패', '문제는', '다만', '결국', '없었다',
+  '지만', '했지만', '였지만', '성공', '실패', '문제는', '다만', '결국', '없었다',
   '남았다', '중이었다', '도착', '사라졌다', '살아 있었다', '끝났다', '불탔다',
+  '대신', '오히려', '정작', '반면',
 ];
 
 function unique(values) {
@@ -42,6 +45,7 @@ function normalizeOrders(value, fallback = []) {
 
 function normalizeJudgment(raw = {}, fallback = {}) {
   return {
+    engineVersion: Number(raw.engineVersion || fallback.engineVersion || 0),
     headline: cleanText(raw.headline, 160) || cleanText(fallback.headline, 160),
     incidentLevel: cleanText(raw.incidentLevel, 100) || cleanText(fallback.incidentLevel, 100),
     opening: cleanParagraph(raw.opening, 800) || cleanParagraph(fallback.opening, 800),
@@ -77,12 +81,29 @@ function countMarkers(text, markers) {
   return markers.filter(marker => source.includes(marker)).length;
 }
 
-function claimOverlap(left, right) {
+function overlapRatio(left, right) {
   const a = new Set(words(left).filter(token => token.length >= 2));
   const b = new Set(words(right).filter(token => token.length >= 2));
-  if (!a.size || !b.size) return 1;
+  if (!a.size || !b.size) return 0;
   const shared = [...a].filter(token => b.has(token)).length;
   return shared / Math.max(1, Math.min(a.size, b.size));
+}
+
+function maxPairOverlap(values) {
+  let max = 0;
+  for (let left = 0; left < values.length; left += 1) {
+    for (let right = left + 1; right < values.length; right += 1) {
+      max = Math.max(max, overlapRatio(values[left], values[right]));
+    }
+  }
+  return max;
+}
+
+function sentenceCount(value) {
+  return String(value || '')
+    .split(/[.!?]+(?:\s|$)/)
+    .map(item => item.trim())
+    .filter(Boolean).length;
 }
 
 function semanticCueVisible(text, phrase) {
@@ -100,7 +121,10 @@ function evaluateJudgment(judgment, analysis) {
   ].join(' ');
   const anchors = unique([analysis.actor, analysis.target, ...(analysis.evidenceAnchors || [])])
     .filter(item => item === analysis.actor || item === analysis.target || String(item).length >= 2);
+  const evidenceAnchors = unique(analysis.evidenceAnchors || []).filter(item => String(item).length >= 2);
   const openingAnchorHits = anchors.filter(anchor => containsAnchor(openingText, [anchor])).length;
+  const sourceAnchorHits = evidenceAnchors.filter(anchor => containsAnchor(allText, [anchor])).length;
+  const requiredSourceHits = Math.min(2, evidenceAnchors.length);
   const actorVisible = analysis.actor === '피고 측' || containsAnchor(openingText, [analysis.actor]);
   const targetVisible = containsAnchor(openingText, [analysis.target]);
   const actionVisible = semanticCueVisible(openingText, analysis.action);
@@ -109,60 +133,80 @@ function evaluateJudgment(judgment, analysis) {
   const contrastComedyHits = judgment.comedyLines.filter(line => countMarkers(line, CONTRAST_MARKERS) >= 1).length;
   const shortPunchlineHits = [...judgment.comedyLines, judgment.closingComment]
     .filter(line => line.length >= 8 && line.length <= 70).length;
-  const genericPhraseHits = countMarkers(allText, GENERIC_PHRASES);
-  const opposingClaimOverlap = claimOverlap(judgment.plaintiffClaim, judgment.defendantClaim);
+  const cannedPhraseHits = countMarkers(allText, CANNED_PHRASES);
+  const opposingClaimOverlap = overlapRatio(judgment.plaintiffClaim, judgment.defendantClaim);
+  const comedyMaxOverlap = maxPairOverlap(judgment.comedyLines);
+  const sectionMaxOverlap = maxPairOverlap([
+    judgment.summary,
+    judgment.facts,
+    judgment.investigation,
+    judgment.opinion,
+  ]);
   const tailoredOrders = judgment.orders.filter(order =>
     containsAnchor(order.text, anchors) || semanticCueVisible(order.text, analysis.remedy)
   ).length;
-  const distinctSections = new Set([
-    judgment.opening, ...judgment.comedyLines, judgment.summary, judgment.facts,
-    judgment.investigation, judgment.plaintiffClaim, judgment.defendantClaim,
-    judgment.opinion, ...judgment.orders.map(order => order.text),
-  ].map(value => words(value).join(' ')).filter(Boolean)).size;
+  const openingSentences = sentenceCount(judgment.opening);
 
   return {
+    engineVersion: judgment.engineVersion,
     openingAnchorHits,
+    sourceAnchorHits,
+    requiredSourceHits,
     actorVisible,
     targetVisible,
     actionVisible,
     consequenceVisible,
+    openingSentences,
     comedyLineCount: judgment.comedyLines.length,
     comedyAnchorHits,
     contrastComedyHits,
     shortPunchlineHits,
-    genericPhraseHits,
+    cannedPhraseHits,
     opposingClaimOverlap,
+    comedyMaxOverlap,
+    sectionMaxOverlap,
     tailoredOrders,
-    distinctSections,
-    passed: judgment.headline.length >= 8
-      && judgment.opening.length >= 70
-      && judgment.opening.length <= 800
+    passed: judgment.engineVersion >= 3
+      && judgment.headline.length >= 8
+      && judgment.headline.length <= 60
+      && judgment.opening.length >= 55
+      && judgment.opening.length <= 220
+      && openingSentences === 2
       && openingAnchorHits >= 2
       && actorVisible
       && targetVisible
       && actionVisible
       && consequenceVisible
-      && judgment.comedyLines.length >= 2
-      && comedyAnchorHits >= 1
+      && sourceAnchorHits >= requiredSourceHits
+      && judgment.comedyLines.length === 3
+      && comedyAnchorHits >= 2
       && contrastComedyHits >= 1
-      && shortPunchlineHits >= 2
-      && genericPhraseHits <= 3
-      && judgment.facts.length >= 80
-      && judgment.investigation.length >= 70
-      && judgment.plaintiffClaim.length >= 45
-      && judgment.defendantClaim.length >= 45
-      && opposingClaimOverlap <= 0.78
-      && judgment.opinion.length >= 100
+      && shortPunchlineHits >= 3
+      && comedyMaxOverlap <= 0.6
+      && cannedPhraseHits === 0
+      && judgment.facts.length >= 50
+      && judgment.facts.length <= 360
+      && judgment.investigation.length >= 40
+      && judgment.investigation.length <= 300
+      && judgment.plaintiffClaim.length >= 35
+      && judgment.plaintiffClaim.length <= 260
+      && judgment.defendantClaim.length >= 35
+      && judgment.defendantClaim.length <= 260
+      && opposingClaimOverlap <= 0.68
+      && judgment.opinion.length >= 70
+      && judgment.opinion.length <= 460
+      && sectionMaxOverlap <= 0.68
       && judgment.orders.length === 3
       && tailoredOrders >= 2
       && judgment.closingComment.length >= 8
-      && distinctSections >= 10,
+      && judgment.closingComment.length <= 70,
   };
 }
 
 function isCompleteJudgment(judgment) {
   return Boolean(
-    judgment?.headline && judgment?.opening && judgment?.summary && judgment?.facts
+    Number(judgment?.engineVersion || 0) >= 3
+    && judgment?.headline && judgment?.opening && judgment?.summary && judgment?.facts
     && judgment?.investigation && judgment?.plaintiffClaim && judgment?.defendantClaim
     && judgment?.opinion && Array.isArray(judgment?.orders) && judgment.orders.length === 3
     && judgment?.closingComment && judgment?.legalNotice
