@@ -55,6 +55,7 @@ assert.equal(concepts.length, 3);
 assert.ok(buildEditorPrompt(input, analysis, concepts).includes('specificity와 humor가 각각 8점 미만'));
 
 const judgment = normalizeJudgment({
+  engineVersion: 3,
   headline: '리트리버의 공원 빵 긴급회수 사건',
   incidentLevel: analysis.incidentLevel,
   opening: '리트리버가 원고가 한눈판 사이 공원 벤치의 빵을 먹어버려 원고의 간식이 사라졌다. 산책은 계속됐지만 증거는 피고의 소화기관으로 이동했다.',
@@ -81,10 +82,14 @@ const judgment = normalizeJudgment({
 const quality = evaluateJudgment(judgment, analysis);
 assert.equal(isCompleteJudgment(judgment), true);
 assert.equal(quality.passed, true, JSON.stringify(quality));
+assert.equal(quality.engineVersion, 3);
 assert.equal(quality.cannedPhraseHits, 0);
 assert.equal(quality.comedyLineCount, 3);
 assert.ok(quality.comedyMaxOverlap <= 0.6);
 assert.ok(quality.sectionMaxOverlap <= 0.68);
+
+const legacy = normalizeJudgment({ ...judgment, engineVersion: 2 });
+assert.equal(isCompleteJudgment(legacy), false, '구형 판결은 새 엔진에서 다시 생성되어야 합니다.');
 
 const stale = normalizeJudgment({ ...judgment, opening: '사건의 크기보다 한 번의 확인이면 막을 수 있었는지가 중요하다. 확인 먼저, 행동 나중이 필요하다.' });
 assert.equal(evaluateJudgment(stale, analysis).passed, false, '상투문구 판결이 통과하면 안 됩니다.');
@@ -95,4 +100,4 @@ const parsed = parseEditorPackage(JSON.stringify({
 }), judgment);
 assert.equal(editorReviewPassed(parsed.review), true);
 
-console.log('Verified grounded AI analysis, three distinct comedy concepts, editorial review and rejection of canned judgments.');
+console.log('Verified grounded AI analysis, three distinct comedy concepts, editorial review, engine version migration and rejection of canned judgments.');
