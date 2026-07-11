@@ -12,7 +12,8 @@ const ADMIN_EMAILS = new Set(['joojeasang@gmail.com']);
 function requireAdmin(request) {
   const token = request.auth?.token || {};
   const email = String(token.email || '').toLowerCase();
-  if (!request.auth?.uid || (token.admin !== true && !ADMIN_EMAILS.has(email))) {
+  const verifiedEmailAdmin = token.email_verified === true && ADMIN_EMAILS.has(email);
+  if (!request.auth?.uid || (token.admin !== true && !verifiedEmailAdmin)) {
     throw new HttpsError('permission-denied', '관리자 권한이 필요합니다.');
   }
   return request.auth;
