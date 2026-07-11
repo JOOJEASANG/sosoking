@@ -1,17 +1,16 @@
 {
   "name": "sosoking-functions",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "private": true,
-  "engines": {
-    "node": "20"
-  },
+  "engines": { "node": "20" },
   "main": "main.js",
   "scripts": {
-    "check:backend": "node --check main.js && node --check case-analysis.js && node --check judgment-contract.js && node --check judgment-writer.js && node --check verify-stage1.js && node --check verify-stage2.js",
-    "check:frontend": "node --experimental-default-type=module --check ../public/js/firebase-config.js && node --experimental-default-type=module --check ../public/js/firebase.js && node --experimental-default-type=module --check ../public/js/app.js",
+    "check:backend": "node --check main.js && node --check case-analysis.js && node --check judgment-contract.js && node --check judgment-writer.js && node --check verify-stage1.js && node --check verify-stage2.js && node --check verify-stage3.js",
+    "check:frontend": "node --experimental-default-type=module --check ../public/js/firebase-config.js && node --experimental-default-type=module --check ../public/js/firebase.js && node --experimental-default-type=module --check ../public/js/judgment-ui.js && node --experimental-default-type=module --check ../public/js/app.js",
     "verify:stage1": "node verify-stage1.js",
     "verify:stage2": "node verify-stage2.js",
-    "verify": "npm run verify:stage1 && npm run verify:stage2",
+    "verify:stage3": "node verify-stage3.js",
+    "verify": "npm run verify:stage1 && npm run verify:stage2 && npm run verify:stage3",
     "check": "npm run check:backend && npm run check:frontend && npm run verify"
   },
   "dependencies": {
