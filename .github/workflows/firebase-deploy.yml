@@ -25,9 +25,6 @@ jobs:
         with:
           show-progress: false
 
-      - name: Verify judgment engine contract
-        run: node functions/verify-stage2.js
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -36,8 +33,35 @@ jobs:
       - name: Install Functions dependencies
         run: npm install --prefix functions --no-audit --no-fund
 
-      - name: Validate application and judgment engine
-        run: npm run check --prefix functions
+      - name: Check backend syntax
+        run: npm run check:backend --prefix functions
+
+      - name: Check frontend syntax
+        run: npm run check:frontend --prefix functions
+
+      - name: Verify Stage 1
+        run: npm run verify:stage1 --prefix functions
+
+      - name: Verify Stage 2
+        run: npm run verify:stage2 --prefix functions
+
+      - name: Verify Stage 3
+        run: npm run verify:stage3 --prefix functions
+
+      - name: Verify Stage 4
+        run: npm run verify:stage4 --prefix functions
+
+      - name: Verify Stage 5
+        run: npm run verify:stage5 --prefix functions
+
+      - name: Verify Stage 6
+        run: npm run verify:stage6 --prefix functions
+
+      - name: Verify Stage 7
+        run: npm run verify:stage7 --prefix functions
+
+      - name: Verify Stage 8
+        run: npm run verify:stage8 --prefix functions
 
       - name: Validate Firebase files
         run: |
