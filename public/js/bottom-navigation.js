@@ -42,8 +42,10 @@ function decorateLink(link) {
     link.innerHTML = `<span class="bottom-nav-icon">${ICONS[href]}</span><span class="bottom-nav-label">${label}</span>`;
     link.dataset.bottomNavDecorated = 'true';
   }
-  link.classList.toggle('active', isActive(href, currentPath()));
-  link.setAttribute('aria-current', isActive(href, currentPath()) ? 'page' : 'false');
+  const active = isActive(href, currentPath());
+  link.classList.toggle('active', active);
+  if (active) link.setAttribute('aria-current', 'page');
+  else link.removeAttribute('aria-current');
 }
 
 function syncHeaderAccount(nav) {
@@ -56,11 +58,26 @@ function syncHeaderAccount(nav) {
     account.className = 'header-account';
     header.appendChild(account);
   }
-  account.replaceChildren();
 
   const admin = nav.querySelector('[data-admin-nav]');
+  const chip = nav.querySelector('.user-chip');
+  const logout = nav.querySelector('#logout-button');
+  const signature = [
+    admin ? 'admin' : '',
+    chip?.textContent?.trim() || '',
+    chip?.querySelector('img')?.getAttribute('src') || '',
+    logout ? 'logout' : '',
+  ].join('|');
+
+  admin?.classList.add('bottom-nav-hidden-control');
+  chip?.classList.add('bottom-nav-hidden-control');
+  logout?.classList.add('bottom-nav-hidden-control');
+
+  if (account.dataset.accountSignature === signature) return;
+  account.dataset.accountSignature = signature;
+  account.replaceChildren();
+
   if (admin) {
-    admin.classList.add('bottom-nav-hidden-control');
     const adminLink = document.createElement('a');
     adminLink.className = 'header-admin-link';
     adminLink.href = '#/admin';
@@ -68,17 +85,14 @@ function syncHeaderAccount(nav) {
     account.appendChild(adminLink);
   }
 
-  const chip = nav.querySelector('.user-chip');
   if (chip) {
-    chip.classList.add('bottom-nav-hidden-control');
     const copy = chip.cloneNode(true);
+    copy.classList.remove('bottom-nav-hidden-control');
     copy.removeAttribute('id');
     account.appendChild(copy);
   }
 
-  const logout = nav.querySelector('#logout-button');
   if (logout) {
-    logout.classList.add('bottom-nav-hidden-control');
     const proxy = document.createElement('button');
     proxy.className = 'header-logout';
     proxy.type = 'button';
@@ -90,6 +104,10 @@ function syncHeaderAccount(nav) {
 
 function reorderLinks(nav) {
   const order = ['#/','#/board','#/submit','#/my-cases','#/login'];
+  const hrefSignature = [...nav.querySelectorAll('a.nav-link')].map(normalizedHref).sort().join('|');
+  if (nav.dataset.bottomNavOrderSignature === hrefSignature) return;
+  nav.dataset.bottomNavOrderSignature = hrefSignature;
+
   const links = [...nav.querySelectorAll('a.nav-link')];
   order.forEach(href => {
     const link = links.find(item => normalizedHref(item) === href);
