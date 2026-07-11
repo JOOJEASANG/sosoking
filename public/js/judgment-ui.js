@@ -26,8 +26,10 @@ function paragraph(value) {
 }
 
 export async function loadJudgmentResult(caseId) {
-  const snapshot = await getDoc(doc(db, 'results', caseId));
-  return snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } : null;
+  const publicSnapshot = await getDoc(doc(db, 'public_results', caseId));
+  if (publicSnapshot.exists()) return { id: publicSnapshot.id, ...publicSnapshot.data() };
+  const privateSnapshot = await getDoc(doc(db, 'results', caseId));
+  return privateSnapshot.exists() ? { id: privateSnapshot.id, ...privateSnapshot.data() } : null;
 }
 
 export function trialPageHtml(caseId) {
@@ -117,22 +119,13 @@ export function startTrial(caseId, { onComplete, onError }) {
     }
   };
 
-  document.getElementById('trial-retry')?.addEventListener('click', () => {
-    location.reload();
-  });
+  document.getElementById('trial-retry')?.addEventListener('click', () => location.reload());
   run();
-  return () => {
-    stopped = true;
-    window.clearInterval(timer);
-  };
+  return () => { stopped = true; window.clearInterval(timer); };
 }
 
 function orderCards(orders = []) {
-  return orders.map(order => `
-    <li>
-      <span>${safe(order.number)}</span>
-      <p>${paragraph(order.text)}</p>
-    </li>`).join('');
+  return orders.map(order => `<li><span>${safe(order.number)}</span><p>${paragraph(order.text)}</p></li>`).join('');
 }
 
 export function resultPageHtml(result) {
@@ -146,78 +139,22 @@ export function resultPageHtml(result) {
     <section class="result-page">
       <div class="container result-shell">
         <header class="judgment-cover card" id="share-card">
-          <div class="judgment-meta">
-            <span>${safe(judgment.incidentLevel || '소소위기 심리 완료')}</span>
-            <span>사건번호 ${safe(result.id || result.caseId || '')}</span>
-          </div>
+          <div class="judgment-meta"><span>${safe(judgment.incidentLevel || '소소위기 심리 완료')}</span><span>사건번호 ${safe(result.id || result.caseId || '')}</span></div>
           <div class="judgment-seal">判</div>
           <p class="judgment-kicker">소소킹 황당재판소 최종판결</p>
           <h1>${safe(judgment.headline || result.caseTitle || '황당사건 판결')}</h1>
           <p class="judgment-opening">${paragraph(judgment.opening || judgment.summary)}</p>
           <div class="judgment-engine-label">${safe(generationLabel)} · ${safe(result.judgeType || 'AI')} 재판부</div>
         </header>
-
-        ${comedyLines.length ? `
-          <section class="card result-section comedy-section">
-            <div class="result-section-label">결정적 한마디</div>
-            <div class="comedy-grid">
-              ${comedyLines.map((line, index) => `<blockquote><span>0${index + 1}</span>${safe(line)}</blockquote>`).join('')}
-            </div>
-          </section>` : ''}
-
-        <section class="card result-section case-core-section">
-          <div class="result-section-label">AI 사건 분석</div>
-          <div class="case-core-grid">
-            <div><span>행위자</span><strong>${safe(analysis.actor || result.defendantName || '피고 측')}</strong></div>
-            <div><span>핵심 대상</span><strong>${safe(analysis.target || '사건 대상')}</strong></div>
-            <div class="wide"><span>결정적 행동</span><strong>${safe(analysis.action || judgment.facts)}</strong></div>
-            <div class="wide"><span>실제 결과</span><strong>${safe(analysis.consequence || judgment.summary)}</strong></div>
-          </div>
-        </section>
-
-        <section class="card result-section claim-section">
-          <div class="result-section-label">법정공방</div>
-          <div class="claim-grid">
-            <article class="claim-card plaintiff"><span>원고측 주장</span><p>${paragraph(judgment.plaintiffClaim)}</p></article>
-            <div class="versus">VS</div>
-            <article class="claim-card defendant"><span>피고측 반박</span><p>${paragraph(judgment.defendantClaim)}</p></article>
-          </div>
-        </section>
-
-        <section class="result-two-column">
-          <article class="card result-section"><div class="result-section-label">사건의 핵심</div><p class="result-body">${paragraph(judgment.facts)}</p></article>
-          <article class="card result-section"><div class="result-section-label">AI 감식 결과</div><p class="result-body">${paragraph(judgment.investigation)}</p></article>
-        </section>
-
-        <section class="card result-section opinion-section">
-          <div class="result-section-label">재판부 최종 판단</div>
-          <p class="result-body opinion-body">${paragraph(judgment.opinion)}</p>
-        </section>
-
-        <section class="card result-section orders-section">
-          <div class="result-section-label">주문</div>
-          <ol class="order-list">${orderCards(orders)}</ol>
-        </section>
-
-        <section class="closing-panel">
-          <span>재판부 마지막 한마디</span>
-          <strong>“${safe(judgment.closingComment || '판결은 끝났지만 사건의 여운은 남았다.')}”</strong>
-        </section>
-
-        <div class="share-toolbar card">
-          <div><strong>이 판결을 증거물로 남기세요</strong><span>링크를 공유하거나 이미지로 저장할 수 있습니다.</span></div>
-          <div class="share-actions">
-            <button class="button" id="copy-result-link" type="button">링크 복사</button>
-            <button class="button" id="share-result" type="button">공유하기</button>
-            <button class="button button-primary" id="download-result-image" type="button">판결 이미지 저장</button>
-          </div>
-        </div>
-
-        <details class="card original-case-details">
-          <summary>접수 원문 확인</summary>
-          <div><strong>${safe(result.caseTitle || '')}</strong><p>${paragraph(result.caseDescription || '')}</p></div>
-        </details>
-
+        ${comedyLines.length ? `<section class="card result-section comedy-section"><div class="result-section-label">결정적 한마디</div><div class="comedy-grid">${comedyLines.map((line, index) => `<blockquote><span>0${index + 1}</span>${safe(line)}</blockquote>`).join('')}</div></section>` : ''}
+        <section class="card result-section case-core-section"><div class="result-section-label">AI 사건 분석</div><div class="case-core-grid"><div><span>행위자</span><strong>${safe(analysis.actor || result.defendantName || '피고 측')}</strong></div><div><span>핵심 대상</span><strong>${safe(analysis.target || '사건 대상')}</strong></div><div class="wide"><span>결정적 행동</span><strong>${safe(analysis.action || judgment.facts)}</strong></div><div class="wide"><span>실제 결과</span><strong>${safe(analysis.consequence || judgment.summary)}</strong></div></div></section>
+        <section class="card result-section claim-section"><div class="result-section-label">법정공방</div><div class="claim-grid"><article class="claim-card plaintiff"><span>원고측 주장</span><p>${paragraph(judgment.plaintiffClaim)}</p></article><div class="versus">VS</div><article class="claim-card defendant"><span>피고측 반박</span><p>${paragraph(judgment.defendantClaim)}</p></article></div></section>
+        <section class="result-two-column"><article class="card result-section"><div class="result-section-label">사건의 핵심</div><p class="result-body">${paragraph(judgment.facts)}</p></article><article class="card result-section"><div class="result-section-label">AI 감식 결과</div><p class="result-body">${paragraph(judgment.investigation)}</p></article></section>
+        <section class="card result-section opinion-section"><div class="result-section-label">재판부 최종 판단</div><p class="result-body opinion-body">${paragraph(judgment.opinion)}</p></section>
+        <section class="card result-section orders-section"><div class="result-section-label">주문</div><ol class="order-list">${orderCards(orders)}</ol></section>
+        <section class="closing-panel"><span>재판부 마지막 한마디</span><strong>“${safe(judgment.closingComment || '판결은 끝났지만 사건의 여운은 남았다.')}”</strong></section>
+        <div class="share-toolbar card"><div><strong>이 판결을 증거물로 남기세요</strong><span>링크를 공유하거나 이미지로 저장할 수 있습니다.</span></div><div class="share-actions"><button class="button" id="copy-result-link" type="button">링크 복사</button><button class="button" id="share-result" type="button">공유하기</button><button class="button button-primary" id="download-result-image" type="button">판결 이미지 저장</button></div></div>
+        <details class="card original-case-details"><summary>접수 원문 확인</summary><div><strong>${safe(result.caseTitle || '')}</strong><p>${paragraph(result.caseDescription || '')}</p></div></details>
         <p class="legal-notice">${safe(judgment.legalNotice || '본 결과는 오락 콘텐츠입니다.')}</p>
       </div>
     </section>`;
@@ -233,9 +170,7 @@ function wrapCanvasText(context, text, x, y, maxWidth, lineHeight, maxLines = 5)
       lines.push(line);
       line = token;
       if (lines.length >= maxLines) break;
-    } else {
-      line = candidate;
-    }
+    } else line = candidate;
   }
   if (line && lines.length < maxLines) lines.push(line);
   lines.forEach((item, index) => context.fillText(item, x, y + (index * lineHeight)));
@@ -254,22 +189,18 @@ async function downloadResultImage(result) {
   gradient.addColorStop(1, '#0b0f1c');
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-
   ctx.strokeStyle = '#d9ab55';
   ctx.lineWidth = 3;
   ctx.strokeRect(56, 56, 968, 1238);
   ctx.fillStyle = '#f2c66d';
   ctx.font = '800 27px "Noto Sans KR", sans-serif';
   ctx.fillText('소소킹 황당재판소 · 최종판결', 92, 122);
-
   ctx.fillStyle = '#fff8eb';
   ctx.font = '900 54px "Noto Serif KR", serif';
   let y = wrapCanvasText(ctx, judgment.headline || result.caseTitle, 92, 220, 880, 76, 3);
-
   ctx.fillStyle = '#c8cedc';
   ctx.font = '500 27px "Noto Sans KR", sans-serif';
   y = wrapCanvasText(ctx, judgment.opening, 92, y + 38, 890, 45, 7);
-
   const comedy = Array.isArray(judgment.comedyLines) ? judgment.comedyLines.slice(0, 2) : [];
   y += 45;
   comedy.forEach((line, index) => {
@@ -277,27 +208,21 @@ async function downloadResultImage(result) {
     ctx.font = '800 31px "Noto Sans KR", sans-serif';
     y = wrapCanvasText(ctx, `“${line}”`, 92, y, 890, 48, 3) + 24;
   });
-
   ctx.strokeStyle = '#46506c';
   ctx.beginPath();
   ctx.moveTo(92, y + 10);
   ctx.lineTo(988, y + 10);
   ctx.stroke();
-
   ctx.fillStyle = '#f2c66d';
   ctx.font = '900 26px "Noto Sans KR", sans-serif';
   ctx.fillText('주문', 92, y + 66);
   ctx.fillStyle = '#eef0f5';
   ctx.font = '600 24px "Noto Sans KR", sans-serif';
   y += 115;
-  (judgment.orders || []).slice(0, 3).forEach(order => {
-    y = wrapCanvasText(ctx, `${order.number}. ${order.text}`, 92, y, 890, 39, 3) + 24;
-  });
-
+  (judgment.orders || []).slice(0, 3).forEach(order => { y = wrapCanvasText(ctx, `${order.number}. ${order.text}`, 92, y, 890, 39, 3) + 24; });
   ctx.fillStyle = '#9ea7bd';
   ctx.font = '500 20px "Noto Sans KR", sans-serif';
   ctx.fillText('실제 법적 효력이 없는 오락 콘텐츠입니다 · sosoking.co.kr', 92, 1240);
-
   const link = document.createElement('a');
   link.download = `소소킹-판결-${result.id || result.caseId || 'result'}.png`;
   link.href = canvas.toDataURL('image/png');
@@ -306,39 +231,20 @@ async function downloadResultImage(result) {
 
 export function bindResultActions(result, showToast) {
   const url = `${location.origin}${location.pathname}#/result/${encodeURIComponent(result.id || result.caseId)}`;
-  const shareData = {
-    title: result.judgment?.headline || '소소킹 황당재판소 판결',
-    text: result.judgment?.comedyLines?.[0] || result.judgment?.summary || '',
-    url,
-  };
-
-  document.getElementById('copy-result-link')?.addEventListener('click', async () => {
-    await navigator.clipboard.writeText(url);
-    showToast('판결 링크를 복사했습니다.');
-  });
-
+  const shareData = { title: result.judgment?.headline || '소소킹 황당재판소 판결', text: result.judgment?.comedyLines?.[0] || result.judgment?.summary || '', url };
+  document.getElementById('copy-result-link')?.addEventListener('click', async () => { await navigator.clipboard.writeText(url); showToast('판결 링크를 복사했습니다.'); });
   document.getElementById('share-result')?.addEventListener('click', async () => {
     if (navigator.share) {
       try { await navigator.share(shareData); } catch (error) { if (error?.name !== 'AbortError') showToast('공유하지 못했습니다.', 'error'); }
-    } else {
-      await navigator.clipboard.writeText(url);
-      showToast('공유 기능 대신 링크를 복사했습니다.');
-    }
+    } else { await navigator.clipboard.writeText(url); showToast('공유 기능 대신 링크를 복사했습니다.'); }
   });
-
   document.getElementById('download-result-image')?.addEventListener('click', async event => {
     const button = event.currentTarget;
     button.disabled = true;
     const original = button.textContent;
     button.textContent = '이미지 만드는 중...';
-    try {
-      await downloadResultImage(result);
-      showToast('판결 이미지를 저장했습니다.');
-    } catch (error) {
-      showToast('이미지를 만들지 못했습니다.', 'error');
-    } finally {
-      button.disabled = false;
-      button.textContent = original;
-    }
+    try { await downloadResultImage(result); showToast('판결 이미지를 저장했습니다.'); }
+    catch { showToast('이미지를 만들지 못했습니다.', 'error'); }
+    finally { button.disabled = false; button.textContent = original; }
   });
 }

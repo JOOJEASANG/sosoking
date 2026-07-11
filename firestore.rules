@@ -6,8 +6,7 @@ service cloud.firestore {
     }
 
     function publicResult(caseId) {
-      return exists(/databases/$(database)/documents/results/$(caseId))
-        && get(/databases/$(database)/documents/results/$(caseId)).data.isPublic == true;
+      return exists(/databases/$(database)/documents/public_results/$(caseId));
     }
 
     match /cases/{caseId} {
@@ -16,8 +15,12 @@ service cloud.firestore {
     }
 
     match /results/{caseId} {
-      allow read: if resource.data.isPublic == true
-        || (signedIn() && resource.data.userId == request.auth.uid);
+      allow read: if signedIn() && resource.data.userId == request.auth.uid;
+      allow create, update, delete: if false;
+    }
+
+    match /public_results/{caseId} {
+      allow read: if resource.data.isPublic == true;
       allow create, update, delete: if false;
     }
 
