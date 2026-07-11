@@ -29,6 +29,8 @@ const checks = [
   [ui.includes('가상 감식 주의') && ui.includes('실제 확인 결과가 아닙니다'), 'Fictional evidence notice is missing'],
   [engineIntegration.includes("const ROLE_TRIAL_VERSION = 'role-based-trial-v10'") && engineIntegration.includes('isCurrentRoleTrial'), 'Role trial version detection is incomplete'],
   [engineIntegration.includes('수사 재판으로 다시 받기') && engineIntegration.includes(`href="#/trial/`), 'Legacy result regeneration action is missing'],
+  [engineIntegration.includes("import { resultPageHtml, bindResultActions } from './judgment-ui.js'") && engineIntegration.includes('replaceStaleOwnerResult'), 'Private owner result does not replace a stale public projection'],
+  [engineIntegration.includes("page.innerHTML = resultPageHtml(result)") && engineIntegration.includes('result.ownerView'), 'Latest private role trial is not rendered for the owner'],
   [ui.includes('navigator.share') && ui.includes('navigator.clipboard.writeText'), 'Link sharing is incomplete'],
   [ui.includes("canvas.toDataURL('image/png')") && ui.includes('download-result-image'), 'Judgment image download is missing'],
   [css.includes('.trial-stage-list') && css.includes('.judgment-cover') && css.includes('.order-list'), 'Base trial styling is incomplete'],
@@ -45,4 +47,4 @@ if (failed.length) {
   process.exit(1);
 }
 
-console.log('Verified Stage 3 role-based investigation, legacy regeneration, fictional CCTV notice, courtroom arguments, sentencing, sharing and mobile layout.');
+console.log('Verified Stage 3 role-based investigation, strong owner refresh, legacy regeneration, fictional CCTV notice, sentencing, sharing and mobile layout.');
