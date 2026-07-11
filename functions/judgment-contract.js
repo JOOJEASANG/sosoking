@@ -45,6 +45,7 @@ function normalizeOrders(value, fallback = []) {
 
 function normalizeJudgment(raw = {}, fallback = {}) {
   return {
+    engineVersion: Number(raw.engineVersion || fallback.engineVersion || 0),
     headline: cleanText(raw.headline, 160) || cleanText(fallback.headline, 160),
     incidentLevel: cleanText(raw.incidentLevel, 100) || cleanText(fallback.incidentLevel, 100),
     opening: cleanParagraph(raw.opening, 800) || cleanParagraph(fallback.opening, 800),
@@ -147,6 +148,7 @@ function evaluateJudgment(judgment, analysis) {
   const openingSentences = sentenceCount(judgment.opening);
 
   return {
+    engineVersion: judgment.engineVersion,
     openingAnchorHits,
     sourceAnchorHits,
     requiredSourceHits,
@@ -164,7 +166,8 @@ function evaluateJudgment(judgment, analysis) {
     comedyMaxOverlap,
     sectionMaxOverlap,
     tailoredOrders,
-    passed: judgment.headline.length >= 8
+    passed: judgment.engineVersion >= 3
+      && judgment.headline.length >= 8
       && judgment.headline.length <= 60
       && judgment.opening.length >= 55
       && judgment.opening.length <= 220
@@ -202,7 +205,8 @@ function evaluateJudgment(judgment, analysis) {
 
 function isCompleteJudgment(judgment) {
   return Boolean(
-    judgment?.headline && judgment?.opening && judgment?.summary && judgment?.facts
+    Number(judgment?.engineVersion || 0) >= 3
+    && judgment?.headline && judgment?.opening && judgment?.summary && judgment?.facts
     && judgment?.investigation && judgment?.plaintiffClaim && judgment?.defendantClaim
     && judgment?.opinion && Array.isArray(judgment?.orders) && judgment.orders.length === 3
     && judgment?.closingComment && judgment?.legalNotice
