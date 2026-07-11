@@ -28,13 +28,14 @@ assert.deepEqual(Object.keys(projected).sort(), [
 ].sort());
 
 const checks = [
-  rules.includes('match /public_results/{caseId}'),
+  rules.includes('match /public_results/{caseId}') && rules.includes('allow read: if true'),
   rules.includes('documents/public_results/$(caseId)'),
   community.includes("collection(db, 'public_results')"),
   community.includes("doc(db, 'public_results', caseId)"),
   judgment.indexOf("doc(db, 'public_results', caseId)") < judgment.indexOf("doc(db, 'results', caseId)"),
   sync.includes('onDocumentWritten'),
   sync.includes('exports.backfillPublicResults'),
+  sync.includes('while (true)') && sync.includes('startAfter(cursor)') && sync.includes('FieldPath.documentId()'),
   adminUi.includes('공개 데이터 동기화'),
   bootstrap.includes("require('./public-result-sync')"),
 ];
@@ -43,4 +44,4 @@ if (checks.some(ok => !ok)) {
   console.error('Stage 7 verification failed.');
   process.exit(1);
 }
-console.log('Verified Stage 7 safe public result projection and access isolation.');
+console.log('Verified Stage 7 safe public result projection, readable public collection and paginated backfill.');

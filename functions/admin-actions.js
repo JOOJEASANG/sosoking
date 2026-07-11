@@ -11,7 +11,8 @@ const ACTIONS = new Set(['dismiss', 'hide', 'restore']);
 function requireAdmin(request) {
   const token = request.auth?.token || {};
   const email = String(token.email || '').toLowerCase();
-  if (!request.auth?.uid || (token.admin !== true && !ADMIN_EMAILS.has(email))) {
+  const verifiedEmailAdmin = token.email_verified === true && ADMIN_EMAILS.has(email);
+  if (!request.auth?.uid || (token.admin !== true && !verifiedEmailAdmin)) {
     throw new HttpsError('permission-denied', '관리자 권한이 필요합니다.');
   }
   return { uid: request.auth.uid, email };
@@ -56,7 +57,7 @@ exports.getAdminDashboard = onCall({ region: REGION, cors: true }, async request
     db.collection('results').where('isPublic', '==', true).count().get(),
     db.collection('results').where('moderationStatus', '==', 'hidden').count().get(),
     db.collection('reports').where('status', '==', 'pending').count().get(),
-    db.collection('reports').where('status', '==', 'pending').limit(50).get(),
+    db.collection('reports').where('status', '==', 'pending').orderBy('createdAt', 'desc').limit(50).get(),
     db.collection('results').orderBy('createdAt', 'desc').limit(100).get(),
   ]);
 
@@ -83,8 +84,6 @@ exports.getAdminDashboard = onCall({ region: REGION, cors: true }, async request
       commentCount: Number(result.commentCount || 0),
     };
   }));
-
-  reportRows.sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
 
   const recentResults = recentResultsSnap.docs.map(item => item.data());
   const usage = recentResults.reduce((sum, item) => {

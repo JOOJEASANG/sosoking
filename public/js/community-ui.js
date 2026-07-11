@@ -44,13 +44,14 @@ export function boardPageHtml(items = []) {
 }
 
 export async function loadCommunity(caseId, userId) {
-  const resultRef = doc(db, 'public_results', caseId);
+  const resultSnap = await getDoc(doc(db, 'public_results', caseId));
+  if (!resultSnap.exists()) return null;
+
   const statsRef = doc(db, 'result_reactions', caseId);
   const commentsQuery = query(collection(db, 'court_comments', caseId, 'items'), orderBy('createdAt', 'asc'), limit(50));
-  const tasks = [getDoc(resultRef), getDoc(statsRef), getDocs(commentsQuery)];
+  const tasks = [getDoc(statsRef), getDocs(commentsQuery)];
   if (userId) tasks.push(getDoc(doc(db, 'result_reactions', caseId, 'votes', userId)));
-  const [resultSnap, statsSnap, commentsSnap, voteSnap] = await Promise.all(tasks);
-  if (!resultSnap.exists()) return null;
+  const [statsSnap, commentsSnap, voteSnap] = await Promise.all(tasks);
   return {
     result: { id: resultSnap.id, ...resultSnap.data() },
     stats: statsSnap.exists() ? statsSnap.data() : { funny: 0, agree: 0, total: 0 },
