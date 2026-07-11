@@ -23,6 +23,16 @@ function parseJsonObject(value) {
   return JSON.parse(source.slice(start, end + 1));
 }
 
+function judgeStyle(judgeType) {
+  if (judgeType === '과몰입형') {
+    return '실제 법정처럼 엄숙한 문장으로 사소한 장면을 과하게 진지하게 다루되 국가적 재난 같은 뻔한 과장은 쓰지 않는다.';
+  }
+  if (judgeType === '논리집착형') {
+    return '시간, 순서, 거리, 선택 가능성처럼 원문에 있는 조건을 집요하게 따져 논리의 빈틈에서 웃음을 만든다. 원문에 없는 숫자는 만들지 않는다.';
+  }
+  return '짧고 자연스러운 관찰과 한 번의 정확한 비틀기로 웃긴다. 억지 운율, 단어 합성, 아재개그를 의무적으로 만들지 않는다.';
+}
+
 function normalizeAiAnalysis(raw = {}, fallback = {}) {
   const humorAngles = cleanList(raw.humorAngles, 5, 180);
   const defenseAngles = cleanList(raw.defenseAngles, 4, 180);
@@ -71,9 +81,10 @@ function buildAnalysisPrompt(caseData) {
 5. keyFacts는 원문에서 확인되는 구체적 장면만 3~6개 적는다.
 6. evidenceAnchors는 판결에 반드시 다시 등장해야 할 고유 명사·수량·행동을 적는다.
 7. forbiddenInventions에는 원문에 없는 것으로 만들면 안 되는 대화·수량·인물·동기를 적는다.
-8. humorAngles는 완성된 농담이 아니라 이 사건에서만 가능한 웃음의 관찰 지점 3~5개다.
-9. defenseAngles는 피고가 할 법한 서로 다른 반박 논리 2~3개다. 악의적 거짓말보다 황당하지만 말은 되는 논리로 쓴다.
-10. JSON 외에는 출력하지 않는다.
+8. humorAngles는 완성된 농담이 아니라 이 사건에서만 보이는 행동의 모순, 타이밍, 장면을 3~5개 적는다.
+9. humorAngles에 다른 사건에도 붙일 수 있는 '질서가 무너짐', '평화가 사라짐', '보고서가 커짐' 같은 표현을 넣지 않는다.
+10. defenseAngles는 피고가 할 법한 서로 다른 반박 논리 2~3개다. 황당하지만 말은 되는 논리로 쓴다.
+11. JSON 외에는 출력하지 않는다.
 
 {
   "actor": "행동 주체",
@@ -92,8 +103,9 @@ function buildAnalysisPrompt(caseData) {
 }
 
 function buildConceptPrompt(caseData, analysis) {
+  const style = judgeStyle(cleanText(caseData.judgeType, 20));
   return `너는 소소킹 황당재판소의 코미디 기획자다.
-같은 사건을 억지 말장난 하나로 끝내지 말고, 서로 완전히 다른 코미디 방향 3개를 제안하라.
+같은 사건을 서로 다른 관찰 방식 3개로 해석하라. 말장난을 억지로 만들지 말고, 실제 장면을 정확히 짚었을 때 생기는 웃음을 우선한다.
 
 [사건 원문]
 ${cleanParagraph(caseData.caseDescription, 1500)}
@@ -110,19 +122,25 @@ ${cleanParagraph(caseData.caseDescription, 1500)}
 관찰 가능한 웃음 지점: ${JSON.stringify(analysis.humorAngles || [])}
 피고 반박 후보: ${JSON.stringify(analysis.defenseAngles || [])}
 판사 성향: ${cleanText(caseData.judgeType, 20)}
+판사 문체: ${style}
 
 세 방향은 반드시 다르게 만든다.
-- A: 사건 물건·행동의 언어적 모순을 이용한 정확한 드립
-- B: 실제 법정처럼 진지하게 과몰입하되 원문 사실에서 벗어나지 않는 방식
-- C: 짧고 건조한 관찰과 뒤집기로 웃기는 방식
+- A: 원문 속 가장 구체적인 장면이나 타이밍을 그대로 확대해 웃기는 관찰형
+- B: 선택 가능성과 책임을 실제 판결처럼 집요하게 따지는 법정 과몰입형
+- C: 짧은 두 문장 사이의 예상 차이로 웃기는 건조한 반전형
 
 금지:
 - 생활질서, 대응체계, 사회적 신뢰, 관계기관, 국가적 재난, 정식 분쟁 같은 공통 문구
-- “사건은 작았지만”, “한 번의 확인이면”, “확인 먼저 행동 나중” 같은 재사용 문장
+- '사건은 끝났지만', '성공했지만 실패했다', '증거는 이미 소화 중', '평화는 사라졌다'처럼 여러 사건에 반복 가능한 공식
+- 핵심 명사 뒤에 아무 단어나 붙인 억지 합성어
 - 제목의 명사만 바꾼 동일한 문장 3개
 - 원문에 없는 대화·감정·수량·고의성 창작
 
-각 concept는 완성 판결이 아니라 최종 작가가 선택할 수 있는 강한 재료여야 한다.
+좋은 문장 기준:
+- 핵심 명사를 다른 명사로 바꾸면 성립하지 않아야 한다.
+- 원문을 읽은 사람이 '바로 그 장면'이라고 느껴야 한다.
+- 설명 없이 한 번에 이해되어야 한다.
+
 JSON 외에는 출력하지 않는다.
 
 {
@@ -132,7 +150,7 @@ JSON 외에는 출력하지 않는다.
       "angle": "이 방향의 핵심 관찰",
       "headline": "짧고 구체적인 사건 제목",
       "opening": "첫 문장에 사건 전체, 둘째 문장에 반전",
-      "comedyLines": ["서로 다른 방식의 문장 1", "문장 2", "문장 3"],
+      "comedyLines": ["가장 강한 문장", "다른 방식의 문장", "예비 문장"],
       "defendantLogic": "이 방향에 맞는 독립 반박",
       "orderIdeas": ["사과", "회복", "재발방지"],
       "whySpecific": "왜 이 사건에만 통하는지"
@@ -156,14 +174,16 @@ function normalizeConcepts(raw = {}) {
 }
 
 function buildEditorPrompt(caseData, analysis, concepts, previous = null, evaluation = null) {
+  const style = judgeStyle(cleanText(caseData.judgeType, 20));
   return `너는 소소킹 황당재판소의 최종 편집장이다.
-아래 3개 기획 중 가장 사건에 정확하고 실제로 웃기는 재료를 고르되, 그대로 복사하지 말고 하나의 완성 판결로 다시 써라.
+아래 기획 중 가장 사건에 정확한 재료를 골라 하나의 짧은 판결로 다시 써라. 웃기려고 애쓴 흔적보다 정확한 관찰을 우선한다.
 
 [원문]
 제목: ${cleanText(caseData.title, 90)}
 내용: ${cleanParagraph(caseData.caseDescription, 1500)}
 원하는 해결: ${cleanParagraph(caseData.desiredVerdict, 240) || '없음'}
 판사 성향: ${cleanText(caseData.judgeType, 20)}
+판사 문체: ${style}
 
 [확정 사실]
 ${JSON.stringify({
@@ -186,35 +206,38 @@ ${previous ? `[이전 판결]\n${JSON.stringify(previous)}\n` : ''}
 ${evaluation ? `[기계 검사 탈락 사유]\n${JSON.stringify(evaluation)}\n` : ''}
 
 최종 작성 원칙:
-1. 첫 문장만 읽어도 누가 무엇을 해서 어떤 결과가 났는지 알 수 있어야 한다.
-2. comedyLines 3개는 각각 언어적 모순, 구체 장면 과몰입, 건조한 반전처럼 웃음 방식이 달라야 한다.
-3. 웃음은 반드시 원문의 구체적 물건·시간·행동에서 나온다.
-4. 피고 주장은 원고 주장 요약이 아니라 독립적인 방어 논리여야 한다.
-5. 같은 사실을 opening, summary, facts, investigation, opinion에서 반복하지 않는다.
-6. facts는 사실만, investigation은 단서 해석만, opinion은 책임 판단만 쓴다.
-7. 주문은 실제로 실행 가능하면서 사건에 딱 맞아야 한다.
-8. 원문에 없는 대화·수량·동기·감정을 만들지 않는다.
-9. 모든 문장은 짧게 쓴다. 항목별 제한을 지킨다.
-10. 아래 review 점수에서 specificity와 humor가 각각 8점 미만이면 스스로 다시 고쳐서 출력한다.
-11. JSON 외에는 출력하지 않는다.
+1. opening 첫 문장은 행동과 결과를 함께 보여주고, 둘째 문장은 가장 정확한 반전 하나만 둔다.
+2. comedyLines는 3개 후보를 쓰되 첫째와 둘째가 실제 화면에 공개되는 가장 강한 문장이다.
+3. 첫째와 둘째는 웃음 방식이 달라야 하며, 둘 다 원문의 고유 장면을 직접 사용한다.
+4. 억지 말장난보다 구체적인 타이밍, 행동의 모순, 피고의 황당한 논리를 우선한다.
+5. headline에 '관련', '처리', '이탈', '예상 밖' 같은 행정 문구를 쓰지 않는다.
+6. 원고와 피고 주장은 각각 한 문장으로 쓴다. 피고는 독립적인 방어 논리를 제시한다.
+7. facts는 사실만, investigation은 단서의 의미만, opinion은 책임과 이유만 쓴다.
+8. 같은 문장을 다른 항목에서 표현만 바꿔 반복하지 않는다.
+9. 주문은 실제로 실행 가능하고 사건 대상이 직접 들어가야 한다.
+10. 원문에 없는 대화·수량·동기·감정을 만들지 않는다.
+11. '사건은 끝났지만', '성공했지만 실패했다', '증거는 소화 중', '평화가 사라졌다' 같은 공식 문장을 쓰지 않는다.
+12. review에서 specificity, humor, repetitionControl 중 하나라도 8점 미만이면 스스로 다시 고쳐서 출력한다.
+13. JSON 외에는 출력하지 않는다.
 
 길이 제한:
-- headline 36자 이하
-- opening 정확히 2문장, 180자 이하
-- comedyLines 각 55자 이하
-- summary 2문장, 180자 이하
-- facts 3문장 이하, 320자 이하
-- investigation 2문장 이하, 260자 이하
-- 원고·피고 주장 각각 2문장 이하, 220자 이하
-- opinion 4문장 이하, 420자 이하
-- closingComment 45자 이하
+- headline 32자 이하
+- opening 정확히 2문장, 150자 이하
+- comedyLines 각 48자 이하
+- summary 2문장, 150자 이하
+- facts 3문장 이하, 260자 이하
+- investigation 2문장 이하, 210자 이하
+- 원고·피고 주장 각각 1문장, 150자 이하
+- opinion 3문장 이하, 300자 이하
+- closingComment 38자 이하
 
 {
   "judgment": {
+    "engineVersion": 3,
     "headline": "",
     "incidentLevel": "${analysis.incidentLevel}",
     "opening": "",
-    "comedyLines": ["", "", ""],
+    "comedyLines": ["화면 공개 1순위", "화면 공개 2순위", "예비 문장"],
     "summary": "",
     "facts": "",
     "investigation": "",
@@ -266,7 +289,7 @@ function editorReviewPassed(review = {}) {
     && Number(review.specificity) >= 8
     && Number(review.humor) >= 8
     && Number(review.defenseDistinctness) >= 7
-    && Number(review.repetitionControl) >= 7
+    && Number(review.repetitionControl) >= 8
     && Number(review.fabricationRisk) <= 3;
 }
 
