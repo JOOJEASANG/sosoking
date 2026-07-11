@@ -4,6 +4,7 @@ import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase
 import { resultPageHtml, bindResultActions } from './judgment-ui.js';
 
 const ROLE_TRIAL_VERSION = 'role-based-trial-v10';
+const ROLE_TRIAL_REVISION = 'role-trial-r4-20260711';
 let user = null;
 let scheduled = false;
 let requestKey = '';
@@ -51,7 +52,9 @@ async function loadResultForDisplay(caseId) {
 
 function isCurrentRoleTrial(result) {
   return result?.resultVersion === ROLE_TRIAL_VERSION
-    && result?.trialRecord?.resultVersion === ROLE_TRIAL_VERSION;
+    && result?.generationRevision === ROLE_TRIAL_REVISION
+    && result?.trialRecord?.resultVersion === ROLE_TRIAL_VERSION
+    && result?.quality?.passed !== false;
 }
 
 function replaceStaleOwnerResult(caseId, result, shell) {
@@ -89,7 +92,7 @@ async function enhanceResultPage() {
   const label = shell.querySelector('.judgment-engine-label');
   if (label && String(result.generationMode || '').startsWith('gemini')) {
     const judge = result.judgeType || 'AI';
-    label.textContent = `이전 Gemini 판결 · ${judge} 재판부`;
+    label.textContent = `이전 판결 기록 · ${judge} 재판부`;
   }
 
   if (!result.ownerView || shell.querySelector('[data-engine-upgrade]')) {
@@ -102,10 +105,10 @@ async function enhanceResultPage() {
   panel.dataset.engineUpgrade = 'true';
   panel.dataset.engineEnhanced = 'true';
   panel.innerHTML = `
-    <div class="result-section-label">역할 분리형 황당재판 사용 가능</div>
-    <h2>이 사건을 수사기록부터 다시 재판합니다</h2>
-    <p class="result-body">현재 보고 있는 내용은 이전 판결 방식입니다. 사건번호, 수사관, 예능용 가상 CCTV·감식, 검사·변호인 공방과 단계별 주문이 포함된 새 기록철로 다시 만들 수 있습니다.</p>
-    <div class="hero-actions"><a class="button button-primary" href="#/trial/${encodeURIComponent(caseId)}">수사 재판으로 다시 받기</a></div>`;
+    <div class="result-section-label">개선 전 결과가 저장되어 있습니다</div>
+    <h2>이번에는 기존 결과를 재사용하지 않고 다시 생성합니다</h2>
+    <p class="result-body">이 사건은 판결 엔진 수정 전 결과입니다. 아래 버튼을 누르면 기존 기록을 무효화하고 현재 수사·감식·공방 구조로 새로 작성합니다.</p>
+    <div class="hero-actions"><a class="button button-primary" href="#/trial/${encodeURIComponent(caseId)}">현재 엔진으로 다시 판결받기</a></div>`;
   (shell.querySelector('.role-docket-cover') || shell.querySelector('.judgment-cover'))?.after(panel);
 }
 
