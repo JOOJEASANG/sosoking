@@ -28,7 +28,10 @@ const checks = [
   [productionCss.includes('.connection-banner') && productionCss.includes('.is-offline'), 'Connection styling is incomplete'],
   [robots.includes('Sitemap: https://sosoking.co.kr/sitemap.xml'), 'Robots sitemap declaration is missing'],
   [sitemap.includes('<loc>https://sosoking.co.kr/</loc>'), 'Sitemap home URL is missing'],
-  [health.status === 'ok' && health.service === 'sosoking-web' && health.version === '2026.07.11-stage8', 'Static health contract is invalid'],
+  [health.status === 'ok'
+    && health.service === 'sosoking-web'
+    && /^2026\.07\.11-(stage8|editorial3)$/.test(health.version)
+    && (!health.judgmentEngine || health.judgmentEngine === 'analysis-concepts-editor-v3'), 'Static health contract is invalid'],
   [globalCache.includes('no-cache') && globalCache.includes('must-revalidate'), 'SPA routes or static assets may remain stale after deployment'],
   [globalHeaderNames.has('X-Content-Type-Options') && globalHeaderNames.has('Referrer-Policy') && globalHeaderNames.has('Permissions-Policy') && globalHeaderNames.has('X-Frame-Options'), 'Security headers are incomplete'],
   [readme.includes('public_results/{caseId}') && readme.includes('공개 데이터 동기화'), 'Operations documentation is stale'],
