@@ -5,6 +5,11 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function publicResult(caseId) {
+      return exists(/databases/$(database)/documents/results/$(caseId))
+        && get(/databases/$(database)/documents/results/$(caseId)).data.isPublic == true;
+    }
+
     match /cases/{caseId} {
       allow read: if signedIn() && resource.data.userId == request.auth.uid;
       allow create, update, delete: if false;
@@ -16,9 +21,33 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    match /result_reactions/{caseId} {
+      allow read: if publicResult(caseId);
+      allow create, update, delete: if false;
+
+      match /votes/{userId} {
+        allow read: if signedIn() && request.auth.uid == userId && publicResult(caseId);
+        allow create, update, delete: if false;
+      }
+    }
+
+    match /court_comments/{caseId}/items/{commentId} {
+      allow read: if publicResult(caseId);
+      allow create, update, delete: if false;
+    }
+
     match /rate_limits/{userId} {
       allow read: if signedIn() && request.auth.uid == userId;
       allow create, update, delete: if false;
+    }
+
+    match /comment_limits/{userId} {
+      allow read: if signedIn() && request.auth.uid == userId;
+      allow create, update, delete: if false;
+    }
+
+    match /reports/{reportId} {
+      allow read, write: if false;
     }
 
     match /{document=**} {
