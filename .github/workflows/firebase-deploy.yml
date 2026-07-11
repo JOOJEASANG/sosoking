@@ -9,7 +9,7 @@ on:
 
 concurrency:
   group: firebase-core-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 env:
   FIREBASE_PROJECT_ID: sosoking-481e6
