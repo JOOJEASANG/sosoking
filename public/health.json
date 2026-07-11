@@ -3,5 +3,6 @@
   "service": "sosoking-web",
   "version": "2026.07.11-rolev10",
   "judgmentEngine": "role-based-trial-v10",
+  "deploymentRevision": "role-trial-v10-final",
   "region": "asia-northeast3"
 }
