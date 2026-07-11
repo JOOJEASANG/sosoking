@@ -6,6 +6,10 @@ const read = relative => fs.readFileSync(path.join(root, relative), 'utf8');
 const index = read('public/index.html');
 const productionJs = read('public/js/production-integration.js');
 const productionCss = read('public/css/production.css');
+const bottomNavJs = read('public/js/bottom-navigation.js');
+const bottomNavCss = read('public/css/bottom-navigation.css');
+const judgmentRefinementJs = read('public/js/judgment-refinement.js');
+const judgmentRefinementCss = read('public/css/judgment-refinement.css');
 const robots = read('public/robots.txt');
 const sitemap = read('public/sitemap.xml');
 const health = JSON.parse(read('public/health.json'));
@@ -23,6 +27,12 @@ const checks = [
   [index.includes('property="og:url"') && index.includes('name="twitter:card"'), 'Social metadata is incomplete'],
   [index.includes('/css/production.css?v=20260711-stage8'), 'Production stylesheet is not loaded'],
   [index.includes('/js/production-integration.js?v=20260711-stage8'), 'Production integration is not loaded'],
+  [index.includes('/css/bottom-navigation.css?v=20260711-bottomnav1') && index.includes('/js/bottom-navigation.js?v=20260711-bottomnav1'), 'Bottom navigation resources are not loaded'],
+  [index.includes('/css/judgment-refinement.css?v=20260711-judgment2') && index.includes('/js/judgment-refinement.js?v=20260711-judgment2'), 'Judgment refinement resources are not loaded'],
+  [bottomNavJs.includes("'#/board'") && bottomNavJs.includes("'#/submit'") && bottomNavJs.includes("'#/my-cases'"), 'Bottom navigation routes are incomplete'],
+  [bottomNavCss.includes('position:fixed') && bottomNavCss.includes('safe-area-inset-bottom') && bottomNavCss.includes('.bottom-nav-primary'), 'Bottom navigation styling is incomplete'],
+  [judgmentRefinementJs.includes('판결문에서 건진 두 줄') && judgmentRefinementJs.includes('판결 근거 자세히 보기'), 'Concise judgment layout is incomplete'],
+  [judgmentRefinementCss.includes('.judgment-detail-fold') && judgmentRefinementCss.includes('.comedy-grid'), 'Concise judgment styling is incomplete'],
   [productionJs.includes("window.addEventListener('offline'") && productionJs.includes("window.addEventListener('online'"), 'Connection handling is incomplete'],
   [productionJs.includes('unhandledrejection') && productionJs.includes('notifyUnexpectedError'), 'Unexpected error handling is incomplete'],
   [productionCss.includes('.connection-banner') && productionCss.includes('.is-offline'), 'Connection styling is incomplete'],
@@ -44,4 +54,4 @@ if (failed.length) {
   process.exit(1);
 }
 
-console.log('Verified Stage 8 SPA cache safety, security headers, connection recovery, error handling, metadata and operating documentation.');
+console.log('Verified Stage 8 bottom navigation, concise judgments, SPA cache safety, security headers and recovery handling.');
