@@ -99,7 +99,7 @@ function evaluateJudgment(judgment, analysis) {
     judgment.opinion, ...judgment.orders.map(order => order.text), judgment.closingComment,
   ].join(' ');
   const anchors = unique([analysis.actor, analysis.target, ...(analysis.evidenceAnchors || [])])
-    .filter(item => String(item).length >= 2);
+    .filter(item => item === analysis.actor || item === analysis.target || String(item).length >= 2);
   const openingAnchorHits = anchors.filter(anchor => containsAnchor(openingText, [anchor])).length;
   const actorVisible = analysis.actor === '피고 측' || containsAnchor(openingText, [analysis.actor]);
   const targetVisible = containsAnchor(openingText, [analysis.target]);
