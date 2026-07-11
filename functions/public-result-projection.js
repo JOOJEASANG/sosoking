@@ -49,7 +49,6 @@ function buildPublicResult(source = {}) {
     } : null,
     judgment: source.judgment || {},
     generationMode: source.generationMode || 'unknown',
-    quality: source.quality ? { passed: source.quality.passed !== false } : {},
     reactionCount: Math.max(0, Number(source.reactionCount || 0)),
     commentCount: Math.max(0, Number(source.commentCount || 0)),
     moderationStatus: source.moderationStatus || 'clear',
