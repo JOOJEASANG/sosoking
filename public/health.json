@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "service": "sosoking-web",
-  "version": "2026.07.11-editorial3",
-  "judgmentEngine": "analysis-concepts-editor-v3",
+  "version": "2026.07.11-rolev10",
+  "judgmentEngine": "role-based-trial-v10",
   "region": "asia-northeast3"
 }

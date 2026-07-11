@@ -1,91 +1,70 @@
 const assert = require('node:assert/strict');
-const { buildCaseAnalysis } = require('./case-analysis');
-const { normalizeJudgment, evaluateJudgment, isCompleteJudgment } = require('./judgment-contract');
 const {
-  normalizeAiAnalysis,
-  buildAnalysisPrompt,
-  buildConceptPrompt,
-  normalizeConcepts,
-  buildEditorPrompt,
-  parseEditorPackage,
-  editorReviewPassed,
-} = require('./judgment-ai-pipeline');
+  ROLE_TRIAL_VERSION,
+  makeDocketNumber,
+  assignCourt,
+  normalizeTrial,
+  validateTrial,
+  buildPrompt,
+  buildCompatibilityJudgment,
+  isCompleteRoleTrial,
+} = require('./role-based-trial');
 
 const input = {
-  title: '공원 간식 무단취식 사건',
-  caseDescription: '공원에서 간식을 먹다가 한눈판 사이 산책 중인 반려견이 남은 간식을 먹었다.',
-  desiredVerdict: '보호자가 같은 간식을 배상했으면 한다.',
+  title: '공원 빵 리트리버 무단취식 사건',
+  caseDescription: '공원 벤치에서 빵을 먹던 원고가 잠시 휴대폰을 보는 사이 산책 중인 리트리버가 남은 빵을 전부 먹어버렸다. 원고는 간식을 잃었고 보호자에게 같은 빵과 사과를 원한다.',
+  desiredVerdict: '보호자가 같은 빵을 배상하고 다음 산책부터 음식과 거리를 두게 해달라.',
   grievanceIndex: 7,
-  defendantName: '반려견',
-  judgeType: '드립형',
+  defendantName: '리트리버와 보호자',
+  judgeType: '과몰입형',
   category: 'food',
 };
 
-const fallback = buildCaseAnalysis(input);
-const analysis = normalizeAiAnalysis({
-  actor: '반려견',
-  target: '간식',
-  action: '반려견이 원고가 한눈판 사이 간식을 먹었다',
-  consequence: '원고가 먹으려던 간식이 사라졌다',
-  conflict: '산책 중 식욕이 타인의 간식보다 먼저 움직였다',
-  keyFacts: ['공원', '한눈판 사이', '간식을 먹음'],
-  evidenceAnchors: ['반려견', '간식', '한눈판'],
-  humorAngles: ['한눈판 순간의 속도', '목줄과 식욕의 통제 차이'],
-  defenseAngles: ['가까운 간식을 자신의 몫으로 오인했다는 반박'],
-  remedy: '같은 간식 배상',
-}, fallback);
+const caseId = 'abc123def456';
+const docketNumber = makeDocketNumber(caseId, new Date('2026-07-11T00:00:00Z'));
+const court = assignCourt(input, caseId);
+const prompt = buildPrompt(input, court, docketNumber);
 
-const analysisPrompt = buildAnalysisPrompt(input);
-const conceptPrompt = buildConceptPrompt(input, analysis);
-const concepts = normalizeConcepts({ concepts: [
-  { id: 'A', headline: '한눈판 사이 간식 사건', comedyLines: ['구체 장면 1', '구체 장면 2'] },
-  { id: 'B', headline: '목줄과 식욕 사건', comedyLines: ['법정 관찰 1', '법정 관찰 2'] },
-  { id: 'C', headline: '산책 중 간식 사건', comedyLines: ['건조 반전 1', '건조 반전 2'] },
-] });
-const editorPrompt = buildEditorPrompt(input, analysis, concepts);
+assert.equal(ROLE_TRIAL_VERSION, 'role-based-trial-v10');
+assert.match(docketNumber, /^2026황당[A-Z0-9]{6}$/);
+assert.ok(court.courtroom.includes('법정'));
+assert.ok(court.analystName);
+assert.ok(court.prosecutorName);
+assert.ok(court.defenderName);
+assert.ok(prompt.includes('역할 분리형 예능 재판'));
+assert.ok(prompt.includes('가상 CCTV'));
+assert.ok(prompt.includes('사소한 사건'));
+assert.ok(prompt.includes('지나치게 진지한 관료적 형식'));
+assert.ok(prompt.includes('원고 측은 억울함을 최대치'));
+assert.ok(prompt.includes('주문 1→2→3'));
 
-assert.ok(analysisPrompt.includes('다른 사건에도 붙일 수 있는'));
-assert.ok(conceptPrompt.includes('억지 합성어'));
-assert.ok(conceptPrompt.includes('핵심 명사를 다른 명사로 바꾸면 성립하지 않아야'));
-assert.ok(editorPrompt.includes('첫째와 둘째가 실제 화면에 공개'));
-assert.ok(editorPrompt.includes('원고와 피고 주장은 각각 한 문장'));
-assert.ok(editorPrompt.includes('repetitionControl'));
-assert.equal(concepts.length, 3);
+const trial = normalizeTrial({
+  refinedCaseTitle: input.title,
+  expandedCase: '접수담당자는 공원 벤치에서 빵을 먹던 원고가 휴대폰 화면을 확인하는 사이 리트리버가 남은 빵을 전부 먹었다는 진술을 확인했다. 원고가 고개를 돌린 순간 간식의 점유 상태가 바뀌었고, 원고에게 남은 것은 빈 포장지와 보호자를 바라보는 시간뿐이었다. 이 사건의 핵심은 리트리버의 식욕 자체보다 보호자가 타인의 음식과 산책 동선을 분리하지 못한 데 있다. 원고는 같은 빵과 분명한 사과를 요구하고 있다.',
+  caseTimeline: '수사 진행기록\n1. 15시 02분경 원고가 공원 벤치에 앉아 빵을 먹기 시작했다.\n2. 15시 04분경 원고가 휴대폰을 확인하며 시선을 아래로 옮겼다.\n3. 황당재판용 가상 동선 재구성 결과 리트리버가 벤치 방향으로 접근한 것으로 표시됐다.\n4. 원고가 다시 고개를 들었을 때 남은 빵은 확인되지 않았고 리트리버의 씹는 동작만 관찰 대상으로 남았다.\n5. 보호자는 상황을 뒤늦게 확인했고 원고는 같은 빵의 배상과 사과를 요청했다.',
+  forensicReport: '예능용 가상 감식보고서\n본 보고서는 실제 CCTV를 열람한 결과가 아니라 접수진술을 바탕으로 만든 황당재판용 재구성이다. 가상 CCTV 프레임 184번에서 원고의 시선이 휴대폰으로 이동한 것으로 설정했고, 프레임 191번에서 리트리버의 코가 빵 방향으로 12도 회전한 것으로 분석했다. 빵 접근 속도는 재판부 임의 단위인 초당 3.7간식으로 측정됐으며, 목줄 통제력은 42점, 식욕 추진력은 96점으로 산출됐다. 증거물은 실제 수집물이 아니라 사건 장면을 과장해 설명하기 위한 오락용 감식 항목이다.',
+  plaintiffArg: '황당검사 강엄숙은 원고가 공원에서 정당하게 소유하고 있던 빵을 단 몇 초의 시선 이동 때문에 전부 잃었다고 주장한다. 원고는 식사를 포기할 의사도, 리트리버에게 간식을 기부할 의사도 표시하지 않았으며, 보호자가 같은 빵을 배상하고 타인의 음식에 접근하지 않게 관리해야 한다고 요청한다.',
+  defendantArg: '국선변호인 안대수롭은 리트리버가 공원에서 가까이 놓인 음식 냄새를 산책 보상으로 오인했을 가능성을 제기한다. 피고는 소유권을 이전받았다고 주장하는 것이 아니라 냄새와 거리의 조합이 너무 설득력 있었다고 항변하며, 보호자의 반응이 식욕보다 늦었던 점만 일부 인정한다.',
+  courtOpinion: '과몰입형 재판부는 원고가 휴대폰을 확인한 몇 초가 빵 소유권 포기 시간으로 해석될 수 없다고 판단한다. 리트리버의 본능은 형사처벌 대상이 아니지만 보호자가 목줄과 음식 사이의 안전거리를 확보하지 못한 책임은 남는다. 재판부는 식욕 추진력 96점에 비해 통제력 42점이 현저히 낮았다는 가상 감식 결과를 참고하되, 이는 오락용 판단 기준임을 명시한다. 따라서 원고의 배상 요구는 이유 있고 피고 측 변론은 귀엽지만 받아들이기 어렵다.',
+  sentence: '주문 1. 보호자는 원고에게 빵 무단취식 경위를 빠뜨리지 않고 사과하라.\n주문 2. 보호자는 원고가 잃은 것과 같은 빵 또는 원고가 직접 고른 동급 빵을 배상하라.\n주문 3. 다음 산책부터 리트리버가 타인의 간식 반경 2미터 안으로 접근할 경우 보호자는 즉시 “이 빵은 네 사건이 아니다”라고 고지하고 동선을 변경한 뒤 현장 기록에 남겨라.',
+  closingComment: '재판장 한마디: “목줄은 잡고 있었지만 사건의 주도권은 빵이 쥐고 있었습니다.”',
+  absurdDetails: ['원고의 시선 이동 시간보다 짧았던 빵 소멸 시간', '목줄 통제력과 식욕 추진력의 점수 차이', '공원 벤치가 임시 증거보전 장소로 지정됨', '빈 포장지가 원고 측 최후 진술을 대신함', '리트리버의 씹는 동작이 사건 종료 신호가 됨', '보호자의 상황 파악이 피고의 식사 완료보다 늦음'],
+  evidenceBits: ['증 제1호 빈 빵 포장지: 원고의 간식이 존재했다는 정황을 보여준다.', '증 제2호 가상 CCTV 프레임 184번: 원고의 시선 이동 시점을 재구성한다.', '증 제3호 식욕 추진력 측정표: 리트리버의 접근 의지를 예능용 수치로 표현한다.', '증 제4호 목줄 동선도: 보호자와 벤치 사이의 통제 공백을 가상으로 표시한다.'],
+  defendantExcuses: ['빵 냄새가 산책 보상처럼 느껴졌다는 항변', '원고가 잠시 보지 않아 배식 완료 신호로 오인했다는 항변', '리트리버는 포장지의 소유권 표시를 읽을 수 없다는 항변'],
+  penaltyIdeas: ['같은 빵 배상', '간식 반경 접근 금지', '산책 전 소유권 교육', '재발 시 보호자의 공개 간식 경계 선언'],
+}, {}, input.title, court, docketNumber);
 
-const judgment = normalizeJudgment({
-  engineVersion: 3,
-  headline: '반려견의 한눈판 간식 사건',
-  incidentLevel: analysis.incidentLevel,
-  opening: '반려견이 원고가 한눈판 사이 공원에서 간식을 먹어 원고의 몫이 사라졌다. 목줄은 잡혀 있었지만 간식까지 지켜주지는 못했다.',
-  comedyLines: [
-    '원고가 고개를 돌린 시간은 짧았고 반려견의 판단은 더 짧았다.',
-    '산책 동선에는 간식 소유권 확인 절차가 없었다.',
-    '피고는 냄새를 확인했고 원고는 빈손을 확인했다.',
-  ],
-  summary: '원고는 먹으려던 간식을 잃었다. 보호자는 접근을 막지 못한 책임이 있다.',
-  facts: '원고는 공원에서 간식을 먹고 있었다. 한눈판 사이 반려견이 남은 간식을 먹었다. 원고의 간식은 남지 않았다.',
-  investigation: '핵심 단서는 공원, 한눈판 사이, 반려견의 접근이다. 원문에 없는 고의나 대화는 판단에 넣지 않았다.',
-  plaintiffClaim: '원고는 자신의 간식을 허락 없이 잃었으므로 같은 간식 배상을 요구한다.',
-  defendantClaim: '피고 측은 가까이 놓인 간식을 자신의 몫으로 오인한 상황이었다고 항변한다.',
-  opinion: '반려견의 본능은 이해할 수 있다. 다만 타인의 음식에 접근하지 않도록 관리할 책임은 보호자에게 있다. 같은 간식 배상과 재발방지가 필요하다.',
-  orders: [
-    { number: 1, text: '보호자는 간식 무단취식에 관해 원고에게 사과하라.' },
-    { number: 2, text: '보호자는 원고가 잃은 것과 같은 간식을 배상하라.' },
-    { number: 3, text: '다음 산책부터 반려견이 타인의 간식에 접근하지 않도록 거리를 확보하라.' },
-  ],
-  closingComment: '다음 산책에는 목줄과 간식 모두 지켜야 한다.',
-  legalNotice: '본 판결은 실제 법적 효력이 없는 오락 콘텐츠입니다.',
-});
-
-const quality = evaluateJudgment(judgment, analysis);
-assert.equal(isCompleteJudgment(judgment), true);
+const quality = validateTrial(trial, input);
 assert.equal(quality.passed, true, JSON.stringify(quality));
-assert.equal(isCompleteJudgment(normalizeJudgment({ ...judgment, engineVersion: 2 })), false);
+assert.equal(isCompleteRoleTrial(trial), true);
+assert.equal(trial.evidenceBits.length, 4);
+assert.ok(trial.forensicReport.includes('가상'));
+assert.ok(trial.caseTimeline.includes('5.'));
 
-const parsed = parseEditorPackage(JSON.stringify({
-  judgment,
-  review: { clarity: 9, specificity: 9, humor: 8, defenseDistinctness: 8, repetitionControl: 8, fabricationRisk: 1 },
-}), judgment);
-assert.equal(editorReviewPassed(parsed.review), true);
+const judgment = buildCompatibilityJudgment(trial, input);
+assert.equal(judgment.engineVersion, 4);
+assert.equal(judgment.orders.length, 3);
+assert.ok(judgment.investigation.includes('가상 감식보고서'));
+assert.ok(judgment.legalNotice.includes('가상 재구성'));
 
-console.log('Verified scene-specific humor, judge-style editing, concise claims and engine migration.');
+console.log('Verified role-based trial docket, personnel, investigation timeline, fictional CCTV notice, courtroom arguments and escalating orders.');

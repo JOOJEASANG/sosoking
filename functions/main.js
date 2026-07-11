@@ -1,33 +1,27 @@
 const admin = require('firebase-admin');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { defineSecret } = require('firebase-functions/params');
 const { logger } = require('firebase-functions');
-const { cleanText, cleanParagraph, buildCaseAnalysis } = require('./case-analysis');
-const { evaluateJudgment, isCompleteJudgment } = require('./judgment-contract');
-const { buildFallbackJudgment } = require('./judgment-writer');
+const { cleanText, cleanParagraph } = require('./case-analysis');
 const {
-  parseJsonObject,
-  normalizeAiAnalysis,
-  buildAnalysisPrompt,
-  buildConceptPrompt,
-  normalizeConcepts,
-  buildEditorPrompt,
-  parseEditorPackage,
-  editorReviewPassed,
-} = require('./judgment-ai-pipeline');
+  ROLE_TRIAL_VERSION,
+  MODEL_NAME,
+  makeDocketNumber,
+  assignCourt,
+  isCompleteRoleTrial,
+  generateRoleBasedTrial,
+} = require('./role-based-trial');
 
 if (!admin.apps.length) admin.initializeApp();
 
 const db = admin.firestore();
 const REGION = 'asia-northeast3';
-const MODEL_NAME = 'gemini-2.5-flash';
 const geminiKey = defineSecret('GEMINI_API_KEY');
 const CATEGORY_IDS = new Set(['food', 'late', 'relationship', 'family', 'work', 'digital', 'other']);
 const JUDGE_TYPES = new Set(['드립형', '과몰입형', '논리집착형']);
 const DAILY_CASE_LIMIT = 20;
 const CASE_COOLDOWN_MS = 30 * 1000;
-const GENERATION_LOCK_MS = 4 * 60 * 1000;
+const GENERATION_LOCK_MS = 5 * 60 * 1000;
 
 function koreaDayKey(date = new Date()) {
   return new Intl.DateTimeFormat('en-CA', {
@@ -60,159 +54,14 @@ function validateCasePayload(raw = {}) {
   return { title, description, defendantName, category, judgeType, desiredVerdict, grievanceIndex, isPublic };
 }
 
-function usageFromResponse(response) {
-  const meta = response?.usageMetadata || {};
-  return {
-    promptTokens: Number(meta.promptTokenCount || 0),
-    outputTokens: Number(meta.candidatesTokenCount || 0),
-    totalTokens: Number(meta.totalTokenCount || 0),
-  };
-}
-
-function addUsage(left, right) {
-  return {
-    promptTokens: Number(left?.promptTokens || 0) + Number(right?.promptTokens || 0),
-    outputTokens: Number(left?.outputTokens || 0) + Number(right?.outputTokens || 0),
-    totalTokens: Number(left?.totalTokens || 0) + Number(right?.totalTokens || 0),
-  };
-}
-
-function createJsonModel(client, temperature, maxOutputTokens) {
-  return client.getGenerativeModel({
-    model: MODEL_NAME,
-    generationConfig: {
-      temperature,
-      topP: 0.95,
-      maxOutputTokens,
-      responseMimeType: 'application/json',
-    },
-  });
-}
-
-async function callModel(model, prompt) {
-  const result = await model.generateContent(prompt);
-  return {
-    text: result.response.text(),
-    usage: usageFromResponse(result.response),
-  };
-}
-
-async function generateJudgmentWithFallback(caseData, fallbackAnalysis, apiKey) {
-  const fallback = buildFallbackJudgment(caseData, fallbackAnalysis);
-  const fallbackQuality = evaluateJudgment(fallback, fallbackAnalysis);
-  if (!apiKey) {
-    return {
-      analysis: fallbackAnalysis,
-      judgment: fallback,
-      quality: { ...fallbackQuality, pipeline: 'fallback-no-key' },
-      generationMode: 'local-no-key',
-      aiAttempts: 0,
-      usage: addUsage(),
-    };
-  }
-
-  const client = new GoogleGenerativeAI(apiKey);
-  const analysisModel = createJsonModel(client, 0.18, 2200);
-  const conceptModel = createJsonModel(client, 1.05, 3000);
-  const editorModel = createJsonModel(client, 0.68, 4400);
-
-  let usage = addUsage();
-  let attempts = 0;
-  let analysis = fallbackAnalysis;
-
-  try {
-    attempts += 1;
-    const analysisResponse = await callModel(analysisModel, buildAnalysisPrompt(caseData));
-    usage = addUsage(usage, analysisResponse.usage);
-    analysis = normalizeAiAnalysis(parseJsonObject(analysisResponse.text), fallbackAnalysis);
-
-    attempts += 1;
-    const conceptResponse = await callModel(conceptModel, buildConceptPrompt(caseData, analysis));
-    usage = addUsage(usage, conceptResponse.usage);
-    const concepts = normalizeConcepts(parseJsonObject(conceptResponse.text));
-    if (concepts.length < 3) throw new Error('Three distinct comedy concepts were not generated');
-
-    attempts += 1;
-    const editorResponse = await callModel(editorModel, buildEditorPrompt(caseData, analysis, concepts));
-    usage = addUsage(usage, editorResponse.usage);
-    let edited = parseEditorPackage(editorResponse.text, fallback);
-    let machineQuality = evaluateJudgment(edited.judgment, analysis);
-    let passed = machineQuality.passed && editorReviewPassed(edited.review);
-
-    if (!passed) {
-      attempts += 1;
-      const repairResponse = await callModel(
-        editorModel,
-        buildEditorPrompt(caseData, analysis, concepts, edited.judgment, {
-          machine: machineQuality,
-          editor: edited.review,
-        }),
-      );
-      usage = addUsage(usage, repairResponse.usage);
-      edited = parseEditorPackage(repairResponse.text, fallback);
-      machineQuality = evaluateJudgment(edited.judgment, analysis);
-      passed = machineQuality.passed && editorReviewPassed(edited.review);
-    }
-
-    if (!passed) {
-      logger.warn('Editorial judgment did not pass final quality gate', {
-        machineQuality,
-        editorReview: edited.review,
-      });
-      return {
-        analysis,
-        judgment: fallback,
-        quality: {
-          ...fallbackQuality,
-          passed: fallbackQuality.passed,
-          pipeline: 'editorial-fallback',
-          rejectedMachineQuality: machineQuality,
-          rejectedEditorReview: edited.review,
-        },
-        generationMode: 'local-quality-fallback',
-        aiAttempts: attempts,
-        usage,
-      };
-    }
-
-    return {
-      analysis,
-      judgment: edited.judgment,
-      quality: {
-        ...machineQuality,
-        passed: true,
-        pipeline: 'analysis-concepts-editor',
-        editorReview: edited.review,
-      },
-      generationMode: 'gemini-editorial',
-      aiAttempts: attempts,
-      usage,
-    };
-  } catch (error) {
-    logger.warn('Gemini editorial pipeline failed', { attempt: attempts, message: error?.message });
-    return {
-      analysis,
-      judgment: fallback,
-      quality: {
-        ...fallbackQuality,
-        pipeline: 'fallback-after-pipeline-error',
-        pipelineError: cleanText(error?.message, 220),
-      },
-      generationMode: 'local-pipeline-fallback',
-      aiAttempts: attempts,
-      usage,
-    };
-  }
-}
-
 exports.systemHealth = onCall({ region: REGION, secrets: [geminiKey], cors: true }, async request => {
   requireUser(request);
   return {
     ok: true,
-    service: 'sosoking-editorial-judgment',
+    service: 'sosoking-role-based-trial',
     geminiConfigured: Boolean(geminiKey.value().trim()),
     model: MODEL_NAME,
-    pipeline: 'analysis-concepts-editor',
+    pipeline: ROLE_TRIAL_VERSION,
     timestamp: new Date().toISOString(),
   };
 });
@@ -224,6 +73,7 @@ exports.createCaseDraft = onCall({ region: REGION, cors: true }, async request =
   const dayKey = koreaDayKey(now.toDate());
   const caseRef = db.collection('cases').doc();
   const limitRef = db.collection('rate_limits').doc(auth.uid);
+  const docketNumber = makeDocketNumber(caseRef.id, now.toDate());
 
   await db.runTransaction(async transaction => {
     const limitSnap = await transaction.get(limitRef);
@@ -236,10 +86,11 @@ exports.createCaseDraft = onCall({ region: REGION, cors: true }, async request =
     if (Date.now() - lastCreatedAt < CASE_COOLDOWN_MS) throw new HttpsError('resource-exhausted', '중복 접수를 막기 위해 잠시 후 다시 시도해 주세요.');
 
     transaction.set(caseRef, {
-      schemaVersion: 1,
+      schemaVersion: 2,
       userId: auth.uid,
       userEmail: cleanText(auth.token?.email, 160),
       userDisplayName: cleanText(auth.token?.name, 60),
+      docketNumber,
       title: input.title,
       caseDescription: input.description,
       defendantName: input.defendantName || '피고 미지정',
@@ -249,6 +100,7 @@ exports.createCaseDraft = onCall({ region: REGION, cors: true }, async request =
       desiredVerdict: input.desiredVerdict,
       isPublic: input.isPublic,
       status: 'received',
+      courtStage: 'filed',
       generationStatus: 'not_started',
       createdAt: now,
       updatedAt: now,
@@ -263,15 +115,15 @@ exports.createCaseDraft = onCall({ region: REGION, cors: true }, async request =
     }, { merge: true });
   });
 
-  logger.info('Case draft created', { caseId: caseRef.id, userId: auth.uid, category: input.category });
-  return { caseId: caseRef.id, status: 'received', nextStage: 'ai-judgment-engine' };
+  logger.info('Case draft created', { caseId: caseRef.id, docketNumber, userId: auth.uid, category: input.category });
+  return { caseId: caseRef.id, docketNumber, status: 'received', nextStage: ROLE_TRIAL_VERSION };
 });
 
 exports.generateJudgment = onCall({
   region: REGION,
   secrets: [geminiKey],
   cors: true,
-  timeoutSeconds: 180,
+  timeoutSeconds: 300,
   memory: '512MiB',
   maxInstances: 10,
 }, async request => {
@@ -290,26 +142,34 @@ exports.generateJudgment = onCall({
     if (caseData.userId !== auth.uid) throw new HttpsError('permission-denied', '본인 사건만 심리할 수 있습니다.');
 
     const resultSnap = await transaction.get(resultRef);
-    if (resultSnap.exists && isCompleteJudgment(resultSnap.data()?.judgment)) {
+    if (resultSnap.exists && resultSnap.data()?.resultVersion === ROLE_TRIAL_VERSION && isCompleteRoleTrial(resultSnap.data()?.trialRecord)) {
       return { existing: true, caseData, resultData: resultSnap.data() };
     }
 
     const startedAt = caseData.generationStartedAt?.toMillis?.() || 0;
     if (caseData.generationStatus === 'processing' && Date.now() - startedAt < GENERATION_LOCK_MS) {
-      throw new HttpsError('aborted', '이미 AI 재판부가 이 사건을 심리 중입니다.');
+      throw new HttpsError('aborted', '수사관과 재판부가 이미 이 사건을 처리 중입니다.');
     }
 
+    const docketNumber = caseData.docketNumber || makeDocketNumber(caseId);
+    const court = assignCourt(caseData, caseId);
     transaction.update(caseRef, {
+      docketNumber,
+      ...court,
+      status: 'processing',
+      courtStage: 'investigation',
       generationStatus: 'processing',
       generationStartedAt: now,
       updatedAt: now,
     });
-    return { existing: false, caseData };
+    return { existing: false, caseData: { ...caseData, docketNumber } };
   });
 
   if (reserved.existing) {
     return {
       caseId,
+      docketNumber: reserved.resultData.docketNumber,
+      trialRecord: reserved.resultData.trialRecord,
       judgment: reserved.resultData.judgment,
       caseAnalysis: reserved.resultData.caseAnalysis,
       generationMode: reserved.resultData.generationMode,
@@ -320,28 +180,58 @@ exports.generateJudgment = onCall({
 
   try {
     const caseData = reserved.caseData;
-    const fallbackAnalysis = buildCaseAnalysis(caseData);
-    const generated = await generateJudgmentWithFallback(caseData, fallbackAnalysis, geminiKey.value().trim());
+    const generated = await generateRoleBasedTrial({
+      caseData,
+      caseId,
+      apiKey: geminiKey.value().trim(),
+    });
     const completedAt = admin.firestore.Timestamp.now();
+    const trial = generated.trialRecord;
     const resultData = {
-      schemaVersion: 3,
+      schemaVersion: 4,
+      resultVersion: ROLE_TRIAL_VERSION,
       caseId,
       userId: auth.uid,
       isPublic: caseData.isPublic === true,
+      docketNumber: trial.docketNumber,
+      courtName: trial.courtName,
+      courtroom: trial.courtroom,
+      division: trial.division,
+      recordClerk: trial.recordClerk,
+      analystName: trial.analystName,
+      prosecutorName: trial.prosecutorName,
+      defenderName: trial.defenderName,
       caseTitle: caseData.title,
       caseDescription: caseData.caseDescription,
       defendantName: caseData.defendantName,
       category: caseData.category,
-      judgeType: caseData.judgeType,
+      judgeType: trial.judgeType,
       grievanceIndex: caseData.grievanceIndex,
       desiredVerdict: caseData.desiredVerdict,
-      caseAnalysis: generated.analysis,
+      caseAnalysis: generated.caseAnalysis,
+      trialRecord: trial,
+      reception: trial.expandedCase,
+      caseTimeline: trial.caseTimeline,
+      forensicReport: trial.forensicReport,
+      evidenceBits: trial.evidenceBits,
+      plaintiffArg: trial.plaintiffArg,
+      defendantArg: trial.defendantArg,
+      courtOpinion: trial.courtOpinion,
+      sentence: trial.sentence,
+      closingComment: trial.closingComment,
+      absurdDetails: trial.absurdDetails,
+      defendantExcuses: trial.defendantExcuses,
+      penaltyIdeas: trial.penaltyIdeas,
       judgment: generated.judgment,
       generationMode: generated.generationMode,
       model: generated.generationMode.startsWith('gemini') ? MODEL_NAME : null,
       aiAttempts: generated.aiAttempts,
       usage: generated.usage,
       quality: generated.quality,
+      reactionCount: 0,
+      commentCount: 0,
+      moderationStatus: 'clear',
+      courtStage: 'sentenced',
       createdAt: completedAt,
       updatedAt: completedAt,
     };
@@ -350,15 +240,26 @@ exports.generateJudgment = onCall({
     batch.set(resultRef, resultData);
     batch.update(caseRef, {
       status: 'judged',
+      courtStage: 'sentenced',
       generationStatus: 'completed',
       resultId: caseId,
+      resultVersion: ROLE_TRIAL_VERSION,
+      docketNumber: trial.docketNumber,
+      courtName: trial.courtName,
+      courtroom: trial.courtroom,
+      division: trial.division,
+      recordClerk: trial.recordClerk,
+      analystName: trial.analystName,
+      prosecutorName: trial.prosecutorName,
+      defenderName: trial.defenderName,
       generationCompletedAt: completedAt,
       updatedAt: completedAt,
     });
     await batch.commit();
 
-    logger.info('Judgment completed', {
+    logger.info('Role-based trial completed', {
       caseId,
+      docketNumber: trial.docketNumber,
       userId: auth.uid,
       mode: generated.generationMode,
       attempts: generated.aiAttempts,
@@ -367,20 +268,24 @@ exports.generateJudgment = onCall({
 
     return {
       caseId,
+      docketNumber: trial.docketNumber,
+      trialRecord: trial,
       judgment: generated.judgment,
-      caseAnalysis: generated.analysis,
+      caseAnalysis: generated.caseAnalysis,
       generationMode: generated.generationMode,
       quality: generated.quality,
       reused: false,
     };
   } catch (error) {
     await caseRef.update({
+      status: 'received',
+      courtStage: 'filed',
       generationStatus: 'failed',
       generationError: cleanText(error?.message, 240),
       updatedAt: admin.firestore.Timestamp.now(),
     }).catch(() => null);
     if (error instanceof HttpsError) throw error;
-    logger.error('Judgment generation failed', { caseId, userId: auth.uid, message: error?.message });
-    throw new HttpsError('internal', 'AI 판결 생성 중 오류가 발생했습니다. 다시 시도해 주세요.');
+    logger.error('Role-based trial generation failed', { caseId, userId: auth.uid, message: error?.message });
+    throw new HttpsError('internal', '황당재판 기록 작성 중 오류가 발생했습니다. 다시 시도해 주세요.');
   }
 });
