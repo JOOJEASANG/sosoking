@@ -22,6 +22,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          show-progress: false
+
+      - name: Verify judgment engine contract
+        run: node functions/verify-stage2.js
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -31,7 +36,7 @@ jobs:
       - name: Install Functions dependencies
         run: npm install --prefix functions --no-audit --no-fund
 
-      - name: Validate Stage 1 application
+      - name: Validate application and judgment engine
         run: npm run check --prefix functions
 
       - name: Validate Firebase files
@@ -42,7 +47,11 @@ jobs:
           test -f firestore.indexes.json
           test -f storage.rules
           test -f public/index.html
+          test -f functions/case-analysis.js
+          test -f functions/judgment-contract.js
+          test -f functions/judgment-writer.js
           grep -q "GEMINI_API_KEY" functions/main.js
+          grep -q "exports.generateJudgment" functions/main.js
           grep -q "FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6" .github/workflows/firebase-deploy.yml
 
   deploy-core:
@@ -54,6 +63,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          show-progress: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
