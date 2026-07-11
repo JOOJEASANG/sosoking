@@ -44,6 +44,7 @@ exports.updateCaseVisibility = onCall({ region: REGION, cors: true }, async requ
     const [caseSnap, resultSnap] = await Promise.all([transaction.get(caseRef), transaction.get(resultRef)]);
     if (!caseSnap.exists) throw new HttpsError('not-found', '사건을 찾을 수 없습니다.');
     if (caseSnap.data().userId !== auth.uid) throw new HttpsError('permission-denied', '본인 사건만 변경할 수 있습니다.');
+    if (caseSnap.data().deletionStatus === 'deleting') throw new HttpsError('failed-precondition', '삭제 중인 사건입니다.');
     const moderationStatus = resultSnap.exists
       ? resultSnap.data().moderationStatus || caseSnap.data().moderationStatus
       : caseSnap.data().moderationStatus;
@@ -66,10 +67,17 @@ exports.deleteMyCase = onCall({ region: REGION, cors: true, timeoutSeconds: 120 
   const publicResultRef = db.collection('public_results').doc(caseId);
   const reactionRef = db.collection('result_reactions').doc(caseId);
   const commentRef = db.collection('court_comments').doc(caseId);
+  const now = admin.firestore.Timestamp.now();
 
-  const caseSnap = await caseRef.get();
-  if (!caseSnap.exists) throw new HttpsError('not-found', '사건을 찾을 수 없습니다.');
-  if (caseSnap.data().userId !== auth.uid) throw new HttpsError('permission-denied', '본인 사건만 삭제할 수 있습니다.');
+  await db.runTransaction(async transaction => {
+    const [caseSnap, resultSnap] = await Promise.all([transaction.get(caseRef), transaction.get(resultRef)]);
+    if (!caseSnap.exists) throw new HttpsError('not-found', '사건을 찾을 수 없습니다.');
+    if (caseSnap.data().userId !== auth.uid) throw new HttpsError('permission-denied', '본인 사건만 삭제할 수 있습니다.');
+    const deleting = { isPublic: false, deletionStatus: 'deleting', updatedAt: now };
+    transaction.update(caseRef, deleting);
+    if (resultSnap.exists) transaction.update(resultRef, deleting);
+    transaction.delete(publicResultRef);
+  });
 
   const [reportCount] = await Promise.all([
     deleteReportsForCase(caseId),
@@ -78,7 +86,6 @@ exports.deleteMyCase = onCall({ region: REGION, cors: true, timeoutSeconds: 120 
   ]);
 
   const batch = db.batch();
-  batch.delete(publicResultRef);
   batch.delete(resultRef);
   batch.delete(caseRef);
   await batch.commit();
