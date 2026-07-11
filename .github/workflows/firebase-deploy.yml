@@ -9,7 +9,7 @@ on:
 
 concurrency:
   group: firebase-core-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 env:
   FIREBASE_PROJECT_ID: sosoking-481e6
@@ -47,6 +47,7 @@ jobs:
           test -f firestore.indexes.json
           test -f storage.rules
           test -f public/index.html
+          test -f public/health.json
           test -f functions/case-analysis.js
           test -f functions/judgment-contract.js
           test -f functions/judgment-writer.js
@@ -86,17 +87,7 @@ jobs:
           fi
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-service-account.json"
 
-      - name: Deploy Functions
+      - name: Deploy Firebase application
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-        run: firebase deploy --only functions --force --project "$FIREBASE_PROJECT_ID" --non-interactive
-
-      - name: Deploy Firestore rules and indexes
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-        run: firebase deploy --only firestore:rules,firestore:indexes --project "$FIREBASE_PROJECT_ID" --non-interactive
-
-      - name: Deploy Hosting
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-        run: firebase deploy --only hosting --project "$FIREBASE_PROJECT_ID" --non-interactive
+        run: firebase deploy --only functions,firestore:rules,firestore:indexes,hosting --force --project "$FIREBASE_PROJECT_ID" --non-interactive
