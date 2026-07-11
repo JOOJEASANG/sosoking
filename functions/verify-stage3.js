@@ -7,6 +7,7 @@ const read = relative => fs.readFileSync(path.join(root, relative), 'utf8');
 const index = read('public/index.html');
 const app = read('public/js/app.js');
 const ui = read('public/js/judgment-ui.js');
+const engineIntegration = read('public/js/result-engine-integration.js');
 const css = read('public/css/app.css');
 const roleCss = read('public/css/role-trial.css');
 const rules = read('firestore.rules');
@@ -16,6 +17,7 @@ const checks = [
   [index.includes('/css/app.css?v=20260711-stage3'), 'Stage 3 stylesheet cache key is missing'],
   [index.includes('/css/role-trial.css?v=20260711-rolev10'), 'Role trial stylesheet is not loaded'],
   [index.includes('/js/app.js?v=20260711-stage3'), 'Stage 3 app cache key is missing'],
+  [index.includes('/js/result-engine-integration.js?v=20260711-rolev10'), 'Role trial upgrade integration cache key is missing'],
   [app.includes("from './judgment-ui.js'"), 'Judgment UI module is not connected'],
   [app.includes("section === 'trial'") && app.includes("section === 'result'"), 'Dynamic trial and result routes are missing'],
   [app.includes('AI 재판 시작') && app.includes('#/trial/'), 'Case receipt does not continue into the trial'],
@@ -25,6 +27,8 @@ const checks = [
   [ui.includes('사건 담당자') && ui.includes('수사 진행기록') && ui.includes('CCTV·증거 감식보고서'), 'Role-based result records are incomplete'],
   [ui.includes('원고 측 주장') && ui.includes('피고 측 변론') && ui.includes('재판부 판단'), 'Courtroom argument and opinion sections are incomplete'],
   [ui.includes('가상 감식 주의') && ui.includes('실제 확인 결과가 아닙니다'), 'Fictional evidence notice is missing'],
+  [engineIntegration.includes("const ROLE_TRIAL_VERSION = 'role-based-trial-v10'") && engineIntegration.includes('isCurrentRoleTrial'), 'Role trial version detection is incomplete'],
+  [engineIntegration.includes('수사 재판으로 다시 받기') && engineIntegration.includes(`href="#/trial/`), 'Legacy result regeneration action is missing'],
   [ui.includes('navigator.share') && ui.includes('navigator.clipboard.writeText'), 'Link sharing is incomplete'],
   [ui.includes("canvas.toDataURL('image/png')") && ui.includes('download-result-image'), 'Judgment image download is missing'],
   [css.includes('.trial-stage-list') && css.includes('.judgment-cover') && css.includes('.order-list'), 'Base trial styling is incomplete'],
@@ -41,4 +45,4 @@ if (failed.length) {
   process.exit(1);
 }
 
-console.log('Verified Stage 3 role-based investigation, fictional CCTV notice, courtroom arguments, sentencing, sharing and mobile layout.');
+console.log('Verified Stage 3 role-based investigation, legacy regeneration, fictional CCTV notice, courtroom arguments, sentencing, sharing and mobile layout.');
