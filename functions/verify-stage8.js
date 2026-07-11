@@ -46,7 +46,7 @@ const checks = [
     && health.judgmentEngine === 'role-based-trial-v10', 'Static health contract is invalid'],
   [globalCache.includes('no-cache') && globalCache.includes('must-revalidate'), 'SPA routes or static assets may remain stale after deployment'],
   [globalHeaderNames.has('X-Content-Type-Options') && globalHeaderNames.has('Referrer-Policy') && globalHeaderNames.has('Permissions-Policy') && globalHeaderNames.has('X-Frame-Options'), 'Security headers are incomplete'],
-  [readme.includes('role-based-trial-v10') && readme.includes('가상 CCTV'), 'Operations documentation is stale'],
+  [readme.includes('public_results/{caseId}') && readme.includes('공개 데이터 동기화'), 'Operations documentation is stale'],
   [!index.includes('GEMINI_API_KEY') && !productionJs.includes('GEMINI_API_KEY'), 'A server secret name leaked into the public application'],
 ];
 
