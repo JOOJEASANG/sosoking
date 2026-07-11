@@ -3,52 +3,38 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>소소킹 황당재판소 - 사건 접수부터 수사·공방·판결까지</title>
-  <meta name="description" content="일상의 소소한 사건을 접수하면 AI가 수사하고 원고·피고 주장을 만든 뒤 법정공방과 과몰입 판결까지 진행하는 오락형 황당재판 서비스">
-
+  <meta name="theme-color" content="#111525">
+  <meta name="application-name" content="소소킹 황당재판소">
+  <meta name="description" content="일상의 사소하고 억울한 사건을 AI가 분석하고 맞춤형 황당판결로 풀어내는 소소킹 황당재판소">
+  <link rel="canonical" href="https://sosoking.co.kr/">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://sosoking.co.kr">
-  <meta property="og:title" content="소소킹 황당재판소 ⚖️">
-  <meta property="og:description" content="사건 접수부터 초동수사, 원고·피고 공방, 긴급특보급 황당판결까지 한 번에 체험하세요.">
-  <meta property="og:image" content="https://sosoking.co.kr/site-logo-banner.png?v=20260707-logo2">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
   <meta property="og:locale" content="ko_KR">
   <meta property="og:site_name" content="소소킹 황당재판소">
-
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="소소킹 황당재판소 ⚖️">
-  <meta name="twitter:description" content="AI 수사관과 원고·피고·재판부가 사소한 사건을 끝까지 크게 키워 판결합니다.">
-  <meta name="twitter:image" content="https://sosoking.co.kr/site-logo-banner.png?v=20260707-logo2">
-
-  <script>
-    (function() {
-      var t = localStorage.getItem('theme');
-      if (t && t !== 'system') document.documentElement.setAttribute('data-theme', t);
-      document.documentElement.style.colorScheme = t === 'light' ? 'light' : t === 'dark' ? 'dark' : 'light dark';
-    })();
-  </script>
-
-  <link rel="icon" href="/favicon.png?v=20260707-logo3" type="image/png">
-  <link rel="shortcut icon" href="/favicon.ico?v=20260707-logo3">
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20260707-logo3">
-  <link rel="manifest" href="/site.webmanifest?v=20260707-logo3">
-  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0c1018">
-  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f6f0e6">
-
+  <meta property="og:url" content="https://sosoking.co.kr/">
+  <meta property="og:title" content="소소킹 황당재판소">
+  <meta property="og:description" content="사소한 억울함도 정식 사건으로 접수하고 AI 황당판결을 받아보세요.">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="소소킹 황당재판소">
+  <meta name="twitter:description" content="일상의 사소한 사건을 AI 재판부가 분석하고 맞춤형 황당판결을 선고합니다.">
+  <title>소소킹 황당재판소</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/main.css?v=20260630-8">
-  <link rel="stylesheet" href="/css/site-system.css?v=20260710-full-audit1">
-  <link rel="stylesheet" href="/css/site-readability.css?v=20260711-interpret1">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800;900&family=Noto+Serif+KR:wght@600;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/app.css?v=20260711-stage3">
+  <link rel="stylesheet" href="/css/my-cases.css?v=20260711-stage4">
+  <link rel="stylesheet" href="/css/community.css?v=20260711-stage5">
+  <link rel="stylesheet" href="/css/admin.css?v=20260711-stage6">
+  <link rel="stylesheet" href="/css/production.css?v=20260711-stage8">
 </head>
 <body>
-  <div id="app">
-    <div id="page-content"></div>
-    <footer id="site-footer"></footer>
+  <div id="app" aria-live="polite">
+    <div class="app-loading"><div class="seal-mark">소</div><p>황당재판소 문을 여는 중입니다.</p></div>
   </div>
-  <div id="toast-container"></div>
-  <script type="module" src="/js/app.js?v=20260711-interpret1"></script>
+  <div id="toast-root" class="toast-root" aria-live="assertive"></div>
+  <script type="module" src="/js/app.js?v=20260711-stage3"></script>
+  <script type="module" src="/js/my-cases-integration.js?v=20260711-stage4"></script>
+  <script type="module" src="/js/community-integration.js?v=20260711-stage5"></script>
+  <script type="module" src="/js/admin-integration.js?v=20260711-stage6"></script>
+  <script type="module" src="/js/production-integration.js?v=20260711-stage8"></script>
 </body>
 </html>

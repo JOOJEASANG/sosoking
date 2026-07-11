@@ -1,181 +1,60 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
     function signedIn() {
       return request.auth != null;
     }
 
-    function verifiedAdminEmail() {
-      return signedIn()
-        && request.auth.token.email != null
-        && request.auth.token.email_verified == true
-        ? request.auth.token.email
-        : '';
+    function publicResult(caseId) {
+      return exists(/databases/$(database)/documents/public_results/$(caseId));
     }
 
-    function isAdmin() {
-      return signedIn() && (
-        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
-        exists(/databases/$(database)/documents/admins/$(verifiedAdminEmail()))
-      );
-    }
-
-    function caseDoc(caseId) {
-      return get(/databases/$(database)/documents/cases/$(caseId));
-    }
-
-    function resultDoc(caseId) {
-      return get(/databases/$(database)/documents/results/$(caseId));
-    }
-
-    function isCaseOwner(caseId) {
-      return signedIn() && caseDoc(caseId).data.userId == request.auth.uid;
-    }
-
-    function isCasePublic(caseId) {
-      return caseDoc(caseId).data.isPublic == true;
-    }
-
-    function isResultPublic(caseId) {
-      return resultDoc(caseId).data.isPublic == true;
-    }
-
-    function canReadPublicCourt(caseId) {
-      return signedIn() && (isCasePublic(caseId) || isResultPublic(caseId) || isCaseOwner(caseId) || isAdmin());
-    }
-
-    match /admins/{uidOrEmail} {
-      allow read: if signedIn() && (
-        request.auth.uid == uidOrEmail ||
-        verifiedAdminEmail() == uidOrEmail ||
-        isAdmin()
-      );
-      allow write: if false;
-    }
-
-    match /admin_logs/{logId} {
-      allow read: if isAdmin();
-      allow write: if false;
-    }
-
-    match /users/{uid} {
-      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+    match /cases/{caseId} {
+      allow read: if signedIn() && resource.data.userId == request.auth.uid;
       allow create, update, delete: if false;
     }
 
-    match /user_names/{key} {
+    match /results/{caseId} {
+      allow read: if signedIn() && resource.data.userId == request.auth.uid;
+      allow create, update, delete: if false;
+    }
+
+    match /public_results/{caseId} {
       allow read: if true;
       allow create, update, delete: if false;
     }
 
-    match /cases/{caseId} {
-      allow read: if signedIn() && (
-        resource.data.userId == request.auth.uid ||
-        isAdmin()
-      );
-      allow create: if false;
-      allow update: if isAdmin() || (
-        signedIn() &&
-        resource.data.userId == request.auth.uid &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isPublic']) &&
-        request.resource.data.isPublic is bool
-      );
-      allow delete: if false;
-    }
-
-    match /results/{caseId} {
-      allow read: if signedIn() && (
-        isCaseOwner(caseId) ||
-        resource.data.isPublic == true ||
-        isAdmin()
-      );
-      allow update: if isAdmin() || (
-        signedIn() &&
-        isCaseOwner(caseId) &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isPublic']) &&
-        request.resource.data.isPublic is bool
-      );
-      allow create, delete: if false;
-    }
-
     match /result_reactions/{caseId} {
-      allow read: if canReadPublicCourt(caseId);
-      allow write: if false;
-      match /votes/{uid} {
-        allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
-        allow write: if false;
+      allow read: if publicResult(caseId);
+      allow create, update, delete: if false;
+
+      match /votes/{userId} {
+        allow read: if signedIn() && request.auth.uid == userId && publicResult(caseId);
+        allow create, update, delete: if false;
       }
     }
 
     match /court_comments/{caseId}/items/{commentId} {
-      allow read: if canReadPublicCourt(caseId);
-      allow write: if false;
-    }
-
-    match /court_comment_stats/{caseId} {
-      allow read: if canReadPublicCourt(caseId);
-      allow write: if false;
-    }
-
-    match /usage_stats/{docId} {
-      allow read: if isAdmin();
-      allow write: if false;
+      allow read: if publicResult(caseId);
+      allow create, update, delete: if false;
     }
 
     match /rate_limits/{userId} {
-      allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
-      allow write: if false;
+      allow read: if signedIn() && request.auth.uid == userId;
+      allow create, update, delete: if false;
     }
 
     match /comment_limits/{userId} {
-      allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
-      allow write: if false;
-    }
-
-    match /title_suggestion_limits/{userId} {
-      allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
-      allow write: if false;
+      allow read: if signedIn() && request.auth.uid == userId;
+      allow create, update, delete: if false;
     }
 
     match /reports/{reportId} {
-      allow create: if signedIn()
-        && request.resource.data.keys().hasOnly(['caseId', 'reason', 'status', 'createdAt', 'userId'])
-        && request.resource.data.userId == request.auth.uid
-        && request.resource.data.caseId is string
-        && request.resource.data.reason is string
-        && request.resource.data.reason.size() > 0
-        && request.resource.data.reason.size() <= 300
-        && request.resource.data.status == 'pending';
-      allow read, update, delete: if isAdmin();
+      allow read, write: if false;
     }
 
-    match /absurd_cases/{caseId} {
-      allow read: if true;
-      allow create, update, delete: if isAdmin();
-    }
-
-    // Gemini 모델, 프롬프트, 금칙어, 비용 단가 등 운영 설정은 관리자만 읽고 쓴다.
-    match /site_settings/{docId} {
-      allow read, write: if isAdmin();
-    }
-
-    // 접수 한도와 사업자 정보 등 사용자 화면에 필요한 값만 별도로 공개한다.
-    match /public_settings/{docId} {
-      allow read: if true;
-      allow write: if isAdmin()
-        && request.resource.data.keys().hasOnly([
-          'dailyLimit', 'cooldownSec', 'businessInfo', 'publicNotice', 'updatedAt'
-        ]);
-    }
-
-    match /admin_settings/{docId} {
-      allow read, write: if isAdmin();
-    }
-
-    match /policy_docs/{docId} {
-      allow read: if true;
-      allow write: if isAdmin();
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

@@ -1,22 +1,6 @@
 rules_version = '2';
-
 service firebase.storage {
   match /b/{bucket}/o {
-    match /profile-photos/{userId}/{fileName} {
-      allow read: if true;
-      allow write: if request.auth != null
-        && request.auth.uid == userId
-        && request.resource.size < 2 * 1024 * 1024
-        && request.resource.contentType in ['image/jpeg', 'image/png', 'image/webp'];
-    }
-
-    match /case-images/{userId}/{caseId}/{fileName} {
-      allow read: if request.auth != null && request.auth.uid == userId;
-      // 사건 이미지는 submitCase Callable Function(Admin SDK)이 업로드한다.
-      // 클라이언트 직접 쓰기는 용량·경로·소유권 검증 우회를 막기 위해 차단한다.
-      allow write: if false;
-    }
-
     match /{allPaths=**} {
       allow read, write: if false;
     }

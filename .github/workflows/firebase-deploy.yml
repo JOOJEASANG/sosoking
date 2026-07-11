@@ -1,4 +1,4 @@
-name: Validate and Deploy Firebase Core
+name: Validate and Deploy Sosoking
 
 on:
   push:
@@ -22,6 +22,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          show-progress: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -37,20 +39,45 @@ jobs:
       - name: Check frontend syntax
         run: npm run check:frontend --prefix functions
 
-      - name: Verify judgment V2 schema
-        run: node functions/verify-judgment-v2.js
+      - name: Verify Stage 1
+        run: npm run verify:stage1 --prefix functions
 
-      - name: Verify case-specific serious humor
-        run: node functions/verify-judgment-story-v2.js
+      - name: Verify Stage 2
+        run: npm run verify:stage2 --prefix functions
 
-      - name: Verify judgment screen integration
-        run: node functions/verify-judgment-v2-integration.js
+      - name: Verify Stage 3
+        run: npm run verify:stage3 --prefix functions
 
-      - name: Verify security contract
-        run: npm run check:security --prefix functions
+      - name: Verify Stage 4
+        run: npm run verify:stage4 --prefix functions
 
-      - name: Verify deployment contract
-        run: npm run check:deployment --prefix functions
+      - name: Verify Stage 5
+        run: npm run verify:stage5 --prefix functions
+
+      - name: Verify Stage 6
+        run: npm run verify:stage6 --prefix functions
+
+      - name: Verify Stage 7
+        run: npm run verify:stage7 --prefix functions
+
+      - name: Verify Stage 8
+        run: npm run verify:stage8 --prefix functions
+
+      - name: Validate Firebase files
+        run: |
+          test -f firebase.json
+          test -f .firebaserc
+          test -f firestore.rules
+          test -f firestore.indexes.json
+          test -f storage.rules
+          test -f public/index.html
+          test -f public/health.json
+          test -f functions/case-analysis.js
+          test -f functions/judgment-contract.js
+          test -f functions/judgment-writer.js
+          grep -q "GEMINI_API_KEY" functions/main.js
+          grep -q "exports.generateJudgment" functions/main.js
+          grep -q "FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6" .github/workflows/firebase-deploy.yml
 
   deploy-core:
     if: github.event_name != 'pull_request'
@@ -61,6 +88,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          show-progress: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -82,17 +111,7 @@ jobs:
           fi
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-service-account.json"
 
-      - name: Deploy Functions from current source
+      - name: Deploy Firebase application
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-        run: firebase deploy --only functions --force --project "$FIREBASE_PROJECT_ID" --non-interactive
-
-      - name: Deploy Firestore rules and indexes
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-        run: firebase deploy --only firestore:rules,firestore:indexes --project "$FIREBASE_PROJECT_ID" --non-interactive
-
-      - name: Deploy Hosting
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-        run: firebase deploy --only hosting --project "$FIREBASE_PROJECT_ID" --non-interactive
+        run: firebase deploy --only functions,firestore:rules,firestore:indexes,hosting --force --project "$FIREBASE_PROJECT_ID" --non-interactive

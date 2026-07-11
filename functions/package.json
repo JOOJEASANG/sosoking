@@ -1,19 +1,22 @@
 {
   "name": "sosoking-functions",
-  "version": "1.0.0",
+  "version": "2.8.0",
   "private": true,
-  "engines": {
-    "node": "20"
-  },
-  "main": "main.js",
+  "engines": { "node": "20" },
+  "main": "bootstrap.js",
   "scripts": {
-    "check:backend": "node --check main.js && node --check admin-utils.js && node --check daily.js && node --check profile.js && node --check repair.js && node --check social.js && node --check submit-secure.js && node --check title-suggestion.js && node --check judgment-v2.js && node --check judgment-story-config.js && node --check judgment-story-writer.js && node --check judgment-story-quality.js && node --check judgment-story-v2.js && node --check generate-trial-v2.js && node --check admin-actions.js && node --check verify-judgment-v2.js && node --check verify-judgment-story-v2.js && node --check verify-judgment-v2-integration.js && node --check verify-site-audit.js && node --check verify-security-contract.js && node --check verify-deployment-contract.js",
-    "check:frontend": "node --experimental-default-type=module --check ../public/js/app.js && node --experimental-default-type=module --check ../public/js/pages/home.js && node --experimental-default-type=module --check ../public/js/pages/trial.js && node --experimental-default-type=module --check ../public/js/pages/trial-game.js && node --experimental-default-type=module --check ../public/js/pages/result.js && node --experimental-default-type=module --check ../public/js/pages/result-case-story.js && node --experimental-default-type=module --check ../public/js/pages/board.js && node --experimental-default-type=module --check ../public/js/pages/board-court.js && node --experimental-default-type=module --check ../public/js/pages/submit-court.js && node --experimental-default-type=module --check ../public/js/pages/submit-guard.js && node --experimental-default-type=module --check ../public/js/pages/guide.js && node --experimental-default-type=module --check ../public/js/pages/policy.js && node --experimental-default-type=module --check ../public/js/data/default-policy-docs.js && node --experimental-default-type=module --check ../public/js/components/footer.js && node --experimental-default-type=module --check ../public/js/components/theme.js && node --experimental-default-type=module --check ../public/js/components/court-design.js && node --experimental-default-type=module --check ../public/js/components/result-storage-image.js && node --experimental-default-type=module --check ../public/admin/admin-delete.js && node --experimental-default-type=module --check ../public/admin/admin-public-sync.js",
-    "check:judgment": "node verify-judgment-v2.js && node verify-judgment-story-v2.js && node verify-judgment-v2-integration.js",
-    "check:site": "node verify-site-audit.js",
-    "check:security": "node verify-security-contract.js",
-    "check:deployment": "node verify-site-audit.js && node verify-deployment-contract.js",
-    "lint": "npm run check:backend && npm run check:frontend && npm run check:judgment && npm run check:site && npm run check:security && npm run check:deployment"
+    "check:backend": "node --check bootstrap.js && node --check main.js && node --check user-case-actions.js && node --check community-actions.js && node --check admin-actions.js && node --check public-result-projection.js && node --check public-result-sync.js && node --check case-analysis.js && node --check judgment-contract.js && node --check judgment-writer.js && node --check verify-stage1.js && node --check verify-stage2.js && node --check verify-stage3.js && node --check verify-stage4.js && node --check verify-stage5.js && node --check verify-stage6.js && node --check verify-stage7.js && node --check verify-stage8.js",
+    "check:frontend": "node --experimental-default-type=module --check ../public/js/firebase-config.js && node --experimental-default-type=module --check ../public/js/firebase.js && node --experimental-default-type=module --check ../public/js/judgment-ui.js && node --experimental-default-type=module --check ../public/js/my-cases-ui.js && node --experimental-default-type=module --check ../public/js/my-cases-integration.js && node --experimental-default-type=module --check ../public/js/community-ui.js && node --experimental-default-type=module --check ../public/js/community-integration.js && node --experimental-default-type=module --check ../public/js/admin-ui.js && node --experimental-default-type=module --check ../public/js/admin-integration.js && node --experimental-default-type=module --check ../public/js/production-integration.js && node --experimental-default-type=module --check ../public/js/app.js",
+    "verify:stage1": "node verify-stage1.js",
+    "verify:stage2": "node verify-stage2.js",
+    "verify:stage3": "node verify-stage3.js",
+    "verify:stage4": "node verify-stage4.js",
+    "verify:stage5": "node verify-stage5.js",
+    "verify:stage6": "node verify-stage6.js",
+    "verify:stage7": "node verify-stage7.js",
+    "verify:stage8": "node verify-stage8.js",
+    "verify": "npm run verify:stage1 && npm run verify:stage2 && npm run verify:stage3 && npm run verify:stage4 && npm run verify:stage5 && npm run verify:stage6 && npm run verify:stage7 && npm run verify:stage8",
+    "check": "npm run check:backend && npm run check:frontend && npm run verify"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
