@@ -25,7 +25,7 @@ const checks = [
   [ui.includes("canvas.toDataURL('image/png')") && ui.includes('download-result-image'), 'Judgment image download is missing'],
   [css.includes('.trial-stage-list') && css.includes('.judgment-cover') && css.includes('.order-list'), 'Trial and judgment styling is incomplete'],
   [css.includes('@media(max-width:719px)') && css.includes('.share-actions'), 'Mobile result layout is incomplete'],
-  [rules.includes('resource.data.isPublic == true') && rules.includes('resource.data.userId == request.auth.uid'), 'Public and private result read rules are incomplete'],
+  [rules.includes('match /results/{caseId}') && rules.includes('resource.data.userId == request.auth.uid') && rules.includes('match /public_results/{caseId}') && rules.includes('allow read: if true'), 'Separated public and private result read rules are incomplete'],
   [rules.includes('allow create, update, delete: if false'), 'Client writes must remain blocked'],
   [functions.includes('isPublic: caseData.isPublic === true') && functions.includes("generationStatus: 'completed'"), 'Generated result does not preserve visibility and completion state'],
 ];
@@ -36,4 +36,4 @@ if (failed.length) {
   process.exit(1);
 }
 
-console.log('Verified Stage 3 trial presentation, judgment result, public/private access, link sharing and PNG export.');
+console.log('Verified Stage 3 trial presentation, judgment result, separated public/private access, link sharing and PNG export.');
