@@ -17,6 +17,21 @@ function cleanId(value) {
   return id;
 }
 
+async function deleteReportsForCase(caseId) {
+  const pageSize = 400;
+  let deleted = 0;
+  while (true) {
+    const snapshot = await db.collection('reports').where('caseId', '==', caseId).limit(pageSize).get();
+    if (snapshot.empty) break;
+    const batch = db.batch();
+    snapshot.docs.forEach(item => batch.delete(item.ref));
+    await batch.commit();
+    deleted += snapshot.size;
+    if (snapshot.size < pageSize) break;
+  }
+  return deleted;
+}
+
 exports.updateCaseVisibility = onCall({ region: REGION, cors: true }, async request => {
   const auth = requireUser(request);
   const caseId = cleanId(request.data?.caseId);
@@ -43,22 +58,31 @@ exports.updateCaseVisibility = onCall({ region: REGION, cors: true }, async requ
   return { caseId, isPublic };
 });
 
-exports.deleteMyCase = onCall({ region: REGION, cors: true }, async request => {
+exports.deleteMyCase = onCall({ region: REGION, cors: true, timeoutSeconds: 120 }, async request => {
   const auth = requireUser(request);
   const caseId = cleanId(request.data?.caseId);
   const caseRef = db.collection('cases').doc(caseId);
   const resultRef = db.collection('results').doc(caseId);
+  const publicResultRef = db.collection('public_results').doc(caseId);
   const reactionRef = db.collection('result_reactions').doc(caseId);
+  const commentRef = db.collection('court_comments').doc(caseId);
 
-  await db.runTransaction(async transaction => {
-    const caseSnap = await transaction.get(caseRef);
-    if (!caseSnap.exists) throw new HttpsError('not-found', '사건을 찾을 수 없습니다.');
-    if (caseSnap.data().userId !== auth.uid) throw new HttpsError('permission-denied', '본인 사건만 삭제할 수 있습니다.');
-    transaction.delete(reactionRef);
-    transaction.delete(resultRef);
-    transaction.delete(caseRef);
-  });
+  const caseSnap = await caseRef.get();
+  if (!caseSnap.exists) throw new HttpsError('not-found', '사건을 찾을 수 없습니다.');
+  if (caseSnap.data().userId !== auth.uid) throw new HttpsError('permission-denied', '본인 사건만 삭제할 수 있습니다.');
 
-  logger.info('User case deleted', { caseId, userId: auth.uid });
-  return { caseId, deleted: true };
+  const [reportCount] = await Promise.all([
+    deleteReportsForCase(caseId),
+    db.recursiveDelete(reactionRef),
+    db.recursiveDelete(commentRef),
+  ]);
+
+  const batch = db.batch();
+  batch.delete(publicResultRef);
+  batch.delete(resultRef);
+  batch.delete(caseRef);
+  await batch.commit();
+
+  logger.info('User case and community data deleted', { caseId, userId: auth.uid, reportCount });
+  return { caseId, deleted: true, reportCount };
 });
