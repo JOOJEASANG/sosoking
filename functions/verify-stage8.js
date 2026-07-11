@@ -13,10 +13,10 @@ const firebase = JSON.parse(read('firebase.json'));
 const readme = read('README.md');
 
 const headerRules = firebase.hosting?.headers || [];
-const staticRule = headerRules.find(rule => String(rule.source).includes('js,css,json,xml,txt'));
 const globalRule = headerRules.find(rule => rule.source === '**');
-const staticCache = staticRule?.headers?.find(item => item.key === 'Cache-Control')?.value || '';
-const globalHeaderNames = new Set((globalRule?.headers || []).map(item => item.key));
+const globalHeaders = globalRule?.headers || [];
+const globalCache = globalHeaders.find(item => item.key === 'Cache-Control')?.value || '';
+const globalHeaderNames = new Set(globalHeaders.map(item => item.key));
 
 const checks = [
   [index.includes('rel="canonical"') && index.includes('https://sosoking.co.kr/'), 'Canonical URL is missing'],
@@ -29,7 +29,7 @@ const checks = [
   [robots.includes('Sitemap: https://sosoking.co.kr/sitemap.xml'), 'Robots sitemap declaration is missing'],
   [sitemap.includes('<loc>https://sosoking.co.kr/</loc>'), 'Sitemap home URL is missing'],
   [health.status === 'ok' && health.service === 'sosoking-web' && health.version === '2026.07.11-stage8', 'Static health contract is invalid'],
-  [staticCache.includes('no-cache') && staticCache.includes('must-revalidate'), 'Static assets may remain stale after deployment'],
+  [globalCache.includes('no-cache') && globalCache.includes('must-revalidate'), 'SPA routes or static assets may remain stale after deployment'],
   [globalHeaderNames.has('X-Content-Type-Options') && globalHeaderNames.has('Referrer-Policy') && globalHeaderNames.has('Permissions-Policy') && globalHeaderNames.has('X-Frame-Options'), 'Security headers are incomplete'],
   [readme.includes('public_results/{caseId}') && readme.includes('공개 데이터 동기화'), 'Operations documentation is stale'],
   [!index.includes('GEMINI_API_KEY') && !productionJs.includes('GEMINI_API_KEY'), 'A server secret name leaked into the public application'],
@@ -41,4 +41,4 @@ if (failed.length) {
   process.exit(1);
 }
 
-console.log('Verified Stage 8 cache safety, security headers, connection recovery, error handling, metadata and operating documentation.');
+console.log('Verified Stage 8 SPA cache safety, security headers, connection recovery, error handling, metadata and operating documentation.');
