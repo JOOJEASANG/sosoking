@@ -1,16 +1,28 @@
 import { auth, db, waitForAuthReady } from './firebase.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { resultPageHtml, bindResultActions } from './judgment-ui.js';
 
 const ROLE_TRIAL_VERSION = 'role-based-trial-v10';
 let user = null;
 let scheduled = false;
 let requestKey = '';
+let replacedCaseId = '';
 
 function resultCaseId() {
   const match = (location.hash || '').match(/^#\/result\/([^?]+)/);
   if (!match) return '';
   try { return decodeURIComponent(match[1]); } catch { return match[1]; }
+}
+
+function toast(message, type = '') {
+  const root = document.getElementById('toast-root');
+  if (!root) return;
+  const item = document.createElement('div');
+  item.className = `toast ${type}`.trim();
+  item.textContent = message;
+  root.appendChild(item);
+  setTimeout(() => item.remove(), 3500);
 }
 
 function scheduleEnhance() {
@@ -42,6 +54,19 @@ function isCurrentRoleTrial(result) {
     && result?.trialRecord?.resultVersion === ROLE_TRIAL_VERSION;
 }
 
+function replaceStaleOwnerResult(caseId, result, shell) {
+  if (!result.ownerView || !isCurrentRoleTrial(result) || shell.classList.contains('role-trial-document')) return false;
+  if (replacedCaseId === caseId) return false;
+  const page = document.querySelector('.page');
+  if (!page) return false;
+
+  replacedCaseId = caseId;
+  page.innerHTML = resultPageHtml(result);
+  bindResultActions(result, (message, type) => toast(message, type));
+  requestKey = '';
+  return true;
+}
+
 async function enhanceResultPage() {
   const caseId = resultCaseId();
   const shell = document.querySelector('.result-shell');
@@ -53,6 +78,8 @@ async function enhanceResultPage() {
 
   const result = await loadResultForDisplay(caseId);
   if (!result || resultCaseId() !== caseId) return;
+
+  if (replaceStaleOwnerResult(caseId, result, shell)) return;
 
   if (isCurrentRoleTrial(result)) {
     shell.dataset.engineEnhanced = 'true';
@@ -82,12 +109,16 @@ async function enhanceResultPage() {
   (shell.querySelector('.role-docket-cover') || shell.querySelector('.judgment-cover'))?.after(panel);
 }
 
-window.addEventListener('hashchange', scheduleEnhance);
+window.addEventListener('hashchange', () => {
+  replacedCaseId = '';
+  scheduleEnhance();
+});
 new MutationObserver(scheduleEnhance).observe(document.getElementById('app'), { childList: true, subtree: true });
 await waitForAuthReady();
 onAuthStateChanged(auth, current => {
   user = current;
   requestKey = '';
+  replacedCaseId = '';
   scheduleEnhance();
 });
 scheduleEnhance();
