@@ -1,8 +1,9 @@
 function buildPublicResult(source = {}) {
   const trial = source.trialRecord || null;
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     resultVersion: source.resultVersion || '',
+    generationRevision: source.generationRevision || '',
     caseId: source.caseId,
     isPublic: source.isPublic === true,
     docketNumber: source.docketNumber || trial?.docketNumber || '',
@@ -48,6 +49,7 @@ function buildPublicResult(source = {}) {
     } : null,
     judgment: source.judgment || {},
     generationMode: source.generationMode || 'unknown',
+    quality: source.quality ? { passed: source.quality.passed !== false } : {},
     reactionCount: Math.max(0, Number(source.reactionCount || 0)),
     commentCount: Math.max(0, Number(source.commentCount || 0)),
     moderationStatus: source.moderationStatus || 'clear',
