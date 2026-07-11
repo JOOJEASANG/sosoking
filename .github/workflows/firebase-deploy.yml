@@ -9,7 +9,7 @@ on:
 
 concurrency:
   group: firebase-core-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 env:
   FIREBASE_PROJECT_ID: sosoking-481e6
@@ -72,9 +72,8 @@ jobs:
           test -f storage.rules
           test -f public/index.html
           test -f public/health.json
-          test -f functions/case-analysis.js
-          test -f functions/judgment-contract.js
-          test -f functions/judgment-writer.js
+          test -f functions/role-based-trial.js
+          test -f functions/verify-deployment.js
           grep -q "GEMINI_API_KEY" functions/main.js
           grep -q "exports.generateJudgment" functions/main.js
           grep -q "FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6" .github/workflows/firebase-deploy.yml
@@ -85,6 +84,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      statuses: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -115,3 +115,30 @@ jobs:
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
         run: firebase deploy --only functions,firestore:rules,firestore:indexes,hosting --force --project "$FIREBASE_PROJECT_ID" --non-interactive
+
+      - name: Verify deployed role trial build
+        env:
+          VERIFY_ATTEMPTS: 18
+          VERIFY_DELAY_MS: 10000
+        run: |
+          node functions/verify-deployment.js \
+            "https://sosoking-481e6.web.app/health.json" \
+            "https://sosoking.co.kr/health.json"
+
+      - name: Publish Firebase deploy commit status
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const state = '${{ job.status }}' === 'success' ? 'success' : 'failure';
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.sha,
+              state,
+              context: 'firebase/deploy',
+              description: state === 'success'
+                ? 'Role trial v10 deployed and verified'
+                : 'Firebase deploy or live verification failed'
+            });
