@@ -11,7 +11,8 @@ service cloud.firestore {
     }
 
     match /results/{caseId} {
-      allow read: if signedIn() && resource.data.userId == request.auth.uid;
+      allow read: if resource.data.isPublic == true
+        || (signedIn() && resource.data.userId == request.auth.uid);
       allow create, update, delete: if false;
     }
 

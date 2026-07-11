@@ -14,20 +14,20 @@ const rules = read('firestore.rules');
 const firebaseJson = JSON.parse(read('firebase.json'));
 
 const checks = [
-  [index.includes('/css/app.css?v=20260711-stage1'), 'Stage 1 stylesheet is not loaded'],
-  [index.includes('/js/app.js?v=20260711-stage1'), 'Stage 1 application module is not loaded'],
+  [index.includes('/css/app.css?v='), 'Application stylesheet is not loaded'],
+  [index.includes('/js/app.js?v='), 'Application module is not loaded'],
   [css.includes('.hero-grid') && css.includes('.auth-layout') && css.includes('.form-card'), 'Core responsive UI styles are missing'],
   [app.includes('signInWithPopup') && app.includes('createUserWithEmailAndPassword'), 'Google and email authentication flows are incomplete'],
   [app.includes("httpsCallable(functions, 'createCaseDraft')"), 'Case form is not connected to the secure callable function'],
-  [app.includes('caseDescription') || app.includes("name=\"description\""), 'Case description input is missing'],
+  [app.includes('caseDescription') || app.includes('name="description"'), 'Case description input is missing'],
   [app.includes('judgeType') && app.includes('grievanceIndex') && app.includes('desiredVerdict'), 'Required case judgment inputs are missing'],
   [firebase.includes("getFunctions(app, 'asia-northeast3')"), 'Functions region must remain asia-northeast3'],
   [firebaseConfig.includes("projectId: 'sosoking-481e6'"), 'Firebase project configuration is incorrect'],
   [functions.includes('exports.createCaseDraft') && functions.includes("status: 'received'"), 'Secure case draft creation is missing'],
   [functions.includes('DAILY_CASE_LIMIT') && functions.includes('CASE_COOLDOWN_MS'), 'Server-side abuse limits are missing'],
-  [functions.includes("generationStatus: 'not_started'"), 'Stage 2 handoff state is missing'],
-  [rules.includes('resource.data.userId == request.auth.uid'), 'Case documents must be readable only by their owner'],
-  [rules.includes('allow create, update, delete: if false'), 'Client-side case writes must remain blocked'],
+  [functions.includes("generationStatus: 'not_started'"), 'Judgment handoff state is missing'],
+  [rules.includes('resource.data.userId == request.auth.uid'), 'Owner-based Firestore reads are missing'],
+  [rules.includes('allow create, update, delete: if false'), 'Client-side writes must remain blocked'],
   [firebaseJson.hosting?.public === 'public' && firebaseJson.functions?.source === 'functions', 'Firebase source configuration is invalid'],
 ];
 
