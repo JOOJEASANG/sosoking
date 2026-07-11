@@ -10,6 +10,11 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    match /results/{caseId} {
+      allow read: if signedIn() && resource.data.userId == request.auth.uid;
+      allow create, update, delete: if false;
+    }
+
     match /rate_limits/{userId} {
       allow read: if signedIn() && request.auth.uid == userId;
       allow create, update, delete: if false;
