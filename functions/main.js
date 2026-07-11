@@ -16,6 +16,7 @@ if (!admin.apps.length) admin.initializeApp();
 
 const db = admin.firestore();
 const REGION = 'asia-northeast3';
+const ROLE_TRIAL_REVISION = 'role-trial-r4-20260711';
 const geminiKey = defineSecret('GEMINI_API_KEY');
 const CATEGORY_IDS = new Set(['food', 'late', 'relationship', 'family', 'work', 'digital', 'other']);
 const JUDGE_TYPES = new Set(['드립형', '과몰입형', '논리집착형']);
@@ -54,6 +55,13 @@ function validateCasePayload(raw = {}) {
   return { title, description, defendantName, category, judgeType, desiredVerdict, grievanceIndex, isPublic };
 }
 
+function isReusableResult(resultData = {}) {
+  return resultData.resultVersion === ROLE_TRIAL_VERSION
+    && resultData.generationRevision === ROLE_TRIAL_REVISION
+    && isCompleteRoleTrial(resultData.trialRecord)
+    && resultData.quality?.passed !== false;
+}
+
 exports.systemHealth = onCall({ region: REGION, secrets: [geminiKey], cors: true }, async request => {
   requireUser(request);
   return {
@@ -62,6 +70,7 @@ exports.systemHealth = onCall({ region: REGION, secrets: [geminiKey], cors: true
     geminiConfigured: Boolean(geminiKey.value().trim()),
     model: MODEL_NAME,
     pipeline: ROLE_TRIAL_VERSION,
+    generationRevision: ROLE_TRIAL_REVISION,
     timestamp: new Date().toISOString(),
   };
 });
@@ -102,6 +111,7 @@ exports.createCaseDraft = onCall({ region: REGION, cors: true }, async request =
       status: 'received',
       courtStage: 'filed',
       generationStatus: 'not_started',
+      generationRevision: null,
       createdAt: now,
       updatedAt: now,
     });
@@ -116,7 +126,7 @@ exports.createCaseDraft = onCall({ region: REGION, cors: true }, async request =
   });
 
   logger.info('Case draft created', { caseId: caseRef.id, docketNumber, userId: auth.uid, category: input.category });
-  return { caseId: caseRef.id, docketNumber, status: 'received', nextStage: ROLE_TRIAL_VERSION };
+  return { caseId: caseRef.id, docketNumber, status: 'received', nextStage: ROLE_TRIAL_VERSION, generationRevision: ROLE_TRIAL_REVISION };
 });
 
 exports.generateJudgment = onCall({
@@ -142,12 +152,15 @@ exports.generateJudgment = onCall({
     if (caseData.userId !== auth.uid) throw new HttpsError('permission-denied', '본인 사건만 심리할 수 있습니다.');
 
     const resultSnap = await transaction.get(resultRef);
-    if (resultSnap.exists && resultSnap.data()?.resultVersion === ROLE_TRIAL_VERSION && isCompleteRoleTrial(resultSnap.data()?.trialRecord)) {
-      return { existing: true, caseData, resultData: resultSnap.data() };
+    const resultData = resultSnap.exists ? resultSnap.data() : null;
+    if (resultData && isReusableResult(resultData)) {
+      return { existing: true, caseData, resultData };
     }
 
     const startedAt = caseData.generationStartedAt?.toMillis?.() || 0;
-    if (caseData.generationStatus === 'processing' && Date.now() - startedAt < GENERATION_LOCK_MS) {
+    const sameRevisionProcessing = caseData.generationStatus === 'processing'
+      && caseData.generationRevision === ROLE_TRIAL_REVISION;
+    if (sameRevisionProcessing && Date.now() - startedAt < GENERATION_LOCK_MS) {
       throw new HttpsError('aborted', '수사관과 재판부가 이미 이 사건을 처리 중입니다.');
     }
 
@@ -159,6 +172,7 @@ exports.generateJudgment = onCall({
       status: 'processing',
       courtStage: 'investigation',
       generationStatus: 'processing',
+      generationRevision: ROLE_TRIAL_REVISION,
       generationStartedAt: now,
       updatedAt: now,
     });
@@ -173,6 +187,7 @@ exports.generateJudgment = onCall({
       judgment: reserved.resultData.judgment,
       caseAnalysis: reserved.resultData.caseAnalysis,
       generationMode: reserved.resultData.generationMode,
+      generationRevision: reserved.resultData.generationRevision,
       quality: reserved.resultData.quality,
       reused: true,
     };
@@ -188,8 +203,9 @@ exports.generateJudgment = onCall({
     const completedAt = admin.firestore.Timestamp.now();
     const trial = generated.trialRecord;
     const resultData = {
-      schemaVersion: 4,
+      schemaVersion: 5,
       resultVersion: ROLE_TRIAL_VERSION,
+      generationRevision: ROLE_TRIAL_REVISION,
       caseId,
       userId: auth.uid,
       isPublic: caseData.isPublic === true,
@@ -242,6 +258,7 @@ exports.generateJudgment = onCall({
       status: 'judged',
       courtStage: 'sentenced',
       generationStatus: 'completed',
+      generationRevision: ROLE_TRIAL_REVISION,
       resultId: caseId,
       resultVersion: ROLE_TRIAL_VERSION,
       docketNumber: trial.docketNumber,
@@ -262,6 +279,7 @@ exports.generateJudgment = onCall({
       docketNumber: trial.docketNumber,
       userId: auth.uid,
       mode: generated.generationMode,
+      generationRevision: ROLE_TRIAL_REVISION,
       attempts: generated.aiAttempts,
       passed: generated.quality?.passed,
     });
@@ -273,6 +291,7 @@ exports.generateJudgment = onCall({
       judgment: generated.judgment,
       caseAnalysis: generated.caseAnalysis,
       generationMode: generated.generationMode,
+      generationRevision: ROLE_TRIAL_REVISION,
       quality: generated.quality,
       reused: false,
     };
@@ -281,6 +300,7 @@ exports.generateJudgment = onCall({
       status: 'received',
       courtStage: 'filed',
       generationStatus: 'failed',
+      generationRevision: ROLE_TRIAL_REVISION,
       generationError: cleanText(error?.message, 240),
       updatedAt: admin.firestore.Timestamp.now(),
     }).catch(() => null);
