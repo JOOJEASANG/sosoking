@@ -15,6 +15,8 @@ const story = [read('./judgment-story-v2.js'), read('./judgment-story-config.js'
 const daily = read('./daily.js');
 const social = read('./social.js');
 const repair = read('./repair.js');
+const visibility = read('./visibility.js');
+const securityUtils = read('./security-utils.js');
 const app = read('../public/js/app.js');
 const index = read('../public/index.html');
 const homePage = read('../public/js/pages/home.js');
@@ -31,9 +33,6 @@ const readme = read('../README.md');
 const functionDeployIndex = coreWorkflow.indexOf('Deploy Functions from current source');
 const firestoreDeployIndex = coreWorkflow.indexOf('Deploy Firestore rules and indexes');
 const hostingDeployIndex = coreWorkflow.indexOf('Deploy Hosting');
-const resultWriteStart = generator.indexOf('await resultRef.set({');
-const resultWriteEnd = generator.indexOf('\n    });', resultWriteStart);
-const resultWrite = resultWriteStart >= 0 && resultWriteEnd > resultWriteStart ? generator.slice(resultWriteStart, resultWriteEnd) : '';
 const retiredFunctions = ['syncJudgmentStructure','backfillJudgmentStructures','backfillJudgmentStructuresNow'];
 const removedFiles = [
   './generate-trial-lite.js','./judgment-parser.js','./sync-judgment-structure.js',
@@ -42,7 +41,16 @@ const removedFiles = [
   '../public/css/theme-targeted-fixes.css','../public/css/home-hero-light-contrast.css',
   '../public/css/light-mode-complete-contrast.css','../public/css/home-stats-cta-polish.css','../public/css/submit-light-fix.css',
 ];
-const duplicatedNarrativeFields = ['expandedCase','reception','caseTimeline','forensicReport','investigation','plaintiffArg','defendantArg','courtOpinion','verdict','sentence','closingComment','judgmentScript'];
+const duplicatedNarrativeFields = ['expandedCase','reception','caseTimeline','forensicReport','plaintiffArg','defendantArg','courtOpinion','verdict','sentence','closingComment','judgmentScript'];
+const resultPayloadStart = generator.indexOf('batch.set(resultRef, {');
+const resultPayloadEnd = generator.indexOf('\n    });', resultPayloadStart);
+const resultPayload = resultPayloadStart >= 0 && resultPayloadEnd > resultPayloadStart
+  ? generator.slice(resultPayloadStart, resultPayloadEnd)
+  : '';
+const globalHeaders = Object.fromEntries(
+  (firebaseConfig.hosting?.headers?.find(item => item.source === '**')?.headers || [])
+    .map(item => [item.key, item.value]),
+);
 
 const checks = [
   [functionDeployIndex >= 0, 'Core workflow must deploy Functions from current source'],
@@ -56,11 +64,13 @@ const checks = [
   [retiredFunctions.every(name => !coreWorkflow.includes(name)), 'Core workflow still references retired judgment Functions'],
 
   [main.includes("require('./generate-trial-v2')"), 'Functions entry point must export V2 generator'],
+  [main.includes("require('./visibility')"), 'Functions entry point must export atomic visibility changes'],
   [!main.includes("require('./generate-trial-lite')") && !main.includes("require('./sync-judgment-structure')"), 'Legacy judgment exports must remain removed'],
   [removedFiles.every(file => !fs.existsSync(resolve(file))), 'A removed or consolidated file was restored'],
-  [resultWrite.includes('schemaVersion: JUDGMENT_SCHEMA_VERSION') && resultWrite.includes('judgment,'), 'V2 generator must save the canonical judgment object'],
-  [resultWrite.includes("resultVersion: 'judgment-v2'") && resultWrite.includes('storyVersion: STORY_VERSION'), 'V2 result version metadata is missing'],
-  [duplicatedNarrativeFields.every(field => !resultWrite.includes(`\n      ${field}:`)), 'V2 generator must not write duplicate narrative fields'],
+  [resultPayload.includes('schemaVersion: JUDGMENT_SCHEMA_VERSION') && resultPayload.includes('judgment,'), 'V2 generator must save the canonical judgment object'],
+  [resultPayload.includes("resultVersion: 'judgment-v2'") && resultPayload.includes('storyVersion: STORY_VERSION'), 'V2 result version metadata is missing'],
+  [duplicatedNarrativeFields.every(field => !resultPayload.includes(`\n      ${field}:`)), 'V2 generator must not write duplicate narrative fields'],
+  [generator.includes('const batch = db.batch()') && generator.includes('batch.update(caseRef') && generator.includes('await batch.commit()'), 'Judgment result and case status must commit atomically'],
 
   [generator.includes('buildCaseProfile') && generator.includes('buildStoryPrompt'), 'User judgments must use case-specific generation'],
   [generator.includes('evaluateStorySpecificity') && generator.includes('buildRewriteInstruction'), 'Generic or repetitive AI output must be rejected and rewritten'],
@@ -74,17 +84,23 @@ const checks = [
   [story.includes('normalizeAnchorToken'), 'Korean case-anchor normalization is missing'],
 
   [daily.includes("resultVersion: 'judgment-v2'") && daily.includes('judgment: data.judgment'), 'Daily AI cases must use V2 schema'],
+  [daily.includes('daily_generation_locks') && daily.includes('DAILY_LOCK_STALE_MS'), 'Daily AI generation must use a stale-safe lock'],
   [social.includes('resultData.judgment?.orders') && social.includes('resultData.judgment?.opinion'), 'Appeals must read V2 fields'],
+  [social.includes('APPEAL_DAILY_LIMIT') && social.includes("status: 'processing'"), 'Appeals must use rate limits and concurrency locks'],
   [repair.includes('isCompleteJudgment(data.judgment)'), 'Stale recovery must recognize completed V2 judgments'],
+  [repair.includes('recoverStaleReservations') && repair.includes('title_suggestion_reservations'), 'Stale quota reservations must be refunded'],
+  [visibility.includes('db.runTransaction') && visibility.includes('assertNoSensitiveContent'), 'Visibility updates must be atomic and privacy checked'],
+  [securityUtils.includes('validDocumentId') && securityUtils.includes('validatedProfilePhotoUrl'), 'Shared security validation module is incomplete'],
 
   [app.includes("from './pages/home.js?v=20260710-full-audit1'"), 'App must load the audited home directly'],
   [app.includes("from './pages/trial-game.js?v=20260710-full-audit1'"), 'App must load the staged trial flow'],
-  [app.includes("from './pages/result-case-story.js?v=20260711-interpret1'"), 'App must load the interpretive result wrapper'],
+  [app.includes("from './pages/result-case-story.js?v=20260717-security1'"), 'App must load the secured result wrapper'],
+  [app.includes("from './pages/auth.js?v=20260717-security1'"), 'App must load the verified-email authentication flow'],
   [app.includes("from './pages/board-court.js?v=20260710-v2judgment1'"), 'App must load V2-aware board'],
   [!app.includes('result-summary.js') && !app.includes('result-court.js') && !app.includes('home-court.js'), 'App must not restore removed wrappers'],
   [index.includes('/css/site-system.css?v=20260710-full-audit1'), 'Index must load unified site CSS'],
   [index.includes('/css/site-readability.css?v=20260711-interpret1'), 'Index must load the final readability guard'],
-  [index.includes('/js/app.js?v=20260711-interpret1'), 'Index must bust interpretive app cache'],
+  [index.includes('/js/app.js?v=20260717-security1'), 'Index must bust security app cache'],
   [siteSystem.includes('html[data-theme="light"]') && siteSystem.includes('--ui-surface:'), 'Unified CSS must define light and dark surfaces'],
   [readability.includes('html[data-theme="light"] body #page-content') && readability.includes('.result-card:not(.emergency-briefing-card) p'), 'Readability guard must protect runtime result text'],
   [homePage.includes('사건 접수부터 선고까지 6단계') && homePage.includes('result.judgment?.plaintiffClaim'), 'Home must explain and search the full court journey'],
@@ -94,13 +110,14 @@ const checks = [
   [resultPage.includes('r.judgment') && resultPage.includes('r.judgmentScript') && resultPage.includes("mode: 'script'"), 'Result page must support V2 and legacy scripts'],
   [resultWrapper.includes("doc(db, 'results', caseId)") && resultWrapper.includes('result.caseDescription'), 'Result wrapper must load original case'],
   [resultWrapper.includes('<details class="result-card original-case-card">') && resultWrapper.includes('같은 사건, 다른 해석'), 'Result wrapper must separate source text and render independent claims'],
-  [resultWrapper.includes('소소킹 긴급사건 특보') && resultWrapper.includes('AI 상황 재구성'), 'Result wrapper must show interpretive emergency briefing'],
+  [resultWrapper.includes('setCaseVisibility') && resultWrapper.includes('소소킹 긴급사건 특보'), 'Result wrapper must use secure publishing and show interpretive briefing'],
   [boardPage.includes('r.judgment?.summary') && boardPage.includes('r.judgment?.headline'), 'Board must read V2 summaries'],
 
   [storageWorkflow.includes('workflow_dispatch:') && !storageWorkflow.includes('\n  push:'), 'Storage workflow must remain manual'],
   [storageWorkflow.includes('firebase deploy --only storage') && !storageWorkflow.includes('continue-on-error'), 'Storage failures must remain visible'],
   [storageWorkflow.includes('FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6'), 'Storage workflow secret is missing'],
   [firebaseConfig.storage?.rules === 'storage.rules' && storageRules.includes('service firebase.storage'), 'Storage rules configuration is invalid'],
+  [globalHeaders['X-Content-Type-Options'] === 'nosniff' && globalHeaders['X-Frame-Options'] === 'DENY', 'Hosting security headers are missing'],
 
   [policy.includes("doc(db, 'public_settings', 'config')") && !policy.includes("doc(db, 'site_settings', 'config')"), 'Public policy must read only public settings'],
   [policy.includes("getDoc(doc(db, 'policy_docs', safeType)).catch(() => null)"), 'Policy content failure must be isolated'],
@@ -118,4 +135,4 @@ if (failed.length) {
   process.exit(1);
 }
 
-console.log('Verified interpretive judgments, light-mode readability and Firebase deployment contracts.');
+console.log('Verified secure judgments, light-mode readability and Firebase deployment contracts.');
