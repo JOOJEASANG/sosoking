@@ -4,6 +4,17 @@ const {
   markerCount,
 } = require('./judgment-story-config');
 
+const COURTROOM_PROCEDURE_MARKERS = [
+  '쟁점', '증거', '진술', '정황', '고의', '과실', '예견', '인과관계', '책임',
+  '항변', '반박', '인정', '배척', '판단', '가중', '정상참작', '확인 가능성',
+  '재발 방지', '원상회복', '처분', '주문',
+];
+
+const SELF_AWARE_JOKE_MARKERS = [
+  'ㅋㅋ', 'ㅎㅎ', '웃기게', '웃겨', '웃음을 주', '개그', '농담', '장난이었다',
+  '재미를 위해', '커 보이게 하려고', '크게 보이게 하려고', '독자를 웃기',
+];
+
 function words(value) {
   return String(value || '').toLowerCase().match(/[가-힣a-z0-9]+/g) || [];
 }
@@ -91,7 +102,10 @@ function evaluateStorySpecificity(judgment, profile) {
   const tailoredOrders = orderSections.filter(order => sectionContainsAnchor(order, anchors)).length;
   const primaryOrderHits = orderSections.filter(order => sectionContainsAnchor(order, [profile.mainAnchor])).length;
   const humorText = `${judgment.breakingNews} ${judgment.emergencyBriefing} ${judgment.impactAssessment} ${judgment.investigation} ${judgment.opinion} ${judgment.closingComment}`;
+  const procedureText = `${judgment.facts} ${judgment.investigation} ${judgment.plaintiffClaim} ${judgment.defendantClaim} ${judgment.prosecution} ${judgment.defense} ${judgment.opinion} ${orderSections.join(' ')}`;
   const seriousHumorHits = markerCount(humorText, SERIOUS_HUMOR_MARKERS);
+  const courtroomProcedureHits = markerCount(procedureText, COURTROOM_PROCEDURE_MARKERS);
+  const selfAwareJokeHits = markerCount(allTexts.join(' '), SELF_AWARE_JOKE_MARKERS);
   const expectedLevelCode = profile.incidentLevel.split('·')[0].trim();
   const incidentLevelMatches = String(judgment.incidentLevel || '').includes(expectedLevelCode);
   const plaintiffClaimLength = String(judgment.plaintiffClaim || '').length;
@@ -113,6 +127,8 @@ function evaluateStorySpecificity(judgment, profile) {
     tailoredOrders,
     primaryOrderHits,
     seriousHumorHits,
+    courtroomProcedureHits,
+    selfAwareJokeHits,
     emergencyDetailLength: String(judgment.emergencyBriefing || '').length,
     impactLength: String(judgment.impactAssessment || '').length,
     incidentLevelMatches,
@@ -143,20 +159,23 @@ function evaluateStorySpecificity(judgment, profile) {
       && echo.echoSectionHits <= 2
       && echo.heavyEchoSectionHits <= 1
       && echo.copiedPhraseHits <= 7
-      && seriousHumorHits >= 4,
+      && seriousHumorHits >= 4
+      && courtroomProcedureHits >= 6
+      && selfAwareJokeHits === 0,
   };
 }
 
 function buildRewriteInstruction(profile, evaluation) {
   return `\n\n[재작성 명령]
-이전 응답은 사건 재해석·문장 다양성·원문 반복 검사에서 탈락했다.
-접수 원문을 다시 읽어주지 말고, 결정적 행동·실제 불편·웃기는 대비만 남겨 완전히 새로운 문장과 비유로 재구성하라.
+이전 응답은 사건 재해석·법정 절차성·문장 다양성·원문 반복 검사에서 탈락했다.
+접수 원문을 다시 읽어주지 말고, 결정적 행동·실제 불편·증거·고의 또는 과실·인과관계·양측 반박·재판부 판단을 서로 다른 영역에 배치하라.
 “${profile.mainAnchor}”를 모든 문단에 반복하지 말고 전체에서 3~8회만 자연스럽게 사용하라.
-facts는 핵심 사실을 한 번만 압축하고, 나머지 영역은 원인 분석·양측 해석·가정적 파급효과·판단처럼 서로 다른 역할을 맡겨라.
+facts는 인정 사실, investigation은 시간선과 증거, prosecution은 책임 논증, defense는 직접 반박, opinion은 주장 인정·배척과 결론을 담당해야 한다.
 plaintiffClaim과 defendantClaim은 각각 1~2문장으로 쓰되 같은 요약을 말투만 바꿔 반복하지 마라.
-원문에서 4개 단어 이상 연속된 표현을 복사하지 말고, orders 3개도 서로 다른 집행 장면으로 작성하라.
-${profile.incidentLevel}의 과몰입 태도와 최소 세 번의 웃음 지점은 유지하라.
-현재 검사값: echoSections=${evaluation.echoSectionHits || 0}, heavyEcho=${evaluation.heavyEchoSectionHits || 0}, copiedPhrases=${evaluation.copiedPhraseHits || 0}, mainAnchorMentions=${evaluation.mainAnchorMentions || 0}, distinctSections=${evaluation.distinctSectionCount || 0}, claimOverlap=${Number(evaluation.opposingClaimOverlap || 0).toFixed(2)}, sections=${evaluation.sectionHits || 0}, orders=${evaluation.tailoredOrders || 0}, humor=${evaluation.seriousHumorHits || 0}.
+원문에서 4개 단어 이상 연속된 표현을 복사하지 말고, orders 3개도 원상회복·재발방지·상징적 집행으로 분리하라.
+수사관·검사·변호인·재판부의 태도는 끝까지 100% 진지해야 한다. 작품이 스스로 웃기다고 설명하거나 독자에게 윙크하는 표현은 전부 제거하라.
+${profile.incidentLevel}의 과몰입 태도와 거대한 절차·정밀한 분석·사소한 집행 대상에서 생기는 최소 세 번의 대비는 유지하라.
+현재 검사값: echoSections=${evaluation.echoSectionHits || 0}, heavyEcho=${evaluation.heavyEchoSectionHits || 0}, copiedPhrases=${evaluation.copiedPhraseHits || 0}, mainAnchorMentions=${evaluation.mainAnchorMentions || 0}, distinctSections=${evaluation.distinctSectionCount || 0}, claimOverlap=${Number(evaluation.opposingClaimOverlap || 0).toFixed(2)}, sections=${evaluation.sectionHits || 0}, orders=${evaluation.tailoredOrders || 0}, seriousHumor=${evaluation.seriousHumorHits || 0}, procedure=${evaluation.courtroomProcedureHits || 0}, selfAwareJokes=${evaluation.selfAwareJokeHits || 0}.
 JSON 객체만 다시 출력하라.`;
 }
 
