@@ -1,6 +1,7 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { getFirestore, FieldValue, Timestamp } = require('firebase-admin/firestore');
+const { getStorage } = require('firebase-admin/storage');
 const { isAdminAuth } = require('./admin-utils');
 const { isCompleteJudgment } = require('./judgment-v2');
 
@@ -89,24 +90,48 @@ async function recoverStaleProcessingCases() {
   return { checked: snap.size, recoveredCount: recovered.length, recovered };
 }
 
-async function refundStaleReservation(document, limitCollection) {
+async function deleteOrphanCaseImages(uid, caseId) {
+  if (!uid || !caseId) return 0;
+  try {
+    const [files] = await getStorage().bucket().getFiles({ prefix: `case-images/${uid}/${caseId}/` });
+    await Promise.all(files.map(file => file.delete().catch(() => null)));
+    return files.length;
+  } catch (error) {
+    console.error('stale reservation image cleanup failed:', error.message || error);
+    return 0;
+  }
+}
+
+async function refundStaleReservation(document, reservationCollection, limitCollection) {
   const reservationRef = document.ref;
   const reservation = document.data() || {};
   const uid = String(reservation.uid || '').trim();
   const date = String(reservation.date || '').trim();
+  const caseId = String(reservation.caseId || '').trim();
   if (!uid || !date) {
     await reservationRef.delete().catch(() => null);
     return { reservationId: document.id, refunded: false, malformed: true };
   }
 
   const limitRef = db.doc(`${limitCollection}/${uid}`);
+  const caseRef = reservationCollection === 'submit_reservations' && caseId
+    ? db.doc(`cases/${caseId}`)
+    : null;
   let refunded = false;
+  let completed = false;
+
   await db.runTransaction(async transaction => {
-    const [freshReservation, limitSnap] = await Promise.all([
-      transaction.get(reservationRef),
-      transaction.get(limitRef),
-    ]);
+    const reads = [transaction.get(reservationRef), transaction.get(limitRef)];
+    if (caseRef) reads.push(transaction.get(caseRef));
+    const [freshReservation, limitSnap, caseSnap] = await Promise.all(reads);
     if (!freshReservation.exists) return;
+
+    if (caseSnap?.exists) {
+      completed = true;
+      transaction.delete(reservationRef);
+      return;
+    }
+
     const current = limitSnap.exists ? limitSnap.data() : {};
     if (current.date === date && numberValue(current.count) > 0) {
       transaction.set(limitRef, {
@@ -118,7 +143,11 @@ async function refundStaleReservation(document, limitCollection) {
     }
     transaction.delete(reservationRef);
   });
-  return { reservationId: document.id, uid, refunded };
+
+  const storageDeleted = reservationCollection === 'submit_reservations' && !completed
+    ? await deleteOrphanCaseImages(uid, caseId)
+    : 0;
+  return { reservationId: document.id, uid, caseId, refunded, completed, storageDeleted };
 }
 
 async function recoverStaleReservations() {
@@ -135,7 +164,7 @@ async function recoverStaleReservations() {
       .limit(50)
       .get();
     for (const document of snapshot.docs) {
-      const result = await refundStaleReservation(document, limitCollection);
+      const result = await refundStaleReservation(document, reservationCollection, limitCollection);
       recovered.push({ type: reservationCollection, ...result });
     }
   }
@@ -143,6 +172,8 @@ async function recoverStaleReservations() {
   return {
     recoveredCount: recovered.length,
     refundedCount: recovered.filter(item => item.refunded).length,
+    completedReservationCount: recovered.filter(item => item.completed).length,
+    storageDeleted: recovered.reduce((sum, item) => sum + numberValue(item.storageDeleted), 0),
     recovered,
   };
 }
