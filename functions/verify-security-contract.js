@@ -12,11 +12,13 @@ const storageRules = fs.readFileSync(path.resolve(__dirname, '../storage.rules')
 const firebaseConfig = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../firebase.json'), 'utf8'));
 const main = fs.readFileSync(path.resolve(__dirname, './main.js'), 'utf8');
 const social = fs.readFileSync(path.resolve(__dirname, './social.js'), 'utf8');
+const reporting = fs.readFileSync(path.resolve(__dirname, './reporting.js'), 'utf8');
 const submit = fs.readFileSync(path.resolve(__dirname, './submit-secure.js'), 'utf8');
 const generator = fs.readFileSync(path.resolve(__dirname, './generate-trial-v2.js'), 'utf8');
 const visibility = fs.readFileSync(path.resolve(__dirname, './visibility.js'), 'utf8');
 const profile = fs.readFileSync(path.resolve(__dirname, './profile.js'), 'utf8');
 const titleSuggestion = fs.readFileSync(path.resolve(__dirname, './title-suggestion.js'), 'utf8');
+const repair = fs.readFileSync(path.resolve(__dirname, './repair.js'), 'utf8');
 
 function section(name, nextName) {
   const start = rules.indexOf(`match /${name}`);
@@ -39,6 +41,7 @@ const publicSettings = section('public_settings/{docId}', 'admin_settings/{docId
 const cases = section('cases/{caseId}', 'results/{caseId}');
 const results = section('results/{caseId}', 'result_reactions/{caseId}');
 const userNames = section('user_names/{key}', 'cases/{caseId}');
+const reports = section('reports/{reportId}', 'absurd_cases/{caseId}');
 const headers = firebaseConfig.hosting?.headers || [];
 const globalHeaderValues = Object.fromEntries(
   (headers.find(item => item.source === '**')?.headers || []).map(item => [item.key, item.value]),
@@ -55,10 +58,16 @@ const checks = [
   [publicSettings.includes('allow read: if true;'), 'Public settings must remain readable'],
   [publicSettings.includes("'dailyLimit', 'cooldownSec', 'businessInfo', 'publicNotice', 'updatedAt'"), 'Public settings writes must use the field whitelist'],
   [rules.includes('match /appeal_limits/{userId}'), 'Appeal limits collection rule is missing'],
+  [rules.includes('match /report_limits/{userId}') && reports.includes('allow create, update, delete: if false;'), 'Reports must use server-side limits and deny direct client writes'],
   [main.includes("require('./visibility')"), 'Visibility Function must be exported'],
+  [main.includes("require('./reporting')"), 'Reporting Function must be exported'],
   [visibility.includes('db.runTransaction') && visibility.includes('assertNoSensitiveContent'), 'Publishing must be atomic and privacy-checked'],
+  [reporting.includes('REPORT_DAILY_LIMIT') && reporting.includes('REPORT_COOLDOWN_SEC') && reporting.includes('db.runTransaction'), 'Reports must use daily limits, cooldown and a transaction'],
+  [reporting.includes('ownerId === uid') && reporting.includes('publicAuthorId(uid)'), 'Reports must block self-reporting and deduplicate pseudonymously'],
   [submit.includes('requireVerifiedUser') && submit.includes('assertNoSensitiveContent'), 'Case submission must require verified users and privacy checks'],
   [submit.includes('hasValidImageSignature') && submit.includes('finishSubmitReservation'), 'Case image and quota failure recovery are incomplete'],
+  [submit.includes('isPublic: false') && !submit.includes('const isPublic = boolValue(data.isPublic'), 'New cases must always be server-forced private'],
+  [repair.includes('caseSnap?.exists') && repair.includes('deleteOrphanCaseImages'), 'Stale reservations must preserve completed cases and clean orphan images'],
   [generator.includes('const batch = db.batch()') && generator.includes('await batch.commit()'), 'Judgment result and case completion must be atomic'],
   [social.includes('publicAuthorId(uid)') && !social.includes("transaction.set(commentRef, { uid,"), 'Public comments must not expose raw Firebase UIDs'],
   [social.includes("status: 'processing'") && social.includes('APPEAL_DAILY_LIMIT'), 'Appeals must use a lock and daily limit'],
