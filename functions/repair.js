@@ -255,6 +255,78 @@ async function scrubPublicResultIdentifiers() {
   return { checked: resultSnap.size, scrubbed };
 }
 
+async function scrubPublicCommentIdentifiers() {
+  const snapshot = await db.collectionGroup('items').get();
+  const targets = snapshot.docs.filter(document => {
+    if (!document.ref.path.startsWith('court_comments/') || !document.ref.path.includes('/items/')) return false;
+    const data = document.data() || {};
+    return data.authorId !== undefined || data.uid !== undefined || data.userId !== undefined;
+  });
+
+  let scrubbed = 0;
+  for (let offset = 0; offset < targets.length; offset += 400) {
+    const batch = db.batch();
+    for (const document of targets.slice(offset, offset + 400)) {
+      batch.set(document.ref, {
+        authorId: FieldValue.delete(),
+        uid: FieldValue.delete(),
+        userId: FieldValue.delete(),
+        publicIdentifiersScrubbedAt: FieldValue.serverTimestamp(),
+      }, { merge: true });
+      scrubbed += 1;
+    }
+    await batch.commit();
+  }
+  return { checked: snapshot.size, scrubbed };
+}
+
+async function scrubPublicIdentifiers() {
+  const [results, comments] = await Promise.all([
+    scrubPublicResultIdentifiers(),
+    scrubPublicCommentIdentifiers(),
+  ]);
+  return { results, comments };
+}
+
+function legacyPublicIdCandidate(id) {
+  return !id.startsWith('case_')
+    && !id.startsWith('daily_')
+    && /^.+_\d{13}_[a-z0-9]{6}$/.test(id);
+}
+
+async function auditLegacyPublicCaseIds() {
+  const snapshot = await db.collection('results').where('isPublic', '==', true).get();
+  const candidates = snapshot.docs.filter(document => legacyPublicIdCandidate(document.id));
+  const confirmed = [];
+
+  for (let offset = 0; offset < candidates.length; offset += 50) {
+    const group = candidates.slice(offset, offset + 50);
+    const caseSnapshots = await Promise.all(group.map(document => db.doc(`cases/${document.id}`).get().catch(() => null)));
+    group.forEach((document, index) => {
+      const caseSnapshot = caseSnapshots[index];
+      const caseData = caseSnapshot?.exists ? caseSnapshot.data() || {} : {};
+      const uid = String(caseData.userId || '');
+      if (uid && document.id.startsWith(`${uid}_`)) {
+        const resultData = document.data() || {};
+        confirmed.push({
+          caseId: document.id,
+          caseTitle: String(resultData.caseTitle || caseData.caseTitle || '').slice(0, 80),
+          createdAt: resultData.createdAt?.toDate ? resultData.createdAt.toDate().toISOString() : '',
+        });
+      }
+    });
+  }
+
+  return {
+    checked: snapshot.size,
+    candidateCount: candidates.length,
+    confirmedCount: confirmed.length,
+    migrationRequired: confirmed.length > 0,
+    cases: confirmed.slice(0, 100),
+    truncated: confirmed.length > 100,
+  };
+}
+
 async function repairSocialCounters(options = {}) {
   const resultLimit = Math.max(1, Math.min(MAX_COUNTER_REPAIR_LIMIT, numberValue(options.limit, 200)));
   let resultSnap;
@@ -317,7 +389,7 @@ exports.repairSocialCounters = onSchedule({ region: REGION, schedule: '20 3 * * 
 });
 
 exports.scrubPublicResultIdentifiers = onSchedule({ region: REGION, schedule: '40 3 * * *', timeZone: 'Asia/Seoul', timeoutSeconds: 300, memory: '256MiB' }, async () => {
-  console.log('scrubPublicResultIdentifiers:', await scrubPublicResultIdentifiers());
+  console.log('scrubPublicResultIdentifiers:', await scrubPublicIdentifiers());
 });
 
 exports.recoverStaleTrialsNow = onCall({ ...ADMIN_CALLABLE_OPTIONS, timeoutSeconds: 120 }, async request => {
@@ -338,5 +410,10 @@ exports.repairSocialCountersNow = onCall(ADMIN_CALLABLE_OPTIONS, async request =
 
 exports.scrubPublicResultIdentifiersNow = onCall({ ...ADMIN_CALLABLE_OPTIONS, timeoutSeconds: 300 }, async request => {
   await assertAdmin(request);
-  return await scrubPublicResultIdentifiers();
+  return await scrubPublicIdentifiers();
+});
+
+exports.auditLegacyPublicCaseIdsNow = onCall({ ...ADMIN_CALLABLE_OPTIONS, timeoutSeconds: 300 }, async request => {
+  await assertAdmin(request);
+  return await auditLegacyPublicCaseIds();
 });
