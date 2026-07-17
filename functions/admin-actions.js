@@ -2,7 +2,7 @@ const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const { getStorage } = require('firebase-admin/storage');
 const { isAdminAuth } = require('./admin-utils');
-const { validDocumentId } = require('./security-utils');
+const { validDocumentId, requireVerifiedUser } = require('./security-utils');
 
 const db = getFirestore();
 const REGION = 'asia-northeast3';
@@ -30,7 +30,7 @@ async function deleteQuerySnapshot(query, counter) {
     const snap = await query.limit(BATCH_LIMIT).get();
     if (snap.empty) break;
     const batch = db.batch();
-    snap.docs.forEach(doc => batch.delete(doc.ref));
+    snap.docs.forEach(document => batch.delete(document.ref));
     await batch.commit();
     counter.deleted += snap.size;
     if (snap.size < BATCH_LIMIT) break;
@@ -42,8 +42,8 @@ async function deleteStoragePrefix(prefix, counter) {
     const [files] = await getStorage().bucket().getFiles({ prefix });
     await Promise.all(files.map(file => file.delete().catch(() => null)));
     counter.storageDeleted = (counter.storageDeleted || 0) + files.length;
-  } catch (err) {
-    counter.storageDeleteError = err.message || String(err);
+  } catch (error) {
+    counter.storageDeleteError = error.message || String(error);
   }
 }
 async function writeAdminLog(uid, action, targetId, detail = {}) {
@@ -78,8 +78,7 @@ async function deleteCourtData(caseId, counter) {
 }
 
 exports.deleteMyCase = onCall(CALLABLE_OPTIONS, async request => {
-  if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
-  const uid = request.auth.uid;
+  const uid = requireVerifiedUser(request, '사건 삭제는 구글 또는 인증된 이메일 로그인 후 이용할 수 있습니다.');
   const caseId = validDocumentId(request.data?.caseId, '사건 ID');
 
   const caseRef = db.doc(`cases/${caseId}`);
@@ -89,15 +88,30 @@ exports.deleteMyCase = onCall(CALLABLE_OPTIONS, async request => {
     return { success: true, caseId, alreadyDeleted: true, deleted: 0 };
   }
 
-  const c = caseSnap.exists ? caseSnap.data() : {};
-  const r = resultSnap?.exists ? resultSnap.data() : {};
-  const ownerId = c.userId || r.userId || r.ownerId || '';
+  const caseData = caseSnap.exists ? caseSnap.data() : {};
+  const resultData = resultSnap?.exists ? resultSnap.data() : {};
+  const ownerId = caseData.userId || resultData.userId || resultData.ownerId || '';
   if (!ownerId || ownerId !== uid) {
     throw new HttpsError('permission-denied', '본인 사건만 삭제할 수 있습니다.');
   }
 
-  await caseRef.set({ status: 'deleting', isPublic: false, deleteRequestedBy: uid, updatedAt: FieldValue.serverTimestamp() }, { merge: true }).catch(() => null);
-  await resultRef.set({ isPublic: false, deleteRequestedBy: uid, updatedAt: FieldValue.serverTimestamp() }, { merge: true }).catch(() => null);
+  const hideBatch = db.batch();
+  if (caseSnap.exists) {
+    hideBatch.set(caseRef, {
+      status: 'deleting',
+      isPublic: false,
+      deleteRequestedBy: 'owner',
+      updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+  }
+  if (resultSnap?.exists) {
+    hideBatch.set(resultRef, {
+      isPublic: false,
+      deleteRequestedBy: 'owner',
+      updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+  }
+  await hideBatch.commit();
 
   const counter = { deleted: 0 };
   await deleteCourtData(caseId, counter);
