@@ -6,30 +6,38 @@ function cleanEmail(value) {
   return String(value || '').trim().toLowerCase();
 }
 
-async function isAdminAuth(auth) {
+function isVerifiedStaffLogin(auth) {
   if (!auth?.uid) return false;
+  const provider = auth.token?.firebase?.sign_in_provider || '';
+  if (provider === 'anonymous') return false;
+  if (provider === 'password' && auth.token?.email_verified !== true) return false;
+  return true;
+}
 
-  const uidSnap = await db.doc(`admins/${auth.uid}`).get();
-  if (uidSnap.exists) return true;
+async function isAdminAuth(auth) {
+  if (!isVerifiedStaffLogin(auth)) return false;
+
+  const uidSnapshot = await db.doc(`admins/${auth.uid}`).get();
+  if (uidSnapshot.exists) return true;
 
   const email = cleanEmail(auth.token?.email);
   const emailVerified = auth.token?.email_verified === true;
   if (!email || !emailVerified) return false;
 
-  const emailSnap = await db.doc(`admins/${email}`).get();
-  return emailSnap.exists;
+  const emailSnapshot = await db.doc(`admins/${email}`).get();
+  return emailSnapshot.exists;
 }
 
 async function loadSettings() {
-  const [publicSnap, privateSnap] = await Promise.all([
+  const [publicSnapshot, privateSnapshot] = await Promise.all([
     db.doc('site_settings/config').get().catch(() => null),
     db.doc('admin_settings/config').get().catch(() => null),
   ]);
 
   return {
-    ...(publicSnap?.exists ? publicSnap.data() : {}),
-    ...(privateSnap?.exists ? privateSnap.data() : {}),
+    ...(publicSnapshot?.exists ? publicSnapshot.data() : {}),
+    ...(privateSnapshot?.exists ? privateSnapshot.data() : {}),
   };
 }
 
-module.exports = { isAdminAuth, loadSettings };
+module.exports = { isAdminAuth, loadSettings, isVerifiedStaffLogin };
