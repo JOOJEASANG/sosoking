@@ -39,6 +39,7 @@ const removedThemeFiles = [
 const checks = [
   [index.includes('/css/site-system.css?v=20260710-full-audit1'), 'Index must load the unified site design system'],
   [index.includes('/css/site-readability.css?v=20260711-interpret1'), 'Index must load the final light-mode readability guard'],
+  [index.includes('/js/app.js?v=20260717-security1'), 'Index must load the secured application cache key'],
   [removedThemeFiles.every(file => !exists(file)), 'Legacy theme patch files must remain removed'],
   [!index.includes('home-light-fix.css') && !index.includes('theme-contrast-fix.css'), 'Index must not reference legacy theme patches'],
   [siteSystem.includes('--ui-bg:') && siteSystem.includes('html[data-theme="light"]'), 'Unified CSS must define dark and light tokens'],
@@ -49,7 +50,8 @@ const checks = [
   [theme.includes('document.documentElement.style.colorScheme'), 'Theme controller must set browser color scheme'],
   [courtDesign.includes('var(--ui-line-strong') && !courtDesign.includes('contrast-fix.js'), 'Court design must use unified tokens without runtime contrast patches'],
   [app.includes("from './pages/home.js?v=20260710-full-audit1'"), 'App must load the audited home directly'],
-  [app.includes("result-case-story.js?v=20260711-interpret1"), 'App must load the interpretive result wrapper'],
+  [app.includes('result-case-story.js?v=20260717-security1'), 'App must load the secured interpretive result wrapper'],
+  [app.includes('auth.js?v=20260717-security1'), 'App must load the verified-email authentication screen'],
   [!exists('public/js/pages/home-court.js'), 'Redundant home decoration wrapper must remain removed'],
   [home.includes('사건 접수부터 선고까지 6단계') && home.includes('원고·피고 주장'), 'Home must explain the full court journey'],
   [home.includes('사건수사') && home.includes('법정공방') && home.includes('최종판결'), 'Home must explain investigation, courtroom and judgment'],
@@ -62,6 +64,7 @@ const checks = [
   [result.includes('claim-showdown') && result.includes('같은 사건, 다른 해석'), 'Result page must render contrasting claim interpretations'],
   [result.includes('<details class="result-card original-case-card">') && result.includes('접수 원문은 판결과 분리'), 'Original submission must be collapsed and separated from the AI result'],
   [result.includes('--alert-title') && result.includes('var(--ui-text-main'), 'Result runtime styles must use theme-aware variables'],
+  [result.includes('setCaseVisibility'), 'Result publishing must use the secured server Function'],
   [guide.includes('전체 과정 시작') && guide.includes('원고·피고 주장'), 'Guide must explain the complete experience'],
   [!guide.includes('관리자 페이지 정책 탭'), 'Public guide must not show administrator instructions'],
   [defaults.includes('사건 접수, 초동수사, 생활증거 감식, 원고측 주장, 피고측 반박'), 'Terms must describe actual service stages'],
@@ -80,4 +83,4 @@ if (failed.length) {
   process.exit(1);
 }
 
-console.log('Verified unified themes, final light-mode readability, interpretive judgments and full court journey.');
+console.log('Verified unified themes, secured result publishing, final light-mode readability and full court journey.');
