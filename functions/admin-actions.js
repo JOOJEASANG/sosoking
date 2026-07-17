@@ -2,6 +2,7 @@ const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const { getStorage } = require('firebase-admin/storage');
 const { isAdminAuth } = require('./admin-utils');
+const { validDocumentId } = require('./security-utils');
 
 const db = getFirestore();
 const REGION = 'asia-northeast3';
@@ -13,9 +14,6 @@ const CALLABLE_OPTIONS = {
   cors: true,
 };
 
-function cleanId(value) {
-  return String(value || '').replace(/[\u0000-\u001F\u007F]/g, '').trim().slice(0, 180);
-}
 function cleanNickname(value) {
   return String(value || '').replace(/\s+/g, '').trim().slice(0, 20);
 }
@@ -82,8 +80,7 @@ async function deleteCourtData(caseId, counter) {
 exports.deleteMyCase = onCall(CALLABLE_OPTIONS, async request => {
   if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
   const uid = request.auth.uid;
-  const caseId = cleanId(request.data?.caseId);
-  if (!caseId) throw new HttpsError('invalid-argument', 'caseId required');
+  const caseId = validDocumentId(request.data?.caseId, '사건 ID');
 
   const caseRef = db.doc(`cases/${caseId}`);
   const resultRef = db.doc(`results/${caseId}`);
@@ -109,8 +106,7 @@ exports.deleteMyCase = onCall(CALLABLE_OPTIONS, async request => {
 
 exports.deleteCourtPost = onCall(CALLABLE_OPTIONS, async request => {
   await assertAdmin(request);
-  const caseId = cleanId(request.data?.caseId);
-  if (!caseId) throw new HttpsError('invalid-argument', 'caseId required');
+  const caseId = validDocumentId(request.data?.caseId, '사건 ID');
 
   const counter = { deleted: 0 };
   await deleteCourtData(caseId, counter);
@@ -120,8 +116,7 @@ exports.deleteCourtPost = onCall(CALLABLE_OPTIONS, async request => {
 
 exports.deleteUserProfile = onCall(CALLABLE_OPTIONS, async request => {
   await assertAdmin(request);
-  const uid = cleanId(request.data?.uid);
-  if (!uid) throw new HttpsError('invalid-argument', 'uid required');
+  const uid = validDocumentId(request.data?.uid, '사용자 ID');
   const userRef = db.doc(`users/${uid}`);
   const snap = await userRef.get();
   const data = snap.exists ? snap.data() : {};
