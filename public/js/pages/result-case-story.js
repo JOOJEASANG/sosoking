@@ -1,7 +1,9 @@
-import { db, auth } from '../firebase.js?v=20260708-1';
+import { db, auth, functions } from '../firebase.js?v=20260708-1';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 import { renderResult as renderBaseResult } from './result.js?v=20260710-v2result1';
 import { escapeHtml } from '../utils/sanitize.js?v=20260630-3';
+import { showToast } from '../components/toast.js?v=20260630-3';
 
 function ensureOriginalCaseStyle() {
   if (document.getElementById('original-case-story-style')) return;
@@ -138,14 +140,39 @@ function decorateResult(container, original) {
   decorateClaims(container, original.extras);
 }
 
+function bindSecureVisibility(container, caseId) {
+  const oldButton = container.querySelector('#btn-share');
+  if (!oldButton || oldButton.dataset.secureVisibility === '1') return;
+  const button = oldButton.cloneNode(true);
+  button.dataset.secureVisibility = '1';
+  oldButton.replaceWith(button);
+  button.addEventListener('click', async () => {
+    const nextPublic = button.textContent.includes('공개 판결로 전환');
+    button.disabled = true;
+    try {
+      await httpsCallable(functions, 'setCaseVisibility')({ caseId, isPublic: nextPublic });
+      showToast(nextPublic ? '개인정보 검사를 통과해 판결을 공개했습니다.' : '판결을 비공개로 전환했습니다.', 'success');
+      await renderResult(container, caseId);
+    } catch (error) {
+      console.error(error);
+      button.disabled = false;
+      showToast((error.message || '공개 상태를 변경하지 못했습니다.').replace('FirebaseError: ', ''), 'error');
+    }
+  });
+}
+
 export async function renderResult(container, caseId) {
   ensureOriginalCaseStyle();
   const originalPromise = loadOriginalCase(caseId);
   await renderBaseResult(container, caseId);
   const original = await originalPromise;
   decorateResult(container, original);
+  bindSecureVisibility(container, caseId);
 
-  const observer = new MutationObserver(() => decorateResult(container, original));
+  const observer = new MutationObserver(() => {
+    decorateResult(container, original);
+    bindSecureVisibility(container, caseId);
+  });
   observer.observe(container, { childList: true, subtree: true });
   const previousCleanup = window._pageCleanup;
   window._pageCleanup = () => {
