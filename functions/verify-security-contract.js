@@ -19,6 +19,7 @@ const visibility = fs.readFileSync(path.resolve(__dirname, './visibility.js'), '
 const profile = fs.readFileSync(path.resolve(__dirname, './profile.js'), 'utf8');
 const titleSuggestion = fs.readFileSync(path.resolve(__dirname, './title-suggestion.js'), 'utf8');
 const repair = fs.readFileSync(path.resolve(__dirname, './repair.js'), 'utf8');
+const resultWrapper = fs.readFileSync(path.resolve(__dirname, '../public/js/pages/result-case-story.js'), 'utf8');
 
 function section(name, nextName) {
   const start = rules.indexOf(`match /${name}`);
@@ -57,20 +58,28 @@ const checks = [
   [siteSettings.includes('allow read, write: if isAdmin();'), 'Operating settings must be admin-only'],
   [publicSettings.includes('allow read: if true;'), 'Public settings must remain readable'],
   [publicSettings.includes("'dailyLimit', 'cooldownSec', 'businessInfo', 'publicNotice', 'updatedAt'"), 'Public settings writes must use the field whitelist'],
-  [rules.includes('match /appeal_limits/{userId}'), 'Appeal limits collection rule is missing'],
+  [rules.includes('match /vote_limits/{userId}') && rules.includes('match /appeal_limits/{userId}'), 'Vote and appeal limit collection rules are missing'],
+  [rules.includes('match /submit_reservations/{reservationId}') && rules.includes('match /appeal_reservations/{reservationId}'), 'Failure-recovery reservations must be client-inaccessible'],
   [rules.includes('match /report_limits/{userId}') && reports.includes('allow create, update, delete: if false;'), 'Reports must use server-side limits and deny direct client writes'],
   [main.includes("require('./visibility')"), 'Visibility Function must be exported'],
   [main.includes("require('./reporting')"), 'Reporting Function must be exported'],
   [visibility.includes('db.runTransaction') && visibility.includes('assertNoSensitiveContent'), 'Publishing must be atomic and privacy-checked'],
+  [visibility.includes('resultUpdate.userId = FieldValue.delete()') && visibility.includes('resultUpdate.imageAttachmentMeta = FieldValue.delete()'), 'Publishing must remove owner identifiers and private attachment paths'],
+  [visibility.includes('appeal.reason') && visibility.includes('appeal.verdict'), 'Publishing privacy checks must include appeal records'],
   [reporting.includes('REPORT_DAILY_LIMIT') && reporting.includes('REPORT_COOLDOWN_SEC') && reporting.includes('db.runTransaction'), 'Reports must use daily limits, cooldown and a transaction'],
-  [reporting.includes('ownerId === uid') && reporting.includes('publicAuthorId(uid)'), 'Reports must block self-reporting and deduplicate pseudonymously'],
+  [reporting.includes('ownerId === uid') && reporting.includes('publicAuthorId(uid, caseId)'), 'Reports must block self-reporting and deduplicate per case'],
+  [resultWrapper.includes("httpsCallable(functions, 'reportResult')") && resultWrapper.includes("location.hash = '#/auth'"), 'Public result reporting must use the server Function and verified login flow'],
   [submit.includes('requireVerifiedUser') && submit.includes('assertNoSensitiveContent'), 'Case submission must require verified users and privacy checks'],
   [submit.includes('hasValidImageSignature') && submit.includes('finishSubmitReservation'), 'Case image and quota failure recovery are incomplete'],
   [submit.includes('isPublic: false') && !submit.includes('const isPublic = boolValue(data.isPublic'), 'New cases must always be server-forced private'],
+  [generator.includes('isPublic: false') && !generator.includes('ownerId: caseData.userId'), 'Generated user results must start private and omit owner UIDs'],
+  [generator.includes('hasImageAttachment(caseData)') && !generator.includes('imageAttachmentMeta: attachmentMeta'), 'Public-capable result documents must not copy private attachment metadata'],
   [repair.includes('caseSnap?.exists') && repair.includes('deleteOrphanCaseImages'), 'Stale reservations must preserve completed cases and clean orphan images'],
+  [repair.includes("['appeal_reservations', 'appeal_limits']") && repair.includes('scrubPublicResultIdentifiers'), 'Appeal reservations and existing public identifiers must be recoverable'],
   [generator.includes('const batch = db.batch()') && generator.includes('await batch.commit()'), 'Judgment result and case completion must be atomic'],
-  [social.includes('publicAuthorId(uid)') && !social.includes("transaction.set(commentRef, { uid,"), 'Public comments must not expose raw Firebase UIDs'],
-  [social.includes("status: 'processing'") && social.includes('APPEAL_DAILY_LIMIT'), 'Appeals must use a lock and daily limit'],
+  [social.includes('VOTE_DAILY_LIMIT') && social.includes("db.doc(`vote_limits/${uid}`)"), 'Reaction changes must have server-side usage limits'],
+  [social.includes('publicAuthorId(uid, caseId)') && !social.includes("transaction.set(commentRef, { uid,"), 'Public comments must use case-scoped pseudonyms without raw Firebase UIDs'],
+  [social.includes("status: 'processing'") && social.includes('APPEAL_DAILY_LIMIT') && social.includes('failAppealReservation'), 'Appeals must use a lock, daily limit and failure refund'],
   [titleSuggestion.includes('finishReservation') && titleSuggestion.includes('assertNoSensitiveContent'), 'Title suggestions must refund failures and filter sensitive input'],
   [profile.includes('validatedProfilePhotoUrl') && profile.includes('requireVerifiedUser'), 'Profile updates must validate ownership and verified login'],
   [storageRules.includes("fileName == 'avatar.jpg'") && storageRules.includes("request.resource.contentType == 'image/jpeg'"), 'Profile Storage path and MIME restrictions are missing'],
@@ -81,7 +90,8 @@ const checks = [
   [sensitiveContentReasons('연락처는 010-1234-5678입니다').includes('전화번호'), 'Phone-number detection failed'],
   [sensitiveContentReasons('서울시 강남구 테헤란로 123').includes('상세 주소'), 'Address detection failed'],
   [sensitiveContentReasons('OO초등학교 학생 이야기').includes('학교·병원·아파트 등 특정 장소'), 'Named-place detection failed'],
-  [publicAuthorId('raw-user-id') !== 'raw-user-id' && publicAuthorId('raw-user-id') === publicAuthorId('raw-user-id'), 'Public author IDs must be stable and pseudonymous'],
+  [publicAuthorId('raw-user-id', 'case-a') !== 'raw-user-id' && publicAuthorId('raw-user-id', 'case-a') === publicAuthorId('raw-user-id', 'case-a'), 'Public author IDs must be stable and pseudonymous'],
+  [publicAuthorId('raw-user-id', 'case-a') !== publicAuthorId('raw-user-id', 'case-b'), 'Public author IDs must not correlate users across cases'],
   [validatedProfilePhotoUrl(expectedPhotoUrl, 'user_123') === expectedPhotoUrl, 'Owned Firebase profile URL must be accepted'],
   [throws(() => validatedProfilePhotoUrl('https://example.com/tracker.png', 'user_123')), 'External profile image URLs must be rejected'],
 ];
