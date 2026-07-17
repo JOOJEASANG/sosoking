@@ -64,9 +64,10 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    // 닉네임 인덱스에는 실제 UID가 들어 있으므로 클라이언트 직접 읽기를 금지한다.
+    // 중복 확인은 checkNickname Callable Function으로만 수행한다.
     match /user_names/{key} {
-      allow read: if true;
-      allow create, update, delete: if false;
+      allow read, create, update, delete: if false;
     }
 
     match /cases/{caseId} {
@@ -74,14 +75,7 @@ service cloud.firestore {
         resource.data.userId == request.auth.uid ||
         isAdmin()
       );
-      allow create: if false;
-      allow update: if isAdmin() || (
-        signedIn() &&
-        resource.data.userId == request.auth.uid &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isPublic']) &&
-        request.resource.data.isPublic is bool
-      );
-      allow delete: if false;
+      allow create, update, delete: if false;
     }
 
     match /results/{caseId} {
@@ -90,13 +84,7 @@ service cloud.firestore {
         resource.data.isPublic == true ||
         isAdmin()
       );
-      allow update: if isAdmin() || (
-        signedIn() &&
-        isCaseOwner(caseId) &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isPublic']) &&
-        request.resource.data.isPublic is bool
-      );
-      allow create, delete: if false;
+      allow create, update, delete: if false;
     }
 
     match /result_reactions/{caseId} {
@@ -134,6 +122,11 @@ service cloud.firestore {
     }
 
     match /title_suggestion_limits/{userId} {
+      allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
+      allow write: if false;
+    }
+
+    match /appeal_limits/{userId} {
       allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
       allow write: if false;
     }
