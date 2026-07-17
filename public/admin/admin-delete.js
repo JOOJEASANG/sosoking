@@ -6,6 +6,7 @@ const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const functions = getFunctions(app, 'asia-northeast3');
 const deleteCourtPost = httpsCallable(functions, 'deleteCourtPost');
 const deleteUserProfile = httpsCallable(functions, 'deleteUserProfile');
+const setCaseVisibility = httpsCallable(functions, 'setCaseVisibility');
 
 function ensureAdminPolishStyle() {
   if (document.getElementById('admin-polish-style')) return;
@@ -27,7 +28,7 @@ function ensureHelper() {
   const div = document.createElement('div');
   div.id = 'admin-helper';
   div.className = 'admin-helper';
-  div.innerHTML = '<strong>운영 모드</strong> · 사건 삭제는 사건/판결/투표/댓글/신고/첨부 이미지까지 함께 정리합니다. 회원 프로필 삭제는 닉네임 예약과 프로필 사진까지 정리합니다.';
+  div.innerHTML = '<strong>운영 모드</strong> · 공개 전환은 개인정보 재검사를 거치며, 사건 삭제는 사건/판결/투표/댓글/신고/첨부 이미지까지 함께 정리합니다. 회원 프로필 삭제는 닉네임 예약과 프로필 사진까지 정리합니다.';
   nav.insertAdjacentElement('afterend', div);
 }
 async function completeDelete(caseId) {
@@ -56,26 +57,47 @@ async function completeUserProfileDelete(uid) {
     alert((err.message || '회원 프로필 정리에 실패했습니다.').replace('FirebaseError: ', ''));
   }
 }
-function interceptInlineDelete(event) {
+async function secureVisibility(caseId, isPublic) {
+  if (!caseId) return;
+  try {
+    await setCaseVisibility({ caseId, isPublic });
+    alert(isPublic ? '개인정보 검사를 통과해 공개했습니다.' : '비공개로 전환했습니다.');
+    if (typeof window._tab === 'function') window._tab('records');
+    else location.reload();
+  } catch (err) {
+    console.error(err);
+    alert((err.message || '공개 상태를 변경하지 못했습니다.').replace('FirebaseError: ', ''));
+  }
+}
+function interceptInlineAction(event) {
   const button = event.target?.closest?.('button[onclick]');
   if (!button) return;
   const code = button.getAttribute('onclick') || '';
-  const match = code.match(/_(del(?:Case|Result|Record|UserProfile))\(['"]([^'"]+)['"]\)/);
-  if (!match?.[1] || !match?.[2]) return;
 
+  const visibilityMatch = code.match(/_recordPublic\(['"]([^'"]+)['"],\s*(true|false)\)/);
+  if (visibilityMatch) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    button.disabled = true;
+    Promise.resolve(secureVisibility(visibilityMatch[1], visibilityMatch[2] === 'true'))
+      .finally(() => { button.disabled = false; });
+    return;
+  }
+
+  const deleteMatch = code.match(/_(del(?:Case|Result|Record|UserProfile))\(['"]([^'"]+)['"]\)/);
+  if (!deleteMatch?.[1] || !deleteMatch?.[2]) return;
   event.preventDefault();
   event.stopImmediatePropagation();
   button.disabled = true;
-
-  const action = match[1] === 'delUserProfile'
-    ? completeUserProfileDelete(match[2])
-    : completeDelete(match[2]);
+  const action = deleteMatch[1] === 'delUserProfile'
+    ? completeUserProfileDelete(deleteMatch[2])
+    : completeDelete(deleteMatch[2]);
   Promise.resolve(action).finally(() => { button.disabled = false; });
 }
 
 ensureAdminPolishStyle();
 setTimeout(ensureHelper, 300);
 window.addEventListener('click', event => {
-  interceptInlineDelete(event);
+  interceptInlineAction(event);
   setTimeout(ensureHelper, 0);
 }, true);
