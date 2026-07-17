@@ -110,18 +110,13 @@ async function imageForGemini(caseData) {
     : null;
 }
 
-function imageMeta(caseData) {
+function hasImageAttachment(caseData) {
   const image = caseData?.imageAttachment || caseData?.imageAttachmentMeta || null;
-  if (!image || typeof image !== 'object') return null;
-  return {
-    storagePath: cleanText(image.storagePath || caseData.imageStoragePath, 240),
-    mimeType: cleanText(image.mimeType, 30),
-    width: Number(image.width || 0),
-    height: Number(image.height || 0),
-    originalName: cleanText(image.originalName, 80),
-    originalSize: Number(image.originalSize || 0),
-    resizedSize: Number(image.resizedSize || 0),
-  };
+  return !!(
+    image?.storagePath
+    || caseData?.imageStoragePath
+    || image?.data
+  );
 }
 
 async function generateWithGemini({ settings, prompt, image, profile }) {
@@ -277,7 +272,6 @@ exports.generateTrial = onCall({
   let usage = {};
   let image = null;
   let saveSucceeded = false;
-  const attachmentMeta = imageMeta(caseData);
 
   try {
     const key = geminiKey.value().trim();
@@ -312,9 +306,7 @@ exports.generateTrial = onCall({
       resultVersion: 'judgment-v2',
       storyVersion: STORY_VERSION,
       source: caseData.source || 'user',
-      userId: caseData.userId,
-      ownerId: caseData.userId,
-      isPublic: caseData.isPublic === true,
+      isPublic: false,
       caseTitle: title,
       headline: judgment.headline || headline,
       caseDescription: description,
@@ -330,8 +322,7 @@ exports.generateTrial = onCall({
       category: profile.categoryId,
       categoryLabel: profile.categoryLabel,
       judgment,
-      hasImageAttachment: !!(attachmentMeta?.storagePath || caseData?.imageAttachment?.data),
-      imageAttachmentMeta: attachmentMeta,
+      hasImageAttachment: hasImageAttachment(caseData),
       aiGenerated,
       aiAttempts,
       generationMode: aiGenerated ? 'gemini-case-story-v1' : 'local-case-story-v1',
@@ -356,7 +347,7 @@ exports.generateTrial = onCall({
       judgeType,
       resultSchemaVersion: JUDGMENT_SCHEMA_VERSION,
       storyVersion: STORY_VERSION,
-      isPublic: caseData.isPublic === true,
+      isPublic: false,
       completedAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
       errorMessage: FieldValue.delete(),
