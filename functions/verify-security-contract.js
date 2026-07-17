@@ -20,6 +20,7 @@ const visibility = read('./visibility.js');
 const profile = read('./profile.js');
 const titleSuggestion = read('./title-suggestion.js');
 const repair = read('./repair.js');
+const adminActions = read('./admin-actions.js');
 const resultWrapper = read('../public/js/pages/result-case-story.js');
 const adminTools = read('../public/admin/admin-ai-tools.js');
 
@@ -70,6 +71,7 @@ const checks = [
   [social.includes('APPEAL_DAILY_LIMIT') && social.includes('failAppealReservation'), 'Appeals must use limits and failure refunds'],
   [titleSuggestion.includes('finishReservation') && titleSuggestion.includes('assertNoSensitiveContent'), 'Title suggestions must refund failed calls'],
   [profile.includes('validatedProfilePhotoUrl') && profile.includes('requireVerifiedUser'), 'Profile validation is incomplete'],
+  [adminActions.includes("requireVerifiedUser(request, '사건 삭제") && adminActions.includes('const hideBatch = db.batch()') && adminActions.includes("deleteRequestedBy: 'owner'"), 'Owner deletion must require verified login and atomically hide data first'],
   [storageRules.includes("fileName == 'avatar.jpg'") && storageRules.includes("request.resource.contentType == 'image/jpeg'"), 'Profile Storage restrictions are missing'],
   [headers['X-Content-Type-Options'] === 'nosniff' && headers['X-Frame-Options'] === 'DENY', 'Basic Hosting security headers are missing'],
   [headers['Strict-Transport-Security'] === 'max-age=31536000', 'HSTS header is missing'],
@@ -79,6 +81,11 @@ const checks = [
   [sensitiveContentReasons('연락처는 010-1234-5678입니다').includes('전화번호'), 'Phone detection failed'],
   [sensitiveContentReasons('서울시 강남구 테헤란로 123').includes('상세 주소'), 'Address detection failed'],
   [sensitiveContentReasons('OO초등학교 학생 이야기').includes('학교·병원·아파트 등 특정 장소'), 'Named-place detection failed'],
+  [sensitiveContentReasons('김철수가 가져갔어요').includes('실명으로 보이는 정보'), 'Korean name detection failed'],
+  [sensitiveContentReasons('카드는 1234-5678-9012-3456').includes('카드번호'), 'Card-number detection failed'],
+  [sensitiveContentReasons('차량은 123가 4567').includes('차량번호'), 'Vehicle-number detection failed'],
+  [sensitiveContentReasons('https://example.com/profile').includes('외부 링크'), 'External-link detection failed'],
+  [sensitiveContentReasons('@private_handle').includes('SNS 계정'), 'SNS-handle detection failed'],
   [publicAuthorId('raw-user-id', 'case-a') === publicAuthorId('raw-user-id', 'case-a') && publicAuthorId('raw-user-id', 'case-a') !== publicAuthorId('raw-user-id', 'case-b'), 'Case-scoped report pseudonyms failed'],
   [validatedProfilePhotoUrl(expectedPhotoUrl, 'user_123') === expectedPhotoUrl, 'Owned profile URL must be accepted'],
   [throws(() => validatedProfilePhotoUrl('https://example.com/tracker.png', 'user_123')), 'External profile URLs must be rejected'],
