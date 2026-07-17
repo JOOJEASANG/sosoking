@@ -140,6 +140,13 @@ function decorateResult(container, original) {
   decorateClaims(container, original.extras);
 }
 
+async function rerenderResult(container, caseId) {
+  const cleanup = window._pageCleanup;
+  window._pageCleanup = null;
+  cleanup?.();
+  await renderResult(container, caseId);
+}
+
 function bindSecureVisibility(container, caseId) {
   const oldButton = container.querySelector('#btn-share');
   if (!oldButton || oldButton.dataset.secureVisibility === '1') return;
@@ -152,7 +159,7 @@ function bindSecureVisibility(container, caseId) {
     try {
       await httpsCallable(functions, 'setCaseVisibility')({ caseId, isPublic: nextPublic });
       showToast(nextPublic ? '개인정보 검사를 통과해 판결을 공개했습니다.' : '판결을 비공개로 전환했습니다.', 'success');
-      await renderResult(container, caseId);
+      await rerenderResult(container, caseId);
     } catch (error) {
       console.error(error);
       button.disabled = false;
@@ -165,9 +172,9 @@ export async function renderResult(container, caseId) {
   ensureOriginalCaseStyle();
   const originalPromise = loadOriginalCase(caseId);
   await renderBaseResult(container, caseId);
+  bindSecureVisibility(container, caseId);
   const original = await originalPromise;
   decorateResult(container, original);
-  bindSecureVisibility(container, caseId);
 
   const observer = new MutationObserver(() => {
     decorateResult(container, original);
