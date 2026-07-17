@@ -18,6 +18,7 @@ const {
   evaluateStorySpecificity,
   buildRewriteInstruction,
 } = require('./judgment-story-v2');
+const { requireVerifiedUser, validDocumentId } = require('./security-utils');
 
 const db = getFirestore();
 const geminiKey = defineSecret('GEMINI_API_KEY');
@@ -176,6 +177,10 @@ function kstDateKey(date = new Date()) {
   return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
 }
 
+function completeResult(data = {}) {
+  return Number(data.schemaVersion) === JUDGMENT_SCHEMA_VERSION && isCompleteJudgment(data.judgment);
+}
+
 exports.generateTrial = onCall({
   region: REGION,
   secrets: [geminiKey],
@@ -183,22 +188,21 @@ exports.generateTrial = onCall({
   memory: '512MiB',
   cors: true,
 }, async request => {
-  if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
-
-  const uid = request.auth.uid;
-  const caseId = cleanText(request.data?.caseId, 180);
-  if (!caseId) throw new HttpsError('invalid-argument', 'caseId required');
+  const uid = requireVerifiedUser(request, '재판 생성은 구글 또는 인증된 이메일 로그인 후 이용할 수 있습니다.');
+  const caseId = validDocumentId(request.data?.caseId, '사건 ID');
 
   const caseRef = db.doc(`cases/${caseId}`);
   const resultRef = db.doc(`results/${caseId}`);
-  const initial = await caseRef.get();
+  const [initial, initialResult] = await Promise.all([caseRef.get(), resultRef.get().catch(() => null)]);
   if (!initial.exists) throw new HttpsError('not-found', '사건을 찾을 수 없습니다.');
 
   let caseData = initial.data();
   if (caseData.userId !== uid) throw new HttpsError('permission-denied', '본인 사건만 재판할 수 있습니다.');
-  if (caseData.status === 'completed') return { success: true, skipped: 'completed' };
+  if (caseData.status === 'completed' && initialResult?.exists && completeResult(initialResult.data())) {
+    return { success: true, skipped: 'completed' };
+  }
   if (caseData.status === 'processing') return { success: true, skipped: 'processing' };
-  if (!['pending', 'error'].includes(caseData.status)) throw new HttpsError('failed-precondition', '처리할 수 없는 사건 상태입니다.');
+  if (!['pending', 'error', 'completed'].includes(caseData.status)) throw new HttpsError('failed-precondition', '처리할 수 없는 사건 상태입니다.');
 
   const title = cleanText(caseData.caseTitle, 90) || '소소한 황당사건';
   const description = cleanParagraph(caseData.caseDescription, 1800) || title;
@@ -222,12 +226,29 @@ exports.generateTrial = onCall({
   });
 
   let acquired = false;
+  let recoveredExistingResult = false;
   await db.runTransaction(async transaction => {
-    const fresh = await transaction.get(caseRef);
+    const [fresh, freshResult] = await Promise.all([
+      transaction.get(caseRef),
+      transaction.get(resultRef),
+    ]);
     if (!fresh.exists) throw new HttpsError('not-found', '사건을 찾을 수 없습니다.');
     const current = fresh.data();
     if (current.userId !== uid) throw new HttpsError('permission-denied', '본인 사건만 재판할 수 있습니다.');
-    if (!['pending', 'error'].includes(current.status)) return;
+
+    if (freshResult.exists && completeResult(freshResult.data())) {
+      recoveredExistingResult = true;
+      transaction.update(caseRef, {
+        status: 'completed',
+        courtStage: 'sentenced',
+        completedAt: current.completedAt || FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+        errorMessage: FieldValue.delete(),
+      });
+      return;
+    }
+
+    if (!['pending', 'error', 'completed'].includes(current.status)) return;
     acquired = true;
     caseData = current;
     transaction.update(caseRef, {
@@ -245,6 +266,7 @@ exports.generateTrial = onCall({
       errorMessage: FieldValue.delete(),
     });
   });
+  if (recoveredExistingResult) return { success: true, skipped: 'recovered-existing-result' };
   if (!acquired) return { success: true, skipped: 'already-started' };
 
   const fallback = buildStoryFallback(profile);
@@ -254,6 +276,7 @@ exports.generateTrial = onCall({
   let aiAttempts = 0;
   let usage = {};
   let image = null;
+  let saveSucceeded = false;
   const attachmentMeta = imageMeta(caseData);
 
   try {
@@ -283,7 +306,8 @@ exports.generateTrial = onCall({
   }
 
   try {
-    await resultRef.set({
+    const batch = db.batch();
+    batch.set(resultRef, {
       schemaVersion: JUDGMENT_SCHEMA_VERSION,
       resultVersion: 'judgment-v2',
       storyVersion: STORY_VERSION,
@@ -319,7 +343,7 @@ exports.generateTrial = onCall({
       updatedAt: FieldValue.serverTimestamp(),
     });
 
-    await caseRef.update({
+    batch.update(caseRef, {
       status: 'completed',
       courtStage: 'sentenced',
       docketNumber,
@@ -337,6 +361,8 @@ exports.generateTrial = onCall({
       updatedAt: FieldValue.serverTimestamp(),
       errorMessage: FieldValue.delete(),
     });
+    await batch.commit();
+    saveSucceeded = true;
   } catch (error) {
     await caseRef.update({
       status: 'error',
@@ -353,13 +379,14 @@ exports.generateTrial = onCall({
         geminiRequests: FieldValue.increment(aiAttempted ? Math.max(1, aiAttempts) : 0),
         geminiInputTokens: FieldValue.increment(Number(usage.promptTokenCount || 0)),
         geminiOutputTokens: FieldValue.increment(Number(usage.candidatesTokenCount || 0)),
-        caseCount: FieldValue.increment(1),
-        imageCaseCount: FieldValue.increment(image ? 1 : 0),
-        firestoreReads: FieldValue.increment(3),
-        firestoreWrites: FieldValue.increment(3),
+        caseCount: FieldValue.increment(saveSucceeded ? 1 : 0),
+        generationSaveErrorCount: FieldValue.increment(saveSucceeded ? 0 : 1),
+        imageCaseCount: FieldValue.increment(saveSucceeded && image ? 1 : 0),
+        firestoreReads: FieldValue.increment(4),
+        firestoreWrites: FieldValue.increment(saveSucceeded ? 3 : 2),
         functionInvocations: FieldValue.increment(1),
-        judgmentV2Count: FieldValue.increment(1),
-        caseStoryCount: FieldValue.increment(1),
+        judgmentV2Count: FieldValue.increment(saveSucceeded ? 1 : 0),
+        caseStoryCount: FieldValue.increment(saveSucceeded ? 1 : 0),
         updatedAt: FieldValue.serverTimestamp(),
       }, { merge: true });
     } catch (error) {
