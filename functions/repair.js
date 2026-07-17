@@ -102,7 +102,7 @@ async function deleteOrphanCaseImages(uid, caseId) {
   }
 }
 
-async function refundStaleReservation(document, reservationCollection, limitCollection) {
+async function refundStaleReservation(document, reservationCollection, limitCollection, cutoffMs) {
   const reservationRef = document.ref;
   const reservation = document.data() || {};
   const uid = String(reservation.uid || '').trim();
@@ -117,16 +117,38 @@ async function refundStaleReservation(document, reservationCollection, limitColl
   const caseRef = reservationCollection === 'submit_reservations' && caseId
     ? db.doc(`cases/${caseId}`)
     : null;
+  const resultRef = reservationCollection === 'appeal_reservations' && caseId
+    ? db.doc(`results/${caseId}`)
+    : null;
   let refunded = false;
   let completed = false;
+  let fresh = false;
 
   await db.runTransaction(async transaction => {
     const reads = [transaction.get(reservationRef), transaction.get(limitRef)];
     if (caseRef) reads.push(transaction.get(caseRef));
-    const [freshReservation, limitSnap, caseSnap] = await Promise.all(reads);
+    if (resultRef) reads.push(transaction.get(resultRef));
+    const snapshots = await Promise.all(reads);
+    const freshReservation = snapshots[0];
+    const limitSnap = snapshots[1];
+    const caseSnap = caseRef ? snapshots[2] : null;
+    const resultSnap = resultRef ? snapshots[caseRef ? 3 : 2] : null;
     if (!freshReservation.exists) return;
 
+    const currentReservation = freshReservation.data() || {};
+    const createdMs = currentReservation.createdAt?.toMillis ? currentReservation.createdAt.toMillis() : 0;
+    if (createdMs && createdMs >= cutoffMs) {
+      fresh = true;
+      return;
+    }
+
     if (caseSnap?.exists) {
+      completed = true;
+      transaction.delete(reservationRef);
+      return;
+    }
+
+    if (resultSnap?.exists && resultSnap.data()?.appeal?.verdict) {
       completed = true;
       transaction.delete(reservationRef);
       return;
@@ -141,20 +163,39 @@ async function refundStaleReservation(document, reservationCollection, limitColl
       }, { merge: true });
       refunded = true;
     }
+
+    if (resultRef && resultSnap?.exists) {
+      const resultData = resultSnap.data() || {};
+      if (
+        resultData.appeal?.status === 'processing'
+        && (!currentReservation.attemptId || resultData.appeal?.attemptId === currentReservation.attemptId)
+      ) {
+        transaction.set(resultRef, {
+          appeal: {
+            status: 'error',
+            reason: resultData.appeal?.reason || '',
+            recoveredAt: FieldValue.serverTimestamp(),
+          },
+          updatedAt: FieldValue.serverTimestamp(),
+        }, { merge: true });
+      }
+    }
     transaction.delete(reservationRef);
   });
 
-  const storageDeleted = reservationCollection === 'submit_reservations' && !completed
+  const storageDeleted = reservationCollection === 'submit_reservations' && !completed && !fresh
     ? await deleteOrphanCaseImages(uid, caseId)
     : 0;
-  return { reservationId: document.id, uid, caseId, refunded, completed, storageDeleted };
+  return { reservationId: document.id, uid, caseId, refunded, completed, fresh, storageDeleted };
 }
 
 async function recoverStaleReservations() {
-  const cutoff = Timestamp.fromMillis(Date.now() - STALE_RESERVATION_MS);
+  const cutoffMs = Date.now() - STALE_RESERVATION_MS;
+  const cutoff = Timestamp.fromMillis(cutoffMs);
   const configs = [
     ['submit_reservations', 'rate_limits'],
     ['title_suggestion_reservations', 'title_suggestion_limits'],
+    ['appeal_reservations', 'appeal_limits'],
   ];
   const recovered = [];
 
@@ -164,18 +205,54 @@ async function recoverStaleReservations() {
       .limit(50)
       .get();
     for (const document of snapshot.docs) {
-      const result = await refundStaleReservation(document, reservationCollection, limitCollection);
+      const result = await refundStaleReservation(document, reservationCollection, limitCollection, cutoffMs);
       recovered.push({ type: reservationCollection, ...result });
     }
   }
 
   return {
-    recoveredCount: recovered.length,
+    recoveredCount: recovered.filter(item => !item.fresh).length,
     refundedCount: recovered.filter(item => item.refunded).length,
     completedReservationCount: recovered.filter(item => item.completed).length,
     storageDeleted: recovered.reduce((sum, item) => sum + numberValue(item.storageDeleted), 0),
     recovered,
   };
+}
+
+async function scrubPublicResultIdentifiers() {
+  const resultSnap = await db.collection('results').where('isPublic', '==', true).get();
+  const fields = [
+    'userId',
+    'ownerId',
+    'visibilityUpdatedBy',
+    'imageAttachment',
+    'imageAttachmentMeta',
+    'imageStoragePath',
+  ];
+  const targets = resultSnap.docs.filter(document => {
+    const data = document.data() || {};
+    return fields.some(field => data[field] !== undefined);
+  });
+
+  let scrubbed = 0;
+  for (let offset = 0; offset < targets.length; offset += 400) {
+    const batch = db.batch();
+    for (const document of targets.slice(offset, offset + 400)) {
+      batch.set(document.ref, {
+        userId: FieldValue.delete(),
+        ownerId: FieldValue.delete(),
+        visibilityUpdatedBy: FieldValue.delete(),
+        imageAttachment: FieldValue.delete(),
+        imageAttachmentMeta: FieldValue.delete(),
+        imageStoragePath: FieldValue.delete(),
+        publicIdentifiersScrubbedAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      }, { merge: true });
+      scrubbed += 1;
+    }
+    await batch.commit();
+  }
+  return { checked: resultSnap.size, scrubbed };
 }
 
 async function repairSocialCounters(options = {}) {
@@ -239,6 +316,10 @@ exports.repairSocialCounters = onSchedule({ region: REGION, schedule: '20 3 * * 
   console.log('repairSocialCounters:', await repairSocialCounters({ limit: 200, onlyPublic: false }));
 });
 
+exports.scrubPublicResultIdentifiers = onSchedule({ region: REGION, schedule: '40 3 * * *', timeZone: 'Asia/Seoul', timeoutSeconds: 300, memory: '256MiB' }, async () => {
+  console.log('scrubPublicResultIdentifiers:', await scrubPublicResultIdentifiers());
+});
+
 exports.recoverStaleTrialsNow = onCall({ ...ADMIN_CALLABLE_OPTIONS, timeoutSeconds: 120 }, async request => {
   await assertAdmin(request);
   const [trials, reservations] = await Promise.all([
@@ -253,4 +334,9 @@ exports.repairSocialCountersNow = onCall(ADMIN_CALLABLE_OPTIONS, async request =
   const resultLimit = numberValue(request.data?.limit, 200);
   const onlyPublic = request.data?.onlyPublic === true;
   return await repairSocialCounters({ limit: resultLimit, onlyPublic });
+});
+
+exports.scrubPublicResultIdentifiersNow = onCall({ ...ADMIN_CALLABLE_OPTIONS, timeoutSeconds: 300 }, async request => {
+  await assertAdmin(request);
+  return await scrubPublicResultIdentifiers();
 });
