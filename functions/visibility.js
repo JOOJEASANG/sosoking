@@ -9,6 +9,7 @@ const {
 
 const db = getFirestore();
 const REGION = 'asia-northeast3';
+const LIKELY_PUBLIC_NAME_RE = /^(?:김|이|박|최|정|강|조|윤|장|임)[가-힣]{2}$/;
 
 function publicText(caseData = {}, resultData = {}) {
   const judgment = resultData.judgment && typeof resultData.judgment === 'object'
@@ -45,6 +46,15 @@ function publicText(caseData = {}, resultData = {}) {
   ].filter(Boolean).join('\n');
 }
 
+function assertSafePublicNickname(caseData = {}, resultData = {}) {
+  const nicknames = [caseData.nickname, resultData.nickname]
+    .map(value => String(value || '').replace(/\s+/g, '').trim())
+    .filter(Boolean);
+  if (nicknames.some(nickname => LIKELY_PUBLIC_NAME_RE.test(nickname))) {
+    throw new HttpsError('failed-precondition', '실명으로 보일 수 있는 닉네임은 공개할 수 없습니다. 프로필 닉네임을 익명 별칭으로 바꿔주세요.');
+  }
+}
+
 exports.setCaseVisibility = onCall({
   region: REGION,
   timeoutSeconds: 30,
@@ -75,6 +85,7 @@ exports.setCaseVisibility = onCall({
     if (!admin && ownerId !== uid) throw new HttpsError('permission-denied', '본인 사건만 공개 상태를 변경할 수 있습니다.');
 
     if (isPublic) {
+      assertSafePublicNickname(caseData, resultData);
       assertNoSensitiveContent(
         publicText(caseData, resultData),
         '공개할 수 없는 개인정보 또는 특정 가능한 정보',
