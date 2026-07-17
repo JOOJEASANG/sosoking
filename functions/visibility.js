@@ -1,5 +1,6 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
+const { isAdminAuth } = require('./admin-utils');
 const {
   requireVerifiedUser,
   validDocumentId,
@@ -44,6 +45,7 @@ exports.setCaseVisibility = onCall({
   cors: true,
 }, async request => {
   const uid = requireVerifiedUser(request, '판결 공개 설정은 로그인 후 이용할 수 있습니다.');
+  const admin = await isAdminAuth(request.auth).catch(() => false);
   const caseId = validDocumentId(request.data?.caseId, '사건 ID');
   const isPublic = request.data?.isPublic;
   if (typeof isPublic !== 'boolean') throw new HttpsError('invalid-argument', '공개 상태가 올바르지 않습니다.');
@@ -63,7 +65,7 @@ exports.setCaseVisibility = onCall({
     const caseData = caseSnap.data() || {};
     const resultData = resultSnap.data() || {};
     const ownerId = caseData.userId || resultData.ownerId || resultData.userId || '';
-    if (ownerId !== uid) throw new HttpsError('permission-denied', '본인 사건만 공개 상태를 변경할 수 있습니다.');
+    if (!admin && ownerId !== uid) throw new HttpsError('permission-denied', '본인 사건만 공개 상태를 변경할 수 있습니다.');
 
     if (isPublic) {
       assertNoSensitiveContent(
@@ -75,11 +77,12 @@ exports.setCaseVisibility = onCall({
     const update = {
       isPublic,
       visibilityUpdatedAt: FieldValue.serverTimestamp(),
+      visibilityUpdatedBy: admin ? 'admin' : uid,
       updatedAt: FieldValue.serverTimestamp(),
     };
     transaction.update(caseRef, update);
     transaction.update(resultRef, update);
   });
 
-  return { success: true, caseId, isPublic };
+  return { success: true, caseId, isPublic, admin };
 });
