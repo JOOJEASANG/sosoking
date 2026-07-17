@@ -40,6 +40,7 @@ const cases = section('cases/{caseId}', 'results/{caseId}');
 const results = section('results/{caseId}', 'result_reactions/{caseId}');
 const reports = section('reports/{reportId}', 'absurd_cases/{caseId}');
 const headers = Object.fromEntries((firebaseConfig.hosting?.headers?.find(item => item.source === '**')?.headers || []).map(item => [item.key, item.value]));
+const csp = headers['Content-Security-Policy'] || '';
 const expectedPhotoUrl = 'https://firebasestorage.googleapis.com/v0/b/sosoking-481e6.firebasestorage.app/o/profile-photos%2Fuser_123%2Favatar.jpg?alt=media&token=test';
 
 const checks = [
@@ -70,7 +71,10 @@ const checks = [
   [titleSuggestion.includes('finishReservation') && titleSuggestion.includes('assertNoSensitiveContent'), 'Title suggestions must refund failed calls'],
   [profile.includes('validatedProfilePhotoUrl') && profile.includes('requireVerifiedUser'), 'Profile validation is incomplete'],
   [storageRules.includes("fileName == 'avatar.jpg'") && storageRules.includes("request.resource.contentType == 'image/jpeg'"), 'Profile Storage restrictions are missing'],
-  [headers['X-Content-Type-Options'] === 'nosniff' && headers['X-Frame-Options'] === 'DENY', 'Hosting security headers are missing'],
+  [headers['X-Content-Type-Options'] === 'nosniff' && headers['X-Frame-Options'] === 'DENY', 'Basic Hosting security headers are missing'],
+  [headers['Strict-Transport-Security'] === 'max-age=31536000', 'HSTS header is missing'],
+  [csp.includes("script-src 'self'") && csp.includes("object-src 'none'") && csp.includes("frame-ancestors 'none'"), 'CSP script, object or framing restrictions are missing'],
+  [csp.includes('https://www.gstatic.com') && csp.includes('https://fonts.googleapis.com'), 'CSP must preserve required Firebase and font origins'],
   [throws(() => validDocumentId('cases/user/evil')) && validDocumentId('case_123-safe') === 'case_123-safe', 'Document ID validation failed'],
   [sensitiveContentReasons('연락처는 010-1234-5678입니다').includes('전화번호'), 'Phone detection failed'],
   [sensitiveContentReasons('서울시 강남구 테헤란로 123').includes('상세 주소'), 'Address detection failed'],
