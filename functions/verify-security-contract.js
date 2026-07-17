@@ -21,6 +21,7 @@ const visibility = read('./visibility.js');
 const profile = read('./profile.js');
 const titleSuggestion = read('./title-suggestion.js');
 const repair = read('./repair.js');
+const privacyMaintenance = read('./privacy-maintenance.js');
 const adminActions = read('./admin-actions.js');
 const resultWrapper = read('../public/js/pages/result-case-story.js');
 const adminTools = read('../public/admin/admin-ai-tools.js');
@@ -55,7 +56,7 @@ const checks = [
   [rules.includes('match /vote_limits/{userId}') && rules.includes('match /appeal_limits/{userId}') && rules.includes('match /report_limits/{userId}'), 'Social usage limit rules are missing'],
   [rules.includes('match /submit_reservations/{reservationId}') && rules.includes('match /appeal_reservations/{reservationId}'), 'Recovery reservations must be client-inaccessible'],
   [reports.includes('allow create, update, delete: if false;'), 'Reports must deny direct client writes'],
-  [main.includes("require('./visibility')") && main.includes("require('./reporting')"), 'Secured publishing or reporting export is missing'],
+  [main.includes("require('./visibility')") && main.includes("require('./reporting')") && main.includes("require('./privacy-maintenance')"), 'Secured publishing, reporting or privacy maintenance export is missing'],
   [visibility.includes('db.runTransaction') && visibility.includes('assertNoSensitiveContent'), 'Publishing must be atomic and privacy-checked'],
   [visibility.includes('resultUpdate.userId = FieldValue.delete()') && visibility.includes('resultUpdate.imageAttachmentMeta = FieldValue.delete()'), 'Publishing must remove owner and attachment identifiers'],
   [visibility.includes('appeal.reason') && visibility.includes('appeal.verdict') && visibility.includes('assertSafePublicNickname'), 'Publishing checks must include appeal records and legacy real-name nicknames'],
@@ -67,8 +68,9 @@ const checks = [
   [submit.includes('isPublic: false') && !submit.includes('const isPublic = boolValue(data.isPublic'), 'New cases must be forced private'],
   [generator.includes('isPublic: false') && !generator.includes('ownerId: caseData.userId') && !generator.includes('imageAttachmentMeta: attachmentMeta'), 'Generated result privacy is incomplete'],
   [repair.includes('deleteOrphanCaseImages') && repair.includes('appeal_reservations'), 'Stale processing recovery is incomplete'],
-  [repair.includes('scrubPublicResultIdentifiers') && repair.includes('scrubPublicCommentIdentifiers'), 'Existing public identifiers must be scrubbed'],
-  [repair.includes('auditLegacyPublicCaseIds') && adminTools.includes('auditLegacyPublicCaseIdsNow'), 'Legacy public ID audit is missing'],
+  [privacyMaintenance.includes("schedule: '40 3 1 * *'") && privacyMaintenance.includes('monthly public result identifier scrub'), 'Automatic privacy scrub must use a low-cost monthly schedule'],
+  [privacyMaintenance.includes('scrubPublicResultIdentifiers()') && privacyMaintenance.includes('scrubPublicCommentIdentifiers()'), 'Manual privacy cleanup must cover results and legacy comments'],
+  [privacyMaintenance.includes('auditLegacyPublicCaseIds') && adminTools.includes('auditLegacyPublicCaseIdsNow'), 'Legacy public ID audit is missing'],
   [adminTools.includes('scrubPublicResultIdentifiersNow') && adminTools.includes('res.data?.trials') && adminTools.includes('res.data?.reservations'), 'Admin recovery or scrub UI is incomplete'],
   [social.includes('VOTE_DAILY_LIMIT') && social.includes("db.doc(`vote_limits/${uid}`)"), 'Vote changes must be rate-limited'],
   [!social.includes('authorId:') && !social.includes('transaction.set(commentRef, { uid'), 'Public comments must not store user identifiers'],
