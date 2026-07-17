@@ -18,9 +18,11 @@ function publicText(caseData = {}, resultData = {}) {
     ? resultData.appeal
     : {};
   return [
+    caseData.nickname,
     caseData.caseTitle,
     caseData.caseDescription,
     caseData.desiredVerdict,
+    resultData.nickname,
     resultData.caseTitle,
     resultData.caseDescription,
     resultData.desiredVerdict,
@@ -59,16 +61,16 @@ exports.setCaseVisibility = onCall({
   const resultRef = db.doc(`results/${caseId}`);
 
   await db.runTransaction(async transaction => {
-    const [caseSnap, resultSnap] = await Promise.all([
+    const [caseSnapshot, resultSnapshot] = await Promise.all([
       transaction.get(caseRef),
       transaction.get(resultRef),
     ]);
-    if (!caseSnap.exists || !resultSnap.exists) {
+    if (!caseSnapshot.exists || !resultSnapshot.exists) {
       throw new HttpsError('not-found', '사건 또는 판결문을 찾을 수 없습니다.');
     }
 
-    const caseData = caseSnap.data() || {};
-    const resultData = resultSnap.data() || {};
+    const caseData = caseSnapshot.data() || {};
+    const resultData = resultSnapshot.data() || {};
     const ownerId = caseData.userId || resultData.ownerId || resultData.userId || '';
     if (!admin && ownerId !== uid) throw new HttpsError('permission-denied', '본인 사건만 공개 상태를 변경할 수 있습니다.');
 
