@@ -41,7 +41,8 @@ exports.reportResult = onCall({
   const resultRef = db.doc(`results/${caseId}`);
   const caseRef = db.doc(`cases/${caseId}`);
   const limitRef = db.doc(`report_limits/${uid}`);
-  const reportRef = db.doc(`reports/${caseId}_${publicAuthorId(uid)}`);
+  const reporterPublicId = publicAuthorId(uid, caseId);
+  const reportRef = db.doc(`reports/${caseId}_${reporterPublicId}`);
   const today = kstDateKey();
   let alreadyExists = false;
 
@@ -85,7 +86,7 @@ exports.reportResult = onCall({
       reason,
       status: 'pending',
       reporterUid: uid,
-      reporterPublicId: publicAuthorId(uid),
+      reporterPublicId,
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     });
