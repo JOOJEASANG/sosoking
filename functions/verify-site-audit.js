@@ -16,6 +16,7 @@ const submitCourt = read('public/js/pages/submit-court.js');
 const privacyDefault = read('public/js/components/submit-privacy-default.js');
 const trial = read('public/js/pages/trial-game.js');
 const result = read('public/js/pages/result-case-story.js');
+const resultAI = read('public/js/pages/result-ai-first.js');
 const theme = read('public/js/components/theme.js');
 const courtDesign = read('public/js/components/court-design.js');
 const siteSystem = read('public/css/site-system.css');
@@ -39,7 +40,7 @@ const removedThemeFiles = [
 const checks = [
   [index.includes('/css/site-system.css?v=20260710-full-audit1'), 'Index must load the unified site design system'],
   [index.includes('/css/site-readability.css?v=20260711-interpret1'), 'Index must load the final light-mode readability guard'],
-  [index.includes('/js/app.js?v=20260717-security2'), 'Index must load the latest secured application cache key'],
+  [index.includes('/js/app.js?v=20260717-ai1'), 'Index must load the AI-first application cache key'],
   [removedThemeFiles.every(file => !exists(file)), 'Legacy theme patch files must remain removed'],
   [!index.includes('home-light-fix.css') && !index.includes('theme-contrast-fix.css'), 'Index must not reference legacy theme patches'],
   [siteSystem.includes('--ui-bg:') && siteSystem.includes('html[data-theme="light"]'), 'Unified CSS must define dark and light tokens'],
@@ -50,7 +51,7 @@ const checks = [
   [theme.includes('document.documentElement.style.colorScheme'), 'Theme controller must set browser color scheme'],
   [courtDesign.includes('var(--ui-line-strong') && !courtDesign.includes('contrast-fix.js'), 'Court design must use unified tokens without runtime contrast patches'],
   [app.includes("from './pages/home.js?v=20260710-full-audit1'"), 'App must load the audited home directly'],
-  [app.includes('result-case-story.js?v=20260717-security2'), 'App must load the secured reporting result wrapper'],
+  [app.includes('result-ai-first.js?v=20260717-ai1'), 'App must load the AI-source-aware result wrapper'],
   [app.includes('auth.js?v=20260717-security1'), 'App must load the verified-email authentication screen'],
   [!exists('public/js/pages/home-court.js'), 'Redundant home decoration wrapper must remain removed'],
   [home.includes('사건 접수부터 선고까지 6단계') && home.includes('원고·피고 주장'), 'Home must explain the full court journey'],
@@ -65,6 +66,8 @@ const checks = [
   [result.includes('<details class="result-card original-case-card">') && result.includes('접수 원문은 판결과 분리'), 'Original submission must be collapsed and separated from the AI result'],
   [result.includes('--alert-title') && result.includes('var(--ui-text-main'), 'Result runtime styles must use theme-aware variables'],
   [result.includes('setCaseVisibility') && result.includes('reportResult'), 'Result publishing and reporting must use secured server Functions'],
+  [resultAI.includes('Gemini AI 개별 판결') && resultAI.includes('기존 시스템 대체 판결문'), 'Result page must disclose the actual generation source'],
+  [resultAI.includes('Gemini AI로 다시 판결받기') && resultAI.includes("httpsCallable(functions, 'generateTrial')"), 'Legacy local results must offer secured AI regeneration'],
   [guide.includes('전체 과정 시작') && guide.includes('원고·피고 주장'), 'Guide must explain the complete experience'],
   [!guide.includes('관리자 페이지 정책 탭'), 'Public guide must not show administrator instructions'],
   [defaults.includes('사건 접수, 초동수사, 생활증거 감식, 원고측 주장, 피고측 반박'), 'Terms must describe actual service stages'],
@@ -83,4 +86,4 @@ if (failed.length) {
   process.exit(1);
 }
 
-console.log('Verified unified themes, secured publishing and reporting, final readability and full court journey.');
+console.log('Verified unified themes, AI generation disclosure, secured publishing and full court journey.');
