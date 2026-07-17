@@ -28,14 +28,14 @@ const SERIOUS_KEYWORDS = ['폭행','폭력','상해','살인','강도','절도',
 function textValue(value, maxLen) { return String(value || '').replace(/[\u0000-\u001F\u007F]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, maxLen); }
 function clampNumber(value, fallback, min, max) { const n = Number(value); return Number.isFinite(n) ? Math.max(min, Math.min(max, Math.floor(n))) : fallback; }
 function boolValue(value, fallback = false) { if (typeof value === 'boolean') return value; if (value === 'true') return true; if (value === 'false') return false; return fallback; }
-function firstDefined(...values) { return values.find(v => v !== undefined && v !== null); }
+function firstDefined(...values) { return values.find(value => value !== undefined && value !== null); }
 function kstDateKey(date = new Date()) { return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(date); }
-function pickFrom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function pickFrom(items) { return items[Math.floor(Math.random() * items.length)]; }
 function randomNickname() { return NICK_ADJ[Math.floor(Math.random() * NICK_ADJ.length)] + NICK_NOUN[Math.floor(Math.random() * NICK_NOUN.length)]; }
 function selectedJudgeOrBlank(value) { return JUDGES.includes(value) ? value : ''; }
-function inferCategory(title, desc) { const text = `${title} ${desc}`; const found = CATEGORIES.find(([kw]) => text.includes(kw)); return found ? found[1] : '황당'; }
+function inferCategory(title, desc) { const text = `${title} ${desc}`; const found = CATEGORIES.find(([keyword]) => text.includes(keyword)); return found ? found[1] : '황당'; }
 function makeDocket(today, category) { return `${today.slice(0, 4)}황당-${category}-${Math.floor(1000 + Math.random() * 9000)}`; }
-function containsBannedWord(text, bannedWords = []) { const source = String(text || '').toLowerCase(); return bannedWords.some(word => { const w = String(word || '').trim().toLowerCase(); return w && source.includes(w); }); }
+function containsBannedWord(text, bannedWords = []) { const source = String(text || '').toLowerCase(); return bannedWords.some(word => { const clean = String(word || '').trim().toLowerCase(); return clean && source.includes(clean); }); }
 function containsSeriousKeyword(text) { const source = String(text || '').replace(/\s+/g, ''); return SERIOUS_KEYWORDS.some(word => source.includes(word)); }
 function compact(value) { return String(value || '').replace(/\s+/g, ' ').replace(/[.!?。！？]+$/g, '').replace(/["“”'‘’]/g, '').trim(); }
 function clipTitle(title) { const clean = compact(title).replace(/사건\s*사건$/g, '사건'); return clean.length > MAX_TITLE ? `${clean.slice(0, MAX_TITLE - 1).trim()}…` : clean; }
@@ -59,48 +59,108 @@ async function makeAiTitle(desc, fallbackTitle, modelName) {
     const prompt = `너는 소소킹 황당재판소의 사건명 작성관이다.\n\n사용자의 접수 내용을 바로 제목으로 만들지 말고, 내부적으로 정리한 뒤 최종 사건명 1개를 만든다. 내부 정리 과정은 출력하지 않는다.\n\n규칙:\n- 18~35자 권장, 최대 40자.\n- 사건 내용 안에 실제로 등장하는 핵심 대상(누가/무엇을)과 핵심 행동(무슨 일을 했는지)을 반드시 포함한다. 내용에 없는 소재나 사물을 지어내지 않는다.\n- 사건 내용의 앞부분 문장을 그대로 잘라 쓰지 말고, 전체 내용을 읽고 핵심을 요약해서 새로 구성한다.\n- 반드시 '사건'으로 끝낸다.\n- 실제 범죄처럼 보이게 과격하게 쓰지 않는다.\n- 웃기려고 드립을 치지 말고, 너무 진지한 사건명처럼 쓴다.\n\n사건 내용:\n${desc}\n\nJSON만 출력하라.\n{"draftTitle":"1차 사건명 초안","titleBasis":["핵심 대상","핵심 행동"],"caseTitle":"최종 사건명"}`;
     const result = await model.generateContent({ contents: [{ role: 'user', parts: [{ text: prompt }] }] });
     return normalizeAiTitle(result.response.text(), fallbackTitle);
-  } catch (err) { console.error('AI title generation failed:', err); return fallbackTitle || ''; }
+  } catch (error) {
+    console.error('AI title generation failed:', error);
+    return fallbackTitle || '';
+  }
 }
+
 function normalizeImageAttachment(value) {
   if (!value || typeof value !== 'object') return null;
   const mimeType = textValue(value.mimeType, 30);
-  if (!['image/jpeg', 'image/png', 'image/webp'].includes(mimeType)) throw new HttpsError('invalid-argument', '이미지는 JPG, PNG, WEBP 형식만 첨부할 수 있습니다.');
+  if (mimeType !== 'image/jpeg') throw new HttpsError('invalid-argument', '첨부 이미지는 브라우저에서 변환된 JPEG 형식만 접수할 수 있습니다.');
   const data = String(value.data || '').replace(/^data:image\/[a-zA-Z0-9.+-]+;base64,/, '').replace(/\s/g, '');
   if (!data) return null;
   if (data.length > MAX_IMAGE_BASE64_LENGTH || !/^[A-Za-z0-9+/=]+$/.test(data)) throw new HttpsError('invalid-argument', '이미지 데이터 형식 또는 용량이 올바르지 않습니다.');
-  return { mimeType, data, width: clampNumber(value.width, 0, 0, 4000), height: clampNumber(value.height, 0, 0, 4000), originalName: textValue(value.originalName, 80), originalSize: clampNumber(value.originalSize, 0, 0, 25 * 1024 * 1024), resizedSize: clampNumber(value.resizedSize, 0, 0, 1024 * 1024), resized: true };
+  return {
+    mimeType: 'image/jpeg',
+    data,
+    width: clampNumber(value.width, 0, 0, 4000),
+    height: clampNumber(value.height, 0, 0, 4000),
+    originalSize: clampNumber(value.originalSize, 0, 0, 25 * 1024 * 1024),
+    resizedSize: clampNumber(value.resizedSize, 0, 0, 1024 * 1024),
+    resized: true,
+  };
 }
-function hasValidImageSignature(buffer, mimeType) {
-  if (mimeType === 'image/jpeg') return buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
-  if (mimeType === 'image/png') return buffer.length >= 8 && buffer.subarray(0, 8).equals(Buffer.from([0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a]));
-  if (mimeType === 'image/webp') return buffer.length >= 12 && buffer.subarray(0, 4).toString('ascii') === 'RIFF' && buffer.subarray(8, 12).toString('ascii') === 'WEBP';
-  return false;
+
+function hasValidJpegSignature(buffer) {
+  return buffer.length >= 4
+    && buffer[0] === 0xff
+    && buffer[1] === 0xd8
+    && buffer[buffer.length - 2] === 0xff
+    && buffer[buffer.length - 1] === 0xd9;
 }
+
+function stripJpegMetadata(buffer) {
+  if (!hasValidJpegSignature(buffer)) throw new HttpsError('invalid-argument', 'JPEG 이미지 구조가 올바르지 않습니다.');
+  const chunks = [buffer.subarray(0, 2)];
+  let offset = 2;
+
+  while (offset < buffer.length) {
+    if (buffer[offset] !== 0xff || offset + 1 >= buffer.length) {
+      throw new HttpsError('invalid-argument', 'JPEG 세그먼트 구조가 올바르지 않습니다.');
+    }
+    const marker = buffer[offset + 1];
+    if (marker === 0xda || marker === 0xd9) {
+      chunks.push(buffer.subarray(offset));
+      return Buffer.concat(chunks);
+    }
+    if (marker === 0x00 || (marker >= 0xd0 && marker <= 0xd7) || marker === 0x01) {
+      chunks.push(buffer.subarray(offset, offset + 2));
+      offset += 2;
+      continue;
+    }
+    if (offset + 4 > buffer.length) throw new HttpsError('invalid-argument', 'JPEG 세그먼트 길이가 올바르지 않습니다.');
+    const length = buffer.readUInt16BE(offset + 2);
+    const end = offset + 2 + length;
+    if (length < 2 || end > buffer.length) throw new HttpsError('invalid-argument', 'JPEG 세그먼트 길이가 올바르지 않습니다.');
+    const isPrivateMetadata = (marker >= 0xe1 && marker <= 0xef) || marker === 0xfe;
+    if (!isPrivateMetadata) chunks.push(buffer.subarray(offset, end));
+    offset = end;
+  }
+  throw new HttpsError('invalid-argument', 'JPEG 이미지 데이터가 완전하지 않습니다.');
+}
+
 async function uploadCaseImage(uid, caseId, image) {
   if (!image) return null;
-  const ext = image.mimeType === 'image/png' ? 'png' : image.mimeType === 'image/webp' ? 'webp' : 'jpg';
-  const storagePath = `case-images/${uid}/${caseId}/evidence.${ext}`;
-  const buffer = Buffer.from(image.data, 'base64');
-  if (buffer.length > 650 * 1024) throw new HttpsError('invalid-argument', '첨부 이미지 용량이 큽니다. 더 작은 이미지를 첨부해주세요.');
-  if (!hasValidImageSignature(buffer, image.mimeType)) throw new HttpsError('invalid-argument', '이미지 실제 형식과 확장자가 일치하지 않습니다.');
-  await getStorage().bucket().file(storagePath).save(buffer, { contentType: image.mimeType, resumable: false, metadata: { cacheControl: 'private,max-age=3600', metadata: { ownerId: uid, caseId } } });
-  return { storagePath, mimeType: image.mimeType, width: image.width, height: image.height, originalName: image.originalName, originalSize: image.originalSize, resizedSize: image.resizedSize, resized: true };
+  const storagePath = `case-images/${uid}/${caseId}/evidence.jpg`;
+  const rawBuffer = Buffer.from(image.data, 'base64');
+  if (rawBuffer.length > 650 * 1024) throw new HttpsError('invalid-argument', '첨부 이미지 용량이 큽니다. 더 작은 이미지를 첨부해주세요.');
+  const buffer = stripJpegMetadata(rawBuffer);
+  if (buffer.length > 650 * 1024) throw new HttpsError('invalid-argument', '정리된 첨부 이미지 용량이 큽니다.');
+  await getStorage().bucket().file(storagePath).save(buffer, {
+    contentType: 'image/jpeg',
+    resumable: false,
+    metadata: { cacheControl: 'private,max-age=3600', metadata: { ownerId: uid, caseId } },
+  });
+  return {
+    storagePath,
+    mimeType: 'image/jpeg',
+    width: image.width,
+    height: image.height,
+    originalName: 'evidence.jpg',
+    originalSize: image.originalSize,
+    resizedSize: buffer.length,
+    resized: true,
+    metadataStripped: true,
+  };
 }
+
 async function removeCaseImage(imageAttachment) {
   const storagePath = imageAttachment?.storagePath;
   if (!storagePath) return;
   await getStorage().bucket().file(storagePath).delete().catch(error => console.error('orphan image cleanup failed:', error.message || error));
 }
-async function loadSettings() { const snap = await db.doc('site_settings/config').get().catch(() => null); return snap?.exists ? snap.data() : {}; }
-async function loadUserNickname(uid) { try { const snap = await db.doc(`users/${uid}`).get(); return snap.exists ? textValue(snap.data().nickname, 30) : ''; } catch { return ''; } }
+async function loadSettings() { const snapshot = await db.doc('site_settings/config').get().catch(() => null); return snapshot?.exists ? snapshot.data() : {}; }
+async function loadUserNickname(uid) { try { const snapshot = await db.doc(`users/${uid}`).get(); return snapshot.exists ? textValue(snapshot.data().nickname, 30) : ''; } catch { return ''; } }
 
 async function reserveSubmitSlot(uid, today, dailyLimit, cooldownSec, caseId) {
   const nonce = `${Date.now()}_${crypto.randomBytes(5).toString('hex')}`;
   const limitRef = db.doc(`rate_limits/${uid}`);
   const reservationRef = db.doc(`submit_reservations/${uid}_${nonce}`);
-  await db.runTransaction(async tx => {
-    const limitSnap = await tx.get(limitRef);
-    const current = limitSnap.exists ? limitSnap.data() : {};
+  await db.runTransaction(async transaction => {
+    const limitSnapshot = await transaction.get(limitRef);
+    const current = limitSnapshot.exists ? limitSnapshot.data() : {};
     const count = current.date === today ? Number(current.count || 0) : 0;
     if (count >= dailyLimit) throw new HttpsError('resource-exhausted', `오늘 접수 한도 ${dailyLimit}건을 초과했습니다. 황당재판부도 하루에 너무 많은 황당함은 감당하기 어렵습니다.`);
     if (current.lastSubmittedAt && current.date === today) {
@@ -108,29 +168,29 @@ async function reserveSubmitSlot(uid, today, dailyLimit, cooldownSec, caseId) {
       const diffSec = Math.floor((Date.now() - lastMs) / 1000);
       if (cooldownSec > 0 && diffSec < cooldownSec) throw new HttpsError('resource-exhausted', `${cooldownSec - diffSec}초 후에 다시 접수할 수 있습니다. 재판부가 방금 전 사건의 황당함을 아직 정리 중입니다.`);
     }
-    tx.set(limitRef, { date: today, count: count + 1, lastSubmittedAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-    tx.set(reservationRef, { uid, date: today, caseId, status: 'pending', createdAt: FieldValue.serverTimestamp() });
+    transaction.set(limitRef, { date: today, count: count + 1, lastSubmittedAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+    transaction.set(reservationRef, { uid, date: today, caseId, status: 'pending', createdAt: FieldValue.serverTimestamp() });
   });
   return { today, limitRef, reservationRef };
 }
 
 async function finishSubmitReservation(reservation, success) {
   if (!reservation) return;
-  await db.runTransaction(async tx => {
-    const reservationSnap = await tx.get(reservation.reservationRef);
-    if (!reservationSnap.exists) return;
+  await db.runTransaction(async transaction => {
+    const reservationSnapshot = await transaction.get(reservation.reservationRef);
+    if (!reservationSnapshot.exists) return;
     if (!success) {
-      const limitSnap = await tx.get(reservation.limitRef);
-      const current = limitSnap.exists ? limitSnap.data() : {};
+      const limitSnapshot = await transaction.get(reservation.limitRef);
+      const current = limitSnapshot.exists ? limitSnapshot.data() : {};
       if (current.date === reservation.today) {
-        tx.set(reservation.limitRef, {
+        transaction.set(reservation.limitRef, {
           count: Math.max(0, Number(current.count || 0) - 1),
           lastFailureRefundAt: FieldValue.serverTimestamp(),
           updatedAt: FieldValue.serverTimestamp(),
         }, { merge: true });
       }
     }
-    tx.delete(reservation.reservationRef);
+    transaction.delete(reservation.reservationRef);
   }).catch(error => console.error('submit reservation cleanup failed:', error.message || error));
 }
 
