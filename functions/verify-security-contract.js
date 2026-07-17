@@ -12,6 +12,7 @@ const rules = read('../firestore.rules');
 const storageRules = read('../storage.rules');
 const firebaseConfig = JSON.parse(read('../firebase.json'));
 const main = read('./main.js');
+const adminUtils = read('./admin-utils.js');
 const social = read('./social.js');
 const reporting = read('./reporting.js');
 const submit = read('./submit-secure.js');
@@ -45,7 +46,8 @@ const csp = headers['Content-Security-Policy'] || '';
 const expectedPhotoUrl = 'https://firebasestorage.googleapis.com/v0/b/sosoking-481e6.firebasestorage.app/o/profile-photos%2Fuser_123%2Favatar.jpg?alt=media&token=test';
 
 const checks = [
-  [rules.includes('request.auth.token.email_verified == true'), 'Admin email access must require verified email'],
+  [rules.includes('function verifiedStaffLogin()') && rules.includes("request.auth.token.firebase.sign_in_provider != 'password'"), 'Firestore admin access must require a verified staff login'],
+  [adminUtils.includes('function isVerifiedStaffLogin') && adminUtils.includes("provider === 'password'") && adminUtils.includes('email_verified !== true'), 'Server admin access must require verified password accounts'],
   [section('user_names/{key}', 'cases/{caseId}').includes('allow read, create, update, delete: if false;'), 'Nickname index must remain server-only'],
   [section('users/{uid}', 'user_names/{key}').includes('allow create, update, delete: if false;'), 'Profiles must remain server-written'],
   [cases.includes('allow create, update, delete: if false;') && results.includes('allow create, update, delete: if false;'), 'Case and result mutations must use Functions'],
@@ -56,10 +58,12 @@ const checks = [
   [main.includes("require('./visibility')") && main.includes("require('./reporting')"), 'Secured publishing or reporting export is missing'],
   [visibility.includes('db.runTransaction') && visibility.includes('assertNoSensitiveContent'), 'Publishing must be atomic and privacy-checked'],
   [visibility.includes('resultUpdate.userId = FieldValue.delete()') && visibility.includes('resultUpdate.imageAttachmentMeta = FieldValue.delete()'), 'Publishing must remove owner and attachment identifiers'],
-  [visibility.includes('appeal.reason') && visibility.includes('appeal.verdict'), 'Publishing checks must include appeal records'],
+  [visibility.includes('appeal.reason') && visibility.includes('appeal.verdict') && visibility.includes('assertSafePublicNickname'), 'Publishing checks must include appeal records and legacy real-name nicknames'],
   [reporting.includes('REPORT_DAILY_LIMIT') && reporting.includes('REPORT_COOLDOWN_SEC') && reporting.includes('publicAuthorId(uid, caseId)'), 'Reports must be rate-limited and case-deduplicated'],
   [resultWrapper.includes("httpsCallable(functions, 'reportResult')") && resultWrapper.includes("location.hash = '#/auth'"), 'Reporting UI must use the secured callable'],
-  [submit.includes('requireVerifiedUser') && submit.includes('assertNoSensitiveContent') && submit.includes('hasValidImageSignature'), 'Submission validation is incomplete'],
+  [submit.includes('requireVerifiedUser') && submit.includes('assertNoSensitiveContent'), 'Submission authentication or privacy validation is incomplete'],
+  [submit.includes("mimeType !== 'image/jpeg'") && submit.includes('stripJpegMetadata') && submit.includes('metadataStripped: true'), 'Submission images must be normalized JPEGs with metadata removed'],
+  [submit.includes('marker >= 0xe1 && marker <= 0xef') && submit.includes('marker === 0xfe'), 'JPEG EXIF/XMP/comment metadata stripping is incomplete'],
   [submit.includes('isPublic: false') && !submit.includes('const isPublic = boolValue(data.isPublic'), 'New cases must be forced private'],
   [generator.includes('isPublic: false') && !generator.includes('ownerId: caseData.userId') && !generator.includes('imageAttachmentMeta: attachmentMeta'), 'Generated result privacy is incomplete'],
   [repair.includes('deleteOrphanCaseImages') && repair.includes('appeal_reservations'), 'Stale processing recovery is incomplete'],
@@ -71,6 +75,7 @@ const checks = [
   [social.includes('APPEAL_DAILY_LIMIT') && social.includes('failAppealReservation'), 'Appeals must use limits and failure refunds'],
   [titleSuggestion.includes('finishReservation') && titleSuggestion.includes('assertNoSensitiveContent'), 'Title suggestions must refund failed calls'],
   [profile.includes('validatedProfilePhotoUrl') && profile.includes('requireVerifiedUser'), 'Profile validation is incomplete'],
+  [profile.includes('LIKELY_KOREAN_NAME_RE') && profile.includes('RESERVED_NICKNAME_RE') && profile.includes('assertNoSensitiveContent'), 'Profiles must block likely real names, staff impersonation and sensitive nicknames'],
   [adminActions.includes("requireVerifiedUser(request, '사건 삭제") && adminActions.includes('const hideBatch = db.batch()') && adminActions.includes("deleteRequestedBy: 'owner'"), 'Owner deletion must require verified login and atomically hide data first'],
   [storageRules.includes("fileName == 'avatar.jpg'") && storageRules.includes("request.resource.contentType == 'image/jpeg'"), 'Profile Storage restrictions are missing'],
   [headers['X-Content-Type-Options'] === 'nosniff' && headers['X-Frame-Options'] === 'DENY', 'Basic Hosting security headers are missing'],
