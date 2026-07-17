@@ -7,6 +7,7 @@ if (!getApps().length) {
 Object.assign(exports, require('./daily'));
 Object.assign(exports, require('./profile'));
 Object.assign(exports, require('./social'));
+Object.assign(exports, require('./reporting'));
 Object.assign(exports, require('./submit-secure'));
 Object.assign(exports, require('./title-suggestion'));
 Object.assign(exports, require('./generate-trial-v2'));
