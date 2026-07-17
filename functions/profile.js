@@ -6,7 +6,7 @@ const db = getFirestore();
 const REGION = 'asia-northeast3';
 const RESERVED_NICKNAME_RE = /(?:관리자|운영자|소소킹|공식계정|admin|administrator|moderator|staff)/i;
 const OFFENSIVE_NICKNAME_RE = /(?:시발|씨발|ㅅㅂ|병신|개새끼|죽어|자살)/i;
-const LIKELY_KOREAN_NAME_RE = /^(?:김|이|박|최|정|강|조|윤|장|임|한|오)[가-힣]{2}$/;
+const LIKELY_KOREAN_NAME_RE = /^(?:김|이|박|최|정|강|조|윤|장|임)[가-힣]{2}$/;
 
 function cleanNickname(value) {
   return String(value || '').replace(/\s+/g, '').trim().slice(0, 20);
