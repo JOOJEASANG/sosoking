@@ -89,12 +89,12 @@ async function uploadCaseImage(uid, caseId, image) {
 async function removeCaseImage(imageAttachment) {
   const storagePath = imageAttachment?.storagePath;
   if (!storagePath) return;
-  await getStorage().bucket().file(storagePath).delete({ ignoreNotFound: true }).catch(error => console.error('orphan image cleanup failed:', error.message || error));
+  await getStorage().bucket().file(storagePath).delete().catch(error => console.error('orphan image cleanup failed:', error.message || error));
 }
 async function loadSettings() { const snap = await db.doc('site_settings/config').get().catch(() => null); return snap?.exists ? snap.data() : {}; }
 async function loadUserNickname(uid) { try { const snap = await db.doc(`users/${uid}`).get(); return snap.exists ? textValue(snap.data().nickname, 30) : ''; } catch { return ''; } }
 
-async function reserveSubmitSlot(uid, today, dailyLimit, cooldownSec) {
+async function reserveSubmitSlot(uid, today, dailyLimit, cooldownSec, caseId) {
   const nonce = `${Date.now()}_${crypto.randomBytes(5).toString('hex')}`;
   const limitRef = db.doc(`rate_limits/${uid}`);
   const reservationRef = db.doc(`submit_reservations/${uid}_${nonce}`);
@@ -109,7 +109,7 @@ async function reserveSubmitSlot(uid, today, dailyLimit, cooldownSec) {
       if (cooldownSec > 0 && diffSec < cooldownSec) throw new HttpsError('resource-exhausted', `${cooldownSec - diffSec}초 후에 다시 접수할 수 있습니다. 재판부가 방금 전 사건의 황당함을 아직 정리 중입니다.`);
     }
     tx.set(limitRef, { date: today, count: count + 1, lastSubmittedAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-    tx.set(reservationRef, { uid, date: today, status: 'pending', createdAt: FieldValue.serverTimestamp() });
+    tx.set(reservationRef, { uid, date: today, caseId, status: 'pending', createdAt: FieldValue.serverTimestamp() });
   });
   return { today, limitRef, reservationRef };
 }
@@ -156,7 +156,8 @@ exports.submitCase = onCall({ region: REGION, secrets: [geminiKey], timeoutSecon
 
   const isAdminSubmitter = await isAdminAuth(request.auth).catch(() => false);
   const today = kstDateKey();
-  const reservation = isAdminSubmitter ? null : await reserveSubmitSlot(uid, today, dailyLimit, cooldownSec);
+  const caseId = `case_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`;
+  const reservation = isAdminSubmitter ? null : await reserveSubmitSlot(uid, today, dailyLimit, cooldownSec, caseId);
   let imageAttachment = null;
   let completed = false;
 
@@ -169,10 +170,8 @@ exports.submitCase = onCall({ region: REGION, secrets: [geminiKey], timeoutSecon
     const title = titleIsManual ? submittedTitle : (autoTitle || submittedTitle || smartTitle);
     if (!title) throw new HttpsError('invalid-argument', '황당사건명을 입력해주세요.');
 
-    const isPublic = boolValue(data.isPublic, false);
     const category = inferCategory(title, desc);
     const docketNumber = makeDocket(today, category);
-    const caseId = `case_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`;
     const profileNickname = await loadUserNickname(uid);
     imageAttachment = await uploadCaseImage(uid, caseId, imageInput);
 
@@ -201,13 +200,13 @@ exports.submitCase = onCall({ region: REGION, secrets: [geminiKey], timeoutSecon
       imageAttachment,
       hasImageAttachment: !!imageAttachment,
       status: 'pending',
-      isPublic,
+      isPublic: false,
       reportCount: 0,
       createdAt: FieldValue.serverTimestamp(),
     });
 
     completed = true;
-    return { caseId, docketNumber, dailyLimit, adminBypass: isAdminSubmitter, hasImageAttachment: !!imageAttachment, caseTitle: title, aiCaseTitle: aiTitle || '' };
+    return { caseId, docketNumber, dailyLimit, adminBypass: isAdminSubmitter, hasImageAttachment: !!imageAttachment, caseTitle: title, aiCaseTitle: aiTitle || '', isPublic: false };
   } catch (error) {
     await removeCaseImage(imageAttachment);
     throw error;
