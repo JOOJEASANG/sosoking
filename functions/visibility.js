@@ -14,6 +14,9 @@ function publicText(caseData = {}, resultData = {}) {
   const judgment = resultData.judgment && typeof resultData.judgment === 'object'
     ? resultData.judgment
     : {};
+  const appeal = resultData.appeal && typeof resultData.appeal === 'object'
+    ? resultData.appeal
+    : {};
   return [
     caseData.caseTitle,
     caseData.caseDescription,
@@ -35,6 +38,8 @@ function publicText(caseData = {}, resultData = {}) {
     judgment.opinion,
     ...(Array.isArray(judgment.orders) ? judgment.orders.map(order => order?.text || order) : []),
     judgment.closingComment,
+    appeal.reason,
+    appeal.verdict,
   ].filter(Boolean).join('\n');
 }
 
@@ -74,14 +79,24 @@ exports.setCaseVisibility = onCall({
       );
     }
 
-    const update = {
+    const commonUpdate = {
       isPublic,
       visibilityUpdatedAt: FieldValue.serverTimestamp(),
-      visibilityUpdatedBy: admin ? 'admin' : uid,
+      visibilityActor: admin ? 'admin' : 'owner',
       updatedAt: FieldValue.serverTimestamp(),
     };
-    transaction.update(caseRef, update);
-    transaction.update(resultRef, update);
+    transaction.update(caseRef, commonUpdate);
+
+    const resultUpdate = { ...commonUpdate };
+    if (isPublic) {
+      resultUpdate.userId = FieldValue.delete();
+      resultUpdate.ownerId = FieldValue.delete();
+      resultUpdate.visibilityUpdatedBy = FieldValue.delete();
+      resultUpdate.imageAttachment = FieldValue.delete();
+      resultUpdate.imageAttachmentMeta = FieldValue.delete();
+      resultUpdate.imageStoragePath = FieldValue.delete();
+    }
+    transaction.update(resultRef, resultUpdate);
   });
 
   return { success: true, caseId, isPublic, admin };
