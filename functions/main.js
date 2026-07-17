@@ -14,3 +14,5 @@ Object.assign(exports, require('./generate-trial-v2'));
 Object.assign(exports, require('./visibility'));
 Object.assign(exports, require('./admin-actions'));
 Object.assign(exports, require('./repair'));
+// 동일한 export 이름을 월간·수동 최적화 구현으로 덮어쓴다.
+Object.assign(exports, require('./privacy-maintenance'));
