@@ -46,16 +46,16 @@ const checks = [
   [home.includes('result.judgment?.headline') && home.includes('result.judgment?.summary'), 'Home feed must display V2 judgment metadata'],
   [home.includes('result.judgment?.plaintiffClaim') && home.includes('result.judgment?.defendantClaim'), 'Home search must include quick claims'],
   [home.includes('사건 접수부터 선고까지 6단계'), 'Home must explain the full court process'],
-  [app.includes('result-case-story.js?v=20260717-security1'), 'App must load the secured interpretive result wrapper with a fresh cache key'],
+  [app.includes('result-case-story.js?v=20260717-security2'), 'App must load the secured reporting result wrapper with a fresh cache key'],
   [resultWrapper.includes('judgment.breakingNews') && resultWrapper.includes('judgment.emergencyBriefing'), 'Result pages must load emergency judgment sections'],
   [resultWrapper.includes('judgment.plaintiffClaim') && resultWrapper.includes('judgment.defendantClaim'), 'Result pages must load quick opposing claims'],
   [resultWrapper.includes('claim-showdown') && resultWrapper.includes('같은 사건, 다른 해석'), 'Result pages must visibly render independent claim interpretations'],
   [resultWrapper.includes('<details class="result-card original-case-card">') && resultWrapper.includes('접수 원문은 판결과 분리'), 'Submitted source text must remain collapsed and separate from the judgment'],
   [resultWrapper.includes('--alert-title') && resultWrapper.includes('var(--ui-text-main'), 'Runtime result styles must use theme-aware text variables'],
-  [resultWrapper.includes('setCaseVisibility'), 'Result publishing must use the secured server Function'],
+  [resultWrapper.includes('setCaseVisibility') && resultWrapper.includes('reportResult'), 'Result actions must use secured publishing and reporting Functions'],
   [readability.includes('html[data-theme="light"] body #page-content') && readability.includes('--readable-body'), 'Final light-mode readability guard is missing'],
   [index.includes('/css/site-readability.css?v=20260711-interpret1'), 'Index must load the final readability guard'],
-  [index.includes('/js/app.js?v=20260717-security1'), 'Index must bust the security app cache'],
+  [index.includes('/js/app.js?v=20260717-security2'), 'Index must bust the latest security app cache'],
 ];
 
 const failed = checks.filter(([ok]) => !ok).map(([, message]) => message);
@@ -64,4 +64,4 @@ if (failed.length) {
   process.exit(1);
 }
 
-console.log('Verified secure interpretive judgments, collapsed source text, staged trial and light-mode readability integration.');
+console.log('Verified secure interpretive judgments, reporting, staged trial and light-mode readability integration.');
