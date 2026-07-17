@@ -8,7 +8,6 @@ const {
   requireVerifiedUser,
   validDocumentId,
   assertNoSensitiveContent,
-  publicAuthorId,
 } = require('./security-utils');
 
 const db = getFirestore();
@@ -142,7 +141,6 @@ exports.addCourtComment = onCall({ region: REGION, timeoutSeconds: 30, memory: '
       if (diffSec < COMMENT_COOLDOWN_SEC) throw new HttpsError('resource-exhausted', `${COMMENT_COOLDOWN_SEC - diffSec}초 후에 다시 남길 수 있습니다.`);
     }
     transaction.set(commentRef, {
-      authorId: publicAuthorId(uid, caseId),
       nickname,
       text,
       status: 'visible',
