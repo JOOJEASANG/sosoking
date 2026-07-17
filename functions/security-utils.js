@@ -5,10 +5,16 @@ const DOCUMENT_ID_RE = /^[A-Za-z0-9_-]{1,180}$/;
 const PHONE_RE = /(?:^|\D)(?:01[016789]|0\d{1,2})[-.\s]?\d{3,4}[-.\s]?\d{4}(?:$|\D)/;
 const EMAIL_RE = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
 const RRN_RE = /(?:^|\D)\d{6}[-\s]?\d{7}(?:$|\D)/;
+const CARD_RE = /(?:^|\D)(?:\d{4}[-\s]?){3}\d{4}(?:$|\D)/;
+const IP_RE = /(?:^|\D)(?:25[0-5]|2[0-4]\d|1?\d?\d)(?:\.(?:25[0-5]|2[0-4]\d|1?\d?\d)){3}(?:$|\D)/;
+const VEHICLE_RE = /(?:^|\D)\d{2,3}[가-힣]\s?\d{4}(?:$|\D)/;
+const URL_RE = /(?:https?:\/\/|www\.)[^\s<>{}]+/i;
+const SNS_HANDLE_RE = /(?:^|[\s(])@[A-Za-z0-9._]{3,30}(?:$|[\s),.!?])/;
 const ACCOUNT_RE = /(?:계좌번호|은행계좌|입금계좌|카드번호|카톡아이디|카카오톡\s*ID|텔레그램\s*ID|인스타그램\s*ID)/i;
 const ADDRESS_RE = /(?:서울|부산|대구|인천|광주|대전|울산|세종|제주|경기|강원|충북|충남|전북|전남|경북|경남|[가-힣]{2,}(?:시|군|구))\s+[가-힣0-9]{1,20}(?:읍|면|동|리|로|길)(?:\s*\d{1,4}(?:-\d{1,4})?)?/;
 const NAMED_PLACE_RE = /[가-힣A-Za-z0-9]{2,30}(?:초등학교|중학교|고등학교|대학교|유치원|학원|병원|아파트)/;
 const EXPLICIT_NAME_RE = /(?:실명|본명|이름|담임|선생님|학생|직원|상사|동료|사장님)\s*(?:은|는|이|가|:)?\s*[가-힣]{2,4}/;
+const KOREAN_NAME_WITH_PARTICLE_RE = /(?:^|[\s,:(])(?:김|이|박|최|정|강|조|윤|장|임|한|오|서|신|권|황|안|송|전|홍|유|고|문|양|손|배|백|허|남|심|노|하|곽|성|차|주|우|구|민|진|지|엄|채|원|천|방|공|현|함|변|염|여|추|도|소|석|선|설|마|길|연|위|표|명|기|반|왕|금|옥|육|인|맹|제|모)[가-힣]{2}(?=\s*(?:씨|님|에게|한테|와|과|을|를|은|는|이|가)(?:\s|[,.!?]|$))/;
 
 function cleanText(value, maxLength = 5000) {
   return String(value || '')
@@ -40,10 +46,15 @@ function sensitiveContentReasons(value) {
   if (PHONE_RE.test(text)) reasons.push('전화번호');
   if (EMAIL_RE.test(text)) reasons.push('이메일');
   if (RRN_RE.test(text)) reasons.push('주민등록번호');
+  if (CARD_RE.test(text)) reasons.push('카드번호');
+  if (IP_RE.test(text)) reasons.push('IP 주소');
+  if (VEHICLE_RE.test(text)) reasons.push('차량번호');
+  if (URL_RE.test(text)) reasons.push('외부 링크');
+  if (SNS_HANDLE_RE.test(text)) reasons.push('SNS 계정');
   if (ACCOUNT_RE.test(text)) reasons.push('계좌·SNS 식별정보');
   if (ADDRESS_RE.test(text)) reasons.push('상세 주소');
   if (NAMED_PLACE_RE.test(text)) reasons.push('학교·병원·아파트 등 특정 장소');
-  if (EXPLICIT_NAME_RE.test(text)) reasons.push('실명으로 보이는 정보');
+  if (EXPLICIT_NAME_RE.test(text) || KOREAN_NAME_WITH_PARTICLE_RE.test(text)) reasons.push('실명으로 보이는 정보');
   return [...new Set(reasons)];
 }
 
