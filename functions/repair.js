@@ -1,6 +1,6 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
-const { getFirestore, FieldValue } = require('firebase-admin/firestore');
+const { getFirestore, FieldValue, Timestamp } = require('firebase-admin/firestore');
 const { isAdminAuth } = require('./admin-utils');
 const { isCompleteJudgment } = require('./judgment-v2');
 
@@ -8,6 +8,7 @@ const db = getFirestore();
 const REGION = 'asia-northeast3';
 const REACTIONS = ['plaintiff', 'defendant', 'both', 'tooMuch', 'funny'];
 const STALE_PROCESSING_MS = 10 * 60 * 1000;
+const STALE_RESERVATION_MS = 15 * 60 * 1000;
 const MAX_COUNTER_REPAIR_LIMIT = 300;
 const ADMIN_CALLABLE_OPTIONS = {
   region: REGION,
@@ -88,6 +89,64 @@ async function recoverStaleProcessingCases() {
   return { checked: snap.size, recoveredCount: recovered.length, recovered };
 }
 
+async function refundStaleReservation(document, limitCollection) {
+  const reservationRef = document.ref;
+  const reservation = document.data() || {};
+  const uid = String(reservation.uid || '').trim();
+  const date = String(reservation.date || '').trim();
+  if (!uid || !date) {
+    await reservationRef.delete().catch(() => null);
+    return { reservationId: document.id, refunded: false, malformed: true };
+  }
+
+  const limitRef = db.doc(`${limitCollection}/${uid}`);
+  let refunded = false;
+  await db.runTransaction(async transaction => {
+    const [freshReservation, limitSnap] = await Promise.all([
+      transaction.get(reservationRef),
+      transaction.get(limitRef),
+    ]);
+    if (!freshReservation.exists) return;
+    const current = limitSnap.exists ? limitSnap.data() : {};
+    if (current.date === date && numberValue(current.count) > 0) {
+      transaction.set(limitRef, {
+        count: Math.max(0, numberValue(current.count) - 1),
+        staleReservationRefundedAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      }, { merge: true });
+      refunded = true;
+    }
+    transaction.delete(reservationRef);
+  });
+  return { reservationId: document.id, uid, refunded };
+}
+
+async function recoverStaleReservations() {
+  const cutoff = Timestamp.fromMillis(Date.now() - STALE_RESERVATION_MS);
+  const configs = [
+    ['submit_reservations', 'rate_limits'],
+    ['title_suggestion_reservations', 'title_suggestion_limits'],
+  ];
+  const recovered = [];
+
+  for (const [reservationCollection, limitCollection] of configs) {
+    const snapshot = await db.collection(reservationCollection)
+      .where('createdAt', '<', cutoff)
+      .limit(50)
+      .get();
+    for (const document of snapshot.docs) {
+      const result = await refundStaleReservation(document, limitCollection);
+      recovered.push({ type: reservationCollection, ...result });
+    }
+  }
+
+  return {
+    recoveredCount: recovered.length,
+    refundedCount: recovered.filter(item => item.refunded).length,
+    recovered,
+  };
+}
+
 async function repairSocialCounters(options = {}) {
   const resultLimit = Math.max(1, Math.min(MAX_COUNTER_REPAIR_LIMIT, numberValue(options.limit, 200)));
   let resultSnap;
@@ -138,7 +197,11 @@ async function repairSocialCounters(options = {}) {
 }
 
 exports.recoverStaleTrials = onSchedule({ region: REGION, schedule: 'every 10 minutes', timeZone: 'Asia/Seoul', timeoutSeconds: 120, memory: '256MiB' }, async () => {
-  console.log('recoverStaleTrials:', await recoverStaleProcessingCases());
+  const [trials, reservations] = await Promise.all([
+    recoverStaleProcessingCases(),
+    recoverStaleReservations(),
+  ]);
+  console.log('recoverStaleTrials:', { trials, reservations });
 });
 
 exports.repairSocialCounters = onSchedule({ region: REGION, schedule: '20 3 * * *', timeZone: 'Asia/Seoul', timeoutSeconds: 180, memory: '256MiB' }, async () => {
@@ -147,7 +210,11 @@ exports.repairSocialCounters = onSchedule({ region: REGION, schedule: '20 3 * * 
 
 exports.recoverStaleTrialsNow = onCall({ ...ADMIN_CALLABLE_OPTIONS, timeoutSeconds: 120 }, async request => {
   await assertAdmin(request);
-  return await recoverStaleProcessingCases();
+  const [trials, reservations] = await Promise.all([
+    recoverStaleProcessingCases(),
+    recoverStaleReservations(),
+  ]);
+  return { trials, reservations };
 });
 
 exports.repairSocialCountersNow = onCall(ADMIN_CALLABLE_OPTIONS, async request => {
