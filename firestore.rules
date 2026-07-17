@@ -6,8 +6,17 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function verifiedAdminEmail() {
+    function verifiedStaffLogin() {
       return signedIn()
+        && request.auth.token.firebase.sign_in_provider != 'anonymous'
+        && (
+          request.auth.token.firebase.sign_in_provider != 'password' ||
+          request.auth.token.email_verified == true
+        );
+    }
+
+    function verifiedAdminEmail() {
+      return verifiedStaffLogin()
         && request.auth.token.email != null
         && request.auth.token.email_verified == true
         ? request.auth.token.email
@@ -15,7 +24,7 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return signedIn() && (
+      return verifiedStaffLogin() && (
         exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
         exists(/databases/$(database)/documents/admins/$(verifiedAdminEmail()))
       );
@@ -46,7 +55,7 @@ service cloud.firestore {
     }
 
     match /admins/{uidOrEmail} {
-      allow read: if signedIn() && (
+      allow read: if verifiedStaffLogin() && (
         request.auth.uid == uidOrEmail ||
         verifiedAdminEmail() == uidOrEmail ||
         isAdmin()
