@@ -1,5 +1,6 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
+const { requireVerifiedUser, validatedProfilePhotoUrl } = require('./security-utils');
 
 const db = getFirestore();
 const REGION = 'asia-northeast3';
@@ -39,18 +40,17 @@ function nicknameError(value) {
 }
 
 exports.checkNickname = onCall({ region: REGION, timeoutSeconds: 20, memory: '256MiB' }, async request => {
-  if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+  const uid = requireVerifiedUser(request, '닉네임 확인은 로그인 후 이용할 수 있습니다.');
   const nickname = cleanNickname(request.data?.nickname);
   const err = nicknameError(nickname);
   if (err) throw new HttpsError('invalid-argument', err);
   const key = nicknameKey(nickname);
   const snap = await db.doc(`user_names/${key}`).get();
-  return { available: !snap.exists || snap.data().uid === request.auth.uid, nickname };
+  return { available: !snap.exists || snap.data().uid === uid, nickname };
 });
 
 exports.setNickname = onCall({ region: REGION, timeoutSeconds: 30, memory: '256MiB' }, async request => {
-  if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
-  const uid = request.auth.uid;
+  const uid = requireVerifiedUser(request, '프로필 설정은 로그인 후 이용할 수 있습니다.');
   const email = request.auth.token.email || '';
   const nickname = cleanNickname(request.data?.nickname);
   const err = nicknameError(nickname);
@@ -59,6 +59,7 @@ exports.setNickname = onCall({ region: REGION, timeoutSeconds: 30, memory: '256M
   const requestedAvatarType = cleanAvatarType(request.data?.avatarType);
   const requestedAvatarSeed = cleanAvatarSeed(request.data?.avatarSeed);
   const requestedAvatarIcon = cleanAvatarIcon(request.data?.avatarIcon);
+  const requestedPhotoURL = String(request.data?.photoURL || '').trim();
   const provider = request.auth.token.firebase?.sign_in_provider || 'password';
   const userRef = db.doc(`users/${uid}`);
   const nameRef = db.doc(`user_names/${key}`);
@@ -73,7 +74,9 @@ exports.setNickname = onCall({ region: REGION, timeoutSeconds: 30, memory: '256M
     const profile = userSnap.exists ? userSnap.data() : {};
     const oldKey = profile.nickname ? nicknameKey(profile.nickname) : '';
     const googlePhotoURL = cleanUrl(request.auth.token.picture || '');
-    const customPhotoURL = cleanUrl(request.data?.photoURL || profile.photoURL || '');
+    const customPhotoURL = requestedPhotoURL
+      ? validatedProfilePhotoUrl(requestedPhotoURL, uid)
+      : cleanUrl(profile.avatarType === 'upload' ? profile.photoURL : '');
     let avatarType = requestedAvatarType || profile.avatarType || (googlePhotoURL ? 'google' : 'generated');
     if (avatarType === 'google' && !googlePhotoURL) avatarType = 'generated';
     if (avatarType === 'upload' && !customPhotoURL) avatarType = googlePhotoURL ? 'google' : 'generated';
