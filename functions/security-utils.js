@@ -54,8 +54,13 @@ function assertNoSensitiveContent(value, messagePrefix = '개인정보 또는 �
   }
 }
 
-function publicAuthorId(uid) {
-  return crypto.createHash('sha256').update(`sosoking-public-author:${uid}`).digest('hex').slice(0, 20);
+function publicAuthorId(uid, scope = 'global') {
+  const safeScope = cleanText(scope, 180) || 'global';
+  return crypto
+    .createHash('sha256')
+    .update(`sosoking-public-author:${safeScope}:${uid}`)
+    .digest('hex')
+    .slice(0, 20);
 }
 
 function firebaseStorageObjectPath(value) {
