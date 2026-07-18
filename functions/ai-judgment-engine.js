@@ -1,4 +1,3 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
 const {
   cleanText,
   extractJson,
@@ -9,8 +8,45 @@ const {
   evaluateStorySpecificity,
   buildRewriteInstruction,
 } = require('./judgment-story-v2');
+const { DEFAULT_MODEL, generateJson } = require('./gemini-runtime');
 
-const DEFAULT_MODEL = 'gemini-2.5-flash';
+const JUDGMENT_JSON_SCHEMA = {
+  type: 'object',
+  properties: {
+    headline: { type: 'string' },
+    incidentLevel: { type: 'string' },
+    breakingNews: { type: 'string' },
+    emergencyBriefing: { type: 'string' },
+    impactAssessment: { type: 'string' },
+    summary: { type: 'string' },
+    facts: { type: 'string' },
+    investigation: { type: 'string' },
+    plaintiffClaim: { type: 'string' },
+    defendantClaim: { type: 'string' },
+    prosecution: { type: 'string' },
+    defense: { type: 'string' },
+    opinion: { type: 'string' },
+    orders: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          number: { type: 'integer' },
+          text: { type: 'string' },
+        },
+        required: ['number', 'text'],
+      },
+    },
+    closingComment: { type: 'string' },
+    legalNotice: { type: 'string' },
+  },
+  required: [
+    'headline', 'incidentLevel', 'breakingNews', 'emergencyBriefing',
+    'impactAssessment', 'summary', 'facts', 'investigation',
+    'plaintiffClaim', 'defendantClaim', 'prosecution', 'defense',
+    'opinion', 'orders', 'closingComment', 'legalNotice',
+  ],
+};
 
 function addUsage(total = {}, next = {}) {
   const keys = [
@@ -55,22 +91,13 @@ function qualitySummary(value = {}) {
 }
 
 async function generateAIJudgment({ apiKey, settings = {}, prompt, image, profile }) {
-  const modelName = cleanText(settings.geminiModel, 60) || DEFAULT_MODEL;
-  const model = new GoogleGenerativeAI(apiKey).getGenerativeModel({
-    model: modelName,
-    generationConfig: {
-      temperature: 1.02,
-      topP: 0.97,
-      maxOutputTokens: 7000,
-      responseMimeType: 'application/json',
-    },
-  });
-
+  const configuredModel = cleanText(settings.geminiModel, 80);
   let lastEvaluation = {};
   let lastError = null;
   let bestCandidate = null;
   let usage = {};
   let attempts = 0;
+  let modelName = DEFAULT_MODEL;
 
   for (let attempt = 0; attempt < 3; attempt += 1) {
     attempts += 1;
@@ -78,11 +105,19 @@ async function generateAIJudgment({ apiKey, settings = {}, prompt, image, profil
       const attemptPrompt = attempt === 0
         ? prompt
         : `${prompt}${buildRewriteInstruction(profile, lastEvaluation)}`;
-      const parts = [{ text: attemptPrompt }];
-      if (image) parts.push({ inlineData: image });
-      const response = await model.generateContent({ contents: [{ role: 'user', parts }] });
-      usage = addUsage(usage, response.response.usageMetadata || {});
-      const judgment = normalizeJudgment(extractJson(response.response.text()));
+      const generated = await generateJson({
+        apiKey,
+        configuredModel,
+        prompt: attemptPrompt,
+        image,
+        responseJsonSchema: JUDGMENT_JSON_SCHEMA,
+        temperature: 1.02,
+        topP: 0.97,
+        maxOutputTokens: 9000,
+      });
+      modelName = generated.modelName;
+      usage = addUsage(usage, generated.usage);
+      const judgment = normalizeJudgment(extractJson(generated.text));
       if (!isCompleteJudgment(judgment)) {
         lastError = new Error('AI judgment did not satisfy the V2 field contract');
         continue;
@@ -93,6 +128,7 @@ async function generateAIJudgment({ apiKey, settings = {}, prompt, image, profil
         judgment,
         evaluation: lastEvaluation,
         score: evaluationScore(lastEvaluation),
+        modelName,
       };
       if (!bestCandidate || candidate.score > bestCandidate.score) bestCandidate = candidate;
       if (lastEvaluation.passed) {
@@ -111,7 +147,6 @@ async function generateAIJudgment({ apiKey, settings = {}, prompt, image, profil
     }
   }
 
-  // 완성된 AI 결과가 있으면 품질 점수가 가장 높은 것을 사용한다. 로컬 문구로 바꾸지 않는다.
   if (bestCandidate) {
     return {
       judgment: bestCandidate.judgment,
@@ -119,7 +154,7 @@ async function generateAIJudgment({ apiKey, settings = {}, prompt, image, profil
       qualityPassed: false,
       attempts,
       usage,
-      modelName,
+      modelName: bestCandidate.modelName,
     };
   }
 
@@ -131,6 +166,7 @@ async function generateAIJudgment({ apiKey, settings = {}, prompt, image, profil
 
 module.exports = {
   DEFAULT_MODEL,
+  JUDGMENT_JSON_SCHEMA,
   addUsage,
   evaluationScore,
   qualitySummary,
