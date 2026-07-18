@@ -2,12 +2,8 @@ const { cleanText } = require('./judgment-v2');
 
 const DEFAULT_MODEL = 'gemini-3.5-flash';
 const FALLBACK_MODEL = 'gemini-2.5-flash';
-const SUPPORTED_MODELS = new Set([
-  DEFAULT_MODEL,
-  FALLBACK_MODEL,
-  'gemini-3.1-pro-preview',
-  'gemini-2.5-pro',
-]);
+const PRO_MODEL = 'gemini-3.1-pro-preview';
+const SUPPORTED_MODELS = new Set([DEFAULT_MODEL, FALLBACK_MODEL, PRO_MODEL, 'gemini-2.5-pro']);
 
 let sdkPromise = null;
 
@@ -19,7 +15,7 @@ async function loadSdk() {
 function modelCandidates(configuredModel = '') {
   const configured = cleanText(configuredModel, 80);
   const ordered = [];
-  if (SUPPORTED_MODELS.has(configured)) ordered.push(configured);
+  if (configured === PRO_MODEL || configured === 'gemini-2.5-pro') ordered.push(PRO_MODEL);
   ordered.push(DEFAULT_MODEL, FALLBACK_MODEL);
   return [...new Set(ordered)];
 }
@@ -72,12 +68,7 @@ async function generateContent({
   for (let index = 0; index < candidates.length; index += 1) {
     const modelName = candidates[index];
     try {
-      const config = {
-        temperature,
-        topP,
-        maxOutputTokens,
-        responseMimeType,
-      };
+      const config = { temperature, topP, maxOutputTokens, responseMimeType };
       if (responseJsonSchema && responseMimeType === 'application/json') {
         config.responseJsonSchema = responseJsonSchema;
       }
@@ -88,11 +79,7 @@ async function generateContent({
       });
       const text = responseText(response).trim();
       if (!text) throw new Error(`Gemini returned an empty response from ${modelName}`);
-      return {
-        text,
-        modelName,
-        usage: response?.usageMetadata || {},
-      };
+      return { text, modelName, usage: response?.usageMetadata || {} };
     } catch (error) {
       lastError = error;
       if (invalidApiKey(error)) throw error;
@@ -116,6 +103,7 @@ async function generateText(options) {
 module.exports = {
   DEFAULT_MODEL,
   FALLBACK_MODEL,
+  PRO_MODEL,
   SUPPORTED_MODELS,
   modelCandidates,
   generateContent,
