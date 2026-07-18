@@ -6,8 +6,17 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function verifiedAdminEmail() {
+    function verifiedStaffLogin() {
       return signedIn()
+        && request.auth.token.firebase.sign_in_provider != 'anonymous'
+        && (
+          request.auth.token.firebase.sign_in_provider != 'password' ||
+          request.auth.token.email_verified == true
+        );
+    }
+
+    function verifiedAdminEmail() {
+      return verifiedStaffLogin()
         && request.auth.token.email != null
         && request.auth.token.email_verified == true
         ? request.auth.token.email
@@ -15,7 +24,7 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return signedIn() && (
+      return verifiedStaffLogin() && (
         exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
         exists(/databases/$(database)/documents/admins/$(verifiedAdminEmail()))
       );
@@ -46,7 +55,7 @@ service cloud.firestore {
     }
 
     match /admins/{uidOrEmail} {
-      allow read: if signedIn() && (
+      allow read: if verifiedStaffLogin() && (
         request.auth.uid == uidOrEmail ||
         verifiedAdminEmail() == uidOrEmail ||
         isAdmin()
@@ -64,9 +73,10 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    // 닉네임 인덱스에는 실제 UID가 들어 있으므로 클라이언트 직접 읽기를 금지한다.
+    // 중복 확인은 checkNickname Callable Function으로만 수행한다.
     match /user_names/{key} {
-      allow read: if true;
-      allow create, update, delete: if false;
+      allow read, create, update, delete: if false;
     }
 
     match /cases/{caseId} {
@@ -74,14 +84,7 @@ service cloud.firestore {
         resource.data.userId == request.auth.uid ||
         isAdmin()
       );
-      allow create: if false;
-      allow update: if isAdmin() || (
-        signedIn() &&
-        resource.data.userId == request.auth.uid &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isPublic']) &&
-        request.resource.data.isPublic is bool
-      );
-      allow delete: if false;
+      allow create, update, delete: if false;
     }
 
     match /results/{caseId} {
@@ -90,13 +93,7 @@ service cloud.firestore {
         resource.data.isPublic == true ||
         isAdmin()
       );
-      allow update: if isAdmin() || (
-        signedIn() &&
-        isCaseOwner(caseId) &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isPublic']) &&
-        request.resource.data.isPublic is bool
-      );
-      allow create, delete: if false;
+      allow create, update, delete: if false;
     }
 
     match /result_reactions/{caseId} {
@@ -128,6 +125,11 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    match /vote_limits/{userId} {
+      allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
+      allow write: if false;
+    }
+
     match /comment_limits/{userId} {
       allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
       allow write: if false;
@@ -138,16 +140,33 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    match /appeal_limits/{userId} {
+      allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
+      allow write: if false;
+    }
+
+    match /report_limits/{userId} {
+      allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
+      allow write: if false;
+    }
+
+    // 예약 문서는 Functions 내부의 실패 복구용이며 클라이언트에 공개하지 않는다.
+    match /submit_reservations/{reservationId} {
+      allow read, write: if false;
+    }
+
+    match /title_suggestion_reservations/{reservationId} {
+      allow read, write: if false;
+    }
+
+    match /appeal_reservations/{reservationId} {
+      allow read, write: if false;
+    }
+
+    // 신고는 reportResult Callable Function에서 공개 여부, 자기 신고, 중복 및 속도 제한을 검증한다.
     match /reports/{reportId} {
-      allow create: if signedIn()
-        && request.resource.data.keys().hasOnly(['caseId', 'reason', 'status', 'createdAt', 'userId'])
-        && request.resource.data.userId == request.auth.uid
-        && request.resource.data.caseId is string
-        && request.resource.data.reason is string
-        && request.resource.data.reason.size() > 0
-        && request.resource.data.reason.size() <= 300
-        && request.resource.data.status == 'pending';
-      allow read, update, delete: if isAdmin();
+      allow read: if isAdmin();
+      allow create, update, delete: if false;
     }
 
     match /absurd_cases/{caseId} {

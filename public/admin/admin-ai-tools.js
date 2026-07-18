@@ -9,6 +9,8 @@ const functions = getFunctions(app, 'asia-northeast3');
 const generateDailyAiNow = httpsCallable(functions, 'generateDailyAiNow');
 const recoverStaleTrialsNow = httpsCallable(functions, 'recoverStaleTrialsNow');
 const repairSocialCountersNow = httpsCallable(functions, 'repairSocialCountersNow');
+const scrubPublicResultIdentifiersNow = httpsCallable(functions, 'scrubPublicResultIdentifiersNow');
+const auditLegacyPublicCaseIdsNow = httpsCallable(functions, 'auditLegacyPublicCaseIdsNow');
 
 function toast(msg) {
   const c = document.getElementById('toast-container');
@@ -38,15 +40,17 @@ function injectDailyButton() {
   box.className = 'card';
   box.style.cssText = 'padding:16px;margin-bottom:14px;border-color:rgba(201,168,76,.45);';
   box.innerHTML = `
-    <div style="font-weight:900;color:var(--gold);margin-bottom:7px;">🤖 AI 판결기록 생성/운영 복구</div>
+    <div style="font-weight:900;color:var(--gold);margin-bottom:7px;">🤖 AI 판결기록 생성·운영 복구·개인정보 정리</div>
     <div style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-bottom:12px;">
-      오늘의 AI 판결기록을 즉시 생성하거나, 생성 중 멈춘 사건과 기존 투표·댓글 카운트를 보정합니다.
-      카운트 보정은 최근 판결문 최대 300건 기준으로 실행되며, 매일 새벽 자동 보정도 함께 동작합니다.
+      오늘의 AI 판결을 생성하고, 중단된 처리와 소셜 카운트를 복구합니다. 공개 데이터 정리는 과거 판결문·댓글에 남은 내부 식별정보를 제거합니다.
+      구형 ID 감사는 과거 공개 URL에 Firebase UID가 포함된 사건이 있는지만 진단하며 자동 이전하지 않습니다.
     </div>
     <div style="display:flex;flex-wrap:wrap;gap:8px;">
-      <button class="btn btn-primary" id="daily-ai-now-btn">오늘의 AI 판결기록 지금 생성</button>
-      <button class="btn btn-secondary" id="recover-stale-trials-btn">멈춘 재판 복구</button>
-      <button class="btn btn-secondary" id="repair-social-counters-btn">최근 투표·댓글 카운트 보정</button>
+      <button class="btn btn-primary" id="daily-ai-now-btn">오늘의 AI 판결 지금 생성</button>
+      <button class="btn btn-secondary" id="recover-stale-trials-btn">멈춘 처리·예약 복구</button>
+      <button class="btn btn-secondary" id="repair-social-counters-btn">투표·댓글 카운트 보정</button>
+      <button class="btn btn-secondary" id="scrub-public-identifiers-btn">공개 식별정보 정리</button>
+      <button class="btn btn-ghost" id="audit-legacy-ids-btn">구형 공개 ID 감사</button>
     </div>
     <div id="admin-ai-tool-result" style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-top:10px;"></div>`;
   content.prepend(box);
@@ -73,10 +77,14 @@ function injectDailyButton() {
     buttonLoading(btn, '복구 중...');
     try {
       const res = await recoverStaleTrialsNow({});
-      const recovered = Number(res.data?.recoveredCount || 0);
-      const checked = Number(res.data?.checked || 0);
-      resultBox.textContent = `멈춘 재판 확인 ${checked}건 / 복구 ${recovered}건`;
-      toast(`멈춘 재판 복구 완료: ${recovered}건`);
+      const trials = res.data?.trials || {};
+      const reservations = res.data?.reservations || {};
+      const recoveredTrials = Number(trials.recoveredCount || 0);
+      const checkedTrials = Number(trials.checked || 0);
+      const recoveredReservations = Number(reservations.recoveredCount || 0);
+      const refunded = Number(reservations.refundedCount || 0);
+      resultBox.textContent = `재판 확인 ${checkedTrials}건 / 복구 ${recoveredTrials}건 · 예약 정리 ${recoveredReservations}건 / 횟수 환불 ${refunded}건`;
+      toast(`멈춘 처리 복구 완료: ${recoveredTrials + recoveredReservations}건`);
     } catch (err) {
       console.error(err);
       alert((err.message || '복구 실패').replace('FirebaseError: ', ''));
@@ -98,6 +106,44 @@ function injectDailyButton() {
     } catch (err) {
       console.error(err);
       alert((err.message || '카운트 보정 실패').replace('FirebaseError: ', ''));
+    } finally {
+      buttonDone(btn);
+    }
+  };
+
+  document.getElementById('scrub-public-identifiers-btn').onclick = async () => {
+    const btn = document.getElementById('scrub-public-identifiers-btn');
+    if (!confirm('기존 공개 판결문과 댓글에서 내부 UID·첨부 경로·작성자 식별 필드를 제거할까요? 표시되는 내용은 유지됩니다.')) return;
+    buttonLoading(btn, '정리 중...');
+    try {
+      const res = await scrubPublicResultIdentifiersNow({});
+      const resultData = res.data?.results || {};
+      const commentData = res.data?.comments || {};
+      const resultCount = Number(resultData.scrubbed || 0);
+      const commentCount = Number(commentData.scrubbed || 0);
+      resultBox.textContent = `공개 판결문 ${resultCount}건 · 댓글 ${commentCount}건의 내부 식별정보를 정리했습니다.`;
+      toast(`공개 식별정보 정리 완료: ${resultCount + commentCount}건`);
+    } catch (err) {
+      console.error(err);
+      alert((err.message || '공개 식별정보 정리 실패').replace('FirebaseError: ', ''));
+    } finally {
+      buttonDone(btn);
+    }
+  };
+
+  document.getElementById('audit-legacy-ids-btn').onclick = async () => {
+    const btn = document.getElementById('audit-legacy-ids-btn');
+    buttonLoading(btn, '감사 중...');
+    try {
+      const res = await auditLegacyPublicCaseIdsNow({});
+      const checked = Number(res.data?.checked || 0);
+      const confirmed = Number(res.data?.confirmedCount || 0);
+      const suffix = res.data?.truncated ? ' (최대 100건만 상세 반환)' : '';
+      resultBox.textContent = `공개 판결 ${checked}건 확인 · UID 포함 구형 ID 확정 ${confirmed}건${suffix}`;
+      toast(confirmed ? `구형 공개 ID ${confirmed}건 확인` : '구형 공개 ID 없음');
+    } catch (err) {
+      console.error(err);
+      alert((err.message || '구형 ID 감사 실패').replace('FirebaseError: ', ''));
     } finally {
       buttonDone(btn);
     }

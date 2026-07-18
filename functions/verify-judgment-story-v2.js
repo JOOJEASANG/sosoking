@@ -61,7 +61,11 @@ for (const input of cases) {
   assert.ok(prompt.includes('4개 단어 이상 연속된 표현을 복사하지 마라'), `${input.title}: 연속 문구 복사 방지 지시가 없습니다.`);
   assert.ok(prompt.includes('전체 판결에서 3~8회'), `${input.title}: 핵심어 반복 제한이 없습니다.`);
   assert.ok(prompt.includes('AI의 자유로운 해석과 정색한 과몰입 개그 45%'), `${input.title}: 자유 해석 비율 지시가 없습니다.`);
+  assert.ok(prompt.includes('표면 태도는 처음부터 끝까지 100% 진지'), `${input.title}: 완전 진지한 서술 태도 지시가 없습니다.`);
+  assert.ok(prompt.includes('수사관·검사·변호인·재판부는 자신들이 우스운 일을 하고 있다는 사실을 인식하지 못한다'), `${input.title}: 자기해설 금지 지시가 없습니다.`);
+  assert.ok(prompt.includes('시간선·증거·정황·인식 가능성·대체 가설'), `${input.title}: 수사 절차 지시가 부족합니다.`);
   assert.ok(prompt.includes('같은 사건을 서로 완전히 다르게 해석'), `${input.title}: 양측 독립 해석 지시가 없습니다.`);
+  assert.ok(prompt.includes('주장 인정·배척'), `${input.title}: 재판부 증거 판단 지시가 없습니다.`);
   assert.ok(prompt.includes('orders 3개는 사건의 핵심을 활용하되 서로 다른 방식'), `${input.title}: 주문 역할 분리 지시가 없습니다.`);
   assert.ok(isCompleteJudgment(judgment), `${input.title}: 로컬 판결이 V2 계약을 충족하지 못합니다.`);
   assert.equal(evaluation.passed, true, `${input.title}: 재해석 품질 검사 실패 ${JSON.stringify(evaluation)}`);
@@ -72,11 +76,13 @@ for (const input of cases) {
   assert.ok(evaluation.distinctSectionCount >= 10, `${input.title}: 판결 영역 간 문장 차별화가 부족합니다.`);
   assert.ok(evaluation.opposingClaimOverlap <= 0.72, `${input.title}: 원고·피고 주장이 같은 말을 반복합니다.`);
   assert.notEqual(judgment.plaintiffClaim, judgment.defendantClaim, `${input.title}: 양측 주장이 대립하지 않습니다.`);
-  assert.ok(evaluation.seriousHumorHits >= 4, `${input.title}: 과몰입 웃음 장치가 부족합니다.`);
+  assert.ok(evaluation.seriousHumorHits >= 4, `${input.title}: 과잉 진지함에서 생기는 대비가 부족합니다.`);
+  assert.ok(evaluation.courtroomProcedureHits >= 6, `${input.title}: 수사·공방·판단 절차가 부족합니다.`);
+  assert.equal(evaluation.selfAwareJokeHits, 0, `${input.title}: 판결문이 스스로 농담을 설명하고 있습니다.`);
   assert.ok(judgment.incidentLevel.includes('소소위기'), `${input.title}: 사건 경계 단계가 없습니다.`);
   assert.ok(judgment.emergencyBriefing.length >= 170, `${input.title}: 재구성 브리핑 디테일이 부족합니다.`);
   assert.ok(judgment.impactAssessment.length >= 110, `${input.title}: 연쇄 피해 평가가 부족합니다.`);
   assert.ok(evaluation.tailoredOrders >= 2, `${input.title}: 사건 맞춤형 주문이 부족합니다.`);
 }
 
-console.log('Verified interpretive judgments, low source echo, distinct opposing claims and tailored orders.');
+console.log('Verified fully serious investigations, adversarial courtroom reasoning, dry contrast humor and tailored orders.');

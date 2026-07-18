@@ -1,7 +1,7 @@
 import { auth, db, functions, storage } from '../firebase.js?v=20260708-1';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
-import { GoogleAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, updateProfile, onAuthStateChanged, signInAnonymously } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
+import { GoogleAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, updateProfile, onAuthStateChanged, signInAnonymously, sendEmailVerification, reload } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
 import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-storage.js';
 import { showToast } from '../components/toast.js?v=20260630-3';
 import { escapeHtml } from '../utils/sanitize.js?v=20260630-3';
@@ -20,12 +20,14 @@ function httpsUrl(v){ const url = String(v || '').trim(); return /^https:\/\//.t
 function googlePhotoUrl(user, profile = {}){ return httpsUrl(user?.photoURL) || (profile.avatarType === 'google' ? httpsUrl(profile.photoURL) : ''); }
 function uploadPhotoUrl(profile = {}){ return profile.avatarType === 'upload' ? httpsUrl(profile.photoURL) : ''; }
 function currentAvatarType(user, profile = {}) { if (profile.avatarType === 'upload' && uploadPhotoUrl(profile)) return 'upload'; if (profile.avatarType === 'generated') return 'generated'; return googlePhotoUrl(user, profile) ? 'google' : 'generated'; }
+function isPasswordUser(user){ return !!user?.providerData?.some(item => item.providerId === 'password'); }
+async function isVerifiedUser(user){ if(!user || user.isAnonymous) return false; await reload(user).catch(() => {}); return !isPasswordUser(user) || user.emailVerified === true; }
 async function isAdminUser(user){
   if(!user || user.isAnonymous) return false;
   const byUid = await getDoc(doc(db, 'admins', user.uid)).catch(() => null);
   if(byUid?.exists()) return true;
   const email = userEmail(user);
-  if(!email) return false;
+  if(!email || user.emailVerified !== true) return false;
   const byEmail = await getDoc(doc(db, 'admins', email)).catch(() => null);
   return !!byEmail?.exists();
 }
@@ -47,14 +49,18 @@ export async function renderAuth(container){
   }).catch(e => console.warn('redirect login result skipped', e));
   const unsub = onAuthStateChanged(auth, async user => {
     if(!box) return;
-    if(user && !user.isAnonymous){ if(await goAdmin(user)) return; const p = await profileOf(user); p.nickname ? drawProfile(box, user, p) : drawEditProfile(box, user, p); }
-    else drawLogin(box);
+    if(user && !user.isAnonymous){
+      if(!(await isVerifiedUser(user))){ drawVerificationRequired(box, user); return; }
+      if(await goAdmin(user)) return;
+      const p = await profileOf(user);
+      p.nickname ? drawProfile(box, user, p) : drawEditProfile(box, user, p);
+    } else drawLogin(box);
   });
   window._pageCleanup = unsub;
 }
 
 function drawLogin(box){
-  box.innerHTML = `<div style="text-align:center;margin-bottom:22px;"><div style="font-size:46px;margin-bottom:8px;">⚖️</div><div style="font-family:var(--font-serif);font-size:21px;font-weight:700;color:var(--gold);">소소킹 계정</div><div style="font-size:13px;color:var(--cream-dim);line-height:1.7;margin-top:8px;">로그인하면 닉네임, 프로필 사진, 내 황당사건 기록이 표시됩니다.</div></div><button class="btn btn-secondary" id="google-login" style="margin-bottom:18px;">Google로 계속하기</button><div style="display:flex;align-items:center;gap:10px;margin:20px 0;color:var(--cream-dim);font-size:12px;"><div style="height:1px;background:var(--border);flex:1;"></div><span>또는 이메일</span><div style="height:1px;background:var(--border);flex:1;"></div></div><form id="email-form"><div class="form-group"><label class="form-label">이메일</label><input type="email" id="auth-email" class="form-input" required></div><div class="form-group"><label class="form-label">비밀번호</label><input type="password" id="auth-password" class="form-input" minlength="6" maxlength="30" required></div><button type="submit" class="btn btn-primary" id="signup-btn">가입하기</button><button type="button" class="btn btn-ghost" id="login-btn" style="margin-top:10px;">이미 계정이 있어요 · 로그인</button></form>`;
+  box.innerHTML = `<div style="text-align:center;margin-bottom:22px;"><div style="font-size:46px;margin-bottom:8px;">⚖️</div><div style="font-family:var(--font-serif);font-size:21px;font-weight:700;color:var(--gold);">소소킹 계정</div><div style="font-size:13px;color:var(--cream-dim);line-height:1.7;margin-top:8px;">로그인하면 닉네임, 프로필 사진, 내 황당사건 기록이 표시됩니다.<br>이메일 가입은 인증 완료 후 이용할 수 있습니다.</div></div><button class="btn btn-secondary" id="google-login" style="margin-bottom:18px;">Google로 계속하기</button><div style="display:flex;align-items:center;gap:10px;margin:20px 0;color:var(--cream-dim);font-size:12px;"><div style="height:1px;background:var(--border);flex:1;"></div><span>또는 이메일</span><div style="height:1px;background:var(--border);flex:1;"></div></div><form id="email-form"><div class="form-group"><label class="form-label">이메일</label><input type="email" id="auth-email" class="form-input" required></div><div class="form-group"><label class="form-label">비밀번호</label><input type="password" id="auth-password" class="form-input" minlength="6" maxlength="30" required></div><button type="submit" class="btn btn-primary" id="signup-btn">가입하기</button><button type="button" class="btn btn-ghost" id="login-btn" style="margin-top:10px;">이미 계정이 있어요 · 로그인</button></form>`;
   document.getElementById('google-login').onclick = async () => {
     const btn = document.getElementById('google-login'); btn.disabled = true; btn.textContent = 'Google 로그인 중...';
     try { const r = await signInWithPopup(auth, googleProvider); if(await goAdmin(r.user)) return; const p = await profileOf(r.user); showToast('구글 로그인 완료', 'success'); p.nickname ? drawProfile(box, r.user, p) : drawEditProfile(box, r.user, p); }
@@ -68,16 +74,40 @@ function drawLogin(box){
   document.getElementById('login-btn').onclick = async () => signInEmail(box);
 }
 
+function drawVerificationRequired(box, user){
+  box.innerHTML = `<div style="text-align:center;"><div style="font-size:46px;margin-bottom:10px;">📨</div><div style="font-family:var(--font-serif);font-size:21px;font-weight:800;color:var(--gold);margin-bottom:8px;">이메일 인증이 필요합니다</div><div style="font-size:13px;color:var(--cream-dim);line-height:1.75;margin-bottom:18px;">${escapeHtml(user.email || '')} 주소로 발송된 인증 메일의 링크를 누른 뒤 다시 로그인해주세요.<br>스팸함도 확인해주세요.</div><button class="btn btn-primary" id="resend-verification">인증 메일 다시 보내기</button><button class="btn btn-ghost" id="verification-logout" style="margin-top:10px;">다른 계정으로 로그인</button></div>`;
+  document.getElementById('resend-verification').onclick = async () => {
+    const button = document.getElementById('resend-verification');
+    button.disabled = true;
+    try { await sendEmailVerification(user); showToast('인증 메일을 다시 보냈습니다.', 'success'); }
+    catch(error){ showToast(error.message || '인증 메일을 보내지 못했습니다.', 'error'); }
+    finally { button.disabled = false; }
+  };
+  document.getElementById('verification-logout').onclick = logout;
+}
+
 async function signUpEmail(box){
   const email = document.getElementById('auth-email').value.trim(); const pw = document.getElementById('auth-password').value;
   if(!validEmail(email)) return showToast('이메일 형식을 확인해주세요.', 'error');
-  try{ const r = await createUserWithEmailAndPassword(auth, email, pw); if(await goAdmin(r.user)) return; showToast('가입 완료. 내 정보를 설정해주세요.', 'success'); drawEditProfile(box, r.user, await profileOf(r.user)); }
+  try{
+    const r = await createUserWithEmailAndPassword(auth, email, pw);
+    await sendEmailVerification(r.user);
+    showToast('가입되었습니다. 인증 메일의 링크를 누른 뒤 로그인해주세요.', 'success');
+    drawVerificationRequired(box, r.user);
+  }
   catch(e){ console.error(e); showToast(e.code === 'auth/email-already-in-use' ? '이미 가입된 이메일입니다.' : e.message || '가입 실패', 'error'); }
 }
 async function signInEmail(box){
   const email = document.getElementById('auth-email').value.trim(); const pw = document.getElementById('auth-password').value;
   if(!validEmail(email)) return showToast('이메일 형식을 확인해주세요.', 'error');
-  try{ const r = await signInWithEmailAndPassword(auth, email, pw); if(await goAdmin(r.user)) return; const p = await profileOf(r.user); showToast('로그인 완료', 'success'); p.nickname ? drawProfile(box, r.user, p) : drawEditProfile(box, r.user, p); }
+  try{
+    const r = await signInWithEmailAndPassword(auth, email, pw);
+    if(!(await isVerifiedUser(r.user))){ drawVerificationRequired(box, r.user); return; }
+    if(await goAdmin(r.user)) return;
+    const p = await profileOf(r.user);
+    showToast('로그인 완료', 'success');
+    p.nickname ? drawProfile(box, r.user, p) : drawEditProfile(box, r.user, p);
+  }
   catch(e){ console.error(e); showToast('이메일 또는 비밀번호를 확인해주세요.', 'error'); }
 }
 
@@ -85,7 +115,7 @@ function avatarChoiceButton(type, seed, icon, src, label, active) {
   return `<button type="button" class="avatar-choice ${active ? 'active' : ''}" data-avatar-type="${escapeHtml(type)}" data-avatar-seed="${escapeHtml(seed || '')}" data-avatar-icon="${escapeHtml(icon || '')}" aria-label="${escapeHtml(label)}" style="width:52px;height:52px;border-radius:999px;border:2px solid ${active ? 'rgba(232,201,122,.9)' : 'var(--border)'};background:${active ? 'rgba(201,168,76,.14)' : 'rgba(255,255,255,.035)'};padding:3px;cursor:pointer;box-shadow:${active ? '0 0 0 3px rgba(201,168,76,.18)' : 'none'};"><img src="${escapeHtml(src)}" alt="${escapeHtml(label)}" style="width:100%;height:100%;border-radius:999px;object-fit:cover;display:block;" referrerpolicy="no-referrer"></button>`;
 }
 function uploadChoiceButton(active) {
-  return `<label class="avatar-upload-choice ${active ? 'active' : ''}" style="width:52px;height:52px;border-radius:999px;border:2px dashed ${active ? 'rgba(232,201,122,.95)' : 'var(--border)'};background:${active ? 'rgba(201,168,76,.14)' : 'rgba(255,255,255,.035)'};display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;box-shadow:${active ? '0 0 0 3px rgba(201,168,76,.18)' : 'none'};" title="직접 등록"><span>📷</span><input type="file" id="avatar-file" accept="image/*" style="display:none;"></label>`;
+  return `<label class="avatar-upload-choice ${active ? 'active' : ''}" style="width:52px;height:52px;border-radius:999px;border:2px dashed ${active ? 'rgba(232,201,122,.95)' : 'var(--border)'};background:${active ? 'rgba(201,168,76,.14)' : 'rgba(255,255,255,.035)'};display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;box-shadow:${active ? '0 0 0 3px rgba(201,168,76,.18)' : 'none'};" title="직접 등록"><span>📷</span><input type="file" id="avatar-file" accept="image/jpeg,image/png,image/webp" style="display:none;"></label>`;
 }
 function avatarChoiceHtml(user, profile, nickname, selectedType, selectedSeed) {
   const email = profile.email || user?.email || '';
@@ -102,7 +132,7 @@ function avatarChoiceHtml(user, profile, nickname, selectedType, selectedSeed) {
 }
 function resizeProfileImage(file) {
   return new Promise((resolve, reject) => {
-    if (!file || !file.type.startsWith('image/')) return reject(new Error('이미지 파일만 등록할 수 있습니다.'));
+    if (!file || !['image/jpeg','image/png','image/webp'].includes(file.type)) return reject(new Error('JPG, PNG, WEBP 이미지만 등록할 수 있습니다.'));
     if (file.size > 5 * 1024 * 1024) return reject(new Error('이미지는 5MB 이하만 등록할 수 있습니다.'));
     const reader = new FileReader();
     reader.onerror = () => reject(new Error('이미지를 읽지 못했습니다.'));
@@ -128,8 +158,8 @@ function resizeProfileImage(file) {
   });
 }
 async function uploadProfilePhoto(user, blob) {
-  const fileRef = ref(storage, `profile-photos/${user.uid}/avatar-${Date.now()}.jpg`);
-  await uploadBytes(fileRef, blob, { contentType: 'image/jpeg', cacheControl: 'public,max-age=3600' });
+  const fileRef = ref(storage, `profile-photos/${user.uid}/avatar.jpg`);
+  await uploadBytes(fileRef, blob, { contentType: 'image/jpeg', cacheControl: 'public,max-age=300' });
   return await getDownloadURL(fileRef);
 }
 

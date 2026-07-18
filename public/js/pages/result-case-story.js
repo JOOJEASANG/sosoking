@@ -1,7 +1,9 @@
-import { db, auth } from '../firebase.js?v=20260708-1';
+import { db, auth, functions } from '../firebase.js?v=20260708-1';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 import { renderResult as renderBaseResult } from './result.js?v=20260710-v2result1';
 import { escapeHtml } from '../utils/sanitize.js?v=20260630-3';
+import { showToast } from '../components/toast.js?v=20260630-3';
 
 function ensureOriginalCaseStyle() {
   if (document.getElementById('original-case-story-style')) return;
@@ -68,16 +70,24 @@ async function loadOriginalCase(caseId) {
   const result = resultSnap?.exists() ? resultSnap.data() : {};
   let description = String(result.caseDescription || '').trim();
   let desiredVerdict = String(result.desiredVerdict || '').trim();
+  let isOwner = false;
 
-  if ((!description || !desiredVerdict) && auth.currentUser) {
+  if (auth.currentUser) {
     const caseSnap = await getDoc(doc(db, 'cases', caseId)).catch(() => null);
     if (caseSnap?.exists()) {
       const data = caseSnap.data() || {};
+      isOwner = data.userId === auth.currentUser.uid;
       description ||= String(data.caseDescription || '').trim();
       desiredVerdict ||= String(data.desiredVerdict || '').trim();
     }
   }
-  return { description, desiredVerdict, extras: judgmentExtras(result) };
+  return {
+    description,
+    desiredVerdict,
+    extras: judgmentExtras(result),
+    isPublic: result.isPublic === true,
+    isOwner,
+  };
 }
 
 function hasEmergencyBriefing(extras) {
@@ -138,14 +148,81 @@ function decorateResult(container, original) {
   decorateClaims(container, original.extras);
 }
 
+async function rerenderResult(container, caseId) {
+  const cleanup = window._pageCleanup;
+  window._pageCleanup = null;
+  cleanup?.();
+  await renderResult(container, caseId);
+}
+
+function bindSecureVisibility(container, caseId) {
+  const oldButton = container.querySelector('#btn-share');
+  if (!oldButton || oldButton.dataset.secureVisibility === '1') return;
+  const button = oldButton.cloneNode(true);
+  button.dataset.secureVisibility = '1';
+  oldButton.replaceWith(button);
+  button.addEventListener('click', async () => {
+    const nextPublic = button.textContent.includes('공개 판결로 전환');
+    button.disabled = true;
+    try {
+      await httpsCallable(functions, 'setCaseVisibility')({ caseId, isPublic: nextPublic });
+      showToast(nextPublic ? '개인정보 검사를 통과해 판결을 공개했습니다.' : '판결을 비공개로 전환했습니다.', 'success');
+      await rerenderResult(container, caseId);
+    } catch (error) {
+      console.error(error);
+      button.disabled = false;
+      showToast((error.message || '공개 상태를 변경하지 못했습니다.').replace('FirebaseError: ', ''), 'error');
+    }
+  });
+}
+
+function bindReportAction(container, caseId, original) {
+  if (!original.isPublic || original.isOwner || container.querySelector('#report-result')) return;
+  const actions = container.querySelector('.result-actions');
+  if (!actions) return;
+
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.id = 'report-result';
+  button.className = 'btn btn-ghost';
+  button.textContent = '이 판결 신고';
+  actions.appendChild(button);
+  button.addEventListener('click', async () => {
+    if (!auth.currentUser || auth.currentUser.isAnonymous) {
+      showToast('신고하려면 로그인해주세요.', 'error');
+      location.hash = '#/auth';
+      return;
+    }
+    const reason = String(prompt('신고 사유를 입력해주세요. 개인정보는 적지 마세요.', '') || '').trim().slice(0, 300);
+    if (!reason) return;
+    if (reason.length < 2) return showToast('신고 사유를 2자 이상 입력해주세요.', 'error');
+    button.disabled = true;
+    try {
+      const response = await httpsCallable(functions, 'reportResult')({ caseId, reason });
+      showToast(response.data?.alreadyExists ? '이미 신고한 판결입니다.' : '신고가 접수되었습니다.', 'success');
+    } catch (error) {
+      console.error(error);
+      showToast((error.message || '신고하지 못했습니다.').replace('FirebaseError: ', ''), 'error');
+    } finally {
+      button.disabled = false;
+    }
+  });
+}
+
 export async function renderResult(container, caseId) {
   ensureOriginalCaseStyle();
   const originalPromise = loadOriginalCase(caseId);
   await renderBaseResult(container, caseId);
+  bindSecureVisibility(container, caseId);
   const original = await originalPromise;
   decorateResult(container, original);
+  bindReportAction(container, caseId, original);
 
-  const observer = new MutationObserver(() => decorateResult(container, original));
+  const observer = new MutationObserver(() => {
+    decorateResult(container, original);
+    bindSecureVisibility(container, caseId);
+    bindReportAction(container, caseId, original);
+  });
   observer.observe(container, { childList: true, subtree: true });
   const previousCleanup = window._pageCleanup;
   window._pageCleanup = () => {

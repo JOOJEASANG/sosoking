@@ -1,3 +1,4 @@
+const crypto = require('node:crypto');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { defineSecret } = require('firebase-functions/params');
@@ -16,6 +17,7 @@ const {
 const db = getFirestore();
 const geminiKey = defineSecret('GEMINI_API_KEY');
 const REGION = 'asia-northeast3';
+const DAILY_LOCK_STALE_MS = 10 * 60 * 1000;
 const JUDGES = ['엄벌주의형', '감성형', '현실주의형', '과몰입형', '피곤형', '논리집착형', '드립형'];
 const REACTIONS = ['plaintiff', 'defendant', 'both', 'tooMuch', 'funny'];
 const LEGACY_RESULT_FIELDS = [
@@ -130,37 +132,7 @@ function dailyPrompt(dateKey, settings = {}) {
     settings.dailyAiTopicHints && `주제 힌트: ${cleanText(settings.dailyAiTopicHints, 300)}`,
     settings.dailyAiPrompt && `추가 지시: ${cleanText(settings.dailyAiPrompt, 500)}`,
   ].filter(Boolean).join('\n');
-  return `소소킹 판결소의 오늘의 공개 판결 한 건을 만든다. 안전하고 사소한 일상 소재만 사용한다. 실명, 연락처, 정치, 혐오, 성적 내용, 자해, 실제 범죄와 법률 조언은 금지한다. 사건은 작지만 재판부는 지나치게 엄숙해야 한다. 주문은 구체적인 생활형 처분 정확히 3개다. 실제 법적 효력이 없는 오락 콘텐츠라는 안내를 포함한다.
-${extra}
-날짜: ${dateKey}
-판사 유형: ${JUDGES.join(', ')}
-
-아래 형식의 JSON 객체 하나만 출력한다. 모든 상위 필드와 judgment 내부 필드를 빠짐없이 작성한다.
-{
-  "caseTitle": "짧은 사건명",
-  "headline": "과도하게 거창한 공식 사건명",
-  "caseDescription": "사건 입력 내용",
-  "grievanceIndex": 1,
-  "nickname": "가상 닉네임",
-  "desiredVerdict": "희망 처분",
-  "judgeType": "판사 유형 중 하나",
-  "judgment": {
-    "headline": "공식 사건명",
-    "summary": "판결 핵심",
-    "facts": "사건의 경위",
-    "investigation": "과도하게 진지한 수사 과정",
-    "prosecution": "검사의 주장",
-    "defense": "변호인의 주장",
-    "opinion": "재판부 판단",
-    "orders": [
-      {"number": 1, "text": "처분"},
-      {"number": 2, "text": "처분"},
-      {"number": 3, "text": "처분"}
-    ],
-    "closingComment": "마지막 한마디",
-    "legalNotice": "오락 콘텐츠 안내"
-  }
-}`;
+  return `소소킹 판결소의 오늘의 공개 판결 한 건을 만든다. 안전하고 사소한 일상 소재만 사용한다. 실명, 연락처, 정치, 혐오, 성적 내용, 자해, 실제 범죄와 법률 조언은 금지한다. 사건은 작지만 재판부는 지나치게 엄숙해야 한다. 주문은 구체적인 생활형 처분 정확히 3개다. 실제 법적 효력이 없는 오락 콘텐츠라는 안내를 포함한다.\n${extra}\n날짜: ${dateKey}\n판사 유형: ${JUDGES.join(', ')}\n\n아래 형식의 JSON 객체 하나만 출력한다. 모든 상위 필드와 judgment 내부 필드를 빠짐없이 작성한다.\n{\n  "caseTitle": "짧은 사건명",\n  "headline": "과도하게 거창한 공식 사건명",\n  "caseDescription": "사건 입력 내용",\n  "grievanceIndex": 1,\n  "nickname": "가상 닉네임",\n  "desiredVerdict": "희망 처분",\n  "judgeType": "판사 유형 중 하나",\n  "judgment": {\n    "headline": "공식 사건명",\n    "summary": "판결 핵심",\n    "facts": "사건의 경위",\n    "investigation": "과도하게 진지한 수사 과정",\n    "prosecution": "검사의 주장",\n    "defense": "변호인의 주장",\n    "opinion": "재판부 판단",\n    "orders": [\n      {"number": 1, "text": "처분"},\n      {"number": 2, "text": "처분"},\n      {"number": 3, "text": "처분"}\n    ],\n    "closingComment": "마지막 한마디",\n    "legalNotice": "오락 콘텐츠 안내"\n  }\n}`;
 }
 
 async function buildDailyContent(dateKey, settings = {}) {
@@ -278,49 +250,106 @@ async function saveDailyResult({ caseId, dateKey, data, generated }) {
   });
 }
 
+async function acquireDailyLock(dateKey, caseId, force) {
+  const lockRef = db.doc(`daily_generation_locks/${dateKey}`);
+  const resultRef = db.doc(`results/${caseId}`);
+  const runId = crypto.randomBytes(12).toString('hex');
+  let acquired = false;
+  let skipped = '';
+  let existingData = {};
+
+  await db.runTransaction(async transaction => {
+    const [lockSnap, resultSnap] = await Promise.all([
+      transaction.get(lockRef),
+      transaction.get(resultRef),
+    ]);
+    existingData = resultSnap.exists ? resultSnap.data() : {};
+    if (resultSnap.exists && !force && isCompleteResult(existingData)) {
+      skipped = 'already-complete';
+      return;
+    }
+
+    const lock = lockSnap.exists ? lockSnap.data() : {};
+    const startedAt = lock.startedAt?.toMillis ? lock.startedAt.toMillis() : 0;
+    if (lock.status === 'processing' && startedAt && Date.now() - startedAt < DAILY_LOCK_STALE_MS) {
+      skipped = 'already-running';
+      return;
+    }
+
+    acquired = true;
+    transaction.set(lockRef, {
+      status: 'processing',
+      runId,
+      caseId,
+      force: force === true,
+      startedAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+      errorMessage: FieldValue.delete(),
+    }, { merge: true });
+  });
+
+  return { acquired, skipped, existingData, lockRef, runId };
+}
+
+async function finishDailyLock(lock, status, errorMessage = '') {
+  if (!lock?.acquired) return;
+  await db.runTransaction(async transaction => {
+    const snapshot = await transaction.get(lock.lockRef);
+    if (!snapshot.exists || snapshot.data().runId !== lock.runId) return;
+    transaction.set(lock.lockRef, {
+      status,
+      finishedAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+      errorMessage: errorMessage ? cleanText(errorMessage, 300) : FieldValue.delete(),
+    }, { merge: true });
+  }).catch(error => console.error('daily lock finalize failed:', error.message || error));
+}
+
 async function createDailyAiCase(force = false) {
   const settings = await loadSettings();
   if (!force && settings.dailyAiEnabled === false) return { created: false, disabled: true };
 
   const dateKey = kstDateKey();
   const caseId = `daily_${dateKey.replace(/-/g, '')}`;
-  const resultRef = db.doc(`results/${caseId}`);
-  const existing = await resultRef.get();
-  const existingData = existing.exists ? existing.data() : {};
-  if (existing.exists && !force && isCompleteResult(existingData)) {
-    return { created: false, caseId, skipped: 'already-complete' };
+  const lock = await acquireDailyLock(dateKey, caseId, force);
+  if (!lock.acquired) return { created: false, caseId, skipped: lock.skipped };
+
+  try {
+    const generated = await buildDailyContent(dateKey, settings);
+    await saveDailyResult({ caseId, dateKey, data: generated.data, generated });
+
+    await Promise.all([
+      db.doc('site_settings/config').set({
+        dailyAiLastRunAt: FieldValue.serverTimestamp(),
+        dailyAiLastCaseId: caseId,
+      }, { merge: true }),
+      db.doc(`usage_stats/daily_${dateKey}`).set({
+        date: dateKey,
+        geminiRequests: FieldValue.increment(generated.attempted ? 1 : 0),
+        geminiInputTokens: FieldValue.increment(Number(generated.usage?.promptTokenCount || 0)),
+        geminiOutputTokens: FieldValue.increment(Number(generated.usage?.candidatesTokenCount || 0)),
+        caseCount: FieldValue.increment(1),
+        dailyAiCaseCount: FieldValue.increment(1),
+        judgmentV2Count: FieldValue.increment(1),
+        firestoreReads: FieldValue.increment(9),
+        firestoreWrites: FieldValue.increment(6),
+        functionInvocations: FieldValue.increment(1),
+        updatedAt: FieldValue.serverTimestamp(),
+      }, { merge: true }),
+    ]);
+
+    await finishDailyLock(lock, 'completed');
+    return {
+      created: true,
+      caseId,
+      schemaVersion: JUDGMENT_SCHEMA_VERSION,
+      aiGenerated: generated.aiGenerated,
+      repaired: Object.keys(lock.existingData || {}).length > 0 && !isCompleteResult(lock.existingData),
+    };
+  } catch (error) {
+    await finishDailyLock(lock, 'error', error.message || String(error));
+    throw error;
   }
-
-  const generated = await buildDailyContent(dateKey, settings);
-  await saveDailyResult({ caseId, dateKey, data: generated.data, generated });
-
-  await Promise.all([
-    db.doc('site_settings/config').set({
-      dailyAiLastRunAt: FieldValue.serverTimestamp(),
-      dailyAiLastCaseId: caseId,
-    }, { merge: true }),
-    db.doc(`usage_stats/daily_${dateKey}`).set({
-      date: dateKey,
-      geminiRequests: FieldValue.increment(generated.attempted ? 1 : 0),
-      geminiInputTokens: FieldValue.increment(Number(generated.usage?.promptTokenCount || 0)),
-      geminiOutputTokens: FieldValue.increment(Number(generated.usage?.candidatesTokenCount || 0)),
-      caseCount: FieldValue.increment(1),
-      dailyAiCaseCount: FieldValue.increment(1),
-      judgmentV2Count: FieldValue.increment(1),
-      firestoreReads: FieldValue.increment(7),
-      firestoreWrites: FieldValue.increment(5),
-      functionInvocations: FieldValue.increment(1),
-      updatedAt: FieldValue.serverTimestamp(),
-    }, { merge: true }),
-  ]);
-
-  return {
-    created: true,
-    caseId,
-    schemaVersion: JUDGMENT_SCHEMA_VERSION,
-    aiGenerated: generated.aiGenerated,
-    repaired: existing.exists && !isCompleteResult(existingData),
-  };
 }
 
 exports.createDailyAiCase = onSchedule({

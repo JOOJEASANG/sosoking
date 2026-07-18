@@ -2,28 +2,27 @@ const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const { getStorage } = require('firebase-admin/storage');
 const { defineSecret } = require('firebase-functions/params');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
 const {
   JUDGMENT_SCHEMA_VERSION,
   cleanText,
   cleanParagraph,
-  extractJson,
-  normalizeJudgment,
   isCompleteJudgment,
 } = require('./judgment-v2');
 const {
   buildCaseProfile,
   buildStoryPrompt,
-  buildStoryFallback,
-  evaluateStorySpecificity,
-  buildRewriteInstruction,
 } = require('./judgment-story-v2');
+const {
+  DEFAULT_MODEL,
+  qualitySummary,
+  generateAIJudgment,
+} = require('./ai-judgment-engine');
 const { requireVerifiedUser, validDocumentId } = require('./security-utils');
 
 const db = getFirestore();
 const geminiKey = defineSecret('GEMINI_API_KEY');
 const REGION = 'asia-northeast3';
-const STORY_VERSION = 'case-story-v1';
+const STORY_VERSION = 'case-story-v2-ai-first';
 
 const JUDGES = ['엄벌주의형', '감성형', '현실주의형', '과몰입형', '피곤형', '논리집착형', '드립형'];
 const COURTROOMS = ['제404호 황당법정', '제101호 사소분쟁법정', '제777호 과몰입법정', '제3호 억울함전담법정'];
@@ -71,17 +70,6 @@ function buildDocket(caseId, title, supplied) {
   return `${year}소소${String(stableNumber(`${caseId}:${title}`, 1000, 9999))}`;
 }
 
-function addUsage(total = {}, next = {}) {
-  const keys = [
-    'promptTokenCount',
-    'candidatesTokenCount',
-    'totalTokenCount',
-    'cachedContentTokenCount',
-    'thoughtsTokenCount',
-  ];
-  return Object.fromEntries(keys.map(key => [key, Number(total[key] || 0) + Number(next[key] || 0)]));
-}
-
 async function loadSettings() {
   try {
     const snap = await db.doc('site_settings/config').get();
@@ -112,68 +100,58 @@ async function imageForGemini(caseData) {
 
 function hasImageAttachment(caseData) {
   const image = caseData?.imageAttachment || caseData?.imageAttachmentMeta || null;
-  return !!(
-    image?.storagePath
-    || caseData?.imageStoragePath
-    || image?.data
-  );
-}
-
-async function generateWithGemini({ settings, prompt, image, profile }) {
-  const model = new GoogleGenerativeAI(geminiKey.value().trim()).getGenerativeModel({
-    model: cleanText(settings.geminiModel, 60) || 'gemini-2.5-flash',
-    generationConfig: {
-      temperature: 0.94,
-      topP: 0.96,
-      maxOutputTokens: 6000,
-      responseMimeType: 'application/json',
-    },
-  });
-
-  let lastEvaluation = { sectionHits: 0, primarySectionHits: 0, mentionedAnchorCount: 0, tailoredOrders: 0, primaryOrderHits: 0, seriousHumorHits: 0 };
-  let lastError = null;
-  let usage = {};
-  let attempts = 0;
-
-  for (let attempt = 0; attempt < 2; attempt += 1) {
-    attempts += 1;
-    try {
-      const attemptPrompt = attempt === 0
-        ? prompt
-        : `${prompt}${buildRewriteInstruction(profile, lastEvaluation)}`;
-      const parts = [{ text: attemptPrompt }];
-      if (image) parts.push({ inlineData: image });
-      const response = await model.generateContent({ contents: [{ role: 'user', parts }] });
-      usage = addUsage(usage, response.response.usageMetadata || {});
-      const raw = extractJson(response.response.text());
-      const judgment = normalizeJudgment(raw);
-      if (!isCompleteJudgment(judgment)) {
-        lastError = new Error('AI judgment did not satisfy the V2 field contract');
-        continue;
-      }
-      lastEvaluation = evaluateStorySpecificity(judgment, profile);
-      if (!lastEvaluation.passed) {
-        lastError = new Error(`AI judgment lacked case specificity: ${JSON.stringify(lastEvaluation)}`);
-        continue;
-      }
-      return { judgment, usage, evaluation: lastEvaluation, attempts };
-    } catch (error) {
-      lastError = error;
-    }
-  }
-
-  const failure = lastError || new Error('AI judgment generation failed');
-  failure.usage = usage;
-  failure.attempts = attempts;
-  throw failure;
-}
-
-function kstDateKey(date = new Date()) {
-  return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
+  return !!(image?.storagePath || caseData?.imageStoragePath || image?.data);
 }
 
 function completeResult(data = {}) {
   return Number(data.schemaVersion) === JUDGMENT_SCHEMA_VERSION && isCompleteJudgment(data.judgment);
+}
+
+function completeAIResult(data = {}) {
+  return completeResult(data)
+    && data.aiGenerated === true
+    && String(data.generationMode || '').startsWith('gemini-');
+}
+
+function kstDateKey(date = new Date()) {
+  return new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date);
+}
+
+function userGenerationError(error) {
+  const message = String(error?.message || error || '');
+  if (/api[_ ]?key|GEMINI_API_KEY|API key not valid|permission denied/i.test(message)) {
+    return 'AI 재판부 연결 설정을 확인할 수 없습니다. 관리자에게 Gemini API 키 설정을 확인해 달라고 요청해주세요.';
+  }
+  if (/quota|resource exhausted|429/i.test(message)) {
+    return 'AI 재판부의 현재 사용량이 많습니다. 잠시 후 같은 사건에서 다시 시도해주세요.';
+  }
+  return 'AI가 판결문을 완성하지 못했습니다. 시스템 문구로 대신하지 않았으니 잠시 후 같은 사건에서 다시 시도해주세요.';
+}
+
+async function recordUsage({ attempted, attempts, usage, image, saved, failed }) {
+  try {
+    const today = kstDateKey();
+    await db.doc(`usage_stats/daily_${today}`).set({
+      date: today,
+      geminiRequests: FieldValue.increment(attempted ? Math.max(1, attempts) : 0),
+      geminiInputTokens: FieldValue.increment(Number(usage.promptTokenCount || 0)),
+      geminiOutputTokens: FieldValue.increment(Number(usage.candidatesTokenCount || 0)),
+      caseCount: FieldValue.increment(saved ? 1 : 0),
+      generationFailureCount: FieldValue.increment(failed ? 1 : 0),
+      imageCaseCount: FieldValue.increment(saved && image ? 1 : 0),
+      judgmentV2Count: FieldValue.increment(saved ? 1 : 0),
+      caseStoryCount: FieldValue.increment(saved ? 1 : 0),
+      functionInvocations: FieldValue.increment(1),
+      updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+  } catch (error) {
+    console.error('usage log failed:', error.message || error);
+  }
 }
 
 exports.generateTrial = onCall({
@@ -185,7 +163,6 @@ exports.generateTrial = onCall({
 }, async request => {
   const uid = requireVerifiedUser(request, '재판 생성은 구글 또는 인증된 이메일 로그인 후 이용할 수 있습니다.');
   const caseId = validDocumentId(request.data?.caseId, '사건 ID');
-
   const caseRef = db.doc(`cases/${caseId}`);
   const resultRef = db.doc(`results/${caseId}`);
   const [initial, initialResult] = await Promise.all([caseRef.get(), resultRef.get().catch(() => null)]);
@@ -193,11 +170,13 @@ exports.generateTrial = onCall({
 
   let caseData = initial.data();
   if (caseData.userId !== uid) throw new HttpsError('permission-denied', '본인 사건만 재판할 수 있습니다.');
-  if (caseData.status === 'completed' && initialResult?.exists && completeResult(initialResult.data())) {
-    return { success: true, skipped: 'completed' };
+  if (caseData.status === 'completed' && initialResult?.exists && completeAIResult(initialResult.data())) {
+    return { success: true, skipped: 'completed-ai' };
   }
   if (caseData.status === 'processing') return { success: true, skipped: 'processing' };
-  if (!['pending', 'error', 'completed'].includes(caseData.status)) throw new HttpsError('failed-precondition', '처리할 수 없는 사건 상태입니다.');
+  if (!['pending', 'error', 'completed'].includes(caseData.status)) {
+    throw new HttpsError('failed-precondition', '처리할 수 없는 사건 상태입니다.');
+  }
 
   const title = cleanText(caseData.caseTitle, 90) || '소소한 황당사건';
   const description = cleanParagraph(caseData.caseDescription, 1800) || title;
@@ -221,7 +200,8 @@ exports.generateTrial = onCall({
   });
 
   let acquired = false;
-  let recoveredExistingResult = false;
+  let recovered = false;
+  let previousResult = {};
   await db.runTransaction(async transaction => {
     const [fresh, freshResult] = await Promise.all([
       transaction.get(caseRef),
@@ -231,21 +211,27 @@ exports.generateTrial = onCall({
     const current = fresh.data();
     if (current.userId !== uid) throw new HttpsError('permission-denied', '본인 사건만 재판할 수 있습니다.');
 
-    if (freshResult.exists && completeResult(freshResult.data())) {
-      recoveredExistingResult = true;
+    if (freshResult.exists && completeAIResult(freshResult.data())) {
+      recovered = true;
       transaction.update(caseRef, {
         status: 'completed',
         courtStage: 'sentenced',
-        completedAt: current.completedAt || FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
         errorMessage: FieldValue.delete(),
       });
       return;
     }
-
     if (!['pending', 'error', 'completed'].includes(current.status)) return;
+
     acquired = true;
     caseData = current;
+    previousResult = freshResult.exists ? freshResult.data() : {};
+    if (freshResult.exists) {
+      transaction.set(resultRef, {
+        generationStatus: 'processing',
+        updatedAt: FieldValue.serverTimestamp(),
+      }, { merge: true });
+    }
     transaction.update(caseRef, {
       status: 'processing',
       courtStage: 'hearing',
@@ -258,47 +244,65 @@ exports.generateTrial = onCall({
       category: profile.categoryId,
       categoryLabel: profile.categoryLabel,
       processingStartedAt: FieldValue.serverTimestamp(),
+      generationMode: 'gemini-processing',
       errorMessage: FieldValue.delete(),
     });
   });
-  if (recoveredExistingResult) return { success: true, skipped: 'recovered-existing-result' };
+  if (recovered) return { success: true, skipped: 'recovered-existing-ai-result' };
   if (!acquired) return { success: true, skipped: 'already-started' };
 
-  const fallback = buildStoryFallback(profile);
-  let judgment = fallback;
-  let aiGenerated = false;
-  let aiAttempted = false;
-  let aiAttempts = 0;
+  let attempted = false;
+  let attempts = 0;
   let usage = {};
   let image = null;
-  let saveSucceeded = false;
+  let generated = null;
+  const apiKey = geminiKey.value().trim();
 
   try {
-    const key = geminiKey.value().trim();
-    aiAttempted = !!key;
-    if (key) {
-      const settings = await loadSettings();
-      image = await imageForGemini(caseData).catch(error => {
-        console.warn('image load skipped:', error.message || error);
-        return null;
-      });
-      const generated = await generateWithGemini({
-        settings,
-        prompt: buildStoryPrompt(profile),
-        image,
-        profile,
-      });
-      judgment = generated.judgment;
-      aiGenerated = true;
-      aiAttempts = generated.attempts;
-      usage = generated.usage;
-    }
+    if (!apiKey) throw new Error('GEMINI_API_KEY is not configured');
+    attempted = true;
+    const settings = await loadSettings();
+    image = await imageForGemini(caseData).catch(error => {
+      console.warn('image load skipped:', error.message || error);
+      return null;
+    });
+    generated = await generateAIJudgment({
+      apiKey,
+      settings,
+      prompt: buildStoryPrompt(profile),
+      image,
+      profile,
+    });
+    attempts = generated.attempts;
+    usage = generated.usage;
   } catch (error) {
-    aiAttempts = Number(error.attempts || (aiAttempted ? 1 : 0));
+    attempts = Number(error.attempts || (attempted ? 1 : 0));
     usage = error.usage || usage;
-    console.error('case-specific AI judgment failed, using tailored local judgment:', error.message || error);
+    const errorMessage = userGenerationError(error);
+    console.error('AI judgment failed; local fallback was not saved:', error.message || error);
+    await Promise.all([
+      caseRef.update({
+        status: 'error',
+        courtStage: 'filed',
+        generationMode: 'gemini-error',
+        errorMessage,
+        updatedAt: FieldValue.serverTimestamp(),
+      }).catch(() => null),
+      Object.keys(previousResult).length
+        ? resultRef.set({
+          generationStatus: 'error',
+          generationErrorMessage: errorMessage,
+          updatedAt: FieldValue.serverTimestamp(),
+        }, { merge: true }).catch(() => null)
+        : Promise.resolve(),
+    ]);
+    await recordUsage({ attempted, attempts, usage, image, saved: false, failed: true });
+    throw new HttpsError('unavailable', errorMessage);
   }
 
+  const qualityPassed = generated.qualityPassed === true;
+  const generationMode = qualityPassed ? 'gemini-case-story-v2' : 'gemini-best-complete-v2';
+  let saved = false;
   try {
     const batch = db.batch();
     batch.set(resultRef, {
@@ -308,7 +312,7 @@ exports.generateTrial = onCall({
       source: caseData.source || 'user',
       isPublic: false,
       caseTitle: title,
-      headline: judgment.headline || headline,
+      headline: generated.judgment.headline || headline,
       caseDescription: description,
       desiredVerdict,
       grievanceIndex,
@@ -321,19 +325,22 @@ exports.generateTrial = onCall({
       judgeType,
       category: profile.categoryId,
       categoryLabel: profile.categoryLabel,
-      judgment,
+      judgment: generated.judgment,
       hasImageAttachment: hasImageAttachment(caseData),
-      aiGenerated,
-      aiAttempts,
-      generationMode: aiGenerated ? 'gemini-case-story-v1' : 'local-case-story-v1',
-      reactionTotal: 0,
-      totalVotes: 0,
-      commentCount: 0,
+      aiGenerated: true,
+      aiAttempts: attempts,
+      aiModel: generated.modelName || DEFAULT_MODEL,
+      qualityPassed,
+      qualitySummary: qualitySummary(generated.evaluation),
+      generationStatus: 'completed',
+      generationMode,
+      reactionTotal: Number(previousResult.reactionTotal || 0),
+      totalVotes: Number(previousResult.totalVotes || 0),
+      commentCount: Number(previousResult.commentCount || 0),
       courtStage: 'sentenced',
-      createdAt: caseData.createdAt || FieldValue.serverTimestamp(),
+      createdAt: previousResult.createdAt || caseData.createdAt || FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     });
-
     batch.update(caseRef, {
       status: 'completed',
       courtStage: 'sentenced',
@@ -347,42 +354,24 @@ exports.generateTrial = onCall({
       judgeType,
       resultSchemaVersion: JUDGMENT_SCHEMA_VERSION,
       storyVersion: STORY_VERSION,
+      generationMode,
       isPublic: false,
       completedAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
       errorMessage: FieldValue.delete(),
     });
     await batch.commit();
-    saveSucceeded = true;
+    saved = true;
   } catch (error) {
     await caseRef.update({
       status: 'error',
       courtStage: 'filed',
-      errorMessage: cleanText(error.message, 300) || '판결 저장 오류',
+      errorMessage: cleanText(error.message, 300) || 'AI 판결 저장 오류',
       updatedAt: FieldValue.serverTimestamp(),
     }).catch(() => null);
-    throw new HttpsError('internal', '판결문 저장 중 오류가 발생했습니다. 다시 시도해주세요.');
+    throw new HttpsError('internal', 'AI 판결문 저장 중 오류가 발생했습니다. 다시 시도해주세요.');
   } finally {
-    try {
-      const today = kstDateKey();
-      await db.doc(`usage_stats/daily_${today}`).set({
-        date: today,
-        geminiRequests: FieldValue.increment(aiAttempted ? Math.max(1, aiAttempts) : 0),
-        geminiInputTokens: FieldValue.increment(Number(usage.promptTokenCount || 0)),
-        geminiOutputTokens: FieldValue.increment(Number(usage.candidatesTokenCount || 0)),
-        caseCount: FieldValue.increment(saveSucceeded ? 1 : 0),
-        generationSaveErrorCount: FieldValue.increment(saveSucceeded ? 0 : 1),
-        imageCaseCount: FieldValue.increment(saveSucceeded && image ? 1 : 0),
-        firestoreReads: FieldValue.increment(4),
-        firestoreWrites: FieldValue.increment(saveSucceeded ? 3 : 2),
-        functionInvocations: FieldValue.increment(1),
-        judgmentV2Count: FieldValue.increment(saveSucceeded ? 1 : 0),
-        caseStoryCount: FieldValue.increment(saveSucceeded ? 1 : 0),
-        updatedAt: FieldValue.serverTimestamp(),
-      }, { merge: true });
-    } catch (error) {
-      console.error('usage log failed:', error.message || error);
-    }
+    await recordUsage({ attempted, attempts, usage, image, saved, failed: false });
   }
 
   return {
@@ -390,6 +379,8 @@ exports.generateTrial = onCall({
     caseId,
     schemaVersion: JUDGMENT_SCHEMA_VERSION,
     storyVersion: STORY_VERSION,
-    aiGenerated,
+    aiGenerated: true,
+    qualityPassed,
+    generationMode,
   };
 });
