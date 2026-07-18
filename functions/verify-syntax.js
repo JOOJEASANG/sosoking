@@ -10,8 +10,8 @@ const backend = [
   'gemini-runtime.js', 'ai-judgment-engine.js', 'generate-trial-v2.js',
   'generate-trial-ai-first.js', 'admin-actions.js', 'verify-gemini-runtime.js',
   'verify-judgment-v2.js', 'verify-judgment-story-v2.js',
-  'verify-judgment-v2-integration.js', 'verify-site-audit.js',
-  'verify-security-contract.js', 'verify-deployment-contract.js',
+  'verify-short-input-overdrive.js', 'verify-judgment-v2-integration.js',
+  'verify-site-audit.js', 'verify-security-contract.js', 'verify-deployment-contract.js',
 ];
 const frontend = [
   '../public/js/app.js', '../public/js/pages/home.js', '../public/js/pages/trial.js',
