@@ -2,13 +2,11 @@
   "name": "sosoking-functions",
   "version": "1.0.0",
   "private": true,
-  "engines": {
-    "node": "20"
-  },
+  "engines": { "node": "20" },
   "main": "main.js",
   "scripts": {
-    "check:backend": "node --check main.js && node --check admin-utils.js && node --check security-utils.js && node --check visibility.js && node --check reporting.js && node --check privacy-maintenance.js && node --check daily.js && node --check profile.js && node --check repair.js && node --check social.js && node --check submit-secure.js && node --check title-suggestion.js && node --check judgment-v2.js && node --check judgment-story-config.js && node --check judgment-story-writer.js && node --check judgment-story-quality.js && node --check judgment-story-v2.js && node --check ai-judgment-engine.js && node --check generate-trial-v2.js && node --check generate-trial-ai-first.js && node --check admin-actions.js && node --check verify-judgment-v2.js && node --check verify-judgment-story-v2.js && node --check verify-judgment-v2-integration.js && node --check verify-site-audit.js && node --check verify-security-contract.js && node --check verify-deployment-contract.js",
-    "check:frontend": "node --experimental-default-type=module --check ../public/js/app.js && node --experimental-default-type=module --check ../public/js/pages/home.js && node --experimental-default-type=module --check ../public/js/pages/trial.js && node --experimental-default-type=module --check ../public/js/pages/trial-game.js && node --experimental-default-type=module --check ../public/js/pages/result.js && node --experimental-default-type=module --check ../public/js/pages/result-case-story.js && node --experimental-default-type=module --check ../public/js/pages/result-ai-first.js && node --experimental-default-type=module --check ../public/js/pages/board.js && node --experimental-default-type=module --check ../public/js/pages/board-court.js && node --experimental-default-type=module --check ../public/js/pages/submit-court.js && node --experimental-default-type=module --check ../public/js/pages/submit-guard.js && node --experimental-default-type=module --check ../public/js/pages/auth.js && node --experimental-default-type=module --check ../public/js/pages/guide.js && node --experimental-default-type=module --check ../public/js/pages/policy.js && node --experimental-default-type=module --check ../public/js/data/default-policy-docs.js && node --experimental-default-type=module --check ../public/js/components/footer.js && node --experimental-default-type=module --check ../public/js/components/theme.js && node --experimental-default-type=module --check ../public/js/components/court-design.js && node --experimental-default-type=module --check ../public/js/components/result-storage-image.js && node --experimental-default-type=module --check ../public/admin/admin-delete.js && node --experimental-default-type=module --check ../public/admin/admin-public-sync.js && node --experimental-default-type=module --check ../public/admin/admin-ai-tools.js",
+    "check:backend": "node verify-syntax.js backend",
+    "check:frontend": "node verify-syntax.js frontend",
     "check:judgment": "node verify-judgment-v2.js && node verify-judgment-story-v2.js && node verify-judgment-v2-integration.js",
     "check:site": "node verify-site-audit.js",
     "check:security": "node verify-security-contract.js",
@@ -16,6 +14,7 @@
     "lint": "npm run check:backend && npm run check:frontend && npm run check:judgment && npm run check:site && npm run check:security && npm run check:deployment"
   },
   "dependencies": {
+    "@google/genai": "^2.11.0",
     "@google/generative-ai": "^0.21.0",
     "firebase-admin": "^12.0.0",
     "firebase-functions": "^5.0.0"

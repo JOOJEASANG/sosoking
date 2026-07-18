@@ -5,10 +5,12 @@ const read = value => fs.readFileSync(path.resolve(__dirname, value), 'utf8');
 const coreWorkflow = read('../.github/workflows/firebase-deploy.yml');
 const storageWorkflow = read('../.github/workflows/firebase-storage-rules.yml');
 const firebaseConfig = JSON.parse(read('../firebase.json'));
+const packageJson = JSON.parse(read('./package.json'));
 const storageRules = read('../storage.rules');
 const main = read('./main.js');
 const generator = read('./generate-trial-ai-first.js');
 const engine = read('./ai-judgment-engine.js');
+const runtime = read('./gemini-runtime.js');
 const app = read('../public/js/app.js');
 const index = read('../public/index.html');
 const resultAI = read('../public/js/pages/result-ai-first.js');
@@ -24,6 +26,9 @@ const checks = [
   [coreWorkflow.includes('firebase deploy --only functions --force') && !coreWorkflow.includes('continue-on-error'), 'Functions deployment must fail visibly'],
   [coreWorkflow.includes('FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6'), 'Deployment credential reference is missing'],
   [main.includes("require('./generate-trial-ai-first')") && !main.includes("require('./generate-trial-v2')"), 'Only the AI-first generateTrial function may be exported'],
+  [packageJson.dependencies?.['@google/genai'] && runtime.includes("import('@google/genai')"), 'Maintained Google GenAI SDK is not configured'],
+  [runtime.includes("gemini-3.5-flash") && runtime.includes("gemini-2.5-flash") && runtime.includes('modelCandidates'), 'Stable Gemini model fallback is missing'],
+  [engine.includes('JUDGMENT_JSON_SCHEMA') && engine.includes('responseJsonSchema'), 'Structured AI judgment output is missing'],
   [generator.includes('generateAIJudgment') && generator.includes('buildStoryPrompt(profile)'), 'Case-specific AI generation is missing'],
   [generator.includes('completeAIResult') && generator.includes('local fallback was not saved'), 'Local fallback results must be regeneratable and AI failures visible'],
   [generator.includes('batch.set(resultRef, {') && generator.includes('batch.update(caseRef') && generator.includes('await batch.commit()'), 'Result and case completion must commit atomically'],
@@ -43,4 +48,4 @@ if (failed.length) {
   failed.forEach(message => console.error(`Deployment contract failed: ${message}`));
   process.exit(1);
 }
-console.log('Verified AI-first generation and secure Firebase deployment contracts.');
+console.log('Verified AI-first generation, stable Gemini runtime and secure Firebase deployment contracts.');
