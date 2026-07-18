@@ -7,7 +7,7 @@ const backend = [
   'privacy-maintenance.js', 'daily.js', 'profile.js', 'repair.js', 'social.js',
   'submit-secure.js', 'title-suggestion.js', 'judgment-v2.js', 'judgment-story-config.js',
   'judgment-story-writer.js', 'judgment-story-quality.js', 'judgment-story-v2.js',
-  'gemini-runtime.js', 'ai-judgment-engine.js', 'generate-trial-v2.js',
+  'gemini-runtime.js', 'gemini-health.js', 'ai-judgment-engine.js', 'generate-trial-v2.js',
   'generate-trial-ai-first.js', 'admin-actions.js', 'verify-gemini-runtime.js',
   'verify-judgment-v2.js', 'verify-judgment-story-v2.js',
   'verify-judgment-v2-integration.js', 'verify-site-audit.js',
