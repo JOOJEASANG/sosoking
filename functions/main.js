@@ -7,7 +7,6 @@ Object.assign(exports, require('./reporting'));
 Object.assign(exports, require('./submit-secure'));
 Object.assign(exports, require('./title-suggestion'));
 Object.assign(exports, require('./generate-trial-ai-first'));
-Object.assign(exports, require('./gemini-health'));
 Object.assign(exports, require('./visibility'));
 Object.assign(exports, require('./admin-actions'));
 Object.assign(exports, require('./repair'));
