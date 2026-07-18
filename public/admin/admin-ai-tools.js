@@ -6,6 +6,7 @@ import { firebaseConfig } from '../js/firebase-config.js';
 
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const functions = getFunctions(app, 'asia-northeast3');
+const checkGeminiConnection = httpsCallable(functions, 'checkGeminiConnection');
 const generateDailyAiNow = httpsCallable(functions, 'generateDailyAiNow');
 const recoverStaleTrialsNow = httpsCallable(functions, 'recoverStaleTrialsNow');
 const repairSocialCountersNow = httpsCallable(functions, 'repairSocialCountersNow');
@@ -40,12 +41,13 @@ function injectDailyButton() {
   box.className = 'card';
   box.style.cssText = 'padding:16px;margin-bottom:14px;border-color:rgba(201,168,76,.45);';
   box.innerHTML = `
-    <div style="font-weight:900;color:var(--gold);margin-bottom:7px;">🤖 AI 판결기록 생성·운영 복구·개인정보 정리</div>
+    <div style="font-weight:900;color:var(--gold);margin-bottom:7px;">🤖 AI 연결 진단·판결 생성·운영 복구</div>
     <div style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-bottom:12px;">
-      오늘의 AI 판결을 생성하고, 중단된 처리와 소셜 카운트를 복구합니다. 공개 데이터 정리는 과거 판결문·댓글에 남은 내부 식별정보를 제거합니다.
-      구형 ID 감사는 과거 공개 URL에 Firebase UID가 포함된 사건이 있는지만 진단하며 자동 이전하지 않습니다.
+      Gemini 연결 확인은 배포된 함수 안에서 API 키와 현재 모델을 실제 호출합니다. 키 값은 화면이나 로그에 표시하지 않습니다.
+      오늘의 AI 판결 생성, 중단 처리 복구, 공개 데이터 식별정보 정리도 이곳에서 실행할 수 있습니다.
     </div>
     <div style="display:flex;flex-wrap:wrap;gap:8px;">
+      <button class="btn btn-primary" id="gemini-health-btn">Gemini 연결 확인</button>
       <button class="btn btn-primary" id="daily-ai-now-btn">오늘의 AI 판결 지금 생성</button>
       <button class="btn btn-secondary" id="recover-stale-trials-btn">멈춘 처리·예약 복구</button>
       <button class="btn btn-secondary" id="repair-social-counters-btn">투표·댓글 카운트 보정</button>
@@ -56,6 +58,24 @@ function injectDailyButton() {
   content.prepend(box);
 
   const resultBox = document.getElementById('admin-ai-tool-result');
+  document.getElementById('gemini-health-btn').onclick = async () => {
+    const btn = document.getElementById('gemini-health-btn');
+    buttonLoading(btn, '연결 확인 중...');
+    try {
+      const res = await checkGeminiConnection({});
+      const model = String(res.data?.model || '모델 확인 불가');
+      const latency = Number(res.data?.latencyMs || 0);
+      resultBox.textContent = `Gemini 연결 정상 · ${model} · ${latency.toLocaleString()}ms`;
+      toast(`Gemini 연결 정상: ${model}`);
+    } catch (err) {
+      console.error(err);
+      resultBox.textContent = 'Gemini 연결 실패 · API 키, 결제 또는 모델 권한을 확인해야 합니다.';
+      alert((err.message || 'Gemini 연결 실패').replace('FirebaseError: ', ''));
+    } finally {
+      buttonDone(btn);
+    }
+  };
+
   document.getElementById('daily-ai-now-btn').onclick = async () => {
     const btn = document.getElementById('daily-ai-now-btn');
     buttonLoading(btn, '생성 중...');
