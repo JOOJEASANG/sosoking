@@ -14,11 +14,26 @@ permissions:
   contents: read
 
 jobs:
-  deploy:
-    name: Hosting 및 Firestore 규칙 배포
+  deploy-hosting:
+    name: Firebase Hosting 배포
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    steps:
+      - name: 저장소 체크아웃
+        uses: actions/checkout@v4
 
+      - name: Firebase Hosting 라이브 배포
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 }}
+          channelId: live
+          projectId: sosoking-481e6
+
+  deploy-firestore-rules:
+    name: Firestore 규칙 배포
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: 저장소 체크아웃
         uses: actions/checkout@v4
@@ -31,14 +46,17 @@ jobs:
       - name: Firebase CLI 설치
         run: npm install --global firebase-tools
 
-      - name: Firebase 프로젝트 배포
+      - name: Firebase 서비스 계정 준비
         env:
-          GOOGLE_APPLICATION_CREDENTIALS_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 }}
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 }}
         run: |
-          if [ -z "$GOOGLE_APPLICATION_CREDENTIALS_JSON" ]; then
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
             echo "GitHub Actions secret FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6가 필요합니다."
             exit 1
           fi
-          printf '%s' "$GOOGLE_APPLICATION_CREDENTIALS_JSON" > "$RUNNER_TEMP/firebase-service-account.json"
-          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/firebase-service-account.json"
-          firebase deploy --project sosoking-481e6 --only hosting,firestore:rules --non-interactive
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-service-account.json"
+
+      - name: Firestore 규칙 배포
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+        run: firebase deploy --project sosoking-481e6 --only firestore:rules --non-interactive
