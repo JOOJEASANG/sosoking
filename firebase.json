@@ -14,7 +14,7 @@
     ],
     "cleanUrls": true,
     "rewrites": [
-      { "source": "**", "destination": "/index-v3.html" }
+      { "source": "**", "destination": "/index-v4.html" }
     ],
     "headers": [
       {
