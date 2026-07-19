@@ -18,9 +18,15 @@
     ],
     "headers": [
       {
-        "source": "**/*.@(js|css|json|svg)",
+        "source": "**/*.@(html|js|css|json)",
         "headers": [
-          { "key": "Cache-Control", "value": "public,max-age=3600" }
+          { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        ]
+      },
+      {
+        "source": "**/*.@(svg|png|jpg|jpeg|webp)",
+        "headers": [
+          { "key": "Cache-Control", "value": "public,max-age=86400" }
         ]
       }
     ]
