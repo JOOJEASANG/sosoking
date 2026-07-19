@@ -25,6 +25,8 @@ jobs:
     steps:
       - name: 저장소 체크아웃
         uses: actions/checkout@v4
+        with:
+          path: repo
 
       - name: Node.js 설정
         uses: actions/setup-node@v4
@@ -44,16 +46,25 @@ jobs:
           fi
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-service-account.json"
 
+      - name: 체크아웃 결과 확인
+        run: |
+          pwd
+          ls -la
+          ls -la repo
+
       - name: Firebase 설정 확인
+        working-directory: repo
         run: |
           test -f firebase.json
           test -f .firebaserc
+          test -f firestore.rules
           test -f index-v4.html
           test -f assets/sosoking-v4.css
           test -f assets/sosoking-v4.js
           test -f assets/sosoking-detail-data.js
 
       - name: Hosting 및 Firestore 규칙 배포
+        working-directory: repo
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
         run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only hosting,firestore:rules --non-interactive
