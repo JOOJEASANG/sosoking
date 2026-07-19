@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>소소킹 관리자</title>
+<style>
+:root{--ink:#29251f;--paper:#fffdf8;--cream:#f4ecdd;--hot:#df653f;--line:#ded5c7;--muted:#756e64}*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:Arial,'Noto Sans KR',sans-serif}button,input,select,textarea{font:inherit}.wrap{max-width:1180px;margin:auto;padding:28px 18px 70px}.top{display:flex;justify-content:space-between;align-items:center;gap:18px;margin-bottom:24px}.top h1{margin:0}.top a{color:var(--ink)}.status{padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:#fff}.layout{display:grid;grid-template-columns:380px 1fr;gap:22px}.panel{border:1px solid var(--line);border-radius:18px;background:#fff;padding:20px}.panel h2{margin-top:0}.field{display:block;font-size:13px;font-weight:700;margin-bottom:13px}.field input,.field select,.field textarea{width:100%;margin-top:6px;border:1px solid var(--line);border-radius:9px;padding:10px;background:#fff}.row{display:grid;grid-template-columns:1fr 1fr;gap:9px}.actions{display:flex;gap:8px;flex-wrap:wrap}.actions button,.toolbar button,.filelabel{border:0;border-radius:9px;padding:10px 13px;font-weight:700;cursor:pointer;background:var(--ink);color:#fff}.actions .primary{background:var(--hot)}.actions .danger{background:#8e342b}.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:15px}.toolbar input{flex:1;min-width:180px;border:1px solid var(--line);border-radius:9px;padding:10px}.filelabel input{display:none}.list{display:grid;gap:9px}.item{display:grid;grid-template-columns:52px 1fr auto;gap:12px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:11px}.emoji{width:52px;height:52px;border-radius:12px;background:var(--cream);display:grid;place-items:center;font-size:27px}.item h3{font-size:16px;margin:0 0 4px}.item p{font-size:12px;color:var(--muted);margin:0}.item button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:8px}.count{color:var(--muted);font-size:13px;margin:10px 0}.hint{font-size:12px;line-height:1.6;color:var(--muted);background:var(--cream);padding:12px;border-radius:10px}@media(max-width:840px){.layout{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}}
+</style>
+</head>
+<body><main class="wrap">
+<div class="top"><div><h1>소소킹 데이터 관리자</h1><p>프로그램 기본정보를 작성하고 JSON으로 관리합니다.</p></div><a href="index.html">← 사이트 보기</a></div>
+<div id="status" class="status">브라우저 임시 저장소로 실행 중입니다.</div>
+<div class="layout">
+<section class="panel"><h2 id="formTitle">프로그램 추가</h2><form id="form">
+<input type="hidden" id="id">
+<label class="field">프로그램명<input id="title" required maxlength="80"></label>
+<div class="row"><label class="field">방송사<input id="broadcaster" required maxlength="20" placeholder="KBS"></label><label class="field">장르<input id="genre" required maxlength="30" placeholder="예능"></label></div>
+<div class="row"><label class="field">시작 연도<input id="startYear" required type="number" min="1950" max="2100"></label><label class="field">종료 연도<input id="endYear" type="number" min="1950" max="2100" placeholder="방영 중이면 비움"></label></div>
+<label class="field">진행·출연<input id="host" maxlength="100"></label>
+<label class="field">소개<textarea id="description" required rows="4" maxlength="500"></textarea></label>
+<div class="row"><label class="field">대표 이모지<input id="emoji" maxlength="4" value="📺"></label><label class="field">상태<select id="statusField"><option value="draft">검수 중</option><option value="published">공개</option></select></label></div>
+<label class="field">태그<input id="tags" placeholder="가족, 주말, 퀴즈"></label>
+<label class="field">공식 출처 URL<input id="sourceUrl" type="url" placeholder="https://..."></label>
+<div class="actions"><button class="primary" type="submit">저장</button><button type="button" id="newBtn">새 항목</button><button class="danger" type="button" id="deleteBtn" hidden>삭제</button></div>
+</form><p class="hint">현재 버전은 브라우저에 임시 저장됩니다. Firebase 관리자 인증을 연결하면 같은 화면을 실제 데이터베이스 관리용으로 확장할 수 있습니다.</p></section>
+<section class="panel"><h2>등록 프로그램</h2><div class="toolbar"><input id="search" placeholder="프로그램명, 방송사, 태그 검색"><button id="exportBtn">JSON 내보내기</button><label class="filelabel">JSON 가져오기<input id="importFile" type="file" accept="application/json"></label></div><p class="count" id="count"></p><div class="list" id="list"></div></section>
+</div></main>
+<script>
+const KEY='sosoking-admin-programs-v1';
+const seed=[
+{title:'가족오락관',broadcaster:'KBS',genre:'예능',startYear:1984,endYear:2009,host:'허참',description:'온 가족이 함께 즐긴 장수 오락 프로그램.',emoji:'🎤',tags:['가족','게임','주말'],status:'published',sourceUrl:''},
+{title:'무한도전',broadcaster:'MBC',genre:'예능',startYear:2005,endYear:2018,host:'유재석 외',description:'멤버들이 끝없는 도전에 나섰던 대표 버라이어티.',emoji:'♾️',tags:['도전','토요일','버라이어티'],status:'published',sourceUrl:''},
+{title:'호기심 천국',broadcaster:'SBS',genre:'교양·예능',startYear:1998,endYear:2002,host:'다수 진행자',description:'생활 속 궁금증을 직접 실험하던 과학·상식 프로그램.',emoji:'🔬',tags:['실험','과학','호기심'],status:'published',sourceUrl:''}
+];
+let data=load(),editing=null;const $=s=>document.querySelector(s);
+function load(){try{const saved=JSON.parse(localStorage.getItem(KEY));return Array.isArray(saved)?saved.map(normalize):seed.map(normalize)}catch{return seed.map(normalize)}}
+function normalize(x){return{id:x.id||crypto.randomUUID(),title:String(x.title||''),broadcaster:String(x.broadcaster||''),genre:String(x.genre||''),startYear:Number(x.startYear)||new Date().getFullYear(),endYear:x.endYear?Number(x.endYear):null,host:String(x.host||''),description:String(x.description||''),emoji:String(x.emoji||'📺'),tags:Array.isArray(x.tags)?x.tags:String(x.tags||'').split(',').map(v=>v.trim()).filter(Boolean),status:x.status==='published'?'published':'draft',sourceUrl:String(x.sourceUrl||'')}}
+function persist(){localStorage.setItem(KEY,JSON.stringify(data));render()}
+function render(){const q=$('#search').value.toLowerCase().trim();const rows=data.filter(x=>[x.title,x.broadcaster,x.genre,x.host,x.tags.join(' ')].join(' ').toLowerCase().includes(q)).sort((a,b)=>a.startYear-b.startYear||a.title.localeCompare(b.title,'ko'));$('#count').textContent=`전체 ${data.length}개 · 검색 결과 ${rows.length}개`;$('#list').innerHTML=rows.map(x=>`<article class="item"><div class="emoji">${esc(x.emoji)}</div><div><h3>${esc(x.title)} <small>${x.status==='published'?'공개':'검수 중'}</small></h3><p>${esc(x.broadcaster)} · ${x.startYear}–${x.endYear||'현재'} · ${esc(x.genre)}</p></div><button data-id="${x.id}">수정</button></article>`).join('')||'<p>검색 결과가 없습니다.</p>';document.querySelectorAll('[data-id]').forEach(b=>b.onclick=()=>edit(b.dataset.id))}
+function esc(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function reset(){editing=null;$('#form').reset();$('#emoji').value='📺';$('#statusField').value='draft';$('#formTitle').textContent='프로그램 추가';$('#deleteBtn').hidden=true}
+function edit(id){const x=data.find(v=>v.id===id);if(!x)return;editing=id;for(const k of ['title','broadcaster','genre','startYear','host','description','emoji','sourceUrl'])$('#'+k).value=x[k]??'';$('#endYear').value=x.endYear||'';$('#tags').value=x.tags.join(', ');$('#statusField').value=x.status;$('#formTitle').textContent='프로그램 수정';$('#deleteBtn').hidden=false;scrollTo({top:0,behavior:'smooth'})}
+$('#form').onsubmit=e=>{e.preventDefault();const x=normalize({id:editing||undefined,title:$('#title').value,broadcaster:$('#broadcaster').value,genre:$('#genre').value,startYear:$('#startYear').value,endYear:$('#endYear').value,host:$('#host').value,description:$('#description').value,emoji:$('#emoji').value,tags:$('#tags').value,status:$('#statusField').value,sourceUrl:$('#sourceUrl').value});if(editing)data=data.map(v=>v.id===editing?x:v);else data.push(x);persist();reset()};
+$('#newBtn').onclick=reset;$('#deleteBtn').onclick=()=>{if(editing&&confirm('이 항목을 삭제할까요?')){data=data.filter(x=>x.id!==editing);persist();reset()}};$('#search').oninput=render;
+$('#exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='sosoking-programs.json';a.click();URL.revokeObjectURL(a.href)};
+$('#importFile').onchange=async e=>{try{const parsed=JSON.parse(await e.target.files[0].text());if(!Array.isArray(parsed))throw Error();data=parsed.map(normalize);persist();reset();$('#status').textContent=`JSON ${data.length}개를 불러왔습니다.`}catch{$('#status').textContent='올바른 프로그램 JSON 파일이 아닙니다.'}e.target.value=''};
+render();
+</script></body></html>
