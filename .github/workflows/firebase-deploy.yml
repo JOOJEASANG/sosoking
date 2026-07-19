@@ -13,27 +13,15 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  FIREBASE_PROJECT_ID: sosoking-481e6
+
 jobs:
-  deploy-hosting:
-    name: Firebase Hosting 배포
+  deploy:
+    name: Firebase Hosting 및 Firestore 배포
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    steps:
-      - name: 저장소 체크아웃
-        uses: actions/checkout@v4
 
-      - name: Firebase Hosting 라이브 배포
-        uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 }}
-          channelId: live
-          projectId: sosoking-481e6
-
-  deploy-firestore-rules:
-    name: Firestore 규칙 배포
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
     steps:
       - name: 저장소 체크아웃
         uses: actions/checkout@v4
@@ -51,12 +39,21 @@ jobs:
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 }}
         run: |
           if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
-            echo "GitHub Actions secret FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6가 필요합니다."
+            echo "Missing GitHub secret: FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6"
             exit 1
           fi
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-service-account.json"
 
-      - name: Firestore 규칙 배포
+      - name: Firebase 설정 확인
+        run: |
+          test -f firebase.json
+          test -f .firebaserc
+          test -f index-v4.html
+          test -f assets/sosoking-v4.css
+          test -f assets/sosoking-v4.js
+          test -f assets/sosoking-detail-data.js
+
+      - name: Hosting 및 Firestore 규칙 배포
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-        run: firebase deploy --project sosoking-481e6 --only firestore:rules --non-interactive
+        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only hosting,firestore:rules --non-interactive
