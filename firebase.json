@@ -14,11 +14,11 @@
     ],
     "cleanUrls": true,
     "rewrites": [
-      { "source": "**", "destination": "/index-v2.html" }
+      { "source": "**", "destination": "/index-v3.html" }
     ],
     "headers": [
       {
-        "source": "**/*.@(js|css|json)",
+        "source": "**/*.@(js|css|json|svg)",
         "headers": [
           { "key": "Cache-Control", "value": "public,max-age=3600" }
         ]
