@@ -1,4 +1,4 @@
-name: Firebase Hosting 배포
+name: Firebase Hosting 및 댓글 규칙 배포
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: firebase-hosting-production
+  group: firebase-production
   cancel-in-progress: true
 
 permissions:
@@ -48,7 +48,7 @@ jobs:
           fi
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-service-account.json"
 
-      - name: Firebase Hosting 배포
+      - name: Firebase Hosting 및 Firestore 규칙 배포
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only hosting --non-interactive
+        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only hosting,firestore:rules --non-interactive
