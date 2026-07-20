@@ -1,3 +1,0 @@
-Firebase Hosting 배포 트리거
-대상: index-v4.html
-버전: v4 상세 아카이브

@@ -1,3 +1,0 @@
-Firebase Hosting redeploy trigger
-Requested: 2026-07-19 Asia/Seoul
-Target: main with 42-memory dataset and cache invalidation fixes
