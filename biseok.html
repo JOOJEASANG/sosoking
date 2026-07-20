@@ -4,65 +4,176 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#17352d">
-  <meta name="description" content="돌을 밀어 비석을 쓰러뜨리는 소소킹 비석치기 웹게임">
+  <meta name="description" content="전통 비석치기의 단계별 동작을 체험하는 소소킹 웹게임">
   <title>비석치기 | 소소킹 추억 놀이터</title>
   <style>
-    :root{--ink:#17231f;--muted:#65716c;--paper:#f8f4e8;--panel:#fffdf7;--line:#d9d2c3;--green:#17352d;--green-2:#245446;--orange:#d96b36;--yellow:#f0c76d;--ground:#b6c98f}
-    *{box-sizing:border-box}html{background:#ece7da}body{margin:0;min-height:100vh;color:var(--ink);background:radial-gradient(circle at 15% 0%,#fff8de 0 18%,transparent 42%),linear-gradient(180deg,#efe9db,#e5dfd2);font-family:Arial,"Noto Sans KR",sans-serif}button,a{font:inherit}a{color:inherit}
-    .top{position:sticky;top:0;z-index:20;background:rgba(248,244,232,.9);border-bottom:1px solid rgba(23,35,31,.12);backdrop-filter:blur(12px)}.top-inner{width:min(1120px,calc(100% - 28px));min-height:66px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:14px}.brand{display:flex;align-items:center;gap:10px;text-decoration:none;font-weight:900}.brand-mark{width:38px;height:38px;border-radius:13px;display:grid;place-items:center;color:#fff;background:var(--green);font-size:20px}.back{text-decoration:none;border:1px solid var(--line);background:var(--panel);padding:9px 13px;border-radius:999px;font-size:14px;font-weight:700}
-    main{width:min(1120px,calc(100% - 24px));margin:0 auto;padding:34px 0 72px}.intro{display:grid;grid-template-columns:1.1fr .9fr;gap:28px;align-items:end;margin-bottom:24px}.eyebrow{font-size:13px;font-weight:900;letter-spacing:.14em;color:var(--orange)}h1{font-size:clamp(36px,6vw,68px);line-height:1.02;letter-spacing:-.055em;margin:8px 0 14px}.intro p{margin:0;max-width:680px;color:var(--muted);font-size:17px;line-height:1.7}.rule-card{border:1px solid var(--line);background:rgba(255,253,247,.72);border-radius:22px;padding:18px 20px}.rule-card strong{display:block;margin-bottom:8px}.rule-card p{font-size:14px;line-height:1.6}
-    .game-shell{border:1px solid rgba(23,35,31,.16);border-radius:28px;background:var(--panel);overflow:hidden;box-shadow:0 22px 60px rgba(55,49,35,.13)}.game-head{display:grid;grid-template-columns:repeat(4,1fr) auto;gap:10px;align-items:stretch;padding:14px;background:#f2ecdf;border-bottom:1px solid var(--line)}.metric{min-width:0;border:1px solid var(--line);background:#fffaf0;border-radius:15px;padding:10px 13px}.metric span{display:block;color:var(--muted);font-size:12px;font-weight:700}.metric strong{display:block;margin-top:2px;font-size:21px}.head-actions{display:flex;gap:8px;align-items:center}.icon-btn{min-width:46px;border:1px solid var(--line);background:#fffaf0;border-radius:14px;cursor:pointer;padding:10px 12px;font-weight:800}
-    .stage-wrap{position:relative;background:var(--ground)}canvas{width:100%;height:auto;display:block;touch-action:none;background:#b6c98f}.overlay{position:absolute;inset:0;display:grid;place-items:center;padding:22px;background:rgba(13,37,30,.65);backdrop-filter:blur(3px)}.overlay[hidden]{display:none}.overlay-card{width:min(460px,100%);background:rgba(255,253,247,.97);border:1px solid rgba(255,255,255,.7);border-radius:24px;padding:24px;text-align:center}.overlay-icon{font-size:48px}.overlay-card h2{margin:8px 0 10px;font-size:28px;letter-spacing:-.035em}.overlay-card p{margin:0 0 16px;color:var(--muted);line-height:1.65}.primary{border:0;border-radius:14px;background:var(--green);color:#fff;padding:13px 22px;font-weight:900;cursor:pointer}.primary:hover{background:var(--green-2)}
-    .game-foot{display:grid;grid-template-columns:1fr auto;gap:18px;align-items:center;padding:14px 18px;background:#fffdf7;border-top:1px solid var(--line)}.message{font-weight:800}.message small{display:block;color:var(--muted);font-weight:500;margin-top:3px}.power{width:min(250px,36vw)}.power-label{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);font-weight:700;margin-bottom:6px}.power-track{height:10px;background:#e4ded0;border-radius:999px;overflow:hidden}.power-fill{height:100%;width:0;background:linear-gradient(90deg,var(--green-2),var(--yellow),var(--orange));transition:width .06s linear}
-    .below{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:20px}.info{border:1px solid var(--line);border-radius:20px;background:rgba(255,253,247,.74);padding:20px}.info h2{font-size:20px;margin:0 0 12px}.steps{display:grid;gap:10px}.step{display:grid;grid-template-columns:34px 1fr;gap:10px;align-items:start}.num{width:30px;height:30px;border-radius:10px;background:var(--green);color:#fff;display:grid;place-items:center;font-weight:900}.step p{margin:3px 0 0;line-height:1.5;color:var(--muted)}.tips{margin:0;padding-left:20px;color:var(--muted);line-height:1.9}
-    @media(max-width:780px){main{padding-top:24px}.intro{grid-template-columns:1fr}.game-head{grid-template-columns:repeat(2,1fr)}.head-actions{grid-column:1/-1}.icon-btn{flex:1}.game-foot{grid-template-columns:1fr}.power{width:100%}.below{grid-template-columns:1fr}}
-    @media(max-width:480px){.top-inner{width:min(100% - 20px,1120px)}main{width:min(100% - 12px,1120px)}.game-shell{border-radius:20px}.metric{padding:9px 10px}.metric strong{font-size:18px}.stage-wrap{min-height:410px;display:flex;align-items:center;background:#b6c98f}canvas{min-height:410px;object-fit:contain}.overlay-card{padding:20px}}
+    :root{--ink:#16251f;--muted:#68736e;--paper:#f6f1e4;--panel:#fffdf7;--line:#d8d0bf;--green:#17352d;--green2:#2c5e4e;--orange:#d56b3f;--yellow:#f1ca72;--blue:#365d78;--danger:#9e4037;--ground:#a9bd83}
+    *{box-sizing:border-box}html{background:#e8e2d6}body{margin:0;min-height:100vh;background:radial-gradient(circle at 10% 0,#fff7d9 0 12%,transparent 34%),linear-gradient(#eee8dc,#e3ddd1);color:var(--ink);font-family:Arial,"Noto Sans KR",sans-serif}button,a{font:inherit}button{touch-action:manipulation}.top{position:sticky;top:0;z-index:20;background:rgba(247,242,230,.9);border-bottom:1px solid rgba(22,37,31,.12);backdrop-filter:blur(14px)}.top-inner{width:min(1120px,calc(100% - 28px));min-height:66px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:14px}.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;font-weight:900}.brand-mark{width:38px;height:38px;border-radius:13px;display:grid;place-items:center;background:var(--green);color:#fff;font-size:20px}.back{text-decoration:none;color:inherit;border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:9px 13px;font-size:14px;font-weight:800}
+    main{width:min(1120px,calc(100% - 24px));margin:auto;padding:30px 0 70px}.intro{display:grid;grid-template-columns:1.12fr .88fr;gap:24px;align-items:end;margin-bottom:20px}.eyebrow{font-size:12px;font-weight:900;letter-spacing:.15em;color:var(--orange)}h1{margin:8px 0 12px;font-size:clamp(38px,6vw,68px);line-height:1;letter-spacing:-.055em}.intro p{margin:0;color:var(--muted);line-height:1.7;font-size:16px}.rule-card{border:1px solid var(--line);background:rgba(255,253,247,.76);border-radius:20px;padding:18px}.rule-card strong{display:block;margin-bottom:7px}.rule-card p{font-size:14px}
+    .game-shell{overflow:hidden;border:1px solid rgba(22,37,31,.16);border-radius:28px;background:var(--panel);box-shadow:0 22px 60px rgba(57,50,38,.12)}.game-head{display:grid;grid-template-columns:1.4fr repeat(3,1fr) auto;gap:9px;padding:13px;background:#f0eadf;border-bottom:1px solid var(--line)}.metric{min-width:0;border:1px solid var(--line);border-radius:15px;background:#fffaf0;padding:9px 12px}.metric span{display:block;font-size:11px;color:var(--muted);font-weight:800}.metric strong{display:block;margin-top:3px;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.head-actions{display:flex;gap:7px}.small-btn{border:1px solid var(--line);background:#fffaf0;border-radius:13px;padding:9px 12px;font-weight:850;cursor:pointer}
+    .stage-wrap{position:relative;background:var(--ground)}canvas{display:block;width:100%;height:auto;background:var(--ground);touch-action:none}.overlay{position:absolute;inset:0;display:grid;place-items:center;padding:20px;background:rgba(12,35,28,.67);backdrop-filter:blur(3px)}.overlay[hidden]{display:none}.overlay-card{width:min(470px,100%);border-radius:24px;background:rgba(255,253,247,.98);padding:23px;text-align:center}.overlay-icon{font-size:47px}.overlay h2{margin:8px 0 9px;font-size:28px}.overlay p{margin:0 0 16px;color:var(--muted);line-height:1.65}.primary{border:0;border-radius:14px;background:var(--green);color:#fff;padding:13px 22px;font-weight:900;cursor:pointer}.primary:disabled{opacity:.42;cursor:not-allowed}
+    .status-row{display:grid;grid-template-columns:1fr 280px;gap:16px;align-items:center;padding:13px 17px;border-top:1px solid var(--line);background:#fffdf7}.message{font-weight:850}.message small{display:block;margin-top:3px;color:var(--muted);font-weight:500}.gauge-label{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);font-weight:800;margin-bottom:5px}.gauge{height:12px;border-radius:999px;background:#e6dfd1;overflow:hidden;position:relative}.gauge-zone{position:absolute;left:39%;width:22%;inset-block:0;background:#b9d59a}.gauge-dot{position:absolute;top:50%;width:18px;height:18px;border-radius:50%;background:var(--orange);border:3px solid #fff;box-shadow:0 1px 4px #0004;transform:translate(-50%,-50%);left:50%}
+    .controls{display:grid;grid-template-columns:1fr 1fr 1.2fr;gap:10px;padding:14px 17px 17px;background:#f4eee2}.control-btn{min-height:58px;border:1px solid var(--line);border-radius:16px;background:#fffaf0;color:var(--ink);font-weight:900;font-size:17px;cursor:pointer}.control-btn:active{transform:translateY(1px)}.control-btn.action{background:var(--orange);color:#fff;border-color:transparent}.control-btn:disabled{opacity:.38;cursor:not-allowed}.throw-help{grid-column:1/-1;text-align:center;color:var(--muted);font-size:13px}
+    .stage-list{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:18px}.stage-chip{border:1px solid var(--line);background:rgba(255,253,247,.72);border-radius:16px;padding:12px 10px;text-align:center}.stage-chip b{display:block;font-size:13px}.stage-chip span{display:block;margin-bottom:4px;font-size:21px}.stage-chip.active{border-color:var(--orange);background:#fff5e9}.stage-chip.done{background:#eaf1e5;border-color:#b9ccb0}.below{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}.info{border:1px solid var(--line);border-radius:20px;background:rgba(255,253,247,.75);padding:19px}.info h2{margin:0 0 10px;font-size:19px}.info p,.info li{color:var(--muted);line-height:1.75}.info ul{margin:0;padding-left:20px}
+    @media(max-width:820px){.intro{grid-template-columns:1fr}.game-head{grid-template-columns:repeat(2,1fr)}.head-actions{grid-column:1/-1}.small-btn{flex:1}.status-row{grid-template-columns:1fr}.stage-list{grid-template-columns:repeat(3,1fr)}.below{grid-template-columns:1fr}}@media(max-width:520px){main{width:min(100% - 12px,1120px);padding-top:20px}.game-shell{border-radius:20px}.game-head{padding:9px}.metric{padding:8px}.metric strong{font-size:16px}.stage-wrap{min-height:410px;display:flex;align-items:center}canvas{min-height:410px;object-fit:contain}.controls{grid-template-columns:1fr 1fr}.control-btn.action{grid-column:1/-1}.stage-list{gap:6px}.stage-chip{padding:9px 6px}.stage-chip b{font-size:11px}}
   </style>
 </head>
 <body>
-  <header class="top"><div class="top-inner"><a class="brand" href="index.html"><span class="brand-mark">石</span><span>소소킹 추억 놀이터</span></a><a class="back" href="index.html">← 메인으로</a></div></header>
-  <main>
-    <section class="intro"><div><div class="eyebrow">ALLEY PLAYGROUND · TEST GAME</div><h1>비석치기</h1><p>돌을 누른 뒤 목표 방향으로 밀어 놓으세요. 드래그한 거리만큼 힘이 세지고, 한 번에 여러 비석을 맞히면 더 높은 점수를 얻습니다.</p></div><aside class="rule-card"><strong>이번 테스트 규칙</strong><p>총 3단계입니다. 단계마다 모든 비석을 제한된 횟수 안에 쓰러뜨리면 다음 운동장으로 이동합니다.</p></aside></section>
-    <section class="game-shell" aria-label="비석치기 게임">
-      <div class="game-head"><div class="metric"><span>점수</span><strong id="score">0</strong></div><div class="metric"><span>단계</span><strong id="round">1 / 3</strong></div><div class="metric"><span>남은 돌</span><strong id="throws">8</strong></div><div class="metric"><span>최고 기록</span><strong id="best">0</strong></div><div class="head-actions"><button class="icon-btn" id="restartBtn" type="button">다시 시작</button><button class="icon-btn" id="soundBtn" type="button" aria-pressed="false">소리 켜기</button></div></div>
-      <div class="stage-wrap"><canvas id="game" width="900" height="600" aria-label="돌을 드래그해 비석을 맞히는 게임 화면"></canvas><div class="overlay" id="overlay"><div class="overlay-card"><div class="overlay-icon" id="overlayIcon">🪨</div><h2 id="overlayTitle">운동장에 비석을 세웠습니다</h2><p id="overlayText">아래쪽 돌을 누른 뒤 비석 방향으로 드래그하고 손을 놓으세요. 짧게 밀면 약하게, 길게 밀면 강하게 나갑니다.</p><button class="primary" id="startBtn" type="button">게임 시작</button></div></div></div>
-      <div class="game-foot"><div class="message" id="message" aria-live="polite">돌을 목표 방향으로 밀어보세요.<small>PC는 마우스, 휴대전화는 손가락으로 조작합니다.</small></div><div class="power"><div class="power-label"><span>던지는 힘</span><span id="powerText">0%</span></div><div class="power-track"><div class="power-fill" id="powerFill"></div></div></div></div>
-    </section>
-    <section class="below"><article class="info"><h2>게임 방법</h2><div class="steps"><div class="step"><span class="num">1</span><p>운동장 아래에 있는 둥근 돌을 누릅니다.</p></div><div class="step"><span class="num">2</span><p>맞히고 싶은 비석 쪽으로 길게 드래그합니다.</p></div><div class="step"><span class="num">3</span><p>손을 놓으면 돌이 굴러가며 비석을 쓰러뜨립니다.</p></div></div></article><article class="info"><h2>점수 올리는 요령</h2><ul class="tips"><li>비석의 가운데를 맞히면 충돌이 안정적입니다.</li><li>한 번의 돌로 여러 비석을 맞히면 연속 보너스를 받습니다.</li><li>단계가 올라가면 비석이 작아지고 배치가 어려워집니다.</li></ul></article></section>
-  </main>
-  <script>
-    (() => {
-      const canvas=document.getElementById('game'),ctx=canvas.getContext('2d'),W=canvas.width,H=canvas.height;
-      const scoreEl=document.getElementById('score'),roundEl=document.getElementById('round'),throwsEl=document.getElementById('throws'),bestEl=document.getElementById('best'),messageEl=document.getElementById('message'),powerFill=document.getElementById('powerFill'),powerText=document.getElementById('powerText'),overlay=document.getElementById('overlay'),overlayIcon=document.getElementById('overlayIcon'),overlayTitle=document.getElementById('overlayTitle'),overlayText=document.getElementById('overlayText'),startBtn=document.getElementById('startBtn'),restartBtn=document.getElementById('restartBtn'),soundBtn=document.getElementById('soundBtn');
-      const bestKey='sosoking-biseok-best-v1';let best=Number(localStorage.getItem(bestKey)||0),score=0,round=1,throwsLeft=8,targets=[],particles=[],running=false,dragging=false,dragPoint={x:450,y:520},combo=0,soundOn=false,audio=null,lastTime=performance.now();
-      const stone={x:W/2,y:520,r:19,vx:0,vy:0,moving:false};
-      function beep(freq=260,duration=.08,type='sine'){if(!soundOn)return;try{audio||=new(window.AudioContext||window.webkitAudioContext)();const o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.value=freq;g.gain.setValueAtTime(.08,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+duration);o.connect(g).connect(audio.destination);o.start();o.stop(audio.currentTime+duration)}catch{}}
-      function updateHud(){scoreEl.textContent=score.toLocaleString();roundEl.textContent=`${round} / 3`;throwsEl.textContent=throwsLeft;bestEl.textContent=best.toLocaleString()}
-      function layoutForRound(level){if(level===1)return[[260,150],[355,150],[450,150],[545,150],[640,150]];if(level===2)return[[310,125],[450,125],[590,125],[380,220],[520,220],[450,305]];return[[245,120],[365,165],[485,120],[605,165],[305,260],[455,265],[575,260]]}
-      function buildTargets(){const sizes=[{w:54,h:86},{w:48,h:80},{w:42,h:74}],s=sizes[round-1];targets=layoutForRound(round).map(([x,y],i)=>({x,y,w:s.w,h:s.h,hit:false,fall:0,hue:i%2}))}
-      function resetStone(){stone.x=W/2;stone.y=520;stone.vx=0;stone.vy=0;stone.moving=false;dragging=false;dragPoint={x:stone.x,y:stone.y};setPower(0)}
-      function startGame(){score=0;round=1;throwsLeft=8;particles=[];buildTargets();resetStone();running=true;overlay.hidden=true;messageEl.innerHTML='돌을 목표 방향으로 밀어보세요.<small>길게 드래그할수록 더 강하게 굴러갑니다.</small>';updateHud();beep(360,.1,'triangle')}
-      function restartGame(){overlayIcon.textContent='🪨';overlayTitle.textContent='비석치기';overlayText.textContent='아래쪽 돌을 비석 방향으로 밀어 모든 비석을 쓰러뜨리세요.';startBtn.textContent='다시 시작';overlay.hidden=false;running=false}
-      function setPower(v){const p=Math.max(0,Math.min(100,v));powerFill.style.width=`${p}%`;powerText.textContent=`${Math.round(p)}%`}
-      function pointerPosition(e){const r=canvas.getBoundingClientRect();return{x:(e.clientX-r.left)*W/r.width,y:(e.clientY-r.top)*H/r.height}}
-      canvas.addEventListener('pointerdown',e=>{if(!running||stone.moving)return;const p=pointerPosition(e);if(Math.hypot(p.x-stone.x,p.y-stone.y)<=stone.r+28){dragging=true;dragPoint=p;combo=0;canvas.setPointerCapture(e.pointerId);messageEl.innerHTML='목표 쪽으로 밀고 손을 놓으세요.<small>화살표 길이가 힘을 나타냅니다.</small>'}})
-      canvas.addEventListener('pointermove',e=>{if(!dragging)return;dragPoint=pointerPosition(e);setPower(Math.hypot(dragPoint.x-stone.x,dragPoint.y-stone.y)/230*100)})
-      function releaseStone(e){if(!dragging||!running)return;dragPoint=pointerPosition(e);dragging=false;const dx=dragPoint.x-stone.x,dy=dragPoint.y-stone.y,d=Math.hypot(dx,dy);setPower(0);if(d<22){messageEl.innerHTML='조금 더 길게 밀어주세요.<small>돌에서 목표 방향으로 드래그합니다.</small>';return}const speed=Math.min(19,4.2+d*.065);stone.vx=dx/d*speed;stone.vy=dy/d*speed;stone.moving=true;throwsLeft--;updateHud();beep(190,.07,'square')}
-      canvas.addEventListener('pointerup',releaseStone);canvas.addEventListener('pointercancel',()=>{dragging=false;setPower(0)})
-      function collideTarget(t){if(t.hit)return false;const cx=Math.max(t.x-t.w/2,Math.min(stone.x,t.x+t.w/2)),cy=Math.max(t.y-t.h/2,Math.min(stone.y,t.y+t.h/2)),dx=stone.x-cx,dy=stone.y-cy;if(dx*dx+dy*dy>stone.r*stone.r)return false;const impact=Math.hypot(stone.vx,stone.vy);if(impact<1.35)return false;t.hit=true;t.fall=.01;combo++;const gained=100+round*25+Math.max(0,combo-1)*50;score+=gained;if(score>best){best=score;localStorage.setItem(bestKey,String(best))}createParticles(t.x,t.y,t.hue);stone.vx*=.76;stone.vy*=.76;messageEl.innerHTML=combo>1?`연속 ${combo}개! +${gained}점<small>돌 하나로 여러 비석을 맞혔습니다.</small>`:`비석 명중! +${gained}점<small>남은 비석도 이어서 노려보세요.</small>`;updateHud();beep(420+combo*80,.11,'triangle');return true}
-      function createParticles(x,y,variant){for(let i=0;i<16;i++)particles.push({x,y,vx:(Math.random()-.5)*7,vy:(Math.random()-.7)*7,life:1,size:2+Math.random()*4,variant})}
-      function finishShot(){const remaining=targets.filter(t=>!t.hit).length;if(remaining===0){if(round<3){const bonus=500+throwsLeft*100;score+=bonus;round++;throwsLeft=Math.max(6,9-round);buildTargets();resetStone();updateHud();messageEl.innerHTML=`단계 통과! +${bonus}점<small>${round}단계 비석이 새로 세워졌습니다.</small>`;beep(660,.18,'triangle')}else{const bonus=1000+throwsLeft*150;score+=bonus;if(score>best){best=score;localStorage.setItem(bestKey,String(best))}updateHud();running=false;overlayIcon.textContent='🏆';overlayTitle.textContent='모든 비석을 쓰러뜨렸습니다!';overlayText.textContent=`최종 점수 ${score.toLocaleString()}점입니다. 다시 도전하면 더 적은 돌로 최고 기록을 노릴 수 있습니다.`;startBtn.textContent='한 번 더 하기';overlay.hidden=false;beep(820,.25,'triangle')}return}if(throwsLeft<=0){running=false;overlayIcon.textContent='😅';overlayTitle.textContent='돌을 모두 사용했습니다';overlayText.textContent=`이번 점수는 ${score.toLocaleString()}점입니다. 남은 비석 ${remaining}개를 다시 노려보세요.`;startBtn.textContent='다시 도전';overlay.hidden=false;beep(120,.22,'sawtooth');return}resetStone();messageEl.innerHTML=`비석 ${remaining}개가 남았습니다.<small>남은 돌은 ${throwsLeft}개입니다.</small>`}
-      function update(dt){for(const t of targets)if(t.hit&&t.fall<1)t.fall=Math.min(1,t.fall+dt*3.2);particles=particles.filter(p=>p.life>0);for(const p of particles){p.x+=p.vx*dt*60;p.y+=p.vy*dt*60;p.vy+=.18*dt*60;p.life-=dt*1.8}if(!stone.moving)return;stone.x+=stone.vx*dt*60;stone.y+=stone.vy*dt*60;const f=Math.pow(.982,dt*60);stone.vx*=f;stone.vy*=f;if(stone.x<stone.r){stone.x=stone.r;stone.vx=Math.abs(stone.vx)*.62}else if(stone.x>W-stone.r){stone.x=W-stone.r;stone.vx=-Math.abs(stone.vx)*.62}if(stone.y<stone.r){stone.y=stone.r;stone.vy=Math.abs(stone.vy)*.62}else if(stone.y>H-stone.r){stone.y=H-stone.r;stone.vy=-Math.abs(stone.vy)*.62}targets.forEach(collideTarget);if(Math.hypot(stone.vx,stone.vy)<.13){stone.moving=false;stone.vx=stone.vy=0;finishShot()}}
-      function roundedRect(x,y,w,h,r){const q=Math.min(r,w/2,h/2);ctx.beginPath();ctx.moveTo(x+q,y);ctx.arcTo(x+w,y,x+w,y+h,q);ctx.arcTo(x+w,y+h,x,y+h,q);ctx.arcTo(x,y+h,x,y,q);ctx.arcTo(x,y,x+w,y,q);ctx.closePath()}
-      function drawGround(){ctx.fillStyle='#b6c98f';ctx.fillRect(0,0,W,H);ctx.globalAlpha=.15;ctx.fillStyle='#6f825c';for(let y=20;y<H;y+=32)for(let x=(y/32%2)*17;x<W;x+=34){ctx.beginPath();ctx.arc(x,y,1.4,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1;ctx.strokeStyle='rgba(255,250,225,.82)';ctx.lineWidth=5;ctx.setLineDash([16,13]);ctx.beginPath();ctx.moveTo(70,405);ctx.lineTo(W-70,405);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle='rgba(255,250,225,.9)';ctx.font='700 15px Arial';ctx.fillText('던지는 선',78,394);ctx.strokeStyle='rgba(255,250,225,.56)';ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(W/2,520,54,28,0,0,Math.PI*2);ctx.stroke();ctx.fillStyle='rgba(23,53,45,.08)';roundedRect(30,28,215,44,14);ctx.fill();ctx.fillStyle='#17352d';ctx.font='800 18px Arial';ctx.fillText(`${round}단계 운동장`,51,57)}
-      function drawTarget(t){ctx.save();ctx.translate(t.x,t.y+t.h/2);if(t.hit)ctx.rotate((Math.PI/2-.05)*t.fall);ctx.translate(0,-t.h/2);ctx.fillStyle='rgba(37,42,35,.18)';roundedRect(-t.w/2+6,-t.h/2+8,t.w,t.h,9);ctx.fill();const g=ctx.createLinearGradient(-t.w/2,0,t.w/2,0);g.addColorStop(0,t.hue?'#6f756f':'#79786f');g.addColorStop(.48,t.hue?'#b0ada2':'#b6b09e');g.addColorStop(1,t.hue?'#555d58':'#66645b');ctx.fillStyle=g;roundedRect(-t.w/2,-t.h/2,t.w,t.h,9);ctx.fill();ctx.strokeStyle='rgba(31,39,34,.45)';ctx.lineWidth=2;roundedRect(-t.w/2,-t.h/2,t.w,t.h,9);ctx.stroke();ctx.strokeStyle='rgba(245,238,214,.45)';ctx.beginPath();ctx.moveTo(-t.w*.17,-t.h*.28);ctx.lineTo(t.w*.12,-t.h*.08);ctx.lineTo(-t.w*.04,t.h*.18);ctx.stroke();ctx.restore()}
-      function drawStone(){ctx.save();ctx.translate(stone.x,stone.y);ctx.fillStyle='rgba(24,32,28,.2)';ctx.beginPath();ctx.ellipse(5,8,stone.r+5,stone.r*.72,0,0,Math.PI*2);ctx.fill();const g=ctx.createRadialGradient(-7,-9,3,0,0,stone.r+5);g.addColorStop(0,'#b9b3a3');g.addColorStop(.55,'#77776e');g.addColorStop(1,'#444a46');ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,stone.r,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#343a36';ctx.lineWidth=2;ctx.stroke();ctx.strokeStyle='rgba(238,232,211,.42)';ctx.beginPath();ctx.moveTo(-8,-5);ctx.lineTo(7,2);ctx.lineTo(1,10);ctx.stroke();ctx.restore()}
-      function drawAim(){if(!dragging)return;const dx=dragPoint.x-stone.x,dy=dragPoint.y-stone.y,d=Math.hypot(dx,dy);if(d<2)return;const max=Math.min(230,d),ux=dx/d,uy=dy/d,endX=stone.x+ux*max,endY=stone.y+uy*max;ctx.save();ctx.strokeStyle='rgba(217,107,54,.9)';ctx.fillStyle='rgba(217,107,54,.9)';ctx.lineWidth=6;ctx.lineCap='round';ctx.setLineDash([12,10]);ctx.beginPath();ctx.moveTo(stone.x,stone.y);ctx.lineTo(endX,endY);ctx.stroke();ctx.setLineDash([]);ctx.translate(endX,endY);ctx.rotate(Math.atan2(uy,ux));ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(-18,-10);ctx.lineTo(-18,10);ctx.closePath();ctx.fill();ctx.restore()}
-      function drawParticles(){for(const p of particles){ctx.globalAlpha=Math.max(0,p.life);ctx.fillStyle=p.variant?'#f0c76d':'#f8f4e8';ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1}
-      function draw(){drawGround();targets.forEach(drawTarget);drawAim();drawStone();drawParticles()}
-      function frame(now){const dt=Math.min(.033,(now-lastTime)/1000);lastTime=now;if(running)update(dt);draw();requestAnimationFrame(frame)}
-      startBtn.addEventListener('click',startGame);restartBtn.addEventListener('click',restartGame);soundBtn.addEventListener('click',()=>{soundOn=!soundOn;soundBtn.textContent=soundOn?'소리 끄기':'소리 켜기';soundBtn.setAttribute('aria-pressed',String(soundOn));if(soundOn)beep(440,.09,'triangle')});bestEl.textContent=best.toLocaleString();buildTargets();resetStone();updateHud();requestAnimationFrame(frame)
-    })();
-  </script>
+<header class="top"><div class="top-inner"><a class="brand" href="index.html"><span class="brand-mark">石</span><span>소소킹 추억 놀이터</span></a><a class="back" href="index.html">← 메인으로</a></div></header>
+<main>
+  <section class="intro">
+    <div><div class="eyebrow">TRADITIONAL PLAY · TEST VERSION 2</div><h1>비석치기</h1><p>단순히 돌을 굴리는 게임이 아니라, 단계마다 한 발로 뛰거나 몸에 비석을 올리고 이동한 뒤 상대 비석을 쓰러뜨리는 놀이로 다시 만들었습니다.</p></div>
+    <aside class="rule-card"><strong>테스트 규칙</strong><p>직접 던지기부터 머리 운반까지 6단계입니다. 지역마다 실제 순서와 이름은 달랐지만, 몸의 여러 부위를 이용해 단계를 통과하는 재미를 중심으로 구성했습니다.</p></aside>
+  </section>
+
+  <section class="game-shell" aria-label="단계별 비석치기 게임">
+    <div class="game-head">
+      <div class="metric"><span>현재 단계</span><strong id="stageName">던져 맞히기</strong></div>
+      <div class="metric"><span>점수</span><strong id="score">0</strong></div>
+      <div class="metric"><span>남은 기회</span><strong id="lives">3</strong></div>
+      <div class="metric"><span>최고 기록</span><strong id="best">0</strong></div>
+      <div class="head-actions"><button class="small-btn" id="restartBtn" type="button">처음부터</button><button class="small-btn" id="soundBtn" type="button" aria-pressed="false">소리 켜기</button></div>
+    </div>
+
+    <div class="stage-wrap">
+      <canvas id="game" width="900" height="560" aria-label="운동장에서 비석치기를 하는 캐릭터"></canvas>
+      <div class="overlay" id="overlay">
+        <div class="overlay-card">
+          <div class="overlay-icon" id="overlayIcon">🪨</div>
+          <h2 id="overlayTitle">진짜 비석치기 방식으로 다시 만들었습니다</h2>
+          <p id="overlayText">1단계는 돌을 던져 비석을 맞히고, 이후에는 한 발 뛰기와 몸에 돌을 올린 운반 단계를 진행합니다.</p>
+          <button class="primary" id="startBtn" type="button">게임 시작</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="status-row">
+      <div class="message" id="message" aria-live="polite">게임을 시작해보세요.<small>PC는 마우스·방향키, 휴대전화는 화면 버튼으로 조작합니다.</small></div>
+      <div><div class="gauge-label"><span id="gaugeTitle">정확도</span><span id="gaugeText">50%</span></div><div class="gauge"><div class="gauge-zone"></div><div class="gauge-dot" id="gaugeDot"></div></div></div>
+    </div>
+
+    <div class="controls">
+      <button class="control-btn" id="leftBtn" type="button">◀ 왼쪽 균형</button>
+      <button class="control-btn" id="rightBtn" type="button">오른쪽 균형 ▶</button>
+      <button class="control-btn action" id="actionBtn" type="button">동작하기</button>
+      <div class="throw-help" id="throwHelp">1단계에서는 캐릭터 손의 돌을 목표 비석 쪽으로 드래그한 뒤 놓으세요.</div>
+    </div>
+  </section>
+
+  <section class="stage-list" id="stageList"></section>
+
+  <section class="below">
+    <article class="info"><h2>이번 버전의 진행 방식</h2><ul><li>1단계: 손의 비석을 드래그해 상대 비석을 맞힙니다.</li><li>2단계: 좌우를 번갈아 눌러 한 발로 뛰어간 뒤 발로 찹니다.</li><li>3~6단계: 발등·무릎·어깨·머리에 비석을 올리고 균형을 유지합니다.</li></ul></article>
+    <article class="info"><h2>조작 요령</h2><p>운반 단계에서는 주황색 균형점이 가운데 초록 영역을 벗어나지 않도록 좌우 버튼을 짧게 눌러주세요. 목표 앞에 도착하면 동작 버튼을 정확한 순간에 눌러 비석을 쓰러뜨립니다.</p></article>
+  </section>
+</main>
+
+<script>
+(() => {
+  const canvas=document.getElementById('game'),ctx=canvas.getContext('2d'),W=canvas.width,H=canvas.height;
+  const stageNameEl=document.getElementById('stageName'),scoreEl=document.getElementById('score'),livesEl=document.getElementById('lives'),bestEl=document.getElementById('best'),messageEl=document.getElementById('message'),gaugeTitle=document.getElementById('gaugeTitle'),gaugeText=document.getElementById('gaugeText'),gaugeDot=document.getElementById('gaugeDot'),leftBtn=document.getElementById('leftBtn'),rightBtn=document.getElementById('rightBtn'),actionBtn=document.getElementById('actionBtn'),throwHelp=document.getElementById('throwHelp'),overlay=document.getElementById('overlay'),overlayIcon=document.getElementById('overlayIcon'),overlayTitle=document.getElementById('overlayTitle'),overlayText=document.getElementById('overlayText'),startBtn=document.getElementById('startBtn'),restartBtn=document.getElementById('restartBtn'),soundBtn=document.getElementById('soundBtn'),stageList=document.getElementById('stageList');
+  const stages=[
+    {name:'던져 맞히기',icon:'🎯',mode:'throw',carry:'hand',desc:'돌을 던져 상대 비석을 직접 맞힙니다.'},
+    {name:'한 발 뛰기',icon:'🦶',mode:'carry',carry:'hop',desc:'한 발로 뛰어 자기 돌까지 간 뒤 상대 비석을 찹니다.'},
+    {name:'발등 운반',icon:'👟',mode:'carry',carry:'foot',desc:'발등 위에 돌을 올린 채 떨어뜨리지 않고 이동합니다.'},
+    {name:'무릎 운반',icon:'🦵',mode:'carry',carry:'knee',desc:'무릎 사이에 돌을 끼운 채 조심스럽게 이동합니다.'},
+    {name:'어깨 운반',icon:'💪',mode:'carry',carry:'shoulder',desc:'어깨에 돌을 올리고 균형을 잡으며 이동합니다.'},
+    {name:'머리 운반',icon:'🧑',mode:'carry',carry:'head',desc:'머리에 돌을 올린 마지막 고난도 단계입니다.'}
+  ];
+  const bestKey='sosoking-biseok-best-v2';
+  let best=Number(localStorage.getItem(bestKey)||0),score=0,stageIndex=0,lives=3,running=false,phase='ready',soundOn=false,audio=null,last=performance.now(),balance=.5,balanceV=0,progress=0,stepPulse=0,aim=.5,aimDir=1,dragging=false,dragPos={x:0,y:0},stone={x:235,y:287,vx:0,vy:0,flying:false},target={x:755,y:410,fall:0,hit:false},particles=[];
+  const player={x:200,y:425};
+
+  function beep(freq=300,duration=.08,type='sine'){if(!soundOn)return;try{audio||=new(window.AudioContext||window.webkitAudioContext)();const o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.value=freq;g.gain.setValueAtTime(.07,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+duration);o.connect(g).connect(audio.destination);o.start();o.stop(audio.currentTime+duration)}catch{}}
+  function updateHud(){stageNameEl.textContent=stages[stageIndex].name;scoreEl.textContent=score.toLocaleString();livesEl.textContent=lives;bestEl.textContent=best.toLocaleString();gaugeDot.style.left=`${Math.max(0,Math.min(100,(phase==='aim'?aim:balance)*100))}%`;gaugeText.textContent=`${Math.round((phase==='aim'?aim:balance)*100)}%`;gaugeTitle.textContent=phase==='aim'?'타격 타이밍':'균형'}
+  function renderStageList(){stageList.innerHTML=stages.map((s,i)=>`<div class="stage-chip ${i===stageIndex?'active':''} ${i<stageIndex?'done':''}"><span>${s.icon}</span><b>${i+1}. ${s.name}</b></div>`).join('')}
+  function resetObjects(){player.x=200;player.y=425;target={x:755,y:410,fall:0,hit:false};particles=[];stone={x:235,y:287,vx:0,vy:0,flying:false};balance=.5;balanceV=(Math.random()-.5)*.16;progress=0;stepPulse=0;aim=.12+Math.random()*.25;aimDir=1;dragging=false}
+  function setupStage(){resetObjects();phase=stages[stageIndex].mode==='throw'?'throw':'carry';leftBtn.disabled=phase==='throw';rightBtn.disabled=phase==='throw';actionBtn.disabled=phase==='throw';actionBtn.textContent='동작하기';throwHelp.textContent=phase==='throw'?'캐릭터 손의 돌을 비석 방향으로 드래그한 뒤 놓으세요.':'좌우 버튼을 번갈아 눌러 균형을 잡고 목표까지 이동하세요.';messageEl.innerHTML=`${stages[stageIndex].desc}<small>${phase==='throw'?'돌을 눌러 목표 쪽으로 드래그합니다.':'균형점이 가운데 초록 구역에 있도록 조절합니다.'}</small>`;updateHud();renderStageList()}
+  function startGame(){score=0;stageIndex=0;lives=3;running=true;overlay.hidden=true;setupStage();beep(430,.1,'triangle')}
+  function showOverlay(icon,title,text,button='계속하기'){overlayIcon.textContent=icon;overlayTitle.textContent=title;overlayText.textContent=text;startBtn.textContent=button;overlay.hidden=false}
+  function loseAttempt(reason){lives--;beep(120,.2,'sawtooth');if(lives<=0){running=false;showOverlay('😅','기회를 모두 사용했습니다',`${reason} 이번 점수는 ${score.toLocaleString()}점입니다.`,'처음부터 다시');startBtn.onclick=startGame;updateHud();return}messageEl.innerHTML=`${reason}<small>남은 기회 ${lives}번. 같은 단계를 다시 시작합니다.</small>`;setTimeout(setupStage,750);updateHud()}
+  function passStage(){if(phase==='done')return;const accuracy=phase==='throw'?1:1-Math.abs(aim-.5)*2;phase='done';leftBtn.disabled=true;rightBtn.disabled=true;actionBtn.disabled=true;const gained=Math.round(600+stageIndex*180+Math.max(0,accuracy)*400);score+=gained;if(score>best){best=score;localStorage.setItem(bestKey,String(best))}target.hit=true;target.fall=.01;spawn(target.x,target.y);beep(720,.18,'triangle');updateHud();setTimeout(()=>{if(stageIndex===stages.length-1){running=false;showOverlay('🏆','비석치기 모든 단계를 통과했습니다',`최종 점수 ${score.toLocaleString()}점입니다. 균형을 더 정확하게 잡으면 기록을 높일 수 있습니다.`,'한 번 더 하기');startBtn.onclick=startGame}else{stageIndex++;lives=Math.min(3,lives+1);showOverlay(stages[stageIndex].icon,`${stageIndex+1}단계 · ${stages[stageIndex].name}`,stages[stageIndex].desc,'다음 단계 시작');startBtn.onclick=()=>{overlay.hidden=true;setupStage()}}},650)}
+  function spawn(x,y){for(let i=0;i<22;i++)particles.push({x,y,vx:(Math.random()-.5)*8,vy:(Math.random()-.8)*7,life:1,r:2+Math.random()*4})}
+
+  function pos(e){const r=canvas.getBoundingClientRect();return{x:(e.clientX-r.left)*W/r.width,y:(e.clientY-r.top)*H/r.height}}
+  canvas.addEventListener('pointerdown',e=>{if(!running||phase!=='throw'||stone.flying)return;const p=pos(e);if(Math.hypot(p.x-stone.x,p.y-stone.y)<42){dragging=true;dragPos=p;canvas.setPointerCapture(e.pointerId)}})
+  canvas.addEventListener('pointermove',e=>{if(dragging)dragPos=pos(e)})
+  canvas.addEventListener('pointerup',e=>{if(!dragging||phase!=='throw')return;dragPos=pos(e);dragging=false;const dx=dragPos.x-stone.x,dy=dragPos.y-stone.y,d=Math.hypot(dx,dy);if(d<30){messageEl.innerHTML='조금 더 길게 드래그해주세요.<small>비석 방향으로 힘껏 던집니다.</small>';return}const speed=Math.min(18,5+d*.045);stone.vx=dx/d*speed;stone.vy=dy/d*speed;stone.flying=true;beep(220,.08,'square')})
+  canvas.addEventListener('pointercancel',()=>dragging=false)
+
+  function nudge(dir){if(!running||phase!=='carry')return;balanceV+=dir*.095;stepPulse=1;progress+=.014;beep(240+progress*160,.025,'square')}
+  leftBtn.addEventListener('pointerdown',()=>nudge(-1));rightBtn.addEventListener('pointerdown',()=>nudge(1));
+  actionBtn.addEventListener('click',()=>{if(!running)return;if(phase==='aim'){const good=Math.abs(aim-.5)<=.13;if(good)passStage();else loseAttempt('타격 순간이 빗나갔습니다.');}})
+  document.addEventListener('keydown',e=>{if(e.key==='ArrowLeft'||e.key.toLowerCase()==='a')nudge(-1);if(e.key==='ArrowRight'||e.key.toLowerCase()==='d')nudge(1);if(e.code==='Space'){e.preventDefault();actionBtn.click()}})
+
+  function update(dt){
+    if(target.hit&&target.fall<1)target.fall=Math.min(1,target.fall+dt*3.5);
+    particles=particles.filter(p=>p.life>0);for(const p of particles){p.x+=p.vx*dt*60;p.y+=p.vy*dt*60;p.vy+=.19*dt*60;p.life-=dt*1.7}
+    if(!running)return;
+    if(phase==='throw'&&stone.flying){
+      stone.x+=stone.vx*dt*60;stone.y+=stone.vy*dt*60;stone.vy+=.12*dt*60;stone.vx*=Math.pow(.995,dt*60);
+      const hit=stone.x>target.x-30&&stone.x<target.x+30&&stone.y>target.y-92&&stone.y<target.y+8;
+      if(hit){passStage();stone.flying=false}
+      else if(stone.y>H+40||stone.x>W+40||stone.x<-40){stone.flying=false;loseAttempt('비석을 맞히지 못했습니다.')}
+    }
+    if(phase==='carry'){
+      const difficulty=.18+stageIndex*.035;balanceV+=(Math.random()-.5)*difficulty*dt;balanceV+=(balance-.5)*-.22*dt;balance+=balanceV*dt;balanceV*=Math.pow(.91,dt*60);
+      progress+=dt*(.075+stageIndex*.004);player.x=200+progress*455;stepPulse=Math.max(0,stepPulse-dt*3);
+      if(balance<.08||balance>.92){phase='pause';loseAttempt('몸에 올린 비석을 떨어뜨렸습니다.');return}
+      if(progress>=1){progress=1;player.x=655;phase='aim';aim=.08;aimDir=1;leftBtn.disabled=true;rightBtn.disabled=true;actionBtn.disabled=false;actionBtn.textContent=stageIndex===1?'발로 차기':'비석 떨어뜨리기';throwHelp.textContent='아래 정확도 점이 가운데 초록 구역에 들어왔을 때 동작 버튼을 누르세요.';messageEl.innerHTML='상대 비석 앞에 도착했습니다.<small>정확한 순간에 동작 버튼을 누르세요.</small>'}
+    }else if(phase==='aim'){aim+=aimDir*dt*(.8+stageIndex*.08);if(aim>=.96){aim=.96;aimDir=-1}else if(aim<=.04){aim=.04;aimDir=1}}
+    updateHud()
+  }
+
+  function rounded(x,y,w,h,r){ctx.beginPath();ctx.roundRect(x,y,w,h,r)}
+  function drawGround(){
+    ctx.fillStyle='#abc083';ctx.fillRect(0,0,W,H);
+    ctx.globalAlpha=.12;ctx.fillStyle='#5d7350';for(let y=25;y<H;y+=30)for(let x=((y/30)%2)*16;x<W;x+=32){ctx.beginPath();ctx.arc(x,y,1.4,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1;
+    ctx.strokeStyle='rgba(255,249,224,.78)';ctx.lineWidth=5;ctx.setLineDash([17,13]);ctx.beginPath();ctx.moveTo(105,475);ctx.lineTo(795,475);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle='rgba(255,250,231,.9)';ctx.font='700 14px Arial';ctx.fillText('출발선',135,499);ctx.fillText('상대 비석',720,499);
+  }
+  function drawTarget(){
+    ctx.save();ctx.translate(target.x,target.y);if(target.hit)ctx.rotate((Math.PI/2-.05)*target.fall);ctx.fillStyle='rgba(25,35,29,.18)';rounded(-23,-77,52,92,8);ctx.fill();const g=ctx.createLinearGradient(-25,0,25,0);g.addColorStop(0,'#626860');g.addColorStop(.5,'#b1ad9e');g.addColorStop(1,'#565d58');ctx.fillStyle=g;rounded(-27,-86,54,92,8);ctx.fill();ctx.strokeStyle='#424a45';ctx.lineWidth=2;ctx.stroke();ctx.strokeStyle='rgba(255,246,216,.45)';ctx.beginPath();ctx.moveTo(-9,-59);ctx.lineTo(8,-38);ctx.lineTo(-4,-12);ctx.stroke();ctx.restore()
+  }
+  function carryStonePoint(kind,x,y){
+    if(kind==='hop')return{x:x+10,y:y+39};
+    if(kind==='foot')return{x:x+19,y:y+49};
+    if(kind==='knee')return{x:x+13,y:y+22};
+    if(kind==='shoulder')return{x:x+16,y:y-34};
+    if(kind==='head')return{x:x,y:y-66};
+    return{x:x+24,y:y-28}
+  }
+  function drawPlayer(){
+    const s=stages[stageIndex],x=player.x,y=player.y,hop=Math.sin(performance.now()/115)*4*(phase==='carry'?1:0);
+    ctx.save();ctx.translate(x,y+hop);
+    ctx.strokeStyle='#243c35';ctx.lineWidth=9;ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(0,-42);ctx.lineTo(0,18);ctx.stroke();
+    ctx.fillStyle='#f0c6a1';ctx.beginPath();ctx.arc(0,-65,18,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='#304c70';ctx.lineWidth=13;ctx.beginPath();ctx.moveTo(0,-31);ctx.lineTo(0,5);ctx.stroke();
+    ctx.strokeStyle='#243c35';ctx.lineWidth=8;
+    const oneLeg=s.carry==='hop';ctx.beginPath();ctx.moveTo(-2,10);ctx.lineTo(oneLeg?-17:-14,48);ctx.moveTo(2,10);ctx.lineTo(oneLeg?24:15,oneLeg?25:48);ctx.stroke();
+    ctx.strokeStyle='#f0c6a1';ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(0,-25);ctx.lineTo(-22,-1);ctx.moveTo(0,-25);ctx.lineTo(22,-5);ctx.stroke();
+    const p=carryStonePoint(s.carry,0,0);if(stageIndex>0){ctx.fillStyle='#555c56';ctx.beginPath();ctx.ellipse(p.x,p.y,12,7,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#39403b';ctx.lineWidth=2;ctx.stroke()}
+    if(stageIndex===0&&!stone.flying){stone.x=x+25;stone.y=y-28}
+    ctx.restore()
+  }
+  function drawStone(){
+    if(stageIndex!==0)return;ctx.save();ctx.translate(stone.x,stone.y);const g=ctx.createRadialGradient(-5,-6,2,0,0,17);g.addColorStop(0,'#b8b2a2');g.addColorStop(.55,'#77786f');g.addColorStop(1,'#444b46');ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(0,0,16,11,.15,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#343a36';ctx.lineWidth=2;ctx.stroke();ctx.restore()
+  }
+  function drawAim(){
+    if(!dragging)return;const dx=dragPos.x-stone.x,dy=dragPos.y-stone.y,d=Math.hypot(dx,dy);if(d<2)return;ctx.save();ctx.strokeStyle='rgba(213,107,63,.92)';ctx.lineWidth=5;ctx.lineCap='round';ctx.setLineDash([10,9]);ctx.beginPath();ctx.moveTo(stone.x,stone.y);ctx.lineTo(dragPos.x,dragPos.y);ctx.stroke();ctx.setLineDash([]);ctx.restore()
+  }
+  function drawProgress(){
+    if(stageIndex===0)return;ctx.fillStyle='rgba(255,253,244,.72)';rounded(170,64,530,24,12);ctx.fill();ctx.fillStyle='#2c5e4e';rounded(170,64,530*Math.min(1,progress),24,12);ctx.fill();ctx.fillStyle='#17352d';ctx.font='800 13px Arial';ctx.fillText(`이동 ${Math.round(progress*100)}%`,392,81)
+  }
+  function drawParticles(){for(const p of particles){ctx.globalAlpha=Math.max(0,p.life);ctx.fillStyle='#f6e8b6';ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1}
+  function draw(){drawGround();drawProgress();drawTarget();drawPlayer();drawStone();drawAim();drawParticles()}
+  function frame(now){const dt=Math.min(.033,(now-last)/1000);last=now;update(dt);draw();requestAnimationFrame(frame)}
+
+  startBtn.onclick=startGame;restartBtn.onclick=()=>{running=false;showOverlay('🪨','비석치기 다시 시작','던져 맞히기부터 머리 운반까지 다시 도전합니다.','게임 시작');startBtn.onclick=startGame};
+  soundBtn.onclick=()=>{soundOn=!soundOn;soundBtn.textContent=soundOn?'소리 끄기':'소리 켜기';soundBtn.setAttribute('aria-pressed',String(soundOn));if(soundOn)beep(440,.08,'triangle')};
+  bestEl.textContent=best.toLocaleString();setupStage();renderStageList();requestAnimationFrame(frame);
+})();
+</script>
 </body>
 </html>
