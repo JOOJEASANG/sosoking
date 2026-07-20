@@ -9,6 +9,27 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    match /comments/{commentId} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasOnly([
+        'programId','programTitle','nickname','content','createdAt'
+      ])
+      && request.resource.data.programId is string
+      && request.resource.data.programId.size() >= 1
+      && request.resource.data.programId.size() <= 80
+      && request.resource.data.programTitle is string
+      && request.resource.data.programTitle.size() >= 1
+      && request.resource.data.programTitle.size() <= 80
+      && request.resource.data.nickname is string
+      && request.resource.data.nickname.size() >= 1
+      && request.resource.data.nickname.size() <= 20
+      && request.resource.data.content is string
+      && request.resource.data.content.size() >= 2
+      && request.resource.data.content.size() <= 300
+      && request.resource.data.createdAt == request.time;
+      allow update, delete: if isAdmin();
+    }
+
     match /memories/{memoryId} {
       allow read: if resource.data.status == 'approved' || isAdmin();
       allow create: if request.resource.data.keys().hasOnly([
