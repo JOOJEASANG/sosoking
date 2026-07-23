@@ -43,7 +43,6 @@ export const EXTENSION_MODULES = [
   './feedback-actions.js',
   './admin-ai-minimal-actions.js',
   './admin-ai-type-patch.js',
-  './admin-ai-write-type-force.js',
   './admin-member-list-fix.js',
   './admin-data-manager.js',
   './admin-ui-cleanup.js',
