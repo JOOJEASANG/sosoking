@@ -15,7 +15,6 @@ export const SAFE_OPTIONAL_MODULES = [
   './admin-password-actions.js',
   './admin-post-list-normalizer.js',
   './nickname-icon-actions.js',
-  './site-copy-normalizer.js',
 ];
 
 export const EXTENSION_MODULES = [
