@@ -12,8 +12,6 @@ const sitemap = require('./sitemap-functions.js');
 const aiHunt = require('./ai-hunt-functions.js');
 const settlement = require('./settlement-functions.js');
 const linkSummary = require('./link-summary-functions.js');
-const dailySeed = require('./daily-seed-functions.js');
-const sosoFeed = require('./soso-feed-functions.js');
 const account = require('./account-functions.js');
 const features = require('./sosoking-features-functions.js');
 const fourGameAiContent = require('./four-game-ai-content-functions.js');
@@ -22,7 +20,6 @@ const adminAutomation = require('./ai-admin-automation-functions.js');
 const adminUsers = require('./admin-user-functions.js');
 const adminData = require('./admin-data-functions.js');
 const memberStats = require('./member-stats-functions.js');
-const weeklyAiSchedule = require('./weekly-ai-schedule-functions.js');
 const dailyAutoPost = require('./daily-auto-post-v2-functions.js');
 const uploadImage = require('./upload-image-functions.js');
 const nicknameIcon = require('./nickname-icon-functions.js');
@@ -71,8 +68,6 @@ module.exports = {
   ...aiHunt,
   ...settlement,
   ...linkSummary,
-  ...dailySeed,
-  ...sosoFeed,
   ...account,
   ...features,
   ...adminAutomation,
@@ -82,9 +77,6 @@ module.exports = {
 
   // 서버 검증 기반 포인트 지급
   ...points,
-
-  // 주간 자동 생성 유지
-  ...weeklyAiSchedule,
 
   // 매일 게임형 콘텐츠 자동 생성의 단일 dailyAiContent 구현입니다.
   ...dailyAutoPost,
