@@ -80,7 +80,6 @@ function renderAdminShell(el) {
 export async function renderAdmin() {
   const el = document.getElementById('page-content');
 
-  // Firebase has a cached session but appState hasn't been populated yet — wait for onAuthStateChanged
   if (auth.currentUser && !appState.user) {
     el.innerHTML = `<div class="loading-center"><div class="spinner spinner--lg"></div></div>`;
     return;
@@ -194,11 +193,7 @@ async function renderUsers(el, options = {}) {
     userListState.pageToken = 0;
   }
   try {
-    const result = await getAdminMemberList({
-      pageSize: userListState.pageSize,
-      pageToken: userListState.pageToken,
-      search: userListState.search,
-    });
+    const result = await getAdminMemberList({ pageSize: userListState.pageSize, pageToken: userListState.pageToken, search: userListState.search });
     const data = result.data || {};
     const members = data.members || [];
     const start = Number(data.total || 0) ? Number(data.pageToken || 0) + 1 : 0;
@@ -230,7 +225,7 @@ async function renderAi(el) {
       features = data.features || {};
     }
   } catch {}
-  el.innerHTML = `<div style="display:flex;flex-direction:column;gap:16px;max-width:760px"><h2 class="admin-section-title">🤖 AI 관리</h2><div class="admin-operation-note"><b>현재 정책</b><span>AI 미션 자동생성은 제거했고, 최소 AI 사용 여부만 관리합니다.</span></div><div class="card"><div class="card__body"><label style="display:flex;gap:10px;align-items:center;font-weight:900"><input type="checkbox" id="ai-enabled" ${enabled ? 'checked' : ''}> AI 기능 사용</label><div class="form-hint" style="margin-top:10px">AI 게시글 생성은 서버 환경 키 ANTHROPIC_API_KEY를 사용합니다. API 키는 Firestore에 저장하지 않습니다.</div><button class="btn btn--primary" id="btn-ai-save" style="margin-top:14px">설정 저장</button></div></div></div>`;
+  el.innerHTML = `<div style="display:flex;flex-direction:column;gap:16px;max-width:760px"><h2 class="admin-section-title">🤖 AI 관리</h2><div class="admin-operation-note"><b>현재 정책</b><span>AI 미션 자동생성은 제거했고, 최소 AI 사용 여부만 관리합니다.</span></div><div class="card"><div class="card__body"><label style="display:flex;gap:10px;align-items:center;font-weight:900"><input type="checkbox" id="ai-enabled" ${enabled ? 'checked' : ''}> AI 기능 사용</label><div class="form-hint" style="margin-top:10px">AI 댓글과 자동 콘텐츠는 Firebase Secret Manager의 GEMINI_API_KEY를 사용합니다. API 키는 Firestore에 저장하지 않습니다.</div><button class="btn btn--primary" id="btn-ai-save" style="margin-top:14px">설정 저장</button></div></div></div>`;
   document.getElementById('btn-ai-save')?.addEventListener('click', async () => {
     await saveAiConfig({ enabled: document.getElementById('ai-enabled')?.checked !== false, features });
     toast.success('AI 설정을 저장했어요');
