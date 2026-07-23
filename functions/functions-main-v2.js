@@ -1,8 +1,7 @@
 'use strict';
 
 // Cloud Functions export를 명시적으로 구성합니다.
-// 여러 모듈이 같은 이름을 export하면 뒤쪽 모듈이 앞쪽 모듈을 조용히 덮어쓰므로,
-// 운영에서 사용하는 대표 함수만 공개하고 레거시/대체 구현은 덮어쓰지 않도록 고정합니다.
+// 운영에서 사용하는 대표 구현만 공개하며 같은 함수 이름을 중복 export하지 않습니다.
 
 const coreAi = require('./index.js');
 const secureAiConfig = require('./secure-ai-config-functions.js');
@@ -10,7 +9,6 @@ const secureFeed = require('./secure-feed-functions.js');
 const secureMulti = require('./secure-multi-functions.js');
 const secureInteractions = require('./secure-interactions-functions.js');
 const sitemap = require('./sitemap-functions.js');
-const aiMission = require('./ai-mission-functions.js');
 const aiHunt = require('./ai-hunt-functions.js');
 const settlement = require('./settlement-functions.js');
 const linkSummary = require('./link-summary-functions.js');
@@ -18,7 +16,6 @@ const dailySeed = require('./daily-seed-functions.js');
 const sosoFeed = require('./soso-feed-functions.js');
 const account = require('./account-functions.js');
 const features = require('./sosoking-features-functions.js');
-const aiContent = require('./ai-content-functions.js');
 const fourGameAiContent = require('./four-game-ai-content-functions.js');
 const aiCharacterComments = require('./ai-character-comments-v2-functions.js');
 const adminAutomation = require('./ai-admin-automation-functions.js');
@@ -65,11 +62,7 @@ module.exports = {
 
   ...sitemap,
 
-  // 레거시 AI 미션·콘텐츠 구현. 아래 최신 구현이 필요한 공개 함수명을 덮어씁니다.
-  ...aiMission,
-  ...aiContent,
-
-  // 관리자 수동 자동글 생성은 4가지 게임형 구조로 덮어씁니다.
+  // 관리자 수동 AI 콘텐츠는 4가지 커뮤니티 유형 구현만 사용합니다.
   ...fourGameAiContent,
 
   // Gemini 기반 유형별 AI 캐릭터 댓글 생성
@@ -93,7 +86,7 @@ module.exports = {
   // 주간 자동 생성 유지
   ...weeklyAiSchedule,
 
-  // 매일 게임형 콘텐츠 자동 생성의 최종 dailyAiContent 기준입니다.
+  // 매일 게임형 콘텐츠 자동 생성의 단일 dailyAiContent 구현입니다.
   ...dailyAutoPost,
 
   // 이미지 업로드 fallback callable
