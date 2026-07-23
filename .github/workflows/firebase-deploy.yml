@@ -1,44 +1,89 @@
-name: Firebase Hosting 배포
+name: 소소킹 전체 소스 적용 및 Firebase 배포
 
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
-    types: [closed]
   workflow_dispatch:
 
 concurrency:
-  group: firebase-hosting-production
-  cancel-in-progress: true
+  group: sosoking-source-import
+  cancel-in-progress: false
 
 permissions:
-  contents: read
+  contents: write
 
 env:
   FIREBASE_PROJECT_ID: sosoking-481e6
+  SOURCE_SHA256: 9732402eecfd9e25ade54728da56008b156d7e8f8cb23d92dad19b74d343636e
 
 jobs:
-  deploy:
-    if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
+  import-and-deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 45
 
     steps:
       - name: 저장소 체크아웃
         uses: actions/checkout@v4
         with:
           ref: main
+          fetch-depth: 0
 
-      - name: Node.js 설정
+      - name: Node.js 22 설정
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
+
+      - name: 업로드 압축 파일 복원
+        run: |
+          test -d .upload_parts
+          cat .upload_parts/part_*.txt > "$RUNNER_TEMP/sosoking.b64"
+          base64 --decode "$RUNNER_TEMP/sosoking.b64" > "$RUNNER_TEMP/sosoking.zip"
+          echo "$SOURCE_SHA256  $RUNNER_TEMP/sosoking.zip" | sha256sum --check --strict
+
+      - name: 압축 파일 안전 검사 및 해제
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+
+          archive = Path("${{ runner.temp }}/sosoking.zip")
+          target = Path("${{ runner.temp }}/sosoking-source")
+          target.mkdir(parents=True, exist_ok=True)
+          base = target.resolve()
+
+          with ZipFile(archive) as zf:
+              for item in zf.infolist():
+                  resolved = (target / item.filename).resolve()
+                  if resolved != base and base not in resolved.parents:
+                      raise SystemExit(f"Unsafe archive path: {item.filename}")
+              zf.extractall(target)
+          PY
+
+      - name: 저장소 소스를 압축본으로 교체
+        run: |
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -a "$RUNNER_TEMP/sosoking-source/." .
+          mkdir -p .github/workflows
+          printf '%s' 'bmFtZTogRmlyZWJhc2Ug7KCE7LK0IOuwsO2PrAoKb246CiAgcHVzaDoKICAgIGJyYW5jaGVzOiBbbWFpbl0KICB3b3JrZmxvd19kaXNwYXRjaDoKCmNvbmN1cnJlbmN5OgogIGdyb3VwOiBmaXJlYmFzZS1wcm9kdWN0aW9uCiAgY2FuY2VsLWluLXByb2dyZXNzOiB0cnVlCgpwZXJtaXNzaW9uczoKICBjb250ZW50czogcmVhZAoKZW52OgogIEZJUkVCQVNFX1BST0pFQ1RfSUQ6IHNvc29raW5nLTQ4MWU2Cgpqb2JzOgogIHZhbGlkYXRlLWFuZC1kZXBsb3k6CiAgICBydW5zLW9uOiB1YnVudHUtbGF0ZXN0CiAgICB0aW1lb3V0LW1pbnV0ZXM6IDQwCgogICAgc3RlcHM6CiAgICAgIC0gbmFtZTog7KCA7J6l7IaMIOyytO2BrOyVhOybgwogICAgICAgIHVzZXM6IGFjdGlvbnMvY2hlY2tvdXRAdjQKCiAgICAgIC0gbmFtZTogTm9kZS5qcyAyMiDshKTsoJUKICAgICAgICB1c2VzOiBhY3Rpb25zL3NldHVwLW5vZGVAdjQKICAgICAgICB3aXRoOgogICAgICAgICAgbm9kZS12ZXJzaW9uOiAnMjInCiAgICAgICAgICBjYWNoZTogbnBtCiAgICAgICAgICBjYWNoZS1kZXBlbmRlbmN5LXBhdGg6IHwKICAgICAgICAgICAgcGFja2FnZS1sb2NrLmpzb24KICAgICAgICAgICAgZnVuY3Rpb25zL3BhY2thZ2UtbG9jay5qc29uCgogICAgICAtIG5hbWU6IENsb3VkIEZ1bmN0aW9ucyDsnZjsobTshLEg7ISk7LmYCiAgICAgICAgcnVuOiBucG0gY2kgLS1wcmVmaXggZnVuY3Rpb25zIC0tbm8tYXVkaXQgLS1uby1mdW5kCgogICAgICAtIG5hbWU6IEphdmFTY3JpcHQg6rWs66y4IOqygOyCrAogICAgICAgIHJ1bjogbnBtIHJ1biBjaGVjawoKICAgICAgLSBuYW1lOiBGaXJlYmFzZSBDTEkg7ISk7LmYCiAgICAgICAgcnVuOiBucG0gaW5zdGFsbCAtLWdsb2JhbCBmaXJlYmFzZS10b29scwoKICAgICAgLSBuYW1lOiBGaXJlYmFzZSDshJzruYTsiqQg6rOE7KCVIOykgOu5hAogICAgICAgIGVudjoKICAgICAgICAgIEZJUkVCQVNFX1NFUlZJQ0VfQUNDT1VOVF9KU09OOiAke3sgc2VjcmV0cy5GSVJFQkFTRV9TRVJWSUNFX0FDQ09VTlRfU09TT0tJTkdfNDgxRTYgfX0KICAgICAgICBydW46IHwKICAgICAgICAgIGlmIFsgLXogIiRGSVJFQkFTRV9TRVJWSUNFX0FDQ09VTlRfSlNPTiIgXTsgdGhlbgogICAgICAgICAgICBlY2hvICJNaXNzaW5nIEdpdEh1YiBzZWNyZXQ6IEZJUkVCQVNFX1NFUlZJQ0VfQUNDT1VOVF9TT1NPS0lOR180ODFFNiIKICAgICAgICAgICAgZXhpdCAxCiAgICAgICAgICBmaQogICAgICAgICAgcHJpbnRmICclcycgIiRGSVJFQkFTRV9TRVJWSUNFX0FDQ09VTlRfSlNPTiIgPiAiJFJVTk5FUl9URU1QL2ZpcmViYXNlLXNlcnZpY2UtYWNjb3VudC5qc29uIgoKICAgICAgLSBuYW1lOiBIb3N0aW5nwrdSdWxlc8K3SW5kZXhlc8K3U3RvcmFnZSDrsLDtj6wKICAgICAgICBlbnY6CiAgICAgICAgICBHT09HTEVfQVBQTElDQVRJT05fQ1JFREVOVElBTFM6ICR7eyBydW5uZXIudGVtcCB9fS9maXJlYmFzZS1zZXJ2aWNlLWFjY291bnQuanNvbgogICAgICAgIHJ1bjogZmlyZWJhc2UgZGVwbG95IC0tcHJvamVjdCAiJEZJUkVCQVNFX1BST0pFQ1RfSUQiIC0tb25seSBob3N0aW5nLGZpcmVzdG9yZTpydWxlcyxmaXJlc3RvcmU6aW5kZXhlcyxzdG9yYWdlIC0tbm9uLWludGVyYWN0aXZlCgogICAgICAtIG5hbWU6IENsb3VkIEZ1bmN0aW9ucyDrsLDtj6wKICAgICAgICBlbnY6CiAgICAgICAgICBHT09HTEVfQVBQTElDQVRJT05fQ1JFREVOVElBTFM6ICR7eyBydW5uZXIudGVtcCB9fS9maXJlYmFzZS1zZXJ2aWNlLWFjY291bnQuanNvbgogICAgICAgIHJ1bjogZmlyZWJhc2UgZGVwbG95IC0tcHJvamVjdCAiJEZJUkVCQVNFX1BST0pFQ1RfSUQiIC0tb25seSBmdW5jdGlvbnMgLS1ub24taW50ZXJhY3RpdmUK' | base64 --decode > .github/workflows/firebase-deploy.yml
+
+      - name: 전체 소스 커밋
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "소소킹 전체 애플리케이션 업로드"
+          git push origin HEAD:main
+
+      - name: Cloud Functions 의존성 설치
+        run: npm ci --prefix functions --no-audit --no-fund
+
+      - name: JavaScript 구문 검사
+        run: npm run check
 
       - name: Firebase CLI 설치
         run: npm install --global firebase-tools
 
-      - name: 서비스 계정 파일 생성
+      - name: Firebase 서비스 계정 준비
         env:
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 }}
         run: |
@@ -48,7 +93,12 @@ jobs:
           fi
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-service-account.json"
 
-      - name: Firebase Hosting 배포
+      - name: Hosting·Rules·Indexes·Storage 배포
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only hosting --non-interactive
+        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only hosting,firestore:rules,firestore:indexes,storage --non-interactive
+
+      - name: Cloud Functions 배포
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only functions --non-interactive
