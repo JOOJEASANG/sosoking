@@ -1,0 +1,66 @@
+/* admin-stat-polish.css — 관리자 상단 현황 박스 시각 정리 */
+
+body:has(.admin-layout) .admin-stat-grid,
+body:has(.admin-layout) .admin-stat-grid--wide {
+  gap: 12px !important;
+  background: transparent !important;
+  border: 0 !important;
+}
+
+body:has(.admin-layout) .admin-stat-card {
+  position: relative !important;
+  overflow: hidden !important;
+  padding: 18px 18px 16px !important;
+  border: 1px solid rgba(255, 107, 74, .20) !important;
+  border-radius: 20px !important;
+  background: var(--color-surface) !important;
+  box-shadow: 0 8px 22px rgba(20, 14, 40, .055) !important;
+}
+
+body:has(.admin-layout) .admin-stat-card::before {
+  display: none !important;
+  content: none !important;
+}
+
+body:has(.admin-layout) .admin-stat-card__num {
+  color: var(--color-text-primary) !important;
+  font-size: 26px !important;
+  font-weight: 950 !important;
+  letter-spacing: -0.7px !important;
+  line-height: 1.05 !important;
+}
+
+body:has(.admin-layout) .admin-stat-card__label {
+  margin-top: 7px !important;
+  color: var(--color-text-secondary) !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.2px !important;
+}
+
+body:has(.admin-layout) .admin-stat-card__label + div,
+body:has(.admin-layout) .admin-stat-card div[style*="color:var(--color-text-muted)"] {
+  color: var(--color-text-muted) !important;
+}
+
+[data-theme="dark"] body:has(.admin-layout) .admin-stat-card {
+  border-color: rgba(255, 107, 74, .26) !important;
+  background: var(--color-surface) !important;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, .20) !important;
+}
+
+@media (max-width: 1023px) {
+  body:has(.admin-layout) .admin-stat-grid,
+  body:has(.admin-layout) .admin-stat-grid--wide {
+    gap: 10px !important;
+  }
+
+  body:has(.admin-layout) .admin-stat-card {
+    padding: 15px 14px 14px !important;
+    border-radius: 18px !important;
+  }
+
+  body:has(.admin-layout) .admin-stat-card__num {
+    font-size: 23px !important;
+  }
+}
