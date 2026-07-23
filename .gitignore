@@ -5,3 +5,5 @@ functions/node_modules/
 *.log
 .firebase/
 .claude/worktrees/
+*.zip
+.upload_archive.b64
