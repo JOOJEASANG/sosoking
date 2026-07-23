@@ -20,13 +20,13 @@ const account = require('./account-functions.js');
 const features = require('./sosoking-features-functions.js');
 const aiContent = require('./ai-content-functions.js');
 const fourGameAiContent = require('./four-game-ai-content-functions.js');
-const aiCharacterComments = require('./ai-character-comments-functions.js');
+const aiCharacterComments = require('./ai-character-comments-v2-functions.js');
 const adminAutomation = require('./ai-admin-automation-functions.js');
 const adminUsers = require('./admin-user-functions.js');
 const adminData = require('./admin-data-functions.js');
 const memberStats = require('./member-stats-functions.js');
 const weeklyAiSchedule = require('./weekly-ai-schedule-functions.js');
-const dailyAutoPost = require('./daily-auto-post-functions.js');
+const dailyAutoPost = require('./daily-auto-post-v2-functions.js');
 const uploadImage = require('./upload-image-functions.js');
 const nicknameIcon = require('./nickname-icon-functions.js');
 const postOwner = require('./post-owner-functions.js');
@@ -65,14 +65,14 @@ module.exports = {
 
   ...sitemap,
 
-  // Anthropic 기반 AI 미션/자동 콘텐츠 기본 구현
+  // 레거시 AI 미션·콘텐츠 구현. 아래 최신 구현이 필요한 공개 함수명을 덮어씁니다.
   ...aiMission,
   ...aiContent,
 
   // 관리자 수동 자동글 생성은 4가지 게임형 구조로 덮어씁니다.
   ...fourGameAiContent,
 
-  // 관리자 테스트용 AI 캐릭터 댓글 생성
+  // Gemini 기반 유형별 AI 캐릭터 댓글 생성
   ...aiCharacterComments,
 
   ...aiHunt,
@@ -93,7 +93,7 @@ module.exports = {
   // 주간 자동 생성 유지
   ...weeklyAiSchedule,
 
-  // 매일 3개 게임형 콘텐츠 자동 생성이 최종 dailyAiContent 기준입니다.
+  // 매일 게임형 콘텐츠 자동 생성의 최종 dailyAiContent 기준입니다.
   ...dailyAutoPost,
 
   // 이미지 업로드 fallback callable
