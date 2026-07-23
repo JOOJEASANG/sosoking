@@ -17,7 +17,7 @@ Gemini 기능을 사용하는 Functions는 Firebase Secret Manager의 `GEMINI_AP
 
 firebase functions:secrets:set GEMINI_API_KEY
 
-Anthropic 자동 콘텐츠 기능은 현재 런타임 환경변수 `ANTHROPIC_API_KEY`를 사용합니다. Firebase Secret Manager로 통일하려면 `ai-content-functions.js`, `ai-mission-functions.js`에서 `defineSecret` 방식으로 전환하세요.
+현재 배포되는 AI 캐릭터 댓글과 일일 자동 콘텐츠도 `GEMINI_API_KEY`를 사용합니다. AI 댓글은 판결·상담·토론·드립·게임·일상 유형별 프롬프트, 캐릭터별 말투, 중복 응답 제거, 상황별 fallback을 적용합니다.
 
 ## 운영상 주요 보안 구조
 
