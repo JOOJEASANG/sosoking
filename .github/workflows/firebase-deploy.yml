@@ -14,7 +14,7 @@ permissions:
 
 env:
   FIREBASE_PROJECT_ID: sosoking-481e6
-  SOURCE_SHA256: 9732402eecfd9e25ade54728da56008b156d7e8f8cb23d92dad19b74d343636e
+  SOURCE_SHA256: 8a4d4d9c8bf7056f16e45a081a498785bdfcfb334618d3fd2f6012f21b294059
 
 jobs:
   import-and-deploy:
@@ -33,30 +33,31 @@ jobs:
         with:
           node-version: '22'
 
-      - name: 업로드 압축 파일 복원
+      - name: 업로드 아카이브 복원 및 검증
         run: |
-          test -d .upload_parts
-          cat .upload_parts/part_*.txt > "$RUNNER_TEMP/sosoking.b64"
-          base64 --decode "$RUNNER_TEMP/sosoking.b64" > "$RUNNER_TEMP/sosoking.zip"
-          echo "$SOURCE_SHA256  $RUNNER_TEMP/sosoking.zip" | sha256sum --check --strict
+          test -f .upload_archive.b64
+          base64 --decode .upload_archive.b64 > "$RUNNER_TEMP/sosoking.tar.xz"
+          echo "$SOURCE_SHA256  $RUNNER_TEMP/sosoking.tar.xz" | sha256sum --check --strict
 
-      - name: 압축 파일 안전 검사 및 해제
+      - name: 아카이브 안전 검사 및 해제
         run: |
           python - <<'PY'
           from pathlib import Path
-          from zipfile import ZipFile
+          import tarfile
 
-          archive = Path("${{ runner.temp }}/sosoking.zip")
+          archive = Path("${{ runner.temp }}/sosoking.tar.xz")
           target = Path("${{ runner.temp }}/sosoking-source")
           target.mkdir(parents=True, exist_ok=True)
           base = target.resolve()
 
-          with ZipFile(archive) as zf:
-              for item in zf.infolist():
-                  resolved = (target / item.filename).resolve()
+          with tarfile.open(archive, "r:xz") as tf:
+              for member in tf.getmembers():
+                  if member.issym() or member.islnk():
+                      raise SystemExit(f"Unsupported archive link: {member.name}")
+                  resolved = (target / member.name).resolve()
                   if resolved != base and base not in resolved.parents:
-                      raise SystemExit(f"Unsafe archive path: {item.filename}")
-              zf.extractall(target)
+                      raise SystemExit(f"Unsafe archive path: {member.name}")
+              tf.extractall(target, filter="data")
           PY
 
       - name: 저장소 소스를 압축본으로 교체
