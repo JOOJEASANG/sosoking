@@ -7,8 +7,5 @@
     "deploy:functions": "npm run check && npx firebase-tools deploy --only functions",
     "deploy:rules": "npx firebase-tools deploy --only firestore:rules,storage:rules",
     "deploy:indexes": "npx firebase-tools deploy --only firestore:indexes"
-  },
-  "devDependencies": {
-    "sharp": "^0.34.5"
   }
 }
