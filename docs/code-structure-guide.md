@@ -1,57 +1,98 @@
-# 소소킹 코드 구조 기준
+# 소소킹 코드 구조
 
-소소킹은 피드와 게임 기능이 계속 늘어날 예정이므로, 새 기능을 추가할 때 한 파일에 모든 코드를 넣지 않고 역할별로 분리한다.
+## 클라이언트 진입
 
-## 기본 원칙
-
-1. 화면 파일은 페이지 조립만 담당한다.
-2. Firestore 읽기/쓰기 코드는 actions 또는 api 파일로 분리한다.
-3. 게임 규칙, 승패 판정, 점수 계산은 rules 파일로 분리한다.
-4. HTML 문자열 생성은 ui/render 파일로 분리한다.
-5. 여러 게임에서 같이 쓰는 함수는 games/common.js에 둔다.
-6. 피드에서 같이 쓰는 함수는 feed 또는 components 폴더로 분리한다.
-7. 기능 추가 시 기존 동작 파일을 크게 갈아엎기보다, 작은 모듈을 추가하고 연결한다.
-
-## 게임 파일 권장 구조
-
-```txt
-public/js/pages/mafia-game.js          라우트 진입, 화면 조립, 이벤트 연결
-public/js/games/common.js              게임 공통 함수
-public/js/games/mafia/rules.js         역할 배정, 승패 판정, 투표 계산
-public/js/games/mafia/actions.js       방 만들기, 참가, 시작, 투표, 집계
-public/js/games/mafia/render.js        마피아게임 HTML 렌더링
+```text
+public/index.html
+├─ public/js/boot.js
+│  └─ public/js/app-safe.js
+└─ public/js/app-extensions-loader.js
+   └─ public/js/app-module-registry.js
 ```
 
-## 피드 파일 권장 구조
+- `boot.js`는 핵심 앱 하나만 불러오고 실패 시 진단 화면을 표시합니다.
+- `app-safe.js`는 공통 레이아웃, 인증 상태, 라우터를 초기화합니다.
+- 확장 모듈은 registry에 등록된 파일만 동적으로 불러옵니다.
 
-```txt
-public/js/pages/feed.js                피드 페이지 조립
-public/js/feed/query.js                Firestore 조회
-public/js/feed/filter.js               필터/정렬 계산
-public/js/feed/render.js               검색바, 필터바, 빈 상태 렌더링
-public/js/components/feed-card.js      피드 카드 UI
+## 주요 페이지
+
+```text
+public/js/pages/
+├─ home.js
+├─ feed.js
+├─ write.js
+├─ detail.js
+├─ account.js
+├─ login.js
+├─ signup.js
+├─ admin-safe.js
+├─ guide.js
+├─ terms.js
+├─ privacy.js
+├─ scraps.js
+└─ hall.js
 ```
 
-## 앞으로 작업 방식
+현재 공개 콘텐츠는 판결·상담·토론·드립 네 유형입니다. `write.js`는 `multi-write.js`를 불러오고, 실제 입력 구성은 `public/js/multi-write/`에서 담당합니다.
 
-- 새 게임은 반드시 games/{gameName}/ 폴더를 만들고 시작한다.
-- 기존 게임을 고칠 때도 가능하면 rules/actions/render로 나눈다.
-- 긴 파일은 300~400줄을 넘기기 전에 분리한다.
-- 사용자 화면에 영향이 큰 수정은 작은 커밋으로 나눠 반영한다.
-- Firestore rules가 바뀌는 작업은 최종 답변에 반드시 명시한다.
+## 상세 화면
 
-## 우선 리팩터링 대상
+```text
+public/js/pages/detail.js
+└─ public/js/detail/
+   ├─ constants.js
+   ├─ data.js
+   ├─ body-render.js
+   ├─ comment-render.js
+   └─ similar-render.js
+```
 
-1. mafia-game.js
-   - rules.js: 역할 배정, 생존자 계산, 투표 집계, 승패 판정
-   - actions.js: 방 생성, 참가, 시작, 투표, 집계, 리셋
-   - render.js: 로비/방/투표 UI HTML
+상세 화면의 투표·댓글·반응은 브라우저에서 Firestore 카운터를 직접 수정하지 않고 Callable Function을 사용합니다.
 
-2. liar-game.js
-   - common.js 재사용
-   - 방 생성/참가 액션 분리
-   - 로비/방 화면 렌더 분리
+## 공통 모듈
 
-3. feed.js
-   - 필터/정렬 계산 분리
-   - 검색/무한스크롤 이벤트 분리
+```text
+public/js/components/   UI 컴포넌트
+public/js/services/     실제 사용 중인 데이터 서비스
+public/js/utils/        공통 유틸리티
+public/js/multi-write/  글쓰기 세부 모듈
+public/js/detail/       상세 세부 모듈
+```
+
+독립 실행형 패치 파일을 추가할 때는 반드시 `app-module-registry.js`에 등록합니다. registry, 페이지 import, HTML script 중 어느 곳에서도 연결되지 않은 파일은 유지하지 않습니다.
+
+## Cloud Functions
+
+```text
+functions/package.json
+└─ functions/functions-main-v2.js
+```
+
+`functions-main-v2.js`만 공개 export를 결정합니다. 주요 구현은 다음과 같습니다.
+
+- `secure-feed-functions.js`: 피드 투표·반응·조회·SEO
+- `secure-multi-functions.js`: 멀티 참여 기능
+- `secure-interactions-functions.js`: 상세 반응과 작성물 상호작용
+- `ai-character-comments-v2-functions.js`: 유형별 AI 캐릭터 댓글
+- `daily-auto-post-v2-functions.js`: 일일 자동 콘텐츠
+- `four-game-ai-content-functions.js`: 관리자 수동 콘텐츠 생성
+- `sitemap-functions.js`: 동적 사이트맵
+- `account-functions.js`: 계정 기능
+- `admin-*-functions.js`: 관리자 전용 기능
+
+같은 함수 이름을 여러 파일에서 export한 뒤 순서로 덮어쓰는 구조는 사용하지 않습니다.
+
+## 스타일
+
+핵심 CSS는 `base.css`, `layout.css`, `components.css`, `pages.css`, `responsive.css`입니다. 추가 스타일 파일은 현재 DOM과 연결된 경우에만 `index.html`에서 로드합니다.
+
+리팩터링 순서:
+
+1. 같은 화면을 수정하는 CSS를 기능별로 통합
+2. HTML 참조를 통합 파일로 변경
+3. 로컬 경로와 모바일 화면 검사
+4. 대체된 파일 삭제
+
+## 데이터 호환
+
+새 글은 네 가지 현재 유형으로만 생성합니다. 이전 버전 게시물은 읽기 호환을 위해 상세 렌더러가 일부 구형 필드를 처리할 수 있지만, 구형 유형을 만드는 스케줄러·관리자 생성기·미션 기능은 유지하지 않습니다.
