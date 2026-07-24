@@ -1,157 +1,121 @@
-/* feed-service.js — 피드 Firestore CRUD 서비스 */
-import { db, auth } from '../firebase.js';
+import { db, auth, functions } from '../firebase.js';
 import { appState } from '../state.js';
 import {
-  collection, query, orderBy, limit, startAfter,
-  getDocs, getDoc, addDoc, updateDoc, deleteDoc,
-  where, doc, increment, serverTimestamp, arrayUnion, runTransaction,
+  collection, query, orderBy, limit, startAfter, getDocs, getDoc,
+  where, doc, addDoc, serverTimestamp,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
 
 const FEEDS = 'feeds';
-const PAGE  = 15;
+const createCommunityPost = httpsCallable(functions, 'createCommunityPost');
+const incrementPostView = httpsCallable(functions, 'incrementPostView');
+const reactToPost = httpsCallable(functions, 'reactToPost');
+const castCommunityVote = httpsCallable(functions, 'castCommunityVote');
+const deleteOwnPost = httpsCallable(functions, 'deleteOwnPost');
 
-/** 피드 목록 조회 */
-export async function fetchFeeds({ cat = '', type = '', lastDoc = null, pageSize = PAGE } = {}) {
-  const constraints = [orderBy('createdAt', 'desc'), limit(pageSize)];
-  if (type)      constraints.unshift(where('type', '==', type));
-  else if (cat)  constraints.unshift(where('cat',  '==', cat));
-  if (lastDoc)   constraints.push(startAfter(lastDoc));
-
+export async function fetchFeeds({ subtype = '', lastDoc = null, pageSize = 20 } = {}) {
+  const constraints = [where('hidden', '==', false)];
+  if (subtype) constraints.push(where('subtype', '==', subtype));
+  constraints.push(orderBy('createdAt', 'desc'), limit(Math.max(1, Math.min(50, pageSize))));
+  if (lastDoc) constraints.push(startAfter(lastDoc));
   const snap = await getDocs(query(collection(db, FEEDS), ...constraints));
-  const posts = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.hidden);
   return {
-    posts,
-    lastDoc: snap.docs[snap.docs.length - 1] || null,
-    hasMore: snap.docs.length >= pageSize,
+    posts: snap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })),
+    lastDoc: snap.docs.at(-1) || null,
+    hasMore: snap.size >= pageSize,
   };
 }
 
-/** 단건 조회 */
 export async function fetchPost(id) {
   const snap = await getDoc(doc(db, FEEDS, id));
   return snap.exists() ? { id: snap.id, ...snap.data() } : null;
 }
 
-/** 인기 피드 (반응 많은 순) */
-export async function fetchHotPosts(n = 5) {
+export async function fetchHotPosts(max = 5) {
   try {
-    const snap = await getDocs(
-      query(collection(db, FEEDS), orderBy('reactions.total', 'desc'), limit(n + 10))
-    );
-    return snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.hidden).slice(0, n);
+    const snap = await getDocs(query(
+      collection(db, FEEDS),
+      where('hidden', '==', false),
+      orderBy('reactions.total', 'desc'),
+      limit(Math.max(1, Math.min(30, max))),
+    ));
+    return snap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
   } catch {
-    try {
-      const snap = await getDocs(
-        query(collection(db, FEEDS), orderBy('createdAt', 'desc'), limit(n + 10))
-      );
-      return snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => !p.hidden).slice(0, n);
-    } catch {
-      return [];
-    }
+    const snap = await getDocs(query(
+      collection(db, FEEDS),
+      where('hidden', '==', false),
+      orderBy('createdAt', 'desc'),
+      limit(Math.max(1, Math.min(30, max))),
+    ));
+    return snap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
   }
 }
 
-/** 오늘의 베스트 (최근 24시간 반응 최다 1개) */
 export async function fetchTodayBest() {
-  try {
-    const since = new Date(Date.now() - 86400000);
-    const snap = await getDocs(
-      query(collection(db, FEEDS), orderBy('reactions.total', 'desc'), limit(30))
-    );
-    const posts = snap.docs
-      .map(d => ({ id: d.id, ...d.data() }))
-      .filter(p => !p.hidden);
-    const today = posts.find(p => {
-      const t = p.createdAt?.toDate?.() || p.createdAt;
-      return t && new Date(t) >= since;
-    });
-    return today || posts[0] || null;
-  } catch {
-    return null;
-  }
+  const posts = await fetchHotPosts(30);
+  const since = Date.now() - 86400000;
+  return posts.find(post => {
+    const date = post.createdAt?.toDate?.() || post.createdAt;
+    return date && new Date(date).getTime() >= since;
+  }) || posts[0] || null;
 }
 
-/** 내 피드 */
-export async function fetchMyPosts(uid, n = 20) {
-  const snap = await getDocs(
-    query(collection(db, FEEDS), where('authorId', '==', uid), orderBy('createdAt', 'desc'), limit(n))
-  );
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+export async function fetchMyPosts(uid, max = 20) {
+  const snap = await getDocs(query(
+    collection(db, FEEDS),
+    where('authorId', '==', uid),
+    orderBy('createdAt', 'desc'),
+    limit(Math.max(1, Math.min(100, max))),
+  ));
+  return snap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
 }
 
-/** 게시물 작성 */
-export async function createPost(data) {
-  const user = auth.currentUser;
-  if (!user) throw new Error('로그인이 필요해요');
-  return addDoc(collection(db, FEEDS), {
-    ...data,
-    authorId:    user.uid,
-    authorName:  appState.nickname || user.displayName || '익명',
-    authorPhoto: user.photoURL || '',
-    reactions:   { total: 0 },
-    commentCount: 0,
-    viewCount:    0,
-    votedBy:      [],
-    hidden:       false,
-    createdAt:    serverTimestamp(),
+export async function createPost(data = {}) {
+  const preset = ['judgment', 'consult', 'vote', 'drip'].includes(data.subtype) ? data.subtype : 'judgment';
+  const result = await createCommunityPost({
+    preset,
+    title: data.title || '',
+    desc: data.desc || data.body || '',
+    tags: data.tags || [],
+    images: data.images || [],
+    topic: data.modules?.consult?.topic,
+    style: data.modules?.consult?.style,
   });
+  return { id: result.data?.postId };
 }
 
-/** 조회수 증가 */
 export async function incrementView(id) {
-  return updateDoc(doc(db, FEEDS, id), { viewCount: increment(1) });
+  return incrementPostView({ postId: id });
 }
 
-/** 반응 추가 */
 export async function addReaction(postId, reactionKey) {
-  return updateDoc(doc(db, FEEDS, postId), {
-    [`reactions.${reactionKey}`]: increment(1),
-    [`reactions.total`]:          increment(1),
-  });
+  return reactToPost({ postId, reaction: reactionKey });
 }
 
-/** 투표 (트랜잭션으로 동시 투표 race condition 방지) */
 export async function castVote(postId, optionIdx) {
-  const user = auth.currentUser;
-  if (!user) throw new Error('로그인이 필요해요');
-
-  const postRef = doc(db, FEEDS, postId);
-  return runTransaction(db, async (transaction) => {
-    const snapshot = await transaction.get(postRef);
-    if (!snapshot.exists()) throw new Error('게시물을 찾을 수 없어요');
-    const data = snapshot.data();
-    if ((data.votedBy || []).includes(user.uid)) throw new Error('이미 투표했어요');
-    const options = (data.options || []).map((opt, i) =>
-      i === optionIdx ? { ...opt, votes: (opt.votes || 0) + 1 } : opt
-    );
-    transaction.update(postRef, { options, votedBy: arrayUnion(user.uid) });
-    return options;
-  });
+  return castCommunityVote({ postId, optionIdx });
 }
 
-/** 댓글 목록 */
 export async function fetchComments(postId) {
-  const snap = await getDocs(
-    query(collection(db, FEEDS, postId, 'comments'), orderBy('createdAt', 'asc'))
-  );
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const snap = await getDocs(query(collection(db, FEEDS, postId, 'comments'), orderBy('createdAt', 'asc')));
+  return snap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
 }
 
-/** 댓글 작성 */
 export async function addComment(postId, text) {
   const user = auth.currentUser;
-  if (!user) throw new Error('로그인이 필요해요');
-
-  await addDoc(collection(db, FEEDS, postId, 'comments'), {
-    text,
-    authorId:    user.uid,
-    authorName:  appState.nickname || user.displayName || '익명',
-    createdAt:   serverTimestamp(),
+  if (!user) throw new Error('로그인이 필요합니다.');
+  return addDoc(collection(db, FEEDS, postId, 'comments'), {
+    text: String(text || '').trim().slice(0, 500),
+    authorId: user.uid,
+    authorName: appState.nickname || user.displayName || '익명',
+    authorPhoto: user.isAnonymous ? '' : (user.photoURL || ''),
+    isGuest: user.isAnonymous === true,
+    reactions: { like: 0, funny: 0, fire: 0 },
+    reactedWith: {},
+    createdAt: serverTimestamp(),
   });
-  await updateDoc(doc(db, FEEDS, postId), { commentCount: increment(1) });
 }
 
-/** 게시물 삭제 (관리자 또는 작성자) */
 export async function deletePost(id) {
-  return deleteDoc(doc(db, FEEDS, id));
+  return deleteOwnPost({ postId: id });
 }
