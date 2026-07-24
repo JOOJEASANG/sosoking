@@ -6,89 +6,52 @@ const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const db = getFirestore();
 const REGION = 'asia-northeast3';
 const PRESETS = new Set(['judgment', 'consult', 'vote', 'drip']);
-const REACTIONS = new Set(['like', 'funny', 'fire']);
-const DAILY_POST_LIMIT = 10;
-const DAILY_DRIP_LIMIT = 40;
+const DRIP_REACTIONS = new Set(['like', 'funny', 'fire']);
 
 function cleanId(value, max = 180) {
   return String(value || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, max);
 }
-
 function cleanText(value, max = 1000) {
-  return String(value || '')
-    .replace(/[<>]/g, '')
-    .replace(/\r\n/g, '\n')
-    .replace(/\r/g, '\n')
-    .replace(/\n{4,}/g, '\n\n\n')
-    .trim()
-    .slice(0, max);
+  return String(value || '').replace(/[<>]/g, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').replace(/\n{4,}/g, '\n\n\n').trim().slice(0, max);
 }
-
 function todayKST() {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit',
-  }).format(new Date());
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
 }
-
 function requireRegisteredUser(request) {
   const uid = request.auth?.uid;
   if (!uid) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
-  const provider = request.auth?.token?.firebase?.sign_in_provider || '';
-  if (provider === 'anonymous') {
-    throw new HttpsError('permission-denied', '정식 회원 로그인 후 사용할 수 있습니다.');
-  }
+  if (request.auth?.token?.firebase?.sign_in_provider === 'anonymous') throw new HttpsError('permission-denied', '정식 회원 로그인 후 사용할 수 있습니다.');
   return uid;
 }
-
 async function reserveDailyQuota(uid, action, limit) {
-  const ref = db.doc(`rate_limits/${action}_${todayKST()}_${cleanId(uid, 128)}`);
+  const day = todayKST();
+  const ref = db.doc(`rate_limits/${action}_${day}_${cleanId(uid, 128)}`);
   await db.runTransaction(async tx => {
     const snap = await tx.get(ref);
-    const count = Number(snap.exists ? snap.data().count || 0 : 0);
-    if (count >= limit) {
-      throw new HttpsError('resource-exhausted', '오늘 이용 가능한 횟수를 초과했습니다.');
-    }
-    tx.set(ref, {
-      uid,
-      action,
-      count: FieldValue.increment(1),
-      limit,
-      day: todayKST(),
-      updatedAt: FieldValue.serverTimestamp(),
-      updatedAtMs: Date.now(),
-    }, { merge: true });
+    const count = Number(snap.exists ? snap.data()?.count || 0 : 0);
+    if (count >= limit) throw new HttpsError('resource-exhausted', '오늘 이용 가능한 횟수를 초과했습니다.');
+    tx.set(ref, { uid, action, day, count: FieldValue.increment(1), limit, updatedAt: FieldValue.serverTimestamp(), updatedAtMs: Date.now() }, { merge: true });
   });
 }
-
-function normalizePreset(value) {
+function presetOf(value) {
   const preset = String(value || '').trim();
   if (!PRESETS.has(preset)) throw new HttpsError('invalid-argument', '지원하지 않는 커뮤니티 유형입니다.');
   return preset;
 }
-
 function cleanTags(value) {
-  return (Array.isArray(value) ? value : [])
-    .map(tag => cleanText(tag, 20).replace(/^#/, ''))
-    .filter(Boolean)
-    .filter((tag, index, list) => list.indexOf(tag) === index)
-    .slice(0, 8);
+  return (Array.isArray(value) ? value : []).map(tag => cleanText(tag, 20).replace(/^#/, '')).filter(Boolean).filter((tag, i, list) => list.indexOf(tag) === i).slice(0, 8);
 }
-
 function cleanImages(value) {
-  const images = [];
-  for (const raw of Array.isArray(value) ? value : []) {
-    if (images.length >= 20) break;
+  return (Array.isArray(value) ? value : []).map(raw => {
     try {
       const url = new URL(String(raw || '').trim());
-      if (url.protocol !== 'https:' || url.hostname !== 'firebasestorage.googleapis.com') continue;
-      if (!url.pathname.includes('/b/sosoking-481e6.firebasestorage.app/o/')) continue;
-      images.push(url.toString().slice(0, 1200));
-    } catch {}
-  }
-  return images;
+      if (url.protocol !== 'https:' || url.hostname !== 'firebasestorage.googleapis.com') return '';
+      if (!url.pathname.includes('/b/sosoking-481e6.firebasestorage.app/o/')) return '';
+      return url.toString().slice(0, 1200);
+    } catch { return ''; }
+  }).filter(Boolean).slice(0, 20);
 }
-
-async function getUser(uid, token = {}) {
+async function userPayload(uid, token = {}) {
   const snap = await db.doc(`users/${uid}`).get().catch(() => null);
   const data = snap?.exists ? snap.data() || {} : {};
   return {
@@ -98,146 +61,68 @@ async function getUser(uid, token = {}) {
     authorEmail: cleanText(data.email || token.email || '', 180),
   };
 }
-
-function buildModules(preset, desc, data = {}) {
+function buildModules(preset, desc, input = {}) {
   const modules = { comments: { enabled: true } };
-  if (preset === 'judgment') {
-    modules.vote = {
-      enabled: true,
-      voteMode: 'judgment',
-      question: desc,
-      options: ['글쓴이가 예민함', '상대가 선 넘음', '둘 다 문제 있음'].map(text => ({ text, votes: 0 })),
-    };
-  } else if (preset === 'vote') {
-    modules.vote = {
-      enabled: true,
-      voteMode: 'pros_cons',
-      question: desc,
-      options: ['찬성', '반대'].map(text => ({ text, votes: 0 })),
-    };
-  } else if (preset === 'consult') {
-    const topic = ['daily', 'people', 'work', 'money', 'vent'].includes(data.topic) ? data.topic : 'daily';
-    const style = ['empathy', 'realistic', 'choice', 'soft', 'funny'].includes(data.style) ? data.style : 'realistic';
+  if (preset === 'judgment') modules.vote = { enabled: true, voteMode: 'judgment', question: desc, options: ['글쓴이가 예민함', '상대가 선 넘음', '둘 다 문제 있음'].map(text => ({ text, votes: 0 })) };
+  if (preset === 'vote') modules.vote = { enabled: true, voteMode: 'pros_cons', question: desc, options: ['찬성', '반대'].map(text => ({ text, votes: 0 })) };
+  if (preset === 'consult') {
+    const topic = ['daily', 'people', 'work', 'money', 'vent'].includes(input.topic) ? input.topic : 'daily';
+    const style = ['empathy', 'realistic', 'choice', 'soft', 'funny'].includes(input.style) ? input.style : 'realistic';
     modules.consult = {
-      enabled: true,
-      topic,
+      enabled: true, topic, style, question: desc,
       topicLabel: ({ daily: '일상', people: '관계', work: '직장/학교', money: '소비/선택', vent: '하소연' })[topic],
-      style,
       styleLabel: ({ empathy: '공감', realistic: '현실조언', choice: '선택도움', soft: '순한맛', funny: '웃긴해결' })[style],
-      question: desc,
     };
-  } else if (preset === 'drip') {
-    modules.drip = { enabled: true, prompt: desc, maxLength: 50, responseLabel: '한 줄 드립' };
   }
+  if (preset === 'drip') modules.drip = { enabled: true, prompt: desc, maxLength: 50, responseLabel: '한 줄 드립' };
   return modules;
 }
-
-function feedTypeFor(preset) {
-  if (preset === 'judgment' || preset === 'vote') return 'vote';
-  if (preset === 'drip') return 'drip';
-  return 'consult';
-}
-
-function labelFor(preset) {
-  return ({ judgment: '판결', consult: '상담', vote: '토론', drip: '드립' })[preset];
-}
-
-function pointAwardRef(uid, action, onceKey) {
-  return db.doc(`point_awards/${cleanId(`${uid}_${action}_${onceKey}`, 900)}`);
-}
-
-function writePointAward(tx, { uid, action, points, label, postId = '', itemId = '', onceKey }) {
-  const awardRef = pointAwardRef(uid, action, onceKey);
+function typeLabel(preset) { return ({ judgment: '판결', consult: '상담', vote: '토론', drip: '드립' })[preset]; }
+function feedType(preset) { return preset === 'drip' ? 'drip' : preset === 'consult' ? 'consult' : 'vote'; }
+function awardRef(uid, action, key) { return db.doc(`point_awards/${cleanId(`${uid}_${action}_${key}`, 900)}`); }
+function addAwardWrites(tx, { uid, action, points, label, postId = '', itemId = '', key }) {
   const userRef = db.doc(`users/${uid}`);
-  const logRef = userRef.collection('point_logs').doc();
-  tx.set(awardRef, {
-    uid, action, points, postId, itemId,
-    createdAt: FieldValue.serverTimestamp(), createdAtMs: Date.now(),
-  });
+  tx.create(awardRef(uid, action, key), { uid, action, points, postId, itemId, createdAt: FieldValue.serverTimestamp(), createdAtMs: Date.now() });
   tx.set(userRef, {
-    points: FieldValue.increment(points),
-    totalPoints: FieldValue.increment(points),
-    [`pointStats.${action}`]: FieldValue.increment(points),
-    [`pointDaily.${todayKST()}`]: FieldValue.increment(points),
-    lastPointAt: FieldValue.serverTimestamp(),
-    updatedAt: FieldValue.serverTimestamp(),
+    points: FieldValue.increment(points), totalPoints: FieldValue.increment(points),
+    [`pointStats.${action}`]: FieldValue.increment(points), [`pointDaily.${todayKST()}`]: FieldValue.increment(points),
+    lastPointAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp(),
   }, { merge: true });
-  tx.set(logRef, {
-    action, label, points, meta: { postId, itemId },
-    createdAt: FieldValue.serverTimestamp(), createdAtMs: Date.now(),
-  });
-  return awardRef;
+  tx.create(userRef.collection('point_logs').doc(), { action, label, points, meta: { postId, itemId }, createdAt: FieldValue.serverTimestamp(), createdAtMs: Date.now() });
 }
-
-function writeNotification(tx, uid, data) {
-  if (!uid) return;
-  tx.set(db.collection('notifications').doc(), {
-    uid,
-    type: cleanText(data.type || 'activity', 40),
-    title: cleanText(data.title || '새 알림', 80),
-    body: cleanText(data.body || '', 180),
-    postId: cleanId(data.postId, 180),
-    itemId: cleanId(data.itemId, 180),
-    actorId: cleanId(data.actorId, 128),
-    actorName: cleanText(data.actorName || '회원', 40),
-    points: Number(data.points || 0),
-    read: false,
-    createdAt: FieldValue.serverTimestamp(),
-    createdAtMs: Date.now(),
+function addNotification(tx, uid, data) {
+  if (!uid || String(uid).startsWith('deleted_')) return;
+  tx.create(db.collection('notifications').doc(), {
+    uid, type: cleanText(data.type, 40), title: cleanText(data.title, 80), body: cleanText(data.body, 180),
+    postId: cleanId(data.postId), itemId: cleanId(data.itemId), actorId: cleanId(data.actorId, 128), actorName: cleanText(data.actorName || '회원', 40),
+    points: Number(data.points || 0), read: false, createdAt: FieldValue.serverTimestamp(), createdAtMs: Date.now(),
   });
 }
 
 const createCommunityPost = onCall({ region: REGION, timeoutSeconds: 30 }, async request => {
   const uid = requireRegisteredUser(request);
-  await reserveDailyQuota(uid, 'community_post', DAILY_POST_LIMIT);
-
+  await reserveDailyQuota(uid, 'community_post', 10);
   const input = request.data || {};
-  const preset = normalizePreset(input.preset);
+  const preset = presetOf(input.preset);
   const title = cleanText(input.title, 100);
-  const desc = cleanText(input.desc, 2000);
+  const desc = cleanText(input.desc, 2000) || title;
   if (!title) throw new HttpsError('invalid-argument', '제목을 입력해주세요.');
-  if (preset === 'consult' && !desc) throw new HttpsError('invalid-argument', '상담 내용을 입력해주세요.');
-  const effectiveDesc = desc || title;
-  const tags = cleanTags(input.tags);
-  const images = cleanImages(input.images);
-  const user = await getUser(uid, request.auth?.token || {});
+  if (preset === 'consult' && !cleanText(input.desc, 2000)) throw new HttpsError('invalid-argument', '상담 내용을 입력해주세요.');
+  const user = await userPayload(uid, request.auth?.token || {});
   const ref = db.collection('feeds').doc();
   const post = {
-    type: 'multi',
-    cat: 'community',
-    subtype: preset,
-    feedType: feedTypeFor(preset),
-    typeLabel: labelFor(preset),
-    title,
-    desc: effectiveDesc,
-    tags,
-    images,
-    modules: buildModules(preset, effectiveDesc, input),
-    authorId: user.authorId,
-    authorName: user.authorName,
-    authorPhoto: user.authorPhoto,
-    authorEmail: user.authorEmail,
-    reactions: { total: 0, like: 0, funny: 0, fire: 0, skull: 0 },
-    commentCount: 0,
-    viewCount: 0,
-    pointsScore: 0,
-    hidden: false,
-    createdAt: FieldValue.serverTimestamp(),
-    updatedAt: FieldValue.serverTimestamp(),
+    type: 'multi', cat: 'community', subtype: preset, feedType: feedType(preset), typeLabel: typeLabel(preset),
+    title, desc, tags: cleanTags(input.tags), images: cleanImages(input.images), modules: buildModules(preset, desc, input),
+    ...user, reactions: { total: 0, like: 0, funny: 0, fire: 0, skull: 0 }, commentCount: 0, viewCount: 0, pointsScore: 0,
+    hidden: false, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp(),
   };
-
-  let awarded = false;
   await db.runTransaction(async tx => {
+    const awardSnap = await tx.get(awardRef(uid, 'post_create', ref.id));
+    if (awardSnap.exists) throw new HttpsError('already-exists', '이미 처리된 글입니다.');
     tx.create(ref, post);
-    const awardRef = pointAwardRef(uid, 'post_create', ref.id);
-    const awardSnap = await tx.get(awardRef);
-    if (!awardSnap.exists) {
-      awarded = true;
-      writePointAward(tx, { uid, action: 'post_create', points: 10, label: '커뮤니티 글 작성', postId: ref.id, onceKey: ref.id });
-    }
+    addAwardWrites(tx, { uid, action: 'post_create', points: 10, label: '커뮤니티 글 작성', postId: ref.id, key: ref.id });
   });
-
-  return { ok: true, postId: ref.id, awarded, points: awarded ? 10 : 0 };
+  return { ok: true, postId: ref.id, awarded: true, points: 10 };
 });
 
 const updateCommunityPost = onCall({ region: REGION, timeoutSeconds: 30 }, async request => {
@@ -245,23 +130,19 @@ const updateCommunityPost = onCall({ region: REGION, timeoutSeconds: 30 }, async
   const postId = cleanId(request.data?.postId);
   if (!postId) throw new HttpsError('invalid-argument', '게시글 정보가 없습니다.');
   const ref = db.doc(`feeds/${postId}`);
-  const snap = await ref.get();
+  const [snap, adminSnap] = await Promise.all([ref.get(), db.doc(`admins/${uid}`).get().catch(() => null)]);
   if (!snap.exists) throw new HttpsError('not-found', '게시글을 찾을 수 없습니다.');
   const post = snap.data() || {};
-  const adminSnap = await db.doc(`admins/${uid}`).get().catch(() => null);
   if (post.authorId !== uid && !adminSnap?.exists) throw new HttpsError('permission-denied', '작성자만 수정할 수 있습니다.');
   if (post.hidden === true) throw new HttpsError('failed-precondition', '숨김 처리된 글은 수정할 수 없습니다.');
-
   const title = cleanText(request.data?.title, 100);
-  const desc = cleanText(request.data?.desc, 2000);
+  const desc = cleanText(request.data?.desc, 2000) || title;
   if (!title) throw new HttpsError('invalid-argument', '제목을 입력해주세요.');
-  const images = cleanImages(request.data?.images);
-  const tags = cleanTags(request.data?.tags);
-  const patch = { title, desc: desc || title, images, tags, updatedAt: FieldValue.serverTimestamp() };
-  const preset = normalizePreset(post.subtype || 'judgment');
-  if (preset === 'judgment' || preset === 'vote') patch['modules.vote.question'] = desc || title;
-  if (preset === 'consult') patch['modules.consult.question'] = desc || title;
-  if (preset === 'drip') patch['modules.drip.prompt'] = desc || title;
+  const patch = { title, desc, tags: cleanTags(request.data?.tags), images: cleanImages(request.data?.images), updatedAt: FieldValue.serverTimestamp() };
+  const preset = presetOf(post.subtype || 'judgment');
+  if (preset === 'judgment' || preset === 'vote') patch['modules.vote.question'] = desc;
+  if (preset === 'consult') patch['modules.consult.question'] = desc;
+  if (preset === 'drip') patch['modules.drip.prompt'] = desc;
   await ref.update(patch);
   return { ok: true, postId };
 });
@@ -270,9 +151,7 @@ const castCommunityVote = onCall({ region: REGION, timeoutSeconds: 20 }, async r
   const uid = requireRegisteredUser(request);
   const postId = cleanId(request.data?.postId);
   const optionIdx = Number(request.data?.optionIdx);
-  if (!postId || !Number.isInteger(optionIdx) || optionIdx < 0 || optionIdx > 5) {
-    throw new HttpsError('invalid-argument', '투표 정보가 올바르지 않습니다.');
-  }
+  if (!postId || !Number.isInteger(optionIdx) || optionIdx < 0 || optionIdx > 5) throw new HttpsError('invalid-argument', '투표 정보가 올바르지 않습니다.');
   const postRef = db.doc(`feeds/${postId}`);
   const voteRef = postRef.collection('votes').doc(uid);
   let updatedPost;
@@ -280,9 +159,7 @@ const castCommunityVote = onCall({ region: REGION, timeoutSeconds: 20 }, async r
     const [postSnap, voteSnap] = await Promise.all([tx.get(postRef), tx.get(voteRef)]);
     if (!postSnap.exists) throw new HttpsError('not-found', '게시글을 찾을 수 없습니다.');
     const post = postSnap.data() || {};
-    if (post.hidden === true || post.type !== 'multi' || post.modules?.vote?.enabled !== true) {
-      throw new HttpsError('failed-precondition', '투표할 수 없는 게시글입니다.');
-    }
+    if (post.hidden === true || post.type !== 'multi' || post.modules?.vote?.enabled !== true) throw new HttpsError('failed-precondition', '투표할 수 없는 게시글입니다.');
     if (voteSnap.exists) throw new HttpsError('already-exists', '이미 투표했습니다.');
     const options = (Array.isArray(post.modules.vote.options) ? post.modules.vote.options : []).map(option => ({ ...option }));
     if (!options[optionIdx]) throw new HttpsError('invalid-argument', '선택지를 찾을 수 없습니다.');
@@ -295,86 +172,62 @@ const castCommunityVote = onCall({ region: REGION, timeoutSeconds: 20 }, async r
   return { ok: true, post: updatedPost };
 });
 
-async function loadDripPost(postId) {
-  const safePostId = cleanId(postId);
-  if (!safePostId) throw new HttpsError('invalid-argument', '게시글 정보가 없습니다.');
-  const ref = db.doc(`feeds/${safePostId}`);
+async function loadDrip(postId) {
+  const id = cleanId(postId);
+  if (!id) throw new HttpsError('invalid-argument', '게시글 정보가 없습니다.');
+  const ref = db.doc(`feeds/${id}`);
   const snap = await ref.get();
   if (!snap.exists) throw new HttpsError('not-found', '게시글을 찾을 수 없습니다.');
   const post = snap.data() || {};
-  if (post.hidden === true || post.type !== 'multi' || post.modules?.drip?.enabled !== true) {
-    throw new HttpsError('failed-precondition', '드립 참여가 가능한 게시글이 아닙니다.');
-  }
-  return { ref, postId: safePostId, post };
+  if (post.hidden === true || post.type !== 'multi' || post.modules?.drip?.enabled !== true) throw new HttpsError('failed-precondition', '드립 참여가 가능한 게시글이 아닙니다.');
+  return { ref, postId: id };
 }
 
 const addDripParticipation = onCall({ region: REGION, timeoutSeconds: 20 }, async request => {
   const uid = requireRegisteredUser(request);
-  await reserveDailyQuota(uid, 'drip_participation', DAILY_DRIP_LIMIT);
-  const { ref: postRef, postId } = await loadDripPost(request.data?.postId);
+  await reserveDailyQuota(uid, 'drip_participation', 40);
+  const { ref: postRef, postId } = await loadDrip(request.data?.postId);
   const text = cleanText(request.data?.text, 50);
   if (!text) throw new HttpsError('invalid-argument', '드립 내용을 입력해주세요.');
-  const user = await getUser(uid, request.auth?.token || {});
+  const user = await userPayload(uid, request.auth?.token || {});
   const itemRef = postRef.collection('multi_drip').doc();
-  let awarded = false;
   await db.runTransaction(async tx => {
-    tx.create(itemRef, {
-      text,
-      ...user,
-      reactions: { like: 0, funny: 0, fire: 0 },
-      replyCount: 0,
-      createdAt: FieldValue.serverTimestamp(),
-      createdAtMs: Date.now(),
-    });
-    const awardRef = pointAwardRef(uid, 'participation_create', itemRef.id);
-    const awardSnap = await tx.get(awardRef);
-    if (!awardSnap.exists) {
-      awarded = true;
-      writePointAward(tx, { uid, action: 'participation_create', points: 3, label: '드립 참여', postId, itemId: itemRef.id, onceKey: itemRef.id });
-    }
+    const awardSnap = await tx.get(awardRef(uid, 'participation_create', itemRef.id));
+    if (awardSnap.exists) throw new HttpsError('already-exists', '이미 처리된 참여입니다.');
+    tx.create(itemRef, { text, ...user, reactions: { like: 0, funny: 0, fire: 0 }, replyCount: 0, createdAt: FieldValue.serverTimestamp(), createdAtMs: Date.now() });
+    addAwardWrites(tx, { uid, action: 'participation_create', points: 3, label: '드립 참여', postId, itemId: itemRef.id, key: itemRef.id });
   });
-  return { ok: true, itemId: itemRef.id, awarded, points: awarded ? 3 : 0 };
+  return { ok: true, itemId: itemRef.id, awarded: true, points: 3 };
 });
 
 const addDripReply = onCall({ region: REGION, timeoutSeconds: 20 }, async request => {
   const uid = requireRegisteredUser(request);
-  const { ref: postRef, postId } = await loadDripPost(request.data?.postId);
+  const { ref: postRef, postId } = await loadDrip(request.data?.postId);
   const itemId = cleanId(request.data?.itemId);
   const text = cleanText(request.data?.text, 500);
   if (!itemId || !text) throw new HttpsError('invalid-argument', '답글 정보가 올바르지 않습니다.');
   const itemRef = postRef.collection('multi_drip').doc(itemId);
-  const itemSnap = await itemRef.get();
-  if (!itemSnap.exists) throw new HttpsError('not-found', '드립을 찾을 수 없습니다.');
-  const item = itemSnap.data() || {};
-  const user = await getUser(uid, request.auth?.token || {});
   const replyRef = itemRef.collection('replies').doc();
-  let awarded = false;
+  const user = await userPayload(uid, request.auth?.token || {});
   await db.runTransaction(async tx => {
+    const [itemSnap, awardSnap] = await Promise.all([tx.get(itemRef), tx.get(awardRef(uid, 'reply_create', replyRef.id))]);
+    if (!itemSnap.exists) throw new HttpsError('not-found', '드립을 찾을 수 없습니다.');
+    if (awardSnap.exists) throw new HttpsError('already-exists', '이미 처리된 답글입니다.');
+    const item = itemSnap.data() || {};
     tx.create(replyRef, { text, ...user, createdAt: FieldValue.serverTimestamp(), createdAtMs: Date.now() });
     tx.update(itemRef, { replyCount: FieldValue.increment(1), updatedAt: FieldValue.serverTimestamp() });
-    const awardRef = pointAwardRef(uid, 'reply_create', replyRef.id);
-    const awardSnap = await tx.get(awardRef);
-    if (!awardSnap.exists) {
-      awarded = true;
-      writePointAward(tx, { uid, action: 'reply_create', points: 2, label: '드립 답글 작성', postId, itemId, onceKey: replyRef.id });
-    }
-    if (item.authorId && item.authorId !== uid) {
-      writeNotification(tx, item.authorId, {
-        type: 'drip_reply', title: '내 드립에 답글이 달렸어요',
-        body: `${user.authorName}: ${text.slice(0, 50)}`, postId, itemId,
-        actorId: uid, actorName: user.authorName,
-      });
-    }
+    addAwardWrites(tx, { uid, action: 'reply_create', points: 2, label: '드립 답글 작성', postId, itemId, key: replyRef.id });
+    if (item.authorId && item.authorId !== uid) addNotification(tx, item.authorId, { type: 'drip_reply', title: '내 드립에 답글이 달렸어요', body: `${user.authorName}: ${text.slice(0, 50)}`, postId, itemId, actorId: uid, actorName: user.authorName });
   });
-  return { ok: true, awarded, points: awarded ? 2 : 0 };
+  return { ok: true, awarded: true, points: 2 };
 });
 
 const reactDripItem = onCall({ region: REGION, timeoutSeconds: 20 }, async request => {
   const uid = requireRegisteredUser(request);
-  const { postId } = await loadDripPost(request.data?.postId);
+  const { postId } = await loadDrip(request.data?.postId);
   const itemId = cleanId(request.data?.itemId);
   const reaction = String(request.data?.reaction || '').trim();
-  if (!itemId || !REACTIONS.has(reaction)) throw new HttpsError('invalid-argument', '반응 정보가 올바르지 않습니다.');
+  if (!itemId || !DRIP_REACTIONS.has(reaction)) throw new HttpsError('invalid-argument', '반응 정보가 올바르지 않습니다.');
   const itemRef = db.doc(`feeds/${postId}/multi_drip/${itemId}`);
   const markerRef = itemRef.collection('reactions_by_user').doc(uid);
   let added = false;
@@ -385,31 +238,19 @@ const reactDripItem = onCall({ region: REGION, timeoutSeconds: 20 }, async reque
     const item = itemSnap.data() || {};
     if (item.authorId === uid) throw new HttpsError('failed-precondition', '본인 글에는 반응할 수 없습니다.');
     if (markerSnap.exists) return;
+    let awardSnap = null;
+    const key = `${itemId}_${uid}`;
+    if (item.authorId) awardSnap = await tx.get(awardRef(item.authorId, 'reaction_received', key));
     added = true;
     tx.create(markerRef, { uid, reaction, createdAt: FieldValue.serverTimestamp(), createdAtMs: Date.now() });
     tx.update(itemRef, { [`reactions.${reaction}`]: FieldValue.increment(1), updatedAt: FieldValue.serverTimestamp() });
-    if (item.authorId) {
-      const onceKey = `${itemId}_${uid}`;
-      const awardRef = pointAwardRef(item.authorId, 'reaction_received', onceKey);
-      const awardSnap = await tx.get(awardRef);
-      if (!awardSnap.exists) {
-        awarded = true;
-        writePointAward(tx, { uid: item.authorId, action: 'reaction_received', points: 1, label: '드립 반응 받음', postId, itemId, onceKey });
-      }
-      writeNotification(tx, item.authorId, {
-        type: 'drip_reaction', title: '내 드립에 반응이 달렸어요',
-        body: '새 반응이 등록됐어요.', postId, itemId, actorId: uid, actorName: '회원', points: awarded ? 1 : 0,
-      });
+    if (item.authorId && !awardSnap?.exists) {
+      awarded = true;
+      addAwardWrites(tx, { uid: item.authorId, action: 'reaction_received', points: 1, label: '드립 반응 받음', postId, itemId, key });
     }
+    if (item.authorId) addNotification(tx, item.authorId, { type: 'drip_reaction', title: '내 드립에 반응이 달렸어요', body: '새 반응이 등록됐어요.', postId, itemId, actorId: uid, actorName: '회원', points: awarded ? 1 : 0 });
   });
   return { ok: true, reactionAdded: added, awarded, points: awarded ? 1 : 0 };
 });
 
-module.exports = {
-  createCommunityPost,
-  updateCommunityPost,
-  castCommunityVote,
-  addDripParticipation,
-  addDripReply,
-  reactDripItem,
-};
+module.exports = { createCommunityPost, updateCommunityPost, castCommunityVote, addDripParticipation, addDripReply, reactDripItem };
