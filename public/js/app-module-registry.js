@@ -24,7 +24,6 @@ export const EXTENSION_MODULES = [
   './post-owner-actions.js',
   './participant-replies.js',
   './multi-detail.js',
-  './detail-extras.js',
   './detail-cards.js',
   './multi-write.js',
   './write-edit-router-fix.js',
