@@ -24,23 +24,6 @@ service cloud.firestore {
       return value is string && value.size() <= maxLength;
     }
 
-    function validNickname(value) {
-      return value is string
-        && value.size() >= 2
-        && value.size() <= 12
-        && value.matches('^[가-힣a-zA-Z0-9_]+$');
-    }
-
-    function validImages(data) {
-      return !('images' in data)
-        || (data.images is list && data.images.size() <= 20);
-    }
-
-    function validTags(data) {
-      return !('tags' in data)
-        || (data.tags is list && data.tags.size() <= 8);
-    }
-
     function canReadFeed(postId) {
       let feed = get(/databases/$(database)/documents/feeds/$(postId));
       return feed.data.hidden != true
@@ -92,8 +75,9 @@ service cloud.firestore {
       match /scraps/{scrapId} {
         allow read: if isAuthor(userId) || isAdmin();
         allow create: if isAuthor(userId)
-          && request.resource.data.keys().hasOnly(['postId', 'createdAt'])
-          && request.resource.data.postId is string;
+          && request.resource.data.keys().hasOnly(['postId', 'scrappedAt'])
+          && request.resource.data.postId is string
+          && request.resource.data.postId == scrapId;
         allow delete: if isAuthor(userId) || isAdmin();
         allow update: if false;
       }
@@ -156,6 +140,7 @@ service cloud.firestore {
       allow read: if isAdmin()
         || (signedIn() && resource.data.reporterId == request.auth.uid);
       allow create: if isRegisteredUser()
+        && reportId == request.resource.data.postId + '_' + request.auth.uid
         && request.resource.data.reporterId == request.auth.uid
         && request.resource.data.keys().hasOnly([
           'postId', 'postTitle', 'reporterId', 'reporterName',
