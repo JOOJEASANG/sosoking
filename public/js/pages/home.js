@@ -1,9 +1,7 @@
-import { db } from '../firebase.js';
 import { setMeta } from '../utils/seo.js';
-import { escHtml, formatTime } from '../utils/helpers.js';
+import { escHtml } from '../utils/helpers.js';
 import { fetchHotPosts, fetchTodayBest } from '../services/feed-service.js';
 import { getPublicAiResidents } from '../ai-residents.js';
-import { collectionGroup, query, orderBy, limit, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { navigate } from '../router.js';
 
 const COMMUNITY_ROOMS = [
@@ -24,28 +22,6 @@ function typeLabel(post) {
   if (post.subtype === 'drip' || post.modules?.drip?.enabled) return '드립';
   if (post.subtype === 'vote' || post.modules?.vote?.voteMode === 'pros_cons') return '토론';
   return '판결';
-}
-
-function commentScore(comment) {
-  const reactions = comment.reactions || {};
-  return Number(reactions.funny || 0) * 3 + Number(reactions.fire || 0) * 2 + Number(reactions.like || 0);
-}
-
-async function fetchPopularComments(max = 8) {
-  try {
-    const snap = await getDocs(query(collectionGroup(db, 'comments'), orderBy('createdAt', 'desc'), limit(80)));
-    return snap.docs.map(docSnap => ({
-      id: docSnap.id,
-      postId: docSnap.ref.parent?.parent?.id || '',
-      ...docSnap.data(),
-    })).filter(item => item.postId && item.text && !item.hidden)
-      .map(item => ({ ...item, score: commentScore(item) }))
-      .sort((a, b) => b.score - a.score)
-      .slice(0, max);
-  } catch (error) {
-    console.warn('[home comments]', error);
-    return [];
-  }
 }
 
 function renderIntro() {
@@ -110,28 +86,13 @@ function renderHot(posts) {
     </section>`;
 }
 
-function renderComments(comments) {
-  return `
-    <section>
-      <div class="home-section-header"><span class="home-section-title">💬 인기 댓글</span></div>
-      <div class="home-compact-feed-list">
-        ${comments.length ? comments.map((comment, index) => `
-          <button class="home-compact-feed-item" type="button" data-home-post="${escHtml(comment.postId)}">
-            <span class="home-compact-feed-item__badge">댓글 ${index + 1}</span>
-            <span class="home-compact-feed-item__title">${escHtml(comment.text || '').slice(0, 120)}</span>
-            <span class="home-compact-feed-item__meta">${escHtml(comment.authorName || '익명')} · ${formatTime(comment.createdAt?.toDate?.() || comment.createdAt)}</span>
-          </button>`).join('') : '<div class="empty-state"><div class="empty-state__title">아직 댓글이 없어요.</div></div>'}
-      </div>
-    </section>`;
-}
-
 export async function renderHome() {
   const root = document.getElementById('page-content');
   if (!root) return;
   setMeta('소소킹 · AI 캐릭터 참여형 커뮤니티');
   root.innerHTML = '<div class="home-dash"><div class="skeleton" style="height:260px;border-radius:18px"></div></div>';
-  const [hotPosts, comments, todayBest] = await Promise.all([fetchHotPosts(8), fetchPopularComments(8), fetchTodayBest()]);
-  root.innerHTML = `<div class="home-dash page-enter home-dash--v2">${renderIntro()}${renderBest(todayBest)}${renderHot(hotPosts)}${renderComments(comments)}</div>`;
+  const [hotPosts, todayBest] = await Promise.all([fetchHotPosts(8), fetchTodayBest()]);
+  root.innerHTML = `<div class="home-dash page-enter home-dash--v2">${renderIntro()}${renderBest(todayBest)}${renderHot(hotPosts)}</div>`;
   root.querySelector('[data-home-write]')?.addEventListener('click', () => navigate('/write?type=multi&preset=judgment'));
   root.querySelector('[data-home-feed]')?.addEventListener('click', () => navigate('/feed'));
   root.querySelector('[data-home-more]')?.addEventListener('click', () => navigate('/feed?sort=popular'));
