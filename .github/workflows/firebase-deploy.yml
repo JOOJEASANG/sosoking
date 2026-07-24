@@ -1,11 +1,25 @@
-name: Firebase 전체 배포
+name: Firebase 검증 및 전체 배포
 
 on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'public/**'
+      - 'functions/**'
+      - 'tools/**'
+      - 'firebase.json'
+      - '.firebaserc'
+      - 'firestore.rules'
+      - 'firestore.indexes.json'
+      - 'storage.rules'
+      - 'package.json'
+      - '.github/workflows/firebase-deploy.yml'
   push:
     branches: [main]
     paths:
       - 'public/**'
       - 'functions/**'
+      - 'tools/**'
       - 'firebase.json'
       - '.firebaserc'
       - 'firestore.rules'
@@ -16,7 +30,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: firebase-production
+  group: firebase-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -44,13 +58,15 @@ jobs:
       - name: Cloud Functions 의존성 설치
         run: npm ci --prefix functions --no-audit --no-fund
 
-      - name: JavaScript 구문 검사
+      - name: 저장소 정적 검사
         run: npm run check
 
       - name: Firebase CLI 설치
+        if: github.event_name != 'pull_request'
         run: npm install --global firebase-tools
 
       - name: Firebase 서비스 계정 준비
+        if: github.event_name != 'pull_request'
         env:
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 }}
         run: |
@@ -62,18 +78,20 @@ jobs:
           echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/firebase-service-account.json" >> "$GITHUB_ENV"
 
       - name: Gemini Secret 등록 확인
+        if: github.event_name != 'pull_request'
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           if [ -n "$GEMINI_API_KEY" ]; then
-            printf '%s' "$GEMINI_API_KEY" | firebase functions:secrets:set GEMINI_API_KEY --data-file=- --project "$FIREBASE_PROJECT_ID" || \
-              echo "::warning::GEMINI_API_KEY 등록 실패: Secret Manager 권한을 확인하세요."
+            printf '%s' "$GEMINI_API_KEY" | firebase functions:secrets:set GEMINI_API_KEY --data-file=- --project "$FIREBASE_PROJECT_ID"
           else
             echo "::notice::GitHub GEMINI_API_KEY secret이 없어 기존 Firebase Secret을 사용합니다."
           fi
 
-      - name: Hosting·Firestore Rules·Indexes 배포
-        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only hosting,firestore:rules,firestore:indexes --non-interactive
+      - name: Hosting·Firestore·Storage 배포
+        if: github.event_name != 'pull_request'
+        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only hosting,firestore:rules,firestore:indexes,storage --non-interactive
 
       - name: Cloud Functions 배포
+        if: github.event_name != 'pull_request'
         run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only functions --force --non-interactive
