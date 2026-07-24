@@ -3,7 +3,7 @@ import { toast } from '../components/toast.js';
 import { signInAnonymously } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 
 export function currentDetailPostId() {
-  const match = (window.location.hash || '').match(/^#\/detail\/([^?]+)/);
+  const match = (location.hash || '').match(/^#\/detail\/([^?]+)/);
   return match ? decodeURIComponent(match[1]) : '';
 }
 
@@ -17,7 +17,7 @@ export function stopDetailEvent(event) {
   event.stopImmediatePropagation?.();
 }
 
-export async function ensureAnonymousActor(message = '참여에 실패했어요') {
+export async function ensureAnonymousActor(message = '참여에 실패했어요.') {
   if (auth.currentUser) return true;
   try {
     await signInAnonymously(auth);
@@ -26,19 +26,6 @@ export async function ensureAnonymousActor(message = '참여에 실패했어요'
     toast.warn(message);
     return false;
   }
-}
-
-export function markLegacyQuizResult(correct, explanation = '') {
-  const resultEl = document.getElementById('quiz-result');
-  if (!resultEl) return;
-  resultEl.style.display = '';
-  resultEl.className = `quiz-result quiz-result--${correct ? 'correct' : 'wrong'}`;
-  const iconEl = resultEl.querySelector('.quiz-result__icon');
-  const textEl = resultEl.querySelector('.quiz-result__text');
-  const exEl = resultEl.querySelector('.quiz-result__explanation');
-  if (iconEl) iconEl.textContent = correct ? '⭕' : '❌';
-  if (textEl) textEl.textContent = correct ? '정답이에요!' : '오답이에요!';
-  if (exEl) exEl.textContent = explanation ? `💡 ${explanation}` : '';
 }
 
 export function readImageListFromThumb(thumb) {
