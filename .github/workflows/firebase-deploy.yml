@@ -59,7 +59,21 @@ jobs:
         run: npm ci --prefix functions --no-audit --no-fund
 
       - name: 저장소 정적 검사
-        run: npm run check
+        shell: bash
+        run: |
+          set +e
+          npm run check 2>&1 | tee check.log
+          status=${PIPESTATUS[0]}
+          exit "$status"
+
+      - name: 정적 검사 로그 저장
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: repository-check-log
+          path: check.log
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Firebase CLI 설치
         if: github.event_name != 'pull_request'
