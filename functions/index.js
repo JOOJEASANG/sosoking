@@ -1,6 +1,5 @@
 'use strict';
 
-const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { onDocumentCreated } = require('firebase-functions/v2/firestore');
 const { initializeApp, getApps } = require('firebase-admin/app');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
@@ -24,19 +23,28 @@ function getAiKey() {
 async function isAiFeatureEnabled(feature) {
   try {
     const snap = await db.doc('config/ai').get();
-    if (!snap.exists) return true;
+    if (!snap.exists) return false;
     const data = snap.data() || {};
-    if (data.enabled === false) return false;
-    return data.features?.[feature] !== false;
+    if (data.enabled !== true) return false;
+    return data.features?.[feature] === true;
   } catch {
-    return true;
+    return false;
   }
 }
 
-async function logAiUsage() {
-  const today = new Date().toISOString().slice(0, 10);
-  await db.doc('config/ai').set({
-    usage: { [today]: { requests: FieldValue.increment(1) } },
+function todayKST() {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date());
+}
+
+async function logAiUsage(feature) {
+  const today = todayKST();
+  await db.doc(`ai_usage/${today}`).set({
+    day: today,
+    requests: FieldValue.increment(1),
+    [`features.${feature}`]: FieldValue.increment(1),
+    updatedAt: FieldValue.serverTimestamp(),
   }, { merge: true });
 }
 
@@ -58,7 +66,6 @@ function modelFor(apiKey) {
   });
 }
 
-// 새 게시물 AI 모더레이션
 exports.onFeedPostCreate = onDocumentCreated({
   document: 'feeds/{postId}',
   region: REGION,
@@ -69,19 +76,16 @@ exports.onFeedPostCreate = onDocumentCreated({
   if (!snap || !(await isAiFeatureEnabled('moderation'))) return;
 
   const post = snap.data() || {};
+  if (post.hidden === true) return;
   const apiKey = getAiKey();
   if (!apiKey) return;
-
-  const text = [post.title, post.body, post.desc, post.subtitle]
-    .filter(Boolean)
-    .join('\n')
-    .slice(0, 1000);
+  const text = [post.title, post.desc].filter(Boolean).join('\n').slice(0, 1200);
   if (!text.trim()) return;
 
   try {
     const prompt = `소소킹 커뮤니티 게시물을 검토하세요.
 
-게시물 유형: ${post.typeLabel || post.subtype || post.feedType || '일반'}
+게시물 유형: ${post.typeLabel || post.subtype || '일반'}
 게시물 내용:
 ${text}
 
@@ -89,46 +93,46 @@ ${text}
 - 판결, 상담, 토론, 드립 등 일상 커뮤니티 표현
 - 가벼운 인터넷 슬랭과 과장된 유머
 
-차단:
+검토 필요:
 - 특정인 신상 공개, 협박, 성희롱, 혐오
 - 상업 광고와 반복 스팸
 - 명백한 불법 콘텐츠
 
-JSON만 출력하세요.
-{"safe":true,"reason":null,"tags":["자동태그"],"summary":"20자 이내 요약"}`;
+자동으로 게시글을 숨기지 않습니다. 운영자 검토용 JSON만 출력하세요.
+{"safe":true,"reason":null,"tags":["자동태그"],"summary":"20자 이내 요약","severity":"none"}`;
     const result = await modelFor(apiKey).generateContent(prompt);
     const analysis = parseAiJson(result.response.text());
     if (!analysis) return;
 
-    const updates = {
+    const safe = analysis.safe !== false;
+    await snap.ref.update({
       aiModerated: true,
+      aiSafe: safe,
+      aiSeverity: ['none', 'low', 'medium', 'high'].includes(analysis.severity) ? analysis.severity : (safe ? 'none' : 'medium'),
       aiTags: Array.isArray(analysis.tags) ? analysis.tags.slice(0, 5).map(String) : [],
       aiSummary: String(analysis.summary || '').slice(0, 80),
-    };
+      aiModerationReason: String(analysis.reason || '').slice(0, 300),
+      aiModeratedAt: FieldValue.serverTimestamp(),
+    });
 
-    if (analysis.safe === false) {
-      updates.hidden = true;
-      updates.hideReason = `AI 자동 검토: ${String(analysis.reason || '정책 위반 의심').slice(0, 200)}`;
+    if (!safe) {
       await db.collection('reports').add({
         postId: snap.id,
         postTitle: String(post.title || '').slice(0, 100),
         authorId: post.authorId || '',
-        reason: String(analysis.reason || 'AI 자동 감지').slice(0, 500),
+        reason: String(analysis.reason || 'AI 자동 검토 필요').slice(0, 500),
         reportedBy: 'AI',
         resolved: false,
         aiGenerated: true,
         createdAt: FieldValue.serverTimestamp(),
       });
     }
-
-    await snap.ref.update(updates);
-    await logAiUsage();
+    await logAiUsage('moderation');
   } catch (error) {
     console.error('[onFeedPostCreate] AI moderation failed', error);
   }
 });
 
-// 새 신고 AI 1차 검토
 exports.onReportCreate = onDocumentCreated({
   document: 'reports/{reportId}',
   region: REGION,
@@ -147,72 +151,34 @@ exports.onReportCreate = onDocumentCreated({
     const postSnap = await db.doc(`feeds/${report.postId}`).get();
     if (!postSnap.exists) return;
     const post = postSnap.data() || {};
-    const text = [post.title, post.body, post.desc].filter(Boolean).join('\n').slice(0, 800);
-    const prompt = `소소킹 신고 게시물을 1차 검토하세요.
+    const text = [post.title, post.desc].filter(Boolean).join('\n').slice(0, 1000);
+    const prompt = `소소킹 신고 게시물을 운영자 참고용으로 검토하세요.
 
 신고 사유: ${String(report.reason || '').slice(0, 300)}
 게시물:
 ${text}
 
 판단값:
-- clear_violation: 명백한 신상 공개, 협박, 성희롱, 혐오, 광고, 불법 콘텐츠
+- clear_violation: 명백한 정책 위반
 - review_needed: 운영자 판단 필요
 - no_action: 정상적인 일상 의견이나 유머
 
-JSON만 출력하세요.
-{"action":"no_action","reason":"한 문장 근거"}`;
+게시글 숨김 또는 신고 종결을 직접 결정하지 말고 JSON만 출력하세요.
+{"action":"review_needed","reason":"한 문장 근거"}`;
     const result = await modelFor(apiKey).generateContent(prompt);
     const analysis = parseAiJson(result.response.text());
     if (!analysis) return;
-
     const action = ['clear_violation', 'review_needed', 'no_action'].includes(analysis.action)
       ? analysis.action
       : 'review_needed';
-    const update = {
+    await snap.ref.update({
       aiReviewed: true,
       aiAction: action,
       aiReason: String(analysis.reason || '').slice(0, 300),
-    };
-
-    if (action === 'clear_violation') {
-      await postSnap.ref.update({
-        hidden: true,
-        hideReason: `AI 신고 처리: ${String(analysis.reason || '').slice(0, 200)}`,
-      });
-      update.resolved = true;
-      update.aiResolved = true;
-    }
-
-    await snap.ref.update(update);
-    await logAiUsage();
+      aiReviewedAt: FieldValue.serverTimestamp(),
+    });
+    await logAiUsage('autoReport');
   } catch (error) {
     console.error('[onReportCreate] AI review failed', error);
   }
-});
-
-// 기존 토너먼트 게시물 결과 호환
-exports.recordTournamentResult = onCall({ region: REGION }, async request => {
-  const userId = request.auth?.uid;
-  if (!userId) throw new HttpsError('unauthenticated', '로그인 필요');
-
-  const { postId, winnerIdx } = request.data || {};
-  if (!postId || !Number.isInteger(winnerIdx)) {
-    throw new HttpsError('invalid-argument', '잘못된 데이터');
-  }
-
-  const postRef = db.doc(`feeds/${postId}`);
-  const snap = await postRef.get();
-  if (!snap.exists) throw new HttpsError('not-found', '게시물 없음');
-
-  const tournament = snap.data()?.modules?.tournament;
-  if (!tournament?.enabled || !Array.isArray(tournament.items) || winnerIdx < 0 || winnerIdx >= tournament.items.length) {
-    throw new HttpsError('invalid-argument', '유효하지 않은 항목');
-  }
-
-  await postRef.update({
-    [`modules.tournament.wins.${winnerIdx}`]: FieldValue.increment(1),
-    'modules.tournament.plays': FieldValue.increment(1),
-  });
-
-  return { ok: true };
 });
