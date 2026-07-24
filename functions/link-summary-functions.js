@@ -1,3 +1,5 @@
+'use strict';
+
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { defineSecret } = require('firebase-functions/params');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
@@ -6,83 +8,60 @@ const dns = require('dns').promises;
 const net = require('net');
 
 const db = getFirestore();
-const GEMINI_API_KEY = defineSecret('GEMINI_API_KEY');
-const SUMMARY_MODEL = 'gemini-2.5-flash-lite';
+const REGION = 'asia-northeast3';
+const geminiKey = defineSecret('GEMINI_API_KEY');
 const MAX_HTML_BYTES = 700000;
 const FETCH_TIMEOUT_MS = 9000;
 
-const BLOCKED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', '::1'];
-const BLOCK_WORDS = ['성인', '도박', '카지노', '토토', '불법', '마약', '폭력'];
-
-function clean(value, max = 1000) {
-  return String(value || '')
-    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/[<>]/g, '')
-    .replace(/\s{2,}/g, ' ')
-    .trim()
-    .slice(0, max);
+function requireRegisteredUser(request) {
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+  if (request.auth?.token?.firebase?.sign_in_provider === 'anonymous') throw new HttpsError('permission-denied', '정식 회원 로그인 후 사용할 수 있습니다.');
+  return uid;
 }
-
+function clean(value, max = 1000) {
+  return String(value || '').replace(/<script[\s\S]*?<\/script>/gi, ' ').replace(/<style[\s\S]*?<\/style>/gi, ' ').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/[<>]/g, '').replace(/\s{2,}/g, ' ').trim().slice(0, max);
+}
 function isPrivateIp(address) {
-  if (!address) return true;
-  if (address === '::1') return true;
-  if (address.startsWith('fc') || address.startsWith('fd') || address.startsWith('fe80')) return true;
-  if (net.isIPv4(address)) {
-    return /^(10\.|127\.|169\.254\.|192\.168\.)/.test(address) || /^(172\.(1[6-9]|2\d|3[0-1])\.)/.test(address);
-  }
+  if (!address || address === '::1') return true;
+  if (/^(fc|fd|fe80)/i.test(address)) return true;
+  if (net.isIPv4(address)) return /^(10\.|127\.|169\.254\.|192\.168\.|172\.(1[6-9]|2\d|3[0-1])\.)/.test(address);
   return false;
 }
-
 async function assertPublicHost(hostname) {
   const host = String(hostname || '').toLowerCase();
-  if (!host || BLOCKED_HOSTS.includes(host) || host.endsWith('.local') || host.endsWith('.internal')) throw new Error('허용되지 않는 링크입니다.');
-  if (net.isIP(host) && isPrivateIp(host)) throw new Error('허용되지 않는 링크입니다.');
-  try {
-    const records = await dns.lookup(host, { all: true, verbatim: true });
-    if (!records.length || records.some(record => isPrivateIp(record.address))) throw new Error('허용되지 않는 링크입니다.');
-  } catch (error) {
-    if (error.message === '허용되지 않는 링크입니다.') throw error;
-    throw new Error('링크 주소를 확인할 수 없습니다.');
-  }
+  if (!host || ['localhost', '127.0.0.1', '0.0.0.0', '::1'].includes(host) || host.endsWith('.local') || host.endsWith('.internal')) throw new HttpsError('invalid-argument', '허용되지 않는 링크입니다.');
+  if (net.isIP(host) && isPrivateIp(host)) throw new HttpsError('invalid-argument', '허용되지 않는 링크입니다.');
+  let records;
+  try { records = await dns.lookup(host, { all: true, verbatim: true }); }
+  catch { throw new HttpsError('invalid-argument', '링크 주소를 확인할 수 없습니다.'); }
+  if (!records.length || records.some(record => isPrivateIp(record.address))) throw new HttpsError('invalid-argument', '허용되지 않는 링크입니다.');
 }
-
 async function validateUrl(raw) {
   let url;
-  try {
-    url = new URL(String(raw || '').trim());
-  } catch (_) {
-    const { HttpsError } = require('firebase-functions/v2/https');
-    throw new HttpsError('invalid-argument', 'URL 형식이 올바르지 않습니다.');
-  }
-  if (url.protocol !== 'https:') throw new Error('https 링크만 요약할 수 있습니다.');
+  try { url = new URL(String(raw || '').trim()); }
+  catch { throw new HttpsError('invalid-argument', 'URL 형식이 올바르지 않습니다.'); }
+  if (url.protocol !== 'https:') throw new HttpsError('invalid-argument', 'HTTPS 링크만 요약할 수 있습니다.');
   await assertPublicHost(url.hostname);
   return url;
 }
-
-async function checkRateLimit(userId, action, maxCount, windowSeconds) {
-  const ref = db.doc(`rate_limits/${userId}`);
-  const windowMs = windowSeconds * 1000;
-  const now = Date.now();
-  await db.runTransaction(async (tx) => {
+function todayKST() {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+}
+async function reserve(uid) {
+  const ref = db.doc(`rate_limits/link_summary_${todayKST()}_${uid}`);
+  await db.runTransaction(async tx => {
     const snap = await tx.get(ref);
-    const data = snap.exists ? snap.data() : {};
-    const timestamps = (data[action] || []).filter(ts => Number(ts) > now - windowMs);
-    if (timestamps.length >= maxCount) throw new Error('AI 요약 요청 한도를 초과했습니다. 잠시 후 다시 시도해주세요.');
-    tx.set(ref, { [action]: [...timestamps, now].slice(-maxCount) }, { merge: true });
+    const count = Number(snap.exists ? snap.data()?.count || 0 : 0);
+    if (count >= 20) throw new HttpsError('resource-exhausted', '오늘 링크 요약 한도를 초과했습니다.');
+    tx.set(ref, { uid, action: 'link_summary', count: FieldValue.increment(1), limit: 20, day: todayKST(), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
   });
 }
-
-function pickMeta(html, name) {
+function meta(html, name) {
+  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const patterns = [
-    new RegExp(`<meta[^>]+property=["']${name}["'][^>]+content=["']([^"']+)["'][^>]*>`, 'i'),
-    new RegExp(`<meta[^>]+name=["']${name}["'][^>]+content=["']([^"']+)["'][^>]*>`, 'i'),
-    new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["']${name}["'][^>]*>`, 'i')
+    new RegExp(`<meta[^>]+(?:property|name)=["']${escaped}["'][^>]+content=["']([^"']+)["']`, 'i'),
+    new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["']${escaped}["']`, 'i'),
   ];
   for (const pattern of patterns) {
     const match = String(html || '').match(pattern);
@@ -90,95 +69,58 @@ function pickMeta(html, name) {
   }
   return '';
 }
-
-function extractPage(html, url) {
-  const title = clean(pickMeta(html, 'og:title') || (String(html).match(/<title[^>]*>([\s\S]*?)<\/title>/i) || [])[1] || url.hostname, 120);
-  const description = clean(pickMeta(html, 'description') || pickMeta(html, 'og:description'), 320);
-  const body = clean(String(html || '').replace(/<nav[\s\S]*?<\/nav>/gi, ' ').replace(/<footer[\s\S]*?<\/footer>/gi, ' '), 5500);
-  return { title, description, body };
-}
-
-async function readLimitedText(res) {
-  const contentLength = Number(res.headers.get('content-length') || 0);
-  if (contentLength && contentLength > MAX_HTML_BYTES) throw new Error('페이지가 너무 커서 요약할 수 없습니다.');
-  const reader = res.body?.getReader?.();
-  if (!reader) return (await res.text()).slice(0, MAX_HTML_BYTES);
+async function readLimited(response) {
+  const length = Number(response.headers.get('content-length') || 0);
+  if (length > MAX_HTML_BYTES) throw new HttpsError('invalid-argument', '페이지가 너무 큽니다.');
+  const reader = response.body?.getReader?.();
+  if (!reader) return (await response.text()).slice(0, MAX_HTML_BYTES);
   const chunks = [];
   let received = 0;
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
     received += value.byteLength;
-    if (received > MAX_HTML_BYTES) throw new Error('페이지가 너무 커서 요약할 수 없습니다.');
+    if (received > MAX_HTML_BYTES) throw new HttpsError('invalid-argument', '페이지가 너무 큽니다.');
     chunks.push(value);
   }
   return Buffer.concat(chunks).toString('utf8');
 }
-
-async function summarizeWithGemini({ title, description, body, url }) {
-  const apiKey = GEMINI_API_KEY.value();
-  if (!apiKey) throw new Error('AI 요약 키가 설정되어 있지 않습니다.');
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: SUMMARY_MODEL });
-  const prompt = `아래 웹페이지를 소소킹 정보공유 피드용으로 요약해줘. 원문을 길게 복사하지 말고 한국어로 짧고 유용하게 정리해.\n\n규칙:\n- 제목 40자 이내\n- 요약 2문장 이내\n- 핵심 포인트 3개\n- 광고성/선정적 표현 제거\n- JSON만 반환\n\nURL: ${url}\n제목: ${title}\n설명: ${description}\n본문 일부: ${body.slice(0, 4500)}\n\n반환 형식: {"title":"","summary":"","points":["","",""]}`;
+async function summarize(page, url) {
+  const apiKey = String(geminiKey.value() || '').trim();
+  if (!apiKey) throw new HttpsError('failed-precondition', 'AI 요약 키가 설정되어 있지 않습니다.');
+  const model = new GoogleGenerativeAI(apiKey).getGenerativeModel({ model: 'gemini-2.5-flash-lite', generationConfig: { responseMimeType: 'application/json' } });
+  const prompt = `다음 웹페이지를 한국어로 요약하세요. 원문을 길게 복사하지 말고 JSON만 출력하세요.\n형식: {"title":"40자 이내","summary":"2문장 이내","points":["핵심1","핵심2","핵심3"]}\nURL: ${url}\n제목: ${page.title}\n설명: ${page.description}\n본문: ${page.body.slice(0, 4500)}`;
   const result = await model.generateContent(prompt);
-  const text = result.response.text().replace(/```json|```/g, '').trim();
+  const raw = result.response.text().replace(/```json|```/g, '').trim();
   try {
-    const json = JSON.parse(text);
-    return {
-      title: clean(json.title || title, 80),
-      summary: clean(json.summary || description, 260),
-      points: Array.isArray(json.points) ? json.points.map(v => clean(v, 90)).filter(Boolean).slice(0, 3) : []
-    };
+    const json = JSON.parse(raw);
+    return { title: clean(json.title || page.title, 80), summary: clean(json.summary || page.description, 260), points: (Array.isArray(json.points) ? json.points : []).map(item => clean(item, 90)).filter(Boolean).slice(0, 3) };
   } catch {
-    return { title: clean(title, 80), summary: clean(text || description, 260), points: [] };
+    return { title: clean(page.title, 80), summary: clean(raw || page.description, 260), points: [] };
   }
 }
 
-const summarizeLink = onCall({ region: 'asia-northeast3', timeoutSeconds: 45, secrets: [GEMINI_API_KEY] }, async (request) => {
-  const userId = request.auth?.uid;
-  if (!userId) throw new Error('로그인 후 링크 요약을 사용할 수 있습니다.');
-  await checkRateLimit(userId, 'summarizeLink', 20, 86400);
-
-  const url = await validateUrl(request.data?.url);
-  const source = url.hostname.replace(/^www\./, '');
-  let decodedUrl = url.toString();
-  try { decodedUrl = decodeURIComponent(decodedUrl); } catch (_) {}
-  if (BLOCK_WORDS.some(word => decodedUrl.includes(word))) throw new Error('요약할 수 없는 링크입니다.');
-
+const summarizeLink = onCall({ region: REGION, timeoutSeconds: 45, secrets: [geminiKey] }, async request => {
+  const uid = requireRegisteredUser(request);
+  await reserve(uid);
+  const requested = await validateUrl(request.data?.url);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-  let res;
+  let response;
   try {
-    res = await fetch(url.toString(), {
-      redirect: 'follow',
-      signal: controller.signal,
-      headers: { 'user-agent': 'SosokingBot/1.0 (+https://sosoking.co.kr)', 'accept': 'text/html,application/xhtml+xml' }
-    });
+    response = await fetch(requested, { redirect: 'follow', signal: controller.signal, headers: { 'user-agent': 'SosokingBot/1.0 (+https://sosoking.co.kr)', accept: 'text/html,application/xhtml+xml' } });
   } catch {
-    throw new Error('링크 내용을 불러오지 못했습니다.');
-  } finally {
-    clearTimeout(timeout);
-  }
-
-  const finalUrl = new URL(res.url || url.toString());
-  if (finalUrl.protocol !== 'https:') throw new Error('https 링크만 요약할 수 있습니다.');
+    throw new HttpsError('unavailable', '링크 내용을 불러오지 못했습니다.');
+  } finally { clearTimeout(timeout); }
+  const finalUrl = new URL(response.url || requested.toString());
+  if (finalUrl.protocol !== 'https:') throw new HttpsError('invalid-argument', 'HTTPS 링크만 요약할 수 있습니다.');
   await assertPublicHost(finalUrl.hostname);
-
-  if (!res.ok) throw new Error('링크 내용을 불러오지 못했습니다.');
-  const contentType = res.headers.get('content-type') || '';
-  if (!contentType.includes('text/html')) throw new Error('HTML 페이지 링크만 요약할 수 있습니다.');
-  const html = await readLimitedText(res);
-  const page = extractPage(html, finalUrl);
-  const ai = await summarizeWithGemini({ ...page, url: finalUrl.toString() });
-  return {
-    ok: true,
-    url: finalUrl.toString(),
-    source: finalUrl.hostname.replace(/^www\./, ''),
-    model: SUMMARY_MODEL,
-    estimatedCostLabel: 'Gemini Flash-Lite 기준: 무료 한도부터 시작, 유료 사용 시 링크 요약 1회는 보통 수 원 미만 예상',
-    ...ai
-  };
+  if (!response.ok || !(response.headers.get('content-type') || '').includes('text/html')) throw new HttpsError('invalid-argument', 'HTML 페이지를 불러오지 못했습니다.');
+  const html = await readLimited(response);
+  const title = clean(meta(html, 'og:title') || (html.match(/<title[^>]*>([\s\S]*?)<\/title>/i) || [])[1] || finalUrl.hostname, 120);
+  const description = clean(meta(html, 'description') || meta(html, 'og:description'), 320);
+  const body = clean(html.replace(/<nav[\s\S]*?<\/nav>/gi, ' ').replace(/<footer[\s\S]*?<\/footer>/gi, ' '), 5500);
+  return { ok: true, url: finalUrl.toString(), source: finalUrl.hostname.replace(/^www\./, ''), ...(await summarize({ title, description, body }, finalUrl.toString())) };
 });
 
 module.exports = { summarizeLink };
