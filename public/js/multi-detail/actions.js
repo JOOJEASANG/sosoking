@@ -1,46 +1,38 @@
 import { db, functions } from '../firebase.js';
-import { doc, collection, getDocs, orderBy, query } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { collection, getDocs, orderBy, query } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
 
-const callCastMultiVote = httpsCallable(functions, 'castMultiVote');
-const callAddMultiParticipation = httpsCallable(functions, 'addMultiParticipation');
-const callAddMultiItemReply = httpsCallable(functions, 'addMultiItemReply');
-const callReactMultiItem = httpsCallable(functions, 'reactMultiItem');
+const callVote = httpsCallable(functions, 'castCommunityVote');
+const callAddDrip = httpsCallable(functions, 'addDripParticipation');
+const callAddReply = httpsCallable(functions, 'addDripReply');
+const callReactDrip = httpsCallable(functions, 'reactDripItem');
 
-function collectionForKind(kind) {
-  return kind === 'naming' ? 'multi_items' : `multi_${kind}`;
+export async function fetchDrips(postId) {
+  const snap = await getDocs(query(collection(db, 'feeds', postId, 'multi_drip'), orderBy('createdAt', 'asc')));
+  return snap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
 }
 
-export async function fetchItems(postId, kind) {
-  const snap = await getDocs(query(collection(db, 'feeds', postId, collectionForKind(kind)), orderBy('createdAt', 'asc')));
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+export async function fetchDripReplies(postId, itemId) {
+  const snap = await getDocs(query(collection(db, 'feeds', postId, 'multi_drip', itemId, 'replies'), orderBy('createdAt', 'asc')));
+  return snap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
 }
 
-export async function addParticipation(postId, kind, data) {
-  const result = await callAddMultiParticipation({ postId, kind, payload: data });
+export async function applyVote(postId, optionIdx) {
+  const result = await callVote({ postId, optionIdx });
   return result.data || { ok: true };
 }
 
-export function itemRef(postId, kind, itemId) {
-  return doc(db, 'feeds', postId, collectionForKind(kind), itemId);
-}
-
-export async function addItemReaction(postId, kind, itemId, key) {
-  const result = await callReactMultiItem({ postId, kind, itemId, reaction: key });
+export async function addDrip(postId, text) {
+  const result = await callAddDrip({ postId, text });
   return result.data || { ok: true };
 }
 
-export async function fetchReplies(postId, kind, itemId) {
-  const snap = await getDocs(query(collection(db, 'feeds', postId, collectionForKind(kind), itemId, 'replies'), orderBy('createdAt', 'asc')));
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-}
-
-export async function addItemReply(postId, kind, itemId, text) {
-  const result = await callAddMultiItemReply({ postId, kind, itemId, text });
+export async function addDripReply(postId, itemId, text) {
+  const result = await callAddReply({ postId, itemId, text });
   return result.data || { ok: true };
 }
 
-export async function applyVote(postRef, post, idx) {
-  const result = await callCastMultiVote({ postId: post.id || postRef.id, optionIdx: idx });
-  return result.data || { ok: true, post };
+export async function reactDrip(postId, itemId, reaction) {
+  const result = await callReactDrip({ postId, itemId, reaction });
+  return result.data || { ok: true };
 }

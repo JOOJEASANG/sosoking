@@ -16,156 +16,96 @@ function dayKey(date = new Date()) {
 async function assertAdmin(uid) {
   if (!uid) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
   const snap = await db.doc(`admins/${uid}`).get();
-  if (!snap.exists) throw new HttpsError('permission-denied', '관리자만 실행할 수 있습니다.');
+  if (!snap.exists) throw new HttpsError('permission-denied', '관리자 권한이 필요합니다.');
 }
 
-let _settingsCache = null;
-let _settingsCacheAt = 0;
-const SETTINGS_TTL = 5 * 60 * 1000;
-
-async function getSettings() {
-  const now = Date.now();
-  if (_settingsCache && now - _settingsCacheAt < SETTINGS_TTL) return _settingsCache;
-  const snap = await db.doc('site_settings/config').get();
-  const data = snap.exists ? snap.data() || {} : {};
-  _settingsCache = {
-    aiAdminAutomationEnabled: data.aiAdminAutomationEnabled !== false,
-    autoHideReportedPosts: data.autoHideReportedPosts === true,
-    reportHideThreshold: Math.max(2, Number(data.reportHideThreshold ?? 3)),
-    notificationRetentionDays: Math.max(7, Number(data.notificationRetentionDays ?? 45)),
-  };
-  _settingsCacheAt = now;
-  return _settingsCache;
+async function enabled() {
+  const snap = await db.doc('site_settings/config').get().catch(() => null);
+  return snap?.exists && snap.data()?.aiAdminAutomationEnabled === true;
 }
 
-async function cleanupOldNotifications(retentionDays) {
-  const cutoff = Timestamp.fromDate(new Date(Date.now() - retentionDays * 86400000));
-  const snap = await db.collection('notifications')
-    .where('read', '==', true)
-    .where('createdAt', '<', cutoff)
-    .limit(300)
-    .get()
-    .catch(() => ({ docs: [] }));
-  if (!snap.docs.length) return 0;
-  const batch = db.batch();
-  snap.docs.forEach(doc => batch.delete(doc.ref));
-  await batch.commit();
-  return snap.docs.length;
-}
-
-async function summarizeReports({ autoHideReportedPosts, reportHideThreshold }) {
+async function reportSummary() {
   const snap = await db.collection('reports')
     .where('resolved', '==', false)
-    .limit(200)
+    .limit(500)
     .get()
     .catch(() => ({ docs: [] }));
-
   const byPost = new Map();
-  snap.docs.forEach(doc => {
-    const data = doc.data() || {};
-    if (!data.postId) return;
+  for (const docSnap of snap.docs) {
+    const data = docSnap.data() || {};
+    if (!data.postId) continue;
     const item = byPost.get(data.postId) || { postId: data.postId, count: 0, reasons: [], reportIds: [] };
     item.count += 1;
-    if (data.reason) item.reasons.push(String(data.reason).slice(0, 80));
-    item.reportIds.push(doc.id);
+    if (data.reason) item.reasons.push(String(data.reason).slice(0, 100));
+    item.reportIds.push(docSnap.id);
     byPost.set(data.postId, item);
-  });
-
-  let hiddenCount = 0;
-  const riskyPosts = [...byPost.values()].filter(item => item.count >= reportHideThreshold);
-  if (autoHideReportedPosts && riskyPosts.length) {
-    const batch = db.batch();
-    riskyPosts.slice(0, 50).forEach(item => {
-      batch.set(db.doc(`feeds/${item.postId}`), {
-        hidden: true,
-        autoHiddenAt: FieldValue.serverTimestamp(),
-        autoHiddenBy: 'ai-admin-automation',
-        autoHiddenReason: `unresolved reports >= ${reportHideThreshold}`,
-      }, { merge: true });
-      hiddenCount += 1;
-    });
-    await batch.commit();
   }
-
-  return { unresolvedReports: snap.docs.length, riskyPosts: riskyPosts.slice(0, 20), autoHiddenPosts: hiddenCount };
-}
-
-async function collectDailyStats() {
-  const today = dayKey();
-  const todayStart = new Date(`${today}T00:00:00+09:00`);
-  const todayTs = Timestamp.fromDate(todayStart);
-  const [postsSnap, aiPostsSnap, reportsSnap, usageSnap] = await Promise.all([
-    db.collection('feeds').where('createdAt', '>=', todayTs).limit(500).get().catch(() => ({ size: 0 })),
-    db.collection('feeds').where('isAiGenerated', '==', true).where('aiGeneratedDate', '==', today).limit(100).get().catch(() => ({ size: 0 })),
-    db.collection('reports').where('resolved', '==', false).limit(500).get().catch(() => ({ size: 0 })),
-    db.doc(`ai_usage/${today}`).get().catch(() => null),
-  ]);
   return {
-    date: today,
-    todayPosts: postsSnap.size || 0,
-    todayAiPosts: aiPostsSnap.size || 0,
-    unresolvedReports: reportsSnap.size || 0,
-    aiUsage: usageSnap && usageSnap.exists ? usageSnap.data() : { total: 0 },
+    unresolvedReports: snap.docs.length,
+    posts: [...byPost.values()].sort((a, b) => b.count - a.count).slice(0, 50),
   };
 }
 
-async function runAdminAutomation({ actorId = 'scheduler' } = {}) {
-  const settings = await getSettings();
-  if (!settings.aiAdminAutomationEnabled) return { skipped: true, reason: 'disabled-by-admin' };
-
-  const [removedNotifications, reportSummary, stats] = await Promise.all([
-    cleanupOldNotifications(settings.notificationRetentionDays),
-    summarizeReports(settings),
-    collectDailyStats(),
+async function dailyStats() {
+  const date = dayKey();
+  const start = Timestamp.fromDate(new Date(`${date}T00:00:00+09:00`));
+  const [posts, aiPosts, reports, usage] = await Promise.all([
+    db.collection('feeds').where('createdAt', '>=', start).limit(1000).get().catch(() => ({ size: 0 })),
+    db.collection('feeds').where('isAiGenerated', '==', true).where('aiGeneratedDate', '==', date).limit(100).get().catch(() => ({ size: 0 })),
+    db.collection('reports').where('resolved', '==', false).limit(1000).get().catch(() => ({ size: 0 })),
+    db.doc(`ai_usage/${date}`).get().catch(() => null),
   ]);
+  return {
+    date,
+    todayPosts: posts.size || 0,
+    todayAiPosts: aiPosts.size || 0,
+    unresolvedReports: reports.size || 0,
+    aiUsage: usage?.exists ? usage.data() : {},
+  };
+}
 
+async function runAutomation(actorId = 'scheduler') {
+  if (!(await enabled())) return { skipped: true, reason: 'disabled' };
+  const [stats, reports] = await Promise.all([dailyStats(), reportSummary()]);
   const summary = {
     ...stats,
-    removedNotifications,
-    unresolvedReports: reportSummary.unresolvedReports,
-    riskyPosts: reportSummary.riskyPosts.map(item => ({ postId: item.postId, count: item.count, reasons: item.reasons.slice(0, 3) })),
-    autoHiddenPosts: reportSummary.autoHiddenPosts,
-    settings,
+    unresolvedReports: reports.unresolvedReports,
+    reportPosts: reports.posts,
+    requiresAdminReview: reports.posts.filter(item => item.count >= 2).map(item => item.postId),
     actorId,
     createdAt: FieldValue.serverTimestamp(),
     createdAtMs: Date.now(),
   };
-
   await db.doc(`admin_summaries/${stats.date}`).set(summary, { merge: true });
   await db.doc(`system_jobs/admin_automation_${stats.date}`).set({
-    status: 'done',
-    actorId,
-    removedNotifications,
-    autoHiddenPosts: reportSummary.autoHiddenPosts,
+    status: 'done', actorId, reportPostCount: reports.posts.length,
     createdAt: FieldValue.serverTimestamp(),
   }, { merge: true });
-
   return { ok: true, summary };
 }
 
-const dailyAdminAutomation = onSchedule(
-  { region: REGION, schedule: '20 8 * * *', timeZone: 'Asia/Seoul', timeoutSeconds: 120, memory: '256MiB' },
-  async () => { await runAdminAutomation({ actorId: 'scheduler' }); }
-);
+const dailyAdminAutomation = onSchedule({
+  region: REGION, schedule: '20 8 * * *', timeZone: 'Asia/Seoul', timeoutSeconds: 120,
+}, async () => runAutomation());
 
-const runAdminAutomationNow = onCall({ region: REGION, timeoutSeconds: 120 }, async (request) => {
-  await assertAdmin(request.auth && request.auth.uid);
-  return runAdminAutomation({ actorId: request.auth.uid });
+const runAdminAutomationNow = onCall({ region: REGION, timeoutSeconds: 120 }, async request => {
+  await assertAdmin(request.auth?.uid);
+  return runAutomation(request.auth.uid);
 });
 
-const getAdminAutomationStatus = onCall({ region: REGION, timeoutSeconds: 30 }, async (request) => {
-  await assertAdmin(request.auth && request.auth.uid);
+const getAdminAutomationStatus = onCall({ region: REGION, timeoutSeconds: 30 }, async request => {
+  await assertAdmin(request.auth?.uid);
   const today = dayKey();
-  const [summarySnap, settingsSnap, usageSnap] = await Promise.all([
+  const [summary, settings, usage] = await Promise.all([
     db.doc(`admin_summaries/${today}`).get(),
     db.doc('site_settings/config').get(),
     db.doc(`ai_usage/${today}`).get(),
   ]);
   return {
     today,
-    summary: summarySnap.exists ? summarySnap.data() : null,
-    settings: settingsSnap.exists ? settingsSnap.data() : {},
-    aiUsage: usageSnap.exists ? usageSnap.data() : { total: 0 },
+    summary: summary.exists ? summary.data() : null,
+    settings: settings.exists ? settings.data() : {},
+    aiUsage: usage.exists ? usage.data() : {},
   };
 });
 

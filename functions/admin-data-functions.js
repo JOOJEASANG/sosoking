@@ -5,33 +5,10 @@ const { getFirestore, FieldPath } = require('firebase-admin/firestore');
 
 const db = getFirestore();
 const REGION = 'asia-northeast3';
-
 const COLLECTIONS = [
-  'feeds',
-  'users',
-  'reports',
-  'notifications',
-  'admin_summaries',
-  'ai_usage',
-  'site_settings',
-  'config',
-  'game_rooms',
-  'points_ledger',
-  'feedback',
-  'admins',
-];
-
-const FEED_SUBCOLLECTIONS = [
-  'comments',
-  'acrostics',
-  'multi_naming',
-  'multi_acrostic',
-  'multi_relay',
-  'multi_fill',
-  'quiz_attempts',
-  'secret',
-  'viewers',
-  'view_events',
+  'feeds', 'users', 'reports', 'notifications', 'feedback',
+  'admins', 'admin_logs', 'ai_usage', 'site_settings', 'config',
+  'system_jobs', 'rate_limits', 'upload_usage', 'deleted_posts', 'deleted_users',
 ];
 
 async function assertAdmin(uid) {
@@ -75,79 +52,40 @@ function summarizeDoc(id, data) {
   };
 }
 
-async function deleteCollection(ref, batchSize = 100) {
-  let deleted = 0;
-  while (true) {
-    const snap = await ref.limit(batchSize).get();
-    if (snap.empty) break;
-    const batch = db.batch();
-    snap.docs.forEach(doc => batch.delete(doc.ref));
-    await batch.commit();
-    deleted += snap.size;
-    if (snap.size < batchSize) break;
-  }
-  return deleted;
-}
-
-async function deleteKnownFeedChildren(postRef) {
-  let deletedChildren = 0;
-  for (const name of FEED_SUBCOLLECTIONS) {
-    const subRef = postRef.collection(name);
-    const snap = await subRef.limit(100).get();
-    for (const doc of snap.docs) {
-      const nested = await doc.ref.listCollections();
-      for (const nestedCollection of nested) {
-        deletedChildren += await deleteCollection(nestedCollection);
-      }
-    }
-    deletedChildren += await deleteCollection(subRef);
-  }
-  return deletedChildren;
-}
-
 const listAdminCollections = onCall({ region: REGION, timeoutSeconds: 30 }, async request => {
-  await assertAdmin(request.auth && request.auth.uid);
+  await assertAdmin(request.auth?.uid);
   return { ok: true, collections: COLLECTIONS };
 });
 
-const listAdminCollectionDocs = onCall({ region: REGION, timeoutSeconds: 60, memory: '256MiB' }, async request => {
-  await assertAdmin(request.auth && request.auth.uid);
-  const collectionName = safeCollection(request.data && request.data.collection);
-  const max = Math.max(1, Math.min(100, Number(request.data && request.data.limit) || 30));
+const listAdminCollectionDocs = onCall({ region: REGION, timeoutSeconds: 60 }, async request => {
+  await assertAdmin(request.auth?.uid);
+  const collectionName = safeCollection(request.data?.collection);
+  const max = Math.max(1, Math.min(100, Number(request.data?.limit) || 30));
   const snap = await db.collection(collectionName).orderBy(FieldPath.documentId()).limit(max).get();
-  return {
-    ok: true,
-    collection: collectionName,
-    docs: snap.docs.map(doc => summarizeDoc(doc.id, doc.data() || {})),
-  };
+  return { ok: true, collection: collectionName, docs: snap.docs.map(docSnap => summarizeDoc(docSnap.id, docSnap.data() || {})) };
 });
 
-const deleteAdminDocument = onCall({ region: REGION, timeoutSeconds: 60 }, async request => {
-  await assertAdmin(request.auth && request.auth.uid);
-  const collectionName = safeCollection(request.data && request.data.collection);
-  const id = String((request.data && request.data.id) || '').trim();
+const deleteAdminDocument = onCall({ region: REGION, timeoutSeconds: 300, memory: '512MiB' }, async request => {
+  await assertAdmin(request.auth?.uid);
+  const collectionName = safeCollection(request.data?.collection);
+  const id = String(request.data?.id || '').trim();
   if (!id || id.includes('/')) throw new HttpsError('invalid-argument', '문서 ID가 올바르지 않습니다.');
-  if (collectionName === 'admins' && id === request.auth.uid) throw new HttpsError('failed-precondition', '자기 자신의 관리자 권한 문서는 삭제할 수 없습니다.');
-  if (collectionName === 'feeds') {
-    const postRef = db.collection(collectionName).doc(id);
-    const deletedChildren = await deleteKnownFeedChildren(postRef);
-    await postRef.delete();
-    return { ok: true, collection: collectionName, id, deletedChildren };
-  }
-  await db.collection(collectionName).doc(id).delete();
+  if (collectionName === 'admins' && id === request.auth.uid) throw new HttpsError('failed-precondition', '자기 관리자 권한은 삭제할 수 없습니다.');
+  const ref = db.collection(collectionName).doc(id);
+  if (collectionName === 'feeds' || collectionName === 'users') await db.recursiveDelete(ref);
+  else await ref.delete();
   return { ok: true, collection: collectionName, id };
 });
 
-const deleteFeedPostDeep = onCall({ region: REGION, timeoutSeconds: 120, memory: '512MiB' }, async request => {
-  await assertAdmin(request.auth && request.auth.uid);
-  const postId = cleanId(request.data && request.data.postId);
+const deleteFeedPostDeep = onCall({ region: REGION, timeoutSeconds: 300, memory: '512MiB' }, async request => {
+  await assertAdmin(request.auth?.uid);
+  const postId = cleanId(request.data?.postId);
   if (!postId) throw new HttpsError('invalid-argument', '게시글 정보가 없습니다.');
-  const postRef = db.doc(`feeds/${postId}`);
-  const snap = await postRef.get();
-  if (!snap.exists) return { ok: true, postId, deleted: false, deletedChildren: 0 };
-  const deletedChildren = await deleteKnownFeedChildren(postRef);
-  await postRef.delete();
-  return { ok: true, postId, deleted: true, deletedChildren };
+  const ref = db.doc(`feeds/${postId}`);
+  const snap = await ref.get();
+  if (!snap.exists) return { ok: true, postId, deleted: false };
+  await db.recursiveDelete(ref);
+  return { ok: true, postId, deleted: true };
 });
 
 module.exports = { listAdminCollections, listAdminCollectionDocs, deleteAdminDocument, deleteFeedPostDeep };

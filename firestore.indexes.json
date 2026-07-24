@@ -4,7 +4,7 @@
       "collectionGroup": "feeds",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "cat", "order": "ASCENDING" },
+        { "fieldPath": "hidden", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     },
@@ -12,8 +12,17 @@
       "collectionGroup": "feeds",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "type", "order": "ASCENDING" },
+        { "fieldPath": "hidden", "order": "ASCENDING" },
+        { "fieldPath": "subtype", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "feeds",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "hidden", "order": "ASCENDING" },
+        { "fieldPath": "reactions.total", "order": "DESCENDING" }
       ]
     },
     {
@@ -25,30 +34,6 @@
       ]
     },
     {
-      "collectionGroup": "feeds",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "reactions.total", "order": "DESCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "feeds",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "title", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "feeds",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "type", "order": "ASCENDING" },
-        { "fieldPath": "reactions.total", "order": "DESCENDING" }
-      ]
-    },
-    {
       "collectionGroup": "notifications",
       "queryScope": "COLLECTION",
       "fields": [
@@ -69,17 +54,8 @@
       "collectionGroup": "notifications",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "userId", "order": "ASCENDING" },
         { "fieldPath": "read", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "notifications",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "userId", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
+        { "fieldPath": "createdAt", "order": "ASCENDING" }
       ]
     },
     {
@@ -88,32 +64,6 @@
       "fields": [
         { "fieldPath": "resolved", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "feeds",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "type", "order": "ASCENDING" },
-        { "fieldPath": "hidden", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "ai_usage_users",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        { "fieldPath": "count", "order": "ASCENDING" },
-        { "fieldPath": "updatedAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "predictions",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "boardId", "order": "ASCENDING" },
-        { "fieldPath": "settled", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "ASCENDING" }
       ]
     }
   ],

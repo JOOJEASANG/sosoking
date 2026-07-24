@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "check": "node --check functions/*.js",
+    "check": "node --experimental-vm-modules tools/check-project.mjs",
     "build": "npm run check && node -e \"console.log('Static Firebase Hosting app: no build step')\"",
     "deploy": "npx firebase-tools deploy",
     "deploy:hosting": "npx firebase-tools deploy --only hosting",

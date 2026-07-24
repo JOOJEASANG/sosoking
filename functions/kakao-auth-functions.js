@@ -7,172 +7,127 @@ const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const https = require('https');
 
 if (!getApps().length) initializeApp();
-const adminAuth = getAuth();
+const auth = getAuth();
 const db = getFirestore();
+const REGION = 'asia-northeast3';
+const KAKAO_APP_KEY = '377995fee0850a5de4167641d343be0e';
+const REDIRECTS = new Set(['https://sosoking.co.kr', 'https://www.sosoking.co.kr']);
 
-const KAKAO_JS_APP_KEY = '377995fee0850a5de4167641d343be0e';
-const ALLOWED_REDIRECT_URIS = new Set([
-  'https://sosoking.co.kr',
-  'https://www.sosoking.co.kr',
-]);
-
-function assertAllowedRedirectUri(redirectUri) {
-  const normalized = String(redirectUri || '').trim().replace(/\/$/, '');
-  if (!ALLOWED_REDIRECT_URIS.has(normalized)) {
-    throw new HttpsError('invalid-argument', '허용되지 않은 카카오 로그인 redirectUri입니다.');
-  }
-  return normalized;
-}
-
-function exchangeKakaoCode(code, redirectUri) {
+function requestJson(options, body = '') {
   return new Promise((resolve, reject) => {
-    const body = [
-      'grant_type=authorization_code',
-      `client_id=${encodeURIComponent(KAKAO_JS_APP_KEY)}`,
-      `redirect_uri=${encodeURIComponent(redirectUri)}`,
-      `code=${encodeURIComponent(code)}`,
-    ].join('&');
-    const req = https.request({
-      hostname: 'kauth.kakao.com',
-      path: '/oauth/token',
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
-        'Content-Length': Buffer.byteLength(body),
-      },
-    }, res => {
+    const req = https.request(options, response => {
       let data = '';
-      res.on('data', chunk => { data += chunk; });
-      res.on('end', () => {
+      response.on('data', chunk => { data += chunk; });
+      response.on('end', () => {
         try {
           const json = JSON.parse(data);
-          if (json.access_token) resolve(json.access_token);
-          else reject(new Error('Kakao token exchange failed: ' + data));
-        } catch (e) { reject(e); }
+          if (response.statusCode >= 200 && response.statusCode < 300) resolve(json);
+          else reject(new Error(`Kakao API ${response.statusCode}`));
+        } catch (error) { reject(error); }
       });
     });
+    req.setTimeout(10000, () => req.destroy(new Error('Kakao API timeout')));
     req.on('error', reject);
-    req.write(body);
+    if (body) req.write(body);
     req.end();
   });
 }
 
-function fetchKakaoUser(accessToken) {
-  return new Promise((resolve, reject) => {
-    const req = https.request(
-      {
-        hostname: 'kapi.kakao.com',
-        path: '/v2/user/me',
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
-        },
-      },
-      (res) => {
-        let body = '';
-        res.on('data', (chunk) => { body += chunk; });
-        res.on('end', () => {
-          try {
-            const data = JSON.parse(body);
-            if (data.id) resolve(data);
-            else reject(new Error('Kakao API error: ' + body));
-          } catch (e) {
-            reject(e);
-          }
-        });
-      }
-    );
-    req.on('error', reject);
-    req.end();
-  });
+function cleanNickname(value) {
+  return String(value || '').replace(/[^가-힣a-zA-Z0-9_]/g, '').slice(0, 12);
 }
 
-exports.kakaoLogin = onCall({ region: 'asia-northeast3' }, async (request) => {
-  let { accessToken, code, redirectUri } = request.data || {};
+function candidate(base, attempt) {
+  if (attempt === 0) return cleanNickname(base) || '카카오회원';
+  const suffix = String(1000 + Math.floor(Math.random() * 9000));
+  return cleanNickname((cleanNickname(base) || '카카오회원').slice(0, 12 - suffix.length) + suffix);
+}
 
-  if (!accessToken && code) {
-    redirectUri = assertAllowedRedirectUri(redirectUri);
-    try {
-      accessToken = await exchangeKakaoCode(code, redirectUri);
-    } catch (e) {
-      console.error('[kakaoLogin] code exchange error:', e.message);
-      throw new HttpsError('unauthenticated', '카카오 인증 코드 교환 실패: ' + e.message);
-    }
-  }
+async function exchangeCode(code, redirectUri) {
+  const redirect = String(redirectUri || '').trim().replace(/\/$/, '');
+  if (!REDIRECTS.has(redirect)) throw new HttpsError('invalid-argument', '허용되지 않은 로그인 주소입니다.');
+  const body = new URLSearchParams({ grant_type: 'authorization_code', client_id: KAKAO_APP_KEY, redirect_uri: redirect, code }).toString();
+  const result = await requestJson({
+    hostname: 'kauth.kakao.com', path: '/oauth/token', method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8', 'Content-Length': Buffer.byteLength(body) },
+  }, body);
+  if (!result.access_token) throw new HttpsError('unauthenticated', '카카오 인증 코드 교환에 실패했습니다.');
+  return result.access_token;
+}
 
-  if (!accessToken || typeof accessToken !== 'string' || accessToken.length < 10) {
-    throw new HttpsError('invalid-argument', '카카오 액세스 토큰 또는 인증 코드가 필요해요');
-  }
+async function fetchKakaoUser(accessToken) {
+  const result = await requestJson({
+    hostname: 'kapi.kakao.com', path: '/v2/user/me', method: 'GET',
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!result.id) throw new HttpsError('unauthenticated', '카카오 사용자 정보를 확인하지 못했습니다.');
+  return result;
+}
 
-  let kakaoUser;
-  try {
-    kakaoUser = await fetchKakaoUser(accessToken);
-  } catch (e) {
-    console.error('[kakaoLogin] Kakao API error:', e.message);
-    throw new HttpsError('unauthenticated', '카카오 인증에 실패했어요. 다시 시도해주세요.');
-  }
-
-  const kakaoId = String(kakaoUser.id);
-  const uid = `kakao_${kakaoId}`;
-
-  const kakaoAccount = kakaoUser.kakao_account || {};
-  const profile = kakaoAccount.profile || {};
-  const displayName = profile.nickname || `카카오${kakaoId.slice(-4)}`;
-  const photoURL = profile.profile_image_url || null;
-  const email = kakaoAccount.email || null;
-
-  let customToken;
-  try {
-    customToken = await adminAuth.createCustomToken(uid, {
-      provider: 'kakao',
-      kakaoId,
-    });
-  } catch (e) {
-    console.error('[kakaoLogin] createCustomToken error:', e.message);
-    throw new HttpsError('internal', '로그인 처리에 실패했어요');
-  }
-
-  try {
-    const userRef = db.doc(`users/${uid}`);
-    const existingSnap = await userRef.get().catch(() => null);
-    const existingNickname = existingSnap?.data()?.nickname || null;
-
-    // 닉네임이 없는 신규 사용자면 카카오 displayName으로 자동 설정 시도
-    let autoNickname = null;
-    if (!existingNickname) {
-      const candidate = (displayName || '').replace(/[^가-힣a-zA-Z0-9_]/g, '').slice(0, 12);
-      if (candidate && candidate.length >= 2) {
-        const nickRef = db.doc(`nicknames/${candidate}`);
-        const nickSnap = await nickRef.get().catch(() => null);
-        if (!nickSnap?.exists) {
-          autoNickname = candidate;
-        }
-      }
-    }
-
-    const batch = db.batch();
-    batch.set(userRef, {
-      displayName,
-      photoURL,
-      ...(email ? { email } : {}),
-      ...(autoNickname ? { nickname: autoNickname } : {}),
-      provider: 'kakao',
-      kakaoId,
+async function saveProfile(uid, profile) {
+  const userRef = db.doc(`users/${uid}`);
+  const existing = await userRef.get();
+  if (existing.exists && existing.data()?.nickname) {
+    await userRef.set({
+      displayName: profile.displayName,
+      photoURL: profile.photoURL,
+      ...(profile.email ? { email: profile.email } : {}),
+      provider: 'kakao', kakaoId: profile.kakaoId,
       updatedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
-
-    if (autoNickname) {
-      batch.set(db.doc(`nicknames/${autoNickname}`), {
-        uid,
-        createdAt: FieldValue.serverTimestamp(),
-      });
-    }
-
-    await batch.commit();
-  } catch (e) {
-    console.warn('[kakaoLogin] Firestore update error (non-fatal):', e.message);
+    return existing.data().nickname;
   }
 
-  return { customToken, displayName, photoURL };
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const nickname = candidate(profile.displayName, attempt);
+    try {
+      await db.runTransaction(async tx => {
+        const nicknameRef = db.doc(`nicknames/${nickname}`);
+        const [userSnap, nicknameSnap] = await Promise.all([tx.get(userRef), tx.get(nicknameRef)]);
+        if (nicknameSnap.exists && nicknameSnap.data()?.uid !== uid) throw new HttpsError('already-exists', '닉네임 중복');
+        tx.set(nicknameRef, { uid, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+        tx.set(userRef, {
+          nickname,
+          displayName: profile.displayName,
+          photoURL: profile.photoURL,
+          ...(profile.email ? { email: profile.email } : {}),
+          provider: 'kakao', kakaoId: profile.kakaoId,
+          updatedAt: FieldValue.serverTimestamp(),
+          ...(userSnap.exists ? {} : { createdAt: FieldValue.serverTimestamp(), points: 0, totalPoints: 0, postCount: 0 }),
+        }, { merge: true });
+      });
+      return nickname;
+    } catch (error) {
+      if (String(error.code || '').includes('already-exists')) continue;
+      throw error;
+    }
+  }
+  throw new HttpsError('resource-exhausted', '사용 가능한 닉네임을 만들지 못했습니다.');
+}
+
+const kakaoLogin = onCall({ region: REGION, timeoutSeconds: 30 }, async request => {
+  let accessToken = String(request.data?.accessToken || '');
+  if (!accessToken && request.data?.code) accessToken = await exchangeCode(String(request.data.code), request.data.redirectUri);
+  if (accessToken.length < 10) throw new HttpsError('invalid-argument', '카카오 인증 정보가 필요합니다.');
+
+  let user;
+  try {
+    user = await fetchKakaoUser(accessToken);
+  } catch (error) {
+    console.error('[kakaoLogin]', error);
+    throw error instanceof HttpsError ? error : new HttpsError('unauthenticated', '카카오 인증에 실패했습니다.');
+  }
+
+  const kakaoId = String(user.id);
+  const uid = `kakao_${kakaoId}`;
+  const account = user.kakao_account || {};
+  const profile = account.profile || {};
+  const displayName = String(profile.nickname || `카카오${kakaoId.slice(-4)}`).slice(0, 80);
+  const photoURL = String(profile.profile_image_url || '').slice(0, 500);
+  const email = String(account.email || '').slice(0, 180);
+  const nickname = await saveProfile(uid, { kakaoId, displayName, photoURL, email });
+  const customToken = await auth.createCustomToken(uid, { provider: 'kakao', kakaoId });
+  return { customToken, displayName, photoURL, nickname };
 });
+
+module.exports = { kakaoLogin };

@@ -1,244 +1,188 @@
-import { db } from '../firebase.js';
-import { collection, query, orderBy, limit, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { getQueryParams, navigate } from '../router.js';
 import { renderFeedCard, renderSkeletonCards } from '../components/feed-card.js';
 import { setMeta } from '../utils/seo.js';
-import { getPublicAiResidents } from '../ai-residents.js';
-import { normalizeFeedSort, postMatchesType, postMatchesSearch, sortFeedPosts } from '../feed/filter.js';
-import { renderFeedSearchBar, renderFeedFilterBar, renderFeedEmptyState, updateFeedFilterUI, renderFeedSummary } from '../feed/render.js';
+import { fetchFeeds, fetchHotPosts } from '../services/feed-service.js';
 
 const PAGE_SIZE = 20;
-const QUERY_LIMIT = 160;
-const NAV_CONTEXT_KEY = 'sosoking:feedNavContext';
-
-const GAME_FILTERS = [
-  { key: '', icon: '✨', label: '전체', write: 'judgment' },
-  { key: 'judgment', icon: '⚖️', label: '판결', write: 'judgment' },
-  { key: 'consult', icon: '🫠', label: '상담', write: 'consult' },
-  { key: 'vote', icon: '🗳️', label: '토론', write: 'vote' },
-  { key: 'drip', icon: '😂', label: '드립', write: 'drip' },
+const FILTERS = [
+  { key: '', icon: '✨', label: '전체', preset: 'judgment' },
+  { key: 'judgment', icon: '⚖️', label: '판결', preset: 'judgment' },
+  { key: 'consult', icon: '🫠', label: '상담', preset: 'consult' },
+  { key: 'vote', icon: '🗳️', label: '토론', preset: 'vote' },
+  { key: 'drip', icon: '😂', label: '드립', preset: 'drip' },
 ];
 
 let currentType = '';
 let currentSearch = '';
 let currentSort = 'latest';
 let currentPage = 1;
-let cachedPosts = [];
-let isLoading = false;
+let pages = new Map();
+let cursors = new Map([[1, null]]);
+let hasMore = false;
+let loading = false;
 
-function normalizeGameType(value = '') {
+function normalizeType(value) {
   const key = String(value || '').trim();
-  if (key === 'collect' || key === 'general' || key === 'category') return 'judgment';
-  if (key === 'quiz' || key === 'initial_game') return 'consult';
-  if (GAME_FILTERS.some(item => item.key === key)) return key;
-  return '';
+  return FILTERS.some(item => item.key === key) ? key : '';
 }
-
-function currentGameFilter() {
-  return GAME_FILTERS.find(item => item.key === currentType) || GAME_FILTERS[0];
+function escapeText(value) {
+  return String(value || '').replace(/[&<>\"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[char]));
 }
-
-function renderGameTabs() {
-  return `<div class="soso-room-tabs" aria-label="소소킹 방 필터">${GAME_FILTERS.map(item => `<button type="button" class="soso-room-tab ${currentType === item.key ? 'active' : ''}" data-type-filter="${item.key}"><span>${item.icon}</span>${item.label}</button>`).join('')}</div>`;
+function matchesSearch(post, search) {
+  if (!search) return true;
+  const needle = search.toLowerCase().replace(/\s+/g, '');
+  const text = [post.title, post.desc, post.authorName, ...(post.tags || [])].join(' ').toLowerCase().replace(/\s+/g, '');
+  return text.includes(needle);
 }
-
-function renderGameHead() {
-  return `
-    <div class="soso-room-head">
-      <div class="soso-room-head__label">🎭 AI 캐릭터 참여 커뮤니티</div>
-      <div class="soso-room-head__title">판결 · 상담 · 토론 · 드립</div>
-      <div class="soso-room-head__desc">판결은 배심원처럼, 상담은 따뜻하게, 토론은 찬반으로, 드립은 짧고 웃기게 AI 캐릭터들이 각 방 성격에 맞춰 끼어듭니다.</div>
-      <div class="soso-room-head__action"><button class="btn btn--primary btn--sm" type="button" id="room-write-btn">참여글 열기</button></div>
-    </div>`;
+function selectedFilter() {
+  return FILTERS.find(item => item.key === currentType) || FILTERS[0];
 }
-
-function renderAiResidentsIntro() {
-  const residents = getPublicAiResidents();
-  return `
-    <section class="soso-ai-residents" aria-label="AI 캐릭터 소개" style="margin:14px 0;padding:16px;border:1px solid var(--color-border,#e5e7eb);border-radius:18px;background:linear-gradient(135deg,rgba(99,102,241,.08),rgba(236,72,153,.06));">
-      <div style="display:flex;gap:10px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;margin-bottom:14px;">
-        <div>
-          <div style="font-size:13px;font-weight:900;color:var(--color-primary,#6366f1);margin-bottom:4px;">8명 캐릭터 대기중</div>
-          <div style="font-size:20px;font-weight:950;color:var(--color-text-primary,#111827);line-height:1.25;">글을 올리면 캐릭터들이 유저처럼 댓글로 참여합니다</div>
-          <div style="font-size:13px;color:var(--color-text-secondary,#6b7280);margin-top:6px;">판결·상담·토론·드립마다 참여 방식이 달라집니다. 공감, 반박, 한 줄 드립, 현실 조언이 섞여 댓글판을 만듭니다.</div>
-        </div>
-        <button class="btn btn--ghost btn--sm" type="button" id="ai-residents-write-btn">캐릭터 참여글 쓰기</button>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;padding:4px 2px 2px;">
-        ${residents.map(resident => `
-          <div style="padding:14px;border-radius:16px;min-height:92px;background:rgba(255,255,255,.72);border:1px solid rgba(148,163,184,.28);">
-            <div style="display:flex;align-items:center;gap:7px;font-weight:950;color:var(--color-text-primary,#111827);"><span style="font-size:20px">${resident.emoji}</span>${resident.name}</div>
-            <div style="font-size:12px;font-weight:800;color:var(--color-text-secondary,#6b7280);margin-top:5px;">${resident.role} · ${resident.mbti || ''}</div>
-            <div style="font-size:11px;color:var(--color-text-muted,#9ca3af);margin-top:6px;line-height:1.35;">${resident.specialty}</div>
-            <div style="font-size:11px;color:var(--color-primary,#6366f1);margin-top:8px;line-height:1.35;">${(resident.catchphrases || []).slice(0, 1).join('')}</div>
-          </div>`).join('')}
-      </div>
-    </section>`;
-}
-
-export async function renderFeed() {
-  const el = document.getElementById('page-content');
-  const params = getQueryParams();
-  currentType = normalizeGameType(params.type || '');
-  currentSearch = params.q || '';
-  currentSort = normalizeFeedSort(params.sort);
-  currentPage = Math.max(1, Number(params.page || 1));
-  cachedPosts = [];
-  isLoading = false;
-  setMeta('소소킹 커뮤니티', '판결·상담·토론·드립에 AI 캐릭터들이 댓글로 참여하는 소소킹');
-
-  el.innerHTML = `
-    <div class="soso-feed-page layout-main layout-main--full feed-page-clean">
-      <div class="soso-feed-toolbar">
-        ${renderGameTabs()}
-        ${renderGameHead()}
-        ${renderAiResidentsIntro()}
-        ${renderFeedSearchBar({ search: currentSearch })}
-        ${renderFeedFilterBar({ type: currentType, search: currentSearch })}
-      </div>
-      <div id="feed-summary" class="soso-feed-summary feed-result-summary"></div>
-      <div id="feed-list" class="soso-feed-list">${renderSkeletonCards(5)}</div>
-      <div id="feed-pagination" class="feed-pagination"></div>
-      <div id="feed-loader" class="loading-center" style="display:none"><div class="spinner"></div></div>
-    </div>`;
-
-  bindFeedEvents();
-  await loadPosts();
-}
-
-function bindFeedEvents() {
-  document.getElementById('room-write-btn')?.addEventListener('click', () => navigate(`/write?type=multi&preset=${currentGameFilter().write || 'judgment'}`));
-  document.getElementById('ai-residents-write-btn')?.addEventListener('click', () => navigate('/write?type=multi&preset=judgment'));
-  document.querySelectorAll('[data-type-filter]').forEach(btn => btn.addEventListener('click', () => {
-    currentType = btn.dataset.typeFilter || '';
-    currentPage = 1;
-    refreshFeed();
-  }));
-
-  const searchInput = document.getElementById('feed-search-input');
-  const searchBtn = document.getElementById('btn-feed-search');
-  const clearBtn = document.getElementById('search-clear-btn');
-  let debounceTimer = null;
-  const doSearch = () => {
-    currentSearch = searchInput?.value.trim() || '';
-    currentPage = 1;
-    refreshFeed();
-    clearBtn?.style.setProperty('display', currentSearch ? 'inline-flex' : 'none');
-  };
-  searchInput?.addEventListener('input', () => {
-    clearBtn?.style.setProperty('display', searchInput.value.trim() ? 'inline-flex' : 'none');
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(doSearch, 420);
-  });
-  searchInput?.addEventListener('keydown', e => { if (e.key === 'Enter') { clearTimeout(debounceTimer); doSearch(); } });
-  searchBtn?.addEventListener('click', () => { clearTimeout(debounceTimer); doSearch(); });
-  clearBtn?.addEventListener('click', () => {
-    clearTimeout(debounceTimer);
-    if (searchInput) searchInput.value = '';
-    currentSearch = '';
-    currentPage = 1;
-    refreshFeed();
-    clearBtn.style.display = 'none';
-  });
-}
-
-function bindSortEvents() {
-  const select = document.getElementById('feed-sort-select');
-  if (!select || select.dataset.bound === '1') return;
-  select.dataset.bound = '1';
-  select.addEventListener('change', e => {
-    currentSort = normalizeFeedSort(e.target.value || 'latest');
-    currentPage = 1;
-    refreshFeed();
-  });
-}
-
-function refreshFeed() {
-  updateUrlState();
-  updateFeedFilterUI({ type: currentType, search: currentSearch, sort: currentSort });
-  loadPosts();
-}
-
-function updateUrlState() {
+function updateHash() {
   const params = new URLSearchParams();
   if (currentType) params.set('type', currentType);
   if (currentSearch) params.set('q', currentSearch);
-  if (currentSort && currentSort !== 'latest') params.set('sort', currentSort);
+  if (currentSort !== 'latest') params.set('sort', currentSort);
   if (currentPage > 1) params.set('page', String(currentPage));
-  const next = params.toString() ? `#/feed?${params.toString()}` : '#/feed';
-  if (window.location.hash !== next) history.replaceState(null, '', next);
+  const hash = params.toString() ? `#/feed?${params}` : '#/feed';
+  if (location.hash !== hash) history.replaceState(null, '', hash);
+}
+function resetData() {
+  currentPage = 1;
+  pages = new Map();
+  cursors = new Map([[1, null]]);
+  hasMore = false;
 }
 
-async function loadPosts() {
-  if (isLoading) return;
-  isLoading = true;
-  const loaderEl = document.getElementById('feed-loader');
-  const listEl = document.getElementById('feed-list');
-  if (loaderEl) loaderEl.style.display = 'flex';
-  if (listEl) {
-    listEl.classList.remove('is-empty');
-    listEl.innerHTML = renderSkeletonCards(3);
-  }
+export async function renderFeed() {
+  const root = document.getElementById('page-content');
+  if (!root) return;
+  const params = getQueryParams();
+  currentType = normalizeType(params.type);
+  currentSearch = String(params.q || '').trim();
+  currentSort = params.sort === 'popular' ? 'popular' : 'latest';
+  currentPage = Math.max(1, Number(params.page || 1));
+  pages = new Map();
+  cursors = new Map([[1, null]]);
+  setMeta('소소킹 커뮤니티', '판결, 상담, 토론, 드립에 AI 캐릭터와 회원이 함께 참여합니다.');
+  root.innerHTML = `
+    <div class="soso-feed-page layout-main layout-main--full feed-page-clean">
+      <div class="soso-room-tabs">${FILTERS.map(item => `<button type="button" class="soso-room-tab ${currentType === item.key ? 'active' : ''}" data-feed-type="${item.key}"><span>${item.icon}</span>${item.label}</button>`).join('')}</div>
+      <section class="soso-room-head">
+        <div><div class="soso-room-head__label">🎭 AI 캐릭터 참여 커뮤니티</div><div class="soso-room-head__title">판결 · 상담 · 토론 · 드립</div></div>
+        <button class="btn btn--primary btn--sm" type="button" data-feed-write>글쓰기</button>
+      </section>
+      <div class="soso-feed-toolbar-row" style="display:flex;gap:8px;flex-wrap:wrap;margin:14px 0">
+        <input id="feed-search-input" class="form-input" style="flex:1;min-width:180px" value="${escapeText(currentSearch)}" placeholder="제목, 내용, 태그 검색">
+        <select id="feed-sort-select" class="form-select"><option value="latest" ${currentSort === 'latest' ? 'selected' : ''}>최신순</option><option value="popular" ${currentSort === 'popular' ? 'selected' : ''}>인기순</option></select>
+        <button type="button" class="btn btn--ghost" data-feed-search>검색</button>
+      </div>
+      <div id="feed-summary" class="soso-feed-summary"></div>
+      <div id="feed-list" class="soso-feed-list">${renderSkeletonCards(5)}</div>
+      <div id="feed-pagination" class="feed-pagination"></div>
+    </div>`;
+  bindEvents(root);
+  await goToPage(currentPage);
+}
 
+function bindEvents(root) {
+  root.querySelectorAll('[data-feed-type]').forEach(button => button.addEventListener('click', async () => {
+    currentType = button.dataset.feedType || '';
+    root.querySelectorAll('[data-feed-type]').forEach(item => item.classList.toggle('active', item === button));
+    resetData();
+    updateHash();
+    await goToPage(1);
+  }));
+  root.querySelector('[data-feed-write]')?.addEventListener('click', () => navigate(`/write?type=multi&preset=${selectedFilter().preset}`));
+  const searchInput = root.querySelector('#feed-search-input');
+  const applySearch = async () => {
+    currentSearch = searchInput?.value.trim() || '';
+    resetData();
+    updateHash();
+    await goToPage(1);
+  };
+  root.querySelector('[data-feed-search]')?.addEventListener('click', applySearch);
+  searchInput?.addEventListener('keydown', event => { if (event.key === 'Enter') applySearch(); });
+  root.querySelector('#feed-sort-select')?.addEventListener('change', async event => {
+    currentSort = event.target.value === 'popular' ? 'popular' : 'latest';
+    resetData();
+    updateHash();
+    await goToPage(1);
+  });
+}
+
+async function loadSearchResults() {
+  const loaded = [];
+  let cursor = null;
+  for (let index = 0; index < 5; index += 1) {
+    const result = await fetchFeeds({ subtype: currentType, lastDoc: cursor, pageSize: 40 });
+    loaded.push(...result.posts);
+    cursor = result.lastDoc;
+    if (!result.hasMore) break;
+  }
+  return loaded.filter(post => matchesSearch(post, currentSearch));
+}
+
+async function loadPopularResults() {
+  const posts = await fetchHotPosts(100);
+  return posts.filter(post => (!currentType || post.subtype === currentType) && matchesSearch(post, currentSearch));
+}
+
+async function ensureLatestPage(page) {
+  for (let number = 1; number <= page; number += 1) {
+    if (pages.has(number)) continue;
+    const cursor = cursors.get(number) || null;
+    const result = await fetchFeeds({ subtype: currentType, lastDoc: cursor, pageSize: PAGE_SIZE });
+    pages.set(number, result.posts);
+    cursors.set(number + 1, result.lastDoc);
+    if (number === page) hasMore = result.hasMore;
+    if (!result.hasMore && number < page) break;
+  }
+}
+
+async function goToPage(page) {
+  if (loading) return;
+  loading = true;
+  const list = document.getElementById('feed-list');
+  const summary = document.getElementById('feed-summary');
+  if (list) list.innerHTML = renderSkeletonCards(4);
   try {
-    const snap = await getDocs(query(collection(db, 'feeds'), orderBy('createdAt', 'desc'), limit(QUERY_LIMIT)));
-    let posts = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(post => !post.hidden);
-    if (currentSearch) posts = posts.filter(post => postMatchesSearch(post, currentSearch));
-    if (currentType) posts = posts.filter(post => postMatchesType(post, currentType));
-    cachedPosts = sortFeedPosts(posts, currentSort);
-    renderCurrentPage();
-  } catch (error) {
-    console.error('커뮤니티 목록 로드 실패', error);
-    if (listEl) {
-      listEl.classList.add('is-empty');
-      listEl.innerHTML = '<div class="empty-state"><div class="empty-state__icon">⚠️</div><div class="empty-state__title">글을 불러오지 못했어요</div><div class="empty-state__desc">잠시 후 다시 시도해주세요.</div></div>';
+    let posts;
+    let totalPages = null;
+    if (currentSearch) {
+      const all = currentSort === 'popular' ? await loadPopularResults() : await loadSearchResults();
+      totalPages = Math.max(1, Math.ceil(all.length / PAGE_SIZE));
+      currentPage = Math.min(Math.max(1, page), totalPages);
+      posts = all.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+      hasMore = currentPage < totalPages;
+    } else if (currentSort === 'popular') {
+      const all = await loadPopularResults();
+      totalPages = Math.max(1, Math.ceil(all.length / PAGE_SIZE));
+      currentPage = Math.min(Math.max(1, page), totalPages);
+      posts = all.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+      hasMore = currentPage < totalPages;
+    } else {
+      currentPage = Math.max(1, page);
+      await ensureLatestPage(currentPage);
+      posts = pages.get(currentPage) || [];
     }
+    list.innerHTML = posts.length ? posts.map(renderFeedCard).join('') : '<div class="empty-state"><div class="empty-state__title">조건에 맞는 글이 없습니다.</div></div>';
+    summary.textContent = currentSearch ? `“${currentSearch}” 검색 결과 · ${currentPage}페이지` : `${selectedFilter().label} · ${currentSort === 'popular' ? '인기순' : '최신순'}`;
+    renderPagination(totalPages);
+    updateHash();
+  } catch (error) {
+    console.error('[feed]', error);
+    list.innerHTML = '<div class="empty-state"><div class="empty-state__icon">⚠️</div><div class="empty-state__title">글을 불러오지 못했습니다.</div></div>';
+  } finally {
+    loading = false;
   }
-
-  if (loaderEl) loaderEl.style.display = 'none';
-  isLoading = false;
-}
-
-function persistNavContext(posts) {
-  try {
-    sessionStorage.setItem(NAV_CONTEXT_KEY, JSON.stringify({ ids: posts.map(p => p.id).filter(Boolean), page: currentPage, type: currentType, search: currentSearch, sort: currentSort, href: window.location.hash || '#/feed', savedAt: Date.now() }));
-    sessionStorage.setItem('sosoking:detailPostNav', JSON.stringify({ ids: posts.map(p => p.id).filter(Boolean), savedAt: Date.now() }));
-  } catch {}
-}
-
-function renderCurrentPage() {
-  const listEl = document.getElementById('feed-list');
-  const summaryEl = document.getElementById('feed-summary');
-  if (!listEl) return;
-  const totalPages = Math.max(1, Math.ceil(cachedPosts.length / PAGE_SIZE));
-  currentPage = Math.min(Math.max(1, currentPage), totalPages);
-  const start = (currentPage - 1) * PAGE_SIZE;
-  const pagePosts = cachedPosts.slice(start, start + PAGE_SIZE);
-  if (summaryEl) summaryEl.innerHTML = renderFeedSummary({ total: cachedPosts.length, page: currentPage, totalPages, search: currentSearch, type: currentType, sort: currentSort });
-  persistNavContext(pagePosts);
-  listEl.classList.toggle('is-empty', !pagePosts.length);
-  listEl.innerHTML = pagePosts.length ? pagePosts.map(post => renderFeedCard(post)).join('') : renderFeedEmptyState({ search: currentSearch });
-  renderPagination(totalPages);
-  bindSortEvents();
-  updateUrlState();
 }
 
 function renderPagination(totalPages) {
-  const el = document.getElementById('feed-pagination');
-  if (!el) return;
-  if (totalPages <= 1) { el.innerHTML = ''; return; }
-  const start = Math.max(1, Math.min(currentPage - 2, Math.max(1, totalPages - 4)));
-  const end = Math.min(totalPages, start + 4);
-  el.innerHTML = `
-    <button class="feed-page-btn" data-feed-page="prev" ${currentPage <= 1 ? 'disabled' : ''}>이전 페이지</button>
-    <div class="feed-page-numbers">${Array.from({ length: end - start + 1 }, (_, i) => start + i).map(p => `<button class="feed-page-num ${p === currentPage ? 'active' : ''}" data-feed-page="${p}">${p}</button>`).join('')}</div>
-    <button class="feed-page-btn" data-feed-page="next" ${currentPage >= totalPages ? 'disabled' : ''}>다음 페이지</button>`;
-  el.querySelectorAll('[data-feed-page]').forEach(btn => btn.addEventListener('click', () => {
-    const value = btn.dataset.feedPage;
-    if (value === 'prev') currentPage -= 1;
-    else if (value === 'next') currentPage += 1;
-    else currentPage = Number(value || 1);
-    renderCurrentPage();
-    document.querySelector('.soso-feed-page')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }));
+  const root = document.getElementById('feed-pagination');
+  if (!root) return;
+  const previous = currentPage > 1;
+  const next = totalPages ? currentPage < totalPages : hasMore;
+  root.innerHTML = `<button class="feed-page-btn" type="button" data-page-prev ${previous ? '' : 'disabled'}>이전</button><span class="feed-page-status">${currentPage}페이지</span><button class="feed-page-btn" type="button" data-page-next ${next ? '' : 'disabled'}>다음</button>`;
+  root.querySelector('[data-page-prev]')?.addEventListener('click', () => goToPage(currentPage - 1));
+  root.querySelector('[data-page-next]')?.addEventListener('click', () => goToPage(currentPage + 1));
 }

@@ -1,15 +1,12 @@
 export function esc(value) {
-  return String(value || '').replace(/[&<>"]/g, m => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-  }[m]));
+  return String(value || '').replace(/[&<>"]/g, char => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;',
+  }[char]));
 }
 
 export function getDetailId() {
-  const match = (window.location.hash || '').match(/^#\/detail\/([^?]+)/);
-  return match ? decodeURIComponent(match[1]) : null;
+  const match = (location.hash || '').match(/^#\/detail\/([^?]+)/);
+  return match ? decodeURIComponent(match[1]) : '';
 }
 
 export function timeText(value) {
@@ -23,17 +20,6 @@ export function timeText(value) {
 }
 
 export function hasInteractiveModule(post) {
-  const modules = post.modules || {};
-  return !!(
-    modules.vote?.enabled ||
-    modules.naming?.enabled ||
-    modules.drip?.enabled ||
-    modules.quiz?.enabled ||
-    modules.fill?.enabled ||
-    modules.tournament?.enabled
-  );
-}
-
-export function normalizeAnswer(value) {
-  return String(value || '').trim().replace(/\s/g, '');
+  const modules = post?.modules || {};
+  return modules.vote?.enabled === true || modules.drip?.enabled === true;
 }
