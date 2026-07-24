@@ -1,169 +1,118 @@
 import { auth, db } from './firebase.js';
-import { addDoc, collection, getDocs, orderBy, query, serverTimestamp, updateDoc, increment, doc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { addDoc, collection, getDocs, orderBy, query, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { navigate } from './router.js';
 import { appState } from './state.js';
 import { toast } from './components/toast.js';
 
 function esc(value) {
-  return String(value || '').replace(/[&<>"]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[m]));
+  return String(value || '').replace(/[&<>\"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[char]));
 }
-
-function getDetailId() {
-  const match = (window.location.hash || '').match(/^#\/detail\/([^?]+)/);
-  return match ? decodeURIComponent(match[1]) : null;
+function postId() {
+  const match = (location.hash || '').match(/^#\/detail\/([^?]+)/);
+  return match ? decodeURIComponent(match[1]) : '';
 }
-
 function timeText(value) {
   const date = value?.toDate?.() || value;
   if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '방금';
-  const diff = Math.floor((Date.now() - date.getTime()) / 1000);
-  if (diff < 60) return '방금';
-  if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`;
+  const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (seconds < 60) return '방금';
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}분 전`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}시간 전`;
   return date.toLocaleDateString('ko-KR');
 }
-
-function targetType(el) {
-  if (el.classList.contains('acrostic-card')) return 'acrostics';
-  return 'comments';
+function repliesRef(post, comment) {
+  return collection(db, 'feeds', post, 'comments', comment, 'replies');
 }
-
-function targetId(el) {
-  return el.dataset.commentId || el.dataset.acrosticId || '';
-}
-
-function replyCollection(postId, type, id) {
-  return collection(db, 'feeds', postId, type, id, 'replies');
-}
-
-function renderReplies(replies) {
-  if (!replies.length) return `<div class="participant-replies__empty">아직 답글이 없습니다.</div>`;
-  return replies.map(r => `
-    <div class="participant-reply" data-reply-id="${esc(r.id)}">
-      <div class="participant-reply__avatar">${esc((r.authorName || '?')[0])}</div>
+function renderReplies(items) {
+  if (!items.length) return '<div class="participant-replies__empty">아직 답글이 없습니다.</div>';
+  return items.map(item => `
+    <div class="participant-reply">
+      <div class="participant-reply__avatar">${esc((item.authorName || '?')[0])}</div>
       <div class="participant-reply__body">
-        <div class="participant-reply__meta"><b>${esc(r.authorName || '익명')}</b><span>${timeText(r.createdAt)}</span></div>
-        <div class="participant-reply__text">${esc(r.text || '').replace(/\n/g, '<br>')}</div>
+        <div class="participant-reply__meta"><b>${esc(item.authorName || '익명')}</b><span>${timeText(item.createdAt)}</span></div>
+        <div class="participant-reply__text">${esc(item.text || '').replace(/\n/g, '<br>')}</div>
       </div>
     </div>`).join('');
 }
-
-async function fetchReplies(postId, type, id) {
-  const snap = await getDocs(query(replyCollection(postId, type, id), orderBy('createdAt', 'asc')));
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-}
-
-async function refreshReplies(box, postId, type, id) {
+async function refresh(box, post, comment) {
   const list = box.querySelector('.participant-replies__list');
-  if (!list) return;
-  list.innerHTML = `<div class="participant-replies__empty">불러오는 중...</div>`;
+  list.innerHTML = '<div class="participant-replies__empty">불러오는 중...</div>';
   try {
-    const replies = await fetchReplies(postId, type, id);
-    list.innerHTML = renderReplies(replies);
-    const count = box.closest('[data-comment-id], [data-acrostic-id]')?.querySelector('[data-reply-count]');
-    if (count) count.textContent = replies.length ? replies.length : '';
+    const snap = await getDocs(query(repliesRef(post, comment), orderBy('createdAt', 'asc')));
+    list.innerHTML = renderReplies(snap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })));
   } catch {
-    list.innerHTML = `<div class="participant-replies__empty">답글을 불러오지 못했어요.</div>`;
+    list.innerHTML = '<div class="participant-replies__empty">답글을 불러오지 못했습니다.</div>';
   }
 }
-
-function ensureReplyBox(card, postId) {
-  const type = targetType(card);
-  const id = targetId(card);
-  if (!id || id.startsWith('temp-')) return null;
+function createReplyBox(card, post, comment) {
   let box = card.querySelector(':scope > .participant-replies');
   if (box) return box;
-
   box = document.createElement('div');
   box.className = 'participant-replies';
   box.innerHTML = `
     <div class="participant-replies__list"></div>
     <div class="participant-replies__form">
-      <input class="participant-replies__input" maxlength="300" placeholder="답글을 입력하세요">
+      <input class="participant-replies__input" maxlength="500" placeholder="답글을 입력하세요">
       <button class="participant-replies__submit" type="button">등록</button>
     </div>`;
   card.appendChild(box);
-
   const input = box.querySelector('.participant-replies__input');
-  const submit = box.querySelector('.participant-replies__submit');
+  const button = box.querySelector('.participant-replies__submit');
   const send = async () => {
-    if (!auth.currentUser) { navigate('/login'); return; }
+    if (!auth.currentUser) return navigate('/login');
     const text = input.value.trim();
-    if (!text) { toast.warn('답글을 입력해주세요'); return; }
-    submit.disabled = true;
-    submit.textContent = '등록 중';
+    if (!text) return toast.warn('답글을 입력해주세요.');
+    button.disabled = true;
     try {
-      await addDoc(replyCollection(postId, type, id), {
-        text,
+      await addDoc(repliesRef(post, comment), {
+        text: text.slice(0, 500),
         authorId: auth.currentUser.uid,
         authorName: appState.nickname || auth.currentUser.displayName || '익명',
+        authorPhoto: auth.currentUser.isAnonymous ? '' : (auth.currentUser.photoURL || ''),
         createdAt: serverTimestamp(),
       });
-      await updateDoc(doc(db, 'feeds', postId, type, id), { replyCount: increment(1) }).catch(() => {});
       input.value = '';
-      toast.success('답글을 남겼어요');
-      await refreshReplies(box, postId, type, id);
-    } catch (error) {
-      console.error(error);
-      toast.error('답글 등록에 실패했어요');
+      toast.success('답글을 등록했어요.');
+      await refresh(box, post, comment);
+    } catch {
+      toast.error('답글 등록에 실패했어요.');
     } finally {
-      submit.disabled = false;
-      submit.textContent = '등록';
+      button.disabled = false;
     }
   };
-  submit.addEventListener('click', send);
-  input.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
+  button.addEventListener('click', send);
+  input.addEventListener('keydown', event => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
       send();
     }
   });
   return box;
 }
-
-function addReplyActions() {
-  const postId = getDetailId();
-  if (!postId) return;
-
-  document.querySelectorAll('.likeable-comment, .comment-item, .cbattle-comment, .acrostic-card').forEach(card => {
-    if (card.dataset.replyActionReady === '1') return;
-    const id = targetId(card);
-    if (!id || id.startsWith('temp-')) return;
-
-    const actions = card.querySelector('.likeable-comment__actions')
-      || card.querySelector('.comment-item__meta')
-      || card.querySelector('.cbattle-comment__meta')
-      || card.querySelector('.acrostic-card__footer');
+function bindReplies() {
+  const post = postId();
+  if (!post) return;
+  document.querySelectorAll('[data-comment-id]').forEach(card => {
+    if (card.dataset.replyReady === '1') return;
+    const comment = card.dataset.commentId;
+    if (!comment || comment.startsWith('temp-')) return;
+    const actions = card.querySelector('.likeable-comment__actions, .comment-item__meta');
     if (!actions) return;
-
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'participant-reply-toggle';
-    btn.innerHTML = `답글 <b data-reply-count>${Number(card.dataset.replyCount || 0) || ''}</b>`;
-    btn.addEventListener('click', async () => {
-      const box = ensureReplyBox(card, postId);
-      if (!box) return;
-      const willOpen = !box.classList.contains('open');
-      box.classList.toggle('open', willOpen);
-      if (willOpen) {
-        btn.classList.add('active');
-        await refreshReplies(box, postId, targetType(card), id);
-        box.querySelector('.participant-replies__input')?.focus();
-      } else {
-        btn.classList.remove('active');
-      }
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'participant-reply-toggle';
+    button.textContent = '답글';
+    button.addEventListener('click', async () => {
+      const box = createReplyBox(card, post, comment);
+      box.classList.toggle('open');
+      if (box.classList.contains('open')) await refresh(box, post, comment);
     });
-    actions.appendChild(btn);
-    card.dataset.replyActionReady = '1';
+    actions.appendChild(button);
+    card.dataset.replyReady = '1';
   });
 }
-
-let timer = null;
-function schedule() {
-  clearTimeout(timer);
-  timer = setTimeout(addReplyActions, 160);
-}
-
+let timer;
+function schedule() { clearTimeout(timer); timer = setTimeout(bindReplies, 160); }
 window.addEventListener('hashchange', schedule);
 new MutationObserver(schedule).observe(document.documentElement, { childList: true, subtree: true });
-setTimeout(schedule, 600);
+schedule();
