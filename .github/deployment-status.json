@@ -1,13 +1,13 @@
 {
   "workflow": "Firebase 검증 및 전체 배포",
-  "run_id": "30136393566",
+  "run_id": "30136404880",
   "run_attempt": "1",
-  "commit": "55f5a6c55d9bb6fde5be5e70b4f273692b386a7c",
+  "commit": "ae034e57c3e4a01bf410b92a627ce1e8fb8d831d",
   "ref": "main",
   "event": "push",
   "result": "cancelled",
   "project": "sosoking-481e6",
-  "recorded_at": "2026-07-25T00:30:00Z",
+  "recorded_at": "2026-07-25T00:30:39Z",
   "storage": {
     "status": "not-run",
     "log_tail": ""
