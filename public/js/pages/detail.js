@@ -77,11 +77,24 @@ function updateDripAiSection(comments) {
   }
 }
 
-function watchComments(post) {
+function stopCommentWatch() {
   unsubscribeComments?.();
   unsubscribeComments = null;
+}
+
+function currentDetailId() {
+  const match = (location.hash || '').match(/^#\/detail\/([^?]+)/);
+  return match ? decodeURIComponent(match[1]) : '';
+}
+
+function watchComments(post) {
+  stopCommentWatch();
   const commentsQuery = query(collection(db, 'feeds', post.id, 'comments'), orderBy('createdAt', 'asc'));
   unsubscribeComments = onSnapshot(commentsQuery, snapshot => {
+    if (currentDetailId() !== post.id) {
+      stopCommentWatch();
+      return;
+    }
     const comments = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
     if (subtype(post) === 'drip') updateDripAiSection(comments);
     else {
@@ -103,8 +116,7 @@ async function registerView(postId) {
 }
 
 export async function renderDetail(id) {
-  unsubscribeComments?.();
-  unsubscribeComments = null;
+  stopCommentWatch();
   const root = document.getElementById('page-content');
   if (!root) return;
   root.innerHTML = '<div class="loading-center"><div class="spinner spinner--lg"></div></div>';
@@ -121,6 +133,7 @@ export async function renderDetail(id) {
       uid ? getDoc(doc(db, 'users', uid, 'scraps', id)).then(item => item.exists()).catch(() => false) : false,
       registerView(id),
     ]);
+    if (currentDetailId() !== id) return;
     if (counted) post.viewCount = Number(post.viewCount || 0) + 1;
     setMeta(post.title || '소소킹', post.desc || '', post.images?.[0], `https://sosoking.co.kr/p/${id}`);
     renderDetailPage(root, post, comments, scrapped);
@@ -173,3 +186,8 @@ function renderDetailPage(root, post, comments, scrapped) {
   initReactionBar(post.id);
   appendSimilarPosts(post);
 }
+
+window.addEventListener('hashchange', () => {
+  if (!currentDetailId()) stopCommentWatch();
+});
+window.addEventListener('pagehide', stopCommentWatch, { once: true });
