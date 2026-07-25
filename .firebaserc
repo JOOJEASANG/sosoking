@@ -1,5 +1,14 @@
 {
   "projects": {
     "default": "sosoking-481e6"
+  },
+  "targets": {
+    "sosoking-481e6": {
+      "storage": {
+        "main": [
+          "sosoking-481e6.firebasestorage.app"
+        ]
+      }
+    }
   }
 }
