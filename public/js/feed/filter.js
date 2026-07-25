@@ -7,7 +7,7 @@ export const TYPE_LABELS = {
   vote: '토론',
   drip: '드립',
 
-  // 예전 데이터 호환: 화면에는 4게임 이름으로만 보이게 매핑합니다.
+  // 예전 데이터 호환: 화면에는 4개 참여 유형 이름으로만 보이게 매핑합니다.
   collect: '판결',
   collection: '판결',
   general: '판결',
@@ -54,7 +54,7 @@ export function isTournamentPost() {
 }
 
 export function getPostTypeLabel(post) {
-  return TYPE_LABELS[getPostTypeKey(post)] || '게임';
+  return TYPE_LABELS[getPostTypeKey(post)] || '게시물';
 }
 
 export function postMatchesType(post, type) {
