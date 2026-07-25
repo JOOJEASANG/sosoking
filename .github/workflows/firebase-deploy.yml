@@ -44,6 +44,9 @@ jobs:
   validate-and-deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    outputs:
+      storage_status: ${{ steps.storage_deploy.outputs.status }}
+      storage_log_b64: ${{ steps.storage_deploy.outputs.log_b64 }}
 
     steps:
       - name: 저장소 체크아웃
@@ -112,8 +115,18 @@ jobs:
         run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only firestore:rules --non-interactive
 
       - name: Storage Rules 배포
+        id: storage_deploy
         if: github.event_name != 'pull_request'
-        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only storage --non-interactive
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          firebase deploy --project "$FIREBASE_PROJECT_ID" --only storage --non-interactive 2>&1 | tee storage-deploy.log
+          status=${PIPESTATUS[0]}
+          log_b64="$(tail -n 40 storage-deploy.log | base64 -w 0)"
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          echo "log_b64=$log_b64" >> "$GITHUB_OUTPUT"
+          exit "$status"
 
       - name: Firestore Indexes 배포
         if: github.event_name != 'pull_request'
@@ -122,6 +135,12 @@ jobs:
       - name: Cloud Functions 배포
         if: github.event_name != 'pull_request'
         run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only functions --force --non-interactive
+
+      - name: Storage Rules 배포 실패 반영
+        if: github.event_name != 'pull_request' && steps.storage_deploy.outcome == 'failure'
+        run: |
+          echo "Storage Rules deployment failed. See deployment-status.json."
+          exit 1
 
   record-deployment-status:
     name: 배포 결과 기록
@@ -137,22 +156,30 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           DEPLOY_RESULT: ${{ needs.validate-and-deploy.result }}
+          STORAGE_STATUS: ${{ needs.validate-and-deploy.outputs.storage_status }}
+          STORAGE_LOG_B64: ${{ needs.validate-and-deploy.outputs.storage_log_b64 }}
         run: |
           set -euo pipefail
           status_file="$RUNNER_TEMP/deployment-status.json"
-          cat > "$status_file" <<EOF
-          {
-            "workflow": "${GITHUB_WORKFLOW}",
-            "run_id": "${GITHUB_RUN_ID}",
-            "run_attempt": "${GITHUB_RUN_ATTEMPT}",
-            "commit": "${GITHUB_SHA}",
-            "ref": "${GITHUB_REF_NAME}",
-            "event": "${GITHUB_EVENT_NAME}",
-            "result": "${DEPLOY_RESULT}",
-            "project": "${FIREBASE_PROJECT_ID}",
-            "recorded_at": "$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-          }
-          EOF
+          storage_log=""
+          if [ -n "${STORAGE_LOG_B64:-}" ]; then
+            storage_log="$(printf '%s' "$STORAGE_LOG_B64" | base64 -d 2>/dev/null || true)"
+          fi
+
+          jq -n \
+            --arg workflow "$GITHUB_WORKFLOW" \
+            --arg run_id "$GITHUB_RUN_ID" \
+            --arg run_attempt "$GITHUB_RUN_ATTEMPT" \
+            --arg commit "$GITHUB_SHA" \
+            --arg ref "$GITHUB_REF_NAME" \
+            --arg event "$GITHUB_EVENT_NAME" \
+            --arg result "$DEPLOY_RESULT" \
+            --arg project "$FIREBASE_PROJECT_ID" \
+            --arg recorded_at "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            --arg storage_status "${STORAGE_STATUS:-not-run}" \
+            --arg storage_log "$storage_log" \
+            '{workflow:$workflow,run_id:$run_id,run_attempt:$run_attempt,commit:$commit,ref:$ref,event:$event,result:$result,project:$project,recorded_at:$recorded_at,storage:{status:$storage_status,log_tail:$storage_log}}' \
+            > "$status_file"
 
           content="$(base64 -w 0 "$status_file")"
           existing_sha="$(gh api "repos/${GITHUB_REPOSITORY}/contents/.github/deployment-status.json?ref=main" --jq '.sha' 2>/dev/null || true)"
