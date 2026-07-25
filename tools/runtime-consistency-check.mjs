@@ -44,6 +44,11 @@ const requestBody = requestStart >= 0 ? pwa.slice(requestStart) : '';
 assert(requestBody.indexOf('const prompt = getInstallPrompt()') >= 0, '설치 클릭 시 기존 프롬프트를 먼저 확인해야 합니다.');
 assert(requestBody.indexOf('const prompt = getInstallPrompt()') < requestBody.indexOf('void ensureServiceWorker()'), 'PWA prompt 확인 전에 비동기 대기를 하면 사용자 클릭 권한이 끊깁니다.');
 
+const detail = read('public/js/pages/detail.js');
+assert(detail.includes('onSnapshot(commentsQuery'), '상세 페이지는 새 AI 댓글을 실시간으로 반영해야 합니다.');
+assert(detail.includes('renderDripAiSection'), '드립 상세에도 AI 캐릭터 반응 영역이 있어야 합니다.');
+assert(detail.includes('댓글이 생성되면 자동으로 표시됩니다.'), 'AI 댓글 생성 대기 상태 안내가 필요합니다.');
+
 const functionsMain = read('functions/functions-main-v2.js');
 assert(!functionsMain.includes('...aiCharacterComments,'), '구형 AI 자동댓글 트리거 전체를 다시 export하면 중복 실행됩니다.');
 assert(functionsMain.includes('...aiCharacterCommentsUnified'), '통합 AI 자동댓글 트리거가 export되어야 합니다.');
