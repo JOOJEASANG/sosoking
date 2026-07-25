@@ -1,9 +1,27 @@
-// sw.js — 배포 후 오래된 정적 자산이 남지 않도록 캐시 버전을 관리합니다.
-const CACHE = 'sosoking-v39';
+// sw.js — PWA 설치 안정성과 최신 자산 반영을 함께 관리합니다.
+const CACHE = 'sosoking-v40';
 const FRESH_EXTENSIONS = ['.html', '.js', '.css', '.json', '.webmanifest'];
+const CORE_ASSETS = [
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/logo.svg',
+  '/icon-192.png',
+  '/icon-512.png',
+  '/icon-192-maskable.png',
+  '/icon-512-maskable.png',
+];
+
+async function cacheCoreAssets() {
+  const cache = await caches.open(CACHE);
+  await Promise.allSettled(CORE_ASSETS.map(async path => {
+    const response = await fetch(path, { cache: 'reload' });
+    if (response.ok) await cache.put(path, response);
+  }));
+}
 
 self.addEventListener('install', event => {
-  self.skipWaiting();
+  event.waitUntil(cacheCoreAssets().finally(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', event => {
@@ -34,18 +52,36 @@ function shouldAlwaysFetchFresh(request, url) {
   return FRESH_EXTENSIONS.some(ext => url.pathname.endsWith(ext)) || url.pathname === '/manifest.json';
 }
 
+async function networkFirst(request) {
+  try {
+    const response = await fetch(request, { cache: 'no-store' });
+    if (response.ok && request.mode === 'navigate') {
+      const cache = await caches.open(CACHE);
+      await cache.put('/index.html', response.clone());
+    }
+    return response;
+  } catch {
+    const cached = await caches.match(request);
+    if (cached) return cached;
+    if (request.mode === 'navigate') {
+      return (await caches.match('/index.html')) || (await caches.match('/'));
+    }
+    throw new Error('network unavailable');
+  }
+}
+
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
   if (shouldBypass(event.request, url)) return;
 
-  // HTML/JS/CSS/JSON/manifest는 캐시에 저장하지 않고 항상 최신 네트워크 응답을 사용합니다.
+  // HTML/JS/CSS/JSON/manifest는 네트워크 우선으로 최신 버전을 사용하고 실패 시 캐시로 대체합니다.
   if (shouldAlwaysFetchFresh(event.request, url)) {
-    event.respondWith(fetch(event.request, { cache: 'no-store' }).catch(() => fetch(event.request)));
+    event.respondWith(networkFirst(event.request));
     return;
   }
 
-  // 이미지/아이콘 등 정적 자산만 캐시합니다. 실패 시 캐시가 있으면 fallback합니다.
+  // 이미지/아이콘 등 정적 자산은 캐시 우선으로 제공합니다.
   event.respondWith(
     caches.match(event.request).then(cached => {
       if (cached) return cached;
@@ -55,7 +91,7 @@ self.addEventListener('fetch', event => {
           caches.open(CACHE).then(cache => cache.put(event.request, clone));
         }
         return response;
-      }).catch(() => cached);
+      });
     })
   );
 });
