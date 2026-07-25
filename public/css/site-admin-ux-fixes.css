@@ -1,10 +1,4 @@
-/* site-admin-ux-fixes.css — UI 리프레시 세부 보완 */
-
-.home-ai-resident__name,
-.home-ai-resident__role {
-  display: block;
-}
-
+/* 구글 로그인 프로필 사진 표시 전용 */
 .site-header__avatar--google,
 .sidebar__user-avatar:has(.sidebar__google-avatar-img),
 .admin-profile-card__avatar:has(.admin-profile-card__avatar-img) {
@@ -26,18 +20,5 @@
 
 .site-header__avatar--google {
   border: 2px solid var(--color-surface) !important;
-  box-shadow: 0 0 0 1px var(--color-border), 0 4px 12px rgba(20, 20, 43, .08);
-}
-
-[data-theme="dark"] .site-header__avatar--google {
-  box-shadow: 0 0 0 1px var(--color-border), 0 4px 12px rgba(0, 0, 0, .28);
-}
-
-@media (max-width: 767px) {
-  .site-header__avatar--google {
-    width: 36px !important;
-    height: 36px !important;
-    min-width: 36px !important;
-    min-height: 36px !important;
-  }
+  box-shadow: 0 0 0 1px var(--color-border);
 }
