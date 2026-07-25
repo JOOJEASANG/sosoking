@@ -82,6 +82,7 @@ export function renderSidebar() {
   const nickname = appState.nickname || user?.displayName || user?.email?.split('@')[0] || '사용자';
   const avatarLetter = escHtml((nickname || '나')[0]);
   const avatarInner = user?.photoURL ? `<img src="${escHtml(user.photoURL)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : avatarLetter;
+  const accountMeta = isAdmin ? '관리자 계정' : (user?.email ? escHtml(user.email) : '내 정보 보기');
   const showInstall = (appState.installPrompt || isIOS() || isAndroid()) && !isStandalone();
 
   el.innerHTML = `
@@ -92,21 +93,23 @@ export function renderSidebar() {
       ${ADMIN_NAV.length > 0 ? `<div class="sidebar__nav-divider"></div>${ADMIN_NAV.map(i => renderNavItem(i, path)).join('')}` : ''}
     </nav>
     <div class="sidebar__spacer"></div>
-    <div class="sidebar__actions">
-      <button class="sidebar__nav-item sidebar__nav-item--button" id="sb-theme-btn" type="button">${dark ? iconSun() : iconMoon()}<span>${dark ? '라이트 모드' : '다크 모드'}</span></button>
-      ${showInstall ? `<button class="sidebar__nav-item sidebar__nav-item--button" id="sb-install-btn" type="button">${iconInstall()}<span>앱 설치</span></button>` : ''}
+    <div class="sidebar__footer-panel">
+      <div class="sidebar__actions" aria-label="화면 설정">
+        <button class="sidebar__nav-item sidebar__nav-item--button" id="sb-theme-btn" type="button">${dark ? iconSun() : iconMoon()}<span>${dark ? '라이트 모드' : '다크 모드'}</span></button>
+        ${showInstall ? `<button class="sidebar__nav-item sidebar__nav-item--button" id="sb-install-btn" type="button">${iconInstall()}<span>앱 설치</span></button>` : ''}
+      </div>
+      ${user ? `
+        <div class="sidebar__user-wrap">
+          <button class="sidebar__user sidebar__profile-btn" id="sb-profile-btn" type="button" aria-label="내 정보 열기">
+            <span class="sidebar__user-avatar">${avatarInner}</span>
+            <span class="sidebar__user-info">
+              <span class="sidebar__user-name">${escHtml(nickname)}</span>
+              <span class="sidebar__user-role">${accountMeta}</span>
+            </span>
+          </button>
+          <button class="sidebar__logout-btn" id="sb-logout-btn" type="button">${svgIcon('<path stroke-linecap="round" stroke-linejoin="round" d="M15 8V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2v-3M10 12h10m0 0-3-3m3 3-3 3"/>')}<span>로그아웃</span></button>
+        </div>` : `<a href="#/login" class="sidebar__login-btn">로그인 / 가입</a>`}
     </div>
-    ${user ? `
-      <div class="sidebar__user-wrap">
-        <div class="sidebar__user">
-          <div class="sidebar__user-avatar" id="sb-avatar" role="button" tabindex="0" aria-label="내 정보">${avatarInner}</div>
-          <div class="sidebar__user-info">
-            <div class="sidebar__user-name" id="sb-username">${escHtml(nickname)}</div>
-            ${isAdmin ? '<div class="sidebar__user-role">🔑 관리자</div>' : ''}
-          </div>
-        </div>
-        <button class="sidebar__logout-btn" id="sb-logout-btn" aria-label="로그아웃">${svgIcon('<path stroke-linecap="round" stroke-linejoin="round" d="M15 8V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2v-3M10 12h10m0 0-3-3m3 3-3 3"/>')}<span>로그아웃</span></button>
-      </div>` : `<a href="#/login" class="sidebar__login-btn">로그인 / 가입</a>`}
   `;
 
   el.querySelectorAll('[data-nav]').forEach(a => a.addEventListener('click', e => {
@@ -114,7 +117,7 @@ export function renderSidebar() {
     navigate(a.dataset.nav || '/');
   }));
 
-  document.getElementById('sb-avatar')?.addEventListener('click', () => navigate('/account'));
+  document.getElementById('sb-profile-btn')?.addEventListener('click', () => navigate('/account'));
   document.getElementById('sb-theme-btn')?.addEventListener('click', () => {
     const next = isDark() ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', next);
