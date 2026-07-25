@@ -11,19 +11,36 @@ function isAdminUser() {
   return !!appState.user && !!appState.isAdmin;
 }
 
+function googlePhoto(user) {
+  const providers = Array.isArray(user?.providerData) ? user.providerData : [];
+  return user?.photoURL && providers.some(item => item?.providerId === 'google.com') ? String(user.photoURL) : '';
+}
+
+function syncAdminProfilePhoto() {
+  if (currentPath() !== '/admin') return;
+  const photo = googlePhoto(auth.currentUser || appState.user);
+  const avatar = document.querySelector('.admin-profile-card__avatar');
+  if (!photo || !avatar || avatar.dataset.googlePhoto === photo) return;
+  avatar.dataset.googlePhoto = photo;
+  const image = document.createElement('img');
+  image.className = 'admin-profile-card__avatar-img';
+  image.src = photo;
+  image.alt = '';
+  image.referrerPolicy = 'no-referrer';
+  avatar.replaceChildren(image);
+}
+
 function injectAdminLogout() {
   if (!isAdminUser()) return;
   if (currentPath() !== '/admin') return;
+  syncAdminProfilePhoto();
   const adminSidebar = document.querySelector('.admin-sidebar');
   if (!adminSidebar || document.getElementById('admin-logout-btn')) return;
 
   adminSidebar.insertAdjacentHTML('beforeend', `
     <div style="margin-top:auto;padding:14px 12px;border-top:1px solid var(--color-border-light)">
-      <button class="btn btn--ghost btn--full" id="admin-logout-btn" style="justify-content:center">
-        로그아웃
-      </button>
-    </div>
-  `);
+      <button class="btn btn--ghost btn--full" id="admin-logout-btn" style="justify-content:center">로그아웃</button>
+    </div>`);
 
   document.getElementById('admin-logout-btn')?.addEventListener('click', async () => {
     try {
@@ -43,9 +60,9 @@ function run() {
   setTimeout(injectAdminLogout, 80);
 }
 
-
 const observer = new MutationObserver(() => setTimeout(injectAdminLogout, 60));
 if (document.body) observer.observe(document.body, { childList: true, subtree: true });
 window.addEventListener('hashchange', () => setTimeout(run, 50));
 window.addEventListener('popstate', () => setTimeout(run, 50));
+window.addEventListener('sosoking:auth-ready', run);
 setTimeout(run, 300);
