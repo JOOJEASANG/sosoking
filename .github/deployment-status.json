@@ -1,11 +1,11 @@
 {
   "workflow": "Firebase 검증 및 전체 배포",
-  "run_id": "30135944134",
+  "run_id": "30136021544",
   "run_attempt": "1",
-  "commit": "d0ac75cf971f3f593e9acf4a8e797d2efc05cd2f",
+  "commit": "72f8952d121c82600a2fca3bada7c58186ba8c04",
   "ref": "main",
   "event": "push",
   "result": "failure",
   "project": "sosoking-481e6",
-  "recorded_at": "2026-07-25T00:18:16Z"
+  "recorded_at": "2026-07-25T00:20:37Z"
 }
