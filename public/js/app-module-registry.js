@@ -37,6 +37,7 @@ export const EXTENSION_MODULES = [
   './admin-ui-cleanup.js',
   './notifications-ui.js',
   './account-request-cleanup.js',
+  './google-profile-photo-sync.js',
   './ui-final-interactions.js',
   './ux-improvements.js',
 ];
