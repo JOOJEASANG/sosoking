@@ -3,20 +3,117 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="사소한 일을 필요 이상으로 수사하고 진지하게 판결하는 AI 법정 코미디">
   <meta name="robots" content="noindex, nofollow">
-  <title>소소킹 V2 준비 중</title>
-  <style>
-    * { box-sizing: border-box; }
-    body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f6f7f9; color: #17191c; }
-    main { width: min(560px, 100%); padding: 40px 28px; border: 1px solid #e2e5e9; border-radius: 20px; background: #fff; text-align: center; }
-    h1 { margin: 0 0 14px; font-size: 28px; }
-    p { margin: 0; color: #626973; line-height: 1.7; }
-  </style>
+  <meta name="theme-color" content="#f5efe3">
+  <title>소문난 판결소 | 별일 아니지만 재판합니다</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./app.js" defer></script>
 </head>
 <body>
-  <main>
-    <h1>소소킹 V2 기획 중</h1>
-    <p>기존 서비스를 안전하게 백업하고 새로운 참여형 서비스를 준비하고 있습니다.</p>
+  <header class="site-header">
+    <a class="brand" href="#top" aria-label="소문난 판결소 홈">
+      <span class="brand-so" aria-hidden="true">소</span>
+      <span class="brand-center">문난 판결</span>
+      <span class="brand-so" aria-hidden="true">소</span>
+    </a>
+    <span class="header-badge">시연 재판부</span>
+  </header>
+
+  <main id="top">
+    <section class="hero" aria-labelledby="hero-title">
+      <p class="eyebrow">사소한 일상 전문 대형사건 처리기관</p>
+      <h1 id="hero-title">별일 아니지만,<br><em>일단 재판부터 열겠습니다.</em></h1>
+      <p class="hero-copy">오늘 있었던 아주 사소하고 유치한 일을 한 줄로 적어주세요. 재판부가 필요 이상으로 수사하고, 과도하게 진지한 판결을 내립니다.</p>
+    </section>
+
+    <section class="intake-panel" aria-labelledby="intake-title">
+      <div class="panel-heading">
+        <div>
+          <p class="section-kicker">사건 접수처</p>
+          <h2 id="intake-title">오늘 무슨 일이 있었습니까?</h2>
+        </div>
+        <span class="case-stamp" aria-hidden="true">접수</span>
+      </div>
+
+      <form id="case-form" novalidate>
+        <label class="field-label" for="incident">사건 내용</label>
+        <textarea id="incident" name="incident" maxlength="120" rows="4" placeholder="예: 남편이 내가 아껴둔 과자를 몰래 먹었다."></textarea>
+        <div class="field-meta">
+          <span>실명·전화번호·주소는 입력하지 마세요.</span>
+          <span><strong id="char-count">0</strong>/120</span>
+        </div>
+
+        <div class="examples" aria-label="사건 예시">
+          <button type="button" class="example-chip" data-example="동생이 내 아이스크림을 너무 크게 한입 먹었다.">아이스크림 한입</button>
+          <button type="button" class="example-chip" data-example="친구가 약속 시간에 20분 늦고 커피도 안 샀다.">친구 지각</button>
+          <button type="button" class="example-chip" data-example="가족이 마지막 치킨 다리를 말없이 먹었다.">치킨 다리</button>
+          <button type="button" class="example-chip" data-example="빌려준 충전기를 돌려받았는데 선만 왔다.">충전기 실종</button>
+        </div>
+
+        <fieldset class="severity-fieldset">
+          <legend>사건 확대 수준</legend>
+          <label class="severity-option">
+            <input type="radio" name="severity" value="official" checked>
+            <span><b>정식 수사</b><small>경찰서가 조금 한가한 날</small></span>
+          </label>
+          <label class="severity-option">
+            <input type="radio" name="severity" value="special">
+            <span><b>특별 수사</b><small>수사본부와 브리핑룸 설치</small></span>
+          </label>
+          <label class="severity-option">
+            <input type="radio" name="severity" value="national">
+            <span><b>국가급 대응</b><small>총리실은 모르지만 일단 긴급</small></span>
+          </label>
+        </fieldset>
+
+        <p id="form-error" class="form-error" role="alert"></p>
+        <button class="primary-button" type="submit">
+          <span>사건 접수 및 수사 개시</span>
+          <span aria-hidden="true">→</span>
+        </button>
+      </form>
+    </section>
+
+    <section id="courtroom" class="courtroom" hidden aria-live="polite">
+      <div class="court-toolbar">
+        <div>
+          <p class="section-kicker">소문난 판결소 사건기록</p>
+          <p id="case-number" class="case-number"></p>
+        </div>
+        <button id="restart-button" class="text-button" type="button">새 사건 접수</button>
+      </div>
+
+      <ol class="stage-list" aria-label="재판 진행 단계">
+        <li class="stage-dot is-active" data-stage-dot="0"><span>1</span>사건</li>
+        <li class="stage-dot" data-stage-dot="1"><span>2</span>수사</li>
+        <li class="stage-dot" data-stage-dot="2"><span>3</span>심문</li>
+        <li class="stage-dot" data-stage-dot="3"><span>4</span>공방</li>
+        <li class="stage-dot" data-stage-dot="4"><span>5</span>판결</li>
+      </ol>
+
+      <article id="stage-content" class="stage-content"></article>
+
+      <div class="stage-actions">
+        <button id="back-button" class="secondary-button" type="button" hidden>이전 기록</button>
+        <button id="next-button" class="primary-button" type="button">현장 수사 개시 →</button>
+      </div>
+    </section>
+
+    <section class="principles" aria-labelledby="principles-title">
+      <p class="section-kicker">본 재판부의 원칙</p>
+      <h2 id="principles-title">내용은 하찮게, 태도는 엄숙하게.</h2>
+      <div class="principle-grid">
+        <div><strong>01</strong><p>진짜 심각한 피해는 웃음거리로 만들지 않습니다.</p></div>
+        <div><strong>02</strong><p>사람이 아니라 사소한 행동과 상황을 재판합니다.</p></div>
+        <div><strong>03</strong><p>본 판결은 오락용이며 실제 법률 판단이 아닙니다.</p></div>
+      </div>
+    </section>
   </main>
+
+  <footer>
+    <span class="footer-brand"><b>소</b>문난 판결<b>소</b></span>
+    <span>오늘도 평화로운 일상을 필요 이상으로 처리합니다.</span>
+  </footer>
 </body>
 </html>
