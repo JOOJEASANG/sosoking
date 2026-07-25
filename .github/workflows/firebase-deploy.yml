@@ -103,9 +103,17 @@ jobs:
             echo "::notice::GitHub GEMINI_API_KEY secret이 없어 기존 Firebase Secret을 사용합니다."
           fi
 
-      - name: Hosting·Firestore Rules·Storage 배포
+      - name: Firebase Hosting 배포
         if: github.event_name != 'pull_request'
-        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only hosting,firestore:rules,storage --non-interactive
+        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only hosting --non-interactive
+
+      - name: Firestore Rules 배포
+        if: github.event_name != 'pull_request'
+        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only firestore:rules --non-interactive
+
+      - name: Storage Rules 배포
+        if: github.event_name != 'pull_request'
+        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only storage --non-interactive
 
       - name: Firestore Indexes 배포
         if: github.event_name != 'pull_request'
