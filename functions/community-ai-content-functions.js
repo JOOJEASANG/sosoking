@@ -10,6 +10,13 @@ const REGION = 'asia-northeast3';
 const geminiKey = defineSecret('GEMINI_API_KEY');
 const PRESETS = new Set(['judgment', 'consult', 'vote', 'drip']);
 
+const PRESET_GUIDANCE = {
+  judgment: '누가 더 잘못했는지 의견이 갈릴 만한 현실적인 생활 갈등을 만든다. 양쪽 사정이 모두 조금씩 이해되게 하고, 디테일 하나로 몰입과 재미를 만든다.',
+  consult: '실제로 주변에 있을 법한 고민을 구체적인 장면으로 쓴다. 감정은 진짜 같아야 하며, 너무 무겁지 않은 주제에는 자기객관화가 느껴지는 가벼운 유머를 섞는다.',
+  vote: '정답이 뻔하지 않고 댓글에서 논쟁할 기준이 있는 주제를 만든다. 찬반 모두 한마디 할 거리가 있도록 예외 상황이나 현실적 조건을 넣는다.',
+  drip: '누구나 장면이 바로 떠오르면서도 뻔하지 않은 상황을 제시한다. 짧고 선명하며 여러 방향의 재치 있는 답이 나올 여지를 남긴다.',
+};
+
 function clean(value, max = 1000) {
   return String(value || '').replace(/[<>]/g, '').replace(/\r/g, '').replace(/\n{4,}/g, '\n\n\n').trim().slice(0, max);
 }
@@ -50,16 +57,30 @@ async function generate(preset) {
   const format = preset === 'consult'
     ? '{"title":"","desc":"","tags":[""],"topic":"daily|people|work|money|vent","style":"empathy|realistic|choice|soft|funny"}'
     : '{"title":"","desc":"","tags":[""]}';
-  const prompt = `소소킹 ${label} 커뮤니티에 올릴 생활 밀착형 게시글 하나를 작성하세요.
-- 실명, 정치, 폭력, 성적 소재, 전문 의료·법률 판단 제외
-- 지나치게 상투적인 소재 제외
-- 제목 60자 이내, 설명 500자 이내, 태그 2~5개
+  const prompt = `한국 온라인 커뮤니티에서 실제 사람이 올린 것처럼 자연스럽고 몰입되는 소소킹 ${label} 게시글 하나를 작성하세요.
+
+주제 방향:
+${PRESET_GUIDANCE[preset]}
+
+품질 기준:
+- 첫 문장부터 상황이 그려지도록 장소, 대화, 횟수, 금액, 시간 같은 구체적인 디테일을 1~2개 사용
+- 뻔한 질문을 반복하지 말고, 댓글을 달고 싶게 만드는 갈등·반전·공감 포인트를 하나 넣기
+- 똑똑하고 관찰력이 느껴지지만 작위적이거나 교훈적으로 쓰지 않기
+- 실제 한국인이 쓰는 자연스러운 구어체로 작성하고 AI 안내문·기사체·과한 설명체 금지
+- 재밌고 유쾌한 말맛을 살리되 고민이나 민감한 상황을 조롱하지 않기
+- 제목은 호기심이 생기게 60자 이내, 본문은 120~500자, 태그 2~5개
+- 실명, 정치 선동, 폭력 조장, 성적 소재, 혐오, 전문 의료·법률 단정 제외
 - JSON만 출력
 형식: ${format}`;
   try {
     const model = new GoogleGenerativeAI(apiKey).getGenerativeModel({
       model: 'gemini-2.5-flash',
-      generationConfig: { responseMimeType: 'application/json', thinkingConfig: { thinkingBudget: 0 } },
+      generationConfig: {
+        responseMimeType: 'application/json',
+        temperature: 0.9,
+        topP: 0.95,
+        thinkingConfig: { thinkingBudget: 768 },
+      },
     });
     const result = await model.generateContent(prompt);
     const data = parseJson(result.response.text());
