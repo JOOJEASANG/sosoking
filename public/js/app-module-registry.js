@@ -33,6 +33,7 @@ export const EXTENSION_MODULES = [
   './admin-data-manager.js',
   './admin-ui-cleanup.js',
   './notifications-ui.js',
+  './account-runtime-controller.js',
   './ui-final-interactions.js',
   './ux-improvements.js',
 ];
