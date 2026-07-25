@@ -1,11 +1,15 @@
 {
   "workflow": "Firebase 검증 및 전체 배포",
-  "run_id": "30136021544",
+  "run_id": "30136136966",
   "run_attempt": "1",
-  "commit": "72f8952d121c82600a2fca3bada7c58186ba8c04",
+  "commit": "200b275b2a693642415959ff1496e9733ebbb530",
   "ref": "main",
   "event": "push",
   "result": "failure",
   "project": "sosoking-481e6",
-  "recorded_at": "2026-07-25T00:20:37Z"
+  "recorded_at": "2026-07-25T00:26:16Z",
+  "storage": {
+    "status": "1",
+    "log_tail": "\n\u001b[1m\u001b[37m===\u001b[39m Deploying to 'sosoking-481e6'...\u001b[22m\n\n\u001b[36m\u001b[1mi \u001b[22m\u001b[39m deploying \u001b[1mstorage\u001b[22m\n\u001b[36m\u001b[1mi  storage:\u001b[22m\u001b[39m ensuring required API \u001b[1mfirebasestorage.googleapis.com\u001b[22m is enabled...\n\u001b[32m\u001b[1m✔  storage:\u001b[22m\u001b[39m required API \u001b[1mfirebasestorage.googleapis.com\u001b[22m is enabled\n\n\nUnexpected error when fetching default storage bucket.\n\n\u001b[1m\u001b[31mError:\u001b[39m\u001b[22m Request to https://firebasestorage.googleapis.com/v1alpha/projects/sosoking-481e6/defaultBucket had HTTP Error: 403, Permission 'firebasestorage.defaultBucket.get' denied on resource '//firebasestorage.googleapis.com/projects/sosoking-481e6/defaultBucket' (or it may not exist). Remediate access with this Troubleshooter URL or share it with your administrator - https://console.cloud.google.com/iam-admin/troubleshooter/summary;errorId=CiQwMTlmOTZhNy1iZDQxLTc1NmEtOTlkNy0xNzAzYTczMDZlOWUSJXByb2plY3RzL3Nvc29raW5nLTQ4MWU2L2RlZmF1bHRCdWNrZXQ%3D ."
+  }
 }
