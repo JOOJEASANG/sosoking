@@ -110,3 +110,50 @@ jobs:
       - name: Cloud Functions 배포
         if: github.event_name != 'pull_request'
         run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only functions --force --non-interactive
+
+  record-deployment-status:
+    name: 배포 결과 기록
+    if: ${{ always() && github.event_name != 'pull_request' }}
+    needs: validate-and-deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: 배포 결과 파일 갱신
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEPLOY_RESULT: ${{ needs.validate-and-deploy.result }}
+        run: |
+          set -euo pipefail
+          status_file="$RUNNER_TEMP/deployment-status.json"
+          cat > "$status_file" <<EOF
+          {
+            "workflow": "${GITHUB_WORKFLOW}",
+            "run_id": "${GITHUB_RUN_ID}",
+            "run_attempt": "${GITHUB_RUN_ATTEMPT}",
+            "commit": "${GITHUB_SHA}",
+            "ref": "${GITHUB_REF_NAME}",
+            "event": "${GITHUB_EVENT_NAME}",
+            "result": "${DEPLOY_RESULT}",
+            "project": "${FIREBASE_PROJECT_ID}",
+            "recorded_at": "$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          }
+          EOF
+
+          content="$(base64 -w 0 "$status_file")"
+          existing_sha="$(gh api "repos/${GITHUB_REPOSITORY}/contents/.github/deployment-status.json?ref=main" --jq '.sha' 2>/dev/null || true)"
+
+          if [ -n "$existing_sha" ]; then
+            gh api --method PUT "repos/${GITHUB_REPOSITORY}/contents/.github/deployment-status.json" \
+              -f message="Firebase 배포 결과 기록: ${DEPLOY_RESULT}" \
+              -f content="$content" \
+              -f sha="$existing_sha" \
+              -f branch="main"
+          else
+            gh api --method PUT "repos/${GITHUB_REPOSITORY}/contents/.github/deployment-status.json" \
+              -f message="Firebase 배포 결과 기록: ${DEPLOY_RESULT}" \
+              -f content="$content" \
+              -f branch="main"
+          fi
