@@ -22,6 +22,11 @@ function iconInstall(){return svgIcon('<path stroke-linecap="round" stroke-linej
 function isDark(){return document.documentElement.getAttribute('data-theme')==='dark';}
 function isNavActive(navPath, currentPath){ return currentPath===navPath; }
 
+function googlePhoto(user) {
+  const providers = Array.isArray(user?.providerData) ? user.providerData : [];
+  return user?.photoURL && providers.some(item => item?.providerId === 'google.com') ? String(user.photoURL) : '';
+}
+
 function renderNavItem(item, currentPath) {
   const active = isNavActive(item.path, currentPath);
   const badgeHTML = (item.badge > 0) ? `<span class="sidebar__nav-badge">${item.badge > 99 ? '99+' : item.badge}</span>` : '';
@@ -33,29 +38,26 @@ export function renderSidebar() {
   const el = document.getElementById('site-sidebar');
   if (!el) return;
 
-  const user    = appState.user;
+  const user = appState.user;
   const isAdmin = appState.isAdmin;
-  const path    = window.location.hash.slice(1).split('?')[0] || '/';
-  const dark    = isDark();
+  const path = window.location.hash.slice(1).split('?')[0] || '/';
+  const dark = isDark();
 
   const MAIN_NAV = [
-    { label: '홈',       path: '/',      icon: iconHome() },
-    { label: '커뮤니티', path: '/feed',  icon: iconCommunity() },
-    { label: '글쓰기',   path: '/write', icon: iconWrite() },
-    { label: '랭킹',     path: '/hall',  icon: iconStats() },
+    { label: '홈', path: '/', icon: iconHome() },
+    { label: '커뮤니티', path: '/feed', icon: iconCommunity() },
+    { label: '글쓰기', path: '/write', icon: iconWrite() },
+    { label: '랭킹', path: '/hall', icon: iconStats() },
   ];
-
-  const PERSONAL_NAV = user ? [
-    { label: '스크랩', path: '/scraps', icon: iconScraps() },
-  ] : [];
-
-  const ADMIN_NAV = isAdmin ? [
-    { label: '관리 패널', path: '/admin', icon: iconAdmin(), isAdmin: true },
-  ] : [];
+  const PERSONAL_NAV = user ? [{ label: '스크랩', path: '/scraps', icon: iconScraps() }] : [];
+  const ADMIN_NAV = isAdmin ? [{ label: '관리 패널', path: '/admin', icon: iconAdmin(), isAdmin: true }] : [];
 
   const nickname = appState.nickname || user?.displayName || user?.email?.split('@')[0] || '사용자';
   const avatarLetter = escHtml((nickname || '나')[0]);
-  const avatarInner = user?.photoURL ? `<img src="${escHtml(user.photoURL)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : avatarLetter;
+  const photo = googlePhoto(user) || user?.photoURL || '';
+  const avatarInner = photo
+    ? `<img src="${escHtml(photo)}" referrerpolicy="no-referrer" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+    : avatarLetter;
   const accountMeta = isAdmin ? '관리자 계정' : (user?.email ? escHtml(user.email) : '내 정보 보기');
   const showInstall = canOfferInstall();
 
@@ -76,21 +78,16 @@ export function renderSidebar() {
         <div class="sidebar__user-wrap">
           <button class="sidebar__user sidebar__profile-btn" id="sb-profile-btn" type="button" aria-label="내 정보 열기">
             <span class="sidebar__user-avatar">${avatarInner}</span>
-            <span class="sidebar__user-info">
-              <span class="sidebar__user-name">${escHtml(nickname)}</span>
-              <span class="sidebar__user-role">${accountMeta}</span>
-            </span>
+            <span class="sidebar__user-info"><span class="sidebar__user-name">${escHtml(nickname)}</span><span class="sidebar__user-role">${accountMeta}</span></span>
           </button>
           <button class="sidebar__logout-btn" id="sb-logout-btn" type="button">${svgIcon('<path stroke-linecap="round" stroke-linejoin="round" d="M15 8V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2v-3M10 12h10m0 0-3-3m3 3-3 3"/>')}<span>로그아웃</span></button>
         </div>` : `<a href="#/login" class="sidebar__login-btn">로그인 / 가입</a>`}
-    </div>
-  `;
+    </div>`;
 
   el.querySelectorAll('[data-nav]').forEach(a => a.addEventListener('click', event => {
     event.preventDefault();
     navigate(a.dataset.nav || '/');
   }));
-
   document.getElementById('sb-profile-btn')?.addEventListener('click', () => navigate('/account'));
   document.getElementById('sb-theme-btn')?.addEventListener('click', () => {
     const next = isDark() ? 'light' : 'dark';
@@ -99,9 +96,7 @@ export function renderSidebar() {
     window.dispatchEvent(new CustomEvent('themechange', { detail: { theme: next } }));
     renderSidebar();
   });
-  document.getElementById('sb-install-btn')?.addEventListener('click', async event => {
-    await requestPwaInstall({ button: event.currentTarget });
-  });
+  document.getElementById('sb-install-btn')?.addEventListener('click', event => requestPwaInstall({ button: event.currentTarget }));
   document.getElementById('sb-logout-btn')?.addEventListener('click', async () => {
     try {
       await signOut(auth);
