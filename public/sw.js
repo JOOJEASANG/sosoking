@@ -64,9 +64,13 @@ async function networkFirst(request) {
     const cached = await caches.match(request);
     if (cached) return cached;
     if (request.mode === 'navigate') {
-      return (await caches.match('/index.html')) || (await caches.match('/'));
+      const shell = (await caches.match('/index.html')) || (await caches.match('/'));
+      if (shell) return shell;
     }
-    throw new Error('network unavailable');
+    return new Response('오프라인 상태입니다.', {
+      status: 503,
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+    });
   }
 }
 
@@ -91,7 +95,7 @@ self.addEventListener('fetch', event => {
           caches.open(CACHE).then(cache => cache.put(event.request, clone));
         }
         return response;
-      });
+      }).catch(() => new Response('', { status: 504 }));
     })
   );
 });
