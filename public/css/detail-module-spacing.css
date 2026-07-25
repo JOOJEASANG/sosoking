@@ -1,0 +1,34 @@
+/* detail-module-spacing.css — 상세 참여 모듈 좌우 여백 통일 */
+
+/* 판결·토론·드립 참여 영역을 본문·댓글의 좌우 24px 기준과 맞춥니다. */
+[data-community-modules-root] {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0 var(--space-6, 24px) var(--space-5, 20px);
+  box-sizing: border-box;
+}
+
+[data-community-modules-root] > .multi-detail-module {
+  width: 100%;
+  margin-top: 0;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+/* 예전 상세 모듈과 접기형 투표 현황 카드도 같은 기준을 사용합니다. */
+[data-detail-root] .multi-detail-root,
+[data-detail-root] .detail-game-status-card {
+  margin-left: var(--space-6, 24px);
+  margin-right: var(--space-6, 24px);
+  box-sizing: border-box;
+}
+
+/* 선택지와 드립 입력 영역이 부모 폭을 넘지 않도록 방지합니다. */
+[data-community-modules-root] .multi-vote-options,
+[data-community-modules-root] .multi-vote-option,
+[data-community-modules-root] .multi-submit-row,
+[data-community-modules-root] .multi-participation-list {
+  width: 100%;
+  box-sizing: border-box;
+}
