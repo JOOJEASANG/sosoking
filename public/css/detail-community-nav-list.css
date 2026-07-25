@@ -1,0 +1,133 @@
+/* 상세 화면 상단 카테고리와 댓글 하단 글 목록 */
+
+.detail-community-tabs {
+  margin: 0 0 12px;
+  padding: 2px 0 4px;
+}
+
+.detail-post-list {
+  width: 100%;
+  margin-top: 16px;
+  overflow: hidden;
+  border: 1px solid var(--color-border-light);
+  border-radius: 16px;
+  background: var(--color-surface);
+  box-sizing: border-box;
+}
+
+.detail-post-list__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--color-border-light);
+  background: var(--color-surface-2);
+}
+
+.detail-post-list__header strong {
+  color: var(--color-text-primary);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.detail-post-list__header button {
+  border: 0;
+  background: transparent;
+  color: var(--color-primary);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.detail-post-list__rows {
+  display: flex;
+  flex-direction: column;
+}
+
+.detail-post-row {
+  display: grid;
+  grid-template-columns: 78px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 16px;
+  border: 0;
+  border-bottom: 1px solid var(--color-border-light);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.detail-post-row:last-child {
+  border-bottom: 0;
+}
+
+.detail-post-row:hover {
+  background: var(--color-surface-2);
+}
+
+.detail-post-row__type {
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.detail-post-row__title {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-text-primary);
+  font-size: 13px;
+  font-weight: 750;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.detail-post-row__meta {
+  color: var(--color-text-muted);
+  font-size: 10.5px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+[data-theme="dark"] .detail-post-list,
+[data-theme="dark"] .detail-post-row {
+  border-color: rgba(255, 255, 255, 0.07);
+}
+
+@media (max-width: 767px) {
+  .detail-community-tabs {
+    margin-bottom: 10px;
+  }
+
+  .detail-post-list {
+    margin-top: 12px;
+    border-radius: 14px;
+  }
+
+  .detail-post-list__header {
+    min-height: 44px;
+    padding: 0 13px;
+  }
+
+  .detail-post-row {
+    grid-template-columns: 68px minmax(0, 1fr);
+    gap: 8px;
+    min-height: 46px;
+    padding: 9px 13px;
+  }
+
+  .detail-post-row__meta {
+    grid-column: 2;
+    margin-top: -3px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
