@@ -33,6 +33,8 @@ assert(registry.includes('./account-runtime-controller.js'), '통합 내정보 �
 const notifications = read('public/js/notifications-ui.js');
 assert(notifications.includes("where('uid', '==', uid)"), '알림 조회는 uid 필드를 사용해야 합니다.');
 assert(!/readAtMs\s*:/.test(notifications), '클라이언트 알림 읽음 처리에 readAtMs를 쓰면 Firestore 규칙에 거부됩니다.');
+assert(notifications.includes('onAuthStateChanged(auth,'), '알림 인증 감시는 Firebase 모듈형 API를 사용해야 합니다.');
+assert(!notifications.includes('auth.onAuthStateChanged('), '알림 인증 감시 호출 방식을 중복 사용하면 안 됩니다.');
 
 const accountController = read('public/js/account-runtime-controller.js');
 assert(accountController.includes("where('uid', '==', user.uid)"), '내 정보 알림함도 uid 필드를 사용해야 합니다.');
@@ -43,11 +45,28 @@ const requestStart = pwa.indexOf('export async function requestPwaInstall');
 const requestBody = requestStart >= 0 ? pwa.slice(requestStart) : '';
 assert(requestBody.indexOf('const prompt = getInstallPrompt()') >= 0, '설치 클릭 시 기존 프롬프트를 먼저 확인해야 합니다.');
 assert(requestBody.indexOf('const prompt = getInstallPrompt()') < requestBody.indexOf('void ensureServiceWorker()'), 'PWA prompt 확인 전에 비동기 대기를 하면 사용자 클릭 권한이 끊깁니다.');
+assert(pwa.includes('hasInstallRecord()'), '설치 완료 기록을 확인해 버튼 재노출을 막아야 합니다.');
+assert(pwa.includes('removeInstallUi()'), '설치 완료 시 모든 설치 버튼과 안내창을 제거해야 합니다.');
 
 const detail = read('public/js/pages/detail.js');
 assert(detail.includes('onSnapshot(commentsQuery'), '상세 페이지는 새 AI 댓글을 실시간으로 반영해야 합니다.');
 assert(detail.includes('renderDripAiSection'), '드립 상세에도 AI 캐릭터 반응 영역이 있어야 합니다.');
 assert(detail.includes('댓글이 생성되면 자동으로 표시됩니다.'), 'AI 댓글 생성 대기 상태 안내가 필요합니다.');
+assert(detail.includes('function stopCommentWatch()'), '상세 페이지 이탈 시 댓글 감시를 해제해야 합니다.');
+assert(detail.includes("window.addEventListener('hashchange'"), '상세 경로 변경 시 댓글 감시 정리가 필요합니다.');
+
+const communityPosts = read('functions/community-post-functions.js');
+assert(!communityPosts.includes('await reserveDailyQuota('), '검증 전에 별도 트랜잭션으로 이용 횟수를 차감하면 안 됩니다.');
+assert(communityPosts.includes('reserveQuotaInTransaction(tx, quota, quotaSnap)'), '이용 횟수 차감은 실제 저장 트랜잭션에 포함해야 합니다.');
+assert(communityPosts.indexOf("if (!title) throw new HttpsError") < communityPosts.indexOf("dailyQuota(uid, 'community_post'"), '게시글 내용 검증 후 작성 제한을 준비해야 합니다.');
+
+const imageUploader = read('public/js/components/image-uploader.js');
+assert(imageUploader.includes('const MAX_UPLOAD_BYTES = 8 * 1024 * 1024'), '클라이언트 이미지 제한은 서버와 동일한 8MB여야 합니다.');
+assert(imageUploader.includes('blob.size > MAX_UPLOAD_BYTES'), '압축 후 이미지 크기도 다시 검사해야 합니다.');
+assert(imageUploader.includes('파일당 최대 8MB'), '업로드 화면에 파일당 8MB 제한을 표시해야 합니다.');
+
+const uploadFunctions = read('functions/upload-image-functions.js');
+assert(uploadFunctions.indexOf('parseDataUrl(request.data?.dataUrl)') < uploadFunctions.indexOf('await reserveQuota(uid)'), '서버는 정상 이미지 검증 후 업로드 횟수를 차감해야 합니다.');
 
 const functionsMain = read('functions/functions-main-v2.js');
 assert(!functionsMain.includes('...aiCharacterComments,'), '구형 AI 자동댓글 트리거 전체를 다시 export하면 중복 실행됩니다.');
