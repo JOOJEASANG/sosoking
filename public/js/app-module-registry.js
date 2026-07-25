@@ -19,7 +19,6 @@ export const EXTENSION_MODULES = [
   './admin-write-sidebar.js',
   './account-ui.js',
   './account-notifications-uid-fix.js',
-  './pc-sidebar-spacing.js',
   './detail-actions-bootstrap.js',
   './post-owner-actions.js',
   './participant-replies.js',
