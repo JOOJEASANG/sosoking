@@ -8,7 +8,7 @@ const STOP_WORDS = new Set([
 
 const PRESET_TAGS = {
   general: ['일반글', '소소킹'],
-  vote: ['투표', '밸런스게임', '의견'],
+  vote: ['투표', '밸런스토론', '의견'],
   fill: ['빈칸채우기', '문장놀이', '참여형'],
   naming: ['미친작명소', '작명', '웃긴이름'],
   acrostic: ['삼행시', '제시어', '글짓기'],
