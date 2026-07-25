@@ -1,13 +1,13 @@
 {
   "workflow": "Firebase 검증 및 전체 배포",
-  "run_id": "30141116869",
+  "run_id": "30142452715",
   "run_attempt": "1",
-  "commit": "ef745e1c6b7c6c4c872cace4dcfe89e1ae6b0fc5",
+  "commit": "99e686323e62dac435a733c28afda27ce9a1f387",
   "ref": "main",
   "event": "push",
   "result": "success",
   "project": "sosoking-481e6",
-  "recorded_at": "2026-07-25T02:51:51Z",
+  "recorded_at": "2026-07-25T03:36:12Z",
   "storage": {
     "status": "0",
     "log_tail": "\n\u001b[1m\u001b[37m===\u001b[39m Deploying to 'sosoking-481e6'...\u001b[22m\n\n\u001b[36m\u001b[1mi \u001b[22m\u001b[39m deploying \u001b[1mstorage\u001b[22m\n\u001b[36m\u001b[1mi  firebase.storage:\u001b[22m\u001b[39m checking \u001b[1mstorage.rules\u001b[22m for compilation errors...\n\u001b[32m\u001b[1m✔  firebase.storage:\u001b[22m\u001b[39m rules file \u001b[1mstorage.rules\u001b[22m compiled successfully\n\u001b[36m\u001b[1mi  storage:\u001b[22m\u001b[39m latest version of \u001b[1mstorage.rules\u001b[22m already up to date, skipping upload...\n\u001b[32m\u001b[1m✔  storage:\u001b[22m\u001b[39m released rules \u001b[1mstorage.rules\u001b[22m to \u001b[1mfirebase.storage\u001b[22m\n\n\u001b[32m\u001b[1m✔ \u001b[22m\u001b[39m \u001b[1m\u001b[4mDeploy complete!\u001b[24m\u001b[22m\n\n\u001b[1mProject Console:\u001b[22m https://console.firebase.google.com/project/sosoking-481e6/overview"
