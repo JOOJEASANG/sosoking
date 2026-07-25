@@ -16,6 +16,7 @@ export const EXTENSION_MODULES = [
   './layout-id-repair.js',
   './admin-visibility-guard.js',
   './admin-shortcuts-pwa.js',
+  './pwa-install-click-fix.js',
   './admin-write-sidebar.js',
   './account-ui.js',
   './account-notifications-uid-fix.js',
