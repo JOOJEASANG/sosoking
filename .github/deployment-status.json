@@ -1,15 +1,15 @@
 {
   "workflow": "Firebase 검증 및 전체 배포",
-  "run_id": "30136404880",
+  "run_id": "30136434173",
   "run_attempt": "1",
-  "commit": "ae034e57c3e4a01bf410b92a627ce1e8fb8d831d",
+  "commit": "fbe527fbf8cbbc17399348eb265e1e22996092dc",
   "ref": "main",
   "event": "push",
-  "result": "cancelled",
+  "result": "success",
   "project": "sosoking-481e6",
-  "recorded_at": "2026-07-25T00:30:39Z",
+  "recorded_at": "2026-07-25T00:32:47Z",
   "storage": {
-    "status": "not-run",
-    "log_tail": ""
+    "status": "0",
+    "log_tail": "\n\u001b[1m\u001b[37m===\u001b[39m Deploying to 'sosoking-481e6'...\u001b[22m\n\n\u001b[36m\u001b[1mi \u001b[22m\u001b[39m deploying \u001b[1mstorage\u001b[22m\n\u001b[36m\u001b[1mi  firebase.storage:\u001b[22m\u001b[39m checking \u001b[1mstorage.rules\u001b[22m for compilation errors...\n\u001b[32m\u001b[1m✔  firebase.storage:\u001b[22m\u001b[39m rules file \u001b[1mstorage.rules\u001b[22m compiled successfully\n\u001b[36m\u001b[1mi  storage:\u001b[22m\u001b[39m uploading rules \u001b[1mstorage.rules\u001b[22m...\n\u001b[32m\u001b[1m✔  storage:\u001b[22m\u001b[39m released rules \u001b[1mstorage.rules\u001b[22m to \u001b[1mfirebase.storage\u001b[22m\n\n\u001b[32m\u001b[1m✔ \u001b[22m\u001b[39m \u001b[1m\u001b[4mDeploy complete!\u001b[24m\u001b[22m\n\n\u001b[1mProject Console:\u001b[22m https://console.firebase.google.com/project/sosoking-481e6/overview"
   }
 }
