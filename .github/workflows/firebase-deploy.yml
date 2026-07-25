@@ -121,7 +121,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          firebase deploy --project "$FIREBASE_PROJECT_ID" --only storage --non-interactive 2>&1 | tee storage-deploy.log
+          firebase deploy --project "$FIREBASE_PROJECT_ID" --only storage:main --non-interactive 2>&1 | tee storage-deploy.log
           status=${PIPESTATUS[0]}
           log_b64="$(tail -n 40 storage-deploy.log | base64 -w 0)"
           echo "status=$status" >> "$GITHUB_OUTPUT"
