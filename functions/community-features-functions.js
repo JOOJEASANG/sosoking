@@ -35,7 +35,9 @@ exports.onCommentCreated = onDocumentCreated({
       commentCount: FieldValue.increment(1),
       updatedAt: FieldValue.serverTimestamp(),
     });
-    if (post.authorId && post.authorId !== comment.authorId && !String(post.authorId).startsWith('deleted_')) {
+
+    const isSystemAiComment = comment.isAiCharacter === true || comment.aiGenerated === true;
+    if (!isSystemAiComment && post.authorId && post.authorId !== comment.authorId && !String(post.authorId).startsWith('deleted_')) {
       const noticeRef = db.collection('notifications').doc();
       tx.set(noticeRef, {
         uid: post.authorId,
