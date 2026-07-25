@@ -1,4 +1,4 @@
-const BASE_TITLE = '소소킹 - 글과 사진으로 즐기는 게임형 커뮤니티';
+const BASE_TITLE = '소소킹 - 글과 사진으로 즐기는 참여형 커뮤니티';
 const BASE_DESC  = '투표·판정·토론, 작명소, 드립, 퀴즈, 일반 피드까지 — 짧게 올리고 바로 노는 참여형 커뮤니티';
 const BASE_IMAGE = 'https://sosoking.co.kr/og-image.png';
 const SITE_URL   = 'https://sosoking.co.kr';
