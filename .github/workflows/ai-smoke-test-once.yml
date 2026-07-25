@@ -1,0 +1,72 @@
+name: Gemini 실제 응답 일회성 재검사
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/ai-smoke-test-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 저장소 체크아웃
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Node.js 설정
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+
+      - name: 의존성 설치
+        working-directory: functions
+        run: npm ci
+
+      - name: Gemini 실제 호출 및 결과 기록
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const { GoogleGenerativeAI } = require('./functions/node_modules/@google/generative-ai');
+
+          (async () => {
+            const status = {
+              checkedAt: new Date().toISOString(),
+              model: 'gemini-2.5-flash',
+            };
+            try {
+              const key = String(process.env.GEMINI_API_KEY || '').trim();
+              if (!key) throw new Error('GEMINI_API_KEY secret is empty');
+              const model = new GoogleGenerativeAI(key).getGenerativeModel({
+                model: 'gemini-2.5-flash',
+                generationConfig: { temperature: 0.7, maxOutputTokens: 100 },
+              });
+              const result = await model.generateContent('소소킹 AI 연결 확인입니다. 한국어로 짧고 자연스럽게 한 문장만 답하세요.');
+              status.result = 'success';
+              status.response = String(result.response.text() || '').trim().slice(0, 500);
+            } catch (error) {
+              status.result = 'failure';
+              status.error = String(error?.message || error).slice(0, 1200);
+            }
+            fs.mkdirSync(path.join('.github'), { recursive: true });
+            fs.writeFileSync(path.join('.github', 'ai-smoke-status.json'), JSON.stringify(status, null, 2) + '\n');
+          })();
+          NODE
+
+      - name: 결과 저장 후 일회성 워크플로 제거
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .github/ai-smoke-status.json
+          git rm .github/workflows/ai-smoke-test-once.yml
+          git commit -m 'Gemini 실제 응답 재검사 결과 기록'
+          git push
