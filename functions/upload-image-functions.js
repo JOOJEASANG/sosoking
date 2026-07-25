@@ -71,8 +71,8 @@ async function reserveQuota(uid) {
 
 const uploadFeedImage = onCall({ region: REGION, timeoutSeconds: 60, memory: '256MiB' }, async request => {
   const uid = requireRegisteredUser(request);
-  await reserveQuota(uid);
   const { buffer, contentType } = parseDataUrl(request.data?.dataUrl);
+  await reserveQuota(uid);
   const ext = contentType === 'image/png' ? 'png' : contentType === 'image/webp' ? 'webp' : contentType === 'image/gif' ? 'gif' : 'jpg';
   const path = `feeds/${uid}/${Date.now()}_${randomUUID()}.${ext}`;
   const token = randomUUID();
