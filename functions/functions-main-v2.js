@@ -11,6 +11,7 @@ const account = require('./account-functions.js');
 const communityFeatures = require('./community-features-functions.js');
 const communityAiContent = require('./community-ai-content-functions.js');
 const aiCharacterComments = require('./ai-character-comments-v2-functions.js');
+const aiCharacterCommentsUnified = require('./ai-character-comments-unified-functions.js');
 const migration = require('./community-migration-functions.js');
 const adminAutomation = require('./ai-admin-automation-functions.js');
 const adminUsers = require('./admin-user-functions.js');
@@ -34,6 +35,7 @@ module.exports = {
   ...communityFeatures,
   ...communityAiContent,
   ...aiCharacterComments,
+  ...aiCharacterCommentsUnified,
   ...migration,
   ...adminAutomation,
   ...adminUsers,
