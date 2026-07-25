@@ -46,11 +46,14 @@ function renderIntro() {
             <span class="home-onboard__room-info"><b>${room.title}</b><em>${room.desc}</em></span>
           </button>`).join('')}
       </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-top:12px">
+      <div class="home-ai-residents" aria-label="참여 AI 캐릭터">
         ${residents.map(resident => `
-          <div style="padding:10px;border-radius:14px;background:rgba(255,255,255,.76);border:1px solid rgba(148,163,184,.28)">
-            <div style="font-size:13px;font-weight:900"><span style="font-size:18px">${resident.emoji}</span> ${escHtml(resident.name)}</div>
-            <div style="font-size:11px;font-weight:800;color:var(--color-text-secondary);margin-top:3px">${escHtml(resident.role)}</div>
+          <div class="home-ai-resident">
+            <span class="home-ai-resident__emoji" aria-hidden="true">${resident.emoji}</span>
+            <span style="min-width:0">
+              <span class="home-ai-resident__name">${escHtml(resident.name)}</span>
+              <span class="home-ai-resident__role">${escHtml(resident.role)}</span>
+            </span>
           </div>`).join('')}
       </div>
     </section>`;
