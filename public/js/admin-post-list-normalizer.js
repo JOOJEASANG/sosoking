@@ -1,6 +1,6 @@
 const TYPE_LABELS = {
   vote: '골라봐',
-  initial_game: '초성게임',
+  initial_game: '초성퀴즈',
   naming: '미친작명소',
   crazy_court: '억까재판',
   relay: '막장릴레이',

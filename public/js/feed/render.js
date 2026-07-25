@@ -19,7 +19,7 @@ export function renderFeedFilterBar({ search = '' } = {}) {
 
 export function renderFeedSortSelect({ sort = 'latest' } = {}) {
   return `
-    <label class="soso-feed-sort soso-feed-sort--summary" aria-label="게임 정렬">
+    <label class="soso-feed-sort soso-feed-sort--summary" aria-label="게시물 정렬">
       <span>정렬</span>
       <select id="feed-sort-select">
         ${Object.entries(SORT_LABELS).map(([key, label]) => `<option value="${key}" ${sort === key ? 'selected' : ''}>${label}</option>`).join('')}
@@ -38,12 +38,12 @@ export function renderFeedSummary({ total = 0, page = 1, totalPages = 1, search 
 export function renderFeedEmptyState({ search = '' } = {}) {
   return `
     <div class="empty-state">
-      <div class="empty-state__icon">${search ? '🔍' : '🎮'}</div>
-      <div class="empty-state__title">${search ? `"${escHtml(search)}" 검색 결과가 없어요` : '아직 열린 게임이 없어요'}</div>
-      <div class="empty-state__desc">${search ? '다른 검색어로 다시 찾아보세요.' : '첫 번째 판결 게임을 열고 AI 캐릭터 댓글을 받아보세요.'}</div>
+      <div class="empty-state__icon">${search ? '🔍' : '📝'}</div>
+      <div class="empty-state__title">${search ? `"${escHtml(search)}" 검색 결과가 없어요` : '아직 등록된 게시물이 없어요'}</div>
+      <div class="empty-state__desc">${search ? '다른 검색어로 다시 찾아보세요.' : '첫 번째 판결 게시물을 작성하고 AI 캐릭터 댓글을 받아보세요.'}</div>
       ${search
-        ? `<button class="btn btn--ghost" style="margin-top:16px" onclick="navigate('/feed')">전체 게임 보기</button>`
-        : `<button class="btn btn--primary" style="margin-top:16px" onclick="navigate('/write?type=multi&preset=judgment')">+ 게임 열기</button>`}
+        ? `<button class="btn btn--ghost" style="margin-top:16px" onclick="navigate('/feed')">전체 게시물 보기</button>`
+        : `<button class="btn btn--primary" style="margin-top:16px" onclick="navigate('/write?type=multi&preset=judgment')">+ 게시물 작성</button>`}
     </div>`;
 }
 

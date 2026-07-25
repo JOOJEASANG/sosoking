@@ -5,6 +5,7 @@ import { appState } from './state.js';
 import { toast } from './components/toast.js';
 
 function esc(v){return String(v||'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));}
+function feedbackIcon(){return '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 9.75h6.75M8.625 13.5h4.5M21 12a9 9 0 1 1-3.3-6.97L21 3v9Z"/></svg>';}
 function isAdminPage(){return (location.hash||'').startsWith('#/admin');}
 function removeButton(){document.getElementById('feedback-open-btn')?.remove();}
 function getPageContext(){const hash=location.hash||'#/';return{hash,path:location.pathname,url:`${location.origin}${location.pathname}${hash}`,title:document.title||'소소킹'};}
@@ -41,7 +42,17 @@ async function submitFeedback(overlay){
   catch(e){console.error(e);toast.error('전송에 실패했어요. 잠시 후 다시 시도해주세요.');btn.disabled=false;btn.textContent='보내기';}
 }
 
-function makeFeedbackButton(cls=''){const btn=document.createElement('button');btn.type='button';btn.className=`btn btn--ghost btn--sm account-feedback-btn ${cls}`.trim();btn.innerHTML='💬 의견·버그';btn.addEventListener('click',openFeedbackModal);return btn;}
+function makeFeedbackButton(cls=''){
+  const btn=document.createElement('button');
+  const sidebar=cls.includes('account-feedback-btn--sidebar');
+  btn.type='button';
+  btn.className=sidebar
+    ? `sidebar__nav-item sidebar__nav-item--button account-feedback-btn ${cls}`.trim()
+    : `btn btn--ghost btn--sm account-feedback-btn ${cls}`.trim();
+  btn.innerHTML=sidebar?`${feedbackIcon()}<span>의견 · 버그</span>`:'💬 의견·버그';
+  btn.addEventListener('click',openFeedbackModal);
+  return btn;
+}
 function ensureFeedbackEntrypoints(){
   removeButton();if(isAdminPage())return;
   const accountActions=document.querySelector('.account-profile-actions');
