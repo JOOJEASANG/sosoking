@@ -28,18 +28,29 @@ function changeCount(button, selector, delta) {
   if (node) {
     const next = Math.max(0, Number(node.textContent || 0) + delta);
     node.textContent = next ? String(next) : '';
+  } else if (delta > 0 && button) {
+    button.insertAdjacentHTML('beforeend', selector === 'strong' ? ' <strong>1</strong>' : ' <b>1</b>');
   }
 }
 
 function applyResult(button, result, selector) {
   const container = button.closest('[data-comment-id], .reaction-bar') || button.parentElement;
+
+  // 같은 반응을 다시 눌러 취소한 경우 현재 버튼을 한 번만 감소시킵니다.
+  if (result.active === false) {
+    button.classList.remove('active');
+    changeCount(button, selector, -1);
+    return;
+  }
+
   if (result.previousReaction && result.previousReaction !== result.reaction) {
     const previous = container?.querySelector(`[data-reaction="${result.previousReaction}"], [data-react="${result.previousReaction}"]`);
     previous?.classList.remove('active');
     changeCount(previous, selector, -1);
   }
-  button.classList.toggle('active', !!result.active);
-  changeCount(button, selector, result.active ? 1 : -1);
+
+  button.classList.add('active');
+  changeCount(button, selector, 1);
 }
 
 async function handlePostReaction(button) {

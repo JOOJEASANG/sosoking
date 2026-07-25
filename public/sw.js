@@ -1,5 +1,5 @@
 // sw.js — PWA 설치 안정성과 최신 자산 반영을 함께 관리합니다.
-const CACHE = 'sosoking-v40';
+const CACHE = 'sosoking-v41';
 const FRESH_EXTENSIONS = ['.html', '.js', '.css', '.json', '.webmanifest'];
 const CORE_ASSETS = [
   '/',
@@ -55,9 +55,13 @@ function shouldAlwaysFetchFresh(request, url) {
 async function networkFirst(request) {
   try {
     const response = await fetch(request, { cache: 'no-store' });
-    if (response.ok && request.mode === 'navigate') {
-      const cache = await caches.open(CACHE);
-      await cache.put('/index.html', response.clone());
+    if (response.ok) {
+      const url = new URL(request.url);
+      if (url.origin === self.location.origin) {
+        const cache = await caches.open(CACHE);
+        await cache.put(request, response.clone());
+        if (request.mode === 'navigate') await cache.put('/index.html', response.clone());
+      }
     }
     return response;
   } catch {
@@ -76,10 +80,9 @@ async function networkFirst(request) {
 
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
-
   if (shouldBypass(event.request, url)) return;
 
-  // HTML/JS/CSS/JSON/manifest는 네트워크 우선으로 최신 버전을 사용하고 실패 시 캐시로 대체합니다.
+  // HTML/JS/CSS/JSON/manifest는 네트워크 우선으로 최신 버전을 사용하고 성공한 응답을 캐시에 보관합니다.
   if (shouldAlwaysFetchFresh(event.request, url)) {
     event.respondWith(networkFirst(event.request));
     return;

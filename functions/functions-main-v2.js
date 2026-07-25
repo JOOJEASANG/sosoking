@@ -34,8 +34,14 @@ module.exports = {
   ...account,
   ...communityFeatures,
   ...communityAiContent,
-  ...aiCharacterComments,
+
+  // v2 모듈은 관리자 설정·수동 테스트 callable만 공개합니다.
+  // 자동 생성 트리거는 unified 한 개만 배포해 중복 실행과 마커 경쟁을 막습니다.
+  getAiCharacterSettings: aiCharacterComments.getAiCharacterSettings,
+  saveAiCharacterSettings: aiCharacterComments.saveAiCharacterSettings,
+  generateAiCharacterCommentsTest: aiCharacterComments.generateAiCharacterCommentsTest,
   ...aiCharacterCommentsUnified,
+
   ...migration,
   ...adminAutomation,
   ...adminUsers,

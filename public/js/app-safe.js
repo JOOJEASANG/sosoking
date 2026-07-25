@@ -12,6 +12,9 @@ import { initPwaInstall } from './pwa-install.js';
 export { appState };
 
 const OWNER_EMAILS = new Set();
+let authReadyResolved = false;
+let resolveAuthReady;
+const authReady = new Promise(resolve => { resolveAuthReady = resolve; });
 
 function loadOptionalModules() {
   importModuleGroup(SAFE_OPTIONAL_MODULES, { label: 'app-safe optional' });
@@ -101,7 +104,13 @@ async function isStrictAdmin(user) {
 }
 
 async function fetchUserProfile(user) {
-  if (!user) return;
+  if (!user) {
+    appState.nickname = '';
+    appState.nicknameIcon = null;
+    appState.points = 0;
+    appState.isAdmin = false;
+    return;
+  }
   try {
     let snap = await getDoc(doc(db, 'users', user.uid));
     if (!snap.exists() && !user.isAnonymous) {
@@ -120,6 +129,8 @@ async function fetchUserProfile(user) {
       appState.points = Number(data.points || data.totalPoints || 0);
     } else {
       appState.nickname = user.displayName || user.email?.split('@')[0] || '';
+      appState.nicknameIcon = null;
+      appState.points = 0;
     }
     appState.isAdmin = await isStrictAdmin(user);
   } catch (error) {
@@ -174,9 +185,16 @@ function renderFrame() {
 onAuthStateChanged(auth, async user => {
   appState.user = user || null;
   await fetchUserProfile(user);
+  appState.loading = false;
   renderHeader();
   renderSidebar();
   renderBottomNav();
+
+  if (!authReadyResolved) {
+    authReadyResolved = true;
+    resolveAuthReady();
+    window.dispatchEvent(new CustomEvent('sosoking:auth-ready', { detail: { signedIn: !!user } }));
+  }
 });
 
 window.addEventListener('sosoking:pwa-statechange', () => {
@@ -184,10 +202,20 @@ window.addEventListener('sosoking:pwa-statechange', () => {
   renderSidebar();
 });
 
+async function startRouter() {
+  try {
+    await Promise.all([registerRoutes(), authReady]);
+    initRouter();
+  } catch (error) {
+    console.error('[router start]', error);
+    showPageError('앱을 시작하지 못했어요', error);
+  }
+}
+
 initToast();
 renderFrame();
 initPwaInstall();
 loadOptionalModules();
-registerRoutes().then(initRouter);
+startRouter();
 
 window.toast = toast;

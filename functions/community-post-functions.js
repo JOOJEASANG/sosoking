@@ -23,15 +23,28 @@ function requireRegisteredUser(request) {
   if (request.auth?.token?.firebase?.sign_in_provider === 'anonymous') throw new HttpsError('permission-denied', '정식 회원 로그인 후 사용할 수 있습니다.');
   return uid;
 }
-async function reserveDailyQuota(uid, action, limit) {
+function dailyQuota(uid, action, limit) {
   const day = todayKST();
-  const ref = db.doc(`rate_limits/${action}_${day}_${cleanId(uid, 128)}`);
-  await db.runTransaction(async tx => {
-    const snap = await tx.get(ref);
-    const count = Number(snap.exists ? snap.data()?.count || 0 : 0);
-    if (count >= limit) throw new HttpsError('resource-exhausted', '오늘 이용 가능한 횟수를 초과했습니다.');
-    tx.set(ref, { uid, action, day, count: FieldValue.increment(1), limit, updatedAt: FieldValue.serverTimestamp(), updatedAtMs: Date.now() }, { merge: true });
-  });
+  return {
+    uid,
+    action,
+    day,
+    limit,
+    ref: db.doc(`rate_limits/${action}_${day}_${cleanId(uid, 128)}`),
+  };
+}
+function reserveQuotaInTransaction(tx, quota, snap) {
+  const count = Number(snap.exists ? snap.data()?.count || 0 : 0);
+  if (count >= quota.limit) throw new HttpsError('resource-exhausted', '오늘 이용 가능한 횟수를 초과했습니다.');
+  tx.set(quota.ref, {
+    uid: quota.uid,
+    action: quota.action,
+    day: quota.day,
+    count: FieldValue.increment(1),
+    limit: quota.limit,
+    updatedAt: FieldValue.serverTimestamp(),
+    updatedAtMs: Date.now(),
+  }, { merge: true });
 }
 function presetOf(value) {
   const preset = String(value || '').trim();
@@ -101,15 +114,17 @@ function addNotification(tx, uid, data) {
 
 const createCommunityPost = onCall({ region: REGION, timeoutSeconds: 30 }, async request => {
   const uid = requireRegisteredUser(request);
-  await reserveDailyQuota(uid, 'community_post', 10);
   const input = request.data || {};
   const preset = presetOf(input.preset);
   const title = cleanText(input.title, 100);
-  const desc = cleanText(input.desc, 2000) || title;
+  const rawDesc = cleanText(input.desc, 2000);
+  const desc = rawDesc || title;
   if (!title) throw new HttpsError('invalid-argument', '제목을 입력해주세요.');
-  if (preset === 'consult' && !cleanText(input.desc, 2000)) throw new HttpsError('invalid-argument', '상담 내용을 입력해주세요.');
+  if (preset === 'consult' && !rawDesc) throw new HttpsError('invalid-argument', '상담 내용을 입력해주세요.');
+
   const user = await userPayload(uid, request.auth?.token || {});
   const ref = db.collection('feeds').doc();
+  const quota = dailyQuota(uid, 'community_post', 10);
   const post = {
     type: 'multi', cat: 'community', subtype: preset, feedType: feedType(preset), typeLabel: typeLabel(preset),
     title, desc, tags: cleanTags(input.tags), images: cleanImages(input.images), modules: buildModules(preset, desc, input),
@@ -117,8 +132,12 @@ const createCommunityPost = onCall({ region: REGION, timeoutSeconds: 30 }, async
     hidden: false, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp(),
   };
   await db.runTransaction(async tx => {
-    const awardSnap = await tx.get(awardRef(uid, 'post_create', ref.id));
+    const [awardSnap, quotaSnap] = await Promise.all([
+      tx.get(awardRef(uid, 'post_create', ref.id)),
+      tx.get(quota.ref),
+    ]);
     if (awardSnap.exists) throw new HttpsError('already-exists', '이미 처리된 글입니다.');
+    reserveQuotaInTransaction(tx, quota, quotaSnap);
     tx.create(ref, post);
     addAwardWrites(tx, { uid, action: 'post_create', points: 10, label: '커뮤니티 글 작성', postId: ref.id, key: ref.id });
   });
@@ -185,15 +204,19 @@ async function loadDrip(postId) {
 
 const addDripParticipation = onCall({ region: REGION, timeoutSeconds: 20 }, async request => {
   const uid = requireRegisteredUser(request);
-  await reserveDailyQuota(uid, 'drip_participation', 40);
-  const { ref: postRef, postId } = await loadDrip(request.data?.postId);
   const text = cleanText(request.data?.text, 50);
   if (!text) throw new HttpsError('invalid-argument', '드립 내용을 입력해주세요.');
+  const { ref: postRef, postId } = await loadDrip(request.data?.postId);
   const user = await userPayload(uid, request.auth?.token || {});
   const itemRef = postRef.collection('multi_drip').doc();
+  const quota = dailyQuota(uid, 'drip_participation', 40);
   await db.runTransaction(async tx => {
-    const awardSnap = await tx.get(awardRef(uid, 'participation_create', itemRef.id));
+    const [awardSnap, quotaSnap] = await Promise.all([
+      tx.get(awardRef(uid, 'participation_create', itemRef.id)),
+      tx.get(quota.ref),
+    ]);
     if (awardSnap.exists) throw new HttpsError('already-exists', '이미 처리된 참여입니다.');
+    reserveQuotaInTransaction(tx, quota, quotaSnap);
     tx.create(itemRef, { text, ...user, reactions: { like: 0, funny: 0, fire: 0 }, replyCount: 0, createdAt: FieldValue.serverTimestamp(), createdAtMs: Date.now() });
     addAwardWrites(tx, { uid, action: 'participation_create', points: 3, label: '드립 참여', postId, itemId: itemRef.id, key: itemRef.id });
   });

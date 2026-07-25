@@ -57,8 +57,17 @@ function renderThemeButton(dark) {
     </button>`;
 }
 
+function googlePhoto(user) {
+  const providers = Array.isArray(user?.providerData) ? user.providerData : [];
+  return user?.photoURL && providers.some(item => item?.providerId === 'google.com') ? String(user.photoURL) : '';
+}
+
 function renderHeaderAvatar(user) {
   const nickname = appState.nickname || user?.displayName || user?.email?.split('@')[0] || '나';
+  const googleUrl = googlePhoto(user);
+  if (googleUrl) {
+    return `<img class="site-header__avatar-img" src="${escHtml(googleUrl)}" referrerpolicy="no-referrer" alt="" aria-hidden="true">`;
+  }
   const icon = normalizeNicknameIcon(appState.nicknameIcon);
   if (icon?.type === 'image') {
     return `<img class="site-header__avatar-img" src="${escHtml(icon.url)}" alt="" aria-hidden="true">`;
@@ -76,10 +85,10 @@ export function renderHeader() {
   const el = document.getElementById('site-header');
   if (!el) return;
 
-  const user   = appState.user;
-  const dark   = isDark();
+  const user = appState.user;
+  const dark = isDark();
   const unread = appState.unreadNotifications || 0;
-  const hasNickIcon = !!normalizeNicknameIcon(appState.nicknameIcon) || !!user?.photoURL;
+  const hasAvatar = !!googlePhoto(user) || !!normalizeNicknameIcon(appState.nicknameIcon) || !!user?.photoURL;
   const themeButton = renderThemeButton(dark);
 
   el.innerHTML = `
@@ -88,27 +97,19 @@ export function renderHeader() {
         <img src="/logo.svg" alt="" width="24" height="24">
         <span>소소킹</span>
       </a>
-
       <div class="site-header__spacer"></div>
-
       <div class="site-header__actions">
         ${canOfferInstall() ? `
         <button class="site-header__install-btn" id="hdr-install-btn" aria-label="앱 설치">
           ${iconInstall()}<span>앱 설치</span>
         </button>` : ''}
-
         ${user ? `
-          <a href="#/account?tab=notifications"
-             class="site-header__icon-btn notif-bell"
-             style="position:relative"
-             aria-label="알림${unread > 0 ? ` (${unread}개 읽지 않음)` : ''}">
+          <a href="#/account?tab=notifications" class="site-header__icon-btn notif-bell" style="position:relative" aria-label="알림${unread > 0 ? ` (${unread}개 읽지 않음)` : ''}">
             ${iconBell()}
             ${unread > 0 ? `<span class="notif-badge">${unread > 99 ? '99+' : unread}</span>` : ''}
           </a>
           ${themeButton}
-          <button class="site-header__icon-btn site-header__avatar ${hasNickIcon ? 'site-header__avatar--icon' : ''}" id="hdr-avatar"
-            aria-label="내 정보"
-            title="${escHtml(appState.nickname || user.displayName || '내 정보')}">
+          <button class="site-header__icon-btn site-header__avatar ${hasAvatar ? 'site-header__avatar--icon' : ''}" id="hdr-avatar" aria-label="내 정보" title="${escHtml(appState.nickname || user.displayName || '내 정보')}">
             ${renderHeaderAvatar(user)}
           </button>
         ` : `
@@ -116,8 +117,7 @@ export function renderHeader() {
           <a href="#/login" class="btn btn--primary btn--sm">로그인</a>
         `}
       </div>
-    </div>
-  `;
+    </div>`;
 
   el.querySelector('[data-logo-nav]')?.addEventListener('click', event => {
     event.preventDefault();
@@ -133,8 +133,5 @@ export function renderHeader() {
   });
 
   document.getElementById('hdr-avatar')?.addEventListener('click', () => navigate('/account'));
-
-  document.getElementById('hdr-install-btn')?.addEventListener('click', async event => {
-    await requestPwaInstall({ button: event.currentTarget });
-  });
+  document.getElementById('hdr-install-btn')?.addEventListener('click', event => requestPwaInstall({ button: event.currentTarget }));
 }
