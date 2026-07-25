@@ -1,4 +1,4 @@
-import { auth, db } from './firebase.js';
+import { auth, db, onAuthStateChanged } from './firebase.js';
 import { appState } from './state.js';
 import { collection, doc, limit, onSnapshot, orderBy, query, serverTimestamp, updateDoc, where, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
@@ -164,9 +164,13 @@ async function markAllRead() {
   await batch.commit();
 }
 
-function watchNotifications(uid) {
-  if (unsubscribe) unsubscribe();
+function stopWatching() {
+  unsubscribe?.();
   unsubscribe = null;
+}
+
+function watchNotifications(uid) {
+  stopWatching();
   if (!uid) {
     liveNotifications = [];
     updateBadges([]);
@@ -190,13 +194,20 @@ let timer = null;
 function schedule() {
   clearTimeout(timer);
   timer = setTimeout(() => {
+    const user = auth.currentUser || appState.user;
+    if (!user) {
+      removePanelShell();
+      updateBadges([]);
+      return;
+    }
     ensurePanelShell();
     bindHeaderBell();
   }, 120);
 }
 
-auth.onAuthStateChanged(user => watchNotifications(user?.uid || ''));
+onAuthStateChanged(auth, user => watchNotifications(user?.uid || ''));
 window.addEventListener('hashchange', schedule);
 window.addEventListener('sosoking:auth-ready', schedule);
 new MutationObserver(schedule).observe(document.documentElement, { childList: true, subtree: true });
+window.addEventListener('pagehide', stopWatching, { once: true });
 setTimeout(schedule, 500);
