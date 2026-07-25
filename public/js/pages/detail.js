@@ -4,6 +4,7 @@ import { httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { renderReactionBar, initReactionBar } from '../components/reaction-bar.js';
 import { setMeta } from '../utils/seo.js';
 import { escHtml, formatTime } from '../utils/helpers.js';
+import { navigate } from '../router.js';
 import { fetchComments } from '../detail/data.js';
 import { renderImageSection } from '../detail/body-render.js';
 import { renderCommentSection } from '../detail/comment-render.js';
@@ -16,6 +17,13 @@ const TYPE_META = {
   vote: { label: '토론', css: 'vote' },
   drip: { label: '드립', css: 'drip' },
 };
+const DETAIL_CATEGORIES = [
+  { key: '', icon: '✨', label: '전체' },
+  { key: 'judgment', icon: '⚖️', label: '판결' },
+  { key: 'consult', icon: '💬', label: '상담' },
+  { key: 'vote', icon: '🗳️', label: '토론' },
+  { key: 'drip', icon: '😂', label: '드립' },
+];
 
 function subtype(post) {
   if (TYPE_META[post.subtype]) return post.subtype;
@@ -23,6 +31,16 @@ function subtype(post) {
   if (post.modules?.drip?.enabled) return 'drip';
   if (post.modules?.vote?.voteMode === 'pros_cons') return 'vote';
   return 'judgment';
+}
+
+function renderDetailCategories(activeType) {
+  return `
+    <nav class="soso-room-tabs detail-community-tabs" aria-label="커뮤니티 카테고리">
+      ${DETAIL_CATEGORIES.map(item => `
+        <button type="button" class="soso-room-tab ${item.key === activeType ? 'active' : ''}" data-detail-category="${item.key}">
+          <span aria-hidden="true">${item.icon}</span>${item.label}
+        </button>`).join('')}
+    </nav>`;
 }
 
 async function registerView(postId) {
@@ -62,10 +80,12 @@ export async function renderDetail(id) {
 }
 
 function renderDetailPage(root, post, comments, scrapped) {
-  const meta = TYPE_META[subtype(post)];
+  const activeType = subtype(post);
+  const meta = TYPE_META[activeType];
   const time = formatTime(post.createdAt?.toDate?.() || post.createdAt);
   root.innerHTML = `
-    <div data-detail-root data-post-id="${escHtml(post.id)}" style="max-width:720px;margin:0 auto">
+    <div data-detail-root data-post-id="${escHtml(post.id)}" data-detail-subtype="${activeType}" style="max-width:720px;margin:0 auto">
+      ${renderDetailCategories(activeType)}
       <article class="card">
         <header class="detail-header">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
@@ -89,6 +109,14 @@ function renderDetailPage(root, post, comments, scrapped) {
         ${renderCommentSection(post, comments)}
       </article>
     </div>`;
+
+  root.querySelectorAll('[data-detail-category]').forEach(button => {
+    button.addEventListener('click', () => {
+      const key = button.dataset.detailCategory || '';
+      navigate(key ? `/feed?type=${encodeURIComponent(key)}` : '/feed');
+    });
+  });
+
   initReactionBar(post.id);
   appendSimilarPosts(post);
 }
