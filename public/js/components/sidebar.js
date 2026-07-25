@@ -3,6 +3,7 @@ import { auth, signOut } from '../firebase.js';
 import { appState } from '../state.js';
 import { navigate } from '../router.js';
 import { escHtml } from '../utils/helpers.js';
+import { canOfferInstall, requestPwaInstall } from '../pwa-install.js';
 
 function svgIcon(path, strokeWidth = '1.8') {
   return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="${strokeWidth}" aria-hidden="true">${path}</svg>`;
@@ -19,34 +20,7 @@ function iconMoon(){return svgIcon('<path stroke-linecap="round" stroke-linejoin
 function iconInstall(){return svgIcon('<path stroke-linecap="round" stroke-linejoin="round" d="M12 3v11m0 0 4-4m-4 4-4-4M4 16.5V19a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2.5"/>');}
 
 function isDark(){return document.documentElement.getAttribute('data-theme')==='dark';}
-function isIOS(){return /iPhone|iPad|iPod/.test(navigator.userAgent)&&!window.MSStream;}
-function isAndroid(){return /Android/i.test(navigator.userAgent)&&!isIOS();}
-function isStandalone(){return window.matchMedia('(display-mode: standalone)').matches||!!navigator.standalone;}
 function isNavActive(navPath, currentPath){ return currentPath===navPath; }
-
-function showIOSInstallGuide(){
-  const prev=document.getElementById('ios-install-tip');
-  if(prev){prev.remove();return;}
-  const tip=document.createElement('div');
-  tip.id='ios-install-tip';
-  tip.style.cssText='position:fixed;left:50%;bottom:84px;transform:translateX(-50%);z-index:10000;width:min(320px,calc(100vw - 32px));background:var(--color-surface);border:1px solid var(--color-border);border-radius:16px;padding:18px 20px;box-shadow:0 12px 40px rgba(0,0,0,.2);text-align:center;font-size:13px;line-height:1.65';
-  tip.innerHTML='<div style="font-size:24px;margin-bottom:8px">📲</div><div style="font-weight:800;color:var(--color-text-primary);margin-bottom:6px">홈 화면에 추가하기</div><div style="color:var(--color-text-secondary)">Safari 하단 <b>공유 버튼 ⬆</b> 탭 후<br><b>"홈 화면에 추가"</b>를 선택하세요</div><button id="ios-tip-close" style="margin-top:14px;padding:7px 24px;background:var(--color-primary);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer">확인</button>';
-  document.body.appendChild(tip);
-  document.getElementById('ios-tip-close')?.addEventListener('click',()=>tip.remove());
-  setTimeout(()=>tip.remove(),10000);
-}
-
-function showAndroidInstallGuide(){
-  const prev=document.getElementById('android-install-tip');
-  if(prev){prev.remove();return;}
-  const tip=document.createElement('div');
-  tip.id='android-install-tip';
-  tip.style.cssText='position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:10000;width:min(340px,calc(100vw - 32px));background:var(--color-surface);border:1px solid var(--color-border);border-radius:16px;padding:20px;box-shadow:0 12px 40px rgba(0,0,0,.2);text-align:center;font-size:13px;line-height:1.7';
-  tip.innerHTML='<div style="font-size:24px;margin-bottom:8px">📲</div><div style="font-weight:800;color:var(--color-text-primary);margin-bottom:10px">Chrome에서 앱 설치하기</div><div style="color:var(--color-text-secondary);text-align:left;margin-bottom:14px"><div style="margin-bottom:6px">① Chrome 주소창 오른쪽 <b>⋮ 메뉴</b> 탭</div><div style="margin-bottom:6px">② <b>"앱 설치"</b> 또는 <b>"홈 화면에 추가"</b> 선택</div></div><button id="android-tip-close" style="width:100%;padding:10px 0;background:var(--color-primary);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit">확인</button>';
-  document.body.appendChild(tip);
-  document.getElementById('android-tip-close')?.addEventListener('click',()=>tip.remove());
-  setTimeout(()=>tip.remove(),20000);
-}
 
 function renderNavItem(item, currentPath) {
   const active = isNavActive(item.path, currentPath);
@@ -83,7 +57,7 @@ export function renderSidebar() {
   const avatarLetter = escHtml((nickname || '나')[0]);
   const avatarInner = user?.photoURL ? `<img src="${escHtml(user.photoURL)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : avatarLetter;
   const accountMeta = isAdmin ? '관리자 계정' : (user?.email ? escHtml(user.email) : '내 정보 보기');
-  const showInstall = (appState.installPrompt || isIOS() || isAndroid()) && !isStandalone();
+  const showInstall = canOfferInstall();
 
   el.innerHTML = `
     <div class="sidebar__logo"><a href="#/" class="sidebar__brand" aria-label="소소킹 홈" data-nav="/"><img src="/logo.svg" alt="" width="28" height="28"><span class="sidebar__brand-name">소소킹</span></a></div>
@@ -112,8 +86,8 @@ export function renderSidebar() {
     </div>
   `;
 
-  el.querySelectorAll('[data-nav]').forEach(a => a.addEventListener('click', e => {
-    e.preventDefault();
+  el.querySelectorAll('[data-nav]').forEach(a => a.addEventListener('click', event => {
+    event.preventDefault();
     navigate(a.dataset.nav || '/');
   }));
 
@@ -125,12 +99,8 @@ export function renderSidebar() {
     window.dispatchEvent(new CustomEvent('themechange', { detail: { theme: next } }));
     renderSidebar();
   });
-  document.getElementById('sb-install-btn')?.addEventListener('click', async () => {
-    const prompt = appState.installPrompt || window.__pwaInstallPrompt;
-    if (prompt) {
-      try { await prompt.prompt(); } catch {}
-    } else if (isIOS()) showIOSInstallGuide();
-    else showAndroidInstallGuide();
+  document.getElementById('sb-install-btn')?.addEventListener('click', async event => {
+    await requestPwaInstall({ button: event.currentTarget });
   });
   document.getElementById('sb-logout-btn')?.addEventListener('click', async () => {
     try {
