@@ -1,4 +1,4 @@
-/* write-room-picker.css — 글쓰기 방 선택 UI */
+/* write-room-picker.css — 글쓰기 유형 선택 UI */
 
 .mw-room-picker {
   margin-bottom: 20px;
@@ -12,7 +12,7 @@
   letter-spacing: -0.1px;
 }
 
-/* ─── 방 버튼 그리드 ─── */
+/* ─── 유형 버튼 그리드 ─── */
 .mw-room-nav {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -25,14 +25,17 @@
   align-items: center;
   justify-content: center;
   gap: 5px;
+  min-width: 0;
   padding: 12px 6px;
   border: 1.5px solid var(--color-border-light);
   border-radius: 14px;
   background: var(--color-surface);
+  color: var(--color-text-secondary);
   cursor: pointer;
   transition: transform 140ms cubic-bezier(0.34,1,0.64,1),
               border-color 140ms ease,
               background 140ms ease,
+              color 140ms ease,
               box-shadow 140ms ease;
   -webkit-tap-highlight-color: transparent;
   box-shadow: var(--shadow-xs);
@@ -44,80 +47,132 @@
 }
 
 .mw-room-btn:active {
-  transform: scale(0.93);
+  transform: scale(0.96);
+}
+
+.mw-room-btn:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-primary) 22%, transparent);
+  outline-offset: 2px;
+}
+
+.mw-room-btn.active,
+.mw-room-btn[aria-pressed="true"] {
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.07), var(--shadow-sm);
 }
 
 .mw-room-btn__icon {
   font-size: 22px;
   line-height: 1;
+  transition: transform 140ms ease;
+}
+
+.mw-room-btn.active .mw-room-btn__icon,
+.mw-room-btn[aria-pressed="true"] .mw-room-btn__icon {
+  transform: scale(1.08);
 }
 
 .mw-room-btn__label {
   font-size: 11.5px;
   font-weight: 800;
   letter-spacing: -0.1px;
-  color: var(--color-text-secondary);
+  color: inherit;
 }
 
-/* ── 방별 active 스타일 ── */
-.mw-room-btn--collect.active {
+/* ── 판결: 주황색 ── */
+.mw-room-btn--judgment.active,
+.mw-room-btn--judgment[aria-pressed="true"] {
   background: var(--color-primary-bg);
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(255,75,43,0.10), var(--shadow-sm);
+  color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(255,75,43,0.12), var(--shadow-sm);
 }
-.mw-room-btn--collect.active .mw-room-btn__label { color: var(--color-primary); }
-.mw-room-btn--collect:not(.active):hover {
+
+.mw-room-btn--judgment:not(.active):hover {
   background: var(--color-primary-bg);
   border-color: var(--color-primary-border);
+  color: var(--color-primary);
 }
-.mw-room-btn--collect:not(.active):hover .mw-room-btn__label { color: var(--color-primary); }
 
-.mw-room-btn--vote.active {
+/* ── 상담: 초록색 ── */
+.mw-room-btn--consult.active,
+.mw-room-btn--consult[aria-pressed="true"] {
+  background: var(--color-malhe-bg);
+  border-color: var(--color-malhe);
+  color: var(--color-malhe-dark);
+  box-shadow: 0 0 0 3px rgba(16,185,129,0.12), var(--shadow-sm);
+}
+
+.mw-room-btn--consult:not(.active):hover {
+  background: var(--color-malhe-bg);
+  border-color: var(--color-malhe-border);
+  color: var(--color-malhe-dark);
+}
+
+/* ── 토론: 파란색 ── */
+.mw-room-btn--vote.active,
+.mw-room-btn--vote[aria-pressed="true"] {
   background: var(--color-golra-bg);
   border-color: var(--color-golra);
-  box-shadow: 0 0 0 3px rgba(79,110,255,0.10), var(--shadow-sm);
+  color: var(--color-golra-dark);
+  box-shadow: 0 0 0 3px rgba(79,110,255,0.12), var(--shadow-sm);
 }
-.mw-room-btn--vote.active .mw-room-btn__label { color: var(--color-golra-dark); }
+
 .mw-room-btn--vote:not(.active):hover {
   background: var(--color-golra-bg);
   border-color: var(--color-golra-border);
+  color: var(--color-golra-dark);
 }
-.mw-room-btn--vote:not(.active):hover .mw-room-btn__label { color: var(--color-golra-dark); }
 
-.mw-room-btn--quiz.active {
-  background: var(--color-malhe-bg);
-  border-color: var(--color-malhe);
-  box-shadow: 0 0 0 3px rgba(16,185,129,0.10), var(--shadow-sm);
-}
-.mw-room-btn--quiz.active .mw-room-btn__label { color: var(--color-malhe-dark); }
-.mw-room-btn--quiz:not(.active):hover {
-  background: var(--color-malhe-bg);
-  border-color: var(--color-malhe-border);
-}
-.mw-room-btn--quiz:not(.active):hover .mw-room-btn__label { color: var(--color-malhe-dark); }
-
-.mw-room-btn--drip.active {
+/* ── 드립: 보라색 ── */
+.mw-room-btn--drip.active,
+.mw-room-btn--drip[aria-pressed="true"] {
   background: var(--color-usgyo-bg);
   border-color: var(--color-usgyo);
-  box-shadow: 0 0 0 3px rgba(139,92,246,0.10), var(--shadow-sm);
+  color: var(--color-usgyo-dark);
+  box-shadow: 0 0 0 3px rgba(139,92,246,0.12), var(--shadow-sm);
 }
-.mw-room-btn--drip.active .mw-room-btn__label { color: var(--color-usgyo-dark); }
+
 .mw-room-btn--drip:not(.active):hover {
   background: var(--color-usgyo-bg);
   border-color: var(--color-usgyo-border);
+  color: var(--color-usgyo-dark);
 }
-.mw-room-btn--drip:not(.active):hover .mw-room-btn__label { color: var(--color-usgyo-dark); }
 
 /* 다크 모드 */
 [data-theme="dark"] .mw-room-btn {
-  border-color: rgba(255,255,255,0.07);
+  border-color: rgba(255,255,255,0.09);
   background: var(--color-surface-2);
+  color: var(--color-text-secondary);
 }
 
-[data-theme="dark"] .mw-room-btn--collect.active { background: rgba(255,75,43,0.12); border-color: rgba(255,75,43,0.40); }
-[data-theme="dark"] .mw-room-btn--vote.active    { background: rgba(79,110,255,0.12); border-color: rgba(79,110,255,0.40); }
-[data-theme="dark"] .mw-room-btn--quiz.active    { background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.38); }
-[data-theme="dark"] .mw-room-btn--drip.active    { background: rgba(139,92,246,0.12); border-color: rgba(139,92,246,0.40); }
+[data-theme="dark"] .mw-room-btn--judgment.active,
+[data-theme="dark"] .mw-room-btn--judgment[aria-pressed="true"] {
+  background: rgba(255,75,43,0.18);
+  border-color: rgba(255,107,74,0.72);
+  color: #ffab94;
+}
+
+[data-theme="dark"] .mw-room-btn--consult.active,
+[data-theme="dark"] .mw-room-btn--consult[aria-pressed="true"] {
+  background: rgba(16,185,129,0.18);
+  border-color: rgba(52,211,153,0.68);
+  color: #6ee7b7;
+}
+
+[data-theme="dark"] .mw-room-btn--vote.active,
+[data-theme="dark"] .mw-room-btn--vote[aria-pressed="true"] {
+  background: rgba(79,110,255,0.18);
+  border-color: rgba(129,140,248,0.72);
+  color: #a5b4fc;
+}
+
+[data-theme="dark"] .mw-room-btn--drip.active,
+[data-theme="dark"] .mw-room-btn--drip[aria-pressed="true"] {
+  background: rgba(139,92,246,0.18);
+  border-color: rgba(167,139,250,0.72);
+  color: #c4b5fd;
+}
 
 /* 모바일 */
 @media (max-width: 420px) {
