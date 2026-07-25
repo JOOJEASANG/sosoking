@@ -5,11 +5,9 @@ export function renderVoteModule(post) {
   const vote = post.modules?.vote;
   if (!vote?.enabled) return '';
   const total = (vote.options || []).reduce((sum, option) => sum + Number(option.votes || 0), 0);
-  const title = String(vote.question || post.desc || post.title || '').trim();
   return `
     <section class="multi-detail-module" data-multi-module="vote">
       <div class="multi-detail-module__title">🗳️ ${vote.voteMode === 'judgment' ? '판결 투표' : '토론 투표'}</div>
-      ${title ? `<div class="multi-quiz-question">${esc(title).replace(/\n/g, '<br>')}</div>` : ''}
       <div class="multi-vote-options">
         ${(vote.options || []).map((option, index) => {
           const count = Number(option.votes || 0);
@@ -27,11 +25,9 @@ export function renderVoteModule(post) {
 export function renderDripModule(post) {
   const drip = post.modules?.drip;
   if (!drip?.enabled) return '';
-  const topic = String(drip.prompt || post.desc || post.title || '').trim();
   return `
     <section class="multi-detail-module" data-multi-module="drip">
       <div class="multi-detail-module__title">😂 한 줄 드립</div>
-      ${topic ? `<div class="multi-drip-prompt">${esc(topic).replace(/\n/g, '<br>')}</div>` : ''}
       <div class="multi-module-hint">50자 이내로 짧게 참여해보세요.</div>
       <div class="multi-submit-row">
         <input id="multi-drip-input" class="form-input" maxlength="50" placeholder="한 줄 드립 입력">
