@@ -1,6 +1,7 @@
 import { appState } from './state.js';
 
 const STATE_EVENT = 'sosoking:pwa-statechange';
+const INSTALL_RECORD_KEY = 'sosoking-pwa-installed-at';
 let initialized = false;
 let serviceWorkerReadyPromise = null;
 
@@ -30,12 +31,29 @@ function isSamsungBrowser() {
   return /SamsungBrowser/i.test(navigator.userAgent);
 }
 
+function hasInstallRecord() {
+  try { return Boolean(localStorage.getItem(INSTALL_RECORD_KEY)); } catch { return false; }
+}
+
+function setInstallRecord() {
+  try { localStorage.setItem(INSTALL_RECORD_KEY, new Date().toISOString()); } catch {}
+}
+
+function clearInstallRecord() {
+  try { localStorage.removeItem(INSTALL_RECORD_KEY); } catch {}
+}
+
+function removeInstallUi() {
+  document.querySelectorAll('#hdr-install-btn, #sb-install-btn, #btn-pwa-install, [data-account-install-button], [data-pwa-install-shortcut]').forEach(element => element.remove());
+  document.getElementById('pwa-install-guide')?.remove();
+}
+
 function emitState(reason) {
   window.dispatchEvent(new CustomEvent(STATE_EVENT, {
     detail: {
       reason,
       installable: Boolean(getInstallPrompt()),
-      installed: isStandalone(),
+      installed: isStandalone() || hasInstallRecord(),
     },
   }));
 }
@@ -54,6 +72,7 @@ export function getInstallPrompt() {
 export function canOfferInstall() {
   if (isStandalone()) return false;
   if (getInstallPrompt()) return true;
+  if (hasInstallRecord()) return false;
   return isMobile();
 }
 
@@ -82,18 +101,28 @@ export function initPwaInstall() {
   initialized = true;
 
   if (window.__pwaInstallPrompt) appState.installPrompt = window.__pwaInstallPrompt;
+  if (isStandalone()) {
+    setInstallRecord();
+    removeInstallUi();
+  }
 
   window.addEventListener('beforeinstallprompt', event => {
     event.preventDefault();
+    clearInstallRecord();
     setInstallPrompt(event, 'prompt-ready');
   });
 
   window.addEventListener('appinstalled', () => {
-    try { localStorage.setItem('sosoking-pwa-installed-at', new Date().toISOString()); } catch {}
+    setInstallRecord();
+    removeInstallUi();
     setInstallPrompt(null, 'installed');
   });
 
-  window.matchMedia('(display-mode: standalone)').addEventListener?.('change', () => {
+  window.matchMedia('(display-mode: standalone)').addEventListener?.('change', event => {
+    if (event.matches || isStandalone()) {
+      setInstallRecord();
+      removeInstallUi();
+    }
     emitState('display-mode-change');
   });
 
@@ -102,7 +131,7 @@ export function initPwaInstall() {
 }
 
 function setButtonBusy(button, busy) {
-  if (!button) return;
+  if (!button || !button.isConnected) return;
   button.disabled = busy;
   button.setAttribute('aria-busy', String(busy));
   const label = button.querySelector('span');
@@ -175,7 +204,10 @@ export function showInstallGuide() {
 }
 
 export async function requestPwaInstall({ button = null } = {}) {
-  if (isStandalone()) return { status: 'installed' };
+  if (isStandalone() || hasInstallRecord()) {
+    removeInstallUi();
+    return { status: 'installed' };
+  }
 
   const prompt = getInstallPrompt();
   if (!prompt || typeof prompt.prompt !== 'function') {
@@ -186,11 +218,15 @@ export async function requestPwaInstall({ button = null } = {}) {
 
   setButtonBusy(button, true);
   try {
-    // 사용자 클릭이 살아 있는 현재 호출 스택에서 즉시 prompt()를 실행합니다.
     const promptResult = prompt.prompt();
     await promptResult;
     const choice = await prompt.userChoice;
-    setInstallPrompt(null, choice?.outcome === 'accepted' ? 'accepted' : 'dismissed');
+    const accepted = choice?.outcome === 'accepted';
+    if (accepted) {
+      setInstallRecord();
+      removeInstallUi();
+    }
+    setInstallPrompt(null, accepted ? 'accepted' : 'dismissed');
     return { status: choice?.outcome || 'dismissed' };
   } catch (error) {
     console.warn('[pwa] install prompt failed', error);
