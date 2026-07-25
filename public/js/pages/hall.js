@@ -6,12 +6,12 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const HALL_CATS = [
-  { key: 'popular',  label: '인기 게임', icon: '🔥', type: null,       desc: '반응과 댓글이 많은 게임', scoreKey: null },
-  { key: 'comment',  label: '댓글 많은 게임', icon: '💬', type: null,  desc: '캐릭터와 유저 댓글이 많은 게임', scoreKey: 'comment' },
-  { key: 'judgment', label: '판결 랭킹', icon: '⚖️', type: 'judgment', desc: '판결 참여가 많은 게임', scoreKey: null },
-  { key: 'consult',  label: '상담 랭킹', icon: '🫠', type: 'consult',  desc: '상담 반응이 좋은 게임', scoreKey: null },
-  { key: 'vote',     label: '토론 랭킹', icon: '🗳️', type: 'vote',    desc: '토론 참여가 많은 게임', scoreKey: null },
-  { key: 'drip',     label: '드립 랭킹', icon: '😂', type: 'drip',    desc: '한 줄 드립 반응이 좋은 게임', scoreKey: null },
+  { key: 'popular',  label: '인기 게시물', icon: '🔥', type: null,       desc: '반응과 댓글이 많은 게시물', scoreKey: null },
+  { key: 'comment',  label: '댓글 많은 게시물', icon: '💬', type: null,  desc: '캐릭터와 회원 댓글이 많은 게시물', scoreKey: 'comment' },
+  { key: 'judgment', label: '판결 랭킹', icon: '⚖️', type: 'judgment', desc: '판결 참여가 많은 게시물', scoreKey: null },
+  { key: 'consult',  label: '상담 랭킹', icon: '🫠', type: 'consult',  desc: '상담 반응이 좋은 게시물', scoreKey: null },
+  { key: 'vote',     label: '토론 랭킹', icon: '🗳️', type: 'vote',    desc: '토론 참여가 많은 게시물', scoreKey: null },
+  { key: 'drip',     label: '드립 랭킹', icon: '😂', type: 'drip',    desc: '한 줄 드립 반응이 좋은 게시물', scoreKey: null },
 ];
 
 function postType(post) {
@@ -43,12 +43,12 @@ function renderHallInfo(posts = []) {
   return `
     <details class="hall-info-accordion">
       <summary>
-        <span>📌 게임 현황과 산정기준</span>
+        <span>📌 게시물 현황과 산정 기준</span>
         <small>기본 접힘</small>
       </summary>
       <div class="hall-info-accordion__body">
         <div class="hall-info-stats">
-          <div><b>${fmt(total)}</b><span>집계 게임</span></div>
+          <div><b>${fmt(total)}</b><span>집계 게시물</span></div>
           <div><b>${fmt(comments)}</b><span>댓글 합계</span></div>
           <div><b>${fmt(reactions)}</b><span>좋아요 합계</span></div>
           <div><b>${fmt(Math.round(views))}</b><span>조회 합계</span></div>
@@ -56,18 +56,18 @@ function renderHallInfo(posts = []) {
         <div class="hall-info-rule-grid">
           <div class="hall-info-rule">
             <b>집계 범위</b>
-            <p>최신 게임 100개 중 숨김 처리되지 않은 공개 게임만 기준으로 계산합니다.</p>
+            <p>최신 게시물 100개 중 숨김 처리되지 않은 공개 게시물만 기준으로 계산합니다.</p>
           </div>
           <div class="hall-info-rule">
-            <b>인기 게임 산정</b>
+            <b>인기 게시물 산정</b>
             <p>좋아요×2 + 댓글×3 + 조회×0.1 점수로 정렬합니다.</p>
           </div>
           <div class="hall-info-rule">
-            <b>댓글 많은 게임</b>
-            <p>캐릭터와 유저 댓글 수가 많은 순서로 TOP 3를 보여줍니다.</p>
+            <b>댓글 많은 게시물</b>
+            <p>캐릭터와 회원 댓글 수가 많은 순서로 TOP 3를 보여줍니다.</p>
           </div>
           <div class="hall-info-rule">
-            <b>4게임 유형별 현황</b>
+            <b>4개 유형별 현황</b>
             <p>${counts.map(item => `${item.label} ${fmt(item.count)}개`).join(' · ') || '유형별 데이터 없음'}</p>
           </div>
         </div>
@@ -77,16 +77,16 @@ function renderHallInfo(posts = []) {
 
 export async function renderHall() {
   const el = document.getElementById('page-content');
-  setMeta('랭킹', '판결·상담·토론·드립 인기 게임 랭킹');
+  setMeta('랭킹', '판결·상담·토론·드립 인기 게시물 랭킹');
 
   el.innerHTML = `
     <div class="hall-page">
       <div class="section-header">
-        <h1 class="section-header__title">🏆 게임 랭킹</h1>
+        <h1 class="section-header__title">🏆 게시물 랭킹</h1>
       </div>
       <div id="hall-info-box">${renderHallInfo([])}</div>
       <div class="hall-grid">
-        ${Array.from({ length: 6 }, () => `<div class="skeleton-card" style="height:200px"></div>`).join('')}
+        ${Array.from({ length: 6 }, () => `<div class="skeleton-card hall-section-skeleton" style="height:200px"></div>`).join('')}
       </div>
     </div>`;
 
@@ -139,6 +139,6 @@ function renderSection({ label, icon, desc }, top3) {
             <div class="hall-item__meta">${escHtml(p.authorName || '')} · 좋아요 ${fmt(p.reactions?.total)} · 댓글 ${fmt(p.commentCount)} · 조회 ${fmt(p.viewCount)}</div>
           </div>
         </div>`).join('') : `
-        <div class="hall-empty">아직 집계할 게임이 없어요</div>`}
+        <div class="hall-empty">아직 집계할 게시물이 없어요</div>`}
     </div>`;
 }
