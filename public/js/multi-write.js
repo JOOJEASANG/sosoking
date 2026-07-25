@@ -5,7 +5,7 @@ import { toast } from './components/toast.js';
 import { initImageUploader, getUploadedImages, hasPendingImages, cleanupUploadedImages } from './components/image-uploader.js';
 import { MULTI_PRESETS, getMultiPresetFromHash } from './multi-write/presets.js';
 import { renderMultiWriteHTML } from './multi-write/render.js';
-import { getBodyText, getBodyHtml, splitTags } from './multi-write/collect.js';
+import { getBodyText, splitTags } from './multi-write/collect.js';
 import { fillAutoTags } from './multi-write/auto-tags.js';
 import { initRichEditor, syncRichEditor } from './multi-write/editor.js';
 
@@ -17,10 +17,16 @@ let draftTimer = null;
 function isWriteRoute() {
   return /[?&]type=multi\b/.test(location.hash || '');
 }
+
 function presetKey() {
   const selected = document.getElementById('mw-selected-preset')?.value || '';
   return MULTI_PRESETS[selected] ? selected : getMultiPresetFromHash(location.hash || '');
 }
+
+function escapeHtml(value) {
+  return String(value || '').replace(/[&<>]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[char]));
+}
+
 function saveDraftSoon() {
   clearTimeout(draftTimer);
   draftTimer = setTimeout(() => {
@@ -29,7 +35,7 @@ function saveDraftSoon() {
       const draft = {
         preset: presetKey(),
         title: document.getElementById('mw-title')?.value || '',
-        desc: document.getElementById('mw-desc')?.value || '',
+        desc: getBodyText(),
         tags: document.getElementById('mw-tags')?.value || '',
         savedAt: Date.now(),
       };
@@ -38,6 +44,7 @@ function saveDraftSoon() {
     } catch {}
   }, 1200);
 }
+
 function restoreDraft() {
   let draft;
   try { draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); } catch { return; }
@@ -50,9 +57,16 @@ function restoreDraft() {
     choosePreset(draft.preset);
     const title = document.getElementById('mw-title');
     const desc = document.getElementById('mw-desc');
+    const editor = document.getElementById('mw-rich-editor');
     const tags = document.getElementById('mw-tags');
     if (title) title.value = draft.title || '';
-    if (desc) desc.value = draft.desc || '';
+    if (editor) {
+      editor.innerHTML = escapeHtml(draft.desc || '').replace(/\n/g, '<br>');
+      syncRichEditor();
+    } else if (desc) {
+      desc.value = draft.desc || '';
+      desc.dataset.plainText = draft.desc || '';
+    }
     if (tags) tags.value = draft.tags || '';
     banner.remove();
   });
@@ -61,6 +75,7 @@ function restoreDraft() {
     banner.remove();
   });
 }
+
 function sectionVisibility(preset) {
   document.querySelectorAll('[data-write-section]').forEach(section => {
     const key = section.dataset.writeSection;
@@ -71,6 +86,7 @@ function sectionVisibility(preset) {
     panel.style.display = panel.dataset.optionPanel === preset ? '' : 'none';
   });
 }
+
 function setFixedVoteOptions(preset) {
   const inputs = [...document.querySelectorAll(`[data-option-panel="${preset}"] .mw-vote-option`)];
   const values = preset === 'judgment'
@@ -82,6 +98,7 @@ function setFixedVoteOptions(preset) {
     input.readOnly = true;
   });
 }
+
 function choosePreset(value) {
   const preset = MULTI_PRESETS[value] ? value : 'judgment';
   const hidden = document.getElementById('mw-selected-preset');
@@ -123,7 +140,8 @@ function bindEvents() {
     const tags = fillAutoTags({ force: true });
     tags.length ? toast.success('태그를 자동 생성했어요.') : toast.warn('제목이나 내용을 조금 더 입력해주세요.');
   });
-  ['mw-title', 'mw-desc', 'mw-tags', 'mw-consult-topic', 'mw-consult-style'].forEach(id => document.getElementById(id)?.addEventListener('input', saveDraftSoon));
+  ['mw-title', 'mw-tags', 'mw-consult-topic', 'mw-consult-style'].forEach(id => document.getElementById(id)?.addEventListener('input', saveDraftSoon));
+  document.getElementById('mw-rich-editor')?.addEventListener('input', saveDraftSoon);
   document.getElementById('multi-submit')?.addEventListener('click', submit);
 }
 
@@ -135,7 +153,7 @@ async function submit() {
   syncRichEditor();
   const preset = presetKey();
   const title = document.getElementById('mw-title')?.value.trim() || '';
-  const body = getBodyHtml() || getBodyText();
+  const body = getBodyText();
   const desc = body || title;
   if (!title) {
     toast.error('제목을 입력해주세요.');
