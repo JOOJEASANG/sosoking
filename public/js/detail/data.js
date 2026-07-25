@@ -1,5 +1,6 @@
 import { db } from '../firebase.js';
-import { collection, getDocs, limit, orderBy, query, where } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { collection, getDocs, orderBy, query } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { fetchFeeds } from '../services/feed-service.js';
 
 export async function fetchComments(postId) {
   try {
@@ -11,18 +12,35 @@ export async function fetchComments(postId) {
   }
 }
 
+export async function fetchSimilarPosts(excludeId, subtype = '') {
+  const result = [];
+  const seen = new Set([String(excludeId || '')]);
+  const append = posts => {
+    (posts || []).forEach(post => {
+      if (!post?.id || post.hidden || seen.has(post.id)) return;
+      seen.add(post.id);
+      result.push(post);
+    });
+  };
 
-export async function fetchSimilarPosts(excludeId, type) {
   try {
-    const q = query(collection(db, 'feeds'), where('type', '==', type), orderBy('reactions.total', 'desc'), limit(5));
-    const snap = await getDocs(q);
-    return snap.docs
-      .map(d => ({ id: d.id, ...d.data() }))
-      .filter(post => !post.hidden && post.id !== excludeId)
-      .slice(0, 4);
+    const sameType = await fetchFeeds({ subtype, pageSize: 10 });
+    append(sameType.posts);
+
+    if (result.length < 6) {
+      const latest = await fetchFeeds({ pageSize: 12 });
+      append(latest.posts);
+    }
   } catch {
-    return [];
+    try {
+      const latest = await fetchFeeds({ pageSize: 12 });
+      append(latest.posts);
+    } catch {
+      return [];
+    }
   }
+
+  return result.slice(0, 8);
 }
 
 export function markBestComment(comments) {
