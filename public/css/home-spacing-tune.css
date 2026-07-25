@@ -1,4 +1,4 @@
-/* home-spacing-tune.css — 메인 화면 여백만 국소 조정 */
+/* home-spacing-tune.css — 메인 캐릭터 카드 여백만 국소 조정 */
 
 /* AI 캐릭터 8개 카드가 홈 박스 외곽선에 붙지 않도록 별도 안쪽 여백을 둔다. */
 .home-ai-grid {
@@ -49,19 +49,6 @@
 
 [data-theme="dark"] .home-ai-grid {
   border-top-color: rgba(255, 255, 255, 0.06);
-}
-
-/* PC 홈에서만 사이드바와 오른쪽 끝 사이의 빈 공간을 줄인다. */
-@media (min-width: 1024px) {
-  .page-container:has(> .home-dash) {
-    max-width: 100%;
-    padding-left: 16px;
-    padding-right: 16px;
-  }
-
-  .page-container > .home-dash {
-    max-width: 820px !important;
-  }
 }
 
 @media (max-width: 480px) {
