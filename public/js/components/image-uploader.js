@@ -4,6 +4,7 @@ import { toast } from './toast.js';
 
 const callUpload = httpsCallable(functions, 'uploadFeedImage');
 const callDelete = httpsCallable(functions, 'deleteUploadedFeedImages');
+const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
 let items = [];
 let maxFiles = 20;
 let containerRef = null;
@@ -50,6 +51,7 @@ async function uploadItem(item) {
   if (item.url) return item.url;
   if (!auth.currentUser || auth.currentUser.isAnonymous) throw new Error('정식 회원 로그인 후 이미지를 올릴 수 있어요.');
   const blob = await compressImage(item.file);
+  if (blob.size > MAX_UPLOAD_BYTES) throw new Error(`${item.file.name || '이미지'} 파일은 압축 후에도 8MB를 초과합니다.`);
   const dataUrl = await readAsDataUrl(blob);
   const result = await callUpload({ dataUrl });
   const url = result.data?.url;
@@ -69,7 +71,7 @@ export function initImageUploader(container, max = 20) {
     <div class="img-upload-area" data-image-drop>
       <div class="img-upload-area__icon">📷</div>
       <div class="img-upload-area__text">클릭하거나 사진을 끌어다 놓으세요</div>
-      <div class="img-upload-area__hint">JPG, PNG, WEBP, GIF · 최대 ${maxFiles}장</div>
+      <div class="img-upload-area__hint">JPG, PNG, WEBP, GIF · 파일당 최대 8MB · 최대 ${maxFiles}장</div>
       <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple hidden data-image-input>
     </div>
     <div class="img-preview-grid" data-image-previews></div>`;
@@ -98,8 +100,8 @@ async function addFiles(fileList) {
       toast.warn(`${file.name} 파일은 지원하지 않는 형식이에요.`);
       continue;
     }
-    if (file.size > 12 * 1024 * 1024) {
-      toast.warn(`${file.name} 파일이 너무 큽니다.`);
+    if (file.size > MAX_UPLOAD_BYTES) {
+      toast.warn(`${file.name} 파일은 8MB를 초과해 올릴 수 없어요.`);
       continue;
     }
     items.push({ file, preview: await readAsDataUrl(file), url: '', path: '' });
@@ -160,6 +162,7 @@ export async function cleanupUploadedImages() {
 }
 
 export async function uploadSingleImage(file) {
+  if (!file || file.size > MAX_UPLOAD_BYTES) throw new Error('이미지는 파일당 최대 8MB까지 올릴 수 있어요.');
   const item = { file, preview: await readAsDataUrl(file), url: '', path: '' };
   return uploadItem(item);
 }
