@@ -25,16 +25,19 @@ jobs:
         run: npm ci --prefix functions
 
       - name: Gemini 키·모델·JSON 댓글 응답 검사
+        id: gemini
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         shell: bash
         run: |
+          set +e
           node <<'NODE'
+          const fs = require('fs');
           const { GoogleGenerativeAI } = require('./functions/node_modules/@google/generative-ai');
           const key = String(process.env.GEMINI_API_KEY || '').trim();
-          if (!key) throw new Error('GEMINI_API_KEY가 비어 있습니다.');
 
-          (async () => {
+          async function run() {
+            if (!key) throw new Error('GEMINI_API_KEY가 비어 있습니다.');
             const model = new GoogleGenerativeAI(key).getGenerativeModel({
               model: 'gemini-2.5-flash',
               generationConfig: {
@@ -49,20 +52,30 @@ jobs:
             const data = JSON.parse(raw);
             const text = String(data?.comments?.[0]?.text || '').trim();
             if (text.length < 10) throw new Error('Gemini 댓글 응답이 비어 있거나 너무 짧습니다.');
-            console.log(`Gemini smoke test passed: ${text.length} chars`);
-          })().catch(error => {
-            console.error(error.message);
-            process.exit(1);
-          });
+            return { result: 'success', model: 'gemini-2.5-flash', responseLength: text.length };
+          }
+
+          run()
+            .then(status => fs.writeFileSync('/tmp/ai-smoke-status.json', JSON.stringify(status, null, 2)))
+            .catch(error => {
+              fs.writeFileSync('/tmp/ai-smoke-status.json', JSON.stringify({
+                result: 'failure',
+                model: 'gemini-2.5-flash',
+                error: String(error?.message || error).slice(0, 500),
+              }, null, 2));
+            });
           NODE
 
-      - name: 성공 후 일회성 워크플로 제거
+      - name: 결과 저장 및 일회성 워크플로 제거
+        if: always()
         shell: bash
         run: |
+          mkdir -p .github
+          cp /tmp/ai-smoke-status.json .github/ai-smoke-status.json
           rm .github/workflows/ai-smoke-test-once.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .github/workflows/ai-smoke-test-once.yml
-          git commit -m "Gemini 실제 응답 검사 성공"
+          git add .github/ai-smoke-status.json .github/workflows/ai-smoke-test-once.yml
+          git commit -m "Gemini 실제 응답 검사 결과 기록"
           git pull --rebase origin main
           git push origin HEAD:main
