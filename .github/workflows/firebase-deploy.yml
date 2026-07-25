@@ -1,4 +1,5 @@
 name: Firebase 검증 및 전체 배포
+run-name: Firebase 검증 및 전체 배포 · ${{ github.event_name }} · ${{ github.ref_name }}
 
 on:
   pull_request:
