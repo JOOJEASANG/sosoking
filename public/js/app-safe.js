@@ -7,6 +7,7 @@ import { initToast, toast } from './components/toast.js';
 import { appState } from './state.js';
 import { getDoc, doc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { SAFE_OPTIONAL_MODULES, importModuleGroup } from './app-module-registry.js';
+import { initPwaInstall } from './pwa-install.js';
 
 export { appState };
 
@@ -178,8 +179,14 @@ onAuthStateChanged(auth, async user => {
   renderBottomNav();
 });
 
+window.addEventListener('sosoking:pwa-statechange', () => {
+  renderHeader();
+  renderSidebar();
+});
+
 initToast();
 renderFrame();
+initPwaInstall();
 loadOptionalModules();
 registerRoutes().then(initRouter);
 
