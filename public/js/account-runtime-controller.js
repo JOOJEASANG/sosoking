@@ -56,14 +56,14 @@ function renderNotification(item) {
     </button>`;
 }
 
-async function renderAccountNotifications() {
+async function renderAccountNotifications({ force = false } = {}) {
   if (!isAccountPage() || activeTab() !== 'notifications' || notificationLoading) return;
   const user = auth.currentUser || appState.user;
   const content = document.getElementById('account-tab-content');
   if (!user || !content) return;
+  if (!force && content.querySelector('[data-runtime-notifications="1"]')) return;
 
   notificationLoading = true;
-  content.dataset.accountNotificationOwner = 'runtime-controller';
   content.innerHTML = '<div class="loading-center"><div class="spinner"></div></div>';
   try {
     const snap = await getDocs(query(
@@ -75,7 +75,7 @@ async function renderAccountNotifications() {
     const items = snap.docs.map(item => ({ id: item.id, ref: item.ref, ...item.data() }));
     const unread = items.filter(item => item.read !== true);
     content.innerHTML = `
-      <div class="account-notifications-section">
+      <div class="account-notifications-section" data-runtime-notifications="1">
         <div class="account-notifications-section__head">
           <div><b>🔔 알림함</b><span>내 글과 참여에 생긴 새 소식을 확인합니다.</span></div>
           <button type="button" data-account-read-all ${unread.length ? '' : 'disabled'}>모두 읽음</button>
@@ -110,7 +110,7 @@ async function renderAccountNotifications() {
     }
   } catch (error) {
     console.warn('[account notifications]', error);
-    content.innerHTML = '<div class="empty-state"><div class="empty-state__icon">⚠️</div><div class="empty-state__title">알림을 불러오지 못했어요</div></div>';
+    content.innerHTML = '<div class="empty-state" data-runtime-notifications="1"><div class="empty-state__icon">⚠️</div><div class="empty-state__title">알림을 불러오지 못했어요</div></div>';
   } finally {
     notificationLoading = false;
   }
@@ -122,6 +122,8 @@ function normalizeAccountUi() {
   document.querySelectorAll('.account-tab[data-tab="follows"]').forEach(tab => tab.remove());
   if (activeTab() === 'follows') {
     history.replaceState(null, '', '#/account?tab=stats');
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+    return;
   }
 
   const user = auth.currentUser || appState.user;
@@ -131,12 +133,6 @@ function normalizeAccountUi() {
     accountAvatar.dataset.googlePhoto = photo;
     accountAvatar.classList.add('avatar--nickname-icon');
     accountAvatar.innerHTML = `<img class="account-avatar__img" src="${esc(photo)}" referrerpolicy="no-referrer" alt="">`;
-  }
-
-  const adminAvatar = document.querySelector('.admin-profile-card__avatar');
-  if (photo && adminAvatar && adminAvatar.dataset.googlePhoto !== photo) {
-    adminAvatar.dataset.googlePhoto = photo;
-    adminAvatar.innerHTML = `<img class="admin-profile-card__avatar-img" src="${esc(photo)}" referrerpolicy="no-referrer" alt="">`;
   }
 
   const logout = document.getElementById('btn-logout');
@@ -181,7 +177,7 @@ document.addEventListener('click', event => {
     event.stopImmediatePropagation();
     document.querySelectorAll('.account-tab').forEach(tab => tab.classList.toggle('active', tab === notificationTab));
     history.replaceState(null, '', '#/account?tab=notifications');
-    void renderAccountNotifications();
+    void renderAccountNotifications({ force: true });
   }
 }, true);
 
