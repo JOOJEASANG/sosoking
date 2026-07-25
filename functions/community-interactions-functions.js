@@ -73,13 +73,17 @@ async function toggleReaction({ targetRef, markerRef, uid, reaction, allowed, to
       tx.delete(markerRef);
       tx.update(targetRef, {
         [`reactions.${reaction}`]: Math.max(0, reactions[reaction] - 1),
+        [`reactedWith.${uid}`]: FieldValue.delete(),
         ...(totalField ? { [totalField]: Math.max(0, reactions.total - 1) } : {}),
       });
       result = { active: false, reaction: null, previousReaction: current };
       return;
     }
 
-    const patch = { [`reactions.${reaction}`]: reactions[reaction] + 1 };
+    const patch = {
+      [`reactions.${reaction}`]: reactions[reaction] + 1,
+      [`reactedWith.${uid}`]: reaction,
+    };
     if (current && allowed.has(current)) patch[`reactions.${current}`] = Math.max(0, reactions[current] - 1);
     if (totalField && !current) patch[totalField] = reactions.total + 1;
     tx.set(markerRef, { uid, reaction, updatedAt: FieldValue.serverTimestamp(), updatedAtMs: Date.now() }, { merge: true });
