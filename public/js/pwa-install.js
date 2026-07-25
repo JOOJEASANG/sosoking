@@ -81,9 +81,7 @@ export function initPwaInstall() {
   if (initialized) return;
   initialized = true;
 
-  if (window.__pwaInstallPrompt) {
-    appState.installPrompt = window.__pwaInstallPrompt;
-  }
+  if (window.__pwaInstallPrompt) appState.installPrompt = window.__pwaInstallPrompt;
 
   window.addEventListener('beforeinstallprompt', event => {
     event.preventDefault();
@@ -99,33 +97,8 @@ export function initPwaInstall() {
     emitState('display-mode-change');
   });
 
-  ensureServiceWorker();
+  void ensureServiceWorker();
   queueMicrotask(() => emitState(window.__pwaInstallPrompt ? 'prompt-restored' : 'initialized'));
-}
-
-function waitForInstallPrompt(timeoutMs = 3500) {
-  const existing = getInstallPrompt();
-  if (existing) return Promise.resolve(existing);
-
-  return new Promise(resolve => {
-    let settled = false;
-    const finish = prompt => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      window.removeEventListener('beforeinstallprompt', onPrompt);
-      window.removeEventListener(STATE_EVENT, onState);
-      resolve(prompt || getInstallPrompt());
-    };
-    const onPrompt = event => finish(event);
-    const onState = () => {
-      const prompt = getInstallPrompt();
-      if (prompt) finish(prompt);
-    };
-    const timer = setTimeout(() => finish(null), timeoutMs);
-    window.addEventListener('beforeinstallprompt', onPrompt, { once: true });
-    window.addEventListener(STATE_EVENT, onState);
-  });
 }
 
 function setButtonBusy(button, busy) {
@@ -135,7 +108,7 @@ function setButtonBusy(button, busy) {
   const label = button.querySelector('span');
   if (!label) return;
   if (!button.dataset.installLabel) button.dataset.installLabel = label.textContent || '앱 설치';
-  label.textContent = busy ? '설치 준비 중' : button.dataset.installLabel;
+  label.textContent = busy ? '설치 확인 중' : button.dataset.installLabel;
 }
 
 function guideContent() {
@@ -204,28 +177,26 @@ export function showInstallGuide() {
 export async function requestPwaInstall({ button = null } = {}) {
   if (isStandalone()) return { status: 'installed' };
 
+  const prompt = getInstallPrompt();
+  if (!prompt || typeof prompt.prompt !== 'function') {
+    void ensureServiceWorker();
+    showInstallGuide();
+    return { status: 'manual' };
+  }
+
   setButtonBusy(button, true);
   try {
-    await ensureServiceWorker();
-    let prompt = getInstallPrompt();
-    if (!prompt) prompt = await waitForInstallPrompt();
-
-    if (!prompt) {
-      showInstallGuide();
-      return { status: 'manual' };
-    }
-
-    try {
-      await prompt.prompt();
-      const choice = await prompt.userChoice;
-      setInstallPrompt(null, choice?.outcome === 'accepted' ? 'accepted' : 'dismissed');
-      return { status: choice?.outcome || 'dismissed' };
-    } catch (error) {
-      console.warn('[pwa] install prompt failed', error);
-      setInstallPrompt(null, 'prompt-error');
-      showInstallGuide();
-      return { status: 'manual', error };
-    }
+    // 사용자 클릭이 살아 있는 현재 호출 스택에서 즉시 prompt()를 실행합니다.
+    const promptResult = prompt.prompt();
+    await promptResult;
+    const choice = await prompt.userChoice;
+    setInstallPrompt(null, choice?.outcome === 'accepted' ? 'accepted' : 'dismissed');
+    return { status: choice?.outcome || 'dismissed' };
+  } catch (error) {
+    console.warn('[pwa] install prompt failed', error);
+    setInstallPrompt(null, 'prompt-error');
+    showInstallGuide();
+    return { status: 'manual', error };
   } finally {
     setButtonBusy(button, false);
   }
