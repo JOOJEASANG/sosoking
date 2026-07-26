@@ -59,7 +59,7 @@ jobs:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     needs: validate
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 40
     steps:
       - name: 저장소 체크아웃
         uses: actions/checkout@v4
@@ -110,10 +110,11 @@ jobs:
           set -euo pipefail
           curl --fail --location --retry 6 --retry-all-errors --retry-delay 10 "https://sosoking-481e6.web.app/" -o production-index.html
           grep -q 'index, follow' production-index.html
-          grep -q 'share-polish.js' production-index.html
+          grep -q 'investigation.css' production-index.html
+          grep -q 'court-v3.js' production-index.html
           curl --fail --location "https://sosoking-481e6.web.app/api/generate-case" \
             -H 'Content-Type: application/json' \
-            -H 'X-Sosoking-Client: court-v2' \
+            -H 'X-Sosoking-Client: court-v3' \
             --data '{"incident":"회의실 리모컨이 또 사라졌다.","severity":"official"}' \
             | grep -q '"case"'
 

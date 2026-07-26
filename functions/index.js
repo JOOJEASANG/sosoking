@@ -1,3 +1,6 @@
 "use strict";
 
-module.exports = require("./gemini-court-runtime");
+const investigation = require("./gemini-court-investigation");
+
+exports.generateCourtCase = investigation.generateCourtCase;
+exports.generateCourtCaseV3 = investigation.generateCourtCase;
