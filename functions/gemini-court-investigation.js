@@ -6,12 +6,12 @@ const { logger } = require("firebase-functions");
 
 const GEMINI_API_KEY = defineSecret("GEMINI_API_KEY");
 const MODEL = "gemini-2.5-flash";
-const REQUEST_TIMEOUT_MS = 45000;
+const REQUEST_TIMEOUT_MS = 28000;
 const RATE_WINDOW_MS = 10 * 60 * 1000;
 const RATE_LIMIT = 12;
 const buckets = new Map();
 const SEVERITIES = new Set(["official", "special", "national"]);
-const CLIENTS = new Set(["court-v2", "court-v3"]);
+const CLIENTS = new Set(["court-v2", "court-v3", "court-v4"]);
 const ORIGINS = new Set([
   "https://sosoking.co.kr",
   "https://www.sosoking.co.kr",
@@ -35,9 +35,28 @@ const PRIVATE_PATTERNS = [
   /\b\d{2,3}[가-힣]\d{4}\b/,
   /(서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)[^\n]{0,20}(로|길|동)\s*\d+/
 ];
+const TOKEN_STOPWORDS = new Set([
+  "내", "내가", "나는", "나를", "나의", "우리", "제가", "저는", "그냥", "진짜", "너무", "조금", "약간", "정말",
+  "오늘", "어제", "아까", "또", "자꾸", "말없이", "몰래", "갑자기", "그리고", "그런데", "그래서", "때문에",
+  "친구", "동생", "형", "누나", "언니", "오빠", "가족", "엄마", "아빠", "회사", "집", "사람", "누가",
+  "했다", "했는데", "했지만", "하였다", "있었다", "없었다", "됐다", "되었다", "한다", "하는", "하고", "해서",
+  "먹었다", "샀다", "늦었다", "남았다", "사라졌다", "가져갔다", "돌려줬다", "보냈다", "읽었다", "말했다", "안했다"
+]);
+const PARTICLE_SUFFIXES = [
+  "으로부터", "에게서는", "에게서", "한테서", "에서는", "으로는", "까지는", "부터는", "에게는", "한테는",
+  "이라도", "라도", "으로", "에서", "에게", "한테", "처럼", "보다", "까지", "부터", "께서", "하고", "이며",
+  "으로도", "에서도", "에도", "만은", "만을", "만이", "만", "은", "는", "이", "가", "을", "를", "의", "에", "도", "와", "과", "로"
+].sort((a, b) => b.length - a.length);
 
 const SYSTEM_PROMPT = `당신은 한국어 참여형 코미디 서비스 '소문난 판결소'의 수석 사건작가다.
 사용자의 아주 사소하고 유치한 일상을 대형 특수사건처럼 확대해, 읽는 과정 자체가 재미있는 수사기록과 재판기록을 만든다.
+
+가장 중요한 원칙은 '접수 내용과의 연결'이다.
+- 사용자가 적은 핵심 물건, 장소, 시간, 행동을 다른 일반 소재로 바꾸지 않는다.
+- 사건명, 요약, 증거, 감식, 심문, 브리핑, 판결이 모두 같은 사건을 다뤄야 한다.
+- 핵심 소재 단어는 표현을 바꾸거나 추상화하지 말고 여러 단계에서 그대로 반복한다.
+- 엉뚱한 소품은 곁가지 농담으로만 추가하고, 사건의 핵심 물건과 행동을 밀어내지 않는다.
+- '현장 미세흔적', '관련 물품', '사소한 행동' 같은 범용 문구만으로 내용을 채우지 않는다.
 
 핵심 웃음 원리:
 - 사건은 하찮고 수사 태도는 국가 비상사태처럼 엄숙하다.
@@ -45,32 +64,29 @@ const SYSTEM_PROMPT = `당신은 한국어 참여형 코미디 서비스 '소문
 - 절차마다 구체적인 장비, 시간, 인력, 보고서 문구, 쓸데없는 발견, 현장요원의 한마디를 넣는다.
 - 농담을 설명하지 말고 공문서·작전일지·감정서·증거봉투·브리핑 문답의 형식으로 보여준다.
 - 같은 농담을 반복하지 말고 단계마다 새로운 코미디 장치를 사용한다.
-- 심각한 정신적 충격이나 사회 붕괴를 반복해서 말하기보다, 자·전자저울·통제선·압수봉투·마이크 개수 같은 눈에 보이는 디테일로 웃긴다.
+- 심각한 정신적 충격이나 사회 붕괴보다 자·전자저울·통제선·압수봉투·마이크 개수 같은 눈에 보이는 디테일로 웃긴다.
 
 안전 및 세계관 원칙:
 - 사람 이름은 절대 만들지 않는다. 제보자, 피해자, 피고, 친구, 가족, 동료, 수사본부 대변인 같은 역할명만 쓴다.
 - 실제 경찰 계급, 검사·판사 이름, 실제 법률명과 실제 정부·수사·사법기관 이름을 사용하지 않는다.
 - '국가과잉수사연구소', '생활질서 특수본', '소문동 현장감식반' 같은 명백한 가상 패러디 기관만 사용한다.
-- 가상 영장은 '소문동 생활질서 절차규정 0-0호'처럼 실제 법률로 오해할 수 없는 표현을 쓴다.
 - 실제 범죄명 대신 '한입범위 과잉침범', '간식주권 교란', '응답대기 방치' 같은 허구의 혐의를 만든다.
 - 폭력, 성적 피해, 학대, 자해, 죽음, 중대한 범죄는 코미디로 만들지 않는다.
 - 혐오, 비속어, 외모·성별·지역·장애 조롱을 사용하지 않는다.
 
 출력 원칙:
-- 사건명은 구체적 행동을 포함하고 반드시 '사건'으로 끝낸다.
-- 작전명은 지나치게 거창하되 사건 소재와 연결한다.
+- 사건명은 접수 내용의 핵심 소재를 포함하고 반드시 '사건'으로 끝낸다.
+- summary는 원문의 사실관계를 분명히 다시 말한다.
+- evidence 4개 중 최소 2개는 핵심 물건이나 행동을 제목과 설명에서 직접 다룬다.
+- forensicReports 3개 중 최소 2개는 핵심 물건 또는 그 주변의 구체적인 시료를 분석한다.
+- questions 3개 중 최소 2개는 원문의 행동·시간·물건을 직접 묻는다.
+- briefing headline과 statement는 사건 핵심 소재를 반드시 포함한다.
+- verdicts 3개 중 최소 2개는 핵심 물건의 배상·복구 또는 핵심 행동의 재발방지를 구체적으로 명령한다.
 - 출동일지는 정확히 4개, 투입부서는 정확히 4개다.
 - 감식보고서는 정확히 3개, 증거물은 정확히 4개다.
 - 심문은 정확히 3개, 판결과 재판관 성향은 각각 정확히 3개다.
 - questions의 speaker는 질문에 답하는 '피고' 또는 '피고인'이다. response는 피고의 답변이다.
 - questions의 replySpeaker는 '신문관', '검사', '변호인', '판사', '재판장' 중 하나이며 reply는 그 답변에 대한 정색한 반응이다.
-- 잠복근무는 위장, 관찰내용, 예상 밖 성과가 모두 있어야 한다.
-- 감식 결과에는 사건 해결과 상관없는 '쓸데없는 결론'이 반드시 포함된다.
-- briefing.spokesperson은 이름 없이 '생활질서 특수본 대변인' 같은 역할명만 쓴다.
-- judge는 사람 이름이 아니라 재판장의 중간 의견을 한두 문장으로 쓴다.
-- 브리핑에는 기자의 날카롭지만 하찮은 질문과 대변인의 지나치게 공식적인 답변이 포함된다.
-- 판결은 엄벌형, 공동책임형, 황당한 화해형으로 확실히 다르게 쓴다.
-- 후일담은 판결 집행 때문에 더 유치한 후속 분쟁이 생기는 반전으로 쓴다.
 - 각 문자열은 한두 문장으로 짧고 선명하게 쓰며 JSON을 반드시 끝까지 완성한다.`;
 
 class SafetyInputError extends Error {
@@ -132,6 +148,34 @@ function normalized(value) {
   return String(value || "").replace(/[\s.,!?"'“”‘’()[\]{}:;·-]/g, "").toLowerCase();
 }
 
+function stemIncidentToken(raw) {
+  let token = String(raw || "").replace(/[^0-9A-Za-z가-힣]/g, "");
+  if (token.length < 2) return "";
+  for (const suffix of PARTICLE_SUFFIXES) {
+    if (token.endsWith(suffix) && token.length - suffix.length >= 2) {
+      token = token.slice(0, -suffix.length);
+      break;
+    }
+  }
+  if (/^(안|못|그|이|저)$/.test(token)) return "";
+  if (/(했다|했는데|했지만|하였다|있었다|없었다|됐다|되었다|먹었다|샀다|늦었다|남았다|사라졌다|가져갔다|돌려줬다|보냈다|읽었다|말했다|넣어둔|꺼냈다|가졌다|버렸다|왔다|갔다|줬다|않았다)$/.test(token)) return "";
+  return token;
+}
+
+function extractIncidentAnchors(incident) {
+  const rawTokens = String(incident || "").split(/\s+/).map(stemIncidentToken).filter(Boolean);
+  const preferred = rawTokens.filter((token) => !TOKEN_STOPWORDS.has(token));
+  const pool = preferred.length >= 2 ? preferred : rawTokens;
+  const uniqueTokens = [...new Set(pool)];
+  return uniqueTokens
+    .sort((a, b) => {
+      const numberDiff = Number(/\d/.test(b)) - Number(/\d/.test(a));
+      if (numberDiff) return numberDiff;
+      return b.length - a.length;
+    })
+    .slice(0, 5);
+}
+
 function collectStrings(value, output = []) {
   if (typeof value === "string") output.push(value);
   else if (Array.isArray(value)) value.forEach((item) => collectStrings(item, output));
@@ -142,6 +186,16 @@ function collectStrings(value, output = []) {
 function unique(items) {
   const values = items.map(normalized);
   return values.every(Boolean) && new Set(values).size === values.length;
+}
+
+function anchorsInText(value, anchors) {
+  const text = normalized(collectStrings(value).join(" "));
+  return anchors.filter((anchor) => text.includes(normalized(anchor)));
+}
+
+function connectedItemCount(items, anchors) {
+  if (!Array.isArray(items)) return 0;
+  return items.filter((item) => anchorsInText(item, anchors).length > 0).length;
 }
 
 function sanitizeText(value) {
@@ -196,7 +250,7 @@ function sanitizeCourtCase(value) {
   return data;
 }
 
-function auditCourtCase(data) {
+function auditCourtCase(data, anchors = []) {
   const issues = [];
   if (!data || typeof data !== "object") return { ok: false, issues: ["객체 아님"] };
   if (!String(data.title || "").endsWith("사건")) issues.push("사건명 끝맺음");
@@ -228,6 +282,17 @@ function auditCourtCase(data) {
     if (!unique(data.verdicts.map((item) => item?.afterStory))) issues.push("후일담 중복");
   }
   if (normalized(data.prosecution) === normalized(data.defense)) issues.push("공방 동일");
+
+  if (anchors.length) {
+    const neededSummaryAnchors = Math.min(2, anchors.length);
+    if (anchorsInText(data.title, anchors).length < 1) issues.push("접수 소재 사건명 미반영");
+    if (anchorsInText(data.summary, anchors).length < neededSummaryAnchors) issues.push("접수 소재 요약 미반영");
+    if (connectedItemCount(data.evidence, anchors) < 2) issues.push("접수 소재 증거 연결 부족");
+    if (connectedItemCount(data.forensicReports, anchors) < 2) issues.push("접수 소재 감식 연결 부족");
+    if (connectedItemCount(data.questions, anchors) < 2) issues.push("접수 소재 심문 연결 부족");
+    if (anchorsInText(data.briefing, anchors).length < 1) issues.push("접수 소재 브리핑 미반영");
+    if (connectedItemCount(data.verdicts, anchors) < 2) issues.push("접수 소재 판결 연결 부족");
+  }
   return { ok: issues.length === 0, issues };
 }
 
@@ -324,15 +389,17 @@ function parseResponse(response) {
   }
 }
 
-async function generate(apiKey, incident, severity, correction = "") {
+async function generate(apiKey, incident, severity, anchors, correction = "") {
   const { GoogleGenAI, Type, HarmCategory, HarmBlockThreshold } = await loadSdk();
   const ai = new GoogleGenAI({ apiKey });
   const prompt = [
-    `제보 내용: ${incident}`,
+    `제보 원문: ${incident}`,
+    `핵심 소재 단어(철자 그대로 반복 사용): ${anchors.join(", ")}`,
     severityText(severity),
-    "원문의 사실관계는 유지하되 수사 규모, 행정 절차, 감식 장비, 투입 인력, 언론 브리핑만 터무니없이 확대하라.",
-    "잠복근무와 감식 단계는 사건 해결에 거의 도움이 안 되지만 읽는 재미가 있도록 구체적으로 작성하라.",
-    correction ? `이전 품질 문제를 모두 수정하라: ${correction}` : ""
+    "원문의 등장 물건, 장소, 시간, 행동을 유지하고 오직 수사 규모와 행정 절차만 과장하라.",
+    "사건명·요약·증거·감식·심문·브리핑·판결이 서로 다른 사건처럼 흩어지지 않게 하나의 연속된 수사기록으로 작성하라.",
+    "증거 제목과 감식 시료에는 핵심 소재 단어를 직접 넣고, 판결은 그 물건의 배상·복구 또는 그 행동의 재발방지를 구체적으로 명령하라.",
+    correction ? `이전 결과의 다음 품질 문제를 모두 수정하라: ${correction}` : ""
   ].filter(Boolean).join("\n");
   const safetySettings = [
     HarmCategory.HARM_CATEGORY_HARASSMENT,
@@ -349,8 +416,8 @@ async function generate(apiKey, incident, severity, correction = "") {
       responseSchema: buildResponseSchema(Type),
       safetySettings,
       thinkingConfig: { thinkingBudget: 0 },
-      temperature: 0.92,
-      topP: 0.95,
+      temperature: 0.78,
+      topP: 0.9,
       maxOutputTokens: 7500
     }
   }));
@@ -358,15 +425,16 @@ async function generate(apiKey, incident, severity, correction = "") {
 }
 
 async function generateAndAudit(apiKey, incident, severity) {
-  let result = sanitizeCourtCase(await generate(apiKey, incident, severity));
-  let audit = auditCourtCase(result);
+  const anchors = extractIncidentAnchors(incident);
+  let result = sanitizeCourtCase(await generate(apiKey, incident, severity, anchors));
+  let audit = auditCourtCase(result, anchors);
   if (!audit.ok) {
-    logger.warn("investigation case quality retry", { issues: audit.issues, incidentLength: incident.length, severity });
-    result = sanitizeCourtCase(await generate(apiKey, incident, severity, audit.issues.join(", ")));
-    audit = auditCourtCase(result);
+    logger.warn("investigation case quality retry", { issues: audit.issues, anchors, incidentLength: incident.length, severity });
+    result = sanitizeCourtCase(await generate(apiKey, incident, severity, anchors, audit.issues.join(", ")));
+    audit = auditCourtCase(result, anchors);
   }
   if (!audit.ok) throw new Error(`사건 품질 검사 실패: ${audit.issues.join(", ")}`);
-  return result;
+  return { result, anchors };
 }
 
 function safeLogMessage(error) {
@@ -407,10 +475,10 @@ exports.generateCourtCase = onRequest(
     try {
       const apiKey = String(GEMINI_API_KEY.value() || "").trim();
       if (!apiKey) throw new Error("GEMINI_API_KEY가 설정되지 않았습니다.");
-      const courtCase = await generateAndAudit(apiKey, input.incident, input.severity);
+      const { result: courtCase, anchors } = await generateAndAudit(apiKey, input.incident, input.severity);
       return res.status(200).json({
         case: courtCase,
-        meta: { source: "gemini", model: MODEL, version: "investigation-v3", thinking: false, stored: false }
+        meta: { source: "gemini", model: MODEL, version: "investigation-v5-relevance", anchors, thinking: false, stored: false }
       });
     } catch (error) {
       const isSafety = error instanceof SafetyInputError;

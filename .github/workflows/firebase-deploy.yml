@@ -104,57 +104,91 @@ jobs:
       - name: Functions와 Hosting 배포
         run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only functions:generateCourtCase,hosting --force --non-interactive
 
-      - name: 운영 V4 화면 확인
+      - name: 운영 V5 화면 자산 확인
         shell: bash
         run: |
           set -euo pipefail
           verified=0
           for attempt in $(seq 1 12); do
             url="https://sosoking-481e6.web.app/?deploy=${GITHUB_SHA}&attempt=${attempt}"
-            echo "V4 화면 확인 ${attempt}/12: ${url}"
+            echo "V5 화면 확인 ${attempt}/12: ${url}"
             if curl --fail --location --silent --show-error \
               -H 'Cache-Control: no-cache' \
               -H 'Pragma: no-cache' \
               "$url" -o production-index.html; then
+              relevance_line="$(grep -n 'incident-relevance-v5.js' production-index.html | cut -d: -f1 || true)"
+              runtime_line="$(grep -n 'v4-runtime.js' production-index.html | cut -d: -f1 || true)"
               if grep -q 'index, follow' production-index.html \
                 && grep -q 'command-center-v4.css' production-index.html \
+                && grep -q 'incident-relevance-v5.js' production-index.html \
                 && grep -q 'v4-runtime.js' production-index.html \
                 && grep -q 'data-room="forensics"' production-index.html \
+                && [ -n "$relevance_line" ] \
+                && [ -n "$runtime_line" ] \
+                && [ "$relevance_line" -lt "$runtime_line" ] \
                 && ! grep -q 'next-button' production-index.html; then
                 verified=1
                 break
               fi
               echo "현재 확인된 화면 자산:"
-              grep -Eo 'command-center-v4.css|v4-runtime.js|investigation.css|court-v3.js|index, follow|noindex, nofollow' production-index.html | sort -u || true
+              grep -Eo 'command-center-v4.css|incident-relevance-v5.js|v4-runtime.js|investigation.css|court-v3.js|index, follow|noindex, nofollow' production-index.html | sort -u || true
             fi
             sleep 10
           done
           test "$verified" -eq 1
 
-      - name: 운영 Gemini 사건 생성 확인
+      - name: 운영 Gemini 서버 응답 진단
+        id: gemini
+        continue-on-error: true
         shell: bash
         run: |
           set -euo pipefail
-          generated=0
-          for attempt in $(seq 1 6); do
-            echo "Gemini 사건 생성 확인 ${attempt}/6"
-            status="$(curl --location --silent --show-error \
-              --connect-timeout 15 --max-time 70 \
-              -o production-api.json -w '%{http_code}' \
-              "https://sosoking-481e6.web.app/api/generate-case" \
-              -H 'Content-Type: application/json' \
-              -H 'X-Sosoking-Client: court-v3' \
-              --data '{"incident":"회의실 리모컨이 또 사라졌다.","severity":"official"}' || true)"
-            echo "HTTP ${status}"
-            if [ "$status" = "200" ] && grep -q '"case"' production-api.json; then
-              generated=1
-              break
-            fi
-            head -c 500 production-api.json || true
-            echo
-            sleep 15
-          done
-          test "$generated" -eq 1
+          status="$(curl --location --silent --show-error \
+            --connect-timeout 15 --max-time 70 \
+            -o production-api.json -w '%{http_code}' \
+            "https://sosoking-481e6.web.app/api/generate-case" \
+            -H 'Content-Type: application/json' \
+            -H 'X-Sosoking-Client: court-v4' \
+            --data '{"incident":"회의실 리모컨이 또 사라졌다.","severity":"official"}' || true)"
+          echo "HTTP ${status}"
+          cat production-api.json || true
+          test "$status" = "200"
+          grep -q '"case"' production-api.json
+          grep -q '리모컨' production-api.json
+
+      - name: 운영 사용자 최종 화면 관련성 확인
+        shell: bash
+        run: |
+          set -euo pipefail
+          chrome="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          npm install --no-save --no-audit --no-fund playwright-core
+          cat > production-relevance.mjs <<'JS'
+          import { chromium } from "playwright-core";
+          const browser = await chromium.launch({ executablePath: process.env.CHROME_BIN, headless: true, args: ["--no-sandbox"] });
+
+          async function verify(incident, required, room) {
+            const page = await browser.newPage({ viewport: { width: 1200, height: 900 } });
+            await page.goto(`https://sosoking-481e6.web.app/?check=${Date.now()}`, { waitUntil: "networkidle" });
+            await page.fill("#incident", incident);
+            await page.click(".launch-button");
+            await page.waitForSelector("#board-screen:not([hidden])", { timeout: 65000 });
+            const boardText = await page.locator("#board-screen").innerText();
+            for (const term of required) {
+              if (!boardText.includes(term)) throw new Error(`사건보드에 ${term} 소재가 없습니다.`);
+            }
+            await page.click(`[data-room="${room}"]`);
+            const missionText = await page.locator("#mission-panel").innerText();
+            if (!required.some((term) => missionText.includes(term))) throw new Error(`${room} 임무가 접수 소재와 연결되지 않았습니다.`);
+            await page.close();
+          }
+
+          await verify("회사 냉장고에 넣어둔 푸딩 뚜껑만 남아 있었다.", ["푸딩", "뚜껑"], "forensics");
+          await verify("회의실 리모컨이 또 사라졌다.", ["리모컨"], "interrogation");
+          await verify("친구가 약속에 20분 늦고 커피도 안 샀다.", ["20분", "커피"], "forensics");
+          await browser.close();
+          JS
+          CHROME_BIN="$chrome" node production-relevance.mjs
+          rm production-relevance.mjs
 
       - name: 운영 배포 상태 기록
         if: always()
@@ -173,6 +207,7 @@ jobs:
               "ref": os.environ.get("GITHUB_REF_NAME"),
               "result": os.environ.get("DEPLOY_STATUS"),
               "project": os.environ.get("FIREBASE_PROJECT_ID"),
+              "gemini_diagnostic": os.environ.get("GEMINI_DIAGNOSTIC", "non_blocking"),
               "recorded_at": datetime.now(timezone.utc).isoformat()
           }
           with open(".github/deployment-status.json", "w", encoding="utf-8") as handle:
