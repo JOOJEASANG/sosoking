@@ -11,9 +11,18 @@ on:
       - "firebase.json"
       - "package.json"
       - ".github/workflows/court-preview.yml"
+  push:
+    branches: [redesign/automatic-case-story-v6]
+    paths:
+      - "public/**"
+      - "functions/**"
+      - "tests/**"
+      - "firebase.json"
+      - "package.json"
+      - ".github/workflows/court-preview.yml"
 
 concurrency:
-  group: court-automatic-story-v6-${{ github.event.pull_request.number }}
+  group: court-automatic-story-v6-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -24,7 +33,7 @@ env:
 
 jobs:
   preview-and-verify-story:
-    if: github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'redesign/automatic-case-story-v6'
+    if: github.event_name == 'push' || (github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'redesign/automatic-case-story-v6')
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
