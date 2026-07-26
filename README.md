@@ -1,4 +1,4 @@
-# 소문난 판결소 MVP
+# 소문난 판결소
 
 아주 사소하고 유치한 일상을 필요 이상으로 수사하고, 과도하게 진지한 법정 공방과 판결로 확대하는 AI 코미디 서비스입니다.
 
@@ -13,8 +13,8 @@
 1. 사용자가 오늘 있었던 사소한 일을 한 줄로 입력합니다.
 2. Gemini가 거창한 사건명과 허구의 혐의로 확대합니다.
 3. 쓸데없이 정밀한 증거 3개를 수사합니다.
-4. 피고를 심문하고 뻔뻔한 해명과 정색 반박을 확인합니다.
-5. 검사와 변호인이 지나치게 진지하게 공방합니다.
+4. 피고의 뻔뻔한 해명과 재판부의 정색 반박을 확인합니다.
+5. 검사와 변호인이 사소한 문제를 지나치게 진지하게 다룹니다.
 6. 사용자가 서로 다른 판결 3개 중 하나를 선택합니다.
 7. 판결 집행 때문에 더 유치한 문제가 생기는 후일담으로 끝납니다.
 8. 판결 결과를 세로형 이미지 카드로 저장하거나 공유합니다.
@@ -23,25 +23,27 @@
 
 ### 프런트엔드
 
-- 사건 입력과 120자 제한
+- 120자 사건 입력과 개인정보 형태 검사
 - 정식 수사·특별 수사·국가급 대응 선택
 - 사건 → 수사 → 심문 → 공방 → 판결 진행
-- 선택형 심문과 판결
-- AI 생성 중 로딩 상태
-- AI 응답 실패 시 예비 판례 자동 전환
+- 선택형 심문과 서로 다른 판결 3개
+- AI 생성 중 로딩 상태와 오류 시 예비 판례 자동 전환
 - AI 맞춤 재판과 예비 판례 구분 표시
-- 결과 PNG 카드 저장과 Web Share 지원
+- 판결 PNG 카드 저장과 Web Share 지원
 - 공유 카드에서 사용자 원문 제외
-- 전화번호·이메일·주소·차량번호 등 개인정보 형태 차단
-- 심각한 사건 소재 차단
-- 전용 SVG 아이콘, 판결 도장, 모바일 반응형 디자인
+- 긴 사건명·형벌·후일담에 맞춘 가변 높이 공유 카드
+- 전용 SVG 아이콘과 양쪽 `소` 붉은 인장
+- 390px 이하 모바일 대응, 안전영역·터치 영역·고정 진행 버튼 적용
+- 키보드 초점 표시와 모션 감소 설정 지원
 
 ### 서버
 
 - Firebase Functions 2세대 `generateCourtCase`
 - 서울 리전 `asia-northeast3`
+- Node.js 22
 - 공식 `@google/genai` SDK
 - 안정 모델 `gemini-2.5-flash`
+- 사고 토큰을 끄고 JSON 작성에 출력 예산 집중
 - JSON 구조화 출력으로 사건 형식 고정
 - Gemini 안전 설정과 자체 입력 차단 규칙
 - 사건명·증거 3개·심문 3개·공방·판결 3개·후일담 형식 검사
@@ -49,28 +51,21 @@
 - 품질 미달 시 한 번 자동 재생성
 - 실제 기관명과 개인정보 형태 출력 차단
 - API 키를 Firebase Secret Manager에서만 사용
-- 허용 출처 확인, 요청 크기 제한, 기본 요청 횟수 제한
+- 진단 정보와 API 오류 세부내용을 사용자 응답에서 제외
+- 10분당 12회 기본 요청 제한과 최대 인스턴스 5개 비용 보호
 - Hosting `/api/generate-case` 경로를 서버 함수로 연결
 
-## 기존 AI 키 재사용
+## 기존 Gemini 키 재사용
 
-기존 사이트가 사용하던 GitHub 저장소 Secret 이름은 `GEMINI_API_KEY`입니다.
+기존 사이트가 사용하던 GitHub 저장소 Secret `GEMINI_API_KEY`를 그대로 사용합니다.
 
-배포 워크플로는 다음처럼 동작합니다.
-
-1. GitHub Secret `GEMINI_API_KEY`가 있으면 Firebase Secret Manager의 같은 이름으로 갱신합니다.
-2. GitHub Secret이 비어 있으면 Firebase에 이미 등록된 `GEMINI_API_KEY`를 그대로 사용합니다.
+1. GitHub Secret이 있으면 Firebase Secret Manager의 같은 이름으로 갱신합니다.
+2. GitHub Secret이 비어 있으면 Firebase에 이미 등록된 값을 유지합니다.
 3. API 키는 브라우저 코드와 저장소 파일에 기록하지 않습니다.
 
-따라서 기존 Secret이 정상이라면 새 API 키를 다시 발급하거나 입력할 필요가 없습니다.
+따라서 기존 Secret이 정상이라면 새 API 키를 발급하거나 다시 입력할 필요가 없습니다.
 
-수동 등록이 필요한 예외 상황에서만 다음 명령을 사용합니다.
-
-```bash
-firebase functions:secrets:set GEMINI_API_KEY
-```
-
-## 검사
+## 자동 검사
 
 저장소 루트에서 실행합니다.
 
@@ -80,64 +75,74 @@ npm run check
 npm run --prefix functions lint
 ```
 
-현재 정적 테스트는 다음을 확인합니다.
+검사 항목:
 
 - 클라이언트·Hosting·Functions API 경로 일치
 - 브라우저 코드에 Gemini API 키가 없는지
-- GitHub Secret과 Firebase Secret 연결 여부
-- Gemini 안전 설정과 출력 품질 검사 여부
+- 운영 서버 응답에 미리보기 진단 기능이 남아 있지 않은지
+- Gemini 안전 설정과 구조화 출력 적용 여부
 - 공유 카드에 사용자 원문이 포함되지 않는지
+- 모바일 안전영역·터치 영역·긴 문구 대응 여부
 - 대표 사건 20개 데이터 유효성
 - 현재 실행 스크립트와 스타일 연결
 
-## AI 품질 평가
+## 실제 Gemini 품질 평가
 
-Firebase 미리보기 주소를 배포한 뒤 대표 사건 20개를 자동 생성합니다.
+Firebase 미리보기 채널에서 대표 사건 20개를 실제 생성해 검사했습니다.
+
+- 형식 통과: **20/20**
+- 평균 응답시간: **8,651ms**
+- 누락된 증거·심문·판결·후일담: 없음
+- 중복 판결·중복 후일담: 없음
+- 평가 후 요청 제한: 정상값 12회로 복원 완료
+
+수동 평가 명령:
 
 ```bash
 COURT_BASE_URL="미리보기 주소" npm run evaluate
 ```
 
-사건 형식, 중복 판결, 중복 후일담, 응답 시간을 표로 확인할 수 있습니다.
+현재 미리보기:
 
-## 함수 의존성 설치
+- `https://sosoking-481e6--court-preview-xviskcgv.web.app`
+- 2026-08-02 만료 예정
 
-```bash
-cd functions
-npm install
-cd ..
-```
+## 배포 방식
 
-## 배포
+전체 절차는 `docs/DEPLOY_CHECKLIST.md`를 따릅니다.
 
-전체 절차는 `docs/DEPLOY_CHECKLIST.md`를 따릅니다. 먼저 Firebase 미리보기 환경에서 검증하고, 자동 테스트와 대표 사건 평가가 통과한 뒤 운영 배포합니다.
+### 미리보기
 
-`main`에 반영되면 GitHub Actions가 기존 Firebase 서비스 계정과 `GEMINI_API_KEY`를 사용해 다음 항목을 자동 배포합니다.
+- 검색엔진 차단 유지
+- 운영 Hosting 변경 없음
+- 새 Functions 런타임과 전용 Hosting 채널 검증
+- 모바일·데스크톱 첫 화면 캡처
+- Gemini 단건 검사 후 대표 사건 20개 평가
 
-- `functions:generateCourtCase`
-- Firebase Hosting
+### 운영
 
-직접 배포해야 하는 경우:
+`main` 반영 시 GitHub Actions가 다음을 수행합니다.
 
-```bash
-firebase deploy --only functions:generateCourtCase,hosting
-```
+1. 정적 검사와 문법 검사
+2. 기존 Firebase 서비스 계정과 `GEMINI_API_KEY` 연결
+3. 운영 HTML을 `index, follow`로 전환
+4. `generateCourtCase`와 Firebase Hosting 배포
+5. 운영 웹페이지와 Gemini 단건 응답 확인
 
 ## 브랜치
 
 - 기존 서비스 전체 백업: `backup/community-v1-20260726`
 - 새 기획 및 개발: `rebuild/sosoking-v2`
-- 현재 운영 기준 브랜치: `main` — 변경하지 않음
+- 운영 기준 브랜치: `main`
+- 검증 Draft PR: `#281`
 
-## 다음 개발 순서
+## 현재 상태
 
-1. 실제 Gemini 사건 20개를 미리보기 환경에서 생성해 웃음 밀도 검수
-2. 결과 카드의 Android·iPhone 저장 및 공유 점검
-3. Gemini 사용량 제한과 결제 알림 점검
-4. 상대방 반박과 재심 기능
-5. 친구 배심원 투표
-6. 공개 사건 전 명예훼손·개인정보 추가 검수
+- 개발 브랜치 정적 검사 통과
+- Firebase 미리보기 배포 통과
+- Gemini 대표 사건 20/20 통과
+- 모바일·데스크톱 첫 화면 캡처 완료
+- 요청 제한 정상 복원 완료
+- 운영 `main`과 `sosoking.co.kr`은 아직 변경하지 않음
 
-## 주의
-
-현재 변경 사항은 재구성 브랜치에만 있습니다. 기존 Firebase에 배포된 Hosting과 Cloud Functions는 변경되지 않았으며, 검증 전에는 `main` 병합이나 운영 배포를 진행하지 않습니다.
+남은 운영 전 확인은 실제 Android·iPhone에서 판결 이미지 저장 및 공유창 동작을 확인하는 것입니다.
