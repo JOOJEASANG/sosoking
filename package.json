@@ -1,11 +1,11 @@
 {
+  "name": "sosoking-court-mvp",
+  "version": "2.3.0",
+  "private": true,
+  "type": "module",
   "scripts": {
-    "check": "node --experimental-vm-modules tools/check-project.mjs && node tools/runtime-consistency-check.mjs && node tools/scan-visible-game-text.mjs",
-    "build": "npm run check && node -e \"console.log('Static Firebase Hosting app: no build step')\"",
-    "deploy": "npx firebase-tools deploy",
-    "deploy:hosting": "npx firebase-tools deploy --only hosting",
-    "deploy:functions": "npm run check && npx firebase-tools deploy --only functions",
-    "deploy:rules": "npx firebase-tools deploy --only firestore:rules,storage:rules",
-    "deploy:indexes": "npx firebase-tools deploy --only firestore:indexes"
+    "check": "node --check public/court-app.js && node --check public/visual.js && node --check public/share-polish.js && node --check functions/index.js && node --check functions/gemini-court-runtime.js && node --check tools/evaluate-cases.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "evaluate": "node tools/evaluate-cases.mjs"
   }
 }

@@ -1,10 +1,20 @@
 {
+  "functions": {
+    "source": "functions",
+    "runtime": "nodejs22"
+  },
   "hosting": {
     "public": "public",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
-      { "source": "/p/**", "function": "seoPost" },
-      { "source": "/sitemap.xml", "function": "sitemapXml" },
+      {
+        "source": "/api/generate-case",
+        "function": {
+          "functionId": "generateCourtCase",
+          "region": "asia-northeast3",
+          "pinTag": true
+        }
+      },
       { "source": "**", "destination": "/index.html" }
     ],
     "headers": [
@@ -13,51 +23,23 @@
         "headers": [
           { "key": "X-Content-Type-Options", "value": "nosniff" },
           { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
-          { "key": "Cross-Origin-Opener-Policy", "value": "same-origin-allow-popups" },
           { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
           { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" }
         ]
       },
       {
         "source": "**/*.html",
-        "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
-      },
-      {
-        "source": "**/*.js",
-        "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
-      },
-      {
-        "source": "/sw.js",
         "headers": [
-          { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
-          { "key": "Content-Type", "value": "application/javascript; charset=utf-8" },
-          { "key": "Service-Worker-Allowed", "value": "/" }
+          { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
         ]
       },
       {
-        "source": "**/*.css",
-        "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
-      },
-      {
-        "source": "/manifest.json",
+        "source": "/api/**",
         "headers": [
-          { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
-          { "key": "Content-Type", "value": "application/manifest+json; charset=utf-8" }
+          { "key": "Cache-Control", "value": "no-store" }
         ]
-      },
-      {
-        "source": "**/*.svg",
-        "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
-      },
-      {
-        "source": "/icon-*.png",
-        "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
       }
     ]
-  },
-  "functions": {
-    "source": "functions",
-    "runtime": "nodejs22"
   },
   "firestore": {
     "rules": "firestore.rules",

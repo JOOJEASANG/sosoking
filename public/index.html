@@ -1,128 +1,183 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
-  <title>소소킹 - AI 캐릭터 참여형 커뮤니티</title>
-  <meta name="description" content="판결, 상담, 토론, 드립에 AI 캐릭터와 회원이 함께 참여하는 소소킹 커뮤니티입니다.">
-  <meta name="keywords" content="소소킹, 판결, 상담, 토론, 드립, AI 캐릭터, 커뮤니티">
-  <link rel="canonical" href="https://sosoking.co.kr/">
-  <meta name="google-site-verification" content="McacS-zZpI8iCazcG17ZzsF8-ApOvPPvuRMvUJlfGdo">
-  <meta name="naver-site-verification" content="e611244aaa246aed0873aab8075458156847e29c">
-
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://sosoking.co.kr">
-  <meta property="og:title" content="소소킹 - AI 캐릭터 참여형 커뮤니티">
-  <meta property="og:description" content="판결, 상담, 토론, 드립에 AI 캐릭터와 회원이 함께 참여합니다.">
-  <meta property="og:image" content="https://sosoking.co.kr/icon-512.png">
-  <meta property="og:locale" content="ko_KR">
-  <meta property="og:site_name" content="소소킹">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="소소킹 - AI 캐릭터 참여형 커뮤니티">
-  <meta name="twitter:description" content="판결, 상담, 토론, 드립에 AI 캐릭터와 회원이 함께 참여합니다.">
-  <meta name="twitter:image" content="https://sosoking.co.kr/icon-512.png">
-
-  <link rel="icon" href="/logo.svg" type="image/svg+xml">
-  <link rel="icon" href="/icon-192.png" type="image/png" sizes="192x192">
-  <link rel="apple-touch-icon" href="/icon-512-maskable.png">
-  <link rel="manifest" href="/manifest.json">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="소소킹">
-  <meta name="theme-color" content="#FF6B4A">
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <script>
-    (function(){
-      var theme=localStorage.getItem('theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');
-      document.documentElement.setAttribute('data-theme',theme);
-    })();
-  </script>
-  <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js" crossorigin="anonymous" defer></script>
-
-  <link rel="stylesheet" href="/css/base.css">
-  <link rel="stylesheet" href="/css/layout.css">
-  <link rel="stylesheet" href="/css/components.css">
-  <link rel="stylesheet" href="/css/pages.css">
-  <link rel="stylesheet" href="/css/responsive.css">
-  <link rel="stylesheet" href="/css/desktop-layout-tune.css">
-  <link rel="stylesheet" href="/css/admin-layout-fix.css">
-  <link rel="stylesheet" href="/css/admin-post-toolbar-fix.css">
-  <link rel="stylesheet" href="/css/admin-mobile-nav-fix.css">
-  <link rel="stylesheet" href="/css/detail-image-fix.css">
-  <link rel="stylesheet" href="/css/detail-inline-image.css">
-  <link rel="stylesheet" href="/css/nickname-icon.css">
-  <link rel="stylesheet" href="/css/post-owner-actions.css">
-  <link rel="stylesheet" href="/css/post-image-edit.css">
-  <link rel="stylesheet" href="/css/mobile-participation-fix.css">
-  <link rel="stylesheet" href="/css/feedback.css">
-  <link rel="stylesheet" href="/css/admin-feedback.css">
-  <link rel="stylesheet" href="/css/participant-replies.css">
-  <link rel="stylesheet" href="/css/multi-post.css">
-  <link rel="stylesheet" href="/css/notifications-panel.css">
-  <link rel="stylesheet" href="/css/account-notifications-section.css">
-  <link rel="stylesheet" href="/css/clean-layout-refresh.css">
-  <link rel="stylesheet" href="/css/inner-background-fix.css">
-  <link rel="stylesheet" href="/css/legal-spacing-fix.css">
-  <link rel="stylesheet" href="/css/mobile-admin-polish.css">
-  <link rel="stylesheet" href="/css/ui-polish-fixes.css">
-  <link rel="stylesheet" href="/css/mobile-final-pass.css">
-  <link rel="stylesheet" href="/css/mobile-feed-polish.css">
-  <link rel="stylesheet" href="/css/mobile-header-polish.css">
-  <link rel="stylesheet" href="/css/write-editor-fix.css">
-  <link rel="stylesheet" href="/css/micro-interactions.css">
-  <link rel="stylesheet" href="/css/mobile-request-polish.css">
-  <link rel="stylesheet" href="/css/theme-visibility-polish.css">
-  <link rel="stylesheet" href="/css/admin-mobile-final-fix.css">
-  <link rel="stylesheet" href="/css/hall-accordion.css">
-  <link rel="stylesheet" href="/css/mobile-admin-bottom-nav-safe.css">
-  <link rel="stylesheet" href="/css/mobile-admin-six-menu.css">
-  <link rel="stylesheet" href="/css/mobile-bottom-color-icons.css">
-  <link rel="stylesheet" href="/css/design-upgrade-v2.css">
-  <link rel="stylesheet" href="/css/home-landing-hero.css">
-  <link rel="stylesheet" href="/css/room-tabs.css">
-  <link rel="stylesheet" href="/css/request-cleanup.css">
-  <link rel="stylesheet" href="/css/home-onboard.css">
-  <link rel="stylesheet" href="/css/write-room-picker.css">
-  <link rel="stylesheet" href="/css/home-today-best.css">
-  <link rel="stylesheet" href="/css/drip-page.css">
-  <link rel="stylesheet" href="/css/design-v3.css">
-  <link rel="stylesheet" href="/css/admin-stat-polish.css">
-  <link rel="stylesheet" href="/css/detail-status-card-polish.css">
-  <link rel="stylesheet" href="/css/feed-list-detail-nav.css">
-  <link rel="stylesheet" href="/css/final-polish.css">
-  <link rel="stylesheet" href="/css/character-dark-card-fix.css">
-  <link rel="stylesheet" href="/css/sidebar-ranking-polish.css">
-  <link rel="stylesheet" href="/css/site-admin-ux-fixes.css">
-  <link rel="stylesheet" href="/css/home-spacing-tune.css">
-  <link rel="stylesheet" href="/css/detail-community-nav-list.css">
-  <link rel="stylesheet" href="/css/detail-module-spacing.css">
-
-  <script type="application/ld+json">
-  {"@context":"https://schema.org","@type":"WebApplication","name":"소소킹","url":"https://sosoking.co.kr","description":"판결, 상담, 토론, 드립에 AI 캐릭터와 회원이 함께 참여하는 커뮤니티","applicationCategory":"SocialNetworkingApplication","operatingSystem":"Web","inLanguage":"ko-KR","isAccessibleForFree":true}
-  </script>
-  <script>
-    window.__pwaInstallPrompt=null;
-    window.addEventListener('beforeinstallprompt',function(event){event.preventDefault();window.__pwaInstallPrompt=event;});
-  </script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="사소한 일을 필요 이상으로 수사하고 진지하게 판결하는 AI 법정 코미디">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#13203a">
+  <meta name="application-name" content="소문난 판결소">
+  <title>소문난 판결소 | 별일 아니지만 재판합니다</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./visual.css">
+  <link rel="stylesheet" href="./ai.css">
+  <link rel="stylesheet" href="./polish.css">
+  <script src="./court-app.js" defer></script>
+  <script src="./visual.js" defer></script>
+  <script src="./share-polish.js" defer></script>
 </head>
 <body>
-  <div id="app">
-    <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;font-family:'Noto Sans KR',system-ui,sans-serif;background:#f7f7fb;color:#222;">
-      <div style="text-align:center;max-width:360px;background:#fff;border-radius:20px;padding:28px;box-shadow:0 12px 32px rgba(0,0,0,.08);">
-        <img src="/logo.svg" alt="소소킹" width="48" height="48" style="margin-bottom:12px">
-        <div style="font-size:22px;font-weight:900;margin-bottom:8px">소소킹</div>
-        <div style="font-size:14px;color:#666;line-height:1.6">커뮤니티를 불러오는 중입니다.</div>
+  <header class="site-header">
+    <a class="brand" href="#top" aria-label="소문난 판결소 홈">
+      <span class="brand-mark-wrap" aria-hidden="true">
+        <svg class="brand-mark"><use href="./icons.svg#gavel"></use></svg>
+      </span>
+      <span class="brand-so" aria-hidden="true">소</span>
+      <span class="brand-center">문난 판결</span>
+      <span class="brand-so" aria-hidden="true">소</span>
+    </a>
+    <span class="header-badge">
+      <svg class="ui-icon" aria-hidden="true"><use href="./icons.svg#court"></use></svg>
+      AI 재판부
+    </span>
+  </header>
+
+  <main id="top">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-emblem" aria-hidden="true">
+        <span class="emblem-so">소</span>
+        <svg><use href="./icons.svg#scales"></use></svg>
+        <span class="emblem-so">소</span>
       </div>
-    </div>
-  </div>
-  <script type="module" src="/js/boot.js"></script>
-  <script type="module" src="/js/app-extensions-loader.js"></script>
-  <script>
-    if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').then(function(reg){return reg.update();}).catch(function(){});}
-  </script>
+      <p class="eyebrow">
+        <svg class="ui-icon" aria-hidden="true"><use href="./icons.svg#spark"></use></svg>
+        사소한 일상 전문 대형사건 처리기관
+      </p>
+      <h1 id="hero-title">별일 아니지만,<br><em>일단 재판부터 열겠습니다.</em></h1>
+      <p class="hero-copy">오늘 있었던 아주 사소하고 유치한 일을 한 줄로 적어주세요. 재판부가 필요 이상으로 수사하고, 과도하게 진지한 판결을 내립니다.</p>
+
+      <div class="flow-preview" aria-label="서비스 진행 과정">
+        <div class="flow-step">
+          <span class="flow-icon" aria-hidden="true"><svg><use href="./icons.svg#file"></use></svg></span>
+          <span><b>한 줄 접수</b><small>유치할수록 좋습니다</small></span>
+        </div>
+        <div class="flow-step">
+          <span class="flow-icon" aria-hidden="true"><svg><use href="./icons.svg#search"></use></svg></span>
+          <span><b>과잉 수사</b><small>증거를 필요 이상으로 확보</small></span>
+        </div>
+        <div class="flow-step">
+          <span class="flow-icon" aria-hidden="true"><svg><use href="./icons.svg#gavel"></use></svg></span>
+          <span><b>엄숙한 판결</b><small>형벌은 대체로 쓸데없습니다</small></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="intake-panel" aria-labelledby="intake-title">
+      <div class="panel-heading">
+        <div>
+          <p class="section-kicker">사건 접수처</p>
+          <div class="panel-title-row">
+            <span class="heading-icon" aria-hidden="true"><svg class="ui-icon"><use href="./icons.svg#file"></use></svg></span>
+            <h2 id="intake-title">오늘 무슨 일이 있었습니까?</h2>
+          </div>
+        </div>
+        <span class="case-stamp" aria-hidden="true">접수</span>
+      </div>
+
+      <form id="case-form" novalidate>
+        <label class="field-label" for="incident">사건 내용</label>
+        <div class="textarea-shell">
+          <span class="textarea-icon" aria-hidden="true"><svg class="ui-icon"><use href="./icons.svg#megaphone"></use></svg></span>
+          <textarea id="incident" name="incident" maxlength="120" rows="4" autocomplete="off" spellcheck="true" aria-describedby="incident-help char-count" placeholder="예: 남편이 내가 아껴둔 과자를 몰래 먹었다."></textarea>
+        </div>
+        <div class="field-meta">
+          <span id="incident-help">실명·전화번호·주소는 입력하지 마세요.</span>
+          <span><strong id="char-count">0</strong>/120</span>
+        </div>
+
+        <div class="examples" aria-label="사건 예시">
+          <button type="button" class="example-chip" data-example="동생이 내 아이스크림을 너무 크게 한입 먹었다."><svg class="ui-icon" aria-hidden="true"><use href="./icons.svg#comedy"></use></svg>아이스크림 한입</button>
+          <button type="button" class="example-chip" data-example="친구가 약속 시간에 20분 늦고 커피도 안 샀다."><svg class="ui-icon" aria-hidden="true"><use href="./icons.svg#clock"></use></svg>친구 지각</button>
+          <button type="button" class="example-chip" data-example="가족이 마지막 치킨 다리를 말없이 먹었다."><svg class="ui-icon" aria-hidden="true"><use href="./icons.svg#evidence"></use></svg>치킨 다리</button>
+          <button type="button" class="example-chip" data-example="빌려준 충전기를 돌려받았는데 선만 왔다."><svg class="ui-icon" aria-hidden="true"><use href="./icons.svg#search"></use></svg>충전기 실종</button>
+        </div>
+
+        <fieldset class="severity-fieldset">
+          <legend>사건 확대 수준</legend>
+          <label class="severity-option">
+            <input type="radio" name="severity" value="official" checked>
+            <span>
+              <i class="severity-icon" aria-hidden="true"><svg><use href="./icons.svg#file"></use></svg></i>
+              <b>정식 수사</b><small>경찰서가 조금 한가한 날</small>
+            </span>
+          </label>
+          <label class="severity-option">
+            <input type="radio" name="severity" value="special">
+            <span>
+              <i class="severity-icon" aria-hidden="true"><svg><use href="./icons.svg#search"></use></svg></i>
+              <b>특별 수사</b><small>수사본부와 브리핑룸 설치</small>
+            </span>
+          </label>
+          <label class="severity-option">
+            <input type="radio" name="severity" value="national">
+            <span>
+              <i class="severity-icon" aria-hidden="true"><svg><use href="./icons.svg#agency"></use></svg></i>
+              <b>국가급 대응</b><small>총리실은 모르지만 일단 긴급</small>
+            </span>
+          </label>
+        </fieldset>
+
+        <p id="form-error" class="form-error" role="alert"></p>
+        <button class="primary-button" type="submit">
+          <svg class="ui-icon button-icon" aria-hidden="true"><use href="./icons.svg#gavel"></use></svg>
+          <span>사건 접수 및 수사 개시</span>
+          <span aria-hidden="true">→</span>
+        </button>
+      </form>
+    </section>
+
+    <section id="courtroom" class="courtroom" hidden aria-live="polite">
+      <div class="court-toolbar">
+        <div class="court-title-row">
+          <span class="court-seal" aria-hidden="true"><svg class="ui-icon"><use href="./icons.svg#court"></use></svg></span>
+          <div>
+            <p class="section-kicker">소문난 판결소 사건기록</p>
+            <p id="case-number" class="case-number"></p>
+          </div>
+        </div>
+        <button id="restart-button" class="text-button" type="button">새 사건 접수</button>
+      </div>
+
+      <ol class="stage-list" aria-label="재판 진행 단계">
+        <li class="stage-dot is-active" data-stage-dot="0"><span class="stage-icon"><svg aria-hidden="true"><use href="./icons.svg#file"></use></svg></span>사건</li>
+        <li class="stage-dot" data-stage-dot="1"><span class="stage-icon"><svg aria-hidden="true"><use href="./icons.svg#search"></use></svg></span>수사</li>
+        <li class="stage-dot" data-stage-dot="2"><span class="stage-icon"><svg aria-hidden="true"><use href="./icons.svg#question"></use></svg></span>심문</li>
+        <li class="stage-dot" data-stage-dot="3"><span class="stage-icon"><svg aria-hidden="true"><use href="./icons.svg#court"></use></svg></span>공방</li>
+        <li class="stage-dot" data-stage-dot="4"><span class="stage-icon"><svg aria-hidden="true"><use href="./icons.svg#gavel"></use></svg></span>판결</li>
+      </ol>
+
+      <article id="stage-content" class="stage-content"></article>
+
+      <div class="stage-actions">
+        <button id="back-button" class="secondary-button" type="button" hidden>이전 기록</button>
+        <button id="next-button" class="primary-button" type="button">현장 수사 개시 →</button>
+      </div>
+    </section>
+
+    <section class="principles" aria-labelledby="principles-title">
+      <p class="section-kicker">본 재판부의 원칙</p>
+      <h2 id="principles-title">내용은 하찮게, 태도는 엄숙하게.</h2>
+      <div class="principle-grid">
+        <div>
+          <span class="principle-icon" aria-hidden="true"><svg><use href="./icons.svg#shield"></use></svg></span>
+          <strong>01</strong><p>진짜 심각한 피해는 웃음거리로 만들지 않습니다.</p>
+        </div>
+        <div>
+          <span class="principle-icon" aria-hidden="true"><svg><use href="./icons.svg#anonymous"></use></svg></span>
+          <strong>02</strong><p>사람이 아니라 사소한 행동과 상황을 재판합니다.</p>
+        </div>
+        <div>
+          <span class="principle-icon" aria-hidden="true"><svg><use href="./icons.svg#comedy"></use></svg></span>
+          <strong>03</strong><p>본 판결은 오락용이며 실제 법률 판단이 아닙니다.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span class="footer-brand"><b>소</b>문난 판결<b>소</b></span>
+    <span>오늘도 평화로운 일상을 필요 이상으로 처리합니다.</span>
+  </footer>
 </body>
 </html>

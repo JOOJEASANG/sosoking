@@ -1,37 +1,30 @@
-name: Firebase 검증 및 전체 배포
-run-name: Firebase 검증 및 전체 배포 · ${{ github.event_name }} · ${{ github.ref_name }}
+name: 소문난 판결소 검증 및 Firebase 배포
 
 on:
   pull_request:
     branches: [main]
     paths:
-      - 'public/**'
-      - 'functions/**'
-      - 'tools/**'
-      - 'firebase.json'
-      - '.firebaserc'
-      - 'firestore.rules'
-      - 'firestore.indexes.json'
-      - 'storage.rules'
-      - 'package.json'
-      - '.github/workflows/firebase-deploy.yml'
+      - "public/**"
+      - "functions/**"
+      - "tests/**"
+      - "tools/**"
+      - "firebase.json"
+      - "package.json"
+      - ".github/workflows/firebase-deploy.yml"
   push:
     branches: [main]
     paths:
-      - 'public/**'
-      - 'functions/**'
-      - 'tools/**'
-      - 'firebase.json'
-      - '.firebaserc'
-      - 'firestore.rules'
-      - 'firestore.indexes.json'
-      - 'storage.rules'
-      - 'package.json'
-      - '.github/workflows/firebase-deploy.yml'
+      - "public/**"
+      - "functions/**"
+      - "tests/**"
+      - "tools/**"
+      - "firebase.json"
+      - "package.json"
+      - ".github/workflows/firebase-deploy.yml"
   workflow_dispatch:
 
 concurrency:
-  group: firebase-${{ github.event_name }}-${{ github.ref }}
+  group: sosoking-court-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -41,13 +34,9 @@ env:
   FIREBASE_PROJECT_ID: sosoking-481e6
 
 jobs:
-  validate-and-deploy:
+  validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
-    outputs:
-      storage_status: ${{ steps.storage_deploy.outputs.status }}
-      storage_log_b64: ${{ steps.storage_deploy.outputs.log_b64 }}
-
+    timeout-minutes: 15
     steps:
       - name: 저장소 체크아웃
         uses: actions/checkout@v4
@@ -55,36 +44,38 @@ jobs:
       - name: Node.js 22 설정
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: npm
-          cache-dependency-path: functions/package-lock.json
+          node-version: "22"
 
-      - name: Cloud Functions 의존성 설치
-        run: npm ci --prefix functions --no-audit --no-fund
+      - name: Functions 의존성 설치
+        run: npm install --prefix functions --no-audit --no-fund
 
-      - name: 저장소 정적 검사
-        shell: bash
+      - name: 정적 검사와 테스트
         run: |
-          set +e
-          npm run check 2>&1 | tee check.log
-          status=${PIPESTATUS[0]}
-          exit "$status"
+          npm test
+          npm run check
+          npm run --prefix functions lint
 
-      - name: 정적 검사 로그 저장
-        if: always()
-        uses: actions/upload-artifact@v4
+  deploy:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: 저장소 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Node.js 22 설정
+        uses: actions/setup-node@v4
         with:
-          name: repository-check-log
-          path: check.log
-          if-no-files-found: ignore
-          retention-days: 7
+          node-version: "22"
+
+      - name: Functions 의존성 설치
+        run: npm install --prefix functions --no-audit --no-fund
 
       - name: Firebase CLI 설치
-        if: github.event_name != 'pull_request'
         run: npm install --global firebase-tools
 
       - name: Firebase 서비스 계정 준비
-        if: github.event_name != 'pull_request'
         env:
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 }}
         run: |
@@ -95,104 +86,33 @@ jobs:
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-service-account.json"
           echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/firebase-service-account.json" >> "$GITHUB_ENV"
 
-      - name: Gemini Secret 등록 확인
-        if: github.event_name != 'pull_request'
+      - name: 기존 Gemini Secret 동기화
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           if [ -n "$GEMINI_API_KEY" ]; then
             printf '%s' "$GEMINI_API_KEY" | firebase functions:secrets:set GEMINI_API_KEY --data-file=- --project "$FIREBASE_PROJECT_ID"
           else
-            echo "::notice::GitHub GEMINI_API_KEY secret이 없어 기존 Firebase Secret을 사용합니다."
+            echo "::notice::GitHub GEMINI_API_KEY가 비어 있어 기존 Firebase Secret을 유지합니다."
           fi
 
-      - name: Firebase Hosting 배포
-        if: github.event_name != 'pull_request'
-        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only hosting --non-interactive
-
-      - name: Firestore Rules 배포
-        if: github.event_name != 'pull_request'
-        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only firestore:rules --non-interactive
-
-      - name: Storage Rules 배포
-        id: storage_deploy
-        if: github.event_name != 'pull_request'
-        continue-on-error: true
-        shell: bash
+      - name: 운영 검색 노출 설정
         run: |
-          set +e
-          firebase deploy --project "$FIREBASE_PROJECT_ID" --only storage:main --non-interactive 2>&1 | tee storage-deploy.log
-          status=${PIPESTATUS[0]}
-          log_b64="$(tail -n 40 storage-deploy.log | base64 -w 0)"
-          echo "status=$status" >> "$GITHUB_OUTPUT"
-          echo "log_b64=$log_b64" >> "$GITHUB_OUTPUT"
-          exit "$status"
+          sed -i 's/noindex, nofollow/index, follow/' public/index.html
+          printf 'User-agent: *\nAllow: /\n' > public/robots.txt
 
-      - name: Firestore Indexes 배포
-        if: github.event_name != 'pull_request'
-        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only firestore:indexes --force --non-interactive
+      - name: Functions와 Hosting 배포
+        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only functions:generateCourtCase,hosting --force --non-interactive
 
-      - name: Cloud Functions 배포
-        if: github.event_name != 'pull_request'
-        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only functions --force --non-interactive
-
-      - name: Storage Rules 배포 실패 반영
-        if: github.event_name != 'pull_request' && steps.storage_deploy.outcome == 'failure'
-        run: |
-          echo "Storage Rules deployment failed. See deployment-status.json."
-          exit 1
-
-  record-deployment-status:
-    name: 배포 결과 기록
-    if: ${{ always() && github.event_name != 'pull_request' }}
-    needs: validate-and-deploy
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
-    steps:
-      - name: 배포 결과 파일 갱신
+      - name: 운영 배포 응답 확인
         shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          DEPLOY_RESULT: ${{ needs.validate-and-deploy.result }}
-          STORAGE_STATUS: ${{ needs.validate-and-deploy.outputs.storage_status }}
-          STORAGE_LOG_B64: ${{ needs.validate-and-deploy.outputs.storage_log_b64 }}
         run: |
           set -euo pipefail
-          status_file="$RUNNER_TEMP/deployment-status.json"
-          storage_log=""
-          if [ -n "${STORAGE_LOG_B64:-}" ]; then
-            storage_log="$(printf '%s' "$STORAGE_LOG_B64" | base64 -d 2>/dev/null || true)"
-          fi
-
-          jq -n \
-            --arg workflow "$GITHUB_WORKFLOW" \
-            --arg run_id "$GITHUB_RUN_ID" \
-            --arg run_attempt "$GITHUB_RUN_ATTEMPT" \
-            --arg commit "$GITHUB_SHA" \
-            --arg ref "$GITHUB_REF_NAME" \
-            --arg event "$GITHUB_EVENT_NAME" \
-            --arg result "$DEPLOY_RESULT" \
-            --arg project "$FIREBASE_PROJECT_ID" \
-            --arg recorded_at "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
-            --arg storage_status "${STORAGE_STATUS:-not-run}" \
-            --arg storage_log "$storage_log" \
-            '{workflow:$workflow,run_id:$run_id,run_attempt:$run_attempt,commit:$commit,ref:$ref,event:$event,result:$result,project:$project,recorded_at:$recorded_at,storage:{status:$storage_status,log_tail:$storage_log}}' \
-            > "$status_file"
-
-          content="$(base64 -w 0 "$status_file")"
-          existing_sha="$(gh api "repos/${GITHUB_REPOSITORY}/contents/.github/deployment-status.json?ref=main" --jq '.sha' 2>/dev/null || true)"
-
-          if [ -n "$existing_sha" ]; then
-            gh api --method PUT "repos/${GITHUB_REPOSITORY}/contents/.github/deployment-status.json" \
-              -f message="Firebase 배포 결과 기록: ${DEPLOY_RESULT}" \
-              -f content="$content" \
-              -f sha="$existing_sha" \
-              -f branch="main"
-          else
-            gh api --method PUT "repos/${GITHUB_REPOSITORY}/contents/.github/deployment-status.json" \
-              -f message="Firebase 배포 결과 기록: ${DEPLOY_RESULT}" \
-              -f content="$content" \
-              -f branch="main"
-          fi
+          curl --fail --location --retry 6 --retry-all-errors --retry-delay 10 "https://sosoking-481e6.web.app/" -o production-index.html
+          grep -q 'index, follow' production-index.html
+          grep -q 'share-polish.js' production-index.html
+          curl --fail --location "https://sosoking-481e6.web.app/api/generate-case" \
+            -H 'Content-Type: application/json' \
+            -H 'X-Sosoking-Client: court-v2' \
+            --data '{"incident":"회의실 리모컨이 또 사라졌다.","severity":"official"}' \
+            | grep -q '"case"'
