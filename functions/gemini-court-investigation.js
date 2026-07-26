@@ -24,6 +24,8 @@ const BLOCKED = [
   "뺑소니", "음주운전", "성범죄", "불륜", "외도", "바람폈", "임신", "낙태"
 ];
 const REAL_INSTITUTIONS = ["대법원", "헌법재판소", "검찰청", "경찰청", "국가정보원", "국무총리실", "대통령실", "국립과학수사연구원"];
+const REAL_LEGAL_TERMS = ["형법", "민법", "사기죄", "절도죄", "재물손괴", "재산 손괴", "중대 범죄", "법 제"];
+const PERSON_WITH_TITLE = /(?:[김이박최정강조윤장임한오서신권황안송전홍유고문양손배백허남심노하곽성차주우구신민진지엄채원천방공현함염여추도소석선설마길연위표명기반왕금옥육인맹제모탁국어은편용][가-힣]{1,2}\s*(?:경정|경감|경위|경사|검사|판사|변호사)|(?:재판장|대변인)\s*[김이박최정강조윤장임한오서신권황안송전홍유고문양손배백허남심노하곽성차주우구신민진지엄채원천방공현함염여추도소석선설마길연위표명기반왕금옥육인맹제모탁국어은편용][가-힣]{1,2})/;
 const PRIVATE_PATTERNS = [
   /\b01[016789][ -]?\d{3,4}[ -]?\d{4}\b/,
   /[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}/,
@@ -40,14 +42,17 @@ const SYSTEM_PROMPT = `당신은 한국어 참여형 코미디 서비스 '소문
 핵심 웃음 원리:
 - 사건은 하찮고 수사 태도는 국가 비상사태처럼 엄숙하다.
 - 작은 행동 하나 때문에 초동출동, 상황실, 잠복근무, 압수수색, 가상 감식기관, 공개브리핑, 법정공방까지 동원한다.
-- 절차 하나하나에 구체적인 장비, 시간, 인력, 보고서 문구, 쓸데없는 발견, 현장요원의 한마디를 넣는다.
+- 절차마다 구체적인 장비, 시간, 인력, 보고서 문구, 쓸데없는 발견, 현장요원의 한마디를 넣는다.
 - 농담을 설명하지 말고 공문서·작전일지·감정서·증거봉투·브리핑 문답의 형식으로 보여준다.
 - 같은 농담을 반복하지 말고 단계마다 새로운 코미디 장치를 사용한다.
+- 심각한 정신적 충격이나 사회 붕괴를 반복해서 말하기보다, 자·전자저울·통제선·압수봉투·마이크 개수 같은 눈에 보이는 디테일로 웃긴다.
 
 안전 및 세계관 원칙:
-- 실명은 절대 출력하지 않고 제보자, 피해자, 피고, 친구, 가족, 동료 같은 역할명으로 바꾼다.
-- 실제 법률명과 실제 정부·수사·사법기관 이름은 사용하지 않는다.
-- '국가과잉수사연구소', '생활질서 특수본', '소문동 현장감식반' 같은 가상 패러디 기관만 사용한다.
+- 사람 이름은 절대 만들지 않는다. 제보자, 피해자, 피고, 친구, 가족, 동료, 수사본부 대변인 같은 역할명만 쓴다.
+- 실제 경찰 계급, 검사·판사 이름, 실제 법률명과 실제 정부·수사·사법기관 이름을 사용하지 않는다.
+- '국가과잉수사연구소', '생활질서 특수본', '소문동 현장감식반' 같은 명백한 가상 패러디 기관만 사용한다.
+- 가상 영장은 '소문동 생활질서 절차규정 0-0호'처럼 실제 법률로 오해할 수 없는 표현을 쓴다.
+- 실제 범죄명 대신 '한입범위 과잉침범', '간식주권 교란', '응답대기 방치' 같은 허구의 혐의를 만든다.
 - 폭력, 성적 피해, 학대, 자해, 죽음, 중대한 범죄는 코미디로 만들지 않는다.
 - 혐오, 비속어, 외모·성별·지역·장애 조롱을 사용하지 않는다.
 
@@ -57,8 +62,12 @@ const SYSTEM_PROMPT = `당신은 한국어 참여형 코미디 서비스 '소문
 - 출동일지는 정확히 4개, 투입부서는 정확히 4개다.
 - 감식보고서는 정확히 3개, 증거물은 정확히 4개다.
 - 심문은 정확히 3개, 판결과 재판관 성향은 각각 정확히 3개다.
+- questions의 speaker는 질문에 답하는 '피고' 또는 '피고인'이다. response는 피고의 답변이다.
+- questions의 replySpeaker는 '신문관', '검사', '변호인', '판사', '재판장' 중 하나이며 reply는 그 답변에 대한 정색한 반응이다.
 - 잠복근무는 위장, 관찰내용, 예상 밖 성과가 모두 있어야 한다.
 - 감식 결과에는 사건 해결과 상관없는 '쓸데없는 결론'이 반드시 포함된다.
+- briefing.spokesperson은 이름 없이 '생활질서 특수본 대변인' 같은 역할명만 쓴다.
+- judge는 사람 이름이 아니라 재판장의 중간 의견을 한두 문장으로 쓴다.
 - 브리핑에는 기자의 날카롭지만 하찮은 질문과 대변인의 지나치게 공식적인 답변이 포함된다.
 - 판결은 엄벌형, 공동책임형, 황당한 화해형으로 확실히 다르게 쓴다.
 - 후일담은 판결 집행 때문에 더 유치한 후속 분쟁이 생기는 반전으로 쓴다.
@@ -149,6 +158,16 @@ function auditCourtCase(data) {
   const allText = collectStrings(data).join(" ");
   if (containsPrivateData(allText)) issues.push("개인정보 형태");
   if (REAL_INSTITUTIONS.some((term) => allText.includes(term))) issues.push("실제 기관명");
+  if (REAL_LEGAL_TERMS.some((term) => allText.includes(term))) issues.push("실제 법률·범죄 표현");
+  if (PERSON_WITH_TITLE.test(allText)) issues.push("인명·실제 계급 형태");
+  if (String(data.judge || "").length < 20) issues.push("재판장 의견 부족");
+  if (!String(data.briefing?.spokesperson || "").includes("대변인")) issues.push("대변인 역할 누락");
+  if (Array.isArray(data.questions)) {
+    const answerSpeakers = new Set(["피고", "피고인"]);
+    const reactionSpeakers = new Set(["신문관", "검사", "변호인", "판사", "재판장"]);
+    if (data.questions.some((item) => !answerSpeakers.has(String(item?.speaker || "")))) issues.push("심문 답변자 역할");
+    if (data.questions.some((item) => !reactionSpeakers.has(String(item?.replySpeaker || "")))) issues.push("심문 반응자 역할");
+  }
   if (Array.isArray(data.evidence) && !unique(data.evidence.map((item) => item?.title))) issues.push("증거 중복");
   if (Array.isArray(data.forensicReports) && !unique(data.forensicReports.map((item) => item?.sample))) issues.push("감식 중복");
   if (Array.isArray(data.questions) && !unique(data.questions.map((item) => item?.question))) issues.push("심문 중복");
