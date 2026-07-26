@@ -2,17 +2,20 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="description" content="사소한 일을 필요 이상으로 수사하고 진지하게 판결하는 AI 법정 코미디">
   <meta name="robots" content="noindex, nofollow">
   <meta name="theme-color" content="#13203a">
+  <meta name="application-name" content="소문난 판결소">
   <title>소문난 판결소 | 별일 아니지만 재판합니다</title>
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./styles.css">
   <link rel="stylesheet" href="./visual.css">
   <link rel="stylesheet" href="./ai.css">
+  <link rel="stylesheet" href="./polish.css">
   <script src="./court-app.js" defer></script>
   <script src="./visual.js" defer></script>
+  <script src="./share-polish.js" defer></script>
 </head>
 <body>
   <header class="site-header">
@@ -76,10 +79,10 @@
         <label class="field-label" for="incident">사건 내용</label>
         <div class="textarea-shell">
           <span class="textarea-icon" aria-hidden="true"><svg class="ui-icon"><use href="./icons.svg#megaphone"></use></svg></span>
-          <textarea id="incident" name="incident" maxlength="120" rows="4" placeholder="예: 남편이 내가 아껴둔 과자를 몰래 먹었다."></textarea>
+          <textarea id="incident" name="incident" maxlength="120" rows="4" autocomplete="off" spellcheck="true" aria-describedby="incident-help char-count" placeholder="예: 남편이 내가 아껴둔 과자를 몰래 먹었다."></textarea>
         </div>
         <div class="field-meta">
-          <span>실명·전화번호·주소는 입력하지 마세요.</span>
+          <span id="incident-help">실명·전화번호·주소는 입력하지 마세요.</span>
           <span><strong id="char-count">0</strong>/120</span>
         </div>
 
