@@ -96,10 +96,14 @@ jobs:
           set -euo pipefail
           curl --fail --location --retry 6 --retry-all-errors --retry-delay 10 "$PREVIEW_URL/" -o preview-index.html
           grep -q 'investigation.css' preview-index.html
+          grep -q 'loading-operation.css' preview-index.html
           grep -q 'court-v3.js' preview-index.html
+          grep -q 'loading-operation.js' preview-index.html
           grep -q '별일 아니어도' preview-index.html
           curl --fail --location "$PREVIEW_URL/investigation.css" >/dev/null
+          curl --fail --location "$PREVIEW_URL/loading-operation.css" >/dev/null
           curl --fail --location "$PREVIEW_URL/court-v3.js" >/dev/null
+          curl --fail --location "$PREVIEW_URL/loading-operation.js" >/dev/null
           curl --fail --location "$PREVIEW_URL/investigation-icons.svg" >/dev/null
 
       - name: 모바일·데스크톱 첫 화면 캡처
@@ -133,13 +137,14 @@ jobs:
         env:
           PREVIEW_URL: ${{ steps.preview.outputs.preview_url }}
         run: |
+          set -euo pipefail
           chrome="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
           if [ -z "$chrome" ]; then
             echo "Chrome 실행 파일을 찾지 못해 단계 캡처를 건너뜁니다."
             exit 0
           fi
           npm install --no-save --no-audit --no-fund playwright-core
-          cat > "$RUNNER_TEMP/capture-stages.mjs" <<'JS'
+          cat > capture-stages.mjs <<'JS'
           import { chromium } from "playwright-core";
           const browser = await chromium.launch({ executablePath: process.env.CHROME_BIN, headless: true, args: ["--no-sandbox"] });
           const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
@@ -147,6 +152,8 @@ jobs:
           await page.fill("#incident", "회사 냉장고에 넣어둔 푸딩 뚜껑만 남아 있었다.");
           await page.check('input[name="severity"][value="special"]');
           await page.click('.submit-button');
+          await page.waitForSelector('.operation-loading:not([hidden])', { timeout: 10000 });
+          await page.screenshot({ path: "mobile-loading-v3.png", fullPage: true });
           await page.waitForSelector('#investigation:not([hidden])', { timeout: 60000 });
           await page.screenshot({ path: "mobile-case-opening-v3.png", fullPage: true });
           for (let i = 0; i < 3; i += 1) await page.click('#next-button');
@@ -160,7 +167,8 @@ jobs:
           await page.screenshot({ path: "desktop-verdict-v3.png", fullPage: true });
           await browser.close();
           JS
-          CHROME_BIN="$chrome" node "$RUNNER_TEMP/capture-stages.mjs"
+          CHROME_BIN="$chrome" node capture-stages.mjs
+          rm -f capture-stages.mjs
 
       - name: 대표 사건 20개 상세 수사 평가
         id: evaluate
@@ -199,8 +207,8 @@ jobs:
             echo
             echo "- 미리보기 주소: ${{ steps.preview.outputs.preview_url || '배포 실패' }}"
             echo "- 운영 Hosting과 기존 generateCourtCase 함수는 변경하지 않았습니다."
-            echo "- 작전본부 UI, 잠복수사, 과잉감식, 압수수색, 브리핑, 판결을 검증합니다."
-            echo "- 실제 생성된 사건으로 감식·브리핑·판결 화면을 자동 캡처합니다."
+            echo "- 작전본부 UI, 코미디 로딩, 잠복수사, 과잉감식, 압수수색, 브리핑, 판결을 검증합니다."
+            echo "- 실제 생성 사건으로 로딩·감식·브리핑·판결 화면을 자동 캡처합니다."
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: 배포·평가·화면 캡처 저장
@@ -216,6 +224,7 @@ jobs:
             function-v3-restore.log
             mobile-home-v3.png
             desktop-home-v3.png
+            mobile-loading-v3.png
             mobile-case-opening-v3.png
             mobile-forensics-v3.png
             desktop-briefing-v3.png
