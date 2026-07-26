@@ -72,7 +72,7 @@ jobs:
           fi
 
       - name: 평가용 요청 한도 임시 적용
-        run: sed -i 's/const RATE_LIMIT = 12;/const RATE_LIMIT = 30;/' functions/gemini-court.js
+        run: sed -i 's/const RATE_LIMIT = 12;/const RATE_LIMIT = 30;/' functions/gemini-court-v2.js
 
       - name: 함수와 Hosting 미리보기 채널 배포
         id: preview
@@ -103,11 +103,6 @@ jobs:
           set -o pipefail
           npm run evaluate 2>&1 | tee court-smoke.log
 
-      - name: Firebase 함수 실행 로그 수집
-        if: always() && steps.preview.outcome == 'success'
-        shell: bash
-        run: firebase functions:log --project "$FIREBASE_PROJECT_ID" --only generateCourtCase --lines 100 > function-runtime.log 2>&1 || true
-
       - name: 대표 사건 20개 실제 Gemini 평가
         id: evaluate
         if: steps.smoke.outcome == 'success'
@@ -125,7 +120,7 @@ jobs:
         if: always() && steps.preview.outcome == 'success'
         shell: bash
         run: |
-          git checkout -- functions/gemini-court.js
+          git checkout -- functions/gemini-court-v2.js
           firebase deploy --project "$FIREBASE_PROJECT_ID" --only functions:generateCourtCase --force --non-interactive 2>&1 | tee function-restore.log
 
       - name: 평가 통과 확인
@@ -158,7 +153,6 @@ jobs:
             preview-deploy.log
             court-smoke.log
             court-evaluation.log
-            function-runtime.log
             function-restore.log
           if-no-files-found: ignore
           retention-days: 7
