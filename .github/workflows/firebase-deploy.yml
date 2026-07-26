@@ -104,21 +104,57 @@ jobs:
       - name: Functions와 Hosting 배포
         run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only functions:generateCourtCase,hosting --force --non-interactive
 
-      - name: 운영 배포 응답 확인
+      - name: 운영 V4 화면 확인
         shell: bash
         run: |
           set -euo pipefail
-          curl --fail --location --retry 8 --retry-all-errors --retry-delay 10 "https://sosoking-481e6.web.app/" -o production-index.html
-          grep -q 'index, follow' production-index.html
-          grep -q 'command-center-v4.css' production-index.html
-          grep -q 'v4-runtime.js' production-index.html
-          grep -q 'data-room="forensics"' production-index.html
-          ! grep -q 'next-button' production-index.html
-          curl --fail --location "https://sosoking-481e6.web.app/api/generate-case" \
-            -H 'Content-Type: application/json' \
-            -H 'X-Sosoking-Client: court-v3' \
-            --data '{"incident":"회의실 리모컨이 또 사라졌다.","severity":"official"}' \
-            | grep -q '"case"'
+          verified=0
+          for attempt in $(seq 1 12); do
+            url="https://sosoking-481e6.web.app/?deploy=${GITHUB_SHA}&attempt=${attempt}"
+            echo "V4 화면 확인 ${attempt}/12: ${url}"
+            if curl --fail --location --silent --show-error \
+              -H 'Cache-Control: no-cache' \
+              -H 'Pragma: no-cache' \
+              "$url" -o production-index.html; then
+              if grep -q 'index, follow' production-index.html \
+                && grep -q 'command-center-v4.css' production-index.html \
+                && grep -q 'v4-runtime.js' production-index.html \
+                && grep -q 'data-room="forensics"' production-index.html \
+                && ! grep -q 'next-button' production-index.html; then
+                verified=1
+                break
+              fi
+              echo "현재 확인된 화면 자산:"
+              grep -Eo 'command-center-v4.css|v4-runtime.js|investigation.css|court-v3.js|index, follow|noindex, nofollow' production-index.html | sort -u || true
+            fi
+            sleep 10
+          done
+          test "$verified" -eq 1
+
+      - name: 운영 Gemini 사건 생성 확인
+        shell: bash
+        run: |
+          set -euo pipefail
+          generated=0
+          for attempt in $(seq 1 6); do
+            echo "Gemini 사건 생성 확인 ${attempt}/6"
+            status="$(curl --location --silent --show-error \
+              --connect-timeout 15 --max-time 70 \
+              -o production-api.json -w '%{http_code}' \
+              "https://sosoking-481e6.web.app/api/generate-case" \
+              -H 'Content-Type: application/json' \
+              -H 'X-Sosoking-Client: court-v3' \
+              --data '{"incident":"회의실 리모컨이 또 사라졌다.","severity":"official"}' || true)"
+            echo "HTTP ${status}"
+            if [ "$status" = "200" ] && grep -q '"case"' production-api.json; then
+              generated=1
+              break
+            fi
+            head -c 500 production-api.json || true
+            echo
+            sleep 15
+          done
+          test "$generated" -eq 1
 
       - name: 운영 배포 상태 기록
         if: always()
