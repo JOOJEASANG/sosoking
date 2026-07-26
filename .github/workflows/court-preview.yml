@@ -1,4 +1,4 @@
-name: 소문난 판결소 접수 관련성 V5 미리보기
+name: 소문난 판결소 자동 사건기록 V6 미리보기
 
 on:
   pull_request:
@@ -13,7 +13,7 @@ on:
       - ".github/workflows/court-preview.yml"
 
 concurrency:
-  group: court-incident-relevance-v5-${{ github.event.pull_request.number }}
+  group: court-automatic-story-v6-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 permissions:
@@ -23,8 +23,8 @@ env:
   FIREBASE_PROJECT_ID: sosoking-481e6
 
 jobs:
-  preview-and-verify-relevance:
-    if: github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'fix/incident-relevance-v5'
+  preview-and-verify-story:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'redesign/automatic-case-story-v6'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -36,7 +36,7 @@ jobs:
         with:
           node-version: "22"
 
-      - name: 정적 검사
+      - name: V6 정적 검사
         run: |
           npm install --prefix functions --no-audit --no-fund
           npm test
@@ -54,34 +54,32 @@ jobs:
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-service-account.json"
           echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/firebase-service-account.json" >> "$GITHUB_ENV"
 
-      - name: 미리보기 전용 함수 연결
-        run: |
-          sed -i 's/"functionId": "generateCourtCase"/"functionId": "generateCourtCaseV3"/' firebase.json
+      - name: V6 미리보기 전용 함수 연결
+        run: sed -i 's/"functionId": "generateCourtCase"/"functionId": "generateCourtCaseV6"/' firebase.json
 
-      - name: V5 미리보기 배포
+      - name: V6 미리보기 배포
         id: preview
         run: |
           set -euo pipefail
-          firebase hosting:channel:deploy court-incident-relevance-v5 --expires 7d --project "$FIREBASE_PROJECT_ID" --non-interactive 2>&1 | tee preview-deploy.log
+          firebase hosting:channel:deploy court-automatic-story-v6 --expires 7d --project "$FIREBASE_PROJECT_ID" --non-interactive 2>&1 | tee preview-deploy.log
           preview_url="$(grep -Eo 'https://[A-Za-z0-9.-]+\.(web\.app|firebaseapp\.com)' preview-deploy.log | tail -n 1 || true)"
           test -n "$preview_url"
           echo "PREVIEW_URL=$preview_url" >> "$GITHUB_ENV"
           echo "preview_url=$preview_url" >> "$GITHUB_OUTPUT"
 
-      - name: V5 자산 검사
+      - name: 자동 기록 화면 자산 검사
         run: |
           sleep 15
           curl --fail --location --retry 12 --retry-all-errors --retry-delay 10 "$PREVIEW_URL/" -o preview-index.html
-          grep -q 'command-center-v4.css' preview-index.html
-          grep -q 'incident-relevance-v5.js' preview-index.html
-          grep -q 'v4-runtime.js' preview-index.html
-          test "$(grep -n 'incident-relevance-v5.js' preview-index.html | cut -d: -f1)" -lt "$(grep -n 'v4-runtime.js' preview-index.html | cut -d: -f1)"
-          ! grep -q 'next-button' preview-index.html
+          grep -q 'auto-story-v6.css' preview-index.html
+          grep -q 'auto-story-v6.js' preview-index.html
+          grep -q 'stage-settlement' preview-index.html
+          grep -q 'stage-trial' preview-index.html
+          grep -q 'stage-judgment' preview-index.html
+          ! grep -q 'data-room=' preview-index.html
+          ! grep -q 'data-verdict=' preview-index.html
 
-      - name: Gemini 서버 응답 진단
-        id: relevance
-        continue-on-error: true
-        shell: bash
+      - name: Gemini 자동 사건 시나리오 검사
         run: |
           set -euo pipefail
           check_case() {
@@ -92,114 +90,84 @@ jobs:
             status="$(curl --location --silent --show-error --max-time 70 \
               "$PREVIEW_URL/api/generate-case" \
               -H 'Content-Type: application/json' \
-              -H 'X-Sosoking-Client: court-v4' \
-              --data "$body" -o "$file" -w '%{http_code}' || true)"
-            echo "${name}: HTTP ${status}"
-            cat "$file" || true
-            echo
+              -H 'X-Sosoking-Client: court-v6' \
+              --data "$body" -o "$file" -w '%{http_code}')"
             test "$status" = "200"
-            grep -q '"case"' "$file"
-            grep -q 'investigation-v5-relevance' "$file"
-            for term in "$@"; do
-              grep -q "$term" "$file"
-            done
+            grep -q 'automatic-story-v6' "$file"
+            grep -q '"settlement"' "$file"
+            grep -q '"trial"' "$file"
+            grep -q '"judgment"' "$file"
+            for term in "$@"; do grep -q "$term" "$file"; done
           }
-          check_case pudding '{"incident":"회사 냉장고에 넣어둔 푸딩 뚜껑만 남아 있었다.","severity":"special"}' '푸딩' '뚜껑'
-          check_case remote '{"incident":"회의실 리모컨이 또 사라졌다.","severity":"official"}' '리모컨'
+          check_case icecream '{"incident":"동생이 내 아이스크림을 너무 크게 한입 먹었다.","severity":"special"}' '아이스크림' '합의' '판결'
           check_case late '{"incident":"친구가 약속에 20분 늦고 커피도 안 샀다.","severity":"national"}' '20분' '커피'
 
-      - name: 서버 진단 실패 시 Firebase 함수 로그 수집
-        if: steps.relevance.outcome != 'success'
-        continue-on-error: true
-        run: |
-          firebase functions:log --project "$FIREBASE_PROJECT_ID" --only generateCourtCaseV3 --lines 120 2>&1 | tee v5-function-error.log
-
-      - name: 사용자 최종 화면 접수 소재 관련성 검사
-        id: browser
-        if: always()
-        continue-on-error: true
+      - name: 실제 브라우저 읽기형 UX 검사
         env:
           PREVIEW_URL: ${{ steps.preview.outputs.preview_url }}
         run: |
           set -euo pipefail
-          test -n "$PREVIEW_URL"
           chrome="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
           npm install --no-save --no-audit --no-fund playwright-core
-          cat > capture-v5.mjs <<'JS'
+          cat > capture-v6.mjs <<'JS'
           import { chromium } from "playwright-core";
           const browser = await chromium.launch({ executablePath: process.env.CHROME_BIN, headless: true, args: ["--no-sandbox"] });
-
-          async function openCase(page, incident) {
-            await page.goto(process.env.PREVIEW_URL, { waitUntil: "networkidle" });
-            await page.fill("#incident", incident);
-            await page.click(".launch-button");
-            await page.waitForSelector("#board-screen:not([hidden])", { timeout: 65000 });
+          const page = await browser.newPage({ viewport: { width: 1440, height: 1100 } });
+          await page.goto(process.env.PREVIEW_URL, { waitUntil: "networkidle" });
+          await page.screenshot({ path: "desktop-intake-v6.png", fullPage: true });
+          await page.fill("#incident", "동생이 내 아이스크림을 너무 크게 한입 먹었다.");
+          await page.click(".submit-case");
+          await page.waitForSelector("#story-view:not([hidden])", { timeout: 65000 });
+          const story = await page.locator("#story-view").innerText();
+          for (const text of ["아이스크림", "사건 접수", "초동수사", "합의·조정", "재판 공방", "판결과 집행 이후"]) {
+            if (!story.includes(text)) throw new Error(`자동 기록 누락: ${text}`);
           }
-
-          const desktop = await browser.newPage({ viewport: { width: 1440, height: 1100 } });
-          await openCase(desktop, "회사 냉장고에 넣어둔 푸딩 뚜껑만 남아 있었다.");
-          const boardText = await desktop.locator("#board-screen").innerText();
-          if (!boardText.includes("푸딩") || !boardText.includes("뚜껑")) throw new Error("데스크톱 사건보드에 푸딩·뚜껑 소재가 유지되지 않았습니다.");
-          await desktop.screenshot({ path: "desktop-relevance-v5.png", fullPage: true });
-          await desktop.click('[data-room="forensics"]');
-          const forensicText = await desktop.locator("#mission-panel").innerText();
-          if (!forensicText.includes("푸딩") && !forensicText.includes("뚜껑")) throw new Error("감식실에 접수 소재가 없습니다.");
-          await desktop.screenshot({ path: "desktop-forensics-relevance-v5.png", fullPage: true });
-
-          const remote = await browser.newPage({ viewport: { width: 1200, height: 900 } });
-          await openCase(remote, "회의실 리모컨이 또 사라졌다.");
-          const remoteText = await remote.locator("#board-screen").innerText();
-          if (!remoteText.includes("리모컨")) throw new Error("리모컨 사건보드가 다른 소재로 바뀌었습니다.");
-          await remote.click('[data-room="interrogation"]');
-          const remoteQuestions = await remote.locator("#mission-panel").innerText();
-          if (!remoteQuestions.includes("리모컨")) throw new Error("리모컨 심문 내용이 제보와 연결되지 않았습니다.");
+          if (await page.locator('[data-room]').count()) throw new Error("선택형 장소 버튼이 남아 있습니다.");
+          if (await page.locator('[data-verdict]').count()) throw new Error("판결 선택 버튼이 남아 있습니다.");
+          await page.screenshot({ path: "desktop-story-v6.png", fullPage: true });
+          await page.locator("#stage-settlement").scrollIntoViewIfNeeded();
+          await page.screenshot({ path: "desktop-settlement-v6.png", fullPage: false });
+          await page.locator("#stage-judgment").scrollIntoViewIfNeeded();
+          await page.screenshot({ path: "desktop-judgment-v6.png", fullPage: false });
 
           const mobile = await browser.newPage({ viewport: { width: 390, height: 844 } });
-          await openCase(mobile, "친구가 약속에 20분 늦고 커피도 안 샀다.");
-          const mobileText = await mobile.locator("#board-screen").innerText();
-          if (!mobileText.includes("20분") || !mobileText.includes("커피")) throw new Error("모바일 사건보드에 20분·커피 소재가 유지되지 않았습니다.");
-          await mobile.screenshot({ path: "mobile-relevance-v5.png", fullPage: true });
-          await mobile.click('[data-room="forensics"]');
-          const mobileForensics = await mobile.locator("#mission-panel").innerText();
-          if (!mobileForensics.includes("20분") && !mobileForensics.includes("커피")) throw new Error("모바일 감식 내용이 제보와 연결되지 않았습니다.");
-
+          await mobile.goto(process.env.PREVIEW_URL, { waitUntil: "networkidle" });
+          await mobile.fill("#incident", "친구가 약속에 20분 늦고 커피도 안 샀다.");
+          await mobile.click(".submit-case");
+          await mobile.waitForSelector("#story-view:not([hidden])", { timeout: 65000 });
+          const mobileStory = await mobile.locator("#story-view").innerText();
+          if (!mobileStory.includes("20분") || !mobileStory.includes("커피")) throw new Error("모바일 자동 기록이 접수 내용과 연결되지 않았습니다.");
+          await mobile.screenshot({ path: "mobile-story-v6.png", fullPage: true });
           await browser.close();
           JS
-          CHROME_BIN="$chrome" node capture-v5.mjs
-          rm capture-v5.mjs
+          CHROME_BIN="$chrome" node capture-v6.mjs
+          rm capture-v6.mjs
 
-      - name: 사용자 화면 관련성 통과 확인
-        if: always()
-        run: |
-          test "${{ steps.browser.outcome }}" = "success"
-
-      - name: 검증 결과 요약
+      - name: V6 검증 결과 요약
         if: always()
         run: |
           {
-            echo "## 소문난 판결소 접수 관련성 V5"
+            echo "## 소문난 판결소 자동 사건기록 V6"
             echo "- 미리보기 주소: ${{ steps.preview.outputs.preview_url || '배포 실패' }}"
-            echo "- Gemini 서버 진단: ${{ steps.relevance.outcome }}"
-            echo "- 사용자 최종 화면 관련성: ${{ steps.browser.outcome }}"
-            echo "- 푸딩·뚜껑, 리모컨, 20분·커피 세 사건을 검사했습니다."
-            echo "- 사용자 화면에서는 API 실패 시에도 접수 내용 기반 기록으로 자동 전환됩니다."
+            echo "- 사용자 선택 없이 사건 접수부터 판결·후일담까지 자동 진행했습니다."
+            echo "- 합의·조정과 검사·변호인·증인·재판장 공방을 실제 화면에서 확인했습니다."
             echo "- 운영 Hosting은 변경하지 않았습니다."
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: 검증 기록 저장
+      - name: V6 화면과 응답 저장
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: court-incident-relevance-v5-preview
+          name: court-automatic-story-v6-preview
           path: |
             preview-deploy.log
             preview-index.html
-            case-pudding.json
-            case-remote.json
+            case-icecream.json
             case-late.json
-            v5-function-error.log
-            desktop-relevance-v5.png
-            desktop-forensics-relevance-v5.png
-            mobile-relevance-v5.png
+            desktop-intake-v6.png
+            desktop-story-v6.png
+            desktop-settlement-v6.png
+            desktop-judgment-v6.png
+            mobile-story-v6.png
           if-no-files-found: ignore
           retention-days: 7
