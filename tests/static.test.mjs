@@ -17,6 +17,7 @@ test("investigation v3 endpoint wiring is consistent", async () => {
   assert.match(firebase, /"functionId"\s*:\s*"generateCourtCase"/);
   assert.match(firebase, /"runtime"\s*:\s*"nodejs22"/);
   assert.match(entry, /gemini-court-investigation/);
+  assert.match(entry, /generateCourtCaseV3/);
   assert.match(server, /exports\.generateCourtCase/);
 });
 
@@ -40,6 +41,9 @@ test("expanded investigation schema and quality controls exist", async () => {
   }
   assert.match(server, /HarmCategory/);
   assert.match(server, /auditCourtCase/);
+  assert.match(server, /PERSON_WITH_TITLE/);
+  assert.match(server, /REAL_LEGAL_TERMS/);
+  assert.match(server, /심문 답변자 역할/);
   assert.match(server, /thinkingBudget:\s*0/);
   assert.match(server, /maxOutputTokens:\s*7500/);
   assert.match(server, /국가과잉수사연구소/);
@@ -47,14 +51,18 @@ test("expanded investigation schema and quality controls exist", async () => {
 });
 
 test("frontend provides seven detailed interactive stages", async () => {
-  const [index, client, css, icons] = await Promise.all([
+  const [index, client, css, icons, loading, loadingCss] = await Promise.all([
     read("public/index.html"),
     read("public/court-v3.js"),
     read("public/investigation.css"),
-    read("public/investigation-icons.svg")
+    read("public/investigation-icons.svg"),
+    read("public/loading-operation.js"),
+    read("public/loading-operation.css")
   ]);
   assert.match(index, /court-v3\.js/);
   assert.match(index, /investigation\.css/);
+  assert.match(index, /loading-operation\.js/);
+  assert.match(index, /loading-operation\.css/);
   assert.match(client, /사건 접수/);
   assert.match(client, /초동 출동/);
   assert.match(client, /잠복 수사/);
@@ -67,6 +75,9 @@ test("frontend provides seven detailed interactive stages", async () => {
   assert.match(css, /\.evidence-envelope/);
   assert.match(icons, /id="binoculars"/);
   assert.match(icons, /id="flask"/);
+  assert.match(loading, /초동출동팀 18명 호출/);
+  assert.match(loading, /국가과잉수사연구소 감식 의뢰/);
+  assert.match(loadingCss, /\.operation-loading/);
 });
 
 test("share card excludes the user's original incident", async () => {
