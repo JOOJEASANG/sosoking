@@ -1,3 +1,3 @@
 "use strict";
 
-module.exports = require("./gemini-court-v3");
+module.exports = require("./gemini-court-runtime");
