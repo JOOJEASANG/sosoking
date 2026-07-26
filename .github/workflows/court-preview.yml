@@ -79,6 +79,8 @@ jobs:
           ! grep -q 'next-button' preview-index.html
 
       - name: Gemini 실제 응답 접수 소재 관련성 검사
+        id: relevance
+        continue-on-error: true
         shell: bash
         run: |
           set -euo pipefail
@@ -87,11 +89,15 @@ jobs:
             body="$2"
             shift 2
             file="case-${name}.json"
-            curl --fail --location --silent --show-error --max-time 70 \
+            status="$(curl --location --silent --show-error --max-time 70 \
               "$PREVIEW_URL/api/generate-case" \
               -H 'Content-Type: application/json' \
               -H 'X-Sosoking-Client: court-v4' \
-              --data "$body" -o "$file"
+              --data "$body" -o "$file" -w '%{http_code}' || true)"
+            echo "${name}: HTTP ${status}"
+            cat "$file" || true
+            echo
+            test "$status" = "200"
             grep -q '"case"' "$file"
             grep -q 'investigation-v5-relevance' "$file"
             for term in "$@"; do
@@ -103,7 +109,16 @@ jobs:
           check_case remote '{"incident":"회의실 리모컨이 또 사라졌다.","severity":"official"}' '리모컨'
           check_case late '{"incident":"친구가 약속에 20분 늦고 커피도 안 샀다.","severity":"national"}' '20분' '커피'
 
+      - name: 관련성 실패 시 Firebase 함수 로그 수집
+        if: steps.relevance.outcome != 'success'
+        continue-on-error: true
+        run: |
+          firebase functions:log --project "$FIREBASE_PROJECT_ID" --only generateCourtCaseV3 --lines 120 2>&1 | tee v5-function-error.log
+
       - name: V5 실제 게임 자동조작과 화면 관련성 검사
+        id: browser
+        if: steps.relevance.outcome == 'success'
+        continue-on-error: true
         env:
           PREVIEW_URL: ${{ steps.preview.outputs.preview_url }}
         run: |
@@ -139,14 +154,21 @@ jobs:
           CHROME_BIN="$chrome" node capture-v5.mjs
           rm capture-v5.mjs
 
+      - name: 관련성 검증 통과 확인
+        if: always()
+        run: |
+          test "${{ steps.relevance.outcome }}" = "success"
+          test "${{ steps.browser.outcome }}" = "success"
+
       - name: 검증 결과 요약
         if: always()
         run: |
           {
             echo "## 소문난 판결소 접수 관련성 V5"
             echo "- 미리보기 주소: ${{ steps.preview.outputs.preview_url || '배포 실패' }}"
-            echo "- 푸딩·뚜껑, 리모컨, 20분·커피 세 사건의 서버 응답 관련성을 검사했습니다."
-            echo "- 데스크톱과 모바일 사건보드 및 감식실에서 접수 소재가 유지되는지 확인했습니다."
+            echo "- 서버 관련성 검사: ${{ steps.relevance.outcome }}"
+            echo "- 화면 관련성 검사: ${{ steps.browser.outcome }}"
+            echo "- 푸딩·뚜껑, 리모컨, 20분·커피 세 사건을 검사했습니다."
             echo "- 운영 Hosting은 변경하지 않았습니다."
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -161,6 +183,7 @@ jobs:
             case-pudding.json
             case-remote.json
             case-late.json
+            v5-function-error.log
             desktop-relevance-v5.png
             desktop-forensics-relevance-v5.png
             mobile-relevance-v5.png
