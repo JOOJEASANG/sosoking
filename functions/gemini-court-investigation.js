@@ -144,6 +144,58 @@ function unique(items) {
   return values.every(Boolean) && new Set(values).size === values.length;
 }
 
+function sanitizeText(value) {
+  let text = String(value || "");
+  const roleNamePattern = new RegExp(PERSON_WITH_TITLE.source, "g");
+  text = text.replace(roleNamePattern, (match) => {
+    if (match.includes("대변인")) return "생활질서 특수본 대변인";
+    if (match.includes("재판장") || match.includes("판사")) return "재판장";
+    if (match.includes("검사")) return "검사";
+    if (match.includes("변호사")) return "변호인";
+    return "현장지휘관";
+  });
+  text = text.replace(/[가-힣]{1,15}법\s*제?\s*\d+조(?:\s*제?\s*\d+항)?/g, "소문동 생활질서 절차규정 0-0호");
+  const replacements = [
+    [/국립과학수사연구원/g, "국가과잉수사연구소"],
+    [/대법원|헌법재판소/g, "소문동 최고판결회의"],
+    [/경찰청|검찰청/g, "생활질서 특별수사본부"],
+    [/국가정보원|국무총리실|대통령실/g, "범일상대책상황실"],
+    [/형법/g, "생활질서 자체규정"],
+    [/민법/g, "관계평온 자체규정"],
+    [/사기죄/g, "설명과장 혐의"],
+    [/절도죄/g, "소유권 경계침범 혐의"],
+    [/재물손괴|재산 손괴/g, "물품상태 무단변경 혐의"],
+    [/중대 범죄/g, "중대해 보이는 생활사건"],
+    [/법\s*제/g, "자체규정 "],
+    [/경정|경감|경위|경사/g, "현장지휘관"]
+  ];
+  for (const [pattern, replacement] of replacements) text = text.replace(pattern, replacement);
+  return text.replace(/\s+/g, " ").trim();
+}
+
+function sanitizeCourtCase(value) {
+  if (typeof value === "string") return sanitizeText(value);
+  if (Array.isArray(value)) return value.map(sanitizeCourtCase);
+  if (!value || typeof value !== "object") return value;
+  const data = {};
+  for (const [key, item] of Object.entries(value)) data[key] = sanitizeCourtCase(item);
+  if (Array.isArray(data.questions)) {
+    const reactionSpeakers = ["신문관", "검사", "재판장"];
+    data.questions = data.questions.map((item, index) => ({
+      ...item,
+      speaker: "피고",
+      replySpeaker: ["신문관", "검사", "변호인", "판사", "재판장"].includes(String(item?.replySpeaker || ""))
+        ? item.replySpeaker
+        : reactionSpeakers[index % reactionSpeakers.length]
+    }));
+  }
+  if (data.briefing && typeof data.briefing === "object") data.briefing.spokesperson = "생활질서 특수본 대변인";
+  if (!String(data.judge || "").trim() || String(data.judge).length < 20 || PERSON_WITH_TITLE.test(String(data.judge))) {
+    data.judge = "행위 자체보다 해명과 과잉수사에 더 많은 인력이 투입됐다는 점을 종합하면, 모두가 조금씩 책임을 나누는 것이 타당합니다.";
+  }
+  return data;
+}
+
 function auditCourtCase(data) {
   const issues = [];
   if (!data || typeof data !== "object") return { ok: false, issues: ["객체 아님"] };
@@ -306,11 +358,11 @@ async function generate(apiKey, incident, severity, correction = "") {
 }
 
 async function generateAndAudit(apiKey, incident, severity) {
-  let result = await generate(apiKey, incident, severity);
+  let result = sanitizeCourtCase(await generate(apiKey, incident, severity));
   let audit = auditCourtCase(result);
   if (!audit.ok) {
     logger.warn("investigation case quality retry", { issues: audit.issues, incidentLength: incident.length, severity });
-    result = await generate(apiKey, incident, severity, audit.issues.join(", "));
+    result = sanitizeCourtCase(await generate(apiKey, incident, severity, audit.issues.join(", ")));
     audit = auditCourtCase(result);
   }
   if (!audit.ok) throw new Error(`사건 품질 검사 실패: ${audit.issues.join(", ")}`);
