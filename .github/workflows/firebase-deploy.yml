@@ -28,7 +28,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  contents: write
 
 env:
   FIREBASE_PROJECT_ID: sosoking-481e6
@@ -116,3 +116,35 @@ jobs:
             -H 'X-Sosoking-Client: court-v2' \
             --data '{"incident":"회의실 리모컨이 또 사라졌다.","severity":"official"}' \
             | grep -q '"case"'
+
+      - name: 운영 배포 상태 기록
+        if: always()
+        env:
+          DEPLOY_STATUS: ${{ job.status }}
+        shell: bash
+        run: |
+          mkdir -p .github
+          python - <<'PY'
+          import json, os
+          from datetime import datetime, timezone
+          payload = {
+              "workflow": "소문난 판결소 검증 및 Firebase 배포",
+              "run_id": os.environ.get("GITHUB_RUN_ID"),
+              "commit": os.environ.get("GITHUB_SHA"),
+              "ref": os.environ.get("GITHUB_REF_NAME"),
+              "result": os.environ.get("DEPLOY_STATUS"),
+              "project": os.environ.get("FIREBASE_PROJECT_ID"),
+              "recorded_at": datetime.now(timezone.utc).isoformat()
+          }
+          with open(".github/deployment-status.json", "w", encoding="utf-8") as handle:
+              json.dump(payload, handle, ensure_ascii=False, indent=2)
+              handle.write("\n")
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/deployment-status.json
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "chore: 운영 배포 상태 기록 [skip ci]"
+          git push
