@@ -59,7 +59,7 @@ jobs:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     needs: validate
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
     steps:
       - name: 저장소 체크아웃
         uses: actions/checkout@v4
@@ -96,5 +96,23 @@ jobs:
             echo "::notice::GitHub GEMINI_API_KEY가 비어 있어 기존 Firebase Secret을 유지합니다."
           fi
 
+      - name: 운영 검색 노출 설정
+        run: |
+          sed -i 's/noindex, nofollow/index, follow/' public/index.html
+          printf 'User-agent: *\nAllow: /\n' > public/robots.txt
+
       - name: Functions와 Hosting 배포
         run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only functions:generateCourtCase,hosting --force --non-interactive
+
+      - name: 운영 배포 응답 확인
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 6 --retry-all-errors --retry-delay 10 "https://sosoking-481e6.web.app/" -o production-index.html
+          grep -q 'index, follow' production-index.html
+          grep -q 'share-polish.js' production-index.html
+          curl --fail --location "https://sosoking-481e6.web.app/api/generate-case" \
+            -H 'Content-Type: application/json' \
+            -H 'X-Sosoking-Client: court-v2' \
+            --data '{"incident":"회의실 리모컨이 또 사라졌다.","severity":"official"}' \
+            | grep -q '"case"'
