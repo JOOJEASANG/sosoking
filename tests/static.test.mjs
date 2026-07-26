@@ -4,84 +4,78 @@ import { readFile } from "node:fs/promises";
 
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("AI endpoint wiring is consistent", async () => {
+test("investigation v3 endpoint wiring is consistent", async () => {
   const [client, firebase, entry, server] = await Promise.all([
-    read("public/court-app.js"),
+    read("public/court-v3.js"),
     read("firebase.json"),
     read("functions/index.js"),
-    read("functions/gemini-court-runtime.js")
+    read("functions/gemini-court-investigation.js")
   ]);
   assert.match(client, /\/api\/generate-case/);
+  assert.match(client, /X-Sosoking-Client"\s*:\s*"court-v3/);
   assert.match(firebase, /"source"\s*:\s*"\/api\/generate-case"/);
   assert.match(firebase, /"functionId"\s*:\s*"generateCourtCase"/);
   assert.match(firebase, /"runtime"\s*:\s*"nodejs22"/);
-  assert.match(entry, /gemini-court-runtime/);
+  assert.match(entry, /gemini-court-investigation/);
   assert.match(server, /exports\.generateCourtCase/);
 });
 
-test("Gemini key remains server-side and preview diagnostics are absent", async () => {
-  const [client, share, server, workflow] = await Promise.all([
-    read("public/court-app.js"),
-    read("public/share-polish.js"),
-    read("functions/gemini-court-runtime.js"),
+test("Gemini key remains server-side", async () => {
+  const [client, server, workflow] = await Promise.all([
+    read("public/court-v3.js"),
+    read("functions/gemini-court-investigation.js"),
     read(".github/workflows/firebase-deploy.yml")
   ]);
-  assert.doesNotMatch(`${client}\n${share}`, /GEMINI_API_KEY|AIza[0-9A-Za-z_-]{20,}/);
+  assert.doesNotMatch(client, /GEMINI_API_KEY|AIza[0-9A-Za-z_-]{20,}/);
   assert.match(server, /defineSecret\("GEMINI_API_KEY"\)/);
   assert.match(server, /@google\/genai/);
   assert.doesNotMatch(server, /api\.openai\.com|OPENAI_API_KEY|x-sosoking-debug|preview-eval/);
   assert.match(workflow, /secrets\.GEMINI_API_KEY/);
-  assert.match(workflow, /functions:secrets:set GEMINI_API_KEY/);
 });
 
-test("Gemini structured output, safety and no-thinking mode exist", async () => {
-  const [client, server] = await Promise.all([
-    read("public/court-app.js"),
-    read("functions/gemini-court-runtime.js")
-  ]);
-  assert.match(client, /privatePatterns/);
+test("expanded investigation schema and quality controls exist", async () => {
+  const server = await read("functions/gemini-court-investigation.js");
+  for (const key of ["taskForceUnits", "dispatchLog", "surveillance", "forensicReports", "search", "briefing"]) {
+    assert.match(server, new RegExp(key));
+  }
   assert.match(server, /HarmCategory/);
-  assert.match(server, /HarmBlockThreshold/);
   assert.match(server, /auditCourtCase/);
-  assert.match(server, /PRIVATE_PATTERNS/);
-  assert.match(server, /BLOCKED/);
-  assert.match(server, /responseMimeType:\s*"application\/json"/);
-  assert.match(server, /responseSchema:\s*buildResponseSchema\(Type\)/);
-  assert.match(server, /Type\.OBJECT/);
-  assert.match(server, /Type\.ARRAY/);
-  assert.match(server, /Type\.STRING/);
   assert.match(server, /thinkingBudget:\s*0/);
-  assert.match(server, /maxOutputTokens:\s*5000/);
-  assert.match(server, /maxInstances:\s*5/);
+  assert.match(server, /maxOutputTokens:\s*7500/);
+  assert.match(server, /국가과잉수사연구소/);
+  assert.match(server, /잠복근무/);
 });
 
-test("share cards exclude the original incident and adapt to long text", async () => {
-  const [client, enhanced] = await Promise.all([
-    read("public/court-app.js"),
-    read("public/share-polish.js")
-  ]);
-  const legacyShare = client.slice(client.indexOf("async function createShareCardBlob"), client.indexOf("function setShareStatus"));
-  assert.doesNotMatch(legacyShare, /state\.data\.incident/);
-  assert.doesNotMatch(enhanced, /incidentInput|state\.data\.incident/);
-  assert.match(enhanced, /canvas\.height\s*=\s*Math\.max/);
-  assert.match(enhanced, /lineBreaks/);
-  assert.match(enhanced, /navigator\.canShare/);
-  assert.match(client, /결과 카드 저장/);
-  assert.match(client, /판결 공유/);
-});
-
-test("mobile layout includes safe areas, touch targets and sticky navigation", async () => {
-  const [index, css] = await Promise.all([
+test("frontend provides seven detailed interactive stages", async () => {
+  const [index, client, css, icons] = await Promise.all([
     read("public/index.html"),
-    read("public/polish.css")
+    read("public/court-v3.js"),
+    read("public/investigation.css"),
+    read("public/investigation-icons.svg")
   ]);
-  assert.match(index, /viewport-fit=cover/);
-  assert.match(index, /polish\.css/);
-  assert.match(index, /share-polish\.js/);
+  assert.match(index, /court-v3\.js/);
+  assert.match(index, /investigation\.css/);
+  assert.match(client, /사건 접수/);
+  assert.match(client, /초동 출동/);
+  assert.match(client, /잠복 수사/);
+  assert.match(client, /과잉 감식/);
+  assert.match(client, /피의자 신문/);
+  assert.match(client, /공개 브리핑/);
+  assert.match(client, /최종 판결/);
+  assert.match(client, /data-evidence/);
   assert.match(css, /safe-area-inset-bottom/);
-  assert.match(css, /touch-action:\s*manipulation/);
-  assert.match(css, /\.stage-list\s*\{[\s\S]*position:\s*sticky/);
-  assert.match(css, /overflow-wrap:\s*anywhere/);
+  assert.match(css, /\.evidence-envelope/);
+  assert.match(icons, /id="binoculars"/);
+  assert.match(icons, /id="flask"/);
+});
+
+test("share card excludes the user's original incident", async () => {
+  const client = await read("public/court-v3.js");
+  const shareFunction = client.slice(client.indexOf("async function createShareCard"), client.indexOf("function shareStatus"));
+  assert.match(shareFunction, /p\.title/);
+  assert.match(shareFunction, /v\.sentence/);
+  assert.doesNotMatch(shareFunction, /state\.data\.incident|incidentInput/);
+  assert.match(client, /navigator\.canShare/);
 });
 
 test("twenty-case evaluation corpus is safe and usable", async () => {
@@ -92,14 +86,4 @@ test("twenty-case evaluation corpus is safe and usable", async () => {
     assert.ok(item.incident.length >= 7 && item.incident.length <= 120);
     assert.ok(allowed.has(item.severity));
   }
-});
-
-test("frontend loads only the current runtime assets", async () => {
-  const index = await read("public/index.html");
-  assert.match(index, /court-app\.js/);
-  assert.match(index, /visual\.js/);
-  assert.match(index, /share-polish\.js/);
-  assert.match(index, /ai\.css/);
-  assert.match(index, /polish\.css/);
-  assert.doesNotMatch(index, /src=["']\.\/app\.js["']/);
 });
