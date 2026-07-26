@@ -5,31 +5,46 @@ import { readFile } from "node:fs/promises";
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
 test("AI endpoint wiring is consistent", async () => {
-  const [client, firebase, server] = await Promise.all([
+  const [client, firebase, entry, server] = await Promise.all([
     read("public/court-app.js"),
     read("firebase.json"),
-    read("functions/index.js")
+    read("functions/index.js"),
+    read("functions/gemini-court.js")
   ]);
   assert.match(client, /\/api\/generate-case/);
   assert.match(firebase, /"source"\s*:\s*"\/api\/generate-case"/);
   assert.match(firebase, /"functionId"\s*:\s*"generateCourtCase"/);
+  assert.match(entry, /gemini-court/);
   assert.match(server, /exports\.generateCourtCase/);
 });
 
-test("API key remains server-side", async () => {
-  const [client, server] = await Promise.all([read("public/court-app.js"), read("functions/index.js")]);
-  assert.doesNotMatch(client, /OPENAI_API_KEY|sk-[A-Za-z0-9]/);
-  assert.match(server, /defineSecret\("OPENAI_API_KEY"\)/);
-  assert.match(server, /store: false/);
+test("Gemini key remains server-side", async () => {
+  const [client, server, workflow] = await Promise.all([
+    read("public/court-app.js"),
+    read("functions/gemini-court.js"),
+    read(".github/workflows/firebase-deploy.yml")
+  ]);
+  assert.doesNotMatch(client, /GEMINI_API_KEY|AIza[0-9A-Za-z_-]{20,}/);
+  assert.match(server, /defineSecret\("GEMINI_API_KEY"\)/);
+  assert.match(server, /@google\/genai/);
+  assert.doesNotMatch(server, /api\.openai\.com|OPENAI_API_KEY/);
+  assert.match(workflow, /secrets\.GEMINI_API_KEY/);
+  assert.match(workflow, /functions:secrets:set GEMINI_API_KEY/);
 });
 
-test("safety and moderation layers exist", async () => {
-  const [client, server] = await Promise.all([read("public/court-app.js"), read("functions/index.js")]);
+test("safety and output audit layers exist", async () => {
+  const [client, server] = await Promise.all([
+    read("public/court-app.js"),
+    read("functions/gemini-court.js")
+  ]);
   assert.match(client, /privatePatterns/);
-  assert.match(server, /omni-moderation-latest/);
+  assert.match(server, /SAFETY_SETTINGS/);
+  assert.match(server, /BLOCK_MEDIUM_AND_ABOVE/);
   assert.match(server, /auditCourtCase/);
   assert.match(server, /PRIVATE_PATTERNS/);
   assert.match(server, /BLOCKED_TERMS/);
+  assert.match(server, /responseMimeType:\s*"application\/json"/);
+  assert.match(server, /responseSchema/);
 });
 
 test("share card excludes the original incident", async () => {
