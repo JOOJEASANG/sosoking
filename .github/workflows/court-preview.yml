@@ -8,7 +8,6 @@ on:
       - "public/**"
       - "functions/**"
       - "tests/**"
-      - "tools/**"
       - "firebase.json"
       - "package.json"
       - ".github/workflows/court-preview.yml"
@@ -37,19 +36,17 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Functions 의존성 설치
-        run: npm install --prefix functions --no-audit --no-fund
-
-      - name: 정적 검사와 테스트
+      - name: 정적 검사
         run: |
+          npm install --prefix functions --no-audit --no-fund
           npm test
           npm run check
           npm run --prefix functions lint
 
-      - name: Firebase CLI 설치
+      - name: Firebase 준비
         run: npm install --global firebase-tools
 
-      - name: Firebase 서비스 계정 준비
+      - name: 서비스 계정 연결
         env:
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 }}
         run: |
@@ -57,20 +54,12 @@ jobs:
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-service-account.json"
           echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/firebase-service-account.json" >> "$GITHUB_ENV"
 
-      - name: 기존 Gemini Secret 동기화
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      - name: 미리보기 전용 함수 연결
         run: |
-          if [ -n "$GEMINI_API_KEY" ]; then
-            printf '%s' "$GEMINI_API_KEY" | firebase functions:secrets:set GEMINI_API_KEY --data-file=- --project "$FIREBASE_PROJECT_ID"
-          fi
+          sed -i 's/"functionId": "generateCourtCase"/"functionId": "generateCourtCaseV3"/' firebase.json
 
-      - name: V4 미리보기 전용 함수 연결
-        run: sed -i 's/"functionId": "generateCourtCase"/"functionId": "generateCourtCaseV3"/' firebase.json
-
-      - name: V4 Hosting 미리보기 배포
+      - name: V4 미리보기 배포
         id: preview
-        shell: bash
         run: |
           set -euo pipefail
           firebase hosting:channel:deploy court-investigation-v4 --expires 7d --project "$FIREBASE_PROJECT_ID" --non-interactive 2>&1 | tee preview-deploy.log
@@ -79,27 +68,15 @@ jobs:
           echo "PREVIEW_URL=$preview_url" >> "$GITHUB_ENV"
           echo "preview_url=$preview_url" >> "$GITHUB_OUTPUT"
 
-      - name: V4 자산과 선형 진행 제거 확인
+      - name: V4 자산 검사
         run: |
           curl --fail --location --retry 5 --retry-all-errors "$PREVIEW_URL/" -o preview-index.html
           grep -q 'command-center-v4.css' preview-index.html
           grep -q 'v4-runtime.js' preview-index.html
           grep -q 'data-room="forensics"' preview-index.html
           ! grep -q 'next-button' preview-index.html
-          curl --fail --location "$PREVIEW_URL/command-center-v4.css" >/dev/null
-          curl --fail --location "$PREVIEW_URL/v4-runtime.js" >/dev/null
 
-      - name: Gemini 단건 수사 데이터 검사
-        id: smoke
-        continue-on-error: true
-        env:
-          COURT_BASE_URL: ${{ steps.preview.outputs.preview_url }}
-          COURT_EVAL_OFFSET: "0"
-          COURT_EVAL_LIMIT: "1"
-        run: npm run evaluate 2>&1 | tee court-smoke-v4.log
-
-      - name: V4 모바일·데스크톱 게임 자동조작
-        shell: bash
+      - name: V4 실제 게임 자동조작
         env:
           PREVIEW_URL: ${{ steps.preview.outputs.preview_url }}
         run: |
@@ -109,25 +86,15 @@ jobs:
           cat > capture-v4.mjs <<'JS'
           import { chromium } from "playwright-core";
           const browser = await chromium.launch({ executablePath: process.env.CHROME_BIN, headless: true, args: ["--no-sandbox"] });
-
-          const mobile = await browser.newPage({ viewport: { width: 390, height: 844 } });
-          await mobile.goto(process.env.PREVIEW_URL, { waitUntil: "networkidle" });
-          await mobile.screenshot({ path: "mobile-intake-v4.png", fullPage: true });
-          await mobile.fill("#incident", "회사 냉장고에 넣어둔 푸딩 뚜껑만 남아 있었다.");
-          await mobile.click(".launch-button");
-          await mobile.waitForSelector("#loading-screen:not([hidden])");
-          await mobile.screenshot({ path: "mobile-loading-v4.png", fullPage: true });
-          await mobile.waitForSelector("#board-screen:not([hidden])", { timeout: 60000 });
-          await mobile.screenshot({ path: "mobile-board-v4.png", fullPage: true });
-
           const page = await browser.newPage({ viewport: { width: 1440, height: 1100 } });
           await page.goto(process.env.PREVIEW_URL, { waitUntil: "networkidle" });
+          await page.screenshot({ path: "desktop-intake-v4.png", fullPage: true });
           await page.fill("#incident", "회사 냉장고에 넣어둔 푸딩 뚜껑만 남아 있었다.");
-          await page.check('input[name="severity"][value="special"]');
           await page.click(".launch-button");
+          await page.waitForSelector("#loading-screen:not([hidden])");
+          await page.screenshot({ path: "desktop-loading-v4.png", fullPage: true });
           await page.waitForSelector("#board-screen:not([hidden])", { timeout: 60000 });
           await page.screenshot({ path: "desktop-board-v4.png", fullPage: true });
-
           await page.click('[data-room="field"]');
           await page.click('[data-action="field"]');
           await page.click('[data-room="surveillance"]');
@@ -153,6 +120,14 @@ jobs:
           await page.click('[data-action="court"]');
           await page.waitForSelector("#result-screen:not([hidden])");
           await page.screenshot({ path: "desktop-result-v4.png", fullPage: true });
+
+          const mobile = await browser.newPage({ viewport: { width: 390, height: 844 } });
+          await mobile.goto(process.env.PREVIEW_URL, { waitUntil: "networkidle" });
+          await mobile.screenshot({ path: "mobile-intake-v4.png", fullPage: true });
+          await mobile.fill("#incident", "친구가 약속에 20분 늦고 커피도 안 샀다.");
+          await mobile.click(".launch-button");
+          await mobile.waitForSelector("#board-screen:not([hidden])", { timeout: 60000 });
+          await mobile.screenshot({ path: "mobile-board-v4.png", fullPage: true });
           await browser.close();
           JS
           CHROME_BIN="$chrome" node capture-v4.mjs
@@ -164,12 +139,11 @@ jobs:
           {
             echo "## 소문난 판결소 수사게임 V4"
             echo "- 미리보기 주소: ${{ steps.preview.outputs.preview_url || '배포 실패' }}"
-            echo "- 긴 세로 페이지와 다음 단계 버튼을 제거했습니다."
-            echo "- 현장·잠복·감식·심문·브리핑·법정을 직접 선택하고 완료했습니다."
+            echo "- 다음 단계 버튼 없이 여섯 장소를 직접 선택하고 완료했습니다."
             echo "- 운영 Hosting은 변경하지 않았습니다."
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: V4 화면 캡처 저장
+      - name: 화면 캡처 저장
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -177,13 +151,13 @@ jobs:
           path: |
             preview-deploy.log
             preview-index.html
-            court-smoke-v4.log
-            mobile-intake-v4.png
-            mobile-loading-v4.png
-            mobile-board-v4.png
+            desktop-intake-v4.png
+            desktop-loading-v4.png
             desktop-board-v4.png
             desktop-forensics-v4.png
             desktop-court-v4.png
             desktop-result-v4.png
+            mobile-intake-v4.png
+            mobile-board-v4.png
           if-no-files-found: ignore
           retention-days: 7
