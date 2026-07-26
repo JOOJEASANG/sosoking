@@ -1,8 +1,9 @@
 name: 소문난 판결소 미리보기 검증
 
 on:
-  push:
-    branches: ["rebuild/sosoking-v2"]
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
     paths:
       - "public/**"
       - "functions/**"
@@ -13,7 +14,7 @@ on:
       - ".github/workflows/court-preview.yml"
 
 concurrency:
-  group: court-preview-${{ github.ref }}
+  group: court-preview-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 permissions:
@@ -26,6 +27,7 @@ env:
 
 jobs:
   preview-and-evaluate:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'rebuild/sosoking-v2'
     runs-on: ubuntu-latest
     timeout-minutes: 35
 
