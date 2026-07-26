@@ -11,7 +11,7 @@
 ## 핵심 경험
 
 1. 사용자가 오늘 있었던 사소한 일을 한 줄로 입력합니다.
-2. AI가 거창한 사건명과 허구의 혐의로 확대합니다.
+2. Gemini가 거창한 사건명과 허구의 혐의로 확대합니다.
 3. 쓸데없이 정밀한 증거 3개를 수사합니다.
 4. 피고를 심문하고 뻔뻔한 해명과 정색 반박을 확인합니다.
 5. 검사와 변호인이 지나치게 진지하게 공방합니다.
@@ -40,17 +40,35 @@
 
 - Firebase Functions 2세대 `generateCourtCase`
 - 서울 리전 `asia-northeast3`
-- OpenAI Responses API와 구조화 JSON 출력
-- GPT-5 mini 사건 생성
-- OpenAI Moderation으로 입력과 생성 결과 검사
-- 사건명·증거 3개·심문 3개·공방·판결 3개·후일담 형식 고정
+- 공식 `@google/genai` SDK
+- 안정 모델 `gemini-2.5-flash`
+- JSON 구조화 출력으로 사건 형식 고정
+- Gemini 안전 설정과 자체 입력 차단 규칙
+- 사건명·증거 3개·심문 3개·공방·판결 3개·후일담 형식 검사
 - 중복 증거·질문·판결·후일담 자동 품질 검사
 - 품질 미달 시 한 번 자동 재생성
 - 실제 기관명과 개인정보 형태 출력 차단
-- OpenAI 응답 저장 비활성화
-- API 키를 Google Cloud Secret Manager에서만 사용
+- API 키를 Firebase Secret Manager에서만 사용
 - 허용 출처 확인, 요청 크기 제한, 기본 요청 횟수 제한
 - Hosting `/api/generate-case` 경로를 서버 함수로 연결
+
+## 기존 AI 키 재사용
+
+기존 사이트가 사용하던 GitHub 저장소 Secret 이름은 `GEMINI_API_KEY`입니다.
+
+배포 워크플로는 다음처럼 동작합니다.
+
+1. GitHub Secret `GEMINI_API_KEY`가 있으면 Firebase Secret Manager의 같은 이름으로 갱신합니다.
+2. GitHub Secret이 비어 있으면 Firebase에 이미 등록된 `GEMINI_API_KEY`를 그대로 사용합니다.
+3. API 키는 브라우저 코드와 저장소 파일에 기록하지 않습니다.
+
+따라서 기존 Secret이 정상이라면 새 API 키를 다시 발급하거나 입력할 필요가 없습니다.
+
+수동 등록이 필요한 예외 상황에서만 다음 명령을 사용합니다.
+
+```bash
+firebase functions:secrets:set GEMINI_API_KEY
+```
 
 ## 검사
 
@@ -59,13 +77,15 @@
 ```bash
 npm test
 npm run check
+npm run --prefix functions lint
 ```
 
 현재 정적 테스트는 다음을 확인합니다.
 
 - 클라이언트·Hosting·Functions API 경로 일치
-- 브라우저 코드에 API 키가 없는지
-- 안전 필터와 Moderation 연결 여부
+- 브라우저 코드에 Gemini API 키가 없는지
+- GitHub Secret과 Firebase Secret 연결 여부
+- Gemini 안전 설정과 출력 품질 검사 여부
 - 공유 카드에 사용자 원문이 포함되지 않는지
 - 대표 사건 20개 데이터 유효성
 - 현재 실행 스크립트와 스타일 연결
@@ -80,15 +100,7 @@ COURT_BASE_URL="미리보기 주소" npm run evaluate
 
 사건 형식, 중복 판결, 중복 후일담, 응답 시간을 표로 확인할 수 있습니다.
 
-## AI 비밀키 설정
-
-API 키를 저장소나 브라우저 코드에 작성하지 않습니다.
-
-```bash
-firebase functions:secrets:set OPENAI_API_KEY
-```
-
-함수 의존성 설치:
+## 함수 의존성 설치
 
 ```bash
 cd functions
@@ -98,7 +110,14 @@ cd ..
 
 ## 배포
 
-전체 절차는 `docs/DEPLOY_CHECKLIST.md`를 따릅니다. 먼저 Firebase 미리보기 채널에서 검증하고, 자동 테스트와 대표 사건 평가가 통과한 뒤 운영 배포합니다.
+전체 절차는 `docs/DEPLOY_CHECKLIST.md`를 따릅니다. 먼저 Firebase 미리보기 환경에서 검증하고, 자동 테스트와 대표 사건 평가가 통과한 뒤 운영 배포합니다.
+
+`main`에 반영되면 GitHub Actions가 기존 Firebase 서비스 계정과 `GEMINI_API_KEY`를 사용해 다음 항목을 자동 배포합니다.
+
+- `functions:generateCourtCase`
+- Firebase Hosting
+
+직접 배포해야 하는 경우:
 
 ```bash
 firebase deploy --only functions:generateCourtCase,hosting
@@ -112,9 +131,9 @@ firebase deploy --only functions:generateCourtCase,hosting
 
 ## 다음 개발 순서
 
-1. 실제 AI 사건 20개를 미리보기 환경에서 생성해 웃음 밀도 검수
+1. 실제 Gemini 사건 20개를 미리보기 환경에서 생성해 웃음 밀도 검수
 2. 결과 카드의 Android·iPhone 저장 및 공유 점검
-3. OpenAI 사용량 제한과 결제 알림 설정
+3. Gemini 사용량 제한과 결제 알림 점검
 4. 상대방 반박과 재심 기능
 5. 친구 배심원 투표
 6. 공개 사건 전 명예훼손·개인정보 추가 검수
