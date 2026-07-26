@@ -1,9 +1,9 @@
 {
   "workflow": "소문난 판결소 검증 및 Firebase 배포",
-  "run_id": "30199416838",
-  "commit": "7cf9bc868d2ba3636502ecdf1e83722fd4614772",
+  "run_id": "30199488316",
+  "commit": "c29dccfcf7608de52129a2c24c6b06179bc7ca1a",
   "ref": "main",
   "result": "failure",
   "project": "sosoking-481e6",
-  "recorded_at": "2026-07-26T11:05:47.708416+00:00"
+  "recorded_at": "2026-07-26T11:08:40.682795+00:00"
 }
