@@ -130,6 +130,13 @@ jobs:
           set -o pipefail
           npm run evaluate 2>&1 | tee court-smoke-v3.log
 
+      - name: 단건 실패 시 V3 함수 로그 수집
+        if: steps.smoke.outcome != 'success'
+        continue-on-error: true
+        shell: bash
+        run: |
+          firebase functions:log --project "$FIREBASE_PROJECT_ID" --only generateCourtCaseV3 --lines 80 2>&1 | tee v3-function-error.log
+
       - name: 실제 수사 단계 UI 자동 캡처
         if: steps.smoke.outcome == 'success'
         continue-on-error: true
@@ -221,6 +228,7 @@ jobs:
             preview-index.html
             court-smoke-v3.log
             court-evaluation-v3.log
+            v3-function-error.log
             function-v3-restore.log
             mobile-home-v3.png
             desktop-home-v3.png
