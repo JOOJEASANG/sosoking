@@ -1,4 +1,4 @@
-name: 소문난 판결소 수사게임 V4 미리보기
+name: 소문난 판결소 접수 관련성 V5 미리보기
 
 on:
   pull_request:
@@ -13,7 +13,7 @@ on:
       - ".github/workflows/court-preview.yml"
 
 concurrency:
-  group: court-investigation-v4-${{ github.event.pull_request.number }}
+  group: court-incident-relevance-v5-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 permissions:
@@ -23,10 +23,10 @@ env:
   FIREBASE_PROJECT_ID: sosoking-481e6
 
 jobs:
-  preview-and-play:
-    if: github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'redesign/sosoking-investigation-v4'
+  preview-and-verify-relevance:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'fix/incident-relevance-v5'
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 45
     steps:
       - name: 저장소 체크아웃
         uses: actions/checkout@v4
@@ -58,107 +58,111 @@ jobs:
         run: |
           sed -i 's/"functionId": "generateCourtCase"/"functionId": "generateCourtCaseV3"/' firebase.json
 
-      - name: V4 미리보기 배포
+      - name: V5 미리보기 배포
         id: preview
         run: |
           set -euo pipefail
-          firebase hosting:channel:deploy court-investigation-v4 --expires 7d --project "$FIREBASE_PROJECT_ID" --non-interactive 2>&1 | tee preview-deploy.log
+          firebase hosting:channel:deploy court-incident-relevance-v5 --expires 7d --project "$FIREBASE_PROJECT_ID" --non-interactive 2>&1 | tee preview-deploy.log
           preview_url="$(grep -Eo 'https://[A-Za-z0-9.-]+\.(web\.app|firebaseapp\.com)' preview-deploy.log | tail -n 1 || true)"
           test -n "$preview_url"
           echo "PREVIEW_URL=$preview_url" >> "$GITHUB_ENV"
           echo "preview_url=$preview_url" >> "$GITHUB_OUTPUT"
 
-      - name: V4 자산 검사
+      - name: V5 자산 검사
         run: |
           sleep 15
           curl --fail --location --retry 12 --retry-all-errors --retry-delay 10 "$PREVIEW_URL/" -o preview-index.html
           grep -q 'command-center-v4.css' preview-index.html
+          grep -q 'incident-relevance-v5.js' preview-index.html
           grep -q 'v4-runtime.js' preview-index.html
-          grep -q 'data-room="forensics"' preview-index.html
+          test "$(grep -n 'incident-relevance-v5.js' preview-index.html | cut -d: -f1)" -lt "$(grep -n 'v4-runtime.js' preview-index.html | cut -d: -f1)"
           ! grep -q 'next-button' preview-index.html
 
-      - name: V4 실제 게임 자동조작
+      - name: Gemini 실제 응답 접수 소재 관련성 검사
+        shell: bash
+        run: |
+          set -euo pipefail
+          check_case() {
+            name="$1"
+            body="$2"
+            shift 2
+            file="case-${name}.json"
+            curl --fail --location --silent --show-error --max-time 70 \
+              "$PREVIEW_URL/api/generate-case" \
+              -H 'Content-Type: application/json' \
+              -H 'X-Sosoking-Client: court-v4' \
+              --data "$body" -o "$file"
+            grep -q '"case"' "$file"
+            grep -q 'investigation-v5-relevance' "$file"
+            for term in "$@"; do
+              echo "${name}: ${term} 확인"
+              grep -q "$term" "$file"
+            done
+          }
+          check_case pudding '{"incident":"회사 냉장고에 넣어둔 푸딩 뚜껑만 남아 있었다.","severity":"special"}' '푸딩' '뚜껑'
+          check_case remote '{"incident":"회의실 리모컨이 또 사라졌다.","severity":"official"}' '리모컨'
+          check_case late '{"incident":"친구가 약속에 20분 늦고 커피도 안 샀다.","severity":"national"}' '20분' '커피'
+
+      - name: V5 실제 게임 자동조작과 화면 관련성 검사
         env:
           PREVIEW_URL: ${{ steps.preview.outputs.preview_url }}
         run: |
           set -euo pipefail
           chrome="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
           npm install --no-save --no-audit --no-fund playwright-core
-          cat > capture-v4.mjs <<'JS'
+          cat > capture-v5.mjs <<'JS'
           import { chromium } from "playwright-core";
           const browser = await chromium.launch({ executablePath: process.env.CHROME_BIN, headless: true, args: ["--no-sandbox"] });
           const page = await browser.newPage({ viewport: { width: 1440, height: 1100 } });
           await page.goto(process.env.PREVIEW_URL, { waitUntil: "networkidle" });
-          await page.screenshot({ path: "desktop-intake-v4.png", fullPage: true });
           await page.fill("#incident", "회사 냉장고에 넣어둔 푸딩 뚜껑만 남아 있었다.");
           await page.click(".launch-button");
-          await page.waitForSelector("#loading-screen:not([hidden])");
-          await page.screenshot({ path: "desktop-loading-v4.png", fullPage: true });
-          await page.waitForSelector("#board-screen:not([hidden])", { timeout: 60000 });
-          await page.screenshot({ path: "desktop-board-v4.png", fullPage: true });
-          await page.click('[data-room="field"]');
-          await page.click('[data-action="field"]');
-          await page.click('[data-room="surveillance"]');
-          await page.click('[data-disguise]');
-          await page.click('[data-action="surveillance"]');
+          await page.waitForSelector("#board-screen:not([hidden])", { timeout: 65000 });
+          const boardText = await page.locator("#board-screen").innerText();
+          if (!boardText.includes("푸딩") || !boardText.includes("뚜껑")) throw new Error("데스크톱 사건보드에 푸딩·뚜껑 소재가 유지되지 않았습니다.");
+          await page.screenshot({ path: "desktop-relevance-v5.png", fullPage: true });
           await page.click('[data-room="forensics"]');
-          const checks = page.locator('[data-evidence]');
-          await checks.nth(0).check();
-          await checks.nth(1).check();
-          await page.click('[data-action="forensics"]');
-          await page.screenshot({ path: "desktop-forensics-v4.png", fullPage: true });
-          await page.click('[data-room="interrogation"]');
-          await page.click('[data-q="0"][data-j="suspicious"]');
-          await page.click('[data-q="1"][data-j="understood"]');
-          await page.click('[data-action="interrogation"]');
-          await page.click('[data-room="briefing"]');
-          await page.click('[data-tone="초엄숙 발표"]');
-          await page.click('[data-action="briefing"]');
-          await page.click('[data-room="court"]');
-          await page.click('[data-court-evidence]');
-          await page.click('[data-verdict="0"]');
-          await page.screenshot({ path: "desktop-court-v4.png", fullPage: true });
-          await page.click('[data-action="court"]');
-          await page.waitForSelector("#result-screen:not([hidden])");
-          await page.screenshot({ path: "desktop-result-v4.png", fullPage: true });
+          const forensicText = await page.locator("#mission-panel").innerText();
+          if (!forensicText.includes("푸딩") && !forensicText.includes("뚜껑")) throw new Error("감식실에 접수 소재가 없습니다.");
+          await page.screenshot({ path: "desktop-forensics-relevance-v5.png", fullPage: true });
 
           const mobile = await browser.newPage({ viewport: { width: 390, height: 844 } });
           await mobile.goto(process.env.PREVIEW_URL, { waitUntil: "networkidle" });
-          await mobile.screenshot({ path: "mobile-intake-v4.png", fullPage: true });
           await mobile.fill("#incident", "친구가 약속에 20분 늦고 커피도 안 샀다.");
           await mobile.click(".launch-button");
-          await mobile.waitForSelector("#board-screen:not([hidden])", { timeout: 60000 });
-          await mobile.screenshot({ path: "mobile-board-v4.png", fullPage: true });
+          await mobile.waitForSelector("#board-screen:not([hidden])", { timeout: 65000 });
+          const mobileText = await mobile.locator("#board-screen").innerText();
+          if (!mobileText.includes("20분") || !mobileText.includes("커피")) throw new Error("모바일 사건보드에 20분·커피 소재가 유지되지 않았습니다.");
+          await mobile.screenshot({ path: "mobile-relevance-v5.png", fullPage: true });
           await browser.close();
           JS
-          CHROME_BIN="$chrome" node capture-v4.mjs
-          rm capture-v4.mjs
+          CHROME_BIN="$chrome" node capture-v5.mjs
+          rm capture-v5.mjs
 
       - name: 검증 결과 요약
         if: always()
         run: |
           {
-            echo "## 소문난 판결소 수사게임 V4"
+            echo "## 소문난 판결소 접수 관련성 V5"
             echo "- 미리보기 주소: ${{ steps.preview.outputs.preview_url || '배포 실패' }}"
-            echo "- 다음 단계 버튼 없이 여섯 장소를 직접 선택하고 완료했습니다."
+            echo "- 푸딩·뚜껑, 리모컨, 20분·커피 세 사건의 서버 응답 관련성을 검사했습니다."
+            echo "- 데스크톱과 모바일 사건보드 및 감식실에서 접수 소재가 유지되는지 확인했습니다."
             echo "- 운영 Hosting은 변경하지 않았습니다."
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: 화면 캡처 저장
+      - name: 검증 기록 저장
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: court-investigation-v4-preview
+          name: court-incident-relevance-v5-preview
           path: |
             preview-deploy.log
             preview-index.html
-            desktop-intake-v4.png
-            desktop-loading-v4.png
-            desktop-board-v4.png
-            desktop-forensics-v4.png
-            desktop-court-v4.png
-            desktop-result-v4.png
-            mobile-intake-v4.png
-            mobile-board-v4.png
+            case-pudding.json
+            case-remote.json
+            case-late.json
+            desktop-relevance-v5.png
+            desktop-forensics-relevance-v5.png
+            mobile-relevance-v5.png
           if-no-files-found: ignore
           retention-days: 7
