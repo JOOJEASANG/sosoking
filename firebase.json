@@ -10,7 +10,7 @@
       {
         "source": "/api/generate-case",
         "function": {
-          "functionId": "generateCourtCase",
+          "functionId": "generateCourtCaseV6",
           "region": "asia-northeast3",
           "pinTag": true
         }

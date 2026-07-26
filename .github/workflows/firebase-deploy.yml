@@ -7,7 +7,6 @@ on:
       - "public/**"
       - "functions/**"
       - "tests/**"
-      - "tools/**"
       - "firebase.json"
       - "package.json"
       - ".github/workflows/firebase-deploy.yml"
@@ -17,7 +16,6 @@ on:
       - "public/**"
       - "functions/**"
       - "tests/**"
-      - "tools/**"
       - "firebase.json"
       - "package.json"
       - ".github/workflows/firebase-deploy.yml"
@@ -40,15 +38,12 @@ jobs:
     steps:
       - name: 저장소 체크아웃
         uses: actions/checkout@v4
-
       - name: Node.js 22 설정
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-
       - name: Functions 의존성 설치
         run: npm install --prefix functions --no-audit --no-fund
-
       - name: 정적 검사와 테스트
         run: |
           npm test
@@ -59,33 +54,25 @@ jobs:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     needs: validate
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 45
     steps:
       - name: 저장소 체크아웃
         uses: actions/checkout@v4
-
       - name: Node.js 22 설정
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-
       - name: Functions 의존성 설치
         run: npm install --prefix functions --no-audit --no-fund
-
       - name: Firebase CLI 설치
         run: npm install --global firebase-tools
-
       - name: Firebase 서비스 계정 준비
         env:
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 }}
         run: |
-          if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
-            echo "Missing GitHub secret: FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6"
-            exit 1
-          fi
+          test -n "$FIREBASE_SERVICE_ACCOUNT_JSON"
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-service-account.json"
           echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/firebase-service-account.json" >> "$GITHUB_ENV"
-
       - name: 기존 Gemini Secret 동기화
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -95,130 +82,100 @@ jobs:
           else
             echo "::notice::GitHub GEMINI_API_KEY가 비어 있어 기존 Firebase Secret을 유지합니다."
           fi
-
       - name: 운영 검색 노출 설정
         run: |
           sed -i 's/noindex, nofollow/index, follow/' public/index.html
           printf 'User-agent: *\nAllow: /\n' > public/robots.txt
+      - name: V6 Functions와 Hosting 배포
+        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only functions:generateCourtCaseV6,hosting --force --non-interactive
 
-      - name: Functions와 Hosting 배포
-        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only functions:generateCourtCase,hosting --force --non-interactive
-
-      - name: 운영 V5 화면 자산 확인
-        shell: bash
+      - name: 운영 V6 화면 자산 확인
         run: |
           set -euo pipefail
           verified=0
           for attempt in $(seq 1 12); do
             url="https://sosoking-481e6.web.app/?deploy=${GITHUB_SHA}&attempt=${attempt}"
-            echo "V5 화면 확인 ${attempt}/12: ${url}"
-            if curl --fail --location --silent --show-error \
-              -H 'Cache-Control: no-cache' \
-              -H 'Pragma: no-cache' \
-              "$url" -o production-index.html; then
-              relevance_line="$(grep -n 'incident-relevance-v5.js' production-index.html | cut -d: -f1 || true)"
-              runtime_line="$(grep -n 'v4-runtime.js' production-index.html | cut -d: -f1 || true)"
+            if curl --fail --location --silent --show-error -H 'Cache-Control: no-cache' "$url" -o production-index.html; then
               if grep -q 'index, follow' production-index.html \
-                && grep -q 'command-center-v4.css' production-index.html \
-                && grep -q 'incident-relevance-v5.js' production-index.html \
-                && grep -q 'v4-runtime.js' production-index.html \
-                && grep -q 'data-room="forensics"' production-index.html \
-                && [ -n "$relevance_line" ] \
-                && [ -n "$runtime_line" ] \
-                && [ "$relevance_line" -lt "$runtime_line" ] \
-                && ! grep -q 'next-button' production-index.html; then
+                && grep -q 'auto-story-v6.css' production-index.html \
+                && grep -q 'auto-story-v6.js' production-index.html \
+                && grep -q 'stage-settlement' production-index.html \
+                && grep -q 'stage-trial' production-index.html \
+                && grep -q 'stage-judgment' production-index.html \
+                && ! grep -q 'data-room=' production-index.html \
+                && ! grep -q 'data-verdict=' production-index.html; then
                 verified=1
                 break
               fi
-              echo "현재 확인된 화면 자산:"
-              grep -Eo 'command-center-v4.css|incident-relevance-v5.js|v4-runtime.js|investigation.css|court-v3.js|index, follow|noindex, nofollow' production-index.html | sort -u || true
             fi
             sleep 10
           done
           test "$verified" -eq 1
 
-      - name: 운영 Gemini 서버 응답 진단
-        id: gemini
-        continue-on-error: true
-        shell: bash
+      - name: 운영 V6 자동 사건 API 확인
         run: |
           set -euo pipefail
-          status="$(curl --location --silent --show-error \
-            --connect-timeout 15 --max-time 70 \
+          status="$(curl --location --silent --show-error --max-time 70 \
             -o production-api.json -w '%{http_code}' \
-            "https://sosoking-481e6.web.app/api/generate-case" \
+            'https://sosoking-481e6.web.app/api/generate-case' \
             -H 'Content-Type: application/json' \
-            -H 'X-Sosoking-Client: court-v4' \
-            --data '{"incident":"회의실 리모컨이 또 사라졌다.","severity":"official"}' || true)"
-          echo "HTTP ${status}"
-          cat production-api.json || true
+            -H 'X-Sosoking-Client: court-v6' \
+            --data '{"incident":"동생이 내 아이스크림을 너무 크게 한입 먹었다.","severity":"special"}')"
           test "$status" = "200"
-          grep -q '"case"' production-api.json
-          grep -q '리모컨' production-api.json
+          grep -q 'automatic-story-v6' production-api.json
+          grep -q '아이스크림' production-api.json
+          grep -q '"settlement"' production-api.json
+          grep -q '"trial"' production-api.json
+          grep -q '"judgment"' production-api.json
 
-      - name: 운영 사용자 최종 화면 관련성 확인
-        shell: bash
+      - name: 운영 읽기형 화면 확인
         run: |
           set -euo pipefail
           chrome="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
           npm install --no-save --no-audit --no-fund playwright-core
-          cat > production-relevance.mjs <<'JS'
+          cat > production-v6.mjs <<'JS'
           import { chromium } from "playwright-core";
           const browser = await chromium.launch({ executablePath: process.env.CHROME_BIN, headless: true, args: ["--no-sandbox"] });
-
-          async function verify(incident, required, room) {
-            const page = await browser.newPage({ viewport: { width: 1200, height: 900 } });
-            await page.goto(`https://sosoking-481e6.web.app/?check=${Date.now()}`, { waitUntil: "networkidle" });
-            await page.fill("#incident", incident);
-            await page.click(".launch-button");
-            await page.waitForSelector("#board-screen:not([hidden])", { timeout: 65000 });
-            const boardText = await page.locator("#board-screen").innerText();
-            for (const term of required) {
-              if (!boardText.includes(term)) throw new Error(`사건보드에 ${term} 소재가 없습니다.`);
-            }
-            await page.click(`[data-room="${room}"]`);
-            const missionText = await page.locator("#mission-panel").innerText();
-            if (!required.some((term) => missionText.includes(term))) throw new Error(`${room} 임무가 접수 소재와 연결되지 않았습니다.`);
-            await page.close();
+          const page = await browser.newPage({ viewport: { width: 1200, height: 900 } });
+          await page.goto(`https://sosoking-481e6.web.app/?check=${Date.now()}`, { waitUntil: "networkidle" });
+          await page.fill("#incident", "친구가 약속에 20분 늦고 커피도 안 샀다.");
+          await page.click(".submit-case");
+          await page.waitForSelector("#story-view:not([hidden])", { timeout: 65000 });
+          const story = await page.locator("#story-view").innerText();
+          for (const text of ["20분", "커피", "합의·조정", "재판 공방", "판결과 집행 이후"]) {
+            if (!story.includes(text)) throw new Error(`운영 자동 기록 누락: ${text}`);
           }
-
-          await verify("회사 냉장고에 넣어둔 푸딩 뚜껑만 남아 있었다.", ["푸딩", "뚜껑"], "forensics");
-          await verify("회의실 리모컨이 또 사라졌다.", ["리모컨"], "interrogation");
-          await verify("친구가 약속에 20분 늦고 커피도 안 샀다.", ["20분", "커피"], "forensics");
+          if (await page.locator('[data-room]').count()) throw new Error("선택형 장소 버튼이 남아 있습니다.");
+          if (await page.locator('[data-verdict]').count()) throw new Error("판결 선택 버튼이 남아 있습니다.");
           await browser.close();
           JS
-          CHROME_BIN="$chrome" node production-relevance.mjs
-          rm production-relevance.mjs
+          CHROME_BIN="$chrome" node production-v6.mjs
+          rm production-v6.mjs
 
       - name: 운영 배포 상태 기록
         if: always()
         env:
           DEPLOY_STATUS: ${{ job.status }}
-        shell: bash
         run: |
-          mkdir -p .github
           python - <<'PY'
           import json, os
           from datetime import datetime, timezone
           payload = {
-              "workflow": "소문난 판결소 검증 및 Firebase 배포",
-              "run_id": os.environ.get("GITHUB_RUN_ID"),
-              "commit": os.environ.get("GITHUB_SHA"),
-              "ref": os.environ.get("GITHUB_REF_NAME"),
-              "result": os.environ.get("DEPLOY_STATUS"),
-              "project": os.environ.get("FIREBASE_PROJECT_ID"),
-              "gemini_diagnostic": os.environ.get("GEMINI_DIAGNOSTIC", "non_blocking"),
-              "recorded_at": datetime.now(timezone.utc).isoformat()
+            "workflow": "소문난 판결소 V6 검증 및 Firebase 배포",
+            "run_id": os.environ.get("GITHUB_RUN_ID"),
+            "commit": os.environ.get("GITHUB_SHA"),
+            "ref": os.environ.get("GITHUB_REF_NAME"),
+            "result": os.environ.get("DEPLOY_STATUS"),
+            "project": os.environ.get("FIREBASE_PROJECT_ID"),
+            "recorded_at": datetime.now(timezone.utc).isoformat()
           }
           with open(".github/deployment-status.json", "w", encoding="utf-8") as handle:
-              json.dump(payload, handle, ensure_ascii=False, indent=2)
-              handle.write("\n")
+            json.dump(payload, handle, ensure_ascii=False, indent=2)
+            handle.write("\n")
           PY
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add .github/deployment-status.json
-          if git diff --cached --quiet; then
-            exit 0
-          fi
+          if git diff --cached --quiet; then exit 0; fi
           git commit -m "chore: 운영 배포 상태 기록 [skip ci]"
           git push
