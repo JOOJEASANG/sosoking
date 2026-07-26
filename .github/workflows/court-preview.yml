@@ -11,17 +11,6 @@ on:
       - "firebase.json"
       - "package.json"
       - ".github/workflows/court-preview.yml"
-  pull_request:
-    branches: [main]
-    types: [opened, synchronize, reopened]
-    paths:
-      - "public/**"
-      - "functions/**"
-      - "tests/**"
-      - "tools/**"
-      - "firebase.json"
-      - "package.json"
-      - ".github/workflows/court-preview.yml"
 
 concurrency:
   group: court-preview-${{ github.ref }}
@@ -31,14 +20,12 @@ permissions:
   contents: read
   issues: write
 
-
 env:
   FIREBASE_PROJECT_ID: sosoking-481e6
   PREVIEW_PR_NUMBER: "281"
 
 jobs:
   preview-and-evaluate:
-    if: github.event_name == 'push' || (github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'rebuild/sosoking-v2')
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
@@ -46,10 +33,10 @@ jobs:
       - name: 저장소 체크아웃
         uses: actions/checkout@v4
 
-      - name: Node.js 20 설정
+      - name: Node.js 22 설정
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
 
       - name: Functions 의존성 설치
         run: npm install --prefix functions --no-audit --no-fund
@@ -84,10 +71,7 @@ jobs:
             echo "::notice::GitHub GEMINI_API_KEY가 비어 있어 기존 Firebase Secret을 유지합니다."
           fi
 
-      - name: 판결 생성 함수 미리보기용 배포
-        run: firebase deploy --project "$FIREBASE_PROJECT_ID" --only functions:generateCourtCase --force --non-interactive
-
-      - name: Hosting 미리보기 채널 배포
+      - name: 함수와 Hosting 미리보기 채널 배포
         id: preview
         shell: bash
         run: |
@@ -154,7 +138,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Draft PR에 검증 결과 기록
-        if: always() && github.event_name == 'push'
+        if: always()
         uses: actions/github-script@v7
         env:
           PREVIEW_URL: ${{ steps.preview.outputs.preview_url }}
