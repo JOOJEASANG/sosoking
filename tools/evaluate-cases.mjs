@@ -15,26 +15,37 @@ function normalized(value) {
   return String(value || "").replace(/[\s.,!?"'“”‘’()[\]{}:;·-]/g, "").toLowerCase();
 }
 
+function duplicate(items) {
+  const values = items.map(normalized);
+  return values.some((value) => !value) || new Set(values).size !== values.length;
+}
+
 function inspect(data) {
   const issues = [];
   if (!String(data?.title || "").endsWith("사건")) issues.push("사건명");
-  for (const key of ["evidence", "questions", "verdicts", "judgeTypes"]) {
-    if (!Array.isArray(data?.[key]) || data[key].length !== 3) issues.push(`${key}:3개아님`);
+  const exactCounts = {
+    taskForceUnits: 4,
+    dispatchLog: 4,
+    forensicReports: 3,
+    evidence: 4,
+    questions: 3,
+    verdicts: 3,
+    judgeTypes: 3
+  };
+  for (const [key, count] of Object.entries(exactCounts)) {
+    if (!Array.isArray(data?.[key]) || data[key].length !== count) issues.push(`${key}:${count}개아님`);
   }
+  for (const key of ["surveillance", "search", "briefing"]) {
+    if (!data?.[key] || typeof data[key] !== "object") issues.push(`${key}:누락`);
+  }
+  if (Array.isArray(data?.evidence) && duplicate(data.evidence.map((item) => item?.title))) issues.push("증거중복");
+  if (Array.isArray(data?.forensicReports) && duplicate(data.forensicReports.map((item) => item?.sample))) issues.push("감식중복");
+  if (Array.isArray(data?.questions) && duplicate(data.questions.map((item) => item?.question))) issues.push("심문중복");
   if (Array.isArray(data?.verdicts)) {
-    const titles = data.verdicts.map((item) => normalized(item?.title));
-    const endings = data.verdicts.map((item) => normalized(item?.afterStory));
-    if (new Set(titles).size !== titles.length) issues.push("판결중복");
-    if (new Set(endings).size !== endings.length) issues.push("후일담중복");
+    if (duplicate(data.verdicts.map((item) => item?.title))) issues.push("판결중복");
+    if (duplicate(data.verdicts.map((item) => item?.afterStory))) issues.push("후일담중복");
   }
   return issues;
-}
-
-function errorText(body, status) {
-  const base = body?.error || `HTTP ${status}`;
-  const diagnostic = body?.diagnostic;
-  if (!diagnostic) return base;
-  return `${base} [${diagnostic.status}: ${diagnostic.message}]`;
 }
 
 const selected = corpus.slice(offset, offset + limit);
@@ -46,17 +57,30 @@ for (const [index, item] of selected.entries()) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-Sosoking-Client": "court-v2",
-        "X-Sosoking-Debug": "preview-eval"
+        "X-Sosoking-Client": "court-v3"
       },
       body: JSON.stringify(item)
     });
     const body = await response.json().catch(() => ({}));
     const latencyMs = Math.round(performance.now() - started);
-    const issues = response.ok && body.case ? inspect(body.case) : [errorText(body, response.status)];
-    rows.push({ no: offset + index + 1, ok: issues.length === 0, latencyMs, title: body.case?.title || "-", issues: issues.join(", ") || "-" });
+    const issues = response.ok && body.case ? inspect(body.case) : [body?.error || `HTTP ${response.status}`];
+    rows.push({
+      no: offset + index + 1,
+      ok: issues.length === 0,
+      latencyMs,
+      title: body.case?.title || "-",
+      operation: body.case?.operationName || "-",
+      issues: issues.join(", ") || "-"
+    });
   } catch (error) {
-    rows.push({ no: offset + index + 1, ok: false, latencyMs: Math.round(performance.now() - started), title: "-", issues: error.message });
+    rows.push({
+      no: offset + index + 1,
+      ok: false,
+      latencyMs: Math.round(performance.now() - started),
+      title: "-",
+      operation: "-",
+      issues: error.message
+    });
   }
 }
 
