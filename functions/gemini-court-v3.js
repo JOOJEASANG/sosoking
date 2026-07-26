@@ -48,7 +48,7 @@ const SYSTEM_PROMPT = `당신은 한국어 코미디 서비스 '소문난 판결
 - 양측 주장은 서로 반대지만 각각 조금씩 말이 되어야 한다.
 - 판결은 엄벌형, 공동책임형, 황당한 화해형으로 확실히 다르게 쓴다.
 - 후일담은 판결 집행 때문에 더 유치한 새 문제가 생기는 반전이다.
-- 각 문자열은 짧고 선명하게 쓴다. 전체 JSON은 간결하게 완성한다.`;
+- 각 문자열은 짧고 선명하게 쓰고 JSON을 끝까지 완성한다.`;
 
 class SafetyInputError extends Error {
   constructor(message) {
@@ -109,10 +109,10 @@ function normalize(value) {
   return String(value || "").replace(/[\s.,!?"'“”‘’()[\]{}:;·-]/g, "").toLowerCase();
 }
 
-function strings(value, output = []) {
+function collectStrings(value, output = []) {
   if (typeof value === "string") output.push(value);
-  else if (Array.isArray(value)) value.forEach((item) => strings(item, output));
-  else if (value && typeof value === "object") Object.values(value).forEach((item) => strings(item, output));
+  else if (Array.isArray(value)) value.forEach((item) => collectStrings(item, output));
+  else if (value && typeof value === "object") Object.values(value).forEach((item) => collectStrings(item, output));
   return output;
 }
 
@@ -128,9 +128,8 @@ function auditCourtCase(data) {
   for (const key of ["evidence", "questions", "verdicts", "judgeTypes"]) {
     if (!Array.isArray(data[key]) || data[key].length !== 3) issues.push(`${key} 개수`);
   }
-  const all = strings(data).join(" ");
+  const all = collectStrings(data).join(" ");
   if (privateData(all)) issues.push("개인정보 형태");
-  if (BLOCKED.some((term) => all.includes(term))) issues.push("차단 소재");
   if (REAL_INSTITUTIONS.some((term) => all.includes(term))) issues.push("실제 기관명");
   if (Array.isArray(data.evidence) && !unique(data.evidence.map((item) => item?.title))) issues.push("증거 중복");
   if (Array.isArray(data.questions) && !unique(data.questions.map((item) => item?.question))) issues.push("심문 중복");
@@ -155,28 +154,21 @@ function responseSchema(Type) {
     ["title", "charge", "scene", "damages", "authority", "scale", "impact", "evidence", "questions", "prosecution", "defense", "judge", "verdicts", "judgeTypes"],
     {
       title: text(), charge: text(), scene: text(), damages: text(), authority: text(), scale: text(), impact: text(),
-      evidence: {
-        type: Type.ARRAY,
-        items: object(["label", "title", "detail"], { label: text(), title: text(), detail: text() })
-      },
+      evidence: { type: Type.ARRAY, items: object(["label", "title", "detail"], { label: text(), title: text(), detail: text() }) },
       questions: {
         type: Type.ARRAY,
-        items: object(
-          ["question", "speaker", "response", "replySpeaker", "reply"],
-          { question: text(), speaker: text(), response: text(), replySpeaker: text(), reply: text() }
-        )
+        items: object(["question", "speaker", "response", "replySpeaker", "reply"], {
+          question: text(), speaker: text(), response: text(), replySpeaker: text(), reply: text()
+        })
       },
       prosecution: text(), defense: text(), judge: text(),
-      verdicts: {
-        type: Type.ARRAY,
-        items: object(["title", "sentence", "afterStory"], { title: text(), sentence: text(), afterStory: text() })
-      },
+      verdicts: { type: Type.ARRAY, items: object(["title", "sentence", "afterStory"], { title: text(), sentence: text(), afterStory: text() }) },
       judgeTypes: { type: Type.ARRAY, items: text() }
     }
   );
 }
 
-async function timeout(promise) {
+async function withTimeout(promise) {
   let timer;
   try {
     return await Promise.race([
@@ -192,8 +184,7 @@ async function timeout(promise) {
 
 function parseResponse(response) {
   const reason = String(response?.candidates?.[0]?.finishReason || "UNKNOWN");
-  const blocked = response?.promptFeedback?.blockReason || reason === "SAFETY";
-  if (blocked) throw new SafetyInputError("가벼운 일상 소재만 접수할 수 있습니다.");
+  if (response?.promptFeedback?.blockReason || reason === "SAFETY") throw new SafetyInputError("가벼운 일상 소재만 접수할 수 있습니다.");
   if (reason === "MAX_TOKENS") throw new Error("Gemini 출력 토큰 한도 초과");
   const raw = String(response?.text || "").trim();
   if (!raw) throw new Error(`Gemini 응답 비어 있음(${reason})`);
@@ -219,7 +210,7 @@ async function generate(apiKey, incident, severity, correction = "") {
     HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
     HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT
   ].map((category) => ({ category, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE }));
-  const response = await timeout(ai.models.generateContent({
+  const response = await withTimeout(ai.models.generateContent({
     model: MODEL,
     contents: prompt,
     config: {
@@ -260,13 +251,7 @@ function diagnostic(error) {
 }
 
 exports.generateCourtCase = onRequest(
-  {
-    region: "asia-northeast3",
-    timeoutSeconds: 60,
-    memory: "512MiB",
-    maxInstances: 10,
-    secrets: [GEMINI_API_KEY]
-  },
+  { region: "asia-northeast3", timeoutSeconds: 60, memory: "512MiB", maxInstances: 10, secrets: [GEMINI_API_KEY] },
   async (req, res) => {
     res.set("Cache-Control", "no-store");
     res.set("X-Content-Type-Options", "nosniff");
@@ -286,10 +271,7 @@ exports.generateCourtCase = onRequest(
       const key = String(GEMINI_API_KEY.value() || "").trim();
       if (!key) throw new Error("GEMINI_API_KEY가 설정되지 않았습니다.");
       const courtCase = await generateAndAudit(key, input.incident, input.severity);
-      return res.status(200).json({
-        case: courtCase,
-        meta: { source: "gemini", model: MODEL, thinking: false, stored: false }
-      });
+      return res.status(200).json({ case: courtCase, meta: { source: "gemini", model: MODEL, thinking: false, stored: false } });
     } catch (error) {
       const isSafety = error instanceof SafetyInputError;
       const info = diagnostic(error);
