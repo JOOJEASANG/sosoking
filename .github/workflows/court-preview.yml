@@ -1,4 +1,4 @@
-name: 소문난 판결소 미리보기 검증
+name: 소문난 판결소 수사본부 V3 미리보기
 
 on:
   pull_request:
@@ -14,7 +14,7 @@ on:
       - ".github/workflows/court-preview.yml"
 
 concurrency:
-  group: court-preview-${{ github.event.pull_request.number }}
+  group: court-investigation-v3-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 permissions:
@@ -25,9 +25,9 @@ env:
 
 jobs:
   preview-and-evaluate:
-    if: github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'rebuild/sosoking-v2'
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'redesign/sosoking-investigation-v3'
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 50
 
     steps:
       - name: 저장소 체크아웃
@@ -71,15 +71,17 @@ jobs:
             echo "::notice::GitHub GEMINI_API_KEY가 비어 있어 기존 Firebase Secret을 유지합니다."
           fi
 
-      - name: 평가용 요청 한도 임시 적용
-        run: sed -i 's/const RATE_LIMIT = 12;/const RATE_LIMIT = 30;/' functions/gemini-court-runtime.js
+      - name: 미리보기 전용 함수와 평가 한도 적용
+        run: |
+          sed -i 's/const RATE_LIMIT = 12;/const RATE_LIMIT = 30;/' functions/gemini-court-investigation.js
+          sed -i 's/"functionId": "generateCourtCase"/"functionId": "generateCourtCaseV3"/' firebase.json
 
-      - name: 함수와 Hosting 미리보기 채널 배포
+      - name: V3 함수와 Hosting 미리보기 채널 배포
         id: preview
         shell: bash
         run: |
           set -euo pipefail
-          firebase hosting:channel:deploy court-preview --expires 7d --project "$FIREBASE_PROJECT_ID" --non-interactive 2>&1 | tee preview-deploy.log
+          firebase hosting:channel:deploy court-investigation-v3 --expires 7d --project "$FIREBASE_PROJECT_ID" --non-interactive 2>&1 | tee preview-deploy.log
           preview_url="$(grep -Eo 'https://[A-Za-z0-9.-]+\.(web\.app|firebaseapp\.com)' preview-deploy.log | tail -n 1 || true)"
           if [ -z "$preview_url" ]; then
             echo "미리보기 주소를 찾지 못했습니다."
@@ -88,15 +90,17 @@ jobs:
           echo "PREVIEW_URL=$preview_url" >> "$GITHUB_ENV"
           echo "preview_url=$preview_url" >> "$GITHUB_OUTPUT"
 
-      - name: 미리보기 HTML과 자산 확인
+      - name: 미리보기 HTML과 디자인 자산 확인
         shell: bash
         run: |
           set -euo pipefail
           curl --fail --location --retry 6 --retry-all-errors --retry-delay 10 "$PREVIEW_URL/" -o preview-index.html
-          grep -q 'polish.css' preview-index.html
-          grep -q 'share-polish.js' preview-index.html
-          curl --fail --location "$PREVIEW_URL/polish.css" >/dev/null
-          curl --fail --location "$PREVIEW_URL/share-polish.js" >/dev/null
+          grep -q 'investigation.css' preview-index.html
+          grep -q 'court-v3.js' preview-index.html
+          grep -q '별일 아니어도' preview-index.html
+          curl --fail --location "$PREVIEW_URL/investigation.css" >/dev/null
+          curl --fail --location "$PREVIEW_URL/court-v3.js" >/dev/null
+          curl --fail --location "$PREVIEW_URL/investigation-icons.svg" >/dev/null
 
       - name: 모바일·데스크톱 첫 화면 캡처
         continue-on-error: true
@@ -107,10 +111,10 @@ jobs:
             echo "Chrome 실행 파일을 찾지 못해 화면 캡처를 건너뜁니다."
             exit 0
           fi
-          "$chrome" --headless --no-sandbox --disable-gpu --hide-scrollbars --window-size=390,844 --screenshot=mobile-home.png "$PREVIEW_URL/"
-          "$chrome" --headless --no-sandbox --disable-gpu --hide-scrollbars --window-size=1440,1100 --screenshot=desktop-home.png "$PREVIEW_URL/"
+          "$chrome" --headless --no-sandbox --disable-gpu --hide-scrollbars --window-size=390,844 --screenshot=mobile-home-v3.png "$PREVIEW_URL/"
+          "$chrome" --headless --no-sandbox --disable-gpu --hide-scrollbars --window-size=1440,1100 --screenshot=desktop-home-v3.png "$PREVIEW_URL/"
 
-      - name: Gemini 단건 스모크 테스트
+      - name: Gemini 단건 상세 수사 검사
         id: smoke
         continue-on-error: true
         shell: bash
@@ -120,9 +124,9 @@ jobs:
           COURT_EVAL_LIMIT: "1"
         run: |
           set -o pipefail
-          npm run evaluate 2>&1 | tee court-smoke.log
+          npm run evaluate 2>&1 | tee court-smoke-v3.log
 
-      - name: 대표 사건 20개 실제 Gemini 평가
+      - name: 대표 사건 20개 상세 수사 평가
         id: evaluate
         if: steps.smoke.outcome == 'success'
         continue-on-error: true
@@ -133,20 +137,20 @@ jobs:
           COURT_EVAL_LIMIT: "20"
         run: |
           set -o pipefail
-          npm run evaluate 2>&1 | tee court-evaluation.log
+          npm run evaluate 2>&1 | tee court-evaluation-v3.log
 
-      - name: 정상 요청 한도 12회 복원
+      - name: V3 함수 요청 한도 정상값 복원
         if: always() && steps.preview.outcome == 'success'
         shell: bash
         run: |
-          git checkout -- functions/gemini-court-runtime.js
-          firebase deploy --project "$FIREBASE_PROJECT_ID" --only functions:generateCourtCase --force --non-interactive 2>&1 | tee function-restore.log
+          git checkout -- functions/gemini-court-investigation.js firebase.json
+          firebase deploy --project "$FIREBASE_PROJECT_ID" --only functions:generateCourtCaseV3 --force --non-interactive 2>&1 | tee function-v3-restore.log
 
       - name: 평가 통과 확인
         if: always()
         run: |
           if [ "${{ steps.smoke.outcome }}" != "success" ] || [ "${{ steps.evaluate.outcome }}" != "success" ]; then
-            echo "Gemini 스모크 테스트 또는 대표 사건 평가에서 실패했습니다."
+            echo "V3 스모크 테스트 또는 대표 사건 평가에서 실패했습니다."
             exit 1
           fi
 
@@ -155,27 +159,26 @@ jobs:
         shell: bash
         run: |
           {
-            echo "## 소문난 판결소 미리보기"
+            echo "## 소문난 판결소 수사본부 V3"
             echo
             echo "- 미리보기 주소: ${{ steps.preview.outputs.preview_url || '배포 실패' }}"
-            echo "- 운영 Hosting은 변경하지 않았습니다."
-            echo "- 모바일 보정 자산과 공유 카드 엔진을 확인했습니다."
-            echo "- Gemini 단건 검사 통과 후 대표 사건 20개를 평가합니다."
-            echo "- 평가 후 함수 요청 한도는 정상값 12회로 복원합니다."
+            echo "- 운영 Hosting과 기존 generateCourtCase 함수는 변경하지 않았습니다."
+            echo "- 작전본부 UI, 잠복수사, 과잉감식, 압수수색, 브리핑, 판결을 검증합니다."
+            echo "- 단건 검사 통과 후 대표 사건 20개를 평가합니다."
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: 배포·평가·화면 캡처 저장
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: court-preview-evaluation
+          name: court-investigation-v3-evaluation
           path: |
             preview-deploy.log
             preview-index.html
-            court-smoke.log
-            court-evaluation.log
-            function-restore.log
-            mobile-home.png
-            desktop-home.png
+            court-smoke-v3.log
+            court-evaluation-v3.log
+            function-v3-restore.log
+            mobile-home-v3.png
+            desktop-home-v3.png
           if-no-files-found: ignore
           retention-days: 7
