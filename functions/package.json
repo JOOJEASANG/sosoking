@@ -1,13 +1,13 @@
 {
   "name": "sosoking-court-functions",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "private": true,
   "main": "index.js",
   "engines": {
     "node": "22"
   },
   "scripts": {
-    "lint": "node --check index.js && node --check gemini-court-v2.js"
+    "lint": "node --check index.js && node --check gemini-court-v3.js"
   },
   "dependencies": {
     "@google/genai": "^2.13.0",
