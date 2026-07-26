@@ -50,6 +50,7 @@ function inspect(data) {
 
 const selected = corpus.slice(offset, offset + limit);
 const rows = [];
+let sampleCase = null;
 for (const [index, item] of selected.entries()) {
   const started = performance.now();
   try {
@@ -64,6 +65,7 @@ for (const [index, item] of selected.entries()) {
     const body = await response.json().catch(() => ({}));
     const latencyMs = Math.round(performance.now() - started);
     const issues = response.ok && body.case ? inspect(body.case) : [body?.error || `HTTP ${response.status}`];
+    if (!sampleCase && body.case) sampleCase = body.case;
     rows.push({
       no: offset + index + 1,
       ok: issues.length === 0,
@@ -85,6 +87,10 @@ for (const [index, item] of selected.entries()) {
 }
 
 console.table(rows);
+if (selected.length === 1 && sampleCase) {
+  console.log("\n--- 상세 수사 샘플 ---");
+  console.log(JSON.stringify(sampleCase, null, 2));
+}
 const passed = rows.filter((row) => row.ok).length;
 const average = Math.round(rows.reduce((sum, row) => sum + row.latencyMs, 0) / rows.length);
 console.log(`\n평가 범위 ${offset + 1}~${offset + rows.length} · 통과 ${passed}/${rows.length} · 평균 응답 ${average}ms`);
