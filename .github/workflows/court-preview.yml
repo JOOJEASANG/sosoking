@@ -27,7 +27,7 @@ env:
 jobs:
   preview-and-evaluate:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 35
 
     steps:
       - name: 저장소 체크아웃
@@ -71,6 +71,9 @@ jobs:
             echo "::notice::GitHub GEMINI_API_KEY가 비어 있어 기존 Firebase Secret을 유지합니다."
           fi
 
+      - name: 평가용 요청 한도 임시 적용
+        run: sed -i 's/const RATE_LIMIT = 12;/const RATE_LIMIT = 24;/' functions/gemini-court.js
+
       - name: 함수와 Hosting 미리보기 채널 배포
         id: preview
         shell: bash
@@ -88,40 +91,27 @@ jobs:
       - name: 미리보기 응답 확인
         run: curl --fail --location --retry 6 --retry-all-errors --retry-delay 10 "$PREVIEW_URL/" >/dev/null
 
-      - name: 대표 사건 1~10 실제 Gemini 평가
-        id: evaluate_first
+      - name: 대표 사건 20개 실제 Gemini 평가
+        id: evaluate
         continue-on-error: true
         env:
           COURT_BASE_URL: ${{ steps.preview.outputs.preview_url }}
           COURT_EVAL_OFFSET: "0"
-          COURT_EVAL_LIMIT: "10"
-        run: npm run evaluate 2>&1 | tee court-evaluation-part1.log
+          COURT_EVAL_LIMIT: "20"
+        run: npm run evaluate 2>&1 | tee court-evaluation.log
 
-      - name: 요청 제한 창 초기화 대기
-        run: sleep 610
-
-      - name: 대표 사건 11~20 실제 Gemini 평가
-        id: evaluate_second
-        continue-on-error: true
-        env:
-          COURT_BASE_URL: ${{ steps.preview.outputs.preview_url }}
-          COURT_EVAL_OFFSET: "10"
-          COURT_EVAL_LIMIT: "10"
-        run: npm run evaluate 2>&1 | tee court-evaluation-part2.log
-
-      - name: 평가 결과 합치기
-        if: always()
+      - name: 정상 요청 한도 12회 복원
+        if: always() && steps.preview.outcome == 'success'
         shell: bash
         run: |
-          {
-            echo "===== 사건 1~10 ====="
-            cat court-evaluation-part1.log 2>/dev/null || true
-            echo
-            echo "===== 사건 11~20 ====="
-            cat court-evaluation-part2.log 2>/dev/null || true
-          } > court-evaluation.log
-          if [ "${{ steps.evaluate_first.outcome }}" != "success" ] || [ "${{ steps.evaluate_second.outcome }}" != "success" ]; then
-            echo "대표 사건 평가에서 실패 항목이 있습니다."
+          git checkout -- functions/gemini-court.js
+          firebase deploy --project "$FIREBASE_PROJECT_ID" --only functions:generateCourtCase --force --non-interactive 2>&1 | tee function-restore.log
+
+      - name: 평가 통과 확인
+        if: always()
+        run: |
+          if [ "${{ steps.evaluate.outcome }}" != "success" ]; then
+            echo "대표 사건 20개 평가에서 실패 항목이 있습니다."
             exit 1
           fi
 
@@ -134,7 +124,8 @@ jobs:
             echo
             echo "- 미리보기 주소: ${{ steps.preview.outputs.preview_url || '배포 실패' }}"
             echo "- 운영 Hosting은 변경하지 않았습니다."
-            echo "- 대표 사건 20개를 두 구간으로 나눠 실제 Gemini로 평가했습니다."
+            echo "- 대표 사건 20개를 실제 Gemini로 생성해 평가했습니다."
+            echo "- 평가 후 함수 요청 한도는 정상값 12회로 복원했습니다."
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Draft PR에 검증 결과 기록
@@ -153,6 +144,7 @@ jobs:
               `- 미리보기: ${process.env.PREVIEW_URL || '배포 주소 생성 실패'}`,
               `- Actions 실행: https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
               '- 운영 Hosting은 변경하지 않았습니다.',
+              '- 대표 사건 20개 평가 후 함수 요청 제한은 정상값으로 복원됩니다.',
               '- 평가 로그는 Actions의 `court-preview-evaluation` 아티팩트에 저장됩니다.'
             ].join('\n');
             await github.rest.issues.createComment({
@@ -170,7 +162,6 @@ jobs:
           path: |
             preview-deploy.log
             court-evaluation.log
-            court-evaluation-part1.log
-            court-evaluation-part2.log
+            function-restore.log
           if-no-files-found: ignore
           retention-days: 7
