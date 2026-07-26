@@ -9,19 +9,20 @@ test("AI endpoint wiring is consistent", async () => {
     read("public/court-app.js"),
     read("firebase.json"),
     read("functions/index.js"),
-    read("functions/gemini-court.js")
+    read("functions/gemini-court-v2.js")
   ]);
   assert.match(client, /\/api\/generate-case/);
   assert.match(firebase, /"source"\s*:\s*"\/api\/generate-case"/);
   assert.match(firebase, /"functionId"\s*:\s*"generateCourtCase"/);
-  assert.match(entry, /gemini-court/);
+  assert.match(firebase, /"runtime"\s*:\s*"nodejs22"/);
+  assert.match(entry, /gemini-court-v2/);
   assert.match(server, /exports\.generateCourtCase/);
 });
 
 test("Gemini key remains server-side", async () => {
   const [client, server, workflow] = await Promise.all([
     read("public/court-app.js"),
-    read("functions/gemini-court.js"),
+    read("functions/gemini-court-v2.js"),
     read(".github/workflows/firebase-deploy.yml")
   ]);
   assert.doesNotMatch(client, /GEMINI_API_KEY|AIza[0-9A-Za-z_-]{20,}/);
@@ -32,19 +33,22 @@ test("Gemini key remains server-side", async () => {
   assert.match(workflow, /functions:secrets:set GEMINI_API_KEY/);
 });
 
-test("safety and output audit layers exist", async () => {
+test("Gemini Type schema and safety layers exist", async () => {
   const [client, server] = await Promise.all([
     read("public/court-app.js"),
-    read("functions/gemini-court.js")
+    read("functions/gemini-court-v2.js")
   ]);
   assert.match(client, /privatePatterns/);
-  assert.match(server, /SAFETY_SETTINGS/);
-  assert.match(server, /BLOCK_MEDIUM_AND_ABOVE/);
+  assert.match(server, /HarmCategory/);
+  assert.match(server, /HarmBlockThreshold/);
   assert.match(server, /auditCourtCase/);
   assert.match(server, /PRIVATE_PATTERNS/);
   assert.match(server, /BLOCKED_TERMS/);
   assert.match(server, /responseMimeType:\s*"application\/json"/);
-  assert.match(server, /responseSchema/);
+  assert.match(server, /responseSchema:\s*buildResponseSchema\(Type\)/);
+  assert.match(server, /Type\.OBJECT/);
+  assert.match(server, /Type\.ARRAY/);
+  assert.match(server, /Type\.STRING/);
 });
 
 test("share card excludes the original incident", async () => {
