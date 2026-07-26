@@ -30,6 +30,13 @@ function inspect(data) {
   return issues;
 }
 
+function errorText(body, status) {
+  const base = body?.error || `HTTP ${status}`;
+  const diagnostic = body?.diagnostic;
+  if (!diagnostic) return base;
+  return `${base} [${diagnostic.status}: ${diagnostic.message}]`;
+}
+
 const selected = corpus.slice(offset, offset + limit);
 const rows = [];
 for (const [index, item] of selected.entries()) {
@@ -37,12 +44,16 @@ for (const [index, item] of selected.entries()) {
   try {
     const response = await fetch(`${baseUrl}/api/generate-case`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-Sosoking-Client": "court-v2" },
+      headers: {
+        "Content-Type": "application/json",
+        "X-Sosoking-Client": "court-v2",
+        "X-Sosoking-Debug": "preview-eval"
+      },
       body: JSON.stringify(item)
     });
     const body = await response.json().catch(() => ({}));
     const latencyMs = Math.round(performance.now() - started);
-    const issues = response.ok && body.case ? inspect(body.case) : [body.error || `HTTP ${response.status}`];
+    const issues = response.ok && body.case ? inspect(body.case) : [errorText(body, response.status)];
     rows.push({ no: offset + index + 1, ok: issues.length === 0, latencyMs, title: body.case?.title || "-", issues: issues.join(", ") || "-" });
   } catch (error) {
     rows.push({ no: offset + index + 1, ok: false, latencyMs: Math.round(performance.now() - started), title: "-", issues: error.message });
