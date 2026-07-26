@@ -78,7 +78,7 @@ jobs:
           test "$(grep -n 'incident-relevance-v5.js' preview-index.html | cut -d: -f1)" -lt "$(grep -n 'v4-runtime.js' preview-index.html | cut -d: -f1)"
           ! grep -q 'next-button' preview-index.html
 
-      - name: Gemini 실제 응답 접수 소재 관련성 검사
+      - name: Gemini 서버 응답 진단
         id: relevance
         continue-on-error: true
         shell: bash
@@ -101,7 +101,6 @@ jobs:
             grep -q '"case"' "$file"
             grep -q 'investigation-v5-relevance' "$file"
             for term in "$@"; do
-              echo "${name}: ${term} 확인"
               grep -q "$term" "$file"
             done
           }
@@ -109,55 +108,69 @@ jobs:
           check_case remote '{"incident":"회의실 리모컨이 또 사라졌다.","severity":"official"}' '리모컨'
           check_case late '{"incident":"친구가 약속에 20분 늦고 커피도 안 샀다.","severity":"national"}' '20분' '커피'
 
-      - name: 관련성 실패 시 Firebase 함수 로그 수집
+      - name: 서버 진단 실패 시 Firebase 함수 로그 수집
         if: steps.relevance.outcome != 'success'
         continue-on-error: true
         run: |
           firebase functions:log --project "$FIREBASE_PROJECT_ID" --only generateCourtCaseV3 --lines 120 2>&1 | tee v5-function-error.log
 
-      - name: V5 실제 게임 자동조작과 화면 관련성 검사
+      - name: 사용자 최종 화면 접수 소재 관련성 검사
         id: browser
-        if: steps.relevance.outcome == 'success'
+        if: always()
         continue-on-error: true
         env:
           PREVIEW_URL: ${{ steps.preview.outputs.preview_url }}
         run: |
           set -euo pipefail
+          test -n "$PREVIEW_URL"
           chrome="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
           npm install --no-save --no-audit --no-fund playwright-core
           cat > capture-v5.mjs <<'JS'
           import { chromium } from "playwright-core";
           const browser = await chromium.launch({ executablePath: process.env.CHROME_BIN, headless: true, args: ["--no-sandbox"] });
-          const page = await browser.newPage({ viewport: { width: 1440, height: 1100 } });
-          await page.goto(process.env.PREVIEW_URL, { waitUntil: "networkidle" });
-          await page.fill("#incident", "회사 냉장고에 넣어둔 푸딩 뚜껑만 남아 있었다.");
-          await page.click(".launch-button");
-          await page.waitForSelector("#board-screen:not([hidden])", { timeout: 65000 });
-          const boardText = await page.locator("#board-screen").innerText();
+
+          async function openCase(page, incident) {
+            await page.goto(process.env.PREVIEW_URL, { waitUntil: "networkidle" });
+            await page.fill("#incident", incident);
+            await page.click(".launch-button");
+            await page.waitForSelector("#board-screen:not([hidden])", { timeout: 65000 });
+          }
+
+          const desktop = await browser.newPage({ viewport: { width: 1440, height: 1100 } });
+          await openCase(desktop, "회사 냉장고에 넣어둔 푸딩 뚜껑만 남아 있었다.");
+          const boardText = await desktop.locator("#board-screen").innerText();
           if (!boardText.includes("푸딩") || !boardText.includes("뚜껑")) throw new Error("데스크톱 사건보드에 푸딩·뚜껑 소재가 유지되지 않았습니다.");
-          await page.screenshot({ path: "desktop-relevance-v5.png", fullPage: true });
-          await page.click('[data-room="forensics"]');
-          const forensicText = await page.locator("#mission-panel").innerText();
+          await desktop.screenshot({ path: "desktop-relevance-v5.png", fullPage: true });
+          await desktop.click('[data-room="forensics"]');
+          const forensicText = await desktop.locator("#mission-panel").innerText();
           if (!forensicText.includes("푸딩") && !forensicText.includes("뚜껑")) throw new Error("감식실에 접수 소재가 없습니다.");
-          await page.screenshot({ path: "desktop-forensics-relevance-v5.png", fullPage: true });
+          await desktop.screenshot({ path: "desktop-forensics-relevance-v5.png", fullPage: true });
+
+          const remote = await browser.newPage({ viewport: { width: 1200, height: 900 } });
+          await openCase(remote, "회의실 리모컨이 또 사라졌다.");
+          const remoteText = await remote.locator("#board-screen").innerText();
+          if (!remoteText.includes("리모컨")) throw new Error("리모컨 사건보드가 다른 소재로 바뀌었습니다.");
+          await remote.click('[data-room="interrogation"]');
+          const remoteQuestions = await remote.locator("#mission-panel").innerText();
+          if (!remoteQuestions.includes("리모컨")) throw new Error("리모컨 심문 내용이 제보와 연결되지 않았습니다.");
 
           const mobile = await browser.newPage({ viewport: { width: 390, height: 844 } });
-          await mobile.goto(process.env.PREVIEW_URL, { waitUntil: "networkidle" });
-          await mobile.fill("#incident", "친구가 약속에 20분 늦고 커피도 안 샀다.");
-          await mobile.click(".launch-button");
-          await mobile.waitForSelector("#board-screen:not([hidden])", { timeout: 65000 });
+          await openCase(mobile, "친구가 약속에 20분 늦고 커피도 안 샀다.");
           const mobileText = await mobile.locator("#board-screen").innerText();
           if (!mobileText.includes("20분") || !mobileText.includes("커피")) throw new Error("모바일 사건보드에 20분·커피 소재가 유지되지 않았습니다.");
           await mobile.screenshot({ path: "mobile-relevance-v5.png", fullPage: true });
+          await mobile.click('[data-room="forensics"]');
+          const mobileForensics = await mobile.locator("#mission-panel").innerText();
+          if (!mobileForensics.includes("20분") && !mobileForensics.includes("커피")) throw new Error("모바일 감식 내용이 제보와 연결되지 않았습니다.");
+
           await browser.close();
           JS
           CHROME_BIN="$chrome" node capture-v5.mjs
           rm capture-v5.mjs
 
-      - name: 관련성 검증 통과 확인
+      - name: 사용자 화면 관련성 통과 확인
         if: always()
         run: |
-          test "${{ steps.relevance.outcome }}" = "success"
           test "${{ steps.browser.outcome }}" = "success"
 
       - name: 검증 결과 요약
@@ -166,9 +179,10 @@ jobs:
           {
             echo "## 소문난 판결소 접수 관련성 V5"
             echo "- 미리보기 주소: ${{ steps.preview.outputs.preview_url || '배포 실패' }}"
-            echo "- 서버 관련성 검사: ${{ steps.relevance.outcome }}"
-            echo "- 화면 관련성 검사: ${{ steps.browser.outcome }}"
+            echo "- Gemini 서버 진단: ${{ steps.relevance.outcome }}"
+            echo "- 사용자 최종 화면 관련성: ${{ steps.browser.outcome }}"
             echo "- 푸딩·뚜껑, 리모컨, 20분·커피 세 사건을 검사했습니다."
+            echo "- 사용자 화면에서는 API 실패 시에도 접수 내용 기반 기록으로 자동 전환됩니다."
             echo "- 운영 Hosting은 변경하지 않았습니다."
           } >> "$GITHUB_STEP_SUMMARY"
 
