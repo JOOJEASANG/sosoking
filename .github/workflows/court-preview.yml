@@ -72,7 +72,7 @@ jobs:
           fi
 
       - name: 평가용 요청 한도 임시 적용
-        run: sed -i 's/const RATE_LIMIT = 12;/const RATE_LIMIT = 30;/' functions/gemini-court-v2.js
+        run: sed -i 's/const RATE_LIMIT = 12;/const RATE_LIMIT = 30;/' functions/gemini-court-v3.js
 
       - name: 함수와 Hosting 미리보기 채널 배포
         id: preview
@@ -120,7 +120,7 @@ jobs:
         if: always() && steps.preview.outcome == 'success'
         shell: bash
         run: |
-          git checkout -- functions/gemini-court-v2.js
+          git checkout -- functions/gemini-court-v3.js
           firebase deploy --project "$FIREBASE_PROJECT_ID" --only functions:generateCourtCase --force --non-interactive 2>&1 | tee function-restore.log
 
       - name: 평가 통과 확인
@@ -140,7 +140,7 @@ jobs:
             echo
             echo "- 미리보기 주소: ${{ steps.preview.outputs.preview_url || '배포 실패' }}"
             echo "- 운영 Hosting은 변경하지 않았습니다."
-            echo "- Gemini 단건 검사 통과 후에만 대표 사건 20개 평가를 실행합니다."
+            echo "- Gemini 단건 검사 통과 후 대표 사건 20개를 평가합니다."
             echo "- 평가 후 함수 요청 한도는 정상값 12회로 복원합니다."
           } >> "$GITHUB_STEP_SUMMARY"
 
