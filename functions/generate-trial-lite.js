@@ -6,6 +6,7 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const db = getFirestore();
 const geminiKey = defineSecret('GEMINI_API_KEY');
 const REGION = 'asia-northeast3';
+const DEFAULT_MODEL = 'gemini-2.5-flash';
 
 function cleanText(value, maxLen) {
   return String(value || '')
@@ -67,91 +68,93 @@ function kstDateKey(date = new Date()) {
 
 function normalizeResult(parsed, description) {
   return {
-    caseTitle: normalizeCaseTitle(parsed.caseTitle, description),
-    reception: cleanDocument(parsed.reception, 1400),
-    investigation: cleanDocument(parsed.investigation, 1800),
-    plaintiffArg: cleanDocument(parsed.plaintiffArg, 1600),
-    defendantArg: cleanDocument(parsed.defendantArg, 1600),
-    verdict: cleanDocument(parsed.verdict, 2600)
+    caseTitle: normalizeCaseTitle(parsed?.caseTitle, description),
+    reception: cleanDocument(parsed?.reception, 1600),
+    investigation: cleanDocument(parsed?.investigation, 2000),
+    plaintiffArg: cleanDocument(parsed?.plaintiffArg, 1800),
+    defendantArg: cleanDocument(parsed?.defendantArg, 1800),
+    verdict: cleanDocument(parsed?.verdict, 3000)
   };
+}
+
+function hasRequiredSections(data) {
+  return Boolean(
+    data
+    && data.caseTitle.length >= 4
+    && data.reception.length >= 25
+    && data.investigation.length >= 30
+    && data.plaintiffArg.length >= 25
+    && data.defendantArg.length >= 25
+    && data.verdict.length >= 50
+  );
+}
+
+function qualityScore(data) {
+  if (!data) return 0;
+  return Math.min(data.reception.length, 300)
+    + Math.min(data.investigation.length, 420)
+    + Math.min(data.plaintiffArg.length, 320)
+    + Math.min(data.defendantArg.length, 320)
+    + Math.min(data.verdict.length, 650)
+    + (/주문|판결/.test(data.verdict) ? 150 : 0);
 }
 
 function isGoodResult(data) {
   return Boolean(
-    data.caseTitle.length >= 6
-    && data.reception.length >= 90
-    && data.investigation.length >= 130
-    && data.plaintiffArg.length >= 100
-    && data.defendantArg.length >= 100
-    && data.verdict.length >= 190
+    hasRequiredSections(data)
+    && data.reception.length >= 55
+    && data.investigation.length >= 75
+    && data.plaintiffArg.length >= 50
+    && data.defendantArg.length >= 50
+    && data.verdict.length >= 110
     && /주문|판결/.test(data.verdict)
   );
 }
 
 function buildPrompt(caseDescription, retry = false) {
   return `당신은 '소소킹 판결소'의 생활사건 기록관이자 코미디 판결문 작가다.
-사용자가 적은 사소한 생활분쟁을 읽고, 실제 사건보고서·내용증명·판결문처럼 정돈된 문서 형식으로 작성하라.
-형식은 진지하고 공식적이어야 하지만, 내용은 사건 사실에서 나온 웃음코드가 충분히 들어가야 한다.
+사용자가 적은 생활분쟁을 읽고, 실제 사건보고서·내용증명·답변서·판결문처럼 정돈된 문서로 작성한다.
+문서 형식은 실제처럼 진지하게 유지하되, 내용에는 사건의 구체적인 사물과 행동에서 나온 웃음이 충분히 들어가야 한다.
 
 [사건 내용]
 ${caseDescription}
 
-[핵심 원칙]
-- 사용자가 적지 않은 사실을 중대한 사실처럼 단정하지 않는다.
-- 실제 법률 자문, 실제 법원 판결, 실제 법적 효력이 있는 문서처럼 주장하지 않는다.
-- 실제 법령 조문이나 실제 기관명은 인용하지 않는다.
-- 욕설, 혐오, 모욕, 신상정보 재현은 하지 않는다.
-- 면책 문구나 시스템 안내 문구를 본문에 반복하지 않는다.
-- 웃음은 '사소한 일을 지나치게 엄숙하게 다루는 태도', '증거의 과잉 해석', '양측의 뻔뻔하지만 그럴듯한 주장'에서 만든다.
-- 모든 문단은 이 사건의 구체적인 사물·행동·말투를 반영한다.
-- 각 항목마다 최소 두 번 이상 자연스러운 웃음 포인트를 넣되, 유치한 말장난만 반복하지 않는다.
+[작성 원칙]
+- 사용자가 말하지 않은 사실을 새로 만들어 단정하지 않는다.
+- 실제 법률 자문이나 실제 법원 문서라고 주장하지 않는다.
+- 실제 법령 조문이나 실제 기관명은 넣지 않는다.
+- 면책·시스템 안내 문구를 본문에 쓰지 않는다.
+- 사소한 일을 지나치게 엄숙하게 다루고, 하찮은 정황을 결정적 증거처럼 분석한다.
+- 원고와 피고의 주장은 서로 다른 웃음 포인트를 사용한다.
+- 모든 항목에 사건 내용의 핵심 대상과 행동을 구체적으로 반영한다.
 
-[출력 형식]
-반드시 아래 여섯 필드만 가진 JSON 객체로 출력한다.
+[출력]
+반드시 JSON 객체 하나만 출력한다. 키는 아래 여섯 개만 사용한다.
 
-1. caseTitle
-- 사건 내용을 즉시 알아볼 수 있는 8~24자의 사건명
-- 핵심 대상과 행동이 드러나야 한다
-- 반드시 '사건'으로 끝낸다
-- 예: '마지막 치킨 한 조각 무단처분 사건'
+caseTitle: 핵심 대상과 행동이 드러나는 8~24자의 사건명. 반드시 '사건'으로 끝낸다.
+reception: '사건접수보고서' 형식. 접수취지, 사건개요, 접수의견을 2~3문단으로 작성한다.
+investigation: '수사보고' 형식. 확인 정황, 주요 증거, 진술의 모순, 조사관 의견을 2~4문단으로 작성한다.
+plaintiffArg: '원고측 내용증명 또는 준비서면' 형식. 청구취지와 주장요지를 2~3문단으로 작성한다.
+defendantArg: '피고측 답변서' 형식. 답변취지와 항변요지를 2~3문단으로 작성한다.
+verdict: '재판부 판결문' 형식. 첫머리에 반드시 '주문'을 쓰고, 실행 가능한 웃긴 생활형 처분과 판단 이유를 4~6문단으로 작성한다.
 
-2. reception
-- 실제 '사건접수보고서'처럼 작성
-- 접수취지, 사건개요, 접수의견이 자연스럽게 드러나는 2~4문단
-- 사소한 사건이 정식 사건으로 접수되는 과정 자체가 웃겨야 한다
-
-3. investigation
-- 실제 '수사보고'처럼 작성
-- 확인된 정황, 주요 증거, 당사자 진술의 모순, 조사관 의견을 포함
-- 빈 접시, 읽음 표시, 사라진 리모컨 같은 하찮은 물증을 과학수사급으로 분석
-- 3~5문단
-
-4. plaintiffArg
-- 실제 내용증명 또는 준비서면의 '원고 주장'처럼 작성
-- 청구취지와 주장요지를 포함
-- 원고가 진지하게 억울함을 주장하지만 과몰입한 표현에서 웃음이 나도록 작성
-- 2~4문단
-
-5. defendantArg
-- 실제 답변서의 '피고 변론'처럼 작성
-- 답변취지와 항변요지를 포함
-- 피고가 말이 되는 듯 안 되는 듯한 논리로 방어하도록 작성
-- 원고 주장과 같은 농담을 반복하지 않는다
-- 2~4문단
-
-6. verdict
-- 실제 판결문의 '주문'과 '이유' 형식으로 작성
-- 첫 부분에 반드시 '주문'을 명시하고, 실행 가능한 웃긴 생활형 처분을 선고한다
-- 이어서 사실관계, 재판부 판단, 양측 주장에 대한 판단을 포함
-- 마지막에는 지나치게 근엄한 생활형 교훈 또는 재판부 한마디를 넣는다
-- 5~8문단
-
-${retry ? '[재작성 지시]\n이전 응답은 분량이 짧거나 문서 구조가 부족했다. 각 항목을 사건 사실에 맞게 더 구체적이고 풍부하게 다시 작성하라.' : ''}`;
+${retry ? '[재작성]\n앞선 응답이 짧거나 일부 항목이 빠졌다. JSON 형식을 정확히 지키고 각 항목을 더 구체적으로 다시 작성한다.' : ''}`;
 }
 
 async function loadSettings() {
   const snap = await db.doc('site_settings/config').get();
   return snap.exists ? snap.data() : {};
+}
+
+function modelFor(genAI, modelName) {
+  return genAI.getGenerativeModel({
+    model: modelName,
+    generationConfig: {
+      temperature: 0.9,
+      topP: 0.95,
+      maxOutputTokens: 4096
+    }
+  });
 }
 
 exports.generateTrial = onCall({
@@ -181,6 +184,18 @@ exports.generateTrial = onCall({
     await caseRef.update({
       status: 'pending',
       courtStage: 'filed',
+      errorMessage: FieldValue.delete(),
+      updatedAt: FieldValue.serverTimestamp()
+    });
+    c = { ...c, status: 'pending', courtStage: 'filed' };
+  }
+
+  if (c.status === 'error') {
+    await caseRef.update({
+      status: 'pending',
+      courtStage: 'filed',
+      errorMessage: FieldValue.delete(),
+      processingStartedAt: FieldValue.delete(),
       updatedAt: FieldValue.serverTimestamp()
     });
     c = { ...c, status: 'pending', courtStage: 'filed' };
@@ -194,6 +209,8 @@ exports.generateTrial = onCall({
     await caseRef.update({
       status: 'pending',
       courtStage: 'filed',
+      errorMessage: FieldValue.delete(),
+      processingStartedAt: FieldValue.delete(),
       updatedAt: FieldValue.serverTimestamp()
     });
     c = { ...c, status: 'pending', courtStage: 'filed' };
@@ -228,25 +245,24 @@ exports.generateTrial = onCall({
 
   const isPublic = c.isPublic !== false;
   const settings = await loadSettings();
-  const modelName = cleanText(settings.geminiModel, 60) || 'gemini-2.5-flash';
-  const model = new GoogleGenerativeAI(geminiKey.value().trim()).getGenerativeModel({
-    model: modelName,
-    generationConfig: {
-      temperature: 0.95,
-      topP: 0.95,
-      maxOutputTokens: 3600,
-      responseMimeType: 'application/json'
-    }
-  });
+  const configuredModel = cleanText(settings.geminiModel, 60) || DEFAULT_MODEL;
+  const modelNames = [...new Set([configuredModel, DEFAULT_MODEL])];
+  const genAI = new GoogleGenerativeAI(geminiKey.value().trim());
 
   let totals = { requests: 0, inputTokens: 0, outputTokens: 0 };
   let data = null;
+  let bestCandidate = null;
+  let bestScore = 0;
   let lastError = null;
 
   try {
     for (let attempt = 0; attempt < 2; attempt += 1) {
+      const modelName = modelNames[Math.min(attempt, modelNames.length - 1)];
       try {
-        const result = await model.generateContent(buildPrompt(cleanText(c.caseDescription, 600), attempt > 0));
+        const model = modelFor(genAI, modelName);
+        const result = await model.generateContent(
+          buildPrompt(cleanText(c.caseDescription, 600), attempt > 0)
+        );
         const meta = result.response.usageMetadata || {};
         totals.requests += 1;
         totals.inputTokens += Number(meta.promptTokenCount || 0);
@@ -254,19 +270,26 @@ exports.generateTrial = onCall({
 
         const parsed = safeJson(result.response.text());
         const candidate = normalizeResult(parsed, c.caseDescription);
+        const score = qualityScore(candidate);
 
-        if (!isGoodResult(candidate)) {
-          throw new Error('AI 판결문 분량 또는 문서 구조가 부족합니다.');
+        if (hasRequiredSections(candidate) && score > bestScore) {
+          bestCandidate = candidate;
+          bestScore = score;
         }
 
-        data = candidate;
-        break;
+        if (isGoodResult(candidate)) {
+          data = candidate;
+          break;
+        }
+
+        lastError = new Error('AI 판결문이 권장 분량보다 짧습니다.');
       } catch (err) {
         lastError = err;
-        console.error(`generateTrial attempt ${attempt + 1} failed:`, err);
+        console.error(`generateTrial attempt ${attempt + 1} failed (${modelName}):`, err);
       }
     }
 
+    if (!data && bestCandidate) data = bestCandidate;
     if (!data) throw lastError || new Error('AI 판결문 생성 실패');
 
     const finalTitle = normalizeCaseTitle(data.caseTitle, c.caseDescription);
@@ -291,7 +314,7 @@ exports.generateTrial = onCall({
       verdict: data.verdict,
       sentence: '',
       aiSource: 'gemini',
-      promptVersion: 'simple-document-v1',
+      promptVersion: 'simple-document-v1.1',
       reactionTotal: 0,
       commentCount: 0,
       courtStage: 'sentenced',
@@ -324,14 +347,14 @@ exports.generateTrial = onCall({
     await caseRef.update({
       status: 'error',
       courtStage: 'error',
-      errorMessage: 'AI 판결문을 완성하지 못했습니다. 잠시 후 다시 접수해 주세요.',
+      errorMessage: 'AI 응답을 받지 못했습니다. 같은 사건으로 다시 작성할 수 있습니다.',
       updatedAt: FieldValue.serverTimestamp(),
       processingStartedAt: FieldValue.delete()
     }).catch(() => null);
 
     throw new HttpsError(
       'unavailable',
-      'AI 판결문을 완성하지 못했습니다. 고정된 시스템 문구로 대신 저장하지 않았습니다. 잠시 후 다시 시도해 주세요.'
+      'AI 응답을 받지 못했습니다. 잠시 후 같은 사건으로 다시 작성해 주세요.'
     );
   } finally {
     try {
