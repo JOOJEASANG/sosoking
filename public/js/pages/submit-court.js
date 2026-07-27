@@ -45,6 +45,26 @@ function ensureGameStyle() {
   `;
   document.head.appendChild(style);
 }
+
+function prepareAiCaseTitle(container) {
+  const titleInput = container.querySelector('#case-title');
+  const titleGroup = titleInput?.closest('.form-group');
+  const descGroup = container.querySelector('#case-desc')?.closest('.form-group');
+  if (!titleInput || !titleGroup || !descGroup) return;
+
+  titleInput.value = 'AI 사건명 작성 중';
+  titleInput.readOnly = true;
+  titleGroup.style.display = 'none';
+
+  if (!document.getElementById('ai-title-notice')) {
+    descGroup.insertAdjacentHTML('beforebegin', `
+      <div id="ai-title-notice" class="card" style="padding:14px;margin-bottom:18px;background:rgba(201,168,76,.08);border-color:rgba(201,168,76,.32);">
+        <div style="font-weight:900;color:var(--gold);margin-bottom:5px;">🤖 사건명은 AI 재판부가 자동 작성</div>
+        <div style="font-size:12px;color:var(--cream-dim);line-height:1.65;">사건 경위만 적으면 핵심을 파악해 짧고 거창한 사건명으로 바꿉니다. 예: ‘마지막 만두 단독 집행 사건’</div>
+      </div>`);
+  }
+}
+
 function decorateSubmit(container) {
   ensureGameStyle();
   const form = container.querySelector('#submit-form');
@@ -88,7 +108,7 @@ function decorateSubmit(container) {
         <div class="court-title" style="font-size:19px;">아무것도 아닌 일을 중대 사건으로 격상합니다</div>
         <div class="court-timeline">
           <div class="court-step"><div class="court-step-num">1</div><div><div class="court-step-title">사소한 사건 포착</div><div class="court-step-text">라면, 충전기, 읽씹 같은 생활분쟁을 대사건처럼 접수합니다.</div></div></div>
-          <div class="court-step"><div class="court-step-num">2</div><div><div class="court-step-title">억울함 레벨 산정</div><div class="court-step-text">Lv이 높을수록 판사가 더 엄숙하게 과몰입합니다.</div></div></div>
+          <div class="court-step"><div class="court-step-num">2</div><div><div class="court-step-title">AI 사건명 부여</div><div class="court-step-text">사건 경위를 읽고 쓸데없이 거창한 사건명을 자동으로 작성합니다.</div></div></div>
           <div class="court-step"><div class="court-step-num">3</div><div><div class="court-step-title">판사 캐릭터 배정</div><div class="court-step-text">선택한 판사 카드의 성향에 따라 판결 톤이 달라집니다.</div></div></div>
         </div>
       </div>`);
@@ -97,5 +117,6 @@ function decorateSubmit(container) {
 
 export async function renderSubmit(container) {
   await renderBaseSubmit(container);
+  prepareAiCaseTitle(container);
   decorateSubmit(container);
 }

@@ -1,5 +1,42 @@
 import { renderHome as renderBaseHome } from './home.js?v=20260630-3';
 
+function replaceHeroLogo(container) {
+  const hero = container.querySelector('.hero-section');
+  const image = hero?.querySelector('img[alt*="소소킹"]');
+  if (!hero || !image) return;
+
+  if (!document.getElementById('sosoking-logo-motion')) {
+    const style = document.createElement('style');
+    style.id = 'sosoking-logo-motion';
+    style.textContent = `
+      @keyframes sosokingLogoFloat {
+        0%,100% { transform: translateY(0); }
+        50% { transform: translateY(-5px); }
+      }
+      .sosoking-hero-logo {
+        width: 112px !important;
+        height: 112px !important;
+        display: block;
+        margin: 0 auto 16px !important;
+        animation: sosokingLogoFloat 3.2s ease-in-out infinite !important;
+        filter: none !important;
+        image-rendering: auto;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .sosoking-hero-logo { animation: none !important; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  image.src = '/logo.svg?v=20260727-1';
+  image.alt = '왕관과 판결봉이 있는 소소킹 판결소 로고';
+  image.classList.add('sosoking-hero-logo');
+  image.setAttribute('width', '112');
+  image.setAttribute('height', '112');
+  image.decoding = 'async';
+}
+
 function addCourtEntrance(container) {
   const hero = container.querySelector('.hero-section');
   if (!hero || document.getElementById('court-entrance')) return;
@@ -36,6 +73,7 @@ function addProcedureSeal(container) {
 
 export async function renderHome(container) {
   await renderBaseHome(container);
+  replaceHeroLogo(container);
   addCourtEntrance(container);
   addProcedureSeal(container);
 }

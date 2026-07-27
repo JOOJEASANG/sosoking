@@ -12,11 +12,34 @@ function fmtDate(ts) {
   return d.toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
+function createdMs(record) {
+  const value = record?.createdAt;
+  if (!value) return 0;
+  if (typeof value.toMillis === 'function') return value.toMillis();
+  if (typeof value.toDate === 'function') return value.toDate().getTime();
+  const parsed = new Date(value).getTime();
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 function totalVotes(r) {
   return Number(r.reactionTotal || r.totalVotes || 0);
 }
 function totalComments(r) {
   return Number(r.commentCount || 0);
+}
+
+async function loadPublicRows(maxRows = 40) {
+  try {
+    const ordered = await getDocs(query(collection(db, 'results'), where('isPublic', '==', true), orderBy('createdAt', 'desc'), limit(maxRows)));
+    return ordered.docs.map(d => [d.id, d.data()]);
+  } catch (err) {
+    console.warn('ordered board query unavailable; using client sort', err);
+    const fallback = await getDocs(query(collection(db, 'results'), where('isPublic', '==', true)));
+    return fallback.docs
+      .map(d => [d.id, d.data()])
+      .sort((a, b) => createdMs(b[1]) - createdMs(a[1]))
+      .slice(0, maxRows);
+  }
 }
 
 export async function renderBoard(container) {
@@ -35,12 +58,11 @@ export async function renderBoard(container) {
 
   const list = document.getElementById('board-list');
   try {
-    const snap = await getDocs(query(collection(db, 'results'), where('isPublic', '==', true), orderBy('createdAt', 'desc'), limit(40)));
-    if (snap.empty) {
+    const rows = await loadPublicRows(40);
+    if (rows.length === 0) {
       list.innerHTML = `<div style="text-align:center;padding:52px 0;color:var(--cream-dim);"><div style="font-size:46px;margin-bottom:12px;">📭</div>아직 공개된 판결기록이 없습니다.<br><a href="#/submit" style="color:var(--gold);margin-top:12px;display:inline-block;">첫 사건 접수하기</a></div>`;
       return;
     }
-    const rows = snap.docs.map(d => [d.id, d.data()]);
     const top = [...rows].sort((a, b) => (totalVotes(b[1]) + totalComments(b[1])) - (totalVotes(a[1]) + totalComments(a[1])))[0];
     document.getElementById('today-pick').innerHTML = top ? todayPick(top) : '';
     list.innerHTML = `<div style="font-size:13px;color:var(--cream-dim);margin:18px 0 8px;">📜 최근 공개 판결기록</div><div style="display:flex;flex-direction:column;gap:10px;">${rows.map(row => boardRow(...row)).join('')}</div>`;
