@@ -70,12 +70,16 @@ export async function renderTrial(container, caseId) {
   const showError = (message = '') => {
     stop();
     const la = document.getElementById('loading-area');
-    if (la) la.innerHTML = `
-      <div class="card" style="border-color:rgba(231,76,60,.55);padding:18px;text-align:left;">
-        <div style="font-size:17px;color:var(--red);font-weight:900;margin-bottom:8px;">⚠️ 판결문 작성 중 오류</div>
-        <div style="font-size:13px;color:var(--cream-dim);line-height:1.7;">${escapeHtml(message || 'AI 재판부가 판결문을 완성하지 못했습니다.')}</div>
-        <a href="#/submit" class="btn btn-secondary" style="margin-top:14px;">다시 접수하기</a>
-      </div>`;
+    if (la) {
+      la.innerHTML = `
+        <div class="card" style="border-color:rgba(231,76,60,.55);padding:18px;text-align:left;">
+          <div style="font-size:17px;color:var(--red);font-weight:900;margin-bottom:8px;">⚠️ 판결문 작성 중 오류</div>
+          <div style="font-size:13px;color:var(--cream-dim);line-height:1.7;">${escapeHtml(message || 'AI 재판부가 판결문을 완성하지 못했습니다.')}</div>
+          <button type="button" class="btn btn-primary" id="retry-current-case" style="margin-top:14px;">같은 사건 다시 작성</button>
+          <a href="#/submit" class="btn btn-secondary" style="margin-top:8px;">새 사건 접수하기</a>
+        </div>`;
+      document.getElementById('retry-current-case')?.addEventListener('click', () => location.reload());
+    }
   };
 
   const keepWaiting = () => {
@@ -88,8 +92,16 @@ export async function renderTrial(container, caseId) {
     caseData = snap.data();
     updateDocket(caseData);
     renderTimeline(stageFor(caseData.courtStage || caseData.status));
-    if (caseData.status === 'error' || caseData.status === 'blocked') {
-      showError(caseData.errorMessage || '판결문을 완성하지 못했습니다.');
+
+    if (caseData.status === 'blocked') {
+      showError(caseData.errorMessage || '접수할 수 없는 내용이 포함되어 있습니다.');
+      return;
+    }
+
+    if (caseData.status === 'error') {
+      const el = document.getElementById('loading-text');
+      if (el) el.textContent = '이전 작성 오류를 정리하고 같은 사건으로 다시 작성하는 중입니다... ♻️';
+      renderTimeline('filed');
     }
   }, err => showError(err.message));
 
@@ -131,6 +143,7 @@ export async function renderTrial(container, caseId) {
 function stageFor(stage) {
   if (stage === 'hearing' || stage === 'received' || stage === 'evidence') return 'investigation';
   if (stage === 'verdict') return 'defendant';
+  if (stage === 'error') return 'filed';
   return stage || 'filed';
 }
 
@@ -150,7 +163,6 @@ function updateDocket(c) {
 function stageLabel(stage) {
   const row = DOCKET_STEPS.find(([id]) => id === stage);
   if (row) return row[1];
-  if (stage === 'error') return '작성중단';
   return '문서작성중';
 }
 
