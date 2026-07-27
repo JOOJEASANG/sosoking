@@ -8,7 +8,7 @@ service cloud.firestore {
 
     function adminEmail() {
       return signedIn() && request.auth.token.email != null
-        ? request.auth.token.email.lower()
+        ? request.auth.token.email
         : '';
     }
 
