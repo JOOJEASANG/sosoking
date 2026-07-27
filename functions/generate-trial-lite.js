@@ -1,12 +1,13 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const { defineSecret } = require('firebase-functions/params');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const db = getFirestore();
 const geminiKey = defineSecret('GEMINI_API_KEY');
 const REGION = 'asia-northeast3';
 const DEFAULT_MODEL = 'gemini-2.5-flash';
+const FALLBACK_MODEL = 'gemini-2.5-flash-lite';
+const GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models';
 
 function cleanText(value, maxLen) {
   return String(value || '')
@@ -53,8 +54,20 @@ function safeJson(text) {
 
   const start = raw.indexOf('{');
   const end = raw.lastIndexOf('}');
-  if (start < 0 || end < start) throw new Error('JSON 형식을 찾을 수 없습니다.');
-  return JSON.parse(raw.slice(start, end + 1));
+  if (start < 0 || end < start) {
+    const err = new Error('JSON 형식을 찾을 수 없습니다.');
+    err.code = 'JSON_NOT_FOUND';
+    throw err;
+  }
+
+  try {
+    return JSON.parse(raw.slice(start, end + 1));
+  } catch (cause) {
+    const err = new Error('JSON 해석에 실패했습니다.');
+    err.code = 'JSON_PARSE_FAILED';
+    err.cause = cause;
+    throw err;
+  }
 }
 
 function kstDateKey(date = new Date()) {
@@ -146,15 +159,126 @@ async function loadSettings() {
   return snap.exists ? snap.data() : {};
 }
 
-function modelFor(genAI, modelName) {
-  return genAI.getGenerativeModel({
-    model: modelName,
-    generationConfig: {
-      temperature: 0.9,
-      topP: 0.95,
-      maxOutputTokens: 4096
+function extractGeminiText(payload) {
+  const parts = payload?.candidates?.[0]?.content?.parts;
+  if (!Array.isArray(parts)) return '';
+  return parts
+    .map(part => typeof part?.text === 'string' ? part.text : '')
+    .filter(Boolean)
+    .join('\n')
+    .trim();
+}
+
+function classifyGeminiError(status, payload) {
+  const apiStatus = cleanText(payload?.error?.status, 80);
+  const apiMessage = cleanText(payload?.error?.message, 500);
+  const combined = `${apiStatus} ${apiMessage}`.toUpperCase();
+
+  let code = `GEMINI_HTTP_${status}`;
+  if (combined.includes('API_KEY_INVALID') || combined.includes('API KEY NOT VALID')) {
+    code = 'API_KEY_INVALID';
+  } else if (status === 401 || status === 403 || combined.includes('PERMISSION_DENIED')) {
+    code = 'API_KEY_FORBIDDEN';
+  } else if (status === 429 || combined.includes('RESOURCE_EXHAUSTED') || combined.includes('QUOTA')) {
+    code = 'QUOTA_EXCEEDED';
+  } else if (status === 404 || combined.includes('NOT_FOUND')) {
+    code = 'MODEL_NOT_FOUND';
+  } else if (status >= 500) {
+    code = 'MODEL_UNAVAILABLE';
+  }
+
+  const err = new Error(apiMessage || `Gemini API 요청 실패 (${status})`);
+  err.code = code;
+  err.httpStatus = status;
+  err.apiStatus = apiStatus;
+  return err;
+}
+
+async function callGeminiRest(apiKey, modelName, prompt) {
+  if (!apiKey) {
+    const err = new Error('GEMINI_API_KEY가 비어 있습니다.');
+    err.code = 'API_KEY_MISSING';
+    throw err;
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 110000);
+
+  try {
+    const url = `${GEMINI_ENDPOINT}/${encodeURIComponent(modelName)}:generateContent`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey
+      },
+      body: JSON.stringify({
+        contents: [{
+          role: 'user',
+          parts: [{ text: prompt }]
+        }],
+        generationConfig: {
+          temperature: 0.9,
+          topP: 0.95,
+          maxOutputTokens: 4096
+        }
+      }),
+      signal: controller.signal
+    });
+
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw classifyGeminiError(response.status, payload);
+
+    const text = extractGeminiText(payload);
+    if (!text) {
+      const finishReason = cleanText(payload?.candidates?.[0]?.finishReason, 80);
+      const blockReason = cleanText(payload?.promptFeedback?.blockReason, 80);
+      const err = new Error(`Gemini 응답 본문이 없습니다.${finishReason ? ` finish=${finishReason}` : ''}${blockReason ? ` block=${blockReason}` : ''}`);
+      err.code = blockReason ? 'CONTENT_BLOCKED' : 'EMPTY_RESPONSE';
+      throw err;
     }
-  });
+
+    return {
+      text,
+      usageMetadata: payload.usageMetadata || {}
+    };
+  } catch (err) {
+    if (err?.name === 'AbortError') {
+      const timeoutErr = new Error('Gemini 응답 시간이 초과되었습니다.');
+      timeoutErr.code = 'GEMINI_TIMEOUT';
+      throw timeoutErr;
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function safeErrorCode(err) {
+  const raw = cleanText(err?.code, 80);
+  return raw || 'UNKNOWN_GEMINI_ERROR';
+}
+
+function userErrorMessage(code) {
+  if (code === 'API_KEY_MISSING' || code === 'API_KEY_INVALID' || code === 'API_KEY_FORBIDDEN') {
+    return 'Gemini API 키 인증에 실패했습니다. 관리자 API 키 설정을 확인해 주세요.';
+  }
+  if (code === 'QUOTA_EXCEEDED') {
+    return 'Gemini 사용량 한도에 도달했습니다. 잠시 후 다시 시도해 주세요.';
+  }
+  if (code === 'MODEL_NOT_FOUND') {
+    return '설정된 AI 모델을 사용할 수 없습니다. 관리자 모델 설정을 확인해 주세요.';
+  }
+  if (code === 'CONTENT_BLOCKED') {
+    return '입력 내용이 AI 안전 기준에 의해 처리되지 않았습니다. 표현을 조금 순화해 다시 접수해 주세요.';
+  }
+  if (code === 'GEMINI_TIMEOUT' || code === 'MODEL_UNAVAILABLE') {
+    return 'AI 서버 연결이 지연되고 있습니다. 잠시 후 같은 사건으로 다시 작성해 주세요.';
+  }
+  if (code === 'JSON_NOT_FOUND' || code === 'JSON_PARSE_FAILED') {
+    return 'AI가 판결문 형식을 완성하지 못했습니다. 같은 사건으로 다시 작성해 주세요.';
+  }
+  return 'AI 응답을 받지 못했습니다. 같은 사건으로 다시 작성해 주세요.';
 }
 
 exports.generateTrial = onCall({
@@ -185,6 +309,7 @@ exports.generateTrial = onCall({
       status: 'pending',
       courtStage: 'filed',
       errorMessage: FieldValue.delete(),
+      aiErrorCode: FieldValue.delete(),
       updatedAt: FieldValue.serverTimestamp()
     });
     c = { ...c, status: 'pending', courtStage: 'filed' };
@@ -195,6 +320,7 @@ exports.generateTrial = onCall({
       status: 'pending',
       courtStage: 'filed',
       errorMessage: FieldValue.delete(),
+      aiErrorCode: FieldValue.delete(),
       processingStartedAt: FieldValue.delete(),
       updatedAt: FieldValue.serverTimestamp()
     });
@@ -210,6 +336,7 @@ exports.generateTrial = onCall({
       status: 'pending',
       courtStage: 'filed',
       errorMessage: FieldValue.delete(),
+      aiErrorCode: FieldValue.delete(),
       processingStartedAt: FieldValue.delete(),
       updatedAt: FieldValue.serverTimestamp()
     });
@@ -234,6 +361,7 @@ exports.generateTrial = onCall({
       courtStage: 'hearing',
       processingStartedAt: FieldValue.serverTimestamp(),
       errorMessage: FieldValue.delete(),
+      aiErrorCode: FieldValue.delete(),
       updatedAt: FieldValue.serverTimestamp()
     });
   });
@@ -246,46 +374,68 @@ exports.generateTrial = onCall({
   const isPublic = c.isPublic !== false;
   const settings = await loadSettings();
   const configuredModel = cleanText(settings.geminiModel, 60) || DEFAULT_MODEL;
-  const modelNames = [...new Set([configuredModel, DEFAULT_MODEL])];
-  const genAI = new GoogleGenerativeAI(geminiKey.value().trim());
+  const modelNames = [...new Set([configuredModel, DEFAULT_MODEL, FALLBACK_MODEL])];
+  const apiKey = cleanText(geminiKey.value(), 500);
 
   let totals = { requests: 0, inputTokens: 0, outputTokens: 0 };
   let data = null;
   let bestCandidate = null;
   let bestScore = 0;
   let lastError = null;
+  let usedModel = '';
 
   try {
-    for (let attempt = 0; attempt < 2; attempt += 1) {
-      const modelName = modelNames[Math.min(attempt, modelNames.length - 1)];
+    for (let attempt = 0; attempt < modelNames.length; attempt += 1) {
+      const modelName = modelNames[attempt];
+
       try {
-        const model = modelFor(genAI, modelName);
-        const result = await model.generateContent(
+        const result = await callGeminiRest(
+          apiKey,
+          modelName,
           buildPrompt(cleanText(c.caseDescription, 600), attempt > 0)
         );
-        const meta = result.response.usageMetadata || {};
-        totals.requests += 1;
-        totals.inputTokens += Number(meta.promptTokenCount || 0);
-        totals.outputTokens += Number(meta.candidatesTokenCount || 0);
 
-        const parsed = safeJson(result.response.text());
+        totals.requests += 1;
+        totals.inputTokens += Number(result.usageMetadata.promptTokenCount || 0);
+        totals.outputTokens += Number(result.usageMetadata.candidatesTokenCount || 0);
+
+        const parsed = safeJson(result.text);
         const candidate = normalizeResult(parsed, c.caseDescription);
         const score = qualityScore(candidate);
 
         if (hasRequiredSections(candidate) && score > bestScore) {
           bestCandidate = candidate;
           bestScore = score;
+          usedModel = modelName;
         }
 
         if (isGoodResult(candidate)) {
           data = candidate;
+          usedModel = modelName;
           break;
         }
 
-        lastError = new Error('AI 판결문이 권장 분량보다 짧습니다.');
+        const shortErr = new Error('AI 판결문이 권장 분량보다 짧습니다.');
+        shortErr.code = 'OUTPUT_TOO_SHORT';
+        lastError = shortErr;
       } catch (err) {
         lastError = err;
-        console.error(`generateTrial attempt ${attempt + 1} failed (${modelName}):`, err);
+        console.error('generateTrial REST attempt failed:', {
+          attempt: attempt + 1,
+          modelName,
+          code: safeErrorCode(err),
+          status: err?.httpStatus || null,
+          apiStatus: err?.apiStatus || null,
+          message: cleanText(err?.message, 500)
+        });
+
+        if (safeErrorCode(err) === 'QUOTA_EXCEEDED' && attempt < modelNames.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1500));
+        }
+
+        if (['API_KEY_MISSING', 'API_KEY_INVALID', 'API_KEY_FORBIDDEN'].includes(safeErrorCode(err))) {
+          break;
+        }
       }
     }
 
@@ -313,8 +463,9 @@ exports.generateTrial = onCall({
       defendantArg: data.defendantArg,
       verdict: data.verdict,
       sentence: '',
-      aiSource: 'gemini',
-      promptVersion: 'simple-document-v1.1',
+      aiSource: 'gemini-rest',
+      aiModel: usedModel || configuredModel,
+      promptVersion: 'simple-document-v1.2',
       reactionTotal: 0,
       commentCount: 0,
       courtStage: 'sentenced',
@@ -331,7 +482,8 @@ exports.generateTrial = onCall({
       completedAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
       processingStartedAt: FieldValue.delete(),
-      errorMessage: FieldValue.delete()
+      errorMessage: FieldValue.delete(),
+      aiErrorCode: FieldValue.delete()
     });
 
     await batch.commit();
@@ -339,23 +491,30 @@ exports.generateTrial = onCall({
     return {
       success: true,
       isPublic,
-      caseTitle: finalTitle
+      caseTitle: finalTitle,
+      model: usedModel || configuredModel
     };
   } catch (err) {
-    console.error('generateTrial failed:', err);
+    const errorCode = safeErrorCode(err);
+    const message = userErrorMessage(errorCode);
+
+    console.error('generateTrial REST failed:', {
+      code: errorCode,
+      status: err?.httpStatus || null,
+      apiStatus: err?.apiStatus || null,
+      message: cleanText(err?.message, 500)
+    });
 
     await caseRef.update({
       status: 'error',
       courtStage: 'error',
-      errorMessage: 'AI 응답을 받지 못했습니다. 같은 사건으로 다시 작성할 수 있습니다.',
+      errorMessage: message,
+      aiErrorCode: errorCode,
       updatedAt: FieldValue.serverTimestamp(),
       processingStartedAt: FieldValue.delete()
     }).catch(() => null);
 
-    throw new HttpsError(
-      'unavailable',
-      'AI 응답을 받지 못했습니다. 잠시 후 같은 사건으로 다시 작성해 주세요.'
-    );
+    throw new HttpsError('unavailable', message);
   } finally {
     try {
       const today = kstDateKey();
