@@ -1,4 +1,7 @@
 import { renderResult as renderBaseResult } from './result.js?v=20260630-7';
+import { db } from '../firebase.js?v=20260630-3';
+import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { escapeHtml } from '../utils/sanitize.js?v=20260630-3';
 
 function grievance(container) {
   const text = container.textContent || '';
@@ -23,6 +26,19 @@ function badgesBy(container, lv) {
   if (text.includes('배심원')) badges.push(['🧑‍⚖️', '배심원 공개']);
   return badges.slice(0, 5);
 }
+function textArray(value, max = 3) {
+  return Array.isArray(value) ? value.map(v => String(v || '').trim()).filter(Boolean).slice(0, max) : [];
+}
+function richCard(kicker, title, body, extraClass = '') {
+  return `<div class="card court-document rich-record-card ${extraClass}" style="padding:20px;margin-bottom:12px;">
+    <div class="court-kicker" style="margin-bottom:5px;">${escapeHtml(kicker)}</div>
+    <div class="court-title" style="font-size:19px;margin-bottom:12px;">${escapeHtml(title)}</div>
+    ${body}
+  </div>`;
+}
+function listBody(items, icon = '•') {
+  return `<div class="rich-record-list">${items.map((item, index) => `<div class="rich-record-item"><div class="rich-record-num">${icon === '•' ? index + 1 : icon}</div><div>${escapeHtml(item)}</div></div>`).join('')}</div>`;
+}
 function ensureResultGameStyle() {
   if (document.getElementById('result-game-style')) return;
   const style = document.createElement('style');
@@ -34,6 +50,13 @@ function ensureResultGameStyle() {
     .invite-defense{padding:16px;margin-bottom:14px;border-radius:18px;border:1px dashed rgba(201,168,76,.48);background:rgba(201,168,76,.07);}
     .invite-defense-title{font-weight:900;color:#e8c97a;margin-bottom:6px;}
     .invite-defense-desc{font-size:12px;color:rgba(255,248,236,.78);line-height:1.7;margin-bottom:12px;}
+    .rich-record-card{border-left:3px solid rgba(201,168,76,.62)!important;}
+    .rich-record-list{display:flex;flex-direction:column;gap:10px;}
+    .rich-record-item{display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;align-items:flex-start;font-size:14px;line-height:1.85;color:var(--cream);padding:11px 0;border-bottom:1px dashed rgba(201,168,76,.18);}
+    .rich-record-item:last-child{border-bottom:0;padding-bottom:0;}
+    .rich-record-num{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(201,168,76,.14);border:1px solid rgba(201,168,76,.35);color:var(--gold);font-size:11px;font-weight:900;margin-top:1px;}
+    .rich-record-text{white-space:pre-wrap;font-size:14px;line-height:1.95;color:var(--cream);}
+    .fallback-notice{padding:10px 12px;margin-bottom:12px;border-radius:10px;background:rgba(231,76,60,.08);border:1px solid rgba(231,76,60,.25);font-size:11px;line-height:1.65;color:var(--cream-dim);}
     [data-theme="light"] .reward-badge,:root:not([data-theme="dark"]) .reward-badge{color:#fff8ec;background:rgba(13,17,23,.82);}
   `;
   document.head.appendChild(style);
@@ -73,6 +96,37 @@ function addInviteDefense(container) {
     try { await navigator.clipboard?.writeText(url); alert('사건 링크를 복사했습니다.'); }
     catch { prompt('아래 링크를 복사하세요.', url); }
   });
+}
+async function addRichRecord(container, caseId) {
+  if (document.getElementById('rich-record-sections')) return;
+  try {
+    const snap = await getDoc(doc(db, 'results', caseId));
+    if (!snap.exists()) return;
+    const r = snap.data();
+    const evidence = textArray(r.evidenceList);
+    const questions = textArray(r.judgeInterrogation);
+    const findings = textArray(r.keyFindings);
+    const verdictCard = container.querySelector('.verdict-card');
+    if (!verdictCard) return;
+
+    const before = [];
+    if (r.generationMode === 'fallback' || r.generationMode === 'ai-assisted-fallback') {
+      before.push(`<div class="fallback-notice">⚠️ AI 응답 일부가 기준 분량에 미달해 소소킹 재판부의 보강 문안이 함께 적용되었습니다.</div>`);
+    }
+    if (evidence.length) before.push(richCard('EVIDENCE EXHIBITS', '🔎 채택된 증거물 3점', listBody(evidence)));
+    if (questions.length) before.push(richCard('COURT INTERROGATION', '🎙️ 재판부 집중신문', listBody(questions)));
+    if (findings.length) before.push(richCard('FINDINGS OF FACT', '📌 재판부 핵심 판단', listBody(findings)));
+    if (r.courtCommentary) before.push(richCard('JUDGE COMMENTARY', '👨‍⚖️ 재판부 특별 논평', `<div class="rich-record-text">${escapeHtml(r.courtCommentary)}</div>`));
+
+    verdictCard.insertAdjacentHTML('beforebegin', `<div id="rich-record-sections">${before.join('')}</div>`);
+
+    const sentenceCard = container.querySelector('.sentence-card');
+    if (sentenceCard && r.aftermath) {
+      sentenceCard.insertAdjacentHTML('afterend', richCard('AFTER THE VERDICT', '🎬 선고 후 생활법정 후일담', `<div class="rich-record-text">${escapeHtml(r.aftermath)}</div>`, 'rich-aftermath'));
+    }
+  } catch (err) {
+    console.error('rich result record load failed:', err);
+  }
 }
 function decorateResult(container) {
   ensureResultGameStyle();
@@ -119,5 +173,7 @@ function decorateResult(container) {
 
 export async function renderResult(container, caseId) {
   await renderBaseResult(container, caseId);
+  ensureResultGameStyle();
+  await addRichRecord(container, caseId);
   decorateResult(container);
 }
