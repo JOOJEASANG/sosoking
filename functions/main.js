@@ -1,4 +1,9 @@
-Object.assign(exports, require('./index'));
+'use strict';
+
+const { getApps, initializeApp } = require('firebase-admin/app');
+
+if (!getApps().length) initializeApp();
+
 Object.assign(exports, require('./daily'));
 Object.assign(exports, require('./profile'));
 Object.assign(exports, require('./social'));
