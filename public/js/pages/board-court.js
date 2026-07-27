@@ -1,4 +1,4 @@
-import { renderBoard as renderBaseBoard } from './board.js?v=20260728-doc-judge-1';
+import { renderBoard as renderBaseBoard } from './board.js?v=20260728-audit-1';
 
 function ensureBoardGameStyle() {
   if (document.getElementById('board-game-style')) return;
@@ -15,12 +15,15 @@ function ensureBoardGameStyle() {
     #board-list .card{position:relative;}
     .board-record-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
     .board-record-meta-row{justify-content:flex-start;}
-    .board-judge-chip,.board-grievance-chip{display:inline-flex;align-items:center;gap:5px;padding:6px 9px;border-radius:999px;border:1px solid rgba(201,168,76,.28);background:rgba(201,168,76,.08);font-size:11px;color:var(--cream-dim);font-weight:800;}
-    .board-grievance-chip strong{color:#f0c76a;}
+    .board-judge-chip,.board-grievance-chip{display:inline-flex;align-items:center;gap:5px;padding:6px 9px;border-radius:999px;border:1px solid rgba(201,168,76,.32);background:rgba(201,168,76,.1);font-size:11px;color:var(--cream-dim);font-weight:800;}
+    .board-grievance-chip strong{color:var(--gold-light);}
     .board-grievance-meter{display:inline-flex;gap:2px;margin-left:3px;}
-    .board-grievance-meter i{display:block;width:3px;height:10px;border-radius:999px;background:rgba(255,255,255,.13);}
+    .board-grievance-meter i{display:block;width:3px;height:10px;border-radius:999px;background:rgba(255,255,255,.16);}
     .board-grievance-meter i.active{background:#d96b5d;}
-    @media(max-width:520px){.board-record-meta{align-items:flex-start;}.board-judge-chip,.board-grievance-chip{font-size:10px;padding:5px 8px;}}
+    @media(max-width:520px){
+      .board-record-meta{align-items:flex-start;}
+      .board-judge-chip,.board-grievance-chip{font-size:10px;padding:5px 8px;}
+    }
   `;
   document.head.appendChild(style);
 }
@@ -34,7 +37,7 @@ function decorateBoard(container) {
     intro.style.padding = '20px';
     intro.insertAdjacentHTML('afterbegin', `
       <div style="display:flex;gap:14px;align-items:center;margin-bottom:10px;">
-        <div class="court-seal" style="width:52px;height:52px;font-size:24px;">🏟️</div>
+        <div class="court-seal" style="width:52px;height:52px;font-size:24px;" aria-hidden="true">🏟️</div>
         <div>
           <div class="court-kicker">SOSOKING ARENA</div>
           <div class="court-title" style="font-size:20px;">생활법정 아레나</div>
@@ -43,21 +46,21 @@ function decorateBoard(container) {
       <div class="arena-rank-tabs">
         <div><strong>최신</strong><span>방금 선고</span></div>
         <div><strong>판사성향</strong><span>캐릭터 판결</span></div>
-        <div><strong>억울지수</strong><span>랜덤 기록</span></div>
+        <div><strong>억울지수</strong><span>고정 기록</span></div>
       </div>`);
   }
 
   const pick = document.getElementById('today-pick')?.firstElementChild;
   if (pick && !pick.classList.contains('court-document')) {
     pick.classList.add('court-document');
-    pick.insertAdjacentHTML('afterbegin', '<div class="court-stamp" style="margin-bottom:8px;">랭킹 1위</div>');
+    pick.insertAdjacentHTML('afterbegin', '<div class="court-stamp" style="margin-bottom:8px;">주목 기록</div>');
   }
 
-  document.querySelectorAll('#board-list .card').forEach((card, idx) => {
+  document.querySelectorAll('#board-list .card').forEach((card, index) => {
     if (card.classList.contains('court-board-row')) return;
     card.classList.add('court-board-row');
     card.style.borderLeft = '3px solid rgba(201,168,76,.5)';
-    const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : String(idx + 1);
+    const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : String(index + 1);
     card.insertAdjacentHTML('afterbegin', `<div class="court-kicker" style="margin-bottom:7px;"><span class="rank-medal">${medal}</span> ARENA RECORD</div>`);
   });
 }
@@ -65,5 +68,4 @@ function decorateBoard(container) {
 export async function renderBoard(container) {
   await renderBaseBoard(container);
   decorateBoard(container);
-  setTimeout(() => decorateBoard(container), 250);
 }
