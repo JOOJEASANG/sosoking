@@ -2,7 +2,7 @@
 
 const investigation = require("./gemini-court-investigation");
 const automaticStory = require("./gemini-auto-case-story");
-const comedyStory = require("./gemini-comedy-case-v7");
+const comedyStory = require("./gemini-comedy-case-v7b");
 
 exports.generateCourtCase = investigation.generateCourtCase;
 exports.generateCourtCaseV3 = investigation.generateCourtCase;
