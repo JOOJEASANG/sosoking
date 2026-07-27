@@ -6,203 +6,168 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function isRegisteredUser() {
-      return signedIn()
-        && request.auth.token.firebase.sign_in_provider != 'anonymous';
-    }
-
-    function isAuthor(uid) {
-      return signedIn() && request.auth.uid == uid;
+    function adminEmail() {
+      return signedIn() && request.auth.token.email != null ? request.auth.token.email : '';
     }
 
     function isAdmin() {
-      return signedIn()
-        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+      return signedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        exists(/databases/$(database)/documents/admins/$(adminEmail()))
+      );
     }
 
-    function validText(value, maxLength) {
-      return value is string && value.size() <= maxLength;
+    function caseDoc(caseId) {
+      return get(/databases/$(database)/documents/cases/$(caseId));
     }
 
-    function canReadFeed(postId) {
-      let feed = get(/databases/$(database)/documents/feeds/$(postId));
-      return feed.data.hidden != true
-        || isAdmin()
-        || isAuthor(feed.data.authorId);
+    function resultDoc(caseId) {
+      return get(/databases/$(database)/documents/results/$(caseId));
     }
 
-    function validUserSelfUpdate(userId) {
-      let changed = request.resource.data.diff(resource.data).affectedKeys();
-      return isAuthor(userId)
-        && changed.hasOnly(['photoURL', 'bio', 'updatedAt'])
-        && validText(request.resource.data.get('bio', ''), 500);
+    function isCaseOwner(caseId) {
+      return signedIn() && caseDoc(caseId).data.userId == request.auth.uid;
     }
 
-    function validNotificationReadUpdate() {
-      let changed = request.resource.data.diff(resource.data).affectedKeys();
-      return signedIn()
-        && resource.data.uid == request.auth.uid
-        && changed.hasOnly(['read', 'readAt'])
-        && request.resource.data.read == true;
+    function isCasePublic(caseId) {
+      return caseDoc(caseId).data.isPublic == true;
+    }
+
+    function isResultPublic(caseId) {
+      return resultDoc(caseId).data.isPublic == true;
+    }
+
+    function canReadPublicCourt(caseId) {
+      return signedIn() && (isCasePublic(caseId) || isResultPublic(caseId) || isCaseOwner(caseId) || isAdmin());
+    }
+
+    function validUserProfile(uid) {
+      return request.resource.data.keys().hasOnly([
+          'uid', 'email', 'nickname', 'provider', 'photoURL', 'avatarSeed', 'avatarType', 'isAnonymous', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.uid == uid
+        && request.resource.data.nickname is string
+        && request.resource.data.nickname.size() >= 2
+        && request.resource.data.nickname.size() <= 20
+        && request.resource.data.email is string
+        && request.resource.data.email.size() <= 120
+        && request.resource.data.provider is string
+        && request.resource.data.provider.size() <= 60
+        && request.resource.data.photoURL is string
+        && request.resource.data.photoURL.size() <= 500
+        && request.resource.data.avatarSeed is string
+        && request.resource.data.avatarSeed.size() <= 80
+        && request.resource.data.avatarType in ['google', 'generated'];
+    }
+
+    function validUserName(key) {
+      return request.resource.data.keys().hasOnly(['uid', 'nickname', 'key', 'createdAt', 'updatedAt'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.key == key
+        && request.resource.data.nickname is string
+        && request.resource.data.nickname.size() >= 2
+        && request.resource.data.nickname.size() <= 20;
+    }
+
+    function validCaseCreate() {
+      return request.resource.data.keys().hasOnly([
+          'userId', 'caseTitle', 'caseDescription', 'grievanceIndex', 'nickname',
+          'desiredVerdict', 'selectedJudge', 'status', 'isPublic', 'reportCount', 'createdAt'
+        ])
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.caseTitle is string
+        && request.resource.data.caseTitle.size() > 0
+        && request.resource.data.caseTitle.size() <= 30
+        && request.resource.data.caseDescription is string
+        && request.resource.data.caseDescription.size() > 0
+        && request.resource.data.caseDescription.size() <= 200
+        && request.resource.data.grievanceIndex is int
+        && request.resource.data.grievanceIndex >= 1
+        && request.resource.data.grievanceIndex <= 10
+        && request.resource.data.nickname is string
+        && request.resource.data.nickname.size() <= 30
+        && request.resource.data.desiredVerdict is string
+        && request.resource.data.desiredVerdict.size() <= 100
+        && request.resource.data.selectedJudge is string
+        && request.resource.data.status == 'pending'
+        && request.resource.data.isPublic == false
+        && request.resource.data.reportCount == 0;
     }
 
     match /admins/{uid} {
-      allow read: if isAdmin();
+      allow read: if signedIn() && (request.auth.uid == uid || adminEmail() == uid || isAdmin());
       allow write: if false;
     }
 
-    match /admin_logs/{logId} {
-      allow read: if isAdmin();
-      allow write: if false;
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow create: if signedIn() && request.auth.uid == uid && validUserProfile(uid);
+      allow update: if signedIn() && request.auth.uid == uid && validUserProfile(uid);
+      allow delete: if isAdmin();
     }
 
-    match /ai_usage/{docId} {
-      allow read: if isAdmin();
-      allow write: if false;
+    match /user_names/{key} {
+      allow read: if true;
+      allow create: if signedIn()
+        && !exists(/databases/$(database)/documents/user_names/$(key))
+        && validUserName(key);
+      allow update: if signedIn()
+        && resource.data.uid == request.auth.uid
+        && validUserName(key);
+      allow delete: if signedIn() && (resource.data.uid == request.auth.uid || isAdmin());
     }
 
-    match /users/{userId} {
-      allow read: if isAuthor(userId) || isAdmin();
+    match /cases/{caseId} {
+      allow read: if signedIn() && (
+        resource.data.userId == request.auth.uid ||
+        resource.data.isPublic == true ||
+        isAdmin()
+      );
+      allow create: if signedIn() && validCaseCreate();
+      allow update: if isAdmin() || (
+        signedIn() &&
+        resource.data.userId == request.auth.uid &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isPublic']) &&
+        request.resource.data.isPublic is bool
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /results/{caseId} {
+      allow read: if signedIn() && (
+        isCaseOwner(caseId) ||
+        resource.data.isPublic == true ||
+        isAdmin()
+      );
+      allow update: if isAdmin() || (
+        signedIn() &&
+        isCaseOwner(caseId) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'isPublic', 'caseTitle', 'grievanceIndex', 'judgeType', 'sentence', 'createdAt'
+        ]) &&
+        request.resource.data.isPublic is bool
+      );
       allow create: if false;
-      allow update: if isAdmin() || validUserSelfUpdate(userId);
-      allow delete: if false;
+      allow delete: if isAdmin();
+    }
 
-      match /point_logs/{logId} {
-        allow read: if isAuthor(userId) || isAdmin();
+    match /result_reactions/{caseId} {
+      allow read: if canReadPublicCourt(caseId);
+      allow write: if false;
+      match /votes/{uid} {
+        allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
         allow write: if false;
       }
-
-      match /scraps/{scrapId} {
-        allow read: if isAuthor(userId) || isAdmin();
-        allow create: if isAuthor(userId)
-          && request.resource.data.keys().hasOnly(['postId', 'scrappedAt'])
-          && request.resource.data.postId is string
-          && request.resource.data.postId == scrapId;
-        allow delete: if isAuthor(userId) || isAdmin();
-        allow update: if false;
-      }
     }
 
-    match /nicknames/{nickname} {
-      allow read: if signedIn();
+    match /court_comments/{caseId}/items/{commentId} {
+      allow read: if canReadPublicCourt(caseId);
       allow write: if false;
     }
 
-    match /feeds/{postId} {
-      allow read: if resource.data.hidden != true
-        || isAdmin()
-        || isAuthor(resource.data.authorId);
-      allow create: if false;
-      allow update, delete: if isAdmin();
-
-      match /comments/{commentId} {
-        allow read: if canReadFeed(postId);
-        allow create: if signedIn()
-          && request.resource.data.authorId == request.auth.uid
-          && request.resource.data.keys().hasOnly([
-            'text', 'authorId', 'authorName', 'authorPhoto', 'isGuest',
-            'side', 'reactions', 'reactedWith', 'createdAt'
-          ])
-          && validText(request.resource.data.text, 500)
-          && validText(request.resource.data.get('authorName', ''), 40);
-        allow update: if false;
-        allow delete: if isAdmin() || isAuthor(resource.data.authorId);
-
-        match /replies/{replyId} {
-          allow read: if canReadFeed(postId);
-          allow create: if signedIn()
-            && request.resource.data.authorId == request.auth.uid
-            && request.resource.data.keys().hasOnly([
-              'text', 'authorId', 'authorName', 'authorPhoto', 'createdAt'
-            ])
-            && validText(request.resource.data.text, 500);
-          allow update: if false;
-          allow delete: if isAdmin() || isAuthor(resource.data.authorId);
-        }
-      }
-
-      match /multi_drip/{itemId} {
-        allow read: if canReadFeed(postId);
-        allow write: if false;
-
-        match /replies/{replyId} {
-          allow read: if canReadFeed(postId);
-          allow write: if false;
-        }
-      }
-
-      match /viewers/{viewerId} {
-        allow read, write: if false;
-      }
-    }
-
-    match /reports/{reportId} {
-      allow read: if isAdmin()
-        || (signedIn() && resource.data.reporterId == request.auth.uid);
-      allow create: if isRegisteredUser()
-        && reportId == request.resource.data.postId + '_' + request.auth.uid
-        && request.resource.data.reporterId == request.auth.uid
-        && request.resource.data.keys().hasOnly([
-          'postId', 'postTitle', 'reporterId', 'reporterName',
-          'reason', 'resolved', 'createdAt'
-        ])
-        && validText(request.resource.data.reason, 500)
-        && request.resource.data.resolved == false;
-      allow update, delete: if isAdmin();
-    }
-
-    match /notifications/{noticeId} {
-      allow read: if signedIn() && resource.data.uid == request.auth.uid;
-      allow update: if validNotificationReadUpdate();
-      allow create, delete: if false;
-    }
-
-    match /follows/{followId} {
-      allow read: if signedIn()
-        && (resource.data.followerId == request.auth.uid
-          || resource.data.followedId == request.auth.uid
-          || isAdmin());
-      allow create: if isRegisteredUser()
-        && request.resource.data.followerId == request.auth.uid
-        && request.resource.data.followedId is string
-        && request.resource.data.followedId != request.auth.uid
-        && request.resource.data.keys().hasOnly([
-          'followerId', 'followerName', 'followedId', 'followedName', 'createdAt'
-        ]);
-      allow delete: if signedIn()
-        && (resource.data.followerId == request.auth.uid || isAdmin());
-      allow update: if false;
-    }
-
-    match /feedback/{feedbackId} {
-      allow read: if isAdmin();
-      allow create: if isRegisteredUser()
-        && request.resource.data.reporterId == request.auth.uid
-        && request.resource.data.keys().hasOnly([
-          'reporterId', 'reporterName', 'message', 'createdAt'
-        ])
-        && validText(request.resource.data.message, 1000);
-      allow update, delete: if isAdmin();
-    }
-
-    match /config/{docId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    match /site_settings/{docId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    match /categories/{categoryId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    match /topics/{topicId} {
-      allow read: if true;
-      allow write: if isAdmin();
+    match /court_comment_stats/{caseId} {
+      allow read: if canReadPublicCourt(caseId);
+      allow write: if false;
     }
 
     match /usage_stats/{docId} {
@@ -210,34 +175,31 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    match /system_jobs/{docId} {
-      allow read, write: if false;
-    }
-
-    match /rate_limits/{docId} {
-      allow read, write: if false;
-    }
-
-    match /upload_usage/{docId} {
-      allow read, write: if false;
-    }
-
-    match /deleted_posts/{docId} {
-      allow read: if isAdmin();
+    match /rate_limits/{userId} {
+      allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
       allow write: if false;
     }
 
-    match /deleted_users/{docId} {
-      allow read: if isAdmin();
-      allow write: if false;
+    match /reports/{reportId} {
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['caseId', 'reason', 'status', 'createdAt', 'userId'])
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.caseId is string
+        && request.resource.data.reason is string
+        && request.resource.data.reason.size() > 0
+        && request.resource.data.reason.size() <= 300
+        && request.resource.data.status == 'pending';
+      allow read, update, delete: if isAdmin();
     }
 
-    match /point_awards/{awardId} {
-      allow read, write: if false;
+    match /site_settings/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
-    match /{document=**} {
-      allow read, write: if false;
+    match /policy_docs/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
   }
 }
