@@ -1,5 +1,5 @@
-import { renderResult as renderBaseResult } from './result.js?v=20260728-doc-judge-1';
-import { db } from '../firebase.js?v=20260630-3';
+import { renderResult as renderBaseResult } from './result.js?v=20260728-audit-1';
+import { db } from '../firebase.js?v=20260728-audit-1';
 import { doc, writeBatch, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { showToast } from '../components/toast.js?v=20260630-3';
 
@@ -10,30 +10,17 @@ function ensureResultDocumentStyle() {
   style.id = 'result-document-style';
   style.textContent = `
     .result-document-container{padding-top:22px;padding-bottom:90px;max-width:760px;}
-
-    /* 전역 다크/라이트 대비 보정의 !important보다 우선해 문서 용지를 항상 밝게 유지한다. */
     .result-document-page .result-cover.card,
     .result-document-page .result-paper.card,
     .result-document-page .result-paper.verdict-card{
-      background:#fffdf7!important;
-      color:#2b251f!important;
-      border-color:#d8cfbf!important;
-      color-scheme:light;
+      background:#fffdf7!important;color:#2b251f!important;border-color:#d8cfbf!important;color-scheme:light;
     }
-
     .result-cover{padding:28px 24px;text-align:center;margin-bottom:18px;box-shadow:0 14px 34px rgba(0,0,0,.2)!important;}
     .result-court-name{font-size:11px;color:#856225!important;font-weight:900;letter-spacing:.16em;}
     .result-title-rule{width:46px;height:2px;background:#a97927;margin:13px auto;}
-    .result-document-page .result-cover h1{
-      margin:0;font-family:var(--font-serif);font-size:27px;line-height:1.45;letter-spacing:.16em;
-      color:#1c1814!important;text-shadow:none!important;
-    }
-    .result-document-page .result-cover h2{
-      margin:14px 0 8px;font-family:var(--font-serif);font-size:21px;line-height:1.55;
-      color:#3d2a12!important;word-break:keep-all;text-shadow:none!important;
-    }
+    .result-document-page .result-cover h1{margin:0;font-family:var(--font-serif);font-size:27px;line-height:1.45;letter-spacing:.16em;color:#1c1814!important;text-shadow:none!important;}
+    .result-document-page .result-cover h2{margin:14px 0 8px;font-family:var(--font-serif);font-size:21px;line-height:1.55;color:#3d2a12!important;word-break:keep-all;text-shadow:none!important;}
     .result-case-meta{font-size:12px;color:#665d54!important;line-height:1.8;}
-
     .judge-summary{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:14px;align-items:center;margin-top:22px;padding:16px;border:1px solid #ded4c2;border-radius:16px;background:#f8f2e7!important;text-align:left;color:#2b251f!important;}
     .judge-character{width:58px;height:58px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#fff!important;border:1px solid #d4c3a6;font-size:30px;box-shadow:0 4px 14px rgba(89,66,32,.12);}
     .judge-label,.grievance-label{font-size:10px;color:#856225!important;font-weight:900;letter-spacing:.12em;}
@@ -46,7 +33,6 @@ function ensureResultDocumentStyle() {
     .grievance-meter{display:flex;gap:3px;justify-content:flex-end;margin-top:8px;}
     .grievance-meter i{display:block;width:6px;height:16px;border-radius:999px;background:#ded4c2;}
     .grievance-meter i.active{background:linear-gradient(180deg,#c75547,#8f2e27);}
-
     .result-document-stack{display:flex;flex-direction:column;gap:16px;}
     .result-paper{position:relative;overflow:hidden;padding:26px 28px 30px;box-shadow:0 12px 28px rgba(0,0,0,.18)!important;}
     .result-paper::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(180deg,#a97927,#e0c88d);}
@@ -67,11 +53,9 @@ function ensureResultDocumentStyle() {
     .result-paper.verdict-card{border-color:#c9ad74!important;}
     .result-paper.verdict-card .result-paper-header{padding-right:68px;}
     .result-paper .verdict-stamp{right:18px;top:18px;opacity:.2;color:#9f241b!important;border-color:#9f241b!important;}
-
     .result-disclaimer{text-align:center;margin:20px 0;padding:12px 14px;background:rgba(255,255,255,.04);border-radius:9px;font-size:11px;color:var(--cream-dim);line-height:1.7;}
     .result-audience{margin-top:26px;padding-top:20px;border-top:1px solid var(--border);}
     .result-audience-title{font-family:var(--font-serif);font-size:18px;font-weight:900;color:var(--gold);margin-bottom:12px;}
-
     @media (max-width:640px){
       .result-document-container{padding-left:14px;padding-right:14px;}
       .result-cover{padding:24px 18px;}
@@ -108,14 +92,8 @@ function patchShareButton(container, caseId) {
 
     try {
       const batch = writeBatch(db);
-      batch.update(doc(db, 'results', caseId), {
-        isPublic: newPublic,
-        updatedAt: serverTimestamp()
-      });
-      batch.update(doc(db, 'cases', caseId), {
-        isPublic: newPublic,
-        updatedAt: serverTimestamp()
-      });
+      batch.update(doc(db, 'results', caseId), { isPublic: newPublic, updatedAt: serverTimestamp() });
+      batch.update(doc(db, 'cases', caseId), { isPublic: newPublic, updatedAt: serverTimestamp() });
       await batch.commit();
 
       if (newPublic) {
