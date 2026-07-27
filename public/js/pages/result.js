@@ -12,6 +12,25 @@ const REACTIONS = [
   ['funny', '😂 웃겼다']
 ];
 
+const JUDGE_INFO = {
+  '엄벌주의형': { icon: '👨‍⚖️', desc: '사소한 생활규칙 위반도 질서 파괴로 보는 단호한 재판부' },
+  '감성형': { icon: '🥹', desc: '서운함과 마음의 상처까지 세심하게 살피는 공감형 재판부' },
+  '현실주의형': { icon: '🤦', desc: '말보다 당장 실행할 생활형 해결책을 중시하는 재판부' },
+  '과몰입형': { icon: '🔥', desc: '평범한 분쟁도 대서사시처럼 심리하는 극적 재판부' },
+  '피곤형': { icon: '😴', desc: '한숨은 쉬어도 핵심 쟁점은 정확히 짚는 재판부' },
+  '논리집착형': { icon: '🧮', desc: '시간순서와 말의 모순을 끝까지 추적하는 분석형 재판부' },
+  '드립형': { icon: '🎭', desc: '문서 격식 속에 사건 맞춤형 비유와 드립을 숨기는 재판부' },
+  '소소킹 AI 재판부': { icon: '⚖️', desc: '생활분쟁을 과하게 진지하게 심리하는 AI 재판부' }
+};
+
+const SECTION_LABELS = {
+  reception: ['접수번호', '접수일자', '접수처', '접수취지', '사건개요', '접수의견'],
+  investigation: ['사건번호', '수사관', '조사일자', '확인 정황', '정황 검토', '주요 증거', '진술 검토', '진술의 모순', '조사관 의견'],
+  plaintiffArg: ['청구취지', '주장요지', '피해 및 요구사항', '원고측 최종의견'],
+  defendantArg: ['답변취지', '항변요지', '피고측 최종의견'],
+  verdict: ['주문', '판단이유', '판결 이유', '재판부 의견', '결론']
+};
+
 function fmtDate(ts) {
   if (!ts) return '';
   const d = ts.toDate ? ts.toDate() : new Date(ts);
@@ -23,6 +42,111 @@ function fmtDate(ts) {
     hour: '2-digit',
     minute: '2-digit'
   });
+}
+
+function hashString(value) {
+  let hash = 2166136261;
+  for (const ch of String(value || '')) {
+    hash ^= ch.charCodeAt(0);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+function legacyJudge(caseId) {
+  const types = Object.keys(JUDGE_INFO).filter(type => type !== '소소킹 AI 재판부');
+  return types[hashString(caseId) % types.length];
+}
+
+function legacyGrievance(caseId) {
+  return (hashString(`${caseId}:grievance`) % 10) + 1;
+}
+
+function safeGrievance(value, caseId) {
+  const n = Number(value);
+  return Number.isInteger(n) && n >= 1 && n <= 10 ? n : legacyGrievance(caseId);
+}
+
+function regexEscape(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function normalizeReadableText(value) {
+  return String(value || '')
+    .replace(/\\n/g, '\n')
+    .replace(/\r/g, '')
+    .replace(/([.!?])(?=[가-힣A-Za-z0-9])/g, '$1 ')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n[ \t]+/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+function splitReadableParagraphs(value) {
+  const text = normalizeReadableText(value);
+  if (!text) return [];
+
+  const explicit = text.split(/\n{2,}/).map(part => part.trim()).filter(Boolean);
+  const paragraphs = [];
+
+  explicit.forEach(part => {
+    if (part.length <= 230) {
+      paragraphs.push(part);
+      return;
+    }
+
+    const sentences = part.split(/(?<=[.!?])\s+/).map(sentence => sentence.trim()).filter(Boolean);
+    let group = '';
+    sentences.forEach(sentence => {
+      if (group && `${group} ${sentence}`.length > 230) {
+        paragraphs.push(group);
+        group = sentence;
+      } else {
+        group = group ? `${group} ${sentence}` : sentence;
+      }
+    });
+    if (group) paragraphs.push(group);
+  });
+
+  return paragraphs;
+}
+
+function renderParagraph(value) {
+  const text = value.trim();
+  const order = text.match(/^(\d+)\.\s*(.+)$/s);
+  if (order) {
+    return `<div class="doc-order-item"><span>${escapeHtml(order[1])}.</span><p>${escapeHtml(order[2])}</p></div>`;
+  }
+  return `<p class="doc-paragraph">${escapeHtml(text)}</p>`;
+}
+
+function renderStructuredText(content, sectionKey) {
+  let text = normalizeReadableText(content)
+    .replace(/^(사건접수보고서|수사보고서|수사보고|원고측 변론|피고측 변론|재판부 판결|판결문)\s*/i, '');
+
+  const headings = SECTION_LABELS[sectionKey] || [];
+  [...headings].sort((a, b) => b.length - a.length).forEach(heading => {
+    const pattern = new RegExp(`${regexEscape(heading)}\\s*[:：]?\\s*`, 'g');
+    text = text.replace(pattern, `\n@@${heading}@@\n`);
+  });
+
+  const chunks = text.split(/\n+/).map(chunk => chunk.trim()).filter(Boolean);
+  const html = [];
+
+  chunks.forEach(chunk => {
+    const marker = chunk.match(/^@@(.+)@@$/);
+    if (marker) {
+      const heading = marker[1];
+      const meta = /번호|일자|수사관|접수처/.test(heading);
+      html.push(`<h3 class="doc-subheading${meta ? ' doc-subheading-meta' : ''}">${escapeHtml(heading)}</h3>`);
+      return;
+    }
+
+    splitReadableParagraphs(chunk).forEach(paragraph => html.push(renderParagraph(paragraph)));
+  });
+
+  if (!html.length) return '<p class="doc-paragraph">기록된 내용이 없습니다.</p>';
+  return html.join('');
 }
 
 async function loadSocial(caseId) {
@@ -88,40 +212,60 @@ export async function renderResult(container, caseId) {
   const title = c.caseTitle || r.caseTitle || '생활분쟁 사건';
   const docket = r.docketNumber || c.docketNumber || '사건번호 미상';
   const date = fmtDate(r.createdAt || c.createdAt);
+  const judgeType = r.judgeType || c.judgeType || legacyJudge(caseId);
+  const judge = JUDGE_INFO[judgeType] || { icon: r.judgeIcon || '⚖️', desc: r.judgeStyle || JUDGE_INFO['소소킹 AI 재판부'].desc };
+  const grievanceIndex = safeGrievance(r.grievanceIndex ?? c.grievanceIndex, caseId);
 
   const sections = [
-    ['01', '사건접수', '사건접수보고서', r.reception],
-    ['02', '수사보고', '정황 및 증거 검토', r.investigation],
-    ['03', '원고측 변론', '청구취지 및 주장요지', r.plaintiffArg],
-    ['04', '피고측 변론', '답변취지 및 항변요지', r.defendantArg],
-    ['05', '재판부 판결', '주문 및 판단이유', r.verdict]
+    ['01', '사건접수', '사건접수보고서', 'reception', r.reception],
+    ['02', '수사보고', '정황 및 증거 검토', 'investigation', r.investigation],
+    ['03', '원고측 변론', '청구취지 및 주장요지', 'plaintiffArg', r.plaintiffArg],
+    ['04', '피고측 변론', '답변취지 및 항변요지', 'defendantArg', r.defendantArg],
+    ['05', '재판부 판결', '주문 및 판단이유', 'verdict', r.verdict]
   ];
 
   container.innerHTML = `
-    <div>
+    <div class="result-document-page">
       <div class="page-header"><span class="logo">⚖️ 판결문</span></div>
-      <div class="container" style="padding-top:26px;padding-bottom:90px;">
-        <header class="card court-document" style="padding:24px 20px;text-align:center;margin-bottom:16px;border-color:rgba(201,168,76,.58);">
-          <div style="font-size:11px;color:var(--gold);font-weight:900;letter-spacing:.16em;">소소킹 판결소 제3생활부</div>
-          <div style="width:44px;height:2px;background:var(--gold);margin:12px auto;"></div>
-          <h1 style="margin:0;font-family:var(--font-serif);font-size:24px;line-height:1.5;">판 결 문</h1>
-          <h2 style="margin:14px 0 7px;font-size:20px;line-height:1.5;">${escapeHtml(title)}</h2>
-          <div style="font-size:12px;color:var(--cream-dim);line-height:1.75;">
+      <div class="container result-document-container">
+        <header class="card court-document result-cover">
+          <div class="result-court-name">소소킹 판결소 제3생활부</div>
+          <div class="result-title-rule"></div>
+          <h1>판 결 문</h1>
+          <h2>${escapeHtml(title)}</h2>
+          <div class="result-case-meta">
             사건번호 ${escapeHtml(docket)}${date ? ` · ${escapeHtml(date)}` : ''}<br>
             원고 ${escapeHtml(c.nickname || r.nickname || '익명')}
           </div>
+          <div class="judge-summary">
+            <div class="judge-character" aria-hidden="true">${escapeHtml(r.judgeIcon || judge.icon)}</div>
+            <div class="judge-copy">
+              <div class="judge-label">담당 재판부</div>
+              <div class="judge-name">${escapeHtml(judgeType)} 판사</div>
+              <div class="judge-desc">${escapeHtml(r.judgeStyle || judge.desc)}</div>
+            </div>
+            <div class="grievance-box">
+              <div class="grievance-label">억울지수</div>
+              <div class="grievance-score"><strong>${grievanceIndex}</strong><span>/10</span></div>
+              <div class="grievance-meter" aria-label="억울지수 ${grievanceIndex}점">
+                ${Array.from({ length: 10 }, (_, index) => `<i class="${index < grievanceIndex ? 'active' : ''}"></i>`).join('')}
+              </div>
+            </div>
+          </div>
         </header>
 
-        ${sections.map(([number, sectionTitle, subtitle, content], index) =>
-          documentSection(number, sectionTitle, subtitle, content, index === 4)
-        ).join('')}
+        <main class="result-document-stack">
+          ${sections.map(([number, sectionTitle, subtitle, key, content], index) =>
+            documentSection(number, sectionTitle, subtitle, key, content, index === 4)
+          ).join('')}
+        </main>
 
-        <div style="text-align:center;margin:18px 0;padding:11px;background:rgba(255,255,255,.04);border-radius:8px;font-size:11px;color:var(--cream-dim);line-height:1.7;">
+        <div class="result-disclaimer">
           본 문서는 AI가 실제 문서 형식을 흉내 내어 만든 오락 콘텐츠이며 법적 효력이 없습니다.
         </div>
 
-        <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--border);">
-          <div style="font-family:var(--font-serif);font-size:18px;font-weight:900;color:var(--gold);margin-bottom:12px;">방청석</div>
+        <div class="result-audience">
+          <div class="result-audience-title">방청석</div>
           ${renderReactions(social, isPublic)}
           ${renderComments(social.comments, isPublic)}
         </div>
@@ -137,17 +281,17 @@ export async function renderResult(container, caseId) {
   bindResultActions(container, caseId, c, r, isOwner, isPublic);
 }
 
-function documentSection(number, title, subtitle, content, verdict = false) {
-  return `<section class="card court-document step-card visible ${verdict ? 'verdict-card' : ''}" style="margin-bottom:14px;padding:22px;position:relative;overflow:hidden;">
+function documentSection(number, title, subtitle, key, content, verdict = false) {
+  return `<section class="card court-document result-paper ${verdict ? 'verdict-card' : ''}">
     ${verdict ? '<div class="verdict-stamp">판결</div>' : ''}
-    <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:15px;padding-bottom:11px;border-bottom:1px solid var(--border);">
+    <div class="result-paper-header">
       <div>
-        <div style="font-size:10px;color:var(--gold);font-weight:900;letter-spacing:.14em;">DOCUMENT ${number}</div>
-        <div style="font-family:var(--font-serif);font-size:20px;font-weight:900;margin-top:4px;">${escapeHtml(title)}</div>
+        <div class="result-paper-number">DOCUMENT ${number}</div>
+        <div class="result-paper-title">${escapeHtml(title)}</div>
       </div>
-      <span class="badge badge-gold">${escapeHtml(subtitle)}</span>
+      <span class="result-paper-badge">${escapeHtml(subtitle)}</span>
     </div>
-    <div class="step-content" style="white-space:pre-line;line-height:1.95;">${escapeHtml(content || '')}</div>
+    <div class="result-paper-body">${renderStructuredText(content, key)}</div>
   </section>`;
 }
 
