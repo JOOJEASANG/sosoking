@@ -37,18 +37,25 @@ function addProcedureSeal(container) {
     </div>`);
 }
 
+function stepTextParts(step) {
+  const textBox = step?.querySelector(':scope > div:nth-child(2)');
+  return {
+    title: textBox?.children?.[0] || null,
+    description: textBox?.children?.[1] || null
+  };
+}
+
 function fixLegacyHomeCopy(container) {
   const procedure = Array.from(container.querySelectorAll('.how-step'));
   if (procedure[0]) {
-    const title = procedure[0].querySelector('div > div:first-child');
-    const desc = procedure[0].querySelector('div > div:nth-child(2)');
+    const { title, description } = stepTextParts(procedure[0]);
     if (title) title.textContent = '사건 내용 접수 📝';
-    if (desc) desc.textContent = '무슨 일이 있었는지 적으면 AI가 알아보기 쉬운 사건명을 자동으로 정합니다.';
+    if (description) description.textContent = '무슨 일이 있었는지 적으면 AI가 알아보기 쉬운 사건명을 자동으로 정합니다.';
   }
 
   if (procedure[3]) {
-    const desc = procedure[3].querySelector('div > div:nth-child(2)');
-    if (desc) desc.textContent = '자동 배정된 판사 성향이 반영된 문서형 판결과 생활형 처분이 내려집니다.';
+    const { description } = stepTextParts(procedure[3]);
+    if (description) description.textContent = '자동 배정된 판사 성향이 반영된 문서형 판결과 생활형 처분이 내려집니다.';
   }
 
   container.querySelectorAll('.judge-card').forEach(card => {
