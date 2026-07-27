@@ -50,6 +50,126 @@ jobs:
           npm run check
           npm run --prefix functions lint
 
+  preview-v7:
+    if: github.event_name == 'pull_request' && github.head_ref == 'redesign/comedy-engine-v7'
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: V7 브랜치 체크아웃
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+      - name: Node.js 22 설정
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Functions 의존성 설치
+        run: npm install --prefix functions --no-audit --no-fund
+      - name: Firebase CLI 설치
+        run: npm install --global firebase-tools
+      - name: Firebase 서비스 계정 준비
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 }}
+        run: |
+          test -n "$FIREBASE_SERVICE_ACCOUNT_JSON"
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-service-account.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/firebase-service-account.json" >> "$GITHUB_ENV"
+      - name: V7 함수 연결과 미리보기 배포
+        id: preview
+        run: |
+          set -euo pipefail
+          sed -i 's/"functionId": "generateCourtCaseV6"/"functionId": "generateCourtCaseV7"/' firebase.json
+          firebase hosting:channel:deploy court-comedy-v7 --expires 7d --project "$FIREBASE_PROJECT_ID" --non-interactive 2>&1 | tee preview-deploy.log
+          preview_url="$(grep -Eo 'https://[A-Za-z0-9.-]+\.(web\.app|firebaseapp\.com)' preview-deploy.log | tail -n 1)"
+          test -n "$preview_url"
+          echo "PREVIEW_URL=$preview_url" >> "$GITHUB_ENV"
+          echo "preview_url=$preview_url" >> "$GITHUB_OUTPUT"
+      - name: V7 실제 사건 코미디 검사
+        run: |
+          set -euo pipefail
+          sleep 15
+          curl --fail --location --retry 10 --retry-all-errors --retry-delay 8 "$PREVIEW_URL/" -o preview-index.html
+          grep -q 'auto-story-v7.js' preview-index.html
+          grep -q 'comedy-v7.css' preview-index.html
+          check_case() {
+            name="$1"; body="$2"; shift 2
+            curl --fail --location --silent --show-error --max-time 70 "$PREVIEW_URL/api/generate-case" \
+              -H 'Content-Type: application/json' -H 'X-Sosoking-Client: court-v7' \
+              --data "$body" -o "case-${name}.json"
+            grep -q 'comedy-engine-v7' "case-${name}.json"
+            grep -q '"comicProfile"' "case-${name}.json"
+            grep -q '"comicBeats"' "case-${name}.json"
+            for term in "$@"; do grep -q "$term" "case-${name}.json"; done
+            ! grep -q '마이크 7개\|3.7cm\|관심 없던 참고인\|사건은 작지만' "case-${name}.json"
+          }
+          check_case icecream '{"incident":"동생이 내 아이스크림을 너무 크게 한입 먹었다.","severity":"special"}' 아이스크림 한입
+          check_case late '{"incident":"친구가 약속에 20분 늦고 커피도 안 샀다.","severity":"national"}' 20분 커피
+          check_case remote '{"incident":"회의실 리모컨이 또 사라졌다.","severity":"official"}' 리모컨
+      - name: V7 브라우저 화면 검사
+        run: |
+          set -euo pipefail
+          chrome="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          npm install --no-save --no-audit --no-fund playwright-core
+          cat > verify-v7.mjs <<'JS'
+          import { chromium } from "playwright-core";
+          const browser = await chromium.launch({ executablePath: process.env.CHROME_BIN, headless: true, args: ["--no-sandbox"] });
+          const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+          await page.goto(process.env.PREVIEW_URL, { waitUntil: "networkidle" });
+          await page.fill("#incident", "동생이 내 아이스크림을 너무 크게 한입 먹었다.");
+          await page.click(".submit-case");
+          await page.waitForSelector("#story-view:not([hidden])", { timeout: 65000 });
+          if (await page.locator(".comic-dna").count() !== 1) throw new Error("코미디 설계 카드 누락");
+          if (await page.locator(".stage-punchline").count() !== 8) throw new Error("단계별 펀치라인 누락");
+          const text = await page.locator("#story-view").innerText();
+          for (const required of ["아이스크림", "수사본부의 핵심 오해", "반복 쟁점", "기록관 주석", "마지막 콜백"]) {
+            if (!text.includes(required)) throw new Error(`화면 누락: ${required}`);
+          }
+          await page.screenshot({ path: "desktop-comedy-v7.png", fullPage: true });
+          await browser.close();
+          JS
+          CHROME_BIN="$chrome" node verify-v7.mjs
+      - name: V7 검증 결과 저장
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: court-comedy-v7-preview
+          path: |
+            preview-deploy.log
+            preview-index.html
+            case-icecream.json
+            case-late.json
+            case-remote.json
+            desktop-comedy-v7.png
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: V7 미리보기 상태 기록
+        if: always()
+        env:
+          PREVIEW_RESULT: ${{ job.status }}
+          PREVIEW_URL_VALUE: ${{ steps.preview.outputs.preview_url }}
+        run: |
+          python - <<'PY'
+          import json, os
+          from datetime import datetime, timezone
+          payload = {
+            "workflow": "기존 Firebase 검증 내 V7 미리보기",
+            "commit": os.environ.get("GITHUB_SHA"),
+            "result": os.environ.get("PREVIEW_RESULT"),
+            "preview_url": os.environ.get("PREVIEW_URL_VALUE", ""),
+            "recorded_at": datetime.now(timezone.utc).isoformat()
+          }
+          with open(".github/v7-preview-status.json", "w", encoding="utf-8") as handle:
+            json.dump(payload, handle, ensure_ascii=False, indent=2)
+            handle.write("\n")
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/v7-preview-status.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "chore: V7 미리보기 상태 기록 [skip ci]"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
+
   deploy:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     needs: validate
