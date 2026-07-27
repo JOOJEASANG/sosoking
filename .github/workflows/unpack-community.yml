@@ -1,0 +1,213 @@
+name: Unpack and sanitize community source
+
+on:
+  push:
+    branches:
+      - cleanup/community-repository
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cleanup-community-repository
+  cancel-in-progress: false
+
+jobs:
+  unpack-and-sanitize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout cleanup branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Unpack uploaded source and remove repository debris
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from __future__ import annotations
+
+          import hashlib
+          import json
+          import re
+          import shutil
+          import tempfile
+          import zipfile
+          from collections import defaultdict
+          from pathlib import Path
+
+          root = Path.cwd()
+          archives = sorted(root.glob("*.zip"))
+          if not archives:
+              print("No root ZIP archive found; nothing to unpack.")
+              raise SystemExit(0)
+
+          archive = archives[0]
+          temp_root = Path(tempfile.mkdtemp(prefix="sosoking-unpack-"))
+          extract_root = temp_root / "extract"
+          extract_root.mkdir(parents=True)
+
+          with zipfile.ZipFile(archive) as zf:
+              for info in zf.infolist():
+                  target = (extract_root / info.filename).resolve()
+                  if extract_root.resolve() not in target.parents and target != extract_root.resolve():
+                      raise RuntimeError(f"Unsafe ZIP entry: {info.filename}")
+              zf.extractall(extract_root)
+
+          entries = [p for p in extract_root.iterdir() if p.name not in {"__MACOSX"}]
+          source = entries[0] if len(entries) == 1 and entries[0].is_dir() else extract_root
+
+          preserved_git = root / ".git"
+          for child in list(root.iterdir()):
+              if child == preserved_git:
+                  continue
+              if child.is_dir() and not child.is_symlink():
+                  shutil.rmtree(child)
+              else:
+                  child.unlink()
+
+          for child in source.iterdir():
+              destination = root / child.name
+              if child.is_dir() and not child.is_symlink():
+                  shutil.copytree(child, destination, symlinks=True)
+              else:
+                  shutil.copy2(child, destination, follow_symlinks=False)
+
+          removed: list[str] = []
+          removed_empty_css: list[str] = []
+
+          def remove_path(path: Path) -> None:
+              if not path.exists() and not path.is_symlink():
+                  return
+              rel = path.relative_to(root).as_posix()
+              if path.is_dir() and not path.is_symlink():
+                  shutil.rmtree(path)
+              else:
+                  path.unlink()
+              removed.append(rel)
+
+          removable_names = {".DS_Store", "Thumbs.db", "desktop.ini", ".upload_archive.b64"}
+          removable_dirs = {"node_modules", ".firebase", "coverage", "dist", "__MACOSX", ".claude"}
+          for path in sorted(root.rglob("*"), key=lambda p: len(p.parts), reverse=True):
+              if ".git" in path.parts:
+                  continue
+              if path.is_dir() and path.name in removable_dirs:
+                  remove_path(path)
+              elif path.is_file() and (path.name in removable_names or path.suffix.lower() in {".zip", ".log", ".tmp", ".bak"}):
+                  remove_path(path)
+
+          for rel in [
+              ".github/deployment-status.json",
+              ".github/ai-smoke-status.json",
+              ".github/pr-import-trigger.txt",
+              ".github/v7-preview-status.json",
+          ]:
+              remove_path(root / rel)
+
+          empty_css = [p for p in root.rglob("*.css") if p.is_file() and p.stat().st_size == 0 and ".git" not in p.parts]
+          for css in empty_css:
+              asset = "/" + css.relative_to(root / "public").as_posix() if root / "public" in css.parents else None
+              if asset:
+                  for html in root.rglob("*.html"):
+                      text = html.read_text(encoding="utf-8")
+                      pattern = re.compile(rf"^[ \t]*<link\b[^>]*href=[\"']{re.escape(asset)}[\"'][^>]*>\s*\n?", re.MULTILINE)
+                      updated = pattern.sub("", text)
+                      if updated != text:
+                          html.write_text(updated, encoding="utf-8")
+              removed_empty_css.append(css.relative_to(root).as_posix())
+              remove_path(css)
+
+          gitignore = root / ".gitignore"
+          existing = gitignore.read_text(encoding="utf-8") if gitignore.exists() else ""
+          required_patterns = [
+              "node_modules/", "functions/node_modules/", ".env", ".env.*", "!.env.example",
+              "*.log", "*.zip", ".firebase/", "coverage/", "dist/", ".DS_Store", "Thumbs.db",
+              ".upload_archive.b64", ".claude/",
+          ]
+          lines = existing.splitlines()
+          for pattern in required_patterns:
+              if pattern not in lines:
+                  lines.append(pattern)
+          gitignore.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
+
+          files = [p for p in root.rglob("*") if p.is_file() and ".git" not in p.parts]
+          by_hash: dict[tuple[int, str], list[str]] = defaultdict(list)
+          ext_counts: dict[str, int] = defaultdict(int)
+          total_bytes = 0
+          empty_non_css: list[str] = []
+          for path in files:
+              data = path.read_bytes()
+              total_bytes += len(data)
+              ext_counts[path.suffix.lower() or "[no extension]"] += 1
+              if not data:
+                  empty_non_css.append(path.relative_to(root).as_posix())
+              digest = hashlib.sha256(data).hexdigest()
+              by_hash[(len(data), digest)].append(path.relative_to(root).as_posix())
+
+          duplicate_groups = [paths for (size, _), paths in by_hash.items() if size > 0 and len(paths) > 1]
+          duplicate_groups.sort(key=lambda paths: (-len(paths), paths[0]))
+
+          report = root / "docs" / "CLEANUP_ANALYSIS.md"
+          report.parent.mkdir(parents=True, exist_ok=True)
+          report.write_text(
+              "# Repository cleanup analysis\n\n"
+              "This report was generated while unpacking the uploaded community-site archive.\n\n"
+              f"- Files retained: **{len(files)}**\n"
+              f"- Retained size: **{total_bytes:,} bytes**\n"
+              f"- Removed paths: **{len(removed)}**\n"
+              f"- Empty CSS files removed: **{len(removed_empty_css)}**\n"
+              f"- Non-CSS empty files retained for review: **{len(empty_non_css)}**\n"
+              f"- Duplicate content groups retained for review: **{len(duplicate_groups)}**\n\n"
+              "## Removed paths\n\n" + ("\n".join(f"- `{p}`" for p in sorted(set(removed))) or "- None") +
+              "\n\n## Empty non-CSS files retained\n\n" + ("\n".join(f"- `{p}`" for p in empty_non_css) or "- None") +
+              "\n\n## Duplicate-content groups\n\n" + (
+                  "\n\n".join("- " + "\n  - ".join(f"`{p}`" for p in group) for group in duplicate_groups[:100])
+                  or "- None"
+              ) +
+              "\n\n## File counts by extension\n\n" + "\n".join(
+                  f"- `{ext}`: {count}" for ext, count in sorted(ext_counts.items(), key=lambda item: (-item[1], item[0]))
+              ) + "\n",
+              encoding="utf-8",
+          )
+
+          print(json.dumps({
+              "archive": archive.name,
+              "retained_files": len(files),
+              "removed": len(set(removed)),
+              "empty_css_removed": len(removed_empty_css),
+              "duplicate_groups": len(duplicate_groups),
+          }, ensure_ascii=False, indent=2))
+          PY
+
+      - name: Install Functions dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f functions/package-lock.json ]; then
+            npm ci --prefix functions --no-audit --no-fund
+          elif [ -f functions/package.json ]; then
+            npm install --prefix functions --no-audit --no-fund
+          fi
+
+      - name: Run repository checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f package.json ]; then npm run check; fi
+          if [ -f functions/package.json ]; then npm run --prefix functions lint --if-present; fi
+
+      - name: Commit unpacked and sanitized source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "chore: unpack and sanitize community source [skip ci]"
+          git push origin HEAD:cleanup/community-repository
