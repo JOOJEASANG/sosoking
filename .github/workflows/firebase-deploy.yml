@@ -8,6 +8,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: read
     concurrency:
@@ -41,12 +42,16 @@ jobs:
           fi
           echo "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-service-account.json"
 
-      - name: Deploy Firestore rules and Hosting
+      - name: Deploy Firestore indexes, rules and Hosting
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-        run: firebase deploy --only firestore:rules,hosting --project sosoking-481e6 --non-interactive
+        run: firebase deploy --only firestore:indexes,firestore:rules,hosting --project sosoking-481e6 --non-interactive
 
       - name: Deploy current Functions only
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
         run: firebase deploy --only functions:submitCase,functions:generateTrial,functions:createDailyAiCase,functions:generateDailyAiNow,functions:checkNickname,functions:setNickname,functions:voteResult,functions:addCourtComment,functions:requestAppeal,functions:deleteCourtPost --project sosoking-481e6 --non-interactive
+
+      - name: Deployment summary
+        if: always()
+        run: echo "Firebase deployment workflow finished for commit $GITHUB_SHA"
