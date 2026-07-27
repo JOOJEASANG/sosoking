@@ -1,0 +1,9 @@
+{
+  "name": "sosoking",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node tools/check-project.mjs",
+    "test": "npm run check"
+  }
+}
