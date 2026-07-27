@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sosoking-app-v20260630-22';
+const CACHE_NAME = 'sosoking-app-v20260727-simple-1';
 const APP_SHELL = ['/', '/index.html', '/site.webmanifest', '/app-icon.svg'];
 const NETWORK_FIRST = /\.(js|css|json|webmanifest)$/i;
 
@@ -35,11 +35,17 @@ self.addEventListener('fetch', event => {
   }
 
   if (NETWORK_FIRST.test(url.pathname)) {
-    event.respondWith(fetch(req).then(res => { putCache(req, res); return res; }).catch(() => caches.match(req)));
+    event.respondWith(fetch(req).then(res => {
+      putCache(req, res);
+      return res;
+    }).catch(() => caches.match(req)));
     return;
   }
 
   event.respondWith(
-    caches.match(req).then(cached => cached || fetch(req).then(res => { putCache(req, res); return res; }).catch(() => cached))
+    caches.match(req).then(cached => cached || fetch(req).then(res => {
+      putCache(req, res);
+      return res;
+    }).catch(() => cached))
   );
 });
