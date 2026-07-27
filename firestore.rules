@@ -20,7 +20,7 @@ service cloud.firestore {
       return signedIn() && (
         bootstrapOwner() ||
         exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
-        exists(/databases/$(database)/documents/admins/$(adminEmail()))
+        (adminEmail() != '' && exists(/databases/$(database)/documents/admins/$(adminEmail())))
       );
     }
 
