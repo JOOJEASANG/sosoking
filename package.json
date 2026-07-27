@@ -1,10 +1,10 @@
 {
-  "name": "sosoking-automatic-case-story",
-  "version": "6.0.1",
+  "name": "sosoking-comedy-case-story",
+  "version": "7.0.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "node --check public/auto-story-v6.js && node --check public/legacy-cleanup.js && node --check functions/index.js && node --check functions/gemini-auto-case-story.js",
-    "test": "node --test tests/v6-auto-story.test.mjs"
+    "check": "node --check public/auto-story-v7.js && node --check public/legacy-cleanup.js && node --check functions/index.js && node --check functions/gemini-comedy-case-v7.js",
+    "test": "node --test tests/v7-comedy-engine.test.mjs"
   }
 }
