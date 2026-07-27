@@ -67,33 +67,39 @@ async function route() {
   window.scrollTo(0, 0);
 
   try {
+    let renderTask;
     if (hash === '#/' || hash === '' || hash === '#') {
-      await renderHome(content);
+      renderTask = renderHome(content);
     } else if (hash === '#/submit') {
-      await renderSubmit(content);
+      renderTask = renderSubmit(content);
     } else if (hash.startsWith('#/trial/')) {
-      await renderTrial(content, decodeURIComponent(hash.replace('#/trial/', '')));
+      renderTask = renderTrial(content, decodeURIComponent(hash.replace('#/trial/', '')));
     } else if (hash.startsWith('#/result/')) {
-      await renderResult(content, decodeURIComponent(hash.replace('#/result/', '')));
+      renderTask = renderResult(content, decodeURIComponent(hash.replace('#/result/', '')));
     } else if (hash.startsWith('#/policy/')) {
-      await renderPolicy(content, hash.replace('#/policy/', ''));
+      renderTask = renderPolicy(content, hash.replace('#/policy/', ''));
     } else if (hash === '#/my-cases') {
-      await renderMyCases(content);
+      renderTask = renderMyCases(content);
     } else if (hash === '#/guide') {
-      await renderGuide(content);
+      renderTask = renderGuide(content);
     } else if (hash === '#/auth') {
-      await renderAuth(content);
+      renderTask = renderAuth(content);
       setTimeout(renderThemePreference, 80);
     } else if (hash === '#/board') {
-      await renderBoard(content);
+      renderTask = renderBoard(content);
     } else {
-      await renderHome(content);
+      renderTask = renderHome(content);
     }
+
+    // 각 화면이 장시간 네트워크 작업을 수행해도 하단 메뉴는 즉시 표시한다.
+    renderNav();
+    await renderTask;
   } catch (err) {
     console.error('route render failed:', { hash, err });
-    if (sequence === routeSequence) renderRouteError(content);
-  } finally {
-    if (sequence === routeSequence) renderNav();
+    if (sequence === routeSequence) {
+      renderRouteError(content);
+      renderNav();
+    }
   }
 }
 
