@@ -10,14 +10,10 @@ const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 const checkNickname = httpsCallable(functions, 'checkNickname');
 const setNickname = httpsCallable(functions, 'setNickname');
-const OWNER_EMAIL = ['sosoday1976', 'gmail.com'].join('@');
 
 function cleanNick(v){ return String(v || '').replace(/\s+/g, '').trim().slice(0, 20); }
 function nickError(v){ const n = cleanNick(v); if(n.length < 2) return '닉네임은 2자 이상 입력해주세요.'; if(!/^[가-힣a-zA-Z0-9_]+$/.test(n)) return '한글, 영문, 숫자, 밑줄만 사용할 수 있습니다.'; return ''; }
 function validEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v || '').trim()); }
-function userEmail(user){ return String(user?.email || '').trim().toLowerCase(); }
-function isOwner(user){ return userEmail(user) === OWNER_EMAIL; }
-function goAdmin(user){ if(isOwner(user)){ location.href = '/admin'; return true; } return false; }
 async function profileOf(user){ if(!user || user.isAnonymous) return {}; const s = await getDoc(doc(db, 'users', user.uid)).catch(() => null); return s?.exists() ? s.data() : {}; }
 async function guest(){ if(!auth.currentUser) await signInAnonymously(auth).catch(() => {}); }
 function providerName(user, profile){ const p = profile.provider || user.providerData?.[0]?.providerId || ''; return p.includes('google') ? 'Google 소셜 로그인' : p.includes('password') ? '이메일 로그인' : '로그인'; }
@@ -28,14 +24,13 @@ export async function renderAuth(container){
   const box = document.getElementById('auth-box');
   getRedirectResult(auth).then(async r => {
     if(!r?.user) return;
-    if(goAdmin(r.user)) return;
     const p = await profileOf(r.user);
     showToast('구글 로그인 완료', 'success');
     p.nickname ? drawProfile(box, r.user, p) : drawNick(box, r.user, p);
   }).catch(e => console.warn('redirect login result skipped', e));
   const unsub = onAuthStateChanged(auth, async user => {
     if(!box) return;
-    if(user && !user.isAnonymous){ if(goAdmin(user)) return; const p = await profileOf(user); p.nickname ? drawProfile(box, user, p) : drawNick(box, user, p); }
+    if(user && !user.isAnonymous){ const p = await profileOf(user); p.nickname ? drawProfile(box, user, p) : drawNick(box, user, p); }
     else drawLogin(box);
   });
   window._pageCleanup = unsub;
@@ -45,7 +40,7 @@ function drawLogin(box){
   box.innerHTML = `<div style="text-align:center;margin-bottom:22px;"><div style="font-size:46px;margin-bottom:8px;">⚖️</div><div style="font-family:var(--font-serif);font-size:21px;font-weight:700;color:var(--gold);">소소킹 계정</div><div style="font-size:13px;color:var(--cream-dim);line-height:1.7;margin-top:8px;">로그인하면 닉네임, 프로필 아이콘, 내 사건 기록이 표시됩니다.</div></div><button class="btn btn-secondary" id="google-login" style="margin-bottom:18px;">Google로 계속하기</button><div style="display:flex;align-items:center;gap:10px;margin:20px 0;color:var(--cream-dim);font-size:12px;"><div style="height:1px;background:var(--border);flex:1;"></div><span>또는 이메일</span><div style="height:1px;background:var(--border);flex:1;"></div></div><form id="email-form"><div class="form-group"><label class="form-label">이메일</label><input type="email" id="auth-email" class="form-input" required></div><div class="form-group"><label class="form-label">비밀번호</label><input type="password" id="auth-password" class="form-input" minlength="6" maxlength="30" required></div><button type="submit" class="btn btn-primary" id="signup-btn">가입하기</button><button type="button" class="btn btn-ghost" id="login-btn" style="margin-top:10px;">이미 계정이 있어요 · 로그인</button></form>`;
   document.getElementById('google-login').onclick = async () => {
     const btn = document.getElementById('google-login'); btn.disabled = true; btn.textContent = 'Google 로그인 중...';
-    try { const r = await signInWithPopup(auth, googleProvider); if(goAdmin(r.user)) return; const p = await profileOf(r.user); showToast('구글 로그인 완료', 'success'); p.nickname ? drawProfile(box, r.user, p) : drawNick(box, r.user, p); }
+    try { const r = await signInWithPopup(auth, googleProvider); const p = await profileOf(r.user); showToast('구글 로그인 완료', 'success'); p.nickname ? drawProfile(box, r.user, p) : drawNick(box, r.user, p); }
     catch(e){
       console.error(e);
       if(popupNeedsRedirect(e)) { btn.textContent = 'Google 로그인 화면으로 이동...'; await signInWithRedirect(auth, googleProvider); return; }
@@ -59,13 +54,14 @@ function drawLogin(box){
 async function signUpEmail(box){
   const email = document.getElementById('auth-email').value.trim(); const pw = document.getElementById('auth-password').value;
   if(!validEmail(email)) return showToast('이메일 형식을 확인해주세요.', 'error');
-  try{ const r = await createUserWithEmailAndPassword(auth, email, pw); if(goAdmin(r.user)) return; showToast('가입 완료. 닉네임을 설정해주세요.', 'success'); drawNick(box, r.user, await profileOf(r.user)); }
+  try{ const r = await createUserWithEmailAndPassword(auth, email, pw); showToast('가입 완료. 닉네임을 설정해주세요.', 'success'); drawNick(box, r.user, await profileOf(r.user)); }
   catch(e){ console.error(e); showToast(e.code === 'auth/email-already-in-use' ? '이미 가입된 이메일입니다.' : e.message || '가입 실패', 'error'); }
 }
+
 async function signInEmail(box){
   const email = document.getElementById('auth-email').value.trim(); const pw = document.getElementById('auth-password').value;
   if(!validEmail(email)) return showToast('이메일 형식을 확인해주세요.', 'error');
-  try{ const r = await signInWithEmailAndPassword(auth, email, pw); if(goAdmin(r.user)) return; const p = await profileOf(r.user); showToast('로그인 완료', 'success'); p.nickname ? drawProfile(box, r.user, p) : drawNick(box, r.user, p); }
+  try{ const r = await signInWithEmailAndPassword(auth, email, pw); const p = await profileOf(r.user); showToast('로그인 완료', 'success'); p.nickname ? drawProfile(box, r.user, p) : drawNick(box, r.user, p); }
   catch(e){ console.error(e); showToast('이메일 또는 비밀번호를 확인해주세요.', 'error'); }
 }
 
