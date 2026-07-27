@@ -1,0 +1,225 @@
+name: Finish cleanup
+
+on:
+  push:
+    branches:
+      - cleanup/community-repository
+
+permissions:
+  contents: write
+
+jobs:
+  finish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Apply final patches
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          root = Path('.')
+
+          admin = root / 'public/admin/admin.js'
+          text = admin.read_text(encoding='utf-8')
+          old = "    return byEmail.exists() || email === 'sosoday1976@gmail.com';"
+          if old not in text:
+              raise SystemExit('administrator fallback line not found')
+          admin.write_text(text.replace(old, "    return byEmail.exists();"), encoding='utf-8')
+
+          deploy_path = root / '.github/workflows/firebase-deploy.yml'
+          deploy = deploy_path.read_text(encoding='utf-8')
+          deploy = deploy.replace('run: npm install --prefix functions', 'run: npm ci --prefix functions --no-audit --no-fund')
+          marker = '      - name: Prepare service account\n'
+          validation = '      - name: Validate repository\n        run: npm run check\n\n'
+          if validation not in deploy:
+              deploy = deploy.replace(marker, validation + marker)
+          deploy_path.write_text(deploy, encoding='utf-8')
+
+          for rel in ['docs/CLEANUP_ANALYSIS.md', 'docs/REACHABILITY_ANALYSIS.md', '.github/workflows/finish-cleanup.yml']:
+              path = root / rel
+              if path.exists():
+                  path.unlink()
+          PY
+
+          mkdir -p tools docs
+
+          cat > package.json <<'EOF'
+          {
+            "name": "sosoking",
+            "private": true,
+            "type": "module",
+            "scripts": {
+              "check": "node tools/check-project.mjs",
+              "test": "npm run check"
+            }
+          }
+          EOF
+
+          cat > tools/check-project.mjs <<'EOF'
+          import fs from 'node:fs';
+          import path from 'node:path';
+          import { spawnSync } from 'node:child_process';
+
+          const root = process.cwd();
+          const errors = [];
+          const ignored = new Set(['.git', 'node_modules', '.firebase', 'coverage', 'dist']);
+
+          function walk(dir) {
+            if (!fs.existsSync(dir)) return [];
+            return fs.readdirSync(dir, { withFileTypes: true }).flatMap(entry => {
+              if (entry.isDirectory() && ignored.has(entry.name)) return [];
+              const file = path.join(dir, entry.name);
+              return entry.isDirectory() ? walk(file) : entry.isFile() ? [file] : [];
+            });
+          }
+
+          function rel(file) {
+            return path.relative(root, file).replaceAll(path.sep, '/');
+          }
+
+          function localTarget(fromFile, specifier) {
+            const clean = specifier.split('?')[0].split('#')[0];
+            if (!clean.startsWith('.') && !clean.startsWith('/')) return true;
+            const base = clean.startsWith('/')
+              ? path.join(root, 'public', clean.slice(1))
+              : path.resolve(path.dirname(fromFile), clean);
+            return [base, `${base}.js`, `${base}.mjs`, path.join(base, 'index.js')]
+              .some(file => fs.existsSync(file) && fs.statSync(file).isFile());
+          }
+
+          const jsFiles = [
+            ...walk(path.join(root, 'functions')).filter(file => file.endsWith('.js')),
+            ...walk(path.join(root, 'public')).filter(file => /\.(?:js|mjs)$/.test(file)),
+          ];
+
+          for (const file of jsFiles) {
+            const checked = spawnSync(process.execPath, ['--check', file], { encoding: 'utf8' });
+            if (checked.status !== 0) errors.push(`${rel(file)}: ${checked.stderr.trim()}`);
+            const source = fs.readFileSync(file, 'utf8');
+            const patterns = [
+              /\bfrom\s*['"]([^'"]+)['"]/g,
+              /\bimport\s*['"]([^'"]+)['"]/g,
+              /\bimport\s*\(\s*[`'"]([^`'"]+)[`'"]\s*\)/g,
+              /\brequire\s*\(\s*['"]([^'"]+)['"]\s*\)/g,
+            ];
+            for (const pattern of patterns) {
+              for (const match of source.matchAll(pattern)) {
+                if (!localTarget(file, match[1])) errors.push(`${rel(file)}: missing ${match[1]}`);
+              }
+            }
+          }
+
+          for (const file of walk(path.join(root, 'public')).filter(file => file.endsWith('.html'))) {
+            const html = fs.readFileSync(file, 'utf8');
+            for (const match of html.matchAll(/(?:src|href)=["'](\/[^"'#?]+\.(?:js|mjs|css|svg|png|webp|jpg|jpeg|json|webmanifest))["']/g)) {
+              if (!fs.existsSync(path.join(root, 'public', match[1].slice(1)))) errors.push(`${rel(file)}: missing ${match[1]}`);
+            }
+          }
+
+          for (const jsonFile of ['package.json', 'firebase.json', 'firestore.indexes.json', 'functions/package.json', 'functions/package-lock.json', 'public/site.webmanifest', 'public/version.json']) {
+            try { JSON.parse(fs.readFileSync(path.join(root, jsonFile), 'utf8')); }
+            catch (error) { errors.push(`${jsonFile}: ${error.message}`); }
+          }
+
+          const obsolete = [
+            'functions/index.js',
+            'public/admin/admin-email-guard.js',
+            'public/css/theme-toggle.css',
+            'public/js/components/app-install.js',
+            'public/js/components/theme-contrast.js',
+            'public/js/pages/auth.js',
+            'public/js/pwa-init.js',
+          ];
+          for (const file of obsolete) if (fs.existsSync(path.join(root, file))) errors.push(`${file}: obsolete file remains`);
+
+          for (const folder of ['functions', 'public']) {
+            for (const file of walk(path.join(root, folder)).filter(file => /\.(?:js|mjs|html)$/.test(file))) {
+              if (fs.readFileSync(file, 'utf8').includes('sosoday1976@gmail.com')) errors.push(`${rel(file)}: hard-coded admin email`);
+            }
+          }
+
+          const mainFile = path.join(root, 'functions/main.js');
+          const main = fs.readFileSync(mainFile, 'utf8');
+          const modules = [...main.matchAll(/require\(['"](\.\/[^'"]+)['"]\)/g)].map(match => match[1]);
+          const exportsByName = new Map();
+          for (const moduleName of modules) {
+            const file = path.resolve(path.dirname(mainFile), `${moduleName}.js`);
+            if (!fs.existsSync(file)) { errors.push(`functions/main.js: missing ${moduleName}`); continue; }
+            const source = fs.readFileSync(file, 'utf8');
+            for (const match of source.matchAll(/exports\.([A-Za-z_$][\w$]*)\s*=/g)) {
+              if (exportsByName.has(match[1])) errors.push(`duplicate export ${match[1]}`);
+              else exportsByName.set(match[1], rel(file));
+            }
+          }
+
+          const workflow = fs.readFileSync(path.join(root, '.github/workflows/firebase-deploy.yml'), 'utf8');
+          const deployed = workflow.match(/firebase deploy --only functions:([^\s]+)/)?.[1]?.split(',functions:') || [];
+          for (const name of deployed) if (!exportsByName.has(name)) errors.push(`deploy references missing function ${name}`);
+
+          if (errors.length) {
+            console.error(`검사 실패: ${errors.length}건`);
+            errors.forEach(error => console.error(`- ${error}`));
+            process.exit(1);
+          }
+          console.log(`검사 통과: JS ${jsFiles.length}개, Functions ${exportsByName.size}개`);
+          EOF
+
+          cat > docs/REPOSITORY_AUDIT.md <<'EOF'
+          # 소소킹 저장소 정리 보고서
+
+          ## 정리 기준
+
+          - 업로드된 `sosoking(재미있는 판결사이트).zip`을 기준으로 소스를 복원했습니다.
+          - `public/index.html`, `public/admin/index.html`, `functions/main.js`, PWA 진입점에서 정적 참조를 추적했습니다.
+          - 실제 실행 경로에서 도달하지 못하거나 활성 구현에 대체된 파일만 삭제했습니다.
+
+          ## 삭제한 코드
+
+          - `functions/index.js`: 같은 이름의 `submitCase`, `generateTrial`을 내보냈다가 뒤 모듈에 덮어써지던 죽은 구현입니다.
+          - `public/admin/admin-email-guard.js`: 관리자 화면의 기존 검사와 중복되며 HTML에서 로드되지 않았습니다.
+          - `public/css/theme-toggle.css`: `components/theme.js`에 동일 스타일이 포함되어 있습니다.
+          - `public/js/components/app-install.js`, `public/js/pwa-init.js`: 활성 `components/pwa-ui.js`와 중복됩니다.
+          - `public/js/components/theme-contrast.js`: 활성 `components/contrast-fix.js`와 중복됩니다.
+          - `public/js/pages/auth.js`: 라우터가 사용하는 `auth2.js`로 대체된 구형 화면입니다.
+          - 저장소 루트 ZIP과 일회성 분석 워크플로를 제거했습니다.
+
+          ## 보안 및 구조 개선
+
+          - 특정 이메일을 코드에 넣어 관리자 권한 또는 관리자 이동을 허용하던 예외를 제거했습니다.
+          - 관리자 판정은 Firestore의 `admins/{uid}` 또는 `admins/{email}` 문서만 사용합니다.
+          - Firebase Admin 초기화를 `functions/main.js`에서 명시적으로 수행합니다.
+          - `tools/check-project.mjs`로 JS 문법, 모듈·정적 자산 경로, JSON, 중복 Functions 내보내기, 배포 함수 목록을 검사합니다.
+          - Firebase 배포 전에 `npm run check`를 실행하며 Functions 의존성은 `npm ci`로 재현 가능하게 설치합니다.
+
+          ## 유지한 코드
+
+          - `*-court.js`, `*-game.js`, `*-guard.js`는 기본 페이지를 가져와 기능과 UI를 확장하는 활성 래퍼입니다.
+          - `submit-secure.js`와 `generate-trial-lite.js`는 현재 배포되는 `submitCase`, `generateTrial` 구현입니다.
+          - Firestore 규칙의 관리자 문서 기반 권한, 본인 사건 접근, 공개 판결 접근 구조는 유지했습니다.
+          EOF
+
+      - name: Install Functions dependencies
+        run: npm ci --prefix functions --no-audit --no-fund
+
+      - name: Validate repository
+        run: npm run check
+
+      - name: Commit final cleanup
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore: finalize repository cleanup [skip ci]"
+          git push origin HEAD:cleanup/community-repository
