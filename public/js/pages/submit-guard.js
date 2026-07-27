@@ -1,12 +1,12 @@
 import { auth } from '../firebase.js?v=20260630-3';
-import { renderSubmit as renderSubmitForm } from './submit-court.js?v=20260630-21';
+import { renderSubmit as renderSubmitForm } from './submit-court.js?v=20260727-simple-1';
 
 function loginRequired(container) {
   container.innerHTML = `
     <div>
       <div class="page-header">
         <a href="#/" class="back-btn">‹</a>
-        <span class="logo">소장 접수</span>
+        <span class="logo">사건 접수</span>
       </div>
       <div class="container" style="padding-top:24px;padding-bottom:90px;">
         <div class="court-shell" style="padding:26px 22px;text-align:center;">
@@ -17,7 +17,7 @@ function loginRequired(container) {
             내 사건 기록, 판결문 확인, 공개 여부 관리를 위해<br>
             구글 또는 이메일 로그인이 필요합니다.
           </div>
-          <a href="#/auth" class="btn btn-primary">로그인하고 바로 접수하기</a>
+          <a href="#/auth" class="btn btn-primary">로그인하고 사건 접수하기</a>
           <a href="#/board" class="btn btn-ghost" style="margin-top:10px;">공개 판결 먼저 보기</a>
         </div>
       </div>
