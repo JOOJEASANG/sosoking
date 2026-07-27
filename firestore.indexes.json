@@ -1,68 +1,18 @@
 {
   "indexes": [
     {
-      "collectionGroup": "feeds",
+      "collectionGroup": "cases",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "hidden", "order": "ASCENDING" },
+        { "fieldPath": "userId", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     },
     {
-      "collectionGroup": "feeds",
+      "collectionGroup": "results",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "hidden", "order": "ASCENDING" },
-        { "fieldPath": "subtype", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "feeds",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "hidden", "order": "ASCENDING" },
-        { "fieldPath": "reactions.total", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "feeds",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "authorId", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "notifications",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "uid", "order": "ASCENDING" },
-        { "fieldPath": "createdAtMs", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "notifications",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "uid", "order": "ASCENDING" },
-        { "fieldPath": "read", "order": "ASCENDING" },
-        { "fieldPath": "createdAtMs", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "notifications",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "read", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "reports",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "resolved", "order": "ASCENDING" },
+        { "fieldPath": "isPublic", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     }

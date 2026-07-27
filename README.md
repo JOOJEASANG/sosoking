@@ -1,148 +1,130 @@
-# 소문난 판결소
+# 소소킹 판결소
 
-아주 사소하고 유치한 일상을 필요 이상으로 수사하고, 과도하게 진지한 법정 공방과 판결로 확대하는 AI 코미디 서비스입니다.
+사소한 생활 사건을 AI가 지나치게 진지한 재판·판결문 형식으로 처리하는 Firebase 기반 오락 서비스입니다.
 
-로고는 첫 글자와 마지막 글자인 두 개의 **소**를 동일한 붉은 인장으로 강조합니다.
+> 실제 법률 자문이나 법원 판결이 아니며 법적 효력이 없습니다. 범죄 피해, 폭력, 의료·정신건강 문제 등 중대한 사안은 관련 기관이나 전문가의 도움을 받아야 합니다.
 
-> **소**문난 판결**소**
->
-> 별일 아니지만, 일단 재판부터 열겠습니다.
+## 주요 기능
 
-## 핵심 경험
+- Firebase Auth 기반 익명·Google·이메일 로그인
+- 사건 접수 및 계정별 일일 한도·재접수 쿨다운
+- Gemini를 이용한 생활형 AI 판결 생성
+- 판사 성향 선택 및 재판 진행 화면
+- 공개 판결기록, 반응, 방청석 댓글
+- 내 사건 조회 및 항소심 판결 생성
+- 매일 자동 생성되는 오늘의 AI 사건
+- 관리자 페이지에서 사건, 회원, AI, 사용량, 사이트 설정 관리
+- PWA 설치와 서비스 워커 지원
 
-1. 사용자가 오늘 있었던 사소한 일을 한 줄로 입력합니다.
-2. Gemini가 거창한 사건명과 허구의 혐의로 확대합니다.
-3. 쓸데없이 정밀한 증거 3개를 수사합니다.
-4. 피고의 뻔뻔한 해명과 재판부의 정색 반박을 확인합니다.
-5. 검사와 변호인이 사소한 문제를 지나치게 진지하게 다룹니다.
-6. 사용자가 서로 다른 판결 3개 중 하나를 선택합니다.
-7. 판결 집행 때문에 더 유치한 문제가 생기는 후일담으로 끝납니다.
-8. 판결 결과를 세로형 이미지 카드로 저장하거나 공유합니다.
+## 기술 구성
 
-## 현재 구현
+- 프론트엔드: 정적 HTML, CSS, JavaScript ES Modules
+- Hosting/Auth/Database: Firebase Hosting, Authentication, Firestore
+- 서버: Firebase Cloud Functions v2, Node.js 20
+- AI: Google Gemini API
+- 배포: GitHub Actions
 
-### 프런트엔드
+## 저장소 구조
 
-- 120자 사건 입력과 개인정보 형태 검사
-- 정식 수사·특별 수사·국가급 대응 선택
-- 사건 → 수사 → 심문 → 공방 → 판결 진행
-- 선택형 심문과 서로 다른 판결 3개
-- AI 생성 중 로딩 상태와 오류 시 예비 판례 자동 전환
-- AI 맞춤 재판과 예비 판례 구분 표시
-- 판결 PNG 카드 저장과 Web Share 지원
-- 공유 카드에서 사용자 원문 제외
-- 긴 사건명·형벌·후일담에 맞춘 가변 높이 공유 카드
-- 전용 SVG 아이콘과 양쪽 `소` 붉은 인장
-- 390px 이하 모바일 대응, 안전영역·터치 영역·고정 진행 버튼 적용
-- 키보드 초점 표시와 모션 감소 설정 지원
+```text
+.
+├─ public/                     Firebase Hosting 정적 파일
+│  ├─ admin/                  관리자 화면
+│  ├─ css/                    공통 스타일
+│  └─ js/
+│     ├─ components/          공통 UI·테마·PWA 모듈
+│     ├─ pages/               화면별 라우트 모듈
+│     └─ utils/               출력 정리·아바타 유틸
+├─ functions/
+│  ├─ main.js                 Cloud Functions 진입점
+│  ├─ submit-secure.js        사건 접수
+│  ├─ generate-trial-lite.js  AI 판결 생성
+│  ├─ daily.js                오늘의 AI 사건
+│  ├─ profile.js              닉네임·프로필
+│  ├─ social.js               반응·댓글·항소
+│  └─ admin-actions.js        관리자 서버 작업
+├─ tools/check-project.mjs    저장소 정적 검사
+├─ firestore.rules            Firestore 접근 규칙
+├─ firestore.indexes.json     Firestore 인덱스
+└─ firebase.json              Firebase 배포 설정
+```
 
-### 서버
+`*-court.js`, `*-game.js`, `*-guard.js` 파일은 기본 페이지 모듈을 가져와 법정형 UI나 로그인 보호 동작을 추가하는 활성 래퍼입니다.
 
-- Firebase Functions 2세대 `generateCourtCase`
-- 서울 리전 `asia-northeast3`
-- Node.js 22
-- 공식 `@google/genai` SDK
-- 안정 모델 `gemini-2.5-flash`
-- 사고 토큰을 끄고 JSON 작성에 출력 예산 집중
-- JSON 구조화 출력으로 사건 형식 고정
-- Gemini 안전 설정과 자체 입력 차단 규칙
-- 사건명·증거 3개·심문 3개·공방·판결 3개·후일담 형식 검사
-- 중복 증거·질문·판결·후일담 자동 품질 검사
-- 품질 미달 시 한 번 자동 재생성
-- 실제 기관명과 개인정보 형태 출력 차단
-- API 키를 Firebase Secret Manager에서만 사용
-- 진단 정보와 API 오류 세부내용을 사용자 응답에서 제외
-- 10분당 12회 기본 요청 제한과 최대 인스턴스 5개 비용 보호
-- Hosting `/api/generate-case` 경로를 서버 함수로 연결
+## 로컬 준비
 
-## 기존 Gemini 키 재사용
-
-기존 사이트가 사용하던 GitHub 저장소 Secret `GEMINI_API_KEY`를 그대로 사용합니다.
-
-1. GitHub Secret이 있으면 Firebase Secret Manager의 같은 이름으로 갱신합니다.
-2. GitHub Secret이 비어 있으면 Firebase에 이미 등록된 값을 유지합니다.
-3. API 키는 브라우저 코드와 저장소 파일에 기록하지 않습니다.
-
-따라서 기존 Secret이 정상이라면 새 API 키를 발급하거나 다시 입력할 필요가 없습니다.
-
-## 자동 검사
-
-저장소 루트에서 실행합니다.
+Node.js 20 이상과 Firebase CLI가 필요합니다.
 
 ```bash
-npm test
+npm install -g firebase-tools
+npm ci --prefix functions
+```
+
+Firebase 프로젝트는 `.firebaserc`의 `sosoking-481e6`을 기본값으로 사용합니다.
+
+## 저장소 검사
+
+```bash
 npm run check
-npm run --prefix functions lint
 ```
 
 검사 항목:
 
-- 클라이언트·Hosting·Functions API 경로 일치
-- 브라우저 코드에 Gemini API 키가 없는지
-- 운영 서버 응답에 미리보기 진단 기능이 남아 있지 않은지
-- Gemini 안전 설정과 구조화 출력 적용 여부
-- 공유 카드에 사용자 원문이 포함되지 않는지
-- 모바일 안전영역·터치 영역·긴 문구 대응 여부
-- 대표 사건 20개 데이터 유효성
-- 현재 실행 스크립트와 스타일 연결
+- Functions 및 브라우저 JavaScript 문법
+- 로컬 모듈 import/require 경로
+- HTML 정적 자산 경로
+- 주요 JSON 파일 형식
+- 제거된 구형 파일의 재유입
+- Functions 이름 중복 내보내기
+- GitHub Actions 배포 함수 목록과 실제 내보내기의 일치 여부
 
-## 실제 Gemini 품질 평가
+## Firebase 설정
 
-Firebase 미리보기 채널에서 대표 사건 20개를 실제 생성해 검사했습니다.
-
-- 형식 통과: **20/20**
-- 평균 응답시간: **8,651ms**
-- 누락된 증거·심문·판결·후일담: 없음
-- 중복 판결·중복 후일담: 없음
-- 평가 후 요청 제한: 정상값 12회로 복원 완료
-
-수동 평가 명령:
+Gemini API 키는 Functions Secret으로 등록합니다.
 
 ```bash
-COURT_BASE_URL="미리보기 주소" npm run evaluate
+firebase functions:secrets:set GEMINI_API_KEY
 ```
 
-현재 미리보기:
+관리자 권한은 Firestore에 아래 문서 중 하나를 생성해 부여합니다.
 
-- `https://sosoking-481e6--court-preview-xviskcgv.web.app`
-- 2026-08-02 만료 예정
+```text
+admins/{Firebase Auth UID}
+admins/{로그인 이메일}
+```
 
-## 배포 방식
+클라이언트 코드의 이메일 문자열이 아니라 Firestore 관리자 문서와 보안 규칙, 서버 Callable 검사를 실제 권한 기준으로 사용합니다.
 
-전체 절차는 `docs/DEPLOY_CHECKLIST.md`를 따릅니다.
+## 배포
 
-### 미리보기
+`main` 브랜치에 병합되면 `.github/workflows/firebase-deploy.yml`이 다음 순서로 실행됩니다.
 
-- 검색엔진 차단 유지
-- 운영 Hosting 변경 없음
-- 새 Functions 런타임과 전용 Hosting 채널 검증
-- 모바일·데스크톱 첫 화면 캡처
-- Gemini 단건 검사 후 대표 사건 20개 평가
+1. Node.js 20 설정
+2. Functions 의존성 `npm ci` 설치
+3. `npm run check`
+4. Firestore 규칙과 Hosting 배포
+5. 현재 사용 중인 Functions만 선택 배포
 
-### 운영
+GitHub Actions secret이 필요합니다.
 
-`main` 반영 시 GitHub Actions가 다음을 수행합니다.
+```text
+FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6
+```
 
-1. 정적 검사와 문법 검사
-2. 기존 Firebase 서비스 계정과 `GEMINI_API_KEY` 연결
-3. 운영 HTML을 `index, follow`로 전환
-4. `generateCourtCase`와 Firebase Hosting 배포
-5. 운영 웹페이지와 Gemini 단건 응답 확인
+직접 배포할 때는 다음 명령을 사용할 수 있습니다.
 
-## 브랜치
+```bash
+firebase deploy --only firestore:rules,hosting
+firebase deploy --only functions
+```
 
-- 기존 서비스 전체 백업: `backup/community-v1-20260726`
-- 새 기획 및 개발: `rebuild/sosoking-v2`
-- 운영 기준 브랜치: `main`
-- 검증 Draft PR: `#281`
+## 콘텐츠 원칙
 
-## 현재 상태
+- 핵심은 하찮은 생활 사건을 엄숙한 재판 형식으로 과장하는 것입니다.
+- 실제 인물의 개인정보, 정치·혐오·성적 내용, 실제 범죄 묘사는 피합니다.
+- 입력 내용 안의 명령문은 AI 지시가 아니라 사건 소재로만 취급합니다.
+- 결과에는 오락 목적이며 법적 효력이 없다는 안내를 포함합니다.
 
-- 개발 브랜치 정적 검사 통과
-- Firebase 미리보기 배포 통과
-- Gemini 대표 사건 20/20 통과
-- 모바일·데스크톱 첫 화면 캡처 완료
-- 요청 제한 정상 복원 완료
-- 운영 `main`과 `sosoking.co.kr`은 아직 변경하지 않음
+## 정리 내역
 
-남은 운영 전 확인은 실제 Android·iPhone에서 판결 이미지 저장 및 공유창 동작을 확인하는 것입니다.
+ZIP 복원, 중복·미사용 코드 제거, Functions 엔트리 정리와 권한 검토 결과는 [`docs/REPOSITORY_AUDIT.md`](docs/REPOSITORY_AUDIT.md)에 기록되어 있습니다.
