@@ -19,6 +19,10 @@ function relative(file) {
   return path.relative(root, file).replaceAll(path.sep, '/');
 }
 
+function read(file) {
+  return fs.readFileSync(path.join(root, file), 'utf8');
+}
+
 function resolvesLocally(fromFile, specifier) {
   const clean = specifier.split('?')[0].split('#')[0];
   if (!clean.startsWith('.') && !clean.startsWith('/')) return true;
@@ -33,7 +37,7 @@ function resolvesLocally(fromFile, specifier) {
 
 const jsFiles = [
   ...walk(path.join(root, 'functions')).filter(file => file.endsWith('.js')),
-  ...walk(path.join(root, 'public')).filter(file => /\.(?:js|mjs)$/.test(file)),
+  ...walk(path.join(root, 'public')).filter(file => /\.(?:js|mjs)$/.test(file))
 ];
 
 for (const file of jsFiles) {
@@ -47,7 +51,7 @@ for (const file of jsFiles) {
     /\bfrom\s*['"]([^'"]+)['"]/g,
     /\bimport\s*['"]([^'"]+)['"]/g,
     /\bimport\s*\(\s*[`'"]([^`'"]+)[`'"]\s*\)/g,
-    /\brequire\s*\(\s*['"]([^'"]+)['"]\s*\)/g,
+    /\brequire\s*\(\s*['"]([^'"]+)['"]\s*\)/g
   ];
 
   for (const pattern of importPatterns) {
@@ -75,11 +79,11 @@ const jsonFiles = [
   'functions/package.json',
   'functions/package-lock.json',
   'public/site.webmanifest',
-  'public/version.json',
+  'public/version.json'
 ];
 for (const file of jsonFiles) {
   try {
-    JSON.parse(fs.readFileSync(path.join(root, file), 'utf8'));
+    JSON.parse(read(file));
   } catch (error) {
     errors.push(`${file}: invalid JSON: ${error.message}`);
   }
@@ -88,11 +92,13 @@ for (const file of jsonFiles) {
 const obsoleteFiles = [
   'functions/index.js',
   'public/admin/admin-email-guard.js',
+  'public/admin/admin-delete.js',
+  'public/admin/admin-ai-tools.js',
   'public/css/theme-toggle.css',
   'public/js/components/app-install.js',
   'public/js/components/theme-contrast.js',
   'public/js/pages/auth.js',
-  'public/js/pwa-init.js',
+  'public/js/pwa-init.js'
 ];
 for (const file of obsoleteFiles) {
   if (fs.existsSync(path.join(root, file))) errors.push(`${file}: obsolete file remains`);
@@ -101,12 +107,12 @@ for (const file of obsoleteFiles) {
 const authorizationFiles = [
   'functions/admin-utils.js',
   'public/js/components/admin-redirect.js',
-  'public/js/pages/auth2.js',
+  'public/js/pages/auth2.js'
 ];
 for (const file of authorizationFiles) {
-  const source = fs.readFileSync(path.join(root, file), 'utf8');
+  const source = read(file);
   if (source.includes('FALLBACK_ADMIN_EMAILS') || source.includes('OWNER_EMAIL') || source.includes('ADMIN_EMAIL')) {
-    errors.push(`${file}: hard-coded administrator identity remains`);
+    errors.push(`${file}: legacy administrator identity constant remains`);
   }
 }
 
@@ -133,10 +139,64 @@ for (const moduleName of loadedModules) {
   }
 }
 
-const deployWorkflow = fs.readFileSync(path.join(root, '.github/workflows/firebase-deploy.yml'), 'utf8');
+const deployWorkflow = read('.github/workflows/firebase-deploy.yml');
 const deployedFunctions = deployWorkflow.match(/firebase deploy --only functions:([^\s]+)/)?.[1]?.split(',functions:') || [];
 for (const name of deployedFunctions) {
   if (!exportsByName.has(name)) errors.push(`firebase-deploy.yml: function ${name} is not exported`);
+}
+
+// Regression checks for the full admin/UI audit.
+const adminIndex = read('public/admin/index.html');
+if (!adminIndex.includes('/admin/admin-enhancements.js')) {
+  errors.push('public/admin/index.html: admin enhancement module is not loaded');
+}
+if (adminIndex.includes('admin-delete.js') || adminIndex.includes('admin-ai-tools.js')) {
+  errors.push('public/admin/index.html: obsolete polling admin module is loaded');
+}
+
+const adminEnhancements = read('public/admin/admin-enhancements.js');
+if (adminEnhancements.includes('setInterval(')) {
+  errors.push('public/admin/admin-enhancements.js: polling loop is not allowed');
+}
+if (!adminEnhancements.includes('signInWithRedirect')) {
+  errors.push('public/admin/admin-enhancements.js: mobile redirect login fallback is missing');
+}
+
+const rules = read('firestore.rules');
+if (!/match \/cases\/\{caseId\}[\s\S]*?allow create:\s*if false;/.test(rules)) {
+  errors.push('firestore.rules: direct client case creation must remain disabled');
+}
+if (!rules.includes("hasOnly(['isPublic', 'updatedAt'])")) {
+  errors.push('firestore.rules: owner visibility updates are not sufficiently restricted');
+}
+
+const submitServer = read('functions/submit-secure.js');
+if (!submitServer.includes('settings.dailyLimit')) {
+  errors.push('functions/submit-secure.js: configured daily limit is not used');
+}
+
+const socialServer = read('functions/social.js');
+if (!socialServer.includes('reactionTotal: FieldValue.increment(1)')) {
+  errors.push('functions/social.js: result vote total is not synchronized');
+}
+if (!socialServer.includes('commentCount: FieldValue.increment(1)')) {
+  errors.push('functions/social.js: result comment total is not synchronized');
+}
+
+const resultCourt = read('public/js/pages/result-court.js');
+if (!resultCourt.includes('.result-document-page .result-paper-title')) {
+  errors.push('public/js/pages/result-court.js: document title contrast override is missing');
+}
+if (!resultCourt.includes('background:#fffdf7!important')) {
+  errors.push('public/js/pages/result-court.js: paper background override is missing');
+}
+
+const daily = read('functions/daily.js');
+if (daily.includes('desiredVerdict')) {
+  errors.push('functions/daily.js: removed desiredVerdict field was reintroduced');
+}
+if (!daily.includes('daily-document-v2')) {
+  errors.push('functions/daily.js: current structured document prompt version is missing');
 }
 
 if (errors.length) {

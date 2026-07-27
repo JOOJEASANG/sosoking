@@ -2,13 +2,19 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>관리자 · 소소킹 판결소</title>
-  <link rel="icon" href="/app-icon.svg?v=20260630-3" type="image/svg+xml">
+  <script>
+    (function() {
+      var theme = localStorage.getItem('theme');
+      if (theme && theme !== 'system') document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
+  <link rel="icon" href="/app-icon.svg?v=20260728-audit-1" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/main.css?v=20260630-3">
+  <link rel="stylesheet" href="/css/main.css?v=20260728-audit-1">
   <style>
     .admin-header{background:var(--navy-light);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
     .admin-header .logo{font-size:15px;color:var(--gold);font-weight:800;}
@@ -24,14 +30,13 @@
     .admin-btn.gold{border-color:rgba(201,168,76,.65);color:var(--gold);}
     .admin-btn.red{border-color:rgba(231,76,60,.65);color:var(--red);}
     .admin-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}
-    @media(max-width:760px){.admin-grid{grid-template-columns:repeat(2,1fr);} .admin-shell{padding-left:12px;padding-right:12px;}}
+    @media(max-width:760px){.admin-grid{grid-template-columns:repeat(2,1fr)}.admin-shell{padding-left:12px;padding-right:12px}}
   </style>
 </head>
 <body>
   <div id="admin-app"><div id="admin-content"></div></div>
   <div id="toast-container"></div>
-  <script type="module" src="/admin/admin.js?v=20260630-3"></script>
-  <script type="module" src="/admin/admin-delete.js?v=20260630-23"></script>
-  <script type="module" src="/admin/admin-ai-tools.js?v=20260630-23"></script>
+  <script type="module" src="/admin/admin.js?v=20260728-audit-1"></script>
+  <script type="module" src="/admin/admin-enhancements.js?v=20260728-audit-1"></script>
 </body>
 </html>
