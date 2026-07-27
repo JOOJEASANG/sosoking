@@ -9,6 +9,7 @@ import {
 import {
   getFirestore,
   doc,
+  getDoc,
   writeBatch,
   serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
@@ -28,7 +29,6 @@ const deleteCourtPost = httpsCallable(functions, 'deleteCourtPost');
 const generateDailyAiNow = httpsCallable(functions, 'generateDailyAiNow');
 
 let patchQueued = false;
-let lastRoot = null;
 
 function toast(message, type = 'info') {
   const host = document.getElementById('toast-container');
@@ -119,17 +119,26 @@ function patchNoAccess() {
   const detail = document.createElement('div');
   detail.id = 'admin-access-detail';
   detail.style.cssText = 'margin-top:14px;padding:12px 13px;border:1px solid rgba(201,168,76,.35);border-radius:10px;color:var(--cream-dim);font-size:12px;line-height:1.75;text-align:left;overflow-wrap:anywhere;';
-  detail.innerHTML = `
-    <strong style="color:var(--gold);">로그인 계정 확인</strong><br>
-    이메일: ${String(user?.email || '없음')}<br>
-    UID: <span id="admin-current-uid">${String(user?.uid || '없음')}</span><br>
-    <button type="button" class="admin-btn gold" id="copy-admin-uid" style="margin-top:8px;">UID 복사</button>`;
-  card.appendChild(detail);
 
-  document.getElementById('copy-admin-uid')?.addEventListener('click', async () => {
+  const heading = document.createElement('strong');
+  heading.style.color = 'var(--gold)';
+  heading.textContent = '로그인 계정 확인';
+  const emailLine = document.createElement('div');
+  emailLine.textContent = `이메일: ${String(user?.email || '없음')}`;
+  const uidLine = document.createElement('div');
+  uidLine.textContent = `UID: ${String(user?.uid || '없음')}`;
+  const copyButton = document.createElement('button');
+  copyButton.type = 'button';
+  copyButton.className = 'admin-btn gold';
+  copyButton.style.marginTop = '8px';
+  copyButton.textContent = 'UID 복사';
+  copyButton.addEventListener('click', async () => {
     await navigator.clipboard?.writeText(String(user?.uid || '')).catch(() => {});
     toast('관리자 UID를 복사했습니다.', 'success');
   });
+
+  detail.append(heading, emailLine, uidLine, copyButton);
+  card.appendChild(detail);
 }
 
 function installAdminActions() {
@@ -137,15 +146,27 @@ function installAdminActions() {
 
   window._recordPublic = async (caseId, isPublic) => {
     try {
+      const caseRef = doc(db, 'cases', caseId);
+      const resultRef = doc(db, 'results', caseId);
+      const [caseSnap, resultSnap] = await Promise.all([
+        getDoc(caseRef),
+        getDoc(resultRef)
+      ]);
+      if (!caseSnap.exists() && !resultSnap.exists()) throw new Error('사건 기록을 찾을 수 없습니다.');
+
       const batch = writeBatch(db);
-      batch.update(doc(db, 'results', caseId), {
-        isPublic: Boolean(isPublic),
-        updatedAt: serverTimestamp()
-      });
-      batch.update(doc(db, 'cases', caseId), {
-        isPublic: Boolean(isPublic),
-        updatedAt: serverTimestamp()
-      });
+      if (resultSnap.exists()) {
+        batch.update(resultRef, {
+          isPublic: Boolean(isPublic),
+          updatedAt: serverTimestamp()
+        });
+      }
+      if (caseSnap.exists()) {
+        batch.update(caseRef, {
+          isPublic: Boolean(isPublic),
+          updatedAt: serverTimestamp()
+        });
+      }
       await batch.commit();
       toast('공개 상태를 변경했습니다.', 'success');
       window._tab?.('records');
@@ -171,7 +192,16 @@ function installAdminActions() {
 function patchStaleAdminCopy() {
   const prompt = document.getElementById('dailyPrompt');
   if (prompt && /원하는 판결|사건명은 30자/.test(prompt.value)) {
-    prompt.value = '사용자가 적은 생활사건 내용을 바탕으로 알아보기 쉬운 사건명을 자동 생성하고, 사건접수·수사보고·원고측 변론·피고측 변론·재판부 판결의 다섯 문서를 실제 문서 형식처럼 작성한다. 문서 형식은 진지하게 유지하되 사건의 구체적인 사물과 행동에서 나온 웃음코드를 충분히 넣는다. 판사 성향을 문체와 판단에 반영하고, 개인정보·혐오·성적 내용·자해·실제 범죄의 상세 묘사는 피한다.';
+    prompt.value = '생활사건 내용을 바탕으로 알아보기 쉬운 사건명을 자동 생성하고, 사건접수·수사보고·원고측 변론·피고측 변론·재판부 판결의 다섯 문서를 실제 문서 형식처럼 작성한다. 문서 형식은 진지하게 유지하되 사건의 구체적인 사물과 행동에서 나온 웃음코드를 충분히 넣는다. 판사 성향을 문체와 판단에 반영하고, 개인정보·혐오·성적 내용·자해·실제 범죄의 상세 묘사는 피한다.';
+  }
+
+  const policy = document.getElementById('pc');
+  if (policy && !policy.dataset.copyAudited) {
+    policy.dataset.copyAudited = 'true';
+    policy.value = policy.value
+      .replace(/사건명·사건 경위·원하는 판결/g, '사건 경위·자동 생성된 사건명·판결문')
+      .replace(/사건명·사건 경위/g, '사건 경위·자동 생성된 사건명')
+      .replace(/접수계, 조사관, 원고 측, 피고 측, 판사 판결문, 생활형 처분/g, '사건접수, 수사보고, 원고측 변론, 피고측 변론, 재판부 판결');
   }
 }
 
@@ -232,18 +262,25 @@ function improveAdminLayout() {
   document.head.appendChild(style);
 }
 
+function patchTableWrappers() {
+  document.querySelectorAll('.admin-table').forEach(table => {
+    const parent = table.parentElement;
+    if (parent) parent.classList.add('admin-table-wrap');
+  });
+}
+
 function patchAdmin() {
   patchQueued = false;
   const root = document.getElementById('admin-content');
   if (!root) return;
 
-  if (root !== lastRoot) lastRoot = root;
   improveAdminLayout();
   patchLoginForm();
   patchNoAccess();
   installAdminActions();
   patchStaleAdminCopy();
   injectDailyAiButton();
+  patchTableWrappers();
 }
 
 function schedulePatch() {
