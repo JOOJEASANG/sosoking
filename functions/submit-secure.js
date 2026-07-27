@@ -4,7 +4,7 @@ const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const db = getFirestore();
 const REGION = 'asia-northeast3';
 const MAX_DESC = 600;
-const HARD_DAILY_LIMIT = 3;
+const DEFAULT_DAILY_LIMIT = 3;
 const DEFAULT_COOLDOWN_SEC = 45;
 const NICK_ADJ = ['억울한','분노한','황당한','지친','당황한','슬픈','안타까운','기막힌'];
 const NICK_NOUN = ['직장인','집사','아무개','라면러버','과자지킴이','충전기수호자','리모컨분실자','냉장고파수꾼'];
@@ -18,7 +18,11 @@ function requireRealLogin(request) {
 }
 
 function textValue(value, maxLen) {
-  return String(value || '').replace(/[\u0000-\u001F\u007F]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, maxLen);
+  return String(value || '')
+    .replace(/[\u0000-\u001F\u007F]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, maxLen);
 }
 
 function clampNumber(value, fallback, min, max) {
@@ -56,8 +60,8 @@ function randomNickname() {
 function containsBannedWord(text, bannedWords = []) {
   const source = String(text || '').toLowerCase();
   return bannedWords.some(word => {
-    const w = String(word || '').trim().toLowerCase();
-    return w && source.includes(w);
+    const normalized = String(word || '').trim().toLowerCase();
+    return normalized && source.includes(normalized);
   });
 }
 
@@ -71,13 +75,17 @@ async function loadUserNickname(uid) {
     const snap = await db.doc(`users/${uid}`).get();
     if (!snap.exists) return '';
     return textValue(snap.data().nickname, 30);
-  } catch (e) {
-    console.error('profile load failed:', e);
+  } catch (err) {
+    console.error('profile load failed:', err);
     return '';
   }
 }
 
-exports.submitCase = onCall({ region: REGION, timeoutSeconds: 30, memory: '256MiB' }, async request => {
+exports.submitCase = onCall({
+  region: REGION,
+  timeoutSeconds: 30,
+  memory: '256MiB'
+}, async request => {
   requireRealLogin(request);
 
   const uid = request.auth.uid;
@@ -91,8 +99,10 @@ exports.submitCase = onCall({ region: REGION, timeoutSeconds: 30, memory: '256Mi
   }
 
   const settings = await loadSettings();
+  const dailyLimit = clampNumber(settings.dailyLimit, DEFAULT_DAILY_LIMIT, 1, 20);
   const cooldownSec = clampNumber(settings.cooldownSec, DEFAULT_COOLDOWN_SEC, 0, 300);
   const bannedWords = Array.isArray(settings.bannedWords) ? settings.bannedWords : [];
+
   if (containsBannedWord(desc, bannedWords)) {
     throw new HttpsError('failed-precondition', '관리자가 제한한 단어가 포함되어 있습니다.');
   }
@@ -108,8 +118,8 @@ exports.submitCase = onCall({ region: REGION, timeoutSeconds: 30, memory: '256Mi
     const current = limitSnap.exists ? limitSnap.data() : {};
     const count = current.date === today ? Number(current.count || 0) : 0;
 
-    if (count >= HARD_DAILY_LIMIT) {
-      throw new HttpsError('resource-exhausted', '오늘 접수 한도 3건을 초과했습니다.');
+    if (count >= dailyLimit) {
+      throw new HttpsError('resource-exhausted', `오늘 접수 한도 ${dailyLimit}건을 초과했습니다.`);
     }
 
     if (current.lastSubmittedAt) {
@@ -136,16 +146,18 @@ exports.submitCase = onCall({ region: REGION, timeoutSeconds: 30, memory: '256Mi
       status: 'pending',
       isPublic,
       reportCount: 0,
-      createdAt: FieldValue.serverTimestamp()
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp()
     });
 
     tx.set(limitRef, {
       date: today,
       count: count + 1,
+      dailyLimit,
       lastSubmittedAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp()
     }, { merge: true });
   });
 
-  return { caseId, docketNumber, dailyLimit: HARD_DAILY_LIMIT };
+  return { caseId, docketNumber, dailyLimit, cooldownSec };
 });
