@@ -3,12 +3,15 @@ const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { defineSecret } = require('firebase-functions/params');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const { isAdminAuth } = require('./admin-utils');
+const { inspectContent } = require('./content-safety');
+const { requireVerifiedUser } = require('./security');
 
 const db = getFirestore();
 const geminiKey = defineSecret('GEMINI_API_KEY');
 const REGION = 'asia-northeast3';
 const GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models';
 const DEFAULT_MODELS = ['gemini-2.5-flash', 'gemini-2.5-flash-lite'];
+const DAILY_PUBLIC_BLOCK_PATTERN = /(대통령|국회의원|정당|선거운동|인종\s*차별|혐오\s*표현|음란|성적\s*행위)/i;
 const JUDGES = [
   { type: '엄벌주의형', icon: '👨‍⚖️', style: '작은 생활규칙 위반도 질서 파괴처럼 단호하고 엄숙하게 판단한다.' },
   { type: '감성형', icon: '🥹', style: '서운함과 마음의 상처를 세심하게 살피며 따뜻한 비유를 사용한다.' },
@@ -188,10 +191,20 @@ function fallbackContent(dateKey, judge) {
   };
 }
 
+function safePromptSetting(value, maxLen) {
+  const text = cleanText(value, maxLen);
+  if (!text) return '';
+  const safety = inspectContent(text);
+  if (!safety.safe || DAILY_PUBLIC_BLOCK_PATTERN.test(text)) return '';
+  return text;
+}
+
 function buildPrompt(dateKey, judge, settings = {}) {
+  const topicHints = safePromptSetting(settings.dailyAiTopicHints, 300);
+  const additionalPrompt = safePromptSetting(settings.dailyAiPrompt, 800);
   const extra = [
-    settings.dailyAiTopicHints && `주제 힌트: ${cleanText(settings.dailyAiTopicHints, 300)}`,
-    settings.dailyAiPrompt && `추가 지시: ${cleanText(settings.dailyAiPrompt, 800)}`
+    topicHints && `주제 힌트: ${topicHints}`,
+    additionalPrompt && `추가 지시: ${additionalPrompt}`
   ].filter(Boolean).join('\n');
 
   return `소소킹 판결소 공개 판결기록에 올릴 안전하고 사소한 생활사건 1개를 작성한다.
@@ -230,6 +243,72 @@ function normalizeDailyContent(ai, dateKey, judge) {
     defendantArg: cleanDocument(ai?.defendantArg, 1800) || fallback.defendantArg,
     verdict: cleanDocument(ai?.verdict, 3000) || fallback.verdict,
     sentence: oneSentence(ai?.sentence, fallback.sentence)
+  };
+}
+
+function dailyContentText(data = {}) {
+  return [
+    data.caseTitle,
+    data.caseDescription,
+    data.reception,
+    data.investigation,
+    data.plaintiffArg,
+    data.defendantArg,
+    data.verdict,
+    data.sentence
+  ].filter(Boolean).join('\n');
+}
+
+function containsBannedWord(text, bannedWords = []) {
+  const source = String(text || '').toLowerCase();
+  return bannedWords.find(word => {
+    const normalized = String(word || '').trim().toLowerCase();
+    return normalized && source.includes(normalized);
+  }) || '';
+}
+
+function moderateDailyContent(data, dateKey, judge, settings = {}) {
+  const text = dailyContentText(data);
+  const safety = inspectContent(text);
+  const blockedPattern = DAILY_PUBLIC_BLOCK_PATTERN.test(text);
+  const bannedWord = containsBannedWord(text, Array.isArray(settings.bannedWords) ? settings.bannedWords : []);
+
+  if (safety.safe && !blockedPattern && !bannedWord) {
+    return {
+      data,
+      publish: true,
+      status: 'passed',
+      code: '',
+      usedSafetyFallback: false
+    };
+  }
+
+  const fallbackData = normalizeDailyContent(fallbackContent(dateKey, judge), dateKey, judge);
+  const fallbackText = dailyContentText(fallbackData);
+  const fallbackSafety = inspectContent(fallbackText);
+  const fallbackBlocked = DAILY_PUBLIC_BLOCK_PATTERN.test(fallbackText);
+  const fallbackBannedWord = containsBannedWord(
+    fallbackText,
+    Array.isArray(settings.bannedWords) ? settings.bannedWords : []
+  );
+  const code = safety.code || (blockedPattern ? 'daily-public-topic' : `banned-word:${bannedWord}`);
+
+  if (!fallbackSafety.safe || fallbackBlocked || fallbackBannedWord) {
+    return {
+      data: fallbackData,
+      publish: false,
+      status: 'blocked',
+      code: fallbackSafety.code || (fallbackBlocked ? 'daily-public-topic' : `banned-word:${fallbackBannedWord}`),
+      usedSafetyFallback: true
+    };
+  }
+
+  return {
+    data: fallbackData,
+    publish: true,
+    status: 'passed',
+    code: `fallback:${code}`,
+    usedSafetyFallback: true
   };
 }
 
@@ -287,13 +366,20 @@ async function createDailyAiCase(force = false) {
   const resultRef = db.doc(`results/${caseId}`);
   const existing = await resultRef.get();
 
-  if (existing.exists && !force && isCompleteResult(existing.data())) {
+  if (
+    existing.exists &&
+    !force &&
+    isCompleteResult(existing.data()) &&
+    existing.data().contentSafetyStatus === 'passed'
+  ) {
     return { created: false, caseId, skipped: 'already-complete' };
   }
 
   const judge = judgeForDate(dateKey);
   const generated = await buildDailyContent(dateKey, judge, settings);
-  const data = normalizeDailyContent(generated.content, dateKey, judge);
+  const normalized = normalizeDailyContent(generated.content, dateKey, judge);
+  const moderation = moderateDailyContent(normalized, dateKey, judge, settings);
+  const data = moderation.data;
   const dailyDocket = docketNumber(dateKey);
   const now = FieldValue.serverTimestamp();
   const batch = db.batch();
@@ -315,8 +401,11 @@ async function createDailyAiCase(force = false) {
     judgeIcon: data.judgeIcon,
     judgeStyle: data.judgeStyle,
     status: 'completed',
-    isPublic: true,
+    isPublic: moderation.publish,
     reportCount: 0,
+    contentSafetyStatus: moderation.status,
+    contentSafetyCode: moderation.code,
+    contentSafetyCheckedAt: now,
     createdAt: now,
     completedAt: now,
     updatedAt: now
@@ -329,7 +418,7 @@ async function createDailyAiCase(force = false) {
     courtName: '소소킹 판결소',
     courtroom: '제404호 생활법정',
     division: '제3생활부',
-    isPublic: true,
+    isPublic: moderation.publish,
     caseTitle: data.caseTitle,
     caseDescription: data.caseDescription,
     grievanceIndex: data.grievanceIndex,
@@ -343,10 +432,15 @@ async function createDailyAiCase(force = false) {
     defendantArg: data.defendantArg,
     verdict: data.verdict,
     sentence: data.sentence,
-    aiSource: generated.modelName ? 'gemini-rest' : 'local-daily-fallback',
-    aiModel: generated.modelName,
-    aiFallbackReason: generated.fallbackReason,
-    promptVersion: 'daily-document-v2',
+    aiSource: moderation.usedSafetyFallback
+      ? 'local-daily-safety-fallback'
+      : (generated.modelName ? 'gemini-rest' : 'local-daily-fallback'),
+    aiModel: moderation.usedSafetyFallback ? '' : generated.modelName,
+    aiFallbackReason: [generated.fallbackReason, moderation.code].filter(Boolean).join(' | '),
+    promptVersion: 'daily-document-v3-safety',
+    contentSafetyStatus: moderation.status,
+    contentSafetyCode: moderation.code,
+    contentSafetyCheckedAt: now,
     reactionTotal: existing.exists ? Number(existing.data().reactionTotal || 0) : 0,
     commentCount: existing.exists ? Number(existing.data().commentCount || 0) : 0,
     courtStage: 'sentenced',
@@ -357,15 +451,19 @@ async function createDailyAiCase(force = false) {
   await batch.commit();
   await db.doc('site_settings/config').set({
     dailyAiLastRunAt: FieldValue.serverTimestamp(),
-    dailyAiLastCaseId: caseId
+    dailyAiLastCaseId: caseId,
+    dailyAiLastSafetyStatus: moderation.status,
+    dailyAiLastSafetyCode: moderation.code
   }, { merge: true });
 
   return {
     created: true,
     caseId,
     repaired: existing.exists && !isCompleteResult(existing.data()),
-    model: generated.modelName,
-    fallback: !generated.modelName
+    model: moderation.usedSafetyFallback ? '' : generated.modelName,
+    fallback: !generated.modelName || moderation.usedSafetyFallback,
+    published: moderation.publish,
+    contentSafetyStatus: moderation.status
   };
 }
 
@@ -386,7 +484,8 @@ exports.generateDailyAiNow = onCall({
   timeoutSeconds: 300,
   memory: '512MiB'
 }, async request => {
-  if (!request.auth || !(await isAdminAuth(request.auth))) {
+  requireVerifiedUser(request);
+  if (!(await isAdminAuth(request.auth))) {
     throw new HttpsError('permission-denied', '관리자만 실행할 수 있습니다.');
   }
   return await createDailyAiCase(true);
