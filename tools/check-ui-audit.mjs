@@ -58,6 +58,15 @@ if (contrast.includes(':root:not([data-theme="dark"])')) {
 if (!contrast.includes('.hero-section .hero-sub')) {
   errors.push('contrast-fix.js: branded hero text contrast override is missing');
 }
+if (!contrast.includes('[data-theme="light"] .court-shell{')) {
+  errors.push('contrast-fix.js: light-mode court card surface override is missing');
+}
+if (!contrast.includes('[data-theme="light"] .court-shell .arena-rank-tabs span')) {
+  errors.push('contrast-fix.js: light-mode arena tab description contrast override is missing');
+}
+if (!contrast.includes('[data-theme="light"] .court-shell .btn-ghost{')) {
+  errors.push('contrast-fix.js: light-mode court secondary action contrast override is missing');
+}
 
 const auth = read('public/js/pages/auth2.js');
 if (auth.includes('showToast(e.message') || auth.includes('showToast(error.message')) {
