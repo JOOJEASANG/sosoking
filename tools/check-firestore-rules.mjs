@@ -86,6 +86,10 @@ try {
         caseId: 'public-case',
         commentId: 'comment-1'
       }),
+      setDoc(doc(db, 'case_id_aliases/legacy-hash'), {
+        targetCaseId: 'public-case',
+        status: 'completed'
+      }),
       setDoc(doc(db, 'action_limits/owner-uid_court-comment'), {
         uid: 'owner-uid',
         count: 1
@@ -154,9 +158,15 @@ try {
     createdAt: now
   }));
 
-  // 댓글 작성자, 동작 제한, 신고 중복 키는 Admin SDK 전용이다.
+  // 댓글 작성자, 주소 별칭, 동작 제한, 신고 중복 키는 Admin SDK 전용이다.
   await assertFails(getDoc(doc(owner, 'court_comment_authors/public-case/items/comment-1')));
   await assertFails(getDoc(doc(admin, 'court_comment_authors/public-case/items/comment-1')));
+  await assertFails(getDoc(doc(owner, 'case_id_aliases/legacy-hash')));
+  await assertFails(getDoc(doc(admin, 'case_id_aliases/legacy-hash')));
+  await assertFails(setDoc(doc(admin, 'case_id_aliases/forged-hash'), {
+    targetCaseId: 'private-case',
+    status: 'completed'
+  }));
   await assertFails(getDoc(doc(owner, 'action_limits/owner-uid_court-comment')));
   await assertFails(updateDoc(doc(owner, 'action_limits/owner-uid_court-comment'), { count: 0 }));
   await assertFails(getDoc(doc(owner, 'report_keys/key-1')));
