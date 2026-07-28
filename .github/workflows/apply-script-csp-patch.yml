@@ -1,0 +1,36 @@
+name: Apply script CSP patch
+
+on:
+  push:
+    branches: [agent/enforce-script-csp]
+    paths:
+      - tools/patch-script-csp-blockers.mjs
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/enforce-script-csp
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node tools/patch-script-csp-blockers.mjs
+      - run: |
+          node --check public/js/app.js
+          node --check public/js/pages/home.js
+          node --check public/js/pages/home-court.js
+          node --check public/js/pages/board.js
+          node --check public/admin/admin.js
+      - name: Commit patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/js/app.js public/js/pages/home.js public/js/pages/home-court.js public/js/pages/board.js public/admin/admin.js
+          git diff --cached --quiet && exit 0
+          git commit -m "Remove inline script event handlers"
+          git push origin HEAD:agent/enforce-script-csp
