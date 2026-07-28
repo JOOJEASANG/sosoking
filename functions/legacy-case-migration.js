@@ -36,7 +36,12 @@ async function reserveAlias(caseId) {
   return db.runTransaction(async tx => {
     const aliasSnap = await tx.get(aliasRef);
     if (aliasSnap.exists && aliasSnap.data().targetCaseId) {
-      return { aliasRef, targetCaseId: aliasSnap.data().targetCaseId, reused: true };
+      return {
+        aliasRef,
+        targetCaseId: aliasSnap.data().targetCaseId,
+        aliasStatus: aliasSnap.data().status || 'processing',
+        reused: true
+      };
     }
 
     const targetRef = db.collection('cases').doc();
@@ -47,7 +52,7 @@ async function reserveAlias(caseId) {
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp()
     });
-    return { aliasRef, targetCaseId: targetRef.id, reused: false };
+    return { aliasRef, targetCaseId: targetRef.id, aliasStatus: 'processing', reused: false };
   });
 }
 
@@ -164,7 +169,6 @@ async function copyPrimaryDocuments(oldCaseId, newCaseId, hash) {
   batch.set(refs.newResult, {
     ...resultData,
     idVersion: 2,
-    legacyIdHash: hash,
     migratedAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp()
   }, { merge: false });
@@ -216,7 +220,18 @@ async function migrateLegacyCase(caseId, { dryRun = true } = {}) {
   }
 
   const hash = legacyIdHash(oldCaseId);
-  const { aliasRef, targetCaseId, reused } = await reserveAlias(oldCaseId);
+  const { aliasRef, targetCaseId, aliasStatus, reused } = await reserveAlias(oldCaseId);
+  if (aliasStatus === 'completed') {
+    const deleted = await removeLegacyDocuments(oldCaseId);
+    return {
+      legacyIdHash: hash,
+      targetCaseId,
+      migrated: true,
+      resumedCleanup: true,
+      deleted
+    };
+  }
+
   await copyPrimaryDocuments(oldCaseId, targetCaseId, hash);
   const [votes, comments, commentAuthors, reportCounts] = await Promise.all([
     copyCollection(`result_reactions/${oldCaseId}/votes`, `result_reactions/${targetCaseId}/votes`),
