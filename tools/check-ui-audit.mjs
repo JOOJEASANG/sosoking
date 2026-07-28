@@ -38,7 +38,7 @@ const theme = read('public/js/components/theme.js');
 if (!theme.includes("root.setAttribute('data-theme', resolved)")) {
   errors.push('theme.js: resolved theme is not written explicitly');
 }
-if (!theme.includes("data-theme-choice")) {
+if (!theme.includes('data-theme-choice')) {
   errors.push('theme.js: theme preference marker is missing');
 }
 
@@ -51,7 +51,7 @@ if (!contrast.includes('.hero-section .hero-sub')) {
 }
 
 const auth = read('public/js/pages/auth2.js');
-if (auth.includes("showToast(e.message") || auth.includes("showToast(error.message")) {
+if (auth.includes('showToast(e.message') || auth.includes('showToast(error.message')) {
   errors.push('auth2.js: raw authentication error is exposed to users');
 }
 if (!auth.includes("'auth/popup-closed-by-user': 'Google 로그인이 취소되었습니다.'")) {
@@ -65,6 +65,47 @@ const index = read('public/index.html');
 if (!index.includes("document.documentElement.setAttribute('data-theme', resolved)")) {
   errors.push('index.html: first-paint theme resolution is missing');
 }
+if (!index.includes('/site.webmanifest?v=20260728-pwa-install-1')) {
+  errors.push('index.html: current PWA manifest version is missing');
+}
+
+const manifest = JSON.parse(read('public/site.webmanifest'));
+if (manifest.display !== 'standalone') {
+  errors.push('site.webmanifest: display must be standalone');
+}
+if (!Array.isArray(manifest.display_override) || manifest.display_override.some(value => value !== 'standalone')) {
+  errors.push('site.webmanifest: browser or minimal-ui display fallback remains');
+}
+if (manifest.prefer_related_applications !== false) {
+  errors.push('site.webmanifest: prefer_related_applications must be false');
+}
+const icons = Array.isArray(manifest.icons) ? manifest.icons : [];
+if (!icons.some(icon => icon.sizes === '192x192' && icon.type === 'image/png')) {
+  errors.push('site.webmanifest: 192px PNG icon is missing');
+}
+if (!icons.some(icon => icon.sizes === '512x512' && icon.type === 'image/png' && String(icon.purpose).includes('any'))) {
+  errors.push('site.webmanifest: 512px any icon is missing');
+}
+if (!icons.some(icon => icon.sizes === '512x512' && String(icon.purpose).includes('maskable'))) {
+  errors.push('site.webmanifest: 512px maskable icon is missing');
+}
+
+const pwa = read('public/js/components/pwa-ui.js');
+if (!pwa.includes("navigator.serviceWorker.register('/sw.js'")) {
+  errors.push('pwa-ui.js: root service worker registration is missing');
+}
+if (!pwa.includes("document.readyState === 'complete'")) {
+  errors.push('pwa-ui.js: late-loaded service worker registration fallback is missing');
+}
+if (!pwa.includes("updateViaCache: 'none'")) {
+  errors.push('pwa-ui.js: service worker cache bypass is missing');
+}
+if (pwa.includes('setTimeout(button') || pwa.includes('홈 화면에 추가를 선택하세요. Chrome')) {
+  errors.push('pwa-ui.js: Android shortcut fallback can still expose a Chrome-badged shortcut');
+}
+if (!pwa.includes('if (standalone() || !savedPrompt)')) {
+  errors.push('pwa-ui.js: install button is not gated by beforeinstallprompt');
+}
 
 if (errors.length) {
   console.error(`UI audit validation failed (${errors.length})`);
@@ -72,4 +113,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('UI audit validation passed: real logo PNGs, authentication messages, and dark/light contrast.');
+console.log('UI audit validation passed: logo PNGs, authentication, theme contrast, and Chrome-badge-free PWA install flow.');
