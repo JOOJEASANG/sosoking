@@ -25,6 +25,12 @@ function kstDateKey(date = new Date()) {
   }).format(date);
 }
 
+function timestampMillis(value) {
+  if (value?.toMillis) return value.toMillis();
+  const parsed = new Date(value || 0).getTime();
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 function requireVerifiedUser(request) {
   if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
   if (enforceAppCheck.value() && !request.app) {
@@ -39,6 +45,47 @@ function requireVerifiedUser(request) {
   if (provider === 'password' && token.email_verified !== true) {
     throw new HttpsError('failed-precondition', '이메일 인증을 완료한 뒤 이용해 주세요.');
   }
+}
+
+async function enforceActionRateLimit(uid, action, options = {}) {
+  const safeUid = String(uid || '').trim();
+  const safeAction = String(action || '').trim().toLowerCase();
+  if (!safeUid || !/^[a-z0-9_-]{1,40}$/.test(safeAction)) {
+    throw new HttpsError('invalid-argument', '요청 제한 키가 올바르지 않습니다.');
+  }
+
+  const cooldownSeconds = clampLimit(options.cooldownSeconds, 0, 0, 3600);
+  const dailyLimit = clampLimit(options.dailyLimit, 100, 1, 10000);
+  const date = kstDateKey();
+  const ref = db.doc(`action_limits/${safeUid}_${safeAction}`);
+
+  await db.runTransaction(async tx => {
+    const snap = await tx.get(ref);
+    const current = snap.exists ? snap.data() : {};
+    const count = current.date === date ? Number(current.count || 0) : 0;
+    const lastActionMs = current.date === date ? timestampMillis(current.lastActionAt) : 0;
+    const elapsedSeconds = lastActionMs ? Math.floor((Date.now() - lastActionMs) / 1000) : Infinity;
+
+    if (count >= dailyLimit) {
+      throw new HttpsError('resource-exhausted', `오늘 이용 가능한 ${dailyLimit}회 한도에 도달했습니다.`);
+    }
+    if (cooldownSeconds > 0 && elapsedSeconds < cooldownSeconds) {
+      throw new HttpsError('resource-exhausted', `${cooldownSeconds - elapsedSeconds}초 후에 다시 시도해 주세요.`);
+    }
+
+    tx.set(ref, {
+      uid: safeUid,
+      action: safeAction,
+      date,
+      count: count + 1,
+      dailyLimit,
+      cooldownSeconds,
+      lastActionAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp()
+    }, { merge: true });
+  });
+
+  return { date, dailyLimit, cooldownSeconds };
 }
 
 async function reserveAiRequest(uid, kind, settings = {}) {
@@ -93,6 +140,7 @@ async function reserveAiRequest(uid, kind, settings = {}) {
 }
 
 module.exports = {
+  enforceActionRateLimit,
   requireVerifiedUser,
   reserveAiRequest
 };
