@@ -28,6 +28,6 @@ export function initCourtDesign() {
   document.head.appendChild(style);
   import('./contrast-fix.js?v=20260728-ui-audit-2').then(module => module.initContrastFix()).catch(err => console.warn('contrast fix load failed:', err));
   import('./owner-polish.js?v=20260630-21').then(module => module.initOwnerPolish()).catch(() => {});
-  import('./pwa-ui.js?v=20260630-23').then(module => module.initPwa()).catch(() => {});
+  import('./pwa-ui.js?v=20260728-pwa-install-1').then(module => module.initPwa()).catch(err => console.warn('pwa ui load failed:', err));
   import('./admin-redirect.js?v=20260728-audit-1').then(module => module.initAdminRedirect()).catch(err => console.warn('admin redirect load failed:', err));
 }
