@@ -1,0 +1,36 @@
+name: Apply trial accounting patch
+
+on:
+  push:
+    branches: [agent/fix-ai-accounting-public-stats]
+    paths:
+      - tools/patch-trial-accounting.mjs
+      - .github/workflows/apply-trial-accounting-patch.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/fix-ai-accounting-public-stats
+          fetch-depth: 0
+
+      - name: Apply exact patch
+        run: node tools/patch-trial-accounting.mjs
+
+      - name: Validate patched JavaScript
+        run: node --check functions/generate-trial-lite.js
+
+      - name: Commit patched file
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add functions/generate-trial-lite.js
+          git commit -m "Fix trial AI quota and usage accounting"
+          git push origin HEAD:agent/fix-ai-accounting-public-stats
