@@ -102,7 +102,7 @@ function todayPick([id, r]) {
   const icon = r.judgeIcon || JUDGE_ICON[judgeType] || '⚖️';
   const grievance = grievanceFor(id, r);
 
-  return `<div class="card board-featured-card" onclick="location.hash='#/result/${encodeURIComponent(id)}'" style="padding:20px;margin-bottom:16px;cursor:pointer;border-color:rgba(201,168,76,.65);background:linear-gradient(135deg,rgba(201,168,76,.12),rgba(255,255,255,.03));">
+  return `<a href="#/result/${encodeURIComponent(id)}" class="card board-featured-card" style="display:block;padding:20px;margin-bottom:16px;cursor:pointer;border-color:rgba(201,168,76,.65);background:linear-gradient(135deg,rgba(201,168,76,.12),rgba(255,255,255,.03));color:inherit;text-decoration:none;">
     <div style="font-size:12px;color:var(--gold);font-weight:900;letter-spacing:.12em;margin-bottom:8px;">오늘의 판결기록</div>
     <div style="font-family:var(--font-serif);font-size:21px;font-weight:900;line-height:1.45;margin-bottom:8px;">${escapeHtml(r.caseTitle || '제목 없음')}</div>
     <div style="font-size:14px;color:var(--cream-dim);line-height:1.65;margin-bottom:13px;">${escapeHtml(compactText(r.sentence || r.caseDescription || r.verdict || '', 96))}</div>
@@ -111,7 +111,7 @@ function todayPick([id, r]) {
       <span class="board-grievance-chip">억울지수 <strong>${grievance}/10</strong>${grievanceMeter(grievance)}</span>
     </div>
     <div style="margin-top:10px;text-align:right;font-size:12px;color:var(--cream-dim);">🧑‍⚖️ ${totalVotes(r)}표 · 💬 ${totalComments(r)}</div>
-  </div>`;
+  </a>`;
 }
 
 function boardRow(id, r) {
@@ -120,7 +120,7 @@ function boardRow(id, r) {
   const grievance = grievanceFor(id, r);
   const isDaily = r.source === 'daily_ai';
 
-  return `<div class="card" onclick="location.hash='#/result/${encodeURIComponent(id)}'" style="padding:16px 18px;cursor:pointer;">
+  return `<a href="#/result/${encodeURIComponent(id)}" class="card" style="display:block;padding:16px 18px;cursor:pointer;color:inherit;text-decoration:none;">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px;"><div style="font-weight:800;font-size:15px;line-height:1.45;flex:1;">${escapeHtml(r.caseTitle || '제목 없음')}</div><div style="font-size:11px;color:var(--cream-dim);white-space:nowrap;margin-top:2px;">${escapeHtml(fmtDate(r.createdAt))}</div></div>
     <div style="font-size:13px;color:var(--cream-dim);line-height:1.6;margin-bottom:11px;">${escapeHtml(compactText(r.sentence || r.caseDescription || r.verdict || '', 86))}</div>
     <div class="board-record-meta board-record-meta-row">
@@ -131,5 +131,5 @@ function boardRow(id, r) {
       <span style="color:var(--cream-dim);">${isDaily ? '오늘의 AI 사건' : '생활사건 기록'}</span>
       <span style="color:var(--gold);white-space:nowrap;">🧑‍⚖️ ${totalVotes(r)} · 💬 ${totalComments(r)} →</span>
     </div>
-  </div>`;
+  </a>`;
 }

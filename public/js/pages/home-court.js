@@ -80,6 +80,7 @@ function fixLegacyHomeCopy(container) {
     if (description) description.textContent = '자동 배정된 판사 성향이 반영된 문서형 판결과 생활형 처분이 내려집니다.';
   }
   container.querySelectorAll('.judge-card').forEach(card => {
+    if (card.matches('a,button')) return;
     card.setAttribute('role', 'link');
     card.setAttribute('tabindex', '0');
     card.addEventListener('keydown', event => {

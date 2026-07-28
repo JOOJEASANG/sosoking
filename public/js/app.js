@@ -48,10 +48,11 @@ function renderRouteError(content) {
         <div style="font-size:40px;margin-bottom:10px;" aria-hidden="true">🛠️</div>
         <div style="font-family:var(--font-serif);font-size:19px;font-weight:900;color:var(--gold);margin-bottom:8px;">화면을 불러오지 못했습니다</div>
         <div style="font-size:13px;color:var(--cream-dim);line-height:1.75;margin-bottom:18px;">네트워크 상태를 확인한 뒤 다시 시도해주세요.</div>
-        <button type="button" class="btn btn-primary" onclick="location.reload()">새로고침</button>
+        <button type="button" class="btn btn-primary" id="route-reload-btn">새로고침</button>
         <a href="#/" class="btn btn-ghost" style="margin-top:10px;">홈으로 이동</a>
       </div>
     </div>`;
+  content.querySelector('#route-reload-btn')?.addEventListener('click', () => location.reload());
 }
 
 async function route() {
