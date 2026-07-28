@@ -1,5 +1,13 @@
 import { renderHome as renderBaseHome } from './home.js?v=20260630-3';
 
+function applyBrandLogo(container) {
+  const logo = container.querySelector('.hero-section > img[alt="소소킹 로고"]');
+  if (!logo) return;
+  logo.src = '/icons/sosoking-512.png?v=20260728-exact-logo-1';
+  logo.width = 512;
+  logo.height = 512;
+}
+
 function addCourtEntrance(container) {
   const hero = container.querySelector('.hero-section');
   if (!hero || document.getElementById('court-entrance')) return;
@@ -72,6 +80,7 @@ function fixLegacyHomeCopy(container) {
 
 export async function renderHome(container) {
   await renderBaseHome(container);
+  applyBrandLogo(container);
   addCourtEntrance(container);
   addProcedureSeal(container);
   fixLegacyHomeCopy(container);

@@ -1,5 +1,5 @@
-const CACHE_NAME = 'sosoking-app-v20260728-logo-cleanup-1';
-const APP_SHELL = ['/', '/index.html', '/site.webmanifest', '/app-icon.svg'];
+const CACHE_NAME = 'sosoking-app-v20260728-exact-logo-1';
+const APP_SHELL = ['/', '/index.html', '/site.webmanifest', '/icons/sosoking-192.png', '/icons/sosoking-512.png'];
 const NETWORK_FIRST = /\.(js|css|json|webmanifest)$/i;
 
 self.addEventListener('install', event => {
