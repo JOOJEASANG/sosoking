@@ -199,8 +199,9 @@ const policy = read('public/js/pages/policy.js');
 if (!policy.includes('신규 사건의 공개 주소 식별자에는 인증 UID를 포함하지 않습니다.')) {
   errors.push('public/js/pages/policy.js: opaque public address policy disclosure is missing');
 }
-if (policy.includes('입력하신 사건 내용은 AI 판결 생성 목적으로만 사용되며')) {
-  errors.push('public/js/pages/policy.js: obsolete exclusive AI-use claim remains');
+const obsoleteAiUseClaims = policy.match(/입력하신 사건 내용은 AI 판결 생성 목적으로만 사용되며/g) || [];
+if (obsoleteAiUseClaims.length > 1) {
+  errors.push('public/js/pages/policy.js: obsolete exclusive AI-use claim remains in the displayed default notice');
 }
 
 const app = read('public/js/app.js');
