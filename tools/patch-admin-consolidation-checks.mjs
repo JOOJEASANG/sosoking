@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 
+// One-shot patch that updates regression checks after removing admin monkey-patch modules.
 function write(file, source) {
   fs.writeFileSync(file, source);
 }
