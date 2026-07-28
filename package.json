@@ -6,7 +6,7 @@
     "prepare:icons": "node tools/prepare-brand-icons.mjs",
     "check": "npm run prepare:icons && node tools/check-content-safety.mjs && node tools/check-security-regressions.mjs && node tools/check-hosting-hardening.mjs && node tools/check-script-csp.mjs && node tools/check-project.mjs && node tools/check-ui-audit.mjs",
     "test": "npm run check && npm run test:rules",
-    "test:rules": "firebase emulators:exec --only firestore \"node tools/check-firestore-rules.mjs && node functions/check-legacy-case-migration.js\" --project sosoking-rules-test"
+    "test:rules": "firebase emulators:exec --only firestore \"node tools/check-firestore-rules.mjs && node functions/check-legacy-case-migration.js && node functions/check-admin-profile-deletion.js\" --project sosoking-rules-test"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^5.0.1",
