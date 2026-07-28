@@ -2,7 +2,7 @@ const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { defineSecret } = require('firebase-functions/params');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-const { requireVerifiedUser, reserveAiRequest } = require('./security');
+const { enforceActionRateLimit, requireVerifiedUser, reserveAiRequest } = require('./security');
 const { inspectContent } = require('./content-safety');
 
 const db = getFirestore();
@@ -25,6 +25,33 @@ function timestampMillis(value) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function publicResultText(caseData = {}, resultData = {}) {
+  return [
+    caseData.caseTitle,
+    caseData.caseDescription,
+    resultData.caseTitle,
+    resultData.caseDescription,
+    resultData.reception,
+    resultData.investigation,
+    resultData.plaintiffArg,
+    resultData.defendantArg,
+    resultData.verdict,
+    resultData.sentence,
+    resultData.appeal?.reason,
+    resultData.appeal?.verdict
+  ].filter(Boolean).join('\n');
+}
+
+function assertSafeForPublic(caseData, resultData) {
+  const safety = inspectContent(publicResultText(caseData, resultData));
+  if (!safety.safe) {
+    throw new HttpsError(
+      'failed-precondition',
+      '공개할 수 없는 개인정보 또는 고위험 내용이 포함되어 있습니다. 내용을 확인해 주세요.'
+    );
+  }
+}
+
 async function loadNickname(uid, fallback = '익명 방청객') {
   const snap = await db.doc(`users/${uid}`).get().catch(() => null);
   return snap?.exists ? cleanText(snap.data().nickname, 20) || fallback : fallback;
@@ -44,7 +71,7 @@ exports.voteResult = onCall({
   timeoutSeconds: 30,
   memory: '256MiB'
 }, async request => {
-  if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+  requireVerifiedUser(request);
 
   const uid = request.auth.uid;
   const caseId = cleanText(request.data?.caseId, 180);
@@ -54,6 +81,11 @@ exports.voteResult = onCall({
   }
 
   const { resultRef } = await assertPublicResult(caseId);
+  await enforceActionRateLimit(uid, 'court-vote', {
+    cooldownSeconds: 2,
+    dailyLimit: 200
+  });
+
   const summaryRef = db.doc(`result_reactions/${caseId}`);
   const voteRef = db.doc(`result_reactions/${caseId}/votes/${uid}`);
 
@@ -93,7 +125,7 @@ exports.addCourtComment = onCall({
   timeoutSeconds: 30,
   memory: '256MiB'
 }, async request => {
-  if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+  requireVerifiedUser(request);
 
   const uid = request.auth.uid;
   const caseId = cleanText(request.data?.caseId, 180);
@@ -106,8 +138,14 @@ exports.addCourtComment = onCall({
   }
 
   const { resultRef } = await assertPublicResult(caseId);
+  await enforceActionRateLimit(uid, 'court-comment', {
+    cooldownSeconds: 15,
+    dailyLimit: 20
+  });
+
   const nickname = await loadNickname(uid);
   const commentRef = db.collection(`court_comments/${caseId}/items`).doc();
+  const authorRef = db.doc(`court_comment_authors/${caseId}/items/${commentRef.id}`);
   const statsRef = db.doc(`court_comment_stats/${caseId}`);
   const batch = db.batch();
 
@@ -115,6 +153,12 @@ exports.addCourtComment = onCall({
     nickname,
     text,
     status: 'visible',
+    createdAt: FieldValue.serverTimestamp()
+  });
+  batch.set(authorRef, {
+    uid,
+    caseId,
+    commentId: commentRef.id,
     createdAt: FieldValue.serverTimestamp()
   });
   batch.set(statsRef, {
@@ -135,7 +179,7 @@ exports.setResultVisibility = onCall({
   timeoutSeconds: 30,
   memory: '256MiB'
 }, async request => {
-  if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+  requireVerifiedUser(request);
 
   const uid = request.auth.uid;
   const caseId = cleanText(request.data?.caseId, 180);
@@ -143,6 +187,11 @@ exports.setResultVisibility = onCall({
   if (!caseId || typeof isPublic !== 'boolean') {
     throw new HttpsError('invalid-argument', '공개 상태 요청이 올바르지 않습니다.');
   }
+
+  await enforceActionRateLimit(uid, 'result-visibility', {
+    cooldownSeconds: 5,
+    dailyLimit: 50
+  });
 
   const caseRef = db.doc(`cases/${caseId}`);
   const resultRef = db.doc(`results/${caseId}`);
@@ -155,6 +204,7 @@ exports.setResultVisibility = onCall({
     if (caseSnap.data().userId !== uid) {
       throw new HttpsError('permission-denied', '본인 판결문만 공개 상태를 변경할 수 있습니다.');
     }
+    if (isPublic) assertSafeForPublic(caseSnap.data(), resultSnap.data());
 
     tx.update(caseRef, {
       isPublic,
@@ -164,6 +214,8 @@ exports.setResultVisibility = onCall({
       isPublic,
       // 과거 결과 문서에 남아 있을 수 있는 인증 UID도 공개 전에 제거한다.
       userId: FieldValue.delete(),
+      contentSafetyStatus: isPublic ? 'passed' : (resultSnap.data().contentSafetyStatus || 'not-public'),
+      contentSafetyCheckedAt: isPublic ? FieldValue.serverTimestamp() : (resultSnap.data().contentSafetyCheckedAt || FieldValue.delete()),
       updatedAt: FieldValue.serverTimestamp()
     });
   });
@@ -233,6 +285,8 @@ exports.requestAppeal = onCall({
     const ai = await model.generateContent(prompt);
     appealVerdict = cleanText(ai.response.text(), 1800);
     if (!appealVerdict) throw new Error('항소심 AI 응답이 비어 있습니다.');
+    const appealSafety = inspectContent(appealVerdict);
+    if (!appealSafety.safe) throw new Error(`항소심 AI 안전검사 실패: ${appealSafety.code || 'unknown'}`);
 
     await db.runTransaction(async tx => {
       const latest = await tx.get(resultRef);
@@ -247,6 +301,7 @@ exports.requestAppeal = onCall({
         'appeal.status': 'completed',
         'appeal.reason': reason,
         'appeal.verdict': appealVerdict,
+        'appeal.contentSafetyStatus': 'passed',
         'appeal.createdAt': FieldValue.serverTimestamp(),
         'appeal.requestId': FieldValue.delete(),
         'appeal.processingStartedAt': FieldValue.delete(),
