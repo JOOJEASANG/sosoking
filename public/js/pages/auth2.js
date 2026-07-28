@@ -1,7 +1,7 @@
-import { auth, db, functions } from '../firebase.js?v=20260728-ui-audit-2';
+import { auth, db, functions, getInitialRedirectResult } from '../firebase.js?v=20260729-auth-session-1';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
-import { GoogleAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, updateProfile, onAuthStateChanged, signInAnonymously, sendEmailVerification, reload } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
+import { GoogleAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, signOut, updateProfile, onAuthStateChanged, signInAnonymously, sendEmailVerification, reload } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
 import { showToast } from '../components/toast.js?v=20260728-ui-audit-2';
 import { escapeHtml } from '../utils/sanitize.js?v=20260630-3';
 import { avatarImg, avatarSourceLabel } from '../utils/avatar.js?v=20260630-3';
@@ -12,7 +12,6 @@ const checkNickname = httpsCallable(functions, 'checkNickname');
 const setNickname = httpsCallable(functions, 'setNickname');
 const REDIRECT_FLAG = 'sosoking:google-login-redirect';
 const NOTICE_FLAG = 'sosoking:last-auth-notice';
-let redirectResultPromise = null;
 
 function cleanNick(v){ return String(v || '').replace(/\s+/g, '').trim().slice(0, 20); }
 function nickError(v){ const n = cleanNick(v); if(n.length < 2) return '닉네임은 2자 이상 입력해주세요.'; if(!/^[가-힣a-zA-Z0-9_]+$/.test(n)) return '한글, 영문, 숫자, 밑줄만 사용할 수 있습니다.'; return ''; }
@@ -21,8 +20,7 @@ async function profileOf(user){ if(!user || user.isAnonymous) return {}; const s
 async function guest(){ if(!auth.currentUser) await signInAnonymously(auth).catch(() => {}); }
 function providerName(user, profile){ const p = profile.provider || user.providerData?.[0]?.providerId || ''; return p.includes('google') ? 'Google 소셜 로그인' : p.includes('password') ? '이메일 로그인' : '로그인'; }
 function needsEmailVerification(user){ return Boolean(user && !user.isAnonymous && user.providerData?.some(p => p.providerId === 'password') && !user.emailVerified); }
-function popupNeedsRedirect(e){ return ['auth/popup-blocked','auth/operation-not-supported-in-this-environment','auth/web-storage-unsupported'].includes(e?.code); }
-function redirectResultOnce(){ if(!redirectResultPromise) redirectResultPromise = getRedirectResult(auth); return redirectResultPromise; }
+function popupNeedsRedirect(e){ return ['auth/popup-blocked','auth/operation-not-supported-in-this-environment'].includes(e?.code); }
 
 function friendlyAuthMessage(error, fallback = '로그인 처리 중 문제가 발생했습니다.') {
   const messages = {
@@ -39,7 +37,8 @@ function friendlyAuthMessage(error, fallback = '로그인 처리 중 문제가 �
     'auth/invalid-email': '이메일 형식을 확인해주세요.',
     'auth/unauthorized-domain': '현재 사이트 주소가 Google 로그인 허용 목록에 없습니다. 관리자에게 문의해주세요.',
     'auth/operation-not-allowed': 'Firebase에서 Google 로그인이 활성화되지 않았습니다.',
-    'auth/account-exists-with-different-credential': '같은 이메일로 가입한 다른 로그인 방식이 있습니다.'
+    'auth/account-exists-with-different-credential': '같은 이메일로 가입한 다른 로그인 방식이 있습니다.',
+    'auth/web-storage-unsupported': '브라우저 저장소가 차단되어 있습니다. 일반 Chrome 탭에서 다시 시도해주세요.'
   };
   return messages[error?.code] || fallback;
 }
@@ -50,12 +49,27 @@ function showAuthNotice(message, type = 'success') {
   let previous = null;
   try { previous = JSON.parse(sessionStorage.getItem(NOTICE_FLAG) || 'null'); } catch { previous = null; }
   if (previous?.key === key && now - Number(previous.at || 0) < 4000) return;
-  sessionStorage.setItem(NOTICE_FLAG, JSON.stringify({ key, at: now }));
+  try { sessionStorage.setItem(NOTICE_FLAG, JSON.stringify({ key, at: now })); } catch {}
   showToast(message, type);
 }
 
-function markRedirectStarted() { sessionStorage.setItem(REDIRECT_FLAG, String(Date.now())); }
-function consumeRedirectFlag() { const active = sessionStorage.getItem(REDIRECT_FLAG); sessionStorage.removeItem(REDIRECT_FLAG); return Boolean(active); }
+function markRedirectStarted() {
+  try {
+    sessionStorage.setItem(REDIRECT_FLAG, String(Date.now()));
+    return true;
+  } catch {
+    return false;
+  }
+}
+function consumeRedirectFlag() {
+  try {
+    const active = sessionStorage.getItem(REDIRECT_FLAG);
+    sessionStorage.removeItem(REDIRECT_FLAG);
+    return Boolean(active);
+  } catch {
+    return false;
+  }
+}
 
 export async function renderAuth(container){
   container.innerHTML = `<div><div class="page-header"><a href="#/" class="back-btn">‹</a><span class="logo">내 계정</span></div><div class="container" style="padding-top:24px;padding-bottom:90px;"><div id="auth-box" class="card auth-card" style="padding:22px;"><div class="loading-dots"><span></span><span></span><span></span></div></div></div></div>`;
@@ -87,7 +101,7 @@ export async function renderAuth(container){
   };
 
   const unsub = onAuthStateChanged(auth, user => { renderUser(user).catch(err => console.warn('auth view render skipped', err)); });
-  redirectResultOnce().then(async result => {
+  getInitialRedirectResult().then(async result => {
     if(!result?.user) return;
     if(consumeRedirectFlag()) showAuthNotice('Google 로그인 완료', 'success');
     await renderUser(result.user);
@@ -113,7 +127,12 @@ function drawLogin(box){
     } catch(error){
       console.warn('google login failed', error?.code || error);
       if(popupNeedsRedirect(error)) {
-        markRedirectStarted();
+        if(!markRedirectStarted()) {
+          showAuthNotice(friendlyAuthMessage({ code: 'auth/web-storage-unsupported' }), 'error');
+          btn.disabled = false;
+          btn.textContent = 'Google로 계속하기';
+          return;
+        }
         btn.textContent = 'Google 로그인 화면으로 이동...';
         try { await signInWithRedirect(auth, googleProvider); return; }
         catch(redirectError) { consumeRedirectFlag(); error = redirectError; }
