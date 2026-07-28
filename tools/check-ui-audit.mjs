@@ -88,6 +88,12 @@ const themeModule = read('public/js/components/theme.js');
 if (themeModule.includes('theme-toggle-text')) {
   errors.push('theme.js: theme switch still contains a text button');
 }
+if (!themeModule.includes("btn.className = 'theme-toggle theme-toggle-floating'")) {
+  errors.push('theme.js: theme icon must use the same fixed position on every page');
+}
+if (themeModule.includes("document.querySelector('.page-header')")) {
+  errors.push('theme.js: page-specific header placement still remains');
+}
 
 const index = read('public/index.html');
 if (!index.includes("document.documentElement.setAttribute('data-theme', resolved)")) {
