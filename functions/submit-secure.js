@@ -107,8 +107,8 @@ exports.submitCase = onCall({
 
   const today = kstDateKey();
   const docketNumber = makeDocket(today);
-  const caseId = `${uid}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-  const caseRef = db.doc(`cases/${caseId}`);
+  const caseRef = db.collection('cases').doc();
+  const caseId = caseRef.id;
   const limitRef = db.doc(`rate_limits/${uid}`);
 
   await db.runTransaction(async tx => {
