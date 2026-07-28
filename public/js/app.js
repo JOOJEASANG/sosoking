@@ -1,5 +1,5 @@
 import { initAuth } from './firebase.js?v=20260728-audit-1';
-import { renderHome } from './pages/home-court.js?v=20260728-logo-cleanup-1';
+import { renderHome } from './pages/home-court.js?v=20260728-exact-logo-1';
 import { renderSubmit } from './pages/submit-guard.js?v=20260728-audit-1';
 import { renderTrial } from './pages/trial-game.js?v=20260728-audit-1';
 import { renderResult } from './pages/result-court.js?v=20260728-audit-1';
