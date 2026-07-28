@@ -28,12 +28,14 @@ jobs:
           set -o pipefail
           npm run build:seo 2>&1 | tee seo-build.log
 
-      - name: Upload SEO build failure log
+      - name: Upload SEO build failure diagnostics
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: seo-build-log
-          path: seo-build.log
+          name: seo-build-diagnostics
+          path: |
+            seo-build.log
+            data/creative-cases-v1.b64
           if-no-files-found: error
           retention-days: 3
 
