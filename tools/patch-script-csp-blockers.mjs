@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 
+// One-shot patch used to remove attributes blocked by an enforced script-src policy.
 function patch(file, replacements) {
   let source = fs.readFileSync(file, 'utf8');
   for (const [before, after] of replacements) {
