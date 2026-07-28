@@ -4,12 +4,11 @@ let started = false;
 function standalone() {
   return window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone === true;
 }
+
 function iosDevice() {
   return /iphone|ipad|ipod/i.test(navigator.userAgent || '');
 }
-function androidDevice() {
-  return /android/i.test(navigator.userAgent || '');
-}
+
 function styleOnce() {
   if (document.getElementById('pwa-ui-style')) return;
   const style = document.createElement('style');
@@ -25,64 +24,107 @@ function styleOnce() {
   `;
   document.head.appendChild(style);
 }
-function help() {
+
+function iosHelp() {
   document.getElementById('pwa-help')?.remove();
-  const isIOS = iosDevice();
-  const isAndroid = androidDevice();
-  const guide = isIOS
-    ? 'Safari 공유 버튼을 누른 뒤 홈 화면에 추가를 선택하세요.'
-    : isAndroid
-      ? '브라우저 메뉴의 앱 설치 또는 홈 화면에 추가를 선택하세요. Chrome에서는 조건이 맞으면 설치창이 바로 열립니다.'
-      : '브라우저 주소창 또는 메뉴에서 앱 설치를 선택하세요.';
   const modal = document.createElement('div');
   modal.id = 'pwa-help';
   modal.className = 'pwa-help';
-  modal.innerHTML = `<div class="pwa-card"><div style="font-size:46px;">📲</div><h3>앱처럼 설치하기</h3><p>${guide}</p><button class="btn btn-primary" id="pwa-close">확인</button><div class="pwa-small">이미 설치했거나 브라우저가 설치 조건을 아직 판단 중이면 설치창이 바로 안 뜰 수 있습니다.</div></div>`;
+  modal.innerHTML = `<div class="pwa-card"><div style="font-size:46px;">📲</div><h3>홈 화면에 추가</h3><p>Safari의 공유 버튼을 누른 뒤 <strong>홈 화면에 추가</strong>를 선택하세요.</p><button class="btn btn-primary" id="pwa-close">확인</button><div class="pwa-small">Android에서는 사이트의 ‘앱 설치’ 버튼으로 설치해야 Chrome 표시 없는 정식 앱 아이콘이 만들어집니다.</div></div>`;
   document.body.appendChild(modal);
-  modal.onclick = e => { if (e.target === modal) modal.remove(); };
+  modal.onclick = event => { if (event.target === modal) modal.remove(); };
   document.getElementById('pwa-close').onclick = () => modal.remove();
 }
-function button() {
-  if (standalone()) return;
-  styleOnce();
-  let btn = document.getElementById('pwa-btn');
-  if (!btn) {
-    btn = document.createElement('button');
-    btn.id = 'pwa-btn';
-    btn.type = 'button';
-    btn.className = 'pwa-pill';
-    document.body.appendChild(btn);
+
+function removeButton() {
+  document.getElementById('pwa-btn')?.remove();
+}
+
+function showInstallButton() {
+  if (standalone() || !savedPrompt) {
+    removeButton();
+    return;
   }
-  btn.innerHTML = '<span>＋</span> 앱 설치';
-  btn.onclick = async () => {
-    if (savedPrompt) {
-      const p = savedPrompt;
-      savedPrompt = null;
-      p.prompt();
-      await p.userChoice.catch(() => null);
-      btn.remove();
-    } else {
-      help();
+
+  styleOnce();
+  let button = document.getElementById('pwa-btn');
+  if (!button) {
+    button = document.createElement('button');
+    button.id = 'pwa-btn';
+    button.type = 'button';
+    button.className = 'pwa-pill';
+    document.body.appendChild(button);
+  }
+
+  button.innerHTML = '<span>＋</span> 앱 설치';
+  button.onclick = async () => {
+    const promptEvent = savedPrompt;
+    if (!promptEvent) {
+      removeButton();
+      return;
     }
+
+    button.disabled = true;
+    button.innerHTML = '<span>…</span> 설치 확인 중';
+    promptEvent.prompt();
+    const choice = await promptEvent.userChoice.catch(() => null);
+    savedPrompt = null;
+
+    if (choice?.outcome === 'accepted') {
+      removeButton();
+      return;
+    }
+
+    button.disabled = false;
+    removeButton();
   };
+}
+
+async function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  try {
+    const registration = await navigator.serviceWorker.register('/sw.js', {
+      scope: '/',
+      updateViaCache: 'none'
+    });
+    await registration.update().catch(() => null);
+  } catch (error) {
+    console.warn('service worker registration failed:', error);
+  }
 }
 
 export function initPwa() {
   if (started) return;
   started = true;
   styleOnce();
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js?v=20260630-22').catch(() => null));
+
+  if (document.readyState === 'complete') {
+    registerServiceWorker();
+  } else {
+    window.addEventListener('load', registerServiceWorker, { once: true });
   }
-  window.addEventListener('beforeinstallprompt', e => {
-    e.preventDefault();
-    savedPrompt = e;
-    button();
+
+  window.addEventListener('beforeinstallprompt', event => {
+    event.preventDefault();
+    savedPrompt = event;
+    showInstallButton();
   });
+
   window.addEventListener('appinstalled', () => {
     savedPrompt = null;
-    document.getElementById('pwa-btn')?.remove();
+    removeButton();
   });
-  setTimeout(button, 1000);
-  setTimeout(button, 3500);
+
+  if (iosDevice() && !standalone()) {
+    setTimeout(() => {
+      if (document.getElementById('pwa-btn')) return;
+      const button = document.createElement('button');
+      button.id = 'pwa-btn';
+      button.type = 'button';
+      button.className = 'pwa-pill';
+      button.innerHTML = '<span>＋</span> 홈 화면 추가';
+      button.onclick = iosHelp;
+      document.body.appendChild(button);
+    }, 1800);
+  }
 }
