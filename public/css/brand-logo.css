@@ -1,4 +1,5 @@
 .hero-section > img[alt="소소킹 로고"] {
+  content: url('/icons/sosoking-512.png?v=20260728-exact-logo-1');
   width: 148px !important;
   height: 148px !important;
   object-fit: contain;
