@@ -1,21 +1,25 @@
-const CACHE_NAME = 'sosoking-app-v20260728-exact-logo-1';
-const APP_SHELL = ['/', '/index.html', '/site.webmanifest', '/icons/sosoking-192.png', '/icons/sosoking-512.png'];
+const CACHE_NAME = 'sosoking-app-v20260728-ui-audit-2';
+const APP_SHELL = [
+  '/',
+  '/index.html',
+  '/site.webmanifest?v=20260728-ui-audit-2',
+  '/css/main.css?v=20260728-ui-audit-2',
+  '/css/brand-logo.css?v=20260728-ui-audit-2',
+  '/js/app.js?v=20260728-ui-audit-2',
+  '/icons/sosoking-192.png?v=20260728-ui-audit-2',
+  '/icons/sosoking-512.png?v=20260728-ui-audit-2'
+];
 const NETWORK_FIRST = /\.(js|css|json|webmanifest)$/i;
 
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(APP_SHELL).catch(() => null))
-  );
+  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL).catch(() => null)));
   self.skipWaiting();
 });
 
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys => Promise.all(
-      keys
-        .filter(key => key.startsWith('sosoking-app-') && key !== CACHE_NAME)
-        .map(key => caches.delete(key))
+      keys.filter(key => key.startsWith('sosoking-app-') && key !== CACHE_NAME).map(key => caches.delete(key))
     ))
   );
   self.clients.claim();
@@ -34,39 +38,34 @@ async function putCache(request, response) {
 self.addEventListener('fetch', event => {
   const request = event.request;
   if (request.method !== 'GET') return;
-
   const url = new URL(request.url);
   if (url.origin !== location.origin) return;
   if (url.pathname.startsWith('/admin')) return;
 
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request)
-        .then(response => {
-          putCache('/index.html', response);
-          return response;
-        })
-        .catch(async () => (await caches.match('/index.html')) || caches.match('/'))
+      fetch(request).then(response => {
+        putCache('/index.html', response);
+        return response;
+      }).catch(async () => (await caches.match('/index.html')) || caches.match('/'))
     );
     return;
   }
 
   if (NETWORK_FIRST.test(url.pathname)) {
     event.respondWith(
-      fetch(request)
-        .then(response => {
-          putCache(request, response);
-          return response;
-        })
-        .catch(() => caches.match(request))
+      fetch(request).then(response => {
+        putCache(request, response);
+        return response;
+      }).catch(() => caches.match(request))
     );
     return;
   }
 
   event.respondWith(
-    caches.match(request).then(cached => cached || fetch(request).then(response => {
+    fetch(request).then(response => {
       putCache(request, response);
       return response;
-    }))
+    }).catch(() => caches.match(request))
   );
 });

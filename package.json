@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "prepare:icons": "node tools/prepare-brand-icons.mjs",
-    "check": "npm run prepare:icons && node tools/check-project.mjs",
+    "check": "npm run prepare:icons && node tools/check-project.mjs && node tools/check-ui-audit.mjs",
     "test": "npm run check"
   }
 }
