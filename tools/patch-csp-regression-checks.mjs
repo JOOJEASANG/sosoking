@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 
+// One-shot update for tests that previously expected an inline theme script.
 function replace(file, before, after) {
   let source = fs.readFileSync(file, 'utf8');
   if (!source.includes(before)) throw new Error(`${file}: target not found`);
