@@ -1,11 +1,11 @@
-const CACHE_NAME = 'sosoking-app-v20260729-security-pwa-1';
+const CACHE_NAME = 'sosoking-app-v20260729-legacy-id-policy-1';
 const APP_SHELL = [
   '/',
   '/index.html',
   '/site.webmanifest?v=20260728-pwa-install-1',
   '/css/main.css?v=20260728-ui-audit-2',
   '/css/brand-logo.css?v=20260729-logo-feed-1',
-  '/js/app.js?v=20260729-security-pwa-1',
+  '/js/app.js?v=20260729-legacy-id-policy-1',
   '/logo.svg?v=20260729-logo-feed-1',
   '/icons/sosoking-192.png',
   '/icons/sosoking-512.png'
