@@ -2,7 +2,6 @@ import { auth, db } from '../firebase.js?v=20260630-3';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 
-const BOOTSTRAP_OWNER = ['sosoday1976', 'gmail.com'].join('@');
 let started = false;
 
 function onAuthPage() {
@@ -12,12 +11,10 @@ function onAuthPage() {
 async function isAdmin(user) {
   if (!user || user.isAnonymous) return false;
 
-  const email = String(user.email || '').trim().toLowerCase();
-  if (email === BOOTSTRAP_OWNER) return true;
-
   const uidDoc = await getDoc(doc(db, 'admins', user.uid)).catch(() => null);
   if (uidDoc?.exists()) return true;
 
+  const email = String(user.email || '').trim().toLowerCase();
   if (!email) return false;
   const emailDoc = await getDoc(doc(db, 'admins', email)).catch(() => null);
   return !!emailDoc?.exists();
