@@ -19,7 +19,7 @@ const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 provider.setCustomParameters({ prompt: 'select_account' });
 
-let adminModulesLoaded = false;
+let dashboardModulePromise = null;
 let authViewVersion = 0;
 
 function host() {
@@ -58,12 +58,15 @@ async function isAdmin(user) {
   return !!emailDoc?.exists();
 }
 
-async function loadAdminModules() {
-  if (adminModulesLoaded) return;
-  adminModulesLoaded = true;
-  await import('./admin.js?v=20260729-script-csp-1');
-  await import('./admin-enhancements.js?v=20260729-script-csp-1');
-  await import('./admin-security-overrides.js?v=20260729-script-csp-1');
+async function mountDashboard(user) {
+  if (!dashboardModulePromise) {
+    dashboardModulePromise = import('./admin.js?v=20260729-admin-consolidated-1').catch(error => {
+      dashboardModulePromise = null;
+      throw error;
+    });
+  }
+  const module = await dashboardModulePromise;
+  module.mountAdminDashboard(user);
 }
 
 function renderLogin() {
@@ -180,5 +183,10 @@ onAuthStateChanged(auth, async user => {
     return;
   }
 
-  await loadAdminModules();
+  try {
+    await mountDashboard(user);
+  } catch (error) {
+    console.error('administrator dashboard load failed:', error);
+    if (root) root.innerHTML = '<div class="card" style="margin:40px auto;max-width:520px;padding:24px;color:var(--cream-dim);">관리자 화면을 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.</div>';
+  }
 });
