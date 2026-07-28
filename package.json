@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "node tools/check-project.mjs",
+    "prepare:icons": "node tools/prepare-brand-icons.mjs",
+    "check": "npm run prepare:icons && node tools/check-project.mjs",
     "test": "npm run check"
   }
 }
