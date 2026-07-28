@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "prepare:icons": "node tools/prepare-brand-icons.mjs",
-    "check": "npm run prepare:icons && node tools/check-content-safety.mjs && node tools/check-security-regressions.mjs && node tools/check-project.mjs && node tools/check-ui-audit.mjs",
+    "check": "npm run prepare:icons && node tools/check-content-safety.mjs && node tools/check-security-regressions.mjs && node tools/check-hosting-hardening.mjs && node tools/check-project.mjs && node tools/check-ui-audit.mjs",
     "test": "npm run check && npm run test:rules",
     "test:rules": "firebase emulators:exec --only firestore \"node tools/check-firestore-rules.mjs\" --project sosoking-rules-test"
   },
