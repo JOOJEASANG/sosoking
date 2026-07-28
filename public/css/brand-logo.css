@@ -1,0 +1,41 @@
+.hero-section > img[alt="소소킹 로고"] {
+  width: 118px !important;
+  height: 118px !important;
+  object-fit: cover;
+  border-radius: 30px;
+  background: #000;
+  box-shadow: 0 12px 32px rgba(0,0,0,.42), 0 0 0 1px rgba(232,201,122,.2);
+}
+
+.page-header .logo,
+.admin-header .logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.page-header .logo::before,
+.admin-header .logo::before {
+  content: "";
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  border-radius: 9px;
+  background: #000 url('/app-icon.svg?v=20260728-logo-cleanup-1') center/cover no-repeat;
+  box-shadow: 0 3px 10px rgba(0,0,0,.28), 0 0 0 1px rgba(201,168,76,.25);
+}
+
+@media (max-width: 520px) {
+  .hero-section > img[alt="소소킹 로고"] {
+    width: 106px !important;
+    height: 106px !important;
+    border-radius: 26px;
+  }
+  .page-header .logo::before,
+  .admin-header .logo::before {
+    width: 27px;
+    height: 27px;
+    flex-basis: 27px;
+    border-radius: 8px;
+  }
+}
