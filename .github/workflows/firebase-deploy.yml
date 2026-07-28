@@ -29,8 +29,11 @@ jobs:
       - name: Install Functions dependencies
         run: npm ci --prefix functions --no-audit --no-fund
 
+      - name: Prepare exact uploaded logo icons
+        run: npm run prepare:icons
+
       - name: Validate repository
-        run: npm run check
+        run: node tools/check-project.mjs
 
       - name: Prepare service account
         env:
@@ -42,22 +45,22 @@ jobs:
           fi
           echo "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-service-account.json"
 
+      - name: Deploy Hosting and Firestore configuration first
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+        run: firebase deploy --only firestore:indexes,firestore:rules,hosting --project sosoking-481e6 --non-interactive
+
+      - name: Deploy current Functions
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+        run: firebase deploy --only functions:submitCase,functions:generateTrial,functions:createDailyAiCase,functions:generateDailyAiNow,functions:checkNickname,functions:setNickname,functions:voteResult,functions:addCourtComment,functions:requestAppeal,functions:deleteCourtPost --project sosoking-481e6 --non-interactive
+
       - name: Remove curated creative cases
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
           GOOGLE_CLOUD_PROJECT: sosoking-481e6
         run: node tools/remove-official-seed.mjs
 
-      - name: Deploy Firestore indexes, rules and Hosting
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-        run: firebase deploy --only firestore:indexes,firestore:rules,hosting --project sosoking-481e6 --non-interactive
-
-      - name: Deploy current Functions only
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-        run: firebase deploy --only functions:submitCase,functions:generateTrial,functions:createDailyAiCase,functions:generateDailyAiNow,functions:checkNickname,functions:setNickname,functions:voteResult,functions:addCourtComment,functions:requestAppeal,functions:deleteCourtPost --project sosoking-481e6 --non-interactive
-
       - name: Deployment summary
         if: always()
-        run: echo "Firebase deployment and official seed cleanup finished for commit $GITHUB_SHA"
+        run: echo "Firebase Hosting, Functions, and official seed cleanup finished for commit $GITHUB_SHA"
