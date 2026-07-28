@@ -9,6 +9,9 @@ const BATCH_LIMIT = 450;
 function cleanId(value) {
   return String(value || '').replace(/[\u0000-\u001F\u007F]/g, '').trim().slice(0, 180);
 }
+function nicknameKey(value) {
+  return String(value || '').replace(/\s+/g, '').trim().slice(0, 20).toLocaleLowerCase('ko-KR');
+}
 async function deleteQuerySnapshot(query, counter) {
   while (true) {
     const snap = await query.limit(BATCH_LIMIT).get();
@@ -20,8 +23,14 @@ async function deleteQuerySnapshot(query, counter) {
     if (snap.size < BATCH_LIMIT) break;
   }
 }
-async function writeAdminLog(uid, action, caseId, detail = {}) {
-  await db.collection('admin_logs').add({ uid, action, caseId, detail, createdAt: FieldValue.serverTimestamp() }).catch(() => null);
+async function writeAdminLog(uid, action, subjectId, detail = {}) {
+  await db.collection('admin_logs').add({
+    uid,
+    action,
+    subjectId,
+    detail,
+    createdAt: FieldValue.serverTimestamp()
+  }).catch(() => null);
 }
 
 exports.deleteCourtPost = onCall({ region: REGION, timeoutSeconds: 120, memory: '256MiB' }, async request => {
@@ -62,4 +71,35 @@ exports.deleteCourtPost = onCall({ region: REGION, timeoutSeconds: 120, memory: 
     removedLegacyAlias: Boolean(legacyIdHash)
   });
   return { success: true, caseId, deleted: counter.deleted };
+});
+
+exports.deleteUserProfile = onCall({ region: REGION, timeoutSeconds: 60, memory: '256MiB' }, async request => {
+  if (!request.auth || !(await isAdminAuth(request.auth))) {
+    throw new HttpsError('permission-denied', '관리자만 회원 프로필을 삭제할 수 있습니다.');
+  }
+  const userId = cleanId(request.data?.userId);
+  if (!userId) throw new HttpsError('invalid-argument', 'userId required');
+
+  const userRef = db.doc(`users/${userId}`);
+  const result = await db.runTransaction(async tx => {
+    const userSnap = await tx.get(userRef);
+    if (!userSnap.exists) return { existed: false, nicknameReleased: false };
+    const profile = userSnap.data();
+    const key = nicknameKey(profile.nickname);
+    let nicknameReleased = false;
+
+    if (key) {
+      const nameRef = db.doc(`user_names/${key}`);
+      const nameSnap = await tx.get(nameRef);
+      if (nameSnap.exists && nameSnap.data().uid === userId) {
+        tx.delete(nameRef);
+        nicknameReleased = true;
+      }
+    }
+    tx.delete(userRef);
+    return { existed: true, nicknameReleased };
+  });
+
+  await writeAdminLog(request.auth.uid, 'deleteUserProfile', userId, result);
+  return { success: true, userId, ...result };
 });
