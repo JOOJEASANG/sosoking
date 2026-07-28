@@ -1,0 +1,19 @@
+name: Scan inline CSP blockers
+
+on:
+  push:
+    branches: [agent/enforce-script-csp]
+    paths:
+      - tools/scan-inline-csp.mjs
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/enforce-script-csp
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node tools/scan-inline-csp.mjs
