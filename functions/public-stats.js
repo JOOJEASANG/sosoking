@@ -70,4 +70,8 @@ exports.syncPublicStatsNow = onCall({
   return await refreshPublicStats();
 });
 
-module.exports.refreshPublicStats = refreshPublicStats;
+// 배포 엔트리의 Object.assign에는 포함되지 않지만 배포 시 CLI에서 사용할 수 있다.
+Object.defineProperty(module.exports, 'refreshPublicStats', {
+  value: refreshPublicStats,
+  enumerable: false
+});
