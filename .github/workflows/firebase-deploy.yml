@@ -54,6 +54,19 @@ jobs:
           fi
           echo "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-service-account.json"
 
+      - name: Prepare Functions environment
+        env:
+          ENFORCE_APP_CHECK: ${{ vars.ENFORCE_APP_CHECK || 'false' }}
+        run: |
+          case "$ENFORCE_APP_CHECK" in
+            true|false) ;;
+            *)
+              echo "ENFORCE_APP_CHECK must be either true or false."
+              exit 1
+              ;;
+          esac
+          printf 'ENFORCE_APP_CHECK=%s\n' "$ENFORCE_APP_CHECK" > functions/.env.sosoking-481e6
+
       - name: Deploy Hosting and Firestore configuration first
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
