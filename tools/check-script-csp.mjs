@@ -25,27 +25,47 @@ for (const file of walk('public').filter(file => /\.(?:html|js|mjs)$/.test(file)
   });
 }
 
-const firebase = fs.readFileSync('firebase.json', 'utf8');
-if (!firebase.includes('"key": "Content-Security-Policy"')) {
-  errors.push('firebase.json: enforced Content-Security-Policy header is missing');
+const firebaseText = fs.readFileSync('firebase.json', 'utf8');
+const firebase = JSON.parse(firebaseText);
+const headerRules = firebase.hosting?.headers || [];
+const globalHeaders = headerRules.find(rule => rule.source === '**')?.headers || [];
+if (globalHeaders.some(header => header.key.startsWith('Content-Security-Policy'))) {
+  errors.push('firebase.json: CSP must not apply globally to Firebase reserved authentication paths');
 }
-if (!firebase.includes("script-src 'self' https://www.gstatic.com https://apis.google.com")) {
+
+const protectedSources = [
+  '/',
+  '/index.html',
+  '/admin',
+  '/admin/**',
+  '/@(board|submit|guide|auth|my-cases)',
+  '/@(result|trial)/**'
+];
+for (const source of protectedSources) {
+  const headers = headerRules.find(rule => rule.source === source)?.headers || [];
+  const enforced = headers.find(header => header.key === 'Content-Security-Policy')?.value || '';
+  const reportOnly = headers.find(header => header.key === 'Content-Security-Policy-Report-Only')?.value || '';
+  if (!enforced) errors.push(`firebase.json: enforced CSP is missing for ${source}`);
+  if (!reportOnly.includes("frame-ancestors 'none'")) {
+    errors.push(`firebase.json: frame-ancestors report policy is missing for ${source}`);
+  }
+}
+
+if (!firebaseText.includes("script-src 'self' https://www.gstatic.com https://apis.google.com")) {
   errors.push('firebase.json: external-script allowlist is missing');
 }
-if (!firebase.includes('https://www.google.com/recaptcha/')
-  || !firebase.includes('https://www.recaptcha.net/recaptcha/')) {
+if (!firebaseText.includes('https://www.google.com/recaptcha/')
+  || !firebaseText.includes('https://www.recaptcha.net/recaptcha/')) {
   errors.push('firebase.json: future App Check reCAPTCHA origins are missing');
 }
-if (!firebase.includes("script-src-attr 'none'")) {
+if (!firebaseText.includes("script-src-attr 'none'")) {
   errors.push('firebase.json: inline event attributes are not explicitly disabled');
 }
-const enforcedPolicy = firebase.match(/"key": "Content-Security-Policy",\s*"value": "([^"]+)"/)?.[1] || '';
-if (!enforcedPolicy || enforcedPolicy.includes("script-src 'self' 'unsafe-inline'")) {
-  errors.push('firebase.json: enforced script-src still permits unsafe-inline');
-}
-if (!firebase.includes('"key": "Content-Security-Policy-Report-Only"')
-  || !firebase.includes("frame-ancestors 'none'")) {
-  errors.push('firebase.json: authentication-compatible frame-ancestors report policy is missing');
+for (const rule of headerRules) {
+  const enforced = rule.headers?.find(header => header.key === 'Content-Security-Policy')?.value || '';
+  if (enforced.includes("script-src 'self' 'unsafe-inline'")) {
+    errors.push(`firebase.json: enforced script-src for ${rule.source} still permits unsafe-inline`);
+  }
 }
 
 for (const file of ['public/index.html', 'public/admin/index.html']) {
@@ -88,4 +108,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Script CSP validation passed: no inline execution, enforced allowlist, and synchronized module cache versions.');
+console.log('Script CSP validation passed: route-scoped policy, no inline execution, and synchronized module cache versions.');
