@@ -74,6 +74,7 @@ for (const htmlFile of walk(path.join(root, 'public')).filter(file => file.endsW
 
 const jsonFiles = [
   'package.json',
+  'package-lock.json',
   'firebase.json',
   'firestore.indexes.json',
   'functions/package.json',
@@ -144,6 +145,9 @@ const deployedFunctions = deployWorkflow.match(/firebase deploy --only functions
 for (const name of deployedFunctions) {
   if (!exportsByName.has(name)) errors.push(`firebase-deploy.yml: function ${name} is not exported`);
 }
+if (!deployWorkflow.includes('node tools/sync-public-config.mjs')) {
+  errors.push('firebase-deploy.yml: safe public configuration sync is missing');
+}
 
 // Regression checks for the full admin/UI audit.
 const adminIndex = read('public/admin/index.html');
@@ -166,13 +170,61 @@ const rules = read('firestore.rules');
 if (!/match \/cases\/\{caseId\}[\s\S]*?allow create:\s*if false;/.test(rules)) {
   errors.push('firestore.rules: direct client case creation must remain disabled');
 }
-if (!rules.includes("hasOnly(['isPublic', 'updatedAt'])")) {
-  errors.push('firestore.rules: owner visibility updates are not sufficiently restricted');
+if (!/match \/cases\/\{caseId\}[\s\S]*?allow update:\s*if isAdmin\(\);/.test(rules)
+  || !/match \/results\/\{caseId\}[\s\S]*?allow update:\s*if isAdmin\(\);/.test(rules)) {
+  errors.push('firestore.rules: visibility updates must remain server-only');
+}
+const caseRules = rules.match(/match \/cases\/\{caseId\}[\s\S]*?(?=\n    match \/results\/)/)?.[0] || '';
+if (caseRules.includes('resource.data.isPublic == true')) {
+  errors.push('firestore.rules: public users must not read private case documents');
+}
+if (!/match \/site_settings\/\{docId\}[\s\S]*?allow read:\s*if isAdmin\(\);/.test(rules)) {
+  errors.push('firestore.rules: private site settings must remain admin-only');
+}
+if (!/match \/site_public\/\{docId\}[\s\S]*?allow read:\s*if true;/.test(rules)) {
+  errors.push('firestore.rules: public site configuration is missing');
+}
+if (!/match \/users\/\{uid\}[\s\S]*?allow create,\s*update:\s*if false;/.test(rules)) {
+  errors.push('firestore.rules: direct client profile writes must remain disabled');
+}
+if (!/match \/user_names\/\{key\}[\s\S]*?allow read,\s*write:\s*if false;/.test(rules)) {
+  errors.push('firestore.rules: nickname mappings must remain server-only');
+}
+
+const profileServer = read('functions/profile.js');
+if (!profileServer.includes('oldNameSnap.data().uid === uid')) {
+  errors.push('functions/profile.js: previous nickname ownership check is missing');
 }
 
 const submitServer = read('functions/submit-secure.js');
 if (!submitServer.includes('settings.dailyLimit')) {
   errors.push('functions/submit-secure.js: configured daily limit is not used');
+}
+if (!submitServer.includes('requireVerifiedUser(request)')) {
+  errors.push('functions/submit-secure.js: verified login enforcement is missing');
+}
+if (!submitServer.includes('boolValue(data.isPublic, false)')) {
+  errors.push('functions/submit-secure.js: new cases must default to private');
+}
+if (!submitServer.includes('inspectContent(desc)')) {
+  errors.push('functions/submit-secure.js: case content safety check is missing');
+}
+
+const contentSafety = read('functions/content-safety.js');
+if (!contentSafety.includes('PII_PATTERNS') || !contentSafety.includes('HIGH_RISK_PATTERNS')
+  || !contentSafety.includes('PROMPT_ATTACK_PATTERNS')) {
+  errors.push('functions/content-safety.js: required safety pattern groups are missing');
+}
+
+const securityServer = read('functions/security.js');
+if (!securityServer.includes("token.email_verified !== true")) {
+  errors.push('functions/security.js: password email verification enforcement is missing');
+}
+if (!securityServer.includes('enforceAppCheck.value()') || !securityServer.includes('!request.app')) {
+  errors.push('functions/security.js: configurable App Check enforcement is missing');
+}
+if (!securityServer.includes('globalAiDailyLimit') || !securityServer.includes('userAiDailyLimit')) {
+  errors.push('functions/security.js: AI request budgets are missing');
 }
 
 const socialServer = read('functions/social.js');
@@ -181,6 +233,55 @@ if (!socialServer.includes('reactionTotal: FieldValue.increment(1)')) {
 }
 if (!socialServer.includes('commentCount: FieldValue.increment(1)')) {
   errors.push('functions/social.js: result comment total is not synchronized');
+}
+if (!socialServer.includes("return { state: 'processing' }") || !socialServer.includes("appeal.requestId !== requestId")) {
+  errors.push('functions/social.js: appeal concurrency lock is missing');
+}
+
+const trialServer = read('functions/generate-trial-lite.js');
+if (!trialServer.includes('if (!acquiredProcessingLock)')) {
+  errors.push('functions/generate-trial-lite.js: trial concurrency lock ownership check is missing');
+}
+if (!trialServer.includes("reserveAiRequest(uid, 'trial', settings)")) {
+  errors.push('functions/generate-trial-lite.js: trial AI budget reservation is missing');
+}
+if (!trialServer.includes('userId: FieldValue.delete()') || !trialServer.includes('isPublic: c.isPublic === true')) {
+  errors.push('functions/generate-trial-lite.js: public result data minimization is missing');
+}
+if (!trialServer.includes('inspectContent(c.caseDescription)')) {
+  errors.push('functions/generate-trial-lite.js: pre-AI legacy case safety check is missing');
+}
+if (!socialServer.includes("reserveAiRequest(uid, 'appeal', settings)")) {
+  errors.push('functions/social.js: appeal AI budget reservation is missing');
+}
+if (!socialServer.includes('exports.setResultVisibility') || !socialServer.includes('userId: FieldValue.delete()')) {
+  errors.push('functions/social.js: secure result visibility update is missing');
+}
+if (!socialServer.includes('inspectContent(reason)') || !socialServer.includes('inspectContent(text)')) {
+  errors.push('functions/social.js: appeal/comment safety checks are missing');
+}
+
+const firebaseClient = read('public/js/firebase.js');
+if (!firebaseClient.includes('initializeAppCheck') || !firebaseClient.includes('firebaseConfig.appCheckSiteKey')) {
+  errors.push('public/js/firebase.js: conditional App Check initialization is missing');
+}
+
+const authPage = read('public/js/pages/auth2.js');
+if (!authPage.includes('sendEmailVerification') || !authPage.includes('needsEmailVerification')) {
+  errors.push('public/js/pages/auth2.js: email verification flow is missing');
+}
+
+const submitPage = read('public/js/pages/submit.js');
+if (/<input[^>]+id="is-public"[^>]+checked/.test(submitPage)) {
+  errors.push('public/js/pages/submit.js: public sharing must not be preselected');
+}
+if (!submitPage.includes("doc(db, 'site_public', 'config')")) {
+  errors.push('public/js/pages/submit.js: public configuration document is not used');
+}
+
+const resultPage = read('public/js/pages/result.js');
+if (!resultPage.includes('const isPublic = r.isPublic === true')) {
+  errors.push('public/js/pages/result.js: result visibility must use the public result document');
 }
 
 const resultCourt = read('public/js/pages/result-court.js');

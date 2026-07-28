@@ -1,6 +1,6 @@
 import { renderResult as renderBaseResult } from './result.js?v=20260728-audit-1';
-import { db } from '../firebase.js?v=20260728-audit-1';
-import { doc, writeBatch, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { functions } from '../firebase.js?v=20260728-audit-1';
+import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 import { showToast } from '../components/toast.js?v=20260630-3';
 
 function ensureResultDocumentStyle() {
@@ -86,15 +86,15 @@ function patchShareButton(container, caseId) {
 
   button.addEventListener('click', async () => {
     const newPublic = button.textContent.includes('공개하기');
+    if (newPublic && !window.confirm('닉네임, 사건 내용과 AI 판결문이 공개 판결기록에 표시됩니다. 개인정보가 없는지 확인했으며 공개에 동의하시겠습니까?')) {
+      return;
+    }
     const oldText = button.textContent;
     button.disabled = true;
     button.textContent = '공개 상태 변경 중...';
 
     try {
-      const batch = writeBatch(db);
-      batch.update(doc(db, 'results', caseId), { isPublic: newPublic, updatedAt: serverTimestamp() });
-      batch.update(doc(db, 'cases', caseId), { isPublic: newPublic, updatedAt: serverTimestamp() });
-      await batch.commit();
+      await httpsCallable(functions, 'setResultVisibility')({ caseId, isPublic: newPublic });
 
       if (newPublic) {
         const url = `${location.origin}/#/result/${encodeURIComponent(caseId)}`;

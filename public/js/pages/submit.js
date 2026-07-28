@@ -9,9 +9,8 @@ const DEFAULT_DAILY_LIMIT = 3;
 const SERIOUS_KEYWORDS = [
   '폭행','폭력','상해','살인','강도','절도','사기','협박','스토킹','납치','감금',
   '성범죄','성폭력','성추행','성희롱','강간','강제추행',
-  '가정폭력','학교폭력','직장내괴롭힘','갑질','따돌림','왕따',
-  '이혼','위자료','손해배상','형사고소','고발','소송','민사','형사','법원',
-  '응급','정신과','우울증','공황'
+  '아동학대','가정폭력','학교폭력','스토킹','협박',
+  '자살','자해','죽고 싶다','극단적 선택','마약'
 ];
 
 function clampNumber(value, fallback, min, max) {
@@ -39,13 +38,12 @@ function showSeriousModal() {
         <p style="font-size:14px;color:rgba(245,240,232,.82);line-height:1.75;margin-bottom:22px;">
           이 사건은 웃고 넘기기보다<br>
           <strong style="color:#fff8ec;">실제 전문가의 도움이 필요할 수 있습니다.</strong><br><br>
-          단순 오락용 각색이라면 계속 진행할 수 있습니다.<br>
+          이 서비스에는 접수하지 말고 실제 도움 경로를 이용해주세요.<br>
           <span style="font-size:12px;opacity:.65;">판사님은 일단 물 한 잔 마셨습니다.</span>
         </p>
         <div style="display:flex;flex-direction:column;gap:8px;">
           <a href="https://www.klac.or.kr" target="_blank" rel="noopener noreferrer" style="display:block;padding:13px;border-radius:12px;background:rgba(231,76,60,.15);border:1.5px solid rgba(231,76,60,.45);color:#ff796c;font-weight:700;font-size:14px;text-decoration:none;">⚖️ 실제 법률 도움 알아보기</a>
-          <button type="button" id="serious-confirm" style="padding:13px;border-radius:12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);color:#fff8ec;font-size:13px;cursor:pointer;">🎭 오락용으로만 접수할게요</button>
-          <button type="button" id="serious-cancel" style="padding:10px;border-radius:12px;background:none;border:none;color:rgba(245,240,232,.6);font-size:13px;cursor:pointer;">취소</button>
+          <button type="button" id="serious-cancel" style="padding:13px;border-radius:12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);color:#fff8ec;font-size:13px;cursor:pointer;">내용 다시 고치기</button>
         </div>
       </div>`;
 
@@ -60,18 +58,17 @@ function showSeriousModal() {
 
     document.body.appendChild(overlay);
     document.addEventListener('keydown', onKeydown);
-    overlay.querySelector('#serious-confirm').onclick = () => close(true);
     overlay.querySelector('#serious-cancel').onclick = () => close(false);
     overlay.onclick = event => {
       if (event.target === overlay) close(false);
     };
-    overlay.querySelector('#serious-confirm').focus();
+    overlay.querySelector('#serious-cancel').focus();
   });
 }
 
 async function loadSubmitSettings() {
   try {
-    const snap = await getDoc(doc(db, 'site_settings', 'config'));
+    const snap = await getDoc(doc(db, 'site_public', 'config'));
     const data = snap.exists() ? snap.data() : {};
     return {
       dailyLimit: clampNumber(data.dailyLimit, DEFAULT_DAILY_LIMIT, 1, 20),
@@ -117,8 +114,8 @@ export async function renderSubmit(container) {
 
           <div class="card" style="padding:14px;margin-bottom:18px;background:rgba(201,168,76,.08);border-color:rgba(201,168,76,.32);">
             <label style="display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.65;color:var(--cream);cursor:pointer;">
-              <input type="checkbox" id="is-public" checked style="margin-top:4px;min-width:18px;min-height:18px;">
-              <span><b style="color:var(--gold);">판결기록에 공개</b><br><span style="color:var(--cream-dim);">체크하면 다른 이용자가 판결문을 읽고 투표하거나 댓글을 남길 수 있습니다. 결과 화면에서 다시 비공개로 바꿀 수 있습니다.</span></span>
+              <input type="checkbox" id="is-public" style="margin-top:4px;min-width:18px;min-height:18px;">
+              <span><b style="color:var(--gold);">내 판결문을 공개 판결기록에 게시하는 데 동의합니다</b><br><span style="color:var(--cream-dim);">기본값은 비공개입니다. 체크하면 닉네임·사건 내용·AI 판결문이 다른 로그인 이용자에게 공개되고 투표·댓글 대상이 됩니다. 결과 화면에서 다시 비공개로 바꿀 수 있습니다.</span></span>
             </label>
           </div>
 

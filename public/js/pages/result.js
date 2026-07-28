@@ -1,5 +1,5 @@
 import { db, auth, functions } from '../firebase.js?v=20260630-3';
-import { doc, getDoc, updateDoc, collection, getDocs, query, orderBy, limit } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { doc, getDoc, collection, getDocs, query, orderBy, limit } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 import { showToast } from '../components/toast.js?v=20260630-3';
 import { escapeHtml } from '../utils/sanitize.js?v=20260630-3';
@@ -181,11 +181,11 @@ export async function renderResult(container, caseId) {
   let social;
 
   try {
-    [caseSnap, resultSnap, social] = await Promise.all([
-      getDoc(doc(db, 'cases', caseId)),
+    [resultSnap, social] = await Promise.all([
       getDoc(doc(db, 'results', caseId)),
       loadSocial(caseId)
     ]);
+    caseSnap = await getDoc(doc(db, 'cases', caseId)).catch(() => null);
   } catch (err) {
     console.error(err);
     container.innerHTML = `
@@ -205,10 +205,10 @@ export async function renderResult(container, caseId) {
     return;
   }
 
-  const c = caseSnap.exists() ? caseSnap.data() : {};
+  const c = caseSnap?.exists() ? caseSnap.data() : {};
   const r = resultSnap.data();
-  const isOwner = caseSnap.exists() && c.userId === auth.currentUser?.uid;
-  const isPublic = !!(c.isPublic || r.isPublic);
+  const isOwner = Boolean(caseSnap?.exists() && c.userId === auth.currentUser?.uid);
+  const isPublic = r.isPublic === true;
   const title = c.caseTitle || r.caseTitle || '생활분쟁 사건';
   const docket = r.docketNumber || c.docketNumber || '사건번호 미상';
   const date = fmtDate(r.createdAt || c.createdAt);
@@ -370,16 +370,7 @@ function bindResultActions(container, caseId, c, r, isOwner, isPublic) {
       const newPublic = !isPublic;
 
       try {
-        await updateDoc(doc(db, 'results', caseId), {
-          isPublic: newPublic,
-          caseTitle: c.caseTitle || r.caseTitle || '생활분쟁 사건',
-          createdAt: r.createdAt || c.createdAt || new Date(),
-          updatedAt: new Date()
-        });
-        await updateDoc(doc(db, 'cases', caseId), {
-          isPublic: newPublic,
-          updatedAt: new Date()
-        });
+        await httpsCallable(functions, 'setResultVisibility')({ caseId, isPublic: newPublic });
 
         if (newPublic) {
           const url = `${location.origin}/#/result/${encodeURIComponent(caseId)}`;

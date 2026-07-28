@@ -53,10 +53,11 @@
 
 ## 로컬 준비
 
-Node.js 20 이상과 Firebase CLI가 필요합니다.
+Node.js 20 이상, Java 21 이상, Firebase CLI 15.24.0이 필요합니다.
 
 ```bash
-npm install -g firebase-tools
+npm install -g firebase-tools@15.24.0
+npm ci
 npm ci --prefix functions
 ```
 
@@ -65,11 +66,13 @@ Firebase 프로젝트는 `.firebaserc`의 `sosoking-481e6`을 기본값으로 �
 ## 저장소 검사
 
 ```bash
-npm run check
+npm test
 ```
 
 검사 항목:
 
+- Firestore 에뮬레이터 기반 보안 규칙 허용·거부 시나리오
+- 개인정보·고위험 콘텐츠 서버 필터 회귀검사
 - Functions 및 브라우저 JavaScript 문법
 - 로컬 모듈 import/require 경로
 - HTML 정적 자산 경로
@@ -99,11 +102,12 @@ admins/{로그인 이메일}
 
 `main` 브랜치에 병합되면 `.github/workflows/firebase-deploy.yml`이 다음 순서로 실행됩니다.
 
-1. Node.js 20 설정
-2. Functions 의존성 `npm ci` 설치
-3. `npm run check`
+1. Node.js 20과 Java 21 설정
+2. Functions 및 검증 의존성 `npm ci` 설치
+3. `npm test`
 4. Firestore 규칙과 Hosting 배포
 5. 현재 사용 중인 Functions만 선택 배포
+6. 공개 가능한 사이트 설정만 `site_public/config`에 동기화
 
 GitHub Actions secret이 필요합니다.
 

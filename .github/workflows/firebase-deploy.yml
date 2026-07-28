@@ -23,17 +23,26 @@ jobs:
         with:
           node-version: 20
 
+      - name: Setup Java for Firebase emulators
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
       - name: Install Firebase CLI
-        run: npm install -g firebase-tools
+        run: npm install -g firebase-tools@15.24.0
 
       - name: Install Functions dependencies
         run: npm ci --prefix functions --no-audit --no-fund
+
+      - name: Install validation dependencies
+        run: npm ci --no-audit --no-fund
 
       - name: Prepare exact uploaded logo icons
         run: npm run prepare:icons
 
       - name: Validate repository
-        run: node tools/check-project.mjs
+        run: npm test
 
       - name: Prepare service account
         env:
@@ -53,7 +62,13 @@ jobs:
       - name: Deploy current Functions
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-        run: firebase deploy --only functions:submitCase,functions:generateTrial,functions:createDailyAiCase,functions:generateDailyAiNow,functions:checkNickname,functions:setNickname,functions:voteResult,functions:addCourtComment,functions:requestAppeal,functions:deleteCourtPost --project sosoking-481e6 --non-interactive
+        run: firebase deploy --only functions:submitCase,functions:generateTrial,functions:createDailyAiCase,functions:generateDailyAiNow,functions:checkNickname,functions:setNickname,functions:voteResult,functions:addCourtComment,functions:setResultVisibility,functions:requestAppeal,functions:deleteCourtPost --project sosoking-481e6 --non-interactive
+
+      - name: Sync safe public configuration
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+          GOOGLE_CLOUD_PROJECT: sosoking-481e6
+        run: node tools/sync-public-config.mjs
 
       - name: Remove curated creative cases
         env:
