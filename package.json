@@ -5,7 +5,7 @@
   "scripts": {
     "build:seo": "node tools/build-seo-pages.mjs",
     "seed:creative": "node tools/seed-creative-cases.mjs",
-    "check": "npm run build:seo && node --check tools/seed-creative-cases.mjs && node tools/check-project.mjs",
+    "check": "npm run build:seo && node --check tools/seed-creative-cases.mjs && node tools/check-seo-seed.mjs && node tools/check-project.mjs",
     "test": "npm run check"
   }
 }
