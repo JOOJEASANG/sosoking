@@ -1,6 +1,8 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const { isAdminAuth } = require('./admin-utils');
+const { inspectContent } = require('./content-safety');
+const { requireVerifiedUser } = require('./security');
 
 const db = getFirestore();
 const REGION = 'asia-northeast3';
@@ -12,12 +14,30 @@ function cleanId(value) {
     .slice(0, 180);
 }
 
+function publicResultText(caseData = {}, resultData = {}) {
+  return [
+    caseData.caseTitle,
+    caseData.caseDescription,
+    resultData.caseTitle,
+    resultData.caseDescription,
+    resultData.reception,
+    resultData.investigation,
+    resultData.plaintiffArg,
+    resultData.defendantArg,
+    resultData.verdict,
+    resultData.sentence,
+    resultData.appeal?.reason,
+    resultData.appeal?.verdict
+  ].filter(Boolean).join('\n');
+}
+
 exports.setAdminResultVisibility = onCall({
   region: REGION,
   timeoutSeconds: 30,
   memory: '256MiB'
 }, async request => {
-  if (!request.auth || !(await isAdminAuth(request.auth))) {
+  requireVerifiedUser(request);
+  if (!(await isAdminAuth(request.auth))) {
     throw new HttpsError('permission-denied', '관리자만 공개 상태를 변경할 수 있습니다.');
   }
 
@@ -39,6 +59,22 @@ exports.setAdminResultVisibility = onCall({
     if (!caseSnap.exists && !resultSnap.exists) {
       throw new HttpsError('not-found', '사건 또는 판결문을 찾을 수 없습니다.');
     }
+    if (isPublic && !resultSnap.exists) {
+      throw new HttpsError('failed-precondition', '완성된 판결문이 있어야 공개할 수 있습니다.');
+    }
+
+    if (isPublic) {
+      const safety = inspectContent(publicResultText(
+        caseSnap.exists ? caseSnap.data() : {},
+        resultSnap.exists ? resultSnap.data() : {}
+      ));
+      if (!safety.safe) {
+        throw new HttpsError(
+          'failed-precondition',
+          '공개할 수 없는 개인정보 또는 고위험 내용이 포함되어 있습니다.'
+        );
+      }
+    }
 
     if (caseSnap.exists) {
       tx.update(caseRef, {
@@ -51,6 +87,10 @@ exports.setAdminResultVisibility = onCall({
       tx.update(resultRef, {
         isPublic,
         userId: FieldValue.delete(),
+        contentSafetyStatus: isPublic ? 'passed' : (resultSnap.data().contentSafetyStatus || 'not-public'),
+        contentSafetyCheckedAt: isPublic
+          ? FieldValue.serverTimestamp()
+          : (resultSnap.data().contentSafetyCheckedAt || FieldValue.delete()),
         updatedAt: FieldValue.serverTimestamp()
       });
     }
@@ -60,7 +100,7 @@ exports.setAdminResultVisibility = onCall({
     uid: request.auth.uid,
     action: 'setAdminResultVisibility',
     caseId,
-    detail: { isPublic },
+    detail: { isPublic, contentSafetyChecked: isPublic },
     createdAt: FieldValue.serverTimestamp()
   }).catch(() => null);
 
