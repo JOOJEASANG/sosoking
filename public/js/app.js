@@ -6,12 +6,11 @@ import { renderResult } from './pages/result-court.js?v=20260728-audit-1';
 import { renderPolicy } from './pages/policy.js?v=20260630-3';
 import { renderMyCases } from './pages/my-cases-game.js?v=20260630-22';
 import { renderGuide } from './pages/guide.js?v=20260728-audit-1';
-import { renderAuth } from './pages/auth2.js?v=20260728-ui-audit-2';
+import { renderAuth } from './pages/auth2.js?v=20260729-theme-auth-1';
 import { renderBoard } from './pages/board-court.js?v=20260729-logo-feed-1';
 import { renderFooter } from './components/footer.js?v=20260728-logo-cleanup-1';
-import { initTheme } from './components/theme.js?v=20260728-ui-audit-2';
+import { initTheme, renderThemeToggle } from './components/theme.js?v=20260729-theme-auth-1';
 import { initCourtDesign } from './components/court-design.js?v=20260728-pwa-install-1';
-import { renderThemePreference } from './components/theme-preference.js?v=20260728-ui-audit-2';
 import { renderNav } from './components/nav.js?v=20260630-8';
 
 let routeSequence = 0;
@@ -68,19 +67,19 @@ async function route() {
     else if (hash.startsWith('#/policy/')) renderTask = renderPolicy(content, hash.replace('#/policy/', ''));
     else if (hash === '#/my-cases') renderTask = renderMyCases(content);
     else if (hash === '#/guide') renderTask = renderGuide(content);
-    else if (hash === '#/auth') {
-      renderTask = renderAuth(content);
-      setTimeout(renderThemePreference, 80);
-    } else if (hash === '#/board') renderTask = renderBoard(content);
+    else if (hash === '#/auth') renderTask = renderAuth(content);
+    else if (hash === '#/board') renderTask = renderBoard(content);
     else renderTask = renderHome(content);
 
     renderNav();
     await renderTask;
+    renderThemeToggle();
   } catch (err) {
     console.error('route render failed:', { hash, err });
     if (sequence === routeSequence) {
       renderRouteError(content);
       renderNav();
+      renderThemeToggle();
     }
   }
 }

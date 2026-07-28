@@ -69,6 +69,25 @@ if (!auth.includes("'auth/popup-closed-by-user': 'Google 로그인이 취소되�
 if (auth.match(/showAuthNotice\('Google 로그인 완료'/g)?.length !== 2) {
   errors.push('auth2.js: Google success notification paths changed unexpectedly');
 }
+if (auth.includes('isMobileAuthEnvironment()')) {
+  errors.push('auth2.js: mobile login must not force redirect before trying popup');
+}
+if (!auth.includes('const result = await signInWithPopup(auth, googleProvider)')) {
+  errors.push('auth2.js: popup-first Google login is missing');
+}
+
+const app = read('public/js/app.js');
+if (app.includes('renderThemePreference')) {
+  errors.push('app.js: legacy large theme preference card is still rendered');
+}
+if (!app.includes('renderThemeToggle();')) {
+  errors.push('app.js: global theme icon is not rendered after routes');
+}
+
+const themeModule = read('public/js/components/theme.js');
+if (themeModule.includes('theme-toggle-text')) {
+  errors.push('theme.js: theme switch still contains a text button');
+}
 
 const index = read('public/index.html');
 if (!index.includes("document.documentElement.setAttribute('data-theme', resolved)")) {
