@@ -22,5 +22,8 @@ jobs:
       - name: Install Functions dependencies
         run: npm ci --prefix functions --no-audit --no-fund
 
+      - name: Check official seed cleanup script
+        run: node --check tools/remove-official-seed.mjs
+
       - name: Run repository checks
         run: npm run check
