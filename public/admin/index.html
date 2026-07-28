@@ -4,16 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>관리자 · 소소킹 판결소</title>
-  <script>
-    (function() {
-      var saved = localStorage.getItem('theme') || 'system';
-      var isLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
-      var resolved = saved === 'light' || saved === 'dark' ? saved : (isLight ? 'light' : 'dark');
-      document.documentElement.setAttribute('data-theme', resolved);
-      document.documentElement.setAttribute('data-theme-choice', saved);
-      document.documentElement.style.colorScheme = resolved;
-    })();
-  </script>
+  <script src="/js/theme-init.js?v=20260729-script-csp-1"></script>
   <link rel="icon" href="/icons/sosoking-192.png?v=20260728-ui-audit-2" type="image/png" sizes="192x192">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -42,6 +33,6 @@
   <div id="admin-app"><div id="admin-content"></div></div>
   <div id="toast-container"></div>
   <!-- /admin/admin-enhancements.js is loaded only after strict Firestore admin authorization. -->
-  <script type="module" src="/admin/admin-bootstrap.js?v=20260729-admin-authz-1"></script>
+  <script type="module" src="/admin/admin-bootstrap.js?v=20260729-script-csp-1"></script>
 </body>
 </html>
