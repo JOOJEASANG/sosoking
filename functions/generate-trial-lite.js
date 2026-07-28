@@ -485,18 +485,29 @@ exports.generateTrial = onCall({
   const configured = cleanText(settings.geminiModel, 60);
   const modelNames = [...new Set([configured, ...DEFAULT_MODELS].filter(Boolean))];
   const apiKey = cleanText(geminiKey.value(), 500);
-  const totals = { requests: 0, inputTokens: 0, outputTokens: 0 };
+  const totals = { attempts: 0, successfulResponses: 0, inputTokens: 0, outputTokens: 0 };
 
   let data = null;
   let usedModel = '';
   let lastError = null;
+  let quotaAvailable = true;
+  let saved = false;
 
-  for (let attempt = 0; attempt < modelNames.length; attempt += 1) {
+  // 사용자·전체 일일 한도는 모델 재시도 횟수가 아니라 재판 요청 1건당 한 번만 예약한다.
+  try {
+    await reserveAiRequest(uid, 'trial', settings);
+  } catch (err) {
+    quotaAvailable = false;
+    lastError = err;
+    console.warn('generateTrial AI quota reservation failed; using local fallback:', safeErrorCode(err));
+  }
+
+  for (let attempt = 0; quotaAvailable && attempt < modelNames.length; attempt += 1) {
     const modelName = modelNames[attempt];
     try {
-      await reserveAiRequest(uid, 'trial', settings);
+      totals.attempts += 1;
       const response = await callGemini(apiKey, modelName, buildPrompt(description, judge, grievanceIndex, attempt > 0));
-      totals.requests += 1;
+      totals.successfulResponses += 1;
       totals.inputTokens += Number(response.usageMetadata.promptTokenCount || 0);
       totals.outputTokens += Number(response.usageMetadata.candidatesTokenCount || 0);
       const candidate = normalizeResult(safeJson(response.text), description);
@@ -519,8 +530,24 @@ exports.generateTrial = onCall({
     }
   }
 
-  const fallbackCode = data ? '' : safeErrorCode(lastError);
+  let fallbackCode = data ? '' : safeErrorCode(lastError);
   if (!data) data = buildLocalFallback(description, judge, grievanceIndex, fallbackCode);
+
+  // 모델 출력도 공개·저장 전에 다시 검사한다. 문제가 있으면 검증 가능한 로컬 판결로 대체한다.
+  const generatedSafety = inspectContent([
+    data.caseTitle,
+    data.reception,
+    data.investigation,
+    data.plaintiffArg,
+    data.defendantArg,
+    data.verdict
+  ].filter(Boolean).join('\n'));
+  if (!generatedSafety.safe) {
+    fallbackCode = `UNSAFE_AI_OUTPUT_${String(generatedSafety.code || 'UNKNOWN').toUpperCase().replace(/[^A-Z0-9]+/g, '_')}`;
+    data = buildLocalFallback(description, judge, grievanceIndex, fallbackCode);
+    usedModel = '';
+  }
+
   const finalTitle = normalizeCaseTitle(data.caseTitle, description);
   const aiSource = usedModel ? 'gemini-rest' : 'local-case-fallback';
 
@@ -551,7 +578,9 @@ exports.generateTrial = onCall({
       aiSource,
       aiModel: usedModel || '',
       aiFallbackReason: fallbackCode || '',
-      promptVersion: 'simple-document-v1.4-judge-layout',
+      promptVersion: 'simple-document-v1.5-accounting-safety',
+      contentSafetyStatus: 'passed',
+      contentSafetyCheckedAt: FieldValue.serverTimestamp(),
       reactionTotal: 0,
       commentCount: 0,
       courtStage: 'sentenced',
@@ -575,6 +604,7 @@ exports.generateTrial = onCall({
       aiErrorCode: FieldValue.delete()
     });
     await batch.commit();
+    saved = true;
   } catch (err) {
     console.error('generateTrial save failed:', err);
     await caseRef.update({
@@ -591,11 +621,13 @@ exports.generateTrial = onCall({
       const today = kstDateKey();
       await db.doc(`usage_stats/daily_${today}`).set({
         date: today,
-        geminiRequests: FieldValue.increment(totals.requests),
+        // 실제 외부 API 호출 시도는 실패 응답도 포함한다.
+        geminiRequests: FieldValue.increment(totals.attempts),
+        geminiSuccessfulResponses: FieldValue.increment(totals.successfulResponses),
         geminiInputTokens: FieldValue.increment(totals.inputTokens),
         geminiOutputTokens: FieldValue.increment(totals.outputTokens),
-        caseCount: FieldValue.increment(1),
-        fallbackCount: FieldValue.increment(usedModel ? 0 : 1),
+        caseCount: FieldValue.increment(saved ? 1 : 0),
+        fallbackCount: FieldValue.increment(saved && !usedModel ? 1 : 0),
         firestoreReads: FieldValue.increment(4),
         firestoreWrites: FieldValue.increment(3),
         functionInvocations: FieldValue.increment(1),

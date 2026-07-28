@@ -21,14 +21,17 @@ let authInitPromise = null;
 
 export function getInitialRedirectResult() {
   if (!redirectResultPromise) {
-    redirectResultPromise = getRedirectResult(auth);
+    redirectResultPromise = getRedirectResult(auth).catch(error => {
+      redirectResultPromise = null;
+      throw error;
+    });
   }
   return redirectResultPromise;
 }
 
 export async function initAuth() {
   if (!authInitPromise) {
-    authInitPromise = (async () => {
+    const currentAttempt = (async () => {
       const redirectResult = await getInitialRedirectResult().catch(error => {
         console.warn('initial redirect login result failed:', error?.code || error);
         return null;
@@ -41,6 +44,13 @@ export async function initAuth() {
       }
       return auth.currentUser;
     })();
+
+    let trackedAttempt;
+    trackedAttempt = currentAttempt.catch(error => {
+      if (authInitPromise === trackedAttempt) authInitPromise = null;
+      throw error;
+    });
+    authInitPromise = trackedAttempt;
   }
   return authInitPromise;
 }

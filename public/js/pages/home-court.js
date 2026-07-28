@@ -1,7 +1,18 @@
 import { renderHome as renderBaseHome } from './home.js?v=20260729-logo-feed-1';
+import { db } from '../firebase.js?v=20260729-auth-session-1';
+import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 
 const BRAND_LOGO = '/logo.svg?v=20260729-logo-feed-1';
 const BRAND_LOGO_FALLBACK = '/icons/sosoking-192.png?v=20260729-logo-feed-1';
+const JUDGE_ICON = {
+  '엄벌주의형': '👨‍⚖️',
+  '감성형': '🥹',
+  '현실주의형': '🤦',
+  '과몰입형': '🔥',
+  '피곤형': '😴',
+  '논리집착형': '🧮',
+  '드립형': '🎭'
+};
 
 function applyBrandLogo(container) {
   const logo = container.querySelector('.hero-section > img[alt="소소킹 로고"]');
@@ -80,10 +91,39 @@ function fixLegacyHomeCopy(container) {
   });
 }
 
+async function applyPublicStatistics(container) {
+  const countElement = container.querySelector('#stat-count');
+  const judgeElement = container.querySelector('#stat-judge');
+  if (!countElement) return;
+
+  // 기존 home.js의 권한 없는 cases 집계와 847 가상 애니메이션이 이 요소를 찾지 못하게 한다.
+  countElement.id = 'public-stat-count';
+  countElement.textContent = '—';
+  if (judgeElement) judgeElement.textContent = '—';
+
+  try {
+    const snapshot = await getDoc(doc(db, 'site_public', 'statistics'));
+    if (!snapshot.exists() || !container.isConnected) return;
+    const data = snapshot.data();
+    const completedCases = Number(data.completedCases);
+    if (Number.isFinite(completedCases) && completedCases >= 0) {
+      countElement.textContent = `${completedCases.toLocaleString('ko-KR')}건`;
+    }
+
+    const popularJudge = String(data.popularJudge || '').trim();
+    if (judgeElement && popularJudge) {
+      judgeElement.textContent = `${JUDGE_ICON[popularJudge] || '⚖️'} ${popularJudge.replace('형', '')}`;
+    }
+  } catch (error) {
+    console.warn('public statistics load failed:', error?.code || error);
+  }
+}
+
 export async function renderHome(container) {
   await renderBaseHome(container);
   applyBrandLogo(container);
   addCourtEntrance(container);
   addProcedureSeal(container);
   fixLegacyHomeCopy(container);
+  await applyPublicStatistics(container);
 }
