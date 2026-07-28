@@ -21,7 +21,6 @@ async function profileOf(user){ if(!user || user.isAnonymous) return {}; const s
 async function guest(){ if(!auth.currentUser) await signInAnonymously(auth).catch(() => {}); }
 function providerName(user, profile){ const p = profile.provider || user.providerData?.[0]?.providerId || ''; return p.includes('google') ? 'Google 소셜 로그인' : p.includes('password') ? '이메일 로그인' : '로그인'; }
 function needsEmailVerification(user){ return Boolean(user && !user.isAnonymous && user.providerData?.some(p => p.providerId === 'password') && !user.emailVerified); }
-function isMobileAuthEnvironment(){ return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || window.matchMedia?.('(pointer: coarse)').matches; }
 function popupNeedsRedirect(e){ return ['auth/popup-blocked','auth/operation-not-supported-in-this-environment','auth/web-storage-unsupported'].includes(e?.code); }
 function redirectResultOnce(){ if(!redirectResultPromise) redirectResultPromise = getRedirectResult(auth); return redirectResultPromise; }
 
@@ -38,6 +37,8 @@ function friendlyAuthMessage(error, fallback = '로그인 처리 중 문제가 �
     'auth/email-already-in-use': '이미 가입된 이메일입니다.',
     'auth/weak-password': '비밀번호는 6자 이상 입력해주세요.',
     'auth/invalid-email': '이메일 형식을 확인해주세요.',
+    'auth/unauthorized-domain': '현재 사이트 주소가 Google 로그인 허용 목록에 없습니다. 관리자에게 문의해주세요.',
+    'auth/operation-not-allowed': 'Firebase에서 Google 로그인이 활성화되지 않았습니다.',
     'auth/account-exists-with-different-credential': '같은 이메일로 가입한 다른 로그인 방식이 있습니다.'
   };
   return messages[error?.code] || fallback;
@@ -105,12 +106,6 @@ function drawLogin(box){
     btn.disabled = true;
     btn.textContent = 'Google 로그인 준비 중...';
     try {
-      if(isMobileAuthEnvironment()) {
-        markRedirectStarted();
-        btn.textContent = 'Google 로그인 화면으로 이동...';
-        await signInWithRedirect(auth, googleProvider);
-        return;
-      }
       const result = await signInWithPopup(auth, googleProvider);
       showAuthNotice('Google 로그인 완료', 'success');
       const profile = await profileOf(result.user);
