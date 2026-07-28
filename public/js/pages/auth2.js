@@ -1,7 +1,7 @@
 import { auth, db, functions } from '../firebase.js?v=20260728-ui-audit-2';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
-import { GoogleAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, updateProfile, onAuthStateChanged, signInAnonymously } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
+import { GoogleAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, updateProfile, onAuthStateChanged, signInAnonymously, sendEmailVerification, reload } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
 import { showToast } from '../components/toast.js?v=20260728-ui-audit-2';
 import { escapeHtml } from '../utils/sanitize.js?v=20260630-3';
 import { avatarImg, avatarSourceLabel } from '../utils/avatar.js?v=20260630-3';
@@ -20,6 +20,7 @@ function validEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v || '')
 async function profileOf(user){ if(!user || user.isAnonymous) return {}; const s = await getDoc(doc(db, 'users', user.uid)).catch(() => null); return s?.exists() ? s.data() : {}; }
 async function guest(){ if(!auth.currentUser) await signInAnonymously(auth).catch(() => {}); }
 function providerName(user, profile){ const p = profile.provider || user.providerData?.[0]?.providerId || ''; return p.includes('google') ? 'Google 소셜 로그인' : p.includes('password') ? '이메일 로그인' : '로그인'; }
+function needsEmailVerification(user){ return Boolean(user && !user.isAnonymous && user.providerData?.some(p => p.providerId === 'password') && !user.emailVerified); }
 function isMobileAuthEnvironment(){ return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || window.matchMedia?.('(pointer: coarse)').matches; }
 function popupNeedsRedirect(e){ return ['auth/popup-blocked','auth/operation-not-supported-in-this-environment','auth/web-storage-unsupported'].includes(e?.code); }
 function redirectResultOnce(){ if(!redirectResultPromise) redirectResultPromise = getRedirectResult(auth); return redirectResultPromise; }
@@ -64,6 +65,13 @@ export async function renderAuth(container){
   const renderUser = async user => {
     if(!active || !box) return;
     if(user && !user.isAnonymous){
+      if(needsEmailVerification(user)){
+        const view = `${user.uid}:verify-email`;
+        if(view === lastView) return;
+        lastView = view;
+        drawEmailVerification(box, user);
+        return;
+      }
       const p = await profileOf(user);
       if(!active) return;
       const view = `${user.uid}:${p.nickname ? 'profile' : 'nickname'}:${p.nickname || user.displayName || ''}`;
@@ -127,15 +135,62 @@ function drawLogin(box){
 async function signUpEmail(box){
   const email = document.getElementById('auth-email').value.trim(); const pw = document.getElementById('auth-password').value;
   if(!validEmail(email)) return showAuthNotice('이메일 형식을 확인해주세요.', 'error');
-  try{ const r = await createUserWithEmailAndPassword(auth, email, pw); showAuthNotice('가입 완료. 닉네임을 설정해주세요.', 'success'); drawNick(box, r.user, await profileOf(r.user)); }
+  try{
+    const r = await createUserWithEmailAndPassword(auth, email, pw);
+    await sendEmailVerification(r.user);
+    showAuthNotice('인증 메일을 보냈습니다.', 'success');
+    drawEmailVerification(box, r.user);
+  }
   catch(error){ console.warn('email signup failed', error?.code || error); showAuthNotice(friendlyAuthMessage(error, '가입 처리에 실패했습니다.'), 'error'); }
 }
 
 async function signInEmail(box){
   const email = document.getElementById('auth-email').value.trim(); const pw = document.getElementById('auth-password').value;
   if(!validEmail(email)) return showAuthNotice('이메일 형식을 확인해주세요.', 'error');
-  try{ const r = await signInWithEmailAndPassword(auth, email, pw); const p = await profileOf(r.user); showAuthNotice('로그인 완료', 'success'); p.nickname ? drawProfile(box, r.user, p) : drawNick(box, r.user, p); }
+  try{
+    const r = await signInWithEmailAndPassword(auth, email, pw);
+    if(needsEmailVerification(r.user)){
+      showAuthNotice('이메일 인증을 완료해주세요.', 'error');
+      drawEmailVerification(box, r.user);
+      return;
+    }
+    const p = await profileOf(r.user);
+    showAuthNotice('로그인 완료', 'success');
+    p.nickname ? drawProfile(box, r.user, p) : drawNick(box, r.user, p);
+  }
   catch(error){ console.warn('email login failed', error?.code || error); showAuthNotice(friendlyAuthMessage(error, '이메일 또는 비밀번호를 확인해주세요.'), 'error'); }
+}
+
+function drawEmailVerification(box, user){
+  box.innerHTML = `<div style="text-align:center;margin-bottom:22px;"><div style="font-size:44px;margin-bottom:10px;">✉️</div><div style="font-family:var(--font-serif);font-size:21px;font-weight:700;color:var(--gold);">이메일 인증이 필요합니다</div><div style="font-size:13px;color:var(--cream-dim);line-height:1.8;margin-top:10px;"><strong>${escapeHtml(user.email || '')}</strong> 주소로 전송된 인증 링크를 눌러주세요.<br>인증 전에는 사건 접수와 AI 판결을 이용할 수 없습니다.</div></div><button class="btn btn-primary" id="verify-refresh">인증 완료 확인</button><button class="btn btn-secondary" id="verify-resend" style="margin-top:10px;">인증 메일 다시 보내기</button><button class="btn btn-ghost" id="logout" style="margin-top:10px;">다른 계정으로 로그인</button>`;
+  document.getElementById('verify-refresh').onclick = async () => {
+    try{
+      await reload(user);
+      if(!user.emailVerified) return showAuthNotice('아직 인증되지 않았습니다. 메일의 링크를 확인해주세요.', 'error');
+      await user.getIdToken(true);
+      showAuthNotice('이메일 인증이 확인되었습니다.', 'success');
+      const p = await profileOf(user);
+      p.nickname ? drawProfile(box, user, p) : drawNick(box, user, p);
+    }catch(error){
+      console.warn('email verification refresh failed', error?.code || error);
+      showAuthNotice('인증 상태 확인에 실패했습니다.', 'error');
+    }
+  };
+  document.getElementById('verify-resend').onclick = async () => {
+    const button = document.getElementById('verify-resend');
+    if(!button || button.disabled) return;
+    button.disabled = true;
+    try{
+      await sendEmailVerification(user);
+      showAuthNotice('인증 메일을 다시 보냈습니다.', 'success');
+    }catch(error){
+      console.warn('email verification resend failed', error?.code || error);
+      showAuthNotice(friendlyAuthMessage(error, '인증 메일 전송에 실패했습니다.'), 'error');
+    }finally{
+      setTimeout(() => { if(button) button.disabled = false; }, 5000);
+    }
+  };
+  document.getElementById('logout').onclick = logout;
 }
 
 function drawNick(box, user, profile = {}){

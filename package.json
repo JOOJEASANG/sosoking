@@ -4,7 +4,12 @@
   "type": "module",
   "scripts": {
     "prepare:icons": "node tools/prepare-brand-icons.mjs",
-    "check": "npm run prepare:icons && node tools/check-project.mjs && node tools/check-ui-audit.mjs",
-    "test": "npm run check"
+    "check": "npm run prepare:icons && node tools/check-content-safety.mjs && node tools/check-project.mjs && node tools/check-ui-audit.mjs",
+    "test": "npm run check && npm run test:rules",
+    "test:rules": "firebase emulators:exec --only firestore \"node tools/check-firestore-rules.mjs\" --project sosoking-rules-test"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.1",
+    "firebase": "^12.16.0"
   }
 }

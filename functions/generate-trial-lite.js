@@ -1,6 +1,8 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const { defineSecret } = require('firebase-functions/params');
+const { requireVerifiedUser, reserveAiRequest } = require('./security');
+const { inspectContent } = require('./content-safety');
 
 const db = getFirestore();
 const geminiKey = defineSecret('GEMINI_API_KEY');
@@ -392,7 +394,7 @@ exports.generateTrial = onCall({
   timeoutSeconds: 300,
   memory: '512MiB'
 }, async request => {
-  if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+  requireVerifiedUser(request);
 
   const uid = request.auth.uid;
   const caseId = cleanText(request.data?.caseId, 180);
@@ -409,6 +411,20 @@ exports.generateTrial = onCall({
   if (c.status === 'completed') {
     const existing = await resultRef.get();
     if (existing.exists) return { success: true, skipped: 'completed' };
+  }
+
+  // 과거 필터 적용 전에 저장된 사건도 외부 AI로 보내기 직전에 다시 검사한다.
+  const safety = inspectContent(c.caseDescription);
+  if (!safety.safe) {
+    await caseRef.update({
+      status: 'blocked',
+      courtStage: 'blocked',
+      errorMessage: safety.message,
+      aiErrorCode: `CONTENT_${String(safety.code || 'UNSAFE').toUpperCase().replace(/[^A-Z0-9]+/g, '_')}`,
+      processingStartedAt: FieldValue.delete(),
+      updatedAt: FieldValue.serverTimestamp()
+    });
+    throw new HttpsError('failed-precondition', safety.message);
   }
 
   if (['completed', 'error'].includes(c.status)) {
@@ -437,12 +453,12 @@ exports.generateTrial = onCall({
 
   if (c.status !== 'pending') throw new HttpsError('failed-precondition', '처리할 수 없는 사건 상태입니다.');
 
-  await db.runTransaction(async tx => {
+  const acquiredProcessingLock = await db.runTransaction(async tx => {
     const fresh = await tx.get(caseRef);
     if (!fresh.exists) throw new HttpsError('not-found', '사건을 찾을 수 없습니다.');
     const current = fresh.data();
     if (current.userId !== uid) throw new HttpsError('permission-denied', '본인 사건만 재판할 수 있습니다.');
-    if (current.status !== 'pending') return;
+    if (current.status !== 'pending') return false;
     c = current;
     tx.update(caseRef, {
       status: 'processing',
@@ -452,10 +468,15 @@ exports.generateTrial = onCall({
       aiErrorCode: FieldValue.delete(),
       updatedAt: FieldValue.serverTimestamp()
     });
+    return true;
   });
 
-  const latest = await caseRef.get();
-  if (latest.data()?.status !== 'processing') return { success: true, skipped: latest.data()?.status || 'unknown' };
+  // 상태가 processing이라는 사실만으로는 이 호출이 잠금을 획득했다는 뜻이 아니다.
+  // 동시 호출 중 트랜잭션에서 pending -> processing 변경을 수행한 단 하나만 AI를 호출한다.
+  if (!acquiredProcessingLock) {
+    const latest = await caseRef.get();
+    return { success: true, skipped: latest.data()?.status || 'unknown' };
+  }
 
   const description = cleanText(c.caseDescription, 600);
   const judge = selectJudge(caseId, c.judgeType);
@@ -473,6 +494,7 @@ exports.generateTrial = onCall({
   for (let attempt = 0; attempt < modelNames.length; attempt += 1) {
     const modelName = modelNames[attempt];
     try {
+      await reserveAiRequest(uid, 'trial', settings);
       const response = await callGemini(apiKey, modelName, buildPrompt(description, judge, grievanceIndex, attempt > 0));
       totals.requests += 1;
       totals.inputTokens += Number(response.usageMetadata.promptTokenCount || 0);
@@ -493,7 +515,7 @@ exports.generateTrial = onCall({
         status: err?.httpStatus || null,
         message: cleanText(err?.message, 500)
       });
-      if (['API_KEY_MISSING', 'API_KEY_INVALID', 'API_KEY_FORBIDDEN'].includes(safeErrorCode(err))) break;
+      if (['API_KEY_MISSING', 'API_KEY_INVALID', 'API_KEY_FORBIDDEN', 'resource-exhausted'].includes(safeErrorCode(err))) break;
     }
   }
 
@@ -506,8 +528,9 @@ exports.generateTrial = onCall({
     const batch = db.batch();
     batch.set(resultRef, {
       source: 'user',
-      userId: uid,
-      isPublic: c.isPublic !== false,
+      // 공개 결과 문서는 문서 단위로 읽히므로 인증 UID를 저장하지 않는다.
+      userId: FieldValue.delete(),
+      isPublic: c.isPublic === true,
       docketNumber: c.docketNumber || '',
       courtName: '소소킹 판결소',
       courtroom: '제404호 생활법정',
@@ -544,7 +567,7 @@ exports.generateTrial = onCall({
       judgeIcon: judge.icon,
       judgeStyle: judge.style,
       grievanceIndex,
-      isPublic: c.isPublic !== false,
+      isPublic: c.isPublic === true,
       completedAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
       processingStartedAt: FieldValue.delete(),

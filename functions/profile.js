@@ -50,9 +50,13 @@ exports.setNickname = onCall({ region: REGION, timeoutSeconds: 30, memory: '256M
 
   await db.runTransaction(async tx => {
     const userSnap = await tx.get(userRef);
-    const nameSnap = await tx.get(nameRef);
     const profile = userSnap.exists ? userSnap.data() : {};
     const oldKey = profile.nickname ? nicknameKey(profile.nickname) : '';
+    const oldNameRef = oldKey && oldKey !== key
+      ? db.doc(`user_names/${oldKey}`)
+      : null;
+    const nameSnap = await tx.get(nameRef);
+    const oldNameSnap = oldNameRef ? await tx.get(oldNameRef) : null;
 
     if (nameSnap.exists && nameSnap.data().uid !== uid) {
       throw new HttpsError('already-exists', '이미 사용 중인 닉네임입니다.');
@@ -66,7 +70,11 @@ exports.setNickname = onCall({ region: REGION, timeoutSeconds: 30, memory: '256M
       createdAt: nameSnap.exists ? nameSnap.data().createdAt : FieldValue.serverTimestamp(),
     }, { merge: true });
 
-    if (oldKey && oldKey !== key) tx.delete(db.doc(`user_names/${oldKey}`));
+    // 기존 프로필이 과거 클라이언트 쓰기로 변조됐더라도 다른 사용자의
+    // 닉네임 예약 문서는 절대 삭제하지 않는다.
+    if (oldNameRef && oldNameSnap?.exists && oldNameSnap.data().uid === uid) {
+      tx.delete(oldNameRef);
+    }
 
     tx.set(userRef, {
       uid,

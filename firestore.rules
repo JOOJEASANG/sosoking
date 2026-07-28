@@ -53,34 +53,6 @@ service cloud.firestore {
       );
     }
 
-    function validUserProfile(uid) {
-      return request.resource.data.keys().hasOnly([
-          'uid', 'email', 'nickname', 'provider', 'photoURL', 'avatarSeed', 'avatarType', 'isAnonymous', 'createdAt', 'updatedAt'
-        ])
-        && request.resource.data.uid == uid
-        && request.resource.data.nickname is string
-        && request.resource.data.nickname.size() >= 2
-        && request.resource.data.nickname.size() <= 20
-        && request.resource.data.email is string
-        && request.resource.data.email.size() <= 120
-        && request.resource.data.provider is string
-        && request.resource.data.provider.size() <= 60
-        && request.resource.data.photoURL is string
-        && request.resource.data.photoURL.size() <= 500
-        && request.resource.data.avatarSeed is string
-        && request.resource.data.avatarSeed.size() <= 80
-        && request.resource.data.avatarType in ['google', 'generated'];
-    }
-
-    function validUserName(key) {
-      return request.resource.data.keys().hasOnly(['uid', 'nickname', 'key', 'createdAt', 'updatedAt'])
-        && request.resource.data.uid == request.auth.uid
-        && request.resource.data.key == key
-        && request.resource.data.nickname is string
-        && request.resource.data.nickname.size() >= 2
-        && request.resource.data.nickname.size() <= 20;
-    }
-
     match /admins/{adminId} {
       allow read: if signedIn() && (
         bootstrapOwner() ||
@@ -93,39 +65,29 @@ service cloud.firestore {
 
     match /users/{uid} {
       allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
-      allow create: if signedIn() && request.auth.uid == uid && validUserProfile(uid);
-      allow update: if signedIn() && request.auth.uid == uid && validUserProfile(uid);
+      // 프로필과 닉네임은 setNickname 함수의 단일 트랜잭션에서만 변경한다.
+      // 클라이언트 직접 쓰기를 허용하면 user_names 예약과 프로필이 불일치할 수 있다.
+      allow create, update: if false;
       allow delete: if isAdmin();
     }
 
     match /user_names/{key} {
-      allow read: if true;
-      allow create: if signedIn()
-        && !exists(/databases/$(database)/documents/user_names/$(key))
-        && validUserName(key);
-      allow update: if signedIn()
-        && resource.data.uid == request.auth.uid
-        && validUserName(key);
-      allow delete: if signedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+      // 닉네임 중복 확인과 예약은 checkNickname/setNickname 함수만 사용한다.
+      // UID-닉네임 매핑은 공개 목록으로 노출하지 않는다.
+      allow read, write: if false;
     }
 
     match /cases/{caseId} {
       allow read: if signedIn() && (
         resource.data.userId == request.auth.uid ||
-        resource.data.isPublic == true ||
         isAdmin()
       );
 
       // 사건 접수는 rate limit과 금칙어 검사를 수행하는 submitCase 함수로만 허용한다.
       allow create: if false;
 
-      allow update: if isAdmin() || (
-        signedIn() &&
-        resource.data.userId == request.auth.uid &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isPublic', 'updatedAt']) &&
-        request.resource.data.isPublic is bool &&
-        request.resource.data.updatedAt == request.time
-      );
+      // 공개 상태도 setResultVisibility 함수가 cases/results에 원자적으로 반영한다.
+      allow update: if isAdmin();
       allow delete: if isAdmin();
     }
 
@@ -136,14 +98,8 @@ service cloud.firestore {
         isAdmin()
       );
 
-      // 사용자는 생성된 판결 내용은 바꿀 수 없고 공개 여부만 변경할 수 있다.
-      allow update: if isAdmin() || (
-        signedIn() &&
-        isCaseOwner(caseId) &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isPublic', 'updatedAt']) &&
-        request.resource.data.isPublic is bool &&
-        request.resource.data.updatedAt == request.time
-      );
+      // 공개 전환 시 과거 UID 제거까지 수행하도록 서버 함수만 사용한다.
+      allow update: if isAdmin();
       allow create: if false;
       allow delete: if isAdmin();
     }
@@ -178,6 +134,16 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    match /ai_limits/{dailyId} {
+      allow read: if isAdmin();
+      allow write: if false;
+
+      match /users/{userId} {
+        allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
+        allow write: if false;
+      }
+    }
+
     match /reports/{reportId} {
       allow create: if signedIn()
         && request.resource.data.keys().hasOnly(['caseId', 'reason', 'status', 'createdAt', 'userId'])
@@ -191,6 +157,12 @@ service cloud.firestore {
     }
 
     match /site_settings/{docId} {
+      // AI 프롬프트, 금칙어, 비용 설정 등 운영 내부값은 관리자만 읽는다.
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /site_public/{docId} {
       allow read: if true;
       allow write: if isAdmin();
     }

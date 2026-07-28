@@ -1,5 +1,7 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
+const { requireVerifiedUser } = require('./security');
+const { inspectContent } = require('./content-safety');
 
 const db = getFirestore();
 const REGION = 'asia-northeast3';
@@ -8,14 +10,6 @@ const DEFAULT_DAILY_LIMIT = 3;
 const DEFAULT_COOLDOWN_SEC = 45;
 const NICK_ADJ = ['억울한','분노한','황당한','지친','당황한','슬픈','안타까운','기막힌'];
 const NICK_NOUN = ['직장인','집사','아무개','라면러버','과자지킴이','충전기수호자','리모컨분실자','냉장고파수꾼'];
-
-function requireRealLogin(request) {
-  if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
-  const provider = request.auth.token.firebase?.sign_in_provider || '';
-  if (provider === 'anonymous') {
-    throw new HttpsError('unauthenticated', '사건 접수는 구글 또는 이메일 로그인 후 이용할 수 있습니다.');
-  }
-}
 
 function textValue(value, maxLen) {
   return String(value || '')
@@ -86,16 +80,20 @@ exports.submitCase = onCall({
   timeoutSeconds: 30,
   memory: '256MiB'
 }, async request => {
-  requireRealLogin(request);
+  requireVerifiedUser(request);
 
   const uid = request.auth.uid;
   const data = request.data || {};
   const desc = textValue(data.caseDescription, MAX_DESC);
-  const isPublic = boolValue(data.isPublic, true);
+  const isPublic = boolValue(data.isPublic, false);
   const profileNickname = await loadUserNickname(uid);
 
   if (desc.length < 10) {
     throw new HttpsError('invalid-argument', '사건 내용을 10자 이상 적어주세요.');
+  }
+  const safety = inspectContent(desc);
+  if (!safety.safe) {
+    throw new HttpsError('failed-precondition', safety.message);
   }
 
   const settings = await loadSettings();

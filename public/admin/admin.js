@@ -283,6 +283,8 @@ async function tabSite(el) {
     <form id="site-form">
       <div class="form-group"><label class="form-label">일일 접수 한도</label><input type="number" id="dl" class="form-input" value="${escapeAttr(d.dailyLimit || 3)}" min="1" max="20"></div>
       <div class="form-group"><label class="form-label">재접수 대기시간(초)</label><input type="number" id="cd" class="form-input" value="${escapeAttr(d.cooldownSec || 45)}" min="0" max="300"></div>
+      <div class="form-group"><label class="form-label">전체 Gemini 일일 요청 한도</label><input type="number" id="gdl" class="form-input" value="${escapeAttr(d.globalAiDailyLimit ?? 100)}" min="1" max="10000"></div>
+      <div class="form-group"><label class="form-label">계정당 Gemini 일일 요청 한도</label><input type="number" id="udl" class="form-input" value="${escapeAttr(d.userAiDailyLimit ?? 12)}" min="1" max="100"></div>
       <div class="form-group"><label class="form-label">Gemini 입력 단가 ($/1M 토큰)</label><input type="number" step="0.001" id="gip" class="form-input" value="${escapeAttr(d.geminiInputPricePerM ?? 0.075)}"></div>
       <div class="form-group"><label class="form-label">Gemini 출력 단가 ($/1M 토큰)</label><input type="number" step="0.001" id="gop" class="form-input" value="${escapeAttr(d.geminiOutputPricePerM ?? 0.30)}"></div>
       <div class="form-group"><label class="form-label">원-달러 환율</label><input type="number" id="krw" class="form-input" value="${escapeAttr(d.krwUsdRate ?? 1400)}"></div>
@@ -291,15 +293,26 @@ async function tabSite(el) {
     </form>`;
   document.getElementById('site-form').onsubmit = async e => {
     e.preventDefault();
-    await setDoc(doc(db, 'site_settings', 'config'), {
-      dailyLimit: parseInt(document.getElementById('dl').value, 10),
-      cooldownSec: parseInt(document.getElementById('cd').value, 10),
+    const dailyLimit = parseInt(document.getElementById('dl').value, 10);
+    const cooldownSec = parseInt(document.getElementById('cd').value, 10);
+    await Promise.all([
+      setDoc(doc(db, 'site_settings', 'config'), {
+      dailyLimit,
+      cooldownSec,
+      globalAiDailyLimit: parseInt(document.getElementById('gdl').value, 10),
+      userAiDailyLimit: parseInt(document.getElementById('udl').value, 10),
       geminiInputPricePerM: parseFloat(document.getElementById('gip').value),
       geminiOutputPricePerM: parseFloat(document.getElementById('gop').value),
       krwUsdRate: parseFloat(document.getElementById('krw').value),
       monthlyBudgetKrw: parseFloat(document.getElementById('budget').value),
       updatedAt: serverTimestamp(),
-    }, { merge: true });
+      }, { merge: true }),
+      setDoc(doc(db, 'site_public', 'config'), {
+        dailyLimit,
+        cooldownSec,
+        updatedAt: serverTimestamp()
+      }, { merge: true })
+    ]);
     toast('저장되었습니다.', 'success');
   };
 }
@@ -309,14 +322,23 @@ async function tabBiz(el) {
   const biz = snap.exists() ? (snap.data().businessInfo || {}) : {};
   const fields = [['companyName','사업자명'],['ceoName','대표자명'],['businessNumber','사업자등록번호'],['contact','연락처'],['email','이메일'],['address','주소']];
   el.innerHTML = `<form id="biz-form">${fields.map(([k,l]) => `<div class="form-group"><label class="form-label">${l}</label><input type="text" id="b_${k}" class="form-input" value="${escapeAttr(biz[k] || '')}"></div>`).join('')}<button type="submit" class="btn btn-primary">저장</button></form>`;
-  document.getElementById('biz-form').onsubmit = async e => { e.preventDefault(); const businessInfo = {}; fields.forEach(([k]) => businessInfo[k] = document.getElementById(`b_${k}`).value.trim()); await setDoc(doc(db, 'site_settings', 'config'), { businessInfo, updatedAt: serverTimestamp() }, { merge: true }); toast('저장되었습니다.', 'success'); };
+  document.getElementById('biz-form').onsubmit = async e => {
+    e.preventDefault();
+    const businessInfo = {};
+    fields.forEach(([k]) => businessInfo[k] = document.getElementById(`b_${k}`).value.trim());
+    await Promise.all([
+      setDoc(doc(db, 'site_settings', 'config'), { businessInfo, updatedAt: serverTimestamp() }, { merge: true }),
+      setDoc(doc(db, 'site_public', 'config'), { businessInfo, updatedAt: serverTimestamp() }, { merge: true })
+    ]);
+    toast('저장되었습니다.', 'success');
+  };
 }
 
 async function tabPolicy(el) {
   const types = [['terms','이용약관'],['privacy','개인정보처리방침'],['ai_disclaimer','AI 서비스 안내']];
   const defaults = {
-    terms: '소소킹 판결소 이용약관\n\n제1조 목적\n본 약관은 소소킹 판결소가 제공하는 AI 기반 생활판결 오락 서비스의 이용 조건을 정합니다.\n\n제2조 서비스 성격\n본 서비스는 사용자가 입력한 사소한 생활형 사건을 AI가 판결문 형식의 콘텐츠로 생성하는 오락 서비스입니다. 생성된 내용은 실제 법률 자문, 법원 판결, 분쟁 해결 결과가 아닙니다.\n\n제3조 회원 이용\n사건 접수와 내 사건 관리는 로그인 후 이용할 수 있습니다. 사용자는 실명, 연락처, 주민등록번호, 주소 등 민감한 개인정보를 입력하지 않아야 합니다.\n\n제4조 공개 판결기록\n사용자가 공개를 선택한 판결문은 공개 판결기록에 표시될 수 있습니다. 사용자는 언제든지 공개 상태를 변경할 수 있습니다.\n\n제5조 금지 행위\n타인의 권리를 침해하는 내용, 개인정보, 악의적 명령문, 서비스 운영을 방해하는 행위는 제한될 수 있습니다.\n\n제6조 책임 제한\n본 서비스의 AI 생성물은 오락 목적 콘텐츠이며 실제 판단 자료로 사용할 수 없습니다.',
-    privacy: '소소킹 판결소 개인정보처리방침\n\n1. 처리 목적\n소소킹 판결소는 회원 로그인, 사건 접수, 판결문 생성, 내 사건 확인, 공개 판결기록 운영을 위해 필요한 정보를 처리합니다.\n\n2. 처리 항목\nFirebase 인증 정보, 이메일, 닉네임, 프로필 이미지, 사용자가 입력한 사건명·사건 경위·원하는 판결, 생성된 판결문, 공개 여부, 투표 및 댓글 정보가 처리될 수 있습니다.\n\n3. 보관 및 삭제\n사용자 사건과 판결기록은 서비스 제공을 위해 보관되며, 관리자가 삭제하거나 사용자가 공개 상태를 변경할 수 있습니다.\n\n4. 제3자 서비스\n본 서비스는 Firebase 및 Gemini API를 사용합니다. AI 생성을 위해 입력 내용 일부가 AI 처리에 사용될 수 있습니다.\n\n5. 개인정보 입력 주의\n사용자는 사건 내용에 실명, 연락처, 주소, 계좌번호, 주민등록번호 등 개인정보를 입력하지 않아야 합니다.\n\n6. 문의\n사업자 정보 또는 사이트 하단에 기재된 연락처를 통해 개인정보 관련 문의를 접수할 수 있습니다.',
+    terms: '소소킹 판결소 이용약관\n\n제1조 목적\n본 약관은 소소킹 판결소가 제공하는 AI 기반 생활판결 오락 서비스의 이용 조건을 정합니다.\n\n제2조 서비스 성격\n본 서비스는 사용자가 입력한 사소한 생활형 사건을 AI가 판결문 형식의 콘텐츠로 생성하는 오락 서비스입니다. 생성된 내용은 실제 법률 자문, 법원 판결, 분쟁 해결 결과가 아닙니다.\n\n제3조 회원 이용\n사건 접수와 내 사건 관리는 로그인 후 이용할 수 있습니다. 사용자는 실명, 연락처, 주민등록번호, 주소 등 개인정보를 입력하지 않아야 합니다.\n\n제4조 공개 판결기록\n사건과 판결문은 기본적으로 비공개입니다. 사용자가 공개 동의 항목을 직접 선택하거나 결과 화면에서 공개로 전환한 경우 닉네임·사건 내용·AI 판결문이 다른 로그인 이용자에게 표시될 수 있습니다. 사용자는 언제든지 다시 비공개로 변경할 수 있습니다.\n\n제5조 금지 행위\n타인의 권리를 침해하는 내용, 개인정보, 악의적 명령문, 서비스 운영을 방해하는 행위는 제한될 수 있습니다.\n\n제6조 책임 제한\n본 서비스의 AI 생성물은 오락 목적 콘텐츠이며 실제 판단 자료로 사용할 수 없습니다.',
+    privacy: '소소킹 판결소 개인정보처리방침\n\n시행일: 2026년 7월 28일\n\n1. 처리 항목\nFirebase 인증 UID, 이메일, 로그인 제공자, 이메일 인증 여부, 닉네임, 프로필 이미지 정보, 사건 내용, 공개 여부, 생성된 판결문, 투표·댓글·신고 정보, 접수 및 AI 요청 횟수와 오류·사용량 기록을 처리할 수 있습니다.\n\n2. 처리 목적\n회원 인증과 내 사건 관리, AI 판결 생성, 이용자가 선택한 공개 판결기록 제공, 투표·댓글 운영, 개인정보·고위험 내용·시스템 공격성 문장 탐지, 중복 요청과 비정상 이용 방지를 위해 처리합니다.\n\n3. 공개 범위\n사건과 판결문은 기본적으로 비공개입니다. 이용자가 직접 공개를 선택한 경우 닉네임·사건 내용·AI 판결문이 표시됩니다. 인증 UID와 이메일은 공개 판결문 및 공개 댓글에 포함하지 않습니다.\n\n4. 외부 서비스\nFirebase와 Gemini API를 사용합니다. AI 판결 생성 시 입력한 사건 내용이 Gemini API로 전송되어 Google의 서비스 환경에서 처리될 수 있습니다.\n\n5. 보관 및 권리\n정보는 서비스 제공과 내 사건 관리를 위해 보관됩니다. 이용자는 공개 여부를 변경할 수 있으며, 열람·정정·삭제·처리정지 요청은 사이트 하단 운영자 연락처로 문의할 수 있습니다.\n\n6. 안전조치\nFirestore 보안 규칙, 서버 전용 쓰기, 이메일 인증 및 요청 횟수 제한을 적용합니다. 사건·항소 이유·공개 댓글은 저장 또는 AI 전송 전에 개인정보와 고위험 표현 등을 자동 검사하며 접수가 제한될 수 있습니다. App Check 활성화 시 reCAPTCHA 기반 토큰이 처리될 수 있습니다.\n\n7. 개인정보 입력 주의\n사건 내용에 실명, 연락처, 주소, 계좌번호, 주민등록번호 등 개인정보를 입력하지 않아야 합니다.',
     ai_disclaimer: 'AI 서비스 이용 안내\n\n소소킹 판결소의 판결문은 AI가 생성한 오락 콘텐츠입니다. 실제 법률 자문, 소송 조언, 법원 판결, 행정기관 결정이 아닙니다.\n\nAI는 사용자의 입력을 바탕으로 접수계, 조사관, 원고 측, 피고 측, 판사 판결문, 생활형 처분 형식의 글을 생성합니다. 생성 결과는 부정확하거나 과장될 수 있습니다.\n\n실제 법적 문제, 손해배상, 형사 사건, 계약 분쟁, 가족 문제, 노동 문제 등은 변호사, 대한법률구조공단, 관계 기관 등 전문가에게 상담해야 합니다.\n\n공개 판결기록에 공개하기 전 개인정보나 타인의 명예를 침해할 수 있는 표현이 포함되어 있지 않은지 확인해야 합니다.'
   };
   const snaps = await Promise.all(types.map(([t]) => getDoc(doc(db, 'policy_docs', t))));
