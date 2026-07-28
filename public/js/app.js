@@ -1,17 +1,17 @@
 import { initAuth } from './firebase.js?v=20260728-audit-1';
-import { renderHome } from './pages/home-court.js?v=20260728-exact-logo-1';
+import { renderHome } from './pages/home-court.js?v=20260728-ui-audit-2';
 import { renderSubmit } from './pages/submit-guard.js?v=20260728-audit-1';
 import { renderTrial } from './pages/trial-game.js?v=20260728-audit-1';
 import { renderResult } from './pages/result-court.js?v=20260728-audit-1';
 import { renderPolicy } from './pages/policy.js?v=20260630-3';
 import { renderMyCases } from './pages/my-cases-game.js?v=20260630-22';
 import { renderGuide } from './pages/guide.js?v=20260728-audit-1';
-import { renderAuth } from './pages/auth2.js?v=20260630-23';
+import { renderAuth } from './pages/auth2.js?v=20260728-ui-audit-2';
 import { renderBoard } from './pages/board-court.js?v=20260728-logo-cleanup-1';
 import { renderFooter } from './components/footer.js?v=20260728-logo-cleanup-1';
-import { initTheme } from './components/theme.js?v=20260630-10';
-import { initCourtDesign } from './components/court-design.js?v=20260728-audit-1';
-import { renderThemePreference } from './components/theme-preference.js?v=20260630-12';
+import { initTheme } from './components/theme.js?v=20260728-ui-audit-2';
+import { initCourtDesign } from './components/court-design.js?v=20260728-ui-audit-2';
+import { renderThemePreference } from './components/theme-preference.js?v=20260728-ui-audit-2';
 import { renderNav } from './components/nav.js?v=20260630-8';
 
 let routeSequence = 0;
@@ -26,12 +26,8 @@ function normalizedRoute() {
     if (path === '/guide') return '#/guide';
     if (path === '/auth') return '#/auth';
     if (path === '/my-cases') return '#/my-cases';
-    if (path.startsWith('/result/')) {
-      return `#/result/${encodeURIComponent(decodeURIComponent(path.replace('/result/', '')))}`;
-    }
-    if (path.startsWith('/trial/')) {
-      return `#/trial/${encodeURIComponent(decodeURIComponent(path.replace('/trial/', '')))}`;
-    }
+    if (path.startsWith('/result/')) return `#/result/${encodeURIComponent(decodeURIComponent(path.replace('/result/', '')))}`;
+    if (path.startsWith('/trial/')) return `#/trial/${encodeURIComponent(decodeURIComponent(path.replace('/trial/', '')))}`;
   }
   return hash || '#/';
 }
@@ -53,11 +49,8 @@ function renderRouteError(content) {
 async function route() {
   const sequence = ++routeSequence;
   if (window._pageCleanup) {
-    try {
-      window._pageCleanup();
-    } catch (err) {
-      console.warn('page cleanup failed:', err);
-    }
+    try { window._pageCleanup(); }
+    catch (err) { console.warn('page cleanup failed:', err); }
     window._pageCleanup = null;
   }
 
@@ -68,30 +61,19 @@ async function route() {
 
   try {
     let renderTask;
-    if (hash === '#/' || hash === '' || hash === '#') {
-      renderTask = renderHome(content);
-    } else if (hash === '#/submit') {
-      renderTask = renderSubmit(content);
-    } else if (hash.startsWith('#/trial/')) {
-      renderTask = renderTrial(content, decodeURIComponent(hash.replace('#/trial/', '')));
-    } else if (hash.startsWith('#/result/')) {
-      renderTask = renderResult(content, decodeURIComponent(hash.replace('#/result/', '')));
-    } else if (hash.startsWith('#/policy/')) {
-      renderTask = renderPolicy(content, hash.replace('#/policy/', ''));
-    } else if (hash === '#/my-cases') {
-      renderTask = renderMyCases(content);
-    } else if (hash === '#/guide') {
-      renderTask = renderGuide(content);
-    } else if (hash === '#/auth') {
+    if (hash === '#/' || hash === '' || hash === '#') renderTask = renderHome(content);
+    else if (hash === '#/submit') renderTask = renderSubmit(content);
+    else if (hash.startsWith('#/trial/')) renderTask = renderTrial(content, decodeURIComponent(hash.replace('#/trial/', '')));
+    else if (hash.startsWith('#/result/')) renderTask = renderResult(content, decodeURIComponent(hash.replace('#/result/', '')));
+    else if (hash.startsWith('#/policy/')) renderTask = renderPolicy(content, hash.replace('#/policy/', ''));
+    else if (hash === '#/my-cases') renderTask = renderMyCases(content);
+    else if (hash === '#/guide') renderTask = renderGuide(content);
+    else if (hash === '#/auth') {
       renderTask = renderAuth(content);
       setTimeout(renderThemePreference, 80);
-    } else if (hash === '#/board') {
-      renderTask = renderBoard(content);
-    } else {
-      renderTask = renderHome(content);
-    }
+    } else if (hash === '#/board') renderTask = renderBoard(content);
+    else renderTask = renderHome(content);
 
-    // 각 화면이 장시간 네트워크 작업을 수행해도 하단 메뉴는 즉시 표시한다.
     renderNav();
     await renderTask;
   } catch (err) {
@@ -109,11 +91,8 @@ window.addEventListener('popstate', route);
 (async () => {
   initTheme();
   initCourtDesign();
-  try {
-    await initAuth();
-  } catch (err) {
-    console.error('initial authentication failed:', err);
-  }
+  try { await initAuth(); }
+  catch (err) { console.error('initial authentication failed:', err); }
   renderFooter();
   await route();
 })();
