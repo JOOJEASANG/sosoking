@@ -118,6 +118,11 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // 댓글 작성자 UID는 공개 댓글 문서와 분리하며 서버와 관리자 작업에서만 사용한다.
+    match /court_comment_authors/{caseId}/items/{commentId} {
+      allow read, write: if false;
+    }
+
     match /usage_stats/{docId} {
       allow read: if isAdmin();
       allow write: if false;
@@ -126,6 +131,10 @@ service cloud.firestore {
     match /rate_limits/{userId} {
       allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
       allow write: if false;
+    }
+
+    match /action_limits/{limitId} {
+      allow read, write: if false;
     }
 
     match /ai_limits/{dailyId} {
@@ -139,15 +148,13 @@ service cloud.firestore {
     }
 
     match /reports/{reportId} {
-      allow create: if signedIn()
-        && request.resource.data.keys().hasOnly(['caseId', 'reason', 'status', 'createdAt', 'userId'])
-        && request.resource.data.userId == request.auth.uid
-        && request.resource.data.caseId is string
-        && request.resource.data.reason is string
-        && request.resource.data.reason.size() > 0
-        && request.resource.data.reason.size() <= 300
-        && request.resource.data.status == 'pending';
+      // 신고 생성은 로그인·중복·횟수 제한을 수행하는 submitReport 함수만 사용한다.
+      allow create: if false;
       allow read, update, delete: if isAdmin();
+    }
+
+    match /report_keys/{keyId} {
+      allow read, write: if false;
     }
 
     match /site_settings/{docId} {
