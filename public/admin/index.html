@@ -22,7 +22,7 @@
     .admin-table th,.admin-table td{border-bottom:1px solid var(--border);padding:9px 7px;text-align:left;vertical-align:top;}
     .admin-table th{color:var(--gold);font-size:11px;white-space:nowrap;}
     .admin-actions{display:flex;gap:5px;flex-wrap:wrap;}
-    .admin-btn{border:1px solid var(--border);background:var(--surface-soft);color:var(--cream-dim);border-radius:6px;padding:5px 8px;font-size:11px;cursor:pointer;}
+    .admin-btn{display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--border);background:var(--surface-soft);color:var(--cream-dim);border-radius:6px;padding:5px 8px;font-size:11px;cursor:pointer;}
     .admin-btn.gold{border-color:var(--gold);color:var(--gold);}
     .admin-btn.red{border-color:var(--red);color:var(--red);}
     .admin-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}
@@ -31,8 +31,7 @@
 </head>
 <body>
   <div id="admin-app"><div id="admin-content"></div></div>
-  <div id="toast-container"></div>
-  <!-- /admin/admin-enhancements.js is loaded only after strict Firestore admin authorization. -->
-  <script type="module" src="/admin/admin-bootstrap.js?v=20260729-script-csp-1"></script>
+  <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+  <script type="module" src="/admin/admin-bootstrap.js?v=20260729-admin-consolidated-1"></script>
 </body>
 </html>
