@@ -27,11 +27,20 @@ checkPng('public/icons/sosoking-192.png', 192, 192);
 checkPng('public/icons/sosoking-512.png', 512, 512);
 
 const home = read('public/js/pages/home-court.js');
-if (!home.includes('/icons/sosoking-512.png?v=20260728-ui-audit-2')) {
-  errors.push('home-court.js: current 512px logo path is missing');
+if (!home.includes('/logo.svg?v=20260729-logo-feed-1')) {
+  errors.push('home-court.js: current SVG logo path is missing');
 }
 if (!home.includes('logo.onerror')) {
   errors.push('home-court.js: logo fallback handler is missing');
+}
+
+const homeBase = read('public/js/pages/home.js');
+const board = read('public/js/pages/board.js');
+if (!homeBase.includes('r.sentence || r.caseDescription || r.verdict')) {
+  errors.push('home.js: public user-case excerpt fallback is missing');
+}
+if ((board.match(/r\.sentence \|\| r\.caseDescription \|\| r\.verdict/g) || []).length < 2) {
+  errors.push('board.js: public user-case excerpts are not rendered consistently');
 }
 
 const theme = read('public/js/components/theme.js');
