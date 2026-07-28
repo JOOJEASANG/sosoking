@@ -1,5 +1,5 @@
 import { initAuth } from './firebase.js?v=20260728-audit-1';
-import { renderHome } from './pages/home-court.js?v=20260728-audit-1';
+import { renderHome } from './pages/home-court.js?v=20260728-seed-seo-1';
 import { renderSubmit } from './pages/submit-guard.js?v=20260728-audit-1';
 import { renderTrial } from './pages/trial-game.js?v=20260728-audit-1';
 import { renderResult } from './pages/result-court.js?v=20260728-audit-1';
@@ -7,8 +7,8 @@ import { renderPolicy } from './pages/policy.js?v=20260630-3';
 import { renderMyCases } from './pages/my-cases-game.js?v=20260630-22';
 import { renderGuide } from './pages/guide.js?v=20260728-audit-1';
 import { renderAuth } from './pages/auth2.js?v=20260630-23';
-import { renderBoard } from './pages/board-court.js?v=20260728-audit-1';
-import { renderFooter } from './components/footer.js?v=20260630-3';
+import { renderBoard } from './pages/board-court.js?v=20260728-seed-seo-1';
+import { renderFooter } from './components/footer.js?v=20260728-seed-seo-1';
 import { initTheme } from './components/theme.js?v=20260630-10';
 import { initCourtDesign } from './components/court-design.js?v=20260728-audit-1';
 import { renderThemePreference } from './components/theme-preference.js?v=20260630-12';
@@ -91,7 +91,6 @@ async function route() {
       renderTask = renderHome(content);
     }
 
-    // 각 화면이 장시간 네트워크 작업을 수행해도 하단 메뉴는 즉시 표시한다.
     renderNav();
     await renderTask;
   } catch (err) {

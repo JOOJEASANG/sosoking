@@ -22,5 +22,28 @@ jobs:
       - name: Install Functions dependencies
         run: npm ci --prefix functions --no-audit --no-fund
 
-      - name: Run repository checks
-        run: npm run check
+      - name: Build SEO case pages
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run build:seo 2>&1 | tee seo-build.log
+
+      - name: Upload SEO build failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: seo-build-diagnostics
+          path: |
+            seo-build.log
+            data/creative-cases-v1.b64
+          if-no-files-found: error
+          retention-days: 3
+
+      - name: Check creative seed script syntax
+        run: node --check tools/seed-creative-cases.mjs
+
+      - name: Validate creative seed and SEO files
+        run: node tools/check-seo-seed.mjs
+
+      - name: Validate repository structure
+        run: node tools/check-project.mjs
