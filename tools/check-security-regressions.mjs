@@ -104,8 +104,51 @@ if (!publicStats.includes("schedule: 'every 30 minutes'")) {
   errors.push('functions/public-stats.js: recurring public statistics refresh is missing');
 }
 
+const migration = read('functions/legacy-case-migration.js');
+if (!migration.includes("db.doc(`case_id_aliases/${legacyIdHash(caseId)}`)")) {
+  errors.push('functions/legacy-case-migration.js: hashed legacy alias document is missing');
+}
+const aliasPayload = migration.match(/tx\.set\(aliasRef,\s*\{([\s\S]*?)\}\);/)?.[1] || '';
+if (!aliasPayload || /\b(?:caseId|oldCaseId)\b/.test(aliasPayload)) {
+  errors.push('functions/legacy-case-migration.js: raw legacy case ID is persisted in the alias document');
+}
+for (const path of ['result_reactions', 'court_comments', 'court_comment_authors', 'reports', 'report_keys']) {
+  if (!migration.includes(path)) {
+    errors.push(`functions/legacy-case-migration.js: ${path} relationships are not migrated`);
+  }
+}
+if (!migration.includes("data.status === 'completed'") || !migration.includes("caseId.startsWith(`${uid}_`)")) {
+  errors.push('functions/legacy-case-migration.js: legacy UID case eligibility check is missing');
+}
+if (!migration.includes("status: 'completed'") || !migration.includes('removeLegacyDocuments(oldCaseId)')) {
+  errors.push('functions/legacy-case-migration.js: alias completion or old document cleanup is missing');
+}
+
+const aliasFunctions = read('functions/case-aliases.js');
+if (!aliasFunctions.includes('exports.resolveCaseAlias') || !aliasFunctions.includes('exports.migrateLegacyCaseIds')) {
+  errors.push('functions/case-aliases.js: resolver or admin migration callable is missing');
+}
+if (!aliasFunctions.includes('request.data?.dryRun !== false')
+  || !aliasFunctions.includes("request.data?.confirm !== 'MIGRATE_LEGACY_CASE_IDS'")) {
+  errors.push('functions/case-aliases.js: migration must default to dry-run and require explicit confirmation');
+}
+if (!aliasFunctions.includes('isAdminAuth(request.auth)')) {
+  errors.push('functions/case-aliases.js: migration callable lacks server-side administrator authorization');
+}
+if (!aliasFunctions.includes("enforceActionRateLimit(request.auth.uid, 'case-alias-resolve'")) {
+  errors.push('functions/case-aliases.js: public alias resolver abuse limit is missing');
+}
+
+const migrationCli = read('functions/migrate-legacy-case-ids-cli.js');
+if (!migrationCli.includes("CONFIRM_LEGACY_CASE_MIGRATION !== 'MIGRATE_LEGACY_CASE_IDS'")) {
+  errors.push('functions/migrate-legacy-case-ids-cli.js: apply mode confirmation guard is missing');
+}
+if (migrationCli.includes('console.log(candidate.caseId)')) {
+  errors.push('functions/migrate-legacy-case-ids-cli.js: raw legacy ID is written to workflow logs');
+}
+
 const main = read('functions/main.js');
-for (const moduleName of ['./admin-visibility', './reports', './public-stats']) {
+for (const moduleName of ['./admin-visibility', './reports', './public-stats', './case-aliases']) {
   if (!main.includes(`require('${moduleName}')`)) {
     errors.push(`functions/main.js: ${moduleName} module is not exported`);
   }
@@ -122,11 +165,18 @@ if (!adminVisibility.includes('inspectContent(publicResultText')) {
   errors.push('functions/admin-visibility.js: administrator public content safety gate is missing');
 }
 
+const adminActions = read('functions/admin-actions.js');
+for (const item of ['court_comment_authors', 'report_keys', 'case_id_aliases']) {
+  if (!adminActions.includes(item)) {
+    errors.push(`functions/admin-actions.js: cascade deletion omits ${item}`);
+  }
+}
+
 const rules = read('firestore.rules');
 if (!/match \/reports\/\{reportId\}[\s\S]*allow create: if false;/.test(rules)) {
   errors.push('firestore.rules: direct report creation is still allowed');
 }
-for (const privatePath of ['court_comment_authors', 'action_limits', 'report_keys']) {
+for (const privatePath of ['court_comment_authors', 'action_limits', 'report_keys', 'case_id_aliases']) {
   if (!rules.includes(`match /${privatePath}/`)) {
     errors.push(`firestore.rules: explicit private rule is missing for ${privatePath}`);
   }
@@ -138,6 +188,19 @@ if (!homeCourt.includes("doc(db, 'site_public', 'statistics')")) {
 }
 if (!homeCourt.includes("countElement.id = 'public-stat-count'")) {
   errors.push('public/js/pages/home-court.js: legacy unauthorized count and fake animation are not disabled');
+}
+
+const resultCourt = read('public/js/pages/result-court.js');
+if (!resultCourt.includes("httpsCallable(functions, 'resolveCaseAlias')") || !resultCourt.includes('location.replace')) {
+  errors.push('public/js/pages/result-court.js: migrated legacy URLs are not redirected');
+}
+
+const policy = read('public/js/pages/policy.js');
+if (!policy.includes('신규 사건의 공개 주소 식별자에는 인증 UID를 포함하지 않습니다.')) {
+  errors.push('public/js/pages/policy.js: opaque public address policy disclosure is missing');
+}
+if (policy.includes('입력하신 사건 내용은 AI 판결 생성 목적으로만 사용되며')) {
+  errors.push('public/js/pages/policy.js: obsolete exclusive AI-use claim remains');
 }
 
 const app = read('public/js/app.js');
@@ -167,7 +230,14 @@ if (!adminOverrides.includes("httpsCallable(functions, 'setAdminResultVisibility
 }
 
 const deploy = read('.github/workflows/firebase-deploy.yml');
-for (const fn of ['setAdminResultVisibility', 'submitReport', 'syncPublicStats', 'syncPublicStatsNow']) {
+for (const fn of [
+  'setAdminResultVisibility',
+  'submitReport',
+  'syncPublicStats',
+  'syncPublicStatsNow',
+  'resolveCaseAlias',
+  'migrateLegacyCaseIds'
+]) {
   if (!deploy.includes(`functions:${fn}`)) {
     errors.push(`.github/workflows/firebase-deploy.yml: ${fn} function is not deployed`);
   }
@@ -184,10 +254,21 @@ if (!deploy.includes('App Check enforcement cannot be enabled while appCheckSite
   errors.push('.github/workflows/firebase-deploy.yml: App Check lockout guard is missing');
 }
 
+const migrationWorkflow = read('.github/workflows/migrate-legacy-case-ids.yml');
+if (!migrationWorkflow.includes('workflow_dispatch:')
+  || migrationWorkflow.includes('\n  push:')
+  || migrationWorkflow.includes('\n  pull_request:')) {
+  errors.push('.github/workflows/migrate-legacy-case-ids.yml: migration must be manual-only');
+}
+if (!migrationWorkflow.includes('refs/heads/main')
+  || !migrationWorkflow.includes('MIGRATE_LEGACY_CASE_IDS')) {
+  errors.push('.github/workflows/migrate-legacy-case-ids.yml: apply mode branch or confirmation guard is missing');
+}
+
 if (errors.length) {
   console.error(`Security regression validation failed (${errors.length})`);
   errors.forEach(error => console.error(`- ${error}`));
   process.exit(1);
 }
 
-console.log('Security regression validation passed: privacy, abuse limits, AI accounting, publication moderation, and authoritative public statistics.');
+console.log('Security regression validation passed: privacy, legacy ID migration, abuse limits, AI accounting, and publication moderation.');
