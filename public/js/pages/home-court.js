@@ -24,6 +24,24 @@ function addCourtEntrance(container) {
     </div>`);
 }
 
+function addCreativeArchive(container) {
+  const entrance = document.getElementById('court-entrance');
+  if (!entrance || document.getElementById('creative-case-archive')) return;
+
+  entrance.insertAdjacentHTML('afterend', `
+    <div class="container" id="creative-case-archive" style="margin-top:14px;">
+      <a href="/cases/" class="court-shell" style="display:flex;align-items:center;gap:14px;padding:17px 18px;text-decoration:none;">
+        <div class="court-seal" style="width:50px;height:50px;font-size:23px;flex-shrink:0;" aria-hidden="true">📚</div>
+        <div style="flex:1;min-width:0;">
+          <div class="court-kicker">CREATIVE CASE ARCHIVE</div>
+          <div class="court-title" style="font-size:18px;">창작 생활사건 120선</div>
+          <div class="court-desc">가족·친구·회사·음식·반려동물까지 분야별 문서형 판결을 둘러보세요.</div>
+        </div>
+        <span style="color:var(--gold);font-size:22px;" aria-hidden="true">›</span>
+      </a>
+    </div>`);
+}
+
 function addProcedureSeal(container) {
   const target = Array.from(container.querySelectorAll('.container'))
     .find(element => element.textContent.includes('재판 진행 순서'));
@@ -73,6 +91,7 @@ function fixLegacyHomeCopy(container) {
 export async function renderHome(container) {
   await renderBaseHome(container);
   addCourtEntrance(container);
+  addCreativeArchive(container);
   addProcedureSeal(container);
   fixLegacyHomeCopy(container);
 }
