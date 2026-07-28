@@ -21,22 +21,7 @@
   <meta name="twitter:description" content="사소한 억울함을 실제 문서처럼 진지하고 웃기게 판결합니다.">
   <meta name="twitter:image" content="https://sosoking.co.kr/og-image.svg?v=20260728-audit-1">
 
-  <script>
-    (function() {
-      var saved = 'system';
-      try {
-        var candidate = localStorage.getItem('theme');
-        if (candidate === 'light' || candidate === 'dark' || candidate === 'system') saved = candidate;
-      } catch (error) {
-        saved = 'system';
-      }
-      var isLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
-      var resolved = saved === 'light' || saved === 'dark' ? saved : (isLight ? 'light' : 'dark');
-      document.documentElement.setAttribute('data-theme', resolved);
-      document.documentElement.setAttribute('data-theme-choice', saved);
-      document.documentElement.style.colorScheme = resolved;
-    })();
-  </script>
+  <script src="/js/theme-init.js?v=20260729-script-csp-1"></script>
 
   <link rel="icon" href="/icons/sosoking-192.png?v=20260728-pwa-install-1" type="image/png" sizes="192x192">
   <link rel="shortcut icon" href="/icons/sosoking-192.png?v=20260728-pwa-install-1" type="image/png">
@@ -56,6 +41,6 @@
     <footer id="site-footer"></footer>
   </div>
   <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
-  <script type="module" src="/js/app.js?v=20260729-legacy-id-policy-1"></script>
+  <script type="module" src="/js/app.js?v=20260729-script-csp-1"></script>
 </body>
 </html>

@@ -15,7 +15,8 @@ const authoritativeAdminFiles = [
   'functions/admin-utils.js',
   'firestore.rules',
   'public/js/components/admin-redirect.js',
-  'public/admin/admin-bootstrap.js'
+  'public/admin/admin-bootstrap.js',
+  'public/admin/admin.js'
 ];
 for (const file of authoritativeAdminFiles) {
   const source = read(file);

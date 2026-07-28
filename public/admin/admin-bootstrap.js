@@ -61,9 +61,9 @@ async function isAdmin(user) {
 async function loadAdminModules() {
   if (adminModulesLoaded) return;
   adminModulesLoaded = true;
-  await import('./admin.js?v=20260729-admin-authz-1');
-  await import('./admin-enhancements.js?v=20260729-admin-authz-1');
-  await import('./admin-security-overrides.js?v=20260729-admin-authz-1');
+  await import('./admin.js?v=20260729-script-csp-1');
+  await import('./admin-enhancements.js?v=20260729-script-csp-1');
+  await import('./admin-security-overrides.js?v=20260729-script-csp-1');
 }
 
 function renderLogin() {

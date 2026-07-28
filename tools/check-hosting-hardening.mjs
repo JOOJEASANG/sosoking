@@ -9,6 +9,7 @@ for (const header of [
   'Referrer-Policy',
   'Permissions-Policy',
   'Cross-Origin-Opener-Policy',
+  'Content-Security-Policy',
   'Content-Security-Policy-Report-Only'
 ]) {
   if (!firebase.includes(`"key": "${header}"`)) {
@@ -54,12 +55,21 @@ if (!theme.includes('prefers-reduced-motion:reduce') || !theme.includes(':focus-
 }
 
 const index = read('public/index.html');
-if (!/try\s*\{[\s\S]*localStorage\.getItem\('theme'\)[\s\S]*catch/.test(index)) {
-  errors.push('public/index.html: first-paint theme storage access is not guarded');
+const adminIndex = read('public/admin/index.html');
+const themeInit = read('public/js/theme-init.js');
+if (!index.includes('/js/theme-init.js?v=') || !adminIndex.includes('/js/theme-init.js?v=')) {
+  errors.push('public index files: external first-paint theme script is missing');
+}
+if (!/try\s*\{[\s\S]*localStorage\.getItem\('theme'\)[\s\S]*catch/.test(themeInit)) {
+  errors.push('public/js/theme-init.js: first-paint theme storage access is not guarded');
 }
 const appVersion = index.match(/\/js\/app\.js\?v=([^"']+)/)?.[1] || '';
 if (!appVersion || !serviceWorker.includes(`/js/app.js?v=${appVersion}`)) {
   errors.push('public/index.html and public/sw.js: application cache versions are inconsistent');
+}
+const themeVersion = index.match(/\/js\/theme-init\.js\?v=([^"']+)/)?.[1] || '';
+if (!themeVersion || !serviceWorker.includes(`/js/theme-init.js?v=${themeVersion}`)) {
+  errors.push('public/index.html and public/sw.js: theme bootstrap cache versions are inconsistent');
 }
 
 if (errors.length) {
@@ -68,4 +78,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Hosting hardening validation passed: auth-compatible headers, cache policy, service worker, and theme storage.');
+console.log('Hosting hardening validation passed: auth-compatible headers, enforced script CSP, cache policy, and theme storage.');

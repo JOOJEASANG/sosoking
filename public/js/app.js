@@ -1,5 +1,5 @@
 import { initAuth } from './firebase.js?v=20260729-auth-session-1';
-import { renderHome } from './pages/home-court.js?v=20260729-public-stats-1';
+import { renderHome } from './pages/home-court.js?v=20260729-script-csp-1';
 import { renderSubmit } from './pages/submit-guard.js?v=20260728-audit-1';
 import { renderTrial } from './pages/trial-game.js?v=20260728-audit-1';
 import { renderResult } from './pages/result-court.js?v=20260729-legacy-id-1';
@@ -7,7 +7,7 @@ import { renderPolicy } from './pages/policy.js?v=20260729-policy-1';
 import { renderMyCases } from './pages/my-cases-game.js?v=20260630-22';
 import { renderGuide } from './pages/guide.js?v=20260728-audit-1';
 import { renderAuth } from './pages/auth2.js?v=20260729-auth-session-1';
-import { renderBoard } from './pages/board-court.js?v=20260729-logo-feed-1';
+import { renderBoard } from './pages/board-court.js?v=20260729-script-csp-1';
 import { renderFooter } from './components/footer.js?v=20260728-logo-cleanup-1';
 import { initTheme, renderThemeToggle } from './components/theme.js?v=20260729-theme-global-2';
 import { initCourtDesign } from './components/court-design.js?v=20260729-light-cards-1';
@@ -48,10 +48,11 @@ function renderRouteError(content) {
         <div style="font-size:40px;margin-bottom:10px;" aria-hidden="true">🛠️</div>
         <div style="font-family:var(--font-serif);font-size:19px;font-weight:900;color:var(--gold);margin-bottom:8px;">화면을 불러오지 못했습니다</div>
         <div style="font-size:13px;color:var(--cream-dim);line-height:1.75;margin-bottom:18px;">네트워크 상태를 확인한 뒤 다시 시도해주세요.</div>
-        <button type="button" class="btn btn-primary" onclick="location.reload()">새로고침</button>
+        <button type="button" class="btn btn-primary" id="route-reload-btn">새로고침</button>
         <a href="#/" class="btn btn-ghost" style="margin-top:10px;">홈으로 이동</a>
       </div>
     </div>`;
+  content.querySelector('#route-reload-btn')?.addEventListener('click', () => location.reload());
 }
 
 async function route() {

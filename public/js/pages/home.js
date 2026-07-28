@@ -95,17 +95,17 @@ export async function renderHome(container) {
         <div class="section-sub">웃기지만 대충 만들지 않는 생활법정 라인업</div>
 
         <div class="judge-lineup">
-          <div class="judge-card" onclick="location.hash='#/submit'">
+          <a href="#/submit" class="judge-card" style="text-decoration:none;color:inherit;">
             <div class="judge-card-icon">🎲</div>
             <div class="judge-card-name">운명에 맡기기</div>
             <div class="judge-card-desc" style="color:var(--gold);">서버가 점지합니다</div>
-          </div>
+          </a>
           ${JUDGES.map(j => `
-            <div class="judge-card" onclick="location.hash='#/submit'">
+            <a href="#/submit" class="judge-card" style="text-decoration:none;color:inherit;">
               <div class="judge-card-icon">${j.icon}</div>
               <div class="judge-card-name">${escapeHtml(j.name)}</div>
               <div class="judge-card-desc">${escapeHtml(j.desc)}</div>
-            </div>
+            </a>
           `).join('')}
         </div>
       </div>

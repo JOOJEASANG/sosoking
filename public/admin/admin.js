@@ -40,7 +40,7 @@ async function isAdminUser(user) {
     const email = String(user.email || '').trim().toLowerCase();
     if (!email) return false;
     const byEmail = await getDoc(doc(db, 'admins', email));
-    return byEmail.exists() || email === 'sosoday1976@gmail.com';
+    return byEmail.exists();
   } catch {
     return false;
   }
@@ -116,17 +116,21 @@ function renderDashboard() {
         <span class="logo">⚖️ 관리자 대시보드</span>
         <div style="display:flex;gap:10px;align-items:center;">
           <a href="/#/" style="font-size:12px;color:var(--cream-dim);text-decoration:none;">사이트 보기</a>
-          <button onclick="window._logout()" style="background:none;border:none;color:var(--cream-dim);font-size:12px;cursor:pointer;">로그아웃</button>
+          <button type="button" id="admin-logout" style="background:none;border:none;color:var(--cream-dim);font-size:12px;cursor:pointer;">로그아웃</button>
         </div>
       </div>
       <div class="admin-shell">
         <div style="font-size:12px;color:var(--cream-dim);">관리자: ${escapeHtml(currentUser?.email || currentUser?.uid || '-')}</div>
-        <div class="admin-nav">${tabs.map(([id,label]) => `<button class="admin-tab${currentTab === id ? ' active' : ''}" onclick="window._tab('${id}')">${label}</button>`).join('')}</div>
+        <div class="admin-nav">${tabs.map(([id,label]) => `<button type="button" class="admin-tab${currentTab === id ? ' active' : ''}" data-admin-tab="${escapeAttr(id)}">${escapeHtml(label)}</button>`).join('')}</div>
         <div id="tab-content"></div>
       </div>
     </div>`;
   window._logout = async () => signOut(auth);
   window._tab = tab => { currentTab = tab; renderDashboard(); };
+  document.getElementById('admin-logout')?.addEventListener('click', () => window._logout());
+  document.querySelectorAll('[data-admin-tab]').forEach(button => {
+    button.addEventListener('click', () => window._tab(button.dataset.adminTab));
+  });
   loadTab(currentTab);
 }
 
@@ -199,7 +203,7 @@ async function tabRecords(el) {
       <td>${escapeHtml(compactText(c.caseDescription || r.caseDescription || r.sentence || '', 86))}</td>
       <td>${escapeHtml(c.status || r.courtStage || '-')}<div style="font-size:10px;color:var(--cream-dim);margin-top:3px;">${escapeHtml(source)} · ${escapeHtml(r.judgeType || c.judgeType || '-')}</div></td>
       <td>${isPublic ? '공개' : '비공개'}</td>
-      <td><div class="admin-actions"><button class="admin-btn gold" onclick="location.href='/#/result/${escapeAttr(d.id)}'">보기</button><button class="admin-btn" onclick="window._recordPublic('${escapeAttr(d.id)}', ${!isPublic})">${isPublic ? '비공개' : '공개'}</button><button class="admin-btn red" onclick="window._delRecord('${escapeAttr(d.id)}')">삭제</button></div></td>
+      <td><div class="admin-actions"><button type="button" class="admin-btn gold" data-record-action="view" data-case-id="${escapeAttr(d.id)}">보기</button><button type="button" class="admin-btn" data-record-action="visibility" data-case-id="${escapeAttr(d.id)}" data-next-public="${!isPublic ? 'true' : 'false'}">${isPublic ? '비공개' : '공개'}</button><button type="button" class="admin-btn red" data-record-action="delete" data-case-id="${escapeAttr(d.id)}">삭제</button></div></td>
     </tr>`;
   });
   el.innerHTML = `<div class="card" style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-bottom:12px;">사건과 판결기록을 하나의 목록에서 관리합니다. 공개 상태는 <code>cases</code>와 <code>results</code>에 함께 반영됩니다.</div>${tableWrap(['사건·판결기록','내용','상태','공개','관리'], rows)}`;
@@ -216,15 +220,26 @@ async function tabRecords(el) {
     toast('삭제 완료', 'success');
     loadTab('records');
   };
+  el.querySelectorAll('[data-record-action]').forEach(button => {
+    button.addEventListener('click', () => {
+      const id = button.dataset.caseId || '';
+      if (button.dataset.recordAction === 'view') location.href = `/#/result/${encodeURIComponent(id)}`;
+      else if (button.dataset.recordAction === 'visibility') window._recordPublic(id, button.dataset.nextPublic === 'true');
+      else if (button.dataset.recordAction === 'delete') window._delRecord(id);
+    });
+  });
 }
 
 async function tabUsers(el) {
   const snap = await getDocs(query(collection(db, 'users'), orderBy('updatedAt', 'desc'), limit(100)));
   el.innerHTML = tableWrap(['닉네임','이메일','가입방식','관리'], snap.docs.map(d => {
     const u = d.data();
-    return `<tr><td><b>${escapeHtml(u.nickname || '-')}</b><div style="font-size:10px;color:var(--cream-dim);">${escapeHtml(d.id)}</div></td><td>${escapeHtml(u.email || '-')}</td><td>${escapeHtml(u.provider || '-')}</td><td><button class="admin-btn red" onclick="window._delUserProfile('${escapeAttr(d.id)}')">프로필 삭제</button></td></tr>`;
+    return `<tr><td><b>${escapeHtml(u.nickname || '-')}</b><div style="font-size:10px;color:var(--cream-dim);">${escapeHtml(d.id)}</div></td><td>${escapeHtml(u.email || '-')}</td><td>${escapeHtml(u.provider || '-')}</td><td><button type="button" class="admin-btn red" data-delete-user="${escapeAttr(d.id)}">프로필 삭제</button></td></tr>`;
   }));
   window._delUserProfile = async id => { if (!confirm('Auth 계정은 삭제되지 않고 프로필 문서만 삭제됩니다. 계속할까요?')) return; await deleteDoc(doc(db, 'users', id)); toast('프로필 삭제 완료', 'success'); loadTab('users'); };
+  el.querySelectorAll('[data-delete-user]').forEach(button => {
+    button.addEventListener('click', () => window._delUserProfile(button.dataset.deleteUser || ''));
+  });
 }
 
 async function tabAi(el) {
@@ -346,9 +361,12 @@ async function tabPolicy(el) {
   function render() {
     const idx = types.findIndex(([t]) => t === active);
     const content = snaps[idx].exists() ? snaps[idx].data().content : defaults[active];
-    el.innerHTML = `<div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;">${types.map(([t,l]) => `<button class="admin-tab${active === t ? ' active' : ''}" onclick="window._pt('${t}')">${l}</button>`).join('')}</div><form id="policy-form"><div class="form-group"><label class="form-label">${types[idx][1]}</label><textarea id="pc" class="form-textarea" style="min-height:420px;">${escapeHtml(content)}</textarea></div><button type="submit" class="btn btn-primary">저장</button></form>`;
+    el.innerHTML = `<div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;">${types.map(([t,l]) => `<button type="button" class="admin-tab${active === t ? ' active' : ''}" data-policy-type="${escapeAttr(t)}">${escapeHtml(l)}</button>`).join('')}</div><form id="policy-form"><div class="form-group"><label class="form-label">${types[idx][1]}</label><textarea id="pc" class="form-textarea" style="min-height:420px;">${escapeHtml(content)}</textarea></div><button type="submit" class="btn btn-primary">저장</button></form>`;
     document.getElementById('policy-form').onsubmit = async e => { e.preventDefault(); const val = document.getElementById('pc').value; await setDoc(doc(db, 'policy_docs', active), { content: val, updatedAt: serverTimestamp() }); snaps[idx] = { exists: () => true, data: () => ({ content: val }) }; toast('저장되었습니다.', 'success'); };
     window._pt = t => { active = t; render(); };
+    el.querySelectorAll('[data-policy-type]').forEach(button => {
+      button.addEventListener('click', () => window._pt(button.dataset.policyType));
+    });
   }
   render();
 }
