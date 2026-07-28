@@ -29,7 +29,7 @@ jobs:
       - name: Install Functions dependencies
         run: npm ci --prefix functions --no-audit --no-fund
 
-      - name: Build SEO pages and validate repository
+      - name: Validate repository
         run: npm run check
 
       - name: Prepare service account
@@ -42,6 +42,12 @@ jobs:
           fi
           echo "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-service-account.json"
 
+      - name: Remove curated creative cases
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+          GOOGLE_CLOUD_PROJECT: sosoking-481e6
+        run: npm run cleanup:creative
+
       - name: Deploy Firestore indexes, rules and Hosting
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
@@ -52,12 +58,6 @@ jobs:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
         run: firebase deploy --only functions:submitCase,functions:generateTrial,functions:createDailyAiCase,functions:generateDailyAiNow,functions:checkNickname,functions:setNickname,functions:voteResult,functions:addCourtComment,functions:requestAppeal,functions:deleteCourtPost --project sosoking-481e6 --non-interactive
 
-      - name: Seed curated creative cases
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-          GOOGLE_CLOUD_PROJECT: sosoking-481e6
-        run: npm run seed:creative
-
       - name: Deployment summary
         if: always()
-        run: echo "Firebase deployment and creative seed workflow finished for commit $GITHUB_SHA"
+        run: echo "Firebase deployment and creative case cleanup finished for commit $GITHUB_SHA"
