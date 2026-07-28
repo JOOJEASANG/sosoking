@@ -37,11 +37,14 @@ const admin = testEnv.authenticatedContext('admin-uid', {
   email: 'admin@example.com',
   email_verified: true
 }).firestore();
+const firebaseAnonymous = testEnv.authenticatedContext('anonymous-uid', {
+  firebase: { sign_in_provider: 'anonymous' }
+}).firestore();
 const formerBootstrap = testEnv.authenticatedContext('former-bootstrap-uid', {
   email: 'sosoday1976@gmail.com',
   email_verified: true
 }).firestore();
-const anonymous = testEnv.unauthenticatedContext().firestore();
+const unauthenticated = testEnv.unauthenticatedContext().firestore();
 const now = Timestamp.now();
 
 try {
@@ -78,6 +81,19 @@ try {
         text: '재미있는 판결입니다.',
         createdAt: now
       }),
+      setDoc(doc(db, 'court_comment_authors/public-case/items/comment-1'), {
+        uid: 'owner-uid',
+        caseId: 'public-case',
+        commentId: 'comment-1'
+      }),
+      setDoc(doc(db, 'action_limits/owner-uid_court-comment'), {
+        uid: 'owner-uid',
+        count: 1
+      }),
+      setDoc(doc(db, 'report_keys/key-1'), {
+        uid: 'owner-uid',
+        caseId: 'public-case'
+      }),
       setDoc(doc(db, 'site_settings/config'), {
         geminiModel: 'private-model',
         bannedWords: ['private-word']
@@ -105,7 +121,8 @@ try {
   await assertSucceeds(getDoc(doc(owner, 'cases/private-case')));
   await assertSucceeds(getDoc(doc(owner, 'cases/public-case')));
   await assertFails(getDoc(doc(other, 'cases/public-case')));
-  await assertFails(getDoc(doc(anonymous, 'cases/public-case')));
+  await assertFails(getDoc(doc(firebaseAnonymous, 'cases/public-case')));
+  await assertFails(getDoc(doc(unauthenticated, 'cases/public-case')));
   await assertFails(setDoc(doc(owner, 'cases/direct-create'), {
     userId: 'owner-uid',
     isPublic: false,
@@ -114,11 +131,12 @@ try {
   await assertFails(updateDoc(doc(owner, 'cases/private-case'), { isPublic: true }));
   await assertSucceeds(updateDoc(doc(admin, 'cases/private-case'), { isPublic: true }));
 
-  // 결과는 소유자가 모두 읽고, 다른 로그인 사용자는 명시적으로 공개된 결과만 읽는다.
+  // 결과는 소유자가 모두 읽고, 로그인 및 Firebase 익명 세션은 공개 결과를 읽는다.
   await assertSucceeds(getDoc(doc(owner, 'results/private-case')));
   await assertFails(getDoc(doc(other, 'results/private-case')));
   await assertSucceeds(getDoc(doc(other, 'results/public-case')));
-  await assertFails(getDoc(doc(anonymous, 'results/public-case')));
+  await assertSucceeds(getDoc(doc(firebaseAnonymous, 'results/public-case')));
+  await assertFails(getDoc(doc(unauthenticated, 'results/public-case')));
   await assertFails(updateDoc(doc(owner, 'results/private-case'), { isPublic: true }));
   await assertSucceeds(updateDoc(doc(admin, 'results/private-case'), { isPublic: true }));
 
@@ -126,19 +144,27 @@ try {
   await assertFails(getDoc(doc(formerBootstrap, 'site_settings/config')));
   await assertFails(updateDoc(doc(formerBootstrap, 'cases/private-case'), { isPublic: false }));
 
-  // 공개 방청 데이터는 로그인 사용자만 읽고 클라이언트가 직접 쓰지 못한다.
+  // 공개 방청 데이터는 앱의 익명 세션도 읽을 수 있지만 모든 클라이언트 쓰기를 막는다.
   await assertSucceeds(getDoc(doc(other, 'court_comments/public-case/items/comment-1')));
-  await assertFails(getDoc(doc(anonymous, 'court_comments/public-case/items/comment-1')));
+  await assertSucceeds(getDoc(doc(firebaseAnonymous, 'court_comments/public-case/items/comment-1')));
+  await assertFails(getDoc(doc(unauthenticated, 'court_comments/public-case/items/comment-1')));
   await assertFails(setDoc(doc(other, 'court_comments/public-case/items/comment-2'), {
     nickname: '침입자',
     text: '직접 쓰기',
     createdAt: now
   }));
 
+  // 댓글 작성자, 동작 제한, 신고 중복 키는 Admin SDK 전용이다.
+  await assertFails(getDoc(doc(owner, 'court_comment_authors/public-case/items/comment-1')));
+  await assertFails(getDoc(doc(admin, 'court_comment_authors/public-case/items/comment-1')));
+  await assertFails(getDoc(doc(owner, 'action_limits/owner-uid_court-comment')));
+  await assertFails(updateDoc(doc(owner, 'action_limits/owner-uid_court-comment'), { count: 0 }));
+  await assertFails(getDoc(doc(owner, 'report_keys/key-1')));
+
   // 내부 운영 설정은 관리자만, 공개 설정은 누구나 읽을 수 있다.
   await assertFails(getDoc(doc(owner, 'site_settings/config')));
   await assertSucceeds(getDoc(doc(admin, 'site_settings/config')));
-  await assertSucceeds(getDoc(doc(anonymous, 'site_public/config')));
+  await assertSucceeds(getDoc(doc(unauthenticated, 'site_public/config')));
   await assertFails(updateDoc(doc(owner, 'site_public/config'), { dailyLimit: 20 }));
   await assertSucceeds(updateDoc(doc(admin, 'site_public/config'), { dailyLimit: 4 }));
 
@@ -149,27 +175,27 @@ try {
   await assertSucceeds(getDoc(doc(admin, 'ai_limits/daily_2026-07-28')));
   await assertFails(updateDoc(doc(owner, 'ai_limits/daily_2026-07-28/users/owner-uid'), { count: 0 }));
 
-  // 신고는 필드·소유자·상태 제한을 모두 만족할 때만 생성된다.
-  await assertSucceeds(setDoc(doc(owner, 'reports/valid-report'), {
+  // 신고는 submitReport 함수만 생성하며 클라이언트 직접 생성은 모두 거부한다.
+  await assertFails(setDoc(doc(owner, 'reports/direct-report'), {
     caseId: 'public-case',
     reason: '개인정보 노출',
     status: 'pending',
     createdAt: now,
     userId: 'owner-uid'
   }));
-  await assertFails(setDoc(doc(owner, 'reports/forged-report'), {
+  await assertFails(setDoc(doc(firebaseAnonymous, 'reports/anonymous-report'), {
     caseId: 'public-case',
-    reason: '위조 신고',
+    reason: '익명 직접 신고',
     status: 'pending',
     createdAt: now,
-    userId: 'other-uid'
+    userId: 'anonymous-uid'
   }));
 
   // 관리자 삭제 권한도 실제 규칙으로 확인한다.
   await assertFails(deleteDoc(doc(owner, 'users/owner-uid')));
   await assertSucceeds(deleteDoc(doc(admin, 'users/owner-uid')));
 
-  console.log('Firestore rules integration passed: Firestore-backed admin authorization and access controls.');
+  console.log('Firestore rules integration passed: server-only mutations and Firestore-backed admin authorization.');
 } finally {
   await testEnv.cleanup();
 }

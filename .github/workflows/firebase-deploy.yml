@@ -65,17 +65,21 @@ jobs:
               exit 1
               ;;
           esac
+          if [ "$ENFORCE_APP_CHECK" = "true" ] && grep -Eq 'appCheckSiteKey:[[:space:]]*""' public/js/firebase-config.js; then
+            echo "App Check enforcement cannot be enabled while appCheckSiteKey is empty."
+            exit 1
+          fi
           printf 'ENFORCE_APP_CHECK=%s\n' "$ENFORCE_APP_CHECK" > functions/.env.sosoking-481e6
 
-      - name: Deploy Hosting and Firestore configuration first
+      - name: Deploy current Functions first
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+        run: firebase deploy --only functions:submitCase,functions:generateTrial,functions:createDailyAiCase,functions:generateDailyAiNow,functions:checkNickname,functions:setNickname,functions:voteResult,functions:addCourtComment,functions:setResultVisibility,functions:setAdminResultVisibility,functions:submitReport,functions:requestAppeal,functions:deleteCourtPost --project sosoking-481e6 --non-interactive
+
+      - name: Deploy Firestore configuration and Hosting
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
         run: firebase deploy --only firestore:indexes,firestore:rules,hosting --project sosoking-481e6 --non-interactive
-
-      - name: Deploy current Functions
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-        run: firebase deploy --only functions:submitCase,functions:generateTrial,functions:createDailyAiCase,functions:generateDailyAiNow,functions:checkNickname,functions:setNickname,functions:voteResult,functions:addCourtComment,functions:setResultVisibility,functions:setAdminResultVisibility,functions:requestAppeal,functions:deleteCourtPost --project sosoking-481e6 --non-interactive
 
       - name: Sync safe public configuration
         env:

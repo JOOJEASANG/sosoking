@@ -1,5 +1,6 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
+const { enforceActionRateLimit, requireVerifiedUser } = require('./security');
 
 const db = getFirestore();
 const REGION = 'asia-northeast3';
@@ -26,7 +27,12 @@ function nicknameError(value) {
 }
 
 exports.checkNickname = onCall({ region: REGION, timeoutSeconds: 20, memory: '256MiB' }, async request => {
-  if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+  requireVerifiedUser(request);
+  await enforceActionRateLimit(request.auth.uid, 'nickname-check', {
+    cooldownSeconds: 1,
+    dailyLimit: 100
+  });
+
   const nickname = cleanNickname(request.data?.nickname);
   const err = nicknameError(nickname);
   if (err) throw new HttpsError('invalid-argument', err);
@@ -36,8 +42,13 @@ exports.checkNickname = onCall({ region: REGION, timeoutSeconds: 20, memory: '25
 });
 
 exports.setNickname = onCall({ region: REGION, timeoutSeconds: 30, memory: '256MiB' }, async request => {
-  if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+  requireVerifiedUser(request);
   const uid = request.auth.uid;
+  await enforceActionRateLimit(uid, 'nickname-set', {
+    cooldownSeconds: 15,
+    dailyLimit: 10
+  });
+
   const email = request.auth.token.email || '';
   const nickname = cleanNickname(request.data?.nickname);
   const err = nicknameError(nickname);
