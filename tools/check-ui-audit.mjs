@@ -123,8 +123,10 @@ if (themeModule.includes("document.querySelector('.page-header')")) {
 }
 
 const index = read('public/index.html');
-if (!index.includes("document.documentElement.setAttribute('data-theme', resolved)")) {
-  errors.push('index.html: first-paint theme resolution is missing');
+const themeInit = read('public/js/theme-init.js');
+if (!index.includes('/js/theme-init.js?v=')
+  || !themeInit.includes("document.documentElement.setAttribute('data-theme', resolved)")) {
+  errors.push('index.html/theme-init.js: external first-paint theme resolution is missing');
 }
 if (!index.includes('/site.webmanifest?v=20260728-pwa-install-1')) {
   errors.push('index.html: current PWA manifest version is missing');
