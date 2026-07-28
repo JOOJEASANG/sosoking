@@ -95,6 +95,8 @@ const obsoleteFiles = [
   'public/admin/admin-email-guard.js',
   'public/admin/admin-delete.js',
   'public/admin/admin-ai-tools.js',
+  'public/admin/admin-enhancements.js',
+  'public/admin/admin-security-overrides.js',
   'public/css/theme-toggle.css',
   'public/js/components/app-install.js',
   'public/js/components/theme-contrast.js',
@@ -149,21 +151,37 @@ if (!deployWorkflow.includes('node tools/sync-public-config.mjs')) {
   errors.push('firebase-deploy.yml: safe public configuration sync is missing');
 }
 
-// Regression checks for the full admin/UI audit.
+// Regression checks for the consolidated administrator UI.
 const adminIndex = read('public/admin/index.html');
-if (!adminIndex.includes('/admin/admin-enhancements.js')) {
-  errors.push('public/admin/index.html: admin enhancement module is not loaded');
+if (!adminIndex.includes('/admin/admin-bootstrap.js?v=20260729-admin-consolidated-1')) {
+  errors.push('public/admin/index.html: consolidated admin bootstrap is not loaded');
 }
-if (adminIndex.includes('admin-delete.js') || adminIndex.includes('admin-ai-tools.js')) {
-  errors.push('public/admin/index.html: obsolete polling admin module is loaded');
+if (adminIndex.includes('admin-enhancements.js') || adminIndex.includes('admin-security-overrides.js')) {
+  errors.push('public/admin/index.html: removed admin patch modules are referenced');
 }
 
-const adminEnhancements = read('public/admin/admin-enhancements.js');
-if (adminEnhancements.includes('setInterval(')) {
-  errors.push('public/admin/admin-enhancements.js: polling loop is not allowed');
+const adminBootstrap = read('public/admin/admin-bootstrap.js');
+if (!adminBootstrap.includes("module.mountAdminDashboard(user)")) {
+  errors.push('public/admin/admin-bootstrap.js: authorized user is not passed to the dashboard module');
 }
-if (!adminEnhancements.includes('signInWithRedirect')) {
-  errors.push('public/admin/admin-enhancements.js: mobile redirect login fallback is missing');
+if (adminBootstrap.includes('admin-enhancements.js') || adminBootstrap.includes('admin-security-overrides.js')) {
+  errors.push('public/admin/admin-bootstrap.js: obsolete admin patch module import remains');
+}
+if (!adminBootstrap.includes('signInWithRedirect')) {
+  errors.push('public/admin/admin-bootstrap.js: mobile redirect login fallback is missing');
+}
+
+const adminDashboard = read('public/admin/admin.js');
+if (!adminDashboard.includes('export function mountAdminDashboard(user)')) {
+  errors.push('public/admin/admin.js: explicit dashboard mount entry point is missing');
+}
+if (adminDashboard.includes('MutationObserver') || adminDashboard.includes('window._')) {
+  errors.push('public/admin/admin.js: global monkey patch or DOM observer remains');
+}
+for (const callable of ['setAdminResultVisibility', 'deleteCourtPost', 'deleteUserProfile', 'generateDailyAiNow', 'syncPublicStatsNow']) {
+  if (!adminDashboard.includes(`httpsCallable(functions, '${callable}')`)) {
+    errors.push(`public/admin/admin.js: secure callable ${callable} is missing`);
+  }
 }
 
 const rules = read('firestore.rules');
