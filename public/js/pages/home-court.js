@@ -1,4 +1,4 @@
-import { renderHome as renderBaseHome } from './home.js?v=20260729-logo-feed-1';
+import { renderHome as renderBaseHome } from './home.js?v=20260729-script-csp-1';
 import { db } from '../firebase.js?v=20260729-auth-session-1';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 
