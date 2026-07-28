@@ -84,13 +84,31 @@ if (auth.includes('isMobileAuthEnvironment()')) {
 if (!auth.includes('const result = await signInWithPopup(auth, googleProvider)')) {
   errors.push('auth2.js: popup-first Google login is missing');
 }
-
+if (!auth.includes('getInitialRedirectResult()')) {
+  errors.push('auth2.js: shared initial redirect result handling is missing');
+}
+if (auth.includes("popupNeedsRedirect(e){ return ['auth/popup-blocked','auth/operation-not-supported-in-this-environment','auth/web-storage-unsupported']")) {
+  errors.push('auth2.js: storage-blocked browsers must not be sent into redirect login');
+}
 const app = read('public/js/app.js');
 if (app.includes('renderThemePreference')) {
   errors.push('app.js: legacy large theme preference card is still rendered');
 }
 if (!app.includes('renderThemeToggle();')) {
   errors.push('app.js: global theme icon is not rendered after routes');
+}
+if (!app.includes('initNavAuthSync();')) {
+  errors.push('app.js: navigation does not follow authentication state changes');
+}
+
+const firebase = read('public/js/firebase.js');
+const redirectIndex = firebase.indexOf('getInitialRedirectResult().catch');
+const anonymousIndex = firebase.indexOf('signInAnonymously(auth)');
+if (redirectIndex < 0 || anonymousIndex < 0 || redirectIndex > anonymousIndex) {
+  errors.push('firebase.js: redirect login result must be handled before anonymous fallback');
+}
+if (!firebase.includes('await auth.authStateReady();')) {
+  errors.push('firebase.js: persisted authentication state is not awaited');
 }
 
 const themeModule = read('public/js/components/theme.js');

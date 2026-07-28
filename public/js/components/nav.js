@@ -1,6 +1,10 @@
-import { auth, db } from '../firebase.js?v=20260630-3';
+import { auth, db } from '../firebase.js?v=20260729-auth-session-1';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
 import { avatarImg } from '../utils/avatar.js?v=20260630-3';
+
+let navRenderVersion = 0;
+let navAuthSyncStarted = false;
 
 async function loadProfile(user) {
   if (!user || user.isAnonymous) return {};
@@ -9,6 +13,7 @@ async function loadProfile(user) {
 }
 
 export function renderNav() {
+  const renderVersion = ++navRenderVersion;
   document.getElementById('bottom-nav')?.remove();
 
   const hash = location.hash || '#/';
@@ -43,6 +48,7 @@ export function renderNav() {
 
   if (isLoggedIn) {
     loadProfile(user).then(profile => {
+      if (renderVersion !== navRenderVersion || auth.currentUser?.uid !== user.uid) return;
       const icon = document.getElementById('nav-account-icon');
       const label = document.getElementById('nav-account-label');
       const name = String(profile.nickname || user.displayName || '계정').slice(0, 8);
@@ -52,4 +58,10 @@ export function renderNav() {
       if (label) label.textContent = name;
     }).catch(() => {});
   }
+}
+
+export function initNavAuthSync() {
+  if (navAuthSyncStarted) return;
+  navAuthSyncStarted = true;
+  onAuthStateChanged(auth, () => renderNav());
 }
