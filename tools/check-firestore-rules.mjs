@@ -34,6 +34,10 @@ const other = testEnv.authenticatedContext('other-uid', {
   email_verified: true
 }).firestore();
 const admin = testEnv.authenticatedContext('admin-uid', {
+  email: 'admin@example.com',
+  email_verified: true
+}).firestore();
+const formerBootstrap = testEnv.authenticatedContext('former-bootstrap-uid', {
   email: 'sosoday1976@gmail.com',
   email_verified: true
 }).firestore();
@@ -44,6 +48,7 @@ try {
   await testEnv.withSecurityRulesDisabled(async context => {
     const db = context.firestore();
     await Promise.all([
+      setDoc(doc(db, 'admins/admin-uid'), { role: 'admin' }),
       setDoc(doc(db, 'users/owner-uid'), { uid: 'owner-uid', nickname: '원고' }),
       setDoc(doc(db, 'user_names/원고'), { uid: 'owner-uid', nickname: '원고' }),
       setDoc(doc(db, 'cases/private-case'), {
@@ -117,6 +122,10 @@ try {
   await assertFails(updateDoc(doc(owner, 'results/private-case'), { isPublic: true }));
   await assertSucceeds(updateDoc(doc(admin, 'results/private-case'), { isPublic: true }));
 
+  // 과거 부트스트랩 이메일은 admins 문서가 없으면 관리자 권한을 얻지 못한다.
+  await assertFails(getDoc(doc(formerBootstrap, 'site_settings/config')));
+  await assertFails(updateDoc(doc(formerBootstrap, 'cases/private-case'), { isPublic: false }));
+
   // 공개 방청 데이터는 로그인 사용자만 읽고 클라이언트가 직접 쓰지 못한다.
   await assertSucceeds(getDoc(doc(other, 'court_comments/public-case/items/comment-1')));
   await assertFails(getDoc(doc(anonymous, 'court_comments/public-case/items/comment-1')));
@@ -160,7 +169,7 @@ try {
   await assertFails(deleteDoc(doc(owner, 'users/owner-uid')));
   await assertSucceeds(deleteDoc(doc(admin, 'users/owner-uid')));
 
-  console.log('Firestore rules integration passed: 34 allow/deny assertions.');
+  console.log('Firestore rules integration passed: Firestore-backed admin authorization and access controls.');
 } finally {
   await testEnv.cleanup();
 }

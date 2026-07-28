@@ -75,7 +75,7 @@ jobs:
       - name: Deploy current Functions
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-        run: firebase deploy --only functions:submitCase,functions:generateTrial,functions:createDailyAiCase,functions:generateDailyAiNow,functions:checkNickname,functions:setNickname,functions:voteResult,functions:addCourtComment,functions:setResultVisibility,functions:requestAppeal,functions:deleteCourtPost --project sosoking-481e6 --non-interactive
+        run: firebase deploy --only functions:submitCase,functions:generateTrial,functions:createDailyAiCase,functions:generateDailyAiNow,functions:checkNickname,functions:setNickname,functions:voteResult,functions:addCourtComment,functions:setResultVisibility,functions:setAdminResultVisibility,functions:requestAppeal,functions:deleteCourtPost --project sosoking-481e6 --non-interactive
 
       - name: Sync safe public configuration
         env:

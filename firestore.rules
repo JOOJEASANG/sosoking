@@ -12,13 +12,8 @@ service cloud.firestore {
         : '';
     }
 
-    function bootstrapOwner() {
-      return signedIn() && adminEmail() == 'sosoday1976@gmail.com';
-    }
-
     function isAdmin() {
       return signedIn() && (
-        bootstrapOwner() ||
         exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
         (adminEmail() != '' && exists(/databases/$(database)/documents/admins/$(adminEmail())))
       );
@@ -55,7 +50,6 @@ service cloud.firestore {
 
     match /admins/{adminId} {
       allow read: if signedIn() && (
-        bootstrapOwner() ||
         request.auth.uid == adminId ||
         adminEmail() == adminId ||
         isAdmin()
