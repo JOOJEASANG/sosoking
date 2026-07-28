@@ -17,7 +17,6 @@ function ensureThemeToggleStyle() {
   const style = document.createElement('style');
   style.id = 'theme-toggle-style';
   style.textContent = `
-    .page-header .logo{flex:1;min-width:0;}
     .theme-toggle{margin-left:auto;flex:0 0 38px;display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;padding:0;border-radius:50%;border:1px solid var(--border);background:var(--surface-soft);color:var(--cream);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .15s ease,background .15s ease,border-color .15s ease,color .15s ease;box-shadow:0 5px 16px rgba(0,0,0,.16);}
     .theme-toggle:active{transform:scale(.96);}
     .theme-toggle:hover{border-color:var(--gold);background:var(--gold-dim);color:var(--gold);}
@@ -70,16 +69,11 @@ export function renderThemeToggle() {
   const btn = document.createElement('button');
   btn.id = 'theme-toggle';
   btn.type = 'button';
-  btn.className = 'theme-toggle';
+  btn.className = 'theme-toggle theme-toggle-floating';
   btn.addEventListener('click', () => {
     const next = resolveTheme() === 'light' ? 'dark' : 'light';
     setThemePreference(next);
   });
-  const header = document.querySelector('.page-header');
-  if (header) header.appendChild(btn);
-  else {
-    btn.classList.add('theme-toggle-floating');
-    document.body.appendChild(btn);
-  }
+  document.body.appendChild(btn);
   updateThemeToggleLabel();
 }
