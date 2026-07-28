@@ -67,6 +67,24 @@ if (!daily.includes('isPublic: moderation.publish')) {
   errors.push('functions/daily.js: daily publication is not controlled by moderation');
 }
 
+const trial = read('functions/generate-trial-lite.js');
+const trialReservations = trial.match(/reserveAiRequest\(uid, 'trial', settings\)/g) || [];
+if (trialReservations.length !== 1) {
+  errors.push(`functions/generate-trial-lite.js: trial quota must be reserved exactly once per operation, found ${trialReservations.length}`);
+}
+if (!trial.includes('for (let attempt = 0; quotaAvailable && attempt < modelNames.length')) {
+  errors.push('functions/generate-trial-lite.js: model retries are not gated by a single quota reservation');
+}
+if (!trial.includes('totals.attempts += 1') || !trial.includes('geminiRequests: FieldValue.increment(totals.attempts)')) {
+  errors.push('functions/generate-trial-lite.js: failed Gemini attempts are not included in usage accounting');
+}
+if (!trial.includes('caseCount: FieldValue.increment(saved ? 1 : 0)')) {
+  errors.push('functions/generate-trial-lite.js: case statistics include failed saves');
+}
+if (!trial.includes('generatedSafety = inspectContent') || !trial.includes('simple-document-v1.5-accounting-safety')) {
+  errors.push('functions/generate-trial-lite.js: generated trial safety validation is missing');
+}
+
 const reports = read('functions/reports.js');
 if (!reports.includes('exports.submitReport')) {
   errors.push('functions/reports.js: secure report callable is missing');
@@ -78,12 +96,19 @@ if (!reports.includes('report_keys/')) {
   errors.push('functions/reports.js: duplicate report key is missing');
 }
 
-const main = read('functions/main.js');
-if (!main.includes("require('./admin-visibility')")) {
-  errors.push('functions/main.js: secure admin visibility module is not exported');
+const publicStats = read('functions/public-stats.js');
+if (!publicStats.includes("db.doc('site_public/statistics').set")) {
+  errors.push('functions/public-stats.js: server-maintained public statistics document is missing');
 }
-if (!main.includes("require('./reports')")) {
-  errors.push('functions/main.js: secure report module is not exported');
+if (!publicStats.includes("schedule: 'every 30 minutes'")) {
+  errors.push('functions/public-stats.js: recurring public statistics refresh is missing');
+}
+
+const main = read('functions/main.js');
+for (const moduleName of ['./admin-visibility', './reports', './public-stats']) {
+  if (!main.includes(`require('${moduleName}')`)) {
+    errors.push(`functions/main.js: ${moduleName} module is not exported`);
+  }
 }
 
 const adminVisibility = read('functions/admin-visibility.js');
@@ -107,6 +132,27 @@ for (const privatePath of ['court_comment_authors', 'action_limits', 'report_key
   }
 }
 
+const homeCourt = read('public/js/pages/home-court.js');
+if (!homeCourt.includes("doc(db, 'site_public', 'statistics')")) {
+  errors.push('public/js/pages/home-court.js: authoritative public statistics document is not used');
+}
+if (!homeCourt.includes("countElement.id = 'public-stat-count'")) {
+  errors.push('public/js/pages/home-court.js: legacy unauthorized count and fake animation are not disabled');
+}
+
+const app = read('public/js/app.js');
+if (!app.includes('function freshContentHost()') || !app.includes('current.replaceWith(next)')) {
+  errors.push('public/js/app.js: stale asynchronous route renders can still overwrite the active page');
+}
+if (!app.includes('function scheduleRoute()') || !app.includes('queueMicrotask')) {
+  errors.push('public/js/app.js: duplicate navigation events are not coalesced');
+}
+
+const firebaseClient = read('public/js/firebase.js');
+if (!firebaseClient.includes('trackedAttempt = currentAttempt.catch') || !firebaseClient.includes('authInitPromise = null')) {
+  errors.push('public/js/firebase.js: failed authentication initialization cannot be retried');
+}
+
 const adminIndex = read('public/admin/index.html');
 if (!adminIndex.includes('/admin/admin-bootstrap.js')) {
   errors.push('public/admin/index.html: strict admin bootstrap is not loaded');
@@ -121,7 +167,7 @@ if (!adminOverrides.includes("httpsCallable(functions, 'setAdminResultVisibility
 }
 
 const deploy = read('.github/workflows/firebase-deploy.yml');
-for (const fn of ['setAdminResultVisibility', 'submitReport']) {
+for (const fn of ['setAdminResultVisibility', 'submitReport', 'syncPublicStats', 'syncPublicStatsNow']) {
   if (!deploy.includes(`functions:${fn}`)) {
     errors.push(`.github/workflows/firebase-deploy.yml: ${fn} function is not deployed`);
   }
@@ -130,6 +176,9 @@ const functionsStep = deploy.indexOf('Deploy current Functions first');
 const rulesStep = deploy.indexOf('Deploy Firestore configuration and Hosting');
 if (functionsStep < 0 || rulesStep < 0 || functionsStep > rulesStep) {
   errors.push('.github/workflows/firebase-deploy.yml: restrictive rules are deployed before backend functions');
+}
+if (!deploy.includes('node functions/sync-public-stats-cli.js')) {
+  errors.push('.github/workflows/firebase-deploy.yml: public statistics are not initialized during deployment');
 }
 if (!deploy.includes('App Check enforcement cannot be enabled while appCheckSiteKey is empty.')) {
   errors.push('.github/workflows/firebase-deploy.yml: App Check lockout guard is missing');
@@ -141,4 +190,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Security regression validation passed: identity privacy, server-only mutations, abuse limits, and publication moderation.');
+console.log('Security regression validation passed: privacy, abuse limits, AI accounting, publication moderation, and authoritative public statistics.');
