@@ -10,7 +10,7 @@ import { renderAuth } from './pages/auth2.js?v=20260728-ui-audit-2';
 import { renderBoard } from './pages/board-court.js?v=20260728-logo-cleanup-1';
 import { renderFooter } from './components/footer.js?v=20260728-logo-cleanup-1';
 import { initTheme } from './components/theme.js?v=20260728-ui-audit-2';
-import { initCourtDesign } from './components/court-design.js?v=20260728-ui-audit-2';
+import { initCourtDesign } from './components/court-design.js?v=20260728-pwa-install-1';
 import { renderThemePreference } from './components/theme-preference.js?v=20260728-ui-audit-2';
 import { renderNav } from './components/nav.js?v=20260630-8';
 
