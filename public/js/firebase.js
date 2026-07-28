@@ -45,10 +45,12 @@ export async function initAuth() {
       return auth.currentUser;
     })();
 
-    authInitPromise = currentAttempt.catch(error => {
-      if (authInitPromise === currentAttempt) authInitPromise = null;
+    let trackedAttempt;
+    trackedAttempt = currentAttempt.catch(error => {
+      if (authInitPromise === trackedAttempt) authInitPromise = null;
       throw error;
     });
+    authInitPromise = trackedAttempt;
   }
   return authInitPromise;
 }
