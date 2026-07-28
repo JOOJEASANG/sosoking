@@ -24,11 +24,9 @@ export function initCourtDesign() {
     .court-bench{height:10px;border-radius:99px;background:linear-gradient(90deg,transparent,rgba(201,168,76,.55),transparent);margin:8px auto 14px;max-width:280px;opacity:.5;}
     .reaction-btn[data-picked="true"]{box-shadow:0 0 0 2px rgba(201,168,76,.35),0 8px 22px rgba(201,168,76,.12);}
     @media(max-width:420px){.court-ledger{grid-template-columns:1fr}.court-title{font-size:20px}}
-    [data-theme="light"] .court-shell{background:linear-gradient(145deg,#fffaf1,#f4eadb);box-shadow:0 10px 24px rgba(60,42,10,.1),inset 0 1px 0 rgba(255,255,255,.9);}
-    [data-theme="light"] .court-document{background:#fffaf1;}
   `;
   document.head.appendChild(style);
-  import('./contrast-fix.js?v=20260728-audit-1').then(module => module.initContrastFix()).catch(err => console.warn('contrast fix load failed:', err));
+  import('./contrast-fix.js?v=20260728-ui-audit-2').then(module => module.initContrastFix()).catch(err => console.warn('contrast fix load failed:', err));
   import('./owner-polish.js?v=20260630-21').then(module => module.initOwnerPolish()).catch(() => {});
   import('./pwa-ui.js?v=20260630-23').then(module => module.initPwa()).catch(() => {});
   import('./admin-redirect.js?v=20260728-audit-1').then(module => module.initAdminRedirect()).catch(err => console.warn('admin redirect load failed:', err));
