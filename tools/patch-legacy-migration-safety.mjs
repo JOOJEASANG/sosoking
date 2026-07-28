@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 
+// Temporary one-shot patch. The workflow removes this file after applying it.
 const path = 'functions/legacy-case-migration.js';
 let source = fs.readFileSync(path, 'utf8');
 
