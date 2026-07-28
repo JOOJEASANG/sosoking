@@ -6,6 +6,9 @@ on:
     paths:
       - tools/scan-inline-csp.mjs
 
+permissions:
+  contents: write
+
 jobs:
   scan:
     runs-on: ubuntu-latest
@@ -16,4 +19,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: node tools/scan-inline-csp.mjs
+      - run: node tools/scan-inline-csp.mjs > inline-csp-report.txt
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add inline-csp-report.txt
+          git diff --cached --quiet && exit 0
+          git commit -m "Record inline CSP blockers"
+          git push origin HEAD:agent/enforce-script-csp
