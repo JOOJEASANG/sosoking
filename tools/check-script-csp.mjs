@@ -32,6 +32,10 @@ if (!firebase.includes('"key": "Content-Security-Policy"')) {
 if (!firebase.includes("script-src 'self' https://www.gstatic.com https://apis.google.com")) {
   errors.push('firebase.json: external-script allowlist is missing');
 }
+if (!firebase.includes('https://www.google.com/recaptcha/')
+  || !firebase.includes('https://www.recaptcha.net/recaptcha/')) {
+  errors.push('firebase.json: future App Check reCAPTCHA origins are missing');
+}
 if (!firebase.includes("script-src-attr 'none'")) {
   errors.push('firebase.json: inline event attributes are not explicitly disabled');
 }
@@ -46,8 +50,8 @@ if (!firebase.includes('"key": "Content-Security-Policy-Report-Only"')
 
 for (const file of ['public/index.html', 'public/admin/index.html']) {
   const html = fs.readFileSync(file, 'utf8');
-  if (!html.includes('/js/theme-init.js?v=')) {
-    errors.push(`${file}: external first-paint theme script is missing`);
+  if (!html.includes('/js/theme-init.js?v=20260729-script-csp-1')) {
+    errors.push(`${file}: external first-paint theme script version is missing`);
   }
 }
 
@@ -56,10 +60,32 @@ if (!themeInit.includes("localStorage.getItem('theme')") || !/try\s*\{[\s\S]*cat
   errors.push('public/js/theme-init.js: guarded theme storage initialization is missing');
 }
 
+const app = fs.readFileSync('public/js/app.js', 'utf8');
+for (const specifier of [
+  './pages/home-court.js?v=20260729-script-csp-1',
+  './pages/board-court.js?v=20260729-script-csp-1'
+]) {
+  if (!app.includes(specifier)) errors.push(`public/js/app.js: stale CSP module import remains instead of ${specifier}`);
+}
+const homeCourt = fs.readFileSync('public/js/pages/home-court.js', 'utf8');
+if (!homeCourt.includes("./home.js?v=20260729-script-csp-1")) {
+  errors.push('public/js/pages/home-court.js: stale home module cache version remains');
+}
+const boardCourt = fs.readFileSync('public/js/pages/board-court.js', 'utf8');
+if (!boardCourt.includes("./board.js?v=20260729-script-csp-1")) {
+  errors.push('public/js/pages/board-court.js: stale board module cache version remains');
+}
+const adminBootstrap = fs.readFileSync('public/admin/admin-bootstrap.js', 'utf8');
+for (const moduleName of ['admin.js', 'admin-enhancements.js', 'admin-security-overrides.js']) {
+  if (!adminBootstrap.includes(`./${moduleName}?v=20260729-script-csp-1`)) {
+    errors.push(`public/admin/admin-bootstrap.js: stale ${moduleName} cache version remains`);
+  }
+}
+
 if (errors.length) {
   console.error(`Script CSP validation failed (${errors.length})`);
   errors.forEach(error => console.error(`- ${error}`));
   process.exit(1);
 }
 
-console.log('Script CSP validation passed: no inline script execution and enforced external-script policy.');
+console.log('Script CSP validation passed: no inline execution, enforced allowlist, and synchronized module cache versions.');
