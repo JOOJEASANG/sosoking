@@ -1,13 +1,13 @@
-const CACHE_NAME = 'sosoking-app-v20260728-ui-audit-2';
+const CACHE_NAME = 'sosoking-app-v20260728-pwa-install-1';
 const APP_SHELL = [
   '/',
   '/index.html',
-  '/site.webmanifest?v=20260728-ui-audit-2',
+  '/site.webmanifest?v=20260728-pwa-install-1',
   '/css/main.css?v=20260728-ui-audit-2',
   '/css/brand-logo.css?v=20260728-ui-audit-2',
-  '/js/app.js?v=20260728-ui-audit-2',
-  '/icons/sosoking-192.png?v=20260728-ui-audit-2',
-  '/icons/sosoking-512.png?v=20260728-ui-audit-2'
+  '/js/app.js?v=20260728-pwa-install-1',
+  '/icons/sosoking-192.png',
+  '/icons/sosoking-512.png'
 ];
 const NETWORK_FIRST = /\.(js|css|json|webmanifest)$/i;
 
@@ -30,8 +30,8 @@ async function putCache(request, response) {
     if (!response?.ok) return;
     const cache = await caches.open(CACHE_NAME);
     await cache.put(request, response.clone());
-  } catch (err) {
-    console.warn('service worker cache write skipped:', err);
+  } catch (error) {
+    console.warn('service worker cache write skipped:', error);
   }
 }
 
