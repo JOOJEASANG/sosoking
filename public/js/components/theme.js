@@ -2,8 +2,27 @@ function systemPrefersLight() {
   return Boolean(window.matchMedia?.('(prefers-color-scheme: light)').matches);
 }
 
+function readStoredTheme() {
+  try {
+    return localStorage.getItem('theme');
+  } catch (error) {
+    console.warn('theme preference read skipped:', error?.name || error);
+    return null;
+  }
+}
+
+function writeStoredTheme(value) {
+  try {
+    localStorage.setItem('theme', value);
+    return true;
+  } catch (error) {
+    console.warn('theme preference save skipped:', error?.name || error);
+    return false;
+  }
+}
+
 function storedTheme() {
-  const saved = localStorage.getItem('theme');
+  const saved = readStoredTheme();
   return saved === 'light' || saved === 'dark' || saved === 'system' ? saved : 'system';
 }
 
@@ -20,8 +39,10 @@ function ensureThemeToggleStyle() {
     .theme-toggle{margin-left:auto;flex:0 0 38px;display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;padding:0;border-radius:50%;border:1px solid var(--border);background:var(--surface-soft);color:var(--cream);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .15s ease,background .15s ease,border-color .15s ease,color .15s ease;box-shadow:0 5px 16px rgba(0,0,0,.16);}
     .theme-toggle:active{transform:scale(.96);}
     .theme-toggle:hover{border-color:var(--gold);background:var(--gold-dim);color:var(--gold);}
+    .theme-toggle:focus-visible{outline:3px solid color-mix(in srgb,var(--gold) 70%,transparent);outline-offset:3px;}
     .theme-toggle-icon{font-size:18px;line-height:1;}
-    .theme-toggle-floating{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));right:14px;z-index:250;box-shadow:var(--shadow);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);}
+    #theme-toggle.theme-toggle-floating{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));right:14px;bottom:auto;width:38px;height:38px;z-index:500;box-shadow:var(--shadow);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);}
+    @media (prefers-reduced-motion:reduce){.theme-toggle{transition:none!important;}.theme-toggle:hover,.theme-toggle:active{transform:none!important;}}
   `;
   document.head.appendChild(style);
 }
@@ -59,7 +80,7 @@ export function initTheme() {
 
 export function setThemePreference(choice) {
   const normalized = choice === 'light' || choice === 'dark' ? choice : 'system';
-  localStorage.setItem('theme', normalized);
+  writeStoredTheme(normalized);
   applyTheme(normalized);
 }
 
