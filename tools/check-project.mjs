@@ -234,7 +234,7 @@ if (!socialServer.includes('reactionTotal: FieldValue.increment(1)')) {
 if (!socialServer.includes('commentCount: FieldValue.increment(1)')) {
   errors.push('functions/social.js: result comment total is not synchronized');
 }
-if (!socialServer.includes("return { state: 'processing' }") || !socialServer.includes("appeal.requestId !== requestId")) {
+if (!socialServer.includes("return { state: 'processing' }") || !socialServer.includes('appeal.requestId !== requestId')) {
   errors.push('functions/social.js: appeal concurrency lock is missing');
 }
 
@@ -296,8 +296,8 @@ const daily = read('functions/daily.js');
 if (daily.includes('desiredVerdict')) {
   errors.push('functions/daily.js: removed desiredVerdict field was reintroduced');
 }
-if (!daily.includes('daily-document-v2')) {
-  errors.push('functions/daily.js: current structured document prompt version is missing');
+if (!daily.includes('daily-document-v3-safety')) {
+  errors.push('functions/daily.js: moderated structured document prompt version is missing');
 }
 
 if (errors.length) {
