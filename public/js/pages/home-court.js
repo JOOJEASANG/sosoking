@@ -1,20 +1,20 @@
-import { renderHome as renderBaseHome } from './home.js?v=20260630-3';
+import { renderHome as renderBaseHome } from './home.js?v=20260729-logo-feed-1';
 
-const BRAND_LOGO_512 = '/icons/sosoking-512.png?v=20260728-ui-audit-2';
-const BRAND_LOGO_192 = '/icons/sosoking-192.png?v=20260728-ui-audit-2';
+const BRAND_LOGO = '/logo.svg?v=20260729-logo-feed-1';
+const BRAND_LOGO_FALLBACK = '/icons/sosoking-192.png?v=20260729-logo-feed-1';
 
 function applyBrandLogo(container) {
   const logo = container.querySelector('.hero-section > img[alt="소소킹 로고"]');
   if (!logo) return;
-  logo.src = BRAND_LOGO_512;
-  logo.width = 512;
-  logo.height = 512;
+  logo.src = BRAND_LOGO;
+  logo.width = 200;
+  logo.height = 200;
   logo.decoding = 'async';
   logo.fetchPriority = 'high';
   logo.style.visibility = 'visible';
   logo.onerror = () => {
     if (logo.src.includes('sosoking-192.png')) return;
-    logo.src = BRAND_LOGO_192;
+    logo.src = BRAND_LOGO_FALLBACK;
   };
 }
 
