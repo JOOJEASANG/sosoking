@@ -3,7 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "node tools/check-project.mjs",
+    "build:seo": "node tools/build-seo-pages.mjs",
+    "seed:creative": "node tools/seed-creative-cases.mjs",
+    "check": "npm run build:seo && node tools/check-project.mjs",
     "test": "npm run check"
   }
 }
