@@ -33,6 +33,28 @@ async function writeAdminLog(uid, action, subjectId, detail = {}) {
   }).catch(() => null);
 }
 
+async function deleteUserProfileData(userId) {
+  const userRef = db.doc(`users/${userId}`);
+  return db.runTransaction(async tx => {
+    const userSnap = await tx.get(userRef);
+    if (!userSnap.exists) return { existed: false, nicknameReleased: false };
+    const profile = userSnap.data();
+    const key = nicknameKey(profile.nickname);
+    let nicknameReleased = false;
+
+    if (key) {
+      const nameRef = db.doc(`user_names/${key}`);
+      const nameSnap = await tx.get(nameRef);
+      if (nameSnap.exists && nameSnap.data().uid === userId) {
+        tx.delete(nameRef);
+        nicknameReleased = true;
+      }
+    }
+    tx.delete(userRef);
+    return { existed: true, nicknameReleased };
+  });
+}
+
 exports.deleteCourtPost = onCall({ region: REGION, timeoutSeconds: 120, memory: '256MiB' }, async request => {
   if (!request.auth || !(await isAdminAuth(request.auth))) {
     throw new HttpsError('permission-denied', '관리자만 삭제할 수 있습니다.');
@@ -80,26 +102,12 @@ exports.deleteUserProfile = onCall({ region: REGION, timeoutSeconds: 60, memory:
   const userId = cleanId(request.data?.userId);
   if (!userId) throw new HttpsError('invalid-argument', 'userId required');
 
-  const userRef = db.doc(`users/${userId}`);
-  const result = await db.runTransaction(async tx => {
-    const userSnap = await tx.get(userRef);
-    if (!userSnap.exists) return { existed: false, nicknameReleased: false };
-    const profile = userSnap.data();
-    const key = nicknameKey(profile.nickname);
-    let nicknameReleased = false;
-
-    if (key) {
-      const nameRef = db.doc(`user_names/${key}`);
-      const nameSnap = await tx.get(nameRef);
-      if (nameSnap.exists && nameSnap.data().uid === userId) {
-        tx.delete(nameRef);
-        nicknameReleased = true;
-      }
-    }
-    tx.delete(userRef);
-    return { existed: true, nicknameReleased };
-  });
-
+  const result = await deleteUserProfileData(userId);
   await writeAdminLog(request.auth.uid, 'deleteUserProfile', userId, result);
   return { success: true, userId, ...result };
+});
+
+Object.defineProperty(module.exports, 'deleteUserProfileData', {
+  value: deleteUserProfileData,
+  enumerable: false
 });
