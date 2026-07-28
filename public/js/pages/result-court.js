@@ -1,7 +1,33 @@
 import { renderResult as renderBaseResult } from './result.js?v=20260728-audit-1';
-import { functions } from '../firebase.js?v=20260728-audit-1';
+import { functions } from '../firebase.js?v=20260729-auth-session-1';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 import { showToast } from '../components/toast.js?v=20260630-3';
+
+const aliasResolutionCache = new Map();
+
+function looksLikeLegacyUidCaseId(caseId) {
+  const value = String(caseId || '');
+  return value.length > 30 && value.includes('_') && !value.startsWith('daily_');
+}
+
+async function redirectLegacyCaseId(caseId) {
+  if (!looksLikeLegacyUidCaseId(caseId)) return false;
+  let request = aliasResolutionCache.get(caseId);
+  if (!request) {
+    request = httpsCallable(functions, 'resolveCaseAlias')({ caseId })
+      .then(response => String(response.data?.targetCaseId || ''))
+      .catch(error => {
+        console.warn('legacy case alias lookup failed:', error?.code || error);
+        return '';
+      });
+    aliasResolutionCache.set(caseId, request);
+  }
+
+  const targetCaseId = await request;
+  if (!targetCaseId || targetCaseId === caseId) return false;
+  location.replace(`${location.origin}/#/result/${encodeURIComponent(targetCaseId)}`);
+  return true;
+}
 
 function ensureResultDocumentStyle() {
   if (document.getElementById('result-document-style')) return;
@@ -115,6 +141,7 @@ function patchShareButton(container, caseId) {
 }
 
 export async function renderResult(container, caseId) {
+  if (await redirectLegacyCaseId(caseId)) return;
   ensureResultDocumentStyle();
   await renderBaseResult(container, caseId);
   patchShareButton(container, caseId);

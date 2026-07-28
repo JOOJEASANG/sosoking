@@ -1,0 +1,69 @@
+name: Migrate legacy case IDs
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Run a dry scan or apply the migration
+        required: true
+        type: choice
+        default: dry-run
+        options:
+          - dry-run
+          - apply
+      confirmation:
+        description: Type MIGRATE_LEGACY_CASE_IDS when mode is apply
+        required: false
+        type: string
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate migration request
+        env:
+          MODE: ${{ inputs.mode }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: |
+          if [ "$MODE" = "apply" ]; then
+            if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+              echo "Apply mode is allowed only from main."
+              exit 1
+            fi
+            if [ "$CONFIRMATION" != "MIGRATE_LEGACY_CASE_IDS" ]; then
+              echo "Apply mode requires the exact confirmation string."
+              exit 1
+            fi
+          fi
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Functions dependencies
+        run: npm ci --prefix functions --no-audit --no-fund
+
+      - name: Prepare service account
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 }}
+        run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
+            echo "Missing GitHub secret: FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6"
+            exit 1
+          fi
+          echo "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-service-account.json"
+
+      - name: Run migration
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+          GOOGLE_CLOUD_PROJECT: sosoking-481e6
+          MODE: ${{ inputs.mode }}
+          CONFIRM_LEGACY_CASE_MIGRATION: ${{ inputs.confirmation }}
+        run: node functions/migrate-legacy-case-ids-cli.js --mode="$MODE"

@@ -32,23 +32,34 @@ exports.deleteCourtPost = onCall({ region: REGION, timeoutSeconds: 120, memory: 
   if (!caseId) throw new HttpsError('invalid-argument', 'caseId required');
 
   const counter = { deleted: 0 };
+  const caseRef = db.doc(`cases/${caseId}`);
+  const caseSnap = await caseRef.get();
+  const legacyIdHash = caseSnap.exists ? cleanId(caseSnap.data().legacyIdHash) : '';
 
   await deleteQuerySnapshot(db.collection(`result_reactions/${caseId}/votes`), counter);
   await deleteQuerySnapshot(db.collection(`court_comments/${caseId}/items`), counter);
+  await deleteQuerySnapshot(db.collection(`court_comment_authors/${caseId}/items`), counter);
   await deleteQuerySnapshot(db.collection('reports').where('caseId', '==', caseId), counter);
+  await deleteQuerySnapshot(db.collection('report_keys').where('caseId', '==', caseId), counter);
 
   const refs = [
     db.doc(`result_reactions/${caseId}`),
     db.doc(`court_comment_stats/${caseId}`),
     db.doc(`court_comments/${caseId}`),
+    db.doc(`court_comment_authors/${caseId}`),
     db.doc(`results/${caseId}`),
-    db.doc(`cases/${caseId}`),
+    caseRef,
   ];
+  if (legacyIdHash) refs.push(db.doc(`case_id_aliases/${legacyIdHash}`));
+
   const batch = db.batch();
   refs.forEach(ref => batch.delete(ref));
   await batch.commit();
   counter.deleted += refs.length;
 
-  await writeAdminLog(request.auth.uid, 'deleteCourtPost', caseId, counter);
+  await writeAdminLog(request.auth.uid, 'deleteCourtPost', caseId, {
+    ...counter,
+    removedLegacyAlias: Boolean(legacyIdHash)
+  });
   return { success: true, caseId, deleted: counter.deleted };
 });

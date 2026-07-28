@@ -57,8 +57,9 @@ const index = read('public/index.html');
 if (!/try\s*\{[\s\S]*localStorage\.getItem\('theme'\)[\s\S]*catch/.test(index)) {
   errors.push('public/index.html: first-paint theme storage access is not guarded');
 }
-if (!index.includes('/js/app.js?v=20260729-security-pwa-1')) {
-  errors.push('public/index.html: hardened application cache version is missing');
+const appVersion = index.match(/\/js\/app\.js\?v=([^"']+)/)?.[1] || '';
+if (!appVersion || !serviceWorker.includes(`/js/app.js?v=${appVersion}`)) {
+  errors.push('public/index.html and public/sw.js: application cache versions are inconsistent');
 }
 
 if (errors.length) {

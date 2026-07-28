@@ -123,6 +123,11 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // 과거 UID 포함 사건 주소는 SHA-256 해시 별칭으로만 보관하고 서버 함수로만 해석한다.
+    match /case_id_aliases/{aliasId} {
+      allow read, write: if false;
+    }
+
     match /usage_stats/{docId} {
       allow read: if isAdmin();
       allow write: if false;
