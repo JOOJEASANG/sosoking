@@ -128,6 +128,58 @@ export function initContrastFix() {
     .auth-online{color:var(--green)!important;font-weight:800;}
 
     [data-theme="light"] body::before{background:radial-gradient(circle at 50% -10%,rgba(121,83,11,.09),transparent 34%),linear-gradient(180deg,rgba(124,84,12,.035),transparent 38%)!important;}
+    [data-theme="light"] .court-shell{
+      color-scheme:light!important;
+      background:
+        radial-gradient(circle at 100% 0,rgba(183,131,25,.13),transparent 34%),
+        linear-gradient(145deg,#fffdf8 0%,#f8eddb 100%)!important;
+      color:#20170d!important;
+      border-color:rgba(121,83,11,.30)!important;
+      box-shadow:0 12px 30px rgba(77,52,12,.12),inset 0 1px 0 rgba(255,255,255,.96)!important;
+    }
+    [data-theme="light"] .court-shell::before{
+      background:linear-gradient(110deg,transparent,rgba(183,131,25,.10),transparent)!important;
+      opacity:.5!important;
+    }
+    [data-theme="light"] .court-shell .court-title,
+    [data-theme="light"] .court-shell .court-step-title,
+    [data-theme="light"] .court-shell strong,
+    [data-theme="light"] .court-shell h1,
+    [data-theme="light"] .court-shell h2,
+    [data-theme="light"] .court-shell h3{color:#20170d!important;}
+    [data-theme="light"] .court-shell .court-kicker,
+    [data-theme="light"] .court-shell .court-ledger strong,
+    [data-theme="light"] .court-shell .court-step-num{color:#79530b!important;}
+    [data-theme="light"] .court-shell .court-desc,
+    [data-theme="light"] .court-shell .court-step-text,
+    [data-theme="light"] .court-shell .court-ledger span,
+    [data-theme="light"] .court-shell p,
+    [data-theme="light"] .court-shell small{color:rgba(32,23,13,.76)!important;}
+    [data-theme="light"] .court-shell .court-seal{
+      color:#79530b!important;
+      background:radial-gradient(circle,#fff9e8,rgba(183,131,25,.12))!important;
+      border-color:rgba(121,83,11,.48)!important;
+      box-shadow:inset 0 0 0 5px rgba(183,131,25,.08)!important;
+    }
+    [data-theme="light"] .court-shell .court-ledger div,
+    [data-theme="light"] .court-shell .court-step,
+    [data-theme="light"] .court-shell .arena-rank-tabs div{
+      background:rgba(255,255,255,.70)!important;
+      border-color:rgba(121,83,11,.23)!important;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.92)!important;
+    }
+    [data-theme="light"] .court-shell .arena-rank-tabs strong{color:#2a1d0d!important;}
+    [data-theme="light"] .court-shell .arena-rank-tabs span{color:rgba(42,29,13,.70)!important;}
+    [data-theme="light"] .court-shell .btn-ghost{
+      background:rgba(255,255,255,.76)!important;
+      color:#5c4110!important;
+      border-color:rgba(121,83,11,.26)!important;
+    }
+    [data-theme="light"] .court-shell .btn-ghost:hover{
+      background:#fffdf8!important;
+      color:#2a1d0d!important;
+      border-color:rgba(121,83,11,.45)!important;
+    }
     [data-theme="light"] .court-document:not(.result-paper){background:#fffaf3!important;color:#20170d!important;}
     [data-theme="light"] .sentence-text{color:#79530b!important;}
     [data-theme="light"] .verdict-card{background:linear-gradient(135deg,#fffdf9,rgba(121,83,11,.045))!important;}
