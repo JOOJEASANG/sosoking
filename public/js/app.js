@@ -1,5 +1,5 @@
 import { initAuth } from './firebase.js?v=20260729-auth-session-1';
-import { renderHome } from './pages/home-court.js?v=20260729-logo-feed-1';
+import { renderHome } from './pages/home-court.js?v=20260729-public-stats-1';
 import { renderSubmit } from './pages/submit-guard.js?v=20260728-audit-1';
 import { renderTrial } from './pages/trial-game.js?v=20260728-audit-1';
 import { renderResult } from './pages/result-court.js?v=20260728-audit-1';
@@ -11,9 +11,10 @@ import { renderBoard } from './pages/board-court.js?v=20260729-logo-feed-1';
 import { renderFooter } from './components/footer.js?v=20260728-logo-cleanup-1';
 import { initTheme, renderThemeToggle } from './components/theme.js?v=20260729-theme-global-2';
 import { initCourtDesign } from './components/court-design.js?v=20260729-light-cards-1';
-import { initNavAuthSync, renderNav } from './components/nav.js?v=20260729-auth-session-1';
+import { initNavAuthSync, renderNav } from './components/nav.js?v=20260729-route-sync-1';
 
 let routeSequence = 0;
+let routeQueued = false;
 
 function normalizedRoute() {
   const hash = location.hash || '';
@@ -29,6 +30,14 @@ function normalizedRoute() {
     if (path.startsWith('/trial/')) return `#/trial/${encodeURIComponent(decodeURIComponent(path.replace('/trial/', '')))}`;
   }
   return hash || '#/';
+}
+
+function freshContentHost() {
+  const current = document.getElementById('page-content');
+  if (!current) return null;
+  const next = current.cloneNode(false);
+  current.replaceWith(next);
+  return next;
 }
 
 function renderRouteError(content) {
@@ -54,7 +63,7 @@ async function route() {
   }
 
   const hash = normalizedRoute();
-  const content = document.getElementById('page-content');
+  const content = freshContentHost();
   if (!content) return;
   window.scrollTo(0, 0);
 
@@ -71,21 +80,31 @@ async function route() {
     else if (hash === '#/board') renderTask = renderBoard(content);
     else renderTask = renderHome(content);
 
-    renderNav();
+    renderNav(hash);
     await renderTask;
+    if (sequence !== routeSequence || !content.isConnected) return;
     renderThemeToggle();
   } catch (err) {
     console.error('route render failed:', { hash, err });
-    if (sequence === routeSequence) {
+    if (sequence === routeSequence && content.isConnected) {
       renderRouteError(content);
-      renderNav();
+      renderNav(hash);
       renderThemeToggle();
     }
   }
 }
 
-window.addEventListener('hashchange', route);
-window.addEventListener('popstate', route);
+function scheduleRoute() {
+  if (routeQueued) return;
+  routeQueued = true;
+  queueMicrotask(() => {
+    routeQueued = false;
+    route();
+  });
+}
+
+window.addEventListener('hashchange', scheduleRoute);
+window.addEventListener('popstate', scheduleRoute);
 
 (async () => {
   initTheme();
