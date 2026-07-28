@@ -20,8 +20,6 @@ export async function renderFooter() {
 
   footer.innerHTML = `
     <div class="footer-links">
-      <a href="/cases/">창작 사건 120선</a>
-      <a href="#/guide">이용 안내</a>
       <a href="#/policy/terms">이용약관</a>
       <a href="#/policy/privacy">개인정보처리방침</a>
       <a href="#/policy/ai_disclaimer">AI 서비스 안내</a>
@@ -33,7 +31,7 @@ export async function renderFooter() {
       <br><span style="display:block;margin-top:6px;">© 2026 소소킹 판결소 · AI 생활법정 · 법적 효력 없음</span>
     </div>
     <div style="margin-top:16px;">
-      <a href="/admin" rel="nofollow" style="font-size:11px;color:rgba(245,240,232,0.2);text-decoration:none;">관리자</a>
+      <a href="/admin" style="font-size:11px;color:rgba(245,240,232,0.2);text-decoration:none;">관리자</a>
     </div>
   `;
 }
