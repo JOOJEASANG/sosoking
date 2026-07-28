@@ -172,6 +172,11 @@ for (const item of ['court_comment_authors', 'report_keys', 'case_id_aliases']) 
     errors.push(`functions/admin-actions.js: cascade deletion omits ${item}`);
   }
 }
+if (!adminActions.includes('exports.deleteUserProfile')
+  || !adminActions.includes('nameSnap.data().uid === userId')
+  || !adminActions.includes('tx.delete(nameRef)')) {
+  errors.push('functions/admin-actions.js: transactional profile and nickname cleanup is missing');
+}
 
 const rules = read('firestore.rules');
 if (!/match \/reports\/\{reportId\}[\s\S]*allow create: if false;/.test(rules)) {
@@ -226,9 +231,22 @@ if (adminIndex.includes('src="/admin/admin.js')) {
   errors.push('public/admin/index.html: legacy admin module bypasses the strict bootstrap');
 }
 
-const adminOverrides = read('public/admin/admin-security-overrides.js');
-if (!adminOverrides.includes("httpsCallable(functions, 'setAdminResultVisibility')")) {
-  errors.push('public/admin/admin-security-overrides.js: admin visibility still bypasses the server callable');
+const adminBootstrap = read('public/admin/admin-bootstrap.js');
+const adminDashboard = read('public/admin/admin.js');
+if (!adminBootstrap.includes('module.mountAdminDashboard(user)')
+  || adminBootstrap.includes('admin-enhancements.js')
+  || adminBootstrap.includes('admin-security-overrides.js')) {
+  errors.push('public/admin/admin-bootstrap.js: administrator module boundary is not consolidated');
+}
+if (adminDashboard.includes('MutationObserver') || adminDashboard.includes('window._')
+  || adminDashboard.includes("updateDoc(doc(db, 'results'")
+  || adminDashboard.includes("deleteDoc(doc(db, 'cases'")) {
+  errors.push('public/admin/admin.js: legacy monkey patch or direct case mutation remains');
+}
+for (const callable of ['setAdminResultVisibility', 'deleteCourtPost', 'deleteUserProfile']) {
+  if (!adminDashboard.includes(`httpsCallable(functions, '${callable}')`)) {
+    errors.push(`public/admin/admin.js: administrator callable ${callable} is missing`);
+  }
 }
 
 const deploy = read('.github/workflows/firebase-deploy.yml');
@@ -238,7 +256,8 @@ for (const fn of [
   'syncPublicStats',
   'syncPublicStatsNow',
   'resolveCaseAlias',
-  'migrateLegacyCaseIds'
+  'migrateLegacyCaseIds',
+  'deleteUserProfile'
 ]) {
   if (!deploy.includes(`functions:${fn}`)) {
     errors.push(`.github/workflows/firebase-deploy.yml: ${fn} function is not deployed`);

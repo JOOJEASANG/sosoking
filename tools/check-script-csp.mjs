@@ -95,11 +95,16 @@ const boardCourt = fs.readFileSync('public/js/pages/board-court.js', 'utf8');
 if (!boardCourt.includes("./board.js?v=20260729-script-csp-1")) {
   errors.push('public/js/pages/board-court.js: stale board module cache version remains');
 }
+const adminIndex = fs.readFileSync('public/admin/index.html', 'utf8');
+if (!adminIndex.includes('/admin/admin-bootstrap.js?v=20260729-admin-consolidated-1')) {
+  errors.push('public/admin/index.html: consolidated administrator bootstrap version is missing');
+}
 const adminBootstrap = fs.readFileSync('public/admin/admin-bootstrap.js', 'utf8');
-for (const moduleName of ['admin.js', 'admin-enhancements.js', 'admin-security-overrides.js']) {
-  if (!adminBootstrap.includes(`./${moduleName}?v=20260729-script-csp-1`)) {
-    errors.push(`public/admin/admin-bootstrap.js: stale ${moduleName} cache version remains`);
-  }
+if (!adminBootstrap.includes("./admin.js?v=20260729-admin-consolidated-1")) {
+  errors.push('public/admin/admin-bootstrap.js: consolidated dashboard cache version is missing');
+}
+if (adminBootstrap.includes('admin-enhancements.js') || adminBootstrap.includes('admin-security-overrides.js')) {
+  errors.push('public/admin/admin-bootstrap.js: obsolete patch module import remains');
 }
 
 if (errors.length) {
