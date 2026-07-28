@@ -1,17 +1,26 @@
 import { renderHome as renderBaseHome } from './home.js?v=20260630-3';
 
+const BRAND_LOGO_512 = '/icons/sosoking-512.png?v=20260728-ui-audit-2';
+const BRAND_LOGO_192 = '/icons/sosoking-192.png?v=20260728-ui-audit-2';
+
 function applyBrandLogo(container) {
   const logo = container.querySelector('.hero-section > img[alt="소소킹 로고"]');
   if (!logo) return;
-  logo.src = '/icons/sosoking-512.png?v=20260728-exact-logo-1';
+  logo.src = BRAND_LOGO_512;
   logo.width = 512;
   logo.height = 512;
+  logo.decoding = 'async';
+  logo.fetchPriority = 'high';
+  logo.style.visibility = 'visible';
+  logo.onerror = () => {
+    if (logo.src.includes('sosoking-192.png')) return;
+    logo.src = BRAND_LOGO_192;
+  };
 }
 
 function addCourtEntrance(container) {
   const hero = container.querySelector('.hero-section');
   if (!hero || document.getElementById('court-entrance')) return;
-
   hero.insertAdjacentHTML('afterend', `
     <div class="container" id="court-entrance" style="margin-top:22px;">
       <div class="court-shell" style="padding:20px;">
@@ -33,10 +42,8 @@ function addCourtEntrance(container) {
 }
 
 function addProcedureSeal(container) {
-  const target = Array.from(container.querySelectorAll('.container'))
-    .find(element => element.textContent.includes('재판 진행 순서'));
+  const target = Array.from(container.querySelectorAll('.container')).find(element => element.textContent.includes('재판 진행 순서'));
   if (!target || document.getElementById('court-procedure-note')) return;
-
   target.insertAdjacentHTML('afterbegin', `
     <div id="court-procedure-note" class="court-shell" style="padding:16px;margin-bottom:18px;">
       <div class="court-kicker">COURT PROTOCOL</div>
@@ -47,10 +54,7 @@ function addProcedureSeal(container) {
 
 function stepTextParts(step) {
   const textBox = step?.querySelector(':scope > div:nth-child(2)');
-  return {
-    title: textBox?.children?.[0] || null,
-    description: textBox?.children?.[1] || null
-  };
+  return { title: textBox?.children?.[0] || null, description: textBox?.children?.[1] || null };
 }
 
 function fixLegacyHomeCopy(container) {
@@ -60,12 +64,10 @@ function fixLegacyHomeCopy(container) {
     if (title) title.textContent = '사건 내용 접수 📝';
     if (description) description.textContent = '무슨 일이 있었는지 적으면 AI가 알아보기 쉬운 사건명을 자동으로 정합니다.';
   }
-
   if (procedure[3]) {
     const { description } = stepTextParts(procedure[3]);
     if (description) description.textContent = '자동 배정된 판사 성향이 반영된 문서형 판결과 생활형 처분이 내려집니다.';
   }
-
   container.querySelectorAll('.judge-card').forEach(card => {
     card.setAttribute('role', 'link');
     card.setAttribute('tabindex', '0');
