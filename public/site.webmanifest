@@ -8,12 +8,12 @@
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui", "browser"],
   "orientation": "portrait-primary",
-  "background_color": "#101522",
-  "theme_color": "#161b2e",
+  "background_color": "#05070c",
+  "theme_color": "#05070c",
   "categories": ["entertainment", "lifestyle"],
   "icons": [
     {
-      "src": "/app-icon.svg?v=20260630-8",
+      "src": "/app-icon.svg?v=20260728-logo-cleanup-1",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"

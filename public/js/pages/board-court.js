@@ -1,4 +1,4 @@
-import { renderBoard as renderBaseBoard } from './board.js?v=20260728-seed-seo-1';
+import { renderBoard as renderBaseBoard } from './board.js?v=20260728-audit-1';
 
 function ensureBoardGameStyle() {
   if (document.getElementById('board-game-style')) return;

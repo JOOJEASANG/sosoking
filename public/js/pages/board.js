@@ -59,12 +59,6 @@ function totalComments(r) {
   return Number(r.commentCount || 0);
 }
 
-function sourceLabel(r) {
-  if (r.source === 'daily_ai') return '오늘의 AI 사건';
-  if (r.source === 'official_seed') return '소소킹 창작 사건';
-  return '사용자 생활사건';
-}
-
 export async function renderBoard(container) {
   container.innerHTML = `
     <div>
@@ -72,8 +66,7 @@ export async function renderBoard(container) {
       <div class="container" style="padding-top:22px;padding-bottom:90px;">
         <div style="margin-bottom:18px;">
           <div style="font-family:var(--font-serif);font-size:22px;font-weight:900;color:var(--gold);margin-bottom:6px;">공개 판결기록</div>
-          <div style="font-size:13px;color:var(--cream-dim);line-height:1.7;">사용자가 공개한 사건과 소소킹 창작 사건을 함께 볼 수 있습니다. 판사 성향과 억울지수를 확인하고 투표와 방청석 한마디를 남겨보세요.</div>
-          <a href="/cases/" style="display:inline-flex;align-items:center;gap:6px;margin-top:11px;padding:8px 12px;border:1px solid rgba(201,168,76,.38);border-radius:999px;color:var(--gold);font-size:12px;font-weight:900;text-decoration:none;">📚 창작 사건 120선 전체 보기</a>
+          <div style="font-size:13px;color:var(--cream-dim);line-height:1.7;">다른 사람들이 공개한 생활판결 기록입니다. 판사 성향과 랜덤 억울지수를 확인하고 판결문에 투표와 방청석 한마디를 남길 수 있습니다.</div>
         </div>
         <div id="today-pick"></div>
         <div id="board-list"><div class="loading-dots"><span></span><span></span><span></span></div></div>
@@ -117,7 +110,7 @@ function todayPick([id, r]) {
       <span class="board-judge-chip">${icon} ${escapeHtml(judgeType)} 판사</span>
       <span class="board-grievance-chip">억울지수 <strong>${grievance}/10</strong>${grievanceMeter(grievance)}</span>
     </div>
-    <div style="display:flex;justify-content:space-between;gap:8px;margin-top:10px;font-size:12px;color:var(--cream-dim);"><span>${escapeHtml(sourceLabel(r))}</span><span>🧑‍⚖️ ${totalVotes(r)}표 · 💬 ${totalComments(r)}</span></div>
+    <div style="margin-top:10px;text-align:right;font-size:12px;color:var(--cream-dim);">🧑‍⚖️ ${totalVotes(r)}표 · 💬 ${totalComments(r)}</div>
   </div>`;
 }
 
@@ -125,6 +118,7 @@ function boardRow(id, r) {
   const judgeType = judgeTypeFor(id, r);
   const icon = r.judgeIcon || JUDGE_ICON[judgeType] || '⚖️';
   const grievance = grievanceFor(id, r);
+  const isDaily = r.source === 'daily_ai';
 
   return `<div class="card" onclick="location.hash='#/result/${encodeURIComponent(id)}'" style="padding:16px 18px;cursor:pointer;">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px;"><div style="font-weight:800;font-size:15px;line-height:1.45;flex:1;">${escapeHtml(r.caseTitle || '제목 없음')}</div><div style="font-size:11px;color:var(--cream-dim);white-space:nowrap;margin-top:2px;">${escapeHtml(fmtDate(r.createdAt))}</div></div>
@@ -134,7 +128,7 @@ function boardRow(id, r) {
       <span class="board-grievance-chip">억울지수 <strong>${grievance}/10</strong>${grievanceMeter(grievance)}</span>
     </div>
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px;font-size:12px;">
-      <span style="color:var(--cream-dim);">${escapeHtml(sourceLabel(r))}</span>
+      <span style="color:var(--cream-dim);">${isDaily ? '오늘의 AI 사건' : '생활사건 기록'}</span>
       <span style="color:var(--gold);white-space:nowrap;">🧑‍⚖️ ${totalVotes(r)} · 💬 ${totalComments(r)} →</span>
     </div>
   </div>`;
