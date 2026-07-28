@@ -5,6 +5,7 @@ import { avatarImg } from '../utils/avatar.js?v=20260630-3';
 
 let navRenderVersion = 0;
 let navAuthSyncStarted = false;
+let activeRouteOverride = '';
 
 async function loadProfile(user) {
   if (!user || user.isAnonymous) return {};
@@ -12,11 +13,27 @@ async function loadProfile(user) {
   return snap?.exists() ? snap.data() : {};
 }
 
-export function renderNav() {
+function routeFromLocation() {
+  const hash = location.hash || '';
+  if (hash && hash !== '#') return hash;
+  const path = location.pathname.replace(/\/$/, '') || '/';
+  if (path === '/') return '#/';
+  if (path === '/board') return '#/board';
+  if (path === '/submit') return '#/submit';
+  if (path === '/guide') return '#/guide';
+  if (path === '/auth') return '#/auth';
+  if (path === '/my-cases') return '#/my-cases';
+  if (path.startsWith('/result/')) return '#/result/';
+  if (path.startsWith('/trial/')) return '#/trial/';
+  return '#/';
+}
+
+export function renderNav(activeRoute = '') {
+  if (activeRoute) activeRouteOverride = activeRoute;
   const renderVersion = ++navRenderVersion;
   document.getElementById('bottom-nav')?.remove();
 
-  const hash = location.hash || '#/';
+  const hash = activeRoute || activeRouteOverride || routeFromLocation();
   const isHome = hash === '#/' || hash === '#' || hash === '';
   const isBoard = hash.startsWith('#/board');
   const isSubmit = hash.startsWith('#/submit');
@@ -63,5 +80,5 @@ export function renderNav() {
 export function initNavAuthSync() {
   if (navAuthSyncStarted) return;
   navAuthSyncStarted = true;
-  onAuthStateChanged(auth, () => renderNav());
+  onAuthStateChanged(auth, () => renderNav(activeRouteOverride || routeFromLocation()));
 }
