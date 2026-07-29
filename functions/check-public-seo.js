@@ -9,21 +9,25 @@ if (!getApps().length) initializeApp({ projectId: process.env.GCLOUD_PROJECT || 
 const db = getFirestore();
 const {
   extractCaseId,
-  loadPublicResult,
-  listPublicResultEntries,
   renderStructuredDocument,
   renderPublicResultHtml,
   renderSitemapXml,
   publicResultUrl
 } = require('./public-seo');
+const {
+  loadSafePublicResult,
+  listSafePublicResultEntries
+} = require('./public-seo-safe');
 
 const PUBLIC_ID = 'seo_public_case_20260729';
 const PRIVATE_ID = 'seo_private_case_20260729';
+const UNSAFE_ID = 'seo_unsafe_case_20260729';
 
 async function cleanup() {
   await Promise.all([
     db.doc(`results/${PUBLIC_ID}`).delete().catch(() => null),
-    db.doc(`results/${PRIVATE_ID}`).delete().catch(() => null)
+    db.doc(`results/${PRIVATE_ID}`).delete().catch(() => null),
+    db.doc(`results/${UNSAFE_ID}`).delete().catch(() => null)
   ]);
 }
 
@@ -34,9 +38,10 @@ async function run() {
   await Promise.all([
     db.doc(`results/${PUBLIC_ID}`).set({
       isPublic: true,
-      userId: 'must-never-be-rendered',
+      publicDataVersion: 1,
+      publicNickname: '익명 원고',
+      publicCaseDescription: '마지막 푸딩이 사라져 생활분쟁이 발생했다.',
       caseTitle: '냉장고 마지막 푸딩 실종 사건',
-      caseDescription: '가족이 남겨 둔 마지막 푸딩을 허락 없이 먹어 억울함이 발생했다.',
       docketNumber: '소소260729-생활판결-1234',
       judgeType: '논리집착형',
       judgeIcon: '🧮',
@@ -53,6 +58,15 @@ async function run() {
       isPublic: false,
       caseTitle: '비공개 사건',
       caseDescription: '검색엔진에 절대 노출되면 안 되는 내용',
+      createdAt: now,
+      updatedAt: now
+    }),
+    db.doc(`results/${UNSAFE_ID}`).set({
+      isPublic: true,
+      userId: 'must-never-be-rendered',
+      nickname: '원문 닉네임',
+      caseDescription: '정리 전 원문 사건 내용',
+      caseTitle: '정리 전 공개 사건',
       createdAt: now,
       updatedAt: now
     })
@@ -74,14 +88,16 @@ async function run() {
   assert.match(structured, /class="document-order"/);
   assert.doesNotMatch(structured, /\*\*/);
 
-  const publicResult = await loadPublicResult(PUBLIC_ID);
-  const privateResult = await loadPublicResult(PRIVATE_ID);
-  assert.ok(publicResult, 'public result should be loadable');
+  const publicResult = await loadSafePublicResult(PUBLIC_ID);
+  const privateResult = await loadSafePublicResult(PRIVATE_ID);
+  const unsafeResult = await loadSafePublicResult(UNSAFE_ID);
+  assert.ok(publicResult, 'sanitized public result should be loadable');
   assert.equal(privateResult, null, 'private result must not be loadable');
+  assert.equal(unsafeResult, null, 'unsanitized public result must not be loadable');
 
   const html = renderPublicResultHtml(publicResult);
   assert.match(html, /냉장고 마지막 푸딩 실종 사건 \| 소소킹 판결소/);
-  assert.match(html, /가족이 남겨 둔 마지막 푸딩/);
+  assert.match(html, /마지막 푸딩이 사라져 생활분쟁/);
   assert.match(html, /피고는 동일 제품 두 개를 보충/);
   assert.match(html, /class="document-subheading"[^>]*>확인 정황<\/h3>/);
   assert.match(html, /class="document-subheading"[^>]*>주요 증거<\/h3>/);
@@ -91,19 +107,22 @@ async function run() {
   assert.match(html, /<meta name="robots" content="index,follow/);
   assert.match(html, /<script type="application\/ld\+json">/);
   assert.doesNotMatch(html, /must-never-be-rendered/);
+  assert.doesNotMatch(html, /정리 전 원문 사건 내용/);
   assert.doesNotMatch(html, /userId/);
 
-  const entries = await listPublicResultEntries();
-  assert.ok(entries.some(entry => entry.caseId === PUBLIC_ID), 'dynamic sitemap should include public results');
+  const entries = await listSafePublicResultEntries();
+  assert.ok(entries.some(entry => entry.caseId === PUBLIC_ID), 'dynamic sitemap should include sanitized public results');
   assert.ok(!entries.some(entry => entry.caseId === PRIVATE_ID), 'dynamic sitemap must exclude private results');
+  assert.ok(!entries.some(entry => entry.caseId === UNSAFE_ID), 'dynamic sitemap must exclude unsanitized public results');
 
   const sitemap = renderSitemapXml(entries);
   assert.match(sitemap, new RegExp(`<loc>${publicResultUrl(PUBLIC_ID)}</loc>`));
   assert.doesNotMatch(sitemap, new RegExp(PRIVATE_ID));
+  assert.doesNotMatch(sitemap, new RegExp(UNSAFE_ID));
   assert.doesNotMatch(sitemap, /#\/result\//);
 
   await cleanup();
-  console.log('Public SEO emulator validation passed: public-only loading, structured result headings, metadata, content rendering, and sitemap filtering.');
+  console.log('Public SEO emulator validation passed: sanitized public-only loading, structured result headings, metadata, and sitemap filtering.');
 }
 
 run().catch(async error => {
