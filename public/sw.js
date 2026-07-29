@@ -1,12 +1,13 @@
-const CACHE_NAME = 'sosoking-app-v20260729-brand-policy-1';
+const CACHE_NAME = 'sosoking-app-v20260729-sans-font-1';
 const APP_SHELL = [
   '/',
   '/index.html',
   '/site.webmanifest?v=20260729-pwa-icon-center-1',
   '/css/main.css?v=20260728-ui-audit-2',
-  '/css/brand-logo.css?v=20260729-daily-real-court-1',
+  '/css/brand-logo.css?v=20260729-sans-font-1',
   '/css/home-light.css?v=20260729-light-home-1',
   '/css/layout-spacing.css?v=20260729-spacing-flow-2',
+  '/css/sans-font.css?v=20260729-sans-font-1',
   '/js/theme-init.js?v=20260729-script-csp-1',
   '/js/app.js?v=20260729-brand-policy-1',
   '/js/pages/home-court.js?v=20260729-brand-policy-1',
