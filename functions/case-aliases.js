@@ -2,7 +2,7 @@
 
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { isAdminAuth } = require('./admin-utils');
-const { enforceActionRateLimit } = require('./security');
+const { enforceActionRateLimit, requireAppCheck } = require('./security');
 const { cleanCaseId, migrateLegacyCase, resolveAlias, scanLegacyCases } = require('./legacy-case-migration');
 
 const REGION = 'asia-northeast3';
@@ -12,6 +12,7 @@ exports.resolveCaseAlias = onCall({
   timeoutSeconds: 20,
   memory: '256MiB'
 }, async request => {
+  requireAppCheck(request);
   const caseId = cleanCaseId(request.data?.caseId);
   if (!caseId) throw new HttpsError('invalid-argument', '사건 주소가 올바르지 않습니다.');
   if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
@@ -28,6 +29,7 @@ exports.migrateLegacyCaseIds = onCall({
   timeoutSeconds: 540,
   memory: '512MiB'
 }, async request => {
+  requireAppCheck(request);
   if (!request.auth || !(await isAdminAuth(request.auth))) {
     throw new HttpsError('permission-denied', '관리자만 기존 사건 주소를 이전할 수 있습니다.');
   }
