@@ -91,15 +91,13 @@ service cloud.firestore {
     }
 
     match /results/{caseId} {
-      // 단일 문서 공개 조회는 민감 필드가 실제로 제거됐는지까지 확인한다.
-      allow get: if signedIn() && (
-        isCaseOwner(caseId) ||
-        isSafePublicResultData(resource.data) ||
-        isAdmin()
-      );
+      // 공개용으로 정리된 결과는 로그인 전에도 읽을 수 있다. 원문 cases 문서는 계속 비공개다.
+      allow get: if isSafePublicResultData(resource.data)
+        || isCaseOwner(caseId)
+        || isAdmin();
 
-      // 목록 쿼리는 isPublic/publicDataVersion 필터로 안전한 공개 스키마만 요청해야 한다.
-      allow list: if signedIn() && isPublicResultListData(resource.data);
+      // 목록 쿼리는 isPublic/publicDataVersion 필터를 모두 포함해야 한다.
+      allow list: if isPublicResultListData(resource.data);
 
       // 공개 전환 시 인증 UID와 공개 불필요 원문 필드를 제거하도록 서버 함수만 사용한다.
       allow update: if isAdmin();
