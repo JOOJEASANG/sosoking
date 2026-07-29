@@ -9,6 +9,7 @@ Object.assign(exports, require('./profile'));
 Object.assign(exports, require('./social'));
 Object.assign(exports, require('./reports'));
 Object.assign(exports, require('./public-stats'));
+Object.assign(exports, require('./public-seo'));
 Object.assign(exports, require('./case-aliases'));
 Object.assign(exports, require('./submit-secure'));
 Object.assign(exports, require('./generate-trial-lite'));

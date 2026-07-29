@@ -1,4 +1,4 @@
-import { renderBoard as renderBaseBoard } from './board.js?v=20260729-script-csp-1';
+import { renderBoard as renderBaseBoard } from './board.js?v=20260729-script-csp-1-public-seo-1';
 
 function ensureBoardGameStyle() {
   if (document.getElementById('board-game-style')) return;

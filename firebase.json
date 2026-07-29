@@ -139,6 +139,20 @@
       }
     ],
     "rewrites": [
+      {
+        "source": "/sitemap.xml",
+        "function": {
+          "functionId": "publicSitemap",
+          "region": "asia-northeast3"
+        }
+      },
+      {
+        "source": "/result/**",
+        "function": {
+          "functionId": "publicResultPage",
+          "region": "asia-northeast3"
+        }
+      },
       { "source": "/admin", "destination": "/admin/index.html" },
       { "source": "/admin/", "destination": "/admin/index.html" },
       { "source": "/board", "destination": "/index.html" },
@@ -146,7 +160,6 @@
       { "source": "/guide", "destination": "/index.html" },
       { "source": "/auth", "destination": "/index.html" },
       { "source": "/my-cases", "destination": "/index.html" },
-      { "source": "/result/**", "destination": "/index.html" },
       { "source": "/trial/**", "destination": "/index.html" }
     ]
   },
