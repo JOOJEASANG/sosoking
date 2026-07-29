@@ -37,18 +37,22 @@ async function loadSafePublicResult(caseId) {
   return normalizeSafePublicResult(caseId, raw);
 }
 
+function safePublicResultsQuery() {
+  return db.collection('results')
+    .where('isPublic', '==', true)
+    .where('publicDataVersion', '==', 1);
+}
+
 async function listSafePublicResultEntries() {
   let snapshot;
   try {
-    snapshot = await db.collection('results')
-      .where('isPublic', '==', true)
+    snapshot = await safePublicResultsQuery()
       .orderBy('createdAt', 'desc')
       .limit(SITEMAP_RESULT_LIMIT)
       .get();
   } catch (error) {
     console.warn('ordered safe public sitemap query failed; retrying without ordering:', error?.code || error);
-    snapshot = await db.collection('results')
-      .where('isPublic', '==', true)
+    snapshot = await safePublicResultsQuery()
       .limit(SITEMAP_RESULT_LIMIT)
       .get();
   }
