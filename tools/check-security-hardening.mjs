@@ -63,6 +63,18 @@ for (const required of ['isSanitizedPublicResult', 'exports.publicResultPage', '
   if (!safeSeo.includes(required)) errors.push(`functions/public-seo-safe.js: missing ${required}`);
 }
 
+const publicStats = read('functions/public-stats.js');
+for (const required of [
+  'async function loadRecentSafePublicResults()',
+  'function isMissingIndexError(error)',
+  "message.includes('requires an index')",
+  "message.includes('index is currently building')",
+  '.limit(500)',
+  '.sort((left, right) => createdAtMillis(right) - createdAtMillis(left))'
+]) {
+  if (!publicStats.includes(required)) errors.push(`functions/public-stats.js: missing deploy-safe index fallback ${required}`);
+}
+
 const main = read('functions/main.js');
 if (!main.includes("require('./public-seo-safe')")) {
   errors.push('functions/main.js: sanitized public SEO functions are not exported');
@@ -91,16 +103,18 @@ if (social.includes('GoogleGenerativeAI')) {
 }
 
 const deploy = read('.github/workflows/firebase-deploy.yml');
+const functionsStep = deploy.indexOf('Deploy current Functions first');
 const sanitizeStep = deploy.indexOf('Sanitize existing public results');
 const rulesStep = deploy.indexOf('Deploy Firestore configuration and Hosting');
+const statisticsStep = deploy.indexOf('Initialize public statistics');
 if (deploy.includes('functions:sanitizePublicResult')) {
   errors.push('.github/workflows/firebase-deploy.yml: Eventarc sanitizer trigger must not block production deployment');
 }
 if (!deploy.includes('node functions/sanitize-public-results-cli.js')) {
   errors.push('.github/workflows/firebase-deploy.yml: existing public records are not sanitized');
 }
-if (sanitizeStep < 0 || rulesStep < 0 || sanitizeStep > rulesStep) {
-  errors.push('.github/workflows/firebase-deploy.yml: existing records must be sanitized before restrictive rules deploy');
+if (functionsStep < 0 || sanitizeStep <= functionsStep || rulesStep <= sanitizeStep || statisticsStep <= rulesStep) {
+  errors.push('.github/workflows/firebase-deploy.yml: required order is Functions, sanitation, Firestore/Hosting, then index-dependent statistics');
 }
 
 if (fs.existsSync('.github/workflows/validate.yml')) {
@@ -113,4 +127,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Security hardening validation passed: App Check, deploy-safe public data sanitation, safe SEO, CSP, appeal timeout, and CI deduplication are intact.');
+console.log('Security hardening validation passed: App Check, deploy-safe sanitation and index handling, safe SEO, CSP, appeal timeout, and CI deduplication are intact.');
