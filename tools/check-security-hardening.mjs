@@ -45,9 +45,13 @@ for (const required of [
   'function isSafePublicResultData(data)',
   'data.publicDataVersion == 1',
   "!data.keys().hasAny(['userId', 'caseDescription', 'nickname'])",
-  'isSafePublicResultData(resource.data)'
+  'allow get: if isSafePublicResultData(resource.data)',
+  'allow list: if isPublicResultListData(resource.data)'
 ]) {
   if (!rules.includes(required)) errors.push(`firestore.rules: missing ${required}`);
+}
+if (rules.includes('allow list: if signedIn() && isPublicResultListData(resource.data)')) {
+  errors.push('firestore.rules: sanitized public result lists must not depend on anonymous sign-in timing');
 }
 
 const sanitizer = read('functions/public-result-sanitizer.js');
@@ -86,9 +90,19 @@ if (main.includes("Object.assign(exports, require('./public-seo'))")) {
   errors.push('functions/main.js: unsafe direct public SEO handlers remain exported');
 }
 
+const publicLoader = read('public/js/utils/public-results.js');
+for (const required of [
+  "where('isPublic', '==', true)",
+  "where('publicDataVersion', '==', 1)",
+  "orderBy('createdAt', 'desc')",
+  "code.includes('failed-precondition')"
+]) {
+  if (!publicLoader.includes(required)) errors.push(`public/js/utils/public-results.js: missing ${required}`);
+}
+
 const board = read('public/js/pages/board.js');
-if (!board.includes("where('publicDataVersion', '==', 1)")) {
-  errors.push('public/js/pages/board.js: board query does not exclude pending public sanitation');
+if (!board.includes('loadSafePublicResults')) {
+  errors.push('public/js/pages/board.js: board does not use the sanitized public result loader');
 }
 if (board.includes('r.caseDescription')) {
   errors.push('public/js/pages/board.js: board still renders raw caseDescription');
@@ -127,4 +141,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Security hardening validation passed: App Check, deploy-safe sanitation and index handling, safe SEO, CSP, appeal timeout, and CI deduplication are intact.');
+console.log('Security hardening validation passed: App Check, public record access, deploy-safe sanitation and index handling, safe SEO, CSP, appeal timeout, and CI deduplication are intact.');
