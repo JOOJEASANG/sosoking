@@ -107,7 +107,7 @@ function bindDashboardHeaderRefresh() {
 
 async function mountDashboard(user) {
   if (!dashboardModulePromise) {
-    dashboardModulePromise = import('./admin.js?v=20260729-admin-brand-actions-1').catch(error => {
+    dashboardModulePromise = import('./admin.js?v=20260729-report-moderation-1&ui=20260729-admin-brand-actions-1').catch(error => {
       dashboardModulePromise = null;
       throw error;
     });
