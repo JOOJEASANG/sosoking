@@ -50,7 +50,7 @@ async function exists(path) {
 
   const deleted = await deleteCourtPostData(ownCaseId, { ownerUid });
   assert.equal(deleted.caseId, ownCaseId);
-  assert.equal(deleted.ownerUid, ownerUid);
+  assert.equal(Object.hasOwn(deleted, 'ownerUid'), false);
   assert.equal(deleted.removedLegacyAlias, true);
   assert.ok(deleted.deleted >= 11);
 
