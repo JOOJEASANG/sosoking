@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sosoking-app-v20260729-daily-real-court-1';
+const CACHE_NAME = 'sosoking-app-v20260729-brand-policy-1';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -8,8 +8,13 @@ const APP_SHELL = [
   '/css/home-light.css?v=20260729-light-home-1',
   '/css/layout-spacing.css?v=20260729-spacing-flow-2',
   '/js/theme-init.js?v=20260729-script-csp-1',
-  '/js/app.js?v=20260729-daily-real-court-1',
+  '/js/app.js?v=20260729-brand-policy-1',
+  '/js/pages/home-court.js?v=20260729-brand-policy-1',
+  '/js/pages/home.js?v=20260729-brand-policy-1',
+  '/js/pages/guide.js?v=20260729-brand-policy-1',
+  '/js/pages/policy.js?v=20260729-brand-policy-1',
   '/js/pages/daily-real-court.js?v=20260729-daily-real-court-1',
+  '/js/components/footer.js?v=20260729-brand-policy-1',
   '/logo.png?v=20260729-brand-unified-1',
   '/icons/sosoking-192.png?v=20260729-pwa-icon-center-1',
   '/icons/sosoking-512.png?v=20260729-pwa-icon-center-1',
