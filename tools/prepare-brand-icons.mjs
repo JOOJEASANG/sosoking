@@ -23,14 +23,21 @@ await transparentIcon(192, path.join(iconDir, 'sosoking-192.png'));
 await transparentIcon(48, path.join(iconDir, 'favicon-48.png'));
 await transparentIcon(32, path.join(iconDir, 'favicon-32.png'));
 
-const maskableLogo = await sharp(source)
-  .resize(360, 360, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+// Android adaptive icons crop the outer canvas before applying the launcher mask.
+// Trim the source transparency first, then keep the mascot inside the maskable safe zone.
+// A small rightward optical correction balances the red seal on the mascot's right side.
+const trimmedMaskableSource = await sharp(source)
+  .trim({ background: { r: 0, g: 0, b: 0, alpha: 0 }, threshold: 8 })
+  .png()
+  .toBuffer();
+const maskableLogo = await sharp(trimmedMaskableSource)
+  .resize(400, 400, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
   .png()
   .toBuffer();
 await sharp({
   create: { width: 512, height: 512, channels: 4, background: '#0b0f16' }
 })
-  .composite([{ input: maskableLogo, gravity: 'centre' }])
+  .composite([{ input: maskableLogo, left: 64, top: 56 }])
   .png({ compressionLevel: 9, palette: true, quality: 95 })
   .toFile(path.join(iconDir, 'sosoking-maskable-512.png'));
 
