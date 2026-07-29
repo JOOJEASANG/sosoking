@@ -26,8 +26,10 @@ function publicBusinessInfo(value) {
   );
 }
 
+const dailyLimit = 1;
+await db.doc('site_settings/config').set({ dailyLimit }, { merge: true });
 await db.doc('site_public/config').set({
-  dailyLimit: numberInRange(data.dailyLimit, 3, 1, 20),
+  dailyLimit,
   cooldownSec: numberInRange(data.cooldownSec, 45, 0, 300),
   businessInfo: publicBusinessInfo(data.businessInfo),
   updatedAt: FieldValue.serverTimestamp()
@@ -36,5 +38,6 @@ await db.doc('site_public/config').set({
 console.log(JSON.stringify({
   synced: true,
   sourceExists: source.exists,
-  fields: ['dailyLimit', 'cooldownSec', 'businessInfo']
+  fields: ['dailyLimit', 'cooldownSec', 'businessInfo'],
+  dailyLimit
 }));
