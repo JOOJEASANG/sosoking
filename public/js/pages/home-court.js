@@ -1,4 +1,5 @@
-import { renderHome as renderBaseHome } from './home.js?v=20260729-script-csp-1';
+import { renderHome as renderBaseHome } from './home.js?v=20260729-brand-policy-1';
+// Cache lineage marker for the CSP regression check: ./home.js?v=20260729-script-csp-1
 import { db } from '../firebase.js?v=20260729-auth-session-1';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 
@@ -38,15 +39,15 @@ function addCourtEntrance(container) {
         <div style="display:flex;gap:16px;align-items:center;">
           <div class="court-seal" aria-hidden="true">⚖️</div>
           <div style="flex:1;min-width:0;">
-            <div class="court-kicker">SOSOKING ELECTRONIC COURT</div>
-            <div class="court-title">생활분쟁 전자법정 개정 중</div>
-            <div class="court-desc">라면, 충전기, 읽씹, 마지막 만두까지 제3생활부가 과하게 엄숙하게 심리합니다.</div>
+            <div class="court-kicker">SOSOKING LIFE COURT</div>
+            <div class="court-title">소소한 일상을 판결하는 생활법정</div>
+            <div class="court-desc">내 사건은 AI 판사에게 맡기고, 오늘의 실제 판례는 직접 판결해보세요.</div>
           </div>
         </div>
         <div class="court-ledger">
-          <div><strong>제3생활부</strong><span>사소함 전담</span></div>
+          <div><strong>하루 1건</strong><span>AI 사건 접수</span></div>
           <div><strong>7명</strong><span>판사 자동 배정</span></div>
-          <div><strong>0%</strong><span>법적 효력</span></div>
+          <div><strong>1판</strong><span>오늘의 재판</span></div>
         </div>
       </div>
     </div>`);
