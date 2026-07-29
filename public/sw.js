@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sosoking-app-v20260729-spacing-flow-2';
+const CACHE_NAME = 'sosoking-app-v20260729-spacing-flow-2-public-seo-1';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -8,7 +8,7 @@ const APP_SHELL = [
   '/css/home-light.css?v=20260729-light-home-1',
   '/css/layout-spacing.css?v=20260729-spacing-flow-2',
   '/js/theme-init.js?v=20260729-script-csp-1',
-  '/js/app.js?v=20260729-compact-spacing-1',
+  '/js/app.js?v=20260729-compact-spacing-1-public-seo-1',
   '/logo.png?v=20260729-brand-unified-1',
   '/icons/sosoking-192.png?v=20260729-pwa-icon-center-1',
   '/icons/sosoking-512.png?v=20260729-pwa-icon-center-1',
@@ -55,10 +55,10 @@ async function putCache(request, response) {
 async function networkFirst(request, fallbackRequest = request) {
   try {
     const response = await fetch(request);
-    await putCache(fallbackRequest, response);
+    await putCache(request, response);
     return response;
   } catch (error) {
-    const cached = await caches.match(fallbackRequest);
+    const cached = await caches.match(request) || await caches.match(fallbackRequest);
     if (cached) return cached;
     throw error;
   }
@@ -90,6 +90,10 @@ self.addEventListener('fetch', event => {
   if (url.pathname.startsWith('/admin') || url.pathname.startsWith('/__/auth/')) return;
 
   if (request.mode === 'navigate') {
+    if (url.pathname.startsWith('/result/')) {
+      event.respondWith(fetch(request));
+      return;
+    }
     event.respondWith(networkFirst(request, '/index.html').catch(() => caches.match('/')));
     return;
   }
