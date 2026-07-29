@@ -11,7 +11,6 @@ Object.assign(exports, require('./social'));
 Object.assign(exports, require('./reports'));
 Object.assign(exports, require('./public-stats'));
 Object.assign(exports, require('./public-seo-safe'));
-Object.assign(exports, require('./public-result-sanitizer'));
 Object.assign(exports, require('./case-aliases'));
 Object.assign(exports, require('./submit-secure'));
 Object.assign(exports, require('./generate-trial-lite'));
