@@ -161,7 +161,7 @@ export async function renderMyCases(container) {
 function _caseRow(id, c) {
   const st = STATUS[c.status] || STATUS.pending;
   const href = c.status === 'completed'
-    ? `#/result/${encodeURIComponent(id)}`
+    ? `#/verdict/${encodeURIComponent(id)}`
     : (c.status === 'processing' || c.status === 'pending')
       ? `#/trial/${encodeURIComponent(id)}`
       : '';
