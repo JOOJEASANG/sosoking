@@ -1,9 +1,7 @@
 'use strict';
 
-const { onDocumentWritten } = require('firebase-functions/v2/firestore');
 const { FieldValue } = require('firebase-admin/firestore');
 
-const REGION = 'asia-northeast3';
 const SENSITIVE_FIELDS = ['userId', 'caseDescription', 'nickname'];
 
 function hasOwn(data, key) {
@@ -39,24 +37,6 @@ function publicSanitizationPatch(data = {}) {
   return changed ? patch : null;
 }
 
-exports.sanitizePublicResult = onDocumentWritten({
-  document: 'results/{caseId}',
-  region: REGION,
-  timeoutSeconds: 60,
-  memory: '256MiB',
-  maxInstances: 20
-}, async event => {
-  const after = event.data?.after;
-  if (!after?.exists) return;
-
-  const patch = publicSanitizationPatch(after.data() || {});
-  if (!patch) return;
-
-  await after.ref.set(patch, { merge: true });
-  console.log('sanitized public result document:', event.params.caseId);
-});
-
-Object.defineProperty(module.exports, 'publicSanitizationPatch', {
-  value: publicSanitizationPatch,
-  enumerable: false
-});
+module.exports = {
+  publicSanitizationPatch
+};
