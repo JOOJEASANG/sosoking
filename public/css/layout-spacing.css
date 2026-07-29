@@ -1,26 +1,24 @@
-/* 메뉴 페이지 하단 공백을 줄이고 푸터가 자연스럽게 이어지도록 정리한다. */
+/* 메뉴 페이지 끝과 푸터 사이에 화면 높이만큼 빈 공간이 생기지 않도록 문서 흐름을 고정한다. */
 #app {
-  min-height: 100svh;
+  display: block !important;
+  min-height: 0 !important;
 }
 
-@supports (min-height: 100dvh) {
-  #app {
-    min-height: 100dvh;
-  }
-}
-
-/* 남는 화면 높이를 본문 아래 빈 공간이 아니라 푸터 배경이 채운다. */
+/* 본문과 푸터는 실제 콘텐츠 높이만 사용한다. */
 #page-content {
-  flex: 0 0 auto;
-  min-height: 0;
+  display: block;
+  flex: none !important;
+  min-height: 0 !important;
 }
 
 #site-footer {
-  flex: 1 0 auto;
+  display: block;
+  flex: none !important;
+  min-height: 0 !important;
   margin-top: 0;
 }
 
-/* 기존 각 화면의 고정 하단 여백은 푸터와 하단 메뉴 안전영역이 대신한다. */
+/* 기존 각 화면의 고정 하단 여백은 푸터와 고정 하단 메뉴 안전영역이 대신한다. */
 #page-content > div > .container[style*="padding-bottom:90px"],
 #page-content > div > .container[style*="padding-bottom:80px"],
 #page-content > div > .container[style*="padding-bottom:72px"],
@@ -29,16 +27,16 @@
 #page-content > .container[style*="padding-bottom:80px"],
 #page-content > .container[style*="padding-bottom:72px"],
 #page-content > .container[style*="padding-bottom:70px"] {
-  padding-bottom: 30px !important;
+  padding-bottom: 26px !important;
 }
 
 /* 홈 화면 마지막 카드 뒤 이중 여백을 축소한다. */
 #page-content > div[style*="padding-bottom:60px"] {
-  padding-bottom: 22px !important;
+  padding-bottom: 18px !important;
 }
 
 #page-content .cta-section {
-  margin-bottom: 14px !important;
+  margin-bottom: 12px !important;
 }
 
 @media (max-width: 520px) {
@@ -50,14 +48,14 @@
   #page-content > .container[style*="padding-bottom:80px"],
   #page-content > .container[style*="padding-bottom:72px"],
   #page-content > .container[style*="padding-bottom:70px"] {
-    padding-bottom: 22px !important;
+    padding-bottom: 18px !important;
   }
 
   #page-content > div[style*="padding-bottom:60px"] {
-    padding-bottom: 14px !important;
+    padding-bottom: 10px !important;
   }
 
   #page-content .cta-section {
-    margin-bottom: 10px !important;
+    margin-bottom: 8px !important;
   }
 }
