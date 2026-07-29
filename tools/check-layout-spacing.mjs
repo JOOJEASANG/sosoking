@@ -5,17 +5,26 @@ const read = file => fs.readFileSync(file, 'utf8');
 
 const css = read('public/css/layout-spacing.css');
 for (const required of [
+  '#app {',
+  'display: block !important;',
+  'min-height: 0 !important;',
   '#page-content {',
-  'flex: 0 0 auto;',
+  'flex: none !important;',
   '#site-footer {',
-  'flex: 1 0 auto;',
+  'flex: none !important;',
   'padding-bottom:90px',
   'padding-bottom:80px',
-  'padding-bottom:60px',
   '#page-content .cta-section',
-  'margin-bottom: 10px !important;'
+  'margin-bottom: 8px !important;'
 ]) {
   if (!css.includes(required)) errors.push(`public/css/layout-spacing.css: missing ${required}`);
+}
+for (const forbidden of [
+  'flex: 1 0 auto;',
+  'min-height: 100svh;',
+  'min-height: 100dvh;'
+]) {
+  if (css.includes(forbidden)) errors.push(`public/css/layout-spacing.css: viewport-filling rule remains: ${forbidden}`);
 }
 
 const footer = read('public/js/components/footer.js');
@@ -31,16 +40,16 @@ if (!app.includes("./components/footer.js?v=20260729-compact-spacing-1")) {
 }
 
 const index = read('public/index.html');
-if (!index.includes('/css/layout-spacing.css?v=20260729-compact-spacing-1')
+if (!index.includes('/css/layout-spacing.css?v=20260729-spacing-flow-2')
   || !index.includes('/js/app.js?v=20260729-compact-spacing-1')) {
-  errors.push('public/index.html: compact spacing stylesheet or app version is missing');
+  errors.push('public/index.html: corrected spacing stylesheet or current app version is missing');
 }
 
 const serviceWorker = read('public/sw.js');
-if (!serviceWorker.includes("sosoking-app-v20260729-compact-spacing-1")
-  || !serviceWorker.includes('/css/layout-spacing.css?v=20260729-compact-spacing-1')
+if (!serviceWorker.includes("sosoking-app-v20260729-spacing-flow-2")
+  || !serviceWorker.includes('/css/layout-spacing.css?v=20260729-spacing-flow-2')
   || !serviceWorker.includes('/js/app.js?v=20260729-compact-spacing-1')) {
-  errors.push('public/sw.js: compact spacing assets are not in the active cache graph');
+  errors.push('public/sw.js: corrected spacing assets are not in the active cache graph');
 }
 
 const packageJson = read('package.json');
@@ -54,4 +63,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Layout spacing validation passed: compact route endings, footer fill, safe navigation spacing, and cache refresh.');
+console.log('Layout spacing validation passed: route endings are compact and the footer no longer stretches to fill the viewport.');
