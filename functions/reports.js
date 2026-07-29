@@ -2,7 +2,7 @@ const crypto = require('crypto');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const { inspectContent } = require('./content-safety');
-const { enforceActionRateLimit, requireVerifiedUser } = require('./security');
+const { enforceActionRateLimit, requireAppCheck, requireVerifiedUser } = require('./security');
 const { isAdminAuth } = require('./admin-utils');
 
 const db = getFirestore();
@@ -124,6 +124,28 @@ async function moderateReportData(reportId, action, adminUid) {
   });
 }
 
+async function writeModerationLog(uid, reportId, action, result) {
+  try {
+    await db.collection('admin_logs').add({
+      uid,
+      action: 'moderateReport',
+      subjectId: reportId,
+      detail: { ...result, moderationAction: action },
+      createdAt: FieldValue.serverTimestamp()
+    });
+    return true;
+  } catch (error) {
+    console.error('report moderation audit log failed:', {
+      uid,
+      reportId,
+      action,
+      code: error?.code || '',
+      message: error?.message || ''
+    });
+    return false;
+  }
+}
+
 exports.submitReport = onCall({
   region: REGION,
   timeoutSeconds: 30,
@@ -156,6 +178,7 @@ exports.moderateReport = onCall({
   timeoutSeconds: 60,
   memory: '256MiB'
 }, async request => {
+  requireAppCheck(request);
   if (!request.auth || !(await isAdminAuth(request.auth))) {
     throw new HttpsError('permission-denied', '관리자만 신고를 처리할 수 있습니다.');
   }
@@ -166,14 +189,8 @@ exports.moderateReport = onCall({
   }
 
   const result = await moderateReportData(reportId, action, request.auth.uid);
-  await db.collection('admin_logs').add({
-    uid: request.auth.uid,
-    action: 'moderateReport',
-    subjectId: reportId,
-    detail: { ...result, moderationAction: action },
-    createdAt: FieldValue.serverTimestamp()
-  }).catch(() => null);
-  return { success: true, reportId, action, ...result };
+  const auditLogged = await writeModerationLog(request.auth.uid, reportId, action, result);
+  return { success: true, auditLogged, reportId, action, ...result };
 });
 
 Object.defineProperties(module.exports, {

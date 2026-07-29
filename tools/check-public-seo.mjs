@@ -3,11 +3,8 @@ import fs from 'node:fs';
 const errors = [];
 const read = file => fs.readFileSync(file, 'utf8');
 
-const server = read('functions/public-seo.js');
+const renderer = read('functions/public-seo.js');
 for (const required of [
-  'exports.publicResultPage',
-  'exports.publicSitemap',
-  "raw.isPublic !== true",
   'renderPublicResultHtml',
   'renderStructuredDocument',
   'document-subheading',
@@ -18,21 +15,44 @@ for (const required of [
   'name="description"',
   'name="robots"',
   'application/ld+json',
-  "'@type': 'CreativeWork'",
+  "'@type': 'CreativeWork'"
+]) {
+  if (!renderer.includes(required)) errors.push(`functions/public-seo.js: missing ${required}`);
+}
+if (renderer.includes("collection('cases')")) {
+  errors.push('functions/public-seo.js: public SEO rendering must not read private case documents');
+}
+
+const gate = read('functions/public-seo-safe.js');
+for (const required of [
+  'exports.publicResultPage',
+  'exports.publicSitemap',
+  'isSanitizedPublicResult',
+  'publicDataVersion',
+  "hasOwnProperty.call(raw, 'userId')",
+  "hasOwnProperty.call(raw, 'caseDescription')",
+  "hasOwnProperty.call(raw, 'nickname')",
+  'loadSafePublicResult',
+  'listSafePublicResultEntries',
+  'renderPublicResultHtml',
+  'renderSitemapXml',
   'X-Robots-Tag',
   'noindex, nofollow',
   "where('isPublic', '==', true)",
   'SITEMAP_RESULT_LIMIT'
 ]) {
-  if (!server.includes(required)) errors.push(`functions/public-seo.js: missing ${required}`);
+  if (!gate.includes(required)) errors.push(`functions/public-seo-safe.js: missing ${required}`);
 }
-if (server.includes('userId') || server.includes("collection('cases')")) {
-  errors.push('functions/public-seo.js: public SEO rendering must not expose owner IDs or read private case documents');
+if (gate.includes("collection('cases')")) {
+  errors.push('functions/public-seo-safe.js: safe SEO gate must not read private case documents');
 }
 
 const main = read('functions/main.js');
-if (!main.includes("require('./public-seo')")) {
-  errors.push('functions/main.js: public SEO functions are not exported');
+if (!main.includes("require('./public-seo-safe')")) {
+  errors.push('functions/main.js: sanitized public SEO functions are not exported');
+}
+if (main.includes("Object.assign(exports, require('./public-seo'))")) {
+  errors.push('functions/main.js: unsafe direct public SEO handlers remain exported');
 }
 
 const firebase = JSON.parse(read('firebase.json'));
@@ -82,8 +102,11 @@ if (!serviceWorker.includes('await putCache(request, response)')) {
 }
 
 const deploy = read('.github/workflows/firebase-deploy.yml');
-for (const functionName of ['functions:publicResultPage', 'functions:publicSitemap']) {
+for (const functionName of ['functions:publicResultPage', 'functions:publicSitemap', 'functions:sanitizePublicResult']) {
   if (!deploy.includes(functionName)) errors.push(`firebase-deploy.yml: ${functionName} is not deployed`);
+}
+if (!deploy.includes('node functions/sanitize-public-results-cli.js')) {
+  errors.push('firebase-deploy.yml: existing public result sanitation is missing');
 }
 
 const packageJson = read('package.json');
@@ -100,4 +123,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Public SEO validation passed: canonical server verdicts remain indexable while board cards open the full in-app verdict with comments, public-only data, dynamic sitemap, and cache isolation.');
+console.log('Public SEO validation passed: only sanitized public verdicts are indexable, while app routes, metadata, sitemap, and cache isolation remain intact.');

@@ -31,17 +31,22 @@ service cloud.firestore {
       return signedIn() && caseDoc(caseId).data.userId == request.auth.uid;
     }
 
-    function isCasePublic(caseId) {
-      return caseDoc(caseId).data.isPublic == true;
+    function isSafePublicResultData(data) {
+      return data.isPublic == true
+        && data.publicDataVersion == 1
+        && !data.keys().hasAny(['userId', 'caseDescription', 'nickname']);
+    }
+
+    function isPublicResultListData(data) {
+      return data.isPublic == true && data.publicDataVersion == 1;
     }
 
     function isResultPublic(caseId) {
-      return resultDoc(caseId).data.isPublic == true;
+      return isSafePublicResultData(resultDoc(caseId).data);
     }
 
     function canReadPublicCourt(caseId) {
       return signedIn() && (
-        isCasePublic(caseId) ||
         isResultPublic(caseId) ||
         isCaseOwner(caseId) ||
         isAdmin()
@@ -86,13 +91,17 @@ service cloud.firestore {
     }
 
     match /results/{caseId} {
-      allow read: if signedIn() && (
+      // 단일 문서 공개 조회는 민감 필드가 실제로 제거됐는지까지 확인한다.
+      allow get: if signedIn() && (
         isCaseOwner(caseId) ||
-        resource.data.isPublic == true ||
+        isSafePublicResultData(resource.data) ||
         isAdmin()
       );
 
-      // 공개 전환 시 과거 UID 제거까지 수행하도록 서버 함수만 사용한다.
+      // 목록 쿼리는 isPublic/publicDataVersion 필터로 안전한 공개 스키마만 요청해야 한다.
+      allow list: if signedIn() && isPublicResultListData(resource.data);
+
+      // 공개 전환 시 인증 UID와 공개 불필요 원문 필드를 제거하도록 서버 함수만 사용한다.
       allow update: if isAdmin();
       allow create: if false;
       allow delete: if isAdmin();

@@ -20,6 +20,14 @@ import { initNavAuthSync, renderNav } from './components/nav.js?v=20260729-daily
 let routeSequence = 0;
 let routeQueued = false;
 
+function decodeRouteValue(value) {
+  try {
+    return decodeURIComponent(String(value || ''));
+  } catch {
+    return '';
+  }
+}
+
 function normalizedRoute() {
   const hash = location.hash || '';
   if (hash === '#/' || hash === '' || hash === '#') {
@@ -31,9 +39,18 @@ function normalizedRoute() {
     if (path === '/guide') return '#/guide';
     if (path === '/auth') return '#/auth';
     if (path === '/my-cases') return '#/my-cases';
-    if (path.startsWith('/result/')) return `#/result/${encodeURIComponent(decodeURIComponent(path.replace('/result/', '')))}`;
-    if (path.startsWith('/verdict/')) return `#/verdict/${encodeURIComponent(decodeURIComponent(path.replace('/verdict/', '')))}`;
-    if (path.startsWith('/trial/')) return `#/trial/${encodeURIComponent(decodeURIComponent(path.replace('/trial/', '')))}`;
+    if (path.startsWith('/result/')) {
+      const caseId = decodeRouteValue(path.replace('/result/', ''));
+      return caseId ? `#/result/${encodeURIComponent(caseId)}` : '#/';
+    }
+    if (path.startsWith('/verdict/')) {
+      const caseId = decodeRouteValue(path.replace('/verdict/', ''));
+      return caseId ? `#/verdict/${encodeURIComponent(caseId)}` : '#/';
+    }
+    if (path.startsWith('/trial/')) {
+      const caseId = decodeRouteValue(path.replace('/trial/', ''));
+      return caseId ? `#/trial/${encodeURIComponent(caseId)}` : '#/';
+    }
   }
   return hash || '#/';
 }
@@ -79,10 +96,16 @@ async function route() {
     if (hash === '#/' || hash === '' || hash === '#') renderTask = renderHome(content);
     else if (hash === '#/submit') renderTask = renderSubmit(content);
     else if (hash === '#/daily-court') renderTask = renderDailyRealCourt(content);
-    else if (hash.startsWith('#/trial/')) renderTask = renderTrial(content, decodeURIComponent(hash.replace('#/trial/', '')));
-    else if (hash.startsWith('#/verdict/')) renderTask = renderResult(content, decodeURIComponent(hash.replace('#/verdict/', '')));
-    else if (hash.startsWith('#/result/')) renderTask = renderResult(content, decodeURIComponent(hash.replace('#/result/', '')));
-    else if (hash.startsWith('#/policy/')) renderTask = renderPolicy(content, hash.replace('#/policy/', ''));
+    else if (hash.startsWith('#/trial/')) {
+      const caseId = decodeRouteValue(hash.replace('#/trial/', ''));
+      renderTask = caseId ? renderTrial(content, caseId) : renderHome(content);
+    } else if (hash.startsWith('#/verdict/')) {
+      const caseId = decodeRouteValue(hash.replace('#/verdict/', ''));
+      renderTask = caseId ? renderResult(content, caseId) : renderHome(content);
+    } else if (hash.startsWith('#/result/')) {
+      const caseId = decodeRouteValue(hash.replace('#/result/', ''));
+      renderTask = caseId ? renderResult(content, caseId) : renderHome(content);
+    } else if (hash.startsWith('#/policy/')) renderTask = renderPolicy(content, hash.replace('#/policy/', ''));
     else if (hash === '#/my-cases') renderTask = renderMyCases(content);
     else if (hash === '#/guide') renderTask = renderGuide(content);
     else if (hash === '#/auth') renderTask = renderAuth(content);

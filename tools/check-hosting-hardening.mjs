@@ -6,6 +6,7 @@ const read = path => fs.readFileSync(path, 'utf8');
 const firebase = read('firebase.json');
 for (const header of [
   'X-Content-Type-Options',
+  'X-Frame-Options',
   'Referrer-Policy',
   'Permissions-Policy',
   'Cross-Origin-Opener-Policy',
@@ -16,11 +17,18 @@ for (const header of [
     errors.push(`firebase.json: ${header} header is missing`);
   }
 }
-if (!firebase.includes('frame-ancestors \'none\'')) {
-  errors.push('firebase.json: report-only CSP frame-ancestors protection is missing');
+if (!firebase.includes('"key": "X-Frame-Options"') || !firebase.includes('"value": "DENY"')) {
+  errors.push('firebase.json: clickjacking fallback header is missing');
 }
-if (firebase.includes('"key": "X-Frame-Options"')) {
-  errors.push('firebase.json: global X-Frame-Options may block the Firebase authentication iframe');
+if (!firebase.includes("frame-ancestors 'none'")) {
+  errors.push('firebase.json: CSP frame-ancestors protection is missing');
+}
+const config = JSON.parse(firebase);
+const cspRules = (config.hosting?.headers || [])
+  .flatMap(rule => rule.headers || [])
+  .filter(header => header.key === 'Content-Security-Policy');
+if (!cspRules.length || cspRules.some(header => !header.value.includes("frame-ancestors 'none'"))) {
+  errors.push("firebase.json: enforced frame-ancestors 'none' must cover every protected HTML route");
 }
 if (!firebase.includes('"source": "/sw.js"') || !firebase.includes('"value": "no-store, max-age=0"')) {
   errors.push('firebase.json: service worker must not be HTTP cached');
@@ -78,4 +86,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Hosting hardening validation passed: auth-compatible headers, enforced script CSP, cache policy, and theme storage.');
+console.log('Hosting hardening validation passed: enforced clickjacking and script CSP, cache policy, auth compatibility, and guarded theme storage.');

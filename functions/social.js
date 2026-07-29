@@ -1,15 +1,16 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { defineSecret } = require('firebase-functions/params');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { enforceActionRateLimit, requireVerifiedUser, reserveAiRequest } = require('./security');
 const { inspectContent } = require('./content-safety');
 
 const db = getFirestore();
 const geminiKey = defineSecret('GEMINI_API_KEY');
 const REGION = 'asia-northeast3';
+const GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models';
 const REACTIONS = ['plaintiff','defendant','both','tooMuch','funny'];
 const APPEAL_LOCK_TIMEOUT_MS = 4 * 60 * 1000;
+const APPEAL_REQUEST_TIMEOUT_MS = 75 * 1000;
 
 function cleanText(value, maxLen) {
   return String(value || '')
@@ -52,6 +53,61 @@ function assertSafeForPublic(caseData, resultData) {
   }
 }
 
+function isSanitizedPublicResult(data = {}) {
+  return data.isPublic === true
+    && Number(data.publicDataVersion || 0) === 1
+    && !Object.prototype.hasOwnProperty.call(data, 'userId')
+    && !Object.prototype.hasOwnProperty.call(data, 'caseDescription')
+    && !Object.prototype.hasOwnProperty.call(data, 'nickname');
+}
+
+function extractGeminiText(payload) {
+  const parts = payload?.candidates?.[0]?.content?.parts;
+  if (!Array.isArray(parts)) return '';
+  return parts
+    .map(part => typeof part?.text === 'string' ? part.text : '')
+    .filter(Boolean)
+    .join('\n')
+    .trim();
+}
+
+async function callAppealGemini(apiKey, modelName, prompt) {
+  if (!apiKey) throw new Error('GEMINI_API_KEY가 비어 있습니다.');
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), APPEAL_REQUEST_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(`${GEMINI_ENDPOINT}/${encodeURIComponent(modelName)}:generateContent`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey
+      },
+      body: JSON.stringify({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.85,
+          topP: 0.95,
+          maxOutputTokens: 1800
+        }
+      }),
+      signal: controller.signal
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(cleanText(payload?.error?.message, 500) || `Gemini 요청 실패 (${response.status})`);
+    }
+    const text = extractGeminiText(payload);
+    if (!text) throw new Error('항소심 AI 응답이 비어 있습니다.');
+    return text;
+  } catch (error) {
+    if (error?.name === 'AbortError') throw new Error('항소심 AI 응답 시간이 초과되었습니다.');
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function loadNickname(uid, fallback = '익명 방청객') {
   const snap = await db.doc(`users/${uid}`).get().catch(() => null);
   return snap?.exists ? cleanText(snap.data().nickname, 20) || fallback : fallback;
@@ -62,7 +118,9 @@ async function assertPublicResult(caseId) {
   const snap = await resultRef.get();
   if (!snap.exists) throw new HttpsError('not-found', '판결문을 찾을 수 없습니다.');
   const data = snap.data();
-  if (!data.isPublic) throw new HttpsError('permission-denied', '공개 판결문만 참여할 수 있습니다.');
+  if (!isSanitizedPublicResult(data)) {
+    throw new HttpsError('permission-denied', '공개 준비가 완료된 판결문만 참여할 수 있습니다.');
+  }
   return { resultRef, data };
 }
 
@@ -212,8 +270,12 @@ exports.setResultVisibility = onCall({
     });
     tx.update(resultRef, {
       isPublic,
-      // 과거 결과 문서에 남아 있을 수 있는 인증 UID도 공개 전에 제거한다.
       userId: FieldValue.delete(),
+      caseDescription: FieldValue.delete(),
+      nickname: FieldValue.delete(),
+      publicCaseDescription: resultSnap.data().publicCaseDescription || '',
+      publicNickname: resultSnap.data().publicNickname || '익명 원고',
+      publicDataVersion: 1,
       contentSafetyStatus: isPublic ? 'passed' : (resultSnap.data().contentSafetyStatus || 'not-public'),
       contentSafetyCheckedAt: isPublic ? FieldValue.serverTimestamp() : (resultSnap.data().contentSafetyCheckedAt || FieldValue.delete()),
       updatedAt: FieldValue.serverTimestamp()
@@ -274,16 +336,17 @@ exports.requestAppeal = onCall({
   const c = lock.caseData;
   const r = lock.resultData;
 
-  const model = new GoogleGenerativeAI(geminiKey.value().trim())
-    .getGenerativeModel({ model: 'gemini-2.5-flash' });
   const prompt = `소소킹 판결소 항소심 판결문을 작성하세요. 실제 법적 효력은 없고 오락 목적임을 포함하세요.\n\n사건명: ${c.caseTitle || r.caseTitle}\n1심 판사: ${r.judgeType || 'AI'}\n1심 주문: ${r.sentence || ''}\n1심 판결 이유: ${r.verdict || ''}\n항소이유: ${reason}\n\n형식:\n1. 항소심 주문\n2. 항소이유 요지\n3. 항소심 판단\n4. 최종 생활형 처분\n\n진짜 판결문처럼 진지하지만 별것 아닌 생활사건이라 웃기게, 3문단 이내.`;
   let appealVerdict = '';
   try {
     const settingsSnap = await db.doc('site_settings/config').get();
     const settings = settingsSnap.exists ? settingsSnap.data() : {};
     await reserveAiRequest(uid, 'appeal', settings);
-    const ai = await model.generateContent(prompt);
-    appealVerdict = cleanText(ai.response.text(), 1800);
+    const modelName = cleanText(settings.geminiModel, 60) || 'gemini-2.5-flash';
+    appealVerdict = cleanText(
+      await callAppealGemini(geminiKey.value().trim(), modelName, prompt),
+      1800
+    );
     if (!appealVerdict) throw new Error('항소심 AI 응답이 비어 있습니다.');
     const appealSafety = inspectContent(appealVerdict);
     if (!appealSafety.safe) throw new Error(`항소심 AI 안전검사 실패: ${appealSafety.code || 'unknown'}`);
