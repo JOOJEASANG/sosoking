@@ -62,16 +62,16 @@ export async function renderHome(container) {
     <div style="padding-bottom:60px;">
       <section class="hero-section">
         <img src="/logo.png?v=20260729-brand-unified-1" alt="소소킹 로고" style="width:92px;height:92px;margin-bottom:14px;display:block;margin-left:auto;margin-right:auto;animation:wiggle 3.5s ease-in-out infinite;" />
-        <div class="hero-badge">⚖️ 사소함 전문 생활법정 · 법적효력 0%</div>
-        <h1 class="hero-h1">억울하죠?<br><span style="font-size:0.58em;color:var(--gold);font-style:italic;">기각하긴 아깝습니다.</span></h1>
-        <p class="hero-sub">아무도 안 들어주는 사소한 억울함을<br><strong>AI 판사단이 너무 진지하게</strong> 심리합니다.<br><span style="font-size:11px;opacity:0.5;">실제 법원은 아니고, 마음속 방청석은 열려 있습니다.</span></p>
+        <div class="hero-badge">⚖️ 소소한 일상을 판결하는 생활법정 놀이터</div>
+        <h1 class="hero-h1">사소한 일도<br><span style="font-size:0.58em;color:var(--gold);font-style:italic;">오늘은 판결감입니다.</span></h1>
+        <p class="hero-sub">내 억울함은 AI 판사에게 맡기고,<br><strong>실제 판례는 직접 판결해보세요.</strong><br><span style="font-size:11px;opacity:0.58;">사소한 일상부터 진짜 법원의 판단까지, 오늘은 당신이 판사입니다.</span></p>
 
         <div class="hero-tw">
           📌 현재 생활법정 심의중: <strong id="tw-text"></strong><span class="cursor-blink" style="color:var(--gold);">|</span>
         </div>
 
-        <a href="#/submit" class="hero-cta hero-cta-pulse">🚨 억울함 공식 접수하기</a>
-        <div class="hero-disclaimer">무료 · 익명 · 과장됨 · 법적효력 없음</div>
+        <a href="#/submit" class="hero-cta hero-cta-pulse">⚖️ 내 사건 판결받기</a>
+        <div class="hero-disclaimer">회원당 하루 1회 · 오락용 AI 판결 · 법적 효력 없음</div>
 
         <div class="stats-row">
           <div class="stat-item">
@@ -151,7 +151,7 @@ export async function renderHome(container) {
       <div class="container" style="margin-top:20px;">
         <div class="disclaimer">
           <strong>⚠️ 오락 서비스 안내</strong><br>
-          소소킹 판결소는 실제 법률 자문이 아닌 AI 기반 오락형 서비스입니다. 판결에는 어떠한 법적 효력도 없습니다.
+          소소킹 판결소는 AI 생활판결과 실제 판례 맞히기를 즐기는 오락형 생활법정입니다. 서비스 결과에는 법적 효력이 없습니다.
         </div>
       </div>
 
@@ -159,7 +159,7 @@ export async function renderHome(container) {
         <div style="font-size:48px;margin-bottom:12px;animation:wiggle 1.5s infinite;">😤</div>
         <h2>참으면 억울함이 숙성됩니다</h2>
         <p>생활법정에 접수하고<br>판사님에게 과하게 진지한 판결을 받아보세요.<br><span style="font-size:12px;opacity:0.5;">단, 실제 법적 문제는 실제 전문가에게.</span></p>
-        <a href="#/submit" class="hero-cta hero-cta-pulse" style="font-size:16px;">🚨 지금 바로 접수하기</a>
+        <a href="#/submit" class="hero-cta hero-cta-pulse" style="font-size:16px;">⚖️ 지금 바로 접수하기</a>
       </section>
     </div>
   `;
