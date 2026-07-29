@@ -25,12 +25,14 @@ const callables = {
   deletePost: httpsCallable(functions, 'deleteCourtPost'),
   deleteUserProfile: httpsCallable(functions, 'deleteUserProfile'),
   generateDaily: httpsCallable(functions, 'generateDailyAiNow'),
-  syncStats: httpsCallable(functions, 'syncPublicStatsNow')
+  syncStats: httpsCallable(functions, 'syncPublicStatsNow'),
+  moderateReport: httpsCallable(functions, 'moderateReport')
 };
 
 const TABS = [
   ['overview', '대시보드'],
   ['records', '사건·판결기록'],
+  ['reports', '신고'],
   ['users', '회원'],
   ['ai', 'AI 관리'],
   ['usage', '사용량'],
@@ -148,6 +150,7 @@ async function loadTab(tab) {
   try {
     if (tab === 'overview') await tabOverview(target);
     else if (tab === 'records') await tabRecords(target);
+    else if (tab === 'reports') await tabReports(target);
     else if (tab === 'users') await tabUsers(target);
     else if (tab === 'ai') await tabAi(target);
     else if (tab === 'usage') await tabUsage(target);
@@ -259,6 +262,51 @@ async function tabRecords(target) {
           toast(errorMessage(error, '삭제하지 못했습니다.'), 'error');
           restore();
         }
+      }
+    });
+  });
+}
+
+async function tabReports(target) {
+  const reportSnap = await getDocs(query(collection(db, 'reports'), orderBy('createdAt', 'desc'), limit(100)));
+  const resultSnaps = await Promise.all(reportSnap.docs.map(report => {
+    const caseId = String(report.data().caseId || '');
+    return caseId ? getDoc(doc(db, 'results', caseId)).catch(() => null) : Promise.resolve(null);
+  }));
+  const rows = reportSnap.docs.map((reportDocument, index) => {
+    const report = reportDocument.data();
+    const caseId = String(report.caseId || '');
+    const result = resultSnaps[index]?.exists() ? resultSnaps[index].data() : {};
+    const pending = report.status === 'pending';
+    return `<tr>
+      <td><b>${escapeHtml(result.caseTitle || caseId || '-')}</b><div style="font-size:10px;color:var(--cream-dim);">${escapeHtml(fmtDate(report.createdAt))}</div></td>
+      <td>${escapeHtml(report.reason || '-')}</td>
+      <td>${escapeHtml(report.status || 'pending')}<div style="font-size:10px;color:var(--cream-dim);">신고자 ${escapeHtml(String(report.userId || '').slice(0, 16))}</div></td>
+      <td><div class="admin-actions">
+        ${caseId ? `<a class="admin-btn gold" href="/#/result/${encodeURIComponent(caseId)}" style="text-decoration:none;">보기</a>` : ''}
+        ${pending ? `<button type="button" class="admin-btn red" data-report-action="hide" data-report-id="${escapeAttr(reportDocument.id)}">숨김 처리</button><button type="button" class="admin-btn" data-report-action="dismiss" data-report-id="${escapeAttr(reportDocument.id)}">기각</button>` : ''}
+      </div></td>
+    </tr>`;
+  });
+
+  target.innerHTML = `<div class="card" style="font-size:12px;color:var(--cream-dim);line-height:1.7;margin-bottom:12px;">숨김 처리는 신고 대상 사건과 판결문을 동시에 비공개로 전환합니다. 기각은 공개 상태를 유지하고 신고만 종결합니다.</div>${tableWrap(['신고 대상', '신고 사유', '상태', '처리'], rows)}`;
+  target.querySelectorAll('[data-report-action]').forEach(button => {
+    button.addEventListener('click', async () => {
+      const reportId = button.dataset.reportId || '';
+      const action = button.dataset.reportAction || '';
+      if (!reportId || !['hide', 'dismiss'].includes(action)) return;
+      const prompt = action === 'hide'
+        ? '신고 대상 판결기록을 비공개로 전환하고 신고를 종결할까요?'
+        : '공개 상태를 유지하고 신고를 기각할까요?';
+      if (!confirm(prompt)) return;
+      const restore = setBusy(button, action === 'hide' ? '숨김 중...' : '처리 중...');
+      try {
+        await callables.moderateReport({ reportId, action });
+        toast(action === 'hide' ? '판결기록을 숨기고 신고를 종결했습니다.' : '신고를 기각했습니다.', 'success');
+        await loadTab('reports');
+      } catch (error) {
+        toast(errorMessage(error, '신고 처리에 실패했습니다.'), 'error');
+        restore();
       }
     });
   });

@@ -60,7 +60,7 @@ async function isAdmin(user) {
 
 async function mountDashboard(user) {
   if (!dashboardModulePromise) {
-    dashboardModulePromise = import('./admin.js?v=20260729-admin-consolidated-1').catch(error => {
+    dashboardModulePromise = import('./admin.js?v=20260729-report-moderation-1').catch(error => {
       dashboardModulePromise = null;
       throw error;
     });
