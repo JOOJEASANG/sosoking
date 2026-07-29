@@ -34,8 +34,10 @@ for (const mutation of [
     errors.push(`functions/reports.js: moderation safeguard is missing: ${mutation}`);
   }
 }
-if (!reports.includes("Object.defineProperty(module.exports, 'moderateReportData'")) {
-  errors.push('functions/reports.js: emulator-testable moderation core is missing');
+if (!reports.includes('Object.defineProperties(module.exports')
+  || !reports.includes('submitReportData: { value: submitReportData, enumerable: false }')
+  || !reports.includes('moderateReportData: { value: moderateReportData, enumerable: false }')) {
+  errors.push('functions/reports.js: emulator-testable report transaction cores are missing');
 }
 
 const dialog = read('public/js/components/report-dialog.js');
@@ -65,12 +67,12 @@ if (!admin.includes("httpsCallable(functions, 'moderateReport')")) {
 if (!admin.includes("['reports', '신고']") || !admin.includes('async function tabReports(target)')) {
   errors.push('public/admin/admin.js: administrator report queue is missing');
 }
-if (!admin.includes("data-report-action=\"hide\"") || !admin.includes("data-report-action=\"dismiss\"")) {
+if (!admin.includes('data-report-action="hide"') || !admin.includes('data-report-action="dismiss"')) {
   errors.push('public/admin/admin.js: report hide or dismiss actions are missing');
 }
 
 const bootstrap = read('public/admin/admin-bootstrap.js');
-if (!bootstrap.includes("./admin.js?v=20260729-report-moderation-1")) {
+if (!bootstrap.includes('./admin.js?v=20260729-report-moderation-1')) {
   errors.push('public/admin/admin-bootstrap.js: report moderation dashboard cache version is missing');
 }
 
