@@ -1,4 +1,5 @@
 import { initAuth } from './firebase.js?v=20260729-auth-session-1';
+import { initAdminLoginRedirect, redirectAdminAccountRoute } from './admin-access.js?v=20260730-admin-redirect-1';
 import { renderHome } from './pages/home-court.js?v=20260730-public-records-2';
 // Cache lineage marker for the CSP regression check: ./pages/home-court.js?v=20260729-brand-unified-1
 import { renderSubmit } from './pages/submit-guard.js?v=20260728-audit-1';
@@ -87,6 +88,8 @@ async function route() {
   }
 
   const hash = normalizedRoute();
+  if (hash === '#/auth' && await redirectAdminAccountRoute()) return;
+
   const content = freshContentHost();
   if (!content) return;
   window.scrollTo(0, 0);
@@ -143,6 +146,7 @@ window.addEventListener('popstate', scheduleRoute);
   initCourtDesign();
   try { await initAuth(); }
   catch (err) { console.error('initial authentication failed:', err); }
+  initAdminLoginRedirect();
   initNavAuthSync();
   renderFooter();
   await route();
