@@ -32,10 +32,67 @@ for (const required of [
   }
 }
 
+const humorPrompt = read('functions/humor-prompt.js');
+for (const required of [
+  '[소소킹 코미디 강도: 풍성하게]',
+  '무거운 법률 사이트가 아니라',
+  '최소 2개씩',
+  '최소 10개의 서로 다른 유머 장면',
+  '사건접수(reception)',
+  '수사보고(investigation)',
+  '원고측 변론(plaintiffArg)',
+  '피고측 변론(defendantArg)',
+  '재판부 판결(verdict)',
+  '사건 속 사물·행동·타이밍',
+  'appendHumorRules'
+]) {
+  if (!humorPrompt.includes(required)) {
+    errors.push(`functions/humor-prompt.js: every-stage humor rule missing: ${required}`);
+  }
+}
+
+const main = read('functions/main.js');
+const humorLoad = main.indexOf("require('./humor-prompt')");
+const dailyLoad = main.indexOf("require('./daily')");
+const userTrialLoad = main.indexOf("require('./generate-trial-lite')");
+if (humorLoad < 0 || dailyLoad < 0 || userTrialLoad < 0 || humorLoad > dailyLoad || humorLoad > userTrialLoad) {
+  errors.push('functions/main.js: humor prompt must load before user and daily AI functions');
+}
+
+const resultComments = read('public/js/pages/result-comments.js');
+for (const required of [
+  '진지한 척 웃기는 오락형 생활법정',
+  '실제 법률 판단이나 법적 효력은 없습니다',
+  '사건접수',
+  '수사보고',
+  '원고측 변론',
+  '피고측 변론',
+  '재판부 판결',
+  'result-stage-comedy'
+]) {
+  if (!resultComments.includes(required)) {
+    errors.push(`public/js/pages/result-comments.js: visible comedy guidance missing: ${required}`);
+  }
+}
+
+const app = read('public/js/app.js');
+const index = read('public/index.html');
+const worker = read('public/sw.js');
+const version = '20260730-humor-every-stage-1';
+for (const [file, source, required] of [
+  ['public/js/app.js', app, `./pages/result-comments.js?v=${version}`],
+  ['public/index.html', index, `/js/app.js?v=${version}`],
+  ['public/sw.js', worker, `sosoking-app-v${version}`],
+  ['public/sw.js', worker, `/js/app.js?v=${version}`],
+  ['public/sw.js', worker, `/js/pages/result-comments.js?v=${version}`]
+]) {
+  if (!source.includes(required)) errors.push(`${file}: humor cache version missing: ${required}`);
+}
+
 if (errors.length) {
   console.error(`Verdict humor validation failed (${errors.length})`);
   errors.forEach(error => console.error(`- ${error}`));
   process.exit(1);
 }
 
-console.log('Verdict humor validation passed: user and daily verdict prompts retain tailored wit, judge-character comedy, and humorous fallbacks.');
+console.log('Verdict humor validation passed: every AI document stage receives plentiful tailored comedy, the result screen states its entertainment purpose, and cache versions are synchronized.');
