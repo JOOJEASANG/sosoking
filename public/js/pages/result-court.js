@@ -124,9 +124,9 @@ function patchShareButton(container, caseId) {
       await httpsCallable(functions, 'setResultVisibility')({ caseId, isPublic: newPublic });
 
       if (newPublic) {
-        const url = `${location.origin}/#/result/${encodeURIComponent(caseId)}`;
+        const url = `${location.origin}/result/${encodeURIComponent(caseId)}`;
         await navigator.clipboard?.writeText(url).catch(() => {});
-        showToast('판결기록을 공개했습니다. 링크도 복사했습니다.', 'success');
+        showToast('판결기록을 공개했습니다. 검색 가능한 공개 링크도 복사했습니다.', 'success');
       } else {
         showToast('판결기록을 비공개로 전환했습니다.', 'success');
       }
