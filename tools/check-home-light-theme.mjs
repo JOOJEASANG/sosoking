@@ -39,7 +39,7 @@ if (!index.includes('id="home-light-theme-css"')
 }
 
 const serviceWorker = read('public/sw.js');
-if (!serviceWorker.includes("sosoking-app-v20260729-compact-spacing-1")
+if (!serviceWorker.includes("sosoking-app-v20260729-spacing-flow-2")
   || !serviceWorker.includes('/css/home-light.css?v=20260729-light-home-1')
   || !serviceWorker.includes('/js/app.js?v=20260729-compact-spacing-1')) {
   errors.push('public/sw.js: light home assets are not in the current cache graph');
