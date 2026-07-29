@@ -52,10 +52,12 @@ for (const type of ['terms', 'privacy', 'ai_disclaimer']) {
 const index = read('public/index.html');
 for (const phrase of [
   '소소한 일상을 판결하는 생활법정 놀이터',
-  'AI 생활판결과 오늘의 재판',
-  '/js/app.js?v=20260729-brand-policy-1'
+  'AI 생활판결과 오늘의 재판'
 ]) {
   if (!index.includes(phrase)) errors.push(`public/index.html: 브랜드 메타정보 누락: ${phrase}`);
+}
+if (!/<script type="module" src="\/js\/app\.js\?v=[^"']+"><\/script>/.test(index)) {
+  errors.push('public/index.html: versioned application entry is missing');
 }
 
 const app = read('public/js/app.js');
@@ -78,7 +80,7 @@ if (!footer.includes('AI 생활판결 · 실제 판례 게임 · 법적 효력 �
 }
 
 const sw = read('public/sw.js');
-const appVersion = index.match(/\/js\/app\.js\?v=([^"']+)/)?.[1] || '';
+const appVersion = index.match(/<script type="module" src="\/js\/app\.js\?v=([^"']+)"/)?.[1] || '';
 if (!appVersion || !sw.includes(`/js/app.js?v=${appVersion}`)) {
   errors.push('public/index.html 및 public/sw.js의 앱 버전이 일치하지 않음');
 }
