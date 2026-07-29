@@ -153,7 +153,7 @@ if (!deployWorkflow.includes('node tools/sync-public-config.mjs')) {
 
 // Regression checks for the consolidated administrator UI.
 const adminIndex = read('public/admin/index.html');
-if (!adminIndex.includes('/admin/admin-bootstrap.js?v=20260729-admin-consolidated-1')) {
+if (!adminIndex.includes('/admin/admin-bootstrap.js?v=20260729-report-moderation-1')) {
   errors.push('public/admin/index.html: consolidated admin bootstrap is not loaded');
 }
 if (adminIndex.includes('admin-enhancements.js') || adminIndex.includes('admin-security-overrides.js')) {
@@ -178,7 +178,7 @@ if (!adminDashboard.includes('export function mountAdminDashboard(user)')) {
 if (adminDashboard.includes('MutationObserver') || adminDashboard.includes('window._')) {
   errors.push('public/admin/admin.js: global monkey patch or DOM observer remains');
 }
-for (const callable of ['setAdminResultVisibility', 'deleteCourtPost', 'deleteUserProfile', 'generateDailyAiNow', 'syncPublicStatsNow']) {
+for (const callable of ['setAdminResultVisibility', 'deleteCourtPost', 'deleteUserProfile', 'generateDailyAiNow', 'syncPublicStatsNow', 'moderateReport']) {
   if (!adminDashboard.includes(`httpsCallable(functions, '${callable}')`)) {
     errors.push(`public/admin/admin.js: secure callable ${callable} is missing`);
   }

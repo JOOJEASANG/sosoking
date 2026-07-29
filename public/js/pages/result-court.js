@@ -2,6 +2,7 @@ import { renderResult as renderBaseResult } from './result.js?v=20260728-audit-1
 import { functions } from '../firebase.js?v=20260729-auth-session-1';
 import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
 import { showToast } from '../components/toast.js?v=20260630-3';
+import { attachReportButton } from '../components/report-dialog.js?v=20260729-report-moderation-1';
 
 const aliasResolutionCache = new Map();
 
@@ -145,4 +146,5 @@ export async function renderResult(container, caseId) {
   ensureResultDocumentStyle();
   await renderBaseResult(container, caseId);
   patchShareButton(container, caseId);
+  attachReportButton(container, caseId);
 }
