@@ -103,14 +103,17 @@ const nav = read('public/js/components/nav.js');
 if (!nav.includes('class="nav-brand-icon"') || !nav.includes('/icons/sosoking-192.png?v=20260729-brand-unified-1')) {
   errors.push('nav.js: unified navigation logo is missing');
 }
+if (!nav.includes('#/daily-court') || !nav.includes('오늘재판')) {
+  errors.push('nav.js: daily real court navigation item is missing');
+}
 
 const brandCss = read('public/css/brand-logo.css');
 if (!brandCss.includes('left: 0;')
   || !brandCss.includes('right: 0;')
   || !brandCss.includes('max-width: 600px;')
   || !brandCss.includes('transform: none;')
-  || !brandCss.includes('flex: 1 1 25%;')) {
-  errors.push('brand-logo.css: mobile-safe four-column bottom navigation layout is missing');
+  || !brandCss.includes('flex: 1 1 20%;')) {
+  errors.push('brand-logo.css: mobile-safe five-column bottom navigation layout is missing');
 }
 if (brandCss.includes('left: 50%;') || brandCss.includes('translateX(-50%)')) {
   errors.push('brand-logo.css: transform-based bottom navigation centering remains');
@@ -154,6 +157,7 @@ if (themeModule.includes("document.querySelector('.page-header')")) {
 }
 
 const index = read('public/index.html');
+const serviceWorker = read('public/sw.js');
 const themeInit = read('public/js/theme-init.js');
 if (!index.includes('/js/theme-init.js?v=')
   || !themeInit.includes("document.documentElement.setAttribute('data-theme', resolved)")) {
@@ -162,8 +166,9 @@ if (!index.includes('/js/theme-init.js?v=')
 if (!index.includes('/site.webmanifest?v=20260729-pwa-icon-center-1')) {
   errors.push('index.html: current PWA manifest version is missing');
 }
-if (!index.includes('/css/brand-logo.css?v=20260729-bottom-nav-fix-1')) {
-  errors.push('index.html: fixed bottom navigation stylesheet version is missing');
+const brandVersion = index.match(/\/css\/brand-logo\.css\?v=([^"']+)/)?.[1] || '';
+if (!brandVersion || !serviceWorker.includes(`/css/brand-logo.css?v=${brandVersion}`)) {
+  errors.push('index.html/public/sw.js: bottom navigation stylesheet cache versions are inconsistent');
 }
 
 const manifest = JSON.parse(read('public/site.webmanifest'));
@@ -227,4 +232,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('UI audit validation passed: unified brand logo assets, authentication, theme contrast, stable bottom navigation, centered PWA icons, and install flow.');
+console.log('UI audit validation passed: unified brand assets, authentication, theme contrast, stable five-item navigation, centered PWA icons, and install flow.');
