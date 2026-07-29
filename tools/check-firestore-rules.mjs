@@ -73,7 +73,24 @@ try {
       }),
       setDoc(doc(db, 'results/public-case'), {
         isPublic: true,
+        publicDataVersion: 1,
+        publicCaseDescription: '',
+        publicNickname: '익명 원고',
         caseTitle: '공개 사건',
+        updatedAt: now
+      }),
+      setDoc(doc(db, 'cases/unsafe-public-case'), {
+        userId: 'owner-uid',
+        isPublic: true,
+        status: 'completed',
+        updatedAt: now
+      }),
+      setDoc(doc(db, 'results/unsafe-public-case'), {
+        isPublic: true,
+        userId: 'owner-uid',
+        nickname: '원고 실명 가능 값',
+        caseDescription: '공개되면 안 되는 원문',
+        caseTitle: '정리 전 공개 사건',
         updatedAt: now
       }),
       setDoc(doc(db, 'court_comments/public-case/items/comment-1'), {
@@ -135,12 +152,16 @@ try {
   await assertFails(updateDoc(doc(owner, 'cases/private-case'), { isPublic: true }));
   await assertSucceeds(updateDoc(doc(admin, 'cases/private-case'), { isPublic: true }));
 
-  // 결과는 소유자가 모두 읽고, 로그인 및 Firebase 익명 세션은 공개 결과를 읽는다.
+  // 결과는 소유자가 모두 읽고, 정리 완료된 공개 결과만 다른 로그인 세션이 읽는다.
   await assertSucceeds(getDoc(doc(owner, 'results/private-case')));
   await assertFails(getDoc(doc(other, 'results/private-case')));
   await assertSucceeds(getDoc(doc(other, 'results/public-case')));
   await assertSucceeds(getDoc(doc(firebaseAnonymous, 'results/public-case')));
   await assertFails(getDoc(doc(unauthenticated, 'results/public-case')));
+  await assertSucceeds(getDoc(doc(owner, 'results/unsafe-public-case')));
+  await assertSucceeds(getDoc(doc(admin, 'results/unsafe-public-case')));
+  await assertFails(getDoc(doc(other, 'results/unsafe-public-case')));
+  await assertFails(getDoc(doc(firebaseAnonymous, 'results/unsafe-public-case')));
   await assertFails(updateDoc(doc(owner, 'results/private-case'), { isPublic: true }));
   await assertSucceeds(updateDoc(doc(admin, 'results/private-case'), { isPublic: true }));
 
@@ -205,7 +226,7 @@ try {
   await assertFails(deleteDoc(doc(owner, 'users/owner-uid')));
   await assertSucceeds(deleteDoc(doc(admin, 'users/owner-uid')));
 
-  console.log('Firestore rules integration passed: server-only mutations and Firestore-backed admin authorization.');
+  console.log('Firestore rules integration passed: server-only mutations, sanitized public results, and Firestore-backed admin authorization.');
 } finally {
   await testEnv.cleanup();
 }
