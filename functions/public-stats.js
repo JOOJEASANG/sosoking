@@ -12,14 +12,19 @@ async function aggregateCount(query) {
   return Number(snapshot.data().count || 0);
 }
 
+function safePublicResultsQuery() {
+  return db.collection('results')
+    .where('isPublic', '==', true)
+    .where('publicDataVersion', '==', 1);
+}
+
 async function refreshPublicStats() {
   const [completedCases, publicResults] = await Promise.all([
     aggregateCount(db.collection('cases').where('status', '==', 'completed')),
-    aggregateCount(db.collection('results').where('isPublic', '==', true))
+    aggregateCount(safePublicResultsQuery())
   ]);
 
-  const recentResults = await db.collection('results')
-    .where('isPublic', '==', true)
+  const recentResults = await safePublicResultsQuery()
     .orderBy('createdAt', 'desc')
     .limit(100)
     .get();
@@ -42,7 +47,7 @@ async function refreshPublicStats() {
     publicResults,
     popularJudge,
     generatedAt: FieldValue.serverTimestamp(),
-    schemaVersion: 1
+    schemaVersion: 2
   }, { merge: true });
 
   return { completedCases, publicResults, popularJudge };
