@@ -69,7 +69,7 @@ if (!index.includes('/js/app.js?v=20260729-compact-spacing-1')) {
 }
 
 const serviceWorker = read('public/sw.js');
-if (!serviceWorker.includes("sosoking-app-v20260729-compact-spacing-1")
+if (!serviceWorker.includes("sosoking-app-v20260729-spacing-flow-2")
   || !serviceWorker.includes('/js/app.js?v=20260729-compact-spacing-1')) {
   errors.push('public/sw.js: own case deletion cache graph is stale');
 }
