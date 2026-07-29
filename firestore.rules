@@ -123,6 +123,32 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // 실제 판례 게임의 정답·투표·개인 기록은 callable 함수에서만 취급한다.
+    match /daily_court_catalog/{caseId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /daily_court_config/{docId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /daily_court_days/{dateKey} {
+      allow read: if isAdmin();
+      allow write: if false;
+
+      match /votes/{uid} {
+        allow read: if isAdmin();
+        allow write: if false;
+      }
+    }
+
+    match /daily_court_players/{uid} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
     // 과거 UID 포함 사건 주소는 SHA-256 해시 별칭으로만 보관하고 서버 함수로만 해석한다.
     match /case_id_aliases/{aliasId} {
       allow read, write: if false;
