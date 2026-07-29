@@ -31,11 +31,15 @@ function timestampMillis(value) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function requireAccountUser(request) {
-  if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+function requireAppCheck(request) {
   if (enforceAppCheck.value() && !request.app) {
     throw new HttpsError('failed-precondition', '정상적인 앱에서 다시 시도해 주세요.');
   }
+}
+
+function requireAccountUser(request) {
+  if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+  requireAppCheck(request);
 
   const token = request.auth.token || {};
   const provider = token.firebase?.sign_in_provider || '';
@@ -149,6 +153,7 @@ async function reserveAiRequest(uid, kind, settings = {}) {
 module.exports = {
   enforceActionRateLimit,
   requireAccountUser,
+  requireAppCheck,
   requireVerifiedUser,
   reserveAiRequest
 };
