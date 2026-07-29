@@ -120,7 +120,7 @@ export async function renderTrial(container, caseId) {
           <div style="font-weight:900;color:var(--gold);">판결문 작성 완료</div>
           <div style="font-size:12px;color:var(--cream-dim);margin-top:4px;">문서 열람 화면으로 이동합니다.</div>
         </div>`;
-      setTimeout(() => { location.hash = `#/result/${encodeURIComponent(caseId)}`; }, 1200);
+      setTimeout(() => { location.hash = `#/verdict/${encodeURIComponent(caseId)}`; }, 1200);
     }
   }, err => showError(err.message));
 

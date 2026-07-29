@@ -37,10 +37,10 @@ if (!brand.includes("--font-serif: 'Noto Sans KR'") || !brand.includes('body *')
 if (!server.includes("font-family:'Noto Sans KR',Arial,sans-serif")) {
   errors.push('functions/public-seo.js: public verdict sans font is missing');
 }
-if (!sw.includes("sosoking-app-v20260729-sans-font-1")
+if (!/const CACHE_NAME = 'sosoking-app-v[^']+';/.test(sw)
   || !sw.includes('/css/brand-logo.css?v=20260729-sans-font-1')
   || !sw.includes('/css/sans-font.css?v=20260729-sans-font-1')) {
-  errors.push('public/sw.js: sans font cache versions are incomplete');
+  errors.push('public/sw.js: sans font cache assets are incomplete');
 }
 
 if (errors.length) {

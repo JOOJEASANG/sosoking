@@ -26,7 +26,7 @@ async function redirectLegacyCaseId(caseId) {
 
   const targetCaseId = await request;
   if (!targetCaseId || targetCaseId === caseId) return false;
-  location.replace(`${location.origin}/#/result/${encodeURIComponent(targetCaseId)}`);
+  location.replace(`${location.origin}/#/verdict/${encodeURIComponent(targetCaseId)}`);
   return true;
 }
 
@@ -83,12 +83,57 @@ function ensureResultDocumentStyle() {
     .result-disclaimer{text-align:center;margin:20px 0;padding:12px 14px;background:rgba(255,255,255,.04);border-radius:9px;font-size:11px;color:var(--cream-dim);line-height:1.7;}
     .result-audience{margin-top:26px;padding-top:20px;border-top:1px solid var(--border);}
     .result-audience-title{font-family:var(--font-serif);font-size:18px;font-weight:900;color:var(--gold);margin-bottom:12px;}
+
+    [data-theme='dark'] .result-document-page .result-cover.card,
+    [data-theme='dark'] .result-document-page .result-paper.card,
+    [data-theme='dark'] .result-document-page .result-paper.verdict-card,
+    [data-theme='dark'] .result-document-page .court-document{
+      color-scheme:dark!important;
+      background:linear-gradient(145deg,#1a2130,#10151f)!important;
+      color:#fff9ef!important;
+      border-color:rgba(209,173,80,.32)!important;
+      box-shadow:0 12px 30px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.045)!important;
+    }
+    [data-theme='dark'] .result-document-page .result-cover h1,
+    [data-theme='dark'] .result-document-page .result-cover h2,
+    [data-theme='dark'] .result-document-page .result-paper-title,
+    [data-theme='dark'] .result-document-page .doc-subheading,
+    [data-theme='dark'] .result-document-page .judge-name{
+      color:#fff9ef!important;
+    }
+    [data-theme='dark'] .result-document-page .result-case-meta,
+    [data-theme='dark'] .result-document-page .judge-desc,
+    [data-theme='dark'] .result-document-page .result-paper-body,
+    [data-theme='dark'] .result-document-page .doc-paragraph,
+    [data-theme='dark'] .result-document-page .doc-order-item,
+    [data-theme='dark'] .result-document-page .doc-order-item p{
+      color:rgba(255,249,239,.82)!important;
+    }
+    [data-theme='dark'] .result-document-page .judge-summary,
+    [data-theme='dark'] .result-document-page .doc-order-item,
+    [data-theme='dark'] .result-document-page .doc-subheading-meta,
+    [data-theme='dark'] .result-document-page .result-paper-badge{
+      background:rgba(255,255,255,.045)!important;
+      border-color:rgba(209,173,80,.28)!important;
+      color:rgba(255,249,239,.82)!important;
+    }
+    [data-theme='dark'] .result-document-page .judge-character{
+      background:#111722!important;
+      border-color:rgba(209,173,80,.35)!important;
+    }
+    [data-theme='dark'] .result-document-page .result-paper-header{
+      border-bottom-color:rgba(255,255,255,.1)!important;
+    }
+    [data-theme='dark'] .result-document-page .grievance-meter i{background:rgba(255,255,255,.13);}
+    [data-theme='dark'] .result-document-page .result-disclaimer{background:rgba(255,255,255,.035)!important;color:rgba(255,249,239,.68)!important;}
+
     @media (max-width:640px){
       .result-document-container{padding-left:14px;padding-right:14px;}
       .result-cover{padding:24px 18px;}
       .judge-summary{grid-template-columns:52px minmax(0,1fr);gap:11px;padding:13px;}
       .judge-character{width:48px;height:48px;font-size:25px;}
       .grievance-box{grid-column:1/-1;display:grid;grid-template-columns:auto auto 1fr;align-items:center;gap:9px;min-width:0;text-align:left;padding-top:10px;border-top:1px solid #ded4c2;}
+      [data-theme='dark'] .result-document-page .grievance-box{border-top-color:rgba(255,255,255,.1);}
       .grievance-score{margin:0;}
       .grievance-score strong{font-size:22px;}
       .grievance-meter{justify-content:flex-start;margin:0;}

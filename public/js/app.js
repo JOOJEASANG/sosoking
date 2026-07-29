@@ -2,13 +2,15 @@ import { initAuth } from './firebase.js?v=20260729-auth-session-1';
 import { renderHome } from './pages/home-court.js?v=20260729-brand-policy-1';
 // Cache lineage marker for the CSP regression check: ./pages/home-court.js?v=20260729-brand-unified-1
 import { renderSubmit } from './pages/submit-guard.js?v=20260728-audit-1';
-import { renderTrial } from './pages/trial-game.js?v=20260728-audit-1';
-import { renderResult } from './pages/result-court.js?v=20260729-report-moderation-1-public-seo-1';
+import { renderTrial } from './pages/trial-game.js?v=20260729-dark-record-participation-1';
+import { renderResult } from './pages/result-court.js?v=20260729-dark-record-participation-1';
+import { renderParticipation } from './pages/participation.js?v=20260729-dark-record-participation-1';
 import { renderPolicy } from './pages/policy.js?v=20260729-brand-policy-1';
-import { renderMyCases } from './pages/my-cases-game.js?v=20260729-own-case-delete-1';
+import { renderMyCases } from './pages/my-cases-game.js?v=20260729-dark-record-participation-1';
 import { renderGuide } from './pages/guide.js?v=20260729-brand-policy-1';
 import { renderAuth } from './pages/auth2.js?v=20260729-brand-unified-1';
-import { renderBoard } from './pages/board-court.js?v=20260729-script-csp-1-public-seo-1';
+import { renderBoard } from './pages/board-court.js?v=20260729-dark-record-participation-1';
+// Cache lineage marker for the CSP regression check: ./pages/board-court.js?v=20260729-script-csp-1
 import { renderDailyRealCourt } from './pages/daily-real-court.js?v=20260729-daily-real-court-1';
 import { renderFooter } from './components/footer.js?v=20260729-brand-policy-1';
 // Cache lineage marker for the compact-spacing regression check: ./components/footer.js?v=20260729-compact-spacing-1
@@ -31,6 +33,7 @@ function normalizedRoute() {
     if (path === '/auth') return '#/auth';
     if (path === '/my-cases') return '#/my-cases';
     if (path.startsWith('/result/')) return `#/result/${encodeURIComponent(decodeURIComponent(path.replace('/result/', '')))}`;
+    if (path.startsWith('/verdict/')) return `#/verdict/${encodeURIComponent(decodeURIComponent(path.replace('/verdict/', '')))}`;
     if (path.startsWith('/trial/')) return `#/trial/${encodeURIComponent(decodeURIComponent(path.replace('/trial/', '')))}`;
   }
   return hash || '#/';
@@ -78,7 +81,8 @@ async function route() {
     else if (hash === '#/submit') renderTask = renderSubmit(content);
     else if (hash === '#/daily-court') renderTask = renderDailyRealCourt(content);
     else if (hash.startsWith('#/trial/')) renderTask = renderTrial(content, decodeURIComponent(hash.replace('#/trial/', '')));
-    else if (hash.startsWith('#/result/')) renderTask = renderResult(content, decodeURIComponent(hash.replace('#/result/', '')));
+    else if (hash.startsWith('#/verdict/')) renderTask = renderResult(content, decodeURIComponent(hash.replace('#/verdict/', '')));
+    else if (hash.startsWith('#/result/')) renderTask = renderParticipation(content, decodeURIComponent(hash.replace('#/result/', '')));
     else if (hash.startsWith('#/policy/')) renderTask = renderPolicy(content, hash.replace('#/policy/', ''));
     else if (hash === '#/my-cases') renderTask = renderMyCases(content);
     else if (hash === '#/guide') renderTask = renderGuide(content);

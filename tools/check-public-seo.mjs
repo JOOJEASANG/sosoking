@@ -55,11 +55,16 @@ if (!robots.includes('Sitemap: https://sosoking.co.kr/sitemap.xml')) {
 }
 
 const board = read('public/js/pages/board.js');
-if (!board.includes('function publicResultPath(id)') || !board.includes('`/result/${encodeURIComponent(id)}`')) {
-  errors.push('public/js/pages/board.js: public cards do not use clean result URLs');
+if (!board.includes('function participationPath(id)') || !board.includes('`#/result/${encodeURIComponent(id)}`')) {
+  errors.push('public/js/pages/board.js: public cards do not open the direct participation route');
 }
-if (board.includes('href="#/result/')) {
-  errors.push('public/js/pages/board.js: fragment result links remain');
+if (board.includes('return `/result/${encodeURIComponent(id)}`')) {
+  errors.push('public/js/pages/board.js: public cards still open the duplicate full verdict page first');
+}
+
+const participation = read('public/js/pages/participation.js');
+if (!participation.includes('href="/result/${encodeURIComponent(caseId)}"')) {
+  errors.push('public/js/pages/participation.js: canonical full verdict link is missing');
 }
 
 const resultCourt = read('public/js/pages/result-court.js');
@@ -95,4 +100,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Public SEO validation passed: clean URLs, structured server result headings, public-only data, canonical metadata, dynamic sitemap, cache isolation, and deployment.');
+console.log('Public SEO validation passed: canonical full verdicts remain indexable while board cards open direct participation, with public-only data, dynamic sitemap, and cache isolation.');

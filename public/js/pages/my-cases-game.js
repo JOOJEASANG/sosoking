@@ -1,4 +1,4 @@
-import { renderMyCases as renderBaseMyCases } from './my-cases.js?v=20260729-own-case-delete-1';
+import { renderMyCases as renderBaseMyCases } from './my-cases.js?v=20260729-dark-record-participation-1';
 
 function titleByCount(count) {
   if (count >= 20) return '전설의 생활소송왕';
