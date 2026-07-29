@@ -64,14 +64,15 @@ if (!app.includes("./pages/my-cases-game.js?v=20260729-own-case-delete-1")) {
 }
 
 const index = read('public/index.html');
-if (!index.includes('/js/app.js?v=20260729-compact-spacing-1')) {
-  errors.push('public/index.html: application cache version is stale');
-}
-
 const serviceWorker = read('public/sw.js');
-if (!serviceWorker.includes("sosoking-app-v20260729-spacing-flow-2")
-  || !serviceWorker.includes('/js/app.js?v=20260729-compact-spacing-1')) {
-  errors.push('public/sw.js: own case deletion cache graph is stale');
+const appVersion = index.match(/\/js\/app\.js\?v=([^"']+)/)?.[1] || '';
+if (!appVersion) {
+  errors.push('public/index.html: versioned application entry is missing');
+} else if (!serviceWorker.includes(`/js/app.js?v=${appVersion}`)) {
+  errors.push('public/index.html and public/sw.js: application cache versions are inconsistent');
+}
+if (!/const CACHE_NAME = 'sosoking-app-v[^']+';/.test(serviceWorker)) {
+  errors.push('public/sw.js: versioned application cache name is missing');
 }
 
 const deploy = read('.github/workflows/firebase-deploy.yml');
@@ -93,4 +94,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Own case deletion validation passed: authenticated ownership, cascade cleanup, UI controls, cache versions, and deployment.');
+console.log('Own case deletion validation passed: authenticated ownership, cascade cleanup, UI controls, cache consistency, and deployment.');
