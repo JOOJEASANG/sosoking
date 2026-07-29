@@ -2,8 +2,8 @@ import { renderHome as renderBaseHome } from './home.js?v=20260729-script-csp-1'
 import { db } from '../firebase.js?v=20260729-auth-session-1';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 
-const BRAND_LOGO = '/logo.svg?v=20260729-logo-feed-1';
-const BRAND_LOGO_FALLBACK = '/icons/sosoking-192.png?v=20260729-logo-feed-1';
+const BRAND_LOGO = '/logo.png?v=20260729-brand-unified-1';
+const BRAND_LOGO_FALLBACK = '/icons/sosoking-192.png?v=20260729-brand-unified-1';
 const JUDGE_ICON = {
   '엄벌주의형': '👨‍⚖️',
   '감성형': '🥹',
