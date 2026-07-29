@@ -12,8 +12,15 @@
   <link rel="stylesheet" href="/css/main.css?v=20260728-ui-audit-2">
   <link rel="stylesheet" href="/css/brand-logo.css?v=20260729-bottom-nav-fix-1">
   <style>
-    .admin-header{background:var(--navy-light);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
-    .admin-header .logo{font-size:15px;color:var(--gold);font-weight:800;}
+    .admin-header{background:var(--navy-light);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:100;}
+    .admin-header .logo{font-size:15px;color:var(--gold);font-weight:800;min-width:0;white-space:nowrap;}
+    .admin-header-actions{display:flex;align-items:center;gap:8px;flex:0 0 auto;}
+    .admin-header-action{width:40px;height:40px;border-radius:50%;border:1px solid var(--border);background:var(--surface-soft);color:var(--gold);display:inline-flex;align-items:center;justify-content:center;padding:0;text-decoration:none;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.12);transition:transform .15s ease,background .15s ease,border-color .15s ease,box-shadow .15s ease;-webkit-tap-highlight-color:transparent;}
+    .admin-header-action:hover{background:var(--gold-dim);border-color:var(--gold);transform:translateY(-1px);box-shadow:0 5px 16px rgba(0,0,0,.18);}
+    .admin-header-action:active{transform:scale(.95);}
+    .admin-header-action:focus-visible{outline:2px solid var(--gold);outline-offset:2px;}
+    .admin-header-action svg{width:20px;height:20px;display:block;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+    .admin-login-logo{display:block;width:112px;height:112px;object-fit:contain;margin:0 auto 10px;filter:drop-shadow(0 10px 20px rgba(0,0,0,.32));}
     .admin-shell{max-width:1120px;margin:0 auto;padding:20px 16px 80px;}
     .admin-nav{display:flex;gap:8px;overflow-x:auto;margin:14px 0 18px;padding-bottom:6px;}
     .admin-tab{white-space:nowrap;border:1px solid var(--border);background:var(--surface-soft);color:var(--cream-dim);border-radius:999px;padding:8px 13px;font-size:12px;cursor:pointer;}
@@ -26,12 +33,12 @@
     .admin-btn.gold{border-color:var(--gold);color:var(--gold);}
     .admin-btn.red{border-color:var(--red);color:var(--red);}
     .admin-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}
-    @media(max-width:760px){.admin-grid{grid-template-columns:repeat(2,1fr)}.admin-shell{padding-left:12px;padding-right:12px}}
+    @media(max-width:760px){.admin-grid{grid-template-columns:repeat(2,1fr)}.admin-shell{padding-left:12px;padding-right:12px}.admin-header{padding:11px 14px}.admin-header .logo{font-size:14px}.admin-header-action{width:38px;height:38px}.admin-header-action svg{width:19px;height:19px}.admin-login-logo{width:104px;height:104px}}
   </style>
 </head>
 <body>
   <div id="admin-app"><div id="admin-content"></div></div>
   <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
-  <script type="module" src="/admin/admin-bootstrap.js?v=20260729-report-moderation-1"></script>
+  <script type="module" src="/admin/admin-bootstrap.js?v=20260729-report-moderation-1&ui=20260729-admin-brand-actions-1"></script>
 </body>
 </html>
