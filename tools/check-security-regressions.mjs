@@ -243,7 +243,7 @@ if (adminDashboard.includes('MutationObserver') || adminDashboard.includes('wind
   || adminDashboard.includes("deleteDoc(doc(db, 'cases'")) {
   errors.push('public/admin/admin.js: legacy monkey patch or direct case mutation remains');
 }
-for (const callable of ['setAdminResultVisibility', 'deleteCourtPost', 'deleteUserProfile']) {
+for (const callable of ['setAdminResultVisibility', 'deleteCourtPost', 'deleteUserProfile', 'moderateReport']) {
   if (!adminDashboard.includes(`httpsCallable(functions, '${callable}')`)) {
     errors.push(`public/admin/admin.js: administrator callable ${callable} is missing`);
   }
@@ -253,6 +253,7 @@ const deploy = read('.github/workflows/firebase-deploy.yml');
 for (const fn of [
   'setAdminResultVisibility',
   'submitReport',
+  'moderateReport',
   'syncPublicStats',
   'syncPublicStatsNow',
   'resolveCaseAlias',
