@@ -1,4 +1,4 @@
-import { renderBoard as renderBaseBoard } from './board.js?v=20260729-full-verdict-comments-1';
+import { renderBoard as renderBaseBoard } from './board.js?v=20260730-public-records-2';
 // Cache lineage marker for the CSP regression check: ./board.js?v=20260729-script-csp-1
 
 function ensureBoardGameStyle() {
@@ -84,13 +84,13 @@ function decorateBoard(container) {
       </div>`);
   }
 
-  const pick = document.getElementById('today-pick')?.firstElementChild;
+  const pick = container.querySelector('#today-pick')?.firstElementChild;
   if (pick && !pick.classList.contains('court-document')) {
     pick.classList.add('court-document');
     pick.insertAdjacentHTML('afterbegin', '<div class="court-stamp" style="margin-bottom:8px;">주목 기록</div>');
   }
 
-  document.querySelectorAll('#board-list .card').forEach((card, index) => {
+  container.querySelectorAll('#board-list .card').forEach((card, index) => {
     if (card.classList.contains('court-board-row')) return;
     card.classList.add('court-board-row');
     card.style.borderLeft = '3px solid rgba(201,168,76,.5)';
