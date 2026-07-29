@@ -104,6 +104,18 @@ if (!nav.includes('class="nav-brand-icon"') || !nav.includes('/icons/sosoking-19
   errors.push('nav.js: unified navigation logo is missing');
 }
 
+const brandCss = read('public/css/brand-logo.css');
+if (!brandCss.includes('left: 0;')
+  || !brandCss.includes('right: 0;')
+  || !brandCss.includes('max-width: 600px;')
+  || !brandCss.includes('transform: none;')
+  || !brandCss.includes('flex: 1 1 25%;')) {
+  errors.push('brand-logo.css: mobile-safe four-column bottom navigation layout is missing');
+}
+if (brandCss.includes('left: 50%;') || brandCss.includes('translateX(-50%)')) {
+  errors.push('brand-logo.css: transform-based bottom navigation centering remains');
+}
+
 const footer = read('public/js/components/footer.js');
 if (!footer.includes('class="footer-brand-logo"')) {
   errors.push('footer.js: unified footer logo is missing');
@@ -150,6 +162,9 @@ if (!index.includes('/js/theme-init.js?v=')
 if (!index.includes('/site.webmanifest?v=20260729-brand-unified-1')) {
   errors.push('index.html: current PWA manifest version is missing');
 }
+if (!index.includes('/css/brand-logo.css?v=20260729-bottom-nav-fix-1')) {
+  errors.push('index.html: fixed bottom navigation stylesheet version is missing');
+}
 
 const manifest = JSON.parse(read('public/site.webmanifest'));
 if (manifest.display !== 'standalone') {
@@ -195,4 +210,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('UI audit validation passed: unified brand logo assets, authentication, theme contrast, and PWA install flow.');
+console.log('UI audit validation passed: unified brand logo assets, authentication, theme contrast, stable bottom navigation, and PWA install flow.');

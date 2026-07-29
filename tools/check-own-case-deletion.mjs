@@ -69,7 +69,7 @@ if (!index.includes('/js/app.js?v=20260729-brand-unified-1')) {
 }
 
 const serviceWorker = read('public/sw.js');
-if (!serviceWorker.includes("sosoking-app-v20260729-brand-unified-1")
+if (!serviceWorker.includes("sosoking-app-v20260729-bottom-nav-fix-1")
   || !serviceWorker.includes('/js/app.js?v=20260729-brand-unified-1')) {
   errors.push('public/sw.js: own case deletion cache graph is stale');
 }
