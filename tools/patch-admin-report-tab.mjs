@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 
+// One-shot patch that adds a report queue to the consolidated administrator dashboard.
 function patch(file, replacements) {
   let source = fs.readFileSync(file, 'utf8');
   for (const [before, after] of replacements) {
