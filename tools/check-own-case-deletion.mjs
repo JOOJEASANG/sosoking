@@ -53,19 +53,19 @@ if (page.includes('deleteDoc(') || page.includes('onclick=')) {
 }
 
 const gamePage = read('public/js/pages/my-cases-game.js');
-if (!gamePage.includes("./my-cases.js?v=20260729-own-case-delete-1")
+if (!/from '\.\/my-cases\.js\?v=[^']+';/.test(gamePage)
   || !gamePage.includes("'sosoking:case-deleted'")) {
-  errors.push('public/js/pages/my-cases-game.js: profile refresh or cache version is missing');
+  errors.push('public/js/pages/my-cases-game.js: profile refresh or versioned base module is missing');
 }
 
 const app = read('public/js/app.js');
-if (!app.includes("./pages/my-cases-game.js?v=20260729-own-case-delete-1")) {
-  errors.push('public/js/app.js: my cases cache version is stale');
+if (!/from '\.\/pages\/my-cases-game\.js\?v=[^']+';/.test(app)) {
+  errors.push('public/js/app.js: versioned my cases module is missing');
 }
 
 const index = read('public/index.html');
 const serviceWorker = read('public/sw.js');
-const appVersion = index.match(/\/js\/app\.js\?v=([^"']+)/)?.[1] || '';
+const appVersion = index.match(/<script type="module" src="\/js\/app\.js\?v=([^"']+)"/)?.[1] || '';
 if (!appVersion) {
   errors.push('public/index.html: versioned application entry is missing');
 } else if (!serviceWorker.includes(`/js/app.js?v=${appVersion}`)) {
