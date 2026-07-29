@@ -59,6 +59,10 @@ function resultPath(id) {
   return `#/result/${encodeURIComponent(id)}`;
 }
 
+function summaryText(r) {
+  return r.sentence || r.publicCaseDescription || r.verdict || '';
+}
+
 export async function renderBoard(container) {
   container.innerHTML = `
     <div class="court-board-page">
@@ -78,6 +82,7 @@ export async function renderBoard(container) {
     const snap = await getDocs(query(
       collection(db, 'results'),
       where('isPublic', '==', true),
+      where('publicDataVersion', '==', 1),
       orderBy('createdAt', 'desc'),
       limit(40)
     ));
@@ -105,7 +110,7 @@ function todayPick([id, r]) {
   return `<a href="${resultPath(id)}" class="card board-featured-card" style="display:block;padding:20px;margin-bottom:16px;cursor:pointer;border-color:rgba(201,168,76,.65);background:linear-gradient(135deg,rgba(201,168,76,.12),rgba(255,255,255,.03));color:inherit;text-decoration:none;">
     <div style="font-size:12px;color:var(--gold);font-weight:900;letter-spacing:.12em;margin-bottom:8px;">오늘의 판결기록</div>
     <div style="font-family:var(--font-serif);font-size:21px;font-weight:900;line-height:1.45;margin-bottom:8px;">${escapeHtml(r.caseTitle || '제목 없음')}</div>
-    <div style="font-size:14px;color:var(--cream-dim);line-height:1.65;margin-bottom:13px;">${escapeHtml(compactText(r.sentence || r.caseDescription || r.verdict || '', 96))}</div>
+    <div style="font-size:14px;color:var(--cream-dim);line-height:1.65;margin-bottom:13px;">${escapeHtml(compactText(summaryText(r), 96))}</div>
     <div class="board-record-meta">
       <span class="board-judge-chip">${icon} ${escapeHtml(judgeType)} 판사</span>
       <span class="board-grievance-chip">억울지수 <strong>${grievance}/10</strong>${grievanceMeter(grievance)}</span>
@@ -122,7 +127,7 @@ function boardRow(id, r) {
 
   return `<a href="${resultPath(id)}" class="card" style="display:block;padding:16px 18px;cursor:pointer;color:inherit;text-decoration:none;">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px;"><div style="font-weight:800;font-size:15px;line-height:1.45;flex:1;">${escapeHtml(r.caseTitle || '제목 없음')}</div><div style="font-size:11px;color:var(--cream-dim);white-space:nowrap;margin-top:2px;">${escapeHtml(fmtDate(r.createdAt))}</div></div>
-    <div style="font-size:13px;color:var(--cream-dim);line-height:1.6;margin-bottom:11px;">${escapeHtml(compactText(r.sentence || r.caseDescription || r.verdict || '', 86))}</div>
+    <div style="font-size:13px;color:var(--cream-dim);line-height:1.6;margin-bottom:11px;">${escapeHtml(compactText(summaryText(r), 86))}</div>
     <div class="board-record-meta board-record-meta-row">
       <span class="board-judge-chip">${icon} ${escapeHtml(judgeType)} 판사</span>
       <span class="board-grievance-chip">억울지수 <strong>${grievance}/10</strong>${grievanceMeter(grievance)}</span>
