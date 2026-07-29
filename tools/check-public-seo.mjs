@@ -55,16 +55,16 @@ if (!robots.includes('Sitemap: https://sosoking.co.kr/sitemap.xml')) {
 }
 
 const board = read('public/js/pages/board.js');
-if (!board.includes('function participationPath(id)') || !board.includes('`#/result/${encodeURIComponent(id)}`')) {
-  errors.push('public/js/pages/board.js: public cards do not open the direct participation route');
+if (!board.includes('function resultPath(id)') || !board.includes('`#/result/${encodeURIComponent(id)}`')) {
+  errors.push('public/js/pages/board.js: public cards do not open the full verdict app route');
 }
 if (board.includes('return `/result/${encodeURIComponent(id)}`')) {
-  errors.push('public/js/pages/board.js: public cards still open the duplicate full verdict page first');
+  errors.push('public/js/pages/board.js: board cards must not leave the app before opening the full verdict record');
 }
 
-const participation = read('public/js/pages/participation.js');
-if (!participation.includes('href="/result/${encodeURIComponent(caseId)}"')) {
-  errors.push('public/js/pages/participation.js: canonical full verdict link is missing');
+const resultComments = read('public/js/pages/result-comments.js');
+if (!resultComments.includes("./result-court.js?v=20260729-dark-record-participation-1")) {
+  errors.push('public/js/pages/result-comments.js: styled full verdict renderer is missing');
 }
 
 const resultCourt = read('public/js/pages/result-court.js');
@@ -100,4 +100,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Public SEO validation passed: canonical full verdicts remain indexable while board cards open direct participation, with public-only data, dynamic sitemap, and cache isolation.');
+console.log('Public SEO validation passed: canonical server verdicts remain indexable while board cards open the full in-app verdict with comments, public-only data, dynamic sitemap, and cache isolation.');
