@@ -34,7 +34,7 @@ function showSeriousModal() {
     overlay.innerHTML = `
       <div style="background:#1a2035;border:2px solid #e74c3c;border-radius:16px;padding:28px 24px;max-width:380px;width:100%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.6);">
         <div style="font-size:52px;margin-bottom:12px;" aria-hidden="true">😰</div>
-        <div id="serious-modal-title" style="font-family:'Noto Serif KR',serif;font-size:19px;font-weight:700;color:#ff796c;margin-bottom:10px;">잠깐, 생활법정이 정색했습니다</div>
+        <div id="serious-modal-title" style="font-family:'Noto Sans KR',Arial,sans-serif;font-size:19px;font-weight:700;color:#ff796c;margin-bottom:10px;">잠깐, 생활법정이 정색했습니다</div>
         <p style="font-size:14px;color:rgba(245,240,232,.82);line-height:1.75;margin-bottom:22px;">
           이 사건은 웃고 넘기기보다<br>
           <strong style="color:#fff8ec;">실제 전문가의 도움이 필요할 수 있습니다.</strong><br><br>
