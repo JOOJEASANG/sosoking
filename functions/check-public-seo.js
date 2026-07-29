@@ -11,6 +11,7 @@ const {
   extractCaseId,
   loadPublicResult,
   listPublicResultEntries,
+  renderStructuredDocument,
   renderPublicResultHtml,
   renderSitemapXml,
   publicResultUrl
@@ -40,11 +41,11 @@ async function run() {
       judgeType: '논리집착형',
       judgeIcon: '🧮',
       grievanceIndex: 8,
-      reception: '마지막 푸딩이 사라진 경위를 접수한다.',
-      investigation: '냉장고 빈칸과 숟가락이 주요 정황으로 확인된다.',
-      plaintiffArg: '원고는 푸딩 보충과 정식 사과를 요구한다.',
-      defendantArg: '피고는 유통기한 임박을 주장한다.',
-      verdict: '피고는 동일 제품 두 개를 보충하고 냉장고 메모 규칙을 준수한다.',
+      reception: '접수취지\n마지막 푸딩이 사라진 경위를 접수한다.\n\n사건개요\n냉장고에서 마지막 푸딩이 사라졌다.',
+      investigation: '**확인 정황**\n냉장고 빈칸과 숟가락이 정황으로 확인된다.\n\n주요 증거:\n1. 내용물이 없는 푸딩 용기\n2. 싱크대의 작은 숟가락\n\n진술 검토\n피고는 유통기한 임박을 주장한다.\n\n조사관 의견\n피고의 설명만으로는 섭취 경위가 충분히 소명되지 않는다.',
+      plaintiffArg: '청구취지\n원고는 푸딩 보충과 정식 사과를 요구한다.',
+      defendantArg: '답변취지\n피고는 유통기한 임박을 주장한다.',
+      verdict: '주문\n1. 피고는 동일 제품 두 개를 보충한다.\n2. 피고는 냉장고 메모 규칙을 준수한다.\n\n판단이유\n빈 용기와 숟가락이 피고 주장보다 설득력이 높다.',
       createdAt: now,
       updatedAt: now
     }),
@@ -64,6 +65,15 @@ async function run() {
   );
   assert.equal(extractCaseId({ originalUrl: '/result/not%2Fsafe' }), '', 'encoded slash must be rejected');
 
+  const structured = renderStructuredDocument(
+    '**확인 정황**\n빈 용기가 발견되었다.\n\n주요 증거:\n1. 빈 용기\n2. 숟가락',
+    'investigation'
+  );
+  assert.match(structured, /class="document-subheading"[^>]*>확인 정황<\/h3>/);
+  assert.match(structured, /class="document-subheading"[^>]*>주요 증거<\/h3>/);
+  assert.match(structured, /class="document-order"/);
+  assert.doesNotMatch(structured, /\*\*/);
+
   const publicResult = await loadPublicResult(PUBLIC_ID);
   const privateResult = await loadPublicResult(PRIVATE_ID);
   assert.ok(publicResult, 'public result should be loadable');
@@ -73,6 +83,10 @@ async function run() {
   assert.match(html, /냉장고 마지막 푸딩 실종 사건 \| 소소킹 판결소/);
   assert.match(html, /가족이 남겨 둔 마지막 푸딩/);
   assert.match(html, /피고는 동일 제품 두 개를 보충/);
+  assert.match(html, /class="document-subheading"[^>]*>확인 정황<\/h3>/);
+  assert.match(html, /class="document-subheading"[^>]*>주요 증거<\/h3>/);
+  assert.match(html, /class="document-order"/);
+  assert.match(html, /document-subheading::before/);
   assert.match(html, new RegExp(`<link rel="canonical" href="${publicResultUrl(PUBLIC_ID)}">`));
   assert.match(html, /<meta name="robots" content="index,follow/);
   assert.match(html, /<script type="application\/ld\+json">/);
@@ -89,7 +103,7 @@ async function run() {
   assert.doesNotMatch(sitemap, /#\/result\//);
 
   await cleanup();
-  console.log('Public SEO emulator validation passed: public-only result loading, server HTML metadata, content rendering, and sitemap filtering.');
+  console.log('Public SEO emulator validation passed: public-only loading, structured result headings, metadata, content rendering, and sitemap filtering.');
 }
 
 run().catch(async error => {
