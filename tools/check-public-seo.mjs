@@ -54,6 +54,9 @@ if (!main.includes("require('./public-seo-safe')")) {
 if (main.includes("Object.assign(exports, require('./public-seo'))")) {
   errors.push('functions/main.js: unsafe direct public SEO handlers remain exported');
 }
+if (main.includes("require('./public-result-sanitizer')")) {
+  errors.push('functions/main.js: deploy-time sanitation utility must not become an Eventarc function');
+}
 
 const firebase = JSON.parse(read('firebase.json'));
 const rewrites = firebase.hosting?.rewrites || [];
@@ -102,8 +105,11 @@ if (!serviceWorker.includes('await putCache(request, response)')) {
 }
 
 const deploy = read('.github/workflows/firebase-deploy.yml');
-for (const functionName of ['functions:publicResultPage', 'functions:publicSitemap', 'functions:sanitizePublicResult']) {
+for (const functionName of ['functions:publicResultPage', 'functions:publicSitemap']) {
   if (!deploy.includes(functionName)) errors.push(`firebase-deploy.yml: ${functionName} is not deployed`);
+}
+if (deploy.includes('functions:sanitizePublicResult')) {
+  errors.push('firebase-deploy.yml: Eventarc sanitizer trigger must not block the hosting deployment');
 }
 if (!deploy.includes('node functions/sanitize-public-results-cli.js')) {
   errors.push('firebase-deploy.yml: existing public result sanitation is missing');
@@ -123,4 +129,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Public SEO validation passed: only sanitized public verdicts are indexable, while app routes, metadata, sitemap, and cache isolation remain intact.');
+console.log('Public SEO validation passed: sanitized public verdicts remain indexable without requiring an Eventarc deployment dependency.');
