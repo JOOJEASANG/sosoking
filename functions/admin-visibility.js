@@ -31,6 +31,28 @@ function publicResultText(caseData = {}, resultData = {}) {
   ].filter(Boolean).join('\n');
 }
 
+async function writeVisibilityLog(uid, caseId, isPublic) {
+  try {
+    await db.collection('admin_logs').add({
+      uid,
+      action: 'setAdminResultVisibility',
+      caseId,
+      detail: { isPublic, contentSafetyChecked: isPublic },
+      createdAt: FieldValue.serverTimestamp()
+    });
+    return true;
+  } catch (error) {
+    console.error('administrator visibility audit log failed:', {
+      uid,
+      caseId,
+      isPublic,
+      code: error?.code || '',
+      message: error?.message || ''
+    });
+    return false;
+  }
+}
+
 exports.setAdminResultVisibility = onCall({
   region: REGION,
   timeoutSeconds: 30,
@@ -87,6 +109,11 @@ exports.setAdminResultVisibility = onCall({
       tx.update(resultRef, {
         isPublic,
         userId: FieldValue.delete(),
+        caseDescription: FieldValue.delete(),
+        nickname: FieldValue.delete(),
+        publicCaseDescription: resultSnap.data().publicCaseDescription || '',
+        publicNickname: resultSnap.data().publicNickname || '익명 원고',
+        publicDataVersion: 1,
         contentSafetyStatus: isPublic ? 'passed' : (resultSnap.data().contentSafetyStatus || 'not-public'),
         contentSafetyCheckedAt: isPublic
           ? FieldValue.serverTimestamp()
@@ -96,13 +123,6 @@ exports.setAdminResultVisibility = onCall({
     }
   });
 
-  await db.collection('admin_logs').add({
-    uid: request.auth.uid,
-    action: 'setAdminResultVisibility',
-    caseId,
-    detail: { isPublic, contentSafetyChecked: isPublic },
-    createdAt: FieldValue.serverTimestamp()
-  }).catch(() => null);
-
-  return { success: true, caseId, isPublic };
+  const auditLogged = await writeVisibilityLog(request.auth.uid, caseId, isPublic);
+  return { success: true, auditLogged, caseId, isPublic };
 });
