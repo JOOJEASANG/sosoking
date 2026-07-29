@@ -1,11 +1,13 @@
 import { renderHome as renderBaseHome } from './home.js?v=20260729-brand-policy-1';
 // Cache lineage marker for the CSP regression check: ./home.js?v=20260729-script-csp-1
 import { db } from '../firebase.js?v=20260729-auth-session-1';
-import { collection, doc, getDoc, getDocs, limit, orderBy, query, where } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { compactText, escapeHtml } from '../utils/sanitize.js?v=20260630-3';
+import { loadSafePublicResults } from '../utils/public-results.js?v=20260730-public-records-2';
 
 const BRAND_LOGO = '/logo.png?v=20260729-brand-unified-1';
 const BRAND_LOGO_FALLBACK = '/icons/sosoking-192.png?v=20260729-brand-unified-1';
+const HOME_PUBLIC_RECORD_LIMIT = 5;
 const JUDGE_ICON = {
   '엄벌주의형': '👨‍⚖️',
   '감성형': '🥹',
@@ -92,6 +94,13 @@ function fixLegacyHomeCopy(container) {
       }
     });
   });
+
+  const feedElement = container.querySelector('#feed-container');
+  const feedSection = feedElement?.closest('.container');
+  const feedTitle = feedSection?.querySelector('div[style*="font-family"]');
+  if (feedTitle) feedTitle.textContent = '최근 공개 판결 5건';
+  const searchElement = container.querySelector('#feed-search');
+  if (searchElement) searchElement.placeholder = '🔍 최근 5건에서 사건명 검색...';
 }
 
 function formatDate(value) {
@@ -115,7 +124,7 @@ function publicFeedCard(caseId, record = {}) {
   const title = record.caseTitle || '제목 없음';
   const judgeType = record.judgeType || 'AI';
   const date = formatDate(record.createdAt);
-  return `<a class="card example-card" href="#/result/${encodeURIComponent(caseId)}" style="display:block;padding:18px 20px;color:inherit;text-decoration:none;">
+  return `<a class="card example-card" data-public-result-link="true" href="#/result/${encodeURIComponent(caseId)}" style="display:block;padding:18px 20px;color:inherit;text-decoration:none;">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
       <div class="case-title" style="flex:1;">${escapeHtml(title)}</div>
       ${date ? `<div style="font-size:11px;color:var(--cream-dim);white-space:nowrap;margin-top:2px;">${escapeHtml(date)}</div>` : ''}
@@ -123,7 +132,7 @@ function publicFeedCard(caseId, record = {}) {
     <div style="font-size:13px;color:var(--cream-dim);margin-top:6px;line-height:1.6;">${escapeHtml(compactText(publicSummary(record), 72))}</div>
     <div class="case-meta" style="margin-top:10px;justify-content:space-between;">
       <span>${JUDGE_ICON[judgeType] || '⚖️'} ${escapeHtml(judgeType)} 판사</span>
-      <span style="color:var(--gold);font-size:12px;">판결문 보기 →</span>
+      <span style="color:var(--gold);font-size:12px;">판결문 바로 보기 →</span>
     </div>
   </a>`;
 }
@@ -131,23 +140,24 @@ function publicFeedCard(caseId, record = {}) {
 async function applySafePublicFeed(container) {
   const feedElement = container.querySelector('#feed-container');
   if (!feedElement) return;
+  feedElement.innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
 
   try {
-    const snapshot = await getDocs(query(
-      collection(db, 'results'),
-      where('isPublic', '==', true),
-      where('publicDataVersion', '==', 1),
-      orderBy('createdAt', 'desc'),
-      limit(20)
-    ));
-    if (!container.isConnected || snapshot.empty) return;
+    const rows = await loadSafePublicResults(db, {
+      maxRows: HOME_PUBLIC_RECORD_LIMIT,
+      fallbackRows: 100
+    });
+    if (!container.isConnected) return;
 
-    const rows = snapshot.docs.map(document => [document.id, document.data()]);
     const renderRows = searchText => {
       const keyword = String(searchText || '').trim();
       const filtered = keyword
         ? rows.filter(([, record]) => String(record.caseTitle || '').includes(keyword))
         : rows;
+      if (!rows.length) {
+        feedElement.innerHTML = '<div style="text-align:center;padding:36px 0;color:var(--cream-dim);font-size:14px;">📭 아직 공개된 판결기록이 없습니다.</div>';
+        return;
+      }
       feedElement.innerHTML = filtered.length
         ? filtered.map(([caseId, record]) => publicFeedCard(caseId, record)).join('')
         : `<div style="text-align:center;padding:36px 0;color:var(--cream-dim);font-size:14px;">🔍 "${escapeHtml(keyword)}"에 대한 판결 사례가 없습니다</div>`;
@@ -161,6 +171,8 @@ async function applySafePublicFeed(container) {
     }
   } catch (error) {
     console.warn('safe public feed load failed:', error?.code || error);
+    feedElement.innerHTML = `<div style="text-align:center;padding:36px 0;color:var(--cream-dim);font-size:14px;">판결기록을 불러오지 못했습니다.<br><button type="button" id="home-public-feed-retry" class="btn btn-secondary" style="margin-top:12px;">다시 불러오기</button></div>`;
+    container.querySelector('#home-public-feed-retry')?.addEventListener('click', () => applySafePublicFeed(container));
   }
 }
 
@@ -169,7 +181,6 @@ async function applyPublicStatistics(container) {
   const judgeElement = container.querySelector('#stat-judge');
   if (!countElement) return;
 
-  // 기존 home.js의 권한 없는 cases 집계와 847 가상 애니메이션이 이 요소를 찾지 못하게 한다.
   countElement.id = 'public-stat-count';
   countElement.textContent = '—';
   if (judgeElement) judgeElement.textContent = '—';

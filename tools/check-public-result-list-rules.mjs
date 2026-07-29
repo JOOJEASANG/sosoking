@@ -27,11 +27,29 @@ const testEnv = await initializeTestEnvironment({
   firestore: { host, port, rules }
 });
 
-const reader = testEnv.authenticatedContext('public-list-reader', {
+const authenticatedReader = testEnv.authenticatedContext('public-list-reader', {
   email: 'reader@example.com',
   email_verified: true
 }).firestore();
+const publicReader = testEnv.unauthenticatedContext().firestore();
 const now = Timestamp.now();
+
+function safeQuery(db) {
+  return query(
+    collection(db, 'results'),
+    where('isPublic', '==', true),
+    where('publicDataVersion', '==', 1),
+    orderBy('createdAt', 'desc')
+  );
+}
+
+function broadQuery(db) {
+  return query(
+    collection(db, 'results'),
+    where('isPublic', '==', true),
+    orderBy('createdAt', 'desc')
+  );
+}
 
 try {
   await testEnv.withSecurityRulesDisabled(async context => {
@@ -62,25 +80,19 @@ try {
     ]);
   });
 
-  const safeQuery = query(
-    collection(reader, 'results'),
-    where('isPublic', '==', true),
-    where('publicDataVersion', '==', 1),
-    orderBy('createdAt', 'desc')
-  );
-  const safeSnapshot = await assertSucceeds(getDocs(safeQuery));
-  const ids = safeSnapshot.docs.map(document => document.id);
-  if (!ids.includes('list-safe-public') || ids.includes('list-unsafe-public') || ids.includes('list-private')) {
-    throw new Error(`sanitized public list returned unexpected documents: ${ids.join(', ')}`);
+  for (const [label, db] of [
+    ['authenticated', authenticatedReader],
+    ['unauthenticated', publicReader]
+  ]) {
+    const snapshot = await assertSucceeds(getDocs(safeQuery(db)));
+    const ids = snapshot.docs.map(document => document.id);
+    if (!ids.includes('list-safe-public') || ids.includes('list-unsafe-public') || ids.includes('list-private')) {
+      throw new Error(`${label} sanitized public list returned unexpected documents: ${ids.join(', ')}`);
+    }
+    await assertFails(getDocs(broadQuery(db)));
   }
 
-  await assertFails(getDocs(query(
-    collection(reader, 'results'),
-    where('isPublic', '==', true),
-    orderBy('createdAt', 'desc')
-  )));
-
-  console.log('Public result list rules passed: sanitized query succeeds and broad public query is denied.');
+  console.log('Public result list rules passed: sanitized queries work before and after login while broad public queries remain denied.');
 } finally {
   await testEnv.cleanup();
 }

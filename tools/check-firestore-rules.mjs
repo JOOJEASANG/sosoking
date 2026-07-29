@@ -152,16 +152,17 @@ try {
   await assertFails(updateDoc(doc(owner, 'cases/private-case'), { isPublic: true }));
   await assertSucceeds(updateDoc(doc(admin, 'cases/private-case'), { isPublic: true }));
 
-  // 결과는 소유자가 모두 읽고, 정리 완료된 공개 결과만 다른 로그인 세션이 읽는다.
+  // 결과는 소유자가 모두 읽고, 정리 완료된 공개 결과는 로그인 전후 모두 읽는다.
   await assertSucceeds(getDoc(doc(owner, 'results/private-case')));
   await assertFails(getDoc(doc(other, 'results/private-case')));
   await assertSucceeds(getDoc(doc(other, 'results/public-case')));
   await assertSucceeds(getDoc(doc(firebaseAnonymous, 'results/public-case')));
-  await assertFails(getDoc(doc(unauthenticated, 'results/public-case')));
+  await assertSucceeds(getDoc(doc(unauthenticated, 'results/public-case')));
   await assertSucceeds(getDoc(doc(owner, 'results/unsafe-public-case')));
   await assertSucceeds(getDoc(doc(admin, 'results/unsafe-public-case')));
   await assertFails(getDoc(doc(other, 'results/unsafe-public-case')));
   await assertFails(getDoc(doc(firebaseAnonymous, 'results/unsafe-public-case')));
+  await assertFails(getDoc(doc(unauthenticated, 'results/unsafe-public-case')));
   await assertFails(updateDoc(doc(owner, 'results/private-case'), { isPublic: true }));
   await assertSucceeds(updateDoc(doc(admin, 'results/private-case'), { isPublic: true }));
 
@@ -226,7 +227,7 @@ try {
   await assertFails(deleteDoc(doc(owner, 'users/owner-uid')));
   await assertSucceeds(deleteDoc(doc(admin, 'users/owner-uid')));
 
-  console.log('Firestore rules integration passed: server-only mutations, sanitized public results, and Firestore-backed admin authorization.');
+  console.log('Firestore rules integration passed: server-only mutations, public sanitized result access, and Firestore-backed admin authorization.');
 } finally {
   await testEnv.cleanup();
 }

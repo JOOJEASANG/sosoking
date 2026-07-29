@@ -22,10 +22,11 @@ expect(!app.includes('renderParticipation') && !app.includes('./pages/participat
   'public/js/app.js: separate participation page must not remain in the active route graph');
 expect(board.includes('function resultPath') && board.includes('return `#/result/${encodeURIComponent(id)}`'),
   'public/js/pages/board.js: verdict record cards must open the full verdict hash');
-expect(board.includes('AI 판결문 전문과 방청석 한마디')
-  && board.includes('전문 보기 · 💬')
+expect(board.includes('AI 판결문 전문으로 바로 이동합니다')
+  && board.includes('판결문 바로 보기 · 💬')
+  && board.includes('data-public-result-link="true"')
   && !board.includes('totalVotes('),
-  'public/js/pages/board.js: records must advertise full text and comments without jury totals');
+  'public/js/pages/board.js: records must directly advertise full verdict content and comments without jury totals');
 expect(result.includes('💬 방청석 한마디') && result.includes("httpsCallable(functions, 'addCourtComment')"),
   'public/js/pages/result.js: audience comments must remain available');
 expect(resultComments.includes("reactionButton?.closest('.card')?.remove()")
@@ -57,4 +58,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Verdict record validation passed: records open the full AI verdict, jury voting is hidden, audience comments remain, and active cache versions stay synchronized.');
+console.log('Verdict record validation passed: records link directly to the full AI verdict, jury voting is hidden, audience comments remain, and active cache versions stay synchronized.');
