@@ -18,20 +18,52 @@ function safePublicResultsQuery() {
     .where('publicDataVersion', '==', 1);
 }
 
+function createdAtMillis(document) {
+  const value = document.data()?.createdAt;
+  if (value?.toMillis) return value.toMillis();
+  const parsed = new Date(value || 0).getTime();
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function isMissingIndexError(error) {
+  const code = error?.code;
+  const message = String(error?.message || '').toLowerCase();
+  return code === 9
+    || code === 'failed-precondition'
+    || message.includes('requires an index')
+    || message.includes('index is currently building');
+}
+
+async function loadRecentSafePublicResults() {
+  try {
+    const snapshot = await safePublicResultsQuery()
+      .orderBy('createdAt', 'desc')
+      .limit(100)
+      .get();
+    return snapshot.docs;
+  } catch (error) {
+    if (!isMissingIndexError(error)) throw error;
+
+    console.warn('ordered public statistics query unavailable; sorting a bounded safe result set in memory:', error?.code || error);
+    const snapshot = await safePublicResultsQuery()
+      .limit(500)
+      .get();
+    return snapshot.docs
+      .sort((left, right) => createdAtMillis(right) - createdAtMillis(left))
+      .slice(0, 100);
+  }
+}
+
 async function refreshPublicStats() {
   const [completedCases, publicResults] = await Promise.all([
     aggregateCount(db.collection('cases').where('status', '==', 'completed')),
     aggregateCount(safePublicResultsQuery())
   ]);
 
-  const recentResults = await safePublicResultsQuery()
-    .orderBy('createdAt', 'desc')
-    .limit(100)
-    .get();
-
+  const recentResults = await loadRecentSafePublicResults();
   const oneWeekAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
   const judgeCounts = {};
-  for (const document of recentResults.docs) {
+  for (const document of recentResults) {
     const data = document.data();
     const createdAt = data.createdAt?.toMillis ? data.createdAt.toMillis() : 0;
     if (!createdAt || createdAt < oneWeekAgo || !data.judgeType) continue;
