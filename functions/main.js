@@ -4,6 +4,9 @@ const { getApps, initializeApp } = require('firebase-admin/app');
 
 if (!getApps().length) initializeApp();
 
+// Gemini 요청에 소소킹 전용 코미디 강도 규칙을 먼저 주입한다.
+require('./humor-prompt');
+
 Object.assign(exports, require('./daily'));
 Object.assign(exports, require('./daily-real-court'));
 Object.assign(exports, require('./profile'));
