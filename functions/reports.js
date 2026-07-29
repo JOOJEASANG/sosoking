@@ -26,6 +26,52 @@ function reportKey(uid, caseId) {
   return crypto.createHash('sha256').update(`${uid}\u0000${caseId}`).digest('hex');
 }
 
+async function submitReportData(uid, caseId, reason) {
+  const caseRef = db.doc(`cases/${caseId}`);
+  const resultRef = db.doc(`results/${caseId}`);
+  const keyRef = db.doc(`report_keys/${reportKey(uid, caseId)}`);
+  const reportRef = db.collection('reports').doc();
+
+  await db.runTransaction(async tx => {
+    const [caseSnap, resultSnap, keySnap] = await Promise.all([
+      tx.get(caseRef),
+      tx.get(resultRef),
+      tx.get(keyRef)
+    ]);
+
+    if (!resultSnap.exists || resultSnap.data().isPublic !== true) {
+      throw new HttpsError('not-found', '신고할 수 있는 공개 판결문을 찾을 수 없습니다.');
+    }
+    if (caseSnap.exists && caseSnap.data().userId === uid) {
+      throw new HttpsError('failed-precondition', '본인이 작성한 판결문은 신고할 수 없습니다.');
+    }
+    if (keySnap.exists) {
+      throw new HttpsError('already-exists', '이미 신고한 판결문입니다.');
+    }
+
+    tx.set(reportRef, {
+      caseId,
+      reason,
+      status: 'pending',
+      userId: uid,
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp()
+    });
+    tx.set(keyRef, {
+      caseId,
+      userId: uid,
+      reportId: reportRef.id,
+      createdAt: FieldValue.serverTimestamp()
+    });
+    tx.update(resultRef, {
+      reportCount: FieldValue.increment(1),
+      updatedAt: FieldValue.serverTimestamp()
+    });
+  });
+
+  return { reportId: reportRef.id };
+}
+
 async function moderateReportData(reportId, action, adminUid) {
   const reportRef = db.doc(`reports/${reportId}`);
   return db.runTransaction(async tx => {
@@ -101,49 +147,8 @@ exports.submitReport = onCall({
     dailyLimit: 10
   });
 
-  const caseRef = db.doc(`cases/${caseId}`);
-  const resultRef = db.doc(`results/${caseId}`);
-  const keyRef = db.doc(`report_keys/${reportKey(uid, caseId)}`);
-  const reportRef = db.collection('reports').doc();
-
-  await db.runTransaction(async tx => {
-    const [caseSnap, resultSnap, keySnap] = await Promise.all([
-      tx.get(caseRef),
-      tx.get(resultRef),
-      tx.get(keyRef)
-    ]);
-
-    if (!resultSnap.exists || resultSnap.data().isPublic !== true) {
-      throw new HttpsError('not-found', '신고할 수 있는 공개 판결문을 찾을 수 없습니다.');
-    }
-    if (caseSnap.exists && caseSnap.data().userId === uid) {
-      throw new HttpsError('failed-precondition', '본인이 작성한 판결문은 신고할 수 없습니다.');
-    }
-    if (keySnap.exists) {
-      throw new HttpsError('already-exists', '이미 신고한 판결문입니다.');
-    }
-
-    tx.set(reportRef, {
-      caseId,
-      reason,
-      status: 'pending',
-      userId: uid,
-      createdAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp()
-    });
-    tx.set(keyRef, {
-      caseId,
-      userId: uid,
-      reportId: reportRef.id,
-      createdAt: FieldValue.serverTimestamp()
-    });
-    tx.update(resultRef, {
-      reportCount: FieldValue.increment(1),
-      updatedAt: FieldValue.serverTimestamp()
-    });
-  });
-
-  return { success: true, reportId: reportRef.id };
+  const result = await submitReportData(uid, caseId, reason);
+  return { success: true, ...result };
 });
 
 exports.moderateReport = onCall({
@@ -171,7 +176,7 @@ exports.moderateReport = onCall({
   return { success: true, reportId, action, ...result };
 });
 
-Object.defineProperty(module.exports, 'moderateReportData', {
-  value: moderateReportData,
-  enumerable: false
+Object.defineProperties(module.exports, {
+  submitReportData: { value: submitReportData, enumerable: false },
+  moderateReportData: { value: moderateReportData, enumerable: false }
 });
