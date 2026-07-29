@@ -1,4 +1,4 @@
-import { renderBoard as renderBaseBoard } from './board.js?v=20260729-dark-record-participation-1';
+import { renderBoard as renderBaseBoard } from './board.js?v=20260729-full-verdict-comments-1';
 // Cache lineage marker for the CSP regression check: ./board.js?v=20260729-script-csp-1
 
 function ensureBoardGameStyle() {
