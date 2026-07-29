@@ -1,5 +1,5 @@
 import { initAuth } from './firebase.js?v=20260729-auth-session-1';
-import { renderHome } from './pages/home-court.js?v=20260729-brand-policy-1';
+import { renderHome } from './pages/home-court.js?v=20260730-public-feed-1';
 // Cache lineage marker for the CSP regression check: ./pages/home-court.js?v=20260729-brand-unified-1
 import { renderSubmit } from './pages/submit-guard.js?v=20260728-audit-1';
 import { renderTrial } from './pages/trial-game.js?v=20260729-dark-record-participation-1';

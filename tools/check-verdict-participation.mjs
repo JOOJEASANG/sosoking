@@ -38,12 +38,18 @@ expect(trial.includes('location.hash = `#/verdict/${encodeURIComponent(caseId)}`
   'public/js/pages/trial.js: completed submissions must open the owned verdict route');
 expect(myCases.includes('`#/verdict/${encodeURIComponent(id)}`'),
   'public/js/pages/my-cases.js: owned completed cases must open the owned verdict route');
-expect(index.includes('/js/app.js?v=20260729-full-verdict-comments-1'),
-  'public/index.html: full verdict comments app cache version is missing');
-expect(sw.includes("sosoking-app-v20260729-full-verdict-comments-1")
-  && sw.includes('/js/pages/result-comments.js?v=20260729-full-verdict-comments-1')
+
+const appVersion = index.match(/<script type="module" src="\/js\/app\.js\?v=([^"']+)"/)?.[1] || '';
+expect(Boolean(appVersion) && sw.includes(`/js/app.js?v=${appVersion}`),
+  'public/index.html and public/sw.js: active app cache versions are inconsistent');
+expect(app.includes("./pages/result-comments.js?v=20260729-full-verdict-comments-1"),
+  'public/js/app.js: full verdict comments renderer is missing from the active route graph');
+expect(sw.includes('/js/pages/result-comments.js?v=20260729-full-verdict-comments-1')
+  && sw.includes('/js/pages/result-court.js?v=20260729-dark-record-participation-1')
   && !sw.includes('/js/pages/participation.js'),
-  'public/sw.js: full verdict comments cache graph is incomplete');
+  'public/sw.js: full verdict comments modules are missing from the cache graph');
+expect(/^const CACHE_NAME = 'sosoking-app-v[^']+';/m.test(sw),
+  'public/sw.js: versioned application cache name is missing');
 
 if (errors.length) {
   console.error(`Verdict record validation failed (${errors.length})`);
@@ -51,4 +57,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Verdict record validation passed: records open the full AI verdict, jury voting is hidden, audience comments remain, and dark mode stays intact.');
+console.log('Verdict record validation passed: records open the full AI verdict, jury voting is hidden, audience comments remain, and active cache versions stay synchronized.');

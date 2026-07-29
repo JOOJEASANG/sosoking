@@ -1,7 +1,8 @@
 import { renderHome as renderBaseHome } from './home.js?v=20260729-brand-policy-1';
 // Cache lineage marker for the CSP regression check: ./home.js?v=20260729-script-csp-1
 import { db } from '../firebase.js?v=20260729-auth-session-1';
-import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { collection, doc, getDoc, getDocs, limit, orderBy, query, where } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { compactText, escapeHtml } from '../utils/sanitize.js?v=20260630-3';
 
 const BRAND_LOGO = '/logo.png?v=20260729-brand-unified-1';
 const BRAND_LOGO_FALLBACK = '/icons/sosoking-192.png?v=20260729-brand-unified-1';
@@ -93,6 +94,76 @@ function fixLegacyHomeCopy(container) {
   });
 }
 
+function formatDate(value) {
+  if (!value) return '';
+  const date = value.toDate ? value.toDate() : new Date(value);
+  if (!Number.isFinite(date.getTime())) return '';
+  return date.toLocaleString('ko-KR', {
+    timeZone: 'Asia/Seoul',
+    month: 'numeric',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+function publicSummary(record = {}) {
+  return record.sentence || record.publicCaseDescription || record.verdict || '';
+}
+
+function publicFeedCard(caseId, record = {}) {
+  const title = record.caseTitle || '제목 없음';
+  const judgeType = record.judgeType || 'AI';
+  const date = formatDate(record.createdAt);
+  return `<a class="card example-card" href="#/result/${encodeURIComponent(caseId)}" style="display:block;padding:18px 20px;color:inherit;text-decoration:none;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+      <div class="case-title" style="flex:1;">${escapeHtml(title)}</div>
+      ${date ? `<div style="font-size:11px;color:var(--cream-dim);white-space:nowrap;margin-top:2px;">${escapeHtml(date)}</div>` : ''}
+    </div>
+    <div style="font-size:13px;color:var(--cream-dim);margin-top:6px;line-height:1.6;">${escapeHtml(compactText(publicSummary(record), 72))}</div>
+    <div class="case-meta" style="margin-top:10px;justify-content:space-between;">
+      <span>${JUDGE_ICON[judgeType] || '⚖️'} ${escapeHtml(judgeType)} 판사</span>
+      <span style="color:var(--gold);font-size:12px;">판결문 보기 →</span>
+    </div>
+  </a>`;
+}
+
+async function applySafePublicFeed(container) {
+  const feedElement = container.querySelector('#feed-container');
+  if (!feedElement) return;
+
+  try {
+    const snapshot = await getDocs(query(
+      collection(db, 'results'),
+      where('isPublic', '==', true),
+      where('publicDataVersion', '==', 1),
+      orderBy('createdAt', 'desc'),
+      limit(20)
+    ));
+    if (!container.isConnected || snapshot.empty) return;
+
+    const rows = snapshot.docs.map(document => [document.id, document.data()]);
+    const renderRows = searchText => {
+      const keyword = String(searchText || '').trim();
+      const filtered = keyword
+        ? rows.filter(([, record]) => String(record.caseTitle || '').includes(keyword))
+        : rows;
+      feedElement.innerHTML = filtered.length
+        ? filtered.map(([caseId, record]) => publicFeedCard(caseId, record)).join('')
+        : `<div style="text-align:center;padding:36px 0;color:var(--cream-dim);font-size:14px;">🔍 "${escapeHtml(keyword)}"에 대한 판결 사례가 없습니다</div>`;
+    };
+
+    renderRows('');
+    const searchElement = container.querySelector('#feed-search');
+    if (searchElement) {
+      searchElement.replaceWith(searchElement.cloneNode(true));
+      container.querySelector('#feed-search')?.addEventListener('input', event => renderRows(event.currentTarget.value));
+    }
+  } catch (error) {
+    console.warn('safe public feed load failed:', error?.code || error);
+  }
+}
+
 async function applyPublicStatistics(container) {
   const countElement = container.querySelector('#stat-count');
   const judgeElement = container.querySelector('#stat-judge');
@@ -127,5 +198,8 @@ export async function renderHome(container) {
   addCourtEntrance(container);
   addProcedureSeal(container);
   fixLegacyHomeCopy(container);
-  await applyPublicStatistics(container);
+  await Promise.all([
+    applyPublicStatistics(container),
+    applySafePublicFeed(container)
+  ]);
 }

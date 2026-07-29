@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sosoking-app-v20260729-full-verdict-comments-1';
+const CACHE_NAME = 'sosoking-app-v20260730-public-feed-1';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -9,8 +9,8 @@ const APP_SHELL = [
   '/css/layout-spacing.css?v=20260729-spacing-flow-2',
   '/css/sans-font.css?v=20260729-sans-font-1',
   '/js/theme-init.js?v=20260729-script-csp-1',
-  '/js/app.js?v=20260729-full-verdict-comments-1',
-  '/js/pages/home-court.js?v=20260729-brand-policy-1',
+  '/js/app.js?v=20260730-public-feed-1',
+  '/js/pages/home-court.js?v=20260730-public-feed-1',
   '/js/pages/home.js?v=20260729-brand-policy-1',
   '/js/pages/guide.js?v=20260729-brand-policy-1',
   '/js/pages/policy.js?v=20260729-brand-policy-1',

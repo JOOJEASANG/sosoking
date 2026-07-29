@@ -62,8 +62,11 @@ if (!/<script type="module" src="\/js\/app\.js\?v=[^"']+"><\/script>/.test(index
 
 const app = read('public/js/app.js');
 const homeCourt = read('public/js/pages/home-court.js');
+const homeCourtVersion = app.match(/\.\/pages\/home-court\.js\?v=([^'";]+)/)?.[1] || '';
+if (!homeCourtVersion) {
+  errors.push('public/js/app.js: versioned home-court module is missing');
+}
 for (const moduleUrl of [
-  './pages/home-court.js?v=20260729-brand-policy-1',
   './pages/policy.js?v=20260729-brand-policy-1',
   './pages/guide.js?v=20260729-brand-policy-1',
   './components/footer.js?v=20260729-brand-policy-1'
@@ -84,8 +87,10 @@ const appVersion = index.match(/<script type="module" src="\/js\/app\.js\?v=([^"
 if (!appVersion || !sw.includes(`/js/app.js?v=${appVersion}`)) {
   errors.push('public/index.html 및 public/sw.js의 앱 버전이 일치하지 않음');
 }
+if (!homeCourtVersion || !sw.includes(`/js/pages/home-court.js?v=${homeCourtVersion}`)) {
+  errors.push('public/js/app.js 및 public/sw.js의 홈 모듈 버전이 일치하지 않음');
+}
 for (const asset of [
-  '/js/pages/home-court.js?v=20260729-brand-policy-1',
   '/js/pages/home.js?v=20260729-brand-policy-1',
   '/js/pages/guide.js?v=20260729-brand-policy-1',
   '/js/pages/policy.js?v=20260729-brand-policy-1',
@@ -105,4 +110,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Brand and policy copy validation passed: main message, daily limits, real-case game, privacy disclosures, AI notice, and cache versions.');
+console.log('Brand and policy copy validation passed: main message, daily limits, real-case game, privacy disclosures, AI notice, and synchronized cache versions.');
