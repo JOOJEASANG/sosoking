@@ -1,5 +1,5 @@
 import { initAuth } from './firebase.js?v=20260729-auth-session-1';
-import { renderHome } from './pages/home-court.js?v=20260730-public-feed-1';
+import { renderHome } from './pages/home-court.js?v=20260730-public-records-2';
 // Cache lineage marker for the CSP regression check: ./pages/home-court.js?v=20260729-brand-unified-1
 import { renderSubmit } from './pages/submit-guard.js?v=20260728-audit-1';
 import { renderTrial } from './pages/trial-game.js?v=20260729-dark-record-participation-1';
@@ -8,7 +8,7 @@ import { renderPolicy } from './pages/policy.js?v=20260729-brand-policy-1';
 import { renderMyCases } from './pages/my-cases-game.js?v=20260729-dark-record-participation-1';
 import { renderGuide } from './pages/guide.js?v=20260729-brand-policy-1';
 import { renderAuth } from './pages/auth2.js?v=20260729-brand-unified-1';
-import { renderBoard } from './pages/board-court.js?v=20260729-full-verdict-comments-1';
+import { renderBoard } from './pages/board-court.js?v=20260730-public-records-2';
 // Cache lineage marker for the CSP regression check: ./pages/board-court.js?v=20260729-script-csp-1
 import { renderDailyRealCourt } from './pages/daily-real-court.js?v=20260729-daily-real-court-1';
 import { renderFooter } from './components/footer.js?v=20260729-brand-policy-1';
