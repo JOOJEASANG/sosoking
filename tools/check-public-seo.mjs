@@ -9,6 +9,10 @@ for (const required of [
   'exports.publicSitemap',
   "raw.isPublic !== true",
   'renderPublicResultHtml',
+  'renderStructuredDocument',
+  'document-subheading',
+  'document-subheading::before',
+  'document-order',
   'renderSitemapXml',
   'rel="canonical"',
   'name="description"',
@@ -17,12 +21,12 @@ for (const required of [
   "'@type': 'CreativeWork'",
   'X-Robots-Tag',
   'noindex, nofollow',
-  'where(\'isPublic\', \'==\', true)',
+  "where('isPublic', '==', true)",
   'SITEMAP_RESULT_LIMIT'
 ]) {
   if (!server.includes(required)) errors.push(`functions/public-seo.js: missing ${required}`);
 }
-if (server.includes('userId') || server.includes('collection(\'cases\')')) {
+if (server.includes('userId') || server.includes("collection('cases')")) {
   errors.push('functions/public-seo.js: public SEO rendering must not expose owner IDs or read private case documents');
 }
 
@@ -91,4 +95,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Public SEO validation passed: clean URLs, server HTML, public-only data, canonical metadata, dynamic sitemap, cache isolation, and deployment.');
+console.log('Public SEO validation passed: clean URLs, structured server result headings, public-only data, canonical metadata, dynamic sitemap, cache isolation, and deployment.');
