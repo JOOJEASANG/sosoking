@@ -4,7 +4,7 @@ const APP_SHELL = [
   '/index.html',
   '/site.webmanifest?v=20260729-brand-unified-1',
   '/css/main.css?v=20260728-ui-audit-2',
-  '/css/brand-logo.css?v=20260729-desktop-shell-1',
+  '/css/brand-logo.css?v=20260729-submit-nav-icon-1',
   '/js/theme-init.js?v=20260729-script-csp-1',
   '/js/app.js?v=20260729-brand-unified-1',
   '/logo.png?v=20260729-brand-unified-1',

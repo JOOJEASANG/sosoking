@@ -54,6 +54,15 @@
   font-size: 25px;
 }
 
+#bottom-nav .nav-cta .nav-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 28px;
+  overflow: visible;
+}
+
 #bottom-nav .nav-label {
   font-size: 10.5px;
 }
@@ -113,10 +122,11 @@
 
 .nav-brand-icon {
   display: block;
-  width: 32px;
-  height: 32px;
+  width: 46px;
+  height: 46px;
+  max-width: none;
   object-fit: contain;
-  margin: -6px auto -3px;
+  margin: -10px auto -8px;
   filter: drop-shadow(0 2px 4px rgba(0,0,0,.35));
 }
 
