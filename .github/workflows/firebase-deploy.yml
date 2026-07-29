@@ -76,6 +76,17 @@ jobs:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
         run: firebase deploy --only functions:submitCase,functions:generateTrial,functions:createDailyAiCase,functions:generateDailyAiNow,functions:getDailyRealCourt,functions:submitDailyRealCourtVerdict,functions:checkNickname,functions:setNickname,functions:voteResult,functions:addCourtComment,functions:setResultVisibility,functions:setAdminResultVisibility,functions:submitReport,functions:moderateReport,functions:syncPublicStats,functions:syncPublicStatsNow,functions:publicResultPage,functions:publicSitemap,functions:resolveCaseAlias,functions:migrateLegacyCaseIds,functions:requestAppeal,functions:deleteOwnCourtPost,functions:deleteCourtPost,functions:deleteUserProfile --project sosoking-481e6 --non-interactive
 
+      - name: Sanitize existing public results
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+          GOOGLE_CLOUD_PROJECT: sosoking-481e6
+        run: node functions/sanitize-public-results-cli.js
+
+      - name: Deploy Firestore configuration and Hosting
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+        run: firebase deploy --only firestore:indexes,firestore:rules,hosting --project sosoking-481e6 --non-interactive
+
       - name: Initialize public statistics
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
@@ -87,17 +98,6 @@ jobs:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
           GOOGLE_CLOUD_PROJECT: sosoking-481e6
         run: node tools/sync-daily-real-court-catalog.mjs
-
-      - name: Sanitize existing public results
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-          GOOGLE_CLOUD_PROJECT: sosoking-481e6
-        run: node functions/sanitize-public-results-cli.js
-
-      - name: Deploy Firestore configuration and Hosting
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-        run: firebase deploy --only firestore:indexes,firestore:rules,hosting --project sosoking-481e6 --non-interactive
 
       - name: Sync safe public configuration
         env:
