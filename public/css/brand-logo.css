@@ -146,3 +146,23 @@
   margin: 0 auto 12px;
   filter: drop-shadow(0 6px 12px rgba(0,0,0,.3));
 }
+
+/* 메인, 판결문, 관리자 화면을 모두 고딕체로 통일한다. */
+:root {
+  --font-serif: 'Noto Sans KR', Arial, sans-serif;
+  --font-sans: 'Noto Sans KR', Arial, sans-serif;
+}
+
+html,
+body,
+body * {
+  font-family: 'Noto Sans KR', Arial, sans-serif !important;
+}
+
+button,
+input,
+textarea,
+select,
+option {
+  font: inherit;
+}
