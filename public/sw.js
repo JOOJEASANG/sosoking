@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sosoking-app-v20260729-script-csp-1';
+const CACHE_NAME = 'sosoking-app-v20260729-report-moderation-1';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -6,7 +6,7 @@ const APP_SHELL = [
   '/css/main.css?v=20260728-ui-audit-2',
   '/css/brand-logo.css?v=20260729-logo-feed-1',
   '/js/theme-init.js?v=20260729-script-csp-1',
-  '/js/app.js?v=20260729-script-csp-1',
+  '/js/app.js?v=20260729-report-moderation-1',
   '/logo.svg?v=20260729-logo-feed-1',
   '/icons/sosoking-192.png',
   '/icons/sosoking-512.png'
