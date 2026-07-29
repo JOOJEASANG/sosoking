@@ -51,8 +51,11 @@ for (const required of [
 }
 
 const sanitizer = read('functions/public-result-sanitizer.js');
-for (const required of ['exports.sanitizePublicResult', "SENSITIVE_FIELDS = ['userId', 'caseDescription', 'nickname']", 'publicDataVersion = 1']) {
+for (const required of ["SENSITIVE_FIELDS = ['userId', 'caseDescription', 'nickname']", 'patch.publicDataVersion = 1', 'publicSanitizationPatch']) {
   if (!sanitizer.includes(required)) errors.push(`functions/public-result-sanitizer.js: missing ${required}`);
+}
+if (sanitizer.includes('onDocumentWritten') || sanitizer.includes('exports.sanitizePublicResult')) {
+  errors.push('functions/public-result-sanitizer.js: Eventarc trigger must remain disabled until deploy IAM is configured');
 }
 
 const safeSeo = read('functions/public-seo-safe.js');
@@ -61,8 +64,11 @@ for (const required of ['isSanitizedPublicResult', 'exports.publicResultPage', '
 }
 
 const main = read('functions/main.js');
-for (const moduleName of ['./public-seo-safe', './public-result-sanitizer']) {
-  if (!main.includes(`require('${moduleName}')`)) errors.push(`functions/main.js: ${moduleName} is not exported`);
+if (!main.includes("require('./public-seo-safe')")) {
+  errors.push('functions/main.js: sanitized public SEO functions are not exported');
+}
+if (main.includes("require('./public-result-sanitizer')")) {
+  errors.push('functions/main.js: deploy-time sanitizer utility must not be exported as a Cloud Function');
 }
 if (main.includes("Object.assign(exports, require('./public-seo'))")) {
   errors.push('functions/main.js: unsafe direct public SEO handlers remain exported');
@@ -87,8 +93,8 @@ if (social.includes('GoogleGenerativeAI')) {
 const deploy = read('.github/workflows/firebase-deploy.yml');
 const sanitizeStep = deploy.indexOf('Sanitize existing public results');
 const rulesStep = deploy.indexOf('Deploy Firestore configuration and Hosting');
-if (!deploy.includes('functions:sanitizePublicResult')) {
-  errors.push('.github/workflows/firebase-deploy.yml: sanitizer trigger is not deployed');
+if (deploy.includes('functions:sanitizePublicResult')) {
+  errors.push('.github/workflows/firebase-deploy.yml: Eventarc sanitizer trigger must not block production deployment');
 }
 if (!deploy.includes('node functions/sanitize-public-results-cli.js')) {
   errors.push('.github/workflows/firebase-deploy.yml: existing public records are not sanitized');
@@ -107,4 +113,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Security hardening validation passed: App Check, public data sanitation, safe SEO, CSP, appeal timeout, and CI deduplication are intact.');
+console.log('Security hardening validation passed: App Check, deploy-safe public data sanitation, safe SEO, CSP, appeal timeout, and CI deduplication are intact.');
