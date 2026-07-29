@@ -1,7 +1,7 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const { isAdminAuth } = require('./admin-utils');
-const { requireAccountUser } = require('./security');
+const { requireAccountUser, requireAppCheck } = require('./security');
 
 const db = getFirestore();
 const REGION = 'asia-northeast3';
@@ -29,13 +29,25 @@ async function deleteQuerySnapshot(query, counter) {
   }
 }
 async function writeAdminLog(uid, action, subjectId, detail = {}) {
-  await db.collection('admin_logs').add({
-    uid,
-    action,
-    subjectId,
-    detail,
-    createdAt: FieldValue.serverTimestamp()
-  }).catch(() => null);
+  try {
+    await db.collection('admin_logs').add({
+      uid,
+      action,
+      subjectId,
+      detail,
+      createdAt: FieldValue.serverTimestamp()
+    });
+    return true;
+  } catch (error) {
+    console.error('administrator audit log failed:', {
+      uid,
+      action,
+      subjectId,
+      code: error?.code || '',
+      message: error?.message || ''
+    });
+    return false;
+  }
 }
 
 async function deleteUserProfileData(userId) {
@@ -112,18 +124,20 @@ exports.deleteOwnCourtPost = onCall({ region: REGION, timeoutSeconds: 120, memor
 });
 
 exports.deleteCourtPost = onCall({ region: REGION, timeoutSeconds: 120, memory: '256MiB' }, async request => {
+  requireAppCheck(request);
   if (!request.auth || !(await isAdminAuth(request.auth))) {
     throw new HttpsError('permission-denied', '관리자만 삭제할 수 있습니다.');
   }
   const result = await deleteCourtPostData(request.data?.caseId);
-  await writeAdminLog(request.auth.uid, 'deleteCourtPost', result.caseId, {
+  const auditLogged = await writeAdminLog(request.auth.uid, 'deleteCourtPost', result.caseId, {
     deleted: result.deleted,
     removedLegacyAlias: result.removedLegacyAlias
   });
-  return { success: true, ...result };
+  return { success: true, auditLogged, ...result };
 });
 
 exports.deleteUserProfile = onCall({ region: REGION, timeoutSeconds: 60, memory: '256MiB' }, async request => {
+  requireAppCheck(request);
   if (!request.auth || !(await isAdminAuth(request.auth))) {
     throw new HttpsError('permission-denied', '관리자만 회원 프로필을 삭제할 수 있습니다.');
   }
@@ -131,8 +145,8 @@ exports.deleteUserProfile = onCall({ region: REGION, timeoutSeconds: 60, memory:
   if (!userId) throw new HttpsError('invalid-argument', 'userId required');
 
   const result = await deleteUserProfileData(userId);
-  await writeAdminLog(request.auth.uid, 'deleteUserProfile', userId, result);
-  return { success: true, userId, ...result };
+  const auditLogged = await writeAdminLog(request.auth.uid, 'deleteUserProfile', userId, result);
+  return { success: true, auditLogged, userId, ...result };
 });
 
 Object.defineProperties(module.exports, {
