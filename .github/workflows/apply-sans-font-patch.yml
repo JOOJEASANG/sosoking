@@ -1,0 +1,61 @@
+name: Apply sans font patch
+
+on:
+  push:
+    branches:
+      - agent/unify-sans-font
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/unify-sans-font
+          fetch-depth: 0
+      - name: Replace remaining serif declarations
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          replacements = {
+              "font-family:Georgia,'Noto Serif KR',serif": "font-family:'Noto Sans KR',Arial,sans-serif",
+              "font-family:'Noto Serif KR',serif": "font-family:'Noto Sans KR',Arial,sans-serif",
+              "font-family:'Noto Serif KR', serif": "font-family:'Noto Sans KR',Arial,sans-serif",
+              "family=Noto+Serif+KR:wght@600;700&family=Noto+Sans+KR:wght@400;500;700;900": "family=Noto+Sans+KR:wght@400;500;600;700;900",
+              "family=Noto+Serif+KR:wght@400;600;700&family=Noto+Sans+KR:wght@400;500;700;900": "family=Noto+Sans+KR:wght@400;500;600;700;900",
+          }
+
+          roots = [Path('public'), Path('functions')]
+          changed = []
+          for root in roots:
+              for path in root.rglob('*'):
+                  if not path.is_file() or path.suffix.lower() not in {'.js', '.css', '.html'}:
+                      continue
+                  text = path.read_text(encoding='utf-8')
+                  updated = text
+                  for old, new in replacements.items():
+                      updated = updated.replace(old, new)
+                  if updated != text:
+                      path.write_text(updated, encoding='utf-8')
+                      changed.append(str(path))
+
+          print('Updated files:')
+          for path in changed:
+              print('-', path)
+          PY
+      - name: Commit patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public functions
+          if git diff --cached --quiet; then
+            echo "No remaining serif declarations found."
+            exit 0
+          fi
+          git commit -m "Replace remaining serif fonts with Noto Sans KR [font-patch]"
+          git push origin HEAD:agent/unify-sans-font
