@@ -1,6 +1,6 @@
 import { db } from '../firebase.js?v=20260630-3';
-import { collection, query, where, orderBy, limit, getDocs } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { escapeHtml, compactText } from '../utils/sanitize.js?v=20260630-3';
+import { loadSafePublicResults } from '../utils/public-results.js?v=20260730-public-records-2';
 
 const JUDGE_ICON = {
   '엄벌주의형': '👨‍⚖️',
@@ -18,6 +18,7 @@ const JUDGE_TYPES = ['엄벌주의형', '감성형', '현실주의형', '과몰�
 function fmtDate(ts) {
   if (!ts) return '';
   const d = ts.toDate ? ts.toDate() : new Date(ts);
+  if (!Number.isFinite(d.getTime())) return '';
   return d.toLocaleString('ko-KR', {
     timeZone: 'Asia/Seoul',
     month: 'numeric',
@@ -70,35 +71,40 @@ export async function renderBoard(container) {
       <div class="container" style="padding-top:22px;padding-bottom:90px;">
         <div style="margin-bottom:18px;">
           <div style="font-family:var(--font-serif);font-size:22px;font-weight:900;color:var(--gold);margin-bottom:6px;">공개 판결기록</div>
-          <div style="font-size:13px;color:var(--cream-dim);line-height:1.7;">다른 사람들이 공개한 생활판결 기록입니다. 사건을 누르면 AI 판결문 전문과 방청석 한마디를 바로 볼 수 있습니다.</div>
+          <div style="font-size:13px;color:var(--cream-dim);line-height:1.7;">다른 사람들이 공개한 생활판결 기록입니다. 사건을 누르면 AI 판결문 전문으로 바로 이동합니다.</div>
         </div>
         <div id="today-pick"></div>
         <div id="board-list"><div class="loading-dots"><span></span><span></span><span></span></div></div>
       </div>
     </div>`;
 
-  const list = document.getElementById('board-list');
-  try {
-    const snap = await getDocs(query(
-      collection(db, 'results'),
-      where('isPublic', '==', true),
-      where('publicDataVersion', '==', 1),
-      orderBy('createdAt', 'desc'),
-      limit(40)
-    ));
+  await loadBoardRecords(container);
+}
 
-    if (snap.empty) {
+async function loadBoardRecords(container) {
+  const list = container.querySelector('#board-list');
+  const todayPickElement = container.querySelector('#today-pick');
+  if (!list || !todayPickElement) return;
+  list.innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
+
+  try {
+    const rows = await loadSafePublicResults(db, { maxRows: 40, fallbackRows: 100 });
+    if (!container.isConnected) return;
+
+    if (!rows.length) {
+      todayPickElement.innerHTML = '';
       list.innerHTML = `<div style="text-align:center;padding:52px 0;color:var(--cream-dim);"><div style="font-size:46px;margin-bottom:12px;">📭</div>아직 공개된 판결기록이 없습니다.<br><a href="#/submit" style="color:var(--gold);margin-top:12px;display:inline-block;">첫 사건 접수하기</a></div>`;
       return;
     }
 
-    const rows = snap.docs.map(d => [d.id, d.data()]);
     const top = [...rows].sort((a, b) => totalComments(b[1]) - totalComments(a[1]))[0];
-    document.getElementById('today-pick').innerHTML = top ? todayPick(top) : '';
+    todayPickElement.innerHTML = top ? todayPick(top) : '';
     list.innerHTML = `<div style="font-size:13px;color:var(--cream-dim);margin:18px 0 8px;">📜 최근 공개 판결기록</div><div style="display:flex;flex-direction:column;gap:10px;">${rows.map(row => boardRow(...row)).join('')}</div>`;
   } catch (err) {
-    console.error(err);
-    list.innerHTML = `<div style="text-align:center;padding:52px 0;color:var(--cream-dim);">판결기록을 불러오지 못했습니다.<br><span style="font-size:12px;opacity:.7;">${escapeHtml(err.message || '')}</span></div>`;
+    console.error('public board load failed:', err);
+    todayPickElement.innerHTML = '';
+    list.innerHTML = `<div style="text-align:center;padding:52px 0;color:var(--cream-dim);">판결기록을 불러오지 못했습니다.<br><span style="font-size:12px;opacity:.7;">${escapeHtml(err.message || '')}</span><br><button type="button" id="board-retry" class="btn btn-secondary" style="margin-top:14px;">다시 불러오기</button></div>`;
+    container.querySelector('#board-retry')?.addEventListener('click', () => loadBoardRecords(container));
   }
 }
 
@@ -107,7 +113,7 @@ function todayPick([id, r]) {
   const icon = r.judgeIcon || JUDGE_ICON[judgeType] || '⚖️';
   const grievance = grievanceFor(id, r);
 
-  return `<a href="${resultPath(id)}" class="card board-featured-card" style="display:block;padding:20px;margin-bottom:16px;cursor:pointer;border-color:rgba(201,168,76,.65);background:linear-gradient(135deg,rgba(201,168,76,.12),rgba(255,255,255,.03));color:inherit;text-decoration:none;">
+  return `<a href="${resultPath(id)}" data-public-result-link="true" class="card board-featured-card" style="display:block;padding:20px;margin-bottom:16px;cursor:pointer;border-color:rgba(201,168,76,.65);background:linear-gradient(135deg,rgba(201,168,76,.12),rgba(255,255,255,.03));color:inherit;text-decoration:none;">
     <div style="font-size:12px;color:var(--gold);font-weight:900;letter-spacing:.12em;margin-bottom:8px;">오늘의 판결기록</div>
     <div style="font-family:var(--font-serif);font-size:21px;font-weight:900;line-height:1.45;margin-bottom:8px;">${escapeHtml(r.caseTitle || '제목 없음')}</div>
     <div style="font-size:14px;color:var(--cream-dim);line-height:1.65;margin-bottom:13px;">${escapeHtml(compactText(summaryText(r), 96))}</div>
@@ -115,7 +121,7 @@ function todayPick([id, r]) {
       <span class="board-judge-chip">${icon} ${escapeHtml(judgeType)} 판사</span>
       <span class="board-grievance-chip">억울지수 <strong>${grievance}/10</strong>${grievanceMeter(grievance)}</span>
     </div>
-    <div style="margin-top:10px;text-align:right;font-size:12px;color:var(--cream-dim);">💬 방청석 한마디 ${totalComments(r)}개</div>
+    <div style="margin-top:10px;text-align:right;font-size:12px;color:var(--cream-dim);">판결문 바로 보기 · 💬 ${totalComments(r)}개 →</div>
   </a>`;
 }
 
@@ -125,7 +131,7 @@ function boardRow(id, r) {
   const grievance = grievanceFor(id, r);
   const isDaily = r.source === 'daily_ai';
 
-  return `<a href="${resultPath(id)}" class="card" style="display:block;padding:16px 18px;cursor:pointer;color:inherit;text-decoration:none;">
+  return `<a href="${resultPath(id)}" data-public-result-link="true" class="card" style="display:block;padding:16px 18px;cursor:pointer;color:inherit;text-decoration:none;">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px;"><div style="font-weight:800;font-size:15px;line-height:1.45;flex:1;">${escapeHtml(r.caseTitle || '제목 없음')}</div><div style="font-size:11px;color:var(--cream-dim);white-space:nowrap;margin-top:2px;">${escapeHtml(fmtDate(r.createdAt))}</div></div>
     <div style="font-size:13px;color:var(--cream-dim);line-height:1.6;margin-bottom:11px;">${escapeHtml(compactText(summaryText(r), 86))}</div>
     <div class="board-record-meta board-record-meta-row">
@@ -134,7 +140,7 @@ function boardRow(id, r) {
     </div>
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px;font-size:12px;">
       <span style="color:var(--cream-dim);">${isDaily ? '오늘의 AI 사건' : '생활사건 기록'}</span>
-      <span style="color:var(--gold);white-space:nowrap;">전문 보기 · 💬 ${totalComments(r)} →</span>
+      <span style="color:var(--gold);white-space:nowrap;">판결문 바로 보기 · 💬 ${totalComments(r)} →</span>
     </div>
   </a>`;
 }
