@@ -31,7 +31,7 @@ function timestampMillis(value) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function requireVerifiedUser(request) {
+function requireAccountUser(request) {
   if (!request.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
   if (enforceAppCheck.value() && !request.app) {
     throw new HttpsError('failed-precondition', '정상적인 앱에서 다시 시도해 주세요.');
@@ -42,6 +42,13 @@ function requireVerifiedUser(request) {
   if (provider === 'anonymous') {
     throw new HttpsError('unauthenticated', '구글 또는 이메일 로그인 후 이용할 수 있습니다.');
   }
+  return request.auth;
+}
+
+function requireVerifiedUser(request) {
+  const authenticated = requireAccountUser(request);
+  const token = authenticated.token || {};
+  const provider = token.firebase?.sign_in_provider || '';
   if (provider === 'password' && token.email_verified !== true) {
     throw new HttpsError('failed-precondition', '이메일 인증을 완료한 뒤 이용해 주세요.');
   }
@@ -141,6 +148,7 @@ async function reserveAiRequest(uid, kind, settings = {}) {
 
 module.exports = {
   enforceActionRateLimit,
+  requireAccountUser,
   requireVerifiedUser,
   reserveAiRequest
 };
