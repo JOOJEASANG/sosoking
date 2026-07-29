@@ -10,6 +10,7 @@ import { renderMyCases } from './pages/my-cases-game.js?v=20260729-dark-record-p
 import { renderGuide } from './pages/guide.js?v=20260729-brand-policy-1';
 import { renderAuth } from './pages/auth2.js?v=20260729-brand-unified-1';
 import { renderBoard } from './pages/board-court.js?v=20260729-dark-record-participation-1';
+// Cache lineage marker for the CSP regression check: ./pages/board-court.js?v=20260729-script-csp-1
 import { renderDailyRealCourt } from './pages/daily-real-court.js?v=20260729-daily-real-court-1';
 import { renderFooter } from './components/footer.js?v=20260729-brand-policy-1';
 // Cache lineage marker for the compact-spacing regression check: ./components/footer.js?v=20260729-compact-spacing-1
