@@ -1,4 +1,4 @@
-import { renderMyCases as renderBaseMyCases } from './my-cases.js?v=20260630-9';
+import { renderMyCases as renderBaseMyCases } from './my-cases.js?v=20260729-own-case-delete-1';
 
 function titleByCount(count) {
   if (count >= 20) return '전설의 생활소송왕';
@@ -20,7 +20,8 @@ function badgeSet(count, completed, maxLv) {
 function addProfileGame(container) {
   const inner = container.querySelector('.container');
   if (!inner || document.getElementById('my-game-profile')) return;
-  const rows = Array.from(inner.querySelectorAll('.card')).filter(card => card.textContent.includes('억울지수'));
+  const rows = Array.from(inner.querySelectorAll('[data-case-row]'));
+  if (!rows.length) return;
   const count = rows.length;
   const completed = rows.filter(card => card.textContent.includes('판결문 보기')).length;
   const maxLv = rows.reduce((m, card) => {
@@ -54,7 +55,13 @@ function addProfileGame(container) {
   header?.insertAdjacentElement('afterend', profile);
 }
 
+function refreshProfileGame(container) {
+  container.querySelector('#my-game-profile')?.remove();
+  addProfileGame(container);
+}
+
 export async function renderMyCases(container) {
   await renderBaseMyCases(container);
   addProfileGame(container);
+  container.addEventListener('sosoking:case-deleted', () => refreshProfileGame(container));
 }
