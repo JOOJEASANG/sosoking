@@ -30,6 +30,63 @@
   filter: drop-shadow(0 3px 7px rgba(0,0,0,.3));
 }
 
+/* PC에서는 본문 폭과 헤더·하단 메뉴 폭을 일치시킨다. */
+.page-header {
+  width: min(100%, 600px);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+#bottom-nav {
+  left: 50%;
+  right: auto;
+  width: min(100%, 600px);
+  height: calc(66px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+}
+
+#bottom-nav .nav-item {
+  gap: 2px;
+  padding: 7px 0 6px;
+}
+
+#bottom-nav .nav-icon {
+  font-size: 25px;
+}
+
+#bottom-nav .nav-label {
+  font-size: 10.5px;
+}
+
+#nav-account-icon img {
+  width: 28px !important;
+  height: 28px !important;
+}
+
+#toast-container,
+#theme-toggle {
+  bottom: 88px;
+}
+
+#site-footer {
+  padding-bottom: 84px;
+}
+
+@media (min-width: 601px) {
+  .page-header {
+    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    border-radius: 0 0 12px 12px;
+  }
+
+  #bottom-nav {
+    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    border-radius: 14px 14px 0 0;
+    box-shadow: 0 -8px 28px rgba(0,0,0,.28);
+  }
+}
+
 @media (max-width: 520px) {
   .hero-section > img[alt="소소킹 로고"] {
     width: 132px !important;
@@ -45,7 +102,6 @@
   }
 }
 
-
 .auth-brand-logo {
   display: block;
   width: 112px;
@@ -57,10 +113,10 @@
 
 .nav-brand-icon {
   display: block;
-  width: 25px;
-  height: 25px;
+  width: 32px;
+  height: 32px;
   object-fit: contain;
-  margin: -3px auto -2px;
+  margin: -6px auto -3px;
   filter: drop-shadow(0 2px 4px rgba(0,0,0,.35));
 }
 
