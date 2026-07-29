@@ -78,15 +78,19 @@ for (const required of [
 const app = read('public/js/app.js');
 const index = read('public/index.html');
 const worker = read('public/sw.js');
-const version = '20260730-humor-every-stage-1';
+const humorVersion = '20260730-humor-every-stage-1';
+const appVersion = index.match(/<script type="module" src="\/js\/app\.js\?v=([^"']+)"/)?.[1] || '';
 for (const [file, source, required] of [
-  ['public/js/app.js', app, `./pages/result-comments.js?v=${version}`],
-  ['public/index.html', index, `/js/app.js?v=${version}`],
-  ['public/sw.js', worker, `sosoking-app-v${version}`],
-  ['public/sw.js', worker, `/js/app.js?v=${version}`],
-  ['public/sw.js', worker, `/js/pages/result-comments.js?v=${version}`]
+  ['public/js/app.js', app, `./pages/result-comments.js?v=${humorVersion}`],
+  ['public/sw.js', worker, `/js/pages/result-comments.js?v=${humorVersion}`]
 ]) {
   if (!source.includes(required)) errors.push(`${file}: humor cache version missing: ${required}`);
+}
+if (!appVersion || !worker.includes(`/js/app.js?v=${appVersion}`)) {
+  errors.push('public/index.html and public/sw.js: active app cache versions are inconsistent');
+}
+if (!/^const CACHE_NAME = 'sosoking-app-v[^']+';/m.test(worker)) {
+  errors.push('public/sw.js: versioned application cache name is missing');
 }
 
 if (errors.length) {
