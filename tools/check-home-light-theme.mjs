@@ -34,14 +34,14 @@ if (!app.includes("./components/court-design.js?v=20260729-light-home-1")) {
 const index = read('public/index.html');
 if (!index.includes('id="home-light-theme-css"')
   || !index.includes('/css/home-light.css?v=20260729-light-home-1')
-  || !index.includes('/js/app.js?v=20260729-light-home-1')) {
-  errors.push('public/index.html: light home stylesheet or application cache version is missing');
+  || !index.includes('/js/app.js?v=20260729-compact-spacing-1')) {
+  errors.push('public/index.html: light home stylesheet or current application cache version is missing');
 }
 
 const serviceWorker = read('public/sw.js');
-if (!serviceWorker.includes("sosoking-app-v20260729-light-home-1")
+if (!serviceWorker.includes("sosoking-app-v20260729-compact-spacing-1")
   || !serviceWorker.includes('/css/home-light.css?v=20260729-light-home-1')
-  || !serviceWorker.includes('/js/app.js?v=20260729-light-home-1')) {
+  || !serviceWorker.includes('/js/app.js?v=20260729-compact-spacing-1')) {
   errors.push('public/sw.js: light home assets are not in the current cache graph');
 }
 
