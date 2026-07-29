@@ -43,10 +43,10 @@ expect(myCases.includes('`#/verdict/${encodeURIComponent(id)}`'),
 const appVersion = index.match(/<script type="module" src="\/js\/app\.js\?v=([^"']+)"/)?.[1] || '';
 expect(Boolean(appVersion) && sw.includes(`/js/app.js?v=${appVersion}`),
   'public/index.html and public/sw.js: active app cache versions are inconsistent');
-expect(app.includes("./pages/result-comments.js?v=20260729-full-verdict-comments-1"),
-  'public/js/app.js: full verdict comments renderer is missing from the active route graph');
-expect(sw.includes('/js/pages/result-comments.js?v=20260729-full-verdict-comments-1')
-  && sw.includes('/js/pages/result-court.js?v=20260729-dark-record-participation-1')
+const resultModuleVersion = app.match(/\.\/pages\/result-comments\.js\?v=([^"']+)/)?.[1] || '';
+expect(Boolean(resultModuleVersion) && sw.includes(`/js/pages/result-comments.js?v=${resultModuleVersion}`),
+  'public/js/app.js and public/sw.js: verdict result module cache versions are inconsistent');
+expect(sw.includes('/js/pages/result-court.js?v=20260729-dark-record-participation-1')
   && !sw.includes('/js/pages/participation.js'),
   'public/sw.js: full verdict comments modules are missing from the cache graph');
 expect(/^const CACHE_NAME = 'sosoking-app-v[^']+';/m.test(sw),
