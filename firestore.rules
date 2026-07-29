@@ -35,8 +35,14 @@ service cloud.firestore {
       return caseDoc(caseId).data.isPublic == true;
     }
 
+    function isSafePublicResultData(data) {
+      return data.isPublic == true
+        && data.publicDataVersion == 1
+        && !data.keys().hasAny(['userId', 'caseDescription', 'nickname']);
+    }
+
     function isResultPublic(caseId) {
-      return resultDoc(caseId).data.isPublic == true;
+      return isSafePublicResultData(resultDoc(caseId).data);
     }
 
     function canReadPublicCourt(caseId) {
@@ -88,11 +94,11 @@ service cloud.firestore {
     match /results/{caseId} {
       allow read: if signedIn() && (
         isCaseOwner(caseId) ||
-        resource.data.isPublic == true ||
+        isSafePublicResultData(resource.data) ||
         isAdmin()
       );
 
-      // 공개 전환 시 과거 UID 제거까지 수행하도록 서버 함수만 사용한다.
+      // 공개 전환 시 인증 UID와 공개 불필요 원문 필드를 제거하도록 서버 함수만 사용한다.
       allow update: if isAdmin();
       allow create: if false;
       allow delete: if isAdmin();
