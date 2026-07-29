@@ -8,10 +8,11 @@ import { renderMyCases } from './pages/my-cases-game.js?v=20260729-own-case-dele
 import { renderGuide } from './pages/guide.js?v=20260728-audit-1';
 import { renderAuth } from './pages/auth2.js?v=20260729-brand-unified-1';
 import { renderBoard } from './pages/board-court.js?v=20260729-script-csp-1-public-seo-1';
+import { renderDailyRealCourt } from './pages/daily-real-court.js?v=20260729-daily-real-court-1';
 import { renderFooter } from './components/footer.js?v=20260729-compact-spacing-1';
 import { initTheme, renderThemeToggle } from './components/theme.js?v=20260729-theme-global-2';
 import { initCourtDesign } from './components/court-design.js?v=20260729-light-home-1';
-import { initNavAuthSync, renderNav } from './components/nav.js?v=20260729-brand-unified-1';
+import { initNavAuthSync, renderNav } from './components/nav.js?v=20260729-daily-real-court-1';
 
 let routeSequence = 0;
 let routeQueued = false;
@@ -23,6 +24,7 @@ function normalizedRoute() {
     if (path === '/') return '#/';
     if (path === '/board') return '#/board';
     if (path === '/submit') return '#/submit';
+    if (path === '/daily-court') return '#/daily-court';
     if (path === '/guide') return '#/guide';
     if (path === '/auth') return '#/auth';
     if (path === '/my-cases') return '#/my-cases';
@@ -72,6 +74,7 @@ async function route() {
     let renderTask;
     if (hash === '#/' || hash === '' || hash === '#') renderTask = renderHome(content);
     else if (hash === '#/submit') renderTask = renderSubmit(content);
+    else if (hash === '#/daily-court') renderTask = renderDailyRealCourt(content);
     else if (hash.startsWith('#/trial/')) renderTask = renderTrial(content, decodeURIComponent(hash.replace('#/trial/', '')));
     else if (hash.startsWith('#/result/')) renderTask = renderResult(content, decodeURIComponent(hash.replace('#/result/', '')));
     else if (hash.startsWith('#/policy/')) renderTask = renderPolicy(content, hash.replace('#/policy/', ''));
