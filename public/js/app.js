@@ -10,7 +10,7 @@ import { renderAuth } from './pages/auth2.js?v=20260729-brand-unified-1';
 import { renderBoard } from './pages/board-court.js?v=20260729-script-csp-1';
 import { renderFooter } from './components/footer.js?v=20260729-brand-unified-1';
 import { initTheme, renderThemeToggle } from './components/theme.js?v=20260729-theme-global-2';
-import { initCourtDesign } from './components/court-design.js?v=20260729-light-cards-1';
+import { initCourtDesign } from './components/court-design.js?v=20260729-light-home-1';
 import { initNavAuthSync, renderNav } from './components/nav.js?v=20260729-brand-unified-1';
 
 let routeSequence = 0;
