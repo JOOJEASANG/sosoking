@@ -159,7 +159,7 @@ if (!index.includes('/js/theme-init.js?v=')
   || !themeInit.includes("document.documentElement.setAttribute('data-theme', resolved)")) {
   errors.push('index.html/theme-init.js: external first-paint theme resolution is missing');
 }
-if (!index.includes('/site.webmanifest?v=20260729-brand-unified-1')) {
+if (!index.includes('/site.webmanifest?v=20260729-pwa-icon-center-1')) {
   errors.push('index.html: current PWA manifest version is missing');
 }
 if (!index.includes('/css/brand-logo.css?v=20260729-bottom-nav-fix-1')) {
@@ -183,8 +183,25 @@ if (!icons.some(icon => icon.sizes === '192x192' && icon.type === 'image/png')) 
 if (!icons.some(icon => icon.sizes === '512x512' && icon.type === 'image/png' && String(icon.purpose).includes('any'))) {
   errors.push('site.webmanifest: 512px any icon is missing');
 }
-if (!icons.some(icon => icon.src === '/icons/sosoking-maskable-512.png' && icon.sizes === '512x512' && String(icon.purpose).includes('maskable'))) {
-  errors.push('site.webmanifest: 512px maskable icon is missing');
+if (!icons.some(icon => icon.src === '/icons/sosoking-maskable-512.png?v=20260729-pwa-icon-center-1'
+  && icon.sizes === '512x512'
+  && String(icon.purpose).includes('maskable'))) {
+  errors.push('site.webmanifest: centered and versioned 512px maskable icon is missing');
+}
+if (icons.some(icon => !String(icon.src || '').includes('v=20260729-pwa-icon-center-1'))) {
+  errors.push('site.webmanifest: stale PWA icon URL remains');
+}
+
+const iconGenerator = read('tools/prepare-brand-icons.mjs');
+for (const required of [
+  '.trim({ background:',
+  '.resize(400, 400',
+  'left: 64',
+  'top: 56'
+]) {
+  if (!iconGenerator.includes(required)) {
+    errors.push(`prepare-brand-icons.mjs: maskable icon centering safeguard is missing: ${required}`);
+  }
 }
 
 const pwa = read('public/js/components/pwa-ui.js');
@@ -210,4 +227,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('UI audit validation passed: unified brand logo assets, authentication, theme contrast, stable bottom navigation, and PWA install flow.');
+console.log('UI audit validation passed: unified brand logo assets, authentication, theme contrast, stable bottom navigation, centered PWA icons, and install flow.');
