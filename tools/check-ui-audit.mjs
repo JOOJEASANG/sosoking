@@ -25,10 +25,15 @@ function checkPng(file, width, height) {
 
 checkPng('public/icons/sosoking-192.png', 192, 192);
 checkPng('public/icons/sosoking-512.png', 512, 512);
+checkPng('public/icons/sosoking-maskable-512.png', 512, 512);
+checkPng('public/icons/favicon-48.png', 48, 48);
+checkPng('public/icons/favicon-32.png', 32, 32);
+checkPng('public/logo.png', 512, 512);
+checkPng('public/og-image.png', 1200, 630);
 
 const home = read('public/js/pages/home-court.js');
-if (!home.includes('/logo.svg?v=20260729-logo-feed-1')) {
-  errors.push('home-court.js: current SVG logo path is missing');
+if (!home.includes('/logo.png?v=20260729-brand-unified-1')) {
+  errors.push('home-court.js: unified PNG logo path is missing');
 }
 if (!home.includes('logo.onerror')) {
   errors.push('home-court.js: logo fallback handler is missing');
@@ -90,6 +95,20 @@ if (!auth.includes('getInitialRedirectResult()')) {
 if (auth.includes("popupNeedsRedirect(e){ return ['auth/popup-blocked','auth/operation-not-supported-in-this-environment','auth/web-storage-unsupported']")) {
   errors.push('auth2.js: storage-blocked browsers must not be sent into redirect login');
 }
+if (!auth.includes('class="auth-brand-logo"') || !auth.includes('/logo.png?v=20260729-brand-unified-1')) {
+  errors.push('auth2.js: unified account logo is missing');
+}
+
+const nav = read('public/js/components/nav.js');
+if (!nav.includes('class="nav-brand-icon"') || !nav.includes('/icons/sosoking-192.png?v=20260729-brand-unified-1')) {
+  errors.push('nav.js: unified navigation logo is missing');
+}
+
+const footer = read('public/js/components/footer.js');
+if (!footer.includes('class="footer-brand-logo"')) {
+  errors.push('footer.js: unified footer logo is missing');
+}
+
 const app = read('public/js/app.js');
 if (app.includes('renderThemePreference')) {
   errors.push('app.js: legacy large theme preference card is still rendered');
@@ -128,7 +147,7 @@ if (!index.includes('/js/theme-init.js?v=')
   || !themeInit.includes("document.documentElement.setAttribute('data-theme', resolved)")) {
   errors.push('index.html/theme-init.js: external first-paint theme resolution is missing');
 }
-if (!index.includes('/site.webmanifest?v=20260728-pwa-install-1')) {
+if (!index.includes('/site.webmanifest?v=20260729-brand-unified-1')) {
   errors.push('index.html: current PWA manifest version is missing');
 }
 
@@ -149,7 +168,7 @@ if (!icons.some(icon => icon.sizes === '192x192' && icon.type === 'image/png')) 
 if (!icons.some(icon => icon.sizes === '512x512' && icon.type === 'image/png' && String(icon.purpose).includes('any'))) {
   errors.push('site.webmanifest: 512px any icon is missing');
 }
-if (!icons.some(icon => icon.sizes === '512x512' && String(icon.purpose).includes('maskable'))) {
+if (!icons.some(icon => icon.src === '/icons/sosoking-maskable-512.png' && icon.sizes === '512x512' && String(icon.purpose).includes('maskable'))) {
   errors.push('site.webmanifest: 512px maskable icon is missing');
 }
 
@@ -176,4 +195,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('UI audit validation passed: logo PNGs, authentication, theme contrast, and Chrome-badge-free PWA install flow.');
+console.log('UI audit validation passed: unified brand logo assets, authentication, theme contrast, and PWA install flow.');

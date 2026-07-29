@@ -82,7 +82,7 @@ if (!themeInit.includes("localStorage.getItem('theme')") || !/try\s*\{[\s\S]*cat
 
 const app = fs.readFileSync('public/js/app.js', 'utf8');
 for (const specifier of [
-  './pages/home-court.js?v=20260729-script-csp-1',
+  './pages/home-court.js?v=20260729-brand-unified-1',
   './pages/board-court.js?v=20260729-script-csp-1'
 ]) {
   if (!app.includes(specifier)) errors.push(`public/js/app.js: stale CSP module import remains instead of ${specifier}`);

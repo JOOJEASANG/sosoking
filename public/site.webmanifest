@@ -6,11 +6,16 @@
   "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
-  "display_override": ["standalone"],
+  "display_override": [
+    "standalone"
+  ],
   "orientation": "portrait-primary",
   "background_color": "#0b0f16",
   "theme_color": "#0b0f16",
-  "categories": ["entertainment", "lifestyle"],
+  "categories": [
+    "entertainment",
+    "lifestyle"
+  ],
   "prefer_related_applications": false,
   "icons": [
     {
@@ -26,7 +31,7 @@
       "purpose": "any"
     },
     {
-      "src": "/icons/sosoking-512.png",
+      "src": "/icons/sosoking-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

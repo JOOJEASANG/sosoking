@@ -53,7 +53,7 @@ export function renderNav(activeRoute = '') {
       <span class="nav-label">판결기록</span>
     </a>
     <a href="#/submit" class="nav-item nav-cta${isSubmit ? ' active' : ''}">
-      <span class="nav-icon">⚖️</span>
+      <span class="nav-icon"><img class="nav-brand-icon" src="/icons/sosoking-192.png?v=20260729-brand-unified-1" alt="" width="25" height="25"></span>
       <span class="nav-label">접수</span>
     </a>
     <a href="#/auth" class="nav-item${isAuth ? ' active' : ''}" id="nav-account-item">

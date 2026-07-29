@@ -19,6 +19,7 @@ export async function renderFooter() {
   const address = escapeHtml(biz.address || '');
 
   footer.innerHTML = `
+    <img class="footer-brand-logo" src="/icons/sosoking-192.png?v=20260729-brand-unified-1" alt="소소킹 저울 로고" width="58" height="58">
     <div class="footer-links">
       <a href="#/policy/terms">이용약관</a>
       <a href="#/policy/privacy">개인정보처리방침</a>
