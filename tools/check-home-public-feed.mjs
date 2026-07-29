@@ -63,18 +63,20 @@ if (!boardCourt.includes("./board.js?v=20260730-public-records-2")) {
 
 const index = read('public/index.html');
 const worker = read('public/sw.js');
-if (!index.includes('/js/app.js?v=20260730-public-records-2')) {
-  errors.push('public/index.html: public record app cache version is missing');
+const appVersion = index.match(/<script type="module" src="\/js\/app\.js\?v=([^"']+)"/)?.[1] || '';
+if (!appVersion || !worker.includes(`/js/app.js?v=${appVersion}`)) {
+  errors.push('public/index.html and public/sw.js: active app cache versions are inconsistent');
 }
 for (const required of [
-  'sosoking-app-v20260730-public-records-2',
-  '/js/app.js?v=20260730-public-records-2',
   '/js/pages/home-court.js?v=20260730-public-records-2',
   '/js/pages/board-court.js?v=20260730-public-records-2',
   '/js/pages/board.js?v=20260730-public-records-2',
   '/js/utils/public-results.js?v=20260730-public-records-2'
 ]) {
   if (!worker.includes(required)) errors.push(`public/sw.js: missing ${required}`);
+}
+if (!/^const CACHE_NAME = 'sosoking-app-v[^']+';/m.test(worker)) {
+  errors.push('public/sw.js: versioned application cache name is missing');
 }
 
 if (errors.length) {
