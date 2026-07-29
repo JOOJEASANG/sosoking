@@ -44,8 +44,13 @@ const board = read('public/js/pages/board.js');
 if (!homeBase.includes('r.sentence || r.caseDescription || r.verdict')) {
   errors.push('home.js: public user-case excerpt fallback is missing');
 }
-if ((board.match(/r\.sentence \|\| r\.caseDescription \|\| r\.verdict/g) || []).length < 2) {
-  errors.push('board.js: public user-case excerpts are not rendered consistently');
+if (!board.includes('function summaryText(r)')
+  || !board.includes('r.sentence || r.publicCaseDescription || r.verdict')
+  || (board.match(/summaryText\(r\)/g) || []).length < 3) {
+  errors.push('board.js: privacy-safe public user-case excerpts are not rendered consistently');
+}
+if (board.includes('r.caseDescription')) {
+  errors.push('board.js: raw caseDescription is still used in public excerpts');
 }
 
 const theme = read('public/js/components/theme.js');
@@ -232,4 +237,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('UI audit validation passed: unified brand assets, authentication, theme contrast, stable five-item navigation, centered PWA icons, and install flow.');
+console.log('UI audit validation passed: unified brand assets, authentication, privacy-safe public excerpts, theme contrast, stable five-item navigation, centered PWA icons, and install flow.');
