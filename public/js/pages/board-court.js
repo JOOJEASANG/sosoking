@@ -1,4 +1,4 @@
-import { renderBoard as renderBaseBoard } from './board.js?v=20260729-script-csp-1-public-seo-1';
+import { renderBoard as renderBaseBoard } from './board.js?v=20260729-dark-record-participation-1';
 
 function ensureBoardGameStyle() {
   if (document.getElementById('board-game-style')) return;
@@ -20,6 +20,39 @@ function ensureBoardGameStyle() {
     .board-grievance-meter{display:inline-flex;gap:2px;margin-left:3px;}
     .board-grievance-meter i{display:block;width:3px;height:10px;border-radius:999px;background:rgba(255,255,255,.16);}
     .board-grievance-meter i.active{background:#d96b5d;}
+    [data-theme='dark'] .court-board-page{
+      color-scheme:dark;
+      background:radial-gradient(circle at 50% -5%,rgba(209,173,80,.08),transparent 30%),#0b0f16;
+      color:#fff9ef;
+    }
+    [data-theme='dark'] .court-board-page .card,
+    [data-theme='dark'] .court-board-page .court-shell{
+      background:linear-gradient(145deg,#1a2130,#10151f)!important;
+      color:#fff9ef!important;
+      border-color:rgba(209,173,80,.31)!important;
+      box-shadow:0 10px 28px rgba(0,0,0,.31),inset 0 1px 0 rgba(255,255,255,.045)!important;
+    }
+    [data-theme='dark'] .court-board-page .board-judge-chip,
+    [data-theme='dark'] .court-board-page .board-grievance-chip,
+    [data-theme='dark'] .court-board-page .arena-rank-tabs div{
+      background:rgba(255,255,255,.045)!important;
+      border-color:rgba(209,173,80,.27)!important;
+      color:rgba(255,249,239,.78)!important;
+    }
+    [data-theme='dark'] .court-board-page .arena-rank-tabs strong{color:#f0cf78!important;}
+    [data-theme='dark'] .court-board-page .arena-rank-tabs span{color:rgba(255,249,239,.68)!important;}
+    [data-theme='light'] .court-board-page .card{
+      background:linear-gradient(145deg,#fffdf9,#f9efdf)!important;
+      color:#20170d!important;
+      border-color:rgba(121,83,11,.25)!important;
+      box-shadow:0 8px 20px rgba(77,52,12,.08),inset 0 1px 0 rgba(255,255,255,.95)!important;
+    }
+    [data-theme='light'] .court-board-page .board-judge-chip,
+    [data-theme='light'] .court-board-page .board-grievance-chip{
+      color:rgba(32,23,13,.72)!important;
+      background:rgba(121,83,11,.07)!important;
+      border-color:rgba(121,83,11,.22)!important;
+    }
     @media(max-width:520px){
       .board-record-meta{align-items:flex-start;}
       .board-judge-chip,.board-grievance-chip{font-size:10px;padding:5px 8px;}
