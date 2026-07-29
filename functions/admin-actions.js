@@ -100,7 +100,6 @@ async function deleteCourtPostData(value, options = {}) {
 
   return {
     caseId,
-    ownerUid: cleanId(caseData.userId),
     deleted: counter.deleted,
     removedLegacyAlias: Boolean(legacyIdHash)
   };
