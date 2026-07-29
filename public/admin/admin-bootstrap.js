@@ -58,15 +58,64 @@ async function isAdmin(user) {
   return !!emailDoc?.exists();
 }
 
+function dashboardActionsMarkup() {
+  return `
+    <a href="/#/" class="admin-header-action" aria-label="사이트 보기" title="사이트 보기">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M3 10.5 12 3l9 7.5"></path>
+        <path d="M5.5 9.5V21h13V9.5"></path>
+        <path d="M9.5 21v-7h5v7"></path>
+      </svg>
+    </a>
+    <button type="button" id="admin-logout" class="admin-header-action" aria-label="로그아웃" title="로그아웃">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M12 2v9"></path>
+        <path d="M6.6 5.7a8 8 0 1 0 10.8 0"></path>
+      </svg>
+    </button>`;
+}
+
+function decorateDashboardHeader() {
+  const root = host();
+  const header = root?.querySelector('.admin-header');
+  if (!header) return;
+
+  const logo = header.querySelector('.logo');
+  if (logo) logo.textContent = '관리자 대시보드';
+
+  let actions = header.querySelector('.admin-header-actions');
+  if (!actions) {
+    actions = document.createElement('div');
+    actions.className = 'admin-header-actions';
+    const oldActions = header.lastElementChild;
+    if (oldActions && oldActions !== logo) oldActions.replaceWith(actions);
+    else header.appendChild(actions);
+  }
+  actions.innerHTML = dashboardActionsMarkup();
+  actions.querySelector('#admin-logout')?.addEventListener('click', () => signOut(auth));
+}
+
+function bindDashboardHeaderRefresh() {
+  const root = host();
+  if (!root || root.dataset.adminHeaderRefreshBound === 'true') return;
+  root.dataset.adminHeaderRefreshBound = 'true';
+  root.addEventListener('click', event => {
+    const target = event.target instanceof Element ? event.target : null;
+    if (target?.closest('[data-admin-tab]')) queueMicrotask(decorateDashboardHeader);
+  });
+}
+
 async function mountDashboard(user) {
   if (!dashboardModulePromise) {
-    dashboardModulePromise = import('./admin.js?v=20260729-report-moderation-1').catch(error => {
+    dashboardModulePromise = import('./admin.js?v=20260729-admin-brand-actions-1').catch(error => {
       dashboardModulePromise = null;
       throw error;
     });
   }
   const module = await dashboardModulePromise;
   module.mountAdminDashboard(user);
+  bindDashboardHeaderRefresh();
+  decorateDashboardHeader();
 }
 
 function renderLogin() {
@@ -76,7 +125,7 @@ function renderLogin() {
     <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;">
       <div class="card" style="width:100%;max-width:390px;padding:26px;">
         <div style="text-align:center;margin-bottom:24px;">
-          <img src="/app-icon.svg?v=20260630-3" style="width:70px;height:70px;margin-bottom:10px;" alt="">
+          <img class="admin-login-logo" src="/logo.png?v=20260729-brand-unified-1" width="112" height="112" alt="소소킹 저울 로고">
           <div style="font-family:var(--font-serif);font-size:21px;color:var(--gold);font-weight:800;">소소킹 관리자</div>
           <div style="font-size:13px;color:var(--cream-dim);margin-top:4px;">등록된 관리자 계정만 접근할 수 있습니다.</div>
         </div>
