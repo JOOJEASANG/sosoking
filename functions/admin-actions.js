@@ -1,6 +1,7 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const { isAdminAuth } = require('./admin-utils');
+const { requireAccountUser } = require('./security');
 
 const db = getFirestore();
 const REGION = 'asia-northeast3';
@@ -8,6 +9,10 @@ const BATCH_LIMIT = 450;
 
 function cleanId(value) {
   return String(value || '').replace(/[\u0000-\u001F\u007F]/g, '').trim().slice(0, 180);
+}
+function cleanCaseId(value) {
+  const caseId = cleanId(value);
+  return /^[A-Za-z0-9_-]{1,180}$/.test(caseId) ? caseId : '';
 }
 function nicknameKey(value) {
   return String(value || '').replace(/\s+/g, '').trim().slice(0, 20).toLocaleLowerCase('ko-KR');
@@ -55,17 +60,22 @@ async function deleteUserProfileData(userId) {
   });
 }
 
-exports.deleteCourtPost = onCall({ region: REGION, timeoutSeconds: 120, memory: '256MiB' }, async request => {
-  if (!request.auth || !(await isAdminAuth(request.auth))) {
-    throw new HttpsError('permission-denied', '관리자만 삭제할 수 있습니다.');
-  }
-  const caseId = cleanId(request.data?.caseId);
-  if (!caseId) throw new HttpsError('invalid-argument', 'caseId required');
+async function deleteCourtPostData(value, options = {}) {
+  const caseId = cleanCaseId(value);
+  if (!caseId) throw new HttpsError('invalid-argument', '올바른 사건 ID가 필요합니다.');
 
-  const counter = { deleted: 0 };
   const caseRef = db.doc(`cases/${caseId}`);
   const caseSnap = await caseRef.get();
-  const legacyIdHash = caseSnap.exists ? cleanId(caseSnap.data().legacyIdHash) : '';
+  if (!caseSnap.exists) throw new HttpsError('not-found', '삭제할 사건을 찾을 수 없습니다.');
+
+  const caseData = caseSnap.data();
+  const ownerUid = cleanId(options.ownerUid);
+  if (ownerUid && caseData.userId !== ownerUid) {
+    throw new HttpsError('permission-denied', '본인이 접수한 사건만 삭제할 수 있습니다.');
+  }
+
+  const counter = { deleted: 0 };
+  const legacyIdHash = cleanId(caseData.legacyIdHash);
 
   await deleteQuerySnapshot(db.collection(`result_reactions/${caseId}/votes`), counter);
   await deleteQuerySnapshot(db.collection(`court_comments/${caseId}/items`), counter);
@@ -79,7 +89,7 @@ exports.deleteCourtPost = onCall({ region: REGION, timeoutSeconds: 120, memory: 
     db.doc(`court_comments/${caseId}`),
     db.doc(`court_comment_authors/${caseId}`),
     db.doc(`results/${caseId}`),
-    caseRef,
+    caseRef
   ];
   if (legacyIdHash) refs.push(db.doc(`case_id_aliases/${legacyIdHash}`));
 
@@ -88,11 +98,30 @@ exports.deleteCourtPost = onCall({ region: REGION, timeoutSeconds: 120, memory: 
   await batch.commit();
   counter.deleted += refs.length;
 
-  await writeAdminLog(request.auth.uid, 'deleteCourtPost', caseId, {
-    ...counter,
+  return {
+    caseId,
+    ownerUid: cleanId(caseData.userId),
+    deleted: counter.deleted,
     removedLegacyAlias: Boolean(legacyIdHash)
+  };
+}
+
+exports.deleteOwnCourtPost = onCall({ region: REGION, timeoutSeconds: 120, memory: '256MiB' }, async request => {
+  const authenticated = requireAccountUser(request);
+  const result = await deleteCourtPostData(request.data?.caseId, { ownerUid: authenticated.uid });
+  return { success: true, ...result };
+});
+
+exports.deleteCourtPost = onCall({ region: REGION, timeoutSeconds: 120, memory: '256MiB' }, async request => {
+  if (!request.auth || !(await isAdminAuth(request.auth))) {
+    throw new HttpsError('permission-denied', '관리자만 삭제할 수 있습니다.');
+  }
+  const result = await deleteCourtPostData(request.data?.caseId);
+  await writeAdminLog(request.auth.uid, 'deleteCourtPost', result.caseId, {
+    deleted: result.deleted,
+    removedLegacyAlias: result.removedLegacyAlias
   });
-  return { success: true, caseId, deleted: counter.deleted };
+  return { success: true, ...result };
 });
 
 exports.deleteUserProfile = onCall({ region: REGION, timeoutSeconds: 60, memory: '256MiB' }, async request => {
@@ -107,7 +136,13 @@ exports.deleteUserProfile = onCall({ region: REGION, timeoutSeconds: 60, memory:
   return { success: true, userId, ...result };
 });
 
-Object.defineProperty(module.exports, 'deleteUserProfileData', {
-  value: deleteUserProfileData,
-  enumerable: false
+Object.defineProperties(module.exports, {
+  deleteCourtPostData: {
+    value: deleteCourtPostData,
+    enumerable: false
+  },
+  deleteUserProfileData: {
+    value: deleteUserProfileData,
+    enumerable: false
+  }
 });
