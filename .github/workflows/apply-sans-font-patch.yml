@@ -1,4 +1,4 @@
-name: Apply sans font patch
+name: Finalize sans font patch
 
 on:
   push:
@@ -17,45 +17,102 @@ jobs:
         with:
           ref: agent/unify-sans-font
           fetch-depth: 0
-      - name: Replace remaining serif declarations
+      - name: Finalize typography and cache versions
         run: |
           python - <<'PY'
           from pathlib import Path
 
-          replacements = {
-              "font-family:Georgia,'Noto Serif KR',serif": "font-family:'Noto Sans KR',Arial,sans-serif",
-              "font-family:'Noto Serif KR',serif": "font-family:'Noto Sans KR',Arial,sans-serif",
-              "font-family:'Noto Serif KR', serif": "font-family:'Noto Sans KR',Arial,sans-serif",
-              "family=Noto+Serif+KR:wght@600;700&family=Noto+Sans+KR:wght@400;500;700;900": "family=Noto+Sans+KR:wght@400;500;600;700;900",
-              "family=Noto+Serif+KR:wght@400;600;700&family=Noto+Sans+KR:wght@400;500;700;900": "family=Noto+Sans+KR:wght@400;500;600;700;900",
-          }
+          def replace(path, old, new):
+              file = Path(path)
+              text = file.read_text(encoding='utf-8')
+              if old not in text:
+                  return
+              file.write_text(text.replace(old, new), encoding='utf-8')
 
-          roots = [Path('public'), Path('functions')]
-          changed = []
-          for root in roots:
-              for path in root.rglob('*'):
-                  if not path.is_file() or path.suffix.lower() not in {'.js', '.css', '.html'}:
-                      continue
-                  text = path.read_text(encoding='utf-8')
-                  updated = text
-                  for old, new in replacements.items():
-                      updated = updated.replace(old, new)
-                  if updated != text:
-                      path.write_text(updated, encoding='utf-8')
-                      changed.append(str(path))
+          replace('public/index.html', '/css/brand-logo.css?v=20260729-daily-real-court-1', '/css/brand-logo.css?v=20260729-sans-font-1')
+          replace('public/admin/index.html', '/css/brand-logo.css?v=20260729-bottom-nav-fix-1', '/css/brand-logo.css?v=20260729-sans-font-1')
 
-          print('Updated files:')
-          for path in changed:
-              print('-', path)
+          sw = Path('public/sw.js')
+          sw_text = sw.read_text(encoding='utf-8')
+          sw_text = sw_text.replace("const CACHE_NAME = 'sosoking-app-v20260729-brand-policy-1';", "const CACHE_NAME = 'sosoking-app-v20260729-sans-font-1';")
+          sw_text = sw_text.replace('/css/brand-logo.css?v=20260729-daily-real-court-1', '/css/brand-logo.css?v=20260729-sans-font-1')
+          sans_asset = "  '/css/sans-font.css?v=20260729-sans-font-1',\n"
+          if sans_asset not in sw_text:
+              marker = "  '/css/layout-spacing.css?v=20260729-spacing-flow-2',\n"
+              sw_text = sw_text.replace(marker, marker + sans_asset)
+          sw.write_text(sw_text, encoding='utf-8')
+
+          check = Path('tools/check-sans-font.mjs')
+          check.write_text("""import fs from 'node:fs';
+
+const errors = [];
+const read = path => fs.readFileSync(path, 'utf8');
+const selected = [
+  'public/index.html',
+  'public/admin/index.html',
+  'public/css/brand-logo.css',
+  'public/css/sans-font.css',
+  'public/js/pages/result-court.js',
+  'public/js/pages/submit.js',
+  'functions/public-seo.js'
+];
+
+for (const path of selected) {
+  const source = read(path);
+  if (source.includes('Noto Serif KR') || source.includes('Georgia')) {
+    errors.push(`${path}: serif font declaration remains`);
+  }
+}
+
+const index = read('public/index.html');
+const admin = read('public/admin/index.html');
+const brand = read('public/css/brand-logo.css');
+const server = read('functions/public-seo.js');
+const sw = read('public/sw.js');
+
+if (!index.includes('family=Noto+Sans+KR') || !index.includes('/css/sans-font.css?v=20260729-sans-font-1')) {
+  errors.push('public/index.html: public sans font assets are incomplete');
+}
+if (!admin.includes('family=Noto+Sans+KR') || !admin.includes('/css/brand-logo.css?v=20260729-sans-font-1')) {
+  errors.push('public/admin/index.html: admin sans font assets are incomplete');
+}
+if (!brand.includes("--font-serif: 'Noto Sans KR'") || !brand.includes('body *')) {
+  errors.push('public/css/brand-logo.css: global sans font override is missing');
+}
+if (!server.includes("font-family:'Noto Sans KR',Arial,sans-serif")) {
+  errors.push('functions/public-seo.js: public verdict sans font is missing');
+}
+if (!sw.includes("sosoking-app-v20260729-sans-font-1")
+  || !sw.includes('/css/brand-logo.css?v=20260729-sans-font-1')
+  || !sw.includes('/css/sans-font.css?v=20260729-sans-font-1')) {
+  errors.push('public/sw.js: sans font cache versions are incomplete');
+}
+
+if (errors.length) {
+  console.error(`Sans font validation failed (${errors.length})`);
+  errors.forEach(error => console.error(`- ${error}`));
+  process.exit(1);
+}
+
+console.log('Sans font validation passed: public app, results, search pages, forms, and admin use Noto Sans KR.');
+""", encoding='utf-8')
+
+          package = Path('package.json')
+          package_text = package.read_text(encoding='utf-8')
+          old = 'node tools/check-brand-policy-copy.mjs && node tools/check-project.mjs'
+          new = 'node tools/check-brand-policy-copy.mjs && node tools/check-sans-font.mjs && node tools/check-project.mjs'
+          if new not in package_text:
+              if old not in package_text:
+                  raise SystemExit('package check chain marker was not found')
+              package_text = package_text.replace(old, new)
+          package.write_text(package_text, encoding='utf-8')
+
+          Path('.github/workflows/apply-sans-font-patch.yml').unlink()
           PY
-      - name: Commit patch
+      - name: Commit finalized patch
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public functions
-          if git diff --cached --quiet; then
-            echo "No remaining serif declarations found."
-            exit 0
-          fi
-          git commit -m "Replace remaining serif fonts with Noto Sans KR [font-patch]"
+          git add -A
+          git commit -m "Finalize global Noto Sans KR typography [font-patch]"
           git push origin HEAD:agent/unify-sans-font
