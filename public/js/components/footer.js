@@ -18,6 +18,12 @@ export async function renderFooter() {
   const email = escapeHtml(biz.email || '');
   const address = escapeHtml(biz.address || '');
 
+  const businessRows = [
+    `${companyName}${ceoName ? ` | 대표 ${ceoName}` : ''}`,
+    [businessNumber ? `사업자등록번호 ${businessNumber}` : '', contact ? `연락처 ${contact}` : ''].filter(Boolean).join(' | '),
+    [email ? `이메일 ${email}` : '', address].filter(Boolean).join(' | ')
+  ].filter(Boolean);
+
   footer.innerHTML = `
     <img class="footer-brand-logo" src="/icons/sosoking-192.png?v=20260729-brand-unified-1" alt="소소킹 저울 로고" width="58" height="58">
     <div class="footer-links">
@@ -26,10 +32,8 @@ export async function renderFooter() {
       <a href="#/policy/ai_disclaimer">AI 서비스 안내</a>
     </div>
     <div class="footer-biz">
-      ${companyName}${ceoName ? ` | 대표 ${ceoName}` : ''}<br>
-      ${businessNumber ? `사업자등록번호 ${businessNumber}` : ''}${contact ? ` | 연락처 ${contact}` : ''}<br>
-      ${email ? `이메일 ${email}` : ''}${address ? ` | ${address}` : ''}
-      <br><span style="display:block;margin-top:6px;">© 2026 소소킹 판결소 · AI 생활법정 · 법적 효력 없음</span>
+      ${businessRows.join('<br>')}
+      <span style="display:block;margin-top:6px;">© 2026 소소킹 판결소 · AI 생활법정 · 법적 효력 없음</span>
     </div>
     <div style="margin-top:16px;">
       <a href="/admin" style="font-size:11px;color:rgba(245,240,232,0.2);text-decoration:none;">관리자</a>
