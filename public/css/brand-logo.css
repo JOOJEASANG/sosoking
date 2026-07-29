@@ -51,14 +51,14 @@
 }
 
 #bottom-nav .nav-item {
-  flex: 1 1 25%;
+  flex: 1 1 20%;
   min-width: 0;
   gap: 2px;
   padding: 7px 0 6px;
 }
 
 #bottom-nav .nav-icon {
-  font-size: 25px;
+  font-size: 24px;
 }
 
 #bottom-nav .nav-cta .nav-icon {
@@ -71,7 +71,8 @@
 }
 
 #bottom-nav .nav-label {
-  font-size: 10.5px;
+  font-size: 9.5px;
+  white-space: nowrap;
 }
 
 #nav-account-icon img {

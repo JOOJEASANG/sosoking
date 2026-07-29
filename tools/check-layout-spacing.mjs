@@ -40,16 +40,19 @@ if (!app.includes("./components/footer.js?v=20260729-compact-spacing-1")) {
 }
 
 const index = read('public/index.html');
-if (!index.includes('/css/layout-spacing.css?v=20260729-spacing-flow-2')
-  || !index.includes('/js/app.js?v=20260729-compact-spacing-1')) {
-  errors.push('public/index.html: corrected spacing stylesheet or current app version is missing');
-}
-
 const serviceWorker = read('public/sw.js');
-if (!serviceWorker.includes("sosoking-app-v20260729-spacing-flow-2")
-  || !serviceWorker.includes('/css/layout-spacing.css?v=20260729-spacing-flow-2')
-  || !serviceWorker.includes('/js/app.js?v=20260729-compact-spacing-1')) {
-  errors.push('public/sw.js: corrected spacing assets are not in the active cache graph');
+if (!index.includes('/css/layout-spacing.css?v=20260729-spacing-flow-2')) {
+  errors.push('public/index.html: corrected spacing stylesheet is missing');
+}
+if (!serviceWorker.includes('/css/layout-spacing.css?v=20260729-spacing-flow-2')) {
+  errors.push('public/sw.js: corrected spacing stylesheet is not in the active cache graph');
+}
+const appVersion = index.match(/\/js\/app\.js\?v=([^"']+)/)?.[1] || '';
+if (!appVersion || !serviceWorker.includes(`/js/app.js?v=${appVersion}`)) {
+  errors.push('public/index.html and public/sw.js: current application cache versions are inconsistent');
+}
+if (!/const CACHE_NAME = 'sosoking-app-v[^']+';/.test(serviceWorker)) {
+  errors.push('public/sw.js: versioned cache name is missing');
 }
 
 const packageJson = read('package.json');
@@ -63,4 +66,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Layout spacing validation passed: route endings are compact and the footer no longer stretches to fill the viewport.');
+console.log('Layout spacing validation passed: route endings are compact, the footer no longer stretches, and cache versions remain consistent.');

@@ -74,13 +74,19 @@ jobs:
       - name: Deploy current Functions first
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-        run: firebase deploy --only functions:submitCase,functions:generateTrial,functions:createDailyAiCase,functions:generateDailyAiNow,functions:checkNickname,functions:setNickname,functions:voteResult,functions:addCourtComment,functions:setResultVisibility,functions:setAdminResultVisibility,functions:submitReport,functions:moderateReport,functions:syncPublicStats,functions:syncPublicStatsNow,functions:publicResultPage,functions:publicSitemap,functions:resolveCaseAlias,functions:migrateLegacyCaseIds,functions:requestAppeal,functions:deleteOwnCourtPost,functions:deleteCourtPost,functions:deleteUserProfile --project sosoking-481e6 --non-interactive
+        run: firebase deploy --only functions:submitCase,functions:generateTrial,functions:createDailyAiCase,functions:generateDailyAiNow,functions:getDailyRealCourt,functions:submitDailyRealCourtVerdict,functions:checkNickname,functions:setNickname,functions:voteResult,functions:addCourtComment,functions:setResultVisibility,functions:setAdminResultVisibility,functions:submitReport,functions:moderateReport,functions:syncPublicStats,functions:syncPublicStatsNow,functions:publicResultPage,functions:publicSitemap,functions:resolveCaseAlias,functions:migrateLegacyCaseIds,functions:requestAppeal,functions:deleteOwnCourtPost,functions:deleteCourtPost,functions:deleteUserProfile --project sosoking-481e6 --non-interactive
 
       - name: Initialize public statistics
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
           GOOGLE_CLOUD_PROJECT: sosoking-481e6
         run: node functions/sync-public-stats-cli.js
+
+      - name: Sync daily real court catalog
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+          GOOGLE_CLOUD_PROJECT: sosoking-481e6
+        run: node tools/sync-daily-real-court-catalog.mjs
 
       - name: Deploy Firestore configuration and Hosting
         env:
@@ -101,4 +107,4 @@ jobs:
 
       - name: Deployment summary
         if: always()
-        run: echo "Firebase Hosting, Functions, and official seed cleanup finished for commit $GITHUB_SHA"
+        run: echo "Firebase Hosting, Functions, daily court catalog, and official seed cleanup finished for commit $GITHUB_SHA"

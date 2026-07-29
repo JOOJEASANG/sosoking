@@ -5,6 +5,7 @@ const { getApps, initializeApp } = require('firebase-admin/app');
 if (!getApps().length) initializeApp();
 
 Object.assign(exports, require('./daily'));
+Object.assign(exports, require('./daily-real-court'));
 Object.assign(exports, require('./profile'));
 Object.assign(exports, require('./social'));
 Object.assign(exports, require('./reports'));

@@ -38,7 +38,7 @@ const protectedSources = [
   '/index.html',
   '/admin',
   '/admin/**',
-  '/@(board|submit|guide|auth|my-cases)',
+  '/@(board|submit|daily-court|guide|auth|my-cases)',
   '/@(result|trial)/**'
 ];
 for (const source of protectedSources) {
@@ -113,4 +113,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Script CSP validation passed: route-scoped policy, no inline execution, and synchronized module cache versions.');
+console.log('Script CSP validation passed: route-scoped policy, including daily court, no inline execution, and synchronized module cache versions.');

@@ -81,7 +81,7 @@
         ]
       },
       {
-        "source": "/@(board|submit|guide|auth|my-cases)",
+        "source": "/@(board|submit|daily-court|guide|auth|my-cases)",
         "headers": [
           {
             "key": "Content-Security-Policy",
@@ -157,6 +157,7 @@
       { "source": "/admin/", "destination": "/admin/index.html" },
       { "source": "/board", "destination": "/index.html" },
       { "source": "/submit", "destination": "/index.html" },
+      { "source": "/daily-court", "destination": "/index.html" },
       { "source": "/guide", "destination": "/index.html" },
       { "source": "/auth", "destination": "/index.html" },
       { "source": "/my-cases", "destination": "/index.html" },
