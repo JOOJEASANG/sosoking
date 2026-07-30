@@ -1,4 +1,4 @@
-name: Audit Firebase custom domains
+name: Unify Firebase custom domains
 
 on:
   pull_request:
@@ -8,7 +8,7 @@ on:
       - 'docs/domain-unification.md'
 
 jobs:
-  audit-domains:
+  unify-domain:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -25,7 +25,7 @@ jobs:
       - name: Install Google auth client
         run: npm install --no-save --no-package-lock google-auth-library@9
 
-      - name: Inspect Hosting sites and custom domains
+      - name: Redirect www to the canonical apex domain
         env:
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOSOKING_481E6 }}
         run: |
@@ -36,63 +36,94 @@ jobs:
           node --input-type=module <<'NODE'
           import { GoogleAuth } from 'google-auth-library';
 
+          const projectId = 'sosoking-481e6';
+          const siteId = 'sosoking-481e6';
+          const sourceDomain = 'www.sosoking.co.kr';
+          const targetDomain = 'sosoking.co.kr';
+          const resourceName = `projects/${projectId}/sites/${siteId}/customDomains/${sourceDomain}`;
+          const base = 'https://firebasehosting.googleapis.com/v1beta1';
+
           const credentials = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
           const auth = new GoogleAuth({
             credentials,
-            scopes: ['https://www.googleapis.com/auth/firebase.hosting.readonly']
+            scopes: ['https://www.googleapis.com/auth/firebase.hosting']
           });
           const client = await auth.getClient();
           const token = await client.getAccessToken();
-          const headers = { Authorization: `Bearer ${token.token || token}` };
-          const projectId = 'sosoking-481e6';
-          const base = 'https://firebasehosting.googleapis.com/v1beta1';
+          const headers = {
+            Authorization: `Bearer ${token.token || token}`,
+            'Content-Type': 'application/json'
+          };
 
-          async function getJson(url) {
-            const response = await fetch(url, { headers });
+          async function requestJson(url, options = {}) {
+            const response = await fetch(url, { ...options, headers: { ...headers, ...(options.headers || {}) } });
             const text = await response.text();
+            const payload = text ? JSON.parse(text) : {};
             if (!response.ok) throw new Error(`${response.status} ${response.statusText}: ${text}`);
-            return text ? JSON.parse(text) : {};
+            return payload;
           }
 
-          const sitePayload = await getJson(`${base}/projects/${projectId}/sites?pageSize=100`);
-          const sites = [];
-          for (const site of sitePayload.sites || []) {
-            const siteId = site.name.split('/').at(-1);
-            const domainPayload = await getJson(`${base}/projects/${projectId}/sites/${siteId}/customDomains?pageSize=100&showDeleted=true`);
-            sites.push({
-              siteId,
-              defaultUrl: site.defaultUrl || '',
-              type: site.type || '',
-              customDomains: (domainPayload.customDomains || []).map(domain => ({
-                domain: domain.name.split('/').at(-1),
-                hostState: domain.hostState || '',
-                ownershipState: domain.ownershipState || '',
-                redirectTarget: domain.redirectTarget || '',
-                certState: domain.cert?.state || '',
-                reconciling: domain.reconciling === true,
-                deleted: Boolean(domain.deleteTime),
-                issues: (domain.issues || []).map(issue => ({ code: issue.code, message: issue.message })),
-                desiredDns: (domain.requiredDnsUpdates?.desired || []).flatMap(set =>
-                  (set.records || []).map(record => ({
-                    domainName: record.domainName,
-                    type: record.type,
-                    rdata: record.rdata,
-                    requiredAction: record.requiredAction
-                  }))
-                ),
-                discoveredDns: (domain.requiredDnsUpdates?.discovered || []).flatMap(set =>
-                  (set.records || []).map(record => ({
-                    domainName: record.domainName,
-                    type: record.type,
-                    rdata: record.rdata,
-                    requiredAction: record.requiredAction
-                  }))
-                )
-              }))
+          const domainUrl = `${base}/${resourceName}`;
+          const before = await requestJson(domainUrl);
+          if (before.hostState !== 'HOST_ACTIVE' || before.ownershipState !== 'OWNERSHIP_ACTIVE') {
+            throw new Error(`Domain is not active: host=${before.hostState}, ownership=${before.ownershipState}`);
+          }
+
+          if (before.redirectTarget !== targetDomain) {
+            const body = JSON.stringify({ name: resourceName, redirectTarget: targetDomain });
+            await requestJson(`${domainUrl}?updateMask=redirectTarget&validateOnly=true`, {
+              method: 'PATCH',
+              body
             });
+            const operation = await requestJson(`${domainUrl}?updateMask=redirectTarget`, {
+              method: 'PATCH',
+              body
+            });
+
+            if (operation.name) {
+              for (let attempt = 0; attempt < 30; attempt += 1) {
+                const current = await requestJson(`${base}/${operation.name}`);
+                if (current.done) {
+                  if (current.error) throw new Error(`Domain update failed: ${JSON.stringify(current.error)}`);
+                  break;
+                }
+                await new Promise(resolve => setTimeout(resolve, 2000));
+              }
+            }
           }
 
-          console.log('DOMAIN_AUDIT_BEGIN');
-          console.log(JSON.stringify({ projectId, sites }, null, 2));
-          console.log('DOMAIN_AUDIT_END');
+          const after = await requestJson(domainUrl);
+          if (after.redirectTarget !== targetDomain) {
+            throw new Error(`Redirect target was not saved: ${after.redirectTarget || '(empty)'}`);
+          }
+
+          let live = null;
+          for (let attempt = 0; attempt < 18; attempt += 1) {
+            const checkUrl = `https://${sourceDomain}/guide?domain-unification=${Date.now()}`;
+            const response = await fetch(checkUrl, {
+              redirect: 'manual',
+              headers: { 'Cache-Control': 'no-cache' }
+            });
+            live = {
+              status: response.status,
+              location: response.headers.get('location') || ''
+            };
+            if (live.status === 301 && live.location.startsWith(`https://${targetDomain}/guide`)) break;
+            await new Promise(resolve => setTimeout(resolve, 5000));
+          }
+
+          if (live?.status !== 301 || !live.location.startsWith(`https://${targetDomain}/guide`)) {
+            throw new Error(`Live redirect not confirmed: ${JSON.stringify(live)}`);
+          }
+
+          console.log(JSON.stringify({
+            unified: true,
+            sourceDomain,
+            targetDomain,
+            redirectTarget: after.redirectTarget,
+            hostState: after.hostState,
+            ownershipState: after.ownershipState,
+            certState: after.cert?.state || '',
+            live
+          }, null, 2));
           NODE
