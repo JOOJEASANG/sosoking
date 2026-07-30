@@ -46,7 +46,7 @@ for (const required of [
   'data.publicDataVersion == 1',
   "!data.keys().hasAny(['userId', 'caseDescription', 'nickname'])",
   'allow get: if isSafePublicResultData(resource.data)',
-  'allow list: if isPublicResultListData(resource.data)'
+  'allow list: if isAdmin() || isPublicResultListData(resource.data)'
 ]) {
   if (!rules.includes(required)) errors.push(`firestore.rules: missing ${required}`);
 }

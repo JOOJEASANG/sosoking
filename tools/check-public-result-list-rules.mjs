@@ -31,6 +31,10 @@ const authenticatedReader = testEnv.authenticatedContext('public-list-reader', {
   email: 'reader@example.com',
   email_verified: true
 }).firestore();
+const adminReader = testEnv.authenticatedContext('admin-reader', {
+  email: 'admin@example.com',
+  email_verified: true
+}).firestore();
 const publicReader = testEnv.unauthenticatedContext().firestore();
 const now = Timestamp.now();
 
@@ -51,10 +55,15 @@ function broadQuery(db) {
   );
 }
 
+function adminAllResultsQuery(db) {
+  return query(collection(db, 'results'), orderBy('createdAt', 'desc'));
+}
+
 try {
   await testEnv.withSecurityRulesDisabled(async context => {
     const db = context.firestore();
     await Promise.all([
+      setDoc(doc(db, 'admins', 'admin-reader'), { enabled: true }),
       setDoc(doc(db, 'results/list-safe-public'), {
         isPublic: true,
         publicDataVersion: 1,
@@ -92,7 +101,15 @@ try {
     await assertFails(getDocs(broadQuery(db)));
   }
 
-  console.log('Public result list rules passed: sanitized queries work before and after login while broad public queries remain denied.');
+  const adminSnapshot = await assertSucceeds(getDocs(adminAllResultsQuery(adminReader)));
+  const adminIds = adminSnapshot.docs.map(document => document.id);
+  for (const requiredId of ['list-safe-public', 'list-unsafe-public', 'list-private']) {
+    if (!adminIds.includes(requiredId)) {
+      throw new Error(`administrator result list is missing ${requiredId}: ${adminIds.join(', ')}`);
+    }
+  }
+
+  console.log('Public result list rules passed: sanitized public queries stay restricted while administrators can load the complete verdict dashboard.');
 } finally {
   await testEnv.cleanup();
 }
