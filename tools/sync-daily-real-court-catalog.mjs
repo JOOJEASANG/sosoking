@@ -12,7 +12,8 @@ if (!getApps().length) initializeApp({ credential: applicationDefault(), project
 
 const sourcePath = path.join(root, 'content', 'daily-real-court-cases.json');
 const cases = JSON.parse(fs.readFileSync(sourcePath, 'utf8'));
-if (!Array.isArray(cases) || cases.length < 1) throw new Error('오늘의 재판 판례 목록이 비어 있습니다.');
+if (!Array.isArray(cases) || cases.length < 3) throw new Error('오늘의 재판 판례는 하루 3건 출제를 위해 최소 3건이 필요합니다.');
+if (cases.length > 500) throw new Error('오늘의 재판 판례는 최대 500건까지 동기화할 수 있습니다.');
 
 const ids = new Set();
 for (const [index, item] of cases.entries()) {
@@ -44,8 +45,10 @@ for (let offset = 0; offset < cases.length; offset += 400) {
 await db.doc('daily_court_config/catalog').set({
   orderedCaseIds: cases.map(item => item.id),
   size: cases.length,
+  dailyCaseCount: 3,
+  targetSize: 500,
   source: '국가법령정보센터 판례를 바탕으로 재구성',
   updatedAt: FieldValue.serverTimestamp()
 }, { merge: true });
 
-console.log(JSON.stringify({ synced: true, count: cases.length, first: cases[0].id, last: cases.at(-1).id }));
+console.log(JSON.stringify({ synced: true, count: cases.length, dailyCaseCount: 3, targetSize: 500, first: cases[0].id, last: cases.at(-1).id }));
