@@ -20,7 +20,7 @@ function replaceCurrentPolicyCopy(text) {
     .replace(OLD_DAILY_VOTE_COPY, NEW_DAILY_VOTE_COPY);
 }
 
-function replaceLegacyPolicyCopy(container) {
+function replaceLegacyLimitCopy(container) {
   const content = container.querySelector('.container > div:first-child');
   if (!content) return;
   content.textContent = replaceCurrentPolicyCopy(content.textContent);
@@ -49,7 +49,7 @@ export async function renderPolicy(container, type) {
     console.warn('configurable policy copy load failed:', error?.code || error);
   }
 
-  replaceLegacyPolicyCopy(container);
+  replaceLegacyLimitCopy(container);
 }
 
 export { NEW_LIMIT_COPY, NEW_DAILY_COPY };
