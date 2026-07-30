@@ -1,0 +1,283 @@
+/* Stage 4 redesign: discussion court */
+.discussion-redesign-host {
+  min-height: 100%;
+}
+
+.discussion-redesign-host .discussion-page,
+.discussion-redesign-host > div {
+  min-height: 100%;
+  background:
+    radial-gradient(circle at 50% 0,rgba(210,168,61,.13),transparent 32%),
+    transparent;
+}
+
+.discussion-redesign-host .discussion-container {
+  width: 100%;
+  max-width: var(--promo-page-max) !important;
+  padding: 25px 22px 112px !important;
+}
+
+.discussion-redesign-host .discussion-summary {
+  position: relative;
+  overflow: hidden;
+  padding: 26px 24px !important;
+  margin-bottom: 16px !important;
+  background:
+    radial-gradient(circle at 94% 8%,rgba(210,168,61,.21),transparent 31%),
+    var(--promo-surface) !important;
+  border: 1px solid var(--promo-line) !important;
+  border-radius: 27px !important;
+  box-shadow: var(--promo-shadow) !important;
+}
+
+.discussion-redesign-host .discussion-summary::after {
+  content: "💬";
+  position: absolute;
+  right: 21px;
+  bottom: 3px;
+  font-size: 74px;
+  opacity: .075;
+  pointer-events: none;
+}
+
+.discussion-redesign-host .discussion-kicker {
+  color: var(--promo-gold-deep) !important;
+  font-weight: 900 !important;
+  letter-spacing: .15em !important;
+}
+
+.discussion-redesign-host .discussion-title {
+  position: relative;
+  z-index: 1;
+  margin-top: 6px;
+  color: var(--promo-text) !important;
+  font-size: clamp(24px,6vw,33px) !important;
+  font-weight: 900 !important;
+  letter-spacing: -.04em;
+}
+
+.discussion-redesign-host .discussion-copy {
+  position: relative;
+  z-index: 1;
+  max-width: 500px;
+  color: var(--promo-muted) !important;
+  line-height: 1.8 !important;
+}
+
+.discussion-redesign-host .discussion-verdict {
+  position: relative;
+  z-index: 1;
+  margin-top: 16px !important;
+  padding: 15px 16px !important;
+  color: var(--promo-text) !important;
+  background: rgba(210,168,61,.09) !important;
+  border-left: 4px solid var(--promo-gold) !important;
+  border-radius: 0 15px 15px 0 !important;
+}
+
+.discussion-redesign-host .discussion-verdict strong {
+  color: var(--promo-gold-deep) !important;
+}
+
+.discussion-redesign-host .discussion-summary .btn {
+  min-height: 48px;
+  border-radius: 15px;
+}
+
+.discussion-redesign-host .discussion-container > section.card:not(.discussion-summary) {
+  padding: 22px !important;
+  margin-bottom: 15px !important;
+  background: var(--promo-surface) !important;
+  border: 1px solid var(--promo-line) !important;
+  border-radius: 24px !important;
+  box-shadow: var(--promo-card-shadow) !important;
+}
+
+.discussion-redesign-host .discussion-container > section.card:not(.discussion-summary) > div:first-child {
+  color: var(--promo-text) !important;
+}
+
+.discussion-redesign-host .discussion-choice-grid {
+  gap: 11px !important;
+}
+
+.discussion-redesign-host .discussion-choice {
+  position: relative;
+  overflow: hidden;
+  min-height: 144px !important;
+  padding: 17px 13px !important;
+  color: var(--promo-text) !important;
+  background: color-mix(in srgb,var(--promo-page-soft) 66%,transparent) !important;
+  border: 1.5px solid var(--promo-line) !important;
+  border-radius: 20px !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.36);
+}
+
+.discussion-redesign-host .discussion-choice::before {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 4px;
+  opacity: .3;
+}
+
+.discussion-redesign-host .discussion-choice[data-discussion-stance="plaintiff"]::before {
+  background: #4d8ed8;
+}
+
+.discussion-redesign-host .discussion-choice[data-discussion-stance="defendant"]::before {
+  background: #d86d5d;
+}
+
+.discussion-redesign-host .discussion-choice[data-discussion-stance="both"]::before {
+  background: #63a765;
+}
+
+.discussion-redesign-host .discussion-choice:hover {
+  transform: translateY(-2px) !important;
+  border-color: rgba(210,168,61,.52) !important;
+  box-shadow: var(--promo-card-shadow);
+}
+
+.discussion-redesign-host .discussion-choice.active {
+  border-color: var(--promo-gold) !important;
+  background: rgba(210,168,61,.13) !important;
+  box-shadow: 0 0 0 2px rgba(210,168,61,.10),var(--promo-card-shadow) !important;
+}
+
+.discussion-redesign-host .discussion-choice-icon {
+  width: 50px;
+  height: 50px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 9px !important;
+  border-radius: 17px;
+  background: rgba(210,168,61,.10);
+  border: 1px solid rgba(210,168,61,.20);
+  font-size: 25px !important;
+}
+
+.discussion-redesign-host .discussion-choice-label {
+  color: var(--promo-text) !important;
+  font-size: 16px !important;
+}
+
+.discussion-redesign-host .discussion-choice span span[style*="color:var(--cream-dim)"] {
+  color: var(--promo-muted) !important;
+}
+
+.discussion-redesign-host .discussion-choice-count {
+  color: var(--promo-muted) !important;
+  font-weight: 800;
+}
+
+.discussion-redesign-host .discussion-choice-bar {
+  height: 6px !important;
+  background: rgba(210,168,61,.10) !important;
+}
+
+.discussion-redesign-host .discussion-choice-bar span {
+  background: linear-gradient(90deg,var(--promo-gold-deep),var(--promo-gold-light)) !important;
+}
+
+.discussion-redesign-host #discussion-selected-note {
+  color: var(--promo-muted) !important;
+}
+
+.discussion-redesign-host #discussion-comment-input {
+  min-height: 155px !important;
+  padding: 16px !important;
+  color: var(--promo-text);
+  background: color-mix(in srgb,var(--promo-page-soft) 66%,transparent) !important;
+  border: 1.5px solid var(--promo-line) !important;
+  border-radius: 18px !important;
+}
+
+.discussion-redesign-host #discussion-comment-input:focus {
+  border-color: rgba(210,168,61,.65) !important;
+  box-shadow: 0 0 0 4px rgba(210,168,61,.10);
+}
+
+.discussion-redesign-host #discussion-comment-submit {
+  min-height: 53px;
+  border-radius: 17px;
+}
+
+.discussion-redesign-host #discussion-comments {
+  display: grid;
+  gap: 10px;
+}
+
+.discussion-redesign-host .discussion-comment {
+  padding: 16px !important;
+  border: 1px solid var(--promo-line) !important;
+  border-radius: 18px;
+  background: color-mix(in srgb,var(--promo-page-soft) 62%,transparent);
+}
+
+.discussion-redesign-host .discussion-comment:first-child {
+  border-top: 1px solid var(--promo-line) !important;
+}
+
+.discussion-redesign-host .discussion-comment-author {
+  color: var(--promo-text) !important;
+}
+
+.discussion-redesign-host .discussion-comment-meta,
+.discussion-redesign-host .discussion-legacy-badge {
+  color: var(--promo-muted) !important;
+}
+
+.discussion-redesign-host .discussion-comment-text {
+  margin-top: 10px;
+  color: var(--promo-text) !important;
+  line-height: 1.8 !important;
+}
+
+.discussion-redesign-host .discussion-stance-badge {
+  color: var(--promo-gold-deep) !important;
+  background: rgba(210,168,61,.09) !important;
+  border-color: rgba(210,168,61,.24) !important;
+}
+
+.discussion-redesign-host .disclaimer {
+  margin-top: 16px !important;
+  border-radius: 18px;
+}
+
+@media(max-width:580px) {
+  .discussion-redesign-host .discussion-container {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  .discussion-redesign-host .discussion-summary,
+  .discussion-redesign-host .discussion-container > section.card:not(.discussion-summary) {
+    padding: 20px 18px !important;
+    border-radius: 22px !important;
+  }
+
+  .discussion-redesign-host .discussion-choice {
+    min-height: 88px !important;
+    grid-template-columns: 48px minmax(0,1fr) auto !important;
+    padding: 13px 14px !important;
+  }
+
+  .discussion-redesign-host .discussion-choice-icon {
+    width: 44px;
+    height: 44px;
+    margin: 0 !important;
+    border-radius: 14px;
+    font-size: 22px !important;
+  }
+
+  .discussion-redesign-host .discussion-choice-count {
+    white-space: nowrap;
+  }
+}
+
+@media(prefers-reduced-motion:reduce) {
+  .discussion-redesign-host .discussion-choice {
+    transition:none !important;
+  }
+}
