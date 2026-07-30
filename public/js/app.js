@@ -4,12 +4,13 @@ import { renderHome } from './pages/home-court.js?v=20260730-configurable-limit-
 // Cache lineage marker for the CSP regression check: ./pages/home-court.js?v=20260729-brand-unified-1
 import { renderSubmit } from './pages/submit-guard.js?v=20260730-configurable-limit-1';
 import { renderTrial } from './pages/trial-game.js?v=20260729-dark-record-participation-1';
-import { renderResult } from './pages/result-comments.js?v=20260730-natural-story-humor-1';
+import { renderResult } from './pages/result-comments.js?v=20260730-discussion-court-1';
+import { renderDiscussion } from './pages/discussion.js?v=20260730-discussion-court-1';
 import { renderPolicy } from './pages/policy-configurable-limit.js?v=20260730-configurable-limit-1';
 import { renderMyCases } from './pages/my-cases-game.js?v=20260729-dark-record-participation-1';
 import { renderGuide } from './pages/guide.js?v=20260730-configurable-limit-1';
 import { renderAuth } from './pages/auth2.js?v=20260729-brand-unified-1';
-import { renderBoard } from './pages/board-court.js?v=20260730-public-records-2';
+import { renderBoard } from './pages/board-court.js?v=20260730-discussion-court-1';
 // Cache lineage marker for the CSP regression check: ./pages/board-court.js?v=20260729-script-csp-1
 import { renderDailyRealCourt } from './pages/daily-real-court.js?v=20260729-daily-real-court-1';
 import { renderFooter } from './components/footer.js?v=20260729-brand-policy-1';
@@ -43,6 +44,10 @@ function normalizedRoute() {
     if (path.startsWith('/result/')) {
       const caseId = decodeRouteValue(path.replace('/result/', ''));
       return caseId ? `#/result/${encodeURIComponent(caseId)}` : '#/';
+    }
+    if (path.startsWith('/discussion/')) {
+      const caseId = decodeRouteValue(path.replace('/discussion/', ''));
+      return caseId ? `#/discussion/${encodeURIComponent(caseId)}` : '#/';
     }
     if (path.startsWith('/verdict/')) {
       const caseId = decodeRouteValue(path.replace('/verdict/', ''));
@@ -108,6 +113,9 @@ async function route() {
     } else if (hash.startsWith('#/result/')) {
       const caseId = decodeRouteValue(hash.replace('#/result/', ''));
       renderTask = caseId ? renderResult(content, caseId) : renderHome(content);
+    } else if (hash.startsWith('#/discussion/')) {
+      const caseId = decodeRouteValue(hash.replace('#/discussion/', ''));
+      renderTask = caseId ? renderDiscussion(content, caseId) : renderBoard(content);
     } else if (hash.startsWith('#/policy/')) renderTask = renderPolicy(content, hash.replace('#/policy/', ''));
     else if (hash === '#/my-cases') renderTask = renderMyCases(content);
     else if (hash === '#/guide') renderTask = renderGuide(content);
