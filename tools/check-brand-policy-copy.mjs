@@ -8,15 +8,26 @@ for (const phrase of [
   '소소한 일상을 판결하는 생활법정 놀이터',
   '오늘은 판결감입니다.',
   '실제 판례는 직접 판결해보세요.',
-  '회원당 하루 1회',
   'AI 생활판결과 실제 판례 맞히기'
 ]) {
   if (!home.includes(phrase)) errors.push(`public/js/pages/home.js: 메인 문구 누락: ${phrase}`);
 }
 
+const homeCourt = read('public/js/pages/home-court.js');
+for (const phrase of [
+  'async function applySubmissionLimit(container)',
+  "doc(db, 'site_public', 'config')",
+  'settings.dailyLimitEnabled === true',
+  '현재 사건 접수 제한 없음',
+  'data-home-daily-limit'
+]) {
+  if (!homeCourt.includes(phrase)) errors.push(`public/js/pages/home-court.js: 동적 접수 한도 문구 누락: ${phrase}`);
+}
+
 const guide = read('public/js/pages/guide.js');
 for (const phrase of [
-  '회원당 하루 1회입니다.',
+  '접수 횟수와 대기시간은 운영 설정에 따라 달라질 수 있으며',
+  '현재 적용 중인 횟수는 사건 접수 화면에 표시됩니다.',
   '오늘의 실제 판례 읽기',
   '실제 판단과 민심 비교하기',
   '검색엔진에 노출될 수 있으며',
@@ -24,10 +35,12 @@ for (const phrase of [
 ]) {
   if (!guide.includes(phrase)) errors.push(`public/js/pages/guide.js: 이용 안내 누락: ${phrase}`);
 }
+if (guide.includes('회원당 하루 1회입니다.')) {
+  errors.push('public/js/pages/guide.js: 고정 하루 1회 안내가 남아 있습니다.');
+}
 
 const policy = read('public/js/pages/policy.js');
 for (const phrase of [
-  '계정당 하루 1회',
   '오늘의 재판 이용',
   '검색엔진을 통해 노출',
   '개인정보 처리 및 보유 기간',
@@ -49,6 +62,16 @@ for (const type of ['terms', 'privacy', 'ai_disclaimer']) {
   if (!policy.includes(`type === '${type}'`)) errors.push(`public/js/pages/policy.js: ${type} 구버전 교체 기준 누락`);
 }
 
+const policyLimit = read('public/js/pages/policy-configurable-limit.js');
+for (const phrase of [
+  '접수 횟수와 재접수 대기시간은 서비스 화면에 표시된 현재 운영 설정을 따릅니다.',
+  '제한을 해제하거나 계정당 일일 건수를 조절할 수 있습니다.',
+  'replaceLegacyLimitCopy',
+  "getDoc(doc(db, 'policy_docs', 'terms'))"
+]) {
+  if (!policyLimit.includes(phrase)) errors.push(`public/js/pages/policy-configurable-limit.js: 가변 한도 약관 문구 누락: ${phrase}`);
+}
+
 const index = read('public/index.html');
 for (const phrase of [
   '소소한 일상을 판결하는 생활법정 놀이터',
@@ -61,17 +84,18 @@ if (!/<script type="module" src="\/js\/app\.js\?v=[^"']+"><\/script>/.test(index
 }
 
 const app = read('public/js/app.js');
-const homeCourt = read('public/js/pages/home-court.js');
 const homeCourtVersion = app.match(/\.\/pages\/home-court\.js\?v=([^'";]+)/)?.[1] || '';
 if (!homeCourtVersion) {
   errors.push('public/js/app.js: versioned home-court module is missing');
 }
 for (const moduleUrl of [
-  './pages/policy.js?v=20260729-brand-policy-1',
-  './pages/guide.js?v=20260729-brand-policy-1',
+  './pages/home-court.js?v=20260730-configurable-limit-1',
+  './pages/submit-guard.js?v=20260730-configurable-limit-1',
+  './pages/policy-configurable-limit.js?v=20260730-configurable-limit-1',
+  './pages/guide.js?v=20260730-configurable-limit-1',
   './components/footer.js?v=20260729-brand-policy-1'
 ]) {
-  if (!app.includes(moduleUrl)) errors.push(`public/js/app.js: 새 문구 모듈 버전 누락: ${moduleUrl}`);
+  if (!app.includes(moduleUrl)) errors.push(`public/js/app.js: 최신 문구·한도 모듈 버전 누락: ${moduleUrl}`);
 }
 if (!homeCourt.includes("./home.js?v=20260729-brand-policy-1")) {
   errors.push('public/js/pages/home-court.js: 메인 문구 모듈 버전 누락');
@@ -92,11 +116,15 @@ if (!homeCourtVersion || !sw.includes(`/js/pages/home-court.js?v=${homeCourtVers
 }
 for (const asset of [
   '/js/pages/home.js?v=20260729-brand-policy-1',
-  '/js/pages/guide.js?v=20260729-brand-policy-1',
+  '/js/pages/guide.js?v=20260730-configurable-limit-1',
   '/js/pages/policy.js?v=20260729-brand-policy-1',
+  '/js/pages/policy-configurable-limit.js?v=20260730-configurable-limit-1',
+  '/js/pages/submit-guard.js?v=20260730-configurable-limit-1',
+  '/js/pages/submit-court.js?v=20260730-configurable-limit-1',
+  '/js/pages/submit.js?v=20260730-configurable-limit-1',
   '/js/components/footer.js?v=20260729-brand-policy-1'
 ]) {
-  if (!sw.includes(asset)) errors.push(`public/sw.js: 새 정책·문구 자산 캐시 누락: ${asset}`);
+  if (!sw.includes(asset)) errors.push(`public/sw.js: 최신 정책·한도 자산 캐시 누락: ${asset}`);
 }
 
 const packageJson = read('package.json');
@@ -110,4 +138,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Brand and policy copy validation passed: main message, daily limits, real-case game, privacy disclosures, AI notice, and synchronized cache versions.');
+console.log('Brand and policy copy validation passed: dynamic submission limits, real-case game, privacy disclosures, AI notice, and synchronized cache versions.');
