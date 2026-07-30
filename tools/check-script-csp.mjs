@@ -96,7 +96,7 @@ if (!boardCourt.includes("./board.js?v=20260729-script-csp-1")) {
   errors.push('public/js/pages/board-court.js: stale board module cache version remains');
 }
 const adminIndex = fs.readFileSync('public/admin/index.html', 'utf8');
-if (!adminIndex.includes('/admin/admin-bootstrap.js?v=20260730-admin-logout-home-1')) {
+if (!adminIndex.includes('/admin/admin-bootstrap.js?v=20260729-report-moderation-1')) {
   errors.push('public/admin/index.html: consolidated administrator bootstrap version is missing');
 }
 const adminBootstrap = fs.readFileSync('public/admin/admin-bootstrap.js', 'utf8');
