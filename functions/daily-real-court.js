@@ -240,10 +240,12 @@ function sortRanking(entries) {
 }
 
 async function loadRanking(collectionRef, scoreField, currentUid, type, completedOnly = false) {
-  const snapshot = await collectionRef.orderBy(scoreField, 'desc').limit(RANKING_QUERY_LIMIT).get();
+  const rankingQuery = completedOnly
+    ? collectionRef.where('completed', '==', true).orderBy(scoreField, 'desc')
+    : collectionRef.orderBy(scoreField, 'desc');
+  const snapshot = await rankingQuery.limit(RANKING_QUERY_LIMIT).get();
   const entries = snapshot.docs
     .map(docSnap => ({ uid: docSnap.id, ...docSnap.data() }))
-    .filter(data => !completedOnly || data.completed === true)
     .map(data => rankingEntry(data, scoreField, currentUid, type));
   return sortRanking(entries)
     .slice(0, RANKING_LIMIT)
