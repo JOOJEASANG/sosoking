@@ -85,7 +85,7 @@ if (!publicPolicy.includes("getDoc(doc(db, 'policy_docs', safeType))")) {
 
 const adminIndex = read('public/admin/index.html');
 for (const required of [
-  '/admin/admin-bootstrap.js?v=20260730-admin-logout-home-1',
+  '/admin/admin-bootstrap.js?v=20260729-report-moderation-1&ui=20260729-admin-brand-actions-1&logout=20260730-home-1',
   '/admin/admin-policy-defaults.js?v=20260730-admin-data-policy-1'
 ]) {
   if (!adminIndex.includes(required)) errors.push(`public/admin/index.html: administrator helper is not loaded: ${required}`);
