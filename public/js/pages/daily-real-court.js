@@ -290,8 +290,7 @@ function renderGame(container, data) {
           selectedChoiceId: choiceId,
           evidenceUsed: Number(evidenceUsage.get(gameCase.id) || 0)
         });
-        const next = nextUnvotedCase(response.data, gameCase.id);
-        activeCaseId = next?.id || gameCase.id;
+        activeCaseId = gameCase.id;
         renderGame(container, response.data);
         showToast(response.data?.votes?.[gameCase.id]?.correct ? '실제 판결을 맞혔습니다.' : '실제 판결과 비교 결과가 공개됐습니다.', 'success');
       } catch (error) {
