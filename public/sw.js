@@ -19,7 +19,7 @@ const APP_SHELL = [
   '/js/pages/board-court.js?v=20260730-public-records-2',
   '/js/pages/board.js?v=20260730-public-records-2',
   '/js/utils/public-results.js?v=20260730-public-records-2',
-  '/js/pages/result-comments.js?v=20260730-humor-every-stage-1',
+  '/js/pages/result-comments.js?v=20260730-natural-story-humor-1',
   '/js/pages/result-court.js?v=20260729-dark-record-participation-1',
   '/js/pages/trial-game.js?v=20260729-dark-record-participation-1',
   '/js/pages/my-cases-game.js?v=20260729-dark-record-participation-1',
@@ -117,7 +117,6 @@ self.addEventListener('fetch', event => {
     event.respondWith(staleWhileRevalidate(request));
     return;
   }
-
   if (NETWORK_FIRST.test(url.pathname)) {
     event.respondWith(networkFirst(request));
   }

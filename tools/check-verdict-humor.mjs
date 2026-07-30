@@ -15,7 +15,7 @@ for (const required of [
   'function judgeClosing'
 ]) {
   if (!userTrial.includes(required)) {
-    errors.push(`functions/generate-trial-lite.js: humor requirement missing: ${required}`);
+    errors.push(`functions/generate-trial-lite.js: humor foundation missing: ${required}`);
   }
 }
 
@@ -28,26 +28,30 @@ for (const required of [
   '숟가락이 증거번호를 받을 일은 없었을 것이다'
 ]) {
   if (!dailyTrial.includes(required)) {
-    errors.push(`functions/daily.js: humor requirement missing: ${required}`);
+    errors.push(`functions/daily.js: humor foundation missing: ${required}`);
   }
 }
 
 const humorPrompt = read('functions/humor-prompt.js');
 for (const required of [
-  '[소소킹 코미디 강도: 풍성하게]',
-  '무거운 법률 사이트가 아니라',
-  '최소 2개씩',
-  '최소 10개의 서로 다른 유머 장면',
-  '사건접수(reception)',
+  '[소소킹 코미디 방향: 상황 자체가 재미있게]',
+  '웃긴 문장을 많이 쓰는 것이 아니라',
+  '핵심 상황·행동·모순 하나',
+  '평범한 시작 → 예상 밖 행동 → 변명과 증거의 충돌 → 판결에서 앞선 장면을 회수하는 결말',
+  "결과문 안에 '웃음 포인트'",
+  '다른 사건에도 그대로 붙일 수 있는 문장',
   '수사보고(investigation)',
-  '원고측 변론(plaintiffArg)',
-  '피고측 변론(defendantArg)',
-  '재판부 판결(verdict)',
-  '사건 속 사물·행동·타이밍',
+  '시간순서, 실제 남은 흔적, 당사자의 말과 행동 사이의 모순',
+  '앞 문서에서 나온 물건·말·행동을 다시 활용해 결말',
   'appendHumorRules'
 ]) {
   if (!humorPrompt.includes(required)) {
-    errors.push(`functions/humor-prompt.js: every-stage humor rule missing: ${required}`);
+    errors.push(`functions/humor-prompt.js: natural comedy rule missing: ${required}`);
+  }
+}
+for (const forbidden of ['최소 2개씩', '최소 10개의 서로 다른 유머 장면']) {
+  if (humorPrompt.includes(forbidden)) {
+    errors.push(`functions/humor-prompt.js: forced joke quota remains: ${forbidden}`);
   }
 }
 
@@ -61,30 +65,36 @@ if (humorLoad < 0 || dailyLoad < 0 || userTrialLoad < 0 || humorLoad > dailyLoad
 
 const resultComments = read('public/js/pages/result-comments.js');
 for (const required of [
-  '진지한 척 웃기는 오락형 생활법정',
+  '진지한 형식으로 즐기는 오락형 생활법정',
   '실제 법률 판단이나 법적 효력은 없습니다',
-  '사건접수',
-  '수사보고',
-  '원고측 변론',
-  '피고측 변론',
-  '재판부 판결',
-  'result-stage-comedy'
+  'function addEntertainmentNotice',
+  'result-comedy-notice'
 ]) {
   if (!resultComments.includes(required)) {
-    errors.push(`public/js/pages/result-comments.js: visible comedy guidance missing: ${required}`);
+    errors.push(`public/js/pages/result-comments.js: entertainment notice missing: ${required}`);
+  }
+}
+for (const forbidden of [
+  'STAGE_COMEDY',
+  'result-stage-comedy',
+  '웃음 포인트',
+  '사물에게 묵비권'
+]) {
+  if (resultComments.includes(forbidden)) {
+    errors.push(`public/js/pages/result-comments.js: forced stage explanation remains: ${forbidden}`);
   }
 }
 
 const app = read('public/js/app.js');
 const index = read('public/index.html');
 const worker = read('public/sw.js');
-const humorVersion = '20260730-humor-every-stage-1';
+const humorVersion = '20260730-natural-story-humor-1';
 const appVersion = index.match(/<script type="module" src="\/js\/app\.js\?v=([^"']+)"/)?.[1] || '';
 for (const [file, source, required] of [
   ['public/js/app.js', app, `./pages/result-comments.js?v=${humorVersion}`],
   ['public/sw.js', worker, `/js/pages/result-comments.js?v=${humorVersion}`]
 ]) {
-  if (!source.includes(required)) errors.push(`${file}: humor cache version missing: ${required}`);
+  if (!source.includes(required)) errors.push(`${file}: natural humor cache version missing: ${required}`);
 }
 if (!appVersion || !worker.includes(`/js/app.js?v=${appVersion}`)) {
   errors.push('public/index.html and public/sw.js: active app cache versions are inconsistent');
@@ -99,4 +109,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Verdict humor validation passed: every AI document stage receives plentiful tailored comedy, the result screen states its entertainment purpose, and cache versions are synchronized.');
+console.log('Verdict humor validation passed: AI verdicts use natural story-driven comedy, forced stage callouts are removed, and cache versions are synchronized.');
