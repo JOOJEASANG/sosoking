@@ -35,40 +35,23 @@ for (const required of [
 const humorPrompt = read('functions/humor-prompt.js');
 for (const required of [
   '[소소킹 코미디 방향: 상황 자체가 재미있게]',
-  '법원 문서처럼 진지하게 읽히면서도',
-  '여러 번 피식 웃게 만드는 것',
-  '물건·행동·시간·순서·말투·기대와 실제 결과의 차이',
-  '남은 흔적 확인',
-  '구체성과 분량 원칙',
-  '확인 가능한 세부사항을 3개 이상',
-  '각 소제목은 보통 2~4문장',
-  '수사보고의 진술 검토와 판결의 판단이유',
-  '유머의 밀도와 방식',
-  '재치 있는 문장이 각각 자연스럽게 한두 번',
-  '사실 설명 두세 문장 사이에 정확히 맞는 재치 한 문장',
-  '모든 판사가 웃기되 엄벌주의형은',
+  '웃긴 문장을 많이 쓰는 것이 아니라',
+  '핵심 상황·행동·모순 하나',
+  '평범한 시작 → 예상 밖 행동 → 변명과 증거의 충돌 → 판결에서 앞선 장면을 회수하는 결말',
   "결과문 안에 '웃음 포인트'",
-  '인터넷 유행어, 억지 신조어',
   '다른 사건에도 그대로 붙일 수 있는 문장',
   '수사보고(investigation)',
   '시간순서, 실제 남은 흔적, 당사자의 말과 행동 사이의 모순',
-  '피고를 바보로 만들지 말고',
-  '앞 문서의 물건·말·행동을 새 문장으로 되받아쳐',
-  '자연스러운 웃긴 문장이 여러 번 등장하는가',
+  '앞 문서에서 나온 물건·말·행동을 다시 활용해 결말',
   'appendHumorRules'
 ]) {
   if (!humorPrompt.includes(required)) {
-    errors.push(`functions/humor-prompt.js: richer natural comedy rule missing: ${required}`);
+    errors.push(`functions/humor-prompt.js: natural comedy rule missing: ${required}`);
   }
 }
-for (const forbidden of [
-  '최소 2개씩',
-  '최소 10개의 서로 다른 유머 장면',
-  '무조건 밈을 사용',
-  '사건마다 같은 드립'
-]) {
+for (const forbidden of ['최소 2개씩', '최소 10개의 서로 다른 유머 장면']) {
   if (humorPrompt.includes(forbidden)) {
-    errors.push(`functions/humor-prompt.js: forced or repetitive joke rule remains: ${forbidden}`);
+    errors.push(`functions/humor-prompt.js: forced joke quota remains: ${forbidden}`);
   }
 }
 
@@ -125,4 +108,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Verdict humor validation passed: AI verdicts use concrete case details, several natural comedy beats, distinct judge voices, and serious document structure without forced stage callouts.');
+console.log('Verdict humor validation passed: AI verdicts use natural story-driven comedy, forced stage callouts are removed, and active cache versions are synchronized.');
