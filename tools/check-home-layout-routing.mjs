@@ -27,7 +27,7 @@ for (const value of [
 
 const app = read('public/js/app.js');
 for (const value of [
-  "./pages/home-seven-judges.js?v=20260730-home-layout-route-1",
+  "./pages/home-seven-judges.js?v=",
   "./pages/daily-real-court-layout.js?v=20260730-home-layout-route-1"
 ]) need(app, value, 'application modules');
 const normalizedRouteSource = app.split('function normalizedRoute() {')[1]?.split('\nfunction freshContentHost()')[0] || '';
@@ -42,15 +42,17 @@ if (normalizedRouteSource.includes("if (hash === '#/' || hash === '' || hash ===
 const index = read('public/index.html');
 const worker = read('public/sw.js');
 const appVersion = index.match(/<script type="module" src="\/js\/app\.js\?v=([^"']+)"/)?.[1] || '';
-if (appVersion !== '20260730-home-layout-route-1') {
-  errors.push(`public/index.html: unexpected active app version ${appVersion || '(missing)'}`);
-}
-if (!worker.includes(`/js/app.js?v=${appVersion}`)) {
+if (!appVersion) errors.push('public/index.html: active app version is missing');
+if (appVersion && !worker.includes(`/js/app.js?v=${appVersion}`)) {
   errors.push('public/index.html and public/sw.js: active app cache versions differ');
 }
+const homeModuleVersion = app.match(/\.\/pages\/home-seven-judges\.js\?v=([^"']+)/)?.[1] || '';
+if (!homeModuleVersion) errors.push('public/js/app.js: active home module version is missing');
+if (homeModuleVersion && !worker.includes(`/js/pages/home-seven-judges.js?v=${homeModuleVersion}`)) {
+  errors.push('public/js/app.js and public/sw.js: active home module cache versions differ');
+}
 for (const value of [
-  "const CACHE_NAME = 'sosoking-app-v20260730-home-layout-route-1';",
-  '/js/pages/home-seven-judges.js?v=20260730-home-layout-route-1',
+  "const CACHE_NAME = 'sosoking-app-v",
   '/js/pages/daily-real-court-layout.js?v=20260730-home-layout-route-1'
 ]) need(worker, value, 'active application cache');
 
