@@ -19,8 +19,10 @@ const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 provider.setCustomParameters({ prompt: 'select_account' });
 
+const HOME_PATH = '/#/';
 let dashboardModulePromise = null;
 let authViewVersion = 0;
+let logoutRedirectStarted = false;
 
 function host() {
   return document.getElementById('admin-content');
@@ -45,6 +47,18 @@ function friendlyError(error, fallback = '로그인에 실패했습니다.') {
     return '이메일 또는 비밀번호를 확인해주세요.';
   }
   return fallback;
+}
+
+async function signOutToHome() {
+  if (logoutRedirectStarted) return;
+  logoutRedirectStarted = true;
+  try {
+    await signOut(auth);
+    location.replace(HOME_PATH);
+  } catch (error) {
+    logoutRedirectStarted = false;
+    toast(friendlyError(error, '로그아웃에 실패했습니다.'), 'error');
+  }
 }
 
 async function isAdmin(user) {
@@ -92,7 +106,7 @@ function decorateDashboardHeader() {
     else header.appendChild(actions);
   }
   actions.innerHTML = dashboardActionsMarkup();
-  actions.querySelector('#admin-logout')?.addEventListener('click', () => signOut(auth));
+  actions.querySelector('#admin-logout')?.addEventListener('click', () => void signOutToHome());
 }
 
 function bindDashboardHeaderRefresh() {
@@ -207,7 +221,7 @@ function renderNoAccess(user) {
         <button class="btn btn-secondary" id="strict-noaccess-logout">로그아웃</button>
       </div>
     </div>`;
-  document.getElementById('strict-noaccess-logout')?.addEventListener('click', () => signOut(auth));
+  document.getElementById('strict-noaccess-logout')?.addEventListener('click', () => void signOutToHome());
 }
 
 getRedirectResult(auth).catch(error => {
@@ -218,7 +232,7 @@ getRedirectResult(auth).catch(error => {
 onAuthStateChanged(auth, async user => {
   const version = ++authViewVersion;
   if (!user) {
-    renderLogin();
+    if (!logoutRedirectStarted) renderLogin();
     return;
   }
 

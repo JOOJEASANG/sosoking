@@ -45,9 +45,16 @@ const bootstrap = read('public/admin/admin-bootstrap.js');
 for (const required of [
   "getDoc(doc(db, 'admins', user.uid))",
   "getDoc(doc(db, 'admins', email))",
-  'await mountDashboard(user)'
+  'await mountDashboard(user)',
+  "const HOME_PATH = '/#/';",
+  'async function signOutToHome()',
+  'await signOut(auth)',
+  'location.replace(HOME_PATH)',
+  "actions.querySelector('#admin-logout')?.addEventListener('click', () => void signOutToHome())",
+  "document.getElementById('strict-noaccess-logout')?.addEventListener('click', () => void signOutToHome())",
+  'if (!logoutRedirectStarted) renderLogin()'
 ]) {
-  if (!bootstrap.includes(required)) errors.push(`public/admin/admin-bootstrap.js: administrator dashboard authorization missing ${required}`);
+  if (!bootstrap.includes(required)) errors.push(`public/admin/admin-bootstrap.js: administrator routing missing ${required}`);
 }
 
 const adminPolicy = read('public/admin/admin-policy-defaults.js');
@@ -77,8 +84,11 @@ if (!publicPolicy.includes("getDoc(doc(db, 'policy_docs', safeType))")) {
 }
 
 const adminIndex = read('public/admin/index.html');
-if (!adminIndex.includes('/admin/admin-policy-defaults.js?v=20260730-admin-data-policy-1')) {
-  errors.push('public/admin/index.html: administrator policy defaults helper is not loaded');
+for (const required of [
+  '/admin/admin-bootstrap.js?v=20260729-report-moderation-1&ui=20260729-admin-brand-actions-1&logout=20260730-home-1',
+  '/admin/admin-policy-defaults.js?v=20260730-admin-data-policy-1'
+]) {
+  if (!adminIndex.includes(required)) errors.push(`public/admin/index.html: administrator helper is not loaded: ${required}`);
 }
 
 const index = read('public/index.html');
@@ -97,9 +107,9 @@ if (!worker.includes("sosoking-app-v20260730-admin-redirect-1")) {
 }
 
 if (errors.length) {
-  console.error(`Administrator login routing validation failed (${errors.length})`);
+  console.error(`Administrator routing validation failed (${errors.length})`);
   errors.forEach(error => console.error(`- ${error}`));
   process.exit(1);
 }
 
-console.log('Administrator validation passed: login redirects, complete verdict data access, and managed policy editing remain connected and cache-safe.');
+console.log('Administrator validation passed: login and logout redirects, complete verdict data access, and managed policy editing remain connected and cache-safe.');
