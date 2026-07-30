@@ -18,8 +18,22 @@ function addEntertainmentNotice(container) {
   cover.insertAdjacentElement('afterend', notice);
 }
 
+function addDiscussionLink(container, caseId) {
+  if (!container.querySelector('#court-comment-input')) return;
+  const actions = container.querySelector('.result-actions');
+  if (!actions || actions.querySelector('[data-discussion-link]')) return;
+
+  const link = document.createElement('a');
+  link.href = `#/discussion/${encodeURIComponent(caseId)}`;
+  link.className = 'btn btn-primary';
+  link.dataset.discussionLink = 'true';
+  link.textContent = '💬 이 판결로 토론하기';
+  actions.prepend(link);
+}
+
 export async function renderResult(container, caseId) {
   await renderStyledResult(container, caseId);
   stripJuryVote(container);
   addEntertainmentNotice(container);
+  addDiscussionLink(container, caseId);
 }
