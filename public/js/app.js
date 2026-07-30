@@ -22,6 +22,7 @@ import { renderFooter } from './components/footer.js?v=20260729-brand-policy-1';
 import { initTheme, renderThemeToggle } from './components/theme.js?v=20260729-theme-global-2';
 import { initCourtDesign } from './components/court-design.js?v=20260729-light-home-1';
 import { initNavAuthSync, renderNav } from './components/nav.js?v=20260729-daily-real-court-1';
+import { normalizePageHeaderIcons } from './components/header-icons.js?v=20260730-header-icon-single-1';
 
 let routeSequence = 0;
 let routeQueued = false;
@@ -130,12 +131,14 @@ async function route() {
     renderNav(hash);
     await renderTask;
     if (sequence !== routeSequence || !content.isConnected) return;
+    normalizePageHeaderIcons(content, hash);
     renderThemeToggle();
   } catch (err) {
     console.error('route render failed:', { hash, err });
     if (sequence === routeSequence && content.isConnected) {
       renderRouteError(content);
       renderNav(hash);
+      normalizePageHeaderIcons(content, hash);
       renderThemeToggle();
     }
   }
