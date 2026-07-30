@@ -1,5 +1,5 @@
 import { auth } from '../firebase.js?v=20260728-audit-1';
-import { renderSubmit as renderSubmitForm } from './submit-court.js?v=20260730-configurable-limit-1';
+import { renderSubmit as renderSubmitForm } from './submit-court.js?v=20260730-redesign-stage-2';
 
 function loginRequired(container) {
   container.innerHTML = `
@@ -22,6 +22,8 @@ function loginRequired(container) {
         </div>
       </div>
     </div>`;
+  container.firstElementChild?.classList.add('submit-redesign-shell');
+  container.querySelector('.page-header + .container')?.classList.add('submit-page');
 }
 
 export async function renderSubmit(container) {
