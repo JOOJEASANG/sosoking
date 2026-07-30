@@ -28,11 +28,14 @@ for (const value of [
 const app = read('public/js/app.js');
 for (const value of [
   "./pages/home-seven-judges.js?v=20260730-home-layout-route-1",
-  "./pages/daily-real-court-layout.js?v=20260730-home-layout-route-1",
+  "./pages/daily-real-court-layout.js?v=20260730-home-layout-route-1"
+]) need(app, value, 'application modules');
+const normalizedRouteSource = app.split('function normalizedRoute() {')[1]?.split('\nfunction freshContentHost()')[0] || '';
+for (const value of [
   "if (hash === '' || hash === '#')",
   "return hash || '#/'"
-]) need(app, value, 'application routing');
-if (app.includes("if (hash === '#/' || hash === '' || hash === '#')")) {
+]) need(normalizedRouteSource, value, 'application routing');
+if (normalizedRouteSource.includes("if (hash === '#/' || hash === '' || hash === '#')")) {
   errors.push('application routing: explicit #/ home route is still overwritten by the current pathname');
 }
 
