@@ -5,7 +5,7 @@ const read = file => fs.readFileSync(file, 'utf8');
 
 const userTrial = read('functions/generate-trial-lite.js');
 for (const required of [
-  "코미디 판결문 작가",
+  '코미디 판결문 작가',
   '웃음코드를 충분히 넣는다',
   '사건 맞춤형 드립',
   '반복되지 않는 웃음 포인트',
@@ -88,13 +88,12 @@ for (const forbidden of [
 const app = read('public/js/app.js');
 const index = read('public/index.html');
 const worker = read('public/sw.js');
-const humorVersion = '20260730-natural-story-humor-1';
+const resultVersion = app.match(/\.\/pages\/result-comments\.js\?v=([^'";]+)/)?.[1] || '';
 const appVersion = index.match(/<script type="module" src="\/js\/app\.js\?v=([^"']+)"/)?.[1] || '';
-for (const [file, source, required] of [
-  ['public/js/app.js', app, `./pages/result-comments.js?v=${humorVersion}`],
-  ['public/sw.js', worker, `/js/pages/result-comments.js?v=${humorVersion}`]
-]) {
-  if (!source.includes(required)) errors.push(`${file}: natural humor cache version missing: ${required}`);
+if (!resultVersion) {
+  errors.push('public/js/app.js: versioned result-comments module is missing');
+} else if (!worker.includes(`/js/pages/result-comments.js?v=${resultVersion}`)) {
+  errors.push('public/js/app.js and public/sw.js: result-comments cache versions differ');
 }
 if (!appVersion || !worker.includes(`/js/app.js?v=${appVersion}`)) {
   errors.push('public/index.html and public/sw.js: active app cache versions are inconsistent');
@@ -109,4 +108,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Verdict humor validation passed: AI verdicts use natural story-driven comedy, forced stage callouts are removed, and cache versions are synchronized.');
+console.log('Verdict humor validation passed: AI verdicts use natural story-driven comedy, forced stage callouts are removed, and active cache versions are synchronized.');

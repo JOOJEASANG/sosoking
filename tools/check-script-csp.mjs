@@ -39,7 +39,7 @@ const protectedSources = [
   '/admin',
   '/admin/**',
   '/@(board|submit|daily-court|guide|auth|my-cases)',
-  '/@(result|trial)/**'
+  '/@(result|trial|discussion)/**'
 ];
 for (const source of protectedSources) {
   const headers = headerRules.find(rule => rule.source === source)?.headers || [];
@@ -113,4 +113,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Script CSP validation passed: route-scoped policy, including daily court, no inline execution, and synchronized module cache versions.');
+console.log('Script CSP validation passed: route-scoped policy, including discussion court, no inline execution, and synchronized module cache versions.');

@@ -95,7 +95,6 @@ for (const required of [
   if (!app.includes(required)) errors.push(`public/js/app.js: configurable limit module missing ${required}`);
 }
 for (const required of [
-  '/js/app.js?v=20260730-configurable-limit-1',
   '/js/pages/home-court.js?v=20260730-configurable-limit-1',
   '/js/pages/submit-guard.js?v=20260730-configurable-limit-1',
   '/js/pages/submit-court.js?v=20260730-configurable-limit-1',
@@ -104,11 +103,12 @@ for (const required of [
 ]) {
   if (!worker.includes(required)) errors.push(`public/sw.js: configurable limit cache entry missing ${required}`);
 }
-if (!index.includes('/js/app.js?v=20260730-configurable-limit-1')) {
-  errors.push('public/index.html: configurable limit application version is missing');
+const appVersion = index.match(/<script type="module" src="\/js\/app\.js\?v=([^"']+)"/)?.[1] || '';
+if (!appVersion || !worker.includes(`/js/app.js?v=${appVersion}`)) {
+  errors.push('public/index.html and public/sw.js: active application cache versions differ');
 }
-if (!worker.includes("const CACHE_NAME = 'sosoking-app-v20260730-configurable-limit-1';")) {
-  errors.push('public/sw.js: configurable limit cache name is missing');
+if (!/^const CACHE_NAME = 'sosoking-app-v[^']+';/m.test(worker)) {
+  errors.push('public/sw.js: a versioned application cache name is missing');
 }
 
 if (errors.length) {
@@ -117,4 +117,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Configurable daily limit validation passed: default-unlimited migration, administrator controls, public copy, backend enforcement, and cache graph are connected.');
+console.log('Configurable daily limit validation passed: default-unlimited migration, administrator controls, public copy, backend enforcement, and active cache graph are connected.');

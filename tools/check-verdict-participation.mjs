@@ -19,19 +19,23 @@ expect(app.includes("hash.startsWith('#/result/')") && app.includes('renderResul
 expect(app.includes("hash.startsWith('#/verdict/')") && app.includes('renderResult(content'),
   'public/js/app.js: owned verdict hash must render the full verdict page');
 expect(!app.includes('renderParticipation') && !app.includes('./pages/participation.js'),
-  'public/js/app.js: separate participation page must not remain in the active route graph');
+  'public/js/app.js: obsolete separate participation page must not return');
 expect(board.includes('function resultPath') && board.includes('return `#/result/${encodeURIComponent(id)}`'),
-  'public/js/pages/board.js: verdict record cards must open the full verdict hash');
-expect(board.includes('AI 판결문 전문으로 바로 이동합니다')
-  && board.includes('판결문 바로 보기 · 💬')
+  'public/js/pages/board.js: verdict record cards must retain the full verdict route');
+expect(board.includes('function discussionPath')
+  && board.includes('return `#/discussion/${encodeURIComponent(id)}`')
+  && board.includes('원고측·피고측·쌍방')
+  && board.includes('판결문 보기')
   && board.includes('data-public-result-link="true"')
+  && board.includes('data-discussion-record-link="true"')
   && !board.includes('totalVotes('),
-  'public/js/pages/board.js: records must directly advertise full verdict content and comments without jury totals');
+  'public/js/pages/board.js: records must provide separate full-verdict and three-way discussion actions without jury totals');
 expect(result.includes('💬 방청석 한마디') && result.includes("httpsCallable(functions, 'addCourtComment')"),
-  'public/js/pages/result.js: audience comments must remain available');
+  'public/js/pages/result.js: legacy audience comments must remain available');
 expect(resultComments.includes("reactionButton?.closest('.card')?.remove()")
-  && resultComments.includes("container.querySelector('.result-audience-title')?.remove()"),
-  'public/js/pages/result-comments.js: jury vote card must be removed while comments remain');
+  && resultComments.includes("container.querySelector('.result-audience-title')?.remove()")
+  && resultComments.includes('이 판결로 토론하기'),
+  'public/js/pages/result-comments.js: old jury card must stay hidden while comments and discussion access remain');
 expect(resultCourt.includes("[data-theme='dark'] .result-document-page")
   && resultCourt.includes('background:linear-gradient(145deg,#1a2130,#10151f)'),
   'public/js/pages/result-court.js: dark full-verdict styling is missing');
@@ -47,8 +51,9 @@ const resultModuleVersion = app.match(/\.\/pages\/result-comments\.js\?v=([^"']+
 expect(Boolean(resultModuleVersion) && sw.includes(`/js/pages/result-comments.js?v=${resultModuleVersion}`),
   'public/js/app.js and public/sw.js: verdict result module cache versions are inconsistent');
 expect(sw.includes('/js/pages/result-court.js?v=20260729-dark-record-participation-1')
+  && sw.includes('/js/pages/discussion.js?v=20260730-discussion-court-1')
   && !sw.includes('/js/pages/participation.js'),
-  'public/sw.js: full verdict comments modules are missing from the cache graph');
+  'public/sw.js: full verdict and discussion modules are missing from the cache graph');
 expect(/^const CACHE_NAME = 'sosoking-app-v[^']+';/m.test(sw),
   'public/sw.js: versioned application cache name is missing');
 
@@ -58,4 +63,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Verdict record validation passed: records link directly to the full AI verdict, jury voting is hidden, audience comments remain, and active cache versions stay synchronized.');
+console.log('Verdict record validation passed: records separate full verdicts and three-way discussions, old jury voting is hidden, legacy comments remain, and cache versions stay synchronized.');

@@ -1,4 +1,4 @@
-import { renderBoard as renderBaseBoard } from './board.js?v=20260730-public-records-2';
+import { renderBoard as renderBaseBoard } from './board.js?v=20260730-discussion-court-1';
 // Cache lineage marker for the CSP regression check: ./board.js?v=20260729-script-csp-1
 
 function ensureBoardGameStyle() {
@@ -87,7 +87,7 @@ function decorateBoard(container) {
   const pick = container.querySelector('#today-pick')?.firstElementChild;
   if (pick && !pick.classList.contains('court-document')) {
     pick.classList.add('court-document');
-    pick.insertAdjacentHTML('afterbegin', '<div class="court-stamp" style="margin-bottom:8px;">주목 기록</div>');
+    pick.insertAdjacentHTML('afterbegin', '<div class="court-stamp" style="margin:12px 20px 0;">주목 기록</div>');
   }
 
   container.querySelectorAll('#board-list .card').forEach((card, index) => {
@@ -95,7 +95,7 @@ function decorateBoard(container) {
     card.classList.add('court-board-row');
     card.style.borderLeft = '3px solid rgba(201,168,76,.5)';
     const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : String(index + 1);
-    card.insertAdjacentHTML('afterbegin', `<div class="court-kicker" style="margin-bottom:7px;"><span class="rank-medal">${medal}</span> ARENA RECORD</div>`);
+    card.insertAdjacentHTML('afterbegin', `<div class="court-kicker" style="margin:12px 18px 0;"><span class="rank-medal">${medal}</span> ARENA RECORD</div>`);
   });
 }
 

@@ -43,7 +43,10 @@ for (const required of [
   'maxRows: 40',
   'data-public-result-link="true"',
   '`#/result/${encodeURIComponent(id)}`',
-  '판결문 바로 보기'
+  '`#/discussion/${encodeURIComponent(id)}`',
+  'data-discussion-record-link="true"',
+  '판결문 보기',
+  '토론장'
 ]) {
   if (!board.includes(required)) errors.push(`public/js/pages/board.js: missing ${required}`);
 }
@@ -51,13 +54,13 @@ for (const required of [
 const app = read('public/js/app.js');
 for (const moduleUrl of [
   './pages/home-court.js?v=20260730-configurable-limit-1',
-  './pages/board-court.js?v=20260730-public-records-2'
+  './pages/board-court.js?v=20260730-discussion-court-1'
 ]) {
   if (!app.includes(moduleUrl)) errors.push(`public/js/app.js: active module version is stale: ${moduleUrl}`);
 }
 
 const boardCourt = read('public/js/pages/board-court.js');
-if (!boardCourt.includes("./board.js?v=20260730-public-records-2")) {
+if (!boardCourt.includes("./board.js?v=20260730-discussion-court-1")) {
   errors.push('public/js/pages/board-court.js: public board module version is stale');
 }
 
@@ -69,8 +72,8 @@ if (!appVersion || !worker.includes(`/js/app.js?v=${appVersion}`)) {
 }
 for (const required of [
   '/js/pages/home-court.js?v=20260730-configurable-limit-1',
-  '/js/pages/board-court.js?v=20260730-public-records-2',
-  '/js/pages/board.js?v=20260730-public-records-2',
+  '/js/pages/board-court.js?v=20260730-discussion-court-1',
+  '/js/pages/board.js?v=20260730-discussion-court-1',
   '/js/utils/public-results.js?v=20260730-public-records-2'
 ]) {
   if (!worker.includes(required)) errors.push(`public/sw.js: missing ${required}`);
@@ -85,4 +88,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Home public feed validation passed: five recent sanitized records load resiliently and link directly to verdict content.');
+console.log('Home public feed validation passed: sanitized records link to verdict content and case-specific discussions.');
