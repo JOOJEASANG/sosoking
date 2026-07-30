@@ -98,7 +98,7 @@
         ]
       },
       {
-        "source": "/@(result|trial)/**",
+        "source": "/@(result|trial|discussion)/**",
         "headers": [
           {
             "key": "Content-Security-Policy",
@@ -165,6 +165,7 @@
       { "source": "/guide", "destination": "/index.html" },
       { "source": "/auth", "destination": "/index.html" },
       { "source": "/my-cases", "destination": "/index.html" },
+      { "source": "/discussion/**", "destination": "/index.html" },
       { "source": "/trial/**", "destination": "/index.html" }
     ]
   },
