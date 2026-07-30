@@ -1,4 +1,6 @@
 export function renderGuide(container) {
+  container.classList.add('guide-redesign-host');
+
   const steps = [
     ['🔐', '로그인하고 생활사건 접수', 'Google 또는 이메일 계정으로 로그인한 뒤 사소한 생활분쟁을 접수합니다. 접수 횟수와 대기시간은 운영 설정에 따라 달라질 수 있으며, 실명·연락처·주소 등 개인정보는 빼주세요.'],
     ['🎲', 'AI 판사 자동 배정', '엄벌주의형·감성형·현실주의형·과몰입형·피곤형·논리집착형·드립형 중 한 명이 사건마다 자동 배정됩니다.'],
@@ -7,9 +9,9 @@ export function renderGuide(container) {
   ];
 
   const dailyCourtSteps = [
-    ['1', '오늘의 실제 판례 읽기', '매일 실제 법원 판례 한 건을 게임용으로 짧게 재구성해 보여드립니다. 결론과 사건번호는 먼저 숨겨집니다.'],
-    ['2', '증거를 열고 직접 판결하기', '최대 3개의 증거 카드를 확인한 뒤 결론을 선택합니다. 증거를 적게 열수록 정답 점수가 높습니다.'],
-    ['3', '실제 판단과 민심 비교하기', '판결을 제출하면 실제 법원 판단, 판단 이유, 전체 이용자 선택 비율과 내 점수가 공개됩니다. 연속 참여와 적중률도 누적됩니다.']
+    ['1', '오늘의 실제 판례 3건 확인', '매일 실제 법원 판례 3건을 게임용으로 짧게 재구성해 보여드립니다. 결론과 사건번호는 먼저 숨겨집니다.'],
+    ['2', '증거를 열고 직접 판결하기', '사건마다 최대 3개의 증거 카드를 확인한 뒤 결론을 선택합니다. 증거를 적게 열수록 정답 점수가 높습니다.'],
+    ['3', '실제 판단·점수·랭킹 확인', '판결을 제출하면 실제 법원 판단과 이유, 이용자 선택 비율과 점수가 공개됩니다. 세 사건을 완료하면 일간 랭킹에 반영되고 주간·누적 기록도 쌓입니다.']
   ];
 
   const faqs = [
@@ -18,7 +20,7 @@ export function renderGuide(container) {
     ['하루에 몇 번 접수할 수 있나요?', '현재 적용 중인 횟수는 사건 접수 화면에 표시됩니다. 운영자는 테스트·비용·안전 상황에 따라 제한을 해제하거나 계정당 일일 건수를 조절할 수 있습니다.'],
     ['내 AI 판결은 언제 볼 수 있나요?', '접수한 본인은 생성이 끝나는 즉시 전체 결과를 확인할 수 있습니다. 사건은 기본적으로 비공개입니다.'],
     ['판결 결과를 공개하면 어떻게 되나요?', '닉네임·사건 내용·AI 판결문이 판결기록에 표시되고 투표와 댓글 대상이 됩니다. 공개 주소는 검색엔진에 노출될 수 있으며, 다시 비공개로 전환하거나 사건을 삭제할 수 있습니다.'],
-    ['오늘의 재판은 하루에 몇 번 하나요?', '매일 한 사건이 제공되며 로그인 회원은 같은 날짜의 사건에 한 번만 판결을 제출할 수 있습니다. 지난 판례가 순환될 수 있습니다.'],
+    ['오늘의 재판은 하루에 몇 번 하나요?', '매일 판례 3건이 제공되며 로그인 회원은 각 사건에 한 번씩 판결을 제출할 수 있습니다. 세 사건의 점수는 일간·주간·누적 랭킹에 반영되며 판례는 순환될 수 있습니다.'],
     ['오늘의 재판은 정말 실제 사건인가요?', '국가법령정보센터에 공개된 실제 판례를 바탕으로 합니다. 사건관계인의 신상은 표시하지 않고 게임용으로 축약하므로 정확한 내용은 결과 화면의 공식 판례 원문을 확인해야 합니다.'],
     ['증거를 보면 왜 점수가 줄어드나요?', '단서 없이 실제 결론을 맞히는 난이도를 반영하기 위한 게임 규칙입니다. 증거를 열어도 실제 판결과 이유는 답을 제출하기 전까지 공개되지 않습니다.'],
     ['내 투표가 다른 사람에게 공개되나요?', '개별 회원의 선택은 공개하지 않고 선택지별 전체 표 수와 비율만 보여줍니다.'],
@@ -31,20 +33,20 @@ export function renderGuide(container) {
         <a href="#/" class="back-btn" aria-label="홈으로 돌아가기">‹</a>
         <span class="logo">이용 안내</span>
       </div>
-      <div class="container" style="padding-top:28px;padding-bottom:90px;">
-        <div style="text-align:center;margin-bottom:32px;">
+      <div class="container guide-container" style="padding-top:28px;padding-bottom:90px;">
+        <div class="guide-hero" style="text-align:center;margin-bottom:32px;">
           <div style="font-size:48px;margin-bottom:12px;" aria-hidden="true">⚖️</div>
           <h1 style="font-family:var(--font-serif);font-size:22px;font-weight:800;margin-bottom:6px;color:var(--gold);">소소킹 판결소 사용법</h1>
           <div style="font-size:13px;color:var(--cream-dim);">내 억울함은 AI에게, 실제 판례는 내가 판결합니다.</div>
         </div>
 
-        <section aria-labelledby="guide-steps-title" style="margin-bottom:36px;">
+        <section class="guide-section" aria-labelledby="guide-steps-title" style="margin-bottom:36px;">
           <h2 id="guide-steps-title" style="font-family:var(--font-serif);font-size:18px;font-weight:800;margin-bottom:6px;color:var(--gold);">AI 생활판결</h2>
           <p style="font-size:12px;color:var(--cream-dim);margin-bottom:16px;">사소한 억울함을 접수하고 문서형 AI 판결을 받는 과정입니다.</p>
-          <div style="display:flex;flex-direction:column;gap:14px;">
+          <div class="guide-card-list" style="display:flex;flex-direction:column;gap:14px;">
             ${steps.map(([icon, title, desc], index) => `
-              <div class="card" style="display:flex;gap:15px;align-items:flex-start;padding:18px 20px;">
-                <div style="width:42px;height:42px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid var(--border);border-radius:50%;background:var(--gold-dim);font-size:22px;" aria-hidden="true">${icon}</div>
+              <div class="card guide-step-card" style="display:flex;gap:15px;align-items:flex-start;padding:18px 20px;">
+                <div class="guide-step-icon" style="width:42px;height:42px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid var(--border);border-radius:50%;background:var(--gold-dim);font-size:22px;" aria-hidden="true">${icon}</div>
                 <div style="min-width:0;">
                   <div style="font-size:10px;color:var(--gold);font-weight:900;letter-spacing:.12em;margin-bottom:3px;">STEP ${index + 1}</div>
                   <div style="font-weight:800;font-size:15px;margin-bottom:5px;color:var(--cream);">${title}</div>
@@ -54,13 +56,13 @@ export function renderGuide(container) {
           </div>
         </section>
 
-        <section aria-labelledby="daily-court-guide-title" style="margin-bottom:36px;">
+        <section class="guide-section" aria-labelledby="daily-court-guide-title" style="margin-bottom:36px;">
           <h2 id="daily-court-guide-title" style="font-family:var(--font-serif);font-size:18px;font-weight:800;margin-bottom:6px;color:var(--gold);">오늘의 재판</h2>
-          <p style="font-size:12px;color:var(--cream-dim);margin-bottom:16px;">접수할 일이 없는 날에도 실제 판례를 직접 판단해볼 수 있습니다.</p>
-          <div style="display:flex;flex-direction:column;gap:12px;">
+          <p style="font-size:12px;color:var(--cream-dim);margin-bottom:16px;">접수할 일이 없는 날에도 실제 판례 3건을 직접 판단하고 랭킹에 도전할 수 있습니다.</p>
+          <div class="guide-card-list" style="display:flex;flex-direction:column;gap:12px;">
             ${dailyCourtSteps.map(([num, title, desc]) => `
-              <div class="card" style="display:flex;gap:14px;align-items:flex-start;padding:17px 19px;">
-                <div style="width:34px;height:34px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border-radius:50%;background:var(--gold);color:var(--navy);font-weight:900;">${num}</div>
+              <div class="card guide-step-card" style="display:flex;gap:14px;align-items:flex-start;padding:17px 19px;">
+                <div class="guide-step-number" style="width:34px;height:34px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border-radius:50%;background:var(--gold);color:var(--navy);font-weight:900;">${num}</div>
                 <div style="min-width:0;">
                   <div style="font-weight:800;font-size:15px;margin-bottom:4px;color:var(--cream);">${title}</div>
                   <div style="font-size:13px;color:var(--cream-dim);line-height:1.75;">${desc}</div>
@@ -70,11 +72,11 @@ export function renderGuide(container) {
           <a href="#/daily-court" class="btn btn-secondary" style="margin-top:14px;">⚖️ 오늘의 재판 참여하기</a>
         </section>
 
-        <section aria-labelledby="guide-faq-title" style="margin-bottom:36px;">
+        <section class="guide-section" aria-labelledby="guide-faq-title" style="margin-bottom:36px;">
           <h2 id="guide-faq-title" style="font-family:var(--font-serif);font-size:18px;font-weight:800;margin-bottom:16px;color:var(--gold);">자주 묻는 질문</h2>
-          <div style="display:flex;flex-direction:column;gap:10px;">
+          <div class="guide-faq-list" style="display:flex;flex-direction:column;gap:10px;">
             ${faqs.map(([question, answer]) => `
-              <details class="card" style="padding:0;overflow:hidden;">
+              <details class="card guide-faq-card" style="padding:0;overflow:hidden;">
                 <summary style="list-style:none;cursor:pointer;padding:16px 18px;font-weight:800;font-size:14px;color:var(--cream);display:flex;justify-content:space-between;gap:12px;align-items:center;">
                   <span>Q. ${question}</span><span style="color:var(--gold);">＋</span>
                 </summary>
