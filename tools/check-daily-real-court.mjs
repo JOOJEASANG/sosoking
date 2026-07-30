@@ -4,8 +4,11 @@ const errors = [];
 const read = path => fs.readFileSync(path, 'utf8');
 const catalog = JSON.parse(read('content/daily-real-court-cases.json'));
 
-if (!Array.isArray(catalog) || catalog.length < 10) {
-  errors.push('content/daily-real-court-cases.json: 초기 실제 판례가 10건 이상 필요합니다.');
+if (!Array.isArray(catalog) || catalog.length < 3) {
+  errors.push('content/daily-real-court-cases.json: 하루 3건 출제를 위해 판례가 3건 이상 필요합니다.');
+}
+if (Array.isArray(catalog) && catalog.length > 500) {
+  errors.push('content/daily-real-court-cases.json: 판례는 최대 500건까지 지원합니다.');
 }
 
 const ids = new Set();
@@ -42,9 +45,14 @@ for (const expected of [
   "require('./daily-real-court')",
   'getDailyRealCourt',
   'submitDailyRealCourtVerdict',
+  'const DAILY_CASE_COUNT = 3;',
+  'dailyCaseIndexes',
   'daily_court_days',
+  'daily_court_weeks',
   'daily_court_players',
-  'daily_court_catalog'
+  'daily_court_catalog',
+  'loadRankings',
+  "completed: raw.completed === true"
 ]) {
   if (!(functionsMain + gameFunction).includes(expected)) errors.push(`Functions integration missing: ${expected}`);
 }
@@ -62,22 +70,30 @@ for (const expected of ['오늘재판', '#/daily-court', 'isDailyCourt']) {
 }
 if (!brand.includes('flex: 1 1 20%')) errors.push('public/css/brand-logo.css: five-item navigation width is missing');
 
-for (const expected of ['증거', '실제 판결', '공식 판례 확인', 'submitDailyRealCourtVerdict']) {
+for (const expected of [
+  '하루 세 판',
+  'daily-case-nav',
+  '판사 랭킹',
+  'data-ranking-tab',
+  '오늘의 3건 판결 완료',
+  'caseId: gameCase.id',
+  'submitDailyRealCourtVerdict'
+]) {
   if (!page.includes(expected)) errors.push(`daily court page missing: ${expected}`);
 }
 
 if (!firebase.includes('{ "source": "/daily-court", "destination": "/index.html" }')) errors.push('firebase.json: /daily-court rewrite missing');
-for (const collection of ['daily_court_catalog', 'daily_court_config', 'daily_court_days', 'daily_court_players']) {
+for (const collection of ['daily_court_catalog', 'daily_court_config', 'daily_court_days', 'daily_court_weeks', 'daily_court_players']) {
   if (!rules.includes(`match /${collection}/`)) errors.push(`firestore.rules: ${collection} protection missing`);
 }
 for (const functionName of ['functions:getDailyRealCourt', 'functions:submitDailyRealCourtVerdict']) {
   if (!deploy.includes(functionName)) errors.push(`deploy workflow missing: ${functionName}`);
 }
-if (!deploy.includes('sync-daily-real-court-catalog.mjs') || !sync.includes('orderedCaseIds')) {
-  errors.push('daily real court catalog deployment sync is incomplete');
+for (const expected of ['orderedCaseIds', 'dailyCaseCount: 3', 'targetSize: 500', 'cases.length > 500']) {
+  if (!sync.includes(expected)) errors.push(`daily real court catalog sync missing: ${expected}`);
 }
 
-// AI 생활사건 접수 한도는 오늘의 재판 1회 투표 규칙과 별개이며 관리자 설정을 따른다.
+// AI 생활사건 접수 한도는 오늘의 재판 3건 참여 규칙과 별개이며 관리자 설정을 따른다.
 for (const expected of [
   'const dailyLimitEnabled = settings.dailyLimitEnabled === true;',
   'if (dailyLimitEnabled && count >= dailyLimit)',
@@ -99,7 +115,7 @@ const appVersion = index.match(/\/js\/app\.js\?v=([^"']+)/)?.[1] || '';
 if (!appVersion || !sw.includes(`/js/app.js?v=${appVersion}`)) errors.push('index and service worker app versions differ');
 const brandVersion = index.match(/\/css\/brand-logo\.css\?v=([^"']+)/)?.[1] || '';
 if (!brandVersion || !sw.includes(`/css/brand-logo.css?v=${brandVersion}`)) errors.push('index and service worker brand CSS versions differ');
-if (!sw.includes('/js/pages/daily-real-court.js?v=20260729-daily-real-court-1')) errors.push('service worker does not cache daily court page module');
+if (!sw.includes('/js/pages/daily-real-court.js?v=20260730-daily-three-ranking-1')) errors.push('service worker does not cache the three-case daily court module');
 
 if (errors.length) {
   console.error(`Daily real court validation failed (${errors.length})`);
@@ -107,4 +123,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log(`Daily real court validation passed: ${catalog.length} verified cases, one-vote game flow, protected answers, and administrator-controlled AI case limits.`);
+console.log(`Daily real court validation passed: ${catalog.length} verified cases, three daily judgments, protected scores, and daily/weekly/all-time rankings.`);
