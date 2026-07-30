@@ -22,7 +22,7 @@ function keepSevenJudgeCards(container) {
   const heading = Array.from(section.children).find(element => element.textContent?.includes('7명의 AI 판사'));
   if (heading) heading.textContent = '7명의 AI 판사';
   const subtitle = section.querySelector('.section-sub');
-  if (subtitle) subtitle.textContent = '사건을 접수하면 성향이 다른 7명 중 한 명이 자동으로 배정됩니다.';
+  if (subtitle) subtitle.textContent = '사건을 접수하면 7명 중 한 명이 자동으로 배정됩니다.';
 }
 
 function createFeatureCard([href, iconText, titleText, descriptionText]) {
