@@ -110,16 +110,16 @@ for (const required of [
 const index = read('public/index.html');
 const worker = read('public/sw.js');
 for (const required of [
-  '/js/app.js?v=20260730-configurable-limit-1',
+  '/js/app.js?v=20260730-discussion-court-1',
   '/js/admin-access.js?v=20260730-admin-redirect-1'
 ]) {
   if (!worker.includes(required)) errors.push(`public/sw.js: missing ${required}`);
 }
-if (!index.includes('/js/app.js?v=20260730-configurable-limit-1')) {
-  errors.push('public/index.html: configurable limit app cache version is stale');
+if (!index.includes('/js/app.js?v=20260730-discussion-court-1')) {
+  errors.push('public/index.html: discussion court app cache version is stale');
 }
-if (!worker.includes("sosoking-app-v20260730-configurable-limit-1")) {
-  errors.push('public/sw.js: configurable limit cache name is stale');
+if (!worker.includes("sosoking-app-v20260730-discussion-court-1")) {
+  errors.push('public/sw.js: discussion court cache name is stale');
 }
 
 if (errors.length) {
@@ -128,4 +128,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Administrator validation passed: login/logout routing, configurable case limits, verdict access, and managed policy editing remain connected and cache-safe.');
+console.log('Administrator validation passed: login/logout routing, configurable case limits, discussion routing, verdict access, and managed policy editing remain connected and cache-safe.');
