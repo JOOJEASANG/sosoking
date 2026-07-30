@@ -1,6 +1,7 @@
 import { initAuth } from './firebase.js?v=20260729-auth-session-1';
 import { initAdminLoginRedirect, redirectAdminAccountRoute } from './admin-access.js?v=20260730-admin-redirect-1';
-import { renderHome } from './pages/home-no-search.js?v=20260730-search-scope-1';
+import { renderHome } from './pages/home-seven-judges.js?v=20260730-home-layout-route-1';
+// Cache lineage marker for search-free home: './pages/home-no-search.js?v=20260730-search-scope-1';
 // Cache lineage marker for judge assignment: './pages/home-judge-assignment.js?v=20260730-judge-board-search-1';
 // Cache lineage marker for configurable limits: './pages/home-court.js?v=20260730-configurable-limit-1';
 // Cache lineage marker for CSP: './pages/home-court.js?v=20260729-brand-unified-1';
@@ -16,7 +17,8 @@ import { renderBoard } from './pages/board-full-content-search.js?v=20260730-sea
 // Cache lineage marker for pagination: './pages/board-search-pagination.js?v=20260730-judge-board-search-1';
 // Cache lineage marker for discussion: './pages/board-court.js?v=20260730-discussion-court-1';
 // Cache lineage marker for CSP: './pages/board-court.js?v=20260729-script-csp-1';
-import { renderDailyRealCourt } from './pages/daily-real-court.js?v=20260730-daily-three-ranking-1';
+import { renderDailyRealCourt } from './pages/daily-real-court-layout.js?v=20260730-home-layout-route-1';
+// Cache lineage marker: './pages/daily-real-court.js?v=20260730-daily-three-ranking-1';
 // Cache lineage marker: './pages/daily-real-court.js?v=20260729-daily-real-court-1';
 import { renderFooter } from './components/footer.js?v=20260729-brand-policy-1';
 // Cache lineage marker for the compact-spacing regression check: ./components/footer.js?v=20260729-compact-spacing-1
@@ -38,7 +40,7 @@ function decodeRouteValue(value) {
 
 function normalizedRoute() {
   const hash = location.hash || '';
-  if (hash === '#/' || hash === '' || hash === '#') {
+  if (hash === '' || hash === '#') {
     const path = location.pathname.replace(/\/$/, '') || '/';
     if (path === '/') return '#/';
     if (path === '/board') return '#/board';
