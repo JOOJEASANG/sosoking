@@ -69,17 +69,19 @@ function installFullContentSearch(container) {
 
   input.dataset.fullContentSearch = 'true';
   input.placeholder = '사건명, 사건내용, 수사·변론·판결문 전체 검색';
-  let enriched = false;
+  let indexReady = false;
   let loading = null;
 
   input.addEventListener('input', async () => {
-    if (!normalizeSearch(input.value) || enriched) return;
+    if (!normalizeSearch(input.value) || indexReady) return;
     if (!loading) {
       if (status) status.textContent = '공개 판결문 전체 내용을 검색하는 중입니다…';
       loading = enrichFullContentIndex(container)
-        .then(() => { enriched = true; })
         .catch(error => console.warn('full verdict search index load failed:', error?.code || error))
-        .finally(() => { loading = null; });
+        .finally(() => {
+          indexReady = true;
+          loading = null;
+        });
     }
     await loading;
     input.dispatchEvent(new Event('input', { bubbles: true }));
