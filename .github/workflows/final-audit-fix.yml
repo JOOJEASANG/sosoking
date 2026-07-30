@@ -1,0 +1,224 @@
+name: Apply final audit fixes
+
+on:
+  push:
+    branches: [agent/final-comprehensive-audit]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: ${{ !contains(github.event.head_commit.message, '[final-audit-fixed]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/final-comprehensive-audit
+          fetch-depth: 0
+
+      - name: Apply verified audit fixes
+        shell: bash
+        run: |
+          python <<'PY'
+          from pathlib import Path
+          import json
+
+          def edit(path, old, new):
+              p = Path(path)
+              text = p.read_text(encoding='utf-8')
+              if old not in text:
+                  raise SystemExit(f'missing expected text in {path}: {old[:100]!r}')
+              p.write_text(text.replace(old, new), encoding='utf-8')
+
+          # 1) 이용 안내를 실제 하루 3건 + 랭킹 구조와 일치시킨다.
+          edit('public/js/pages/guide.js',
+          """  const dailyCourtSteps = [
+              ['1', '오늘의 실제 판례 읽기', '매일 실제 법원 판례 한 건을 게임용으로 짧게 재구성해 보여드립니다. 결론과 사건번호는 먼저 숨겨집니다.'],
+              ['2', '증거를 열고 직접 판결하기', '최대 3개의 증거 카드를 확인한 뒤 결론을 선택합니다. 증거를 적게 열수록 정답 점수가 높습니다.'],
+              ['3', '실제 판단과 민심 비교하기', '판결을 제출하면 실제 법원 판단, 판단 이유, 전체 이용자 선택 비율과 내 점수가 공개됩니다. 연속 참여와 적중률도 누적됩니다.']
+            ];""",
+          """  const dailyCourtSteps = [
+              ['1', '오늘의 실제 판례 3건 읽기', '매일 실제 법원 판례 3건을 게임용으로 짧게 재구성해 보여드립니다. 각 사건의 결론과 사건번호는 먼저 숨겨집니다.'],
+              ['2', '증거를 열고 직접 판결하기', '사건마다 최대 3개의 증거 카드를 확인한 뒤 결론을 선택합니다. 증거를 적게 열수록 정답 점수가 높습니다.'],
+              ['3', '실제 판단과 민심 비교하기', '각 판결을 제출하면 실제 법원 판단, 판단 이유, 이용자 선택 비율과 점수가 공개됩니다. 세 사건을 완료하면 일간 랭킹에 반영되고 주간·누적 기록도 쌓입니다.']
+            ];""")
+          edit('public/js/pages/guide.js',
+               "['오늘의 재판은 하루에 몇 번 하나요?', '매일 한 사건이 제공되며 로그인 회원은 같은 날짜의 사건에 한 번만 판결을 제출할 수 있습니다. 지난 판례가 순환될 수 있습니다.']",
+               "['오늘의 재판은 하루에 몇 번 하나요?', '매일 판례 3건이 제공되며 로그인 회원은 각 사건에 한 번씩 판결을 제출할 수 있습니다. 세 사건의 점수는 일간·주간·누적 랭킹에 반영되며 판례는 순환될 수 있습니다.']")
+
+          # 2) 기본 약관과 관리자가 저장한 구버전 약관을 모두 현재 규칙으로 보정한다.
+          edit('public/js/pages/policy.js',
+               '1. 오늘의 재판은 매일 실제 판례 한 건을 제시하고 이용자가 결론을 선택한 뒤 실제 판단과 비교하는 게임입니다.\n2. 로그인 회원은 같은 날짜의 사건에 한 번만 판결을 제출할 수 있습니다.\n3. 이용자가 확인한 증거 수, 선택한 답변, 정답 여부, 점수, 연속 참여 기록 및 누적 통계가 저장될 수 있습니다.',
+               '1. 오늘의 재판은 매일 실제 판례 3건을 제시하고 이용자가 각 결론을 선택한 뒤 실제 판단과 비교하는 게임입니다.\n2. 로그인 회원은 같은 날짜에 출제된 각 사건에 한 번씩 판결을 제출할 수 있습니다.\n3. 이용자가 확인한 증거 수, 선택한 답변, 정답 여부, 점수, 연속 참여 기록과 일간·주간·누적 랭킹 통계가 저장될 수 있습니다.')
+
+          policy_wrapper = '''import { renderPolicy as renderBasePolicy } from './policy.js?v=20260730-final-audit-1';
+          import { db } from '../firebase.js?v=20260630-3';
+          import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+
+          const OLD_LIMIT_COPY = '회원의 AI 사건 접수는 원칙적으로 계정당 하루 1회입니다. 미사용 횟수는 다음 날로 이월되지 않습니다.';
+          const NEW_LIMIT_COPY = 'AI 사건의 접수 횟수와 재접수 대기시간은 서비스 화면에 표시된 현재 운영 설정을 따릅니다. 운영자는 테스트, 비용 통제, 안전 및 장애 대응을 위해 제한을 해제하거나 계정당 일일 건수를 조절할 수 있습니다.';
+          const OLD_DAILY_COPY = '오늘의 재판은 매일 실제 판례 한 건을 제시하고 이용자가 결론을 선택한 뒤 실제 판단과 비교하는 게임입니다.';
+          const NEW_DAILY_COPY = '오늘의 재판은 매일 실제 판례 3건을 제시하고 이용자가 각 결론을 선택한 뒤 실제 판단과 비교하는 게임입니다.';
+          const OLD_DAILY_VOTE_COPY = '로그인 회원은 같은 날짜의 사건에 한 번만 판결을 제출할 수 있습니다.';
+          const NEW_DAILY_VOTE_COPY = '로그인 회원은 같은 날짜에 출제된 각 사건에 한 번씩 판결을 제출할 수 있습니다.';
+          const OLD_DAILY_STATS_COPY = '이용자가 확인한 증거 수, 선택한 답변, 정답 여부, 점수, 연속 참여 기록 및 누적 통계가 저장될 수 있습니다.';
+          const NEW_DAILY_STATS_COPY = '이용자가 확인한 증거 수, 선택한 답변, 정답 여부, 점수, 연속 참여 기록과 일간·주간·누적 랭킹 통계가 저장될 수 있습니다.';
+
+          function applyBusinessName(text, business = {}) {
+            return String(text || '').replaceAll('{companyName}', business.companyName || '운영자');
+          }
+
+          function replaceCurrentPolicyCopy(text) {
+            return String(text || '')
+              .replace(OLD_LIMIT_COPY, NEW_LIMIT_COPY)
+              .replace(OLD_DAILY_COPY, NEW_DAILY_COPY)
+              .replace(OLD_DAILY_VOTE_COPY, NEW_DAILY_VOTE_COPY)
+              .replace(OLD_DAILY_STATS_COPY, NEW_DAILY_STATS_COPY);
+          }
+
+          function replaceLegacyLimitCopy(container) {
+            const content = container.querySelector('.container > div:first-child');
+            if (!content) return;
+            content.textContent = replaceCurrentPolicyCopy(content.textContent);
+          }
+
+          export async function renderPolicy(container, type) {
+            await renderBasePolicy(container, type);
+            if (type !== 'terms') return;
+
+            try {
+              const [policySnapshot, publicSnapshot] = await Promise.all([
+                getDoc(doc(db, 'policy_docs', 'terms')),
+                getDoc(doc(db, 'site_public', 'config'))
+              ]);
+              if (!container.isConnected) return;
+
+              const saved = policySnapshot.exists() ? String(policySnapshot.data().content || '') : '';
+              const business = publicSnapshot.exists() ? (publicSnapshot.data().businessInfo || {}) : {};
+              const content = container.querySelector('.container > div:first-child');
+
+              if (content && saved) {
+                content.textContent = applyBusinessName(replaceCurrentPolicyCopy(saved), business);
+                return;
+              }
+            } catch (error) {
+              console.warn('configurable policy copy load failed:', error?.code || error);
+            }
+
+            replaceLegacyLimitCopy(container);
+          }
+
+          export { NEW_LIMIT_COPY, NEW_DAILY_COPY };
+          '''
+          Path('public/js/pages/policy-configurable-limit.js').write_text(policy_wrapper.replace('          ', ''), encoding='utf-8')
+
+          # 3) 일간 랭킹은 완료 사용자만 먼저 조회한 뒤 상위 점수를 정렬한다.
+          edit('functions/daily-real-court.js',
+          """async function loadRanking(collectionRef, scoreField, currentUid, type, completedOnly = false) {
+            const snapshot = await collectionRef.orderBy(scoreField, 'desc').limit(RANKING_QUERY_LIMIT).get();
+            const entries = snapshot.docs
+              .map(docSnap => ({ uid: docSnap.id, ...docSnap.data() }))
+              .filter(data => !completedOnly || data.completed === true)
+              .map(data => rankingEntry(data, scoreField, currentUid, type));
+            return sortRanking(entries)
+              .slice(0, RANKING_LIMIT)
+              .map((entry, index) => ({ ...entry, rank: index + 1, completedAt: undefined }));
+          }""",
+          """async function loadRanking(collectionRef, scoreField, currentUid, type, completedOnly = false) {
+            const rankingQuery = completedOnly
+              ? collectionRef.where('completed', '==', true).orderBy(scoreField, 'desc')
+              : collectionRef.orderBy(scoreField, 'desc');
+            const snapshot = await rankingQuery.limit(RANKING_QUERY_LIMIT).get();
+            const entries = snapshot.docs
+              .map(docSnap => ({ uid: docSnap.id, ...docSnap.data() }))
+              .map(data => rankingEntry(data, scoreField, currentUid, type));
+            return sortRanking(entries)
+              .slice(0, RANKING_LIMIT)
+              .map((entry, index) => ({ ...entry, rank: index + 1, completedAt: undefined }));
+          }""")
+
+          indexes_path = Path('firestore.indexes.json')
+          indexes = json.loads(indexes_path.read_text(encoding='utf-8'))
+          daily_index = {
+              'collectionGroup': 'votes',
+              'queryScope': 'COLLECTION',
+              'fields': [
+                  {'fieldPath': 'completed', 'order': 'ASCENDING'},
+                  {'fieldPath': 'score', 'order': 'DESCENDING'}
+              ]
+          }
+          if daily_index not in indexes['indexes']:
+              indexes['indexes'].append(daily_index)
+          indexes_path.write_text(json.dumps(indexes, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+
+          # 4) 캐시 버전을 갱신하되 이전 URL도 호환용으로 남긴다.
+          edit('public/js/app.js',
+               "import { renderPolicy } from './pages/policy-configurable-limit.js?v=20260730-configurable-limit-1';",
+               "import { renderPolicy } from './pages/policy-configurable-limit.js?v=20260730-final-audit-1';\n// Cache lineage marker: './pages/policy-configurable-limit.js?v=20260730-configurable-limit-1';")
+          edit('public/js/app.js',
+               "import { renderGuide } from './pages/guide.js?v=20260730-configurable-limit-1';",
+               "import { renderGuide } from './pages/guide.js?v=20260730-final-audit-1';\n// Cache lineage marker: './pages/guide.js?v=20260730-configurable-limit-1';")
+          edit('public/index.html',
+               '<script type="module" src="/js/app.js?v=20260730-home-layout-route-1"></script>',
+               '<script type="module" src="/js/app.js?v=20260730-final-audit-1"></script>\n  <!-- Cache lineage: /js/app.js?v=20260730-home-layout-route-1 -->')
+          edit('public/sw.js',
+               "const CACHE_NAME = 'sosoking-app-v20260730-home-layout-route-1';",
+               "const CACHE_NAME = 'sosoking-app-v20260730-final-audit-1';\n// Cache lineage: const CACHE_NAME = 'sosoking-app-v20260730-home-layout-route-1';")
+          edit('public/sw.js',
+               "  '/js/app.js?v=20260730-home-layout-route-1',",
+               "  '/js/app.js?v=20260730-final-audit-1',\n  '/js/app.js?v=20260730-home-layout-route-1',")
+          edit('public/sw.js',
+               "  '/js/pages/guide.js?v=20260730-configurable-limit-1',",
+               "  '/js/pages/guide.js?v=20260730-final-audit-1',\n  '/js/pages/guide.js?v=20260730-configurable-limit-1',")
+          edit('public/sw.js',
+               "  '/js/pages/policy.js?v=20260729-brand-policy-1',",
+               "  '/js/pages/policy.js?v=20260730-final-audit-1',\n  '/js/pages/policy.js?v=20260729-brand-policy-1',")
+          edit('public/sw.js',
+               "  '/js/pages/policy-configurable-limit.js?v=20260730-configurable-limit-1',",
+               "  '/js/pages/policy-configurable-limit.js?v=20260730-final-audit-1',\n  '/js/pages/policy-configurable-limit.js?v=20260730-configurable-limit-1',")
+
+          # 5) 회귀검사가 구버전 한 건 안내와 잘못된 랭킹 조회를 다시 허용하지 않게 한다.
+          brand_test = Path('tools/check-brand-policy-copy.mjs')
+          text = brand_test.read_text(encoding='utf-8')
+          text = text.replace("'오늘의 실제 판례 읽기',", "'오늘의 실제 판례 3건 읽기',\n  '매일 실제 법원 판례 3건',\n  '세 사건을 완료하면 일간 랭킹',")
+          text = text.replace("if (guide.includes('회원당 하루 1회입니다.')) {\n  errors.push('public/js/pages/guide.js: 고정 하루 1회 안내가 남아 있습니다.');\n}", "for (const legacy of ['회원당 하루 1회입니다.', '매일 실제 법원 판례 한 건', '매일 한 사건이 제공되며']) {\n  if (guide.includes(legacy)) errors.push(`public/js/pages/guide.js: 구버전 안내가 남아 있습니다: ${legacy}`);\n}")
+          text = text.replace("'오늘의 재판은 실제 판례'", "'오늘의 재판은 실제 판례',\n  '매일 실제 판례 3건',\n  '각 사건에 한 번씩',\n  '일간·주간·누적'")
+          text = text.replace("'replaceLegacyLimitCopy',", "'replaceLegacyLimitCopy',\n  'replaceCurrentPolicyCopy',\n  'OLD_DAILY_COPY',\n  'NEW_DAILY_COPY',")
+          brand_test.write_text(text, encoding='utf-8')
+
+          daily_test = Path('tools/check-daily-real-court.mjs')
+          text = daily_test.read_text(encoding='utf-8')
+          text = text.replace("const rules = read('firestore.rules');", "const rules = read('firestore.rules');\nconst indexes = JSON.parse(read('firestore.indexes.json'));")
+          text = text.replace("  'loadRankings',", "  'loadRankings',\n  \"where('completed', '==', true).orderBy(scoreField, 'desc')\",")
+          anchor = "for (const collection of ['daily_court_catalog', 'daily_court_config', 'daily_court_days', 'daily_court_weeks', 'daily_court_players']) {\n  if (!rules.includes(`match /${collection}/`)) errors.push(`firestore.rules: ${collection} protection missing`);\n}\n"
+          insertion = anchor + "const completedScoreIndex = indexes.indexes?.some(index => index.collectionGroup === 'votes'\n  && index.fields?.some(field => field.fieldPath === 'completed' && field.order === 'ASCENDING')\n  && index.fields?.some(field => field.fieldPath === 'score' && field.order === 'DESCENDING'));\nif (!completedScoreIndex) errors.push('firestore.indexes.json: completed daily ranking index missing');\n"
+          if anchor not in text:
+              raise SystemExit('daily test insertion anchor missing')
+          text = text.replace(anchor, insertion)
+          daily_test.write_text(text, encoding='utf-8')
+
+          Path('docs/final-audit-2026-07-30.md').write_text('''# Final comprehensive audit — 2026-07-30
+
+The restored pre-redesign runtime was audited through the full repository and Firebase emulator suite.
+
+Final corrections applied:
+- aligned the guide and terms with three daily real-court cases and rankings
+- filtered daily rankings to completed users before applying the query limit
+- added the required completed/score Firestore composite index
+- added regression checks for these behaviors
+
+Operational follow-ups that require console or content work remain documented in the pull request: App Check activation, live custom-domain synchronization, daily AI schedule review, and expansion of the verified case catalog beyond the current ten cases.
+''', encoding='utf-8')
+
+          Path('.github/workflows/final-audit-fix.yml').unlink()
+          PY
+
+      - name: Commit fixes and remove one-time workflow
+        shell: bash
+        run: |
+          git config user.name "sosoking-audit-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git commit -m "Fix final audit findings [final-audit-fixed]"
+          git push origin HEAD:agent/final-comprehensive-audit
