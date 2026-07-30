@@ -59,8 +59,17 @@ if (!/from '\.\/my-cases\.js\?v=[^']+';/.test(gamePage)
 }
 
 const app = read('public/js/app.js');
-if (!/from '\.\/pages\/my-cases-game\.js\?v=[^']+';/.test(app)) {
-  errors.push('public/js/app.js: versioned my cases module is missing');
+const directGameImport = /from '\.\/pages\/my-cases-game\.js\?v=[^']+';/.test(app);
+const redesignImport = /from '\.\/pages\/my-cases-redesign\.js\?v=[^']+';/.test(app);
+if (!directGameImport && !redesignImport) {
+  errors.push('public/js/app.js: versioned my cases module or redesign wrapper is missing');
+}
+if (redesignImport) {
+  const wrapper = read('public/js/pages/my-cases-redesign.js');
+  if (!/from '\.\/my-cases-game\.js\?v=[^']+';/.test(wrapper)
+    || !wrapper.includes('await renderBaseMyCases(container)')) {
+    errors.push('public/js/pages/my-cases-redesign.js: versioned my cases behavior chain is incomplete');
+  }
 }
 
 const index = read('public/index.html');
@@ -94,4 +103,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Own case deletion validation passed: authenticated ownership, cascade cleanup, UI controls, cache consistency, and deployment.');
+console.log('Own case deletion validation passed: authenticated ownership, cascade cleanup, wrapped UI controls, cache consistency, and deployment.');
